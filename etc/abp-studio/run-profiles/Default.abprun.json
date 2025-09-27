@@ -1,0 +1,28 @@
+﻿{
+  "applications": {
+    "Radish.HttpApi.Host": {
+      "type": "dotnet-project",
+      "launchUrl": "https://localhost:44342",
+      "path": "../../../src/Radish.HttpApi.Host/Radish.HttpApi.Host.csproj",
+      "kubernetesService": ".*-httpapihost$",
+      "healthCheckEndpoint": "/health-status",
+      "healthUiEndpoint": "/health-ui",
+      "execution": {
+        "order": 4
+      }
+    },
+    "Radish.Angular": {
+      "type": "cli",
+      "workingDirectory": "../../../angular",
+      "startCommand": "./start.ps1",
+      "launchUrl": "http://localhost:4200",
+      "kubernetesService": ".*-angular$",
+      "execution": {
+        "order": 2
+      }    
+    }
+  },
+  "containers": {
+    "serviceName": "Radish-Containers",
+  }
+}

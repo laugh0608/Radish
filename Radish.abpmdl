@@ -1,0 +1,108 @@
+{
+  "template": "app",
+  "imports": {
+    "Volo.Abp.LeptonXLiteTheme": {
+      "version": "4.3.4",
+      "isInstalled": true
+    },
+    "Volo.Abp.Account": {
+      "version": "9.3.4",
+      "isInstalled": true,
+      "creationTime": "09/27/2025 09:06:33 +00:00"
+    },
+    "Volo.Abp.OpenIddict": {
+      "version": "9.3.4",
+      "isInstalled": true,
+      "creationTime": "09/27/2025 09:06:33 +00:00"
+    },
+    "Volo.Abp.Identity": {
+      "version": "9.3.4",
+      "isInstalled": true,
+      "creationTime": "09/27/2025 09:06:33 +00:00"
+    },
+    "Volo.Abp.TenantManagement": {
+      "version": "9.3.4",
+      "isInstalled": true,
+      "creationTime": "09/27/2025 09:06:33 +00:00"
+    },
+    "Volo.Abp.SettingManagement": {
+      "version": "9.3.4",
+      "isInstalled": true,
+      "creationTime": "09/27/2025 09:06:33 +00:00"
+    },
+    "Volo.Abp.PermissionManagement": {
+      "version": "9.3.4",
+      "isInstalled": true,
+      "creationTime": "09/27/2025 09:06:33 +00:00"
+    },
+    "Volo.Abp.FeatureManagement": {
+      "version": "9.3.4",
+      "isInstalled": true,
+      "creationTime": "09/27/2025 09:06:33 +00:00"
+    }
+  },
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {
+    "Radish.Application": {
+      "path": "src/Radish.Application/Radish.Application.abppkg",
+      "folder": "src"
+    },
+    "Radish.Application.Tests": {
+      "path": "test/Radish.Application.Tests/Radish.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "Radish.MongoDB": {
+      "path": "src/Radish.MongoDB/Radish.MongoDB.abppkg",
+      "folder": "src"
+    },
+    "Radish.MongoDB.Tests": {
+      "path": "test/Radish.MongoDB.Tests/Radish.MongoDB.Tests.abppkg",
+      "folder": "test"
+    },
+    "Radish.Domain.Shared": {
+      "path": "src/Radish.Domain.Shared/Radish.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "Radish.Application.Contracts": {
+      "path": "src/Radish.Application.Contracts/Radish.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "Radish.HttpApi": {
+      "path": "src/Radish.HttpApi/Radish.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "Radish.HttpApi.Client": {
+      "path": "src/Radish.HttpApi.Client/Radish.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "Radish.TestBase": {
+      "path": "test/Radish.TestBase/Radish.TestBase.abppkg",
+      "folder": "test"
+    },
+    "Radish.Domain.Tests": {
+      "path": "test/Radish.Domain.Tests/Radish.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "Radish.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/Radish.HttpApi.Client.ConsoleTestApp/Radish.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "Radish.DbMigrator": {
+      "path": "src/Radish.DbMigrator/Radish.DbMigrator.abppkg",
+      "folder": "src"
+    },
+    "Radish.HttpApi.Host": {
+      "path": "src/Radish.HttpApi.Host/Radish.HttpApi.Host.abppkg",
+      "folder": "src"
+    },
+    "Radish.Domain": {
+      "path": "src/Radish.Domain/Radish.Domain.abppkg",
+      "folder": "src"
+    }
+  }
+}
