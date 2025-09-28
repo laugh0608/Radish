@@ -5,11 +5,11 @@
 ## 关于这个项目 About this solution
 
 Still under development...
-还在开发中...
+萝卜在努力施工中...
 
-## 未来的计划 Future Plans
+## 开发计划 Development Framework
 
-[项目计划 Project Plans](./docs/Framework.md)]
+[项目计划 Development Framework](./docs/DevelopmentFramework.md)]
 
 ## 开发进度 Development Progress
 
