@@ -4,8 +4,7 @@
 
 ## 关于这个项目 About this solution
 
-Still under development...
-萝卜在努力施工中...
+萝卜在努力施工中...  Still under development...
 
 ## 开发计划 Development Framework
 
