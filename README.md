@@ -9,7 +9,7 @@ Still under development...
 
 ## 开发计划 Development Framework
 
-[项目计划 Development Framework](./docs/DevelopmentFramework.md)]
+[项目计划 Development Framework](./docs/DevelopmentFramework.md)
 
 ## 开发进度 Development Progress
 

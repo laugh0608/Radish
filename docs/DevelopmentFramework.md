@@ -34,15 +34,15 @@ Radish，萝卜。
 ```mermaid
 graph TD
     subgraph Frontend Layer
-        A[React UI (Forum Portal)] ---|API Calls| C(ABP .Host - API Gateway)
-        B[ABP Angular UI (Admin Portal)] ---|API Calls| C
+        A[React UI Forum Portal] -->|API Calls| C(ABP .Host - API Gateway)
+        B[ABP Angular UI Admin Portal] -->|API Calls| C
     end
 
-    subgraph Backend Layer (ABP Framework)
-        C ---|HTTP/gRPC?| D(ABP .Application)
-        D ---|Uses| E(ABP .Domain)
-        E ---|Uses/Persists| F(ABP .Domain.MongoDB - Infrastructure)
-        F ---|MongoDB Driver| G(MongoDB Database)
+    subgraph Backend Layer ABP Framework
+        C -->|HTTP/gRPC| D(ABP .Application)
+        D -->|Uses| E(ABP .Domain)
+        E -->|Uses/Persists| F(ABP .Domain.MongoDB - Infrastructure)
+        F -->|MongoDB Driver| G[(MongoDB Database)]
     end
 
     subgraph Deployment
@@ -53,8 +53,8 @@ graph TD
         H --> B
     end
 
-    C --Swagger/Scalar--> I(API Documentation)
-    C --Authentication/Authorization--> J(IdentityServer/OpenIddict)
+    C -->|Swagger/Scalar| I[API Documentation]
+    C -->|Authentication/Authorization| J[IdentityServer/OpenIddict]
 ```
 
 #### 2.2 ABP 后端分层详细说明 (DDD)
