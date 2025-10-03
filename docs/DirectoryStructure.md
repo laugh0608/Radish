@@ -86,16 +86,16 @@ Radish/
 │   │   ├── index.css             # 占位符
 │   │   ├── main.jsx              # 占位符
 │   │   └── ...                   # 占位符
-│   ├── index.html
-│   ├── index.html
-│   ├── index.html
-│   ├── index.html
-│   ├── index.html
-│   ├── index.html
-│   ├── index.html
-│   ├── index.html
-│   ├── index.html
-│   └── images/
+│   ├── .gitignore                # 占位符
+│   ├── eslint.config.js          # 占位符
+│   ├── index.html                # 占位符
+│   ├── package-lock.json         # 占位符
+│   ├── package.json              # 占位符
+│   ├── react.iml                 # 占位符
+│   ├── README.md                 # 占位符
+│   ├── start.ps1                 # 占位符
+│   ├── vite.config.js            # 占位符
+│   └── ...                       # 占位符
 ├── src/    # 后端 API 项目
 │   ├── index.html
 │   └── images/
