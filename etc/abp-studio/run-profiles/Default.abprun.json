@@ -1,4 +1,4 @@
-﻿{
+{
   "applications": {
     "Radish.HttpApi.Host": {
       "type": "dotnet-project",
@@ -19,7 +19,17 @@
       "kubernetesService": ".*-angular$",
       "execution": {
         "order": 2
-      }    
+      }
+    },
+    "Radish.React": {
+      "type": "cli",
+      "workingDirectory": "../../../react",
+      "startCommand": "./start.ps1",
+      "launchUrl": "http://localhost:5173",
+      "kubernetesService": ".*-react",
+      "execution": {
+        "order": 2
+      }
     }
   },
   "containers": {
