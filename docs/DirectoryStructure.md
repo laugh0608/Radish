@@ -2,116 +2,129 @@
 
 ```bash
 Radish/
-├── angular/                      # 后台管理 UI 项目
-│   ├── e2e/                      # e2e
-│   │   ├── src/                  # 源码
-│   │   ├── protractor.conf.js    # 配置文件
-│   │   ├── tsconfig.json         # 配置文件
-│   │   └── ...                   # 配置文件
-│   ├── src/                      # 源码
-│   │   ├── app/                  # 占位符
-│   │   ├── assets/               # 占位符
-│   │   ├── environments/         # 占位符
-│   │   ├── favicon.ico           # 占位符
-│   │   ├── index.html            # 占位符
-│   │   ├── main.ts               # 占位符
-│   │   ├── polyfills.ts          # 占位符
-│   │   ├── styles.scss           # 占位符
-│   │   ├── test.ts               # 占位符
-│   │   └── ...                   # 占位符
-│   ├── .editorconfig             # 占位符
-│   ├── .eslintrc.json            # 占位符
-│   ├── .gitignore                # 占位符
-│   ├── .prettierrc               # 占位符
-│   ├── angular.json              # 占位符
-│   ├── Dockerfile                # 占位符
-│   ├── Dockerfile.local          # 占位符
-│   ├── dynamic-env.json          # 占位符
-│   ├── karma.conf.js             # 占位符
-│   ├── nginx.conf                # 占位符
-│   ├── package.json              # 占位符
-│   ├── README.md                 # 占位符
-│   ├── start.ps1                 # 占位符
-│   ├── tsconfig.app.json         # 占位符
-│   ├── tsconfig.json             # 占位符
-│   ├── tsconfig.spec.json        # 占位符
-│   ├── web.config                # 占位符
-│   ├── yarn.lock                 # 占位符
-│   └── ...                       # 占位符
-├── docs/                         # 项目文档
-│   └── ...                       # 占位符
-├── etc/                          # 项目配置
-│   ├── abp-studio/run-profiles/  # 占位符
-│   │   ├── Default.abprun.json   # 占位符
-│   │   └── ...                   # 占位符
-│   └── ...                       # 占位符
-├── modules/                      # 项目附加模块 DDD
-│   ├── contohtri/                # 占位符
-│   │   ├── src/                  # 占位符
-│   │   │   ├── ComToHtri.Application/                  # 占位符
-│   │   │   ├── ComToHtri.Application.Contracts/        # 占位符
-│   │   │   ├── ComToHtri.Domain/                       # 占位符
-│   │   │   ├── ComToHtri.Domain.Shared/                # 占位符
-│   │   │   ├── ComToHtri.EntityFrameworkCore/          # 占位符
-│   │   │   ├── ComToHtri.HttpApi/                      # 占位符
-│   │   │   ├── ComToHtri.HttpApi.Client/               # 占位符
-│   │   │   ├── ComToHtri.Installer/                    # 占位符
-│   │   │   ├── ComToHtri.MongoDB/                      # 占位符
-│   │   │   ├── ComToHtri.Web/                          # 占位符
-│   │   │   └── ...                                     # 占位符
-│   │   ├── test/                 # 占位符
-│   │   │   ├── ComToHtri.Application.Tests/            # 占位符
-│   │   │   ├── ComToHtri.Domain.Tests/                 # 占位符
-│   │   │   ├── ComToHtri.EntityFrameworkCore.Tests/    # 占位符
-│   │   │   ├── ComToHtri.MongoDB.Tests/                # 占位符
-│   │   │   ├── ComToHtri.TestBase/                     # 占位符
-│   │   │   └── ...                                     # 占位符
-│   │   ├── .editorconfig         # 占位符
-│   │   ├── .gitignore            # 占位符
-│   │   ├── common.props          # 占位符
-│   │   ├── ComToHtr.abpmdl       # 占位符
-│   │   ├── ComToHtri.sln         # 占位符
-│   │   └── ...                   # 占位符
-│   └── ...                       # 占位符
-├── react/                        # 前端 UI 项目
-│   ├── public/                   # 占位符
-│   │   ├── vite.svg              # 占位符
-│   │   └── ...                   # 占位符
-│   ├── src/                      # 占位符
-│   │   ├── assets/               # 占位符
-│   │   │   ├── react.svg         # 占位符
-│   │   │   └── ...               # 占位符
-│   │   ├── App.css               # 占位符
-│   │   ├── App.jsx               # 占位符
-│   │   ├── index.css             # 占位符
-│   │   ├── main.jsx              # 占位符
-│   │   └── ...                   # 占位符
-│   ├── .gitignore                # 占位符
-│   ├── eslint.config.js          # 占位符
-│   ├── index.html                # 占位符
-│   ├── package-lock.json         # 占位符
-│   ├── package.json              # 占位符
-│   ├── react.iml                 # 占位符
-│   ├── README.md                 # 占位符
-│   ├── start.ps1                 # 占位符
-│   ├── vite.config.js            # 占位符
-│   └── ...                       # 占位符
-├── src/    # 后端 API 项目
-│   ├── index.html
-│   └── images/
-├── test/ # 后端单元测试项目
-│   ├── index.html
-│   └── images/
-├── .editorconfig
-├── .gitattrbutes
-├── .gitignore
-├── adb-command-prompt.png
-├── common.props
-├── LICENSE.txt
-├── NuGet.Config
-├── Radish.abpmdl
-├── Radish.abpsln
-├── Radish.sln
-├── Radish.sln.DotSettings
-└── README.md
+├── angular/                      # Angular 后台管理前端项目
+│   ├── e2e/                      # e2e 端到端测试目录
+│   │   ├── src/                  # e2e 测试源码
+│   │   ├── protractor.conf.js    # Protractor 测试框架配置
+│   │   ├── tsconfig.json         # TypeScript 配置
+│   │   └── ...                   # 其他配置文件
+│   ├── src/                      # Angular 项目源码目录
+│   │   ├── app/                  # Angular 应用组件和模块
+│   │   ├── assets/               # 静态资源文件
+│   │   ├── environments/         # 环境配置文件
+│   │   ├── favicon.ico           # 网站图标
+│   │   ├── index.html            # 应用主页面
+│   │   ├── main.ts               # 应用入口文件
+│   │   ├── polyfills.ts          # 浏览器兼容性填充
+│   │   ├── styles.scss           # 全局样式文件
+│   │   ├── test.ts               # 测试入口文件
+│   │   └── ...                   # 其他源码文件
+│   ├── .editorconfig             # 编辑器配置
+│   ├── .eslintrc.json            # ESLint 代码规范配置
+│   ├── .gitignore                # Git 忽略文件配置
+│   ├── .prettierrc               # Prettier 代码格式化配置
+│   ├── angular.json              # Angular 项目配置
+│   ├── Dockerfile                # Docker 生产环境构建文件
+│   ├── Dockerfile.local          # Docker 本地开发环境构建文件
+│   ├── dynamic-env.json          # 动态环境变量配置
+│   ├── karma.conf.js             # Karma 测试运行器配置
+│   ├── nginx.conf                # Nginx 服务器配置
+│   ├── package.json              # 项目依赖和脚本配置
+│   ├── README.md                 # 项目说明文档
+│   ├── start.ps1                 # PowerShell 启动脚本
+│   ├── tsconfig.app.json         # 应用 TypeScript 配置
+│   ├── tsconfig.json             # 根 TypeScript 配置
+│   ├── tsconfig.spec.json        # 测试 TypeScript 配置
+│   ├── web.config                # IIS Web 服务器配置
+│   ├── yarn.lock                 # Yarn 依赖锁定文件
+│   └── ...                       # 其他项目文件
+├── docs/                         # 项目文档目录
+│   └── ...                       # 各种项目文档
+├── etc/                          # 项目配置目录
+│   ├── abp-studio/run-profiles/  # ABP Studio 运行配置
+│   │   ├── Default.abprun.json   # 默认运行配置文件
+│   │   └── ...                   # 其他运行配置
+│   └── ...                       # 其他配置目录
+├── modules/                      # DDD 领域驱动设计附加模块
+│   ├── contohtri/                # ComToHtri 模块项目
+│   │   ├── src/                  # ComToHtri 模块源码目录
+│   │   │   ├── ComToHtri.Application/                  # 应用服务层
+│   │   │   ├── ComToHtri.Application.Contracts/        # 应用服务契约
+│   │   │   ├── ComToHtri.Domain/                       # 领域层
+│   │   │   ├── ComToHtri.Domain.Shared/                # 共享领域层
+│   │   │   ├── ComToHtri.EntityFrameworkCore/          # EntityFramework 数据访问层
+│   │   │   ├── ComToHtri.HttpApi/                      # HTTP API 接口
+│   │   │   ├── ComToHtri.HttpApi.Client/               # HTTP API 客户端
+│   │   │   ├── ComToHtri.Installer/                    # 模块安装器
+│   │   │   ├── ComToHtri.MongoDB/                      # MongoDB 数据访问层
+│   │   │   ├── ComToHtri.Web/                          # Web 项目
+│   │   │   └── ...               # ComToHtri 其他模块相关目录
+│   │   ├── test/                 # ComToHtri 模块测试目录
+│   │   │   ├── ComToHtri.Application.Tests/            # 应用服务测试
+│   │   │   ├── ComToHtri.Domain.Tests/                 # 领域层测试
+│   │   │   ├── ComToHtri.EntityFrameworkCore.Tests/    # 数据访问层测试
+│   │   │   ├── ComToHtri.MongoDB.Tests/                # MongoDB 测试
+│   │   │   ├── ComToHtri.TestBase/                     # 测试基类库
+│   │   │   └── ...               # 其他测试项目
+│   │   ├── .editorconfig         # 编辑器配置
+│   │   ├── .gitignore            # Git 忽略文件配置
+│   │   ├── common.props          # 公共项目属性
+│   │   ├── ComToHtr.abpmdl       # ABP 模块定义文件
+│   │   ├── ComToHtri.sln         # Visual Studio 解决方案文件
+│   │   └── ...                   # 其他模块文件
+│   └── ...                       # 其他附加模块
+├── react/                        # React 前端项目
+│   ├── public/                   # 公共静态资源
+│   │   ├── vite.svg              # Vite 图标
+│   │   └── ...                   # 其他公共资源
+│   ├── src/                      # React 源码目录
+│   │   ├── assets/               # 项目资源文件
+│   │   │   ├── react.svg         # React 图标
+│   │   │   └── ...               # 其他资源文件
+│   │   ├── App.css               # 应用样式文件
+│   │   ├── App.jsx               # 应用根组件
+│   │   ├── index.css             # 全局样式文件
+│   │   ├── main.jsx              # 应用入口文件
+│   │   └── ...                   # 其他组件和工具
+│   ├── .gitignore                # Git 忽略文件配置
+│   ├── eslint.config.js          # ESLint 配置
+│   ├── index.html                # HTML 模板文件
+│   ├── package-lock.json         # NPM 依赖锁定文件
+│   ├── package.json              # 项目依赖和脚本配置
+│   ├── react.iml                 # IntelliJ IDEA 模块文件
+│   ├── README.md                 # 项目说明文档
+│   ├── start.ps1                 # PowerShell 启动脚本
+│   ├── vite.config.js            # Vite 构建工具配置
+│   └── ...                       # 其他 React 项目文件
+├── src/                          # 后端 API 核心项目
+│   ├── Radish.Application                              # 应用服务层
+│   ├── Radish.Application.Contracts                    # 应用服务契约
+│   ├── Radish.DbMingrator                              # 数据库迁移项目
+│   ├── Radish.Domain                                   # 领域层
+│   ├── Radish.Domain.Shared                            # 共享领域层
+│   ├── Radish.HttpApi                                  # HTTP API 接口定义
+│   ├── Radish.HttpApi.Client                           # HTTP API 客户端
+│   ├── Radish.HttpApi.Host                             # API 宿主项目
+│   ├── Radish.MongoDB                                  # MongoDB 数据访问层
+│   └── ...                       # 其他后端项目
+├── test/                         # 后端单元测试项目
+│   ├── Radish.Application.Tests                        # 应用服务测试
+│   ├── Radish.Domain.Tests                             # 领域层测试
+│   ├── Radish.HttpApi.Client.ConsoleTestApp            # API 客户端控制台测试应用
+│   ├── Radish.MongoDB.Tests                            # MongoDB 数据访问测试
+│   ├── Radish.TestBase                                 # 测试基类库
+│   └── ...                       # 其他测试项目
+├── .editorconfig                 # 编辑器配置
+├── .gitattrbutes                 # Git 属性配置
+├── .gitignore                    # Git 忽略文件配置
+├── adb-command-prompt.png        # 安卓 ADB 命令截图
+├── common.props                  # 公共项目属性配置
+├── LICENSE.txt                   # 项目许可证
+├── NuGet.Config                  # NuGet 包管理器配置
+├── Radish.abpmdl                 # ABP 模块定义文件
+├── Radish.abpsln                 # ABP Studio 解决方案文件
+├── Radish.sln                    # Visual Studio 解决方案文件
+├── Radish.sln.DotSettings        # ReSharper 配置
+├── README.md                     # 项目主说明文档
+└── ...                           # 其他根目录文件
 ```
