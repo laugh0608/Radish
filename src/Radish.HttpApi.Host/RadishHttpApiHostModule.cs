@@ -1,37 +1,38 @@
-using System;
-using System.IO;
-using System.Linq;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.Extensions.DependencyInjection;
-using OpenIddict.Validation.AspNetCore;
+using Microsoft.OpenApi.Models;
 using OpenIddict.Server.AspNetCore;
+using OpenIddict.Validation.AspNetCore;
+using Radish.HealthChecks;
 using Radish.MongoDB;
 using Radish.MultiTenancy;
-using Radish.HealthChecks;
-using Microsoft.OpenApi.Models;
+using Scalar.AspNetCore;
+using System;
+using System.IO;
+using System.Linq;
 using Volo.Abp;
 using Volo.Abp.Account;
 using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.MultiTenancy;
 using Volo.Abp.AspNetCore.Mvc;
-using Volo.Abp.Autofac;
-using Volo.Abp.Modularity;
-using Volo.Abp.UI.Navigation.Urls;
-using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
+using Volo.Abp.Autofac;
+using Volo.Abp.Modularity;
 using Volo.Abp.OpenIddict;
-using Volo.Abp.Swashbuckle;
-using Volo.Abp.Studio.Client.AspNetCore;
 using Volo.Abp.Security.Claims;
+using Volo.Abp.Studio.Client.AspNetCore;
+using Volo.Abp.Swashbuckle;
+using Volo.Abp.UI.Navigation.Urls;
+using Volo.Abp.VirtualFileSystem;
 
 namespace Radish;
 
@@ -47,7 +48,7 @@ namespace Radish;
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreSerilogModule)
 )]
-public abstract class RadishHttpApiHostModule : AbpModule
+public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstract 抽象类
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
@@ -83,7 +84,7 @@ public abstract class RadishHttpApiHostModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
-        // var hostingEnvironment = context.Services.GetHostingEnvironment();
+        var hostingEnvironment = context.Services.GetHostingEnvironment();
 
         if (!configuration.GetValue<bool>("App:DisablePII"))
         {
@@ -109,7 +110,8 @@ public abstract class RadishHttpApiHostModule : AbpModule
         ConfigureBundles();
         ConfigureConventionalControllers();
         ConfigureHealthChecks(context);
-        ConfigureSwagger(context, configuration);
+        ConfigureSwagger(context, configuration); // Swagger 配置
+        ConfigureScalar(context, configuration); // Scalar 配置
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
     }
@@ -184,6 +186,9 @@ public abstract class RadishHttpApiHostModule : AbpModule
         });
     }
 
+    /// <summary>Swagger 配置</summary>
+    /// <param name="context">ServiceConfigurationContext</param>
+    /// <param name="configuration">IConfiguration</param>
     private static void ConfigureSwagger(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddAbpSwaggerGenWithOidc(
@@ -199,6 +204,27 @@ public abstract class RadishHttpApiHostModule : AbpModule
             });
     }
 
+    /// <summary>Scalar 扩展服务配置</summary>
+    /// <param name="context">ServiceConfigurationContext</param>
+    /// <param name="configuration">IConfiguration</param>
+    /// <remarks>Scalar 的主配置在 Program.cs 中</remarks>
+    private static void ConfigureScalar(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        // 对应 Scaler 的多个 API 文档
+        context.Services.AddOpenApi("v1"); // 发布 V1
+        context.Services.AddOpenApi("v1beta"); // 测试 v1beta
+        context.Services.AddOpenApi(options =>
+        {
+            // Scaler 扩展
+            options.AddScalarTransformers();
+            // ABP 官方 issue 给出的配置，参考：Discussions #22926
+            // options.ShouldInclude = (_) => true;
+        });
+    }
+
+    /// <summary>跨域请求配置</summary>
+    /// <param name="context">ServiceConfigurationContext</param>
+    /// <param name="configuration">IConfiguration</param>
     private void ConfigureCors(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddCors(options =>
@@ -249,7 +275,7 @@ public abstract class RadishHttpApiHostModule : AbpModule
         app.MapAbpStaticAssets();
         app.UseAbpStudioLink();
         app.UseAbpSecurityHeaders();
-        app.UseCors();
+        app.UseCors(); // 允许跨域请求，必须在 UseRouting 和 UseAuthentication 之间
         app.UseAuthentication();
         app.UseAbpOpenIddictValidation();
 
@@ -262,6 +288,7 @@ public abstract class RadishHttpApiHostModule : AbpModule
         app.UseDynamicClaims();
         app.UseAuthorization();
 
+        // ↓ Swagger 配置 ↓    顺便提一嘴，目前来说 Scalar 的配置，只能在 Program.cs 中
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
@@ -270,6 +297,8 @@ public abstract class RadishHttpApiHostModule : AbpModule
             var configuration = context.ServiceProvider.GetRequiredService<IConfiguration>();
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
         });
+        // ↑ Swagger 配置 ↑
+
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();

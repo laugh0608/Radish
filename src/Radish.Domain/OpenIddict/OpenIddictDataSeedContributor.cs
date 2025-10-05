@@ -60,7 +60,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
     {
         if (await _openIddictScopeRepository.FindByNameAsync("Radish") == null)
         {
-            await _scopeManager.CreateAsync(new OpenIddictScopeDescriptor {
+            await _scopeManager.CreateAsync(new OpenIddictScopeDescriptor
+            {
                 Name = "Radish", DisplayName = "Radish API", Resources = { "Radish" }
             });
         }
@@ -68,7 +69,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
     private async Task CreateApplicationsAsync()
     {
-        var commonScopes = new List<string> {
+        var commonScopes = new List<string>
+        {
             OpenIddictConstants.Permissions.Scopes.Address,
             OpenIddictConstants.Permissions.Scopes.Email,
             OpenIddictConstants.Permissions.Scopes.Phone,
@@ -92,7 +94,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 consentType: OpenIddictConstants.ConsentTypes.Implicit,
                 displayName: "Console Test / Angular Application",
                 secret: null,
-                grantTypes: new List<string> {
+                grantTypes: new List<string>
+                {
                     OpenIddictConstants.GrantTypes.AuthorizationCode,
                     OpenIddictConstants.GrantTypes.Password,
                     OpenIddictConstants.GrantTypes.ClientCredentials,
@@ -108,11 +111,7 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
             );
         }
 
-        
-        
-
-
-
+        // TODO: Scaler Client & React Client
 
         // Swagger Client
         var swaggerClientId = configurationSection["Radish_Swagger:ClientId"];
@@ -134,8 +133,6 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 logoUri: "/images/clients/swagger.svg"
             );
         }
-
-
     }
 
     private async Task CreateApplicationAsync(
@@ -167,7 +164,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
         var client = await _openIddictApplicationRepository.FindByClientIdAsync(name);
 
-        var application = new AbpApplicationDescriptor {
+        var application = new AbpApplicationDescriptor
+        {
             ApplicationType = applicationType,
             ClientId = name,
             ClientType = type,
@@ -198,7 +196,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
             application.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.EndSession);
         }
 
-        var buildInGrantTypes = new[] {
+        var buildInGrantTypes = new[]
+        {
             OpenIddictConstants.GrantTypes.Implicit, OpenIddictConstants.GrantTypes.Password,
             OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.ClientCredentials,
             OpenIddictConstants.GrantTypes.DeviceCode, OpenIddictConstants.GrantTypes.RefreshToken
@@ -271,7 +270,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
             }
         }
 
-        var buildInScopes = new[] {
+        var buildInScopes = new[]
+        {
             OpenIddictConstants.Permissions.Scopes.Address, OpenIddictConstants.Permissions.Scopes.Email,
             OpenIddictConstants.Permissions.Scopes.Phone, OpenIddictConstants.Permissions.Scopes.Profile,
             OpenIddictConstants.Permissions.Scopes.Roles
@@ -303,12 +303,12 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                     application.RedirectUris.Add(uri);
                 }
             }
-            
         }
-        
+
         if (!postLogoutRedirectUris.IsNullOrEmpty())
         {
-            foreach (var postLogoutRedirectUri in postLogoutRedirectUris!.Where(postLogoutRedirectUri => !postLogoutRedirectUri.IsNullOrWhiteSpace()))
+            foreach (var postLogoutRedirectUri in postLogoutRedirectUris!.Where(postLogoutRedirectUri =>
+                         !postLogoutRedirectUri.IsNullOrWhiteSpace()))
             {
                 if (!Uri.TryCreate(postLogoutRedirectUri, UriKind.Absolute, out var uri) ||
                     !uri.IsWellFormedOriginalString())
@@ -341,8 +341,11 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
         if (!HasSameRedirectUris(client, application))
         {
-            client.RedirectUris = JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().RemovePostFix("/")));
-            client.PostLogoutRedirectUris = JsonSerializer.Serialize(application.PostLogoutRedirectUris.Select(q => q.ToString().RemovePostFix("/")));
+            client.RedirectUris =
+                JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().RemovePostFix("/")));
+            client.PostLogoutRedirectUris =
+                JsonSerializer.Serialize(
+                    application.PostLogoutRedirectUris.Select(q => q.ToString().RemovePostFix("/")));
 
             await _applicationManager.UpdateAsync(client.ToModel());
         }
@@ -356,11 +359,13 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
     private bool HasSameRedirectUris(OpenIddictApplication existingClient, AbpApplicationDescriptor application)
     {
-        return existingClient.RedirectUris == JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().RemovePostFix("/")));
+        return existingClient.RedirectUris ==
+               JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().RemovePostFix("/")));
     }
 
     private bool HasSameScopes(OpenIddictApplication existingClient, AbpApplicationDescriptor application)
     {
-        return existingClient.Permissions == JsonSerializer.Serialize(application.Permissions.Select(q => q.ToString().TrimEnd('/')));
+        return existingClient.Permissions ==
+               JsonSerializer.Serialize(application.Permissions.Select(q => q.ToString().TrimEnd('/')));
     }
 }
