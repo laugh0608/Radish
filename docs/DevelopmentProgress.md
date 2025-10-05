@@ -1,12 +1,16 @@
 # 开发日志
 
+## 2025.10.5
+
+feat: 增加了 Scaler 配置
+
 ## 2025.10.4
 
-docs: 完成了项目目录架构的出版
+docs: 完成了项目目录架构的初版
 
 ## 2025.9.29
 
-build: 在ABP Studio中增加了React项目的启动脚本
+build: 在 ABP Studio 中增加了 React 项目的启动脚本
 
 ## 2025.9.28
 
