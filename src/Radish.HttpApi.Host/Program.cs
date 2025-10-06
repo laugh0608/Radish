@@ -57,8 +57,8 @@ public class Program
                     options
                         .WithTitle("Radish API") // 标题
                         .WithTheme(ScalarTheme.BluePlanet) // 主题
-                        // .WithSidebar(false) // 关闭侧边栏
-                        .WithDarkMode() // 默认使用黑暗模式
+                        // .WithSidebar(false) // 侧边栏
+                        .WithDarkMode(false) // 黑暗模式
                         .WithDefaultOpenAllTags(false); // 是否展开所有标签栏
                     // 自定义查找 Open API 文档地址
                     // options.WithOpenApiRoutePattern("/openapi/{documentName}.json");
