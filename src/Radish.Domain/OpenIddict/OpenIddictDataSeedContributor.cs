@@ -172,27 +172,27 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
         #endregion
 
-        #region Scaler Client
+        #region Scalar Client
 
-        // @luobo 2025.10.6 Scaler Client
-        var scalerClientId = configurationSection["Radish_Scaler:ClientId"];
-        if (!scalerClientId.IsNullOrWhiteSpace())
+        // @luobo 2025.10.6 Scalar Client
+        var scalarClientId = configurationSection["Radish_Scalar:ClientId"];
+        if (!scalarClientId.IsNullOrWhiteSpace())
         {
-            var scalerRootUrl = configurationSection["Radish_Scaler:RootUrl"]?.TrimEnd('/');
+            var scalarRootUrl = configurationSection["Radish_Scalar:RootUrl"]?.TrimEnd('/');
         
             await CreateApplicationAsync(
                 applicationType: OpenIddictConstants.ApplicationTypes.Web,
-                name: scalerClientId!,
+                name: scalarClientId!,
                 type: OpenIddictConstants.ClientTypes.Public,
                 consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                displayName: "Scaler App",
+                displayName: "Scalar App",
                 secret: null,
                 grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, },
                 scopes: commonScopes,
-                // TODO: $"{scalerRootUrl}/scaler/oauth2-redirect.html" 不知道是干嘛的
-                redirectUris: new List<string> { $"{scalerRootUrl}/scaler/oauth2-redirect.html" },
-                // clientUri: scalerRootUrl.EnsureEndsWith('/') + "scaler", // 可选在 DbMigrator 的 appsettings 中配置
-                clientUri: scalerRootUrl.EnsureEndsWith('/'),
+                // TODO: $"{scalarRootUrl}/scalar/oauth2-redirect.html" 不知道是干嘛的
+                redirectUris: new List<string> { $"{scalarRootUrl}/scalar/oauth2-redirect.html" },
+                // clientUri: scalarRootUrl.EnsureEndsWith('/') + "scalar", // 可选在 DbMigrator 的 appsettings 中配置
+                clientUri: scalarRootUrl.EnsureEndsWith('/'),
                 logoUri: "/images/clients/aspnetcore.svg"
             );
         }

@@ -210,12 +210,12 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
     /// <remarks>Scalar 的主配置在 Program.cs 中</remarks>
     private static void ConfigureScalar(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        // 对应 Scaler 的多个 API 文档
+        // 对应 Scalar 的多个 API 文档
         context.Services.AddOpenApi("v1"); // 发布 V1
         context.Services.AddOpenApi("v1beta"); // 测试 v1beta
         context.Services.AddOpenApi(options =>
         {
-            // Scaler 扩展
+            // Scalar 扩展
             options.AddScalarTransformers();
             // ABP 官方 issue 给出的配置，参考：Discussions #22926
             // options.ShouldInclude = (_) => true;

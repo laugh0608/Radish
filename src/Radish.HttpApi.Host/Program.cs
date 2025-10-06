@@ -42,13 +42,13 @@ public class Program
                 });
             await builder.AddApplicationAsync<RadishHttpApiHostModule>();
             var app = builder.Build();
-            // ↓ Scaler 配置 ↓
+            // ↓ Scalar 配置 ↓
             if (app.Environment.IsDevelopment())
             {
                 // 注入 OpenAPI
                 app.MapOpenApi();
 
-                // 注入 Scaler，Api Web UI 管理
+                // 注入 Scalar，Api Web UI 管理
                 // 文档地址：https://guides.scalar.com/scalar/scalar-api-references/integrations/net-aspnet-core/integration
                 // 默认路由地址为：/scalar ，自定义路由地址为：/api-docs
                 // 自定义路由方法：app.MapScalarApiReference("/api-docs", options => {});
@@ -71,7 +71,7 @@ public class Program
                         .AddDocument("v1beta", "V1Beta", "openapi/v1beta.json", isDefault: true); // 测试 v1beta，默认
                 });
             }
-            // ↑ Scaler 配置 ↑
+            // ↑ Scalar 配置 ↑
 
             await app.InitializeApplicationAsync();
             await app.RunAsync();
