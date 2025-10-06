@@ -41,7 +41,9 @@ public class Program
                         .WriteTo.Async(c => c.AbpStudio(services));
                 });
             await builder.AddApplicationAsync<RadishHttpApiHostModule>();
+            
             var app = builder.Build();
+            
             // ↓ Scalar 配置 ↓
             if (app.Environment.IsDevelopment())
             {

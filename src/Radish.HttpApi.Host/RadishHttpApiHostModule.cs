@@ -205,6 +205,8 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
             });
     }
 
+    #region Scalar
+
     /// <summary>Scalar 扩展服务配置</summary>
     /// <param name="context">ServiceConfigurationContext</param>
     /// <param name="configuration">IConfiguration</param>
@@ -217,9 +219,12 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         {
             options.AddDocumentTransformer((document, transformerContext, cancellationToken) =>
             {
-                document.Info.Title = "Radish V1 API";
-                document.Info.Version = "v1";
-                document.Info.Description = "Radish V1 API";
+                document.Info = new OpenApiInfo
+                {
+                    Title = "V1 API",
+                    Version = "V1",
+                    Description = "Radish V1 API"
+                };
                 return Task.CompletedTask;
             });
         });
@@ -228,9 +233,12 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         {
             options.AddDocumentTransformer((document, transformerContext, cancellationToken) =>
             {
-                document.Info.Title = "Radish V1Beta API";
-                document.Info.Version = "v1beta";
-                document.Info.Description = "Radish V1Beta API";
+                document.Info = new OpenApiInfo
+                {
+                    Title = "V1Beta API",
+                    Version = "v1beta",
+                    Description = "Radish V1Beta API"
+                };
                 return Task.CompletedTask;
             });
         });
@@ -238,10 +246,13 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         context.Services.AddOpenApi(options =>
         {
             options.AddScalarTransformers();
-            // ABP 官方 issue 给出的配置，参考：Discussions #22926
+            // ABP 官方 issue 给出的配置，参考：https://github.com/abpframework/abp/discussions/22926
+            // 但是我实测不生效，会报错 Document 'v1' could not be loaded
             // options.ShouldInclude = (_) => true;
         });
     }
+
+    #endregion
 
     /// <summary>跨域请求配置</summary>
     /// <param name="context">ServiceConfigurationContext</param>
