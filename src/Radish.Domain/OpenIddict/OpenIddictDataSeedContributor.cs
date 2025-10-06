@@ -81,18 +81,52 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
         var configurationSection = _configuration.GetSection("OpenIddict:Applications");
 
+        #region App / React Client
 
-        //Console Test / Angular Client
-        var consoleAndAngularClientId = configurationSection["Radish_App:ClientId"];
+        var appAndReactClientId = configurationSection["Radish_React:ClientId"];
+        if (!appAndReactClientId.IsNullOrWhiteSpace())
+        {
+            var appAndReactClientRootUrl =
+                configurationSection["Radish_React:RootUrl"]?.TrimEnd('/');
+            await CreateApplicationAsync(
+                applicationType: OpenIddictConstants.ApplicationTypes.Web,
+                name: appAndReactClientId!,
+                type: OpenIddictConstants.ClientTypes.Public,
+                consentType: OpenIddictConstants.ConsentTypes.Implicit,
+                displayName: "App / React App",
+                secret: null,
+                grantTypes: new List<string>
+                {
+                    OpenIddictConstants.GrantTypes.AuthorizationCode,
+                    OpenIddictConstants.GrantTypes.Password,
+                    OpenIddictConstants.GrantTypes.ClientCredentials,
+                    OpenIddictConstants.GrantTypes.RefreshToken,
+                    "LinkLogin",
+                    "Impersonation"
+                },
+                scopes: commonScopes,
+                redirectUris: new List<string> { appAndReactClientRootUrl },
+                postLogoutRedirectUris: new List<string> { appAndReactClientRootUrl },
+                clientUri: appAndReactClientRootUrl,
+                logoUri: "/images/clients/blazor.svg"
+            );
+        }
+
+        #endregion
+        
+        #region Console / Angular Client
+
+        var consoleAndAngularClientId = configurationSection["Radish_Console:ClientId"]; // 旧：Radish_App
         if (!consoleAndAngularClientId.IsNullOrWhiteSpace())
         {
-            var consoleAndAngularClientRootUrl = configurationSection["Radish_App:RootUrl"]?.TrimEnd('/');
+            var consoleAndAngularClientRootUrl =
+                configurationSection["Radish_Console:RootUrl"]?.TrimEnd('/'); // 旧：Radish_App
             await CreateApplicationAsync(
                 applicationType: OpenIddictConstants.ApplicationTypes.Web,
                 name: consoleAndAngularClientId!,
                 type: OpenIddictConstants.ClientTypes.Public,
                 consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                displayName: "Console Test / Angular Application",
+                displayName: "Console / Angular App",
                 secret: null,
                 grantTypes: new List<string>
                 {
@@ -111,9 +145,10 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
             );
         }
 
-        // TODO: Scaler Client & React Client
+        #endregion
 
-        // Swagger Client
+        #region Swagger Client
+
         var swaggerClientId = configurationSection["Radish_Swagger:ClientId"];
         if (!swaggerClientId.IsNullOrWhiteSpace())
         {
@@ -124,15 +159,45 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 name: swaggerClientId!,
                 type: OpenIddictConstants.ClientTypes.Public,
                 consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                displayName: "Swagger Application",
+                displayName: "Swagger App",
                 secret: null,
                 grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, },
                 scopes: commonScopes,
                 redirectUris: new List<string> { $"{swaggerRootUrl}/swagger/oauth2-redirect.html" },
-                clientUri: swaggerRootUrl.EnsureEndsWith('/') + "swagger",
+                // clientUri: swaggerRootUrl.EnsureEndsWith('/') + "swagger", // 可选在 DbMigrator 的 appsettings 中配置
+                clientUri: swaggerRootUrl.EnsureEndsWith('/'),
                 logoUri: "/images/clients/swagger.svg"
             );
         }
+
+        #endregion
+
+        #region Scaler Client
+
+        // @luobo 2025.10.6 Scaler Client
+        var scalerClientId = configurationSection["Radish_Scaler:ClientId"];
+        if (!scalerClientId.IsNullOrWhiteSpace())
+        {
+            var scalerRootUrl = configurationSection["Radish_Scaler:RootUrl"]?.TrimEnd('/');
+        
+            await CreateApplicationAsync(
+                applicationType: OpenIddictConstants.ApplicationTypes.Web,
+                name: scalerClientId!,
+                type: OpenIddictConstants.ClientTypes.Public,
+                consentType: OpenIddictConstants.ConsentTypes.Implicit,
+                displayName: "Scaler App",
+                secret: null,
+                grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, },
+                scopes: commonScopes,
+                // TODO: $"{scalerRootUrl}/scaler/oauth2-redirect.html" 不知道是干嘛的
+                redirectUris: new List<string> { $"{scalerRootUrl}/scaler/oauth2-redirect.html" },
+                // clientUri: scalerRootUrl.EnsureEndsWith('/') + "scaler", // 可选在 DbMigrator 的 appsettings 中配置
+                clientUri: scalerRootUrl.EnsureEndsWith('/'),
+                logoUri: "/images/clients/aspnetcore.svg"
+            );
+        }
+
+        #endregion
     }
 
     private async Task CreateApplicationAsync(
