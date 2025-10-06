@@ -55,6 +55,7 @@ public class Program
                 app.MapScalarApiReference(options =>
                 {
                     options
+                        // 多个文档时，这里的标题不起作用，需要单独在 context.Services.AddOpenApi() 中配置
                         .WithTitle("Radish API") // 标题
                         .WithTheme(ScalarTheme.BluePlanet) // 主题
                         // .WithSidebar(false) // 侧边栏

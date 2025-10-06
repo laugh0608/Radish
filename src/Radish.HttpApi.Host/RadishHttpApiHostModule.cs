@@ -15,6 +15,7 @@ using Scalar.AspNetCore;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Account;
 using Volo.Abp.Account.Web;
@@ -211,11 +212,31 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
     private static void ConfigureScalar(ServiceConfigurationContext context, IConfiguration configuration)
     {
         // 对应 Scalar 的多个 API 文档
-        context.Services.AddOpenApi("v1"); // 发布 V1
-        context.Services.AddOpenApi("v1beta"); // 测试 v1beta
+        // 创建 V1 文档 json
+        context.Services.AddOpenApi("v1", options =>
+        {
+            options.AddDocumentTransformer((document, transformerContext, cancellationToken) =>
+            {
+                document.Info.Title = "Radish V1 API";
+                document.Info.Version = "v1";
+                document.Info.Description = "Radish V1 API";
+                return Task.CompletedTask;
+            });
+        });
+        // 创建 v1beta 文档 json
+        context.Services.AddOpenApi("v1beta", options =>
+        {
+            options.AddDocumentTransformer((document, transformerContext, cancellationToken) =>
+            {
+                document.Info.Title = "Radish V1Beta API";
+                document.Info.Version = "v1beta";
+                document.Info.Description = "Radish V1Beta API";
+                return Task.CompletedTask;
+            });
+        });
+        // 开启 Scalar 扩展
         context.Services.AddOpenApi(options =>
         {
-            // Scalar 扩展
             options.AddScalarTransformers();
             // ABP 官方 issue 给出的配置，参考：Discussions #22926
             // options.ShouldInclude = (_) => true;
