@@ -202,6 +202,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Radish API", Version = "v1" });
                 options.DocInclusionPredicate((docName, description) => true);
                 options.CustomSchemaIds(type => type.FullName);
+                options.HideAbpEndpoints(); // 隐藏 ABP 的默认端点
             });
     }
 
@@ -329,6 +330,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
 
             var configuration = context.ServiceProvider.GetRequiredService<IConfiguration>();
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
+            // options.OAuthClientSecret("1q2w3e*");  // 密码
         });
 
         #endregion
@@ -359,7 +361,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         
             // 自定义多个版本 API 文档集合，对应 ConfigureScalar 中的文档名称
             options
-                .AddDocument("v1", "V1", "openapi/v1.json") // 发布 V1
+                .AddDocument("v1", "V1", "swagger/v1/swagger.json") // 发布 V1 openapi/v1.json
                 .AddDocument("v1beta", "V1Beta", "openapi/v1beta.json", isDefault: true); // 测试 v1beta，默认
         });
 
