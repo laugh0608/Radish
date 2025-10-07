@@ -320,7 +320,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         app.UseDynamicClaims();
         app.UseAuthorization();
 
-        // ↓ Swagger 配置 ↓    顺便提一嘴，目前来说 Scalar 的配置，只能在 Program.cs 中
+        // ↓ Swagger 配置 ↓
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
@@ -330,6 +330,36 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
         });
         // ↑ Swagger 配置 ↑
+
+        // ↓ Scalar 配置 ↓
+        // if (env.IsDevelopment()) { }
+        // 注入 OpenAPI
+        ((WebApplication)app).MapOpenApi();
+
+        // 注入 Scalar，Api Web UI 管理
+        // 文档地址：https://guides.scalar.com/scalar/scalar-api-references/integrations/net-aspnet-core/integration
+        // 默认路由地址为：/scalar ，自定义路由地址为：/api-docs
+        // 自定义路由方法：app.MapScalarApiReference("/api-docs", options => {});
+        ((WebApplication)app).MapScalarApiReference(options =>
+        {
+            options
+                // 多个文档时，这里的标题不起作用，需要单独在 context.Services.AddOpenApi() 中配置
+                .WithTitle("Radish API") // 标题
+                .WithTheme(ScalarTheme.BluePlanet) // 主题
+                // .WithSidebar(false) // 侧边栏
+                .WithDarkMode(false) // 黑暗模式
+                .WithDefaultOpenAllTags(false); // 是否展开所有标签栏
+            // 自定义查找 Open API 文档地址
+            // options.WithOpenApiRoutePattern("/openapi/{documentName}.json");
+            // 设置默认的 Http 客户端
+            options.WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.HttpClient);
+
+            // 自定义多个版本 API 文档集合，对应 ConfigureScalar 中的文档名称
+            options
+                .AddDocument("v1", "V1", "openapi/v1.json") // 发布 V1
+                .AddDocument("v1beta", "V1Beta", "openapi/v1beta.json", isDefault: true); // 测试 v1beta，默认
+        });
+        // ↑ Scalar 配置 ↑
 
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
