@@ -15,7 +15,12 @@ using Scalar.AspNetCore;
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
+using Asp.Versioning;
+using Asp.Versioning.Routing;
+using Microsoft.AspNetCore.Routing;
+using Radish.Extensions;
 using Volo.Abp;
 using Volo.Abp.Account;
 using Volo.Abp.Account.Web;
@@ -105,6 +110,69 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
             });
         }
+        
+        // 生成多 API 版本文档
+        var apiVersions = new CustomApiVersion.AutoApiVersions();
+        // AutoApiVersions 尽量只能整数版本号，例如 V1，V2
+        foreach (FieldInfo field in apiVersions.GetType().GetFields())
+        {
+            var apiVersion = field.GetValue(apiVersions)!.ToString()!;
+            context.Services.AddOpenApi(apiVersion, options =>
+            {
+                options.AddDocumentTransformer((document, context, cancellationToken) =>
+                {
+                    // 设置文档的标题、版本和描述
+                    document.Info = new()
+                    {
+                        Title = $"Radish API | {apiVersion}", // 文档标题
+                        Version = apiVersion, // 文档版本
+                        Description = apiVersion switch
+                        {
+                            "V1" => "版本 1.0，只包含基础功能，部分在测试中。",
+                            "V2" => "版本 2.0，正式发布和生产使用。",
+                            _ => "Radish API 文档。"
+                        }
+                    };
+                    return Task.CompletedTask;
+                });
+            });
+        }
+        // 启用 API 版本控制
+        context.Services.AddAbpApiVersioning(options =>
+        {
+            options.ReportApiVersions = true; // 报告 API 版本
+            options.AssumeDefaultVersionWhenUnspecified = true; // 当未指定版本时使用默认版本
+            options.DefaultApiVersion = new ApiVersion(1, 0); // 默认 API 版本，第一个参数为大版本，第二个为小版本，小版本号为 0 时自动忽略
+            // options.DefaultApiVersion = new ApiVersion("1beta"); // 不知道为什么，这里不支持字符串了，实际上应该是支持的
+            options.ApiVersionReader = new UrlSegmentApiVersionReader(); // 使用 URL 段作为版本读取器
+            // options.ApiVersionReader = new QueryStringApiVersionReader("api-version"); // 使用查询字符串作为版本读取器
+            // options.ApiVersionReader = new HeaderApiVersionReader("api-version"); // 使用请求头作为版本读取器
+        }).AddApiExplorer(options =>
+        {
+            // 添加版本化的 API 探索器，这也会注册 IApiVersionDescriptionProvider 服务
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true; // 当使用 URL 段版本控制时，此选项是必要的
+        });
+        // 自定义路由约束，让 API 版本变为连字符，例如：[ApiVersion(2.1)] => /api/v2-1/xxx
+        // 当 ApiVersion 定义为 double 的时候使用，如果是 string 则会报错
+        context.Services.Configure<RouteOptions>(options =>
+        {
+            options.ConstraintMap.Add("apiVersion", typeof(ApiVersionRouteConstraint));
+        });
+        // 配置自动 API 控制器
+        Configure<AbpAspNetCoreMvcOptions>(options =>
+        {
+            // options.ConventionalControllers.Create(typeof(RadishApplicationModule).Assembly, opts =>
+            // {
+            //     opts.RootPath = "api/v{version:apiVersion}";
+            //     opts.UseV3UrlStyle = true; // 重要：使用 URL 版本控制
+            //     // opts.UrlControllerNameNormalizer = pContext => pContext.ControllerName;
+            // });
+            // 过滤手动控制器，只显示自动 API 控制器
+            //options.ControllersToRemove.Add(typeof(ProductController));
+            // 移除控制器分组，只显示 v 开头的版本分组
+            options.ChangeControllerModelApiExplorerGroupName = false;
+        });
 
         ConfigureAuthentication(context);
         ConfigureUrls(configuration);
@@ -214,35 +282,37 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
     /// <remarks>Scalar 的主配置在 Program.cs 中</remarks>
     private static void ConfigureScalar(ServiceConfigurationContext context, IConfiguration configuration)
     {
+        // @luobo 2025.10.7 更改为使用默认的 ApiVersions 来生成 openapi 文档
+        // 下方已经弃用 ↓
         // 对应 Scalar 的多个 API 文档
-        // 创建 V1 文档 json
-        context.Services.AddOpenApi("v1", options =>
-        {
-            options.AddDocumentTransformer((document, transformerContext, cancellationToken) =>
-            {
-                document.Info = new OpenApiInfo
-                {
-                    Title = "V1 API",
-                    Version = "V1",
-                    Description = "Radish V1 API"
-                };
-                return Task.CompletedTask;
-            });
-        });
-        // 创建 v1beta 文档 json
-        context.Services.AddOpenApi("v1beta", options =>
-        {
-            options.AddDocumentTransformer((document, transformerContext, cancellationToken) =>
-            {
-                document.Info = new OpenApiInfo
-                {
-                    Title = "V1Beta API",
-                    Version = "v1beta",
-                    Description = "Radish V1Beta API"
-                };
-                return Task.CompletedTask;
-            });
-        });
+        // // 创建 V1 文档 json
+        // context.Services.AddOpenApi("V1", options =>
+        // {
+        //     options.AddDocumentTransformer((document, transformerContext, cancellationToken) =>
+        //     {
+        //         document.Info = new OpenApiInfo
+        //         {
+        //             Title = "V1 API",
+        //             Version = "V1",
+        //             Description = "Radish V1 API"
+        //         };
+        //         return Task.CompletedTask;
+        //     });
+        // });
+        // // 创建 V2 文档 json
+        // context.Services.AddOpenApi("V2", options =>
+        // {
+        //     options.AddDocumentTransformer((document, transformerContext, cancellationToken) =>
+        //     {
+        //         document.Info = new OpenApiInfo
+        //         {
+        //             Title = "V1Beta API",
+        //             Version = "v1beta",
+        //             Description = "Radish V1Beta API"
+        //         };
+        //         return Task.CompletedTask;
+        //     });
+        // });
         // 开启 Scalar 扩展
         context.Services.AddOpenApi(options =>
         {
@@ -361,8 +431,8 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         
             // 自定义多个版本 API 文档集合，对应 ConfigureScalar 中的文档名称
             options
-                .AddDocument("v1", "V1", "swagger/v1/swagger.json") // 发布 V1 openapi/v1.json
-                .AddDocument("v1beta", "V1Beta", "openapi/v1beta.json", isDefault: true); // 测试 v1beta，默认
+                .AddDocument("v1", "V1", "openapi/v1.json", isDefault: true) // 测试版 V1
+                .AddDocument("v2", "V2", "openapi/v2.json"); // 发布版 V2
         });
 
         #endregion

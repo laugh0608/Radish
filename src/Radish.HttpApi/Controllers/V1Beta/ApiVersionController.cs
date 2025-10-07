@@ -6,6 +6,8 @@ using static Radish.Extensions.CustomApiVersion;
 
 namespace Radish.Controllers.V1Beta;
 
+// @luobo 2025.10.7 该方法和版本约定已弃用，请看 V1 和 V2 文件夹示例。
+
 /*
  * @luobo 2025.10.6
  * 写法二：方法级定义 API 版本
