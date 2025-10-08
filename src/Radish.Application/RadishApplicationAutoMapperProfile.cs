@@ -5,6 +5,7 @@ namespace Radish;
 
 public class RadishApplicationAutoMapperProfile : Profile
 {
+    /// <summary>实体模型与 Dto 视图模型的映射</summary>
     public RadishApplicationAutoMapperProfile()
     {
         CreateMap<Book, BookDto>();
