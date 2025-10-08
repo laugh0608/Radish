@@ -63,14 +63,6 @@ public abstract class CustomApiVersion
         V1Beta = 2,
 
         // /// <summary>v2 公开版本</summary>
-        // v2 = 3,
-    }
-    
-    public class AutoApiVersions
-    {
-        // @luobo 2025.10.7 目前 ABP 框架只能对应整数版本号，不能加字符串
-        public string V1 = "v1"; // 对应特性为 [ApiVersion(1)]
-        public string V2 = "v2"; // 对应特性为 [ApiVersion(2)]
-        
+        // V2 = 3,
     }
 }
