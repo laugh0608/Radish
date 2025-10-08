@@ -60,7 +60,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
     {
         if (await _openIddictScopeRepository.FindByNameAsync("Radish") == null)
         {
-            await _scopeManager.CreateAsync(new OpenIddictScopeDescriptor {
+            await _scopeManager.CreateAsync(new OpenIddictScopeDescriptor
+            {
                 Name = "Radish", DisplayName = "Radish API", Resources = { "Radish" }
             });
         }
@@ -68,7 +69,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
     private async Task CreateApplicationsAsync()
     {
-        var commonScopes = new List<string> {
+        var commonScopes = new List<string>
+        {
             OpenIddictConstants.Permissions.Scopes.Address,
             OpenIddictConstants.Permissions.Scopes.Email,
             OpenIddictConstants.Permissions.Scopes.Phone,
@@ -79,20 +81,55 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
         var configurationSection = _configuration.GetSection("OpenIddict:Applications");
 
+        #region App / React Client
 
-        //Console Test / Angular Client
-        var consoleAndAngularClientId = configurationSection["Radish_App:ClientId"];
+        var appAndReactClientId = configurationSection["Radish_React:ClientId"];
+        if (!appAndReactClientId.IsNullOrWhiteSpace())
+        {
+            var appAndReactClientRootUrl =
+                configurationSection["Radish_React:RootUrl"]?.TrimEnd('/');
+            await CreateApplicationAsync(
+                applicationType: OpenIddictConstants.ApplicationTypes.Web,
+                name: appAndReactClientId!,
+                type: OpenIddictConstants.ClientTypes.Public,
+                consentType: OpenIddictConstants.ConsentTypes.Implicit,
+                displayName: "App / React App",
+                secret: null,
+                grantTypes: new List<string>
+                {
+                    OpenIddictConstants.GrantTypes.AuthorizationCode,
+                    OpenIddictConstants.GrantTypes.Password,
+                    OpenIddictConstants.GrantTypes.ClientCredentials,
+                    OpenIddictConstants.GrantTypes.RefreshToken,
+                    "LinkLogin",
+                    "Impersonation"
+                },
+                scopes: commonScopes,
+                redirectUris: new List<string> { appAndReactClientRootUrl },
+                postLogoutRedirectUris: new List<string> { appAndReactClientRootUrl },
+                clientUri: appAndReactClientRootUrl,
+                logoUri: "/images/clients/blazor.svg"
+            );
+        }
+
+        #endregion
+        
+        #region Console / Angular Client
+
+        var consoleAndAngularClientId = configurationSection["Radish_Console:ClientId"]; // 旧：Radish_App
         if (!consoleAndAngularClientId.IsNullOrWhiteSpace())
         {
-            var consoleAndAngularClientRootUrl = configurationSection["Radish_App:RootUrl"]?.TrimEnd('/');
+            var consoleAndAngularClientRootUrl =
+                configurationSection["Radish_Console:RootUrl"]?.TrimEnd('/'); // 旧：Radish_App
             await CreateApplicationAsync(
                 applicationType: OpenIddictConstants.ApplicationTypes.Web,
                 name: consoleAndAngularClientId!,
                 type: OpenIddictConstants.ClientTypes.Public,
                 consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                displayName: "Console Test / Angular Application",
+                displayName: "Console / Angular App",
                 secret: null,
-                grantTypes: new List<string> {
+                grantTypes: new List<string>
+                {
                     OpenIddictConstants.GrantTypes.AuthorizationCode,
                     OpenIddictConstants.GrantTypes.Password,
                     OpenIddictConstants.GrantTypes.ClientCredentials,
@@ -108,13 +145,10 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
             );
         }
 
-        
-        
+        #endregion
 
+        #region Swagger Client
 
-
-
-        // Swagger Client
         var swaggerClientId = configurationSection["Radish_Swagger:ClientId"];
         if (!swaggerClientId.IsNullOrWhiteSpace())
         {
@@ -125,17 +159,45 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 name: swaggerClientId!,
                 type: OpenIddictConstants.ClientTypes.Public,
                 consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                displayName: "Swagger Application",
+                displayName: "Swagger App",
                 secret: null,
                 grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, },
                 scopes: commonScopes,
                 redirectUris: new List<string> { $"{swaggerRootUrl}/swagger/oauth2-redirect.html" },
-                clientUri: swaggerRootUrl.EnsureEndsWith('/') + "swagger",
+                // clientUri: swaggerRootUrl.EnsureEndsWith('/') + "swagger", // 可选在 DbMigrator 的 appsettings 中配置
+                clientUri: swaggerRootUrl.EnsureEndsWith('/'),
                 logoUri: "/images/clients/swagger.svg"
             );
         }
 
+        #endregion
 
+        #region Scalar Client
+
+        // @luobo 2025.10.6 Scalar Client
+        var scalarClientId = configurationSection["Radish_Scalar:ClientId"];
+        if (!scalarClientId.IsNullOrWhiteSpace())
+        {
+            var scalarRootUrl = configurationSection["Radish_Scalar:RootUrl"]?.TrimEnd('/');
+        
+            await CreateApplicationAsync(
+                applicationType: OpenIddictConstants.ApplicationTypes.Web,
+                name: scalarClientId!,
+                type: OpenIddictConstants.ClientTypes.Public,
+                consentType: OpenIddictConstants.ConsentTypes.Implicit,
+                displayName: "Scalar App",
+                secret: null,
+                grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, },
+                scopes: commonScopes,
+                // TODO: $"{scalarRootUrl}/scalar/oauth2-redirect.html" 不知道是干嘛的
+                redirectUris: new List<string> { $"{scalarRootUrl}/scalar/oauth2-redirect.html" },
+                // clientUri: scalarRootUrl.EnsureEndsWith('/') + "scalar", // 可选在 DbMigrator 的 appsettings 中配置
+                clientUri: scalarRootUrl.EnsureEndsWith('/'),
+                logoUri: "/images/clients/aspnetcore.svg"
+            );
+        }
+
+        #endregion
     }
 
     private async Task CreateApplicationAsync(
@@ -167,7 +229,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
         var client = await _openIddictApplicationRepository.FindByClientIdAsync(name);
 
-        var application = new AbpApplicationDescriptor {
+        var application = new AbpApplicationDescriptor
+        {
             ApplicationType = applicationType,
             ClientId = name,
             ClientType = type,
@@ -198,7 +261,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
             application.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.EndSession);
         }
 
-        var buildInGrantTypes = new[] {
+        var buildInGrantTypes = new[]
+        {
             OpenIddictConstants.GrantTypes.Implicit, OpenIddictConstants.GrantTypes.Password,
             OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.ClientCredentials,
             OpenIddictConstants.GrantTypes.DeviceCode, OpenIddictConstants.GrantTypes.RefreshToken
@@ -271,7 +335,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
             }
         }
 
-        var buildInScopes = new[] {
+        var buildInScopes = new[]
+        {
             OpenIddictConstants.Permissions.Scopes.Address, OpenIddictConstants.Permissions.Scopes.Email,
             OpenIddictConstants.Permissions.Scopes.Phone, OpenIddictConstants.Permissions.Scopes.Profile,
             OpenIddictConstants.Permissions.Scopes.Roles
@@ -303,12 +368,12 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                     application.RedirectUris.Add(uri);
                 }
             }
-            
         }
-        
+
         if (!postLogoutRedirectUris.IsNullOrEmpty())
         {
-            foreach (var postLogoutRedirectUri in postLogoutRedirectUris!.Where(postLogoutRedirectUri => !postLogoutRedirectUri.IsNullOrWhiteSpace()))
+            foreach (var postLogoutRedirectUri in postLogoutRedirectUris!.Where(postLogoutRedirectUri =>
+                         !postLogoutRedirectUri.IsNullOrWhiteSpace()))
             {
                 if (!Uri.TryCreate(postLogoutRedirectUri, UriKind.Absolute, out var uri) ||
                     !uri.IsWellFormedOriginalString())
@@ -341,8 +406,11 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
         if (!HasSameRedirectUris(client, application))
         {
-            client.RedirectUris = JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().RemovePostFix("/")));
-            client.PostLogoutRedirectUris = JsonSerializer.Serialize(application.PostLogoutRedirectUris.Select(q => q.ToString().RemovePostFix("/")));
+            client.RedirectUris =
+                JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().RemovePostFix("/")));
+            client.PostLogoutRedirectUris =
+                JsonSerializer.Serialize(
+                    application.PostLogoutRedirectUris.Select(q => q.ToString().RemovePostFix("/")));
 
             await _applicationManager.UpdateAsync(client.ToModel());
         }
@@ -356,11 +424,13 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
     private bool HasSameRedirectUris(OpenIddictApplication existingClient, AbpApplicationDescriptor application)
     {
-        return existingClient.RedirectUris == JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().RemovePostFix("/")));
+        return existingClient.RedirectUris ==
+               JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().RemovePostFix("/")));
     }
 
     private bool HasSameScopes(OpenIddictApplication existingClient, AbpApplicationDescriptor application)
     {
-        return existingClient.Permissions == JsonSerializer.Serialize(application.Permissions.Select(q => q.ToString().TrimEnd('/')));
+        return existingClient.Permissions ==
+               JsonSerializer.Serialize(application.Permissions.Select(q => q.ToString().TrimEnd('/')));
     }
 }

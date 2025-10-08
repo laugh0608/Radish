@@ -1,14 +1,16 @@
 ﻿# 萝卜！ Radish!
 
+## 关于 About
+
+萝卜在努力施工中...  Still under development...
+
 ## 项目说明 Description
 
 [简体中文](./docs/README_CN.md) | [English](./docs/README_EN.md)
 
-## 关于 About
+## 目录架构 Directory Structure
 
 [目录架构 Directory Structure](./docs/DirectoryStructure.md)
-
-萝卜在努力施工中...  Still under development...
 
 ## 开发计划 Development Framework
 
