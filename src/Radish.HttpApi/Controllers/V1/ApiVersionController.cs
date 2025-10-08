@@ -1,3 +1,5 @@
+// @luobo 2025.10.8 以下自定义路由策略已弃用，请查看 ConventionalControllers 文件夹下的示例
+
 // using System;
 // using Microsoft.AspNetCore.Mvc;
 // using Radish.Extensions;

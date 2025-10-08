@@ -1,3 +1,5 @@
+// @luobo 2025.10.8 以下自定义路由策略已弃用，请查看 ConventionalControllers 文件夹下的示例
+
 // using System;
 // using Microsoft.AspNetCore.Mvc;
 // using Volo.Abp.AspNetCore.Mvc;
@@ -5,8 +7,6 @@
 // using static Radish.Extensions.CustomApiVersion;
 //
 // namespace Radish.Controllers.V1Beta;
-//
-// // @luobo 2025.10.7 该方法和版本约定已弃用，请看 V1 和 V2 文件夹示例。
 //
 // /*
 //  * @luobo 2025.10.6
