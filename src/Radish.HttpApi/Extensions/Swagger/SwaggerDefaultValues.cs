@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace Radish.Swagger;
+namespace Radish.Extensions.Swagger;
 
 /// <summary>
 /// Represents the Swagger/Swashbuckle operation filter used to document the implicit API version parameter.
