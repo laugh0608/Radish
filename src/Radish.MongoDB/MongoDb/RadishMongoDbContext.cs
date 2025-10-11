@@ -5,7 +5,7 @@ using Radish.Books;
 
 namespace Radish.MongoDB;
 
-[ConnectionStringName("Default")]
+[ConnectionStringName("Default")] // 配置该上下文数据库连接使用哪个连接字符串
 public class RadishMongoDbContext : AbpMongoDbContext
 {
 
