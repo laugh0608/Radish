@@ -13,7 +13,6 @@ using Radish.MongoDB;
 using Radish.MultiTenancy;
 using Scalar.AspNetCore;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -21,7 +20,7 @@ using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Asp.Versioning.ApplicationModels;
 using Microsoft.Extensions.Options;
-using Radish.Swagger;
+using Radish.Extensions.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Volo.Abp;
 using Volo.Abp.Account;
@@ -146,9 +145,8 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
 
-        #region API Version
+        #region API 版本控制
 
-        // 添加 API 版本控制
         var preActions = context.Services.GetPreConfigureActions<AbpAspNetCoreMvcOptions>();
         Configure<AbpAspNetCoreMvcOptions>(options => { preActions.Configure(options); });
 
@@ -174,95 +172,33 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 options.SubstituteApiVersionInUrl = true;
             });
         context.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-        // context.Services.AddAbpSwaggerGenWithOidc( // AddSwaggerGen
-        //     configuration["AuthServer:Authority"]!,
-        //     ["Radish"],
-        //     [AbpSwaggerOidcFlows.AuthorizationCode],
-        //     null,
-        //     options =>
-        //     {
-        //         // add a custom operation filter which sets default values
-        //         options.OperationFilter<SwaggerDefaultValues>();
-        //         options.CustomSchemaIds(type => type.FullName);
-        //         // 额外的配置
-        //         // options.SwaggerDoc("v1", new OpenApiInfo { Title = "Radish API", Version = "v1" });
-        //         options.DocInclusionPredicate((docName, description) => true);
-        //         options.HideAbpEndpoints(); // 隐藏 ABP 的默认端点
-        //     });
-        context.Services.AddSwaggerGen(options =>
+        // Swagger 配置
+        context.Services.AddAbpSwaggerGenWithOidc(
+            configuration["AuthServer:Authority"]!,
+            ["Radish"],
+            [AbpSwaggerOidcFlows.AuthorizationCode],
+            null,
+            options =>
+            {
+                // add a custom operation filter which sets default values
+                options.OperationFilter<SwaggerDefaultValues>();
+                options.CustomSchemaIds(type => type.FullName);
+                // options.SwaggerDoc("v1", new OpenApiInfo { Title = "Radish API", Version = "v1" });
+                // options.DocInclusionPredicate((docName, description) => true); // 这个配置已经不兼容了，不能开，否则报错
+                // options.HideAbpEndpoints(); // 隐藏 ABP 的默认端点
+            });
+        // context.Services.AddAbpSwaggerGen(options =>
+        // {
+        //     // add a custom operation filter which sets default values
+        //     options.OperationFilter<SwaggerDefaultValues>();
+        //     options.CustomSchemaIds(type => type.FullName);
+        //     // Hides ABP Related endpoints on Swagger UI
+        //     options.HideAbpEndpoints();
+        // });
+        Configure<AbpAspNetCoreMvcOptions>(options =>
         {
-            // add a custom operation filter which sets default values
-            options.OperationFilter<SwaggerDefaultValues>();
-            options.CustomSchemaIds(type => type.FullName);
+            options.ChangeControllerModelApiExplorerGroupName = false;
         });
-        Configure<AbpAspNetCoreMvcOptions>(options => { options.ChangeControllerModelApiExplorerGroupName = false; });
-
-        #endregion
-
-        #region 自定义 API 版本 - 已弃用
-
-        // // 生成多 API 版本文档
-        // var apiVersions = new CustomApiVersion.AutoApiVersions();
-        // // AutoApiVersions 尽量只能整数版本号，例如 V1，V2
-        // foreach (FieldInfo field in apiVersions.GetType().GetFields())
-        // {
-        //     var apiVersion = field.GetValue(apiVersions)!.ToString()!;
-        //     context.Services.AddOpenApi(apiVersion, options =>
-        //     {
-        //         options.AddDocumentTransformer((document, context, cancellationToken) =>
-        //         {
-        //             // 设置文档的标题、版本和描述
-        //             document.Info = new()
-        //             {
-        //                 Title = $"Radish API | {apiVersion}", // 文档标题
-        //                 Version = apiVersion, // 文档版本
-        //                 Description = apiVersion switch
-        //                 {
-        //                     "V1" => "版本 1.0，只包含基础功能，部分在测试中。",
-        //                     "V2" => "版本 2.0，正式发布和生产使用。",
-        //                     _ => "Radish API 文档。"
-        //                 }
-        //             };
-        //             return Task.CompletedTask;
-        //         });
-        //     });
-        // }
-        // // 启用 API 版本控制
-        // context.Services.AddAbpApiVersioning(options =>
-        // {
-        //     options.ReportApiVersions = true; // 报告 API 版本
-        //     options.AssumeDefaultVersionWhenUnspecified = true; // 当未指定版本时使用默认版本
-        //     options.DefaultApiVersion = new ApiVersion(1, 0); // 默认 API 版本，第一个参数为大版本，第二个为小版本，小版本号为 0 时自动忽略
-        //     // options.DefaultApiVersion = new ApiVersion("1beta"); // 不知道为什么，这里不支持字符串了，实际上应该是支持的
-        //     options.ApiVersionReader = new UrlSegmentApiVersionReader(); // 使用 URL 段作为版本读取器
-        //     // options.ApiVersionReader = new QueryStringApiVersionReader("api-version"); // 使用查询字符串作为版本读取器
-        //     // options.ApiVersionReader = new HeaderApiVersionReader("api-version"); // 使用请求头作为版本读取器
-        // }).AddApiExplorer(options =>
-        // {
-        //     // 添加版本化的 API 探索器，这也会注册 IApiVersionDescriptionProvider 服务
-        //     options.GroupNameFormat = "'v'VVV";
-        //     options.SubstituteApiVersionInUrl = true; // 当使用 URL 段版本控制时，此选项是必要的
-        // });
-        // // 自定义路由约束，让 API 版本变为连字符，例如：[ApiVersion(2.1)] => /api/v2-1/xxx
-        // // 当 ApiVersion 定义为 double 的时候使用，如果是 string 则会报错
-        // context.Services.Configure<RouteOptions>(options =>
-        // {
-        //     options.ConstraintMap.Add("apiVersion", typeof(ApiVersionRouteConstraint));
-        // });
-        // // 配置自动 API 控制器
-        // Configure<AbpAspNetCoreMvcOptions>(options =>
-        // {
-        //     // options.ConventionalControllers.Create(typeof(RadishApplicationModule).Assembly, opts =>
-        //     // {
-        //     //     opts.RootPath = "api/v{version:apiVersion}";
-        //     //     opts.UseV3UrlStyle = true; // 重要：使用 URL 版本控制
-        //     //     // opts.UrlControllerNameNormalizer = pContext => pContext.ControllerName;
-        //     // });
-        //     // 过滤手动控制器，只显示自动 API 控制器
-        //     //options.ControllersToRemove.Add(typeof(ProductController));
-        //     // 移除控制器分组，只显示 v 开头的版本分组
-        //     options.ChangeControllerModelApiExplorerGroupName = false;
-        // });
 
         #endregion
     }
@@ -336,7 +272,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         });
     }
 
-    #region API 文档配置 - 已弃用
+    #region 文档单独配置类 - 已弃用
 
     /// <summary>Swagger 配置</summary>
     /// <param name="context">ServiceConfigurationContext</param>
@@ -493,7 +429,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
 
             var configuration = context.ServiceProvider.GetRequiredService<IConfiguration>();
 
-            // OAuth 配置 - 目前不生效
+            // OAuth 配置
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
             // options.OAuthClientSecret("1q2w3e*");  // 密码
             options.OAuthScopes("Radish");
