@@ -1,11 +1,10 @@
 ﻿using Asp.Versioning.ApiExplorer;
-using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-namespace Radish.Swagger;
+namespace Radish.Extensions.Swagger;
 
 /// <summary>
 /// Configures the Swagger generation options.

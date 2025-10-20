@@ -17,15 +17,35 @@ using Volo.Abp.AspNetCore.Mvc;
  *
  */
 
+/*
+ * @luobo 2025.10.19 补充
+ * 还可以像下方这样，在控制类上定义多个版本，但具体的 API 端点定义具体的版本
+ */
+
 namespace Radish.Controllers.ConventionalControllers.V2;
 
 [ApiController]
+[ApiVersion(1.0)]
 [ApiVersion(2.0)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 public class ApiVersionController : AbpControllerBase
 {
     [HttpGet]
-    public IActionResult GetApiVersion()
+    [MapToApiVersion(1.0)]
+    public IActionResult GetApiVersionV1()
+    {
+        return Ok(new
+        {
+            ApiVersion = "V1",
+            StatusCode = 0,
+            StatusMessage = "获取成功",
+            OperatingTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+        });
+    }
+    
+    [HttpGet]
+    [MapToApiVersion(2.0)]
+    public IActionResult GetApiVersionV2()
     {
         return Ok(new
         {
