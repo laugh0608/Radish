@@ -13,6 +13,8 @@ using Volo.Abp.AspNetCore.Mvc;
  * 5. 路由特性不建议更改：[Route("api/v{version:apiVersion}/[controller]/[action]")]
  * 6. 自动 API 控制器见 TodoAppService 中的示例（实际上就一个命名空间而已）
  *
+ * 设置 Deprecated = true 属性即可在返回体中标识该接口已废弃，例如：[ApiVersion(1.0, Deprecated = true)]
+ *
  * 下方示例的 API 路径为：/api/v1/ApiVersion/GetApiVersion
  *
  */
@@ -20,7 +22,7 @@ using Volo.Abp.AspNetCore.Mvc;
 namespace Radish.Controllers.ConventionalControllers.V1;
 
 [ApiController]
-[ApiVersion(1.0)]
+[ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 public class ApiVersionController : AbpControllerBase
 {

@@ -145,9 +145,10 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
 
-        #region API 版本控制
+        #region API Version
 
-        var preActions = context.Services.GetPreConfigureActions<AbpAspNetCoreMvcOptions>();
+        var preActions = 
+            context.Services.GetPreConfigureActions<AbpAspNetCoreMvcOptions>();
         Configure<AbpAspNetCoreMvcOptions>(options => { preActions.Configure(options); });
 
         // Show neutral/versionless APIs.
@@ -157,8 +158,8 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 options.ReportApiVersions = true;
                 options.AssumeDefaultVersionWhenUnspecified = true;
 
-                //options.ApiVersionReader = new HeaderApiVersionReader("api-version"); //Supports header too
-                //options.ApiVersionReader = new MediaTypeApiVersionReader(); //Supports accept header too
+                // options.ApiVersionReader = new HeaderApiVersionReader("api-version"); //Supports header too
+                // options.ApiVersionReader = new MediaTypeApiVersionReader(); //Supports accept header too
             }, options => { options.ConfigureAbp(preActions.Configure()); })
             .AddApiExplorer(options =>
             {
@@ -185,7 +186,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 options.CustomSchemaIds(type => type.FullName);
                 // options.SwaggerDoc("v1", new OpenApiInfo { Title = "Radish API", Version = "v1" });
                 // options.DocInclusionPredicate((docName, description) => true); // 这个配置已经不兼容了，不能开，否则报错
-                // options.HideAbpEndpoints(); // 隐藏 ABP 的默认端点
+                // options.HideAbpEndpoints(); // 隐藏 ABP 的默认端点，这个不要用，会隐藏所有 Controller 的 API 节点
             });
         // context.Services.AddAbpSwaggerGen(options =>
         // {
@@ -441,7 +442,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
             options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
             options.EnableDeepLinking();
             options.DisplayOperationId();
-            
+
             // Console.WriteLine("=== 开始 Swagger UI 配置 ===");
             // Console.WriteLine($"Provider 版本数量: {provider.ApiVersionDescriptions.Count}");
             // 清除默认的文档（如果有）
