@@ -71,3 +71,8 @@ export default defineConfig([
   },
 ])
 ```
+
+## Project Docs
+
+- I18n & Guidelines (中文): `docs/i18n-and-guidelines.zh-CN.md`
+- I18n & Guidelines (English): `docs/i18n-and-guidelines.en.md`
