@@ -2,17 +2,22 @@
 import { useState } from 'react'
 import logo from '../assets/react.svg'
 import './NavBar.css'
+// i18n：翻译与语言切换
+import { useI18n } from '../lib/i18n/useI18n'
+import LanguageSwitcher from './LanguageSwitcher'
 
-// 导航项：可根据需要扩展为路由跳转
+// 导航项：仅保存 key，展示时通过 t(key) 翻译
 const navItems = [
-  { label: '\u6587\u6863', href: '#docs' },
-  { label: '\u7279\u6027', href: '#features' },
-  { label: '\u793e\u533a', href: '#community' },
+  { key: 'nav.docs', href: '#docs' },
+  { key: 'nav.features', href: '#features' },
+  { key: 'nav.community', href: '#community' },
 ]
 
 const NavBar = () => {
   // 移动端菜单打开状态
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  // 读取翻译函数
+  const { t } = useI18n()
 
   // 切换移动端菜单开合
   const toggleMenu = () => {
@@ -36,26 +41,28 @@ const NavBar = () => {
         {/* 桌面端主导航链接 */}
         <nav className="navbar__links">
           {navItems.map((item) => (
-            <a key={item.label} href={item.href}>
-              {item.label}
+            <a key={item.key} href={item.href}>
+              {t(item.key)}
             </a>
           ))}
         </nav>
         {/* 右侧操作按钮（示例：注册 / 登录） */}
         <div className="navbar__actions">
           <button className="navbar__button navbar__button--outline" type="button">
-            {'\u6ce8\u518c'}
+            {t('actions.signUp')}
           </button>
           <button className="navbar__button navbar__button--solid" type="button">
-            {'\u767b\u5f55'}
+            {t('actions.signIn')}
           </button>
+          {/* 语言切换器 */}
+          <LanguageSwitcher />
         </div>
         {/* 移动端菜单切换按钮（汉堡） */}
         <button
           className="navbar__toggle"
           type="button"
           aria-expanded={isMenuOpen}
-          aria-label="\u5207\u6362\u5bfc\u822a\u83dc\u5355"
+          aria-label={t('aria.toggleNav')}
           onClick={toggleMenu}
         >
           <span />
@@ -67,18 +74,20 @@ const NavBar = () => {
       <div className="navbar__mobile-panel">
         <nav className="navbar__mobile-links" onClick={closeMenu}>
           {navItems.map((item) => (
-            <a key={item.label} href={item.href}>
-              {item.label}
+            <a key={item.key} href={item.href}>
+              {t(item.key)}
             </a>
           ))}
         </nav>
         <div className="navbar__mobile-actions">
           <button className="navbar__button navbar__button--outline" type="button" onClick={closeMenu}>
-            {'\u6ce8\u518c'}
+            {t('actions.signUp')}
           </button>
           <button className="navbar__button navbar__button--solid" type="button" onClick={closeMenu}>
-            {'\u767b\u5f55'}
+            {t('actions.signIn')}
           </button>
+          {/* 移动端同样提供语言切换 */}
+          <LanguageSwitcher />
         </div>
       </div>
     </header>
