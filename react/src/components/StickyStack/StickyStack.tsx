@@ -91,9 +91,10 @@ const StickyStack = ({ children, gap, baseOffset = 12 }: Props) => {
         const extraProps: Partial<StickyChildProps> & { ref?: any; style?: React.CSSProperties } = {}
         if (sticky) {
           extraProps.stickyTop = offsets[i]
-          // z-index：让上面的卡片层级更高（先出现的卡片层级最高）
-          const stickyOrder = items.filter((c) => isValidElement(c) && (c.props as StickyChildProps).sticky).indexOf(child)
-          const z = 100 - stickyOrder
+          // z-index：先出现的卡片层级更低，后出现的更高（1,2,3...），且低于导航栏(z=10)
+          const stickyOnly = items.filter((c) => isValidElement(c) && (c.props as StickyChildProps).sticky)
+          const stickyOrder = stickyOnly.indexOf(child)
+          const z = 1 + stickyOrder
           extraProps.style = { zIndex: z } as React.CSSProperties
         }
         extraProps.ref = refCb
