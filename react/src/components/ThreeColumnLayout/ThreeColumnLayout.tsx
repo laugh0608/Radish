@@ -1,4 +1,5 @@
 import './ThreeColumnLayout.css'
+import * as React from "react";
 
 type Props = {
   left?: React.ReactNode

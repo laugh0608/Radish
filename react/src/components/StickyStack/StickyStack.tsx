@@ -18,6 +18,7 @@ const StickyStack = ({ children, gap, baseOffset = 12 }: Props) => {
   const items = useMemo(() => Children.toArray(children), [children])
   const refs = useRef<(HTMLElement | null)[]>([])
   const [offsets, setOffsets] = useState<number[]>([])
+  const [allowedIndices, setAllowedIndices] = useState<number[] | null>(null)
 
   const measure = () => {
     const el = document.documentElement
@@ -40,15 +41,22 @@ const StickyStack = ({ children, gap, baseOffset = 12 }: Props) => {
       return node ? node.getBoundingClientRect().height : 0
     })
 
-    // 根据视口高度计算允许同时吸附的卡片数量（尽量不超过视口）
+    // 根据视口高度计算允许同时吸附的卡片数量
+    // 至少允许前 2 张（若存在），其余在有空间时再叠加
     const vh = window.innerHeight || 0
-    const allowed: number[] = []
+    const computed: number[] = []
     let used = base
     for (let k = 0; k < stickyIdx.length; k++) {
+      const idx = stickyIdx[k]
       const h = heights[k]
       const g = typeof gap === 'number' ? gap : 0
+      if (k < 2) {
+        computed.push(idx)
+        used += h + g
+        continue
+      }
       if (used + h <= vh) {
-        allowed.push(stickyIdx[k])
+        computed.push(idx)
         used += h + g
       } else {
         break
@@ -73,9 +81,7 @@ const StickyStack = ({ children, gap, baseOffset = 12 }: Props) => {
     })
 
     setOffsets(newOffsets)
-
-    // 将允许吸附的索引存到 data 属性，供渲染期使用
-    ;(measure as any).allowed = allowed
+    setAllowedIndices(computed)
   }
 
   useLayoutEffect(() => {
@@ -113,8 +119,7 @@ const StickyStack = ({ children, gap, baseOffset = 12 }: Props) => {
           refs.current[i] = node
         }
         const extraProps: Partial<StickyChildProps> & { ref?: any; style?: React.CSSProperties } = {}
-        const allowed: number[] | undefined = (measure as any).allowed
-        const isAllowed = !!allowed && allowed.includes(i)
+        const isAllowed = allowedIndices ? allowedIndices.includes(i) : true
         if (sticky && isAllowed) {
           extraProps.stickyTop = offsets[i]
           // z-index：先出现的卡片层级更低，后出现的更高（1,2,3...），且低于导航栏(z=10)
