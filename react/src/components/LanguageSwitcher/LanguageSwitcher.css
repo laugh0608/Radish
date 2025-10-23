@@ -10,7 +10,7 @@
   justify-content: center;
   gap: 6px;
   height: 36px;
-  min-width: 36px;
+  width: 60px; /* 与主题开关保持一致 */
   padding: 0 10px;
   border-radius: 18px;
   border: 1px solid var(--border);
@@ -81,8 +81,9 @@
 /* 移动端增大触控区域 */
 @media (max-width: 639px) {
   .lang-switcher__button {
-    height: 40px;
-    border-radius: 20px;
+    height: 36px; /* 和主题开关一致，保持 36px */
+    width: 60px;
+    border-radius: 18px;
   }
 
   .lang-switcher__menu {

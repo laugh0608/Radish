@@ -1,11 +1,11 @@
 // 导航栏组件：负责全局站点导航、Logo 与移动端菜单
 import { useState } from 'react'
-import logo from '../assets/react.svg'
+import logo from '../../assets/react.svg'
 import './NavBar.css'
 // i18n：翻译与语言切换
-import { useI18n } from '../lib/i18n/useI18n'
-import LanguageSwitcher from './LanguageSwitcher'
-import ThemeToggle from './ThemeToggle'
+import { useI18n } from '../../lib/i18n/useI18n'
+import LanguageSwitcher from '../LanguageSwitcher'
+import ThemeToggle from '../ThemeToggle'
 
 // 导航项：仅保存 key，展示时通过 t(key) 翻译
 const navItems = [

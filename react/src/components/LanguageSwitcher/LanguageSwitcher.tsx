@@ -1,7 +1,7 @@
 // 语言切换器（图标按钮 + 下拉菜单）
 import { useEffect, useRef, useState } from 'react'
-import { useI18n } from '../lib/i18n/useI18n'
-import type { Locale } from '../lib/i18n/messages'
+import { useI18n } from '../../lib/i18n/useI18n'
+import type { Locale } from '../../lib/i18n/messages'
 import './LanguageSwitcher.css'
 
 type LangOption = { value: Locale; labelKey: string }
