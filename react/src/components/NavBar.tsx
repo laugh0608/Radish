@@ -49,16 +49,15 @@ const NavBar = () => {
         </nav>
         {/* 右侧操作按钮（示例：注册 / 登录） */}
         <div className="navbar__actions">
+          {/* 桌面端把两个按钮放在注册/登录左侧 */}
+          <ThemeToggle />
+          <LanguageSwitcher />
           <button className="navbar__button navbar__button--outline" type="button">
             {t('actions.signUp')}
           </button>
           <button className="navbar__button navbar__button--solid" type="button">
             {t('actions.signIn')}
           </button>
-          {/* 主题切换 */}
-          <ThemeToggle />
-          {/* 语言切换器 */}
-          <LanguageSwitcher />
         </div>
         {/* 移动端菜单切换按钮（汉堡） */}
         <button
