@@ -70,3 +70,10 @@
   top: var(--sticky-top, calc(var(--navbar-height, 72px) + 12px));
   z-index: var(--sticky-z, auto);
 }
+
+/* 被 StickyStack 动态禁用吸附时 */
+.sidebar-card.no-sticky {
+  position: static !important;
+  top: auto !important;
+  z-index: auto !important;
+}
