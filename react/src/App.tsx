@@ -2,6 +2,7 @@
 import './App.css'
 // 站点顶栏导航组件
 import NavBar from './components/NavBar'
+import BottomBar from './components/BottomBar'
 import ThreeColumnLayout from './components/ThreeColumnLayout'
 import SidebarCard from './components/SidebarCard'
 import SectionList from './components/SectionList'
@@ -10,13 +11,15 @@ import RadishAcg from './assets/RadishAcg.png'
 import StickyStack from './components/StickyStack'
 // 引入 i18n Hook 以读取文案
 import { useI18n } from './lib/i18n/useI18n'
+import { useState } from 'react'
 
 function App() {
   // 通过 t(key) 读取多语言文案
   const { t } = useI18n()
+  const [dockEnabled, setDockEnabled] = useState(true)
   return (
     <>
-      <NavBar />
+      <NavBar dockEnabled={dockEnabled} onToggleDock={() => setDockEnabled((v) => !v)} />
       <ThreeColumnLayout
         left={
           <div>
@@ -76,6 +79,7 @@ function App() {
           <PostList count={28} />
         </main>
       </ThreeColumnLayout>
+      <BottomBar enabled={dockEnabled} />
     </>
   )
 }

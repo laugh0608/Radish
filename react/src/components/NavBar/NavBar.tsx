@@ -1,24 +1,34 @@
 // 导航栏组件：负责全局站点导航、Logo 与移动端菜单
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 import logo from '../../assets/react.svg'
 import './NavBar.css'
 // i18n：翻译与语言切换
 import { useI18n } from '../../lib/i18n/useI18n'
 import LanguageSwitcher from '../LanguageSwitcher'
 import ThemeToggle from '../ThemeToggle'
+import DockToggle from '../DockToggle'
 
-// 导航项：仅保存 key，展示时通过 t(key) 翻译
-const navItems = [
-  { key: 'nav.docs', href: '#docs' },
-  { key: 'nav.features', href: '#features' },
-  { key: 'nav.community', href: '#community' },
-]
+type Props = {
+  dockEnabled?: boolean
+  onToggleDock?: () => void
+}
 
-const NavBar = () => {
+// 顶部中部改为搜索框，原导航项移除
+
+const NavBar = ({ dockEnabled = true, onToggleDock }: Props) => {
   // 移动端菜单打开状态
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   // 读取翻译函数
   const { t } = useI18n()
+  const [query, setQuery] = useState('')
+
+  const onSearchSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    // 暂无真实搜索后端，这里仅演示：可替换为路由跳转或回调
+    // eslint-disable-next-line no-console
+    console.log('search:', query)
+  }
 
   // 切换移动端菜单开合
   const toggleMenu = () => {
@@ -39,19 +49,22 @@ const NavBar = () => {
           <img src={logo} alt="Radish logo" />
           <span className="navbar__brand">Radish</span>
         </div>
-        {/* 桌面端主导航链接 */}
-        <nav className="navbar__links">
-          {navItems.map((item) => (
-            <a key={item.key} href={item.href}>
-              {t(item.key)}
-            </a>
-          ))}
-        </nav>
+        {/* 桌面端搜索框（居中） */}
+        <form className="navbar__search" role="search" onSubmit={onSearchSubmit}>
+          <input
+            type="search"
+            className="navbar__search-input"
+            placeholder={t('search.placeholder')}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </form>
         {/* 右侧操作按钮（示例：注册 / 登录） */}
         <div className="navbar__actions">
           {/* 桌面端把两个按钮放在注册/登录左侧 */}
           <ThemeToggle />
           <LanguageSwitcher />
+          <DockToggle enabled={dockEnabled} onToggle={onToggleDock} />
           <button className="navbar__button navbar__button--outline" type="button">
             {t('actions.signUp')}
           </button>
@@ -72,15 +85,19 @@ const NavBar = () => {
           <span />
         </button>
       </div>
-      {/* 移动端抽屉面板：包含导航链接与操作按钮 */}
+      {/* 移动端抽屉面板：包含搜索与操作按钮 */}
       <div className="navbar__mobile-panel">
-        <nav className="navbar__mobile-links" onClick={closeMenu}>
-          {navItems.map((item) => (
-            <a key={item.key} href={item.href}>
-              {t(item.key)}
-            </a>
-          ))}
-        </nav>
+        <div className="navbar__mobile-search">
+          <form role="search" onSubmit={onSearchSubmit}>
+            <input
+              type="search"
+              className="navbar__search-input navbar__search-input--mobile"
+              placeholder={t('search.placeholder')}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </form>
+        </div>
         <div className="navbar__mobile-actions">
           <button className="navbar__button navbar__button--outline" type="button" onClick={closeMenu}>
             {t('actions.signUp')}
@@ -92,6 +109,7 @@ const NavBar = () => {
           <div className="navbar__mobile-controls">
             <ThemeToggle />
             <LanguageSwitcher />
+            <DockToggle enabled={dockEnabled} onToggle={() => { onToggleDock?.(); closeMenu(); }} />
           </div>
         </div>
       </div>

@@ -1,0 +1,173 @@
+/* Dock 风格底部栏 */
+.bottom-dock {
+  --dock-gap: clamp(8px, 1.2vw, 16px);
+  --dock-icon: clamp(22px, 2.2vw, 34px);
+  --dock-pad-v: clamp(8px, 1.2vw, 12px);
+  --dock-pad-h: clamp(12px, 2vw, 18px);
+  position: fixed;
+  left: 50%;
+  transform: translate(-50%, 0);
+  bottom: max(10px, env(safe-area-inset-bottom));
+  z-index: 1100;
+  background: linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--card), transparent 35%),
+      color-mix(in oklab, var(--card), transparent 20%)
+    );
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  backdrop-filter: saturate(180%) blur(12px);
+  border: 1px solid color-mix(in oklab, var(--border), transparent 30%);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.22), inset 0 1px 0 rgba(255,255,255,0.06);
+  transition: transform 200ms ease, opacity 200ms ease;
+  will-change: transform, opacity;
+}
+
+.bottom-dock--hidden {
+  transform: translate(-50%, 120%);
+  opacity: 0.8;
+}
+
+.bottom-dock--visible {
+  transform: translate(-50%, 0);
+}
+
+.bottom-dock__list {
+  display: flex;
+  align-items: center;
+  padding: var(--dock-pad-v) var(--dock-pad-h);
+  margin: 0;
+  list-style: none;
+  gap: var(--dock-gap);
+}
+
+.bottom-dock__btn {
+  width: calc(var(--dock-icon) * 1.45);
+  height: calc(var(--dock-icon) * 1.45);
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in oklab, var(--border), transparent 15%);
+  border-radius: 12px;
+  background: color-mix(in oklab, var(--card), transparent 10%);
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  font-size: var(--dock-icon);
+  position: relative;
+  transform-origin: bottom center;
+  transform: translateY(calc((var(--dock-scale, 1) - 1) * -6px)) scale(var(--dock-scale, 1));
+}
+
+@media (hover: hover) {
+  .bottom-dock__btn:hover { border-color: color-mix(in oklab, var(--primary), var(--border) 40%); }
+}
+
+/* 气泡提示：仅桌面 hover 显示 */
+.bottom-dock__item { position: relative; }
+.bottom-dock__tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  padding: 6px 10px;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text);
+  background: color-mix(in oklab, var(--card), transparent 10%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.bottom-dock__item:hover .bottom-dock__tooltip {
+  opacity: 1;
+  transform: translate(-50%, -2px);
+}
+
+/* 右上角未读角标 */
+.bottom-dock__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: #ef4444;
+  color: #fff;
+  border-radius: 9999px;
+  font-size: 11px;
+  line-height: 16px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(2, 6, 23, 0.25);
+}
+
+/* 右键/长按菜单 */
+.bottom-dock__menu {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  min-width: 120px;
+  padding: 6px;
+  background: color-mix(in oklab, var(--card), transparent 8%);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(2, 6, 23, 0.18);
+  z-index: 10;
+}
+.bottom-dock__menu-item {
+  display: block;
+  width: 100%;
+  height: 34px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0 10px;
+  text-align: left;
+  cursor: pointer;
+}
+.bottom-dock__menu-item:hover { background: color-mix(in oklab, var(--card), var(--text) 6%); }
+
+@media (max-width: 639.98px) {
+  /* 在移动端默认隐藏 hover 提示 */
+  .bottom-dock__tooltip { display: none; }
+}
+
+/* 窄屏桌面：渐进式隐藏可选图标 */
+@media (max-width: 1100px) and (min-width: 640px) {
+  .bottom-dock__item.optional-2 { display: none; }
+}
+
+@media (max-width: 900px) and (min-width: 640px) {
+  .bottom-dock__item.optional-1 { display: none; }
+}
+
+/* 移动端：全宽底部导航 */
+@media (max-width: 639.98px) {
+  .bottom-dock {
+    left: 0;
+    right: 0;
+    transform: none;
+    width: 100%;
+    bottom: 0;
+    border-radius: 12px 12px max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-bottom));
+  }
+  .bottom-dock--hidden {
+    transform: translateY(100%);
+  }
+  .bottom-dock--visible {
+    transform: translateY(0);
+  }
+  .bottom-dock__list {
+    justify-content: space-around;
+    padding-bottom: calc(var(--dock-pad-v) + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bottom-dock { transition: none; }
+  .bottom-dock__btn { transition: none; }
+}

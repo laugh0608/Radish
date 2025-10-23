@@ -16,6 +16,8 @@
   --border: #e5e7eb;
   --primary: #2563eb;
   --primary-hover: #1d4ed8;
+  /* Dock 安全内边距（由组件动态设置） */
+  --dock-inset-bottom: 0px;
 }
 
 /* Dark theme variables */
@@ -39,6 +41,7 @@ body {
   min-width: 320px;
   background-color: var(--bg);
   color: var(--text);
+  padding-bottom: var(--dock-inset-bottom);
 }
 
 a {
