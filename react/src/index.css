@@ -8,6 +8,7 @@
   -moz-osx-font-smoothing: grayscale;
 
   /* Theme tokens - light */
+  --navbar-height: 72px; /* 用于右侧栏 sticky 偏移 */
   --bg: #f8fafc;
   --card: #ffffff;
   --text: #0f172a;

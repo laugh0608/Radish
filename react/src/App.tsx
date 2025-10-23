@@ -56,7 +56,7 @@ function App() {
         }
         right={
           <div>
-            <SidebarCard title={t('layout.right.illustration')}>
+            <SidebarCard title={t('layout.right.illustration')} sticky>
               <img src={RadishAcg} alt="Radish illustration" />
             </SidebarCard>
             <SidebarCard title={t('layout.right.placeholderA')}>

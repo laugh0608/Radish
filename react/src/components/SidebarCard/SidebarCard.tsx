@@ -1,15 +1,19 @@
 import './SidebarCard.css'
+import type { CSSProperties } from 'react'
 
 type Props = {
   title?: React.ReactNode
   icon?: React.ReactNode
   action?: React.ReactNode
   children?: React.ReactNode
+  sticky?: boolean
+  stickyTop?: number
 }
 
-const SidebarCard = ({ title, icon, action, children }: Props) => {
+const SidebarCard = ({ title, icon, action, children, sticky, stickyTop }: Props) => {
+  const style: CSSProperties | undefined = stickyTop !== undefined ? ({ ['--sticky-top' as any]: `${stickyTop}px` } as CSSProperties) : undefined
   return (
-    <section className="sidebar-card">
+    <section className={`sidebar-card ${sticky ? 'sticky' : ''}`} style={style}>
       {(title || action) && (
         <header className="sidebar-card__header">
           <div className="sidebar-card__title">

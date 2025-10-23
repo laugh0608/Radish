@@ -63,3 +63,9 @@
 }
 
 .sidebar-card .btn-ghost + .btn-ghost { margin-left: 0.5rem; }
+
+/* 可选：吸附在视口顶部（仅右侧栏需要时添加 .sticky 类） */
+.sidebar-card.sticky {
+  position: sticky;
+  top: var(--sticky-top, calc(var(--navbar-height, 72px) + 12px));
+}
