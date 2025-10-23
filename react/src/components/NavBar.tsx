@@ -89,10 +89,11 @@ const NavBar = () => {
           <button className="navbar__button navbar__button--solid" type="button" onClick={closeMenu}>
             {t('actions.signIn')}
           </button>
-          {/* 移动端主题切换 */}
-          <ThemeToggle />
-          {/* 移动端同样提供语言切换 */}
-          <LanguageSwitcher />
+          {/* 移动端开关区：横向排布 */}
+          <div className="navbar__mobile-controls">
+            <ThemeToggle />
+            <LanguageSwitcher />
+          </div>
         </div>
       </div>
     </header>

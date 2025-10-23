@@ -1,4 +1,5 @@
 .navbar {
+  --mobile-panel-top: 64px; /* 小屏幕时头部高度，用于浮层定位 */
   background-color: var(--card);
   border-bottom: 1px solid var(--border);
   position: sticky;
@@ -109,16 +110,22 @@
 }
 
 .navbar__mobile-panel {
-  max-height: 0;
+  position: fixed;          /* 作为浮层不挤压主体 */
+  left: 0;
+  right: 0;
+  top: var(--mobile-panel-top);
+  max-height: 0;            /* 动画展开 */
   overflow: hidden;
   background-color: var(--card);
   border-top: 1px solid var(--border);
+  box-shadow: 0 10px 25px rgba(2, 6, 23, 0.18);
   transition: max-height 200ms ease;
+  z-index: 100;             /* 覆盖内容区域 */
 }
 
 .navbar--expanded .navbar__mobile-panel {
-  max-height: 320px;
-  overflow: visible; /* 展开时允许弹层超出面板区域，避免被裁剪 */
+  max-height: calc(100vh - var(--mobile-panel-top));
+  overflow: visible; /* 语言弹层不被裁剪 */
 }
 
 .navbar__mobile-links {
@@ -137,7 +144,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
-  padding: 1rem 1.5rem 1.5rem;
+  padding: 1rem 1.5rem 2rem; /* 增加底部留白 */
 }
 
 .navbar--expanded .navbar__toggle span:nth-child(1) {
@@ -176,4 +183,13 @@
   .navbar__brand {
     display: inline;
   }
+}
+
+/* 移动端：开关与语言横向排布 */
+.navbar__mobile-controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
 }

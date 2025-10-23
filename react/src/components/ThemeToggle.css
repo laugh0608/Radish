@@ -1,11 +1,11 @@
 /* 主题开关：无依赖、含平滑动画与图标过渡 */
 .theme-toggle {
   position: relative;
-  width: 54px;
-  height: 32px;
+  width: 60px;
+  height: 36px; /* 与语言按钮统一高度 */
   border: 1px solid var(--border);
   background: var(--card);
-  border-radius: 9999px;
+  border-radius: 18px;
   padding: 0;
   cursor: pointer;
   transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
@@ -25,8 +25,8 @@
   position: absolute;
   top: 50%;
   left: 4px;
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 50%;
@@ -48,7 +48,7 @@
 .theme-toggle__icon--moon { right: 8px; }
 
 .theme-toggle.is-dark .theme-toggle__thumb {
-  transform: translate(22px, -50%);
+  transform: translate(24px, -50%);
 }
 
 .theme-toggle.is-light .theme-toggle__icon--moon,
@@ -56,8 +56,7 @@
   opacity: 0.25;
 }
 
+/* 移动端保持与语言按钮一致尺寸 */
 @media (max-width: 639px) {
   .theme-toggle { height: 36px; width: 60px; }
-  .theme-toggle__thumb { width: 26px; height: 26px; }
 }
-
