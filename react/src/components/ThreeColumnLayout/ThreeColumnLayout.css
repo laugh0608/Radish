@@ -15,34 +15,33 @@
   min-width: 0;
 }
 
-/* Desktop grid */
+/* >=1024px：先显示左侧栏 + 主内容，隐藏右侧栏 */
 @media (min-width: 1024px) {
   .three-col {
     display: grid;
-    /* 缩窄两侧栏，保证主列宽度 */
-    grid-template-columns: 220px 1fr 260px;
+    grid-template-columns: 220px 1fr;
     gap: 1.25rem;
     align-items: start;
   }
 
-  .three-col__left,
-  .three-col__right {
-    display: block;
-  }
+  .three-col__left { display: block; }
+  /* 右侧栏保持隐藏，直到更大断点再显示 */
 
   .three-col__left,
-  .three-col__right,
   .three-col__main {
     min-height: 420px;
   }
 }
 
 /* Larger desktop breathing room */
+/* >=1280px：显示三列（左 + 主 + 右） */
 @media (min-width: 1280px) {
   .three-col {
     grid-template-columns: 240px 1fr 300px;
     gap: 1.5rem;
   }
+
+  .three-col__right { display: block; }
 }
 
 /* 超大屏下进一步加宽容器与舒展侧栏 */
