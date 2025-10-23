@@ -1,6 +1,7 @@
 .three-col {
   display: block;
-  max-width: 1120px;
+  /* 扩大容器宽度，给中间主列更多空间 */
+  max-width: min(96vw, 1440px);
   margin: 0 auto;
   padding: 2rem 1.5rem;
 }
@@ -18,7 +19,8 @@
 @media (min-width: 1024px) {
   .three-col {
     display: grid;
-    grid-template-columns: 260px 1fr 300px;
+    /* 缩窄两侧栏，保证主列宽度 */
+    grid-template-columns: 220px 1fr 260px;
     gap: 1.25rem;
     align-items: start;
   }
@@ -38,7 +40,15 @@
 /* Larger desktop breathing room */
 @media (min-width: 1280px) {
   .three-col {
-    grid-template-columns: 280px 1fr 340px;
+    grid-template-columns: 240px 1fr 300px;
     gap: 1.5rem;
+  }
+}
+
+/* 超大屏下进一步加宽容器与舒展侧栏 */
+@media (min-width: 1536px) {
+  .three-col {
+    grid-template-columns: 260px 1fr 340px;
+    max-width: min(96vw, 1600px);
   }
 }
