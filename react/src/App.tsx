@@ -56,7 +56,7 @@ function App() {
           </div>
         }
         right={
-          <StickyStack>
+          <StickyStack gap={12}>
             <SidebarCard title={t('layout.right.illustration')} sticky>
               <img src={RadishAcg} alt="Radish illustration" />
             </SidebarCard>

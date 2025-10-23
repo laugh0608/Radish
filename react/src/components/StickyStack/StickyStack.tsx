@@ -8,16 +8,22 @@ const toPx = (v: string | null | undefined): number => {
   return Number.isFinite(n) ? n : 0
 }
 
-const StickyStack = ({ children }: { children: React.ReactNode }) => {
+type Props = {
+  children: React.ReactNode
+  gap?: number // px 间距（优先于卡片自身 margin-top）
+  baseOffset?: number // 顶部基础偏移（在 navbar 高度基础上附加）
+}
+
+const StickyStack = ({ children, gap, baseOffset = 12 }: Props) => {
   const items = useMemo(() => Children.toArray(children), [children])
   const refs = useRef<(HTMLElement | null)[]>([])
   const [offsets, setOffsets] = useState<number[]>([])
 
-  useLayoutEffect(() => {
+  const measure = () => {
     const el = document.documentElement
     const cs = getComputedStyle(el)
     const nav = toPx(cs.getPropertyValue('--navbar-height')) || 72
-    const base = nav + 12 // 与卡片顶部留白协调
+    const base = nav + (baseOffset ?? 0) // 与卡片顶部留白协调
 
     const newOffsets: number[] = []
     let acc = base
@@ -27,7 +33,8 @@ const StickyStack = ({ children }: { children: React.ReactNode }) => {
       const isSticky = isValidElement(child) && (child.props as StickyChildProps).sticky
       if (!isSticky) return
 
-      const mt = node ? toPx(getComputedStyle(node).marginTop) : 16
+      let mt = node ? toPx(getComputedStyle(node).marginTop) : 16
+      if (typeof gap === 'number') mt = gap
       acc += mt
       newOffsets[i] = Math.round(acc)
       const h = node ? node.offsetHeight : 0
@@ -35,33 +42,15 @@ const StickyStack = ({ children }: { children: React.ReactNode }) => {
     })
 
     setOffsets(newOffsets)
-  }, [items])
+  }
 
   useLayoutEffect(() => {
-    const onResize = () => {
-      // 触发重新计算
-      setOffsets([])
-      // 下一帧重新测量
-      requestAnimationFrame(() => {
-        const el = document.documentElement
-        const cs = getComputedStyle(el)
-        const nav = toPx(cs.getPropertyValue('--navbar-height')) || 72
-        const base = nav + 12
-        const newOffsets: number[] = []
-        let acc = base
-        items.forEach((child, i) => {
-          const node = refs.current[i]
-          const isSticky = isValidElement(child) && (child.props as StickyChildProps).sticky
-          if (!isSticky) return
-          const mt = node ? toPx(getComputedStyle(node).marginTop) : 16
-          acc += mt
-          newOffsets[i] = Math.round(acc)
-          const h = node ? node.offsetHeight : 0
-          acc += h
-        })
-        setOffsets(newOffsets)
-      })
-    }
+    measure()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, gap, baseOffset])
+
+  useLayoutEffect(() => {
+    const onResize = () => requestAnimationFrame(measure)
     window.addEventListener('resize', onResize)
     window.addEventListener('orientationchange', onResize)
     return () => {
@@ -88,4 +77,3 @@ const StickyStack = ({ children }: { children: React.ReactNode }) => {
 }
 
 export default StickyStack
-
