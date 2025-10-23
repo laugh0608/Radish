@@ -118,6 +118,7 @@
 
 .navbar--expanded .navbar__mobile-panel {
   max-height: 320px;
+  overflow: visible; /* 展开时允许弹层超出面板区域，避免被裁剪 */
 }
 
 .navbar__mobile-links {
