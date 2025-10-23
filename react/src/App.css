@@ -5,9 +5,7 @@
 }
 
 .app-content {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 3.5rem 1.5rem;
+  padding: 2rem 0; /* 由容器三列负责左右内边距，这里只做上下留白 */
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -33,7 +31,7 @@
   .app-content {
     align-items: flex-start;
     text-align: left;
-    padding: 6rem 1.5rem;
+    padding: 3rem 0;
     gap: 1.25rem;
   }
 
