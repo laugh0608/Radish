@@ -2,7 +2,7 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 1rem;
+  padding: 0.9rem 1rem;
   box-shadow: 0 4px 10px rgba(2, 6, 23, 0.06);
   color: var(--text);
 }
@@ -11,11 +11,31 @@
   margin-top: 1rem;
 }
 
-.sidebar-card p {
-  margin: 0;
+.sidebar-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+
+.sidebar-card__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+}
+
+.sidebar-card__icon svg {
+  width: 18px;
+  height: 18px;
+  color: var(--muted-text);
+}
+
+.sidebar-card__body {
+  font-size: 0.95rem;
   color: var(--muted-text);
   line-height: 1.6;
-  font-size: 0.95rem;
 }
 
 .sidebar-card img {
@@ -25,3 +45,21 @@
   border-radius: 8px;
 }
 
+/* ghost 按钮（用于操作区或内容按钮组） */
+.sidebar-card .btn-ghost {
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.sidebar-card .btn-ghost:hover {
+  background: color-mix(in oklab, var(--card), var(--text) 6%);
+}
+
+.sidebar-card .btn-ghost + .btn-ghost { margin-left: 0.5rem; }

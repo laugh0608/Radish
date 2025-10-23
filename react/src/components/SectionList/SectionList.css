@@ -1,0 +1,27 @@
+.section-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0;
+}
+
+.section-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.25rem;
+  border-bottom: 1px dashed var(--border);
+}
+
+.section-list__item:last-child {
+  border-bottom: none;
+}
+
+.section-list__label {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.section-list__count {
+  color: var(--muted-text);
+  font-size: 0.85rem;
+}
