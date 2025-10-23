@@ -29,6 +29,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     'sections.news': 'News',
     'sections.tech': 'Tech',
     'sections.share': 'Sharing',
+    'posts.placeholderTitle': 'Sample post title',
+    'posts.placeholderMeta': 'Author · 5 min read',
   },
   'zh-CN': {
     'nav.docs': '文档',
@@ -56,6 +58,8 @@ export const messages: Record<Locale, Record<string, string>> = {
     'sections.news': '动态',
     'sections.tech': '技术',
     'sections.share': '分享',
+    'posts.placeholderTitle': '示例帖子标题',
+    'posts.placeholderMeta': '作者 · 5 分钟阅读',
   },
 }
 

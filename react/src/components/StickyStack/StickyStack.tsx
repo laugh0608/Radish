@@ -1,4 +1,4 @@
-import { Children, cloneElement, isValidElement, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Children, cloneElement, isValidElement, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 
 type StickyChildProps = { sticky?: boolean; stickyTop?: number }
 
@@ -68,6 +68,17 @@ const StickyStack = ({ children, gap, baseOffset = 12 }: Props) => {
       window.removeEventListener('orientationchange', onResize)
     }
   }, [items])
+
+  // ResizeObserver：当任一 sticky 卡片尺寸变化（如图片加载）时，重新测量
+  useEffect(() => {
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => {
+      requestAnimationFrame(measure)
+    })
+    refs.current.forEach((n) => n && ro.observe(n))
+    return () => ro.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, gap, baseOffset])
 
   return (
     <>

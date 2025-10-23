@@ -5,6 +5,7 @@ import NavBar from './components/NavBar'
 import ThreeColumnLayout from './components/ThreeColumnLayout'
 import SidebarCard from './components/SidebarCard'
 import SectionList from './components/SectionList'
+import PostList from './components/PostList'
 import RadishAcg from './assets/RadishAcg.png'
 import StickyStack from './components/StickyStack'
 // 引入 i18n Hook 以读取文案
@@ -72,6 +73,7 @@ function App() {
         <main className="app-content">
           <h1>{t('app.welcome')}</h1>
           <p>{t('app.getStarted')}</p>
+          <PostList count={28} />
         </main>
       </ThreeColumnLayout>
     </>
