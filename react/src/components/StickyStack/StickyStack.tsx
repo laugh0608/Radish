@@ -91,9 +91,10 @@ const StickyStack = ({ children, gap, baseOffset = 12 }: Props) => {
         const extraProps: Partial<StickyChildProps> & { ref?: any; style?: React.CSSProperties } = {}
         if (sticky) {
           extraProps.stickyTop = offsets[i]
-          // 设置 z-index 使后续卡片在上层（更符合堆叠感）
-          const z = 10 + i // 简单递增即可
-          extraProps.style = { ['--sticky-z' as any]: z } as React.CSSProperties
+          // z-index：让上面的卡片层级更高（先出现的卡片层级最高）
+          const stickyOrder = items.filter((c) => isValidElement(c) && (c.props as StickyChildProps).sticky).indexOf(child)
+          const z = 100 - stickyOrder
+          extraProps.style = { zIndex: z } as React.CSSProperties
         }
         extraProps.ref = refCb
         return cloneElement(child, extraProps)
