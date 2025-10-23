@@ -28,17 +28,27 @@ const StickyStack = ({ children, gap, baseOffset = 12 }: Props) => {
     const newOffsets: number[] = []
     let acc = base
 
-    items.forEach((child, i) => {
-      const node = refs.current[i]
-      const isSticky = isValidElement(child) && (child.props as StickyChildProps).sticky
-      if (!isSticky) return
+    // 找到所有 sticky 索引，便于向后看间距
+    const stickyIdx: number[] = []
+    items.forEach((c, i) => {
+      if (isValidElement(c) && (c.props as StickyChildProps).sticky) stickyIdx.push(i)
+    })
 
-      let mt = node ? toPx(getComputedStyle(node).marginTop) : 16
-      if (typeof gap === 'number') mt = gap
-      acc += mt
+    stickyIdx.forEach((i, order) => {
+      const node = refs.current[i]
+      // 当前卡片吸附位置 = 已累计高度
       newOffsets[i] = Math.round(acc)
       const h = node ? node.offsetHeight : 0
-      acc += h
+
+      // 与下一张 sticky 卡片之间的间距
+      let g = typeof gap === 'number' ? gap : 0
+      if (g === 0) {
+        // 使用下一张卡片自身的 margin-top 作为间隙（若存在）
+        const nextIdx = stickyIdx[order + 1]
+        const nextNode = nextIdx !== undefined ? refs.current[nextIdx] : null
+        g = nextNode ? toPx(getComputedStyle(nextNode).marginTop) : 0
+      }
+      acc += h + g
     })
 
     setOffsets(newOffsets)
@@ -67,8 +77,13 @@ const StickyStack = ({ children, gap, baseOffset = 12 }: Props) => {
         const refCb = (node: HTMLElement | null) => {
           refs.current[i] = node
         }
-        const extraProps: Partial<StickyChildProps> & { ref?: any } = {}
-        if (sticky) extraProps.stickyTop = offsets[i]
+        const extraProps: Partial<StickyChildProps> & { ref?: any; style?: React.CSSProperties } = {}
+        if (sticky) {
+          extraProps.stickyTop = offsets[i]
+          // 设置 z-index 使后续卡片在上层（更符合堆叠感）
+          const z = 10 + i // 简单递增即可
+          extraProps.style = { ['--sticky-z' as any]: z } as React.CSSProperties
+        }
         extraProps.ref = refCb
         return cloneElement(child, extraProps)
       })}
