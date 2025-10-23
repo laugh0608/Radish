@@ -6,6 +6,7 @@ import ThreeColumnLayout from './components/ThreeColumnLayout'
 import SidebarCard from './components/SidebarCard'
 import SectionList from './components/SectionList'
 import RadishAcg from './assets/RadishAcg.png'
+import StickyStack from './components/StickyStack'
 // 引入 i18n Hook 以读取文案
 import { useI18n } from './lib/i18n/useI18n'
 
@@ -55,17 +56,17 @@ function App() {
           </div>
         }
         right={
-          <div>
+          <StickyStack>
             <SidebarCard title={t('layout.right.illustration')} sticky>
               <img src={RadishAcg} alt="Radish illustration" />
             </SidebarCard>
-            <SidebarCard title={t('layout.right.placeholderA')}>
+            <SidebarCard title={t('layout.right.placeholderA')} sticky>
               <p>{t('layout.right.placeholderA')} - Lorem ipsum dolor sit amet.</p>
             </SidebarCard>
-            <SidebarCard title={t('layout.right.placeholderB')}>
+            <SidebarCard title={t('layout.right.placeholderB')} sticky>
               <p>{t('layout.right.placeholderB')} - Vivamus sagittis lacus vel augue.</p>
             </SidebarCard>
-          </div>
+          </StickyStack>
         }
       >
         <main className="app-content">
