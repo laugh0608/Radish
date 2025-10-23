@@ -7,13 +7,16 @@ import './index.css'
 import App from './App.tsx'
 // 本地化提供者（包裹应用以启用翻译能力）
 import { I18nProvider } from './lib/i18n/I18nProvider'
+import { ThemeProvider } from './lib/theme/ThemeProvider'
 
 // 创建并渲染应用到 index.html 中 id 为 root 的容器
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    {/* 全局本地化上下文 */}
-    <I18nProvider>
-      <App />
-    </I18nProvider>
+    {/* 全局主题与本地化上下文 */}
+    <ThemeProvider>
+      <I18nProvider>
+        <App />
+      </I18nProvider>
+    </ThemeProvider>
   </StrictMode>,
 )

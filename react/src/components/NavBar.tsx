@@ -5,6 +5,7 @@ import './NavBar.css'
 // i18n：翻译与语言切换
 import { useI18n } from '../lib/i18n/useI18n'
 import LanguageSwitcher from './LanguageSwitcher'
+import ThemeToggle from './ThemeToggle'
 
 // 导航项：仅保存 key，展示时通过 t(key) 翻译
 const navItems = [
@@ -54,6 +55,8 @@ const NavBar = () => {
           <button className="navbar__button navbar__button--solid" type="button">
             {t('actions.signIn')}
           </button>
+          {/* 主题切换 */}
+          <ThemeToggle />
           {/* 语言切换器 */}
           <LanguageSwitcher />
         </div>
@@ -86,6 +89,8 @@ const NavBar = () => {
           <button className="navbar__button navbar__button--solid" type="button" onClick={closeMenu}>
             {t('actions.signIn')}
           </button>
+          {/* 移动端主题切换 */}
+          <ThemeToggle />
           {/* 移动端同样提供语言切换 */}
           <LanguageSwitcher />
         </div>

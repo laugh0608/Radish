@@ -1,6 +1,6 @@
 .navbar {
-  background-color: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
+  background-color: var(--card);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -21,7 +21,7 @@
   align-items: center;
   gap: 0.75rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--text);
   font-size: 1.125rem;
 }
 
@@ -42,13 +42,13 @@
 }
 
 .navbar__links a {
-  color: #475569;
+  color: var(--muted-text);
   font-weight: 500;
   transition: color 150ms ease;
 }
 
 .navbar__links a:hover {
-  color: #2563eb;
+  color: var(--primary);
 }
 
 .navbar__actions {
@@ -67,25 +67,25 @@
 }
 
 .navbar__button--outline {
-  border: 1px solid #0f172a;
+  border: 1px solid var(--text);
   background-color: transparent;
-  color: #0f172a;
+  color: var(--text);
 }
 
 .navbar__button--outline:hover {
-  background-color: #0f172a;
-  color: #ffffff;
+  background-color: var(--text);
+  color: var(--bg);
 }
 
 .navbar__button--solid {
-  border: 1px solid #2563eb;
-  background-color: #2563eb;
+  border: 1px solid var(--primary);
+  background-color: var(--primary);
   color: #ffffff;
 }
 
 .navbar__button--solid:hover {
-  background-color: #1d4ed8;
-  border-color: #1d4ed8;
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .navbar__toggle {
@@ -104,15 +104,15 @@
   display: block;
   width: 22px;
   height: 2px;
-  background-color: #0f172a;
+  background-color: var(--text);
   transition: transform 200ms ease, opacity 200ms ease;
 }
 
 .navbar__mobile-panel {
   max-height: 0;
   overflow: hidden;
-  background-color: #ffffff;
-  border-top: 1px solid #e5e7eb;
+  background-color: var(--card);
+  border-top: 1px solid var(--border);
   transition: max-height 200ms ease;
 }
 
@@ -129,7 +129,7 @@
 }
 
 .navbar__mobile-links a {
-  color: #0f172a;
+  color: var(--text);
   font-weight: 600;
 }
 

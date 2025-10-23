@@ -11,8 +11,11 @@ export const messages: Record<Locale, Record<string, string>> = {
     'actions.signIn': 'Sign in',
     'aria.toggleNav': 'Toggle navigation menu',
     'aria.langSwitcher': 'Switch language',
+    'aria.themeToggle': 'Toggle theme',
     'lang.zhCN': '中文',
     'lang.en': 'English',
+    'theme.light': 'Light',
+    'theme.dark': 'Dark',
     'app.welcome': 'Welcome to Radish',
     'app.getStarted': 'Start building your React app.',
   },
@@ -24,8 +27,11 @@ export const messages: Record<Locale, Record<string, string>> = {
     'actions.signIn': '登录',
     'aria.toggleNav': '切换导航菜单',
     'aria.langSwitcher': '切换语言',
+    'aria.themeToggle': '切换主题',
     'lang.zhCN': '中文',
     'lang.en': '英文',
+    'theme.light': '浅色',
+    'theme.dark': '深色',
     'app.welcome': '欢迎来到 Radish',
     'app.getStarted': '开始构建你的 React 应用。',
   },
@@ -33,4 +39,3 @@ export const messages: Record<Locale, Record<string, string>> = {
 
 // 支持的语言列表（用于校验与 UI 切换）
 export const SUPPORTED_LOCALES: Locale[] = ['en', 'zh-CN']
-
