@@ -416,7 +416,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         app.UseAbpSerilogEnrichers();
         // app.UseHttpsRedirection(); // 配置 HTTP 重定向中间件，强制使用 HTTPS
 
-        // 保护 Swagger/Scalar 文档页：未登录则触发 OIDC 登录
+        // 保护 Swagger/Scalar 文档页：未登录则触发登录（使用 Cookie 方案）
         app.Use(async (ctx, next) =>
         {
             var path = ctx.Request.Path;
@@ -424,7 +424,8 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
             {
                 if (!(ctx.User?.Identity?.IsAuthenticated ?? false))
                 {
-                    await ctx.ChallengeAsync();
+                    // 指定使用 Identity.Application（Cookie）触发交互式登录，避免返回 401 导致前端解析出错
+                    await ctx.ChallengeAsync("Identity.Application");
                     return;
                 }
             }
