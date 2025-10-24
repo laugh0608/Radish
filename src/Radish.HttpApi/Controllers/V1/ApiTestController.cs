@@ -1,11 +1,13 @@
 using System;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc;
 
 namespace Radish.Controllers.V1;
 
 [ApiController]
+[Authorize] // 允许 Cookie 或 Bearer（Host 已配置转发）
 [ApiVersion(1)]
 [ApiVersion(2)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]

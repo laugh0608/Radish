@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -414,6 +416,22 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         app.UseAbpSerilogEnrichers();
         // app.UseHttpsRedirection(); // 配置 HTTP 重定向中间件，强制使用 HTTPS
 
+        // 保护 Swagger/Scalar 文档页：未登录则触发 OIDC 登录
+        app.Use(async (ctx, next) =>
+        {
+            var path = ctx.Request.Path;
+            if (path.StartsWithSegments("/swagger") || path.StartsWithSegments("/scalar"))
+            {
+                if (!(ctx.User?.Identity?.IsAuthenticated ?? false))
+                {
+                    await ctx.ChallengeAsync();
+                    return;
+                }
+            }
+
+            await next();
+        });
+
         #region Swagger 配置
 
         app.UseSwagger();
@@ -510,7 +528,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 options.AddDocument(description.GroupName.ToUpperInvariant(), description.GroupName.ToUpperInvariant(),
                     $"swagger/{description.GroupName}/swagger.json");
             }
-        });
+        }).RequireAuthorization();
 
         #endregion
 
