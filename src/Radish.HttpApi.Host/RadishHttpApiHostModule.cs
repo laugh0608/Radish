@@ -184,6 +184,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 // add a custom operation filter which sets default values
                 options.OperationFilter<SwaggerDefaultValues>();
                 options.CustomSchemaIds(type => type.FullName);
+                options.DocumentFilter<Radish.Extensions.Swagger.OnlyProjectApisDocumentFilter>();
                 // options.SwaggerDoc("v1", new OpenApiInfo { Title = "Radish API", Version = "v1" });
                 // options.DocInclusionPredicate((docName, description) => true); // 这个配置已经不兼容了，不能开，否则报错
                 // options.HideAbpEndpoints(); // 隐藏 ABP 的默认端点，这个不要用，会隐藏所有 Controller 的 API 节点
