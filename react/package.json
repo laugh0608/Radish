@@ -8,6 +8,11 @@
     "start": "node ./script/start.js",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "tsc -b --pretty false",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run lint && npm run typecheck",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -26,6 +31,7 @@
     "globals": "^16.4.0",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.45.0",
+    "prettier": "^3.3.3",
     "vite": "npm:rolldown-vite@7.1.14"
   },
   "overrides": {
