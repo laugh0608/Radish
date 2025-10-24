@@ -2,6 +2,13 @@
 
 ## 第一阶段
 
+### 2025.10.24
+
+- feat(config): 按环境加载 .env，抽离敏感项并提供示例文件（Host/DbMigrator 支持 .env.development 与 .env.product，忽略本地 .env.development）。
+- fix(swagger): 未登录访问 /swagger 时使用 Cookie 挑战，避免回调 HTML 导致 YAML 解析错误；允许已登录会话访问 Swagger，修正 Swagger/Scalar 客户端 RootUrl。
+- docs(swagger): 保留 OIDC 所需的 /connect 路径并隐藏不必要的 ABP Schemas，对文档仅保留项目 API，隐藏基础设施端点。
+- chore(frontend): CI 严格安装策略与贡献者设置收尾。
+
 ### 2025.10.20
 
 refactor: 将react项目从js重构为ts
