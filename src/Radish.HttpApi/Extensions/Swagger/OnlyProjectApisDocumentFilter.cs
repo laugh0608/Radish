@@ -22,8 +22,7 @@ public class OnlyProjectApisDocumentFilter : IDocumentFilter
         "/api/tenant-management",
         "/api/feature-management",
         "/api/permission-management",
-        "/api/setting-management",
-        "/connect" // OpenIddict/OIDC 端点
+        "/api/setting-management"
     ];
 
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
@@ -58,6 +57,89 @@ public class OnlyProjectApisDocumentFilter : IDocumentFilter
                 swaggerDoc.Tags.Remove(tag);
             }
         }
+
+        // 隐藏未被引用的 ABP Schemas（保守策略：仅移除未被任何操作引用的 ABP 类型）
+        if (swaggerDoc.Components?.Schemas is { Count: > 0 })
+        {
+            var referenced = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
+
+            void Collect(OpenApiSchema? schema)
+            {
+                if (schema is null) return;
+                if (schema.Reference?.Id is { } id)
+                {
+                    // 仅在 components/schemas 下的引用才计入（更安全）
+                    if (schema.Reference.Type == ReferenceType.Schema)
+                    {
+                        if (referenced.Add(id))
+                        {
+                            // 递归展开：AllOf/AnyOf/OneOf/Items/AdditionalProperties/Properties
+                            foreach (var s in schema.AllOf) Collect(s);
+                            foreach (var s in schema.AnyOf) Collect(s);
+                            foreach (var s in schema.OneOf) Collect(s);
+                            if (schema.Items != null) Collect(schema.Items);
+                            if (schema.AdditionalProperties != null) Collect(schema.AdditionalProperties);
+                            foreach (var p in schema.Properties.Values) Collect(p);
+                        }
+                    }
+                    return;
+                }
+
+                foreach (var s in schema.AllOf) Collect(s);
+                foreach (var s in schema.AnyOf) Collect(s);
+                foreach (var s in schema.OneOf) Collect(s);
+                if (schema.Items != null) Collect(schema.Items);
+                if (schema.AdditionalProperties != null) Collect(schema.AdditionalProperties);
+                foreach (var p in schema.Properties.Values) Collect(p);
+            }
+
+            foreach (var path in swaggerDoc.Paths.Values)
+            {
+                foreach (var op in path.Operations.Values)
+                {
+                    // 请求体
+                    var rb = op.RequestBody;
+                    if (rb?.Content != null)
+                    {
+                        foreach (var c in rb.Content.Values)
+                        {
+                            Collect(c.Schema);
+                        }
+                    }
+
+                    // 响应体
+                    foreach (var resp in op.Responses.Values)
+                    {
+                        if (resp.Content == null) continue;
+                        foreach (var c in resp.Content.Values)
+                        {
+                            Collect(c.Schema);
+                        }
+                    }
+
+                    // 参数（尽量完整，但通常为原生类型）
+                    if (op.Parameters != null)
+                    {
+                        foreach (var p in op.Parameters)
+                        {
+                            Collect(p.Schema);
+                        }
+                    }
+                }
+            }
+
+            static bool IsAbpSchema(string name)
+                => name.StartsWith("Volo.Abp", StringComparison.Ordinal);
+
+            var removeSchemas = swaggerDoc.Components.Schemas
+                .Where(kv => IsAbpSchema(kv.Key) && !referenced.Contains(kv.Key))
+                .Select(kv => kv.Key)
+                .ToList();
+
+            foreach (var key in removeSchemas)
+            {
+                swaggerDoc.Components.Schemas.Remove(key);
+            }
+        }
     }
 }
-
