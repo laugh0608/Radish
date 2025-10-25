@@ -1,6 +1,8 @@
 // I18n 上下文定义：仅导出类型与 Context（无组件）
 import { createContext } from 'react'
-import type { Locale } from './messages'
+
+// 与后端 ABP 资源对齐：使用 zh-Hans / en
+export type Locale = 'en' | 'zh-Hans'
 
 export type I18nCtx = {
   // 当前语言标识
@@ -12,4 +14,3 @@ export type I18nCtx = {
 }
 
 export const I18nContext = createContext<I18nCtx | null>(null)
-

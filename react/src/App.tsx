@@ -74,8 +74,8 @@ function App() {
         }
       >
         <main className="app-content">
-          <h1>{t('app.welcome')}</h1>
-          <p>{t('app.getStarted')}</p>
+          <h1>{t('::Welcome')}</h1>
+          <p>{t('::GetStarted')}</p>
           <PostList count={28} />
         </main>
       </ThreeColumnLayout>

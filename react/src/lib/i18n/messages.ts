@@ -1,5 +1,6 @@
 // 本地化文案表：仅含简体中文与英语两种语言
-export type Locale = 'en' | 'zh-CN'
+// 本地兜底字典：用于 ABP 资源未覆盖时的回退
+export type Locale = 'en' | 'zh-Hans'
 
 // 重要说明：键名采用命名空间前缀，便于分组管理
 export const messages: Record<Locale, Record<string, string>> = {
@@ -18,6 +19,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     'lang.en': 'English',
     'theme.light': 'Light',
     'theme.dark': 'Dark',
+    // 保留旧键，供未迁移处使用
     'app.welcome': 'Welcome to Radish',
     'app.getStarted': 'Start building your React app.',
     'layout.left.actions': 'Quick actions',
@@ -48,7 +50,7 @@ export const messages: Record<Locale, Record<string, string>> = {
     'menu.mute': 'Mute notifications',
     'menu.clear': 'Clear',
   },
-  'zh-CN': {
+  'zh-Hans': {
     'nav.docs': '文档',
     'nav.features': '特性',
     'nav.community': '社区',
@@ -96,4 +98,4 @@ export const messages: Record<Locale, Record<string, string>> = {
 }
 
 // 支持的语言列表（用于校验与 UI 切换）
-export const SUPPORTED_LOCALES: Locale[] = ['en', 'zh-CN']
+export const SUPPORTED_LOCALES: Locale[] = ['en', 'zh-Hans']

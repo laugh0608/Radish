@@ -1,20 +1,17 @@
 // 语言切换器（图标按钮 + 下拉菜单）
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../lib/i18n/useI18n'
-import type { Locale } from '../../lib/i18n/messages'
+import type { Locale } from '../../lib/i18n/I18nContext'
 import './LanguageSwitcher.css'
 
 type LangOption = { value: Locale; labelKey: string }
 
 const OPTIONS: LangOption[] = [
-  { value: 'zh-CN', labelKey: 'lang.zhCN' },
+  { value: 'zh-Hans', labelKey: 'lang.zhCN' },
   { value: 'en', labelKey: 'lang.en' },
 ]
 
-const localeBadge: Record<Locale, string> = {
-  'zh-CN': '中',
-  en: 'EN',
-}
+const localeBadge: Record<Locale, string> = { 'zh-Hans': '中', en: 'EN' }
 
 const LanguageSwitcher = () => {
   const { locale, setLocale, t } = useI18n()

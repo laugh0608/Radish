@@ -1,54 +1,77 @@
-// 轻量本地化 Provider：提供 t(key) 翻译与语言切换
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { messages, SUPPORTED_LOCALES, type Locale } from './messages'
-import { I18nContext } from './I18nContext'
-
-// Ctx 类型定义移动至 I18nContext.ts，便于分离导出
+// 基于 ABP 的本地化 Provider：优先读取后端资源，缺失时回退到本地字典
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { fetchAbpLocalization } from './abpApi'
+import { I18nContext, type Locale } from './I18nContext'
+import { messages as fallbackMessages } from './messages'
 
 const STORAGE_KEY = 'app.locale'
+const DEFAULT_RESOURCE = 'Radish'
 
-// 根据浏览器默认值推断语言（仅首次）
 function resolveInitialLocale(): Locale {
-  // 尝试从 localStorage 恢复
   const stored = typeof window !== 'undefined' ? (localStorage.getItem(STORAGE_KEY) as Locale | null) : null
-  if (stored && SUPPORTED_LOCALES.includes(stored)) return stored
-
-  // 根据浏览器语言猜测
+  if (stored === 'en' || stored === 'zh-Hans') return stored
   const nav = typeof navigator !== 'undefined' ? navigator.language : 'en'
-  // 简单匹配到支持的语言
-  const guess: Locale = nav.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en'
-  return guess
+  return nav.toLowerCase().startsWith('zh') ? 'zh-Hans' : 'en'
 }
+
+type ResourceMap = Record<string, Record<string, string>>
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  // 语言状态：默认从缓存或浏览器语言推断
   const [locale, setLocaleState] = useState<Locale>(resolveInitialLocale())
+  const [resources, setResources] = useState<ResourceMap>({})
+  const cache = useRef<Record<string, ResourceMap>>({})
+  const [ready, setReady] = useState(false)
 
-  // 写入 localStorage 以便记住选择
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, locale)
-    } catch {
-      // 忽略持久化失败
+  // 拉取 ABP 资源（按语言缓存）
+  const load = useCallback(async (l: Locale) => {
+    setReady(false)
+    if (cache.current[l]) {
+      setResources(cache.current[l])
+      setReady(true)
+      return
     }
-  }, [locale])
-
-  const setLocale = useCallback((l: Locale) => {
-    if (SUPPORTED_LOCALES.includes(l)) setLocaleState(l)
+    try {
+      const loc = await fetchAbpLocalization(l)
+      const values = loc.values || {}
+      cache.current[l] = values
+      setResources(values)
+    } catch {
+      // 拉取失败时回退为空（由本地字典兜底）
+      setResources({})
+    } finally {
+      setReady(true)
+    }
   }, [])
 
-  // 翻译函数：按当前语言查找
-  const t = useCallback(
-    (key: string) => {
-      const dict = messages[locale]
-      return dict[key] ?? key
-    },
-    [locale],
-  )
+  useEffect(() => {
+    load(locale)
+    try { localStorage.setItem(STORAGE_KEY, locale) } catch {}
+  }, [locale, load])
+
+  const setLocale = useCallback((l: Locale) => {
+    if (l !== 'en' && l !== 'zh-Hans') return
+    setLocaleState(l)
+  }, [])
+
+  const t = useCallback((key: string) => {
+    // 支持 `Resource::Key` 与 `::Key`（默认 Radish）
+    let res = DEFAULT_RESOURCE
+    let realKey = key
+    const idx = key.indexOf('::')
+    if (idx >= 0) {
+      const left = key.slice(0, idx)
+      realKey = key.slice(idx + 2)
+      if (left) res = left
+    }
+    const dict = resources[res]
+    const fromServer = dict?.[realKey]
+    if (fromServer !== undefined) return fromServer
+
+    // 本地兜底（保持现有 UI 正常）
+    const local = fallbackMessages[locale as 'en' | 'zh-Hans'] as Record<string, string>
+    return local?.[key] ?? realKey
+  }, [resources, locale])
 
   const value = useMemo(() => ({ locale, setLocale, t }), [locale, setLocale, t])
-
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>
+  return <I18nContext.Provider value={value}>{ready ? children : null}</I18nContext.Provider>
 }
-
-// 注意：Hook 已拆分至独立文件以满足 react-refresh 规则

@@ -1,17 +1,16 @@
-# Internationalization Guide and Dev Practices (Radish React)
+# Internationalization Guide (Radish React)
 
-This project ships a lightweight, custom i18n setup (no external lib) powered by `I18nProvider`, `useI18n`, and `messages.ts`. It supports translation, runtime locale switching, and persistence via LocalStorage.
+The React app now aligns with ABP server-side localization. It fetches resources from `/api/abp/application-configuration?includeLocalizationResources=true` and exposes them via `I18nProvider`/`useI18n`. The local `messages.ts` serves as a fallback only.
 
-- Provider: `src/lib/i18n/I18nProvider.tsx`
+- Provider: `src/lib/i18n/I18nProvider.tsx` (fetches ABP resources)
 - Hook: `src/lib/i18n/useI18n.ts`
-- Dictionaries and locale type: `src/lib/i18n/messages.ts`
-- Context types: `src/lib/i18n/I18nContext.ts`
+- Context types: `src/lib/i18n/I18nContext.ts` (locales: `en`, `zh-Hans`)
+- Fallback dictionary: `src/lib/i18n/messages.ts`
 - Mounted at entry: `src/main.tsx`
 
 ## Quick Start
-1. Ensure the app is wrapped with `I18nProvider` (already configured) in `src/main.tsx`.
+1. Set backend base URL via Vite env: `VITE_API_BASE_URL=https://localhost:44342`.
 2. Use `useI18n()` inside components to read translations or switch locale.
-3. Maintain translations and supported locales in `messages.ts`.
 
 Example (already present):
 
@@ -23,8 +22,8 @@ function App() {
   const { t } = useI18n()
   return (
     <>
-      <h1>{t('app.welcome')}</h1>
-      <p>{t('app.getStarted')}</p>
+      <h1>{t('::Welcome')}</h1>
+      <p>{t('::GetStarted')}</p>
     </>
   )
 }
@@ -42,19 +41,22 @@ const { locale, setLocale, t } = useI18n()
 ```
 
 Provider behavior:
-- Guesses initial locale from browser language (`zh*` → `zh-CN`, otherwise `en`).
+- Guesses initial locale from browser (`zh*` → `zh-Hans`, else `en`).
 - Persists selection in `localStorage('app.locale')`.
-- Falls back to the key when a translation is missing (handy during development).
+- First tries ABP resources; if missing, falls back to local dictionary; else returns the key (to expose gaps).
 
 ## Adding or Updating Messages
-In `src/lib/i18n/messages.ts`:
-- Use namespaced keys: `'module.subdomain.meaning'`, e.g., `app.welcome`, `nav.docs`, `actions.signIn`.
-- Keep key sets identical across locales (provide values for all languages).
+Prefer adding UI copies in backend resources:
+- `src/Radish.Domain.Shared/Localization/Radish/en.json`
+- `src/Radish.Domain.Shared/Localization/Radish/zh-Hans.json`
+
+For temporary UI-only strings, you may still use the fallback dictionary `src/lib/i18n/messages.ts`.
 
 ```ts
+// Temporary fallback dictionary example (if needed)
 export const messages = {
-  en: { 'feature.title': 'Feature', /* ... */ },
-  'zh-CN': { 'feature.title': '功能', /* ... */ },
+  en: { 'feature.title': 'Feature' },
+  'zh-Hans': { 'feature.title': '功能' },
 }
 ```
 
@@ -65,23 +67,23 @@ Recommended namespaces:
 - `app.*` page-level copies
 
 ## Adding a New Locale
-1. Extend the `Locale` union and add a dictionary in `messages.ts`:
+1. Register new language in backend `RadishDomainSharedModule` and add JSON resources.
 
 ```ts
-export type Locale = 'en' | 'zh-CN' | 'ja'
+export type Locale = 'en' | 'zh-Hans' | 'ja'
 export const messages = {
   en: { /* ... */ },
   'zh-CN': { /* ... */ },
   ja: { /* ... */ },
 }
-export const SUPPORTED_LOCALES: Locale[] = ['en', 'zh-CN', 'ja']
+export const SUPPORTED_LOCALES: Locale[] = ['en', 'zh-Hans', 'ja']
 ```
 
 2. Expose it in the switcher by updating options in `src/components/LanguageSwitcher.tsx`:
 
 ```ts
 const options = [
-  { value: 'zh-CN', labelKey: 'lang.zhCN' },
+  { value: 'zh-Hans', labelKey: 'lang.zhCN' },
   { value: 'en', labelKey: 'lang.en' },
   { value: 'ja', labelKey: 'lang.ja' },
 ]
@@ -130,4 +132,3 @@ Local commands
 - `npm run build` produce production bundle to `dist/`.
 - `npm run preview` serve the latest build.
 - `npm run lint` run ESLint and fix issues.
-

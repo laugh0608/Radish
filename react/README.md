@@ -76,3 +76,7 @@ export default defineConfig([
 
 - I18n & Guidelines (中文): `docs/i18n-and-guidelines.zh-CN.md`
 - I18n & Guidelines (English): `docs/i18n-and-guidelines.en.md`
+
+ABP integration
+- Set `VITE_API_BASE_URL` to your backend (e.g., `https://localhost:44342`).
+- The app fetches localization via `/api/abp/application-configuration?includeLocalizationResources=true` and exposes `t()` through an I18n provider.
