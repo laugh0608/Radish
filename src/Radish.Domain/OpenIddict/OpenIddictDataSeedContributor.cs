@@ -169,8 +169,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, },
                 scopes: commonScopes,
                 redirectUris: new List<string> { $"{swaggerRootUrl}/swagger/oauth2-redirect.html" },
-                // clientUri: swaggerRootUrl.EnsureEndsWith('/') + "swagger", // 可选在 DbMigrator 的 appsettings 中配置
-                clientUri: swaggerRootUrl.EnsureEndsWith('/'),
+                // 将 ClientUri 指向具体文档页，避免首页卡片点击仅回到根路径导致的“原地刷新”
+                clientUri: swaggerRootUrl.EnsureEndsWith('/') + "swagger",
                 logoUri: "/images/clients/swagger.svg"
             );
         }
@@ -196,8 +196,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 scopes: commonScopes,
                 // TODO: $"{scalarRootUrl}/scalar/oauth2-redirect.html" 不知道是干嘛的
                 redirectUris: new List<string> { $"{scalarRootUrl}/scalar/oauth2-redirect.html" },
-                // clientUri: scalarRootUrl.EnsureEndsWith('/') + "scalar", // 可选在 DbMigrator 的 appsettings 中配置
-                clientUri: scalarRootUrl.EnsureEndsWith('/'),
+                // 将 ClientUri 指向具体文档页，避免首页卡片点击仅回到根路径导致的“原地刷新”
+                clientUri: scalarRootUrl.EnsureEndsWith('/') + "scalar",
                 logoUri: "/images/clients/aspnetcore.svg"
             );
         }
@@ -409,6 +409,15 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
             return;
         }
 
+        var requiresUpdate = false;
+
+        // 同步更新 ClientUri（例如为 Swagger/Scalar 写入具体文档页路径）
+        if (!string.Equals(client.ClientUri, application.ClientUri, StringComparison.OrdinalIgnoreCase))
+        {
+            client.ClientUri = application.ClientUri;
+            requiresUpdate = true;
+        }
+
         if (!HasSameRedirectUris(client, application))
         {
             client.RedirectUris =
@@ -417,12 +426,17 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 JsonSerializer.Serialize(
                     application.PostLogoutRedirectUris.Select(q => q.ToString().RemovePostFix("/")));
 
-            await _applicationManager.UpdateAsync(client.ToModel());
+            requiresUpdate = true;
         }
 
         if (!HasSameScopes(client, application))
         {
             client.Permissions = JsonSerializer.Serialize(application.Permissions.Select(q => q.ToString()));
+            requiresUpdate = true;
+        }
+
+        if (requiresUpdate)
+        {
             await _applicationManager.UpdateAsync(client.ToModel());
         }
     }

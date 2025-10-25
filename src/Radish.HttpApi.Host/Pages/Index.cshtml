@@ -97,15 +97,33 @@
                                     {
                                         <abp-column size-md="_4" class="mb-2">
                                             @{
-                                                var target = application.ClientUri;
+                                                // 基础目标地址来自 OpenIddict Application 的 ClientUri
+                                                var target = application.ClientUri?.TrimEnd('/');
+
+                                                // 针对 Swagger/Scalar 的卡片：当未在数据库中显式配置到具体路径时，
+                                                // 将根地址补全为具体文档页，以避免点击后停留在首页导致“原地刷新”。
+                                                // 说明：若已经在数据库将 ClientUri 设置为包含 "/swagger" 或 "/scalar"，下面的补全不会重复追加。
+                                                var clientId = application.ClientId ?? string.Empty;
+                                                if (!string.IsNullOrEmpty(target))
+                                                {
+                                                    if (clientId == "Radish_Swagger" && !target.EndsWith("/swagger", StringComparison.OrdinalIgnoreCase))
+                                                    {
+                                                        target += "/swagger";
+                                                    }
+                                                    else if (clientId == "Radish_Scalar" && !target.EndsWith("/scalar", StringComparison.OrdinalIgnoreCase))
+                                                    {
+                                                        target += "/scalar";
+                                                    }
+                                                }
+
                                                 // 仅当 Host 已登录时才附加 sso=1，触发前端顶层授权复用会话
                                                 // 若 Host 未登录，则不附加，保持应用匿名访问，不强制跳登录
-                                                if (CurrentUser.IsAuthenticated)
+                                                if (CurrentUser.IsAuthenticated && !string.IsNullOrEmpty(target))
                                                 {
-                                                    target += (target?.Contains("?") == true ? "&" : "?") + "sso=1";
+                                                    target += (target!.Contains("?") ? "&" : "?") + "sso=1";
                                                 }
                                             }
-                                            <a href="@target" style="text-decoration:none">
+                                            <a href="@(target ?? "#")" style="text-decoration:none">
                                                 <abp-card>
                                                     <abp-card-body>
                                                         @if (!application.LogoUri.IsNullOrEmpty())
