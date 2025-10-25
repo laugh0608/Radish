@@ -49,6 +49,7 @@
   <ItemGroup>
     <_DocFiles Include="..\Radish.HttpApi\bin\$(Configuration)\$(TargetFramework)\Radish.HttpApi.xml" />
     <_DocFiles Include="..\Radish.Application.Contracts\bin\$(Configuration)\$(TargetFramework)\Radish.Application.Contracts.xml" />
+    <_DocFiles Include="..\Radish.Application\bin\$(Configuration)\$(TargetFramework)\Radish.Application.xml" />
   </ItemGroup>
 
   <Target Name="CopyXmlDocsToOutput" AfterTargets="Build">

@@ -21,11 +21,20 @@ using Volo.Abp.AspNetCore.Mvc;
 
 namespace Radish.Controllers.ConventionalControllers.V1;
 
+/// <summary>
+/// 版本示例接口（V1）。
+/// </summary>
 [ApiController]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 public class ApiVersionController : AbpControllerBase
 {
+    /// <summary>
+    /// 获取当前接口版本（V1）。
+    /// </summary>
+    /// <remarks>
+    /// 用于演示基于路由的 API 版本控制。
+    /// </remarks>
     [HttpGet]
     public IActionResult GetApiVersion()
     {

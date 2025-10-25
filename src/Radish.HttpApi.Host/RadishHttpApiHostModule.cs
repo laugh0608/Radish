@@ -191,6 +191,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 var xmlTypes = new[]
                 {
                     typeof(RadishHttpApiModule),
+                    typeof(RadishApplicationModule),
                     typeof(RadishApplicationContractsModule),
                     typeof(RadishHttpApiHostModule)
                 };
