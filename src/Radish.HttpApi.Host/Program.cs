@@ -124,7 +124,8 @@ internal static class DotEnv
         {
             if (string.IsNullOrWhiteSpace(r)) return;
             try { r = Path.GetFullPath(r); } catch { return; }
-            if (!roots.Contains(r, StringComparer.OrdinalIgnoreCase)) roots.Add(r);
+            // if (!roots.Contains(r, StringComparer.OrdinalIgnoreCase)) roots.Add(r);
+            if (!roots.Exists(x => string.Equals(x, r, StringComparison.OrdinalIgnoreCase))) roots.Add(r);
         }
 
         add(root);
