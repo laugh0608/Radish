@@ -44,6 +44,7 @@ using Volo.Abp.Studio.Client.AspNetCore;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
+using Serilog;
 
 namespace Radish;
 
@@ -405,6 +406,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
+        var configuration = context.ServiceProvider.GetRequiredService<IConfiguration>();
 
         app.UseForwardedHeaders();
 
@@ -429,6 +431,20 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         {
             MinimumSameSitePolicy = SameSiteMode.Unspecified
         });
+        // 启用 CORS 前打印当前允许的来源，便于排查跨域问题
+        try
+        {
+            var origins = (configuration["App:CorsOrigins"] ?? string.Empty)
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(o => o.Trim().TrimEnd('/'))
+                .ToArray();
+            if (origins.Length > 0)
+                Log.Information("CORS allowed origins: {Origins}", string.Join(", ", origins));
+            else
+                Log.Warning("CORS allowed origins is empty. Browser calls may be blocked.");
+        }
+        catch { /* no-op */ }
+
         app.UseCors(); // 允许跨域请求，必须在 UseRouting 和 UseAuthentication 之间
         app.UseAuthentication(); // 配置身份认证和权限验证中间件，必须放在 UseRouting 和 UseEndpoints 之间
         app.UseAbpOpenIddictValidation();
