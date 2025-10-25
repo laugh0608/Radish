@@ -70,7 +70,19 @@ async function bootstrap() {
 
   const server = await createServer(finalConfig)
   await server.listen()
-  server.printUrls()
+  // 自定义输出：仅打印首选本地地址，避免多 host 造成困惑
+  const urls = server.resolvedUrls
+  if (urls && (urls.local?.length || urls.network?.length)) {
+    const locals = urls.local ?? []
+    const primary =
+      locals.find((u) => u.includes('https://localhost')) ||
+      locals.find((u) => u.includes('http://localhost')) ||
+      locals[0] ||
+      (urls.network ?? [])[0]
+    if (primary) console.log(`\n  ➜  Local: ${primary}\n`)
+  } else {
+    server.printUrls()
+  }
   server.bindCLIShortcuts({ print: true })
 }
 
