@@ -15,6 +15,7 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { environment } from '../environments/environment';
 import { APP_ROUTES } from './app.routes';
+import { AUTO_LOGIN_PROVIDER } from './auth.auto-login';
 import { APP_ROUTE_PROVIDER } from './route.provider';
 
 export const appConfig: ApplicationConfig = {
@@ -38,5 +39,6 @@ export const appConfig: ApplicationConfig = {
     provideAccountConfig(),
     provideTenantManagementConfig(),
     provideAbpThemeShared(),
+    ...AUTO_LOGIN_PROVIDER,
   ]
 };
