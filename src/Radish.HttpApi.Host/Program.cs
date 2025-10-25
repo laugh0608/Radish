@@ -15,7 +15,8 @@ public class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        // 在构建 Host 之前预加载 .env，确保环境变量提供器可用
+        // 在构建 Host 之前仅预加载 .env，确保环境变量提供器可用；
+        // 支持在项目根/可执行目录/当前工作目录等常见位置搜索 .env。
         try
         {
             DotEnv.Preload(Directory.GetCurrentDirectory());
@@ -33,26 +34,52 @@ public class Program
 
             builder.Host
                 .AddAppSettingsSecretsJson()
-                // 加载 .env 配置：按优先级顺序追加（后者覆盖前者），放在后面以便覆盖 appsettings/secrets
+                // 仅从 .env 加载：在多个候选根目录查找，后加入者覆盖前者，以便覆盖 appsettings/secrets
                 .ConfigureAppConfiguration((hostingContext, config) =>
                 {
                     var env = hostingContext.HostingEnvironment;
                     var root = env.ContentRootPath;
-                    var files = new[]
+                    var roots = new List<string>();
+
+                    void add(string? r)
                     {
-                        Path.Combine(root, ".env"),
-                        Path.Combine(root, ".env.product"),
-                        Path.Combine(root, ".env.development"),
-                        Path.Combine(root, ".env.local"),
-                    };
-                    foreach (var f in files)
+                        if (string.IsNullOrWhiteSpace(r)) return;
+                        try { r = Path.GetFullPath(r); } catch { return; }
+                        if (!roots.Exists(x => string.Equals(x, r, StringComparison.OrdinalIgnoreCase))) roots.Add(r);
+                    }
+
+                    add(root);
+                    add(AppContext.BaseDirectory);
+                    add(Directory.GetCurrentDirectory());
+                    try { add(Path.Combine(AppContext.BaseDirectory!, "..", "..", "..")); } catch { }
+                    try { add(Path.Combine(root!, "..", "..", "..")); } catch { }
+
+                    var fromEnvDefault = false;
+                    var fromEnvChrelyonly = false;
+                    foreach (var r in roots)
                     {
+                        var f = Path.Combine(r, ".env");
                         var data = DotEnv.Read(f);
                         if (data is { Count: > 0 })
                         {
+                            if (!fromEnvDefault && data.TryGetValue("ConnectionStrings:Default", out var v1) && !string.IsNullOrWhiteSpace(v1))
+                            {
+                                fromEnvDefault = true;
+                            }
+                            if (!fromEnvChrelyonly && data.TryGetValue("ConnectionStrings:Chrelyonly", out var v2) && !string.IsNullOrWhiteSpace(v2))
+                            {
+                                fromEnvChrelyonly = true;
+                            }
                             config.AddInMemoryCollection(data);
                         }
                     }
+
+                    // 写入标记，用于启动时校验连接字符串来源
+                    config.AddInMemoryCollection(new Dictionary<string, string>
+                    {
+                        ["Radish:EnvOnly:ConnectionStringsFromEnv"] = fromEnvDefault ? "true" : "false",
+                        ["Radish:EnvOnly:ChrelyonlyFromEnv"] = fromEnvChrelyonly ? "true" : "false",
+                    });
                 })
                 .UseAutofac()
                 .UseSerilog((context, services, loggerConfiguration) =>
@@ -70,13 +97,14 @@ public class Program
                         .WriteTo.Async(c => c.Console())
                         .WriteTo.Async(c => c.AbpStudio(services));
                 });
-            // 在模块初始化前做关键配置校验：连接字符串必须来自环境变量/.env（不能是占位）
+            // 在模块初始化前做关键配置校验：连接字符串必须来自 .env
             var conn = builder.Configuration.GetConnectionString("Default");
-            if (string.IsNullOrWhiteSpace(conn) || conn.Contains("xxxx", StringComparison.OrdinalIgnoreCase))
+            var onlyFromEnv = string.Equals(builder.Configuration["Radish:EnvOnly:ConnectionStringsFromEnv"], "true", StringComparison.OrdinalIgnoreCase);
+            if (!onlyFromEnv || string.IsNullOrWhiteSpace(conn))
             {
                 const string hint =
-                    "未找到有效的 ConnectionStrings:Default。请在 src/Radish.HttpApi.Host 目录的 .env(.development/.product/.local) 中设置\n" +
-                    "ConnectionStrings__Default 与 ConnectionStrings__Chrelyonly，或通过系统环境变量覆盖。";
+                    "未找到有效的 ConnectionStrings:Default。请在 src/Radish.HttpApi.Host 目录的 .env 中设置：\n" +
+                    "ConnectionStrings__Default 与 ConnectionStrings__Chrelyonly。";
                 throw new InvalidOperationException(hint);
             }
 
@@ -117,7 +145,8 @@ internal static class DotEnv
 
     private static IEnumerable<string> EnumerateCandidateFiles(string root)
     {
-        var names = new[] { ".env", ".env.product", ".env.development", ".env.local" };
+        // 仅保留 .env 名称
+        var names = new[] { ".env" };
         var roots = new List<string>();
 
         void add(string? r)
