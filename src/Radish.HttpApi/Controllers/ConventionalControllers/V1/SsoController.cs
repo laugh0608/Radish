@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Users;
+using Microsoft.Extensions.Configuration;
 
 namespace Radish.Controllers.ConventionalControllers.V1;
 
@@ -22,15 +23,18 @@ public class SsoController : AbpControllerBase
     private readonly ICurrentUser _currentUser;
     private readonly IOpenIddictTokenManager _tokenManager;
     private readonly IOpenIddictApplicationManager _applicationManager;
+    private readonly IConfiguration _configuration;
 
     public SsoController(
         ICurrentUser currentUser,
         IOpenIddictTokenManager tokenManager,
-        IOpenIddictApplicationManager applicationManager)
+        IOpenIddictApplicationManager applicationManager,
+        IConfiguration configuration)
     {
         _currentUser = currentUser;
         _tokenManager = tokenManager;
         _applicationManager = applicationManager;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -101,5 +105,32 @@ public class SsoController : AbpControllerBase
 
         return Ok(new { revoked = count });
     }
-}
 
+    /// <summary>
+    /// 构造 OIDC End-Session（前通道登出）URL，便于前端重定向。
+    /// </summary>
+    /// <param name="redirectUri">登出后回跳地址（默认取 App:AngularUrl）。</param>
+    /// <param name="state">可选透传状态。</param>
+    /// <returns>{ url: string }</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult GetEndSessionUrl([FromQuery] string? redirectUri = null, [FromQuery] string? state = null)
+    {
+        var authority = _configuration["AuthServer:Authority"]; // e.g. https://localhost:44342
+        if (string.IsNullOrWhiteSpace(authority))
+        {
+            authority = $"{Request.Scheme}://{Request.Host}";
+        }
+
+        var endSession = authority!.TrimEnd('/') + "/connect/logout";
+        var postLogout = redirectUri ?? _configuration["App:AngularUrl"] ?? "/";
+
+        var url = endSession + "?post_logout_redirect_uri=" + Uri.EscapeDataString(postLogout);
+        if (!string.IsNullOrEmpty(state))
+        {
+            url += "&state=" + Uri.EscapeDataString(state);
+        }
+
+        return Ok(new { url, authority, postLogoutRedirectUri = postLogout });
+    }
+}
