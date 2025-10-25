@@ -23,6 +23,31 @@
   - `PostLogoutRedirectUris`: `http://localhost:4200/`。
   - CORS：允许 Angular 源（`http://localhost:4200`）。
 
+### 在 DbMigrator 中配置并落库
+- 文件：`src/Radish.DbMigrator/appsettings.json`
+- 位置：`OpenIddict:Applications:Radish_Console`
+- 示例：
+
+```
+"OpenIddict": {
+  "Applications": {
+    "Radish_Console": {
+      "ClientId": "Radish_Console",
+      "RootUrl": "http://localhost:4200"
+    }
+  }
+}
+```
+
+- 运行：
+  - `cd src/Radish.DbMigrator && dotnet run`
+  - 将在数据库中创建/更新对应的 OpenIddict 应用（见 `OpenIddictDataSeedContributor`）。
+
+### Host 侧与前端对齐的其他设置
+- 文件：`src/Radish.HttpApi.Host/appsettings.json`
+  - `App.AngularUrl`、`App.CorsOrigins`、`App.RedirectAllowedUrls` 需包含 Angular 根地址。
+  - `AuthServer.Authority` 与 Angular `issuer` 保持一致。
+
 ## Angular 管理端的 SSO 初始化
 
 - 初始化代码：`angular/src/app/auth.auto-login.ts`
@@ -51,6 +76,36 @@
 2) 吊销刷新令牌（Refresh Token Revocation）
 - 在 Host 的登出流程中，统一吊销该客户端的 refresh token：
   - 吊销后，Angular 的静默续期会失败，ABP OAuth 包会清理本地并引导重新登录。
+ - 参考实现（伪代码示意）：
+
+```
+// 在自定义的 Logout 应用服务或控制器中：
+public class SignOutAppService : ApplicationService
+{
+    private readonly IOpenIddictTokenManager _tokenManager;
+    private readonly ICurrentUser _currentUser;
+
+    public SignOutAppService(IOpenIddictTokenManager tokenManager, ICurrentUser currentUser)
+    {
+        _tokenManager = tokenManager;
+        _currentUser = currentUser;
+    }
+
+    public async Task RevokeAllForCurrentUserAsync()
+    {
+        // 根据主体查找并吊销当前用户的刷新令牌（可限定 ClientId）
+        await foreach (var token in _tokenManager.FindBySubjectAsync(_currentUser.GetId().ToString()))
+        {
+            if (await _tokenManager.HasTypeAsync(token, OpenIddictConstants.TokenTypes.RefreshToken))
+            {
+                await _tokenManager.TryRevokeAsync(token);
+            }
+        }
+    }
+}
+```
+
+> 注意：生产中应按需限定 ClientId、TenantId 等范围，并结合业务登出流程调用该接口。
 
 3) 降低令牌时效或关闭刷新
 - 通过较短存活时间缩短不同步窗口；或不发放 `offline_access`（需权衡用户体验）。
@@ -77,8 +132,9 @@
 - SSO 初始化：`angular/src/app/auth.auto-login.ts`
 - App 配置：`angular/src/app/app.config.ts`
 - 受保护路由示例：`angular/src/app/app.routes.ts`
+- OpenIddict 应用种子：`src/Radish.Domain/OpenIddict/OpenIddictDataSeedContributor.cs`
+- DbMigrator 配置：`src/Radish.DbMigrator/appsettings.json`
 
 ---
 
 如需我在 Host 侧补充 OpenIddict 的示例配置（创建应用、登记重定向、吊销刷新令牌等），请提出你的运行环境与版本，我将补充对应片段。
-
