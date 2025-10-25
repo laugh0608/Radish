@@ -8,6 +8,16 @@
 
 [简体中文](./docs/README_CN.md) | [English](./docs/README_EN.md)
 
+## 文档索引 Docs Index
+
+[集中文档索引 Docs Index](./docs/README.md)
+
+## 组件文档 Component Docs
+
+- 后端（.NET/ABP）：`docs/backend/README.md`
+- 管理端（Angular）：`docs/frontend/angular/README.md`
+- 前端 UI（React）：`docs/frontend/react/README.md`
+
 ## 目录架构 Directory Structure
 
 [目录架构 Directory Structure](./docs/DirectoryStructure.md)

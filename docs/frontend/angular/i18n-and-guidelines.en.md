@@ -45,3 +45,4 @@ Example keys
 ## Troubleshooting
 - Text not applied: ensure the key exists in the correct culture JSON and backend cache is refreshed.
 - Unknown key: when using `::Key`, the default resource is `Radish`; include resource name if using another.
+

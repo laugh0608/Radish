@@ -1,5 +1,7 @@
 # Radish
 
+> 统一文档入口：`docs/frontend/angular/README.md`
+
 This is a startup project based on the ABP framework. For more information, visit <a href="https://abp.io/" target="_blank">abp.io</a>
 
 ## Development server
@@ -34,8 +36,8 @@ See [Environment](https://abp.io/docs/latest/framework/ui/angular/environment) f
 
 ## Internationalization (i18n)
 
-- Docs (中文): `docs/i18n-and-guidelines.zh-CN.md`
-- Docs (English): `docs/i18n-and-guidelines.en.md`
+- Docs (中文): `../../docs/frontend/angular/i18n-and-guidelines.zh-CN.md`
+- Docs (English): `../../docs/frontend/angular/i18n-and-guidelines.en.md`
 
 Quick usage
 - Templates: `{{ '::Welcome' | abpLocalization }}`、`{{ '::GetStarted' | abpLocalization }}`。

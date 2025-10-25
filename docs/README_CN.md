@@ -61,9 +61,11 @@ Deploying an ABP application follows the same process as deploying any .NET or A
 
 #### Internal Resources
 
-You can find detailed setup and configuration guide(s) for your solution below:
+项目组件文档（统一归档在 `docs/`）：
 
-* [Angular](./angular/README.md)
+- 后端（.NET / ABP）：`docs/backend/README.md`
+- 管理端（Angular）：`docs/frontend/angular/README.md`
+- 前端 UI（React）：`docs/frontend/react/README.md`
 
 #### External Resources
 You can see the following resources to learn more about your solution and the ABP Framework:
