@@ -77,17 +77,33 @@ internal static class DotEnv
 {
     public static void Preload(string root)
     {
-        var files = new[]
+        foreach (var candidate in EnumerateCandidateFiles(root))
         {
-            Path.Combine(root, ".env"),
-            Path.Combine(root, ".env.product"),
-            Path.Combine(root, ".env.development"),
-            Path.Combine(root, ".env.local"),
-        };
-        foreach (var f in files)
-        {
-            Read(f);
+            Read(candidate);
         }
+    }
+
+    private static IEnumerable<string> EnumerateCandidateFiles(string root)
+    {
+        var names = new[] { ".env", ".env.product", ".env.development", ".env.local" };
+        var roots = new List<string>();
+
+        void add(string? r)
+        {
+            if (string.IsNullOrWhiteSpace(r)) return;
+            try { r = Path.GetFullPath(r); } catch { return; }
+            if (!roots.Contains(r, StringComparer.OrdinalIgnoreCase)) roots.Add(r);
+        }
+
+        add(root);
+        add(AppContext.BaseDirectory);
+        add(Directory.GetCurrentDirectory());
+        try { add(Path.Combine(AppContext.BaseDirectory!, "..", "..", "..")); } catch { }
+        try { add(Path.Combine(root!, "..", "..", "..")); } catch { }
+
+        foreach (var r in roots)
+        foreach (var n in names)
+            yield return Path.Combine(r, n);
     }
 
     public static IDictionary<string, string> Read(string path)
