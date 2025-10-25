@@ -13,6 +13,8 @@ on:
 jobs:
   angular:
     name: Angular
+    # 临时禁用：开发阶段不在 GitHub 上运行前端CI
+    if: ${{ false }}
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -42,6 +44,8 @@ jobs:
 
   react:
     name: React
+    # 临时禁用：开发阶段不在 GitHub 上运行前端CI
+    if: ${{ false }}
     runs-on: ubuntu-latest
     defaults:
       run:
