@@ -85,13 +85,8 @@ ABP integration
 
 ## HTTPS Dev Server
 
-The dev server supports HTTPS similar to Angular:
+The dev server supports HTTPS and now prefers a unified certificate location at the repo root `dev-certs/`.
 
-- Already wired in `script/start.js` to prefer HTTPS.
-- Option A (recommended): install the basic SSL plugin
-  - `cd react && npm install` (after this change) or `npm i -D @vitejs/plugin-basic-ssl`
-  - Run `npm run dev`, the server starts at `https://localhost:5173`.
-- Option B: provide your own certs
-  - Put `localhost.crt` and `localhost.key` under `react/script/certs/`.
-  - Then run `npm run dev`.
+- Place `localhost.crt` and `localhost.key` under `../dev-certs/` (see instructions in `dev-certs/README.md`).
+- Run `npm run dev`; the script will auto-load these certs. If not found, it will try `react/script/certs/`, then fall back to `@vitejs/plugin-basic-ssl`.
 - Disable HTTPS (if needed): set env `DEV_HTTPS=0` before `npm run dev`.

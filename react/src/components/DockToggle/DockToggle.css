@@ -28,6 +28,9 @@
   border: 1px solid var(--border);
   transform: translate(0, -50%);
   transition: transform 200ms ease, background-color 160ms ease, border-color 160ms ease;
+  display: grid;          /* 居中内部图标 */
+  place-items: center;    /* 居中 */
+  line-height: 0;         /* 避免 inline 高度影响定位 */
 }
 
 .dock-toggle.is-on .dock-toggle__thumb {
@@ -36,6 +39,17 @@
 
 .dock-toggle.is-on {
   border-color: color-mix(in oklab, var(--primary), var(--border) 40%);
+}
+
+/* 图标样式：放在滑块内部，与其他按钮视觉统一 */
+.dock-toggle__icon {
+  width: 16px;   /* 与 ThemeToggle 图标一致 */
+  height: 16px;
+  display: block;
+  color: var(--muted-text);
+}
+.dock-toggle.is-on .dock-toggle__icon {
+  color: color-mix(in oklab, var(--primary), var(--muted-text) 40%);
 }
 
 @media (max-width: 639px) {

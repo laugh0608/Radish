@@ -15,7 +15,7 @@ async function bootstrap() {
   const parsedPort = Number.parseInt(process.env.PORT ?? serverDefaults.port ?? '5173', 10)
   const port = Number.isNaN(parsedPort) ? 5173 : parsedPort
 
-  // Decide HTTPS strategy: prefer basic-ssl plugin; else try local certs; else fallback to HTTP
+  // Decide HTTPS strategy: prefer repo-root dev-certs; else react/script/certs; else basic-ssl; else HTTP
   const useHttps = process.env.DEV_HTTPS !== '0'
   /** @type {import('vite').PluginOption | undefined} */
   let httpsPlugin
@@ -23,26 +23,47 @@ async function bootstrap() {
   let httpsOption = serverDefaults.https
 
   if (useHttps && httpsOption === undefined) {
-    try {
-      // Lazy import to avoid hard dependency when offline
-      const mod = await import('@vitejs/plugin-basic-ssl')
-      const basicSsl = (mod && (mod.default ?? mod))
-      httpsPlugin = basicSsl()
-      httpsOption = true
-      console.log('[dev] HTTPS enabled via @vitejs/plugin-basic-ssl')
-    } catch {
-      const certDir = path.join(root, 'script', 'certs')
-      const keyFile = path.join(certDir, 'localhost.key')
-      const crtFile = path.join(certDir, 'localhost.crt')
+    /**
+     * Try loading certificate pair from given directory.
+     * @param {string} base
+     */
+    const loadPair = (base) => {
+      const keyFile = path.join(base, 'localhost.key')
+      const crtFile = path.join(base, 'localhost.crt')
       if (fs.existsSync(keyFile) && fs.existsSync(crtFile)) {
-        httpsOption = {
-          key: fs.readFileSync(keyFile),
-          cert: fs.readFileSync(crtFile),
-        }
+        return { key: fs.readFileSync(keyFile), cert: fs.readFileSync(crtFile) }
+      }
+      return undefined
+    }
+
+    // 1) repo root: ../dev-certs
+    const monoRoot = path.resolve(root, '..')
+    const pairRoot = loadPair(path.join(monoRoot, 'dev-certs'))
+    if (pairRoot) {
+      httpsOption = pairRoot
+      console.log('[dev] HTTPS enabled using ../dev-certs/localhost.{key,crt}')
+    }
+
+    // 2) legacy location: react/script/certs
+    if (httpsOption === undefined) {
+      const pairScript = loadPair(path.join(root, 'script', 'certs'))
+      if (pairScript) {
+        httpsOption = pairScript
         console.log('[dev] HTTPS enabled using script/certs/localhost.{key,crt}')
-      } else {
+      }
+    }
+
+    // 3) fall back to basic-ssl plugin (self-signed, not trusted by default)
+    if (httpsOption === undefined) {
+      try {
+        const mod = await import('@vitejs/plugin-basic-ssl')
+        const basicSsl = (mod && (mod.default ?? mod))
+        httpsPlugin = basicSsl()
+        httpsOption = true
+        console.log('[dev] HTTPS enabled via @vitejs/plugin-basic-ssl')
+      } catch {
         httpsOption = false
-        console.warn('[dev] HTTPS requested but no certs found and @vitejs/plugin-basic-ssl not installed. Falling back to HTTP. To enable HTTPS, install dev dep: "npm i -D @vitejs/plugin-basic-ssl" or put certs in react/script/certs/.')
+        console.warn('[dev] HTTPS requested but no certs found and @vitejs/plugin-basic-ssl not installed. Falling back to HTTP. To enable HTTPS, put certs in ../dev-certs/ or react/script/certs/, or install the plugin.')
       }
     }
   }

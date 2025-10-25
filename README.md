@@ -33,3 +33,7 @@
 ## 贡献 Contribution
 
 [大白萝卜](https://www.imbhj.com)
+
+## 致谢 Acknowledgments
+
+Codex(GPT-5 High)

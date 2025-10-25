@@ -155,7 +155,8 @@ const BottomBar = ({ enabled = true }: { enabled?: boolean }) => {
           if (raf.current) cancelAnimationFrame(raf.current)
           raf.current = requestAnimationFrame(() => {
             const radius = 120
-            const max = 1.65
+            // 略微降低最大缩放，减少相邻覆盖面积
+            const max = 1.55
             const sigma = radius / 2.5
             const twoSigmaSq = 2 * sigma * sigma
             const entries = Object.entries(btnRefs.current)
@@ -167,12 +168,17 @@ const BottomBar = ({ enabled = true }: { enabled?: boolean }) => {
               const influence = Math.exp(-(d * d) / twoSigmaSq)
               const scale = 1 + (max - 1) * influence
               el.style.setProperty('--dock-scale', scale.toFixed(3))
+              // 提升所在条目的层级，避免图标互相遮挡
+              el.parentElement?.style.setProperty('--dock-z', String(Math.round(scale * 100)))
             }
           })
         }}
         onMouseLeave={() => {
           const entries = Object.entries(btnRefs.current)
-          for (const [, el] of entries) el?.style.setProperty('--dock-scale', '1')
+          for (const [, el] of entries) {
+            el?.style.setProperty('--dock-scale', '1')
+            el?.parentElement?.style.setProperty('--dock-z', '1')
+          }
         }}
       >
         {items.map((it) => {

@@ -18,7 +18,8 @@
   backdrop-filter: saturate(180%) blur(12px);
   border: 1px solid color-mix(in oklab, var(--border), transparent 30%);
   border-radius: 16px;
-  overflow: hidden;
+  /* 允许鱼眼放大后图标超出容器上沿，不被裁切 */
+  overflow: visible;
   box-shadow: 0 18px 40px rgba(2, 6, 23, 0.22), inset 0 1px 0 rgba(255,255,255,0.06);
   transition: transform 200ms ease, opacity 200ms ease;
   will-change: transform, opacity;
@@ -63,12 +64,12 @@
   .bottom-dock__btn:hover { border-color: color-mix(in oklab, var(--primary), var(--border) 40%); }
 }
 
-/* 气泡提示：仅桌面 hover 显示 */
-.bottom-dock__item { position: relative; }
+/* 气泡提示：仅桌面 hover 显示；根据鱼眼 scale 动态调整堆叠层级，避免相互遮挡 */
+.bottom-dock__item { position: relative; z-index: var(--dock-z, 1); }
 .bottom-dock__tooltip {
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 10px);
+  bottom: calc(100% + 18px); /* 提高悬浮文字位置，避免遮挡放大图标 */
   transform: translateX(-50%);
   padding: 6px 10px;
   white-space: nowrap;
@@ -83,7 +84,7 @@
 }
 .bottom-dock__item:hover .bottom-dock__tooltip {
   opacity: 1;
-  transform: translate(-50%, -2px);
+  transform: translate(-50%, -4px);
 }
 
 /* 右上角未读角标 */
@@ -107,7 +108,7 @@
 .bottom-dock__menu {
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 10px);
+  bottom: calc(100% + 18px); /* 与 tooltip 保持一致间距 */
   transform: translateX(-50%);
   min-width: 120px;
   padding: 6px;

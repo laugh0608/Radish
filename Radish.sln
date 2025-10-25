@@ -35,15 +35,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Radish.DbMigrator", "src\Ra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Radish.HttpApi.Host", "src\Radish.HttpApi.Host\Radish.HttpApi.Host.csproj", "{96E5259E-59A3-4FAF-BCD1-5BF8E74EF82C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{FD117442-5769-4B3A-9D19-5FF08C36632B}"
-	ProjectSection(SolutionItems) = preProject
-		docs\DevelopmentFramework.md = docs\DevelopmentFramework.md
-		docs\DevelopmentProgress.md = docs\DevelopmentProgress.md
-		docs\DirectoryStructure.md = docs\DirectoryStructure.md
-		docs\README_CN.md = docs\README_CN.md
-		docs\README_EN.md = docs\README_EN.md
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
