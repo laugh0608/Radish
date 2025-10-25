@@ -14,9 +14,9 @@
 
 ## 组件文档 Component Docs
 
-- 后端（.NET/ABP）：`docs/backend/README.md`
-- 管理端（Angular）：`docs/frontend/angular/README.md`
-- 前端 UI（React）：`docs/frontend/react/README.md`
+- 后端（.NET/ABP）：[docs/backend/README.md](docs/backend/README.md)
+- 管理端（Angular）：[docs/frontend/angular/README.md](docs/frontend/angular/README.md)
+- 前端 UI（React）：[docs/frontend/react/README.md](docs/frontend/react/README.md)
 
 ## 目录架构 Directory Structure
 
