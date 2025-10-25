@@ -33,6 +33,9 @@
     "Permission:Books.Delete": "Deleting the books",
     "Menu:Home": "Home",
     "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information visit",
-    "Welcome": "Welcome"
+    "Welcome": "Welcome",
+    "GetStarted": "Getting Started",
+    "Tutorial": "Web Application Development Tutorial",
+    "ExploreTutorial": "Explore Tutorial"
   }
 }

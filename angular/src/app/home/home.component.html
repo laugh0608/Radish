@@ -2,12 +2,10 @@
   <div class="col-xl-6 col-12 d-flex">
     <div class="card h-lg-100 w-100 overflow-hidden">
       <div class="card-body">
-        <div class="d-flex justify-content-end mb-2">
-          <app-language-switcher></app-language-switcher>
-        </div>
+        
         <div class="starting-content pe-5">
           @if(!hasLoggedIn){
-          <h3>{{ 'app.welcome' | t }}</h3>
+          <h3>{{ '::Welcome' | abpLocalization }}</h3>
           <p class="lead text-muted mb-2">
             {{ '::LongWelcomeMessage' | abpLocalization }}
           </p>
@@ -17,7 +15,7 @@
           </a>
           }
 
-          <h4>{{ 'app.getStarted' | t }}</h4>
+          <h4>{{ '::GetStarted' | abpLocalization }}</h4>
           <p class="lead text-muted mb-2">
             Learn how to create and run a new web application using the application startup
             template.
@@ -27,10 +25,10 @@
             class="btn btn-brand mb-4"
             target="_blank"
           >
-            {{ 'app.getStarted' | t }}
+            {{ '::GetStarted' | abpLocalization }}
           </a>
 
-          <h4>{{ 'app.tutorial' | t }}</h4>
+          <h4>{{ '::Tutorial' | abpLocalization }}</h4>
           <p class="lead text-muted mb-2">
             Learn how to build an ABP based web application named Acme.BookStore.
           </p>
@@ -39,7 +37,7 @@
             class="btn btn-brand mb-4"
             target="_blank"
           >
-            {{ 'app.exploreTutorial' | t }}
+            {{ '::ExploreTutorial' | abpLocalization }}
           </a>
         </div>
         <img class="card-bg-image" src="assets/images/getting-started/bg-01.png" />

@@ -37,6 +37,9 @@
     "Unspecified": "System",
     "SeeAllUsers": "查看所有用户",
     "TakePhoto": "拍摄照片",
-    "ChoosePhoto": "选择照片"
+    "ChoosePhoto": "选择照片",
+    "GetStarted": "快速上手",
+    "Tutorial": "Web 应用开发教程",
+    "ExploreTutorial": "查看教程"
   }
 }

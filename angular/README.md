@@ -38,6 +38,6 @@ See [Environment](https://abp.io/docs/latest/framework/ui/angular/environment) f
 - Docs (English): `docs/i18n-and-guidelines.en.md`
 
 Quick usage
-- In templates: `{{ 'app.welcome' | t }}` (custom UI texts)
-- Server-side ABP resources still use `abpLocalization`, e.g. `{{ '::LongWelcomeMessage' | abpLocalization }}`
-- Runtime switcher: `<app-language-switcher></app-language-switcher>` (already added on Home)
+- Templates: `{{ '::Welcome' | abpLocalization }}`、`{{ '::GetStarted' | abpLocalization }}`。
+- All UI copies come from server-side ABP resources (Radish resource). No custom front-end i18n.
+- Runtime switcher: provided by the theme in the top-right corner.

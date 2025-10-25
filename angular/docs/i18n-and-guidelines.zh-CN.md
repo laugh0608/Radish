@@ -1,76 +1,47 @@
-# 国际化使用说明与开发规范（Angular 管理端）
+# 国际化使用说明（Angular 管理端）
 
-本管理端提供一套轻量级前端国际化方案（不依赖第三方库），用于自定义文案的翻译与运行时切换，并与 ABP 自带的服务端资源本地化互不干扰：
+本项目统一采用 ABP 的服务端本地化机制（Radish 资源）。前端不再维护自定义 i18n 服务/管道/词典。
 
-- 服务：`src/app/i18n/i18n.service.ts`
-- 管道：`src/app/i18n/i18n.pipe.ts`（模板中使用 `| t`）
-- 词典与语言类型：`src/app/i18n/messages.ts`
-- 语言切换组件：`src/app/components/language-switcher/language-switcher.component.ts`
+关键点
+- 模板使用 `abpLocalization` 管道，如：`{{ '::Welcome' | abpLocalization }}`。
+- 右上角语言切换由主题提供，切换后会重新应用 ABP 语言资源。
+- 词条和语言均在后端项目维护：`src/Radish.Domain.Shared/Localization/Radish/*.json` 与 `RadishDomainSharedModule`。
 
-ABP 的 `abpLocalization` 仍然用于 `::`/`AbpAccount::` 等后端资源键，本方案专注于前端自定义文案。
-
-## 快速开始
-1. 在需要使用的模板中，通过 `| t` 管道读取翻译：
+## 前端用法
+- 在 HTML 模板：
 
 ```html
-<h3>{{ 'app.welcome' | t }}</h3>
+<h4>{{ '::GetStarted' | abpLocalization }}</h4>
 ```
 
-2. TypeScript 中使用服务读取：
+- 在 TypeScript（如需要）：通过 ABP Angular 提供的 `LocalizationService` 获取。
 
-```ts
-import { I18nService } from 'src/app/i18n/i18n.service';
-constructor(private i18n: I18nService) {}
-const text = this.i18n.t('app.welcome');
+## 后端维护
+1. 词条：在以下文件中新增/修改键值：
+   - `src/Radish.Domain.Shared/Localization/Radish/en.json`
+   - `src/Radish.Domain.Shared/Localization/Radish/zh-Hans.json`
+2. 语言清单与默认资源：`src/Radish.Domain.Shared/RadishDomainSharedModule.cs` 的 `Configure<AbpLocalizationOptions>`。
+
+示例键
+```jsonc
+// en.json 的 Texts 里
+"GetStarted": "Getting Started",
+"Tutorial": "Web Application Development Tutorial",
+"ExploreTutorial": "Explore Tutorial"
 ```
 
-3. 页面引入语言切换组件（已接入首页示例）：
-
-```html
-<app-language-switcher></app-language-switcher>
+```jsonc
+// zh-Hans.json 的 texts 里
+"GetStarted": "快速上手",
+"Tutorial": "Web 应用开发教程",
+"ExploreTutorial": "查看教程"
 ```
 
-## 行为说明
-- 首次加载根据浏览器语言猜测：`zh*` → `zh-CN`，否则 `en`。
-- 选择的语言持久化到 `localStorage('app.locale')`。
-- 未命中键时回退为键名，便于开发阶段发现缺失文案。
-
-## 维护与扩展
-在 `src/app/i18n/messages.ts`：
-
-```ts
-export type Locale = 'en' | 'zh-CN'
-export const messages = {
-  en: { 'app.welcome': 'Welcome', /* ... */ },
-  'zh-CN': { 'app.welcome': '欢迎', /* ... */ },
-}
-export const SUPPORTED_LOCALES: Locale[] = ['en', 'zh-CN']
-```
-
-键名建议采用命名空间分组：
-- `nav.*` 导航链接
-- `actions.*` 按钮与操作
-- `aria.*` 无障碍/辅助文本
-- `app.*` 页面级文案
-
-### 新增语言
-1. 扩展 `Locale` 联合类型并新增该语言词典；
-2. 将语言加入 `SUPPORTED_LOCALES`；
-3. 在 `language-switcher.component.ts` 的 `options` 中补充对应 `labelKey`（如 `lang.ja`）；
-4. 在词典中补充 `lang.*` 标签。
-
-```ts
-// 例：加入日文
-export type Locale = 'en' | 'zh-CN' | 'ja'
-export const SUPPORTED_LOCALES: Locale[] = ['en', 'zh-CN', 'ja']
-// options 增加 { value: 'ja', labelKey: 'lang.ja' }
-```
+## 迁移说明（从旧方案到 ABP）
+- 已移除：`src/app/i18n/*` 与 `src/app/components/language-switcher/*`。
+- 首页模板已将 `| t` 全部替换为 `| abpLocalization`。
+- 如需新增界面文案，请直接在后端资源 JSON 中添加键值。
 
 ## 常见问题
-- 文案显示为键名：该键未在当前语言字典中定义，请在 `messages.ts` 补齐。
-- 切换不生效：确认传入值位于 `SUPPORTED_LOCALES` 列表中。
-- 重启后语言丢失：检查是否启用隐私模式或禁用了 `localStorage`。
-
-## 与 React 项目的一致性（仅文档层面）
-- 文档组织与说明方法参考 `react/docs/i18n-and-guidelines.*.md`，保持“快速开始 / 维护与扩展 / 常见问题”的结构；
-- 实现细节不共享，仅对齐使用方式与维护约定。
+- 文案未生效：确认键已写入对应文化 JSON，并重启后端或清缓存。
+- 找不到键：模板中使用 `::Key` 形式时，默认资源为 `Radish`；如引用其它资源需带资源名。
