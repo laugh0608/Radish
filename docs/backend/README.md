@@ -62,10 +62,24 @@ dotnet test test/Radish.MongoDB.Tests
 
 ## 配置与安全
 
-- 开发配置：`src/Radish.HttpApi.Host/appsettings.Development.json`
-- 连接字符串：`Radish.HttpApi.Host` 与 `Radish.DbMigrator` 的 `appsettings*.json` 中的 `ConnectionStrings`。
-- 机密覆盖：使用 `appsettings.secrets.json` 或环境变量，不要提交敏感信息到仓库。
-- OpenIddict 证书：仅用于本地开发的 `openiddict.pfx`；生产环境请按需生成与配置签名/加密证书。
+本项目在开发阶段以 `.env` 为唯一可信的配置来源（关键项必须来自 `.env`），优先级高于 `appsettings*.json`。运行时会在常见目录搜索 `.env` 并注入到 `IConfiguration`，空值将被忽略。
+
+放置位置与示例：
+- `src/Radish.HttpApi.Host/.env`
+  - 必填：
+    - `ConnectionStrings__Default=...`
+    - `ConnectionStrings__Chrelyonly=...`
+- `src/Radish.DbMigrator/.env`
+  - 与 Host 保持一致，便于迁移工具使用同一套连接串。
+
+注意事项：
+- `.env` 支持 `KEY=VALUE` 形式，键名中的层级可写成 `ConnectionStrings__Default`（双下划线）或 `ConnectionStrings:Default`（冒号）。
+- 连接字符串如未从 `.env` 明确提供，后端会在启动时抛出异常并提示。
+- `.env` 仅用于本地/自托管环境，请勿提交到仓库。
+
+机密与证书：
+- 建议用 `.env` 或环境变量覆盖敏感项，避免 `appsettings` 直接存放机密。
+- OpenIddict 开发证书：仓库内的 `openiddict.pfx` 仅用于本地开发；生产环境请自行生成并安全配置。
 
 生成示例（可自定义密码）：
 
@@ -93,4 +107,3 @@ dotnet dev-certs https -v -ep openiddict.pfx -p 83c828cf-930d-4c16-8cc7-e98e05fc
 - Angular（管理端）：见 `docs/frontend/angular/README.md`
 
 两端均基于 ABP 的服务端本地化，若新增文案，请在 `src/Radish.Domain.Shared/Localization/Radish/*.json` 维护，并在 `RadishDomainSharedModule` 中登记语言与默认资源。
-

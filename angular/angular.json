@@ -169,6 +169,11 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "ssl": true,
+            "sslKey": "../dev-certs/localhost.key",
+            "sslCert": "../dev-certs/localhost.crt"
+          },
           "configurations": {
             "production": {
               "buildTarget": "Radish:build:production"
