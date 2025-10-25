@@ -8,7 +8,8 @@ const oAuthConfig = {
   // 与服务端 OpenIddict 配置一致（见 DbMigrator: OpenIddict:Applications:Radish_Console）
   clientId: 'Radish_Console',
   responseType: 'code',
-  scope: 'offline_access Radish',
+  // 与开发环境保持一致，确保生产构建也能完成 OIDC Code Flow
+  scope: 'offline_access openid profile email phone address roles Radish',
   requireHttps: true,
   // 静默登录/续期回调页（与开发一致，确保构建后仍可访问）
   silentRefreshRedirectUri: baseUrl + '/assets/silent-refresh.html',

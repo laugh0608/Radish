@@ -138,7 +138,12 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                     "Impersonation"
                 },
                 scopes: commonScopes,
-                redirectUris: new List<string> { consoleAndAngularClientRootUrl },
+                // 允许 Angular 顶层回调与静默刷新回调（prompt=none / iframe）
+                redirectUris: new List<string>
+                {
+                    consoleAndAngularClientRootUrl,
+                    $"{consoleAndAngularClientRootUrl}/assets/silent-refresh.html"
+                },
                 postLogoutRedirectUris: new List<string> { consoleAndAngularClientRootUrl },
                 clientUri: consoleAndAngularClientRootUrl,
                 logoUri: "/images/clients/angular.svg"

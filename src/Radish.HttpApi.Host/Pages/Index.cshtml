@@ -98,9 +98,12 @@
                                         <abp-column size-md="_4" class="mb-2">
                                             @{
                                                 var target = application.ClientUri;
-                                                // 为控制台/管理端等前端应用附加 sso=1，促使其在首访时触发顶层授权
-                                                // 这样可复用 Host 现有登录会话，规避浏览器第三方 Cookie 限制导致的 silent SSO 失败
-                                                target += (target?.Contains("?") == true ? "&" : "?") + "sso=1";
+                                                // 仅当 Host 已登录时才附加 sso=1，触发前端顶层授权复用会话
+                                                // 若 Host 未登录，则不附加，保持应用匿名访问，不强制跳登录
+                                                if (CurrentUser.IsAuthenticated)
+                                                {
+                                                    target += (target?.Contains("?") == true ? "&" : "?") + "sso=1";
+                                                }
                                             }
                                             <a href="@target" style="text-decoration:none">
                                                 <abp-card>

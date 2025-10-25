@@ -1,9 +1,19 @@
-import { APP_INITIALIZER } from '@angular/core';
+import { APP_INITIALIZER, inject } from '@angular/core';
 import { OAuthService } from 'angular-oauth2-oidc';
+import { EnvironmentService } from '@abp/ng.core';
 
 function initAutoLoginFactory(oAuthService: OAuthService) {
   return async () => {
     try {
+      // 在调用 OAuthService 之前，确保已按环境配置完成（避免 APP_INITIALIZER 顺序竞争导致 issuer 为空）
+      try {
+        const envService = inject(EnvironmentService);
+        const env = envService.getEnvironment?.();
+        if (env?.oAuthConfig) {
+          oAuthService.configure(env.oAuthConfig);
+        }
+      } catch {}
+
       // 1) 加载发现文档并尝试从回调解析登录（若已从 IdP 重定向回来）
       await oAuthService.loadDiscoveryDocumentAndTryLogin();
 
@@ -51,7 +61,7 @@ export const AUTO_LOGIN_PROVIDER = [
   {
     provide: APP_INITIALIZER,
     multi: true,
-    deps: [OAuthService],
+    deps: [OAuthService, EnvironmentService],
     useFactory: initAutoLoginFactory,
   },
 ];
