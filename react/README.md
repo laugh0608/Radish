@@ -80,3 +80,16 @@ export default defineConfig([
 ABP integration
 - Set `VITE_API_BASE_URL` to your backend (e.g., `https://localhost:44342`).
 - The app fetches localization via `/api/abp/application-configuration?includeLocalizationResources=true` and exposes `t()` through an I18n provider.
+
+## HTTPS Dev Server
+
+The dev server supports HTTPS similar to Angular:
+
+- Already wired in `script/start.js` to prefer HTTPS.
+- Option A (recommended): install the basic SSL plugin
+  - `cd react && npm install` (after this change) or `npm i -D @vitejs/plugin-basic-ssl`
+  - Run `npm run dev`, the server starts at `https://localhost:5173`.
+- Option B: provide your own certs
+  - Put `localhost.crt` and `localhost.key` under `react/script/certs/`.
+  - Then run `npm run dev`.
+- Disable HTTPS (if needed): set env `DEV_HTTPS=0` before `npm run dev`.
