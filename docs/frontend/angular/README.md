@@ -11,7 +11,7 @@ yarn install && yarn start
 npm install && npm run start
 ```
 
-启动后访问 `http://localhost:4200/`。
+启动后访问 `https://localhost:4200/`（已在 `angular.json` 中启用本地 HTTPS 并统一使用仓库根 `dev-certs/` 证书）。
 
 ## 构建与测试
 
@@ -26,7 +26,14 @@ ng e2e              # 端到端测试
 ## 环境与配置
 
 - 远程配置：默认通过 `dynamic-env.json` 与服务端 `getEnvConfig` 端点读取运行时环境。
-- 与后端联调：确保后端 `Radish.HttpApi.Host` 已启动（例如 `https://localhost:44342`），并在反向代理/CORS 中允许前端端口。
+- 与后端联调：确保后端 `Radish.HttpApi.Host` 已启动（例如 `https://localhost:44342`），并在 CORS 允许以下来源：
+  - 在 `src/Radish.HttpApi.Host/.env` 中设置 `App__CorsOrigins=https://localhost:4200,https://localhost:5173`
+  - 后端启动日志会打印“CORS allowed origins: ...”用于确认。
+
+本地 HTTPS 证书
+- 推荐使用统一脚本生成并信任（一次性）：
+  - Bash: `./scripts/ssl-setup.sh`
+  - PowerShell: `./scripts/ssl-setup.ps1`
 
 更多参考 ABP 文档：Environment（Angular）
 https://abp.io/docs/latest/framework/ui/angular/environment
@@ -42,4 +49,3 @@ https://abp.io/docs/latest/framework/ui/angular/environment
 详细指南：
 - i18n（中文）：`docs/frontend/angular/i18n-and-guidelines.zh-CN.md`
 - i18n（English）：`docs/frontend/angular/i18n-and-guidelines.en.md`
-

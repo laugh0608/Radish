@@ -19,14 +19,17 @@ VITE_API_BASE_URL=https://localhost:44342
 
 ## HTTPS 开发服务器
 
-- 已在 `script/start.js` 中优先支持 HTTPS。
-- 方式 A（推荐）：安装基础 SSL 插件
-  - `npm i -D @vitejs/plugin-basic-ssl`
-  - `npm run dev` 后即可通过 `https://localhost:5173` 访问
-- 方式 B：自备证书
-  - 将 `localhost.crt` 与 `localhost.key` 放到 `react/script/certs/`
-  - `npm run dev` 即可
-- 若需关闭 HTTPS：在启动前设置 `DEV_HTTPS=0`
+- 已在 `react/script/start.js` 中优先支持 HTTPS，并优先读取仓库根目录 `dev-certs/` 证书。
+- 推荐使用统一脚本生成并信任证书（一次性）：
+  - Bash: `./scripts/ssl-setup.sh`
+  - PowerShell: `./scripts/ssl-setup.ps1`
+- 启动后使用 `https://localhost:5173` 访问；首次访问若提示不安全，按浏览器提示接受一次即可（使用 mkcert 生成时通常会直接信任）。
+- 若需关闭 HTTPS：在启动前设置 `DEV_HTTPS=0`。
+
+与后端联调的 CORS 要点
+- 确保后端 `.env` 已包含本前端来源：
+  - `src/Radish.HttpApi.Host/.env` 中设置：`App__CorsOrigins=https://localhost:5173,https://localhost:4200`
+- 后端启动时会在日志打印“CORS allowed origins: ...”用以确认。
 
 ## 构建与校验
 
@@ -45,4 +48,3 @@ npm run lint     # ESLint 校验
 详细指南：
 - i18n（中文）：`docs/frontend/react/i18n-and-guidelines.zh-CN.md`
 - i18n（English）：`docs/frontend/react/i18n-and-guidelines.en.md`
-
