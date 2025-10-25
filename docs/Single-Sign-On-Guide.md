@@ -135,6 +135,26 @@ public class SignOutAppService : ApplicationService
 - OpenIddict 应用种子：`src/Radish.Domain/OpenIddict/OpenIddictDataSeedContributor.cs`
 - DbMigrator 配置：`src/Radish.DbMigrator/appsettings.json`
 
+## 可直接调用的撤销接口（Host 示例）
+
+- 控制器：`src/Radish.HttpApi/Controllers/ConventionalControllers/V1/SsoController.cs`
+- 路由（V1）：`POST /api/v1/sso/RevokeMyTokens`
+  - Query 参数：
+    - `clientId`（可选）：仅撤销这个客户端颁发的令牌，例如 `Radish_Console`。
+    - `includeAccessTokens`（可选，默认 false）：是否同时撤销访问令牌（默认只撤销刷新令牌）。
+  - 认证：需要已登录（Bearer/Cookies 均可）。
+  - 返回：`{ revoked: number }` 撤销数量。
+
+使用示例（Bearer）：
+
+```
+curl -X POST \
+  -H "Authorization: Bearer <ACCESS_TOKEN>" \
+  "https://localhost:44342/api/v1/sso/RevokeMyTokens?clientId=Radish_Console&includeAccessTokens=false"
+```
+
+> 注意：该接口未集成到现有登出流程。需要时手动调用；如需后台登出时同步吊销刷新令牌，可在自己的登出逻辑中调用相应能力。
+
 ---
 
 如需我在 Host 侧补充 OpenIddict 的示例配置（创建应用、登记重定向、吊销刷新令牌等），请提出你的运行环境与版本，我将补充对应片段。
