@@ -15,6 +15,12 @@ public class Program
 {
     public static async Task<int> Main(string[] args)
     {
+        // 在构建 Host 之前预加载 .env，确保环境变量提供器可用
+        try
+        {
+            DotEnv.Preload(Directory.GetCurrentDirectory());
+        }
+        catch { /* ignore */ }
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Async(c => c.File("Logs/logs.txt"))
             .WriteTo.Async(c => c.Console())
@@ -27,16 +33,25 @@ public class Program
 
             builder.Host
                 .AddAppSettingsSecretsJson()
-                // 加载 .env 配置：开发读取 .env.development，其它环境读取 .env.product（放在后面以便覆盖 appsettings/secrets）
+                // 加载 .env 配置：按优先级顺序追加（后者覆盖前者），放在后面以便覆盖 appsettings/secrets
                 .ConfigureAppConfiguration((hostingContext, config) =>
                 {
                     var env = hostingContext.HostingEnvironment;
-                    var envFileName = env.IsDevelopment() ? ".env.development" : ".env.product";
-                    var envFilePath = Path.Combine(env.ContentRootPath, envFileName);
-                    var data = DotEnv.Read(envFilePath);
-                    if (data is not null && data.Count > 0)
+                    var root = env.ContentRootPath;
+                    var files = new[]
                     {
-                        config.AddInMemoryCollection(data);
+                        Path.Combine(root, ".env"),
+                        Path.Combine(root, ".env.product"),
+                        Path.Combine(root, ".env.development"),
+                        Path.Combine(root, ".env.local"),
+                    };
+                    foreach (var f in files)
+                    {
+                        var data = DotEnv.Read(f);
+                        if (data is { Count: > 0 })
+                        {
+                            config.AddInMemoryCollection(data);
+                        }
                     }
                 })
                 .UseAutofac()
@@ -55,6 +70,16 @@ public class Program
                         .WriteTo.Async(c => c.Console())
                         .WriteTo.Async(c => c.AbpStudio(services));
                 });
+            // 在模块初始化前做关键配置校验：连接字符串必须来自环境变量/.env（不能是占位）
+            var conn = builder.Configuration.GetConnectionString("Default");
+            if (string.IsNullOrWhiteSpace(conn) || conn.Contains("xxxx", StringComparison.OrdinalIgnoreCase))
+            {
+                const string hint =
+                    "未找到有效的 ConnectionStrings:Default。请在 src/Radish.HttpApi.Host 目录的 .env(.development/.product/.local) 中设置\n" +
+                    "ConnectionStrings__Default 与 ConnectionStrings__Chrelyonly，或通过系统环境变量覆盖。";
+                throw new InvalidOperationException(hint);
+            }
+
             await builder.AddApplicationAsync<RadishHttpApiHostModule>();
             
             var app = builder.Build();
@@ -82,6 +107,21 @@ public class Program
 
 internal static class DotEnv
 {
+    public static void Preload(string root)
+    {
+        var files = new[]
+        {
+            Path.Combine(root, ".env"),
+            Path.Combine(root, ".env.product"),
+            Path.Combine(root, ".env.development"),
+            Path.Combine(root, ".env.local"),
+        };
+        foreach (var f in files)
+        {
+            Read(f);
+        }
+    }
+
     public static IDictionary<string, string> Read(string path)
     {
         var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -106,11 +146,14 @@ internal static class DotEnv
                     value = value.Substring(1, value.Length - 2);
                 }
 
-                // 允许通过 .env 覆盖环境变量与配置
-                // 兼容 KEY__SUBKEY 与 KEY:SUBKEY 两种写法，配置字典使用冒号分隔
-                var normalizedKey = key.Replace("__", ":");
-                Environment.SetEnvironmentVariable(key, value);
-                dict[normalizedKey] = value;
+                // 允许通过 .env 覆盖环境变量与配置；空值不写入
+                if (!string.IsNullOrEmpty(value))
+                {
+                    // 兼容 KEY__SUBKEY 与 KEY:SUBKEY 两种写法，配置字典使用冒号分隔
+                    var normalizedKey = key.Replace("__", ":");
+                    Environment.SetEnvironmentVariable(key, value);
+                    dict[normalizedKey] = value;
+                }
             }
         }
         catch
