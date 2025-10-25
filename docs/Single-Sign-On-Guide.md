@@ -11,17 +11,17 @@
 
 - Angular 侧：`angular/src/environments/environment.ts`
   - `oAuthConfig.issuer`: Host 地址（例 `https://localhost:44342/`）。
-  - `oAuthConfig.redirectUri`: Angular 站点根（例 `http://localhost:4200`）。
+  - `oAuthConfig.redirectUri`: Angular 站点根（例 `https://localhost:4200`）。
   - `oAuthConfig.responseType`: `code`。
   - `oAuthConfig.scope`: 至少包含 `offline_access Radish`（`offline_access` 用于刷新令牌）。
   - `oAuthConfig.requireHttps`：
-    - 开发可设 `false` 便于本地 HTTP 联调；生产务必为 `true`。
+    - 推荐本地也启用 HTTPS（见下文证书统一方案），保持 `true`；如确需 HTTP，可临时设为 `false`。
 
 - Host 侧（OpenIddict 应用）需与前端一致：
   - `ClientId`: `Radish_Console`（与 SPA 环境一致）。
-  - `RedirectUris`: `http(s)://localhost:4200/`（Angular）或 `http(s)://localhost:5173/`（React）。
+  - `RedirectUris`: `https://localhost:4200/`（Angular）与 `https://localhost:5173/`（React）。
   - `PostLogoutRedirectUris`: 同上。
-  - CORS：允许上述来源。
+  - CORS：允许上述来源（使用 `.env` 的 `App__CorsOrigins` 配置，见下）。
 
 ### 在 DbMigrator 中配置并落库
 - 文件：`src/Radish.DbMigrator/appsettings.json`
@@ -44,9 +44,12 @@
   - 将在数据库中创建/更新对应的 OpenIddict 应用（见 `OpenIddictDataSeedContributor`）。
 
 ### Host 侧与前端对齐的其他设置
-- 文件：`src/Radish.HttpApi.Host/appsettings.json`
-  - `App.AngularUrl`、`App.CorsOrigins`、`App.RedirectAllowedUrls` 需包含 Angular 根地址。
-  - `AuthServer.Authority` 与 Angular `issuer` 保持一致。
+- CORS 允许来源通过 `.env` 设置，而非 appsettings：
+  - `src/Radish.HttpApi.Host/.env`：`App__CorsOrigins=https://localhost:4200,https://localhost:5173`
+  - 启动后端会打印 “CORS allowed origins: ...” 便于确认。
+- 其他：
+  - `src/Radish.HttpApi.Host/appsettings.json` 中的 `App:AngularUrl`、`App:RedirectAllowedUrls` 仍可按需维护或通过环境变量覆盖。
+  - `AuthServer:Authority` 与 Angular `issuer` 保持一致。
 
 ## Angular 管理端的 SSO 初始化
 
@@ -63,9 +66,12 @@
   - 原因多为浏览器开始默认拦截第三方 Cookie，导致从 Angular（不同源/不同 Scheme）以 iframe 方式静默获取授权时，IdP 会话不可见，返回 `login_required`。
   - 处理：本仓库已实现两种路径，任选其一即可：
     - 首选：本地也用 HTTPS 启动 Angular/React，使其与 Host 同为 `https://localhost`，成为 same-site，上述限制不再命中。
-      - Angular：已默认 `ng serve --ssl`；环境中的 `baseUrl/redirectUri/silentRefreshRedirectUri` 设为 `https://localhost:4200`。
-      - React：`npm run dev` 将尝试启用 HTTPS（优先 `@vitejs/plugin-basic-ssl`；也可在 `react/script/certs/` 放置 `localhost.key/.crt`）。
-      - Host 与 DbMigrator 的配置已包含 `https://localhost:4200` 与 `https://localhost:5173`（见 `src/Radish.HttpApi.Host/appsettings.json` 与 `src/Radish.DbMigrator/appsettings.json`）。
+      - 统一证书：运行根目录脚本生成并信任本地证书
+        - Bash: `./scripts/ssl-setup.sh`
+        - PowerShell: `./scripts/ssl-setup.ps1`
+      - Angular：`yarn start`/`npm start` 以 `https://localhost:4200` 启动。
+      - React：`npm run dev` 以 `https://localhost:5173` 启动（优先使用根目录 `dev-certs/`）。
+      - CORS：在 `src/Radish.HttpApi.Host/.env` 配置 `App__CorsOrigins=https://localhost:4200,https://localhost:5173`，后端启动日志可见。
     - 或者：通过“顶层跳转”触发 Code Flow。Host 门户卡片链接已追加 `?sso=1`，Angular 启动时检测到后会调用 `initCodeFlow()`，利用 IdP 现有登录会话无感回跳，从而实现 SSO。
 - “Host 注销后，Angular 刷新仍显示已登录”：
   - 原因：SPA 本地持有 access/refresh token；Host 的登出仅清除了 IdP 会话，不会强制使 SPA 的令牌失效。
@@ -121,10 +127,10 @@ public class SignOutAppService : ApplicationService
 - 确认 Host 应用中 OpenIddict 的应用配置（ClientId、重定向地址、PostLogoutRedirectUris、CORS）。
 - Angular 环境文件的 `issuer/redirectUri/scope/requireHttps` 与 Host 对齐。
 - 如切换到 HTTPS 开发：
-  - Angular：`yarn start` 将以 `https://localhost:4200` 启动；浏览器需信任本地自签证书。
-  - React：`npm run dev` 尝试 HTTPS；若降级为 HTTP，请安装 `@vitejs/plugin-basic-ssl` 或放置本地证书，或设置 `DEV_HTTPS=0` 临时禁用。
+  - 在仓库根运行一次证书脚本生成并信任（见上）。
+  - Angular：`yarn start` 以 `https://localhost:4200` 启动；React：`npm run dev` 以 `https://localhost:5173` 启动。
   - 运行一次迁移以更新 OpenIddict 应用：`cd src/Radish.DbMigrator && dotnet run`。
-  - Host 配置的 `App:AngularUrl / App:CorsOrigins / App:RedirectAllowedUrls` 包含 `https://localhost:4200, https://localhost:5173`。
+  - 后端 `.env` 的 `App__CorsOrigins` 包含 `https://localhost:4200,https://localhost:5173`；启动日志可见。
 - 受保护页面使用 `authGuard`；首页是否匿名根据需求配置。
 - Dev 环境若不启用 TLS：
   - `requireHttps=false`；浏览器若阻止第三方 Cookie，回跳后可能无法读取会话，请在同源或启用受信任证书下测试。
@@ -179,7 +185,7 @@ curl -X POST \
 示例：
 
 ```
-curl "https://localhost:44342/api/v1/sso/GetEndSessionUrl?redirectUri=http://localhost:4200"
+curl "https://localhost:44342/api/v1/sso/GetEndSessionUrl?redirectUri=https://localhost:4200"
 ```
 
 前端可直接 `window.location.href = url` 触发前通道登出并回跳。
