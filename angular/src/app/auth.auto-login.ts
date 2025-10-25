@@ -1,6 +1,6 @@
 import { APP_INITIALIZER, inject } from '@angular/core';
 import { OAuthService } from 'angular-oauth2-oidc';
-import { EnvironmentService } from '@abp/ng.core';
+import { ConfigStateService, EnvironmentService } from '@abp/ng.core';
 
 function initAutoLoginFactory(oAuthService: OAuthService) {
   return async () => {
@@ -13,6 +13,14 @@ function initAutoLoginFactory(oAuthService: OAuthService) {
           oAuthService.configure(env.oAuthConfig);
         }
       } catch {}
+
+      const configState = inject(ConfigStateService);
+      const refreshAppState = () => {
+        try {
+          // 刷新后端 ApplicationConfiguration，更新 currentUser/menus/权限
+          configState.refreshAppState().subscribe();
+        } catch {}
+      };
 
       // 1) 加载发现文档并尝试从回调解析登录（若已从 IdP 重定向回来）
       await oAuthService.loadDiscoveryDocumentAndTryLogin();
@@ -43,9 +51,14 @@ function initAutoLoginFactory(oAuthService: OAuthService) {
       // 4) 成功获取令牌后，开启自动静默续期（使用 refresh_token 或 prompt=none 视配置而定）
       if (oAuthService.hasValidAccessToken()) {
         oAuthService.setupAutomaticSilentRefresh(undefined, 'access_token', true);
+        // 确保首次进入时就拉取用户与权限，避免需要手动刷新
+        refreshAppState();
       }
       // 5) 监听会话终止（若 IdP 支持 front-channel/logout），则本地也登出
       oAuthService.events.subscribe(e => {
+        if ((e as any)?.type === 'token_received') {
+          refreshAppState();
+        }
         if ((e as any)?.type === 'session_terminated') {
           oAuthService.logOut();
         }
