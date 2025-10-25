@@ -72,6 +72,10 @@ dotnet test test/Radish.MongoDB.Tests
 - `src/Radish.DbMigrator/.env`
   - 与 Host 保持一致，便于迁移工具使用同一套连接串。
 
+你可以从示例文件开始：
+- `src/Radish.HttpApi.Host/.env.example` → 复制为 `.env` 并按需修改
+- `src/Radish.DbMigrator/.env.example` → 复制为 `.env` 并按需修改
+
 注意事项：
 - `.env` 支持 `KEY=VALUE` 形式，键名中的层级可写成 `ConnectionStrings__Default`（双下划线）或 `ConnectionStrings:Default`（冒号）。
 - 连接字符串如未从 `.env` 明确提供，后端会在启动时抛出异常并提示。
