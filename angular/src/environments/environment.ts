@@ -9,7 +9,8 @@ const oAuthConfig = {
   clientId: 'Radish_Console',
   responseType: 'code',
   scope: 'offline_access Radish',
-  requireHttps: true,
+  // 开发环境允许 HTTP，以便在本地非 TLS 场景下联调
+  requireHttps: false,
 };
 
 export const environment = {

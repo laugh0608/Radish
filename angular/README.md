@@ -31,3 +31,13 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
 The application provides a remote environment for production. we use `dynamic-env.json` file to set the environment variables and configured web server's `getEnvConfig` endpoint by default.
 
 See [Environment](https://abp.io/docs/latest/framework/ui/angular/environment) for more information.
+
+## Internationalization (i18n)
+
+- Docs (中文): `docs/i18n-and-guidelines.zh-CN.md`
+- Docs (English): `docs/i18n-and-guidelines.en.md`
+
+Quick usage
+- In templates: `{{ 'app.welcome' | t }}` (custom UI texts)
+- Server-side ABP resources still use `abpLocalization`, e.g. `{{ '::LongWelcomeMessage' | abpLocalization }}`
+- Runtime switcher: `<app-language-switcher></app-language-switcher>` (already added on Home)
