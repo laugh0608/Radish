@@ -23,6 +23,16 @@ public class DbMigratorHostedService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        // 在真正初始化 ABP 之前先校验连接串是否已通过 .env/环境变量覆盖
+        var defaultConn = _configuration.GetConnectionString("Default");
+        if (string.IsNullOrWhiteSpace(defaultConn) || defaultConn.Contains("xxxx", StringComparison.OrdinalIgnoreCase))
+        {
+            const string hint =
+                "未找到有效的 ConnectionStrings:Default。请在 src/Radish.DbMigrator 目录配置 .env(.development/.product/.local) 中的\n" +
+                "ConnectionStrings__Default 与 ConnectionStrings__Chrelyonly，或通过系统环境变量覆盖。";
+            throw new InvalidOperationException(hint);
+        }
+
         using (var application = await AbpApplicationFactory.CreateAsync<RadishDbMigratorModule>(options =>
         {
            options.Services.ReplaceConfiguration(_configuration);

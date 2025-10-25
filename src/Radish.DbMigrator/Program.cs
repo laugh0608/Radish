@@ -15,6 +15,14 @@ class Program
 {
     static async Task Main(string[] args)
     {
+        // 0) 在 Host 构建前预加载 .env（确保环境变量提供器能读取到）
+        try
+        {
+            var root = Directory.GetCurrentDirectory();
+            DotEnv.Preload(root);
+        }
+        catch { /* ignore */ }
+
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.Information()
             .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
@@ -38,12 +46,24 @@ class Program
             .ConfigureAppConfiguration((hostingContext, config) =>
             {
                 var env = hostingContext.HostingEnvironment;
-                var envFileName = env.IsDevelopment() ? ".env.development" : ".env.product";
-                var envFilePath = Path.Combine(env.ContentRootPath, envFileName);
-                var data = DotEnv.Read(envFilePath);
-                if (data is not null && data.Count > 0)
+                var root = env.ContentRootPath;
+
+                // 读取多个 .env 变体，后读者覆盖先读者；忽略空值
+                var files = new[]
                 {
-                    config.AddInMemoryCollection(data);
+                    Path.Combine(root, ".env"),
+                    Path.Combine(root, ".env.product"),
+                    Path.Combine(root, ".env.development"),
+                    Path.Combine(root, ".env.local"),
+                };
+
+                foreach (var file in files)
+                {
+                    var data = DotEnv.Read(file);
+                    if (data is not null && data.Count > 0)
+                    {
+                        config.AddInMemoryCollection(data);
+                    }
                 }
             })
             .ConfigureLogging((context, logging) => logging.ClearProviders())
@@ -55,6 +75,21 @@ class Program
 
 internal static class DotEnv
 {
+    public static void Preload(string root)
+    {
+        var files = new[]
+        {
+            Path.Combine(root, ".env"),
+            Path.Combine(root, ".env.product"),
+            Path.Combine(root, ".env.development"),
+            Path.Combine(root, ".env.local"),
+        };
+        foreach (var f in files)
+        {
+            Read(f);
+        }
+    }
+
     public static IDictionary<string, string> Read(string path)
     {
         var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -79,8 +114,16 @@ internal static class DotEnv
                     value = value.Substring(1, value.Length - 2);
                 }
 
+                if (string.IsNullOrEmpty(value))
+                {
+                    // 空值不写入，避免覆盖 appsettings 的有效默认值
+                    continue;
+                }
+
                 var normalizedKey = key.Replace("__", ":");
+                // 写入进程级环境变量，便于其他读取路径（Host 默认包含 AddEnvironmentVariables）
                 Environment.SetEnvironmentVariable(key, value);
+                // 同时注入到 IConfiguration（后加入的提供程序将覆盖之前的值）
                 dict[normalizedKey] = value;
             }
         }
