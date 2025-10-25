@@ -155,6 +155,24 @@ curl -X POST \
 
 > 注意：该接口未集成到现有登出流程。需要时手动调用；如需后台登出时同步吊销刷新令牌，可在自己的登出逻辑中调用相应能力。
 
+## 构造前通道登出地址（Host 示例）
+
+- 控制器：`src/Radish.HttpApi/Controllers/ConventionalControllers/V1/SsoController.cs`
+- 路由（V1）：`GET /api/v1/sso/GetEndSessionUrl`
+  - Query 参数：
+    - `redirectUri`（可选）：登出后回跳地址，默认取 `App:AngularUrl`。
+    - `state`（可选）：自定义状态，原样透传给回跳地址。
+  - 返回：`{ url, authority, postLogoutRedirectUri }`。
+  - 说明：内部根据 `AuthServer:Authority` 构造 `<authority>/connect/logout?post_logout_redirect_uri=...`；如未配置，则基于当前请求 Scheme/Host 推断。
+
+示例：
+
+```
+curl "https://localhost:44342/api/v1/sso/GetEndSessionUrl?redirectUri=http://localhost:4200"
+```
+
+前端可直接 `window.location.href = url` 触发前通道登出并回跳。
+
 ---
 
 如需我在 Host 侧补充 OpenIddict 的示例配置（创建应用、登记重定向、吊销刷新令牌等），请提出你的运行环境与版本，我将补充对应片段。
