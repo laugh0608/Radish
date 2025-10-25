@@ -62,7 +62,10 @@
 - “Host 登录后进入 Angular，首页仍匿名”：
   - 原因多为浏览器开始默认拦截第三方 Cookie，导致从 Angular（不同源/不同 Scheme）以 iframe 方式静默获取授权时，IdP 会话不可见，返回 `login_required`。
   - 处理：本仓库已实现两种路径，任选其一即可：
-    - 首选：本地也用 HTTPS 启动 Angular，使其与 Host 同为 `https://localhost`，成为 same-site，上述限制不再命中（需把 `environment.ts` 的 `baseUrl/redirectUri/silentRefreshRedirectUri` 改成 `https://localhost:4200` 并 `ng serve --ssl`）。
+    - 首选：本地也用 HTTPS 启动 Angular，使其与 Host 同为 `https://localhost`，成为 same-site，上述限制不再命中。
+      - 已在仓库中默认开启：`package.json:start` 使用 `ng serve --ssl`。
+      - 环境文件已将 `baseUrl/redirectUri/silentRefreshRedirectUri` 设为 `https://localhost:4200`。
+      - Host 与 DbMigrator 的配置也已改为允许 `https://localhost:4200`（见 `src/Radish.HttpApi.Host/appsettings.json` 与 `src/Radish.DbMigrator/appsettings.json`）。
     - 或者：通过“顶层跳转”触发 Code Flow。Host 门户卡片链接已追加 `?sso=1`，Angular 启动时检测到后会调用 `initCodeFlow()`，利用 IdP 现有登录会话无感回跳，从而实现 SSO。
 - “Host 注销后，Angular 刷新仍显示已登录”：
   - 原因：SPA 本地持有 access/refresh token；Host 的登出仅清除了 IdP 会话，不会强制使 SPA 的令牌失效。
@@ -117,6 +120,10 @@ public class SignOutAppService : ApplicationService
 
 - 确认 Host 应用中 OpenIddict 的应用配置（ClientId、重定向地址、PostLogoutRedirectUris、CORS）。
 - Angular 环境文件的 `issuer/redirectUri/scope/requireHttps` 与 Host 对齐。
+- 如切换到 HTTPS 开发：
+  - `yarn start` 将以 `https://localhost:4200` 启动；浏览器需信任本地自签证书。
+  - 运行一次迁移以更新 OpenIddict 应用：`cd src/Radish.DbMigrator && dotnet run`。
+  - Host 配置的 `App:AngularUrl / App:CorsOrigins / App:RedirectAllowedUrls` 包含 `https://localhost:4200`。
 - 受保护页面使用 `authGuard`；首页是否匿名根据需求配置。
 - Dev 环境若不启用 TLS：
   - `requireHttps=false`；浏览器若阻止第三方 Cookie，回跳后可能无法读取会话，请在同源或启用受信任证书下测试。
