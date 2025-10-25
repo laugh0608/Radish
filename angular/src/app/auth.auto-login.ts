@@ -19,11 +19,22 @@ function initAutoLoginFactory(oAuthService: OAuthService) {
         }
       }
 
-      // 3) 成功获取令牌后，开启自动静默续期（使用 refresh_token 或 prompt=none 视配置而定）
+      // 3) 若仍未登录且带有 `?sso=1`，进行一次顶层 Code Flow 跳转
+      //    这样能复用 Host 已登录会话，绕过第三方 Cookie 被拦截导致的 silent SSO 失败
+      if (!oAuthService.hasValidAccessToken()) {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('sso') === '1') {
+          // 触发交互式（顶层）授权，IdP 已登录时不会再显示登录页
+          oAuthService.initCodeFlow();
+          return; // 发生跳转，后续逻辑不再执行
+        }
+      }
+
+      // 4) 成功获取令牌后，开启自动静默续期（使用 refresh_token 或 prompt=none 视配置而定）
       if (oAuthService.hasValidAccessToken()) {
         oAuthService.setupAutomaticSilentRefresh(undefined, 'access_token', true);
       }
-      // 4) 监听会话终止（若 IdP 支持 front-channel/logout），则本地也登出
+      // 5) 监听会话终止（若 IdP 支持 front-channel/logout），则本地也登出
       oAuthService.events.subscribe(e => {
         if ((e as any)?.type === 'session_terminated') {
           oAuthService.logOut();

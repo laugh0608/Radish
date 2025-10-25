@@ -60,7 +60,10 @@
 ## 常见现象与说明
 
 - “Host 登录后进入 Angular，首页仍匿名”：
-  - 正常。首页允许匿名；当访问受保护路由或点击“登录”时，才会触发授权流程。
+  - 原因多为浏览器开始默认拦截第三方 Cookie，导致从 Angular（不同源/不同 Scheme）以 iframe 方式静默获取授权时，IdP 会话不可见，返回 `login_required`。
+  - 处理：本仓库已实现两种路径，任选其一即可：
+    - 首选：本地也用 HTTPS 启动 Angular，使其与 Host 同为 `https://localhost`，成为 same-site，上述限制不再命中（需把 `environment.ts` 的 `baseUrl/redirectUri/silentRefreshRedirectUri` 改成 `https://localhost:4200` 并 `ng serve --ssl`）。
+    - 或者：通过“顶层跳转”触发 Code Flow。Host 门户卡片链接已追加 `?sso=1`，Angular 启动时检测到后会调用 `initCodeFlow()`，利用 IdP 现有登录会话无感回跳，从而实现 SSO。
 - “Host 注销后，Angular 刷新仍显示已登录”：
   - 原因：SPA 本地持有 access/refresh token；Host 的登出仅清除了 IdP 会话，不会强制使 SPA 的令牌失效。
   - 何时会失效：刷新令牌被吊销/过期；或启用前/后通道登出（见下）。
