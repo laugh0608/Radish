@@ -8,6 +8,7 @@
     <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
     <RootNamespace>Radish</RootNamespace>
     <PreserveCompilationReferences>true</PreserveCompilationReferences>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(RunConfiguration)' == 'Radish.HttpApi.Host' " />
@@ -43,6 +44,17 @@
     <ProjectReference Include="..\Radish.HttpApi\Radish.HttpApi.csproj" />
     <ProjectReference Include="..\Radish.MongoDB\Radish.MongoDB.csproj" />
   </ItemGroup>
+
+  <!-- 将被引用项目的 XML 文档复制到 Host 输出目录，便于 Swagger 加载注释 -->
+  <ItemGroup>
+    <_DocFiles Include="..\Radish.HttpApi\bin\$(Configuration)\$(TargetFramework)\Radish.HttpApi.xml" />
+    <_DocFiles Include="..\Radish.Application.Contracts\bin\$(Configuration)\$(TargetFramework)\Radish.Application.Contracts.xml" />
+  </ItemGroup>
+
+  <Target Name="CopyXmlDocsToOutput" AfterTargets="Build">
+    <Message Importance="Low" Text="Copying XML docs: @(_DocFiles) => $(OutputPath)" />
+    <Copy SourceFiles="@(_DocFiles)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" Condition="Exists('%(Identity)')" />
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.Studio.Client.AspNetCore" Version="1.3.2" />

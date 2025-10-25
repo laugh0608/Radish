@@ -6,6 +6,9 @@ using Volo.Abp.AspNetCore.Mvc;
 
 namespace Radish.Controllers.V1;
 
+/// <summary>
+/// 示例测试接口（多版本演示）
+/// </summary>
 [ApiController]
 [Authorize] // 允许 Cookie 或 Bearer（Host 已配置转发）
 [ApiVersion(1)]
@@ -13,6 +16,12 @@ namespace Radish.Controllers.V1;
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 public class ApiTestController : AbpControllerBase
 {
+    /// <summary>
+    /// 测试接口（V1）
+    /// </summary>
+    /// <remarks>
+    /// 返回当前 API 版本与示例响应。
+    /// </remarks>
     [HttpGet]
     [MapToApiVersion(1)]
     public IActionResult TestApiV1()
@@ -26,6 +35,12 @@ public class ApiTestController : AbpControllerBase
         });
     }
     
+    /// <summary>
+    /// 测试接口（V2）
+    /// </summary>
+    /// <remarks>
+    /// 返回当前 API 版本与示例响应。
+    /// </remarks>
     [HttpGet]
     [MapToApiVersion(2)]
     public IActionResult TestApiV2()
