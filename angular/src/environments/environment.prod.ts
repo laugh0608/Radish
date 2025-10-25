@@ -5,7 +5,8 @@ const baseUrl = 'http://localhost:4200';
 const oAuthConfig = {
   issuer: 'https://localhost:44342/',
   redirectUri: baseUrl,
-  clientId: 'Radish_App',
+  // 与服务端 OpenIddict 配置一致（见 DbMigrator: OpenIddict:Applications:Radish_Console）
+  clientId: 'Radish_Console',
   responseType: 'code',
   scope: 'offline_access Radish',
   requireHttps: true,
