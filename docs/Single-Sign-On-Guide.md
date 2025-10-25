@@ -1,0 +1,84 @@
+# 单点登录（SSO）配置与行为说明（ABP Host + Angular 管理端）
+
+本文说明本仓库在“Host 门户（ABP/OpenIddict） + Angular 管理端（@abp/ng.oauth + angular-oauth2-oidc）”组合下的登录/登出行为、常见配置与联调要点。
+
+## 架构概览
+- 身份提供者（IdP）：`src/Radish.HttpApi.Host`（OpenIddict，ABP Account UI）。
+- 客户端（RP）：`angular/` 管理端，使用 `@abp/ng.oauth` 封装的 `angular-oauth2-oidc`。
+- 推荐授权模式：Authorization Code（带 PKCE）。
+
+## 关键配置
+
+- Angular 侧：`angular/src/environments/environment.ts`
+  - `oAuthConfig.issuer`: Host 地址（例 `https://localhost:44342/`）。
+  - `oAuthConfig.redirectUri`: Angular 站点根（例 `http://localhost:4200`）。
+  - `oAuthConfig.responseType`: `code`。
+  - `oAuthConfig.scope`: 至少包含 `offline_access Radish`（`offline_access` 用于刷新令牌）。
+  - `oAuthConfig.requireHttps`：
+    - 开发可设 `false` 便于本地 HTTP 联调；生产务必为 `true`。
+
+- Host 侧（OpenIddict 应用）需与前端一致：
+  - `ClientId`: `Radish_Console`（与 Angular 环境一致）。
+  - `RedirectUris`: `http://localhost:4200/`（根据本地端口调整）。
+  - `PostLogoutRedirectUris`: `http://localhost:4200/`。
+  - CORS：允许 Angular 源（`http://localhost:4200`）。
+
+## Angular 管理端的 SSO 初始化
+
+- 初始化代码：`angular/src/app/auth.auto-login.ts`
+  - 在 APP 启动时执行 `loadDiscoveryDocumentAndTryLogin()` 用于处理回跳（不强制跳转登录）。
+  - 若已有有效令牌，则开启 `setupAutomaticSilentRefresh()`；否则保持匿名状态。
+  - 监听 `session_terminated` 事件（若 IdP 支持 front-channel/logout），本地触发 `logOut()`。
+- 注册位置：`angular/src/app/app.config.ts` 中的 `...AUTO_LOGIN_PROVIDER`。
+- 路由守卫：仅对需要保护的路由（例如 `books`）使用 `authGuard`；首页可匿名访问。
+
+## 常见现象与说明
+
+- “Host 登录后进入 Angular，首页仍匿名”：
+  - 正常。首页允许匿名；当访问受保护路由或点击“登录”时，才会触发授权流程。
+- “Host 注销后，Angular 刷新仍显示已登录”：
+  - 原因：SPA 本地持有 access/refresh token；Host 的登出仅清除了 IdP 会话，不会强制使 SPA 的令牌失效。
+  - 何时会失效：刷新令牌被吊销/过期；或启用前/后通道登出（见下）。
+
+## 实现“真正的单点登出”的方案（择需）
+
+1) 启用前/后通道登出（Front/Back-Channel Logout）
+- 目标：当用户在 Host 登出时，通知所有 RP（含 Angular）主动清空本地令牌并跳转。
+- 参考要点：
+  - OpenIddict 支持 RP 发起的 `end_session`；要从 IdP 主动通知 RP，可结合前通道 iFrame 或后通道回调（框架与浏览器限制较多，需根据部署域名与安全策略评估）。
+  - Angular 侧已监听 `session_terminated`（若浏览器收到该事件），并会本地登出。
+
+2) 吊销刷新令牌（Refresh Token Revocation）
+- 在 Host 的登出流程中，统一吊销该客户端的 refresh token：
+  - 吊销后，Angular 的静默续期会失败，ABP OAuth 包会清理本地并引导重新登录。
+
+3) 降低令牌时效或关闭刷新
+- 通过较短存活时间缩短不同步窗口；或不发放 `offline_access`（需权衡用户体验）。
+
+## 开发联调 Checklist
+
+- 确认 Host 应用中 OpenIddict 的应用配置（ClientId、重定向地址、PostLogoutRedirectUris、CORS）。
+- Angular 环境文件的 `issuer/redirectUri/scope/requireHttps` 与 Host 对齐。
+- 受保护页面使用 `authGuard`；首页是否匿名根据需求配置。
+- Dev 环境若不启用 TLS：
+  - `requireHttps=false`；浏览器若阻止第三方 Cookie，回跳后可能无法读取会话，请在同源或启用受信任证书下测试。
+
+## 常见报错速查
+
+- `Cannot find the zh-Hans locale file`：
+  - 使用 esbuild 的项目需在 `app.config.ts` 中使用 `registerLocaleForEsBuild()`（本项目已配置）。
+- `issuer must use HTTPS (with TLS)`：
+  - Dev 场景可在 `environment.ts` 中把 `requireHttps` 设为 `false`；生产必须保持 `true`。
+- `NG0203: inject() must be called from an injection context`：
+  - APP 初始化请使用标准 `APP_INITIALIZER + deps` 注入依赖，避免在非注入上下文直接 `inject()`（本项目已修正）。
+
+## 相关文件
+- Angular 环境：`angular/src/environments/environment.ts`
+- SSO 初始化：`angular/src/app/auth.auto-login.ts`
+- App 配置：`angular/src/app/app.config.ts`
+- 受保护路由示例：`angular/src/app/app.routes.ts`
+
+---
+
+如需我在 Host 侧补充 OpenIddict 的示例配置（创建应用、登记重定向、吊销刷新令牌等），请提出你的运行环境与版本，我将补充对应片段。
+
