@@ -15,7 +15,8 @@ class Program
 {
     static async Task Main(string[] args)
     {
-        // 0) 在 Host 构建前预加载 .env（确保环境变量提供器能读取到）
+        // 0) 在 Host 构建前仅预加载 .env（确保环境变量提供器能读取到）。
+        // 支持在常见目录（项目根/可执行目录/当前工作目录等）查找 .env。
         try
         {
             var root = Directory.GetCurrentDirectory();
@@ -48,23 +49,49 @@ class Program
                 var env = hostingContext.HostingEnvironment;
                 var root = env.ContentRootPath;
 
-                // 读取多个 .env 变体，后读者覆盖先读者；忽略空值
-                var files = new[]
-                {
-                    Path.Combine(root, ".env"),
-                    Path.Combine(root, ".env.product"),
-                    Path.Combine(root, ".env.development"),
-                    Path.Combine(root, ".env.local"),
-                };
+                // 仅从 .env 加载（放在后面以覆盖 appsettings/secrets），忽略空值。
+                // 为兼容从 bin 目录启动，支持在多个候选根目录查找 .env。
+                var roots = new List<string>();
 
-                foreach (var file in files)
+                void add(string? r)
                 {
-                    var data = DotEnv.Read(file);
+                    if (string.IsNullOrWhiteSpace(r)) return;
+                    try { r = Path.GetFullPath(r); } catch { return; }
+                    if (!roots.Exists(x => string.Equals(x, r, StringComparison.OrdinalIgnoreCase))) roots.Add(r);
+                }
+
+                add(root);
+                add(AppContext.BaseDirectory);
+                add(Directory.GetCurrentDirectory());
+                try { add(Path.Combine(AppContext.BaseDirectory!, "..", "..", "..")); } catch { }
+                try { add(Path.Combine(root!, "..", "..", "..")); } catch { }
+
+                var fromEnvDefault = false;
+                var fromEnvChrelyonly = false;
+                foreach (var r in roots)
+                {
+                    var envFile = Path.Combine(r, ".env");
+                    var data = DotEnv.Read(envFile);
                     if (data is not null && data.Count > 0)
                     {
+                        if (!fromEnvDefault && data.TryGetValue("ConnectionStrings:Default", out var v1) && !string.IsNullOrWhiteSpace(v1))
+                        {
+                            fromEnvDefault = true;
+                        }
+                        if (!fromEnvChrelyonly && data.TryGetValue("ConnectionStrings:Chrelyonly", out var v2) && !string.IsNullOrWhiteSpace(v2))
+                        {
+                            fromEnvChrelyonly = true;
+                        }
                         config.AddInMemoryCollection(data);
                     }
                 }
+
+                // 标记是否已从 .env 明确提供连接字符串，用于运行时强制校验
+                config.AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["Radish:EnvOnly:ConnectionStringsFromEnv"] = fromEnvDefault ? "true" : "false",
+                    ["Radish:EnvOnly:ChrelyonlyFromEnv"] = fromEnvChrelyonly ? "true" : "false",
+                });
             })
             .ConfigureLogging((context, logging) => logging.ClearProviders())
             .ConfigureServices((hostContext, services) =>
@@ -77,6 +104,7 @@ internal static class DotEnv
 {
     public static void Preload(string root)
     {
+        // 仅名为 .env，但在多目录候选中查找（便于从 bin 启动时仍能读取到项目根的 .env）。
         foreach (var candidate in EnumerateCandidateFiles(root))
         {
             Read(candidate);
@@ -85,7 +113,8 @@ internal static class DotEnv
 
     private static IEnumerable<string> EnumerateCandidateFiles(string root)
     {
-        var names = new[] { ".env", ".env.product", ".env.development", ".env.local" };
+        // 仅保留 .env 名称
+        var names = new[] { ".env" };
         var roots = new List<string>();
 
         void add(string? r)

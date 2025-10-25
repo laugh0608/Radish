@@ -24,13 +24,14 @@ public class DbMigratorHostedService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        // 在真正初始化 ABP 之前先校验连接串是否已通过 .env/环境变量覆盖
+        // 在真正初始化 ABP 之前强制校验：连接串必须来自 .env
         var defaultConn = _configuration.GetConnectionString("Default");
-        if (string.IsNullOrWhiteSpace(defaultConn) || defaultConn.Contains("xxxx", StringComparison.OrdinalIgnoreCase))
+        var onlyFromEnv = string.Equals(_configuration["Radish:EnvOnly:ConnectionStringsFromEnv"], "true", StringComparison.OrdinalIgnoreCase);
+        if (!onlyFromEnv || string.IsNullOrWhiteSpace(defaultConn))
         {
             const string hint =
-                "未找到有效的 ConnectionStrings:Default。请在 src/Radish.DbMigrator 目录配置 .env(.development/.product/.local) 中的\n" +
-                "ConnectionStrings__Default 与 ConnectionStrings__Chrelyonly，或通过系统环境变量覆盖。";
+                "未找到有效的 ConnectionStrings:Default。请在 src/Radish.DbMigrator 目录配置 .env 中设置：\n" +
+                "ConnectionStrings__Default 与 ConnectionStrings__Chrelyonly。";
             throw new InvalidOperationException(hint);
         }
 

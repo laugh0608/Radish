@@ -241,7 +241,7 @@ FakesAssemblies/
 
 # Local environment files (do not commit)
 /src/Radish.HttpApi.Host/.env.development
-/src/Radish.DbMigrator/.env.development
+/src/Radish.DbMigrator/.env
 _Pvt_Extensions
 
 # Paket dependency manager
