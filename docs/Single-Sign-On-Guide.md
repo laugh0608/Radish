@@ -1,10 +1,10 @@
 # 单点登录（SSO）配置与行为说明（ABP Host + Angular 管理端）
 
-本文说明本仓库在“Host 门户（ABP/OpenIddict） + Angular 管理端（@abp/ng.oauth + angular-oauth2-oidc）”组合下的登录/登出行为、常见配置与联调要点。
+本文说明本仓库在“Host 门户（ABP/OpenIddict） + Angular 管理端（@abp/ng.oauth + angular-oauth2-oidc）/React（Vite）”组合下的登录/登出行为、常见配置与联调要点。
 
 ## 架构概览
 - 身份提供者（IdP）：`src/Radish.HttpApi.Host`（OpenIddict，ABP Account UI）。
-- 客户端（RP）：`angular/` 管理端，使用 `@abp/ng.oauth` 封装的 `angular-oauth2-oidc`。
+- 客户端（RP）：`angular/` 管理端，使用 `@abp/ng.oauth` 封装的 `angular-oauth2-oidc`；`react/` 为 Vite 示例应用。
 - 推荐授权模式：Authorization Code（带 PKCE）。
 
 ## 关键配置
@@ -18,10 +18,10 @@
     - 开发可设 `false` 便于本地 HTTP 联调；生产务必为 `true`。
 
 - Host 侧（OpenIddict 应用）需与前端一致：
-  - `ClientId`: `Radish_Console`（与 Angular 环境一致）。
-  - `RedirectUris`: `http://localhost:4200/`（根据本地端口调整）。
-  - `PostLogoutRedirectUris`: `http://localhost:4200/`。
-  - CORS：允许 Angular 源（`http://localhost:4200`）。
+  - `ClientId`: `Radish_Console`（与 SPA 环境一致）。
+  - `RedirectUris`: `http(s)://localhost:4200/`（Angular）或 `http(s)://localhost:5173/`（React）。
+  - `PostLogoutRedirectUris`: 同上。
+  - CORS：允许上述来源。
 
 ### 在 DbMigrator 中配置并落库
 - 文件：`src/Radish.DbMigrator/appsettings.json`
@@ -62,10 +62,10 @@
 - “Host 登录后进入 Angular，首页仍匿名”：
   - 原因多为浏览器开始默认拦截第三方 Cookie，导致从 Angular（不同源/不同 Scheme）以 iframe 方式静默获取授权时，IdP 会话不可见，返回 `login_required`。
   - 处理：本仓库已实现两种路径，任选其一即可：
-    - 首选：本地也用 HTTPS 启动 Angular，使其与 Host 同为 `https://localhost`，成为 same-site，上述限制不再命中。
-      - 已在仓库中默认开启：`package.json:start` 使用 `ng serve --ssl`。
-      - 环境文件已将 `baseUrl/redirectUri/silentRefreshRedirectUri` 设为 `https://localhost:4200`。
-      - Host 与 DbMigrator 的配置也已改为允许 `https://localhost:4200`（见 `src/Radish.HttpApi.Host/appsettings.json` 与 `src/Radish.DbMigrator/appsettings.json`）。
+    - 首选：本地也用 HTTPS 启动 Angular/React，使其与 Host 同为 `https://localhost`，成为 same-site，上述限制不再命中。
+      - Angular：已默认 `ng serve --ssl`；环境中的 `baseUrl/redirectUri/silentRefreshRedirectUri` 设为 `https://localhost:4200`。
+      - React：`npm run dev` 将尝试启用 HTTPS（优先 `@vitejs/plugin-basic-ssl`；也可在 `react/script/certs/` 放置 `localhost.key/.crt`）。
+      - Host 与 DbMigrator 的配置已包含 `https://localhost:4200` 与 `https://localhost:5173`（见 `src/Radish.HttpApi.Host/appsettings.json` 与 `src/Radish.DbMigrator/appsettings.json`）。
     - 或者：通过“顶层跳转”触发 Code Flow。Host 门户卡片链接已追加 `?sso=1`，Angular 启动时检测到后会调用 `initCodeFlow()`，利用 IdP 现有登录会话无感回跳，从而实现 SSO。
 - “Host 注销后，Angular 刷新仍显示已登录”：
   - 原因：SPA 本地持有 access/refresh token；Host 的登出仅清除了 IdP 会话，不会强制使 SPA 的令牌失效。
@@ -121,9 +121,10 @@ public class SignOutAppService : ApplicationService
 - 确认 Host 应用中 OpenIddict 的应用配置（ClientId、重定向地址、PostLogoutRedirectUris、CORS）。
 - Angular 环境文件的 `issuer/redirectUri/scope/requireHttps` 与 Host 对齐。
 - 如切换到 HTTPS 开发：
-  - `yarn start` 将以 `https://localhost:4200` 启动；浏览器需信任本地自签证书。
+  - Angular：`yarn start` 将以 `https://localhost:4200` 启动；浏览器需信任本地自签证书。
+  - React：`npm run dev` 尝试 HTTPS；若降级为 HTTP，请安装 `@vitejs/plugin-basic-ssl` 或放置本地证书，或设置 `DEV_HTTPS=0` 临时禁用。
   - 运行一次迁移以更新 OpenIddict 应用：`cd src/Radish.DbMigrator && dotnet run`。
-  - Host 配置的 `App:AngularUrl / App:CorsOrigins / App:RedirectAllowedUrls` 包含 `https://localhost:4200`。
+  - Host 配置的 `App:AngularUrl / App:CorsOrigins / App:RedirectAllowedUrls` 包含 `https://localhost:4200, https://localhost:5173`。
 - 受保护页面使用 `authGuard`；首页是否匿名根据需求配置。
 - Dev 环境若不启用 TLS：
   - `requireHttps=false`；浏览器若阻止第三方 Cookie，回跳后可能无法读取会话，请在同源或启用受信任证书下测试。
