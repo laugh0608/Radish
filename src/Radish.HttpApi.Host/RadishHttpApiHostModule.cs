@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
@@ -138,6 +140,12 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         }
 
         ConfigureAuthentication(context);
+        // 允许跨站 iframe 静默登录：将 Identity 应用 Cookie 设置为 SameSite=None; Secure
+        context.Services.ConfigureApplicationCookie(options =>
+        {
+            options.Cookie.SameSite = SameSiteMode.None;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        });
         ConfigureUrls(configuration);
         ConfigureBundles();
         ConfigureConventionalControllers();
@@ -416,6 +424,11 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         app.MapAbpStaticAssets();
         app.UseAbpStudioLink();
         app.UseAbpSecurityHeaders();
+        // 配置全局 Cookie 策略，保持 SameSite=Unspecified 以便第三方上下文（iframe）携带登录 Cookie
+        app.UseCookiePolicy(new CookiePolicyOptions
+        {
+            MinimumSameSitePolicy = SameSiteMode.Unspecified
+        });
         app.UseCors(); // 允许跨域请求，必须在 UseRouting 和 UseAuthentication 之间
         app.UseAuthentication(); // 配置身份认证和权限验证中间件，必须放在 UseRouting 和 UseEndpoints 之间
         app.UseAbpOpenIddictValidation();

@@ -4,13 +4,26 @@ import { OAuthService } from 'angular-oauth2-oidc';
 function initAutoLoginFactory(oAuthService: OAuthService) {
   return async () => {
     try {
-      // 加载发现文档并尝试从回调解析登录（若已从 IDP 重定向回来）
+      // 1) 加载发现文档并尝试从回调解析登录（若已从 IdP 重定向回来）
       await oAuthService.loadDiscoveryDocumentAndTryLogin();
-      // 若已认证则启用自动刷新；未认证则不跳转登录，保持匿名访问
-      if (oAuthService.hasValidAccessToken()) {
-        oAuthService.setupAutomaticSilentRefresh();
+
+      // 2) 若未拿到令牌，则尝试基于已存在的 IdP 会话静默获取（无感知 SSO）
+      if (!oAuthService.hasValidAccessToken()) {
+        try {
+          // noPrompt=true -> 带 prompt=none，已登录则直接签发 code；未登录返回 login_required
+          await oAuthService.silentRefresh(undefined, true);
+        } catch (err) {
+          // 兼容：未登录/需交互(consent_required / login_required / interaction_required)时忽略错误，保持匿名
+          // 仅记录调试信息，避免影响首页匿名访问
+          console.warn('[auth.auto-login] silent SSO skipped:', err);
+        }
       }
-      // 监听会话终止（若 IdP 支持 front-channel/logout），则本地也登出
+
+      // 3) 成功获取令牌后，开启自动静默续期（使用 refresh_token 或 prompt=none 视配置而定）
+      if (oAuthService.hasValidAccessToken()) {
+        oAuthService.setupAutomaticSilentRefresh(undefined, 'access_token', true);
+      }
+      // 4) 监听会话终止（若 IdP 支持 front-channel/logout），则本地也登出
       oAuthService.events.subscribe(e => {
         if ((e as any)?.type === 'session_terminated') {
           oAuthService.logOut();

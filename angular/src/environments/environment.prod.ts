@@ -10,6 +10,8 @@ const oAuthConfig = {
   responseType: 'code',
   scope: 'offline_access Radish',
   requireHttps: true,
+  // 静默登录/续期回调页（与开发一致，确保构建后仍可访问）
+  silentRefreshRedirectUri: baseUrl + '/assets/silent-refresh.html',
 };
 
 export const environment = {

@@ -96,7 +96,7 @@ public class SignOutAppService : ApplicationService
         // 根据主体查找并吊销当前用户的刷新令牌（可限定 ClientId）
         await foreach (var token in _tokenManager.FindBySubjectAsync(_currentUser.GetId().ToString()))
         {
-            if (await _tokenManager.HasTypeAsync(token, OpenIddictConstants.TokenTypes.RefreshToken))
+            if (await _tokenManager.HasTypeAsync(token, OpenIddictConstants.TokenTypeHints.RefreshToken))
             {
                 await _tokenManager.TryRevokeAsync(token);
             }

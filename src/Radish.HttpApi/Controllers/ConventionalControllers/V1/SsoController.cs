@@ -51,7 +51,8 @@ public class SsoController : AbpControllerBase
             return Unauthorized();
         }
 
-        var subject = _currentUser.GetId()?.ToString();
+        // 已经过 IsAuthenticated 判断，GetId() 可安全取得非空 Guid
+        var subject = _currentUser.GetId().ToString();
         if (string.IsNullOrWhiteSpace(subject))
         {
             return Unauthorized();
@@ -74,8 +75,9 @@ public class SsoController : AbpControllerBase
         await foreach (var token in _tokenManager.FindBySubjectAsync(subject))
         {
             // 只撤销刷新令牌，必要时可带上访问令牌
-            var isRefresh = await _tokenManager.HasTypeAsync(token, OpenIddictConstants.TokenTypes.RefreshToken);
-            var isAccess = includeAccessTokens && await _tokenManager.HasTypeAsync(token, OpenIddictConstants.TokenTypes.AccessToken);
+            // OpenIddict v4 使用 TokenTypeHints 常量（access_token / refresh_token）
+            var isRefresh = await _tokenManager.HasTypeAsync(token, OpenIddictConstants.TokenTypeHints.RefreshToken);
+            var isAccess = includeAccessTokens && await _tokenManager.HasTypeAsync(token, OpenIddictConstants.TokenTypeHints.AccessToken);
             if (!isRefresh && !isAccess)
             {
                 continue;
