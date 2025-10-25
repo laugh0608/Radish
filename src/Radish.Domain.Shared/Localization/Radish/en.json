@@ -36,6 +36,49 @@
     "Welcome": "Welcome",
     "GetStarted": "Getting Started",
     "Tutorial": "Web Application Development Tutorial",
-    "ExploreTutorial": "Explore Tutorial"
+    "ExploreTutorial": "Explore Tutorial",
+    
+    "lang.zhCN": "中文",
+    "lang.en": "English",
+    
+    "aria.langSwitcher": "Switch language",
+    "aria.themeToggle": "Toggle theme",
+    "aria.toggleDock": "Toggle dock bar",
+    "aria.toggleNav": "Toggle navigation menu",
+    "aria.dock": "Bottom dock",
+    
+    "search.placeholder": "Search...",
+    
+    "actions.signUp": "Sign up",
+    "actions.signIn": "Sign in",
+    "actions.post": "New Post",
+    "actions.drafts": "Drafts",
+    "actions.notifications": "Notifications",
+    
+    "layout.left.actions": "Quick actions",
+    "layout.left.sections": "Sections",
+    "layout.right.illustration": "Illustration",
+    "layout.right.placeholderA": "Tips",
+    "layout.right.placeholderB": "Hot topics",
+    
+    "sections.news": "News",
+    "sections.tech": "Tech",
+    "sections.share": "Sharing",
+    
+    "posts.placeholderTitle": "Sample post title",
+    "posts.placeholderMeta": "Author · 5 min read",
+    
+    "dock.toTop": "Back to top",
+    "dock.home": "Home",
+    "dock.search": "Search",
+    "dock.new": "New",
+    "dock.notifications": "Notifications",
+    "dock.profile": "Profile",
+    "dock.settings": "Settings",
+    
+    "menu.open": "Open",
+    "menu.pin": "Pin to dock",
+    "menu.mute": "Mute notifications",
+    "menu.clear": "Clear"
   }
 }

@@ -40,6 +40,49 @@
     "ChoosePhoto": "选择照片",
     "GetStarted": "快速上手",
     "Tutorial": "Web 应用开发教程",
-    "ExploreTutorial": "查看教程"
+    "ExploreTutorial": "查看教程",
+    
+    "lang.zhCN": "中文",
+    "lang.en": "英文",
+    
+    "aria.langSwitcher": "切换语言",
+    "aria.themeToggle": "切换主题",
+    "aria.toggleDock": "切换 Dock 栏",
+    "aria.toggleNav": "切换导航菜单",
+    "aria.dock": "底部 Dock 栏",
+    
+    "search.placeholder": "搜索...",
+    
+    "actions.signUp": "注册",
+    "actions.signIn": "登录",
+    "actions.post": "发帖",
+    "actions.drafts": "草稿",
+    "actions.notifications": "通知",
+    
+    "layout.left.actions": "功能面板",
+    "layout.left.sections": "帖子分区",
+    "layout.right.illustration": "插画",
+    "layout.right.placeholderA": "小提示",
+    "layout.right.placeholderB": "热门话题",
+    
+    "sections.news": "动态",
+    "sections.tech": "技术",
+    "sections.share": "分享",
+    
+    "posts.placeholderTitle": "示例帖子标题",
+    "posts.placeholderMeta": "作者 · 5 分钟阅读",
+    
+    "dock.toTop": "返回顶部",
+    "dock.home": "首页",
+    "dock.search": "搜索",
+    "dock.new": "新建",
+    "dock.notifications": "通知",
+    "dock.profile": "我的",
+    "dock.settings": "设置",
+    
+    "menu.open": "打开",
+    "menu.pin": "固定到 Dock",
+    "menu.mute": "静音通知",
+    "menu.clear": "清除"
   }
 }

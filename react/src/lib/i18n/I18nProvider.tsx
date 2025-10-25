@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fetchAbpLocalization } from './abpApi'
 import { I18nContext, type Locale } from './I18nContext'
-import { messages as fallbackMessages } from './messages'
 
 const STORAGE_KEY = 'app.locale'
 const DEFAULT_RESOURCE = 'Radish'
@@ -67,9 +66,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     const fromServer = dict?.[realKey]
     if (fromServer !== undefined) return fromServer
 
-    // 本地兜底（保持现有 UI 正常）
-    const local = fallbackMessages[locale as 'en' | 'zh-Hans'] as Record<string, string>
-    return local?.[key] ?? realKey
+    return realKey
   }, [resources, locale])
 
   const value = useMemo(() => ({ locale, setLocale, t }), [locale, setLocale, t])
