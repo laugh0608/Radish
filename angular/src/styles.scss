@@ -37,3 +37,50 @@
     background-image: url('/assets/images/getting-started/x.svg');
   }
 }
+
+/* ---- Global mobile-friendly tweaks ---- */
+/* 避免图片在小屏溢出容器 */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 缩小极小屏的左右间距，提升有效内容空间 */
+@media (max-width: 575.98px) {
+  .container,
+  .container-fluid,
+  .lpx-container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+/* 强化 LeptonX 移动端导航的可见性（偶发被主题层级/覆盖隐藏） */
+@media (max-width: 767.98px) {
+  /* 确保移动导航容器在小屏呈现 */
+  .lpx-mobile-navbar-container {
+    display: block !important;
+    z-index: 110;
+  }
+
+  /* 显示右侧菜单/个人图标，并提升对比度 */
+  .lpx-mobile-navbar .user-menu {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+  }
+  .lpx-mobile-navbar .user-menu .lpx-icon,
+  .lpx-mobile-navbar .user-menu [class^="bi"],
+  .lpx-mobile-navbar .user-menu [class*=" bi"] {
+    color: #fff !important;
+    opacity: 1 !important;
+    font-size: 30px !important;
+  }
+}
+
+/* 移动端隐藏空的顶部 Topbar，避免出现圆角白条占位 */
+@media (max-width: 767.98px) {
+  .lpx-topbar-container {
+    display: none !important;
+  }
+}
