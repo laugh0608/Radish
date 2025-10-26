@@ -5,20 +5,18 @@
   left: 0;
   right: 0;
   height: 56px;
-  background: #161616;
+  background: #111214;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: none;
   z-index: 140;
 }
 
 @media (max-width: 767.98px) {
-  .mobile-bottom-nav {
-    display: flex;
-  }
+  .mobile-bottom-nav { display: flex; }
 }
 
 .mobile-bottom-nav a {
-  color: #c9d1d9;
+  color: #e0e4ea;
   text-decoration: none;
   flex: 1 1 0;
   display: flex;
@@ -27,6 +25,7 @@
   gap: 6px;
   font-size: 12px;
   white-space: nowrap;
+  padding: 0 4px;
 }
 
 .mobile-bottom-nav a i {
@@ -43,4 +42,65 @@
   .lpx-content-container {
     padding-bottom: 70px;
   }
+}
+
+/* -------- Submenu (bottom sheet) -------- */
+.mobile-submenu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 139;
+}
+
+.mobile-submenu-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 56px; /* sit above bottom nav */
+  background: #1b1d21;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 141;
+}
+
+.mobile-submenu-panel .submenu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  color: #fff;
+}
+
+.mobile-submenu-panel .btn-close {
+  filter: invert(1);
+}
+
+.mobile-submenu-panel .submenu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px 6px;
+  padding: 6px 8px 12px 8px;
+}
+
+.mobile-submenu-panel .submenu-grid a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #e0e4ea;
+  text-decoration: none;
+  padding: 10px 4px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mobile-submenu-panel .submenu-grid a i {
+  font-size: 20px;
+}
+
+.mobile-submenu-panel .submenu-grid a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
 }
