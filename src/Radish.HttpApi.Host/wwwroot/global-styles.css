@@ -46,7 +46,10 @@ html, body {
 }
 
 /* 页面背景与文字 */
-.radish-landing{ background-color: var(--page-bg); color: var(--text-color); }
+.radish-landing{ background-color: var(--page-bg); color: var(--text-color); min-height: 100vh; }
+/* 覆盖空布局可能的深色背景，去除两侧黑边 */
+html, body{ background-color: var(--page-bg) !important; }
+body.abp-application-layout, .abp-account-layout{ background-color: var(--page-bg) !important; }
 .radish-landing .text-muted{ color: var(--muted-color) !important; }
 
 /* 顶部 Hero */
@@ -55,6 +58,12 @@ html, body {
 .radish-hero .btn, .radish-hero .dropdown-toggle { color:#0f172a; }
 .theme-dark .radish-hero .btn, .theme-dark .radish-hero .dropdown-toggle{ color:#e5e7eb; }
 .radish-brand .brand-logo{ width:44px; height:44px; background: var(--lpx-logo-icon) no-repeat center/contain; display:inline-block; }
+
+/* 顶部操作区：在移动端占满宽度、自动换行对齐 */
+.radish-actions{ display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+@media (max-width: 576px){
+  .radish-actions{ width:100%; margin-top:.75rem; justify-content:flex-start; }
+}
 
 /* 卡片与动效 */
 .radish-app-card .card{ transition: transform .2s ease, box-shadow .2s ease; background: var(--card-bg); box-shadow: var(--card-shadow); border: 1px solid var(--card-border); }
