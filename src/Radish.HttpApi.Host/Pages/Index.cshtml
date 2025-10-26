@@ -84,25 +84,23 @@
                 {
                     @foreach (var application in Model.Applications)
                     {
-                        @{
-                            var target = application.ClientUri?.TrimEnd('/');
-                            var clientId = application.ClientId ?? string.Empty;
-                            if (!string.IsNullOrEmpty(target))
+                        var target = application.ClientUri?.TrimEnd('/');
+                        var clientId = application.ClientId ?? string.Empty;
+                        if (!string.IsNullOrEmpty(target))
+                        {
+                            if (clientId == "Radish_Swagger" && !target.EndsWith("/swagger", StringComparison.OrdinalIgnoreCase))
                             {
-                                if (clientId == "Radish_Swagger" && !target.EndsWith("/swagger", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    target += "/swagger";
-                                }
-                                else if (clientId == "Radish_Scalar" && !target.EndsWith("/scalar", StringComparison.OrdinalIgnoreCase))
-                                {
-                                    target += "/scalar";
-                                }
+                                target += "/swagger";
                             }
+                            else if (clientId == "Radish_Scalar" && !target.EndsWith("/scalar", StringComparison.OrdinalIgnoreCase))
+                            {
+                                target += "/scalar";
+                            }
+                        }
 
-                            if (CurrentUser.IsAuthenticated && !string.IsNullOrEmpty(target))
-                            {
-                                target += (target!.Contains("?") ? "&" : "?") + "sso=1";
-                            }
+                        if (CurrentUser.IsAuthenticated && !string.IsNullOrEmpty(target))
+                        {
+                            target += (target!.Contains("?") ? "&" : "?") + "sso=1";
                         }
                         <div class="col">
                             <a href="@(target ?? "#")" class="radish-app-card d-block h-100 text-reset">
