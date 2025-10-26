@@ -73,7 +73,7 @@ dotnet test test/Radish.MongoDB.Tests
   - 与 Host 保持一致，便于迁移工具使用同一套连接串。
   
 跨域来源（CORS）：
-- 通过 `App__CorsOrigins` 指定允许的前端来源，多个用逗号分隔（例：`https://localhost:5173,https://localhost:4200`）。
+- 通过 `App__CorsOrigins` 指定允许的前端来源，多个用逗号分隔（建议同时包含 http/https，例：`http://localhost:5173,https://localhost:5173,http://localhost:4200,https://localhost:4200`）。
 - 启动时后端会自动解析并应用到默认 CORS 策略（允许凭据、任意头与方法，支持通配子域）。
 
 弃用说明（关于 appsettings.json 中的 CORS 配置）：
