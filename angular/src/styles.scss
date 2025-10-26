@@ -38,6 +38,11 @@
   }
 }
 
+/* 全局字体：优先系统字体，Inter 次之，避免远程字体不可用时阻塞渲染 */
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", Arial, "Inter", sans-serif !important;
+}
+
 /* ---- Global mobile-friendly tweaks ---- */
 /* 避免图片在小屏溢出容器 */
 img {

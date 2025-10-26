@@ -6,3 +6,8 @@
     --lpx-logo: url('/images/logo/leptonxlite/logo-dark.png');
     background-position: left;
 }
+
+/* 字体回退：即使 Inter 未加载也能优雅降级 */
+html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", Arial, "Inter", sans-serif !important;
+}

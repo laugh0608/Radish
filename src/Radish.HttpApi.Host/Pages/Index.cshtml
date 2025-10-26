@@ -39,9 +39,10 @@
 
                         <div class="container">
                             <abp-row>
-                                <abp-column size="_9">
+                                <!-- 在移动端堆叠，两列从 md 起并排 -->
+                                <abp-column size-md="_9">
 
-                                    <div class="mr-auto p-2 float-start">
+                                    <div class="mr-auto p-2 float-md-start text-center text-md-start">
                                         @if (CurrentUser.IsAuthenticated)
                                         {
                                             <div>
@@ -63,8 +64,8 @@
                                         }
                                     </div>
                                 </abp-column>
-                                <abp-column size="_3">
-                                    <div class="ml-auto p-2 float-end">
+                                <abp-column size-md="_3">
+                                    <div class="ml-auto p-2 float-md-end text-center text-md-end">
                                         <abp-dropdown>
                                             @if (Model.CurrentLanguage != null)
                                             {
