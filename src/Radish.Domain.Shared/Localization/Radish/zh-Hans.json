@@ -117,5 +117,8 @@
     ,
     "Section:Recent": "最近访问",
     "Section:Apps": "应用"
+    ,
+    "Section:RecentOnlyFavs": "仅显示收藏",
+    "Actions:Clear": "清空"
   }
 }

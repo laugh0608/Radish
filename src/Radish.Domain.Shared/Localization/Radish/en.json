@@ -112,5 +112,8 @@
     ,
     "Section:Recent": "Recent",
     "Section:Apps": "Apps"
+    ,
+    "Section:RecentOnlyFavs": "Only favorites",
+    "Actions:Clear": "Clear"
   }
 }

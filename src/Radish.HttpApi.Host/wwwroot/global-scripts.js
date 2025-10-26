@@ -7,6 +7,7 @@
   var KEY_ORDER   = 'radish.order';           // [clientId]
   var KEY_FAVS    = 'radish.favs';            // [clientId]
   var KEY_RECENT  = 'radish.recent';          // [{id,title,href}]
+  var KEY_RECENT_ONLYFAVS = 'radish.recent.onlyFavs'; // boolean
   var KEY_HIDDEN  = 'radish.hidden';          // [clientId]
   var KEY_META    = 'radish.meta';            // {id:{title,href}}
 
@@ -130,6 +131,8 @@
           });
           items.forEach(function(n){ grid.appendChild(n); });
         }catch{}
+        // 可能影响“仅显示收藏”的最近访问展示
+        try{ renderRecent(); }catch{}
       });
     });
 
@@ -143,13 +146,24 @@
     function touchRecent(item){ var list=getRecent(); list=list.filter(function(x){return x&&x.id!==item.id;}); list.unshift(item); if(list.length>6) list=list.slice(0,6); setRecent(list); }
     grid.querySelectorAll('.radish-app-card').forEach(function(a){ a.addEventListener('click', function(){ var parent=a.closest('.col'); var id=parent?(parent.getAttribute('data-client-id')||''):''; var title=a.getAttribute('data-title')||(a.querySelector('.h5')?a.querySelector('.h5').textContent.trim():id); var href=a.getAttribute('data-href')||a.getAttribute('href')||''; touchRecent({id:id, href:href, title:title}); }); });
     function renderRecent(){
-      var hidden=getHidden(); var recent=getRecent().filter(function(x){ return x && hidden.indexOf(x.id) < 0; });
+      var hidden=getHidden();
+      var recent=getRecent().filter(function(x){ return x && hidden.indexOf(x.id) < 0; });
+      var onlyFavs = (localStorage.getItem(KEY_RECENT_ONLYFAVS) === 'true');
+      if(onlyFavs){ var favs=getFavs(); recent = recent.filter(function(x){ return favs.indexOf(x.id) >= 0; }); }
       var section=document.getElementById('recentSection'); var row=document.getElementById('recentRow'); if(!row||!section) return;
       if(!recent.length){ section.classList.add('d-none'); return; }
       section.classList.remove('d-none'); row.innerHTML='';
       recent.forEach(function(r){ var col=document.createElement('div'); col.className='col'; col.innerHTML='\n<a href="'+(r.href||'#')+'" target="_blank" class="radish-app-card d-block h-100 text-reset">\n  <div class="card h-100 border-0 shadow-sm radish-card">\n    <div class="card-body d-flex align-items-start gap-3">\n      <div class="flex-grow-1">\n        <div class="h6 mb-1">'+(r.title||r.id||'App')+'</div>\n        <div class="text-muted small text-truncate">'+(r.href||'')+'</div>\n      </div>\n    </div>\n  </div>\n</a>'; row.appendChild(col); });
     }
     renderRecent();
+    // Recent section controls
+    try{
+      var onlyFavsToggle = document.getElementById('recentOnlyFavsToggle');
+      if(onlyFavsToggle){ onlyFavsToggle.checked = (localStorage.getItem(KEY_RECENT_ONLYFAVS) === 'true');
+        onlyFavsToggle.addEventListener('change', function(){ localStorage.setItem(KEY_RECENT_ONLYFAVS, onlyFavsToggle.checked ? 'true':'false'); renderRecent(); }); }
+      var clearBtn = document.getElementById('recentClearBtn');
+      if(clearBtn){ clearBtn.addEventListener('click', function(){ setRecent([]); renderRecent(); if(window.abp&&abp.notify) abp.notify.info(L('Actions:Clear')); }); }
+    }catch{}
 
     // Hide toggle & manage
     grid.querySelectorAll('.hide-toggle').forEach(function(el){ el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var id=el.getAttribute('data-client-id')||''; var arr=getHidden(); if(arr.indexOf(id)<0) arr.push(id); setHidden(arr); syncHidden(); renderRecent(); if(window.abp&&abp.notify) abp.notify.info(L('Notify:HiddenDone')); }); });

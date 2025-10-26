@@ -104,8 +104,9 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 .radish-app-card .card{ transition: transform .2s ease, box-shadow .2s ease; background: var(--card-bg); box-shadow: var(--card-shadow); border: 1px solid var(--card-border); }
 .radish-app-card:hover .card{ transform: translateY(-4px); box-shadow: 0 .75rem 1.5rem rgba(15,23,42,.12); }
 .radish-app-logo{ width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.08)); }
-.radish-card-tools{ opacity: 0; transition: opacity .15s ease; }
+.radish-card-tools{ opacity: .9; }
 .radish-app-card:hover .radish-card-tools{ opacity: 1; }
+.radish-card-tools .btn{ padding: .25rem .375rem; line-height: 1; }
 .radish-card .card-body{ padding: var(--card-padding); }
 
 /* 区块标题与区分 */
