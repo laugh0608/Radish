@@ -47,6 +47,16 @@
 
   // --- DOM Ready ---
   window.addEventListener('DOMContentLoaded', function(){
+    // Localization helper
+    var lres = (window.abp && abp.localization && abp.localization.getResource) ? abp.localization.getResource('Radish') : function(s){ return s; };
+    function L(key){
+      try{
+        var args = Array.prototype.slice.call(arguments,1);
+        var t = lres ? lres(key) : key;
+        if(args.length){ return t.replace(/\{(\d+)\}/g, function(_,i){ return (args[i]!==undefined? args[i] : '{'+i+'}'); }); }
+        return t;
+      }catch{ return key; }
+    }
     // Theme toggles
     var themeBtn = document.getElementById('themeToggle');
     if(themeBtn) themeBtn.addEventListener('click', function(){ theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(theme); localStorage.setItem(KEY_THEME, theme); });
@@ -124,10 +134,10 @@
     });
 
     // Copy link
-    grid.querySelectorAll('.copy-link').forEach(function(el){ el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var href = el.getAttribute('data-href')||''; if(navigator.clipboard){ navigator.clipboard.writeText(href).then(function(){ if(window.abp&&abp.notify){ abp.notify.info('已复制链接'); } else { console.info('已复制链接: '+href); } }).catch(function(){ alert('复制失败'); }); } else { var t=document.createElement('textarea'); t.value=href; document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); if(window.abp&&abp.notify){ abp.notify.info('已复制链接'); } } finally { document.body.removeChild(t); } } }); });
+    grid.querySelectorAll('.copy-link').forEach(function(el){ el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var href = el.getAttribute('data-href')||''; if(navigator.clipboard){ navigator.clipboard.writeText(href).then(function(){ if(window.abp&&abp.notify){ abp.notify.info(L('Notify:Copied')); } else { console.info(L('Notify:Copied')+': '+href); } }).catch(function(){ alert(L('Notify:CopyFailed')); }); } else { var t=document.createElement('textarea'); t.value=href; document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); if(window.abp&&abp.notify){ abp.notify.info(L('Notify:Copied')); } } finally { document.body.removeChild(t); } } }); });
 
     // Health check
-    grid.querySelectorAll('.health-check').forEach(function(el){ el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var origin = el.getAttribute('data-health-origin')||''; if(!origin){ if(window.abp&&abp.notify) abp.notify.warn('未配置健康检查'); return; } var url = origin.replace(/\/$/,'') + '/health-status'; fetch(url,{method:'GET'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(data){ var status=(data&&data.status)||'Unknown'; if(window.abp&&abp.notify){ if((status||'').toLowerCase()==='healthy') abp.notify.success('健康: '+status); else abp.notify.warn('健康: '+status); } else { alert('健康状态: '+status); } }).catch(function(){ if(window.abp&&abp.notify) abp.notify.error('检查失败'); else alert('检查失败'); }); }); });
+    grid.querySelectorAll('.health-check').forEach(function(el){ el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var origin = el.getAttribute('data-health-origin')||''; if(!origin){ if(window.abp&&abp.notify) abp.notify.warn(L('Notify:HealthNotConfigured')); return; } var url = origin.replace(/\/$/,'') + '/health-status'; fetch(url,{method:'GET'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(data){ var status=(data&&data.status)||'Unknown'; var msg=L('Notify:HealthStatus', status); if(window.abp&&abp.notify){ if((status||'').toLowerCase()==='healthy') abp.notify.success(msg); else abp.notify.warn(msg); } else { alert(msg); } }).catch(function(){ if(window.abp&&abp.notify) abp.notify.error(L('Notify:HealthCheckFailed')); else alert(L('Notify:HealthCheckFailed')); }); }); });
 
     // Recent
     function touchRecent(item){ var list=getRecent(); list=list.filter(function(x){return x&&x.id!==item.id;}); list.unshift(item); if(list.length>6) list=list.slice(0,6); setRecent(list); }
@@ -136,9 +146,9 @@
     renderRecent();
 
     // Hide toggle & manage
-    grid.querySelectorAll('.hide-toggle').forEach(function(el){ el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var id=el.getAttribute('data-client-id')||''; var arr=getHidden(); if(arr.indexOf(id)<0) arr.push(id); setHidden(arr); syncHidden(); renderRecent(); if(window.abp&&abp.notify) abp.notify.info('已隐藏'); }); });
+    grid.querySelectorAll('.hide-toggle').forEach(function(el){ el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var id=el.getAttribute('data-client-id')||''; var arr=getHidden(); if(arr.indexOf(id)<0) arr.push(id); setHidden(arr); syncHidden(); renderRecent(); if(window.abp&&abp.notify) abp.notify.info(L('Notify:HiddenDone')); }); });
 
-    function openHiddenManage(){ try{ var list=document.getElementById('hiddenList'); if(!list) return; var arr=getHidden(); var meta=getMeta(); list.innerHTML=''; if(!arr.length){ list.innerHTML='<div class="text-muted">暂无隐藏项</div>'; } arr.forEach(function(id){ var m=meta[id]||{title:id, href:''}; var item=document.createElement('div'); item.className='list-group-item d-flex justify-content-between align-items-center'; item.innerHTML='<div><div class="fw-semibold">'+(m.title||id)+'</div><div class="text-muted small">'+(m.href||'')+'</div></div><button type="button" class="btn btn-sm btn-outline-primary unhide" data-id="'+id+'">显示</button>'; list.appendChild(item); }); list.querySelectorAll('.unhide').forEach(function(btn){ btn.addEventListener('click', function(){ var id=btn.getAttribute('data-id')||''; var a=getHidden().filter(function(x){return x!==id;}); setHidden(a); syncHidden(); renderRecent(); btn.closest('.list-group-item').remove(); }); }); var modalEl=document.getElementById('hiddenManageModal'); if(!modalEl) return; var mdl=new bootstrap.Modal(modalEl); mdl.show(); }catch(e){ console.warn(e); } }
+    function openHiddenManage(){ try{ var list=document.getElementById('hiddenList'); if(!list) return; var arr=getHidden(); var meta=getMeta(); list.innerHTML=''; if(!arr.length){ list.innerHTML='<div class="text-muted">'+L('Hidden:Empty')+'</div>'; } arr.forEach(function(id){ var m=meta[id]||{title:id, href:''}; var item=document.createElement('div'); item.className='list-group-item d-flex justify-content-between align-items-center'; item.innerHTML='<div><div class="fw-semibold">'+(m.title||id)+'</div><div class="text-muted small">'+(m.href||'')+'</div></div><button type="button" class="btn btn-sm btn-outline-primary unhide" data-id="'+id+'">'+L('Actions:Show')+'</button>'; list.appendChild(item); }); list.querySelectorAll('.unhide').forEach(function(btn){ btn.addEventListener('click', function(){ var id=btn.getAttribute('data-id')||''; var a=getHidden().filter(function(x){return x!==id;}); setHidden(a); syncHidden(); renderRecent(); btn.closest('.list-group-item').remove(); }); }); var modalEl=document.getElementById('hiddenManageModal'); if(!modalEl) return; var mdl=new bootstrap.Modal(modalEl); mdl.show(); }catch(e){ console.warn(e); } }
     var hBtn=document.getElementById('hiddenManageBtn'); if(hBtn) hBtn.addEventListener('click', openHiddenManage);
     var hBtnM=document.getElementById('hiddenManageBtnMobile'); if(hBtnM) hBtnM.addEventListener('click', openHiddenManage);
 
@@ -146,7 +156,7 @@
     var editBtn = document.getElementById('editToggle');
     var editBtnM = document.getElementById('editToggleMobile');
     function readIds(container){ return Array.from(container.querySelectorAll(':scope > .col')).map(function(x){ return x.getAttribute('data-client-id')||'';}); }
-    function setEditMode(on){ document.body.classList.toggle('edit-mode', !!on); grid.querySelectorAll(':scope > .col').forEach(function(col){ col.setAttribute('draggable', on? 'true':'false'); }); if(editBtn) editBtn.textContent = on? '完成':'编辑'; }
+    function setEditMode(on){ document.body.classList.toggle('edit-mode', !!on); grid.querySelectorAll(':scope > .col').forEach(function(col){ col.setAttribute('draggable', on? 'true':'false'); }); if(editBtn) editBtn.textContent = on? L('Actions:Done'):L('Actions:Edit'); }
     var editing=false; setEditMode(editing);
     function toggleEdit(){ editing=!editing; setEditMode(editing); }
     if(editBtn) editBtn.addEventListener('click', toggleEdit);
@@ -158,4 +168,3 @@
     grid.addEventListener('dragend', function(e){ var t=e.target.closest('.col'); if(t) t.classList.remove('edit-dragging'); dragSrc=null; });
   });
 })();
-

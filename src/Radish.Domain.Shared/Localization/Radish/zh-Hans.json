@@ -84,6 +84,35 @@
     "menu.open": "打开",
     "menu.pin": "固定到 Dock",
     "menu.mute": "静音通知",
-    "menu.clear": "清除"
+    "menu.clear": "清除",
+
+    "Landing:WelcomeUser": "欢迎，{0}",
+    "Actions:More": "更多",
+    "Actions:Edit": "编辑",
+    "Actions:Done": "完成",
+    "Actions:EditHome": "编辑首页",
+    "Actions:ManageHidden": "隐藏管理",
+    "Actions:Close": "关闭",
+    "Actions:ThemeToggle": "切换主题",
+    "Actions:Density": "密度",
+    "Actions:Density.Auto": "自动",
+    "Actions:Density.Comfortable": "舒适",
+    "Actions:Density.Compact": "紧凑",
+    "Actions:Favorite": "收藏",
+    "Actions:CopyLink": "复制链接",
+    "Actions:HealthCheck": "健康检查",
+    "Actions:Hide": "隐藏",
+    "Actions:Show": "显示",
+    "Actions:DragToSort": "拖拽排序",
+
+    "Hidden:Title": "已隐藏的应用",
+    "Hidden:Empty": "暂无隐藏项",
+
+    "Notify:Copied": "已复制链接",
+    "Notify:CopyFailed": "复制失败",
+    "Notify:HiddenDone": "已隐藏",
+    "Notify:HealthNotConfigured": "未配置健康检查",
+    "Notify:HealthStatus": "健康: {0}",
+    "Notify:HealthCheckFailed": "检查失败"
   }
 }

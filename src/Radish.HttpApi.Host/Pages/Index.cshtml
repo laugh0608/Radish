@@ -33,7 +33,7 @@
                         <p class="lead mb-0 text-hero-sub">
                             @if (CurrentUser.IsAuthenticated)
                             {
-                                <text>欢迎，@(CurrentUser.UserName ?? CurrentUser.Name ?? "")</text>
+                                @L["Landing:WelcomeUser", (CurrentUser.UserName ?? CurrentUser.Name ?? "")] 
                             }
                             else
                             {
@@ -46,13 +46,13 @@
                 <div class="radish-actions d-flex align-items-center gap-2 ms-auto flex-wrap">
                     <!-- 大屏：直接展示所有操作 -->
                     <div class="d-none d-sm-flex align-items-center gap-2">
-                        <button type="button" id="themeToggle" class="btn btn-light-subtle border-0 btn-sm" title="切换主题">🌞/🌙</button>
+                        <button type="button" id="themeToggle" class="btn btn-light-subtle border-0 btn-sm" title="@L["Actions:ThemeToggle"]">🌞/🌙</button>
                         <div class="dropdown">
-                            <button class="btn btn-light-subtle border-0 btn-sm dropdown-toggle" type="button" id="densityMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">密度</button>
+                            <button class="btn btn-light-subtle border-0 btn-sm dropdown-toggle" type="button" id="densityMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">@L["Actions:Density"]</button>
                             <ul class="dropdown-menu" aria-labelledby="densityMenuBtn">
-                                <li><button class="dropdown-item density-item" data-density="auto" type="button">自动</button></li>
-                                <li><button class="dropdown-item density-item" data-density="comfortable" type="button">舒适</button></li>
-                                <li><button class="dropdown-item density-item" data-density="compact" type="button">紧凑</button></li>
+                                <li><button class="dropdown-item density-item" data-density="auto" type="button">@L["Actions:Density.Auto"]</button></li>
+                                <li><button class="dropdown-item density-item" data-density="comfortable" type="button">@L["Actions:Density.Comfortable"]</button></li>
+                                <li><button class="dropdown-item density-item" data-density="compact" type="button">@L["Actions:Density.Compact"]</button></li>
                             </ul>
                         </div>
                         <abp-dropdown>
@@ -82,21 +82,21 @@
                         {
                             <a abp-button="Light" class="btn-sm" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a>
                         }
-                        <button type="button" id="editToggle" class="btn btn-outline-secondary btn-sm ms-1" title="编辑首页">编辑</button>
-                        <button type="button" id="hiddenManageBtn" class="btn btn-outline-secondary btn-sm" title="管理隐藏">隐藏管理</button>
+                        <button type="button" id="editToggle" class="btn btn-outline-secondary btn-sm ms-1" title="@L["Actions:EditHome"]">@L["Actions:Edit"]</button>
+                        <button type="button" id="hiddenManageBtn" class="btn btn-outline-secondary btn-sm" title="@L["Actions:ManageHidden"]">@L["Actions:ManageHidden"]</button>
                     </div>
 
                     <!-- 小屏：收纳为“更多”菜单 -->
                     <div class="dropdown d-flex d-sm-none">
-                        <button class="btn btn-light-subtle border-0 btn-sm dropdown-toggle" type="button" id="moreMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">更多</button>
+                        <button class="btn btn-light-subtle border-0 btn-sm dropdown-toggle" type="button" id="moreMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">@L["Actions:More"]</button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="moreMenuBtn">
-                            <li><button class="dropdown-item" type="button" id="themeToggleMobile">切换主题</button></li>
+                            <li><button class="dropdown-item" type="button" id="themeToggleMobile">@L["Actions:ThemeToggle"]</button></li>
                             <li class="dropend">
-                                <a class="dropdown-item dropdown-toggle" href="#" id="densitySub" data-bs-toggle="dropdown" aria-expanded="false">密度</a>
+                                <a class="dropdown-item dropdown-toggle" href="#" id="densitySub" data-bs-toggle="dropdown" aria-expanded="false">@L["Actions:Density"]</a>
                                 <ul class="dropdown-menu" aria-labelledby="densitySub">
-                                    <li><button class="dropdown-item density-item" data-density="auto" type="button">自动</button></li>
-                                    <li><button class="dropdown-item density-item" data-density="comfortable" type="button">舒适</button></li>
-                                    <li><button class="dropdown-item density-item" data-density="compact" type="button">紧凑</button></li>
+                                    <li><button class="dropdown-item density-item" data-density="auto" type="button">@L["Actions:Density.Auto"]</button></li>
+                                    <li><button class="dropdown-item density-item" data-density="comfortable" type="button">@L["Actions:Density.Comfortable"]</button></li>
+                                    <li><button class="dropdown-item density-item" data-density="compact" type="button">@L["Actions:Density.Compact"]</button></li>
                                 </ul>
                             </li>
                             <li><hr class="dropdown-divider"/></li>
@@ -119,8 +119,8 @@
                                 <li><a class="dropdown-item" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a></li>
                             }
                             <li><hr class="dropdown-divider"/></li>
-                            <li><button class="dropdown-item" type="button" id="editToggleMobile">编辑首页</button></li>
-                            <li><button class="dropdown-item" type="button" id="hiddenManageBtnMobile">管理隐藏</button></li>
+                            <li><button class="dropdown-item" type="button" id="editToggleMobile">@L["Actions:EditHome"]</button></li>
+                            <li><button class="dropdown-item" type="button" id="hiddenManageBtnMobile">@L["Actions:ManageHidden"]</button></li>
                         </ul>
                     </div>
                 </div>
@@ -174,11 +174,11 @@
                                             <div class="text-muted small text-truncate">@application.ClientUri</div>
                                         </div>
                                         <div class="radish-card-tools position-absolute top-0 end-0 p-2 d-flex gap-2">
-                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 fav-toggle" title="收藏" data-client-id="@clientId">☆</button>
-                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 copy-link" title="复制链接" data-href="@(target ?? "#")">⧉</button>
-                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 health-check" title="健康检查" data-health-origin="@((!string.IsNullOrEmpty(application.ClientUri) ? new Uri(application.ClientUri).GetLeftPart(UriPartial.Authority) : string.Empty))">❤</button>
-                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 hide-toggle" title="隐藏" data-client-id="@clientId">🙈</button>
-                                            <span class="radish-drag-handle d-none" title="拖拽排序">⋮⋮</span>
+                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 fav-toggle" title="@L["Actions:Favorite"]" data-client-id="@clientId">☆</button>
+                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 copy-link" title="@L["Actions:CopyLink"]" data-href="@(target ?? "#")">⧉</button>
+                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 health-check" title="@L["Actions:HealthCheck"]" data-health-origin="@((!string.IsNullOrEmpty(application.ClientUri) ? new Uri(application.ClientUri).GetLeftPart(UriPartial.Authority) : string.Empty))">❤</button>
+                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 hide-toggle" title="@L["Actions:Hide"]" data-client-id="@clientId">🙈</button>
+                                            <span class="radish-drag-handle d-none" title="@L["Actions:DragToSort"]">⋮⋮</span>
                                         </div>
                                     </div>
                                 </div>
@@ -196,14 +196,14 @@
   <div class="modal-dialog modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="hiddenManageLabel">已隐藏的应用</h5>
+        <h5 class="modal-title" id="hiddenManageLabel">@L["Hidden:Title"]</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div id="hiddenList" class="list-group small"></div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@L["Actions:Close"]</button>
       </div>
     </div>
   </div>
