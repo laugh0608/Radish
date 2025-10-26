@@ -16,7 +16,8 @@ async function bootstrap() {
   const port = Number.isNaN(parsedPort) ? 5173 : parsedPort
 
   // Decide HTTPS strategy: prefer repo-root dev-certs; else react/script/certs; else basic-ssl; else HTTP
-  const useHttps = process.env.DEV_HTTPS !== '0'
+  // 默认使用 HTTP；只有设置 DEV_HTTPS=1 时才启用 HTTPS
+  const useHttps = process.env.DEV_HTTPS === '1'
   /** @type {import('vite').PluginOption | undefined} */
   let httpsPlugin
   /** @type {false | import('vite').HttpsServerOptions | true | undefined} */

@@ -6,7 +6,7 @@ This is a startup project based on the ABP framework. For more information, visi
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Run `ng serve` (HTTP) for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
 ## Code scaffolding
 
@@ -43,3 +43,6 @@ Quick usage
 - Templates: `{{ '::Welcome' | abpLocalization }}`、`{{ '::GetStarted' | abpLocalization }}`。
 - All UI copies come from server-side ABP resources (Radish resource). No custom front-end i18n.
 - Runtime switcher: provided by the theme in the top-right corner.
+
+Notes
+- Local development defaults to HTTP to avoid untrusted certificate prompts. Use `yarn start:https` only when you explicitly need HTTPS.
