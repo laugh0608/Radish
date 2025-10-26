@@ -108,6 +108,17 @@ public class Program
                 throw new InvalidOperationException(hint);
             }
 
+            // 在开发环境下，若未显式指定 ASPNETCORE_URLS，则默认同时监听 HTTPS 与 HTTP（44342）
+            try
+            {
+                var urlsEnv = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
+                if (string.IsNullOrWhiteSpace(urlsEnv) && builder.Environment.IsDevelopment())
+                {
+                    builder.WebHost.UseUrls("https://localhost:44342", "http://localhost:44342");
+                }
+            }
+            catch { /* ignore */ }
+
             await builder.AddApplicationAsync<RadishHttpApiHostModule>();
             
             var app = builder.Build();

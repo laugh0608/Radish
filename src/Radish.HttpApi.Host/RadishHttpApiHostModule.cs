@@ -381,18 +381,44 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         {
             options.AddDefaultPolicy(builder =>
             {
-                builder
-                    .WithOrigins(
-                        configuration["App:CorsOrigins"]?
-                            .Split(",", StringSplitOptions.RemoveEmptyEntries)
-                            .Select(o => o.Trim().RemovePostFix("/"))
-                            .ToArray() ?? Array.Empty<string>()
-                    )
-                    .WithAbpExposedHeaders()
-                    .SetIsOriginAllowedToAllowWildcardSubdomains()
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials();
+                var origins = (configuration["App:CorsOrigins"] ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(o => o.Trim().RemovePostFix("/"))
+                    .ToArray();
+
+                // 开发兜底：若未配置 CORS 来源，则放开常见本地来源（含 http/https），或放开全部来源
+                if (origins.Length == 0)
+                {
+                    var localDefaults = new[]
+                    {
+                        "http://localhost:4200",
+                        "https://localhost:4200",
+                        "http://localhost:5173",
+                        "https://localhost:5173",
+                    };
+                    origins = localDefaults;
+                }
+
+                // 若 origins 仍为空（理论不会发生），则放开任意来源（允许凭据需与 AllowAnyOrigin 互斥，改用 SetIsOriginAllowed）
+                if (origins.Length == 0)
+                {
+                    builder
+                        .SetIsOriginAllowed(_ => true)
+                        .WithAbpExposedHeaders()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                }
+                else
+                {
+                    builder
+                        .WithOrigins(origins)
+                        .WithAbpExposedHeaders()
+                        .SetIsOriginAllowedToAllowWildcardSubdomains()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                }
             });
         });
     }
