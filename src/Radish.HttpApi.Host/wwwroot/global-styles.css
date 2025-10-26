@@ -11,3 +11,34 @@
 html, body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", Arial, "Inter", sans-serif !important;
 }
+
+/* ==== Radish Landing UI (Host 首页) ==== */
+.radish-hero {
+    /* 渐变 + 轻微纹理 */
+    background: radial-gradient(1200px 400px at 10% -10%, rgba(99, 102, 241, 0.15), rgba(99,102,241,0) 70%),
+                radial-gradient(1000px 380px at 90% -20%, rgba(16, 185, 129, 0.10), rgba(16,185,129,0) 65%),
+                linear-gradient(180deg, #0f172a, #111827);
+    color: #eef2ff;
+}
+.radish-hero .text-hero-sub{ color: rgba(255,255,255,.75); }
+.radish-hero .btn, .radish-hero .dropdown-toggle { color:#0f172a; }
+.radish-brand .brand-logo{
+    width:44px; height:44px; background: var(--lpx-logo-icon) no-repeat center/contain; display:inline-block;
+}
+
+.radish-app-card .card{ transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease; }
+.radish-card-glass{ background: rgba(255,255,255,.75); backdrop-filter: blur(6px); }
+.radish-app-card:hover .card{ transform: translateY(-2px); box-shadow: 0 .5rem 1.25rem rgba(15,23,42,.12); }
+.radish-app-logo{ width: 56px; height: 56px; object-fit: contain; }
+
+/* 暗色模式兼容（跟随主题或操作系统） */
+@media (prefers-color-scheme: dark) {
+  .radish-card-glass{ background: rgba(17,24,39,.7); }
+  .radish-app-card .card{ color:#e5e7eb; }
+}
+
+/* 移动端优化 */
+@media (max-width: 576px){
+  .radish-hero{ padding-top: 2rem; padding-bottom: 2rem; }
+  .radish-app-logo{ width:48px; height:48px; }
+}

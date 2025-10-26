@@ -17,144 +17,117 @@
     Layout = Theme.GetEmptyLayout();
 }
 
-<div class="d-flex align-items-center" style="min-height: 100vh;">
-    <div class="container">
-        <abp-row>
-
-            <div class="col mx-auto account-column">
-                <div class="account-brand p-4 text-center mb-1">
-
+<div class="radish-landing d-flex flex-column" style="min-height: 100vh;">
+    <!-- Hero -->
+    <section class="radish-hero py-5 py-lg-6">
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <div class="radish-brand d-flex align-items-center gap-3">
                     @if (!BrandingProvider.LogoUrl.IsNullOrEmpty())
                     {
-                        <a class="navbar-brand" href="~/" alt="@BrandingProvider.AppName"></a>
+                        <span class="brand-logo"></span>
                     }
-                    else
-                    {
-                        <h1>@BrandingProvider.AppName</h1>
-                    }
+                    <div>
+                        <h1 class="display-6 mb-1 fw-semibold">@BrandingProvider.AppName</h1>
+                        <p class="lead mb-0 text-hero-sub">@L["Welcome"]</p>
+                    </div>
                 </div>
-                <abp-card class="border rounded">
 
-                    <abp-card-body>
+                <div class="d-flex align-items-center gap-2 ms-auto flex-wrap">
+                    <div>
+                        <abp-dropdown>
+                            @if (Model.CurrentLanguage != null)
+                            {
+                                <abp-dropdown-button class="btn btn-light-subtle border-0" text="@Model.CurrentLanguage"/>
+                            }
 
-                        <div class="container">
-                            <abp-row>
-                                <!-- 在移动端堆叠，两列从 md 起并排 -->
-                                <abp-column size-md="_9">
-
-                                    <div class="mr-auto p-2 float-md-start text-center text-md-start">
-                                        @if (CurrentUser.IsAuthenticated)
-                                        {
-                                            <div>
-                                                <div>
-                                                    <a abp-button="Outline_Primary" asp-controller="Manage"
-                                                       asp-action="Index" asp-area="Account"
-                                                       class="me-2">@AccountLocalizer["MyAccount"]</a>
-                                                    <a abp-button="Primary" asp-controller="Logout" asp-action="Index"
-                                                       asp-area="Account">@L["Logout"]</a>
-                                                </div>
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <div class="text-center">
-                                                <a abp-button="Primary" asp-controller="Login" asp-action="Index"
-                                                   asp-area="Account">@L["Login"]</a>
-                                            </div>
-                                        }
-                                    </div>
-                                </abp-column>
-                                <abp-column size-md="_3">
-                                    <div class="ml-auto p-2 float-md-end text-center text-md-end">
-                                        <abp-dropdown>
-                                            @if (Model.CurrentLanguage != null)
-                                            {
-                                                <abp-dropdown-button text="@Model.CurrentLanguage"/>
-                                            }
-
-                                            @if (Model.Languages != null)
-                                            {
-                                                <abp-dropdown-menu>
-                                                    @foreach (var language in Model.Languages)
-                                                    {
-                                                        var languageUrl = Url.Content($"~/Abp/Languages/Switch?culture={language.CultureName}&uiCulture={language.UiCultureName}&returnUrl={System.Net.WebUtility.UrlEncode(Request.GetEncodedPathAndQuery())}");
-                                                        <abp-dropdown-item
-                                                            href="@languageUrl">@language.DisplayName</abp-dropdown-item>
-                                                    }
-                                                </abp-dropdown-menu>
-                                            }
-                                        </abp-dropdown>
-                                    </div>
-                                </abp-column>
-
-                            </abp-row>
-                            <hr class="m-4"/>
-
-                            <abp-row>
-                                @if (Model.Applications != null)
-                                {
-                                    // 从 Model.Applications 中获取要展示的列表
-                                    @foreach (var application in Model.Applications)
+                            @if (Model.Languages != null)
+                            {
+                                <abp-dropdown-menu>
+                                    @foreach (var language in Model.Languages)
                                     {
-                                        <abp-column size-md="_4" class="mb-2">
-                                            @{
-                                                // 基础目标地址来自 OpenIddict Application 的 ClientUri
-                                                var target = application.ClientUri?.TrimEnd('/');
-
-                                                // 针对 Swagger/Scalar 的卡片：当未在数据库中显式配置到具体路径时，
-                                                // 将根地址补全为具体文档页，以避免点击后停留在首页导致“原地刷新”。
-                                                // 说明：若已经在数据库将 ClientUri 设置为包含 "/swagger" 或 "/scalar"，下面的补全不会重复追加。
-                                                var clientId = application.ClientId ?? string.Empty;
-                                                if (!string.IsNullOrEmpty(target))
-                                                {
-                                                    if (clientId == "Radish_Swagger" && !target.EndsWith("/swagger", StringComparison.OrdinalIgnoreCase))
-                                                    {
-                                                        target += "/swagger";
-                                                    }
-                                                    else if (clientId == "Radish_Scalar" && !target.EndsWith("/scalar", StringComparison.OrdinalIgnoreCase))
-                                                    {
-                                                        target += "/scalar";
-                                                    }
-                                                }
-
-                                                // 仅当 Host 已登录时才附加 sso=1，触发前端顶层授权复用会话
-                                                // 若 Host 未登录，则不附加，保持应用匿名访问，不强制跳登录
-                                                if (CurrentUser.IsAuthenticated && !string.IsNullOrEmpty(target))
-                                                {
-                                                    target += (target!.Contains("?") ? "&" : "?") + "sso=1";
-                                                }
-                                            }
-                                            <a href="@(target ?? "#")" style="text-decoration:none">
-                                                <abp-card>
-                                                    <abp-card-body>
-                                                        @if (!application.LogoUri.IsNullOrEmpty())
-                                                        {
-                                                            var logoUri = application.LogoUri;
-                                                            if (application.LogoUri.StartsWith('/'))
-                                                            {
-                                                                logoUri = @Url.Content(application.LogoUri.EnsureStartsWith('~'));
-                                                            }
-
-                                                            <div class="mx-auto">
-                                                                <img src="@logoUri" style="height:64px" class="mb-3"/>
-                                                            </div>
-                                                        }
-                                                        <h4>@application.DisplayName</h4>
-                                                        <span class="text-muted">@application.ClientUri</span>
-                                                    </abp-card-body>
-                                                </abp-card>
-                                            </a>
-                                        </abp-column>
+                                        var languageUrl = Url.Content($"~/Abp/Languages/Switch?culture={language.CultureName}&uiCulture={language.UiCultureName}&returnUrl={System.Net.WebUtility.UrlEncode(Request.GetEncodedPathAndQuery())}");
+                                        <abp-dropdown-item href="@languageUrl">@language.DisplayName</abp-dropdown-item>
                                     }
-                                }
-                            </abp-row>
-                        </div>
+                                </abp-dropdown-menu>
+                            }
+                        </abp-dropdown>
+                    </div>
 
-                    </abp-card-body>
-
-                </abp-card>
+                    <div>
+                        @if (CurrentUser.IsAuthenticated)
+                        {
+                            <a abp-button="Outline_Light" class="me-2" asp-controller="Manage" asp-action="Index" asp-area="Account">
+                                @AccountLocalizer["MyAccount"]
+                            </a>
+                            <a abp-button="Light" asp-controller="Logout" asp-action="Index" asp-area="Account">
+                                @L["Logout"]
+                            </a>
+                        }
+                        else
+                        {
+                            <a abp-button="Light" asp-controller="Login" asp-action="Index" asp-area="Account">
+                                @L["Login"]
+                            </a>
+                        }
+                    </div>
+                </div>
             </div>
+        </div>
+    </section>
 
-        </abp-row>
-    </div>
+    <!-- 应用卡片 -->
+    <section class="flex-grow-1 py-4 py-lg-5">
+        <div class="container">
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                @if (Model.Applications != null)
+                {
+                    @foreach (var application in Model.Applications)
+                    {
+                        @{
+                            var target = application.ClientUri?.TrimEnd('/');
+                            var clientId = application.ClientId ?? string.Empty;
+                            if (!string.IsNullOrEmpty(target))
+                            {
+                                if (clientId == "Radish_Swagger" && !target.EndsWith("/swagger", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    target += "/swagger";
+                                }
+                                else if (clientId == "Radish_Scalar" && !target.EndsWith("/scalar", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    target += "/scalar";
+                                }
+                            }
+
+                            if (CurrentUser.IsAuthenticated && !string.IsNullOrEmpty(target))
+                            {
+                                target += (target!.Contains("?") ? "&" : "?") + "sso=1";
+                            }
+                        }
+                        <div class="col">
+                            <a href="@(target ?? "#")" class="radish-app-card d-block h-100 text-reset">
+                                <div class="card h-100 border-0 shadow-sm radish-card-glass">
+                                    <div class="card-body d-flex align-items-start gap-3">
+                                        @if (!application.LogoUri.IsNullOrEmpty())
+                                        {
+                                            var logoUri = application.LogoUri;
+                                            if (application.LogoUri.StartsWith('/'))
+                                            {
+                                                logoUri = @Url.Content(application.LogoUri.EnsureStartsWith('~'));
+                                            }
+                                            <img src="@logoUri" class="flex-shrink-0 radish-app-logo" alt="logo" />
+                                        }
+                                        <div>
+                                            <div class="h5 mb-1 fw-semibold">@application.DisplayName</div>
+                                            <div class="text-muted small text-truncate">@application.ClientUri</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </section>
 </div>
