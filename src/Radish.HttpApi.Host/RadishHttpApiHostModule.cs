@@ -457,17 +457,24 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         {
             MinimumSameSitePolicy = SameSiteMode.Unspecified
         });
-        // 启用 CORS 前打印当前允许的来源，便于排查跨域问题
+        // 启用 CORS 前打印当前允许的来源（含开发兜底），便于排查跨域问题
         try
         {
             var origins = (configuration["App:CorsOrigins"] ?? string.Empty)
                 .Split(',', StringSplitOptions.RemoveEmptyEntries)
                 .Select(o => o.Trim().TrimEnd('/'))
                 .ToArray();
-            if (origins.Length > 0)
-                Log.Information("CORS allowed origins: {Origins}", string.Join(", ", origins));
-            else
-                Log.Warning("CORS allowed origins is empty. Browser calls may be blocked.");
+            if (origins.Length == 0)
+            {
+                origins = new[]
+                {
+                    "http://localhost:4200",
+                    "https://localhost:4200",
+                    "http://localhost:5173",
+                    "https://localhost:5173",
+                };
+            }
+            Log.Information("CORS allowed origins: {Origins}", string.Join(", ", origins));
         }
         catch { /* no-op */ }
 
