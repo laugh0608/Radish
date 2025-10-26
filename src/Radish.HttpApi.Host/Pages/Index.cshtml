@@ -171,7 +171,17 @@
     <section class="flex-grow-1 py-4 py-lg-5">
         <div class="container">
             <!-- 最近访问（若有） -->
-            <div id="recentRow" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mb-2 d-none"></div>
+            <div id="recentSection" class="radish-section d-none">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="radish-section-title">@L["Section:Recent"]</div>
+                </div>
+                <div id="recentRow" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3"></div>
+            </div>
+
+            <!-- 应用列表 -->
+            <div class="d-flex align-items-center justify-content-between mt-4 mb-2">
+                <div class="radish-section-title">@L["Section:Apps"]</div>
+            </div>
             <div id="appsGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                 @if (Model.Applications != null)
                 {

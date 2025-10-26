@@ -114,5 +114,8 @@
     "Notify:HealthNotConfigured": "未配置健康检查",
     "Notify:HealthStatus": "健康: {0}",
     "Notify:HealthCheckFailed": "检查失败"
+    ,
+    "Section:Recent": "最近访问",
+    "Section:Apps": "应用"
   }
 }

@@ -109,5 +109,8 @@
     "Notify:HealthNotConfigured": "Health check not configured",
     "Notify:HealthStatus": "Health: {0}",
     "Notify:HealthCheckFailed": "Health check failed"
+    ,
+    "Section:Recent": "Recent",
+    "Section:Apps": "Apps"
   }
 }

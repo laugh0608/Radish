@@ -142,7 +142,13 @@
     // Recent
     function touchRecent(item){ var list=getRecent(); list=list.filter(function(x){return x&&x.id!==item.id;}); list.unshift(item); if(list.length>6) list=list.slice(0,6); setRecent(list); }
     grid.querySelectorAll('.radish-app-card').forEach(function(a){ a.addEventListener('click', function(){ var parent=a.closest('.col'); var id=parent?(parent.getAttribute('data-client-id')||''):''; var title=a.getAttribute('data-title')||(a.querySelector('.h5')?a.querySelector('.h5').textContent.trim():id); var href=a.getAttribute('data-href')||a.getAttribute('href')||''; touchRecent({id:id, href:href, title:title}); }); });
-    function renderRecent(){ var hidden=getHidden(); var recent=getRecent().filter(function(x){ return x && hidden.indexOf(x.id) < 0; }); var row=document.getElementById('recentRow'); if(!row) return; if(!recent.length){ row.classList.add('d-none'); return; } row.classList.remove('d-none'); row.innerHTML=''; recent.forEach(function(r){ var col=document.createElement('div'); col.className='col'; col.innerHTML='\n<a href="'+(r.href||'#')+'" target="_blank" class="radish-app-card d-block h-100 text-reset">\n  <div class="card h-100 border-0 shadow-sm radish-card">\n    <div class="card-body d-flex align-items-start gap-3">\n      <div class="flex-grow-1">\n        <div class="h6 mb-1">'+(r.title||r.id||'App')+'</div>\n        <div class="text-muted small text-truncate">'+(r.href||'')+'</div>\n      </div>\n    </div>\n  </div>\n</a>'; row.appendChild(col); }); }
+    function renderRecent(){
+      var hidden=getHidden(); var recent=getRecent().filter(function(x){ return x && hidden.indexOf(x.id) < 0; });
+      var section=document.getElementById('recentSection'); var row=document.getElementById('recentRow'); if(!row||!section) return;
+      if(!recent.length){ section.classList.add('d-none'); return; }
+      section.classList.remove('d-none'); row.innerHTML='';
+      recent.forEach(function(r){ var col=document.createElement('div'); col.className='col'; col.innerHTML='\n<a href="'+(r.href||'#')+'" target="_blank" class="radish-app-card d-block h-100 text-reset">\n  <div class="card h-100 border-0 shadow-sm radish-card">\n    <div class="card-body d-flex align-items-start gap-3">\n      <div class="flex-grow-1">\n        <div class="h6 mb-1">'+(r.title||r.id||'App')+'</div>\n        <div class="text-muted small text-truncate">'+(r.href||'')+'</div>\n      </div>\n    </div>\n  </div>\n</a>'; row.appendChild(col); });
+    }
     renderRecent();
 
     // Hide toggle & manage

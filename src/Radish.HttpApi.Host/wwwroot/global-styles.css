@@ -108,6 +108,10 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 .radish-app-card:hover .radish-card-tools{ opacity: 1; }
 .radish-card .card-body{ padding: var(--card-padding); }
 
+/* 区块标题与区分 */
+.radish-section{ margin-bottom: 1.25rem; }
+.radish-section-title{ font-size: .875rem; font-weight: 600; color: var(--muted-color); letter-spacing: .02em; text-transform: none; }
+
 /* 密度（紧凑） */
 .density-compact .radish-card .card-body{ --card-padding: .625rem; }
 .density-compact #appsGrid{ row-gap: 1rem; }
