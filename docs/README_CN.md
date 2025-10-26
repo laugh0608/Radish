@@ -20,6 +20,21 @@ The solution comes with a default configuration that works out of the box. Howev
 
 * Check the `ConnectionStrings` in `appsettings.json` files under the `Radish.HttpApi.Host` and `Radish.DbMigrator` projects and change it if you need.
 
+### 本地联调（重要）
+
+- Host 以 HTTPS 提供 API：`https://localhost:44342`。首次开发请信任本机证书：`dotnet dev-certs https --trust`。
+- 前端默认用 HTTP 启动：Angular `http://localhost:4200`，React `http://localhost:5173`。
+- CORS 配置使用 `src/Radish.HttpApi.Host/.env` 的 `App__CorsOrigins`，建议同时写入 http 与 https，例如：
+  - `App__CorsOrigins=http://localhost:4200,https://localhost:4200,http://localhost:5173,https://localhost:5173`
+- Host 会自动为相同 host:port 补全另一种协议（只写 https 也会运行时放行 http）。
+- 预检自测（期望 204 且包含 `Access-Control-Allow-Origin`）：
+  - `curl -i -X OPTIONS "https://localhost:44342/api/abp/application-configuration" -H "Origin: http://localhost:4200" -H "Access-Control-Request-Method: GET"`
+
+示例与更多细节：
+- 后端：`docs/backend/README.md`
+- Angular：`docs/frontend/angular/README.md`
+- React：`docs/frontend/react/README.md`
+
 ### Before running the application
 
 * Run `abp install-libs` command on your solution folder to install client-side package dependencies. This step is automatically done when you create a new solution, if you didn't especially disabled it. However, you should run it yourself if you have first cloned this solution from your source control, or added a new client-side package dependency to your solution.

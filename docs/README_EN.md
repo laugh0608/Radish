@@ -20,6 +20,21 @@ The solution comes with a default configuration that works out of the box. Howev
 
 * Check the `ConnectionStrings` in `appsettings.json` files under the `Radish.HttpApi.Host` and `Radish.DbMigrator` projects and change it if you need.
 
+### Local integration (Important)
+
+- Host serves APIs over HTTPS: `https://localhost:44342`. Trust the local dev cert once: `dotnet dev-certs https --trust`.
+- Frontends run over HTTP by default: Angular `http://localhost:4200`, React `http://localhost:5173`.
+- CORS is configured via `src/Radish.HttpApi.Host/.env` -> `App__CorsOrigins`. It's recommended to include both http and https, e.g.:
+  - `App__CorsOrigins=http://localhost:4200,https://localhost:4200,http://localhost:5173,https://localhost:5173`
+- The Host auto-completes the counterpart scheme for the same host:port (if you only set https, it also allows http at runtime).
+- Preflight check (expect 204 with `Access-Control-Allow-Origin`):
+  - `curl -i -X OPTIONS "https://localhost:44342/api/abp/application-configuration" -H "Origin: http://localhost:4200" -H "Access-Control-Request-Method: GET"`
+
+See also for details:
+- Backend: `docs/backend/README.md`
+- Angular: `docs/frontend/angular/README.md`
+- React: `docs/frontend/react/README.md`
+
 ### Before running the application
 
 * Run `abp install-libs` command on your solution folder to install client-side package dependencies. This step is automatically done when you create a new solution, if you didn't especially disabled it. However, you should run it yourself if you have first cloned this solution from your source control, or added a new client-side package dependency to your solution.
