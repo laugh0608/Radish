@@ -1,7 +1,7 @@
 import { NgFor, NgIf } from '@angular/common';
 import { Component, HostListener, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
-import { LocalizationPipe, RoutesService, ABP, TreeNode, eLayoutType } from '@abp/ng.core';
+import { LocalizationPipe, RoutesService, ABP, TreeNode, eLayoutType, LocalizationService } from '@abp/ng.core';
 import { LanguageService, LpxLanguage } from '@volo/ngx-lepton-x.core';
 import { firstValueFrom } from 'rxjs';
 
@@ -70,6 +70,7 @@ import { firstValueFrom } from 'rxjs';
 export class MobileBottomNavComponent {
   private routes = inject(RoutesService);
   private language = inject(LanguageService);
+  private abpLocalization = inject(LocalizationService);
   private router = inject(Router);
   submenuOpen = false;
   submenuFor: string | null = null;
@@ -224,6 +225,8 @@ export class MobileBottomNavComponent {
 
   selectLanguage(lang: LpxLanguage) {
     this.language.setSelectedLanguage(lang);
+    // 同步到 ABP 本地化系统，确保 abpLocalization 管道立即生效
+    this.abpLocalization.setLanguage(lang.cultureName);
     this.closeSubmenu();
   }
 
