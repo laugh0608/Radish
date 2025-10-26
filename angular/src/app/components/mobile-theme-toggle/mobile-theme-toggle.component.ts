@@ -1,4 +1,5 @@
-import { AfterViewInit, Component, ElementRef, HostListener, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, inject } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
 
 @Component({
   selector: 'app-mobile-theme-toggle',
@@ -15,11 +16,18 @@ import { AfterViewInit, Component, ElementRef, HostListener, inject } from '@ang
   `,
   styleUrls: ['./mobile-theme-toggle.component.scss'],
 })
-export class MobileThemeToggleComponent implements AfterViewInit {
+export class MobileThemeToggleComponent implements AfterViewInit, OnDestroy {
   private el = inject(ElementRef<HTMLElement>);
+  private router = inject(Router);
 
   isDark = false;
   private storageKey = 'data-bs-theme';
+  private media = window.matchMedia('(max-width: 767.98px)');
+  private resizeHandler = () => setTimeout(() => this.attachToNavbar(), 0);
+  private mediaHandler = () => setTimeout(() => this.attachToNavbar(), 0);
+  private routeSub = this.router.events.subscribe(e => {
+    if (e instanceof NavigationEnd) setTimeout(() => this.attachToNavbar(), 0);
+  });
 
   ngAfterViewInit(): void {
     this.attachToNavbar();
@@ -29,6 +37,9 @@ export class MobileThemeToggleComponent implements AfterViewInit {
     const preferredDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initTheme = (saved as 'dark' | 'light' | null) || (doc.getAttribute('data-bs-theme') as 'dark' | 'light' | null) || (preferredDark ? 'dark' : 'light');
     this.apply(initTheme);
+    // 监听窗口与断点变化，跨视图切换时重新挂载
+    window.addEventListener('resize', this.resizeHandler);
+    try { this.media.addEventListener?.('change', this.mediaHandler as any); } catch {}
   }
 
   toggle() {
@@ -52,5 +63,10 @@ export class MobileThemeToggleComponent implements AfterViewInit {
       }
     } catch {}
   }
-}
 
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.resizeHandler);
+    try { this.media.removeEventListener?.('change', this.mediaHandler as any); } catch {}
+    try { this.routeSub.unsubscribe(); } catch {}
+  }
+}

@@ -4,13 +4,28 @@ import { DesktopThemeToggleComponent } from '../components/desktop-theme-toggle/
 
 function initToolbar(toolbar: ToolbarService) {
   return () => {
-    // 在 PC 端顶部右侧添加“明暗主题切换”按钮
-    toolbar.addItem({
-      id: 'theme-toggle',
-      name: 'ThemeToggle',
-      component: DesktopThemeToggleComponent,
-      order: 9999,
-    });
+    const ensure = () => {
+      const sub = toolbar.items$.subscribe(items => {
+        const exists = Array.isArray(items) && items.some(i => i && (i as any).id === 'theme-toggle');
+        if (!exists) {
+          toolbar.addItem({
+            id: 'theme-toggle',
+            name: 'ThemeToggle',
+            component: DesktopThemeToggleComponent,
+            order: 9999,
+          });
+        }
+      });
+      // 轻量的异步触发，尽量保证在主题初始化之后执行一次
+      setTimeout(() => toolbar.addItem({
+        id: 'theme-toggle',
+        name: 'ThemeToggle',
+        component: DesktopThemeToggleComponent,
+        order: 9999,
+      }), 0);
+      return sub;
+    };
+    ensure();
   };
 }
 
@@ -24,4 +39,3 @@ export function provideAppToolbarItems(): EnvironmentProviders {
     },
   ]);
 }
-
