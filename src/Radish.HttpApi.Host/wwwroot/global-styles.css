@@ -72,6 +72,9 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 .radish-hero{ width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
 /* Avoid tiny horizontal scrollbars on some browsers */
 @supports (width: 100dvw){ .radish-hero{ width: 100dvw; margin-left: calc(50% - 50dvw); margin-right: calc(50% - 50dvw); } }
+
+/* Hero content paddings for fluid container */
+.radish-hero > .container-fluid{ padding-left: clamp(12px, 4vw, 48px); padding-right: clamp(12px, 4vw, 48px); }
 .radish-hero-anim{ position:absolute; inset:-10% -5% 0 -5%; pointer-events:none; z-index:0; opacity:.6; }
 .radish-hero-anim{ background:
   radial-gradient(40rem 12rem at 15% -10%, rgba(99,102,241,.20), rgba(99,102,241,0) 60%),
