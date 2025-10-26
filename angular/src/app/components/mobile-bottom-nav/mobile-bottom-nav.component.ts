@@ -92,13 +92,44 @@ export class MobileBottomNavComponent {
 
   // 底部栏主导航项（其余的放到“更多”）
   private maxPrimary = 4;
-  items = computed<ABP.Route[]>(() => this.topRoutes().slice(0, this.maxPrimary));
-  overflow = computed<ABP.Route[]>(() => this.topRoutes().slice(this.maxPrimary));
+  private adminPaths = ['/identity', '/tenant-management', '/setting-management'];
+  private homePath = '/';
+
+  private withManageGroup = computed<ABP.Route[]>(() => {
+    const roots = this.topRoutes();
+    const admins = roots.filter(r => this.adminPaths.includes(r.path || ''));
+    if (admins.length === 0) return roots;
+
+    const manage: ABP.Route = {
+      path: '/__manage',
+      name: '管理',
+      iconClass: 'bi bi-tools',
+      order: (roots.find(r => (r.path || '') === this.homePath)?.order ?? 0) + 1,
+    } as ABP.Route;
+
+    const result: ABP.Route[] = [];
+    // 保留 Home 在前
+    const home = roots.find(r => (r.path || '') === this.homePath);
+    if (home) result.push(home);
+    // 插入管理
+    result.push(manage);
+    // 其余（去掉三个管理模块）保持原顺序
+    for (const r of roots) {
+      const p = r.path || '';
+      if (p === this.homePath) continue;
+      if (this.adminPaths.includes(p)) continue;
+      result.push(r);
+    }
+    return result;
+  });
+
+  items = computed<ABP.Route[]>(() => this.withManageGroup().slice(0, this.maxPrimary));
+  overflow = computed<ABP.Route[]>(() => this.withManageGroup().slice(this.maxPrimary));
 
   hasSubmenu(item: ABP.Route): boolean {
     if (!item.path) return false;
+    if (item.path === '/__manage') return true;
     const subs = this.getSubmenuRoutes(item.path);
-    // 对有子项的模块，显示二级菜单
     return subs.length > 0;
   }
 
@@ -113,8 +144,15 @@ export class MobileBottomNavComponent {
     const path = item.path || '';
     this.submenuFor = path;
     this.submenuTitle = item.name || '';
-    this.submenuItems = this.getSubmenuRoutes(path);
+    if (path === '/__manage') {
+      // 聚合“身份/租户/设置”作为二级菜单
+      const roots = this.topRoutes();
+      this.submenuItems = roots.filter(r => this.adminPaths.includes(r.path || ''));
+    } else {
+      this.submenuItems = this.getSubmenuRoutes(path);
+    }
     this.submenuOpen = true;
+    this.navHidden = false;
   }
 
   closeSubmenu() {
@@ -165,6 +203,7 @@ export class MobileBottomNavComponent {
     const map: Record<string, string> = {
       '/': 'bi bi-house-fill',
       '/books': 'bi bi-journal-bookmark-fill',
+      '/__manage': 'bi bi-tools',
       '/identity': 'bi bi-people-fill',
       '/identity/users': 'bi bi-person-fill',
       '/identity/roles': 'bi bi-person-badge-fill',
@@ -195,6 +234,11 @@ export class MobileBottomNavComponent {
       this.navHidden = diff > 0; // 下滑隐藏，上滑显示
       this.lastScrollY = y;
     }
+    // 停止滚动后自动显示
+    clearTimeout(this._scrollTimer);
+    this._scrollTimer = setTimeout(() => {
+      this.navHidden = false;
+    }, 250);
   }
 
   openMore(event: Event) {
@@ -203,5 +247,8 @@ export class MobileBottomNavComponent {
     this.submenuTitle = '更多';
     this.submenuItems = this.overflow();
     this.submenuOpen = true;
+    this.navHidden = false;
   }
+
+  private _scrollTimer: any;
 }
