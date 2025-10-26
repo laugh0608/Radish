@@ -1,0 +1,21 @@
+.mobile-theme-btn {
+  height: 36px;
+  width: 36px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #fff;
+}
+
+.mobile-theme-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 768px) {
+  .mobile-theme-btn { display: none !important; }
+}
+

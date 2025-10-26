@@ -62,12 +62,23 @@ img {
     display: block !important;
     z-index: 110;
   }
+  /* 取消 LeptonX 在移动端展开时将导航高度撑满屏幕，避免遮罩全屏导致其他按钮无法点击 */
+  .mobile-menu-opened lpx-mobile-navbar {
+    height: auto !important;
+  }
+  /* 不使用内置的“移动端路由列表”抽屉（我们已有底部导航） */
+  .mobile-menu-opened .lpx-mobile-nav-items {
+    display: none !important;
+  }
 
   /* 显示右侧菜单/个人图标，并提升对比度 */
   .lpx-mobile-navbar .user-menu {
     display: flex !important;
     align-items: center;
     gap: 12px;
+    position: relative; /* 作为语言下拉的定位锚点 */
+    /* 隐藏库内置的两个图标（用户/菜单），仅保留我们自定义按钮 */
+    > lpx-icon { display: none !important; }
   }
   .lpx-mobile-navbar .user-menu .lpx-icon,
   .lpx-mobile-navbar .user-menu [class^="bi"],

@@ -1,10 +1,11 @@
 import { NgFor, NgIf } from '@angular/common';
-import { Component, HostListener, computed, inject } from '@angular/core';
+import { Component, HostListener, computed, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
-import { LocalizationPipe, RoutesService, ABP, TreeNode, eLayoutType, SessionStateService } from '@abp/ng.core';
+import { LocalizationPipe, RoutesService, ABP, TreeNode, eLayoutType, SessionStateService, ConfigStateService } from '@abp/ng.core';
 import { LanguageService, LpxLanguage } from '@volo/ngx-lepton-x.core';
 import { firstValueFrom } from 'rxjs';
+import { MobileUiService } from '../../services/mobile-ui.service';
 
 @Component({
   selector: 'app-mobile-bottom-nav',
@@ -70,6 +71,8 @@ export class MobileBottomNavComponent {
   private language = inject(LanguageService);
   private abpSession = inject(SessionStateService);
   private router = inject(Router);
+  private mobileUi = inject(MobileUiService);
+  private configState = inject(ConfigStateService);
   submenuOpen = false;
   submenuFor: string | null = null;
   submenuTitle = '';
@@ -79,13 +82,16 @@ export class MobileBottomNavComponent {
   private lastScrollY = 0;
   // 监听语言变化以驱动重算
   private currentLang = toSignal(this.abpSession.getLanguage$(), { initialValue: this.abpSession.getLanguage() });
+  // 路由可见树的信号：当后台资源随语言刷新后，自动重新计算菜单
+  private visibleRoutes = toSignal(this.routes.visible$, { initialValue: this.routes.visible });
 
   // 仅取顶层且可见、带 path 的应用路由作为底部导航项
   // 顶部可见的所有顶层路由（与 PC 一致）
   private topRoutes = computed<ABP.Route[]>(() => {
     // 读取语言信号以在切换语言后重算名称
     this.currentLang();
-    const tree = (this.routes.visible || []) as TreeNode<ABP.Route>[];
+    // 依赖 visibleRoutes() 以便在刷新 ApplicationConfiguration 后立刻生效
+    const tree = (this.visibleRoutes() || []) as TreeNode<ABP.Route>[];
     const list: ABP.Route[] = [];
     for (const n of tree) {
       const isTop = !n.parent && (n.layout === eLayoutType.application || !n.layout);
@@ -251,6 +257,8 @@ export class MobileBottomNavComponent {
     this.language.setSelectedLanguage(lang);
     this.abpSession.setLanguage(lang.cultureName);
     try { document.documentElement.lang = lang.cultureName; } catch {}
+    // 立即刷新 App 配置（菜单/本地化资源），避免需手动刷新
+    try { this.configState.refreshAppState().subscribe(); } catch {}
     this.closeSubmenu();
   }
 
@@ -308,6 +316,39 @@ export class MobileBottomNavComponent {
   constructor() {
     this.router.events.subscribe(e => {
       if (e instanceof NavigationEnd) this.closeSubmenu();
+    });
+    // 监听“顶部语言按钮”的打开请求
+    this.mobileUi.openLanguage$.subscribe(() => {
+      this.openLanguageMenu(new MouseEvent('click'));
+      this.navHidden = false;
+    });
+
+    // 语言变化时，如二级面板已打开，实时刷新面板内容
+    effect(() => {
+      this.currentLang();
+      this.visibleRoutes();
+      if (!this.submenuOpen) return;
+      if (this.submenuFor === 'language') {
+        // 语言面板：刷新候选列表
+        firstValueFrom(this.language.languages$).then(l => (this.submenuLanguages = l)).catch(() => (this.submenuLanguages = []));
+        return;
+      }
+      if (this.submenuFor === 'more') {
+        // 重新打开“更多”以重算语言项文案
+        this.openMore(new MouseEvent('click'));
+        return;
+      }
+      // 普通功能分组/路由：基于当前路由树重算
+      const key = this.submenuFor || '';
+      if (key.startsWith('/__group__')) {
+        const name = decodeURIComponent(key.replace('/__group__/', ''));
+        this.submenuItems = this.getGroupChildren(name);
+      } else if (key === '/__manage') {
+        const roots = this.topRoutes();
+        this.submenuItems = roots.filter(r => this.adminPaths.includes(r.path || ''));
+      } else {
+        this.submenuItems = this.getSubmenuRoutes(key);
+      }
     });
   }
 
