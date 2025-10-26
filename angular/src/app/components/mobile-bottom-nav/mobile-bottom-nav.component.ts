@@ -1,5 +1,6 @@
 import { NgFor, NgIf } from '@angular/common';
 import { Component, HostListener, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { LocalizationPipe, RoutesService, ABP, TreeNode, eLayoutType, SessionStateService } from '@abp/ng.core';
 import { LanguageService, LpxLanguage } from '@volo/ngx-lepton-x.core';
@@ -81,10 +82,14 @@ export class MobileBottomNavComponent {
   submenuLanguages: LpxLanguage[] = [];
   navHidden = false;
   private lastScrollY = 0;
+  // 监听语言变化以驱动重算
+  private currentLang = toSignal(this.abpSession.getLanguage$(), { initialValue: this.abpSession.getLanguage() });
 
   // 仅取顶层且可见、带 path 的应用路由作为底部导航项
   // 顶部可见的所有顶层路由（与 PC 一致）
   private topRoutes = computed<ABP.Route[]>(() => {
+    // 读取语言信号以在切换语言后重算名称
+    this.currentLang();
     const tree = (this.routes.visible || []) as TreeNode<ABP.Route>[];
     const list: ABP.Route[] = [];
     for (const n of tree) {
@@ -118,9 +123,13 @@ export class MobileBottomNavComponent {
     const admins = roots.filter(r => this.adminPaths.includes(r.path || ''));
     if (admins.length === 0) return roots;
 
+    // 如果已有顶层分组（如 Administration），优先使用该分组而不插入虚拟“管理”
+    const hasAdminGroup = roots.some(r => (r.path || '').startsWith('/__group__/') && this.isAdminGroupName(decodeURIComponent((r.path || '').replace('/__group__/', ''))));
+    if (hasAdminGroup) return roots;
+
     const manage: ABP.Route = {
       path: '/__manage',
-      name: '管理',
+      name: this.isZh() ? '管理' : 'Administration',
       iconClass: 'bi bi-tools',
       order: (roots.find(r => (r.path || '') === this.homePath)?.order ?? 0) + 1,
     } as ABP.Route;
@@ -274,6 +283,16 @@ export class MobileBottomNavComponent {
     const key = (name || '').toLowerCase();
     if (key.includes('管理') || key.includes('administration') || key.includes('manage')) return 'bi bi-tools';
     return 'bi bi-grid';
+  }
+
+  private isAdminGroupName(name: string): boolean {
+    const key = (name || '').toLowerCase();
+    return key.includes('管理') || key.includes('administration') || key.includes('manage');
+  }
+
+  private isZh(): boolean {
+    const l = (this.currentLang() || '').toLowerCase();
+    return l.startsWith('zh');
   }
 
   // 关闭弹层：路由变化时
