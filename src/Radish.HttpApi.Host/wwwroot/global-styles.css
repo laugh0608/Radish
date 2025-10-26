@@ -13,29 +13,55 @@ html, body {
 }
 
 /* ==== Radish Landing UI (Host 首页) ==== */
-.radish-hero {
-    /* 渐变 + 轻微纹理 */
-    background: radial-gradient(1200px 400px at 10% -10%, rgba(99, 102, 241, 0.15), rgba(99,102,241,0) 70%),
-                radial-gradient(1000px 380px at 90% -20%, rgba(16, 185, 129, 0.10), rgba(16,185,129,0) 65%),
-                linear-gradient(180deg, #0f172a, #111827);
-    color: #eef2ff;
+
+/* 主题变量：默认浅色 */
+:root,
+.theme-light{
+  --page-bg: #f8fafc;
+  --text-color: #0f172a;
+  --muted-color: #475569;
+  --card-bg: #ffffff;
+  --card-border: rgba(15,23,42,.08);
+  --card-shadow: 0 .5rem 1.25rem rgba(15,23,42,.06);
+  --hero-color: #0f172a;
+  --hero-sub: rgba(15,23,42,.7);
+  --hero-bg: radial-gradient(900px 280px at 15% -10%, rgba(99,102,241,.16), rgba(99,102,241,0) 60%),
+              radial-gradient(720px 240px at 85% -20%, rgba(16,185,129,.12), rgba(16,185,129,0) 55%),
+              linear-gradient(180deg, #ffffff, #eef2ff);
 }
-.radish-hero .text-hero-sub{ color: rgba(255,255,255,.75); }
+
+/* 暗色主题覆盖 */
+.theme-dark{
+  --page-bg: #0b1020;
+  --text-color: #e5e7eb;
+  --muted-color: #94a3b8;
+  --card-bg: rgba(17,24,39,.7);
+  --card-border: rgba(148,163,184,.12);
+  --card-shadow: 0 .5rem 1.25rem rgba(0,0,0,.25);
+  --hero-color: #eef2ff;
+  --hero-sub: rgba(255,255,255,.75);
+  --hero-bg: radial-gradient(1200px 400px at 10% -10%, rgba(99,102,241,.15), rgba(99,102,241,0) 70%),
+             radial-gradient(1000px 380px at 90% -20%, rgba(16,185,129,.10), rgba(16,185,129,0) 65%),
+             linear-gradient(180deg, #0f172a, #111827);
+}
+
+/* 页面背景与文字 */
+.radish-landing{ background-color: var(--page-bg); color: var(--text-color); }
+.radish-landing .text-muted{ color: var(--muted-color) !important; }
+
+/* 顶部 Hero */
+.radish-hero{ background: var(--hero-bg); color: var(--hero-color); }
+.radish-hero .text-hero-sub{ color: var(--hero-sub); }
 .radish-hero .btn, .radish-hero .dropdown-toggle { color:#0f172a; }
-.radish-brand .brand-logo{
-    width:44px; height:44px; background: var(--lpx-logo-icon) no-repeat center/contain; display:inline-block;
-}
+.theme-dark .radish-hero .btn, .theme-dark .radish-hero .dropdown-toggle{ color:#e5e7eb; }
+.radish-brand .brand-logo{ width:44px; height:44px; background: var(--lpx-logo-icon) no-repeat center/contain; display:inline-block; }
 
-.radish-app-card .card{ transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease; }
-.radish-card-glass{ background: rgba(255,255,255,.75); backdrop-filter: blur(6px); }
-.radish-app-card:hover .card{ transform: translateY(-2px); box-shadow: 0 .5rem 1.25rem rgba(15,23,42,.12); }
-.radish-app-logo{ width: 56px; height: 56px; object-fit: contain; }
-
-/* 暗色模式兼容（跟随主题或操作系统） */
-@media (prefers-color-scheme: dark) {
-  .radish-card-glass{ background: rgba(17,24,39,.7); }
-  .radish-app-card .card{ color:#e5e7eb; }
-}
+/* 卡片与动效 */
+.radish-app-card .card{ transition: transform .2s ease, box-shadow .2s ease; background: var(--card-bg); box-shadow: var(--card-shadow); border: 1px solid var(--card-border); }
+.radish-app-card:hover .card{ transform: translateY(-4px); box-shadow: 0 .75rem 1.5rem rgba(15,23,42,.12); }
+.radish-app-logo{ width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.08)); }
+.radish-card-tools{ opacity: 0; transition: opacity .15s ease; }
+.radish-app-card:hover .radish-card-tools{ opacity: 1; }
 
 /* 移动端优化 */
 @media (max-width: 576px){
