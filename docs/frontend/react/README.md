@@ -10,7 +10,7 @@ npm install
 npm run dev
 ```
 
-- 默认端口：`http://localhost:5173`（如需启用 HTTPS，见下）
+- 默认端口：`http://localhost:5173`（如需启用 HTTPS，见下）。API 由 Host 提供的地址为 `https://localhost:44342`，首次使用建议信任本机开发证书：`dotnet dev-certs https --trust`。
 - 与后端联调：在 `.env.local` 或启动环境中设置 `VITE_API_BASE_URL` 指向后端，例如：
 
 ```bash
@@ -28,8 +28,8 @@ VITE_API_BASE_URL=https://localhost:44342
 - 启动后使用 `https://localhost:5173` 访问；首次访问若提示不安全，按浏览器提示接受一次即可（使用 mkcert 生成时通常会直接信任）。
 
 与后端联调的 CORS 要点
-- 确保后端 `.env` 已包含本前端来源：
-  - `src/Radish.HttpApi.Host/.env` 中设置：`App__CorsOrigins=https://localhost:5173,https://localhost:4200`
+- 确保后端 `.env` 已包含本前端来源（Host 会自动补全 http/https，但建议显式写全）：
+  - `src/Radish.HttpApi.Host/.env`：`App__CorsOrigins=http://localhost:5173,https://localhost:5173,http://localhost:4200,https://localhost:4200`
 - 后端启动时会在日志打印“CORS allowed origins: ...”用以确认。
 
 ## 构建与校验

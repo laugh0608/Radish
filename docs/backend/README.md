@@ -74,6 +74,10 @@ dotnet test test/Radish.MongoDB.Tests
   
 跨域来源（CORS）：
 - 通过 `App__CorsOrigins` 指定允许的前端来源，多个用逗号分隔（建议同时包含 http/https，例：`http://localhost:5173,https://localhost:5173,http://localhost:4200,https://localhost:4200`）。
+- Host 会自动为相同 host:port 补全另一种协议（例如仅配置了 `https://localhost:4200`，运行时也会放行 `http://localhost:4200`）。
+- 验证预检：
+  - `curl -i -X OPTIONS "https://localhost:44342/api/abp/application-configuration" -H "Origin: http://localhost:4200" -H "Access-Control-Request-Method: GET"`
+  - 期望 204 响应，且包含 `Access-Control-Allow-Origin` 头。
 - 启动时后端会自动解析并应用到默认 CORS 策略（允许凭据、任意头与方法，支持通配子域）。
 
 弃用说明（关于 appsettings.json 中的 CORS 配置）：
@@ -96,6 +100,7 @@ dotnet test test/Radish.MongoDB.Tests
 
 机密与证书：
 - 建议用 `.env` 或环境变量覆盖敏感项，避免 `appsettings` 直接存放机密。
+- Host 默认以 HTTPS 运行：首次本地开发建议执行 `dotnet dev-certs https --trust` 信任 Kestrel 证书。
 - OpenIddict 开发证书：仓库内的 `openiddict.pfx` 仅用于本地开发；生产环境请自行生成并安全配置。
 
 生成示例（可自定义密码）：

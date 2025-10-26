@@ -11,7 +11,7 @@ yarn install && yarn start
 npm install && npm run start
 ```
 
-启动后访问 `http://localhost:4200/`（本地默认使用 HTTP，避免自签证书信任提示）。如需 HTTPS，可运行：
+启动后访问 `http://localhost:4200/`（本地默认使用 HTTP，避免自签证书信任提示）。API 由 Host 提供的地址为 `https://localhost:44342`，首次使用建议信任本机开发证书：`dotnet dev-certs https --trust`。如需前端也使用 HTTPS，可运行：
 
 ```bash
 yarn start:https
@@ -33,9 +33,11 @@ ng e2e              # 端到端测试
 ## 环境与配置
 
 - 远程配置：默认通过 `dynamic-env.json` 与服务端 `getEnvConfig` 端点读取运行时环境。
-- 与后端联调：确保后端 `Radish.HttpApi.Host` 已启动（例如 `https://localhost:44342`），并在 CORS 允许以下来源（含 http/https）：
+- 与后端联调：确保后端 `Radish.HttpApi.Host` 已启动（例如 `https://localhost:44342`），并在 CORS 允许以下来源（含 http/https，Host 会自动补全缺失协议）：
   - 在 `src/Radish.HttpApi.Host/.env` 中设置 `App__CorsOrigins=http://localhost:4200,https://localhost:4200,http://localhost:5173,https://localhost:5173`
   - 后端启动日志会打印“CORS allowed origins: ...”用于确认。
+  - 预检测试（期望 204 且包含 `Access-Control-Allow-Origin`）：
+    - `curl -i -X OPTIONS "https://localhost:44342/api/abp/application-configuration" -H "Origin: http://localhost:4200" -H "Access-Control-Request-Method: GET"`
 
 可选：本地 HTTPS 证书
 - 若需在本地走 HTTPS，可使用统一脚本生成并信任（一次性）：

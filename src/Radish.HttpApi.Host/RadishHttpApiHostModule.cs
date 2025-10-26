@@ -17,6 +17,7 @@ using Radish.MongoDB;
 using Radish.MultiTenancy;
 using Scalar.AspNetCore;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -381,25 +382,46 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         {
             options.AddDefaultPolicy(builder =>
             {
-                var origins = (configuration["App:CorsOrigins"] ?? string.Empty)
+                // 1) 从配置读取
+                var configured = (configuration["App:CorsOrigins"] ?? string.Empty)
                     .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(o => o.Trim().RemovePostFix("/"))
-                    .ToArray();
+                    .Select(o => o.Trim().RemovePostFix("/"));
 
-                // 开发兜底：若未配置 CORS 来源，则放开常见本地来源（含 http/https），或放开全部来源
-                if (origins.Length == 0)
+                // 2) 规范化并补全 http/https 对（同 host/port）
+                var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                void add(string s)
                 {
-                    var localDefaults = new[]
+                    if (string.IsNullOrWhiteSpace(s)) return;
+                    s = s.Trim().TrimEnd('/');
+                    if (!set.Contains(s)) set.Add(s);
+                    if (Uri.TryCreate(s, UriKind.Absolute, out var uri))
                     {
-                        "http://localhost:4200",
-                        "https://localhost:4200",
-                        "http://localhost:5173",
-                        "https://localhost:5173",
-                    };
-                    origins = localDefaults;
+                        if (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var other = string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                                ? Uri.UriSchemeHttps
+                                : Uri.UriSchemeHttp;
+                            var counterpart = $"{other}://{uri.Host}{(uri.IsDefaultPort ? string.Empty : ":" + uri.Port)}";
+                            counterpart = counterpart.TrimEnd('/');
+                            if (!set.Contains(counterpart)) set.Add(counterpart);
+                        }
+                    }
+                }
+                foreach (var o in configured) add(o);
+
+                // 3) 兜底：若仍为空，放开常见本地来源（含 http/https）
+                if (set.Count == 0)
+                {
+                    add("http://localhost:4200");
+                    add("https://localhost:4200");
+                    add("http://localhost:5173");
+                    add("https://localhost:5173");
                 }
 
-                // 若 origins 仍为空（理论不会发生），则放开任意来源（允许凭据需与 AllowAnyOrigin 互斥，改用 SetIsOriginAllowed）
+                var origins = set.ToArray();
+
+                // 4) 应用策略
                 if (origins.Length == 0)
                 {
                     builder
@@ -457,23 +479,40 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         {
             MinimumSameSitePolicy = SameSiteMode.Unspecified
         });
-        // 启用 CORS 前打印当前允许的来源（含开发兜底），便于排查跨域问题
+        // 启用 CORS 前打印当前允许的来源（合并补全 http/https），便于排查跨域问题
         try
         {
-            var origins = (configuration["App:CorsOrigins"] ?? string.Empty)
-                .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                .Select(o => o.Trim().TrimEnd('/'))
-                .ToArray();
-            if (origins.Length == 0)
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            void add(string s)
             {
-                origins = new[]
+                if (string.IsNullOrWhiteSpace(s)) return;
+                s = s.Trim().TrimEnd('/');
+                if (!set.Contains(s)) set.Add(s);
+                if (Uri.TryCreate(s, UriKind.Absolute, out var uri))
                 {
-                    "http://localhost:4200",
-                    "https://localhost:4200",
-                    "http://localhost:5173",
-                    "https://localhost:5173",
-                };
+                    if (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var other = string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                            ? Uri.UriSchemeHttps
+                            : Uri.UriSchemeHttp;
+                        var counterpart = $"{other}://{uri.Host}{(uri.IsDefaultPort ? string.Empty : ":" + uri.Port)}";
+                        counterpart = counterpart.TrimEnd('/');
+                        if (!set.Contains(counterpart)) set.Add(counterpart);
+                    }
+                }
             }
+            foreach (var s in (configuration["App:CorsOrigins"] ?? string.Empty)
+                         .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                         .Select(o => o.Trim().TrimEnd('/'))) add(s);
+            if (set.Count == 0)
+            {
+                add("http://localhost:4200");
+                add("https://localhost:4200");
+                add("http://localhost:5173");
+                add("https://localhost:5173");
+            }
+            var origins = set.ToArray();
             Log.Information("CORS allowed origins: {Origins}", string.Join(", ", origins));
         }
         catch { /* no-op */ }
