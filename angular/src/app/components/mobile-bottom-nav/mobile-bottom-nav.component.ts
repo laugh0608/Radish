@@ -144,6 +144,7 @@ export class MobileBottomNavComponent {
   hasSubmenu(item: ABP.Route): boolean {
     if (!item.path) return false;
     if (item.path === '/__manage') return true;
+    if (item.path.startsWith('/__group__/')) return true;
     const subs = this.getSubmenuRoutes(item.path);
     return subs.length > 0;
   }
@@ -151,6 +152,8 @@ export class MobileBottomNavComponent {
   onItemClick(event: Event, item: ABP.Route) {
     if (this.hasSubmenu(item)) {
       event.preventDefault();
+      (event as any).stopImmediatePropagation?.();
+      event.stopPropagation();
       this.openSubmenu(item);
     }
   }
