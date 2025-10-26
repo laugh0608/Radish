@@ -73,8 +73,7 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 /* Avoid tiny horizontal scrollbars on some browsers */
 @supports (width: 100dvw){ .radish-hero{ width: 100dvw; margin-left: calc(50% - 50dvw); margin-right: calc(50% - 50dvw); } }
 
-/* Hero content paddings for fluid container */
-.radish-hero > .container-fluid{ padding-left: clamp(12px, 4vw, 48px); padding-right: clamp(12px, 4vw, 48px); }
+/* Hero content (默认 container) 不额外改动，保留 Bootstrap 内边距与 max-width */
 .radish-hero-anim{ position:absolute; inset:-10% -5% 0 -5%; pointer-events:none; z-index:0; opacity:.6; }
 .radish-hero-anim{ background:
   radial-gradient(40rem 12rem at 15% -10%, rgba(99,102,241,.20), rgba(99,102,241,0) 60%),
@@ -120,9 +119,17 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 /* 轻量纹理叠加，弱化块状感 */
 .radish-hero::before{
   content:""; position:absolute; inset:0; pointer-events:none; opacity:.35;
-  background: radial-gradient(600px 120px at 10% 10%, rgba(99,102,241,.08), rgba(99,102,241,0) 60%),
-              radial-gradient(500px 100px at 80% 0%, rgba(16,185,129,.06), rgba(16,185,129,0) 60%),
-              repeating-radial-gradient(circle at 50% -10%, rgba(255,255,255,.15) 0 2px, rgba(255,255,255,0) 3px 6px);
+  /* 将“顶部/左右边缘”柔化过渡也放进同一个覆盖层，摆在最前面确保在纹理之上 */
+  background:
+    /* 顶部渐隐到页面背景 */
+    linear-gradient(to bottom, var(--page-bg), rgba(255,255,255,0) 64px),
+    /* 左右两侧向内渐隐 */
+    linear-gradient(to right, var(--page-bg), rgba(255,255,255,0) 48px),
+    linear-gradient(to left, var(--page-bg), rgba(255,255,255,0) 48px),
+    /* 轻量纹理与光斑 */
+    radial-gradient(600px 120px at 10% 10%, rgba(99,102,241,.08), rgba(99,102,241,0) 60%),
+    radial-gradient(500px 100px at 80% 0%, rgba(16,185,129,.06), rgba(16,185,129,0) 60%),
+    repeating-radial-gradient(circle at 50% -10%, rgba(255,255,255,.15) 0 2px, rgba(255,255,255,0) 3px 6px);
 }
 
 /* 移动端优化 */
