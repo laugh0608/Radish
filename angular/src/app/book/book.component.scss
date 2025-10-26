@@ -1,0 +1,33 @@
+/* 移动端卡片样式，仅在 < md 生效，桌面端仍走表格 */
+@media (max-width: 767.98px) {
+  .book-card {
+    border: 1px solid var(--bs-border-color, #dee2e6);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background: var(--bs-body-bg);
+  }
+
+  .book-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .book-card-header .title {
+    font-weight: 600;
+    font-size: 16px;
+  }
+
+  .book-card-body .meta {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .book-card-body .label {
+    color: var(--bs-secondary-color);
+  }
+}
+
