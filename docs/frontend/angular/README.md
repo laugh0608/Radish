@@ -11,7 +11,14 @@ yarn install && yarn start
 npm install && npm run start
 ```
 
-启动后访问 `https://localhost:4200/`（已在 `angular.json` 中启用本地 HTTPS 并统一使用仓库根 `dev-certs/` 证书）。
+启动后访问 `http://localhost:4200/`（本地默认使用 HTTP，避免自签证书信任提示）。如需 HTTPS，可运行：
+
+```bash
+yarn start:https
+# 或
+npm run start:https
+```
+对应证书优先使用仓库根目录 `dev-certs/localhost.{key,crt}`。
 
 ## 构建与测试
 
@@ -26,12 +33,12 @@ ng e2e              # 端到端测试
 ## 环境与配置
 
 - 远程配置：默认通过 `dynamic-env.json` 与服务端 `getEnvConfig` 端点读取运行时环境。
-- 与后端联调：确保后端 `Radish.HttpApi.Host` 已启动（例如 `https://localhost:44342`），并在 CORS 允许以下来源：
-  - 在 `src/Radish.HttpApi.Host/.env` 中设置 `App__CorsOrigins=https://localhost:4200,https://localhost:5173`
+- 与后端联调：确保后端 `Radish.HttpApi.Host` 已启动（例如 `https://localhost:44342`），并在 CORS 允许以下来源（含 http/https）：
+  - 在 `src/Radish.HttpApi.Host/.env` 中设置 `App__CorsOrigins=http://localhost:4200,https://localhost:4200,http://localhost:5173,https://localhost:5173`
   - 后端启动日志会打印“CORS allowed origins: ...”用于确认。
 
-本地 HTTPS 证书
-- 推荐使用统一脚本生成并信任（一次性）：
+可选：本地 HTTPS 证书
+- 若需在本地走 HTTPS，可使用统一脚本生成并信任（一次性）：
   - Bash: `./scripts/ssl-setup.sh`
   - PowerShell: `./scripts/ssl-setup.ps1`
 

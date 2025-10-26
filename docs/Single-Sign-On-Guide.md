@@ -11,17 +11,17 @@
 
 - Angular 侧：`angular/src/environments/environment.ts`
   - `oAuthConfig.issuer`: Host 地址（例 `https://localhost:44342/`）。
-  - `oAuthConfig.redirectUri`: Angular 站点根（例 `https://localhost:4200`）。
+  - `oAuthConfig.redirectUri`: Angular 站点根（本地默认 `http://localhost:4200`）。
   - `oAuthConfig.responseType`: `code`。
   - `oAuthConfig.scope`: 至少包含 `offline_access Radish`（`offline_access` 用于刷新令牌）。
   - `oAuthConfig.requireHttps`：
-    - 推荐本地也启用 HTTPS（见下文证书统一方案），保持 `true`；如确需 HTTP，可临时设为 `false`。
+    - 本地默认 HTTP 开发，保持 `false`；生产通过 Nginx/网关提供 HTTPS 时自动为 `true`（本项目按页面协议自动判断）。
 
 - Host 侧（OpenIddict 应用）需与前端一致：
   - `ClientId`: `Radish_Console`（与 SPA 环境一致）。
-  - `RedirectUris`: `https://localhost:4200/`（Angular）与 `https://localhost:5173/`（React）。
+  - `RedirectUris`: `http://localhost:4200/`（Angular）与 `http://localhost:5173/`（React）。
   - `PostLogoutRedirectUris`: 同上。
-  - CORS：允许上述来源（使用 `.env` 的 `App__CorsOrigins` 配置，见下）。
+  - CORS：允许上述来源（使用 `.env` 的 `App__CorsOrigins` 配置，包含 http/https，见下）。
 
 ### 在 DbMigrator 中配置并落库
 - 文件：`src/Radish.DbMigrator/appsettings.json`
@@ -45,7 +45,7 @@
 
 ### Host 侧与前端对齐的其他设置
 - CORS 允许来源通过 `.env` 设置，而非 appsettings：
-  - `src/Radish.HttpApi.Host/.env`：`App__CorsOrigins=https://localhost:4200,https://localhost:5173`
+  - `src/Radish.HttpApi.Host/.env`：`App__CorsOrigins=http://localhost:4200,https://localhost:4200,http://localhost:5173,https://localhost:5173`
   - 启动后端会打印 “CORS allowed origins: ...” 便于确认。
 - 其他：
   - `src/Radish.HttpApi.Host/appsettings.json` 中的 `App:AngularUrl`、`App:RedirectAllowedUrls` 仍可按需维护或通过环境变量覆盖。
@@ -65,14 +65,14 @@
 - “Host 登录后进入 Angular，首页仍匿名”：
   - 原因多为浏览器开始默认拦截第三方 Cookie，导致从 Angular（不同源/不同 Scheme）以 iframe 方式静默获取授权时，IdP 会话不可见，返回 `login_required`。
   - 处理：本仓库已实现两种路径，任选其一即可：
-    - 首选：本地也用 HTTPS 启动 Angular/React，使其与 Host 同为 `https://localhost`，成为 same-site，上述限制不再命中。
+    - 方案 A（默认）：使用 HTTP 开发。若浏览器因第三方 Cookie 导致静默登录受限，可点击“登录”后走顶层跳转完成 Code Flow。
+    - 方案 B（可选）：本地也用 HTTPS 启动 Angular/React，使其与 Host 同为 `https://localhost`，成为 same-site，静默登录更稳定。
       - 统一证书：运行根目录脚本生成并信任本地证书
         - Bash: `./scripts/ssl-setup.sh`
         - PowerShell: `./scripts/ssl-setup.ps1`
-      - Angular：`yarn start`/`npm start` 以 `https://localhost:4200` 启动。
-      - React：`npm run dev` 以 `https://localhost:5173` 启动（优先使用根目录 `dev-certs/`）。
-      - CORS：在 `src/Radish.HttpApi.Host/.env` 配置 `App__CorsOrigins=https://localhost:4200,https://localhost:5173`，后端启动日志可见。
-    - 或者：通过“顶层跳转”触发 Code Flow。Host 门户卡片链接已追加 `?sso=1`，Angular 启动时检测到后会调用 `initCodeFlow()`，利用 IdP 现有登录会话无感回跳，从而实现 SSO。
+      - Angular：`yarn start:https` 以 `https://localhost:4200` 启动。
+      - React：`DEV_HTTPS=1 npm run dev` 以 `https://localhost:5173` 启动（优先使用根目录 `dev-certs/`）。
+      - CORS：在 `src/Radish.HttpApi.Host/.env` 配置 `App__CorsOrigins=http(s)://localhost:4200,http(s)://localhost:5173`，后端启动日志可见。
 - “Host 注销后，Angular 刷新仍显示已登录”：
   - 原因：SPA 本地持有 access/refresh token；Host 的登出仅清除了 IdP 会话，不会强制使 SPA 的令牌失效。
   - 何时会失效：刷新令牌被吊销/过期；或启用前/后通道登出（见下）。
@@ -126,14 +126,8 @@ public class SignOutAppService : ApplicationService
 
 - 确认 Host 应用中 OpenIddict 的应用配置（ClientId、重定向地址、PostLogoutRedirectUris、CORS）。
 - Angular 环境文件的 `issuer/redirectUri/scope/requireHttps` 与 Host 对齐。
-- 如切换到 HTTPS 开发：
-  - 在仓库根运行一次证书脚本生成并信任（见上）。
-  - Angular：`yarn start` 以 `https://localhost:4200` 启动；React：`npm run dev` 以 `https://localhost:5173` 启动。
-  - 运行一次迁移以更新 OpenIddict 应用：`cd src/Radish.DbMigrator && dotnet run`。
-  - 后端 `.env` 的 `App__CorsOrigins` 包含 `https://localhost:4200,https://localhost:5173`；启动日志可见。
-- 受保护页面使用 `authGuard`；首页是否匿名根据需求配置。
-- Dev 环境若不启用 TLS：
-  - `requireHttps=false`；浏览器若阻止第三方 Cookie，回跳后可能无法读取会话，请在同源或启用受信任证书下测试。
+- 切 HTTPS 开发：按上节“方案 B”步骤执行；记得重跑 DbMigrator 更新回调地址。
+- Dev 环境默认 HTTP：`requireHttps=false`；若浏览器阻止第三方 Cookie，回跳可能无法访问会话，此时使用“顶层跳转登录”或切 HTTPS 开发。
 
 ## 常见报错速查
 

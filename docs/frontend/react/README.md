@@ -10,21 +10,22 @@ npm install
 npm run dev
 ```
 
-- 默认端口：`http://localhost:5173`（若启用 HTTPS，则为 `https://localhost:5173`）
+- 默认端口：`http://localhost:5173`（如需启用 HTTPS，见下）
 - 与后端联调：在 `.env.local` 或启动环境中设置 `VITE_API_BASE_URL` 指向后端，例如：
 
 ```bash
 VITE_API_BASE_URL=https://localhost:44342
 ```
 
-## HTTPS 开发服务器
+## 可选：HTTPS 开发服务器
 
-- 已在 `react/script/start.js` 中优先支持 HTTPS，并优先读取仓库根目录 `dev-certs/` 证书。
-- 推荐使用统一脚本生成并信任证书（一次性）：
+- 默认使用 HTTP 避免证书信任提示。如需启用 HTTPS：
+  - 设置环境变量并启动：`DEV_HTTPS=1 npm run dev`
+  - 优先读取仓库根目录 `dev-certs/` 证书。
+- 建议用统一脚本生成并信任证书（一次性）：
   - Bash: `./scripts/ssl-setup.sh`
   - PowerShell: `./scripts/ssl-setup.ps1`
 - 启动后使用 `https://localhost:5173` 访问；首次访问若提示不安全，按浏览器提示接受一次即可（使用 mkcert 生成时通常会直接信任）。
-- 若需关闭 HTTPS：在启动前设置 `DEV_HTTPS=0`。
 
 与后端联调的 CORS 要点
 - 确保后端 `.env` 已包含本前端来源：
