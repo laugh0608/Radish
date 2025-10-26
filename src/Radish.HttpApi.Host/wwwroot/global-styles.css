@@ -59,6 +59,14 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 .theme-dark .radish-hero .btn, .theme-dark .radish-hero .dropdown-toggle{ color:#e5e7eb; }
 .radish-brand .brand-logo{ width:44px; height:44px; background: var(--lpx-logo-icon) no-repeat center/contain; display:inline-block; }
 
+/* Hero 边界柔化：全宽铺满 + 底部渐隐 */
+.radish-hero{ position: relative; overflow: hidden; }
+.radish-hero::after{
+  content:""; position:absolute; left:0; right:0; bottom:-1px; height:56px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0), var(--page-bg));
+  pointer-events:none; z-index:1;
+}
+
 /* 顶部操作区：在移动端占满宽度、自动换行对齐 */
 .radish-actions{ display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
 @media (max-width: 576px){

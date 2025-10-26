@@ -43,7 +43,8 @@
                 </div>
 
                 <div class="radish-actions d-flex align-items-center gap-2 ms-auto flex-wrap">
-                    <div class="d-flex align-items-center gap-2">
+                    <!-- 大屏：直接展示所有操作 -->
+                    <div class="d-none d-sm-flex align-items-center gap-2">
                         <button type="button" id="themeToggle" class="btn btn-light-subtle border-0 btn-sm" title="切换主题">🌞/🌙</button>
                         <abp-dropdown>
                             @if (Model.CurrentLanguage != null)
@@ -62,24 +63,43 @@
                                 </abp-dropdown-menu>
                             }
                         </abp-dropdown>
-                    </div>
 
-                    <div>
                         @if (CurrentUser.IsAuthenticated)
                         {
-                            <a abp-button="Outline_Light" class="me-2 btn-sm" asp-controller="Manage" asp-action="Index" asp-area="Account">
-                                @AccountLocalizer["MyAccount"]
-                            </a>
-                            <a abp-button="Light" class="btn-sm" asp-controller="Logout" asp-action="Index" asp-area="Account">
-                                @L["Logout"]
-                            </a>
+                            <a abp-button="Outline_Light" class="ms-1 btn-sm" asp-controller="Manage" asp-action="Index" asp-area="Account">@AccountLocalizer["MyAccount"]</a>
+                            <a abp-button="Light" class="btn-sm" asp-controller="Logout" asp-action="Index" asp-area="Account">@L["Logout"]</a>
                         }
                         else
                         {
-                            <a abp-button="Light" class="btn-sm" asp-controller="Login" asp-action="Index" asp-area="Account">
-                                @L["Login"]
-                            </a>
+                            <a abp-button="Light" class="btn-sm" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a>
                         }
+                    </div>
+
+                    <!-- 小屏：收纳为“更多”菜单 -->
+                    <div class="dropdown d-flex d-sm-none">
+                        <button class="btn btn-light-subtle border-0 btn-sm dropdown-toggle" type="button" id="moreMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">更多</button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="moreMenuBtn">
+                            <li><button class="dropdown-item" type="button" id="themeToggleMobile">切换主题</button></li>
+                            <li><hr class="dropdown-divider"/></li>
+                            @if (Model.Languages != null)
+                            {
+                                foreach (var language in Model.Languages)
+                                {
+                                    var languageUrl = Url.Content($"~/Abp/Languages/Switch?culture={language.CultureName}&uiCulture={language.UiCultureName}&returnUrl={System.Net.WebUtility.UrlEncode(Request.GetEncodedPathAndQuery())}");
+                                    <li><a class="dropdown-item" href="@languageUrl">@language.DisplayName</a></li>
+                                }
+                            }
+                            <li><hr class="dropdown-divider"/></li>
+                            @if (CurrentUser.IsAuthenticated)
+                            {
+                                <li><a class="dropdown-item" asp-controller="Manage" asp-action="Index" asp-area="Account">@AccountLocalizer["MyAccount"]</a></li>
+                                <li><a class="dropdown-item" asp-controller="Logout" asp-action="Index" asp-area="Account">@L["Logout"]</a></li>
+                            }
+                            else
+                            {
+                                <li><a class="dropdown-item" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a></li>
+                            }
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -89,6 +109,8 @@
     <!-- 应用卡片 -->
     <section class="flex-grow-1 py-4 py-lg-5">
         <div class="container">
+            <!-- 最近访问（若有） -->
+            <div id="recentRow" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3 mb-2 d-none"></div>
             <div id="appsGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                 @if (Model.Applications != null)
                 {

@@ -25,6 +25,12 @@
         localStorage.setItem(KEY_THEME, next);
       });
     }
+    var btnM = document.getElementById('themeToggleMobile');
+    if(btnM){ btnM.addEventListener('click', function(){
+      var cur = root.classList.contains('theme-dark') ? 'dark' : 'light';
+      var next = cur === 'dark' ? 'light' : 'dark';
+      applyTheme(next); localStorage.setItem(KEY_THEME, next);
+    }); }
 
     // --- Favorites ---
     var KEY_FAVS = 'radish.favs';
@@ -80,6 +86,41 @@
           }
         });
       });
+
+      // 最近访问：记录并渲染置顶区
+      var KEY_RECENT = 'radish.recent';
+      function getRecent(){ try{return JSON.parse(localStorage.getItem(KEY_RECENT)||'[]');}catch{return [];} }
+      function setRecent(arr){ try{localStorage.setItem(KEY_RECENT, JSON.stringify(arr||[]));}catch{} }
+      function touchRecent(item){
+        var list = getRecent();
+        // item: {id, href, title}
+        list = list.filter(function(x){ return x && x.id !== item.id; });
+        list.unshift(item);
+        if(list.length>6) list = list.slice(0,6);
+        setRecent(list);
+      }
+
+      grid.querySelectorAll('.radish-app-card').forEach(function(a){
+        a.addEventListener('click', function(){
+          var parent = a.closest('.col');
+          var id = parent ? (parent.getAttribute('data-client-id')||'') : '';
+          var title = a.querySelector('.h5') ? a.querySelector('.h5').textContent.trim() : id;
+          var href = a.getAttribute('data-href') || a.getAttribute('href') || '';
+          touchRecent({id:id, href:href, title:title});
+        });
+      });
+
+      function renderRecent(){
+        var recent = getRecent(); var row = document.getElementById('recentRow');
+        if(!row) return; if(!recent.length){ row.classList.add('d-none'); return; }
+        row.classList.remove('d-none'); row.innerHTML = '';
+        recent.forEach(function(r){
+          var col = document.createElement('div'); col.className = 'col';
+          col.innerHTML = '\n<a href="'+(r.href||'#')+'" target="_blank" class="radish-app-card d-block h-100 text-reset">\n  <div class="card h-100 border-0 shadow-sm radish-card">\n    <div class="card-body d-flex align-items-start gap-3">\n      <div class="flex-grow-1">\n        <div class="h6 mb-1">'+(r.title||r.id||'App')+'</div>\n        <div class="text-muted small text-truncate">'+(r.href||'')+'</div>\n      </div>\n    </div>\n  </div>\n</a>';
+          row.appendChild(col);
+        });
+      }
+      renderRecent();
     }
   });
 })();
