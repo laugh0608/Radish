@@ -9,6 +9,7 @@
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: none;
   z-index: 140;
+  transition: transform 0.24s ease-in-out;
 }
 
 @media (max-width: 767.98px) {
@@ -83,6 +84,10 @@
   border-top-right-radius: 14px;
   box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
   z-index: 141;
+}
+
+.mobile-bottom-nav.hidden {
+  transform: translateY(100%);
 }
 
 .mobile-submenu-panel .submenu-header {

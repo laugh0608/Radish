@@ -1,5 +1,5 @@
 import { NgFor, NgIf } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { Component, HostListener, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { LocalizationPipe, RoutesService, ABP, TreeNode, eLayoutType } from '@abp/ng.core';
 import { LanguageService, LpxLanguage } from '@volo/ngx-lepton-x.core';
@@ -10,7 +10,7 @@ import { firstValueFrom } from 'rxjs';
   standalone: true,
   imports: [NgFor, NgIf, RouterLink, RouterLinkActive, LocalizationPipe],
   template: `
-    <nav class="mobile-bottom-nav d-sm-flex d-md-none" *ngIf="(items() || []).length > 0">
+    <nav class="mobile-bottom-nav d-sm-flex d-md-none" [class.hidden]="navHidden" *ngIf="(items() || []).length > 0">
       <a
         *ngFor="let item of items()"
         [routerLink]="item.path"
@@ -21,6 +21,11 @@ import { firstValueFrom } from 'rxjs';
       >
         <i [class]="iconFor(item)"></i>
         <span>{{ item.name | abpLocalization }}</span>
+      </a>
+      <!-- 更多（收纳溢出项） -->
+      <a role="button" *ngIf="(overflow() || []).length > 0" (click)="openMore($event)">
+        <i class="bi bi-grid-3x3-gap-fill"></i>
+        <span>更多</span>
       </a>
       <!-- 语言按钮打开二级菜单 -->
       <a role="button" (click)="openLanguageMenu($event)" aria-label="language">
@@ -71,37 +76,30 @@ export class MobileBottomNavComponent {
   submenuTitle = '';
   submenuItems: ABP.Route[] = [];
   submenuLanguages: LpxLanguage[] = [];
+  navHidden = false;
+  private lastScrollY = 0;
 
   // 仅取顶层且可见、带 path 的应用路由作为底部导航项
-  items = computed<ABP.Route[]>(() => {
+  // 顶部可见的所有顶层路由（与 PC 一致）
+  private topRoutes = computed<ABP.Route[]>(() => {
     const tree = (this.routes.visible || []) as TreeNode<ABP.Route>[];
-
-    const flatten = (nodes: TreeNode<ABP.Route>[], acc: ABP.Route[] = []): ABP.Route[] => {
-      for (const n of nodes) {
-        const node = n as unknown as ABP.Route;
-        acc.push(node);
-        if ((n.children || []).length) flatten(n.children as any, acc);
-      }
-      return acc;
-    };
-
-    const all = flatten(tree).filter(r => !!r.path && (r.layout === eLayoutType.application || !r.layout));
-    const wantedPaths = ['/', '/identity', '/tenant-management', '/setting-management', '/books'];
-    const pick = new Map<string, ABP.Route>();
-    for (const r of all) {
-      const path = r.path || '';
-      if (wantedPaths.some(p => path === p || path.startsWith(p))) {
-        if (!pick.has(path)) pick.set(path, r);
-      }
-    }
-    const order = new Map(wantedPaths.map((p, i) => [p, i] as const));
-    return [...pick.values()].sort((a, b) => (order.get(a.path || 'zzz') ?? 99) - (order.get(b.path || 'zzz') ?? 99));
+    const tops = tree
+      .filter(n => !n.parent && !!n.path && (n.layout === eLayoutType.application || !n.layout))
+      .map(n => n as unknown as ABP.Route)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return tops;
   });
+
+  // 底部栏主导航项（其余的放到“更多”）
+  private maxPrimary = 4;
+  items = computed<ABP.Route[]>(() => this.topRoutes().slice(0, this.maxPrimary));
+  overflow = computed<ABP.Route[]>(() => this.topRoutes().slice(this.maxPrimary));
 
   hasSubmenu(item: ABP.Route): boolean {
     if (!item.path) return false;
     const subs = this.getSubmenuRoutes(item.path);
-    return subs.length > 0 && ['/identity', '/tenant-management', '/setting-management'].some(p => item.path === p);
+    // 对有子项的模块，显示二级菜单
+    return subs.length > 0;
   }
 
   onItemClick(event: Event, item: ABP.Route) {
@@ -186,5 +184,24 @@ export class MobileBottomNavComponent {
     this.router.events.subscribe(e => {
       if (e instanceof NavigationEnd) this.closeSubmenu();
     });
+  }
+
+  // 滚动隐藏 / 上滑显示
+  @HostListener('window:scroll', [])
+  onScroll() {
+    const y = window.scrollY || 0;
+    const diff = y - this.lastScrollY;
+    if (Math.abs(diff) > 5) {
+      this.navHidden = diff > 0; // 下滑隐藏，上滑显示
+      this.lastScrollY = y;
+    }
+  }
+
+  openMore(event: Event) {
+    event.preventDefault();
+    this.submenuFor = 'more';
+    this.submenuTitle = '更多';
+    this.submenuItems = this.overflow();
+    this.submenuOpen = true;
   }
 }
