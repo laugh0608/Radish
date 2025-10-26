@@ -1,6 +1,8 @@
 import { Environment } from '@abp/ng.core';
 
-const baseUrl = 'https://localhost:4200';
+// 使用当前 Origin，避免 http/https 不一致导致证书或资源跨协议问题
+const origin = (typeof window !== 'undefined' && window.location && window.location.origin) || 'http://localhost:4200';
+const baseUrl = origin;
 
 const oAuthConfig = {
   issuer: 'https://localhost:44342/',
@@ -12,7 +14,8 @@ const oAuthConfig = {
   // 其余常见声明按需取用（email/phone/address/roles），后端通过 OpenIddict 自动支持内置范围
   scope: 'offline_access openid profile email phone address roles Radish',
   // 本地也以 HTTPS 运行 Angular，避免第三方 Cookie/跨站导致的静默登录失败
-  requireHttps: true,
+  // 与页面同协议自动决定是否要求 https
+  requireHttps: origin.startsWith('https'),
   // 静默登录/续期回调页（需能被独立加载，不依赖主 SPA）
   silentRefreshRedirectUri: baseUrl + '/assets/silent-refresh.html',
 };

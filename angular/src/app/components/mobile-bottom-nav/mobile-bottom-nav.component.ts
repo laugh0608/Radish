@@ -83,11 +83,26 @@ export class MobileBottomNavComponent {
   // 顶部可见的所有顶层路由（与 PC 一致）
   private topRoutes = computed<ABP.Route[]>(() => {
     const tree = (this.routes.visible || []) as TreeNode<ABP.Route>[];
-    const tops = tree
-      .filter(n => !n.parent && !!n.path && (n.layout === eLayoutType.application || !n.layout))
-      .map(n => n as unknown as ABP.Route)
-      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    return tops;
+    const list: ABP.Route[] = [];
+    for (const n of tree) {
+      const isTop = !n.parent && (n.layout === eLayoutType.application || !n.layout);
+      if (!isTop) continue;
+      const node = n as any;
+      if (node.path) {
+        list.push(node as ABP.Route);
+      } else {
+        // 顶层分组（无 path），转成伪路由，点击打开子菜单
+        const name: string = node.name || 'Group';
+        const pseudo: ABP.Route = {
+          path: `/__group__/${encodeURIComponent(name)}`,
+          name,
+          iconClass: this.iconForGroup(name),
+          order: node.order,
+        } as ABP.Route;
+        list.push(pseudo);
+      }
+    }
+    return list.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   });
 
   // 底部栏主导航项（其余的放到“更多”）
@@ -148,6 +163,9 @@ export class MobileBottomNavComponent {
       // 聚合“身份/租户/设置”作为二级菜单
       const roots = this.topRoutes();
       this.submenuItems = roots.filter(r => this.adminPaths.includes(r.path || ''));
+    } else if (path.startsWith('/__group__/')) {
+      const groupName = decodeURIComponent(path.replace('/__group__/', ''));
+      this.submenuItems = this.getGroupChildren(groupName);
     } else {
       this.submenuItems = this.getSubmenuRoutes(path);
     }
@@ -176,6 +194,16 @@ export class MobileBottomNavComponent {
     // 取该分组下的后代项（排除自身）
     return all
       .filter(r => (r.path || '').startsWith(rootPath + '/') && (r.path || '') !== rootPath)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }
+
+  private getGroupChildren(groupName: string): ABP.Route[] {
+    const tree = (this.routes.visible || []) as TreeNode<ABP.Route>[];
+    const group = tree.find(n => !n.parent && (n as any).name === groupName);
+    if (!group) return [];
+    return (group.children || [])
+      .map(c => c as any as ABP.Route)
+      .filter(r => (r.layout === eLayoutType.application || !r.layout))
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }
 
@@ -216,6 +244,12 @@ export class MobileBottomNavComponent {
       .sort((a, b) => b.length - a.length)
       .find(p => path === p || path.startsWith(p + '/'));
     return r.iconClass || (matched ? map[matched] : 'bi bi-dot');
+  }
+
+  private iconForGroup(name: string): string {
+    const key = (name || '').toLowerCase();
+    if (key.includes('管理') || key.includes('administration') || key.includes('manage')) return 'bi bi-tools';
+    return 'bi bi-grid';
   }
 
   // 关闭弹层：路由变化时
