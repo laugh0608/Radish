@@ -46,6 +46,7 @@
                     <!-- 大屏：直接展示所有操作 -->
                     <div class="d-none d-sm-flex align-items-center gap-2">
                         <button type="button" id="themeToggle" class="btn btn-light-subtle border-0 btn-sm" title="切换主题">🌞/🌙</button>
+                        <button type="button" id="densityToggle" class="btn btn-light-subtle border-0 btn-sm" title="密度切换">密度</button>
                         <abp-dropdown>
                             @if (Model.CurrentLanguage != null)
                             {
@@ -73,6 +74,7 @@
                         {
                             <a abp-button="Light" class="btn-sm" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a>
                         }
+                        <button type="button" id="editToggle" class="btn btn-outline-secondary btn-sm ms-1" title="编辑首页">编辑</button>
                     </div>
 
                     <!-- 小屏：收纳为“更多”菜单 -->
@@ -80,6 +82,7 @@
                         <button class="btn btn-light-subtle border-0 btn-sm dropdown-toggle" type="button" id="moreMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">更多</button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="moreMenuBtn">
                             <li><button class="dropdown-item" type="button" id="themeToggleMobile">切换主题</button></li>
+                            <li><button class="dropdown-item" type="button" id="densityToggleMobile">密度切换</button></li>
                             <li><hr class="dropdown-divider"/></li>
                             @if (Model.Languages != null)
                             {
@@ -99,6 +102,8 @@
                             {
                                 <li><a class="dropdown-item" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a></li>
                             }
+                            <li><hr class="dropdown-divider"/></li>
+                            <li><button class="dropdown-item" type="button" id="editToggleMobile">编辑首页</button></li>
                         </ul>
                     </div>
                 </div>
@@ -154,6 +159,8 @@
                                         <div class="radish-card-tools position-absolute top-0 end-0 p-2 d-flex gap-2">
                                             <button type="button" class="btn btn-sm btn-light-subtle border-0 fav-toggle" title="收藏" data-client-id="@clientId">☆</button>
                                             <button type="button" class="btn btn-sm btn-light-subtle border-0 copy-link" title="复制链接" data-href="@(target ?? "#")">⧉</button>
+                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 health-check" title="健康检查" data-health-origin="@((!string.IsNullOrEmpty(application.ClientUri) ? new Uri(application.ClientUri).GetLeftPart(UriPartial.Authority) : string.Empty))">❤</button>
+                                            <span class="radish-drag-handle d-none" title="拖拽排序">⋮⋮</span>
                                         </div>
                                     </div>
                                 </div>

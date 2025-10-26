@@ -23,6 +23,8 @@ html, body {
   --card-bg: #ffffff;
   --card-border: rgba(15,23,42,.08);
   --card-shadow: 0 .5rem 1.25rem rgba(15,23,42,.06);
+  --card-padding: 1rem;
+  --grid-gap-y: 1.5rem;
   --hero-color: #0f172a;
   --hero-sub: rgba(15,23,42,.7);
   --hero-bg: radial-gradient(900px 280px at 15% -10%, rgba(99,102,241,.16), rgba(99,102,241,0) 60%),
@@ -38,11 +40,16 @@ html, body {
   --card-bg: rgba(17,24,39,.7);
   --card-border: rgba(148,163,184,.12);
   --card-shadow: 0 .5rem 1.25rem rgba(0,0,0,.25);
+  --card-padding: 1rem;
+  --grid-gap-y: 1.25rem;
   --hero-color: #eef2ff;
   --hero-sub: rgba(255,255,255,.75);
   --hero-bg: radial-gradient(1200px 400px at 10% -10%, rgba(99,102,241,.15), rgba(99,102,241,0) 70%),
              radial-gradient(1000px 380px at 90% -20%, rgba(16,185,129,.10), rgba(16,185,129,0) 65%),
              linear-gradient(180deg, #0f172a, #111827);
+  /* 主题化 Logo（若存在暗色版资源可在此切换） */
+  --lpx-logo: url('/images/logo/leptonxlite/logo-dark.png');
+  --lpx-logo-icon: url('/images/logo/leptonxlite/logo-light-thumbnail.png');
 }
 
 /* 页面背景与文字 */
@@ -79,6 +86,24 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 .radish-app-logo{ width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.08)); }
 .radish-card-tools{ opacity: 0; transition: opacity .15s ease; }
 .radish-app-card:hover .radish-card-tools{ opacity: 1; }
+.radish-card .card-body{ padding: var(--card-padding); }
+
+/* 密度（紧凑） */
+.density-compact .radish-card .card-body{ --card-padding: .625rem; }
+.density-compact #appsGrid{ row-gap: 1rem; }
+
+/* 编辑模式（拖拽排序） */
+.edit-mode #appsGrid .col{ cursor: move; }
+.edit-mode .radish-drag-handle{ display:inline-block !important; cursor: move; font-size: 16px; opacity: .6; }
+.edit-dragging{ opacity:.6; }
+
+/* 轻量纹理叠加，弱化块状感 */
+.radish-hero::before{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.35;
+  background: radial-gradient(600px 120px at 10% 10%, rgba(99,102,241,.08), rgba(99,102,241,0) 60%),
+              radial-gradient(500px 100px at 80% 0%, rgba(16,185,129,.06), rgba(16,185,129,0) 60%),
+              repeating-radial-gradient(circle at 50% -10%, rgba(255,255,255,.15) 0 2px, rgba(255,255,255,0) 3px 6px);
+}
 
 /* 移动端优化 */
 @media (max-width: 576px){
