@@ -1,6 +1,7 @@
 import { APP_INITIALIZER, inject } from '@angular/core';
 import { OAuthService } from 'angular-oauth2-oidc';
 import { ConfigStateService, EnvironmentService } from '@abp/ng.core';
+import { finalize } from 'rxjs/operators';
 
 function initAutoLoginFactory(oAuthService: OAuthService) {
   return async () => {
@@ -15,11 +16,28 @@ function initAutoLoginFactory(oAuthService: OAuthService) {
       } catch {}
 
       const configState = inject(ConfigStateService);
+      // 避免并发重复刷新导致前一个 XHR 被浏览器取消（控制台出现 XHR 加载失败的噪音）
+      let refreshing = false;
+      let refreshedAfterLogin = false;
       const refreshAppState = () => {
+        if (refreshing) return;
         try {
+          refreshing = true;
           // 刷新后端 ApplicationConfiguration，更新 currentUser/menus/权限
-          configState.refreshAppState().subscribe();
-        } catch {}
+          configState
+            .refreshAppState()
+            .pipe(finalize(() => (refreshing = false)))
+            .subscribe({
+              next: () => {
+                refreshedAfterLogin = true;
+              },
+              error: () => {
+                // 忽略错误，避免阻断应用启动
+              },
+            });
+        } catch {
+          refreshing = false;
+        }
       };
 
       // 1) 加载发现文档并尝试从回调解析登录（若已从 IdP 重定向回来）
@@ -51,8 +69,8 @@ function initAutoLoginFactory(oAuthService: OAuthService) {
       // 4) 成功获取令牌后，开启自动静默续期（使用 refresh_token 或 prompt=none 视配置而定）
       if (oAuthService.hasValidAccessToken()) {
         oAuthService.setupAutomaticSilentRefresh(undefined, 'access_token', true);
-        // 确保首次进入时就拉取用户与权限，避免需要手动刷新
-        refreshAppState();
+        // 避免与 ABP 内部初始化的 ApplicationConfiguration 请求并发，
+        // 不在此处立即刷新，统一在 token_received 事件中进行一次刷新。
       }
       // 5) 监听会话终止（若 IdP 支持 front-channel/logout），则本地也登出
       oAuthService.events.subscribe(e => {
