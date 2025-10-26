@@ -30,11 +30,6 @@ import { firstValueFrom } from 'rxjs';
         <i class="bi bi-grid-3x3-gap-fill"></i>
         <span>更多</span>
       </a>
-      <!-- 语言按钮打开二级菜单 -->
-      <a role="button" (click)="openLanguageMenu($event)" aria-label="language">
-        <i class="bi bi-globe"></i>
-        <span>{{ 'AbpUi::Language' | abpLocalization }}</span>
-      </a>
     </nav>
 
     <!-- 二级菜单遮罩 -->
@@ -123,9 +118,17 @@ export class MobileBottomNavComponent {
     const admins = roots.filter(r => this.adminPaths.includes(r.path || ''));
     if (admins.length === 0) return roots;
 
-    // 如果已有顶层分组（如 Administration），优先使用该分组而不插入虚拟“管理”
-    const hasAdminGroup = roots.some(r => (r.path || '').startsWith('/__group__/') && this.isAdminGroupName(decodeURIComponent((r.path || '').replace('/__group__/', ''))));
-    if (hasAdminGroup) return roots;
+    // 如果已有顶层分组（如 Administration），将其固定到首页之后
+    const adminGroup = roots.find(r => (r.path || '').startsWith('/__group__/') && this.isAdminGroupName(decodeURIComponent((r.path || '').replace('/__group__/', ''))));
+    if (adminGroup) {
+      const home = roots.find(r => (r.path || '') === this.homePath);
+      const rest = roots.filter(r => r !== home && r !== adminGroup);
+      const result: ABP.Route[] = [];
+      if (home) result.push(home);
+      result.push(adminGroup);
+      result.push(...rest);
+      return result;
+    }
 
     const manage: ABP.Route = {
       path: '/__manage',
@@ -253,6 +256,11 @@ export class MobileBottomNavComponent {
 
   go(item: ABP.Route) {
     if (!item || !item.path) return;
+    if (item.path === '/__language') {
+      // 打开语言面板
+      this.openLanguageMenu(new MouseEvent('click'));
+      return;
+    }
     this.router.navigateByUrl(item.path);
     this.closeSubmenu();
   }
@@ -265,6 +273,7 @@ export class MobileBottomNavComponent {
       '/': 'bi bi-house-fill',
       '/books': 'bi bi-journal-bookmark-fill',
       '/__manage': 'bi bi-tools',
+      '/__language': 'bi bi-globe',
       '/identity': 'bi bi-people-fill',
       '/identity/users': 'bi bi-person-fill',
       '/identity/roles': 'bi bi-person-badge-fill',
@@ -322,7 +331,15 @@ export class MobileBottomNavComponent {
     event.preventDefault();
     this.submenuFor = 'more';
     this.submenuTitle = '更多';
-    this.submenuItems = this.overflow();
+    const items = [...this.overflow()];
+    const langItem: ABP.Route = {
+      path: '/__language',
+      name: this.isZh() ? '语言' : 'Language',
+      iconClass: 'bi bi-globe',
+      order: 999,
+    } as ABP.Route;
+    items.push(langItem);
+    this.submenuItems = items;
     this.submenuOpen = true;
     this.navHidden = false;
   }
