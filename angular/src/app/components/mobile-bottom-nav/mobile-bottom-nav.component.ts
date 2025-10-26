@@ -1,6 +1,6 @@
 import { NgFor, NgIf } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { LocalizationPipe, RoutesService, ABP, TreeNode, eLayoutType } from '@abp/ng.core';
 import { LanguageService, LpxLanguage } from '@volo/ngx-lepton-x.core';
 import { firstValueFrom } from 'rxjs';
@@ -19,7 +19,7 @@ import { firstValueFrom } from 'rxjs';
         (click)="onItemClick($event, item)"
         [attr.aria-label]="item.name"
       >
-        <i [class]="item.iconClass || 'bi bi-circle'"></i>
+        <i [class]="iconFor(item)"></i>
         <span>{{ item.name | abpLocalization }}</span>
       </a>
       <!-- 语言按钮打开二级菜单 -->
@@ -40,7 +40,7 @@ import { firstValueFrom } from 'rxjs';
       </header>
       <div class="submenu-grid">
         <a *ngFor="let s of submenuItems" [routerLink]="s.path" (click)="closeSubmenu()">
-          <i [class]="s.iconClass || 'bi bi-dot' "></i>
+          <i [class]="iconFor(s)"></i>
           <span>{{ s.name | abpLocalization }}</span>
         </a>
       </div>
@@ -54,7 +54,7 @@ import { firstValueFrom } from 'rxjs';
       </header>
       <div class="submenu-grid">
         <a *ngFor="let lg of submenuLanguages" role="button" (click)="selectLanguage(lg)">
-          <i class="bi bi-translate"></i>
+          <i [class]="lg.cultureName === language.selectedLanguage?.cultureName ? 'bi bi-check2-circle' : 'bi bi-translate'"></i>
           <span>{{ lg.displayName }}</span>
         </a>
       </div>
@@ -65,6 +65,7 @@ import { firstValueFrom } from 'rxjs';
 export class MobileBottomNavComponent {
   private routes = inject(RoutesService);
   private language = inject(LanguageService);
+  private router = inject(Router);
   submenuOpen = false;
   submenuFor: string | null = null;
   submenuTitle = '';
@@ -157,5 +158,33 @@ export class MobileBottomNavComponent {
   selectLanguage(lang: LpxLanguage) {
     this.language.setSelectedLanguage(lang);
     this.closeSubmenu();
+  }
+
+  // ----- UI helpers -----
+  iconFor(r: ABP.Route | undefined): string {
+    if (!r) return 'bi bi-dot';
+    const path = r.path || '';
+    const map: Record<string, string> = {
+      '/': 'bi bi-house-fill',
+      '/books': 'bi bi-journal-bookmark-fill',
+      '/identity': 'bi bi-people-fill',
+      '/identity/users': 'bi bi-person-fill',
+      '/identity/roles': 'bi bi-person-badge-fill',
+      '/tenant-management': 'bi bi-buildings-fill',
+      '/tenant-management/tenants': 'bi bi-building-fill',
+      '/setting-management': 'bi bi-gear-fill',
+    };
+    // longest prefix match
+    const matched = Object.keys(map)
+      .sort((a, b) => b.length - a.length)
+      .find(p => path === p || path.startsWith(p + '/'));
+    return r.iconClass || (matched ? map[matched] : 'bi bi-dot');
+  }
+
+  // 关闭弹层：路由变化时
+  constructor() {
+    this.router.events.subscribe(e => {
+      if (e instanceof NavigationEnd) this.closeSubmenu();
+    });
   }
 }

@@ -37,6 +37,27 @@
   color: #ffffff;
 }
 
+.mobile-bottom-nav a {
+  position: relative;
+}
+.mobile-bottom-nav a.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 3px;
+  background: #0d6efd; /* brand */
+  border-radius: 2px;
+}
+
+.mobile-bottom-nav a.has-submenu::after {
+  content: '\25B2'; /* small triangle up */
+  font-size: 8px;
+  margin-left: 2px;
+  opacity: 0.55;
+}
+
 /* 给内容区域预留空间，避免被底部栏遮挡 */
 @media (max-width: 767.98px) {
   .lpx-content-container {
