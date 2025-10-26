@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -111,10 +112,22 @@ public class Program
             // 在开发环境下，若未显式指定 ASPNETCORE_URLS，则默认同时监听 HTTPS 与 HTTP（44342）
             try
             {
-                var urlsEnv = Environment.GetEnvironmentVariable("ASPNETCORE_URLS");
-                if (string.IsNullOrWhiteSpace(urlsEnv) && builder.Environment.IsDevelopment())
+                if (builder.Environment.IsDevelopment())
                 {
-                    builder.WebHost.UseUrls("https://localhost:44342", "http://localhost:44342");
+                    var urlsEnv = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? string.Empty;
+                    var list = new List<string>();
+                    if (!string.IsNullOrWhiteSpace(urlsEnv))
+                    {
+                        foreach (var p in urlsEnv.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                        {
+                            var v = p.Trim();
+                            if (!string.IsNullOrWhiteSpace(v)) list.Add(v);
+                        }
+                    }
+                    // 仅确保包含 HTTPS 44342，避免与 HTTP 44342 冲突
+                    if (!list.Exists(u => string.Equals(u, "https://localhost:44342", StringComparison.OrdinalIgnoreCase)))
+                        list.Add("https://localhost:44342");
+                    builder.WebHost.UseUrls(list.ToArray());
                 }
             }
             catch { /* ignore */ }

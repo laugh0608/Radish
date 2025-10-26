@@ -4,7 +4,7 @@ const origin = (typeof window !== 'undefined' && window.location && window.locat
 const baseUrl = origin;
 
 const oAuthConfig = {
-  issuer: 'http://localhost:44342/',
+  issuer: 'https://localhost:44342/',
   redirectUri: baseUrl,
   // 与服务端 OpenIddict 配置一致（见 DbMigrator: OpenIddict:Applications:Radish_Console）
   clientId: 'Radish_Console',
@@ -26,7 +26,7 @@ export const environment = {
   oAuthConfig,
   apis: {
     default: {
-      url: 'http://localhost:44342',
+      url: 'https://localhost:44342',
       rootNamespace: 'Radish',
     },
     AbpAccountPublic: {

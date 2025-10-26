@@ -15,7 +15,7 @@ export type AbpAppConfig = {
   localization?: AbpLocalizationPayload
 }
 
-const DEFAULT_API_BASE = 'http://localhost:44342'
+const DEFAULT_API_BASE = 'https://localhost:44342'
 
 function getApiBase() {
   // Vite 注入：优先使用环境变量
