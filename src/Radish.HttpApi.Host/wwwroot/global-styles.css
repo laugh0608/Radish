@@ -68,6 +68,19 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 
 /* Hero 边界柔化：全宽铺满 + 底部渐隐 */
 .radish-hero{ position: relative; overflow: hidden; }
+.radish-hero-anim{ position:absolute; inset:-10% -5% 0 -5%; pointer-events:none; z-index:0; opacity:.6; }
+.radish-hero-anim{ background:
+  radial-gradient(40rem 12rem at 15% -10%, rgba(99,102,241,.20), rgba(99,102,241,0) 60%),
+  radial-gradient(30rem 10rem at 85% -15%, rgba(16,185,129,.16), rgba(16,185,129,0) 55%),
+  conic-gradient(from 0deg at 100% -10%, rgba(255,255,255,.22), rgba(255,255,255,0) 25%, rgba(255,255,255,.22) 50%, rgba(255,255,255,0) 75%, rgba(255,255,255,.22) 100%);
+  mix-blend-mode: soft-light;
+  animation: heroFloat 18s linear infinite;
+}
+@keyframes heroFloat {
+  0% { transform: translateY(0) translateX(0) scale(1); filter: blur(0px); }
+  50% { transform: translateY(12px) translateX(-8px) scale(1.02); filter: blur(.2px); }
+  100% { transform: translateY(0) translateX(0) scale(1); filter: blur(0px); }
+}
 .radish-hero::after{
   content:""; position:absolute; left:0; right:0; bottom:-1px; height:56px;
   background: linear-gradient(to bottom, rgba(255,255,255,0), var(--page-bg));
