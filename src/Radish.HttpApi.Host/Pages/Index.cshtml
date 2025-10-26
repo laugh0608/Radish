@@ -128,6 +128,45 @@
         </div>
     </section>
 
+    <!-- 移动端：功能面板（替代“更多”下拉） -->
+    <section class="d-sm-none py-2">
+        <div class="container">
+            <div class="card border-0 shadow-sm radish-mobile-actions">
+                <div class="card-body d-flex flex-wrap gap-2">
+                    <button type="button" id="themeToggleMobile" class="btn btn-light-subtle border-0 btn-sm">@L["Actions:ThemeToggle"]</button>
+
+                    <div class="btn-group" role="group" aria-label="@L["Actions:Density"]">
+                        <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="auto">@L["Actions:Density.Auto"]</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="comfortable">@L["Actions:Density.Comfortable"]</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="compact">@L["Actions:Density.Compact"]</button>
+                    </div>
+
+                    @if (Model.Languages != null)
+                    {
+                        foreach (var language in Model.Languages)
+                        {
+                            var languageUrl = Url.Content($"~/Abp/Languages/Switch?culture={language.CultureName}&uiCulture={language.UiCultureName}&returnUrl={System.Net.WebUtility.UrlEncode(Request.GetEncodedPathAndQuery())}");
+                            <a class="btn btn-outline-secondary btn-sm" href="@languageUrl">@language.DisplayName</a>
+                        }
+                    }
+
+                    @if (CurrentUser.IsAuthenticated)
+                    {
+                        <a abp-button="Outline_Light" class="btn-sm" asp-controller="Manage" asp-action="Index" asp-area="Account">@AccountLocalizer["MyAccount"]</a>
+                        <a abp-button="Light" class="btn-sm" asp-controller="Logout" asp-action="Index" asp-area="Account">@L["Logout"]</a>
+                    }
+                    else
+                    {
+                        <a abp-button="Light" class="btn-sm" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a>
+                    }
+
+                    <button type="button" id="editToggleMobile" class="btn btn-outline-secondary btn-sm">@L["Actions:EditHome"]</button>
+                    <button type="button" id="hiddenManageBtnMobile" class="btn btn-outline-secondary btn-sm">@L["Actions:ManageHidden"]</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- 应用卡片 -->
     <section class="flex-grow-1 py-4 py-lg-5">
         <div class="container">

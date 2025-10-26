@@ -138,4 +138,6 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 @media (max-width: 576px){
   .radish-hero{ padding-top: 2rem; padding-bottom: 2rem; }
   .radish-app-logo{ width:48px; height:48px; }
+  .radish-mobile-actions .card-body{ padding: .75rem; }
+  .radish-mobile-actions .btn{ white-space: nowrap; }
 }
