@@ -1,7 +1,7 @@
 import { NgFor, NgIf } from '@angular/common';
 import { Component, HostListener, computed, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
-import { LocalizationPipe, RoutesService, ABP, TreeNode, eLayoutType, LocalizationService } from '@abp/ng.core';
+import { LocalizationPipe, RoutesService, ABP, TreeNode, eLayoutType, SessionStateService } from '@abp/ng.core';
 import { LanguageService, LpxLanguage } from '@volo/ngx-lepton-x.core';
 import { firstValueFrom } from 'rxjs';
 
@@ -11,17 +11,19 @@ import { firstValueFrom } from 'rxjs';
   imports: [NgFor, NgIf, RouterLink, RouterLinkActive, LocalizationPipe],
   template: `
     <nav class="mobile-bottom-nav d-sm-flex d-md-none" [class.hidden]="navHidden" *ngIf="(items() || []).length > 0">
-      <a
-        *ngFor="let item of items()"
-        [routerLink]="item.path"
-        routerLinkActive="active"
-        [class.has-submenu]="hasSubmenu(item)"
-        (click)="onItemClick($event, item)"
-        [attr.aria-label]="item.name"
-      >
-        <i [class]="iconFor(item)"></i>
-        <span>{{ item.name | abpLocalization }}</span>
-      </a>
+      <ng-container *ngFor="let item of items()">
+        @if (hasSubmenu(item)) {
+          <a role="button" class="has-submenu" (click)="openSubmenu(item)" [attr.aria-label]="item.name">
+            <i [class]="iconFor(item)"></i>
+            <span>{{ item.name | abpLocalization }}</span>
+          </a>
+        } @else {
+          <a [routerLink]="item.path" routerLinkActive="active" [attr.aria-label]="item.name">
+            <i [class]="iconFor(item)"></i>
+            <span>{{ item.name | abpLocalization }}</span>
+          </a>
+        }
+      </ng-container>
       <!-- 更多（收纳溢出项） -->
       <a role="button" *ngIf="(overflow() || []).length > 0" (click)="openMore($event)">
         <i class="bi bi-grid-3x3-gap-fill"></i>
@@ -44,7 +46,7 @@ import { firstValueFrom } from 'rxjs';
         <button type="button" class="btn-close" aria-label="close" (click)="closeSubmenu()"></button>
       </header>
       <div class="submenu-grid">
-        <a *ngFor="let s of submenuItems" [routerLink]="s.path" (click)="closeSubmenu()">
+        <a *ngFor="let s of submenuItems" role="button" (click)="go(s)">
           <i [class]="iconFor(s)"></i>
           <span>{{ s.name | abpLocalization }}</span>
         </a>
@@ -70,7 +72,7 @@ import { firstValueFrom } from 'rxjs';
 export class MobileBottomNavComponent {
   private routes = inject(RoutesService);
   private language = inject(LanguageService);
-  private abpLocalization = inject(LocalizationService);
+  private abpSession = inject(SessionStateService);
   private router = inject(Router);
   submenuOpen = false;
   submenuFor: string | null = null;
@@ -205,9 +207,19 @@ export class MobileBottomNavComponent {
     const tree = (this.routes.visible || []) as TreeNode<ABP.Route>[];
     const group = tree.find(n => !n.parent && (n as any).name === groupName);
     if (!group) return [];
-    return (group.children || [])
-      .map(c => c as any as ABP.Route)
-      .filter(r => (r.layout === eLayoutType.application || !r.layout))
+    const collect = (nodes: TreeNode<ABP.Route>[], acc: ABP.Route[] = []): ABP.Route[] => {
+      for (const n of nodes) {
+        const v = n as any as ABP.Route;
+        const isApp = (v.layout === eLayoutType.application || !v.layout);
+        if (!isApp) continue;
+        if (v.path) {
+          acc.push(v);
+        }
+        if ((n.children || []).length) collect(n.children as any, acc);
+      }
+      return acc;
+    };
+    return collect(group.children || [])
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }
 
@@ -225,8 +237,14 @@ export class MobileBottomNavComponent {
 
   selectLanguage(lang: LpxLanguage) {
     this.language.setSelectedLanguage(lang);
-    // 同步到 ABP 本地化系统，确保 abpLocalization 管道立即生效
-    this.abpLocalization.setLanguage(lang.cultureName);
+    this.abpSession.setLanguage(lang.cultureName);
+    try { document.documentElement.lang = lang.cultureName; } catch {}
+    this.closeSubmenu();
+  }
+
+  go(item: ABP.Route) {
+    if (!item || !item.path) return;
+    this.router.navigateByUrl(item.path);
     this.closeSubmenu();
   }
 
