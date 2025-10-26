@@ -13,6 +13,7 @@
 ## 后端（.NET / ABP）
 - 开发指南: [backend/README.md](backend/README.md)
  - 环境变量示例：复制并修改 `src/Radish.HttpApi.Host/.env.example`、`src/Radish.DbMigrator/.env.example`
+- Host 首页功能说明: [Host-Home-Features.md](Host-Home-Features.md)
 
 ## 前端（Frontend）
 - 管理端（Angular）: [frontend/angular/README.md](frontend/angular/README.md)
