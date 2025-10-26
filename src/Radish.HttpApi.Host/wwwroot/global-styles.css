@@ -68,10 +68,8 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 
 /* Hero 边界柔化：全宽铺满 + 底部渐隐 */
 .radish-hero{ position: relative; overflow: hidden; }
-/* Full-bleed hero: extend background to viewport edges even inside centered wrappers */
-.radish-hero{ width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw); }
-/* Avoid tiny horizontal scrollbars on some browsers */
-@supports (width: 100dvw){ .radish-hero{ width: 100dvw; margin-left: calc(50% - 50dvw); margin-right: calc(50% - 50dvw); } }
+/* Contained hero: 与页面容器一致，避免左右边缘硬线 */
+.radish-hero{ width: auto; margin-left: 0; margin-right: 0; }
 
 /* 软化四周边界，避免一道硬线（不影响内容） */
 .radish-hero{ box-shadow: inset 0 28px 28px -28px var(--page-bg), inset 28px 0 28px -28px var(--page-bg), inset -28px 0 28px -28px var(--page-bg); }
@@ -122,6 +120,7 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 /* 轻量纹理叠加，弱化块状感 */
 .radish-hero::before{
   content:""; position:absolute; inset:0; pointer-events:none; opacity:.35;
+  z-index: 2;
   /* 将“顶部/左右边缘”柔化过渡也放进同一个覆盖层，摆在最前面确保在纹理之上 */
   background:
     /* 顶部渐隐到页面背景 */
