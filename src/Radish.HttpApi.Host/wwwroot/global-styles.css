@@ -68,6 +68,8 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 
 /* Hero 边界柔化：全宽铺满 + 底部渐隐 */
 .radish-hero{ position: relative; overflow: hidden; }
+/* 解决 Hero 内部下拉被裁剪：下拉打开时允许溢出 */
+.radish-hero.dropdown-open{ overflow: visible; }
 /* Contained hero: 与页面容器一致，避免左右边缘硬线 */
 .radish-hero{ width: auto; margin-left: 0; margin-right: 0; }
 
@@ -100,14 +102,33 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
   .radish-actions{ width:100%; margin-top:.75rem; justify-content:flex-start; }
 }
 
+/* 移除原先“整体换行”的策略，改为仅工具区二行布局 */
+
 /* 卡片与动效 */
 .radish-app-card .card{ transition: transform .2s ease, box-shadow .2s ease; background: var(--card-bg); box-shadow: var(--card-shadow); border: 1px solid var(--card-border); }
+.radish-app-card, .radish-app-card:hover, .radish-app-card:focus { text-decoration: none !important; }
 .radish-app-card:hover .card{ transform: translateY(-4px); box-shadow: 0 .75rem 1.5rem rgba(15,23,42,.12); }
 .radish-app-logo{ width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.08)); }
 .radish-card-tools{ opacity: .9; }
 .radish-app-card:hover .radish-card-tools{ opacity: 1; }
-.radish-card-tools .btn{ padding: .25rem .375rem; line-height: 1; }
-.radish-card .card-body{ padding: var(--card-padding); }
+.radish-card-tools .btn{ padding: .25rem .375rem; line-height: 1; white-space: nowrap; }
+.radish-card-tools{ flex-wrap: wrap; }
+/* 工具区始终两行（2x2），保持在右上角 */
+.radish-card .radish-card-tools{ display: grid !important; grid-template-columns: repeat(2, auto); grid-auto-flow: row; justify-content: end; align-content: start; }
+.radish-card .card-body{
+  padding: var(--card-padding);
+  /* 使用 Grid 确保三栏布局：logo | 文本自适应 | 工具固定 */
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "logo main tools";
+  align-items: center;
+  column-gap: 1rem;
+}
+/* 让文本容器在窄宽度时可收缩，避免把工具按钮顶出卡片 */
+.radish-card .app-main{ min-width: 0; flex: 1 1 0; grid-area: main; }
+.radish-card .app-main .text-truncate{ display: block; max-width: 100%; }
+.radish-card .radish-app-logo{ grid-area: logo; }
+.radish-card .radish-card-tools{ grid-area: tools; justify-self: end; align-self: start; }
 
 /* 区块标题与区分 */
 .radish-section{ margin-bottom: 1.25rem; }
@@ -117,9 +138,14 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 .density-compact .radish-card .card-body{ --card-padding: .625rem; }
 .density-compact #appsGrid{ row-gap: 1rem; }
 
+/* 应用网格：缩小跨行垂直间距（比 g-4 更紧凑一点） */
+#appsGrid{ --bs-gutter-y: 1rem; }
+/* 收藏区也缩小垂直间距，视觉一致 */
+#favRow{ --bs-gutter-y: 1rem; }
+
 /* 编辑模式（拖拽排序） */
 .edit-mode #appsGrid .col{ cursor: move; }
-.edit-mode .radish-drag-handle{ display:inline-block !important; cursor: move; font-size: 16px; opacity: .6; }
+.edit-mode #appsGrid .radish-drag-handle{ display:inline-block !important; cursor: move; font-size: 16px; opacity: .6; }
 .edit-dragging{ opacity:.6; }
 
 /* 轻量纹理叠加，弱化块状感 */
@@ -145,4 +171,10 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
   .radish-app-logo{ width:48px; height:48px; }
   .radish-mobile-actions .card-body{ padding: .75rem; }
   .radish-mobile-actions .btn{ white-space: nowrap; }
+  /* 小屏：保持单行栅格，改由工具区内部二行布局（见下方 <=992px 规则） */
 }
+
+/* 取消宽度阈值：始终 2x2 布局 */
+
+/* “更多”显示完全由脚本控制 */
+.radish-card .radish-card-tools .tools-more.d-none{ display: none !important; }

@@ -64,6 +64,17 @@
     var themeBtnM = document.getElementById('themeToggleMobile');
     if(themeBtnM) themeBtnM.addEventListener('click', function(){ theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(theme); localStorage.setItem(KEY_THEME, theme); });
 
+    // Fix: Hero 溢出裁剪导致下拉被遮挡，监听下拉开合切换 overflow
+    try{
+      var hero = document.querySelector('.radish-hero');
+      if(hero){
+        document.querySelectorAll('.radish-hero .dropdown, .radish-hero abp-dropdown').forEach(function(el){
+          el.addEventListener('shown.bs.dropdown', function(){ hero.classList.add('dropdown-open'); });
+          el.addEventListener('hidden.bs.dropdown', function(){ hero.classList.remove('dropdown-open'); });
+        });
+      }
+    }catch{}
+
     // Density menu (auto/comfortable/compact)
     document.querySelectorAll('.density-item').forEach(function(item){
       item.addEventListener('click', function(){ densityMode = item.getAttribute('data-density') || 'comfortable'; localStorage.setItem(KEY_DENSITY, densityMode); applyDensity(densityMode); });
@@ -71,6 +82,52 @@
 
     // Grid + cards
     var grid = document.getElementById('appsGrid'); if(!grid) return;
+    
+    // 构建“更多”菜单：把部分按钮折叠为下拉项
+    function setupToolsMore(tools){
+      try{
+        if(!tools) return;
+        var more = tools.querySelector('.tools-more');
+        if(!more){
+          more = document.createElement('div');
+          more.className = 'dropdown tools-more';
+          more.innerHTML = '<button class="btn btn-sm btn-light-subtle border-0 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">⋯</button><ul class="dropdown-menu dropdown-menu-end"></ul>';
+          tools.appendChild(more);
+        }
+
+        var fav    = tools.querySelector('.fav-toggle');
+        var copy   = tools.querySelector('.copy-link');
+        var health = tools.querySelector('.health-check');
+        var hideB  = tools.querySelector('.hide-toggle');
+        var menu   = more.querySelector('.dropdown-menu');
+        var card   = tools.closest('.card');
+        var title  = card ? card.querySelector('.app-title') : null;
+
+        function rebuildMenu(items){
+          if(!menu) return; menu.innerHTML='';
+          items.forEach(function(it){
+            var li=document.createElement('li');
+            var a=document.createElement('button'); a.type='button'; a.className='dropdown-item'; a.textContent=it.text;
+            a.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); it.btn.click(); });
+            li.appendChild(a); menu.appendChild(li);
+          });
+        }
+
+        function update(){
+          // 始终展示四个工具按钮，隐藏“更多”
+          [fav, copy, health, hideB].forEach(function(x){ if(x) x.classList.remove('d-none'); });
+          rebuildMenu([]);
+          if(more) more.classList.add('d-none');
+        }
+
+        // 初始化与监听尺寸变化
+        update();
+        if(window.ResizeObserver && card){ var ro=new ResizeObserver(update); ro.observe(card); }
+        window.addEventListener('resize', update);
+      }catch(e){ console.warn(e); }
+    }
+    // 对所有卡片工具区初始化“更多”菜单
+    grid.querySelectorAll('.radish-card-tools').forEach(setupToolsMore);
 
     // Meta map for all visible cards
     var meta = getMeta();
@@ -98,15 +155,49 @@
       items.forEach(function(el){ grid.appendChild(el); });
     })();
 
-    // Hidden sync
+    // Hidden sync（同时作用于“应用列表”和“收藏”两个容器）
     function syncHidden(){
       var hidden = getHidden();
-      Array.from(grid.querySelectorAll(':scope > .col')).forEach(function(col){
-        var id = col.getAttribute('data-client-id')||'';
-        col.classList.toggle('d-none', hidden.indexOf(id) >= 0);
-      });
+      try{
+        var containers = [grid];
+        var favRow = document.getElementById('favRow'); if(favRow) containers.push(favRow);
+        containers.forEach(function(container){
+          if(!container) return;
+          Array.from(container.querySelectorAll(':scope > .col')).forEach(function(col){
+            var id = col.getAttribute('data-client-id')||'';
+            col.classList.toggle('d-none', hidden.indexOf(id) >= 0);
+          });
+        });
+      }catch{}
     }
     syncHidden();
+
+    // 收藏区重排：将已收藏卡片移动到“收藏”区，其余保留在“应用列表”区
+    function reflowByFavorites(){
+      try{
+        var favRow = document.getElementById('favRow');
+        var favSection = document.getElementById('favSection');
+        if(!favRow){ return; }
+        var favs = getFavs();
+        var order = getOrder(); var omap = {}; order.forEach(function(id,i){ omap[id]=i; });
+        // 收集两个容器中的卡片
+        var items = [];
+        [grid, favRow].forEach(function(c){ if(c){ items = items.concat(Array.from(c.querySelectorAll(':scope > .col'))); } });
+        // 分组
+        var favItems = []; var otherItems = [];
+        items.forEach(function(col){ var id=col.getAttribute('data-client-id')||''; if(favs.indexOf(id)>=0) favItems.push(col); else otherItems.push(col); });
+        // 根据自定义顺序排序（无顺序的放后，按文本）
+        function sortItems(arr){ arr.sort(function(a,b){ var ia=omap[a.getAttribute('data-client-id')||'']; var ib=omap[b.getAttribute('data-client-id')||'']; ia=(typeof ia==='number')?ia:9999; ib=(typeof ib==='number')?ib:9999; if(ia!==ib) return ia-ib; return (a.textContent||'').localeCompare((b.textContent||'')); }); }
+        sortItems(favItems); sortItems(otherItems);
+        // 移动节点到对应容器
+        favItems.forEach(function(el){ favRow.appendChild(el); });
+        otherItems.forEach(function(el){ grid.appendChild(el); });
+        // 显隐收藏区
+        if(favSection){ favSection.classList.toggle('d-none', favItems.length === 0); }
+        // 应用隐藏规则
+        syncHidden();
+      }catch(e){ console.warn(e); }
+    }
 
     // Favorites init + toggle
     var favs = getFavs();
@@ -117,24 +208,13 @@
       el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation();
         var now = toggleFav(id);
         if(now.indexOf(id) >= 0){ el.classList.add('is-fav'); el.textContent = '★'; } else { el.classList.remove('is-fav'); el.textContent = '☆'; }
-        try{
-          var items = Array.from(grid.querySelectorAll(':scope > .col'));
-          var order = getOrder(); var map = {}; order.forEach(function(x,i){ map[x]=i; });
-          items.sort(function(a,b){
-            var ia = now.indexOf(a.getAttribute('data-client-id')||'') >= 0 ? 0 : 1;
-            var ib = now.indexOf(b.getAttribute('data-client-id')||'') >= 0 ? 0 : 1;
-            if(ia !== ib) return ia - ib;
-            var oa = map[a.getAttribute('data-client-id')||'']; var ob = map[b.getAttribute('data-client-id')||''];
-            oa = (typeof oa==='number')?oa:9999; ob = (typeof ob==='number')?ob:9999;
-            if(oa!==ob) return oa-ob;
-            return (a.textContent||'').localeCompare((b.textContent||''));
-          });
-          items.forEach(function(n){ grid.appendChild(n); });
-        }catch{}
+        try{ reflowByFavorites(); }catch{}
         // 可能影响“仅显示收藏”的最近访问展示
         try{ renderRecent(); }catch{}
       });
     });
+    // 初始重排一次
+    reflowByFavorites();
 
     // Copy link
     grid.querySelectorAll('.copy-link').forEach(function(el){ el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var href = el.getAttribute('data-href')||''; if(navigator.clipboard){ navigator.clipboard.writeText(href).then(function(){ if(window.abp&&abp.notify){ abp.notify.info(L('Notify:Copied')); } else { console.info(L('Notify:Copied')+': '+href); } }).catch(function(){ alert(L('Notify:CopyFailed')); }); } else { var t=document.createElement('textarea'); t.value=href; document.body.appendChild(t); t.select(); try{ document.execCommand('copy'); if(window.abp&&abp.notify){ abp.notify.info(L('Notify:Copied')); } } finally { document.body.removeChild(t); } } }); });
@@ -143,13 +223,15 @@
     grid.querySelectorAll('.health-check').forEach(function(el){ el.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); var origin = el.getAttribute('data-health-origin')||''; if(!origin){ if(window.abp&&abp.notify) abp.notify.warn(L('Notify:HealthNotConfigured')); return; } var url = origin.replace(/\/$/,'') + '/health-status'; fetch(url,{method:'GET'}).then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(data){ var status=(data&&data.status)||'Unknown'; var msg=L('Notify:HealthStatus', status); if(window.abp&&abp.notify){ if((status||'').toLowerCase()==='healthy') abp.notify.success(msg); else abp.notify.warn(msg); } else { alert(msg); } }).catch(function(){ if(window.abp&&abp.notify) abp.notify.error(L('Notify:HealthCheckFailed')); else alert(L('Notify:HealthCheckFailed')); }); }); });
 
     // Recent
-    function touchRecent(item){ var list=getRecent(); list=list.filter(function(x){return x&&x.id!==item.id;}); list.unshift(item); if(list.length>6) list=list.slice(0,6); setRecent(list); }
+    function touchRecent(item){ var list=getRecent(); list=list.filter(function(x){return x&&x.id!==item.id;}); list.unshift(item); if(list.length>2) list=list.slice(0,2); setRecent(list); }
     grid.querySelectorAll('.radish-app-card').forEach(function(a){ a.addEventListener('click', function(){ var parent=a.closest('.col'); var id=parent?(parent.getAttribute('data-client-id')||''):''; var title=a.getAttribute('data-title')||(a.querySelector('.h5')?a.querySelector('.h5').textContent.trim():id); var href=a.getAttribute('data-href')||a.getAttribute('href')||''; touchRecent({id:id, href:href, title:title}); }); });
     function renderRecent(){
       var hidden=getHidden();
       var recent=getRecent().filter(function(x){ return x && hidden.indexOf(x.id) < 0; });
       var onlyFavs = (localStorage.getItem(KEY_RECENT_ONLYFAVS) === 'true');
       if(onlyFavs){ var favs=getFavs(); recent = recent.filter(function(x){ return favs.indexOf(x.id) >= 0; }); }
+      // 仅保留最新的两条
+      recent = recent.slice(0, 2);
       var section=document.getElementById('recentSection'); var row=document.getElementById('recentRow'); if(!row||!section) return;
       if(!recent.length){ section.classList.add('d-none'); return; }
       section.classList.remove('d-none'); row.innerHTML='';

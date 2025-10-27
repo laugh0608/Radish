@@ -185,11 +185,19 @@
                 <div id="recentRow" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3"></div>
             </div>
 
+            <!-- 收藏（若有） -->
+            <div id="favSection" class="radish-section d-none">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="radish-section-title">@L["Actions:Favorite"]</div>
+                </div>
+                <div id="favRow" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 align-items-start"></div>
+            </div>
+
             <!-- 应用列表 -->
             <div class="d-flex align-items-center justify-content-between mt-4 mb-2">
                 <div class="radish-section-title">@L["Section:Apps"]</div>
             </div>
-            <div id="appsGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            <div id="appsGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 align-items-start">
                 @if (Model.Applications != null)
                 {
                     @foreach (var application in Model.Applications)
@@ -225,8 +233,8 @@
                                             }
                                             <img src="@logoUri" class="flex-shrink-0 radish-app-logo" alt="logo" />
                                         }
-                                        <div class="flex-grow-1">
-                                            <div class="h5 mb-1 fw-semibold">@application.DisplayName</div>
+                                        <div class="flex-grow-1 app-main">
+                                            <div class="h5 mb-1 fw-semibold text-truncate app-title">@application.DisplayName</div>
                                             <div class="text-muted small text-truncate">@application.ClientUri</div>
                                         </div>
                                         <div class="radish-card-tools d-flex align-items-start gap-2 ms-auto flex-shrink-0">
@@ -235,6 +243,11 @@
                                             <button type="button" class="btn btn-sm btn-light-subtle border-0 health-check" title="@L["Actions:HealthCheck"]" data-health-origin="@((!string.IsNullOrEmpty(application.ClientUri) ? new Uri(application.ClientUri).GetLeftPart(UriPartial.Authority) : string.Empty))">❤</button>
                                             <button type="button" class="btn btn-sm btn-light-subtle border-0 hide-toggle" title="@L["Actions:Hide"]" data-client-id="@clientId">🙈</button>
                                             <span class="radish-drag-handle d-none" title="@L["Actions:DragToSort"]">⋮⋮</span>
+                                            <!-- 更多菜单（在很窄时显示，将部分按钮折叠进去） -->
+                                            <div class="dropdown tools-more d-none">
+                                                <button class="btn btn-sm btn-light-subtle border-0 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">⋯</button>
+                                                <ul class="dropdown-menu dropdown-menu-end"></ul>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
