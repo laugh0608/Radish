@@ -6,7 +6,8 @@
 
 ## 页面结构
 - 顶部 Hero：品牌名称与欢迎语、主题/密度/语言切换、账号操作、编辑与隐藏管理入口（大屏直接展示，移动端折叠为按钮面板）。
-- 最近访问：自动记录最近打开的应用，支持“仅显示收藏”和“清空”。
+- 最近访问：自动记录最近打开的应用（最多 2 条），支持“仅显示收藏”和“清空”。
+- 收藏：集中展示已收藏的应用卡片（位于“最近访问”与“应用列表”之间）。
 - 应用列表：读取 OpenIddict 中登记的应用（DisplayName、ClientUri、LogoUri），以卡片形式展示并提供工具按钮。
 - 隐藏管理：集中查看/恢复被隐藏的应用（弹窗）。
 
@@ -37,7 +38,10 @@
   - 代码：`src/Radish.HttpApi.Host/Pages/Index.cshtml:131`
 
 ## 卡片工具与交互
-- 收藏：置顶分组展示，状态保存在本地（浏览器 LocalStorage）。
+- 收藏：分区展示（位于“最近访问”与“应用列表”之间），状态保存在本地（浏览器 LocalStorage）。
+  - 代码：`src/Radish.HttpApi.Host/Pages/Index.cshtml:185`、`src/Radish.HttpApi.Host/wwwroot/global-scripts.js:161`
+- 工具区布局：固定两行两列（2x2），在窄宽度下不遮挡标题；不使用“更多(⋯)”折叠。
+  - 样式：`src/Radish.HttpApi.Host/wwwroot/global-styles.css:114`
   - 代码：`src/Radish.HttpApi.Host/Pages/Index.cshtml:233`、`src/Radish.HttpApi.Host/wwwroot/global-scripts.js:111`
 - 复制链接：一键复制卡片跳转地址。
   - 代码：`src/Radish.HttpApi.Host/Pages/Index.cshtml:234`、`src/Radish.HttpApi.Host/wwwroot/global-scripts.js:139`
@@ -49,7 +53,7 @@
   - 代码：`src/Radish.HttpApi.Host/Pages/Index.cshtml:247`、`src/Radish.HttpApi.Host/wwwroot/global-scripts.js:175`
 
 ## 最近访问
-- 自动记录最近开启的应用（最多 6 条），可选择“仅显示收藏”，支持清空。
+- 自动记录最近开启的应用（最多 2 条），可选择“仅显示收藏”，支持清空。
   - 区块：`src/Radish.HttpApi.Host/Pages/Index.cshtml:173`
   - 逻辑：`src/Radish.HttpApi.Host/wwwroot/global-scripts.js:146`、`src/Radish.HttpApi.Host/wwwroot/global-scripts.js:148`、`src/Radish.HttpApi.Host/wwwroot/global-scripts.js:161`、`src/Radish.HttpApi.Host/wwwroot/global-scripts.js:164`
 
@@ -99,6 +103,9 @@
   - 确保目标系统实现了 `{origin}/health-status` 端点，且允许跨源访问（如有需要）。
 - 首页顺序或收藏丢失？
   - 这些为浏览器本地存储项，请检查是否更换了浏览器/设备或清理了站点数据。
+- 顶部“密度”下拉在全屏时被遮挡？
+  - 原因：Hero 容器使用了 `overflow: hidden`；已在下拉展开时临时允许溢出（`dropdown-open`），收起后恢复。
+  - 代码：`src/Radish.HttpApi.Host/wwwroot/global-styles.css:72`、`src/Radish.HttpApi.Host/wwwroot/global-scripts.js:68`
 
 ---
 如需将该文档链接加入 docs 首页或 README，我可以一并补充目录导航。
