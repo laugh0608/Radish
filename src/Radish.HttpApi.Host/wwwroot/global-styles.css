@@ -181,6 +181,21 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
   /* 小屏：保持单行栅格，改由工具区内部二行布局（见下方 <=992px 规则） */
 }
 
+/* 深色模式下的移动功能面板卡片：半透明毛玻璃 + 更清晰边框 */
+.theme-dark .radish-mobile-actions .card{
+  background-color: rgba(17,24,39,.7);
+  border: 1px solid rgba(148,163,184,.22);
+  box-shadow: 0 .75rem 1.25rem rgba(0,0,0,.35);
+  backdrop-filter: saturate(120%) blur(8px);
+}
+
+/* 统一移动端按钮可见性（避免“无边框”样式在深色下不明显） */
+.theme-dark .radish-mobile-actions .btn-light-subtle{ 
+  background: transparent !important; 
+  border: 1px solid rgba(148,163,184,.35) !important; 
+  color: var(--text-color) !important;
+}
+
 /* 取消宽度阈值：始终 2x2 布局 */
 
 /* “更多”显示完全由脚本控制 */

@@ -98,7 +98,7 @@
             <div class="card border-0 shadow-sm radish-mobile-actions">
                 <div class="card-body mobile-actions-grid">
                     <!-- 主题切换 -->
-                    <button type="button" id="themeToggleMobile" class="btn btn-light-subtle border-0 btn-sm w-100">@L["Actions:ThemeToggle"]</button>
+                    <button type="button" id="themeToggleMobile" class="btn btn-outline-secondary btn-sm w-100">@L["Actions:ThemeToggle"]</button>
 
                     <!-- 语言切换：改为下拉，避免占位过多 -->
                     <div class="dropdown lang-dropdown">
@@ -125,8 +125,8 @@
                     <!-- 账号/会话 -->
                     @if (CurrentUser.IsAuthenticated)
                     {
-                        <a abp-button="Outline_Light" class="btn-sm w-100" asp-controller="Manage" asp-action="Index" asp-area="Account">@AccountLocalizer["MyAccount"]</a>
-                        <a abp-button="Light" class="btn-sm w-100" asp-controller="Logout" asp-action="Index" asp-area="Account">@L["Logout"]</a>
+                        <a class="btn btn-outline-secondary btn-sm w-100" role="button" asp-controller="Manage" asp-action="Index" asp-area="Account">@AccountLocalizer["MyAccount"]</a>
+                        <a class="btn btn-outline-secondary btn-sm w-100" role="button" asp-controller="Logout" asp-action="Index" asp-area="Account">@L["Logout"]</a>
                     }
                     else
                     {
