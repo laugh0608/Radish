@@ -83,6 +83,7 @@
 
     "Landing:WelcomeUser": "Welcome, {0}",
     "Actions:More": "More",
+    "Actions:Density.Card": "Card Density",
     "Actions:Edit": "Edit",
     "Actions:Done": "Done",
     "Actions:EditHome": "Edit Home",

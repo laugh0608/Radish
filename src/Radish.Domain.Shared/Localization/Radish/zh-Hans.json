@@ -88,6 +88,7 @@
 
     "Landing:WelcomeUser": "欢迎，{0}",
     "Actions:More": "更多",
+    "Actions:Density.Card": "卡片密度",
     "Actions:Edit": "编辑",
     "Actions:Done": "完成",
     "Actions:EditHome": "编辑首页",
