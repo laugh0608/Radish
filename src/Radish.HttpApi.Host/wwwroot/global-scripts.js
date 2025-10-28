@@ -76,9 +76,25 @@
     }catch{}
 
     // Density menu (auto/comfortable/compact)
+    function setDensityActive(mode){
+      try{
+        document.querySelectorAll('.density-item').forEach(function(el){
+          var m = el.getAttribute('data-density') || '';
+          if(m === mode){ el.classList.add('active'); el.setAttribute('aria-pressed','true'); }
+          else { el.classList.remove('active'); el.setAttribute('aria-pressed','false'); }
+        });
+      }catch{}
+    }
     document.querySelectorAll('.density-item').forEach(function(item){
-      item.addEventListener('click', function(){ densityMode = item.getAttribute('data-density') || 'comfortable'; localStorage.setItem(KEY_DENSITY, densityMode); applyDensity(densityMode); });
+      item.addEventListener('click', function(){
+        densityMode = item.getAttribute('data-density') || 'comfortable';
+        localStorage.setItem(KEY_DENSITY, densityMode);
+        applyDensity(densityMode);
+        setDensityActive(densityMode);
+      });
     });
+    // 初始化当前选中态
+    setDensityActive(densityMode);
 
     // Grid + cards
     var grid = document.getElementById('appsGrid'); if(!grid) return;
