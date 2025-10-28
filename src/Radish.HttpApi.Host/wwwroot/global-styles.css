@@ -183,8 +183,8 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 
 /* 深色模式下的移动功能面板卡片：半透明毛玻璃 + 更清晰边框 */
 .theme-dark .radish-mobile-actions{
-  background-color: rgba(17,24,39,.7);
-  border: 1px solid rgba(148,163,184,.22);
+  background-color: rgba(17,24,39,.7) !important;
+  border: 1px solid rgba(148,163,184,.22) !important;
   box-shadow: 0 .75rem 1.25rem rgba(0,0,0,.35);
   backdrop-filter: saturate(120%) blur(8px);
 }
