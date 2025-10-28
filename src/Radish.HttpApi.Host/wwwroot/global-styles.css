@@ -214,6 +214,7 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
 .radish-mobile-actions .density-row .density-group--seg .btn:first-child{ border-top-left-radius:.5rem; border-bottom-left-radius:.5rem; }
 .radish-mobile-actions .density-row .density-group--seg .btn:last-child{ border-top-right-radius:.5rem; border-bottom-right-radius:.5rem; }
 .radish-mobile-actions .density-row .density-label{ white-space: nowrap; min-width: 3.5rem; }
+.radish-mobile-actions .density-row .density-group--seg .density-label{ flex:0 0 auto; pointer-events:none; color: var(--muted-color); }
 
 /* 取消宽度阈值：始终 2x2 布局 */
 
