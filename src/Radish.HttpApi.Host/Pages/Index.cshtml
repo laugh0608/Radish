@@ -92,40 +92,50 @@
         </div>
     </section>
 
-    <!-- 移动端：功能面板（替代“更多”下拉） -->
+    <!-- 移动端：功能面板（更紧凑的两列布局） -->
     <section class="d-sm-none py-2">
         <div class="container">
             <div class="card border-0 shadow-sm radish-mobile-actions">
-                <div class="card-body d-flex flex-wrap gap-2">
-                    <button type="button" id="themeToggleMobile" class="btn btn-light-subtle border-0 btn-sm">@L["Actions:ThemeToggle"]</button>
+                <div class="card-body mobile-actions-grid">
+                    <!-- 主题切换 -->
+                    <button type="button" id="themeToggleMobile" class="btn btn-light-subtle border-0 btn-sm w-100">@L["Actions:ThemeToggle"]</button>
 
-                    <div class="btn-group" role="group" aria-label="@L["Actions:Density"]">
+                    <!-- 语言切换：改为下拉，避免占位过多 -->
+                    <div class="dropdown lang-dropdown">
+                        <button class="btn btn-outline-secondary btn-sm w-100 dropdown-toggle" type="button" id="mobileLangBtn" data-bs-toggle="dropdown" aria-expanded="false">@(Model.CurrentLanguage ?? L["Language"])</button>
+                        <ul class="dropdown-menu" aria-labelledby="mobileLangBtn">
+                            @if (Model.Languages != null)
+                            {
+                                foreach (var language in Model.Languages)
+                                {
+                                    var languageUrl = Url.Content($"~/Abp/Languages/Switch?culture={language.CultureName}&uiCulture={language.UiCultureName}&returnUrl={System.Net.WebUtility.UrlEncode(Request.GetEncodedPathAndQuery())}");
+                                    <li><a class="dropdown-item" href="@languageUrl">@language.DisplayName</a></li>
+                                }
+                            }
+                        </ul>
+                    </div>
+
+                    <!-- 界面密度：整行分段控件 -->
+                    <div class="btn-group density-group w-100" role="group" aria-label="@L["Actions:Density"]">
                         <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="auto">@L["Actions:Density.Auto"]</button>
                         <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="comfortable">@L["Actions:Density.Comfortable"]</button>
                         <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="compact">@L["Actions:Density.Compact"]</button>
                     </div>
 
-                    @if (Model.Languages != null)
-                    {
-                        foreach (var language in Model.Languages)
-                        {
-                            var languageUrl = Url.Content($"~/Abp/Languages/Switch?culture={language.CultureName}&uiCulture={language.UiCultureName}&returnUrl={System.Net.WebUtility.UrlEncode(Request.GetEncodedPathAndQuery())}");
-                            <a class="btn btn-outline-secondary btn-sm" href="@languageUrl">@language.DisplayName</a>
-                        }
-                    }
-
+                    <!-- 账号/会话 -->
                     @if (CurrentUser.IsAuthenticated)
                     {
-                        <a abp-button="Outline_Light" class="btn-sm" asp-controller="Manage" asp-action="Index" asp-area="Account">@AccountLocalizer["MyAccount"]</a>
-                        <a abp-button="Light" class="btn-sm" asp-controller="Logout" asp-action="Index" asp-area="Account">@L["Logout"]</a>
+                        <a abp-button="Outline_Light" class="btn-sm w-100" asp-controller="Manage" asp-action="Index" asp-area="Account">@AccountLocalizer["MyAccount"]</a>
+                        <a abp-button="Light" class="btn-sm w-100" asp-controller="Logout" asp-action="Index" asp-area="Account">@L["Logout"]</a>
                     }
                     else
                     {
-                        <a abp-button="Light" class="btn-sm" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a>
+                        <a abp-button="Light" class="btn-sm w-100 grid-span-2" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a>
                     }
 
-                    <button type="button" id="editToggleMobile" class="btn btn-outline-secondary btn-sm">@L["Actions:EditHome"]</button>
-                    <button type="button" id="hiddenManageBtnMobile" class="btn btn-outline-secondary btn-sm">@L["Actions:ManageHidden"]</button>
+                    <!-- 页面管理 -->
+                    <button type="button" id="editToggleMobile" class="btn btn-outline-secondary btn-sm w-100">@L["Actions:EditHome"]</button>
+                    <button type="button" id="hiddenManageBtnMobile" class="btn btn-outline-secondary btn-sm w-100">@L["Actions:ManageHidden"]</button>
                 </div>
             </div>
         </div>

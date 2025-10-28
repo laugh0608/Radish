@@ -171,6 +171,13 @@ body.abp-application-layout, .abp-account-layout{ background-color: var(--page-b
   .radish-app-logo{ width:48px; height:48px; }
   .radish-mobile-actions .card-body{ padding: .75rem; }
   .radish-mobile-actions .btn{ white-space: nowrap; }
+  /* 移动端功能面板：两列栅格，更规整 */
+  .radish-mobile-actions .mobile-actions-grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .5rem .75rem; align-items: center; }
+  .radish-mobile-actions .mobile-actions-grid > *{ min-width:0; }
+  .radish-mobile-actions .mobile-actions-grid .btn{ width:100%; }
+  .radish-mobile-actions .mobile-actions-grid .density-group{ grid-column: span 2; }
+  .radish-mobile-actions .mobile-actions-grid .density-group .btn{ flex:1 1 0; }
+  .radish-mobile-actions .mobile-actions-grid .grid-span-2{ grid-column: span 2; }
   /* 小屏：保持单行栅格，改由工具区内部二行布局（见下方 <=992px 规则） */
 }
 
