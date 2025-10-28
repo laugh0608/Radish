@@ -86,43 +86,7 @@
                         <button type="button" id="hiddenManageBtn" class="btn btn-outline-secondary btn-sm" title="@L["Actions:ManageHidden"]">@L["Actions:ManageHidden"]</button>
                     </div>
 
-                    <!-- 小屏：收纳为“更多”菜单 -->
-                    <div class="dropdown d-flex d-sm-none">
-                        <button class="btn btn-light-subtle border-0 btn-sm dropdown-toggle" type="button" id="moreMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">@L["Actions:More"]</button>
-                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="moreMenuBtn">
-                            <li><button class="dropdown-item" type="button" id="themeToggleMobile">@L["Actions:ThemeToggle"]</button></li>
-                            <li class="dropend">
-                                <a class="dropdown-item dropdown-toggle" href="#" id="densitySub" data-bs-toggle="dropdown" aria-expanded="false">@L["Actions:Density"]</a>
-                                <ul class="dropdown-menu" aria-labelledby="densitySub">
-                                    <li><button class="dropdown-item density-item" data-density="auto" type="button">@L["Actions:Density.Auto"]</button></li>
-                                    <li><button class="dropdown-item density-item" data-density="comfortable" type="button">@L["Actions:Density.Comfortable"]</button></li>
-                                    <li><button class="dropdown-item density-item" data-density="compact" type="button">@L["Actions:Density.Compact"]</button></li>
-                                </ul>
-                            </li>
-                            <li><hr class="dropdown-divider"/></li>
-                            @if (Model.Languages != null)
-                            {
-                                foreach (var language in Model.Languages)
-                                {
-                                    var languageUrl = Url.Content($"~/Abp/Languages/Switch?culture={language.CultureName}&uiCulture={language.UiCultureName}&returnUrl={System.Net.WebUtility.UrlEncode(Request.GetEncodedPathAndQuery())}");
-                                    <li><a class="dropdown-item" href="@languageUrl">@language.DisplayName</a></li>
-                                }
-                            }
-                            <li><hr class="dropdown-divider"/></li>
-                            @if (CurrentUser.IsAuthenticated)
-                            {
-                                <li><a class="dropdown-item" asp-controller="Manage" asp-action="Index" asp-area="Account">@AccountLocalizer["MyAccount"]</a></li>
-                                <li><a class="dropdown-item" asp-controller="Logout" asp-action="Index" asp-area="Account">@L["Logout"]</a></li>
-                            }
-                            else
-                            {
-                                <li><a class="dropdown-item" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a></li>
-                            }
-                            <li><hr class="dropdown-divider"/></li>
-                            <li><button class="dropdown-item" type="button" id="editToggleMobile">@L["Actions:EditHome"]</button></li>
-                            <li><button class="dropdown-item" type="button" id="hiddenManageBtnMobile">@L["Actions:ManageHidden"]</button></li>
-                        </ul>
-                    </div>
+                    <!-- 小屏：移除 Hero 区“更多”下拉，统一使用下方移动端功能面板 -->
                 </div>
             </div>
         </div>
