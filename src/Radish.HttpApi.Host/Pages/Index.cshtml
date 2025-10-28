@@ -115,11 +115,14 @@
                         </ul>
                     </div>
 
-                    <!-- 界面密度：整行分段控件 -->
-                    <div class="btn-group density-group w-100" role="group" aria-label="@L["Actions:Density"]">
-                        <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="auto">@L["Actions:Density.Auto"]</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="comfortable">@L["Actions:Density.Comfortable"]</button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="compact">@L["Actions:Density.Compact"]</button>
+                    <!-- 界面密度：提示 + 三个按钮（同一行） -->
+                    <div class="density-row grid-span-2 d-flex align-items-center gap-2 w-100">
+                        <div class="density-label text-muted small">@L["Actions:Density"]</div>
+                        <div class="btn-group density-group flex-grow-1" role="group" aria-label="@L["Actions:Density"]">
+                            <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="auto">@L["Actions:Density.Auto"]</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="comfortable">@L["Actions:Density.Comfortable"]</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="compact">@L["Actions:Density.Compact"]</button>
+                        </div>
                     </div>
 
                     <!-- 账号/会话 -->
