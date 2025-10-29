@@ -88,6 +88,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
         {
             var appAndReactClientRootUrl =
                 configurationSection["Radish_React:RootUrl"]?.TrimEnd('/');
+            var reactRedirects = WithHttpHttpsPair(appAndReactClientRootUrl).ToList();
+            var reactPostLogoutRedirects = WithHttpHttpsPair(appAndReactClientRootUrl).ToList();
             await CreateApplicationAsync(
                 applicationType: OpenIddictConstants.ApplicationTypes.Web,
                 name: appAndReactClientId!,
@@ -105,8 +107,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                     "Impersonation"
                 },
                 scopes: commonScopes,
-                redirectUris: new List<string> { appAndReactClientRootUrl },
-                postLogoutRedirectUris: new List<string> { appAndReactClientRootUrl },
+                redirectUris: reactRedirects,
+                postLogoutRedirectUris: reactPostLogoutRedirects,
                 clientUri: appAndReactClientRootUrl,
                 logoUri: "/images/clients/blazor.svg"
             );
@@ -121,6 +123,10 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
         {
             var consoleAndAngularClientRootUrl =
                 configurationSection["Radish_Console:RootUrl"]?.TrimEnd('/'); // 旧：Radish_App
+            var angularRedirects = new List<string>();
+            angularRedirects.AddRange(WithHttpHttpsPair(consoleAndAngularClientRootUrl));
+            angularRedirects.AddRange(WithHttpHttpsPair($"{consoleAndAngularClientRootUrl}/assets/silent-refresh.html"));
+            var angularPostLogoutRedirects = WithHttpHttpsPair(consoleAndAngularClientRootUrl).ToList();
             await CreateApplicationAsync(
                 applicationType: OpenIddictConstants.ApplicationTypes.Web,
                 name: consoleAndAngularClientId!,
@@ -138,13 +144,9 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                     "Impersonation"
                 },
                 scopes: commonScopes,
-                // 允许 Angular 顶层回调与静默刷新回调（prompt=none / iframe）
-                redirectUris: new List<string>
-                {
-                    consoleAndAngularClientRootUrl,
-                    $"{consoleAndAngularClientRootUrl}/assets/silent-refresh.html"
-                },
-                postLogoutRedirectUris: new List<string> { consoleAndAngularClientRootUrl },
+                // 允许 Angular 顶层回调与静默刷新回调（prompt=none / iframe），并同时包含 http/https 配对
+                redirectUris: angularRedirects,
+                postLogoutRedirectUris: angularPostLogoutRedirects,
                 clientUri: consoleAndAngularClientRootUrl,
                 logoUri: "/images/clients/angular.svg"
             );
@@ -438,6 +440,26 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
         if (requiresUpdate)
         {
             await _applicationManager.UpdateAsync(client.ToModel());
+        }
+    }
+
+    private static IEnumerable<string> WithHttpHttpsPair(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) yield break;
+        var s = url.Trim().TrimEnd('/');
+        yield return s;
+
+        if (Uri.TryCreate(s, UriKind.Absolute, out var uri) &&
+            (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
+        {
+            var other = string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                ? Uri.UriSchemeHttps
+                : Uri.UriSchemeHttp;
+            var counterpart = $"{other}://{uri.Host}{(uri.IsDefaultPort ? string.Empty : ":" + uri.Port)}{uri.AbsolutePath}";
+            counterpart = counterpart.TrimEnd('/');
+            if (!string.Equals(counterpart, s, StringComparison.OrdinalIgnoreCase))
+                yield return counterpart;
         }
     }
 
