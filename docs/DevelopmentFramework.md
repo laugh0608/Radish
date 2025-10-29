@@ -4,6 +4,42 @@
 >
 > 开发框架图请点：[Radish](https://affine.imbhj.net/workspace/e54b7d62-20a6-473e-bfc8-0e0f1592b17c/i2ZYOGr95mO5T88PhTKr8) 。
 
+## 功能期望与范围（Overview & Scope）
+
+- 核心功能模块
+  - 身份与单点登录（SSO）：OpenIddict（OIDC 授权码 + PKCE）、ABP 身份模块、前后端静默续期与登出回跳。
+  - 门户首页与文档：Host 首页聚合跳转（Angular、React、Swagger、Scalar），登录态透传与 `sso=1` 约定；Swagger/Scalar 授权可调试。
+  - 内容域：分类/标签、帖子/评论（基础 CRUD、分页/过滤/排序），点赞/收藏，浏览计数。
+  - 搜索与筛选：按标题/标签/分类检索，排序（时间/热度）。
+  - 通知（可选）：发帖/回复/点赞等站内通知（可后续迭代）。
+  - 积分系统：积分账户、积分流水、规则（发帖/点赞/被采纳等）。
+  - 商城系统：商品/库存、购买与激活（基于积分），前端效果应用（头像框/昵称色等）。
+  - 管理后台（Angular）：分类与内容管理、用户与权限、积分/商城管理。
+
+- 非功能性要求
+  - 安全：全链路 HTTPS（生产）、CORS 白名单（.env）、CSP 基线、XSS/CSRF/输入校验、最小权限、密钥不入库（仅 .env/.secrets）。
+  - 性能：热点接口 P95 ≤ 200ms（本地/容器基线），Mongo 索引、必要的读缓存（只读列表）。
+  - 可用性：健康检查（/health-status）、就绪/存活探针（容器化）、幂等迁移（DbMigrator）。
+  - 可观测性：结构化日志（Serilog）、关键事件与错误记录；后续可接入指标/追踪。
+  - 国际化：服务端本地化资源（zh-Hans 基线），前端复用 ABP 资源；支持切换文化。
+  - 测试与质量：后端单测（xUnit + Shouldly + NSubstitute），前端 lint/build 通过；必要端到端冒烟。
+  - 配置与运维：统一使用 `.env` 注入（示例 `.env.example`），Docker Compose 一键启动（后续步骤）。
+  - 兼容性：主流现代浏览器（Chrome/Edge/Firefox/Safari 最新版），移动端视口友好。
+
+- 里程碑与验收标准（与 DevelopmentPlan.md 对齐）
+  - M1｜基线与联调（周1）：Host HTTPS 可访问；React/Angular 能拉取应用配置并通过 CORS；证书与预检命令可自测。
+  - M2｜领域与数据（周2）：Category/Post/Comment 模型 + 仓储与索引；CRUD 与分页可用；单测通过。
+  - M3｜应用层与 API（周3-4）：DTO/服务/权限齐备；Swagger/Scalar 授权可调试；异常映射一致。
+  - M4｜React/Angular MVP（周5-7）：React 列表/详情/发帖流程；Angular 基础管理；登录态与权限生效。
+  - M5｜容器化（周8）：Host/DbMigrator/React/Angular Dockerfile 与 Compose；`up --build` 一键跑通。
+  - M6｜积分与商城（周9-10）：积分规则闭环；商城购买-库存-应用链路可用。
+  - M7｜硬化与交付（周11-12）：性能/安全/观测到位；测试覆盖补全；文档齐备可演示/部署。
+
+- 范围外（当前阶段暂不覆盖）
+  - 第三方登录（微信/钉钉/飞书/企业 SSO 等）、支付能力（真实扣款）。
+  - SSR/SEO（React 迁移 Next.js）、富媒体文件云存储（可后续接入 S3/OSS）。
+  - 消息队列/事件总线与复杂异步编排、CDN 边缘缓存策略。
+
 ## ABP & React/Angular & MongoDB & Docker 论坛项目开发大纲
 
 ### 项目名称
