@@ -3,7 +3,6 @@
 > 本计划依据当前仓库目录结构（Radish.Application*、Radish.Domain*、Radish.HttpApi*、Radish.HttpApi.Host、Radish.MongoDB、Radish.DbMigrator）与文档约定（.env 管理、CORS、React/Angular、MongoDB、OpenIddict、Docker 等）制订；与 docs/DevelopmentFramework.md 的总体架构一致，但聚焦“按周可交付”。
 
 相关文档
-- 执行看板（任务拆分）: [DevelopmentBoard.md](DevelopmentBoard.md)
 - 开发进度日志: [DevelopmentProgress.md](DevelopmentProgress.md)
 
 ## 目标与范围
@@ -103,3 +102,100 @@
 
 ## 变更记录
 - 2025-10-29：创建文档，首次纳入 12 周按周计划；与 DevelopmentFramework.md 对齐并使用 Radish.* 命名。
+
+---
+
+## 执行看板（任务拆分）
+
+> 看板聚焦“执行级任务”，与上文的按周目标互补：
+> - 按周目标：见本文上方“按周计划（12 周）”章节
+> - 进度/日志：见 [DevelopmentProgress.md](DevelopmentProgress.md)
+
+快速入口
+- 后端指南: [backend/README.md](backend/README.md)
+- React 指南: [frontend/react/README.md](frontend/react/README.md)
+- Angular 指南: [frontend/angular/README.md](frontend/angular/README.md)
+
+任务命名规范
+- ID: `W<周>-<域>-<序号>`，域示例：BE（后端）、FE-REACT、FE-ANG、OPS、DOC、TEST。
+- 每项含：Owner（可填用户名/群组，初始可 `TBD`）、Estimate（人天）、Deps（依赖）。
+- 清单采用 `[ ]` 勾选；验收标准（Acceptance）与交付物（Deliverables）明确可验证结果。
+
+任务模板
+- 标题（ID + 名称）
+  - Owner: TBD | Estimate: 0.5d | Deps: -
+  - Checklist:
+    - [ ] 子任务A
+  - Acceptance: 列出验证方式/指标
+  - Deliverables: 产出物（代码/配置/文档/截图等）
+
+---
+
+### Week 1｜基线与联调打通（W1）
+
+#### W1-OPS-1 本地证书与环境基线
+- Owner: TBD | Estimate: 0.5d | Deps: -
+- Checklist:
+  - [x] 生成并信任本机 HTTPS 证书（`dotnet dev-certs https --trust`）
+  - [ ] dev-certs 文件存在：`dev-certs/localhost.crt` 与 `dev-certs/localhost.key`
+  - [ ] 可选校验：`openssl x509 -in dev-certs/localhost.crt -noout -subject -issuer -dates`
+  - [ ] React（HTTPS 开发）：`cd react && DEV_HTTPS=1 npm run dev`，日志出现“using ../dev-certs/localhost.{key,crt}”且本地地址为 `https://localhost:5173`
+  - [ ] React 证书验证：浏览器访问 `https://localhost:5173` 证书受信，或 `curl -vk https://localhost:5173` 握手成功
+  - [ ] Angular（HTTPS 开发）：`cd angular && npm run start:https` 成功启动，绑定 `../dev-certs/localhost.{key,crt}`
+  - [ ] Angular 证书验证：浏览器访问 `https://localhost:4200` 证书受信，或 `curl -vk https://localhost:4200`
+  - [ ] 如不受信：执行 `mkcert -install` 并按 `dev-certs/README.md` 重新生成证书
+  - [x] 验证 `https://localhost:44342` 能打开（Host 未启动时忽略）
+- Acceptance: 浏览器可访问 Host HTTPS，证书受信；前端使用 HTTP 正常跨域
+- Deliverables: 终端日志/截图、必要脚本文档更新（如需）
+
+#### W1-BE-1 Host/DbMigrator .env 初始化
+- Owner: TBD | Estimate: 0.5d | Deps: W1-OPS-1
+- Checklist:
+  - [ ] 复制 `src/Radish.HttpApi.Host/.env.example` → `.env` 并配置：
+        `ConnectionStrings__Default`、`App__CorsOrigins`
+  - [ ] 复制 `src/Radish.DbMigrator/.env.example` → `.env` 与 Host 对齐
+  - [ ] 启动 Host 打印 CORS 允许来源（含 http/https、5173/4200）
+- Acceptance: 启动日志显示“CORS allowed origins: …”并与预期匹配
+- Deliverables: `.env` 文件（不入库）、日志片段贴入 DevelopmentProgress.md
+
+#### W1-BE-2 DbMigrator 运行与基础种子
+- Owner: TBD | Estimate: 0.5d | Deps: W1-BE-1
+- Checklist:
+  - [ ] `cd src/Radish.DbMigrator && dotnet run`
+  - [ ] 确认初始数据/索引（若有）执行完成
+- Acceptance: 迁移完成、异常为零；重复运行幂等
+- Deliverables: 迁移日志片段、如有新增索引/种子在文档标注
+
+#### W1-FE-REACT-1 React 本地联调
+- Owner: TBD | Estimate: 0.5d | Deps: W1-BE-1
+- Checklist:
+  - [ ] `react/.env.local` 设置 `VITE_API_BASE_URL=https://localhost:44342`
+  - [ ] `npm run dev` 启动并访问首页
+  - [ ] 调用 `/api/abp/application-configuration` 成功
+- Acceptance: 控制台无 CORS 错误；能读取本地化/认证配置
+- Deliverables: 截图与步骤简记（可补到 React 指南）
+
+#### W1-FE-ANG-1 Angular 本地联调
+- Owner: TBD | Estimate: 0.5d | Deps: W1-BE-1
+- Checklist:
+  - [ ] `angular` 目录 `npm install && npm run start`
+  - [ ] 验证动态环境加载；访问主页面正常
+  - [ ] 调用 `/api/abp/application-configuration` 成功
+- Acceptance: 控制台无 CORS 错误；能读取本地化/认证配置
+- Deliverables: 截图与步骤简记（可补到 Angular 指南）
+
+#### W1-TEST-1 基线测试与健康检查
+- Owner: TBD | Estimate: 0.5d | Deps: W1-BE-1
+- Checklist:
+  - [ ] `dotnet build`、`dotnet test` 全绿
+  - [ ] 为 Host 增加最小健康检查用例或手工 curl 验证
+- Acceptance: CI 本地通过；健康检查 200/204
+- Deliverables: 测试通过记录、必要的测试代码（如有）
+
+#### W1-DOC-1 文档对齐与自测命令
+- Owner: TBD | Estimate: 0.5d | Deps: W1-BE-1, W1-FE-REACT-1, W1-FE-ANG-1
+- Checklist:
+  - [ ] 在 `docs/DevelopmentProgress.md` 记录联调结论与端口/协议
+  - [ ] 如有偏差，补充 `docs/backend/README.md` 的 CORS/预检命令
+- Acceptance: 文档与现状一致；新人可按文档直接跑通
+- Deliverables: 文档更新 PR（本地提交）

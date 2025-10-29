@@ -53,7 +53,7 @@ ng e2e              # 端到端测试
 - 可选证书信息：`openssl x509 -in dev-certs/localhost.crt -noout -subject -issuer -dates`
 - 若不受信：先执行 `mkcert -install` 再按 `dev-certs/README.md` 重新生成。
 
-相关任务看板：见 `docs/DevelopmentBoard.md` 的 W1-OPS-1。
+相关任务看板：见 `docs/DevelopmentPlan.md` 中“执行看板（任务拆分）”的 W1-OPS-1。
 
 更多参考 ABP 文档：Environment（Angular）
 https://abp.io/docs/latest/framework/ui/angular/environment
