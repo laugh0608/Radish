@@ -44,6 +44,17 @@ ng e2e              # 端到端测试
   - Bash: `./scripts/ssl-setup.sh`
   - PowerShell: `./scripts/ssl-setup.ps1`
 
+本地 HTTPS 验证（dev-certs 检查）
+- 文件存在：确认 `dev-certs/localhost.crt` 与 `dev-certs/localhost.key`
+- 启动与绑定：`cd angular && npm run start:https`（或 `yarn start:https`）应成功启动并绑定 `../dev-certs/localhost.{key,crt}`
+- 浏览器/命令行校验：
+  - 访问 `https://localhost:4200`，查看证书受信
+  - 或执行 `curl -vk https://localhost:4200`
+- 可选证书信息：`openssl x509 -in dev-certs/localhost.crt -noout -subject -issuer -dates`
+- 若不受信：先执行 `mkcert -install` 再按 `dev-certs/README.md` 重新生成。
+
+相关任务看板：见 `docs/DevelopmentBoard.md` 的 W1-OPS-1。
+
 更多参考 ABP 文档：Environment（Angular）
 https://abp.io/docs/latest/framework/ui/angular/environment
 
