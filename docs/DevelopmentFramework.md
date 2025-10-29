@@ -16,7 +16,7 @@ Radish，萝卜。
 
 ### 1. 技术栈概览
 
-* **后端框架:** [ABP Framework](https://abp.io) (建议 v7.x 或 v8.x，基于 .NET 8)
+* **后端框架:** [ABP Framework](https://abp.io)（基于 .NET 9，与本仓库一致）
   * **架构模式:** DDD (领域驱动设计) 分层架构
   * **核心模块:** `Volo.Abp.Identity`, `Volo.Abp.PermissionManagement`, `Volo.Abp.AuditLogging`, `Volo.Abp.SettingManagement` 等。
 * **API 管理/调试:** [Swagger UI](https://swagger.io/) / [Scalar](https://scalar.com/) (ABP框架自带集成)
@@ -24,7 +24,7 @@ Radish，萝卜。
 * **前端用户UI:** [React](https://react.dev/) (配合 [Vite](https://vitejs.dev/) 或 [Next.js](https://nextjs.org/) 等构建工具，建议Vite简化配置)
 * **数据库:** [MongoDB](https://www.mongodb.com/) (建议 v6.x 或更高版本)
 * **容器化:** [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
-* **身份认证/授权:** JWT (JSON Web Tokens) + ABP IdentityServer4 (或 ABP内置的OpenIddict)
+* **身份认证/授权:** OpenIddict + JWT (JSON Web Tokens)
 * **辅助工具:** Git, VS Code/Visual Studio
 
 ### 2. 系统架构
@@ -54,42 +54,42 @@ graph TD
     end
 
     C -->|Swagger/Scalar| I[API Documentation]
-    C -->|Authentication/Authorization| J[IdentityServer/OpenIddict]
+    C -->|Authentication/Authorization| J[OpenIddict]
 ```
 
 #### 2.2 ABP 后端分层详细说明 (DDD)
 
-* **ForumProject.Host:**
+* **Radish.HttpApi.Host:**
   * ASP.NET Core Web Application，作为API网关。
   * 配置身份认证 (JWT/OpenIddict)。
     * 集成Swagger/Scalar，提供API文档和调试界面。
     * 配置CORS (跨域资源共享)。
     * 加载并暴露所有应用服务 (Application Services)。
   * **Docker:** 将此项目容器化为API服务。
-* **ForumProject.Application.Contracts:**
+* **Radish.Application.Contracts:**
   * 定义应用层与表示层 (UI) 之间的数据传输对象 (DTOs)。
   * 定义应用服务接口 (Application Service Interfaces)。
   * **DDD:** DTOs作为输入/输出，是聚合根或实体的扁平化表示。
-* **ForumProject.Application:**
+* **Radish.Application:**
   * 实现应用服务接口。
   * 负责业务逻辑的编排，调用领域服务和仓储。
   * 处理事务、权限检查、数据转换。
   * **DDD:** 作为领域层和表示层之间的协调者，不包含核心业务规则，只负责流程控制。
-* **ForumProject.Domain.Shared:**
+* **Radish.Domain.Shared:**
   * 包含所有层共享的常量、枚举、全局异常定义等。
-* **ForumProject.Domain:** (DDD 核心层)
+* **Radish.Domain:** (DDD 核心层)
   * **聚合根 (Aggregate Roots):** `User` (来自Identity), `Category`, `Post`, `ShopItem`, `UserPoints`。负责保证自身内部及关联实体的业务不变性。
   * **实体 (Entities):** `Comment`, `Tag`, `PointTransaction`, `UserInventory` (可能依附于聚合根)。拥有唯一标识符和生命周期。
   * **值对象 (Value Objects):** `PostTitle`, `Content` (如果需要封装特定行为), `Money` (用于积分/价格)。没有唯一标识符，不可变。
   * **领域服务 (Domain Services):** 处理跨多个聚合根的业务逻辑，例如 `PostManager` 可能包含置顶、精华等逻辑，`PointCalculator` 计算积分。
   * **仓储接口 (Repository Interfaces):** 定义领域层访问持久化数据的契约，例如 `IPostRepository`, `ICategoryRepository`。
   * **领域事件 (Domain Events):** 用于解耦业务逻辑，例如 `PostCreatedEvent`, `PostLikedEvent`, `CommentAcceptedEvent` 等，积分系统将订阅这些事件。
-* **ForumProject.Domain.MongoDB:** (基础设施层)
+* **Radish.MongoDB:** (基础设施层)
   * 实现领域层定义的仓储接口，将领域对象持久化到MongoDB数据库。
   * 配置MongoDB连接字符串。
   * 利用ABP提供的MongoDB集成，如 `IMongoDbContext`, `IMongoDbRepository<TEntity>`。
   * **Docker:** 无需独立容器，作为Host项目的依赖库。
-* **ForumProject.DbMigrator:**
+* **Radish.DbMigrator:**
   * 独立的控制台应用，用于执行数据库初始化、数据播种 (Seed Data)、MongoDB索引创建等。
   * **Docker:** 通常作为一次性运行的容器服务，在其他服务启动前执行。
 
@@ -228,14 +228,14 @@ graph TD
 
 #### 5.1 Dockerize 各个服务
 
-* **ForumProject.Host (Backend API):**
+* **Radish.HttpApi.Host (Backend API):**
   * `Dockerfile`：基于 .NET SDK 构建，然后基于 .NET Runtime 运行。
   * 监听端口：例如 8000。
 * **MongoDB:**
   * 直接使用官方 `mongo` 镜像。
   * 需要持久化数据卷。
   * 监听端口：默认 27017。
-* **ForumProject.DbMigrator:**
+* **Radish.DbMigrator:**
   * `Dockerfile`：基于 .NET SDK 构建。
   * 作为一次性服务 (entrypoint)。
   * **注意:** 确保在MongoDB和Backend API之前运行，完成初始化。
@@ -264,7 +264,7 @@ graph TD
 #### 阶段 0: 环境搭建与项目初始化 (2-3 天)
 
 1. **ABP项目初始化:**
-    * 使用 ABP CLI 创建新项目：`abp new ForumProject -t tiered -csf -u angular --db-provider mongodb`
+    * 本仓库已包含完整解决方案；如从零开始可参考 ABP CLI 示例：`abp new Radish -t tiered -csf -u angular --db-provider mongodb`
     * 验证 ABP Angular UI 能否启动并访问默认的身份和权限管理页面。
 2. **React前端项目初始化:**
     * 在解决方案外部或单独文件夹中创建 React 项目：`npm create vite@latest react-frontend --template react-ts` (推荐使用 Vite)。
@@ -275,14 +275,14 @@ graph TD
 #### 阶段 1: 后端 MVP 开发 (3-4 周)
 
 1. **DDD 基础构建:**
-    * 在 `ForumProject.Domain` 项目中，定义 `Category`, `Post`, `Comment` 聚合根/实体、值对象、仓储接口。
-    * 在 `ForumProject.Domain.MongoDB` 中实现对应的仓储。
-    * 在 `ForumProject.DbMigrator` 中添加 MongoDB 索引和初始数据 (例如默认版块)。
+    * 在 `Radish.Domain` 项目中，定义 `Category`, `Post`, `Comment` 聚合根/实体、值对象、仓储接口。
+    * 在 `Radish.MongoDB` 中实现对应的仓储。
+    * 在 `Radish.DbMigrator` 中添加 MongoDB 索引和初始数据 (例如默认版块)。
 2. **应用服务实现:**
-    * 在 `ForumProject.Application.Contracts` 中定义 `ICategoryAppService`, `IPostAppService`, `ICommentAppService` 接口及其 DTOs。
-    * 在 `ForumProject.Application` 中实现这些应用服务，调用领域层逻辑。
+    * 在 `Radish.Application.Contracts` 中定义 `ICategoryAppService`, `IPostAppService`, `ICommentAppService` 接口及其 DTOs。
+    * 在 `Radish.Application` 中实现这些应用服务，调用领域层逻辑。
 3. **API 暴露与测试:**
-    * 确保所有应用服务通过 `ForumProject.Host` 项目暴露为 RESTful API。
+    * 确保所有应用服务通过 `Radish.HttpApi.Host` 项目暴露为 RESTful API。
     * 通过 Swagger/Scalar 验证所有 API 接口的可用性和正确性。
     * **Admin UI 适配:** 确认 ABP Angular UI 能够管理 `Category` (如果需要自定义管理界面，则进行开发)。
 
@@ -306,7 +306,7 @@ graph TD
 
 #### 阶段 3: Docker 化与部署 (1 周)
 
-1. **编写 Dockerfile:** 为 `ForumProject.Host`, `ForumProject.DbMigrator`, `react-frontend`, `angular-admin` 编写 Dockerfile。
+1. **编写 Dockerfile:** 为 `Radish.HttpApi.Host`, `Radish.DbMigrator`, `react-frontend`, `angular-admin` 编写 Dockerfile。
 2. **编写 docker-compose.yml:** 整合所有服务，配置网络、卷、端口映射和环境变量。
 3. **本地测试:** `docker-compose up --build -d` 启动整个项目，验证所有服务正常运行，功能联调。
 4. **文档:** 编写详细的 Docker 部署说明。
@@ -359,8 +359,8 @@ graph TD
 ### 7. 起步建议
 
 1. **按照“阶段 0”完成项目初始化。** 这是构建一切的基础。
-2. **专注于后端 DDD 核心：** 先在 `ForumProject.Domain` 中清晰地定义 `Category`, `Post`, `Comment` 的聚合根、实体、值对象和它们之间的关系，以及仓储接口。这是业务逻辑的骨架。
-3. **MongoDB 配置：** 确保 `ForumProject.Domain.MongoDB` 正确连接到你的 MongoDB 实例，并能实现基本实体的增删改查。
+2. **专注于后端 DDD 核心：** 先在 `Radish.Domain` 中清晰地定义 `Category`, `Post`, `Comment` 的聚合根、实体、值对象和它们之间的关系，以及仓储接口。这是业务逻辑的骨架。
+3. **MongoDB 配置：** 确保 `Radish.MongoDB` 正确连接到你的 MongoDB 实例，并能实现基本实体的增删改查。
 4. **自底向上验证：**
     * 先通过单元测试验证领域层逻辑。
     * 然后通过集成测试或 Swagger/Scalar 验证应用服务和 API。
