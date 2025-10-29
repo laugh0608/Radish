@@ -32,9 +32,15 @@
 ### W1-OPS-1 本地证书与环境基线
 - Owner: TBD | Estimate: 0.5d | Deps: -
 - Checklist:
-  - [ ] 生成并信任本机 HTTPS 证书（`dotnet dev-certs https --trust`）
-  - [ ] 仓库 `dev-certs/` 证书可用（前端可选 HTTPS）
-  - [ ] 验证 `https://localhost:44342` 能打开（Host 未启动时忽略）
+  - [x] 生成并信任本机 HTTPS 证书（`dotnet dev-certs https --trust`）
+  - [ ] dev-certs 文件存在：`dev-certs/localhost.crt` 与 `dev-certs/localhost.key`
+  - [ ] 可选校验：`openssl x509 -in dev-certs/localhost.crt -noout -subject -issuer -dates`
+  - [ ] React（HTTPS 开发）：`cd react && DEV_HTTPS=1 npm run dev`，日志出现“using ../dev-certs/localhost.{key,crt}”且本地地址为 `https://localhost:5173`
+  - [ ] React 证书验证：浏览器访问 `https://localhost:5173` 证书受信，或 `curl -vk https://localhost:5173` 握手成功
+  - [ ] Angular（HTTPS 开发）：`cd angular && npm run start:https` 成功启动，绑定 `../dev-certs/localhost.{key,crt}`
+  - [ ] Angular 证书验证：浏览器访问 `https://localhost:4200` 证书受信，或 `curl -vk https://localhost:4200`
+  - [ ] 如不受信：执行 `mkcert -install` 并按 `dev-certs/README.md` 重新生成证书
+  - [x] 验证 `https://localhost:44342` 能打开（Host 未启动时忽略）
 - Acceptance: 浏览器可访问 Host HTTPS，证书受信；前端使用 HTTP 正常跨域
 - Deliverables: 终端日志/截图、必要脚本文档更新（如需）
 
