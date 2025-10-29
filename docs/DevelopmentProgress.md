@@ -2,6 +2,14 @@
 
 ## 第一阶段
 
+### 2025.10.29
+
+- feat(openiddict): 同时允许 http/https 回调与登出回调（含静默刷新），前端切换协议无需改配置。
+- docs(readme): 重写根 README，整合 docs 内容，补充快速开始、HTTPS/CORS/SSO 指南与常用脚本。
+- docs: 合并 DevelopmentBoard 至 DevelopmentPlan，统一为“开发计划与看板”，并更新索引与前端文档引用。
+- docs(framework): 在 DevelopmentFramework.md 顶部新增“功能期望与范围”（功能/非功能、里程碑、范围外）。
+- docs(index): docs/README.md 索引项更名为“项目总体功能与需求（含范围与里程碑）”。
+
 ### 2025.10.28
 
 - feat(host/mobile): 移除 Hero 区小屏“更多”下拉，统一使用下方移动端功能面板。
