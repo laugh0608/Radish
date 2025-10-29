@@ -44,6 +44,7 @@ using Volo.Abp.Security.Claims;
 using Volo.Abp.Studio.Client.AspNetCore;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.UI.Navigation.Urls;
+using Volo.Abp.AspNetCore.Security;
 using Volo.Abp.VirtualFileSystem;
 using Serilog;
 
@@ -474,6 +475,55 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         app.MapAbpStaticAssets();
         app.UseAbpStudioLink();
         app.UseAbpSecurityHeaders();
+        // 在 ABP 默认安全头之后，追加/扩展 CSP 的 style-src 与 font-src 以放行 loli 镜像
+        app.Use(async (context, next) =>
+        {
+            context.Response.OnStarting(() =>
+            {
+                const string styleAppend = " https://fonts.loli.net";
+                const string fontAppend = " https://gstatic.loli.net";
+
+                if (context.Response.Headers.TryGetValue("Content-Security-Policy", out var values))
+                {
+                    var csp = values.ToString();
+
+                    string AppendOrAdd(string input, string directive, string append)
+                    {
+                        var idx = input.IndexOf(directive, StringComparison.OrdinalIgnoreCase);
+                        if (idx >= 0)
+                        {
+                            var end = input.IndexOf(';', idx);
+                            if (end < 0) end = input.Length;
+                            var seg = input.Substring(idx, end - idx);
+                            if (!seg.Contains(append, StringComparison.OrdinalIgnoreCase))
+                            {
+                                seg += append;
+                                input = input.Substring(0, idx) + seg + input.Substring(end);
+                            }
+                        }
+                        else
+                        {
+                            input += (input.EndsWith(";") ? string.Empty : ";") + $"{directive}{append}";
+                        }
+                        return input;
+                    }
+
+                    csp = AppendOrAdd(csp, "style-src", styleAppend);
+                    csp = AppendOrAdd(csp, "font-src", " data:" + fontAppend);
+
+                    context.Response.Headers["Content-Security-Policy"] = csp;
+                }
+                else
+                {
+                    var csp =
+                        "style-src 'self' 'unsafe-inline' https://fonts.loli.net; font-src 'self' data: https://gstatic.loli.net";
+                    context.Response.Headers["Content-Security-Policy"] = csp;
+                }
+
+                return Task.CompletedTask;
+            });
+            await next();
+        });
         // 配置全局 Cookie 策略，保持 SameSite=Unspecified 以便第三方上下文（iframe）携带登录 Cookie
         app.UseCookiePolicy(new CookiePolicyOptions
         {
