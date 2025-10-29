@@ -9,6 +9,7 @@
 - docs: 合并 DevelopmentBoard 至 DevelopmentPlan，统一为“开发计划与看板”，并更新索引与前端文档引用。
 - docs(framework): 在 DevelopmentFramework.md 顶部新增“功能期望与范围”（功能/非功能、里程碑、范围外）。
 - docs(index): docs/README.md 索引项更名为“项目总体功能与需求（含范围与里程碑）”。
+- docs(framework): 增补“非目标与边界（Non-Goals & Boundaries）”详细清单，明确暂不覆盖项与阶段边界。
 
 ### 2025.10.28
 
