@@ -8,6 +8,7 @@
 - 目录结构: [DirectoryStructure.md](DirectoryStructure.md)
 - 开发计划: [DevelopmentFramework.md](DevelopmentFramework.md)
 - 分阶段计划（按周）: [DevelopmentPlan.md](DevelopmentPlan.md)
+- 开发看板（任务拆分）: [DevelopmentBoard.md](DevelopmentBoard.md)
 - 开发进度: [DevelopmentProgress.md](DevelopmentProgress.md)
 - 单点登录指南: [Single-Sign-On-Guide.md](Single-Sign-On-Guide.md)
 

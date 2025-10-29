@@ -2,6 +2,10 @@
 
 > 本计划依据当前仓库目录结构（Radish.Application*、Radish.Domain*、Radish.HttpApi*、Radish.HttpApi.Host、Radish.MongoDB、Radish.DbMigrator）与文档约定（.env 管理、CORS、React/Angular、MongoDB、OpenIddict、Docker 等）制订；与 docs/DevelopmentFramework.md 的总体架构一致，但聚焦“按周可交付”。
 
+相关文档
+- 执行看板（任务拆分）: [DevelopmentBoard.md](DevelopmentBoard.md)
+- 开发进度日志: [DevelopmentProgress.md](DevelopmentProgress.md)
+
 ## 目标与范围
 
 - 基线：.NET 9 + ABP，MongoDB，OpenIddict + JWT，Swagger/Scalar，React（Vite）与 Angular（ABP UI）。
@@ -99,4 +103,3 @@
 
 ## 变更记录
 - 2025-10-29：创建文档，首次纳入 12 周按周计划；与 DevelopmentFramework.md 对齐并使用 Radish.* 命名。
-
