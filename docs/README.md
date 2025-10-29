@@ -7,6 +7,7 @@
 ## 项目通用
 - 目录结构: [DirectoryStructure.md](DirectoryStructure.md)
 - 项目总体功能与需求（含范围与里程碑）: [DevelopmentFramework.md](DevelopmentFramework.md)
+- 非目标与边界：见同文档章节 `docs/DevelopmentFramework.md`
 - 开发计划与看板（按周）: [DevelopmentPlan.md](DevelopmentPlan.md)
 - 开发进度: [DevelopmentProgress.md](DevelopmentProgress.md)
 - 单点登录指南: [Single-Sign-On-Guide.md](Single-Sign-On-Guide.md)
