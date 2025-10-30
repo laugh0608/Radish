@@ -60,4 +60,24 @@ img {
   }
 }
 
-/* 恢复使用 LeptonX 默认的移动端导航与抽屉行为，避免功能分叉 */
+/* 移动端导航可见性修复：在某些主题组合下，移动导航容器偶发被隐藏 */
+@media (max-width: 767.98px) {
+  /* 确保移动导航容器渲染出来（包含左侧菜单按钮与右侧用户区） */
+  .lpx-mobile-navbar-container {
+    display: block !important;
+    z-index: 110; /* 高于内容卡片阴影，避免被覆盖 */
+  }
+  /* 右侧用户区（含登录/账号/更多）在小屏默认可见 */
+  .lpx-mobile-navbar .user-menu {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+  }
+  /* 提升图标对比度，避免深色背景下看不清 */
+  .lpx-mobile-navbar .user-menu .lpx-icon,
+  .lpx-mobile-navbar .user-menu [class^="bi"],
+  .lpx-mobile-navbar .user-menu [class*=" bi"] {
+    color: #fff !important;
+    opacity: 1 !important;
+  }
+}
