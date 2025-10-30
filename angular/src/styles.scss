@@ -73,6 +73,7 @@ img {
     align-items: center;
     gap: 10px;
   }
+  .lpx-mobile-navbar .user-menu lpx-icon { display: inline-flex !important; }
   /* 提升图标对比度，避免深色背景下看不清 */
   .lpx-mobile-navbar .user-menu .lpx-icon,
   .lpx-mobile-navbar .user-menu [class^="bi"],
