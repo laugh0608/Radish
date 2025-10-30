@@ -72,7 +72,15 @@ img {
     display: flex !important;
     align-items: center;
     gap: 10px;
-    min-width: 96px; /* 为空时也保留可点击区域，避免视觉上"看不见" */
+  }
+  /* 隐藏主题自带的两个图标（用户/菜单），只保留我们注入的按钮，避免撑宽 */
+  .lpx-mobile-navbar .user-menu > lpx-icon { display: none !important; }
+  /* 导航容器不允许产生横向滚动 */
+  .lpx-mobile-navbar-container,
+  lpx-mobile-navbar,
+  .lpx-mobile-navbar .container {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
   }
   .lpx-mobile-navbar .user-menu lpx-icon { display: inline-flex !important; }
   /* 提升图标对比度，避免深色背景下看不清 */
@@ -83,3 +91,6 @@ img {
     opacity: 1 !important;
   }
 }
+
+/* 彻底禁止页面产生横向滚动（兜底） */
+html, body { overflow-x: hidden; }
