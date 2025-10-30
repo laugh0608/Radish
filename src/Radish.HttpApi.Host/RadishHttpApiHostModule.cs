@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
@@ -13,6 +17,7 @@ using Radish.MongoDB;
 using Radish.MultiTenancy;
 using Scalar.AspNetCore;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -39,7 +44,9 @@ using Volo.Abp.Security.Claims;
 using Volo.Abp.Studio.Client.AspNetCore;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.UI.Navigation.Urls;
+using Volo.Abp.AspNetCore.Security;
 using Volo.Abp.VirtualFileSystem;
+using Serilog;
 
 namespace Radish;
 
@@ -136,6 +143,12 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         }
 
         ConfigureAuthentication(context);
+        // 允许跨站 iframe 静默登录：将 Identity 应用 Cookie 设置为 SameSite=None; Secure
+        context.Services.ConfigureApplicationCookie(options =>
+        {
+            options.Cookie.SameSite = SameSiteMode.None;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+        });
         ConfigureUrls(configuration);
         ConfigureBundles();
         ConfigureConventionalControllers();
@@ -145,9 +158,10 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
 
-        #region API 版本控制
+        #region API Version
 
-        var preActions = context.Services.GetPreConfigureActions<AbpAspNetCoreMvcOptions>();
+        var preActions = 
+            context.Services.GetPreConfigureActions<AbpAspNetCoreMvcOptions>();
         Configure<AbpAspNetCoreMvcOptions>(options => { preActions.Configure(options); });
 
         // Show neutral/versionless APIs.
@@ -157,8 +171,8 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 options.ReportApiVersions = true;
                 options.AssumeDefaultVersionWhenUnspecified = true;
 
-                //options.ApiVersionReader = new HeaderApiVersionReader("api-version"); //Supports header too
-                //options.ApiVersionReader = new MediaTypeApiVersionReader(); //Supports accept header too
+                // options.ApiVersionReader = new HeaderApiVersionReader("api-version"); //Supports header too
+                // options.ApiVersionReader = new MediaTypeApiVersionReader(); //Supports accept header too
             }, options => { options.ConfigureAbp(preActions.Configure()); })
             .AddApiExplorer(options =>
             {
@@ -183,9 +197,26 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 // add a custom operation filter which sets default values
                 options.OperationFilter<SwaggerDefaultValues>();
                 options.CustomSchemaIds(type => type.FullName);
+                options.DocumentFilter<Radish.Extensions.Swagger.OnlyProjectApisDocumentFilter>();
+                // 包含各层 XML 注释到 Swagger（控制器、应用服务接口与DTO注释）
+                var xmlTypes = new[]
+                {
+                    typeof(RadishHttpApiModule),
+                    typeof(RadishApplicationModule),
+                    typeof(RadishApplicationContractsModule),
+                    typeof(RadishHttpApiHostModule)
+                };
+                foreach (var t in xmlTypes)
+                {
+                    var xml = Path.Combine(AppContext.BaseDirectory, $"{t.Assembly.GetName().Name}.xml");
+                    if (File.Exists(xml))
+                    {
+                        options.IncludeXmlComments(xml, includeControllerXmlComments: true);
+                    }
+                }
                 // options.SwaggerDoc("v1", new OpenApiInfo { Title = "Radish API", Version = "v1" });
                 // options.DocInclusionPredicate((docName, description) => true); // 这个配置已经不兼容了，不能开，否则报错
-                // options.HideAbpEndpoints(); // 隐藏 ABP 的默认端点
+                // options.HideAbpEndpoints(); // 隐藏 ABP 的默认端点，这个不要用，会隐藏所有 Controller 的 API 节点
             });
         // context.Services.AddAbpSwaggerGen(options =>
         // {
@@ -352,18 +383,65 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         {
             options.AddDefaultPolicy(builder =>
             {
-                builder
-                    .WithOrigins(
-                        configuration["App:CorsOrigins"]?
-                            .Split(",", StringSplitOptions.RemoveEmptyEntries)
-                            .Select(o => o.Trim().RemovePostFix("/"))
-                            .ToArray() ?? Array.Empty<string>()
-                    )
-                    .WithAbpExposedHeaders()
-                    .SetIsOriginAllowedToAllowWildcardSubdomains()
-                    .AllowAnyHeader()
-                    .AllowAnyMethod()
-                    .AllowCredentials();
+                // 1) 从配置读取
+                var configured = (configuration["App:CorsOrigins"] ?? string.Empty)
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(o => o.Trim().RemovePostFix("/"));
+
+                // 2) 规范化并补全 http/https 对（同 host/port）
+                var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                void add(string s)
+                {
+                    if (string.IsNullOrWhiteSpace(s)) return;
+                    s = s.Trim().TrimEnd('/');
+                    if (!set.Contains(s)) set.Add(s);
+                    if (Uri.TryCreate(s, UriKind.Absolute, out var uri))
+                    {
+                        if (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+                        {
+                            var other = string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                                ? Uri.UriSchemeHttps
+                                : Uri.UriSchemeHttp;
+                            var counterpart = $"{other}://{uri.Host}{(uri.IsDefaultPort ? string.Empty : ":" + uri.Port)}";
+                            counterpart = counterpart.TrimEnd('/');
+                            if (!set.Contains(counterpart)) set.Add(counterpart);
+                        }
+                    }
+                }
+                foreach (var o in configured) add(o);
+
+                // 3) 兜底：若仍为空，放开常见本地来源（含 http/https）
+                if (set.Count == 0)
+                {
+                    add("http://localhost:4200");
+                    add("https://localhost:4200");
+                    add("http://localhost:5173");
+                    add("https://localhost:5173");
+                }
+
+                var origins = set.ToArray();
+
+                // 4) 应用策略
+                if (origins.Length == 0)
+                {
+                    builder
+                        .SetIsOriginAllowed(_ => true)
+                        .WithAbpExposedHeaders()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                }
+                else
+                {
+                    builder
+                        .WithOrigins(origins)
+                        .WithAbpExposedHeaders()
+                        .SetIsOriginAllowedToAllowWildcardSubdomains()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
+                }
             });
         });
     }
@@ -377,6 +455,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
+        var configuration = context.ServiceProvider.GetRequiredService<IConfiguration>();
 
         app.UseForwardedHeaders();
 
@@ -396,6 +475,98 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         app.MapAbpStaticAssets();
         app.UseAbpStudioLink();
         app.UseAbpSecurityHeaders();
+        // 在 ABP 默认安全头之后，追加/扩展 CSP 的 style-src 与 font-src 以放行 loli 镜像
+        app.Use(async (context, next) =>
+        {
+            context.Response.OnStarting(() =>
+            {
+                const string styleAppend = " https://fonts.loli.net";
+                const string fontAppend = " https://gstatic.loli.net";
+
+                if (context.Response.Headers.TryGetValue("Content-Security-Policy", out var values))
+                {
+                    var csp = values.ToString();
+
+                    string AppendOrAdd(string input, string directive, string append)
+                    {
+                        var idx = input.IndexOf(directive, StringComparison.OrdinalIgnoreCase);
+                        if (idx >= 0)
+                        {
+                            var end = input.IndexOf(';', idx);
+                            if (end < 0) end = input.Length;
+                            var seg = input.Substring(idx, end - idx);
+                            if (!seg.Contains(append, StringComparison.OrdinalIgnoreCase))
+                            {
+                                seg += append;
+                                input = input.Substring(0, idx) + seg + input.Substring(end);
+                            }
+                        }
+                        else
+                        {
+                            input += (input.EndsWith(";") ? string.Empty : ";") + $"{directive}{append}";
+                        }
+                        return input;
+                    }
+
+                    csp = AppendOrAdd(csp, "style-src", styleAppend);
+                    csp = AppendOrAdd(csp, "font-src", " data:" + fontAppend);
+
+                    context.Response.Headers["Content-Security-Policy"] = csp;
+                }
+                else
+                {
+                    var csp =
+                        "style-src 'self' 'unsafe-inline' https://fonts.loli.net; font-src 'self' data: https://gstatic.loli.net";
+                    context.Response.Headers["Content-Security-Policy"] = csp;
+                }
+
+                return Task.CompletedTask;
+            });
+            await next();
+        });
+        // 配置全局 Cookie 策略，保持 SameSite=Unspecified 以便第三方上下文（iframe）携带登录 Cookie
+        app.UseCookiePolicy(new CookiePolicyOptions
+        {
+            MinimumSameSitePolicy = SameSiteMode.Unspecified
+        });
+        // 启用 CORS 前打印当前允许的来源（合并补全 http/https），便于排查跨域问题
+        try
+        {
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            void add(string s)
+            {
+                if (string.IsNullOrWhiteSpace(s)) return;
+                s = s.Trim().TrimEnd('/');
+                if (!set.Contains(s)) set.Add(s);
+                if (Uri.TryCreate(s, UriKind.Absolute, out var uri))
+                {
+                    if (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var other = string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                            ? Uri.UriSchemeHttps
+                            : Uri.UriSchemeHttp;
+                        var counterpart = $"{other}://{uri.Host}{(uri.IsDefaultPort ? string.Empty : ":" + uri.Port)}";
+                        counterpart = counterpart.TrimEnd('/');
+                        if (!set.Contains(counterpart)) set.Add(counterpart);
+                    }
+                }
+            }
+            foreach (var s in (configuration["App:CorsOrigins"] ?? string.Empty)
+                         .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                         .Select(o => o.Trim().TrimEnd('/'))) add(s);
+            if (set.Count == 0)
+            {
+                add("http://localhost:4200");
+                add("https://localhost:4200");
+                add("http://localhost:5173");
+                add("https://localhost:5173");
+            }
+            var origins = set.ToArray();
+            Log.Information("CORS allowed origins: {Origins}", string.Join(", ", origins));
+        }
+        catch { /* no-op */ }
+
         app.UseCors(); // 允许跨域请求，必须在 UseRouting 和 UseAuthentication 之间
         app.UseAuthentication(); // 配置身份认证和权限验证中间件，必须放在 UseRouting 和 UseEndpoints 之间
         app.UseAbpOpenIddictValidation();
@@ -411,6 +582,23 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         // app.UseHttpsRedirection(); // 配置 HTTP 重定向中间件，强制使用 HTTPS
+
+        // 保护 Swagger/Scalar 文档页：未登录则触发登录（使用 Cookie 方案）
+        app.Use(async (ctx, next) =>
+        {
+            var path = ctx.Request.Path;
+            if (path.StartsWithSegments("/swagger") || path.StartsWithSegments("/scalar"))
+            {
+                if (!(ctx.User?.Identity?.IsAuthenticated ?? false))
+                {
+                    // 指定使用 Identity.Application（Cookie）触发交互式登录，避免返回 401 导致前端解析出错
+                    await ctx.ChallengeAsync("Identity.Application");
+                    return;
+                }
+            }
+
+            await next();
+        });
 
         #region Swagger 配置
 
@@ -441,7 +629,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
             options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
             options.EnableDeepLinking();
             options.DisplayOperationId();
-            
+
             // Console.WriteLine("=== 开始 Swagger UI 配置 ===");
             // Console.WriteLine($"Provider 版本数量: {provider.ApiVersionDescriptions.Count}");
             // 清除默认的文档（如果有）
@@ -508,7 +696,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 options.AddDocument(description.GroupName.ToUpperInvariant(), description.GroupName.ToUpperInvariant(),
                     $"swagger/{description.GroupName}/swagger.json");
             }
-        });
+        }).RequireAuthorization();
 
         #endregion
 

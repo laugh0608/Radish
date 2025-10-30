@@ -1,0 +1,65 @@
+/* 容器跟随顶部栏，插入到 .lpx-mobile-navbar .user-menu 内 */
+:host {
+  position: relative;
+  display: inline-block;
+}
+
+.mobile-lang-button {
+  height: 36px;
+  width: 36px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  outline: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #fff;
+}
+
+.mobile-lang-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mobile-lang-button:active {
+  transform: scale(0.97);
+}
+
+/* 下拉菜单：相对宿主绝对定位 */
+.mobile-lang-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1201;
+
+  min-width: 160px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 10px 25px rgba(2, 6, 23, 0.18);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.mobile-lang-menu .lang-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 40px;
+  padding: 0 10px;
+  background: transparent;
+  border: 0;
+  color: #111827;
+}
+
+.mobile-lang-menu .lang-item:hover {
+  background: rgba(0,0,0,0.04);
+}
+
+/* 仅在窄屏时显示（在模板上也做了 d-md-none 双保险） */
+@media (min-width: 768px) {
+  .mobile-lang-button {
+    display: none !important;
+  }
+  .mobile-lang-menu { display: none !important; }
+}

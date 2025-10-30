@@ -82,9 +82,9 @@ Radish/
 │   │   │   ├── react.svg         # React 图标
 │   │   │   └── ...               # 其他资源文件
 │   │   ├── App.css               # 应用样式文件
-│   │   ├── App.jsx               # 应用根组件
+│   │   ├── App.tsx               # 应用根组件
 │   │   ├── index.css             # 全局样式文件
-│   │   ├── main.jsx              # 应用入口文件
+│   │   ├── main.tsx              # 应用入口文件
 │   │   └── ...                   # 其他组件和工具
 │   ├── .gitignore                # Git 忽略文件配置
 │   ├── eslint.config.js          # ESLint 配置
@@ -93,6 +93,9 @@ Radish/
 │   ├── package.json              # 项目依赖和脚本配置
 │   ├── react.iml                 # IntelliJ IDEA 模块文件
 │   ├── README.md                 # 项目说明文档
+│   ├── tsconfig.app.json         # 基础配置文件，包含其他配置文件的共享设置
+│   ├── tsconfig.json             # 配置浏览器端运行的源代码
+│   ├── tsconfig.node.json        # 配置构建工具相关的代码
 │   ├── start.ps1                 # PowerShell 启动脚本
 │   ├── vite.config.js            # Vite 构建工具配置
 │   └── ...                       # 其他 React 项目文件

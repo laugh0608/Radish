@@ -1,0 +1,133 @@
+/* 底部移动导航，仅在小屏展示 */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: #111214;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: none;
+  z-index: 140;
+  transition: transform 0.24s ease-in-out;
+}
+
+@media (max-width: 767.98px) {
+  .mobile-bottom-nav { display: flex; }
+}
+
+.mobile-bottom-nav a {
+  color: #e0e4ea;
+  text-decoration: none;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  white-space: nowrap;
+  padding: 0 4px;
+}
+
+.mobile-bottom-nav a i {
+  font-size: 18px;
+}
+
+.mobile-bottom-nav a.active,
+.mobile-bottom-nav a:hover {
+  color: #ffffff;
+}
+
+.mobile-bottom-nav a {
+  position: relative;
+}
+.mobile-bottom-nav a.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 12px;
+  right: 12px;
+  height: 3px;
+  background: #0d6efd; /* brand */
+  border-radius: 2px;
+}
+
+.mobile-bottom-nav a.has-submenu::after {
+  content: '\25B2'; /* small triangle up */
+  font-size: 8px;
+  margin-left: 2px;
+  opacity: 0.55;
+}
+
+/* 给内容区域预留空间，避免被底部栏遮挡 */
+@media (max-width: 767.98px) {
+  .lpx-content-container {
+    padding-bottom: 70px;
+  }
+}
+
+/* -------- Submenu (bottom sheet) -------- */
+.mobile-submenu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 139;
+}
+
+.mobile-submenu-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 56px; /* sit above bottom nav */
+  background: #1b1d21;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.35);
+  z-index: 141;
+}
+
+.mobile-bottom-nav.hidden {
+  transform: translateY(100%);
+}
+
+.mobile-submenu-panel .submenu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  color: #fff;
+}
+
+.mobile-submenu-panel .btn-close {
+  filter: invert(1);
+}
+
+.mobile-submenu-panel .submenu-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px 6px;
+  padding: 6px 8px 12px 8px;
+}
+
+.mobile-submenu-panel .submenu-grid a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #e0e4ea;
+  text-decoration: none;
+  padding: 10px 4px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+}
+
+.mobile-submenu-panel .submenu-grid a i {
+  font-size: 20px;
+}
+
+.mobile-submenu-panel .submenu-grid a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}

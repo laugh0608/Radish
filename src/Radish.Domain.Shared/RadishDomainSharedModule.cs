@@ -51,7 +51,7 @@ public class RadishDomainSharedModule : AbpModule
 
             options.DefaultResourceType = typeof(RadishResource);
             
-            options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "Chinese (Simplified)")); 
+            options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "简体中文")); 
             options.Languages.Add(new LanguageInfo("en", "en", "English")); 
 
         });

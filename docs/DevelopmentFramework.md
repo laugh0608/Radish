@@ -4,6 +4,84 @@
 >
 > 开发框架图请点：[Radish](https://affine.imbhj.net/workspace/e54b7d62-20a6-473e-bfc8-0e0f1592b17c/i2ZYOGr95mO5T88PhTKr8) 。
 
+## 功能期望与范围（Overview & Scope）
+
+- 核心功能模块
+  - 身份与单点登录（SSO）：OpenIddict（OIDC 授权码 + PKCE）、ABP 身份模块、前后端静默续期与登出回跳。
+  - 门户首页与文档：Host 首页聚合跳转（Angular、React、Swagger、Scalar），登录态透传与 `sso=1` 约定；Swagger/Scalar 授权可调试。
+  - 内容域：分类/标签、帖子/评论（基础 CRUD、分页/过滤/排序），点赞/收藏，浏览计数。
+  - 搜索与筛选：按标题/标签/分类检索，排序（时间/热度）。
+  - 通知（可选）：发帖/回复/点赞等站内通知（可后续迭代）。
+  - 积分系统：积分账户、积分流水、规则（发帖/点赞/被采纳等）。
+  - 商城系统：商品/库存、购买与激活（基于积分），前端效果应用（头像框/昵称色等）。
+  - 管理后台（Angular）：分类与内容管理、用户与权限、积分/商城管理。
+
+- 非功能性要求
+  - 安全：全链路 HTTPS（生产）、CORS 白名单（.env）、CSP 基线、XSS/CSRF/输入校验、最小权限、密钥不入库（仅 .env/.secrets）。
+  - 性能：热点接口 P95 ≤ 200ms（本地/容器基线），Mongo 索引、必要的读缓存（只读列表）。
+  - 可用性：健康检查（/health-status）、就绪/存活探针（容器化）、幂等迁移（DbMigrator）。
+  - 可观测性：结构化日志（Serilog）、关键事件与错误记录；后续可接入指标/追踪。
+  - 国际化：服务端本地化资源（zh-Hans 基线），前端复用 ABP 资源；支持切换文化。
+  - 测试与质量：后端单测（xUnit + Shouldly + NSubstitute），前端 lint/build 通过；必要端到端冒烟。
+  - 配置与运维：统一使用 `.env` 注入（示例 `.env.example`），Docker Compose 一键启动（后续步骤）。
+  - 兼容性：主流现代浏览器（Chrome/Edge/Firefox/Safari 最新版），移动端视口友好。
+
+- 里程碑与验收标准（与 DevelopmentPlan.md 对齐）
+  - M1｜基线与联调（周1）：Host HTTPS 可访问；React/Angular 能拉取应用配置并通过 CORS；证书与预检命令可自测。
+  - M2｜领域与数据（周2）：Category/Post/Comment 模型 + 仓储与索引；CRUD 与分页可用；单测通过。
+  - M3｜应用层与 API（周3-4）：DTO/服务/权限齐备；Swagger/Scalar 授权可调试；异常映射一致。
+  - M4｜React/Angular MVP（周5-7）：React 列表/详情/发帖流程；Angular 基础管理；登录态与权限生效。
+  - M5｜容器化（周8）：Host/DbMigrator/React/Angular Dockerfile 与 Compose；`up --build` 一键跑通。
+  - M6｜积分与商城（周9-10）：积分规则闭环；商城购买-库存-应用链路可用。
+  - M7｜硬化与交付（周11-12）：性能/安全/观测到位；测试覆盖补全；文档齐备可演示/部署。
+
+- 范围外（当前阶段暂不覆盖）
+  - 第三方登录（微信/钉钉/飞书/企业 SSO 等）、支付能力（真实扣款）。
+  - SSR/SEO（React 迁移 Next.js）、富媒体文件云存储（可后续接入 S3/OSS）。
+  - 消息队列/事件总线与复杂异步编排、CDN 边缘缓存策略。
+
+### 非目标与边界（Non-Goals & Boundaries）
+
+- 认证与支付
+  - 非目标：接入外部 OAuth/企业 SSO（微信/钉钉/飞书/企微等）；真实支付/结算流程。
+  - 边界：仅提供本地帐号体系 + OpenIddict（授权码 + PKCE）；商城以“积分兑换”为主，不涉及金流与发票。
+
+- 媒体与上传
+  - 非目标：大文件与多媒体（视频/音频）转码、图片 CDN 与裁剪、内容审查（OCR/涉政涉黄）。
+  - 边界：头像/帖子配图等轻量图片为主；后续如需接入 S3/OSS/本地 MinIO，将单列里程碑。
+
+- 渲染与 SEO
+  - 非目标：SSR/SSG 与搜索引擎优化（站外 SEO 策略、sitemap 自动化）。
+  - 边界：当前维持 SPA 架构（Vite React），必要时可迁移 Next.js，届时重新评估路由与鉴权。
+
+- 分布式与事件
+  - 非目标：Kafka/RabbitMQ 等消息总线、Saga/Outbox、跨服务一致性。
+  - 边界：单体服务 + 领域事件（进程内）足以满足 MVP；如需异步扩展，先以内存队列/延时任务验证。
+
+- 性能与扩展
+  - 非目标：大规模水平扩展与全局缓存（Redis Cluster/CDN 边缘缓存）。
+  - 边界：以 Mongo 索引 + 轻量读缓存为准；热点接口设定 P95≤200ms 的本地/容器基线作为验收。
+
+- 合规与隐私
+  - 非目标：严格 GDPR/CCPA/等保三级等合规落地。
+  - 边界：遵循最小化采集与脱敏输出原则；提供帐号删除导出基础能力时再进入合规阶段。
+
+- 平台与浏览器
+  - 非目标：旧版浏览器/IE 兼容、App 混合容器、小程序端等多端适配。
+  - 边界：现代浏览器最新版为支持基线（Chrome/Edge/Firefox/Safari），移动端以响应式适配为主。
+
+- 运维与部署
+  - 非目标：K8s 多环境流水线、灰度/蓝绿发布、服务网格、全链路追踪。
+  - 边界：以 Docker Compose 一键启动为阶段目标，后续再评估 K8s 化。
+
+- 数据与迁移
+  - 非目标：复杂数据迁移编排与版本回滚策略、数据脱敏/同步平台。
+  - 边界：DbMigrator 保证幂等，核心索引与种子可重复执行；生产升级前置备份。
+
+- UED 与可用性
+  - 非目标：完整设计体系与可访问性 (A11y) 全量达标。
+  - 边界：遵循基本可访问性与对比度要求；组件库选型以 ABP Angular/自建轻组件为主。
+
 ## ABP & React/Angular & MongoDB & Docker 论坛项目开发大纲
 
 ### 项目名称
@@ -16,7 +94,7 @@ Radish，萝卜。
 
 ### 1. 技术栈概览
 
-* **后端框架:** [ABP Framework](https://abp.io) (建议 v7.x 或 v8.x，基于 .NET 8)
+* **后端框架:** [ABP Framework](https://abp.io)（基于 .NET 9，与本仓库一致）
   * **架构模式:** DDD (领域驱动设计) 分层架构
   * **核心模块:** `Volo.Abp.Identity`, `Volo.Abp.PermissionManagement`, `Volo.Abp.AuditLogging`, `Volo.Abp.SettingManagement` 等。
 * **API 管理/调试:** [Swagger UI](https://swagger.io/) / [Scalar](https://scalar.com/) (ABP框架自带集成)
@@ -24,7 +102,7 @@ Radish，萝卜。
 * **前端用户UI:** [React](https://react.dev/) (配合 [Vite](https://vitejs.dev/) 或 [Next.js](https://nextjs.org/) 等构建工具，建议Vite简化配置)
 * **数据库:** [MongoDB](https://www.mongodb.com/) (建议 v6.x 或更高版本)
 * **容器化:** [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
-* **身份认证/授权:** JWT (JSON Web Tokens) + ABP IdentityServer4 (或 ABP内置的OpenIddict)
+* **身份认证/授权:** OpenIddict + JWT (JSON Web Tokens)
 * **辅助工具:** Git, VS Code/Visual Studio
 
 ### 2. 系统架构
@@ -54,42 +132,42 @@ graph TD
     end
 
     C -->|Swagger/Scalar| I[API Documentation]
-    C -->|Authentication/Authorization| J[IdentityServer/OpenIddict]
+    C -->|Authentication/Authorization| J[OpenIddict]
 ```
 
 #### 2.2 ABP 后端分层详细说明 (DDD)
 
-* **ForumProject.Host:**
+* **Radish.HttpApi.Host:**
   * ASP.NET Core Web Application，作为API网关。
   * 配置身份认证 (JWT/OpenIddict)。
     * 集成Swagger/Scalar，提供API文档和调试界面。
     * 配置CORS (跨域资源共享)。
     * 加载并暴露所有应用服务 (Application Services)。
   * **Docker:** 将此项目容器化为API服务。
-* **ForumProject.Application.Contracts:**
+* **Radish.Application.Contracts:**
   * 定义应用层与表示层 (UI) 之间的数据传输对象 (DTOs)。
   * 定义应用服务接口 (Application Service Interfaces)。
   * **DDD:** DTOs作为输入/输出，是聚合根或实体的扁平化表示。
-* **ForumProject.Application:**
+* **Radish.Application:**
   * 实现应用服务接口。
   * 负责业务逻辑的编排，调用领域服务和仓储。
   * 处理事务、权限检查、数据转换。
   * **DDD:** 作为领域层和表示层之间的协调者，不包含核心业务规则，只负责流程控制。
-* **ForumProject.Domain.Shared:**
+* **Radish.Domain.Shared:**
   * 包含所有层共享的常量、枚举、全局异常定义等。
-* **ForumProject.Domain:** (DDD 核心层)
+* **Radish.Domain:** (DDD 核心层)
   * **聚合根 (Aggregate Roots):** `User` (来自Identity), `Category`, `Post`, `ShopItem`, `UserPoints`。负责保证自身内部及关联实体的业务不变性。
   * **实体 (Entities):** `Comment`, `Tag`, `PointTransaction`, `UserInventory` (可能依附于聚合根)。拥有唯一标识符和生命周期。
   * **值对象 (Value Objects):** `PostTitle`, `Content` (如果需要封装特定行为), `Money` (用于积分/价格)。没有唯一标识符，不可变。
   * **领域服务 (Domain Services):** 处理跨多个聚合根的业务逻辑，例如 `PostManager` 可能包含置顶、精华等逻辑，`PointCalculator` 计算积分。
   * **仓储接口 (Repository Interfaces):** 定义领域层访问持久化数据的契约，例如 `IPostRepository`, `ICategoryRepository`。
   * **领域事件 (Domain Events):** 用于解耦业务逻辑，例如 `PostCreatedEvent`, `PostLikedEvent`, `CommentAcceptedEvent` 等，积分系统将订阅这些事件。
-* **ForumProject.Domain.MongoDB:** (基础设施层)
+* **Radish.MongoDB:** (基础设施层)
   * 实现领域层定义的仓储接口，将领域对象持久化到MongoDB数据库。
   * 配置MongoDB连接字符串。
   * 利用ABP提供的MongoDB集成，如 `IMongoDbContext`, `IMongoDbRepository<TEntity>`。
   * **Docker:** 无需独立容器，作为Host项目的依赖库。
-* **ForumProject.DbMigrator:**
+* **Radish.DbMigrator:**
   * 独立的控制台应用，用于执行数据库初始化、数据播种 (Seed Data)、MongoDB索引创建等。
   * **Docker:** 通常作为一次性运行的容器服务，在其他服务启动前执行。
 
@@ -224,18 +302,84 @@ graph TD
       * **昵称颜色:** 给用户昵称元素添加特定CSS样式。
       * **定制签名框小尾巴:** 在用户发帖/回帖时，在签名档末尾添加对应文本或HTML片段。
 
+#### 4.3 论坛 AI 与自动化任务
+
+* 功能目标
+  * AI 审批：新帖/评论提交后自动审查（敏感词、垃圾/广告、涉黄涉政、毒性语言）。工作流：新内容 → AI 打分 → 阈值判定 → 自动通过/挂起/拒绝；保留人工复审入口与审计日志。
+  * AI 分类：基于正文自动建议版块/分类，提供 Top-N 候选及置信度；可配置“自动归类”或“仅提示管理员”。
+  * AI 标签：关键词抽取/主题聚类，建议 3-8 个标签；区分“系统建议/用户自定义”；支持一键采纳合并。
+  * 自动汇总报表：按周/按月/按年生成帖子汇总（Top 帖子、热度榜、活跃作者、分类/标签分布、增长曲线等），生成 Markdown/HTML 内容并以“系统报表帖子”的形式发布到指定分类（如“运营报表”）。
+  * AI 摘要：为帖子生成 1-3 行摘要，用于列表页与分享卡片快速预览。
+  * 反垃圾治理：黑/白名单、链接风险打分、重复/洗稿检测（轻量版），低分触发限流或二次校验。
+
+* 后端 (ABP - DDD)
+  * 领域事件：`PostCreatedEvent`、`CommentCreatedEvent` 触发 AI 流水线；`ReportGeneratedEvent` 发布周期报表。
+  * 应用服务：`AiModerationAppService`、`AiSuggestionAppService`、`ReportAppService`（对外提供审核重试、建议查询、报表生成/发布能力）。
+  * 后台任务/调度：基于 ABP BackgroundWorker/BackgroundJobs 实现异步审核与定时汇总；支持 Cron（如：`0 3 * * 1` 生成周报）。
+  * 可观测性：记录 AI 请求耗时/错误率/决策结果，落入审计日志，必要指标可对接后续监控。
+
+* 数据模型建议（Radish.Domain）
+  * Post 新增字段：
+    * `AiReviewStatus` Enum：Pending/Approved/Rejected/Skipped
+    * `AiScores` Object：Spam、Toxicity、Sexual、Political、SuspectLink 等维度
+    * `AiSuggestedCategoryId` Nullable<Guid>
+    * `AiSuggestedTags` List<string>
+    * `AiSummary` string（短摘要）
+    * `AiReviewedTime` DateTime?
+    * `ContentSource` Enum：User/AiRecommended（区分来源）
+  * 新实体：
+    * `ModerationRecord`：Id，EntityType(Post/Comment)，EntityId，Action(AutoApprove/AutoReject/Flag)，Scores(json)，Reason，Reviewer(UserId 或 "AI")，CreationTime。
+    * `PeriodicReport`：Id，Type(Weekly/Monthly/Yearly)，PeriodKey(如 2025-W44/2025-10/2025)，Title，Content(Markdown/Html)，Metrics(json)，PublishedPostId Nullable<Guid>。
+
+* API 设计（示例）
+  * `GET /api/ai/suggestions/posts/{id}` 获取某帖 AI 建议（分类/标签/摘要/评分）。
+  * `POST /api/ai/review/posts/{id}/retry` 重试 AI 审核流水线。
+  * `POST /api/ai/override/posts/{id}` 管理员手工覆写审核决定（通过/拒绝/挂起）。
+  * `GET /api/reports?type=weekly&period=2025-W44` 查询既有周期报表。
+  * `POST /api/reports/generate?type=monthly&period=2025-10` 立即生成周期报表并可选发布。
+
+* Admin UI (Angular)
+  * 审核队列：展示待审内容、AI 分数与简要理由，支持一键通过/拒绝/拉黑。
+  * 策略配置：启用/禁用 AI，阈值，自动发布/挂起策略，Cron 调度，报表发布目标分类。
+  * 审计追踪：按内容查看 `ModerationRecord` 历史。
+  * 报表中心：浏览/搜索周报/月报/年报，手动触发生成与发布。
+
+* Frontend UI (React)
+  * 发帖/编辑：展示 AI 建议标签与分类，用户可一键采纳或忽略。
+  * 列表/详情：显示 AI 摘要徽标；挂起状态为作者显示“待审核”提示。
+  * 报表展示：在指定分类以普通帖子形式展示周期报表，包含关键指标卡片。
+
+* 权限与设置
+  * 权限：`AiPolicy.Manage`、`Post.Moderate.Override`、`Report.Manage`、`Report.View`。
+  * 设置：`Ai:Enabled`、`Ai:AutoPublishThreshold`、`Ai:HoldThreshold`、`Ai:MaxTags`、`Report:Targets:CategoryId`、`Report:Cron:Weekly/Monthly/Yearly`。
+  * 机密：AI 提供方密钥仅通过环境变量或 `appsettings.secrets.json` 注入，禁止入库与提交。
+
+* 安全与隐私
+  * 最小化传输：仅向 AI 服务发送必要文本，尽可能脱敏，避免 PII 外泄。
+  * 可解释性：保存关键打分与简要理由，便于溯源与复核。
+  * 人在回路：任何自动拒绝均可申诉与人工复核；可一键回滚决定。
+
+* 索引与性能
+  * 针对 `CreationTime`、`CategoryId`、`Tags`、`AiReviewStatus` 建立（复合）索引以加速队列与汇总查询。
+  * 汇总任务分页批处理，使用“水位线”避免重复计算；长耗时任务分片执行。
+
+* 验收标准
+  * 新帖/评论触发 AI 审核并按策略阈值自动决定；管理员可覆写，完整审计记录。
+  * 能生成并发布周报/月报/年报，包含 Top 帖、活跃用户、分类/标签分布等指标。
+  * 关闭 AI 后系统自然退化为人工审核流程，核心功能不受影响。
+
 ### 5. Docker 支持 (一键启动)
 
 #### 5.1 Dockerize 各个服务
 
-* **ForumProject.Host (Backend API):**
+* **Radish.HttpApi.Host (Backend API):**
   * `Dockerfile`：基于 .NET SDK 构建，然后基于 .NET Runtime 运行。
   * 监听端口：例如 8000。
 * **MongoDB:**
   * 直接使用官方 `mongo` 镜像。
   * 需要持久化数据卷。
   * 监听端口：默认 27017。
-* **ForumProject.DbMigrator:**
+* **Radish.DbMigrator:**
   * `Dockerfile`：基于 .NET SDK 构建。
   * 作为一次性服务 (entrypoint)。
   * **注意:** 确保在MongoDB和Backend API之前运行，完成初始化。
@@ -264,7 +408,7 @@ graph TD
 #### 阶段 0: 环境搭建与项目初始化 (2-3 天)
 
 1. **ABP项目初始化:**
-    * 使用 ABP CLI 创建新项目：`abp new ForumProject -t tiered -csf -u angular --db-provider mongodb`
+    * 本仓库已包含完整解决方案；如从零开始可参考 ABP CLI 示例：`abp new Radish -t tiered -csf -u angular --db-provider mongodb`
     * 验证 ABP Angular UI 能否启动并访问默认的身份和权限管理页面。
 2. **React前端项目初始化:**
     * 在解决方案外部或单独文件夹中创建 React 项目：`npm create vite@latest react-frontend --template react-ts` (推荐使用 Vite)。
@@ -275,14 +419,14 @@ graph TD
 #### 阶段 1: 后端 MVP 开发 (3-4 周)
 
 1. **DDD 基础构建:**
-    * 在 `ForumProject.Domain` 项目中，定义 `Category`, `Post`, `Comment` 聚合根/实体、值对象、仓储接口。
-    * 在 `ForumProject.Domain.MongoDB` 中实现对应的仓储。
-    * 在 `ForumProject.DbMigrator` 中添加 MongoDB 索引和初始数据 (例如默认版块)。
+    * 在 `Radish.Domain` 项目中，定义 `Category`, `Post`, `Comment` 聚合根/实体、值对象、仓储接口。
+    * 在 `Radish.MongoDB` 中实现对应的仓储。
+    * 在 `Radish.DbMigrator` 中添加 MongoDB 索引和初始数据 (例如默认版块)。
 2. **应用服务实现:**
-    * 在 `ForumProject.Application.Contracts` 中定义 `ICategoryAppService`, `IPostAppService`, `ICommentAppService` 接口及其 DTOs。
-    * 在 `ForumProject.Application` 中实现这些应用服务，调用领域层逻辑。
+    * 在 `Radish.Application.Contracts` 中定义 `ICategoryAppService`, `IPostAppService`, `ICommentAppService` 接口及其 DTOs。
+    * 在 `Radish.Application` 中实现这些应用服务，调用领域层逻辑。
 3. **API 暴露与测试:**
-    * 确保所有应用服务通过 `ForumProject.Host` 项目暴露为 RESTful API。
+    * 确保所有应用服务通过 `Radish.HttpApi.Host` 项目暴露为 RESTful API。
     * 通过 Swagger/Scalar 验证所有 API 接口的可用性和正确性。
     * **Admin UI 适配:** 确认 ABP Angular UI 能够管理 `Category` (如果需要自定义管理界面，则进行开发)。
 
@@ -306,7 +450,7 @@ graph TD
 
 #### 阶段 3: Docker 化与部署 (1 周)
 
-1. **编写 Dockerfile:** 为 `ForumProject.Host`, `ForumProject.DbMigrator`, `react-frontend`, `angular-admin` 编写 Dockerfile。
+1. **编写 Dockerfile:** 为 `Radish.HttpApi.Host`, `Radish.DbMigrator`, `react-frontend`, `angular-admin` 编写 Dockerfile。
 2. **编写 docker-compose.yml:** 整合所有服务，配置网络、卷、端口映射和环境变量。
 3. **本地测试:** `docker-compose up --build -d` 启动整个项目，验证所有服务正常运行，功能联调。
 4. **文档:** 编写详细的 Docker 部署说明。
@@ -359,8 +503,8 @@ graph TD
 ### 7. 起步建议
 
 1. **按照“阶段 0”完成项目初始化。** 这是构建一切的基础。
-2. **专注于后端 DDD 核心：** 先在 `ForumProject.Domain` 中清晰地定义 `Category`, `Post`, `Comment` 的聚合根、实体、值对象和它们之间的关系，以及仓储接口。这是业务逻辑的骨架。
-3. **MongoDB 配置：** 确保 `ForumProject.Domain.MongoDB` 正确连接到你的 MongoDB 实例，并能实现基本实体的增删改查。
+2. **专注于后端 DDD 核心：** 先在 `Radish.Domain` 中清晰地定义 `Category`, `Post`, `Comment` 的聚合根、实体、值对象和它们之间的关系，以及仓储接口。这是业务逻辑的骨架。
+3. **MongoDB 配置：** 确保 `Radish.MongoDB` 正确连接到你的 MongoDB 实例，并能实现基本实体的增删改查。
 4. **自底向上验证：**
     * 先通过单元测试验证领域层逻辑。
     * 然后通过集成测试或 Swagger/Scalar 验证应用服务和 API。

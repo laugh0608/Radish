@@ -23,7 +23,9 @@
     </div>
   </div>
   <div class="card-body">
-    <ngx-datatable [rows]="book.items" [count]="book.totalCount" [list]="list" default>
+    <!-- 桌面端：表格模式 -->
+    <div class="d-none d-md-block">
+      <ngx-datatable [rows]="book.items" [count]="book.totalCount" [list]="list" default>
       <ngx-datatable-column
         [name]="'::Actions' | abpLocalization"
         [maxWidth]="150"
@@ -74,12 +76,44 @@
           {{ row.price | currency }}
         </ng-template>
       </ngx-datatable-column>
-    </ngx-datatable>
+      </ngx-datatable>
+    </div>
+
+    <!-- 移动端：卡片模式 -->
+    <div class="d-block d-md-none">
+      <div class="book-card" *ngFor="let row of book.items; trackBy: trackById">
+        <div class="book-card-header">
+          <div class="title">{{ row.name }}</div>
+          <div class="actions">
+            <button *abpPermission="'Radish.Books.Edit'" type="button" class="btn btn-sm btn-outline-primary me-1" (click)="editBook(row.id)">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button *abpPermission="'Radish.Books.Delete'" type="button" class="btn btn-sm btn-outline-danger" (click)="delete(row.id)">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+        <div class="book-card-body">
+          <div class="meta">
+            <span class="label">{{ '::Type' | abpLocalization }}:</span>
+            <span class="value">{{ '::Enum:BookType.' + row.type | abpLocalization }}</span>
+          </div>
+          <div class="meta">
+            <span class="label">{{ '::PublishDate' | abpLocalization }}:</span>
+            <span class="value">{{ row.publishDate | date }}</span>
+          </div>
+          <div class="meta">
+            <span class="label">{{ '::Price' | abpLocalization }}:</span>
+            <span class="value">{{ row.price | currency }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <!-- Add the modal here -->
-<abp-modal [(visible)]="isModalOpen">
+<abp-modal [(visible)]="isModalOpen" [options]="{ windowClass: 'modal-fullscreen-sm-down' }">
   <ng-template #abpHeader>
     <h3>{{ (selectedBook.id ? '::Edit' : '::NewBook' ) | abpLocalization }}</h3>
   </ng-template>

@@ -12,6 +12,8 @@ using Volo.Abp.AspNetCore.Mvc;
  * 4. 目前仅支持整数版本号，且小版本号必须为 0
  * 5. 路由特性不建议更改：[Route("api/v{version:apiVersion}/[controller]/[action]")]
  * 6. 自动 API 控制器见 TodoAppService 中的示例（实际上就一个命名空间而已）
+ * 
+ * 设置 Deprecated = true 属性即可在返回体中标识该接口已废弃，例如：[ApiVersion(1.0, Deprecated = true)]
  *
  * 下方示例的 API 路径为：/api/v2/ApiVersion/GetApiVersion
  *
@@ -24,14 +26,23 @@ using Volo.Abp.AspNetCore.Mvc;
 
 namespace Radish.Controllers.ConventionalControllers.V2;
 
+/// <summary>
+/// 版本示例接口（V1/V2）。
+/// </summary>
 [ApiController]
-[ApiVersion(1.0)]
-[ApiVersion(2.0)]
+[ApiVersion(1)]
+[ApiVersion(2)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 public class ApiVersionController : AbpControllerBase
 {
+    /// <summary>
+    /// 获取当前接口版本（V1）。
+    /// </summary>
+    /// <remarks>
+    /// MapToApiVersion(1) 示例。
+    /// </remarks>
     [HttpGet]
-    [MapToApiVersion(1.0)]
+    [MapToApiVersion(1)]
     public IActionResult GetApiVersionV1()
     {
         return Ok(new
@@ -43,8 +54,14 @@ public class ApiVersionController : AbpControllerBase
         });
     }
     
+    /// <summary>
+    /// 获取当前接口版本（V2）。
+    /// </summary>
+    /// <remarks>
+    /// MapToApiVersion(2) 示例。
+    /// </remarks>
     [HttpGet]
-    [MapToApiVersion(2.0)]
+    [MapToApiVersion(2)]
     public IActionResult GetApiVersionV2()
     {
         return Ok(new

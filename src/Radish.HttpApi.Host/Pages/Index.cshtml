@@ -17,116 +17,240 @@
     Layout = Theme.GetEmptyLayout();
 }
 
-<div class="d-flex align-items-center" style="min-height: 100vh;">
-    <div class="container">
-        <abp-row>
-
-            <div class="col mx-auto account-column">
-                <div class="account-brand p-4 text-center mb-1">
-
+<div class="radish-landing d-flex flex-column" style="min-height: 100vh;">
+    <!-- Hero -->
+    <section class="radish-hero py-5 py-lg-6">
+        <span class="radish-hero-anim" aria-hidden="true"></span>
+        <div class="container">
+            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                <div class="radish-brand d-flex align-items-center gap-3">
                     @if (!BrandingProvider.LogoUrl.IsNullOrEmpty())
                     {
-                        <a class="navbar-brand" href="~/" alt="@BrandingProvider.AppName"></a>
+                        <span class="brand-logo"></span>
+                    }
+                    <div>
+                        <h1 class="display-6 mb-1 fw-semibold">@BrandingProvider.AppName</h1>
+                        <p class="lead mb-0 text-hero-sub">
+                            @if (CurrentUser.IsAuthenticated)
+                            {
+                                @L["Landing:WelcomeUser", (CurrentUser.UserName ?? CurrentUser.Name ?? "")] 
+                            }
+                            else
+                            {
+                                @L["Welcome"]
+                            }
+                        </p>
+                    </div>
+                </div>
+
+                <div class="radish-actions d-flex align-items-center gap-2 ms-auto flex-wrap">
+                    <!-- 大屏：直接展示所有操作 -->
+                    <div class="d-none d-sm-flex align-items-center gap-2">
+                        <button type="button" id="themeToggle" class="btn btn-light-subtle border-0 btn-sm" title="@L["Actions:ThemeToggle"]">🌞/🌙</button>
+                        <div class="dropdown">
+                            <button class="btn btn-light-subtle border-0 btn-sm dropdown-toggle" type="button" id="densityMenuBtn" data-bs-toggle="dropdown" aria-expanded="false">@L["Actions:Density"]</button>
+                            <ul class="dropdown-menu" aria-labelledby="densityMenuBtn">
+                                <li><button class="dropdown-item density-item" data-density="auto" type="button">@L["Actions:Density.Auto"]</button></li>
+                                <li><button class="dropdown-item density-item" data-density="comfortable" type="button">@L["Actions:Density.Comfortable"]</button></li>
+                                <li><button class="dropdown-item density-item" data-density="compact" type="button">@L["Actions:Density.Compact"]</button></li>
+                            </ul>
+                        </div>
+                        <abp-dropdown>
+                            @if (Model.CurrentLanguage != null)
+                            {
+                                <abp-dropdown-button class="btn btn-light-subtle border-0 btn-sm" text="@Model.CurrentLanguage"/>
+                            }
+
+                            @if (Model.Languages != null)
+                            {
+                                <abp-dropdown-menu>
+                                    @foreach (var language in Model.Languages)
+                                    {
+                                        var languageUrl = Url.Content($"~/Abp/Languages/Switch?culture={language.CultureName}&uiCulture={language.UiCultureName}&returnUrl={System.Net.WebUtility.UrlEncode(Request.GetEncodedPathAndQuery())}");
+                                        <abp-dropdown-item href="@languageUrl">@language.DisplayName</abp-dropdown-item>
+                                    }
+                                </abp-dropdown-menu>
+                            }
+                        </abp-dropdown>
+
+                        @if (CurrentUser.IsAuthenticated)
+                        {
+                            <a abp-button="Outline_Light" class="ms-1 btn-sm" asp-controller="Manage" asp-action="Index" asp-area="Account">@AccountLocalizer["MyAccount"]</a>
+                            <a abp-button="Light" class="btn-sm" asp-controller="Logout" asp-action="Index" asp-area="Account">@L["Logout"]</a>
+                        }
+                        else
+                        {
+                            <a abp-button="Light" class="btn-sm" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a>
+                        }
+                        <button type="button" id="editToggle" class="btn btn-outline-secondary btn-sm ms-1" title="@L["Actions:EditHome"]">@L["Actions:Edit"]</button>
+                        <button type="button" id="hiddenManageBtn" class="btn btn-outline-secondary btn-sm" title="@L["Actions:ManageHidden"]">@L["Actions:ManageHidden"]</button>
+                    </div>
+
+                    <!-- 小屏：移除 Hero 区“更多”下拉，统一使用下方移动端功能面板 -->
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 移动端：功能面板（更紧凑的两列布局） -->
+    <section class="d-sm-none py-2">
+        <div class="container">
+            <div class="card border-0 shadow-sm radish-mobile-actions">
+                <div class="card-body mobile-actions-grid">
+                    <!-- 主题切换 -->
+                    <button type="button" id="themeToggleMobile" class="btn btn-outline-secondary btn-sm w-100">@L["Actions:ThemeToggle"]</button>
+
+                    <!-- 语言切换：改为下拉，避免占位过多 -->
+                    <div class="dropdown lang-dropdown">
+                        <button class="btn btn-outline-secondary btn-sm w-100 dropdown-toggle" type="button" id="mobileLangBtn" data-bs-toggle="dropdown" aria-expanded="false">@(Model.CurrentLanguage ?? L["Language"].Value)</button>
+                        <ul class="dropdown-menu" aria-labelledby="mobileLangBtn">
+                            @if (Model.Languages != null)
+                            {
+                                foreach (var language in Model.Languages)
+                                {
+                                    var languageUrl = Url.Content($"~/Abp/Languages/Switch?culture={language.CultureName}&uiCulture={language.UiCultureName}&returnUrl={System.Net.WebUtility.UrlEncode(Request.GetEncodedPathAndQuery())}");
+                                    <li><a class="dropdown-item" href="@languageUrl">@language.DisplayName</a></li>
+                                }
+                            }
+                        </ul>
+                    </div>
+
+                    <!-- 卡片密度：提示 + 三个独立按钮（统一样式） -->
+                    <div class="density-row grid-span-2 w-100">
+                        <div class="btn-group density-group density-group--seg w-100" role="group" aria-label="@L["Actions:Density.Card"]">
+                            <span class="btn btn-outline-secondary btn-sm density-label disabled" tabindex="-1">@L["Actions:Density.Card"]</span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="auto">@L["Actions:Density.Auto"]</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="comfortable">@L["Actions:Density.Comfortable"]</button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm density-item" data-density="compact">@L["Actions:Density.Compact"]</button>
+                        </div>
+                    </div>
+
+                    <!-- 账号/会话 -->
+                    @if (CurrentUser.IsAuthenticated)
+                    {
+                        <a class="btn btn-outline-secondary btn-sm w-100" role="button" asp-controller="Manage" asp-action="Index" asp-area="Account">@AccountLocalizer["MyAccount"]</a>
+                        <a class="btn btn-outline-secondary btn-sm w-100" role="button" asp-controller="Logout" asp-action="Index" asp-area="Account">@L["Logout"]</a>
                     }
                     else
                     {
-                        <h1>@BrandingProvider.AppName</h1>
+                        <a abp-button="Light" class="btn-sm w-100 grid-span-2" asp-controller="Login" asp-action="Index" asp-area="Account">@L["Login"]</a>
                     }
+
+                    <!-- 页面管理 -->
+                    <button type="button" id="editToggleMobile" class="btn btn-outline-secondary btn-sm w-100">@L["Actions:EditHome"]</button>
+                    <button type="button" id="hiddenManageBtnMobile" class="btn btn-outline-secondary btn-sm w-100">@L["Actions:ManageHidden"]</button>
                 </div>
-                <abp-card class="border rounded">
+            </div>
+        </div>
+    </section>
 
-                    <abp-card-body>
-
-                        <div class="container">
-                            <abp-row>
-                                <abp-column size="_9">
-
-                                    <div class="mr-auto p-2 float-start">
-                                        @if (CurrentUser.IsAuthenticated)
-                                        {
-                                            <div>
-                                                <div>
-                                                    <a abp-button="Outline_Primary" asp-controller="Manage"
-                                                       asp-action="Index" asp-area="Account"
-                                                       class="me-2">@AccountLocalizer["MyAccount"]</a>
-                                                    <a abp-button="Primary" asp-controller="Logout" asp-action="Index"
-                                                       asp-area="Account">@L["Logout"]</a>
-                                                </div>
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <div class="text-center">
-                                                <a abp-button="Primary" asp-controller="Login" asp-action="Index"
-                                                   asp-area="Account">@L["Login"]</a>
-                                            </div>
-                                        }
-                                    </div>
-                                </abp-column>
-                                <abp-column size="_3">
-                                    <div class="ml-auto p-2 float-end">
-                                        <abp-dropdown>
-                                            @if (Model.CurrentLanguage != null)
-                                            {
-                                                <abp-dropdown-button text="@Model.CurrentLanguage"/>
-                                            }
-
-                                            @if (Model.Languages != null)
-                                            {
-                                                <abp-dropdown-menu>
-                                                    @foreach (var language in Model.Languages)
-                                                    {
-                                                        var languageUrl = Url.Content($"~/Abp/Languages/Switch?culture={language.CultureName}&uiCulture={language.UiCultureName}&returnUrl={System.Net.WebUtility.UrlEncode(Request.GetEncodedPathAndQuery())}");
-                                                        <abp-dropdown-item
-                                                            href="@languageUrl">@language.DisplayName</abp-dropdown-item>
-                                                    }
-                                                </abp-dropdown-menu>
-                                            }
-                                        </abp-dropdown>
-                                    </div>
-                                </abp-column>
-
-                            </abp-row>
-                            <hr class="m-4"/>
-
-                            <abp-row>
-                                @if (Model.Applications != null)
-                                {
-                                    // 从 Model.Applications 中获取要展示的列表
-                                    @foreach (var application in Model.Applications)
-                                    {
-                                        <abp-column size-md="_4" class="mb-2">
-                                            <a href="@application.ClientUri" style="text-decoration:none">
-                                                <abp-card>
-                                                    <abp-card-body>
-                                                        @if (!application.LogoUri.IsNullOrEmpty())
-                                                        {
-                                                            var logoUri = application.LogoUri;
-                                                            if (application.LogoUri.StartsWith('/'))
-                                                            {
-                                                                logoUri = @Url.Content(application.LogoUri.EnsureStartsWith('~'));
-                                                            }
-
-                                                            <div class="mx-auto">
-                                                                <img src="@logoUri" style="height:64px" class="mb-3"/>
-                                                            </div>
-                                                        }
-                                                        <h4>@application.DisplayName</h4>
-                                                        <span class="text-muted">@application.ClientUri</span>
-                                                    </abp-card-body>
-                                                </abp-card>
-                                            </a>
-                                        </abp-column>
-                                    }
-                                }
-                            </abp-row>
+    <!-- 应用卡片 -->
+    <section class="flex-grow-1 py-4 py-lg-5">
+        <div class="container">
+            <!-- 最近访问（若有） -->
+            <div id="recentSection" class="radish-section d-none">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="radish-section-title">@L["Section:Recent"]</div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="form-check form-switch m-0">
+                            <input class="form-check-input" type="checkbox" id="recentOnlyFavsToggle" />
+                            <label class="form-check-label small" for="recentOnlyFavsToggle">@L["Section:RecentOnlyFavs"]</label>
                         </div>
-
-                    </abp-card-body>
-
-                </abp-card>
+                        <button id="recentClearBtn" type="button" class="btn btn-link btn-sm text-decoration-none">@L["Actions:Clear"]</button>
+                    </div>
+                </div>
+                <div id="recentRow" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3"></div>
             </div>
 
-        </abp-row>
+            <!-- 收藏（若有） -->
+            <div id="favSection" class="radish-section d-none">
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <div class="radish-section-title">@L["Actions:Favorite"]</div>
+                </div>
+                <div id="favRow" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 align-items-start"></div>
+            </div>
+
+            <!-- 应用列表 -->
+            <div class="d-flex align-items-center justify-content-between mt-4 mb-2">
+                <div class="radish-section-title">@L["Section:Apps"]</div>
+            </div>
+            <div id="appsGrid" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 align-items-start">
+                @if (Model.Applications != null)
+                {
+                    @foreach (var application in Model.Applications)
+                    {
+                        var target = application.ClientUri?.TrimEnd('/');
+                        var clientId = application.ClientId ?? string.Empty;
+                        if (!string.IsNullOrEmpty(target))
+                        {
+                            if (clientId == "Radish_Swagger" && !target.EndsWith("/swagger", StringComparison.OrdinalIgnoreCase))
+                            {
+                                target += "/swagger";
+                            }
+                            else if (clientId == "Radish_Scalar" && !target.EndsWith("/scalar", StringComparison.OrdinalIgnoreCase))
+                            {
+                                target += "/scalar";
+                            }
+                        }
+
+                        if (CurrentUser.IsAuthenticated && !string.IsNullOrEmpty(target))
+                        {
+                            target += (target!.Contains("?") ? "&" : "?") + "sso=1";
+                        }
+                        <div class="col" data-client-id="@clientId">
+                            <a href="@(target ?? "#")" target="_blank" rel="noopener" class="radish-app-card d-block h-100 text-reset" data-href="@(target ?? "#")" data-title="@application.DisplayName">
+                                <div class="card h-100 border-0 shadow-sm radish-card">
+                                    <div class="card-body d-flex align-items-start gap-3">
+                                        @if (!application.LogoUri.IsNullOrEmpty())
+                                        {
+                                            var logoUri = application.LogoUri;
+                                            if (application.LogoUri.StartsWith('/'))
+                                            {
+                                                logoUri = @Url.Content(application.LogoUri.EnsureStartsWith('~'));
+                                            }
+                                            <img src="@logoUri" class="flex-shrink-0 radish-app-logo" alt="logo" />
+                                        }
+                                        <div class="flex-grow-1 app-main">
+                                            <div class="h5 mb-1 fw-semibold text-truncate app-title">@application.DisplayName</div>
+                                            <div class="text-muted small text-truncate">@application.ClientUri</div>
+                                        </div>
+                                        <div class="radish-card-tools d-flex align-items-start gap-2 ms-auto flex-shrink-0">
+                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 fav-toggle" title="@L["Actions:Favorite"]" data-client-id="@clientId">☆</button>
+                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 copy-link" title="@L["Actions:CopyLink"]" data-href="@(target ?? "#")">⧉</button>
+                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 health-check" title="@L["Actions:HealthCheck"]" data-health-origin="@((!string.IsNullOrEmpty(application.ClientUri) ? new Uri(application.ClientUri).GetLeftPart(UriPartial.Authority) : string.Empty))">❤</button>
+                                            <button type="button" class="btn btn-sm btn-light-subtle border-0 hide-toggle" title="@L["Actions:Hide"]" data-client-id="@clientId">🙈</button>
+                                            <span class="radish-drag-handle d-none" title="@L["Actions:DragToSort"]">⋮⋮</span>
+                                            <!-- 更多菜单（在很窄时显示，将部分按钮折叠进去） -->
+                                            <div class="dropdown tools-more d-none">
+                                                <button class="btn btn-sm btn-light-subtle border-0 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">⋯</button>
+                                                <ul class="dropdown-menu dropdown-menu-end"></ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- 隐藏管理 Modal -->
+<div class="modal fade" id="hiddenManageModal" tabindex="-1" aria-labelledby="hiddenManageLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="hiddenManageLabel">@L["Hidden:Title"]</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="hiddenList" class="list-group small"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@L["Actions:Close"]</button>
+      </div>
     </div>
+  </div>
 </div>

@@ -1,10 +1,12 @@
 # Radish
 
+> 统一文档入口：`docs/frontend/angular/README.md`
+
 This is a startup project based on the ABP framework. For more information, visit <a href="https://abp.io/" target="_blank">abp.io</a>
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+Run `ng serve` (HTTP) for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
 
 ## Code scaffolding
 
@@ -31,3 +33,16 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
 The application provides a remote environment for production. we use `dynamic-env.json` file to set the environment variables and configured web server's `getEnvConfig` endpoint by default.
 
 See [Environment](https://abp.io/docs/latest/framework/ui/angular/environment) for more information.
+
+## Internationalization (i18n)
+
+- Docs (中文): `../../docs/frontend/angular/i18n-and-guidelines.zh-CN.md`
+- Docs (English): `../../docs/frontend/angular/i18n-and-guidelines.en.md`
+
+Quick usage
+- Templates: `{{ '::Welcome' | abpLocalization }}`、`{{ '::GetStarted' | abpLocalization }}`。
+- All UI copies come from server-side ABP resources (Radish resource). No custom front-end i18n.
+- Runtime switcher: provided by the theme in the top-right corner.
+
+Notes
+- Local development defaults to HTTP to avoid untrusted certificate prompts. Use `yarn start:https` only when you explicitly need HTTPS.

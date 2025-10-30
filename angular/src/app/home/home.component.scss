@@ -25,3 +25,48 @@
     height: 100% !important;
   }
 }
+
+/* --- Mobile adaptations --- */
+/* 调整 <lg 时右下角装饰图尺寸，避免遮挡 */
+@media (max-width: 991.98px) {
+  .card-bg-image {
+    width: 360px;
+    opacity: 0.6;
+  }
+}
+
+/* 主要针对手机（<576px）优化：隐藏大图、减小内边距、按钮更易点按 */
+@media (max-width: 575.98px) {
+  .card .card-body {
+    padding: 1rem !important;
+  }
+
+  /* 取消右侧多余留白 */
+  .starting-content.pe-5,
+  .starting-content {
+    padding-right: 0 !important;
+  }
+
+  .starting-content h3 {
+    font-size: 1.25rem;
+  }
+
+  .starting-content h4 {
+    font-size: 1.125rem;
+    margin-top: 0.5rem;
+  }
+
+  .starting-content .lead {
+    font-size: 0.95rem;
+  }
+
+  /* 主要 CTA 按钮在手机上占满一行，便于点击 */
+  .starting-content .btn {
+    width: 100%;
+  }
+
+  /* 手机上隐藏大背景图，避免横向滚动与遮挡 */
+  .card-bg-image {
+    display: none;
+  }
+}

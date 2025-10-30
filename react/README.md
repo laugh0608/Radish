@@ -1,5 +1,7 @@
 # React + TypeScript + Vite
 
+> Centralized docs: `docs/frontend/react/README.md`
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:
@@ -71,3 +73,20 @@ export default defineConfig([
   },
 ])
 ```
+
+## Project Docs
+
+- I18n & Guidelines (中文): `../../docs/frontend/react/i18n-and-guidelines.zh-CN.md`
+- I18n & Guidelines (English): `../../docs/frontend/react/i18n-and-guidelines.en.md`
+
+ABP integration
+- Set `VITE_API_BASE_URL` to your backend (e.g., `https://localhost:44342`).
+- The app fetches localization via `/api/abp/application-configuration?includeLocalizationResources=true` and exposes `t()` through an I18n provider.
+
+## HTTPS Dev Server
+
+The dev server supports HTTPS and now prefers a unified certificate location at the repo root `dev-certs/`.
+
+- Place `localhost.crt` and `localhost.key` under `../dev-certs/` (see instructions in `dev-certs/README.md`).
+- Run `npm run dev`; the script will auto-load these certs. If not found, it will try `react/script/certs/`, then fall back to `@vitejs/plugin-basic-ssl`.
+- Disable HTTPS (if needed): set env `DEV_HTTPS=0` before `npm run dev`.
