@@ -302,6 +302,72 @@ graph TD
       * **昵称颜色:** 给用户昵称元素添加特定CSS样式。
       * **定制签名框小尾巴:** 在用户发帖/回帖时，在签名档末尾添加对应文本或HTML片段。
 
+#### 4.3 论坛 AI 与自动化任务
+
+* 功能目标
+  * AI 审批：新帖/评论提交后自动审查（敏感词、垃圾/广告、涉黄涉政、毒性语言）。工作流：新内容 → AI 打分 → 阈值判定 → 自动通过/挂起/拒绝；保留人工复审入口与审计日志。
+  * AI 分类：基于正文自动建议版块/分类，提供 Top-N 候选及置信度；可配置“自动归类”或“仅提示管理员”。
+  * AI 标签：关键词抽取/主题聚类，建议 3-8 个标签；区分“系统建议/用户自定义”；支持一键采纳合并。
+  * 自动汇总报表：按周/按月/按年生成帖子汇总（Top 帖子、热度榜、活跃作者、分类/标签分布、增长曲线等），生成 Markdown/HTML 内容并以“系统报表帖子”的形式发布到指定分类（如“运营报表”）。
+  * AI 摘要：为帖子生成 1-3 行摘要，用于列表页与分享卡片快速预览。
+  * 反垃圾治理：黑/白名单、链接风险打分、重复/洗稿检测（轻量版），低分触发限流或二次校验。
+
+* 后端 (ABP - DDD)
+  * 领域事件：`PostCreatedEvent`、`CommentCreatedEvent` 触发 AI 流水线；`ReportGeneratedEvent` 发布周期报表。
+  * 应用服务：`AiModerationAppService`、`AiSuggestionAppService`、`ReportAppService`（对外提供审核重试、建议查询、报表生成/发布能力）。
+  * 后台任务/调度：基于 ABP BackgroundWorker/BackgroundJobs 实现异步审核与定时汇总；支持 Cron（如：`0 3 * * 1` 生成周报）。
+  * 可观测性：记录 AI 请求耗时/错误率/决策结果，落入审计日志，必要指标可对接后续监控。
+
+* 数据模型建议（Radish.Domain）
+  * Post 新增字段：
+    * `AiReviewStatus` Enum：Pending/Approved/Rejected/Skipped
+    * `AiScores` Object：Spam、Toxicity、Sexual、Political、SuspectLink 等维度
+    * `AiSuggestedCategoryId` Nullable<Guid>
+    * `AiSuggestedTags` List<string>
+    * `AiSummary` string（短摘要）
+    * `AiReviewedTime` DateTime?
+    * `ContentSource` Enum：User/AiRecommended（区分来源）
+  * 新实体：
+    * `ModerationRecord`：Id，EntityType(Post/Comment)，EntityId，Action(AutoApprove/AutoReject/Flag)，Scores(json)，Reason，Reviewer(UserId 或 "AI")，CreationTime。
+    * `PeriodicReport`：Id，Type(Weekly/Monthly/Yearly)，PeriodKey(如 2025-W44/2025-10/2025)，Title，Content(Markdown/Html)，Metrics(json)，PublishedPostId Nullable<Guid>。
+
+* API 设计（示例）
+  * `GET /api/ai/suggestions/posts/{id}` 获取某帖 AI 建议（分类/标签/摘要/评分）。
+  * `POST /api/ai/review/posts/{id}/retry` 重试 AI 审核流水线。
+  * `POST /api/ai/override/posts/{id}` 管理员手工覆写审核决定（通过/拒绝/挂起）。
+  * `GET /api/reports?type=weekly&period=2025-W44` 查询既有周期报表。
+  * `POST /api/reports/generate?type=monthly&period=2025-10` 立即生成周期报表并可选发布。
+
+* Admin UI (Angular)
+  * 审核队列：展示待审内容、AI 分数与简要理由，支持一键通过/拒绝/拉黑。
+  * 策略配置：启用/禁用 AI，阈值，自动发布/挂起策略，Cron 调度，报表发布目标分类。
+  * 审计追踪：按内容查看 `ModerationRecord` 历史。
+  * 报表中心：浏览/搜索周报/月报/年报，手动触发生成与发布。
+
+* Frontend UI (React)
+  * 发帖/编辑：展示 AI 建议标签与分类，用户可一键采纳或忽略。
+  * 列表/详情：显示 AI 摘要徽标；挂起状态为作者显示“待审核”提示。
+  * 报表展示：在指定分类以普通帖子形式展示周期报表，包含关键指标卡片。
+
+* 权限与设置
+  * 权限：`AiPolicy.Manage`、`Post.Moderate.Override`、`Report.Manage`、`Report.View`。
+  * 设置：`Ai:Enabled`、`Ai:AutoPublishThreshold`、`Ai:HoldThreshold`、`Ai:MaxTags`、`Report:Targets:CategoryId`、`Report:Cron:Weekly/Monthly/Yearly`。
+  * 机密：AI 提供方密钥仅通过环境变量或 `appsettings.secrets.json` 注入，禁止入库与提交。
+
+* 安全与隐私
+  * 最小化传输：仅向 AI 服务发送必要文本，尽可能脱敏，避免 PII 外泄。
+  * 可解释性：保存关键打分与简要理由，便于溯源与复核。
+  * 人在回路：任何自动拒绝均可申诉与人工复核；可一键回滚决定。
+
+* 索引与性能
+  * 针对 `CreationTime`、`CategoryId`、`Tags`、`AiReviewStatus` 建立（复合）索引以加速队列与汇总查询。
+  * 汇总任务分页批处理，使用“水位线”避免重复计算；长耗时任务分片执行。
+
+* 验收标准
+  * 新帖/评论触发 AI 审核并按策略阈值自动决定；管理员可覆写，完整审计记录。
+  * 能生成并发布周报/月报/年报，包含 Top 帖、活跃用户、分类/标签分布等指标。
+  * 关闭 AI 后系统自然退化为人工审核流程，核心功能不受影响。
+
 ### 5. Docker 支持 (一键启动)
 
 #### 5.1 Dockerize 各个服务
