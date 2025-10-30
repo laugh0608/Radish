@@ -72,6 +72,7 @@ img {
     display: flex !important;
     align-items: center;
     gap: 10px;
+    min-width: 96px; /* 为空时也保留可点击区域，避免视觉上"看不见" */
   }
   .lpx-mobile-navbar .user-menu lpx-icon { display: inline-flex !important; }
   /* 提升图标对比度，避免深色背景下看不清 */
