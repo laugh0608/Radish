@@ -60,11 +60,12 @@ https://abp.io/docs/latest/framework/ui/angular/environment
 
 ## 移动端适配
 
-- 采用 LeptonX Lite 默认的响应式布局与移动导航，保持与桌面端完全一致的功能，仅做样式适配。
-- 不再使用自定义的底部导航或悬浮按钮，避免功能分叉与交互冲突。
-- 表格在小屏可按需降级为卡片（示例见 `angular/src/app/book/book.component.html` 中的 `d-md-none` 分支）。
-- 表单/工具条：尽量使用 Bootstrap 栅格（`row`/`col-*`）与 `flex-wrap`，避免超出屏幕与互相遮挡。
-- 如需在小屏隐藏非关键装饰项，请使用 `d-none d-md-block` 之类的响应式工具类，不影响核心功能。
+- 启用自定义底部导航（MobileBottomNav）：主要功能固定在底部栏，次要功能通过二级“功能面板/更多”收纳，避免在小屏下找不到入口。
+  - 组件：`angular/src/app/components/mobile-bottom-nav/`
+  - 根模板挂载：`angular/src/app/app.component.ts`
+- 顶部区域保留品牌与主题默认导航，但隐藏多余图标，以避免横向滚动与拥挤。
+- 表格在小屏可降级为卡片（示例：`angular/src/app/book/book.component.html` 的 `d-md-none` 分支）。
+- 表单/工具条建议使用 Bootstrap 栅格与 `flex-wrap`，避免溢出。
 
 ## 国际化（i18n）
 
