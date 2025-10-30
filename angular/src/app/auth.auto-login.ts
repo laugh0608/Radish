@@ -55,11 +55,13 @@ function initAutoLoginFactory(oAuthService: OAuthService) {
         }
       }
 
-      // 3) 若仍未登录且带有 `?sso=1`，进行一次顶层 Code Flow 跳转
+      // 3) 若仍未登录且带有 `?sso=true`（兼容历史 `?sso=1`），进行一次顶层 Code Flow 跳转
       //    这样能复用 Host 已登录会话，绕过第三方 Cookie 被拦截导致的 silent SSO 失败
       if (!oAuthService.hasValidAccessToken()) {
         const url = new URL(window.location.href);
-        if (url.searchParams.get('sso') === '1') {
+        const ssoParam = url.searchParams.get('sso');
+        const shouldSso = !!ssoParam && ['1', 'true', 'yes'].includes(ssoParam.toLowerCase());
+        if (shouldSso) {
           // 触发交互式（顶层）授权，IdP 已登录时不会再显示登录页
           oAuthService.initCodeFlow();
           return; // 发生跳转，后续逻辑不再执行

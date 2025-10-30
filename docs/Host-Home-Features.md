@@ -18,8 +18,8 @@
   - 若客户端为 `Radish_Swagger` 或 `Radish_Scalar`，会在卡片链接末尾自动补全 `/swagger` 或 `/scalar`，确保直达文档页。
   - 代码：`src/Radish.HttpApi.Host/Pages/Index.cshtml:201`、`src/Radish.HttpApi.Host/Pages/Index.cshtml:205`
 - 登录态跳转参数：
-  - 若当前已登录，跳转链接会追加 `sso=1`，便于目标前端按约定做静默登录或自动登录。
-  - 代码：`src/Radish.HttpApi.Host/Pages/Index.cshtml:211`
+  - 若当前已登录，跳转链接会追加 `sso=true`（向后兼容 `sso=1`），用于提示目标前端按约定进行静默/交互登录。
+  - 代码：`src/Radish.HttpApi.Host/Pages/Index.cshtml:198`
 - 相对 Logo 支持：`LogoUri` 以 `/` 开头时，按 `wwwroot` 相对路径解析展示图标。
   - 代码：`src/Radish.HttpApi.Host/Pages/Index.cshtml:219`
 

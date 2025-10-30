@@ -195,7 +195,7 @@
 
                         if (CurrentUser.IsAuthenticated && !string.IsNullOrEmpty(target))
                         {
-                            target += (target!.Contains("?") ? "&" : "?") + "sso=1";
+                            target += (target!.Contains("?") ? "&" : "?") + "sso=true";
                         }
                         <div class="col" data-client-id="@clientId">
                             <a href="@(target ?? "#")" target="_blank" rel="noopener" class="radish-app-card d-block h-100 text-reset" data-href="@(target ?? "#")" data-title="@application.DisplayName">
