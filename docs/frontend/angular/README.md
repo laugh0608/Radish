@@ -58,6 +58,14 @@ ng e2e              # 端到端测试
 更多参考 ABP 文档：Environment（Angular）
 https://abp.io/docs/latest/framework/ui/angular/environment
 
+## 移动端适配
+
+- 采用 LeptonX Lite 默认的响应式布局与移动导航，保持与桌面端完全一致的功能，仅做样式适配。
+- 不再使用自定义的底部导航或悬浮按钮，避免功能分叉与交互冲突。
+- 表格在小屏可按需降级为卡片（示例见 `angular/src/app/book/book.component.html` 中的 `d-md-none` 分支）。
+- 表单/工具条：尽量使用 Bootstrap 栅格（`row`/`col-*`）与 `flex-wrap`，避免超出屏幕与互相遮挡。
+- 如需在小屏隐藏非关键装饰项，请使用 `d-none d-md-block` 之类的响应式工具类，不影响核心功能。
+
 ## 国际化（i18n）
 
 管理端直接使用 ABP 的服务端本地化（资源 `Radish`），不维护自定义前端字典：
