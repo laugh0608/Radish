@@ -8,7 +8,7 @@
 
 - 核心功能模块
   - 身份与单点登录（SSO）：OpenIddict（OIDC 授权码 + PKCE）、ABP 身份模块、前后端静默续期与登出回跳。
-  - 门户首页与文档：Host 首页聚合跳转（Angular、React、Swagger、Scalar），登录态透传与 `sso=true` 约定（兼容 `sso=1`）；Swagger/Scalar 授权可调试。
+  - 门户首页与文档：Host 首页聚合跳转（Angular、React、Swagger、Scalar），登录态透传与 `sso=auto` 约定（兼容 `sso=true` / `sso=1`）；Swagger/Scalar 授权可调试。
   - 内容域：分类/标签、帖子/评论（基础 CRUD、分页/过滤/排序），点赞/收藏，浏览计数。
   - 搜索与筛选：按标题/标签/分类检索，排序（时间/热度）。
   - 通知（可选）：发帖/回复/点赞等站内通知（可后续迭代）。
