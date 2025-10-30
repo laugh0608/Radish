@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +24,17 @@ public class DbMigratorHostedService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        // 在真正初始化 ABP 之前强制校验：连接串必须来自 .env
+        var defaultConn = _configuration.GetConnectionString("Default");
+        var onlyFromEnv = string.Equals(_configuration["Radish:EnvOnly:ConnectionStringsFromEnv"], "true", StringComparison.OrdinalIgnoreCase);
+        if (!onlyFromEnv || string.IsNullOrWhiteSpace(defaultConn))
+        {
+            const string hint =
+                "未找到有效的 ConnectionStrings:Default。请在 src/Radish.DbMigrator 目录配置 .env 中设置：\n" +
+                "ConnectionStrings__Default 与 ConnectionStrings__Chrelyonly。";
+            throw new InvalidOperationException(hint);
+        }
+
         using (var application = await AbpApplicationFactory.CreateAsync<RadishDbMigratorModule>(options =>
         {
            options.Services.ReplaceConfiguration(_configuration);

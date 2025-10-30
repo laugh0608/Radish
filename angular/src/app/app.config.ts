@@ -6,7 +6,7 @@ import { provideAbpThemeShared,} from '@abp/ng.theme.shared';
 import { provideIdentityConfig } from '@abp/ng.identity/config';
 import { provideAccountConfig } from '@abp/ng.account/config';
 import { provideTenantManagementConfig } from '@abp/ng.tenant-management/config';
-import { registerLocale } from '@abp/ng.core/locale';
+import { registerLocaleForEsBuild } from '@abp/ng.core/locale';
 import { provideThemeLeptonX } from '@abp/ng.theme.lepton-x';
 import { provideSideMenuLayout } from '@abp/ng.theme.lepton-x/layouts';
 import { provideLogo, withEnvironmentOptions } from "@volo/ngx-lepton-x.core";
@@ -15,7 +15,9 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideRouter } from '@angular/router';
 import { environment } from '../environments/environment';
 import { APP_ROUTES } from './app.routes';
+import { AUTO_LOGIN_PROVIDER } from './auth.auto-login';
 import { APP_ROUTE_PROVIDER } from './route.provider';
+import { provideAppToolbarItems } from './providers/toolbar.providers';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,7 +27,7 @@ export const appConfig: ApplicationConfig = {
     provideAbpCore(
       withOptions({
         environment,
-        registerLocaleFn: registerLocale(),
+        registerLocaleFn: registerLocaleForEsBuild(),
       }),
     ),
     provideAbpOAuth(),
@@ -38,5 +40,8 @@ export const appConfig: ApplicationConfig = {
     provideAccountConfig(),
     provideTenantManagementConfig(),
     provideAbpThemeShared(),
+    // 注入 PC 端顶部工具栏项（明暗主题切换）
+    provideAppToolbarItems(),
+    ...AUTO_LOGIN_PROVIDER,
   ]
 };

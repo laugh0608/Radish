@@ -88,6 +88,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
         {
             var appAndReactClientRootUrl =
                 configurationSection["Radish_React:RootUrl"]?.TrimEnd('/');
+            var reactRedirects = WithHttpHttpsPair(appAndReactClientRootUrl).ToList();
+            var reactPostLogoutRedirects = WithHttpHttpsPair(appAndReactClientRootUrl).ToList();
             await CreateApplicationAsync(
                 applicationType: OpenIddictConstants.ApplicationTypes.Web,
                 name: appAndReactClientId!,
@@ -105,8 +107,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                     "Impersonation"
                 },
                 scopes: commonScopes,
-                redirectUris: new List<string> { appAndReactClientRootUrl },
-                postLogoutRedirectUris: new List<string> { appAndReactClientRootUrl },
+                redirectUris: reactRedirects,
+                postLogoutRedirectUris: reactPostLogoutRedirects,
                 clientUri: appAndReactClientRootUrl,
                 logoUri: "/images/clients/blazor.svg"
             );
@@ -121,6 +123,10 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
         {
             var consoleAndAngularClientRootUrl =
                 configurationSection["Radish_Console:RootUrl"]?.TrimEnd('/'); // 旧：Radish_App
+            var angularRedirects = new List<string>();
+            angularRedirects.AddRange(WithHttpHttpsPair(consoleAndAngularClientRootUrl));
+            angularRedirects.AddRange(WithHttpHttpsPair($"{consoleAndAngularClientRootUrl}/assets/silent-refresh.html"));
+            var angularPostLogoutRedirects = WithHttpHttpsPair(consoleAndAngularClientRootUrl).ToList();
             await CreateApplicationAsync(
                 applicationType: OpenIddictConstants.ApplicationTypes.Web,
                 name: consoleAndAngularClientId!,
@@ -138,8 +144,9 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                     "Impersonation"
                 },
                 scopes: commonScopes,
-                redirectUris: new List<string> { consoleAndAngularClientRootUrl },
-                postLogoutRedirectUris: new List<string> { consoleAndAngularClientRootUrl },
+                // 允许 Angular 顶层回调与静默刷新回调（prompt=none / iframe），并同时包含 http/https 配对
+                redirectUris: angularRedirects,
+                postLogoutRedirectUris: angularPostLogoutRedirects,
                 clientUri: consoleAndAngularClientRootUrl,
                 logoUri: "/images/clients/angular.svg"
             );
@@ -164,8 +171,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, },
                 scopes: commonScopes,
                 redirectUris: new List<string> { $"{swaggerRootUrl}/swagger/oauth2-redirect.html" },
-                // clientUri: swaggerRootUrl.EnsureEndsWith('/') + "swagger", // 可选在 DbMigrator 的 appsettings 中配置
-                clientUri: swaggerRootUrl.EnsureEndsWith('/'),
+                // 将 ClientUri 指向具体文档页，避免首页卡片点击仅回到根路径导致的“原地刷新”
+                clientUri: swaggerRootUrl.EnsureEndsWith('/') + "swagger",
                 logoUri: "/images/clients/swagger.svg"
             );
         }
@@ -191,8 +198,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 scopes: commonScopes,
                 // TODO: $"{scalarRootUrl}/scalar/oauth2-redirect.html" 不知道是干嘛的
                 redirectUris: new List<string> { $"{scalarRootUrl}/scalar/oauth2-redirect.html" },
-                // clientUri: scalarRootUrl.EnsureEndsWith('/') + "scalar", // 可选在 DbMigrator 的 appsettings 中配置
-                clientUri: scalarRootUrl.EnsureEndsWith('/'),
+                // 将 ClientUri 指向具体文档页，避免首页卡片点击仅回到根路径导致的“原地刷新”
+                clientUri: scalarRootUrl.EnsureEndsWith('/') + "scalar",
                 logoUri: "/images/clients/aspnetcore.svg"
             );
         }
@@ -404,6 +411,15 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
             return;
         }
 
+        var requiresUpdate = false;
+
+        // 同步更新 ClientUri（例如为 Swagger/Scalar 写入具体文档页路径）
+        if (!string.Equals(client.ClientUri, application.ClientUri, StringComparison.OrdinalIgnoreCase))
+        {
+            client.ClientUri = application.ClientUri;
+            requiresUpdate = true;
+        }
+
         if (!HasSameRedirectUris(client, application))
         {
             client.RedirectUris =
@@ -412,13 +428,38 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 JsonSerializer.Serialize(
                     application.PostLogoutRedirectUris.Select(q => q.ToString().RemovePostFix("/")));
 
-            await _applicationManager.UpdateAsync(client.ToModel());
+            requiresUpdate = true;
         }
 
         if (!HasSameScopes(client, application))
         {
             client.Permissions = JsonSerializer.Serialize(application.Permissions.Select(q => q.ToString()));
+            requiresUpdate = true;
+        }
+
+        if (requiresUpdate)
+        {
             await _applicationManager.UpdateAsync(client.ToModel());
+        }
+    }
+
+    private static IEnumerable<string> WithHttpHttpsPair(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) yield break;
+        var s = url.Trim().TrimEnd('/');
+        yield return s;
+
+        if (Uri.TryCreate(s, UriKind.Absolute, out var uri) &&
+            (string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
+        {
+            var other = string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
+                ? Uri.UriSchemeHttps
+                : Uri.UriSchemeHttp;
+            var counterpart = $"{other}://{uri.Host}{(uri.IsDefaultPort ? string.Empty : ":" + uri.Port)}{uri.AbsolutePath}";
+            counterpart = counterpart.TrimEnd('/');
+            if (!string.Equals(counterpart, s, StringComparison.OrdinalIgnoreCase))
+                yield return counterpart;
         }
     }
 

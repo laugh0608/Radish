@@ -102,12 +102,12 @@
                 "bundleName": "bootstrap-dim.rtl"
               },
               {
-                "input": "node_modules/@volo/ngx-lepton-x.lite/assets/css/font-bundle.css",
+                "input": "src/assets/fonts/font-bundle.css",
                 "inject": false,
                 "bundleName": "font-bundle"
               },
               {
-                "input": "node_modules/@volo/ngx-lepton-x.lite/assets/css/font-bundle.rtl.css",
+                "input": "src/assets/fonts/font-bundle.rtl.css",
                 "inject": false,
                 "bundleName": "font-bundle.rtl"
               },
@@ -169,6 +169,11 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "ssl": false,
+            "sslKey": "../dev-certs/localhost.key",
+            "sslCert": "../dev-certs/localhost.crt"
+          },
           "configurations": {
             "production": {
               "buildTarget": "Radish:build:production"

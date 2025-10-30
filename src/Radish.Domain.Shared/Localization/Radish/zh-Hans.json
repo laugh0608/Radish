@@ -3,6 +3,7 @@
   "texts": {
     "AppName": "Radish",
     "Menu:Home": "首页",
+    "Menu:Books": "书籍管理",
     "Menu:ContactUs": "联系我们",
     "Menu:ArticleSample": "文章示例",
     "Home": "首页",
@@ -37,6 +38,88 @@
     "Unspecified": "System",
     "SeeAllUsers": "查看所有用户",
     "TakePhoto": "拍摄照片",
-    "ChoosePhoto": "选择照片"
+    "ChoosePhoto": "选择照片",
+    "GetStarted": "快速上手",
+    "Tutorial": "Web 应用开发教程",
+    "ExploreTutorial": "查看教程",
+    
+    "lang.zhCN": "中文",
+    "lang.en": "英文",
+    
+    "aria.langSwitcher": "切换语言",
+    "aria.themeToggle": "切换主题",
+    "aria.toggleDock": "切换 Dock 栏",
+    "aria.toggleNav": "切换导航菜单",
+    "aria.dock": "底部 Dock 栏",
+    
+    "search.placeholder": "搜索...",
+    
+    "actions.signUp": "注册",
+    "actions.signIn": "登录",
+    "actions.post": "发帖",
+    "actions.drafts": "草稿",
+    "actions.notifications": "通知",
+    
+    "layout.left.actions": "功能面板",
+    "layout.left.sections": "帖子分区",
+    "layout.right.illustration": "插画",
+    "layout.right.placeholderA": "小提示",
+    "layout.right.placeholderB": "热门话题",
+    
+    "sections.news": "动态",
+    "sections.tech": "技术",
+    "sections.share": "分享",
+    
+    "posts.placeholderTitle": "示例帖子标题",
+    "posts.placeholderMeta": "作者 · 5 分钟阅读",
+    
+    "dock.toTop": "返回顶部",
+    "dock.home": "首页",
+    "dock.search": "搜索",
+    "dock.new": "新建",
+    "dock.notifications": "通知",
+    "dock.profile": "我的",
+    "dock.settings": "设置",
+    
+    "menu.open": "打开",
+    "menu.pin": "固定到 Dock",
+    "menu.mute": "静音通知",
+    "menu.clear": "清除",
+
+    "Landing:WelcomeUser": "欢迎，{0}",
+    "Actions:More": "更多",
+    "Actions:Density.Card": "卡片密度",
+    "Actions:Edit": "编辑",
+    "Actions:Done": "完成",
+    "Actions:EditHome": "编辑首页",
+    "Actions:ManageHidden": "隐藏管理",
+    "Actions:Close": "关闭",
+    "Actions:ThemeToggle": "切换主题",
+    "Actions:Density": "密度",
+    "Actions:Density.Auto": "自动",
+    "Actions:Density.Comfortable": "舒适",
+    "Actions:Density.Compact": "紧凑",
+    "Actions:Favorite": "收藏",
+    "Actions:CopyLink": "复制链接",
+    "Actions:HealthCheck": "健康检查",
+    "Actions:Hide": "隐藏",
+    "Actions:Show": "显示",
+    "Actions:DragToSort": "拖拽排序",
+
+    "Hidden:Title": "已隐藏的应用",
+    "Hidden:Empty": "暂无隐藏项",
+
+    "Notify:Copied": "已复制链接",
+    "Notify:CopyFailed": "复制失败",
+    "Notify:HiddenDone": "已隐藏",
+    "Notify:HealthNotConfigured": "未配置健康检查",
+    "Notify:HealthStatus": "健康: {0}",
+    "Notify:HealthCheckFailed": "检查失败"
+    ,
+    "Section:Recent": "最近访问",
+    "Section:Apps": "应用"
+    ,
+    "Section:RecentOnlyFavs": "仅显示收藏",
+    "Actions:Clear": "清空"
   }
 }

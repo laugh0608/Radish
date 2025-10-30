@@ -1,0 +1,59 @@
+.dock-toggle {
+  position: relative;
+  width: 60px;   /* 与 ThemeToggle 保持一致 */
+  height: 36px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.dock-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+.dock-toggle__track { position: absolute; inset: 0; }
+
+.dock-toggle__thumb {
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  transform: translate(0, -50%);
+  transition: transform 200ms ease, background-color 160ms ease, border-color 160ms ease;
+  display: grid;          /* 居中内部图标 */
+  place-items: center;    /* 居中 */
+  line-height: 0;         /* 避免 inline 高度影响定位 */
+}
+
+.dock-toggle.is-on .dock-toggle__thumb {
+  transform: translate(24px, -50%);
+}
+
+.dock-toggle.is-on {
+  border-color: color-mix(in oklab, var(--primary), var(--border) 40%);
+}
+
+/* 图标样式：放在滑块内部，与其他按钮视觉统一 */
+.dock-toggle__icon {
+  width: 16px;   /* 与 ThemeToggle 图标一致 */
+  height: 16px;
+  display: block;
+  color: var(--muted-text);
+}
+.dock-toggle.is-on .dock-toggle__icon {
+  color: color-mix(in oklab, var(--primary), var(--muted-text) 40%);
+}
+
+@media (max-width: 639px) {
+  .dock-toggle { width: 60px; height: 36px; border-radius: 18px; }
+  .dock-toggle__thumb { width: 26px; height: 26px; transform: translate(0, -50%); }
+  .dock-toggle.is-on .dock-toggle__thumb { transform: translate(24px, -50%); }
+}

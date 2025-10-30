@@ -6,3 +6,217 @@
     --lpx-logo: url('/images/logo/leptonxlite/logo-dark.png');
     background-position: left;
 }
+
+/* 字体回退：即使 Inter 未加载也能优雅降级 */
+html, body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", Arial, "Inter", sans-serif !important;
+}
+
+/* ==== Radish Landing UI (Host 首页) ==== */
+
+/* 主题变量：默认浅色 */
+:root,
+.theme-light{
+  --page-bg: #f8fafc;
+  --text-color: #0f172a;
+  --muted-color: #475569;
+  --card-bg: #ffffff;
+  --card-border: rgba(15,23,42,.08);
+  --card-shadow: 0 .5rem 1.25rem rgba(15,23,42,.06);
+  --card-padding: 1rem;
+  --grid-gap-y: 1.5rem;
+  --hero-color: #0f172a;
+  --hero-sub: rgba(15,23,42,.7);
+  --hero-bg: radial-gradient(900px 280px at 15% -10%, rgba(99,102,241,.16), rgba(99,102,241,0) 60%),
+              radial-gradient(720px 240px at 85% -20%, rgba(16,185,129,.12), rgba(16,185,129,0) 55%),
+              linear-gradient(180deg, #ffffff, #eef2ff);
+}
+
+/* 暗色主题覆盖 */
+.theme-dark{
+  --page-bg: #0b1020;
+  --text-color: #e5e7eb;
+  --muted-color: #94a3b8;
+  --card-bg: rgba(17,24,39,.7);
+  --card-border: rgba(148,163,184,.12);
+  --card-shadow: 0 .5rem 1.25rem rgba(0,0,0,.25);
+  --card-padding: 1rem;
+  --grid-gap-y: 1.25rem;
+  --hero-color: #eef2ff;
+  --hero-sub: rgba(255,255,255,.75);
+  --hero-bg: radial-gradient(1200px 400px at 10% -10%, rgba(99,102,241,.15), rgba(99,102,241,0) 70%),
+             radial-gradient(1000px 380px at 90% -20%, rgba(16,185,129,.10), rgba(16,185,129,0) 65%),
+             linear-gradient(180deg, #0f172a, #111827);
+  /* 主题化 Logo（若存在暗色版资源可在此切换） */
+  --lpx-logo: url('/images/logo/leptonxlite/logo-dark.png');
+  --lpx-logo-icon: url('/images/logo/leptonxlite/logo-light-thumbnail.png');
+}
+
+/* 页面背景与文字 */
+.radish-landing{ background-color: var(--page-bg); color: var(--text-color); min-height: 100vh; overflow-x: hidden; }
+/* 覆盖空布局可能的深色背景，去除两侧黑边 */
+html, body{ background-color: var(--page-bg) !important; }
+body.abp-application-layout, .abp-account-layout{ background-color: var(--page-bg) !important; }
+.radish-landing .text-muted{ color: var(--muted-color) !important; }
+
+/* 顶部 Hero */
+.radish-hero{ background: var(--hero-bg); color: var(--hero-color); }
+.radish-hero .text-hero-sub{ color: var(--hero-sub); }
+.radish-hero .btn, .radish-hero .dropdown-toggle { color:#0f172a; }
+.theme-dark .radish-hero .btn, .theme-dark .radish-hero .dropdown-toggle{ color:#e5e7eb; }
+.radish-brand .brand-logo{ width:44px; height:44px; background: var(--lpx-logo-icon) no-repeat center/contain; display:inline-block; }
+
+/* Hero 边界柔化：全宽铺满 + 底部渐隐 */
+.radish-hero{ position: relative; overflow: hidden; }
+/* 解决 Hero 内部下拉被裁剪：下拉打开时允许溢出 */
+.radish-hero.dropdown-open{ overflow: visible; }
+/* Contained hero: 与页面容器一致，避免左右边缘硬线 */
+.radish-hero{ width: auto; margin-left: 0; margin-right: 0; }
+
+/* 软化四周边界，避免一道硬线（不影响内容） */
+.radish-hero{ box-shadow: inset 0 28px 28px -28px var(--page-bg), inset 28px 0 28px -28px var(--page-bg), inset -28px 0 28px -28px var(--page-bg); }
+
+/* Hero content (默认 container) 不额外改动，保留 Bootstrap 内边距与 max-width */
+.radish-hero-anim{ position:absolute; inset:-10% -5% 0 -5%; pointer-events:none; z-index:0; opacity:.6; }
+.radish-hero-anim{ background:
+  radial-gradient(40rem 12rem at 15% -10%, rgba(99,102,241,.20), rgba(99,102,241,0) 60%),
+  radial-gradient(30rem 10rem at 85% -15%, rgba(16,185,129,.16), rgba(16,185,129,0) 55%),
+  conic-gradient(from 0deg at 100% -10%, rgba(255,255,255,.22), rgba(255,255,255,0) 25%, rgba(255,255,255,.22) 50%, rgba(255,255,255,0) 75%, rgba(255,255,255,.22) 100%);
+  mix-blend-mode: soft-light;
+  animation: heroFloat 18s linear infinite;
+}
+@keyframes heroFloat {
+  0% { transform: translateY(0) translateX(0) scale(1); filter: blur(0px); }
+  50% { transform: translateY(12px) translateX(-8px) scale(1.02); filter: blur(.2px); }
+  100% { transform: translateY(0) translateX(0) scale(1); filter: blur(0px); }
+}
+.radish-hero::after{
+  content:""; position:absolute; left:0; right:0; bottom:-1px; height:56px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0), var(--page-bg));
+  pointer-events:none; z-index:1;
+}
+
+/* 顶部操作区：在移动端占满宽度、自动换行对齐 */
+.radish-actions{ display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; }
+@media (max-width: 576px){
+  .radish-actions{ width:100%; margin-top:.75rem; justify-content:flex-start; }
+}
+
+/* 移除原先“整体换行”的策略，改为仅工具区二行布局 */
+
+/* 卡片与动效 */
+.radish-app-card .card{ transition: transform .2s ease, box-shadow .2s ease; background: var(--card-bg); box-shadow: var(--card-shadow); border: 1px solid var(--card-border); }
+.radish-app-card, .radish-app-card:hover, .radish-app-card:focus { text-decoration: none !important; }
+.radish-app-card:hover .card{ transform: translateY(-4px); box-shadow: 0 .75rem 1.5rem rgba(15,23,42,.12); }
+.radish-app-logo{ width: 56px; height: 56px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,.08)); }
+.radish-card-tools{ opacity: .9; }
+.radish-app-card:hover .radish-card-tools{ opacity: 1; }
+.radish-card-tools .btn{ padding: .25rem .375rem; line-height: 1; white-space: nowrap; }
+.radish-card-tools{ flex-wrap: wrap; }
+/* 工具区始终两行（2x2），保持在右上角 */
+.radish-card .radish-card-tools{ display: grid !important; grid-template-columns: repeat(2, auto); grid-auto-flow: row; justify-content: end; align-content: start; }
+.radish-card .card-body{
+  padding: var(--card-padding);
+  /* 使用 Grid 确保三栏布局：logo | 文本自适应 | 工具固定 */
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "logo main tools";
+  align-items: center;
+  column-gap: 1rem;
+}
+/* 让文本容器在窄宽度时可收缩，避免把工具按钮顶出卡片 */
+.radish-card .app-main{ min-width: 0; flex: 1 1 0; grid-area: main; }
+.radish-card .app-main .text-truncate{ display: block; max-width: 100%; }
+.radish-card .radish-app-logo{ grid-area: logo; }
+.radish-card .radish-card-tools{ grid-area: tools; justify-self: end; align-self: start; }
+
+/* 区块标题与区分 */
+.radish-section{ margin-bottom: 1.25rem; }
+.radish-section-title{ font-size: .875rem; font-weight: 600; color: var(--muted-color); letter-spacing: .02em; text-transform: none; }
+
+/* 密度（紧凑） */
+.density-compact .radish-card .card-body{ --card-padding: .625rem; }
+.density-compact #appsGrid{ row-gap: 1rem; }
+
+/* 应用网格：缩小跨行垂直间距（比 g-4 更紧凑一点） */
+#appsGrid{ --bs-gutter-y: 1rem; }
+/* 收藏区也缩小垂直间距，视觉一致 */
+#favRow{ --bs-gutter-y: 1rem; }
+
+/* 编辑模式（拖拽排序） */
+.edit-mode #appsGrid .col{ cursor: move; }
+.edit-mode #appsGrid .radish-drag-handle{ display:inline-block !important; cursor: move; font-size: 16px; opacity: .6; }
+.edit-dragging{ opacity:.6; }
+
+/* 轻量纹理叠加，弱化块状感 */
+.radish-hero::before{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:.35;
+  z-index: 2;
+  /* 将“顶部/左右边缘”柔化过渡也放进同一个覆盖层，摆在最前面确保在纹理之上 */
+  background:
+    /* 顶部渐隐到页面背景 */
+    linear-gradient(to bottom, var(--page-bg), rgba(255,255,255,0) 64px),
+    /* 左右两侧向内渐隐 */
+    linear-gradient(to right, var(--page-bg), rgba(255,255,255,0) 48px),
+    linear-gradient(to left, var(--page-bg), rgba(255,255,255,0) 48px),
+    /* 轻量纹理与光斑 */
+    radial-gradient(600px 120px at 10% 10%, rgba(99,102,241,.08), rgba(99,102,241,0) 60%),
+    radial-gradient(500px 100px at 80% 0%, rgba(16,185,129,.06), rgba(16,185,129,0) 60%),
+    repeating-radial-gradient(circle at 50% -10%, rgba(255,255,255,.15) 0 2px, rgba(255,255,255,0) 3px 6px);
+}
+
+/* 移动端优化 */
+@media (max-width: 576px){
+  .radish-hero{ padding-top: 2rem; padding-bottom: 2rem; }
+  .radish-app-logo{ width:48px; height:48px; }
+  .radish-mobile-actions .card-body{ padding: .75rem; }
+  .radish-mobile-actions .btn{ white-space: nowrap; }
+  /* 移动端功能面板：两列栅格，更规整 */
+  .radish-mobile-actions .mobile-actions-grid{ display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .5rem .75rem; align-items: center; }
+  .radish-mobile-actions .mobile-actions-grid > *{ min-width:0; }
+  .radish-mobile-actions .mobile-actions-grid .btn{ width:100%; }
+  .radish-mobile-actions .mobile-actions-grid .density-group{ grid-column: span 2; }
+  .radish-mobile-actions .mobile-actions-grid .density-group .btn{ flex:1 1 0; }
+  .radish-mobile-actions .mobile-actions-grid .grid-span-2{ grid-column: span 2; }
+  /* 小屏：保持单行栅格，改由工具区内部二行布局（见下方 <=992px 规则） */
+}
+
+/* 深色模式下的移动功能面板卡片：半透明毛玻璃 + 更清晰边框 */
+.theme-dark .radish-mobile-actions{
+  background-color: rgba(17,24,39,.7) !important;
+  border: 1px solid rgba(148,163,184,.22) !important;
+  box-shadow: 0 .75rem 1.25rem rgba(0,0,0,.35);
+  backdrop-filter: saturate(120%) blur(8px);
+}
+
+/* 深色模式下的下拉菜单与描边按钮对比度 */
+.theme-dark .radish-mobile-actions .dropdown-menu{
+  background-color: rgba(17,24,39,.95);
+  color: var(--text-color);
+  border: 1px solid rgba(148,163,184,.22);
+}
+.theme-dark .radish-mobile-actions .btn-outline-secondary{
+  color: var(--text-color);
+  border-color: rgba(148,163,184,.45);
+}
+
+/* 统一移动端按钮可见性（避免“无边框”样式在深色下不明显） */
+.theme-dark .radish-mobile-actions .btn-light-subtle{ 
+  background: transparent !important; 
+  border: 1px solid rgba(148,163,184,.35) !important; 
+  color: var(--text-color) !important;
+}
+
+/* 密度行：标签与按钮在一行，按钮自适应铺满 */
+.radish-mobile-actions .density-row .density-group--seg{ width:100%; overflow:hidden; }
+.radish-mobile-actions .density-row .density-group--seg .btn{ flex:1 1 0; min-width:0; width:auto; }
+.radish-mobile-actions .density-row .density-group--seg .btn{ border-radius:0; }
+.radish-mobile-actions .density-row .density-group--seg .btn:first-child{ border-top-left-radius:.5rem; border-bottom-left-radius:.5rem; }
+.radish-mobile-actions .density-row .density-group--seg .btn:last-child{ border-top-right-radius:.5rem; border-bottom-right-radius:.5rem; }
+.radish-mobile-actions .density-row .density-label{ white-space: nowrap; min-width: 3.5rem; }
+.radish-mobile-actions .density-row .density-group--seg .density-label{ flex:0 0 auto; pointer-events:none; color: var(--muted-color); }
+
+/* 取消宽度阈值：始终 2x2 布局 */
+
+/* “更多”显示完全由脚本控制 */
+.radish-card .radish-card-tools .tools-more.d-none{ display: none !important; }

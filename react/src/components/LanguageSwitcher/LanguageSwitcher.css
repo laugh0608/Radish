@@ -1,0 +1,94 @@
+/* 语言切换按钮与菜单样式：紧凑、可触控、无第三方依赖 */
+.lang-switcher {
+  position: relative;
+  display: inline-block; /* 避免父级占满整行，确保菜单相对按钮定位 */
+}
+
+.lang-switcher__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 36px;
+  width: 60px; /* 与主题开关保持一致 */
+  padding: 0 10px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.lang-switcher__button:hover {
+  background-color: color-mix(in oklab, var(--card), var(--text) 6%);
+}
+
+.lang-switcher__button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+  border-color: color-mix(in oklab, var(--primary), white 40%);
+}
+
+.lang-switcher__icon {
+  width: 18px;
+  height: 18px;
+}
+
+.lang-switcher__badge {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--muted-text);
+}
+
+.lang-switcher__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 140px;
+  padding: 6px;
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(2, 6, 23, 0.08), 0 2px 6px rgba(2, 6, 23, 0.06);
+  z-index: 50; /* 高于导航条内容，避免被遮挡 */
+}
+
+.lang-switcher__menu-item {
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.lang-switcher__menu-item:hover {
+  background-color: color-mix(in oklab, var(--card), var(--text) 6%);
+}
+
+.lang-switcher__menu-item.is-active {
+  color: var(--primary);
+}
+
+/* 移动端增大触控区域 */
+@media (max-width: 639px) {
+  .lang-switcher__button {
+    height: 36px; /* 和主题开关一致，保持 36px */
+    width: 60px;
+    border-radius: 18px;
+  }
+
+  .lang-switcher__menu {
+    min-width: 160px;
+    left: 0;      /* 移动端改为左下对齐 */
+    right: auto;
+  }
+}

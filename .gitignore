@@ -238,6 +238,10 @@ FakesAssemblies/
 **/*.DesktopClient/ModelManifest.xml
 **/*.Server/GeneratedArtifacts
 **/*.Server/ModelManifest.xml
+
+# Local environment files (do not commit)
+/src/Radish.HttpApi.Host/.env
+/src/Radish.DbMigrator/.env
 _Pvt_Extensions
 
 # Paket dependency manager

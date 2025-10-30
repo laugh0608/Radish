@@ -29,6 +29,7 @@ import { BookService, BookDto, bookTypeOptions } from '../proxy/books';
 @Component({
   selector: 'app-book',
   templateUrl: './book.component.html',
+  styleUrls: ['./book.component.scss'],
   imports: [
     FormsModule,
     ReactiveFormsModule,
@@ -58,6 +59,8 @@ export class BookComponent implements OnInit {
   form: FormGroup;
   bookTypes = bookTypeOptions;
   isModalOpen = false;
+
+  trackById = (_: number, row: BookDto) => row.id;
 
   ngOnInit() {
     const bookStreamCreator = query => this.bookService.getList(query);
