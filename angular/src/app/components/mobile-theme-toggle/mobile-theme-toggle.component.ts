@@ -62,6 +62,8 @@ export class MobileThemeToggleComponent implements AfterViewInit, OnDestroy {
       if (target && host.parentElement !== target) {
         target.appendChild(host);
       }
+      // 确保每次挂载/路由切换后都重新绑定个人信息按钮
+      this.bindPersonIconToProfile();
     } catch {}
   }
 

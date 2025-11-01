@@ -38,15 +38,198 @@
   }
 }
 
+/* =========================
+   主题设计（高对比度）
+   - 使用 Bootstrap 5.3 data-bs-theme 机制
+   - 定义一组自有 token，统一映射到 --bs-* 变量
+   ========================= */
+
+/* 亮色主题（默认） */
+:root,
+[data-bs-theme='light'] {
+  /* Radish base tokens */
+  --rb-bg: #f6f7fb;            /* 页面背景 */
+  --rb-surface: #ffffff;       /* 卡片/容器 */
+  --rb-text: #1f2937;          /* 主文字 */
+  --rb-text-muted: #6b7280;    /* 次级文字 */
+  --rb-border: #e5e7eb;        /* 分隔线 */
+
+  /* 品牌色：亮蓝，保证与暗色主题一致识别 */
+  --rb-primary: #3b82f6;       /* blue-500 */
+  --rb-primary-strong: #2563eb;/* blue-600 */
+  --rb-primary-soft: #dbeafe;  /* blue-100 */
+
+  /* 移动底部导航（与亮色形成反差） */
+  /* 底部导航（亮色）与移动顶部栏使用同一套浅色方案 */
+  --rb-nav-bg: #ffffff;
+  --rb-nav-border: rgba(15, 23, 42, 0.08); /* 与深色相反 */
+  --rb-nav-fg: #475569;        /* slate-600 */
+  --rb-nav-fg-active: #111827; /* slate-900 */
+
+  /* 映射到 Bootstrap 变量 */
+  --bs-body-bg: var(--rb-bg);
+  --bs-body-color: var(--rb-text);
+  --bs-secondary-color: var(--rb-text-muted);
+  --bs-border-color: var(--rb-border);
+  --bs-card-bg: var(--rb-surface);
+  --bs-card-color: var(--rb-text);
+  --bs-primary: var(--rb-primary);
+  --bs-primary-rgb: 59, 130, 246;
+  --bs-link-color: var(--rb-primary);
+  --bs-link-hover-color: var(--rb-primary-strong);
+  --bs-tertiary-bg: #eef2f7; /* 表格/条纹背景 */
+  /* ABP/LeptonX 变量对齐 */
+  --lpx-card-bg: var(--rb-surface);
+  --lpx-brand: var(--bs-primary);
+  --lpx-primary: var(--bs-primary);
+
+  /* 顶栏/侧栏主题变量（亮色） */
+  --rb-topbar-shell-bg: var(--rb-bg);
+  --rb-topbar-bg: var(--rb-surface);
+  --rb-topbar-border: var(--rb-border);
+  --rb-sidenav-bg: #ffffff;
+  --rb-sidenav-text: #475569; /* slate-600 */
+  --rb-sidenav-hover-bg: #eef2f7;
+  --rb-sidenav-active-bg: var(--rb-primary-soft);
+  --rb-sidenav-active-color: var(--bs-primary);
+}
+
+/* 暗色主题 */
+[data-bs-theme='dark'] {
+  --rb-bg: #0b1220;            /* 深靛青背景 */
+  --rb-surface: #121826;       /* 卡片面板 */
+  --rb-text: #e6e7eb;          /* 主要文字 */
+  --rb-text-muted: #9aa4b2;    /* 次级文字 */
+  --rb-border: #2b3441;        /* 分隔线 */
+
+  /* 品牌色在深色下略提亮，增强可读性 */
+  --rb-primary: #60a5fa;       /* blue-400 */
+  --rb-primary-strong: #93c5fd;/* blue-300，用作 hover */
+  --rb-primary-soft: rgba(96, 165, 250, 0.15);
+
+  /* 移动底部导航：与主体协调 */
+  --rb-nav-bg: #0e121b;
+  --rb-nav-border: rgba(255, 255, 255, 0.08);
+  --rb-nav-fg: #9aa4b2;
+  --rb-nav-fg-active: #ffffff;
+
+  /* Bootstrap 变量映射 */
+  --bs-body-bg: var(--rb-bg);
+  --bs-body-color: var(--rb-text);
+  --bs-secondary-color: var(--rb-text-muted);
+  --bs-border-color: var(--rb-border);
+  --bs-card-bg: var(--rb-surface);
+  --bs-card-color: var(--rb-text);
+  --bs-primary: var(--rb-primary);
+  --bs-primary-rgb: 96, 165, 250;
+  --bs-link-color: var(--rb-primary);
+  --bs-link-hover-color: var(--rb-primary-strong);
+  --bs-tertiary-bg: #0f172a;
+  /* ABP/LeptonX 变量对齐 */
+  --lpx-card-bg: var(--rb-surface);
+  --lpx-brand: var(--bs-primary);
+  --lpx-primary: var(--bs-primary);
+
+  /* 顶栏/侧栏主题变量（暗色） */
+  --rb-topbar-shell-bg: var(--rb-bg);
+  --rb-topbar-bg: #0f172a; /* 比卡片更深一点 */
+  --rb-topbar-border: var(--rb-border);
+  --rb-sidenav-bg: #0f172a;
+  --rb-sidenav-text: #cbd5e1; /* slate-300 */
+  --rb-sidenav-hover-bg: #192133;
+  --rb-sidenav-active-bg: var(--rb-primary-soft);
+  --rb-sidenav-active-color: #ffffff;
+}
+
 /* 全局字体：优先系统字体，Inter 次之，避免远程字体不可用时阻塞渲染 */
 html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", Arial, "Inter", sans-serif !important;
 }
 
+/* 全局背景与卡片兜底，确保第三方样式也能遵循主题 */
+body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !important; }
+/* 覆盖 LeptonX 对内容容器固定的浅灰背景，随主题切换 */
+.lpx-content-container { background: var(--bs-body-bg) !important; }
+.card {
+  /* Bootstrap 卡片变量在 LeptonX 的 bootstrap-dim.css 中被重置为白色，这里强制覆盖 */
+  --bs-card-bg: var(--rb-surface) !important;
+  --bs-card-color: var(--rb-text) !important;
+  background: var(--bs-card-bg) !important;
+  color: var(--bs-card-color) !important;
+}
+.text-muted { color: var(--bs-secondary-color) !important; }
+
+/* ---- 侧边栏与顶栏：随主题切换 ---- */
+/* 顶栏/底栏容器与内部背景、边框 */
+.lpx-topbar-container,
+.lpx-footbar-container { background-color: var(--rb-topbar-shell-bg) !important; }
+.lpx-topbar-container .lpx-topbar,
+.lpx-footbar-container .lpx-footbar {
+  background-color: var(--rb-topbar-bg) !important;
+  border-color: var(--rb-topbar-border) !important;
+}
+.lpx-content-wrapper { border-color: var(--rb-topbar-border) !important; }
+
+/* 侧边栏底色与文本颜色 */
+.lpx-sidebar,
+.lpx-sidebar .lpx-logo-container,
+.lpx-sidebar-container .lpx-sidebar .lpx-nav,
+.lpx-sidebar-container .lpx-sidebar .lpx-nav .lpx-nav-menu { background-color: var(--rb-sidenav-bg) !important; }
+.lpx-brand-name { background: var(--rb-sidenav-bg) !important; color: var(--rb-text) !important; }
+.lpx-nav,
+.lpx-menu-item,
+.lpx-nav-menu .lpx-menu-item-link { color: var(--rb-sidenav-text) !important; }
+
+/* 侧边栏悬停与选中 */
+.lpx-nav-menu .lpx-menu-item-link:hover,
+.lpx-nav-menu .lpx-inner-menu-item .lpx-menu-item-link:hover {
+  background-color: var(--rb-sidenav-hover-bg) !important;
+  color: var(--rb-text) !important;
+}
+.lpx-nav-menu .lpx-menu-item-link.selected,
+.lpx-nav-menu .lpx-menu-item-link.expanded,
+.lpx-nav-menu .lpx-inner-menu-item .lpx-menu-item-link.selected {
+  background-color: var(--rb-sidenav-active-bg) !important;
+  color: var(--rb-sidenav-active-color) !important;
+}
+
+/* 移动端顶部栏随主题（覆盖 LeptonX 的 #161616） */
+@media (max-width: 767.98px) {
+  .lpx-mobile-navbar,
+  .user-menu-groups,
+  .lpx-mobile-nav-items { background-color: var(--rb-topbar-bg) !important; }
+  .lpx-mobile-navbar .user-menu .lpx-icon { color: var(--rb-text) !important; }
+  .lpx-mobile-navbar .user-menu lpx-icon { pointer-events: auto; cursor: pointer; }
+}
+
+/* 统一品牌按钮与“soft”系列的主色表现（覆盖 LeptonX 默认粉色） */
+.btn.btn-brand {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: #fff !important;
+}
+.btn.btn-brand:hover {
+  background-color: var(--bs-link-hover-color) !important;
+  border-color: var(--bs-link-hover-color) !important;
+}
+.btn.btn-brand.soft {
+  background-color: var(--rb-primary-soft) !important;
+  border-color: transparent !important;
+  color: var(--bs-primary) !important;
+}
+.bg-brand.soft {
+  background-color: var(--rb-primary-soft) !important;
+  color: var(--bs-primary) !important;
+}
+.bg-brand {
+  background-color: var(--bs-primary) !important;
+  color: #fff !important;
+}
+
 /* ---- Desktop Topbar 调整 ---- */
 @media (min-width: 768px) {
-  /* 去掉右上角“用户”按钮，仅保留菜单/语言/主题 */
-  .lpx-topbar .lpx-user-profile { display: none !important; }
+  /* 显示右上角用户按钮 */
+  .lpx-topbar .lpx-user-profile { display: inline-flex !important; }
 
   /* 语言下拉：避免被内容卡片遮挡 */
   .lpx-topbar .lpx-language-selection { position: relative; z-index: 1300; }
@@ -100,11 +283,11 @@ img {
     overflow-x: hidden !important;
   }
   .lpx-mobile-navbar .user-menu lpx-icon { display: inline-flex !important; }
-  /* 提升图标对比度，避免深色背景下看不清 */
+  /* 移动端图标颜色随主题 */
   .lpx-mobile-navbar .user-menu .lpx-icon,
   .lpx-mobile-navbar .user-menu [class^="bi"],
   .lpx-mobile-navbar .user-menu [class*=" bi"] {
-    color: #fff !important;
+    color: var(--rb-text) !important;
     opacity: 1 !important;
   }
 
