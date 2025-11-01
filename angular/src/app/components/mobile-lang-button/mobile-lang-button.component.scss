@@ -32,6 +32,7 @@
   z-index: 2001;
   max-width: calc(100vw - 16px);
   width: max-content;
+  right: 8px; /* 双保险：即使脚本未执行也不外溢 */
 
   min-width: 160px;
   padding: 6px;

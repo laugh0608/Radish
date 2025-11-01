@@ -113,7 +113,7 @@ export class MobileLangButtonComponent implements AfterViewInit {
     } catch {}
   }
 
-  private updateMenuPosition(force = false) {
+  private updateMenuPosition(_force = false) {
     try {
       const host = this.el.nativeElement as HTMLElement;
       const btn = host.querySelector('.mobile-lang-button') as HTMLElement | null;
@@ -121,25 +121,14 @@ export class MobileLangButtonComponent implements AfterViewInit {
       const rect = btn.getBoundingClientRect();
       const margin = 8;
       const top = Math.round(rect.bottom + margin);
-
-      const applyWithMenuWidth = () => {
-        const menu = host.querySelector('.mobile-lang-menu') as HTMLElement | null;
-        const menuWidth = menu ? Math.round(menu.getBoundingClientRect().width) : 200; // 兜底估值
-        // 目标：优先让菜单右边与按钮右边对齐，随后做边界 clamp
-        let left = Math.round(rect.right - menuWidth);
-        const minLeft = margin;
-        const maxLeft = Math.round(window.innerWidth - menuWidth - margin);
-        left = Math.min(Math.max(left, minLeft), Math.max(minLeft, maxLeft));
-        this.menuStyle = { position: 'fixed', top: `${top}px`, left: `${left}px`, zIndex: '3000' } as any;
-      };
-
-      if (force) {
-        applyWithMenuWidth();
-      } else {
-        // 先设置一个大致位置，再下一拍精确计算宽度后修正
-        this.menuStyle = { position: 'fixed', top: `${top}px`, right: `${margin}px`, zIndex: '3000' };
-        setTimeout(applyWithMenuWidth, 0);
-      }
+      // 最稳妥：始终贴屏幕右侧 8px，确保绝不外溢
+      this.menuStyle = {
+        position: 'fixed',
+        top: `${top}px`,
+        right: `${margin}px`,
+        left: 'auto',
+        zIndex: '3000'
+      } as any;
     } catch {}
   }
 }
