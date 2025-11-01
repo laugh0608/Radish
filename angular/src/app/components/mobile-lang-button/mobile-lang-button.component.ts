@@ -122,27 +122,23 @@ export class MobileLangButtonComponent implements AfterViewInit {
       const margin = 8;
       const top = Math.round(rect.bottom + margin);
 
-      // 先默认靠右对齐
-      const preferredRight = Math.max(margin, Math.round(window.innerWidth - rect.right));
-      this.menuStyle = { position: 'fixed', top: `${top}px`, right: `${preferredRight}px`, zIndex: '3000' };
+      const applyWithMenuWidth = () => {
+        const menu = host.querySelector('.mobile-lang-menu') as HTMLElement | null;
+        const menuWidth = menu ? Math.round(menu.getBoundingClientRect().width) : 200; // 兜底估值
+        // 目标：优先让菜单右边与按钮右边对齐，随后做边界 clamp
+        let left = Math.round(rect.right - menuWidth);
+        const minLeft = margin;
+        const maxLeft = Math.round(window.innerWidth - menuWidth - margin);
+        left = Math.min(Math.max(left, minLeft), Math.max(minLeft, maxLeft));
+        this.menuStyle = { position: 'fixed', top: `${top}px`, left: `${left}px`, zIndex: '3000' } as any;
+      };
 
-      // 下一拍再根据实际宽度校正，避免溢出
-      if (!force) {
-        setTimeout(() => {
-          try {
-            const menu = host.querySelector('.mobile-lang-menu') as HTMLElement | null;
-            if (!menu) return;
-            const mrect = menu.getBoundingClientRect();
-            // 如果仍然溢出右侧，则贴右侧边距；否则优先让菜单右边缘与按钮右对齐
-            if (mrect.right > window.innerWidth - margin) {
-              this.menuStyle = { position: 'fixed', top: `${top}px`, right: `${margin}px`, zIndex: '3000' };
-            }
-            // 如果左侧溢出，也做保护
-            if (mrect.left < margin) {
-              this.menuStyle = { position: 'fixed', top: `${top}px`, left: `${margin}px`, zIndex: '3000' } as any;
-            }
-          } catch {}
-        }, 0);
+      if (force) {
+        applyWithMenuWidth();
+      } else {
+        // 先设置一个大致位置，再下一拍精确计算宽度后修正
+        this.menuStyle = { position: 'fixed', top: `${top}px`, right: `${margin}px`, zIndex: '3000' };
+        setTimeout(applyWithMenuWidth, 0);
       }
     } catch {}
   }
