@@ -43,6 +43,19 @@ html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", Arial, "Inter", sans-serif !important;
 }
 
+/* ---- Desktop Topbar 调整 ---- */
+@media (min-width: 768px) {
+  /* 去掉右上角“用户”按钮，仅保留菜单/语言/主题 */
+  .lpx-topbar .lpx-user-profile { display: none !important; }
+
+  /* 语言下拉：避免被内容卡片遮挡 */
+  .lpx-topbar .lpx-language-selection { position: relative; z-index: 1300; }
+  .lpx-topbar .lpx-language-selection .dropdown-menu { z-index: 2001 !important; }
+
+  /* 防止父级裁剪下拉 */
+  .lpx-topbar, .lpx-topbar-content { overflow: visible !important; }
+}
+
 /* ---- Global mobile-friendly tweaks ---- */
 /* 避免图片在小屏溢出容器 */
 img {
@@ -62,6 +75,11 @@ img {
 
 /* 移动端导航可见性修复：在某些主题组合下，移动导航容器偶发被隐藏 */
 @media (max-width: 767.98px) {
+  /* 移动端隐藏顶部空白条（LeptonX Topbar），否则会占位并遮挡按钮点击 */
+  .lpx-topbar-container {
+    display: none !important;
+  }
+
   /* 确保移动导航容器渲染出来（包含左侧菜单按钮与右侧用户区） */
   .lpx-mobile-navbar-container {
     display: block !important;
@@ -73,8 +91,7 @@ img {
     align-items: center;
     gap: 10px;
   }
-  /* 隐藏主题自带的两个图标（用户/菜单），只保留我们注入的按钮，避免撑宽 */
-  .lpx-mobile-navbar .user-menu > lpx-icon { display: none !important; }
+  /* 如需隐藏默认“用户”图标，运行时代码已处理（保持菜单图标可见） */
   /* 导航容器不允许产生横向滚动 */
   .lpx-mobile-navbar-container,
   lpx-mobile-navbar,
@@ -89,6 +106,13 @@ img {
   .lpx-mobile-navbar .user-menu [class*=" bi"] {
     color: #fff !important;
     opacity: 1 !important;
+  }
+
+  /* 兜底：提升移动端右上角菜单区域层级，避免被其它粘性元素覆盖 */
+  .lpx-mobile-navbar,
+  .lpx-mobile-navbar .user-menu {
+    position: relative;
+    z-index: 1201;
   }
 }
 

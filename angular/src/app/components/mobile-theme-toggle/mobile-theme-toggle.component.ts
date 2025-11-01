@@ -31,6 +31,7 @@ export class MobileThemeToggleComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.attachToNavbar();
+    this.bindPersonIconToProfile();
     // 初始主题：localStorage > 文档属性 > 系统偏好
     const doc = document.documentElement;
     const saved = localStorage.getItem(this.storageKey);
@@ -61,6 +62,25 @@ export class MobileThemeToggleComponent implements AfterViewInit, OnDestroy {
       if (target && host.parentElement !== target) {
         target.appendChild(host);
       }
+    } catch {}
+  }
+
+  // 将左起第一个“用户”图标点击行为重定向到个人信息页
+  private bindPersonIconToProfile() {
+    try {
+      const container = document.querySelector('.lpx-mobile-navbar .user-menu') as HTMLElement | null;
+      if (!container) return;
+      const person = (container.querySelector('lpx-icon[iconclass*="bi-person" i]') as HTMLElement | null)
+        || (container.querySelector('lpx-icon:first-child') as HTMLElement | null);
+      if (!person || person.getAttribute('data-profile-bound') === '1') return;
+      person.setAttribute('data-profile-bound', '1');
+      person.style.cursor = 'pointer';
+      const handler = (ev: Event) => {
+        try { ev.preventDefault(); ev.stopPropagation(); (ev as any).stopImmediatePropagation?.(); } catch {}
+        try { document.body.classList.remove('mobile-menu-opened'); document.documentElement.classList.remove('mobile-menu-opened'); } catch {}
+        this.router.navigateByUrl('/account/manage');
+      };
+      person.addEventListener('click', handler, { capture: true });
     } catch {}
   }
 
