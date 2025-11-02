@@ -275,6 +275,49 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
 
   /* 防止父级裁剪下拉 */
   .lpx-topbar, .lpx-topbar-content { overflow: visible !important; }
+
+  /* 桌面端：统一右上角图标样式（头像保持原样，语言/主题/更多统一成圆形图标按钮） */
+  .desktop-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px; border-radius: 16px;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border));
+    background: transparent;
+    color: var(--rb-text);
+    outline: none;
+    transition: background-color .15s ease, color .15s ease;
+    vertical-align: middle; /* 和用户名文本在一条基线 */
+  }
+  .desktop-icon-btn:hover { background: rgba(0,0,0,0.06); }
+  [data-bs-theme='dark'] .desktop-icon-btn:hover { background: rgba(255,255,255,0.10); }
+  .desktop-icon-btn i { font-size: 16px; line-height: 1; }
+
+  /* 语言选择按钮统一为圆形图标（隐藏文本，如 ZH） */
+  .lpx-topbar .lpx-language-selection .dropdown-toggle {
+    @extend .desktop-icon-btn;
+    font-size: 0; /* 隐藏文字标签 */
+    padding: 0 !important;
+  }
+  .lpx-topbar .lpx-language-selection .dropdown-toggle i,
+  .lpx-topbar .lpx-language-selection .dropdown-toggle [class^="bi"],
+  .lpx-topbar .lpx-language-selection .dropdown-toggle [class*=" bi"] {
+    font-size: 16px; line-height: 1; width: 16px; height: 16px;
+  }
+
+  /* 头像与用户名区域对齐到同一中线（不同主题/字号下更稳定） */
+  .lpx-topbar .lpx-user-profile { align-items: center !important; gap: 8px; }
+  .lpx-topbar .lpx-user-profile img,
+  .lpx-topbar .lpx-user-profile .lpx-avatar,
+  .lpx-topbar .lpx-user-profile .avatar,
+  .lpx-topbar .lpx-user-profile .lpx-user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+  }
+  .lpx-topbar .lpx-user-profile .lpx-user-name { line-height: 1; display: inline-flex; align-items: center; }
+  }
+
+  /* 用户名在桌面端可隐藏，仅保留头像，维持紧凑统一（可按需注释） */
+  .lpx-topbar .lpx-user-profile .lpx-user-name { display: none !important; }
 }
 
 /* ---- Global mobile-friendly tweaks ---- */
