@@ -227,7 +227,6 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
 
   /* 统一按钮内图标的视觉尺寸（Bi icons 与 lpx-icon 一致） */
   .mobile-icon-btn i,
-  .lpx-mobile-navbar .user-menu lpx-icon,
   .lpx-mobile-navbar .user-menu lpx-icon i,
   .lpx-mobile-navbar .user-menu lpx-icon [class^="bi"],
   .lpx-mobile-navbar .user-menu lpx-icon [class*=" bi"] {
