@@ -20,7 +20,10 @@ import { MobileUiService } from '../../services/mobile-ui.service';
             <span>{{ item.name | abpLocalization }}</span>
           </a>
         } @else {
-          <a [routerLink]="item.path" routerLinkActive="active" [attr.aria-label]="item.name">
+          <a [routerLink]="item.path"
+             routerLinkActive="active"
+             [routerLinkActiveOptions]="{ exact: (item.path || '') === '/' }"
+             [attr.aria-label]="item.name">
             <i [class]="iconFor(item)"></i>
             <span>{{ item.name | abpLocalization }}</span>
           </a>
