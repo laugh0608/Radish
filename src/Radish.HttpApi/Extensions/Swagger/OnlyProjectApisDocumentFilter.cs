@@ -14,6 +14,15 @@ public class OnlyProjectApisDocumentFilter : IDocumentFilter
         "/api/radish"  // 如有自定义前缀
     ];
 
+    // 明确允许显示的前缀（优先级最高），用于覆盖 DropPrefixes 中的某些 ABP 端点
+    private static readonly string[] AllowPrefixes =
+    [
+        "/api/abp/application-configuration", // ABP 应用配置（包含 OIDC 配置）
+        "/api/abp/application-localization",  // ABP 语言/本地化配置
+        "/connect",                            // OIDC 相关端点（如 connect/token 等），一般不会进 Swagger，但兜底放行
+        "/.well-known"                         // OIDC 元数据端点，兜底放行
+    ];
+
     private static readonly string[] DropPrefixes =
     [
         "/api/abp",
@@ -27,10 +36,30 @@ public class OnlyProjectApisDocumentFilter : IDocumentFilter
 
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
+        static bool StartsWith(string path, string prefix)
+            => path.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
+
+        bool IsAllowed(string path)
+            => AllowPrefixes.Any(p => StartsWith(path, p))
+               || KeepPrefixes.Any(p => StartsWith(path, p));
+
+        bool ShouldRemove(string path)
+        {
+            // 1) 显式允许优先：命中则保留
+            if (AllowPrefixes.Any(p => StartsWith(path, p))) return false;
+
+            // 2) 命中黑名单：移除（除非已在 1) 放行）
+            if (DropPrefixes.Any(p => StartsWith(path, p))) return true;
+
+            // 3) 命中白名单：保留
+            if (KeepPrefixes.Any(p => StartsWith(path, p))) return false;
+
+            // 4) 其他未识别路径：移除，保持文档干净
+            return true;
+        }
+
         var toRemove = swaggerDoc.Paths
-            .Where(kv =>
-                DropPrefixes.Any(p => kv.Key.StartsWith(p, StringComparison.OrdinalIgnoreCase)) ||
-               !KeepPrefixes.Any(p => kv.Key.StartsWith(p, StringComparison.OrdinalIgnoreCase)))
+            .Where(kv => ShouldRemove(kv.Key))
             .Select(kv => kv.Key)
             .ToList();
 
@@ -58,88 +87,7 @@ public class OnlyProjectApisDocumentFilter : IDocumentFilter
             }
         }
 
-        // 隐藏未被引用的 ABP Schemas（保守策略：仅移除未被任何操作引用的 ABP 类型）
-        if (swaggerDoc.Components?.Schemas is { Count: > 0 })
-        {
-            var referenced = new System.Collections.Generic.HashSet<string>(StringComparer.Ordinal);
-
-            void Collect(OpenApiSchema? schema)
-            {
-                if (schema is null) return;
-                if (schema.Reference?.Id is { } id)
-                {
-                    // 仅在 components/schemas 下的引用才计入（更安全）
-                    if (schema.Reference.Type == ReferenceType.Schema)
-                    {
-                        if (referenced.Add(id))
-                        {
-                            // 递归展开：AllOf/AnyOf/OneOf/Items/AdditionalProperties/Properties
-                            foreach (var s in schema.AllOf) Collect(s);
-                            foreach (var s in schema.AnyOf) Collect(s);
-                            foreach (var s in schema.OneOf) Collect(s);
-                            if (schema.Items != null) Collect(schema.Items);
-                            if (schema.AdditionalProperties != null) Collect(schema.AdditionalProperties);
-                            foreach (var p in schema.Properties.Values) Collect(p);
-                        }
-                    }
-                    return;
-                }
-
-                foreach (var s in schema.AllOf) Collect(s);
-                foreach (var s in schema.AnyOf) Collect(s);
-                foreach (var s in schema.OneOf) Collect(s);
-                if (schema.Items != null) Collect(schema.Items);
-                if (schema.AdditionalProperties != null) Collect(schema.AdditionalProperties);
-                foreach (var p in schema.Properties.Values) Collect(p);
-            }
-
-            foreach (var path in swaggerDoc.Paths.Values)
-            {
-                foreach (var op in path.Operations.Values)
-                {
-                    // 请求体
-                    var rb = op.RequestBody;
-                    if (rb?.Content != null)
-                    {
-                        foreach (var c in rb.Content.Values)
-                        {
-                            Collect(c.Schema);
-                        }
-                    }
-
-                    // 响应体
-                    foreach (var resp in op.Responses.Values)
-                    {
-                        if (resp.Content == null) continue;
-                        foreach (var c in resp.Content.Values)
-                        {
-                            Collect(c.Schema);
-                        }
-                    }
-
-                    // 参数（尽量完整，但通常为原生类型）
-                    if (op.Parameters != null)
-                    {
-                        foreach (var p in op.Parameters)
-                        {
-                            Collect(p.Schema);
-                        }
-                    }
-                }
-            }
-
-            static bool IsAbpSchema(string name)
-                => name.StartsWith("Volo.Abp", StringComparison.Ordinal);
-
-            var removeSchemas = swaggerDoc.Components.Schemas
-                .Where(kv => IsAbpSchema(kv.Key) && !referenced.Contains(kv.Key))
-                .Select(kv => kv.Key)
-                .ToList();
-
-            foreach (var key in removeSchemas)
-            {
-                swaggerDoc.Components.Schemas.Remove(key);
-            }
-        }
+        // 注意：不再移除 ABP 的 schemas，以避免引用缺失（如 RemoteServiceErrorInfo）。
+        // 如果未来需要精简，可在确保“引用完整收集”的前提下再开启。
     }
 }
