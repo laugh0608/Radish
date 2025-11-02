@@ -318,7 +318,6 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
 
   /* 用户名在桌面端可隐藏，仅保留头像，维持紧凑统一（可按需注释） */
   .lpx-topbar .lpx-user-profile .lpx-user-name { display: none !important; }
-}
 
 /* ---- Global mobile-friendly tweaks ---- */
 /* 避免图片在小屏溢出容器 */
