@@ -16,6 +16,7 @@ import { MobileBottomNavComponent } from './components/mobile-bottom-nav/mobile-
     <!-- 移动端底部导航：主要功能在主栏，次要功能收纳在二级菜单/更多面板 -->
     <app-mobile-bottom-nav />
   `,
+  standalone: true,
   imports: [LoaderBarComponent, DynamicLayoutComponent, MobileLangButtonComponent, MobileThemeToggleComponent, MobileBottomNavComponent],
 })
 export class AppComponent {}
