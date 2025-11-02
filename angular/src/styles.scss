@@ -269,21 +269,50 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
   /* 显示右上角用户按钮 */
   .lpx-topbar .lpx-user-profile { display: inline-flex !important; }
 
-  /* 语言下拉：避免被内容卡片遮挡 */
-  .lpx-topbar .lpx-language-selection { position: relative; z-index: 1300; }
-  .lpx-topbar .lpx-language-selection .dropdown-menu { z-index: 2001 !important; }
-
-  /* 防止父级裁剪下拉 */
-  .lpx-topbar, .lpx-topbar-content { overflow: visible !important; }
+  /* 语言下拉：避免被内容卡片遮挡（不依赖顶栏父类） */
+  .lpx-language-selection { position: relative; z-index: 1300; }
+  .lpx-language-selection .dropdown-menu { z-index: 2001 !important; }
+  /* 防止顶栏区域裁剪下拉（尽量宽泛，避免不同版本类名差异） */
+  .lpx-topbar, .lpx-topbar-content, .lpx-navbar, .lpx-toolbar { overflow: visible !important; }
 
   /* 顶栏内各区域垂直居中（品牌/菜单/工具区） */
   .lpx-topbar .lpx-topbar-content,
   .lpx-topbar .lpx-toolbar,
   .lpx-topbar .lpx-nav,
-  .lpx-topbar .lpx-inner-toolbar { align-items: center !important; }
+  .lpx-topbar .lpx-inner-toolbar,
+  .lpx-toolbar { align-items: center !important; }
 
   /* 桌面端：统一右上角图标样式（头像保持原样，语言/主题/更多统一成圆形图标按钮） */
   .lpx-topbar .lpx-topbar-content { align-items: center !important; }
+  /* 顶栏高度与内边距，保证图标不“贴顶贴底” */
+  .lpx-topbar, .lpx-topbar .lpx-topbar-content { min-height: 44px; }
+  /* 让顶栏本身就是 Flex，所有子项自然垂直居中 */
+  .lpx-topbar,
+  .lpx-topbar-container { display: flex; align-items: center; }
+  .lpx-topbar { width: 100%; }
+  /* 工具区容器（组件）与内容容器都设为 Flex */
+  lpx-toolbar,
+  lpx-toolbar-items.lpx-topbar-content,
+  .lpx-topbar .lpx-topbar-content { display: flex !important; align-items: center !important; gap: 6px !important; }
+  /* 右侧工具栏整体的垂直居中与紧凑间距 */
+  .lpx-topbar .lpx-toolbar,
+  .lpx-topbar .lpx-inner-toolbar,
+  .lpx-toolbar {
+    display: flex;
+    align-items: center !important;
+    gap: 6px !important; /* 顶栏各项之间 6px 间距 */
+    padding-right: 16px; /* 右侧留白，避免贴边 */
+  }
+  /* 顶栏内的菜单链接（主题默认包裹图标的 <a>）统一为 Flex 居中 */
+  .lpx-topbar .lpx-menu-item-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 32px !important;
+    padding: 0 !important;
+  }
+  /* 去除可能的水平外边距造成的“错位”（保留垂直外边距用于上下留白） */
+  .lpx-topbar .lpx-toolbar > *, .lpx-toolbar > * { margin-left: 0 !important; margin-right: 0 !important; }
   .desktop-icon-btn {
     display: inline-flex;
     align-items: center;
@@ -295,41 +324,128 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
     outline: none;
     transition: background-color .15s ease, color .15s ease;
     vertical-align: middle; /* 和用户名文本在一条基线 */
+    line-height: 32px; /* 避免字体/图标影响视觉高度 */
+    margin: 6px 0; /* 仅上下留白，水平由 gap 控制 */
   }
   .desktop-icon-btn:hover { background: rgba(0,0,0,0.06); }
   [data-bs-theme='dark'] .desktop-icon-btn:hover { background: rgba(255,255,255,0.10); }
   .desktop-icon-btn i { font-size: 16px; line-height: 1; }
 
   /* 语言选择按钮统一为圆形图标（隐藏文本，如 ZH） */
-  .lpx-topbar .lpx-language-selection .dropdown-toggle {
-    @extend .desktop-icon-btn;
-    font-size: 0; /* 隐藏文字标签 */
-    padding: 0 !important;
-    line-height: 1 !important;
+  /* 语言切换：实际为 .lpx-language-selection 下的 div[role="button"] */
+  .lpx-language-selection [role="button"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important; height: 32px !important; border-radius: 16px !important;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border)) !important;
+    background: transparent; padding: 0 !important; line-height: 1 !important;
     vertical-align: middle !important;
+    gap: 0 !important;
+    margin: 6px 0 !important; /* 仅上下留白，水平由 gap 控制 */
+    line-height: 32px !important; /* 统一行高 */
   }
-  /* 隐藏 bootstrap caret，避免基线偏移 */
-  .lpx-topbar .lpx-language-selection .dropdown-toggle::after { display: none !important; }
-  .lpx-topbar .lpx-language-selection { display: inline-flex; align-items: center; }
-  .lpx-topbar .lpx-language-selection .dropdown-toggle i,
-  .lpx-topbar .lpx-language-selection .dropdown-toggle [class^="bi"],
-  .lpx-topbar .lpx-language-selection .dropdown-toggle [class*=" bi"] {
-    font-size: 16px; line-height: 1; width: 16px; height: 16px;
+  /* 语言选择整体容器不再附加水平外边距，交由 gap 控制 */
+  .lpx-language-selection { margin: 0 !important; }
+  .lpx-language-selection [role="button"]::after { display: none !important; }
+  .lpx-language-selection [role="button"] span { display: none !important; }
+  .lpx-language-selection [role="button"] i,
+  .lpx-language-selection [role="button"] [class^="bi"],
+  .lpx-language-selection [role="button"] [class*=" bi"],
+  .lpx-language-selection [role="button"] lpx-icon {
+    font-size: 16px !important; line-height: 1 !important;
+    width: 16px; height: 16px;
   }
 
+  /* 统一右上角其它按钮（主题切换等） */
+  .lpx-topbar .lpx-toolbar .btn,
+  .lpx-topbar .lpx-toolbar button,
+  .lpx-topbar .lpx-toolbar .dropdown-toggle,
+  .lpx-toolbar .btn,
+  .lpx-toolbar button {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    border-radius: 16px !important;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border)) !important;
+    background: transparent !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 6px 0 !important; /* 上下留白 */
+  }
+  .lpx-topbar .lpx-toolbar .btn i,
+  .lpx-topbar .lpx-toolbar button i,
+  .lpx-topbar .lpx-toolbar .dropdown-toggle i,
+  .lpx-toolbar .btn i,
+  .lpx-toolbar button i { font-size: 16px !important; line-height: 1 !important; }
+
   /* 头像与用户名区域对齐到同一中线（不同主题/字号下更稳定） */
-  .lpx-topbar .lpx-user-profile { align-items: center !important; gap: 8px; }
+  .lpx-topbar .lpx-user-profile, .lpx-user-profile {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important; /* 头像与用户名 3px */
+    height: 32px !important;
+    vertical-align: middle !important;
+    margin: 6px 0 !important; /* 仅上下留白，水平由 gap 控制 */
+    line-height: 32px !important;
+    align-self: center !important;
+    padding: 0 !important; /* 清掉 Bootstrap dropdown-toggle 可能的 padding */
+  }
+  /* 工具栏项（LeptonX 包裹的链接）水平外边距交由 gap 控制 */
+  .lpx-topbar .lpx-menu-item-link { margin: 0 !important; }
+  /* 进一步确保头像在 32x32 容器内垂直水平居中 */
+  .lpx-topbar .lpx-user-profile lpx-avatar,
+  .lpx-user-profile lpx-avatar {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    vertical-align: middle !important;
+  }
+  .lpx-topbar .lpx-user-profile .lpx-avatar {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .lpx-topbar .lpx-user-profile .lpx-avatar-icon,
+  .lpx-topbar .lpx-user-profile .lpx-avatar .lpx-avatar-icon,
+  .lpx-user-profile .lpx-avatar-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+  }
+  .lpx-topbar .lpx-user-profile .lpx-avatar-icon .lpx-icon,
+  .lpx-topbar .lpx-user-profile .lpx-avatar-icon i,
+  .lpx-user-profile .lpx-avatar-icon .lpx-icon,
+  .lpx-user-profile .lpx-avatar-icon i {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 20px; height: 20px; line-height: 20px;
+    margin: 0 !important;
+  }
   .lpx-topbar .lpx-user-profile img,
   .lpx-topbar .lpx-user-profile .lpx-avatar,
   .lpx-topbar .lpx-user-profile .avatar,
   .lpx-topbar .lpx-user-profile .lpx-user-avatar {
-    width: 32px; height: 32px; border-radius: 50%;
+    width: 32px !important; height: 32px !important; border-radius: 50%;
   }
-  .lpx-topbar .lpx-user-profile .lpx-user-name { line-height: 1; display: inline-flex; align-items: center; }
+  .lpx-topbar .lpx-user-profile .lpx-user-name,
+  .lpx-topbar .lpx-user-profile .user-full-name,
+  .lpx-user-profile .user-full-name {
+    line-height: 1;
+    display: inline-flex !important;
+    align-items: center;
+    margin-left: 0 !important; /* 留白由父级 gap 控制 */
   }
+}
 
-  /* 用户名在桌面端可隐藏，仅保留头像，维持紧凑统一（可按需注释） */
-  .lpx-topbar .lpx-user-profile .lpx-user-name { display: none !important; }
+  /* 保留桌面端用户名显示 */
 
 /* ---- Global mobile-friendly tweaks ---- */
 /* 避免图片在小屏溢出容器 */
