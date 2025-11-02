@@ -224,6 +224,21 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
   .lpx-mobile-navbar .user-menu lpx-icon:hover { background: rgba(255,255,255,0.10); }
   [data-bs-theme='light'] .mobile-icon-btn:hover,
   [data-bs-theme='light'] .lpx-mobile-navbar .user-menu lpx-icon:hover { background: rgba(0,0,0,0.06); }
+
+  /* 统一按钮内图标的视觉尺寸（Bi icons 与 lpx-icon 一致） */
+  .mobile-icon-btn i,
+  .lpx-mobile-navbar .user-menu lpx-icon,
+  .lpx-mobile-navbar .user-menu lpx-icon i,
+  .lpx-mobile-navbar .user-menu lpx-icon [class^="bi"],
+  .lpx-mobile-navbar .user-menu lpx-icon [class*=" bi"] {
+    font-size: 18px !important;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 /* 统一品牌按钮与“soft”系列的主色表现（覆盖 LeptonX 默认粉色） */
