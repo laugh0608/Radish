@@ -276,6 +276,19 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
   /* 防止父级裁剪下拉 */
   .lpx-topbar, .lpx-topbar-content { overflow: visible !important; }
 
+  /* 桌面端：增加顶栏高度与上下内边距，让菜单与右侧图标更舒展 */
+  .lpx-topbar-container .lpx-topbar {
+    min-height: 64px;                /* 默认 ~52-56，改为更舒展的 64 */
+    padding-top: 10px;               /* 适度上下留白 */
+    padding-bottom: 10px;
+  }
+  .lpx-topbar .lpx-topbar-content { min-height: 64px; }
+  /* 顶栏内各区域垂直居中（品牌/菜单/工具区） */
+  .lpx-topbar .lpx-topbar-content,
+  .lpx-topbar .lpx-toolbar,
+  .lpx-topbar .lpx-nav,
+  .lpx-topbar .lpx-inner-toolbar { align-items: center !important; }
+
   /* 桌面端：统一右上角图标样式（头像保持原样，语言/主题/更多统一成圆形图标按钮） */
   .lpx-topbar .lpx-topbar-content { align-items: center !important; }
   .desktop-icon-btn {
