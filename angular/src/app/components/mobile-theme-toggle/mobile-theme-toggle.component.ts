@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 
 @Component({
@@ -16,7 +16,7 @@ import { Router, NavigationEnd } from '@angular/router';
   `,
   styleUrls: ['./mobile-theme-toggle.component.scss'],
 })
-export class MobileThemeToggleComponent implements AfterViewInit, OnDestroy {
+export class MobileThemeToggleComponent implements OnInit, AfterViewInit, OnDestroy {
   private el = inject(ElementRef<HTMLElement>);
   private router = inject(Router);
 
@@ -29,15 +29,18 @@ export class MobileThemeToggleComponent implements AfterViewInit, OnDestroy {
     if (e instanceof NavigationEnd) setTimeout(() => this.attachToNavbar(), 0);
   });
 
-  ngAfterViewInit(): void {
-    this.attachToNavbar();
-    this.bindPersonIconToProfile();
-    // 初始主题：localStorage > 文档属性 > 系统偏好
+  ngOnInit(): void {
+    // 初始主题在 OnInit 设置，避免 AfterViewInit 改变绑定值导致 NG0100
     const doc = document.documentElement;
     const saved = localStorage.getItem(this.storageKey);
     const preferredDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initTheme = (saved as 'dark' | 'light' | null) || (doc.getAttribute('data-bs-theme') as 'dark' | 'light' | null) || (preferredDark ? 'dark' : 'light');
     this.apply(initTheme);
+  }
+
+  ngAfterViewInit(): void {
+    this.attachToNavbar();
+    this.bindPersonIconToProfile();
     // 监听窗口与断点变化，跨视图切换时重新挂载
     window.addEventListener('resize', this.resizeHandler);
     try { this.media.addEventListener?.('change', this.mediaHandler as any); } catch {}
