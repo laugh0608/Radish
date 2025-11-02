@@ -277,6 +277,7 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
   .lpx-topbar, .lpx-topbar-content { overflow: visible !important; }
 
   /* 桌面端：统一右上角图标样式（头像保持原样，语言/主题/更多统一成圆形图标按钮） */
+  .lpx-topbar .lpx-topbar-content { align-items: center !important; }
   .desktop-icon-btn {
     display: inline-flex;
     align-items: center;
@@ -298,7 +299,12 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
     @extend .desktop-icon-btn;
     font-size: 0; /* 隐藏文字标签 */
     padding: 0 !important;
+    line-height: 1 !important;
+    vertical-align: middle !important;
   }
+  /* 隐藏 bootstrap caret，避免基线偏移 */
+  .lpx-topbar .lpx-language-selection .dropdown-toggle::after { display: none !important; }
+  .lpx-topbar .lpx-language-selection { display: inline-flex; align-items: center; }
   .lpx-topbar .lpx-language-selection .dropdown-toggle i,
   .lpx-topbar .lpx-language-selection .dropdown-toggle [class^="bi"],
   .lpx-topbar .lpx-language-selection .dropdown-toggle [class*=" bi"] {
