@@ -4,26 +4,10 @@
   display: inline-block;
 }
 
-.mobile-lang-button {
-  height: 36px;
-  width: 36px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  outline: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  color: #fff;
-}
+/* 按钮外观由全局 .mobile-icon-btn 统一，这里不额外覆盖颜色/边框 */
+.mobile-lang-button { }
 
-.mobile-lang-button:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.mobile-lang-button:active {
-  transform: scale(0.97);
-}
+.mobile-lang-button:active { transform: scale(0.97); }
 
 /* 下拉菜单：相对宿主绝对定位 */
 .mobile-lang-menu {

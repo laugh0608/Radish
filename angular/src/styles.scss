@@ -200,6 +200,30 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
   .lpx-mobile-nav-items { background-color: var(--rb-topbar-bg) !important; }
   .lpx-mobile-navbar .user-menu .lpx-icon { color: var(--rb-text) !important; }
   .lpx-mobile-navbar .user-menu lpx-icon { pointer-events: auto; cursor: pointer; }
+
+  /* 统一移动端右上角四个按钮的样式（用户、菜单、语言、主题） */
+  .lpx-mobile-navbar .user-menu {
+    gap: 8px !important;
+  }
+  /* 公共样式：36x36 圆角、描边、悬停背景 */
+  .mobile-icon-btn,
+  .lpx-mobile-navbar .user-menu lpx-icon {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    border: 1px solid var(--rb-nav-border, rgba(255,255,255,0.35));
+    background: transparent;
+    color: var(--rb-text) !important;
+    outline: none;
+    transition: background-color .15s ease, color .15s ease;
+  }
+  .mobile-icon-btn:hover,
+  .lpx-mobile-navbar .user-menu lpx-icon:hover { background: rgba(255,255,255,0.10); }
+  [data-bs-theme='light'] .mobile-icon-btn:hover,
+  [data-bs-theme='light'] .lpx-mobile-navbar .user-menu lpx-icon:hover { background: rgba(0,0,0,0.06); }
 }
 
 /* 统一品牌按钮与“soft”系列的主色表现（覆盖 LeptonX 默认粉色） */

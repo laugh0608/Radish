@@ -7,7 +7,7 @@ import { Router, NavigationEnd } from '@angular/router';
   template: `
     <button
       type="button"
-      class="mobile-theme-btn d-sm-inline-flex d-md-none"
+      class="mobile-icon-btn mobile-theme-btn d-sm-inline-flex d-md-none"
       [attr.aria-label]="isDark ? 'Switch to light' : 'Switch to dark'"
       (click)="toggle()"
     >

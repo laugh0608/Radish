@@ -12,7 +12,7 @@ import { SessionStateService } from '@abp/ng.core';
   template: `
     <button
       type="button"
-      class="mobile-lang-button d-sm-inline-flex d-md-none"
+      class="mobile-icon-btn mobile-lang-button d-sm-inline-flex d-md-none"
       [attr.aria-expanded]="open"
       [attr.aria-haspopup]="'menu'"
       [attr.aria-label]="'AbpUi::Language' | abpLocalization"
