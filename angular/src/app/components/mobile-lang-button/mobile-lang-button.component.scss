@@ -7,6 +7,18 @@
 /* 按钮外观由全局 .mobile-icon-btn 统一，这里不额外覆盖颜色/边框 */
 .mobile-lang-button { }
 
+/* 语言按钮图标使用与 PC 一致的主色（蓝色） */
+.mobile-lang-button i {
+  color: var(--bs-primary) !important;
+}
+
+/* 悬停/聚焦/按下时保持与 PC 一致的主色 */
+.mobile-lang-button:hover i,
+.mobile-lang-button:focus i,
+.mobile-lang-button:active i {
+  color: var(--bs-primary) !important;
+}
+
 .mobile-lang-button:active { transform: scale(0.97); }
 
 /* 下拉菜单：相对宿主绝对定位 */

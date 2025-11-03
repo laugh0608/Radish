@@ -10,6 +10,7 @@ import { MobileBottomNavComponent } from './components/mobile-bottom-nav/mobile-
   template: `
     <abp-loader-bar />
     <abp-dynamic-layout />
+    <!-- PC 顶栏顺序通过 CSS 控制（styles.scss），无需运行时重排 -->
     <!-- 移动端右上角：语言与主题切换（仅样式适配，不改变功能） -->
     <app-mobile-lang-button />
     <app-mobile-theme-toggle />

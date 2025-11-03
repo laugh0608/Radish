@@ -269,6 +269,23 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
   /* 显示右上角用户按钮 */
   .lpx-topbar .lpx-user-profile { display: inline-flex !important; }
 
+  /* PC 顶栏顺序：语言 -> 主题 -> 头像昵称
+     说明：LeptonX 顶栏/工具栏为 Flex 布局，这里通过 order 明确排序，
+     确保“语言、主题”位于“用户头像与昵称”的左侧。 */
+  /* 语言选择置左（尽量覆盖不同包装容器） */
+  .lpx-topbar .lpx-language-selection,
+  .lpx-topbar .language-selection,
+  .lpx-topbar [class*="language-selection"],
+  .lpx-topbar .lpx-language-selection-container,
+  .lpx-topbar .lpx-language-selection-wrapper { order: 1 !important; }
+
+  /* 在顶栏的 Toolbar 容器内（lpx-toolbar-items），以子级 lpx-toolbar-item 为单位重排顺序 */
+  lpx-toolbar-items.lpx-topbar-content { display: flex !important; align-items: center !important; gap: 6px !important; }
+  lpx-toolbar-items.lpx-topbar-content > lpx-toolbar-item { order: 10 !important; }
+  lpx-toolbar-items.lpx-topbar-content > lpx-toolbar-item:has(.lpx-language-selection) { order: 1 !important; }
+  lpx-toolbar-items.lpx-topbar-content > lpx-toolbar-item:has(app-desktop-theme-toggle) { order: 2 !important; }
+  lpx-toolbar-items.lpx-topbar-content > lpx-toolbar-item:has(.lpx-user-profile) { order: 3 !important; }
+
   /* 语言下拉：避免被内容卡片遮挡（不依赖顶栏父类） */
   .lpx-language-selection { position: relative; z-index: 1300; }
   .lpx-language-selection .dropdown-menu { z-index: 2001 !important; }
@@ -384,7 +401,7 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
   .lpx-topbar .lpx-user-profile, .lpx-user-profile {
     display: inline-flex !important;
     align-items: center !important;
-    gap: 3px !important; /* 头像与用户名 3px */
+    gap: 6px !important; /* 头像与用户名 6px（略增） */
     height: 32px !important;
     vertical-align: middle !important;
     margin: 6px 0 !important; /* 仅上下留白，水平由 gap 控制 */
@@ -402,6 +419,12 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
     justify-content: center !important;
     width: 32px !important;
     height: 32px !important;
+    border-radius: 50% !important;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border)) !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
     vertical-align: middle !important;
   }
   .lpx-topbar .lpx-user-profile .lpx-avatar {
@@ -410,6 +433,12 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
     justify-content: center !important;
     width: 32px !important;
     height: 32px !important;
+    border-radius: 50% !important;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border)) !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
   }
   .lpx-topbar .lpx-user-profile .lpx-avatar-icon,
   .lpx-topbar .lpx-user-profile .lpx-avatar .lpx-avatar-icon,
@@ -426,7 +455,7 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 20px; height: 20px; line-height: 20px;
+    width: 16px; height: 16px; line-height: 16px;
     margin: 0 !important;
   }
   .lpx-topbar .lpx-user-profile img,
@@ -434,6 +463,21 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
   .lpx-topbar .lpx-user-profile .avatar,
   .lpx-topbar .lpx-user-profile .lpx-user-avatar {
     width: 32px !important; height: 32px !important; border-radius: 50%;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border)) !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  /* 头像 Hover 效果与其它按钮一致 */
+  .lpx-topbar .lpx-user-profile:hover lpx-avatar,
+  .lpx-topbar .lpx-user-profile:hover .lpx-avatar {
+    background: rgba(0,0,0,0.06) !important;
+  }
+  [data-bs-theme='dark'] .lpx-topbar .lpx-user-profile:hover lpx-avatar,
+  [data-bs-theme='dark'] .lpx-topbar .lpx-user-profile:hover .lpx-avatar {
+    background: rgba(255,255,255,0.10) !important;
   }
   .lpx-topbar .lpx-user-profile .lpx-user-name,
   .lpx-topbar .lpx-user-profile .user-full-name,

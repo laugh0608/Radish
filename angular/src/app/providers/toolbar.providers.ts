@@ -12,7 +12,7 @@ function initToolbar(toolbar: ToolbarService) {
             id: 'theme-toggle',
             name: 'ThemeToggle',
             component: DesktopThemeToggleComponent,
-            order: 9999,
+            order: 2,
           });
         }
       });
@@ -21,7 +21,7 @@ function initToolbar(toolbar: ToolbarService) {
         id: 'theme-toggle',
         name: 'ThemeToggle',
         component: DesktopThemeToggleComponent,
-        order: 9999,
+        order: 2,
       }), 0);
       return sub;
     };
