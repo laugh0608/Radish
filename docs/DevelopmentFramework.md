@@ -336,7 +336,7 @@ graph TD
   * `POST /api/ai/review/posts/{id}/retry` 重试 AI 审核流水线。
   * `POST /api/ai/override/posts/{id}` 管理员手工覆写审核决定（通过/拒绝/挂起）。
   * `GET /api/reports?type=weekly&period=2025-W44` 查询既有周期报表。
-  * `POST /api/reports/generate?type=monthly&period=2025-10` 立即生成周期报表并可选发布。
+* `POST /api/reports/generate?type=monthly&period=2025-10` 立即生成周期报表并可选发布。
 
 * Admin UI (Angular)
   * 审核队列：展示待审内容、AI 分数与简要理由，支持一键通过/拒绝/拉黑。
@@ -366,7 +366,51 @@ graph TD
 * 验收标准
   * 新帖/评论触发 AI 审核并按策略阈值自动决定；管理员可覆写，完整审计记录。
   * 能生成并发布周报/月报/年报，包含 Top 帖、活跃用户、分类/标签分布等指标。
-  * 关闭 AI 后系统自然退化为人工审核流程，核心功能不受影响。
+* 关闭 AI 后系统自然退化为人工审核流程，核心功能不受影响。
+
+#### 4.4 端到端加密（E2EE）帖子与聊天室
+
+> 与 docs/DevelopmentPlan.md 中“扩展专题：端到端加密聊天/帖子（E2EE）”一致，此处给出框架层设计与落点。
+
+* 功能目标
+  * 加密帖子（Recipients 白名单）：作者为选定收件人加密内容，非收件人仅见占位，服务端零知存储密文。
+  * 加密聊天室/私信（群聊密钥）：房间对称密钥 + 成员公钥封装；成员变更触发轮换，退群后无法解密新消息。
+  * 用户密钥对：默认前端生成并本地保存私钥，可选口令加密后云端备份；服务端仅存公钥与元信息。
+
+* 架构与算法选型
+  * 内容加密：AES-256-GCM（WebCrypto）。
+  * 密钥封装：ECIES（P-256/Curve25519）或 RSA-OAEP-256（环境受限时）。
+  * 口令派生：PBKDF2-HMAC-SHA256（优先 Argon2id，如可用）。
+  * 存储策略：仅保存 `ciphertext` 与 `encryptionMeta`（`alg`、`keyId`、`recipients[{userId,keyId,wrappedKey}]`、`iv`、`tag`）。
+
+* 数据模型建议（Radish.Domain/MongoDB）
+  * `UserEncryptionKey`：`UserId`、`KeyId`、`Algorithm`、`PublicKey`、`CreatedAt`、`RevokedAt`（索引：`UserId`、`KeyId`）。
+  * `Post` 增加：`IsEncrypted`、`Ciphertext`、`EncryptionMeta`（不影响明文帖结构）。
+  * `Message`（若有 IM/聊天室）：`RoomId`、`Ciphertext`、`RoomKeyVersion`、`Meta`；房间保存 `RoomKey` 封装列表与版本。
+
+* 应用与 API（Radish.Application*/HttpApi*）
+  * 公钥管理：发布/撤销/查询当前 `KeyId` 与 `PublicKey`。
+  * 加密发帖：前端生成 `contentKey`，按收件人公钥封装 `wrappedKey`；后端仅校验/存储密文与元信息。
+  * 加密读取：前端拿 `wrappedKey` + 本地私钥解封装并解密。
+  * 聊天室密钥轮换：成员增删触发新 `RoomKey` 及封装列表生成。
+
+* 前端实现要点（React/Angular）
+  * 私钥存储：IndexedDB/系统安全区；导出/导入备份（口令加密）。
+  * UI：发帖“加密发布”开关、收件人选择、加密徽标、解密失败/恢复提示。
+  * 兼容：WebCrypto 优先；不支持时禁用该能力并提示升级。
+
+* 合规与开关
+  * Feature Flag：`App__Features__E2EE`（默认关闭，仅测试环境开启）。
+  * 可选测试环境“监管密钥”用于排障；生产默认零知，无平台解密能力。
+
+* 风险与限制
+  * 私钥丢失不可恢复历史密文（设计即如此）；提供备份指引与二次确认。
+  * 搜索/审计：密文不可全文检索，依赖元信息/举报快照；需额外运营策略。
+  * 性能：收件人越多封装开销线性增长；限制最大收件人数或采用群聊密钥模型。
+
+* 验收
+  * 指定收件人可成功解密帖子；非收件人不可见明文。
+  * 聊天室成员变更后，前成员无法解密新消息；消息解密无明显卡顿。
 
 ### 5. Docker 支持 (一键启动)
 
