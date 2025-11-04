@@ -159,6 +159,85 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
 }
 .text-muted { color: var(--bs-secondary-color) !important; }
 
+/* 深色模式下，统一第三方组件与 Bootstrap 元素的暗色适配 */
+[data-bs-theme='dark'] {
+  /* 常见“强制白色”类的回退（来自三方样式/模板） */
+  .bg-white,
+  .bg-light,
+  .card.bg-white,
+  .card.bg-light { background-color: var(--rb-surface) !important; color: var(--rb-text) !important; }
+
+  /* 下拉菜单 */
+  .dropdown-menu {
+    --bs-dropdown-bg: var(--rb-surface);
+    --bs-dropdown-color: var(--rb-text);
+    --bs-dropdown-link-color: var(--rb-text);
+    --bs-dropdown-link-hover-bg: rgba(255,255,255,0.08);
+    --bs-dropdown-link-hover-color: #fff;
+    background-color: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+    border-color: var(--rb-border) !important;
+  }
+  .dropdown-item.active, .dropdown-item:active { background-color: var(--bs-primary) !important; color: #fff !important; }
+
+  /* 表格（Bootstrap） */
+  .table {
+    --bs-table-bg: var(--rb-surface);
+    --bs-table-color: var(--rb-text);
+    --bs-table-striped-bg: rgba(255,255,255,0.03);
+    --bs-table-hover-bg: rgba(255,255,255,0.06);
+    background-color: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+    border-color: var(--rb-border) !important;
+  }
+  .table thead th { color: var(--rb-text) !important; border-color: var(--rb-border) !important; }
+
+  /* 模态框 */
+  .modal-content { background-color: var(--rb-surface) !important; color: var(--rb-text) !important; border-color: var(--rb-border) !important; }
+  .modal-header, .modal-footer { border-color: var(--rb-border) !important; }
+
+  /* 表单控件 */
+  .form-control, .form-select, .ng-select-container, .ngb-dp-day, .ngb-dp-header,
+  .ngb-dp-weekdays, .ngb-dp-week, .ngb-dp-month {
+    background-color: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+    border-color: var(--rb-border) !important;
+  }
+  .form-control:focus, .form-select:focus { border-color: var(--bs-primary) !important; box-shadow: 0 0 0 .2rem rgba(96,165,250,.25) !important; }
+
+  /* ngx-datatable（@swimlane/ngx-datatable material 主题会强制白底，这里全部覆盖） */
+  .ngx-datatable.material {
+    background: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+  }
+  .ngx-datatable .datatable-header,
+  .ngx-datatable.material .datatable-header {
+    background: var(--rb-surface) !important;
+    border-bottom: 1px solid var(--rb-border) !important;
+    color: var(--rb-text) !important;
+  }
+  .ngx-datatable .datatable-header .datatable-header-cell { color: var(--rb-text) !important; }
+  .ngx-datatable .datatable-body,
+  .ngx-datatable.material .datatable-body {
+    background: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+  }
+  .ngx-datatable .datatable-body-row,
+  .ngx-datatable.material .datatable-body-row {
+    background: transparent !important;
+    border-bottom: 1px solid var(--rb-border) !important;
+    color: var(--rb-text) !important;
+  }
+  .ngx-datatable.material .datatable-row-odd { background: rgba(255,255,255,0.03) !important; }
+  .ngx-datatable.material .datatable-row-even { background: transparent !important; }
+  .ngx-datatable .datatable-footer,
+  .ngx-datatable.material .datatable-footer {
+    background: var(--rb-surface) !important;
+    border-top: 1px solid var(--rb-border) !important;
+    color: var(--rb-text) !important;
+  }
+}
+
 /* ---- 侧边栏与顶栏：随主题切换 ---- */
 /* 顶栏/底栏容器与内部背景、边框 */
 .lpx-topbar-container,
