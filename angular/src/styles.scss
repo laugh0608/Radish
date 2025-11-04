@@ -250,6 +250,7 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
     color: var(--rb-text) !important;
     /* 避免与表头双线：material 主题可能对 body 设置了顶部边框，暗色下去掉 */
     border-top: none !important;
+    outline: none !important; /* 某些浏览器焦点样式会以浅色显示一条线 */
   }
   .ngx-datatable .datatable-body-row,
   .ngx-datatable.material .datatable-body-row {
@@ -274,6 +275,20 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
     background: var(--rb-surface) !important;
     border-top: 1px solid var(--rb-border) !important;
     color: var(--rb-text) !important;
+  }
+
+  /* 更激进的“顶部白线”兜底：移除滚动层与首行可能的 top 边框/阴影 */
+  .ngx-datatable .datatable-scroll,
+  .ngx-datatable.material .datatable-scroll {
+    border-top: none !important;
+    box-shadow: none !important;
+    background-image: none !important;
+  }
+  .ngx-datatable .datatable-row-wrapper:first-child,
+  .ngx-datatable .datatable-row-center:first-child,
+  .ngx-datatable .datatable-row-group:first-child,
+  .ngx-datatable .datatable-body-row:first-child {
+    border-top: none !important;
   }
 }
 
