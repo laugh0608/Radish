@@ -17,7 +17,6 @@ import { environment } from '../environments/environment';
 import { APP_ROUTES } from './app.routes';
 import { AUTO_LOGIN_PROVIDER } from './auth.auto-login';
 import { APP_ROUTE_PROVIDER } from './route.provider';
-import { provideAppToolbarItems } from './providers/toolbar.providers';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -40,8 +39,6 @@ export const appConfig: ApplicationConfig = {
     provideAccountConfig(),
     provideTenantManagementConfig(),
     provideAbpThemeShared(),
-    // 注入 PC 端顶部工具栏项（明暗主题切换）
-    provideAppToolbarItems(),
     ...AUTO_LOGIN_PROVIDER,
   ]
 };
