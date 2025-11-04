@@ -215,18 +215,57 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
     background: var(--rb-surface) !important;
     border-bottom: 1px solid var(--rb-border) !important;
     color: var(--rb-text) !important;
+    box-shadow: none !important; /* material 主题可能用阴影做分隔线，暗色下去掉 */
   }
-  .ngx-datatable .datatable-header .datatable-header-cell { color: var(--rb-text) !important; }
+  /* 头部单元格与模板（有些主题在 cell/template 上再设白底/浅色） */
+  .ngx-datatable .datatable-header .datatable-header-cell,
+  .ngx-datatable.material .datatable-header .datatable-header-cell,
+  .ngx-datatable .datatable-header .datatable-header-cell .datatable-header-cell-template,
+  .ngx-datatable.material .datatable-header .datatable-header-cell .datatable-header-cell-template {
+    background: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+  }
+  /* 头部排序箭头/按钮颜色统一 */
+  .ngx-datatable .datatable-header .sort-btn,
+  .ngx-datatable .datatable-header .sort-btn i,
+  .ngx-datatable .datatable-header .datatable-icon-up,
+  .ngx-datatable .datatable-header .datatable-icon-down {
+    color: var(--rb-text) !important;
+    opacity: .85;
+  }
+  /* 头部过滤行中的控件与占位符颜色 */
+  .ngx-datatable .datatable-header input,
+  .ngx-datatable .datatable-header select,
+  .ngx-datatable .datatable-header .form-control,
+  .ngx-datatable .datatable-header .form-select {
+    background-color: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+    border-color: var(--rb-border) !important;
+  }
+  .ngx-datatable .datatable-header input::placeholder,
+  .ngx-datatable .datatable-header .form-control::placeholder { color: var(--rb-text-muted) !important; }
   .ngx-datatable .datatable-body,
   .ngx-datatable.material .datatable-body {
     background: var(--rb-surface) !important;
     color: var(--rb-text) !important;
+    /* 避免与表头双线：material 主题可能对 body 设置了顶部边框，暗色下去掉 */
+    border-top: none !important;
   }
   .ngx-datatable .datatable-body-row,
   .ngx-datatable.material .datatable-body-row {
     background: transparent !important;
     border-bottom: 1px solid var(--rb-border) !important;
     color: var(--rb-text) !important;
+  }
+
+  /* 兜底：若某些包裹层自带顶/底边框，统一颜色，避免出现白色分隔线 */
+  .ngx-datatable .datatable-row-wrapper,
+  .ngx-datatable .datatable-row-group,
+  .ngx-datatable .datatable-row-center,
+  .ngx-datatable .datatable-row-left,
+  .ngx-datatable .datatable-row-right {
+    border-top-color: var(--rb-border) !important;
+    border-bottom-color: var(--rb-border) !important;
   }
   .ngx-datatable.material .datatable-row-odd { background: rgba(255,255,255,0.03) !important; }
   .ngx-datatable.material .datatable-row-even { background: transparent !important; }
