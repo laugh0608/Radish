@@ -285,6 +285,12 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
     color: var(--rb-text) !important;
   }
 
+  /* 精确覆盖 material 默认的 cell 顶部分隔线（其使用了 !important 和浅色），暗色下直接移除，
+     统一由 wrapper 顶部分隔线绘制，避免出现白线 */
+  .ngx-datatable.material .datatable-body .datatable-row-wrapper:not(:first-child) .datatable-body-row .datatable-body-cell {
+    border-top: none !important;
+  }
+
   /* 更激进的“顶部白线”兜底：移除滚动层与首行可能的 top 边框/阴影 */
   .ngx-datatable .datatable-scroll,
   .ngx-datatable.material .datatable-scroll {
