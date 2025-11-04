@@ -255,8 +255,11 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
   .ngx-datatable .datatable-body-row,
   .ngx-datatable.material .datatable-body-row {
     background: transparent !important;
-    border-bottom: 1px solid var(--rb-border) !important;
+    /* 行内不再画分割线，改由 wrapper 统一绘制，避免双线/浅色残留 */
+    border-bottom: none !important;
     color: var(--rb-text) !important;
+    box-shadow: none !important;
+    background-image: none !important;
   }
 
   /* 兜底：若某些包裹层自带顶/底边框，统一颜色，避免出现白色分隔线 */
@@ -265,8 +268,13 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
   .ngx-datatable .datatable-row-center,
   .ngx-datatable .datatable-row-left,
   .ngx-datatable .datatable-row-right {
-    border-top-color: var(--rb-border) !important;
-    border-bottom-color: var(--rb-border) !important;
+    border-color: var(--rb-border) !important;
+    box-shadow: none !important;
+    background-image: none !important;
+  }
+  /* 统一“行分隔线”：仅在 wrapper 顶部绘制一根暗色线，从第二行开始生效 */
+  .ngx-datatable.material .datatable-row-wrapper:not(:first-child) {
+    border-top: 1px solid var(--rb-border) !important;
   }
   .ngx-datatable.material .datatable-row-odd { background: rgba(255,255,255,0.03) !important; }
   .ngx-datatable.material .datatable-row-even { background: transparent !important; }
