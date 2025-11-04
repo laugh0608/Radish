@@ -199,3 +199,87 @@
   - [ ] 如有偏差，补充 `docs/backend/README.md` 的 CORS/预检命令
 - Acceptance: 文档与现状一致；新人可按文档直接跑通
 - Deliverables: 文档更新 PR（本地提交）
+
+## 扩展专题：端到端加密聊天/帖子（E2EE）
+
+> 目标：为论坛提供“加密帖子”和“加密聊天室/私信”的端到端加密（E2EE）能力，支持给用户生成密钥对（默认前端生成私钥并仅本地保存），发布内容以收件人公钥加密，使“仅指定用户或持有私钥者”可解密阅读。服务端对明文零知，仅负责密文存储与访问控制。该能力通过 Feature Flag 渐进式上线。
+
+### 范围与约束
+- 范围：后端（ABP 分层）+ React/Angular 前端 + 密钥管理流程与备份。
+- 加密算法建议：
+  - 内容加密：AES-256-GCM（WebCrypto 可用）。
+  - 密钥封装：ECIES/非对称封装（P-256 或 Curve25519；如受限则使用 RSA-OAEP-256）。
+  - 口令派生：PBKDF2-HMAC-SHA256（优先 Argon2id，如可用）。
+- 兼容性：优先使用浏览器 WebCrypto SubtleCrypto；不支持场景回退为“明文/仅 ACL”。
+- 搜索/审核：密文不可全文检索；仅依赖元信息与用户主动举报快照；可选“监管密钥”仅在测试环境启用。
+
+### 里程碑与任务
+
+#### E2EE-1 密钥基础设施（用户密钥对）
+- Owner: TBD | Estimate: 2d | Deps: 登录/用户资料
+- Checklist:
+  - [ ] 前端首次开启 E2EE 时生成密钥对（KeyId、算法、创建时间），私钥仅本地保存（IndexedDB/Keychain）。
+  - [ ] 可选备份：以用户口令派生密钥对私钥进行 AES-GCM 加密后上传备份（服务端仅存密文）。
+  - [ ] 后端新增实体 `UserEncryptionKey`：`UserId`、`KeyId`、`Algorithm`、`PublicKey`、`CreatedAt`、`RevokedAt`。
+  - [ ] 开放 API：发布/撤销公钥、按 `UserId` 查询公钥列表与当前 `KeyId`。
+  - [ ] 密钥轮换：允许并行多把公钥，标记当前生效；撤销旧 KeyId。
+- Acceptance: 用户可生成并发布公钥；服务端可查询；轮换/撤销流程可用。
+
+#### E2EE-2 加密帖子（Recipients 白名单）
+- Owner: TBD | Estimate: 2d | Deps: E2EE-1
+- Checklist:
+  - [ ] Domain：在 `Post` 增加 `IsEncrypted`、`Ciphertext`、`EncryptionMeta`（含 `alg`、`keyId`、`recipients` 数组：`[{ userId, keyId, wrappedKey }]`、`iv`、`tag`）。
+  - [ ] 应用层：发布加密帖时，前端生成随机 `contentKey`（对称），对每位收件人公钥做密钥封装（wrappedKey），提交密文与元信息；服务端仅做 ACL/元信息校验与存储。
+  - [ ] 读取：前端拉取密文与自己的 `wrappedKey`，以本地私钥解封装 `contentKey` 并解密正文；失败时给出恢复/重试指引。
+  - [ ] UI：发帖支持“加密发布”开关与收件人选择；列表标示“加密”。
+- Acceptance: 白名单内用户可解密阅读；非收件人仅见占位/受限提示；服务端不触达明文。
+
+#### E2EE-3 加密聊天室/私信（群聊密钥）
+- Owner: TBD | Estimate: 3d | Deps: E2EE-1
+- Checklist:
+  - [ ] 结构：聊天室维度维护 `RoomKey`（对称）及其轮换序列；为每位成员保存一份 `wrappedKey`（基于成员公钥封装）。
+  - [ ] 成员变更：新成员加入时为其封装当前 `RoomKey` 或触发轮换；成员退出/移除触发轮换，使其无法解密新消息。
+  - [ ] 消息：每条消息使用当前 `RoomKey` + AES-GCM 加密；服务器仅保存密文与必要元信息（`roomKeyVersion`）。
+  - [ ] 前端：加入/退出/轮换的自动重协商与提示；离线后重连恢复。
+- Acceptance: 群聊仅成员可读；成员变更后前成员无法解密新消息；消息解密无明显卡顿。
+
+#### E2EE-4 备份与恢复（私钥/密钥包）
+- Owner: TBD | Estimate: 1d | Deps: E2EE-1
+- Checklist:
+  - [ ] 导出加密备份：以口令派生密钥加密私钥包（含 KeyId/算法/指纹），本地下载或安全云存储。
+  - [ ] 导入恢复：在新设备导入备份后验证指纹并恢复解密能力。
+  - [ ] 安全提示：遗失口令或备份将无法恢复历史密文（设计即如此）。
+- Acceptance: 新设备可通过备份恢复并成功解密历史加密帖/消息。
+
+#### E2EE-5 合规与运营开关
+- Owner: TBD | Estimate: 1d | Deps: E2EE-2/E2EE-3
+- Checklist:
+  - [ ] Feature Flag：`App__Features__E2EE`（默认关闭，仅测试环境开启）。
+  - [ ] 可选“监管密钥”（测试环境）：为指定监管账户附加一份 `wrappedKey`，用于问题排查；生产默认关闭。
+  - [ ] 日志与隐私：避免在日志/埋点中泄露任何明文或密钥材料。
+- Acceptance: 在不同环境下开关生效；关闭监管时平台无法解密内容。
+
+### ABP/实体/接口改动点（梳理）
+- Domain（Radish.Domain*）：
+  - `UserEncryptionKey` 聚合/实体。
+  - `Post`、`Message` 增加加密相关字段（不改变明文帖/消息存储结构）。
+- Application（Radish.Application*）：
+  - 公钥发布/撤销/查询 AppService。
+  - 加密帖发布/读取、聊天室密钥轮换/成员管理应用服务。
+- HttpApi（Radish.HttpApi*）：
+  - 公钥 API、加密帖/消息读写 API（仅返回密文与元数据）。
+- MongoDB（Radish.MongoDB）：
+  - 索引：`UserEncryptionKey.UserId`、`KeyId`；`Post`/`Message` 的加密标识与时间序列优化。
+- 前端（react/、angular/）：
+  - 密钥生成/存储（IndexedDB）、备份/恢复、解密渲染与错误处理；UI 开关与指纹展示。
+
+### 风险与缓解
+- 私钥丢失：不可恢复历史内容；提供备份与二次确认提示。
+- 浏览器兼容：优先使用 WebCrypto；低版本回退为“不可用/提示升级”。
+- 搜索与审核：密文不可检索；辅以标签/元信息与用户主动举报快照；可选测试环境监管密钥。
+- 性能：大内容建议分块或只对正文加密；密钥封装对收件人数线性增长，限制最大收件人数或采用群聊密钥。
+
+### 交付物与验证
+- API 文档（Swagger/Scalar 分组：E2EE）。
+- 前端演示：发加密帖、解密渲染、群聊密钥轮换演示。
+- 自动化：核心加解密与元信息校验的单测；端到端冒烟（可选）。

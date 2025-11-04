@@ -196,6 +196,8 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
             {
                 // add a custom operation filter which sets default values
                 options.OperationFilter<SwaggerDefaultValues>();
+                // 移除默认的错误响应（400/401/403/404/500/501）
+                options.OperationFilter<RemoveDefaultErrorResponsesOperationFilter>();
                 options.CustomSchemaIds(type => type.FullName);
                 options.DocumentFilter<Radish.Extensions.Swagger.OnlyProjectApisDocumentFilter>();
                 // 包含各层 XML 注释到 Swagger（控制器、应用服务接口与DTO注释）

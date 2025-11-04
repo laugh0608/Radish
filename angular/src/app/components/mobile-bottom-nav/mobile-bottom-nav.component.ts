@@ -20,7 +20,10 @@ import { MobileUiService } from '../../services/mobile-ui.service';
             <span>{{ item.name | abpLocalization }}</span>
           </a>
         } @else {
-          <a [routerLink]="item.path" routerLinkActive="active" [attr.aria-label]="item.name">
+          <a [routerLink]="item.path"
+             routerLinkActive="active"
+             [routerLinkActiveOptions]="{ exact: (item.path || '') === '/' }"
+             [attr.aria-label]="item.name">
             <i [class]="iconFor(item)"></i>
             <span>{{ item.name | abpLocalization }}</span>
           </a>
@@ -181,6 +184,11 @@ export class MobileBottomNavComponent {
 
   openSubmenu(item: ABP.Route) {
     const path = item.path || '';
+    // 再次点击同一入口 => 切换关闭
+    if (this.submenuOpen && this.submenuFor === path) {
+      this.closeSubmenu();
+      return;
+    }
     this.submenuFor = path;
     this.submenuTitle = item.name || '';
     if (path === '/__manage') {
@@ -276,7 +284,7 @@ export class MobileBottomNavComponent {
   // ----- UI helpers -----
   iconFor(r: ABP.Route | undefined): string {
     if (!r) return 'bi bi-dot';
-    const path = r.path || '';
+    const path = (r.path || '').trim();
     const map: Record<string, string> = {
       '/': 'bi bi-house-fill',
       '/books': 'bi bi-journal-bookmark-fill',
@@ -285,15 +293,34 @@ export class MobileBottomNavComponent {
       '/identity': 'bi bi-people-fill',
       '/identity/users': 'bi bi-person-fill',
       '/identity/roles': 'bi bi-person-badge-fill',
-      '/tenant-management': 'bi bi-buildings-fill',
-      '/tenant-management/tenants': 'bi bi-building-fill',
+      // bootstrap-icons@1.7.2 仅包含 bi-building，无 buildings / building-fill
+      '/tenant-management': 'bi bi-building',
+      '/tenant-management/tenants': 'bi bi-building',
+      // 兼容旧模块（SaaS）路径
+      '/saas': 'bi bi-building',
+      '/saas/tenants': 'bi bi-building',
       '/setting-management': 'bi bi-gear-fill',
     };
-    // longest prefix match
+    // 仅当后端提供的是 Bootstrap Icons 类时才使用 r.iconClass；
+    // 避免 FontAwesome 等未加载字体导致“看起来没有图标”。
+    let ic = (r.iconClass || '').trim();
+    // 租户：若后端给的是 building / building-fill，统一用 bi-building（1.7.2 存在）
+    if (/\bbi\s+bi-building(-fill)?\b/.test(ic) || /\bbi-building(-fill)?\b/.test(ic)) {
+      ic = 'bi bi-building';
+    }
+    if (ic.startsWith('bi ') || ic.startsWith('bi-')) return ic;
+    // longest prefix match by path
     const matched = Object.keys(map)
       .sort((a, b) => b.length - a.length)
       .find(p => path === p || path.startsWith(p + '/'));
-    return r.iconClass || (matched ? map[matched] : 'bi bi-dot');
+    if (matched) return map[matched];
+    // 名称兜底
+    const nameLower = (r.name || '').toLowerCase();
+    if (nameLower.includes('tenant') || (r.name || '').includes('租户')) return 'bi bi-building';
+    if (nameLower.includes('role') || (r.name || '').includes('角色')) return 'bi bi-person-badge-fill';
+    if (nameLower.includes('user') || nameLower.includes('account') || (r.name || '').includes('用户')) return 'bi bi-person-fill';
+    if (nameLower.includes('setting') || (r.name || '').includes('设置')) return 'bi bi-gear-fill';
+    return 'bi bi-dot';
   }
 
   private iconForGroup(name: string): string {
@@ -370,6 +397,11 @@ export class MobileBottomNavComponent {
 
   openMore(event: Event) {
     event.preventDefault();
+    // 再次点击“更多” => 切换关闭
+    if (this.submenuOpen && this.submenuFor === 'more') {
+      this.closeSubmenu();
+      return;
+    }
     this.submenuFor = 'more';
     this.submenuTitle = '更多';
     const items = [...this.overflow()];

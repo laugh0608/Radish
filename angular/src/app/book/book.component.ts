@@ -6,7 +6,7 @@ import {
   ReactiveFormsModule
 } from '@angular/forms';
 import { Component, inject, OnInit } from '@angular/core';
-import { DatePipe, CurrencyPipe, formatDate } from '@angular/common';
+import { DatePipe, CurrencyPipe, formatDate, NgFor } from '@angular/common';
 import { NgbDatepickerModule, NgbDateStruct, NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { NgxDatatableModule } from '@swimlane/ngx-datatable';
 import {
@@ -30,7 +30,9 @@ import { BookService, BookDto, bookTypeOptions } from '../proxy/books';
   selector: 'app-book',
   templateUrl: './book.component.html',
   styleUrls: ['./book.component.scss'],
+  standalone: true,
   imports: [
+    NgFor,
     FormsModule,
     ReactiveFormsModule,
     NgbDatepickerModule,
