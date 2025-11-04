@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, OnDestroy, inject } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 
 @Component({
@@ -7,7 +7,7 @@ import { Router, NavigationEnd } from '@angular/router';
   template: `
     <button
       type="button"
-      class="mobile-theme-btn d-sm-inline-flex d-md-none"
+      class="mobile-icon-btn mobile-theme-btn d-sm-inline-flex d-md-none"
       [attr.aria-label]="isDark ? 'Switch to light' : 'Switch to dark'"
       (click)="toggle()"
     >
@@ -16,7 +16,7 @@ import { Router, NavigationEnd } from '@angular/router';
   `,
   styleUrls: ['./mobile-theme-toggle.component.scss'],
 })
-export class MobileThemeToggleComponent implements AfterViewInit, OnDestroy {
+export class MobileThemeToggleComponent implements OnInit, AfterViewInit, OnDestroy {
   private el = inject(ElementRef<HTMLElement>);
   private router = inject(Router);
 
@@ -29,14 +29,18 @@ export class MobileThemeToggleComponent implements AfterViewInit, OnDestroy {
     if (e instanceof NavigationEnd) setTimeout(() => this.attachToNavbar(), 0);
   });
 
-  ngAfterViewInit(): void {
-    this.attachToNavbar();
-    // 初始主题：localStorage > 文档属性 > 系统偏好
+  ngOnInit(): void {
+    // 初始主题在 OnInit 设置，避免 AfterViewInit 改变绑定值导致 NG0100
     const doc = document.documentElement;
     const saved = localStorage.getItem(this.storageKey);
     const preferredDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initTheme = (saved as 'dark' | 'light' | null) || (doc.getAttribute('data-bs-theme') as 'dark' | 'light' | null) || (preferredDark ? 'dark' : 'light');
     this.apply(initTheme);
+  }
+
+  ngAfterViewInit(): void {
+    this.attachToNavbar();
+    this.bindPersonIconToProfile();
     // 监听窗口与断点变化，跨视图切换时重新挂载
     window.addEventListener('resize', this.resizeHandler);
     try { this.media.addEventListener?.('change', this.mediaHandler as any); } catch {}
@@ -61,6 +65,27 @@ export class MobileThemeToggleComponent implements AfterViewInit, OnDestroy {
       if (target && host.parentElement !== target) {
         target.appendChild(host);
       }
+      // 确保每次挂载/路由切换后都重新绑定个人信息按钮
+      this.bindPersonIconToProfile();
+    } catch {}
+  }
+
+  // 将左起第一个“用户”图标点击行为重定向到个人信息页
+  private bindPersonIconToProfile() {
+    try {
+      const container = document.querySelector('.lpx-mobile-navbar .user-menu') as HTMLElement | null;
+      if (!container) return;
+      const person = (container.querySelector('lpx-icon[iconclass*="bi-person" i]') as HTMLElement | null)
+        || (container.querySelector('lpx-icon:first-child') as HTMLElement | null);
+      if (!person || person.getAttribute('data-profile-bound') === '1') return;
+      person.setAttribute('data-profile-bound', '1');
+      person.style.cursor = 'pointer';
+      const handler = (ev: Event) => {
+        try { ev.preventDefault(); ev.stopPropagation(); (ev as any).stopImmediatePropagation?.(); } catch {}
+        try { document.body.classList.remove('mobile-menu-opened'); document.documentElement.classList.remove('mobile-menu-opened'); } catch {}
+        this.router.navigateByUrl('/account/manage');
+      };
+      person.addEventListener('click', handler, { capture: true });
     } catch {}
   }
 

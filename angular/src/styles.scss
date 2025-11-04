@@ -38,10 +38,609 @@
   }
 }
 
+/* =========================
+   主题设计（高对比度）
+   - 使用 Bootstrap 5.3 data-bs-theme 机制
+   - 定义一组自有 token，统一映射到 --bs-* 变量
+   ========================= */
+
+/* 亮色主题（默认） */
+:root,
+[data-bs-theme='light'] {
+  /* Radish base tokens */
+  --rb-bg: #f6f7fb;            /* 页面背景 */
+  --rb-surface: #ffffff;       /* 卡片/容器 */
+  --rb-text: #1f2937;          /* 主文字 */
+  --rb-text-muted: #6b7280;    /* 次级文字 */
+  --rb-border: #e5e7eb;        /* 分隔线 */
+
+  /* 品牌色：亮蓝，保证与暗色主题一致识别 */
+  --rb-primary: #3b82f6;       /* blue-500 */
+  --rb-primary-strong: #2563eb;/* blue-600 */
+  --rb-primary-soft: #dbeafe;  /* blue-100 */
+
+  /* 移动底部导航（与亮色形成反差） */
+  /* 底部导航（亮色）与移动顶部栏使用同一套浅色方案 */
+  --rb-nav-bg: #ffffff;
+  --rb-nav-border: rgba(15, 23, 42, 0.08); /* 与深色相反 */
+  --rb-nav-fg: #475569;        /* slate-600 */
+  --rb-nav-fg-active: #111827; /* slate-900 */
+
+  /* 映射到 Bootstrap 变量 */
+  --bs-body-bg: var(--rb-bg);
+  --bs-body-color: var(--rb-text);
+  --bs-secondary-color: var(--rb-text-muted);
+  --bs-border-color: var(--rb-border);
+  --bs-card-bg: var(--rb-surface);
+  --bs-card-color: var(--rb-text);
+  --bs-primary: var(--rb-primary);
+  --bs-primary-rgb: 59, 130, 246;
+  --bs-link-color: var(--rb-primary);
+  --bs-link-hover-color: var(--rb-primary-strong);
+  --bs-tertiary-bg: #eef2f7; /* 表格/条纹背景 */
+  /* ABP/LeptonX 变量对齐 */
+  --lpx-card-bg: var(--rb-surface);
+  --lpx-brand: var(--bs-primary);
+  --lpx-primary: var(--bs-primary);
+
+  /* 顶栏/侧栏主题变量（亮色） */
+  --rb-topbar-shell-bg: var(--rb-bg);
+  --rb-topbar-bg: var(--rb-surface);
+  --rb-topbar-border: var(--rb-border);
+  --rb-sidenav-bg: #ffffff;
+  --rb-sidenav-text: #475569; /* slate-600 */
+  --rb-sidenav-hover-bg: #eef2f7;
+  --rb-sidenav-active-bg: var(--rb-primary-soft);
+  --rb-sidenav-active-color: var(--bs-primary);
+}
+
+/* 暗色主题 */
+[data-bs-theme='dark'] {
+  --rb-bg: #0b1220;            /* 深靛青背景 */
+  --rb-surface: #121826;       /* 卡片面板 */
+  --rb-text: #e6e7eb;          /* 主要文字 */
+  --rb-text-muted: #9aa4b2;    /* 次级文字 */
+  --rb-border: #2b3441;        /* 分隔线 */
+
+  /* 品牌色在深色下略提亮，增强可读性 */
+  --rb-primary: #60a5fa;       /* blue-400 */
+  --rb-primary-strong: #93c5fd;/* blue-300，用作 hover */
+  --rb-primary-soft: rgba(96, 165, 250, 0.15);
+
+  /* 移动底部导航：与主体协调 */
+  --rb-nav-bg: #0e121b;
+  --rb-nav-border: rgba(255, 255, 255, 0.08);
+  --rb-nav-fg: #9aa4b2;
+  --rb-nav-fg-active: #ffffff;
+
+  /* Bootstrap 变量映射 */
+  --bs-body-bg: var(--rb-bg);
+  --bs-body-color: var(--rb-text);
+  --bs-secondary-color: var(--rb-text-muted);
+  --bs-border-color: var(--rb-border);
+  --bs-card-bg: var(--rb-surface);
+  --bs-card-color: var(--rb-text);
+  --bs-primary: var(--rb-primary);
+  --bs-primary-rgb: 96, 165, 250;
+  --bs-link-color: var(--rb-primary);
+  --bs-link-hover-color: var(--rb-primary-strong);
+  --bs-tertiary-bg: #0f172a;
+  /* ABP/LeptonX 变量对齐 */
+  --lpx-card-bg: var(--rb-surface);
+  --lpx-brand: var(--bs-primary);
+  --lpx-primary: var(--bs-primary);
+
+  /* 顶栏/侧栏主题变量（暗色） */
+  --rb-topbar-shell-bg: var(--rb-bg);
+  --rb-topbar-bg: #0f172a; /* 比卡片更深一点 */
+  --rb-topbar-border: var(--rb-border);
+  --rb-sidenav-bg: #0f172a;
+  --rb-sidenav-text: #cbd5e1; /* slate-300 */
+  --rb-sidenav-hover-bg: #192133;
+  --rb-sidenav-active-bg: var(--rb-primary-soft);
+  --rb-sidenav-active-color: #ffffff;
+}
+
 /* 全局字体：优先系统字体，Inter 次之，避免远程字体不可用时阻塞渲染 */
 html, body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC", Arial, "Inter", sans-serif !important;
 }
+
+/* 全局背景与卡片兜底，确保第三方样式也能遵循主题 */
+body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !important; }
+/* 覆盖 LeptonX 对内容容器固定的浅灰背景，随主题切换 */
+.lpx-content-container { background: var(--bs-body-bg) !important; }
+.card {
+  /* Bootstrap 卡片变量在 LeptonX 的 bootstrap-dim.css 中被重置为白色，这里强制覆盖 */
+  --bs-card-bg: var(--rb-surface) !important;
+  --bs-card-color: var(--rb-text) !important;
+  background: var(--bs-card-bg) !important;
+  color: var(--bs-card-color) !important;
+}
+.text-muted { color: var(--bs-secondary-color) !important; }
+
+/* 深色模式下，统一第三方组件与 Bootstrap 元素的暗色适配 */
+[data-bs-theme='dark'] {
+  /* 常见“强制白色”类的回退（来自三方样式/模板） */
+  .bg-white,
+  .bg-light,
+  .card.bg-white,
+  .card.bg-light { background-color: var(--rb-surface) !important; color: var(--rb-text) !important; }
+
+  /* 下拉菜单 */
+  .dropdown-menu {
+    --bs-dropdown-bg: var(--rb-surface);
+    --bs-dropdown-color: var(--rb-text);
+    --bs-dropdown-link-color: var(--rb-text);
+    --bs-dropdown-link-hover-bg: rgba(255,255,255,0.08);
+    --bs-dropdown-link-hover-color: #fff;
+    background-color: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+    border-color: var(--rb-border) !important;
+  }
+  .dropdown-item.active, .dropdown-item:active { background-color: var(--bs-primary) !important; color: #fff !important; }
+
+  /* 表格（Bootstrap） */
+  .table {
+    --bs-table-bg: var(--rb-surface);
+    --bs-table-color: var(--rb-text);
+    --bs-table-striped-bg: rgba(255,255,255,0.03);
+    --bs-table-hover-bg: rgba(255,255,255,0.06);
+    background-color: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+    border-color: var(--rb-border) !important;
+  }
+  .table thead th { color: var(--rb-text) !important; border-color: var(--rb-border) !important; }
+
+  /* 模态框 */
+  .modal-content { background-color: var(--rb-surface) !important; color: var(--rb-text) !important; border-color: var(--rb-border) !important; }
+  .modal-header, .modal-footer { border-color: var(--rb-border) !important; }
+
+  /* 表单控件 */
+  .form-control, .form-select, .ng-select-container, .ngb-dp-day, .ngb-dp-header,
+  .ngb-dp-weekdays, .ngb-dp-week, .ngb-dp-month {
+    background-color: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+    border-color: var(--rb-border) !important;
+  }
+  .form-control:focus, .form-select:focus { border-color: var(--bs-primary) !important; box-shadow: 0 0 0 .2rem rgba(96,165,250,.25) !important; }
+
+  /* ngx-datatable（@swimlane/ngx-datatable material 主题会强制白底，这里全部覆盖） */
+  .ngx-datatable.material {
+    background: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+  }
+  .ngx-datatable .datatable-header,
+  .ngx-datatable.material .datatable-header {
+    background: var(--rb-surface) !important;
+    border-bottom: 1px solid var(--rb-border) !important;
+    color: var(--rb-text) !important;
+    box-shadow: none !important; /* material 主题可能用阴影做分隔线，暗色下去掉 */
+  }
+  /* 头部单元格与模板（有些主题在 cell/template 上再设白底/浅色） */
+  .ngx-datatable .datatable-header .datatable-header-cell,
+  .ngx-datatable.material .datatable-header .datatable-header-cell,
+  .ngx-datatable .datatable-header .datatable-header-cell .datatable-header-cell-template,
+  .ngx-datatable.material .datatable-header .datatable-header-cell .datatable-header-cell-template {
+    background: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+  }
+  /* 头部排序箭头/按钮颜色统一 */
+  .ngx-datatable .datatable-header .sort-btn,
+  .ngx-datatable .datatable-header .sort-btn i,
+  .ngx-datatable .datatable-header .datatable-icon-up,
+  .ngx-datatable .datatable-header .datatable-icon-down {
+    color: var(--rb-text) !important;
+    opacity: .85;
+  }
+  /* 头部过滤行中的控件与占位符颜色 */
+  .ngx-datatable .datatable-header input,
+  .ngx-datatable .datatable-header select,
+  .ngx-datatable .datatable-header .form-control,
+  .ngx-datatable .datatable-header .form-select {
+    background-color: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+    border-color: var(--rb-border) !important;
+  }
+  .ngx-datatable .datatable-header input::placeholder,
+  .ngx-datatable .datatable-header .form-control::placeholder { color: var(--rb-text-muted) !important; }
+  .ngx-datatable .datatable-body,
+  .ngx-datatable.material .datatable-body {
+    background: var(--rb-surface) !important;
+    color: var(--rb-text) !important;
+    /* 避免与表头双线：material 主题可能对 body 设置了顶部边框，暗色下去掉 */
+    border-top: none !important;
+    outline: none !important; /* 某些浏览器焦点样式会以浅色显示一条线 */
+  }
+  .ngx-datatable .datatable-body-row,
+  .ngx-datatable.material .datatable-body-row {
+    background: transparent !important;
+    /* 行内不再画分割线，改由 wrapper 统一绘制，避免双线/浅色残留 */
+    border-bottom: none !important;
+    color: var(--rb-text) !important;
+    box-shadow: none !important;
+    background-image: none !important;
+  }
+
+  /* 兜底：若某些包裹层自带顶/底边框，统一颜色，避免出现白色分隔线 */
+  .ngx-datatable .datatable-row-wrapper,
+  .ngx-datatable .datatable-row-group,
+  .ngx-datatable .datatable-row-center,
+  .ngx-datatable .datatable-row-left,
+  .ngx-datatable .datatable-row-right {
+    border-color: var(--rb-border) !important;
+    box-shadow: none !important;
+    background-image: none !important;
+  }
+  /* 统一“行分隔线”：仅在 wrapper 顶部绘制一根暗色线，从第二行开始生效 */
+  .ngx-datatable.material .datatable-row-wrapper:not(:first-child) {
+    border-top: 1px solid var(--rb-border) !important;
+  }
+  .ngx-datatable.material .datatable-row-odd { background: rgba(255,255,255,0.03) !important; }
+  .ngx-datatable.material .datatable-row-even { background: transparent !important; }
+  .ngx-datatable .datatable-footer,
+  .ngx-datatable.material .datatable-footer {
+    background: var(--rb-surface) !important;
+    border-top: 1px solid var(--rb-border) !important;
+    color: var(--rb-text) !important;
+  }
+
+  /* 精确覆盖 material 默认的 cell 顶部分隔线（其使用了 !important 和浅色），暗色下直接移除，
+     统一由 wrapper 顶部分隔线绘制，避免出现白线 */
+  .ngx-datatable.material .datatable-body .datatable-row-wrapper:not(:first-child) .datatable-body-row .datatable-body-cell {
+    border-top: none !important;
+  }
+
+  /* 更激进的“顶部白线”兜底：移除滚动层与首行可能的 top 边框/阴影 */
+  .ngx-datatable .datatable-scroll,
+  .ngx-datatable.material .datatable-scroll {
+    border-top: none !important;
+    box-shadow: none !important;
+    background-image: none !important;
+  }
+  .ngx-datatable .datatable-row-wrapper:first-child,
+  .ngx-datatable .datatable-row-center:first-child,
+  .ngx-datatable .datatable-row-group:first-child,
+  .ngx-datatable .datatable-body-row:first-child {
+    border-top: none !important;
+  }
+}
+
+/* ---- 侧边栏与顶栏：随主题切换 ---- */
+/* 顶栏/底栏容器与内部背景、边框 */
+.lpx-topbar-container,
+.lpx-footbar-container { background-color: var(--rb-topbar-shell-bg) !important; }
+.lpx-topbar-container .lpx-topbar,
+.lpx-footbar-container .lpx-footbar {
+  background-color: var(--rb-topbar-bg) !important;
+  border-color: var(--rb-topbar-border) !important;
+}
+.lpx-content-wrapper { border-color: var(--rb-topbar-border) !important; }
+
+/* 侧边栏底色与文本颜色 */
+.lpx-sidebar,
+.lpx-sidebar .lpx-logo-container,
+.lpx-sidebar-container .lpx-sidebar .lpx-nav,
+.lpx-sidebar-container .lpx-sidebar .lpx-nav .lpx-nav-menu { background-color: var(--rb-sidenav-bg) !important; }
+.lpx-brand-name { background: var(--rb-sidenav-bg) !important; color: var(--rb-text) !important; }
+.lpx-nav,
+.lpx-menu-item,
+.lpx-nav-menu .lpx-menu-item-link { color: var(--rb-sidenav-text) !important; }
+
+/* 侧边栏悬停与选中 */
+.lpx-nav-menu .lpx-menu-item-link:hover,
+.lpx-nav-menu .lpx-inner-menu-item .lpx-menu-item-link:hover {
+  background-color: var(--rb-sidenav-hover-bg) !important;
+  color: var(--rb-text) !important;
+}
+.lpx-nav-menu .lpx-menu-item-link.selected,
+.lpx-nav-menu .lpx-menu-item-link.expanded,
+.lpx-nav-menu .lpx-inner-menu-item .lpx-menu-item-link.selected {
+  background-color: var(--rb-sidenav-active-bg) !important;
+  color: var(--rb-sidenav-active-color) !important;
+}
+
+/* 移动端顶部栏随主题（覆盖 LeptonX 的 #161616） */
+@media (max-width: 767.98px) {
+  .lpx-mobile-navbar,
+  .user-menu-groups,
+  .lpx-mobile-nav-items { background-color: var(--rb-topbar-bg) !important; }
+  .lpx-mobile-navbar .user-menu .lpx-icon { color: var(--rb-text) !important; }
+  .lpx-mobile-navbar .user-menu lpx-icon { pointer-events: auto; cursor: pointer; }
+
+  /* 统一移动端右上角四个按钮的样式（用户、菜单、语言、主题） */
+  .lpx-mobile-navbar .user-menu {
+    gap: 8px !important;
+  }
+  /* 公共样式：36x36 圆角、描边、悬停背景 */
+  .mobile-icon-btn,
+  .lpx-mobile-navbar .user-menu lpx-icon {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    border: 1px solid var(--rb-nav-border, rgba(255,255,255,0.35));
+    background: transparent;
+    color: var(--rb-text) !important;
+    outline: none;
+    transition: background-color .15s ease, color .15s ease;
+  }
+  .mobile-icon-btn:hover,
+  .lpx-mobile-navbar .user-menu lpx-icon:hover { background: rgba(255,255,255,0.10); }
+  [data-bs-theme='light'] .mobile-icon-btn:hover,
+  [data-bs-theme='light'] .lpx-mobile-navbar .user-menu lpx-icon:hover { background: rgba(0,0,0,0.06); }
+
+  /* 统一按钮内图标的视觉尺寸（Bi icons 与 lpx-icon 一致） */
+  .mobile-icon-btn i,
+  .lpx-mobile-navbar .user-menu lpx-icon i,
+  .lpx-mobile-navbar .user-menu lpx-icon [class^="bi"],
+  .lpx-mobile-navbar .user-menu lpx-icon [class*=" bi"] {
+    font-size: 18px !important;
+    width: 18px;
+    height: 18px;
+    line-height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* 统一品牌按钮与“soft”系列的主色表现（覆盖 LeptonX 默认粉色） */
+.btn.btn-brand {
+  background-color: var(--bs-primary) !important;
+  border-color: var(--bs-primary) !important;
+  color: #fff !important;
+}
+.btn.btn-brand:hover {
+  background-color: var(--bs-link-hover-color) !important;
+  border-color: var(--bs-link-hover-color) !important;
+}
+.btn.btn-brand.soft {
+  background-color: var(--rb-primary-soft) !important;
+  border-color: transparent !important;
+  color: var(--bs-primary) !important;
+}
+.bg-brand.soft {
+  background-color: var(--rb-primary-soft) !important;
+  color: var(--bs-primary) !important;
+}
+.bg-brand {
+  background-color: var(--bs-primary) !important;
+  color: #fff !important;
+}
+
+/* ---- Desktop Topbar 调整 ---- */
+@media (min-width: 768px) {
+  /* 显示右上角用户按钮 */
+  .lpx-topbar .lpx-user-profile { display: inline-flex !important; }
+
+  /* PC 顶栏顺序：语言 -> 主题 -> 头像昵称
+     说明：LeptonX 顶栏/工具栏为 Flex 布局，这里通过 order 明确排序，
+     确保“语言、主题”位于“用户头像与昵称”的左侧。 */
+  /* 语言选择置左（尽量覆盖不同包装容器） */
+  .lpx-topbar .lpx-language-selection,
+  .lpx-topbar .language-selection,
+  .lpx-topbar [class*="language-selection"],
+  .lpx-topbar .lpx-language-selection-container,
+  .lpx-topbar .lpx-language-selection-wrapper { order: 1 !important; }
+
+  /* 在顶栏的 Toolbar 容器内（lpx-toolbar-items），以子级 lpx-toolbar-item 为单位重排顺序 */
+  lpx-toolbar-items.lpx-topbar-content { display: flex !important; align-items: center !important; gap: 6px !important; }
+  lpx-toolbar-items.lpx-topbar-content > lpx-toolbar-item { order: 10 !important; }
+  lpx-toolbar-items.lpx-topbar-content > lpx-toolbar-item:has(.lpx-language-selection) { order: 1 !important; }
+  lpx-toolbar-items.lpx-topbar-content > lpx-toolbar-item:has(app-desktop-theme-toggle) { order: 2 !important; }
+  lpx-toolbar-items.lpx-topbar-content > lpx-toolbar-item:has(.lpx-user-profile) { order: 3 !important; }
+
+  /* 若主题已自带“主题切换器”（带 bi-moon/bi-sun 的 dropdown），隐藏自定义的 PC 主题按钮，避免重复 */
+  lpx-toolbar-items.lpx-topbar-content:has(.dropdown-toggle i.bi-moon, .dropdown-toggle i.bi-sun)
+    > lpx-toolbar-item:has(app-desktop-theme-toggle) { display: none !important; }
+
+  /* 语言下拉：避免被内容卡片遮挡（不依赖顶栏父类） */
+  .lpx-language-selection { position: relative; z-index: 1300; }
+  .lpx-language-selection .dropdown-menu { z-index: 2001 !important; }
+  /* 防止顶栏区域裁剪下拉（尽量宽泛，避免不同版本类名差异） */
+  .lpx-topbar, .lpx-topbar-content, .lpx-navbar, .lpx-toolbar { overflow: visible !important; }
+
+  /* 顶栏内各区域垂直居中（品牌/菜单/工具区） */
+  .lpx-topbar .lpx-topbar-content,
+  .lpx-topbar .lpx-toolbar,
+  .lpx-topbar .lpx-nav,
+  .lpx-topbar .lpx-inner-toolbar,
+  .lpx-toolbar { align-items: center !important; }
+
+  /* 桌面端：统一右上角图标样式（头像保持原样，语言/主题/更多统一成圆形图标按钮） */
+  .lpx-topbar .lpx-topbar-content { align-items: center !important; }
+  /* 顶栏高度与内边距，保证图标不“贴顶贴底” */
+  .lpx-topbar, .lpx-topbar .lpx-topbar-content { min-height: 44px; }
+  /* 让顶栏本身就是 Flex，所有子项自然垂直居中 */
+  .lpx-topbar,
+  .lpx-topbar-container { display: flex; align-items: center; }
+  .lpx-topbar { width: 100%; }
+  /* 工具区容器（组件）与内容容器都设为 Flex */
+  lpx-toolbar,
+  lpx-toolbar-items.lpx-topbar-content,
+  .lpx-topbar .lpx-topbar-content { display: flex !important; align-items: center !important; gap: 6px !important; }
+  /* 右侧工具栏整体的垂直居中与紧凑间距 */
+  .lpx-topbar .lpx-toolbar,
+  .lpx-topbar .lpx-inner-toolbar,
+  .lpx-toolbar {
+    display: flex;
+    align-items: center !important;
+    gap: 6px !important; /* 顶栏各项之间 6px 间距 */
+    padding-right: 16px; /* 右侧留白，避免贴边 */
+  }
+  /* 顶栏内的菜单链接（主题默认包裹图标的 <a>）统一为 Flex 居中 */
+  .lpx-topbar .lpx-menu-item-link {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 32px !important;
+    padding: 0 !important;
+  }
+  /* 去除可能的水平外边距造成的“错位”（保留垂直外边距用于上下留白） */
+  .lpx-topbar .lpx-toolbar > *, .lpx-toolbar > * { margin-left: 0 !important; margin-right: 0 !important; }
+  .desktop-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px; height: 32px; border-radius: 16px;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border));
+    background: transparent;
+    color: var(--rb-text);
+    outline: none;
+    transition: background-color .15s ease, color .15s ease;
+    vertical-align: middle; /* 和用户名文本在一条基线 */
+    line-height: 32px; /* 避免字体/图标影响视觉高度 */
+    margin: 6px 0; /* 仅上下留白，水平由 gap 控制 */
+  }
+  .desktop-icon-btn:hover { background: rgba(0,0,0,0.06); }
+  [data-bs-theme='dark'] .desktop-icon-btn:hover { background: rgba(255,255,255,0.10); }
+  .desktop-icon-btn i { font-size: 16px; line-height: 1; }
+
+  /* 语言选择按钮统一为圆形图标（隐藏文本，如 ZH） */
+  /* 语言切换：实际为 .lpx-language-selection 下的 div[role="button"] */
+  .lpx-language-selection [role="button"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important; height: 32px !important; border-radius: 16px !important;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border)) !important;
+    background: transparent; padding: 0 !important; line-height: 1 !important;
+    vertical-align: middle !important;
+    gap: 0 !important;
+    margin: 6px 0 !important; /* 仅上下留白，水平由 gap 控制 */
+    line-height: 32px !important; /* 统一行高 */
+  }
+  /* 语言选择整体容器不再附加水平外边距，交由 gap 控制 */
+  .lpx-language-selection { margin: 0 !important; }
+  .lpx-language-selection [role="button"]::after { display: none !important; }
+  .lpx-language-selection [role="button"] span { display: none !important; }
+  .lpx-language-selection [role="button"] i,
+  .lpx-language-selection [role="button"] [class^="bi"],
+  .lpx-language-selection [role="button"] [class*=" bi"],
+  .lpx-language-selection [role="button"] lpx-icon {
+    font-size: 16px !important; line-height: 1 !important;
+    width: 16px; height: 16px;
+  }
+
+  /* 统一右上角其它按钮（主题切换等） */
+  .lpx-topbar .lpx-toolbar .btn,
+  .lpx-topbar .lpx-toolbar button,
+  .lpx-topbar .lpx-toolbar .dropdown-toggle,
+  .lpx-toolbar .btn,
+  .lpx-toolbar button {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    border-radius: 16px !important;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border)) !important;
+    background: transparent !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 6px 0 !important; /* 上下留白 */
+  }
+  .lpx-topbar .lpx-toolbar .btn i,
+  .lpx-topbar .lpx-toolbar button i,
+  .lpx-topbar .lpx-toolbar .dropdown-toggle i,
+  .lpx-toolbar .btn i,
+  .lpx-toolbar button i { font-size: 16px !important; line-height: 1 !important; }
+
+  /* 头像与用户名区域对齐到同一中线（不同主题/字号下更稳定） */
+  .lpx-topbar .lpx-user-profile, .lpx-user-profile {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important; /* 头像与用户名 6px（略增） */
+    height: 32px !important;
+    vertical-align: middle !important;
+    margin: 6px 0 !important; /* 仅上下留白，水平由 gap 控制 */
+    line-height: 32px !important;
+    align-self: center !important;
+    padding: 0 !important; /* 清掉 Bootstrap dropdown-toggle 可能的 padding */
+  }
+  /* 工具栏项（LeptonX 包裹的链接）水平外边距交由 gap 控制 */
+  .lpx-topbar .lpx-menu-item-link { margin: 0 !important; }
+  /* 进一步确保头像在 32x32 容器内垂直水平居中 */
+  .lpx-topbar .lpx-user-profile lpx-avatar,
+  .lpx-user-profile lpx-avatar {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border)) !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+    vertical-align: middle !important;
+  }
+  .lpx-topbar .lpx-user-profile .lpx-avatar {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border)) !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+  .lpx-topbar .lpx-user-profile .lpx-avatar-icon,
+  .lpx-topbar .lpx-user-profile .lpx-avatar .lpx-avatar-icon,
+  .lpx-user-profile .lpx-avatar-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+  }
+  .lpx-topbar .lpx-user-profile .lpx-avatar-icon .lpx-icon,
+  .lpx-topbar .lpx-user-profile .lpx-avatar-icon i,
+  .lpx-user-profile .lpx-avatar-icon .lpx-icon,
+  .lpx-user-profile .lpx-avatar-icon i {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 16px; height: 16px; line-height: 16px;
+    margin: 0 !important;
+  }
+  .lpx-topbar .lpx-user-profile img,
+  .lpx-topbar .lpx-user-profile .lpx-avatar,
+  .lpx-topbar .lpx-user-profile .avatar,
+  .lpx-topbar .lpx-user-profile .lpx-user-avatar {
+    width: 32px !important; height: 32px !important; border-radius: 50%;
+    border: 1px solid var(--rb-topbar-border, var(--rb-border)) !important;
+    box-sizing: border-box !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  /* 头像 Hover 效果与其它按钮一致 */
+  .lpx-topbar .lpx-user-profile:hover lpx-avatar,
+  .lpx-topbar .lpx-user-profile:hover .lpx-avatar {
+    background: rgba(0,0,0,0.06) !important;
+  }
+  [data-bs-theme='dark'] .lpx-topbar .lpx-user-profile:hover lpx-avatar,
+  [data-bs-theme='dark'] .lpx-topbar .lpx-user-profile:hover .lpx-avatar {
+    background: rgba(255,255,255,0.10) !important;
+  }
+  .lpx-topbar .lpx-user-profile .lpx-user-name,
+  .lpx-topbar .lpx-user-profile .user-full-name,
+  .lpx-user-profile .user-full-name {
+    line-height: 1;
+    display: inline-flex !important;
+    align-items: center;
+    margin-left: 0 !important; /* 留白由父级 gap 控制 */
+  }
+}
+
+  /* 保留桌面端用户名显示 */
 
 /* ---- Global mobile-friendly tweaks ---- */
 /* 避免图片在小屏溢出容器 */
@@ -60,43 +659,48 @@ img {
   }
 }
 
-/* 强化 LeptonX 移动端导航的可见性（偶发被主题层级/覆盖隐藏） */
+/* 移动端导航可见性修复：在某些主题组合下，移动导航容器偶发被隐藏 */
 @media (max-width: 767.98px) {
-  /* 确保移动导航容器在小屏呈现 */
-  .lpx-mobile-navbar-container {
-    display: block !important;
-    z-index: 110;
-  }
-  /* 取消 LeptonX 在移动端展开时将导航高度撑满屏幕，避免遮罩全屏导致其他按钮无法点击 */
-  .mobile-menu-opened lpx-mobile-navbar {
-    height: auto !important;
-  }
-  /* 不使用内置的“移动端路由列表”抽屉（我们已有底部导航） */
-  .mobile-menu-opened .lpx-mobile-nav-items {
-    display: none !important;
-  }
-
-  /* 显示右侧菜单/个人图标，并提升对比度 */
-  .lpx-mobile-navbar .user-menu {
-    display: flex !important;
-    align-items: center;
-    gap: 12px;
-    position: relative; /* 作为语言下拉的定位锚点 */
-    /* 隐藏库内置的两个图标（用户/菜单），仅保留我们自定义按钮 */
-    > lpx-icon { display: none !important; }
-  }
-  .lpx-mobile-navbar .user-menu .lpx-icon,
-  .lpx-mobile-navbar .user-menu [class^="bi"],
-  .lpx-mobile-navbar .user-menu [class*=" bi"] {
-    color: #fff !important;
-    opacity: 1 !important;
-    font-size: 30px !important;
-  }
-}
-
-/* 移动端隐藏空的顶部 Topbar，避免出现圆角白条占位 */
-@media (max-width: 767.98px) {
+  /* 移动端隐藏顶部空白条（LeptonX Topbar），否则会占位并遮挡按钮点击 */
   .lpx-topbar-container {
     display: none !important;
   }
+
+  /* 确保移动导航容器渲染出来（包含左侧菜单按钮与右侧用户区） */
+  .lpx-mobile-navbar-container {
+    display: block !important;
+    z-index: 110; /* 高于内容卡片阴影，避免被覆盖 */
+  }
+  /* 右侧用户区（含登录/账号/更多）在小屏默认可见 */
+  .lpx-mobile-navbar .user-menu {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+  }
+  /* 如需隐藏默认“用户”图标，运行时代码已处理（保持菜单图标可见） */
+  /* 导航容器不允许产生横向滚动 */
+  .lpx-mobile-navbar-container,
+  lpx-mobile-navbar,
+  .lpx-mobile-navbar .container {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+  }
+  .lpx-mobile-navbar .user-menu lpx-icon { display: inline-flex !important; }
+  /* 移动端图标颜色随主题 */
+  .lpx-mobile-navbar .user-menu .lpx-icon,
+  .lpx-mobile-navbar .user-menu [class^="bi"],
+  .lpx-mobile-navbar .user-menu [class*=" bi"] {
+    color: var(--rb-text) !important;
+    opacity: 1 !important;
+  }
+
+  /* 兜底：提升移动端右上角菜单区域层级，避免被其它粘性元素覆盖 */
+  .lpx-mobile-navbar,
+  .lpx-mobile-navbar .user-menu {
+    position: relative;
+    z-index: 1201;
+  }
 }
+
+/* 彻底禁止页面产生横向滚动（兜底） */
+html, body { overflow-x: hidden; }

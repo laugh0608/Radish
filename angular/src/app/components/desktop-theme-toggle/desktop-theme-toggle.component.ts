@@ -6,12 +6,12 @@ import { AfterViewInit, Component } from '@angular/core';
   template: `
     <button
       type="button"
-      class="btn btn-link p-0 d-none d-md-inline-flex align-items-center"
+      class="desktop-icon-btn d-none d-md-inline-flex"
       [attr.aria-label]="isDark ? 'Switch to light' : 'Switch to dark'"
       (click)="toggle()"
       title="Toggle theme"
     >
-      <i [class]="isDark ? 'bi bi-sun fs-5' : 'bi bi-moon fs-5'"></i>
+      <i [class]="isDark ? 'bi bi-sun' : 'bi bi-moon'"></i>
     </button>
   `,
 })
@@ -39,4 +39,3 @@ export class DesktopThemeToggleComponent implements AfterViewInit {
     } catch {}
   }
 }
-
