@@ -286,6 +286,10 @@ body { background: var(--bs-body-bg) !important; color: var(--bs-body-color) !im
   lpx-toolbar-items.lpx-topbar-content > lpx-toolbar-item:has(app-desktop-theme-toggle) { order: 2 !important; }
   lpx-toolbar-items.lpx-topbar-content > lpx-toolbar-item:has(.lpx-user-profile) { order: 3 !important; }
 
+  /* 若主题已自带“主题切换器”（带 bi-moon/bi-sun 的 dropdown），隐藏自定义的 PC 主题按钮，避免重复 */
+  lpx-toolbar-items.lpx-topbar-content:has(.dropdown-toggle i.bi-moon, .dropdown-toggle i.bi-sun)
+    > lpx-toolbar-item:has(app-desktop-theme-toggle) { display: none !important; }
+
   /* 语言下拉：避免被内容卡片遮挡（不依赖顶栏父类） */
   .lpx-language-selection { position: relative; z-index: 1300; }
   .lpx-language-selection .dropdown-menu { z-index: 2001 !important; }
