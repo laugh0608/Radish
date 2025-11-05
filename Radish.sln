@@ -35,6 +35,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Radish.DbMigrator", "src\Ra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Radish.HttpApi.Host", "src\Radish.HttpApi.Host\Radish.HttpApi.Host.csproj", "{96E5259E-59A3-4FAF-BCD1-5BF8E74EF82C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "other", "other", "{B007FFCE-CFA1-4F04-ADEA-42748AF7006F}"
+	ProjectSection(SolutionItems) = preProject
+		adb-command-prompt.png = adb-command-prompt.png
+		AGENTS.md = AGENTS.md
+		common.props = common.props
+		global.json = global.json
+		LICENSE.txt = LICENSE.txt
+		NuGet.Config = NuGet.Config
+		Radish.abpmdl = Radish.abpmdl
+		README.md = README.md
+		start.ps1 = start.ps1
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
