@@ -40,6 +40,16 @@ function initAutoLoginFactory(oAuthService: OAuthService) {
         }
       };
 
+      // 提前订阅 OAuth 事件，确保能捕获 tryLogin 过程中产生的 token_received 事件
+      oAuthService.events.subscribe(e => {
+        if ((e as any)?.type === 'token_received') {
+          refreshAppState();
+        }
+        if ((e as any)?.type === 'session_terminated') {
+          oAuthService.logOut();
+        }
+      });
+
       // 1) 加载发现文档并尝试从回调解析登录（若已从 IdP 重定向回来）
       await oAuthService.loadDiscoveryDocumentAndTryLogin();
 
@@ -55,11 +65,13 @@ function initAutoLoginFactory(oAuthService: OAuthService) {
         }
       }
 
-      // 3) 若仍未登录且带有 `?sso=1`，进行一次顶层 Code Flow 跳转
+      // 3) 若仍未登录且带有 `?sso=auto`（兼容历史 `?sso=true`/`?sso=1`/`?sso=yes`），进行一次顶层 Code Flow 跳转
       //    这样能复用 Host 已登录会话，绕过第三方 Cookie 被拦截导致的 silent SSO 失败
       if (!oAuthService.hasValidAccessToken()) {
         const url = new URL(window.location.href);
-        if (url.searchParams.get('sso') === '1') {
+        const ssoParam = url.searchParams.get('sso');
+        const shouldSso = !!ssoParam && ['auto', '1', 'true', 'yes'].includes(ssoParam.toLowerCase());
+        if (shouldSso) {
           // 触发交互式（顶层）授权，IdP 已登录时不会再显示登录页
           oAuthService.initCodeFlow();
           return; // 发生跳转，后续逻辑不再执行
@@ -69,18 +81,12 @@ function initAutoLoginFactory(oAuthService: OAuthService) {
       // 4) 成功获取令牌后，开启自动静默续期（使用 refresh_token 或 prompt=none 视配置而定）
       if (oAuthService.hasValidAccessToken()) {
         oAuthService.setupAutomaticSilentRefresh(undefined, 'access_token', true);
-        // 避免与 ABP 内部初始化的 ApplicationConfiguration 请求并发，
-        // 不在此处立即刷新，统一在 token_received 事件中进行一次刷新。
-      }
-      // 5) 监听会话终止（若 IdP 支持 front-channel/logout），则本地也登出
-      oAuthService.events.subscribe(e => {
-        if ((e as any)?.type === 'token_received') {
+        // 兜底：某些场景下（例如事件未触发或错过），确保刷新一次应用配置
+        if (!refreshedAfterLogin) {
           refreshAppState();
         }
-        if ((e as any)?.type === 'session_terminated') {
-          oAuthService.logOut();
-        }
-      });
+      }
+      // 5) 监听会话终止（若 IdP 支持 front-channel/logout），事件在上方已统一订阅
     } catch (e) {
       // 保守处理：初始化过程中的错误打印到控制台，避免阻断应用启动
       console.error('[auth.auto-login] init failed', e);

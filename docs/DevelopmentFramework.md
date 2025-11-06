@@ -8,7 +8,7 @@
 
 - 核心功能模块
   - 身份与单点登录（SSO）：OpenIddict（OIDC 授权码 + PKCE）、ABP 身份模块、前后端静默续期与登出回跳。
-  - 门户首页与文档：Host 首页聚合跳转（Angular、React、Swagger、Scalar），登录态透传与 `sso=1` 约定；Swagger/Scalar 授权可调试。
+  - 门户首页与文档：Host 首页聚合跳转（Angular、React、Swagger、Scalar），登录态透传与 `sso=auto` 约定（兼容 `sso=true` / `sso=1`）；Swagger/Scalar 授权可调试。
   - 内容域：分类/标签、帖子/评论（基础 CRUD、分页/过滤/排序），点赞/收藏，浏览计数。
   - 搜索与筛选：按标题/标签/分类检索，排序（时间/热度）。
   - 通知（可选）：发帖/回复/点赞等站内通知（可后续迭代）。
@@ -218,24 +218,6 @@ graph TD
     * 首页展示所有活跃的版块列表。
     * 点击版块进入该版块的帖子列表页。
 
-  * **按等级划分纵向分类（板块）:**
-    * 目标：依据用户等级对版块做“纵向分层”，不同等级段进入对应的板块聚合，形成成长进阶路线与社区秩序。
-    * 建模建议（领域/存储）：
-      * 在 `Category` 增加可选的 `MinLevel`、`MaxLevel` 字段（闭区间），用于限制发帖/回帖权限；为空表示不限制。
-      * 可增加 `Realm`（领域/界域）概念作为父级分组（如：凡间、仙界等），`Category` 归属某个 `Realm`，`Realm` 绑定等级范围，用于前端导航分组展示。
-    * 访问规则（建议）：
-      * 浏览：对所有用户开放（可配置为仅同层或更高层可见，默认开放）。
-      * 发帖/回帖：用户当前等级须满足版块 `MinLevel ≤ level ≤ MaxLevel`。
-    * 示例分层映射（可配置）：
-      * 0–5 级：凡间（例如 `Realm=凡间` 下若干分类）
-      * 6–10 级：仙界（例如 `Realm=仙界` 下若干分类）
-      * 11–20 级：更高层（如 真仙/上仙 等，后续扩展）
-    * 管理端（Angular）：
-      * 维护 `Realm`（名称、排序、等级区间）与 `Category` 的从属关系。
-      * 在分类编辑处配置 `MinLevel/MaxLevel`，并在列表中显示等级限制。
-    * 前端（React）：
-      * 导航以 `Realm` 为分组显示；进入版块时，若用户等级不满足则提示“当前等级不可发帖/回帖”。
-
 ##### 3.3.2 帖子发布与管理
 
 * **后端 (ABP - DDD):**
@@ -369,6 +351,116 @@ graph TD
 * 数据一致性与审计：
   * 重要事件（升级、授予徽章）记录审计日志，便于回溯。
   * 经验累加与升级计算建议放在同一事务边界内，或使用领域事件 + Outbox 确保最终一致性。
+
+#### 4.4 论坛 AI 与自动化任务
+
+* 功能目标
+    * AI 审批：新帖/评论提交后自动审查（敏感词、垃圾/广告、涉黄涉政、毒性语言）。工作流：新内容 → AI 打分 → 阈值判定 → 自动通过/挂起/拒绝；保留人工复审入口与审计日志。
+    * AI 分类：基于正文自动建议版块/分类，提供 Top-N 候选及置信度；可配置“自动归类”或“仅提示管理员”。
+    * AI 标签：关键词抽取/主题聚类，建议 3-8 个标签；区分“系统建议/用户自定义”；支持一键采纳合并。
+    * 自动汇总报表：按周/按月/按年生成帖子汇总（Top 帖子、热度榜、活跃作者、分类/标签分布、增长曲线等），生成 Markdown/HTML 内容并以“系统报表帖子”的形式发布到指定分类（如“运营报表”）。
+    * AI 摘要：为帖子生成 1-3 行摘要，用于列表页与分享卡片快速预览。
+    * 反垃圾治理：黑/白名单、链接风险打分、重复/洗稿检测（轻量版），低分触发限流或二次校验。
+
+* 后端 (ABP - DDD)
+    * 领域事件：`PostCreatedEvent`、`CommentCreatedEvent` 触发 AI 流水线；`ReportGeneratedEvent` 发布周期报表。
+    * 应用服务：`AiModerationAppService`、`AiSuggestionAppService`、`ReportAppService`（对外提供审核重试、建议查询、报表生成/发布能力）。
+    * 后台任务/调度：基于 ABP BackgroundWorker/BackgroundJobs 实现异步审核与定时汇总；支持 Cron（如：`0 3 * * 1` 生成周报）。
+    * 可观测性：记录 AI 请求耗时/错误率/决策结果，落入审计日志，必要指标可对接后续监控。
+
+* 数据模型建议（Radish.Domain）
+    * Post 新增字段：
+        * `AiReviewStatus` Enum：Pending/Approved/Rejected/Skipped
+        * `AiScores` Object：Spam、Toxicity、Sexual、Political、SuspectLink 等维度
+        * `AiSuggestedCategoryId` Nullable<Guid>
+        * `AiSuggestedTags` List<string>
+        * `AiSummary` string（短摘要）
+        * `AiReviewedTime` DateTime?
+        * `ContentSource` Enum：User/AiRecommended（区分来源）
+    * 新实体：
+        * `ModerationRecord`：Id，EntityType(Post/Comment)，EntityId，Action(AutoApprove/AutoReject/Flag)，Scores(json)，Reason，Reviewer(UserId 或 "AI")，CreationTime。
+        * `PeriodicReport`：Id，Type(Weekly/Monthly/Yearly)，PeriodKey(如 2025-W44/2025-10/2025)，Title，Content(Markdown/Html)，Metrics(json)，PublishedPostId Nullable<Guid>。
+
+* API 设计（示例）
+    * `GET /api/ai/suggestions/posts/{id}` 获取某帖 AI 建议（分类/标签/摘要/评分）。
+    * `POST /api/ai/review/posts/{id}/retry` 重试 AI 审核流水线。
+    * `POST /api/ai/override/posts/{id}` 管理员手工覆写审核决定（通过/拒绝/挂起）。
+    * `GET /api/reports?type=weekly&period=2025-W44` 查询既有周期报表。
+* `POST /api/reports/generate?type=monthly&period=2025-10` 立即生成周期报表并可选发布。
+
+* Admin UI (Angular)
+    * 审核队列：展示待审内容、AI 分数与简要理由，支持一键通过/拒绝/拉黑。
+    * 策略配置：启用/禁用 AI，阈值，自动发布/挂起策略，Cron 调度，报表发布目标分类。
+    * 审计追踪：按内容查看 `ModerationRecord` 历史。
+    * 报表中心：浏览/搜索周报/月报/年报，手动触发生成与发布。
+
+* Frontend UI (React)
+    * 发帖/编辑：展示 AI 建议标签与分类，用户可一键采纳或忽略。
+    * 列表/详情：显示 AI 摘要徽标；挂起状态为作者显示“待审核”提示。
+    * 报表展示：在指定分类以普通帖子形式展示周期报表，包含关键指标卡片。
+
+* 权限与设置
+    * 权限：`AiPolicy.Manage`、`Post.Moderate.Override`、`Report.Manage`、`Report.View`。
+    * 设置：`Ai:Enabled`、`Ai:AutoPublishThreshold`、`Ai:HoldThreshold`、`Ai:MaxTags`、`Report:Targets:CategoryId`、`Report:Cron:Weekly/Monthly/Yearly`。
+    * 机密：AI 提供方密钥仅通过环境变量或 `appsettings.secrets.json` 注入，禁止入库与提交。
+
+* 安全与隐私
+    * 最小化传输：仅向 AI 服务发送必要文本，尽可能脱敏，避免 PII 外泄。
+    * 可解释性：保存关键打分与简要理由，便于溯源与复核。
+    * 人在回路：任何自动拒绝均可申诉与人工复核；可一键回滚决定。
+
+* 索引与性能
+    * 针对 `CreationTime`、`CategoryId`、`Tags`、`AiReviewStatus` 建立（复合）索引以加速队列与汇总查询。
+    * 汇总任务分页批处理，使用“水位线”避免重复计算；长耗时任务分片执行。
+
+* 验收标准
+    * 新帖/评论触发 AI 审核并按策略阈值自动决定；管理员可覆写，完整审计记录。
+    * 能生成并发布周报/月报/年报，包含 Top 帖、活跃用户、分类/标签分布等指标。
+* 关闭 AI 后系统自然退化为人工审核流程，核心功能不受影响。
+
+#### 4.5 端到端加密（E2EE）帖子与聊天室
+
+> 与 docs/DevelopmentPlan.md 中“扩展专题：端到端加密聊天/帖子（E2EE）”一致，此处给出框架层设计与落点。
+
+* 功能目标
+    * 加密帖子（Recipients 白名单）：作者为选定收件人加密内容，非收件人仅见占位，服务端零知存储密文。
+    * 加密聊天室/私信（群聊密钥）：房间对称密钥 + 成员公钥封装；成员变更触发轮换，退群后无法解密新消息。
+    * 用户密钥对：默认前端生成并本地保存私钥，可选口令加密后云端备份；服务端仅存公钥与元信息。
+
+* 架构与算法选型
+    * 内容加密：AES-256-GCM（WebCrypto）。
+    * 密钥封装：ECIES（P-256/Curve25519）或 RSA-OAEP-256（环境受限时）。
+    * 口令派生：PBKDF2-HMAC-SHA256（优先 Argon2id，如可用）。
+    * 存储策略：仅保存 `ciphertext` 与 `encryptionMeta`（`alg`、`keyId`、`recipients[{userId,keyId,wrappedKey}]`、`iv`、`tag`）。
+
+* 数据模型建议（Radish.Domain/MongoDB）
+    * `UserEncryptionKey`：`UserId`、`KeyId`、`Algorithm`、`PublicKey`、`CreatedAt`、`RevokedAt`（索引：`UserId`、`KeyId`）。
+    * `Post` 增加：`IsEncrypted`、`Ciphertext`、`EncryptionMeta`（不影响明文帖结构）。
+    * `Message`（若有 IM/聊天室）：`RoomId`、`Ciphertext`、`RoomKeyVersion`、`Meta`；房间保存 `RoomKey` 封装列表与版本。
+
+* 应用与 API（Radish.Application*/HttpApi*）
+    * 公钥管理：发布/撤销/查询当前 `KeyId` 与 `PublicKey`。
+    * 加密发帖：前端生成 `contentKey`，按收件人公钥封装 `wrappedKey`；后端仅校验/存储密文与元信息。
+    * 加密读取：前端拿 `wrappedKey` + 本地私钥解封装并解密。
+    * 聊天室密钥轮换：成员增删触发新 `RoomKey` 及封装列表生成。
+
+* 前端实现要点（React/Angular）
+    * 私钥存储：IndexedDB/系统安全区；导出/导入备份（口令加密）。
+    * UI：发帖“加密发布”开关、收件人选择、加密徽标、解密失败/恢复提示。
+    * 兼容：WebCrypto 优先；不支持时禁用该能力并提示升级。
+
+* 合规与开关
+    * Feature Flag：`App__Features__E2EE`（默认关闭，仅测试环境开启）。
+    * 可选测试环境“监管密钥”用于排障；生产默认零知，无平台解密能力。
+
+* 风险与限制
+    * 私钥丢失不可恢复历史密文（设计即如此）；提供备份指引与二次确认。
+    * 搜索/审计：密文不可全文检索，依赖元信息/举报快照；需额外运营策略。
+    * 性能：收件人越多封装开销线性增长；限制最大收件人数或采用群聊密钥模型。
+
+* 验收
+    * 指定收件人可成功解密帖子；非收件人不可见明文。
+    * 聊天室成员变更后，前成员无法解密新消息；消息解密无明显卡顿。
 
 ### 5. Docker 支持 (一键启动)
 

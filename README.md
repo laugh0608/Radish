@@ -1,5 +1,7 @@
 # Radish
 
+![萝卜](./docs/images/RadishAcg.png)
+
 基于 ABP Framework 的分层单体应用：后端 .NET 9 + OpenIddict，前端包含 Angular 管理端与 React（Vite）示例。
 
 - 简体中文: docs/README_CN.md

@@ -58,6 +58,15 @@ ng e2e              # 端到端测试
 更多参考 ABP 文档：Environment（Angular）
 https://abp.io/docs/latest/framework/ui/angular/environment
 
+## 移动端适配
+
+- 启用自定义底部导航（MobileBottomNav）：主要功能固定在底部栏，次要功能通过二级“功能面板/更多”收纳，避免在小屏下找不到入口。
+  - 组件：`angular/src/app/components/mobile-bottom-nav/`
+  - 根模板挂载：`angular/src/app/app.component.ts`
+- 顶部区域保留品牌与主题默认导航，但隐藏多余图标，以避免横向滚动与拥挤。
+- 表格在小屏可降级为卡片（示例：`angular/src/app/book/book.component.html` 的 `d-md-none` 分支）。
+- 表单/工具条建议使用 Bootstrap 栅格与 `flex-wrap`，避免溢出。
+
 ## 国际化（i18n）
 
 管理端直接使用 ABP 的服务端本地化（资源 `Radish`），不维护自定义前端字典：
