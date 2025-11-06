@@ -1,5 +1,7 @@
 ﻿using System.Linq;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -13,13 +15,35 @@ namespace Radish.Extensions.Swagger;
 /// Once they are fixed and published, this class can be removed.</remarks>
 public class SwaggerDefaultValues : IOperationFilter
 {
+    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    {
+        ApplyCore(operation, context, CancellationToken.None);
+    }
+
     /// <summary>
     /// Applies the filter to the specified operation using the given context.
     /// </summary>
     /// <param name="operation">The operation to apply the filter to.</param>
     /// <param name="context">The current operation filter context.</param>
-    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    /// <param name="cancellationToken">Token used to observe cancellation requests.</param>
+    public void Apply(OpenApiOperation operation, OperationFilterContext context, CancellationToken cancellationToken)
     {
+        ApplyCore(operation, context, cancellationToken);
+    }
+
+    /// <summary>
+    /// Applies the filter asynchronously.
+    /// </summary>
+    public ValueTask ApplyAsync(OpenApiOperation operation, OperationFilterContext context, CancellationToken cancellationToken = default)
+    {
+        ApplyCore(operation, context, cancellationToken);
+        return ValueTask.CompletedTask;
+    }
+
+    static void ApplyCore(OpenApiOperation operation, OperationFilterContext context, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
         var apiDescription = context.ApiDescription;
 
         operation.Deprecated |= apiDescription.IsDeprecated();
