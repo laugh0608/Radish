@@ -1,29 +1,23 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <Import Project="..\..\common.props" />
-
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <RootNamespace>Radish</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\Radish.Application.Contracts\Radish.Application.Contracts.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="9.0.6" />
-    <PackageReference Include="Volo.Abp.PermissionManagement.HttpApi" Version="9.3.4" />
-    <PackageReference Include="Volo.Abp.FeatureManagement.HttpApi" Version="9.3.4" />
-    <PackageReference Include="Volo.Abp.SettingManagement.HttpApi" Version="9.3.4" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.HttpApi" Version="10.0.0-rc.2" />
+    <PackageReference Include="Volo.Abp.FeatureManagement.HttpApi" Version="10.0.0-rc.2" />
+    <PackageReference Include="Volo.Abp.SettingManagement.HttpApi" Version="10.0.0-rc.2" />
   </ItemGroup>
-
   <ItemGroup>
-    <PackageReference Include="Volo.Abp.Identity.HttpApi" Version="9.3.4" />
-    <PackageReference Include="Volo.Abp.Account.HttpApi" Version="9.3.4" />
-    <PackageReference Include="Volo.Abp.TenantManagement.HttpApi" Version="9.3.4" />
+    <PackageReference Include="Volo.Abp.Identity.HttpApi" Version="10.0.0-rc.2" />
+    <PackageReference Include="Volo.Abp.Account.HttpApi" Version="10.0.0-rc.2" />
+    <PackageReference Include="Volo.Abp.TenantManagement.HttpApi" Version="10.0.0-rc.2" />
   </ItemGroup>
-
 </Project>
