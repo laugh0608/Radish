@@ -2,88 +2,88 @@
 # yarn lockfile v1
 
 
-"@abp/ng.account.core@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.account.core/-/ng.account.core-9.3.4.tgz#550a210ef95852fddab70149961e98b5da9f9664"
-  integrity sha512-CzKUnNYmPhTVXr+nrJg4ZrtFu+7J1mGAc9pYJTqUF0iIm68YyJqpZr3RVjNyWMk/JyCCXf1OWsyzfNDz/H7mYA==
+"@abp/ng.account.core@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.account.core/-/ng.account.core-10.0.0-rc.2.tgz#66388078e7cb7bc4d0acc96fac33747e41c58040"
+  integrity sha512-XtjIeYw+/02IUousDpkcmqZXc6YbkQNTjgZPRpCExkZwvfUDWs8nAadiMmiRBZK7lBK0Fe24GMAZeqDPL9dkcw==
   dependencies:
-    "@abp/ng.core" "~9.3.4"
-    "@abp/ng.theme.shared" "~9.3.4"
+    "@abp/ng.core" "~10.0.0-rc.2"
+    "@abp/ng.theme.shared" "~10.0.0-rc.2"
     tslib "^2.0.0"
 
-"@abp/ng.account@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.account/-/ng.account-9.3.4.tgz#8108bd0c59f9de1085a5e81c5a49b7c9609e89c2"
-  integrity sha512-sZd5POX5Vj6dRkdC3KhdWNv0ZHiSeGZ9d/chsJsZPioF+vuK8Mq43yYmwH1Ez1xZGtq5nppigvCZT15J4HHKLQ==
+"@abp/ng.account@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.account/-/ng.account-10.0.0-rc.2.tgz#547cb3b192bff490156865be7d6cd9b6ede6737c"
+  integrity sha512-zez3WerzEtwrKVR4a3kMJvLNEhFjYek5VjzwFjIQEOGhw68ohSsi+xvJ7dc7VzM7xx17ekUJ2cs7aRkGlvssKQ==
   dependencies:
-    "@abp/ng.account.core" "~9.3.4"
-    "@abp/ng.theme.shared" "~9.3.4"
+    "@abp/ng.account.core" "~10.0.0-rc.2"
+    "@abp/ng.theme.shared" "~10.0.0-rc.2"
     tslib "^2.0.0"
 
-"@abp/ng.components@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.components/-/ng.components-9.3.4.tgz#f751404d98b8247d4645677959fc7ca4ce6f90e7"
-  integrity sha512-oQ8Sf0CX5HIIU+hZPm7H/tukvaDk79koc/rMo357c30SJJtQimhcUaCKNspts6vmdEhOHjU9+mhBxGMS079Tzg==
+"@abp/ng.components@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.components/-/ng.components-10.0.0-rc.2.tgz#bab63a7d8f9fa2c0304554029cec02941ae070d4"
+  integrity sha512-qprGZULvYqk0lNU0t/DTnbENQAjf7RexhL1dpTA2O5DpE4OFAJxqp74DYMvZs2iTnAMDyCLTQ8JDrYf4sskCbw==
   dependencies:
     "@ctrl/tinycolor" "^4.0.0"
     chart.js "^3.5.1"
     ng-zorro-antd "~20.0.0"
     tslib "^2.0.0"
 
-"@abp/ng.core@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.core/-/ng.core-9.3.4.tgz#7fd63678edeed25a775515d5852ed2856ef3a946"
-  integrity sha512-wLLzO7GtCXhYbWgI/eyMab7hlfDsULM5DZOw99bTi6aiV3BkLAtL29SzwiO2+g5N/RdKgpCkERnrCc0wZssyqQ==
+"@abp/ng.core@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.core/-/ng.core-10.0.0-rc.2.tgz#1c32ac73c997c9b65bd01a52a7154709b82fb557"
+  integrity sha512-47et0DwbbG9bwOqqzwEC1VXqiKzTIVbcGFO1bhB9Jne7yqBnwzZ+nP3oA3fNJkj8LNErl3Q9g2+TRO7NnYtHtw==
   dependencies:
-    "@abp/utils" "~9.3.4"
+    "@abp/utils" "~10.0.0-rc.2"
     just-clone "^6.0.0"
     just-compare "^2.0.0"
     luxon "^3.0.0"
     ts-toolbelt "^9.0.0"
     tslib "^2.0.0"
 
-"@abp/ng.feature-management@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.feature-management/-/ng.feature-management-9.3.4.tgz#5388fcf312eb4e131c1396b499536fbdf0d8bf01"
-  integrity sha512-pjvnHerHqaFQ5qpzOcYY7fJymgafEiutzVjqPeQbVFNCYCAcXRB7gyhYSU/AuFueEFmewCBJs/3Z6VuMMRN9Zw==
+"@abp/ng.feature-management@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.feature-management/-/ng.feature-management-10.0.0-rc.2.tgz#7364e92820d162f6029d77695e433e0be880a614"
+  integrity sha512-2R+UFfA++OCFr5W2v16/LZIqnSj+HQf8vsgv8d612P6p7YPrv4g0TAUqOSHKknY6F/iWTvOqRxUIRoPSv+C9Vg==
   dependencies:
-    "@abp/ng.theme.shared" "~9.3.4"
+    "@abp/ng.theme.shared" "~10.0.0-rc.2"
     tslib "^2.0.0"
 
-"@abp/ng.identity@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.identity/-/ng.identity-9.3.4.tgz#961d2bb5c8337111a5cfc0ebfb9f481a310ec6a6"
-  integrity sha512-QK/XLxR5d1EDVZ6xZhPf6aj54Ou/IxyNnAogUmsdB6Qp/snrBqg/kmCvBzpU5agjF88TP98nVmMEwEkKSj2htA==
+"@abp/ng.identity@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.identity/-/ng.identity-10.0.0-rc.2.tgz#39e38b4c40b7783c3f6c1327344837087fc62469"
+  integrity sha512-Zeumz+zmVaFB+lXEV3NjanLd6y+gwMRks9XMaxz3dgdnyya/PaLTGeqDOtjXhdK+cAJJgkzEmSEEIYpVrPYXdg==
   dependencies:
-    "@abp/ng.components" "~9.3.4"
-    "@abp/ng.permission-management" "~9.3.4"
-    "@abp/ng.theme.shared" "~9.3.4"
+    "@abp/ng.components" "~10.0.0-rc.2"
+    "@abp/ng.permission-management" "~10.0.0-rc.2"
+    "@abp/ng.theme.shared" "~10.0.0-rc.2"
     tslib "^2.0.0"
 
-"@abp/ng.oauth@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.oauth/-/ng.oauth-9.3.4.tgz#a28da6fbd2ca4148457ee60eecdba4d1548c8639"
-  integrity sha512-2za6becQRNJsQ+ziMDReYh8PH5c4QkCPyLUpeH0Fq7iOBODr3hImF091cn1UDHt9k/+fTeYbpWISxUGV/+ngeA==
+"@abp/ng.oauth@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.oauth/-/ng.oauth-10.0.0-rc.2.tgz#6ccf767fcc5e64a2badab95e320391c87a70f8b1"
+  integrity sha512-OO5YURbeBhLc+Ao90IAwx8x4D0rplcCgXL4Z0bghEdZwJdR0fmOrJsb9GhpyMO7dOaJlwImWMxMHO/+geLFYZg==
   dependencies:
-    "@abp/ng.core" "~9.3.4"
-    "@abp/utils" "~9.3.4"
+    "@abp/ng.core" "~10.0.0-rc.2"
+    "@abp/utils" "~10.0.0-rc.2"
     angular-oauth2-oidc "^20.0.0"
     just-clone "^6.0.0"
     just-compare "^2.0.0"
     tslib "^2.0.0"
 
-"@abp/ng.permission-management@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.permission-management/-/ng.permission-management-9.3.4.tgz#ae0c057fafc30615cd8056f1715f90a2694004fc"
-  integrity sha512-ky3KmPdJzS4Qm2iyNX+BKc+86vF1moAKhrLpqT78t9p5Zt5gth2fqo3REAc41JbBeSHuFRBngDXcimA0TGCGdw==
+"@abp/ng.permission-management@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.permission-management/-/ng.permission-management-10.0.0-rc.2.tgz#47d6520473b211a30089a5948445fbe264e5047c"
+  integrity sha512-LfiJloLU47Cc7i0T1iWRLTeR5eruwJc8Zw7QBObzQY0gaOoHcya4Vn2jrkbaH07HoSgOQgjnEjqOL3+q61T56Q==
   dependencies:
-    "@abp/ng.theme.shared" "~9.3.4"
+    "@abp/ng.theme.shared" "~10.0.0-rc.2"
     tslib "^2.0.0"
 
-"@abp/ng.schematics@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.schematics/-/ng.schematics-9.3.4.tgz#474746bf2f62a65713139a1b0bc093423058a5fa"
-  integrity sha512-D+scsNx1XZk+nhQ3Z8TFHfX0eBTMLQtELYRL2AeMa2XlQC7U0tyV8CjmoR3HcylEuhA36opJRYcEj9vAKBlsBQ==
+"@abp/ng.schematics@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.schematics/-/ng.schematics-10.0.0-rc.2.tgz#3cc9a1c9cb9c91d13a976e59146eea795539f984"
+  integrity sha512-xSyXAu1QK9ezXP4ikZoYjE8hBbVgOIzvkV7XhyXmrqNfF+N4jAiLpU8Agzp/5HsoQzfPza6bBpTba4LIisaRNA==
   dependencies:
     "@angular-devkit/core" "~20.0.0"
     "@angular-devkit/schematics" "~20.0.0"
@@ -93,39 +93,39 @@
     should-quote "^1.0.0"
     typescript "~5.8.0"
 
-"@abp/ng.setting-management@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.setting-management/-/ng.setting-management-9.3.4.tgz#cc47bfd982a02397e17cec276895b7ee3069f435"
-  integrity sha512-9wnXywD0hoX3dLR5ASjIDYStRvu+YU/WheIFjZysqfEPpg+vO30alBzYuzxdW900PdJFQzMn1orL9kZ71PIiCg==
+"@abp/ng.setting-management@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.setting-management/-/ng.setting-management-10.0.0-rc.2.tgz#f972712dad38cbf3053bf82c377617f02d77ace1"
+  integrity sha512-ETObRjSkKKChvbtCcrqRCWRLUzlQS31NU7rlrwm3GuYzig1pvVBAG32sMmDO1Al4aoQrcxPRpoO4aTdITB391Q==
   dependencies:
-    "@abp/ng.components" "~9.3.4"
-    "@abp/ng.theme.shared" "~9.3.4"
+    "@abp/ng.components" "~10.0.0-rc.2"
+    "@abp/ng.theme.shared" "~10.0.0-rc.2"
     tslib "^2.0.0"
 
-"@abp/ng.tenant-management@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.tenant-management/-/ng.tenant-management-9.3.4.tgz#e03b67ad3c57e69217fba80ae634f8dcd24eebe4"
-  integrity sha512-NgDSPp3vXypwndL+p6Qe1FGsrXdxiTsCdSTNmU3UMvSp3ZOGKMF/Z6TJbGQlU1qgV1uk+XjIrwD4UYaogxaF+g==
+"@abp/ng.tenant-management@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.tenant-management/-/ng.tenant-management-10.0.0-rc.2.tgz#33e2bf8828da8137e1ab31ee13b4ea4d671d8d5b"
+  integrity sha512-LkPeXiF3sjIJEjraYJngrtU/FRAJp4FxoSUnjRQN8HT6Akd4hlRE0/cmfFtAE4d9UF+HkkP/kmCL4x0TpkMkRg==
   dependencies:
-    "@abp/ng.feature-management" "~9.3.4"
-    "@abp/ng.theme.shared" "~9.3.4"
+    "@abp/ng.feature-management" "~10.0.0-rc.2"
+    "@abp/ng.theme.shared" "~10.0.0-rc.2"
     tslib "^2.0.0"
 
-"@abp/ng.theme.lepton-x@~4.3.4":
-  version "4.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.theme.lepton-x/-/ng.theme.lepton-x-4.3.4.tgz#0750708ed40e5d0403caf6aae02918e98bc64323"
-  integrity sha512-kOWY4UmkcfOpqPwyRj/n/AOe8jAU0CqssAdHVlkGBIgPZPopxcqH8J1T5ouogij7oGdslMmI6xuMa7nQ3HbwNQ==
+"@abp/ng.theme.lepton-x@~5.0.0-rc.2":
+  version "5.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.theme.lepton-x/-/ng.theme.lepton-x-5.0.0-rc.2.tgz#c0557fc10303ee56fcc392c025e5993eed52aef0"
+  integrity sha512-1mdty8D/rKKm8WuMQByU/71Pd8uk7mTJjgi1eMk/VQS/8PI3aweAz2cjKR5kefa7Th5vxnncwAURKzN0foByZA==
   dependencies:
-    "@volo/abp.ng.lepton-x.core" "4.3.4"
-    "@volo/ngx-lepton-x.lite" "4.3.4"
+    "@volo/abp.ng.lepton-x.core" "5.0.0-rc.2"
+    "@volo/ngx-lepton-x.lite" "5.0.0-rc.2"
     tslib "^2.3.0"
 
-"@abp/ng.theme.shared@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/ng.theme.shared/-/ng.theme.shared-9.3.4.tgz#bb2e9474c26789c10a5b936e15df31bae81ba757"
-  integrity sha512-2qzoOsFCkZqENjTyI7ckfNdPp6dGfTKpNNcIw4Hw5pG9X2rmv8HZ6h8LSxBtBLxPg6AZYvg4QqMW2qD+lPbTEQ==
+"@abp/ng.theme.shared@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/ng.theme.shared/-/ng.theme.shared-10.0.0-rc.2.tgz#5bcd9fa7b5495e2bf2ff4f497e2fd93cd6033217"
+  integrity sha512-YAcWKTDOIduECzW1GnPPmfyewEspqDTkUmRQcFWpWm3OY26ti5RI3OhDob7TYhriL8J7ZIOhO7nXuBksdYAbOw==
   dependencies:
-    "@abp/ng.core" "~9.3.4"
+    "@abp/ng.core" "~10.0.0-rc.2"
     "@fortawesome/fontawesome-free" "^6.0.0"
     "@ng-bootstrap/ng-bootstrap" "~19.0.0"
     "@ngx-validate/core" "^0.2.0"
@@ -134,10 +134,10 @@
     bootstrap "^5.0.0"
     tslib "^2.0.0"
 
-"@abp/utils@~9.3.4":
-  version "9.3.4"
-  resolved "https://registry.npmmirror.com/@abp/utils/-/utils-9.3.4.tgz#72d0c8b109415d584c887fd8c904644cdf767fd4"
-  integrity sha512-94EyyKIovai/Mzfa6DhanwC2Y+Jz2uX+w/9nkAfitvN2NJY1+Ixqd6cnvuDdIHAGMTxs6Bo5XV0cT33VGrGMAA==
+"@abp/utils@~10.0.0-rc.2":
+  version "10.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@abp/utils/-/utils-10.0.0-rc.2.tgz#6dde9360cfd1f464a971585faa76c5b409a59fff"
+  integrity sha512-aCX+RGPNyI+LqwhR/AeU/s1MsUdMd1drgt9IN4PNfm/JR/wlAP2CG78IwxKtfc/8QPpH5P29LxJdbjWubMny1A==
   dependencies:
     just-compare "^2.3.0"
 
@@ -2097,29 +2097,29 @@
   resolved "https://registry.npmmirror.com/@vitejs/plugin-basic-ssl/-/plugin-basic-ssl-2.1.0.tgz#c70d2a922bc437f154089d7ef0505db4b383eb7b"
   integrity sha512-dOxxrhgyDIEUADhb/8OlV9JIqYLgos03YorAueTIeOUskLJSEsfwCByjbu98ctXitUN3znXKp0bYD/WHSudCeA==
 
-"@volo/abp.ng.lepton-x.core@4.3.4":
-  version "4.3.4"
-  resolved "https://registry.npmmirror.com/@volo/abp.ng.lepton-x.core/-/abp.ng.lepton-x.core-4.3.4.tgz#6c3655ff9a8984f54b17f30b07e121bc72d7de22"
-  integrity sha512-RFKY+4ntCoXNdinEmtZitxmlQfk/L9t8x9AJuJ9PybNPeE6o4XfwtEWW+amWCaE3LcZrtbZppxxh+H7nZQie1A==
+"@volo/abp.ng.lepton-x.core@5.0.0-rc.2":
+  version "5.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@volo/abp.ng.lepton-x.core/-/abp.ng.lepton-x.core-5.0.0-rc.2.tgz#7f88aeb4abe0131199a7ffc4f26f0e2be301bc00"
+  integrity sha512-KPgDXwIXPEyDO+xC38oAKtWAe5VnYr+3JfCWZdQvsKtALfozby1w8qdkkRHxoiHwbYpzv+K0XdfGCFtDHBzeCA==
   dependencies:
-    "@volo/ngx-lepton-x.core" "4.3.4"
+    "@volo/ngx-lepton-x.core" "5.0.0-rc.2"
     tslib "^2.3.0"
 
-"@volo/ngx-lepton-x.core@4.3.4":
-  version "4.3.4"
-  resolved "https://registry.npmmirror.com/@volo/ngx-lepton-x.core/-/ngx-lepton-x.core-4.3.4.tgz#ba2a6e8155211a198d0bb0a84769cf33f3059bad"
-  integrity sha512-LVChaWVKUs7V8c9kwC/h8718S5aSRcox9Mp00PnxEv95bczKj0y6LXfbW5v+mzmdwYykT5ZGeVhbzSX7piT8qw==
+"@volo/ngx-lepton-x.core@5.0.0-rc.2":
+  version "5.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@volo/ngx-lepton-x.core/-/ngx-lepton-x.core-5.0.0-rc.2.tgz#2468af380abf2b191a72a337f0b9b1beed86d389"
+  integrity sha512-nIpNfihYmhl8+4BImrmJ+LrW5OT/RsMwWEZDpiZjoTPeSU3C/NOTHP9Ba/iLYtzukoyYUlLm4fbkRk6OAwpLNA==
   dependencies:
     ts-toolbelt "^9.0.0"
     tslib "^2.3.0"
 
-"@volo/ngx-lepton-x.lite@4.3.4":
-  version "4.3.4"
-  resolved "https://registry.npmmirror.com/@volo/ngx-lepton-x.lite/-/ngx-lepton-x.lite-4.3.4.tgz#78db06da28aaf654515d56ba4ba57d2653cc2c4d"
-  integrity sha512-MT1srS4ujcDwLvtyqh/ePW3p/EmtfjS0JzYp0OECFL6c5B3+G7uKbtQAsB+3fmZ0s2bNzX42JH5XN9t6OY/zww==
+"@volo/ngx-lepton-x.lite@5.0.0-rc.2":
+  version "5.0.0-rc.2"
+  resolved "https://registry.npmmirror.com/@volo/ngx-lepton-x.lite/-/ngx-lepton-x.lite-5.0.0-rc.2.tgz#76bd1bd6dfb5e2127aa523dd70a7cad5673b4146"
+  integrity sha512-HPcu5emQ7IV1rp+B1Gkma5S4q44bygwjfblQeAVLTKo92DJ43LXmnlBeoaUoQ3AI4jbK0ji/1wJvnR97rZTRmQ==
   dependencies:
     "@ng-bootstrap/ng-bootstrap" "~19.0.0"
-    "@volo/ngx-lepton-x.core" "4.3.4"
+    "@volo/ngx-lepton-x.core" "5.0.0-rc.2"
     bootstrap-icons "~1.7.2"
     tslib "^2.3.0"
 
