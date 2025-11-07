@@ -1,0 +1,6 @@
+@Radish.Server_HostAddress = http://localhost:5202
+
+GET {{Radish.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
