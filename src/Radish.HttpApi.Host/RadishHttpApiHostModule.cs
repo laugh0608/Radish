@@ -9,7 +9,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.OpenApi.Models;
 using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.AspNetCore;
 using Radish.HealthChecks;
@@ -25,6 +24,7 @@ using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Asp.Versioning.ApplicationModels;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi;
 using Radish.Extensions.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Volo.Abp;
@@ -121,7 +121,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
-        var hostingEnvironment = context.Services.GetHostingEnvironment();
+        // var hostingEnvironment = context.Services.GetHostingEnvironment();
 
         if (!configuration.GetValue<bool>("App:DisablePII"))
         {
@@ -153,15 +153,12 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         ConfigureBundles();
         ConfigureConventionalControllers();
         ConfigureHealthChecks(context);
-        // ConfigureSwagger(context, configuration); // Swagger 配置，已弃用
-        // ConfigureScalar(context, configuration); // Scalar 配置，已弃用
         ConfigureVirtualFileSystem(context);
         ConfigureCors(context, configuration);
 
         #region API Version
 
-        var preActions = 
-            context.Services.GetPreConfigureActions<AbpAspNetCoreMvcOptions>();
+        var preActions = context.Services.GetPreConfigureActions<AbpAspNetCoreMvcOptions>();
         Configure<AbpAspNetCoreMvcOptions>(options => { preActions.Configure(options); });
 
         // Show neutral/versionless APIs.
@@ -171,12 +168,11 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 options.ReportApiVersions = true;
                 options.AssumeDefaultVersionWhenUnspecified = true;
 
-                // options.ApiVersionReader = new HeaderApiVersionReader("api-version"); //Supports header too
-                // options.ApiVersionReader = new MediaTypeApiVersionReader(); //Supports accept header too
+                //options.ApiVersionReader = new HeaderApiVersionReader("api-version"); //Supports header too
+                //options.ApiVersionReader = new MediaTypeApiVersionReader(); //Supports accept header too
             }, options => { options.ConfigureAbp(preActions.Configure()); })
             .AddApiExplorer(options =>
             {
-                // 添加 API Explorer
                 // add the versioned api explorer, which also adds IApiVersionDescriptionProvider service
                 // note: the specified format code will format the version as "'v'major[.minor][-status]"
                 options.GroupNameFormat = "'v'VVV";
@@ -185,53 +181,18 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 // can also be used to control the format of the API version in route templates
                 options.SubstituteApiVersionInUrl = true;
             });
+
         context.Services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-        // Swagger 配置
-        context.Services.AddAbpSwaggerGenWithOidc(
-            configuration["AuthServer:Authority"]!,
-            ["Radish"],
-            [AbpSwaggerOidcFlows.AuthorizationCode],
-            null,
-            options =>
-            {
-                // add a custom operation filter which sets default values
-                options.OperationFilter<SwaggerDefaultValues>();
-                // 移除默认的错误响应（400/401/403/404/500/501）
-                options.OperationFilter<RemoveDefaultErrorResponsesOperationFilter>();
-                options.CustomSchemaIds(type => type.FullName);
-                options.DocumentFilter<Radish.Extensions.Swagger.OnlyProjectApisDocumentFilter>();
-                // 包含各层 XML 注释到 Swagger（控制器、应用服务接口与DTO注释）
-                var xmlTypes = new[]
-                {
-                    typeof(RadishHttpApiModule),
-                    typeof(RadishApplicationModule),
-                    typeof(RadishApplicationContractsModule),
-                    typeof(RadishHttpApiHostModule)
-                };
-                foreach (var t in xmlTypes)
-                {
-                    var xml = Path.Combine(AppContext.BaseDirectory, $"{t.Assembly.GetName().Name}.xml");
-                    if (File.Exists(xml))
-                    {
-                        options.IncludeXmlComments(xml, includeControllerXmlComments: true);
-                    }
-                }
-                // options.SwaggerDoc("v1", new OpenApiInfo { Title = "Radish API", Version = "v1" });
-                // options.DocInclusionPredicate((docName, description) => true); // 这个配置已经不兼容了，不能开，否则报错
-                // options.HideAbpEndpoints(); // 隐藏 ABP 的默认端点，这个不要用，会隐藏所有 Controller 的 API 节点
-            });
-        // context.Services.AddAbpSwaggerGen(options =>
-        // {
-        //     // add a custom operation filter which sets default values
-        //     options.OperationFilter<SwaggerDefaultValues>();
-        //     options.CustomSchemaIds(type => type.FullName);
-        //     // Hides ABP Related endpoints on Swagger UI
-        //     options.HideAbpEndpoints();
-        // });
-        Configure<AbpAspNetCoreMvcOptions>(options =>
+
+        context.Services.AddAbpSwaggerGen(options =>
         {
-            options.ChangeControllerModelApiExplorerGroupName = false;
+            // add a custom operation filter which sets default values
+            options.OperationFilter<SwaggerDefaultValues>();
+
+            options.CustomSchemaIds(type => type.FullName);
         });
+
+        Configure<AbpAspNetCoreMvcOptions>(options => { options.ChangeControllerModelApiExplorerGroupName = false; });
 
         #endregion
     }
@@ -305,77 +266,6 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         });
     }
 
-    #region 文档单独配置类 - 已弃用
-
-    /// <summary>Swagger 配置</summary>
-    /// <param name="context">ServiceConfigurationContext</param>
-    /// <param name="configuration">IConfiguration</param>
-    private static void ConfigureSwagger(ServiceConfigurationContext context, IConfiguration configuration)
-    {
-        // @luobo 2025.10.8 更改为使用默认的 ApiVersions 来生成 openapi 文档
-        context.Services.AddAbpSwaggerGenWithOidc(
-            configuration["AuthServer:Authority"]!,
-            ["Radish"],
-            [AbpSwaggerOidcFlows.AuthorizationCode],
-            null,
-            options =>
-            {
-                options.SwaggerDoc("v1", new OpenApiInfo { Title = "Radish API", Version = "v1" });
-                options.DocInclusionPredicate((docName, description) => true);
-                options.CustomSchemaIds(type => type.FullName);
-                options.HideAbpEndpoints(); // 隐藏 ABP 的默认端点
-            });
-    }
-
-    /// <summary>Scalar 扩展服务配置</summary>
-    /// <param name="context">ServiceConfigurationContext</param>
-    /// <param name="configuration">IConfiguration</param>
-    /// <remarks>Scalar 的主配置在 Program.cs 中</remarks>
-    private static void ConfigureScalar(ServiceConfigurationContext context, IConfiguration configuration)
-    {
-        // @luobo 2025.10.7 更改为使用默认的 ApiVersions 来生成 openapi 文档
-        // 下方已经弃用 ↓
-        // 对应 Scalar 的多个 API 文档
-        // 创建 V1 文档 json
-        context.Services.AddOpenApi("V1", options =>
-        {
-            options.AddDocumentTransformer((document, transformerContext, cancellationToken) =>
-            {
-                document.Info = new OpenApiInfo
-                {
-                    Title = "V1 API",
-                    Version = "V1",
-                    Description = "Radish V1 API"
-                };
-                return Task.CompletedTask;
-            });
-        });
-        // 创建 V2 文档 json
-        context.Services.AddOpenApi("V2", options =>
-        {
-            options.AddDocumentTransformer((document, transformerContext, cancellationToken) =>
-            {
-                document.Info = new OpenApiInfo
-                {
-                    Title = "V1Beta API",
-                    Version = "v1beta",
-                    Description = "Radish V1Beta API"
-                };
-                return Task.CompletedTask;
-            });
-        });
-        // 开启 Scalar 扩展
-        context.Services.AddOpenApi(options =>
-        {
-            options.AddScalarTransformers();
-            // ABP 官方 issue 给出的配置，参考：https://github.com/abpframework/abp/discussions/22926
-            // 但是我实测不生效，会报错 Document 'v1' could not be loaded
-            // options.ShouldInclude = (_) => true;
-        });
-    }
-
-    #endregion
-
     /// <summary>跨域请求配置</summary>
     /// <param name="context">ServiceConfigurationContext</param>
     /// <param name="configuration">IConfiguration</param>
@@ -392,6 +282,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
 
                 // 2) 规范化并补全 http/https 对（同 host/port）
                 var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
                 void add(string s)
                 {
                     if (string.IsNullOrWhiteSpace(s)) return;
@@ -405,12 +296,14 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                             var other = string.Equals(uri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase)
                                 ? Uri.UriSchemeHttps
                                 : Uri.UriSchemeHttp;
-                            var counterpart = $"{other}://{uri.Host}{(uri.IsDefaultPort ? string.Empty : ":" + uri.Port)}";
+                            var counterpart =
+                                $"{other}://{uri.Host}{(uri.IsDefaultPort ? string.Empty : ":" + uri.Port)}";
                             counterpart = counterpart.TrimEnd('/');
                             if (!set.Contains(counterpart)) set.Add(counterpart);
                         }
                     }
                 }
+
                 foreach (var o in configured) add(o);
 
                 // 3) 兜底：若仍为空，放开常见本地来源（含 http/https）
@@ -507,6 +400,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                         {
                             input += (input.EndsWith(";") ? string.Empty : ";") + $"{directive}{append}";
                         }
+
                         return input;
                     }
 
@@ -535,6 +429,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         try
         {
             var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
             void add(string s)
             {
                 if (string.IsNullOrWhiteSpace(s)) return;
@@ -554,9 +449,10 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                     }
                 }
             }
+
             foreach (var s in (configuration["App:CorsOrigins"] ?? string.Empty)
-                         .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                         .Select(o => o.Trim().TrimEnd('/'))) add(s);
+                     .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                     .Select(o => o.Trim().TrimEnd('/'))) add(s);
             if (set.Count == 0)
             {
                 add("http://localhost:4200");
@@ -564,10 +460,14 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 add("http://localhost:5173");
                 add("https://localhost:5173");
             }
+
             var origins = set.ToArray();
             Log.Information("CORS allowed origins: {Origins}", string.Join(", ", origins));
         }
-        catch { /* no-op */ }
+        catch
+        {
+            /* no-op */
+        }
 
         app.UseCors(); // 允许跨域请求，必须在 UseRouting 和 UseAuthentication 之间
         app.UseAuthentication(); // 配置身份认证和权限验证中间件，必须放在 UseRouting 和 UseEndpoints 之间
@@ -605,54 +505,9 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         #region Swagger 配置
 
         app.UseSwagger();
-        // app.UseAbpSwaggerUI(options =>
-        // {
-        //     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Radish API");
-        //
-        //     var configuration = context.ServiceProvider.GetRequiredService<IConfiguration>();
-        //     options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
-        //     // options.OAuthClientSecret("1q2w3e*");  // 密码
-        // });
-        app.UseSwaggerUI(options =>
+        app.UseAbpSwaggerUI(options =>
         {
             var provider = app.ApplicationServices.GetRequiredService<IApiVersionDescriptionProvider>();
-
-            var configuration = context.ServiceProvider.GetRequiredService<IConfiguration>();
-
-            // OAuth 配置
-            options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
-            // options.OAuthClientSecret("1q2w3e*");  // 密码
-            options.OAuthScopes("Radish");
-            options.OAuthUsePkce();
-
-            // UI 配置
-            options.ConfigObject.DisplayRequestDuration = true;
-            options.ConfigObject.ShowExtensions = true;
-            options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
-            options.EnableDeepLinking();
-            options.DisplayOperationId();
-
-            // Console.WriteLine("=== 开始 Swagger UI 配置 ===");
-            // Console.WriteLine($"Provider 版本数量: {provider.ApiVersionDescriptions.Count}");
-            // 清除默认的文档（如果有）
-            // options.ConfigObject.Urls = null;
-            // 设置 URLs
-            // var urlList = new List<Swashbuckle.AspNetCore.SwaggerUI.UrlDescriptor>();
-            // foreach (var desc in provider.ApiVersionDescriptions)
-            // {
-            //     var urlDesc = new Swashbuckle.AspNetCore.SwaggerUI.UrlDescriptor
-            //     {
-            //         Name = desc.GroupName.ToUpperInvariant(),
-            //         Url = $"/swagger/{desc.GroupName}/swagger.json"
-            //     };
-            //     urlList.Add(urlDesc);
-            //     Console.WriteLine($"创建 UrlDescriptor: {urlDesc.Name} -> {urlDesc.Url}");
-            // }
-            //
-            // options.ConfigObject.Urls = urlList;
-            // Console.WriteLine($"设置后 URLs 数量: {options.ConfigObject.Urls?.Count() ?? 0}");
-            // Console.WriteLine("=== 结束 Swagger UI 配置 ===");
-
             // build a swagger endpoint for each discovered API version
             foreach (var description in provider.ApiVersionDescriptions)
             {
@@ -664,10 +519,6 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
         #endregion
 
         #region Scalar 配置
-
-        // if (env.IsDevelopment()) { }
-        // 注入 OpenAPI
-        // ((WebApplication)app).MapOpenApi();
 
         // 注入 Scalar，Api Web UI 管理
         // 文档地址：https://guides.scalar.com/scalar/scalar-api-references/integrations/net-aspnet-core/integration
@@ -683,7 +534,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
                 .WithDarkMode(false) // 黑暗模式
                 .WithDefaultOpenAllTags(false); // 是否展开所有标签栏
             // 自定义查找 Open API 文档地址
-            // options.WithOpenApiRoutePattern("/openapi/{documentName}.json");
+            options.WithOpenApiRoutePattern("/swagger/v1/swagger.json");
             // 设置默认的 Http 客户端
             options.WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios);
 
@@ -696,7 +547,7 @@ public class RadishHttpApiHostModule : AbpModule // 这里不能设置为 abstra
             foreach (var description in provider.ApiVersionDescriptions)
             {
                 options.AddDocument(description.GroupName.ToUpperInvariant(), description.GroupName.ToUpperInvariant(),
-                    $"swagger/{description.GroupName}/swagger.json");
+                    $"/swagger/{description.GroupName}/swagger.json");
             }
         }).RequireAuthorization();
 

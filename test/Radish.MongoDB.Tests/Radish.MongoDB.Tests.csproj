@@ -1,18 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="..\..\common.props" />
-
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <RootNamespace>Radish</RootNamespace>
   </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\..\src\Radish.MongoDB\Radish.MongoDB.csproj" />
     <ProjectReference Include="..\Radish.Application.Tests\Radish.Application.Tests.csproj" />
   </ItemGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
     <PackageReference Include="MongoSandbox.Core" Version="2.0.0" />
@@ -21,5 +17,4 @@
     <PackageReference Include="MongoSandbox8.runtime.osx-x64" Version="1.0.1" Condition="$([MSBuild]::IsOSPlatform('OSX'))" />
     <PackageReference Include="MongoSandbox8.runtime.win-x64" Version="2.0.0" Condition="$([MSBuild]::IsOSPlatform('Windows'))" />
   </ItemGroup>
-
 </Project>
