@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="radish.client/radish.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="Radish.Server/Radish.Server.csproj" />
+</Solution>
