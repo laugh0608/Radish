@@ -1,5 +1,13 @@
 # 开发日志
 
+## 第二阶段
+
+### 2025.11.8
+
+- 重新创建项目，完全舍弃之前的代码，包括 ABP 框架与 MongoDB
+- 重新使用 .NET 10 + React + Entity Framework Core/SqlSugar + PostgreSQL 技术栈
+- 重新设计项目架构与模块划分
+
 ## 第一阶段
 
 ### 2025.10.29
