@@ -1,6 +1,18 @@
 # 开发日志
 
+## 第二阶段
+
+> 当前阶段采用 .NET 10 + SQLSugar + PostgreSQL + React 技术栈；以下记录聚焦新架构的推进，后续如有重要调整也会在此处补充说明。
+
+### 2025.11.8
+
+- 重新创建项目，完全舍弃之前的代码，包括 ABP 框架与 MongoDB
+- 重新使用 .NET 10 + React + Entity Framework Core/SqlSugar + PostgreSQL 技术栈
+- 重新设计项目架构与模块划分
+
 ## 第一阶段
+
+> 以下内容为历史记录，保留 ABP + Angular + MongoDB 方案的决策脉络以供参考，但不再作为现行实现依据。
 
 ### 2025.10.29
 
