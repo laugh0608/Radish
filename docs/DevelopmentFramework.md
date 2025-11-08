@@ -1,20 +1,18 @@
-# Development Framework
+# 开发整体架构
 
-> 以下内容参考自 Gemini-2.5-Flash。
->
 > 开发框架图请点：[Radish](https://affine.imbhj.net/workspace/e54b7d62-20a6-473e-bfc8-0e0f1592b17c/i2ZYOGr95mO5T88PhTKr8) 。
 
-## 功能期望与范围（Overview & Scope）
+## 功能期望与范围
 
 - 核心功能模块
   - 身份与单点登录（SSO）：OpenIddict（OIDC 授权码 + PKCE）、ABP 身份模块、前后端静默续期与登出回跳。
-  - 门户首页与文档：Host 首页聚合跳转（Angular、React、Swagger、Scalar），登录态透传与 `sso=auto` 约定（兼容 `sso=true` / `sso=1`）；Swagger/Scalar 授权可调试。
+  - 门户首页与文档：Host 首页聚合跳转（React、Swagger、Scalar），登录态透传与 `sso=auto` 约定（兼容 `sso=true` / `sso=1`）；Swagger/Scalar 授权可调试。
   - 内容域：分类/标签、帖子/评论（基础 CRUD、分页/过滤/排序），点赞/收藏，浏览计数。
   - 搜索与筛选：按标题/标签/分类检索，排序（时间/热度）。
   - 通知（可选）：发帖/回复/点赞等站内通知（可后续迭代）。
   - 积分系统：积分账户、积分流水、规则（发帖/点赞/被采纳等）。
   - 商城系统：商品/库存、购买与激活（基于积分），前端效果应用（头像框/昵称色等）。
-  - 管理后台（Angular）：分类与内容管理、用户与权限、积分/商城管理。
+  - 管理后台：分类与内容管理、用户与权限、积分/商城管理。
 
 - 非功能性要求
   - 安全：全链路 HTTPS（生产）、CORS 白名单（.env）、CSP 基线、XSS/CSRF/输入校验、最小权限、密钥不入库（仅 .env/.secrets）。
@@ -82,7 +80,7 @@
   - 非目标：完整设计体系与可访问性 (A11y) 全量达标。
   - 边界：遵循基本可访问性与对比度要求；组件库选型以 ABP Angular/自建轻组件为主。
 
-## ABP & React/Angular & MongoDB & Docker 论坛项目开发大纲
+## 开发大纲
 
 ### 项目名称
 
@@ -496,114 +494,3 @@ graph TD
   * `react-frontend` 和 `angular-admin` 依赖 `backend-api` (在启动时)。
 * **Environment Variables:** 配置数据库连接字符串、JWT密钥等。
 * **启动命令:** `docker-compose up --build -d`
-
-### 6. 开发流程规划
-
-#### 阶段 0: 环境搭建与项目初始化 (2-3 天)
-
-1. **ABP项目初始化:**
-    * 本仓库已包含完整解决方案；如从零开始可参考 ABP CLI 示例：`abp new Radish -t tiered -csf -u angular --db-provider mongodb`
-    * 验证 ABP Angular UI 能否启动并访问默认的身份和权限管理页面。
-2. **React前端项目初始化:**
-    * 在解决方案外部或单独文件夹中创建 React 项目：`npm create vite@latest react-frontend --template react-ts` (推荐使用 Vite)。
-    * 配置 React 项目的开发服务器代理，使其能访问 ABP 后端 API (例如 `vite.config.ts` 中的 `server.proxy`)。
-3. **Git 版本控制:** 初始化 Git 仓库，建立开发分支。
-4. **MongoDB 环境:** 确保本地或Docker中有一个MongoDB实例可以访问。
-
-#### 阶段 1: 后端 MVP 开发 (3-4 周)
-
-1. **DDD 基础构建:**
-    * 在 `Radish.Domain` 项目中，定义 `Category`, `Post`, `Comment` 聚合根/实体、值对象、仓储接口。
-    * 在 `Radish.MongoDB` 中实现对应的仓储。
-    * 在 `Radish.DbMigrator` 中添加 MongoDB 索引和初始数据 (例如默认版块)。
-2. **应用服务实现:**
-    * 在 `Radish.Application.Contracts` 中定义 `ICategoryAppService`, `IPostAppService`, `ICommentAppService` 接口及其 DTOs。
-    * 在 `Radish.Application` 中实现这些应用服务，调用领域层逻辑。
-3. **API 暴露与测试:**
-    * 确保所有应用服务通过 `Radish.HttpApi.Host` 项目暴露为 RESTful API。
-    * 通过 Swagger/Scalar 验证所有 API 接口的可用性和正确性。
-    * **Admin UI 适配:** 确认 ABP Angular UI 能够管理 `Category` (如果需要自定义管理界面，则进行开发)。
-
-#### 阶段 2: React 前端 MVP 开发 (3-4 周)
-
-1. **认证与授权集成:**
-    * 在 React 中实现登录/注册页面，与后端认证 API 交互，处理 JWT Token 的存储 (localStorage/cookie) 和刷新。
-    * 实现全局的 `AuthContext` 或 Redux/Zustand 状态管理，存储用户认证信息和权限列表。
-    * 实现路由守卫 (Route Guard) 保护需要认证的页面。
-2. **通用 UI 组件开发:**
-    * 布局组件 (Header, Footer, Navigation)。
-    * 帖子卡片、评论卡片等可复用组件。
-    * 富文本编辑器集成。
-3. **核心页面开发:**
-    * 首页/版块列表页。
-    * 帖子列表页 (支持分页、筛选、排序)。
-    * 帖子详情页 (展示帖子内容、评论列表、发表评论)。
-    * 发布/编辑帖子页面。
-    * 个人中心页面 (显示基础信息)。
-    * 错误处理和加载状态管理。
-
-#### 阶段 3: Docker 化与部署 (1 周)
-
-1. **编写 Dockerfile:** 为 `Radish.HttpApi.Host`, `Radish.DbMigrator`, `react-frontend`, `angular-admin` 编写 Dockerfile。
-2. **编写 docker-compose.yml:** 整合所有服务，配置网络、卷、端口映射和环境变量。
-3. **本地测试:** `docker-compose up --build -d` 启动整个项目，验证所有服务正常运行，功能联调。
-4. **文档:** 编写详细的 Docker 部署说明。
-
-#### 阶段 4: 积分系统开发 (2-3 周)
-
-1. **DDD 建模:** 定义 `UserPoints`, `PointTransaction` 聚合根/实体，仓储接口。
-2. **领域事件与处理器:** 定义 `PostLikedEvent` 等领域事件，并创建对应的领域事件处理器来更新用户积分。
-3. **应用服务与 API:** 实现 `PointAppService`，提供查询用户积分和积分历史的 API。
-4. **Admin UI:** 在 ABP Angular UI 中添加用户积分管理界面。
-5. **React UI:** 在个人中心和相关页面展示用户积分和积分历史。
-
-#### 阶段 5: 商城系统开发 (3-4 周)
-
-1. **DDD 建模:** 定义 `ShopItem`, `UserInventory` 聚合根/实体，仓储接口。
-2. **领域服务与应用服务:** 实现 `ShopAppService`，处理商品管理、购买、用户物品激活/禁用逻辑。
-3. **Admin UI:** 在 ABP Angular UI 中添加商品管理和用户库存管理界面。
-4. **React UI:**
-    * 创建商城页面，展示商品列表。
-    * 实现商品购买流程。
-    * 创建“我的物品”页面，展示用户已购物品。
-    * 实现物品的激活/禁用功能，并动态应用前端样式 (例如，根据激活的头像框ID，加载并显示对应的CSS类或图片)。
-
-#### 阶段 6: 持续优化与扩展 (持续进行)
-
-1. **搜索与标签功能:**
-    * 后端：为帖子添加全文搜索（MongoDB支持），为标签提供单独管理。
-    * 前端：搜索框，标签云/标签列表。
-2. **消息/通知系统:**
-    * 后端：集成 SignalR，或基于领域事件实现站内信。
-    * 前端：实时通知、消息中心。
-3. **文件上传服务:**
-    * 后端：集成文件存储 (本地文件系统、MinIO、云存储如阿里云OSS/AWS S3)。
-    * 前端：头像上传、帖子图片上传。
-4. **SEO 优化:**
-    * 对于 React 前端，考虑使用 Next.js 进行 SSR (服务器端渲染) 或预渲染。
-    * 生成 Sitemap，robots.txt。
-5. **性能优化:**
-    * 数据库索引优化。
-    * 缓存机制 (Redis)。
-    * API 响应速度优化。
-6. **安全性增强:**
-    * XSS/CSRF 防护。
-    * 输入验证 (后端和前端)。
-    * 限流、防刷。
-7. **日志与监控:**
-    * 利用 ABP 内置日志系统，集成 ELK 或 Grafana/Prometheus。
-8. **国际化 (i18n):** 如果需要支持多语言。
-
-### 7. 起步建议
-
-1. **按照“阶段 0”完成项目初始化。** 这是构建一切的基础。
-2. **专注于后端 DDD 核心：** 先在 `Radish.Domain` 中清晰地定义 `Category`, `Post`, `Comment` 的聚合根、实体、值对象和它们之间的关系，以及仓储接口。这是业务逻辑的骨架。
-3. **MongoDB 配置：** 确保 `Radish.MongoDB` 正确连接到你的 MongoDB 实例，并能实现基本实体的增删改查。
-4. **自底向上验证：**
-    * 先通过单元测试验证领域层逻辑。
-    * 然后通过集成测试或 Swagger/Scalar 验证应用服务和 API。
-    * 最后才进入前端 UI 的开发。
-5. **MVP 优先原则：** 严格遵循MVP的核心功能列表，不要一开始就追求完美或所有附加功能。先让核心论坛功能跑起来，再迭代。
-6. **持续集成/部署 (CI/CD):** 尽早设置基本的 CI/CD 管道，尤其是在 Docker 化之后，能够自动化构建、测试和部署。
-
-这份大纲旨在提供一个清晰的开发路径和结构。在实际开发中，可能会根据具体情况和团队反馈进行调整。祝你项目顺利！

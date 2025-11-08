@@ -1,7 +1,31 @@
 <Solution>
+  <Folder Name="/docs/">
+    <File Path="docs/DevelopmentFramework.md" />
+    <File Path="docs/DevelopmentLog.md" />
+    <File Path="docs/DevelopmentPlan.md" />
+    <File Path="docs/DevelopmentSpecifications.md" />
+    <File Path="docs/README.md" />
+  </Folder>
+  <Folder Name="/others/">
+    <File Path=".dockerignore" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="global.json" />
+    <File Path="LICENSE.txt" />
+    <File Path="README.md" />
+  </Folder>
   <Project Path="radish.client/radish.client.esproj">
     <Build />
     <Deploy />
   </Project>
+  <Project Path="Radish.Common/Radish.Common.csproj" Id="06c1ac0c-253a-4a49-98ba-b1a29cf40cbe" />
+  <Project Path="Radish.Core/Radish.Core.csproj" Id="288ce360-ff97-4a27-8d17-21e0f5805940" />
+  <Project Path="Radish.Extension/Radish.Extension.csproj" Id="11f884bf-417e-4027-b308-ed692f378bb3" />
+  <Project Path="Radish.IRepository/Radish.IRepository.csproj" Id="b57b479a-8170-4d7d-91d5-bd5a813068ed" />
+  <Project Path="Radish.IService/Radish.IService.csproj" Id="c41551c5-2850-4795-af28-3248e984f182" />
+  <Project Path="Radish.Model/Radish.Model.csproj" Id="3051de3c-c5aa-4628-9c82-b8082f15ff0b" />
+  <Project Path="Radish.Repository/Radish.Repository.csproj" Id="c4a5fe04-1f7d-4409-a6aa-6a526a0855fe" />
   <Project Path="Radish.Server/Radish.Server.csproj" />
+  <Project Path="Radish.Service/Radish.Service.csproj" Id="54c037fb-fc5e-4dc9-ad62-7274e0d864ac" />
+  <Project Path="Radish.Shared/Radish.Shared.csproj" Id="2011ea7b-a4b6-411d-8586-68c7fbd559a4" />
 </Solution>
