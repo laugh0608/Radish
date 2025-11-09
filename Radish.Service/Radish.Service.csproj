@@ -6,4 +6,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Radish.IService\Radish.IService.csproj" />
+    <ProjectReference Include="..\Radish.Repository\Radish.Repository.csproj" />
+  </ItemGroup>
+
 </Project>
