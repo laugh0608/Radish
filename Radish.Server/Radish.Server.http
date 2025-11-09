@@ -4,3 +4,5 @@ GET {{Radish.Server_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+GET {{Radish.Server_HostAddress}}/api/User/GetUserList/
+Accept: application/json

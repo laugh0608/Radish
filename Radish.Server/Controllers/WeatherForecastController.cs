@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Radish.Server.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]/[action]")]
     public class WeatherForecastController : ControllerBase
     {
         private static readonly string[] Summaries =
