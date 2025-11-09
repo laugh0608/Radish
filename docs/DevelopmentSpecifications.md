@@ -45,6 +45,15 @@
 - `Radish.Server.Tests/Controllers/UserControllerTest` 使用 xUnit 校验示例接口返回 `OkObjectResult`，且至少包含两条用户数据；任何对示例链路的改动都必须同步更新该测试。
 - `Radish.Server/Radish.Server.http` 已加入“用户列表”调用示例，可在调试时直接复用；如新增演示接口，应当在 .http 文件中同步记录。
 
+## SignalR 实时交互规范
+
+- Hub 位置：所有实时交互入口放在 `Radish.Server/Hubs`（命名为 `*Hub.cs`），继承 `Hub<TClient>` 以启用强类型调用；公共消息 DTO 定义在 `Radish.Model` 中，避免前后端字段不一致。
+- DI 与调用：业务服务通过注入 `IHubContext<T>` 或 `IHubContext<T, TClient>` 发送消息，禁止在 Controller 中直接 new Hub；需要跨层推送时在 Service 层聚合，保持仓储层不涉及实时推送。
+- 客户端：`radish.client` 使用 `@microsoft/signalr`，连接封装在 `shared/signalr/useSignalrHub.ts`（预留）中，负责断线重连、心跳与 Token 附带；前端只暴露订阅型 API。
+- 安全：Hub 仅接受已认证用户，连接时附带 JWT（Query 或 Header），后台在 `OnConnectedAsync` 验证租户/角色；Hub 方法命名遵循 PascalCase，禁止接受动态字符串并在方法内再次鉴权。
+- 可扩展性：生产部署多实例时启用 Redis Backplane，并限制客户端分组订阅；压测期间通过 `MaximumReceiveMessageSize` 控制 payload，必要时启用 MessagePack 序列化。
+- 调试：添加 `Radish.Server/Hubs/hubs.http` 或在现有 `.http` 文件中记录 `/negotiate` 请求；本地开发启用 `builder.Services.AddSignalR().AddJsonProtocol(...)` 并结合浏览器 Network 面板排查。
+
 ## 前后端通信安全要求
 
 - 所有前后端数据交互必须通过 HTTPS 进行，禁止使用明文 HTTP，确保传输链路具备 TLS 加密。
