@@ -14,7 +14,10 @@
     <File Path="LICENSE.txt" />
     <File Path="README.md" />
   </Folder>
-  <Project Path="radish.client/radish.client.esproj" />
+  <Project Path="radish.client/radish.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
   <Project Path="Radish.Common/Radish.Common.csproj" />
   <Project Path="Radish.Core/Radish.Core.csproj" />
   <Project Path="Radish.Extension/Radish.Extension.csproj" />
@@ -22,7 +25,7 @@
   <Project Path="Radish.IService/Radish.IService.csproj" />
   <Project Path="Radish.Model/Radish.Model.csproj" />
   <Project Path="Radish.Repository/Radish.Repository.csproj" />
-  <Project Path="Radish.Server.Tests\Radish.Server.Tests.csproj" Type="Classic C#" />
+  <Project Path="Radish.Server.Tests\Radish.Server.Tests.csproj" />
   <Project Path="Radish.Server/Radish.Server.csproj" />
   <Project Path="Radish.Service/Radish.Service.csproj" />
   <Project Path="Radish.Shared/Radish.Shared.csproj" />
