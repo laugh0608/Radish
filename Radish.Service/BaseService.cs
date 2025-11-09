@@ -5,8 +5,13 @@ namespace Radish.Service;
 
 public class BaseServices<TEntity> : IBaseServices<TEntity> where TEntity : class, new()
 {
-    private IBaseRepository<TEntity> _repository;
-    
+    private readonly IBaseRepository<TEntity> _repository;
+
+    public BaseServices(IBaseRepository<TEntity> repository)
+    {
+        _repository = repository;
+    }
+
     public Task<List<TEntity>> QueryAsync()
     {
         return _repository.QueryAsync();
