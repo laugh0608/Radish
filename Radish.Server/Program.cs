@@ -1,7 +1,11 @@
 using Radish.IRepository;
+using Radish.IRepository.User;
 using Radish.IService;
+using Radish.IService.User;
 using Radish.Repository;
+using Radish.Repository.User;
 using Radish.Service;
+using Radish.Service.User;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
