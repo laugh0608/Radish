@@ -7,7 +7,7 @@ namespace Radish.Repository;
 // 这里的 where TEntity : class, new() 的意思是对泛型进行约束，首先必须是类 class，其次必须可以被实例化 new()
 public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : class, new()
 {
-    /// <summary>测试查询方法示例</summary>
+    /// <summary>测试泛型查询方法示例</summary>
     /// <returns></returns>
     public async Task<List<TEntity>> QueryAsync()
     {
