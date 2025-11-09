@@ -1,6 +1,7 @@
 using JetBrains.Annotations;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.ViewModels;
 using Radish.Repository;
 using Radish.Server.Controllers;
 using Radish.Service;

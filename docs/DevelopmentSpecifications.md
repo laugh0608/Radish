@@ -1,6 +1,7 @@
 # 开发规范
 
-养成一个好习惯，先写接口（IService），再写实现（Service）
+- 养成一个好习惯，先写接口（IService），再写实现（Service）
+- BaseRepository、BaseService、IBaseRepository、IBaseService 都已定义，后续增加业务只需要定义 Model 和 ViewModel 即可
 
 ## 项目结构约定
 
