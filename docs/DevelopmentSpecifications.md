@@ -10,20 +10,22 @@
 - Radish.Core：后端核心业务逻辑与算法类，保留模块，为后续流程模拟与算法实现做准备
 - Radish.Extension：后端扩展功能模块类，例如 Swagger/Scalar、HealthCheck 等
 - Radish.IRepository：后端数据访问接口类，定义数据访问层接口
-- Radish.IServices：后端服务接口类，定义业务逻辑层接口
+- Radish.IService：后端服务接口类，定义业务逻辑层接口
 - Radish.Model：后端数据模型类，定义数据库实体模型
 - Radish.Repository：后端数据访问实现类，具体实现数据访问接口
-- Radish.Services：后端服务实现类，具体实现业务逻辑接口
+- Radish.Service：后端服务实现类，具体实现业务逻辑接口
 - Radish.Shared：前后端共享的模型和工具类，例如 DTO、枚举等
+- Radish.Server.Tests：xUnit 测试工程，目前包含 UserController 示例测试，约束接口返回示例数据
 
 ## 分层依赖约定
 
 - 前端项目（radish.client）仅依赖 npm 包
 - 后端项目按层次结构依赖：
-  - Radish.Server 依赖于 radish.client，用以同步启动前端应用
-  - Radish.Repository 依赖于 Radish.Model
-    - Radish.Model 依赖于 Radish.Common
+  - Radish.Server 引用 radish.client（用于 SPA 代理）与 Radish.Service，通过 Program.cs 注入 `IUserService/IUserRepository` 等接口实现
+  - Radish.Service 依赖 Radish.IService、Radish.Repository，用于封装应用服务编排
+  - Radish.Repository 依赖 Radish.IRepository，具体实现集中数据访问逻辑；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model
   - Radish.Core 暂时保留，无直接依赖关系
+- `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用“Controller 调用 Service，再由 Service 访问 Repository”的模式，并补齐对应接口定义
 
 ## 项目依赖约定
 
@@ -35,6 +37,13 @@
 - 避免使用过时或不再维护的库，优先选择社区活跃且有良好文档支持的库
 - 对于大型依赖，考虑使用按需加载或代码拆分以优化性能
 - 记录所有依赖变更，确保团队成员了解更新内容和影响
+
+## 示例实现与测试约定
+
+- `Radish.Server/Controllers/UserController`、`Radish.Service/UserService`、`Radish.Repository/UserRepository` 与对应的接口项目组成“用户列表”示例。该示例演示分层调用方式和 DI 注册写法，亦为 Swagger/.http 文件中的演示请求提供数据。
+- 示例仓储目前返回内存中的 Alice/Bob 两条静态数据，供开发联调、单元测试与文档说明复用；如需扩展，请保持“接口契约 + 数据映射 + 控制器”结构。
+- `Radish.Server.Tests/Controllers/UserControllerTest` 使用 xUnit 校验示例接口返回 `OkObjectResult`，且至少包含两条用户数据；任何对示例链路的改动都必须同步更新该测试。
+- `Radish.Server/Radish.Server.http` 已加入“用户列表”调用示例，可在调试时直接复用；如新增演示接口，应当在 .http 文件中同步记录。
 
 ## 前后端通信安全要求
 
