@@ -15,7 +15,7 @@
   - 管理后台（同 React 工程内实现管理视图）：分类、内容、用户、积分与商城配置。
 
 - **非功能性要求**
-  - 安全：HTTPS、JWT + Refresh、基于角色的授权、CSP/CORS、参数验证、敏感信息集中管控。
+  - 安全：所有前后端流量强制 HTTPS，登录等敏感参数需在前端使用 RSA 公钥加密后发送，后端持私钥解密；结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。
   - 性能：关键查询 P95 ≤ 200ms；SQLSugar Profile + PostgreSQL EXPLAIN 校验索引；读多写少场景可使用内存缓存。
   - 可用性：健康检查 `/health`, `/ready`; SQLSugar 迁移幂等；容器探针。
   - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点。
@@ -142,6 +142,7 @@ graph LR
 - 认证：基于 `fetch`/`axios` 拦截器附带 AccessToken，失效时调用刷新接口（刷新令牌存于 HttpOnly Cookie 或安全存储）。
 - 状态管理：React Query 管理异步数据，Zustand/Jotai 管理本地 UI 状态；Form 使用 React Hook Form。
 - UI 与可访问性：Tailwind/UnoCSS 原子化 + 自研组件，提供暗色模式与响应式布局。
+- 桌面化交互规范：首页呈现类 macOS 桌面，顶部状态栏显示用户名/IP，底部 Dock 承载主功能入口，左侧桌面图标双击弹出带最小化/关闭按钮的窗口，所有弹窗遵循桌面操作逻辑。
 - 测试：组件级 Vitest，关键流程 Playwright（可选）。
 
 ## DevOps 与运维基线
