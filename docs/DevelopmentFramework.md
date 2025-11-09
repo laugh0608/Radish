@@ -87,6 +87,9 @@ PostgreSQL
   - 常量、错误码、事件名、Options 绑定类型。
 - `radish.client`
   - SPA + 内嵌管理视图；共享 DTO 通过 `radish.client/src/types` 维护，与后端模型保持同步。
+- `UserController -> IUserService -> IUserRepository` 示例链路
+  - 通过内存仓储 + 应用服务演示分层合作，Program.cs 负责注入 `IUserService/IUserRepository`。
+  - `.http` 文件与 `Radish.Server.Tests/Controllers/UserControllerTest` 均以该示例为基准，确保开发者可以快速验证分层约定。
 
 ### 架构示意
 

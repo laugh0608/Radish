@@ -1,3 +1,8 @@
+using Radish.IRepository;
+using Radish.IService;
+using Radish.Repository;
+using Radish.Service;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -5,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>(); // 示例接口依赖的用户服务链路
 
 var app = builder.Build();
 
