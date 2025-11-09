@@ -6,6 +6,7 @@ using Radish.Server.Controllers;
 using Radish.Service;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Radish.Model.ViewModels;
 using Radish.Repository.User;
 using Radish.Service.User;
 using Xunit;
