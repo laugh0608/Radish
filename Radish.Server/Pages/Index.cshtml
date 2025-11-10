@@ -1,10 +1,16 @@
+@page "/"
+@{
+    Layout = null;
+    ViewData["Title"] = "Radish API 服务欢迎页";
+}
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Radish API 服务欢迎页</title>
-    <link rel="stylesheet" href="/css/index.css">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/index.css" asp-append-version="true">
 </head>
 <body>
 <main>
@@ -57,6 +63,6 @@
     <footer>Radish Platform · 构建快速、安全的后台服务体验</footer>
 </main>
 
-<script src="/js/index.js"></script>
+<script src="~/js/index.js" asp-append-version="true"></script>
 </body>
 </html>
