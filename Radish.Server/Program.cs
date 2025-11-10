@@ -1,20 +1,5 @@
-using System;
-using System;
-using AutoMapper;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Radish.Extension;
-using Radish.IRepository;
-using Radish.IRepository.User;
-using Radish.IService;
-using Radish.IService.User;
-using Radish.Repository;
-using Radish.Repository.User;
-using Radish.Service;
-using Radish.Service.User;
 using Scalar.AspNetCore;
-using IConfigurationProvider = AutoMapper.IConfigurationProvider;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,9 +18,11 @@ builder.Services.AddOpenApi(options =>
     options.AddScalarTransformers();
 });
 
-
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUserService, UserService>();
+// 注册 AddAutoMapper 服务
+builder.Services.AddAutoMapperSetup(builder.Configuration);
+// 注册用户相关服务
+// builder.Services.AddScoped<IUserRepository, UserRepository>();
+// builder.Services.AddScoped<IUserService, UserService>();
 
 var app = builder.Build();
 
