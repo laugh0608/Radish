@@ -13,6 +13,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddControllers();
+builder.Services.AddRazorPages();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 // 通过多份 OpenAPI 文档承载 Scalar 的版本切换
@@ -97,11 +98,9 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
+app.MapRazorPages();
 app.MapControllers();
 
-app.MapFallbackToFile("/index.html");
-
-// 默认根路由下要显示的内容。
-app.MapGet("/", () => "Welcome To Radish.Server...");
+app.MapFallbackToPage("/Index");
 
 app.Run();
