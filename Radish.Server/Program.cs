@@ -56,13 +56,12 @@ if (app.Environment.IsDevelopment())
             //.SortTagsAlphabetically()
             //.SortOperationsByMethod()
             //.PreserveSchemaPropertyOrder()
-            .WithProxy("https://localhost:7110")
             .AddServer("https://api.radish.icu", "Production");
         // 设置默认的 Http 客户端
         options.WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios);
         // 自定义多个版本 API 文档集合
         options
-           .AddDocument("v1", "v1", "/openapi/v1.json", isDefault: true) // 默认文档
+            .AddDocument("v1", "v1", "/openapi/v1.json", isDefault: true) // 默认文档
             .AddDocument("v2", "v2", "/openapi/v2.json"); // 双版本切换入口
         // // Custom local path
         // options.WithOpenApiRoutePattern("/api-spec/{documentName}.json");
