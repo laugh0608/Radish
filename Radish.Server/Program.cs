@@ -55,9 +55,8 @@ if (app.Environment.IsDevelopment())
            //.SortTagsAlphabetically()
            //.SortOperationsByMethod()
            //.PreserveSchemaPropertyOrder()
-           .WithProxy("https://api-gateway.company.com")
-           .AddServer("https://api.company.com", "Production")
-           .AddServer("https://staging-api.company.com", "Staging");
+           .WithProxy("https://localhost:7110")
+           .AddServer("https://api.radish.icu", "Production");
         // 设置默认的 Http 客户端
         options.WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios);
         // 自定义多个版本 API 文档集合
