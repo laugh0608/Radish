@@ -25,6 +25,7 @@
     <ProjectReference Include="..\radish.client\radish.client.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+    <ProjectReference Include="..\Radish.Extension\Radish.Extension.csproj" />
     <ProjectReference Include="..\Radish.Service\Radish.Service.csproj" />
   </ItemGroup>
 

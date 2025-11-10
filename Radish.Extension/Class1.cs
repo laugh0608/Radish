@@ -1,7 +1,6 @@
-﻿namespace Radish.Extension
-{
-    public class Class1
-    {
+namespace Radish.Extension;
 
-    }
+public class Class1
+{
+    
 }
