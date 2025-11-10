@@ -56,6 +56,7 @@ if (app.Environment.IsDevelopment())
             //.SortTagsAlphabetically()
             //.SortOperationsByMethod()
             //.PreserveSchemaPropertyOrder()
+            // .WithProxy("https://localhost:7110")
             .AddServer("https://api.radish.icu", "Production");
         // 设置默认的 Http 客户端
         options.WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios);
