@@ -16,10 +16,11 @@ public class UserController : ControllerBase
         _userService = userService;
     }
 
+    /// <summary>获取全部用户，测试仓储和服务分层</summary>
+    /// <returns></returns>
     [HttpGet]
     public async Task<ActionResult> GetUserList()
     {
-        // 示例：经由 Service 调用仓储，返回演示用的用户清单。
         var users = await _userService.GetUsersAsync();
         return Ok(users);
     }

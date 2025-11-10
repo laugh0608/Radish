@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Radish.IService;
 using Radish.Model;
@@ -10,13 +11,17 @@ namespace Radish.Server.Controllers;
 [Route("api/[controller]/[action]")]
 public class RoleController : ControllerBase
 {
-    private readonly IBaseServices<RoleVo>  _roleService;
+    private readonly IMapper _mapper;
+    private readonly IBaseServices<Role, RoleVo> _roleService;
 
-    public RoleController(IBaseServices<RoleVo> roleService)
+    public RoleController(IMapper mapper, IBaseServices<Role, RoleVo> roleService)
     {
+        _mapper = mapper;
         _roleService = roleService;
     }
 
+    /// <summary>获取全部角色，测试泛型基类和视图对象关系映射</summary>
+    /// <returns></returns>
     [HttpGet]
     public async Task<IActionResult> GetRoleList()
     {
