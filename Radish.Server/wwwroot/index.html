@@ -4,139 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Radish API 服务欢迎页</title>
-    <style>
-        :root {
-            color-scheme: light dark;
-            font-family: "Inter", "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-            --bg: #f8fafc;
-            --fg: #0f172a;
-            --muted: #64748b;
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --border: rgba(15, 23, 42, 0.08);
-        }
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: radial-gradient(circle at top, #dbeafe 0%, #f8fafc 55%, #f1f5f9 100%);
-            color: var(--fg);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-        main {
-            width: min(920px, 100%);
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 32px;
-            padding: 2.75rem;
-            box-shadow: 0 25px 80px rgba(15, 23, 42, 0.15);
-            backdrop-filter: blur(6px);
-        }
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--primary);
-            background: rgba(37, 99, 235, 0.08);
-            border: 1px solid rgba(37, 99, 235, 0.15);
-            border-radius: 999px;
-            padding: 0.35rem 0.9rem;
-        }
-        h1 { font-size: clamp(2rem, 4vw, 2.75rem); margin: 1rem 0 0.6rem; }
-        .lead {
-            font-size: 1.05rem;
-            color: var(--muted);
-            line-height: 1.5;
-            max-width: 640px;
-        }
-        .actions {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin: 2rem 0;
-        }
-        .button {
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.85rem 1.4rem;
-            border-radius: 14px;
-            font-weight: 600;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-            border: 1px solid transparent;
-        }
-        .button.primary {
-            background: var(--primary);
-            color: #fff;
-            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.25);
-        }
-        .button.primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
-        .button.secondary {
-            border-color: var(--border);
-            color: var(--fg);
-            background: rgba(15, 23, 42, 0.02);
-        }
-        .button.secondary:hover { border-color: rgba(37, 99, 235, 0.3); color: var(--primary-dark); }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 1.5rem;
-        }
-        article {
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 1.4rem;
-            background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,252,0.85));
-        }
-        article h2 { margin: 0 0 0.6rem; font-size: 1.1rem; }
-        ol {
-            margin: 0;
-            padding-left: 1.1rem;
-            color: var(--muted);
-            line-height: 1.45;
-        }
-        .status-text { font-weight: 600; color: #dc2626; }
-        .status-text[data-state="ok"] { color: #059669; }
-        ul.resource-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            color: var(--muted);
-            display: grid;
-            gap: 0.5rem;
-        }
-        ul.resource-list li {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-            padding: 0.75rem;
-            border: 1px dashed var(--border);
-            border-radius: 14px;
-            background: rgba(15, 23, 42, 0.015);
-        }
-        code {
-            font-family: "JetBrains Mono", "Cascadia Code", Consolas, "Courier New", monospace;
-            background: rgba(15, 23, 42, 0.08);
-            padding: 0.15rem 0.4rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-        }
-        footer {
-            margin-top: 2.5rem;
-            text-align: center;
-            font-size: 0.85rem;
-            color: var(--muted);
-        }
-        @media (max-width: 600px) {
-            body { padding: 1.25rem; }
-            main { padding: 1.85rem; }
-        }
-    </style>
+    <link rel="stylesheet" href="/css/index.css">
 </head>
 <body>
 <main>
@@ -148,7 +16,7 @@
 
     <div class="actions">
         <a class="button primary" href="/docs" target="_blank" rel="noopener noreferrer">打开项目文档</a>
-        <a class="button secondary" href="/scalar/index.html" target="_blank" rel="noopener noreferrer">Scalar 可视化</a>
+        <a class="button secondary" href="/api/docs" target="_blank" rel="noopener noreferrer">Scalar 可视化</a>
     </div>
 
     <section class="grid">
@@ -189,33 +57,6 @@
     <footer>Radish Platform · 构建快速、安全的后台服务体验</footer>
 </main>
 
-<script>
-    (function () {
-        const originLabel = document.getElementById("current-origin");
-        originLabel.textContent = window.location.origin;
-
-        const statusEl = document.getElementById("health-status");
-        const candidates = ["/healthz", "/health", "/api/health"];
-
-        (async () => {
-            for (const endpoint of candidates) {
-                try {
-                    const start = performance.now();
-                    const response = await fetch(endpoint, { cache: "no-store" });
-                    if (response.ok) {
-                        const duration = Math.round(performance.now() - start);
-                        statusEl.textContent = `服务可用 · ${endpoint} · ${duration} ms`;
-                        statusEl.dataset.state = "ok";
-                        return;
-                    }
-                } catch (error) {
-                    // 忽略并尝试下一个端点
-                }
-            }
-            statusEl.textContent = "暂未检测到健康检查端点，请确认 API 已启动或在 Program.cs 中注册 HealthChecks。";
-            statusEl.dataset.state = "fail";
-        })();
-    })();
-</script>
+<script src="/js/index.js"></script>
 </body>
 </html>
