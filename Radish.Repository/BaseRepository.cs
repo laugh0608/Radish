@@ -12,7 +12,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<List<TEntity>> QueryAsync()
     {
         await Task.CompletedTask;
-        const string data = "[{\"Id\": 1, \"Data\": \"test test test\"}]";
+        const string data = "[{\"Id\": 1, \"RoleName\": \"test test test\"}]";
         return JsonConvert.DeserializeObject<List<TEntity>>(data) ?? [];
     }
 }

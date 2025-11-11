@@ -1,3 +1,4 @@
+using Radish.Common;
 using Radish.Extension;
 using Radish.IRepository;
 using Radish.IService;
@@ -24,6 +25,8 @@ builder.Services.AddOpenApi(options =>
 
 // 注册 AddAutoMapper 服务
 builder.Services.AddAutoMapperSetup(builder.Configuration);
+// 注册 AppSetting 自定义扩展服务
+builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 // 注册泛型仓储与服务
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseServices<,>), typeof(BaseServices<,>));

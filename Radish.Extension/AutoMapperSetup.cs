@@ -22,7 +22,7 @@ public static class AutoMapperSetup
             var expression = new MapperConfigurationExpression();
             AutoMapperConfig.RegisterProfiles(expression);
 
-            var licenseKey = AppSettings.App(new string[] {"AutoMapper"}).ObjToString();
+            var licenseKey = AppSettings.App(new string[] {"AutoMapper", "LicenseKey"}).ObjToString();
             // var licenseKey = configuration["AutoMapper:LicenseKey"];
             if (!string.IsNullOrWhiteSpace(licenseKey))
             {
