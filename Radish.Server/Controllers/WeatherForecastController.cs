@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Radish.Common;
 
 namespace Radish.Server.Controllers;
 
@@ -21,5 +22,18 @@ public class WeatherForecastController : ControllerBase
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToArray();
+    }
+    
+    [HttpGet]
+    public async Task<IActionResult> Test()
+    {
+        await Task.CompletedTask;
+        var res1 = AppSettings.App(new []{"Redis", "Enable"});
+        var res2 = AppSettings.GetValue("Redis:ConnectionString");
+        return Ok(new
+        {
+            res1,
+            res2
+        });
     }
 }

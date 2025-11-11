@@ -21,6 +21,7 @@ public static class AutoMapperSetup
             var expression = new MapperConfigurationExpression();
             AutoMapperConfig.RegisterProfiles(expression);
 
+            // LicenseKey 优先从 AppSettings 统一入口读取，支持 Secret Manager / 环境变量等多种来源
             var licenseKey = AppSettings.App(new string[] {"AutoMapper", "LicenseKey"}).ObjToString();
             // var licenseKey = configuration["AutoMapper:LicenseKey"];
             if (!string.IsNullOrWhiteSpace(licenseKey))
@@ -28,12 +29,14 @@ public static class AutoMapperSetup
                 expression.LicenseKey = licenseKey;
             }
 
+            // 先尝试从容器解析 Profile/Converter 中声明的依赖，缺失时再回退到 Activator
             expression.ConstructServicesUsing(type =>
             {
                 var resolved = provider.GetService(type);
                 return resolved ?? Activator.CreateInstance(type)!;
             });
 
+            // 传入 ILoggerFactory 以启用 AutoMapper 内部诊断日志
             var loggerFactory = provider.GetService<ILoggerFactory>() ?? NullLoggerFactory.Instance;
             return new MapperConfiguration(expression, loggerFactory);
         });
