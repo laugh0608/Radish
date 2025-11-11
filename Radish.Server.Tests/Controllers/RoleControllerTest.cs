@@ -16,7 +16,7 @@ public class RoleControllerTest
     // [Fact]
     // public void GetRoleList_Test()
     // {
-    //     var roleController = new RoleController(new BaseServices<Role,RoleVo>(new BaseRepository<Role,RoleVo>(_mapper)));
+    //     var roleController = new RoleController(new BaseService<Role,RoleVo>(new BaseRepository<Role,RoleVo>(_mapper)));
     //     var result = roleController.GetRoleList();
     //     Assert.NotNull(result);
     // }

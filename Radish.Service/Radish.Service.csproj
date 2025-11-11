@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Radish.Extension\Radish.Extension.csproj" />
     <ProjectReference Include="..\Radish.IService\Radish.IService.csproj" />
     <ProjectReference Include="..\Radish.Repository\Radish.Repository.csproj" />
   </ItemGroup>

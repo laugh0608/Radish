@@ -4,7 +4,7 @@ using Radish.IService;
 
 namespace Radish.Service;
 
-public class BaseServices<TEntity, TVo> : IBaseServices<TEntity, TVo> where TEntity : class, new()
+public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntity : class, new()
 {
     private readonly IBaseRepository<TEntity> _repository;
     private readonly IMapper _mapper;
@@ -12,7 +12,7 @@ public class BaseServices<TEntity, TVo> : IBaseServices<TEntity, TVo> where TEnt
     /// <summary>构造函数依赖注入</summary>
     /// <param name="repository">IBaseRepository</param>
     /// <param name="mapper">IMapper</param>
-    public BaseServices(IBaseRepository<TEntity> repository, IMapper mapper)
+    public BaseService(IBaseRepository<TEntity> repository, IMapper mapper)
     {
         _repository = repository;
         _mapper = mapper;
