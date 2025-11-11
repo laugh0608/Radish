@@ -16,7 +16,7 @@ namespace Radish.Extension
 
         protected override void Load(ContainerBuilder builder)
         {
-            // 记得要启动服务注册，把这一行放在 Program.cs 中
+            // 记得要启动服务注册，把这一行放在 Program.cs 中:
             // builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
             var controllerBaseType = typeof(ControllerBase);
             builder.RegisterAssemblyTypes(_controllersAssembly)
