@@ -27,7 +27,7 @@ builder.Services.AddOpenApi(options =>
 builder.Services.AddAutoMapperSetup(builder.Configuration);
 // 注册 AppSetting 自定义扩展服务
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
-// 注册泛型仓储与服务
+// 注册泛型仓储与服务，AddScoped() 汇报模式，每次请求的时候注入
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseServices<,>), typeof(BaseServices<,>));
 
