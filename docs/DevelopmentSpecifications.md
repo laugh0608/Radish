@@ -14,7 +14,7 @@
 - Radish.Extension：后端扩展功能模块类，例如 Swagger/Scalar、HealthCheck 等
 - Radish.IRepository：后端数据访问接口类，定义数据访问层接口
 - Radish.IService：后端服务接口类，定义业务逻辑层接口
-- Radish.Model：后端数据模型类，定义数据库实体模型
+- Radish.Model：后端数据模型类，仅存放数据库实体；实体（Entity）只能在 Repository 层内被直接操作，Service 层及以上均需转换为视图模型或 DTO
 - Radish.Repository：后端数据访问实现类，具体实现数据访问接口
 - Radish.Service：后端服务实现类，具体实现业务逻辑接口
 - Radish.Shared：前后端共享的模型和工具类，例如 DTO、枚举等
@@ -24,11 +24,28 @@
 
 - 前端项目（radish.client）仅依赖 npm 包
 - 后端项目按层次结构依赖：
-  - Radish.Server 引用 radish.client（用于 SPA 代理）与 Radish.Service，通过 Program.cs 注入 `IUserService/IUserRepository` 等接口实现
-  - Radish.Service 依赖 Radish.IService、Radish.Repository，用于封装应用服务编排
-  - Radish.Repository 依赖 Radish.IRepository，具体实现集中数据访问逻辑；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model
+  - Radish.Server 引用 radish.client（用于 SPA 代理）与 Radish.Service，并通过 Program.cs 注入 `IUserService/IUserRepository` 等接口实现；同时依赖 Radish.Common 以注册 `AppSettings` 扩展，避免在其他层重复创建配置源。
+  - Radish.Service 依赖 Radish.IService（接口契约）与 Radish.Repository（数据访问实现），负责聚合业务逻辑；Service 层对外仅暴露 DTO/Vo，必须在返回前将仓储层实体映射为视图模型（推荐 AutoMapper）。
+  - Radish.Repository 依赖 Radish.IRepository 与 Radish.Model 中的实体类型，只能向 Service 层返回实体或实体集合，禁止直接引用任何 Vo/DTO；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model，以便共享实体与视图模型定义。
   - Radish.Core 暂时保留，无直接依赖关系
 - `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用“Controller 调用 Service，再由 Service 访问 Repository”的模式，并补齐对应接口定义
+
+## 实体与视图模型规范
+
+- 仓储层（Radish.Repository）只处理 `Radish.Model` 中定义的实体类型，禁止将实体对象直接向外暴露；Service 层获取实体后必须映射为视图模型再返回给 Controller。
+- 视图模型命名以 `Vo` 为前缀，但不得只追加单个前缀；需结合业务含义进行缩写或扩写（例如 `VoUsrAudit`、`VoAssetReport`），从命名上进行模糊化以减少被直接猜测的风险。
+- AutoMapper Profile 中维护实体与视图模型的对应关系；如需手动映射，也必须在 Service 层完成，确保 Controller 不访问实体。
+- DTO/Vo 定义集中在 `Radish.Model` 或 `Radish.Shared` 的对应目录下，提交前请自检实体与视图模型字段是否同步更新。
+
+## AutoMapper 与配置扩展
+
+- `Radish.Extension/AutoMapperSetup` 负责集中注册全部 profile，并通过 `expression.ConstructServicesUsing` 使用 DI 容器解析依赖；新增 profile 时直接在 `AutoMapperConfig.RegisterProfiles` 中挂载。
+- AutoMapper 授权：
+  - 在 `appsettings.{Environment}.json` 中新增 `AutoMapper:LicenseKey`，严禁提交真实 key，可通过用户密钥或 Secret Manager 注入。
+  - 运行时通过 `AppSettings.App(new[] { "AutoMapper", "LicenseKey" }).ObjToString()` 读取，并在 `expression.LicenseKey` 上设置；为空时自动跳过，避免影响本地调试。
+- `Radish.Common.AppSettings` 为自定义配置入口，Program.cs 使用 `builder.Services.AddSingleton(new AppSettings(builder.Configuration));` 注册后即可在任何层注入/静态调用。
+  - 当需要分段读取配置时，统一调用 `AppSettings.App(params string[] sections)`，禁止在业务代码中自行 new ConfigurationBuilder，以保证配置来源一致。
+  - 对应扩展支持 `Get<T>()`、`ObjToString()` 等常用方法，可在新增配置时同步补充注释，方便多人协作。
 
 ## 项目依赖约定
 
