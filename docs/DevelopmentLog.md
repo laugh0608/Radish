@@ -4,6 +4,12 @@
 
 > 当前阶段采用 .NET 10 + SQLSugar + PostgreSQL + React 技术栈；以下记录聚焦新架构的推进，后续如有重要调整也会在此处补充说明。
 
+### 2025.11.9
+
+- refactor(di): `AutofacPropertyModuleReg` 改为由宿主传入 `Assembly`，避免引用 `Program` 造成循环依赖，同时扩展层负责注册 Service/Repository 泛型实现。
+- chore(project): 调整 Radish.Service 与 Radish.Extension 的引用方向，确保 IoC/扩展层仅被宿主引用，其余业务项目不再依赖扩展层。
+- docs(spec): 在 DevelopmentSpecifications 中说明新的分层依赖约束与模块传参约定，方便后续贡献者遵循。
+
 ### 2025.11.8
 
 - 重新创建项目，完全舍弃之前的代码，包括 ABP 框架与 MongoDB

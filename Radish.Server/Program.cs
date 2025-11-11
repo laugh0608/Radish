@@ -1,3 +1,7 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Radish.Common;
 using Radish.Extension;
 using Radish.IRepository;
@@ -10,6 +14,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+// 使用 Autofac 配置 Host 与容器
+builder.Host
+    .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+    .ConfigureContainer<ContainerBuilder>(containerBuilder =>
+    {
+        containerBuilder.RegisterModule(new AutofacModuleRegister());
+        containerBuilder.RegisterModule(new AutofacPropertyModuleReg(typeof(Program).Assembly));
+    });
+builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
 builder.Services.AddControllers();
 builder.Services.AddRazorPages();
 
@@ -29,7 +42,7 @@ builder.Services.AddAutoMapperSetup(builder.Configuration);
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 // 注册泛型仓储与服务，AddScoped() 汇报模式，每次请求的时候注入
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
-builder.Services.AddScoped(typeof(IBaseServices<,>), typeof(BaseServices<,>));
+builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
 
 var app = builder.Build();
 
@@ -52,15 +65,15 @@ app.MapScalarApiReference("/api/docs", options =>
         //.EnableDarkMode()
         .ForceDarkMode()
         .HideDarkModeToggle();
-        //.WithClassicLayout()
-        //.HideSearch()
-        //.ShowOperationId()
-        //.ExpandAllTags()
-        //.SortTagsAlphabetically()
-        //.SortOperationsByMethod()
-        //.PreserveSchemaPropertyOrder()
-        // .WithProxy("https://localhost:7110")
-        // .AddServer("https://api.radish.icu", "Production");
+    //.WithClassicLayout()
+    //.HideSearch()
+    //.ShowOperationId()
+    //.ExpandAllTags()
+    //.SortTagsAlphabetically()
+    //.SortOperationsByMethod()
+    //.PreserveSchemaPropertyOrder()
+    // .WithProxy("https://localhost:7110")
+    // .AddServer("https://api.radish.icu", "Production");
     // 设置默认的 Http 客户端
     options.WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios);
     // 自定义多个版本 API 文档集合
