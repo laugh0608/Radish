@@ -12,12 +12,14 @@ namespace Radish.Server.Controllers;
 public class RoleController : ControllerBase
 {
     private readonly IMapper _mapper;
-    private readonly IBaseServices<Role, RoleVo> _roleService;
+    private readonly IBaseService<Role, RoleVo> _roleService;
+    private readonly IServiceScopeFactory _scopeFactory;
 
-    public RoleController(IMapper mapper, IBaseServices<Role, RoleVo> roleService)
+    public RoleController(IMapper mapper, IBaseService<Role, RoleVo> roleService, IServiceScopeFactory scopeFactory)
     {
         _mapper = mapper;
         _roleService = roleService;
+        _scopeFactory = scopeFactory;
     }
 
     /// <summary>获取全部角色，测试泛型基类和视图对象关系映射</summary>
