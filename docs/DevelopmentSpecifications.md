@@ -46,7 +46,13 @@
   - 运行时通过 `AppSettings.App(new[] { "AutoMapper", "LicenseKey" }).ObjToString()` 读取，并在 `expression.LicenseKey` 上设置；为空时自动跳过，避免影响本地调试。
 - `Radish.Common.AppSettings` 为自定义配置入口，Program.cs 使用 `builder.Services.AddSingleton(new AppSettings(builder.Configuration));` 注册后即可在任何层注入/静态调用。
   - 当需要分段读取配置时，统一调用 `AppSettings.App(params string[] sections)`，禁止在业务代码中自行 new ConfigurationBuilder，以保证配置来源一致。
-  - 对应扩展支持 `Get<T>()`、`ObjToString()` 等常用方法，可在新增配置时同步补充注释，方便多人协作。
+- 对应扩展支持 `Get<T>()`、`ObjToString()` 等常用方法，可在新增配置时同步补充注释，方便多人协作。
+
+## AOP 与日志
+
+- `Radish.Extension/ServiceAop` 基于 Castle.DynamicProxy 实现接口拦截，当前主要用于捕捉 `BaseService<,>` 等应用服务的入参、响应与耗时信息，并通过 `AopLogInfo` 统一结构化输出。
+- `AutofacModuleRegister` 已在泛型服务注册时启用 `.EnableInterfaceInterceptors().InterceptedBy(ServiceAop)`，如果后续服务需要自定义拦截，可在同一位置扩展拦截器数组。
+- `Radish.Common/AopLogInfo` 集中维护 AOP 日志字段，调用层仅负责填充必要属性并交给日志基础设施处理，避免在各服务中手写日志模型。
 
 ## 项目依赖约定
 

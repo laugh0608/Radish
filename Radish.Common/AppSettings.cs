@@ -6,7 +6,10 @@ namespace Radish.Common;
 /// <summary>appsettings.json 操作类</summary>
 public class AppSettings
 {
+    // 需要引用 Microsoft.Extensions.Configuration.Binder 和 Microsoft.Extensions.Configuration.Json 包
     public static IConfiguration Configuration { get; set; }
+    
+    // static string ContentPath { get; set; }
 
     public AppSettings(IConfiguration configuration)
     {
@@ -29,7 +32,7 @@ public class AppSettings
             .Build();
     }
 
-    /// <summary>封装要操作的字符</summary>
+    /// <summary>封装要操作的字符，数组类型</summary>
     /// <param name="sections">节点配置</param>
     /// <returns></returns>
     public static string App(params string[] sections)
@@ -56,14 +59,14 @@ public class AppSettings
     public static List<T> App<T>(params string[] sections)
     {
         List<T> list = new List<T>();
-        // 引用 Microsoft.Extensions.Configuration.Binder 包
         Configuration.Bind(string.Join(":", sections), list);
         return list;
     }
 
 
-    /// <summary>根据路径  configuration["App:Name"];</summary>
-    /// <param name="sectionsPath"></param>
+    /// <summary>根据路径</summary>
+    /// <remarks>configuration["App:Name"]</remarks>
+    /// <param name="sectionsPath">configuration["App:Name"]</param>
     /// <returns></returns>
     public static string GetValue(string sectionsPath)
     {
@@ -73,7 +76,7 @@ public class AppSettings
         }
         catch (Exception)
         {
-            throw new Exception("Invalid configuration Failed");
+            // throw new Exception("Invalid configuration Failed");
         }
 
         return "";

@@ -22,6 +22,7 @@ builder.Host
         containerBuilder.RegisterModule(new AutofacModuleRegister());
         containerBuilder.RegisterModule(new AutofacPropertyModuleReg(typeof(Program).Assembly));
     });
+// 激活 Autofac 影响的 IControllerActivator
 builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
 builder.Services.AddControllers();
 builder.Services.AddRazorPages();
