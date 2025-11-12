@@ -71,7 +71,7 @@ PostgreSQL
   - 仅保留轻量 Controller/Endpoint，所有核心逻辑委派给 Service 层。
   - API 文档：开发环境把 Scalar UI 映射到 `/api/docs`，并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Server/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
   - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为“联调开关”。
-  - 配置访问：Program.cs 注入 `new AppSettings(builder.Configuration)`，所有层通过 `AppSettings.App("Section", ...)` 读取配置，避免重复创建 `ConfigurationBuilder`。
+  - 配置访问：Program.cs 注入 `new AppSettings(builder.Configuration)` 并调用 `builder.Configuration.ConfigureApplication()`；常规字符串读取统一改用 `AppSettings.RadishApp("Section", ...)`，批量强类型配置则通过 `ConfigurableOptions + AddAllOptionRegister` 自动绑定 `IConfigurableOptions`。
 - `Radish.Service`
   - 应用服务（`*AppService`）封装用例流程、权限校验、事务控制、DTO 转换。
   - 依赖 `Radish.Core` 接口与 `Radish.Repository` 实现，通过 `IUnitOfWork` 控制 SQLSugar 上下文。

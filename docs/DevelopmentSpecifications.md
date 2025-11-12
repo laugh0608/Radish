@@ -43,9 +43,10 @@
 - `Radish.Extension/AutoMapperSetup` 负责集中注册全部 profile，并通过 `expression.ConstructServicesUsing` 使用 DI 容器解析依赖；新增 profile 时直接在 `AutoMapperConfig.RegisterProfiles` 中挂载。
 - AutoMapper 授权：
   - 在 `appsettings.{Environment}.json` 中新增 `AutoMapper:LicenseKey`，严禁提交真实 key，可通过用户密钥或 Secret Manager 注入。
-  - 运行时通过 `AppSettings.App(new[] { "AutoMapper", "LicenseKey" }).ObjToString()` 读取，并在 `expression.LicenseKey` 上设置；为空时自动跳过，避免影响本地调试。
+  - 运行时通过 `AppSettings.RadishApp(new[] { "AutoMapper", "LicenseKey" }).ObjToString()` 读取，并在 `expression.LicenseKey` 上设置；为空时自动跳过，避免影响本地调试。
 - `Radish.Common.AppSettings` 为自定义配置入口，Program.cs 使用 `builder.Services.AddSingleton(new AppSettings(builder.Configuration));` 注册后即可在任何层注入/静态调用。
-  - 当需要分段读取配置时，统一调用 `AppSettings.App(params string[] sections)`，禁止在业务代码中自行 new ConfigurationBuilder，以保证配置来源一致。
+  - 当需要分段读取配置时，统一调用 `AppSettings.RadishApp(params string[] sections)`，禁止在业务代码中自行 new ConfigurationBuilder，以保证配置来源一致。
+  - 强类型配置建议实现 `IConfigurableOptions`（位于 `Radish.Common.Option.Core`），由 `ConfigurableOptions` + `AllOptionRegister` 自动绑定，再通过 `IOptions<T>` 注入。
 - 对应扩展支持 `Get<T>()`、`ObjToString()` 等常用方法，可在新增配置时同步补充注释，方便多人协作。
 
 ## AOP 与日志
@@ -121,4 +122,3 @@
    （6）（可选）若泛型仓储不满足需求，在 IRepository/Repository 层定义并实现专用仓储；
    （7）在 Server 层通过依赖注入调用 IService，完成数据返回或存储。
 7. Server 层对外暴露的 Controller 禁止直接注入 `IBaseRepository` 或任何业务仓储，所有数据访问需经由 Service 层封装。
-
