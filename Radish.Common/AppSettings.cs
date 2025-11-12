@@ -35,7 +35,7 @@ public class AppSettings
     /// <summary>封装要操作的字符，数组类型</summary>
     /// <param name="sections">节点配置</param>
     /// <returns></returns>
-    public static string App(params string[] sections)
+    public static string RadishApp(params string[] sections)
     {
         try
         {
@@ -56,7 +56,7 @@ public class AppSettings
     /// <typeparam name="T"></typeparam>
     /// <param name="sections"></param>
     /// <returns></returns>
-    public static List<T> App<T>(params string[] sections)
+    public static List<T> RadishApp<T>(params string[] sections)
     {
         List<T> list = new List<T>();
         Configuration.Bind(string.Join(":", sections), list);
@@ -65,8 +65,8 @@ public class AppSettings
 
 
     /// <summary>根据路径</summary>
-    /// <remarks>configuration["App:Name"]</remarks>
-    /// <param name="sectionsPath">configuration["App:Name"]</param>
+    /// <remarks>configuration["Redis:ConnectionString"]</remarks>
+    /// <param name="sectionsPath">configuration["Redis:ConnectionString"]</param>
     /// <returns></returns>
     public static string GetValue(string sectionsPath)
     {

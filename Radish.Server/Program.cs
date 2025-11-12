@@ -3,6 +3,7 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Radish.Common;
+using Radish.Common.Option.Core;
 using Radish.Extension;
 using Radish.IRepository;
 using Radish.IService;
@@ -21,6 +22,12 @@ builder.Host
     {
         containerBuilder.RegisterModule(new AutofacModuleRegister());
         containerBuilder.RegisterModule(new AutofacPropertyModuleReg(typeof(Program).Assembly));
+    }).ConfigureAppConfiguration((hostingContext, config) =>
+    {
+        hostingContext.Configuration.ConfigureApplication();
+        config.Sources.Clear();
+        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+        // config.AddConfigurationApollo("appsettings.apollo.json");
     });
 // 激活 Autofac 影响的 IControllerActivator
 builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
@@ -41,6 +48,8 @@ builder.Services.AddOpenApi(options =>
 builder.Services.AddAutoMapperSetup(builder.Configuration);
 // 注册 AppSetting 自定义扩展服务
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
+// 注册 AppSetting 自定义扩展的扩展 ConfigurableOptions 服务
+builder.Services.AddAllOptionRegister();
 // 注册泛型仓储与服务，AddScoped() 汇报模式，每次请求的时候注入
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));

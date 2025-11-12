@@ -22,7 +22,7 @@ public static class AutoMapperSetup
             AutoMapperConfig.RegisterProfiles(expression);
 
             // LicenseKey 优先从 AppSettings 统一入口读取，支持 Secret Manager / 环境变量等多种来源
-            var licenseKey = AppSettings.App(new string[] {"AutoMapper", "LicenseKey"}).ObjToString();
+            var licenseKey = AppSettings.RadishApp(new string[] {"AutoMapper", "LicenseKey"}).ObjToString();
             // var licenseKey = configuration["AutoMapper:LicenseKey"];
             if (!string.IsNullOrWhiteSpace(licenseKey))
             {

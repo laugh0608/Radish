@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using Radish.Common;
 
 namespace Radish.Server.Controllers;
 
@@ -7,6 +6,15 @@ namespace Radish.Server.Controllers;
 [Route("api/[controller]/[action]")]
 public class WeatherForecastController : ControllerBase
 {
+    /// <summary>
+    /// 构造函数，无参数
+    /// </summary>
+    /// <exception cref="NotImplementedException"></exception>
+    public WeatherForecastController()
+    {
+        throw new NotImplementedException();
+    }
+
     private static readonly string[] Summaries =
     [
         "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
@@ -22,18 +30,5 @@ public class WeatherForecastController : ControllerBase
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToArray();
-    }
-    
-    [HttpGet]
-    public async Task<IActionResult> Test()
-    {
-        await Task.CompletedTask;
-        var res1 = AppSettings.App(new []{"Redis", "Enable"});
-        var res2 = AppSettings.GetValue("Redis:ConnectionString");
-        return Ok(new
-        {
-            res1,
-            res2
-        });
     }
 }
