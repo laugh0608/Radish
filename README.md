@@ -1,6 +1,9 @@
 # Radish
 
-![萝卜](./docs/images/RadishAcg-512.png)
+<p align="center">
+  <img src="./docs/images/RadishAcg-256.png" alt="萝卜娘" width="256">
+</p>
+<!-- ![萝卜](./docs/images/RadishAcg-256.png) -->
 
 Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，前端使用 React 19（Vite + TypeScript）。仓库提供 Server、领域层、仓储层、共享模型以及前端工程，所有模块都可在同一个解决方案中协同开发。
 
