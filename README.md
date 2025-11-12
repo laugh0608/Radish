@@ -1,6 +1,9 @@
 # Radish
 
-![萝卜](./docs/images/RadishAcg.png)
+<p align="center">
+  <img src="./docs/images/RadishAcg-256.png" alt="萝卜娘" width="256">
+</p>
+<!-- ![萝卜](./docs/images/RadishAcg-256.png) -->
 
 Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，前端使用 React 19（Vite + TypeScript）。仓库提供 Server、领域层、仓储层、共享模型以及前端工程，所有模块都可在同一个解决方案中协同开发。
 
@@ -38,9 +41,9 @@ Radish.IRepository/          # 仓储接口契约
 - `docs/`：承载开发规范、设计、计划与部署指引，是贡献者同步信息的唯一入口。
 - `radish.client/`：React + TypeScript 前端，按照 feature-first 拆分页面与组件。
 - `Radish.Server/`：ASP.NET Core 主机，只负责 API 宿主、DI、配置、健康检查与 Swagger/Scalar。
-- `Radish.Common/`：全局可复用的日志、配置与基础工具。
+- `Radish.Common/`：全局可复用的日志、配置与基础工具；`AppSettings.RadishApp(...)` 提供统一的字符串读取入口。
 - `Radish.Core/`：领域模型、聚合根、领域服务与事件。
-- `Radish.Extension/`：Swagger/Scalar、HealthCheck、JWT 等横切扩展。
+- `Radish.Extension/`：Swagger/Scalar、HealthCheck、JWT 等横切扩展，并包含 `AllOptionRegister` 等 DI 扩展。
 - `Radish.IRepository/` & `Radish.IService/`：定义仓储与业务的接口契约。
 - `Radish.Model/`：数据库实体、DTO、查询对象与共享枚举。
 - `Radish.Repository/`：SQLSugar 持久化实现、上下文配置、迁移与种子帮助。
@@ -57,6 +60,12 @@ Radish.IRepository/          # 仓储接口契约
 - 后端依赖通过 NuGet 管理，锁定 .NET 10 兼容的稳定版本。
 - 第三方库需经过安全审查，记录在 PR/变更说明中，并关注社区维护状态。
 - 定期升级依赖并在 `DevelopmentLog` 记录影响；大体量依赖需评估按需加载或代码拆分策略。
+- 配置扩展沿用 `Radish.Common.Option.Core` 中的 `IConfigurableOptions` 约定，配合 `Radish.Extension.AllOptionRegister` 自动完成选项绑定。
+
+### 配置读取与选项
+- Program.cs 在注册 `new AppSettings(builder.Configuration)` 的同时调用 `builder.Configuration.ConfigureApplication()`，以便静态扩展能访问统一的配置实例。
+- 简单键值读取统一通过 `AppSettings.RadishApp("Section", "Key")`；相比直接访问 `IConfiguration`，该入口可以在 Secret Manager、环境变量、JSON 等多源合并后返回最终值。
+- 若需要强类型绑定，在 `Radish.Common.Option` 下实现 `IConfigurableOptions`（如 `RedisOptions`），并在宿主中调用 `services.AddAllOptionRegister()`；随后即可在任何层注入 `IOptions<T>`/`IOptionsSnapshot<T>`。
 
 ## 快速开始
 1. 安装依赖：`.NET 10 SDK`、`Node.js 24+`、`PostgreSQL 16+`。
@@ -67,13 +76,13 @@ Radish.IRepository/          # 仓储接口契约
    dotnet build Radish.slnx -c Debug
    ```
 4. 初始化数据库（可选 Code First）：运行 `dotnet run --project Radish.Server -- --seed` 或编写 SQLSugar 初始化脚本。
-5. 启动服务：`dotnet run --project Radish.Server/Radish.Server.csproj`，默认监听 `http://localhost:5000` 与 `https://localhost:5001`。
+5. 启动服务：`dotnet run --project Radish.Server/Radish.Server.csproj`，默认监听 `http://localhost:5165` 与 `https://localhost:7110`（源自 `Radish.Server/Properties/launchSettings.json`，可按需调整）。
 6. 前端联调：
    ```bash
    npm install --prefix radish.client
    npm run dev --prefix radish.client
    ```
-   通过 `VITE_API_BASE_URL` 指向后端地址。
+   通过 `VITE_API_BASE_URL` 指向后端地址；Vite Dev Server 默认启在 `https://localhost:58794`（或使用环境变量 `DEV_SERVER_PORT` 覆盖）。
 
 ## 常用命令
 - `dotnet watch --project Radish.Server`：后端热重载。
