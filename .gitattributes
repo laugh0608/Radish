@@ -4,6 +4,7 @@
 
 # Windows-specific files that should use CRLF
 *.sln   text eol=crlf
+*.slnx   text eol=crlf
 *.bat   text eol=crlf
 *.cmd   text eol=crlf
 *.ps1   text eol=crlf
