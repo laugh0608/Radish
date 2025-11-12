@@ -14,10 +14,6 @@
     <File Path="LICENSE.txt" />
     <File Path="README.md" />
   </Folder>
-  <Project Path="radish.client/radish.client.esproj">
-    <Build />
-    <Deploy />
-  </Project>
   <Project Path="Radish.Common/Radish.Common.csproj" />
   <Project Path="Radish.Core/Radish.Core.csproj" />
   <Project Path="Radish.Extension/Radish.Extension.csproj" />

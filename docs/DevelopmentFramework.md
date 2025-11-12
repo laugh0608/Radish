@@ -69,24 +69,33 @@ PostgreSQL
 - `Radish.Server`
   - 负责 DI、配置、日志、全局异常、认证授权、Swagger/Scalar、HealthChecks。
   - 仅保留轻量 Controller/Endpoint，所有核心逻辑委派给 Service 层。
+  - API 文档：开发环境把 Scalar UI 映射到 `/api/docs`，并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Server/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
+  - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为“联调开关”。
+  - 配置访问：Program.cs 注入 `new AppSettings(builder.Configuration)` 并调用 `builder.Configuration.ConfigureApplication()`；常规字符串读取统一改用 `AppSettings.RadishApp("Section", ...)`，批量强类型配置则通过 `ConfigurableOptions + AddAllOptionRegister` 自动绑定 `IConfigurableOptions`。
 - `Radish.Service`
   - 应用服务（`*AppService`）封装用例流程、权限校验、事务控制、DTO 转换。
   - 依赖 `Radish.Core` 接口与 `Radish.Repository` 实现，通过 `IUnitOfWork` 控制 SQLSugar 上下文。
+  - 对外仅返回 DTO/Vo，禁止把 `Radish.Model` 中的实体直接暴露给 Controller；实体需在此层通过 AutoMapper（一律在 `Radish.Extension/AutoMapperSetup` 注册）转换为视图模型。
 - `Radish.Core`
   - 聚合根（Post、Comment、Category、UserProfile、PointLedger、ShopItem 等）、值对象、领域事件。
   - 定义仓储接口与领域服务，例如 `IPostRepository`, `IPointPolicyService`。
 - `Radish.Repository`
   - 持久化实现，集中 SQLSugar 配置（连接池、AOP 日志、软删除、审计字段）。
   - 提供迁移/种子帮助类，必要时拆分模块级仓储。
+  - 仓储层仅依赖实体类型；返回 Service 层的对象必须是实体或匿名结构，禁止引用 DTO/Vo，保持“实体只存在于仓储层”原则。
 - `Radish.Model`
   - DTO、ViewModel、查询对象、枚举。
   - 提供 `PagedRequest`, `PagedResponse<T>`, `ApiError` 等复用结构。
+  - 视图模型需以 `Vo` 开头，并结合业务含义做缩写/扩写（如 `VoUsrAudit`, `VoAssetReport`），避免简单加前缀即可猜测真实用途。
 - `Radish.Extension`
   - 横切关注：验证、缓存策略、OpenAPI 自定义、JWT 扩展、全局过滤器。
 - `Radish.Shared`
   - 常量、错误码、事件名、Options 绑定类型。
 - `radish.client`
   - SPA + 内嵌管理视图；共享 DTO 通过 `radish.client/src/types` 维护，与后端模型保持同步。
+- `UserController -> IUserService -> IUserRepository` 示例链路
+  - 通过内存仓储 + 应用服务演示分层合作，Program.cs 负责注入 `IUserService/IUserRepository`。
+  - `.http` 文件与 `Radish.Server.Tests/Controllers/UserControllerTest` 均以该示例为基准，确保开发者可以快速验证分层约定。
 
 ### 架构示意
 
@@ -123,6 +132,14 @@ graph LR
 | 积分 | 规则配置、事件订阅（发帖、点赞、被采纳）、流水记录、积分账户锁定 | 积分面板、历史记录、规则展示 |
 | 商城 | 商品/库存/价格、购买/退款/激活、权益发放、过期策略 | 商品列表/详情、购买流程、权益展示、我的物品 |
 | 管理视图 | 统一权限守卫、数据导出、批量操作、操作日志 | React Admin Layout、表格与筛选、审计信息 |
+
+## 实时交互（SignalR）
+
+- 场景：帖子评论/点赞即时刷新、在线用户状态、积分变化提示、运营公告推送等需要“秒级到达”体验的功能统一通过 SignalR Hub 承载，避免重复造轮子。
+- 架构：`Radish.Server` 内新增 `Hubs/*Hub.cs` 定义 strongly-typed Hub；业务层通过注入 `IHubContext<T>` 推送消息，或在 Service 内调度事件。客户端由 `radish.client` 使用 `@microsoft/signalr` SDK 建立连接，统一封装 `useSignalrHub` Hook。
+- 协议：默认使用 JSON over WebSocket，自动降级为 Server-Sent Events/Long Polling；如需 Binary 可切换 MessagePack，需在前后端同时开启。
+- 安全：连接时附带 JWT/AccessToken，服务端在 `OnConnectedAsync` 中验证身份与租户；Hub Method 名称使用 PascalCase 并在共享 DTO 中定义负载，禁止随意拼字符串。
+- 扩展：多实例部署时启用 Redis Backplane（`Microsoft.AspNetCore.SignalR.StackExchangeRedis`）保持消息一致性；对公网推送需配置 TLS 与速率限制，可在 Nginx/Ingress 层结合 IP 限流。
 
 ## 数据与持久化策略
 

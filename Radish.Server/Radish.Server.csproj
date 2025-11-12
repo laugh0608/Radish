@@ -17,12 +17,13 @@
       <Version>10.*-*</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
+    <PackageReference Include="Scalar.AspNetCore" Version="2.10.3" />
+    <PackageReference Include="Scalar.AspNetCore.Microsoft" Version="2.10.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\radish.client\radish.client.esproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
+    <ProjectReference Include="..\Radish.Extension\Radish.Extension.csproj" />
+    <ProjectReference Include="..\Radish.Service\Radish.Service.csproj" />
   </ItemGroup>
 
 </Project>

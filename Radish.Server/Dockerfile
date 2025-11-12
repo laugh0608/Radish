@@ -20,7 +20,6 @@ FROM with-node AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Radish.Server/Radish.Server.csproj", "Radish.Server/"]
-COPY ["radish.client/radish.client.esproj", "radish.client/"]
 RUN dotnet restore "./Radish.Server/Radish.Server.csproj"
 COPY . .
 WORKDIR "/src/Radish.Server"
