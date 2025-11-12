@@ -4,6 +4,12 @@
 
 > 当前阶段采用 .NET 10 + SQLSugar + PostgreSQL + React 技术栈；以下记录聚焦新架构的推进，后续如有重要调整也会在此处补充说明。
 
+### 2025.11.12
+
+- feat(config): `AppSettings.App` 更名为 `AppSettings.RadishApp`，统一入口避免与系统方法混淆，并同步更新 AutoMapper 与示例代码。
+- feat(options): 新增 `ConfigurableOptions` + `AllOptionRegister`，集中注册所有实现 `IConfigurableOptions` 的配置项，Redis 配置抽象为 `Radish.Common.Option.RedisOptions` 并通过 `IOptions<T>` 注入。
+- feat(api): 新建 `AppSettingController` 演示三种读取配置的方式（`RadishApp`、`GetValue`、`IOptions`），同时为 `appsettings.json` 增补注释与默认前缀。
+
 ### 2025.11.10
 
 - feat(aop): 引入 `ServiceAop` + `AopLogInfo`，结合 Autofac 动态代理为泛型服务开启接口拦截，输出统一的请求/响应日志。
