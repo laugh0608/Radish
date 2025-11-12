@@ -97,3 +97,28 @@
 - 左侧屏幕区域展示社区功能图标，用户双击后需弹出大弹窗（模态窗口）显示对应功能内容。
 - 弹窗左上角包含最小化与关闭按钮，交互样式参考 macOS；最小化后回到 Dock 或桌面图标，关闭后释放资源。
 - 状态栏、Dock、桌面图标以及弹窗需要统一的外观主题和响应式策略，优先适配桌面端分辨率，对移动端访问给出限缩体验或引导。
+
+## radish.client 前端规范
+
+1. 前后端传输的敏感字段计划使用 `encryptByPublicKey()` 加密，后端通过 `DecryptByPrivateKey()` 解密；方法虽未实现，但需提前规划调用点，保证接口兼容性。
+2. 组件统一使用函数式写法，结合 `useState`、`useMemo`、`useEffect` 等 Hook 管理状态与生命周期，避免继续编写 Class 组件。
+3. 使用 `const` 定义组件与内部函数，遵循 React 不可变范式，常规情况下避免 `function` 声明以减少作用域、提升与 `this` 绑定问题。
+4. 禁用 `var`，默认 `const`，仅在确需重新赋值时选用 `let`；在 React 顶层逻辑几乎无需 `let`，如需持久化可变值，优先用 `const + useState` 组合处理。
+
+## Radish.Server 接口规范
+
+1. API 方法全部位于 Server 层 Controller 命名空间，统一使用 `[Route("api/[controller]/[action]")]` 作为路由前缀。
+2. 需鉴权的 API 必须在 Controller 或 Action 上添加 `[Authorize(Permissions.Name)]`；无需鉴权的显式标注 `[AllowAnonymous]`，避免默认放行。
+3. Controller Action 默认遵循 `[Produces("application/json")]` 与 RESTful 设计原则，除非业务场景要求其他内容类型或风格。
+4. 实体类存放在 Model 层 `Models` 命名空间并继承 `RootEntityTkey<Tkey>`（含主键 Id）；若有自定义外键实体，同样继承该基类。视图模型位于 `ViewModels` 命名空间，按对外暴露字段设计，无继承硬性要求。
+5. 实体与视图模型的映射集中在 Extension 层 `AutoMapper` 命名空间，每组实体定义独立 `CustomProfile`，避免在 Controller 或仓储中手动映射。
+6. 新增对外接口遵循以下流程：
+   （1）在 Model 层定义实体与视图模型；
+   （2）在 Extension 层配置映射关系；
+   （3）在 Core 层实现算法或数据处理；
+   （4）在 IService 层声明接口；
+   （5）在 Service 层实现接口，注入 `IBaseRepository` 或专用仓储并完成映射；
+   （6）（可选）若泛型仓储不满足需求，在 IRepository/Repository 层定义并实现专用仓储；
+   （7）在 Server 层通过依赖注入调用 IService，完成数据返回或存储。
+7. Server 层对外暴露的 Controller 禁止直接注入 `IBaseRepository` 或任何业务仓储，所有数据访问需经由 Service 层封装。
+
