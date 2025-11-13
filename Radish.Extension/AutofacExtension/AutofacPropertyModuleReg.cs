@@ -1,9 +1,8 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 using Autofac;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Radish.Extension
+namespace Radish.Extension.AutofacExtension
 {
     public class AutofacPropertyModuleReg : Autofac.Module
     {

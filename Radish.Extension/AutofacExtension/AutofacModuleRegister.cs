@@ -2,11 +2,11 @@ using System.Reflection;
 using Autofac;
 using Autofac.Extras.DynamicProxy;
 using Radish.IRepository;
-using Radish.Repository;
 using Radish.IService;
+using Radish.Repository;
 using Radish.Service;
 
-namespace Radish.Extension;
+namespace Radish.Extension.AutofacExtension;
 
 public class AutofacModuleRegister: Autofac.Module
 {

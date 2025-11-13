@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
-using Radish.Common.Core;
-using Radish.Common.Option;
+using Newtonsoft.Json;
+using Radish.Common.CacheTool;
+using Radish.Common.CoreTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -16,16 +17,21 @@ public class WeatherForecastController : ControllerBase
     
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IBaseService<Role, RoleVo> _roleService;
+    private readonly ICaching  _caching;
 
     /// <summary>
     /// 构造函数，注入服务
     /// </summary>
     /// <param name="scopeFactory"></param>
     /// <param name="roleService"></param>
-    public WeatherForecastController(IServiceScopeFactory scopeFactory, IBaseService<Role, RoleVo> roleService)
+    /// <param name="caching"></param>
+    public WeatherForecastController(IServiceScopeFactory scopeFactory, 
+        IBaseService<Role, RoleVo> roleService, 
+        ICaching caching)
     {
         _scopeFactory = scopeFactory;
         _roleService = roleService;
+        _caching = caching;
     }
 
     /// <summary>
@@ -66,6 +72,17 @@ public class WeatherForecastController : ControllerBase
         var dataStatisticService3 = App.GetService<IBaseService<Role, RoleVo>>(false);
         var roleList3 = await dataStatisticService3.QueryAsync();
         var roleList4 = await RoleServiceObj?.QueryAsync()!;
+        
+        var cacheKey = "radish_key";
+        var cacheKeys = await _caching.GetAllCacheKeysAsync();
+        await Console.Out.WriteLineAsync("全部 keys -->" + JsonConvert.SerializeObject(cacheKeys));
+        await Console.Out.WriteLineAsync("添加一个缓存");
+        await _caching.SetStringAsync(cacheKey, "hello radish");
+        await Console.Out.WriteLineAsync("全部 keys -->" + JsonConvert.SerializeObject(await _caching.GetAllCacheKeysAsync()));
+        await Console.Out.WriteLineAsync("当前 key 内容-->" + JsonConvert.SerializeObject(await _caching.GetStringAsync(cacheKey)));
+        await Console.Out.WriteLineAsync("删除 key");
+        await _caching.RemoveAsync(cacheKey);
+        await Console.Out.WriteLineAsync("全部 keys -->" + JsonConvert.SerializeObject(await _caching.GetAllCacheKeysAsync()));
         
         return Ok(new
         {

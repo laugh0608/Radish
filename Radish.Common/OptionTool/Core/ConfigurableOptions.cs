@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Radish.Common.Core;
+using Radish.Common.CoreTool;
 
-namespace Radish.Common.Option.Core;
+namespace Radish.Common.OptionTool.Core;
 
 /// <summary>
 /// 提供注册 <see cref="IConfigurableOptions" /> 实现的统一入口，避免重复的配置绑定代码。

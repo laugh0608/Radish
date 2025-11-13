@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
-namespace Radish.Common.Core;
+namespace Radish.Common.CoreTool;
 
 /// <summary>内部只用于初始化使用</summary>
 public static class InternalApp
