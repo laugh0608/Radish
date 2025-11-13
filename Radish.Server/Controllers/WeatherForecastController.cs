@@ -11,6 +11,9 @@ namespace Radish.Server.Controllers;
 [Route("api/[controller]/[action]")]
 public class WeatherForecastController : ControllerBase
 {
+    // 属性注入
+    public IBaseService<Role, RoleVo>? RoleServiceObj { get; set; }
+    
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IBaseService<Role, RoleVo> _roleService;
 
@@ -62,12 +65,14 @@ public class WeatherForecastController : ControllerBase
         var roleList2 = await dataStatisticService2.QueryAsync();
         var dataStatisticService3 = App.GetService<IBaseService<Role, RoleVo>>(false);
         var roleList3 = await dataStatisticService3.QueryAsync();
+        var roleList4 = await RoleServiceObj?.QueryAsync()!;
         
         return Ok(new
         {
             roleList1,
             roleList2,
-            roleList3
+            roleList3,
+            roleList4
         });
     }
 }
