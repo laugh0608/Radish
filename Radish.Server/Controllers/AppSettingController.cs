@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Radish.Common;
+using Radish.Common.Core;
 using Radish.Common.Option;
 
 namespace Radish.Server.Controllers;
@@ -21,16 +22,18 @@ public class AppSettingController : ControllerBase
     public async Task<IActionResult> GetRedisConfig()
     {
         await Task.CompletedTask;
-        // 三种不同的获取 appsetting 的方式 AppSettingController
+        // 不同的获取 appsetting 的方式 AppSettingController
         var res1 = AppSettings.RadishApp(new []{"Redis", "Enable"});
         var res2 = AppSettings.GetValue("Redis:ConnectionString");
         // var res3 = JsonConvert.SerializeObject(_redisOptions.Value);
         var res3 = _redisOptions.Value.InstanceName;
+        var res4 = App.GetOptions<RedisOptions>();
         return Ok(new
         {
             res1,
             res2,
-            res3
+            res3,
+            res4
         });
     }
     

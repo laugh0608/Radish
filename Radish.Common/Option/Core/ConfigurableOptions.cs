@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Radish.Common.Core;
 
 namespace Radish.Common.Option.Core;
 
@@ -9,19 +9,19 @@ namespace Radish.Common.Option.Core;
 /// </summary>
 public static class ConfigurableOptions
 {
-    /// <summary>
-    /// 由 <see cref="ConfigureApplication" /> 设置的全局配置引用，用于读取具体的配置节。
-    /// </summary>
-    internal static IConfiguration Configuration;
-
-    /// <summary>
-    /// 缓存应用启动时构建好的 <see cref="IConfiguration" />，供后续选项注册使用。
-    /// </summary>
-    /// <param name="configuration">程序初始化阶段注入的配置对象</param>
-    public static void ConfigureApplication(this IConfiguration configuration)
-    {
-        Configuration = configuration;
-    }
+    // /// <summary>
+    // /// 由 <see cref="ConfigureApplication" /> 设置的全局配置引用，用于读取具体的配置节。
+    // /// </summary>
+    // internal static IConfiguration Configuration;
+    //
+    // /// <summary>
+    // /// 缓存应用启动时构建好的 <see cref="IConfiguration" />，供后续选项注册使用。
+    // /// </summary>
+    // /// <param name="configuration">程序初始化阶段注入的配置对象</param>
+    // public static void ConfigureApplication(this IConfiguration configuration)
+    // {
+    //     Configuration = configuration;
+    // }
 
     /// <summary>
     /// 通过配置节名称绑定 `TOptions`，便于在其它层中使用 `IOptions&lt;TOptions&gt;` 获取强类型配置。
@@ -34,7 +34,7 @@ public static class ConfigurableOptions
     {
         Type optionsType = typeof(TOptions);
         string path = GetConfigurationPath(optionsType);
-        services.Configure<TOptions>(Configuration.GetSection(path));
+        services.Configure<TOptions>(App.Configuration.GetSection(path));
 
         return services;
     }
@@ -48,7 +48,7 @@ public static class ConfigurableOptions
     public static IServiceCollection AddConfigurableOptions(this IServiceCollection services, Type type)
     {
         string path = GetConfigurationPath(type);
-        var config = Configuration.GetSection(path);
+        var config = App.Configuration.GetSection(path);
 
         Type iOptionsChangeTokenSource = typeof(IOptionsChangeTokenSource<>);
         Type iConfigureOptions = typeof(IConfigureOptions<>);
@@ -62,11 +62,11 @@ public static class ConfigurableOptions
         services.AddOptions();
         services.AddSingleton(iOptionsChangeTokenSource,
             Activator.CreateInstance(configurationChangeTokenSource,
-                global::Microsoft.Extensions.Options.Options.DefaultName, config) ??
+                Options.DefaultName, config) ??
             throw new InvalidOperationException());
         return services.AddSingleton(iConfigureOptions,
             Activator.CreateInstance(namedConfigureFromConfigurationOptions,
-                global::Microsoft.Extensions.Options.Options.DefaultName, config) ??
+                Options.DefaultName, config) ??
             throw new InvalidOperationException());
     }
 

@@ -3,7 +3,7 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Radish.Common;
-using Radish.Common.Option.Core;
+using Radish.Common.Core;
 using Radish.Extension;
 using Radish.IRepository;
 using Radish.IService;
@@ -24,11 +24,13 @@ builder.Host
         containerBuilder.RegisterModule(new AutofacPropertyModuleReg(typeof(Program).Assembly));
     }).ConfigureAppConfiguration((hostingContext, config) =>
     {
-        hostingContext.Configuration.ConfigureApplication();
+        hostingContext.Configuration.ConfigureApplication(); // 1. 绑定 InternalApp 扩展中的配置
         config.Sources.Clear();
         config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
         // config.AddConfigurationApollo("appsettings.apollo.json");
     });
+// 2. 绑定 InternalApp 扩展中的环境变量
+builder.ConfigureApplication();
 // 激活 Autofac 影响的 IControllerActivator
 builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
 builder.Services.AddControllers();
@@ -55,6 +57,11 @@ builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
 
 var app = builder.Build();
+
+// 3. 绑定 InternalApp 扩展中的服务
+app.ConfigureApplication();
+// 4. 启动 InternalApp 扩展中的 App
+app.UseApplicationSetup();
 
 app.UseDefaultFiles();
 app.MapStaticAssets();
