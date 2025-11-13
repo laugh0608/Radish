@@ -3,17 +3,19 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Radish.Common;
-using Radish.Common.Core;
+using Radish.Common.CoreTool;
 using Radish.Extension;
+using Radish.Extension.AutofacExtension;
+using Radish.Extension.RedisExtension;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Repository;
 using Radish.Service;
 using Scalar.AspNetCore;
 
+// -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
+// -------------- 容器构建阶段 ---------------
 
 // 使用 Autofac 配置 Host 与容器
 builder.Host
@@ -31,13 +33,13 @@ builder.Host
     });
 // 2. 绑定 InternalApp 扩展中的环境变量
 builder.ConfigureApplication();
-// 激活 Autofac 影响的 IControllerActivator
+// 激活 Autofac 影响的 IControllerActivator 控制器激活器，这一行的意义就是把 Controller 类也就是控制器注册为 Service 服务
 builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
+// 注册 Controller 控制器
 builder.Services.AddControllers();
+// 注册 RazorPages 解析
 builder.Services.AddRazorPages();
-
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-// 通过多份 OpenAPI 文档承载 Scalar 的版本切换
+// 通过多份 OpenAPI 文档承载 Scalar 的版本切换，文档：https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi("v1"); // Scalar 默认读取 openapi/v1.json
 builder.Services.AddOpenApi("v2"); // 预留第二份文档，方便演进期并行发布
 builder.Services.AddOpenApi(options =>
@@ -45,28 +47,29 @@ builder.Services.AddOpenApi(options =>
     // Scalar 扩展：启用主题、左侧目录等 Transformer
     options.AddScalarTransformers();
 });
-
 // 注册 AddAutoMapper 服务
 builder.Services.AddAutoMapperSetup(builder.Configuration);
 // 注册 AppSetting 自定义扩展服务
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 // 注册 AppSetting 自定义扩展的扩展 ConfigurableOptions 服务
 builder.Services.AddAllOptionRegister();
+// 注册缓存相关
+builder.Services.AddCacheSetup();
 // 注册泛型仓储与服务，AddScoped() 汇报模式，每次请求的时候注入
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
 
+// -------------- App 初始化阶段 ---------------
 var app = builder.Build();
+// -------------- App 初始化阶段 ---------------
 
 // 3. 绑定 InternalApp 扩展中的服务
 app.ConfigureApplication();
 // 4. 启动 InternalApp 扩展中的 App
 app.UseApplicationSetup();
-
 app.UseDefaultFiles();
 app.MapStaticAssets();
 app.UseStaticFiles();
-
 // Configure the HTTP request pipeline.
 // if (app.Environment.IsDevelopment())
 // {
@@ -79,9 +82,9 @@ app.MapScalarApiReference("/api/docs", options =>
         // 统一主题/外观，保持与桌面化前端一致
         .WithTheme(ScalarTheme.BluePlanet)
         .HideClientButton()
-        //.EnableDarkMode()
         .ForceDarkMode()
         .HideDarkModeToggle();
+    //.EnableDarkMode()
     //.WithClassicLayout()
     //.HideSearch()
     //.ShowOperationId()
@@ -125,14 +128,12 @@ app.MapScalarApiReference("/api/docs", options =>
 // {
 //     options.WithBundleUrl("https://cdn.jsdelivr.net/npm/@scalar/api-reference");
 // });
-
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapRazorPages();
 app.MapControllers();
-
 app.MapFallbackToPage("/Index");
 
+// -------------- App 运行阶段 ---------------
 app.Run();
+// -------------- App 运行阶段 ---------------

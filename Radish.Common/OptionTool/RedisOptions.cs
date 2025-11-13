@@ -1,6 +1,6 @@
-using Radish.Common.Option.Core;
+using Radish.Common.OptionTool.Core;
 
-namespace Radish.Common.Option;
+namespace Radish.Common.OptionTool;
 
 /// <summary>Redis 缓存配置选项</summary>
 public sealed class RedisOptions : IConfigurableOptions

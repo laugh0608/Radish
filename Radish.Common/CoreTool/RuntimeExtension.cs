@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Runtime.Loader;
 
-namespace Radish.Common.Core;
+namespace Radish.Common.CoreTool;
 
 public static class RuntimeExtension
 {

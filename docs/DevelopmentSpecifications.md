@@ -50,6 +50,13 @@
 - `Radish.Common.Core.App` 负责缓存 `Configuration/WebHostEnvironment/RootServices`，Program.cs 必须依次执行 `hostingContext.Configuration.ConfigureApplication()`、`builder.ConfigureApplication()`、`app.ConfigureApplication()` 与 `app.UseApplicationSetup()` 才能完成注入；仅在无法通过构造函数注入时，才在静态上下文调用 `App.GetService<T>`、`App.GetOptions<T>`，并优先保证线程安全与生命周期一致。
 - 对应扩展支持 `Get<T>()`、`ObjToString()` 等常用方法，可在新增配置时同步补充注释，方便多人协作。
 
+## 缓存策略
+
+- `Radish.Extension.RedisExtension.CacheSetup` 提供统一的 `AddCacheSetup()`，需在 Program 的服务注册阶段调用；该方法会读取 `Redis.Enable`/`Redis.ConnectionString`/`Redis.InstanceName` 并自动在 StackExchange.Redis 与内存缓存之间切换。
+- 若 `Redis.Enable=true`，启动时会构建单例 `IConnectionMultiplexer` 并注册 `IRedisBasketRepository`（包含 List/Queue 等常用 API），其他场景使用 `Radish.Common.CacheTool.ICaching` 进行增删查；禁用 Redis 时自动回落到 `IMemoryCache` + `IDistributedMemoryCache`。
+- 所有新增缓存键应通过 `ICaching.AddCacheKey*` 记录，便于 `DelByPattern`/`Clear` 等工具批量清理；若需发布订阅或队列语义，请依赖 `IRedisBasketRepository`，不要在业务代码中自行 new 连接。
+- 请勿将生产 Redis 连接串直接写入仓库，示例配置仅用于本地调试，线上需要通过环境变量或 Secret Manager 注入。
+
 ## AOP 与日志
 
 - `Radish.Extension/ServiceAop` 基于 Castle.DynamicProxy 实现接口拦截，当前主要用于捕捉 `BaseService<,>` 等应用服务的入参、响应与耗时信息，并通过 `AopLogInfo` 统一结构化输出。

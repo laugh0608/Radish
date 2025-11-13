@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Builder;
-using Radish.Common.Core;
+using Radish.Common.CoreTool;
 using Serilog;
 
 namespace Radish.Extension;
 
-/// <summary>
-/// 启动配置的扩展 App
-/// </summary>
+/// <summary>启动配置的扩展 App</summary>
 public static class ApplicationSetup
 {
     public static void UseApplicationSetup(this WebApplication app)
@@ -20,7 +18,7 @@ public static class ApplicationSetup
         {
             App.IsRun = false;
 
-            //清除日志
+            // 清除日志
             Log.CloseAndFlush();
         });
     }

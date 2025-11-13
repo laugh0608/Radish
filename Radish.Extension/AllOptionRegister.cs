@@ -1,5 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using Radish.Common.Option.Core;
+using Radish.Common.OptionTool.Core;
 
 namespace Radish.Extension;
 

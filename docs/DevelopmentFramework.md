@@ -88,7 +88,8 @@ PostgreSQL
   - 提供 `PagedRequest`, `PagedResponse<T>`, `ApiError` 等复用结构。
   - 视图模型需以 `Vo` 开头，并结合业务含义做缩写/扩写（如 `VoUsrAudit`, `VoAssetReport`），避免简单加前缀即可猜测真实用途。
 - `Radish.Extension`
-  - 横切关注：验证、缓存策略、OpenAPI 自定义、JWT 扩展、全局过滤器。
+  - 横切关注：验证、缓存策略、OpenAPI 自定义、JWT 扩展、全局过滤器；按照职责拆分 `AutofacExtension/*`, `AutoMapperExtension/*`, `RedisExtension/*` 等子目录。
+  - `RedisExtension.CacheSetup` 提供统一入口 `AddCacheSetup()`，根据 `appsettings.json` 的 `Redis.Enable` 自动在 Redis（StackExchange.Redis）与内存缓存间切换，并在启用 Redis 时预先创建 `IConnectionMultiplexer`；缓存读写统一走 `Radish.Common.CacheTool.ICaching` 或 `IRedisBasketRepository`。
 - `Radish.Shared`
   - 常量、错误码、事件名、Options 绑定类型。
 - `radish.client`

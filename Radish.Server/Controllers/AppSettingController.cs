@@ -2,8 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Radish.Common;
-using Radish.Common.Core;
-using Radish.Common.Option;
+using Radish.Common.CoreTool;
+using Radish.Common.OptionTool;
 
 namespace Radish.Server.Controllers;
 

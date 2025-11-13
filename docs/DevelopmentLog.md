@@ -6,6 +6,8 @@
 
 ### 2025.11.13
 
+- feat(cache): 引入 `Radish.Common.CacheTool` + `Radish.Extension.RedisExtension`，配置项默认启用 Redis，可在 `Redis.Enable` 为 false 时自动退回内存缓存；提供 `ICaching` 与 `IRedisBasketRepository` 两层 API，并在 Program 中统一调用 `AddCacheSetup()` 完成注入。
+- refactor(ext): Extension 与 Common 的通用组件重新按功能拆分到 `*Tool`、`AutofacExtension`、`AutoMapperExtension` 等目录，便于后续独立引用；AppSetting/WeatherForecast 控制器与单测同步调整引用路径。
 - feat(core): 新增 `Radish.Common.Core.App/InternalApp`，集中感知 Host/Configuration/RootServices，并提供 `GetService*` 与 `GetOptions*` 辅助方法，便于在非 DI 管道内按需解析服务或读取配置。
 - chore(host): Program.cs 引入 `ConfigureApplication()` 四步绑定（Host 配置 → Builder → App → `UseApplicationSetup`），运行期即可维护 `App.IsRun` 状态并在停止时刷新 Serilog。
 - feat(api): WeatherForecastController 演示 `IServiceScopeFactory` + `App.GetService` 多种解析方式，AppSettingController 也补充 `App.GetOptions<T>` 示例，方便验证配置绑定是否生效。
