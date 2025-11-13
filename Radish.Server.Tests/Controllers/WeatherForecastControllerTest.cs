@@ -1,6 +1,5 @@
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
-using Radish.Common.Option;
 using Radish.Server.Controllers;
 using Xunit;
 
