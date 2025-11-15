@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Radish.Common.CacheTool;
@@ -10,14 +12,14 @@ namespace Radish.Server.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
-public class WeatherForecastController : ControllerBase
+public partial class WeatherForecastController : ControllerBase
 {
     // 属性注入
     public IBaseService<Role, RoleVo>? RoleServiceObj { get; set; }
-    
+
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly IBaseService<Role, RoleVo> _roleService;
-    private readonly ICaching  _caching;
+    private readonly ICaching _caching;
 
     /// <summary>
     /// 构造函数，注入服务
@@ -25,8 +27,8 @@ public class WeatherForecastController : ControllerBase
     /// <param name="scopeFactory"></param>
     /// <param name="roleService"></param>
     /// <param name="caching"></param>
-    public WeatherForecastController(IServiceScopeFactory scopeFactory, 
-        IBaseService<Role, RoleVo> roleService, 
+    public WeatherForecastController(IServiceScopeFactory scopeFactory,
+        IBaseService<Role, RoleVo> roleService,
         ICaching caching)
     {
         _scopeFactory = scopeFactory;
@@ -61,7 +63,7 @@ public class WeatherForecastController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetTest()
+    public async Task<IActionResult> Test()
     {
         // await Task.CompletedTask;
         using var scope = _scopeFactory.CreateScope();
@@ -72,18 +74,21 @@ public class WeatherForecastController : ControllerBase
         var dataStatisticService3 = App.GetService<IBaseService<Role, RoleVo>>(false);
         var roleList3 = await dataStatisticService3.QueryAsync();
         var roleList4 = await RoleServiceObj?.QueryAsync()!;
-        
-        var cacheKey = "radish_key";
+
+        const string cacheKey = "radish_test_key";
         var cacheKeys = await _caching.GetAllCacheKeysAsync();
         await Console.Out.WriteLineAsync("全部 keys -->" + JsonConvert.SerializeObject(cacheKeys));
         await Console.Out.WriteLineAsync("添加一个缓存");
         await _caching.SetStringAsync(cacheKey, "hello radish");
-        await Console.Out.WriteLineAsync("全部 keys -->" + JsonConvert.SerializeObject(await _caching.GetAllCacheKeysAsync()));
-        await Console.Out.WriteLineAsync("当前 key 内容-->" + JsonConvert.SerializeObject(await _caching.GetStringAsync(cacheKey)));
+        await Console.Out.WriteLineAsync("全部 keys -->" +
+                                         JsonConvert.SerializeObject(await _caching.GetAllCacheKeysAsync()));
+        await Console.Out.WriteLineAsync("当前 key 内容-->" +
+                                         JsonConvert.SerializeObject(await _caching.GetStringAsync(cacheKey)));
         await Console.Out.WriteLineAsync("删除 key");
         await _caching.RemoveAsync(cacheKey);
-        await Console.Out.WriteLineAsync("全部 keys -->" + JsonConvert.SerializeObject(await _caching.GetAllCacheKeysAsync()));
-        
+        await Console.Out.WriteLineAsync("全部 keys -->" +
+                                         JsonConvert.SerializeObject(await _caching.GetAllCacheKeysAsync()));
+
         return Ok(new
         {
             roleList1,
