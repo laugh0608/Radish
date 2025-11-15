@@ -1,0 +1,25 @@
+[package] # 项目基本信息
+name = "test_lib" # 项目/包的名称
+version = "0.1.0" # 版本号（遵循语义化版本控制）
+edition = "2024" # Rust 版本 edition
+authors = ["DaBaiLuoBo<laugh0608@foxmail.com>"]
+description = "测试 ASP.NET 调用 Rust"
+license = "Apache-2.0"
+# repository = "https://github.com/laugh0608/Radish"
+# documentation = "https://bbs.imbhj.com"
+
+[dependencies] # 项目依赖的第三方库
+rayon = "1.8" # 实现数据并行
+num_cpus = "1.16" # 获取逻辑核心数
+
+[dev-dependencies] # 仅用于测试的依赖
+
+[build-dependencies] # 构建时需要的依赖
+
+#[[bin]] # 二进制目标配置
+#name = "test"
+#path = "src/main.rs"
+
+[lib] # 库目标配置
+name = "test_lib"
+crate-type = ["cdylib"]  # 编译为 C 兼容库
