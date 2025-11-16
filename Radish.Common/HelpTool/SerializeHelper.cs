@@ -1,7 +1,7 @@
 using System.Text;
 using Newtonsoft.Json;
 
-namespace Radish.Common.HelpeTool;
+namespace Radish.Common.HelpTool;
 
 public class SerializeHelper
 {

@@ -7,6 +7,7 @@ using Radish.Common.CoreTool;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
 using Radish.Extension.RedisExtension;
+using Radish.Extension.SqlSugarExtension;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Repository;
@@ -53,8 +54,10 @@ builder.Services.AddAutoMapperSetup(builder.Configuration);
 builder.Services.AddSingleton(new AppSettings(builder.Configuration));
 // 注册 AppSetting 自定义扩展的扩展 ConfigurableOptions 服务
 builder.Services.AddAllOptionRegister();
-// 注册缓存相关
+// 注册缓存相关服务
 builder.Services.AddCacheSetup();
+// 注册 SqlSugar 服务
+builder.Services.AddSqlSugarSetup();
 // 注册泛型仓储与服务，AddScoped() 汇报模式，每次请求的时候注入
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
