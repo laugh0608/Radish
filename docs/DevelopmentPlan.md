@@ -85,9 +85,11 @@
 - 自动化：补齐 xUnit/Vitest + Playwright（可选）测试，纳入 CI。
 - 性能：PostgreSQL 索引审计、缓存策略（IMemoryCache/redis 预留）、SQLSugar Profiling。
 - Observability：Serilog → Seq/Console JSON；OpenTelemetry 采样；健康检查拓展。
+- 原生扩展（Rust）：将 `Radish.Core/test_lib` 演示项目抽离为解决方案根目录下的 `native/rust/*`，编写 `cargo build --release` + `dotnet` 构建后拷贝脚本，使共享库自动复制到 `Radish.Server` 输出目录，后续所有 Rust 扩展统一按该目录结构维护。
 - 验收：
   - `dotnet test`, `npm run test`, `npm run lint`, `npm run build` 均通过。
   - P95 指标满足目标；日志可追踪请求链路。
+  - `/api/RustTest/*` 在 CI/本地构建后可直接加载 `native/rust` 输出的 `test_lib`（DLL/SO/Dylib），无须手动复制。
 
 ### 第 8 周｜部署、运维与交付
 - Docker：完善 `Radish.Server/Dockerfile`（Node/SQLSugar 依赖）与 compose（PostgreSQL + API + 前端静态站点）。
@@ -131,3 +133,4 @@
 - 新增数据库字段或模块时，同步更新迁移脚本与文档（架构/部署/贡献者指南）。
 - 前端与后端共享的 DTO 请优先在 `Radish.Model` 中维护，React 侧生成对应的 TypeScript 类型，避免漂移。
 - 若出现新的关键技术选型（例如引入 redis、消息队列等），请同步更新 DevelopmentFramework 与本文件，保持信息一致。
+- React Compiler（实验）：React 19 新编译器暂不在主干启用；待官方正式发布并通过 Vite/Babel 稳定支持后，再在独立分支验证收益（减少手写 memo、优化渲染），评估通过后才会合入主线。

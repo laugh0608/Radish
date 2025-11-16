@@ -19,6 +19,7 @@
 - Radish.Service：后端服务实现类，具体实现业务逻辑接口
 - Radish.Shared：前后端共享的模型和工具类，例如 DTO、枚举等
 - Radish.Server.Tests：xUnit 测试工程，目前包含 UserController 示例测试，约束接口返回示例数据
+- native/rust（规划目录）：承载 Rust 扩展库或性能模块源码与 `cargo` 构建脚本，位于解决方案根目录；当前 `Radish.Core/test_lib` 只是互操作示例，正式原生模块应迁移到该目录并作为 Solution Folder 挂载。
 
 ## 分层依赖约定
 
@@ -27,9 +28,19 @@
   - Radish.Server 引用 radish.client（用于 SPA 代理）与 Radish.Service，并通过 Program.cs 注入 `IUserService/IUserRepository` 等接口实现；同时依赖 Radish.Common 以注册 `AppSettings` 扩展，避免在其他层重复创建配置源。
   - Radish.Service 依赖 Radish.IService（接口契约）与 Radish.Repository（数据访问实现），负责聚合业务逻辑；Service 层对外仅暴露 DTO/Vo，必须在返回前将仓储层实体映射为视图模型（推荐 AutoMapper）。
   - Radish.Repository 依赖 Radish.IRepository 与 Radish.Model 中的实体类型，只能向 Service 层返回实体或实体集合，禁止直接引用任何 Vo/DTO；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model，以便共享实体与视图模型定义。
-  - Radish.Extension 仅由宿主（Radish.Server）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
+- Radish.Extension 仅由宿主（Radish.Server）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
   - Radish.Core 暂时保留，无直接依赖关系
 - `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用“Controller 调用 Service，再由 Service 访问 Repository”的模式，并补齐对应接口定义
+
+## 跨语言扩展（Rust 原生库）
+
+- 目的：为 CPU 密集或高并发算法提供 Rust 实现，并通过 `[DllImport("test_lib")]` 在 `Radish.Server.Controllers.RustTest` 中验证性能差异。本阶段的 `Radish.Core/test_lib` 仅为演示，后续需将实际扩展迁入解决方案根目录的 `native/rust/{library}`，确保 Core 层保持纯 C# 领域模型。
+- 构建流程：
+  1. 安装 Rust 工具链（rustup + nightly/stable 均可），在仓库根目录执行 `cd Radish.Core/test_lib && cargo build --release`。
+  2. 构建完成后会在 `target/release/` 生成 `test_lib.dll`（Windows）、`libtest_lib.so`（Linux）或 `libtest_lib.dylib`（macOS）。MSBuild/Docker 构建需在 `AfterBuild`/脚本阶段把对应文件拷贝到 `Radish.Server/bin/<Configuration>/net10.0/` 或发布目录，以便运行期自动加载。
+  3. `RustTest` 控制器提供 `/api/RustTest/TestSum1~4` 四个端点，演示累加、类斐波那契、埃拉托斯特尼筛与并行质数计数；发布前请以 `?iterations=1_000_000` 等参数在本地验证返回结果与耗时。
+- 目录规划：真实业务扩展应在 `native/rust/<库名>` 下维护 Cargo 工程，并附 README 说明导出函数签名/调用约定。`Radish.Core/test_lib` 仅保留最小示例，迁移完成后可以删除或仅做文档参考。
+- 提交规范：Rust `target/` 目录与生成的 `.dll/.so/.dylib` 依旧忽略，必要时在 `.gitignore` 中新增排除项；若需要在 CI 中编译 Rust，请在构建脚本中加入 `cargo build --release` 与共享库复制步骤，保持与 DevelopmentPlan 中的原生扩展规划一致。
 
 ## 实体与视图模型规范
 
@@ -113,6 +124,7 @@
 2. 组件统一使用函数式写法，结合 `useState`、`useMemo`、`useEffect` 等 Hook 管理状态与生命周期，避免继续编写 Class 组件。
 3. 使用 `const` 定义组件与内部函数，遵循 React 不可变范式，常规情况下避免 `function` 声明以减少作用域、提升与 `this` 绑定问题。
 4. 禁用 `var`，默认 `const`，仅在确需重新赋值时选用 `let`；在 React 顶层逻辑几乎无需 `let`，如需持久化可变值，优先用 `const + useState` 组合处理。
+5. React Compiler 仍属实验功能，主干暂不启用；若官方 GA 后可在独立分支尝试 `babel-plugin-react-compiler`，确认与 `radish.client` 的桌面化 UI、第三方组件兼容且能明显减少手写 memo，再提交 PR 合入主线。
 
 ## Radish.Server 接口规范
 

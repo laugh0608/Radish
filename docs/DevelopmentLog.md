@@ -4,6 +4,12 @@
 
 > 当前阶段采用 .NET 10 + SQLSugar + PostgreSQL + React 技术栈；以下记录聚焦新架构的推进，后续如有重要调整也会在此处补充说明。
 
+### 2025.11.15
+
+- feat(core/native): 在 `Radish.Core/test_lib` 引入首个 Rust `cdylib` 示例，通过 `cargo build --release` 输出 `test_lib`，封装累加、斐波那契模拟、埃拉托斯特尼筛及并行质数计算，配合 Rayon/num_cpus 快速验证 CPU 密集算法表现。
+- feat(api): 新建 `RustTest` 控制器，提供 `/api/RustTest/TestSum{1-4}` 基准接口，对比 C# 与 Rust 的执行耗时，并统一以 `DllImport("test_lib")` 调用共享库。
+- docs(native): 当前 Rust demo 仅用于验证流程，正式扩展需迁至解决方案根目录（如 `native/rust/*`），并通过脚本在构建后自动拷贝 DLL/SO/Dylib，避免继续把 Core 层当成原生模块的承载目录。
+
 ### 2025.11.13
 
 - feat(cache): 引入 `Radish.Common.CacheTool` + `Radish.Extension.RedisExtension`，配置项默认启用 Redis，可在 `Redis.Enable` 为 false 时自动退回内存缓存；提供 `ICaching` 与 `IRedisBasketRepository` 两层 API，并在 Program 中统一调用 `AddCacheSetup()` 完成注入。
