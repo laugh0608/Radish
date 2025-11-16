@@ -1,4 +1,4 @@
-namespace Radish.Common.HelpeTool;
+namespace Radish.Common.HelpTool;
 
 public static class ConsoleHelper
 {

@@ -23,6 +23,8 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     /// <returns></returns>
     public async Task<List<TVo>> QueryAsync()
     {
+        // Repository 不是单例，所以多次查询的 HASH 是不一样的，对应的是 Repository 层的 DbBase 是单例
+        await Console.Out.WriteLineAsync($"Repository HashCode: {_repository.GetHashCode().ToString()}");
         return _mapper.Map<List<TVo>>(await _repository.QueryAsync());
     }
 }
