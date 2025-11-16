@@ -32,6 +32,24 @@
   - Radish.Core 暂时保留，无直接依赖关系
 - `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用“Controller 调用 Service，再由 Service 访问 Repository”的模式，并补齐对应接口定义
 
+## 数据库与 SqlSugar 配置
+
+- `Program.cs` 需要在 `builder.Build()` 前调用 `builder.Services.AddSqlSugarSetup()`。该扩展定义于 `Radish.Extension.SqlSugarExtension`，内部使用 `SqlSugarScope` 单例注入并绑定所有连接配置。
+- `appsettings.json` 约定结构如下：
+
+```json
+"MainDb": "Main",
+"Databases": [
+  { "ConnId": "Main", "DbType": 2, "Enabled": true, "ConnectionString": "Radish.db" },
+  { "ConnId": "Log", "DbType": 2, "Enabled": true, "ConnectionString": "RadishLog.db", "HitRate": 50 }
+]
+```
+
+  - `MainDb` 指定默认主库的 `ConnId`；当配置多库/主从时，`BaseDbConfig.MutiConnectionString` 会把该连接放在集合首位。
+  - `Databases` 中至少包含 `ConnId=Main` 与 `ConnId=Log` 两条记录，后者名称固定（`SqlSugarConst.LogConfigId`），缺失时启动会抛出异常；其余库可自定义 `DbType` 与从库 `Slaves` 列表。
+- 使用 SQLite 时 `ConnectionString` 只需传数据库文件名，运行期会自动拼接 `Environment.CurrentDirectory`；对于 MySQL/SQLServer 等外部数据库，可通过 `dbCountPsw1_*.txt` 本地文件或环境变量隐藏真实连接串，`BaseDbConfig.SpecialDbString` 会优先读取文件值。
+- SQL 日志统一通过 `SqlSugarAop.OnLogExecuting` 写入 Serilog，`LogContextHelper` 会在上下文中打上 `LogSource=AopSql` 标签；SqlSugar 的缓存实现委托给 `Radish.Common.CacheTool.SqlSugarCache`，保持与 Redis/内存缓存一致的策略。
+
 ## 跨语言扩展（Rust 原生库）
 
 - 目的：为 CPU 密集或高并发算法提供 Rust 实现，并通过 `[DllImport("test_lib")]` 在 `Radish.Server.Controllers.RustTest` 中验证性能差异。本阶段的 `Radish.Core/test_lib` 仅为演示，后续需将实际扩展迁入解决方案根目录的 `native/rust/{library}`，确保 Core 层保持纯 C# 领域模型。
@@ -131,7 +149,7 @@
 1. API 方法全部位于 Server 层 Controller 命名空间，统一使用 `[Route("api/[controller]/[action]")]` 作为路由前缀。
 2. 需鉴权的 API 必须在 Controller 或 Action 上添加 `[Authorize(Permissions.Name)]`；无需鉴权的显式标注 `[AllowAnonymous]`，避免默认放行。
 3. Controller Action 默认遵循 `[Produces("application/json")]` 与 RESTful 设计原则，除非业务场景要求其他内容类型或风格。
-4. 实体类存放在 Model 层 `Models` 命名空间并继承 `RootEntityTkey<Tkey>`（含主键 Id）；若有自定义外键实体，同样继承该基类。视图模型位于 `ViewModels` 命名空间，按对外暴露字段设计，无继承硬性要求。
+4. 实体类存放在 Model 层 `Models` 命名空间并继承 `RootEntityTKey<TKey>`（含主键 Id）；若有自定义外键实体，同样继承该基类。视图模型位于 `ViewModels` 命名空间，按对外暴露字段设计，无继承硬性要求。
 5. 实体与视图模型的映射集中在 Extension 层 `AutoMapper` 命名空间，每组实体定义独立 `CustomProfile`，避免在 Controller 或仓储中手动映射。
 6. 新增对外接口遵循以下流程：
    （1）在 Model 层定义实体与视图模型；
