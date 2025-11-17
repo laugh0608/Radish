@@ -1,9 +1,0 @@
-@Radish.Server_HostAddress = http://localhost:5165
-
-GET {{Radish.Server_HostAddress}}/api/WeatherForecast/Get/
-Accept: application/json
-
-###
-# 示例：用户演示接口，供文档与测试引用
-GET {{Radish.Server_HostAddress}}/api/User/GetUserList/
-Accept: application/json

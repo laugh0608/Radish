@@ -19,19 +19,19 @@ RUN apt-get -y install nodejs
 FROM with-node AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
-COPY ["Radish.Server/Radish.Server.csproj", "Radish.Server/"]
-RUN dotnet restore "./Radish.Server/Radish.Server.csproj"
+COPY ["Radish.Api/Radish.Api.csproj", "Radish.Api/"]
+RUN dotnet restore "./Radish.Api/Radish.Api.csproj"
 COPY . .
-WORKDIR "/src/Radish.Server"
-RUN dotnet build "./Radish.Server.csproj" -c $BUILD_CONFIGURATION -o /app/build
+WORKDIR "/src/Radish.Api"
+RUN dotnet build "./Radish.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
 
 # 此阶段用于发布要复制到最终阶段的服务项目
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Radish.Server.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "./Radish.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
 
 # 此阶段在生产中使用，或在常规模式下从 VS 运行时使用(在不使用调试配置时为默认值)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Radish.Server.dll"]
+ENTRYPOINT ["dotnet", "Radish.Api.dll"]

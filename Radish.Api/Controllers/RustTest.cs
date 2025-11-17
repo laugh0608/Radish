@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Radish.Server.Controllers;
+namespace Radish.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]

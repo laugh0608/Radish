@@ -20,7 +20,7 @@ Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NE
 Radish.slnx                  # 解决方案入口
 docs/                        # 开发规范、架构、计划、部署等文档
 radish.client/               # React + Vite 前端工程
-Radish.Server/               # ASP.NET Core Host，暴露 REST API
+Radish.Api/               # ASP.NET Core Host，暴露 REST API
 Radish.Common/               # 日志、配置等通用工具
 Radish.Core/                 # 领域模型与业务规则
 Radish.Service/              # 应用服务，协调 Core 与仓储
@@ -40,7 +40,7 @@ Radish.IRepository/          # 仓储接口契约
 ### 目录职责
 - `docs/`：承载开发规范、设计、计划与部署指引，是贡献者同步信息的唯一入口。
 - `radish.client/`：React + TypeScript 前端，按照 feature-first 拆分页面与组件。
-- `Radish.Server/`：ASP.NET Core 主机，只负责 API 宿主、DI、配置、健康检查与 Swagger/Scalar。
+- `Radish.Api/`：ASP.NET Core 主机，只负责 API 宿主、DI、配置、健康检查与 Swagger/Scalar。
 - `Radish.Common/`：全局可复用的日志、配置与基础工具；`AppSettings.RadishApp(...)` 提供统一的字符串读取入口。
 - `Radish.Core/`：领域模型、聚合根、领域服务与事件。
 - `Radish.Extension/`：Swagger/Scalar、HealthCheck、JWT 等横切扩展，并包含 `AllOptionRegister` 等 DI 扩展。
@@ -52,7 +52,7 @@ Radish.IRepository/          # 仓储接口契约
 
 ### 分层依赖
 - 前端（`radish.client`）只依赖 npm/pnpm 生态。
-- 后端按层次引用：`Radish.Server → Radish.Service → Radish.Core/IService/IRepository → Radish.Repository → Radish.Model → Radish.Common`，保持核心域对基础设施的最小感知。
+- 后端按层次引用：`Radish.Api → Radish.Service → Radish.Core/IService/IRepository → Radish.Repository → Radish.Model → Radish.Common`，保持核心域对基础设施的最小感知。
 - `Radish.Core` 当前以 Domain 角色存在，可独立演进，不直接依赖具体实现。
 
 ### 依赖管理
@@ -69,14 +69,14 @@ Radish.IRepository/          # 仓储接口契约
 
 ## 快速开始
 1. 安装依赖：`.NET 10 SDK`、`Node.js 24+`、`PostgreSQL 16+`。
-2. 复制并填写配置：`cp Radish.Server/appsettings.Development.json appsettings.Local.json` 或通过环境变量设置 `ConnectionStrings__Default`、`Jwt__Key` 等敏感项。
+2. 复制并填写配置：`cp Radish.Api/appsettings.Development.json appsettings.Local.json` 或通过环境变量设置 `ConnectionStrings__Default`、`Jwt__Key` 等敏感项。
 3. 还原与构建：
    ```bash
    dotnet restore
    dotnet build Radish.slnx -c Debug
    ```
-4. 初始化数据库（可选 Code First）：运行 `dotnet run --project Radish.Server -- --seed` 或编写 SQLSugar 初始化脚本。
-5. 启动服务：`dotnet run --project Radish.Server/Radish.Server.csproj`，默认监听 `http://localhost:5165` 与 `https://localhost:7110`（源自 `Radish.Server/Properties/launchSettings.json`，可按需调整）。
+4. 初始化数据库（可选 Code First）：运行 `dotnet run --project Radish.Api -- --seed` 或编写 SQLSugar 初始化脚本。
+5. 启动服务：`dotnet run --project Radish.Api/Radish.Api.csproj`，默认监听 `http://localhost:5165` 与 `https://localhost:7110`（源自 `Radish.Api/Properties/launchSettings.json`，可按需调整）。
 6. 前端联调：
    ```bash
    npm install --prefix radish.client
@@ -85,8 +85,8 @@ Radish.IRepository/          # 仓储接口契约
    通过 `VITE_API_BASE_URL` 指向后端地址；Vite Dev Server 默认启在 `https://localhost:58794`（或使用环境变量 `DEV_SERVER_PORT` 覆盖）。
 
 ## 常用命令
-- `dotnet watch --project Radish.Server`：后端热重载。
-- `dotnet test Radish.Server.Tests`：运行后端单元测试。
+- `dotnet watch --project Radish.Api`：后端热重载。
+- `dotnet test Radish.Api.Tests`：运行后端单元测试。
 - `npm run build --prefix radish.client`：产出前端静态资源。
 - `docker compose -f deploy/docker-compose.yml up --build`：一键拉起 PostgreSQL + API（详见 `docs/DeploymentGuide.md`）。
 

@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Radish.Server\Radish.Server.csproj" />
+    <ProjectReference Include="..\Radish.Api\Radish.Api.csproj" />
     <ProjectReference Include="..\Radish.Service\Radish.Service.csproj" />
     <ProjectReference Include="..\Radish.Repository\Radish.Repository.csproj" />
     <ProjectReference Include="..\Radish.Model\Radish.Model.csproj" />

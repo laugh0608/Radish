@@ -4,7 +4,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 
-namespace Radish.Server.Controllers;
+namespace Radish.Api.Controllers;
 
 /// <summary>角色接口控制器</summary>
 [ApiController]

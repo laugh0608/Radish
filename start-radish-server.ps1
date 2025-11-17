@@ -3,10 +3,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$projectPath = Join-Path $PSScriptRoot "Radish.Server/Radish.Server.csproj"
+$projectPath = Join-Path $PSScriptRoot "Radish.Api/Radish.Api.csproj"
 
 if (-not (Test-Path $projectPath)) {
-    Write-Error "Radish.Server.csproj not found. Run this script from the repository root."
+    Write-Error "Radish.Api.csproj not found. Run this script from the repository root."
     exit 1
 }
 

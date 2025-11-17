@@ -2,7 +2,7 @@
 
 ## 项目结构与模块组织
 Radish.slnx 汇总所有 .NET 10 项目，遵循分层架构：
-- `Radish.Server/`：ASP.NET Core Web API 主机（Program.cs、Controllers、Dockerfile）。
+- `Radish.Api/`：ASP.NET Core Web API 主机（Program.cs、Controllers、Dockerfile）。
 - `Radish.Core`、`Radish.Service`、`Radish.Repository`：封装领域逻辑、应用服务与数据访问；`Radish.IService`、`Radish.IRepository` 提供接口契约；`Radish.Common`、`Radish.Shared`、`Radish.Extension` 复用通用模型与扩展。
 - `Radish.Model/`：集中实体与 DTO；保持与数据库/前端同步。
 - `radish.client/`：React + TypeScript + Vite 前端；`src/` 为页面与组件，`public/` 存放静态资源。
@@ -10,8 +10,8 @@ Radish.slnx 汇总所有 .NET 10 项目，遵循分层架构：
 
 ## 构建、测试与开发命令
 - `dotnet restore && dotnet build Radish.slnx -c Debug`：还原并在 Debug 配置下构建所有后端项目。
-- `dotnet run --project Radish.Server/Radish.Server.csproj`：启动本地 API；需要 PostgreSQL 与 appsettings 中的连接信息。
-- `dotnet watch --project Radish.Server/Radish.Server.csproj`：热重载 API，便于调试。
+- `dotnet run --project Radish.Api/Radish.Api.csproj`：启动本地 API；需要 PostgreSQL 与 appsettings 中的连接信息。
+- `dotnet watch --project Radish.Api/Radish.Api.csproj`：热重载 API，便于调试。
 - `npm install --prefix radish.client`：安装前端依赖（Node 24+）。
 - `npm run dev --prefix radish.client`：本地启动 Vite 开发服务器；生产版本使用 `npm run build --prefix radish.client` 输出至 `dist/`。
 
@@ -26,7 +26,7 @@ Radish.slnx 汇总所有 .NET 10 项目，遵循分层架构：
 
 ## 提交与 Pull Request 指南
 - Git 历史遵循 Conventional Commits（如 `feat: 完成项目分层创建`、`fix:`、`chore:`）；保持小步提交，并在需要时附中文说明。
-- PR 描述包含变更摘要、测试结果、关联 Issue；前端 UI 变更附截图/GIF，后端接口调整附示例请求（可复用 `Radish.Server.http`）。更新文档或脚本时在同一 PR 中同步。
+- PR 描述包含变更摘要、测试结果、关联 Issue；前端 UI 变更附截图/GIF，后端接口调整附示例请求（可复用 `Radish.Api.http`）。更新文档或脚本时在同一 PR 中同步。
 
 ## 配置与安全提示
 - `global.json` 固定 .NET SDK 10.0.0；若本地多版本，请使用 `dotnet --list-sdks` 确认。环境敏感值放入用户密钥或 `appsettings.{Environment}.json` 中的占位符，并通过环境变量或 Secret Manager 注入。
