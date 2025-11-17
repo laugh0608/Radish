@@ -3,7 +3,7 @@ using Castle.DynamicProxy;
 using Newtonsoft.Json;
 using Radish.Common;
 
-namespace Radish.Extension;
+namespace Radish.Extension.AopExtension;
 
 /// <summary>服务 AOP 切面</summary>
 /// <remarks>继承 IInterceptor 接口</remarks>
