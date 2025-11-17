@@ -12,7 +12,7 @@ public class WeatherForecastControllerTest
     public void GetTest()
     {
         var controller = new WeatherForecastController();
-        controller.Get();
+        controller.Test();
 
         Assert.NotNull(controller);
     }
