@@ -17,7 +17,7 @@ function Ensure-Command {
     param([string]$Name)
 
     if (-not (Get-Command $Name -ErrorAction SilentlyContinue)) {
-        throw "未找到命令 '$Name'，请先安装或将其添加到 PATH。"
+        throw "Command '$Name' not found. Install it or add to PATH."
     }
 }
 
@@ -37,7 +37,7 @@ function Invoke-Step {
 function Start-Backend {
     Push-Location $repoRoot
     try {
-        Write-Host "准备以配置 $Configuration 启动后端 (Radish.Api)。"
+        Write-Host "Starting backend (Radish.Api) with configuration $Configuration."
         $env:ASPNETCORE_URLS = "https://localhost:7110;http://localhost:5165"
 
         Invoke-Step "dotnet clean ($Configuration)" {
@@ -70,7 +70,7 @@ function Start-Frontend {
     if ($Detached) {
         $shellExe = if ($PSVersionTable.PSEdition -eq 'Core') { "pwsh" } else { "powershell" }
         Start-Process -FilePath $shellExe -ArgumentList "-NoExit", "-Command", $command | Out-Null
-        Write-Host "前端已在新的终端窗口中启动（npm run dev --prefix radish.client）。"
+        Write-Host "Frontend started in a new terminal window (npm run dev --prefix radish.client)."
         return
     }
 
@@ -95,12 +95,12 @@ function Run-Tests {
     }
 }
 
-Write-Host "请选择要启动的服务："
-Write-Host "1. 启动前端 (radish.client)"
-Write-Host "2. 启动后端 (Radish.Api)"
-Write-Host "3. 前后端一起启动"
-Write-Host "4. 执行单元测试 (Radish.Api.Tests)"
-$choice = Read-Host "输入选项 (1/2/3/4)"
+Write-Host "Select an action:"
+Write-Host "1. Start frontend (radish.client)"
+Write-Host "2. Start backend (Radish.Api)"
+Write-Host "3. Start both frontend and backend"
+Write-Host "4. Run unit tests (Radish.Api.Tests)"
+$choice = Read-Host "Enter choice (1/2/3/4)"
 
 switch ($choice) {
     "1" {
@@ -117,7 +117,7 @@ switch ($choice) {
         Run-Tests
     }
     default {
-        Write-Error "未知选项：$choice"
+        Write-Error "Unknown option: $choice"
         exit 1
     }
 }
