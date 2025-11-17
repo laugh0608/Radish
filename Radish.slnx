@@ -21,8 +21,8 @@
   <Project Path="Radish.IService/Radish.IService.csproj" />
   <Project Path="Radish.Model/Radish.Model.csproj" />
   <Project Path="Radish.Repository/Radish.Repository.csproj" />
-  <Project Path="Radish.Server.Tests\Radish.Server.Tests.csproj" />
-  <Project Path="Radish.Server/Radish.Server.csproj" />
+  <Project Path="Radish.Api.Tests\Radish.Api.Tests.csproj" />
+  <Project Path="Radish.Api/Radish.Api.csproj" />
   <Project Path="Radish.Service/Radish.Service.csproj" />
   <Project Path="Radish.Shared/Radish.Shared.csproj" />
 </Solution>

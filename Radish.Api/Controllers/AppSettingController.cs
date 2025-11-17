@@ -5,7 +5,7 @@ using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.OptionTool;
 
-namespace Radish.Server.Controllers;
+namespace Radish.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]

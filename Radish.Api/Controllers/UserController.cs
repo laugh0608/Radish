@@ -2,7 +2,7 @@
 using Radish.IService;
 using Radish.IService.User;
 
-namespace Radish.Server.Controllers;
+namespace Radish.Api.Controllers;
 
 /// <summary>用户接口控制器</summary>
 [ApiController]

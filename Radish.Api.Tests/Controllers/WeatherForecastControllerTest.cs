@@ -1,9 +1,9 @@
 using JetBrains.Annotations;
 using Microsoft.Extensions.Options;
-using Radish.Server.Controllers;
+using Radish.Api.Controllers;
 using Xunit;
 
-namespace Radish.Server.Tests.Controllers;
+namespace Radish.Api.Tests.Controllers;
 
 [TestSubject(typeof(WeatherForecastController))]
 public class WeatherForecastControllerTest

@@ -7,7 +7,7 @@ public static class RuntimeExtension
 {
     private static readonly List<string> ProjectAssemblies =
     [
-        "Radish.Server"
+        "Radish.Api"
     ];
 
     /// <summary>

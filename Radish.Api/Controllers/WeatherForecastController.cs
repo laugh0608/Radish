@@ -8,7 +8,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 
-namespace Radish.Server.Controllers;
+namespace Radish.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]

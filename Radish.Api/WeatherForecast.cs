@@ -1,4 +1,4 @@
-namespace Radish.Server
+namespace Radish.Api
 {
     public class WeatherForecast
     {
