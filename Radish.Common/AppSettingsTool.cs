@@ -4,19 +4,19 @@ using Microsoft.Extensions.Configuration.Json;
 namespace Radish.Common;
 
 /// <summary>appsettings.json 操作类</summary>
-public class AppSettings
+public class AppSettingsTool
 {
     // 需要引用 Microsoft.Extensions.Configuration.Binder 和 Microsoft.Extensions.Configuration.Json 包
     public static IConfiguration Configuration { get; set; }
     
     // static string ContentPath { get; set; }
 
-    public AppSettings(IConfiguration configuration)
+    public AppSettingsTool(IConfiguration configuration)
     {
         Configuration = configuration;
     }
 
-    public AppSettings(string contentPath)
+    public AppSettingsTool(string contentPath)
     {
         const string path = "appsettings.json";
 

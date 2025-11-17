@@ -23,8 +23,8 @@ public class AppSettingController : ControllerBase
     {
         await Task.CompletedTask;
         // 不同的获取 appsetting 的方式 AppSettingController
-        var res1 = AppSettings.RadishApp(new []{"Redis", "Enable"});
-        var res2 = AppSettings.GetValue("Redis:ConnectionString");
+        var res1 = AppSettingsTool.RadishApp(new []{"Redis", "Enable"});
+        var res2 = AppSettingsTool.GetValue("Redis:ConnectionString");
         // var res3 = JsonConvert.SerializeObject(_redisOptions.Value);
         var res3 = _redisOptions.Value.InstanceName;
         var res4 = App.GetOptions<RedisOptions>();

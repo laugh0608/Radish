@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 namespace Radish.Common;
 
 /// <summary>字符串帮助类</summary>
-public static class UtilConvert
+public static class UtilConvertTool
 {
     /// <summary>
     /// 

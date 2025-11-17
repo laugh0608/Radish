@@ -30,9 +30,9 @@ public class BaseDbConfig
 
     public static (List<MutiDbOperate>, List<MutiDbOperate>) MutiInitConn()
     {
-        List<MutiDbOperate> listDatabase = AppSettings.RadishApp<MutiDbOperate>("Databases")
+        List<MutiDbOperate> listDatabase = AppSettingsTool.RadishApp<MutiDbOperate>("Databases")
             .Where(i => i.Enabled).ToList();
-        var mainDbId = AppSettings.RadishApp(new string[] { "MainDb" }).ToString();
+        var mainDbId = AppSettingsTool.RadishApp(new string[] { "MainDb" }).ToString();
         var mainDbModel = listDatabase.Single(d => d.ConnId == mainDbId);
         listDatabase.Remove(mainDbModel);
         listDatabase.Insert(0, mainDbModel);

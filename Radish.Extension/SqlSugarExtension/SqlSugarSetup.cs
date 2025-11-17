@@ -16,9 +16,9 @@ public static class SqlSugarSetup
         if (services == null) throw new ArgumentNullException(nameof(services));
 
         // 默认添加主数据库连接
-        if (!string.IsNullOrEmpty(AppSettings.RadishApp("MainDb")))
+        if (!string.IsNullOrEmpty(AppSettingsTool.RadishApp("MainDb")))
         {
-            MainDb.CurrentDbConnId = AppSettings.RadishApp("MainDb");
+            MainDb.CurrentDbConnId = AppSettingsTool.RadishApp("MainDb");
         }
 
         BaseDbConfig.MutiConnectionString.allDbs.ForEach(m =>

@@ -1,7 +1,7 @@
 ﻿namespace Radish.Common;
 
 /// <summary>AopLog 公共类</summary>
-public class AopLogInfo
+public class AopLogInfoTool
 {
     /// <summary>请求时间</summary>
     public string RequestTime { get; set; } = string.Empty;

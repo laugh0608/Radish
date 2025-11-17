@@ -25,7 +25,7 @@ public class ServiceAop : IInterceptor
         }
 
         DateTime startTime = DateTime.Now;
-        AopLogInfo apiLogAopInfo = new AopLogInfo
+        AopLogInfoTool apiLogAopInfo = new AopLogInfoTool
         {
             RequestTime = startTime.ToString("yyyy-MM-dd hh:mm:ss fff"),
             OpUserName = "",
@@ -47,7 +47,7 @@ public class ServiceAop : IInterceptor
                 {
                     invocation.ReturnValue = InternalAsyncHelper.AwaitTaskWithPostActionAndFinally(
                         (Task)invocation.ReturnValue,
-                        async () => await SuccessAction(invocation, apiLogAopInfo, startTime), /*成功时执行*/
+                        async () => await SuccessAction(invocation, apiLogAopInfo, startTime), /* 成功时执行 */
                         ex => { LogEx(ex, apiLogAopInfo); });
                 }
                 // Task<TResult>
@@ -56,7 +56,7 @@ public class ServiceAop : IInterceptor
                     invocation.ReturnValue = InternalAsyncHelper.CallAwaitTaskWithPostActionAndFinallyAndGetResult(
                         invocation.Method.ReturnType.GenericTypeArguments[0],
                         invocation.ReturnValue,
-                        async (o) => await SuccessAction(invocation, apiLogAopInfo, startTime, o), /*成功时执行*/
+                        async (o) => await SuccessAction(invocation, apiLogAopInfo, startTime, o), /* 成功时执行 */
                         ex => { LogEx(ex, apiLogAopInfo); });
                 }
             }
@@ -88,7 +88,7 @@ public class ServiceAop : IInterceptor
         }
     }
 
-    private async Task SuccessAction(IInvocation invocation, AopLogInfo apiLogAopInfo, DateTime startTime,
+    private async Task SuccessAction(IInvocation invocation, AopLogInfoTool apiLogAopInfo, DateTime startTime,
         object o = null)
     {
         DateTime endTime = DateTime.Now;
@@ -103,7 +103,7 @@ public class ServiceAop : IInterceptor
         });
     }
 
-    private void LogEx(Exception ex, AopLogInfo dataIntercept)
+    private void LogEx(Exception ex, AopLogInfoTool dataIntercept)
     {
         if (ex != null)
         {

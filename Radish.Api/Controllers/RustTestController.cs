@@ -6,7 +6,7 @@ namespace Radish.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
-public class RustTest : ControllerBase
+public class RustTestController : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> TestSum1(long iterations = 50_000_000)
