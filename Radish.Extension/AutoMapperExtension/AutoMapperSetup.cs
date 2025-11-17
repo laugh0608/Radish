@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Radish.Common;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
-namespace Radish.Extension;
+namespace Radish.Extension.AutoMapperExtension;
 
 /// <summary>Automapper 启动服务</summary>
 public static class AutoMapperSetup

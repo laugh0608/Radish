@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Radish.Common;
 using Radish.IService;
-using Radish.IService.User;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Repository.UnitOfWorks;
@@ -16,12 +15,14 @@ public class TransactionController : ControllerBase
     private readonly IBaseService<Role, RoleVo> _roleService;
     private readonly IUserService _userService;
     private readonly IUnitOfWorkManage _unitOfWorkManage;
+    private readonly IDepartmentService  _departmentService;
 
-    public TransactionController(IBaseService<Role, RoleVo> roleService, IUserService userService, IUnitOfWorkManage unitOfWorkManage)
+    public TransactionController(IBaseService<Role, RoleVo> roleService, IUserService userService, IUnitOfWorkManage unitOfWorkManage, IDepartmentService departmentService)
     {
         _roleService = roleService;
         _userService = userService;
         _unitOfWorkManage = unitOfWorkManage;
+        _departmentService = departmentService;
     }
 
     [HttpGet]
@@ -74,9 +75,11 @@ public class TransactionController : ControllerBase
         };
     }
 
-    //[HttpGet]
-    //public async Task<object> TestTranPropagation()
-    //{
-    //    return await _userService.TestTranPropagation();
-    //}
+    /// <summary>测试使用同事务</summary>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<object> TestTranPropagation()
+    {
+        return await _userService.TestTranPropagationUser();
+    }
 }

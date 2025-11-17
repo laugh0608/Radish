@@ -1,6 +1,7 @@
 using AutoMapper;
 using Radish.IRepository;
 using Radish.IService;
+using SqlSugar;
 
 namespace Radish.Service;
 
@@ -9,10 +10,12 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     private readonly IBaseRepository<TEntity> _baseRepository;
     private readonly IMapper _mapper;
 
+    public ISqlSugarClient Db => _baseRepository.DbBase;
+
     /// <summary>构造函数依赖注入</summary>
     /// <param name="baseRepository">IBaseRepository</param>
     /// <param name="mapper">IMapper</param>
-    public BaseService(IBaseRepository<TEntity> baseRepository, IMapper mapper)
+    public BaseService(IMapper mapper, IBaseRepository<TEntity> baseRepository)
     {
         _baseRepository = baseRepository;
         _mapper = mapper;

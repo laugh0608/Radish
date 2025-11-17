@@ -5,7 +5,7 @@ using Radish.Common;
 
 namespace Radish.Extension;
 
-/// <summary>拦截器 AOP 服务切面</summary>
+/// <summary>服务 AOP 切面</summary>
 /// <remarks>继承 IInterceptor 接口</remarks>
 public class ServiceAop : IInterceptor
 {
@@ -97,10 +97,7 @@ public class ServiceAop : IInterceptor
         apiLogAopInfo.ResponseIntervalTime = responseTime + "ms";
         apiLogAopInfo.ResponseJsonData = JsonConvert.SerializeObject(o);
 
-        await Task.Run(() =>
-        {
-            Console.WriteLine("执行成功-->" + JsonConvert.SerializeObject(apiLogAopInfo));
-        });
+        await Task.Run(() => { Console.WriteLine("执行成功-->" + JsonConvert.SerializeObject(apiLogAopInfo)); });
     }
 
     private void LogEx(Exception ex, AopLogInfoTool dataIntercept)

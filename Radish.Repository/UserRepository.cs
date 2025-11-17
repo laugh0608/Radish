@@ -1,6 +1,6 @@
-﻿using Radish.IRepository.User;
+﻿using Radish.IRepository;
 
-namespace Radish.Repository.User;
+namespace Radish.Repository;
 
 /// <summary>用户仓储</summary>
 public class UserRepository : IUserRepository
