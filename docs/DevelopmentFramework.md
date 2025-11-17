@@ -77,6 +77,7 @@ PostgreSQL
   - 仅保留轻量 Controller/Endpoint，所有核心逻辑委派给 Service 层。
   - API 文档：开发环境把 Scalar UI 映射到 `/api/docs`，并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Api/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
   - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为“联调开关”。
+  - 跨域：`appsettings.json` 中的 `Cors:AllowedOrigins` 维护允许访问 API 的前端地址，预设了 `localhost:5173` 以及 Rolldown 默认端口 `58794` 的多个别名（`vite.dev.localhost`、`host.*` 等）。更换端口或外网域名时记得同步更新该列表。
 - 配置与服务访问：Program.cs 依次调用 `hostingContext.Configuration.ConfigureApplication()` → `builder.ConfigureApplication()` → `app.ConfigureApplication()` → `app.UseApplicationSetup()`，把 Configuration/HostEnvironment/RootServices 注入到 `Radish.Common.Core.App`；在非 DI 管道下可使用 `App.GetService*`、`App.GetOptions*` 手动解析服务或配置。常规字符串读取仍统一使用 `AppSettings.RadishApp("Section", ...)`，批量强类型配置通过 `ConfigurableOptions + AddAllOptionRegister` 自动绑定 `IConfigurableOptions`。
 - `Radish.Service`
   - 应用服务（`*AppService`）封装用例流程、权限校验、事务控制、DTO 转换。
