@@ -50,6 +50,12 @@
 | 日志 / 配置 | Serilog + `Microsoft.Extensions.Configuration` | 支持 JSON + 环境变量 + 用户密钥；生产日志输出到 Console + Seq/Elastic 预留 |
 | 容器 | Dockerfile（Radish.Api）+ Docker Compose | Compose 负责 PostgreSQL + API + 前端静态站点 |
 
+### 本地启动脚本
+
+- `local-start.ps1`（Windows/PowerShell）与 `local-start.sh`（Linux/macOS）提供交互式菜单，快速完成常见开发任务。
+- 当前包含四个选项：① 仅启动前端 `radish.client`；② 仅启动后端 `Radish.Api`（默认同时监听 `https://localhost:7110` 与 `http://localhost:5165`）；③ 前后端一起启动（前端在独立终端/后台运行）；④ 执行 `Radish.Api.Tests` 单元测试。
+- 如需自定义配置，可在运行脚本前设置 `Configuration`（PowerShell 参数）或 `CONFIGURATION` 环境变量（Shell 脚本）。
+
 ### 分层视图
 
 ```

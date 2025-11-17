@@ -83,11 +83,13 @@ Radish.IRepository/          # 仓储接口契约
    npm run dev --prefix radish.client
    ```
    通过 `VITE_API_BASE_URL` 指向后端地址；Vite Dev Server 默认启在 `https://localhost:58794`（或使用环境变量 `DEV_SERVER_PORT` 覆盖）。
+   > 想快速搭建本地环境，可运行 `pwsh ./local-start.ps1`（Windows/PowerShell）或 `./local-start.sh`（Linux/macOS）。脚本会提供四个选项：启动前端、启动后端（默认同时监听 HTTP/HTTPS）、前后端一起启动，以及执行 `Radish.Api.Tests` 单元测试。
 
 ## 常用命令
 - `dotnet watch --project Radish.Api`：后端热重载。
 - `dotnet test Radish.Api.Tests`：运行后端单元测试。
 - `npm run build --prefix radish.client`：产出前端静态资源。
+- `pwsh ./local-start.ps1` / `./local-start.sh`：交互式脚本，可选择单独/同时启动前后端，或直接运行 `Radish.Api.Tests`。
 - `docker compose -f deploy/docker-compose.yml up --build`：一键拉起 PostgreSQL + API（详见 `docs/DeploymentGuide.md`）。
 
 ## 文档
