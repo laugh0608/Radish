@@ -1,10 +1,20 @@
+using SqlSugar;
+
 namespace Radish.IRepository;
 
 /// <summary>泛型基类仓储接口</summary>
 // 这里的 where TEntity : class 的意思是对泛型进行约束，必须是类 class
 public interface IBaseRepository<TEntity> where TEntity : class
 {
-    /// <summary>测试泛型查询方法示例</summary>
-    /// <returns></returns>
+    /// <summary>供外部使用的公开 ISqlSugarClient 数据库实例</summary>
+    ISqlSugarClient DbBase { get; }
+
+    /// <summary>写入一条实体类数据</summary>
+    /// <param name="entity">泛型实体类</param>
+    /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
+    Task<long> AddAsync(TEntity entity);
+
+    /// <summary>按照泛型实体类查询表中所有数据</summary>
+    /// <returns>List TEntity</returns>
     Task<List<TEntity>> QueryAsync();
 }
