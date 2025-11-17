@@ -6,6 +6,7 @@ using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
+using Radish.Extension.AutoMapperExtension;
 using Radish.Extension.RedisExtension;
 using Radish.Extension.SqlSugarExtension;
 using Radish.IRepository;

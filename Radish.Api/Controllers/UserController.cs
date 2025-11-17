@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Radish.IService;
-using Radish.IService.User;
 
 namespace Radish.Api.Controllers;
 

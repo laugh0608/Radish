@@ -1,4 +1,4 @@
-﻿namespace Radish.IRepository.User;
+﻿namespace Radish.IRepository;
 
 /// <summary>用户仓储接口</summary>
 public interface IUserRepository
