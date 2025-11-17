@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
 using Radish.Repository.UnitOfWorks;
 
-namespace Radish.Extension;
+namespace Radish.Extension.AopExtension;
 
 /// <summary>事务 AOP 切面</summary>
 /// <remarks>继承 IInterceptor 接口</remarks>

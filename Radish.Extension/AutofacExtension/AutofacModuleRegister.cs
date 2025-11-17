@@ -1,6 +1,7 @@
 using System.Reflection;
 using Autofac;
 using Autofac.Extras.DynamicProxy;
+using Radish.Extension.AopExtension;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Repository;
