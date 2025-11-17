@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Radish.Common.HelpeTool;
+using Radish.Common.HelpTool;
 using StackExchange.Redis;
 
 namespace Radish.Extension.RedisExtension;

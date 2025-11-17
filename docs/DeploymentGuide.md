@@ -1,7 +1,7 @@
 # 部署与容器指南
 
 ## 目标
-本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Server/Dockerfile` 构建镜像、配置环境变量，并提供一个 PostgreSQL + API 的 Compose 示例，确保与 `global.json` 指定的 .NET 10 SDK 及现有目录结构保持一致。
+本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile` 构建镜像、配置环境变量，并提供一个 PostgreSQL + API 的 Compose 示例，确保与 `global.json` 指定的 .NET 10 SDK 及现有目录结构保持一致。
 
 ## 先决条件
 - Docker Engine ≥ 24，能够拉取 `mcr.microsoft.com/dotnet/*` 官方镜像。
@@ -10,16 +10,16 @@
 - PostgreSQL 15+：本地或托管实例，需提供 `ConnectionStrings__Default`。
 
 ## 构建服务镜像
-`Radish.Server/Dockerfile` 采用多阶段构建：`with-node` 准备 Node 环境，`build/publish` 负责编译，`final` 提供轻量运行时。常用构建命令如下：
+`Radish.Api/Dockerfile` 采用多阶段构建：`with-node` 准备 Node 环境，`build/publish` 负责编译，`final` 提供轻量运行时。常用构建命令如下：
 
 ```bash
 docker build \
-  -f Radish.Server/Dockerfile \
+  -f Radish.Api/Dockerfile \
   --build-arg BUILD_CONFIGURATION=Release \
   -t radish/server:local .
 ```
 
-如需在构建阶段打包前端，可在 `Radish.Server` 项目文件中引用打包产物，或在 Dockerfile 的 `build` 阶段追加 `npm install && npm run build --prefix radish.client`。
+如需在构建阶段打包前端，可在 `Radish.Api` 项目文件中引用打包产物，或在 Dockerfile 的 `build` 阶段追加 `npm install && npm run build --prefix radish.client`。
 
 ## 运行容器
 镜像默认监听 8080/8081（HTTP/HTTPS）。启动容器示例：
@@ -43,7 +43,7 @@ services:
   api:
     build:
       context: ..
-      dockerfile: Radish.Server/Dockerfile
+      dockerfile: Radish.Api/Dockerfile
       args:
         BUILD_CONFIGURATION: Release
     environment:

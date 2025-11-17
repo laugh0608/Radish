@@ -1,6 +1,6 @@
 # 开发路线图（按周计划）
 
-> 本计划基于当前仓库分层结构（Radish.Server、Radish.Core、Radish.Service、Radish.Repository、Radish.Model、radish.client 等）制定，聚焦「.NET 10 + SQLSugar + PostgreSQL + React 19 (Vite + Node 24)」技术栈。与 [docs/DevelopmentFramework.md](DevelopmentFramework.md) 描述的总体架构保持一致，但更强调按周可交付的节奏与验收标准。
+> 本计划基于当前仓库分层结构（Radish.Api、Radish.Core、Radish.Service、Radish.Repository、Radish.Model、radish.client 等）制定，聚焦「.NET 10 + SQLSugar + PostgreSQL + React 19 (Vite + Node 24)」技术栈。与 [docs/DevelopmentFramework.md](DevelopmentFramework.md) 描述的总体架构保持一致，但更强调按周可交付的节奏与验收标准。
 
 相关文档
 - 开发日志: [DevelopmentLog.md](DevelopmentLog.md)
@@ -16,7 +16,7 @@
 
 | 周次 | 主题 | 目标 | 验收 |
 | --- | --- | --- | --- |
-| M1 | 基线设施 | API 宿主、SQLSugar 与 PostgreSQL 通路、健康检查、React 脚手架 | `dotnet run Radish.Server` + React dev server 均可访问；数据库初始化脚本可重复执行 |
+| M1 | 基线设施 | API 宿主、SQLSugar 与 PostgreSQL 通路、健康检查、React 脚手架 | `dotnet run Radish.Api` + React dev server 均可访问；数据库初始化脚本可重复执行 |
 | M2 | 领域建模 | 分类/帖子/评论聚合、SQLSugar 仓储、迁移/种子脚本 | CRUD + 分页 API 可用，单测覆盖核心聚合 |
 | M3 | 应用服务 | DTO、应用服务、权限校验、统一异常/日志 | Swagger/Scalar 可调试所有内容 API；错误为 ProblemDetails |
 | M4 | 认证与安全 | JWT + 刷新令牌、角色权限、审计日志、速率限制、HTTPS 强制与 RSA 敏感字段加密 | React 可完成登录/登出/自动续期；敏感请求经 RSA 加密；受保护 API 能正确拒绝未授权请求 |
@@ -44,7 +44,7 @@
 - **Domain/Core**：建模 Category/Post/Comment/Tag 等聚合，不变式与领域事件。
 - **Repository**：SQLSugar 仓储实现，封装分页、过滤、事务、软删除。
 - **Service**：实现最小 `CategoryAppService` 与 `PostAppService`（列表、详情、创建）。
-- **测试**：`Radish.Server.Tests` 补充聚合与仓储单测。
+- **测试**：`Radish.Api.Tests` 补充聚合与仓储单测。
 - **验收**：Swagger 可调试 CRUD；分页/排序参数生效；关键测试通过。
 
 ### 第 3 周｜应用层与 API 硬化
@@ -85,12 +85,14 @@
 - 自动化：补齐 xUnit/Vitest + Playwright（可选）测试，纳入 CI。
 - 性能：PostgreSQL 索引审计、缓存策略（IMemoryCache/redis 预留）、SQLSugar Profiling。
 - Observability：Serilog → Seq/Console JSON；OpenTelemetry 采样；健康检查拓展。
+- 原生扩展（Rust）：将 `Radish.Core/test_lib` 演示项目抽离为解决方案根目录下的 `native/rust/*`，编写 `cargo build --release` + `dotnet` 构建后拷贝脚本，使共享库自动复制到 `Radish.Api` 输出目录，后续所有 Rust 扩展统一按该目录结构维护。
 - 验收：
   - `dotnet test`, `npm run test`, `npm run lint`, `npm run build` 均通过。
   - P95 指标满足目标；日志可追踪请求链路。
+  - `/api/RustTest/*` 在 CI/本地构建后可直接加载 `native/rust` 输出的 `test_lib`（DLL/SO/Dylib），无须手动复制。
 
 ### 第 8 周｜部署、运维与交付
-- Docker：完善 `Radish.Server/Dockerfile`（Node/SQLSugar 依赖）与 compose（PostgreSQL + API + 前端静态站点）。
+- Docker：完善 `Radish.Api/Dockerfile`（Node/SQLSugar 依赖）与 compose（PostgreSQL + API + 前端静态站点）。
 - 配置：`appsettings.Production.json` 模板、环境变量清单、Secret 注入示例。
 - 文档：补充运维手册、常见问题、回滚策略。
 - 演示：录制或截图 Compose 一键启动流程。
@@ -117,7 +119,7 @@
 - Checklist:
   - [ ] 创建 `ProblemDetailsExtensions`，将业务异常映射为标准响应。
   - [ ] Serilog LoggingBehavior，写入 traceId、UserId、耗时。
-  - [ ] 更新 `Radish.Server` 的中间件顺序，确保异常优先捕获。
+  - [ ] 更新 `Radish.Api` 的中间件顺序，确保异常优先捕获。
 - Acceptance:
   - `/api/posts/{id}` 人为触发异常时返回 4xx/5xx ProblemDetails。
   - 日志包含 `TraceId`、`UserId`、`ElapsedMs`。
@@ -131,3 +133,4 @@
 - 新增数据库字段或模块时，同步更新迁移脚本与文档（架构/部署/贡献者指南）。
 - 前端与后端共享的 DTO 请优先在 `Radish.Model` 中维护，React 侧生成对应的 TypeScript 类型，避免漂移。
 - 若出现新的关键技术选型（例如引入 redis、消息队列等），请同步更新 DevelopmentFramework 与本文件，保持信息一致。
+- React Compiler（实验）：React 19 新编译器暂不在主干启用；待官方正式发布并通过 Vite/Babel 稳定支持后，再在独立分支验证收益（减少手写 memo、优化渲染），评估通过后才会合入主线。

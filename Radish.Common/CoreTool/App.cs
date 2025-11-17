@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Radish.Common.HelpeTool;
+using Radish.Common.HelpTool;
 using Radish.Common.OptionTool.Core;
 
 namespace Radish.Common.CoreTool;

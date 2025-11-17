@@ -8,7 +8,7 @@
 - docs/：项目文档，实际文件夹，映射解决方案中的 docs 目录，包含开发规范、设计文档等
 - others/：其他资源文件，虚拟文件夹，只是解决方案中的文件夹，其中所有文件均为项目根目录下的，包括 Dockerfile、GitHub 配置、start.ps1 脚本 等
 - radish.client：主要 - 前端 React 应用代码，TypeScript 编写
-- Radish.Server：主要 - 后端服务代码，ASP.NET Core 编写
+- Radish.Api：主要 - 后端服务代码，ASP.NET Core 编写
 - Radish.Common：后端服务使用的普通工具类，例如基础日志、基础配置等
 - Radish.Core：后端核心业务逻辑与算法类，保留模块，为后续流程模拟与算法实现做准备
 - Radish.Extension：后端扩展功能模块类，例如 Swagger/Scalar、HealthCheck 等
@@ -18,18 +18,47 @@
 - Radish.Repository：后端数据访问实现类，具体实现数据访问接口
 - Radish.Service：后端服务实现类，具体实现业务逻辑接口
 - Radish.Shared：前后端共享的模型和工具类，例如 DTO、枚举等
-- Radish.Server.Tests：xUnit 测试工程，目前包含 UserController 示例测试，约束接口返回示例数据
+- Radish.Api.Tests：xUnit 测试工程，目前包含 UserController 示例测试，约束接口返回示例数据
+- native/rust（规划目录）：承载 Rust 扩展库或性能模块源码与 `cargo` 构建脚本，位于解决方案根目录；当前 `Radish.Core/test_lib` 只是互操作示例，正式原生模块应迁移到该目录并作为 Solution Folder 挂载。
 
 ## 分层依赖约定
 
 - 前端项目（radish.client）仅依赖 npm 包
 - 后端项目按层次结构依赖：
-  - Radish.Server 引用 radish.client（用于 SPA 代理）与 Radish.Service，并通过 Program.cs 注入 `IUserService/IUserRepository` 等接口实现；同时依赖 Radish.Common 以注册 `AppSettings` 扩展，避免在其他层重复创建配置源。
+  - Radish.Api 引用 radish.client（用于 SPA 代理）与 Radish.Service，并通过 Program.cs 注入 `IUserService/IUserRepository` 等接口实现；同时依赖 Radish.Common 以注册 `AppSettings` 扩展，避免在其他层重复创建配置源。
   - Radish.Service 依赖 Radish.IService（接口契约）与 Radish.Repository（数据访问实现），负责聚合业务逻辑；Service 层对外仅暴露 DTO/Vo，必须在返回前将仓储层实体映射为视图模型（推荐 AutoMapper）。
   - Radish.Repository 依赖 Radish.IRepository 与 Radish.Model 中的实体类型，只能向 Service 层返回实体或实体集合，禁止直接引用任何 Vo/DTO；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model，以便共享实体与视图模型定义。
-  - Radish.Extension 仅由宿主（Radish.Server）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
+- Radish.Extension 仅由宿主（Radish.Api）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
   - Radish.Core 暂时保留，无直接依赖关系
 - `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用“Controller 调用 Service，再由 Service 访问 Repository”的模式，并补齐对应接口定义
+
+## 数据库与 SqlSugar 配置
+
+- `Program.cs` 需要在 `builder.Build()` 前调用 `builder.Services.AddSqlSugarSetup()`。该扩展定义于 `Radish.Extension.SqlSugarExtension`，内部使用 `SqlSugarScope` 单例注入并绑定所有连接配置。
+- `appsettings.json` 约定结构如下：
+
+```json
+"MainDb": "Main",
+"Databases": [
+  { "ConnId": "Main", "DbType": 2, "Enabled": true, "ConnectionString": "Radish.db" },
+  { "ConnId": "Log", "DbType": 2, "Enabled": true, "ConnectionString": "RadishLog.db", "HitRate": 50 }
+]
+```
+
+  - `MainDb` 指定默认主库的 `ConnId`；当配置多库/主从时，`BaseDbConfig.MutiConnectionString` 会把该连接放在集合首位。
+  - `Databases` 中至少包含 `ConnId=Main` 与 `ConnId=Log` 两条记录，后者名称固定（`SqlSugarConst.LogConfigId`），缺失时启动会抛出异常；其余库可自定义 `DbType` 与从库 `Slaves` 列表。
+- 使用 SQLite 时 `ConnectionString` 只需传数据库文件名，运行期会自动拼接 `Environment.CurrentDirectory`；对于 MySQL/SQLServer 等外部数据库，可通过 `dbCountPsw1_*.txt` 本地文件或环境变量隐藏真实连接串，`BaseDbConfig.SpecialDbString` 会优先读取文件值。
+- SQL 日志统一通过 `SqlSugarAop.OnLogExecuting` 写入 Serilog，`LogContextHelper` 会在上下文中打上 `LogSource=AopSql` 标签；SqlSugar 的缓存实现委托给 `Radish.Common.CacheTool.SqlSugarCache`，保持与 Redis/内存缓存一致的策略。
+
+## 跨语言扩展（Rust 原生库）
+
+- 目的：为 CPU 密集或高并发算法提供 Rust 实现，并通过 `[DllImport("test_lib")]` 在 `Radish.Api.Controllers.RustTest` 中验证性能差异。本阶段的 `Radish.Core/test_lib` 仅为演示，后续需将实际扩展迁入解决方案根目录的 `native/rust/{library}`，确保 Core 层保持纯 C# 领域模型。
+- 构建流程：
+  1. 安装 Rust 工具链（rustup + nightly/stable 均可），在仓库根目录执行 `cd Radish.Core/test_lib && cargo build --release`。
+  2. 构建完成后会在 `target/release/` 生成 `test_lib.dll`（Windows）、`libtest_lib.so`（Linux）或 `libtest_lib.dylib`（macOS）。MSBuild/Docker 构建需在 `AfterBuild`/脚本阶段把对应文件拷贝到 `Radish.Api/bin/<Configuration>/net10.0/` 或发布目录，以便运行期自动加载。
+  3. `RustTest` 控制器提供 `/api/RustTest/TestSum1~4` 四个端点，演示累加、类斐波那契、埃拉托斯特尼筛与并行质数计数；发布前请以 `?iterations=1_000_000` 等参数在本地验证返回结果与耗时。
+- 目录规划：真实业务扩展应在 `native/rust/<库名>` 下维护 Cargo 工程，并附 README 说明导出函数签名/调用约定。`Radish.Core/test_lib` 仅保留最小示例，迁移完成后可以删除或仅做文档参考。
+- 提交规范：Rust `target/` 目录与生成的 `.dll/.so/.dylib` 依旧忽略，必要时在 `.gitignore` 中新增排除项；若需要在 CI 中编译 Rust，请在构建脚本中加入 `cargo build --release` 与共享库复制步骤，保持与 DevelopmentPlan 中的原生扩展规划一致。
 
 ## 实体与视图模型规范
 
@@ -76,19 +105,19 @@
 
 ## 示例实现与测试约定
 
-- `Radish.Server/Controllers/UserController`、`Radish.Service/UserService`、`Radish.Repository/UserRepository` 与对应的接口项目组成“用户列表”示例。该示例演示分层调用方式和 DI 注册写法，亦为 Swagger/.http 文件中的演示请求提供数据。
+- `Radish.Api/Controllers/UserController`、`Radish.Service/UserService`、`Radish.Repository/UserRepository` 与对应的接口项目组成“用户列表”示例。该示例演示分层调用方式和 DI 注册写法，亦为 Swagger/.http 文件中的演示请求提供数据。
 - 示例仓储目前返回内存中的 Alice/Bob 两条静态数据，供开发联调、单元测试与文档说明复用；如需扩展，请保持“接口契约 + 数据映射 + 控制器”结构。
-- `Radish.Server.Tests/Controllers/UserControllerTest` 使用 xUnit 校验示例接口返回 `OkObjectResult`，且至少包含两条用户数据；任何对示例链路的改动都必须同步更新该测试。
-- `Radish.Server/Radish.Server.http` 已加入“用户列表”调用示例，可在调试时直接复用；如新增演示接口，应当在 .http 文件中同步记录。
+- `Radish.Api.Tests/Controllers/UserControllerTest` 使用 xUnit 校验示例接口返回 `OkObjectResult`，且至少包含两条用户数据；任何对示例链路的改动都必须同步更新该测试。
+- `Radish.Api/Radish.Api.http` 已加入“用户列表”调用示例，可在调试时直接复用；如新增演示接口，应当在 .http 文件中同步记录。
 
 ## SignalR 实时交互规范
 
-- Hub 位置：所有实时交互入口放在 `Radish.Server/Hubs`（命名为 `*Hub.cs`），继承 `Hub<TClient>` 以启用强类型调用；公共消息 DTO 定义在 `Radish.Model` 中，避免前后端字段不一致。
+- Hub 位置：所有实时交互入口放在 `Radish.Api/Hubs`（命名为 `*Hub.cs`），继承 `Hub<TClient>` 以启用强类型调用；公共消息 DTO 定义在 `Radish.Model` 中，避免前后端字段不一致。
 - DI 与调用：业务服务通过注入 `IHubContext<T>` 或 `IHubContext<T, TClient>` 发送消息，禁止在 Controller 中直接 new Hub；需要跨层推送时在 Service 层聚合，保持仓储层不涉及实时推送。
 - 客户端：`radish.client` 使用 `@microsoft/signalr`，连接封装在 `shared/signalr/useSignalrHub.ts`（预留）中，负责断线重连、心跳与 Token 附带；前端只暴露订阅型 API。
 - 安全：Hub 仅接受已认证用户，连接时附带 JWT（Query 或 Header），后台在 `OnConnectedAsync` 验证租户/角色；Hub 方法命名遵循 PascalCase，禁止接受动态字符串并在方法内再次鉴权。
 - 可扩展性：生产部署多实例时启用 Redis Backplane，并限制客户端分组订阅；压测期间通过 `MaximumReceiveMessageSize` 控制 payload，必要时启用 MessagePack 序列化。
-- 调试：添加 `Radish.Server/Hubs/hubs.http` 或在现有 `.http` 文件中记录 `/negotiate` 请求；本地开发启用 `builder.Services.AddSignalR().AddJsonProtocol(...)` 并结合浏览器 Network 面板排查。
+- 调试：添加 `Radish.Api/Hubs/hubs.http` 或在现有 `.http` 文件中记录 `/negotiate` 请求；本地开发启用 `builder.Services.AddSignalR().AddJsonProtocol(...)` 并结合浏览器 Network 面板排查。
 
 ## 前后端通信安全要求
 
@@ -113,13 +142,14 @@
 2. 组件统一使用函数式写法，结合 `useState`、`useMemo`、`useEffect` 等 Hook 管理状态与生命周期，避免继续编写 Class 组件。
 3. 使用 `const` 定义组件与内部函数，遵循 React 不可变范式，常规情况下避免 `function` 声明以减少作用域、提升与 `this` 绑定问题。
 4. 禁用 `var`，默认 `const`，仅在确需重新赋值时选用 `let`；在 React 顶层逻辑几乎无需 `let`，如需持久化可变值，优先用 `const + useState` 组合处理。
+5. React Compiler 仍属实验功能，主干暂不启用；若官方 GA 后可在独立分支尝试 `babel-plugin-react-compiler`，确认与 `radish.client` 的桌面化 UI、第三方组件兼容且能明显减少手写 memo，再提交 PR 合入主线。
 
-## Radish.Server 接口规范
+## Radish.Api 接口规范
 
 1. API 方法全部位于 Server 层 Controller 命名空间，统一使用 `[Route("api/[controller]/[action]")]` 作为路由前缀。
 2. 需鉴权的 API 必须在 Controller 或 Action 上添加 `[Authorize(Permissions.Name)]`；无需鉴权的显式标注 `[AllowAnonymous]`，避免默认放行。
 3. Controller Action 默认遵循 `[Produces("application/json")]` 与 RESTful 设计原则，除非业务场景要求其他内容类型或风格。
-4. 实体类存放在 Model 层 `Models` 命名空间并继承 `RootEntityTkey<Tkey>`（含主键 Id）；若有自定义外键实体，同样继承该基类。视图模型位于 `ViewModels` 命名空间，按对外暴露字段设计，无继承硬性要求。
+4. 实体类存放在 Model 层 `Models` 命名空间并继承 `RootEntityTKey<TKey>`（含主键 Id）；若有自定义外键实体，同样继承该基类。视图模型位于 `ViewModels` 命名空间，按对外暴露字段设计，无继承硬性要求。
 5. 实体与视图模型的映射集中在 Extension 层 `AutoMapper` 命名空间，每组实体定义独立 `CustomProfile`，避免在 Controller 或仓储中手动映射。
 6. 新增对外接口遵循以下流程：
    （1）在 Model 层定义实体与视图模型；
