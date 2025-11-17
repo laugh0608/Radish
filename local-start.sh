@@ -8,13 +8,13 @@ CLIENT_DIR="$ROOT_DIR/radish.client"
 TEST_PROJECT="$ROOT_DIR/Radish.Api.Tests/Radish.Api.Tests.csproj"
 
 if [[ ! -f "$API_PROJECT" ]]; then
-  echo "未找到 $API_PROJECT，请在仓库根目录运行该脚本。" >&2
+  echo "Cannot find $API_PROJECT. Run this script from the repository root." >&2
   exit 1
 fi
 
 ensure_command() {
   if ! command -v "$1" >/dev/null 2>&1; then
-    echo "未找到命令 '$1'，请先安装后再运行脚本。" >&2
+    echo "Command '$1' not found. Install it before running this script." >&2
     exit 1
   fi
 }
@@ -60,12 +60,12 @@ cleanup() {
   fi
 }
 
-echo "请选择要启动的服务："
-echo "1. 启动前端 (radish.client)"
-echo "2. 启动后端 (Radish.Api)"
-echo "3. 前后端一起启动"
-echo "4. 执行单元测试 (Radish.Api.Tests)"
-read -rp "输入选项 (1/2/3/4): " choice
+echo "Select an action:"
+echo "1. Start frontend (radish.client)"
+echo "2. Start backend (Radish.Api)"
+echo "3. Start both frontend and backend"
+echo "4. Run unit tests (Radish.Api.Tests)"
+read -rp "Enter choice (1/2/3/4): " choice
 
 case "$choice" in
   1)
@@ -78,14 +78,14 @@ case "$choice" in
     start_frontend &
     FRONTEND_PID=$!
     trap cleanup EXIT
-    echo "前端已在后台启动 (PID: $FRONTEND_PID)，按 Ctrl+C 可在终端中停止后端。"
+    echo "Frontend started in background (PID: $FRONTEND_PID). Press Ctrl+C here to stop backend."
     start_backend
     ;;
   4)
     run_tests
     ;;
   *)
-    echo "未知选项: $choice" >&2
+    echo "Unknown option: $choice" >&2
     exit 1
     ;;
 esac
