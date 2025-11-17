@@ -37,6 +37,28 @@ builder.ConfigureApplication();
 // 激活 Autofac 影响的 IControllerActivator 控制器激活器，这一行的意义就是把 Controller 类也就是控制器注册为 Service 服务
 builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
 // 注册 Controller 控制器
+const string CorsPolicyName = "FrontendCors";
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(CorsPolicyName, policyBuilder =>
+    {
+        if (allowedOrigins.Length > 0)
+        {
+            policyBuilder.WithOrigins(allowedOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+        else
+        {
+            policyBuilder.AllowAnyOrigin()
+                .AllowAnyHeader()
+                .AllowAnyMethod();
+        }
+    });
+});
+
 builder.Services.AddControllers();
 // 注册 RazorPages 解析
 builder.Services.AddRazorPages();
@@ -77,6 +99,7 @@ app.UseStaticFiles();
 // if (app.Environment.IsDevelopment())
 // {
 // }
+app.UseCors(CorsPolicyName);
 app.MapOpenApi();
 // 将 Scalar UI 固定映射到 /api/docs，方便与前端门户共存
 app.MapScalarApiReference("/api/docs", options =>

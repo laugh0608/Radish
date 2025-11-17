@@ -84,6 +84,7 @@ Radish.IRepository/          # 仓储接口契约
    ```
    通过 `VITE_API_BASE_URL` 指向后端地址；Vite Dev Server 默认启在 `https://localhost:58794`（或使用环境变量 `DEV_SERVER_PORT` 覆盖）。
    > 想快速搭建本地环境，可运行 `pwsh ./local-start.ps1`（Windows/PowerShell）或 `./local-start.sh`（Linux/macOS）。脚本会提供四个选项：启动前端、启动后端（默认同时监听 HTTP/HTTPS）、前后端一起启动，以及执行 `Radish.Api.Tests` 单元测试。
+   > 后端默认允许来自 `http(s)://localhost:5173` 与 Vite Rolldown 默认端口 `https://localhost:58794`（及其 `vite.dev.*`/`host.*` 域名）的跨域请求，可在 `Radish.Api/appsettings.json` 的 `Cors:AllowedOrigins` 段中追加或删减地址。
 
 ## 常用命令
 - `dotnet watch --project Radish.Api`：后端热重载。
