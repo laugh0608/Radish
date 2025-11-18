@@ -3,7 +3,7 @@ using Radish.Extension.AutoMapperExtension.CustomProfiles;
 
 namespace Radish.Extension.AutoMapperExtension;
 
-/// <summary>集中注册 AutoMapper 配置。</summary>
+/// <summary>集中注册 AutoMapper 配置</summary>
 public class AutoMapperConfig
 {
     public static void RegisterCustomProfile(IMapperConfigurationExpression cfg)
@@ -14,17 +14,18 @@ public class AutoMapperConfig
     {
         cfg.AddProfile<RoleProfile>();
         cfg.AddProfile<UserProfile>();
+        cfg.AddProfile<AuditSqlLogProfile>();
     }
-    
+
+    #region 已弃用
+
     // private ILoggerFactory _loggerFactory;
     // private ILogger _logger;
-
     // public AutoMapperConfig(ILoggerFactory loggerFactory, ILogger logger)
     // {
     //     _loggerFactory = loggerFactory;
     //     _logger = logger;
     // }
-
     // public MapperConfiguration RegisterMappings()
     // {
     //     var licenseKey = AppSettingsTool.RadishApp(new string[] {"AutoMapper", "LicenseKey"}).ObjToString();
@@ -40,4 +41,6 @@ public class AutoMapperConfig
     //         cfg.AddProfile<UserProfile>();
     //     }, _loggerFactory);
     // }
+
+    #endregion
 }
