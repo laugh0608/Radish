@@ -5,6 +5,7 @@ using Radish.Extension.AopExtension;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Repository;
+using Radish.Repository.UnitOfWorks;
 using Radish.Service;
 
 namespace Radish.Extension.AutofacExtension;
@@ -46,9 +47,9 @@ public class AutofacModuleRegister: Autofac.Module
             .InstancePerDependency();
         
         // 注册事务模型
-        // builder.RegisterType<UnitOfWorkManage>().As<IUnitOfWorkManage>()
-        //     .AsImplementedInterfaces()
-        //     .InstancePerLifetimeScope()
-        //     .PropertiesAutowired();
+        builder.RegisterType<UnitOfWorkManage>().As<IUnitOfWorkManage>()
+            .AsImplementedInterfaces()
+            .InstancePerLifetimeScope()
+            .PropertiesAutowired();
     }
 }
