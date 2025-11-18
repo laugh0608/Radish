@@ -73,6 +73,8 @@ builder.Services.AddOpenApi(options =>
 });
 // 注册 AddAutoMapper 服务
 builder.Services.AddAutoMapperSetup(builder.Configuration);
+// builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
+// AutoMapperConfig.RegisterMappings();
 // 注册 AppSetting 自定义扩展服务
 builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
 // 注册 AppSetting 自定义扩展的扩展 ConfigurableOptions 服务
