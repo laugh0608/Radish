@@ -15,6 +15,7 @@
 - Radish.IRepository：后端数据访问接口类，定义数据访问层接口
 - Radish.IService：后端服务接口类，定义业务逻辑层接口
 - Radish.Model：后端数据模型类，仅存放数据库实体；实体（Entity）只能在 Repository 层内被直接操作，Service 层及以上均需转换为视图模型或 DTO
+- Radish.Model.LogModels：用于承载日志库实体，`BaseLog` 统一 DateTime/Level/Message 等字段，`AuditSqlLog` 通过 `[Tenant(configId: "log")] + [SplitTable(SplitType.Month)]` 按月写入日志；对应的 `AuditSqlLogVo` 仍位于 `ViewModels`，对外访问必须走 Vo/DTO
 - Radish.Repository：后端数据访问实现类，具体实现数据访问接口
 - Radish.Service：后端服务实现类，具体实现业务逻辑接口
 - Radish.Shared：前后端共享的模型和工具类，例如 DTO、枚举等
@@ -70,6 +71,8 @@
 ## AutoMapper 与配置扩展
 
 - `Radish.Extension/AutoMapperSetup` 负责集中注册全部 profile，并通过 `expression.ConstructServicesUsing` 使用 DI 容器解析依赖；新增 profile 时直接在 `AutoMapperConfig.RegisterProfiles` 中挂载。
+- `AutoMapperConfig.RegisterCustomProfile` 可以配置全局规则（例如识别属性前缀/后缀、通用转换器），之后的 `RegisterProfiles` 列表挂载业务 profile（`RoleProfile`、`UserProfile`、`AuditSqlLogProfile` 等）；保持两段式注册可以避免 profile 顺序造成的耦合。
+- `AuditSqlLogProfile` 已示范如何同时识别源和目标的 `Vo` 前缀：`RecognizeDestinationPrefixes("Vo")` + `RecognizePrefixes("Vo")` 使 `AuditSqlLog` 与 `AuditSqlLogVo` 能够双向自动映射，开发其他 Vo 模型时直接复用该写法即可。
 - AutoMapper 授权：
   - 在 `appsettings.{Environment}.json` 中新增 `AutoMapper:LicenseKey`，严禁提交真实 key，可通过用户密钥或 Secret Manager 注入。
   - 运行时通过 `AppSettings.RadishApp(new[] { "AutoMapper", "LicenseKey" }).ObjToString()` 读取，并在 `expression.LicenseKey` 上设置；为空时自动跳过，避免影响本地调试。
