@@ -10,7 +10,7 @@ namespace Radish.Extension.AutoMapperExtension;
 /// <summary>Automapper 启动服务</summary>
 public static class AutoMapperSetup
 {
-    public static IServiceCollection AddAutoMapperSetup(this IServiceCollection services,
+    public static void AddAutoMapperSetup(this IServiceCollection services,
         IConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -19,6 +19,7 @@ public static class AutoMapperSetup
         services.AddSingleton(provider =>
         {
             var expression = new MapperConfigurationExpression();
+            AutoMapperConfig.RegisterCustomProfile(expression);
             AutoMapperConfig.RegisterProfiles(expression);
 
             // LicenseKey 优先从 AppSettings 统一入口读取，支持 Secret Manager / 环境变量等多种来源
@@ -48,7 +49,5 @@ public static class AutoMapperSetup
             var mapperConfiguration = sp.GetRequiredService<MapperConfiguration>();
             return mapperConfiguration.CreateMapper(sp.GetService);
         });
-
-        return services;
     }
 }
