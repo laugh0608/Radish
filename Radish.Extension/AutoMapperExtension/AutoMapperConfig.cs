@@ -1,4 +1,5 @@
 using AutoMapper;
+using Radish.Extension.AutoMapperExtension.CustomProfiles;
 
 namespace Radish.Extension.AutoMapperExtension;
 
@@ -7,7 +8,7 @@ public static class AutoMapperConfig
 {
     public static void RegisterProfiles(IMapperConfigurationExpression cfg)
     {
-        // cfg.AddProfile<CustomProfile>();
+        cfg.AddProfile<CustomProfile>();
         cfg.AddProfile<RoleProfile>();
         cfg.AddProfile<UserProfile>();
     }
