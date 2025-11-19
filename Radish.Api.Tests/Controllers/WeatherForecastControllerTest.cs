@@ -1,5 +1,5 @@
+using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Microsoft.Extensions.Options;
 using Radish.Api.Controllers;
 using Xunit;
 
@@ -9,11 +9,11 @@ namespace Radish.Api.Tests.Controllers;
 public class WeatherForecastControllerTest
 {
     [Fact]
-    public void GetTest()
+    public async Task GetTest()
     {
         var controller = new WeatherForecastController();
-        controller.Test();
+        var res = await controller.Test();
 
-        Assert.NotNull(controller);
+        Assert.NotNull(res);
     }
 }

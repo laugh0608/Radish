@@ -48,6 +48,7 @@
 
   - `MainDb` 指定默认主库的 `ConnId`；当配置多库/主从时，`BaseDbConfig.MutiConnectionString` 会把该连接放在集合首位。
   - `Databases` 中至少包含 `ConnId=Main` 与 `ConnId=Log` 两条记录，后者名称固定（`SqlSugarConst.LogConfigId`），缺失时启动会抛出异常；其余库可自定义 `DbType` 与从库 `Slaves` 列表。
+- `BaseRepository` 通过 `IUnitOfWorkManage` 获取 `SqlSugarScope` 单例，内部根据泛型实体的 `[Tenant(configId)]` 特性切换连接；未标注特性的实体沿用 `MainDb`，标注了 `configId="Log"` 等值（大小写不敏感）的实体会自动访问对应库。需要写入日志库或其他独立库的模型务必显式添加 `TenantAttribute`，以免错写入主库。
 - 使用 SQLite 时 `ConnectionString` 只需传数据库文件名，运行期会自动拼接 `Environment.CurrentDirectory`；对于 MySQL/SQLServer 等外部数据库，可通过 `dbCountPsw1_*.txt` 本地文件或环境变量隐藏真实连接串，`BaseDbConfig.SpecialDbString` 会优先读取文件值。
 - SQL 日志统一通过 `SqlSugarAop.OnLogExecuting` 写入 Serilog，`LogContextHelper` 会在上下文中打上 `LogSource=AopSql` 标签；SqlSugar 的缓存实现委托给 `Radish.Common.CacheTool.SqlSugarCache`，保持与 Redis/内存缓存一致的策略。
 
