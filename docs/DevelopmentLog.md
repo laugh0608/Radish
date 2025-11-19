@@ -8,6 +8,7 @@
 
 - feat(repo/db): `BaseRepository` 改由 `SqlSugarScope` + `IUnitOfWorkManage` 承载数据库实例，并读取实体上的 `[Tenant(configId)]` 特性动态切换连接，默认走主库，`AuditSqlLog` 等标注了 `configId="Log"` 的实体自动写入日志库。
 - feat(api/tests): WeatherForecast 控制器及其 xUnit 示例同步验证多种依赖解析方式，同时注入 `IBaseService<AuditSqlLog, AuditSqlLogVo>` 以演示日志库的查询链路，便于之后参考缓存、属性注入与多库访问的组合用法。
+- feat(api): WeatherForecastController 新增 `[HttpGet("{id}")]` 的 `GetById` 示例，可通过 `api/WeatherForecast/GetById/1` 直接验证路径参数绑定，后续 Controller 添加 REST 风格路由时可参照该写法。
 
 ### 2025.11.18
 

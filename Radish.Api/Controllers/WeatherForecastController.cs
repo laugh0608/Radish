@@ -62,6 +62,12 @@ public class WeatherForecastController : ControllerBase
             .ToArray();
     }
 
+    [HttpGet("{id}")] // 效果：api/WeatherForecast/GetById/1
+    public async Task<IActionResult> GetById(int id) {
+        var res = await Task.Run(() => new { Id = id, Name = "Radish"});
+        return Ok(res);
+    }
+
     [HttpGet]
     public async Task<IActionResult> Test()
     {

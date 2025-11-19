@@ -170,6 +170,7 @@ graph LR
 - 状态管理：React Query 管理异步数据，Zustand/Jotai 管理本地 UI 状态；Form 使用 React Hook Form。
 - UI 与可访问性：Tailwind/UnoCSS 原子化 + 自研组件，提供暗色模式与响应式布局。
 - 桌面化交互规范：首页呈现类 macOS 桌面，顶部状态栏显示用户名/IP，底部 Dock 承载主功能入口，左侧桌面图标双击弹出带最小化/关闭按钮的窗口，所有弹窗遵循桌面操作逻辑。
+- 视觉原型：`radish.client/public/webos.html`（Nebula OS Demo）通过原生 HTML/CSS/JS 构建完整桌面体验，含开机动画、可拖拽多窗口、Start 菜单与任务栏应用指示，后续 React 实现需对齐该交互/布局细节，可直接在浏览器打开该文件体验并作为 UI 评审基准。
 - 测试：组件级 Vitest，关键流程 Playwright（可选）。
 
 ## DevOps 与运维基线
