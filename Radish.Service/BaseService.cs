@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using AutoMapper;
 using Radish.IRepository;
 using Radish.IService;
@@ -21,6 +22,40 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
         _mapper = mapper;
     }
 
+    #region 增
+
+    /// <summary>写入一条实体类数据</summary>
+    /// <param name="entity">泛型实体类</param>
+    /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
+    public async Task<long> AddAsync(TEntity entity)
+    {
+        return await _baseRepository.AddAsync(entity);
+    }
+
+    /// <summary>分表-写入实体数据</summary>
+    /// <param name="entity">泛型实体类</param>
+    /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
+    public async Task<List<long>> AddSplitAsync(TEntity entity)
+    {
+        return await _baseRepository.AddSplitAsync(entity);
+    }
+
+    #endregion
+
+    #region 删
+
+    // 删
+
+    #endregion
+
+    #region 改
+
+    // 改
+
+    #endregion
+
+    #region 查
+
     /// <summary>按照泛型实体类查询表中所有数据</summary>
     /// <remarks>已加入实体类和视图模型的泛型对象关系映射</remarks>
     /// <returns>List TEntity</returns>
@@ -31,11 +66,15 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
         return _mapper.Map<List<TVo>>(await _baseRepository.QueryAsync());
     }
 
-    /// <summary>写入一条实体类数据</summary>
-    /// <param name="entity">泛型实体类</param>
-    /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
-    public async Task<long> AddAsync(TEntity entity)
+    /// <summary>分表-按照泛型实体类查询表中所有数据</summary>
+    /// <param name="whereExpression">条件表达式</param>
+    /// <param name="orderByFields">排序字段，默认为 Id，其他如 Name, Age</param>
+    /// <returns>List TEntity</returns>
+    public async Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>> whereExpression,
+        string orderByFields = "Id")
     {
-        return await _baseRepository.AddAsync(entity);
+        return await _baseRepository.QuerySplitAsync(whereExpression, orderByFields);
     }
+
+    #endregion
 }
