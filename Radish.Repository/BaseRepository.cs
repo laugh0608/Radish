@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Radish.IRepository;
 using Radish.Repository.UnitOfWorks;
 using SqlSugar;
@@ -11,6 +12,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 {
     private readonly SqlSugarScope _dbScopeBase;
     private readonly IUnitOfWorkManage _unitOfWorkManage;
+
     /// <summary>供 BaseRepository 内部使用 ISqlSugarClient 数据库实例</summary>
     /// <remarks>支持多租户切换数据库</remarks>
     private ISqlSugarClient _dbClientBase
@@ -19,6 +21,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         {
             ISqlSugarClient db = _dbScopeBase;
 
+            // 自动切库实现
             // 使用 Model 的特性字段作为切换数据库条件，用 SqlSugar TenantAttribute 存放数据库 ConnId
             // 参考: https://www.donet5.com/Home/Doc?typeId=2246
             var tenantAttr = typeof(TEntity).GetCustomAttribute<TenantAttribute>();
@@ -53,6 +56,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             return db;
         }
     }
+
     /// <summary>供外部使用的公开 ISqlSugarClient 数据库实例</summary>
     /// <remarks>继承自私有 ISqlSugarClient _dbClientBase 进而支持多租户切换数据库</remarks>
     public ISqlSugarClient DbBase => _dbClientBase;
@@ -65,14 +69,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         _dbScopeBase = unitOfWorkManage.GetDbClient();
     }
 
-    /// <summary>按照泛型实体类查询表中所有数据</summary>
-    /// <returns>List TEntity</returns>
-    public async Task<List<TEntity>> QueryAsync()
-    {
-        // DbBase 是 ISqlSugarClient 单例注入的，所以多次查询的 HASH 是一样的，对应的是 Service 层的 Repository 不是单例
-        await Console.Out.WriteLineAsync($"DbBase HashCode: {DbBase.GetHashCode().ToString()}");
-        return await _dbClientBase.Queryable<TEntity>().ToListAsync();
-    }
+    #region 增
 
     /// <summary>写入一条实体类数据</summary>
     /// <param name="entity">泛型实体类</param>
@@ -82,4 +79,56 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         var insert = _dbClientBase.Insertable(entity);
         return await insert.ExecuteReturnSnowflakeIdAsync();
     }
+
+    /// <summary>分表-写入实体数据</summary>
+    /// <param name="entity">泛型实体类</param>
+    /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
+    public async Task<List<long>> AddSplitAsync(TEntity entity)
+    {
+        var insert = _dbClientBase.Insertable(entity).SplitTable();
+        // 插入并返回雪花ID并且自动赋值 Id
+        return await insert.ExecuteReturnSnowflakeIdListAsync();
+    }
+
+    #endregion
+
+    #region 删
+
+    // 删
+
+    #endregion
+
+    #region 改
+
+    // 改
+
+    #endregion
+
+    #region 查
+
+    /// <summary>按照泛型实体类查询表中所有数据</summary>
+    /// <returns>List TEntity</returns>
+    public async Task<List<TEntity>> QueryAsync()
+    {
+        // DbBase 是 ISqlSugarClient 单例注入的，所以多次查询的 HASH 是一样的，对应的是 Service 层的 Repository 不是单例
+        await Console.Out.WriteLineAsync($"DbBase HashCode: {DbBase.GetHashCode().ToString()}");
+        return await _dbClientBase.Queryable<TEntity>().ToListAsync();
+    }
+
+
+    /// <summary>分表-按照泛型实体类查询表中所有数据</summary>
+    /// <param name="whereExpression">条件表达式</param>
+    /// <param name="orderByFields">排序字段，默认为 Id，其他如 Name, Age</param>
+    /// <returns>List TEntity</returns>
+    public async Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>> whereExpression,
+        string orderByFields = "Id")
+    {
+        return await _dbClientBase.Queryable<TEntity>()
+            .SplitTable()
+            .OrderByIF(!string.IsNullOrEmpty(orderByFields), orderByFields)
+            .WhereIF(whereExpression != null, whereExpression)
+            .ToListAsync();
+    }
+
+    #endregion
 }
