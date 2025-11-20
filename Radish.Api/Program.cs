@@ -1,7 +1,11 @@
+using System.Text;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.IdentityModel.Tokens;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Extension;
@@ -40,7 +44,7 @@ builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, Servi
 // 注册 Controller 控制器
 const string corsPolicyName = "FrontendCors";
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-
+// 注册跨域规则
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(corsPolicyName, policyBuilder =>
@@ -59,7 +63,7 @@ builder.Services.AddCors(options =>
         }
     });
 });
-
+// 注册 Controller 控制器
 builder.Services.AddControllers();
 // 注册 RazorPages 解析
 builder.Services.AddRazorPages();
@@ -86,6 +90,37 @@ builder.Services.AddSqlSugarSetup();
 // 注册泛型仓储与服务，AddScoped() 汇报模式，每次请求的时候注入
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
+// 注册 JWT 认证服务
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true, // 订阅者
+        ValidateAudience = true, // 发布者
+        ValidateLifetime = true, // 生命周期
+        ValidateIssuerSigningKey = true, // 密码校验
+        // 安全校验，在请求认证的时候会将 Token 进行解析，然后校验下面这三个参数
+        ValidIssuer = "Radish", // 颁发者，发行人
+        ValidAudience = "luobo", // 使用者
+        // 加密密钥
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("sdfsdfsrty45634kkhllghtdgdfss345t678fs"))
+    };
+});
+// 注册 JWT 授权方案，核心是通过解析请求头中的 JWT Token，然后匹配策略中的 key 和字段值
+builder.Services.AddAuthorizationBuilder()
+           // Client 授权方案，RequireClaim 方式
+           .AddPolicy("Client", policy => policy.RequireClaim("iss", "Radish").Build())
+           // System 授权方案，RequireRole 方式
+           .AddPolicy("System", policy => policy.RequireRole("System").Build())
+           // SystemOrAdmin 授权方案，RequireRole 方式
+           .AddPolicy("SystemOrAdmin", policy => policy.RequireRole("System", "Admin").Build())
+           // 自定义授权策略
+           .AddPolicy("RadishAuthPolicy", policy => policy.Requirements.Add(new PermissionRequirement()));
+// 注册自定义授权策略中间件
+builder.Services.AddScoped<IAuthorizationHandler, PermissionRequirement>();
+// 注册 HttpContext 上下文服务
+builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
 // -------------- App 初始化阶段 ---------------
 var app = builder.Build();

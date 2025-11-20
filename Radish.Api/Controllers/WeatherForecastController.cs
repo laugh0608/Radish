@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common;
 using Radish.Common.CacheTool;
@@ -10,6 +11,9 @@ using Radish.Model.ViewModels;
 namespace Radish.Api.Controllers;
 
 [ApiController]
+// [Authorize(Roles = "Client")] // 可以写多个
+// [Authorize(Policy = "SystemOrAdmin")]
+[Authorize(Policy = "RadishAuthPolicy")]
 [Route("api/[controller]/[action]")]
 public class WeatherForecastController : ControllerBase
 {
