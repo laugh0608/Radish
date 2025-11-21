@@ -4,16 +4,16 @@
 public class MessageModel<T>
 {
     /// <summary>状态码</summary>
-    public int StatusCode { get; set; } = 200;
+    public int StatusCode { get; set; } = 500;
 
     /// <summary>操作是否成功</summary>
     public bool IsSuccess { get; set; } = false;
 
     /// <summary>返回信息</summary>
-    public string MessageInfo { get; set; } = string.Empty;
+    public string MessageInfo { get; set; } = "Nothing happened here.";
 
     /// <summary>开发者信息</summary>
-    public string MessageInfoDev { get; set; } = string.Empty;
+    public string MessageInfoDev { get; set; } = "Nothing happened here.";
 
     /// <summary>返回数据集合</summary>
     public T ResponseData { get; set; } = default;

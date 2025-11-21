@@ -45,7 +45,7 @@ public class UserService : BaseService<User, UserVo>, IUserService
         var insertSysUserInfo = await base.AddAsync(new User()
         {
             Id = id,
-            UserName = $"user name {id}",
+            UserName = $"UserName {id}",
             StatusCode = 0,
             CreateTime = DateTime.Now,
             UpdateTime = DateTime.Now,
