@@ -1,6 +1,5 @@
 namespace Radish.Model.ViewModels;
 
-///<summary>部门表视图模型</summary>
 public class DepartmentVo
 {
     public string VoCodeRelationship { get; set; } = string.Empty;

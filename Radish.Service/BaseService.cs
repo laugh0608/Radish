@@ -56,21 +56,21 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
 
     #region 查
 
-    /// <summary>按照泛型实体类查询表中所有数据</summary>
-    /// <remarks>已加入实体类和视图模型的泛型对象关系映射</remarks>
+    /// <summary>按照 Where 表达式查询</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
     /// <returns>List TEntity</returns>
-    public async Task<List<TVo>> QueryAsync()
+    public async Task<List<TVo>> QueryAsync(Expression<Func<TEntity, bool>>? whereExpression = null)
     {
         // Repository 不是单例，所以多次查询的 HASH 是不一样的，对应的是 Repository 层的 DbBase 是单例
-        await Console.Out.WriteLineAsync($"Repository HashCode: {_baseRepository.GetHashCode().ToString()}");
-        return _mapper.Map<List<TVo>>(await _baseRepository.QueryAsync());
+        // await Console.Out.WriteLineAsync($"Repository HashCode: {_baseRepository.GetHashCode().ToString()}");
+        return _mapper.Map<List<TVo>>(await _baseRepository.QueryAsync(whereExpression));
     }
 
-    /// <summary>分表-按照泛型实体类查询表中所有数据</summary>
-    /// <param name="whereExpression">条件表达式</param>
+    /// <summary>分表-按照 Where 表达式查询</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
     /// <param name="orderByFields">排序字段，默认为 Id，其他如 Name, Age</param>
     /// <returns>List TEntity</returns>
-    public async Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>> whereExpression,
+    public async Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>>? whereExpression,
         string orderByFields = "Id")
     {
         return await _baseRepository.QuerySplitAsync(whereExpression, orderByFields);

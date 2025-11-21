@@ -33,16 +33,16 @@ public interface IBaseService<TEntity, TVo> where TEntity : class
 
     #region 查
 
-    /// <summary>按照泛型实体类查询表中所有数据</summary>
-    /// <remarks>已加入实体类和视图模型的泛型对象关系映射</remarks>
+    /// <summary>按照 Where 表达式查询</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
     /// <returns>List TEntity</returns>
-    Task<List<TVo>> QueryAsync();
+    Task<List<TVo>> QueryAsync(Expression<Func<TEntity, bool>>? whereExpression = null);
 
-    /// <summary>分表-按照泛型实体类查询表中所有数据</summary>
-    /// <param name="whereExpression">条件表达式</param>
+    /// <summary>分表-按照 Where 表达式查询</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
     /// <param name="orderByFields">排序字段，默认为 Id，其他如 Name, Age</param>
     /// <returns>List TEntity</returns>
-    Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>> whereExpression,
+    Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>>? whereExpression,
         string orderByFields = "Id");
 
     #endregion

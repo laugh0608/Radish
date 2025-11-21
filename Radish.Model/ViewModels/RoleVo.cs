@@ -1,7 +1,6 @@
 ﻿namespace Radish.Model.ViewModels;
 
-/// <summary>接口对外返回的角色视图模型</summary>
 public class RoleVo
 {
-    public string VoRoName { get; set; } = string.Empty;
+    public string VoRoleName { get; set; } = string.Empty;
 }

@@ -9,11 +9,10 @@ public class RoleProfile : Profile
 {
     public RoleProfile()
     {
-        CreateMap<Role, RoleVo>().ForMember(a => 
-            a.VoRoName, o => 
-            o.MapFrom(d => d.RoleName));
-        CreateMap<RoleVo, Role>().ForMember(a => 
-            a.RoleName, o => 
-            o.MapFrom(d => d.VoRoName));
+        // 自动识别字段前缀 Vo
+        RecognizeDestinationPrefixes("Vo"); // Role -> RoleVo
+        CreateMap<Role, RoleVo>();
+        RecognizePrefixes("Vo"); // RoleVo -> Role
+        CreateMap<RoleVo, Role>();
     }
 }

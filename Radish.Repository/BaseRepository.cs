@@ -106,21 +106,22 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 
     #region 查
 
-    /// <summary>按照泛型实体类查询表中所有数据</summary>
+    /// <summary>按照 Where 表达式查询</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
     /// <returns>List TEntity</returns>
-    public async Task<List<TEntity>> QueryAsync()
+    public async Task<List<TEntity>> QueryAsync(Expression<Func<TEntity, bool>>? whereExpression = null)
     {
         // DbBase 是 ISqlSugarClient 单例注入的，所以多次查询的 HASH 是一样的，对应的是 Service 层的 Repository 不是单例
-        await Console.Out.WriteLineAsync($"DbBase HashCode: {DbBase.GetHashCode().ToString()}");
-        return await _dbClientBase.Queryable<TEntity>().ToListAsync();
+        // await Console.Out.WriteLineAsync($"DbBase HashCode: {DbBase.GetHashCode().ToString()}");
+        return await _dbClientBase.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).ToListAsync();
     }
 
 
-    /// <summary>分表-按照泛型实体类查询表中所有数据</summary>
-    /// <param name="whereExpression">条件表达式</param>
+    /// <summary>分表-按照 Where 表达式查询</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
     /// <param name="orderByFields">排序字段，默认为 Id，其他如 Name, Age</param>
     /// <returns>List TEntity</returns>
-    public async Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>> whereExpression,
+    public async Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>>? whereExpression,
         string orderByFields = "Id")
     {
         return await _dbClientBase.Queryable<TEntity>()

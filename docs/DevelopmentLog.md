@@ -4,6 +4,13 @@
 
 > 当前阶段采用 .NET 10 + SQLSugar + PostgreSQL + React 技术栈；以下记录聚焦新架构的推进，后续如有重要调整也会在此处补充说明。
 
+### 2025.11.21
+
+- feat(model/auth): 新增 `ApiModule`、`RoleModulePermission`、`UserRole` 实体与 `UserRoleVo`/`TokenInfoVo` 视图模型，补完 API 模块、角色-权限-按钮及用户-角色关联建模，支撑下一步的 RBAC 鉴权。
+- refactor(model/user): User/MessageModel/RoleVo/UserVo 默认值与字段全面校准（含 Uuid、Vo* 命名、性别/年龄/状态默认值、消息默认提示等），保证接口契约在登录与下游消费场景下更一致。
+- refactor(service/repo): `IBaseRepository/IBaseService` 的 `Query*` 支持可空 `Expression<Func<...>>`，Repository/Service 的实现亦同步泛化，`UserService` 的种子数据示例也调整为正式命名。
+- feat(api/automapper): `LoginController` 标记为标准 API 控制器并注入 `IUserService`，AutoMapper Profile 为 User/Role/UserRole 映射补齐前缀识别与字段对应，便于后续直接复用 DTO。
+
 ### 2025.11.19
 
 - feat(repo/db): `BaseRepository` 改由 `SqlSugarScope` + `IUnitOfWorkManage` 承载数据库实例，并读取实体上的 `[Tenant(configId)]` 特性动态切换连接，默认走主库，`AuditSqlLog` 等标注了 `configId="Log"` 的实体自动写入日志库。
