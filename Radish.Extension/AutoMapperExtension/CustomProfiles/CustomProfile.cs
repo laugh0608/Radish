@@ -30,5 +30,10 @@ public class CustomProfile : Profile
         CreateMap<Tenant, TenantVo>();
         RecognizePrefixes("Vo"); // TenantVo -> Tenant
         CreateMap<TenantVo, Tenant>();
+        // SubLibBusinessTable
+        RecognizeDestinationPrefixes("Vo"); // SubLibBusinessTable -> SubLibBusinessTableVo
+        CreateMap<SubLibBusinessTable, SubLibBusinessTableVo>();
+        RecognizePrefixes("Vo"); // SubLibBusinessTableVo -> SubLibBusinessTable
+        CreateMap<SubLibBusinessTableVo, SubLibBusinessTable>();
     }
 }

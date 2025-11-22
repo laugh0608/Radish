@@ -36,7 +36,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
                 return db;
             }
 
-            // 多租户实现-分不同的数据库
+            // 多租户实现-分不同的数据库，需要配置 Tenant 表中的数据库连接字符串
             var mta = typeof(TEntity).GetCustomAttribute<MultiTenantAttribute>();
             if (mta is { TenantType: TenantTypeEnum.DataBases })
             {

@@ -15,12 +15,17 @@ GET {{Api_HostAddress}}/api/User/GetUserById/1
 Accept: application/json
 Authorization:Bearer {{JwtToken}}
 
-### 获取租户下全部业务数据-字段隔离
+### 获取登录用户的租户下全部业务数据-字段隔离
 GET {{Api_HostAddress}}/api/Tenant/BusinessTable
 Accept: application/json
 Authorization:Bearer {{JwtToken}}
 
-### 获取租户下全部业务数据-表隔离
+### 获取登录用户的租户下全部业务数据-表隔离
 GET {{Api_HostAddress}}/api/Tenant/MultiBusinessTable
+Accept: application/json
+Authorization:Bearer {{JwtToken}}
+
+### 获取登录用户的租户下全部业务数据-库隔离
+GET {{Api_HostAddress}}/api/Tenant/SubLibBusinessTable
 Accept: application/json
 Authorization:Bearer {{JwtToken}}

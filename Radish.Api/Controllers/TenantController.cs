@@ -17,12 +17,15 @@ public class TenantController : ControllerBase
 {
     private readonly IBaseService<BusinessTable, BusinessTableVo> _businessTableService;
     private readonly IBaseService<MultiBusinessTable, MultiBusinessTableVo> _multiBusinessTableService;
+    private readonly IBaseService<SubLibBusinessTable, SubLibBusinessTableVo> _subLibBusinessTableService;
 
     public TenantController(IBaseService<BusinessTable, BusinessTableVo> businessTableService,
-        IBaseService<MultiBusinessTable, MultiBusinessTableVo> multiBusinessTableService)
+        IBaseService<MultiBusinessTable, MultiBusinessTableVo> multiBusinessTableService,
+        IBaseService<SubLibBusinessTable, SubLibBusinessTableVo> subLibBusinessTableService)
     {
         _businessTableService = businessTableService;
         _multiBusinessTableService = multiBusinessTableService;
+        _subLibBusinessTableService = subLibBusinessTableService;
     }
 
     /// <summary>
@@ -34,7 +37,7 @@ public class TenantController : ControllerBase
     {
         return await _businessTableService.QueryAsync();
     }
-    
+
     /// <summary>
     /// 获取租户下全部业务数据-表隔离
     /// </summary>
@@ -43,5 +46,15 @@ public class TenantController : ControllerBase
     public async Task<object> MultiBusinessTable()
     {
         return await _multiBusinessTableService.QueryAsync();
+    }
+
+    /// <summary>
+    /// 获取租户下全部业务数据-库隔离
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<object> SubLibBusinessTable()
+    {
+        return await _subLibBusinessTableService.QueryAsync();
     }
 }
