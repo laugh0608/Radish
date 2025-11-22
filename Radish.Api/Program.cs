@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using Radish.Common;
 using Radish.Common.CoreTool;
+using Radish.Common.HttpContextTool;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
 using Radish.Extension.AutoMapperExtension;
@@ -124,6 +125,8 @@ builder.Services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>(
 builder.Services.AddSingleton(new PermissionRequirement());
 // 注册 HttpContext 上下文服务
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+// 注册 HttpContext 获取用户信息服务
+builder.Services.AddScoped<IHttpContextUser, HttpContextUser>();
 
 // -------------- App 初始化阶段 ---------------
 var app = builder.Build();

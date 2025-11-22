@@ -9,7 +9,7 @@
 - others/：其他资源文件，虚拟文件夹，只是解决方案中的文件夹，其中所有文件均为项目根目录下的，包括 Dockerfile、GitHub 配置、start.ps1 脚本 等
 - radish.client：主要 - 前端 React 应用代码，TypeScript 编写
 - Radish.Api：主要 - 后端服务代码，ASP.NET Core 编写
-- Radish.Common：后端服务使用的普通工具类，例如基础日志、基础配置等
+- Radish.Common：后端服务使用的普通工具类，例如基础日志、基础配置等；**仅能引用外部 NuGet 包，不允许依赖任何内部业务层**。若某工具/扩展需要访问 `Radish.Model`、Service 或 Repository 中的类型（如 DTO、实体、仓储服务等），应放置在 `Radish.Extension` 中，以免 Common 层被反向依赖导致环状引用。
 - Radish.Core：后端核心业务逻辑与算法类，保留模块，为后续流程模拟与算法实现做准备
 - Radish.Extension：后端扩展功能模块类，例如 Swagger/Scalar、HealthCheck 等
 - Radish.IRepository：后端数据访问接口类，定义数据访问层接口

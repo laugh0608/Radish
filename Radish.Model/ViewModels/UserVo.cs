@@ -20,9 +20,9 @@ public class UserVo
     public int VoErrorCount { get; set; } = 0;
     public bool VoIsEnable { get; set; } = false;
     public bool VoIsDeleted { get; set; } = true;
-    public long VoDeId { get; set; } = 1000001;
+    public long VoDeId { get; set; } = 0;
     public string VoDeNa { get; set; } = string.Empty;
-    public long VoTenId { get; set; } = 1000001;
+    public long VoTenId { get; set; } = 0;
     public List<long> VoRoIds { get; set; } = new List<long>();
     public List<string> VoRoNas { get; set; } = new List<string>();
     public List<long> VoDeIds { get; set; } = new List<long>();

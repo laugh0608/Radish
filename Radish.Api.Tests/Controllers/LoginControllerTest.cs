@@ -48,7 +48,7 @@ public class LoginControllerTest
                 //     LoginName = "blogadmin",
                 //     LoginPassword = encryptedPwd,
                 //     IsDeleted = false,
-                //     TenantId = 1000001
+                //     TenantId = 0
                 // }
 
                 new User
@@ -57,7 +57,7 @@ public class LoginControllerTest
                     LoginName = "test",
                     LoginPassword = encryptedPwd,
                     IsDeleted = false,
-                    TenantId = 1000001
+                    TenantId = 0
                 }
             };
         }

@@ -1,11 +1,14 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Radish.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Produces("application/json")]
+[Authorize(Policy = "RadishAuthPolicy")]
 public class RustTestController : ControllerBase
 {
     [HttpGet]

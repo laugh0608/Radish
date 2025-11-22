@@ -13,8 +13,9 @@ namespace Radish.Api.Controllers;
 [ApiController]
 // [Authorize(Roles = "Client")] // 可以写多个
 // [Authorize(Policy = "SystemOrAdmin")]
-[Authorize(Policy = "RadishAuthPolicy")]
 [Route("api/[controller]/[action]")]
+[Produces("application/json")]
+[Authorize(Policy = "RadishAuthPolicy")]
 public class WeatherForecastController : ControllerBase
 {
     // 属性注入

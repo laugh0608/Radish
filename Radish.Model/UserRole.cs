@@ -28,7 +28,7 @@ public class UserRole
     /// 创建 Id
     /// </summary>
     [SugarColumn(IsNullable = true)]
-    public long CreateId { get; set; } = 1000001;
+    public long CreateId { get; set; } = 0;
 
     /// <summary>
     /// 创建者
