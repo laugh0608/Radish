@@ -5,6 +5,7 @@ using SqlSugar;
 using System.Reflection;
 using Radish.Common.CoreTool;
 using Radish.Common.TenantTool;
+using Radish.Infrastructure.Tenant;
 using Radish.Model;
 
 namespace Radish.Repository;

@@ -1,9 +1,8 @@
 using System.Reflection;
 using Radish.Common.TenantTool;
-using Radish.Model;
 using SqlSugar;
 
-namespace Radish.Extension.TenantExtension;
+namespace Radish.Infrastructure.Tenant;
 
 public static class TenantUtil
 {
@@ -34,12 +33,9 @@ public static class TenantUtil
             return false;
         }
 
-        if (tenantType != null)
+        if (tenantType != null && mta.TenantType != tenantType)
         {
-            if (mta.TenantType != tenantType)
-            {
-                return false;
-            }
+            return false;
         }
 
         return true;
@@ -79,13 +75,13 @@ public static class TenantUtil
     /// <param name="tenant"></param>
     /// <returns></returns>
     /// <exception cref="ArgumentException"></exception>
-    public static ConnectionConfig GetConnectionConfig(this Tenant tenant)
+    public static ConnectionConfig GetConnectionConfig(this Model.Tenant tenant)
     {
         if (tenant.DbType is null)
         {
             throw new ArgumentException("Tenant DbType Must");
         }
-        
+
         return new ConnectionConfig()
         {
             ConfigId = tenant.TenantConfigId,
