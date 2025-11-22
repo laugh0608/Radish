@@ -1,10 +1,10 @@
-using Radish.Common.HelpTool;
+using Radish.Common.LogTool;
 using Serilog;
 using SqlSugar;
 
-namespace Radish.Common.DbTool;
+namespace Radish.Extension.AopExtension;
 
-public static class SqlSugarAop
+public class SqlSugarAop
 {
     public static void OnLogExecuting(ISqlSugarClient sqlSugarScopeProvider, string user, string table, string operate,
         string sql, SugarParameter[] p, ConnectionConfig config)
@@ -15,8 +15,8 @@ public static class SqlSugarAop
                 $"------------------ \r\n User:[{user}]  Table:[{table}]  Operate:[{operate}] " +
                 $"ConnId:[{config.ConfigId}]【SQL语句】: " +
                 $"\r\n {UtilMethods.GetNativeSql(sql, p)}");
-            // Console.WriteLine(logConsole);
-            using (LogContextHelper.Create.SqlAopPushProperty(sqlSugarScopeProvider))
+            Console.WriteLine(logConsole);
+            using (LogContextTool.Create.SqlAopPushProperty(sqlSugarScopeProvider))
             {
                 Log.Information(logConsole);
             }

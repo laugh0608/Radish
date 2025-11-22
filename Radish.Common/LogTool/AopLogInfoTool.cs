@@ -1,4 +1,4 @@
-﻿namespace Radish.Common;
+﻿namespace Radish.Common.LogTool;
 
 /// <summary>AopLog 公共类</summary>
 public class AopLogInfoTool
