@@ -103,7 +103,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         // 安全校验，在请求认证的时候会将 Token 进行解析，然后校验下面这三个参数
         ValidIssuer = "Radish", // 颁发者，发行人
         ValidAudience = "luobo", // 使用者
-        // 加密密钥
+        // 加密密钥，TODO: 这个密钥后期要改
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("sdfsdfsrty45634kkhllghtdgdfss345t678fs"))
     };
 });
@@ -119,6 +119,8 @@ builder.Services.AddAuthorizationBuilder()
            .AddPolicy("RadishAuthPolicy", policy => policy.Requirements.Add(new PermissionRequirement()));
 // 注册自定义授权策略中间件
 builder.Services.AddScoped<IAuthorizationHandler, PermissionRequirement>();
+// 注册 PermissionRequirement 鉴权类
+builder.Services.AddSingleton(new PermissionRequirement());
 // 注册 HttpContext 上下文服务
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 

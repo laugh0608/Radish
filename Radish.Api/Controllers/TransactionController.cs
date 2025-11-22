@@ -76,6 +76,7 @@ public class TransactionController : ControllerBase
     }
 
     /// <summary>测试使用同事务</summary>
+    /// <remarks>仅为示例，无任何作用</remarks>
     /// <returns></returns>
     [HttpGet]
     public async Task<object> TestTranPropagation()

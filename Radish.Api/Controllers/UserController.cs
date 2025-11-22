@@ -15,12 +15,12 @@ public class UserController : ControllerBase
         _userService = userService;
     }
 
-    /// <summary>获取全部用户，测试仓储和服务分层</summary>
+    /// <summary>获取全部用户</summary>
     /// <returns></returns>
     [HttpGet]
     public async Task<ActionResult> GetUserList()
     {
-        var users = await _userService.GetUsersAsync();
+        var users = await _userService.QueryAsync();
         return Ok(users);
     }
 }

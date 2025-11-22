@@ -4,7 +4,7 @@
 public class MessageModel<T>
 {
     /// <summary>状态码</summary>
-    public int StatusCode { get; set; } = 500;
+    public int StatusCode { get; set; } = 200;
 
     /// <summary>操作是否成功</summary>
     public bool IsSuccess { get; set; } = false;
@@ -38,7 +38,7 @@ public class MessageModel<T>
     /// <summary>返回失败</summary>
     /// <param name="msg">消息</param>
     /// <returns></returns>
-    public static MessageModel<T> Fail(string msg)
+    public static MessageModel<T> Failed(string msg)
     {
         return Message(false, msg, default);
     }
@@ -47,7 +47,7 @@ public class MessageModel<T>
     /// <param name="msg">消息</param>
     /// <param name="responseData">数据</param>
     /// <returns></returns>
-    public static MessageModel<T> Fail(string msg, T responseData)
+    public static MessageModel<T> Failed(string msg, T responseData)
     {
         return Message(false, msg, responseData);
     }
