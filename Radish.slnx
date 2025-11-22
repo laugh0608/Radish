@@ -26,6 +26,7 @@
   <Project Path="Radish.Api/Radish.Api.csproj" />
   <Project Path="Radish.Common/Radish.Common.csproj" />
   <Project Path="Radish.Core/Radish.Core.csproj" />
+  <Project Path="Radish.Infrastructure/Radish.Infrastructure.csproj" />
   <Project Path="Radish.Extension/Radish.Extension.csproj" />
   <Project Path="Radish.IRepository/Radish.IRepository.csproj" />
   <Project Path="Radish.IService/Radish.IService.csproj" />

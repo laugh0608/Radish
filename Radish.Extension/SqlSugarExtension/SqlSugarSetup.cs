@@ -4,7 +4,7 @@ using Radish.Common;
 using Radish.Common.CacheTool;
 using Radish.Common.CoreTool;
 using Radish.Common.DbTool;
-using Radish.Extension.TenantExtension;
+using Radish.Infrastructure.Tenant;
 using SqlSugar;
 
 namespace Radish.Extension.SqlSugarExtension;
