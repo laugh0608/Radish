@@ -14,6 +14,12 @@ public interface IUserService : IBaseService<User, UserVo>
     /// <returns>string RoleName, 可能为多个</returns>
     Task<string> GetUserRoleNameStrAsync(string loginName, string loginPwd);
 
+    /// <summary>
+    /// 获取所有的 角色-API 关系
+    /// </summary>
+    /// <returns>List RoleModulePermission</returns>
+    Task<List<RoleModulePermission>> RoleModuleMaps();
+
     #region 初始测试，不用理会
 
     /// <summary>测试获取用户服务示例</summary>

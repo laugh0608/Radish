@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Radish.Api.Controllers;
 using Radish.Common.HelpTool;
 using Radish.Extension;
+using Radish.Extension.PermissionExtension;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -24,7 +25,8 @@ public class LoginControllerTest
         var controller = new LoginController(new FakeUserService(), NullLogger<LoginController>.Instance,
             new PermissionRequirement());
 
-        var result = await controller.GetJwtToken("blogadmin", "blogadmin");
+        var result = await controller.GetJwtToken("test", "blogadmin");
+        // var result = await controller.GetJwtToken("blogadmin", "blogadmin");
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.ResponseData);
@@ -40,10 +42,19 @@ public class LoginControllerTest
             var encryptedPwd = Md5Helper.Md5Encrypt32("blogadmin");
             _users = new List<User>
             {
+                // new User
+                // {
+                //     Id = 1,
+                //     LoginName = "blogadmin",
+                //     LoginPassword = encryptedPwd,
+                //     IsDeleted = false,
+                //     TenantId = 1000001
+                // }
+
                 new User
                 {
                     Id = 1,
-                    LoginName = "blogadmin",
+                    LoginName = "test",
                     LoginPassword = encryptedPwd,
                     IsDeleted = false,
                     TenantId = 1000001
@@ -54,6 +65,11 @@ public class LoginControllerTest
         public Task<string> GetUserRoleNameStrAsync(string loginName, string loginPwd)
         {
             return Task.FromResult("Admin");
+        }
+
+        public Task<List<RoleModulePermission>> RoleModuleMaps()
+        {
+            throw new NotImplementedException();
         }
 
         public Task<List<UserVo>> GetUsersAsync() => Task.FromResult(new List<UserVo>());
@@ -85,7 +101,15 @@ public class LoginControllerTest
             return Task.FromResult(result);
         }
 
-        public Task<List<User>> QuerySplitAsync(Expression<Func<User, bool>>? whereExpression, string orderByFields = "Id")
+        public Task<List<TResult>> QueryMuchAsync<T, T2, T3, TResult>(
+            Expression<Func<T, T2, T3, object[]>> joinExpression, Expression<Func<T, T2, T3, TResult>> selectExpression,
+            Expression<Func<T, T2, T3, bool>> whereLambda = null) where T : class, new()
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<List<User>> QuerySplitAsync(Expression<Func<User, bool>>? whereExpression,
+            string orderByFields = "Id")
         {
             return Task.FromResult(new List<User>());
         }

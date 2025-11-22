@@ -1,9 +1,16 @@
 #@Radish.Api_HostAddress = http://localhost:5165
 
+### WeatherForecast
 GET {{Api_HostAddress}}/api/WeatherForecast/Get/
 Accept: application/json
 Authorization:Bearer {{JwtToken}}
 
-###
+### 获取全部用户
 GET {{Api_HostAddress}}/api/User/GetUserList/
 Accept: application/json
+Authorization:Bearer {{JwtToken}}
+
+### 查询指定用户
+GET {{Api_HostAddress}}/api/User/GetUserById/1
+Accept: application/json
+Authorization:Bearer {{JwtToken}}

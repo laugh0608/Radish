@@ -21,7 +21,7 @@ public class ApiModule : RootEntityTKey<long>
     public bool IsDeleted { get; set; } = true;
 
     /// <summary>
-    /// 名称
+    /// 接口名称
     /// </summary>
     [SugarColumn(Length = 50, IsNullable = true)]
     public string ApiModuleName { get; set; } = string.Empty;
