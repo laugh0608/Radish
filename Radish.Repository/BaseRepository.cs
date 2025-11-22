@@ -3,6 +3,9 @@ using Radish.IRepository;
 using Radish.Repository.UnitOfWorks;
 using SqlSugar;
 using System.Reflection;
+using Radish.Common.CoreTool;
+using Radish.Common.TenantTool;
+using Radish.Model;
 
 namespace Radish.Repository;
 
@@ -21,7 +24,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         {
             ISqlSugarClient db = _dbScopeBase;
 
-            // 自动切库实现
+            // 自动切库实现（非租户，只是业务切库）
             // 使用 Model 的特性字段作为切换数据库条件，用 SqlSugar TenantAttribute 存放数据库 ConnId
             // 参考: https://www.donet5.com/Home/Doc?typeId=2246
             var tenantAttr = typeof(TEntity).GetCustomAttribute<TenantAttribute>();
@@ -32,26 +35,26 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
                 return db;
             }
 
-            // 多租户实现
-            //var mta = typeof(TEntity).GetCustomAttribute<MultiTenantAttribute>();
-            //if (mta is { TenantType: TenantTypeEnum.Db })
-            //{
-            //    // 获取租户信息，租户信息可以提前缓存下来 
-            //    if (App.User is { TenantId: > 0 })
-            //    {
-            //        //.WithCache()
-            //        var tenant = db.Queryable<SysTenant>().WithCache().Where(s => s.Id == App.User.TenantId).First();
-            //        if (tenant != null)
-            //        {
-            //            var iTenant = db.AsTenant();
-            //            if (!iTenant.IsAnyConnection(tenant.ConfigId))
-            //            {
-            //                iTenant.AddConnection(tenant.GetConnectionConfig());
-            //            }
-            //            return iTenant.GetConnectionScope(tenant.ConfigId);
-            //        }
-            //    }
-            //}
+            // 多租户实现-分不同的数据库
+            var mta = typeof(TEntity).GetCustomAttribute<MultiTenantAttribute>();
+            if (mta is { TenantType: TenantTypeEnum.DataBases })
+            {
+                // 获取租户信息，租户信息可以提前缓存下来 
+                if (App.HttpContextUser is { TenantId: > 0 })
+                {
+                    // .WithCache()
+                    var tenant = db.Queryable<Tenant>().WithCache().Where(s => s.Id == App.HttpContextUser.TenantId).First();
+                    if (tenant != null)
+                    {
+                        var iTenant = db.AsTenant();
+                        if (!iTenant.IsAnyConnection(tenant.TenantConfigId))
+                        {
+                            iTenant.AddConnection(tenant.GetConnectionConfig());
+                        }
+                        return iTenant.GetConnectionScope(tenant.TenantConfigId);
+                    }
+                }
+            }
 
             return db;
         }
