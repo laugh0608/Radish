@@ -37,6 +37,21 @@ public interface IBaseService<TEntity, TVo> where TEntity : class
     /// <param name="whereExpression">Where 表达式，可空</param>
     /// <returns>List TEntity</returns>
     Task<List<TVo>> QueryAsync(Expression<Func<TEntity, bool>>? whereExpression = null);
+    
+    /// <summary>
+    /// 三表联查
+    /// </summary>
+    /// <typeparam name="T">实体1</typeparam> 
+    /// <typeparam name="T2">实体2</typeparam> 
+    /// <typeparam name="T3">实体3</typeparam>
+    /// <typeparam name="TResult">返回对象</typeparam>
+    /// <param name="joinExpression">关联表达式 (join1,join2) => new object[] {JoinType.Left,join1.UserNo==join2.UserNo}</param> 
+    /// <param name="selectExpression">返回表达式 (s1, s2) => new { Id =s1.UserNo, Id1 = s2.UserNo}</param>
+    /// <param name="whereLambda">查询表达式 (w1, w2) =>w1.UserNo == "")</param> 
+    /// <returns>List TResult</returns>
+    Task<List<TResult>> QueryMuchAsync<T, T2, T3, TResult>(
+        Expression<Func<T, T2, T3, object[]>> joinExpression, Expression<Func<T, T2, T3, TResult>> selectExpression,
+        Expression<Func<T, T2, T3, bool>>? whereLambda = null) where T : class, new();
 
     /// <summary>分表-按照 Where 表达式查询</summary>
     /// <param name="whereExpression">Where 表达式，可空</param>

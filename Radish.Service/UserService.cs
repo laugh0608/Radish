@@ -5,6 +5,7 @@ using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using SqlSugar;
 
 namespace Radish.Service;
 
@@ -51,6 +52,30 @@ public class UserService : BaseService<User, UserVo>, IUserService
         }
 
         return roleName;
+    }
+    
+    /// <summary>
+    /// 获取所有的 角色-API 关系
+    /// </summary>
+    /// <returns>List RoleModulePermission</returns>
+    public async Task<List<RoleModulePermission>> RoleModuleMaps()
+    {
+        // return await _userRepository.RoleModuleMaps();
+        
+        return await QueryMuchAsync<RoleModulePermission, ApiModule, Role, RoleModulePermission>(
+            (rmp, m, r) => new object[]
+            {
+                JoinType.Left, rmp.ApiModuleId == m.Id,
+                JoinType.Left, rmp.RoleId == r.Id
+            },
+            (rmp, m, r) => new RoleModulePermission()
+            {
+                Role = r,
+                ApiModule = m,
+                IsDeleted = rmp.IsDeleted
+            },
+            (rmp, m, r) => rmp.IsDeleted == false && m.IsDeleted == false && r.IsDeleted == false
+        );
     }
 
     #region 初始测试，不用理会

@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.IService;
 using Radish.Model;
@@ -9,6 +10,7 @@ namespace Radish.Api.Controllers;
 /// <summary>角色接口控制器</summary>
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Authorize(Policy = "RadishAuthPolicy")]
 public class RoleController : ControllerBase
 {
     private readonly IMapper _mapper;

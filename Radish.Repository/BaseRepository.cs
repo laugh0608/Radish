@@ -15,7 +15,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 
     /// <summary>供 BaseRepository 内部使用 ISqlSugarClient 数据库实例</summary>
     /// <remarks>支持多租户切换数据库</remarks>
-    private ISqlSugarClient _dbClientBase
+    private ISqlSugarClient DbClientBase
     {
         get
         {
@@ -59,7 +59,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 
     /// <summary>供外部使用的公开 ISqlSugarClient 数据库实例</summary>
     /// <remarks>继承自私有 ISqlSugarClient _dbClientBase 进而支持多租户切换数据库</remarks>
-    public ISqlSugarClient DbBase => _dbClientBase;
+    public ISqlSugarClient DbBase => DbClientBase;
 
     /// <summary>构造函数，注入依赖</summary>
     /// <param name="unitOfWorkManage"></param>
@@ -76,7 +76,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
     public async Task<long> AddAsync(TEntity entity)
     {
-        var insert = _dbClientBase.Insertable(entity);
+        var insert = DbClientBase.Insertable(entity);
         return await insert.ExecuteReturnSnowflakeIdAsync();
     }
 
@@ -85,7 +85,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
     public async Task<List<long>> AddSplitAsync(TEntity entity)
     {
-        var insert = _dbClientBase.Insertable(entity).SplitTable();
+        var insert = DbClientBase.Insertable(entity).SplitTable();
         // 插入并返回雪花ID并且自动赋值 Id
         return await insert.ExecuteReturnSnowflakeIdListAsync();
     }
@@ -113,9 +113,32 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     {
         // DbBase 是 ISqlSugarClient 单例注入的，所以多次查询的 HASH 是一样的，对应的是 Service 层的 Repository 不是单例
         // await Console.Out.WriteLineAsync($"DbBase HashCode: {DbBase.GetHashCode().ToString()}");
-        return await _dbClientBase.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).ToListAsync();
+        return await DbClientBase.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).ToListAsync();
     }
 
+    /// <summary>
+    /// 三表联查
+    /// </summary>
+    /// <typeparam name="T">实体1</typeparam> 
+    /// <typeparam name="T2">实体2</typeparam> 
+    /// <typeparam name="T3">实体3</typeparam>
+    /// <typeparam name="TResult">返回对象</typeparam>
+    /// <param name="joinExpression">关联表达式 (join1,join2) => new object[] {JoinType.Left,join1.UserNo==join2.UserNo}</param> 
+    /// <param name="selectExpression">返回表达式 (s1, s2) => new { Id =s1.UserNo, Id1 = s2.UserNo}</param>
+    /// <param name="whereLambda">查询表达式 (w1, w2) =>w1.UserNo == "")</param> 
+    /// <returns>List TResult</returns>
+    public async Task<List<TResult>> QueryMuchAsync<T, T2, T3, TResult>(
+        Expression<Func<T, T2, T3, object[]>> joinExpression,
+        Expression<Func<T, T2, T3, TResult>> selectExpression,
+        Expression<Func<T, T2, T3, bool>>? whereLambda = null) where T : class, new()
+    {
+        if (whereLambda == null)
+        {
+            return await DbClientBase.Queryable(joinExpression).Select(selectExpression).ToListAsync();
+        }
+
+        return await DbClientBase.Queryable(joinExpression).Where(whereLambda).Select(selectExpression).ToListAsync();
+    }
 
     /// <summary>分表-按照 Where 表达式查询</summary>
     /// <param name="whereExpression">Where 表达式，可空</param>
@@ -124,7 +147,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>>? whereExpression,
         string orderByFields = "Id")
     {
-        return await _dbClientBase.Queryable<TEntity>()
+        return await DbClientBase.Queryable<TEntity>()
             .SplitTable()
             .OrderByIF(!string.IsNullOrEmpty(orderByFields), orderByFields)
             .WhereIF(whereExpression != null, whereExpression)

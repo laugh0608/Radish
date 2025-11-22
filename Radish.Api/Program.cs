@@ -11,6 +11,7 @@ using Radish.Common.CoreTool;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
 using Radish.Extension.AutoMapperExtension;
+using Radish.Extension.PermissionExtension;
 using Radish.Extension.RedisExtension;
 using Radish.Extension.SqlSugarExtension;
 using Radish.IRepository;
@@ -103,8 +104,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         // 安全校验，在请求认证的时候会将 Token 进行解析，然后校验下面这三个参数
         ValidIssuer = "Radish", // 颁发者，发行人
         ValidAudience = "luobo", // 使用者
-        // 加密密钥，TODO: 这个密钥后期要改
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("sdfsdfsrty45634kkhllghtdgdfss345t678fs"))
+        // 加密密钥
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("wpH7A1jQRPuDDTyWv5ZDpCuAtwvMwmjzeKOMgBtvBe3ghDlfO3FhKx6vmZPAIazM"))
     };
 });
 // 注册 JWT 授权方案，核心是通过解析请求头中的 JWT Token，然后匹配策略中的 key 和字段值
@@ -118,7 +119,7 @@ builder.Services.AddAuthorizationBuilder()
            // 自定义授权策略
            .AddPolicy("RadishAuthPolicy", policy => policy.Requirements.Add(new PermissionRequirement()));
 // 注册自定义授权策略中间件
-builder.Services.AddScoped<IAuthorizationHandler, PermissionRequirement>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
 // 注册 PermissionRequirement 鉴权类
 builder.Services.AddSingleton(new PermissionRequirement());
 // 注册 HttpContext 上下文服务

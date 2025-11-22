@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
+using Radish.Extension.PermissionExtension;
 using Radish.Model.ViewModels;
 
 namespace Radish.Extension;
@@ -28,8 +29,7 @@ public class JwtTokenGenerate
         const double tokenTime = 60 * 60 * 12;
         
         var now = DateTime.Now;
-        // TODO: 这个密钥后期要改
-        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("sdfsdfsrty45634kkhllghtdgdfss345t678fs"));
+        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("wpH7A1jQRPuDDTyWv5ZDpCuAtwvMwmjzeKOMgBtvBe3ghDlfO3FhKx6vmZPAIazM"));
         // 实例化 JwtSecurityToken，这些信息必须要与 Program.cs 中 options.TokenValidationParameters 定义的一致！
         var jwt = new JwtSecurityToken(
             issuer: "Radish", // 发行

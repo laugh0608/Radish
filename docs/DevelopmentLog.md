@@ -4,6 +4,14 @@
 
 > 当前阶段采用 .NET 10 + SQLSugar + PostgreSQL + React 技术栈；以下记录聚焦新架构的推进，后续如有重要调整也会在此处补充说明。
 
+### 2025.11.23
+
+- feat(auth): 将鉴权类型拆分到 `PermissionExtension`，新增 `PermissionItem` 与 `PermissionRequirementHandler`，运行时按“角色-API”关系动态组装 `RadishAuthPolicy`，并在 `RoleController`、`UserController` 等控制器上启用策略。
+- feat(api/user): `UserController` 改为统一返回 `MessageModel`，新增 `GetUserById` 示例，`Radish.Api.http`/`http-client.env.json` 补充用户接口示例与最新 JWT，便于本地调试。
+- feat(service/repo): `IBaseRepository`/`IBaseService` 增加 `QueryMuchAsync` 三表联查封装，`UserService.RoleModuleMaps()` 直接基于 SqlSugar Join 构建 `RoleModulePermission`，为权限处理器提供实时数据。
+- chore(config): 轮换 JWT 密钥，`JwtTokenGenerate` 与 `Program` 保持一致；`appsettings.json` 新增 `AppSettings.UseLoadTest`，供鉴权测试时跳过登录校验；`PermissionRequirement` 仅保留配置，授权逻辑迁至 handler。
+- test(api): `LoginControllerTest` 适配新的命名空间与假数据，实现 `RoleModuleMaps`/`QueryMuchAsync` 桩方法，继续验证登录流程。
+
 ### 2025.11.21
 
 - feat(model/auth): 新增 `ApiModule`、`RoleModulePermission`、`UserRole` 实体与 `UserRoleVo`/`TokenInfoVo` 视图模型，补完 API 模块、角色-权限-按钮及用户-角色关联建模，支撑下一步的 RBAC 鉴权。
