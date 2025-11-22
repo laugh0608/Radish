@@ -4,6 +4,13 @@
 
 > 当前阶段采用 .NET 10 + SQLSugar + PostgreSQL + React 技术栈；以下记录聚焦新架构的推进，后续如有重要调整也会在此处补充说明。
 
+### 2025.11.24
+
+- feat(infra): 新增 `Radish.Infrastructure` 项目沉淀 SqlSugar/租户相关的基础设施（`Tenant.RepositorySetting`、`TenantUtil` 等），由 Extension/Repository 统一引用，避免跨层循环依赖并集中维护多租户路由逻辑。
+- feat(tenant): `TenantController` 与 `Radish.Api.http` 补充字段隔离、分表隔离与分库隔离示例接口，模型层新增 `BusinessTable`、`MultiBusinessTable`、`SubLibBusinessTable` 及其 Vo，Repository 通过 `TenantUtil.GetConnectionConfig()` 自动切换租户库。
+- feat(automapper): `CustomProfile` 注册 Business/MultiBusiness/SubLibBusiness 的 Vo 映射，保障多租户示例无需手写转换即可返回 DTO。
+- docs(auth): `AuthenticationGuide.md` 汇总当前 JWT 发行、授权策略与 PermissionRequirementHandler 流程，文档化登录接口的 Claim 组合与调试建议，方便新成员快速理解鉴权链路。
+
 ### 2025.11.23
 
 - feat(auth): 将鉴权类型拆分到 `PermissionExtension`，新增 `PermissionItem` 与 `PermissionRequirementHandler`，运行时按“角色-API”关系动态组装 `RadishAuthPolicy`，并在 `RoleController`、`UserController` 等控制器上启用策略。

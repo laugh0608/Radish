@@ -12,6 +12,7 @@
 - Radish.Common：后端服务使用的普通工具类，例如基础日志、基础配置等；**仅能引用外部 NuGet 包，不允许依赖任何内部业务层**。若某工具/扩展需要访问 `Radish.Model`、Service 或 Repository 中的类型（如 DTO、实体、仓储服务等），应放置在 `Radish.Extension` 中，以免 Common 层被反向依赖导致环状引用。
 - Radish.Core：后端核心业务逻辑与算法类，保留模块，为后续流程模拟与算法实现做准备
 - Radish.Extension：后端扩展功能模块类，例如 Swagger/Scalar、HealthCheck 等
+- Radish.Infrastructure：数据库与多租户基础设施层，集中维护 SqlSugar 扩展、租户过滤、表/库路由与连接解析逻辑，供 Extension、Repository 等项目复用
 - Radish.IRepository：后端数据访问接口类，定义数据访问层接口
 - Radish.IService：后端服务接口类，定义业务逻辑层接口
 - Radish.Model：后端数据模型类，仅存放数据库实体；实体（Entity）只能在 Repository 层内被直接操作，Service 层及以上均需转换为视图模型或 DTO
@@ -28,14 +29,14 @@
 - 后端项目按层次结构依赖：
   - Radish.Api 引用 radish.client（用于 SPA 代理）与 Radish.Service，并通过 Program.cs 注入 `IUserService/IUserRepository` 等接口实现；同时依赖 Radish.Common 以注册 `AppSettings` 扩展，避免在其他层重复创建配置源。
   - Radish.Service 依赖 Radish.IService（接口契约）与 Radish.Repository（数据访问实现），负责聚合业务逻辑；Service 层对外仅暴露 DTO/Vo，必须在返回前将仓储层实体映射为视图模型（推荐 AutoMapper）。
-  - Radish.Repository 依赖 Radish.IRepository 与 Radish.Model 中的实体类型，只能向 Service 层返回实体或实体集合，禁止直接引用任何 Vo/DTO；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model，以便共享实体与视图模型定义。
-- Radish.Extension 仅由宿主（Radish.Api）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
+  - Radish.Repository 依赖 Radish.IRepository、Radish.Model 以及 Radish.Infrastructure 中的 SqlSugar/租户扩展，只能向 Service 层返回实体或实体集合，禁止直接引用任何 Vo/DTO；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model，以便共享实体与视图模型定义。
+- Radish.Extension 仅由宿主（Radish.Api）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以及 Infrastructure 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
   - Radish.Core 暂时保留，无直接依赖关系
 - `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用“Controller 调用 Service，再由 Service 访问 Repository”的模式，并补齐对应接口定义
 
 ## 数据库与 SqlSugar 配置
 
-- `Program.cs` 需要在 `builder.Build()` 前调用 `builder.Services.AddSqlSugarSetup()`。该扩展定义于 `Radish.Extension.SqlSugarExtension`，内部使用 `SqlSugarScope` 单例注入并绑定所有连接配置。
+- `Program.cs` 需要在 `builder.Build()` 前调用 `builder.Services.AddSqlSugarSetup()`。该扩展定义于 `Radish.Extension.SqlSugarExtension`，内部依赖 `Radish.Infrastructure.Tenant.RepositorySetting`、`TenantUtil` 等组件，使用 `SqlSugarScope` 单例注入并绑定所有连接配置。
 - `appsettings.json` 约定结构如下：
 
 ```json
@@ -48,9 +49,15 @@
 
   - `MainDb` 指定默认主库的 `ConnId`；当配置多库/主从时，`BaseDbConfig.MutiConnectionString` 会把该连接放在集合首位。
   - `Databases` 中至少包含 `ConnId=Main` 与 `ConnId=Log` 两条记录，后者名称固定（`SqlSugarConst.LogConfigId`），缺失时启动会抛出异常；其余库可自定义 `DbType` 与从库 `Slaves` 列表。
-- `BaseRepository` 通过 `IUnitOfWorkManage` 获取 `SqlSugarScope` 单例，内部根据泛型实体的 `[Tenant(configId)]` 特性切换连接；未标注特性的实体沿用 `MainDb`，标注了 `configId="Log"` 等值（大小写不敏感）的实体会自动访问对应库。需要写入日志库或其他独立库的模型务必显式添加 `TenantAttribute`，以免错写入主库。
+- `BaseRepository` 通过 `IUnitOfWorkManage` 获取 `SqlSugarScope` 单例，内部根据泛型实体的 `[Tenant(configId)]` 特性切换连接；未标注特性的实体沿用 `MainDb`，标注了 `configId="Log"` 等值（大小写不敏感）的实体会自动访问对应库。需要写入日志库或其他独立库的模型务必显式添加 `TenantAttribute`，以免错写入主库；若实体启用了 `[MultiTenant(TenantTypeEnum.DataBases)]`，`BaseRepository` 会通过 `TenantUtil.GetConnectionConfig()` 在运行期动态添加租户库配置。
 - 使用 SQLite 时 `ConnectionString` 只需传数据库文件名，运行期会自动拼接 `Environment.CurrentDirectory`；对于 MySQL/SQLServer 等外部数据库，可通过 `dbCountPsw1_*.txt` 本地文件或环境变量隐藏真实连接串，`BaseDbConfig.SpecialDbString` 会优先读取文件值。
 - SQL 日志统一通过 `SqlSugarAop.OnLogExecuting` 写入 Serilog，`LogContextHelper` 会在上下文中打上 `LogSource=AopSql` 标签；SqlSugar 的缓存实现委托给 `Radish.Common.CacheTool.SqlSugarCache`，保持与 Redis/内存缓存一致的策略。
+
+### 多租户隔离模式示例
+
+- **字段隔离（单表）**：`BusinessTable : ITenantEntity` 依赖 QueryFilter 自动按 `TenantId` 过滤；调用 `GET /api/Tenant/BusinessTable` 可查看仅当前租户可见的数据，`.http` 示例位于 `Radish.Api/Radish.Api.http`。
+- **表隔离**：`MultiBusinessTable` 标注 `[MultiTenant(TenantTypeEnum.Tables)]`，`TenantUtil.SetTenantTable()` 会在运行期改写表名为 `表名_{TenantId}`，示例接口 `GET /api/Tenant/MultiBusinessTable`。
+- **分库隔离**：`SubLibBusinessTable` 标注 `[MultiTenant(TenantTypeEnum.DataBases)]`，`TenantUtil.GetConnectionConfig()` 根据租户配置动态注入连接，示例接口 `GET /api/Tenant/SubLibBusinessTable`（参考 `.http` 文件）。租户主数据需在数据库中预配 `TenantConfigId/DbConnectionStr` 等字段，且 `App.HttpContextUser` 必须包含合法 `TenantId`。
 
 ## 跨语言扩展（Rust 原生库）
 
