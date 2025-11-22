@@ -62,24 +62,24 @@ public static class SqlSugarSetup
         // 参考：https://www.donet5.com/Home/Doc?typeId=1181
         services.AddSingleton<ISqlSugarClient>(o =>
         {
-            return new SqlSugarScope(BaseDbConfig.AllConfigs);
-            // return new SqlSugarScope(BaseDbConfig.AllConfigs, db =>
-            // {
-            //     BaseDbConfig.ValidConfig.ForEach(config =>
-            //     {
-            //         var dbProvider = db.GetConnectionScope((string)config.ConfigId);
-            //         // 配置实体数据权限（多租户）
-            //         // RepositorySetting.SetTenantEntityFilter(dbProvider);
-            //
-            //         // 打印 SQL 语句
-            //         dbProvider.Aop.OnLogExecuting = (s, parameters) =>
-            //         {
-            //             SqlSugarAop.OnLogExecuting(dbProvider, App.User?.Name.ObjToString(), ExtractTableName(s),
-            //                 Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType), s, parameters,
-            //                 config);
-            //         };
-            //     });
-            // });
+            // return new SqlSugarScope(BaseDbConfig.AllConfigs);
+            return new SqlSugarScope(BaseDbConfig.AllConfigs, db =>
+            {
+                BaseDbConfig.ValidConfig.ForEach(config =>
+                {
+                    var dbProvider = db.GetConnectionScope((string)config.ConfigId);
+                    // 配置实体数据权限（多租户）
+                    RepositorySetting.SetTenantEntityFilter(dbProvider);
+            
+                    // 打印 SQL 语句
+                    // dbProvider.Aop.OnLogExecuting = (s, parameters) =>
+                    // {
+                    //     SqlSugarAop.OnLogExecuting(dbProvider, App.User?.Name.ObjToString(), ExtractTableName(s),
+                    //         Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType), s, parameters,
+                    //         config);
+                    // };
+                });
+            });
         });
     }
 

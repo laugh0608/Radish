@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 
@@ -8,14 +9,17 @@ namespace Radish.Api.Controllers;
 /// <summary>用户接口控制器</summary>
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Produces("application/json")]
 [Authorize(Policy = "RadishAuthPolicy")]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
+    private readonly IHttpContextUser  _httpContextUser;
 
-    public UserController(IUserService userService)
+    public UserController(IUserService userService, IHttpContextUser httpContextUser)
     {
         _userService = userService;
+        _httpContextUser = httpContextUser;
     }
 
     /// <summary>
@@ -50,6 +54,27 @@ public class UserController : ControllerBase
             IsSuccess = true,
             StatusCode = 200,
             MessageInfo = "获取成功",
+            ResponseData = userInfo
+        };
+    }
+
+    /// <summary>
+    /// 根据 HTTP 上下文来获取用户信息
+    /// </summary>
+    /// <returns></returns>
+    [HttpGet]
+    public async Task<MessageModel> GetUserByHttpContext()
+    {
+        await Task.CompletedTask;
+        var userId = _httpContextUser.UserId;
+        var userName = _httpContextUser.UserName;
+        var tenantId = _httpContextUser.TenantId;
+        // var userInfo = await _userService.QueryAsync(d => d.Id == res);
+        var userInfo = new { userId, userName, tenantId };
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = 200,
             ResponseData = userInfo
         };
     }

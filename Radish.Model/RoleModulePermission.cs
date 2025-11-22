@@ -35,7 +35,7 @@ public class RoleModulePermission : RootEntityTKey<long>
     /// 创建者 Id
     /// </summary>
     [SugarColumn(IsNullable = true)]
-    public long CreateId { get; set; } = 1000001;
+    public long CreateId { get; set; } = 0;
 
     /// <summary>
     /// 创建者

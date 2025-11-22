@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Radish.Common.HelpTool;
+using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool.Core;
 
 namespace Radish.Common.CoreTool;
@@ -50,7 +51,9 @@ public class App
     /// 获取请求上下文
     /// </summary>
     public static HttpContext HttpContext => RootServices?.GetService<IHttpContextAccessor>()?.HttpContext;
-
+    
+    public static IHttpContextUser HttpContextUser => GetService<IHttpContextUser>();
+    
     #region Service
 
     /// <summary>解析服务提供器</summary>
@@ -115,28 +118,6 @@ public class App
 
     #endregion
 
-    #region private
-
-    /// <summary>加载程序集中的所有类型</summary>
-    /// <param name="ass"></param>
-    /// <returns></returns>
-    private static IEnumerable<Type> GetTypes(Assembly ass)
-    {
-        Type[] source = Array.Empty<Type>();
-        try
-        {
-            source = ass.GetTypes();
-        }
-        catch
-        {
-            $@"Error load `{ass.FullName}` assembly.".WriteErrorLine();
-        }
-
-        return source.Where(u => u.IsPublic);
-    }
-
-    #endregion
-
     #region Options
 
     /// <summary>获取配置</summary>
@@ -185,4 +166,22 @@ public class App
     }
 
     #endregion
+    
+    /// <summary>加载程序集中的所有类型</summary>
+    /// <param name="ass"></param>
+    /// <returns></returns>
+    private static IEnumerable<Type> GetTypes(Assembly ass)
+    {
+        Type[] source = Array.Empty<Type>();
+        try
+        {
+            source = ass.GetTypes();
+        }
+        catch
+        {
+            $@"Error load `{ass.FullName}` assembly.".WriteErrorLine();
+        }
+
+        return source.Where(u => u.IsPublic);
+    }
 }

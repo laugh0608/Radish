@@ -14,6 +14,7 @@ namespace Radish.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Produces("application/json")]
 public class LoginController : ControllerBase
 {
     private readonly IUserService _userService;

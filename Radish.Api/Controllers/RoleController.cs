@@ -10,18 +10,15 @@ namespace Radish.Api.Controllers;
 /// <summary>角色接口控制器</summary>
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Produces("application/json")]
 [Authorize(Policy = "RadishAuthPolicy")]
 public class RoleController : ControllerBase
 {
-    private readonly IMapper _mapper;
     private readonly IBaseService<Role, RoleVo> _roleService;
-    private readonly IServiceScopeFactory _scopeFactory;
 
     public RoleController(IMapper mapper, IBaseService<Role, RoleVo> roleService, IServiceScopeFactory scopeFactory)
     {
-        _mapper = mapper;
         _roleService = roleService;
-        _scopeFactory = scopeFactory;
     }
 
     /// <summary>获取全部角色，测试泛型基类和视图对象关系映射</summary>

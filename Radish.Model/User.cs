@@ -111,9 +111,9 @@ public class User : RootEntityTKey<long>
     #region 权限相关
 
     /// <summary>部门 Id</summary>
-    /// <remarks>不可为空，默认为 1000001</remarks>
+    /// <remarks>不可为空，默认为 0</remarks>
     [SugarColumn(IsNullable = true)]
-    public long DepartmentId { get; set; } = 1000001;
+    public long DepartmentId { get; set; } = 0;
 
     /// <summary>所在部门名称</summary>
     /// <remarks>不可为空，最大 200 字符</remarks>
@@ -121,9 +121,9 @@ public class User : RootEntityTKey<long>
     public string DepartmentName { get; set; } = string.Empty;
 
     /// <summary>租户 Id</summary>
-    /// <remarks>不可为空，默认为 1000001</remarks>
+    /// <remarks>不可为空，默认为 0</remarks>
     [SugarColumn(IsNullable = false)]
-    public long TenantId { get; set; } = 1000001;
+    public long TenantId { get; set; } = 0;
 
     /// <summary>所拥有角色的 Ids</summary>
     /// <remarks>不可为空</remarks>
