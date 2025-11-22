@@ -20,5 +20,10 @@ public class CustomProfile : Profile
         CreateMap<BusinessTable, BusinessTableVo>();
         RecognizePrefixes("Vo"); // BusinessTableVo -> BusinessTable
         CreateMap<BusinessTableVo, BusinessTable>();
+        // MultiBusinessTable
+        RecognizeDestinationPrefixes("Vo"); // MultiBusinessTable -> MultiBusinessTableVo
+        CreateMap<MultiBusinessTable, MultiBusinessTableVo>();
+        RecognizePrefixes("Vo"); // MultiBusinessTableVo -> MultiBusinessTable
+        CreateMap<MultiBusinessTableVo, MultiBusinessTable>();
     }
 }
