@@ -80,6 +80,9 @@ public class WeatherForecastController : ControllerBase
 
     /// <summary>普通依赖注入和对象关系映射测试接口</summary>
     /// <returns></returns>
+    /// <example>{"name":"Sample","value":42}</example>
+    /// <response code="200">Returns the requested project board.</response>
+    /// <response code="404">If the project board is not found.</response>
     [HttpGet]
     public async Task<IActionResult> Test()
     {
