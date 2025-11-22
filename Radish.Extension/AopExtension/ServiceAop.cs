@@ -2,6 +2,7 @@ using System.Reflection;
 using Castle.DynamicProxy;
 using Newtonsoft.Json;
 using Radish.Common;
+using Radish.Common.LogTool;
 
 namespace Radish.Extension.AopExtension;
 

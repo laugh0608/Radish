@@ -4,6 +4,7 @@ using Radish.Common;
 using Radish.Common.CacheTool;
 using Radish.Common.CoreTool;
 using Radish.Common.DbTool;
+using Radish.Extension.AopExtension;
 using Radish.Infrastructure.Tenant;
 using SqlSugar;
 
@@ -73,12 +74,12 @@ public static class SqlSugarSetup
                     RepositorySetting.SetTenantEntityFilter(dbProvider);
             
                     // 打印 SQL 语句
-                    // dbProvider.Aop.OnLogExecuting = (s, parameters) =>
-                    // {
-                    //     SqlSugarAop.OnLogExecuting(dbProvider, App.User?.Name.ObjToString(), ExtractTableName(s),
-                    //         Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType), s, parameters,
-                    //         config);
-                    // };
+                    dbProvider.Aop.OnLogExecuting = (s, parameters) =>
+                    {
+                        SqlSugarAop.OnLogExecuting(dbProvider, App.HttpContextUser?.UserName.ObjToString(), ExtractTableName(s),
+                            Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType), s, parameters,
+                            config);
+                    };
                 });
             });
         });
