@@ -173,6 +173,7 @@ graph LR
 - 认证：封装 API 客户端自动附带 Token，失效触发刷新；敏感数据统一通过 RSA 公钥加密。
 - 状态管理：TanStack Query 管理异步数据与缓存，Zustand 管理 Dock/窗口/主题等客户端状态，表单由 React Hook Form + Zod 验证。
 - UI 与可访问性：Tailwind/UnoCSS + 自研组件 + Framer Motion 动效，兼顾键盘/触屏；所有文案走 i18n。
+- 组件库：计划自研一套基础组件（Button/Input/Select/Checkbox/Radio/Switch/Transfer/Form 等），或在 antd、Arco 等库上做白标二次封装，封装层统一输出 API、主题 Token、交互规范与 Storybook 文档，供桌面/移动/RN 共享。
 - 桌面化交互规范：桌面 Shell + Dock + 窗口系统为核心体验，移动端自动切换至 Tab/Stack 结构；未来 React Native/Expo 应重用相同的 Design Token 与组件语义。
 - 测试：组件级 Vitest + React Testing Library，端到端走 Playwright（桌面/移动视口），RN 规划阶段可使用 Detox。
 
