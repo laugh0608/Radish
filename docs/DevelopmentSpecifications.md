@@ -140,6 +140,8 @@
 
 ## 前端桌面化 UI 规范
 
+> 详细的交互、设计 Token、跨端策略以 [FrontendDesign.md](FrontendDesign.md) 为准，此处保留关键守则，便于与后端规范并列查看。
+
 - radish.client 以桌面模式为核心交互范式，首页加载后呈现类似 macOS 的桌面界面。
 - 顶部为状态栏，需显示当前登录用户名、IP 地址以及预留系统状态信息区域。
 - 底部为 Dock 栏，用于承载核心功能快捷入口；点击或双击图标都应维持桌面操作逻辑和动效。
@@ -149,6 +151,8 @@
 - 参考实现：`radish.client/public/webos.html`（Nebula OS 示例）展示了开机过渡、可拖拽窗口、多任务任务栏、Start 菜单与预置 Terminal/Editor/Browser 等应用图标；任何新页面都应优先在该场景中定义窗口外观与交互再迁移至 React 组件，保持动画节奏、图标尺寸与控件布局一致。
 
 ## radish.client 前端规范
+
+> 技术栈、目录结构、状态管理、测试策略等完整说明见 [FrontendDesign.md](FrontendDesign.md)，以下列出与后端协作密切的约束。
 
 1. 前后端传输的敏感字段计划使用 `encryptByPublicKey()` 加密，后端通过 `DecryptByPrivateKey()` 解密；方法虽未实现，但需提前规划调用点，保证接口兼容性。
 2. 组件统一使用函数式写法，结合 `useState`、`useMemo`、`useEffect` 等 Hook 管理状态与生命周期，避免继续编写 Class 组件。
