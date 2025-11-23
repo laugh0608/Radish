@@ -7,6 +7,7 @@
 ### 2025.11.25
 
 - chore(host/startup): Program.cs 在执行 `app.Run()` 前输出 “Radish  --by luobo” ASCII 标识，方便在控制台明确当前运行实例与版本信息。
+- docs(spec): 补充 `ApiModule.LinkUrl` 的正则写法与 `/` 前缀要求，开发规范强调包含路径参数的 API 必须在表中登记正则化 URL，避免授权策略匹配遗漏。
 
 ### 2025.11.24
 

@@ -27,10 +27,15 @@ public class ApiModule : RootEntityTKey<long>
     public string ApiModuleName { get; set; } = string.Empty;
 
     /// <summary>
-    /// 菜单链接地址
+    /// API 地址
     /// </summary>
+    /// <remarks>
+    /// <para>如果使用了路径参数，那么在 ApiModule 表中存 URL 的时候必须加上正则匹配：</para>
+    /// <para>例如：/api/GetById/\d+</para>
+    /// <para>api 前面的根符号别忘了</para>
+    /// </remarks>
     [SugarColumn(Length = 100, IsNullable = true)]
-    public string LinkUrl { get; set; } = "api/HealthCheck";
+    public string LinkUrl { get; set; } = "/api/HealthCheck";
 
     /// <summary>
     /// 区域名称
