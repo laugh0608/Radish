@@ -11,6 +11,7 @@
 - **基础基线**：.NET 10 SDK、SQLSugar、PostgreSQL 16、本地或容器化运行；前端统一使用 React（不再维护 Angular）。
 - **配置策略**：`appsettings.{Env}.json` + 环境变量 + `.env`; 前端通过 `.env.local` 注入 `VITE_API_BASE_URL` 等；敏感值仅存储在 Secret Manager 或密钥管控服务。
 - **交付要求**：每周至少完成一个端到端可演示的用例（后端 API + 前端界面 + 文档/测试），并在 DevelopmentLog 中留下记录。
+- **前端体验**：桌面化 UI、移动适配与 React Native 规划须遵循 [FrontendDesign.md](FrontendDesign.md)，各阶段完成度以该文档的 Token/组件/交互 checklist 为准。
 
 ## 里程碑概览
 
