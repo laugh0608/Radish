@@ -4,6 +4,8 @@ using Radish.Common;
 using Radish.Common.CacheTool;
 using Radish.Common.CoreTool;
 using Radish.Common.DbTool;
+using Radish.Extension.AopExtension;
+using Radish.Infrastructure.Tenant;
 using SqlSugar;
 
 namespace Radish.Extension.SqlSugarExtension;
@@ -34,7 +36,7 @@ public static class SqlSugarSetup
                     IsAutoRemoveDataCache = true,
                     SqlServerCodeFirstNvarchar = true,
                 },
-                // 自定义特性
+                // 通过自定义特性使用 SqlSugar 缓存服务
                 ConfigureExternalServices = new ConfigureExternalServices()
                 {
                     DataInfoCacheService = new SqlSugarCache(),
@@ -55,31 +57,31 @@ public static class SqlSugarSetup
 
         if (BaseDbConfig.LogConfig is null)
         {
-            throw new ApplicationException("未配置Log库连接");
+            throw new ApplicationException("未配置 Log 库连接");
         }
 
         // SqlSugarScope 是线程安全，可使用单例注入
         // 参考：https://www.donet5.com/Home/Doc?typeId=1181
         services.AddSingleton<ISqlSugarClient>(o =>
         {
-            return new SqlSugarScope(BaseDbConfig.AllConfigs);
-            // return new SqlSugarScope(BaseDbConfig.AllConfigs, db =>
-            // {
-            //     BaseDbConfig.ValidConfig.ForEach(config =>
-            //     {
-            //         var dbProvider = db.GetConnectionScope((string)config.ConfigId);
-            //         // 配置实体数据权限（多租户）
-            //         // RepositorySetting.SetTenantEntityFilter(dbProvider);
-            //
-            //         // 打印 SQL 语句
-            //         dbProvider.Aop.OnLogExecuting = (s, parameters) =>
-            //         {
-            //             SqlSugarAop.OnLogExecuting(dbProvider, App.User?.Name.ObjToString(), ExtractTableName(s),
-            //                 Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType), s, parameters,
-            //                 config);
-            //         };
-            //     });
-            // });
+            // return new SqlSugarScope(BaseDbConfig.AllConfigs);
+            return new SqlSugarScope(BaseDbConfig.AllConfigs, db =>
+            {
+                BaseDbConfig.ValidConfig.ForEach(config =>
+                {
+                    var dbProvider = db.GetConnectionScope((string)config.ConfigId);
+                    // 配置实体数据权限（多租户）
+                    RepositorySetting.SetTenantEntityFilter(dbProvider);
+            
+                    // 打印 SQL 语句
+                    dbProvider.Aop.OnLogExecuting = (s, parameters) =>
+                    {
+                        SqlSugarAop.OnLogExecuting(dbProvider, App.HttpContextUser?.UserName.ObjToString(), ExtractTableName(s),
+                            Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType), s, parameters,
+                            config);
+                    };
+                });
+            });
         });
     }
 

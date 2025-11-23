@@ -10,10 +10,10 @@ public class MessageModel<T>
     public bool IsSuccess { get; set; } = false;
 
     /// <summary>返回信息</summary>
-    public string MessageInfo { get; set; } = string.Empty;
+    public string MessageInfo { get; set; } = "Nothing happened here.";
 
     /// <summary>开发者信息</summary>
-    public string MessageInfoDev { get; set; } = string.Empty;
+    public string MessageInfoDev { get; set; } = "Nothing happened here.";
 
     /// <summary>返回数据集合</summary>
     public T ResponseData { get; set; } = default;
@@ -38,7 +38,7 @@ public class MessageModel<T>
     /// <summary>返回失败</summary>
     /// <param name="msg">消息</param>
     /// <returns></returns>
-    public static MessageModel<T> Fail(string msg)
+    public static MessageModel<T> Failed(string msg)
     {
         return Message(false, msg, default);
     }
@@ -47,7 +47,7 @@ public class MessageModel<T>
     /// <param name="msg">消息</param>
     /// <param name="responseData">数据</param>
     /// <returns></returns>
-    public static MessageModel<T> Fail(string msg, T responseData)
+    public static MessageModel<T> Failed(string msg, T responseData)
     {
         return Message(false, msg, responseData);
     }

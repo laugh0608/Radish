@@ -46,9 +46,9 @@ public class Role : RootEntityTKey<long>
     public bool IsEnabled { get; set; } = false;
 
     /// <summary>创建者的 Id</summary>
-    /// <remarks>不可为空，默认为 1000001</remarks>
+    /// <remarks>不可为空，默认为 0</remarks>
     [SugarColumn(IsNullable = true)]
-    public long CreateId { get; set; } = 1000001;
+    public long CreateId { get; set; } = 0;
 
     /// <summary>创建者的名称</summary>
     /// <remarks>不可为空，最大 50 字符，默认为 System</remarks>

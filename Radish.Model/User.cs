@@ -44,16 +44,16 @@ public class User : RootEntityTKey<long>
 
     /// <summary>性别</summary>
     /// <remarks>
-    /// <para>0 为未知，1 为男，2 为女</para>
+    /// <para>0 为保密，1 为男，2 为女</para>
     /// <para>不可为空，默认为 0</para>
     /// </remarks>
     [SugarColumn(IsNullable = true)]
     public int UserSex { get; set; } = 0;
 
     /// <summary>年龄</summary>
-    /// <remarks>不可为空，默认为 1</remarks>
+    /// <remarks>不可为空，默认为 18</remarks>
     [SugarColumn(IsNullable = true)]
-    public int UserAge { get; set; } = 1;
+    public int UserAge { get; set; } = 18;
 
     /// <summary>生日</summary>
     /// <remarks>可空，限定格式为 yyyy-MM-dd</remarks>
@@ -70,9 +70,9 @@ public class User : RootEntityTKey<long>
     #region 状态相关
 
     /// <summary>状态</summary>
-    /// <remarks>不可为空，默认为 0</remarks>
+    /// <remarks>不可为空，默认为 -1</remarks>
     [SugarColumn(IsNullable = true)]
-    public int StatusCode { get; set; } = 0;
+    public int StatusCode { get; set; } = -1;
 
     /// <summary>创建时间</summary>
     /// <remarks>更新时忽略改列</remarks>
@@ -99,21 +99,21 @@ public class User : RootEntityTKey<long>
     /// <summary>用户是否启用</summary>
     /// <remarks>不可为空，默认为 true</remarks>
     [SugarColumn(IsNullable = true)]
-    public bool IsEnable { get; set; } = true;
+    public bool IsEnable { get; set; } = false;
 
     /// <summary>用户是否被删除</summary>
     /// <remarks>不可为空，默认为 false</remarks>
     [SugarColumn(IsNullable = true)]
-    public bool IsDeleted { get; set; } = false;
+    public bool IsDeleted { get; set; } = true;
 
     #endregion
 
     #region 权限相关
 
     /// <summary>部门 Id</summary>
-    /// <remarks>不可为空，默认为 1000001</remarks>
+    /// <remarks>不可为空，默认为 0</remarks>
     [SugarColumn(IsNullable = true)]
-    public long DepartmentId { get; set; } = 1000001;
+    public long DepartmentId { get; set; } = 0;
 
     /// <summary>所在部门名称</summary>
     /// <remarks>不可为空，最大 200 字符</remarks>
@@ -121,9 +121,9 @@ public class User : RootEntityTKey<long>
     public string DepartmentName { get; set; } = string.Empty;
 
     /// <summary>租户 Id</summary>
-    /// <remarks>不可为空，默认为 1000001</remarks>
+    /// <remarks>不可为空，默认为 0</remarks>
     [SugarColumn(IsNullable = false)]
-    public long TenantId { get; set; } = 1000001;
+    public long TenantId { get; set; } = 0;
 
     /// <summary>所拥有角色的 Ids</summary>
     /// <remarks>不可为空</remarks>

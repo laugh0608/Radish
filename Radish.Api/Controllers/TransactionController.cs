@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Radish.Common;
 using Radish.IService;
 using Radish.Model;
@@ -10,6 +11,8 @@ namespace Radish.Api.Controllers;
 /// <summary>测试事务-订单交易接口控制器</summary>
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Produces("application/json")]
+[Authorize(Policy = "RadishAuthPolicy")]
 public class TransactionController : ControllerBase
 {
     private readonly IBaseService<Role, RoleVo> _roleService;
@@ -76,6 +79,7 @@ public class TransactionController : ControllerBase
     }
 
     /// <summary>测试使用同事务</summary>
+    /// <remarks>仅为示例，无任何作用</remarks>
     /// <returns></returns>
     [HttpGet]
     public async Task<object> TestTranPropagation()

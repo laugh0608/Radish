@@ -5,24 +5,35 @@
     <File Path="docs/DevelopmentPlan.md" />
     <File Path="docs/DevelopmentSpecifications.md" />
     <File Path="docs/README.md" />
+    <File Path="docs\AuthenticationGuide.md" />
+    <File Path="docs\DeploymentGuide.md" />
   </Folder>
-  <Folder Name="/others/">
+  <Folder Name="/solution/">
     <File Path=".dockerignore" />
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
     <File Path="global.json" />
     <File Path="LICENSE.txt" />
     <File Path="README.md" />
+    <File Path="AGENTS.md" />
+    <File Path="local-start.ps1" />
+    <File Path="local-start.sh" />
+    <File Path="Radish.sln.DotSettings.user" />
+    <File Path="Radish.slnLaunch.user" />
+    <File Path="Radish.slnx" />
   </Folder>
+  <Folder Name="/test/">
+    <Project Path="Radish.Api.Tests\Radish.Api.Tests.csproj" />
+  </Folder>
+  <Project Path="Radish.Api/Radish.Api.csproj" />
   <Project Path="Radish.Common/Radish.Common.csproj" />
   <Project Path="Radish.Core/Radish.Core.csproj" />
   <Project Path="Radish.Extension/Radish.Extension.csproj" />
+  <Project Path="Radish.Infrastructure/Radish.Infrastructure.csproj" />
   <Project Path="Radish.IRepository/Radish.IRepository.csproj" />
   <Project Path="Radish.IService/Radish.IService.csproj" />
   <Project Path="Radish.Model/Radish.Model.csproj" />
   <Project Path="Radish.Repository/Radish.Repository.csproj" />
-  <Project Path="Radish.Api.Tests\Radish.Api.Tests.csproj" />
-  <Project Path="Radish.Api/Radish.Api.csproj" />
   <Project Path="Radish.Service/Radish.Service.csproj" />
   <Project Path="Radish.Shared/Radish.Shared.csproj" />
 </Solution>

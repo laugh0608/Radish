@@ -21,6 +21,7 @@
     <ProjectReference Include="..\Radish.Service\Radish.Service.csproj" />
     <ProjectReference Include="..\Radish.Model\Radish.Model.csproj" />
     <ProjectReference Include="..\Radish.Repository\Radish.Repository.csproj" />
+    <ProjectReference Include="..\Radish.Infrastructure\Radish.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
