@@ -20,6 +20,7 @@ using Radish.IService;
 using Radish.Repository;
 using Radish.Service;
 using Scalar.AspNetCore;
+using SqlSugar;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
@@ -37,16 +38,17 @@ builder.Host
         hostingContext.Configuration.ConfigureApplication(); // 1. 绑定 InternalApp 扩展中的配置
         config.Sources.Clear();
         config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+        config.AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json",
+            optional: true, reloadOnChange: false);
         // config.AddConfigurationApollo("appsettings.apollo.json");
     });
 // 2. 绑定 InternalApp 扩展中的环境变量
 builder.ConfigureApplication();
 // 激活 Autofac 影响的 IControllerActivator 控制器激活器，这一行的意义就是把 Controller 类也就是控制器注册为 Service 服务
 builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
-// 注册 Controller 控制器
+// 注册跨域规则
 const string corsPolicyName = "FrontendCors";
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
-// 注册跨域规则
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(corsPolicyName, policyBuilder =>
@@ -89,6 +91,10 @@ builder.Services.AddAllOptionRegister();
 builder.Services.AddCacheSetup();
 // 注册 SqlSugar 服务
 builder.Services.AddSqlSugarSetup();
+// 增强 SqlSugar 的雪花 ID 算法，防止重复
+var snowflakeSection = builder.Configuration.GetSection("Snowflake");
+SnowFlakeSingle.WorkId = snowflakeSection.GetValue<int>("WorkId");
+SnowFlakeSingle.DatacenterId = snowflakeSection.GetValue<int>("DataCenterId");
 // 注册泛型仓储与服务，AddScoped() 汇报模式，每次请求的时候注入
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));

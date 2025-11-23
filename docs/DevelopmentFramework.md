@@ -75,6 +75,8 @@ PostgreSQL
 - `Radish.Api`
   - 负责 DI、配置、日志、全局异常、认证授权、Swagger/Scalar、HealthChecks。
   - 仅保留轻量 Controller/Endpoint，所有核心逻辑委派给 Service 层。
+  - 配置加载：`ConfigureAppConfiguration` 会先清空默认源，再依次加载 `appsettings.json` 与 `appsettings.{Environment}.json`，保证环境差异（连接串、Snowflake、Redis 等）优先由环境文件覆盖，公共默认值仍写在基础文件里兜底。
+  - 雪花 ID：`Program` 在注册 SqlSugar 之后从 `Snowflake` 节读取 `WorkId`、`DataCenterId` 并写入 `SnowFlakeSingle`，多实例部署必须在各自的 `appsettings.{Env}.json` 中配置不同 WorkId；若缺省则读取基础文件的兜底值，禁止把生产与本地设置为同一个编号。
   - API 文档：开发环境把 Scalar UI 映射到 `/api/docs`，并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Api/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
   - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为“联调开关”。
   - 跨域：`appsettings.json` 中的 `Cors:AllowedOrigins` 维护允许访问 API 的前端地址，预设了 `localhost:5173` 以及 Rolldown 默认端口 `58794` 的多个别名（`vite.dev.localhost`、`host.*` 等）。更换端口或外网域名时记得同步更新该列表。
