@@ -42,8 +42,8 @@ public class LoginController : ControllerBase
         // 用 32 位 MD5 加密密码
         pass = Md5Helper.Md5Encrypt32(pass);
 
-        Log.Information($"测试自定义日志 -- {name}-{pass}");
-        _logger.LogInformation($"测试自定义日志 -- {name}-{pass}");
+        Log.Information($"自定义日志 -- {name}-{pass}");
+        _logger.LogInformation($"自定义日志 -- {name}-{pass}");
 
         var user = await _userService.QueryAsync(d =>
             d.LoginName == name && d.LoginPassword == pass && d.IsDeleted == false);
