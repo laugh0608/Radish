@@ -4,6 +4,11 @@
 
 > 当前阶段采用 .NET 10 + SQLSugar + PostgreSQL + React 技术栈；以下记录聚焦新架构的推进，后续如有重要调整也会在此处补充说明。
 
+### 2025.11.26
+
+- feat(config): `Program` 的 Host 配置阶段在清空默认配置源后同时加载 `appsettings.json` 与 `appsettings.{Environment}.json`，并在 SqlSugar 注册后读取 `Snowflake.WorkId/DataCenterId` 设置 `SnowFlakeSingle`，确保多实例按环境文件划分唯一 WorkId 且公共默认值仍写在基础文件兜底。
+- docs(config/snowflake): DevelopmentFramework 与 DevelopmentSpecifications 说明新增环境配置加载顺序与 `Snowflake` 配置段的使用方式，明确所有服务器需在各自的环境文件里维护不同的 WorkId/DatacenterId，避免雪花 ID 冲突。
+
 ### 2025.11.25
 
 - chore(host/startup): Program.cs 在执行 `app.Run()` 前输出 “Radish  --by luobo” ASCII 标识，方便在控制台明确当前运行实例与版本信息。
