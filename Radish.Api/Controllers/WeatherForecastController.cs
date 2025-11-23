@@ -7,6 +7,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.LogModels;
 using Radish.Model.ViewModels;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -26,28 +27,24 @@ public class WeatherForecastController : ControllerBase
     private readonly IBaseService<Role, RoleVo> _roleService;
     private readonly IBaseService<AuditSqlLog, AuditSqlLogVo> _auditSqlLogService;
     private readonly ICaching _caching;
+    private readonly ILogger<WeatherForecastController> _logger;
 
     /// <summary>构造函数，注入服务</summary>
     /// <param name="scopeFactory"></param>
     /// <param name="roleService"></param>
     /// <param name="auditSqlLogService"></param>
     /// <param name="caching"></param>
+    /// <param name="logger"></param>
     public WeatherForecastController(IServiceScopeFactory scopeFactory,
         IBaseService<Role, RoleVo> roleService,
         IBaseService<AuditSqlLog, AuditSqlLogVo> auditSqlLogService,
-        ICaching caching)
+        ICaching caching, ILogger<WeatherForecastController> logger)
     {
         _scopeFactory = scopeFactory;
         _roleService = roleService;
         _auditSqlLogService = auditSqlLogService;
         _caching = caching;
-    }
-
-    /// <summary>构造函数，无参数</summary>
-    /// <exception cref="NotImplementedException"></exception>
-    public WeatherForecastController()
-    {
-        throw new NotImplementedException();
+        _logger = logger;
     }
 
     private static readonly string[] Summaries =
@@ -60,6 +57,12 @@ public class WeatherForecastController : ControllerBase
     [HttpGet]
     public IEnumerable<WeatherForecast> Get()
     {
+        // 测试两种日志输出
+        // 直接使用 Serilog
+        Log.Information("Log.Information: Getting weather forecast");
+        // 使用 ILogger
+        _logger.LogInformation("_logger.LogInformation: Getting weather forecast");
+
         return Enumerable.Range(1, 5).Select(index => new WeatherForecast
             {
                 Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),

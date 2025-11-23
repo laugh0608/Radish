@@ -4,6 +4,12 @@
 
 > 当前阶段采用 .NET 10 + SQLSugar + PostgreSQL + React 技术栈；以下记录聚焦新架构的推进，后续如有重要调整也会在此处补充说明。
 
+### 2025.11.27
+
+- feat(log): 引入 `Radish.Extension.SerilogExtension`（`SerilogSetup` + `LogConfigExtension`），Program 通过 `builder.Host.AddSerilogSetup()` 安装 Serilog，统一输出到控制台与 `Log/` 目录，并用 `LogContextTool.LogSource` 区分普通日志与 SqlSugar AOP 日志；日志落盘使用 `WriteTo.Async()` 防止阻塞请求线程，同时在 `Log/SerilogDebug` 下收集 SelfLog。
+- chore(common): `LogContextTool` 重命名并扩展 `SerilogDebug` 常量，供 Serilog 内部日志复用；`SqlSugarAop` 不再直接 `Console.WriteLine`，统一交给 Serilog 输出。
+- chore(api/weather): `WeatherForecastController` 更新为注入 `ILogger<WeatherForecastController>`，演示同时使用 `_logger` 与 `Serilog.Log` 输出示例日志，避免 Autofac 无法解析非泛型 `ILogger` 的问题。
+
 ### 2025.11.26
 
 - feat(config): `Program` 的 Host 配置阶段在清空默认配置源后同时加载 `appsettings.json` 与 `appsettings.{Environment}.json`，并在 SqlSugar 注册后读取 `Snowflake.WorkId/DataCenterId` 设置 `SnowFlakeSingle`，确保多实例按环境文件划分唯一 WorkId 且公共默认值仍写在基础文件兜底。
