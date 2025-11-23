@@ -75,6 +75,9 @@ PostgreSQL
 - `Radish.Api`
   - 负责 DI、配置、日志、全局异常、认证授权、Swagger/Scalar、HealthChecks。
   - 仅保留轻量 Controller/Endpoint，所有核心逻辑委派给 Service 层。
+  - 配置加载：`ConfigureAppConfiguration` 会先清空默认源，再依次加载 `appsettings.json` 与 `appsettings.{Environment}.json`，保证环境差异（连接串、Snowflake、Redis 等）优先由环境文件覆盖，公共默认值仍写在基础文件里兜底。
+  - 雪花 ID：`Program` 在注册 SqlSugar 之后从 `Snowflake` 节读取 `WorkId`、`DataCenterId` 并写入 `SnowFlakeSingle`，多实例部署必须在各自的 `appsettings.{Env}.json` 中配置不同 WorkId；若缺省则读取基础文件的兜底值，禁止把生产与本地设置为同一个编号。
+  - 日志：宿主调用 `builder.Host.AddSerilogSetup()`，由 `Radish.Extension.SerilogExtension` 统一配置输出目标。Serilog 默认读取 appsettings，写入控制台与 `Log/` 目录（普通日志 -> `Log.txt`，SqlSugar AOP 日志 -> `AopSql/AopSql.txt`），内部基于 `LogContextTool.LogSource` 区分日志类型并通过 `WriteTo.Async()` 异步落盘，避免阻塞请求线程。
   - API 文档：开发环境把 Scalar UI 映射到 `/api/docs`，并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Api/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
   - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为“联调开关”。
   - 跨域：`appsettings.json` 中的 `Cors:AllowedOrigins` 维护允许访问 API 的前端地址，预设了 `localhost:5173` 以及 Rolldown 默认端口 `58794` 的多个别名（`vite.dev.localhost`、`host.*` 等）。更换端口或外网域名时记得同步更新该列表。
@@ -164,13 +167,15 @@ graph LR
 
 ## 前端架构与规范
 
-- Vite 配置 HTTPS、代理 API、环境变量区分（`.env.development` / `.env.production`）。
-- 目录建议：`features/*`, `entities/*`, `shared/*`, `app/providers`，使用按特性拆包。
-- 认证：基于 `fetch`/`axios` 拦截器附带 AccessToken，失效时调用刷新接口（刷新令牌存于 HttpOnly Cookie 或安全存储）。
-- 状态管理：React Query 管理异步数据，Zustand/Jotai 管理本地 UI 状态；Form 使用 React Hook Form。
-- UI 与可访问性：Tailwind/UnoCSS 原子化 + 自研组件，提供暗色模式与响应式布局。
-- 桌面化交互规范：首页呈现类 macOS 桌面，顶部状态栏显示用户名/IP，底部 Dock 承载主功能入口，左侧桌面图标双击弹出带最小化/关闭按钮的窗口，所有弹窗遵循桌面操作逻辑。
-- 测试：组件级 Vitest，关键流程 Playwright（可选）。
+- 详细的前端设计、桌面/移动交互规范与未来 React Native 规划均见 [FrontendDesign.md](FrontendDesign.md)，下文仅保留核心约束。
+- Vite 配置 HTTPS、代理 API、环境变量区分（`.env.development` / `.env.production`），并在 `radish.client` 中启用 React 19 + Rolldown。
+- 目录建议：`app/`（入口、providers、路由）、`features/*`（按业务拆包）、`widgets/*`（桌面组件）、`shared/*`（api/ui/config），保持与未来 RN 工程一致，方便共享包。
+- 认证：封装 API 客户端自动附带 Token，失效触发刷新；敏感数据统一通过 RSA 公钥加密。
+- 状态管理：TanStack Query 管理异步数据与缓存，Zustand 管理 Dock/窗口/主题等客户端状态，表单由 React Hook Form + Zod 验证。
+- UI 与可访问性：Tailwind/UnoCSS + 自研组件 + Framer Motion 动效，兼顾键盘/触屏；所有文案走 i18n。
+- 组件库：计划自研一套基础组件（Button/Input/Select/Checkbox/Radio/Switch/Transfer/Form 等），或在 antd、Arco 等库上做白标二次封装，封装层统一输出 API、主题 Token、交互规范与 Storybook 文档，供桌面/移动/RN 共享。
+- 桌面化交互规范：桌面 Shell + Dock + 窗口系统为核心体验，移动端自动切换至 Tab/Stack 结构；未来 React Native/Expo 应重用相同的 Design Token 与组件语义。
+- 测试：组件级 Vitest + React Testing Library，端到端走 Playwright（桌面/移动视口），RN 规划阶段可使用 Detox。
 
 ## DevOps 与运维基线
 
@@ -187,6 +192,12 @@ graph LR
 4. **质量门禁**：
    - PR 必须附带 `dotnet test` 与 `npm run build` 结果；若变更数据库需提供迁移脚本与回滚建议。
    - 关键模块需要 Code Review + Pair Walkthrough。
+
+## API Gateway 规划（未来迭代）
+
+- 需求背景、阶段划分、任务清单详见 [GatewayPlan.md](GatewayPlan.md)，当前仍以完成既有框架/业务功能为优先，但涉及认证、日志、配置时需预留 Gateway 所需的 Header/配置片段。
+- 最近规划：在核心模块稳定后（预计 M8+），增量引入 `Radish.Gateway`（Ocelot 方案），先完成 P1-P3（基线、认证、路由聚合），其余 P4-P6（服务发现、可观测性、服务拆分）列为后续迭代。
+- 新增服务/接口需在设计评审阶段评估“是否通过 Gateway 暴露”，避免未来迁移时重复改动。
 
 ---
 

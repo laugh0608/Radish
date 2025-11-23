@@ -1,16 +1,75 @@
 # 开发日志
 
+## 第三阶段
+
+> 准备开发...
+
 ## 第二阶段
 
-> 当前阶段采用 .NET 10 + SQLSugar + PostgreSQL + React 技术栈；以下记录聚焦新架构的推进，后续如有重要调整也会在此处补充说明。
+### 阶段总结
+
+- **后端框架落地**：完成 `Radish.Api` 最小宿主与分层架构（Common/Core/Extension/Service/Repository/I* 项目）搭建，Autofac 容器、ConfigurableOptions、`AppSettingsTool`、`App.ConfigureApplication()` 四步绑定、SqlSugarScope、Snowflake ID、Serilog、Redis/内存缓存、泛型仓储与服务、AutoMapper、JWT + PermissionRequirement 等核心能力全部串联，可在开发/生产配置文件中无缝切换并支持多租户、多数据库、日志分流。
+- **基础设施增强**：实现 SqlSugar 多库与日志库分离、AOP SQL 日志、`LogContextTool`/`SerilogSetup` 的统一输出策略、`SqlSugarCache`/Redis 缓存、`ServiceAop` 拦截、`TenantController` 的字段/表/库隔离示例、`WeatherForecast`/`RustTest` 的 DI/原生能力验证，确保关键横切关注点（配置、日志、安全、缓存、租户、测试样例）在进入业务阶段前就位。
+- **模型与权限体系**：补齐 `ApiModule`、`RoleModulePermission`、`UserRole` 等实体与视图模型，`PermissionExtension` + `PermissionRequirementHandler` 动态拼装 `RadishAuthPolicy`，`IBaseRepository/IBaseService` 支持 Snowflake ID 返回、可空 Where、三表联查等增强，为 RBAC 与业务表 CRUD 提供统一基座。
+- **文档与前端计划**：同步更新 DevelopmentFramework/Specifications/AuthenticationGuide/FrontendDesign 等文档，记录配置加载、日志策略、SqlSugar 多库、前端桌面化与标准化组件规划，为第三阶段（领域建模、应用服务、桌面化前端组件、DevOps 补强）提供一致的事实来源与验证 checklist。
+
+### 2025.11.23
+
+- feat(log): 引入 `Radish.Extension.SerilogExtension`（`SerilogSetup` + `LogConfigExtension`），Program 通过 `builder.Host.AddSerilogSetup()` 安装 Serilog，统一输出到控制台与 `Log/` 目录，并用 `LogContextTool.LogSource` 区分普通日志与 SqlSugar AOP 日志；日志落盘使用 `WriteTo.Async()` 防止阻塞请求线程，同时在 `Log/SerilogDebug` 下收集 SelfLog。
+- chore(common): `LogContextTool` 重命名并扩展 `SerilogDebug` 常量，供 Serilog 内部日志复用；`SqlSugarAop` 不再直接 `Console.WriteLine`，统一交给 Serilog 输出。
+- chore(api/weather): `WeatherForecastController` 更新为注入 `ILogger<WeatherForecastController>`，演示同时使用 `_logger` 与 `Serilog.Log` 输出示例日志，避免 Autofac 无法解析非泛型 `ILogger` 的问题。
+
+### 2025.11.22
+
+- feat(config): `Program` 的 Host 配置阶段在清空默认配置源后同时加载 `appsettings.json` 与 `appsettings.{Environment}.json`，并在 SqlSugar 注册后读取 `Snowflake.WorkId/DataCenterId` 设置 `SnowFlakeSingle`，确保多实例按环境文件划分唯一 WorkId 且公共默认值仍写在基础文件兜底。
+- docs(config/snowflake): DevelopmentFramework 与 DevelopmentSpecifications 说明新增环境配置加载顺序与 `Snowflake` 配置段的使用方式，明确所有服务器需在各自的环境文件里维护不同的 WorkId/DatacenterId，避免雪花 ID 冲突。
+
+### 2025.11.21
+
+- chore(host/startup): Program.cs 在执行 `app.Run()` 前输出 “Radish  --by luobo” ASCII 标识，方便在控制台明确当前运行实例与版本信息。
+- docs(spec): 补充 `ApiModule.LinkUrl` 的正则写法与 `/` 前缀要求，开发规范强调包含路径参数的 API 必须在表中登记正则化 URL，避免授权策略匹配遗漏。
+
+### 2025.11.20
+
+- feat(infra): 新增 `Radish.Infrastructure` 项目沉淀 SqlSugar/租户相关的基础设施（`Tenant.RepositorySetting`、`TenantUtil` 等），由 Extension/Repository 统一引用，避免跨层循环依赖并集中维护多租户路由逻辑。
+- feat(tenant): `TenantController` 与 `Radish.Api.http` 补充字段隔离、分表隔离与分库隔离示例接口，模型层新增 `BusinessTable`、`MultiBusinessTable`、`SubLibBusinessTable` 及其 Vo，Repository 通过 `TenantUtil.GetConnectionConfig()` 自动切换租户库。
+- feat(automapper): `CustomProfile` 注册 Business/MultiBusiness/SubLibBusiness 的 Vo 映射，保障多租户示例无需手写转换即可返回 DTO。
+- docs(auth): `AuthenticationGuide.md` 汇总当前 JWT 发行、授权策略与 PermissionRequirementHandler 流程，文档化登录接口的 Claim 组合与调试建议，方便新成员快速理解鉴权链路。
+
+### 2025.11.19
+
+- feat(auth): 将鉴权类型拆分到 `PermissionExtension`，新增 `PermissionItem` 与 `PermissionRequirementHandler`，运行时按“角色-API”关系动态组装 `RadishAuthPolicy`，并在 `RoleController`、`UserController` 等控制器上启用策略。
+- feat(api/user): `UserController` 改为统一返回 `MessageModel`，新增 `GetUserById` 示例，`Radish.Api.http`/`http-client.env.json` 补充用户接口示例与最新 JWT，便于本地调试。
+- feat(service/repo): `IBaseRepository`/`IBaseService` 增加 `QueryMuchAsync` 三表联查封装，`UserService.RoleModuleMaps()` 直接基于 SqlSugar Join 构建 `RoleModulePermission`，为权限处理器提供实时数据。
+- chore(config): 轮换 JWT 密钥，`JwtTokenGenerate` 与 `Program` 保持一致；`appsettings.json` 新增 `AppSettings.UseLoadTest`，供鉴权测试时跳过登录校验；`PermissionRequirement` 仅保留配置，授权逻辑迁至 handler。
+- test(api): `LoginControllerTest` 适配新的命名空间与假数据，实现 `RoleModuleMaps`/`QueryMuchAsync` 桩方法，继续验证登录流程。
+
+### 2025.11.18
+
+- feat(model/auth): 新增 `ApiModule`、`RoleModulePermission`、`UserRole` 实体与 `UserRoleVo`/`TokenInfoVo` 视图模型，补完 API 模块、角色-权限-按钮及用户-角色关联建模，支撑下一步的 RBAC 鉴权。
+- refactor(model/user): User/MessageModel/RoleVo/UserVo 默认值与字段全面校准（含 Uuid、Vo* 命名、性别/年龄/状态默认值、消息默认提示等），保证接口契约在登录与下游消费场景下更一致。
+- refactor(service/repo): `IBaseRepository/IBaseService` 的 `Query*` 支持可空 `Expression<Func<...>>`，Repository/Service 的实现亦同步泛化，`UserService` 的种子数据示例也调整为正式命名。
+- feat(api/automapper): `LoginController` 标记为标准 API 控制器并注入 `IUserService`，AutoMapper Profile 为 User/Role/UserRole 映射补齐前缀识别与字段对应，便于后续直接复用 DTO。
+
+### 2025.11.17
+
+- feat(repo/db): `BaseRepository` 改由 `SqlSugarScope` + `IUnitOfWorkManage` 承载数据库实例，并读取实体上的 `[Tenant(configId)]` 特性动态切换连接，默认走主库，`AuditSqlLog` 等标注了 `configId="Log"` 的实体自动写入日志库。
+- feat(api/tests): WeatherForecast 控制器及其 xUnit 示例同步验证多种依赖解析方式，同时注入 `IBaseService<AuditSqlLog, AuditSqlLogVo>` 以演示日志库的查询链路，便于之后参考缓存、属性注入与多库访问的组合用法。
+- feat(api): WeatherForecastController 新增 `[HttpGet("{id}")]` 的 `GetById` 示例，可通过 `api/WeatherForecast/GetById/1` 直接验证路径参数绑定，后续 Controller 添加 REST 风格路由时可参照该写法。
 
 ### 2025.11.16
+
+- feat(log): 新增 `Radish.Model.LogModels.BaseLog` 与 `AuditSqlLog`，默认挂载 `Tenant(configId: "log")` 并按月分表落库，同时提供 `AuditSqlLogVo` 作为对外视图模型，保证查询日志时依旧走 DTO。
+- fix(automapper): `AutoMapperConfig` 拆分 `RegisterCustomProfile()`，`AutoMapperSetup` 在构建配置时先注册自定义 profile，再集中挂载 `Role/User/AuditSqlLog` 映射；`AuditSqlLogProfile` 中启用了 `RecognizePrefixes/RecognizeDestinationPrefixes("Vo")`，作为首个 Vo 前缀双向映射样例。
+- docs(todo): 启动阶段待接入 `AssertConfigurationIsValid()` 以确保所有 profile 均通过 AutoMapper 15 的配置校验，避免运行期才发现字段缺失。
+
+### 2025.11.15
 
 - feat(db): `Radish.Common.DbTool` + `Radish.Extension.SqlSugarExtension` 接入 SqlSugarScope，`BaseDbConfig` 统一读取 `MainDb` 与 `Databases` 列表，默认提供 `Main`（业务库）与 `Log`（日志库）两个 SQLite 示例，并在 Program 中以 `AddSqlSugarSetup()` 自动注入多库配置。
 - feat(log/cache): 新增 `SqlSugarCache`、`SqlSugarAop` 与 `LogContextHelper`，将 SqlSugar 内置缓存委托至 `ICaching` 并把 SQL 日志推送到 Serilog，上下文可通过 `LogSource=AopSql` 快速检索。
 - feat(model): `Radish.Model.RootEntityTKey<TKey>` 统一约束实体主键，`Role` 等实体继承该基类；`BaseRepository`/`BaseService` 暴露 `ISqlSugarClient` 实例以便服务层调试 Hash，对应接口同步更新。
 
-### 2025.11.15
+### 2025.11.14
 
 - feat(core/native): 在 `Radish.Core/test_lib` 引入首个 Rust `cdylib` 示例，通过 `cargo build --release` 输出 `test_lib`，封装累加、斐波那契模拟、埃拉托斯特尼筛及并行质数计算，配合 Rayon/num_cpus 快速验证 CPU 密集算法表现。
 - feat(api): 新建 `RustTest` 控制器，提供 `/api/RustTest/TestSum{1-4}` 基准接口，对比 C# 与 Rust 的执行耗时，并统一以 `DllImport("test_lib")` 调用共享库。

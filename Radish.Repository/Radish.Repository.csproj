@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Radish.IRepository\Radish.IRepository.csproj" />
+    <ProjectReference Include="..\Radish.Infrastructure\Radish.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

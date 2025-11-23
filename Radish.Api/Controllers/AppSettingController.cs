@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -9,6 +10,8 @@ namespace Radish.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]/[action]")]
+[Produces("application/json")]
+[Authorize(Policy = "RadishAuthPolicy")]
 public class AppSettingController : ControllerBase
 {
     private readonly IOptions<RedisOptions>  _redisOptions;

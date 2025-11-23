@@ -2,6 +2,7 @@ using System.Reflection;
 using Castle.DynamicProxy;
 using Newtonsoft.Json;
 using Radish.Common;
+using Radish.Common.LogTool;
 
 namespace Radish.Extension.AopExtension;
 
@@ -97,7 +98,8 @@ public class ServiceAop : IInterceptor
         apiLogAopInfo.ResponseIntervalTime = responseTime + "ms";
         apiLogAopInfo.ResponseJsonData = JsonConvert.SerializeObject(o);
 
-        await Task.Run(() => { Console.WriteLine("执行成功-->" + JsonConvert.SerializeObject(apiLogAopInfo)); });
+        await Task.CompletedTask;
+        // await Task.Run(() => { Console.WriteLine("执行成功-->" + JsonConvert.SerializeObject(apiLogAopInfo)); });
     }
 
     private void LogEx(Exception ex, AopLogInfoTool dataIntercept)

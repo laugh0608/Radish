@@ -26,6 +26,7 @@ Radish.slnx 汇总所有 .NET 10 项目，遵循分层架构：
 
 ## 提交与 Pull Request 指南
 - Git 历史遵循 Conventional Commits（如 `feat: 完成项目分层创建`、`fix:`、`chore:`）；保持小步提交，并在需要时附中文说明。
+- 提交信息需清晰描述核心变动，避免使用 `save local changes` 等笼统内容；若改动较大，可拆分为多个语义明确的提交。
 - PR 描述包含变更摘要、测试结果、关联 Issue；前端 UI 变更附截图/GIF，后端接口调整附示例请求（可复用 `Radish.Api.http`）。更新文档或脚本时在同一 PR 中同步。
 
 ## 配置与安全提示
