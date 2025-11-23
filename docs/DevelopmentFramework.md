@@ -189,6 +189,12 @@ graph LR
    - PR 必须附带 `dotnet test` 与 `npm run build` 结果；若变更数据库需提供迁移脚本与回滚建议。
    - 关键模块需要 Code Review + Pair Walkthrough。
 
+## API Gateway 规划（未来迭代）
+
+- 需求背景、阶段划分、任务清单详见 [GatewayPlan.md](GatewayPlan.md)，当前仍以完成既有框架/业务功能为优先，但涉及认证、日志、配置时需预留 Gateway 所需的 Header/配置片段。
+- 最近规划：在核心模块稳定后（预计 M8+），增量引入 `Radish.Gateway`（Ocelot 方案），先完成 P1-P3（基线、认证、路由聚合），其余 P4-P6（服务发现、可观测性、服务拆分）列为后续迭代。
+- 新增服务/接口需在设计评审阶段评估“是否通过 Gateway 暴露”，避免未来迁移时重复改动。
+
 ---
 
 如需在架构或选型上做进一步调整，请同步更新本文件并在 DevelopmentLog 中记录决策，确保贡献者获取到一致的信息。

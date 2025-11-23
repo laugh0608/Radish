@@ -134,3 +134,9 @@
 - 前端与后端共享的 DTO 请优先在 `Radish.Model` 中维护，React 侧生成对应的 TypeScript 类型，避免漂移。
 - 若出现新的关键技术选型（例如引入 redis、消息队列等），请同步更新 DevelopmentFramework 与本文件，保持信息一致。
 - React Compiler（实验）：React 19 新编译器暂不在主干启用；待官方正式发布并通过 Vite/Babel 稳定支持后，再在独立分支验证收益（减少手写 memo、优化渲染），评估通过后才会合入主线。
+
+## 后续规划：API Gateway
+
+- 详细任务拆解见 [GatewayPlan.md](GatewayPlan.md)，当前阶段专注既有 M1-M8 交付，Gateway 作为 M9 之后的专项迭代。
+- 触发条件：后端核心用例和认证机制稳定、日志/监控链路可复用。届时启动 P1（项目基线）→ P2（认证）→ P3（路由/聚合）的工作包，并在 DevelopmentLog 记录进度。
+- 在日常开发中提前预留：规范 Header（`X-Request-Id`、`X-Client-Id`）、CORS 配置、登录控制器可被 Gateway 复用，减少后续迁移成本。
