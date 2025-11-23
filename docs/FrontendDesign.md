@@ -66,16 +66,22 @@ radish.client/src
 ## 4. 设计系统
 
 1. **Token**：在 `shared/config/tokens.ts` 定义颜色、字体、间距、阴影、模糊、动效时长，导出 `desktopTheme`、`mobileTheme`, `darkTheme`。
-2. **组件层级**：
+2. **标准化组件库**：
+   - 目标是沉淀一套 Button/Input/Select/Checkbox/Radio/Switch/Transfer/Form 等基础组件，统一语义、尺寸、状态与动效。实现方式可为完全自研，或基于 Ant Design/Arco/Next UI 等第三方库进行“白标化”二次封装，但最外层 API、设计 Token、动效必须保持 Radish 规范。
+   - 若采用第三方库，需要拆分 `@/shared/ui/primitives`（直接映射 antd 组件并覆写主题）与 `@/shared/ui/controls`（业务中使用的封装层）。封装层负责：① 统一命名与变体（`<Button variant="ghost" intent="danger" size="lg">`）；② 注入 Design Token；③ 屏蔽第三方库的命名/类前缀；④ 导出 `Form`、`Field`、`FormItem` 等组合件。
+   - 组件库需配套 Storybook/VitePress 文档（`npm run storybook` 或 `docs/ui`），列出属性、交互、辅助线，并在 PR 中附录对应故事链接。所有组件要提供暗黑模式、无障碍状态（Focus ring、ARIA 标签）、移动端触控半径。
+   - 表单体系默认依赖 React Hook Form + 自定义 `Form`, `FormField`, `FormItem`, `FormControl`, `FormMessage` 组合，支持动态 schema、联动校验、表单布局（水平/垂直/紧凑）。穿梭框、列表选择、树选择等复合组件要提前评估数据量并提供虚拟滚动。
+   - 发布节奏：先落地 Button/Input/Select/IconButton/FormItem，随后扩展 Table、Modal、Drawer、Notification。组件需写入 `radish.client/src/shared/ui`，未来 RN 端在 `packages/ui/native` 保持相同 API。
+3. **组件层级**：
    - 基础组件（Button/Input/Card/Modal）→ shared/ui。
    - 布局组件：`AppShell`, `Dock`, `DesktopGrid`, `Window`, `MobileTabBar`。
    - 业务组件：`PostList`, `CommentThread`, `ShopCarousel`。
-3. **动效规范**：
+4. **动效规范**：
    - 窗口打开：scale+opacity 210ms，最小化：向 Dock 图标缩放 180ms。
    - Tab 切换：左右滑动 250ms+Bezier。
    - RN 端采用 Reanimated 的 shared transitions，实现与 Web 近似的动效。
-4. **图标体系**：统一使用 `RadishIcon`（基于 Iconify 或自建 SVG 集），尺寸 16/20/24px，Dock 图标 48px。
-5. **文案与国际化**：字符串全部走 i18n，默认 zh-Hans，预留 en-US；移动端文案保持简洁避免超出。
+5. **图标体系**：统一使用 `RadishIcon`（基于 Iconify 或自建 SVG 集），尺寸 16/20/24px，Dock 图标 48px。
+6. **文案与国际化**：字符串全部走 i18n，默认 zh-Hans，预留 en-US；移动端文案保持简洁避免超出。
 
 ## 5. 交互与导航
 
