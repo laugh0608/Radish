@@ -4,6 +4,10 @@
 
 > 当前阶段采用 .NET 10 + SQLSugar + PostgreSQL + React 技术栈；以下记录聚焦新架构的推进，后续如有重要调整也会在此处补充说明。
 
+### 2025.11.25
+
+- chore(host/startup): Program.cs 在执行 `app.Run()` 前输出 “Radish  --by luobo” ASCII 标识，方便在控制台明确当前运行实例与版本信息。
+
 ### 2025.11.24
 
 - feat(infra): 新增 `Radish.Infrastructure` 项目沉淀 SqlSugar/租户相关的基础设施（`Tenant.RepositorySetting`、`TenantUtil` 等），由 Extension/Repository 统一引用，避免跨层循环依赖并集中维护多租户路由逻辑。
