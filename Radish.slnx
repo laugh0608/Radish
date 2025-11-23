@@ -5,6 +5,8 @@
     <File Path="docs/DevelopmentPlan.md" />
     <File Path="docs/DevelopmentSpecifications.md" />
     <File Path="docs/README.md" />
+    <File Path="docs\AuthenticationGuide.md" />
+    <File Path="docs\DeploymentGuide.md" />
   </Folder>
   <Folder Name="/solution/">
     <File Path=".dockerignore" />
@@ -26,8 +28,8 @@
   <Project Path="Radish.Api/Radish.Api.csproj" />
   <Project Path="Radish.Common/Radish.Common.csproj" />
   <Project Path="Radish.Core/Radish.Core.csproj" />
-  <Project Path="Radish.Infrastructure/Radish.Infrastructure.csproj" />
   <Project Path="Radish.Extension/Radish.Extension.csproj" />
+  <Project Path="Radish.Infrastructure/Radish.Infrastructure.csproj" />
   <Project Path="Radish.IRepository/Radish.IRepository.csproj" />
   <Project Path="Radish.IService/Radish.IService.csproj" />
   <Project Path="Radish.Model/Radish.Model.csproj" />
