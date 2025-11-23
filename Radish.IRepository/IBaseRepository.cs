@@ -43,6 +43,13 @@ public interface IBaseRepository<TEntity> where TEntity : class
     /// <returns>List TEntity</returns>
     Task<List<TEntity>> QueryAsync(Expression<Func<TEntity, bool>>? whereExpression = null);
 
+    /// <summary>按照 Where 表达式查询（使用缓存）</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <param name="cacheTime">使用缓存查询的时间，默认 10 s</param>
+    /// <returns>List TEntity</returns>
+    Task<List<TEntity>> QueryWithCacheAsync(Expression<Func<TEntity, bool>>? whereExpression = null,
+        int cacheTime = 10);
+
     /// <summary>
     /// 三表联查
     /// </summary>
@@ -58,7 +65,7 @@ public interface IBaseRepository<TEntity> where TEntity : class
         Expression<Func<T, T2, T3, object[]>> joinExpression,
         Expression<Func<T, T2, T3, TResult>> selectExpression,
         Expression<Func<T, T2, T3, bool>>? whereLambda = null) where T : class, new();
-    
+
     /// <summary>分表-按照 Where 表达式查询</summary>
     /// <param name="whereExpression">Where 表达式，可空</param>
     /// <param name="orderByFields">排序字段，默认为 Id，其他如 Name, Age</param>

@@ -38,6 +38,13 @@ public interface IBaseService<TEntity, TVo> where TEntity : class
     /// <returns>List TEntity</returns>
     Task<List<TVo>> QueryAsync(Expression<Func<TEntity, bool>>? whereExpression = null);
     
+    /// <summary>按照 Where 表达式查询（使用缓存）</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <param name="cacheTime">使用缓存查询的时间，默认 10 s</param>
+    /// <returns>List TEntity</returns>
+    Task<List<TVo>> QueryWithCacheAsync(Expression<Func<TEntity, bool>>? whereExpression = null,
+        int cacheTime = 10);
+    
     /// <summary>
     /// 三表联查
     /// </summary>

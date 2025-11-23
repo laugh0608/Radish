@@ -43,8 +43,9 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
                 // 获取租户信息，租户信息可以提前缓存下来 
                 if (App.HttpContextUser is { TenantId: > 0 })
                 {
-                    // .WithCache()
-                    var tenant = db.Queryable<Tenant>().WithCache().Where(s => s.Id == App.HttpContextUser.TenantId).First();
+                    // .WithCache() 走缓存查询
+                    var tenant = db.Queryable<Tenant>().WithCache().Where(s => s.Id == App.HttpContextUser.TenantId)
+                        .First();
                     if (tenant != null)
                     {
                         var iTenant = db.AsTenant();
@@ -52,6 +53,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
                         {
                             iTenant.AddConnection(tenant.GetConnectionConfig());
                         }
+
                         return iTenant.GetConnectionScope(tenant.TenantConfigId);
                     }
                 }
@@ -118,6 +120,17 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         // DbBase 是 ISqlSugarClient 单例注入的，所以多次查询的 HASH 是一样的，对应的是 Service 层的 Repository 不是单例
         // await Console.Out.WriteLineAsync($"DbBase HashCode: {DbBase.GetHashCode().ToString()}");
         return await DbClientBase.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).ToListAsync();
+    }
+
+    /// <summary>按照 Where 表达式查询（使用缓存）</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <param name="cacheTime">使用缓存查询的时间，默认 10 s</param>
+    /// <returns>List TEntity</returns>
+    public async Task<List<TEntity>> QueryWithCacheAsync(Expression<Func<TEntity, bool>>? whereExpression = null, int cacheTime = 10)
+    {
+        // return await DbClientBase.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).WithCache().ToListAsync();
+        // 缓存时间默认为 10 s
+        return await DbClientBase.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).WithCacheIF(true, cacheTime).ToListAsync();
     }
 
     /// <summary>

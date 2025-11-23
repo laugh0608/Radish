@@ -41,7 +41,7 @@ public class Caching : ICaching
     }
 
     /// <summary>
-    /// 增加缓存Key
+    /// 增加缓存 Key
     /// </summary>
     /// <param name="cacheKey"></param>
     /// <returns></returns>

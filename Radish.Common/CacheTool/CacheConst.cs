@@ -44,7 +44,7 @@ public class CacheConst
     public const string KeyQueryFilter = "queryFilter:";
 
     /// <summary>
-    /// 机构Id集合缓存
+    /// 机构 Id 集合缓存
     /// </summary>
     public const string KeyOrgIdList = "org:";
 
@@ -79,7 +79,7 @@ public class CacheConst
     public const string KeyConstSelector = "selector:";
 
     /// <summary>
-    /// swagger登录缓存
+    /// Swagger 登录缓存
     /// </summary>
     public const string SwaggerLogin = "swaggerLogin:";
 }
