@@ -173,3 +173,4 @@
    （6）（可选）若泛型仓储不满足需求，在 IRepository/Repository 层定义并实现专用仓储；
    （7）在 Server 层通过依赖注入调用 IService，完成数据返回或存储。
 8. Server 层对外暴露的 Controller 禁止直接注入 `IBaseRepository` 或任何业务仓储，所有数据访问需经由 Service 层封装。
+9. 角色-API 授权依赖 `ApiModule.LinkUrl` 进行正则匹配，因此 URL 必须以 `/` 开头；若 Action 路由包含路径参数（如 `[HttpGet("{id:long}")]`），请在 `LinkUrl` 中写入对应的正则版本（示例：`/api/User/GetById/\d+`），否则 `RadishAuthPolicy` 无法命中该路由。

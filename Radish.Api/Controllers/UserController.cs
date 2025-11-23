@@ -38,10 +38,15 @@ public class UserController : ControllerBase
             ResponseData = users
         };
     }
-    
+
     /// <summary>
     /// 根据 Uuid 获取用户信息
     /// </summary>
+    /// <remarks>
+    /// <para>如果使用了路径参数，那么在 ApiModule 表中存 URL 的时候必须加上正则匹配：</para>
+    /// <para>例如：/api/GetById/\d+</para>
+    /// <para>api 前面的根符号别忘了</para>
+    /// </remarks>
     /// <param name="id">用户 Id</param>
     /// <returns></returns>
     [HttpGet("{id:long}")]

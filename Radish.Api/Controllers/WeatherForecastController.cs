@@ -70,6 +70,11 @@ public class WeatherForecastController : ControllerBase
     }
 
     /// <summary>路径参数测试接口</summary>
+    /// <remarks>
+    /// <para>如果使用了路径参数，那么在 ApiModule 表中存 URL 的时候必须加上正则匹配：</para>
+    /// <para>例如：/api/GetById/\d+</para>
+    /// <para>api 前面的根符号别忘了</para>
+    /// </remarks>
     /// <param name="id"></param>
     /// <returns></returns>
     [HttpGet("{id}")] // 效果：api/WeatherForecast/GetById/1
