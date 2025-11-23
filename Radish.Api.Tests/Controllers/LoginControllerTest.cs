@@ -101,6 +101,11 @@ public class LoginControllerTest
             return Task.FromResult(result);
         }
 
+        public Task<List<UserVo>> QueryWithCacheAsync(Expression<Func<User, bool>> whereExpression = null, int cacheTime = 10)
+        {
+            throw new NotImplementedException();
+        }
+
         public Task<List<TResult>> QueryMuchAsync<T, T2, T3, TResult>(
             Expression<Func<T, T2, T3, object[]>> joinExpression, Expression<Func<T, T2, T3, TResult>> selectExpression,
             Expression<Func<T, T2, T3, bool>> whereLambda = null) where T : class, new()

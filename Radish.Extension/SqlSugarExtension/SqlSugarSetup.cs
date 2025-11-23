@@ -36,7 +36,7 @@ public static class SqlSugarSetup
                     IsAutoRemoveDataCache = true,
                     SqlServerCodeFirstNvarchar = true,
                 },
-                // 通过自定义特性识别数据库链接配置
+                // 通过自定义特性使用 SqlSugar 缓存服务
                 ConfigureExternalServices = new ConfigureExternalServices()
                 {
                     DataInfoCacheService = new SqlSugarCache(),

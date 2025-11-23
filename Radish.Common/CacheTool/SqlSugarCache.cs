@@ -3,7 +3,14 @@ using SqlSugar;
 
 namespace Radish.Common.CacheTool;
 
-/// <summary>实现 SqlSugar 的 ICacheService 接口</summary>
+/// <summary>
+/// 实现 SqlSugar 的 ICacheService 接口
+/// </summary>
+/// <remarks>
+/// <para>建议另行实现业务缓存，注入 ICaching 直接用即可</para>
+/// <para>不建议使用 SqlSugar 缓存，性能有很大问题，会导致 Redis 堆积</para>
+/// <para>核心问题在于 SqlSugar，每次 Query（注：不管有没有启用，所有表的查询）都会查缓存, insert\update\delete，又会频繁 GetAllKey，导致性能特别差</para>
+/// </remarks>
 public class SqlSugarCache : ICacheService
 {
     private readonly Lazy<ICaching> _caching = new(() => App.GetService<ICaching>(false));

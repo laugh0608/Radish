@@ -29,3 +29,13 @@ Authorization:Bearer {{JwtToken}}
 GET {{Api_HostAddress}}/api/Tenant/SubLibBusinessTable
 Accept: application/json
 Authorization:Bearer {{JwtToken}}
+
+### 使用缓存获取全部租户列表
+GET {{Api_HostAddress}}/api/Tenant/GetTenantWithCache
+Accept: application/json
+Authorization:Bearer {{JwtToken}}
+
+### 测试添加一个租户
+GET {{Api_HostAddress}}/api/Tenant/AddTest
+Accept: application/json
+Authorization:Bearer {{JwtToken}}
