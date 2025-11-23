@@ -14,6 +14,7 @@ using Radish.Extension.AutofacExtension;
 using Radish.Extension.AutoMapperExtension;
 using Radish.Extension.PermissionExtension;
 using Radish.Extension.RedisExtension;
+using Radish.Extension.SerilogExtension;
 using Radish.Extension.SqlSugarExtension;
 using Radish.IRepository;
 using Radish.IService;
@@ -133,6 +134,8 @@ builder.Services.AddSingleton(new PermissionRequirement());
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 // 注册 HttpContext 获取用户信息服务
 builder.Services.AddScoped<IHttpContextUser, HttpContextUser>();
+// 注册 Serilog 服务
+builder.Host.AddSerilogSetup();
 
 // -------------- App 初始化阶段 ---------------
 var app = builder.Build();
