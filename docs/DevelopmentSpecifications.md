@@ -40,11 +40,24 @@
 - `appsettings.json` 约定结构如下：
 
 ```json
-"MainDb": "Main",
-"Databases": [
-  { "ConnId": "Main", "DbType": 2, "Enabled": true, "ConnectionString": "Radish.db" },
-  { "ConnId": "Log", "DbType": 2, "Enabled": true, "ConnectionString": "RadishLog.db", "HitRate": 50 }
-]
+{
+  "MainDb": "Main",
+  "Databases": [
+    {
+      "ConnId": "Main",
+      "DbType": 2,
+      "Enabled": true,
+      "ConnectionString": "Radish.db"
+    },
+    {
+      "ConnId": "Log",
+      "DbType": 2,
+      "Enabled": true,
+      "ConnectionString": "RadishLog.db",
+      "HitRate": 50
+    }
+  ]
+}
 ```
 
   - `MainDb` 指定默认主库的 `ConnId`；当配置多库/主从时，`BaseDbConfig.MutiConnectionString` 会把该连接放在集合首位。
