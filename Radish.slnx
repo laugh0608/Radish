@@ -7,6 +7,8 @@
     <File Path="docs/README.md" />
     <File Path="docs\AuthenticationGuide.md" />
     <File Path="docs\DeploymentGuide.md" />
+    <File Path="docs\FrontendDesign.md" />
+    <File Path="docs\GatewayPlan.md" />
   </Folder>
   <Folder Name="/solution/">
     <File Path=".dockerignore" />
@@ -21,6 +23,7 @@
     <File Path="Radish.sln.DotSettings.user" />
     <File Path="Radish.slnLaunch.user" />
     <File Path="Radish.slnx" />
+    <File Path="CLAUDE.md" />
   </Folder>
   <Folder Name="/test/">
     <Project Path="Radish.Api.Tests\Radish.Api.Tests.csproj" />
