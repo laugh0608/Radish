@@ -102,6 +102,7 @@
 ## AOP 与日志
 
 - `Radish.Extension/ServiceAop` 基于 Castle.DynamicProxy 实现接口拦截，当前主要用于捕捉 `BaseService<,>` 等应用服务的入参、响应与耗时信息，并通过 `AopLogInfo` 统一结构化输出。
+- 常规业务日志统一调用 Serilog 静态方法（`Log.Information/Log.Warning/Log.Error` 等），除非框架/第三方库必须注入 `ILogger<T>` 才能工作，否则 Controller、Service 以及扩展类中都不再手动注入 `ILogger`，避免出现多套日志通道。
 - `AutofacModuleRegister` 已在泛型服务注册时启用 `.EnableInterfaceInterceptors().InterceptedBy(ServiceAop)`，如果后续服务需要自定义拦截，可在同一位置扩展拦截器数组。
 - `Radish.Common/AopLogInfo` 集中维护 AOP 日志字段，调用层仅负责填充必要属性并交给日志基础设施处理，避免在各服务中手写日志模型。
 
