@@ -1,63 +1,561 @@
-# 鉴权与授权总览
+# 鉴权与授权指南
 
-Radish 后端的鉴权链路建立在 **JWT 持有者认证 + ASP.NET Core Authorization** 之上，结合数据库中的“角色-API”映射动态裁剪可访问资源。本文档梳理当前实现，以便快速定位策略或扩展。
+Radish 采用 **OIDC（OpenID Connect）** 架构实现统一身份认证，基于 **OpenIddict** 构建认证服务器。本文档梳理整体架构、配置要点与扩展方式。
 
-## 1. 鉴权流程
+## 1. 架构概览
 
-1. 客户端调用 `GET /api/Login/GetJwtToken`，传入用户名/密码。
-2. `LoginController` 验证账号（`Radish.Api/Controllers/LoginController.cs`），并为合法用户构造 `Claim` 列表（`Name`、`Jti`、`TenantId`、`Iat`、`Expiration`、`Role` 等）。
-3. `JwtTokenGenerate.BuildJwtToken` 使用固定密钥、Issuer/Audience 等参数生成 JWT（`Radish.Extension/JwtTokenGenerate.cs`）。
-4. 后续 API 通过 `Authorization: Bearer <token>` 头传递凭据。
-5. `Program.cs` 注册的 `AddJwtBearer` 中间件校验 Token，同时 ASP.NET Core Authorization 根据策略决定是否放行。
+### 1.1 系统拓扑
 
-## 2. JWT 配置
+```
+┌─────────────────────────────────────────────────────────┐
+│                  Radish.Auth (OIDC Server)              │
+│  端口: https://localhost:7100                           │
+│  ─────────────────────────────────────────────────────  │
+│  • 用户管理（注册/登录/密码重置）                         │
+│  • 角色与权限管理                                        │
+│  • 租户管理（多租户支持）                                 │
+│  • Token 签发/刷新/撤销                                  │
+│  • OIDC 端点                                            │
+└──────────────┬──────────────────────────────────────────┘
+               │
+    ┌──────────┴──────────┬────────────┬───────────┐
+    ▼                     ▼            ▼           ▼
+┌─────────┐        ┌──────────┐   ┌────────┐  ┌─────────┐
+│Radish.Api│       │radish.   │   │ Scalar │  │ Admin   │
+│:7110     │       │client    │   │API Docs│  │Dashboard│
+│(资源服务器)│       │:58794    │   │        │  │(预留)    │
+└─────────┘        └──────────┘   └────────┘  └─────────┘
+```
 
-- **Issuer/Audience**：`Radish` / `luobo`，在 `Program.cs` 和 `JwtTokenGenerate` 中保持一致，防止解密失败。
-- **SigningKey**：当前保存在源代码中（`wpH7A1jQRPu...`），建议在生产中改为环境变量或 Secret Manager。
-- **Lifetime**：`TokenValidationParameters.ValidateLifetime = true`，`JwtTokenGenerate` 默认签发 12 小时有效期（`tokenTime = 60 * 60 * 12`）。
-- **Claims 要求**：`PermissionRequirementHandler` 依赖 `ClaimTypes.Role`/`"role"` 判断访问范围，并读取 `ClaimTypes.Expiration` 监控过期，因此生成 Token 时必须写入这些项。
+### 1.2 核心优势
 
-## 3. 登录接口说明
+- **单点登录（SSO）**：一次登录可访问所有已注册的客户端应用
+- **标准化协议**：遵循 OAuth 2.0 / OIDC 规范，便于集成第三方身份提供商
+- **安全性**：支持 PKCE、Refresh Token 轮换、Token 撤销
+- **可扩展性**：认证服务可独立水平扩展
 
-`LoginController.GetJwtToken` 做了以下工作：
+## 2. OIDC 端点
 
-- 使用 `Md5Helper.Md5Encrypt32` 对密码进行 32 位 MD5，加密匹配数据库。
-- 调用 `IUserService.GetUserRoleNameStrAsync` 获取角色字符串，多角色会以逗号拼接并写入 `ClaimTypes.Role`。
-- 调用 `JwtTokenGenerate` 返回 `TokenInfoVo`，包含 `TokenInfo`、`ExpiresIn`、`TokenType`。
-- 认证失败会返回 `MessageModel<TokenInfoVo>.Failed("认证失败")`，便于前端提示。
+Radish.Auth 提供以下标准 OIDC 端点：
 
-若需扩展登录方式（如短信/三方登录），确保最终仍生成上述核心 Claims，或同步调整 Handler 的读取逻辑。
+| 端点 | 路径 | 说明 |
+| --- | --- | --- |
+| 发现文档 | `/.well-known/openid-configuration` | OIDC 配置元数据 |
+| 授权 | `/connect/authorize` | 用户授权入口（浏览器重定向） |
+| Token | `/connect/token` | 获取/刷新 Access Token |
+| 用户信息 | `/connect/userinfo` | 获取当前用户信息 |
+| 登出 | `/connect/logout` | 结束会话 |
+| 撤销 | `/connect/revoke` | 撤销 Token |
+| 内省 | `/connect/introspect` | Token 验证（资源服务器使用） |
 
-## 4. 授权策略整理
+## 3. 授权类型
 
-`builder.Services.AddAuthorizationBuilder()` 注册了多种策略（见 `Radish.Api/Program.cs`）：
+### 3.1 Authorization Code + PKCE（推荐）
 
-- `Client`：`RequireClaim("iss","Radish")`，只校验签发者。
-- `System`：`RequireRole("System")`，用于后台管理类接口。
-- `SystemOrAdmin`：`RequireRole("System","Admin")`，兼容高权限运营场景。
-- `RadishAuthPolicy`：自定义策略，借助 `PermissionRequirement` + `PermissionRequirementHandler` 做“角色-URL”匹配，是绝大多数业务接口挂载的策略。
+适用于前端 SPA、移动 App 等公开客户端。
 
-控制器可通过 `[Authorize(Policy = "System")]` 等特性选用不同策略；若未声明，默认只执行 JWT 验证，不做额外授权判断。
+```
+┌────────┐                              ┌────────────┐                    ┌──────────┐
+│ Client │                              │ Auth Server│                    │   API    │
+└───┬────┘                              └─────┬──────┘                    └────┬─────┘
+    │                                         │                                │
+    │ 1. 生成 code_verifier + code_challenge  │                                │
+    │ ──────────────────────────────────────> │                                │
+    │ 2. 重定向到 /connect/authorize          │                                │
+    │                                         │                                │
+    │ 3. 用户登录并授权                        │                                │
+    │ <────────────────────────────────────── │                                │
+    │ 4. 返回 authorization_code              │                                │
+    │                                         │                                │
+    │ 5. POST /connect/token                  │                                │
+    │    (code + code_verifier)               │                                │
+    │ ──────────────────────────────────────> │                                │
+    │ 6. 返回 access_token + refresh_token    │                                │
+    │ <────────────────────────────────────── │                                │
+    │                                         │                                │
+    │ 7. 调用 API (Bearer token)              │                                │
+    │ ────────────────────────────────────────────────────────────────────────>│
+    │ 8. 返回资源                              │                                │
+    │ <────────────────────────────────────────────────────────────────────────│
+```
 
-## 5. PermissionRequirementHandler 细节
+### 3.2 Client Credentials
 
-`Radish.Extension/PermissionExtension/PermissionRequirementHandler.cs` 负责 `RadishAuthPolicy` 的动态授权：
+适用于服务间调用（无用户参与）。
 
-- 首次命中会调用 `IUserService.RoleModuleMaps()` 构建 `PermissionItem` 列表，按角色与 API（`ApiModule.LinkUrl`）缓存到 `PermissionRequirement.PermissionItems`，避免重复查询。
-- 每个请求都会：
-  - 使用 `Schemes.GetDefaultAuthenticateSchemeAsync()` + `AuthenticateAsync()` 解析 Token。
-  - 若 `AppSettings.UseLoadTest` 为 `true`，跳过登录校验，用于压测或调试。
-  - 检查 `ClaimTypes.Expiration` 是否仍大于当前时间，过期则 `context.Fail`。
-  - 从 `ClaimTypes.Role` / `"role"` 收集角色，若未含 `System`，将当前 URL 与角色下的 `PermissionItem.Url` 通过正则匹配（忽略大小写、可支持 `/api/User/Get/\d+` 形式）。
-  - 匹配失败时 `context.Fail()`，否则 `context.Succeed(requirement)`。
+```csharp
+// 请求示例
+POST /connect/token
+Content-Type: application/x-www-form-urlencoded
 
-变更数据库路由或角色后，可清空应用缓存或重启以刷新 `PermissionItems`，或扩展 Handler 使其支持定期刷新。
+grant_type=client_credentials
+&client_id=radish-background-service
+&client_secret=xxx
+&scope=radish-api
+```
 
-## 6. 调试与实践建议
+### 3.3 Refresh Token
 
-- **本地调试**：在 `Radish.Api/http-client.env.json` 中维护测试 Token，可配合 `Radish.Api.http` 直接调用。
-- **密钥轮换**：同步更新 `Program.cs` 与 `JwtTokenGenerate` 中的 `IssuerSigningKey`，并记录在 `docs/DevelopmentLog.md`，必要时支持双 Token 验证过渡。
-- **新增受控 API**：确保对应角色的 `RoleModuleMap` 数据存在，并在控制器上标记 `[Authorize(Policy = "RadishAuthPolicy")]`。
-- **压测开关**：`appsettings.json` 的 `AppSettings.UseLoadTest` 置为 `true` 可跳过登录校验，但务必只在测试环境开启。
+用于无感续期 Access Token。
 
-如需进一步扩展（多租户、Scope、刷新 Token 等），建议基于此文档罗列的触发点逐步演化。
+```csharp
+POST /connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token
+&client_id=radish-client
+&refresh_token=xxx
+```
+
+## 4. 客户端注册
+
+所有客户端需在 Auth Server 中注册。通过 DbSeed 初始化：
+
+### 4.1 Scalar API 文档
+
+```csharp
+new OpenIddictApplicationDescriptor
+{
+    ClientId = "radish-scalar",
+    DisplayName = "Radish API Documentation",
+    ConsentType = ConsentTypes.Implicit, // 跳过授权确认页
+    RedirectUris = {
+        new Uri("https://localhost:7110/scalar/oauth2-callback")
+    },
+    Permissions =
+    {
+        Permissions.Endpoints.Authorization,
+        Permissions.Endpoints.Token,
+        Permissions.GrantTypes.AuthorizationCode,
+        Permissions.ResponseTypes.Code,
+        Permissions.Scopes.OpenId,
+        Permissions.Scopes.Profile,
+        Permissions.Prefixes.Scope + "radish-api"
+    }
+}
+```
+
+### 4.2 前端 Web 客户端
+
+```csharp
+new OpenIddictApplicationDescriptor
+{
+    ClientId = "radish-client",
+    DisplayName = "Radish Web Client",
+    ConsentType = ConsentTypes.Explicit, // 显示授权确认页
+    RedirectUris = {
+        new Uri("https://localhost:58794/callback"),
+        new Uri("https://localhost:58794/silent-renew")
+    },
+    PostLogoutRedirectUris = {
+        new Uri("https://localhost:58794")
+    },
+    Permissions =
+    {
+        Permissions.Endpoints.Authorization,
+        Permissions.Endpoints.Token,
+        Permissions.Endpoints.Logout,
+        Permissions.GrantTypes.AuthorizationCode,
+        Permissions.GrantTypes.RefreshToken,
+        Permissions.ResponseTypes.Code,
+        Permissions.Scopes.OpenId,
+        Permissions.Scopes.Profile,
+        Permissions.Scopes.OfflineAccess, // 启用 refresh_token
+        Permissions.Prefixes.Scope + "radish-api"
+    },
+    Requirements =
+    {
+        Requirements.Features.ProofKeyForCodeExchange // 强制 PKCE
+    }
+}
+```
+
+### 4.3 后台服务（Client Credentials）
+
+```csharp
+new OpenIddictApplicationDescriptor
+{
+    ClientId = "radish-background-service",
+    ClientSecret = "generated-secret", // 生产环境使用强密钥
+    DisplayName = "Radish Background Service",
+    Permissions =
+    {
+        Permissions.Endpoints.Token,
+        Permissions.GrantTypes.ClientCredentials,
+        Permissions.Prefixes.Scope + "radish-api"
+    }
+}
+```
+
+### 4.4 客户端动态管理
+
+客户端存储在数据库中，支持通过后台管理界面动态配置。
+
+#### 数据模型扩展
+
+```csharp
+// 扩展 OpenIddict Application 实体
+public class RadishApplication
+{
+    // OpenIddict 基础字段
+    public string Id { get; set; }
+    public string? ClientId { get; set; }
+    public string? ClientSecret { get; set; }
+    public string? DisplayName { get; set; }
+    // ...
+
+    // 扩展字段
+    public string? Logo { get; set; }
+    public string? Description { get; set; }
+    public string? DeveloperName { get; set; }
+    public string? DeveloperEmail { get; set; }
+    public ApplicationStatus Status { get; set; } // Active/Disabled
+    public ApplicationType AppType { get; set; } // Internal/ThirdParty
+    public DateTime CreatedAt { get; set; }
+    public long? CreatedBy { get; set; }
+}
+
+public enum ApplicationStatus
+{
+    Active,
+    Disabled,
+    PendingReview // 第三方应用审核中
+}
+
+public enum ApplicationType
+{
+    Internal,   // 内部应用
+    ThirdParty  // 第三方应用
+}
+```
+
+#### 管理 API
+
+| 方法 | 端点 | 说明 | 权限 |
+|------|------|------|------|
+| GET | `/api/clients` | 获取客户端列表 | Admin |
+| GET | `/api/clients/{id}` | 获取客户端详情 | Admin |
+| POST | `/api/clients` | 创建客户端 | Admin |
+| PUT | `/api/clients/{id}` | 更新客户端 | Admin |
+| DELETE | `/api/clients/{id}` | 删除客户端 | Admin |
+| POST | `/api/clients/{id}/reset-secret` | 重置 Secret | Admin |
+| POST | `/api/clients/{id}/toggle-status` | 启用/禁用 | Admin |
+
+#### 创建客户端示例
+
+```http
+POST /api/clients
+Content-Type: application/json
+Authorization: Bearer {admin_token}
+
+{
+  "clientId": "third-party-app",
+  "displayName": "第三方游戏社区",
+  "description": "某游戏社区论坛接入",
+  "appType": "ThirdParty",
+  "redirectUris": [
+    "https://game-community.example.com/callback"
+  ],
+  "postLogoutRedirectUris": [
+    "https://game-community.example.com"
+  ],
+  "permissions": {
+    "grantTypes": ["authorization_code", "refresh_token"],
+    "scopes": ["openid", "profile", "radish-api"]
+  },
+  "requirePkce": true
+}
+```
+
+响应：
+
+```json
+{
+  "id": "abc123",
+  "clientId": "third-party-app",
+  "clientSecret": "generated-random-secret",
+  "displayName": "第三方游戏社区",
+  "status": "Active",
+  "createdAt": "2025-11-24T10:00:00Z"
+}
+```
+
+> **注意**：ClientSecret 仅在创建时返回一次，请妥善保管。
+
+## 5. 资源服务器配置
+
+Radish.Api 作为资源服务器验证 Token：
+
+```csharp
+// Program.cs
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = "https://localhost:7100";
+        options.Audience = "radish-api";
+        options.RequireHttpsMetadata = true; // 生产环境必须为 true
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero // 严格过期时间
+        };
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    // 保留现有策略
+    options.AddPolicy("Client", policy =>
+        policy.RequireClaim("iss", "https://localhost:7100"));
+
+    options.AddPolicy("System", policy =>
+        policy.RequireRole("System"));
+
+    options.AddPolicy("SystemOrAdmin", policy =>
+        policy.RequireRole("System", "Admin"));
+
+    // 动态权限策略
+    options.AddPolicy("RadishAuthPolicy", policy =>
+        policy.Requirements.Add(new PermissionRequirement()));
+});
+```
+
+## 6. 前端集成
+
+### 6.1 配置
+
+使用 `oidc-client-ts` 或 `react-oidc-context`：
+
+```typescript
+// shared/auth/oidc-config.ts
+import { UserManagerSettings } from 'oidc-client-ts';
+
+export const oidcConfig: UserManagerSettings = {
+  authority: 'https://localhost:7100',
+  client_id: 'radish-client',
+  redirect_uri: 'https://localhost:58794/callback',
+  post_logout_redirect_uri: 'https://localhost:58794',
+  silent_redirect_uri: 'https://localhost:58794/silent-renew',
+  scope: 'openid profile radish-api offline_access',
+  response_type: 'code',
+  automaticSilentRenew: true,
+  // PKCE 默认启用
+};
+```
+
+### 6.2 认证流程
+
+```typescript
+// shared/auth/auth-provider.tsx
+import { AuthProvider } from 'react-oidc-context';
+import { oidcConfig } from './oidc-config';
+
+export const AppAuthProvider = ({ children }) => (
+  <AuthProvider {...oidcConfig}>
+    {children}
+  </AuthProvider>
+);
+
+// 使用
+import { useAuth } from 'react-oidc-context';
+
+const LoginButton = () => {
+  const auth = useAuth();
+
+  if (auth.isLoading) return <div>Loading...</div>;
+  if (auth.error) return <div>Error: {auth.error.message}</div>;
+
+  if (auth.isAuthenticated) {
+    return (
+      <div>
+        Welcome, {auth.user?.profile.name}
+        <button onClick={() => auth.signoutRedirect()}>Logout</button>
+      </div>
+    );
+  }
+
+  return <button onClick={() => auth.signinRedirect()}>Login</button>;
+};
+```
+
+### 6.3 API 调用
+
+```typescript
+// shared/api/client.ts
+import { useAuth } from 'react-oidc-context';
+
+export const useApiClient = () => {
+  const auth = useAuth();
+
+  return async (url: string, options?: RequestInit) => {
+    const headers = new Headers(options?.headers);
+
+    if (auth.user?.access_token) {
+      headers.set('Authorization', `Bearer ${auth.user.access_token}`);
+    }
+
+    return fetch(url, { ...options, headers });
+  };
+};
+```
+
+## 7. Scalar OAuth 配置
+
+在 Radish.Api 中配置 Scalar 使用 OAuth：
+
+```csharp
+// Program.cs
+app.MapScalarApiReference(options =>
+{
+    options.WithTitle("Radish API")
+        .WithTheme(ScalarTheme.BluePlanet)
+        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+        .WithOAuth2Configuration(oauth =>
+        {
+            oauth.ClientId = "radish-scalar";
+            oauth.Scopes = new[] { "openid", "profile", "radish-api" };
+        });
+});
+```
+
+## 8. 多租户支持
+
+### 8.1 租户识别
+
+- 通过 Token 中的 `tenant_id` Claim 识别租户
+- Auth Server 在签发 Token 时写入租户信息
+
+### 8.2 租户隔离
+
+```csharp
+// 用户登录时写入租户 Claim
+identity.SetClaim("tenant_id", user.TenantId.ToString());
+
+// 资源服务器读取
+var tenantId = User.FindFirstValue("tenant_id");
+```
+
+## 9. 权限与授权
+
+### 9.1 角色-权限模型
+
+延续第二阶段的 RBAC 模型：
+
+```
+User -> UserRole -> Role -> RolePermission -> Permission
+                      ↓
+                 RoleModuleMap -> ApiModule
+```
+
+### 9.2 PermissionRequirementHandler
+
+保留动态权限校验逻辑，从 Token Claims 获取角色：
+
+```csharp
+// 从 OIDC Token 读取角色
+var roles = context.User.FindAll(ClaimTypes.Role)
+    .Select(c => c.Value)
+    .ToList();
+
+// 匹配 URL 与角色权限
+var url = httpContext.Request.Path.Value;
+var hasPermission = PermissionItems
+    .Any(p => roles.Contains(p.Role) &&
+              Regex.IsMatch(url, p.Url, RegexOptions.IgnoreCase));
+```
+
+## 10. 安全最佳实践
+
+### 10.1 Token 安全
+
+- Access Token 有效期：15-60 分钟
+- Refresh Token 有效期：7-30 天
+- 启用 Token 轮换：每次刷新生成新的 Refresh Token
+- 支持 Token 撤销：用户登出时撤销所有 Token
+
+### 10.2 客户端安全
+
+- 公开客户端（SPA/Mobile）必须使用 PKCE
+- 机密客户端使用强密钥，定期轮换
+- 严格限制 RedirectUris，避免开放重定向攻击
+
+### 10.3 传输安全
+
+- 全程 HTTPS
+- 启用 HSTS
+- Cookie 设置 `Secure`、`HttpOnly`、`SameSite=Strict`
+
+## 11. 调试与排障
+
+### 11.1 发现文档
+
+```bash
+curl https://localhost:7100/.well-known/openid-configuration
+```
+
+### 11.2 获取 Token（测试）
+
+```bash
+# Authorization Code 流程需要浏览器交互
+# Client Credentials 可直接调用
+curl -X POST https://localhost:7100/connect/token \
+  -d "grant_type=client_credentials" \
+  -d "client_id=radish-background-service" \
+  -d "client_secret=xxx" \
+  -d "scope=radish-api"
+```
+
+### 11.3 验证 Token
+
+```bash
+# 调用 userinfo 端点
+curl https://localhost:7100/connect/userinfo \
+  -H "Authorization: Bearer {access_token}"
+```
+
+### 11.4 常见问题
+
+| 问题 | 可能原因 | 解决方案 |
+| --- | --- | --- |
+| `invalid_client` | ClientId 未注册或 Secret 错误 | 检查 DbSeed 客户端注册 |
+| `invalid_redirect_uri` | RedirectUri 不匹配 | 确保与注册的 URI 完全一致 |
+| `invalid_grant` | 授权码已使用或过期 | 授权码只能使用一次 |
+| Token 验证失败 | Issuer/Audience 不匹配 | 检查资源服务器配置 |
+
+## 12. 迁移指南
+
+### 12.1 从旧版 JWT 迁移
+
+如果从第二阶段的简单 JWT 认证迁移：
+
+1. **保留数据模型**：User/Role/UserRole 等实体无需更改
+2. **更新 Claims 来源**：从 `JwtTokenGenerate` 迁移到 OpenIddict Claims Principal
+3. **调整 Token 验证**：从硬编码密钥改为 Authority 发现
+4. **更新前端**：从手动存储 Token 改为 OIDC 库管理
+
+### 12.2 旧版登录接口（临时兼容）
+
+在完全迁移前，可保留 `/api/Login/GetJwtToken` 作为兼容层：
+
+```csharp
+[AllowAnonymous]
+[HttpPost]
+[Obsolete("请使用 OIDC /connect/token 端点")]
+public async Task<IActionResult> GetJwtToken(LoginInput input)
+{
+    // 旧逻辑保留，但建议客户端尽快迁移
+}
+```
+
+## 13. 扩展规划
+
+- **第三方登录**：GitHub、微信、钉钉等 OAuth Provider
+- **MFA**：TOTP、短信验证码
+- **设备管理**：记住设备、异常登录检测
+- **API Key**：为开发者提供静态 API 密钥访问
+
+---
+
+> 本文档随第三阶段开发持续更新，如有变更请同步修改 `DevelopmentLog.md`。

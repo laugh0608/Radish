@@ -2,7 +2,53 @@
 
 ## 第三阶段
 
-> 准备开发...
+> OIDC 认证中心与前端框架搭建
+
+### 2025.11.24
+
+- **arch(auth)**: 决定采用 OIDC（OpenID Connect）架构替代原有的简单 JWT 认证，使用 OpenIddict 作为认证服务器实现。主要考量：
+  - 一次登录可访问多个客户端（Scalar API 文档、前端、后台管理、未来的商城等）
+  - 标准化协议，便于未来扩展第三方登录
+  - 支持 Authorization Code + PKCE 流程，更安全
+  - 可独立扩展认证服务
+- **plan(phase3)**: 重新规划第三阶段工作顺序，调整里程碑 M3/M4 内容：
+  - M3 聚焦 OIDC 认证中心：创建 Radish.Auth 项目、设计身份数据模型、实现 DbSeed 初始化、配置 OpenIddict 端点、集成 Scalar OAuth
+  - M4 聚焦前端框架与认证：搭建桌面模式骨架、基础组件库、OIDC 客户端集成、资源服务器配置
+- **design(identity)**: 规划身份数据模型目录结构 `Radish.Model/Models/Identity/`，包含 User、Role、UserRole、UserClaim、Tenant、Permission、RolePermission 等实体
+- **design(clients)**: 预定义 OIDC 客户端注册：
+  - `radish-client` - WebOS 前端客户端（包含论坛/聊天/商城/后台管理子应用）
+  - `radish-scalar` - API 文档客户端
+  - `radish-rust-ext` - Rust 扩展项目客户端
+- **docs**: 更新 DevelopmentPlan.md 里程碑概览与周计划，详细描述第 3-4 周的 OIDC 相关任务与验收标准
+- **arch(open-platform)**: 确认开放平台需求，OIDC 客户端需支持后台动态配置：
+  - 内部应用：radish-client（WebOS）、radish-scalar、radish-rust-ext
+  - 第三方应用：未来支持动态注册和接入
+  - 后台管理（作为 WebOS 子应用）需提供应用管理界面（CRUD、重置 Secret、启用/禁用）
+- **arch(frontend/webos)**: 确认采用 **WebOS/超级应用** 架构，Radish 是运行在浏览器中的操作系统：
+  - 单体应用 `radish.client`，不分离前后台
+  - 桌面系统（Desktop Shell）：状态栏、图标网格、Dock、窗口管理器
+  - 所有功能作为桌面应用：论坛、聊天室、商城、后台管理、API 文档
+  - 应用注册表（AppRegistry）：统一管理应用元信息（类型、权限、图标）
+  - 权限控制：根据用户角色动态显示/隐藏应用图标
+  - 窗口类型：window（可拖拽）、fullscreen（全屏）、iframe（嵌入外部）
+  - 后台管理作为 `apps/admin/` 子应用，全屏模式运行，使用 Ant Design 组件
+- **arch(gateway)**: 决定 Gateway 暂缓，理由：
+  - 当前后端服务仅 Auth + Api，复杂度不高
+  - OIDC 已解决认证统一问题
+  - 待服务数量增加或需要 BFF 聚合时再引入
+- **docs**: 更新 DevelopmentPlan.md M3/M4 任务，添加客户端管理 API 和后台应用管理界面
+- **docs(frontend)**: 完全重写 `FrontendDesign.md` 为 WebOS/超级应用架构文档：
+  - 详细描述桌面系统、应用注册表、窗口管理器、子应用开发规范
+  - 包含完整代码示例：AppRegistry、WindowManager、权限控制
+  - 移动端适配策略、技术栈、性能优化、迭代计划
+- **docs(plan)**: 调整 `DevelopmentPlan.md` M4 任务为 WebOS 架构：
+  - 去掉前后台分离的 Monorepo 结构
+  - 改为单体应用 + 桌面系统 + 子应用架构
+  - 后台管理作为 `apps/admin/` 子应用，全屏模式
+- **docs(open-platform)**: 更新 `OpenPlatformGuide.md` 应用矩阵：
+  - 去掉 `radish-admin` 独立客户端
+  - `radish-client` 包含所有子应用（论坛/聊天/商城/后台管理）
+  - 调整系统架构图反映 WebOS 结构
 
 ## 第二阶段
 

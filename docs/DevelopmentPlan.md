@@ -19,12 +19,12 @@
 | --- | --- | --- | --- |
 | M1 | 基线设施 | API 宿主、SQLSugar 与 PostgreSQL 通路、健康检查、React 脚手架 | `dotnet run Radish.Api` + React dev server 均可访问；数据库初始化脚本可重复执行 |
 | M2 | 领域建模 | 分类/帖子/评论聚合、SQLSugar 仓储、迁移/种子脚本 | CRUD + 分页 API 可用，单测覆盖核心聚合 |
-| M3 | 应用服务 | DTO、应用服务、权限校验、统一异常/日志 | Swagger/Scalar 可调试所有内容 API；错误为 ProblemDetails |
-| M4 | 认证与安全 | JWT + 刷新令牌、角色权限、审计日志、速率限制、HTTPS 强制与 RSA 敏感字段加密 | React 可完成登录/登出/自动续期；敏感请求经 RSA 加密；受保护 API 能正确拒绝未授权请求 |
+| M3 | OIDC 认证中心 | Radish.Auth 项目、OpenIddict 配置、用户/角色/租户/权限模型、DbSeed 初始化、客户端管理 API | OIDC 发现文档可访问；Scalar 可通过 OAuth 授权调试 API；客户端 CRUD API 可用 |
+| M4 | 前端框架与认证 | 桌面模式骨架、基础组件库、OIDC 客户端集成、后台应用管理界面 | React 可完成 OIDC 登录/登出/自动续期；后台可动态配置客户端；桌面 Shell 可用 |
 | M5 | React MVP | 列表/详情/发帖/评论链路、状态管理（React Query）、桌面化 UI 规范 | 前端提供桌面模式的社区主要流程，含 Loading/Empty/Error 状态 |
 | M6 | 积分与商城 | 积分规则、事件订阅、商城商品与库存、购买链路 | 发帖/互动触发积分，商城购买扣减积分并更新权益 |
 | M7 | 可观测性与测试 | 日志/Tracing、性能调优、自动化测试、CI 脚本 | `dotnet test` + `npm run test` 通过；Serilog/O11y 配置完成；性能基线达到 P95≤200ms |
-| M8 | 部署与运维 | Dockerfile/Compose、自监控、变更文档 | `docker compose up --build` 一键拉起 PostgreSQL + API + 前端；文档覆盖常见排障 |
+| M8 | 部署与运维 | Dockerfile/Compose、自监控、变更文档 | `docker compose up --build` 一键拉起 PostgreSQL + API + Auth + 前端；文档覆盖常见排障 |
 
 ## 按周计划
 
@@ -48,23 +48,196 @@
 - **测试**：`Radish.Api.Tests` 补充聚合与仓储单测。
 - **验收**：Swagger 可调试 CRUD；分页/排序参数生效；关键测试通过。
 
-### 第 3 周｜应用层与 API 硬化
-- DTO 与验证：利用 FluentValidation 保证输入合法；定义标准响应模型。
-- API 对外：统一异常映射、ProblemDetails、trace-id；提供 API 版本与分组。
-- 日志：Serilog 写入 Console + 本地文件，并输出 SQL 时间；必要时加请求日志中间件。
-- 文档：补充 API 使用说明、错误码表。
-- 验收：日志中可看到 SQL 与请求；错误返回结构一致；前端可消费新的 DTO。
+### 第 3 周｜OIDC 认证中心与数据初始化
 
-### 第 4 周｜身份认证与安全
-- **Auth**：账号/角色/权限模型；Hash 密码；JWT + Refresh Token；黑名单/撤销策略。
-- **AppService**：登录/注册/刷新/登出；权限守卫（AuthorizeAttribute + Policy）。
-- **安全**：CORS、速率限制、输入验证、审计日志（记录用户/路径/IP）、端到端 HTTPS 配置，以及前端使用 RSA 公钥加密登录/敏感数据、后端私钥解密。
-- **前端**：实现认证上下文、Token 存储、自动续期、基于角色的路由守卫；封装 RSA 加解密工具并在登录表单中应用。
-- **验收**：
-  - 成功登录并调用受保护 API，全程 HTTPS。
-  - 登录表单提交前对账号/密码进行 RSA 加密，后端成功解密并完成认证。
-  - 刷新令牌流程通过自动/手动验证。
-  - 未授权访问返回 401/403。
+#### 3.1 创建 Radish.Auth 项目
+- **项目结构**：新建 ASP.NET Core 项目，独立运行在 `:7100` 端口
+- **依赖引入**：OpenIddict 核心包（OpenIddict.AspNetCore、OpenIddict.EntityFrameworkCore 或自定义 SqlSugar 存储）
+- **端点配置**：
+  - `/connect/authorize` - 授权端点
+  - `/connect/token` - Token 端点
+  - `/connect/userinfo` - 用户信息端点
+  - `/connect/logout` - 登出端点
+  - `/.well-known/openid-configuration` - 发现文档
+
+#### 3.2 身份数据模型设计
+- **实体定义**（`Radish.Model/Models/Identity/`）：
+  - `User.cs` - 用户实体（支持多租户）
+  - `Role.cs` - 角色实体
+  - `UserRole.cs` - 用户-角色关联
+  - `UserClaim.cs` - 用户声明
+  - `Tenant.cs` - 租户实体
+  - `Permission.cs` - 权限定义
+  - `RolePermission.cs` - 角色-权限关联
+- **OpenIddict 实体**：Application、Authorization、Scope、Token
+
+#### 3.3 实现 Radish.DbSeed 项目
+- 创建控制台项目或 CLI 工具
+- 初始化数据库表结构（SqlSugar InitTables）
+- 种子数据：
+  - 默认租户（Main Tenant）
+  - 管理员用户（admin/System）
+  - 基础角色（System、Admin、User）
+  - 系统权限与 API 模块
+- 预置内部 OIDC 客户端（通过数据库存储，非硬编码）：
+  - `radish-client` - WebOS 前端客户端（包含所有子应用）
+  - `radish-scalar` - API 文档客户端
+  - `radish-rust-ext` - Rust 扩展项目客户端
+
+#### 3.4 客户端管理 API
+- **数据模型扩展**：
+  ```csharp
+  // 扩展 OpenIddict Application 实体
+  public class RadishApplication
+  {
+      public string? Logo { get; set; }
+      public string? Description { get; set; }
+      public string? DeveloperName { get; set; }
+      public string? DeveloperEmail { get; set; }
+      public ApplicationStatus Status { get; set; } // Active/Disabled
+      public ApplicationType AppType { get; set; } // Internal/ThirdParty
+      public DateTime CreatedAt { get; set; }
+      public long? CreatedBy { get; set; }
+  }
+  ```
+- **API 端点**（`/api/clients`）：
+  - `GET /api/clients` - 获取客户端列表（分页、筛选）
+  - `GET /api/clients/{id}` - 获取客户端详情
+  - `POST /api/clients` - 创建客户端
+  - `PUT /api/clients/{id}` - 更新客户端
+  - `DELETE /api/clients/{id}` - 删除客户端
+  - `POST /api/clients/{id}/reset-secret` - 重置 ClientSecret
+  - `POST /api/clients/{id}/toggle-status` - 启用/禁用客户端
+- **权限控制**：仅 System/Admin 角色可访问
+
+#### 3.5 Scalar OAuth 集成
+- 修改 `Radish.Api/Program.cs` 配置 Scalar OAuth：
+  ```csharp
+  app.MapScalarApiReference(options => {
+      options.WithOAuth2Configuration(oauth => {
+          oauth.ClientId = "radish-scalar";
+          oauth.Scopes = new[] { "openid", "profile", "radish-api" };
+      });
+  });
+  ```
+- 验收：访问 `/scalar` 可跳转到 Auth 登录，授权后返回并携带 Token
+
+#### 验收标准
+- `/.well-known/openid-configuration` 返回正确的 OIDC 发现文档
+- DbSeed 可重复执行且幂等
+- Scalar 文档通过 OAuth 授权后可调试受保护 API
+- 多客户端（Scalar、前端、后台）注册完成
+
+### 第 4 周｜前端 WebOS 架构与 OIDC 认证
+
+#### 4.1 WebOS 架构（超级应用）
+- **核心理念**：Radish 是一个运行在浏览器中的操作系统
+- **单体应用结构**（`radish.client`）：
+  ```
+  radish.client/
+  ├── src/
+  │   ├── desktop/         # 桌面系统核心
+  │   ├── apps/            # 子应用（论坛/聊天/商城/后台管理）
+  │   ├── widgets/         # 桌面小部件
+  │   ├── shared/          # 共享代码
+  │   └── stores/          # 全局状态
+  ```
+- 详见 `FrontendDesign.md`
+
+#### 4.2 桌面系统基础
+- **核心组件**：
+  - `Shell.tsx` - 桌面外壳容器
+  - `StatusBar.tsx` - 顶部状态栏（用户名、IP、消息、系统状态）
+  - `Desktop.tsx` - 桌面图标网格（基于权限动态显示）
+  - `Dock.tsx` - 底部 Dock 栏（运行中应用）
+  - `WindowManager.tsx` - 窗口管理器（窗口/全屏/iframe 模式）
+  - `AppRegistry.tsx` - 应用注册表
+
+#### 4.3 应用注册系统
+- **注册表定义**：
+  ```typescript
+  interface AppDefinition {
+    id: string;
+    name: string;
+    icon: string;
+    component: React.ComponentType;
+    type: 'window' | 'fullscreen' | 'iframe';
+    requiredRoles: string[];
+  }
+  ```
+- **预置应用**：
+  - 论坛（`forum`）- 窗口模式
+  - 聊天室（`chat`）- 窗口模式
+  - 商城（`shop`）- 全屏模式
+  - 后台管理（`admin`）- 全屏模式，仅 Admin/System 可见
+  - API 文档（`docs`）- iframe 模式
+
+#### 4.4 子应用开发
+- **论坛应用**（`apps/forum/`）：
+  - 帖子列表、详情、发帖、评论
+  - 窗口模式，可多开
+- **后台管理应用**（`apps/admin/`）：
+  - 使用 Ant Design 组件
+  - 全屏模式，独占桌面
+  - 核心模块：应用管理、用户管理、角色管理
+- **聊天室应用**（`apps/chat/`）：预留
+- **商城应用**（`apps/shop/`）：预留
+
+#### 4.5 OIDC 客户端集成
+- 使用 `oidc-client-ts` 或 `react-oidc-context`
+- 配置文件（`shared/auth/oidc-config.ts`）：
+  ```typescript
+  export const oidcConfig = {
+    authority: 'https://localhost:7100',
+    client_id: 'radish-client',
+    redirect_uri: 'https://localhost:58794/callback',
+    post_logout_redirect_uri: 'https://localhost:58794',
+    scope: 'openid profile radish-api offline_access',
+    response_type: 'code',
+    automaticSilentRenew: true
+  };
+  ```
+- 实现认证流程：
+  - 登录跳转 → Auth 授权页 → 回调处理 → Token 存储
+  - 静默续期（iframe 或 refresh_token）
+  - 登出（清除本地 + 调用 Auth 登出端点）
+- **桌面权限控制**：根据用户角色动态显示应用图标
+
+#### 4.6 Radish.Api 资源服务器配置
+- 配置 JWT Bearer 验证：
+  ```csharp
+  builder.Services.AddAuthentication()
+      .AddJwtBearer(options => {
+          options.Authority = "https://localhost:7100";
+          options.Audience = "radish-api";
+          options.TokenValidationParameters = new TokenValidationParameters {
+              ValidateIssuer = true,
+              ValidateAudience = true,
+              ValidateLifetime = true
+          };
+      });
+  ```
+- 保留 `PermissionRequirementHandler` 动态权限校验
+- 更新现有控制器的 `[Authorize]` 策略
+
+#### 4.7 安全增强
+- HTTPS 强制（开发/生产均启用）
+- CORS 配置（Auth、API、前端、后台跨域）
+- 速率限制中间件
+- 审计日志（登录/登出/敏感操作）
+
+#### 验收标准
+- 桌面系统可正常渲染（状态栏、Dock、桌面图标）
+- 桌面根据用户角色动态显示应用图标（普通用户看不到后台管理）
+- 双击应用图标可打开窗口/全屏应用
+- 论坛应用（窗口模式）基本可用：帖子列表、详情页
+- 后台管理应用（全屏模式）可访问应用管理模块
+- 后台可动态创建/编辑/删除 OIDC 客户端
+- OIDC 认证流程完整：登录 → 授权 → 回调 → 调用 API → 登出
+- Token 自动续期正常工作
+- 未授权访问返回 401，权限不足返回 403
+- 登录后状态栏显示用户信息
+- Dock 正确显示运行中的应用
 
 ### 第 5 周｜React MVP（内容浏览与创作）
 - 页面：
