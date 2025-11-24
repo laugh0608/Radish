@@ -1,142 +1,650 @@
 # 前端设计文档
 
-> 本文聚焦 radish.client 及未来移动端/原生体验的统一设计与实现方案，面向前端与全栈开发者。结合桌面化 UI 目标、小众论坛/圈子/商城场景以及未来 React Native 应用，将交互规范、技术栈、目录结构、状态管理与迭代计划集中说明。
+> Radish 采用 **超级应用（Super App）/ WebOS** 架构，提供类似操作系统的桌面体验。用户登录后看到桌面，双击应用图标即可打开论坛、聊天室、商城、后台管理等不同应用。本文档描述整体架构、技术栈和实现方案。
 
-## 1. 设计目标
+## 1. 设计理念
 
-1. **沉浸式体验**：Web 端采用桌面化（Desktop Shell）交互，让 PC 用户获得接近操作系统的体验；移动端保持轻量但动效一致。
-2. **统一视觉与交互语言**：颜色、字体、间距、阴影、动效、图标尺寸由 Design Token 统一管理，PC/移动 Web/RN 共享。
-3. **跨端复用**：业务逻辑、数据模型、API Hook 尽量共享，后续 React Native/Expo 应用只需重写 UI 层。
-4. **渐进式迭代**：先保证 Web 端 MVP 可用，再逐步增强移动适配与原生 App，避免一次性重构。
+### 1.1 核心概念：WebOS
 
-## 2. 视图层规划
+**Radish 不是一个网站，而是一个运行在浏览器中的操作系统。**
 
-### 2.1 桌面模式（PC Web）
+```
+用户访问 radish.client
+        ↓
+    统一登录 (OIDC)
+        ↓
+   桌面系统（Desktop Shell）
+        ↓
+根据角色显示应用图标
+        ↓
+双击图标 → 打开应用
+        ↓
+[论坛] [聊天室] [商城] → 窗口模式
+[后台管理] [文档] → 全屏/iframe 模式
+```
 
-- `AppDesktopShell` 负责渲染顶部状态栏、左侧桌面图标、底部 Dock 与窗口管理器。
-- 窗口（`DesktopWindow`）具备最小化/关闭、拖拽、缩放、Dock 绑定图标、层级管理、快捷键（⌘/Ctrl + W/M）。
-- Dock 使用“磁贴+指示点”展示运行状态，双击桌面或 Dock 打开窗口，长按弹出快捷菜单。
-- 登录后需在状态栏显示用户信息/IP、消息提示、全局搜索入口。
-- 参考实现 `public/webos.html`，React 组件需复刻其中的动效与布局。
+### 1.2 设计目标
 
-### 2.2 响应式与移动 Web
+1. **统一入口**：所有功能通过桌面访问，无需记忆多个 URL
+2. **权限控制**：根据用户角色动态显示可用应用
+3. **沉浸体验**：桌面化交互（状态栏、Dock、窗口系统）
+4. **无缝切换**：应用间切换无需重新登录
+5. **扩展性强**：新增功能只需注册新应用
 
-- 桌面 Shell 在宽度 < 1024px 时自动切换到“移动模式”：顶部保留状态栏，Dock 转为底部 Tab，桌面图标改为列表/网格。
-- 使用 CSS Container Queries + Tailwind/Uno 原子类实现断点控制；移动模式允许隐藏复杂背景并简化阴影/模糊。
-- 手势：移动端窗口以全屏卡片呈现，采用滑入/滑出动画；侧滑返回、下拉关闭等交互通过 `framer-motion` 或 `react-spring` 实现。
+## 2. 系统架构
 
-### 2.3 React Native / Expo 规划
+### 2.1 整体结构
 
-- 目标：提供原生级页面切换与交互流畅度，重点优化圈子浏览、帖子详情、商城下单。
-- 方案：使用 Expo Router + React Native Reanimated 3 + Gesture Handler，拆分为 `app/(tabs)`、`app/(modals)` 等路由段。
-- 组件命名与 Web 保持一致（如 `AppShell`, `DesktopWindow` 在 RN 中映射为 `AppMobileShell`, `AppCardPanel`），内部实现使用 RN 组件。
-- 共享包：在仓库根目录创建 `packages/ui`, `packages/hooks`, `packages/theme`，通过 pnpm workspace 或 turbo repo 管理，Web 与 RN 均可复用。
+```
+┌────────────────────────────────────────────────────┐
+│               Radish Desktop Shell                  │
+│  ┌────────────────────────────────────────────┐    │
+│  │ 状态栏：用户 | IP | 消息 | 系统状态         │    │
+│  └────────────────────────────────────────────┘    │
+│                                                     │
+│  桌面应用图标（基于权限显示）：                       │
+│  ┌─────┐  ┌─────┐  ┌─────┐  ┌─────┐              │
+│  │论坛 │  │聊天 │  │商城 │  │文档 │              │
+│  │ 📝  │  │ 💬  │  │ 🛒  │  │ 📄  │              │
+│  └─────┘  └─────┘  └─────┘  └─────┘              │
+│  ┌─────┐  ┌─────┐                                 │
+│  │后台 │  │游戏 │  ... (更多应用)                  │
+│  │ ⚙️  │  │ 🎮  │                                │
+│  └─────┘  └─────┘                                 │
+│  ↑ 仅管理员可见                                      │
+│                                                     │
+│  ┌────────────────────────────────────────────┐    │
+│  │ Dock：论坛(运行中) | 聊天室(运行中)          │    │
+│  └────────────────────────────────────────────┘    │
+└────────────────────────────────────────────────────┘
+```
 
-## 3. 技术栈与结构
+### 2.2 技术架构
 
-| 层级 | 选型/说明 |
-| --- | --- |
-| 构建 | React 19 + Vite（Rolldown），ESLint 9，TypeScript 5.5+ |
-| 状态/数据 | TanStack Query + Zustand（瞬时 UI 状态）+ React Context（主题/会话），未来 RN 复用 |
-| 路由 | TanStack Router（Web），Expo Router（RN），保持路由表结构一致 |
-| UI | TailwindCSS/UnoCSS + 自研组件；动效使用 Framer Motion（Web）/Reanimated（RN） |
-| API | `@/shared/api/client.ts`（封装 axios/fetch），自动附带 Token、TraceId、设备信息；React Query 统一缓存策略 |
+```
+radish.client/
+├── src/
+│   ├── desktop/              # 桌面系统核心
+│   │   ├── Shell.tsx         # 桌面外壳（容器）
+│   │   ├── StatusBar.tsx     # 顶部状态栏
+│   │   ├── Desktop.tsx       # 桌面图标网格
+│   │   ├── Dock.tsx          # 底部 Dock 栏
+│   │   ├── WindowManager.tsx # 窗口管理器
+│   │   ├── AppRegistry.tsx   # 应用注册表
+│   │   └── types.ts          # 类型定义
+│   │
+│   ├── apps/                 # 子应用（各功能模块）
+│   │   ├── forum/            # 论坛应用
+│   │   │   ├── ForumApp.tsx  # 应用入口
+│   │   │   ├── pages/        # 页面
+│   │   │   ├── components/   # 组件
+│   │   │   └── routes.tsx    # 路由
+│   │   │
+│   │   ├── chat/             # 聊天室应用
+│   │   ├── shop/             # 商城应用
+│   │   ├── admin/            # 后台管理应用
+│   │   ├── docs/             # 文档应用（iframe）
+│   │   └── games/            # 游戏应用（示例）
+│   │
+│   ├── widgets/              # 桌面小部件
+│   │   ├── DesktopWindow.tsx # 窗口组件
+│   │   ├── AppIcon.tsx       # 应用图标
+│   │   └── Notification.tsx  # 通知组件
+│   │
+│   ├── shared/               # 共享代码
+│   │   ├── ui/               # 基础 UI 组件
+│   │   ├── api/              # API 客户端
+│   │   ├── auth/             # 认证逻辑
+│   │   ├── hooks/            # 通用 Hooks
+│   │   └── utils/            # 工具函数
+│   │
+│   └── stores/               # 全局状态
+│       ├── windowStore.ts    # 窗口状态
+│       ├── dockStore.ts      # Dock 状态
+│       └── userStore.ts      # 用户状态
+```
+
+## 3. 应用注册系统
+
+### 3.1 应用注册表
+
+所有应用在 `AppRegistry.tsx` 中注册：
+
+```typescript
+// desktop/AppRegistry.tsx
+export interface AppDefinition {
+  id: string;
+  name: string;
+  icon: string;
+  description?: string;
+  component?: React.ComponentType;
+  type: 'window' | 'fullscreen' | 'iframe';
+  defaultSize?: { width: number; height: number };
+  url?: string; // for iframe
+  requiredRoles: string[]; // 权限控制
+  category?: string; // 分类
+}
+
+export const appRegistry: AppDefinition[] = [
+  // === 内容应用 ===
+  {
+    id: 'forum',
+    name: '论坛',
+    icon: '📝',
+    description: '社区讨论与内容分享',
+    component: ForumApp,
+    type: 'window',
+    defaultSize: { width: 1200, height: 800 },
+    requiredRoles: ['User'],
+    category: 'content'
+  },
+  {
+    id: 'chat',
+    name: '聊天室',
+    icon: '💬',
+    description: '实时交流',
+    component: ChatApp,
+    type: 'window',
+    defaultSize: { width: 800, height: 600 },
+    requiredRoles: ['User'],
+    category: 'social'
+  },
+  {
+    id: 'shop',
+    name: '商城',
+    icon: '🛒',
+    description: '积分商城',
+    component: ShopApp,
+    type: 'fullscreen', // 全屏体验更好
+    requiredRoles: ['User'],
+    category: 'commerce'
+  },
+
+  // === 管理应用 ===
+  {
+    id: 'admin',
+    name: '后台管理',
+    icon: '⚙️',
+    description: '系统管理控制台',
+    component: AdminApp,
+    type: 'fullscreen',
+    requiredRoles: ['Admin', 'System'],
+    category: 'admin'
+  },
+
+  // === 工具应用 ===
+  {
+    id: 'docs',
+    name: 'API 文档',
+    icon: '📄',
+    description: 'Scalar API 文档',
+    type: 'iframe',
+    url: 'https://localhost:7110/scalar',
+    defaultSize: { width: 1400, height: 900 },
+    requiredRoles: ['Developer', 'Admin'],
+    category: 'tools'
+  },
+
+  // === 第三方应用（示例） ===
+  {
+    id: 'game-example',
+    name: '小游戏',
+    icon: '🎮',
+    component: GameApp,
+    type: 'window',
+    defaultSize: { width: 600, height: 600 },
+    requiredRoles: ['User'],
+    category: 'entertainment'
+  }
+];
+```
+
+### 3.2 权限控制
+
+桌面根据用户角色过滤可见应用：
+
+```typescript
+// desktop/Desktop.tsx
+const Desktop = () => {
+  const { user } = useAuth();
+
+  // 过滤用户有权限的应用
+  const visibleApps = appRegistry.filter(app =>
+    app.requiredRoles.some(role => user.roles?.includes(role))
+  );
+
+  return (
+    <div className="desktop-grid">
+      {visibleApps.map(app => (
+        <AppIcon
+          key={app.id}
+          app={app}
+          onDoubleClick={() => openApp(app.id)}
+          onContextMenu={(e) => showContextMenu(e, app.id)}
+        />
+      ))}
+    </div>
+  );
+};
+```
+
+## 4. 窗口系统
+
+### 4.1 窗口类型
+
+| 类型 | 说明 | 适用场景 |
+|------|------|---------|
+| `window` | 可拖拽、调整大小的窗口 | 论坛、聊天室等小应用 |
+| `fullscreen` | 全屏显示，隐藏桌面 | 商城、后台管理等复杂应用 |
+| `iframe` | 嵌入外部网页 | API 文档、第三方工具 |
+
+### 4.2 窗口管理器
+
+```typescript
+// desktop/WindowManager.tsx
+export const WindowManager = () => {
+  const { openWindows } = useWindowStore();
+
+  return (
+    <>
+      {openWindows.map(window => {
+        const app = appRegistry.find(a => a.id === window.appId);
+
+        if (app.type === 'fullscreen') {
+          return (
+            <FullscreenApp
+              key={window.id}
+              onClose={() => closeWindow(window.id)}
+            >
+              <app.component />
+            </FullscreenApp>
+          );
+        }
+
+        return (
+          <DesktopWindow
+            key={window.id}
+            title={app.name}
+            icon={app.icon}
+            defaultSize={app.defaultSize}
+            onClose={() => closeWindow(window.id)}
+            onMinimize={() => minimizeWindow(window.id)}
+            zIndex={window.zIndex}
+          >
+            {app.type === 'iframe' ? (
+              <iframe src={app.url} className="w-full h-full" />
+            ) : (
+              <app.component />
+            )}
+          </DesktopWindow>
+        );
+      })}
+    </>
+  );
+};
+```
+
+### 4.3 窗口状态管理
+
+```typescript
+// stores/windowStore.ts
+interface Window {
+  id: string;
+  appId: string;
+  zIndex: number;
+  isMinimized: boolean;
+  position?: { x: number; y: number };
+  size?: { width: number; height: number };
+}
+
+export const useWindowStore = create<WindowStore>((set) => ({
+  openWindows: [],
+
+  openApp: (appId: string) => set(state => {
+    // 如果已打开，聚焦窗口
+    const existing = state.openWindows.find(w => w.appId === appId);
+    if (existing) {
+      return { openWindows: bringToFront(existing.id, state.openWindows) };
+    }
+
+    // 创建新窗口
+    const newWindow = {
+      id: nanoid(),
+      appId,
+      zIndex: getMaxZIndex(state.openWindows) + 1,
+      isMinimized: false
+    };
+
+    return { openWindows: [...state.openWindows, newWindow] };
+  }),
+
+  closeWindow: (windowId: string) => set(state => ({
+    openWindows: state.openWindows.filter(w => w.id !== windowId)
+  })),
+
+  minimizeWindow: (windowId: string) => set(state => ({
+    openWindows: state.openWindows.map(w =>
+      w.id === windowId ? { ...w, isMinimized: true } : w
+    )
+  }))
+}));
+```
+
+## 5. 子应用开发
+
+### 5.1 论坛应用示例
+
+```typescript
+// apps/forum/ForumApp.tsx
+export const ForumApp = () => {
+  return (
+    <div className="forum-app h-full flex flex-col">
+      <ForumHeader />
+      <div className="flex-1 overflow-hidden">
+        <Routes>
+          <Route path="/" element={<PostList />} />
+          <Route path="/post/:id" element={<PostDetail />} />
+          <Route path="/create" element={<CreatePost />} />
+          <Route path="/category/:id" element={<CategoryView />} />
+        </Routes>
+      </div>
+    </div>
+  );
+};
+
+// apps/forum/pages/PostList.tsx
+const PostList = () => {
+  const { data } = useQuery({
+    queryKey: ['posts'],
+    queryFn: () => api.getPosts()
+  });
+
+  return (
+    <div className="post-list">
+      {data?.items.map(post => (
+        <PostCard key={post.id} post={post} />
+      ))}
+    </div>
+  );
+};
+```
+
+### 5.2 后台管理应用
+
+```typescript
+// apps/admin/AdminApp.tsx
+import { Layout, Menu } from 'antd';
+
+export const AdminApp = () => {
+  return (
+    <Layout className="h-full">
+      <Layout.Sider>
+        <Menu
+          items={[
+            { key: 'dashboard', icon: <DashboardOutlined />, label: '仪表盘' },
+            { key: 'apps', icon: <AppstoreOutlined />, label: '应用管理' },
+            { key: 'users', icon: <UserOutlined />, label: '用户管理' },
+            { key: 'roles', icon: <TeamOutlined />, label: '角色管理' }
+          ]}
+        />
+      </Layout.Sider>
+      <Layout.Content>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/apps" element={<AppManagement />} />
+          <Route path="/users" element={<UserManagement />} />
+          <Route path="/roles" element={<RoleManagement />} />
+        </Routes>
+      </Layout.Content>
+    </Layout>
+  );
+};
+```
+
+## 6. 移动端适配
+
+### 6.1 响应式策略
+
+```typescript
+// desktop/Shell.tsx
+const Shell = () => {
+  const isMobile = useMediaQuery('(max-width: 768px)');
+
+  if (isMobile) {
+    return <MobileShell />;
+  }
+
+  return <DesktopShell />;
+};
+```
+
+### 6.2 移动端布局
+
+```
+移动端自动转换为 Tab 导航：
+
+┌────────────────────────┐
+│ 状态栏                  │
+├────────────────────────┤
+│                        │
+│   当前应用内容           │
+│                        │
+│                        │
+├────────────────────────┤
+│ Tab: 论坛|聊天|商城|我  │
+└────────────────────────┘
+```
+
+```typescript
+// desktop/MobileShell.tsx
+const MobileShell = () => {
+  const { user } = useAuth();
+  const visibleApps = appRegistry.filter(app =>
+    app.requiredRoles.some(role => user.roles?.includes(role))
+  );
+
+  return (
+    <div className="mobile-shell">
+      <StatusBar />
+      <Routes>
+        {visibleApps.map(app => (
+          <Route
+            key={app.id}
+            path={`/${app.id}/*`}
+            element={<app.component />}
+          />
+        ))}
+      </Routes>
+      <MobileTabBar apps={visibleApps} />
+    </div>
+  );
+};
+```
+
+## 7. 技术栈
+
+| 层级 | 技术选型 |
+|------|---------|
+| 框架 | React 19 + TypeScript |
+| 构建 | Vite (Rolldown) |
+| 路由 | TanStack Router |
+| 状态管理 | Zustand (窗口/Dock) + TanStack Query (数据) |
+| UI 框架 | TailwindCSS + 自研组件 |
+| 窗口拖拽 | react-rnd |
+| 动效 | Framer Motion |
+| 后台组件 | Ant Design (仅 admin 应用使用) |
 | 表单 | React Hook Form + Zod |
-| 国际化 | react-i18next；词条集中在 `src/i18n`，RN 复用 JSON 资源 |
-| 打包 | `npm run dev/build/lint/test`，RN 使用 `expo start/build`，CI 通过 Turbo/Pnpm workspace 协调 |
+| 国际化 | react-i18next |
 
-### 3.1 目录结构（Web）
+## 8. 设计系统
+
+### 8.1 Design Tokens
+
+```typescript
+// shared/config/tokens.ts
+export const tokens = {
+  colors: {
+    desktop: {
+      background: '#1a1a2e',
+      foreground: '#eee'
+    },
+    primary: '#00adb5',
+    secondary: '#393e46'
+  },
+  spacing: {
+    dock: 64,
+    statusBar: 40,
+    appIconGap: 24
+  },
+  borderRadius: {
+    window: 12,
+    appIcon: 16
+  },
+  shadows: {
+    window: '0 8px 32px rgba(0,0,0,0.3)',
+    appIcon: '0 2px 8px rgba(0,0,0,0.2)'
+  }
+};
+```
+
+### 8.2 基础组件
+
+| 组件 | 说明 | 用途 |
+|------|------|------|
+| Button | 统一按钮 | 所有应用 |
+| Input | 统一输入框 | 所有应用 |
+| Modal | 统一弹窗 | 所有应用 |
+| Card | 卡片容器 | 论坛、商城 |
+| ProTable | 高级表格 | 后台管理 |
+| ProForm | 高级表单 | 后台管理 |
+
+### 8.3 图标系统
+
+```typescript
+// 使用 Iconify 统一图标
+import { Icon } from '@iconify/react';
+
+<Icon icon="mdi:forum" />
+<Icon icon="mdi:chat" />
+<Icon icon="mdi:cart" />
+```
+
+## 9. 性能优化
+
+### 9.1 应用懒加载
+
+```typescript
+// desktop/AppRegistry.tsx
+const ForumApp = lazy(() => import('@/apps/forum/ForumApp'));
+const ChatApp = lazy(() => import('@/apps/chat/ChatApp'));
+const ShopApp = lazy(() => import('@/apps/shop/ShopApp'));
+const AdminApp = lazy(() => import('@/apps/admin/AdminApp'));
+```
+
+### 9.2 窗口虚拟化
+
+只渲染可见窗口，最小化的窗口不渲染内容：
+
+```typescript
+{openWindows.map(window => (
+  window.isMinimized ? (
+    <MinimizedPlaceholder key={window.id} />
+  ) : (
+    <DesktopWindow key={window.id} {...window} />
+  )
+))}
+```
+
+### 9.3 数据缓存
+
+```typescript
+// 使用 TanStack Query 缓存
+const { data } = useQuery({
+  queryKey: ['posts'],
+  queryFn: fetchPosts,
+  staleTime: 5 * 60 * 1000, // 5分钟
+  cacheTime: 30 * 60 * 1000 // 30分钟
+});
+```
+
+## 10. 开发规范
+
+### 10.1 新增应用
+
+1. 在 `apps/` 下创建应用目录
+2. 创建 `{App}App.tsx` 入口文件
+3. 在 `AppRegistry.tsx` 注册应用
+4. 配置权限和窗口类型
+
+### 10.2 应用间通信
+
+```typescript
+// 使用 EventBus 或全局状态
+import { eventBus } from '@/shared/eventBus';
+
+// 论坛应用发送消息
+eventBus.emit('new-message', { count: 5 });
+
+// 状态栏监听消息
+eventBus.on('new-message', ({ count }) => {
+  showNotification(`您有 ${count} 条新消息`);
+});
+```
+
+### 10.3 路由规范
 
 ```
-radish.client/src
-├─ app/               # 入口、providers、路由
-├─ features/          # 领域（posts, comments, points, shop）
-├─ widgets/           # Dock、StatusBar、WindowManager 等桌面部件
-├─ entities/          # 数据实体 + hooks
-├─ shared/
-│   ├─ api/           # HTTP 客户端、DTO 映射
-│   ├─ config/        # 设计 Token、主题
-│   ├─ lib/           # 工具库、加密
-│   └─ ui/            # 基础组件（Button, Card, Overlay）
-└─ mobile/            # 移动专用增强（可选）
+桌面路由：/
+应用路由：/{appId}/*
+
+示例：
+/ - 桌面
+/forum - 论坛首页
+/forum/post/123 - 论坛帖子详情
+/chat - 聊天室
+/admin/apps - 后台应用管理
 ```
 
-未来 RN 目录与上述结构保持一致，放在 `apps/mobile`。
+## 11. 迭代计划
 
-## 4. 设计系统
+### 阶段一：M4（桌面系统基础）
 
-1. **Token**：在 `shared/config/tokens.ts` 定义颜色、字体、间距、阴影、模糊、动效时长，导出 `desktopTheme`、`mobileTheme`, `darkTheme`。
-2. **标准化组件库**：
-   - 目标是沉淀一套 Button/Input/Select/Checkbox/Radio/Switch/Transfer/Form 等基础组件，统一语义、尺寸、状态与动效。实现方式可为完全自研，或基于 Ant Design/Arco/Next UI 等第三方库进行“白标化”二次封装，但最外层 API、设计 Token、动效必须保持 Radish 规范。
-   - 若采用第三方库，需要拆分 `@/shared/ui/primitives`（直接映射 antd 组件并覆写主题）与 `@/shared/ui/controls`（业务中使用的封装层）。封装层负责：① 统一命名与变体（`<Button variant="ghost" intent="danger" size="lg">`）；② 注入 Design Token；③ 屏蔽第三方库的命名/类前缀；④ 导出 `Form`、`Field`、`FormItem` 等组合件。
-   - 组件库需配套 Storybook/VitePress 文档（`npm run storybook` 或 `docs/ui`），列出属性、交互、辅助线，并在 PR 中附录对应故事链接。所有组件要提供暗黑模式、无障碍状态（Focus ring、ARIA 标签）、移动端触控半径。
-   - 表单体系默认依赖 React Hook Form + 自定义 `Form`, `FormField`, `FormItem`, `FormControl`, `FormMessage` 组合，支持动态 schema、联动校验、表单布局（水平/垂直/紧凑）。穿梭框、列表选择、树选择等复合组件要提前评估数据量并提供虚拟滚动。
-   - 发布节奏：先落地 Button/Input/Select/IconButton/FormItem，随后扩展 Table、Modal、Drawer、Notification。组件需写入 `radish.client/src/shared/ui`，未来 RN 端在 `packages/ui/native` 保持相同 API。
-3. **组件层级**：
-   - 基础组件（Button/Input/Card/Modal）→ shared/ui。
-   - 布局组件：`AppShell`, `Dock`, `DesktopGrid`, `Window`, `MobileTabBar`。
-   - 业务组件：`PostList`, `CommentThread`, `ShopCarousel`。
-4. **动效规范**：
-   - 窗口打开：scale+opacity 210ms，最小化：向 Dock 图标缩放 180ms。
-   - Tab 切换：左右滑动 250ms+Bezier。
-   - RN 端采用 Reanimated 的 shared transitions，实现与 Web 近似的动效。
-5. **图标体系**：统一使用 `RadishIcon`（基于 Iconify 或自建 SVG 集），尺寸 16/20/24px，Dock 图标 48px。
-6. **文案与国际化**：字符串全部走 i18n，默认 zh-Hans，预留 en-US；移动端文案保持简洁避免超出。
+- [x] Desktop Shell 骨架
+- [ ] 应用注册系统
+- [ ] 窗口管理器（窗口/全屏/iframe）
+- [ ] 权限控制
+- [ ] 论坛应用（MVP）
 
-## 5. 交互与导航
+### 阶段二：M5（核心应用）
 
-- **PC**：桌面窗口模式 + Dock + 全局搜索命令面板（⌘K）；支持多窗口并存、窗口置顶、窗口记忆位置。
-- **移动 Web**：底部 Tab（圈子/探索/消息/商城/我），Tab 内再嵌 Stack；详情页支持向下拉关闭。
-- **RN**：沿用移动 Web 的信息架构，但引入原生导航转场、侧滑返回、沉浸状态栏、震动反馈。
-- **深链**：所有页面提供 `/app/:module/:id` 形式的深链接，对应 RN 中的动态路由，方便推广与通知跳转。
+- [ ] 聊天室应用
+- [ ] 商城应用
+- [ ] 后台管理应用（应用管理模块）
+- [ ] Dock 运行指示
+- [ ] 窗口动画
 
-## 6. 数据与状态共享
+### 阶段三：M6-M7（增强体验）
 
-- DTO/模型统一放在 `Radish.Model`，通过 `openapi-typescript` 或手写类型同步到前端。
-- React Query 中央缓存 key 以 `[domain, params]` 组织，支持窗体级缓存与跨窗口复用。
-- Zustand 用于 Dock/窗口状态、桌面背景、主题、通知等客户端状态；提供持久化（localStorage/IndexedDB）策略。
-- 加密：封装 `encryptSensitivePayload(payload)`，登录/敏感操作在 Hook 内自动处理；RN 端使用 `react-native-rsa-native` 实现同样接口。
+- [ ] 移动端适配
+- [ ] 快捷键支持
+- [ ] 桌面小部件
+- [ ] 多桌面/工作区
+- [ ] 性能优化
 
-## 7. 性能策略
+### 阶段四：M8+（扩展生态）
 
-- Vite 分包：`vendor`, `app-shell`, `desktop-widgets`, `feature-*`；使用 `React.lazy` + Suspense 分割功能窗口。
-- 图片/视频资源通过 CDN + 自适应格式（WebP/AVIF）；启动时按需加载壁纸。
-- 列表使用虚拟化（TanStack Virtual / React Virtuoso / FlashList），支持骨架屏。
-- 缓存：React Query + IndexedDB（`idb-keyval`）存储最近访问帖子与商城数据；移动端可做离线浏览。
-- RN 端预渲染关键页面、启用 Hermes 引擎、关闭不必要的日志。
+- [ ] 第三方应用接入
+- [ ] 应用商店
+- [ ] React Native 版本
+- [ ] 插件系统
 
-## 8. 测试与质量
+## 12. 参考资料
 
-- 单元/组件测试：Vitest + React Testing Library，覆盖核心组件与 Hook。
-- 端到端：Playwright（桌面/移动视口），涵盖登录、发帖、商城下单；RN 端可使用 Detox。
-- 可访问性：使用 Testing Library `axe` 与手动检查确保键盘导航可用；移动端遵循 WCAG 对比度。
-- 性能基线：Lighthouse P95 > 85 分，首屏交互 < 2.5s（桌面），移动端 < 3s。
+- Nebula OS 原型：`public/webos.html`
+- 窗口拖拽：react-rnd
+- macOS Big Sur 设计规范
+- Windows 11 设计规范
 
-## 9. 构建与发布
+---
 
-| 任务 | 命令 | 说明 |
-| --- | --- | --- |
-| 开发 | `npm run dev --prefix radish.client` | Vite Dev Server，代理 API |
-| 构建 | `npm run build --prefix radish.client` | 产出 `dist/`，供 Radish.Api 或静态服务器托管 |
-| 预览 | `npm run preview --prefix radish.client` | 本地验证生产包 |
-| RN 开发（规划） | `cd apps/mobile && npx expo start` | 触发展示 |
-| RN 构建（规划） | `npx expo prebuild && expo build:*` | 生成安卓 APK/AAB |
-
-CI 需串行执行 Web lint/test/build，再触发 RN 构建（可选）。生产部署时，Web 静态资源可挂载到 CDN 或由 Gateway/前端容器提供；RN 端通过 EAS Update 或商店发版。
-
-## 10. 迭代路线
-
-1. **阶段 A（M1-M4）**：完善 Web 桌面模式 + 响应式骨架；完成身份、内容、商城基本页面。
-2. **阶段 B（M5-M6）**：强化桌面动效、Dock 互动、移动模式体验；抽象共享 Hook/DTO。
-3. **阶段 C（M7-M8）**：接入可观测性、性能优化、PWA 可用性；准备 RN 环境（monorepo、共享包）。
-4. **阶段 D（M9+）**：启动 React Native App，优先实现圈子/帖子/商城主流程；与 Gateway 引入同步，确保 API 稳定。
-5. **阶段 E（持续）**：探索 Flutter/原生模块可能性，仅在需要更强渲染能力时评估。
-
-每个阶段需在 DevelopmentLog 中记录进度、问题、设计迭代，并同步更新本文件。
-
-## 11. 维护与协作
-
-- 所有前端设计/交互变更必须先更新 Figma/设计稿，再同步到本文件与 `DevelopmentFramework.md`。
-- 提交 PR 时附带关键页面截图（桌面 + 移动），若涉及 RN，也需要录屏或 GIF。
-- 对共享包或 Design Token 的修改需在 PR 描述中列出影响面，并通知 Web/RN 负责人。
-- 本文定位为“前端唯一事实来源”，其它文档只保留摘要与引用，避免重复维护。
+> 本文档是 Radish 前端架构的唯一事实来源，其他文档仅保留摘要与引用。
