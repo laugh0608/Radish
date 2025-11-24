@@ -5,7 +5,7 @@
 </p>
 <!-- ![萝卜](./docs/images/RadishAcg-256.png) -->
 
-Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，前端使用 React 19（Vite + TypeScript）。仓库提供 Server、领域层、仓储层、共享模型以及前端工程，所有模块都可在同一个解决方案中协同开发。
+Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，前端使用 React 19（Vite + TypeScript）。仓库提供 Server、领域层、仓储层、基础设施层、共享模型以及前端工程，所有模块都可在同一个解决方案中协同开发。
 
 ## 技术栈一览
 - **后端**：ASP.NET Core 10、Minimal API/Controller、Serilog、FluentValidation。
@@ -13,18 +13,19 @@ Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NE
 - **数据库**：PostgreSQL 16（本地/容器均可）。
 - **前端**：React 19、Vite、TypeScript、React Query、Tailwind/UnoCSS（可按需选用）。
 - **测试**：xUnit + Shouldly（后端）、Vitest + Testing Library（前端）。
-- **开发体验**：Docker/Docker Compose、Taskfile/PowerShell 脚本、EditorConfig、lint-staged。
+- **开发体验**：Docker/Docker Compose、local-start 脚本（PowerShell/Bash）、EditorConfig、lint-staged。
 
 ## 项目结构
 ```
 Radish.slnx                  # 解决方案入口
 docs/                        # 开发规范、架构、计划、部署等文档
 radish.client/               # React + Vite 前端工程
-Radish.Api/               # ASP.NET Core Host，暴露 REST API
+Radish.Api/                  # ASP.NET Core Host，暴露 REST API
 Radish.Common/               # 日志、配置等通用工具
 Radish.Core/                 # 领域模型与业务规则
 Radish.Service/              # 应用服务，协调 Core 与仓储
 Radish.Repository/           # SQLSugar 仓储实现与配置
+Radish.Infrastructure/       # SqlSugar 扩展、多租户路由与连接解析
 Radish.Model/                # DTO/实体定义，前后端共享
 Radish.Extension/            # 横切关注点（健康检查、Swagger、Auth 中间件）
 Radish.Shared/               # 公共常量、枚举、错误码
@@ -43,6 +44,7 @@ Radish.IRepository/          # 仓储接口契约
 - `Radish.Api/`：ASP.NET Core 主机，只负责 API 宿主、DI、配置、健康检查与 Swagger/Scalar。
 - `Radish.Common/`：全局可复用的日志、配置与基础工具；`AppSettings.RadishApp(...)` 提供统一的字符串读取入口。
 - `Radish.Core/`：领域模型、聚合根、领域服务与事件。
+- `Radish.Infrastructure/`：SqlSugar 多库、租户隔离、连接配置解析等基础设施能力，供 Repository 与 Extension 共享。
 - `Radish.Extension/`：Swagger/Scalar、HealthCheck、JWT 等横切扩展，并包含 `AllOptionRegister` 等 DI 扩展。
 - `Radish.IRepository/` & `Radish.IService/`：定义仓储与业务的接口契约。
 - `Radish.Model/`：数据库实体、DTO、查询对象与共享枚举。
@@ -52,7 +54,7 @@ Radish.IRepository/          # 仓储接口契约
 
 ### 分层依赖
 - 前端（`radish.client`）只依赖 npm/pnpm 生态。
-- 后端按层次引用：`Radish.Api → Radish.Service → Radish.Core/IService/IRepository → Radish.Repository → Radish.Model → Radish.Common`，保持核心域对基础设施的最小感知。
+- 后端按层次引用：`Radish.Api → Radish.Service → Radish.Core/IService/IRepository → Radish.Repository → Radish.Infrastructure → Radish.Model → Radish.Common`，保持核心域对基础设施的最小感知，SqlSugar/租户扩展集中在 Infrastructure。
 - `Radish.Core` 当前以 Domain 角色存在，可独立演进，不直接依赖具体实现。
 
 ### 依赖管理
@@ -69,13 +71,15 @@ Radish.IRepository/          # 仓储接口契约
 
 ## 快速开始
 1. 安装依赖：`.NET 10 SDK`、`Node.js 24+`、`PostgreSQL 16+`。
-2. 复制并填写配置：`cp Radish.Api/appsettings.Development.json appsettings.Local.json` 或通过环境变量设置 `ConnectionStrings__Default`、`Jwt__Key` 等敏感项。
+2. 配置应用：直接修改 `Radish.Api/appsettings.Development.json`（或附加 `appsettings.{Environment}.json` / 环境变量）以设置 `ConnectionStrings__Default`、`Jwt__Key`、`Redis` 等敏感项；当前未使用 `appsettings.Local.json`。
 3. 还原与构建：
    ```bash
    dotnet restore
    dotnet build Radish.slnx -c Debug
    ```
-4. 初始化数据库（可选 Code First）：运行 `dotnet run --project Radish.Api -- --seed` 或编写 SQLSugar 初始化脚本。
+4. 初始化数据库：
+   - 默认示例沿用 `appsettings.json` 中的 SQLite `Radish.db`/`RadishLog.db`，首次运行 API 即可自动生成文件。
+   - 若改用 PostgreSQL 或需要正式种子数据，请参考 [docs/DevelopmentFramework.md](docs/DevelopmentFramework.md) “数据与持久化策略” 与 [docs/DevelopmentPlan.md](docs/DevelopmentPlan.md) M1/M2 清单手动执行 `db.DbMaintenance.CreateDatabase()` + `InitTables()`/种子脚本（当前仍在整理 `SeedRunner`，暂未提供 `--seed` CLI）。
 5. 启动服务：`dotnet run --project Radish.Api/Radish.Api.csproj`，默认监听 `http://localhost:5165` 与 `https://localhost:7110`（源自 `Radish.Api/Properties/launchSettings.json`，可按需调整）。
 6. 前端联调：
    ```bash
@@ -91,12 +95,16 @@ Radish.IRepository/          # 仓储接口契约
 - `dotnet test Radish.Api.Tests`：运行后端单元测试。
 - `npm run build --prefix radish.client`：产出前端静态资源。
 - `pwsh ./local-start.ps1` / `./local-start.sh`：交互式脚本，可选择单独/同时启动前后端，或直接运行 `Radish.Api.Tests`。
-- `docker compose -f deploy/docker-compose.yml up --build`：一键拉起 PostgreSQL + API（详见 `docs/DeploymentGuide.md`）。
+- `docker compose up --build`（请先按 [docs/DeploymentGuide.md](docs/DeploymentGuide.md) 模板在 `deploy/docker-compose.yml` 中定义服务）：拉起 PostgreSQL + API。
 
 ## 文档
+- [docs/README.md](docs/README.md)：文档索引入口。
 - [docs/DevelopmentSpecifications.md](docs/DevelopmentSpecifications.md)：目录、分层与依赖管理规范。
 - [docs/DevelopmentFramework.md](docs/DevelopmentFramework.md)：总体架构与技术决策。
 - [docs/DevelopmentPlan.md](docs/DevelopmentPlan.md)：按周交付计划。
 - [docs/DevelopmentLog.md](docs/DevelopmentLog.md)：阶段日志与关键节点。
+- [docs/AuthenticationGuide.md](docs/AuthenticationGuide.md)：鉴权与授权链路说明。
+- [docs/FrontendDesign.md](docs/FrontendDesign.md)：React 桌面化体验与组件规划。
+- [docs/GatewayPlan.md](docs/GatewayPlan.md)：API Gateway 改造方案。
 - [docs/DeploymentGuide.md](docs/DeploymentGuide.md)：容器化与部署指南。
 - [AGENTS.md](AGENTS.md)：贡献者指南。
