@@ -1,14 +1,24 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Radish.Api.Controllers;
 
+/// <summary>
+/// Rust 原生互操作性能测试控制器 (v2)
+/// </summary>
+/// <remarks>
+/// 提供 C# 与 Rust 原生库性能对比测试接口。
+/// 此接口为 v2 版本，演示跨语言互操作和版本控制。
+/// </remarks>
 [ApiController]
-[Route("api/[controller]/[action]")]
+[ApiVersion("2.0")]
+[Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Authorize(Policy = "RadishAuthPolicy")]
+[Tags("性能测试")]
 public class RustTestController : ControllerBase
 {
     [HttpGet]

@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
@@ -14,7 +15,8 @@ namespace Radish.Api.Controllers;
 /// 所有接口需要通过 JWT 认证和 RadishAuthPolicy 授权策略。
 /// </remarks>
 [ApiController]
-[Route("api/[controller]/[action]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Authorize(Policy = "RadishAuthPolicy")]
 [Tags("用户管理")]
