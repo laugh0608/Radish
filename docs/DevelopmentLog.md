@@ -4,6 +4,12 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.11.25
+
+- **decision(gateway)**: 复盘 Gateway 与 Auth 的优先级，确认当前阶段仅有 `Radish.Api + Radish.Auth` 两个宿主，复杂度有限，Gateway 投入收益不高；因此 Gateway 项目整体移至 M9（暂缓），只在接口/配置中保留将来透传所需的 Header/Trace/Token 字段。
+- **plan(auth-first)**: 将“Radish.Auth + OIDC 客户端集成”明确为 M3-M4 的唯一主线，后续 WebOS/桌面子应用、Scalar OAuth、客户端管理均依赖该服务，团队资源集中支持 Auth 交付。
+- **docs(plan/framework/gateway)**: `DevelopmentPlan.md` 更新里程碑表与周计划提示，强调 Gateway 暂缓、Auth 为前置；`DevelopmentFramework.md` 与 `GatewayPlan.md` 追加状态说明及执行条件，统一文档口径。
+
 ### 2025.11.24
 
 - **arch(auth)**: 决定采用 OIDC（OpenID Connect）架构替代原有的简单 JWT 认证，使用 OpenIddict 作为认证服务器实现。主要考量：
