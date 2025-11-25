@@ -1,4 +1,5 @@
 using System.Text;
+using Asp.Versioning;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -72,6 +73,26 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 // 注册 RazorPages 解析
 builder.Services.AddRazorPages();
+// 配置 API 版本控制
+builder.Services.AddApiVersioning(options =>
+{
+    // 报告支持的 API 版本
+    options.ReportApiVersions = true;
+    // 当客户端未指定版本时，使用默认版本
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    // 设置默认版本为 1.0
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    // 使用 URL 路径版本控制（推荐）
+    // 例如：/api/v1/User/GetUserList
+})
+.AddMvc() // 添加 MVC 支持
+.AddApiExplorer(options =>
+{
+    // API 版本在 URL 路径中的格式：'v'major[.minor][-status]
+    options.GroupNameFormat = "'v'VVV";
+    // 自动替换 Controller 路由中的版本占位符
+    options.SubstituteApiVersionInUrl = true;
+});
 // 配置 OpenAPI 和 Scalar 文档
 builder.Services.AddScalarSetup();
 // 注册 AddAutoMapper 服务

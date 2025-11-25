@@ -1,3 +1,4 @@
+using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Scalar.AspNetCore;
@@ -8,78 +9,69 @@ namespace Radish.Extension.OpenApiExtension;
 public static class ScalarSetup
 {
     /// <summary>
-    /// 添加增强的 OpenAPI 配置
+    /// 添加增强的 OpenAPI 配置，支持 API 版本控制
     /// </summary>
     /// <param name="services">服务集合</param>
     public static void AddScalarSetup(this IServiceCollection services)
     {
         if (services == null) throw new ArgumentNullException(nameof(services));
 
-        // 配置 OpenAPI v1 文档
-        services.AddOpenApi("v1", options =>
+        // 获取 API 版本描述提供者（需要在 AddApiVersioning 之后调用）
+        var serviceProvider = services.BuildServiceProvider();
+        var versionProvider = serviceProvider.GetRequiredService<IApiVersionDescriptionProvider>();
+
+        // 为每个 API 版本动态创建 OpenAPI 文档
+        foreach (var description in versionProvider.ApiVersionDescriptions)
         {
-            options.AddDocumentTransformer((document, context, cancellationToken) =>
+            var versionName = description.GroupName; // 例如：v1, v2
+
+            services.AddOpenApi(versionName, options =>
             {
-                document.Info.Title = "Radish API Documentation";
-                document.Info.Version = "v1.0";
-                document.Info.Description = @"
-## Radish 社区平台 API 文档
-
-### 认证方式
-使用 JWT Bearer Token 认证，在请求头中添加：
-```
-Authorization: Bearer {your_token}
-```
-
-### 获取 Token
-调用 `GET /api/Login/GetJwtToken` 接口，传入用户名和密码获取 Token。
-
-### 常见状态码
-- `200`: 请求成功
-- `401`: 未授权，Token 无效或过期
-- `403`: 禁止访问，权限不足
-- `500`: 服务器内部错误
-
-### 统一响应格式
-所有接口返回统一的 MessageModel 格式：
-```json
-{
-  ""statusCode"": 200,
-  ""isSuccess"": true,
-  ""messageInfo"": ""操作成功"",
-  ""messageInfoDev"": ""开发者调试信息"",
-  ""responseData"": {}
-}
-```
-";
-
-                // 添加服务器列表
-                document.Servers.Add(new()
+                options.AddDocumentTransformer((document, context, cancellationToken) =>
                 {
-                    Url = "https://localhost:7110",
-                    Description = "本地开发环境 (HTTPS)"
-                });
-                document.Servers.Add(new()
-                {
-                    Url = "http://localhost:5165",
-                    Description = "本地开发环境 (HTTP)"
-                });
+                    var version = description.ApiVersion.ToString(); // 例如：1.0, 2.0
+                    var isDeprecated = description.IsDeprecated;
 
-                return Task.CompletedTask;
-            });
-        });
+                    // 设置文档标题和版本
+                    document.Info.Title = $"Radish API Documentation - {versionName.ToUpper()}";
+                    document.Info.Version = version;
 
-        // 配置 OpenAPI v2 文档（预留）
-        services.AddOpenApi("v2", options =>
-        {
-            options.AddDocumentTransformer((document, context, cancellationToken) =>
-            {
-                document.Info.Title = "Radish API Documentation (v2 - Preview)";
-                document.Info.Version = "v2.0-preview";
-                document.Info.Description = "第二版 API 文档，用于新功能预览和向后兼容";
-                return Task.CompletedTask;
+                    // 根据版本设置不同的描述
+                    if (versionName == "v1")
+                    {
+                        document.Info.Description = BuildV1Description(isDeprecated);
+                    }
+                    else if (versionName == "v2")
+                    {
+                        document.Info.Description = BuildV2Description();
+                    }
+                    else
+                    {
+                        document.Info.Description = $"Radish API 文档 - 版本 {version}";
+                    }
+
+                    // 如果版本已弃用，添加警告标记
+                    if (isDeprecated)
+                    {
+                        document.Info.Description = $"⚠️ **此版本已弃用**\n\n{document.Info.Description}";
+                    }
+
+                    // 添加服务器列表
+                    document.Servers.Add(new()
+                    {
+                        Url = "https://localhost:7110",
+                        Description = "本地开发环境 (HTTPS)"
+                    });
+                    document.Servers.Add(new()
+                    {
+                        Url = "http://localhost:5165",
+                        Description = "本地开发环境 (HTTP)"
+                    });
+
+                    return Task.CompletedTask;
+                });
             });
-        });
+        }
     }
 
     /// <summary>
@@ -91,6 +83,12 @@ Authorization: Bearer {your_token}
     {
         // 映射 OpenAPI 文档端点
         app.MapOpenApi();
+
+        // 获取 API 版本描述提供者
+        var versionProvider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+        var versions = versionProvider.ApiVersionDescriptions
+            .OrderBy(v => v.ApiVersion)
+            .ToList();
 
         // 配置 Scalar UI
         app.MapScalarApiReference(routePrefix, options =>
@@ -112,10 +110,105 @@ Authorization: Bearer {your_token}
                 // 设置默认 HTTP 客户端为 Axios
                 .WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios);
 
-            // 配置多版本文档
-            options
-                .AddDocument("v1", "v1 (当前版本)", "/openapi/v1.json", isDefault: true)
-                .AddDocument("v2", "v2 (预览版)", "/openapi/v2.json");
+            // 动态配置多版本文档
+            for (var i = 0; i < versions.Count; i++)
+            {
+                var description = versions[i];
+                var versionName = description.GroupName;
+                var displayName = description.IsDeprecated
+                    ? $"{versionName.ToUpper()} (已弃用)"
+                    : $"{versionName.ToUpper()} ({description.ApiVersion})";
+
+                // 第一个版本设为默认
+                var isDefault = i == 0;
+
+                options.AddDocument(
+                    versionName,
+                    displayName,
+                    $"/openapi/{versionName}.json",
+                    isDefault
+                );
+            }
         });
+    }
+
+    /// <summary>
+    /// 构建 v1 版本的文档描述
+    /// </summary>
+    private static string BuildV1Description(bool isDeprecated)
+    {
+        var statusText = isDeprecated ? "**已弃用** - 请迁移到更高版本" : "**当前稳定版本**";
+
+        return $@"
+## Radish 社区平台 API 文档 - V1
+
+{statusText}
+
+### 📋 包含的接口
+- **认证管理**: 用户登录、Token 获取
+- **用户管理**: 用户信息查询、修改
+
+### 🔐 认证方式
+使用 JWT Bearer Token 认证，在请求头中添加：
+```
+Authorization: Bearer {{your_token}}
+```
+
+### 🔑 获取 Token
+调用 `GET /api/v1/Login/GetJwtToken` 接口，传入用户名和密码获取 Token。
+
+### 📊 常见状态码
+- `200`: 请求成功
+- `401`: 未授权，Token 无效或过期
+- `403`: 禁止访问，权限不足
+- `404`: 资源不存在
+- `500`: 服务器内部错误
+
+### 📦 统一响应格式
+所有接口返回统一的 MessageModel 格式：
+```json
+{{
+  ""statusCode"": 200,
+  ""isSuccess"": true,
+  ""messageInfo"": ""操作成功"",
+  ""messageInfoDev"": ""开发者调试信息"",
+  ""responseData"": {{}}
+}}
+```
+";
+    }
+
+    /// <summary>
+    /// 构建 v2 版本的文档描述
+    /// </summary>
+    private static string BuildV2Description()
+    {
+        return @"
+## Radish 社区平台 API 文档 - V2
+
+**新功能预览版本**
+
+### 📋 包含的接口
+- **系统管理**: 应用配置查询、系统信息获取
+- **性能测试**: C# 与 Rust 原生库性能对比
+
+### 🆕 新特性
+- **应用配置管理**: 提供多种配置读取方式演示
+- **Rust 互操作**: 跨语言性能测试接口
+- **版本控制**: URL 路径版本控制示例
+
+### 🔐 认证方式
+与 v1 版本相同，使用 JWT Bearer Token 认证。
+
+### 🚀 URL 格式
+所有 v2 接口 URL 格式为：`/api/v2/{Controller}/{Action}`
+
+例如：
+- `/api/v2/AppSetting/GetRedisConfig`
+- `/api/v2/RustTest/TestSum1`
+
+### ⚙️ 版本迁移
+从 v1 迁移到 v2 只需修改 URL 路径中的版本号即可。
+";
     }
 }

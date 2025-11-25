@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common;
@@ -21,7 +22,8 @@ namespace Radish.Api.Controllers;
 /// 所有接口均返回统一的 MessageModel 格式。
 /// </remarks>
 [ApiController]
-[Route("api/[controller]/[action]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Tags("认证管理")]
 public class LoginController : ControllerBase
