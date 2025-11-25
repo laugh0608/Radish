@@ -195,9 +195,9 @@ graph LR
 
 ## API Gateway 规划（未来迭代）
 
-- 需求背景、阶段划分、任务清单详见 [GatewayPlan.md](GatewayPlan.md)，当前仍以完成既有框架/业务功能为优先，但涉及认证、日志、配置时需预留 Gateway 所需的 Header/配置片段。
-- 最近规划：在核心模块稳定后（预计 M8+），增量引入 `Radish.Gateway`（Ocelot 方案），先完成 P1-P3（基线、认证、路由聚合），其余 P4-P6（服务发现、可观测性、服务拆分）列为后续迭代。
-- 新增服务/接口需在设计评审阶段评估“是否通过 Gateway 暴露”，避免未来迁移时重复改动。
+- 需求背景、阶段划分、任务清单详见 [GatewayPlan.md](GatewayPlan.md)。当前决策为“维持直连模式 + 预留兼容”，集中资源完成 Radish.Auth/OIDC 以及 WebOS 交互；Gateway 项目在未形成多服务/多入口压力前不启动。
+- 最近规划：把 Gateway 工作整体移动到 M9（暂缓里程碑），届时再评估是否按照 `Radish.Gateway + Ocelot` 的 P1-P3 路线推进；在此之前仅在接口、Header、日志等设计中预留可透传字段，确保未来迁移成本最低。
+- 新增服务/接口仍需在评审阶段勾勒“若未来接入 Gateway 的 URL/Scope/聚合需求”，但不落地任何代码或基础设施。
 
 ---
 

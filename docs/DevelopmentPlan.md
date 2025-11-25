@@ -25,6 +25,9 @@
 | M6 | 积分与商城 | 积分规则、事件订阅、商城商品与库存、购买链路 | 发帖/互动触发积分，商城购买扣减积分并更新权益 |
 | M7 | 可观测性与测试 | 日志/Tracing、性能调优、自动化测试、CI 脚本 | `dotnet test` + `npm run test` 通过；Serilog/O11y 配置完成；性能基线达到 P95≤200ms |
 | M8 | 部署与运维 | Dockerfile/Compose、自监控、变更文档 | `docker compose up --build` 一键拉起 PostgreSQL + API + Auth + 前端；文档覆盖常见排障 |
+| M9（暂缓） | Gateway & BFF 策略 | Gateway PoC（Ocelot 路由 + 认证透传）与聚合 API 设计，仅在多服务/多入口明确后启动 | 在 `DevelopmentLog` 记录启动审批 + 回滚预案；保证现有 API 维持直连能力 |
+
+> 当前迭代聚焦 M3-M4 的 Radish.Auth 与 WebOS OIDC 接入。Gateway 相关任务被移至 M9，并标记为“暂缓”，除保留 Header/Token 兼容性外不投入实现资源。
 
 ## 按周计划
 
@@ -47,6 +50,8 @@
 - **Service**：实现最小 `CategoryAppService` 与 `PostAppService`（列表、详情、创建）。
 - **测试**：`Radish.Api.Tests` 补充聚合与仓储单测。
 - **验收**：Swagger 可调试 CRUD；分页/排序参数生效；关键测试通过。
+
+> ⚠️ OIDC 认证中心（M3）是所有后续 WebOS/OIDC 集成与客户端管理的前置条件，资源投入优先保证本阶段可交付；Gateway 相关能力仅保留接口兼容性，不在 M1-M4 执行。
 
 ### 第 3 周｜OIDC 认证中心与数据初始化
 
