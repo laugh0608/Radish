@@ -41,7 +41,12 @@ public static class SerilogSetup
         Log.Logger = loggerConfiguration.CreateLogger();
 
         // Serilog 内部日志
-        var file = File.CreateText( LogContextTool.Combine(LogContextTool.SerilogDebug, $"Serilog{DateTime.Now:yyyyMMdd}.txt"));
+        var debugLogDir = LogContextTool.Combine(LogContextTool.SerilogDebug);
+        if (!Directory.Exists(debugLogDir))
+        {
+            Directory.CreateDirectory(debugLogDir);
+        }
+        var file = File.CreateText(LogContextTool.Combine(LogContextTool.SerilogDebug, $"Serilog{DateTime.Now:yyyyMMdd}.txt"));
         SelfLog.Enable(TextWriter.Synchronized(file));
 
         host.UseSerilog();
