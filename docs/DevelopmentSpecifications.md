@@ -194,3 +194,186 @@
    （7）在 Server 层通过依赖注入调用 IService，完成数据返回或存储。
 8. Server 层对外暴露的 Controller 禁止直接注入 `IBaseRepository` 或任何业务仓储，所有数据访问需经由 Service 层封装。
 9. 角色-API 授权依赖 `ApiModule.LinkUrl` 进行正则匹配，因此 URL 必须以 `/` 开头；若 Action 路由包含路径参数（如 `[HttpGet("{id:long}")]`），请在 `LinkUrl` 中写入对应的正则版本（示例：`/api/User/GetById/\d+`），否则 `RadishAuthPolicy` 无法命中该路由。
+
+## API 版本控制规范
+
+### 版本控制策略
+
+- Radish 采用 **URL 路径版本控制**方式，这是业界标准且最直观的版本管理方案（GitHub、Stripe、Twitter 等主流 API 均采用此方案）。
+- 版本号格式为 `v{major}.{minor}`，在 URL 路径中以 `v{major}` 形式体现（如 `v1`、`v2`）。
+- 所有 API 路由必须包含版本号：`/api/v{version}/{controller}/{action}`。
+- 使用 `Asp.Versioning.Mvc` (8.1.0) 和 `Asp.Versioning.Mvc.ApiExplorer` 提供版本控制支持。
+
+### Controller 版本声明
+
+每个 Controller 必须明确声明其所属的 API 版本：
+
+```csharp
+[ApiController]
+[ApiVersion("1.0")]  // 声明为 v1 版本
+[Route("api/v{version:apiVersion}/[controller]/[action]")]
+[Produces("application/json")]
+[Tags("功能模块")]
+public class MyController : ControllerBase
+{
+    // Actions...
+}
+```
+
+**关键特性说明：**
+- `[ApiVersion("1.0")]`: 声明 Controller 支持的版本，可同时声明多个版本
+- `v{version:apiVersion}`: 路由模板中的版本占位符，运行时自动替换为实际版本号
+- 版本号采用 Major.Minor 格式（如 1.0, 2.0）
+- URL 中显示为 v1, v2（由 `GroupNameFormat = "'v'VVV"` 配置）
+
+### 版本划分原则
+
+**v1 (稳定版本)：**
+- 核心业务接口：用户管理、认证授权等
+- 已发布到生产环境的稳定 API
+- 必须保持向后兼容，不得破坏性变更
+- 示例：LoginController、UserController
+
+**v2 及更高版本（预览/实验版本）：**
+- 新功能接口：系统管理、性能测试等
+- 实验性功能或重大重构
+- 可包含破坏性变更
+- 示例：AppSettingController (v2)、RustTestController (v2)
+
+### OpenAPI 文档配置
+
+**自动文档生成：**
+- 系统通过 `IApiVersionDescriptionProvider` 自动发现所有 API 版本
+- 为每个版本动态生成独立的 OpenAPI 文档（`/openapi/v1.json`, `/openapi/v2.json`）
+- Scalar UI 自动展示版本选择下拉菜单，切换版本时文档内容自动过滤
+
+**文档配置位置：**
+- `Radish.Extension/OpenApiExtension/ScalarSetup.cs` 负责统一配置
+- 每个版本的文档描述、示例、服务器列表均可独立定制
+- 支持版本弃用标记（在 `Info.Description` 中添加警告）
+
+**Scalar UI 版本切换：**
+```csharp
+// 在 ScalarSetup.cs 中自动配置
+options
+    .AddDocument("v1", "V1 (1.0)", "/openapi/v1.json", isDefault: true)
+    .AddDocument("v2", "V2 (2.0)", "/openapi/v2.json");
+```
+
+### XML 注释规范
+
+所有 Controller 和 Action 必须提供完整的 XML 注释：
+
+```csharp
+/// <summary>
+/// 功能简述
+/// </summary>
+/// <param name="paramName">参数说明</param>
+/// <returns>返回值说明</returns>
+/// <remarks>
+/// 详细说明，包括：
+/// - 业务逻辑
+/// - 请求示例
+/// - 响应示例
+/// - 注意事项
+/// </remarks>
+/// <response code="200">成功响应说明</response>
+/// <response code="401">未授权说明</response>
+[HttpGet]
+[ProducesResponseType(typeof(MessageModel<T>), StatusCodes.Status200OK)]
+[ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
+public async Task<MessageModel<T>> MyAction(string paramName)
+```
+
+**关键要求：**
+- 必须启用 XML 文档生成（在 `.csproj` 中配置 `<GenerateDocumentationFile>true</GenerateDocumentationFile>`）
+- 使用 `[ProducesResponseType]` 明确声明所有可能的响应状态码
+- 使用 `[Tags]` 对 API 进行分组（如"认证管理"、"用户管理"、"系统管理"）
+- 为 v2+ 版本在注释中标注 "(v2)" 等版本标识
+
+### 版本迁移指南
+
+**添加新版本：**
+1. 创建新的 Controller 或复制现有 Controller
+2. 修改 `[ApiVersion]` 特性为新版本号（如 "2.0"）
+3. 更新 XML 注释说明版本差异
+4. 在 `ScalarSetup.cs` 中为新版本添加专属描述
+
+**弃用旧版本：**
+```csharp
+[ApiVersion("1.0", Deprecated = true)]
+```
+- 添加 `Deprecated = true` 标记
+- OpenAPI 文档会自动显示"已弃用"警告
+- 保留至少一个完整版本周期再移除
+
+**跨版本支持：**
+```csharp
+[ApiVersion("1.0")]
+[ApiVersion("2.0")]
+public class MyController : ControllerBase
+```
+- Controller 可同时支持多个版本
+- 使用 `[MapToApiVersion("2.0")]` 标记特定 Action 的版本
+
+### 版本控制配置（Program.cs）
+
+```csharp
+builder.Services.AddApiVersioning(options =>
+{
+    options.ReportApiVersions = true;  // 响应头报告支持的版本
+    options.AssumeDefaultVersionWhenUnspecified = true;  // 未指定版本时使用默认版本
+    options.DefaultApiVersion = new ApiVersion(1, 0);  // 默认版本 1.0
+})
+.AddMvc()
+.AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";  // URL 中显示为 v1, v2
+    options.SubstituteApiVersionInUrl = true;  // 自动替换路由中的版本占位符
+});
+```
+
+### URL 格式示例
+
+**v1 接口：**
+```
+GET /api/v1/Login/GetJwtToken?name=admin&pass=123456
+GET /api/v1/User/GetUserList
+GET /api/v1/User/GetUserById/123456789
+```
+
+**v2 接口：**
+```
+GET /api/v2/AppSetting/GetRedisConfig
+GET /api/v2/RustTest/TestSum1?iterations=1000000
+```
+
+### 版本响应头
+
+启用 `ReportApiVersions` 后，响应头会包含版本信息：
+
+```
+api-supported-versions: 1.0, 2.0
+api-deprecated-versions: (空或已弃用的版本)
+```
+
+### 文档访问
+
+- **Scalar UI**: `https://localhost:7110/api/docs`
+- **OpenAPI JSON**: 
+  - v1: `https://localhost:7110/openapi/v1.json`
+  - v2: `https://localhost:7110/openapi/v2.json`
+
+### 常见问题
+
+**Q: 是否可以不指定版本？**
+A: 不推荐。虽然系统会使用默认版本 (v1.0)，但显式指定版本更清晰。
+
+**Q: 如何在权限表中配置版本化 URL？**
+A: `ApiModule.LinkUrl` 中必须包含版本号的正则，例如：`/api/v1/User/GetUserList` 或 `/api/v\d+/User/GetUserList`。
+
+**Q: 前端如何调用不同版本？**
+A: 直接修改 URL 路径中的版本号即可，无需修改请求头或参数。
+
+**Q: 是否支持查询参数或请求头版本控制？**
+A: 系统支持但不推荐。URL 路径版本控制是最佳实践，工具支持最好，用户体验最佳。

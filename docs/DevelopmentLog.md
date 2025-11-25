@@ -268,3 +268,89 @@ docs: 写了开发大纲
 ### 2025.9.27
 
 feat: 决定使用 Radish 项目名称，创建 ABP 项目
+### 2025.11.25
+
+#### feat: 完善 Scalar OpenAPI 文档配置
+
+- **创建 OpenAPI 扩展模块**: 新建 `Radish.Extension/OpenApiExtension/ScalarSetup.cs`，统一管理 OpenAPI 和 Scalar 配置
+- **简化 Program.cs**: 通过 `AddScalarSetup()` 和 `UseScalarUI()` 扩展方法简化配置代码
+- **完善 MessageModel 文档**: 为 `MessageModel<T>` 添加完整的 XML 注释、使用示例和业务场景说明
+- **增强 Controller 文档**: 
+  - LoginController: 添加详细的登录流程、请求/响应示例
+  - UserController: 为所有方法添加业务场景和参数说明
+  - 使用 `[Tags]` 特性进行 API 分组（"认证管理"、"用户管理"）
+  - 使用 `[ProducesResponseType]` 明确声明所有可能的响应状态码
+- **JWT 认证文档化**: 在 OpenAPI 文档中添加 JWT Bearer 认证说明和使用指南
+- **项目配置优化**: 
+  - 为 `Radish.Model` 和 `Radish.Api` 启用 XML 文档生成
+  - 配置多版本 API 文档支持
+- **Scalar UI 优化**: 使用 BluePlanet 主题、强制暗色模式、启用操作 ID 显示、展开所有标签、按字母排序
+- **Bug 修复**: 修复 SerilogDebug 日志目录不存在导致的启动异常
+
+#### chore: 配置调试启动时自动打开 API 文档
+
+- 修改 `launchSettings.json`，为所有 profile 启用 `launchBrowser`
+- 默认打开 `/api/docs` (Scalar 文档页面)
+- Visual Studio 中按 F5 启动调试时，浏览器会自动打开并导航到 API 文档
+- 关闭浏览器窗口时，Visual Studio 会自动停止调试会话
+
+#### feat: 实现基于 URL 路径的 API 版本控制
+
+- **版本控制核心配置**: 
+  - 安装 `Asp.Versioning.Mvc` 和 `Asp.Versioning.Mvc.ApiExplorer` (8.1.0)
+  - 配置 URL 路径版本控制，格式为 `/api/v{version}/[controller]/[action]`
+  - 设置默认版本为 1.0，未指定版本时自动使用默认版本
+  - 启用 API 版本报告和自动版本替换
+
+- **版本划分**: 
+  - **v1 (稳定版本)**: LoginController、UserController
+  - **v2 (预览版本)**: AppSettingController、RustTestController
+
+- **Controllers 更新**: 
+  - 添加 `[ApiVersion("x.0")]` 特性声明版本
+  - 路由模板更新为 `api/v{version:apiVersion}/[controller]/[action]`
+  - 完善 XML 注释和响应类型声明
+  - 为 v2 Controller 添加 Tags 分类（"系统管理"、"性能测试"）
+
+- **OpenAPI 动态文档生成**: 
+  - 使用 `IApiVersionDescriptionProvider` 自动发现所有 API 版本
+  - 为每个版本动态创建独立的 OpenAPI 文档
+  - 每个版本文档包含专属的描述、示例和接口列表
+  - 支持版本弃用标记和警告提示
+
+- **Scalar UI 版本切换**: 
+  - 自动生成版本选择下拉菜单
+  - v1 文档只显示 v1 接口，v2 文档只显示 v2 接口
+  - 按版本号升序排列，首个版本默认选中
+  - 显示版本状态（如 "V1 (1.0)"、"V2 (2.0)"）
+
+- **文档隔离**: 
+  - v1 文档描述: 包含认证管理、用户管理接口，当前稳定版本
+  - v2 文档描述: 包含系统管理、性能测试接口，新功能预览版本
+  - 每个版本包含独立的 URL 格式说明和迁移指南
+
+#### 技术要点
+
+- **URL 格式**: 
+  - v1: `/api/v1/Login/GetJwtToken`, `/api/v1/User/GetUserList`
+  - v2: `/api/v2/AppSetting/GetRedisConfig`, `/api/v2/RustTest/TestSum1`
+
+- **特色功能**: 
+  - ✅ URL 路径版本控制（业界标准）
+  - ✅ 文档自动隔离（按版本过滤接口）
+  - ✅ 默认版本支持
+  - ✅ 版本报告（响应头包含支持的版本信息）
+  - ✅ 弃用支持（可标记和提示已弃用版本）
+  - ✅ 完全向后兼容
+
+- **配置文件更新**: 
+  - Radish.Api.csproj: 添加 Asp.Versioning.* 包引用、启用 XML 文档生成
+  - Radish.Extension.csproj: 添加 ApiExplorer 包支持、添加 OpenAPI 相关包
+  - Radish.Model.csproj: 启用 XML 文档生成
+
+#### Git 提交记录
+
+- `df6ca3d` - feat: 完善 Scalar OpenAPI 文档配置
+- `9d3ca4a` - chore: 配置调试启动时自动打开 API 文档
+- `9f3085b` - feat: 实现基于 URL 路径的 API 版本控制
+
