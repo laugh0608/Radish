@@ -8,6 +8,51 @@ namespace Radish.Model;
 /// <remarks>对应仓储层生成的内存数据</remarks>
 public class User : RootEntityTKey<long>
 {
+    /// <summary>初始化默认用户实例</summary>
+    public User()
+    {
+        InitializeDefaults();
+    }
+
+    /// <summary>通过登录名与密码初始化用户</summary>
+    /// <param name="loginName">登录名</param>
+    /// <param name="loginPassword">登录密码</param>
+    public User(string loginName, string loginPassword)
+    {
+        InitializeDefaults();
+        LoginName = loginName ?? string.Empty;
+        LoginPassword = loginPassword ?? string.Empty;
+    }
+
+    /// <summary>统一设置默认值</summary>
+    private void InitializeDefaults()
+    {
+        LoginName = string.Empty;
+        UserName = string.Empty;
+        UserEmail = string.Empty;
+        LoginPassword = string.Empty;
+        UserRealName = string.Empty;
+        UserSex = 0;
+        UserAge = 18;
+        UserBirth = null;
+        UserAddress = string.Empty;
+        StatusCode = -1;
+        CreateTime = DateTime.Now;
+        UpdateTime = null;
+        CriticalModifyTime = null;
+        LastErrorTime = null;
+        ErrorCount = 0;
+        IsEnable = false;
+        IsDeleted = true;
+        DepartmentId = 0;
+        DepartmentName = string.Empty;
+        TenantId = 0;
+        RoleIds = new List<long>();
+        RoleNames = new List<string>();
+        DepartmentIds = new List<long>();
+        Remark = "There is no remark";
+    }
+
     #region 登录相关
 
     /// <summary>登录账号 1 LoginName</summary>
