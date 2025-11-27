@@ -203,6 +203,70 @@ dotnet run --project Radish.Api
 }
 ```
 
+### 6. Gateway 配置（仅 Radish.Gateway 项目）
+
+Gateway 门户页面需要配置服务的公开访问地址，用于页面展示和链接跳转。
+
+#### 开发环境配置
+
+`appsettings.json`：
+
+```json
+{
+  "GatewayService": {
+    "PublicUrl": "https://localhost:5001"
+  },
+  "DownstreamServices": {
+    "ApiService": {
+      "BaseUrl": "https://localhost:5101",
+      "HealthCheckPath": "/health"
+    }
+  },
+  "FrontendService": {
+    "BaseUrl": "https://localhost:3000"
+  }
+}
+```
+
+**配置说明**：
+- `GatewayService.PublicUrl`：Gateway 自身的公开访问地址（用于门户页面展示）
+- `DownstreamServices.ApiService.BaseUrl`：API 服务的访问地址
+- `DownstreamServices.ApiService.HealthCheckPath`：API 健康检查端点路径
+- `FrontendService.BaseUrl`：前端应用的访问地址
+
+#### 生产环境配置
+
+参考 `appsettings.Production.example.json`：
+
+```json
+{
+  "GatewayService": {
+    "PublicUrl": "https://radish.com"
+  },
+  "DownstreamServices": {
+    "ApiService": {
+      "BaseUrl": "http://api:5100",           // 内网地址，反代到 HTTP 端口
+      "HealthCheckPath": "/health"
+    }
+  },
+  "FrontendService": {
+    "BaseUrl": "https://app.radish.com"
+  },
+  "Cors": {
+    "AllowedOrigins": [
+      "https://app.radish.com",
+      "https://www.radish.com"
+    ]
+  }
+}
+```
+
+**注意事项**：
+- 生产环境 `DownstreamServices.ApiService.BaseUrl` 使用内网地址（如 Docker 容器名 `http://api:5100`）
+- 公开地址（`PublicUrl`）使用域名，配合反向代理使用
+- Nginx 反向代理会将公网 HTTPS 请求转发到内网 HTTP 端口
+- 详细的反向代理配置请参考 [部署指南](./DeploymentGuide.md)
+
 ## 配置示例
 
 ### 示例 1：本地开发（SQLite + 内存缓存）

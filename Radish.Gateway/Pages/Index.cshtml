@@ -6,6 +6,7 @@
     Layout = null;
     ViewData["Title"] = "Radish 服务门户";
 
+    var gatewayUrl = Configuration["GatewayService:PublicUrl"];
     var apiBaseUrl = Configuration["DownstreamServices:ApiService:BaseUrl"];
     var frontendBaseUrl = Configuration["FrontendService:BaseUrl"];
 }
@@ -19,7 +20,7 @@
     <link rel="stylesheet" href="~/css/index.css" asp-append-version="true">
 </head>
 <body>
-<main>
+<main data-api-base-url="@apiBaseUrl" data-api-health-path="@(Configuration["DownstreamServices:ApiService:HealthCheckPath"] ?? "/health")">
     <span class="badge">Radish Gateway · ASP.NET Core</span>
     <h1>欢迎来到 Radish 平台</h1>
     <p class="lead">
@@ -34,8 +35,7 @@
                 <div class="service-details">
                     <h3>Gateway 网关</h3>
                     <div class="service-urls">
-                        <a href="https://localhost:5001" target="_blank">https://localhost:5001</a>
-                        <a href="http://localhost:5000" target="_blank">http://localhost:5000</a>
+                        <a href="@gatewayUrl" target="_blank">@gatewayUrl</a>
                     </div>
                 </div>
             </div>
@@ -55,8 +55,7 @@
                 <div class="service-details">
                     <h3>API 服务</h3>
                     <div class="service-urls">
-                        <a href="https://localhost:5101/api/docs" target="_blank">https://localhost:5101</a>
-                        <a href="http://localhost:5100/api/docs" target="_blank">http://localhost:5100</a>
+                        <a href="@apiBaseUrl/api/docs" target="_blank">@apiBaseUrl</a>
                     </div>
                 </div>
             </div>
