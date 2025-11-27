@@ -1,4 +1,3 @@
-using System;
 using Radish.Common.TenantTool;
 using Radish.Model.Root;
 using SqlSugar;
@@ -46,7 +45,7 @@ public class Tenant : RootEntityTKey<long>
     private void InitializeDefaults()
     {
         TenantName = "System";
-        TenantType = TenantTypeEnum.Id;
+        TenantType = TenantTypeEnum.None;
         TenantConfigId = string.Empty;
         TenantHost = string.Empty;
         DbType = null;
