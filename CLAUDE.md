@@ -315,6 +315,33 @@ Comprehensive docs in `docs/`:
 7. **Router parameters in authorization** - Ensure `ApiModule.LinkUrl` contains regex for routes with parameters
 8. **ViewModels must be obfuscated** - Don't just add `Vo` prefix; combine with business abbreviation
 
+## Git Commit Guidelines
+
+**CRITICAL: When performing git commits, follow these strict rules:**
+
+1. **Never include Claude Code attribution** - Do NOT add "Generated with Claude Code" or similar phrases in commit messages
+2. **Never use Claude co-authorship** - Do NOT add `Co-Authored-By: Claude <noreply@anthropic.com>` or similar tags
+3. **Use user's own identity** - All commits MUST use the user's configured git name and email only
+4. **Keep commit messages clean** - Write concise, professional commit messages that follow the repository's existing commit style (as seen in `git log`)
+5. **Follow conventional commits** - Use prefixes like `feat:`, `fix:`, `docs:`, `refactor:`, etc. as appropriate
+
+**Example of CORRECT commit message:**
+```
+feat: 添加用户权限验证中间件
+
+实现了基于角色的权限验证,支持多级权限控制
+```
+
+**Example of INCORRECT commit message (DO NOT USE):**
+```
+feat: 添加用户权限验证中间件
+
+实现了基于角色的权限验证,支持多级权限控制
+
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
 ## Development Workflow Tips
 
 - Use `dotnet watch` for backend hot reload
