@@ -1,4 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Radish.Model.Root;
 using SqlSugar;
 
@@ -18,10 +21,22 @@ public class User : RootEntityTKey<long>
     /// <param name="loginName">登录名</param>
     /// <param name="loginPassword">登录密码</param>
     public User(string loginName, string loginPassword)
+        : this(new UserInitializationOptions(loginName, loginPassword))
     {
+    }
+
+    /// <summary>通过初始化选项批量构造用户</summary>
+    /// <param name="options">初始化选项</param>
+    public User(UserInitializationOptions options)
+    {
+        options = options ?? throw new ArgumentNullException(nameof(options));
+
         InitializeDefaults();
-        LoginName = loginName ?? string.Empty;
-        LoginPassword = loginPassword ?? string.Empty;
+        ApplyLoginInformation(options.LoginName, options.LoginPassword, options.UserName, options.UserEmail);
+        ApplyProfileInformation(options.UserRealName, options.UserSex, options.UserAge, options.UserBirth,
+            options.UserAddress);
+        ApplyPermissionInformation(options);
+        ApplyStatusInformation(options);
     }
 
     /// <summary>统一设置默认值</summary>
@@ -51,6 +66,151 @@ public class User : RootEntityTKey<long>
         RoleNames = new List<string>();
         DepartmentIds = new List<long>();
         Remark = "There is no remark";
+    }
+
+    /// <summary>处理登录信息与账号标识</summary>
+    private void ApplyLoginInformation(string loginName, string loginPassword, string? userName, string? userEmail)
+    {
+        LoginName = NormalizeRequired(loginName, nameof(loginName));
+        LoginPassword = NormalizeRequired(loginPassword, nameof(loginPassword));
+        UserName = !string.IsNullOrWhiteSpace(userName) ? userName.Trim() : LoginName;
+
+        if (!string.IsNullOrWhiteSpace(userEmail))
+        {
+            UserEmail = userEmail.Trim();
+        }
+    }
+
+    /// <summary>处理个人信息（非必填）</summary>
+    private void ApplyProfileInformation(string? userRealName, int? userSex, int? userAge, DateTime? userBirth,
+        string? userAddress)
+    {
+        if (!string.IsNullOrWhiteSpace(userRealName))
+        {
+            UserRealName = userRealName.Trim();
+        }
+
+        if (userSex.HasValue)
+        {
+            UserSex = Clamp(userSex.Value, 0, 2);
+        }
+
+        if (userAge.HasValue)
+        {
+            UserAge = Math.Max(userAge.Value, 0);
+        }
+
+        if (userBirth.HasValue)
+        {
+            UserBirth = userBirth;
+        }
+
+        if (!string.IsNullOrWhiteSpace(userAddress))
+        {
+            UserAddress = userAddress.Trim();
+        }
+    }
+
+    /// <summary>处理权限、租户相关信息</summary>
+    private void ApplyPermissionInformation(UserInitializationOptions options)
+    {
+        if (options.TenantId.HasValue)
+        {
+            TenantId = options.TenantId.Value;
+        }
+
+        if (options.DepartmentId.HasValue)
+        {
+            DepartmentId = options.DepartmentId.Value;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.DepartmentName))
+        {
+            DepartmentName = options.DepartmentName.Trim();
+        }
+
+        if (options.RoleIds != null)
+        {
+            RoleIds = NormalizeIds(options.RoleIds);
+        }
+
+        if (options.RoleNames != null)
+        {
+            RoleNames = NormalizeNames(options.RoleNames);
+        }
+
+        if (options.DepartmentIds != null)
+        {
+            DepartmentIds = NormalizeIds(options.DepartmentIds);
+        }
+    }
+
+    /// <summary>处理状态信息</summary>
+    private void ApplyStatusInformation(UserInitializationOptions options)
+    {
+        if (options.StatusCode.HasValue)
+        {
+            StatusCode = options.StatusCode.Value;
+        }
+
+        if (options.IsEnable.HasValue)
+        {
+            IsEnable = options.IsEnable.Value;
+            if (!options.StatusCode.HasValue && IsEnable && StatusCode == -1)
+            {
+                StatusCode = 0;
+            }
+        }
+
+        if (options.IsDeleted.HasValue)
+        {
+            IsDeleted = options.IsDeleted.Value;
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.Remark))
+        {
+            Remark = options.Remark.Trim();
+        }
+    }
+
+    private static string NormalizeRequired(string value, string paramName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException($"{paramName} 不能为空。", paramName);
+        }
+
+        return value.Trim();
+    }
+
+    private static int Clamp(int value, int min, int max)
+    {
+        if (value < min)
+        {
+            return min;
+        }
+
+        if (value > max)
+        {
+            return max;
+        }
+
+        return value;
+    }
+
+    private static List<long> NormalizeIds(IEnumerable<long> ids)
+    {
+        return ids.Where(id => id > 0).Distinct().ToList();
+    }
+
+    private static List<string> NormalizeNames(IEnumerable<string> names)
+    {
+        return names
+            .Select(name => name?.Trim())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     #region 登录相关
@@ -191,4 +351,74 @@ public class User : RootEntityTKey<long>
     /// <remarks>不可为空，最大 2000 字符，默认为 "There is no remark"</remarks>
     [SugarColumn(Length = 2000, IsNullable = true)]
     public string Remark { get; set; } = "There is no remark";
+}
+
+/// <summary>用户初始化选项</summary>
+public sealed class UserInitializationOptions
+{
+    /// <summary>必填项构造</summary>
+    /// <param name="loginName">登录名</param>
+    /// <param name="loginPassword">登录密码</param>
+    public UserInitializationOptions(string loginName, string loginPassword)
+    {
+        LoginName = loginName ?? throw new ArgumentNullException(nameof(loginName));
+        LoginPassword = loginPassword ?? throw new ArgumentNullException(nameof(loginPassword));
+    }
+
+    /// <summary>登录名</summary>
+    public string LoginName { get; }
+
+    /// <summary>登录密码</summary>
+    public string LoginPassword { get; }
+
+    /// <summary>用户名（用于展示）</summary>
+    public string? UserName { get; set; }
+
+    /// <summary>登录邮箱</summary>
+    public string? UserEmail { get; set; }
+
+    /// <summary>真实姓名</summary>
+    public string? UserRealName { get; set; }
+
+    /// <summary>性别</summary>
+    public int? UserSex { get; set; }
+
+    /// <summary>年龄</summary>
+    public int? UserAge { get; set; }
+
+    /// <summary>生日</summary>
+    public DateTime? UserBirth { get; set; }
+
+    /// <summary>地址</summary>
+    public string? UserAddress { get; set; }
+
+    /// <summary>部门 Id</summary>
+    public long? DepartmentId { get; set; }
+
+    /// <summary>部门名</summary>
+    public string? DepartmentName { get; set; }
+
+    /// <summary>租户 Id</summary>
+    public long? TenantId { get; set; }
+
+    /// <summary>角色 Id 列表</summary>
+    public IEnumerable<long>? RoleIds { get; set; }
+
+    /// <summary>角色名称列表</summary>
+    public IEnumerable<string>? RoleNames { get; set; }
+
+    /// <summary>自定义部门 Id 列表</summary>
+    public IEnumerable<long>? DepartmentIds { get; set; }
+
+    /// <summary>是否启用</summary>
+    public bool? IsEnable { get; set; }
+
+    /// <summary>是否已删除</summary>
+    public bool? IsDeleted { get; set; }
+
+    /// <summary>状态码</summary>
+    public int? StatusCode { get; set; }
+
+    /// <summary>备注</summary>
+    public string? Remark { get; set; }
 }
