@@ -106,7 +106,7 @@ Gateway 负责：
 | 阶段 | 目标 | 关键动作 | 产出/验收 |
 | --- | --- | --- | --- |
 | P1 基线 | 独立 Gateway 项目跑通（路由转发） | - 在 Phase 0 基础上引入 `Ocelot`<br>- 配置 `ocelot.Development.json` 路由规则<br>- 实现 API 请求转发到 `Radish.Api` | 通过 Gateway 访问 `Radish.Api` 既有接口，所有 REST API 请求正常转发 |
-| P2 认证 | 网关成为唯一身份验证入口 | - 在 Gateway 暴露 `/auth/login`、`/auth/refresh`，调用现有 Auth 服务或 `Radish.Service`<br>- 配置 `AddAuthentication().AddJwtBearer()` + Ocelot `AuthenticationOptions`<br>- 下游统一信任 Gateway 签发的 Token | 前端仅调用 Gateway 完成登录/续期；`Radish.Api` 不再暴露登录接口 |
+| P2 认证 | 网关成为唯一身份验证入口 | - 在 Gateway 暴露 `/auth/login`、`/auth/refresh`，调用现有 Auth 服务或 `Radish.Service`<br>- 配置 `AddAuthentication().AddJwtBearer()` + Ocelot `AuthenticationOptions`<br>- 下游统一信任 Gateway 签发的 Token<br>- **详见** [AuthenticationGuide.md](AuthenticationGuide.md) 了解 OIDC 技术实现 | 前端仅调用 Gateway 完成登录/续期；`Radish.Api` 不再暴露登录接口 |
 | P3 路由与聚合 | 按业务域拆分路由并实现典型聚合 | - `ocelot.json` 按模块（身份/内容/积分/商城）组织 Route<br>- 使用 Ocelot Aggregates 或 Gateway Controller 聚合常用数据<br>- 引入 `Polly`、`RateLimitOptions`、`QoSOptions` | 聚合接口返回多下游数据；关键接口具备超时/熔断/限流 |
 | P4 服务发现 | 对接 Consul/自建注册中心 | - Gateway 通过 `ocelot.json`/Consul 自动感知下游实例<br>- 下游服务注册心跳<br>- 配置健康探测/权重 | 下游地址不再写死，扩缩容无需改配置 |
 | P5 可观测性 | 完善监控与治理 | - 集成 OpenTelemetry、Prometheus 指标、集中日志<br>- TraceId/CorrelationId 透传 Gateway → 下游<br>- 审计 Gateway 的管理接口（如动态路由更新） | 日志/指标/Trace 可关联；攻防/流量事件可定位 |

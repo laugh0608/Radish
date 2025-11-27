@@ -7,8 +7,18 @@
 - 非目标与边界：见同文档章节 [DevelopmentFramework.md](DevelopmentFramework.md)
 - 开发计划与看板（按周）: [DevelopmentPlan.md](DevelopmentPlan.md)
 - 开发进度日志（按日）: [DevelopmentLog.md](DevelopmentLog.md)
-- 鉴权与授权链路说明： [AuthenticationGuide.md](AuthenticationGuide.md)
-- 开放平台设计（OIDC 客户端管理）： [OpenPlatformGuide.md](OpenPlatformGuide.md)
+
+## 配置与部署
+
+- **配置管理指南**（环境隔离、敏感数据管理）： [ConfigurationGuide.md](ConfigurationGuide.md)
 - 部署与容器化指引： [DeploymentGuide.md](DeploymentGuide.md)
+
+## 架构与认证
+
+- **鉴权与授权链路说明**（OIDC 技术实现）： [AuthenticationGuide.md](AuthenticationGuide.md)
+- **API Gateway 改造方案**（统一入口与认证规划）： [GatewayPlan.md](GatewayPlan.md)
+- 开放平台设计（OIDC 客户端管理）： [OpenPlatformGuide.md](OpenPlatformGuide.md)
+
+## 前端
+
 - 前端设计、交互与跨端规划： [FrontendDesign.md](FrontendDesign.md)
-- API Gateway 改造方案与任务清单： [GatewayPlan.md](GatewayPlan.md)
