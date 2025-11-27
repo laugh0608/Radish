@@ -120,7 +120,8 @@ git push origin v1.2.0.251126
 - docs/：项目文档，实际文件夹，映射解决方案中的 docs 目录，包含开发规范、设计文档等
 - others/：其他资源文件，虚拟文件夹，只是解决方案中的文件夹，其中所有文件均为项目根目录下的，包括 Dockerfile、GitHub 配置、start.ps1 脚本 等
 - radish.client：主要 - 前端 React 应用代码，TypeScript 编写
-- Radish.Api：主要 - 后端服务代码，ASP.NET Core 编写
+- Radish.Gateway：主要 - 服务门户与网关项目，ASP.NET Core 编写；Phase 0 阶段承载服务欢迎页面、健康检查展示、API 文档入口等功能；后续阶段（P1+）将实现 API 路由转发、统一认证、聚合接口等 Gateway 功能。详细规划见 `docs/GatewayPlan.md`。
+- Radish.Api：主要 - 后端服务代码，ASP.NET Core 编写；专注于提供 REST API 接口，不包含页面展示功能
 - Radish.Common：后端服务使用的普通工具类，例如基础日志、基础配置等；**仅能引用外部 NuGet 包，不允许依赖任何内部业务层**。若某工具/扩展需要访问 `Radish.Model`、Service 或 Repository 中的类型（如 DTO、实体、仓储服务等），应放置在 `Radish.Extension` 中，以免 Common 层被反向依赖导致环状引用。
 - Radish.Core：后端核心业务逻辑与算法类，保留模块，为后续流程模拟与算法实现做准备
 - Radish.Extension：后端扩展功能模块类，例如 Swagger/Scalar、HealthCheck 等
@@ -138,13 +139,17 @@ git push origin v1.2.0.251126
 ## 分层依赖约定
 
 - 前端项目（radish.client）仅依赖 npm 包
+- Gateway 项目（Radish.Gateway）：
+  - Phase 0 阶段：依赖 `Radish.Common`（配置工具）和 `Radish.Extension`（日志扩展），提供 Razor Pages 页面展示和静态文件服务
+  - P1+ 阶段：额外引入 `Ocelot` 或 `YARP` 实现路由转发，可能需要引用 `Radish.Service` 实现聚合接口和统一认证
+  - 职责：服务门户展示、健康检查聚合、API 路由转发（P1+）、统一认证（P2+）、请求聚合（P3+）
 - 后端项目按层次结构依赖：
   - Radish.Api 引用 radish.client（用于 SPA 代理）与 Radish.Service，并通过 Program.cs 注入 `IUserService/IUserRepository` 等接口实现；同时依赖 Radish.Common 以注册 `AppSettings` 扩展，避免在其他层重复创建配置源。
   - Radish.Service 依赖 Radish.IService（接口契约）与 Radish.Repository（数据访问实现），负责聚合业务逻辑；Service 层对外仅暴露 DTO/Vo，必须在返回前将仓储层实体映射为视图模型（推荐 AutoMapper）。
   - Radish.Repository 依赖 Radish.IRepository、Radish.Model 以及 Radish.Infrastructure 中的 SqlSugar/租户扩展，只能向 Service 层返回实体或实体集合，禁止直接引用任何 Vo/DTO；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model，以便共享实体与视图模型定义。
-- Radish.Extension 仅由宿主（Radish.Api）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以及 Infrastructure 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
+- Radish.Extension 仅由宿主（Radish.Api、Radish.Gateway）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以及 Infrastructure 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
   - Radish.Core 暂时保留，无直接依赖关系
-- `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用“Controller 调用 Service，再由 Service 访问 Repository”的模式，并补齐对应接口定义
+- `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用"Controller 调用 Service，再由 Service 访问 Repository"的模式，并补齐对应接口定义
 
 ## 数据库与 SqlSugar 配置
 
