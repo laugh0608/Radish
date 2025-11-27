@@ -16,8 +16,8 @@ builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
     config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
 });
 
-// ===== Serilog 日志配置 =====
-builder.Host.AddSerilogSetup();
+// 绑定 InternalApp 扩展中的环境变量
+builder.ConfigureApplication();
 
 // ===== Razor Pages 配置 =====
 builder.Services.AddRazorPages();
@@ -55,7 +55,16 @@ if (!string.IsNullOrEmpty(apiBaseUrl) && !string.IsNullOrEmpty(apiHealthPath))
         tags: ["downstream", "api"]);
 }
 
+// ===== AppSettings 工具初始化 =====
+builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
+
+// ===== Serilog 日志配置 =====
+builder.Host.AddSerilogSetup();
+
 var app = builder.Build();
+
+// 绑定 InternalApp 扩展中的服务
+app.ConfigureApplication();
 
 // ===== 中间件配置 =====
 if (app.Environment.IsDevelopment())
