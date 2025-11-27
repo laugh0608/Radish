@@ -2,7 +2,7 @@
 
 > 目标：在现有 Radish 分层架构上增加统一 API Gateway，使前端、后端及其他项目通过单一入口完成认证、路由、聚合、治理等能力。本方案参考 Blog.Core 的 Gateway 实践，但结合项目当前阶段做了简化与优化建议，作为未来迭代的行动指南。
 
-> **当前状态**：根据 2025-11-25 的决策，Gateway 处于“暂缓（On Hold）”状态，排在 M9 之后执行。现阶段只要求在 `Radish.Api` 与 OIDC/前端交互中保留必要的 Header/Trace/Token 约束，等多服务/多入口清晰后再开启 P1-P3 的实施。
+> **当前状态**：根据 2025-11-27 的最新决策，Gateway 项目将**提前启动**，首要任务是将 `Radish.Api` 中的服务欢迎页面（Razor Pages）抽离至独立的 `Radish.Gateway` 项目。这一调整旨在实现关注点分离，让 API 项目专注于提供接口服务，同时为后续的路由转发、统一认证等功能打下基础。完整的 Gateway 功能（P1-P3）仍按原计划在多服务需求明确后实施。
 
 ## 1. 背景与定位
 
@@ -42,9 +42,70 @@ Gateway 负责：
 
 ## 4. 实施阶段与清单
 
+### Phase 0：门户页面抽离（优先启动）
+
+**目标**：将 `Radish.Api` 中的服务欢迎页面独立为 `Radish.Gateway` 项目，实现职责分离并为后续 Gateway 功能奠定基础。
+
+**背景**：
+- 当前 `Radish.Api/Pages/Index.cshtml` 承载了服务欢迎页、健康检查展示、API 文档入口等功能
+- 这些功能属于"服务门户"性质，与 API 接口职责混合在一起
+- 抽离后 `Radish.Api` 可以纯粹作为 REST API 服务，Gateway 承担门户展示职责
+
+**关键动作**：
+1. **创建 Radish.Gateway 项目**
+   - 使用 `dotnet new web -n Radish.Gateway -f net10.0` 创建轻量级 Web 项目
+   - 添加到 `Radish.slnx` 解决方案
+   - 引用必要的依赖：`Serilog.AspNetCore`、`Microsoft.Extensions.Diagnostics.HealthChecks`
+
+2. **迁移欢迎页面**
+   - 将 `Radish.Api/Pages/` 目录（包括 `Index.cshtml`、`_ViewImports.cshtml`）迁移至 `Radish.Gateway/Pages/`
+   - 将 `Radish.Api/wwwroot/` 静态资源（css、js）迁移至 `Radish.Gateway/wwwroot/`
+   - 保留 `Radish.Api/wwwroot/scalar/` 目录（Scalar API 文档仍由 API 项目提供）
+
+3. **配置 Gateway 项目**
+   - 复用 `Radish.Extension.SerilogExtension` 和 `Radish.Common.AppSettingsTool` 实现日志和配置
+   - 注册 Razor Pages 和静态文件服务
+   - 配置健康检查端点（聚合 API 服务的健康状态）
+   - 监听端口：`https://localhost:5001` 和 `http://localhost:5000`
+
+4. **清理 Radish.Api**
+   - 移除 `Pages/` 目录和相关 Razor Pages 配置
+   - 移除 `MapRazorPages()` 和 `MapFallbackToPage("/Index")` 调用
+   - 保留 Scalar API 文档功能（`/api/docs` 路由）
+   - API 项目回归纯接口服务定位
+
+5. **更新启动脚本**
+   - 修改 `local-start.ps1` 和 `local-start.sh`，添加"启动 Gateway"选项
+   - 提供"同时启动 Backend + Gateway"的组合选项
+   - 更新文档说明新的访问入口
+
+**产出/验收**：
+- [ ] `Radish.Gateway` 项目成功创建并加入解决方案
+- [ ] 访问 `https://localhost:5001/` 显示服务欢迎页面（原 API 首页内容）
+- [ ] 欢迎页面上的健康检查功能正常，能检测到 `Radish.Api` 的健康状态
+- [ ] 欢迎页面上的"打开项目文档"和"Scalar 可视化"链接正确跳转到 API 服务
+- [ ] `Radish.Api` 项目移除所有 Razor Pages 相关代码，启动后仅提供 API 服务
+- [ ] `local-start` 脚本更新完成，能正确启动 Gateway 和 API
+- [ ] 文档更新完成（CLAUDE.md、DevelopmentSpecifications.md、DevelopmentFramework.md）
+
+**设计决策**：
+1. **不引入 Ocelot**：Phase 0 阶段不实现路由转发功能，Gateway 仅作为静态门户页面承载
+2. **复用基础设施**：共享 `Radish.Extension` 和 `Radish.Common` 中的日志、配置工具
+3. **最小依赖**：只引入 Razor Pages、静态文件、健康检查等必要功能
+4. **渐进式架构**：为后续 P1-P3 阶段预留扩展空间，但当前不增加复杂度
+
+**预计工作量**：
+- 项目创建与配置：0.5 天
+- 页面与资源迁移：0.5 天
+- 健康检查聚合实现：0.5 天
+- 脚本与文档更新：0.5 天
+- **总计**：2 天
+
+---
+
 | 阶段 | 目标 | 关键动作 | 产出/验收 |
 | --- | --- | --- | --- |
-| P1 基线 | 独立 Gateway 项目跑通 | - `dotnet new web` → `Radish.Gateway`<br>- 引入 `Ocelot`、`Serilog`、`HealthChecks`<br>- 复制基础配置加载/日志模式<br>- `ocelot.Development.json` 配置示例路由（传透到 `Radish.Api`） | `dotnet run --project Radish.Gateway`，调用 `/gateway/health` 成功且可通过 Gateway 访问 `Radish.Api` 既有接口 |
+| P1 基线 | 独立 Gateway 项目跑通（路由转发） | - 在 Phase 0 基础上引入 `Ocelot`<br>- 配置 `ocelot.Development.json` 路由规则<br>- 实现 API 请求转发到 `Radish.Api` | 通过 Gateway 访问 `Radish.Api` 既有接口，所有 REST API 请求正常转发 |
 | P2 认证 | 网关成为唯一身份验证入口 | - 在 Gateway 暴露 `/auth/login`、`/auth/refresh`，调用现有 Auth 服务或 `Radish.Service`<br>- 配置 `AddAuthentication().AddJwtBearer()` + Ocelot `AuthenticationOptions`<br>- 下游统一信任 Gateway 签发的 Token | 前端仅调用 Gateway 完成登录/续期；`Radish.Api` 不再暴露登录接口 |
 | P3 路由与聚合 | 按业务域拆分路由并实现典型聚合 | - `ocelot.json` 按模块（身份/内容/积分/商城）组织 Route<br>- 使用 Ocelot Aggregates 或 Gateway Controller 聚合常用数据<br>- 引入 `Polly`、`RateLimitOptions`、`QoSOptions` | 聚合接口返回多下游数据；关键接口具备超时/熔断/限流 |
 | P4 服务发现 | 对接 Consul/自建注册中心 | - Gateway 通过 `ocelot.json`/Consul 自动感知下游实例<br>- 下游服务注册心跳<br>- 配置健康探测/权重 | 下游地址不再写死，扩缩容无需改配置 |
@@ -54,6 +115,77 @@ Gateway 负责：
 > 阶段 P1-P3 可作为近期目标，P4-P6 列入中长期规划，随实际演进更新。
 
 ## 5. 详细任务列表
+
+### Phase 0：门户页面抽离任务清单
+
+**0.1 项目创建**
+- [ ] 在解决方案根目录执行 `dotnet new web -n Radish.Gateway -f net10.0`
+- [ ] 执行 `dotnet sln Radish.slnx add Radish.Gateway/Radish.Gateway.csproj`
+- [ ] 添加项目引用：
+  ```bash
+  cd Radish.Gateway
+  dotnet add package Serilog.AspNetCore --version 8.0.0
+  dotnet add package Microsoft.Extensions.Diagnostics.HealthChecks --version 10.0.0
+  dotnet add reference ../Radish.Common/Radish.Common.csproj
+  dotnet add reference ../Radish.Extension/Radish.Extension.csproj
+  ```
+
+**0.2 页面与资源迁移**
+- [ ] 创建 `Radish.Gateway/Pages/` 目录
+- [ ] 复制 `Radish.Api/Pages/Index.cshtml` 到 `Radish.Gateway/Pages/`
+- [ ] 复制 `Radish.Api/Pages/_ViewImports.cshtml` 到 `Radish.Gateway/Pages/`
+- [ ] 修改 `_ViewImports.cshtml` 的命名空间为 `Radish.Gateway.Pages`
+- [ ] 创建 `Radish.Gateway/wwwroot/` 目录
+- [ ] 复制 `Radish.Api/wwwroot/css/` 到 `Radish.Gateway/wwwroot/css/`
+- [ ] 复制 `Radish.Api/wwwroot/js/` 到 `Radish.Gateway/wwwroot/js/`
+- [ ] 保留 `Radish.Api/wwwroot/scalar/`（不迁移）
+
+**0.3 配置 Gateway Program.cs**
+- [ ] 配置加载（对齐 Radish.Api）
+- [ ] 注册 `AppSettingsTool` 服务
+- [ ] 注册 Serilog 日志
+- [ ] 注册 Razor Pages 和静态文件服务
+- [ ] 配置健康检查端点
+- [ ] 添加 HttpClient 服务（用于检测下游 API 健康状态）
+- [ ] 配置监听端口：`https://localhost:5001` 和 `http://localhost:5000`
+
+**0.4 实现健康检查聚合**
+- [ ] 修改 `Index.cshtml` 的健康检查 JavaScript，指向 `Radish.Api` 的健康端点
+- [ ] 更新页面链接，确保文档和 Scalar 链接指向正确的 API 服务地址
+- [ ] （可选）在 Gateway 添加 `/health` 端点，聚合显示自身和下游 API 的健康状态
+
+**0.5 清理 Radish.Api**
+- [ ] 删除 `Radish.Api/Pages/` 目录（除了可能存在的其他必要页面）
+- [ ] 删除 `Radish.Api/wwwroot/css/` 和 `Radish.Api/wwwroot/js/`（保留 `scalar/`）
+- [ ] 在 `Program.cs` 中移除 `builder.Services.AddRazorPages()`
+- [ ] 在 `Program.cs` 中移除 `app.MapRazorPages()` 和 `app.MapFallbackToPage("/Index")`
+- [ ] 移除 `app.UseDefaultFiles()` 调用（如果仅为首页服务）
+- [ ] 保留 `app.UseStaticFiles()`（用于 Scalar 静态资源）
+
+**0.6 更新启动脚本**
+- [ ] 更新 `local-start.ps1`，添加"3. Start Gateway"选项
+- [ ] 添加"4. Start Backend + Gateway"组合选项
+- [ ] 添加"5. Start all (frontend + backend + Gateway)"全部启动选项
+- [ ] 调整原有选项编号（4 → 6: Run tests）
+- [ ] 更新 `local-start.sh`，实现相同的选项调整
+- [ ] 在脚本中定义 Gateway 启动函数
+
+**0.7 文档更新**
+- [ ] 更新 `CLAUDE.md` - 添加 Gateway 项目说明和启动命令
+- [ ] 更新 `DevelopmentSpecifications.md` - 添加 Radish.Gateway 项目结构说明
+- [ ] 更新 `DevelopmentFramework.md` - 更新架构图和技术基线
+- [ ] 更新 `GatewayPlan.md` - 添加 Phase 0 阶段说明（当前任务）
+- [ ] 更新 `README.md` - 修改快速开始部分的访问地址说明
+
+**0.8 测试与验收**
+- [ ] 启动 `Radish.Api`，确认仅提供 API 服务，访问根路径返回 404
+- [ ] 启动 `Radish.Gateway`，访问 `https://localhost:5001/` 显示欢迎页
+- [ ] 测试欢迎页上的健康检查功能
+- [ ] 测试欢迎页上的链接跳转（文档、Scalar）
+- [ ] 使用 `local-start` 脚本测试各启动选项
+- [ ] 确认日志输出正常，Gateway 和 API 日志可区分
+
+---
 
 1. **项目初始化（P1）**
    - [ ] `Radish.Gateway/Radish.Gateway.csproj`：启用 `net10.0`、Nullable、ImplicitUsings；引用 `Ocelot`, `Serilog.AspNetCore`, `Serilog.Sinks.Console`, `HealthChecks`.
@@ -937,6 +1069,6 @@ VITE_API_BASE_URL=https://localhost:5001  # 测试 Gateway
 
 ---
 
-> **最后更新**：2025-11-24
-> **下次评审**：M7 计划会议（预计 M7 启动时）
+> **最后更新**：2025-11-27（添加 Phase 0 门户页面抽离阶段）
+> **下次评审**：Phase 0 完成后，评估是否启动 P1 路由转发阶段
 > **文档维护者**：请在每次 Gateway 相关决策后更新本文档，并同步到 `DevelopmentLog.md`

@@ -14,6 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Radish is a modern community platform built with a self-designed layered architecture:
 - **Backend**: ASP.NET Core 10 + SQLSugar ORM + PostgreSQL (SQLite for local dev)
+- **Gateway**: Radish.Gateway - Service portal and API gateway (Phase 0: portal page; P1+: routing, auth, aggregation)
 - **Frontend**: React 19 + Vite (using Rolldown bundler) + TypeScript with a desktop-like UI paradigm
 - **Solution**: Radish.slnx contains all backend projects and can be developed cohesively
 
@@ -27,8 +28,12 @@ dotnet build Radish.slnx -c Debug
 # Run the API (listens on https://localhost:7110 and http://localhost:5165)
 dotnet run --project Radish.Api/Radish.Api.csproj
 
+# Run the Gateway (listens on https://localhost:5001 and http://localhost:5000)
+dotnet run --project Radish.Gateway/Radish.Gateway.csproj
+
 # Hot reload during development
-dotnet watch --project Radish.Api
+dotnet watch --project Radish.Api          # For API
+dotnet watch --project Radish.Gateway      # For Gateway
 
 # Run backend tests
 dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj
@@ -51,7 +56,14 @@ npm run lint --prefix radish.client
 
 ### Quick Start Scripts
 ```bash
-# Interactive menu to start frontend, backend, both, or run tests
+# Interactive menu to start frontend, backend, gateway, or run tests
+# Options after Phase 0:
+# 1. Start frontend (radish.client)
+# 2. Start backend (Radish.Api)
+# 3. Start Gateway (Radish.Gateway)
+# 4. Start backend + Gateway
+# 5. Start all (frontend + backend + Gateway)
+# 6. Run unit tests
 pwsh ./local-start.ps1    # Windows/PowerShell
 ./local-start.sh          # Linux/macOS
 ```
@@ -86,6 +98,10 @@ Radish.IService + Radish.Service (business logic contracts + implementations)
 Radish.Extension (Swagger/Scalar, health checks, Autofac/AutoMapper setup, JWT middleware)
     ↓
 Radish.Api (ASP.NET Core host, controllers, DI container, configuration)
+
+Radish.Gateway (service portal & API gateway)
+    - Phase 0: Depends on Radish.Common + Radish.Extension (portal pages, health checks)
+    - P1+: May also reference Radish.Service (for aggregation & unified auth)
 ```
 
 ### Key Architectural Rules

@@ -6,7 +6,7 @@
 
 - **核心模块**
   - 身份与会话：自建帐号体系、邮箱/用户名登录、JWT + 刷新令牌、角色与权限控制、第三方登录预留。
-  - 门户与文档：React 单页应用 + Swagger/Scalar 嵌入，支持文档直达、健康检查、运维面板。
+  - 门户与文档：Radish.Gateway 提供服务欢迎页面、健康检查展示、API 文档入口；React 单页应用（radish.client）提供业务功能界面；Swagger/Scalar 嵌入至 API 项目。
   - 内容域：分类 / 标签 / 帖子 / 评论 / 点赞 / 收藏 / 浏览计数，列表分页与过滤，富文本编辑。
   - 搜索：按标题、标签、分类、作者检索；支持时间/热度排序与模糊匹配（PostgreSQL `tsvector` 预留）。
   - 通知与订阅（可选）：帖子互动提醒、积分变动提醒，支持站内信或邮件。
@@ -53,24 +53,33 @@
 ### 本地启动脚本
 
 - `local-start.ps1`（Windows/PowerShell）与 `local-start.sh`（Linux/macOS）提供交互式菜单，快速完成常见开发任务。
-- 当前包含四个选项：① 仅启动前端 `radish.client`；② 仅启动后端 `Radish.Api`（默认同时监听 `https://localhost:7110` 与 `http://localhost:5165`）；③ 前后端一起启动（前端在独立终端/后台运行）；④ 执行 `Radish.Api.Tests` 单元测试。
+- Phase 0 完成后将包含六个选项：
+  - ① 仅启动前端 `radish.client`
+  - ② 仅启动后端 `Radish.Api`（默认监听 `https://localhost:7110` 与 `http://localhost:5165`）
+  - ③ 仅启动 Gateway `Radish.Gateway`（默认监听 `https://localhost:5001` 与 `http://localhost:5000`）
+  - ④ 启动后端 + Gateway
+  - ⑤ 全部启动（前端 + 后端 + Gateway）
+  - ⑥ 执行 `Radish.Api.Tests` 单元测试
 - 如需自定义配置，可在运行脚本前设置 `Configuration`（PowerShell 参数）或 `CONFIGURATION` 环境变量（Shell 脚本）。
 
 ### 分层视图
 
 ```
-radish.client (React SPA)
-        │ REST/JSON
-Radish.Api (ASP.NET Core Host)
-        │ 调用应用服务 + DTO
-Radish.Service (Application Layer)
-        │ 调度
-Radish.Core (Domain Layer)
-        │ 抽象 + 领域事件
+radish.client (React SPA)                    浏览器访问
+        │ REST/JSON                                │
+Radish.Api (ASP.NET Core Host)  ←────── Radish.Gateway (Portal & Router)
+        │ 调用应用服务 + DTO                        │
+Radish.Service (Application Layer)             │
+        │ 调度                          服务欢迎页面、健康检查
+Radish.Core (Domain Layer)                   API 文档入口
+        │ 抽象 + 领域事件                (P1+: 路由转发、统一认证)
 Radish.Repository (Infrastructure, SQLSugar)
         │ SQL
 PostgreSQL
 ```
+
+**Phase 0 阶段**：Gateway 仅提供门户页面展示，不参与 API 请求转发
+**P1+ 阶段**：Gateway 接管所有外部请求，转发至 Radish.Api 和其他服务
 
 - `Radish.Api`
   - 负责 DI、配置、日志、全局异常、认证授权、Swagger/Scalar、HealthChecks。
@@ -80,8 +89,14 @@ PostgreSQL
   - 日志：宿主调用 `builder.Host.AddSerilogSetup()`，由 `Radish.Extension.SerilogExtension` 统一配置输出目标。Serilog 默认读取 appsettings，写入控制台与 `Log/` 目录（普通日志 -> `Log.txt`，SqlSugar AOP 日志 -> `AopSql/AopSql.txt`），内部基于 `LogContextTool.LogSource` 区分日志类型并通过 `WriteTo.Async()` 异步落盘，避免阻塞请求线程；业务代码默认直接使用 `Serilog.Log` 静态方法输出日志，仅在依赖外部框架时才注入 `ILogger<T>`。
   - API 文档：开发环境把 Scalar UI 映射到 `/api/docs`，并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Api/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
   - API 版本控制：采用 **URL 路径版本控制**（`/api/v{version}/[controller]/[action]`），基于 `Asp.Versioning.Mvc` (8.1.0) 实现；Controller 通过 `[ApiVersion("x.0")]` 特性声明版本，未指定版本时默认使用 v1.0。v1 包含核心稳定接口（Login、User），v2 包含新功能与实验接口（AppSetting、RustTest）；OpenAPI 文档通过 `IApiVersionDescriptionProvider` 自动发现所有版本，为每个版本生成独立文档（`/openapi/v1.json`、`/openapi/v2.json`），Scalar UI 提供版本下拉菜单，切换时文档自动过滤只显示对应版本的接口。详细规范见 `DevelopmentSpecifications.md` 的"API 版本控制规范"章节。
-  - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为“联调开关”。
+  - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为"联调开关"。
   - 跨域：`appsettings.json` 中的 `Cors:AllowedOrigins` 维护允许访问 API 的前端地址，预设了 `localhost:5173` 以及 Rolldown 默认端口 `58794` 的多个别名（`vite.dev.localhost`、`host.*` 等）。更换端口或外网域名时记得同步更新该列表。
+- `Radish.Gateway`
+  - **Phase 0 职责**：承载服务欢迎页面（Razor Pages）、健康检查展示、API 文档入口链接、静态资源服务。
+  - **依赖**：复用 `Radish.Common`（配置工具）和 `Radish.Extension`（日志扩展），保持与 `Radish.Api` 一致的配置加载和日志输出方式。
+  - **监听端口**：`https://localhost:5001`（主要）和 `http://localhost:5000`（HTTP 重定向）。
+  - **健康检查**：聚合显示自身和下游 `Radish.Api` 的健康状态，页面通过 JavaScript 调用下游健康端点实现动态检测。
+  - **架构演进**：Phase 0 为纯静态门户，不引入 Ocelot；P1+ 阶段将增加路由转发、统一认证、请求聚合等 Gateway 核心功能。详见 `docs/GatewayPlan.md`。
 - 配置与服务访问：Program.cs 依次调用 `hostingContext.Configuration.ConfigureApplication()` → `builder.ConfigureApplication()` → `app.ConfigureApplication()` → `app.UseApplicationSetup()`，把 Configuration/HostEnvironment/RootServices 注入到 `Radish.Common.Core.App`；在非 DI 管道下可使用 `App.GetService*`、`App.GetOptions*` 手动解析服务或配置。常规字符串读取仍统一使用 `AppSettings.RadishApp("Section", ...)`，批量强类型配置通过 `ConfigurableOptions + AddAllOptionRegister` 自动绑定 `IConfigurableOptions`。
 - `Radish.Service`
   - 应用服务（`*AppService`）封装用例流程、权限校验、事务控制、DTO 转换。
@@ -194,10 +209,12 @@ graph LR
    - PR 必须附带 `dotnet test` 与 `npm run build` 结果；若变更数据库需提供迁移脚本与回滚建议。
    - 关键模块需要 Code Review + Pair Walkthrough。
 
-## API Gateway 规划（未来迭代）
+## API Gateway 规划（进行中）
 
-- 需求背景、阶段划分、任务清单详见 [GatewayPlan.md](GatewayPlan.md)。当前决策为“维持直连模式 + 预留兼容”，集中资源完成 Radish.Auth/OIDC 以及 WebOS 交互；Gateway 项目在未形成多服务/多入口压力前不启动。
-- 最近规划：把 Gateway 工作整体移动到 M9（暂缓里程碑），届时再评估是否按照 `Radish.Gateway + Ocelot` 的 P1-P3 路线推进；在此之前仅在接口、Header、日志等设计中预留可透传字段，确保未来迁移成本最低。
+- **最新决策（2025-11-27）**：Gateway 项目**提前启动**，首要任务是将 `Radish.Api` 中的服务欢迎页面抽离至独立的 `Radish.Gateway` 项目（Phase 0）。
+- **Phase 0 目标**：实现关注点分离，让 API 项目专注于提供接口服务，Gateway 承担服务门户展示职责。Phase 0 阶段不引入 Ocelot，仅实现静态页面展示和健康检查聚合。
+- **后续阶段（P1-P6）**：在 Phase 0 基础上渐进式引入路由转发、统一认证、请求聚合、服务发现、可观测性、服务拆分等功能。详细规划、任务清单、实施指南见 [GatewayPlan.md](GatewayPlan.md)。
+- **架构演进路径**：Phase 0（门户页面） → P1（路由转发） → P2（统一认证） → P3（请求聚合） → P4（服务发现） → P5（可观测性） → P6（服务拆分）。
 - 新增服务/接口仍需在评审阶段勾勒“若未来接入 Gateway 的 URL/Scope/聚合需求”，但不落地任何代码或基础设施。
 
 ---
