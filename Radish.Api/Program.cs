@@ -72,6 +72,8 @@ builder.Services.AddCors(options =>
 });
 // 注册 Controller 控制器
 builder.Services.AddControllers();
+// 注册健康检查
+builder.Services.AddHealthChecks();
 // 配置 API 版本控制
 builder.Services.AddApiVersioning(options =>
 {
@@ -172,6 +174,9 @@ app.UseScalarUI();
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+// 映射健康检查端点
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/healthz");
 
 // 输出项目启动标识
 Console.WriteLine(@"
