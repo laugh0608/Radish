@@ -9,6 +9,8 @@
     <File Path="docs\DeploymentGuide.md" />
     <File Path="docs\FrontendDesign.md" />
     <File Path="docs\GatewayPlan.md" />
+    <File Path="docs\ConfigurationGuide.md" />
+    <File Path="docs\OpenPlatformGuide.md" />
   </Folder>
   <Folder Name="/solution/">
     <File Path=".dockerignore" />

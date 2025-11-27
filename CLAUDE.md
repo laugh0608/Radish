@@ -123,11 +123,38 @@ Radish.Gateway (service portal & API gateway)
 
 ## Configuration Management
 
-### Configuration Sources
-- `appsettings.json` (base config, checked into git)
-- `appsettings.Development.json` / `appsettings.Production.json` (environment-specific)
-- Environment variables (override file-based config)
-- User Secrets (for sensitive local dev data)
+### Configuration Sources & Priority
+
+Configuration files are loaded in the following order (later sources override earlier ones):
+
+```
+1. appsettings.json                      (base config, checked into git)
+   ↓
+2. appsettings.{Environment}.json        (Development/Production, checked into git)
+   ↓
+3. appsettings.Local.json                (local overrides, NOT checked into git)
+   ↓
+4. Environment variables                 (production deployments)
+```
+
+**IMPORTANT**: `appsettings.Local.json` is used for local development and contains sensitive data (database passwords, API keys, etc.). This file is ignored by Git and must be created by each developer.
+
+### Quick Setup for New Developers
+
+```bash
+# 1. Copy the configuration template
+cp Radish.Api/appsettings.Local.example.json Radish.Api/appsettings.Local.json
+
+# 2. Edit appsettings.Local.json and update sensitive fields:
+#    - Databases[].ConnectionString (if using PostgreSQL)
+#    - Redis.ConnectionString (if enabling Redis)
+#    - AutoMapper.LicenseKey (if you have a commercial license)
+
+# 3. Start the project (default config works out of the box with SQLite + memory cache)
+dotnet run --project Radish.Api
+```
+
+For detailed configuration instructions, see [docs/ConfigurationGuide.md](docs/ConfigurationGuide.md).
 
 ### Reading Configuration
 ```csharp
@@ -145,6 +172,12 @@ public class MyOptions : IConfigurableOptions { ... }
 - `Databases`: Array with at least `ConnId=Main` and `ConnId=Log` (Log name is fixed)
 - `Redis.Enable`: Toggle between Redis (`true`) or in-memory cache (`false`)
 - `Cors.AllowedOrigins`: Frontend origins for CORS policy
+
+### Security Best Practices
+- **NEVER commit sensitive data** to `appsettings.json` (use placeholders or empty strings)
+- **ALWAYS use `appsettings.Local.json`** for local development secrets
+- **Use environment variables** for production deployments (Docker, Kubernetes)
+- **Check `.gitignore`** to ensure `appsettings.Local.json` is excluded
 
 ## Database & SqlSugar
 
