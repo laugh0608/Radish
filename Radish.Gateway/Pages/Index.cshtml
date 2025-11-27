@@ -1,0 +1,90 @@
+@page "/"
+@attribute [ApiExplorerSettings(IgnoreApi = true)]
+@{
+    Layout = null;
+    ViewData["Title"] = "Radish 服务门户";
+}
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/index.css" asp-append-version="true">
+</head>
+<body>
+<main>
+    <span class="badge">Radish Gateway · ASP.NET Core</span>
+    <h1>欢迎来到 Radish 平台</h1>
+    <p class="lead">
+        这里是服务门户入口，为您提供统一的服务访问、健康检查和开发文档。使用下方快捷入口即可查阅项目文档、API 可视化与服务状态。
+    </p>
+
+    <div class="actions">
+        <a class="button primary" href="/docs" target="_blank" rel="noopener noreferrer">打开项目文档</a>
+        <a class="button secondary" href="https://localhost:7110/api/docs" target="_blank" rel="noopener noreferrer">API Scalar 可视化</a>
+    </div>
+
+    <section class="grid">
+        <article>
+            <h2>Gateway 状态</h2>
+            <p id="health-status" class="status-text">正在检测 Gateway 健康状况...</p>
+            <small style="color: var(--muted);">检查 Gateway 自身的健康检查端点。</small>
+        </article>
+
+        <article>
+            <h2>下游服务</h2>
+            <p id="downstream-status" class="status-text">正在检测 API 服务状况...</p>
+            <small style="color: var(--muted);">监控下游 API 服务的可用性。</small>
+        </article>
+    </section>
+
+    <section class="grid" style="margin-top: 1.5rem;">
+        <article>
+            <h2>快速开始 - Gateway</h2>
+            <ol>
+                <li><code>dotnet build Radish.slnx -c Debug</code></li>
+                <li><code>dotnet run --project Radish.Gateway/Radish.Gateway.csproj</code></li>
+                <li>浏览器访问 <code id="current-origin">/</code></li>
+            </ol>
+        </article>
+
+        <article>
+            <h2>快速开始 - API</h2>
+            <ol>
+                <li><code>dotnet restore && dotnet build Radish.slnx -c Debug</code></li>
+                <li><code>dotnet run --project Radish.Api/Radish.Api.csproj</code></li>
+                <li>浏览器访问 <code>https://localhost:7110/scalar/index.html</code></li>
+            </ol>
+        </article>
+    </section>
+
+    <article style="margin-top: 1.5rem;">
+        <h2>常用资源</h2>
+        <ul class="resource-list">
+            <li>
+                <strong>docs/</strong>
+                <span>查看项目约定、技术栈与进展记录。</span>
+            </li>
+            <li>
+                <strong>Radish.Api.http</strong>
+                <span>使用 VS / Rider / HTTP Client 快速验证接口。</span>
+            </li>
+            <li>
+                <strong>radish.client</strong>
+                <span>Vite 前端，运行 <code>npm install && npm run dev --prefix radish.client</code>。</span>
+            </li>
+            <li>
+                <strong>local-start.ps1 / local-start.sh</strong>
+                <span>交互式菜单快速启动前端、后端、Gateway 或运行测试。</span>
+            </li>
+        </ul>
+    </article>
+
+    <footer>Radish Platform · 构建快速、安全的后台服务体验</footer>
+</main>
+
+<script src="~/js/index.js" asp-append-version="true"></script>
+</body>
+</html>
