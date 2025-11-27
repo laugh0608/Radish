@@ -72,8 +72,6 @@ builder.Services.AddCors(options =>
 });
 // 注册 Controller 控制器
 builder.Services.AddControllers();
-// 注册 RazorPages 解析
-builder.Services.AddRazorPages();
 // 配置 API 版本控制
 builder.Services.AddApiVersioning(options =>
 {
@@ -173,9 +171,7 @@ app.UseCors(corsPolicyName);
 app.UseScalarUI();
 app.UseHttpsRedirection();
 app.UseAuthorization();
-app.MapRazorPages();
 app.MapControllers();
-app.MapFallbackToPage("/Index");
 
 // 输出项目启动标识
 Console.WriteLine(@"
