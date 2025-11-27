@@ -42,6 +42,7 @@ builder.Host
         config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
         config.AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json",
             optional: true, reloadOnChange: false);
+        config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
         // config.AddConfigurationApollo("appsettings.apollo.json");
     });
 // 2. 绑定 InternalApp 扩展中的环境变量
