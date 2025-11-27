@@ -184,7 +184,7 @@ footer {
 
 .service-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.25rem;
 }
 
@@ -246,6 +246,9 @@ footer {
     font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
     padding: 0.25rem 0;
     transition: color 0.2s;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    display: block;
 }
 
 .service-urls a:hover {

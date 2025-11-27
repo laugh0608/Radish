@@ -1,4 +1,8 @@
 (function () {
+    const mainElement = document.querySelector("main");
+    const apiBaseUrl = mainElement.dataset.apiBaseUrl || "https://localhost:5101";
+    const apiHealthPath = mainElement.dataset.apiHealthPath || "/health";
+
     const originLabel = document.getElementById("current-origin");
     originLabel.textContent = window.location.origin;
 
@@ -30,7 +34,8 @@
     (async () => {
         try {
             const start = performance.now();
-            const response = await fetch("https://localhost:5101/health", {
+            const apiHealthUrl = `${apiBaseUrl}${apiHealthPath}`;
+            const response = await fetch(apiHealthUrl, {
                 cache: "no-store",
                 mode: "cors"
             });

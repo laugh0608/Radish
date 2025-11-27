@@ -80,13 +80,18 @@ Gateway 负责：
    - 更新文档说明新的访问入口
 
 **产出/验收**：
-- [ ] `Radish.Gateway` 项目成功创建并加入解决方案
-- [ ] 访问 `https://localhost:5001/` 显示服务欢迎页面（原 API 首页内容）
-- [ ] 欢迎页面上的健康检查功能正常，能检测到 `Radish.Api` 的健康状态
-- [ ] 欢迎页面上的"打开项目文档"和"Scalar 可视化"链接正确跳转到 API 服务
-- [ ] `Radish.Api` 项目移除所有 Razor Pages 相关代码，启动后仅提供 API 服务
-- [ ] `local-start` 脚本更新完成，能正确启动 Gateway 和 API
-- [ ] 文档更新完成（CLAUDE.md、DevelopmentSpecifications.md、DevelopmentFramework.md）
+- [x] `Radish.Gateway` 项目成功创建并加入解决方案
+- [x] 访问 `https://localhost:5001/` 显示服务欢迎页面（原 API 首页内容）
+- [x] 欢迎页面上的健康检查功能正常，能检测到 `Radish.Api` 的健康状态
+- [x] 欢迎页面上的"打开项目文档"和"Scalar 可视化"链接正确跳转到 API 服务
+- [x] `Radish.Api` 项目移除所有 Razor Pages 相关代码，启动后仅提供 API 服务
+- [x] `local-start` 脚本更新完成，能正确启动 Gateway 和 API
+- [x] 文档更新完成（CLAUDE.md、DevelopmentSpecifications.md、DevelopmentFramework.md）
+- [x] **2025-11-27 增强**：门户页面配置化改造，支持生产环境部署
+  - [x] 修复 URL 溢出问题，优化卡片布局
+  - [x] 实现从配置文件读取服务 URL（新增 `GatewayService.PublicUrl` 配置项）
+  - [x] 创建 `appsettings.Production.example.json` 生产环境配置模板
+  - [x] JavaScript 健康检查 URL 动态化
 
 **设计决策**：
 1. **不引入 Ocelot**：Phase 0 阶段不实现路由转发功能，Gateway 仅作为静态门户页面承载

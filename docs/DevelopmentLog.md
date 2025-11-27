@@ -4,6 +4,20 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.11.27
+
+- **feat(gateway/portal)**: 优化 Gateway 门户页面 URL 显示与配置管理
+  - 修复服务卡片 URL 溢出问题：添加 `word-break`、`overflow-wrap` 自动换行支持
+  - 增加服务卡片最小宽度至 280px，为 URL 提供更多显示空间
+  - 实现从配置文件读取服务 URL：新增 `GatewayService.PublicUrl` 配置项
+  - 移除 HTTP 端口显示，每个服务仅显示主 URL（开发环境使用 HTTPS 端口）
+  - JavaScript 健康检查 URL 从配置动态读取，通过 `data-*` 属性传递
+- **feat(gateway/config)**: 创建生产环境配置示例 `appsettings.Production.example.json`
+  - 说明反向代理场景下的配置方式（公网域名 + 内网 HTTP 端口）
+  - 提供生产环境 CORS、服务地址等配置示例
+- **docs(deployment)**: 明确反向代理最佳实践：TLS 终止在反向代理层，后端服务使用 HTTP 端口
+- **refactor(gateway/portal)**: Gateway 门户页面配置化改造，为生产环境部署做好准备
+
 ### 2025.11.25
 
 - **decision(gateway)**: 复盘 Gateway 与 Auth 的优先级，确认当前阶段仅有 `Radish.Api + Radish.Auth` 两个宿主，复杂度有限，Gateway 投入收益不高；因此 Gateway 项目整体移至 M9（暂缓），只在接口/配置中保留将来透传所需的 Header/Trace/Token 字段。
