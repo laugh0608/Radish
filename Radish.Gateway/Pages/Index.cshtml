@@ -1,8 +1,13 @@
 @page "/"
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
 @attribute [ApiExplorerSettings(IgnoreApi = true)]
 @{
     Layout = null;
     ViewData["Title"] = "Radish 服务门户";
+
+    var apiBaseUrl = Configuration["DownstreamServices:ApiService:BaseUrl"];
+    var frontendBaseUrl = Configuration["FrontendService:BaseUrl"];
 }
 
 <!DOCTYPE html>
@@ -21,9 +26,47 @@
         这里是服务门户入口，为您提供统一的服务访问、健康检查和开发文档。使用下方快捷入口即可查阅项目文档、API 可视化与服务状态。
     </p>
 
+    <section class="services-info">
+        <h2>🌐 服务地址</h2>
+        <div class="service-grid">
+            <div class="service-card gateway">
+                <div class="service-icon">🚪</div>
+                <div class="service-details">
+                    <h3>Gateway 网关</h3>
+                    <div class="service-urls">
+                        <a href="https://localhost:5001" target="_blank">https://localhost:5001</a>
+                        <a href="http://localhost:5000" target="_blank">http://localhost:5000</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-card frontend">
+                <div class="service-icon">⚛️</div>
+                <div class="service-details">
+                    <h3>React 前端</h3>
+                    <div class="service-urls">
+                        <a href="@frontendBaseUrl" target="_blank">@frontendBaseUrl</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-card api">
+                <div class="service-icon">🔌</div>
+                <div class="service-details">
+                    <h3>API 服务</h3>
+                    <div class="service-urls">
+                        <a href="https://localhost:5101/api/docs" target="_blank">https://localhost:5101</a>
+                        <a href="http://localhost:5100/api/docs" target="_blank">http://localhost:5100</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <div class="actions">
         <a class="button primary" href="/docs" target="_blank" rel="noopener noreferrer">打开项目文档</a>
-        <a class="button secondary" href="https://localhost:7110/api/docs" target="_blank" rel="noopener noreferrer">API Scalar 可视化</a>
+        <a class="button secondary" href="@(apiBaseUrl)/api/docs" target="_blank" rel="noopener noreferrer">API Scalar 可视化</a>
+        <a class="button secondary" href="@frontendBaseUrl" target="_blank" rel="noopener noreferrer">访问前端应用</a>
     </div>
 
     <section class="grid">
@@ -55,7 +98,7 @@
             <ol>
                 <li><code>dotnet restore && dotnet build Radish.slnx -c Debug</code></li>
                 <li><code>dotnet run --project Radish.Api/Radish.Api.csproj</code></li>
-                <li>浏览器访问 <code>https://localhost:7110/scalar/index.html</code></li>
+                <li>浏览器访问 <code>https://localhost:5101/api/docs</code></li>
             </ol>
         </article>
     </section>

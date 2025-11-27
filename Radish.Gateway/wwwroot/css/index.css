@@ -167,6 +167,92 @@ footer {
     color: var(--muted);
 }
 
+/* 服务地址展示 */
+.services-info {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(248, 250, 252, 0.4));
+    border-radius: 20px;
+    border: 1px solid var(--border);
+}
+
+.services-info h2 {
+    margin: 0 0 1.25rem;
+    font-size: 1.35rem;
+    color: var(--fg);
+}
+
+.service-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+}
+
+.service-card {
+    display: flex;
+    gap: 1rem;
+    padding: 1.25rem;
+    border-radius: 16px;
+    border: 2px solid transparent;
+    background: #fff;
+    transition: all 0.2s ease;
+}
+
+.service-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.service-card.gateway {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.05), #fff);
+}
+
+.service-card.frontend {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), #fff);
+}
+
+.service-card.api {
+    border-color: rgba(168, 85, 247, 0.3);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.05), #fff);
+}
+
+.service-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.service-details {
+    flex: 1;
+}
+
+.service-details h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: var(--fg);
+}
+
+.service-urls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.service-urls a {
+    font-size: 0.85rem;
+    color: var(--primary);
+    text-decoration: none;
+    font-family: "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+    padding: 0.25rem 0;
+    transition: color 0.2s;
+}
+
+.service-urls a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
 @media (max-width: 600px) {
     body {
         padding: 1.25rem;
@@ -174,5 +260,9 @@ footer {
 
     main {
         padding: 1.85rem;
+    }
+
+    .service-grid {
+        grid-template-columns: 1fr;
     }
 }

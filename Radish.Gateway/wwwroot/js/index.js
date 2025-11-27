@@ -30,7 +30,7 @@
     (async () => {
         try {
             const start = performance.now();
-            const response = await fetch("https://localhost:7110/health", {
+            const response = await fetch("https://localhost:5101/health", {
                 cache: "no-store",
                 mode: "cors"
             });
