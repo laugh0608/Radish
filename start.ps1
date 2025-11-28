@@ -99,8 +99,10 @@ Write-Host "Select an action:"
 Write-Host "1. Start frontend (radish.client)"
 Write-Host "2. Start backend (Radish.Api)"
 Write-Host "3. Start both frontend and backend"
-Write-Host "4. Run unit tests (Radish.Api.Tests)"
-$choice = Read-Host "Enter choice (1/2/3/4)"
+Write-Host "4. Start Gateway (Radish.Gateway)"
+Write-Host "5. Start docs (radish.docs)"
+Write-Host "6. Run unit tests (Radish.Api.Tests)"
+$choice = Read-Host "Enter choice (1/2/3/4/5/6)"
 
 switch ($choice) {
     "1" {
@@ -114,6 +116,18 @@ switch ($choice) {
         Start-Backend
     }
     "4" {
+        dotnet run --project (Join-Path $repoRoot "Radish.Gateway/Radish.Gateway.csproj")
+    }
+    "5" {
+        Push-Location $repoRoot
+        try {
+            npm run docs:dev --prefix radish.docs
+        }
+        finally {
+            Pop-Location
+        }
+    }
+    "6" {
         Run-Tests
     }
     default {

@@ -1,0 +1,12 @@
+{
+  "name": "radish-root",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix radish.client",
+    "dev:docs": "npm run docs:dev --prefix radish.docs",
+    "build:docs": "npm run docs:build --prefix radish.docs",
+    "dev:gateway": "dotnet run --project Radish.Gateway/Radish.Gateway.csproj",
+    "dev:api": "dotnet run --project Radish.Api/Radish.Api.csproj"
+  }
+}

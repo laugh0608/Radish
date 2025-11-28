@@ -64,8 +64,10 @@ echo "Select an action:"
 echo "1. Start frontend (radish.client)"
 echo "2. Start backend (Radish.Api)"
 echo "3. Start both frontend and backend"
-echo "4. Run unit tests (Radish.Api.Tests)"
-read -rp "Enter choice (1/2/3/4): " choice
+echo "4. Start Gateway (Radish.Gateway)"
+echo "5. Start docs (radish.docs)"
+echo "6. Run unit tests (Radish.Api.Tests)"
+read -rp "Enter choice (1/2/3/4/5/6): " choice
 
 case "$choice" in
   1)
@@ -82,6 +84,18 @@ case "$choice" in
     start_backend
     ;;
   4)
+    (
+      cd "$ROOT_DIR"
+      dotnet run --project Radish.Gateway/Radish.Gateway.csproj
+    )
+    ;;
+  5)
+    (
+      cd "$ROOT_DIR"
+      npm run docs:dev --prefix radish.docs
+    )
+    ;;
+  6)
     run_tests
     ;;
   *)
