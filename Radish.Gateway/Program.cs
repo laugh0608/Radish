@@ -1,3 +1,4 @@
+using Microsoft.Extensions.FileProviders;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Extension.SerilogExtension;
@@ -79,6 +80,34 @@ else
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// ===== 在线文档静态站点（可选） =====
+var docsSection = app.Configuration.GetSection("Docs");
+var docsEnabled = docsSection.GetValue<bool>("Enabled");
+var docsRequestPath = docsSection.GetValue<string>("RequestPath") ?? "/docs";
+var docsStaticFolder = docsSection.GetValue<string>("StaticFolder") ?? "DocsSite";
+
+if (docsEnabled)
+{
+    var docsPhysicalPath = Path.Combine(app.Environment.ContentRootPath, docsStaticFolder);
+    if (Directory.Exists(docsPhysicalPath))
+    {
+        var fileServerOptions = new FileServerOptions
+        {
+            FileProvider = new PhysicalFileProvider(docsPhysicalPath),
+            RequestPath = docsRequestPath,
+            EnableDefaultFiles = true
+        };
+
+        app.UseFileServer(fileServerOptions);
+
+        Log.Information("Docs 站点已启用: {RequestPath} -> {PhysicalPath}", docsRequestPath, docsPhysicalPath);
+    }
+    else
+    {
+        Log.Warning("Docs 已启用但静态目录不存在: {PhysicalPath}", docsPhysicalPath);
+    }
+}
 
 app.UseCors("GatewayCorsPolicy");
 
