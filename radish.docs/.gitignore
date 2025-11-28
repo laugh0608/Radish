@@ -1,0 +1,17 @@
+# VitePress 缓存和构建输出
+.vitepress/cache
+.vitepress/dist
+node_modules
+
+# 文档目录符号链接（自动生成，不提交）
+docs
+
+# npm 日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 系统文件
+.DS_Store
+Thumbs.db

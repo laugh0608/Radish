@@ -1,14 +1,29 @@
+import { defineConfig } from 'vitepress'
+
 // Radish 文档站配置
-export default {
+export default defineConfig({
   lang: 'zh-CN',
   title: 'Radish 文档',
   description: 'Radish 社区平台文档',
-  // 使用仓库根目录下的 docs 作为内容目录
-  srcDir: '../docs',
-  // 构建输出到 Gateway 的 DocsSite 目录，便于直接托管
+
+  ignoreDeadLinks: true,
+
+  // 使用符号链接指向仓库根目录下的 docs
+  srcDir: './docs',
+
+  vite: {
+    resolve: {
+      preserveSymlinks: true
+    },
+    ssr: {
+      noExternal: ['vue', '@vue/server-renderer']
+    }
+  },
+  // 构建输出到 Gateway 的 DocsSite 目录,便于直接托管
   outDir: '../Radish.Gateway/DocsSite',
   // 与 Gateway 中 Docs.RequestPath 保持一致
   base: '/docs/',
+
   themeConfig: {
     nav: [
       { text: '首页', link: '/' },
@@ -50,4 +65,4 @@ export default {
       // { icon: 'github', link: 'https://github.com/xxx/Radish' }
     ]
   }
-}
+})
