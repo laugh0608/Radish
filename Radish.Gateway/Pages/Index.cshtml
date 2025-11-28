@@ -9,6 +9,7 @@
     var gatewayUrl = Configuration["GatewayService:PublicUrl"];
     var apiBaseUrl = Configuration["DownstreamServices:ApiService:BaseUrl"];
     var frontendBaseUrl = Configuration["FrontendService:BaseUrl"];
+    var docsEnabled = bool.TryParse(Configuration["Docs:Enabled"], out var docsEnabledValue) && docsEnabledValue;
 }
 
 <!DOCTYPE html>
@@ -63,7 +64,10 @@
     </section>
 
     <div class="actions">
-        <a class="button primary" href="/docs" target="_blank" rel="noopener noreferrer">打开项目文档</a>
+        @if (docsEnabled)
+        {
+            <a class="button primary" href="/docs" target="_blank" rel="noopener noreferrer">打开项目文档</a>
+        }
         <a class="button secondary" href="@(apiBaseUrl)/api/docs" target="_blank" rel="noopener noreferrer">API Scalar 可视化</a>
         <a class="button secondary" href="@frontendBaseUrl" target="_blank" rel="noopener noreferrer">访问前端应用</a>
     </div>
