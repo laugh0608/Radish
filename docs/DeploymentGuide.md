@@ -241,6 +241,59 @@ networks:
 - **内网可信场景**：反代到 HTTP 端口是安全的
 - **零信任架构**：如需端到端加密，可配置反代到 HTTPS，但需要额外证书管理
 
+## 可选：部署 Gateway 在线文档
+
+本节为可选配置，仅当你希望在 Gateway 下托管在线文档站点时才需要执行。
+
+### 步骤 1：安装文档工程依赖
+
+在仓库根目录执行：
+
+```bash
+npm install --prefix radish.docs
+```
+
+该命令会在 `radish.docs` 目录下安装 VitePress 等文档工程依赖。
+
+### 步骤 2：构建文档静态站点
+
+```bash
+npm run docs:build --prefix radish.docs
+```
+
+构建完成后，文档站点的静态文件会输出到：
+
+- `Radish.Gateway/DocsSite`
+
+该目录会被 Gateway 作为独立的静态站点托管。
+
+### 步骤 3：在 Gateway 中启用 Docs
+
+建议在 `Radish.Gateway/appsettings.Local.json` 中配置（`Local` 文件已被 Git 忽略，适合放环境差异与敏感信息）：
+
+```json
+"Docs": {
+  "Enabled": true,
+  "RequestPath": "/docs",
+  "StaticFolder": "DocsSite"
+}
+```
+
+说明：
+
+- 基础配置 `Radish.Gateway/appsettings.json` 中 `Docs.Enabled` 默认为 `false`，开源用户默认不会启用在线文档；
+- 当本地或生产环境需要文档站点时，通过 `appsettings.Local.json` 或环境变量覆盖即可开启；
+- `RequestPath` 与 `StaticFolder` 应与 `Program.cs` 中的中间件配置保持一致。
+
+### 步骤 4：通过 Gateway 访问在线文档
+
+启动 Gateway 后，可通过以下地址访问文档站点：
+
+- 本地默认：`https://localhost:5001/docs`
+- 生产环境：`{GatewayService:PublicUrl}/docs`
+
+> 提示：当 `Docs.Enabled = true` 但 `DocsSite` 目录不存在时，Gateway 会在日志中输出告警并回退到门户页，不会影响其他服务与路由。
+
 ## 排查与清理
 - 若构建时提示 SDK 版本不符，执行 `dotnet --list-sdks` 确认版本或在容器内设置 `DOTNET_NOLOGO=1` 以减少输出。
 - 端口占用可通过 `docker compose ps` 或 `lsof -i :8080` 定位，调整 `ports` 映射即可。
