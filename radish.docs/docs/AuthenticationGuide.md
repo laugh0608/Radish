@@ -25,7 +25,7 @@ Radish 采用 **OIDC（OpenID Connect）** 架构实现统一身份认证，基�
 ┌─────────┐        ┌──────────┐   ┌────────┐  ┌─────────┐
 │Radish.Api│       │radish.   │   │ Scalar │  │ Admin   │
 │:7110     │       │client    │   │API Docs│  │Dashboard│
-│(资源服务器)│       │:58794    │   │        │  │(预留)    │
+│(资源服务器)│       │:3000    │   │        │  │(预留)    │
 └─────────┘        └──────────┘   └────────┘  └─────────┘
 ```
 
@@ -146,11 +146,11 @@ new OpenIddictApplicationDescriptor
     DisplayName = "Radish Web Client",
     ConsentType = ConsentTypes.Explicit, // 显示授权确认页
     RedirectUris = {
-        new Uri("https://localhost:58794/callback"),
-        new Uri("https://localhost:58794/silent-renew")
+        new Uri("https://localhost:3000/callback"),
+        new Uri("https://localhost:3000/silent-renew")
     },
     PostLogoutRedirectUris = {
-        new Uri("https://localhost:58794")
+        new Uri("https://localhost:3000")
     },
     Permissions =
     {
@@ -337,9 +337,9 @@ import { UserManagerSettings } from 'oidc-client-ts';
 export const oidcConfig: UserManagerSettings = {
   authority: 'https://localhost:7100',
   client_id: 'radish-client',
-  redirect_uri: 'https://localhost:58794/callback',
-  post_logout_redirect_uri: 'https://localhost:58794',
-  silent_redirect_uri: 'https://localhost:58794/silent-renew',
+  redirect_uri: 'https://localhost:3000/callback',
+  post_logout_redirect_uri: 'https://localhost:3000',
+  silent_redirect_uri: 'https://localhost:3000/silent-renew',
   scope: 'openid profile radish-api offline_access',
   response_type: 'code',
   automaticSilentRenew: true,

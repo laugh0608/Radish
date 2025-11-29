@@ -1,73 +1,44 @@
-# React + TypeScript + Vite
+# Radish Console
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Radish Console is a small React + TypeScript + Vite application used as the management console frontend under the Radish Gateway.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Shows an overview table of core services (frontend webOS, docs, API, Scalar UI, console).
+- Intended as the entry point for future admin/monitoring features.
 
-## React Compiler
+## Development
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+From the repo root:
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install --prefix radish.console  # first time only
+npm run dev --prefix radish.console
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The dev server runs on:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- https://localhost:3002/
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Access through Gateway
+
+When both Gateway and the console dev server are running, you can access the console via:
+
+- https://localhost:5001/console
+
+The Gateway forwards `/console/**` to `https://localhost:3002`.
+
+You can also use the unified start scripts from the repo root:
+
+```bash
+pwsh ./start.ps1   # Windows/PowerShell
+./start.sh         # Linux/macOS
 ```
+
+Choose the menu item for `radish.console` or a combination that includes the console (for example: "Gateway + API + frontend + console").
+
+## Notes
+
+- This project is a plain Vite React app; there is no backend code here.
+- API base URLs and routing are configured on the Gateway side (YARP) rather than in this project.
+- You can customize the console UI freely as long as it remains accessible via `/console` behind the Gateway.

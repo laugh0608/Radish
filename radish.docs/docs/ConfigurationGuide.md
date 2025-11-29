@@ -194,10 +194,10 @@ dotnet run --project Radish.Api
 {
   "Cors": {
     "AllowedOrigins": [
-      "https://localhost:5173",      // Vite 默认端口
-      "http://localhost:5173",
-      "https://localhost:58794",     // 项目自定义端口
-      "http://localhost:58794"
+      "https://localhost:3000",      // Vite 默认端口
+      "http://localhost:3000",
+      "https://localhost:3000",     // 项目自定义端口
+      "http://localhost:3000"
     ]
   }
 }

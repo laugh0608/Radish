@@ -12,12 +12,12 @@
 
 ## 环境要求与启动方式
 - 基础环境：.NET SDK 10（`global.json` 已锁定 10.0.0），Node.js 24+，PostgreSQL 16+（或使用仓库附带的 SQLite）。
-- 一键脚本：`pwsh ./local-start.ps1` 或 `./local-start.sh`，提供启动前端/后端/Gateway/组合以及执行 `Radish.Api.Tests` 的 6 个菜单项，可通过 `Configuration` 参数或环境变量注入构建配置。
+- 一键脚本：`pwsh ./start.ps1` 或 `./start.sh`，提供启动 API/Gateway/Frontend/Docs/Console 以及常见组合和 `Radish.Api.Tests` 的交互式菜单，可通过 `Configuration` 参数或环境变量注入构建配置。
 - 常用命令：
   - 后端：`dotnet restore && dotnet build Radish.slnx -c Debug`、`dotnet run --project Radish.Api/Radish.Api.csproj`、`dotnet watch --project Radish.Api`、`dotnet run --project Radish.Gateway/Radish.Gateway.csproj`、`dotnet test Radish.Api.Tests`。
   - 前端：`npm install --prefix radish.client`、`npm run dev --prefix radish.client`、`npm run build --prefix radish.client`、`npm run lint --prefix radish.client`。
   - 单测筛选：`dotnet test --list-tests`、`dotnet test --filter "FullyQualifiedName~UserControllerTest"`。
-- 默认端口：API `https://localhost:7110` / `http://localhost:5165`、Gateway `https://localhost:5001` / `http://localhost:5000`、前端 Vite `https://localhost:58794`（亦支持 5173/localhost 组合，见 `appsettings.json` 的 CORS 列表）。Scalar UI 位于 `/api/docs`。
+- 默认端口：API `https://localhost:7110` / `http://localhost:5165`、Gateway `https://localhost:5001` / `http://localhost:5000`、前端 Vite `https://localhost:3000`（如调整端口，请同步更新 `Cors:AllowedOrigins`）。Scalar UI 位于 `/api/docs`。
 
 ## 配置、数据库与安全
 - 配置加载顺序：`appsettings.json` → `appsettings.{Environment}.json` → `appsettings.Local.json`（忽略提交） → 环境变量。新成员应复制 `Radish.Api/appsettings.Local.example.json`，并通过 `AppSettings.RadishApp` 或实现 `IConfigurableOptions` 读取强类型配置。
@@ -52,7 +52,7 @@
 ## 测试与质量保障
 - 后端：`dotnet test Radish.Api.Tests`（或 `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj`），调试单例测试可借助 `--filter`。修改示例 Controller（如 UserController、RustTest）时务必同步更新对应测试。
 - 前端：规划使用 Vitest + React Testing Library；在 `radish.client` 中创建 `*.test.tsx` 并通过 `npm run test --prefix radish.client` 执行。提交前至少运行 `npm run lint`。
-- 持续运行：`dotnet watch --project Radish.Api`、`npm run dev --prefix radish.client` 提供热重载；`local-start` 菜单的第 6 项可快速执行后端测试。
+- 持续运行：`dotnet watch --project Radish.Api`、`npm run dev --prefix radish.client` 提供热重载；`start` 菜单中的测试选项可快速执行后端测试。
 - 关键链路需补充 `.http` 手工验证、SQLSugar Profile 和 Gateway 健康页检查；性能或安全改动要记录验证方法。
 
 ## 文档、协作与提交要求
