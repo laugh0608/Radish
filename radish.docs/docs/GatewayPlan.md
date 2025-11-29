@@ -85,7 +85,9 @@ Gateway 负责：
 - [x] 欢迎页面上的健康检查功能正常，能检测到 `Radish.Api` 的健康状态
 - [x] 欢迎页面上的"打开项目文档"和"Scalar 可视化"链接正确跳转到 API 服务
 - [x] `Radish.Api` 项目移除所有 Razor Pages 相关代码，启动后仅提供 API 服务
-- [x] `local-start` 脚本更新完成，能正确启动 Gateway 和 API
+- [x] 启用 YARP 路由，在本地开发环境下通过 Gateway 暴露 `/docs` 在线文档入口，并可按需代理到 radish.docs dev 服务
+- [x] 启用统一入口路由规划（`/`、`/docs`、`/api`、`/scalar`、`/console` 等），为后续完整 Gateway/BFF 能力预留路径空间
+- [x] 启动脚本更新完成（`start.ps1`/`start.sh`），可交互式启动 Gateway、API、前端、文档站与控制台
 - [x] 文档更新完成（CLAUDE.md、DevelopmentSpecifications.md、DevelopmentFramework.md）
 - [x] **2025-11-27 增强**：门户页面配置化改造，支持生产环境部署
   - [x] 修复 URL 溢出问题，优化卡片布局

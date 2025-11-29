@@ -228,6 +228,14 @@ Gateway 门户页面需要配置服务的公开访问地址，用于页面展示
 }
 ```
 
+在本地开发环境下，Gateway 还通过 YARP 暴露若干常用路由（具体规则在 `Radish.Gateway/appsettings.Local.json` 中配置）：
+
+- `/` → 前端 webOS（转发到 `https://localhost:3000`）
+- `/docs` → 文档站点（转发到 radish.docs dev / 或静态 `DocsSite`）
+- `/api` → 后端 API（转发到 `https://localhost:5101`）
+- `/scalar` → Scalar API 文档 UI（转发到后端的 `/api/docs`）
+- `/console` → 管理控制台前端 `radish.console`（转发到 `https://localhost:3002`）
+
 **配置说明**：
 - `GatewayService.PublicUrl`：Gateway 自身的公开访问地址（用于门户页面展示）
 - `DownstreamServices.ApiService.BaseUrl`：API 服务的访问地址

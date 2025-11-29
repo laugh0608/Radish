@@ -8,7 +8,7 @@ export default defineConfig({
 
   ignoreDeadLinks: true,
 
-  // 使用符号链接指向仓库根目录下的 docs
+  // 指向当前工程内 docs 目录（不再依赖符号链接或 junction）
   srcDir: './docs',
 
   vite: {
