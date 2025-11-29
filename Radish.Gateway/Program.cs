@@ -3,6 +3,7 @@ using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Extension.SerilogExtension;
 using Serilog;
+using Yarp.ReverseProxy;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -62,6 +63,10 @@ builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
 // ===== Serilog 日志配置 =====
 builder.Host.AddSerilogSetup();
 
+// ===== YARP 反向代理配置 =====
+builder.Services.AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
 var app = builder.Build();
 
 // 绑定 InternalApp 扩展中的服务
@@ -81,37 +86,12 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
-// ===== 在线文档静态站点（可选） =====
-var docsSection = app.Configuration.GetSection("Docs");
-var docsEnabled = docsSection.GetValue<bool>("Enabled");
-var docsRequestPath = docsSection.GetValue<string>("RequestPath") ?? "/docs";
-var docsStaticFolder = docsSection.GetValue<string>("StaticFolder") ?? "DocsSite";
-
-if (docsEnabled)
-{
-    var docsPhysicalPath = Path.Combine(app.Environment.ContentRootPath, docsStaticFolder);
-    if (Directory.Exists(docsPhysicalPath))
-    {
-        var fileServerOptions = new FileServerOptions
-        {
-            FileProvider = new PhysicalFileProvider(docsPhysicalPath),
-            RequestPath = docsRequestPath,
-            EnableDefaultFiles = true
-        };
-
-        app.UseFileServer(fileServerOptions);
-
-        Log.Information("Docs 站点已启用: {RequestPath} -> {PhysicalPath}", docsRequestPath, docsPhysicalPath);
-    }
-    else
-    {
-        Log.Warning("Docs 已启用但静态目录不存在: {PhysicalPath}", docsPhysicalPath);
-    }
-}
-
 app.UseCors("GatewayCorsPolicy");
 
 app.UseRouting();
+
+// ===== YARP 端点映射 =====
+app.MapReverseProxy();
 
 // ===== 端点映射 =====
 app.MapRazorPages();

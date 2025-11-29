@@ -19,9 +19,9 @@ export default defineConfig({
       noExternal: ['vue', '@vue/server-renderer']
     }
   },
-  // 构建输出到 Gateway 的 DocsSite 目录,便于直接托管
-  outDir: '../Radish.Gateway/DocsSite',
-  // 与 Gateway 中 Docs.RequestPath 保持一致
+  // 构建输出到 radish.docs 内部 dist 目录，由独立 docs 服务托管
+  outDir: './dist',
+  // 通过 Gateway 在 /docs 路径下反向代理访问
   base: '/docs/',
 
   themeConfig: {
