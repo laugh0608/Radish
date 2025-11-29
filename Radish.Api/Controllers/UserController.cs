@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
+using Radish.Shared;
+using Radish.Shared.CuatomEnum;
 
 namespace Radish.Api.Controllers;
 
@@ -54,7 +56,7 @@ public class UserController : ControllerBase
         return new MessageModel
         {
             IsSuccess = true,
-            StatusCode = 200,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = users
         };
@@ -97,7 +99,7 @@ public class UserController : ControllerBase
         return new MessageModel
         {
             IsSuccess = true,
-            StatusCode = 200,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = userInfo
         };
@@ -137,7 +139,7 @@ public class UserController : ControllerBase
         return new MessageModel
         {
             IsSuccess = true,
-            StatusCode = 200,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
             ResponseData = userInfo
         };
     }
