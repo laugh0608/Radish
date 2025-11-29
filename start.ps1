@@ -6,6 +6,7 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = $PSScriptRoot
 $projectPath = Join-Path $repoRoot "Radish.Api/Radish.Api.csproj"
 $clientPath = Join-Path $repoRoot "radish.client"
+$consolePath = Join-Path $repoRoot "radish.console"
 $testProjectPath = Join-Path $repoRoot "Radish.Api.Tests/Radish.Api.Tests.csproj"
 
 if (-not (Test-Path $projectPath)) {
@@ -83,6 +84,16 @@ function Start-Frontend {
     }
 }
 
+function Start-Console {
+    Push-Location $repoRoot
+    try {
+        npm run dev --prefix radish.console
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 function Run-Tests {
     Push-Location $repoRoot
     try {
@@ -102,7 +113,8 @@ Write-Host "3. Start both frontend and backend"
 Write-Host "4. Start Gateway (Radish.Gateway)"
 Write-Host "5. Start docs (radish.docs)"
 Write-Host "6. Run unit tests (Radish.Api.Tests)"
-$choice = Read-Host "Enter choice (1/2/3/4/5/6)"
+Write-Host "7. Start console (radish.console)"
+$choice = Read-Host "Enter choice (1/2/3/4/5/6/7)"
 
 switch ($choice) {
     "1" {
@@ -129,6 +141,9 @@ switch ($choice) {
     }
     "6" {
         Run-Tests
+    }
+    "7" {
+        Start-Console
     }
     default {
         Write-Error "Unknown option: $choice"

@@ -5,6 +5,7 @@ CONFIGURATION="${CONFIGURATION:-Debug}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 API_PROJECT="$ROOT_DIR/Radish.Api/Radish.Api.csproj"
 CLIENT_DIR="$ROOT_DIR/radish.client"
+CONSOLE_DIR="$ROOT_DIR/radish.console"
 TEST_PROJECT="$ROOT_DIR/Radish.Api.Tests/Radish.Api.Tests.csproj"
 
 if [[ ! -f "$API_PROJECT" ]]; then
@@ -31,6 +32,10 @@ invoke_step() {
 
 start_frontend() {
   (cd "$ROOT_DIR" && npm run dev --prefix "$CLIENT_DIR")
+}
+
+start_console() {
+  (cd "$ROOT_DIR" && npm run dev --prefix "$CONSOLE_DIR")
 }
 
 start_backend() {
@@ -67,7 +72,8 @@ echo "3. Start both frontend and backend"
 echo "4. Start Gateway (Radish.Gateway)"
 echo "5. Start docs (radish.docs)"
 echo "6. Run unit tests (Radish.Api.Tests)"
-read -rp "Enter choice (1/2/3/4/5/6): " choice
+echo "7. Start console (radish.console)"
+read -rp "Enter choice (1/2/3/4/5/6/7): " choice
 
 case "$choice" in
   1)
@@ -97,6 +103,9 @@ case "$choice" in
     ;;
   6)
     run_tests
+    ;;
+  7)
+    start_console
     ;;
   *)
     echo "Unknown option: $choice" >&2

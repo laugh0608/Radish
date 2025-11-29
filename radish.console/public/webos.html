@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nebula OS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #0078d4;
+            --bg-color: #f3f3f3;
+            --taskbar-height: 48px;
+            --glass: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --window-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        * { box-sizing: border-box; user-select: none; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: url('https://images.unsplash.com/photo-1579546929518-9e396f3cc809?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80') no-repeat center center fixed; background-size: cover; height: 100vh; }
+
+        /* Boot Screen */
+        #boot-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; color: white; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity 1s ease;
+        }
+        .loader { width: 50px; height: 50px; border: 5px solid #333; border-top: 5px solid #0078d4; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Desktop */
+        #desktop { width: 100%; height: calc(100vh - var(--taskbar-height)); position: relative; padding: 10px; display: flex; flex-direction: column; flex-wrap: wrap; align-content: flex-start; gap: 10px; }
+        
+        /* Icons */
+        .desktop-icon {
+            width: 80px; height: 90px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.8); cursor: pointer; border-radius: 5px;
+            transition: background 0.2s;
+        }
+        .desktop-icon:hover { background: rgba(255,255,255,0.1); }
+        .desktop-icon i { font-size: 32px; margin-bottom: 8px; }
+        .desktop-icon span { font-size: 12px; text-align: center; line-height: 1.2; }
+
+        /* Window System */
+        .window {
+            position: absolute; background: rgba(255,255,255,0.95); border-radius: 8px;
+            box-shadow: var(--window-shadow); display: flex; flex-direction: column;
+            overflow: hidden; min-width: 300px; min-height: 200px;
+            animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .title-bar {
+            height: 32px; background: #eef; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 10px; cursor: default; border-bottom: 1px solid #ddd;
+        }
+        .window-controls { display: flex; gap: 8px; }
+        .control-btn { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; }
+        .close-btn { background: #ff5f57; } .min-btn { background: #ffbd2e; } .max-btn { background: #27c93f; }
+
+        .window-content { flex: 1; overflow: auto; position: relative; background: white; }
+        
+        /* Taskbar */
+        #taskbar {
+            position: absolute; bottom: 0; width: 100%; height: var(--taskbar-height);
+            background: rgba(243, 243, 243, 0.85); backdrop-filter: blur(20px);
+            display: flex; align-items: center; padding: 0 15px; justify-content: space-between; z-index: 9000;
+            border-top: 1px solid rgba(255,255,255,0.4);
+        }
+        #start-btn { font-size: 20px; color: #0078d4; cursor: pointer; padding: 8px; transition: 0.2s; }
+        #start-btn:hover { transform: scale(1.1); }
+        .task-items { display: flex; gap: 5px; flex: 1; margin-left: 15px; }
+        .task-item {
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            border-radius: 5px; cursor: pointer; transition: 0.2s; font-size: 18px; color: #444;
+            position: relative;
+        }
+        .task-item:hover { background: rgba(255,255,255,0.5); }
+        .task-item.active { background: white; border-bottom: 3px solid #0078d4; }
+        #clock { font-size: 12px; text-align: right; color: #333; }
+
+        /* Start Menu */
+        #start-menu {
+            position: absolute; bottom: 55px; left: 10px; width: 320px; height: 400px;
+            background: rgba(255,255,255,0.9); backdrop-filter: blur(20px);
+            border-radius: 8px; box-shadow: var(--window-shadow); z-index: 9001;
+            display: none; flex-direction: column; padding: 20px;
+            animation: slideUp 0.2s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .start-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 20px; }
+        .start-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; color: #333; font-size: 12px; gap: 5px;}
+        .start-item:hover { opacity: 0.7; }
+        .start-item i { font-size: 24px; padding: 10px; background: white; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        /* APP SPECIFIC STYLES */
+        /* Terminal */
+        .terminal { background: #1e1e1e; color: #0f0; font-family: 'Consolas', monospace; padding: 10px; height: 100%; font-size: 14px; }
+        .cmd-input { background: transparent; border: none; color: white; outline: none; font-family: inherit; width: 80%; }
+        
+        /* Editor */
+        .editor-container { display: flex; height: 100%; flex-direction: column; }
+        .editor-area { flex: 1; background: #2d2d2d; color: #d4d4d4; border: none; padding: 10px; resize: none; outline: none; font-family: 'Consolas', monospace; }
+        
+        /* Paint */
+        .paint-toolbar { padding: 5px; background: #eee; display: flex; gap: 10px; border-bottom: 1px solid #ccc; }
+        canvas { background: white; cursor: crosshair; display: block; }
+
+        /* Game */
+        .game-container { background: #222; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+        #snake-canvas { background: #000; border: 2px solid #555; }
+        .score-board { position: absolute; top: 10px; left: 10px; color: white; font-family: monospace; }
+
+        /* Video Editor Mockup */
+        .video-timeline { height: 60px; background: #333; margin-top: auto; display: flex; align-items: center; padding: 0 10px; gap: 5px; }
+        .track { height: 30px; background: #0078d4; flex: 1; border-radius: 4px; position: relative; overflow: hidden;}
+        .track::after { content: 'Video Track 1'; color: rgba(255,255,255,0.5); font-size: 10px; padding: 5px; }
+        .video-preview { background: #000; flex: 1; display: flex; align-items: center; justify-content: center; color: #666; flex-direction: column; }
+
+    </style>
+</head>
+<body>
+
+    <div id="boot-screen">
+        <div class="loader"></div>
+        <h2>NEBULA OS</h2>
+        <p>正在初始化系统核心...</p>
+    </div>
+
+    <div id="desktop">
+        </div>
+
+    <div id="start-menu">
+        <h3>固定应用</h3>
+        <div class="start-grid" id="start-grid"></div>
+    </div>
+
+    <div id="taskbar">
+        <div style="display: flex; align-items: center;">
+            <i class="fab fa-windows" id="start-btn"></i>
+            <div class="task-items" id="task-items"></div>
+        </div>
+        <div id="clock">12:00 PM<br>2023/10/01</div>
+    </div>
+
+<script>
+// --- System Kernel ---
+const System = {
+    apps: [
+        { id: 'terminal', name: '终端', icon: 'fa-terminal', color: '#333', run: createTerminal },
+        { id: 'editor', name: 'Code Studio', icon: 'fa-code', color: '#0078d4', run: createEditor },
+        { id: 'browser', name: '浏览器', icon: 'fa-globe', color: '#28a745', run: createBrowser },
+        { id: 'files', name: '资源管理器', icon: 'fa-folder-open', color: '#ffc107', run: createFileExplorer },
+        { id: 'paint', name: '画图板', icon: 'fa-paint-brush', color: '#e83e8c', run: createPaint },
+        { id: 'game', name: '贪吃蛇', icon: 'fa-gamepad', color: '#6610f2', run: createSnakeGame },
+        { id: 'video', name: 'ClipCut', icon: 'fa-film', color: '#fd7e14', run: createVideoEditor },
+        { id: 'calc', name: '计算器', icon: 'fa-calculator', color: '#17a2b8', run: createCalculator }
+    ],
+    zIndex: 100,
+    fs: { // Virtual File System
+        'readme.txt': '欢迎来到 Nebula OS!\n这是一个单文件 Web 操作系统演示。',
+        'todo.list': '- 买牛奶\n- 写代码\n- 统治世界',
+        'main.py': 'print("Hello World")\na = 5\nb = 10\nprint(a+b)'
+    }
+};
+
+// --- Boot Sequence ---
+window.onload = () => {
+    setTimeout(() => {
+        document.getElementById('boot-screen').style.opacity = 0;
+        setTimeout(() => document.getElementById('boot-screen').remove(), 1000);
+        initDesktop();
+        updateClock();
+        setInterval(updateClock, 1000);
+    }, 1500);
+};
+
+// --- Desktop & UI ---
+function initDesktop() {
+    const desk = document.getElementById('desktop');
+    const startGrid = document.getElementById('start-grid');
+    
+    System.apps.forEach(app => {
+        // Desktop Icons
+        const icon = document.createElement('div');
+        icon.className = 'desktop-icon';
+        icon.innerHTML = `<i class="fas ${app.icon}" style="color: ${app.color}"></i><span>${app.name}</span>`;
+        icon.ondblclick = () => openWindow(app);
+        desk.appendChild(icon);
+
+        // Start Menu Icons
+        const startItem = document.createElement('div');
+        startItem.className = 'start-item';
+        startItem.innerHTML = `<i class="fas ${app.icon}" style="color: ${app.color}"></i><span>${app.name}</span>`;
+        startItem.onclick = () => { openWindow(app); toggleStartMenu(); };
+        startGrid.appendChild(startItem);
+    });
+
+    document.getElementById('start-btn').onclick = toggleStartMenu;
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('start-menu');
+        const btn = document.getElementById('start-btn');
+        if (!menu.contains(e.target) && e.target !== btn && menu.style.display === 'flex') {
+            toggleStartMenu();
+        }
+    });
+}
+
+function toggleStartMenu() {
+    const menu = document.getElementById('start-menu');
+    menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
+}
+
+function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').innerHTML = 
+        now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + '<br>' + now.toLocaleDateString();
+}
+
+// --- Window Management ---
+function openWindow(app) {
+    const id = 'win-' + Date.now();
+    System.zIndex++;
+    
+    const win = document.createElement('div');
+    win.className = 'window';
+    win.id = id;
+    win.style.zIndex = System.zIndex;
+    win.style.left = (100 + Math.random() * 50) + 'px';
+    win.style.top = (50 + Math.random() * 50) + 'px';
+    win.style.width = '600px';
+    win.style.height = '400px';
+
+    win.innerHTML = `
+        <div class="title-bar" onmousedown="startDrag(event, '${id}')">
+            <div style="display:flex;align-items:center;gap:5px"><i class="fas ${app.icon}"></i> ${app.name}</div>
+            <div class="window-controls">
+                <div class="control-btn min-btn"></div>
+                <div class="control-btn max-btn" onclick="toggleMax('${id}')"></div>
+                <div class="control-btn close-btn" onclick="closeWindow('${id}')"></div>
+            </div>
+        </div>
+        <div class="window-content" id="${id}-content"></div>
+    `;
+
+    // Bring to front on click
+    win.onmousedown = () => {
+        win.style.zIndex = ++System.zIndex;
+        updateTaskbarActive(id);
+    };
+
+    document.body.appendChild(win);
+    
+    // Create Taskbar Item
+    const taskItem = document.createElement('div');
+    taskItem.className = 'task-item active';
+    taskItem.id = `task-${id}`;
+    taskItem.innerHTML = `<i class="fas ${app.icon}" style="color: ${app.color}"></i>`;
+    taskItem.onclick = () => {
+        if (win.style.display === 'none') {
+            win.style.display = 'flex';
+            win.style.zIndex = ++System.zIndex;
+        } else if (win.style.zIndex < System.zIndex) {
+            win.style.zIndex = ++System.zIndex;
+        } else {
+            win.style.display = 'none'; // Minimize
+            taskItem.classList.remove('active');
+            return;
+        }
+        updateTaskbarActive(id);
+    };
+    document.getElementById('task-items').appendChild(taskItem);
+
+    // Run App Logic
+    app.run(document.getElementById(`${id}-content`));
+}
+
+function closeWindow(id) {
+    document.getElementById(id).remove();
+    document.getElementById(`task-${id}`).remove();
+}
+
+function toggleMax(id) {
+    const win = document.getElementById(id);
+    if (win.style.width === '100%') {
+        win.style.width = '600px'; win.style.height = '400px'; win.style.top = '50px'; win.style.left = '100px';
+        win.style.borderRadius = '8px';
+    } else {
+        win.style.width = '100%'; win.style.height = 'calc(100% - 48px)'; win.style.top = '0'; win.style.left = '0';
+        win.style.borderRadius = '0';
+    }
+}
+
+function updateTaskbarActive(activeId) {
+    document.querySelectorAll('.task-item').forEach(t => t.classList.remove('active'));
+    const activeTask = document.getElementById(`task-${activeId}`);
+    if(activeTask) activeTask.classList.add('active');
+}
+
+// Dragging Logic
+let isDragging = false, startX, startY, initialLeft, initialTop, currentWin = null;
+function startDrag(e, id) {
+    if(e.target.classList.contains('control-btn')) return;
+    isDragging = true;
+    currentWin = document.getElementById(id);
+    startX = e.clientX;
+    startY = e.clientY;
+    initialLeft = currentWin.offsetLeft;
+    initialTop = currentWin.offsetTop;
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', stopDrag);
+}
+function doDrag(e) {
+    if (!isDragging) return;
+    currentWin.style.left = (initialLeft + e.clientX - startX) + 'px';
+    currentWin.style.top = (initialTop + e.clientY - startY) + 'px';
+}
+function stopDrag() { isDragging = false; document.removeEventListener('mousemove', doDrag); }
+
+// --- APPLICATIONS IMPL ---
+
+// 1. TERMINAL (With simulated Python)
+function createTerminal(container) {
+    container.innerHTML = `
+        <div class="terminal" onclick="this.querySelector('input').focus()">
+            <div id="term-output">Nebula OS v1.0.0 (tty1)<br>Type "help" or "python" to start.<br><br></div>
+            <div style="display:flex">
+                <span>user@nebula:~$ </span>
+                <input type="text" class="cmd-input" autofocus>
+            </div>
+        </div>
+    `;
+    const input = container.querySelector('input');
+    const output = container.querySelector('#term-output');
+    let inPython = false;
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const cmd = input.value;
+            output.innerHTML += `<div>${inPython ? '>>> ' : 'user@nebula:~$ '}${cmd}</div>`;
+            input.value = '';
+            
+            if (inPython) {
+                if (cmd === 'exit()') { inPython = false; output.innerHTML += 'Exited Python console.<br>'; }
+                else {
+                    try {
+                        // Very basic simulation
+                        if(cmd.startsWith('print')) {
+                            const content = cmd.match(/print\((.*)\)/)[1];
+                            output.innerHTML += `<div>${content.replace(/["']/g, '')}</div>`;
+                        } else if (cmd.includes('=')) {
+                            window.pyVars = window.pyVars || {};
+                            const [k, v] = cmd.split('=').map(s=>s.trim());
+                            window.pyVars[k] = eval(v); // Risky but fine for toy OS
+                        } else {
+                            // Try to evaluate math or vars
+                            let res = cmd;
+                            if(window.pyVars) {
+                                Object.keys(window.pyVars).forEach(k => { res = res.replace(new RegExp(k,'g'), window.pyVars[k]) });
+                            }
+                            output.innerHTML += `<div>${eval(res)}</div>`;
+                        }
+                    } catch(err) { output.innerHTML += `<div style="color:red">Error: Syntax Error</div>`; }
+                }
+            } else {
+                if (cmd === 'help') output.innerHTML += 'Commands: help, clear, ls, cat [file], python<br>';
+                else if (cmd === 'clear') output.innerHTML = '';
+                else if (cmd === 'ls') output.innerHTML += Object.keys(System.fs).join('  ') + '<br>';
+                else if (cmd.startsWith('cat ')) {
+                    const f = cmd.split(' ')[1];
+                    output.innerHTML += (System.fs[f] || 'File not found') + '<br>';
+                }
+                else if (cmd === 'python') { inPython = true; output.innerHTML += 'Python 3.9.0 (Simulated)<br>Type "exit()" to quit.<br>'; }
+                else output.innerHTML += `Command not found: ${cmd}<br>`;
+            }
+            container.scrollTop = container.scrollHeight;
+        }
+    });
+}
+
+// 2. CODE EDITOR
+function createEditor(container) {
+    container.innerHTML = `
+        <div class="editor-container">
+            <div style="background:#333;padding:5px;color:#ccc;font-size:12px;display:flex;gap:10px">
+                <button onclick="alert('File Saved!')">Save</button>
+                <span>main.js</span>
+            </div>
+            <textarea class="editor-area" spellcheck="false">function hello() {\n  console.log("Hello Nebula!");\n}</textarea>
+        </div>
+    `;
+}
+
+// 3. PAINT
+function createPaint(container) {
+    container.innerHTML = `
+        <div style="height:100%;display:flex;flex-direction:column">
+            <div class="paint-toolbar">
+                <button onclick="this.parentElement.nextElementSibling.getContext('2d').strokeStyle='red'">Red</button>
+                <button onclick="this.parentElement.nextElementSibling.getContext('2d').strokeStyle='blue'">Blue</button>
+                <button onclick="this.parentElement.nextElementSibling.getContext('2d').strokeStyle='black'">Black</button>
+                <button onclick="const c=this.parentElement.nextElementSibling;c.getContext('2d').clearRect(0,0,c.width,c.height)">Clear</button>
+            </div>
+            <canvas width="600" height="350"></canvas>
+        </div>
+    `;
+    const canvas = container.querySelector('canvas');
+    const ctx = canvas.getContext('2d');
+    let painting = false;
+    
+    // Resize canvas fix
+    setTimeout(() => {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight - 40;
+    }, 100);
+
+    canvas.onmousedown = (e) => { painting = true; ctx.beginPath(); ctx.moveTo(e.offsetX, e.offsetY); };
+    canvas.onmousemove = (e) => { 
+        if(!painting) return; 
+        ctx.lineTo(e.offsetX, e.offsetY); 
+        ctx.stroke(); 
+    };
+    canvas.onmouseup = () => painting = false;
+}
+
+// 4. SNAKE GAME
+function createSnakeGame(container) {
+    container.innerHTML = `
+        <div class="game-container">
+            <div class="score-board">Score: <span id="score">0</span></div>
+            <canvas id="snake-canvas" width="400" height="300"></canvas>
+            <div style="position:absolute;bottom:10px;color:#888;font-size:10px">Press Arrow Keys</div>
+        </div>
+    `;
+    const cvs = container.querySelector('canvas');
+    const ctx = cvs.getContext('2d');
+    let snake = [{x:10, y:10}], food = {x:15, y:15}, dx=1, dy=0, score=0;
+    const gridSize = 20, tileCountX = 20, tileCountY = 15;
+    
+    function gameLoop() {
+        if(!document.body.contains(cvs)) return; // Stop if window closed
+        
+        // Logic
+        const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+        
+        if(head.x < 0) head.x = tileCountX-1;
+        if(head.x >= tileCountX) head.x = 0;
+        if(head.y < 0) head.y = tileCountY-1;
+        if(head.y >= tileCountY) head.y = 0;
+        
+        snake.unshift(head);
+        if(head.x === food.x && head.y === food.y) {
+            score++;
+            container.querySelector('#score').innerText = score;
+            food = {x: Math.floor(Math.random()*tileCountX), y: Math.floor(Math.random()*tileCountY)};
+        } else {
+            snake.pop();
+        }
+        
+        // Draw
+        ctx.fillStyle = 'black'; ctx.fillRect(0,0,cvs.width,cvs.height);
+        ctx.fillStyle = 'lime'; snake.forEach(s => ctx.fillRect(s.x*gridSize, s.y*gridSize, gridSize-2, gridSize-2));
+        ctx.fillStyle = 'red'; ctx.fillRect(food.x*gridSize, food.y*gridSize, gridSize-2, gridSize-2);
+        
+        setTimeout(gameLoop, 100);
+    }
+    
+    gameLoop();
+    // Focus hack for keys
+    cvs.tabIndex = 1; cvs.focus();
+    cvs.addEventListener('keydown', e => {
+        e.preventDefault();
+        if(e.key==='ArrowUp' && dy!==1) {dx=0;dy=-1}
+        if(e.key==='ArrowDown' && dy!==-1) {dx=0;dy=1}
+        if(e.key==='ArrowLeft' && dx!==1) {dx=-1;dy=0}
+        if(e.key==='ArrowRight' && dx!==-1) {dx=1;dy=0}
+    });
+}
+
+// 5. VIDEO EDITOR (Mockup)
+function createVideoEditor(container) {
+    container.innerHTML = `
+        <div style="height:100%;display:flex;flex-direction:column;background:#222;color:white">
+            <div style="flex:1;display:flex;">
+                <div style="width:200px;background:#333;border-right:1px solid #444;padding:10px">
+                    <h4 style="margin-top:0">Media Bin</h4>
+                    <div style="background:#444;padding:5px;margin-bottom:5px;font-size:12px">clip_01.mp4</div>
+                    <div style="background:#444;padding:5px;margin-bottom:5px;font-size:12px">music.mp3</div>
+                    <div style="background:#444;padding:5px;margin-bottom:5px;font-size:12px">intro.png</div>
+                </div>
+                <div class="video-preview">
+                    <i class="fas fa-play-circle" style="font-size:40px;margin-bottom:10px"></i>
+                    <span>Preview Window (No Media)</span>
+                </div>
+            </div>
+            <div class="video-timeline">
+                <div style="width:50px;font-size:10px;color:#aaa">00:00</div>
+                <div class="track" style="width:30%;"></div>
+                <div class="track" style="width:20%;background:#d40078;margin-left:10px"></div>
+            </div>
+        </div>
+    `;
+}
+
+// 6. BROWSER (Iframe)
+function createBrowser(container) {
+    container.innerHTML = `
+        <div style="height:100%;display:flex;flex-direction:column">
+            <div style="padding:5px;background:#ddd;display:flex;gap:5px">
+                <button>Back</button>
+                <input type="text" value="https://en.m.wikipedia.org" style="flex:1">
+                <button>Go</button>
+            </div>
+            <iframe src="https://en.m.wikipedia.org/wiki/Main_Page" style="flex:1;border:none" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+    `;
+}
+
+// 7. FILE EXPLORER
+function createFileExplorer(container) {
+    let filesHtml = '';
+    for(let f in System.fs) {
+        filesHtml += `
+            <div style="width:60px;text-align:center;cursor:pointer;margin:10px" onclick="alert('Content: ${System.fs[f]}')">
+                <i class="fas fa-file-alt" style="font-size:30px;color:#555;"></i>
+                <div style="font-size:11px;margin-top:5px;word-break:break-all">${f}</div>
+            </div>`;
+    }
+    container.innerHTML = `
+        <div style="height:100%;display:flex;">
+            <div style="width:120px;background:#f0f0f0;border-right:1px solid #ccc;padding:10px">
+                <div><i class="fas fa-desktop"></i> Desktop</div>
+                <div style="margin-top:10px"><i class="fas fa-download"></i> Downloads</div>
+                <div style="margin-top:10px"><i class="fas fa-hdd"></i> C: Drive</div>
+            </div>
+            <div style="flex:1;background:white;display:flex;flex-wrap:wrap;align-content:flex-start;padding:10px">
+                ${filesHtml}
+            </div>
+        </div>
+    `;
+}
+
+// 8. CALCULATOR
+function createCalculator(container) {
+    container.innerHTML = `
+        <div style="height:100%;display:flex;flex-direction:column;background:#f3f3f3;">
+            <div id="calc-display" style="background:#fff;height:50px;text-align:right;font-size:24px;padding:10px;border-bottom:1px solid #ccc;">0</div>
+            <div style="flex:1;display:grid;grid-template-columns:repeat(4,1fr);gap:1px;">
+                <button style="border:none;background:#fff;font-size:18px;" onclick="calcInput('7')">7</button>
+                <button style="border:none;background:#fff;font-size:18px;" onclick="calcInput('8')">8</button>
+                <button style="border:none;background:#fff;font-size:18px;" onclick="calcInput('9')">9</button>
+                <button style="border:none;background:#eee;font-size:18px;" onclick="calcInput('/')">/</button>
+                <button style="border:none;background:#fff;font-size:18px;" onclick="calcInput('4')">4</button>
+                <button style="border:none;background:#fff;font-size:18px;" onclick="calcInput('5')">5</button>
+                <button style="border:none;background:#fff;font-size:18px;" onclick="calcInput('6')">6</button>
+                <button style="border:none;background:#eee;font-size:18px;" onclick="calcInput('*')">*</button>
+                <button style="border:none;background:#fff;font-size:18px;" onclick="calcInput('1')">1</button>
+                <button style="border:none;background:#fff;font-size:18px;" onclick="calcInput('2')">2</button>
+                <button style="border:none;background:#fff;font-size:18px;" onclick="calcInput('3')">3</button>
+                <button style="border:none;background:#eee;font-size:18px;" onclick="calcInput('-')">-</button>
+                <button style="border:none;background:#fff;font-size:18px;" onclick="calcInput('C')">C</button>
+                <button style="border:none;background:#fff;font-size:18px;" onclick="calcInput('0')">0</button>
+                <button style="border:none;background:#0078d4;color:white;font-size:18px;" onclick="calcInput('=')">=</button>
+                <button style="border:none;background:#eee;font-size:18px;" onclick="calcInput('+')">+</button>
+            </div>
+        </div>
+    `;
+    window.calcVal = '';
+    window.calcInput = (v) => {
+        const disp = container.querySelector('#calc-display');
+        if(v==='C') { calcVal=''; disp.innerText='0'; return; }
+        if(v==='=') { try{ disp.innerText=eval(calcVal); calcVal=disp.innerText; }catch{disp.innerText='Error'} return; }
+        calcVal+=v; disp.innerText=calcVal;
+    }
+}
+
+</script>
+</body>
+</html>
