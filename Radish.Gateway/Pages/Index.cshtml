@@ -1,4 +1,4 @@
-@page "/"
+@page "/server"
 @using Microsoft.Extensions.Configuration
 @inject IConfiguration Configuration
 @attribute [ApiExplorerSettings(IgnoreApi = true)]
@@ -10,6 +10,8 @@
     var apiBaseUrl = Configuration["DownstreamServices:ApiService:BaseUrl"];
     var frontendBaseUrl = Configuration["FrontendService:BaseUrl"];
     var docsEnabled = bool.TryParse(Configuration["Docs:Enabled"], out var docsEnabledValue) && docsEnabledValue;
+    var docsRequestPath = Configuration["Docs:RequestPath"] ?? "/docs/";
+    var consoleRequestPath = "/console";
 }
 
 <!DOCTYPE html>
@@ -21,7 +23,11 @@
     <link rel="stylesheet" href="~/css/index.css" asp-append-version="true">
 </head>
 <body>
-<main data-api-base-url="@apiBaseUrl" data-api-health-path="@(Configuration["DownstreamServices:ApiService:HealthCheckPath"] ?? "/health")">
+<main data-api-base-url="@apiBaseUrl"
+      data-api-health-path="@(Configuration["DownstreamServices:ApiService:HealthCheckPath"] ?? "/health")"
+      data-frontend-base-url="@frontendBaseUrl"
+      data-docs-path="@docsRequestPath"
+      data-console-path="@consoleRequestPath">
     <span class="badge">Radish Gateway · ASP.NET Core</span>
     <h1>欢迎来到 Radish 平台</h1>
     <p class="lead">
@@ -56,7 +62,27 @@
                 <div class="service-details">
                     <h3>API 服务</h3>
                     <div class="service-urls">
-                        <a href="@apiBaseUrl/api/docs" target="_blank">@apiBaseUrl</a>
+                        <a href="@($"{apiBaseUrl}/api/docs")" target="_blank">@apiBaseUrl</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-card docs">
+                <div class="service-icon">📚</div>
+                <div class="service-details">
+                    <h3>Docs 文档站</h3>
+                    <div class="service-urls">
+                        <a href="@docsRequestPath" target="_blank">@($"{gatewayUrl}{docsRequestPath}")</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-card console">
+                <div class="service-icon">🖥️</div>
+                <div class="service-details">
+                    <h3>服务控制台</h3>
+                    <div class="service-urls">
+                        <a href="@consoleRequestPath" target="_blank">@($"{gatewayUrl}{consoleRequestPath}")</a>
                     </div>
                 </div>
             </div>
@@ -66,10 +92,11 @@
     <div class="actions">
         @if (docsEnabled)
         {
-            <a class="button primary" href="/docs" target="_blank" rel="noopener noreferrer">打开项目文档</a>
+            <a class="button primary" href="@docsRequestPath" target="_blank" rel="noopener noreferrer">打开项目文档</a>
         }
-        <a class="button secondary" href="@(apiBaseUrl)/api/docs" target="_blank" rel="noopener noreferrer">API Scalar 可视化</a>
+        <a class="button secondary" href="@($"{apiBaseUrl}/api/docs")" target="_blank" rel="noopener noreferrer">API Scalar 可视化</a>
         <a class="button secondary" href="@frontendBaseUrl" target="_blank" rel="noopener noreferrer">访问前端应用</a>
+        <a class="button secondary" href="@consoleRequestPath" target="_blank" rel="noopener noreferrer">服务控制台 Console</a>
     </div>
 
     <section class="grid">
@@ -88,6 +115,21 @@
 
     <section class="grid" style="margin-top: 1.5rem;">
         <article>
+            <h2>前端应用</h2>
+            <p id="frontend-status" class="status-text">正在检测前端应用状况...</p>
+            <small style="color: var(--muted);">检查 WebOS 前端服务是否可以访问。</small>
+        </article>
+
+        <article>
+            <h2>Docs 与 Console</h2>
+            <p id="docs-status" class="status-text">正在检测 Docs 文档站状况...</p>
+            <p id="console-status" class="status-text">正在检测 Console 控制台状况...</p>
+            <small style="color: var(--muted);">监控文档站与控制台服务的可用性。</small>
+        </article>
+    </section>
+
+    <section class="grid" style="margin-top: 1.5rem;">
+        <article>
             <h2>快速开始 - Gateway</h2>
             <ol>
                 <li><code>dotnet build Radish.slnx -c Debug</code></li>
@@ -101,7 +143,7 @@
             <ol>
                 <li><code>dotnet restore && dotnet build Radish.slnx -c Debug</code></li>
                 <li><code>dotnet run --project Radish.Api/Radish.Api.csproj</code></li>
-                <li>浏览器访问 <code>https://localhost:5101/api/docs</code></li>
+                <li>浏览器访问 <code>@($"{apiBaseUrl}/api/docs")</code></li>
             </ol>
         </article>
     </section>
