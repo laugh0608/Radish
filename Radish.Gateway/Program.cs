@@ -104,16 +104,26 @@ app.MapHealthChecks("/healthz");
 app.MapFallbackToPage("/Index");
 
 // ===== 启动日志 =====
-Log.Information("========================================");
-Log.Information("Radish.Gateway 正在启动...");
-Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
-Log.Information("监听地址: {Urls}", string.Join(", ", builder.WebHost.GetSetting("urls")?.Split(';') ?? ["未配置"]));
-Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
-if (!string.IsNullOrEmpty(apiBaseUrl))
+app.Lifetime.ApplicationStarted.Register(() =>
 {
-    Log.Information("下游 API 服务: {ApiUrl}", apiBaseUrl);
-}
-Log.Information("========================================");
+    var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
+
+    Log.Information("====================================");
+    Log.Information("   ____           _ _     _");
+    Log.Information("  |  _ \\ __ _  __| (_)___| |__");
+    Log.Information("  | |_) / _` |/ _` | / __| '_ \\");
+    Log.Information("  |  _ < (_| | (_| | \\__ \\ | | |");
+    Log.Information("  |_| \\\\__,_|\\__,_|_|___/_| |_|");
+    Log.Information("        Radish.Gateway --by luobo");
+    Log.Information("====================================");
+    Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
+    Log.Information("监听地址: {Urls}", urls);
+    Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
+    if (!string.IsNullOrEmpty(apiBaseUrl))
+    {
+        Log.Information("下游 API 服务: {ApiUrl}", apiBaseUrl);
+    }
+});
 
 app.Run();
 

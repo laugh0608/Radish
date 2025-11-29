@@ -22,6 +22,7 @@ using Radish.IRepository;
 using Radish.IService;
 using Radish.Repository;
 using Radish.Service;
+using Serilog;
 using SqlSugar;
 
 // -------------- 容器构建阶段 ---------------
@@ -178,17 +179,23 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/healthz");
 
-// 输出项目启动标识
-Console.WriteLine(@"
-====================================
-   ____           _ _     _     
-  |  _ \ __ _  __| (_)___| |__  
-  | |_) / _` |/ _` | / __| '_ \ 
-  |  _ < (_| | (_| | \__ \ | | |
-  |_| \_\__,_|\__,_|_|___/_| |_|
-        Radish  --by luobo
-====================================
-");
+// 输出项目启动标识（使用 Serilog，与 Gateway 风格统一）
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
+
+    Log.Information("====================================");
+    Log.Information("   ____           _ _     _");
+    Log.Information("  |  _ \\ __ _  __| (_)___| |__");
+    Log.Information("  | |_) / _` |/ _` | / __| '_ \\");
+    Log.Information("  |  _ < (_| | (_| | \\__ \\ | | |");
+    Log.Information("  |_| \\\\__,_|\\__,_|_|___/_| |_|");
+    Log.Information("        Radish.Api --by luobo");
+    Log.Information("====================================");
+    Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
+    Log.Information("监听地址: {Urls}", urls);
+    Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
+});
 
 // -------------- App 运行阶段 ---------------
 app.Run();
