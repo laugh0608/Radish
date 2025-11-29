@@ -1,13 +1,17 @@
-# 文档索引（Docs Index）
+# 文档已迁移
 
-## 项目通用
+Radish 项目的完整文档已迁移至 `radish.docs/docs/` 目录（同时也是在线文档站的源文件）。
 
-- 开发目录、分层依赖与依赖管理规范: [DevelopmentSpecifications.md](DevelopmentSpecifications.md)
-- 项目总体功能与需求（含范围与里程碑）: [DevelopmentFramework.md](DevelopmentFramework.md)
-- 非目标与边界：见同文档章节 [DevelopmentFramework.md](DevelopmentFramework.md)
-- 开发计划与看板（按周）: [DevelopmentPlan.md](DevelopmentPlan.md)
-- 开发进度日志（按日）: [DevelopmentLog.md](DevelopmentLog.md)
-- 鉴权与授权链路说明： [AuthenticationGuide.md](AuthenticationGuide.md)
-- 部署与容器化指引： [DeploymentGuide.md](DeploymentGuide.md)
-- 前端设计、交互与跨端规划： [FrontendDesign.md](FrontendDesign.md)
-- API Gateway 改造方案与任务清单： [GatewayPlan.md](GatewayPlan.md)
+推荐直接访问：
+
+- [文档首页](../radish.docs/docs/index.md)
+- [开发规范](../radish.docs/docs/DevelopmentSpecifications.md)
+- [架构设计](../radish.docs/docs/DevelopmentFramework.md)
+- [部署指南](../radish.docs/docs/DeploymentGuide.md)
+- [认证授权指南](../radish.docs/docs/AuthenticationGuide.md)
+- [前端设计](../radish.docs/docs/FrontendDesign.md)
+- [Gateway 规划](../radish.docs/docs/GatewayPlan.md)
+- [开发计划](../radish.docs/docs/DevelopmentPlan.md)
+- [开发日志](../radish.docs/docs/DevelopmentLog.md)
+
+> 提示：`radish.docs/docs` 目录中的 Markdown 文件既用于在线文档站点构建，也方便在 GitHub 上直接浏览。

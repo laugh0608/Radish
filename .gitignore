@@ -280,3 +280,17 @@ src/Radish.Blazor.Server.Tiered/Logs/*
 # IdentityServer temp files
 tempkey.rsa
 tempkey.jwk
+
+# Local configuration files (contains sensitive data)
+**/appsettings.Local.json
+*.Local.json
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Environment files
+.env
+.env.local
+.env.*.local
