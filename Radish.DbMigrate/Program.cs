@@ -5,13 +5,14 @@ using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Extension;
 using Radish.Extension.SqlSugarExtension;
+using Radish.Model;
 using SqlSugar;
 
 // 简单的迁移/初始化控制台：
 // dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 //  - 初始化数据库（按配置）并根据实体结构创建/更新表
 // dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
-//  - 预留：基础数据灌入（管理员、角色、租户等）
+//  - 执行基础数据灌入（例如默认角色/管理员/租户等）
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -61,7 +62,7 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
     var db = services.GetRequiredService<ISqlSugarClient>();
 
     Console.WriteLine("[Radish.DbMigrate] 创建数据库（如不存在）...");
-    foreach (var config in Radish.Common.DbTool.BaseDbConfig.AllConfigs)
+    foreach (var _ in Radish.Common.DbTool.BaseDbConfig.AllConfigs)
     {
         // 使用当前连接执行 CreateDatabase，SqlSugar 会根据连接串创建数据库文件/实例
         db.DbMaintenance.CreateDatabase();
@@ -74,7 +75,7 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
     var entityTypes = modelAssembly
         .GetTypes()
         .Where(t => t.IsClass && !t.IsAbstract && t.IsPublic)
-        .Where(t => t.GetCustomAttributes(typeof(SqlSugar.SugarTable), inherit: true).Any());
+        .Where(t => t.GetCustomAttributes(typeof(SugarTable), inherit: true).Any());
 
     foreach (var type in entityTypes)
     {
@@ -88,8 +89,60 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
 static async Task RunSeedAsync(IServiceProvider services, IConfiguration configuration, string environment)
 {
     Console.WriteLine($"[Radish.DbMigrate] Environment: {environment}");
-    Console.WriteLine("[Radish.DbMigrate] Seed 逻辑暂未实现，可在此处添加默认管理员/角色/租户等初始化数据。");
-    await Task.CompletedTask;
+
+    var db = services.GetRequiredService<ISqlSugarClient>();
+
+    // 固定 Id 的系统默认角色，避免雪花 ID 随机值带来的难以记忆
+    const long systemRoleId = 10000;
+    const long adminRoleId = 10001;
+
+    // System 角色
+    var systemExists = await db.Queryable<Role>().AnyAsync(r => r.Id == systemRoleId);
+    if (!systemExists)
+    {
+        Console.WriteLine($"[Radish.DbMigrate] 创建默认角色 Id={systemRoleId}, RoleName=System...");
+
+        var systemRole = new Role("System")
+        {
+            Id = systemRoleId,
+            RoleDescription = "System built-in role (超级管理员，拥有系统级权限)",
+            IsDeleted = false,
+            IsEnabled = true,
+            OrderSort = 0,
+            DepartmentIds = string.Empty,
+        };
+
+        await db.Insertable(systemRole).ExecuteCommandAsync();
+    }
+    else
+    {
+        Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={systemRoleId} 的 System 角色，跳过创建。");
+    }
+
+    // Admin 角色
+    var adminExists = await db.Queryable<Role>().AnyAsync(r => r.Id == adminRoleId);
+    if (!adminExists)
+    {
+        Console.WriteLine($"[Radish.DbMigrate] 创建默认角色 Id={adminRoleId}, RoleName=Admin...");
+
+        var adminRole = new Role("Admin")
+        {
+            Id = adminRoleId,
+            RoleDescription = "Admin built-in role (管理员，拥有常规管理权限)",
+            IsDeleted = false,
+            IsEnabled = true,
+            OrderSort = 1,
+            DepartmentIds = string.Empty,
+        };
+
+        await db.Insertable(adminRole).ExecuteCommandAsync();
+    }
+    else
+    {
+        Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={adminRoleId} 的 Admin 角色，跳过创建。");
+    }
+
+    Console.WriteLine("[Radish.DbMigrate] Seed 完成（默认角色）。");
 }
 
 static void PrintHelp()
@@ -98,5 +151,5 @@ static void PrintHelp()
     Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init");
     Console.WriteLine("      初始化数据库并基于实体结构创建/更新表结构。");
     Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed");
-    Console.WriteLine("      执行数据初始化（管理员、角色、租户等），当前为预留实现。");
+    Console.WriteLine("      执行数据初始化（例如默认角色/管理员/租户等）。");
 }
