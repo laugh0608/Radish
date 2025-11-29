@@ -3,9 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Radish.Common;
 using Radish.Common.CoreTool;
+using Radish.DbMigrate;
 using Radish.Extension;
 using Radish.Extension.SqlSugarExtension;
-using Radish.Model;
 using SqlSugar;
 
 // 简单的迁移/初始化控制台：
@@ -92,57 +92,7 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
 
     var db = services.GetRequiredService<ISqlSugarClient>();
 
-    // 固定 Id 的系统默认角色，避免雪花 ID 随机值带来的难以记忆
-    const long systemRoleId = 10000;
-    const long adminRoleId = 10001;
-
-    // System 角色
-    var systemExists = await db.Queryable<Role>().AnyAsync(r => r.Id == systemRoleId);
-    if (!systemExists)
-    {
-        Console.WriteLine($"[Radish.DbMigrate] 创建默认角色 Id={systemRoleId}, RoleName=System...");
-
-        var systemRole = new Role("System")
-        {
-            Id = systemRoleId,
-            RoleDescription = "System built-in role (超级管理员，拥有系统级权限)",
-            IsDeleted = false,
-            IsEnabled = true,
-            OrderSort = 0,
-            DepartmentIds = string.Empty,
-        };
-
-        await db.Insertable(systemRole).ExecuteCommandAsync();
-    }
-    else
-    {
-        Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={systemRoleId} 的 System 角色，跳过创建。");
-    }
-
-    // Admin 角色
-    var adminExists = await db.Queryable<Role>().AnyAsync(r => r.Id == adminRoleId);
-    if (!adminExists)
-    {
-        Console.WriteLine($"[Radish.DbMigrate] 创建默认角色 Id={adminRoleId}, RoleName=Admin...");
-
-        var adminRole = new Role("Admin")
-        {
-            Id = adminRoleId,
-            RoleDescription = "Admin built-in role (管理员，拥有常规管理权限)",
-            IsDeleted = false,
-            IsEnabled = true,
-            OrderSort = 1,
-            DepartmentIds = string.Empty,
-        };
-
-        await db.Insertable(adminRole).ExecuteCommandAsync();
-    }
-    else
-    {
-        Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={adminRoleId} 的 Admin 角色，跳过创建。");
-    }
-
-    Console.WriteLine("[Radish.DbMigrate] Seed 完成（默认角色）。");
+    await InitialDataSeeder.SeedAsync(db);
 }
 
 static void PrintHelp()

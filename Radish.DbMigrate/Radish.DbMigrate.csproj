@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Radish.Api\Radish.Api.csproj" />
+    <ProjectReference Include="..\Radish.Common\Radish.Common.csproj" />
   </ItemGroup>
 
 </Project>

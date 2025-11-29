@@ -107,6 +107,23 @@ volumes:
 
 > 建议：生产环境中**不要**在 Api/Gateway 启动时自动调用 `InitTables`，避免意外结构变更；所有结构更新应通过经审核的迁移 SQL 或专门的迁移任务执行。
 
+### 初始化基础数据（seed 子命令）
+
+`Radish.DbMigrate` 中的 `seed` 子命令用于初始化一批基础数据，当前默认会：
+
+- 创建固定 Id 的角色：10000 System、10001 Admin、20000 system、20001 admin；
+- 创建固定 Id 的租户：30000 Radish、30001 Test；
+- 创建固定 Id 的部门：40000 Development、40001 Test；
+- 创建固定 Id 的测试用户：20002 test（绑定租户 30000 与部门 40000）。
+
+在仓库根目录执行：
+
+```bash
+ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
+```
+
+实现位于 `Radish.DbMigrate/InitialDataSeeder.cs`，并按模块拆分为 `SeedRolesAsync`、`SeedTenantsAsync`、`SeedDepartmentsAsync`、`SeedUsersAsync` 等方法，支持后续按业务扩展更多种子数据。所有插入都会先通过 `AnyAsync` 判断是否已存在，保证可以安全重复执行。
+
 ---
 
 ## 反向代理配置
