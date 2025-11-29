@@ -1,7 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using Radish.Model.Root;
-using Radish.Shared.CuatomEnum;
+using Radish.Shared.CustomEnum;
 using SqlSugar;
 
 namespace Radish.Model;

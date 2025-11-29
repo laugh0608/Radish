@@ -1,4 +1,4 @@
-namespace Radish.Shared.CuatomEnum;
+namespace Radish.Shared.CustomEnum;
 
 /// <summary>
 /// 用户性别，替代 0 / 1 / 2 魔术数字。

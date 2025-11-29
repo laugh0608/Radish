@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Radish.Model.Root;
-using Radish.Shared.CuatomEnum;
+using Radish.Shared.CustomEnum;
 using SqlSugar;
 
 namespace Radish.Model;

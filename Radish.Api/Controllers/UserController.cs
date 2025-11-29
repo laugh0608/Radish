@@ -5,7 +5,7 @@ using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Shared;
-using Radish.Shared.CuatomEnum;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers;
 

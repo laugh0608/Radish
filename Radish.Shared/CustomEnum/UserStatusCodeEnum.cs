@@ -1,4 +1,4 @@
-namespace Radish.Shared.CuatomEnum;
+namespace Radish.Shared.CustomEnum;
 
 /// <summary>
 /// 用户状态码，替代 -1 / 0 等魔术数字。

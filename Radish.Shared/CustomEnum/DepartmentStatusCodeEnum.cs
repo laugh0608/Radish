@@ -1,4 +1,4 @@
-namespace Radish.Shared.CuatomEnum;
+namespace Radish.Shared.CustomEnum;
 
 /// <summary>
 /// 部门状态码，目前仅约定 0 为“正常”。

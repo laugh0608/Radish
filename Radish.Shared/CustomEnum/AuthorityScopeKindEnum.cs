@@ -1,4 +1,4 @@
-namespace Radish.Shared.CuatomEnum;
+namespace Radish.Shared.CustomEnum;
 
 /// <summary>
 /// 权限范围，基于 Role.AuthorityScope 历史注释整理。
