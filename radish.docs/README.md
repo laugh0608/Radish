@@ -5,10 +5,11 @@
 ## 快速开始
 
 ```bash
-# 安装依赖
+# 安装依赖（在 radish.docs 目录下）
 npm install
 
 # 开发模式（热重载）
+# 默认开发地址：http://localhost:3001/docs
 npm run docs:dev
 
 # 构建生产版本
@@ -16,6 +17,19 @@ npm run docs:build
 
 # 预览构建结果
 npm run docs:preview
+```
+
+也可以在仓库根目录使用统一的 `--prefix` 方式：
+
+```bash
+# 安装依赖（仓库根目录）
+npm install --prefix radish.docs
+
+# 开发模式
+npm run docs:dev --prefix radish.docs
+
+# 构建生产版本
+npm run docs:build --prefix radish.docs
 ```
 
 ## 目录结构
@@ -34,14 +48,14 @@ radish.docs/
 ### 文档源文件位置
 
 - **源文件**：位于 `radish.docs/docs` 目录（同时也是在线文档站的内容源）
-- **构建输出**：`Radish.Gateway/DocsSite`
+- **构建输出**：`radish.docs/dist`（默认），由独立 docs 服务或任意静态服务器托管
 
 ### VitePress 配置要点
 
 ```typescript
 export default defineConfig({
   srcDir: './docs',  // 指向工程内 docs 目录
-  outDir: '../Radish.Gateway/DocsSite',
+  outDir: './dist',   // 默认构建到当前工程 dist 目录
   base: '/docs/',
 
   vite: {

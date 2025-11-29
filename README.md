@@ -37,10 +37,17 @@ npm install --prefix radish.client
 npm run dev --prefix radish.client
 ```
 
-启动后：
+启动后常见入口：
+- **Gateway 门户**：https://localhost:5001  （统一入口，下挂各子系统）
+- **前端桌面（webOS）**：https://localhost:5001/        （YARP 代理到前端 dev https://localhost:3000）
+- **在线文档**：https://localhost:5001/docs             （文档站，来自 radish.docs）
+- **API 文档（Scalar）**：https://localhost:5001/scalar  （Gateway 转发到 Radish.Api 的 `/api/docs`）
+- **控制台（radish.console）**：https://localhost:5001/console
+
+如需直连后端服务：
 - **后端 API**：https://localhost:7110 或 http://localhost:5165
-- **API 文档**：https://localhost:7110/api/docs (Scalar UI)
-- **前端页面**：https://localhost:3000
+- **API 文档（直连）**：https://localhost:7110/api/docs
+- **前端 dev**：https://localhost:3000
 
 ### 常用命令
 

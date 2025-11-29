@@ -52,15 +52,11 @@
 
 ### 本地启动脚本
 
-- `start.ps1`（Windows/PowerShell）与 `start.sh`（Linux/macOS）提供交互式菜单，快速完成常见开发任务。
-- Phase 0 完成后将包含六个选项：
-  - ① 仅启动前端 `radish.client`
-  - ② 仅启动后端 `Radish.Api`（默认监听 `https://localhost:7110` 与 `http://localhost:5165`）
-  - ③ 仅启动 Gateway `Radish.Gateway`（默认监听 `https://localhost:5001` 与 `http://localhost:5000`）
-  - ④ 启动后端 + Gateway
-  - ⑤ 全部启动（前端 + 后端 + Gateway）
-  - ⑥ 执行 `Radish.Api.Tests` 单元测试
-- 如需自定义配置，可在运行脚本前设置 `Configuration`（PowerShell 参数）或 `CONFIGURATION` 环境变量（Shell 脚本）。
+- `start.ps1`（Windows/PowerShell）与 `start.sh`（Linux/macOS）提供交互式菜单，统一启动/组合 API、Gateway、前端、文档站与控制台等服务。
+- 当前菜单大致包含两类选项：
+  - **单服务**：仅启动 `Radish.Api` / `Radish.Gateway` / `radish.client`（前端）/ `radish.docs`（文档 dev）/ `radish.console`（控制台）或执行 `Radish.Api.Tests`。
+  - **组合启动**：如 "Gateway + API"、"Gateway + frontend"、"Gateway + docs"、"Gateway + console"、"Gateway + API + frontend"、"Gateway + API + frontend + console" 以及“一键启动全部”。
+- 如需自定义构建配置，可在运行脚本前设置 `Configuration`（PowerShell 参数）或 `CONFIGURATION` 环境变量（Shell 脚本）。
 
 ### 分层视图
 

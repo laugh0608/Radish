@@ -263,10 +263,9 @@ npm run docs:build --prefix radish.docs
 
 构建完成后，文档站点的静态文件会输出到：
 
-- `Radish.Gateway/DocsSite`
+- `radish.docs/dist`
 
-该目录会被 Gateway 作为独立的静态站点托管。
-
+该目录通常由独立 docs 服务或静态服务器托管；如需让 Gateway 托管静态文档，可将该目录挂载或复制到 `Radish.Gateway/DocsSite`，并在 Gateway 配置中设置对应的 `StaticFolder`。
 ### 步骤 3：在 Gateway 中启用 Docs
 
 建议在 `Radish.Gateway/appsettings.Local.json` 中配置（`Local` 文件已被 Git 忽略，适合放环境差异与敏感信息）：
@@ -293,6 +292,20 @@ npm run docs:build --prefix radish.docs
 - 生产环境：`{GatewayService:PublicUrl}/docs`
 
 > 提示：当 `Docs.Enabled = true` 但 `DocsSite` 目录不存在时，Gateway 会在日志中输出告警并回退到门户页，不会影响其他服务与路由。
+
+### 常见 Gateway 路由一览（开发环境）
+
+在默认本地开发配置下，Gateway 提供以下典型入口：
+
+- `/` → 前端 webOS（radish.client）
+- `/docs` → 在线文档站（radish.docs 构建产物或 dev 代理）
+- `/api` → 后端 API（Radish.Api）
+- `/scalar` → Scalar API 文档 UI（转发到 Radish.Api 的 `/api/docs`）
+- `/console` → 控制台前端（radish.console）
+
+生产环境中，这些路径通常通过反向代理映射到 `{GatewayService.PublicUrl}`，例如：
+
+- `https://radish.com/`、`https://radish.com/docs`、`https://radish.com/console` 等。
 
 ## 排查与清理
 - 若构建时提示 SDK 版本不符，执行 `dotnet --list-sdks` 确认版本或在容器内设置 `DOTNET_NOLOGO=1` 以减少输出。

@@ -27,7 +27,7 @@
 | M8 | 部署与运维 | Dockerfile/Compose、自监控、变更文档 | `docker compose up --build` 一键拉起 PostgreSQL + API + Auth + 前端；文档覆盖常见排障 |
 | M9（暂缓） | Gateway & BFF 策略 | Gateway PoC（Ocelot 路由 + 认证透传）与聚合 API 设计，仅在多服务/多入口明确后启动 | 在 `DevelopmentLog` 记录启动审批 + 回滚预案；保证现有 API 维持直连能力 |
 
-> 当前迭代聚焦 M3-M4 的 Radish.Auth 与 WebOS OIDC 接入。Gateway 相关任务被移至 M9，并标记为“暂缓”，除保留 Header/Token 兼容性外不投入实现资源。
+> 当前迭代聚焦 M3-M4 的 Radish.Auth 与 WebOS OIDC 接入。Gateway 完整能力（路由转发/聚合/BFF 等）仍排在 M9 之后的专门迭代，但 **Phase 0（Gateway 门户 + 健康检查 + `/docs` 在线文档入口）已经提前在当前代码中落地**，并作为本地开发的统一入口使用。
 
 ## 按周计划
 
