@@ -154,7 +154,7 @@ cp Radish.Api/appsettings.Local.example.json Radish.Api/appsettings.Local.json
 dotnet run --project Radish.Api
 ```
 
-For detailed configuration instructions, see [docs/ConfigurationGuide.md](docs/ConfigurationGuide.md).
+For detailed configuration instructions, see [ConfigurationGuide.md](radish.docs/docs/ConfigurationGuide.md).
 
 ### Reading Configuration
 ```csharp
@@ -341,7 +341,7 @@ Copy the compiled library to `Radish.Api/bin/Debug/net10.0/` for runtime loading
 
 ## Documentation
 
-Comprehensive docs in `docs/`:
+Comprehensive docs in `radish.docs/docs/`:
 - `DevelopmentSpecifications.md` - Directory structure, layering, dependency rules
 - `DevelopmentFramework.md` - Overall architecture, tech decisions, milestones
 - `DevelopmentPlan.md` - Weekly delivery plan
