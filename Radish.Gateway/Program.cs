@@ -57,6 +57,27 @@ if (!string.IsNullOrEmpty(apiBaseUrl) && !string.IsNullOrEmpty(apiHealthPath))
         tags: ["downstream", "api"]);
 }
 
+// 通过 Gateway 路径添加 docs 与 console 健康检查（如果配置了网关地址）
+var gatewayPublicUrl = builder.Configuration["GatewayService:PublicUrl"];
+if (!string.IsNullOrEmpty(gatewayPublicUrl))
+{
+    var gatewayBase = gatewayPublicUrl.TrimEnd('/');
+    var docsRequestPath = builder.Configuration["Docs:RequestPath"] ?? "/docs";
+    var consoleRequestPath = "/console";
+
+    var docsHealthUrl = $"{gatewayBase}{docsRequestPath}";
+    healthChecksBuilder.AddUrlGroup(
+        new Uri(docsHealthUrl),
+        name: "docs-service",
+        tags: ["downstream", "docs"]);
+
+    var consoleHealthUrl = $"{gatewayBase}{consoleRequestPath}";
+    healthChecksBuilder.AddUrlGroup(
+        new Uri(consoleHealthUrl),
+        name: "console-service",
+        tags: ["downstream", "console"]);
+}
+
 // ===== AppSettings 工具初始化 =====
 builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
 
