@@ -35,6 +35,46 @@ function Invoke-Step {
     & $Action
 }
 
+function Show-Banner {
+@"
+====================================
+   ____           _ _     _
+  |  _ \ __ _  __| (_)___| |__
+  | |_) / _` |/ _` | / __| '_ \
+  |  _ < (_| | (_| | \__ \ | | |
+  |_| \_\__,_|\__,_|_|___/_| |_|
+        Radish  --by luobo
+====================================
+"@
+}
+
+function Show-Menu {
+    Write-Host
+    Write-Host "Radish dev start menu ($Configuration)"
+    Write-Host "--------------------------------------"
+    Write-Host "[Single services]"
+    Write-Host "  1. Start API           (Radish.Api           @ https://localhost:7110)"
+    Write-Host "  2. Start Gateway       (Radish.Gateway       @ https://localhost:5001)"
+    Write-Host "  3. Start Frontend      (radish.client        @ https://localhost:3000)"
+    Write-Host "  4. Start Docs          (radish.docs          @  http://localhost:3001/docs/)"
+    Write-Host "  5. Start Console       (radish.console       @ https://localhost:3002)"
+    Write-Host "  6. Run unit tests      (Radish.Api.Tests)"
+    Write-Host
+    Write-Host "[Combinations]"
+    Write-Host "  7. Start Gateway + API"
+    Write-Host "  8. Start Gateway + Frontend"
+    Write-Host "  9. Start Gateway + Docs"
+    Write-Host " 10. Start Gateway + Console"
+    Write-Host " 11. Start Gateway + API + Frontend"
+    Write-Host " 12. Start Gateway + API + Frontend + Console"
+    Write-Host " 13. Start ALL (Gateway + API + Frontend + Docs + Console)"
+    Write-Host
+    Write-Host "Hint: combinations run Gateway / frontend / docs / console in separate terminals; this window usually runs API."
+    Write-Host
+}
+
+# ---- Single-service start functions ----
+
 function Start-Backend {
     Push-Location $repoRoot
     try {
@@ -62,22 +102,30 @@ function Start-Backend {
     }
 }
 
-function Start-Frontend {
-    param(
-        [switch]$Detached
-    )
-
-    $command = "Set-Location `"$repoRoot`"; npm run dev --prefix radish.client"
-    if ($Detached) {
-        $shellExe = if ($PSVersionTable.PSEdition -eq 'Core') { "pwsh" } else { "powershell" }
-        Start-Process -FilePath $shellExe -ArgumentList "-NoExit", "-Command", $command | Out-Null
-        Write-Host "Frontend started in a new terminal window (npm run dev --prefix radish.client)."
-        return
+function Start-Gateway {
+    Push-Location $repoRoot
+    try {
+        dotnet run --project (Join-Path $repoRoot "Radish.Gateway/Radish.Gateway.csproj")
     }
+    finally {
+        Pop-Location
+    }
+}
 
+function Start-Frontend {
     Push-Location $repoRoot
     try {
         npm run dev --prefix radish.client
+    }
+    finally {
+        Pop-Location
+    }
+}
+
+function Start-Docs {
+    Push-Location $repoRoot
+    try {
+        npm run docs:dev --prefix radish.docs
     }
     finally {
         Pop-Location
@@ -106,47 +154,97 @@ function Run-Tests {
     }
 }
 
-Write-Host "Select an action:"
-Write-Host "1. Start frontend (radish.client)"
-Write-Host "2. Start backend (Radish.Api)"
-Write-Host "3. Start both frontend and backend"
-Write-Host "4. Start Gateway (Radish.Gateway)"
-Write-Host "5. Start docs (radish.docs)"
-Write-Host "6. Run unit tests (Radish.Api.Tests)"
-Write-Host "7. Start console (radish.console)"
-$choice = Read-Host "Enter choice (1/2/3/4/5/6/7)"
+# ---- Helper: start command in a new terminal ----
+
+function Start-BackgroundShell {
+    param(
+        [string]$Description,
+        [string]$CommandLine
+    )
+
+    $shellExe = if ($PSVersionTable.PSEdition -eq 'Core') { "pwsh" } else { "powershell" }
+    $args = @(
+        "-NoExit"
+        "-Command"
+        $CommandLine
+    )
+
+    Start-Process -FilePath $shellExe -WorkingDirectory $repoRoot -ArgumentList $args | Out-Null
+    Write-Host "  - $Description"
+}
+
+# ---- Combination start functions ----
+
+function Start-GatewayApi {
+    Write-Host "[Combo] Gateway + API..."
+    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-Backend
+}
+
+function Start-GatewayFrontend {
+    Write-Host "[Combo] Gateway + Frontend..."
+    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Frontend running at https://localhost:3000" "npm run dev --prefix radish.client"
+}
+
+function Start-GatewayDocs {
+    Write-Host "[Combo] Gateway + Docs..."
+    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Docs running at http://localhost:3001/docs/" "npm run docs:dev --prefix radish.docs"
+}
+
+function Start-GatewayConsole {
+    Write-Host "[Combo] Gateway + Console..."
+    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Console running at https://localhost:3002" "npm run dev --prefix radish.console"
+}
+
+function Start-GatewayApiFrontend {
+    Write-Host "[Combo] Gateway + API + Frontend..."
+    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Frontend running at https://localhost:3000" "npm run dev --prefix radish.client"
+    Start-Backend
+}
+
+function Start-GatewayApiFrontendConsole {
+    Write-Host "[Combo] Gateway + API + Frontend + Console..."
+    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Frontend running at https://localhost:3000" "npm run dev --prefix radish.client"
+    Start-BackgroundShell "Console running at https://localhost:3002" "npm run dev --prefix radish.console"
+    Start-Backend
+}
+
+function Start-All {
+    Write-Host "[Combo] ALL: Gateway + API + Frontend + Docs + Console..."
+    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Frontend running at https://localhost:3000" "npm run dev --prefix radish.client"
+    Start-BackgroundShell "Docs running at http://localhost:3001/docs/" "npm run docs:dev --prefix radish.docs"
+    Start-BackgroundShell "Console running at https://localhost:3002" "npm run dev --prefix radish.console"
+    Start-Backend
+}
+
+# ---- Main ----
+
+Show-Banner
+Show-Menu
+$choice = Read-Host "Enter choice number"
 
 switch ($choice) {
-    "1" {
-        Start-Frontend
-    }
-    "2" {
-        Start-Backend
-    }
-    "3" {
-        Start-Frontend -Detached
-        Start-Backend
-    }
-    "4" {
-        dotnet run --project (Join-Path $repoRoot "Radish.Gateway/Radish.Gateway.csproj")
-    }
-    "5" {
-        Push-Location $repoRoot
-        try {
-            npm run docs:dev --prefix radish.docs
-        }
-        finally {
-            Pop-Location
-        }
-    }
-    "6" {
-        Run-Tests
-    }
-    "7" {
-        Start-Console
-    }
+    "1"  { Start-Backend }
+    "2"  { Start-Gateway }
+    "3"  { Start-Frontend }
+    "4"  { Start-Docs }
+    "5"  { Start-Console }
+    "6"  { Run-Tests }
+    "7"  { Start-GatewayApi }
+    "8"  { Start-GatewayFrontend }
+    "9"  { Start-GatewayDocs }
+    "10" { Start-GatewayConsole }
+    "11" { Start-GatewayApiFrontend }
+    "12" { Start-GatewayApiFrontendConsole }
+    "13" { Start-All }
     default {
-        Write-Error "Unknown option: $choice"
+        Write-Error ('Unknown choice: ' + $choice)
         exit 1
     }
 }
