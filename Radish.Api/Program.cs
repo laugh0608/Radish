@@ -1,4 +1,5 @@
 using System.Text;
+using Asp.Versioning;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -16,11 +17,12 @@ using Radish.Extension.PermissionExtension;
 using Radish.Extension.RedisExtension;
 using Radish.Extension.SerilogExtension;
 using Radish.Extension.SqlSugarExtension;
+using Radish.Extension.OpenApiExtension;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Repository;
 using Radish.Service;
-using Scalar.AspNetCore;
+using Serilog;
 using SqlSugar;
 
 // -------------- 容器构建阶段 ---------------
@@ -41,6 +43,7 @@ builder.Host
         config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
         config.AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json",
             optional: true, reloadOnChange: false);
+        config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
         // config.AddConfigurationApollo("appsettings.apollo.json");
     });
 // 2. 绑定 InternalApp 扩展中的环境变量
@@ -70,16 +73,30 @@ builder.Services.AddCors(options =>
 });
 // 注册 Controller 控制器
 builder.Services.AddControllers();
-// 注册 RazorPages 解析
-builder.Services.AddRazorPages();
-// 通过多份 OpenAPI 文档承载 Scalar 的版本切换，文档：https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi("v1"); // Scalar 默认读取 openapi/v1.json
-builder.Services.AddOpenApi("v2"); // 预留第二份文档，方便演进期并行发布
-builder.Services.AddOpenApi(options =>
+// 注册健康检查
+builder.Services.AddHealthChecks();
+// 配置 API 版本控制
+builder.Services.AddApiVersioning(options =>
 {
-    // Scalar 扩展：启用主题、左侧目录等 Transformer
-    options.AddScalarTransformers();
+    // 报告支持的 API 版本
+    options.ReportApiVersions = true;
+    // 当客户端未指定版本时，使用默认版本
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    // 设置默认版本为 1.0
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    // 使用 URL 路径版本控制（推荐）
+    // 例如：/api/v1/User/GetUserList
+})
+.AddMvc() // 添加 MVC 支持
+.AddApiExplorer(options =>
+{
+    // API 版本在 URL 路径中的格式：'v'major[.minor][-status]
+    options.GroupNameFormat = "'v'VVV";
+    // 自动替换 Controller 路由中的版本占位符
+    options.SubstituteApiVersionInUrl = true;
 });
+// 配置 OpenAPI 和 Scalar 文档
+builder.Services.AddScalarSetup();
 // 注册 AddAutoMapper 服务
 builder.Services.AddAutoMapperSetup(builder.Configuration);
 // builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
@@ -153,77 +170,32 @@ app.UseStaticFiles();
 // {
 // }
 app.UseCors(corsPolicyName);
-app.MapOpenApi();
-// 将 Scalar UI 固定映射到 /api/docs，方便与前端门户共存
-app.MapScalarApiReference("/api/docs", options =>
-{
-    options.WithTitle("Radish API Documentation")
-        // 统一主题/外观，保持与桌面化前端一致
-        .WithTheme(ScalarTheme.BluePlanet)
-        .HideClientButton()
-        .ForceDarkMode()
-        .HideDarkModeToggle();
-    //.EnableDarkMode()
-    //.WithClassicLayout()
-    //.HideSearch()
-    //.ShowOperationId()
-    //.ExpandAllTags()
-    //.SortTagsAlphabetically()
-    //.SortOperationsByMethod()
-    //.PreserveSchemaPropertyOrder()
-    // .WithProxy("https://localhost:7110")
-    // .AddServer("https://api.radish.icu", "Production");
-    // 设置默认的 Http 客户端
-    options.WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios);
-    // 自定义多个版本 API 文档集合
-    options
-        .AddDocument("v1", "v1", "/openapi/v1.json", isDefault: true) // 默认文档
-        .AddDocument("v2", "v2", "/openapi/v2.json"); // 双版本切换入口
-    // // Custom local path
-    // options.WithOpenApiRoutePattern("/api-spec/{documentName}.json");
-    // // External URL
-    // options.WithOpenApiRoutePattern("https://api.example.com/openapi/{documentName}.json");
-    // // Static external URL (no placeholder)
-    // options.WithOpenApiRoutePattern("https://registry.scalar.com/@scalar/apis/galaxy?format=json");
-});
-// 配置自定义扩展 js 文件
-// 放置路径：/wwwroot/scalar/config.js
-// app.MapScalarApiReference(options =>
-// {
-//     options.WithJavaScriptConfiguration("/scalar/config.js");
-// });
-// // Access HttpContext for dynamic configuration
-// app.MapScalarApiReference((options, httpContext) =>
-// {
-//     var isAdmin = httpContext.User.IsInRole("Admin");
-//     options.WithTitle(isAdmin ? "Admin API" : "Public API");
-// });
-// // Custom route with HttpContext access
-// app.MapScalarApiReference("/docs", (options, httpContext) =>
-// {
-//     options.WithTitle($"API for {httpContext.User.Identity?.Name}");
-// });
-// app.MapScalarApiReference(options =>
-// {
-//     options.WithBundleUrl("https://cdn.jsdelivr.net/npm/@scalar/api-reference");
-// });
+// 配置 Scalar UI
+app.UseScalarUI();
 app.UseHttpsRedirection();
 app.UseAuthorization();
-app.MapRazorPages();
 app.MapControllers();
-app.MapFallbackToPage("/Index");
+// 映射健康检查端点
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/healthz");
 
-// 输出项目启动标识
-Console.WriteLine(@"
-====================================
-   ____           _ _     _     
-  |  _ \ __ _  __| (_)___| |__  
-  | |_) / _` |/ _` | / __| '_ \ 
-  |  _ < (_| | (_| | \__ \ | | |
-  |_| \_\__,_|\__,_|_|___/_| |_|
-        Radish  --by luobo
-====================================
-");
+// 输出项目启动标识（使用 Serilog，与 Gateway 风格统一）
+app.Lifetime.ApplicationStarted.Register(() =>
+{
+    var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
+
+    Log.Information("====================================");
+    Log.Information("   ____           _ _     _");
+    Log.Information("  |  _ \\ __ _  __| (_)___| |__");
+    Log.Information("  | |_) / _` |/ _` | / __| '_ \\");
+    Log.Information("  |  _ < (_| | (_| | \\__ \\ | | |");
+    Log.Information("  |_| \\\\__,_|\\__,_|_|___/_| |_|");
+    Log.Information("        Radish.Api --by luobo");
+    Log.Information("====================================");
+    Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
+    Log.Information("监听地址: {Urls}", urls);
+    Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
+});
 
 // -------------- App 运行阶段 ---------------
 app.Run();

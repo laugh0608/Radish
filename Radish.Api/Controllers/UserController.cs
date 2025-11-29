@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
@@ -6,11 +7,19 @@ using Radish.Model;
 
 namespace Radish.Api.Controllers;
 
-/// <summary>用户接口控制器</summary>
+/// <summary>
+/// 用户管理控制器
+/// </summary>
+/// <remarks>
+/// 提供用户信息查询、修改等接口。
+/// 所有接口需要通过 JWT 认证和 RadishAuthPolicy 授权策略。
+/// </remarks>
 [ApiController]
-[Route("api/[controller]/[action]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Authorize(Policy = "RadishAuthPolicy")]
+[Tags("用户管理")]
 public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -23,10 +32,22 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    /// 获取全部用户
+    /// 获取全部用户列表
     /// </summary>
-    /// <returns></returns>
+    /// <returns>包含用户列表的响应对象</returns>
+    /// <remarks>
+    /// 查询所有用户信息，不包含已删除的用户。
+    /// 需要认证和授权。
+    /// </remarks>
+    /// <response code="200">查询成功，返回用户列表</response>
+    /// <response code="401">未授权，Token 无效或过期</response>
+    /// <response code="403">禁止访问，权限不足</response>
+    /// <response code="500">服务器内部错误</response>
     [HttpGet]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel> GetUserList()
     {
         var users = await _userService.QueryAsync();
@@ -40,16 +61,35 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    /// 根据 Uuid 获取用户信息
+    /// 根据用户 ID 获取用户信息
     /// </summary>
+    /// <param name="id">用户 ID（长整型）</param>
+    /// <returns>包含用户信息的响应对象</returns>
     /// <remarks>
-    /// <para>如果使用了路径参数，那么在 ApiModule 表中存 URL 的时候必须加上正则匹配：</para>
-    /// <para>例如：/api/GetById/\d+</para>
-    /// <para>api 前面的根符号别忘了</para>
+    /// <para>根据用户 ID 查询单个用户的详细信息。</para>
+    /// <para><strong>重要提示：</strong></para>
+    /// <list type="bullet">
+    /// <item>使用了路径参数 {id}</item>
+    /// <item>在 ApiModule 权限表中配置 URL 时必须使用正则匹配</item>
+    /// <item>示例：<c>/api/User/GetUserById/\d+</c></item>
+    /// <item>URL 必须以 <c>/</c> 开头</item>
+    /// </list>
+    /// <para>请求示例：</para>
+    /// <code>
+    /// GET /api/User/GetUserById/123456789
+    /// </code>
     /// </remarks>
-    /// <param name="id">用户 Id</param>
-    /// <returns></returns>
+    /// <response code="200">查询成功，返回用户信息</response>
+    /// <response code="401">未授权，Token 无效或过期</response>
+    /// <response code="403">禁止访问，权限不足</response>
+    /// <response code="404">用户不存在</response>
+    /// <response code="500">服务器内部错误</response>
     [HttpGet("{id:long}")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel> GetUserById(long id)
     {
         // TODO: 这里瞎写的，后面要修改的
@@ -64,10 +104,28 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
-    /// 根据 HTTP 上下文来获取用户信息
+    /// 获取当前登录用户信息
     /// </summary>
-    /// <returns></returns>
+    /// <returns>包含当前用户基本信息的响应对象</returns>
+    /// <remarks>
+    /// <para>从 JWT Token 的 HttpContext 中解析当前登录用户信息。</para>
+    /// <para>返回信息包括：</para>
+    /// <list type="bullet">
+    /// <item>userId: 用户 ID</item>
+    /// <item>userName: 用户名</item>
+    /// <item>tenantId: 租户 ID</item>
+    /// </list>
+    /// <para>无需传递任何参数，自动从当前请求上下文中获取。</para>
+    /// </remarks>
+    /// <response code="200">查询成功，返回当前用户信息</response>
+    /// <response code="401">未授权，Token 无效或过期</response>
+    /// <response code="403">禁止访问，权限不足</response>
+    /// <response code="500">服务器内部错误</response>
     [HttpGet]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel> GetUserByHttpContext()
     {
         await Task.CompletedTask;

@@ -7,12 +7,15 @@
     <File Path="docs/README.md" />
     <File Path="docs\AuthenticationGuide.md" />
     <File Path="docs\DeploymentGuide.md" />
+    <File Path="docs\FrontendDesign.md" />
+    <File Path="docs\GatewayPlan.md" />
+    <File Path="docs\ConfigurationGuide.md" />
+    <File Path="docs\OpenPlatformGuide.md" />
   </Folder>
   <Folder Name="/solution/">
     <File Path=".dockerignore" />
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
-    <File Path="global.json" />
     <File Path="LICENSE.txt" />
     <File Path="README.md" />
     <File Path="AGENTS.md" />
@@ -21,6 +24,7 @@
     <File Path="Radish.sln.DotSettings.user" />
     <File Path="Radish.slnLaunch.user" />
     <File Path="Radish.slnx" />
+    <File Path="CLAUDE.md" />
   </Folder>
   <Folder Name="/test/">
     <Project Path="Radish.Api.Tests\Radish.Api.Tests.csproj" />
@@ -29,6 +33,7 @@
   <Project Path="Radish.Common/Radish.Common.csproj" />
   <Project Path="Radish.Core/Radish.Core.csproj" />
   <Project Path="Radish.Extension/Radish.Extension.csproj" />
+  <Project Path="Radish.Gateway/Radish.Gateway.csproj" />
   <Project Path="Radish.Infrastructure/Radish.Infrastructure.csproj" />
   <Project Path="Radish.IRepository/Radish.IRepository.csproj" />
   <Project Path="Radish.IService/Radish.IService.csproj" />

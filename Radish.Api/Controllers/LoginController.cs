@@ -1,5 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common;
 using Radish.Common.HelpTool;
@@ -12,9 +14,18 @@ using Serilog;
 
 namespace Radish.Api.Controllers;
 
+/// <summary>
+/// 登录认证控制器
+/// </summary>
+/// <remarks>
+/// 提供用户登录、获取 Token 等认证相关接口。
+/// 所有接口均返回统一的 MessageModel 格式。
+/// </remarks>
 [ApiController]
-[Route("api/[controller]/[action]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[Tags("认证管理")]
 public class LoginController : ControllerBase
 {
     private readonly IUserService _userService;
@@ -29,12 +40,52 @@ public class LoginController : ControllerBase
     }
 
     /// <summary>
-    /// 使用用户名和密码获取登录 JWT Token
+    /// 用户登录获取 JWT Token
     /// </summary>
-    /// <param name="name">明文用户名</param>
-    /// <param name="pass">明文密码</param>
-    /// <returns>TokenInfoViewModel</returns>
+    /// <param name="name">用户名（明文）</param>
+    /// <param name="pass">密码（明文，传输时建议使用 RSA 加密）</param>
+    /// <returns>包含 JWT Token 信息的响应对象</returns>
+    /// <remarks>
+    /// <para>登录流程：</para>
+    /// <list type="number">
+    /// <item>密码使用 MD5 加密后与数据库比对</item>
+    /// <item>验证成功后生成包含用户信息和角色的 JWT Token</item>
+    /// <item>Token 有效期为 12 小时</item>
+    /// </list>
+    /// <para>请求示例：</para>
+    /// <code>
+    /// GET /api/Login/GetJwtToken?name=admin&amp;pass=123456
+    /// </code>
+    /// <para>成功响应示例：</para>
+    /// <code>
+    /// {
+    ///   "statusCode": 200,
+    ///   "isSuccess": true,
+    ///   "messageInfo": "获取成功",
+    ///   "responseData": {
+    ///     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    ///     "expires": 43200
+    ///   }
+    /// }
+    /// </code>
+    /// <para>失败响应示例：</para>
+    /// <code>
+    /// {
+    ///   "statusCode": 401,
+    ///   "isSuccess": false,
+    ///   "messageInfo": "认证失败",
+    ///   "responseData": null
+    /// }
+    /// </code>
+    /// </remarks>
+    /// <response code="200">登录成功，返回 Token 信息</response>
+    /// <response code="401">认证失败，用户名或密码错误</response>
+    /// <response code="500">服务器内部错误</response>
     [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel<TokenInfoVo>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel<TokenInfoVo>), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel<TokenInfoVo>> GetJwtToken(string name = "", string pass = "")
     {
         // string jwtStr = string.Empty;
