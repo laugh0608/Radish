@@ -3,8 +3,6 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "predev": "node scripts/setup-docs-link.js",
-    "prebuild": "node scripts/setup-docs-link.js",
     "dev": "vitepress dev .",
     "build": "vitepress build .",
     "preview": "vitepress preview .",

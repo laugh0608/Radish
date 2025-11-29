@@ -1,18 +1,21 @@
 ---
-title: Radish 文档
+title: Radish 文档入口
 ---
 
-# Radish 文档
+# Radish 文档入口
 
-欢迎来到 Radish 项目文档。本页作为文档首页，汇总常用入口：
+Radish 文档已迁移至 `radish.docs/docs/` 目录。
 
-- [开发规范](./DevelopmentSpecifications.md)
-- [开发框架说明](./DevelopmentFramework.md)
-- [认证与权限指南](./AuthenticationGuide.md)
-- [前端设计说明](./FrontendDesign.md)
-- [Gateway 规划](./GatewayPlan.md)
-- [部署指南](./DeploymentGuide.md)
-- [开发计划](./DevelopmentPlan.md)
-- [开发日志](./DevelopmentLog.md)
+常用链接：
 
-> 提示：以上文档均位于仓库根目录的 `docs/` 目录下，VitePress 会以该目录为内容源构建在线文档站。
+- [文档首页](../radish.docs/docs/index.md)
+- [开发规范](../radish.docs/docs/DevelopmentSpecifications.md)
+- [开发框架说明](../radish.docs/docs/DevelopmentFramework.md)
+- [认证与权限指南](../radish.docs/docs/AuthenticationGuide.md)
+- [前端设计说明](../radish.docs/docs/FrontendDesign.md)
+- [Gateway 规划](../radish.docs/docs/GatewayPlan.md)
+- [部署指南](../radish.docs/docs/DeploymentGuide.md)
+- [开发计划](../radish.docs/docs/DevelopmentPlan.md)
+- [开发日志](../radish.docs/docs/DevelopmentLog.md)
+
+> 说明：以上链接均指向 `radish.docs/docs` 目录，在线文档站也基于该目录构建。

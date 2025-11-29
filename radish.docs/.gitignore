@@ -3,8 +3,6 @@
 .vitepress/dist
 node_modules
 
-# 文档目录符号链接（自动生成，不提交）
-docs
 
 # npm 日志
 npm-debug.log*

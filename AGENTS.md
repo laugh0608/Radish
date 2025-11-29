@@ -3,7 +3,7 @@
 ## 快速认知
 - Radish 是基于 ASP.NET Core 10 + SQLSugar + PostgreSQL（本地默认 SQLite）的分层内容社区，前端为 React 19 + Vite + TypeScript，网关 Radish.Gateway 承载门户及后续路由能力。
 - 当前协作主分支为 `dev`；所有沟通、文档说明默认使用中文（代码与技术标识除外）。
-- `Radish.slnx` 收纳全部后端项目，`docs/` 保持规范/计划/日志的唯一真相源；如需了解架构与需求，优先查阅 `docs/DevelopmentFramework.md` 与 `docs/README.md` 的索引。
+- `Radish.slnx` 收纳全部后端项目，`radish.docs/docs/` 保持规范/计划/日志的唯一真相源；如需了解架构与需求，优先查阅 `radish.docs/docs/DevelopmentFramework.md` 与 `radish.docs/docs/README.md` 的索引（根目录 `docs/` 提供跳转入口，方便 GitHub 浏览）。
 
 ## 仓库结构与分层职责
 - 目录要点：`Radish.Api`（Web API 宿主）、`Radish.Gateway`（门户&未来网关）、`Radish.Service`/`Radish.Repository`/`Radish.Core`/`Radish.Model`（业务分层）、`Radish.Common`（通用工具，仅能引用外部包）、`Radish.Extension`（宿主引用的扩展/Autofac/AutoMapper/Redis/Serilog 注册）、`Radish.IService` 与 `Radish.IRepository`（接口契约）、`Radish.Shared`（跨端常量/DTO）、`Radish.Api.Tests`（xUnit 示例）、`radish.client`（React 应用）、`docs/`（所有文档）、`Radish.Core/test_lib`（Rust POC，正式原生库放 `native/rust`）。
@@ -28,8 +28,8 @@
 
 ## 版本、里程碑与分支策略
 - 遵循语义化版本号 `vMAJOR.MINOR.PATCH`，当日热修或阶段性合并可追加日期后缀 `v1.2.3.YYMMDD`。正式发布前移除日期后缀并在 GitHub Release 中记录 Feature/Bug Fix/Performance/Breaking Changes/Dependencies。
-- 发布前需：规划版本 → 代码冻结 → 完整测试 → 同步更新 `Radish.Api/Radish.Api.csproj` `<Version>` 与 `radish.client/package.json` `version` → 打标签（`git tag -a vX.Y.Z`）→ 推送 Release → 按 `docs/DeploymentGuide.md` 部署。
-- 项目里程碑与范围参阅 `docs/DevelopmentFramework.md`、`docs/DevelopmentPlan.md`，重大变更请同步到 `docs/DevelopmentLog.md`。
+- 发布前需：规划版本 → 代码冻结 → 完整测试 → 同步更新 `Radish.Api/Radish.Api.csproj` `<Version>` 与 `radish.client/package.json` `version` → 打标签（`git tag -a vX.Y.Z`）→ 推送 Release → 按 `radish.docs/docs/DeploymentGuide.md` 部署。
+- 项目里程碑与范围参阅 `radish.docs/docs/DevelopmentFramework.md`、`radish.docs/docs/DevelopmentPlan.md`，重大变更请同步到 `radish.docs/docs/DevelopmentLog.md`。
 
 ## 编码规范与架构约束
 - “先接口后实现”：新增服务/仓储必须先在 `Radish.IService`/`Radish.IRepository` 声明，再在 `Radish.Service`/`Radish.Repository` 扩展；继承 `BaseService`/`BaseRepository` 以复用通用逻辑。
@@ -56,12 +56,12 @@
 - 关键链路需补充 `.http` 手工验证、SQLSugar Profile 和 Gateway 健康页检查；性能或安全改动要记录验证方法。
 
 ## 文档、协作与提交要求
-- 文档更新：任何流程/配置/脚本/规范变更同步到 `docs/`（如 DevelopmentSpecifications、ConfigurationGuide、DeploymentGuide），并在 `docs/DevelopmentLog.md` 记录关键节点。
+- 文档更新：任何流程/配置/脚本/规范变更同步到 `radish.docs/docs/`（如 DevelopmentSpecifications、ConfigurationGuide、DeploymentGuide），并在 `radish.docs/docs/DevelopmentLog.md` 记录关键节点（根目录 `docs/` 作为入口即可）。
 - PR 说明需包含：变更摘要、测试结果、关联 Issue；前端 UI 贴截图/GIF，后端接口提供 `.http` 示例。多语言文档优先中文描述，可附英文注解。
 - 提交遵循 Conventional Commits（`feat:`、`fix:`、`chore:`、`docs:` 等），描述具体变更，禁止使用诸如“update files”或带 AI 签名/Co-Authored 标记。一次提交聚焦单一主题，必要时拆分。
-- 合规提醒：禁止把真实连接串、证书、`.user` 文件或其他敏感数据加入版本库；正式部署前依据 `docs/DeploymentGuide.md` 准备 Docker/Compose 配置与探针。
+- 合规提醒：禁止把真实连接串、证书、`.user` 文件或其他敏感数据加入版本库；正式部署前依据 `radish.docs/docs/DeploymentGuide.md` 准备 Docker/Compose 配置与探针。
 
 ## 参考资料
-- 设计与规范：`docs/DevelopmentFramework.md`、`docs/DevelopmentSpecifications.md`、`docs/FrontendDesign.md`、`docs/GatewayPlan.md`、`docs/AuthenticationGuide.md`、`docs/ConfigurationGuide.md`、`docs/DeploymentGuide.md`。
-- 计划与记录：`docs/DevelopmentPlan.md`（里程碑/周计划）、`docs/DevelopmentLog.md`（日更日志）。
+- 设计与规范：`radish.docs/docs/DevelopmentFramework.md`、`radish.docs/docs/DevelopmentSpecifications.md`、`radish.docs/docs/FrontendDesign.md`、`radish.docs/docs/GatewayPlan.md`、`radish.docs/docs/AuthenticationGuide.md`、`radish.docs/docs/ConfigurationGuide.md`、`radish.docs/docs/DeploymentGuide.md`。
+- 计划与记录：`radish.docs/docs/DevelopmentPlan.md`（里程碑/周计划）、`radish.docs/docs/DevelopmentLog.md`（日更日志）。
 - 运行指南：根目录 `README.md`（快速开始）、`CLAUDE.md`（AI 协作者说明，包含命令、分层图与常见陷阱）。

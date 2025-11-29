@@ -1,7 +1,7 @@
 # Radish
 
 <p align="center">
-  <img src="./docs/images/RadishAcg-256.png" alt="萝卜娘" width="256">
+  <img src="./radish.docs/docs/images/RadishAcg-256.png" alt="萝卜娘" width="256">
 </p>
 
 Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，前端使用 React 19（Vite + TypeScript），采用桌面化 UI 设计理念。
@@ -79,22 +79,22 @@ Radish/
 
 ## 文档导航
 
-完整的开发文档位于 `docs/` 目录：
+完整的开发文档现位于 `radish.docs/docs/` 目录（同时也是在线文档站的源文件）：
 
 ### 核心文档
-- 📘 [**开发规范**](docs/DevelopmentSpecifications.md) - 目录职责、分层依赖、代码约定
-- 📗 [**架构设计**](docs/DevelopmentFramework.md) - 技术选型、分层架构、数据持久化
-- 📙 [**开发计划**](docs/DevelopmentPlan.md) - 里程碑与迭代计划
-- 📕 [**开发日志**](docs/DevelopmentLog.md) - 阶段性进展与决策记录
+- 📘 [**开发规范**](radish.docs/docs/DevelopmentSpecifications.md) - 目录职责、分层依赖、代码约定
+- 📗 [**架构设计**](radish.docs/docs/DevelopmentFramework.md) - 技术选型、分层架构、数据持久化
+- 📙 [**开发计划**](radish.docs/docs/DevelopmentPlan.md) - 里程碑与迭代计划
+- 📕 [**开发日志**](radish.docs/docs/DevelopmentLog.md) - 阶段性进展与决策记录
 
 ### 专项文档
-- 🔐 [**认证授权指南**](docs/AuthenticationGuide.md) - JWT 认证、角色权限、API 授权
-- 🎨 [**前端设计**](docs/FrontendDesign.md) - 桌面化 UI、React 架构、跨端策略
-- 🚪 [**Gateway 规划**](docs/GatewayPlan.md) - API 网关改造方案与实施路线
-- 🚀 [**部署指南**](docs/DeploymentGuide.md) - 容器化、CI/CD、生产部署
+- 🔐 [**认证授权指南**](radish.docs/docs/AuthenticationGuide.md) - JWT 认证、角色权限、API 授权
+- 🎨 [**前端设计**](radish.docs/docs/FrontendDesign.md) - 桌面化 UI、React 架构、跨端策略
+- 🚪 [**Gateway 规划**](radish.docs/docs/GatewayPlan.md) - API 网关改造方案与实施路线
+- 🚀 [**部署指南**](radish.docs/docs/DeploymentGuide.md) - 容器化、CI/CD、生产部署
 
 ### 其他资源
-- 📖 [**文档索引**](docs/README.md) - 所有文档的完整目录
+- 📖 [**文档索引**](radish.docs/docs/README.md) - 所有文档的完整目录
 - 🤝 [**贡献指南**](AGENTS.md) - 参与项目开发的指引
 - 🤖 [**AI 开发助手配置**](CLAUDE.md) - Claude Code 工作指南
 
@@ -146,7 +146,7 @@ export Redis__Enable=true
 export Redis__ConnectionString="localhost:6379"
 ```
 
-更多配置细节参见 [开发规范](docs/DevelopmentSpecifications.md)。
+更多配置细节参见 [开发规范](radish.docs/docs/DevelopmentSpecifications.md)。
 
 ## 开发规范要点
 
@@ -156,17 +156,17 @@ export Redis__ConnectionString="localhost:6379"
 - **配置统一读取**：使用 `AppSettings.RadishApp()` 或 `IOptions<T>`
 - **日志使用 Serilog 静态方法**：避免注入 `ILogger<T>`（除非框架要求）
 
-完整规范详见 [DevelopmentSpecifications.md](docs/DevelopmentSpecifications.md)。
+完整规范详见 [DevelopmentSpecifications.md](radish.docs/docs/DevelopmentSpecifications.md)。
 
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
 请确保：
-1. 代码遵循项目 [开发规范](docs/DevelopmentSpecifications.md)
+1. 代码遵循项目 [开发规范](radish.docs/docs/DevelopmentSpecifications.md)
 2. 单元测试通过（`dotnet test`）
 3. 提交前运行 `npm run lint --prefix radish.client`
-4. 在 [DevelopmentLog.md](docs/DevelopmentLog.md) 中记录重大变更
+4. 在 [DevelopmentLog.md](radish.docs/docs/DevelopmentLog.md) 中记录重大变更
 
 ## 许可
 
@@ -174,6 +174,6 @@ export Redis__ConnectionString="localhost:6379"
 
 ## 相关链接
 
-- [在线文档](docs/README.md) - 完整文档目录
+- [在线文档](radish.docs/docs/README.md) - 完整文档目录
 - [API 文档](https://localhost:7110/api/docs) - Scalar 交互式文档（需启动后端）
-- [项目计划](docs/DevelopmentPlan.md) - 迭代规划与里程碑
+- [项目计划](radish.docs/docs/DevelopmentPlan.md) - 迭代规划与里程碑
