@@ -75,7 +75,7 @@ Gateway 负责：
    - API 项目回归纯接口服务定位
 
 5. **更新启动脚本**
-   - 修改 `local-start.ps1` 和 `local-start.sh`，添加"启动 Gateway"选项
+   - 修改 `start.ps1` 和 `start.sh`，添加"启动 Gateway"选项
    - 提供"同时启动 Backend + Gateway"的组合选项
    - 更新文档说明新的访问入口
 
@@ -168,11 +168,11 @@ Gateway 负责：
 - [ ] 保留 `app.UseStaticFiles()`（用于 Scalar 静态资源）
 
 **0.6 更新启动脚本**
-- [ ] 更新 `local-start.ps1`，添加"3. Start Gateway"选项
+- [ ] 更新 `start.ps1`，添加"3. Start Gateway"选项
 - [ ] 添加"4. Start Backend + Gateway"组合选项
 - [ ] 添加"5. Start all (frontend + backend + Gateway)"全部启动选项
 - [ ] 调整原有选项编号（4 → 6: Run tests）
-- [ ] 更新 `local-start.sh`，实现相同的选项调整
+- [ ] 更新 `start.sh`，实现相同的选项调整
 - [ ] 在脚本中定义 Gateway 启动函数
 
 **0.7 文档更新**
@@ -882,7 +882,7 @@ builder.Host.UseSerilog((context, services, configuration) =>
 
 ### 11.4 启动脚本整合
 
-**更新 local-start.ps1**：
+**更新 start.ps1**：
 
 ```powershell
 Write-Host "Select an action:"

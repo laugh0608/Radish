@@ -195,8 +195,8 @@
   export const oidcConfig = {
     authority: 'https://localhost:7100',
     client_id: 'radish-client',
-    redirect_uri: 'https://localhost:58794/callback',
-    post_logout_redirect_uri: 'https://localhost:58794',
+    redirect_uri: 'https://localhost:3000/callback',
+    post_logout_redirect_uri: 'https://localhost:3000',
     scope: 'openid profile radish-api offline_access',
     response_type: 'code',
     automaticSilentRenew: true

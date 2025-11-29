@@ -44,7 +44,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj
 # Install dependencies (run from repo root)
 npm install --prefix radish.client
 
-# Start dev server (default: https://localhost:58794)
+# Start dev server (default: https://localhost:3000)
 npm run dev --prefix radish.client
 
 # Build for production
@@ -56,16 +56,13 @@ npm run lint --prefix radish.client
 
 ### Quick Start Scripts
 ```bash
-# Interactive menu to start frontend, backend, gateway, or run tests
-# Options after Phase 0:
-# 1. Start frontend (radish.client)
-# 2. Start backend (Radish.Api)
-# 3. Start Gateway (Radish.Gateway)
-# 4. Start backend + Gateway
-# 5. Start all (frontend + backend + Gateway)
-# 6. Run unit tests
-pwsh ./local-start.ps1    # Windows/PowerShell
-./local-start.sh          # Linux/macOS
+# Interactive menu to start API, Gateway, frontend, docs, console or run tests
+# Current options include:
+# - Single services: API / Gateway / frontend / docs / console / tests
+# - Combinations: Gateway+API, Gateway+frontend, Gateway+docs, Gateway+console,
+#   Gateway+API+frontend, Gateway+API+frontend+console, start ALL
+pwsh ./start.ps1    # Windows/PowerShell
+./start.sh          # Linux/macOS
 ```
 
 ### Running Single Tests

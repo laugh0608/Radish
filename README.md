@@ -25,8 +25,8 @@ Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NE
 
 ```bash
 # 方式 1：使用一键脚本（推荐）
-pwsh ./local-start.ps1    # Windows/PowerShell
-./local-start.sh          # Linux/macOS
+pwsh ./start.ps1    # Windows/PowerShell
+./start.sh          # Linux/macOS
 
 # 方式 2：手动启动后端
 dotnet restore
@@ -40,7 +40,7 @@ npm run dev --prefix radish.client
 启动后：
 - **后端 API**：https://localhost:7110 或 http://localhost:5165
 - **API 文档**：https://localhost:7110/api/docs (Scalar UI)
-- **前端页面**：https://localhost:58794
+- **前端页面**：https://localhost:3000
 
 ### 常用命令
 
