@@ -53,8 +53,8 @@ function Show-Menu {
     Write-Host "Radish dev start menu ($Configuration)"
     Write-Host "--------------------------------------"
     Write-Host "[Single services]"
-    Write-Host "  1. Start API           (Radish.Api           @ https://localhost:7110)"
-    Write-Host "  2. Start Gateway       (Radish.Gateway       @ https://localhost:5001)"
+    Write-Host "  1. Start API           (Radish.Api           @ https://localhost:5101)"
+    Write-Host "  2. Start Gateway       (Radish.Gateway       @ https://localhost:5000)"
     Write-Host "  3. Start Frontend      (radish.client        @ https://localhost:3000)"
     Write-Host "  4. Start Docs          (radish.docs          @  http://localhost:3001/docs/)"
     Write-Host "  5. Start Console       (radish.console       @ https://localhost:3002)"
@@ -91,7 +91,7 @@ function Start-Backend {
     Push-Location $repoRoot
     try {
         Write-Host "Starting backend (Radish.Api) with configuration $Configuration."
-        $env:ASPNETCORE_URLS = "https://localhost:7110;http://localhost:5165"
+        $env:ASPNETCORE_URLS = "https://localhost:5101;http://localhost:5100"
 
         Invoke-Step "dotnet clean ($Configuration)" {
             dotnet clean $projectPath -c $Configuration
@@ -118,7 +118,7 @@ function Start-BackendNoBuild {
     Push-Location $repoRoot
     try {
         Write-Host "Starting backend (Radish.Api) without build."
-        $env:ASPNETCORE_URLS = "https://localhost:7110;http://localhost:5165"
+        $env:ASPNETCORE_URLS = "https://localhost:5101;http://localhost:5100"
 
         Invoke-Step "dotnet run API (no-build)" {
             dotnet run --no-build --project $projectPath -c $Configuration --launch-profile https
@@ -215,35 +215,35 @@ function Start-BackgroundShell {
 function Start-GatewayApi {
     Write-Host "[Combo] Gateway + API..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
     Start-BackendNoBuild
 }
 
 function Start-GatewayFrontend {
     Write-Host "[Combo] Gateway + Frontend..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
     Start-BackgroundShell "Frontend running at https://localhost:3000" "npm run dev --prefix radish.client"
 }
 
 function Start-GatewayDocs {
     Write-Host "[Combo] Gateway + Docs..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
     Start-BackgroundShell "Docs running at http://localhost:3001/docs/" "npm run docs:dev --prefix radish.docs"
 }
 
 function Start-GatewayConsole {
     Write-Host "[Combo] Gateway + Console..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
     Start-BackgroundShell "Console running at https://localhost:3002" "npm run dev --prefix radish.console"
 }
 
 function Start-GatewayApiFrontend {
     Write-Host "[Combo] Gateway + API + Frontend..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
     Start-BackgroundShell "Frontend running at https://localhost:3000" "npm run dev --prefix radish.client"
     Start-BackendNoBuild
 }
@@ -251,7 +251,7 @@ function Start-GatewayApiFrontend {
 function Start-GatewayApiFrontendConsole {
     Write-Host "[Combo] Gateway + API + Frontend + Console..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
     Start-BackgroundShell "Frontend running at https://localhost:3000" "npm run dev --prefix radish.client"
     Start-BackgroundShell "Console running at https://localhost:3002" "npm run dev --prefix radish.console"
     Start-BackendNoBuild
@@ -260,7 +260,7 @@ function Start-GatewayApiFrontendConsole {
 function Start-All {
     Write-Host "[Combo] ALL: Gateway + API + Frontend + Docs + Console..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5001" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
     Start-BackgroundShell "Frontend running at https://localhost:3000" "npm run dev --prefix radish.client"
     Start-BackgroundShell "Docs running at http://localhost:3001/docs/" "npm run docs:dev --prefix radish.docs"
     Start-BackgroundShell "Console running at https://localhost:3002" "npm run dev --prefix radish.console"

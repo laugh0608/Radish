@@ -25,10 +25,10 @@ Radish is a modern community platform built with a self-designed layered archite
 # Build the solution
 dotnet build Radish.slnx -c Debug
 
-# Run the API (listens on https://localhost:7110 and http://localhost:5165)
+# Run the API (listens on https://localhost:5101 and http://localhost:5100)
 dotnet run --project Radish.Api/Radish.Api.csproj
 
-# Run the Gateway (listens on https://localhost:5001 and http://localhost:5000)
+# Run the Gateway (listens on https://localhost:5000 and http://localhost:5001)
 dotnet run --project Radish.Gateway/Radish.Gateway.csproj
 
 # Hot reload during development

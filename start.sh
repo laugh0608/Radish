@@ -48,8 +48,8 @@ print_menu() {
   echo "Radish 开发启动菜单 ($CONFIGURATION)"
   echo "------------------------------------"
   echo "[单服务]"
-  echo "  1. 启动 API           (Radish.Api           @ https://localhost:7110)"
-  echo "  2. 启动 Gateway       (Radish.Gateway       @ https://localhost:5001)"
+  echo "  1. 启动 API           (Radish.Api           @ https://localhost:5101)"
+  echo "  2. 启动 Gateway       (Radish.Gateway       @ https://localhost:5000)"
   echo "  3. 启动 Frontend      (radish.client        @ https://localhost:3000)"
   echo "  4. 启动 Docs          (radish.docs          @  http://localhost:3001/docs/)"
   echo "  5. 启动 Console       (radish.console       @ https://localhost:3002)"
@@ -80,7 +80,7 @@ build_all() {
 start_api() {
   (
     cd "$ROOT_DIR"
-    export ASPNETCORE_URLS="https://localhost:7110;http://localhost:5165"
+    export ASPNETCORE_URLS="https://localhost:5101;http://localhost:5100"
 
     invoke_step "dotnet clean ($CONFIGURATION)" dotnet clean "$API_PROJECT" -c "$CONFIGURATION"
     invoke_step "dotnet restore" dotnet restore "$API_PROJECT"
@@ -92,7 +92,7 @@ start_api() {
 start_api_no_build() {
   (
     cd "$ROOT_DIR"
-    export ASPNETCORE_URLS="https://localhost:7110;http://localhost:5165"
+    export ASPNETCORE_URLS="https://localhost:5101;http://localhost:5100"
     invoke_step "dotnet run API (no-build)" dotnet run --no-build --project "$API_PROJECT" -c "$CONFIGURATION" --launch-profile https
   )
 }
@@ -145,7 +145,7 @@ start_gateway_api() {
   echo "[组合] 启动 Gateway + API..."
   build_all
   start_gateway_no_build &
-  echo "  - Gateway 已在后台启动 (https://localhost:5001)."
+  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_api_no_build
 }
 
@@ -153,7 +153,7 @@ start_gateway_frontend() {
   echo "[组合] 启动 Gateway + Frontend..."
   build_all
   start_gateway_no_build &
-  echo "  - Gateway 已在后台启动 (https://localhost:5001)."
+  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_frontend
 }
 
@@ -161,7 +161,7 @@ start_gateway_docs() {
   echo "[组合] 启动 Gateway + Docs..."
   build_all
   start_gateway_no_build &
-  echo "  - Gateway 已在后台启动 (https://localhost:5001)."
+  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_docs
 }
 
@@ -169,7 +169,7 @@ start_gateway_console() {
   echo "[组合] 启动 Gateway + Console..."
   build_all
   start_gateway_no_build &
-  echo "  - Gateway 已在后台启动 (https://localhost:5001)."
+  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_console
 }
 
@@ -177,7 +177,7 @@ start_gateway_api_frontend() {
   echo "[组合] 启动 Gateway + API + Frontend..."
   build_all
   start_gateway_no_build &
-  echo "  - Gateway 已在后台启动 (https://localhost:5001)."
+  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_frontend &
   echo "  - Frontend 已在后台启动 (https://localhost:3000)."
   start_api_no_build
@@ -187,7 +187,7 @@ start_gateway_api_frontend_console() {
   echo "[组合] 启动 Gateway + API + Frontend + Console..."
   build_all
   start_gateway_no_build &
-  echo "  - Gateway 已在后台启动 (https://localhost:5001)."
+  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_frontend &
   echo "  - Frontend 已在后台启动 (https://localhost:3000)."
   start_console &
@@ -199,7 +199,7 @@ start_all() {
   echo "[组合] 一键启动全部服务 (Gateway + API + Frontend + Docs + Console)..."
   build_all
   start_gateway_no_build &
-  echo "  - Gateway 已在后台启动 (https://localhost:5001)."
+  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_frontend &
   echo "  - Frontend 已在后台启动 (https://localhost:3000)."
   start_docs &

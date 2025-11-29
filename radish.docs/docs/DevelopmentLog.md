@@ -7,6 +7,9 @@
 ### 2025.11.27
 
 - **feat(gateway/portal)**: 优化 Gateway 门户页面 URL 显示与配置管理
+- **feat(gateway/status)**: Gateway 门户新增 docs 与 console 服务卡片与健康检查展示，通过 JavaScript 调用 Gateway `/docs`、`/console` 以及下游 API `/health` 端点，统一查看前端、API、docs、console 的可用性；门户自身路由调整为 `/server`，以便根路径 `/` 直接反代到前端 WebOS。
+- **chore(dev/ports)**: 统一本地开发端口约定：`Radish.Api` 使用 `https://localhost:5101` 与 `http://localhost:5100`，`Radish.Gateway` 使用 `https://localhost:5000` 与 `http://localhost:5001`；更新 `start.sh`/`start.ps1` 菜单文案与 ASPNETCORE_URLS，避免 7110/5165 等旧端口残留，并在 CLAUDE.md 中同步示例说明。
+
   - 修复服务卡片 URL 溢出问题：添加 `word-break`、`overflow-wrap` 自动换行支持
   - 增加服务卡片最小宽度至 280px，为 URL 提供更多显示空间
   - 实现从配置文件读取服务 URL：新增 `GatewayService.PublicUrl` 配置项
