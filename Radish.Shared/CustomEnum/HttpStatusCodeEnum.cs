@@ -1,4 +1,4 @@
-namespace Radish.Shared.CuatomEnum;
+namespace Radish.Shared.CustomEnum;
 
 /// <summary>
 /// 统一的 HTTP 状态码枚举，用于 MessageModel.StatusCode 等场景。

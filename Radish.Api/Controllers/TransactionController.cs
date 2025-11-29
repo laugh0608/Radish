@@ -6,7 +6,7 @@ using Radish.Model;
 using Radish.Shared;
 using Radish.Model.ViewModels;
 using Radish.Repository.UnitOfWorks;
-using Radish.Shared.CuatomEnum;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers;
 

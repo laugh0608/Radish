@@ -1,4 +1,4 @@
-﻿using Radish.Shared.CuatomEnum;
+﻿using Radish.Shared.CustomEnum;
 
 namespace Radish.Model;
 
