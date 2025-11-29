@@ -74,6 +74,41 @@ volumes:
 
 使用 `docker compose -f deploy/docker-compose.yml up --build` 可一键启动依赖。若后续引入前端容器，可在同一文件内新增 `client` 服务并通过 Nginx/Caddy 统一暴露。
 
+## 数据库初始化与迁移（Radish.DbMigrate）
+
+> 适用于：新环境第一次部署数据库，或在已有数据库上按版本执行结构迁移。
+
+### 本地/测试环境：初始化数据库结构
+
+1. 确认 `Radish.Api/appsettings.Local.json`（或对应环境的 `appsettings.{Environment}.json`）已配置好数据库连接：
+   - SQLite 场景：只需指定数据库文件名（如 `Radish.db`）。
+   - PostgreSQL 场景：配置好 `Host/Port/Database/Username/Password`。
+2. 在仓库根目录执行：
+
+   ```bash
+   dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
+   ```
+
+   - 该命令会：
+     - 根据当前配置创建数据库（若不存在）；
+     - 扫描 `Radish.Model` 中的实体类型并执行 SqlSugar Code First（`InitTables`），自动创建/补全表结构。
+3. 使用数据库客户端确认结构是否符合预期（表/字段/索引）。
+
+### 生成迁移 SQL 并应用到生产
+
+1. 在一套用于对比的测试库上执行 `DbMigrate init`，让其结构同步到最新代码。
+2. 使用数据库工具导出“从当前生产版本 → 新版本”的结构差异 SQL，并保存到仓库（建议放在 `deploy/sql` 目录按日期/版本命名）。
+3. 在发布新版本前，由 DBA 或 CI/CD 流水线在生产数据库上执行本次版本对应的迁移 SQL：
+   - 顺序执行所有未执行过的脚本；
+   - 执行完成后再滚动升级/重启 API 与 Gateway。
+4. 对于需要回填的数据（例如为历史记录设置新字段的默认值），可以：
+   - 在迁移 SQL 中添加 `UPDATE` 语句，或
+   - 后续在 `Radish.DbMigrate` 项目中实现 `seed` 子命令统一处理。
+
+> 建议：生产环境中**不要**在 Api/Gateway 启动时自动调用 `InitTables`，避免意外结构变更；所有结构更新应通过经审核的迁移 SQL 或专门的迁移任务执行。
+
+---
+
 ## 反向代理配置
 
 ### 最佳实践：TLS 终止在反向代理层
