@@ -1,8 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
 using Radish.Model.Root;
+using Radish.Shared.CuatomEnum;
 using SqlSugar;
 
 namespace Radish.Model;
@@ -44,7 +42,7 @@ public class Department : RootEntityTKey<long>
         DepartmentName = "Radish";
         LeaderName = "System";
         OrderSort = 0;
-        StatusCode = 0;
+        StatusCode = (int)DepartmentStatusCodeEnum.Normal;
         IsDeleted = false;
         CreateBy = "System";
         CreateTime = DateTime.Now;
@@ -159,7 +157,7 @@ public class Department : RootEntityTKey<long>
     /// <summary>部门状态</summary>
     /// <remarks>不可为空，默认为 0</remarks>
     [SugarColumn(IsNullable = true)]
-    public int StatusCode { get; set; } = 0;
+    public int StatusCode { get; set; } = (int)DepartmentStatusCodeEnum.Normal;
 
     /// <summary>是否已被删除</summary>
     /// <remarks>不可为空，默认为 false</remarks>

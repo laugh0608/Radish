@@ -3,8 +3,10 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Common;
 using Radish.IService;
 using Radish.Model;
+using Radish.Shared;
 using Radish.Model.ViewModels;
 using Radish.Repository.UnitOfWorks;
+using Radish.Shared.CuatomEnum;
 
 namespace Radish.Api.Controllers;
 
@@ -72,7 +74,7 @@ public class TransactionController : ControllerBase
 
         return new MessageModel()
         {
-            StatusCode = 200,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
             IsSuccess = true,
             MessageInfo = "Success",
         };

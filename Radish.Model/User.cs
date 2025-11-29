@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Radish.Model.Root;
+using Radish.Shared.CuatomEnum;
 using SqlSugar;
 
 namespace Radish.Model;
@@ -47,11 +48,11 @@ public class User : RootEntityTKey<long>
         UserEmail = string.Empty;
         LoginPassword = string.Empty;
         UserRealName = string.Empty;
-        UserSex = 0;
+        UserSex = (int)UserSexEnum.Unknown;
         UserAge = 18;
         UserBirth = null;
         UserAddress = string.Empty;
-        StatusCode = -1;
+        StatusCode = (int)UserStatusCodeEnum.Unknown;
         CreateTime = DateTime.Now;
         UpdateTime = null;
         CriticalModifyTime = null;
@@ -92,7 +93,7 @@ public class User : RootEntityTKey<long>
 
         if (userSex.HasValue)
         {
-            UserSex = Clamp(userSex.Value, 0, 2);
+            UserSex = Clamp(userSex.Value, (int)UserSexEnum.Unknown, (int)UserSexEnum.Female);
         }
 
         if (userAge.HasValue)
@@ -150,15 +151,15 @@ public class User : RootEntityTKey<long>
     {
         if (options.StatusCode.HasValue)
         {
-            StatusCode = options.StatusCode.Value;
+            StatusCode = options.StatusCode.Value;  // 若从外部直接传入，可考虑后续改为 UserStatusCode 枚举
         }
 
         if (options.IsEnable.HasValue)
         {
             IsEnable = options.IsEnable.Value;
-            if (!options.StatusCode.HasValue && IsEnable && StatusCode == -1)
+            if (!options.StatusCode.HasValue && IsEnable && StatusCode == (int)UserStatusCodeEnum.Unknown)
             {
-                StatusCode = 0;
+                StatusCode = (int)UserStatusCodeEnum.Normal;
             }
         }
 
@@ -253,7 +254,7 @@ public class User : RootEntityTKey<long>
     /// <para>不可为空，默认为 0</para>
     /// </remarks>
     [SugarColumn(IsNullable = true)]
-    public int UserSex { get; set; } = 0;
+    public int UserSex { get; set; } = (int)UserSexEnum.Unknown;
 
     /// <summary>年龄</summary>
     /// <remarks>不可为空，默认为 18</remarks>
@@ -277,7 +278,7 @@ public class User : RootEntityTKey<long>
     /// <summary>状态</summary>
     /// <remarks>不可为空，默认为 -1</remarks>
     [SugarColumn(IsNullable = true)]
-    public int StatusCode { get; set; } = -1;
+    public int StatusCode { get; set; } = (int)UserStatusCodeEnum.Unknown;
 
     /// <summary>创建时间</summary>
     /// <remarks>更新时忽略改列</remarks>
@@ -381,7 +382,7 @@ public sealed class UserInitializationOptions
     public string? UserRealName { get; set; }
 
     /// <summary>性别</summary>
-    public int? UserSex { get; set; }
+    public int? UserSex { get; set; }  // TODO: 后续可考虑改为 UserSex? 枚举类型
 
     /// <summary>年龄</summary>
     public int? UserAge { get; set; }
@@ -417,7 +418,7 @@ public sealed class UserInitializationOptions
     public bool? IsDeleted { get; set; }
 
     /// <summary>状态码</summary>
-    public int? StatusCode { get; set; }
+    public int? StatusCode { get; set; }  // TODO: 后续可考虑改为 UserStatusCode? 枚举类型
 
     /// <summary>备注</summary>
     public string? Remark { get; set; }
