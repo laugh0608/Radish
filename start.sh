@@ -30,6 +30,29 @@ invoke_step() {
   "$@"
 }
 
+# 记录后台服务 PID，脚本退出或中断时统一清理
+BG_PIDS=()
+
+add_bg_pid() {
+  BG_PIDS+=("$1")
+}
+
+cleanup() {
+  if ((${#BG_PIDS[@]} == 0)); then
+    return
+  fi
+  echo
+  echo "==> 正在停止后台服务..."
+  for pid in "${BG_PIDS[@]}"; do
+    if kill -0 "$pid" 2>/dev/null; then
+      echo "  - kill $pid"
+      kill "$pid" 2>/dev/null || true
+    fi
+  done
+}
+
+trap cleanup EXIT INT TERM
+
 print_banner() {
   cat <<'EOF'
 ====================================
@@ -48,11 +71,11 @@ print_menu() {
   echo "Radish 开发启动菜单 ($CONFIGURATION)"
   echo "------------------------------------"
   echo "[单服务]"
-  echo "  1. 启动 API           (Radish.Api           @ https://localhost:5101)"
+  echo "  1. 启动 API           (Radish.Api           @ http://localhost:5100)"
   echo "  2. 启动 Gateway       (Radish.Gateway       @ https://localhost:5000)"
-  echo "  3. 启动 Frontend      (radish.client        @ https://localhost:3000)"
+  echo "  3. 启动 Frontend      (radish.client        @ http://localhost:3000)"
   echo "  4. 启动 Docs          (radish.docs          @  http://localhost:3001/docs/)"
-  echo "  5. 启动 Console       (radish.console       @ https://localhost:3002)"
+  echo "  5. 启动 Console       (radish.console       @ http://localhost:3002)"
   echo "  6. 运行单元测试       (Radish.Api.Tests)"
   echo
   echo "[组合启动]"
@@ -80,55 +103,55 @@ build_all() {
 start_api() {
   (
     cd "$ROOT_DIR"
-    export ASPNETCORE_URLS="https://localhost:5101;http://localhost:5100"
+    export ASPNETCORE_URLS="http://localhost:5100"
 
     invoke_step "dotnet clean ($CONFIGURATION)" dotnet clean "$API_PROJECT" -c "$CONFIGURATION"
     invoke_step "dotnet restore" dotnet restore "$API_PROJECT"
     invoke_step "dotnet build ($CONFIGURATION)" dotnet build "$API_PROJECT" -c "$CONFIGURATION"
-    invoke_step "dotnet run (https + http)" dotnet run --project "$API_PROJECT" -c "$CONFIGURATION" --launch-profile https
+    invoke_step "dotnet run (http only)" dotnet run --project "$API_PROJECT" -c "$CONFIGURATION" --launch-profile http
   )
 }
 
 start_api_no_build() {
   (
     cd "$ROOT_DIR"
-    export ASPNETCORE_URLS="https://localhost:5101;http://localhost:5100"
-    invoke_step "dotnet run API (no-build)" dotnet run --no-build --project "$API_PROJECT" -c "$CONFIGURATION" --launch-profile https
+    export ASPNETCORE_URLS="http://localhost:5100"
+    invoke_step "dotnet run API (no-build, http only)" dotnet run --no-build --project "$API_PROJECT" -c "$CONFIGURATION" --launch-profile http
   )
 }
 
 start_gateway() {
   (
     cd "$ROOT_DIR"
-    dotnet run --project Radish.Gateway/Radish.Gateway.csproj
+    dotnet run --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https
   )
 }
 
 start_gateway_no_build() {
   (
     cd "$ROOT_DIR"
-    dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj
+    exec dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https
   )
 }
 
 start_frontend() {
   (
     cd "$ROOT_DIR"
-    npm run dev --prefix "$CLIENT_DIR"
+    exec npm run dev --prefix "$CLIENT_DIR"
   )
 }
 
 start_docs() {
   (
     cd "$ROOT_DIR"
-    npm run docs:dev --prefix radish.docs
+    exec npm run docs:dev --prefix radish.docs
   )
 }
 
 start_console() {
   (
     cd "$ROOT_DIR"
-    npm run dev --prefix "$CONSOLE_DIR"
+    exec npm run dev --prefix "$CONSOLE_DIR"
   )
 }
 
@@ -145,6 +168,7 @@ start_gateway_api() {
   echo "[组合] 启动 Gateway + API..."
   build_all
   start_gateway_no_build &
+  add_bg_pid $!
   echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_api_no_build
 }
@@ -153,6 +177,7 @@ start_gateway_frontend() {
   echo "[组合] 启动 Gateway + Frontend..."
   build_all
   start_gateway_no_build &
+  add_bg_pid $!
   echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_frontend
 }
@@ -161,6 +186,7 @@ start_gateway_docs() {
   echo "[组合] 启动 Gateway + Docs..."
   build_all
   start_gateway_no_build &
+  add_bg_pid $!
   echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_docs
 }
@@ -169,6 +195,7 @@ start_gateway_console() {
   echo "[组合] 启动 Gateway + Console..."
   build_all
   start_gateway_no_build &
+  add_bg_pid $!
   echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_console
 }
@@ -177,8 +204,10 @@ start_gateway_api_frontend() {
   echo "[组合] 启动 Gateway + API + Frontend..."
   build_all
   start_gateway_no_build &
+  add_bg_pid $!
   echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_frontend &
+  add_bg_pid $!
   echo "  - Frontend 已在后台启动 (https://localhost:3000)."
   start_api_no_build
 }
@@ -187,10 +216,13 @@ start_gateway_api_frontend_console() {
   echo "[组合] 启动 Gateway + API + Frontend + Console..."
   build_all
   start_gateway_no_build &
+  add_bg_pid $!
   echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_frontend &
+  add_bg_pid $!
   echo "  - Frontend 已在后台启动 (https://localhost:3000)."
   start_console &
+  add_bg_pid $!
   echo "  - Console 已在后台启动 (https://localhost:3002)."
   start_api_no_build
 }
@@ -199,12 +231,16 @@ start_all() {
   echo "[组合] 一键启动全部服务 (Gateway + API + Frontend + Docs + Console)..."
   build_all
   start_gateway_no_build &
+  add_bg_pid $!
   echo "  - Gateway 已在后台启动 (https://localhost:5000)."
   start_frontend &
+  add_bg_pid $!
   echo "  - Frontend 已在后台启动 (https://localhost:3000)."
   start_docs &
+  add_bg_pid $!
   echo "  - Docs 已在后台启动 (http://localhost:3001/docs/)."
   start_console &
+  add_bg_pid $!
   echo "  - Console 已在后台启动 (https://localhost:3002)."
   start_api_no_build
 }
