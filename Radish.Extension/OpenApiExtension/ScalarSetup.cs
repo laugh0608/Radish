@@ -59,13 +59,13 @@ public static class ScalarSetup
                     // 添加服务器列表
                     document.Servers.Add(new()
                     {
-                        Url = "https://localhost:7110",
-                        Description = "本地开发环境 (HTTPS)"
+                        Url = "https://localhost:5000",
+                        Description = "本地开发环境 (Gateway HTTPS)"
                     });
                     document.Servers.Add(new()
                     {
-                        Url = "http://localhost:5165",
-                        Description = "本地开发环境 (HTTP)"
+                        Url = "http://localhost:5100",
+                        Description = "本地开发环境 (API HTTP)"
                     });
 
                     return Task.CompletedTask;
@@ -78,8 +78,8 @@ public static class ScalarSetup
     /// 映射 Scalar UI 到指定路径
     /// </summary>
     /// <param name="app">应用构建器</param>
-    /// <param name="routePrefix">路由前缀，默认 /api/docs</param>
-    public static void UseScalarUI(this WebApplication app, string routePrefix = "/api/docs")
+    /// <param name="routePrefix">路由前缀，默认 /scalar</param>
+    public static void UseScalarUI(this WebApplication app, string routePrefix = "/scalar")
     {
         // 映射 OpenAPI 文档端点
         app.MapOpenApi();

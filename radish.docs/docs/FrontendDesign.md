@@ -179,7 +179,7 @@ export const appRegistry: AppDefinition[] = [
     icon: '📄',
     description: 'Scalar API 文档',
     type: 'iframe',
-    url: 'https://localhost:7110/scalar',
+    url: 'https://localhost:5000/scalar',
     defaultSize: { width: 1400, height: 900 },
     requiredRoles: ['Developer', 'Admin'],
     category: 'tools'

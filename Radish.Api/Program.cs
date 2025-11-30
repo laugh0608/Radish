@@ -173,6 +173,10 @@ app.UseCors(corsPolicyName);
 // 配置 Scalar UI
 app.UseScalarUI("/scalar");
 
+// 将旧路径 /api/docs 永久重定向到新的 /scalar
+app.MapGet("/api/docs", () => Results.Redirect("/scalar", permanent: true)).ExcludeFromDescription();
+app.MapGet("/api/docs/{**catchAll}", () => Results.Redirect("/scalar", permanent: true)).ExcludeFromDescription();
+
 // 将 API 根路径重定向到 Scalar 文档
 app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
 

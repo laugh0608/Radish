@@ -41,12 +41,12 @@ npm run dev --prefix radish.client
 - **Gateway 门户**：https://localhost:5000  （统一入口，下挂各子系统；http://localhost:5001 会自动重定向到此地址）
 - **前端桌面（webOS）**：https://localhost:5000/        （YARP 代理到前端 dev http://localhost:3000）
 - **在线文档**：https://localhost:5000/docs             （VitePress 文档站，来自 radish.docs）
-- **API 文档（Scalar）**：https://localhost:5000/api/docs  （Gateway 转发到 Radish.Api 的 `/api/docs`）
+- **API 文档（Scalar）**：https://localhost:5000/scalar  （Gateway 转发到 Radish.Api 的 `/scalar`，`/api/docs` 作为旧路径已重定向到 `/scalar`）
 - **控制台（radish.console）**：https://localhost:5000/console
 
 如需直连后端服务（仅用于本机调试，下游服务不直接对外暴露）：
 - **后端 API（内部调试）**：http://localhost:5100
-- **API 文档（直连）**：http://localhost:5100/api/docs
+- **API 文档（直连）**：http://localhost:5100/scalar
 - **前端 dev**：http://localhost:3000
 - **Docs dev**：http://localhost:3001/docs
 - **Console dev**：http://localhost:3002
@@ -184,5 +184,5 @@ export Redis__ConnectionString="localhost:6379"
 ## 相关链接
 
 - [在线文档](radish.docs/docs/README.md) - 完整文档目录
-- [API 文档](https://localhost:5000/api/docs) - Scalar 交互式文档（需通过 Gateway，内部由 Radish.Api 提供 `/api/docs`）
+- [API 文档](https://localhost:5000/scalar) - Scalar 交互式文档（推荐通过 Gateway 访问，内部由 Radish.Api 提供 `/scalar`，旧 `/api/docs` 路径仅做重定向兼容）
 - [项目计划](radish.docs/docs/DevelopmentPlan.md) - 迭代规划与里程碑
