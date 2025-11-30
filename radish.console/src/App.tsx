@@ -57,10 +57,10 @@ const services: Service[] = [
     {
         key: 'scalar',
         name: 'Scalar',
-        description: 'API Scalar 可视化文档，通过 Gateway 暴露在 /api/docs',
-        path: '/api/docs',
-        target: 'https://localhost:5000/api/docs',
-        healthPath: '/api/docs'
+        description: 'API Scalar 可视化文档，通过 Gateway 暴露在 /scalar',
+        path: '/scalar',
+        target: 'https://localhost:5000/scalar',
+        healthPath: '/scalar'
     },
     {
         key: 'console',

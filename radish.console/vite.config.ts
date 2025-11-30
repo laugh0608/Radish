@@ -9,6 +9,7 @@ const target = env.ASPNETCORE_URLS?.split(';')[0] ?? 'http://localhost:5100';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    base: '/console/',
     plugins: [plugin()],
     resolve: {
         alias: {
