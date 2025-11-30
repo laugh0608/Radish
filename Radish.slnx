@@ -1,17 +1,4 @@
 <Solution>
-  <Folder Name="/docs/">
-    <File Path="docs/DevelopmentFramework.md" />
-    <File Path="docs/DevelopmentLog.md" />
-    <File Path="docs/DevelopmentPlan.md" />
-    <File Path="docs/DevelopmentSpecifications.md" />
-    <File Path="docs/README.md" />
-    <File Path="docs\AuthenticationGuide.md" />
-    <File Path="docs\DeploymentGuide.md" />
-    <File Path="docs\FrontendDesign.md" />
-    <File Path="docs\GatewayPlan.md" />
-    <File Path="docs\ConfigurationGuide.md" />
-    <File Path="docs\OpenPlatformGuide.md" />
-  </Folder>
   <Folder Name="/solution/">
     <File Path=".dockerignore" />
     <File Path=".gitattributes" />
