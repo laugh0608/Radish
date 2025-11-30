@@ -146,11 +146,11 @@ new OpenIddictApplicationDescriptor
     DisplayName = "Radish Web Client",
     ConsentType = ConsentTypes.Explicit, // 显示授权确认页
     RedirectUris = {
-        new Uri("https://localhost:3000/callback"),
-        new Uri("https://localhost:3000/silent-renew")
+        new Uri("http://localhost:3000/callback"),
+        new Uri("http://localhost:3000/silent-renew")
     },
     PostLogoutRedirectUris = {
-        new Uri("https://localhost:3000")
+        new Uri("http://localhost:3000")
     },
     Permissions =
     {
@@ -337,13 +337,13 @@ import { UserManagerSettings } from 'oidc-client-ts';
 export const oidcConfig: UserManagerSettings = {
   authority: 'https://localhost:7100',
   client_id: 'radish-client',
-  redirect_uri: 'https://localhost:3000/callback',
-  post_logout_redirect_uri: 'https://localhost:3000',
-  silent_redirect_uri: 'https://localhost:3000/silent-renew',
+  redirect_uri: 'http://localhost:3000/callback',
+  post_logout_redirect_uri: 'http://localhost:3000',
+  silent_redirect_uri: 'http://localhost:3000/silent-renew',
   scope: 'openid profile radish-api offline_access',
   response_type: 'code',
   automaticSilentRenew: true,
-  // PKCE 默认启用
+  // PKCE 默认启用（生产环境请使用真实 HTTPS 域名）
 };
 ```
 

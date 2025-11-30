@@ -6,7 +6,7 @@
 
 - **核心模块**
   - 身份与会话：自建帐号体系、邮箱/用户名登录、JWT + 刷新令牌、角色与权限控制、第三方登录预留。
-  - 门户与文档：Radish.Gateway 提供服务欢迎页面、健康检查展示、API 文档入口；React 单页应用（radish.client）提供业务功能界面；Swagger/Scalar 嵌入至 API 项目。
+  - 门户与文档：Radish.Gateway 提供统一对外入口和 `/server` 欢迎页面，并透传健康检查与文档入口；React 单页应用（radish.client）提供业务功能界面；Scalar 嵌入至 API 项目并通过 Gateway `/api/docs` 暴露。
   - 内容域：分类 / 标签 / 帖子 / 评论 / 点赞 / 收藏 / 浏览计数，列表分页与过滤，富文本编辑。
   - 搜索：按标题、标签、分类、作者检索；支持时间/热度排序与模糊匹配（PostgreSQL `tsvector` 预留）。
   - 通知与订阅（可选）：帖子互动提醒、积分变动提醒，支持站内信或邮件。
@@ -88,11 +88,11 @@ PostgreSQL
   - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为"联调开关"。
   - 跨域：`appsettings.json` 中的 `Cors:AllowedOrigins` 维护允许访问 API 的前端地址，预设了 `localhost:3000` 以及 Rolldown 默认端口 `58794` 的多个别名（`vite.dev.localhost`、`host.*` 等）。更换端口或外网域名时记得同步更新该列表。
 - `Radish.Gateway`
-  - **Phase 0 职责**：承载服务欢迎页面（Razor Pages）、健康检查展示、API 文档入口链接、静态资源服务。
+  - **Phase 0 职责**：承载 `/server` 欢迎页面（Razor Pages）、提供基础健康检查透传与文档入口链接，静态资源服务。服务总览与多服务健康状态表已迁移到 Console（`/console`）。
   - **依赖**：复用 `Radish.Common`（配置工具）和 `Radish.Extension`（日志扩展），保持与 `Radish.Api` 一致的配置加载和日志输出方式。
-  - **监听端口**：`https://localhost:5001`（主要）和 `http://localhost:5000`（HTTP 重定向）。
-  - **健康检查**：聚合显示自身和下游 `Radish.Api` 的健康状态，页面通过 JavaScript 调用下游健康端点实现动态检测。
-  - **架构演进**：Phase 0 为纯静态门户，不引入 Ocelot；P1+ 阶段将增加路由转发、统一认证、请求聚合等 Gateway 核心功能。详见 `docs/GatewayPlan.md`。
+  - **监听端口**：`https://localhost:5000`（主要对外入口）和 `http://localhost:5001`（HTTP 仅用于重定向到 5000）。
+  - **健康检查**：自身暴露 `/health`、`/healthz`，下游 `Radish.Api` 健康通过 `/api/health` 统一对外；Console 通过 Gateway 路径 `/`、`/docs`、`/api/health`、`/console` 聚合展示多服务状态。
+  - **架构演进**：Phase 0 为简化门户，不引入 Ocelot；P1+ 阶段将继续增强路由转发、统一认证、请求聚合等 Gateway 核心功能。详见 `GatewayPlan.md`。
 - 配置与服务访问：Program.cs 依次调用 `hostingContext.Configuration.ConfigureApplication()` → `builder.ConfigureApplication()` → `app.ConfigureApplication()` → `app.UseApplicationSetup()`，把 Configuration/HostEnvironment/RootServices 注入到 `Radish.Common.Core.App`；在非 DI 管道下可使用 `App.GetService*`、`App.GetOptions*` 手动解析服务或配置。常规字符串读取仍统一使用 `AppSettings.RadishApp("Section", ...)`，批量强类型配置通过 `ConfigurableOptions + AddAllOptionRegister` 自动绑定 `IConfigurableOptions`。
 - `Radish.Service`
   - 应用服务（`*AppService`）封装用例流程、权限校验、事务控制、DTO 转换。

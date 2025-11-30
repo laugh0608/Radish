@@ -288,7 +288,7 @@ networks:
 
 ### 注意事项
 
-- **开发环境**：应用直接使用 HTTPS 端口（`https://localhost:5001`）
+- **开发环境**：Gateway 应用对外使用 HTTPS 端口（`https://localhost:5000`，`http://localhost:5001` 仅用于重定向）
 - **生产环境**：应用使用 HTTP 端口，TLS 由反向代理处理
 - **内网可信场景**：反代到 HTTP 端口是安全的
 - **零信任架构**：如需端到端加密，可配置反代到 HTTPS，但需要额外证书管理
@@ -340,7 +340,7 @@ npm run docs:build --prefix radish.docs
 
 启动 Gateway 后，可通过以下地址访问文档站点：
 
-- 本地默认：`https://localhost:5001/docs`
+- 本地默认：`https://localhost:5000/docs`
 - 生产环境：`{GatewayService:PublicUrl}/docs`
 
 > 提示：当 `Docs.Enabled = true` 但 `DocsSite` 目录不存在时，Gateway 会在日志中输出告警并回退到门户页，不会影响其他服务与路由。

@@ -66,7 +66,7 @@ Gateway 负责：
    - 复用 `Radish.Extension.SerilogExtension` 和 `Radish.Common.AppSettingsTool` 实现日志和配置
    - 注册 Razor Pages 和静态文件服务
    - 配置健康检查端点（聚合 API 服务的健康状态）
-   - 监听端口：`https://localhost:5001` 和 `http://localhost:5000`
+   - 监听端口：`https://localhost:5000` 和 `http://localhost:5001`
 
 4. **清理 Radish.Api**
    - 移除 `Pages/` 目录和相关 Razor Pages 配置
@@ -379,7 +379,7 @@ dotnet run --project Radish.Api/Radish.Api.csproj
 
 # 新终端启动 Gateway
 cd Radish.Gateway
-dotnet run --urls="https://localhost:5001;http://localhost:5000"
+dotnet run --urls="https://localhost:5000;http://localhost:5001"
 
 # 测试健康检查
 curl https://localhost:5001/api/health

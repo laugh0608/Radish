@@ -25,7 +25,7 @@ Radish is a modern community platform built with a self-designed layered archite
 # Build the solution
 dotnet build Radish.slnx -c Debug
 
-# Run the API (listens on https://localhost:5101 and http://localhost:5100)
+# Run the API (listens on http://localhost:5100 only in local dev)
 dotnet run --project Radish.Api/Radish.Api.csproj
 
 # Run the Gateway (listens on https://localhost:5000 and http://localhost:5001)
@@ -44,7 +44,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj
 # Install dependencies (run from repo root)
 npm install --prefix radish.client
 
-# Start dev server (default: https://localhost:3000)
+# Start dev server (default: http://localhost:3000)
 npm run dev --prefix radish.client
 
 # Build for production
