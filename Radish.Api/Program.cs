@@ -171,10 +171,10 @@ app.UseStaticFiles();
 // }
 app.UseCors(corsPolicyName);
 // 配置 Scalar UI
-app.UseScalarUI();
+app.UseScalarUI("/scalar");
 
 // 将 API 根路径重定向到 Scalar 文档
-app.MapGet("/", () => Results.Redirect("/api/docs")).ExcludeFromDescription();
+app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
 
 app.UseAuthorization();
 app.MapControllers();

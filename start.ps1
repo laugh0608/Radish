@@ -215,35 +215,35 @@ function Start-BackgroundShell {
 function Start-GatewayApi {
     Write-Host "[Combo] Gateway + API..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
     Start-BackendNoBuild
 }
 
 function Start-GatewayFrontend {
     Write-Host "[Combo] Gateway + Frontend..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
     Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
 }
 
 function Start-GatewayDocs {
     Write-Host "[Combo] Gateway + Docs..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
     Start-BackgroundShell "Docs running at http://localhost:3001/docs/" "npm run docs:dev --prefix radish.docs"
 }
 
 function Start-GatewayConsole {
     Write-Host "[Combo] Gateway + Console..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
     Start-BackgroundShell "Console running at http://localhost:3002" "npm run dev --prefix radish.console"
 }
 
 function Start-GatewayApiFrontend {
     Write-Host "[Combo] Gateway + API + Frontend..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
     Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
     Start-BackendNoBuild
 }
@@ -251,7 +251,7 @@ function Start-GatewayApiFrontend {
 function Start-GatewayApiFrontendConsole {
     Write-Host "[Combo] Gateway + API + Frontend + Console..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
     Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
     Start-BackgroundShell "Console running at http://localhost:3002" "npm run dev --prefix radish.console"
     Start-BackendNoBuild
@@ -260,7 +260,7 @@ function Start-GatewayApiFrontendConsole {
 function Start-All {
     Write-Host "[Combo] ALL: Gateway + API + Frontend + Docs + Console..."
     Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj"
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
     Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
     Start-BackgroundShell "Docs running at http://localhost:3001/docs/" "npm run docs:dev --prefix radish.docs"
     Start-BackgroundShell "Console running at http://localhost:3002" "npm run dev --prefix radish.console"
