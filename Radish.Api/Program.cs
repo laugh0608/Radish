@@ -172,12 +172,16 @@ app.UseStaticFiles();
 app.UseCors(corsPolicyName);
 // 配置 Scalar UI
 app.UseScalarUI();
-app.UseHttpsRedirection();
+
+// 将 API 根路径重定向到 Scalar 文档
+app.MapGet("/", () => Results.Redirect("/api/docs")).ExcludeFromDescription();
+
 app.UseAuthorization();
 app.MapControllers();
 // 映射健康检查端点
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/healthz");
+app.MapHealthChecks("/api/health");
 
 // 输出项目启动标识（使用 Serilog，与 Gateway 风格统一）
 app.Lifetime.ApplicationStarted.Register(() =>

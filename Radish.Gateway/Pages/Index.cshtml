@@ -1,178 +1,28 @@
 @page "/server"
-@using Microsoft.Extensions.Configuration
-@inject IConfiguration Configuration
-@attribute [ApiExplorerSettings(IgnoreApi = true)]
 @{
     Layout = null;
-    ViewData["Title"] = "Radish 服务门户";
-
-    var gatewayUrl = Configuration["GatewayService:PublicUrl"];
-    var apiBaseUrl = Configuration["DownstreamServices:ApiService:BaseUrl"];
-    var frontendBaseUrl = Configuration["FrontendService:BaseUrl"];
-    var docsEnabled = bool.TryParse(Configuration["Docs:Enabled"], out var docsEnabledValue) && docsEnabledValue;
-    var docsRequestPath = Configuration["Docs:RequestPath"] ?? "/docs/";
-    var consoleRequestPath = "/console";
+    ViewData["Title"] = "Radish Gateway";
 }
 
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"]</title>
     <link rel="stylesheet" href="~/css/index.css" asp-append-version="true">
 </head>
 <body>
-<main data-api-base-url="@apiBaseUrl"
-      data-api-health-path="@(Configuration["DownstreamServices:ApiService:HealthCheckPath"] ?? "/health")"
-      data-frontend-base-url="@frontendBaseUrl"
-      data-docs-path="@docsRequestPath"
-      data-console-path="@consoleRequestPath">
-    <span class="badge">Radish Gateway · ASP.NET Core</span>
-    <h1>欢迎来到 Radish 平台</h1>
+<main class="simple-server-page">
+    <span class="badge">Radish Gateway</span>
+    <h1>Welcome to Radish</h1>
     <p class="lead">
-        这里是服务门户入口，为您提供统一的服务访问、健康检查和开发文档。使用下方快捷入口即可查阅项目文档、API 可视化与服务状态。
+        这是 Gateway 服务入口，统一的服务概览和健康状态已迁移到 Console 控制台。
     </p>
 
-    <section class="services-info">
-        <h2>🌐 服务地址</h2>
-        <div class="service-grid">
-            <div class="service-card gateway">
-                <div class="service-icon">🚪</div>
-                <div class="service-details">
-                    <h3>Gateway 网关</h3>
-                    <div class="service-urls">
-                        <a href="@gatewayUrl" target="_blank">@gatewayUrl</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="service-card frontend">
-                <div class="service-icon">⚛️</div>
-                <div class="service-details">
-                    <h3>React 前端</h3>
-                    <div class="service-urls">
-                        <a href="@frontendBaseUrl" target="_blank">@frontendBaseUrl</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="service-card api">
-                <div class="service-icon">🔌</div>
-                <div class="service-details">
-                    <h3>API 服务</h3>
-                    <div class="service-urls">
-                        <a href="@($"{apiBaseUrl}/api/docs")" target="_blank">@apiBaseUrl</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="service-card docs">
-                <div class="service-icon">📚</div>
-                <div class="service-details">
-                    <h3>Docs 文档站</h3>
-                    <div class="service-urls">
-                        <a href="@docsRequestPath" target="_blank">@($"{gatewayUrl}{docsRequestPath}")</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="service-card console">
-                <div class="service-icon">🖥️</div>
-                <div class="service-details">
-                    <h3>服务控制台</h3>
-                    <div class="service-urls">
-                        <a href="@consoleRequestPath" target="_blank">@($"{gatewayUrl}{consoleRequestPath}")</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <div class="actions">
-        @if (docsEnabled)
-        {
-            <a class="button primary" href="@docsRequestPath" target="_blank" rel="noopener noreferrer">打开项目文档</a>
-        }
-        <a class="button secondary" href="@($"{apiBaseUrl}/api/docs")" target="_blank" rel="noopener noreferrer">API Scalar 可视化</a>
-        <a class="button secondary" href="@frontendBaseUrl" target="_blank" rel="noopener noreferrer">访问前端应用</a>
-        <a class="button secondary" href="@consoleRequestPath" target="_blank" rel="noopener noreferrer">服务控制台 Console</a>
+    <div class="actions" style="margin-top: 1.5rem;">
+        <a class="button primary" href="/console">进入 Console 控制台</a>
     </div>
-
-    <section class="grid">
-        <article>
-            <h2>Gateway 状态</h2>
-            <p id="health-status" class="status-text">正在检测 Gateway 健康状况...</p>
-            <small style="color: var(--muted);">检查 Gateway 自身的健康检查端点。</small>
-        </article>
-
-        <article>
-            <h2>下游服务</h2>
-            <p id="downstream-status" class="status-text">正在检测 API 服务状况...</p>
-            <small style="color: var(--muted);">监控下游 API 服务的可用性。</small>
-        </article>
-    </section>
-
-    <section class="grid" style="margin-top: 1.5rem;">
-        <article>
-            <h2>前端应用</h2>
-            <p id="frontend-status" class="status-text">正在检测前端应用状况...</p>
-            <small style="color: var(--muted);">检查 WebOS 前端服务是否可以访问。</small>
-        </article>
-
-        <article>
-            <h2>Docs 与 Console</h2>
-            <p id="docs-status" class="status-text">正在检测 Docs 文档站状况...</p>
-            <p id="console-status" class="status-text">正在检测 Console 控制台状况...</p>
-            <small style="color: var(--muted);">监控文档站与控制台服务的可用性。</small>
-        </article>
-    </section>
-
-    <section class="grid" style="margin-top: 1.5rem;">
-        <article>
-            <h2>快速开始 - Gateway</h2>
-            <ol>
-                <li><code>dotnet build Radish.slnx -c Debug</code></li>
-                <li><code>dotnet run --project Radish.Gateway/Radish.Gateway.csproj</code></li>
-                <li>浏览器访问 <code id="current-origin">/</code></li>
-            </ol>
-        </article>
-
-        <article>
-            <h2>快速开始 - API</h2>
-            <ol>
-                <li><code>dotnet restore && dotnet build Radish.slnx -c Debug</code></li>
-                <li><code>dotnet run --project Radish.Api/Radish.Api.csproj</code></li>
-                <li>浏览器访问 <code>@($"{apiBaseUrl}/api/docs")</code></li>
-            </ol>
-        </article>
-    </section>
-
-    <article style="margin-top: 1.5rem;">
-        <h2>常用资源</h2>
-        <ul class="resource-list">
-            <li>
-                <strong>docs/</strong>
-                <span>查看项目约定、技术栈与进展记录。</span>
-            </li>
-            <li>
-                <strong>Radish.Api.http</strong>
-                <span>使用 VS / Rider / HTTP Client 快速验证接口。</span>
-            </li>
-            <li>
-                <strong>radish.client</strong>
-                <span>Vite 前端，运行 <code>npm install && npm run dev --prefix radish.client</code>。</span>
-            </li>
-            <li>
-                <strong>local-start.ps1 / local-start.sh</strong>
-                <span>交互式菜单快速启动前端、后端、Gateway 或运行测试。</span>
-            </li>
-        </ul>
-    </article>
-
-    <footer>Radish Platform · 构建快速、安全的后台服务体验</footer>
 </main>
-
-<script src="~/js/index.js" asp-append-version="true"></script>
 </body>
 </html>
