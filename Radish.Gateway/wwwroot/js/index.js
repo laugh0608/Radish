@@ -1,8 +1,8 @@
 (function () {
     const mainElement = document.querySelector("main");
-    const apiBaseUrl = mainElement?.dataset.apiBaseUrl || "https://localhost:5101";
+    const apiBaseUrl = mainElement?.dataset.apiBaseUrl || "http://localhost:5100";
     const apiHealthPath = mainElement?.dataset.apiHealthPath || "/health";
-    const frontendBaseUrl = mainElement?.dataset.frontendBaseUrl || "https://localhost:3000";
+    const frontendBaseUrl = mainElement?.dataset.frontendBaseUrl || "http://localhost:3000";
     const docsPath = mainElement?.dataset.docsPath || "/docs";
     const consolePath = mainElement?.dataset.consolePath || "/console";
 

@@ -15,4 +15,4 @@ title: Radish 文档
 - [开发计划](./DevelopmentPlan.md)
 - [开发日志](./DevelopmentLog.md)
 
-> 提示：以上文档均位于 `radish.docs/docs/` 目录下，VitePress 会以该目录为内容源构建在线文档站，并通过 Gateway 暴露在 `/docs` 路径下（https://localhost:5001/docs，本地 dev 默认 http://localhost:3001/docs）。
+> 提示：以上文档均位于 `radish.docs/docs/` 目录下，VitePress 会以该目录为内容源构建在线文档站，并通过 Gateway 暴露在 `/docs` 路径下（https://localhost:5000/docs，本地 dev 默认 http://localhost:3001/docs）。
