@@ -8,7 +8,8 @@ interface Forecast {
     summary: string;
 }
 
-const defaultApiBase = 'https://localhost:7110';
+// 默认通过 Gateway 暴露的 API 入口
+const defaultApiBase = 'https://localhost:5000';
 
 function App() {
     const [forecasts, setForecasts] = useState<Forecast[]>();
