@@ -231,7 +231,7 @@ Gateway 门户页面需要配置服务的公开访问地址，用于页面展示
 - `/` → 前端 webOS（转发到 `http://localhost:3000`）
 - `/docs` → 文档站点（转发到 radish.docs dev 根路径 `http://localhost:3001`，内部 `base=/docs/`）
 - `/api` → 后端 API（转发到 `http://localhost:5100`）
-- `/scalar` → Scalar API 文档 UI（通过 Gateway 暴露在 `/api/docs`）
+- `/scalar` → Scalar API 文档 UI（Gateway 直接代理到 Radish.Api 的 `/scalar`，`/api/docs` 仅作为旧路径重定向到 `/scalar`）
 - `/console` → 管理控制台前端 `radish.console`（转发到 `http://localhost:3002`）
 
 **配置说明**：

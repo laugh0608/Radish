@@ -34,7 +34,7 @@
 ### 第 1 周｜运行基线 & 数据接入
 - **后端**：
   - 生成 SQLSugar 上下文，接入 PostgreSQL（ConnectionStrings__Default）。
-  - 添加健康检查 `/health` `/ready`（及 `/api/health`），并通过 `/api/docs` 暴露 Scalar。
+  - 添加健康检查 `/health` `/ready`（及 `/api/health`），并通过 `/scalar` 暴露 Scalar（`/api/docs` 仅做重定向兼容）。
   - 引入 Serilog + 配置加载（JSON + env + user-secrets）。
 - **数据库**：
   - 创建 `Radish` 数据库，编写初始化脚本（SqlSugar `InitTables` + 种子）。

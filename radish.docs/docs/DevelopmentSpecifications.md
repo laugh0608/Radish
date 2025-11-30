@@ -538,10 +538,10 @@ api-deprecated-versions: (空或已弃用的版本)
 
 ### 文档访问
 
-- **Scalar UI**: `https://localhost:7110/api/docs`
-- **OpenAPI JSON**: 
-  - v1: `https://localhost:7110/openapi/v1.json`
-  - v2: `https://localhost:7110/openapi/v2.json`
+- **Scalar UI**: `https://localhost:5000/scalar`（本机直连：`http://localhost:5100/scalar`）
+- **OpenAPI JSON**:
+  - v1: `http://localhost:5100/openapi/v1.json`（或经 Gateway：`https://localhost:5000/openapi/v1.json`）
+  - v2: `http://localhost:5100/openapi/v2.json`（或经 Gateway：`https://localhost:5000/openapi/v2.json`）
 
 ### 常见问题
 

@@ -24,7 +24,7 @@ Radish 采用 **OIDC（OpenID Connect）** 架构实现统一身份认证，基�
     ▼                     ▼            ▼           ▼
 ┌─────────┐        ┌──────────┐   ┌────────┐  ┌─────────┐
 │Radish.Api│       │radish.   │   │ Scalar │  │ Admin   │
-│:7110     │       │client    │   │API Docs│  │Dashboard│
+│:5100     │       │client    │   │API Docs│  │Dashboard│
 │(资源服务器)│       │:3000    │   │        │  │(预留)    │
 └─────────┘        └──────────┘   └────────┘  └─────────┘
 ```
@@ -122,7 +122,7 @@ new OpenIddictApplicationDescriptor
     DisplayName = "Radish API Documentation",
     ConsentType = ConsentTypes.Implicit, // 跳过授权确认页
     RedirectUris = {
-        new Uri("https://localhost:7110/scalar/oauth2-callback")
+        new Uri("https://localhost:5000/scalar/oauth2-callback")
     },
     Permissions =
     {

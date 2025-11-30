@@ -392,7 +392,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 - Use `dotnet watch` for backend hot reload
 - Use Vite's HMR for instant frontend updates
-- Scalar API docs available at `/api/docs` when running locally
+- Scalar API docs available at `/scalar` when running locally (API direct: `http://localhost:5100/scalar`, via Gateway: `https://localhost:5000/scalar`)
 - Example requests in `Radish.Api/Radish.Api.http` (use REST Client extension)
 - Check `docs/DevelopmentLog.md` for recent changes and known issues
 - When adding new repositories/services, register them in Autofac module or use the generic pattern
