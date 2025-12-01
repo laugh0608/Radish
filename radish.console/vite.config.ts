@@ -23,7 +23,6 @@ export default defineConfig({
                 secure: false
             }
         },
-        port: parseInt(env.DEV_SERVER_PORT || '3002', 10),
-        https: false
+        port: parseInt(env.DEV_SERVER_PORT || '3002', 10)
     }
 });

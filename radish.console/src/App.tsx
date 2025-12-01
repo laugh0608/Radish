@@ -6,9 +6,11 @@ interface Service {
     name: string;
     description: string;
     // Gateway 暴露的路径（相对网关根路径）
-    path: string;
-    // 下游实际目标地址（本地开发时用于参考）
-    target: string;
+    gatewayPath: string;
+    // Gateway 完整 URL（开发环境）
+    gatewayUrl: string;
+    // 内部服务地址（本地开发时的实际端口）
+    internalUrl?: string;
     // 用于健康检查的路径（相对当前 origin）
     healthPath?: string;
 }
@@ -26,48 +28,63 @@ const services: Service[] = [
         key: 'gateway',
         name: 'Gateway',
         description: 'Radish Gateway 反向代理与统一入口',
-        path: '/server',
-        target: 'https://localhost:5000/',
+        gatewayPath: '/server',
+        gatewayUrl: 'https://localhost:5000/server',
+        internalUrl: 'https://localhost:5000',
         healthPath: '/healthz'
     },
     {
         key: 'frontend',
-        name: 'Frontend (webOS)',
+        name: 'Frontend (WebOS)',
         description: '桌面式主入口，提供应用图标和窗口管理',
-        path: '/',
-        target: 'https://localhost:5000/',
+        gatewayPath: '/',
+        gatewayUrl: 'https://localhost:5000/',
+        internalUrl: 'http://localhost:3000',
         healthPath: '/'
     },
     {
         key: 'docs',
         name: 'Docs',
-        description: 'VitePress 文档站，通过 Gateway 暴露在 /docs',
-        path: '/docs',
-        target: 'https://localhost:5000/docs',
+        description: 'VitePress 文档站，通过 Gateway 暴露',
+        gatewayPath: '/docs',
+        gatewayUrl: 'https://localhost:5000/docs',
+        internalUrl: 'http://localhost:3001',
         healthPath: '/docs'
     },
     {
         key: 'api',
         name: 'API',
-        description: 'Radish.Api 后端服务，通过 Gateway 暴露在 /api',
-        path: '/api',
-        target: 'https://localhost:5000/api',
+        description: 'Radish.Api 后端服务，提供 RESTful API',
+        gatewayPath: '/api',
+        gatewayUrl: 'https://localhost:5000/api',
+        internalUrl: 'http://localhost:5100',
         healthPath: '/api/health'
+    },
+    {
+        key: 'auth',
+        name: 'Auth (OIDC)',
+        description: 'Radish.Auth OIDC 认证服务器，基于 OpenIddict',
+        gatewayPath: '/auth',
+        gatewayUrl: 'https://localhost:5000/auth',
+        internalUrl: 'http://localhost:5200',
+        healthPath: undefined // Auth 暂时没有暴露健康检查端点
     },
     {
         key: 'scalar',
         name: 'Scalar',
-        description: 'API Scalar 可视化文档，通过 Gateway 暴露在 /scalar',
-        path: '/scalar',
-        target: 'https://localhost:5000/scalar',
+        description: 'API Scalar 可视化文档，交互式 API 调试工具',
+        gatewayPath: '/scalar',
+        gatewayUrl: 'https://localhost:5000/scalar',
+        internalUrl: undefined,
         healthPath: '/scalar'
     },
     {
         key: 'console',
         name: 'Console',
         description: '当前管理控制台前端（radish.console）',
-        path: '/console',
-        target: 'https://localhost:5000/console',
+        gatewayPath: '/console',
+        gatewayUrl: 'https://localhost:5000/console',
+        internalUrl: 'http://localhost:3002',
         healthPath: '/console'
     }
 ];
@@ -135,52 +152,109 @@ function App() {
         };
     }, []);
 
+    const getStatusIcon = (service: Service): string => {
+        if (!service.healthPath) return '⚪';
+        const status = statuses[service.key];
+        if (!status || status.state === 'pending') return '🔵';
+        if (status.state === 'ok') return '🟢';
+        return '🔴';
+    };
+
     const renderStatus = (service: Service): string => {
-        if (!service.healthPath) return '未配置';
+        if (!service.healthPath) return '未配置检查';
         const status = statuses[service.key];
         if (!status || status.state === 'pending') return '检测中...';
         if (status.state === 'ok') {
-            return status.latency != null ? `可用 · ${status.latency} ms` : '可用';
+            return status.latency != null ? `${status.latency} ms` : '正常';
         }
-        return status.message ? `异常 · ${status.message}` : '异常';
+        return status.message ? status.message : '异常';
+    };
+
+    const getStatusClass = (service: Service): string => {
+        if (!service.healthPath) return 'status-unchecked';
+        const status = statuses[service.key];
+        if (!status || status.state === 'pending') return 'status-pending';
+        if (status.state === 'ok') return 'status-ok';
+        return 'status-fail';
     };
 
     return (
-        <div>
-            <h1>Radish Console</h1>
-            <p>
-                这是 Radish 网关下各个子系统的控制台入口视图。在这里可以查看服务路径、下游目标、健康状态，并跳转到对应的页面。
-            </p>
-            <table className="table" aria-label="service overview">
-                <thead>
-                    <tr>
-                        <th>应用</th>
-                        <th>Gateway 路径</th>
-                        <th>下游目标地址</th>
-                        <th>状态</th>
-                        <th>说明</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {services.map(service => (
-                        <tr key={service.key}>
-                            <td>{service.name}</td>
-                            <td>
-                                <a href={service.path} target="_blank" rel="noreferrer">
-                                    {service.path}
-                                </a>
-                            </td>
-                            <td>
-                                <a href={service.target} target="_blank" rel="noreferrer">
-                                    {service.target}
-                                </a>
-                            </td>
-                            <td>{renderStatus(service)}</td>
-                            <td>{service.description}</td>
+        <div className="container">
+            <header className="header">
+                <h1>🌿 Radish Console</h1>
+                <p className="subtitle">
+                    Radish 微服务控制台 - 查看服务状态、路径配置与健康检查
+                </p>
+            </header>
+
+            <div className="services-table">
+                <table aria-label="service overview">
+                    <thead>
+                        <tr>
+                            <th>状态</th>
+                            <th>服务名称</th>
+                            <th>Gateway 路径</th>
+                            <th>内部地址</th>
+                            <th>健康检查</th>
+                            <th>说明</th>
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {services.map(service => (
+                            <tr key={service.key}>
+                                <td className="status-icon">
+                                    <span className={getStatusClass(service)} title={renderStatus(service)}>
+                                        {getStatusIcon(service)}
+                                    </span>
+                                </td>
+                                <td className="service-name">
+                                    <strong>{service.name}</strong>
+                                </td>
+                                <td className="service-url">
+                                    <a
+                                        href={service.gatewayUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        title={service.gatewayUrl}
+                                    >
+                                        {service.gatewayPath}
+                                    </a>
+                                </td>
+                                <td className="service-url">
+                                    {service.internalUrl ? (
+                                        <a
+                                            href={service.internalUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            title={service.internalUrl}
+                                        >
+                                            {service.internalUrl.replace('http://', '').replace('https://', '')}
+                                        </a>
+                                    ) : (
+                                        <span className="text-muted">-</span>
+                                    )}
+                                </td>
+                                <td className={`health-status ${getStatusClass(service)}`}>
+                                    {renderStatus(service)}
+                                </td>
+                                <td className="service-description">
+                                    {service.description}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            <footer className="footer">
+                <p>
+                    <strong>端口约定：</strong>
+                    Gateway (5000/5001) · API (5100) · Auth (5200) · Frontend (3000) · Docs (3001) · Console (3002)
+                </p>
+                <p className="text-muted">
+                    所有对外访问通过 Gateway (https://localhost:5000) 统一入口，内部服务仅用于开发调试
+                </p>
+            </footer>
         </div>
     );
 }
