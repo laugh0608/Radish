@@ -4,6 +4,46 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.01
+
+- **feat(auth/project)**: 创建 Radish.Auth OIDC 认证服务器项目
+  - 集成 OpenIddict 7.2.0 框架，配置 OIDC 标准端点（/connect/authorize、/connect/token、/connect/userinfo、/connect/introspect、/connect/revoke）
+  - 配置服务端口 `http://localhost:5200`（内部端口，对外通过 Gateway 暴露）
+  - 支持三种授权流程：Authorization Code Flow（授权码流程）、Refresh Token Flow（刷新令牌）、Client Credentials Flow（客户端凭证）
+  - 配置开发/生产环境密钥管理：开发环境使用临时密钥，生产环境强制使用固定加密密钥
+  - 集成 Cookie 认证（用于登录页面会话管理）
+  - 完整的配置文件模板：appsettings.json、appsettings.Local.example.json
+  - WorkId 约定：Auth 服务使用 WorkId=2（API=0, Gateway=1, Auth=2）
+- **feat(auth/models)**: 创建 OIDC 数据模型与 ViewModels
+  - 新增 `UserClaim` 实体：存储 OIDC 声明和自定义用户声明
+  - 新增 OpenIddict 自定义实体（位于 `Radish.Model/Models/OpenIddict/`）：
+    - `RadishApplication`：OAuth 客户端应用管理，包含状态（Active/Disabled/PendingReview）和类型（Internal/ThirdParty）枚举
+    - `RadishAuthorization`：用户授权记录
+    - `RadishScope`：OAuth 作用域定义
+    - `RadishToken`：令牌存储（access_token、refresh_token、authorization_code）
+  - 对应的 ViewModels：UserClaimVo、VoOidcApp、VoOidcAuth、VoOidcScope、VoOidcToken
+  - AutoMapper 映射配置：`OidcProfile.cs`，特殊处理 ClientSecret 隐私保护和 PayloadPreview 截断
+- **feat(auth/startup)**: 完成 Program.cs 配置
+  - Autofac 容器集成（AutofacModuleRegister + AutofacPropertyModuleReg）
+  - Serilog 日志配置（AppSettingsTool 前置注册）
+  - SqlSugar ORM + Snowflake ID 配置
+  - Redis/内存缓存切换支持
+  - CORS 跨域配置（允许 Gateway、前端、文档等来源）
+  - OpenIddict Server 端点透传（EnableAuthorizationEndpointPassthrough、EnableTokenEndpointPassthrough、EnableUserInfoEndpointPassthrough）
+  - 开发环境禁用 HTTPS 要求（DisableTransportSecurityRequirement）
+  - 启动日志输出（与 API/Gateway 风格统一）
+- **chore(auth/test)**: 验证项目编译和启动
+  - 编译成功，无警告和错误
+  - 服务成功启动在 http://localhost:5200
+  - 日志输出正常，显示监听地址和 CORS 配置
+- **plan(auth/next)**: 规划 Auth 项目后续工作（按优先级）
+  1. 创建 OIDC 端点控制器（AuthorizationController、TokenController、UserInfoController、AccountController）
+  2. 实现 OpenIddict 自定义 SqlSugar Store（替代当前的内存存储，支持生产环境持久化）
+  3. 创建 Radish.DbSeed 项目（数据库初始化、预注册 OIDC 客户端：radish-client、radish-scalar、radish-rust-ext）
+  4. 实现客户端管理 API（CRUD 接口管理 OIDC 客户端应用）
+  5. 配置 Radish.Api 为资源服务器（添加 JWT Bearer 验证，从 Auth 服务验证访问令牌）
+  6. 前端集成（WebOS 前端对接 OIDC 登录流程）
+
 ### 2025.11.27
 
 - **feat(gateway/portal)**: 优化 Gateway 门户页面 URL 显示与配置管理

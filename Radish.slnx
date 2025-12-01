@@ -17,6 +17,7 @@
     <Project Path="Radish.Api.Tests\Radish.Api.Tests.csproj" />
   </Folder>
   <Project Path="Radish.Api/Radish.Api.csproj" />
+  <Project Path="Radish.Auth/Radish.Auth.csproj" />
   <Project Path="Radish.Common/Radish.Common.csproj" />
   <Project Path="Radish.Core/Radish.Core.csproj" />
   <Project Path="Radish.DbMigrate/Radish.DbMigrate.csproj" />
