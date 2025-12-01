@@ -1,0 +1,1 @@
+import{_ as e,c as a,o as i,ae as t}from"./chunks/framework.DdJmP4Xu.js";const m=JSON.parse('{"title":"文档指南","description":"","frontmatter":{},"headers":[],"relativePath":"guide.md","filePath":"guide.md"}'),o={name:"guide.md"};function d(r,l,s,c,h,n){return i(),a("div",null,[...l[0]||(l[0]=[t("",7)])])}const p=e(o,[["render",d]]);export{m as __pageData,p as default};
