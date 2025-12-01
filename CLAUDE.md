@@ -31,9 +31,13 @@ dotnet run --project Radish.Api/Radish.Api.csproj
 # Run the Gateway (listens on https://localhost:5000 and http://localhost:5001)
 dotnet run --project Radish.Gateway/Radish.Gateway.csproj
 
+# Run the Auth Server (listens on http://localhost:5200)
+dotnet run --project Radish.Auth/Radish.Auth.csproj
+
 # Hot reload during development
 dotnet watch --project Radish.Api          # For API
 dotnet watch --project Radish.Gateway      # For Gateway
+dotnet watch --project Radish.Auth         # For Auth
 
 # Run backend tests
 dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj
@@ -56,11 +60,11 @@ npm run lint --prefix radish.client
 
 ### Quick Start Scripts
 ```bash
-# Interactive menu to start API, Gateway, frontend, docs, console or run tests
+# Interactive menu to start API, Gateway, Auth, frontend, docs, console or run tests
 # Current options include:
-# - Single services: API / Gateway / frontend / docs / console / tests
+# - Single services: API / Gateway / frontend / docs / console / Auth / tests
 # - Combinations: Gateway+API, Gateway+frontend, Gateway+docs, Gateway+console,
-#   Gateway+API+frontend, Gateway+API+frontend+console, start ALL
+#   Gateway+Auth, Gateway+API+frontend, Gateway+API+frontend+console, start ALL
 pwsh ./start.ps1    # Windows/PowerShell
 ./start.sh          # Linux/macOS
 ```

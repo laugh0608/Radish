@@ -4,6 +4,7 @@ set -euo pipefail
 CONFIGURATION="${CONFIGURATION:-Debug}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 API_PROJECT="$ROOT_DIR/Radish.Api/Radish.Api.csproj"
+AUTH_PROJECT="$ROOT_DIR/Radish.Auth/Radish.Auth.csproj"
 CLIENT_DIR="$ROOT_DIR/radish.client"
 CONSOLE_DIR="$ROOT_DIR/radish.console"
 TEST_PROJECT="$ROOT_DIR/Radish.Api.Tests/Radish.Api.Tests.csproj"
@@ -76,18 +77,20 @@ print_menu() {
   echo "  3. 启动 Frontend      (radish.client        @ http://localhost:3000)"
   echo "  4. 启动 Docs          (radish.docs          @  http://localhost:3001/docs/)"
   echo "  5. 启动 Console       (radish.console       @ http://localhost:3002)"
-  echo "  6. 运行单元测试       (Radish.Api.Tests)"
+  echo "  6. 启动 Auth          (Radish.Auth          @ http://localhost:5200)"
+  echo "  7. 运行单元测试       (Radish.Api.Tests)"
   echo
   echo "[组合启动]"
-  echo "  7. 启动 Gateway + API"
-  echo "  8. 启动 Gateway + Frontend"
-  echo "  9. 启动 Gateway + Docs"
-  echo " 10. 启动 Gateway + Console"
-  echo " 11. 启动 Gateway + API + Frontend"
-  echo " 12. 启动 Gateway + API + Frontend + Console"
-  echo " 13. 一键启动全部服务 (Gateway + API + Frontend + Docs + Console)"
+  echo "  8. 启动 Gateway + API"
+  echo "  9. 启动 Gateway + Frontend"
+  echo " 10. 启动 Gateway + Docs"
+  echo " 11. 启动 Gateway + Console"
+  echo " 12. 启动 Gateway + Auth"
+  echo " 13. 启动 Gateway + API + Frontend"
+  echo " 14. 启动 Gateway + API + Frontend + Console"
+  echo " 15. 一键启动全部服务 (Gateway + API + Auth + Frontend + Docs + Console)"
   echo
-  echo "提示: 组合启动会将 Gateway / 前端 / 文档 / Console 置于后台, API 通常在前台运行以便查看日志。"
+  echo "提示: 组合启动会将 Gateway / 前端 / 文档 / Console / Auth 置于后台, API 通常在前台运行以便查看日志。"
   echo
 }
 
@@ -155,6 +158,26 @@ start_console() {
   )
 }
 
+start_auth() {
+  (
+    cd "$ROOT_DIR"
+    export ASPNETCORE_URLS="http://localhost:5200"
+
+    invoke_step "dotnet clean ($CONFIGURATION)" dotnet clean "$AUTH_PROJECT" -c "$CONFIGURATION"
+    invoke_step "dotnet restore" dotnet restore "$AUTH_PROJECT"
+    invoke_step "dotnet build ($CONFIGURATION)" dotnet build "$AUTH_PROJECT" -c "$CONFIGURATION"
+    invoke_step "dotnet run (http only)" dotnet run --project "$AUTH_PROJECT" -c "$CONFIGURATION" --launch-profile http
+  )
+}
+
+start_auth_no_build() {
+  (
+    cd "$ROOT_DIR"
+    export ASPNETCORE_URLS="http://localhost:5200"
+    exec dotnet run --no-build --project "$AUTH_PROJECT" -c "$CONFIGURATION" --launch-profile http
+  )
+}
+
 run_tests() {
   (
     cd "$ROOT_DIR"
@@ -200,6 +223,15 @@ start_gateway_console() {
   start_console
 }
 
+start_gateway_auth() {
+  echo "[组合] 启动 Gateway + Auth..."
+  build_all
+  start_gateway_no_build &
+  add_bg_pid $!
+  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
+  start_auth_no_build
+}
+
 start_gateway_api_frontend() {
   echo "[组合] 启动 Gateway + API + Frontend..."
   build_all
@@ -228,11 +260,14 @@ start_gateway_api_frontend_console() {
 }
 
 start_all() {
-  echo "[组合] 一键启动全部服务 (Gateway + API + Frontend + Docs + Console)..."
+  echo "[组合] 一键启动全部服务 (Gateway + API + Auth + Frontend + Docs + Console)..."
   build_all
   start_gateway_no_build &
   add_bg_pid $!
   echo "  - Gateway 已在后台启动 (https://localhost:5000)."
+  start_auth_no_build &
+  add_bg_pid $!
+  echo "  - Auth 已在后台启动 (http://localhost:5200)."
   start_frontend &
   add_bg_pid $!
   echo "  - Frontend 已在后台启动 (https://localhost:3000)."
@@ -268,27 +303,33 @@ case "$choice" in
     start_console
     ;;
   6)
-    run_tests
+    start_auth
     ;;
   7)
-    start_gateway_api
+    run_tests
     ;;
   8)
-    start_gateway_frontend
+    start_gateway_api
     ;;
   9)
-    start_gateway_docs
+    start_gateway_frontend
     ;;
   10)
-    start_gateway_console
+    start_gateway_docs
     ;;
   11)
-    start_gateway_api_frontend
+    start_gateway_console
     ;;
   12)
-    start_gateway_api_frontend_console
+    start_gateway_auth
     ;;
   13)
+    start_gateway_api_frontend
+    ;;
+  14)
+    start_gateway_api_frontend_console
+    ;;
+  15)
     start_all
     ;;
   *)
