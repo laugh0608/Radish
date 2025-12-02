@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
+using Radish.Shared;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers;
 
@@ -18,7 +20,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = "RadishAuthPolicy")]
+//[Authorize(Policy = "RadishAuthPolicy")]
 [Tags("用户管理")]
 public class UserController : ControllerBase
 {
@@ -54,7 +56,7 @@ public class UserController : ControllerBase
         return new MessageModel
         {
             IsSuccess = true,
-            StatusCode = 200,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = users
         };
@@ -97,7 +99,7 @@ public class UserController : ControllerBase
         return new MessageModel
         {
             IsSuccess = true,
-            StatusCode = 200,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = userInfo
         };
@@ -122,6 +124,7 @@ public class UserController : ControllerBase
     /// <response code="403">禁止访问，权限不足</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet]
+    [Authorize(Policy = "Client")]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -137,7 +140,7 @@ public class UserController : ControllerBase
         return new MessageModel
         {
             IsSuccess = true,
-            StatusCode = 200,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
             ResponseData = userInfo
         };
     }

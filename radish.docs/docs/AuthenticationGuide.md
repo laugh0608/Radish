@@ -11,7 +11,7 @@ Radish 采用 **OIDC（OpenID Connect）** 架构实现统一身份认证，基�
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                  Radish.Auth (OIDC Server)              │
-│  端口: https://localhost:7100                           │
+│  端口: http://localhost:5200 （本地开发）               │
 │  ─────────────────────────────────────────────────────  │
 │  • 用户管理（注册/登录/密码重置）                         │
 │  • 角色与权限管理                                        │
@@ -24,7 +24,7 @@ Radish 采用 **OIDC（OpenID Connect）** 架构实现统一身份认证，基�
     ▼                     ▼            ▼           ▼
 ┌─────────┐        ┌──────────┐   ┌────────┐  ┌─────────┐
 │Radish.Api│       │radish.   │   │ Scalar │  │ Admin   │
-│:7110     │       │client    │   │API Docs│  │Dashboard│
+│:5100     │       │client    │   │API Docs│  │Dashboard│
 │(资源服务器)│       │:3000    │   │        │  │(预留)    │
 └─────────┘        └──────────┘   └────────┘  └─────────┘
 ```
@@ -122,7 +122,7 @@ new OpenIddictApplicationDescriptor
     DisplayName = "Radish API Documentation",
     ConsentType = ConsentTypes.Implicit, // 跳过授权确认页
     RedirectUris = {
-        new Uri("https://localhost:7110/scalar/oauth2-callback")
+        new Uri("https://localhost:5000/scalar/oauth2-callback")
     },
     Permissions =
     {
@@ -146,11 +146,11 @@ new OpenIddictApplicationDescriptor
     DisplayName = "Radish Web Client",
     ConsentType = ConsentTypes.Explicit, // 显示授权确认页
     RedirectUris = {
-        new Uri("https://localhost:3000/callback"),
-        new Uri("https://localhost:3000/silent-renew")
+        new Uri("http://localhost:3000/callback"),
+        new Uri("http://localhost:3000/silent-renew")
     },
     PostLogoutRedirectUris = {
-        new Uri("https://localhost:3000")
+        new Uri("http://localhost:3000")
     },
     Permissions =
     {
@@ -286,31 +286,37 @@ Authorization: Bearer {admin_token}
 
 ## 5. 资源服务器配置
 
-Radish.Api 作为资源服务器验证 Token：
+Radish.Api 作为资源服务器验证 Token（当前本地开发配置已经与 Radish.Auth 对接）：
 
 ```csharp
 // Program.cs
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = "https://localhost:7100";
-        options.Audience = "radish-api";
-        options.RequireHttpsMetadata = true; // 生产环境必须为 true
+        // 本地开发：直接信任 Radish.Auth 的 OpenIddict Server
+        options.Authority = "http://localhost:5200";
+        // 生产环境部署到网关后，可切换为网关暴露的 https 地址
+        // options.Authority = "https://your-gateway-domain";
+
+        // 本地开发阶段先关闭 Audience 校验，等待后续统一约定
+        // options.Audience = "radish-api";
+        options.RequireHttpsMetadata = false;
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
+            // 若生产环境统一配置 Issuer，可开启严格校验
+            ValidateIssuer = false,
+            ValidateAudience = false,
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero // 严格过期时间
+            ClockSkew = TimeSpan.Zero
         };
     });
 
 builder.Services.AddAuthorization(options =>
 {
-    // 保留现有策略
+    // Client 策略：基于 scope=radish-api 控制访问资源服务器
     options.AddPolicy("Client", policy =>
-        policy.RequireClaim("iss", "https://localhost:7100"));
+        policy.RequireClaim("scope", "radish-api"));
 
     options.AddPolicy("System", policy =>
         policy.RequireRole("System"));
@@ -337,13 +343,13 @@ import { UserManagerSettings } from 'oidc-client-ts';
 export const oidcConfig: UserManagerSettings = {
   authority: 'https://localhost:7100',
   client_id: 'radish-client',
-  redirect_uri: 'https://localhost:3000/callback',
-  post_logout_redirect_uri: 'https://localhost:3000',
-  silent_redirect_uri: 'https://localhost:3000/silent-renew',
+  redirect_uri: 'http://localhost:3000/callback',
+  post_logout_redirect_uri: 'http://localhost:3000',
+  silent_redirect_uri: 'http://localhost:3000/silent-renew',
   scope: 'openid profile radish-api offline_access',
   response_type: 'code',
   automaticSilentRenew: true,
-  // PKCE 默认启用
+  // PKCE 默认启用（生产环境请使用真实 HTTPS 域名）
 };
 ```
 

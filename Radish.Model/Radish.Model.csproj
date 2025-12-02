@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Radish.Common\Radish.Common.csproj" />
+    <ProjectReference Include="..\Radish.Shared\Radish.Shared.csproj" />
   </ItemGroup>
 
 </Project>

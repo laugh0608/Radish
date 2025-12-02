@@ -15,6 +15,7 @@ public class AutoMapperConfig
         cfg.AddProfile<RoleProfile>();
         cfg.AddProfile<UserProfile>();
         cfg.AddProfile<AuditSqlLogProfile>();
+        cfg.AddProfile<OidcProfile>();
     }
 
     #region 已弃用

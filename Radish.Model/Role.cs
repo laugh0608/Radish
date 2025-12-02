@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using Radish.Model.Root;
+using Radish.Shared.CustomEnum;
 using SqlSugar;
 
 namespace Radish.Model;
@@ -43,7 +44,7 @@ public class Role : RootEntityTKey<long>
         RoleDescription = string.Empty;
         OrderSort = 0;
         DepartmentIds = string.Empty;
-        AuthorityScope = -1;
+        AuthorityScope = (int)AuthorityScopeKindEnum.None;
         IsEnabled = false;
         CreateId = 0;
         CreateBy = "System";
@@ -152,7 +153,7 @@ public class Role : RootEntityTKey<long>
     /// <para>默认为 -1 无任何权限</para>
     /// <para>-1 无任何权限；1 自定义权限；2 本部门；3 本部门及以下；4 仅自己；9 全部；</para></remarks>
     [SugarColumn(IsNullable = true)]
-    public int AuthorityScope { get; set; } = -1;
+    public int AuthorityScope { get; set; } = (int)AuthorityScopeKindEnum.None;
 
     /// <summary>是否激活</summary>
     /// <remarks>不可为空，默认为 false</remarks>

@@ -1,4 +1,6 @@
-﻿namespace Radish.Model;
+﻿using Radish.Shared.CustomEnum;
+
+namespace Radish.Model;
 
 /// <summary>
 /// 统一返回信息类（泛型版本）
@@ -40,7 +42,7 @@ public class MessageModel<T>
     /// 404: 资源不存在<br/>
     /// 500: 服务器内部错误
     /// </value>
-    public int StatusCode { get; set; } = 200;
+    public int StatusCode { get; set; } = (int)HttpStatusCodeEnum.Success;
 
     /// <summary>
     /// 操作是否成功
@@ -155,7 +157,7 @@ public class MessageModel
     /// <summary>
     /// HTTP 状态码
     /// </summary>
-    public int StatusCode { get; set; } = 200;
+    public int StatusCode { get; set; } = (int)HttpStatusCodeEnum.Success;
 
     /// <summary>
     /// 操作是否成功

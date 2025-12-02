@@ -201,6 +201,68 @@ git push origin v1.2.0.251126
 - 目录规划：真实业务扩展应在 `native/rust/<库名>` 下维护 Cargo 工程，并附 README 说明导出函数签名/调用约定。`Radish.Core/test_lib` 仅保留最小示例，迁移完成后可以删除或仅做文档参考。
 - 提交规范：Rust `target/` 目录与生成的 `.dll/.so/.dylib` 依旧忽略，必要时在 `.gitignore` 中新增排除项；若需要在 CI 中编译 Rust，请在构建脚本中加入 `cargo build --release` 与共享库复制步骤，保持与 DevelopmentPlan 中的原生扩展规划一致。
 
+## 枚举与魔术数字规范
+
+- 用户、角色、部门、租户等业务对象的“状态”、“类型”、“级别”等字段，禁止在代码中直接使用 `-1`、`0`、`1` 之类的魔术数字。
+- 必须为这类字段定义**语义明确的枚举或常量**，统一放在 `Radish.Shared.CustomEnum`（推荐，用于跨模块/跨前后端共享）或 `Radish.Model` 中，例如：`UserStatusCodeEnum.Normal/Unknown`、`UserSexEnum.Male/Female`、`DepartmentStatusCodeEnum.Normal`、`AuthorityScopeKindEnum.Self/All`。
+- 实体类中应使用枚举类型或整型字段 + 枚举映射的方式，Controller 和 Service 逻辑一律基于枚举名/常量判断，避免出现 `if (status == 1)` 这类难以理解的比较。
+- 枚举命名需体现业务语义，避免 `Status0/Status1` 这类无含义命名；建议按业务维度划分命名空间，例如统一集中在 `Radish.Shared.CustomEnum` 下管理用户状态、性别、部门状态、权限范围、HTTP 状态码等。
+- 数据库存储可以使用 `int` 或 `smallint`，但必须在代码层用枚举封装，并在 AutoMapper 或转换逻辑中保持枚举与整型之间的映射一致。
+- 新增或修改状态码时，优先扩展枚举，而不是在各处散落新增数字常量；涉及前端时也应在前后端共享的枚举/常量文件中保持同步。
+
+## 新增实体与字段的标准流程
+
+> 目标：保证“以实体为真源（Code First）”，在不直接手改数据库的前提下，让开发环境与生产环境的表结构、安全地跟随代码演进。
+
+1. **设计与建模**
+   - 在 `Radish.Model` 中定义/修改实体类型（继承 `RootEntityTKey<TKey>`），补充字段、注释与 `[SugarColumn]` 等特性。
+   - 若涉及状态码、类型枚举等，优先在 `Radish.Shared.CustomEnum` 下新增或扩展枚举（如 `UserStatusCodeEnum`、`UserSexEnum`、`DepartmentStatusCodeEnum`、`AuthorityScopeKindEnum`、`HttpStatusCodeEnum`）。
+   - 确认前后端对外暴露的是 ViewModel/DTO，而不是直接暴露实体。
+
+2. **代码层变更（实体/枚举）**
+   - 修改实体字段时同步更新：
+     - 对应的 ViewModel/Vo（位于 `Radish.Model/ViewModels`）。
+     - AutoMapper 配置（位于 `Radish.Extension/AutoMapperExtension`）。
+     - 相关 Service/Controller 中对该字段的使用（避免遗漏）。
+   - 新增状态/类型字段时，禁止直接写 `-1/0/1`，必须通过 `Radish.Shared.CustomEnum` 中的枚举来表达语义。
+
+3. **本地开发环境同步（InitTables / DbMigrate）**
+   - 确保本地 `Radish.Api/appsettings.Local.json` 中数据库连接指向开发环境库（SQLite 或 PostgreSQL）。
+   - 在仓库根目录执行：
+
+     ```bash
+     dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
+     ```
+
+     - 动作说明：
+       - 根据当前配置创建数据库（如不存在）。
+       - 扫描 `Radish.Model` 中标记了 `[SugarTable]` 的实体类型，执行 `CodeFirst.InitTables`：
+         - 新表会被创建；
+         - 新增字段会自动补列；
+         - 不会主动删除旧字段。
+   - 使用数据库客户端确认表结构是否符合预期（字段名、类型、默认值、索引等）。
+
+4. **生成迁移 SQL（供测试/生产环境使用）**
+   - 在一套“迁移基线库”（例如测试环境数据库）上，同样执行 `DbMigrate init` 让结构跟随最新实体。
+   - 使用数据库自带工具或对比工具，生成**从旧版本到新版本**的结构差异 SQL：
+     - 只包含必要的 `CREATE TABLE` / `ALTER TABLE` / `CREATE INDEX` 等 DDL；
+     - 拆分为按版本管理的文件，例如：`deploy/sql/2025XXXX_add_user_profile_fields.sql`。
+   - 将迁移 SQL 文件提交到仓库，作为版本的一部分，方便后续审查与回滚。
+
+5. **上线前执行迁移 SQL**
+   - 部署流程中，在启动新版本 API/Gateway 之前：
+     - 由 DBA 或 CI/CD 流水线在目标数据库上按顺序执行本次版本对应的迁移 SQL；
+     - 执行完成后，再发布/切换应用实例。
+   - 生产环境**禁止**在应用启动时自动调用 `InitTables`，所有结构变更必须通过迁移脚本显式执行。
+
+6. **数据初始化与回填（配合 DbMigrate seed）**
+   - 若新增字段需要默认业务数据（例如为所有历史用户回填某个状态），建议：
+     - 在迁移 SQL 中加入安全的 `UPDATE` 语句，或
+     - 在 `Radish.DbMigrate` 中实现 `seed` 子命令，集中处理默认管理员、角色、租户、基础参数等数据初始化。
+   - 数据初始化脚本同样应纳入版本管理，并在上线流程中显式执行。
+
+---
+
 ## 实体与视图模型规范
 
 - 仓储层（Radish.Repository）只处理 `Radish.Model` 中定义的实体类型，禁止将实体对象直接向外暴露；Service 层获取实体后必须映射为视图模型再返回给 Controller。
@@ -476,10 +538,10 @@ api-deprecated-versions: (空或已弃用的版本)
 
 ### 文档访问
 
-- **Scalar UI**: `https://localhost:7110/api/docs`
-- **OpenAPI JSON**: 
-  - v1: `https://localhost:7110/openapi/v1.json`
-  - v2: `https://localhost:7110/openapi/v2.json`
+- **Scalar UI**: `https://localhost:5000/scalar`（本机直连：`http://localhost:5100/scalar`）
+- **OpenAPI JSON**:
+  - v1: `http://localhost:5100/openapi/v1.json`（或经 Gateway：`https://localhost:5000/openapi/v1.json`）
+  - v2: `http://localhost:5100/openapi/v2.json`（或经 Gateway：`https://localhost:5000/openapi/v2.json`）
 
 ### 常见问题
 

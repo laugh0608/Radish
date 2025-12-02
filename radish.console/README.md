@@ -18,15 +18,15 @@ npm run dev --prefix radish.console
 
 The dev server runs on:
 
-- https://localhost:3002/
+- http://localhost:3002/
 
 ## Access through Gateway
 
 When both Gateway and the console dev server are running, you can access the console via:
 
-- https://localhost:5001/console
+- https://localhost:5000/console
 
-The Gateway forwards `/console/**` to `https://localhost:3002`.
+The Gateway forwards `/console/**` to `http://localhost:3002`, exposing only the Gateway entry externally.
 
 You can also use the unified start scripts from the repo root:
 
