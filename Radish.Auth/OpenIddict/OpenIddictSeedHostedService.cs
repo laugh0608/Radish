@@ -1,0 +1,68 @@
+using Microsoft.Extensions.Hosting;
+using OpenIddict.Abstractions;
+
+namespace Radish.Auth.OpenIddict;
+
+/// <summary>
+/// 初始化 OpenIddict 所需的基础数据：
+/// - radish-client：前端 Web 客户端（授权码 + PKCE + refresh_token）
+/// - radish-api Scope：资源服务器标识
+/// </summary>
+public class OpenIddictSeedHostedService : IHostedService
+{
+    private readonly IOpenIddictApplicationManager _applicationManager;
+    private readonly IOpenIddictScopeManager _scopeManager;
+
+    public OpenIddictSeedHostedService(
+        IOpenIddictApplicationManager applicationManager,
+        IOpenIddictScopeManager scopeManager)
+    {
+        _applicationManager = applicationManager;
+        _scopeManager = scopeManager;
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        // 初始化 radish-api Scope
+        if (await _scopeManager.FindByNameAsync("radish-api", cancellationToken) is null)
+        {
+            var descriptor = new OpenIddictScopeDescriptor
+            {
+                Name = "radish-api",
+                DisplayName = "Radish API"
+            };
+
+            descriptor.Resources.Add("radish-api");
+
+            await _scopeManager.CreateAsync(descriptor, cancellationToken);
+        }
+
+        // 初始化前端 Web 客户端：radish-client
+        if (await _applicationManager.FindByClientIdAsync("radish-client", cancellationToken) is null)
+        {
+            var descriptor = new OpenIddictApplicationDescriptor
+            {
+                ClientId = "radish-client",
+                DisplayName = "Radish Web Client",
+                ConsentType = OpenIddictConstants.ConsentTypes.Explicit
+            };
+
+            // 通过 Gateway 暴露的回调地址
+            descriptor.RedirectUris.Add(new Uri("https://localhost:5000/oidc/callback"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000"));
+
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.RefreshToken);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
+
+            //descriptor.Requirements.Add(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
+
+            await _applicationManager.CreateAsync(descriptor, cancellationToken);
+        }
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+}
