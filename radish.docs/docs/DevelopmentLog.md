@@ -4,6 +4,69 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.02
+
+- **feat(auth+api/oidc-minimal)**: 打通 Radish.Auth 与 Radish.Api 的最小 OIDC 授权码 + 资源服务器链路
+  - 在 `Radish.Auth` 中接入 OpenIddict EF Core 集成：
+    - 新增 `AuthOpenIddictDbContext`（/Radish.Auth/OpenIddict/AuthOpenIddictDbContext.cs），专门承载 OpenIddict 的 Application/Authorization/Scope/Token 实体，使用 Sqlite 本地文件 `RadishAuth.OpenIddict.db`
+    - `Program.cs` 中通过 `AddDbContext<AuthOpenIddictDbContext>()` + `.AddOpenIddict().AddCore().UseEntityFrameworkCore().UseDbContext<AuthOpenIddictDbContext>()` 正式启用 EF Core 存储
+    - 启动时调用 `db.Database.EnsureCreated()` 自动建表
+  - 配置 OpenIddict Server 仅对 access_token 使用签名 JWT，不再加密：
+    - 使用 `options.AddDevelopmentEncryptionCertificate().AddDevelopmentSigningCertificate()` 配置开发环境的加密/签名证书
+    - 调用 `options.DisableAccessTokenEncryption()`，保留内部票据（授权码/RefreshToken）的加密，但 access_token 统一发出 3 段 JWS，方便 `Radish.Api` 通过 `JwtBearer` 验签
+    - Issuer 从配置读取：`OpenIddict:Server:Issuer = http://localhost:5200`，与本地 Auth 服务地址保持一致
+  - 落地最小可用 OIDC 控制器：
+    - `AccountController`（/Radish.Auth/Controllers/AccountController.cs）
+      - `GET /Account/Login`：返回极简 HTML 表单，预填测试账号 `test / P@ssw0rd!`，方便浏览器直接登录
+      - `POST /Account/Login`：校验固定账号，写入 Cookie 认证会话，Claims 中包含 `sub=1`、`name=test`、`role=System`
+    - `AuthorizationController`（/Radish.Auth/Controllers/AuthorizationController.cs）
+      - `~/connect/authorize`：
+        - 未登录 → 通过 Cookie 认证方案 `Challenge` 到 `/Account/Login?returnUrl=...`
+        - 已登录 → 从 `HttpContext.GetOpenIddictServerRequest()` 读取 client_id、redirect_uri、scope 等信息
+        - 构造 `ClaimsPrincipal`，确保存在 `sub`，然后 `principal.SetScopes(request.GetScopes())` + `SetResources("radish-api")`，交给 OpenIddict 生成授权码
+    - `UserInfoController`：实现 `~/connect/userinfo` 基于当前用户 Claims 返回基本信息（sub/name/role 等）
+  - 种子数据（Scope + Client）：
+    - `OpenIddictSeedHostedService`（/Radish.Auth/OpenIddict/OpenIddictSeedHostedService.cs）：
+      - Scope：`radish-api`（Name=radish-api，Resources=["radish-api"]）
+      - Client：`radish-client`：
+        - ClientId="radish-client"，DisplayName="Radish Web Client"
+        - RedirectUris=["https://localhost:5000/oidc/callback"], PostLogoutRedirectUris=["https://localhost:5000"]
+        - Permissions：Authorization Endpoint、Token Endpoint、AuthorizationCode、RefreshToken、ResponseTypes.Code、`scope:radish-api`
+        - 移除强制 PKCE 要求（便于目前手工使用 `.http` 调试），后续前端接入后再根据需要重新开启
+  - `Radish.Api` 作为资源服务器信任 `Radish.Auth` 发出的 access_token：
+    - `Program.cs`（/Radish.Api/Program.cs）：
+      - 配置 JwtBearer：
+        - `options.Authority = "http://localhost:5200";`
+        - 暂不设置 `Audience`，并在 `TokenValidationParameters` 中关闭 `ValidateAudience`，只验证签名 + 时效：
+          ```csharp
+          options.TokenValidationParameters = new TokenValidationParameters
+          {
+              ValidateIssuer = true,
+              ValidateAudience = false,
+              ValidateLifetime = true,
+              ValidateIssuerSigningKey = true,
+              ClockSkew = TimeSpan.Zero
+          };
+          ```
+        - `options.RequireHttpsMetadata = false`（本地使用 http 调试，后续通过 Gateway 暴露 https）
+      - 中间件顺序：`app.UseAuthentication();` 在 `UseAuthorization()` 之前，确保 JWT 认证实际生效
+    - 授权策略：
+      - `Client` 策略改为基于 `scope=radish-api` 控制访问资源服务器：
+        ```csharp
+        .AddPolicy("Client", policy =>
+            policy.RequireClaim("scope", "radish-api").Build())
+        ```
+  - 用于验证链路的调试接口与 .http 脚本：
+    - `UserController.GetUserByHttpContext`（/Radish.Api/Controllers/UserController.cs）
+      - 控制器级别：`[Authorize]`（只要求已认证）
+      - 方法级别：`[Authorize(Policy = "Client")]`，只要 access_token 里有 `scope=radish-api` 即可访问
+      - 从 `IHttpContextUser` 读取 `UserId/UserName/TenantId` 并返回，目前由于 Claim 映射仍按旧 JWT 方案实现，返回的是 `0/""/0`，后续单独补齐映射逻辑
+    - 新增 `Radish.Api/Radish.Api.oidc.http`，用于手动验证整个 OIDC 流程：
+      1. 浏览器访问 `http://localhost:5200/Account/Login`，使用 `test / P@ssw0rd!` 登录
+      2. 浏览器访问 `http://localhost:5200/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=radish-api`，从回调 URL 中复制 `code`
+      3. 使用 `.http` 中的 `POST http://localhost:5200/connect/token` 请求，用 `grant_type=authorization_code&client_id=radish-client&code=...&redirect_uri=...` 换取 access_token（为 3 段 JWT）
+      4. 在 `.http` 中使用 `Authorization: Bearer {access_token}` 调用 `GET http://localhost:5100/api/v1/User/GetUserByHttpContext`，确认返回 200 表示 Auth+Api 最小 OIDC 流程已经打通
+
 ### 2025.12.01
 
 - **feat(auth/project)**: 创建 Radish.Auth OIDC 认证服务器项目
