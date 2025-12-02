@@ -1,8 +1,11 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
 using Radish.Common.CoreTool;
+using Radish.Auth.OpenIddict;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
 using Radish.Extension.AutoMapperExtension;
@@ -56,7 +59,7 @@ builder.Host.AddSerilogSetup();
 // AutoMapper
 builder.Services.AddAutoMapperSetup(builder.Configuration);
 
-// SqlSugar
+// SqlSugar（业务数据仍使用 SqlSugar）
 builder.Services.AddSqlSugarSetup();
 
 // 配置 Snowflake ID
@@ -86,6 +89,9 @@ builder.Services.AddAllOptionRegister();
 // 添加控制器
 builder.Services.AddControllers();
 
+// OpenIddict 初始化种子数据（使用 EF Core 存储）
+builder.Services.AddHostedService<OpenIddictSeedHostedService>();
+
 // 添加认证：Cookie（用于登录页面会话）
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -94,19 +100,34 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.LogoutPath = "/Account/Logout";
     });
 
+// OpenIddict 所用 EF Core DbContext（仅承载 OpenIddict 实体）
+var openIddictConnectionString = builder.Configuration.GetConnectionString("OpenIddict")
+    ?? "Data Source=RadishAuth.OpenIddict.db";
+
+builder.Services.AddDbContext<AuthOpenIddictDbContext>(options =>
+{
+    options.UseSqlite(openIddictConnectionString);
+});
+
 // OpenIddict 配置
 builder.Services.AddOpenIddict()
-    // 注册 OpenIddict Core 服务
+    // 注册 OpenIddict Core 服务（使用 EF Core 存储）
     .AddCore(options =>
     {
-        // 配置 OpenIddict 使用 SqlSugar（通过自定义 Store）
-        // TODO: 实现自定义 Store，暂时使用内存存储
-        // options.UseRadishSqlSugarStores();
+        options.UseEntityFrameworkCore()
+               .UseDbContext<AuthOpenIddictDbContext>();
     })
     // 注册 OpenIddict Server 服务
     .AddServer(options =>
     {
-        // 启用 OIDC 授权端点
+        // 显式设置 Issuer 为配置中的地址
+        var issuer = builder.Configuration.GetValue<string>("OpenIddict:Server:Issuer");
+        if (!string.IsNullOrEmpty(issuer))
+        {
+            options.SetIssuer(new Uri(issuer));
+        }
+
+        // 启用 OIDC 端点
         options.SetAuthorizationEndpointUris("/connect/authorize")
                .SetTokenEndpointUris("/connect/token")
                .SetUserInfoEndpointUris("/connect/userinfo")
@@ -119,24 +140,16 @@ builder.Services.AddOpenIddict()
                .AllowClientCredentialsFlow();
 
         // 配置加密和签名密钥
-        var useDevelopmentKeys = builder.Configuration.GetValue<bool>("OpenIddict:Encryption:UseDevelopmentKeys");
-        if (useDevelopmentKeys)
-        {
-            // 开发环境：使用临时密钥
-            options.AddDevelopmentEncryptionCertificate()
-                   .AddDevelopmentSigningCertificate();
-        }
-        else
-        {
-            // 生产环境：使用固定密钥（从配置读取）
-            // TODO: 实现生产环境密钥加载
-            throw new InvalidOperationException("生产环境必须配置固定的加密和签名密钥");
-        }
+        // 开发环境：使用临时加密 + 签名证书
+        options.AddDevelopmentEncryptionCertificate()
+               .AddDevelopmentSigningCertificate();
+
+        // 重要：禁用 access_token 加密，只生成签名 JWT，方便 Api 直接用 JwtBearer 验签
+        options.DisableAccessTokenEncryption();
 
         // 注册 ASP.NET Core 宿主
         options.UseAspNetCore()
                .EnableAuthorizationEndpointPassthrough()
-               .EnableTokenEndpointPassthrough()
                .EnableUserInfoEndpointPassthrough()
                .DisableTransportSecurityRequirement(); // 允许 HTTP（仅开发环境）
     });
@@ -146,6 +159,13 @@ builder.Services.AddOpenIddict()
 // -------------- App 初始化阶段 ---------------
 var app = builder.Build();
 // -------------- App 初始化阶段 ---------------
+
+// 确保 OpenIddict 所在的 EF Core 数据库已创建
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AuthOpenIddictDbContext>();
+    db.Database.EnsureCreated();
+}
 
 #region 中间件管道
 
