@@ -194,10 +194,8 @@ dotnet run --project Radish.Api
 {
   "Cors": {
     "AllowedOrigins": [
-      "https://localhost:3000",      // Vite 默认端口
-      "http://localhost:3000",
-      "https://localhost:3000",     // 项目自定义端口
-      "http://localhost:3000"
+      "http://localhost:3000"      // Vite 本地开发默认端口（HTTP）
+      // 如需在本地启用 HTTPS dev，可按需追加 "https://localhost:3000"
     ]
   }
 }
@@ -214,27 +212,27 @@ Gateway 门户页面需要配置服务的公开访问地址，用于页面展示
 ```json
 {
   "GatewayService": {
-    "PublicUrl": "https://localhost:5001"
+    "PublicUrl": "https://localhost:5000"
   },
   "DownstreamServices": {
     "ApiService": {
-      "BaseUrl": "https://localhost:5101",
+      "BaseUrl": "http://localhost:5100",
       "HealthCheckPath": "/health"
     }
   },
   "FrontendService": {
-    "BaseUrl": "https://localhost:3000"
+    "BaseUrl": "http://localhost:3000"
   }
 }
 ```
 
 在本地开发环境下，Gateway 还通过 YARP 暴露若干常用路由（具体规则在 `Radish.Gateway/appsettings.Local.json` 中配置）：
 
-- `/` → 前端 webOS（转发到 `https://localhost:3000`）
-- `/docs` → 文档站点（转发到 radish.docs dev / 或静态 `DocsSite`）
-- `/api` → 后端 API（转发到 `https://localhost:5101`）
-- `/scalar` → Scalar API 文档 UI（转发到后端的 `/api/docs`）
-- `/console` → 管理控制台前端 `radish.console`（转发到 `https://localhost:3002`）
+- `/` → 前端 webOS（转发到 `http://localhost:3000`）
+- `/docs` → 文档站点（转发到 radish.docs dev 根路径 `http://localhost:3001`，内部 `base=/docs/`）
+- `/api` → 后端 API（转发到 `http://localhost:5100`）
+- `/scalar` → Scalar API 文档 UI（Gateway 直接代理到 Radish.Api 的 `/scalar`，`/api/docs` 仅作为旧路径重定向到 `/scalar`）
+- `/console` → 管理控制台前端 `radish.console`（转发到 `http://localhost:3002`）
 
 **配置说明**：
 - `GatewayService.PublicUrl`：Gateway 自身的公开访问地址（用于门户页面展示）

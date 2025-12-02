@@ -116,27 +116,29 @@ SnowFlakeSingle.DatacenterId = snowflakeSection.GetValue<int>("DataCenterId");
 // 注册泛型仓储与服务，AddScoped() 汇报模式，每次请求的时候注入
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
-// 注册 JWT 认证服务
+// 注册 JWT 认证服务（使用 Radish.Auth 作为 OIDC 授权服务器）
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidateIssuer = true, // 订阅者
-        ValidateAudience = true, // 发布者
-        ValidateLifetime = true, // 生命周期
-        ValidateIssuerSigningKey = true, // 密码校验
-        // 安全校验，在请求认证的时候会将 Token 进行解析，然后校验下面这三个参数
-        ValidIssuer = "Radish", // 颁发者，发行人
-        ValidAudience = "luobo", // 使用者
-        // 加密密钥
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("wpH7A1jQRPuDDTyWv5ZDpCuAtwvMwmjzeKOMgBtvBe3ghDlfO3FhKx6vmZPAIazM"))
-    };
-});
+        // Authority 指向 Gateway 对外暴露的认证服务器地址
+        options.Authority = "http://localhost:5200";
+        //options.Audience = "radish-api";
+        options.RequireHttpsMetadata = false;
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            // 先关闭 Audience 校验，确认 token 其余部分没问题
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = System.TimeSpan.Zero
+        };
+    });
 // 注册 JWT 授权方案，核心是通过解析请求头中的 JWT Token，然后匹配策略中的 key 和字段值
 builder.Services.AddAuthorizationBuilder()
-           // Client 授权方案，RequireClaim 方式
-           .AddPolicy("Client", policy => policy.RequireClaim("iss", "Radish").Build())
+           // Client 授权方案，基于 scope 控制访问 radish-api
+           .AddPolicy("Client", policy => policy.RequireClaim("scope", "radish-api").Build())
            // System 授权方案，RequireRole 方式
            .AddPolicy("System", policy => policy.RequireRole("System").Build())
            // SystemOrAdmin 授权方案，RequireRole 方式
@@ -171,13 +173,22 @@ app.UseStaticFiles();
 // }
 app.UseCors(corsPolicyName);
 // 配置 Scalar UI
-app.UseScalarUI();
-app.UseHttpsRedirection();
+app.UseScalarUI("/scalar");
+
+// 将旧路径 /api/docs 永久重定向到新的 /scalar
+app.MapGet("/api/docs", () => Results.Redirect("/scalar", permanent: true)).ExcludeFromDescription();
+app.MapGet("/api/docs/{**catchAll}", () => Results.Redirect("/scalar", permanent: true)).ExcludeFromDescription();
+
+// 将 API 根路径重定向到 Scalar 文档
+app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
+// 先认证，再授权
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 // 映射健康检查端点
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/healthz");
+app.MapHealthChecks("/api/health");
 
 // 输出项目启动标识（使用 Serilog，与 Gateway 风格统一）
 app.Lifetime.ApplicationStarted.Register(() =>

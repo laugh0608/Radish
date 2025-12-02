@@ -6,7 +6,7 @@
 
 - **核心模块**
   - 身份与会话：自建帐号体系、邮箱/用户名登录、JWT + 刷新令牌、角色与权限控制、第三方登录预留。
-  - 门户与文档：Radish.Gateway 提供服务欢迎页面、健康检查展示、API 文档入口；React 单页应用（radish.client）提供业务功能界面；Swagger/Scalar 嵌入至 API 项目。
+  - 门户与文档：Radish.Gateway 提供统一对外入口和 `/server` 欢迎页面，并透传健康检查与文档入口；React 单页应用（radish.client）提供业务功能界面；Scalar 嵌入至 API 项目并通过 Gateway `/scalar` 暴露（`/api/docs` 仅保留重定向到 `/scalar` 以兼容旧链接）。
   - 内容域：分类 / 标签 / 帖子 / 评论 / 点赞 / 收藏 / 浏览计数，列表分页与过滤，富文本编辑。
   - 搜索：按标题、标签、分类、作者检索；支持时间/热度排序与模糊匹配（PostgreSQL `tsvector` 预留）。
   - 通知与订阅（可选）：帖子互动提醒、积分变动提醒，支持站内信或邮件。
@@ -15,7 +15,7 @@
   - 管理后台（同 React 工程内实现管理视图）：分类、内容、用户、积分与商城配置。
 
 - **非功能性要求**
-  - 安全：所有前后端流量强制 HTTPS，登录等敏感参数需在前端使用 RSA 公钥加密后发送，后端持私钥解密；结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。
+  - 安全：所有外部流量通过 Gateway 强制 HTTPS，登录等敏感参数需在前端使用 RSA 公钥加密后发送，后端持私钥解密；结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。开发阶段 Radish.Api 保留 HTTPS 端口便于直接调试，但在完成 Gateway/OIDC 接入并进入生产环境前，应关闭或限制直接暴露的 API HTTPS 端口，仅通过 Gateway/反向代理对外提供服务。
   - 性能：关键查询 P95 ≤ 200ms；SQLSugar Profile + PostgreSQL EXPLAIN 校验索引；读多写少场景可使用内存缓存。
   - 可用性：健康检查 `/health`, `/ready`; SQLSugar 迁移幂等；容器探针。
   - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点。
@@ -83,16 +83,16 @@ PostgreSQL
   - 配置加载：`ConfigureAppConfiguration` 会先清空默认源，再依次加载 `appsettings.json` 与 `appsettings.{Environment}.json`，保证环境差异（连接串、Snowflake、Redis 等）优先由环境文件覆盖，公共默认值仍写在基础文件里兜底。
   - 雪花 ID：`Program` 在注册 SqlSugar 之后从 `Snowflake` 节读取 `WorkId`、`DataCenterId` 并写入 `SnowFlakeSingle`，多实例部署必须在各自的 `appsettings.{Env}.json` 中配置不同 WorkId；若缺省则读取基础文件的兜底值，禁止把生产与本地设置为同一个编号。
   - 日志：宿主调用 `builder.Host.AddSerilogSetup()`，由 `Radish.Extension.SerilogExtension` 统一配置输出目标。Serilog 默认读取 appsettings，写入控制台与 `Log/` 目录（普通日志 -> `Log.txt`，SqlSugar AOP 日志 -> `AopSql/AopSql.txt`），内部基于 `LogContextTool.LogSource` 区分日志类型并通过 `WriteTo.Async()` 异步落盘，避免阻塞请求线程；业务代码默认直接使用 `Serilog.Log` 静态方法输出日志，仅在依赖外部框架时才注入 `ILogger<T>`。
-  - API 文档：开发环境把 Scalar UI 映射到 `/api/docs`，并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Api/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
+  - API 文档：开发环境把 Scalar UI 映射到 `/scalar`（`/api/docs` 重定向到 `/scalar`），并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Api/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
   - API 版本控制：采用 **URL 路径版本控制**（`/api/v{version}/[controller]/[action]`），基于 `Asp.Versioning.Mvc` (8.1.0) 实现；Controller 通过 `[ApiVersion("x.0")]` 特性声明版本，未指定版本时默认使用 v1.0。v1 包含核心稳定接口（Login、User），v2 包含新功能与实验接口（AppSetting、RustTest）；OpenAPI 文档通过 `IApiVersionDescriptionProvider` 自动发现所有版本，为每个版本生成独立文档（`/openapi/v1.json`、`/openapi/v2.json`），Scalar UI 提供版本下拉菜单，切换时文档自动过滤只显示对应版本的接口。详细规范见 `DevelopmentSpecifications.md` 的"API 版本控制规范"章节。
   - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为"联调开关"。
   - 跨域：`appsettings.json` 中的 `Cors:AllowedOrigins` 维护允许访问 API 的前端地址，预设了 `localhost:3000` 以及 Rolldown 默认端口 `58794` 的多个别名（`vite.dev.localhost`、`host.*` 等）。更换端口或外网域名时记得同步更新该列表。
 - `Radish.Gateway`
-  - **Phase 0 职责**：承载服务欢迎页面（Razor Pages）、健康检查展示、API 文档入口链接、静态资源服务。
+  - **Phase 0 职责**：承载 `/server` 欢迎页面（Razor Pages）、提供基础健康检查透传与文档入口链接，静态资源服务。服务总览与多服务健康状态表已迁移到 Console（`/console`）。
   - **依赖**：复用 `Radish.Common`（配置工具）和 `Radish.Extension`（日志扩展），保持与 `Radish.Api` 一致的配置加载和日志输出方式。
-  - **监听端口**：`https://localhost:5001`（主要）和 `http://localhost:5000`（HTTP 重定向）。
-  - **健康检查**：聚合显示自身和下游 `Radish.Api` 的健康状态，页面通过 JavaScript 调用下游健康端点实现动态检测。
-  - **架构演进**：Phase 0 为纯静态门户，不引入 Ocelot；P1+ 阶段将增加路由转发、统一认证、请求聚合等 Gateway 核心功能。详见 `docs/GatewayPlan.md`。
+  - **监听端口**：`https://localhost:5000`（主要对外入口）和 `http://localhost:5001`（HTTP 仅用于重定向到 5000）。
+  - **健康检查**：自身暴露 `/health`、`/healthz`，下游 `Radish.Api` 健康通过 `/api/health` 统一对外；Console 通过 Gateway 路径 `/`、`/docs`、`/api/health`、`/console` 聚合展示多服务状态。
+  - **架构演进**：Phase 0 为简化门户，不引入 Ocelot；P1+ 阶段将继续增强路由转发、统一认证、请求聚合等 Gateway 核心功能。详见 `GatewayPlan.md`。
 - 配置与服务访问：Program.cs 依次调用 `hostingContext.Configuration.ConfigureApplication()` → `builder.ConfigureApplication()` → `app.ConfigureApplication()` → `app.UseApplicationSetup()`，把 Configuration/HostEnvironment/RootServices 注入到 `Radish.Common.Core.App`；在非 DI 管道下可使用 `App.GetService*`、`App.GetOptions*` 手动解析服务或配置。常规字符串读取仍统一使用 `AppSettings.RadishApp("Section", ...)`，批量强类型配置通过 `ConfigurableOptions + AddAllOptionRegister` 自动绑定 `IConfigurableOptions`。
 - `Radish.Service`
   - 应用服务（`*AppService`）封装用例流程、权限校验、事务控制、DTO 转换。
@@ -114,7 +114,7 @@ PostgreSQL
   - `RedisExtension.CacheSetup` 提供统一入口 `AddCacheSetup()`，根据 `appsettings.json` 的 `Redis.Enable` 自动在 Redis（StackExchange.Redis）与内存缓存间切换，并在启用 Redis 时预先创建 `IConnectionMultiplexer`；缓存读写统一走 `Radish.Common.CacheTool.ICaching` 或 `IRedisBasketRepository`。
   - `SqlSugarExtension.SqlSugarSetup` 负责注入 `ISqlSugarClient` 单例：内部读取 `Radish.Common.DbTool.BaseDbConfig` 生成的连接集合（含 `MainDb`、`Log` 以及所有从库），并在缺失日志库配置时直接抛出异常，确保多库配置在启动阶段即被验证。
 - `Radish.Shared`
-  - 常量、错误码、事件名、Options 绑定类型。
+  - 常量、错误码、事件名、Options 绑定类型，以及跨模块共享的业务枚举（集中位于 `Radish.Shared.CustomEnum` 命名空间，例如 `UserStatusCodeEnum`、`UserSexEnum`、`DepartmentStatusCodeEnum`、`AuthorityScopeKindEnum`、`HttpStatusCodeEnum` 等）。
 - `radish.client`
   - SPA + 内嵌管理视图；共享 DTO 通过 `radish.client/src/types` 维护，与后端模型保持同步。
 - `UserController -> IUserService -> IUserRepository` 示例链路

@@ -17,7 +17,7 @@
   - 后端：`dotnet restore && dotnet build Radish.slnx -c Debug`、`dotnet run --project Radish.Api/Radish.Api.csproj`、`dotnet watch --project Radish.Api`、`dotnet run --project Radish.Gateway/Radish.Gateway.csproj`、`dotnet test Radish.Api.Tests`。
   - 前端：`npm install --prefix radish.client`、`npm run dev --prefix radish.client`、`npm run build --prefix radish.client`、`npm run lint --prefix radish.client`。
   - 单测筛选：`dotnet test --list-tests`、`dotnet test --filter "FullyQualifiedName~UserControllerTest"`。
-- 默认端口：API `https://localhost:7110` / `http://localhost:5165`、Gateway `https://localhost:5001` / `http://localhost:5000`、前端 Vite `https://localhost:3000`（如调整端口，请同步更新 `Cors:AllowedOrigins`）。Scalar UI 位于 `/api/docs`。
+- 默认端口：API `http://localhost:5100`（内部）、Gateway `https://localhost:5000` / `http://localhost:5001`（外部唯一入口）、前端 Vite `http://localhost:3000`、Docs `http://localhost:3001`、Console `http://localhost:3002`。所有对外 API/Docs/Console 均通过 Gateway 暴露：`https://localhost:5000/api`、`https://localhost:5000/docs`、`https://localhost:5000/console`，Scalar UI 位于 `/scalar`（对外入口 `https://localhost:5000/scalar`，本机直连 `http://localhost:5100/scalar`，旧 `/api/docs` 路径仅保留重定向）。
 
 ## 配置、数据库与安全
 - 配置加载顺序：`appsettings.json` → `appsettings.{Environment}.json` → `appsettings.Local.json`（忽略提交） → 环境变量。新成员应复制 `Radish.Api/appsettings.Local.example.json`，并通过 `AppSettings.RadishApp` 或实现 `IConfigurableOptions` 读取强类型配置。

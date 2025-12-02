@@ -34,14 +34,14 @@
 ### 第 1 周｜运行基线 & 数据接入
 - **后端**：
   - 生成 SQLSugar 上下文，接入 PostgreSQL（ConnectionStrings__Default）。
-  - 添加健康检查 `/health` `/ready`，并暴露 Swagger/Scalar。
+  - 添加健康检查 `/health` `/ready`（及 `/api/health`），并通过 `/scalar` 暴露 Scalar（`/api/docs` 仅做重定向兼容）。
   - 引入 Serilog + 配置加载（JSON + env + user-secrets）。
 - **数据库**：
   - 创建 `Radish` 数据库，编写初始化脚本（SqlSugar `InitTables` + 种子）。
   - 提供 `scripts/init-db.sql` 或 CLI 命令，确保幂等。
 - **前端**：
   - 初始化 React 19 + Vite 项目结构，配置别名、ESLint、Prettier。
-  - 设置 `.env.local`（示例 `VITE_API_BASE_URL=http://localhost:5000`）。
+  - 设置 `.env.development.local`（示例 `VITE_API_BASE_URL=https://localhost:5000`），所有前端 API 调用统一通过 Gateway `/api`。
 - **验收**：`dotnet build/test` 全绿；数据库脚本可重复执行；React `npm run dev` 成功读取健康检查结果。
 
 ### 第 2 周｜领域建模与仓储

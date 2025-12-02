@@ -25,15 +25,19 @@ Radish is a modern community platform built with a self-designed layered archite
 # Build the solution
 dotnet build Radish.slnx -c Debug
 
-# Run the API (listens on https://localhost:7110 and http://localhost:5165)
+# Run the API (listens on http://localhost:5100 only in local dev)
 dotnet run --project Radish.Api/Radish.Api.csproj
 
-# Run the Gateway (listens on https://localhost:5001 and http://localhost:5000)
+# Run the Gateway (listens on https://localhost:5000 and http://localhost:5001)
 dotnet run --project Radish.Gateway/Radish.Gateway.csproj
+
+# Run the Auth Server (listens on http://localhost:5200)
+dotnet run --project Radish.Auth/Radish.Auth.csproj
 
 # Hot reload during development
 dotnet watch --project Radish.Api          # For API
 dotnet watch --project Radish.Gateway      # For Gateway
+dotnet watch --project Radish.Auth         # For Auth
 
 # Run backend tests
 dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj
@@ -44,7 +48,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj
 # Install dependencies (run from repo root)
 npm install --prefix radish.client
 
-# Start dev server (default: https://localhost:3000)
+# Start dev server (default: http://localhost:3000)
 npm run dev --prefix radish.client
 
 # Build for production
@@ -56,11 +60,11 @@ npm run lint --prefix radish.client
 
 ### Quick Start Scripts
 ```bash
-# Interactive menu to start API, Gateway, frontend, docs, console or run tests
+# Interactive menu to start API, Gateway, Auth, frontend, docs, console or run tests
 # Current options include:
-# - Single services: API / Gateway / frontend / docs / console / tests
+# - Single services: API / Gateway / frontend / docs / console / Auth / tests
 # - Combinations: Gateway+API, Gateway+frontend, Gateway+docs, Gateway+console,
-#   Gateway+API+frontend, Gateway+API+frontend+console, start ALL
+#   Gateway+Auth, Gateway+API+frontend, Gateway+API+frontend+console, start ALL
 pwsh ./start.ps1    # Windows/PowerShell
 ./start.sh          # Linux/macOS
 ```
@@ -392,7 +396,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 
 - Use `dotnet watch` for backend hot reload
 - Use Vite's HMR for instant frontend updates
-- Scalar API docs available at `/api/docs` when running locally
+- Scalar API docs available at `/scalar` when running locally (API direct: `http://localhost:5100/scalar`, via Gateway: `https://localhost:5000/scalar`)
 - Example requests in `Radish.Api/Radish.Api.http` (use REST Client extension)
 - Check `docs/DevelopmentLog.md` for recent changes and known issues
 - When adding new repositories/services, register them in Autofac module or use the generic pattern

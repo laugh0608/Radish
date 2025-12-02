@@ -1,17 +1,4 @@
 <Solution>
-  <Folder Name="/docs/">
-    <File Path="docs/DevelopmentFramework.md" />
-    <File Path="docs/DevelopmentLog.md" />
-    <File Path="docs/DevelopmentPlan.md" />
-    <File Path="docs/DevelopmentSpecifications.md" />
-    <File Path="docs/README.md" />
-    <File Path="docs\AuthenticationGuide.md" />
-    <File Path="docs\DeploymentGuide.md" />
-    <File Path="docs\FrontendDesign.md" />
-    <File Path="docs\GatewayPlan.md" />
-    <File Path="docs\ConfigurationGuide.md" />
-    <File Path="docs\OpenPlatformGuide.md" />
-  </Folder>
   <Folder Name="/solution/">
     <File Path=".dockerignore" />
     <File Path=".gitattributes" />
@@ -30,8 +17,10 @@
     <Project Path="Radish.Api.Tests\Radish.Api.Tests.csproj" />
   </Folder>
   <Project Path="Radish.Api/Radish.Api.csproj" />
+  <Project Path="Radish.Auth/Radish.Auth.csproj" />
   <Project Path="Radish.Common/Radish.Common.csproj" />
   <Project Path="Radish.Core/Radish.Core.csproj" />
+  <Project Path="Radish.DbMigrate/Radish.DbMigrate.csproj" />
   <Project Path="Radish.Extension/Radish.Extension.csproj" />
   <Project Path="Radish.Gateway/Radish.Gateway.csproj" />
   <Project Path="Radish.Infrastructure/Radish.Infrastructure.csproj" />

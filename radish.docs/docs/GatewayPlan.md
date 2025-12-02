@@ -66,12 +66,12 @@ Gateway 负责：
    - 复用 `Radish.Extension.SerilogExtension` 和 `Radish.Common.AppSettingsTool` 实现日志和配置
    - 注册 Razor Pages 和静态文件服务
    - 配置健康检查端点（聚合 API 服务的健康状态）
-   - 监听端口：`https://localhost:5001` 和 `http://localhost:5000`
+   - 监听端口：`https://localhost:5000` 和 `http://localhost:5001`
 
 4. **清理 Radish.Api**
    - 移除 `Pages/` 目录和相关 Razor Pages 配置
    - 移除 `MapRazorPages()` 和 `MapFallbackToPage("/Index")` 调用
-   - 保留 Scalar API 文档功能（`/api/docs` 路由）
+   - 保留 Scalar API 文档功能（主入口 `/scalar`，`/api/docs` 仅作为旧路径重定向到 `/scalar`）
    - API 项目回归纯接口服务定位
 
 5. **更新启动脚本**
@@ -348,25 +348,25 @@ app.Run();
   "Routes": [
     {
       "DownstreamPathTemplate": "/health",
-      "DownstreamScheme": "https",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "localhost", "Port": 7110 }
+        { "Host": "localhost", "Port": 5100 }
       ],
       "UpstreamPathTemplate": "/api/health",
       "UpstreamHttpMethod": [ "GET" ]
     },
     {
       "DownstreamPathTemplate": "/api/{everything}",
-      "DownstreamScheme": "https",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "localhost", "Port": 7110 }
+        { "Host": "localhost", "Port": 5100 }
       ],
       "UpstreamPathTemplate": "/api/{everything}",
       "UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE", "PATCH" ]
     }
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "https://localhost:5001"
+    "BaseUrl": "https://localhost:5000"
   }
 }
 ```
@@ -379,7 +379,7 @@ dotnet run --project Radish.Api/Radish.Api.csproj
 
 # 新终端启动 Gateway
 cd Radish.Gateway
-dotnet run --urls="https://localhost:5001;http://localhost:5000"
+dotnet run --urls="https://localhost:5000;http://localhost:5001"
 
 # 测试健康检查
 curl https://localhost:5001/api/health
@@ -463,9 +463,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
   "Routes": [
     {
       "DownstreamPathTemplate": "/api/User",
-      "DownstreamScheme": "https",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "localhost", "Port": 7110 }
+        { "Host": "localhost", "Port": 5100 }
       ],
       "UpstreamPathTemplate": "/api/User",
       "UpstreamHttpMethod": [ "GET" ],
@@ -476,9 +476,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     },
     {
       "DownstreamPathTemplate": "/api/Login",
-      "DownstreamScheme": "https",
+      "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
-        { "Host": "localhost", "Port": 7110 }
+        { "Host": "localhost", "Port": 5100 }
       ],
       "UpstreamPathTemplate": "/api/Login",
       "UpstreamHttpMethod": [ "POST" ]
@@ -527,7 +527,7 @@ public class AggregateController : ControllerBase
     public async Task<IActionResult> GetBootstrap()
     {
         var httpClient = _httpClientFactory.CreateClient();
-        var apiBaseUrl = _configuration["Gateway:DownstreamApi"] ?? "https://localhost:7110";
+        var apiBaseUrl = _configuration["Gateway:DownstreamApi"] ?? "http://localhost:5100";
 
         // 从 Header 中获取 Token 并转发
         var token = Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
@@ -1065,8 +1065,8 @@ tye run  # 自动启动所有服务
 
 # 方案3：保留 Api 直连模式
 前端环境变量：
-VITE_API_BASE_URL=https://localhost:7110  # 开发时直连 Api
-VITE_API_BASE_URL=https://localhost:5001  # 测试 Gateway
+VITE_API_BASE_URL=http://localhost:5100   # 开发时直连 Api（本机直连 HTTP）
+VITE_API_BASE_URL=https://localhost:5000  # 测试 Gateway（对外统一入口）
 ```
 
 ### Q5: Gateway 是否需要独立数据库？

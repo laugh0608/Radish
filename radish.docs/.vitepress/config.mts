@@ -27,7 +27,7 @@ export default defineConfig({
   themeConfig: {
     nav: [
       { text: '首页', link: '/' },
-      { text: '开发文档', link: '/DevelopmentSpecifications' },
+      { text: '开发文档', link: '/guide' },
       { text: '架构设计', link: '/DevelopmentFramework' },
       { text: '部署运维', link: '/DeploymentGuide' }
     ],
