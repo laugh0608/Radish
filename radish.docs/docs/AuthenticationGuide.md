@@ -428,7 +428,101 @@ app.MapScalarApiReference(options =>
 });
 ```
 
-## 8. 多租户支持
+## 8. Claim 与内部用户模型映射约定
+
+访问令牌（Access Token）由 Radish.Auth 负责签发，Radish.Api 及领域层通过 `IHttpContextUser` 获取“当前用户视图”。
+本节约定 Token 内各 Claim 与内部模型之间的对应关系和解析规则，避免各处自行约定字段含义。
+
+### 8.1 核心 Claim 约定
+
+| Claim 名称     | 说明                 | 对应实体字段           | 备注                                       |
+|----------------|----------------------|------------------------|--------------------------------------------|
+| `sub`          | 用户唯一标识         | `User.Id`              | OIDC 标准 Claim，推荐作为唯一用户 Id       |
+| `name`         | 用户显示名           | `User.UserName` 等     | 显示用名称，可根据业务组合昵称             |
+| `tenant_id`    | 租户 Id              | `User.TenantId`        | 多租户隔离核心字段                         |
+| `TenantId`     | 租户 Id（兼容字段）  | `User.TenantId`        | 过渡期内与 `tenant_id` 同值，便于兼容旧代码 |
+| `role`         | 角色名               | `Role.RoleName`        | 可多值，需与 `Role.RoleName` 完全一致      |
+| `scope`        | 授权范围             | —                      | 如 `openid profile radish-api`             |
+| `iss`/`aud`…   | 标准 Token 元数据    | —                      | 由 OpenIddict 负责                         |
+
+> 兼容说明：旧版 JWT 将用户 Id 写入 `jti`，`HttpContextUser.UserId` 也依赖 `jti`。
+> 新版 OIDC 以 `sub` 为主，Api 端会同时兼容 `sub` 与 `jti`，逐步过渡到以 `sub` 为唯一来源。
+
+### 8.2 Api 侧解析规则（IHttpContextUser）
+
+Api 侧不直接到处解析 `ClaimsPrincipal`，而是统一通过 `IHttpContextUser` 暴露“当前用户视图”。
+解析规则约定如下（伪代码，仅示意逻辑）：
+
+```csharp
+// UserId：优先使用 OIDC 标准的 sub，兼容旧版 jti
+long userId =
+    GetLongClaim("sub") ??
+    GetLongClaim(JwtRegisteredClaimNames.Jti) ??
+    0;
+
+// TenantId：优先 tenant_id，其次 TenantId
+long tenantId =
+    GetLongClaim("tenant_id") ??
+    GetLongClaim("TenantId") ??
+    0;
+
+// UserName：优先 OIDC Name，其次 ClaimTypes.Name / Identity.Name
+string userName =
+    User.FindFirst(OpenIddictConstants.Claims.Name)?.Value ??
+    User.FindFirst(ClaimTypes.Name)?.Value ??
+    User.Identity?.Name ??
+    string.Empty;
+
+// Roles：从 ClaimTypes.Role 和 "role" 汇总
+var roles = User.FindAll(ClaimTypes.Role)
+    .Select(c => c.Value)
+    .Concat(User.FindAll("role").Select(c => c.Value))
+    .Distinct()
+    .ToList();
+
+// Scopes：从 scope 拆分空格
+var scopes = User.FindAll("scope")
+    .SelectMany(c => c.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+    .Distinct()
+    .ToList();
+```
+
+在此基础上，`IHttpContextUser` 对外暴露统一的“当前用户视图”（示意）：
+
+- `UserId: long`
+- `UserName: string`
+- `TenantId: long`
+- `Roles: IReadOnlyList<string>`
+- `IsAuthenticated(): bool`
+- `GetClaimsIdentity(): IEnumerable<Claim>`
+- （可选）`GetUserInfoFromToken(string claimType)` 等
+
+多租户、仓储、日志等基础设施应尽量依赖这一视图，而不是自己从 Claims 中取值。
+
+### 8.3 与多租户 / 权限体系的关系
+
+- **多租户（Tenant）**
+  - Auth 在签发 Token 时必须写入正确的 `tenant_id`（以及兼容的 `TenantId`）；
+  - Api 通过上述规则解析出 `TenantId`，`RepositorySetting`/`BaseRepository` 会基于该值：
+    - 对实现 `ITenantEntity` 的实体增加 QueryFilter；
+    - 根据租户切换数据库或分表后缀。
+
+- **角色与权限（RBAC）**
+  - Auth 需将用户角色写入 `role`/`ClaimTypes.Role`，值必须与 `Role.RoleName` 一致；
+  - Api 侧授权策略：
+    - `System` / `SystemOrAdmin` 通过角色 Claim 做静态角色判断；
+    - `RadishAuthPolicy` 通过角色 Claim 与 `ApiModule.LinkUrl`（正则）构建的 `PermissionItem` 集合做 URL 级权限校验。
+
+- **当前用户信息接口**
+  - `UserController.GetUserByHttpContext` 等接口只依赖 `IHttpContextUser` 暴露的视图，而不关心 Token 的具体格式；
+  - 旧 JWT 模式与新 OIDC 模式可以并行一段时间，只要遵循本节的 Claim 映射规则，调用方不需要感知差异。
+
+> 总体原则：
+> - Auth 统一负责 **Claims 的内容与命名**；
+> - Api 统一通过 `IHttpContextUser` 解析 Claims 并向上提供“当前用户视图”；
+> - 领域层及仓储层只依赖 `UserId`、`TenantId`、`Roles` 等抽象，不直接操作 Token。
+
+## 9. 多租户支持
 
 ### 8.1 租户识别
 
