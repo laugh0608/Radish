@@ -54,9 +54,9 @@ public class User : RootEntityTKey<long>
         UserAddress = string.Empty;
         StatusCode = (int)UserStatusCodeEnum.Unknown;
         CreateTime = DateTime.Now;
-        UpdateTime = null;
-        CriticalModifyTime = null;
-        LastErrorTime = null;
+        UpdateTime = DateTime.Now;
+        CriticalModifyTime = DateTime.Now;
+        LastErrorTime = DateTime.Now;
         ErrorCount = 0;
         IsEnable = false;
         IsDeleted = true;

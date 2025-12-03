@@ -130,8 +130,17 @@ internal static class InitialDataSeeder
         Console.WriteLine(
             $"[Radish.DbMigrate] 创建角色 Id={roleId} ({roleName}) 对 ApiModule Id={apiModuleId} 的访问权限...");
 
+        // 为种子权限使用固定、靠后的 Id 段，避免与历史数据的主键冲突
+        var permId = roleId switch
+        {
+            10000 => 60000, // System 对 GetUserByHttpContext
+            10001 => 60001, // Admin 对 GetUserByHttpContext
+            _ => 0          // 其它角色走默认雪花/自增配置
+        };
+
         var perm = new RoleModulePermission
         {
+            Id = permId,
             RoleId = roleId,
             ApiModuleId = apiModuleId,
             IsDeleted = false,
@@ -364,6 +373,7 @@ internal static class InitialDataSeeder
                 UserRealName = "Test User",
                 UserSex = (int)UserSexEnum.Unknown,
                 UserAge = 18,
+                UserBirth = DateTime.Today,
                 TenantId = radishTenantId,
                 DepartmentId = devDeptId,
                 IsEnable = true,

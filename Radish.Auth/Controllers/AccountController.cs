@@ -62,9 +62,9 @@ public class AccountController : Controller
             return Unauthorized("Invalid username or password.");
         }
 
-        // 模拟一个固定的用户 Id 与租户 Id
-        const string userId = "1";
-        const string tenantId = "1";
+        // 模拟一个固定的用户 Id 与租户 Id（与 DbMigrate 种子保持一致）
+        const string userId = "20002";
+        const string tenantId = "30000";
 
         var claims = new List<Claim>
         {
