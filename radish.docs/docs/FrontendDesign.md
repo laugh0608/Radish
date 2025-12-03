@@ -690,6 +690,7 @@ eventBus.on('new-message', ({ count }) => {
 - [ ] 窗口管理器（窗口/全屏/iframe）
 - [ ] 权限控制
 - [ ] 论坛应用（MVP）
+- [ ] 用 WebOS 桌面 Shell 取代当前 `src/App.tsx` Demo 页；现阶段暂时保留该页面的 WeatherForecast + Gateway OIDC 登录/退出示例，用于验证 Auth + Api + Gateway 端到端链路
 
 ### 阶段二：M5（核心应用）
 

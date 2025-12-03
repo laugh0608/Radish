@@ -4,6 +4,28 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.03
+
+- **feat(gateway+client/oidc-through-gateway)**: 通过 Gateway 打通 Auth + Api + 前端的完整 OIDC 授权码链路
+  - `Radish.Api/Radish.Api.oidc.http` 增补“6. （推荐）全量通过 Gateway 的 OIDC 测试流程”，统一使用 `https://localhost:5000` 作为 OIDC 入口（登录 / 授权码 / 换取 Token / 当前用户接口）。
+  - `Radish.Gateway/appsettings.Local.json` 中为 `/Account/{**catch-all}` 与 `/connect/{**catch-all}` 新增 `auth-account-route` / `auth-connect-route`，将 OIDC 相关端点通过 Gateway 转发到 `Radish.Auth`，前端与 `.http` 示例均不再直连 5200 端口。
+  - `radish.client/src/App.tsx` 新增最小 OIDC Demo：
+    - 在首页“Authentication” 区块提供“通过 OIDC 登录”与“退出登录”按钮，登录走 `GET {apiBaseUrl}/connect/authorize`，退出调用 `POST {apiBaseUrl}/Account/Logout` 并清理 `localStorage` 中的 access_token/refresh_token。
+    - 实现 `OidcCallback` 回调组件，处理 `/oidc/callback?code=xxx`，调用 `POST {apiBaseUrl}/connect/token` 换取 Token，持久化到 `localStorage` 后跳转回首页。
+    - 首页挂载时通过 `GET {apiBaseUrl}/api/v1/User/GetUserByHttpContext` 拉取当前用户信息，并在界面显示 `userId/userName/tenantId`，验证 Auth ↔ Api ↔ Db 的映射配置。
+  - 前端增加轻量级 `apiFetch` 封装，统一附带 `Accept: application/json` 与可选的 Authorization 头，为后续 WebOS 子应用复用网关 API 提供最小示例。
+
+- **fix(dbmigrate/role-permission)**: 记录 `RoleModulePermission` 表缺失导致本地 SQLite 抛出 `SQLite Error 1: 'no such table: RoleModulePermission'` 时的推荐修复路径
+  - 建议在本地环境遇到该错误时执行：
+    - `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init`
+    - `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed`
+  - `init` 通过 `CodeFirst.InitTables` 为所有实体（包含 `RoleModulePermission`）建表，`seed` 则按约定灌入 System/Admin 与 `GetUserByHttpContext` 相关的角色权限种子数据，确保权限表结构与数据与当前 OIDC/Auth 策略保持一致。
+
+- **docs(auth+gateway+frontend)**: 同步认证与 Gateway 文档，标记当前实现状态
+  - `AuthenticationGuide.md` 中说明当前仓库已在 `radish.client/src/App.tsx` 中实现一套通过 Gateway 的极简 OIDC 流程，本节其余 `oidc-client-ts/react-oidc-context` 内容为后续正式接入方案。
+  - `GatewayPlan.md` Phase 0 验收标准中补充“通过 Gateway 反向代理 Radish.Auth 的 `/Account` 与 `/connect` 端点”，明确本地 OIDC 调试入口统一为 Gateway (`https://localhost:5000`)。
+  - `FrontendDesign.md` 在 M4 迭代计划中说明：当前仍暂时保留 `src/App.tsx` 作为 WeatherForecast + Gateway OIDC 登录/退出的 Demo 页，未来将由 WebOS 桌面 Shell 取代。
+
 ### 2025.12.02
 
 - **feat(auth+api/oidc-minimal)**: 打通 Radish.Auth 与 Radish.Api 的最小 OIDC 授权码 + 资源服务器链路

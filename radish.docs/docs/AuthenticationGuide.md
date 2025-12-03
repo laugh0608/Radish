@@ -332,6 +332,14 @@ builder.Services.AddAuthorization(options =>
 
 ## 6. 前端集成
 
+> 当前仓库中，为了先打通端到端调试链路，在 `radish.client/src/App.tsx` 中实现了一套极简 OIDC 流程：
+> - 前端统一通过 Gateway 访问：`https://localhost:5000`；
+> - 首页 `App` 组件提供“通过 OIDC 登录 / 退出登录”按钮，登录重定向到 `${apiBaseUrl}/connect/authorize`，回调地址为 `${window.location.origin}/oidc/callback`；
+> - 回调页 `/oidc/callback` 调用 `${apiBaseUrl}/connect/token` 换取 Token，并将 `access_token/refresh_token` 持久化到浏览器；
+> - 首页挂载时调用 `${apiBaseUrl}/api/v1/User/GetUserByHttpContext` 获取当前用户 `userId/userName/tenantId`，用以验证 Auth ↔ Api ↔ Db 的数据映射。
+>
+> 这套实现仅用于当前阶段的本地开发与调试，后续计划按本节 6.1–6.3 所述方式，引入 `oidc-client-ts` 或 `react-oidc-context` 等专用库接管 Token 生命周期与自动续期。
+
 ### 6.1 配置
 
 使用 `oidc-client-ts` 或 `react-oidc-context`：
