@@ -46,8 +46,8 @@ public class Department : RootEntityTKey<long>
         IsDeleted = false;
         CreateBy = "System";
         CreateTime = DateTime.Now;
-        ModifyBy = null;
-        ModifyTime = null;
+        ModifyBy = "System";
+        ModifyTime = DateTime.Now;
         HasChildren = true;
         PidArr = new List<long>();
     }

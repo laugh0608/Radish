@@ -43,7 +43,7 @@ public class SqlSugarCache : ICacheService
 
     public IEnumerable<string> GetAllKey<V>()
     {
-        return Caching?.GetAllCacheKeys() ?? Array.Empty<string>();
+        return Caching?.GetAllCacheKeys() ?? new List<string>();
     }
 
     public V GetOrCreate<V>(string cacheKey, Func<V> create, int cacheDurationInSeconds = int.MaxValue)

@@ -93,7 +93,10 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
                 t.GetCustomAttributes(typeof(SugarTable), inherit: true).Any() ||
                 (t.BaseType != null && t.BaseType.IsGenericType &&
                  t.BaseType.GetGenericTypeDefinition() == typeof(Radish.Model.Root.RootEntityTKey<>))
-            );
+            )
+            // 显式包含 UserRole 这样的非 RootEntityTKey<> 映射实体
+            .Concat(new[] { typeof(Radish.Model.UserRole) })
+            .Distinct();
 
         foreach (var type in entityTypes)
         {

@@ -56,6 +56,10 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.RefreshToken);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
+            // 允许 openid/profile/offline_access + radish-api 这几种 scope
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "openid");
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "profile");
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "offline_access");
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
 
             //descriptor.Requirements.Add(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
@@ -79,8 +83,9 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Scopes.OpenId);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Scopes.Profile);
+            // 当前 OpenIddict 版本未提供 Scopes.OpenId/Profile 常量，这里直接使用 Scope 前缀 + 字面值
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "openid");
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "profile");
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
