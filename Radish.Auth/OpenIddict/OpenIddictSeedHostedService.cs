@@ -62,6 +62,46 @@ public class OpenIddictSeedHostedService : IHostedService
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
         }
+
+        // 初始化 Scalar 文档客户端：radish-scalar（用于 /scalar OAuth 调试）
+        if (await _applicationManager.FindByClientIdAsync("radish-scalar", cancellationToken) is null)
+        {
+            var descriptor = new OpenIddictApplicationDescriptor
+            {
+                ClientId = "radish-scalar",
+                DisplayName = "Radish API Documentation",
+                ConsentType = OpenIddictConstants.ConsentTypes.Implicit
+            };
+
+            descriptor.RedirectUris.Add(new Uri("https://localhost:5000/scalar/oauth2-callback"));
+
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Scopes.OpenId);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Scopes.Profile);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
+
+            await _applicationManager.CreateAsync(descriptor, cancellationToken);
+        }
+
+        // 初始化后台/服务端客户端：radish-rust-ext（示例：Rust 扩展或后台任务）
+        if (await _applicationManager.FindByClientIdAsync("radish-rust-ext", cancellationToken) is null)
+        {
+            var descriptor = new OpenIddictApplicationDescriptor
+            {
+                ClientId = "radish-rust-ext",
+                ClientSecret = "radish-rust-ext-dev-secret", // 本地开发示例，生产请使用强随机密钥并通过配置管理
+                DisplayName = "Radish Rust Extension",
+            };
+
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.ClientCredentials);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
+
+            await _applicationManager.CreateAsync(descriptor, cancellationToken);
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

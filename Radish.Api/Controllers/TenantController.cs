@@ -29,6 +29,7 @@ public class TenantController : ControllerBase
     /// <param name="businessTableService"></param>
     /// <param name="multiBusinessTableService"></param>
     /// <param name="subLibBusinessTableService"></param>
+    /// <param name="tenantService"></param>
     public TenantController(IBaseService<BusinessTable, BusinessTableVo> businessTableService,
         IBaseService<MultiBusinessTable, MultiBusinessTableVo> multiBusinessTableService,
         IBaseService<SubLibBusinessTable, SubLibBusinessTableVo> subLibBusinessTableService, IBaseService<Tenant, TenantVo> tenantService)
