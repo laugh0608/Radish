@@ -63,6 +63,10 @@ public class AuthorizationController : Controller
         // 对于资源服务器，只暴露 radish-api 这一项
         principal.SetResources("radish-api");
 
+        // 将所有当前 Claims 下发到 access_token，方便资源服务器直接消费
+        principal.SetDestinations(static claim =>
+            new[] { OpenIddictConstants.Destinations.AccessToken });
+
         // 由 OpenIddict 生成授权码等票据
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }

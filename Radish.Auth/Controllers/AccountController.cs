@@ -62,17 +62,23 @@ public class AccountController : Controller
             return Unauthorized("Invalid username or password.");
         }
 
-        // 模拟一个固定的用户 Id
+        // 模拟一个固定的用户 Id 与租户 Id
         const string userId = "1";
+        const string tenantId = "1";
 
         var claims = new List<Claim>
         {
+            // 标准身份标识
             new(ClaimTypes.NameIdentifier, userId),
             new(ClaimTypes.Name, username),
             new(ClaimTypes.Role, "System"),
+
             // 为 OIDC 兼容再写一份 sub/name
             new("sub", userId),
-            new("name", username)
+            new("name", username),
+
+            // 多租户标识（与 AuthenticationGuide 中的约定一致）
+            new("tenant_id", tenantId)
         };
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
