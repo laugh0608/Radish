@@ -6,6 +6,7 @@ using Radish.Common.CoreTool;
 using Radish.DbMigrate;
 using Radish.Extension;
 using Radish.Extension.SqlSugarExtension;
+using Radish.Common.DbTool;
 using SqlSugar;
 
 // 简单的迁移/初始化控制台：
@@ -16,13 +17,18 @@ using SqlSugar;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// 复用与 Radish.Api 相同的配置加载顺序
-builder.Configuration.Sources.Clear();
-builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-builder.Configuration.AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: false);
-builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
+// 复用与 Radish.Api 相同的配置加载顺序（但 DbMigrate 运行在控制台，需显式指向输出目录的配置文件）
+var contentRoot = AppContext.BaseDirectory;
 
-// 注册 AppSettings 与 SqlSugar，与 API 完全一致
+builder.Configuration.Sources.Clear();
+builder.Configuration.AddJsonFile(Path.Combine(contentRoot, "appsettings.json"), optional: true, reloadOnChange: false);
+builder.Configuration.AddJsonFile(Path.Combine(contentRoot, $"appsettings.{builder.Environment.EnvironmentName}.json"), optional: true, reloadOnChange: false);
+builder.Configuration.AddJsonFile(Path.Combine(contentRoot, "appsettings.Local.json"), optional: true, reloadOnChange: false);
+
+// 先将配置绑定到全局 App/InternalApp（用于 ConfigurableOptions 等静态访问）
+InternalApp.ConfigureApplication(builder.Configuration);
+
+// 注册 AppSettings 与 SqlSugar，与 API 尽量保持一致
 builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
 builder.Services.AddAllOptionRegister();
 builder.Services.AddSqlSugarSetup();
@@ -70,17 +76,30 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
 
     Console.WriteLine("[Radish.DbMigrate] 初始化业务表结构（Code First）...");
 
-    // 这里直接扫描 Radish.Model 程序集中的实体类型
-    var modelAssembly = typeof(Radish.Model.Root.RootEntityTKey<>).Assembly;
-    var entityTypes = modelAssembly
-        .GetTypes()
-        .Where(t => t.IsClass && !t.IsAbstract && t.IsPublic)
-        .Where(t => t.GetCustomAttributes(typeof(SugarTable), inherit: true).Any());
-
-    foreach (var type in entityTypes)
+    // 直接复用 BaseDbConfig.AllConfigs 的连接配置，通过 Code First 为所有实体建表
+    foreach (var config in BaseDbConfig.AllConfigs)
     {
-        Console.WriteLine($"  -> Init table for entity: {type.FullName}");
-        db.CodeFirst.InitTables(type);
+        var dbForConfig = (SqlSugarScope)db;
+        var conn = dbForConfig.GetConnectionScope(config.ConfigId.ToString());
+
+        // 按约定扫描 Radish.Model 程序集中的实体类型：
+        // - 带有 [SugarTable] 特性的实体；
+        // - 或继承自 RootEntityTKey<> 的实体（大部分业务表）。
+        var modelAssembly = typeof(Radish.Model.Root.RootEntityTKey<>).Assembly;
+        var entityTypes = modelAssembly
+            .GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract && t.IsPublic)
+            .Where(t =>
+                t.GetCustomAttributes(typeof(SugarTable), inherit: true).Any() ||
+                (t.BaseType != null && t.BaseType.IsGenericType &&
+                 t.BaseType.GetGenericTypeDefinition() == typeof(Radish.Model.Root.RootEntityTKey<>))
+            );
+
+        foreach (var type in entityTypes)
+        {
+            Console.WriteLine($"  -> Init table for entity: {type.FullName} (ConnId={config.ConfigId})");
+            conn.CodeFirst.InitTables(type);
+        }
     }
 
     Console.WriteLine("[Radish.DbMigrate] Init 完成。");

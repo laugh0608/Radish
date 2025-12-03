@@ -14,35 +14,45 @@ namespace Radish.Common.CacheTool;
 public class SqlSugarCache : ICacheService
 {
     private readonly Lazy<ICaching> _caching = new(() => App.GetService<ICaching>(false));
-    private ICaching Caching => _caching.Value;
+    private ICaching? Caching => _caching.Value;
 
     public void Add<V>(string key, V value)
     {
-        Caching.Set(key, value);
+        Caching?.Set(key, value);
     }
 
     public void Add<V>(string key, V value, int cacheDurationInSeconds)
     {
+        if (Caching == null)
+        {
+            return;
+        }
+
         Caching.Set(key, value, TimeSpan.FromSeconds(cacheDurationInSeconds));
     }
 
     public bool ContainsKey<V>(string key)
     {
-        return Caching.Exists(key);
+        return Caching?.Exists(key) ?? false;
     }
 
     public V Get<V>(string key)
     {
-        return Caching.Get<V>(key);
+        return Caching != null ? Caching.Get<V>(key) : default;
     }
 
     public IEnumerable<string> GetAllKey<V>()
     {
-        return Caching.GetAllCacheKeys();
+        return Caching?.GetAllCacheKeys() ?? Array.Empty<string>();
     }
 
     public V GetOrCreate<V>(string cacheKey, Func<V> create, int cacheDurationInSeconds = int.MaxValue)
     {
+        if (Caching == null)
+        {
+            return create();
+        }
+
         if (!ContainsKey<V>(cacheKey))
         {
             var value = create();
@@ -55,12 +65,12 @@ public class SqlSugarCache : ICacheService
 
     public void Remove<V>(string key)
     {
-        Caching.Remove(key);
+        Caching?.Remove(key);
     }
 
     public bool RemoveAll()
     {
-        Caching.RemoveAll();
+        Caching?.RemoveAll();
         return true;
     }
 }

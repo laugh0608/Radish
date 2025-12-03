@@ -49,9 +49,9 @@ public class Role : RootEntityTKey<long>
         CreateId = 0;
         CreateBy = "System";
         CreateTime = DateTime.Now;
-        ModifyId = null;
-        ModifyBy = null;
-        ModifyTime = null;
+        ModifyId = 0;
+        ModifyBy = "System";
+        ModifyTime = DateTime.Now;
     }
 
     /// <summary>处理基础信息</summary>
@@ -177,6 +177,7 @@ public class Role : RootEntityTKey<long>
     public DateTime CreateTime { get; set; } = DateTime.Now;
 
     /// <summary>信息修改者的 Id</summary>
+    [SugarColumn(IsNullable = true)]
     public long? ModifyId { get; set; }
 
     /// <summary>修改者的名称</summary>
