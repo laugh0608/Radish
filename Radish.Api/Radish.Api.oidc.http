@@ -39,3 +39,28 @@ Authorization: Bearer {{authToken}}
 ### 5. 使用 AccessToken 调用 Radish.Api 受保护接口（通过 Gateway 转发，视 Gateway 路由而定）
 ###GET https://localhost:5000/api/User/GetUserByHttpContext
 ###Authorization: Bearer {{access_token}}
+
+### 6. （推荐）全量通过 Gateway 访问 Auth + Api 的 OIDC 测试流程
+### 6.1 通过 Gateway 访问 Radish.Auth 登录测试用户
+### 步骤：
+### - 浏览器打开：https://localhost:5000/Account/Login
+### - 按提示使用用户名 test / 密码 P@ssw0rd! 登录
+
+### 6.2 触发授权码流程（浏览器中操作）
+### - 浏览器访问：
+###   https://localhost:5000/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=radish-api
+### - 登录后会重定向到 https://localhost:5000/oidc/callback?code=xxxx
+### - 从回调 URL 中复制 code 参数，替换到下面的占位符 {gatewayAuthCode}
+
+@gatewayAuthCode=WyMiEE1HnwFiDvSJUgkzscK-a6W6CapnEPqpmVXsqIA
+### 6.3 使用授权码（经由 Gateway）换取 AccessToken + RefreshToken
+POST https://localhost:5000/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code&client_id=radish-client&code={{gatewayAuthCode}}&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback
+
+### 6.4 使用 AccessToken 调用 Radish.Api 受保护接口（通过 Gateway 转发）
+@gatewayAuthToken=eyJhbGciOiJSUzI1NiIsImtpZCI6IkY3N0M4MUYzNEVENkE3RTQzQzQ5NjBDN0Y1NzRBRTFGMUEzQkMwQjUiLCJ4NXQiOiI5M3lCODA3V3AtUThTV0RIOVhTdUh4bzd3TFUiLCJ0eXAiOiJhdCtqd3QifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUyMDAvIiwiZXhwIjoxNzY0Nzc1NDg3LCJpYXQiOjE3NjQ3NzE4ODcsImF1ZCI6InJhZGlzaC1hcGkiLCJzY29wZSI6InJhZGlzaC1hcGkiLCJqdGkiOiJmN2U1N2IyMC1mYjE2LTQ2NTMtYmYyNy03NDYwMDljODE4OTgiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjIwMDAyIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6InRlc3QiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJTeXN0ZW0iLCJzdWIiOiIyMDAwMiIsIm5hbWUiOiJ0ZXN0IiwidGVuYW50X2lkIjoiMzAwMDAiLCJvaV9wcnN0IjoicmFkaXNoLWNsaWVudCIsIm9pX2F1X2lkIjoiNDMwMjE5ZTAtYmQ5Yy00NzMxLWI1ZjItMGVhYmQzYjdjZjc4IiwiY2xpZW50X2lkIjoicmFkaXNoLWNsaWVudCIsIm9pX3Rrbl9pZCI6IjYxYjFmODkyLTJkMWUtNDhmZC04MjkzLTU2YjI3MTY3MDQ2ZiJ9.HhYMq7QkxhhUYBk01cyM0dc-JyZr5PlgqURTRm8_4XfpkVoJiOp0ia2TH5o_w4ij7sHH9SSKcTH4Y97E6E6pucUcrNesB87WUl-9Iw-NwK9J2r-7BBpstYDUx4xjZBmeK3Ve8iedQrQCy0iyiNeCsF0WuH4V5CbgLXzWrrhV8zJbVV8F-IGv8L8mpjIGr4wMD7i7WIKY7MYs97y0jgkG3XYgLC-INl1JczaZhBSoGAlhfnM4zu7ykESa2Rq-BRoQFlwAz2vcseGk9SvxHN2eKVOLjW-JlS6RokF-Ec8Bk6Jg5DCMcmpglZ7bb1HMC6o37EmkV0NLFYQ607sJVxwC3A
+
+GET https://localhost:5000/api/v1/User/GetUserByHttpContext
+Authorization: Bearer {{gatewayAuthToken}}
