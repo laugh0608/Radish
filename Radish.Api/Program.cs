@@ -1,4 +1,5 @@
 using System.Text;
+using System.IO;
 using Asp.Versioning;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -39,11 +40,15 @@ builder.Host
     }).ConfigureAppConfiguration((hostingContext, config) =>
     {
         hostingContext.Configuration.ConfigureApplication(); // 1. 绑定 InternalApp 扩展中的配置
+
+        // 配置文件统一从输出目录（AppContext.BaseDirectory）读取，避免受工作目录影响
+        var basePath = AppContext.BaseDirectory;
+
         config.Sources.Clear();
-        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-        config.AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json",
+        config.AddJsonFile(Path.Combine(basePath, "appsettings.json"), optional: true, reloadOnChange: false);
+        config.AddJsonFile(Path.Combine(basePath, $"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json"),
             optional: true, reloadOnChange: false);
-        config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
+        config.AddJsonFile(Path.Combine(basePath, "appsettings.Local.json"), optional: true, reloadOnChange: false);
         // config.AddConfigurationApollo("appsettings.apollo.json");
     });
 // 2. 绑定 InternalApp 扩展中的环境变量
