@@ -41,6 +41,19 @@ public class BaseDbConfig
         return (listDatabase, mainDbModel.Slaves);
     }
 
+    /// <summary>
+    /// 查找解决方案根目录（包含 Radish.slnx 的目录）
+    /// </summary>
+    private static string FindSolutionRoot()
+    {
+        var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (currentDir != null && !File.Exists(Path.Combine(currentDir.FullName, "Radish.slnx")))
+        {
+            currentDir = currentDir.Parent;
+        }
+        return currentDir?.FullName ?? Environment.CurrentDirectory;
+    }
+
     private static string DifDbConnOfSecurity(params string[] conn)
     {
         foreach (var item in conn)
@@ -69,8 +82,12 @@ public class BaseDbConfig
     {
         if (mutiDbOperate.DbType == DataBaseType.Sqlite)
         {
+            // 使用解决方案根目录下的 DataBases 文件夹存放 SQLite 数据库
+            var solutionRoot = FindSolutionRoot();
+            var dbDirectory = Path.Combine(solutionRoot, "DataBases");
+            Directory.CreateDirectory(dbDirectory); // 确保目录存在
             mutiDbOperate.ConnectionString =
-                $"DataSource=" + Path.Combine(Environment.CurrentDirectory, mutiDbOperate.ConnectionString);
+                $"DataSource=" + Path.Combine(dbDirectory, mutiDbOperate.ConnectionString);
         }
         else if (mutiDbOperate.DbType == DataBaseType.SqlServer)
         {
