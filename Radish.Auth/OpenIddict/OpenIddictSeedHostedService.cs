@@ -74,7 +74,7 @@ public class OpenIddictSeedHostedService : IHostedService
             {
                 ClientId = "radish-scalar",
                 DisplayName = "Radish API Documentation",
-                ConsentType = OpenIddictConstants.ConsentTypes.Implicit
+                ConsentType = OpenIddictConstants.ConsentTypes.Explicit // 需要用户显式授权
             };
 
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/scalar/oauth2-callback"));

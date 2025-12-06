@@ -1,6 +1,8 @@
 using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 
 namespace Radish.Extension.OpenApiExtension;
@@ -56,7 +58,8 @@ public static class ScalarSetup
                         document.Info.Description = $"⚠️ **此版本已弃用**\n\n{document.Info.Description}";
                     }
 
-                    // 添加服务器列表
+                    // 清空默认服务器列表，添加自定义服务器
+                    document.Servers.Clear();
                     document.Servers.Add(new()
                     {
                         Url = "https://localhost:5000",
@@ -64,9 +67,38 @@ public static class ScalarSetup
                     });
                     document.Servers.Add(new()
                     {
-                        Url = "http://localhost:5100",
-                        Description = "本地开发环境 (API HTTP)"
+                        Url = "http://localhost:5001",
+                        Description = "本地开发环境 (Gateway HTTP)"
                     });
+                    document.Servers.Add(new()
+                    {
+                        Url = "http://localhost:5100",
+                        Description = "本地开发环境 (API 直连)"
+                    });
+
+                    // 添加 OAuth2 Security Scheme（用于 Scalar OIDC 登录）
+                    document.Components ??= new OpenApiComponents();
+                    document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+                    document.Components.SecuritySchemes["oauth2"] = new OpenApiSecurityScheme
+                    {
+                        Type = SecuritySchemeType.OAuth2,
+                        Description = "通过 OIDC 认证服务器获取 Access Token",
+                        Flows = new OpenApiOAuthFlows
+                        {
+                            AuthorizationCode = new OpenApiOAuthFlow
+                            {
+                                // 通过 Gateway 代理的 Auth 端点
+                                AuthorizationUrl = new Uri("https://localhost:5000/connect/authorize"),
+                                TokenUrl = new Uri("https://localhost:5000/connect/token"),
+                                Scopes = new Dictionary<string, string>
+                                {
+                                    ["openid"] = "OpenID Connect 身份认证",
+                                    ["profile"] = "用户基本信息",
+                                    ["radish-api"] = "Radish API 访问权限"
+                                }
+                            }
+                        }
+                    };
 
                     return Task.CompletedTask;
                 });
@@ -108,7 +140,18 @@ public static class ScalarSetup
                 // 保留 Schema 属性顺序
                 .PreserveSchemaPropertyOrder()
                 // 设置默认 HTTP 客户端为 Axios
-                .WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios);
+                .WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios)
+                // 配置 OAuth2/OIDC 认证（启用 Authorize 按钮）
+                .AddPreferredSecuritySchemes("oauth2")
+                .AddOAuth2Flows("oauth2", flows =>
+                {
+                    flows.AuthorizationCode = new AuthorizationCodeFlow
+                    {
+                        ClientId = "radish-scalar",
+                        RedirectUri = "https://localhost:5000/scalar/oauth2-callback"
+                    };
+                })
+                .AddDefaultScopes("oauth2", ["openid", "profile", "radish-api"]);
 
             // 动态配置多版本文档
             for (var i = 0; i < versions.Count; i++)

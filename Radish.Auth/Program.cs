@@ -101,8 +101,16 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 // OpenIddict 所用 EF Core DbContext（仅承载 OpenIddict 实体）
-var openIddictConnectionString = builder.Configuration.GetConnectionString("OpenIddict")
-    ?? "Data Source=RadishAuth.OpenIddict.db";
+var openIddictConnectionString = builder.Configuration.GetConnectionString("OpenIddict");
+
+// 如果未配置连接字符串，使用默认 SQLite 路径（DataBases 文件夹）
+if (string.IsNullOrEmpty(openIddictConnectionString))
+{
+    var dbDirectory = Path.Combine(AppContext.BaseDirectory, "DataBases");
+    Directory.CreateDirectory(dbDirectory); // 确保目录存在
+    var dbPath = Path.Combine(dbDirectory, "RadishAuth.OpenIddict.db");
+    openIddictConnectionString = $"Data Source={dbPath}";
+}
 
 builder.Services.AddDbContext<AuthOpenIddictDbContext>(options =>
 {
@@ -138,6 +146,9 @@ builder.Services.AddOpenIddict()
         options.AllowAuthorizationCodeFlow()
                .AllowRefreshTokenFlow()
                .AllowClientCredentialsFlow();
+
+        // 注册允许的 Scopes
+        options.RegisterScopes("openid", "profile", "offline_access", "radish-api");
 
         // 配置加密和签名密钥
         // 开发环境：使用临时加密 + 签名证书
