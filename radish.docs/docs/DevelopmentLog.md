@@ -4,6 +4,36 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.06
+
+- **feat(scalar+auth/oidc-integration)**: Scalar API 文档集成 OIDC 认证，优化 Auth 服务配置
+  - **Scalar OAuth2 配置**（`Radish.Extension/OpenApiExtension/ScalarSetup.cs`）：
+    - 在 OpenAPI 文档中添加 OAuth2 Security Scheme，定义 Authorization Code Flow
+    - 配置 Scalar UI 的 OAuth2 认证：`AddPreferredSecuritySchemes("oauth2")` + `AddOAuth2Flows`
+    - 设置 `ClientId="radish-scalar"`，`RedirectUri="https://localhost:5000/scalar/oauth2-callback"`
+    - 默认 Scopes：`openid`、`profile`、`radish-api`
+    - 修复服务器列表显示问题：清空默认列表，添加 Gateway HTTPS/HTTP + API 直连三个选项
+  - **Auth Server Scopes 注册**（`Radish.Auth/Program.cs`）：
+    - 添加 `options.RegisterScopes("openid", "profile", "offline_access", "radish-api")`
+    - 解决 `invalid_scope` 错误：OpenIddict Server 必须显式注册允许使用的 scopes
+  - **客户端授权类型调整**（`Radish.Auth/OpenIddict/OpenIddictSeedHostedService.cs`）：
+    - 将 `radish-scalar` 的 `ConsentType` 从 `Implicit` 改为 `Explicit`
+    - 现在每次授权都会显示授权确认页面，方便测试和调试
+  - **数据库路径优化**（`Radish.Auth/Program.cs`）：
+    - OpenIddict 数据库默认存储在 `DataBases/RadishAuth.OpenIddict.db`（而非项目根目录）
+    - 自动创建 DataBases 文件夹，统一数据库文件管理
+    - 支持通过 `ConnectionStrings:OpenIddict` 配置自定义路径或使用 PostgreSQL
+  - **使用方式**：
+    1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
+    2. 点击右上角 **Authenticate** 按钮
+    3. 选择 **oauth2** 认证方式，点击 **Authorize**
+    4. 使用测试账号登录（用户名：`test`，密码：`P@ssw0rd!`）
+    5. 确认授权后，所有 API 请求自动携带 Bearer Token
+  - **文档更新**：
+    - 更新 `AuthenticationGuide.md`：添加 Scalar OAuth 配置详细说明（7.1-7.4 节）
+    - 更新 Scalar 页面说明：添加 OIDC 认证使用步骤
+    - 更新 `appsettings.Local.example.json`：添加 OpenIddict 数据库配置说明
+
 ### 2025.12.03
 
 - **feat(gateway+client/oidc-through-gateway)**: 通过 Gateway 打通 Auth + Api + 前端的完整 OIDC 授权码链路

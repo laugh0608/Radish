@@ -120,7 +120,7 @@ new OpenIddictApplicationDescriptor
 {
     ClientId = "radish-scalar",
     DisplayName = "Radish API Documentation",
-    ConsentType = ConsentTypes.Implicit, // 跳过授权确认页
+    ConsentType = ConsentTypes.Explicit, // 显示授权确认页（用于测试）
     RedirectUris = {
         new Uri("https://localhost:5000/scalar/oauth2-callback")
     },
@@ -130,12 +130,19 @@ new OpenIddictApplicationDescriptor
         Permissions.Endpoints.Token,
         Permissions.GrantTypes.AuthorizationCode,
         Permissions.ResponseTypes.Code,
-        Permissions.Scopes.OpenId,
-        Permissions.Scopes.Profile,
+        Permissions.Prefixes.Scope + "openid",
+        Permissions.Prefixes.Scope + "profile",
         Permissions.Prefixes.Scope + "radish-api"
     }
 }
 ```
+
+**使用方式**：
+1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
+2. 点击右上角 **Authenticate** 按钮
+3. 选择 **oauth2** 认证方式，点击 **Authorize**
+4. 使用测试账号登录（用户名：`test`，密码：`P@ssw0rd!`）
+5. 确认授权后，所有 API 请求将自动携带 Bearer Token
 
 ### 4.2 前端 Web 客户端
 
@@ -419,21 +426,93 @@ export const useApiClient = () => {
 
 ## 7. Scalar OAuth 配置
 
-在 Radish.Api 中配置 Scalar 使用 OAuth：
+Scalar API 文档已集成 OIDC 认证，配置位于 `Radish.Extension/OpenApiExtension/ScalarSetup.cs`：
+
+### 7.1 OpenAPI Security Scheme
 
 ```csharp
-// Program.cs
+// 在 OpenAPI 文档中定义 OAuth2 Security Scheme
+document.Components ??= new OpenApiComponents();
+document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+document.Components.SecuritySchemes["oauth2"] = new OpenApiSecurityScheme
+{
+    Type = SecuritySchemeType.OAuth2,
+    Description = "通过 OIDC 认证服务器获取 Access Token",
+    Flows = new OpenApiOAuthFlows
+    {
+        AuthorizationCode = new OpenApiOAuthFlow
+        {
+            AuthorizationUrl = new Uri("https://localhost:5000/connect/authorize"),
+            TokenUrl = new Uri("https://localhost:5000/connect/token"),
+            Scopes = new Dictionary<string, string>
+            {
+                ["openid"] = "OpenID Connect 身份认证",
+                ["profile"] = "用户基本信息",
+                ["radish-api"] = "Radish API 访问权限"
+            }
+        }
+    }
+};
+```
+
+### 7.2 Scalar UI 配置
+
+```csharp
 app.MapScalarApiReference(options =>
 {
-    options.WithTitle("Radish API")
+    options.WithTitle("Radish API Documentation")
         .WithTheme(ScalarTheme.BluePlanet)
-        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
-        .WithOAuth2Configuration(oauth =>
+        .WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios)
+        // 配置 OAuth2 认证
+        .AddPreferredSecuritySchemes("oauth2")
+        .AddOAuth2Flows("oauth2", flows =>
         {
-            oauth.ClientId = "radish-scalar";
-            oauth.Scopes = new[] { "openid", "profile", "radish-api" };
-        });
+            flows.AuthorizationCode = new AuthorizationCodeFlow
+            {
+                ClientId = "radish-scalar",
+                RedirectUri = "https://localhost:5000/scalar/oauth2-callback"
+            };
+        })
+        .AddDefaultScopes("oauth2", ["openid", "profile", "radish-api"]);
 });
+```
+
+### 7.3 服务器配置
+
+Scalar 支持多个服务器选项，方便在不同环境下测试：
+
+```csharp
+document.Servers.Clear();
+document.Servers.Add(new()
+{
+    Url = "https://localhost:5000",
+    Description = "本地开发环境 (Gateway HTTPS)"
+});
+document.Servers.Add(new()
+{
+    Url = "http://localhost:5001",
+    Description = "本地开发环境 (Gateway HTTP)"
+});
+document.Servers.Add(new()
+{
+    Url = "http://localhost:5100",
+    Description = "本地开发环境 (API 直连)"
+});
+```
+
+### 7.4 Auth Server Scopes 注册
+
+**重要**：Auth Server 必须注册允许的 Scopes，否则会报 `invalid_scope` 错误：
+
+```csharp
+// Radish.Auth/Program.cs
+builder.Services.AddOpenIddict()
+    .AddServer(options =>
+    {
+        // 注册允许的 Scopes
+        options.RegisterScopes("openid", "profile", "offline_access", "radish-api");
+        // ...
+    });
 ```
 
 ## 8. Claim 与内部用户模型映射约定
