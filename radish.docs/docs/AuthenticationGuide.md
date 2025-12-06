@@ -198,81 +198,60 @@ new OpenIddictApplicationDescriptor
 
 ### 4.4 客户端动态管理
 
-客户端存储在数据库中，支持通过后台管理界面动态配置。
+客户端存储在 OpenIddict 数据库中，支持通过 API 动态管理。
 
-#### 数据模型扩展
+#### 数据存储
 
-```csharp
-// 扩展 OpenIddict Application 实体
-public class RadishApplication
-{
-    // OpenIddict 基础字段
-    public string Id { get; set; }
-    public string? ClientId { get; set; }
-    public string? ClientSecret { get; set; }
-    public string? DisplayName { get; set; }
-    // ...
+客户端数据使用 **OpenIddict 的 Properties 字段**（`ImmutableDictionary<string, JsonElement>`）存储扩展信息：
 
-    // 扩展字段
-    public string? Logo { get; set; }
-    public string? Description { get; set; }
-    public string? DeveloperName { get; set; }
-    public string? DeveloperEmail { get; set; }
-    public ApplicationStatus Status { get; set; } // Active/Disabled
-    public ApplicationType AppType { get; set; } // Internal/ThirdParty
-    public DateTime CreatedAt { get; set; }
-    public long? CreatedBy { get; set; }
-}
+- **IsDeleted**：软删除标记（`"true"` / `"false"`）
+- **CreatedAt** / **CreatedBy**：创建时间和创建者 ID
+- **UpdatedAt** / **UpdatedBy**：更新时间和更新者 ID
+- **DeletedAt** / **DeletedBy**：删除时间和删除者 ID
 
-public enum ApplicationStatus
-{
-    Active,
-    Disabled,
-    PendingReview // 第三方应用审核中
-}
-
-public enum ApplicationType
-{
-    Internal,   // 内部应用
-    ThirdParty  // 第三方应用
-}
-```
+所有审计字段使用 ISO 8601 格式存储（`DateTime.UtcNow.ToString("O")`）。
 
 #### 管理 API
 
+客户端管理 API 位于 **Radish.Api** 项目（`/api/v1/Client/*`），需要 `System` 或 `Admin` 角色权限。
+
 | 方法 | 端点 | 说明 | 权限 |
 |------|------|------|------|
-| GET | `/api/clients` | 获取客户端列表 | Admin |
-| GET | `/api/clients/{id}` | 获取客户端详情 | Admin |
-| POST | `/api/clients` | 创建客户端 | Admin |
-| PUT | `/api/clients/{id}` | 更新客户端 | Admin |
-| DELETE | `/api/clients/{id}` | 删除客户端 | Admin |
-| POST | `/api/clients/{id}/reset-secret` | 重置 Secret | Admin |
-| POST | `/api/clients/{id}/toggle-status` | 启用/禁用 | Admin |
+| GET | `/api/v1/Client/GetClients` | 获取客户端列表（分页、搜索） | System/Admin |
+| GET | `/api/v1/Client/GetClient/{id}` | 获取客户端详情 | System/Admin |
+| POST | `/api/v1/Client/CreateClient` | 创建客户端 | System/Admin |
+| PUT | `/api/v1/Client/UpdateClient/{id}` | 更新客户端 | System/Admin |
+| DELETE | `/api/v1/Client/DeleteClient/{id}` | 删除客户端（软删除） | System/Admin |
+| POST | `/api/v1/Client/ResetClientSecret/{id}` | 重置 Secret | System/Admin |
 
 #### 创建客户端示例
 
 ```http
-POST /api/clients
+POST https://localhost:5000/api/v1/Client/CreateClient
 Content-Type: application/json
 Authorization: Bearer {admin_token}
 
 {
   "clientId": "third-party-app",
   "displayName": "第三方游戏社区",
-  "description": "某游戏社区论坛接入",
-  "appType": "ThirdParty",
+  "consentType": "Explicit",
+  "requireClientSecret": true,
+  "requirePkce": true,
   "redirectUris": [
     "https://game-community.example.com/callback"
   ],
   "postLogoutRedirectUris": [
     "https://game-community.example.com"
   ],
-  "permissions": {
-    "grantTypes": ["authorization_code", "refresh_token"],
-    "scopes": ["openid", "profile", "radish-api"]
-  },
-  "requirePkce": true
+  "grantTypes": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "scopes": [
+    "openid",
+    "profile",
+    "radish-api"
+  ]
 }
 ```
 
@@ -280,16 +259,20 @@ Authorization: Bearer {admin_token}
 
 ```json
 {
-  "id": "abc123",
-  "clientId": "third-party-app",
-  "clientSecret": "generated-random-secret",
-  "displayName": "第三方游戏社区",
-  "status": "Active",
-  "createdAt": "2025-11-24T10:00:00Z"
+  "success": true,
+  "msg": "创建成功",
+  "response": {
+    "clientId": "third-party-app",
+    "clientSecret": "vK8x2mP9nQ4wR7tY5uI3oL6aS1dF0gH8jK2lZ4xC9vB3nM7qW5eR1tY8uI6oP4aS",
+    "message": "请妥善保管此密钥，关闭后将无法再次查看"
+  }
 }
 ```
 
-> **注意**：ClientSecret 仅在创建时返回一次，请妥善保管。
+> **重要提示**：
+> - ClientSecret 仅在创建时返回一次，无法再次查看
+> - 如果丢失密钥，需要使用 `/api/v1/Client/ResetClientSecret/{id}` 重置
+> - 公开客户端（`requireClientSecret: false`）不需要密钥
 
 ## 5. 资源服务器配置
 
@@ -738,7 +721,180 @@ public async Task<IActionResult> GetJwtToken(LoginInput input)
 }
 ```
 
-## 13. 扩展规划
+## 13. 数据库配置
+
+### 13.1 OpenIddict 数据库
+
+OpenIddict 使用独立的 SQLite 数据库存储客户端、授权、Token 等信息。
+
+#### 数据库位置
+
+所有数据库文件统一存放在**解决方案根目录**的 `DataBases/` 文件夹：
+
+```
+Radish/
+└── DataBases/
+    ├── Radish.db                    # API 主数据库（SqlSugar）
+    ├── RadishLog.db                 # API 日志数据库（SqlSugar）
+    └── RadishAuth.OpenIddict.db     # OpenIddict 数据库（EF Core）
+```
+
+#### 共享机制
+
+- **Auth 项目**：启动时创建数据库并初始化种子数据（客户端、测试用户等）
+- **API 项目**：通过 `IOpenIddictApplicationManager` 访问同一数据库，实现客户端管理 API
+
+两个项目通过查找 `Radish.slnx` 文件定位解决方案根目录，确保使用相同的数据库路径。
+
+#### 配置方式
+
+**方式 1：使用默认路径（推荐）**
+
+不配置 `ConnectionStrings:OpenIddict`，系统自动使用：
+```
+{SolutionRoot}/DataBases/RadishAuth.OpenIddict.db
+```
+
+**方式 2：自定义路径**
+
+在 `appsettings.Local.json` 中配置：
+
+```json
+{
+  "ConnectionStrings": {
+    "OpenIddict": "Data Source=/custom/path/RadishAuth.OpenIddict.db"
+  }
+}
+```
+
+### 13.2 业务数据库
+
+业务数据（用户、角色、内容等）使用 SqlSugar 管理，配置在 `Databases` 数组中：
+
+```json
+{
+  "Databases": [
+    {
+      "ConnId": "Main",
+      "DbType": 2,
+      "Enabled": true,
+      "ConnectionString": "Radish.db"
+    },
+    {
+      "ConnId": "Log",
+      "DbType": 2,
+      "Enabled": true,
+      "ConnectionString": "RadishLog.db"
+    }
+  ]
+}
+```
+
+SQLite 数据库文件名会自动拼接到 `DataBases/` 文件夹下。
+
+### 13.3 数据库迁移
+
+#### OpenIddict 数据库
+
+使用 EF Core Migrations：
+
+```bash
+# 添加迁移
+cd Radish.Auth
+dotnet ef migrations add InitialCreate --context AuthOpenIddictDbContext
+
+# 应用迁移
+dotnet ef database update --context AuthOpenIddictDbContext
+```
+
+#### 业务数据库
+
+SqlSugar 使用 CodeFirst 自动创建表结构，无需手动迁移。
+
+## 14. Scalar API 文档集成
+
+### 14.1 OIDC 认证配置
+
+Scalar API 文档已集成 OIDC 认证，支持在文档界面直接登录并测试 API。
+
+#### 配置位置
+
+`Radish.Extension/OpenApiExtension/ScalarSetup.cs`：
+
+```csharp
+// 添加 OAuth2 Security Scheme
+document.Components.SecuritySchemes["oauth2"] = new OpenApiSecurityScheme
+{
+    Type = SecuritySchemeType.OAuth2,
+    Flows = new OpenApiOAuthFlows
+    {
+        AuthorizationCode = new OpenApiOAuthFlow
+        {
+            AuthorizationUrl = new Uri("https://localhost:5000/connect/authorize"),
+            TokenUrl = new Uri("https://localhost:5000/connect/token"),
+            Scopes = new Dictionary<string, string>
+            {
+                ["openid"] = "OpenID Connect 身份认证",
+                ["profile"] = "用户基本信息",
+                ["radish-api"] = "Radish API 访问权限"
+            }
+        }
+    }
+};
+
+// 配置 Scalar UI
+options.AddPreferredSecuritySchemes("oauth2")
+    .AddOAuth2Flows("oauth2", flows => {
+        flows.AuthorizationCode = new AuthorizationCodeFlow {
+            ClientId = "radish-scalar",
+            RedirectUri = "https://localhost:5000/scalar/oauth2-callback"
+        };
+    })
+    .AddDefaultScopes("oauth2", ["openid", "profile", "radish-api"]);
+```
+
+### 14.2 使用方式
+
+1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
+2. 点击右上角 **Authenticate** 按钮
+3. 选择 **oauth2** 认证方式
+4. 点击 **Authorize** 按钮
+5. 使用测试账号登录：
+   - 用户名：`test`
+   - 密码：`P@ssw0rd!`
+6. 确认授权后，所有 API 请求将自动携带 Bearer Token
+
+### 14.3 客户端配置
+
+Scalar 使用的客户端配置（在 Auth 项目的 `OpenIddictSeedHostedService` 中初始化）：
+
+```csharp
+new OpenIddictApplicationDescriptor
+{
+    ClientId = "radish-scalar",
+    DisplayName = "Radish API Documentation",
+    ConsentType = ConsentTypes.Explicit,
+    RedirectUris = {
+        new Uri("https://localhost:5000/scalar/oauth2-callback")
+    },
+    Permissions =
+    {
+        Permissions.Endpoints.Authorization,
+        Permissions.Endpoints.Token,
+        Permissions.GrantTypes.AuthorizationCode,
+        Permissions.ResponseTypes.Code,
+        Permissions.Scopes.OpenId,
+        Permissions.Scopes.Profile,
+        Permissions.Prefixes.Scope + "radish-api"
+    },
+    Requirements =
+    {
+        Requirements.Features.ProofKeyForCodeExchange // 强制 PKCE
+    }
+}
+```
+
+## 15. 扩展规划
 
 - **第三方登录**：GitHub、微信、钉钉等 OAuth Provider
 - **MFA**：TOTP、短信验证码

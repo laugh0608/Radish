@@ -6,6 +6,48 @@
 
 ### 2025.12.06
 
+- **feat(api/client-management)**: 实现 OIDC 客户端管理 API
+  - **ClientController**（`Radish.Api/Controllers/ClientController.cs`）：
+    - 实现完整的 CRUD API：`GetClients`（分页+搜索）、`GetClient`、`CreateClient`、`UpdateClient`、`DeleteClient`、`ResetClientSecret`
+    - 使用 `IOpenIddictApplicationManager` 直接操作 OpenIddict 数据库
+    - 软删除实现：使用 OpenIddict Properties 字段存储 `IsDeleted`、`CreatedAt/By`、`UpdatedAt/By`、`DeletedAt/By`
+    - 所有接口需要 `System` 或 `Admin` 角色权限（`[Authorize(Roles = "System,Admin")]`）
+    - API 路由遵循项目规范：`/api/v1/Client/[action]`
+  - **数据模型**（`Radish.Model/ViewModels/Client/`）：
+    - `ClientVo`：客户端视图模型（列表和详情）
+    - `CreateClientDto`：创建客户端请求 DTO
+    - `UpdateClientDto`：更新客户端请求 DTO
+    - `ClientSecretVo`：客户端密钥返回模型（仅在创建/重置时返回一次）
+  - **分页模型**（`Radish.Model/PageModel.cs`）：
+    - 新增通用分页模型 `PageModel<T>`，包含 `Page`、`PageSize`、`DataCount`、`PageCount`、`Data`
+  - **项目依赖**（`Radish.Api/Radish.Api.csproj`）：
+    - API 项目新增对 Auth 项目的引用，以共享 `AuthOpenIddictDbContext`
+    - API 和 Auth 项目共享同一个 OpenIddict 数据库
+
+- **refactor(database/unified-path)**: 统一所有数据库文件到 DataBases 文件夹
+  - **OpenIddict 数据库共享**（`Radish.Api/Program.cs` + `Radish.Auth/Program.cs`）：
+    - 两个项目通过查找 `Radish.slnx` 文件定位解决方案根目录
+    - 默认数据库路径：`{SolutionRoot}/DataBases/RadishAuth.OpenIddict.db`
+    - Auth 项目启动时创建数据库并初始化种子数据
+    - API 项目通过 `IOpenIddictApplicationManager` 访问同一数据库
+  - **SqlSugar 数据库路径**（`Radish.Common/DbTool/BaseDbConfig.cs`）：
+    - 修改 `SpecialDbString` 方法，SQLite 数据库自动存储到 `{SolutionRoot}/DataBases/`
+    - 新增 `FindSolutionRoot()` 方法，通过查找 `Radish.slnx` 定位解决方案根目录
+    - 配置文件中只需填写文件名（如 `Radish.db`），路径自动拼接
+  - **最终数据库布局**：
+    ```
+    Radish/
+    └── DataBases/
+        ├── Radish.db                    # API 主数据库（SqlSugar）
+        ├── RadishLog.db                 # API 日志数据库（SqlSugar）
+        └── RadishAuth.OpenIddict.db     # OpenIddict 数据库（EF Core，Auth + API 共享）
+    ```
+
+- **refactor(docs/folder-rename)**: 重命名根目录 docs 文件夹为 Docs
+  - 将 `docs/` 重命名为 `Docs/`，与 `radish.docs/` 区分
+  - 更新 `README.md`、`CLAUDE.md`、`AGENTS.md` 中的相关引用
+  - `Docs/` 作为文档入口，提供跳转链接到 `radish.docs/docs/` 的实际文档内容
+
 - **feat(scalar+auth/oidc-integration)**: Scalar API 文档集成 OIDC 认证，优化 Auth 服务配置
   - **Scalar OAuth2 配置**（`Radish.Extension/OpenApiExtension/ScalarSetup.cs`）：
     - 在 OpenAPI 文档中添加 OAuth2 Security Scheme，定义 Authorization Code Flow
@@ -19,20 +61,20 @@
   - **客户端授权类型调整**（`Radish.Auth/OpenIddict/OpenIddictSeedHostedService.cs`）：
     - 将 `radish-scalar` 的 `ConsentType` 从 `Implicit` 改为 `Explicit`
     - 现在每次授权都会显示授权确认页面，方便测试和调试
-  - **数据库路径优化**（`Radish.Auth/Program.cs`）：
-    - OpenIddict 数据库默认存储在 `DataBases/RadishAuth.OpenIddict.db`（而非项目根目录）
-    - 自动创建 DataBases 文件夹，统一数据库文件管理
-    - 支持通过 `ConnectionStrings:OpenIddict` 配置自定义路径或使用 PostgreSQL
   - **使用方式**：
     1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
     2. 点击右上角 **Authenticate** 按钮
     3. 选择 **oauth2** 认证方式，点击 **Authorize**
     4. 使用测试账号登录（用户名：`test`，密码：`P@ssw0rd!`）
     5. 确认授权后，所有 API 请求自动携带 Bearer Token
-  - **文档更新**：
-    - 更新 `AuthenticationGuide.md`：添加 Scalar OAuth 配置详细说明（7.1-7.4 节）
-    - 更新 Scalar 页面说明：添加 OIDC 认证使用步骤
-    - 更新 `appsettings.Local.example.json`：添加 OpenIddict 数据库配置说明
+
+- **docs(auth+database)**: 更新认证和数据库文档
+  - **AuthenticationGuide.md**：
+    - 更新第 4.4 节"客户端动态管理"：详细说明软删除和审计字段的实现
+    - 更新管理 API 表格：使用实际的 API 路由（`/api/v1/Client/*`）
+    - 更新创建客户端示例：使用实际的请求/响应格式
+    - 新增第 13 章"数据库配置"：详细说明 OpenIddict 和 SqlSugar 数据库的配置方式
+    - 新增第 14 章"Scalar API 文档集成"：详细说明 OIDC 认证配置和使用方式
 
 ### 2025.12.03
 
