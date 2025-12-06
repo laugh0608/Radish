@@ -1,0 +1,22 @@
+[
+  {
+    "Name": "G+A+A",
+    "Projects": [
+      {
+        "Path": "Radish.Api\\Radish.Api.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      },
+      {
+        "Path": "Radish.Gateway\\Radish.Gateway.csproj",
+        "Action": "Start",
+        "DebugTarget": "https"
+      },
+      {
+        "Path": "Radish.Auth\\Radish.Auth.csproj",
+        "Action": "Start",
+        "DebugTarget": "http"
+      }
+    ]
+  }
+]
