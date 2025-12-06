@@ -25,6 +25,8 @@ using Radish.Repository;
 using Radish.Service;
 using Serilog;
 using SqlSugar;
+using Microsoft.EntityFrameworkCore;
+using OpenIddict.Abstractions;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
@@ -121,6 +123,29 @@ SnowFlakeSingle.DatacenterId = snowflakeSection.GetValue<int>("DataCenterId");
 // 注册泛型仓储与服务，AddScoped() 汇报模式，每次请求的时候注入
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
+
+// 注册 OpenIddict DbContext（用于客户端管理 API）
+var openIddictConnectionString = builder.Configuration.GetConnectionString("OpenIddict");
+if (string.IsNullOrEmpty(openIddictConnectionString))
+{
+    var dbDirectory = Path.Combine(AppContext.BaseDirectory, "DataBases");
+    Directory.CreateDirectory(dbDirectory);
+    var dbPath = Path.Combine(dbDirectory, "RadishAuth.OpenIddict.db");
+    openIddictConnectionString = $"Data Source={dbPath}";
+}
+builder.Services.AddDbContext<Radish.Auth.OpenIddict.AuthOpenIddictDbContext>(options =>
+{
+    options.UseSqlite(openIddictConnectionString);
+});
+
+// 注册 OpenIddict Core（仅用于客户端管理，不启用 Server）
+builder.Services.AddOpenIddict()
+    .AddCore(options =>
+    {
+        options.UseEntityFrameworkCore()
+               .UseDbContext<Radish.Auth.OpenIddict.AuthOpenIddictDbContext>();
+    });
+
 // 注册 JWT 认证服务（使用 Radish.Auth 作为 OIDC 授权服务器）
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
