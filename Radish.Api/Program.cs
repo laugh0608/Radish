@@ -124,11 +124,18 @@ SnowFlakeSingle.DatacenterId = snowflakeSection.GetValue<int>("DataCenterId");
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
 
-// 注册 OpenIddict DbContext（用于客户端管理 API）
+// 注册 OpenIddict DbContext（用于客户端管理 API，与 Auth 项目共享数据库）
 var openIddictConnectionString = builder.Configuration.GetConnectionString("OpenIddict");
 if (string.IsNullOrEmpty(openIddictConnectionString))
 {
-    var dbDirectory = Path.Combine(AppContext.BaseDirectory, "DataBases");
+    // 查找解决方案根目录（包含 Radish.slnx 的目录）
+    var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
+    while (currentDir != null && !File.Exists(Path.Combine(currentDir.FullName, "Radish.slnx")))
+    {
+        currentDir = currentDir.Parent;
+    }
+    var solutionRoot = currentDir?.FullName ?? AppContext.BaseDirectory;
+    var dbDirectory = Path.Combine(solutionRoot, "DataBases");
     Directory.CreateDirectory(dbDirectory);
     var dbPath = Path.Combine(dbDirectory, "RadishAuth.OpenIddict.db");
     openIddictConnectionString = $"Data Source={dbPath}";

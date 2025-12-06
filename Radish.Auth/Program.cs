@@ -103,10 +103,17 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 // OpenIddict 所用 EF Core DbContext（仅承载 OpenIddict 实体）
 var openIddictConnectionString = builder.Configuration.GetConnectionString("OpenIddict");
 
-// 如果未配置连接字符串，使用默认 SQLite 路径（DataBases 文件夹）
+// 如果未配置连接字符串，使用解决方案根目录下的 DataBases 文件夹（与 API 项目共享）
 if (string.IsNullOrEmpty(openIddictConnectionString))
 {
-    var dbDirectory = Path.Combine(AppContext.BaseDirectory, "DataBases");
+    // 查找解决方案根目录（包含 Radish.slnx 的目录）
+    var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
+    while (currentDir != null && !File.Exists(Path.Combine(currentDir.FullName, "Radish.slnx")))
+    {
+        currentDir = currentDir.Parent;
+    }
+    var solutionRoot = currentDir?.FullName ?? AppContext.BaseDirectory;
+    var dbDirectory = Path.Combine(solutionRoot, "DataBases");
     Directory.CreateDirectory(dbDirectory); // 确保目录存在
     var dbPath = Path.Combine(dbDirectory, "RadishAuth.OpenIddict.db");
     openIddictConnectionString = $"Data Source={dbPath}";
