@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import i18n from './i18n';
+import { parseApiResponse, type ApiResponse } from './api/client';
 import './App.css';
 
 interface Forecast {
@@ -22,6 +25,8 @@ interface OidcCallbackProps {
 const defaultApiBase = 'https://localhost:5000';
 
 function App() {
+    const { t } = useTranslation();
+
     const [forecasts, setForecasts] = useState<Forecast[]>();
     const [error, setError] = useState<string>();
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
@@ -47,14 +52,14 @@ function App() {
     }, [apiBaseUrl]);
 
     const contents = forecasts === undefined
-        ? <p><em>{error ?? 'Loading weather data from Radish.Api...'}</em></p>
+        ? <p><em>{error ?? t('weather.loading')}</em></p>
         : <table className="table table-striped" aria-labelledby="tableLabel">
             <thead>
                 <tr>
-                    <th>Date</th>
-                    <th>Temp. (C)</th>
-                    <th>Temp. (F)</th>
-                    <th>Summary</th>
+                    <th>{t('weather.date')}</th>
+                    <th>{t('weather.tempC')}</th>
+                    <th>{t('weather.tempF')}</th>
+                    <th>{t('weather.summary')}</th>
                 </tr>
             </thead>
             <tbody>
@@ -71,15 +76,23 @@ function App() {
 
     return (
         <div>
-            <h1 id="tableLabel">Radish Weather Forecast</h1>
-            <p>实时展示来自 Radish.Api 的 WeatherForecast 示例数据，便于验证前后端联通性。</p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                <button type="button" onClick={() => i18n.changeLanguage('zh-CN')}>
+                    {t('lang.zhCN')}
+                </button>
+                <button type="button" onClick={() => i18n.changeLanguage('en')}>
+                    {t('lang.en')}
+                </button>
+            </div>
+            <h1 id="tableLabel">{t('app.title')}</h1>
+            <p>{t('app.description')}</p>
 
             <section style={{ marginBottom: '1rem' }}>
-                <h2>Authentication</h2>
+                <h2>{t('auth.sectionTitle')}</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         <button type="button" onClick={() => handleLogin(apiBaseUrl)}>
-                            通过 OIDC 登录
+                            {t('auth.login')}
                         </button>
                         {currentUser && (
                             <button type="button" onClick={() => handleLogout(apiBaseUrl)}>
@@ -90,14 +103,18 @@ function App() {
                     <div>
                         {currentUser && (
                             <span>
-                                当前用户：{currentUser.userName}（Id: {currentUser.userId}, Tenant: {currentUser.tenantId}）
+                                {t('auth.currentUser', {
+                                    userName: currentUser.userName,
+                                    userId: currentUser.userId,
+                                    tenantId: currentUser.tenantId
+                                })}
                             </span>
                         )}
                         {!currentUser && !userError && (
-                            <span>当前未登录</span>
+                            <span>{t('auth.notLoggedIn')}</span>
                         )}
                         {userError && (
-                            <span>用户信息加载失败：{userError}</span>
+                            <span>{t('auth.userInfoLoadFailedPrefix')}{userError}</span>
                         )}
                     </div>
                 </div>
@@ -108,15 +125,21 @@ function App() {
     );
 
     async function populateWeatherData() {
-        const requestUrl = `${apiBaseUrl}/api/WeatherForecast/Get`;
+        const requestUrl = `${apiBaseUrl}/api/WeatherForecast/GetStandard`;
         try {
-            const response = await apiFetch(requestUrl, apiBaseUrl);
-            const data = await response.json();
-            setForecasts(data as Forecast[]);
+            const response = await apiFetch(requestUrl);
+            const json = await response.json() as ApiResponse<Forecast[]>;
+            const parsed = parseApiResponse(json, t);
+
+            if (!parsed.ok || !parsed.data) {
+                throw new Error(parsed.message || t('error.weather.load_failed'));
+            }
+
+            setForecasts(parsed.data);
             setError(undefined);
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            setError(`无法从 ${requestUrl} 获取数据：${message}`);
+            setError(message);
             setForecasts(undefined);
         }
     }
@@ -128,24 +151,20 @@ function App() {
 
         const requestUrl = `${apiBaseUrl}/api/v1/User/GetUserByHttpContext`;
         try {
-            const response = await apiFetch(requestUrl, apiBaseUrl, { withAuth: true });
+            const response = await apiFetch(requestUrl, { withAuth: true });
 
-            const json = await response.json() as {
-                statusCode: number;
-                isSuccess: boolean;
-                messageInfo: string;
-                responseData?: CurrentUser;
-            };
+            const json = await response.json() as ApiResponse<CurrentUser>;
+            const parsed = parseApiResponse(json, t);
 
-            if (!json.isSuccess || !json.responseData) {
-                throw new Error(json.messageInfo || '未能获取到当前用户信息');
+            if (!parsed.ok || !parsed.data) {
+                throw new Error(parsed.message || t('auth.userInfoLoadFailedPrefix'));
             }
 
-            setCurrentUser(json.responseData);
+            setCurrentUser(parsed.data);
             setUserError(undefined);
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            setUserError(`无法从 ${requestUrl} 获取当前用户：${message}`);
+            setUserError(`${t('auth.userInfoLoadFailedPrefix')}${message}`);
             setCurrentUser(null);
         }
     }
@@ -155,11 +174,12 @@ interface ApiFetchOptions extends RequestInit {
     withAuth?: boolean;
 }
 
-function apiFetch(input: RequestInfo | URL, apiBaseUrl: string, options: ApiFetchOptions = {}) {
+function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
     const { withAuth, headers, ...rest } = options;
 
     const finalHeaders: HeadersInit = {
         Accept: 'application/json',
+        'Accept-Language': i18n.language || 'zh-CN',
         ...headers,
     };
 
@@ -218,8 +238,9 @@ function handleLogout(apiBaseUrl: string) {
 }
 
 function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
+    const { t } = useTranslation();
     const [error, setError] = useState<string>();
-    const [message, setMessage] = useState<string>('正在完成登录...');
+    const [message, setMessage] = useState<string>(t('oidc.completingLogin'));
 
     useEffect(() => {
         if (typeof window === 'undefined') {
@@ -230,8 +251,8 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
         const code = url.searchParams.get('code');
 
         if (!code) {
-            setError('缺少授权码 code。');
-            setMessage('登录失败');
+            setError(t('oidc.missingCode'));
+            setMessage(t('oidc.loginFailed'));
             return;
         }
 
@@ -254,7 +275,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Token 请求失败: ${response.status} ${response.statusText}`);
+                    throw new Error(t('oidc.tokenRequestFailed', { status: response.status, statusText: response.statusText }));
                 }
 
                 const tokenSet = await response.json() as {
@@ -263,7 +284,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
                 };
 
                 if (!tokenSet.access_token) {
-                    throw new Error('Token 响应中缺少 access_token。');
+                    throw new Error(t('oidc.missingAccessToken'));
                 }
 
                 window.localStorage.setItem('access_token', tokenSet.access_token);
@@ -271,14 +292,14 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
                     window.localStorage.setItem('refresh_token', tokenSet.refresh_token);
                 }
 
-                setMessage('登录成功，即将跳转到首页...');
+                setMessage(t('oidc.loginSucceeded'));
 
                 // 使用 replace 避免在浏览器历史中留下带 code 的 URL
                 window.location.replace('/');
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
                 setError(msg);
-                setMessage('登录失败');
+                setMessage(t('oidc.loginFailed'));
             }
         };
 
@@ -287,9 +308,9 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
 
     return (
         <div>
-            <h1>OIDC 登录回调</h1>
+            <h1>{t('oidc.title')}</h1>
             <p>{message}</p>
-            {error && <p>错误详情：{error}</p>}
+            {error && <p>{t('oidc.errorDetailPrefix')}{error}</p>}
         </div>
     );
 }

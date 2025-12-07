@@ -8,6 +8,9 @@ using Radish.Model;
 using Radish.Model.LogModels;
 using Radish.Model.ViewModels;
 using Serilog;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
+using Radish.Api.Resources;
 
 namespace Radish.Api.Controllers;
 
@@ -52,15 +55,13 @@ public class WeatherForecastController : ControllerBase
         "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
     ];
 
-    /// <summary>天气测试接口</summary>
+    /// <summary>天气测试接口（原始示例，直接返回实体数组）</summary>
     /// <returns></returns>
     [HttpGet]
     public IEnumerable<WeatherForecast> Get()
     {
         // 测试两种日志输出
-        // 直接使用 Serilog
         Log.Information("Log.Information: Getting weather forecast");
-        // 使用 ILogger
         _logger.LogInformation("_logger.LogInformation: Getting weather forecast");
 
         return Enumerable.Range(1, 5).Select(index => new WeatherForecast
@@ -70,6 +71,46 @@ public class WeatherForecastController : ControllerBase
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToArray();
+    }
+
+    /// <summary>
+    /// 标准返回格式示例：使用 MessageModel 包裹天气数据，演示 code + messageKey + messageInfo
+    /// </summary>
+    /// <param name="fail">为 true 时返回一个模拟的业务错误</param>
+    /// <returns>统一格式的天气预报响应</returns>
+    [HttpGet]
+    public ActionResult<MessageModel<IEnumerable<WeatherForecast>>> GetStandard(bool fail = false)
+    {
+        var localizer = HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Errors>>();
+
+        if (fail)
+        {
+            var failMessage = localizer["error.weather.load_failed"];
+            var failResult = MessageModel<IEnumerable<WeatherForecast>>.Failed(
+                failMessage,
+                code: "Weather.LoadFailed",
+                messageKey: "error.weather.load_failed");
+            failResult.StatusCode = StatusCodes.Status500InternalServerError;
+            return StatusCode(StatusCodes.Status500InternalServerError, failResult);
+        }
+
+        var forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
+            {
+                Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+                TemperatureC = Random.Shared.Next(-20, 55),
+                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
+            })
+            .ToArray();
+
+        var successMessage = localizer["info.weather.load_success"];
+        var successResult = MessageModel<IEnumerable<WeatherForecast>>.Success(
+            successMessage,
+            forecasts,
+            code: "Weather.LoadSuccess",
+            messageKey: "info.weather.load_success");
+        successResult.StatusCode = StatusCodes.Status200OK;
+
+        return Ok(successResult);
     }
 
     /// <summary>路径参数测试接口</summary>

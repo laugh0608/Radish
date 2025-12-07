@@ -27,6 +27,9 @@ using Serilog;
 using SqlSugar;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Options;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
@@ -78,6 +81,26 @@ builder.Services.AddCors(options =>
         }
     });
 });
+
+// 本地化配置：支持 zh-CN / en-US，通过 Accept-Language 解析请求语言
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[]
+    {
+        new CultureInfo("zh-CN"),
+        new CultureInfo("en-US")
+    };
+
+    options.DefaultRequestCulture = new RequestCulture("zh-CN");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+
+    // 优先从 Accept-Language 读取语言
+    options.RequestCultureProviders.Insert(0, new AcceptLanguageHeaderRequestCultureProvider());
+});
+
 // 注册 Controller 控制器
 builder.Services.AddControllers();
 // 注册健康检查
@@ -209,6 +232,11 @@ app.UseStaticFiles();
 // {
 // }
 app.UseCors(corsPolicyName);
+
+// 配置请求本地化（根据 Accept-Language 设置 Culture）
+var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
+app.UseRequestLocalization(localizationOptions.Value);
+
 // 配置 Scalar UI
 app.UseScalarUI("/scalar");
 

@@ -6,7 +6,10 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Localization;
+using Moq;
 using Radish.Api.Controllers;
+using Radish.Api.Resources;
 using Radish.Common.HelpTool;
 using Radish.Extension;
 using Radish.Extension.PermissionExtension;
@@ -23,8 +26,13 @@ public class LoginControllerTest
     [Fact]
     public async Task GetJwtToken_ShouldReturnToken_WhenUserExists()
     {
+        var errorsLocalizerMock = new Mock<IStringLocalizer<Errors>>();
+        errorsLocalizerMock
+            .Setup(l => l[It.IsAny<string>()])
+            .Returns((string name) => new LocalizedString(name, name));
+
         var controller = new LoginController(new FakeUserService(), NullLogger<LoginController>.Instance,
-            new PermissionRequirement());
+            new PermissionRequirement(), errorsLocalizerMock.Object);
 
         var result = await controller.GetJwtToken("test", "blogadmin");
 
