@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="auth.login.title" xml:space="preserve">
+    <value>Radish 统一登录</value>
+  </data>
+  <data name="auth.login.heading" xml:space="preserve">
+    <value>Radish.Auth 测试登录</value>
+  </data>
+  <data name="auth.login.description" xml:space="preserve">
+    <value>使用内置测试账号登录，后续可替换为实际用户体系。</value>
+  </data>
+  <data name="auth.login.testAccount" xml:space="preserve">
+    <value>测试账号</value>
+  </data>
+  <data name="auth.login.testAccount.username" xml:space="preserve">
+    <value>用户名：</value>
+  </data>
+  <data name="auth.login.testAccount.password" xml:space="preserve">
+    <value>密码：</value>
+  </data>
+  <data name="auth.login.usernameLabel" xml:space="preserve">
+    <value>用户名</value>
+  </data>
+  <data name="auth.login.passwordLabel" xml:space="preserve">
+    <value>密码</value>
+  </data>
+  <data name="auth.login.submit" xml:space="preserve">
+    <value>登录</value>
+  </data>
+  <data name="auth.login.error.invalidCredentials" xml:space="preserve">
+    <value>用户名或密码错误，请重试。</value>
+  </data>
+  <data name="auth.login.success.message" xml:space="preserve">
+    <value>登录成功，您现在可以关闭此页面或返回调用系统。</value>
+  </data>
+  <data name="auth.logout.success" xml:space="preserve">
+    <value>已注销登录。</value>
+  </data>
+  <data name="auth.consent.title" xml:space="preserve">
+    <value>授权确认</value>
+  </data>
+  <data name="auth.consent.heading" xml:space="preserve">
+    <value>授权第三方访问你的 Radish 账号</value>
+  </data>
+  <data name="auth.consent.description" xml:space="preserve">
+    <value>应用 {0} 请求访问以下权限：</value>
+  </data>
+  <data name="auth.consent.client" xml:space="preserve">
+    <value>应用：</value>
+  </data>
+  <data name="auth.consent.scopes" xml:space="preserve">
+    <value>将被授予的权限：</value>
+  </data>
+  <data name="auth.consent.allow" xml:space="preserve">
+    <value>同意</value>
+  </data>
+  <data name="auth.consent.deny" xml:space="preserve">
+    <value>拒绝</value>
+  </data>
+</root>
