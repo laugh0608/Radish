@@ -19,7 +19,7 @@
   - 性能：关键查询 P95 ≤ 200ms；SQLSugar Profile + PostgreSQL EXPLAIN 校验索引；读多写少场景可使用内存缓存。
   - 可用性：健康检查 `/health`, `/ready`; SQLSugar 迁移幂等；容器探针。
   - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点。
-  - 国际化：后端资源文件（zh-Hans 基线），前端 i18n（React i18next）。
+  - 国际化：后端资源文件（zh-Hans 基线）+ `MessageModel` 三件套，前端 i18n（React i18next），详见 [I18nGuide.md](I18nGuide.md)。
   - 质量：后端 xUnit + Shouldly + NSubstitute，前端 Vitest + RTL，关键链路具备 E2E 冒烟。
   - 配置：`appsettings.{Env}.json` + 环境变量 + `.env`；禁止把密钥写入仓库。
 

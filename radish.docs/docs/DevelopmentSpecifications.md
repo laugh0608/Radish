@@ -333,6 +333,26 @@ git push origin v1.2.0.251126
 - 公私钥对统一由后端团队生成和轮换，前端需在构建阶段或运行时安全加载最新公钥。
 - 开发联调阶段同样遵循 HTTPS+RSA 约束，以防调试阶段泄漏敏感数据。
 
+## 国际化（i18n）约定
+
+- 支持语言固定为 `zh-CN`（简体中文）与 `en`（英语），默认使用 `zh-CN`，所有多语言扩展应基于这两种文化继续演进。
+- 前端（radish.client）负责界面文案、交互提示等 UI 文本的多语言管理，统一使用 `react-i18next`：
+  - 所有新页面禁止写死中文/英文字符串，必须通过 `t('app.title')`、`t('auth.login')` 等 key 访问文案。
+  - i18n key 采用“小写 + 点号分隔”的层级命名：`{domain}[.{subDomain}].{meaning}`，推荐顶级域包括：`app.*`、`auth.*`、`user.*`、`weather.*`、`oidc.*`、`error.*`、`info.*`、`lang.*` 等。
+  - 详细示例与最佳实践见 [I18nGuide.md](I18nGuide.md) 的“前端国际化规范”。
+- 后端（Radish.Api / Radish.Auth）负责错误/提示类系统消息的多语言资源管理：
+  - `.resx` 资源文件统一放在 `Radish.Api/Resources`，使用 `Errors.zh-Hans.resx` 与 `Errors.en-US.resx` 存放中文/英文文案，通过 `IStringLocalizer<Errors>` 访问。
+  - 在 `Program.cs` 中使用 `RequestLocalizationOptions + UseRequestLocalization`，按 HTTP 头 `Accept-Language`（`zh-CN` 或 `en`）选择当前 `CultureInfo`，所有多语言文案均从对应 `.resx` 中读取。
+- API 响应统一使用 `MessageModel<T>`/`MessageModel` 三件套结构：
+  - 对外字段固定为：`StatusCode` + `IsSuccess` + `MessageInfo` + `Code?` + `MessageKey?` + `ResponseData?`。
+  - `Code`：业务错误码，面向日志与前端精细化判断，采用大驼峰命名（如 `Auth.InvalidCredentials`、`User.NotFound`、`Weather.LoadFailed`）。
+  - `MessageKey`：与 `.resx` 和前端 i18n 映射的 key，沿用 `error.*` / `info.*` 命名规范（如 `error.auth.invalid_credentials`）。
+  - `MessageInfo`：按当前文化翻译后的完整提示句子，由后端本地化组件生成，作为前端兜底展示内容。
+- 前端发起 HTTP 请求时必须携带 `Accept-Language` 头：
+  - 统一通过封装的 `requestJson<T>()` 或 `apiFetch()` 等 helper 写入 `Accept-Language: i18n.language || 'zh-CN'`，避免在页面中分散设置。
+  - 前端解析响应时优先使用 `messageKey` 做 i18n 映射，仅在 key 缺失或解析失败时回退到 `MessageInfo`。
+- 所有新接口、新页面默认遵循上述统一模式：Controller 返回 `MessageModel<T>`，通过 `IStringLocalizer<Errors>` 提供多语言文案，前端使用 `requestJson<T>` + `parseApiResponse` 完成解析与提示。
+
 ## 前端桌面化 UI 规范
 
 > 详细的交互、设计 Token、跨端策略以 [FrontendDesign.md](FrontendDesign.md) 为准，此处保留关键守则，便于与后端规范并列查看。
