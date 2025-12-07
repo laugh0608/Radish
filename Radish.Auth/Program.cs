@@ -87,7 +87,7 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 本地化配置：支持 zh-CN / en-US，通过 Accept-Language 解析请求语言
+// 本地化配置：统一使用 zh / en，与前端保持一致
 // 不设置 ResourcesPath，让它在类型相同的目录查找资源文件
 builder.Services.AddLocalization();
 
@@ -95,11 +95,11 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
     var supportedCultures = new[]
     {
-        new CultureInfo("zh-CN"),
-        new CultureInfo("en-US")
+        new CultureInfo("zh"),
+        new CultureInfo("en")
     };
 
-    options.DefaultRequestCulture = new RequestCulture("zh-CN");
+    options.DefaultRequestCulture = new RequestCulture("zh");
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
 
@@ -239,15 +239,15 @@ app.UseForwardedHeaders();
 // 静态文件
 app.UseStaticFiles();
 
+// 配置请求本地化（必须在 UseRouting 之前，确保在路由和控制器执行前设置 Culture）
+var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
+app.UseRequestLocalization(localizationOptions.Value);
+
 // 路由
 app.UseRouting();
 
 // CORS
 app.UseCors();
-
-// 配置请求本地化（根据 Accept-Language 设置 Culture）
-var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
-app.UseRequestLocalization(localizationOptions.Value);
 
 // 认证
 app.UseAuthentication();
