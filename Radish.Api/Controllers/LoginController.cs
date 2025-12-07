@@ -11,6 +11,8 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Serilog;
+using Microsoft.Extensions.Localization;
+using Radish.Api.Resources;
 
 namespace Radish.Api.Controllers;
 
@@ -31,12 +33,14 @@ public class LoginController : ControllerBase
     private readonly IUserService _userService;
     private readonly ILogger<LoginController> _logger;
     private readonly PermissionRequirement _requirement;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
-    public LoginController(IUserService userService, ILogger<LoginController> logger, PermissionRequirement requirement)
+    public LoginController(IUserService userService, ILogger<LoginController> logger, PermissionRequirement requirement, IStringLocalizer<Errors> errorsLocalizer)
     {
         _userService = userService;
         _logger = logger;
         _requirement = requirement;
+        _errorsLocalizer = errorsLocalizer;
     }
 
     /// <summary>
@@ -125,10 +129,19 @@ public class LoginController : ControllerBase
             claims.AddRange(userRoles.Split(',').Select(s => new Claim(ClaimTypes.Role, s)));
             
             var token = JwtTokenGenerate.BuildJwtToken(claims.ToArray(), _requirement);
-            
-            return MessageModel<TokenInfoVo>.Success("获取成功", token);
+
+            var successMessage = _errorsLocalizer["error.auth.login_success"];
+            return MessageModel<TokenInfoVo>.Success(
+                successMessage,
+                token,
+                code: "Auth.LoginSuccess",
+                messageKey: "error.auth.login_success");
         }
 
-        return MessageModel<TokenInfoVo>.Failed("认证失败");
+        var failMessage = _errorsLocalizer["error.auth.invalid_credentials"];
+        return MessageModel<TokenInfoVo>.Failed(
+            failMessage,
+            code: "Auth.InvalidCredentials",
+            messageKey: "error.auth.invalid_credentials");
     }
 }

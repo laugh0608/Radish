@@ -14,6 +14,9 @@ using Radish.Extension.SerilogExtension;
 using Radish.Extension.SqlSugarExtension;
 using Serilog;
 using SqlSugar;
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Options;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
@@ -81,6 +84,25 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader()
               .AllowCredentials();
     });
+});
+
+// 本地化配置：支持 zh-CN / en-US，通过 Accept-Language 解析请求语言
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[]
+    {
+        new CultureInfo("zh-CN"),
+        new CultureInfo("en-US")
+    };
+
+    options.DefaultRequestCulture = new RequestCulture("zh-CN");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+
+    // 优先从 Accept-Language 读取语言
+    options.RequestCultureProviders.Insert(0, new AcceptLanguageHeaderRequestCultureProvider());
 });
 
 // 配置强类型 Options
@@ -203,6 +225,10 @@ app.UseRouting();
 
 // CORS
 app.UseCors();
+
+// 配置请求本地化（根据 Accept-Language 设置 Culture）
+var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
+app.UseRequestLocalization(localizationOptions.Value);
 
 // 认证
 app.UseAuthentication();
