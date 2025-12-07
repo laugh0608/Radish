@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
@@ -26,11 +27,18 @@ public class LoginControllerTest
             new PermissionRequirement());
 
         var result = await controller.GetJwtToken("test", "blogadmin");
-        // var result = await controller.GetJwtToken("blogadmin", "blogadmin");
 
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.ResponseData);
         Assert.False(string.IsNullOrEmpty(result.ResponseData.TokenInfo));
+
+        // 额外校验：Token 中应包含统一的 OIDC 风格 Claim（sub/name/tenant_id）
+        var handler = new JwtSecurityTokenHandler();
+        var jwt = handler.ReadJwtToken(result.ResponseData.TokenInfo);
+
+        Assert.Equal("1", jwt.Claims.First(c => c.Type == "sub").Value);
+        Assert.Equal("test", jwt.Claims.First(c => c.Type == "name").Value);
+        Assert.Equal("0", jwt.Claims.First(c => c.Type == "tenant_id").Value);
     }
 
     private sealed class FakeUserService : IUserService

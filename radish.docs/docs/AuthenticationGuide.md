@@ -515,8 +515,8 @@ builder.Services.AddOpenIddict()
 | `scope`        | 授权范围             | —                      | 如 `openid profile radish-api`             |
 | `iss`/`aud`…   | 标准 Token 元数据    | —                      | 由 OpenIddict 负责                         |
 
-> 兼容说明：旧版 JWT 将用户 Id 写入 `jti`，`HttpContextUser.UserId` 也依赖 `jti`。
-> 新版 OIDC 以 `sub` 为主，Api 端会同时兼容 `sub` 与 `jti`，逐步过渡到以 `sub` 为唯一来源。
+> 兼容说明：历史版本的自建 JWT 仅将用户 Id 写入 `jti`、租户 Id 写入 `TenantId`；当前实现已经在旧登录接口中同时补充了 `sub/tenant_id` 等 OIDC 风格 Claim。
+> Api 端通过 `IHttpContextUser` 同时兼容 `sub` 与 `jti`、`tenant_id` 与 `TenantId`，后续会逐步过渡到以 `sub/tenant_id` 为唯一来源。
 
 ### 8.2 Api 侧解析规则（IHttpContextUser）
 
@@ -691,10 +691,13 @@ curl https://localhost:7100/connect/userinfo \
 
 | 问题 | 可能原因 | 解决方案 |
 | --- | --- | --- |
-| `invalid_client` | ClientId 未注册或 Secret 错误 | 检查 DbSeed 客户端注册 |
-| `invalid_redirect_uri` | RedirectUri 不匹配 | 确保与注册的 URI 完全一致 |
-| `invalid_grant` | 授权码已使用或过期 | 授权码只能使用一次 |
-| Token 验证失败 | Issuer/Audience 不匹配 | 检查资源服务器配置 |
+| `invalid_client` | ClientId 未注册或 Secret 错误 | 检查 `OpenIddictSeedHostedService` 中的客户端注册，确认 Id/Secret 与请求一致 |
+| `invalid_redirect_uri` | RedirectUri 不匹配 | 确保回调地址与客户端注册的 URI 完全一致（包括协议、端口、路径、末尾 `/`） |
+| `invalid_scope` | 请求的 scope 未在 Auth Server 注册，或客户端未声明相应权限 | 在 `Radish.Auth/Program.cs` 中通过 `options.RegisterScopes("openid", "profile", "offline_access", "radish-api")` 注册 scope，并在客户端的 `Permissions` 中添加对应 `Permissions.Prefixes.Scope + "radish-api"` 等配置 |
+| `invalid_grant` | 授权码已使用、过期或与当前客户端/redirect_uri 不匹配 | 授权码只能使用一次，确保 `client_id` 与 `redirect_uri` 与原授权请求一致，避免重复使用旧 code |
+| Token 验证失败 | Issuer/Audience 或签名配置不匹配；使用了旧 JWT Token 调用 OIDC 资源 | 检查资源服务器的 `Authority`/`TokenValidationParameters` 配置，确保指向 `Radish.Auth`；通过 `.oidc.http` 或前端 OIDC 流程重新获取 Access Token，避免混用旧 JWT 与 OIDC Token |
+| 调用需要 `Client` 策略的 API 返回 403 | Access Token 中缺少 `scope=radish-api`；或使用的是不带 scope 的旧登录方式 | 调用 `/connect/authorize` + `/connect/token` 时明确申请 `scope=radish-api`，并使用通过 Gateway/OIDC 获取的 Token 访问需要 `Client` 策略的接口 |
+| `/connect/userinfo` 中 `tenant_id` 为空 | 使用了未写入 `tenant_id` 的旧 Token，或 Auth 登录流程未正确设置租户 | 确保通过最新的 Auth 登录入口（`/Account/Login` 或前端 OIDC 流程）获取 Token，并确认登录用户绑定了有效的 TenantId |
 
 ## 12. 迁移指南
 
