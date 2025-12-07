@@ -40,16 +40,34 @@ function App() {
     const isBrowser = typeof window !== 'undefined';
     const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
 
-    // OIDC 回调页面：单独渲染回调组件
-    if (isOidcCallback) {
-        return <OidcCallback apiBaseUrl={apiBaseUrl} />;
-    }
+    // 🌍 启动时检查 URL 中的语言参数（从 Auth Server 返回时可能带有语言参数）
+    useEffect(() => {
+        if (!isBrowser || isOidcCallback) return;
+
+        const url = new URL(window.location.href);
+        const cultureParam = url.searchParams.get('culture') || url.searchParams.get('ui-culture');
+
+        if (cultureParam && (cultureParam === 'zh' || cultureParam === 'en')) {
+            if (i18n.language !== cultureParam) {
+                void i18n.changeLanguage(cultureParam);
+            }
+            // 清理 URL 参数
+            url.searchParams.delete('culture');
+            url.searchParams.delete('ui-culture');
+            window.history.replaceState({}, '', url.toString());
+        }
+    }, [isBrowser, isOidcCallback]);
 
     useEffect(() => {
         populateWeatherData();
         populateCurrentUser();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [apiBaseUrl]);
+
+    // OIDC 回调页面：单独渲染回调组件
+    if (isOidcCallback) {
+        return <OidcCallback apiBaseUrl={apiBaseUrl} />;
+    }
 
     const contents = forecasts === undefined
         ? <p><em>{error ?? t('weather.loading')}</em></p>
@@ -77,8 +95,8 @@ function App() {
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <button type="button" onClick={() => i18n.changeLanguage('zh-CN')}>
-                    {t('lang.zhCN')}
+                <button type="button" onClick={() => i18n.changeLanguage('zh')}>
+                    {t('lang.zh')}
                 </button>
                 <button type="button" onClick={() => i18n.changeLanguage('en')}>
                     {t('lang.en')}
@@ -179,7 +197,7 @@ function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
 
     const finalHeaders: HeadersInit = {
         Accept: 'application/json',
-        'Accept-Language': i18n.language || 'zh-CN',
+        'Accept-Language': i18n.language || 'zh',
         ...headers,
     };
 
@@ -210,6 +228,11 @@ function handleLogin(apiBaseUrl: string) {
     // 目前后端已为 radish-client 配置了 radish-api Scope，这里只请求资源 scope，避免无关 scope 带来 invalid_scope 问题
     authorizeUrl.searchParams.set('scope', 'radish-api');
 
+    // 🌍 传递当前语言设置到 Auth Server，实现国际化统一
+    const currentLanguage = i18n.language || 'zh';
+    authorizeUrl.searchParams.set('culture', currentLanguage);
+    authorizeUrl.searchParams.set('ui-culture', currentLanguage);
+
     window.location.href = authorizeUrl.toString();
 }
 
@@ -222,13 +245,17 @@ function handleLogout(apiBaseUrl: string) {
     window.localStorage.removeItem('access_token');
     window.localStorage.removeItem('refresh_token');
 
-    const logoutUrl = `${apiBaseUrl}/Account/Logout`;
+    // 🌍 传递当前语言设置
+    const currentLanguage = i18n.language || 'zh';
+    const logoutUrl = new URL(`${apiBaseUrl}/Account/Logout`);
+    logoutUrl.searchParams.set('culture', currentLanguage);
 
     // 调用 Auth 的 Logout，并在完成后回到首页
-    void fetch(logoutUrl, {
+    void fetch(logoutUrl.toString(), {
         method: 'POST',
         headers: {
-            Accept: 'application/json'
+            Accept: 'application/json',
+            'Accept-Language': currentLanguage
         }
     }).catch(() => {
         // 忽略登出接口错误，仍然清理本地状态并跳转首页
@@ -249,6 +276,12 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
 
         const url = new URL(window.location.href);
         const code = url.searchParams.get('code');
+
+        // 🌍 从 URL 读取语言参数并同步到前端（用户可能在登录页切换了语言）
+        const cultureParam = url.searchParams.get('culture') || url.searchParams.get('ui-culture');
+        if (cultureParam && (cultureParam === 'zh' || cultureParam === 'en')) {
+            void i18n.changeLanguage(cultureParam);
+        }
 
         if (!code) {
             setError(t('oidc.missingCode'));

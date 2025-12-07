@@ -31,14 +31,23 @@ public class AuthorizationController : Controller
         // 如果用户尚未通过 Cookie 登录，则引导到登录页，登录后自动回跳到当前请求
         if (User.Identity is not { IsAuthenticated: true })
         {
-            var props = new AuthenticationProperties
-            {
-                RedirectUri = Request.PathBase + Request.Path + Request.QueryString
-            };
+            // 🌍 提取 culture 参数，在重定向到登录页时保留语言设置
+            var culture = Request.Query["culture"].ToString();
+            var uiCulture = Request.Query["ui-culture"].ToString();
 
-            return Challenge(
-                authenticationSchemes: CookieAuthenticationDefaults.AuthenticationScheme,
-                properties: props);
+            var loginUrl = "/Account/Login?ReturnUrl=" + Uri.EscapeDataString(Request.PathBase + Request.Path + Request.QueryString);
+
+            // 将 culture 参数添加到登录页 URL（而不是 ReturnUrl 内部）
+            if (!string.IsNullOrEmpty(culture))
+            {
+                loginUrl += "&culture=" + Uri.EscapeDataString(culture);
+            }
+            if (!string.IsNullOrEmpty(uiCulture))
+            {
+                loginUrl += "&ui-culture=" + Uri.EscapeDataString(uiCulture);
+            }
+
+            return Redirect(loginUrl);
         }
 
         // 从 OpenIddict 管道中获取当前请求（包含 client_id、redirect_uri、scope 等）

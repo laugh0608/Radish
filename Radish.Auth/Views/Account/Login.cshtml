@@ -144,8 +144,8 @@
 <body>
     <div class="container">
         <div class="lang-switcher">
-            <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh") ? "active" : "")" onclick="switchLanguage('zh-CN')">中文</button>
-            <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "active" : "")" onclick="switchLanguage('en-US')">English</button>
+            <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh") ? "active" : "")" onclick="switchLanguage('zh')">中文</button>
+            <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "active" : "")" onclick="switchLanguage('en')">English</button>
         </div>
 
         <h1>@Localizer["auth.login.heading"]</h1>
@@ -189,6 +189,7 @@
             const url = new URL(window.location.href);
             url.searchParams.set('culture', culture);
             url.searchParams.set('ui-culture', culture);
+            // 保留 ReturnUrl 参数，确保登录后能正确回跳
             window.location.href = url.toString();
         }
     </script>

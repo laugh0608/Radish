@@ -33,11 +33,11 @@ const resources = {
             'oidc.missingAccessToken': 'Token response does not contain access_token.',
             'oidc.tokenRequestFailed': 'Token request failed: {{status}} {{statusText}}',
 
-            'lang.zhCN': '中文',
+            'lang.zh': '中文',
             'lang.en': 'EN'
         }
     },
-    'zh-CN': {
+    zh: {
         translation: {
             'app.title': 'Radish 天气预报',
             'app.description': '实时展示来自 Radish.Api 的 WeatherForecast 示例数据，便于验证前后端联通性。',
@@ -67,7 +67,7 @@ const resources = {
             'oidc.missingAccessToken': 'Token 响应中缺少 access_token。',
             'oidc.tokenRequestFailed': 'Token 请求失败: {{status}} {{statusText}}',
 
-            'lang.zhCN': '中文',
+            'lang.zh': '中文',
             'lang.en': 'EN'
         }
     }
@@ -78,8 +78,8 @@ i18n
     .use(initReactI18next)
     .init({
         resources,
-        fallbackLng: 'zh-CN',
-        supportedLngs: ['zh-CN', 'en'],
+        fallbackLng: 'zh',
+        supportedLngs: ['zh', 'en'],
         interpolation: {
             escapeValue: false
         },

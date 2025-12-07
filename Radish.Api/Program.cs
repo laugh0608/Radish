@@ -82,18 +82,18 @@ builder.Services.AddCors(options =>
     });
 });
 
-// 本地化配置：支持 zh-CN / en-US，通过 Accept-Language 解析请求语言
+// 本地化配置：统一使用 zh / en，与前端保持一致
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
     var supportedCultures = new[]
     {
-        new CultureInfo("zh-CN"),
-        new CultureInfo("en-US")
+        new CultureInfo("zh"),
+        new CultureInfo("en")
     };
 
-    options.DefaultRequestCulture = new RequestCulture("zh-CN");
+    options.DefaultRequestCulture = new RequestCulture("zh");
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
 
