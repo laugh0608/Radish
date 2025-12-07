@@ -2,13 +2,16 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using Radish.Auth.Resources;
 
 namespace Radish.Auth.Controllers;
 
 /// <summary>
-/// 最小可用的账号控制器：
+/// 账号控制器：
 /// - 使用内置测试用户完成 Cookie 登录
 /// - 为 OIDC 授权端点提供认证会话
+/// - 提供一个基于 Razor View + .resx 文案的登录页面
 /// </summary>
 [Route("[controller]/[action]")]
 public class AccountController : Controller
@@ -16,50 +19,31 @@ public class AccountController : Controller
     private const string TestUserName = "test";
     private const string TestPassword = "P@ssw0rd!";
 
-    [HttpGet]
-    public IActionResult Login(string? returnUrl = null)
-    {
-        // 返回一个最简单的 HTML 表单，方便在浏览器中直接登录
-        var html = $"""
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="utf-8" />
-    <title>Radish.Auth 登录</title>
-</head>
-<body>
-    <h1>Radish.Auth 测试登录</h1>
-    <p>使用内置测试账号登录：</p>
-    <ul>
-        <li>用户名：<code>{TestUserName}</code></li>
-        <li>密码：<code>{TestPassword}</code></li>
-    </ul>
-    <form method="post" action="/Account/Login">
-        <input type="hidden" name="returnUrl" value="{(returnUrl ?? string.Empty)}" />
-        <div>
-            <label>用户名：<input type="text" name="username" value="{TestUserName}" /></label>
-        </div>
-        <div>
-            <label>密码：<input type="password" name="password" value="{TestPassword}" /></label>
-        </div>
-        <div>
-            <button type="submit">登录</button>
-        </div>
-    </form>
-</body>
-</html>
-""";
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
-        return Content(html, "text/html; charset=utf-8");
+    public AccountController(IStringLocalizer<Errors> errorsLocalizer)
+    {
+        _errorsLocalizer = errorsLocalizer;
+    }
+
+    [HttpGet]
+    public IActionResult Login(string? returnUrl = null, string? username = null)
+    {
+        ViewData[nameof(returnUrl)] = returnUrl;
+        ViewData[nameof(username)] = username;
+        return View();
     }
 
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login([FromForm] string username, [FromForm] string password, [FromForm] string? returnUrl = null)
     {
         if (!string.Equals(username, TestUserName, StringComparison.Ordinal) ||
             !string.Equals(password, TestPassword, StringComparison.Ordinal))
         {
-            return Unauthorized("Invalid username or password.");
+            // 登录失败：使用本地化错误文案，并回到登录页
+            TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"];
+            return RedirectToAction(nameof(Login), new { returnUrl, username });
         }
 
         // 模拟一个固定的用户 Id 与租户 Id（与 DbMigrate 种子保持一致）
@@ -91,13 +75,18 @@ public class AccountController : Controller
             return Redirect(returnUrl);
         }
 
-        return Ok("Signed in.");
+        // 直接访问 /Account/Login 并登录成功时，返回一个简单的确认信息
+        var successMessage = _errorsLocalizer["auth.login.success.message"];
+        return Ok(successMessage);
     }
 
     [HttpPost]
     public async Task<IActionResult> Logout()
     {
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-        return Ok("Signed out.");
+
+        var message = _errorsLocalizer["auth.logout.success"];
+
+        return Ok(message);
     }
 }

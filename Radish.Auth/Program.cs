@@ -1,6 +1,7 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
@@ -87,7 +88,8 @@ builder.Services.AddCors(options =>
 });
 
 // 本地化配置：支持 zh-CN / en-US，通过 Accept-Language 解析请求语言
-builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+// 不设置 ResourcesPath，让它在类型相同的目录查找资源文件
+builder.Services.AddLocalization();
 
 builder.Services.Configure<RequestLocalizationOptions>(options =>
 {
@@ -101,15 +103,29 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
     options.SupportedCultures = supportedCultures;
     options.SupportedUICultures = supportedCultures;
 
-    // 优先从 Accept-Language 读取语言
-    options.RequestCultureProviders.Insert(0, new AcceptLanguageHeaderRequestCultureProvider());
+    // 语言提供者优先级：Query String > Cookie > Accept-Language
+    options.RequestCultureProviders.Clear();
+    options.RequestCultureProviders.Add(new QueryStringRequestCultureProvider());
+    options.RequestCultureProviders.Add(new CookieRequestCultureProvider());
+    options.RequestCultureProviders.Add(new AcceptLanguageHeaderRequestCultureProvider());
 });
 
 // 配置强类型 Options
 builder.Services.AddAllOptionRegister();
 
-// 添加控制器
-builder.Services.AddControllers();
+// 配置 ForwardedHeaders，让 Auth Server 能识别通过 Gateway 转发的原始请求信息
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                               ForwardedHeaders.XForwardedProto |
+                               ForwardedHeaders.XForwardedHost;
+    // 信任所有代理（仅开发环境）
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// 添加控制器 + 视图（用于登录页）
+builder.Services.AddControllersWithViews();
 
 // OpenIddict 初始化种子数据（使用 EF Core 存储）
 builder.Services.AddHostedService<OpenIddictSeedHostedService>();
@@ -213,6 +229,9 @@ using (var scope = app.Services.CreateScope())
 app.ConfigureApplication();
 // 4. 启动 InternalApp 扩展中的 App
 app.UseApplicationSetup();
+
+// ForwardedHeaders 必须在其他中间件之前
+app.UseForwardedHeaders();
 
 // HTTPS 重定向（由 Gateway 处理，Auth 服务本身不需要）
 // app.UseHttpsRedirection();
