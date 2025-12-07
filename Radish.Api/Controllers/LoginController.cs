@@ -101,11 +101,22 @@ public class LoginController : ControllerBase
         if (user.Count > 0)
         {
             var userRoles = await _userService.GetUserRoleNameStrAsync(name, pass);
+            var firstUser = user.FirstOrDefault();
+            var userId = firstUser?.Uuid ?? 0;
+            var tenantId = firstUser?.VoTenId ?? 0;
+
             var claims = new List<Claim>
             {
+                // 统一身份标识：优先使用 OIDC 风格的 sub/name/tenant_id
+                new Claim("sub", userId.ToString()),
+                new Claim("name", name),
+                new Claim("tenant_id", tenantId.ToString()),
+
+                // 兼容旧版：Name/Uuid/TenantId 仍然保留，方便历史代码解析
                 new Claim(ClaimTypes.Name, name),
-                new Claim(JwtRegisteredClaimNames.Jti, user.FirstOrDefault().Uuid.ToString()),
-                new Claim("TenantId", user.FirstOrDefault().VoTenId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, userId.ToString()),
+                new Claim("TenantId", tenantId.ToString()),
+
                 new Claim(JwtRegisteredClaimNames.Iat, DateTime.Now.DateToTimeStamp()),
                 new Claim(ClaimTypes.Expiration,
                     DateTime.Now.AddSeconds(60 * 60 * 12).ToString()) // Token 有效期，单位 s
