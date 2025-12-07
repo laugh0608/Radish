@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Security.Claims;
-using Asp.Versioning;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -89,11 +89,11 @@ public class UserControllerTest
         public Task<bool> TestTranPropagationUser() => throw new System.NotImplementedException();
         public Task<long> AddAsync(User entity) => throw new System.NotImplementedException();
         public Task<List<long>> AddSplitAsync(User entity) => throw new System.NotImplementedException();
-        public Task<List<UserVo>> QueryWithCacheAsync(System.Linq.Expressions.Expression<System.Func<User, bool>> whereExpression = null, int cacheTime = 10) => throw new System.NotImplementedException();
+        public Task<List<UserVo>> QueryWithCacheAsync(System.Linq.Expressions.Expression<System.Func<User, bool>>? whereExpression = null, int cacheTime = 10) => throw new System.NotImplementedException();
         public Task<List<TResult>> QueryMuchAsync<T, T2, T3, TResult>(
             System.Linq.Expressions.Expression<System.Func<T, T2, T3, object[]>> joinExpression,
             System.Linq.Expressions.Expression<System.Func<T, T2, T3, TResult>> selectExpression,
-            System.Linq.Expressions.Expression<System.Func<T, T2, T3, bool>> whereLambda = null) where T : class, new() => throw new System.NotImplementedException();
+            System.Linq.Expressions.Expression<System.Func<T, T2, T3, bool>>? whereLambda = null) where T : class, new() => throw new System.NotImplementedException();
         public Task<List<User>> QuerySplitAsync(System.Linq.Expressions.Expression<System.Func<User, bool>>? whereExpression, string orderByFields = "Id") => throw new System.NotImplementedException();
 
         #endregion
