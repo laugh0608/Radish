@@ -4,6 +4,37 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.07
+
+- **feat(i18n/unified-language-codes)**: 统一前后端语言代码为 zh 和 en
+  - **问题背景**：
+    - 前端 i18next 使用 `en` 和 `zh-CN`
+    - Auth 后端配置了 `zh-CN`、`en`、`en-US`
+    - API 后端配置了 `zh-CN`、`zh-Hans`、`en`、`en-US`
+    - 资源文件命名不一致：`Errors.zh-CN.resx`、`Errors.zh-Hans.resx`、`Errors.en-US.resx`
+    - 导致前端传递 `en` 时后端无法匹配，回退到默认中文
+  - **解决方案**：统一使用中性语言代码 `zh` 和 `en`
+    - 前端（`radish.client`）：
+      - `i18n.ts`：将 `zh-CN` 改为 `zh`，更新 `fallbackLng` 和 `supportedLngs`
+      - `App.tsx`：所有语言相关代码统一使用 `zh` 和 `en`（语言切换、URL 参数、Accept-Language 等）
+    - Auth 项目（`Radish.Auth`）：
+      - `Program.cs`：`SupportedCultures` 只保留 `zh` 和 `en`
+      - `AuthorizationController.cs`：在重定向到登录页时提取 culture 参数，确保语言参数在登录页 URL 上而非 ReturnUrl 内
+      - `Login.cshtml`：语言切换按钮改为 `zh` 和 `en`
+      - 资源文件：删除 `Errors.zh-CN.resx` 和 `Errors.en-US.resx`，重命名为 `Errors.zh.resx` 和 `Errors.en.resx`
+    - API 项目（`Radish.Api`）：
+      - `Program.cs`：`SupportedCultures` 只保留 `zh` 和 `en`
+      - 资源文件：删除 `Errors.zh-CN.resx`、`Errors.zh-Hans.resx`、`Errors.en-US.resx`，只保留 `Errors.zh.resx` 和 `Errors.en.resx`
+  - **中间件顺序修复**（`Radish.Auth/Program.cs`）：
+    - 将 `UseRequestLocalization` 移到 `UseRouting` 之前，确保在路由和控制器执行前设置 Culture
+    - 修复前：`UseStaticFiles → UseRouting → UseCors → UseRequestLocalization`（❌ Culture 设置太晚）
+    - 修复后：`UseStaticFiles → UseRequestLocalization → UseRouting → UseCors`（✅ 正确顺序）
+  - **优势**：
+    - 前后端语言代码完全一致，无需映射转换
+    - 简洁明了，避免 zh-CN/zh-Hans/en-US/en 混乱
+    - 资源文件结构清晰：`Errors.resx`（默认）、`Errors.zh.resx`、`Errors.en.resx`
+    - 保留扩展性：未来可按需添加 `zh-TW`（繁体中文）、`en-GB`（英式英语）等
+
 ### 2025.12.06
 
 - **feat(api/client-management)**: 实现 OIDC 客户端管理 API
