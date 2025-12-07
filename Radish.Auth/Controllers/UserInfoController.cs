@@ -21,13 +21,16 @@ public class UserInfoController : Controller
                    ?? User.Identity?.Name;
         var email = User.FindFirst(ClaimTypes.Email)?.Value;
         var roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToArray();
+        var tenantId = User.FindFirst("tenant_id")?.Value
+                       ?? User.FindFirst("TenantId")?.Value;
 
         var payload = new Dictionary<string, object?>
         {
             [OpenIddictConstants.Claims.Subject] = subject,
             [OpenIddictConstants.Claims.Name] = name,
             [OpenIddictConstants.Claims.Email] = email,
-            [OpenIddictConstants.Claims.Role] = roles
+            [OpenIddictConstants.Claims.Role] = roles,
+            ["tenant_id"] = tenantId
         };
 
         return Ok(payload);
