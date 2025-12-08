@@ -4,6 +4,44 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.08
+
+- **feat(log)**: 统一日志输出到解决方案根目录
+  - **问题**：每个项目（Api、Auth、Gateway）都在自己的目录下生成 Log 文件夹，分散且不便管理
+  - **解决方案**：修改 Serilog 配置，统一输出到解决方案根目录的 `Log/` 文件夹
+    - `Radish.Common/LogTool/LogContextTool.cs`：
+      - 新增 `GetSolutionLogDirectory()`：向上查找 .slnx/.sln 文件定位解决方案根目录
+      - 新增 `GetProjectName()`：从 .csproj 文件自动识别当前项目名称
+      - `BaseLogs` 改为动态计算的解决方案根目录路径
+      - 添加 `ProjectName` 静态属性用于区分不同项目
+    - `Radish.Extension/SerilogExtension/LogConfigExtension.cs`：
+      - 修改日志路径包含项目名称：`Log/{ProjectName}/Log.txt`、`Log/{ProjectName}/AopSql/AopSql.txt`
+    - `Radish.Extension/SerilogExtension/SerilogSetup.cs`：
+      - Serilog 内部调试日志路径：`Log/{ProjectName}/SerilogDebug/Serilog{date}.txt`
+  - **新的日志结构**：
+    ```
+    Log/
+    ├── Radish.Api/
+    │   ├── Log20251208.txt
+    │   ├── AopSql/AopSql20251208.txt
+    │   └── SerilogDebug/Serilog20251208.txt
+    ├── Radish.Gateway/...
+    └── Radish.Auth/...
+    ```
+  - **优势**：所有项目日志集中管理，便于查看和归档；自动识别项目名称，无需手动配置
+
+- **feat(dbmigrate)**: seed 命令自动检测并初始化表结构
+  - **问题**：用户直接运行 `seed` 时，如果表不存在会报错 `no such table: Role`
+  - **解决方案**：
+    - `Radish.DbMigrate/Program.cs`：
+      - `RunSeedAsync` 中添加表结构检查，使用 `db.DbMaintenance.IsAnyTable("Role", false)` 检测
+      - 如果表不存在，自动执行 `RunInitAsync` 创建表结构
+      - 优化输出信息，添加状态标识（✓ 和 ⚠️）
+    - `start.ps1` 和 `start.sh`：
+      - 更新 DbMigrate 菜单说明，默认命令改为 `seed`（更常用）
+      - 添加命令说明：init - 仅初始化表结构；seed - 智能初始化（自动检测表结构）
+  - **优势**：简化操作流程，新用户只需运行 `seed` 即可完成所有初始化，无需先 `init` 再 `seed`
+
 ### 2025.12.07
 
 - **feat(i18n/unified-language-codes)**: 统一前后端语言代码为 zh 和 en
