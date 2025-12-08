@@ -133,12 +133,16 @@ Configuration files are loaded in the following order (later sources override ea
    ↓
 2. appsettings.{Environment}.json        (Development/Production, checked into git)
    ↓
-3. appsettings.Local.json                (local overrides, NOT checked into git)
+3. appsettings.Local.json                (local overrides, NOT checked into git, highest priority)
    ↓
 4. Environment variables                 (production deployments)
 ```
 
-**IMPORTANT**: `appsettings.Local.json` is used for local development and contains sensitive data (database passwords, API keys, etc.). This file is ignored by Git and must be created by each developer.
+**IMPORTANT**:
+- `appsettings.Local.json` is used for local development and contains sensitive data (database passwords, API keys, etc.). This file is ignored by Git.
+- Configuration uses **deep merge** strategy: later configs override earlier ones by key path.
+- For arrays (like `Databases`), provide the complete array in Local.json to avoid partial overrides.
+- See [ConfigurationGuide.md](radish.docs/docs/ConfigurationGuide.md) for detailed merge behavior examples.
 
 ### Quick Setup for New Developers
 

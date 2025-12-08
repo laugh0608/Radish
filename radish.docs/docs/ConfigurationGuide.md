@@ -30,6 +30,148 @@ ASP.NET Core 按以下顺序加载配置（后面的会覆盖前面的）：
 4. 环境变量                              (可选，生产环境推荐)
 ```
 
+### 配置合并机制
+
+ASP.NET Core 配置系统使用**深度合并**策略：
+
+#### 1. 简单值的覆盖
+
+后加载的配置会直接覆盖前加载的配置：
+
+**appsettings.json**：
+```json
+{
+  "Redis": {
+    "Enable": false,
+    "ConnectionString": "localhost:6379"
+  }
+}
+```
+
+**appsettings.Local.json**：
+```json
+{
+  "Redis": {
+    "Enable": true,
+    "ConnectionString": "production-redis:6379,password=secret"
+  }
+}
+```
+
+**结果**：
+```json
+{
+  "Redis": {
+    "Enable": true,  // ✅ 被 Local 覆盖
+    "ConnectionString": "production-redis:6379,password=secret"  // ✅ 被 Local 覆盖
+  }
+}
+```
+
+#### 2. 对象的深度合并
+
+如果只在 Local.json 中覆盖部分字段，未覆盖的字段会保留原值：
+
+**appsettings.json**：
+```json
+{
+  "Snowflake": {
+    "WorkId": 0,
+    "DataCenterId": 0
+  }
+}
+```
+
+**appsettings.Local.json**（只覆盖 WorkId）：
+```json
+{
+  "Snowflake": {
+    "WorkId": 2
+  }
+}
+```
+
+**结果**：
+```json
+{
+  "Snowflake": {
+    "WorkId": 2,         // ✅ 被 Local 覆盖
+    "DataCenterId": 0    // ✅ 保留 appsettings.json 的值
+  }
+}
+```
+
+#### 3. 数组的索引覆盖
+
+数组配置按**索引位置**进行覆盖（不是追加）：
+
+**appsettings.json**：
+```json
+{
+  "Databases": [
+    {
+      "ConnId": "Main",
+      "DbType": 2,
+      "Enabled": true,
+      "ConnectionString": "Radish.db"
+    },
+    {
+      "ConnId": "Log",
+      "DbType": 2,
+      "Enabled": true,
+      "ConnectionString": "RadishLog.db"
+    }
+  ]
+}
+```
+
+**appsettings.Local.json**（切换到 PostgreSQL）：
+```json
+{
+  "Databases": [
+    {
+      "ConnId": "Main",
+      "DbType": 4,
+      "Enabled": true,
+      "ConnectionString": "Host=localhost;Port=5432;Database=radish;Username=postgres;Password=mypassword"
+    },
+    {
+      "ConnId": "Log",
+      "DbType": 4,
+      "Enabled": true,
+      "HitRate": 50,
+      "ConnectionString": "Host=localhost;Port=5432;Database=radish_log;Username=postgres;Password=mypassword"
+    }
+  ]
+}
+```
+
+**结果**：完全使用 Local.json 中的 PostgreSQL 配置，覆盖默认的 SQLite 配置。
+
+**重要提示**：如果要修改数组中的某个元素，建议提供完整的数组配置，以避免配置混淆。
+
+### 验证配置优先级
+
+可以在启动时打印配置值来验证加载顺序：
+
+**Program.cs**（开发环境调试用）：
+```csharp
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    var dbType = app.Configuration["Databases:0:DbType"];
+    var connStr = app.Configuration["Databases:0:ConnectionString"];
+    var redisEnabled = app.Configuration["Redis:Enable"];
+
+    app.Logger.LogInformation("=== 配置加载验证 ===");
+    app.Logger.LogInformation("Database Type: {DbType}", dbType);
+    app.Logger.LogInformation("Database Connection: {ConnStr}", connStr);
+    app.Logger.LogInformation("Redis Enabled: {RedisEnabled}", redisEnabled);
+    app.Logger.LogInformation("====================");
+}
+```
+
 ## 快速开始
 
 ### 新开发者配置步骤
@@ -440,6 +582,64 @@ builder.Configuration.AddJsonFile(
    ```
 
 ## 常见问题
+
+### Q0: appsettings.Local.json 一定会覆盖 appsettings.json 吗？
+
+**是的！** `appsettings.Local.json` 是最后加载的配置文件（除了环境变量），具有最高优先级。
+
+**配置加载代码**（在 `Program.cs` 中）：
+```csharp
+config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+config.AddJsonFile($"appsettings.{Environment}.json", optional: true, reloadOnChange: false);
+config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);  // 最后加载，最高优先级
+```
+
+**示例验证**：
+
+1. **appsettings.json**（默认配置）：
+```json
+{
+  "Redis": {
+    "Enable": false,
+    "ConnectionString": "localhost:6379"
+  }
+}
+```
+
+2. **appsettings.Local.json**（你的本地配置）：
+```json
+{
+  "Redis": {
+    "Enable": true,
+    "ConnectionString": "production:6379,password=secret"
+  }
+}
+```
+
+3. **最终生效的配置**：
+```json
+{
+  "Redis": {
+    "Enable": true,                                           // ✅ 来自 Local.json
+    "ConnectionString": "production:6379,password=secret"     // ✅ 来自 Local.json
+  }
+}
+```
+
+**注意事项**：
+- ✅ 对于简单值（字符串、数字、布尔值），Local.json 的值会完全覆盖
+- ✅ 对于对象，会进行深度合并（未指定的字段保留 appsettings.json 的值）
+- ⚠️ 对于数组（如 `Databases`），建议提供完整的数组配置，避免索引混淆
+
+**验证方法**：
+```csharp
+// 在 Program.cs 中添加（开发环境）
+if (app.Environment.IsDevelopment())
+{
+    app.Logger.LogInformation("Redis Enabled: {Value}",
+        app.Configuration["Redis:Enable"]);
+}
+```
 
 ### Q1: 如何验证配置是否生效？
 
