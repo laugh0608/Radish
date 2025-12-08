@@ -6,6 +6,8 @@ Radish 项目采用多层配置管理策略，以实现开发环境与生产环�
 
 ## 配置文件结构
 
+### Radish.Api 和 Radish.Auth（包含敏感信息）
+
 ```
 Radish.Api/
 ├── appsettings.json                       ✅ 提交到 Git（完整配置模板，包含默认值和注释）
@@ -15,13 +17,31 @@ Radish.Api/
 └── appsettings.Local.json                 ❌ 不提交（本地敏感数据）
 ```
 
+### Radish.Gateway（无敏感信息）
+
+```
+Radish.Gateway/
+├── appsettings.json                       ✅ 提交到 Git（完整配置，适用于开发和生产）
+├── appsettings.Development.json           ✅ 提交到 Git（可选）
+├── appsettings.Production.json            ✅ 提交到 Git（可选）
+└── README.md                              ✅ 配置说明（使用环境变量覆盖配置）
+```
+
 **重要说明**：
+
+**Radish.Api 和 Radish.Auth**：
 - `appsettings.json` - 完整的配置模板，包含所有配置项和详细注释，作为默认配置使用
 - `appsettings.Local.json.example` - **精简的配置示例**，仅包含常见需要修改的敏感配置项（推荐使用）
 - `appsettings.Local.json` - **只需包含你想要覆盖的配置项**，其他配置会自动继承 `appsettings.json`
 
+**Radish.Gateway**：
+- `appsettings.json` - 完整配置，开发和生产环境均可使用
+- **不需要 `appsettings.Local.json`** - Gateway 没有敏感信息（无数据库密码、API 密钥）
+- 生产环境通过**环境变量**覆盖配置（PublicUrl、服务地址等）
+
 **配置策略**：
-- ✅ **敏感信息放在 Local.json**：数据库密码、Redis 密码、API 密钥、加密密钥等
+- ✅ **敏感信息放在 Local.json**（仅 API 和 Auth）：数据库密码、Redis 密码、API 密钥、加密密钥等
+- ✅ **Gateway 使用环境变量**：公开域名、内部服务地址等非敏感配置
 - ✅ **非敏感配置放在 appsettings.json**：CORS 地址、日志级别、默认端口、功能开关等
 - ✅ **利用深度合并**：Local.json 只写需要修改的配置项，其他自动继承
 
@@ -198,13 +218,14 @@ dotnet run --project Radish.Gateway
 
 **如需自定义配置（可选）**：
 
-**方式一：使用精简配置示例（推荐）**
+**Radish.Api 和 Radish.Auth（使用 Local.json）**
+
+方式一：使用精简配置示例（推荐）
 
 ```bash
 # 1. 复制精简配置示例（仅包含常见的敏感配置项）
 cp Radish.Api/appsettings.Local.json.example Radish.Api/appsettings.Local.json
 cp Radish.Auth/appsettings.Local.json.example Radish.Auth/appsettings.Local.json
-cp Radish.Gateway/appsettings.Local.json.example Radish.Gateway/appsettings.Local.json
 
 # 2. 编辑 appsettings.Local.json
 #    取消注释并修改你需要的配置项：
@@ -217,9 +238,10 @@ cp Radish.Gateway/appsettings.Local.json.example Radish.Gateway/appsettings.Loca
 
 # 3. 启动项目
 dotnet run --project Radish.Api
+dotnet run --project Radish.Auth
 ```
 
-**方式二：从头开始写（适合高级用户）**
+方式二：从头开始写（适合高级用户）
 
 ```bash
 # 1. 创建空的 appsettings.Local.json
@@ -246,6 +268,24 @@ touch Radish.Api/appsettings.Local.json
   ]
 }
 ```
+
+**Radish.Gateway（使用环境变量）**
+
+Gateway 不需要 `appsettings.Local.json`，生产环境通过环境变量覆盖配置：
+
+```bash
+# Docker Compose 示例
+services:
+  radish-gateway:
+    image: radish-gateway:latest
+    environment:
+      - GatewayService__PublicUrl=https://your-domain.com
+      - Cors__AllowedOrigins__0=https://your-frontend-domain.com
+      - DownstreamServices__ApiService__BaseUrl=http://radish-api:5100
+      - DownstreamServices__AuthService__BaseUrl=http://radish-auth:5200
+```
+
+详细配置说明请参考 `Radish.Gateway/README.md`
 
 **重要**：
 - `appsettings.Local.json` 已被 Git 忽略，不会被提交到仓库

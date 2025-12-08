@@ -153,16 +153,16 @@ dotnet run --project Radish.Auth
 dotnet run --project Radish.Gateway
 
 # Optional: If you need to customize configuration (PostgreSQL, Redis, etc.)
-# 1. Copy the minimal example file (recommended - only includes sensitive settings)
+# Note: Gateway does not need Local.json - it has no sensitive data
+# 1. Copy the minimal example file for API and Auth only
 cp Radish.Api/appsettings.Local.json.example Radish.Api/appsettings.Local.json
 cp Radish.Auth/appsettings.Local.json.example Radish.Auth/appsettings.Local.json
-cp Radish.Gateway/appsettings.Local.json.example Radish.Gateway/appsettings.Local.json
 
 # 2. Edit appsettings.Local.json - uncomment and modify only what you need:
 #    - Database passwords (if using PostgreSQL)
 #    - Redis passwords (if enabling Redis)
+#    - OpenIddict keys (Auth service, production only)
 #    - Snowflake.WorkId (if different from default)
-#    - API keys and secrets
 #
 #    All other settings will inherit from appsettings.json automatically!
 
@@ -171,11 +171,12 @@ dotnet run --project Radish.Api
 ```
 
 **Important Notes**:
-- **appsettings.Local.json should only contain settings you want to override** (database passwords, Redis credentials, etc.)
+- **Radish.Api & Radish.Auth**: Use `appsettings.Local.json` for sensitive data (database passwords, Redis passwords, API keys)
+- **Radish.Gateway**: No Local.json needed - no sensitive data. Use environment variables in production to override PublicUrl and service addresses
 - Non-sensitive settings should stay in `appsettings.json` (CORS origins, log levels, default ports, etc.)
 - Thanks to deep merge, you only need to specify the values you want to change
-- See `appsettings.Local.json.example` for a minimal template with common overrides
-- For complete configuration reference, see `appsettings.json` with full documentation
+- See `appsettings.Local.json.example` for minimal templates with common overrides (API & Auth only)
+- For Gateway production deployment, see `Radish.Gateway/README.md`
 
 For detailed configuration instructions, see [ConfigurationGuide.md](radish.docs/docs/ConfigurationGuide.md).
 
