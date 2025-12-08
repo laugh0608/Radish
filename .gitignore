@@ -288,7 +288,7 @@ tempkey.jwk
 **/appsettings.Local.json
 *.Local.json
 
-# Database files
+# Database files (SQLite)
 *.db
 *.db-shm
 *.db-wal
