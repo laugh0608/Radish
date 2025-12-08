@@ -231,18 +231,23 @@ function Start-AuthNoBuild {
 function Start-DbMigrate {
     Push-Location $repoRoot
     try {
-        $cmd = Read-Host "Select DbMigrate command [init/seed] (default: init, q to cancel)"
+        Write-Host ""
+        Write-Host "DbMigrate commands:"
+        Write-Host "  init - Initialize database schema only"
+        Write-Host "  seed - Seed initial data (auto-runs init if needed)"
+        Write-Host ""
+        $cmd = Read-Host "Select DbMigrate command [init/seed] (default: seed, q to cancel)"
         if ([string]::IsNullOrWhiteSpace($cmd)) {
-            $cmd = "init"
+            $cmd = "seed"
         }
         if ($cmd -eq "q") {
             Write-Host "DbMigrate cancelled."
             return
         }
 
-        switch ($cmd) {
-            "init" { $arg = "init" }
-            "seed" { $arg = "seed" }
+        $arg = switch ($cmd) {
+            "init" { "init" }
+            "seed" { "seed" }
             default {
                 Write-Error ("Unknown DbMigrate command: " + $cmd)
                 exit 1
