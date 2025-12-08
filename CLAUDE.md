@@ -129,7 +129,7 @@ Radish.Gateway (service portal & API gateway)
 Configuration files are loaded in the following order (later sources override earlier ones):
 
 ```
-1. appsettings.json                      (base config, checked into git)
+1. appsettings.json                      (base config with default values, checked into git)
    ↓
 2. appsettings.{Environment}.json        (Development/Production, checked into git)
    ↓
@@ -143,17 +143,29 @@ Configuration files are loaded in the following order (later sources override ea
 ### Quick Setup for New Developers
 
 ```bash
-# 1. Copy the configuration template
-cp Radish.Api/appsettings.Local.example.json Radish.Api/appsettings.Local.json
+# Simplest way: Just run the project (works out of the box with SQLite + memory cache)
+dotnet run --project Radish.Api
+dotnet run --project Radish.Auth
+dotnet run --project Radish.Gateway
 
-# 2. Edit appsettings.Local.json and update sensitive fields:
-#    - Databases[].ConnectionString (if using PostgreSQL)
-#    - Redis.ConnectionString (if enabling Redis)
+# Optional: If you need to customize configuration (PostgreSQL, Redis, etc.)
+# 1. Copy appsettings.json as appsettings.Local.json for each project
+cp Radish.Api/appsettings.json Radish.Api/appsettings.Local.json
+cp Radish.Auth/appsettings.json Radish.Auth/appsettings.Local.json
+cp Radish.Gateway/appsettings.json Radish.Gateway/appsettings.Local.json
+
+# 2. Edit appsettings.Local.json and update fields as needed:
+#    - Snowflake.WorkId (must be unique per deployment: API=0, Gateway=1, Auth=2)
+#    - Databases[].ConnectionString (update password if using PostgreSQL)
+#    - Redis.ConnectionString (update password if enabling Redis)
 #    - AutoMapper.LicenseKey (if you have a commercial license)
+#    - OpenIddict.Encryption keys (for Auth service in production)
 
-# 3. Start the project (default config works out of the box with SQLite + memory cache)
+# 3. Start the project
 dotnet run --project Radish.Api
 ```
+
+**Note**: Each `appsettings.json` now serves as a complete configuration template with detailed comments explaining all available options. Simply copy it to `appsettings.Local.json` and modify the sensitive values.
 
 For detailed configuration instructions, see [ConfigurationGuide.md](radish.docs/docs/ConfigurationGuide.md).
 
