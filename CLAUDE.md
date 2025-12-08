@@ -153,23 +153,29 @@ dotnet run --project Radish.Auth
 dotnet run --project Radish.Gateway
 
 # Optional: If you need to customize configuration (PostgreSQL, Redis, etc.)
-# 1. Copy appsettings.json as appsettings.Local.json for each project
-cp Radish.Api/appsettings.json Radish.Api/appsettings.Local.json
-cp Radish.Auth/appsettings.json Radish.Auth/appsettings.Local.json
-cp Radish.Gateway/appsettings.json Radish.Gateway/appsettings.Local.json
+# 1. Copy the minimal example file (recommended - only includes sensitive settings)
+cp Radish.Api/appsettings.Local.json.example Radish.Api/appsettings.Local.json
+cp Radish.Auth/appsettings.Local.json.example Radish.Auth/appsettings.Local.json
+cp Radish.Gateway/appsettings.Local.json.example Radish.Gateway/appsettings.Local.json
 
-# 2. Edit appsettings.Local.json and update fields as needed:
-#    - Snowflake.WorkId (must be unique per deployment: API=0, Gateway=1, Auth=2)
-#    - Databases[].ConnectionString (update password if using PostgreSQL)
-#    - Redis.ConnectionString (update password if enabling Redis)
-#    - AutoMapper.LicenseKey (if you have a commercial license)
-#    - OpenIddict.Encryption keys (for Auth service in production)
+# 2. Edit appsettings.Local.json - uncomment and modify only what you need:
+#    - Database passwords (if using PostgreSQL)
+#    - Redis passwords (if enabling Redis)
+#    - Snowflake.WorkId (if different from default)
+#    - API keys and secrets
+#
+#    All other settings will inherit from appsettings.json automatically!
 
 # 3. Start the project
 dotnet run --project Radish.Api
 ```
 
-**Note**: Each `appsettings.json` now serves as a complete configuration template with detailed comments explaining all available options. Simply copy it to `appsettings.Local.json` and modify the sensitive values.
+**Important Notes**:
+- **appsettings.Local.json should only contain settings you want to override** (database passwords, Redis credentials, etc.)
+- Non-sensitive settings should stay in `appsettings.json` (CORS origins, log levels, default ports, etc.)
+- Thanks to deep merge, you only need to specify the values you want to change
+- See `appsettings.Local.json.example` for a minimal template with common overrides
+- For complete configuration reference, see `appsettings.json` with full documentation
 
 For detailed configuration instructions, see [ConfigurationGuide.md](radish.docs/docs/ConfigurationGuide.md).
 
