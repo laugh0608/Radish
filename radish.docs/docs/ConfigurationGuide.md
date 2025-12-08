@@ -8,13 +8,22 @@ Radish 项目采用多层配置管理策略，以实现开发环境与生产环�
 
 ```
 Radish.Api/
-├── appsettings.json                    ✅ 提交到 Git（完整配置模板，包含默认值和注释）
-├── appsettings.Development.json        ✅ 提交到 Git（开发环境特定配置，可选）
-├── appsettings.Production.json         ✅ 提交到 Git（生产环境特定配置，可选）
-└── appsettings.Local.json              ❌ 不提交（本地敏感数据，从 appsettings.json 复制）
+├── appsettings.json                       ✅ 提交到 Git（完整配置模板，包含默认值和注释）
+├── appsettings.Development.json           ✅ 提交到 Git（开发环境特定配置，可选）
+├── appsettings.Production.json            ✅ 提交到 Git（生产环境特定配置，可选）
+├── appsettings.Local.json.example         ✅ 提交到 Git（精简配置示例，仅包含常见敏感项）
+└── appsettings.Local.json                 ❌ 不提交（本地敏感数据）
 ```
 
-**说明**：`appsettings.json` 现在作为完整的配置模板，包含所有可用配置项及其说明。开发者只需复制此文件为 `appsettings.Local.json` 并修改敏感信息即可。
+**重要说明**：
+- `appsettings.json` - 完整的配置模板，包含所有配置项和详细注释，作为默认配置使用
+- `appsettings.Local.json.example` - **精简的配置示例**，仅包含常见需要修改的敏感配置项（推荐使用）
+- `appsettings.Local.json` - **只需包含你想要覆盖的配置项**，其他配置会自动继承 `appsettings.json`
+
+**配置策略**：
+- ✅ **敏感信息放在 Local.json**：数据库密码、Redis 密码、API 密钥、加密密钥等
+- ✅ **非敏感配置放在 appsettings.json**：CORS 地址、日志级别、默认端口、功能开关等
+- ✅ **利用深度合并**：Local.json 只写需要修改的配置项，其他自动继承
 
 ## 配置加载优先级
 
@@ -189,29 +198,61 @@ dotnet run --project Radish.Gateway
 
 **如需自定义配置（可选）**：
 
-```bash
-# 1. 复制 appsettings.json 为 appsettings.Local.json（仅在需要自定义时）
-cp Radish.Api/appsettings.json Radish.Api/appsettings.Local.json
-cp Radish.Auth/appsettings.json Radish.Auth/appsettings.Local.json
-cp Radish.Gateway/appsettings.json Radish.Gateway/appsettings.Local.json
+**方式一：使用精简配置示例（推荐）**
 
-# 2. 编辑 appsettings.Local.json（使用任何文本编辑器）
-# appsettings.json 已包含所有配置项的详细注释和示例
-# 根据你的本地环境修改以下配置项：
-#   - Snowflake.WorkId (必须唯一，建议 API=0, Gateway=1, Auth=2)
-#   - Databases 连接字符串（切换到 PostgreSQL 时，参考文件中的注释示例）
-#   - Redis 配置（启用 Redis 时，参考文件中的注释示例）
-#   - AutoMapper.LicenseKey（如有商业许可证）
-#   - OpenIddict 密钥（Auth 服务，生产环境必须配置）
+```bash
+# 1. 复制精简配置示例（仅包含常见的敏感配置项）
+cp Radish.Api/appsettings.Local.json.example Radish.Api/appsettings.Local.json
+cp Radish.Auth/appsettings.Local.json.example Radish.Auth/appsettings.Local.json
+cp Radish.Gateway/appsettings.Local.json.example Radish.Gateway/appsettings.Local.json
+
+# 2. 编辑 appsettings.Local.json
+#    取消注释并修改你需要的配置项：
+#    - 数据库密码（切换到 PostgreSQL 时）
+#    - Redis 密码（启用 Redis 时）
+#    - Snowflake.WorkId（如需修改）
+#    - API 密钥和其他敏感信息
+#
+#    未指定的配置会自动继承 appsettings.json 中的默认值！
 
 # 3. 启动项目
 dotnet run --project Radish.Api
 ```
 
+**方式二：从头开始写（适合高级用户）**
+
+```bash
+# 1. 创建空的 appsettings.Local.json
+touch Radish.Api/appsettings.Local.json
+
+# 2. 只添加你想要覆盖的配置项
+#    参考 appsettings.json 中的完整配置和注释说明
+#    例如只修改数据库密码：
+{
+  "Databases": [
+    {
+      "ConnId": "Main",
+      "DbType": 4,
+      "Enabled": true,
+      "ConnectionString": "Host=localhost;Port=5432;Database=radish;Username=postgres;Password=mypassword"
+    },
+    {
+      "ConnId": "Log",
+      "DbType": 4,
+      "Enabled": true,
+      "HitRate": 50,
+      "ConnectionString": "Host=localhost;Port=5432;Database=radish_log;Username=postgres;Password=mypassword"
+    }
+  ]
+}
+```
+
 **重要**：
 - `appsettings.Local.json` 已被 Git 忽略，不会被提交到仓库
-- `appsettings.json` 作为完整的配置模板，包含所有配置项的详细说明和示例
-- 每个配置文件都包含注释示例，例如 PostgreSQL 和远程 Redis 的配置
+- **只在 Local.json 中写需要覆盖的配置项**，利用深度合并机制自动继承其他配置
+- **敏感信息**（密码、密钥）必须放在 Local.json，**非敏感配置**（CORS、日志级别）应保留在 appsettings.json
+- `appsettings.Local.json.example` 提供了精简的配置模板，仅包含常见需要修改的项
+- `appsettings.json` 包含完整的配置说明和示例，可作为参考
 
 ## 配置项说明
 
@@ -693,20 +734,35 @@ services:
 
 新成员加入时：
 
+**方式一：直接运行（最简单）**
 ```bash
 # 1. 克隆仓库
 git clone https://github.com/your-org/Radish.git
 cd Radish
 
-# 2. 方式一：直接运行（推荐，使用默认 SQLite 配置）
+# 2. 直接运行（使用默认 SQLite 配置）
 dotnet run --project Radish.Api
 dotnet run --project Radish.Auth
 dotnet run --project Radish.Gateway
+```
 
-# 3. 方式二：自定义配置（可选）
-cp Radish.Api/appsettings.json Radish.Api/appsettings.Local.json
-# 编辑 appsettings.Local.json，修改需要自定义的配置项
-# appsettings.json 中已包含所有配置项的详细说明和示例
+**方式二：自定义配置（可选）**
+```bash
+# 1. 克隆仓库
+git clone https://github.com/your-org/Radish.git
+cd Radish
+
+# 2. 复制精简配置示例
+cp Radish.Api/appsettings.Local.json.example Radish.Api/appsettings.Local.json
+cp Radish.Auth/appsettings.Local.json.example Radish.Auth/appsettings.Local.json
+cp Radish.Gateway/appsettings.Local.json.example Radish.Gateway/appsettings.Local.json
+
+# 3. 编辑 appsettings.Local.json，取消注释并修改需要的配置项
+#    - 数据库密码（切换到 PostgreSQL 时）
+#    - Redis 密码（启用 Redis 时）
+#    - 其他敏感信息
+#
+#    所有配置项都有详细注释说明
 
 # 4. 启动项目
 dotnet run --project Radish.Api
@@ -736,5 +792,9 @@ git push origin --force --all
 
 ## 变更日志
 
-- **2025-12-08**：简化配置文件结构，移除 `appsettings.Local.example.json`，`appsettings.json` 现作为完整配置模板
+- **2025-12-08**：
+  - 优化配置策略：Local.json 只需包含需要覆盖的配置项，利用深度合并自动继承其他配置
+  - 添加 `appsettings.Local.json.example` 精简配置示例，仅包含常见的敏感配置项
+  - 补充配置优先级和合并机制说明
+  - 简化配置文件结构，移除冗余的 `.Local.example.json`，`appsettings.json` 现作为完整配置模板
 - **2025-11-27**：初始版本，引入 `appsettings.Local.json` 配置管理策略

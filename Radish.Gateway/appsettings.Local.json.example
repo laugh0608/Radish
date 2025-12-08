@@ -1,0 +1,52 @@
+{
+  // ============================================================
+  // Radish.Gateway 本地配置示例
+  // ============================================================
+  // 说明：本文件仅包含常见的需要修改的配置项
+  //       复制本文件为 appsettings.Local.json 后按需取消注释并修改
+  //       其他配置项会自动继承 appsettings.json 中的默认值
+  // ============================================================
+
+  // Gateway 公开访问地址（生产环境需修改为实际域名）
+  // "GatewayService": {
+  //   "PublicUrl": "https://your-domain.com"
+  // },
+
+  // 下游服务配置（生产环境需修改为实际服务地址）
+  // "DownstreamServices": {
+  //   "ApiService": {
+  //     "BaseUrl": "http://your-api-server:5100",
+  //     "HealthCheckPath": "/health"
+  //   },
+  //   "AuthService": {
+  //     "BaseUrl": "http://your-auth-server:5200",
+  //     "HealthCheckPath": "/health"
+  //   }
+  // },
+
+  // 前端服务配置（生产环境需修改为实际域名）
+  // "FrontendService": {
+  //   "BaseUrl": "https://your-frontend-domain.com"
+  // },
+
+  // YARP 反向代理配置（生产环境需配置路由和集群）
+  // "ReverseProxy": {
+  //   "Routes": {
+  //     "api-route": {
+  //       "ClusterId": "api-cluster",
+  //       "Match": {
+  //         "Path": "/api/{**catch-all}"
+  //       }
+  //     }
+  //   },
+  //   "Clusters": {
+  //     "api-cluster": {
+  //       "Destinations": {
+  //         "api": {
+  //           "Address": "http://your-api-server:5100"
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+}
