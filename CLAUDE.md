@@ -248,7 +248,20 @@ API routes must start with `/` for permission matching. If using path parameters
 ## Logging with Serilog
 
 ### Initialization
-`Program.cs` calls `builder.Host.AddSerilogSetup()` to configure Serilog. Logs written to `Log/Log.txt` (general) and `Log/AopSql/AopSql.txt` (SQL via AOP).
+`Program.cs` calls `builder.Host.AddSerilogSetup()` to configure Serilog. Logs are written to the solution root's `Log/` folder with the following structure:
+- `Log/{ProjectName}/Log.txt` - General application logs
+- `Log/{ProjectName}/AopSql/AopSql.txt` - SQL logs via AOP
+- `Log/{ProjectName}/SerilogDebug/Serilog{date}.txt` - Serilog internal debug logs
+
+Where `{ProjectName}` is automatically detected from the running project (e.g., Radish.Api, Radish.Gateway, Radish.Auth).
+
+### Log Location Auto-Detection
+The logging system automatically:
+1. Finds the solution root by searching upward for `*.slnx` or `*.sln` files
+2. Identifies the current project name from the `.csproj` file
+3. Creates project-specific subdirectories under the solution's `Log/` folder
+
+This ensures all projects log to a centralized location while maintaining clear separation.
 
 ### Usage
 Prefer static Serilog methods over injecting `ILogger<T>`:
