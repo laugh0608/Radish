@@ -11,6 +11,8 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Serilog;
+using Microsoft.Extensions.Localization;
+using Radish.Api.Resources;
 
 namespace Radish.Api.Controllers;
 
@@ -31,12 +33,14 @@ public class LoginController : ControllerBase
     private readonly IUserService _userService;
     private readonly ILogger<LoginController> _logger;
     private readonly PermissionRequirement _requirement;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
-    public LoginController(IUserService userService, ILogger<LoginController> logger, PermissionRequirement requirement)
+    public LoginController(IUserService userService, ILogger<LoginController> logger, PermissionRequirement requirement, IStringLocalizer<Errors> errorsLocalizer)
     {
         _userService = userService;
         _logger = logger;
         _requirement = requirement;
+        _errorsLocalizer = errorsLocalizer;
     }
 
     /// <summary>
@@ -101,11 +105,22 @@ public class LoginController : ControllerBase
         if (user.Count > 0)
         {
             var userRoles = await _userService.GetUserRoleNameStrAsync(name, pass);
+            var firstUser = user.FirstOrDefault();
+            var userId = firstUser?.Uuid ?? 0;
+            var tenantId = firstUser?.VoTenId ?? 0;
+
             var claims = new List<Claim>
             {
+                // 统一身份标识：优先使用 OIDC 风格的 sub/name/tenant_id
+                new Claim("sub", userId.ToString()),
+                new Claim("name", name),
+                new Claim("tenant_id", tenantId.ToString()),
+
+                // 兼容旧版：Name/Uuid/TenantId 仍然保留，方便历史代码解析
                 new Claim(ClaimTypes.Name, name),
-                new Claim(JwtRegisteredClaimNames.Jti, user.FirstOrDefault().Uuid.ToString()),
-                new Claim("TenantId", user.FirstOrDefault().VoTenId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, userId.ToString()),
+                new Claim("TenantId", tenantId.ToString()),
+
                 new Claim(JwtRegisteredClaimNames.Iat, DateTime.Now.DateToTimeStamp()),
                 new Claim(ClaimTypes.Expiration,
                     DateTime.Now.AddSeconds(60 * 60 * 12).ToString()) // Token 有效期，单位 s
@@ -114,10 +129,19 @@ public class LoginController : ControllerBase
             claims.AddRange(userRoles.Split(',').Select(s => new Claim(ClaimTypes.Role, s)));
             
             var token = JwtTokenGenerate.BuildJwtToken(claims.ToArray(), _requirement);
-            
-            return MessageModel<TokenInfoVo>.Success("获取成功", token);
+
+            var successMessage = _errorsLocalizer["error.auth.login_success"];
+            return MessageModel<TokenInfoVo>.Success(
+                successMessage,
+                token,
+                code: "Auth.LoginSuccess",
+                messageKey: "error.auth.login_success");
         }
 
-        return MessageModel<TokenInfoVo>.Failed("认证失败");
+        var failMessage = _errorsLocalizer["error.auth.invalid_credentials"];
+        return MessageModel<TokenInfoVo>.Failed(
+            failMessage,
+            code: "Auth.InvalidCredentials",
+            messageKey: "error.auth.invalid_credentials");
     }
 }

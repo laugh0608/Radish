@@ -363,3 +363,237 @@ npm run docs:build --prefix radish.docs
 - 若构建时提示 SDK 版本不符，执行 `dotnet --list-sdks` 确认版本或在容器内设置 `DOTNET_NOLOGO=1` 以减少输出。
 - 端口占用可通过 `docker compose ps` 或 `lsof -i :8080` 定位，调整 `ports` 映射即可。
 - 清理旧镜像：`docker image prune -f`；清理多余卷：`docker volume prune`（慎用）。
+
+## 未来两镜像多容器部署设计（规划阶段）
+
+> 本节用于记录未来在服务器上采用“两个镜像、多容器”的部署思路，目前 **仅作为设计文档，不在开发阶段使用 Docker 进行启动与测试**。
+>
+> 当前开发阶段建议仍使用 `dotnet run` / `dotnet watch` / `npm run dev` 等方式在宿主机直接运行各项目。
+
+### 设计目标与前提
+
+- 目标机器内存约 **4–8GB**，希望在资源有限的前提下尽量简化镜像数量；
+- 采用 **两个基础镜像**：
+  - `radish-backend`：承载所有 .NET 服务（Api / Gateway / Auth / DbMigrate 等）；
+  - `radish-frontend`：承载所有前端项目的构建与静态资源（radish.client / radish.console / radish.docs）。
+- 在 Compose 层面仍然按照服务拆分多个容器：
+  - 后端：`gateway`、`api`、`auth`（以及可选的 `db-migrate` 等 Job 容器）；
+  - 前端：`client`（未来可扩展为 `console`、`docs` 独立容器）；
+  - 数据：`postgres`、`redis`。
+- 区分概念：**镜像数量少** 不代表只跑少量容器，每个服务仍然应有独立容器，便于监控、扩容和故障隔离。
+
+### 后端镜像设计示例（Dockerfile.backend 草案）
+
+> 下述 Dockerfile 仅为设计示例，用于说明统一后端镜像的构建思路，**仓库中默认不会自动创建该文件**。当后续确实需要上线容器部署时，可在确认路径与项目之后再落地。
+
+```dockerfile
+# 统一构建所有 .NET 服务的后端镜像
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+
+# 复制解决方案与各项目文件（根据实际项目补充）
+COPY Radish.slnx ./
+COPY Radish.Api/Radish.Api.csproj Radish.Api/
+COPY Radish.Auth/Radish.Auth.csproj Radish.Auth/
+COPY Radish.Gateway/Radish.Gateway.csproj Radish.Gateway/
+# 如有额外 Job/Web 项目，可在此继续追加 COPY + restore
+
+RUN dotnet restore Radish.Api/Radish.Api.csproj
+RUN dotnet restore Radish.Auth/Radish.Auth.csproj
+RUN dotnet restore Radish.Gateway/Radish.Gateway.csproj
+
+# 复制全部源代码
+COPY . .
+
+# 分别发布到不同目录，供运行时容器按需选择入口
+RUN dotnet publish Radish.Api/Radish.Api.csproj -c Release -o /app/api /p:UseAppHost=false
+RUN dotnet publish Radish.Auth/Radish.Auth.csproj -c Release -o /app/auth /p:UseAppHost=false
+RUN dotnet publish Radish.Gateway/Radish.Gateway.csproj -c Release -o /app/gateway /p:UseAppHost=false
+# 例如：RUN dotnet publish Radish.DbMigrate/Radish.DbMigrate.csproj -c Release -o /app/dbmigrate /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+WORKDIR /app
+
+COPY --from=build /app/api /app/api
+COPY --from=build /app/auth /app/auth
+COPY --from=build /app/gateway /app/gateway
+# COPY --from=build /app/dbmigrate /app/dbmigrate
+
+# 运行时不在镜像中写死 ENTRYPOINT，由 docker-compose 的 command 决定具体运行哪一个服务
+```
+
+### 前端镜像设计示例（Dockerfile.frontend 草案，兼顾 WebOS SEO）
+
+> 同样仅作为设计示例，说明如何用单一前端镜像承载三个前端项目。
+> 其中 `radish.client` 未来会承载 WebOS（帖子列表/详情等公开页面），需要对搜索引擎友好，建议采用 SSR/SSG + hydrate 的方式，而不是纯 SPA。出于简化，本节只记录“镜像运行形态”的规划，不约束具体框架实现（可以是 Vite SSR、Next.js、Astro 等）。
+
+```dockerfile
+FROM node:20 AS base
+WORKDIR /app
+
+# 安装三个前端项目的依赖
+COPY radish.client/package*.json radish.client/
+COPY radish.console/package*.json radish.console/
+COPY radish.docs/package*.json radish.docs/
+
+RUN cd radish.client && npm install
+RUN cd radish.console && npm install
+RUN cd radish.docs && npm install
+
+# 复制源代码
+COPY radish.client radish.client
+COPY radish.console radish.console
+COPY radish.docs radish.docs
+
+# 统一构建所有前端项目
+# - radish.client: 未来可以是 SSR/SSG 构建（生成 server bundle + HTML 模板）
+# - radish.console / radish.docs: 通常构建为静态站点
+RUN cd radish.client && npm run build
+RUN cd radish.console && npm run build
+RUN cd radish.docs && npm run build
+
+# 运行时使用 Node 作为前端服务容器入口
+# - WebOS (radish.client) 通过 Node 服务进行 SSR/SSG 渲染，返回带完整 HTML 的帖子列表/详情页
+# - console/docs 可通过同一个 Node 服务以静态方式挂载，或继续采用其他静态托管方案
+FROM node:20 AS final
+WORKDIR /app
+
+COPY --from=base /app .
+
+# 约定：
+# - `radish.client` 提供一个 SSR 入口（例如 scripts 中的 "start:ssr"），监听 3000 端口；
+# - 具体的 SSR 实现细节由前端工程内部决定，Docker 只关心如何启动该服务。
+CMD ["npm", "run", "start:ssr", "--prefix", "radish.client"]
+```
+
+> 注意：上面的 `start:ssr` 仅为占位命令，用于表达“这个容器将以一个 Node Web 服务的形式运行 WebOS SSR”，真正实现时需要在 `radish.client/package.json` 中定义对应脚本。
+
+### 两镜像多容器的 Compose 结构示例（草案）
+
+> 本小节给出一个基于 `radish-backend` 与 `radish-frontend` 的 Compose 结构示例，并结合 4–8GB 内存的目标机器给出初始内存限制配置。数值仅供参考，实际部署应结合 `docker stats` 和监控数据调整。
+
+推荐在仓库根目录使用 `docker-compose.yml` 统一编排（路径可根据团队习惯调整）：
+
+```yaml
+version: "3.9"
+
+services:
+  gateway:
+    image: radish-backend
+    container_name: radish-gateway
+    command: ["dotnet", "Radish.Gateway.dll"]
+    working_dir: /app/gateway
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    depends_on:
+      - api
+      - auth
+      - client
+    mem_reservation: 192m
+    mem_limit: 384m
+    networks:
+      - radish-net
+
+  api:
+    image: radish-backend
+    container_name: radish-api
+    command: ["dotnet", "Radish.Api.dll"]
+    working_dir: /app/api
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+      # ConnectionStrings__Main: "Host=postgres;Port=5432;Database=radish;Username=radish;Password=change_me"
+    depends_on:
+      - postgres
+      - redis
+    mem_reservation: 256m
+    mem_limit: 768m
+    networks:
+      - radish-net
+
+  auth:
+    image: radish-backend
+    container_name: radish-auth
+    command: ["dotnet", "Radish.Auth.dll"]
+    working_dir: /app/auth
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Production"
+    depends_on:
+      - postgres
+      - redis
+    mem_reservation: 256m
+    mem_limit: 512m
+    networks:
+      - radish-net
+
+  client:
+    image: radish-frontend
+    container_name: radish-client
+    ports:
+      - "3000:80"  # 生产环境可由 Gateway 或外部反向代理统一暴露
+    mem_reservation: 64m
+    mem_limit: 256m
+    networks:
+      - radish-net
+
+  postgres:
+    image: postgres:16
+    container_name: radish-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "radish"
+      POSTGRES_USER: "radish"
+      POSTGRES_PASSWORD: "change_me"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    mem_reservation: 256m
+    mem_limit: 768m
+    networks:
+      - radish-net
+
+  redis:
+    image: redis:7
+    container_name: radish-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redisdata:/data
+    ports:
+      - "6379:6379"
+    mem_reservation: 64m
+    mem_limit: 256m
+    networks:
+      - radish-net
+
+networks:
+  radish-net:
+    driver: bridge
+
+volumes:
+  pgdata:
+  redisdata:
+```
+
+该结构下，在 4–8GB 宿主机上：
+
+- 所有服务的 `mem_limit` 上限之和约为 3GB 左右，保留了充足的系统与缓冲空间；
+- 后续可根据实际监控情况对 `mem_reservation` 与 `mem_limit` 做细调：
+  - 如果某服务常年远低于软限制，可适当下调节省资源；
+  - 如果某服务经常接近硬限制，则需要考虑优化缓存/查询或上调限制。
+
+### 当前开发阶段的约定与落地建议
+
+- **当前阶段不要求在 Docker 中启动与测试**：
+  - 后端推荐使用 `dotnet run` / `dotnet watch` 在宿主机运行 Api / Gateway / Auth；
+  - 前端推荐使用 `npm run dev --prefix radish.client` 等命令运行 Vite/VitePress 开发服务；
+  - Docker 相关内容仅作为将来部署到服务器（测试/预生产/生产环境）时的设计参考。
+- **在真正落地容器部署前，建议遵循以下步骤**：
+  1. 与运维/基础设施同学确认最终的目录结构与文件命名（例如是否采用 `Dockerfile.backend`、`Dockerfile.frontend` 与仓库根目录 `docker-compose.yml`）；
+  2. 根据实际数据库/Redis/域名/TLS 方案，补全 Compose 中的环境变量与端口映射；
+  3. 在测试环境中逐步启用各服务容器，并使用 `docker stats`/监控系统验证内存与 CPU 占用情况；
+  4. 确认没有影响现有非容器化部署流程后，再考虑将该方案纳入正式的部署流水线。
+

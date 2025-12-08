@@ -21,8 +21,133 @@ internal static class InitialDataSeeder
         await SeedTenantsAsync(db);
         await SeedDepartmentsAsync(db);
         await SeedUsersAsync(db);
+        await SeedUserRolesAsync(db);
+        await SeedPermissionsAsync(db);
 
-        Console.WriteLine("[Radish.DbMigrate] Seed 完成（默认角色/租户/部门/用户）。");
+        Console.WriteLine("[Radish.DbMigrate] Seed 完成（默认角色/租户/部门/用户/用户角色/角色-API 权限）。");
+    }
+
+    /// <summary>初始化用户-角色关系</summary>
+    private static async Task SeedUserRolesAsync(ISqlSugarClient db)
+    {
+        // 与用户/角色种子中的固定 Id 对齐
+        const long testUserId = 20002;
+        const long systemRoleId = 10000;
+        const long adminRoleId = 10001;
+
+        // test 用户作为 System + Admin 角色
+        var exists = await db.Queryable<UserRole>().AnyAsync(ur => ur.UserId == testUserId && ur.RoleId == systemRoleId);
+        if (!exists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 绑定用户 Id={testUserId} 到角色 Id={systemRoleId} (System)...");
+            await db.Insertable(new UserRole
+            {
+                UserId = testUserId,
+                RoleId = systemRoleId,
+                IsDeleted = false,
+                CreateBy = "System",
+            }).ExecuteCommandAsync();
+        }
+        else
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已存在用户 Id={testUserId} 与角色 Id={systemRoleId} 的绑定，跳过创建。");
+        }
+
+        exists = await db.Queryable<UserRole>().AnyAsync(ur => ur.UserId == testUserId && ur.RoleId == adminRoleId);
+        if (!exists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 绑定用户 Id={testUserId} 到角色 Id={adminRoleId} (Admin)...");
+            await db.Insertable(new UserRole
+            {
+                UserId = testUserId,
+                RoleId = adminRoleId,
+                IsDeleted = false,
+                CreateBy = "System",
+            }).ExecuteCommandAsync();
+        }
+        else
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已存在用户 Id={testUserId} 与角色 Id={adminRoleId} 的绑定，跳过创建。");
+        }
+    }
+
+    /// <summary>初始化角色-API 权限（示例：允许 System/Admin 访问用户基本信息接口）</summary>
+    private static async Task SeedPermissionsAsync(ISqlSugarClient db)
+    {
+        // 为 UserController.GetUserByHttpContext 建立 ApiModule 与 RoleModulePermission
+        // 便于通过 RadishAuthPolicy 或客户端权限检查进行验证。
+
+        const long userByHttpContextApiId = 50000;
+        const string linkUrl = "/api/v1/User/GetUserByHttpContext";
+
+        var apiExists = await db.Queryable<ApiModule>().AnyAsync(m => m.Id == userByHttpContextApiId);
+        if (!apiExists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 创建 ApiModule Id={userByHttpContextApiId}, LinkUrl={linkUrl}...");
+
+            var options = new ApiModuleInitializationOptions("Get current user by HttpContext", linkUrl)
+            {
+                ControllerName = "User",
+                ActionName = "GetUserByHttpContext",
+                IsEnabled = true,
+                IsDeleted = false,
+                IsMenu = false,
+                OrderSort = 0,
+            };
+
+            var module = new ApiModule(options)
+            {
+                Id = userByHttpContextApiId,
+            };
+
+            await db.Insertable(module).ExecuteCommandAsync();
+        }
+        else
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={userByHttpContextApiId} 的 ApiModule，跳过创建。");
+        }
+
+        // System + Admin 默认都可以访问该接口
+        const long systemRoleId = 10000;
+        const long adminRoleId = 10001;
+
+        await EnsureRoleApiPermissionAsync(db, systemRoleId, userByHttpContextApiId, "System");
+        await EnsureRoleApiPermissionAsync(db, adminRoleId, userByHttpContextApiId, "Admin");
+    }
+
+    private static async Task EnsureRoleApiPermissionAsync(ISqlSugarClient db, long roleId, long apiModuleId,
+        string roleName)
+    {
+        var exists = await db.Queryable<RoleModulePermission>()
+            .AnyAsync(p => p.RoleId == roleId && p.ApiModuleId == apiModuleId);
+        if (exists)
+        {
+            Console.WriteLine(
+                $"[Radish.DbMigrate] 已存在角色 Id={roleId} 与 ApiModule Id={apiModuleId} 的权限记录，跳过创建。");
+            return;
+        }
+
+        Console.WriteLine(
+            $"[Radish.DbMigrate] 创建角色 Id={roleId} ({roleName}) 对 ApiModule Id={apiModuleId} 的访问权限...");
+
+        // 为种子权限使用固定、靠后的 Id 段，避免与历史数据的主键冲突
+        var permId = roleId switch
+        {
+            10000 => 60000, // System 对 GetUserByHttpContext
+            10001 => 60001, // Admin 对 GetUserByHttpContext
+            _ => 0          // 其它角色走默认雪花/自增配置
+        };
+
+        var perm = new RoleModulePermission
+        {
+            Id = permId,
+            RoleId = roleId,
+            ApiModuleId = apiModuleId,
+            IsDeleted = false,
+            CreateBy = "System",
+        };
+
+        await db.Insertable(perm).ExecuteCommandAsync();
     }
 
     /// <summary>初始化角色相关数据</summary>
@@ -248,6 +373,7 @@ internal static class InitialDataSeeder
                 UserRealName = "Test User",
                 UserSex = (int)UserSexEnum.Unknown,
                 UserAge = 18,
+                UserBirth = DateTime.Today,
                 TenantId = radishTenantId,
                 DepartmentId = devDeptId,
                 IsEnable = true,

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="error.auth.invalid_credentials" xml:space="preserve">
+    <value>认证失败：用户名或密码错误。</value>
+  </data>
+  <data name="error.auth.login_success" xml:space="preserve">
+    <value>登录成功。</value>
+  </data>
+  <data name="error.common.internal_error" xml:space="preserve">
+    <value>服务器内部错误，请稍后重试。</value>
+  </data>
+  <data name="info.weather.load_success" xml:space="preserve">
+    <value>获取天气预报成功。</value>
+  </data>
+  <data name="error.weather.load_failed" xml:space="preserve">
+    <value>天气数据加载失败。</value>
+  </data>
+  <data name="info.user.get_by_id_success" xml:space="preserve">
+    <value>获取用户信息成功。</value>
+  </data>
+  <data name="error.user.not_found" xml:space="preserve">
+    <value>用户不存在。</value>
+  </data>
+</root>

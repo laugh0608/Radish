@@ -3,10 +3,10 @@
 ## 快速认知
 - Radish 是基于 ASP.NET Core 10 + SQLSugar + PostgreSQL（本地默认 SQLite）的分层内容社区，前端为 React 19 + Vite + TypeScript，网关 Radish.Gateway 承载门户及后续路由能力。
 - 当前协作主分支为 `dev`；所有沟通、文档说明默认使用中文（代码与技术标识除外）。
-- `Radish.slnx` 收纳全部后端项目，`radish.docs/docs/` 保持规范/计划/日志的唯一真相源；如需了解架构与需求，优先查阅 `radish.docs/docs/DevelopmentFramework.md` 与 `radish.docs/docs/README.md` 的索引（根目录 `docs/` 提供跳转入口，方便 GitHub 浏览）。
+- `Radish.slnx` 收纳全部后端项目，`radish.docs/docs/` 保持规范/计划/日志的唯一真相源；如需了解架构与需求，优先查阅 `radish.docs/docs/DevelopmentFramework.md` 与 `radish.docs/docs/README.md` 的索引（根目录 `Docs/` 提供跳转入口，方便 GitHub 浏览）。
 
 ## 仓库结构与分层职责
-- 目录要点：`Radish.Api`（Web API 宿主）、`Radish.Gateway`（门户&未来网关）、`Radish.Service`/`Radish.Repository`/`Radish.Core`/`Radish.Model`（业务分层）、`Radish.Common`（通用工具，仅能引用外部包）、`Radish.Extension`（宿主引用的扩展/Autofac/AutoMapper/Redis/Serilog 注册）、`Radish.IService` 与 `Radish.IRepository`（接口契约）、`Radish.Shared`（跨端常量/DTO）、`Radish.Api.Tests`（xUnit 示例）、`radish.client`（React 应用）、`docs/`（所有文档）、`Radish.Core/test_lib`（Rust POC，正式原生库放 `native/rust`）。
+- 目录要点：`Radish.Api`（Web API 宿主）、`Radish.Gateway`（门户&未来网关）、`Radish.Service`/`Radish.Repository`/`Radish.Core`/`Radish.Model`（业务分层）、`Radish.Common`（通用工具，仅能引用外部包）、`Radish.Extension`（宿主引用的扩展/Autofac/AutoMapper/Redis/Serilog 注册）、`Radish.IService` 与 `Radish.IRepository`（接口契约）、`Radish.Shared`（跨端常量/DTO）、`Radish.Api.Tests`（xUnit 示例）、`radish.client`（React 应用）、`Docs/`（所有文档）、`Radish.Core/test_lib`（Rust POC，正式原生库放 `native/rust`）。
 - 层级依赖：Common → Shared → Model → Infrastructure → IRepository/Repository → IService/Service → Extension → Api/Gateway；`radish.client` 仅依赖 npm 包。Gateway Phase 0 只依赖 Common+Extension，后续 P1+ 才可引用 Service。
 - 示例链路 `UserController -> IUserService -> IUserRepository` 体现 Controller → Service → Repository 调用顺序，任何新功能必须沿用该模式并补齐接口定义。
 
@@ -47,7 +47,7 @@
 4. 在 `Radish.Api` 控制器中注入 IService 并暴露 API；需要示例请求时同步维护 `Radish.Api/Radish.Api.http`。
 5. 更新 `Radish.Extension`（AutoMapper、Autofac 模块、配置）或 `Radish.Infrastructure`（租户/连接配置）以注册新模块。
 6. 编写/更新单元测试（`Radish.Api.Tests`）与前端联动逻辑，必要时在 `radish.client` 同步 DTO 并更新页面/Hook。
-7. 重大流程或约定变更请在 `docs` 中追加说明，并在 `DevelopmentLog.md` 写明日期和影响面。
+7. 重大流程或约定变更请在 `Docs` 中追加说明，并在 `DevelopmentLog.md` 写明日期和影响面。
 
 ## 测试与质量保障
 - 后端：`dotnet test Radish.Api.Tests`（或 `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj`），调试单例测试可借助 `--filter`。修改示例 Controller（如 UserController、RustTest）时务必同步更新对应测试。
@@ -56,7 +56,7 @@
 - 关键链路需补充 `.http` 手工验证、SQLSugar Profile 和 Gateway 健康页检查；性能或安全改动要记录验证方法。
 
 ## 文档、协作与提交要求
-- 文档更新：任何流程/配置/脚本/规范变更同步到 `radish.docs/docs/`（如 DevelopmentSpecifications、ConfigurationGuide、DeploymentGuide），并在 `radish.docs/docs/DevelopmentLog.md` 记录关键节点（根目录 `docs/` 作为入口即可）。
+- 文档更新：任何流程/配置/脚本/规范变更同步到 `radish.docs/docs/`（如 DevelopmentSpecifications、ConfigurationGuide、DeploymentGuide），并在 `radish.docs/docs/DevelopmentLog.md` 记录关键节点（根目录 `Docs/` 作为入口即可）。
 - PR 说明需包含：变更摘要、测试结果、关联 Issue；前端 UI 贴截图/GIF，后端接口提供 `.http` 示例。多语言文档优先中文描述，可附英文注解。
 - 提交遵循 Conventional Commits（`feat:`、`fix:`、`chore:`、`docs:` 等），描述具体变更，禁止使用诸如“update files”或带 AI 签名/Co-Authored 标记。一次提交聚焦单一主题，必要时拆分。
 - 合规提醒：禁止把真实连接串、证书、`.user` 文件或其他敏感数据加入版本库；正式部署前依据 `radish.docs/docs/DeploymentGuide.md` 准备 Docker/Compose 配置与探针。

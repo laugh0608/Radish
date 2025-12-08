@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="error.auth.invalid_credentials" xml:space="preserve">
+    <value>Authentication failed: invalid username or password.</value>
+  </data>
+  <data name="error.auth.login_success" xml:space="preserve">
+    <value>Login succeeded.</value>
+  </data>
+  <data name="error.common.internal_error" xml:space="preserve">
+    <value>Internal server error. Please try again later.</value>
+  </data>
+  <data name="info.weather.load_success" xml:space="preserve">
+    <value>Weather forecast loaded successfully.</value>
+  </data>
+  <data name="error.weather.load_failed" xml:space="preserve">
+    <value>Failed to load weather data.</value>
+  </data>
+  <data name="info.user.get_by_id_success" xml:space="preserve">
+    <value>User fetched successfully.</value>
+  </data>
+  <data name="error.user.not_found" xml:space="preserve">
+    <value>User not found.</value>
+  </data>
+</root>

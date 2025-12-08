@@ -120,7 +120,7 @@ new OpenIddictApplicationDescriptor
 {
     ClientId = "radish-scalar",
     DisplayName = "Radish API Documentation",
-    ConsentType = ConsentTypes.Implicit, // 跳过授权确认页
+    ConsentType = ConsentTypes.Explicit, // 显示授权确认页（用于测试）
     RedirectUris = {
         new Uri("https://localhost:5000/scalar/oauth2-callback")
     },
@@ -130,12 +130,19 @@ new OpenIddictApplicationDescriptor
         Permissions.Endpoints.Token,
         Permissions.GrantTypes.AuthorizationCode,
         Permissions.ResponseTypes.Code,
-        Permissions.Scopes.OpenId,
-        Permissions.Scopes.Profile,
+        Permissions.Prefixes.Scope + "openid",
+        Permissions.Prefixes.Scope + "profile",
         Permissions.Prefixes.Scope + "radish-api"
     }
 }
 ```
+
+**使用方式**：
+1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
+2. 点击右上角 **Authenticate** 按钮
+3. 选择 **oauth2** 认证方式，点击 **Authorize**
+4. 使用测试账号登录（用户名：`test`，密码：`P@ssw0rd!`）
+5. 确认授权后，所有 API 请求将自动携带 Bearer Token
 
 ### 4.2 前端 Web 客户端
 
@@ -191,81 +198,60 @@ new OpenIddictApplicationDescriptor
 
 ### 4.4 客户端动态管理
 
-客户端存储在数据库中，支持通过后台管理界面动态配置。
+客户端存储在 OpenIddict 数据库中，支持通过 API 动态管理。
 
-#### 数据模型扩展
+#### 数据存储
 
-```csharp
-// 扩展 OpenIddict Application 实体
-public class RadishApplication
-{
-    // OpenIddict 基础字段
-    public string Id { get; set; }
-    public string? ClientId { get; set; }
-    public string? ClientSecret { get; set; }
-    public string? DisplayName { get; set; }
-    // ...
+客户端数据使用 **OpenIddict 的 Properties 字段**（`ImmutableDictionary<string, JsonElement>`）存储扩展信息：
 
-    // 扩展字段
-    public string? Logo { get; set; }
-    public string? Description { get; set; }
-    public string? DeveloperName { get; set; }
-    public string? DeveloperEmail { get; set; }
-    public ApplicationStatus Status { get; set; } // Active/Disabled
-    public ApplicationType AppType { get; set; } // Internal/ThirdParty
-    public DateTime CreatedAt { get; set; }
-    public long? CreatedBy { get; set; }
-}
+- **IsDeleted**：软删除标记（`"true"` / `"false"`）
+- **CreatedAt** / **CreatedBy**：创建时间和创建者 ID
+- **UpdatedAt** / **UpdatedBy**：更新时间和更新者 ID
+- **DeletedAt** / **DeletedBy**：删除时间和删除者 ID
 
-public enum ApplicationStatus
-{
-    Active,
-    Disabled,
-    PendingReview // 第三方应用审核中
-}
-
-public enum ApplicationType
-{
-    Internal,   // 内部应用
-    ThirdParty  // 第三方应用
-}
-```
+所有审计字段使用 ISO 8601 格式存储（`DateTime.UtcNow.ToString("O")`）。
 
 #### 管理 API
 
+客户端管理 API 位于 **Radish.Api** 项目（`/api/v1/Client/*`），需要 `System` 或 `Admin` 角色权限。
+
 | 方法 | 端点 | 说明 | 权限 |
 |------|------|------|------|
-| GET | `/api/clients` | 获取客户端列表 | Admin |
-| GET | `/api/clients/{id}` | 获取客户端详情 | Admin |
-| POST | `/api/clients` | 创建客户端 | Admin |
-| PUT | `/api/clients/{id}` | 更新客户端 | Admin |
-| DELETE | `/api/clients/{id}` | 删除客户端 | Admin |
-| POST | `/api/clients/{id}/reset-secret` | 重置 Secret | Admin |
-| POST | `/api/clients/{id}/toggle-status` | 启用/禁用 | Admin |
+| GET | `/api/v1/Client/GetClients` | 获取客户端列表（分页、搜索） | System/Admin |
+| GET | `/api/v1/Client/GetClient/{id}` | 获取客户端详情 | System/Admin |
+| POST | `/api/v1/Client/CreateClient` | 创建客户端 | System/Admin |
+| PUT | `/api/v1/Client/UpdateClient/{id}` | 更新客户端 | System/Admin |
+| DELETE | `/api/v1/Client/DeleteClient/{id}` | 删除客户端（软删除） | System/Admin |
+| POST | `/api/v1/Client/ResetClientSecret/{id}` | 重置 Secret | System/Admin |
 
 #### 创建客户端示例
 
 ```http
-POST /api/clients
+POST https://localhost:5000/api/v1/Client/CreateClient
 Content-Type: application/json
 Authorization: Bearer {admin_token}
 
 {
   "clientId": "third-party-app",
   "displayName": "第三方游戏社区",
-  "description": "某游戏社区论坛接入",
-  "appType": "ThirdParty",
+  "consentType": "Explicit",
+  "requireClientSecret": true,
+  "requirePkce": true,
   "redirectUris": [
     "https://game-community.example.com/callback"
   ],
   "postLogoutRedirectUris": [
     "https://game-community.example.com"
   ],
-  "permissions": {
-    "grantTypes": ["authorization_code", "refresh_token"],
-    "scopes": ["openid", "profile", "radish-api"]
-  },
-  "requirePkce": true
+  "grantTypes": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "scopes": [
+    "openid",
+    "profile",
+    "radish-api"
+  ]
 }
 ```
 
@@ -273,16 +259,20 @@ Authorization: Bearer {admin_token}
 
 ```json
 {
-  "id": "abc123",
-  "clientId": "third-party-app",
-  "clientSecret": "generated-random-secret",
-  "displayName": "第三方游戏社区",
-  "status": "Active",
-  "createdAt": "2025-11-24T10:00:00Z"
+  "success": true,
+  "msg": "创建成功",
+  "response": {
+    "clientId": "third-party-app",
+    "clientSecret": "vK8x2mP9nQ4wR7tY5uI3oL6aS1dF0gH8jK2lZ4xC9vB3nM7qW5eR1tY8uI6oP4aS",
+    "message": "请妥善保管此密钥，关闭后将无法再次查看"
+  }
 }
 ```
 
-> **注意**：ClientSecret 仅在创建时返回一次，请妥善保管。
+> **重要提示**：
+> - ClientSecret 仅在创建时返回一次，无法再次查看
+> - 如果丢失密钥，需要使用 `/api/v1/Client/ResetClientSecret/{id}` 重置
+> - 公开客户端（`requireClientSecret: false`）不需要密钥
 
 ## 5. 资源服务器配置
 
@@ -331,6 +321,14 @@ builder.Services.AddAuthorization(options =>
 ```
 
 ## 6. 前端集成
+
+> 当前仓库中，为了先打通端到端调试链路，在 `radish.client/src/App.tsx` 中实现了一套极简 OIDC 流程：
+> - 前端统一通过 Gateway 访问：`https://localhost:5000`；
+> - 首页 `App` 组件提供“通过 OIDC 登录 / 退出登录”按钮，登录重定向到 `${apiBaseUrl}/connect/authorize`，回调地址为 `${window.location.origin}/oidc/callback`；
+> - 回调页 `/oidc/callback` 调用 `${apiBaseUrl}/connect/token` 换取 Token，并将 `access_token/refresh_token` 持久化到浏览器；
+> - 首页挂载时调用 `${apiBaseUrl}/api/v1/User/GetUserByHttpContext` 获取当前用户 `userId/userName/tenantId`，用以验证 Auth ↔ Api ↔ Db 的数据映射。
+>
+> 这套实现仅用于当前阶段的本地开发与调试，后续计划按本节 6.1–6.3 所述方式，引入 `oidc-client-ts` 或 `react-oidc-context` 等专用库接管 Token 生命周期与自动续期。
 
 ### 6.1 配置
 
@@ -411,24 +409,190 @@ export const useApiClient = () => {
 
 ## 7. Scalar OAuth 配置
 
-在 Radish.Api 中配置 Scalar 使用 OAuth：
+Scalar API 文档已集成 OIDC 认证，配置位于 `Radish.Extension/OpenApiExtension/ScalarSetup.cs`：
+
+### 7.1 OpenAPI Security Scheme
 
 ```csharp
-// Program.cs
+// 在 OpenAPI 文档中定义 OAuth2 Security Scheme
+document.Components ??= new OpenApiComponents();
+document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+document.Components.SecuritySchemes["oauth2"] = new OpenApiSecurityScheme
+{
+    Type = SecuritySchemeType.OAuth2,
+    Description = "通过 OIDC 认证服务器获取 Access Token",
+    Flows = new OpenApiOAuthFlows
+    {
+        AuthorizationCode = new OpenApiOAuthFlow
+        {
+            AuthorizationUrl = new Uri("https://localhost:5000/connect/authorize"),
+            TokenUrl = new Uri("https://localhost:5000/connect/token"),
+            Scopes = new Dictionary<string, string>
+            {
+                ["openid"] = "OpenID Connect 身份认证",
+                ["profile"] = "用户基本信息",
+                ["radish-api"] = "Radish API 访问权限"
+            }
+        }
+    }
+};
+```
+
+### 7.2 Scalar UI 配置
+
+```csharp
 app.MapScalarApiReference(options =>
 {
-    options.WithTitle("Radish API")
+    options.WithTitle("Radish API Documentation")
         .WithTheme(ScalarTheme.BluePlanet)
-        .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
-        .WithOAuth2Configuration(oauth =>
+        .WithDefaultHttpClient(ScalarTarget.Node, ScalarClient.Axios)
+        // 配置 OAuth2 认证
+        .AddPreferredSecuritySchemes("oauth2")
+        .AddOAuth2Flows("oauth2", flows =>
         {
-            oauth.ClientId = "radish-scalar";
-            oauth.Scopes = new[] { "openid", "profile", "radish-api" };
-        });
+            flows.AuthorizationCode = new AuthorizationCodeFlow
+            {
+                ClientId = "radish-scalar",
+                RedirectUri = "https://localhost:5000/scalar/oauth2-callback"
+            };
+        })
+        .AddDefaultScopes("oauth2", ["openid", "profile", "radish-api"]);
 });
 ```
 
-## 8. 多租户支持
+### 7.3 服务器配置
+
+Scalar 支持多个服务器选项，方便在不同环境下测试：
+
+```csharp
+document.Servers.Clear();
+document.Servers.Add(new()
+{
+    Url = "https://localhost:5000",
+    Description = "本地开发环境 (Gateway HTTPS)"
+});
+document.Servers.Add(new()
+{
+    Url = "http://localhost:5001",
+    Description = "本地开发环境 (Gateway HTTP)"
+});
+document.Servers.Add(new()
+{
+    Url = "http://localhost:5100",
+    Description = "本地开发环境 (API 直连)"
+});
+```
+
+### 7.4 Auth Server Scopes 注册
+
+**重要**：Auth Server 必须注册允许的 Scopes，否则会报 `invalid_scope` 错误：
+
+```csharp
+// Radish.Auth/Program.cs
+builder.Services.AddOpenIddict()
+    .AddServer(options =>
+    {
+        // 注册允许的 Scopes
+        options.RegisterScopes("openid", "profile", "offline_access", "radish-api");
+        // ...
+    });
+```
+
+## 8. Claim 与内部用户模型映射约定
+
+访问令牌（Access Token）由 Radish.Auth 负责签发，Radish.Api 及领域层通过 `IHttpContextUser` 获取“当前用户视图”。
+本节约定 Token 内各 Claim 与内部模型之间的对应关系和解析规则，避免各处自行约定字段含义。
+
+### 8.1 核心 Claim 约定
+
+| Claim 名称     | 说明                 | 对应实体字段           | 备注                                       |
+|----------------|----------------------|------------------------|--------------------------------------------|
+| `sub`          | 用户唯一标识         | `User.Id`              | OIDC 标准 Claim，推荐作为唯一用户 Id       |
+| `name`         | 用户显示名           | `User.UserName` 等     | 显示用名称，可根据业务组合昵称             |
+| `tenant_id`    | 租户 Id              | `User.TenantId`        | 多租户隔离核心字段                         |
+| `TenantId`     | 租户 Id（兼容字段）  | `User.TenantId`        | 过渡期内与 `tenant_id` 同值，便于兼容旧代码 |
+| `role`         | 角色名               | `Role.RoleName`        | 可多值，需与 `Role.RoleName` 完全一致      |
+| `scope`        | 授权范围             | —                      | 如 `openid profile radish-api`             |
+| `iss`/`aud`…   | 标准 Token 元数据    | —                      | 由 OpenIddict 负责                         |
+
+> 兼容说明：历史版本的自建 JWT 仅将用户 Id 写入 `jti`、租户 Id 写入 `TenantId`；当前实现已经在旧登录接口中同时补充了 `sub/tenant_id` 等 OIDC 风格 Claim。
+> Api 端通过 `IHttpContextUser` 同时兼容 `sub` 与 `jti`、`tenant_id` 与 `TenantId`，后续会逐步过渡到以 `sub/tenant_id` 为唯一来源。
+
+### 8.2 Api 侧解析规则（IHttpContextUser）
+
+Api 侧不直接到处解析 `ClaimsPrincipal`，而是统一通过 `IHttpContextUser` 暴露“当前用户视图”。
+解析规则约定如下（伪代码，仅示意逻辑）：
+
+```csharp
+// UserId：优先使用 OIDC 标准的 sub，兼容旧版 jti
+long userId =
+    GetLongClaim("sub") ??
+    GetLongClaim(JwtRegisteredClaimNames.Jti) ??
+    0;
+
+// TenantId：优先 tenant_id，其次 TenantId
+long tenantId =
+    GetLongClaim("tenant_id") ??
+    GetLongClaim("TenantId") ??
+    0;
+
+// UserName：优先 OIDC Name，其次 ClaimTypes.Name / Identity.Name
+string userName =
+    User.FindFirst(OpenIddictConstants.Claims.Name)?.Value ??
+    User.FindFirst(ClaimTypes.Name)?.Value ??
+    User.Identity?.Name ??
+    string.Empty;
+
+// Roles：从 ClaimTypes.Role 和 "role" 汇总
+var roles = User.FindAll(ClaimTypes.Role)
+    .Select(c => c.Value)
+    .Concat(User.FindAll("role").Select(c => c.Value))
+    .Distinct()
+    .ToList();
+
+// Scopes：从 scope 拆分空格
+var scopes = User.FindAll("scope")
+    .SelectMany(c => c.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+    .Distinct()
+    .ToList();
+```
+
+在此基础上，`IHttpContextUser` 对外暴露统一的“当前用户视图”（示意）：
+
+- `UserId: long`
+- `UserName: string`
+- `TenantId: long`
+- `Roles: IReadOnlyList<string>`
+- `IsAuthenticated(): bool`
+- `GetClaimsIdentity(): IEnumerable<Claim>`
+- （可选）`GetUserInfoFromToken(string claimType)` 等
+
+多租户、仓储、日志等基础设施应尽量依赖这一视图，而不是自己从 Claims 中取值。
+
+### 8.3 与多租户 / 权限体系的关系
+
+- **多租户（Tenant）**
+  - Auth 在签发 Token 时必须写入正确的 `tenant_id`（以及兼容的 `TenantId`）；
+  - Api 通过上述规则解析出 `TenantId`，`RepositorySetting`/`BaseRepository` 会基于该值：
+    - 对实现 `ITenantEntity` 的实体增加 QueryFilter；
+    - 根据租户切换数据库或分表后缀。
+
+- **角色与权限（RBAC）**
+  - Auth 需将用户角色写入 `role`/`ClaimTypes.Role`，值必须与 `Role.RoleName` 一致；
+  - Api 侧授权策略：
+    - `System` / `SystemOrAdmin` 通过角色 Claim 做静态角色判断；
+    - `RadishAuthPolicy` 通过角色 Claim 与 `ApiModule.LinkUrl`（正则）构建的 `PermissionItem` 集合做 URL 级权限校验。
+
+- **当前用户信息接口**
+  - `UserController.GetUserByHttpContext` 等接口只依赖 `IHttpContextUser` 暴露的视图，而不关心 Token 的具体格式；
+  - 旧 JWT 模式与新 OIDC 模式可以并行一段时间，只要遵循本节的 Claim 映射规则，调用方不需要感知差异。
+
+> 总体原则：
+> - Auth 统一负责 **Claims 的内容与命名**；
+> - Api 统一通过 `IHttpContextUser` 解析 Claims 并向上提供“当前用户视图”；
+> - 领域层及仓储层只依赖 `UserId`、`TenantId`、`Roles` 等抽象，不直接操作 Token。
+
+## 9. 多租户支持
 
 ### 8.1 租户识别
 
@@ -527,10 +691,13 @@ curl https://localhost:7100/connect/userinfo \
 
 | 问题 | 可能原因 | 解决方案 |
 | --- | --- | --- |
-| `invalid_client` | ClientId 未注册或 Secret 错误 | 检查 DbSeed 客户端注册 |
-| `invalid_redirect_uri` | RedirectUri 不匹配 | 确保与注册的 URI 完全一致 |
-| `invalid_grant` | 授权码已使用或过期 | 授权码只能使用一次 |
-| Token 验证失败 | Issuer/Audience 不匹配 | 检查资源服务器配置 |
+| `invalid_client` | ClientId 未注册或 Secret 错误 | 检查 `OpenIddictSeedHostedService` 中的客户端注册，确认 Id/Secret 与请求一致 |
+| `invalid_redirect_uri` | RedirectUri 不匹配 | 确保回调地址与客户端注册的 URI 完全一致（包括协议、端口、路径、末尾 `/`） |
+| `invalid_scope` | 请求的 scope 未在 Auth Server 注册，或客户端未声明相应权限 | 在 `Radish.Auth/Program.cs` 中通过 `options.RegisterScopes("openid", "profile", "offline_access", "radish-api")` 注册 scope，并在客户端的 `Permissions` 中添加对应 `Permissions.Prefixes.Scope + "radish-api"` 等配置 |
+| `invalid_grant` | 授权码已使用、过期或与当前客户端/redirect_uri 不匹配 | 授权码只能使用一次，确保 `client_id` 与 `redirect_uri` 与原授权请求一致，避免重复使用旧 code |
+| Token 验证失败 | Issuer/Audience 或签名配置不匹配；使用了旧 JWT Token 调用 OIDC 资源 | 检查资源服务器的 `Authority`/`TokenValidationParameters` 配置，确保指向 `Radish.Auth`；通过 `.oidc.http` 或前端 OIDC 流程重新获取 Access Token，避免混用旧 JWT 与 OIDC Token |
+| 调用需要 `Client` 策略的 API 返回 403 | Access Token 中缺少 `scope=radish-api`；或使用的是不带 scope 的旧登录方式 | 调用 `/connect/authorize` + `/connect/token` 时明确申请 `scope=radish-api`，并使用通过 Gateway/OIDC 获取的 Token 访问需要 `Client` 策略的接口 |
+| `/connect/userinfo` 中 `tenant_id` 为空 | 使用了未写入 `tenant_id` 的旧 Token，或 Auth 登录流程未正确设置租户 | 确保通过最新的 Auth 登录入口（`/Account/Login` 或前端 OIDC 流程）获取 Token，并确认登录用户绑定了有效的 TenantId |
 
 ## 12. 迁移指南
 
@@ -557,7 +724,180 @@ public async Task<IActionResult> GetJwtToken(LoginInput input)
 }
 ```
 
-## 13. 扩展规划
+## 13. 数据库配置
+
+### 13.1 OpenIddict 数据库
+
+OpenIddict 使用独立的 SQLite 数据库存储客户端、授权、Token 等信息。
+
+#### 数据库位置
+
+所有数据库文件统一存放在**解决方案根目录**的 `DataBases/` 文件夹：
+
+```
+Radish/
+└── DataBases/
+    ├── Radish.db                    # API 主数据库（SqlSugar）
+    ├── RadishLog.db                 # API 日志数据库（SqlSugar）
+    └── RadishAuth.OpenIddict.db     # OpenIddict 数据库（EF Core）
+```
+
+#### 共享机制
+
+- **Auth 项目**：启动时创建数据库并初始化种子数据（客户端、测试用户等）
+- **API 项目**：通过 `IOpenIddictApplicationManager` 访问同一数据库，实现客户端管理 API
+
+两个项目通过查找 `Radish.slnx` 文件定位解决方案根目录，确保使用相同的数据库路径。
+
+#### 配置方式
+
+**方式 1：使用默认路径（推荐）**
+
+不配置 `ConnectionStrings:OpenIddict`，系统自动使用：
+```
+{SolutionRoot}/DataBases/RadishAuth.OpenIddict.db
+```
+
+**方式 2：自定义路径**
+
+在 `appsettings.Local.json` 中配置：
+
+```json
+{
+  "ConnectionStrings": {
+    "OpenIddict": "Data Source=/custom/path/RadishAuth.OpenIddict.db"
+  }
+}
+```
+
+### 13.2 业务数据库
+
+业务数据（用户、角色、内容等）使用 SqlSugar 管理，配置在 `Databases` 数组中：
+
+```json
+{
+  "Databases": [
+    {
+      "ConnId": "Main",
+      "DbType": 2,
+      "Enabled": true,
+      "ConnectionString": "Radish.db"
+    },
+    {
+      "ConnId": "Log",
+      "DbType": 2,
+      "Enabled": true,
+      "ConnectionString": "RadishLog.db"
+    }
+  ]
+}
+```
+
+SQLite 数据库文件名会自动拼接到 `DataBases/` 文件夹下。
+
+### 13.3 数据库迁移
+
+#### OpenIddict 数据库
+
+使用 EF Core Migrations：
+
+```bash
+# 添加迁移
+cd Radish.Auth
+dotnet ef migrations add InitialCreate --context AuthOpenIddictDbContext
+
+# 应用迁移
+dotnet ef database update --context AuthOpenIddictDbContext
+```
+
+#### 业务数据库
+
+SqlSugar 使用 CodeFirst 自动创建表结构，无需手动迁移。
+
+## 14. Scalar API 文档集成
+
+### 14.1 OIDC 认证配置
+
+Scalar API 文档已集成 OIDC 认证，支持在文档界面直接登录并测试 API。
+
+#### 配置位置
+
+`Radish.Extension/OpenApiExtension/ScalarSetup.cs`：
+
+```csharp
+// 添加 OAuth2 Security Scheme
+document.Components.SecuritySchemes["oauth2"] = new OpenApiSecurityScheme
+{
+    Type = SecuritySchemeType.OAuth2,
+    Flows = new OpenApiOAuthFlows
+    {
+        AuthorizationCode = new OpenApiOAuthFlow
+        {
+            AuthorizationUrl = new Uri("https://localhost:5000/connect/authorize"),
+            TokenUrl = new Uri("https://localhost:5000/connect/token"),
+            Scopes = new Dictionary<string, string>
+            {
+                ["openid"] = "OpenID Connect 身份认证",
+                ["profile"] = "用户基本信息",
+                ["radish-api"] = "Radish API 访问权限"
+            }
+        }
+    }
+};
+
+// 配置 Scalar UI
+options.AddPreferredSecuritySchemes("oauth2")
+    .AddOAuth2Flows("oauth2", flows => {
+        flows.AuthorizationCode = new AuthorizationCodeFlow {
+            ClientId = "radish-scalar",
+            RedirectUri = "https://localhost:5000/scalar/oauth2-callback"
+        };
+    })
+    .AddDefaultScopes("oauth2", ["openid", "profile", "radish-api"]);
+```
+
+### 14.2 使用方式
+
+1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
+2. 点击右上角 **Authenticate** 按钮
+3. 选择 **oauth2** 认证方式
+4. 点击 **Authorize** 按钮
+5. 使用测试账号登录：
+   - 用户名：`test`
+   - 密码：`P@ssw0rd!`
+6. 确认授权后，所有 API 请求将自动携带 Bearer Token
+
+### 14.3 客户端配置
+
+Scalar 使用的客户端配置（在 Auth 项目的 `OpenIddictSeedHostedService` 中初始化）：
+
+```csharp
+new OpenIddictApplicationDescriptor
+{
+    ClientId = "radish-scalar",
+    DisplayName = "Radish API Documentation",
+    ConsentType = ConsentTypes.Explicit,
+    RedirectUris = {
+        new Uri("https://localhost:5000/scalar/oauth2-callback")
+    },
+    Permissions =
+    {
+        Permissions.Endpoints.Authorization,
+        Permissions.Endpoints.Token,
+        Permissions.GrantTypes.AuthorizationCode,
+        Permissions.ResponseTypes.Code,
+        Permissions.Scopes.OpenId,
+        Permissions.Scopes.Profile,
+        Permissions.Prefixes.Scope + "radish-api"
+    },
+    Requirements =
+    {
+        Requirements.Features.ProofKeyForCodeExchange // 强制 PKCE
+    }
+}
+```
+
+## 15. 扩展规划
 
 - **第三方登录**：GitHub、微信、钉钉等 OAuth Provider
 - **MFA**：TOTP、短信验证码

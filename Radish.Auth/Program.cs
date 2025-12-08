@@ -1,6 +1,7 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
@@ -14,6 +15,9 @@ using Radish.Extension.SerilogExtension;
 using Radish.Extension.SqlSugarExtension;
 using Serilog;
 using SqlSugar;
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Options;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
@@ -83,11 +87,45 @@ builder.Services.AddCors(options =>
     });
 });
 
+// 本地化配置：统一使用 zh / en，与前端保持一致
+// 不设置 ResourcesPath，让它在类型相同的目录查找资源文件
+builder.Services.AddLocalization();
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[]
+    {
+        new CultureInfo("zh"),
+        new CultureInfo("en")
+    };
+
+    options.DefaultRequestCulture = new RequestCulture("zh");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+
+    // 语言提供者优先级：Query String > Cookie > Accept-Language
+    options.RequestCultureProviders.Clear();
+    options.RequestCultureProviders.Add(new QueryStringRequestCultureProvider());
+    options.RequestCultureProviders.Add(new CookieRequestCultureProvider());
+    options.RequestCultureProviders.Add(new AcceptLanguageHeaderRequestCultureProvider());
+});
+
 // 配置强类型 Options
 builder.Services.AddAllOptionRegister();
 
-// 添加控制器
-builder.Services.AddControllers();
+// 配置 ForwardedHeaders，让 Auth Server 能识别通过 Gateway 转发的原始请求信息
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                               ForwardedHeaders.XForwardedProto |
+                               ForwardedHeaders.XForwardedHost;
+    // 信任所有代理（仅开发环境）
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+// 添加控制器 + 视图（用于登录页）
+builder.Services.AddControllersWithViews();
 
 // OpenIddict 初始化种子数据（使用 EF Core 存储）
 builder.Services.AddHostedService<OpenIddictSeedHostedService>();
@@ -101,8 +139,23 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 // OpenIddict 所用 EF Core DbContext（仅承载 OpenIddict 实体）
-var openIddictConnectionString = builder.Configuration.GetConnectionString("OpenIddict")
-    ?? "Data Source=RadishAuth.OpenIddict.db";
+var openIddictConnectionString = builder.Configuration.GetConnectionString("OpenIddict");
+
+// 如果未配置连接字符串，使用解决方案根目录下的 DataBases 文件夹（与 API 项目共享）
+if (string.IsNullOrEmpty(openIddictConnectionString))
+{
+    // 查找解决方案根目录（包含 Radish.slnx 的目录）
+    var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
+    while (currentDir != null && !File.Exists(Path.Combine(currentDir.FullName, "Radish.slnx")))
+    {
+        currentDir = currentDir.Parent;
+    }
+    var solutionRoot = currentDir?.FullName ?? AppContext.BaseDirectory;
+    var dbDirectory = Path.Combine(solutionRoot, "DataBases");
+    Directory.CreateDirectory(dbDirectory); // 确保目录存在
+    var dbPath = Path.Combine(dbDirectory, "RadishAuth.OpenIddict.db");
+    openIddictConnectionString = $"Data Source={dbPath}";
+}
 
 builder.Services.AddDbContext<AuthOpenIddictDbContext>(options =>
 {
@@ -139,6 +192,9 @@ builder.Services.AddOpenIddict()
                .AllowRefreshTokenFlow()
                .AllowClientCredentialsFlow();
 
+        // 注册允许的 Scopes
+        options.RegisterScopes("openid", "profile", "offline_access", "radish-api");
+
         // 配置加密和签名密钥
         // 开发环境：使用临时加密 + 签名证书
         options.AddDevelopmentEncryptionCertificate()
@@ -174,11 +230,18 @@ app.ConfigureApplication();
 // 4. 启动 InternalApp 扩展中的 App
 app.UseApplicationSetup();
 
+// ForwardedHeaders 必须在其他中间件之前
+app.UseForwardedHeaders();
+
 // HTTPS 重定向（由 Gateway 处理，Auth 服务本身不需要）
 // app.UseHttpsRedirection();
 
 // 静态文件
 app.UseStaticFiles();
+
+// 配置请求本地化（必须在 UseRouting 之前，确保在路由和控制器执行前设置 Culture）
+var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
+app.UseRequestLocalization(localizationOptions.Value);
 
 // 路由
 app.UseRouting();

@@ -6,6 +6,9 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
+using Radish.Api.Resources;
 
 namespace Radish.Api.Controllers;
 
@@ -94,13 +97,32 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel> GetUserById(long id)
     {
-        // TODO: 这里瞎写的，后面要修改的
+        var localizer = HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Errors>>();
+
         var userInfo = await _userService.QueryAsync(d => d.Id == id && d.IsDeleted == false);
+
+        if (userInfo == null || userInfo.Count == 0)
+        {
+            var notFoundMessage = localizer["error.user.not_found"];
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = notFoundMessage,
+                Code = "User.NotFound",
+                MessageKey = "error.user.not_found",
+                ResponseData = null
+            };
+        }
+
+        var successMessage = localizer["info.user.get_by_id_success"];
         return new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "获取成功",
+            MessageInfo = successMessage,
+            Code = "User.GetByIdSuccess",
+            MessageKey = "info.user.get_by_id_success",
             ResponseData = userInfo
         };
     }
