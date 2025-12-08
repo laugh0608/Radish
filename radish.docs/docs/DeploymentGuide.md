@@ -78,7 +78,29 @@ volumes:
 
 > 适用于：新环境第一次部署数据库，或在已有数据库上按版本执行结构迁移。
 
-### 本地/测试环境：初始化数据库结构
+### 快速开始：一键初始化（推荐）
+
+对于全新环境或本地开发，推荐直接使用 `seed` 命令，它会自动完成表结构初始化和数据填充：
+
+```bash
+# 通过启动脚本（推荐）
+pwsh ./start.ps1  # 或 ./start.sh
+# 选择 7 (DbMigrate)，直接按回车选择默认的 seed
+
+# 或直接运行
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
+```
+
+**seed 命令会自动：**
+1. 检查数据库表结构是否存在
+2. 如果表不存在，自动执行 `init` 创建表结构
+3. 填充初始数据（角色、租户、部门、用户等）
+
+这样您无需手动先执行 `init` 再执行 `seed`，一条命令即可完成所有初始化。
+
+### 本地/测试环境：仅初始化数据库结构
+
+如果您只需要创建表结构而不填充数据，可以单独使用 `init` 命令：
 
 1. 确认 `Radish.Api/appsettings.Local.json`（或对应环境的 `appsettings.{Environment}.json`）已配置好数据库连接：
    - SQLite 场景：只需指定数据库文件名（如 `Radish.db`）。
@@ -119,8 +141,15 @@ volumes:
 在仓库根目录执行：
 
 ```bash
- dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
+# 通过启动脚本（推荐）
+pwsh ./start.ps1  # 或 ./start.sh
+# 选择 7 (DbMigrate)，直接按回车选择默认的 seed
+
+# 或直接运行
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
 ```
+
+**智能初始化**：`seed` 命令会自动检测数据库表结构，如果表不存在会先执行 `init` 创建表结构，然后再填充数据。因此对于全新环境，您只需运行 `seed` 即可完成所有初始化工作。
 
 实现位于 `Radish.DbMigrate/InitialDataSeeder.cs`，并按模块拆分为 `SeedRolesAsync`、`SeedTenantsAsync`、`SeedDepartmentsAsync`、`SeedUsersAsync` 等方法，支持后续按业务扩展更多种子数据。所有插入都会先通过 `AnyAsync` 判断是否已存在，保证可以安全重复执行。
 
