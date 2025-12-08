@@ -335,21 +335,27 @@ git push origin v1.2.0.251126
 
 ## 国际化（i18n）约定
 
-- 支持语言固定为 `zh-CN`（简体中文）与 `en`（英语），默认使用 `zh-CN`，所有多语言扩展应基于这两种文化继续演进。
+- 支持语言固定为 `zh`（简体中文）与 `en`（英语），默认使用 `zh`，统一使用中性语言代码，所有多语言扩展（如 `zh-TW`、`en-GB`）在此基础上继续演进。
 - 前端（radish.client）负责界面文案、交互提示等 UI 文本的多语言管理，统一使用 `react-i18next`：
   - 所有新页面禁止写死中文/英文字符串，必须通过 `t('app.title')`、`t('auth.login')` 等 key 访问文案。
   - i18n key 采用“小写 + 点号分隔”的层级命名：`{domain}[.{subDomain}].{meaning}`，推荐顶级域包括：`app.*`、`auth.*`、`user.*`、`weather.*`、`oidc.*`、`error.*`、`info.*`、`lang.*` 等。
   - 详细示例与最佳实践见 [I18nGuide.md](I18nGuide.md) 的“前端国际化规范”。
 - 后端（Radish.Api / Radish.Auth）负责错误/提示类系统消息的多语言资源管理：
-  - `.resx` 资源文件统一放在 `Radish.Api/Resources`，使用 `Errors.zh-Hans.resx` 与 `Errors.en-US.resx` 存放中文/英文文案，通过 `IStringLocalizer<Errors>` 访问。
-  - 在 `Program.cs` 中使用 `RequestLocalizationOptions + UseRequestLocalization`，按 HTTP 头 `Accept-Language`（`zh-CN` 或 `en`）选择当前 `CultureInfo`，所有多语言文案均从对应 `.resx` 中读取。
+  - `.resx` 资源文件统一命名为 `Errors.<culture>.resx`，使用中性语言代码后缀：
+    - API：`Radish.Api/Resources/Errors.zh.resx`、`Errors.en.resx`
+    - Auth：`Radish.Auth/Resources/Errors.zh.resx`、`Errors.en.resx`（可选 `Errors.resx` 作为默认）
+    - 通过 `IStringLocalizer<Errors>` 访问。
+  - 在各宿主 `Program.cs` 中使用 `RequestLocalizationOptions + UseRequestLocalization`，按 HTTP 头 `Accept-Language` 或 QueryString 选择当前 `CultureInfo`：
+    - 支持文化固定为 `zh` 与 `en`，`DefaultRequestCulture = \"zh\"`。
+    - API：优先使用 `Accept-Language` 头（插入 `AcceptLanguageHeaderRequestCultureProvider` 至首位）。
+    - Auth：优先顺序为 Query String → Cookie → `Accept-Language`，方便登录页切换语言。
 - API 响应统一使用 `MessageModel<T>`/`MessageModel` 三件套结构：
   - 对外字段固定为：`StatusCode` + `IsSuccess` + `MessageInfo` + `Code?` + `MessageKey?` + `ResponseData?`。
   - `Code`：业务错误码，面向日志与前端精细化判断，采用大驼峰命名（如 `Auth.InvalidCredentials`、`User.NotFound`、`Weather.LoadFailed`）。
   - `MessageKey`：与 `.resx` 和前端 i18n 映射的 key，沿用 `error.*` / `info.*` 命名规范（如 `error.auth.invalid_credentials`）。
   - `MessageInfo`：按当前文化翻译后的完整提示句子，由后端本地化组件生成，作为前端兜底展示内容。
 - 前端发起 HTTP 请求时必须携带 `Accept-Language` 头：
-  - 统一通过封装的 `requestJson<T>()` 或 `apiFetch()` 等 helper 写入 `Accept-Language: i18n.language || 'zh-CN'`，避免在页面中分散设置。
+  - 统一通过封装的 `apiFetch()` / `requestJson<T>()` 等 helper 写入 `Accept-Language: i18n.language || 'zh'`，避免在页面中分散设置（当前示例实现见 `radish.client/src/App.tsx`）。
   - 前端解析响应时优先使用 `messageKey` 做 i18n 映射，仅在 key 缺失或解析失败时回退到 `MessageInfo`。
 - 所有新接口、新页面默认遵循上述统一模式：Controller 返回 `MessageModel<T>`，通过 `IStringLocalizer<Errors>` 提供多语言文案，前端使用 `requestJson<T>` + `parseApiResponse` 完成解析与提示。
 

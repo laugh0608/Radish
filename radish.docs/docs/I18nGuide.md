@@ -4,13 +4,13 @@
 
 ## 总体设计
 
-- 支持语言：**zh-CN（简体中文）** 与 **en（英语）**。
+- 支持语言：**zh（简体中文）** 与 **en（英语）**，统一使用中性语言代码，避免 zh-CN/zh-Hans/en-US/en 混用。
 - 责任划分：
   - **前端（radish.client）**：负责「界面文案、交互提示」等 UI 文本的多语言管理与切换；统一使用 `react-i18next`。
   - **后端（Radish.Api / Radish.Auth）**：负责错误消息、系统提示等的多语言资源（.resx），并通过 `MessageModel<T>` 将 `code + messageKey + messageInfo` 返回给前端。
   - 前后端通过 **`messageKey`（i18n key）与 `code`（业务错误码）协作**，而不是直接依赖“中文/英文字符串”。
 - 语言传递通道：
-  - 前端请求统一携带 HTTP 头：`Accept-Language: zh-CN` 或 `en`。
+  - 前端请求统一携带 HTTP 头：`Accept-Language: zh` 或 `en`。
   - 后端通过 `RequestLocalizationOptions + UseRequestLocalization` 按 `Accept-Language` 设置 `CultureInfo.CurrentUICulture`，并据此选择对应 `.resx` 文案。
 
 ## 前端国际化规范（radish.client）
@@ -32,9 +32,9 @@
 - 缓存策略：
   - 当前选择写入 `localStorage.radish_lang`，避免每次刷新重新检测。
 - 切换接口：
-  - 统一使用 `i18n.changeLanguage('zh-CN' | 'en')`；
+  - 统一使用 `i18n.changeLanguage('zh' | 'en')`；
   - 建议在全局布局中提供语言切换 UI，例如：
-    - `lang.zhCN` → "中文"
+    - `lang.zh` → "中文"
     - `lang.en` → "EN"。
 
 ### 3. 文案与 key 命名
@@ -99,23 +99,21 @@ export function parseApiResponse<T>(json: ApiResponse<T>, t: (key: string) => st
 }
 ```
 
-- 高层封装 `requestJson<T>`：
+- 推荐封装一个统一设置 `Accept-Language` 的请求 helper（当前示例在 `App.tsx` 中命名为 `apiFetch`）：
 
 ```ts
-export interface RequestJsonOptions extends RequestInit {
+interface ApiFetchOptions extends RequestInit {
     withAuth?: boolean;
 }
 
-export async function requestJson<T>(
-    input: RequestInfo | URL,
-    t: (key: string) => string,
-    options: RequestJsonOptions = {}
-) {
+function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
     const { withAuth, headers, ...rest } = options;
+
+    const currentLanguage = i18n.language || 'zh';
 
     const finalHeaders: HeadersInit = {
         Accept: 'application/json',
-        'Accept-Language': i18n.language || 'zh-CN',
+        'Accept-Language': currentLanguage,
         ...headers,
     };
 
@@ -126,13 +124,10 @@ export async function requestJson<T>(
         }
     }
 
-    const response = await fetch(input, {
+    return fetch(input, {
         ...rest,
         headers: finalHeaders,
     });
-
-    const json = await response.json() as ApiResponse<T>;
-    return parseApiResponse(json, t);
 }
 ```
 
@@ -141,7 +136,10 @@ export async function requestJson<T>(
 ```ts
 const { t } = useTranslation();
 
-const parsed = await requestJson<Forecast[]>(`${apiBaseUrl}/api/WeatherForecast/GetStandard`, t);
+const response = await apiFetch(`${apiBaseUrl}/api/WeatherForecast/GetStandard`);
+const json = await response.json() as ApiResponse<Forecast[]>;
+const parsed = parseApiResponse(json, t);
+
 if (!parsed.ok || !parsed.data) {
     throw new Error(parsed.message || t('error.weather.load_failed'));
 }
@@ -151,7 +149,10 @@ setForecasts(parsed.data);
 - 若需要针对特定错误码做逻辑判断（例如用户不存在）：
 
 ```ts
-const parsed = await requestJson<UserVo[]>(`${apiBaseUrl}/api/v1/User/GetUserById/${id}`, t);
+const response = await apiFetch(`${apiBaseUrl}/api/v1/User/GetUserById/${id}`);
+const json = await response.json() as ApiResponse<UserVo>;
+const parsed = parseApiResponse(json, t);
+
 if (!parsed.ok) {
     if (parsed.code === 'User.NotFound') {
         // TODO: 显示“用户不存在”的专用提示
@@ -164,13 +165,27 @@ if (!parsed.ok) {
 
 ### 1. RequestLocalization 与 Accept-Language
 
-- 在 Radish.Api / Radish.Auth 统一配置：
-  - `builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");`
-  - `builder.Services.Configure<RequestLocalizationOptions>(...)` 中：
-    - 支持 `zh-CN` 与 `en-US` 两种文化；
-    - `DefaultRequestCulture = zh-CN`；
-    - 把 `AcceptLanguageHeaderRequestCultureProvider` 放在 `RequestCultureProviders` 首位。
-  - 中间件顺序：在 `UseCors` 后调用 `UseRequestLocalization`：
+- 在 Radish.Api / Radish.Auth 中统一配置本地化服务与请求文化：
+  - Radish.Api：
+    - `builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");`
+    - `builder.Services.Configure<RequestLocalizationOptions>(...)` 中：
+      - 支持 `zh` 与 `en` 两种文化；
+      - `DefaultRequestCulture = "zh"`；
+      - `SupportedCultures` 与 `SupportedUICultures` 都设置为 `zh` / `en`。
+    - 使用 `AcceptLanguageHeaderRequestCultureProvider` 从 HTTP 头中读取语言，并插入到 `RequestCultureProviders` 首位：
+      - `options.RequestCultureProviders.Insert(0, new AcceptLanguageHeaderRequestCultureProvider());`
+  - Radish.Auth：
+    - `builder.Services.AddLocalization();`（资源文件默认放在 `Resources` 目录）
+    - `builder.Services.Configure<RequestLocalizationOptions>(...)` 中：
+      - 同样支持 `zh` 与 `en`，默认 `zh`。
+      - 显式设置文化提供者优先级：Query String → Cookie → Accept-Language，便于登录页通过 URL 或 Cookie 切换语言：
+        - `options.RequestCultureProviders.Clear();`
+        - `options.RequestCultureProviders.Add(new QueryStringRequestCultureProvider());`
+        - `options.RequestCultureProviders.Add(new CookieRequestCultureProvider());`
+        - `options.RequestCultureProviders.Add(new AcceptLanguageHeaderRequestCultureProvider());`
+  - 中间件顺序：
+    - Radish.Api：在 `UseCors` 后调用 `UseRequestLocalization` 即可（当前流水线：静态文件 → CORS → RequestLocalization → Scalar → Authentication/Authorization → Controllers）。
+    - Radish.Auth：`UseRequestLocalization` 必须在 `UseRouting` 之前，确保路由与视图执行前就设置好 Culture（当前流水线：静态文件 → RequestLocalization → Routing → CORS → Authentication/Authorization → Controllers）。
 
 ```csharp
 var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
@@ -185,10 +200,16 @@ app.UseRequestLocalization(localizationOptions.Value);
 
 ### 2. 多语言资源文件与 Errors 类型
 
-- 资源路径：`Radish.Api/Resources/Errors.*.resx`：
-  - `Errors.zh-Hans.resx`
-  - `Errors.en-US.resx`
-- 占位类型：`Radish.Api/Resources/Errors.cs`：
+- 资源路径与命名：
+  - API：`Radish.Api/Resources/Errors.*.resx`，当前包含：
+    - `Errors.zh.resx`
+    - `Errors.en.resx`
+  - Auth：`Radish.Auth/Resources/Errors.*.resx`，当前包含：
+    - `Errors.resx`（默认资源）
+    - `Errors.zh.resx`
+    - `Errors.en.resx`
+  - 统一使用中性语言代码作为后缀（`zh` / `en`），避免 `zh-CN`、`zh-Hans`、`en-US` 等混用。
+- API 项目占位类型：`Radish.Api/Resources/Errors.cs`：
 
 ```csharp
 namespace Radish.Api.Resources;
@@ -347,7 +368,41 @@ var failResult = MessageModel<IEnumerable<WeatherForecast>>.Failed(
 4. **新接口默认走统一模式**：
    - Controller 返回 `MessageModel<T>`；
    - 通过 `IStringLocalizer<Errors>` 提供文案；
-   - 前端通过 `requestJson<T>` + `parseApiResponse` 解析。
+   - 前端通过统一封装的 `apiFetch()`/`requestJson<T>` + `parseApiResponse` 解析。
 
 5. **文档维护**：
    - 本文为 i18n 规范的唯一来源；如有变更（新增语言、调整命名规则等），请同步更新本文件并在 `DevelopmentLog.md` 中记录决策。
+
+## 开发流程（新增多语言时如何做）
+
+### 1. 新增一个后端错误/提示
+
+1. 在合适的域下设计业务码 `Code` 与 i18n key `MessageKey`，例如：
+   - `Code = "User.NotFound"`
+   - `MessageKey = "error.user.not_found"`
+2. 在对应项目的 `.resx` 文件中补充中文/英文文案：
+   - API：`Radish.Api/Resources/Errors.zh.resx` 与 `Errors.en.resx`
+   - Auth 视图：`Radish.Auth/Resources/Errors.zh.resx` 与 `Errors.en.resx`
+3. 在 Controller 或 Service 中通过 `IStringLocalizer<Errors>` 读取文案，并使用 `MessageModel<T>.Success/Failed` 返回，同时填充 `Code` 与 `MessageKey`。
+4. 若前端需要根据该错误码做特殊处理，在前端 i18n 资源中也补上同名 key（通常以 `error.*` 或 `info.*` 开头）。
+
+### 2. 新增一个前端界面文案
+
+1. 选择顶级域（如 `app.*`、`auth.*`、`user.*` 等），定义 key，例如 `user.list.empty`。
+2. 在 `radish.client/src/i18n.ts` 的 `resources.zh` 与 `resources.en` 中各自添加对应值。
+3. 在组件中使用 `const { t } = useTranslation();` 并通过 `t('user.list.empty')` 读取。
+4. 如文案与后端返回的 `MessageKey` 共用，可优先以后端 key 为准，避免重复定义。
+
+### 3. 新增宿主/服务的国际化支持
+
+1. 按 `Radish.Api` 或 `Radish.Auth` 的模式在新宿主中调用 `AddLocalization` 与 `Configure<RequestLocalizationOptions>`，统一使用 `zh` / `en`。
+2. 创建 `Resources/Errors.*.resx` 并引入 `IStringLocalizer<Errors>`，保证错误消息结构一致。
+3. 如需 UI 页（Razor View / 前端应用），通过 `Accept-Language` 或 QueryString 传递语言，并在页面中读取/切换。
+
+## 未来扩展方向
+
+- **增加更多语言/地区变体**：当前仅支持 `zh` 与 `en`，未来可按需添加 `zh-TW`、`en-GB` 等，通过新增 `Errors.zh-TW.resx`、`Errors.en-GB.resx` 与前端 `resources['zh-TW']` 等实现。
+- **抽离公共 i18n 包**：将前端的 `ApiResponse`、`parseApiResponse`、`apiFetch` 等 helper 抽到共享模块，避免每个子应用重复实现。
+- **统一错误码与 key 注册表**：在 `radish.docs` 或代码中维护一份错误码清单，避免不同模块使用重复/冲突的 `Code` 或 `MessageKey`。
+- **自动化检查**：后续可引入脚本检查 `.resx` 与前端 i18n 资源是否缺 key、是否存在未使用 key，以及多语言对齐情况。
+- **运行时语言切换 / 用户偏好存储**：在登录后将用户偏好语言存储到 Profile 中，由后端在生成 Token 时写入 Claim，前端按用户设置而非浏览器默认语言渲染。
