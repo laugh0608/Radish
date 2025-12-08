@@ -127,6 +127,69 @@
   ```
 - 验收：访问 `/scalar` 可跳转到 Auth 登录，授权后返回并携带 Token
 
+#### 第 3 周后端工作项（Auth/OIDC 核心）
+
+> 采用工作项模板：`W{周}-BE-{序号}`，Owner/Estimate/Deps 可在实际排期时补充。
+
+```md
+### W3-BE-1 OpenIddict SqlSugar Store 落地
+- Owner: TBD | Estimate: TBD | Deps: Radish.Auth 已基于 EF Core 存储跑通 OIDC 最小链路
+- Checklist:
+  - [ ] 设计 OpenIddict 实体到 SqlSugar 模型的映射方案（参考 `Radish.Model/Models/OpenIddict/*` 与 `AuthOpenIddictDbContext`）
+  - [ ] 在合适位置新增 SqlSugar Store 实现（Application/Authorization/Scope/Token Store 接口）
+  - [ ] 在 `Radish.Auth/Program.cs` 中切换 OpenIddict Core 配置为 SqlSugar Store，而非 EF Core DbContext
+  - [ ] 保证与现有 `RadishAuth.OpenIddict.db` 数据模式兼容，或提供一次性迁移脚本/说明
+  - [ ] 为 Store 编写基础集成测试（创建/查询/撤销 Token、客户端读取）
+- Acceptance:
+  - Radish.Auth 启动时不再依赖 EF Core 的 `AuthOpenIddictDbContext` 建表
+  - 新创建/授权的客户端与 Token 可以通过 SqlSugar 查询验证
+  - 授权码 → Token → 调用 API 在切换到 SqlSugar 后仍正常（复用现有 `.http` 流程）
+
+### W3-BE-2 Radish.DbSeed/DbMigrate 对 Auth + Api 的统一初始化
+- Owner: TBD | Estimate: TBD | Deps: Radish.DbMigrate 基础项目已存在
+- Checklist:
+  - [ ] 梳理当前各处初始化逻辑（Auth 内部 `OpenIddictSeedHostedService` + Radish.DbMigrate 现有种子）
+  - [ ] 设计统一初始化流程，明确 Auth 与 Api/主库的职责边界
+  - [ ] 在 `Radish.DbMigrate` 中补全以下种子：默认租户、管理员用户、基础角色、系统权限与 API 模块、内置 OIDC 客户端（radish-client/radish-scalar/radish-rust-ext）
+  - [ ] 确保种子流程幂等，可重复执行
+  - [ ] 提供命令调用方式并在 DeploymentGuide 中补充使用说明
+- Acceptance:
+  - 新环境执行一次 DbMigrate/Seed 可完成主库 + Auth 所需基础数据
+  - 重复执行不会产生重复数据或异常
+
+### W3-BE-3 OIDC 客户端管理 API（Auth 后端）
+- Owner: TBD | Estimate: TBD | Deps: W3-BE-1（可选）、W3-BE-2
+- Checklist:
+  - [ ] 基于 `RadishApplication`/VoOidcApp 设计 `Radish.Auth` 侧客户端管理 API（`/api/clients` 全套 CRUD + reset-secret/toggle-status）
+  - [ ] 定义 Repository/Service 接口 + 实现，遵循 IService/IRepository 模式
+  - [ ] 实现权限控制：仅 System/Admin 角色可访问
+  - [ ] 对 ClientSecret 做最小暴露和写入策略：创建时返回一次，后续仅支持重置
+  - [ ] 编写基础单测（覆盖创建/禁用/重置 Secret 流程）
+- Acceptance:
+  - 可通过 HTTP 客户端完整走一遍客户端生命周期（创建→查询→更新→禁用→重置 Secret→删除）
+  - 非 System/Admin 角色访问返回 403
+
+### W3-BE-4 Radish.Api 资源服务器 Claim 映射与当前用户接口完善
+- Owner: TBD | Estimate: TBD | Deps: AuthenticationGuide 中 Claim 映射约定已更新
+- Checklist:
+  - [ ] 按文档约定统一 `HttpContextUser` Claim 解析逻辑（UserId: sub/jti，TenantId: tenant_id/TenantId 等）
+  - [ ] 修正 `UserController.GetUserByHttpContext`，确保 OIDC 模式下返回正确的 userId/userName/tenantId
+  - [ ] 验证多租户（RepositorySetting/BaseRepository）与权限链路（PermissionRequirementHandler）在 OIDC Token 下正常工作
+  - [ ] 更新/补充 `.http` 调试脚本与必要单测
+- Acceptance:
+  - 使用 OIDC Token 调用 `GetUserByHttpContext` 可获得正确的当前用户信息
+  - 开启 RadishAuthPolicy 的控制器在 OIDC 模式下按角色正确放行/拒绝
+
+### W3-BE-5 Scalar OAuth 全链路校验与文档对齐
+- Owner: TBD | Estimate: TBD | Deps: W3-BE-1/2/4 基本完成
+- Checklist:
+  - [ ] 确认 `Radish.Api/Program.cs` 中 Scalar OAuth 配置与 Auth 侧 radish-scalar 客户端保持一致
+  - [ ] 通过 Scalar UI 完整跑一遍授权→登录→回调→调用 API 的流程
+  - [ ] 在 AuthenticationGuide 或 DevelopmentLog 中补充“Scalar OAuth 调试指南”（步骤/截图）
+- Acceptance:
+  - `/scalar` 页面可通过 OAuth 调试需要 `scope=radish-api` 的接口
+```
+
 #### 验收标准
 - `/.well-known/openid-configuration` 返回正确的 OIDC 发现文档
 - DbSeed 可重复执行且幂等

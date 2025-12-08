@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="auth.login.title" xml:space="preserve">
+    <value>Radish Unified Login</value>
+  </data>
+  <data name="auth.login.heading" xml:space="preserve">
+    <value>Radish.Auth Test Login</value>
+  </data>
+  <data name="auth.login.description" xml:space="preserve">
+    <value>Sign in with the built-in test account. You can replace it with a real user store later.</value>
+  </data>
+  <data name="auth.login.testAccount" xml:space="preserve">
+    <value>Test account</value>
+  </data>
+  <data name="auth.login.testAccount.username" xml:space="preserve">
+    <value>User:</value>
+  </data>
+  <data name="auth.login.testAccount.password" xml:space="preserve">
+    <value>Password:</value>
+  </data>
+  <data name="auth.login.usernameLabel" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="auth.login.passwordLabel" xml:space="preserve">
+    <value>Password</value>
+  </data>
+  <data name="auth.login.submit" xml:space="preserve">
+    <value>Sign in</value>
+  </data>
+  <data name="auth.login.error.invalidCredentials" xml:space="preserve">
+    <value>Invalid username or password. Please try again.</value>
+  </data>
+  <data name="auth.login.success.message" xml:space="preserve">
+    <value>Signed in successfully. You can now close this page or return to the calling system.</value>
+  </data>
+  <data name="auth.logout.success" xml:space="preserve">
+    <value>Signed out.</value>
+  </data>
+  <data name="auth.consent.title" xml:space="preserve">
+    <value>Authorization consent</value>
+  </data>
+  <data name="auth.consent.heading" xml:space="preserve">
+    <value>Authorize this application to access your Radish account</value>
+  </data>
+  <data name="auth.consent.description" xml:space="preserve">
+    <value>The application {0} is requesting the following permissions:</value>
+  </data>
+  <data name="auth.consent.client" xml:space="preserve">
+    <value>Application:</value>
+  </data>
+  <data name="auth.consent.scopes" xml:space="preserve">
+    <value>Requested permissions:</value>
+  </data>
+  <data name="auth.consent.allow" xml:space="preserve">
+    <value>Allow</value>
+  </data>
+  <data name="auth.consent.deny" xml:space="preserve">
+    <value>Deny</value>
+  </data>
+</root>

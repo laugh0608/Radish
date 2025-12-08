@@ -1,0 +1,165 @@
+### Radish.Auth + Radish.Api OIDC 完整调试脚本
+### 包含：
+### - 直连 Auth 的授权码 → Token → API 调用
+### - 经 Gateway 的授权码 → Token → API 调用
+### - UserInfo 查询
+### - Refresh Token 换新 Access Token
+
+### 环境变量（按本地默认端口配置）
+@authBase = http://localhost:5200
+@gatewayBase = https://localhost:5000
+@apiBase = http://localhost:5100
+
+########################################################
+### A. 直连 Auth：授权码流程（浏览器 + .http）
+########################################################
+
+### A.1 在浏览器中登录测试用户（直连 Auth）
+### 步骤：
+### 1) 打开浏览器访问：
+###    {{authBase}}/Account/Login
+###    http://localhost:5200/Account/Login
+### 2) 使用测试账号登录：
+###    用户名: test
+###    密  码: P@ssw0rd!
+###
+### 这一步只是建立 Auth 侧的 Cookie 会话，后续授权码流程会用到。
+
+### A.2 在浏览器中触发授权码流程（直连 Auth）
+### 步骤：
+### 1) 浏览器访问：
+###    {{authBase}}/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=radish-api
+###    http://localhost:5200/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=radish-api
+### 2) 如果未登录，会跳到登录页，用上面的 test 账号登录；
+### 3) 登录/授权成功后，会跳转到：
+###    https://localhost:5000/oidc/callback?code=xxxxx
+### 4) 从回调 URL 中复制 `code=` 后面的那一段值，粘到下面的 @authCode 变量里。
+
+@authCode = 在这里粘贴从回调 URL 中复制的授权码
+
+### A.3 使用授权码向 Auth 换取 Access Token + Refresh Token（直连 Auth）
+
+POST {{authBase}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code&
+client_id=radish-client&
+code={{authCode}}&
+redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback
+
+### 执行上面的请求后，响应示例：
+### HTTP/1.1 200 OK
+### {
+###   "access_token": "...",
+###   "token_type": "Bearer",
+###   "expires_in": 3600,
+###   "refresh_token": "...",
+###   "scope": "openid profile offline_access radish-api"
+### }
+###
+### 请从响应中复制 access_token / refresh_token 到下面两个变量。
+
+@accessToken = 在这里粘贴上一步返回的 access_token
+@refreshToken = 在这里粘贴上一步返回的 refresh_token
+
+### A.4 使用 Access Token 调用 Radish.Api 受保护接口（直连 Api）
+
+GET {{apiBase}}/api/v1/User/GetUserByHttpContext
+Authorization: Bearer {{accessToken}}
+
+### 预期：
+### - 状态码 200
+### - 响应体中包含当前用户 userId / userName / tenantId 等信息
+
+### A.5 使用 Access Token 调用 Auth 的 UserInfo 端点（直连 Auth）
+
+GET {{authBase}}/connect/userinfo
+Authorization: Bearer {{accessToken}}
+
+### 预期：
+### - 状态码 200
+### - 响应体中包含 sub / name / email / role 等用户信息
+
+### A.6 使用 Refresh Token 换取新的 Access Token（直连 Auth）
+
+POST {{authBase}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token&
+client_id=radish-client&
+refresh_token={{refreshToken}}
+
+### 执行后，同样会返回一组新的 access_token / refresh_token。
+### 你可以再次更新 @accessToken / @refreshToken 变量，重复 A.4/A.5 测试。
+
+########################################################
+### B. 经 Gateway 的授权码流程（推荐按生产入口习惯）
+########################################################
+
+### B.1 在浏览器中通过 Gateway 登录测试用户
+### 步骤：
+### 1) 打开浏览器访问：
+###    {{gatewayBase}}/Account/Login
+###    https://localhost:5000/Account/Login
+### 2) 使用测试账号登录：
+###    用户名: test
+###    密  码: P@ssw0rd!
+
+### B.2 在浏览器中通过 Gateway 触发授权码流程
+### 步骤：
+### 1) 浏览器访问：
+###    {{gatewayBase}}/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=radish-api
+###    https://localhost:5000/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=radish-api
+### 2) 未登录会跳转登录页，登录后会重定向到：
+###    https://localhost:5000/oidc/callback?code=xxxxx
+### 3) 从 URL 中复制 code 参数，粘到下面的 @gatewayAuthCode 变量。
+
+@gatewayAuthCode = WM_nmSwdDpYBjoT_ZOSIoLBTHKM11elhBXcbBhpZA-Q
+
+### B.3 使用授权码（经 Gateway）换取 Access Token + Refresh Token
+
+POST {{gatewayBase}}/connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code&client_id=radish-client&code={{gatewayAuthCode}}&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback
+
+### 和 A.3 一样，从响应中复制 access_token，填到下面。
+
+@gatewayAccessToken = eyJhbGciOiJSUzI1NiIsImtpZCI6IkY3N0M4MUYzNEVENkE3RTQzQzQ5NjBDN0Y1NzRBRTFGMUEzQkMwQjUiLCJ4NXQiOiI5M3lCODA3V3AtUThTV0RIOVhTdUh4bzd3TFUiLCJ0eXAiOiJhdCtqd3QifQ.eyJpc3MiOiJodHRwOi8vbG9jYWxob3N0OjUyMDAvIiwiZXhwIjoxNzY1MDA5NzAxLCJpYXQiOjE3NjUwMDYxMDEsImF1ZCI6InJhZGlzaC1hcGkiLCJzY29wZSI6InJhZGlzaC1hcGkiLCJqdGkiOiI0Y2MxYzU3My1lYWMzLTQ2N2YtOGU1OS02ZGEyZTdhNDc2MmMiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjIwMDAyIiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZSI6InRlc3QiLCJodHRwOi8vc2NoZW1hcy5taWNyb3NvZnQuY29tL3dzLzIwMDgvMDYvaWRlbnRpdHkvY2xhaW1zL3JvbGUiOiJTeXN0ZW0iLCJzdWIiOiIyMDAwMiIsIm5hbWUiOiJ0ZXN0IiwidGVuYW50X2lkIjoiMzAwMDAiLCJvaV9wcnN0IjoicmFkaXNoLWNsaWVudCIsIm9pX2F1X2lkIjoiYTFjNDM2ZjUtY2Y5Mi00ZTNhLTg5YzMtMDcwMTg0NGIwZGQxIiwiY2xpZW50X2lkIjoicmFkaXNoLWNsaWVudCIsIm9pX3Rrbl9pZCI6ImVhODg3NWY0LWFjYTQtNDBkMi04NDMxLWFmMGRmZjUwNzVmMSJ9.qQuoXUUWuE8AODN56xbEQYIYgg_6YiVOlEXCA7kTJvdHDj4aHnAzre6e4qhtmmBYKkmcsP8LeQkxAn-wDnpJi7IylH5dYJOL5gJ4pNpDM47LyGTszDfs8o8EAh2rB60S3_xjFOC5pa2nAYfiQSSNRG6pUyRk0HSWu6Beozp_FnVzR2whoy-AKoM-Z1zNANWTJExV4s5I9WoImqZbyW-f-Yos7gNtf4H3NRxf6jI-0PawCfK31XnAixWvJDK0O57gKdmPaYYs-dw0LM3gF7IugtMzigJrA5MVHc_bO8W9dvljvO2oSz_icylhoY5TBxD1BsToA3ZWnZNKlopESHPjHw
+
+### B.4 通过 Gateway 调用 Radish.Api 受保护接口
+
+GET {{gatewayBase}}/api/v1/User/GetUserByHttpContext
+Authorization: Bearer {{gatewayAccessToken}}
+
+### 预期：
+### - 状态码 200
+### - 响应体与 A.4 一致，只是路径换成了通过 Gateway 的入口
+
+########################################################
+### C. （可选）Client Credentials 模式（后台服务，不涉及浏览器）
+########################################################
+
+### 注意：
+### - 前提是 Radish.Auth 中已经注册了客户端 `radish-background-service`
+###   （参考 AuthenticationGuide 中“后台服务（Client Credentials）”一节）。
+### - 若当前环境还没配置这个客户端，本节可以先忽略。
+
+### C.1 使用 Client Credentials 换取 Access Token（直连 Auth）
+
+# POST {{authBase}}/connect/token
+# Content-Type: application/x-www-form-urlencoded
+#
+# grant_type=client_credentials&
+# client_id=radish-background-service&
+# client_secret=在这里填写后台服务的 client_secret&
+# scope=radish-api
+#
+# 把返回的 access_token 填到下面变量中，再按需调用 API。
+
+@serviceAccessToken = 可选：在这里粘贴后台服务模式的 access_token
+
+### C.2 使用后台服务的 Access Token 调用某个 API（示例）
+
+# GET {{apiBase}}/api/v1/WeatherForecast/Get
+# Authorization: Bearer {{serviceAccessToken}}

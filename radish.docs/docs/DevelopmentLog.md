@@ -4,6 +4,131 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.07
+
+- **feat(i18n/unified-language-codes)**: 统一前后端语言代码为 zh 和 en
+  - **问题背景**：
+    - 前端 i18next 使用 `en` 和 `zh-CN`
+    - Auth 后端配置了 `zh-CN`、`en`、`en-US`
+    - API 后端配置了 `zh-CN`、`zh-Hans`、`en`、`en-US`
+    - 资源文件命名不一致：`Errors.zh-CN.resx`、`Errors.zh-Hans.resx`、`Errors.en-US.resx`
+    - 导致前端传递 `en` 时后端无法匹配，回退到默认中文
+  - **解决方案**：统一使用中性语言代码 `zh` 和 `en`
+    - 前端（`radish.client`）：
+      - `i18n.ts`：将 `zh-CN` 改为 `zh`，更新 `fallbackLng` 和 `supportedLngs`
+      - `App.tsx`：所有语言相关代码统一使用 `zh` 和 `en`（语言切换、URL 参数、Accept-Language 等）
+    - Auth 项目（`Radish.Auth`）：
+      - `Program.cs`：`SupportedCultures` 只保留 `zh` 和 `en`
+      - `AuthorizationController.cs`：在重定向到登录页时提取 culture 参数，确保语言参数在登录页 URL 上而非 ReturnUrl 内
+      - `Login.cshtml`：语言切换按钮改为 `zh` 和 `en`
+      - 资源文件：删除 `Errors.zh-CN.resx` 和 `Errors.en-US.resx`，重命名为 `Errors.zh.resx` 和 `Errors.en.resx`
+    - API 项目（`Radish.Api`）：
+      - `Program.cs`：`SupportedCultures` 只保留 `zh` 和 `en`
+      - 资源文件：删除 `Errors.zh-CN.resx`、`Errors.zh-Hans.resx`、`Errors.en-US.resx`，只保留 `Errors.zh.resx` 和 `Errors.en.resx`
+  - **中间件顺序修复**（`Radish.Auth/Program.cs`）：
+    - 将 `UseRequestLocalization` 移到 `UseRouting` 之前，确保在路由和控制器执行前设置 Culture
+    - 修复前：`UseStaticFiles → UseRouting → UseCors → UseRequestLocalization`（❌ Culture 设置太晚）
+    - 修复后：`UseStaticFiles → UseRequestLocalization → UseRouting → UseCors`（✅ 正确顺序）
+  - **优势**：
+    - 前后端语言代码完全一致，无需映射转换
+    - 简洁明了，避免 zh-CN/zh-Hans/en-US/en 混乱
+    - 资源文件结构清晰：`Errors.resx`（默认）、`Errors.zh.resx`、`Errors.en.resx`
+    - 保留扩展性：未来可按需添加 `zh-TW`（繁体中文）、`en-GB`（英式英语）等
+
+### 2025.12.06
+
+- **feat(api/client-management)**: 实现 OIDC 客户端管理 API
+  - **ClientController**（`Radish.Api/Controllers/ClientController.cs`）：
+    - 实现完整的 CRUD API：`GetClients`（分页+搜索）、`GetClient`、`CreateClient`、`UpdateClient`、`DeleteClient`、`ResetClientSecret`
+    - 使用 `IOpenIddictApplicationManager` 直接操作 OpenIddict 数据库
+    - 软删除实现：使用 OpenIddict Properties 字段存储 `IsDeleted`、`CreatedAt/By`、`UpdatedAt/By`、`DeletedAt/By`
+    - 所有接口需要 `System` 或 `Admin` 角色权限（`[Authorize(Roles = "System,Admin")]`）
+    - API 路由遵循项目规范：`/api/v1/Client/[action]`
+  - **数据模型**（`Radish.Model/ViewModels/Client/`）：
+    - `ClientVo`：客户端视图模型（列表和详情）
+    - `CreateClientDto`：创建客户端请求 DTO
+    - `UpdateClientDto`：更新客户端请求 DTO
+    - `ClientSecretVo`：客户端密钥返回模型（仅在创建/重置时返回一次）
+  - **分页模型**（`Radish.Model/PageModel.cs`）：
+    - 新增通用分页模型 `PageModel<T>`，包含 `Page`、`PageSize`、`DataCount`、`PageCount`、`Data`
+  - **项目依赖**（`Radish.Api/Radish.Api.csproj`）：
+    - API 项目新增对 Auth 项目的引用，以共享 `AuthOpenIddictDbContext`
+    - API 和 Auth 项目共享同一个 OpenIddict 数据库
+
+- **refactor(database/unified-path)**: 统一所有数据库文件到 DataBases 文件夹
+  - **OpenIddict 数据库共享**（`Radish.Api/Program.cs` + `Radish.Auth/Program.cs`）：
+    - 两个项目通过查找 `Radish.slnx` 文件定位解决方案根目录
+    - 默认数据库路径：`{SolutionRoot}/DataBases/RadishAuth.OpenIddict.db`
+    - Auth 项目启动时创建数据库并初始化种子数据
+    - API 项目通过 `IOpenIddictApplicationManager` 访问同一数据库
+  - **SqlSugar 数据库路径**（`Radish.Common/DbTool/BaseDbConfig.cs`）：
+    - 修改 `SpecialDbString` 方法，SQLite 数据库自动存储到 `{SolutionRoot}/DataBases/`
+    - 新增 `FindSolutionRoot()` 方法，通过查找 `Radish.slnx` 定位解决方案根目录
+    - 配置文件中只需填写文件名（如 `Radish.db`），路径自动拼接
+  - **最终数据库布局**：
+    ```
+    Radish/
+    └── DataBases/
+        ├── Radish.db                    # API 主数据库（SqlSugar）
+        ├── RadishLog.db                 # API 日志数据库（SqlSugar）
+        └── RadishAuth.OpenIddict.db     # OpenIddict 数据库（EF Core，Auth + API 共享）
+    ```
+
+- **refactor(docs/folder-rename)**: 重命名根目录 docs 文件夹为 Docs
+  - 将 `docs/` 重命名为 `Docs/`，与 `radish.docs/` 区分
+  - 更新 `README.md`、`CLAUDE.md`、`AGENTS.md` 中的相关引用
+  - `Docs/` 作为文档入口，提供跳转链接到 `radish.docs/docs/` 的实际文档内容
+
+- **feat(scalar+auth/oidc-integration)**: Scalar API 文档集成 OIDC 认证，优化 Auth 服务配置
+  - **Scalar OAuth2 配置**（`Radish.Extension/OpenApiExtension/ScalarSetup.cs`）：
+    - 在 OpenAPI 文档中添加 OAuth2 Security Scheme，定义 Authorization Code Flow
+    - 配置 Scalar UI 的 OAuth2 认证：`AddPreferredSecuritySchemes("oauth2")` + `AddOAuth2Flows`
+    - 设置 `ClientId="radish-scalar"`，`RedirectUri="https://localhost:5000/scalar/oauth2-callback"`
+    - 默认 Scopes：`openid`、`profile`、`radish-api`
+    - 修复服务器列表显示问题：清空默认列表，添加 Gateway HTTPS/HTTP + API 直连三个选项
+  - **Auth Server Scopes 注册**（`Radish.Auth/Program.cs`）：
+    - 添加 `options.RegisterScopes("openid", "profile", "offline_access", "radish-api")`
+    - 解决 `invalid_scope` 错误：OpenIddict Server 必须显式注册允许使用的 scopes
+  - **客户端授权类型调整**（`Radish.Auth/OpenIddict/OpenIddictSeedHostedService.cs`）：
+    - 将 `radish-scalar` 的 `ConsentType` 从 `Implicit` 改为 `Explicit`
+    - 现在每次授权都会显示授权确认页面，方便测试和调试
+  - **使用方式**：
+    1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
+    2. 点击右上角 **Authenticate** 按钮
+    3. 选择 **oauth2** 认证方式，点击 **Authorize**
+    4. 使用测试账号登录（用户名：`test`，密码：`P@ssw0rd!`）
+    5. 确认授权后，所有 API 请求自动携带 Bearer Token
+
+- **docs(auth+database)**: 更新认证和数据库文档
+  - **AuthenticationGuide.md**：
+    - 更新第 4.4 节"客户端动态管理"：详细说明软删除和审计字段的实现
+    - 更新管理 API 表格：使用实际的 API 路由（`/api/v1/Client/*`）
+    - 更新创建客户端示例：使用实际的请求/响应格式
+    - 新增第 13 章"数据库配置"：详细说明 OpenIddict 和 SqlSugar 数据库的配置方式
+    - 新增第 14 章"Scalar API 文档集成"：详细说明 OIDC 认证配置和使用方式
+
+### 2025.12.03
+
+- **feat(gateway+client/oidc-through-gateway)**: 通过 Gateway 打通 Auth + Api + 前端的完整 OIDC 授权码链路
+  - `Radish.Api/Radish.Api.oidc.http` 增补“6. （推荐）全量通过 Gateway 的 OIDC 测试流程”，统一使用 `https://localhost:5000` 作为 OIDC 入口（登录 / 授权码 / 换取 Token / 当前用户接口）。
+  - `Radish.Gateway/appsettings.Local.json` 中为 `/Account/{**catch-all}` 与 `/connect/{**catch-all}` 新增 `auth-account-route` / `auth-connect-route`，将 OIDC 相关端点通过 Gateway 转发到 `Radish.Auth`，前端与 `.http` 示例均不再直连 5200 端口。
+  - `radish.client/src/App.tsx` 新增最小 OIDC Demo：
+    - 在首页“Authentication” 区块提供“通过 OIDC 登录”与“退出登录”按钮，登录走 `GET {apiBaseUrl}/connect/authorize`，退出调用 `POST {apiBaseUrl}/Account/Logout` 并清理 `localStorage` 中的 access_token/refresh_token。
+    - 实现 `OidcCallback` 回调组件，处理 `/oidc/callback?code=xxx`，调用 `POST {apiBaseUrl}/connect/token` 换取 Token，持久化到 `localStorage` 后跳转回首页。
+    - 首页挂载时通过 `GET {apiBaseUrl}/api/v1/User/GetUserByHttpContext` 拉取当前用户信息，并在界面显示 `userId/userName/tenantId`，验证 Auth ↔ Api ↔ Db 的映射配置。
+  - 前端增加轻量级 `apiFetch` 封装，统一附带 `Accept: application/json` 与可选的 Authorization 头，为后续 WebOS 子应用复用网关 API 提供最小示例。
+
+- **fix(dbmigrate/role-permission)**: 记录 `RoleModulePermission` 表缺失导致本地 SQLite 抛出 `SQLite Error 1: 'no such table: RoleModulePermission'` 时的推荐修复路径
+  - 建议在本地环境遇到该错误时执行：
+    - `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init`
+    - `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed`
+  - `init` 通过 `CodeFirst.InitTables` 为所有实体（包含 `RoleModulePermission`）建表，`seed` 则按约定灌入 System/Admin 与 `GetUserByHttpContext` 相关的角色权限种子数据，确保权限表结构与数据与当前 OIDC/Auth 策略保持一致。
+
+- **docs(auth+gateway+frontend)**: 同步认证与 Gateway 文档，标记当前实现状态
+  - `AuthenticationGuide.md` 中说明当前仓库已在 `radish.client/src/App.tsx` 中实现一套通过 Gateway 的极简 OIDC 流程，本节其余 `oidc-client-ts/react-oidc-context` 内容为后续正式接入方案。
+  - `GatewayPlan.md` Phase 0 验收标准中补充“通过 Gateway 反向代理 Radish.Auth 的 `/Account` 与 `/connect` 端点”，明确本地 OIDC 调试入口统一为 Gateway (`https://localhost:5000`)。
+  - `FrontendDesign.md` 在 M4 迭代计划中说明：当前仍暂时保留 `src/App.tsx` 作为 WeatherForecast + Gateway OIDC 登录/退出的 Demo 页，未来将由 WebOS 桌面 Shell 取代。
+
 ### 2025.12.02
 
 - **feat(auth+api/oidc-minimal)**: 打通 Radish.Auth 与 Radish.Api 的最小 OIDC 授权码 + 资源服务器链路

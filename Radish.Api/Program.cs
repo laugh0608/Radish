@@ -1,4 +1,5 @@
 using System.Text;
+using System.IO;
 using Asp.Versioning;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -24,6 +25,11 @@ using Radish.Repository;
 using Radish.Service;
 using Serilog;
 using SqlSugar;
+using Microsoft.EntityFrameworkCore;
+using OpenIddict.Abstractions;
+using System.Globalization;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Options;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
@@ -39,11 +45,15 @@ builder.Host
     }).ConfigureAppConfiguration((hostingContext, config) =>
     {
         hostingContext.Configuration.ConfigureApplication(); // 1. 绑定 InternalApp 扩展中的配置
+
+        // 配置文件统一从输出目录（AppContext.BaseDirectory）读取，避免受工作目录影响
+        var basePath = AppContext.BaseDirectory;
+
         config.Sources.Clear();
-        config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-        config.AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json",
+        config.AddJsonFile(Path.Combine(basePath, "appsettings.json"), optional: true, reloadOnChange: false);
+        config.AddJsonFile(Path.Combine(basePath, $"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json"),
             optional: true, reloadOnChange: false);
-        config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
+        config.AddJsonFile(Path.Combine(basePath, "appsettings.Local.json"), optional: true, reloadOnChange: false);
         // config.AddConfigurationApollo("appsettings.apollo.json");
     });
 // 2. 绑定 InternalApp 扩展中的环境变量
@@ -71,6 +81,26 @@ builder.Services.AddCors(options =>
         }
     });
 });
+
+// 本地化配置：统一使用 zh / en，与前端保持一致
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    var supportedCultures = new[]
+    {
+        new CultureInfo("zh"),
+        new CultureInfo("en")
+    };
+
+    options.DefaultRequestCulture = new RequestCulture("zh");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+
+    // 优先从 Accept-Language 读取语言
+    options.RequestCultureProviders.Insert(0, new AcceptLanguageHeaderRequestCultureProvider());
+});
+
 // 注册 Controller 控制器
 builder.Services.AddControllers();
 // 注册健康检查
@@ -116,6 +146,36 @@ SnowFlakeSingle.DatacenterId = snowflakeSection.GetValue<int>("DataCenterId");
 // 注册泛型仓储与服务，AddScoped() 汇报模式，每次请求的时候注入
 builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
+
+// 注册 OpenIddict DbContext（用于客户端管理 API，与 Auth 项目共享数据库）
+var openIddictConnectionString = builder.Configuration.GetConnectionString("OpenIddict");
+if (string.IsNullOrEmpty(openIddictConnectionString))
+{
+    // 查找解决方案根目录（包含 Radish.slnx 的目录）
+    var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
+    while (currentDir != null && !File.Exists(Path.Combine(currentDir.FullName, "Radish.slnx")))
+    {
+        currentDir = currentDir.Parent;
+    }
+    var solutionRoot = currentDir?.FullName ?? AppContext.BaseDirectory;
+    var dbDirectory = Path.Combine(solutionRoot, "DataBases");
+    Directory.CreateDirectory(dbDirectory);
+    var dbPath = Path.Combine(dbDirectory, "RadishAuth.OpenIddict.db");
+    openIddictConnectionString = $"Data Source={dbPath}";
+}
+builder.Services.AddDbContext<Radish.Auth.OpenIddict.AuthOpenIddictDbContext>(options =>
+{
+    options.UseSqlite(openIddictConnectionString);
+});
+
+// 注册 OpenIddict Core（仅用于客户端管理，不启用 Server）
+builder.Services.AddOpenIddict()
+    .AddCore(options =>
+    {
+        options.UseEntityFrameworkCore()
+               .UseDbContext<Radish.Auth.OpenIddict.AuthOpenIddictDbContext>();
+    });
+
 // 注册 JWT 认证服务（使用 Radish.Auth 作为 OIDC 授权服务器）
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -172,6 +232,11 @@ app.UseStaticFiles();
 // {
 // }
 app.UseCors(corsPolicyName);
+
+// 配置请求本地化（根据 Accept-Language 设置 Culture）
+var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
+app.UseRequestLocalization(localizationOptions.Value);
+
 // 配置 Scalar UI
 app.UseScalarUI("/scalar");
 

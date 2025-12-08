@@ -681,6 +681,76 @@ eventBus.on('new-message', ({ count }) => {
 /admin/apps - 后台应用管理
 ```
 
+### 10.4 WebOS 与 SEO 适配规划
+
+> 仅 WebOS（radish.client）需要对搜索引擎友好，用于公开帖子列表/详情；其他前端项目（radish.console、radish.docs）默认不做 SEO 要求。此处只记录前端视角的规划，真正启用时需要与部署文档的 Docker 方案配合。
+
+#### 10.4.1 URL 与路由规划
+
+- 公开内容（需 SEO）：
+  - 帖子列表：`/forum`、`/forum/category/{id}`、`/forum/tag/{tag}`
+  - 帖子详情：`/forum/post/{id}` 或 `/forum/post/{id}-{slug}`
+- 登录后功能（不要求 SEO）：
+  - 发帖/编辑：`/forum/create`、`/forum/edit/{id}`
+  - 用户中心：`/me`、`/settings` 等
+- 桌面 Shell 与应用路由关系：
+  - 桌面仍然挂在 `/` 路径；
+  - 对于搜索引擎访问 `/forum`、`/forum/post/*` 等路径时，可以直接渲染论坛应用而不是完整桌面壳，以减少噪音并提升首屏内容密度。
+
+#### 10.4.2 SSR/SSG 与 hydrate 策略（前端视角）
+
+- WebOS 论坛相关路由建议支持：
+  - 服务端渲染（SSR）：
+    - 在服务器端拉取帖子数据，返回完整 HTML（标题、正文摘要、首屏列表等）；
+    - 浏览器加载 JS 后再对页面进行 hydrate，继续以 SPA 方式运行。
+  - 或静态站点生成（SSG）：
+    - 对热门帖子、专题页预生成静态 HTML；
+    - 通过前端路由和 API 实现增量内容加载。
+- 具体实现可以基于：
+  - Vite SSR
+  - Next.js / Remix
+  - Astro 等支持 React 的 SSG/SSR 框架
+- 文档层面只要求：
+  - `/forum`、`/forum/post/*` 等路由在**服务端就具备完整 HTML 内容**，而不是只有空 `div#root`。
+
+#### 10.4.3 SEO 元信息与结构化数据
+
+- 每个可索引页面需要具备：
+  - `<title>`：`{帖子标题} - Radish`；
+  - `<meta name="description" content="{摘要或首段内容}">`；
+  - `<link rel="canonical" href="https://radish.com/forum/post/{id}">`；
+  - 根据需要配置 `og:title` / `og:description` / `og:image` 等社交分享 meta。
+- 可选：为帖子详情页输出 JSON-LD 结构化数据：
+
+```html
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "DiscussionForumPosting",
+  "headline": "{帖子标题}",
+  "datePublished": "{ISO 时间}",
+  "author": {
+    "@type": "Person",
+    "name": "{作者昵称}"
+  }
+}
+</script>
+```
+
+- 上述 meta 与 JSON-LD 可以在 SSR 阶段注入，也可以通过前端渲染时在 `<head>` 中动态更新（优先推荐 SSR 注入）。
+
+#### 10.4.4 sitemap 与 robots 规范
+
+- 建议由后端或独立任务生成 sitemap：
+  - 包含主要列表页：`/forum`、`/forum/category/*`、`/forum/tag/*`；
+  - 包含一部分帖子详情页：可以按时间/热门程度取 Top N，避免 sitemap 过大；
+  - 将 sitemap 暴露为：`/sitemap.xml` 或 `/sitemap-forum.xml`。
+- `robots.txt` 规划：
+  - 允许搜索引擎抓取论坛公开路径：`/forum`、`/forum/post/*` 等；
+  - 显式禁止与登录、设置相关的路径：`/me`、`/settings`、`/admin/*` 等。
+
+> 具体 sitemap 和 robots 的生成/托管位置建议在后端与部署文档中补充，这里只约束前端 URL 与可索引页面的范围。
+
 ## 11. 迭代计划
 
 ### 阶段一：M4（桌面系统基础）
@@ -690,6 +760,7 @@ eventBus.on('new-message', ({ count }) => {
 - [ ] 窗口管理器（窗口/全屏/iframe）
 - [ ] 权限控制
 - [ ] 论坛应用（MVP）
+- [ ] 用 WebOS 桌面 Shell 取代当前 `src/App.tsx` Demo 页；现阶段暂时保留该页面的 WeatherForecast + Gateway OIDC 登录/退出示例，用于验证 Auth + Api + Gateway 端到端链路
 
 ### 阶段二：M5（核心应用）
 
