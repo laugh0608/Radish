@@ -15,8 +15,6 @@ internal static class InitialDataSeeder
 {
     public static async Task SeedAsync(ISqlSugarClient db)
     {
-        Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
-
         await SeedRolesAsync(db);
         await SeedTenantsAsync(db);
         await SeedDepartmentsAsync(db);
@@ -24,7 +22,7 @@ internal static class InitialDataSeeder
         await SeedUserRolesAsync(db);
         await SeedPermissionsAsync(db);
 
-        Console.WriteLine("[Radish.DbMigrate] Seed 完成（默认角色/租户/部门/用户/用户角色/角色-API 权限）。");
+        Console.WriteLine("[Radish.DbMigrate] ✓ Seed 完成（默认角色/租户/部门/用户/用户角色/角色-API 权限）。");
     }
 
     /// <summary>初始化用户-角色关系</summary>

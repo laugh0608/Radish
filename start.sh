@@ -185,9 +185,14 @@ start_auth_no_build() {
 start_dbmigrate() {
   (
     cd "$ROOT_DIR"
-    read -rp "请选择 DbMigrate 子命令 [init/seed] (默认 init, 输入 q 取消): " migrate_cmd
+    echo ""
+    echo "DbMigrate 命令说明："
+    echo "  init - 仅初始化数据库表结构（Code First）"
+    echo "  seed - 填充初始数据（如表不存在会自动执行 init）"
+    echo ""
+    read -rp "请选择 DbMigrate 子命令 [init/seed] (默认 seed, 输入 q 取消): " migrate_cmd
     if [[ -z "${migrate_cmd:-}" ]]; then
-      migrate_cmd="init"
+      migrate_cmd="seed"
     fi
     if [[ "$migrate_cmd" == "q" ]]; then
       echo "已取消执行 DbMigrate。"
