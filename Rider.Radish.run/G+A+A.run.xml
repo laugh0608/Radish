@@ -17,7 +17,7 @@
       <ExecutableRowSnapshot>
         <option name="condition">
           <ConditionSnapshot>
-            <option name="type" value="afterPreviousFinished" />
+            <option name="type" value="immediately" />
           </ConditionSnapshot>
         </option>
         <option name="disableDebugging" value="true" />
@@ -30,7 +30,7 @@
       <ExecutableRowSnapshot>
         <option name="condition">
           <ConditionSnapshot>
-            <option name="type" value="afterPreviousFinished" />
+            <option name="type" value="immediately" />
           </ConditionSnapshot>
         </option>
         <option name="disableDebugging" value="true" />
