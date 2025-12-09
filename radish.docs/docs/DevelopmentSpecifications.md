@@ -153,8 +153,15 @@ git push origin v1.2.0.251126
 
 ## 数据库与 SqlSugar 配置
 
+**重要说明 - API 和 Auth 项目共享业务数据库**：
+- **Radish.Api** 和 **Radish.Auth** 项目必须使用**相同的业务数据库配置**
+- 两个项目的 `appsettings.json` 中的 `Databases` 配置必须保持一致（`Radish.db` 和 `RadishLog.db`）
+- 这是因为 Auth 项目需要访问用户、角色、权限、租户等业务数据来验证身份和权限
+- **OpenIddict 数据库**（`RadishAuth.OpenIddict.db`）是独立的，仅由 Auth 项目使用，存储 OIDC 认证相关数据
+- **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
+
 - `Program.cs` 需要在 `builder.Build()` 前调用 `builder.Services.AddSqlSugarSetup()`。该扩展定义于 `Radish.Extension.SqlSugarExtension`，内部依赖 `Radish.Infrastructure.Tenant.RepositorySetting`、`TenantUtil` 等组件，使用 `SqlSugarScope` 单例注入并绑定所有连接配置。
-- `appsettings.json` 约定结构如下：
+- `appsettings.json` 约定结构如下（**API 和 Auth 项目必须保持一致**）：
 
 ```json
 {
@@ -164,13 +171,13 @@ git push origin v1.2.0.251126
       "ConnId": "Main",
       "DbType": 2,
       "Enabled": true,
-      "ConnectionString": "Radish.db"
+      "ConnectionString": "Radish.db"  // API 和 Auth 共享
     },
     {
       "ConnId": "Log",
       "DbType": 2,
       "Enabled": true,
-      "ConnectionString": "RadishLog.db",
+      "ConnectionString": "RadishLog.db",  // API 和 Auth 共享
       "HitRate": 50
     }
   ]

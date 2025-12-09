@@ -226,7 +226,13 @@ SnowFlakeSingle.DatacenterId = snowflakeSection.GetValue<int>("DataCenterId");
 - Log entities like `AuditSqlLog` use `[Tenant(configId: "log")]` + `[SplitTable(SplitType.Month)]` for monthly partitioning
 
 ### Local Dev (SQLite)
-Default setup uses `Radish.db` (main) and `RadishLog.db` (logs) in project root. Auto-created on first run. For PostgreSQL, update `Databases[].ConnectionString` and `DbType=4`.
+Default setup uses `Radish.db` (main) and `RadishLog.db` (logs) in `DataBases/` folder. Auto-created on first run. For PostgreSQL, update `Databases[].ConnectionString` and `DbType=4`.
+
+**IMPORTANT - Database Sharing Between Projects**:
+- **API and Auth projects share the same business databases**: Both `Radish.Api` and `Radish.Auth` use `Radish.db` (main) and `RadishLog.db` (logs) for business data (users, roles, permissions, tenants, etc.)
+- **OpenIddict uses a separate database**: `RadishAuth.OpenIddict.db` is managed by EF Core and stores OIDC-specific data (clients, authorizations, tokens, scopes)
+- **Why share business databases?**: Auth and API need access to the same user/role/permission data for authentication and authorization
+- **Database location**: All database files are stored in the solution root's `DataBases/` folder
 
 ## Authentication & Authorization
 

@@ -316,6 +316,12 @@ services:
 
 ### 2. 数据库配置
 
+**重要说明 - API 和 Auth 项目共享业务数据库**：
+- **Radish.Api** 和 **Radish.Auth** 项目使用**相同的业务数据库**（`Radish.db` 和 `RadishLog.db`）
+- 这两个数据库存储用户、角色、权限、租户等业务数据，需要被两个项目共同访问
+- **OpenIddict 使用独立的数据库**（`RadishAuth.OpenIddict.db`），由 EF Core 管理，存储 OIDC 认证相关数据（客户端、授权码、令牌等）
+- **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
+
 #### SQLite（默认，适合本地开发）
 
 ```json
@@ -325,20 +331,20 @@ services:
       "ConnId": "Main",
       "DbType": 2,                    // 2 = SQLite
       "Enabled": true,
-      "ConnectionString": "Radish.db" // 数据库文件名
+      "ConnectionString": "Radish.db" // 数据库文件名（API 和 Auth 共享）
     },
     {
       "ConnId": "Log",
       "DbType": 2,
       "Enabled": true,
       "HitRate": 50,
-      "ConnectionString": "RadishLog.db"
+      "ConnectionString": "RadishLog.db" // 日志数据库（API 和 Auth 共享）
     }
   ]
 }
 ```
 
-数据库文件会自动创建在项目根目录（`/mnt/d/Code/Radish/`）。
+数据库文件会自动创建在解决方案根目录的 `DataBases/` 文件夹（例如：`/home/luobo/Code/Radish/DataBases/`）。
 
 #### PostgreSQL（生产环境推荐）
 

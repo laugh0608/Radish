@@ -737,10 +737,20 @@ OpenIddict 使用独立的 SQLite 数据库存储客户端、授权、Token 等�
 ```
 Radish/
 └── DataBases/
-    ├── Radish.db                    # API 主数据库（SqlSugar）
-    ├── RadishLog.db                 # API 日志数据库（SqlSugar）
-    └── RadishAuth.OpenIddict.db     # OpenIddict 数据库（EF Core）
+    ├── Radish.db                    # 业务主数据库（SqlSugar，API 和 Auth 共享）
+    ├── RadishLog.db                 # 业务日志数据库（SqlSugar，API 和 Auth 共享）
+    └── RadishAuth.OpenIddict.db     # OpenIddict 数据库（EF Core，Auth 专用）
 ```
+
+**重要说明 - 数据库共享机制**：
+- **业务数据库共享**：`Radish.db` 和 `RadishLog.db` 被 **Radish.Api** 和 **Radish.Auth** 两个项目共同使用
+  - 存储用户、角色、权限、租户等业务数据
+  - Auth 项目需要访问这些数据来验证用户身份和权限
+  - API 项目需要访问这些数据来提供业务功能
+- **OpenIddict 数据库独立**：`RadishAuth.OpenIddict.db` 仅由 **Radish.Auth** 项目使用
+  - 存储 OIDC 认证相关数据（客户端、授权码、令牌、Scope 等）
+  - 使用 EF Core 管理（而不是 SqlSugar）
+  - API 项目通过 `IOpenIddictApplicationManager` 访问此数据库，实现客户端管理 API
 
 #### 共享机制
 
