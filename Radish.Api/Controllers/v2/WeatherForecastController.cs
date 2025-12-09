@@ -1,5 +1,9 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
+using Radish.Api.Resources;
 using Radish.Common;
 using Radish.Common.CacheTool;
 using Radish.Common.CoreTool;
@@ -8,16 +12,14 @@ using Radish.Model;
 using Radish.Model.LogModels;
 using Radish.Model.ViewModels;
 using Serilog;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
-using Radish.Api.Resources;
 
-namespace Radish.Api.Controllers;
+namespace Radish.Api.Controllers.v2;
 
 [ApiController]
 // [Authorize(Roles = "Client")] // 可以写多个
 // [Authorize(Policy = "SystemOrAdmin")]
-[Route("api/[controller]/[action]")]
+[ApiVersion("2.0")]
+[Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Authorize(Policy = "RadishAuthPolicy")]
 public class WeatherForecastController : ControllerBase
