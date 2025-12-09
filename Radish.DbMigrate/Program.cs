@@ -86,7 +86,7 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
         // - 带有 [SugarTable] 特性的实体；
         // - 或继承自 RootEntityTKey<> 的实体（大部分业务表）。
         var modelAssembly = typeof(Radish.Model.Root.RootEntityTKey<>).Assembly;
-        var entityTypes = modelAssembly
+        var allEntityTypes = modelAssembly
             .GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract && t.IsPublic)
             .Where(t =>
@@ -98,7 +98,24 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
             .Concat(new[] { typeof(Radish.Model.UserRole) })
             .Distinct();
 
-        foreach (var type in entityTypes)
+        // 根据 [Tenant(configId)] 注解过滤实体
+        var entityTypesForConfig = allEntityTypes.Where(type =>
+        {
+            var tenantAttr = type.GetCustomAttributes(typeof(TenantAttribute), inherit: true)
+                .Cast<TenantAttribute>()
+                .FirstOrDefault();
+
+            // 如果实体有 [Tenant(configId)] 注解，只在对应的数据库中初始化
+            if (tenantAttr != null && !string.IsNullOrEmpty(tenantAttr.configId))
+            {
+                return tenantAttr.configId.Equals(config.ConfigId.ToString(), StringComparison.OrdinalIgnoreCase);
+            }
+
+            // 如果实体没有 [Tenant] 注解，只在主库中初始化（排除 Log 库）
+            return !config.ConfigId.ToString().Equals("Log", StringComparison.OrdinalIgnoreCase);
+        }).ToList();
+
+        foreach (var type in entityTypesForConfig)
         {
             Console.WriteLine($"  -> Init table for entity: {type.FullName} (ConnId={config.ConfigId})");
             conn.CodeFirst.InitTables(type);
