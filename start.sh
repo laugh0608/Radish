@@ -90,9 +90,10 @@ print_menu() {
   echo " 11. 启动 Gateway + Docs"
   echo " 12. 启动 Gateway + Console"
   echo " 13. 启动 Gateway + Auth"
-  echo " 14. 启动 Gateway + API + Frontend"
-  echo " 15. 启动 Gateway + API + Frontend + Console"
-  echo " 16. 一键启动全部服务 (Gateway + API + Auth + Frontend + Docs + Console)"
+  echo " 14. 启动 Gateway + Auth + API"
+  echo " 15. 启动 Gateway + API + Frontend"
+  echo " 16. 启动 Gateway + API + Frontend + Console"
+  echo " 17. 一键启动全部服务 (Gateway + API + Auth + Frontend + Docs + Console)"
   echo
   echo "提示: 组合启动会将 Gateway / 前端 / 文档 / Console / Auth 置于后台, API 通常在前台运行以便查看日志。"
   echo
@@ -264,6 +265,18 @@ start_gateway_auth() {
   start_auth_no_build
 }
 
+start_gateway_auth_api() {
+  echo "[组合] 启动 Gateway + Auth + API..."
+  build_all
+  start_gateway_no_build &
+  add_bg_pid $!
+  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
+  start_auth_no_build &
+  add_bg_pid $!
+  echo "  - Auth 已在后台启动 (http://localhost:5200)."
+  start_api_no_build
+}
+
 start_gateway_api_frontend() {
   echo "[组合] 启动 Gateway + API + Frontend..."
   build_all
@@ -363,12 +376,15 @@ case "$choice" in
     start_gateway_auth
     ;;
   14)
-    start_gateway_api_frontend
+    start_gateway_auth_api
     ;;
   15)
-    start_gateway_api_frontend_console
+    start_gateway_api_frontend
     ;;
   16)
+    start_gateway_api_frontend_console
+    ;;
+  17)
     start_all
     ;;
   *)
