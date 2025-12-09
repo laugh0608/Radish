@@ -99,6 +99,7 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
             .Distinct();
 
         // 根据 [Tenant(configId)] 注解过滤实体
+        var configIdStr = config.ConfigId?.ToString() ?? string.Empty;
         var entityTypesForConfig = allEntityTypes.Where(type =>
         {
             var tenantAttr = type.GetCustomAttributes(typeof(TenantAttribute), inherit: true)
@@ -106,13 +107,17 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
                 .FirstOrDefault();
 
             // 如果实体有 [Tenant(configId)] 注解，只在对应的数据库中初始化
-            if (tenantAttr != null && !string.IsNullOrEmpty(tenantAttr.configId))
+            if (tenantAttr != null && tenantAttr.configId != null)
             {
-                return tenantAttr.configId.Equals(config.ConfigId.ToString(), StringComparison.OrdinalIgnoreCase);
+                var tenantConfigId = tenantAttr.configId.ToString() ?? string.Empty;
+                if (!string.IsNullOrEmpty(tenantConfigId))
+                {
+                    return string.Equals(tenantConfigId, configIdStr, StringComparison.OrdinalIgnoreCase);
+                }
             }
 
             // 如果实体没有 [Tenant] 注解，只在主库中初始化（排除 Log 库）
-            return !config.ConfigId.ToString().Equals("Log", StringComparison.OrdinalIgnoreCase);
+            return !string.Equals(configIdStr, "Log", StringComparison.OrdinalIgnoreCase);
         }).ToList();
 
         foreach (var type in entityTypesForConfig)

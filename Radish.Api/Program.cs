@@ -41,7 +41,8 @@ builder.Host
     .ConfigureContainer<ContainerBuilder>(containerBuilder =>
     {
         containerBuilder.RegisterModule(new AutofacModuleRegister());
-        containerBuilder.RegisterModule(new AutofacPropertyModuleReg(typeof(Program).Assembly));
+        // 使用 Assembly.GetExecutingAssembly() 避免与 Radish.Auth 的 Program 类冲突
+        containerBuilder.RegisterModule(new AutofacPropertyModuleReg(System.Reflection.Assembly.GetExecutingAssembly()));
     }).ConfigureAppConfiguration((hostingContext, config) =>
     {
         hostingContext.Configuration.ConfigureApplication(); // 1. 绑定 InternalApp 扩展中的配置
