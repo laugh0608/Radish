@@ -72,9 +72,10 @@ function Show-Menu {
     Write-Host " 11. Start Gateway + Docs"
     Write-Host " 12. Start Gateway + Console"
     Write-Host " 13. Start Gateway + Auth"
-    Write-Host " 14. Start Gateway + API + Frontend"
-    Write-Host " 15. Start Gateway + API + Frontend + Console"
-    Write-Host " 16. Start ALL (Gateway + API + Auth + Frontend + Docs + Console)"
+    Write-Host " 14. Start Gateway + Auth + API"
+    Write-Host " 15. Start Gateway + API + Frontend"
+    Write-Host " 16. Start Gateway + API + Frontend + Console"
+    Write-Host " 17. Start ALL (Gateway + API + Auth + Frontend + Docs + Console)"
     Write-Host
     Write-Host "Hint: combinations run Gateway / frontend / docs / console / auth in separate terminals; this window usually runs API."
     Write-Host
@@ -331,6 +332,14 @@ function Start-GatewayAuth {
     Start-AuthNoBuild
 }
 
+function Start-GatewayAuthApi {
+    Write-Host "[Combo] Gateway + Auth + API..."
+    Build-All
+    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
+    Start-BackgroundShell "Auth running at http://localhost:5200" "dotnet run --no-build --project Radish.Auth/Radish.Auth.csproj --launch-profile http"
+    Start-BackendNoBuild
+}
+
 function Start-GatewayApiFrontend {
     Write-Host "[Combo] Gateway + API + Frontend..."
     Build-All
@@ -380,9 +389,10 @@ switch ($choice) {
     "11" { Start-GatewayDocs }
     "12" { Start-GatewayConsole }
     "13" { Start-GatewayAuth }
-    "14" { Start-GatewayApiFrontend }
-    "15" { Start-GatewayApiFrontendConsole }
-    "16" { Start-All }
+    "14" { Start-GatewayAuthApi }
+    "15" { Start-GatewayApiFrontend }
+    "16" { Start-GatewayApiFrontendConsole }
+    "17" { Start-All }
     default {
         Write-Error ('Unknown choice: ' + $choice)
         exit 1
