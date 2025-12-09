@@ -60,7 +60,7 @@ function Show-Menu {
     Write-Host "  1. Start API           (Radish.Api           @ http://localhost:5100)"
     Write-Host "  2. Start Gateway       (Radish.Gateway       @ https://localhost:5000)"
     Write-Host "  3. Start Frontend      (radish.client        @ http://localhost:3000)"
-    Write-Host "  4. Start Docs          (radish.docs          @  http://localhost:3001/docs/)"
+    Write-Host "  4. Start Docs          (radish.docs          @ http://localhost:3001/docs/)"
     Write-Host "  5. Start Console       (radish.console       @ http://localhost:3002)"
     Write-Host "  6. Start Auth          (Radish.Auth          @ http://localhost:5200)"
     Write-Host "  7. Run DbMigrate       (Radish.DbMigrate     @ init/seed)"
