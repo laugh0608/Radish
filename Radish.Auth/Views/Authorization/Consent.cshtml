@@ -141,6 +141,13 @@
         </div>
 
         <form method="post">
+            @* 通过隐藏字段将 OIDC 必要参数一并提交，避免二次 POST 时缺少 client_id 等参数 *@
+            <input type="hidden" name="client_id" value="@Model.ClientId" />
+            <input type="hidden" name="redirect_uri" value="@Model.RedirectUri" />
+            <input type="hidden" name="response_type" value="@Model.ResponseType" />
+            <input type="hidden" name="scope" value="@Model.Scope" />
+            <input type="hidden" name="state" value="@Model.State" />
+
             <div class="button-group">
                 <button type="submit" name="decision" value="accept">@Localizer["auth.consent.allow"]</button>
                 <button type="submit" name="decision" value="deny">@Localizer["auth.consent.deny"]</button>

@@ -94,7 +94,11 @@ public class AuthorizationController : Controller
                 ClientId = clientId,
                 ClientName = clientName,
                 Scope = string.Join(" ", scopes),
-                Scopes = scopes
+                Scopes = scopes,
+                // 将本次授权请求中必需的 OIDC 参数保存到视图模型，方便在同意页通过 form 再次提交
+                ResponseType = request.ResponseType ?? string.Empty,
+                RedirectUri = request.RedirectUri ?? string.Empty,
+                State = request.State ?? string.Empty
             };
 
             return View("Consent", vm);
