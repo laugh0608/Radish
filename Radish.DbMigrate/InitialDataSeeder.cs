@@ -33,6 +33,10 @@ internal static class InitialDataSeeder
         const long systemRoleId = 10000;
         const long adminRoleId = 10001;
 
+        // UserRole 关联记录的固定 ID
+        const long userRoleId1 = 70000; // test -> System
+        const long userRoleId2 = 70001; // test -> Admin
+
         // test 用户作为 System + Admin 角色
         var exists = await db.Queryable<UserRole>().AnyAsync(ur => ur.UserId == testUserId && ur.RoleId == systemRoleId);
         if (!exists)
@@ -40,6 +44,7 @@ internal static class InitialDataSeeder
             Console.WriteLine($"[Radish.DbMigrate] 绑定用户 Id={testUserId} 到角色 Id={systemRoleId} (System)...");
             await db.Insertable(new UserRole
             {
+                Id = userRoleId1,
                 UserId = testUserId,
                 RoleId = systemRoleId,
                 IsDeleted = false,
@@ -57,6 +62,7 @@ internal static class InitialDataSeeder
             Console.WriteLine($"[Radish.DbMigrate] 绑定用户 Id={testUserId} 到角色 Id={adminRoleId} (Admin)...");
             await db.Insertable(new UserRole
             {
+                Id = userRoleId2,
                 UserId = testUserId,
                 RoleId = adminRoleId,
                 IsDeleted = false,
@@ -201,53 +207,8 @@ internal static class InitialDataSeeder
             Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={adminRoleId} 的 Admin 角色，跳过创建。");
         }
 
-        // 额外内置角色（20000,20001）
-        const long systemRoleId2 = 20000;
-        const long adminRoleId2 = 20001;
-
-        var system2Exists = await db.Queryable<Role>().AnyAsync(r => r.Id == systemRoleId2);
-        if (!system2Exists)
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认角色 Id={systemRoleId2}, RoleName=system...");
-
-            var systemRole2 = new Role("system")
-            {
-                Id = systemRoleId2,
-                RoleDescription = "System role for default tenant",
-                IsDeleted = false,
-                IsEnabled = true,
-                OrderSort = 10,
-                DepartmentIds = string.Empty,
-            };
-
-            await db.Insertable(systemRole2).ExecuteCommandAsync();
-        }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={systemRoleId2} 的 system 角色，跳过创建。");
-        }
-
-        var admin2Exists = await db.Queryable<Role>().AnyAsync(r => r.Id == adminRoleId2);
-        if (!admin2Exists)
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认角色 Id={adminRoleId2}, RoleName=admin...");
-
-            var adminRole2 = new Role("admin")
-            {
-                Id = adminRoleId2,
-                RoleDescription = "Admin role for default tenant",
-                IsDeleted = false,
-                IsEnabled = true,
-                OrderSort = 11,
-                DepartmentIds = string.Empty,
-            };
-
-            await db.Insertable(adminRole2).ExecuteCommandAsync();
-        }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={adminRoleId2} 的 admin 角色，跳过创建。");
-        }
+        // 注意：不再创建 20000/20001 的小写角色，避免与用户 ID 段混淆
+        // 如果需要租户级别的角色，应该使用不同的 ID 段（例如 15000+）
     }
 
     /// <summary>初始化租户相关数据</summary>
