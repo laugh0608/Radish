@@ -46,13 +46,9 @@ public class AccountController : Controller
             return RedirectToAction(nameof(Login), new { returnUrl, username });
         }
 
-        // 与 API 保持一致：使用 32 位 MD5 对密码进行加密后再与数据库比对
-        var passwordHash = Md5Helper.Md5Encrypt32(password);
-
-        // 仅允许启用且未删除的账号登录
+        // 1. 查询用户（使用 Service 层）
         var users = await _userService.QueryAsync(u =>
             u.LoginName == username &&
-            u.LoginPassword == passwordHash &&
             u.IsDeleted == false &&
             u.IsEnable);
 
@@ -63,11 +59,19 @@ public class AccountController : Controller
             return RedirectToAction(nameof(Login), new { returnUrl, username });
         }
 
+        // 2. 使用 Argon2id 验证密码
+        if (!PasswordHasher.VerifyPassword(password, user.VoLoPwd))
+        {
+            TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
+            return RedirectToAction(nameof(Login), new { returnUrl, username });
+        }
+
+        // 3. 密码验证成功，生成会话
         var userId = user.Uuid.ToString();
         var tenantId = user.VoTenId.ToString();
 
-        // 查询用户角色字符串（逗号分隔）
-        var roleNamesStr = await _userService.GetUserRoleNameStrAsync(username, passwordHash);
+        // 查询用户角色字符串（逗号分隔，传递哈希后的密码）
+        var roleNamesStr = await _userService.GetUserRoleNameStrAsync(username, user.VoLoPwd);
         var roleNames = roleNamesStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
         var claims = new List<Claim>

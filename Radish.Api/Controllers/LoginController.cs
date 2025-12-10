@@ -47,18 +47,25 @@ public class LoginController : ControllerBase
     /// 用户登录获取 JWT Token
     /// </summary>
     /// <param name="name">用户名（明文）</param>
-    /// <param name="pass">密码（明文，传输时建议使用 RSA 加密）</param>
+    /// <param name="pass">密码（明文，通过 HTTPS 传输加密）</param>
     /// <returns>包含 JWT Token 信息的响应对象</returns>
     /// <remarks>
     /// <para>登录流程：</para>
     /// <list type="number">
-    /// <item>密码使用 MD5 加密后与数据库比对</item>
+    /// <item>查询用户名对应的用户记录</item>
+    /// <item>使用 Argon2id 验证密码</item>
     /// <item>验证成功后生成包含用户信息和角色的 JWT Token</item>
     /// <item>Token 有效期为 12 小时</item>
     /// </list>
+    /// <para>安全说明：</para>
+    /// <list type="bullet">
+    /// <item>密码通过 HTTPS 传输，由 TLS 层提供加密保护</item>
+    /// <item>密码在数据库中使用 Argon2id 算法存储（抗暴力破解）</item>
+    /// <item>详细的密码安全策略请参阅：radish.docs/docs/PasswordSecurity.md</item>
+    /// </list>
     /// <para>请求示例：</para>
     /// <code>
-    /// GET /api/Login/GetJwtToken?name=admin&amp;pass=123456
+    /// GET /api/Login/GetJwtToken?name=admin&amp;pass=admin123456
     /// </code>
     /// <para>成功响应示例：</para>
     /// <code>
@@ -92,56 +99,78 @@ public class LoginController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel<TokenInfoVo>> GetJwtToken(string name = "", string pass = "")
     {
-        // string jwtStr = string.Empty;
+        Log.Information($"用户登录尝试 -- {name}");
+        _logger.LogInformation($"用户登录尝试 -- {name}");
 
-        // 用 32 位 MD5 加密密码
-        pass = Md5Helper.Md5Encrypt32(pass);
-
-        Log.Information($"自定义日志 -- {name}-{pass}");
-        _logger.LogInformation($"自定义日志 -- {name}-{pass}");
-
+        // 1. 查询用户（不再在数据库层比对密码）
         var user = await _userService.QueryAsync(d =>
-            d.LoginName == name && d.LoginPassword == pass && d.IsDeleted == false);
-        if (user.Count > 0)
+            d.LoginName == name && d.IsDeleted == false);
+
+        if (user.Count == 0)
         {
-            var userRoles = await _userService.GetUserRoleNameStrAsync(name, pass);
-            var firstUser = user.FirstOrDefault();
-            var userId = firstUser?.Uuid ?? 0;
-            var tenantId = firstUser?.VoTenId ?? 0;
-
-            var claims = new List<Claim>
-            {
-                // 统一身份标识：优先使用 OIDC 风格的 sub/name/tenant_id
-                new Claim("sub", userId.ToString()),
-                new Claim("name", name),
-                new Claim("tenant_id", tenantId.ToString()),
-
-                // 兼容旧版：Name/Uuid/TenantId 仍然保留，方便历史代码解析
-                new Claim(ClaimTypes.Name, name),
-                new Claim(JwtRegisteredClaimNames.Jti, userId.ToString()),
-                new Claim("TenantId", tenantId.ToString()),
-
-                new Claim(JwtRegisteredClaimNames.Iat, DateTime.Now.DateToTimeStamp()),
-                new Claim(ClaimTypes.Expiration,
-                    DateTime.Now.AddSeconds(60 * 60 * 12).ToString()) // Token 有效期，单位 s
-            };
-            // 如果是基于用户的授权策略，这里要添加用户，如果是基于角色的授权策略，这里要添加角色
-            claims.AddRange(userRoles.Split(',').Select(s => new Claim(ClaimTypes.Role, s)));
-            
-            var token = JwtTokenGenerate.BuildJwtToken(claims.ToArray(), _requirement);
-
-            var successMessage = _errorsLocalizer["error.auth.login_success"];
-            return MessageModel<TokenInfoVo>.Success(
-                successMessage,
-                token,
-                code: "Auth.LoginSuccess",
-                messageKey: "error.auth.login_success");
+            var failMessage = _errorsLocalizer["error.auth.invalid_credentials"];
+            return MessageModel<TokenInfoVo>.Failed(
+                failMessage,
+                code: "Auth.InvalidCredentials",
+                messageKey: "error.auth.invalid_credentials");
         }
 
-        var failMessage = _errorsLocalizer["error.auth.invalid_credentials"];
-        return MessageModel<TokenInfoVo>.Failed(
-            failMessage,
-            code: "Auth.InvalidCredentials",
-            messageKey: "error.auth.invalid_credentials");
+        var firstUser = user.FirstOrDefault();
+        if (firstUser == null)
+        {
+            var failMessage = _errorsLocalizer["error.auth.invalid_credentials"];
+            return MessageModel<TokenInfoVo>.Failed(
+                failMessage,
+                code: "Auth.InvalidCredentials",
+                messageKey: "error.auth.invalid_credentials");
+        }
+
+        // 2. 使用 Argon2id 验证密码
+        if (!PasswordHasher.VerifyPassword(pass, firstUser.VoLoPwd))
+        {
+            Log.Warning($"用户 {name} 密码验证失败");
+            var failMessage = _errorsLocalizer["error.auth.invalid_credentials"];
+            return MessageModel<TokenInfoVo>.Failed(
+                failMessage,
+                code: "Auth.InvalidCredentials",
+                messageKey: "error.auth.invalid_credentials");
+        }
+
+        // 3. 密码验证成功，生成 Token
+        var userId = firstUser.Uuid;
+        var tenantId = firstUser.VoTenId;
+
+        // 获取用户角色（注意：这里需要传递用户名和哈希后的密码）
+        var userRoles = await _userService.GetUserRoleNameStrAsync(name, firstUser.VoLoPwd);
+
+        var claims = new List<Claim>
+        {
+            // 统一身份标识：优先使用 OIDC 风格的 sub/name/tenant_id
+            new Claim("sub", userId.ToString()),
+            new Claim("name", name),
+            new Claim("tenant_id", tenantId.ToString()),
+
+            // 兼容旧版：Name/Uuid/TenantId 仍然保留，方便历史代码解析
+            new Claim(ClaimTypes.Name, name),
+            new Claim(JwtRegisteredClaimNames.Jti, userId.ToString()),
+            new Claim("TenantId", tenantId.ToString()),
+
+            new Claim(JwtRegisteredClaimNames.Iat, DateTime.Now.DateToTimeStamp()),
+            new Claim(ClaimTypes.Expiration,
+                DateTime.Now.AddSeconds(60 * 60 * 12).ToString()) // Token 有效期，单位 s
+        };
+
+        // 如果是基于用户的授权策略，这里要添加用户，如果是基于角色的授权策略，这里要添加角色
+        claims.AddRange(userRoles.Split(',').Select(s => new Claim(ClaimTypes.Role, s)));
+
+        var token = JwtTokenGenerate.BuildJwtToken(claims.ToArray(), _requirement);
+
+        Log.Information($"用户 {name} 登录成功");
+        var successMessage = _errorsLocalizer["error.auth.login_success"];
+        return MessageModel<TokenInfoVo>.Success(
+            successMessage,
+            token,
+            code: "Auth.LoginSuccess",
+            messageKey: "error.auth.login_success");
     }
 }

@@ -342,8 +342,9 @@ Tests use in-memory services where possible. For integration tests requiring dat
 5. React Compiler: Experimental, not enabled in main branch yet
 
 ### Frontend-Backend Communication
-- All requests over HTTPS
-- Sensitive fields (login, password reset) encrypted with RSA public key on client, decrypted with private key on server
+- All requests over HTTPS (TLS provides transport encryption)
+- **Password Security**: Passwords are transmitted as plaintext over HTTPS and hashed with Argon2id on the server. See [PasswordSecurity.md](radish.docs/docs/PasswordSecurity.md) for details.
+- **No frontend encryption**: Frontend code is fully exposed to users, so client-side encryption (like RSA) provides no real security benefit
 - VITE_API_BASE_URL env var points to backend
 - CORS configured in `appsettings.json` under `Cors.AllowedOrigins`
 
