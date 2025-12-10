@@ -659,6 +659,83 @@ var hasPermission = PermissionItems
 - 启用 HSTS
 - Cookie 设置 `Secure`、`HttpOnly`、`SameSite=Strict`
 
+### 10.4 OIDC 证书管理
+
+- 仓库根目录新增 `Certs/` 文件夹，默认提供一个仅供开发/联调使用的 `dev-auth-cert.pfx`，密码为 `RadishDevCert123!`（已加入 `.gitignore`，只保留示例证书）。
+- `Radish.Auth/appsettings.json` 预置了以下配置，并由 `Program.cs` 自动加载证书（注意路径区分大小写，Linux 环境需保持 `Certs` 首字母大写）：
+
+```json
+"OpenIddict": {
+  "Encryption": {
+    "UseDevelopmentKeys": false,
+    "SigningCertificatePath": "../Certs/dev-auth-cert.pfx",
+    "SigningCertificatePassword": "RadishDevCert123!",
+    "EncryptionCertificatePath": "../Certs/dev-auth-cert.pfx",
+    "EncryptionCertificatePassword": "RadishDevCert123!"
+  }
+}
+```
+
+#### 证书生成示例
+
+1. **生成签名证书（Signing）**：
+   ```bash
+   openssl genrsa -out auth-signing.key 4096
+   openssl req -new -key auth-signing.key -out auth-signing.csr -subj "/CN=radish-auth-signing"
+   openssl x509 -req -in auth-signing.csr -signkey auth-signing.key -days 365 -out auth-signing.crt
+   openssl pkcs12 -export -out auth-signing.pfx -inkey auth-signing.key -in auth-signing.crt -password pass:ChangeMe!
+   ```
+2. **生成加密证书（Encryption，可与签名证书分离）**：
+   ```bash
+   openssl genrsa -out auth-encryption.key 4096
+   openssl req -new -key auth-encryption.key -out auth-encryption.csr -subj "/CN=radish-auth-encryption"
+   openssl x509 -req -in auth-encryption.csr -signkey auth-encryption.key -days 365 -out auth-encryption.crt
+   openssl pkcs12 -export -out auth-encryption.pfx -inkey auth-encryption.key -in auth-encryption.crt -password pass:ChangeMeToo!
+   ```
+3. **安全处理明文文件**：生成 `.pfx` 后，立即销毁 `.key/.csr/.crt` 明文文件或转存到安全密钥库，仅保留 `.pfx` 与随机密码。
+4. **验证内容**：
+   ```bash
+   openssl pkcs12 -info -in auth-signing.pfx -nokeys
+   ```
+   确保 PFX 中包含私钥且未过期。
+
+> 可以使用同一个 `.pfx` 兼作签名与加密，但生产环境推荐拆分，以便后续按不同生命周期轮换。
+
+Auth 启动时会在 `Program.cs` 中调用 `LoadOpenIddictCertificate`，相对路径会基于 `builder.Environment.ContentRootPath` 解析成绝对路径，因此在生产环境只需确保证书被挂载到容器内并设置正确的 `OpenIddict__Encryption__*` 环境变量即可。
+
+#### 部署与覆盖配置
+
+1. **放置证书**：将 `auth-signing.pfx`、`auth-encryption.pfx` 拷贝到宿主机安全目录（例如 `/etc/radish/certs/`），以 `600` 权限挂载到容器（`/app/certs`）。
+2. **覆盖配置**：在 `appsettings.Production.json` 或环境变量中设置：
+   ```
+   OpenIddict__Encryption__UseDevelopmentKeys=false
+   OpenIddict__Encryption__SigningCertificatePath=/app/certs/auth-signing.pfx
+   OpenIddict__Encryption__SigningCertificatePassword=<生产密码>
+   OpenIddict__Encryption__EncryptionCertificatePath=/app/certs/auth-encryption.pfx
+   OpenIddict__Encryption__EncryptionCertificatePassword=<生产密码>
+   ```
+3. **滚动重启 Auth**：逐台/逐 Pod 重启 Auth 服务，发布后访问 `/.well-known/openid-configuration` 与 `/.well-known/jwks`，确认 `kid` 已切换至新证书；旧 Token 应该立即验签失败。
+
+#### 滚动更新与密钥轮换
+
+1. **提前生成下一版证书**，建议以“`auth-signing-2025Q1.pfx`”等命名区分版本。
+2. **上传并挂载新证书**，但暂不更新环境变量，确保文件可被容器访问。
+3. **更新配置指向新证书**：
+   ```bash
+   export AUTH_CERT_PASSWORD=<new-password>
+   docker compose exec auth bash -c 'printenv | grep OpenIddict__Encryption'
+   # 修改部署清单或 Compose/Helm values，指向新的 .pfx 与密码
+   ```
+4. **按批次重启 Auth**（Kubernetes 可 `kubectl rollout restart deploy/radish-auth`；Compose 可 `docker compose up -d auth`）。
+5. **验证 JWKS**：
+   ```bash
+   curl https://radish.com/.well-known/jwks | jq '.keys[].kid'
+   ```
+   确保新 `kid` 已生效，再次调用受保护 API 验证 Token。
+6. **清理旧证书**：确认所有客户端已获取新 Token 后，删除旧 `.pfx` 文件并吊销旧密码，避免被继续使用。
+
+- **注意**：`dev-auth-cert.pfx` 只能用于本地开发，生产环境一定要替换证书与密码，并限制证书文件的访问权限。
+
 ## 11. 调试与排障
 
 ### 11.1 发现文档
