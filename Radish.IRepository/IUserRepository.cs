@@ -5,10 +5,6 @@ namespace Radish.IRepository;
 /// <summary>用户仓储接口</summary>
 public interface IUserRepository
 {
-    /// <summary>测试获取用户方法示例</summary>
-    /// <returns></returns>
-    Task<List<User>> GetUsersAsync();
-
     // /// <summary>
     // /// 获取所有的 角色-API 关系
     // /// </summary>
