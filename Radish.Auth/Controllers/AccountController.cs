@@ -4,26 +4,28 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using Radish.Auth.Resources;
+using Radish.Common.HelpTool;
+using Radish.IService;
+using System.Linq;
 
 namespace Radish.Auth.Controllers;
 
 /// <summary>
 /// 账号控制器：
-/// - 使用内置测试用户完成 Cookie 登录
+/// - 使用业务用户表完成 Cookie 登录
 /// - 为 OIDC 授权端点提供认证会话
 /// - 提供一个基于 Razor View + .resx 文案的登录页面
 /// </summary>
 [Route("[controller]/[action]")]
 public class AccountController : Controller
 {
-    private const string TestUserName = "test";
-    private const string TestPassword = "P@ssw0rd!";
-
     private readonly IStringLocalizer<Errors> _errorsLocalizer;
+    private readonly IUserService _userService;
 
-    public AccountController(IStringLocalizer<Errors> errorsLocalizer)
+    public AccountController(IStringLocalizer<Errors> errorsLocalizer, IUserService userService)
     {
         _errorsLocalizer = errorsLocalizer;
+        _userService = userService;
     }
 
     [HttpGet]
@@ -38,32 +40,54 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login([FromForm] string username, [FromForm] string password, [FromForm] string? returnUrl = null)
     {
-        if (!string.Equals(username, TestUserName, StringComparison.Ordinal) ||
-            !string.Equals(password, TestPassword, StringComparison.Ordinal))
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
-            // 登录失败：使用本地化错误文案，并回到登录页
-            TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"];
+            TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
             return RedirectToAction(nameof(Login), new { returnUrl, username });
         }
 
-        // 模拟一个固定的用户 Id 与租户 Id（与 DbMigrate 种子保持一致）
-        const string userId = "20002";
-        const string tenantId = "30000";
+        // 与 API 保持一致：使用 32 位 MD5 对密码进行加密后再与数据库比对
+        var passwordHash = Md5Helper.Md5Encrypt32(password);
+
+        // 仅允许启用且未删除的账号登录
+        var users = await _userService.QueryAsync(u =>
+            u.LoginName == username &&
+            u.LoginPassword == passwordHash &&
+            u.IsDeleted == false &&
+            u.IsEnable);
+
+        var user = users.FirstOrDefault();
+        if (user is null)
+        {
+            TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
+            return RedirectToAction(nameof(Login), new { returnUrl, username });
+        }
+
+        var userId = user.Uuid.ToString();
+        var tenantId = user.VoTenId.ToString();
+
+        // 查询用户角色字符串（逗号分隔）
+        var roleNamesStr = await _userService.GetUserRoleNameStrAsync(username, passwordHash);
+        var roleNames = roleNamesStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
         var claims = new List<Claim>
         {
             // 标准身份标识
             new(ClaimTypes.NameIdentifier, userId),
             new(ClaimTypes.Name, username),
-            new(ClaimTypes.Role, "System"),
 
-            // 为 OIDC 兼容再写一份 sub/name
+            // OIDC 兼容的 sub/name
             new("sub", userId),
             new("name", username),
 
             // 多租户标识（与 AuthenticationGuide 中的约定一致）
             new("tenant_id", tenantId)
         };
+
+        foreach (var role in roleNames)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
+        }
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
