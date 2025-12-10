@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Radish.Common.HelpTool;
 using Radish.Common.TenantTool;
 using Radish.Model;
 using Radish.Shared.CustomEnum;
@@ -378,7 +379,7 @@ internal static class InitialDataSeeder
         {
             Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={systemUserId}, LoginName=system...");
 
-            var systemUserOptions = new UserInitializationOptions("system", "system123456")
+            var systemUserOptions = new UserInitializationOptions("system", Md5Helper.Md5Encrypt32("system123456"))
             {
                 UserName = "system",
                 UserRealName = "System User",
@@ -411,7 +412,7 @@ internal static class InitialDataSeeder
         {
             Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={adminUserId}, LoginName=admin...");
 
-            var adminUserOptions = new UserInitializationOptions("admin", "admin123456")
+            var adminUserOptions = new UserInitializationOptions("admin", Md5Helper.Md5Encrypt32("admin123456"))
             {
                 UserName = "admin",
                 UserRealName = "Admin User",
@@ -444,7 +445,7 @@ internal static class InitialDataSeeder
         {
             Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={testUserId}, LoginName=test...");
 
-            var testUserOptions = new UserInitializationOptions("test", "test123456")
+            var testUserOptions = new UserInitializationOptions("test", Md5Helper.Md5Encrypt32("test123456"))
             {
                 UserName = "test",
                 UserRealName = "Test User",
