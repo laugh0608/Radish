@@ -18,6 +18,9 @@
   <data name="error.auth.login_success" xml:space="preserve">
     <value>登录成功。</value>
   </data>
+  <data name="error.auth.legacy_login_deprecated" xml:space="preserve">
+    <value>旧版登录接口已废弃，请使用 OIDC 登录流程。</value>
+  </data>
   <data name="error.common.internal_error" xml:space="preserve">
     <value>服务器内部错误，请稍后重试。</value>
   </data>
