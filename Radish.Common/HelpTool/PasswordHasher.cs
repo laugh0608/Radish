@@ -42,6 +42,13 @@ public static class PasswordHasher
             throw new ArgumentException("密码不能为空或仅包含空白字符", nameof(password));
         }
 
+        // 生成 16 字节（128 位）的随机盐值
+        var salt = new byte[16];
+        using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+        {
+            rng.GetBytes(salt);
+        }
+
         var config = new Argon2Config
         {
             Type = Argon2Type.HybridAddressing,  // Argon2id（混合模式，兼顾安全性和性能）
@@ -51,6 +58,7 @@ public static class PasswordHasher
             Lanes = 1,                           // 并行度（1 线程，避免并发问题）
             Threads = 1,                         // 线程数
             Password = System.Text.Encoding.UTF8.GetBytes(password),
+            Salt = salt,                         // 随机盐值（必须设置）
             HashLength = 32                      // 哈希输出长度（256 位）
         };
 
