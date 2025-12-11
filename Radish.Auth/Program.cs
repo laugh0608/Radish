@@ -18,6 +18,7 @@ using SqlSugar;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
+using System.Security.Cryptography.X509Certificates;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
@@ -120,7 +121,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
                                ForwardedHeaders.XForwardedProto |
                                ForwardedHeaders.XForwardedHost;
     // 信任所有代理（仅开发环境）
-    options.KnownNetworks.Clear();
+    options.KnownIPNetworks.Clear();
     options.KnownProxies.Clear();
 });
 
@@ -162,6 +163,42 @@ builder.Services.AddDbContext<AuthOpenIddictDbContext>(options =>
     options.UseSqlite(openIddictConnectionString);
 });
 
+var openIddictCertificateSection = builder.Configuration.GetSection("OpenIddict:Encryption");
+
+string ResolveCertificatePath(string? relativePath)
+{
+    if (string.IsNullOrWhiteSpace(relativePath))
+    {
+        return string.Empty;
+    }
+
+    if (Path.IsPathRooted(relativePath))
+    {
+        return relativePath;
+    }
+
+    return Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, relativePath));
+}
+
+X509Certificate2 LoadOpenIddictCertificate(string certificateType)
+{
+    var certificatePath =
+        ResolveCertificatePath(openIddictCertificateSection.GetValue<string>($"{certificateType}CertificatePath"));
+    var certificatePassword = openIddictCertificateSection.GetValue<string>($"{certificateType}CertificatePassword");
+
+    if (string.IsNullOrWhiteSpace(certificatePath) || string.IsNullOrWhiteSpace(certificatePassword))
+    {
+        throw new InvalidOperationException($"OpenIddict {certificateType} 证书配置缺失，请检查 appsettings.");
+    }
+
+    if (!File.Exists(certificatePath))
+    {
+        throw new FileNotFoundException($"未找到 {certificateType} 证书文件：{certificatePath}", certificatePath);
+    }
+
+    return X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);
+}
+
 // OpenIddict 配置
 builder.Services.AddOpenIddict()
     // 注册 OpenIddict Core 服务（使用 EF Core 存储）
@@ -195,10 +232,18 @@ builder.Services.AddOpenIddict()
         // 注册允许的 Scopes
         options.RegisterScopes("openid", "profile", "offline_access", "radish-api");
 
-        // 配置加密和签名密钥
-        // 开发环境：使用临时加密 + 签名证书
-        options.AddDevelopmentEncryptionCertificate()
-               .AddDevelopmentSigningCertificate();
+        // 配置加密和签名证书（默认使用 certs/dev-auth-cert.pfx）
+        var useDevelopmentKeys = openIddictCertificateSection.GetValue<bool?>("UseDevelopmentKeys") ?? false;
+        if (useDevelopmentKeys)
+        {
+            options.AddDevelopmentEncryptionCertificate()
+                   .AddDevelopmentSigningCertificate();
+        }
+        else
+        {
+            options.AddSigningCertificate(LoadOpenIddictCertificate("Signing"))
+                   .AddEncryptionCertificate(LoadOpenIddictCertificate("Encryption"));
+        }
 
         // 重要：禁用 access_token 加密，只生成签名 JWT，方便 Api 直接用 JwtBearer 验签
         options.DisableAccessTokenEncryption();

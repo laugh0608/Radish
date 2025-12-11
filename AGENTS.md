@@ -12,7 +12,7 @@
 
 ## 环境要求与启动方式
 - 基础环境：.NET SDK 10（`global.json` 已锁定 10.0.0），Node.js 24+，PostgreSQL 16+（或使用仓库附带的 SQLite）。
-- 一键脚本：`pwsh ./start.ps1` 或 `./start.sh`，提供启动 API/Gateway/Frontend/Docs/Console 以及常见组合和 `Radish.Api.Tests` 的交互式菜单，可通过 `Configuration` 参数或环境变量注入构建配置。
+- 一键脚本：`pwsh ./start.ps1`（单服务 1-8；组合仅 Gateway+Auth+API、ALL）或 `./start.sh`（单服务 1-8；组合 9-15 覆盖 Gateway+API/Frontend/Docs/Console/Auth 及 ALL），均提供 `Radish.Api.Tests` 入口，支持 `Configuration`/`CONFIGURATION` 注入构建配置。
 - 常用命令：
   - 后端：`dotnet restore && dotnet build Radish.slnx -c Debug`、`dotnet run --project Radish.Api/Radish.Api.csproj`、`dotnet watch --project Radish.Api`、`dotnet run --project Radish.Gateway/Radish.Gateway.csproj`、`dotnet test Radish.Api.Tests`。
   - 前端：`npm install --prefix radish.client`、`npm run dev --prefix radish.client`、`npm run build --prefix radish.client`、`npm run lint --prefix radish.client`。

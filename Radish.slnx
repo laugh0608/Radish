@@ -7,11 +7,13 @@
     <File Path="README.md" />
     <File Path="AGENTS.md" />
     <File Path="Radish.sln.DotSettings.user" />
-    <File Path="Radish.slnLaunch.user" />
     <File Path="Radish.slnx" />
     <File Path="CLAUDE.md" />
     <File Path="start.ps1" />
     <File Path="start.sh" />
+    <File Path="Directory.Build.props" />
+    <File Path="package.json" />
+    <File Path="Radish.slnLaunch" />
   </Folder>
   <Folder Name="/test/">
     <Project Path="Radish.Api.Tests\Radish.Api.Tests.csproj" />

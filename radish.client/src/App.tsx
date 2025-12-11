@@ -93,7 +93,7 @@ function App() {
         </table>;
 
     return (
-        <div>
+        <main className="app-shell">
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
                 <button type="button" onClick={() => i18n.changeLanguage('zh')}>
                     {t('lang.zh')}
@@ -139,7 +139,7 @@ function App() {
             </section>
 
             {contents}
-        </div>
+        </main>
     );
 
     async function populateWeatherData() {
@@ -253,6 +253,7 @@ function handleLogout(apiBaseUrl: string) {
     // 调用 Auth 的 Logout，并在完成后回到首页
     void fetch(logoutUrl.toString(), {
         method: 'POST',
+        credentials: 'include',
         headers: {
             Accept: 'application/json',
             'Accept-Language': currentLanguage

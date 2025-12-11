@@ -25,8 +25,8 @@ Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NE
 
 ```bash
 # 方式 1：使用一键脚本（推荐）
-pwsh ./start.ps1    # Windows/PowerShell
-./start.sh          # Linux/macOS
+pwsh ./start.ps1    # Windows/PowerShell（单服务 1-8；组合：Gateway+Auth+API，或一键启动全部）
+./start.sh          # Linux/macOS（单服务 1-8；组合 9-15 覆盖 Gateway+API/Frontend/Docs/Console/Auth 及 ALL）
 
 # 方式 2：手动启动后端
 dotnet restore
@@ -39,7 +39,7 @@ npm run dev --prefix radish.client
 
 启动后常见入口：
 - **Gateway 门户**：https://localhost:5000  （统一入口，下挂各子系统；http://localhost:5001 会自动重定向到此地址）
-- **前端桌面（webOS）**：https://localhost:5000/        （YARP 代理到前端 dev http://localhost:3000）
+- **前端桌面（WebOS 默认）**：https://localhost:5000/        （YARP 代理到前端 dev http://localhost:3000，支持 `/?showcase` 组件库与 `/?demo` 旧 OIDC Demo）
 - **在线文档**：https://localhost:5000/docs             （VitePress 文档站，来自 radish.docs）
 - **API 文档（Scalar）**：https://localhost:5000/scalar  （Gateway 转发到 Radish.Api 的 `/scalar`，`/api/docs` 作为旧路径已重定向到 `/scalar`）
 - **控制台（radish.console）**：https://localhost:5000/console

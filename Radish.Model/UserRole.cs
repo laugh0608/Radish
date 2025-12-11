@@ -1,12 +1,13 @@
-using System.ComponentModel.DataAnnotations;
+using Radish.Model.Root;
 using SqlSugar;
+using System.ComponentModel.DataAnnotations;
 
 namespace Radish.Model;
 
 /// <summary>
 /// 用户跟角色关联表
 /// </summary>
-public class UserRole
+public class UserRole : RootEntityTKey<long>
 {
     /// <summary>
     /// 用户 Id

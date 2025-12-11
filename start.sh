@@ -7,6 +7,7 @@ API_PROJECT="$ROOT_DIR/Radish.Api/Radish.Api.csproj"
 AUTH_PROJECT="$ROOT_DIR/Radish.Auth/Radish.Auth.csproj"
 CLIENT_DIR="$ROOT_DIR/radish.client"
 CONSOLE_DIR="$ROOT_DIR/radish.console"
+DBMIGRATE_PROJECT="$ROOT_DIR/Radish.DbMigrate/Radish.DbMigrate.csproj"
 TEST_PROJECT="$ROOT_DIR/Radish.Api.Tests/Radish.Api.Tests.csproj"
 
 if [[ ! -f "$API_PROJECT" ]]; then
@@ -39,6 +40,9 @@ add_bg_pid() {
 }
 
 cleanup() {
+  if declare -f leave_menu_mode >/dev/null 2>&1; then
+    leave_menu_mode
+  fi
   if ((${#BG_PIDS[@]} == 0)); then
     return
   fi
@@ -71,23 +75,25 @@ print_menu() {
   echo
   echo "Radish 开发启动菜单 ($CONFIGURATION)"
   echo "------------------------------------"
+  echo "  0. 退出"
+  echo
   echo "[单服务]"
-  echo "  1. 启动 API           (Radish.Api           @ http://localhost:5100)"
-  echo "  2. 启动 Gateway       (Radish.Gateway       @ https://localhost:5000)"
-  echo "  3. 启动 Frontend      (radish.client        @ http://localhost:3000)"
-  echo "  4. 启动 Docs          (radish.docs          @  http://localhost:3001/docs/)"
-  echo "  5. 启动 Console       (radish.console       @ http://localhost:3002)"
+  echo "  1. 启动 API           (Radish.Api           @ https://localhost:7110)"
+  echo "  2. 启动 Gateway       (Radish.Gateway       @ https://localhost:5001)"
+  echo "  3. 启动 Frontend      (radish.client        @ https://localhost:3000)"
+  echo "  4. 启动 Docs          (radish.docs          @ http://localhost:3001/docs/)"
+  echo "  5. 启动 Console       (radish.console       @ https://localhost:3002)"
   echo "  6. 启动 Auth          (Radish.Auth          @ http://localhost:5200)"
-  echo "  7. 运行单元测试       (Radish.Api.Tests)"
+  echo "  7. 运行 DbMigrate     (Radish.DbMigrate     @ init/seed)"
+  echo "  8. 运行单元测试       (Radish.Api.Tests)"
   echo
   echo "[组合启动]"
-  echo "  8. 启动 Gateway + API"
-  echo "  9. 启动 Gateway + Frontend"
-  echo " 10. 启动 Gateway + Docs"
-  echo " 11. 启动 Gateway + Console"
-  echo " 12. 启动 Gateway + Auth"
-  echo " 13. 启动 Gateway + API + Frontend"
-  echo " 14. 启动 Gateway + API + Frontend + Console"
+  echo "  9. 启动 Gateway + API"
+  echo " 10. 启动 Gateway + Frontend"
+  echo " 11. 启动 Gateway + Docs"
+  echo " 12. 启动 Gateway + Console"
+  echo " 13. 启动 Gateway + Auth"
+  echo " 14. 启动 Gateway + Auth + API"
   echo " 15. 一键启动全部服务 (Gateway + API + Auth + Frontend + Docs + Console)"
   echo
   echo "提示: 组合启动会将 Gateway / 前端 / 文档 / Console / Auth 置于后台, API 通常在前台运行以便查看日志。"
@@ -178,6 +184,34 @@ start_auth_no_build() {
   )
 }
 
+start_dbmigrate() {
+  (
+    cd "$ROOT_DIR"
+    echo ""
+    echo "DbMigrate 命令说明："
+    echo "  init - 仅初始化数据库表结构（Code First）"
+    echo "  seed - 填充初始数据（如表不存在会自动执行 init）"
+    echo ""
+    read -rp "请选择 DbMigrate 子命令 [init/seed] (默认 seed, 输入 q 取消): " migrate_cmd
+    if [[ -z "${migrate_cmd:-}" ]]; then
+      migrate_cmd="seed"
+    fi
+    if [[ "$migrate_cmd" == "q" ]]; then
+      echo "已取消执行 DbMigrate。"
+      return
+    fi
+    case "$migrate_cmd" in
+      init | seed)
+        invoke_step "dotnet run DbMigrate ($migrate_cmd, $CONFIGURATION)" dotnet run --project "$DBMIGRATE_PROJECT" -c "$CONFIGURATION" -- "$migrate_cmd"
+        ;;
+      *)
+        echo "未知 DbMigrate 子命令: $migrate_cmd" >&2
+        exit 1
+        ;;
+    esac
+  )
+}
+
 run_tests() {
   (
     cd "$ROOT_DIR"
@@ -232,30 +266,15 @@ start_gateway_auth() {
   start_auth_no_build
 }
 
-start_gateway_api_frontend() {
-  echo "[组合] 启动 Gateway + API + Frontend..."
+start_gateway_auth_api() {
+  echo "[组合] 启动 Gateway + Auth + API..."
   build_all
   start_gateway_no_build &
   add_bg_pid $!
   echo "  - Gateway 已在后台启动 (https://localhost:5000)."
-  start_frontend &
+  start_auth_no_build &
   add_bg_pid $!
-  echo "  - Frontend 已在后台启动 (https://localhost:3000)."
-  start_api_no_build
-}
-
-start_gateway_api_frontend_console() {
-  echo "[组合] 启动 Gateway + API + Frontend + Console..."
-  build_all
-  start_gateway_no_build &
-  add_bg_pid $!
-  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
-  start_frontend &
-  add_bg_pid $!
-  echo "  - Frontend 已在后台启动 (https://localhost:3000)."
-  start_console &
-  add_bg_pid $!
-  echo "  - Console 已在后台启动 (https://localhost:3002)."
+  echo "  - Auth 已在后台启动 (http://localhost:5200)."
   start_api_no_build
 }
 
@@ -287,6 +306,10 @@ print_menu
 read -rp "请输入选项编号: " choice
 
 case "$choice" in
+  0)
+    echo "已退出。"
+    exit 0
+    ;;
   1)
     start_api
     ;;
@@ -306,28 +329,28 @@ case "$choice" in
     start_auth
     ;;
   7)
-    run_tests
+    start_dbmigrate
     ;;
   8)
-    start_gateway_api
+    run_tests
     ;;
   9)
-    start_gateway_frontend
+    start_gateway_api
     ;;
   10)
-    start_gateway_docs
+    start_gateway_frontend
     ;;
   11)
-    start_gateway_console
+    start_gateway_docs
     ;;
   12)
-    start_gateway_auth
+    start_gateway_console
     ;;
   13)
-    start_gateway_api_frontend
+    start_gateway_auth
     ;;
   14)
-    start_gateway_api_frontend_console
+    start_gateway_auth_api
     ;;
   15)
     start_all

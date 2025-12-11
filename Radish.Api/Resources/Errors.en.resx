@@ -18,6 +18,9 @@
   <data name="error.auth.login_success" xml:space="preserve">
     <value>Login succeeded.</value>
   </data>
+  <data name="error.auth.legacy_login_deprecated" xml:space="preserve">
+    <value>The legacy login endpoint is deprecated. Please use the OIDC login flow.</value>
+  </data>
   <data name="error.common.internal_error" xml:space="preserve">
     <value>Internal server error. Please try again later.</value>
   </data>

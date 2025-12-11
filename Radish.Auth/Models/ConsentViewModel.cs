@@ -24,4 +24,19 @@ public class ConsentViewModel
     /// 解析后的 scope 列表。
     /// </summary>
     public IReadOnlyList<string> Scopes { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// 授权响应类型（response_type），例如：code。
+    /// </summary>
+    public string ResponseType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 授权完成后的回调地址（redirect_uri）。
+    /// </summary>
+    public string RedirectUri { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 授权请求状态（state），用于防 CSRF。
+    /// </summary>
+    public string State { get; set; } = string.Empty;
 }
