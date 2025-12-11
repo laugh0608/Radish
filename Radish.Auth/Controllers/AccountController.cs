@@ -3,10 +3,14 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using OpenIddict.Abstractions;
 using Radish.Auth.Resources;
+using Radish.Auth.ViewModels.Account;
 using Radish.Common.HelpTool;
 using Radish.IService;
+using Radish.Model.OpenIddict;
 using System.Linq;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace Radish.Auth.Controllers;
 
@@ -21,19 +25,27 @@ public class AccountController : Controller
 {
     private readonly IStringLocalizer<Errors> _errorsLocalizer;
     private readonly IUserService _userService;
+    private readonly IOpenIddictApplicationManager _applicationManager;
 
-    public AccountController(IStringLocalizer<Errors> errorsLocalizer, IUserService userService)
+    public AccountController(IStringLocalizer<Errors> errorsLocalizer, IUserService userService, IOpenIddictApplicationManager applicationManager)
     {
         _errorsLocalizer = errorsLocalizer;
         _userService = userService;
+        _applicationManager = applicationManager;
     }
 
     [HttpGet]
-    public IActionResult Login(string? returnUrl = null, string? username = null)
+    public async Task<IActionResult> Login(string? returnUrl = null, string? username = null)
     {
-        ViewData[nameof(returnUrl)] = returnUrl;
-        ViewData[nameof(username)] = username;
-        return View();
+        var model = new LoginViewModel
+        {
+            ReturnUrl = returnUrl,
+            PrefillUserName = username,
+            ErrorMessage = TempData["LoginError"] as string,
+            Client = await ResolveClientAsync(returnUrl)
+        };
+
+        return View(model);
     }
 
     [HttpPost]
@@ -116,5 +128,66 @@ public class AccountController : Controller
         var message = _errorsLocalizer["auth.logout.success"];
 
         return Ok(message);
+    }
+
+    private async Task<ClientSummaryViewModel> ResolveClientAsync(string? returnUrl)
+    {
+        var clientId = TryGetClientIdFromReturnUrl(returnUrl);
+
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            var fallback = HttpContext.Request.Query["client_id"].FirstOrDefault();
+            clientId = string.IsNullOrWhiteSpace(fallback) ? null : fallback;
+        }
+
+        if (string.IsNullOrWhiteSpace(clientId))
+        {
+            return ClientSummaryViewModel.Empty;
+        }
+
+        try
+        {
+            var application = await _applicationManager.FindByClientIdAsync(clientId, HttpContext.RequestAborted) as RadishApplication;
+            return application is null ? ClientSummaryViewModel.Empty : ClientSummaryViewModel.FromApplication(application);
+        }
+        catch
+        {
+            return ClientSummaryViewModel.Empty;
+        }
+    }
+
+    private static string? TryGetClientIdFromReturnUrl(string? returnUrl)
+    {
+        if (string.IsNullOrWhiteSpace(returnUrl))
+        {
+            return null;
+        }
+
+        try
+        {
+            var decodedUrl = Uri.UnescapeDataString(returnUrl);
+
+            if (!Uri.TryCreate(decodedUrl, UriKind.Absolute, out var uri))
+            {
+                if (!Uri.TryCreate(decodedUrl, UriKind.Relative, out var relative))
+                {
+                    return null;
+                }
+
+                uri = new Uri(new Uri("https://placeholder"), relative);
+            }
+
+            var query = QueryHelpers.ParseQuery(uri.Query);
+            if (!query.TryGetValue("client_id", out var clientIdValues))
+            {
+                return null;
+            }
+
+            return clientIdValues.FirstOrDefault();
+        }
+        catch
+        {
+            return null;
+        }
     }
 }
