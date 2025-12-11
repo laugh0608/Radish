@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using System.Text.Json;
 using Radish.Model.OpenIddict;
 
 namespace Radish.Auth.ViewModels.Account;
@@ -30,5 +32,38 @@ public sealed class ClientSummaryViewModel
             Logo = application.Logo,
             DeveloperName = application.DeveloperName
         };
+    }
+
+    public static ClientSummaryViewModel FromStoreData(string? clientId, string? displayName, ImmutableDictionary<string, JsonElement> properties)
+    {
+        var logo = TryGetStringProperty(properties, "logo");
+        var description = TryGetStringProperty(properties, "description");
+        var developerName = TryGetStringProperty(properties, "developerName");
+
+        return new ClientSummaryViewModel
+        {
+            ClientId = clientId ?? string.Empty,
+            DisplayName = string.IsNullOrWhiteSpace(displayName)
+                ? (clientId ?? string.Empty)
+                : displayName,
+            Description = description,
+            Logo = logo,
+            DeveloperName = developerName
+        };
+    }
+
+    private static string? TryGetStringProperty(ImmutableDictionary<string, JsonElement> properties, string key)
+    {
+        if (!properties.TryGetValue(key, out var value))
+        {
+            return null;
+        }
+
+        if (value.ValueKind == JsonValueKind.String)
+        {
+            return value.GetString();
+        }
+
+        return value.ToString();
     }
 }
