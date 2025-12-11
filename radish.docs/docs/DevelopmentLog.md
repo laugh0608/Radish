@@ -4,6 +4,34 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.11
+
+- **fix(auth/client-info)**: 修复登录页面无法显示客户端信息的问题
+  - **问题现象**：访问登录页时始终显示"未知的客户端"，即使 URL 中包含正确的 `client_id` 参数
+  - **根本原因**：
+    - `TryGetClientIdFromReturnUrl` 方法中错误使用 `Uri.UnescapeDataString` 对整个 URL 解码
+    - 解码后 `redirect_uri` 参数中的 `https://localhost:5000` 被提取出来，导致 `Uri` 类解析器无法识别查询字符串
+    - 示例：`/connect/authorize?client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000` 解码后变成 `/connect/authorize?client_id=radish-client&redirect_uri=https://localhost:5000`，`Uri.Query` 返回空字符串
+  - **解决方案**：
+    - 移除 `Uri.UnescapeDataString` 调用，改用 `IndexOf('?')` 和 `Substring` 直接提取查询字符串
+    - 使用 `QueryHelpers.ParseQuery` 解析（会自动处理 URL 编码的参数值）
+    - 添加 `ClientSummaryViewModel.FromStoreData` 方法，支持从 OpenIddict 默认实体的 Properties 字典中提取扩展属性
+  - **客户端扩展属性完善**（`OpenIddictSeedHostedService.cs`）：
+    - 为所有客户端添加 `description` 和 `developerName` 属性（存储在 OpenIddict Properties 字典中）
+    - `radish-client`：描述为"Radish 社区平台前端应用"
+    - `radish-scalar`：描述为"Radish API 文档和调试工具"
+    - `radish-rust-ext`：描述为"Radish 后台服务和 Rust 原生扩展"
+    - 更新逻辑确保现有客户端也能自动补充扩展属性
+  - **日志优化**：将调试日志从 `Console.WriteLine` 改为 `Serilog`，使用 `Log.Debug` 记录解析过程，`Log.Warning` 记录客户端不存在等异常情况
+  - **技术说明**：
+    - OpenIddict 默认使用 EF Core 实体存储，扩展信息需存储在 `Properties: ImmutableDictionary<string, JsonElement>` 中
+    - URL 解析时不应对整个 URL 解码，避免嵌套 URL 参数（如 `redirect_uri`）干扰查询字符串识别
+  - **文件变更**：
+    - `Radish.Auth/ViewModels/Account/LoginViewModel.cs`: 添加 `FromStoreData` 和 `GetPropertyFromDictionary` 方法
+    - `Radish.Auth/Controllers/AccountController.cs`: 修复 URL 解析逻辑并添加 Serilog 日志
+    - `Radish.Auth/OpenIddict/OpenIddictSeedHostedService.cs`: 为客户端添加扩展属性
+    - `Radish.Auth/Radish.Auth.csproj`: 添加 `OpenIddict.Abstractions` NuGet 包引用
+
 ### 2025.12.09
 
 - **chore(auth/openiddict)**: 移除尚未接入的自定义 SqlSugar Store，并确认继续采用 EF Core 存储
