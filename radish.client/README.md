@@ -1,73 +1,73 @@
-# React + TypeScript + Vite
+# Radish Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Radish 社区平台的前端应用，基于 WebOS 架构设计，提供类似桌面操作系统的用户体验。
 
-Currently, two official plugins are available:
+## 🚀 快速开始
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+# 安装依赖
+npm install
 
-## React Compiler
+# 启动开发服务器
+npm run dev
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# 构建生产版本
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 📱 访问地址
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- **WebOS Desktop**: `http://localhost:3000/` - 默认桌面系统
+- **组件展示**: `http://localhost:3000/?showcase` - UI 组件库预览
+- **OIDC Demo**: `http://localhost:3000/?demo` - 认证流程演示
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## 📚 文档
+
+完整文档请访问：[radish.docs/docs](../radish.docs/docs/)
+
+- [WebOS 快速开始指南](../radish.docs/docs/WebOSQuickStart.md) - 详细的使用指南
+- [组件库文档](../radish.docs/docs/ComponentLibrary.md) - UI 组件使用文档
+- [前端设计文档](../radish.docs/docs/FrontendDesign.md) - WebOS 架构设计
+- [开发规范](../CLAUDE.md) - 项目开发规范
+
+## 🎨 技术栈
+
+- **框架**: React 19 + TypeScript
+- **构建工具**: Vite (Rolldown)
+- **状态管理**: Zustand
+- **UI 组件**: 自研组件库 (CSS Modules)
+- **图标系统**: @iconify/react
+- **窗口系统**: react-rnd
+- **国际化**: react-i18next
+
+## 📦 项目结构
+
 ```
+src/
+├── desktop/              # 桌面系统核心
+├── apps/                # 子应用
+├── widgets/             # 桌面小部件
+├── stores/              # 状态管理
+├── shared/ui/           # 通用 UI 组件
+└── api/                 # API 客户端
+```
+
+## 🔧 开发命令
+
+```bash
+npm run dev              # 启动开发服务器
+npm run build            # 构建生产版本
+npm run preview          # 预览生产构建
+npm run lint             # 代码检查
+```
+
+## 📝 相关项目
+
+- [radish.docs](../radish.docs/) - 项目文档
+- [Radish.Api](../Radish.Api/) - 后端 API 服务
+- [Radish.Auth](../Radish.Auth/) - OIDC 认证服务
+- [Radish.Gateway](../Radish.Gateway/) - API 网关
+
+---
+
+更多信息请查看 [完整文档](../radish.docs/docs/)
