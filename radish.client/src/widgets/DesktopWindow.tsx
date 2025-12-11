@@ -15,7 +15,7 @@ export interface DesktopWindowProps {
  * 支持拖拽和调整大小
  */
 export const DesktopWindow = ({ window }: DesktopWindowProps) => {
-  const { closeWindow, minimizeWindow, focusWindow, updateWindowPosition, updateWindowSize } = useWindowStore();
+  const { closeWindow, minimizeWindow, focusWindow, updateWindowPosition, updateWindowSize, maximizeWindow, unmaximizeWindow } = useWindowStore();
   const app = getAppById(window.appId);
 
   if (!app) {
@@ -34,12 +34,16 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
         width: defaultWidth,
         height: defaultHeight
       }}
+      size={window.size}
+      position={window.position}
       minWidth={400}
       minHeight={300}
       bounds="parent"
       dragHandleClassName="window-drag-handle"
       style={{ zIndex: window.zIndex }}
       onMouseDown={() => focusWindow(window.id)}
+      disableDragging={window.isMaximized}
+      enableResizing={!window.isMaximized}
       onDragStop={(_e, d) => {
         updateWindowPosition(window.id, { x: d.x, y: d.y });
       }}
@@ -60,6 +64,28 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
               className={`${styles.controlBtn} ${styles.minimizeBtn}`}
               onClick={() => minimizeWindow(window.id)}
               title="最小化"
+            />
+            <button
+              className={`${styles.controlBtn} ${styles.maximizeBtn}`}
+              onClick={() => {
+                const parentWidth = window.innerWidth || 0;
+                const parentHeight = window.innerHeight || 0;
+                const dockHeight = 80; // Dock 高度（Dock.module.css 中为 80px）
+                const padding = 16; // 与边缘留一点距离，避免贴边
+
+                if (window.isMaximized) {
+                  unmaximizeWindow(window.id);
+                  return;
+                }
+
+                maximizeWindow(window.id, {
+                  width: parentWidth - padding * 2,
+                  height: parentHeight - dockHeight - padding * 2,
+                  x: padding,
+                  y: padding
+                });
+              }}
+              title={window.isMaximized ? '还原' : '最大化'}
             />
             <button
               className={`${styles.controlBtn} ${styles.closeBtn}`}

@@ -30,20 +30,23 @@
 
 .controls {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  align-items: center;
 }
 
 .controlBtn {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06) inset;
 }
 
 .controlBtn:hover {
-  transform: scale(1.1);
+  transform: scale(1.08);
+  filter: brightness(0.95);
 }
 
 .minimizeBtn {
@@ -52,6 +55,14 @@
 
 .minimizeBtn:hover {
   background: #f5b525;
+}
+
+.maximizeBtn {
+  background: #2ecc71;
+}
+
+.maximizeBtn:hover {
+  background: #27c46b;
 }
 
 .closeBtn {
