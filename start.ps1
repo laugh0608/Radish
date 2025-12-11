@@ -73,9 +73,7 @@ function Show-Menu {
     Write-Host " 12. Start Gateway + Console"
     Write-Host " 13. Start Gateway + Auth"
     Write-Host " 14. Start Gateway + Auth + API"
-    Write-Host " 15. Start Gateway + API + Frontend"
-    Write-Host " 16. Start Gateway + API + Frontend + Console"
-    Write-Host " 17. Start ALL (Gateway + API + Auth + Frontend + Docs + Console)"
+    Write-Host " 15. Start ALL (Gateway + API + Auth + Frontend + Docs + Console)"
     Write-Host
     Write-Host "Hint: combinations run Gateway / frontend / docs / console / auth in separate terminals; this window usually runs API."
     Write-Host
@@ -340,23 +338,6 @@ function Start-GatewayAuthApi {
     Start-BackendNoBuild
 }
 
-function Start-GatewayApiFrontend {
-    Write-Host "[Combo] Gateway + API + Frontend..."
-    Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
-    Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
-    Start-BackendNoBuild
-}
-
-function Start-GatewayApiFrontendConsole {
-    Write-Host "[Combo] Gateway + API + Frontend + Console..."
-    Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
-    Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
-    Start-BackgroundShell "Console running at http://localhost:3002" "npm run dev --prefix radish.console"
-    Start-BackendNoBuild
-}
-
 function Start-All {
     Write-Host "[Combo] ALL: Gateway + API + Auth + Frontend + Docs + Console..."
     Build-All
@@ -390,9 +371,7 @@ switch ($choice) {
     "12" { Start-GatewayConsole }
     "13" { Start-GatewayAuth }
     "14" { Start-GatewayAuthApi }
-    "15" { Start-GatewayApiFrontend }
-    "16" { Start-GatewayApiFrontendConsole }
-    "17" { Start-All }
+    "15" { Start-All }
     default {
         Write-Error ('Unknown choice: ' + $choice)
         exit 1
