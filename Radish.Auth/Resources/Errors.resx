@@ -57,6 +57,12 @@
   <data name="auth.login.passwordLabel" xml:space="preserve">
     <value>密码</value>
   </data>
+  <data name="auth.login.password.show" xml:space="preserve">
+    <value>显示密码</value>
+  </data>
+  <data name="auth.login.password.hide" xml:space="preserve">
+    <value>隐藏密码</value>
+  </data>
   <data name="auth.login.submit" xml:space="preserve">
     <value>登录</value>
   </data>

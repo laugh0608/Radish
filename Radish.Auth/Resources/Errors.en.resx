@@ -36,6 +36,12 @@
   <data name="auth.login.passwordLabel" xml:space="preserve">
     <value>Password</value>
   </data>
+  <data name="auth.login.password.show" xml:space="preserve">
+    <value>Show password</value>
+  </data>
+  <data name="auth.login.password.hide" xml:space="preserve">
+    <value>Hide password</value>
+  </data>
   <data name="auth.login.submit" xml:space="preserve">
     <value>Sign in</value>
   </data>

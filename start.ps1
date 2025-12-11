@@ -67,15 +67,10 @@ function Show-Menu {
     Write-Host "  8. Run unit tests      (Radish.Api.Tests)"
     Write-Host
     Write-Host "[Combinations]"
-    Write-Host "  9. Start Gateway + API"
-    Write-Host " 10. Start Gateway + Frontend"
-    Write-Host " 11. Start Gateway + Docs"
-    Write-Host " 12. Start Gateway + Console"
-    Write-Host " 13. Start Gateway + Auth"
-    Write-Host " 14. Start Gateway + Auth + API"
-    Write-Host " 15. Start ALL (Gateway + API + Auth + Frontend + Docs + Console)"
+    Write-Host "  9. Start Gateway + Auth + API"
+    Write-Host " 10. Start ALL (Gateway + API + Auth + Frontend + Docs + Console)"
     Write-Host
-    Write-Host "Hint: combinations run Gateway / frontend / docs / console / auth in separate terminals; this window usually runs API."
+    Write-Host "Hint: combinations launch Gateway / Frontend / Docs / Console / Auth in separate terminals while this window usually keeps API logs."
     Write-Host
 }
 
@@ -295,41 +290,6 @@ function Start-BackgroundShell {
 
 # ---- Combination start functions ----
 
-function Start-GatewayApi {
-    Write-Host "[Combo] Gateway + API..."
-    Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
-    Start-BackendNoBuild
-}
-
-function Start-GatewayFrontend {
-    Write-Host "[Combo] Gateway + Frontend..."
-    Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
-    Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
-}
-
-function Start-GatewayDocs {
-    Write-Host "[Combo] Gateway + Docs..."
-    Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
-    Start-BackgroundShell "Docs running at http://localhost:3001/docs/" "npm run docs:dev --prefix radish.docs"
-}
-
-function Start-GatewayConsole {
-    Write-Host "[Combo] Gateway + Console..."
-    Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
-    Start-BackgroundShell "Console running at http://localhost:3002" "npm run dev --prefix radish.console"
-}
-
-function Start-GatewayAuth {
-    Write-Host "[Combo] Gateway + Auth..."
-    Build-All
-    Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
-    Start-AuthNoBuild
-}
-
 function Start-GatewayAuthApi {
     Write-Host "[Combo] Gateway + Auth + API..."
     Build-All
@@ -365,13 +325,8 @@ switch ($choice) {
     "6"  { Start-Auth }
     "7"  { Start-DbMigrate }
     "8"  { Run-Tests }
-    "9"  { Start-GatewayApi }
-    "10" { Start-GatewayFrontend }
-    "11" { Start-GatewayDocs }
-    "12" { Start-GatewayConsole }
-    "13" { Start-GatewayAuth }
-    "14" { Start-GatewayAuthApi }
-    "15" { Start-All }
+    "9"  { Start-GatewayAuthApi }
+    "10" { Start-All }
     default {
         Write-Error ('Unknown choice: ' + $choice)
         exit 1
