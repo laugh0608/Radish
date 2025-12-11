@@ -67,6 +67,10 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "offline_access");
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
 
+            // 扩展属性：客户端展示信息
+            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 社区平台前端应用");
+            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
+
             //descriptor.Requirements.Add(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
@@ -84,6 +88,10 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.PostLogoutRedirectUris.Clear();
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000"));
+
+            // 确保扩展属性存在
+            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 社区平台前端应用");
+            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
 
             await _applicationManager.UpdateAsync(existingClient, descriptor, cancellationToken);
         }
@@ -109,6 +117,10 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "profile");
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
 
+            // 扩展属性：客户端展示信息
+            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish API 文档和调试工具");
+            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
+
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
         }
 
@@ -125,6 +137,10 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.ClientCredentials);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
+
+            // 扩展属性：客户端展示信息
+            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 后台服务和 Rust 原生扩展");
+            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
         }
