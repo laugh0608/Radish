@@ -204,10 +204,53 @@ new OpenIddictApplicationDescriptor
 
 客户端数据使用 **OpenIddict 的 Properties 字段**（`ImmutableDictionary<string, JsonElement>`）存储扩展信息：
 
+**系统字段**（用于客户端管理）：
 - **IsDeleted**：软删除标记（`"true"` / `"false"`）
 - **CreatedAt** / **CreatedBy**：创建时间和创建者 ID
 - **UpdatedAt** / **UpdatedBy**：更新时间和更新者 ID
 - **DeletedAt** / **DeletedBy**：删除时间和删除者 ID
+
+**展示字段**（用于登录页面和客户端信息展示）：
+- **description**：客户端描述信息，如"Radish 社区平台前端应用"
+- **developerName**：开发者/团队名称，如"Radish Team"
+- **logo**：客户端图标 URL（可选）
+
+#### 客户端扩展属性配置
+
+在客户端初始化时，可通过 `OpenIddictApplicationDescriptor.Properties` 设置扩展属性：
+
+```csharp
+var descriptor = new OpenIddictApplicationDescriptor
+{
+    ClientId = "radish-client",
+    DisplayName = "Radish Web Client",
+    ConsentType = OpenIddictConstants.ConsentTypes.Explicit,
+    // ... 其他配置 ...
+};
+
+// 添加扩展属性（存储为 JSON 元素）
+descriptor.Properties["description"] = JsonSerializer.SerializeToElement("Radish 社区平台前端应用");
+descriptor.Properties["developerName"] = JsonSerializer.SerializeToElement("Radish Team");
+descriptor.Properties["logo"] = JsonSerializer.SerializeToElement("https://example.com/logo.png");
+
+await applicationManager.CreateAsync(descriptor);
+```
+
+**登录页面展示**：
+
+当用户访问登录页时，Auth Server 会从 `ReturnUrl` 中提取 `client_id` 参数，查询客户端信息并展示：
+- 客户端图标（logo）或首字母缩写
+- 客户端显示名称（DisplayName）
+- 客户端 ID（ClientId）
+- 客户端描述（description）
+- 开发者名称（developerName）
+
+如果无法解析 `client_id` 或客户端不存在，将显示"未知的客户端"。
+
+**注意事项**：
+- URL 解析时不应对整个 ReturnUrl 解码（避免 `redirect_uri` 参数干扰）
+- 使用 `QueryHelpers.ParseQuery` 解析查询字符串（自动处理 URL 编码）
+- 扩展属性通过 `IOpenIddictApplicationManager.GetPropertiesAsync` 获取
 
 所有审计字段使用 ISO 8601 格式存储（`DateTime.UtcNow.ToString("O")`）。
 
