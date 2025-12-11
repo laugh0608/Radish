@@ -13,6 +13,7 @@ using Radish.IService;
 using Radish.Model.OpenIddict;
 using System.Linq;
 using Microsoft.AspNetCore.WebUtilities;
+using Serilog;
 
 namespace Radish.Auth.Controllers;
 
@@ -144,19 +145,26 @@ public class AccountController : Controller
 
         if (string.IsNullOrWhiteSpace(clientId))
         {
+            Log.Debug("[ResolveClientAsync] No client_id found in URL or query string");
             return ClientSummaryViewModel.Empty;
         }
+
+        Log.Debug("[ResolveClientAsync] Resolved client_id: {ClientId}", clientId);
 
         try
         {
             var applicationObject = await _applicationManager.FindByClientIdAsync(clientId, HttpContext.RequestAborted);
             if (applicationObject is null)
             {
+                Log.Warning("[ResolveClientAsync] Client '{ClientId}' not found in database", clientId);
                 return ClientSummaryViewModel.Empty;
             }
 
+            Log.Debug("[ResolveClientAsync] Found application object, type: {TypeName}", applicationObject.GetType().Name);
+
             if (applicationObject is RadishApplication application)
             {
+                Log.Debug("[ResolveClientAsync] Using RadishApplication: {DisplayName}", application.DisplayName);
                 return ClientSummaryViewModel.FromApplication(application);
             }
 
@@ -164,16 +172,22 @@ public class AccountController : Controller
             var displayName = await _applicationManager.GetDisplayNameAsync(applicationObject, HttpContext.RequestAborted);
             var properties = await _applicationManager.GetPropertiesAsync(applicationObject, HttpContext.RequestAborted);
 
+            Log.Debug("[ResolveClientAsync] Client: {ClientId}, DisplayName: {DisplayName}, Properties count: {PropertiesCount}",
+                clientIdValue, displayName, properties?.Count ?? 0);
+
             return ClientSummaryViewModel.FromStoreData(clientIdValue, displayName, properties);
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Error(ex, "[ResolveClientAsync] Failed to resolve client from returnUrl");
             return ClientSummaryViewModel.Empty;
         }
     }
 
     private static string? TryGetClientIdFromReturnUrl(string? returnUrl)
     {
+        Log.Debug("[TryGetClientIdFromReturnUrl] Input returnUrl: {ReturnUrl}", returnUrl);
+
         if (string.IsNullOrWhiteSpace(returnUrl))
         {
             return null;
@@ -181,28 +195,34 @@ public class AccountController : Controller
 
         try
         {
-            var decodedUrl = Uri.UnescapeDataString(returnUrl);
-
-            if (!Uri.TryCreate(decodedUrl, UriKind.Absolute, out var uri))
+            // 查找查询字符串的起始位置
+            var queryIndex = returnUrl.IndexOf('?');
+            if (queryIndex == -1)
             {
-                if (!Uri.TryCreate(decodedUrl, UriKind.Relative, out var relative))
-                {
-                    return null;
-                }
-
-                uri = new Uri(new Uri("https://placeholder"), relative);
-            }
-
-            var query = QueryHelpers.ParseQuery(uri.Query);
-            if (!query.TryGetValue("client_id", out var clientIdValues))
-            {
+                Log.Debug("[TryGetClientIdFromReturnUrl] No query string found in returnUrl");
                 return null;
             }
 
-            return clientIdValues.FirstOrDefault();
+            // 提取查询字符串部分（包括 '?'）
+            var queryString = returnUrl.Substring(queryIndex);
+
+            // 使用 QueryHelpers.ParseQuery 解析查询字符串（会自动处理 URL 编码）
+            var query = QueryHelpers.ParseQuery(queryString);
+            Log.Debug("[TryGetClientIdFromReturnUrl] Parsed {Count} query parameters", query.Count);
+
+            if (!query.TryGetValue("client_id", out var clientIdValues))
+            {
+                Log.Debug("[TryGetClientIdFromReturnUrl] client_id not found in query parameters");
+                return null;
+            }
+
+            var clientId = clientIdValues.FirstOrDefault();
+            Log.Debug("[TryGetClientIdFromReturnUrl] Found client_id: {ClientId}", clientId);
+            return clientId;
         }
-        catch
+        catch (Exception ex)
         {
+            Log.Warning(ex, "[TryGetClientIdFromReturnUrl] Failed to parse returnUrl");
             return null;
         }
     }

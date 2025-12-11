@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Text.Json;
+using OpenIddict.Abstractions;
 using Radish.Model.OpenIddict;
 
 namespace Radish.Auth.ViewModels.Account;
@@ -34,11 +35,29 @@ public sealed class ClientSummaryViewModel
         };
     }
 
-    public static ClientSummaryViewModel FromStoreData(string? clientId, string? displayName, ImmutableDictionary<string, JsonElement> properties)
+    public static ClientSummaryViewModel FromDescriptor(OpenIddictApplicationDescriptor descriptor)
     {
-        var logo = TryGetStringProperty(properties, "logo");
-        var description = TryGetStringProperty(properties, "description");
-        var developerName = TryGetStringProperty(properties, "developerName");
+        var logo = GetCustomProperty(descriptor, "logo");
+        var description = GetCustomProperty(descriptor, "description");
+        var developerName = GetCustomProperty(descriptor, "developerName");
+
+        return new ClientSummaryViewModel
+        {
+            ClientId = descriptor.ClientId ?? string.Empty,
+            DisplayName = string.IsNullOrWhiteSpace(descriptor.DisplayName)
+                ? (descriptor.ClientId ?? string.Empty)
+                : descriptor.DisplayName,
+            Description = description,
+            Logo = logo,
+            DeveloperName = developerName
+        };
+    }
+
+    public static ClientSummaryViewModel FromStoreData(string? clientId, string? displayName, ImmutableDictionary<string, JsonElement>? properties)
+    {
+        var logo = GetPropertyFromDictionary(properties, "logo");
+        var description = GetPropertyFromDictionary(properties, "description");
+        var developerName = GetPropertyFromDictionary(properties, "developerName");
 
         return new ClientSummaryViewModel
         {
@@ -52,18 +71,33 @@ public sealed class ClientSummaryViewModel
         };
     }
 
-    private static string? TryGetStringProperty(ImmutableDictionary<string, JsonElement> properties, string key)
+    private static string? GetCustomProperty(OpenIddictApplicationDescriptor descriptor, string key)
     {
-        if (!properties.TryGetValue(key, out var value))
+        if (descriptor.Properties is null || !descriptor.Properties.TryGetValue(key, out var element))
         {
             return null;
         }
 
-        if (value.ValueKind == JsonValueKind.String)
+        if (element.ValueKind == JsonValueKind.String)
         {
-            return value.GetString();
+            return element.GetString();
         }
 
-        return value.ToString();
+        return element.ToString();
+    }
+
+    private static string? GetPropertyFromDictionary(ImmutableDictionary<string, JsonElement>? properties, string key)
+    {
+        if (properties is null || !properties.TryGetValue(key, out var element))
+        {
+            return null;
+        }
+
+        if (element.ValueKind == JsonValueKind.String)
+        {
+            return element.GetString();
+        }
+
+        return element.ToString();
     }
 }
