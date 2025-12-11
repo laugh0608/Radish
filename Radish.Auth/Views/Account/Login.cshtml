@@ -225,6 +225,38 @@
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         }
 
+        .password-field {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .password-field input {
+            flex: 1;
+        }
+
+        .toggle-password {
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid #cbd5f5;
+            background: #f8fafc;
+            cursor: pointer;
+            font-size: 13px;
+            color: #475569;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-password:hover {
+            background: #eef2ff;
+            border-color: #6366f1;
+            color: #3730a3;
+        }
+
+        .toggle-password:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+
         .button-group {
             margin-top: 24px;
         }
@@ -344,7 +376,17 @@
 
                     <div class="form-group">
                         <label>@Localizer["auth.login.passwordLabel"]</label>
-                        <input type="password" name="password" value="test123456" />
+                        <div class="password-field">
+                            <input id="passwordInput" type="password" name="password" value="test123456" />
+                            <button type="button"
+                                    id="togglePassword"
+                                    class="toggle-password"
+                                    data-show="@Localizer["auth.login.password.show"]"
+                                    data-hide="@Localizer["auth.login.password.hide"]"
+                                    aria-pressed="false">
+                                @Localizer["auth.login.password.show"]
+                            </button>
+                        </div>
                     </div>
 
                     <div class="button-group">
@@ -362,6 +404,21 @@
             url.searchParams.set('ui-culture', culture);
             window.location.href = url.toString();
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const passwordInput = document.getElementById('passwordInput');
+            const toggleButton = document.getElementById('togglePassword');
+            if (!passwordInput || !toggleButton) {
+                return;
+            }
+
+            toggleButton.addEventListener('click', () => {
+                const shouldShow = passwordInput.type === 'password';
+                passwordInput.type = shouldShow ? 'text' : 'password';
+                toggleButton.textContent = shouldShow ? toggleButton.dataset.hide : toggleButton.dataset.show;
+                toggleButton.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+            });
+        });
     </script>
 </body>
 </html>
