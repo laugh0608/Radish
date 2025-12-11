@@ -86,7 +86,7 @@ volumes:
 ```bash
 # 通过启动脚本（推荐）
 pwsh ./start.ps1  # 或 ./start.sh
-# 选择 7 (DbMigrate)，直接按回车选择默认的 seed
+# 选择 7 (DbMigrate)，直接按回车选择默认的 seed（两端脚本均保留此单项）
 
 # 或直接运行
 dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
@@ -144,7 +144,7 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
 ```bash
 # 通过启动脚本（推荐）
 pwsh ./start.ps1  # 或 ./start.sh
-# 选择 7 (DbMigrate)，直接按回车选择默认的 seed
+# 选择 7 (DbMigrate)，直接按回车选择默认的 seed（两端脚本均保留此单项）
 
 # 或直接运行
 dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
