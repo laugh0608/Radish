@@ -807,6 +807,8 @@ public async Task<IActionResult> GetJwtToken(LoginInput input)
 
 OpenIddict 使用独立的 SQLite 数据库存储客户端、授权、Token 等信息。
 
+> 说明：此前仓库中曾探索过自定义 SqlSugar Store，但未正式接入。现阶段统一由 EF Core (`AuthOpenIddictDbContext`) 管理 OpenIddict 数据库，后续也不再维护那套实验性实现，避免不同 ORM 并行带来的维护成本。
+
 #### 数据库位置
 
 所有数据库文件统一存放在**解决方案根目录**的 `DataBases/` 文件夹：

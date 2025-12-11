@@ -4,6 +4,14 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.09
+
+- **chore(auth/openiddict)**: 移除尚未接入的自定义 SqlSugar Store，并确认继续采用 EF Core 存储
+  - 删除 `Radish.Auth/OpenIddict/Stores` 下的临时实现（RadishApplicationStore/RadishAuthorizationStore/RadishScopeStore/RadishTokenStore）及 `OpenIddictSqlSugarExtensions`，避免误导
+  - 保留 `Radish.Model/OpenIddict/*` 实体，继续作为客户端管理 API 的 DTO/视图模型来源
+  - `Radish.Auth/Program.cs` 仍通过 `AuthOpenIddictDbContext` + SQLite (`DataBases/RadishAuth.OpenIddict.db`) 持久化 OpenIddict 数据；Api 项目仅共享 `IOpenIddictApplicationManager` 访问该库
+  - 在 DevelopmentPlan/AuthenticationGuide 中更新说明：Auth 负责 OpenIddict 数据库的创建与迁移，Api 只消费，不再计划切换 SqlSugar Store
+
 ### 2025.12.08
 
 - **feat(log)**: 统一日志输出到解决方案根目录
@@ -264,7 +272,7 @@
   - 日志输出正常，显示监听地址和 CORS 配置
 - **plan(auth/next)**: 规划 Auth 项目后续工作（按优先级）
   1. 创建 OIDC 端点控制器（AuthorizationController、TokenController、UserInfoController、AccountController）
-  2. 实现 OpenIddict 自定义 SqlSugar Store（替代当前的内存存储，支持生产环境持久化）
+  2. 实现 OpenIddict 自定义 SqlSugar Store（替代当前的内存存储，支持生产环境持久化）（2025.12.09 更新：本计划已取消，统一改为长期使用 EF Core `AuthOpenIddictDbContext`）
   3. 创建 Radish.DbSeed 项目（数据库初始化、预注册 OIDC 客户端：radish-client、radish-scalar、radish-rust-ext）
   4. 实现客户端管理 API（CRUD 接口管理 OIDC 客户端应用）
   5. 配置 Radish.Api 为资源服务器（添加 JWT Bearer 验证，从 Auth 服务验证访问令牌）

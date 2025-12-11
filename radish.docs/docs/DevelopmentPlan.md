@@ -132,18 +132,17 @@
 > 采用工作项模板：`W{周}-BE-{序号}`，Owner/Estimate/Deps 可在实际排期时补充。
 
 ```md
-### W3-BE-1 OpenIddict SqlSugar Store 落地
+### W3-BE-1 OpenIddict EF Core 存储巩固
 - Owner: TBD | Estimate: TBD | Deps: Radish.Auth 已基于 EF Core 存储跑通 OIDC 最小链路
 - Checklist:
-  - [ ] 设计 OpenIddict 实体到 SqlSugar 模型的映射方案（参考 `Radish.Model/Models/OpenIddict/*` 与 `AuthOpenIddictDbContext`）
-  - [ ] 在合适位置新增 SqlSugar Store 实现（Application/Authorization/Scope/Token Store 接口）
-  - [ ] 在 `Radish.Auth/Program.cs` 中切换 OpenIddict Core 配置为 SqlSugar Store，而非 EF Core DbContext
-  - [ ] 保证与现有 `RadishAuth.OpenIddict.db` 数据模式兼容，或提供一次性迁移脚本/说明
-  - [ ] 为 Store 编写基础集成测试（创建/查询/撤销 Token、客户端读取）
+  - [ ] 明确 Auth 项目长期采用 EF Core + `AuthOpenIddictDbContext` 的架构，不再尝试 SqlSugar Store 切换
+  - [ ] 确保 `RadishAuth.OpenIddict.db` 作为独立 SQLite 数据库，仅由 Auth 创建维护
+  - [ ] 保留 Api 项目对 `IOpenIddictApplicationManager` 的共享访问（客户端管理 API），同时强调其不负责建表
+  - [ ] 在配置与文档示例中统一“Auth 负责 OpenIddict 数据，Api 仅消费”的表述
 - Acceptance:
-  - Radish.Auth 启动时不再依赖 EF Core 的 `AuthOpenIddictDbContext` 建表
-  - 新创建/授权的客户端与 Token 可以通过 SqlSugar 查询验证
-  - 授权码 → Token → 调用 API 在切换到 SqlSugar 后仍正常（复用现有 `.http` 流程）
+  - DevelopmentPlan/AuthenticationGuide/DevelopmentLog 等文档均指向 EF Core 方案
+  - `Radish.Auth/Program.cs` 及配置没有 SqlSugar Store 残留说明
+  - 新成员按照文档即可用 `AuthOpenIddictDbContext` 初始化/迁移 OpenIddict 数据库
 
 ### W3-BE-2 Radish.DbSeed/DbMigrate 对 Auth + Api 的统一初始化
 - Owner: TBD | Estimate: TBD | Deps: Radish.DbMigrate 基础项目已存在

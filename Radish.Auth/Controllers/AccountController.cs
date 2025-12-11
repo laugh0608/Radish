@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -147,8 +149,22 @@ public class AccountController : Controller
 
         try
         {
-            var application = await _applicationManager.FindByClientIdAsync(clientId, HttpContext.RequestAborted) as RadishApplication;
-            return application is null ? ClientSummaryViewModel.Empty : ClientSummaryViewModel.FromApplication(application);
+            var applicationObject = await _applicationManager.FindByClientIdAsync(clientId, HttpContext.RequestAborted);
+            if (applicationObject is null)
+            {
+                return ClientSummaryViewModel.Empty;
+            }
+
+            if (applicationObject is RadishApplication application)
+            {
+                return ClientSummaryViewModel.FromApplication(application);
+            }
+
+            var clientIdValue = await _applicationManager.GetClientIdAsync(applicationObject, HttpContext.RequestAborted);
+            var displayName = await _applicationManager.GetDisplayNameAsync(applicationObject, HttpContext.RequestAborted);
+            var properties = await _applicationManager.GetPropertiesAsync(applicationObject, HttpContext.RequestAborted);
+
+            return ClientSummaryViewModel.FromStoreData(clientIdValue, displayName, properties);
         }
         catch
         {
