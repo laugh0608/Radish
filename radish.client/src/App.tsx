@@ -253,6 +253,7 @@ function handleLogout(apiBaseUrl: string) {
     // 调用 Auth 的 Logout，并在完成后回到首页
     void fetch(logoutUrl.toString(), {
         method: 'POST',
+        credentials: 'include',
         headers: {
             Accept: 'application/json',
             'Accept-Language': currentLanguage
