@@ -1,0 +1,69 @@
+.window {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.titleBar {
+  height: 40px;
+  background: linear-gradient(180deg, #f5f5f7 0%, #e8e8ea 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1rem;
+  cursor: move;
+  user-select: none;
+  border-bottom: 1px solid #d1d1d6;
+}
+
+.title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.controlBtn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.controlBtn:hover {
+  transform: scale(1.1);
+}
+
+.minimizeBtn {
+  background: #ffbd2e;
+}
+
+.minimizeBtn:hover {
+  background: #f5b525;
+}
+
+.closeBtn {
+  background: #ff5f57;
+}
+
+.closeBtn:hover {
+  background: #e6554d;
+}
+
+.content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}

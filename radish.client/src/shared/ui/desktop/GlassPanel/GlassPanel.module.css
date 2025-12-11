@@ -1,0 +1,48 @@
+/* 基础面板样式 */
+.panel {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  color: rgba(255, 255, 255, 0.95); /* 默认使用浅色文字 */
+}
+
+/* 模糊强度 */
+.light {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.medium {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.strong {
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+}
+
+/* 背景透明度 */
+.panel.light {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.95); /* 浅色背景使用白色文字 */
+}
+
+.panel.dark {
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.95); /* 深色背景也使用白色文字 */
+}
+
+/* 边框 */
+.bordered {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.bordered.dark {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 悬停效果 */
+.panel:hover {
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+}
