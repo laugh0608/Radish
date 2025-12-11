@@ -16,7 +16,7 @@ npm run dev
 http://localhost:3000/
 ```
 - 完整的桌面操作系统体验
-- 状态栏显示用户信息和时间
+- 状态栏显示用户信息和时间（当前默认用户：`userId=1`, `userName='test'`, `roles=['User','Admin']`）
 - 桌面显示应用图标
 - 双击图标打开应用
 - Dock 显示运行中的应用
@@ -64,7 +64,7 @@ http://localhost:3000/?demo
 ### 欢迎应用
 - **图标**: 👋 (mdi:hand-wave)
 - **功能**:
-  - 显示用户信息
+  - 显示用户信息（取自 `useUserStore` 当前用户，默认 `test/Admin`）
   - WebOS 使用指南
   - 快速开始提示
 

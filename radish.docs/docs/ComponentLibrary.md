@@ -80,6 +80,54 @@ import { GlassPanel } from '@/shared/ui/desktop/GlassPanel';
 
 ---
 
+#### DesktopWindow - 桌面窗口
+基于 `react-rnd` 的可拖拽/缩放窗口框架，内置标题栏、最小化与关闭按钮，自动应用 `AppRegistry` 中的组件与默认尺寸。
+
+**位置**: `src/widgets/DesktopWindow.tsx`
+
+**使用示例**:
+```tsx
+import { DesktopWindow } from '@/widgets/DesktopWindow';
+import type { WindowState } from '@/desktop/types';
+
+const win: WindowState = {
+  id: 'welcome-1',
+  appId: 'welcome',
+  zIndex: 2,
+  minimized: false
+};
+
+<DesktopWindow window={win} />;
+```
+
+**要点**:
+- `dragHandleClassName="window-drag-handle"`：标题栏即可拖拽
+- 支持最小化/关闭（调用 `useWindowStore` 的 `minimizeWindow` / `closeWindow`）
+- 支持 resize，结果回写到 `useWindowStore`（位置、尺寸）
+
+---
+
+#### AppIcon - 桌面应用图标
+桌面入口图标，支持 Iconify 与 emoji，双击触发应用打开。
+
+**位置**: `src/widgets/AppIcon.tsx`
+
+**使用示例**:
+```tsx
+import { AppIcon } from '@/widgets/AppIcon';
+import { getAppById } from '@/desktop/AppRegistry';
+
+const app = getAppById('welcome');
+
+<AppIcon app={app!} onDoubleClick={() => console.log('open app')} />;
+```
+
+**要点**:
+- 若 `app.icon` 以 `mdi:` / `ic:` 开头则走 Iconify，否则按 emoji 渲染
+- `title` 与文本均来自应用定义的 `name/description`
+
+---
+
 ## 🎨 设计原则
 
 1. **CSS Modules**: 使用 CSS Modules 实现样式隔离，避免全局污染
@@ -136,8 +184,9 @@ src/
 │           │   ├── GlassPanel.tsx
 │           │   ├── GlassPanel.module.css
 │           │   └── index.ts
-│           ├── DesktopIcon/   # 待实现
-│           └── WindowChrome/  # 待实现
+│           ├── DesktopWindow/  # 计划将窗口样式从 widgets 抽离
+│           ├── DesktopIcon/    # 待实现（图标样式当前在 widgets/AppIcon）
+│           └── WindowChrome/   # 待实现
 ```
 
 ---
