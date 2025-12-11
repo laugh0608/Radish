@@ -4,6 +4,42 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.11（续）
+
+- **feat(client/webos-shell)**: 实现 WebOS Desktop Shell 与通用组件库
+  - **核心功能**：
+    - 桌面系统：状态栏、桌面图标网格、Dock 栏、窗口管理器
+    - 窗口系统：支持拖拽（react-rnd）、调整大小、最小化、关闭、z-index 自动管理
+    - 应用系统：应用注册表、基于角色的权限控制、欢迎应用
+    - 状态管理：Zustand 实现窗口状态（windowStore）和用户状态（userStore）
+  - **通用组件库**（CSS Modules 实现）：
+    - 基础组件：Button（3 种变体、3 种尺寸）、Icon（@iconify/react 封装）
+    - 桌面组件：GlassPanel（毛玻璃面板，3 种模糊强度）
+    - 桌面小部件：AppIcon（应用图标）、DesktopWindow（可拖拽窗口）
+  - **组件展示页面**：ComponentShowcase 用于预览所有 UI 组件
+  - **技术实现**：
+    - CSS Modules 实现样式隔离，避免全局污染
+    - TypeScript 路径别名配置（@/* 映射到 src/*）
+    - Vite 配置优化（移除 https: false 避免类型错误）
+    - 完整的类型定义（AppDefinition、WindowState、UserInfo）
+  - **项目结构**：
+    - `src/desktop/`: Shell、StatusBar、Desktop、Dock、WindowManager、AppRegistry
+    - `src/apps/welcome/`: 欢迎应用（展示用户信息和使用指南）
+    - `src/widgets/`: AppIcon、DesktopWindow
+    - `src/stores/`: windowStore、userStore
+    - `src/shared/ui/`: 通用 UI 组件库（base/ 和 desktop/）
+  - **访问方式**：
+    - `/` - WebOS Desktop Shell（默认）
+    - `/?showcase` - 组件库展示页面
+    - `/?demo` - 原有的 OIDC Demo 页面
+  - **文件变更**：新增 37 个文件，修改 5 个配置文件
+
+- **docs(client)**: 重构文档结构，文档归档到 radish.docs
+  - 将 `COMPONENTS.md` 移至 `radish.docs/docs/ComponentLibrary.md`
+  - 将 `QUICKSTART.md` 移至 `radish.docs/docs/WebOSQuickStart.md`
+  - 更新 `radish.client/README.md` 为简洁版本，指向详细文档
+  - 统一文档管理：所有详细文档集中在 radish.docs 项目
+
 ### 2025.12.11
 
 - **fix(auth/client-info)**: 修复登录页面无法显示客户端信息的问题
