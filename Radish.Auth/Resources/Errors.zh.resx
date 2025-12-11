@@ -21,6 +21,27 @@
   <data name="auth.login.description" xml:space="preserve">
     <value>使用内置测试账号登录，后续可替换为实际用户体系。</value>
   </data>
+  <data name="auth.login.client.title" xml:space="preserve">
+    <value>正在登录的客户端</value>
+  </data>
+  <data name="auth.login.client.unknown" xml:space="preserve">
+    <value>未知客户端</value>
+  </data>
+  <data name="auth.login.client.id" xml:space="preserve">
+    <value>客户端 ID</value>
+  </data>
+  <data name="auth.login.client.description" xml:space="preserve">
+    <value>应用描述</value>
+  </data>
+  <data name="auth.login.client.defaultDescription" xml:space="preserve">
+    <value>该客户端尚未提供详细描述。</value>
+  </data>
+  <data name="auth.login.client.developer" xml:space="preserve">
+    <value>开发者：{0}</value>
+  </data>
+  <data name="auth.login.client.logoAlt" xml:space="preserve">
+    <value>客户端图标</value>
+  </data>
   <data name="auth.login.testAccount" xml:space="preserve">
     <value>测试账号</value>
   </data>

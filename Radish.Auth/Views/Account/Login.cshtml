@@ -1,13 +1,11 @@
+@model Radish.Auth.ViewModels.Account.LoginViewModel
 @using System.Globalization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Radish.Auth.Resources.Errors> Localizer
 
 @{
     ViewData["Title"] = Localizer["auth.login.title"];
-
-    var returnUrl = Context.Request.Query["returnUrl"].ToString();
-    var userName = Context.Request.Query["username"].ToString();
-    var error = ViewContext.TempData["LoginError"] as string;
+    var client = Model.Client;
 }
 
 <!DOCTYPE html>
@@ -17,171 +15,344 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
     <style>
+        :root {
+            color-scheme: light;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            max-width: 500px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-        .description {
-            color: #666;
-            margin-bottom: 20px;
-        }
-        .test-account {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
-        .test-account h3 {
-            margin: 0 0 10px 0;
-            color: #555;
-            font-size: 14px;
-        }
-        .test-account ul {
             margin: 0;
-            padding-left: 20px;
-        }
-        .test-account li {
-            margin: 5px 0;
-            color: #666;
-        }
-        .test-account code {
-            background: #e9ecef;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-        }
-        .error {
-            color: #b3261e;
-            background: #fdecea;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-            font-weight: 500;
-        }
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-        input[type="text"]:focus,
-        input[type="password"]:focus {
-            outline: none;
-            border-color: #4285f4;
-        }
-        .button-group {
+            min-height: 100vh;
             display: flex;
-            gap: 10px;
-            margin-top: 20px;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top, #fef3f3, #f8fafc);
+            padding: 24px;
         }
-        button {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
+
+        .auth-shell {
+            width: 100%;
+            max-width: 960px;
+            background: rgba(255,255,255,0.85);
+            border-radius: 32px;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+            overflow: hidden;
+            backdrop-filter: blur(8px);
         }
-        button[type="submit"] {
-            background: #4285f4;
-            color: white;
+
+        .auth-layout {
+            display: grid;
+            grid-template-columns: minmax(280px, 1fr) minmax(380px, 1fr);
+            gap: 0;
         }
-        button[type="submit"]:hover {
-            background: #357ae8;
+
+        .client-panel {
+            background: linear-gradient(135deg, #f472b6, #fb7185);
+            padding: 48px;
+            color: #fff7fb;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
         }
+
+        .client-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.2), transparent 45%);
+            pointer-events: none;
+        }
+
+        .client-logo {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+        }
+
+        .client-logo img {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            object-fit: cover;
+        }
+
+        .client-logo-placeholder {
+            font-size: 28px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .client-title {
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 12px;
+        }
+
+        .client-name {
+            font-size: 2rem;
+            margin: 0 0 16px;
+            line-height: 1.2;
+        }
+
+        .client-id, .client-desc, .client-developer {
+            margin: 8px 0;
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .client-id strong,
+        .client-desc strong,
+        .client-developer strong {
+            display: block;
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .form-panel {
+            padding: 48px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+
         .lang-switcher {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin-bottom: 20px;
         }
+
         .lang-button {
             padding: 6px 12px;
             background: transparent;
-            color: #4285f4;
-            border: 1px solid #4285f4;
-            border-radius: 4px;
+            color: #0f172a;
+            border: 1px solid #94a3b8;
+            border-radius: 999px;
             cursor: pointer;
             font-size: 12px;
             transition: all 0.2s;
         }
-        .lang-button:hover {
-            background: #4285f4;
-            color: white;
-        }
+
+        .lang-button:hover,
         .lang-button.active {
-            background: #4285f4;
-            color: white;
+            background: #0f172a;
+            color: #fff;
+            border-color: #0f172a;
+        }
+
+        h1 {
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+        }
+
+        .description {
+            color: #475569;
+            margin-bottom: 1.5rem;
+        }
+
+        .test-account {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+
+        .test-account h3 {
+            margin: 0 0 10px 0;
+            color: #1e293b;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .test-account ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #475569;
+        }
+
+        .test-account code {
+            background: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .error {
+            color: #b3261e;
+            background: #fdecea;
+            border: 1px solid #f8c9c4;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5f5;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .button-group {
+            margin-top: 24px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 999px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.25);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 15px 30px rgba(79, 70, 229, 0.3);
+        }
+
+        @@media (max-width: 900px) {
+            body {
+                padding: 16px;
+            }
+
+            .auth-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .client-panel,
+            .form-panel {
+                padding: 32px;
+            }
+
+            .client-panel {
+                min-height: 280px;
+            }
+        }
+
+        @@media (max-width: 600px) {
+            .client-panel,
+            .form-panel {
+                padding: 24px;
+            }
+
+            .client-name {
+                font-size: 1.6rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="lang-switcher">
-            <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh") ? "active" : "")" onclick="switchLanguage('zh')">中文</button>
-            <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "active" : "")" onclick="switchLanguage('en')">English</button>
+    <div class="auth-shell">
+        <div class="auth-layout">
+            <section class="client-panel">
+                <div class="client-logo">
+                    @if (!string.IsNullOrWhiteSpace(client.Logo))
+                    {
+                        <img src="@client.Logo" alt="@Localizer["auth.login.client.logoAlt"]" />
+                    }
+                    else
+                    {
+                        <div class="client-logo-placeholder">@(string.IsNullOrEmpty(client.DisplayName) ? "R" : client.DisplayName.First())</div>
+                    }
+                </div>
+                <p class="client-title">@Localizer["auth.login.client.title"]</p>
+                <h2 class="client-name">@(string.IsNullOrWhiteSpace(client.DisplayName) ? Localizer["auth.login.client.unknown"] : client.DisplayName)</h2>
+                <p class="client-id">
+                    <strong>@Localizer["auth.login.client.id"]</strong>
+                    @(string.IsNullOrWhiteSpace(client.ClientId) ? "-" : client.ClientId)
+                </p>
+                <p class="client-desc">
+                    <strong>@Localizer["auth.login.client.description"]</strong>
+                    @(string.IsNullOrWhiteSpace(client.Description) ? Localizer["auth.login.client.defaultDescription"] : client.Description)
+                </p>
+                @if (!string.IsNullOrWhiteSpace(client.DeveloperName))
+                {
+                    <p class="client-developer">
+                        <strong>@Localizer["auth.login.client.developer", client.DeveloperName]</strong>
+                    </p>
+                }
+            </section>
+
+            <section class="form-panel">
+                <div class="lang-switcher">
+                    <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh") ? "active" : "")" onclick="switchLanguage('zh')">中文</button>
+                    <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "active" : "")" onclick="switchLanguage('en')">English</button>
+                </div>
+
+                <h1>@Localizer["auth.login.heading"]</h1>
+                <p class="description">@Localizer["auth.login.description"]</p>
+
+                <div class="test-account">
+                    <h3>@Localizer["auth.login.testAccount"]</h3>
+                    <ul>
+                        <li>@Localizer["auth.login.testAccount.username"]<code>test</code></li>
+                        <li>@Localizer["auth.login.testAccount.password"]<code>test123456</code></li>
+                    </ul>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="error">@Model.ErrorMessage</div>
+                }
+
+                <form asp-controller="Account" asp-action="Login" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+                    <div class="form-group">
+                        <label>@Localizer["auth.login.usernameLabel"]</label>
+                        <input type="text" name="username" value="@(string.IsNullOrWhiteSpace(Model.PrefillUserName) ? "test" : Model.PrefillUserName)" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>@Localizer["auth.login.passwordLabel"]</label>
+                        <input type="password" name="password" value="test123456" />
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit">@Localizer["auth.login.submit"]</button>
+                    </div>
+                </form>
+            </section>
         </div>
-
-        <h1>@Localizer["auth.login.heading"]</h1>
-        <p class="description">@Localizer["auth.login.description"]</p>
-
-        <div class="test-account">
-            <h3>@Localizer["auth.login.testAccount"]</h3>
-            <ul>
-                <li>@Localizer["auth.login.testAccount.username"]<code>test</code></li>
-                <li>@Localizer["auth.login.testAccount.password"]<code>test123456</code></li>
-            </ul>
-        </div>
-
-        @if (!string.IsNullOrEmpty(error))
-        {
-            <div class="error">@error</div>
-        }
-
-        <form asp-controller="Account" asp-action="Login" method="post">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="returnUrl" value="@returnUrl" />
-
-            <div class="form-group">
-                <label>@Localizer["auth.login.usernameLabel"]</label>
-                <input type="text" name="username" value="@(string.IsNullOrWhiteSpace(userName) ? "test" : userName)" />
-            </div>
-
-            <div class="form-group">
-                <label>@Localizer["auth.login.passwordLabel"]</label>
-                <input type="password" name="password" value="P@ssw0rd!" />
-            </div>
-
-            <div class="button-group">
-                <button type="submit">@Localizer["auth.login.submit"]</button>
-            </div>
-        </form>
     </div>
 
     <script>
@@ -189,7 +360,6 @@
             const url = new URL(window.location.href);
             url.searchParams.set('culture', culture);
             url.searchParams.set('ui-culture', culture);
-            // 保留 ReturnUrl 参数，确保登录后能正确回跳
             window.location.href = url.toString();
         }
     </script>

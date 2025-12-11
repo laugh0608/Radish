@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
+using OpenIddict.Abstractions;
 using Radish.Auth.Controllers;
 using Radish.Auth.Resources;
 using Radish.Common.HelpTool;
@@ -68,7 +69,10 @@ public class AccountControllerTest
         services.AddSingleton<IAuthenticationService>(authServiceMock.Object);
         httpContext.RequestServices = services.BuildServiceProvider();
 
-        var controller = new AccountController(errorsLocalizer.Object, userServiceMock.Object)
+        var applicationManager = new Mock<IOpenIddictApplicationManager>();
+        applicationManager.Setup(m => m.FindByClientIdAsync(It.IsAny<string>(), default)).ReturnsAsync((object?)null);
+
+        var controller = new AccountController(errorsLocalizer.Object, userServiceMock.Object, applicationManager.Object)
         {
             ControllerContext = new ControllerContext
             {
