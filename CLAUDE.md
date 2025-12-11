@@ -62,9 +62,10 @@ npm run lint --prefix radish.client
 ```bash
 # Interactive menu to start API, Gateway, Auth, frontend, docs, console or run tests
 # Current options include:
-# - Single services: API / Gateway / frontend / docs / console / Auth / tests
-# - Combinations: Gateway+API, Gateway+frontend, Gateway+docs, Gateway+console,
-#   Gateway+Auth, Gateway+API+frontend, Gateway+API+frontend+console, start ALL
+# - Single services: API / Gateway / frontend / docs / console / Auth / tests (1-8)
+# - Combinations (PowerShell): Gateway+Auth+API, or start ALL (1 0)
+# - Combinations (Shell): Gateway+API, Gateway+frontend, Gateway+docs, Gateway+console,
+#   Gateway+Auth, Gateway+Auth+API, start ALL (9-15)
 pwsh ./start.ps1    # Windows/PowerShell
 ./start.sh          # Linux/macOS
 ```
@@ -129,31 +130,54 @@ Radish.Gateway (service portal & API gateway)
 Configuration files are loaded in the following order (later sources override earlier ones):
 
 ```
-1. appsettings.json                      (base config, checked into git)
+1. appsettings.json                      (base config with default values, checked into git)
    ↓
 2. appsettings.{Environment}.json        (Development/Production, checked into git)
    ↓
-3. appsettings.Local.json                (local overrides, NOT checked into git)
+3. appsettings.Local.json                (local overrides, NOT checked into git, highest priority)
    ↓
 4. Environment variables                 (production deployments)
 ```
 
-**IMPORTANT**: `appsettings.Local.json` is used for local development and contains sensitive data (database passwords, API keys, etc.). This file is ignored by Git and must be created by each developer.
+**IMPORTANT**:
+- `appsettings.Local.json` is used for local development and contains sensitive data (database passwords, API keys, etc.). This file is ignored by Git.
+- Configuration uses **deep merge** strategy: later configs override earlier ones by key path.
+- For arrays (like `Databases`), provide the complete array in Local.json to avoid partial overrides.
+- See [ConfigurationGuide.md](radish.docs/docs/ConfigurationGuide.md) for detailed merge behavior examples.
 
 ### Quick Setup for New Developers
 
 ```bash
-# 1. Copy the configuration template
-cp Radish.Api/appsettings.Local.example.json Radish.Api/appsettings.Local.json
+# Simplest way: Just run the project (works out of the box with SQLite + memory cache)
+dotnet run --project Radish.Api
+dotnet run --project Radish.Auth
+dotnet run --project Radish.Gateway
 
-# 2. Edit appsettings.Local.json and update sensitive fields:
-#    - Databases[].ConnectionString (if using PostgreSQL)
-#    - Redis.ConnectionString (if enabling Redis)
-#    - AutoMapper.LicenseKey (if you have a commercial license)
+# Optional: If you need to customize configuration (PostgreSQL, Redis, etc.)
+# Note: Gateway does not need Local.json - it has no sensitive data
+# 1. Copy the minimal example file for API and Auth only
+cp Radish.Api/appsettings.Local.json.example Radish.Api/appsettings.Local.json
+cp Radish.Auth/appsettings.Local.json.example Radish.Auth/appsettings.Local.json
 
-# 3. Start the project (default config works out of the box with SQLite + memory cache)
+# 2. Edit appsettings.Local.json - uncomment and modify only what you need:
+#    - Database passwords (if using PostgreSQL)
+#    - Redis passwords (if enabling Redis)
+#    - OpenIddict keys (Auth service, production only)
+#    - Snowflake.WorkId (if different from default)
+#
+#    All other settings will inherit from appsettings.json automatically!
+
+# 3. Start the project
 dotnet run --project Radish.Api
 ```
+
+**Important Notes**:
+- **Radish.Api & Radish.Auth**: Use `appsettings.Local.json` for sensitive data (database passwords, Redis passwords, API keys)
+- **Radish.Gateway**: No Local.json needed - no sensitive data. Use environment variables in production to override PublicUrl and service addresses
+- Non-sensitive settings should stay in `appsettings.json` (CORS origins, log levels, default ports, etc.)
+- Thanks to deep merge, you only need to specify the values you want to change
+- See `appsettings.Local.json.example` for minimal templates with common overrides (API & Auth only)
+- For Gateway production deployment, see `Radish.Gateway/README.md`
 
 For detailed configuration instructions, see [ConfigurationGuide.md](radish.docs/docs/ConfigurationGuide.md).
 
@@ -203,7 +227,13 @@ SnowFlakeSingle.DatacenterId = snowflakeSection.GetValue<int>("DataCenterId");
 - Log entities like `AuditSqlLog` use `[Tenant(configId: "log")]` + `[SplitTable(SplitType.Month)]` for monthly partitioning
 
 ### Local Dev (SQLite)
-Default setup uses `Radish.db` (main) and `RadishLog.db` (logs) in project root. Auto-created on first run. For PostgreSQL, update `Databases[].ConnectionString` and `DbType=4`.
+Default setup uses `Radish.db` (main) and `RadishLog.db` (logs) in `DataBases/` folder. Auto-created on first run. For PostgreSQL, update `Databases[].ConnectionString` and `DbType=4`.
+
+**IMPORTANT - Database Sharing Between Projects**:
+- **API and Auth projects share the same business databases**: Both `Radish.Api` and `Radish.Auth` use `Radish.db` (main) and `RadishLog.db` (logs) for business data (users, roles, permissions, tenants, etc.)
+- **OpenIddict uses a separate database**: `RadishAuth.OpenIddict.db` is managed by EF Core and stores OIDC-specific data (clients, authorizations, tokens, scopes)
+- **Why share business databases?**: Auth and API need access to the same user/role/permission data for authentication and authorization
+- **Database location**: All database files are stored in the solution root's `DataBases/` folder
 
 ## Authentication & Authorization
 
@@ -225,7 +255,20 @@ API routes must start with `/` for permission matching. If using path parameters
 ## Logging with Serilog
 
 ### Initialization
-`Program.cs` calls `builder.Host.AddSerilogSetup()` to configure Serilog. Logs written to `Log/Log.txt` (general) and `Log/AopSql/AopSql.txt` (SQL via AOP).
+`Program.cs` calls `builder.Host.AddSerilogSetup()` to configure Serilog. Logs are written to the solution root's `Log/` folder with the following structure:
+- `Log/{ProjectName}/Log.txt` - General application logs
+- `Log/{ProjectName}/AopSql/AopSql.txt` - SQL logs via AOP
+- `Log/{ProjectName}/SerilogDebug/Serilog{date}.txt` - Serilog internal debug logs
+
+Where `{ProjectName}` is automatically detected from the running project (e.g., Radish.Api, Radish.Gateway, Radish.Auth).
+
+### Log Location Auto-Detection
+The logging system automatically:
+1. Finds the solution root by searching upward for `*.slnx` or `*.sln` files
+2. Identifies the current project name from the `.csproj` file
+3. Creates project-specific subdirectories under the solution's `Log/` folder
+
+This ensures all projects log to a centralized location while maintaining clear separation.
 
 ### Usage
 Prefer static Serilog methods over injecting `ILogger<T>`:
@@ -300,8 +343,9 @@ Tests use in-memory services where possible. For integration tests requiring dat
 5. React Compiler: Experimental, not enabled in main branch yet
 
 ### Frontend-Backend Communication
-- All requests over HTTPS
-- Sensitive fields (login, password reset) encrypted with RSA public key on client, decrypted with private key on server
+- All requests over HTTPS (TLS provides transport encryption)
+- **Password Security**: Passwords are transmitted as plaintext over HTTPS and hashed with Argon2id on the server. See [PasswordSecurity.md](radish.docs/docs/PasswordSecurity.md) for details.
+- **No frontend encryption**: Frontend code is fully exposed to users, so client-side encryption (like RSA) provides no real security benefit
 - VITE_API_BASE_URL env var points to backend
 - CORS configured in `appsettings.json` under `Cors.AllowedOrigins`
 

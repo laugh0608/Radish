@@ -4,6 +4,116 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.11（续）
+
+- **feat(client/webos-shell)**: 实现 WebOS Desktop Shell 与通用组件库
+  - **核心功能**：
+    - 桌面系统：状态栏、桌面图标网格、Dock 栏、窗口管理器
+    - 窗口系统：支持拖拽（react-rnd）、调整大小、最小化、关闭、z-index 自动管理
+    - 应用系统：应用注册表、基于角色的权限控制、欢迎应用
+    - 状态管理：Zustand 实现窗口状态（windowStore）和用户状态（userStore）
+  - **通用组件库**（CSS Modules 实现）：
+    - 基础组件：Button（3 种变体、3 种尺寸）、Icon（@iconify/react 封装）
+    - 桌面组件：GlassPanel（毛玻璃面板，3 种模糊强度）
+    - 桌面小部件：AppIcon（应用图标）、DesktopWindow（可拖拽窗口）
+  - **组件展示页面**：ComponentShowcase 用于预览所有 UI 组件
+  - **技术实现**：
+    - CSS Modules 实现样式隔离，避免全局污染
+    - TypeScript 路径别名配置（@/* 映射到 src/*）
+    - Vite 配置优化（移除 https: false 避免类型错误）
+    - 完整的类型定义（AppDefinition、WindowState、UserInfo）
+  - **项目结构**：
+    - `src/desktop/`: Shell、StatusBar、Desktop、Dock、WindowManager、AppRegistry
+    - `src/apps/welcome/`: 欢迎应用（展示用户信息和使用指南）
+    - `src/widgets/`: AppIcon、DesktopWindow
+    - `src/stores/`: windowStore、userStore
+    - `src/shared/ui/`: 通用 UI 组件库（base/ 和 desktop/）
+  - **访问方式**：
+    - `/` - WebOS Desktop Shell（默认）
+    - `/?showcase` - 组件库展示页面
+    - `/?demo` - 原有的 OIDC Demo 页面
+  - **文件变更**：新增 37 个文件，修改 5 个配置文件
+
+- **docs(client)**: 重构文档结构，文档归档到 radish.docs
+  - 将 `COMPONENTS.md` 移至 `radish.docs/docs/ComponentLibrary.md`
+  - 将 `QUICKSTART.md` 移至 `radish.docs/docs/WebOSQuickStart.md`
+  - 更新 `radish.client/README.md` 为简洁版本，指向详细文档
+  - 统一文档管理：所有详细文档集中在 radish.docs 项目
+
+### 2025.12.11
+
+- **fix(auth/client-info)**: 修复登录页面无法显示客户端信息的问题
+  - **问题现象**：访问登录页时始终显示"未知的客户端"，即使 URL 中包含正确的 `client_id` 参数
+  - **根本原因**：
+    - `TryGetClientIdFromReturnUrl` 方法中错误使用 `Uri.UnescapeDataString` 对整个 URL 解码
+    - 解码后 `redirect_uri` 参数中的 `https://localhost:5000` 被提取出来，导致 `Uri` 类解析器无法识别查询字符串
+    - 示例：`/connect/authorize?client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000` 解码后变成 `/connect/authorize?client_id=radish-client&redirect_uri=https://localhost:5000`，`Uri.Query` 返回空字符串
+  - **解决方案**：
+    - 移除 `Uri.UnescapeDataString` 调用，改用 `IndexOf('?')` 和 `Substring` 直接提取查询字符串
+    - 使用 `QueryHelpers.ParseQuery` 解析（会自动处理 URL 编码的参数值）
+    - 添加 `ClientSummaryViewModel.FromStoreData` 方法，支持从 OpenIddict 默认实体的 Properties 字典中提取扩展属性
+  - **客户端扩展属性完善**（`OpenIddictSeedHostedService.cs`）：
+    - 为所有客户端添加 `description` 和 `developerName` 属性（存储在 OpenIddict Properties 字典中）
+    - `radish-client`：描述为"Radish 社区平台前端应用"
+    - `radish-scalar`：描述为"Radish API 文档和调试工具"
+    - `radish-rust-ext`：描述为"Radish 后台服务和 Rust 原生扩展"
+    - 更新逻辑确保现有客户端也能自动补充扩展属性
+  - **日志优化**：将调试日志从 `Console.WriteLine` 改为 `Serilog`，使用 `Log.Debug` 记录解析过程，`Log.Warning` 记录客户端不存在等异常情况
+  - **技术说明**：
+    - OpenIddict 默认使用 EF Core 实体存储，扩展信息需存储在 `Properties: ImmutableDictionary<string, JsonElement>` 中
+    - URL 解析时不应对整个 URL 解码，避免嵌套 URL 参数（如 `redirect_uri`）干扰查询字符串识别
+  - **文件变更**：
+    - `Radish.Auth/ViewModels/Account/LoginViewModel.cs`: 添加 `FromStoreData` 和 `GetPropertyFromDictionary` 方法
+    - `Radish.Auth/Controllers/AccountController.cs`: 修复 URL 解析逻辑并添加 Serilog 日志
+    - `Radish.Auth/OpenIddict/OpenIddictSeedHostedService.cs`: 为客户端添加扩展属性
+    - `Radish.Auth/Radish.Auth.csproj`: 添加 `OpenIddict.Abstractions` NuGet 包引用
+
+### 2025.12.09
+
+- **chore(auth/openiddict)**: 移除尚未接入的自定义 SqlSugar Store，并确认继续采用 EF Core 存储
+  - 删除 `Radish.Auth/OpenIddict/Stores` 下的临时实现（RadishApplicationStore/RadishAuthorizationStore/RadishScopeStore/RadishTokenStore）及 `OpenIddictSqlSugarExtensions`，避免误导
+  - 保留 `Radish.Model/OpenIddict/*` 实体，继续作为客户端管理 API 的 DTO/视图模型来源
+  - `Radish.Auth/Program.cs` 仍通过 `AuthOpenIddictDbContext` + SQLite (`DataBases/RadishAuth.OpenIddict.db`) 持久化 OpenIddict 数据；Api 项目仅共享 `IOpenIddictApplicationManager` 访问该库
+  - 在 DevelopmentPlan/AuthenticationGuide 中更新说明：Auth 负责 OpenIddict 数据库的创建与迁移，Api 只消费，不再计划切换 SqlSugar Store
+
+### 2025.12.08
+
+- **feat(log)**: 统一日志输出到解决方案根目录
+  - **问题**：每个项目（Api、Auth、Gateway）都在自己的目录下生成 Log 文件夹，分散且不便管理
+  - **解决方案**：修改 Serilog 配置，统一输出到解决方案根目录的 `Log/` 文件夹
+    - `Radish.Common/LogTool/LogContextTool.cs`：
+      - 新增 `GetSolutionLogDirectory()`：向上查找 .slnx/.sln 文件定位解决方案根目录
+      - 新增 `GetProjectName()`：从 .csproj 文件自动识别当前项目名称
+      - `BaseLogs` 改为动态计算的解决方案根目录路径
+      - 添加 `ProjectName` 静态属性用于区分不同项目
+    - `Radish.Extension/SerilogExtension/LogConfigExtension.cs`：
+      - 修改日志路径包含项目名称：`Log/{ProjectName}/Log.txt`、`Log/{ProjectName}/AopSql/AopSql.txt`
+    - `Radish.Extension/SerilogExtension/SerilogSetup.cs`：
+      - Serilog 内部调试日志路径：`Log/{ProjectName}/SerilogDebug/Serilog{date}.txt`
+  - **新的日志结构**：
+    ```
+    Log/
+    ├── Radish.Api/
+    │   ├── Log20251208.txt
+    │   ├── AopSql/AopSql20251208.txt
+    │   └── SerilogDebug/Serilog20251208.txt
+    ├── Radish.Gateway/...
+    └── Radish.Auth/...
+    ```
+  - **优势**：所有项目日志集中管理，便于查看和归档；自动识别项目名称，无需手动配置
+
+- **feat(dbmigrate)**: seed 命令自动检测并初始化表结构
+  - **问题**：用户直接运行 `seed` 时，如果表不存在会报错 `no such table: Role`
+  - **解决方案**：
+    - `Radish.DbMigrate/Program.cs`：
+      - `RunSeedAsync` 中添加表结构检查，使用 `db.DbMaintenance.IsAnyTable("Role", false)` 检测
+      - 如果表不存在，自动执行 `RunInitAsync` 创建表结构
+      - 优化输出信息，添加状态标识（✓ 和 ⚠️）
+    - `start.ps1` 和 `start.sh`：
+      - 更新 DbMigrate 菜单说明，默认命令改为 `seed`（更常用）
+      - 添加命令说明：init - 仅初始化表结构；seed - 智能初始化（自动检测表结构）
+  - **优势**：简化操作流程，新用户只需运行 `seed` 即可完成所有初始化，无需先 `init` 再 `seed`
+
 ### 2025.12.07
 
 - **feat(i18n/unified-language-codes)**: 统一前后端语言代码为 zh 和 en
@@ -226,7 +336,7 @@
   - 日志输出正常，显示监听地址和 CORS 配置
 - **plan(auth/next)**: 规划 Auth 项目后续工作（按优先级）
   1. 创建 OIDC 端点控制器（AuthorizationController、TokenController、UserInfoController、AccountController）
-  2. 实现 OpenIddict 自定义 SqlSugar Store（替代当前的内存存储，支持生产环境持久化）
+  2. 实现 OpenIddict 自定义 SqlSugar Store（替代当前的内存存储，支持生产环境持久化）（2025.12.09 更新：本计划已取消，统一改为长期使用 EF Core `AuthOpenIddictDbContext`）
   3. 创建 Radish.DbSeed 项目（数据库初始化、预注册 OIDC 客户端：radish-client、radish-scalar、radish-rust-ext）
   4. 实现客户端管理 API（CRUD 接口管理 OIDC 客户端应用）
   5. 配置 Radish.Api 为资源服务器（添加 JWT Bearer 验证，从 Auth 服务验证访问令牌）

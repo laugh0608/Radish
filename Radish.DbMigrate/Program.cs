@@ -86,7 +86,7 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
         // - 带有 [SugarTable] 特性的实体；
         // - 或继承自 RootEntityTKey<> 的实体（大部分业务表）。
         var modelAssembly = typeof(Radish.Model.Root.RootEntityTKey<>).Assembly;
-        var entityTypes = modelAssembly
+        var allEntityTypes = modelAssembly
             .GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract && t.IsPublic)
             .Where(t =>
@@ -98,7 +98,29 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
             .Concat(new[] { typeof(Radish.Model.UserRole) })
             .Distinct();
 
-        foreach (var type in entityTypes)
+        // 根据 [Tenant(configId)] 注解过滤实体
+        var configIdStr = config.ConfigId?.ToString() ?? string.Empty;
+        var entityTypesForConfig = allEntityTypes.Where(type =>
+        {
+            var tenantAttr = type.GetCustomAttributes(typeof(TenantAttribute), inherit: true)
+                .Cast<TenantAttribute>()
+                .FirstOrDefault();
+
+            // 如果实体有 [Tenant(configId)] 注解，只在对应的数据库中初始化
+            if (tenantAttr != null && tenantAttr.configId != null)
+            {
+                var tenantConfigId = tenantAttr.configId.ToString() ?? string.Empty;
+                if (!string.IsNullOrEmpty(tenantConfigId))
+                {
+                    return string.Equals(tenantConfigId, configIdStr, StringComparison.OrdinalIgnoreCase);
+                }
+            }
+
+            // 如果实体没有 [Tenant] 注解，只在主库中初始化（排除 Log 库）
+            return !string.Equals(configIdStr, "Log", StringComparison.OrdinalIgnoreCase);
+        }).ToList();
+
+        foreach (var type in entityTypesForConfig)
         {
             Console.WriteLine($"  -> Init table for entity: {type.FullName} (ConnId={config.ConfigId})");
             conn.CodeFirst.InitTables(type);
@@ -114,6 +136,22 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
 
     var db = services.GetRequiredService<ISqlSugarClient>();
 
+    // 检查 Role 表是否存在，如果不存在则先执行 init
+    Console.WriteLine("[Radish.DbMigrate] 检查数据库表结构...");
+    var roleTableExists = db.DbMaintenance.IsAnyTable("Role", false);
+
+    if (!roleTableExists)
+    {
+        Console.WriteLine("[Radish.DbMigrate] ⚠️  检测到数据库表结构未初始化，自动执行 init...");
+        await RunInitAsync(services, configuration, environment);
+        Console.WriteLine();
+    }
+    else
+    {
+        Console.WriteLine("[Radish.DbMigrate] ✓ 数据库表结构已存在");
+    }
+
+    Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
     await InitialDataSeeder.SeedAsync(db);
 }
 

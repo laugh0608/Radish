@@ -88,7 +88,7 @@ Gateway 负责：
 - [x] 启用 YARP 路由，在本地开发环境下通过 Gateway 暴露 `/docs` 在线文档入口，并可按需代理到 radish.docs dev 服务
 - [x] 启用统一入口路由规划（`/`、`/docs`、`/api`、`/scalar`、`/console` 等），为后续完整 Gateway/BFF 能力预留路径空间
 - [x] 通过 Gateway 反向代理 Radish.Auth 的 `/Account` 与 `/connect` 端点（`appsettings.Local.json` 中的 `auth-account-route`/`auth-connect-route`），确保本地 OIDC 登录/授权码/Token 换取统一以 `https://localhost:5000` 作为入口
-- [x] 启动脚本更新完成（`start.ps1`/`start.sh`），可交互式启动 Gateway、API、前端、文档站与控制台
+- [x] 启动脚本更新完成（`start.ps1`/`start.sh`），可交互式启动 Gateway、API、前端、文档站与控制台；当前组合项：PowerShell 仅保留 Gateway+Auth+API 与 ALL，Shell 保留 9-15（Gateway+API/Frontend/Docs/Console/Auth、Gateway+Auth+API、ALL）。
 - [x] 文档更新完成（CLAUDE.md、DevelopmentSpecifications.md、DevelopmentFramework.md）
 - [x] **2025-11-27 增强**：门户页面配置化改造，支持生产环境部署
   - [x] 修复 URL 溢出问题，优化卡片布局

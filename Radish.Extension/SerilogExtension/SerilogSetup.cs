@@ -40,13 +40,15 @@ public static class SerilogSetup
 
         Log.Logger = loggerConfiguration.CreateLogger();
 
-        // Serilog 内部日志
-        var debugLogDir = LogContextTool.Combine(LogContextTool.SerilogDebug);
+        // Serilog 内部日志 - 输出到 Log/{ProjectName}/SerilogDebug/ 文件夹
+        var projectName = LogContextTool.ProjectName;
+        var debugLogDir = Path.Combine(LogContextTool.BaseLogs, projectName, LogContextTool.SerilogDebug);
         if (!Directory.Exists(debugLogDir))
         {
             Directory.CreateDirectory(debugLogDir);
         }
-        var file = File.CreateText(LogContextTool.Combine(LogContextTool.SerilogDebug, $"Serilog{DateTime.Now:yyyyMMdd}.txt"));
+        var debugLogPath = Path.Combine(debugLogDir, $"Serilog{DateTime.Now:yyyyMMdd}.txt");
+        var file = File.CreateText(debugLogPath);
         SelfLog.Enable(TextWriter.Synchronized(file));
 
         host.UseSerilog();

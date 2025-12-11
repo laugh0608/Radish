@@ -6,14 +6,44 @@ Radish 项目采用多层配置管理策略，以实现开发环境与生产环�
 
 ## 配置文件结构
 
+### Radish.Api 和 Radish.Auth（包含敏感信息）
+
 ```
 Radish.Api/
-├── appsettings.json                    ✅ 提交到 Git（基础配置，占位符）
-├── appsettings.Development.json        ✅ 提交到 Git（开发环境特定配置）
-├── appsettings.Production.json         ✅ 提交到 Git（生产环境特定配置）
-├── appsettings.Local.json              ❌ 不提交（本地敏感数据）
-└── appsettings.Local.example.json      ✅ 提交到 Git（配置模板）
+├── appsettings.json                       ✅ 提交到 Git（完整配置模板，包含默认值和注释）
+├── appsettings.Development.json           ✅ 提交到 Git（开发环境特定配置，可选）
+├── appsettings.Production.json            ✅ 提交到 Git（生产环境特定配置，可选）
+├── appsettings.Local.json.example         ✅ 提交到 Git（精简配置示例，仅包含常见敏感项）
+└── appsettings.Local.json                 ❌ 不提交（本地敏感数据）
 ```
+
+### Radish.Gateway（无敏感信息）
+
+```
+Radish.Gateway/
+├── appsettings.json                       ✅ 提交到 Git（完整配置，适用于开发和生产）
+├── appsettings.Development.json           ✅ 提交到 Git（可选）
+├── appsettings.Production.json            ✅ 提交到 Git（可选）
+└── README.md                              ✅ 配置说明（使用环境变量覆盖配置）
+```
+
+**重要说明**：
+
+**Radish.Api 和 Radish.Auth**：
+- `appsettings.json` - 完整的配置模板，包含所有配置项和详细注释，作为默认配置使用
+- `appsettings.Local.json.example` - **精简的配置示例**，仅包含常见需要修改的敏感配置项（推荐使用）
+- `appsettings.Local.json` - **只需包含你想要覆盖的配置项**，其他配置会自动继承 `appsettings.json`
+
+**Radish.Gateway**：
+- `appsettings.json` - 完整配置，开发和生产环境均可使用
+- **不需要 `appsettings.Local.json`** - Gateway 没有敏感信息（无数据库密码、API 密钥）
+- 生产环境通过**环境变量**覆盖配置（PublicUrl、服务地址等）
+
+**配置策略**：
+- ✅ **敏感信息放在 Local.json**（仅 API 和 Auth）：数据库密码、Redis 密码、API 密钥、加密密钥等
+- ✅ **Gateway 使用环境变量**：公开域名、内部服务地址等非敏感配置
+- ✅ **非敏感配置放在 appsettings.json**：CORS 地址、日志级别、默认端口、功能开关等
+- ✅ **利用深度合并**：Local.json 只写需要修改的配置项，其他自动继承
 
 ## 配置加载优先级
 
@@ -29,26 +59,240 @@ ASP.NET Core 按以下顺序加载配置（后面的会覆盖前面的）：
 4. 环境变量                              (可选，生产环境推荐)
 ```
 
+### 配置合并机制
+
+ASP.NET Core 配置系统使用**深度合并**策略：
+
+#### 1. 简单值的覆盖
+
+后加载的配置会直接覆盖前加载的配置：
+
+**appsettings.json**：
+```json
+{
+  "Redis": {
+    "Enable": false,
+    "ConnectionString": "localhost:6379"
+  }
+}
+```
+
+**appsettings.Local.json**：
+```json
+{
+  "Redis": {
+    "Enable": true,
+    "ConnectionString": "production-redis:6379,password=secret"
+  }
+}
+```
+
+**结果**：
+```json
+{
+  "Redis": {
+    "Enable": true,  // ✅ 被 Local 覆盖
+    "ConnectionString": "production-redis:6379,password=secret"  // ✅ 被 Local 覆盖
+  }
+}
+```
+
+#### 2. 对象的深度合并
+
+如果只在 Local.json 中覆盖部分字段，未覆盖的字段会保留原值：
+
+**appsettings.json**：
+```json
+{
+  "Snowflake": {
+    "WorkId": 0,
+    "DataCenterId": 0
+  }
+}
+```
+
+**appsettings.Local.json**（只覆盖 WorkId）：
+```json
+{
+  "Snowflake": {
+    "WorkId": 2
+  }
+}
+```
+
+**结果**：
+```json
+{
+  "Snowflake": {
+    "WorkId": 2,         // ✅ 被 Local 覆盖
+    "DataCenterId": 0    // ✅ 保留 appsettings.json 的值
+  }
+}
+```
+
+#### 3. 数组的索引覆盖
+
+数组配置按**索引位置**进行覆盖（不是追加）：
+
+**appsettings.json**：
+```json
+{
+  "Databases": [
+    {
+      "ConnId": "Main",
+      "DbType": 2,
+      "Enabled": true,
+      "ConnectionString": "Radish.db"
+    },
+    {
+      "ConnId": "Log",
+      "DbType": 2,
+      "Enabled": true,
+      "ConnectionString": "RadishLog.db"
+    }
+  ]
+}
+```
+
+**appsettings.Local.json**（切换到 PostgreSQL）：
+```json
+{
+  "Databases": [
+    {
+      "ConnId": "Main",
+      "DbType": 4,
+      "Enabled": true,
+      "ConnectionString": "Host=localhost;Port=5432;Database=radish;Username=postgres;Password=mypassword"
+    },
+    {
+      "ConnId": "Log",
+      "DbType": 4,
+      "Enabled": true,
+      "HitRate": 50,
+      "ConnectionString": "Host=localhost;Port=5432;Database=radish_log;Username=postgres;Password=mypassword"
+    }
+  ]
+}
+```
+
+**结果**：完全使用 Local.json 中的 PostgreSQL 配置，覆盖默认的 SQLite 配置。
+
+**重要提示**：如果要修改数组中的某个元素，建议提供完整的数组配置，以避免配置混淆。
+
+### 验证配置优先级
+
+可以在启动时打印配置值来验证加载顺序：
+
+**Program.cs**（开发环境调试用）：
+```csharp
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    var dbType = app.Configuration["Databases:0:DbType"];
+    var connStr = app.Configuration["Databases:0:ConnectionString"];
+    var redisEnabled = app.Configuration["Redis:Enable"];
+
+    app.Logger.LogInformation("=== 配置加载验证 ===");
+    app.Logger.LogInformation("Database Type: {DbType}", dbType);
+    app.Logger.LogInformation("Database Connection: {ConnStr}", connStr);
+    app.Logger.LogInformation("Redis Enabled: {RedisEnabled}", redisEnabled);
+    app.Logger.LogInformation("====================");
+}
+```
+
 ## 快速开始
 
 ### 新开发者配置步骤
 
-```bash
-# 1. 复制配置模板
-cp Radish.Api/appsettings.Local.example.json Radish.Api/appsettings.Local.json
+**最简单的方式（推荐）**：
 
-# 2. 编辑 appsettings.Local.json（使用任何文本编辑器）
-# 根据你的本地环境修改以下配置项：
-#   - Snowflake.WorkId (建议使用 0)
-#   - Databases 连接字符串（默认 SQLite 可直接使用）
-#   - Redis 配置（默认使用内存缓存，无需 Redis）
-#   - AutoMapper.LicenseKey（如有商业许可证）
+```bash
+# 直接启动项目，使用默认 SQLite 配置（开箱即用）
+dotnet run --project Radish.Api
+dotnet run --project Radish.Auth
+dotnet run --project Radish.Gateway
+```
+
+默认配置已经启用 SQLite 数据库和内存缓存，无需任何额外配置即可运行。
+
+**如需自定义配置（可选）**：
+
+**Radish.Api 和 Radish.Auth（使用 Local.json）**
+
+方式一：使用精简配置示例（推荐）
+
+```bash
+# 1. 复制精简配置示例（仅包含常见的敏感配置项）
+cp Radish.Api/appsettings.Local.json.example Radish.Api/appsettings.Local.json
+cp Radish.Auth/appsettings.Local.json.example Radish.Auth/appsettings.Local.json
+
+# 2. 编辑 appsettings.Local.json
+#    取消注释并修改你需要的配置项：
+#    - 数据库密码（切换到 PostgreSQL 时）
+#    - Redis 密码（启用 Redis 时）
+#    - Snowflake.WorkId（如需修改）
+#    - API 密钥和其他敏感信息
+#
+#    未指定的配置会自动继承 appsettings.json 中的默认值！
 
 # 3. 启动项目
 dotnet run --project Radish.Api
+dotnet run --project Radish.Auth
 ```
 
-**重要**：`appsettings.Local.json` 已被 Git 忽略，不会被提交到仓库。
+方式二：从头开始写（适合高级用户）
+
+```bash
+# 1. 创建空的 appsettings.Local.json
+touch Radish.Api/appsettings.Local.json
+
+# 2. 只添加你想要覆盖的配置项
+#    参考 appsettings.json 中的完整配置和注释说明
+#    例如只修改数据库密码：
+{
+  "Databases": [
+    {
+      "ConnId": "Main",
+      "DbType": 4,
+      "Enabled": true,
+      "ConnectionString": "Host=localhost;Port=5432;Database=radish;Username=postgres;Password=mypassword"
+    },
+    {
+      "ConnId": "Log",
+      "DbType": 4,
+      "Enabled": true,
+      "HitRate": 50,
+      "ConnectionString": "Host=localhost;Port=5432;Database=radish_log;Username=postgres;Password=mypassword"
+    }
+  ]
+}
+```
+
+**Radish.Gateway（使用环境变量）**
+
+Gateway 不需要 `appsettings.Local.json`，生产环境通过环境变量覆盖配置：
+
+```bash
+# Docker Compose 示例
+services:
+  radish-gateway:
+    image: radish-gateway:latest
+    environment:
+      - GatewayService__PublicUrl=https://your-domain.com
+      - Cors__AllowedOrigins__0=https://your-frontend-domain.com
+      - DownstreamServices__ApiService__BaseUrl=http://radish-api:5100
+      - DownstreamServices__AuthService__BaseUrl=http://radish-auth:5200
+```
+
+详细配置说明请参考 `Radish.Gateway/README.md`
+
+**重要**：
+- `appsettings.Local.json` 已被 Git 忽略，不会被提交到仓库
+- **只在 Local.json 中写需要覆盖的配置项**，利用深度合并机制自动继承其他配置
+- **敏感信息**（密码、密钥）必须放在 Local.json，**非敏感配置**（CORS、日志级别）应保留在 appsettings.json
+- `appsettings.Local.json.example` 提供了精简的配置模板，仅包含常见需要修改的项
+- `appsettings.json` 包含完整的配置说明和示例，可作为参考
 
 ## 配置项说明
 
@@ -72,6 +316,12 @@ dotnet run --project Radish.Api
 
 ### 2. 数据库配置
 
+**重要说明 - API 和 Auth 项目共享业务数据库**：
+- **Radish.Api** 和 **Radish.Auth** 项目使用**相同的业务数据库**（`Radish.db` 和 `RadishLog.db`）
+- 这两个数据库存储用户、角色、权限、租户等业务数据，需要被两个项目共同访问
+- **OpenIddict 使用独立的数据库**（`RadishAuth.OpenIddict.db`），由 EF Core 管理，存储 OIDC 认证相关数据（客户端、授权码、令牌等）
+- **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
+
 #### SQLite（默认，适合本地开发）
 
 ```json
@@ -81,20 +331,20 @@ dotnet run --project Radish.Api
       "ConnId": "Main",
       "DbType": 2,                    // 2 = SQLite
       "Enabled": true,
-      "ConnectionString": "Radish.db" // 数据库文件名
+      "ConnectionString": "Radish.db" // 数据库文件名（API 和 Auth 共享）
     },
     {
       "ConnId": "Log",
       "DbType": 2,
       "Enabled": true,
       "HitRate": 50,
-      "ConnectionString": "RadishLog.db"
+      "ConnectionString": "RadishLog.db" // 日志数据库（API 和 Auth 共享）
     }
   ]
 }
 ```
 
-数据库文件会自动创建在项目根目录（`/mnt/d/Code/Radish/`）。
+数据库文件会自动创建在解决方案根目录的 `DataBases/` 文件夹（例如：`/home/luobo/Code/Radish/DataBases/`）。
 
 #### PostgreSQL（生产环境推荐）
 
@@ -396,7 +646,8 @@ builder.Configuration.AddJsonFile(
    ```
 
 4. **团队共享配置模板**
-   - 更新 `appsettings.Local.example.json` 让新人快速上手
+   - `appsettings.json` 已作为完整的配置模板
+   - 添加新配置项时，务必在 `appsettings.json` 中添加注释说明
 
 ### ❌ 不应该做的
 
@@ -418,6 +669,64 @@ builder.Configuration.AddJsonFile(
    ```
 
 ## 常见问题
+
+### Q0: appsettings.Local.json 一定会覆盖 appsettings.json 吗？
+
+**是的！** `appsettings.Local.json` 是最后加载的配置文件（除了环境变量），具有最高优先级。
+
+**配置加载代码**（在 `Program.cs` 中）：
+```csharp
+config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+config.AddJsonFile($"appsettings.{Environment}.json", optional: true, reloadOnChange: false);
+config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);  // 最后加载，最高优先级
+```
+
+**示例验证**：
+
+1. **appsettings.json**（默认配置）：
+```json
+{
+  "Redis": {
+    "Enable": false,
+    "ConnectionString": "localhost:6379"
+  }
+}
+```
+
+2. **appsettings.Local.json**（你的本地配置）：
+```json
+{
+  "Redis": {
+    "Enable": true,
+    "ConnectionString": "production:6379,password=secret"
+  }
+}
+```
+
+3. **最终生效的配置**：
+```json
+{
+  "Redis": {
+    "Enable": true,                                           // ✅ 来自 Local.json
+    "ConnectionString": "production:6379,password=secret"     // ✅ 来自 Local.json
+  }
+}
+```
+
+**注意事项**：
+- ✅ 对于简单值（字符串、数字、布尔值），Local.json 的值会完全覆盖
+- ✅ 对于对象，会进行深度合并（未指定的字段保留 appsettings.json 的值）
+- ⚠️ 对于数组（如 `Databases`），建议提供完整的数组配置，避免索引混淆
+
+**验证方法**：
+```csharp
+// 在 Program.cs 中添加（开发环境）
+if (app.Environment.IsDevelopment())
+{
+    app.Logger.LogInformation("Redis Enabled: {Value}",
+        app.Configuration["Redis:Enable"]);
+}
+```
 
 ### Q1: 如何验证配置是否生效？
 
@@ -471,16 +780,35 @@ services:
 
 新成员加入时：
 
+**方式一：直接运行（最简单）**
 ```bash
 # 1. 克隆仓库
 git clone https://github.com/your-org/Radish.git
 cd Radish
 
-# 2. 复制配置模板
-cp Radish.Api/appsettings.Local.example.json Radish.Api/appsettings.Local.json
+# 2. 直接运行（使用默认 SQLite 配置）
+dotnet run --project Radish.Api
+dotnet run --project Radish.Auth
+dotnet run --project Radish.Gateway
+```
 
-# 3. 如需修改，编辑 appsettings.Local.json
-# （默认配置通常可以直接使用）
+**方式二：自定义配置（可选）**
+```bash
+# 1. 克隆仓库
+git clone https://github.com/your-org/Radish.git
+cd Radish
+
+# 2. 复制精简配置示例
+cp Radish.Api/appsettings.Local.json.example Radish.Api/appsettings.Local.json
+cp Radish.Auth/appsettings.Local.json.example Radish.Auth/appsettings.Local.json
+cp Radish.Gateway/appsettings.Local.json.example Radish.Gateway/appsettings.Local.json
+
+# 3. 编辑 appsettings.Local.json，取消注释并修改需要的配置项
+#    - 数据库密码（切换到 PostgreSQL 时）
+#    - Redis 密码（启用 Redis 时）
+#    - 其他敏感信息
+#
+#    所有配置项都有详细注释说明
 
 # 4. 启动项目
 dotnet run --project Radish.Api
@@ -510,4 +838,9 @@ git push origin --force --all
 
 ## 变更日志
 
+- **2025-12-08**：
+  - 优化配置策略：Local.json 只需包含需要覆盖的配置项，利用深度合并自动继承其他配置
+  - 添加 `appsettings.Local.json.example` 精简配置示例，仅包含常见的敏感配置项
+  - 补充配置优先级和合并机制说明
+  - 简化配置文件结构，移除冗余的 `.Local.example.json`，`appsettings.json` 现作为完整配置模板
 - **2025-11-27**：初始版本，引入 `appsettings.Local.json` 配置管理策略

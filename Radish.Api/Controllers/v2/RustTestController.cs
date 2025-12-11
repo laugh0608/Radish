@@ -4,7 +4,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Radish.Api.Controllers;
+namespace Radish.Api.Controllers.v2;
 
 /// <summary>
 /// Rust 原生互操作性能测试控制器 (v2)

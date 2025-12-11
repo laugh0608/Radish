@@ -2,7 +2,7 @@
 
 Radish 采用 **OIDC（OpenID Connect）** 架构实现统一身份认证，基于 **OpenIddict** 构建认证服务器。本文档梳理整体架构、配置要点与扩展方式。
 
-> **相关文档**：本文档专注于认证的技术实现细节。关于 Gateway 架构下的统一认证规划（Phase 2），请参阅 [GatewayPlan.md](GatewayPlan.md#phase-2-认证集成)。
+> **相关文档**：本文档专注于认证的技术实现细节。关于密码安全与用户密码存储策略，请参阅 [PasswordSecurity.md](PasswordSecurity.md)。关于 Gateway 架构下的统一认证规划（Phase 2），请参阅 [GatewayPlan.md](GatewayPlan.md#phase-2-认证集成)。
 
 ## 1. 架构概览
 
@@ -204,10 +204,53 @@ new OpenIddictApplicationDescriptor
 
 客户端数据使用 **OpenIddict 的 Properties 字段**（`ImmutableDictionary<string, JsonElement>`）存储扩展信息：
 
+**系统字段**（用于客户端管理）：
 - **IsDeleted**：软删除标记（`"true"` / `"false"`）
 - **CreatedAt** / **CreatedBy**：创建时间和创建者 ID
 - **UpdatedAt** / **UpdatedBy**：更新时间和更新者 ID
 - **DeletedAt** / **DeletedBy**：删除时间和删除者 ID
+
+**展示字段**（用于登录页面和客户端信息展示）：
+- **description**：客户端描述信息，如"Radish 社区平台前端应用"
+- **developerName**：开发者/团队名称，如"Radish Team"
+- **logo**：客户端图标 URL（可选）
+
+#### 客户端扩展属性配置
+
+在客户端初始化时，可通过 `OpenIddictApplicationDescriptor.Properties` 设置扩展属性：
+
+```csharp
+var descriptor = new OpenIddictApplicationDescriptor
+{
+    ClientId = "radish-client",
+    DisplayName = "Radish Web Client",
+    ConsentType = OpenIddictConstants.ConsentTypes.Explicit,
+    // ... 其他配置 ...
+};
+
+// 添加扩展属性（存储为 JSON 元素）
+descriptor.Properties["description"] = JsonSerializer.SerializeToElement("Radish 社区平台前端应用");
+descriptor.Properties["developerName"] = JsonSerializer.SerializeToElement("Radish Team");
+descriptor.Properties["logo"] = JsonSerializer.SerializeToElement("https://example.com/logo.png");
+
+await applicationManager.CreateAsync(descriptor);
+```
+
+**登录页面展示**：
+
+当用户访问登录页时，Auth Server 会从 `ReturnUrl` 中提取 `client_id` 参数，查询客户端信息并展示：
+- 客户端图标（logo）或首字母缩写
+- 客户端显示名称（DisplayName）
+- 客户端 ID（ClientId）
+- 客户端描述（description）
+- 开发者名称（developerName）
+
+如果无法解析 `client_id` 或客户端不存在，将显示"未知的客户端"。
+
+**注意事项**：
+- URL 解析时不应对整个 ReturnUrl 解码（避免 `redirect_uri` 参数干扰）
+- 使用 `QueryHelpers.ParseQuery` 解析查询字符串（自动处理 URL 编码）
+- 扩展属性通过 `IOpenIddictApplicationManager.GetPropertiesAsync` 获取
 
 所有审计字段使用 ISO 8601 格式存储（`DateTime.UtcNow.ToString("O")`）。
 
@@ -659,6 +702,83 @@ var hasPermission = PermissionItems
 - 启用 HSTS
 - Cookie 设置 `Secure`、`HttpOnly`、`SameSite=Strict`
 
+### 10.4 OIDC 证书管理
+
+- 仓库根目录新增 `Certs/` 文件夹，默认提供一个仅供开发/联调使用的 `dev-auth-cert.pfx`，密码为 `RadishDevCert123!`（已加入 `.gitignore`，只保留示例证书）。
+- `Radish.Auth/appsettings.json` 预置了以下配置，并由 `Program.cs` 自动加载证书（注意路径区分大小写，Linux 环境需保持 `Certs` 首字母大写）：
+
+```json
+"OpenIddict": {
+  "Encryption": {
+    "UseDevelopmentKeys": false,
+    "SigningCertificatePath": "../Certs/dev-auth-cert.pfx",
+    "SigningCertificatePassword": "RadishDevCert123!",
+    "EncryptionCertificatePath": "../Certs/dev-auth-cert.pfx",
+    "EncryptionCertificatePassword": "RadishDevCert123!"
+  }
+}
+```
+
+#### 证书生成示例
+
+1. **生成签名证书（Signing）**：
+   ```bash
+   openssl genrsa -out auth-signing.key 4096
+   openssl req -new -key auth-signing.key -out auth-signing.csr -subj "/CN=radish-auth-signing"
+   openssl x509 -req -in auth-signing.csr -signkey auth-signing.key -days 365 -out auth-signing.crt
+   openssl pkcs12 -export -out auth-signing.pfx -inkey auth-signing.key -in auth-signing.crt -password pass:ChangeMe!
+   ```
+2. **生成加密证书（Encryption，可与签名证书分离）**：
+   ```bash
+   openssl genrsa -out auth-encryption.key 4096
+   openssl req -new -key auth-encryption.key -out auth-encryption.csr -subj "/CN=radish-auth-encryption"
+   openssl x509 -req -in auth-encryption.csr -signkey auth-encryption.key -days 365 -out auth-encryption.crt
+   openssl pkcs12 -export -out auth-encryption.pfx -inkey auth-encryption.key -in auth-encryption.crt -password pass:ChangeMeToo!
+   ```
+3. **安全处理明文文件**：生成 `.pfx` 后，立即销毁 `.key/.csr/.crt` 明文文件或转存到安全密钥库，仅保留 `.pfx` 与随机密码。
+4. **验证内容**：
+   ```bash
+   openssl pkcs12 -info -in auth-signing.pfx -nokeys
+   ```
+   确保 PFX 中包含私钥且未过期。
+
+> 可以使用同一个 `.pfx` 兼作签名与加密，但生产环境推荐拆分，以便后续按不同生命周期轮换。
+
+Auth 启动时会在 `Program.cs` 中调用 `LoadOpenIddictCertificate`，相对路径会基于 `builder.Environment.ContentRootPath` 解析成绝对路径，因此在生产环境只需确保证书被挂载到容器内并设置正确的 `OpenIddict__Encryption__*` 环境变量即可。
+
+#### 部署与覆盖配置
+
+1. **放置证书**：将 `auth-signing.pfx`、`auth-encryption.pfx` 拷贝到宿主机安全目录（例如 `/etc/radish/certs/`），以 `600` 权限挂载到容器（`/app/certs`）。
+2. **覆盖配置**：在 `appsettings.Production.json` 或环境变量中设置：
+   ```
+   OpenIddict__Encryption__UseDevelopmentKeys=false
+   OpenIddict__Encryption__SigningCertificatePath=/app/certs/auth-signing.pfx
+   OpenIddict__Encryption__SigningCertificatePassword=<生产密码>
+   OpenIddict__Encryption__EncryptionCertificatePath=/app/certs/auth-encryption.pfx
+   OpenIddict__Encryption__EncryptionCertificatePassword=<生产密码>
+   ```
+3. **滚动重启 Auth**：逐台/逐 Pod 重启 Auth 服务，发布后访问 `/.well-known/openid-configuration` 与 `/.well-known/jwks`，确认 `kid` 已切换至新证书；旧 Token 应该立即验签失败。
+
+#### 滚动更新与密钥轮换
+
+1. **提前生成下一版证书**，建议以“`auth-signing-2025Q1.pfx`”等命名区分版本。
+2. **上传并挂载新证书**，但暂不更新环境变量，确保文件可被容器访问。
+3. **更新配置指向新证书**：
+   ```bash
+   export AUTH_CERT_PASSWORD=<new-password>
+   docker compose exec auth bash -c 'printenv | grep OpenIddict__Encryption'
+   # 修改部署清单或 Compose/Helm values，指向新的 .pfx 与密码
+   ```
+4. **按批次重启 Auth**（Kubernetes 可 `kubectl rollout restart deploy/radish-auth`；Compose 可 `docker compose up -d auth`）。
+5. **验证 JWKS**：
+   ```bash
+   curl https://radish.com/.well-known/jwks | jq '.keys[].kid'
+   ```
+   确保新 `kid` 已生效，再次调用受保护 API 验证 Token。
+6. **清理旧证书**：确认所有客户端已获取新 Token 后，删除旧 `.pfx` 文件并吊销旧密码，避免被继续使用。
+
+- **注意**：`dev-auth-cert.pfx` 只能用于本地开发，生产环境一定要替换证书与密码，并限制证书文件的访问权限。
+
 ## 11. 调试与排障
 
 ### 11.1 发现文档
@@ -730,6 +850,8 @@ public async Task<IActionResult> GetJwtToken(LoginInput input)
 
 OpenIddict 使用独立的 SQLite 数据库存储客户端、授权、Token 等信息。
 
+> 说明：此前仓库中曾探索过自定义 SqlSugar Store，但未正式接入。现阶段统一由 EF Core (`AuthOpenIddictDbContext`) 管理 OpenIddict 数据库，后续也不再维护那套实验性实现，避免不同 ORM 并行带来的维护成本。
+
 #### 数据库位置
 
 所有数据库文件统一存放在**解决方案根目录**的 `DataBases/` 文件夹：
@@ -737,10 +859,20 @@ OpenIddict 使用独立的 SQLite 数据库存储客户端、授权、Token 等�
 ```
 Radish/
 └── DataBases/
-    ├── Radish.db                    # API 主数据库（SqlSugar）
-    ├── RadishLog.db                 # API 日志数据库（SqlSugar）
-    └── RadishAuth.OpenIddict.db     # OpenIddict 数据库（EF Core）
+    ├── Radish.db                    # 业务主数据库（SqlSugar，API 和 Auth 共享）
+    ├── RadishLog.db                 # 业务日志数据库（SqlSugar，API 和 Auth 共享）
+    └── RadishAuth.OpenIddict.db     # OpenIddict 数据库（EF Core，Auth 专用）
 ```
+
+**重要说明 - 数据库共享机制**：
+- **业务数据库共享**：`Radish.db` 和 `RadishLog.db` 被 **Radish.Api** 和 **Radish.Auth** 两个项目共同使用
+  - 存储用户、角色、权限、租户等业务数据
+  - Auth 项目需要访问这些数据来验证用户身份和权限
+  - API 项目需要访问这些数据来提供业务功能
+- **OpenIddict 数据库独立**：`RadishAuth.OpenIddict.db` 仅由 **Radish.Auth** 项目使用
+  - 存储 OIDC 认证相关数据（客户端、授权码、令牌、Scope 等）
+  - 使用 EF Core 管理（而不是 SqlSugar）
+  - API 项目通过 `IOpenIddictApplicationManager` 访问此数据库，实现客户端管理 API
 
 #### 共享机制
 

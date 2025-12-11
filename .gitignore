@@ -196,6 +196,7 @@ ClientBin/
 *.dbmdl
 *.dbproj.schemaview
 *.pfx
+!Certs/dev-auth-cert.pfx
 *.publishsettings
 node_modules/
 orleans.codegen.cs
@@ -288,7 +289,7 @@ tempkey.jwk
 **/appsettings.Local.json
 *.Local.json
 
-# Database files
+# Database files (SQLite)
 *.db
 *.db-shm
 *.db-wal

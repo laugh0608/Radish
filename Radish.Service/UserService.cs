@@ -78,18 +78,6 @@ public class UserService : BaseService<User, UserVo>, IUserService
         );
     }
 
-    #region 初始测试，不用理会
-    
-    /// <summary>测试获取用户服务示例</summary>
-    /// <remarks>返回的是视图 Vo 模型，隔离实际实体类</remarks>
-    /// <returns></returns>
-    public async Task<List<UserVo>> GetUsersAsync()
-    {
-        // 将仓储层返回的实体映射为外部可用的 UserVo，仅供示例接口与测试调用。
-        var userList = await _userRepository.GetUsersAsync();
-        return userList.Select(u => new UserVo { VoUsName = u.UserName }).ToList();
-    }
-
     /// <summary>测试使用同事务</summary>
     /// <remarks>仅为示例，无任何作用</remarks>
     /// <returns></returns>
@@ -119,6 +107,4 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
         return true;
     }
-    
-    #endregion
 }

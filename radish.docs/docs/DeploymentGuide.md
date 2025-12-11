@@ -8,6 +8,7 @@
 - .NET SDK 10.0.0（满足 `global.json`），用于调试或本地 `dotnet publish`。
 - Node.js 20+：可选，用于本地构建前端；镜像会在 `with-node` 阶段安装 Node 响应 webpack/Vite 资源打包需求。
 - PostgreSQL 15+：本地或托管实例，需提供 `ConnectionStrings__Default`。
+- **Auth 证书**：准备好 OIDC 签名/加密证书（`.pfx` 文件），并在部署环境中通过环境变量覆盖 `OpenIddict__Encryption__*` 配置；默认的 `Certs/dev-auth-cert.pfx` 仅用于本地联调，生产必须替换。
 
 ## 构建服务镜像
 `Radish.Api/Dockerfile` 采用多阶段构建：`with-node` 准备 Node 环境，`build/publish` 负责编译，`final` 提供轻量运行时。常用构建命令如下：
@@ -78,7 +79,29 @@ volumes:
 
 > 适用于：新环境第一次部署数据库，或在已有数据库上按版本执行结构迁移。
 
-### 本地/测试环境：初始化数据库结构
+### 快速开始：一键初始化（推荐）
+
+对于全新环境或本地开发，推荐直接使用 `seed` 命令，它会自动完成表结构初始化和数据填充：
+
+```bash
+# 通过启动脚本（推荐）
+pwsh ./start.ps1  # 或 ./start.sh
+# 选择 7 (DbMigrate)，直接按回车选择默认的 seed（两端脚本均保留此单项）
+
+# 或直接运行
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
+```
+
+**seed 命令会自动：**
+1. 检查数据库表结构是否存在
+2. 如果表不存在，自动执行 `init` 创建表结构
+3. 填充初始数据（角色、租户、部门、用户等）
+
+这样您无需手动先执行 `init` 再执行 `seed`，一条命令即可完成所有初始化。
+
+### 本地/测试环境：仅初始化数据库结构
+
+如果您只需要创建表结构而不填充数据，可以单独使用 `init` 命令：
 
 1. 确认 `Radish.Api/appsettings.Local.json`（或对应环境的 `appsettings.{Environment}.json`）已配置好数据库连接：
    - SQLite 场景：只需指定数据库文件名（如 `Radish.db`）。
@@ -119,8 +142,15 @@ volumes:
 在仓库根目录执行：
 
 ```bash
- dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
+# 通过启动脚本（推荐）
+pwsh ./start.ps1  # 或 ./start.sh
+# 选择 7 (DbMigrate)，直接按回车选择默认的 seed（两端脚本均保留此单项）
+
+# 或直接运行
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
 ```
+
+**智能初始化**：`seed` 命令会自动检测数据库表结构，如果表不存在会先执行 `init` 创建表结构，然后再填充数据。因此对于全新环境，您只需运行 `seed` 即可完成所有初始化工作。
 
 实现位于 `Radish.DbMigrate/InitialDataSeeder.cs`，并按模块拆分为 `SeedRolesAsync`、`SeedTenantsAsync`、`SeedDepartmentsAsync`、`SeedUsersAsync` 等方法，支持后续按业务扩展更多种子数据。所有插入都会先通过 `AnyAsync` 判断是否已存在，保证可以安全重复执行。
 
@@ -231,6 +261,7 @@ services:
     depends_on:
       - gateway
       - api
+      - auth
 
   gateway:
     build:
@@ -241,6 +272,7 @@ services:
       ASPNETCORE_URLS: http://+:5000
       GatewayService__PublicUrl: https://radish.com
       DownstreamServices__ApiService__BaseUrl: http://api:5100
+      DownstreamServices__AuthService__BaseUrl: http://auth:5200
     expose:
       - "5000"
     networks:
@@ -256,6 +288,29 @@ services:
       ConnectionStrings__Default: Host=db;Port=5432;Database=radish;Username=radish;Password=${DB_PASSWORD}
     expose:
       - "5100"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - radish-network
+
+  auth:
+    build:
+      context: ..
+      dockerfile: Radish.Auth/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5200
+      OpenIddict__Server__Issuer: https://radish.com
+      OpenIddict__Encryption__UseDevelopmentKeys: "false"
+      OpenIddict__Encryption__SigningCertificatePath: /app/certs/auth-signing.pfx
+      OpenIddict__Encryption__SigningCertificatePassword: ${AUTH_CERT_PASSWORD}
+      OpenIddict__Encryption__EncryptionCertificatePath: /app/certs/auth-encryption.pfx
+      OpenIddict__Encryption__EncryptionCertificatePassword: ${AUTH_CERT_PASSWORD}
+    volumes:
+      - ./certs:/app/certs:ro
+    expose:
+      - "5200"
     depends_on:
       db:
         condition: service_healthy
@@ -292,6 +347,33 @@ networks:
 - **生产环境**：应用使用 HTTP 端口，TLS 由反向代理处理
 - **内网可信场景**：反代到 HTTP 端口是安全的
 - **零信任架构**：如需端到端加密，可配置反代到 HTTPS，但需要额外证书管理
+
+### OIDC 证书滚动更新流程
+
+1. **准备新证书**：参考《AuthenticationGuide.md》的“证书生成示例”生成新 `.pfx`（签名/加密可拆分）。
+2. **上传/挂载**：将新证书放到宿主机（如 `/etc/radish/certs/auth-signing-2025Q1.pfx`），并映射到容器的 `/app/certs`。
+3. **更新环境变量**：
+   ```bash
+   export AUTH_CERT_VERSION=2025Q1
+   export AUTH_CERT_PASSWORD=<new-password>
+   docker compose up -d auth \
+     -e OpenIddict__Encryption__SigningCertificatePath=/app/certs/auth-signing-${AUTH_CERT_VERSION}.pfx \
+     -e OpenIddict__Encryption__SigningCertificatePassword=${AUTH_CERT_PASSWORD} \
+     -e OpenIddict__Encryption__EncryptionCertificatePath=/app/certs/auth-encryption-${AUTH_CERT_VERSION}.pfx \
+     -e OpenIddict__Encryption__EncryptionCertificatePassword=${AUTH_CERT_PASSWORD}
+   ```
+   Kubernetes 集群可在 Helm values 中覆盖 `env`，并执行 `helm upgrade`。
+4. **分批重启**：
+   - Compose：`docker compose up -d auth`
+   - Kubernetes：`kubectl rollout restart deploy/radish-auth`
+5. **验证**：
+   ```bash
+   curl https://radish.com/.well-known/jwks | jq '.keys[].kid'
+   ```
+   确认 `kid` 已切换为新证书，再用新 Token 访问 `https://radish.com/api/...` 验证签名。
+6. **清理旧证书**：确保所有客户端已换取新 Token 后，删除旧 `.pfx` 并吊销旧密码。
+
+> 建议记录证书轮换日期，并在运维手册中说明下一次到期时间，以避免证书过期导致 Auth 下线。
 
 ## 可选：部署 Gateway 在线文档
 

@@ -54,8 +54,10 @@
 
 - `start.ps1`（Windows/PowerShell）与 `start.sh`（Linux/macOS）提供交互式菜单，统一启动/组合 API、Gateway、前端、文档站与控制台等服务。
 - 当前菜单大致包含两类选项：
-  - **单服务**：仅启动 `Radish.Api` / `Radish.Gateway` / `radish.client`（前端）/ `radish.docs`（文档 dev）/ `radish.console`（控制台）或执行 `Radish.Api.Tests`。
-  - **组合启动**：如 "Gateway + API"、"Gateway + frontend"、"Gateway + docs"、"Gateway + console"、"Gateway + API + frontend"、"Gateway + API + frontend + console" 以及“一键启动全部”。
+  - **单服务**：仅启动 `Radish.Api` / `Radish.Gateway` / `radish.client`（前端）/ `radish.docs`（文档 dev）/ `radish.console`（控制台）/ `Radish.Auth`，或执行 `Radish.Api.Tests`。
+  - **组合启动**：
+    - PowerShell (`start.ps1`): 仅保留 "Gateway + Auth + API" 与 "Start ALL"。
+    - Shell (`start.sh`): "Gateway + API"、"Gateway + frontend"、"Gateway + docs"、"Gateway + console"、"Gateway + Auth"、"Gateway + Auth + API"、"Start ALL"（编号 9-15）。
 - 如需自定义构建配置，可在运行脚本前设置 `Configuration`（PowerShell 参数）或 `CONFIGURATION` 环境变量（Shell 脚本）。
 
 ### 分层视图

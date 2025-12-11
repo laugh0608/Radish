@@ -755,12 +755,12 @@ eventBus.on('new-message', ({ count }) => {
 
 ### 阶段一：M4（桌面系统基础）
 
-- [x] Desktop Shell 骨架
-- [ ] 应用注册系统
-- [ ] 窗口管理器（窗口/全屏/iframe）
-- [ ] 权限控制
-- [ ] 论坛应用（MVP）
-- [ ] 用 WebOS 桌面 Shell 取代当前 `src/App.tsx` Demo 页；现阶段暂时保留该页面的 WeatherForecast + Gateway OIDC 登录/退出示例，用于验证 Auth + Api + Gateway 端到端链路
+- [x] Desktop Shell 骨架（Shell、StatusBar、Desktop、Dock 已实现）
+- [x] 应用注册系统（AppRegistry.tsx 已实现，支持权限、类型、分类）
+- [x] 窗口管理器（窗口/全屏/iframe）（WindowManager.tsx + DesktopWindow.tsx 已实现 react-rnd）
+- [x] 权限控制（基于 requiredRoles 的应用过滤，支持角色级访问控制）
+- [ ] 论坛应用（MVP）（仅实现了 WelcomeApp 作为演示应用）
+- [x] 用 WebOS 桌面 Shell 取代当前 `src/App.tsx` Demo 页（已通过 main.tsx URL 参数实现：默认 Shell，?demo 访问原页面，?showcase 查看组件库）
 
 ### 阶段二：M5（核心应用）
 
