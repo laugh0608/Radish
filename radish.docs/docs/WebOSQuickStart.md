@@ -192,9 +192,9 @@ useUserStore.getState().setUser({
 
 ## 📚 相关文档
 
-- [组件库文档](./COMPONENTS.md) - 基础 UI 组件使用指南
-- [前端设计文档](../radish.docs/docs/FrontendDesign.md) - WebOS 架构设计
-- [开发规范](../CLAUDE.md) - 项目开发规范
+- [组件库文档](./ComponentLibrary.md) - 基础 UI 组件使用指南
+- [前端设计文档](./FrontendDesign.md) - WebOS 架构设计
+- [开发规范](../../CLAUDE.md) - 项目开发规范
 
 ---
 
