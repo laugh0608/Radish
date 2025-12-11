@@ -38,10 +38,16 @@ export interface WindowState {
   zIndex: number;
   /** 是否最小化 */
   isMinimized: boolean;
+  /** 是否最大化（铺满可用区域，预留 Dock） */
+  isMaximized?: boolean;
   /** 窗口位置 */
   position?: { x: number; y: number };
   /** 窗口大小 */
   size?: { width: number; height: number };
+  /** 最大化前的窗口位置（用于恢复） */
+  prevPosition?: { x: number; y: number };
+  /** 最大化前的窗口大小（用于恢复） */
+  prevSize?: { width: number; height: number };
 }
 
 /**

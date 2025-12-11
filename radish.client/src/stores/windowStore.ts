@@ -25,6 +25,12 @@ interface WindowStore {
 
   /** 更新窗口大小 */
   updateWindowSize: (windowId: string, size: { width: number; height: number }) => void;
+
+  /** 最大化窗口 */
+  maximizeWindow: (windowId: string, payload: { width: number; height: number; x: number; y: number }) => void;
+
+  /** 退出最大化 */
+  unmaximizeWindow: (windowId: string) => void;
 }
 
 export const useWindowStore = create<WindowStore>((set, get) => ({
@@ -50,7 +56,8 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       id: `win-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       appId,
       zIndex: maxZIndex + 1,
-      isMinimized: false
+      isMinimized: false,
+      isMaximized: false
     };
 
     set({ openWindows: [...openWindows, newWindow] });
@@ -112,6 +119,47 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     set(state => ({
       openWindows: state.openWindows.map(w =>
         w.id === windowId ? { ...w, size } : w
+      )
+    }));
+  },
+
+  maximizeWindow: (windowId: string, payload: { width: number; height: number; x: number; y: number }) => {
+    const { openWindows } = get();
+    const maxZIndex = Math.max(0, ...openWindows.map(w => w.zIndex));
+
+    set(state => ({
+      openWindows: state.openWindows.map(w =>
+        w.id === windowId
+          ? {
+              ...w,
+              isMinimized: false,
+              isMaximized: true,
+              prevPosition: w.position,
+              prevSize: w.size,
+              position: { x: payload.x, y: payload.y },
+              size: { width: payload.width, height: payload.height },
+              zIndex: maxZIndex + 1
+            }
+          : w
+      )
+    }));
+  },
+
+  unmaximizeWindow: (windowId: string) => {
+    const { openWindows } = get();
+    const maxZIndex = Math.max(0, ...openWindows.map(w => w.zIndex));
+
+    set(state => ({
+      openWindows: state.openWindows.map(w =>
+        w.id === windowId
+          ? {
+              ...w,
+              isMaximized: false,
+              position: w.prevPosition ?? w.position,
+              size: w.prevSize ?? w.size,
+              zIndex: maxZIndex + 1
+            }
+          : w
       )
     }));
   }
