@@ -230,7 +230,7 @@ builder.Services.AddOpenIddict()
                .AllowClientCredentialsFlow();
 
         // 注册允许的 Scopes
-        options.RegisterScopes("openid", "profile", "offline_access", "radish-api");
+        options.RegisterScopes("openid", "profile", "email", "offline_access", "radish-api");
 
         // 配置加密和签名证书（默认使用 certs/dev-auth-cert.pfx）
         var useDevelopmentKeys = openIddictCertificateSection.GetValue<bool?>("UseDevelopmentKeys") ?? false;
