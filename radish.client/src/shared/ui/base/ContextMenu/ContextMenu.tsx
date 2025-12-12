@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type ReactElement, cloneElement } from 'react';
 import styles from './ContextMenu.module.css';
 
 export interface ContextMenuItem {
@@ -69,11 +69,11 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [submenuState, setSubmenuState] = useState<{ [key: string]: boolean }>({});
-  const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // 处理右键点击
   const handleContextMenu = (e: React.MouseEvent) => {
+    console.log('ContextMenu: handleContextMenu triggered');
     e.preventDefault();
     e.stopPropagation();
 
@@ -192,8 +192,10 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
   };
 
   return (
-    <div ref={containerRef} onContextMenu={handleContextMenu}>
-      {children}
+    <>
+      {cloneElement(children as ReactElement<any>, {
+        onContextMenu: handleContextMenu
+      })}
       {visible && (
         <div
           ref={menuRef}
@@ -206,6 +208,6 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
           {items.map(item => renderMenuItem(item))}
         </div>
       )}
-    </div>
+    </>
   );
 };
