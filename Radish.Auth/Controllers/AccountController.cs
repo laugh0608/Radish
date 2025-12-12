@@ -91,21 +91,37 @@ public class AccountController : Controller
 
         var claims = new List<Claim>
         {
-            // 标准身份标识
+            // 标准身份标识 (ClaimTypes)
             new(ClaimTypes.NameIdentifier, userId),
             new(ClaimTypes.Name, username),
 
-            // OIDC 兼容的 sub/name
-            new("sub", userId),
-            new("name", username),
+            // OIDC 标准 claims
+            new(OpenIddictConstants.Claims.Subject, userId),
+            new(OpenIddictConstants.Claims.Name, username),
+            new(OpenIddictConstants.Claims.PreferredUsername, user.VoLoName),
 
             // 多租户标识（与 AuthenticationGuide 中的约定一致）
             new("tenant_id", tenantId)
         };
 
+        // Email claim (如果存在)
+        if (!string.IsNullOrWhiteSpace(user.VoUsEmail))
+        {
+            claims.Add(new Claim(ClaimTypes.Email, user.VoUsEmail));
+            claims.Add(new Claim(OpenIddictConstants.Claims.Email, user.VoUsEmail));
+        }
+
+        // 真实姓名 (如果存在)
+        if (!string.IsNullOrWhiteSpace(user.VoReNa))
+        {
+            claims.Add(new Claim(OpenIddictConstants.Claims.GivenName, user.VoReNa));
+        }
+
+        // 角色 claims
         foreach (var role in roleNames)
         {
             claims.Add(new Claim(ClaimTypes.Role, role));
+            claims.Add(new Claim(OpenIddictConstants.Claims.Role, role));
         }
 
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);

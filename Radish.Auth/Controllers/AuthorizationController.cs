@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Security.Claims;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
@@ -87,14 +88,14 @@ public class AuthorizationController : Controller
             string.IsNullOrEmpty(userDecision))
         {
             // 第一次到达 /connect/authorize，且为需要显式授权的第三方客户端：展示授权确认页
-            var scopes = request.GetScopes().ToArray();
+            var requestedScopes = request.GetScopes().ToArray();
 
             var vm = new ConsentViewModel
             {
                 ClientId = clientId,
                 ClientName = clientName,
-                Scope = string.Join(" ", scopes),
-                Scopes = scopes,
+                Scope = string.Join(" ", requestedScopes),
+                Scopes = requestedScopes,
                 // 将本次授权请求中必需的 OIDC 参数保存到视图模型，方便在同意页通过 form 再次提交
                 ResponseType = request.ResponseType ?? string.Empty,
                 RedirectUri = request.RedirectUri ?? string.Empty,
@@ -141,16 +142,111 @@ public class AuthorizationController : Controller
         var principal = new ClaimsPrincipal(identity);
 
         // 关键点：只把「请求中」的 scopes 传给 OpenIddict，避免超出客户端允许范围
-        principal.SetScopes(request.GetScopes());
+        var scopes = request.GetScopes();
+        principal.SetScopes(scopes);
 
         // 对于资源服务器，只暴露 radish-api 这一项
         principal.SetResources("radish-api");
 
-        // 将所有当前 Claims 下发到 access_token，方便资源服务器直接消费
-        principal.SetDestinations(static claim =>
-            new[] { OpenIddictConstants.Destinations.AccessToken });
+        // 根据 scope 和 claim 类型动态设置 destinations
+        principal.SetDestinations(claim => GetClaimDestinations(claim, scopes));
 
         // 由 OpenIddict 生成授权码等票据
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+    }
+
+    /// <summary>
+    /// 根据 scope 和 claim 类型动态决定 claim 的目标位置 (id_token / access_token)。
+    /// </summary>
+    private static IEnumerable<string> GetClaimDestinations(Claim claim, ImmutableArray<string> scopes)
+    {
+        // sub 是必需的标识符，始终包含在 id_token 和 access_token 中
+        if (claim.Type == OpenIddictConstants.Claims.Subject)
+        {
+            yield return OpenIddictConstants.Destinations.AccessToken;
+
+            if (scopes.Contains(OpenIddictConstants.Scopes.OpenId))
+            {
+                yield return OpenIddictConstants.Destinations.IdentityToken;
+            }
+
+            yield break;
+        }
+
+        // name claim: 如果请求了 openid 或 profile scope，包含在 id_token 中；始终包含在 access_token 中
+        if (claim.Type == OpenIddictConstants.Claims.Name)
+        {
+            yield return OpenIddictConstants.Destinations.AccessToken;
+
+            if (scopes.Contains(OpenIddictConstants.Scopes.OpenId) ||
+                scopes.Contains(OpenIddictConstants.Scopes.Profile))
+            {
+                yield return OpenIddictConstants.Destinations.IdentityToken;
+            }
+
+            yield break;
+        }
+
+        // email claim: 如果请求了 email scope，包含在 id_token 中；始终包含在 access_token 中
+        if (claim.Type == OpenIddictConstants.Claims.Email)
+        {
+            yield return OpenIddictConstants.Destinations.AccessToken;
+
+            if (scopes.Contains(OpenIddictConstants.Scopes.Email))
+            {
+                yield return OpenIddictConstants.Destinations.IdentityToken;
+            }
+
+            yield break;
+        }
+
+        // role claim: 业务授权相关，始终包含在 access_token 中；如果请求了 profile，也包含在 id_token 中
+        if (claim.Type == OpenIddictConstants.Claims.Role ||
+            claim.Type == ClaimTypes.Role)
+        {
+            yield return OpenIddictConstants.Destinations.AccessToken;
+
+            if (scopes.Contains(OpenIddictConstants.Scopes.Profile))
+            {
+                yield return OpenIddictConstants.Destinations.IdentityToken;
+            }
+
+            yield break;
+        }
+
+        // tenant_id: 业务相关的多租户标识，始终包含在 access_token 中
+        if (claim.Type == "tenant_id" || claim.Type == "TenantId")
+        {
+            yield return OpenIddictConstants.Destinations.AccessToken;
+            yield break;
+        }
+
+        // 其他标准 OIDC claims (preferred_username, picture, website 等)
+        // 如果请求了 profile scope，包含在 id_token 中
+        if (claim.Type == OpenIddictConstants.Claims.PreferredUsername ||
+            claim.Type == OpenIddictConstants.Claims.GivenName ||
+            claim.Type == OpenIddictConstants.Claims.FamilyName ||
+            claim.Type == OpenIddictConstants.Claims.MiddleName ||
+            claim.Type == OpenIddictConstants.Claims.Nickname ||
+            claim.Type == OpenIddictConstants.Claims.Picture ||
+            claim.Type == OpenIddictConstants.Claims.Website ||
+            claim.Type == OpenIddictConstants.Claims.Gender ||
+            claim.Type == OpenIddictConstants.Claims.Birthdate ||
+            claim.Type == OpenIddictConstants.Claims.Zoneinfo ||
+            claim.Type == OpenIddictConstants.Claims.Locale ||
+            claim.Type == OpenIddictConstants.Claims.UpdatedAt)
+        {
+            yield return OpenIddictConstants.Destinations.AccessToken;
+
+            if (scopes.Contains(OpenIddictConstants.Scopes.Profile))
+            {
+                yield return OpenIddictConstants.Destinations.IdentityToken;
+            }
+
+            yield break;
+        }
+
+        // 默认：其他所有 claims 只包含在 access_token 中
+        yield return OpenIddictConstants.Destinations.AccessToken;
     }
 }
