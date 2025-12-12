@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { WindowState } from '@/desktop/types';
+import { getAppById } from '@/desktop/AppRegistry';
 
 interface WindowStore {
   /** 打开的窗口列表 */
@@ -50,14 +51,28 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       return;
     }
 
-    // 创建新窗口
+    // 获取应用定义以获取默认尺寸
+    const app = getAppById(appId);
+    const defaultWidth = app?.defaultSize?.width || 800;
+    const defaultHeight = app?.defaultSize?.height || 600;
+
+    // 创建新窗口，设置初始位置和大小
     const maxZIndex = Math.max(0, ...openWindows.map(w => w.zIndex));
+    const offsetIndex = openWindows.length; // 用于错开窗口位置
     const newWindow: WindowState = {
       id: `win-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       appId,
       zIndex: maxZIndex + 1,
       isMinimized: false,
-      isMaximized: false
+      isMaximized: false,
+      position: {
+        x: 100 + offsetIndex * 30,
+        y: 80 + offsetIndex * 30
+      },
+      size: {
+        width: defaultWidth,
+        height: defaultHeight
+      }
     };
 
     set({ openWindows: [...openWindows, newWindow] });
