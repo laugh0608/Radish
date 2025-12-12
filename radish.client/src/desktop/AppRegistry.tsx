@@ -42,6 +42,30 @@ export const appRegistry: AppDefinition[] = [
     requiredRoles: ['User'],
     category: 'development'
   },
+  {
+    id: 'docs',
+    name: '文档中心',
+    icon: 'mdi:book-open-page-variant',
+    description: 'Radish 项目文档',
+    component: () => null, // iframe 应用不需要实际组件
+    type: 'iframe',
+    url: 'http://localhost:3001/docs/',
+    defaultSize: { width: 1200, height: 800 },
+    requiredRoles: ['User'],
+    category: 'development'
+  },
+  {
+    id: 'console',
+    name: '控制台',
+    icon: 'mdi:console',
+    description: 'Radish 管理控制台',
+    component: () => null, // iframe 应用不需要实际组件
+    type: 'iframe',
+    url: 'http://localhost:3002',
+    defaultSize: { width: 1400, height: 900 },
+    requiredRoles: ['User'],
+    category: 'system'
+  },
   // 后续可以添加更多应用...
   // {
   //   id: 'forum',

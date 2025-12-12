@@ -92,7 +92,16 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
 
         {/* 窗口内容区 */}
         <div className={styles.content}>
-          <AppComponent />
+          {app.type === 'iframe' && app.url ? (
+            <iframe
+              src={app.url}
+              className={styles.iframe}
+              title={app.name}
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+            />
+          ) : (
+            <AppComponent />
+          )}
         </div>
       </div>
     </Rnd>
