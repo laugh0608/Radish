@@ -51,10 +51,22 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       return;
     }
 
+    // 获取视口尺寸
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
     // 获取应用定义以获取默认尺寸
     const app = getAppById(appId);
     const defaultWidth = app?.defaultSize?.width || 800;
     const defaultHeight = app?.defaultSize?.height || 600;
+
+    // 根据视口大小计算窗口尺寸
+    // 窗口最大不超过视口的 80% 宽度和 85% 高度（留空间给状态栏和 Dock）
+    const maxWidth = viewportWidth * 0.80;
+    const maxHeight = viewportHeight * 0.85;
+
+    const finalWidth = Math.min(defaultWidth, maxWidth);
+    const finalHeight = Math.min(defaultHeight, maxHeight);
 
     // 创建新窗口，设置初始位置和大小
     const maxZIndex = Math.max(0, ...openWindows.map(w => w.zIndex));
@@ -70,8 +82,8 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
         y: 80 + offsetIndex * 30
       },
       size: {
-        width: defaultWidth,
-        height: defaultHeight
+        width: finalWidth,
+        height: finalHeight
       }
     };
 
