@@ -1,0 +1,77 @@
+using AutoMapper;
+using Radish.IRepository;
+using Radish.IService;
+using Radish.Model;
+using Radish.Model.ViewModels;
+
+namespace Radish.Service;
+
+/// <summary>标签服务实现</summary>
+public class TagService : BaseService<Tag, TagVo>, ITagService
+{
+    private readonly IBaseRepository<Tag> _tagRepository;
+
+    public TagService(IMapper mapper, IBaseRepository<Tag> baseRepository)
+        : base(mapper, baseRepository)
+    {
+        _tagRepository = baseRepository;
+    }
+
+    /// <summary>
+    /// 根据标签名称获取或创建标签
+    /// </summary>
+    public async Task<Tag> GetOrCreateTagAsync(string tagName)
+    {
+        if (string.IsNullOrWhiteSpace(tagName))
+        {
+            throw new ArgumentException("标签名称不能为空", nameof(tagName));
+        }
+
+        // 尝试获取现有标签
+        var tags = await _tagRepository.QueryAsync(t => t.Name == tagName.Trim());
+        var existingTag = tags.FirstOrDefault();
+
+        if (existingTag != null)
+        {
+            return existingTag;
+        }
+
+        // 创建新标签
+        var newTag = new Tag(tagName.Trim())
+        {
+            IsEnabled = true,
+            IsDeleted = false
+        };
+
+        var tagId = await _tagRepository.AddAsync(newTag);
+        newTag.Id = tagId;
+
+        return newTag;
+    }
+
+    /// <summary>
+    /// 更新标签的帖子数量
+    /// </summary>
+    public async Task UpdatePostCountAsync(long tagId, int increment)
+    {
+        var tag = await _tagRepository.QueryByIdAsync(tagId);
+        if (tag != null)
+        {
+            tag.PostCount = Math.Max(0, tag.PostCount + increment);
+            await _tagRepository.UpdateAsync(tag);
+        }
+    }
+
+    /// <summary>
+    /// 获取热门标签
+    /// </summary>
+    public async Task<List<TagVo>> GetHotTagsAsync(int topCount = 20)
+    {
+        var tags = await _tagRepository.QueryAsync(t => t.IsEnabled && !t.IsDeleted);
+        var hotTags = tags.OrderByDescending(t => t.PostCount)
+                         .Take(topCount)
+                         .ToList();
+
+        return Mapper.Map<List<TagVo>>(hotTags);
+    }
+}

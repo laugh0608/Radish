@@ -32,11 +32,19 @@ public interface IBaseRepository<TEntity> where TEntity : class
 
     #region 改
 
-    // 改
+    /// <summary>更新实体数据</summary>
+    /// <param name="entity">泛型实体类</param>
+    /// <returns>是否成功</returns>
+    Task<bool> UpdateAsync(TEntity entity);
 
     #endregion
 
     #region 查
+
+    /// <summary>根据 ID 查询单个实体</summary>
+    /// <param name="id">实体 ID</param>
+    /// <returns>实体对象，如果不存在则返回 null</returns>
+    Task<TEntity?> QueryByIdAsync(long id);
 
     /// <summary>按照 Where 表达式查询</summary>
     /// <param name="whereExpression">Where 表达式，可空</param>
