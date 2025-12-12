@@ -632,17 +632,191 @@ var scopes = User.FindAll("scope")
 
 > 总体原则：
 > - Auth 统一负责 **Claims 的内容与命名**；
-> - Api 统一通过 `IHttpContextUser` 解析 Claims 并向上提供“当前用户视图”；
+> - Api 统一通过 `IHttpContextUser` 解析 Claims 并向上提供"当前用户视图"；
 > - 领域层及仓储层只依赖 `UserId`、`TenantId`、`Roles` 等抽象，不直接操作 Token。
+
+### 8.4 基于 Scope 的动态 Claim Destination 分配
+
+为了符合 OIDC 规范并优化 Token 大小，Radish.Auth 实现了基于请求 scope 的动态 claim destination 分配机制。
+
+#### 8.4.1 设计原则
+
+- **ID Token**：用于身份认证，包含用户身份信息，由客户端消费
+- **Access Token**：用于资源访问授权，包含授权信息，由资源服务器消费
+- **按需分配**：根据客户端请求的 scope 决定哪些 claim 应该包含在哪个 token 中
+
+#### 8.4.2 Claim Destination 规则
+
+| Claim 类型 | Access Token | ID Token | 条件 |
+|-----------|--------------|----------|------|
+| `sub` | ✅ 始终包含 | ✅ 条件包含 | 请求了 `openid` scope |
+| `name` | ✅ 始终包含 | ✅ 条件包含 | 请求了 `openid` 或 `profile` scope |
+| `email` | ✅ 始终包含 | ✅ 条件包含 | 请求了 `email` scope |
+| `role` | ✅ 始终包含 | ✅ 条件包含 | 请求了 `profile` scope |
+| `tenant_id` | ✅ 始终包含 | ❌ 不包含 | 业务相关，仅用于授权 |
+| `preferred_username` | ✅ 始终包含 | ✅ 条件包含 | 请求了 `profile` scope |
+| `given_name` | ✅ 始终包含 | ✅ 条件包含 | 请求了 `profile` scope |
+| 其他标准 OIDC claims | ✅ 始终包含 | ✅ 条件包含 | 请求了 `profile` scope |
+
+#### 8.4.3 实现位置
+
+**AuthorizationController.cs** 中的 `GetClaimDestinations` 方法：
+
+```csharp
+private static IEnumerable<string> GetClaimDestinations(Claim claim, ImmutableArray<string> scopes)
+{
+    // sub 是必需的标识符
+    if (claim.Type == OpenIddictConstants.Claims.Subject)
+    {
+        yield return OpenIddictConstants.Destinations.AccessToken;
+        if (scopes.Contains(OpenIddictConstants.Scopes.OpenId))
+        {
+            yield return OpenIddictConstants.Destinations.IdentityToken;
+        }
+        yield break;
+    }
+
+    // name claim
+    if (claim.Type == OpenIddictConstants.Claims.Name)
+    {
+        yield return OpenIddictConstants.Destinations.AccessToken;
+        if (scopes.Contains(OpenIddictConstants.Scopes.OpenId) ||
+            scopes.Contains(OpenIddictConstants.Scopes.Profile))
+        {
+            yield return OpenIddictConstants.Destinations.IdentityToken;
+        }
+        yield break;
+    }
+
+    // email claim
+    if (claim.Type == OpenIddictConstants.Claims.Email)
+    {
+        yield return OpenIddictConstants.Destinations.AccessToken;
+        if (scopes.Contains(OpenIddictConstants.Scopes.Email))
+        {
+            yield return OpenIddictConstants.Destinations.IdentityToken;
+        }
+        yield break;
+    }
+
+    // role claim
+    if (claim.Type == OpenIddictConstants.Claims.Role ||
+        claim.Type == ClaimTypes.Role)
+    {
+        yield return OpenIddictConstants.Destinations.AccessToken;
+        if (scopes.Contains(OpenIddictConstants.Scopes.Profile))
+        {
+            yield return OpenIddictConstants.Destinations.IdentityToken;
+        }
+        yield break;
+    }
+
+    // tenant_id: 仅用于授权
+    if (claim.Type == "tenant_id" || claim.Type == "TenantId")
+    {
+        yield return OpenIddictConstants.Destinations.AccessToken;
+        yield break;
+    }
+
+    // 默认：其他所有 claims 只包含在 access_token 中
+    yield return OpenIddictConstants.Destinations.AccessToken;
+}
+```
+
+#### 8.4.4 登录时设置的 Claims
+
+**AccountController.cs** 在用户登录时设置以下 claims：
+
+```csharp
+var claims = new List<Claim>
+{
+    // 标准身份标识
+    new(ClaimTypes.NameIdentifier, userId),
+    new(ClaimTypes.Name, username),
+
+    // OIDC 标准 claims
+    new(OpenIddictConstants.Claims.Subject, userId),
+    new(OpenIddictConstants.Claims.Name, username),
+    new(OpenIddictConstants.Claims.PreferredUsername, user.VoLoName),
+
+    // 多租户标识
+    new("tenant_id", tenantId)
+};
+
+// Email claim (如果存在)
+if (!string.IsNullOrWhiteSpace(user.VoUsEmail))
+{
+    claims.Add(new Claim(ClaimTypes.Email, user.VoUsEmail));
+    claims.Add(new Claim(OpenIddictConstants.Claims.Email, user.VoUsEmail));
+}
+
+// 真实姓名 (如果存在)
+if (!string.IsNullOrWhiteSpace(user.VoReNa))
+{
+    claims.Add(new Claim(OpenIddictConstants.Claims.GivenName, user.VoReNa));
+}
+
+// 角色 claims
+foreach (var role in roleNames)
+{
+    claims.Add(new Claim(ClaimTypes.Role, role));
+    claims.Add(new Claim(OpenIddictConstants.Claims.Role, role));
+}
+```
+
+#### 8.4.5 支持的 Scopes
+
+Auth Server 注册的 scopes（`Radish.Auth/Program.cs`）：
+
+```csharp
+options.RegisterScopes("openid", "profile", "email", "offline_access", "radish-api");
+```
+
+- **openid**：启用 OIDC 身份认证，`sub` claim 会包含在 id_token 中
+- **profile**：请求用户基本信息（name, preferred_username, given_name, role 等）
+- **email**：请求用户邮箱信息
+- **offline_access**：启用 refresh_token
+- **radish-api**：访问 Radish API 的权限
+
+#### 8.4.6 使用示例
+
+**请求最小权限**（仅访问 API）：
+```
+scope=radish-api
+```
+- Access Token 包含：sub, name, tenant_id, role
+- ID Token：不生成（未请求 openid）
+
+**请求身份认证**：
+```
+scope=openid profile radish-api
+```
+- Access Token 包含：sub, name, preferred_username, tenant_id, role
+- ID Token 包含：sub, name, preferred_username, role
+
+**请求完整信息**：
+```
+scope=openid profile email radish-api offline_access
+```
+- Access Token 包含：sub, name, email, preferred_username, tenant_id, role
+- ID Token 包含：sub, name, email, preferred_username, role
+- 同时获得 refresh_token
+
+#### 8.4.7 优势
+
+1. **符合 OIDC 规范**：ID Token 和 Access Token 职责分离
+2. **优化 Token 大小**：客户端只获取需要的信息
+3. **提升安全性**：敏感信息（如 tenant_id）不会泄露到客户端
+4. **灵活性**：支持不同客户端按需请求不同的用户信息
 
 ## 9. 多租户支持
 
-### 8.1 租户识别
+### 9.1 租户识别
 
 - 通过 Token 中的 `tenant_id` Claim 识别租户
 - Auth Server 在签发 Token 时写入租户信息
 
-### 8.2 租户隔离
+### 9.2 租户隔离
 
 ```csharp
 // 用户登录时写入租户 Claim
@@ -652,9 +826,9 @@ identity.SetClaim("tenant_id", user.TenantId.ToString());
 var tenantId = User.FindFirstValue("tenant_id");
 ```
 
-## 9. 权限与授权
+## 10. 权限与授权
 
-### 9.1 角色-权限模型
+### 10.1 角色-权限模型
 
 延续第二阶段的 RBAC 模型：
 
@@ -664,7 +838,7 @@ User -> UserRole -> Role -> RolePermission -> Permission
                  RoleModuleMap -> ApiModule
 ```
 
-### 9.2 PermissionRequirementHandler
+### 10.2 PermissionRequirementHandler
 
 保留动态权限校验逻辑，从 Token Claims 获取角色：
 
@@ -681,28 +855,28 @@ var hasPermission = PermissionItems
               Regex.IsMatch(url, p.Url, RegexOptions.IgnoreCase));
 ```
 
-## 10. 安全最佳实践
+## 11. 安全最佳实践
 
-### 10.1 Token 安全
+### 11.1 Token 安全
 
 - Access Token 有效期：15-60 分钟
 - Refresh Token 有效期：7-30 天
 - 启用 Token 轮换：每次刷新生成新的 Refresh Token
 - 支持 Token 撤销：用户登出时撤销所有 Token
 
-### 10.2 客户端安全
+### 11.2 客户端安全
 
 - 公开客户端（SPA/Mobile）必须使用 PKCE
 - 机密客户端使用强密钥，定期轮换
 - 严格限制 RedirectUris，避免开放重定向攻击
 
-### 10.3 传输安全
+### 11.3 传输安全
 
 - 全程 HTTPS
 - 启用 HSTS
 - Cookie 设置 `Secure`、`HttpOnly`、`SameSite=Strict`
 
-### 10.4 OIDC 证书管理
+### 11.4 OIDC 证书管理
 
 - 仓库根目录新增 `Certs/` 文件夹，默认提供一个仅供开发/联调使用的 `dev-auth-cert.pfx`，密码为 `RadishDevCert123!`（已加入 `.gitignore`，只保留示例证书）。
 - `Radish.Auth/appsettings.json` 预置了以下配置，并由 `Program.cs` 自动加载证书（注意路径区分大小写，Linux 环境需保持 `Certs` 首字母大写）：
@@ -779,15 +953,15 @@ Auth 启动时会在 `Program.cs` 中调用 `LoadOpenIddictCertificate`，相对
 
 - **注意**：`dev-auth-cert.pfx` 只能用于本地开发，生产环境一定要替换证书与密码，并限制证书文件的访问权限。
 
-## 11. 调试与排障
+## 12. 调试与排障
 
-### 11.1 发现文档
+### 12.1 发现文档
 
 ```bash
 curl https://localhost:7100/.well-known/openid-configuration
 ```
 
-### 11.2 获取 Token（测试）
+### 12.2 获取 Token（测试）
 
 ```bash
 # Authorization Code 流程需要浏览器交互
@@ -799,7 +973,7 @@ curl -X POST https://localhost:7100/connect/token \
   -d "scope=radish-api"
 ```
 
-### 11.3 验证 Token
+### 12.3 验证 Token
 
 ```bash
 # 调用 userinfo 端点
@@ -807,7 +981,7 @@ curl https://localhost:7100/connect/userinfo \
   -H "Authorization: Bearer {access_token}"
 ```
 
-### 11.4 常见问题
+### 12.4 常见问题
 
 | 问题 | 可能原因 | 解决方案 |
 | --- | --- | --- |
@@ -819,9 +993,9 @@ curl https://localhost:7100/connect/userinfo \
 | 调用需要 `Client` 策略的 API 返回 403 | Access Token 中缺少 `scope=radish-api`；或使用的是不带 scope 的旧登录方式 | 调用 `/connect/authorize` + `/connect/token` 时明确申请 `scope=radish-api`，并使用通过 Gateway/OIDC 获取的 Token 访问需要 `Client` 策略的接口 |
 | `/connect/userinfo` 中 `tenant_id` 为空 | 使用了未写入 `tenant_id` 的旧 Token，或 Auth 登录流程未正确设置租户 | 确保通过最新的 Auth 登录入口（`/Account/Login` 或前端 OIDC 流程）获取 Token，并确认登录用户绑定了有效的 TenantId |
 
-## 12. 迁移指南
+## 13. 迁移指南
 
-### 12.1 从旧版 JWT 迁移
+### 13.1 从旧版 JWT 迁移
 
 如果从第二阶段的简单 JWT 认证迁移：
 
@@ -830,7 +1004,7 @@ curl https://localhost:7100/connect/userinfo \
 3. **调整 Token 验证**：从硬编码密钥改为 Authority 发现
 4. **更新前端**：从手动存储 Token 改为 OIDC 库管理
 
-### 12.2 旧版登录接口（临时兼容）
+### 13.2 旧版登录接口（临时兼容）
 
 在完全迁移前，可保留 `/api/Login/GetJwtToken` 作为兼容层：
 
@@ -844,9 +1018,9 @@ public async Task<IActionResult> GetJwtToken(LoginInput input)
 }
 ```
 
-## 13. 数据库配置
+## 14. 数据库配置
 
-### 13.1 OpenIddict 数据库
+### 14.1 OpenIddict 数据库
 
 OpenIddict 使用独立的 SQLite 数据库存储客户端、授权、Token 等信息。
 
@@ -902,7 +1076,7 @@ Radish/
 }
 ```
 
-### 13.2 业务数据库
+### 14.2 业务数据库
 
 业务数据（用户、角色、内容等）使用 SqlSugar 管理，配置在 `Databases` 数组中：
 
@@ -927,7 +1101,7 @@ Radish/
 
 SQLite 数据库文件名会自动拼接到 `DataBases/` 文件夹下。
 
-### 13.3 数据库迁移
+### 14.3 数据库迁移
 
 #### OpenIddict 数据库
 
@@ -946,9 +1120,9 @@ dotnet ef database update --context AuthOpenIddictDbContext
 
 SqlSugar 使用 CodeFirst 自动创建表结构，无需手动迁移。
 
-## 14. Scalar API 文档集成
+## 15. Scalar API 文档集成
 
-### 14.1 OIDC 认证配置
+### 15.1 OIDC 认证配置
 
 Scalar API 文档已集成 OIDC 认证，支持在文档界面直接登录并测试 API。
 
@@ -988,7 +1162,7 @@ options.AddPreferredSecuritySchemes("oauth2")
     .AddDefaultScopes("oauth2", ["openid", "profile", "radish-api"]);
 ```
 
-### 14.2 使用方式
+### 15.2 使用方式
 
 1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
 2. 点击右上角 **Authenticate** 按钮
@@ -999,7 +1173,7 @@ options.AddPreferredSecuritySchemes("oauth2")
    - 密码：`P@ssw0rd!`
 6. 确认授权后，所有 API 请求将自动携带 Bearer Token
 
-### 14.3 客户端配置
+### 15.3 客户端配置
 
 Scalar 使用的客户端配置（在 Auth 项目的 `OpenIddictSeedHostedService` 中初始化）：
 
@@ -1029,7 +1203,7 @@ new OpenIddictApplicationDescriptor
 }
 ```
 
-## 15. 扩展规划
+## 16. 扩展规划
 
 - **第三方登录**：GitHub、微信、钉钉等 OAuth Provider
 - **MFA**：TOTP、短信验证码
