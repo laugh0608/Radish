@@ -106,11 +106,25 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 
     #region 改
 
-    // 改
+    /// <summary>更新实体数据</summary>
+    /// <param name="entity">泛型实体类</param>
+    /// <returns>是否成功</returns>
+    public async Task<bool> UpdateAsync(TEntity entity)
+    {
+        return await DbClientBase.Updateable(entity).ExecuteCommandHasChangeAsync();
+    }
 
     #endregion
 
     #region 查
+
+    /// <summary>根据 ID 查询单个实体</summary>
+    /// <param name="id">实体 ID</param>
+    /// <returns>实体对象，如果不存在则返回 null</returns>
+    public async Task<TEntity?> QueryByIdAsync(long id)
+    {
+        return await DbClientBase.Queryable<TEntity>().InSingleAsync(id);
+    }
 
     /// <summary>按照 Where 表达式查询</summary>
     /// <param name="whereExpression">Where 表达式，可空</param>

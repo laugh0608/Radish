@@ -12,6 +12,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     private readonly IMapper _mapper;
 
     public ISqlSugarClient Db => _baseRepository.DbBase;
+    protected IMapper Mapper => _mapper;
 
     /// <summary>构造函数依赖注入</summary>
     /// <param name="baseRepository">IBaseRepository</param>

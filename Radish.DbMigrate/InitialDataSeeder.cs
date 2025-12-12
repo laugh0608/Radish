@@ -22,8 +22,10 @@ internal static class InitialDataSeeder
         await SeedUsersAsync(db);
         await SeedUserRolesAsync(db);
         await SeedPermissionsAsync(db);
+        await SeedForumCategoriesAsync(db);
+        await SeedForumTagsAsync(db);
 
-        Console.WriteLine("[Radish.DbMigrate] ✓ Seed 完成（默认角色/租户/部门/用户/用户角色/角色-API 权限）。");
+        Console.WriteLine("[Radish.DbMigrate] ✓ Seed 完成（默认角色/租户/部门/用户/用户角色/角色-API 权限/论坛分类/标签）。");
     }
 
     /// <summary>初始化用户-角色关系</summary>
@@ -470,6 +472,206 @@ internal static class InitialDataSeeder
         else
         {
             Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={testUserId} 的 test 用户，跳过创建。");
+        }
+    }
+
+    /// <summary>初始化论坛分类数据</summary>
+    private static async Task SeedForumCategoriesAsync(ISqlSugarClient db)
+    {
+        // 默认论坛分类 ID
+        const long techCategoryId = 80000;
+        const long lifeCategoryId = 80001;
+        const long discussCategoryId = 80002;
+
+        // 技术交流分类
+        var techExists = await db.Queryable<Category>().AnyAsync(c => c.Id == techCategoryId);
+        if (!techExists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认分类 Id={techCategoryId}, Name=技术交流...");
+
+            var techCategory = new Category(new CategoryInitializationOptions("技术交流")
+            {
+                Slug = "tech",
+                Description = "技术相关的讨论和分享",
+                OrderSort = 0,
+                IsEnabled = true,
+                IsDeleted = false
+            })
+            {
+                Id = techCategoryId,
+            };
+
+            await db.Insertable(techCategory).ExecuteCommandAsync();
+        }
+        else
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={techCategoryId} 的技术交流分类，跳过创建。");
+        }
+
+        // 生活随笔分类
+        var lifeExists = await db.Queryable<Category>().AnyAsync(c => c.Id == lifeCategoryId);
+        if (!lifeExists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认分类 Id={lifeCategoryId}, Name=生活随笔...");
+
+            var lifeCategory = new Category(new CategoryInitializationOptions("生活随笔")
+            {
+                Slug = "life",
+                Description = "记录生活点滴，分享日常感悟",
+                OrderSort = 1,
+                IsEnabled = true,
+                IsDeleted = false
+            })
+            {
+                Id = lifeCategoryId,
+            };
+
+            await db.Insertable(lifeCategory).ExecuteCommandAsync();
+        }
+        else
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={lifeCategoryId} 的生活随笔分类，跳过创建。");
+        }
+
+        // 问答讨论分类
+        var discussExists = await db.Queryable<Category>().AnyAsync(c => c.Id == discussCategoryId);
+        if (!discussExists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认分类 Id={discussCategoryId}, Name=问答讨论...");
+
+            var discussCategory = new Category(new CategoryInitializationOptions("问答讨论")
+            {
+                Slug = "discuss",
+                Description = "提问解答，经验交流",
+                OrderSort = 2,
+                IsEnabled = true,
+                IsDeleted = false
+            })
+            {
+                Id = discussCategoryId,
+            };
+
+            await db.Insertable(discussCategory).ExecuteCommandAsync();
+        }
+        else
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={discussCategoryId} 的问答讨论分类，跳过创建。");
+        }
+    }
+
+    /// <summary>初始化论坛标签数据</summary>
+    private static async Task SeedForumTagsAsync(ISqlSugarClient db)
+    {
+        // 默认标签 ID
+        const long csharpTagId = 90000;
+        const long dotnetTagId = 90001;
+        const long webTagId = 90002;
+        const long databaseTagId = 90003;
+        const long generalTagId = 90004;
+
+        // C# 标签
+        var csharpExists = await db.Queryable<Tag>().AnyAsync(t => t.Id == csharpTagId);
+        if (!csharpExists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认标签 Id={csharpTagId}, Name=C#...");
+
+            var csharpTag = new Tag("C#")
+            {
+                Id = csharpTagId,
+                Color = "#68217A",
+                IsEnabled = true,
+                IsDeleted = false,
+            };
+
+            await db.Insertable(csharpTag).ExecuteCommandAsync();
+        }
+        else
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={csharpTagId} 的 C# 标签，跳过创建。");
+        }
+
+        // .NET 标签
+        var dotnetExists = await db.Queryable<Tag>().AnyAsync(t => t.Id == dotnetTagId);
+        if (!dotnetExists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认标签 Id={dotnetTagId}, Name=.NET...");
+
+            var dotnetTag = new Tag(".NET")
+            {
+                Id = dotnetTagId,
+                Color = "#512BD4",
+                IsEnabled = true,
+                IsDeleted = false,
+            };
+
+            await db.Insertable(dotnetTag).ExecuteCommandAsync();
+        }
+        else
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={dotnetTagId} 的 .NET 标签，跳过创建。");
+        }
+
+        // Web开发 标签
+        var webExists = await db.Queryable<Tag>().AnyAsync(t => t.Id == webTagId);
+        if (!webExists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认标签 Id={webTagId}, Name=Web开发...");
+
+            var webTag = new Tag("Web开发")
+            {
+                Id = webTagId,
+                Color = "#0078D4",
+                IsEnabled = true,
+                IsDeleted = false,
+            };
+
+            await db.Insertable(webTag).ExecuteCommandAsync();
+        }
+        else
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={webTagId} 的 Web开发 标签，跳过创建。");
+        }
+
+        // 数据库 标签
+        var databaseExists = await db.Queryable<Tag>().AnyAsync(t => t.Id == databaseTagId);
+        if (!databaseExists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认标签 Id={databaseTagId}, Name=数据库...");
+
+            var databaseTag = new Tag("数据库")
+            {
+                Id = databaseTagId,
+                Color = "#107C10",
+                IsEnabled = true,
+                IsDeleted = false,
+            };
+
+            await db.Insertable(databaseTag).ExecuteCommandAsync();
+        }
+        else
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={databaseTagId} 的数据库标签，跳过创建。");
+        }
+
+        // 综合 标签
+        var generalExists = await db.Queryable<Tag>().AnyAsync(t => t.Id == generalTagId);
+        if (!generalExists)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认标签 Id={generalTagId}, Name=综合...");
+
+            var generalTag = new Tag("综合")
+            {
+                Id = generalTagId,
+                Color = "#8A8A8A",
+                IsEnabled = true,
+                IsDeleted = false,
+            };
+
+            await db.Insertable(generalTag).ExecuteCommandAsync();
+        }
+        else
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={generalTagId} 的综合标签，跳过创建。");
         }
     }
 }
