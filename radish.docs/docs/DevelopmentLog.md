@@ -4,6 +4,42 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.12
+
+- **test(api)**: 完善 ClientController 测试并启用跳过的测试用例
+  - 完善 OpenIddictApplicationManager mock 实现,正确返回 FakeClient 属性
+  - 修复 CreateAsync 返回值类型 (从 ValueTask 改为 ValueTask<object>)
+  - 启用之前跳过的 5 个测试用例 (GetClients、CreateClient、DeleteClient、ResetClientSecret 等)
+  - 所有测试通过,验证客户端管理 API 的核心功能
+
+- **feat(auth)**: 完善 OIDC Claim 映射机制
+  - **实现基于 scope 的动态 claim destination 分配**:
+    - 新增 `GetClaimDestinations` 方法,根据请求的 scope 决定 claim 包含在 id_token 还是 access_token 中
+    - sub claim: 始终在 access_token 中,如果请求了 openid scope 则也在 id_token 中
+    - name claim: 始终在 access_token 中,如果请求了 openid 或 profile scope 则也在 id_token 中
+    - email claim: 始终在 access_token 中,如果请求了 email scope 则也在 id_token 中
+    - role claim: 始终在 access_token 中,如果请求了 profile scope 则也在 id_token 中
+    - tenant_id: 仅在 access_token 中 (业务相关,不泄露到客户端)
+  - **登录时添加更多标准 OIDC claims**:
+    - 添加 email claim (如果用户有邮箱)
+    - 添加 preferred_username 和 given_name claims
+    - 同时设置 ClaimTypes 和 OpenIddictConstants 版本的 claims,确保兼容性
+  - **注册 email scope**: 在 OpenIddict 服务器配置中添加 email scope
+  - **优势**:
+    - 符合 OIDC 规范: ID Token 和 Access Token 职责分离
+    - 优化 Token 大小: 客户端只获取需要的信息
+    - 提升安全性: 敏感信息 (如 tenant_id) 不会泄露到客户端
+    - 灵活性: 支持不同客户端按需请求不同的用户信息
+
+- **docs(auth)**: 添加基于 Scope 的动态 Claim Destination 分配文档
+  - 新增 AuthenticationGuide.md 第 8.4 节,详细说明 OIDC Claim 映射机制
+  - 记录 GetClaimDestinations 方法的设计原则和实现细节
+  - 添加 Claim Destination 规则表格
+  - 补充登录时设置的 Claims 列表
+  - 说明支持的 Scopes 及其用途 (openid, profile, email, offline_access, radish-api)
+  - 提供不同场景下的使用示例 (最小权限、身份认证、完整信息)
+  - 修正章节编号 (9-16 章)
+
 ### 2025.12.11（续）
 
 - **feat(client/webos-shell)**: 实现 WebOS Desktop Shell 与通用组件库
