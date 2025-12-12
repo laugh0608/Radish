@@ -62,10 +62,9 @@ npm run lint --prefix radish.client
 ```bash
 # Interactive menu to start API, Gateway, Auth, frontend, docs, console or run tests
 # Current options include:
-# - Single services: API / Gateway / frontend / docs / console / Auth / tests (1-8)
-# - Combinations (PowerShell): Gateway+Auth+API, or start ALL (1 0)
-# - Combinations (Shell): Gateway+API, Gateway+frontend, Gateway+docs, Gateway+console,
-#   Gateway+Auth, Gateway+Auth+API, start ALL (9-15)
+# - Single services: API / Gateway / frontend / docs / console / Auth / DbMigrate / tests (1-8)
+# - Combinations: Gateway+Auth+API, Frontend+Console+Docs (9-10)
+# - Start ALL: All services (11)
 pwsh ./start.ps1    # Windows/PowerShell
 ./start.sh          # Linux/macOS
 ```
