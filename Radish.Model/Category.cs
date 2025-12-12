@@ -233,6 +233,7 @@ public class Category : RootEntityTKey<long>
 
     /// <summary>修改时间</summary>
     /// <remarks>可空</remarks>
+    [SugarColumn(IsNullable = true)]
     [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]
     public DateTime? ModifyTime { get; set; }
 
