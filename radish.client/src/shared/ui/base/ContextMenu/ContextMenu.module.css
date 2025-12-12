@@ -8,7 +8,7 @@
     0 0 0 1px rgba(0, 0, 0, 0.05);
   padding: 6px;
   min-width: 180px;
-  z-index: 9999;
+  z-index: 999999; /* 提高到非常高的值，确保在所有元素之上 */
   user-select: none;
   animation: fadeIn 0.15s ease-out;
 }

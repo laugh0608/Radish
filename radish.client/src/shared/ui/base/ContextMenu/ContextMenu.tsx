@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode, type ReactElement, cloneElement } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './ContextMenu.module.css';
 
 export interface ContextMenuItem {
@@ -73,10 +74,16 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
 
   // 处理右键点击
   const handleContextMenu = (e: React.MouseEvent) => {
-    console.log('ContextMenu: handleContextMenu triggered');
+    console.log('ContextMenu: handleContextMenu triggered', {
+      clientX: e.clientX,
+      clientY: e.clientY,
+      pageX: e.pageX,
+      pageY: e.pageY
+    });
     e.preventDefault();
     e.stopPropagation();
 
+    // 使用 clientX/clientY，因为菜单使用 position: fixed
     const x = e.clientX;
     const y = e.clientY;
 
@@ -196,7 +203,7 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
       {cloneElement(children as ReactElement<any>, {
         onContextMenu: handleContextMenu
       })}
-      {visible && (
+      {visible && createPortal(
         <div
           ref={menuRef}
           className={styles.contextMenu}
@@ -206,7 +213,8 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
           }}
         >
           {items.map(item => renderMenuItem(item))}
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
