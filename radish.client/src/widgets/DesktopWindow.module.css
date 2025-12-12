@@ -115,6 +115,7 @@
 
 .content {
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   position: relative;
+  min-height: 0; /* 确保 flex 子元素可以正确收缩 */
 }
