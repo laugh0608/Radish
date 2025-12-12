@@ -39,3 +39,207 @@ Authorization:Bearer {{JwtToken}}
 GET {{Api_HostAddress}}/api/Tenant/AddTest
 Accept: application/json
 Authorization:Bearer {{JwtToken}}
+
+###############################################################################
+# 论坛 API 测试
+###############################################################################
+
+###############################################################################
+# 分类管理 (Category)
+###############################################################################
+
+### 1. 获取所有顶级分类
+GET {{Api_HostAddress}}/api/v1.0/Category/GetTopCategories
+Accept: application/json
+
+### 2. 获取指定分类的子分类（需要先有分类ID）
+GET {{Api_HostAddress}}/api/v1.0/Category/GetChildCategories?parentId=1
+Accept: application/json
+
+### 3. 根据ID获取分类详情
+GET {{Api_HostAddress}}/api/v1.0/Category/GetById/1
+Accept: application/json
+
+### 4. 创建新分类（需要认证）
+POST {{Api_HostAddress}}/api/v1.0/Category/Create
+Content-Type: application/json
+Authorization: Bearer {{JwtToken}}
+
+{
+  "name": "测试分类",
+  "slug": "test-category",
+  "description": "这是一个测试分类",
+  "icon": "🧪",
+  "sortOrder": 100,
+  "isEnabled": true,
+  "isDeleted": false,
+  "parentId": null
+}
+
+###############################################################################
+# 标签管理 (Tag)
+###############################################################################
+
+### 5. 获取所有标签
+GET {{Api_HostAddress}}/api/v1.0/Tag/GetAll
+Accept: application/json
+
+### 6. 获取热门标签（默认前20个）
+GET {{Api_HostAddress}}/api/v1.0/Tag/GetHotTags
+Accept: application/json
+
+### 7. 获取热门标签（指定数量）
+GET {{Api_HostAddress}}/api/v1.0/Tag/GetHotTags?topCount=10
+Accept: application/json
+
+### 8. 根据ID获取标签详情
+GET {{Api_HostAddress}}/api/v1.0/Tag/GetById/1
+Accept: application/json
+
+###############################################################################
+# 帖子管理 (Post)
+###############################################################################
+
+### 9. 获取所有帖子列表
+GET {{Api_HostAddress}}/api/v1.0/Post/GetList
+Accept: application/json
+
+### 10. 获取指定分类的帖子列表
+GET {{Api_HostAddress}}/api/v1.0/Post/GetList?categoryId=1
+Accept: application/json
+
+### 11. 根据ID获取帖子详情（会自动增加浏览次数）
+GET {{Api_HostAddress}}/api/v1.0/Post/GetById/1
+Accept: application/json
+
+### 12. 发布新帖子（需要认证）
+POST {{Api_HostAddress}}/api/v1.0/Post/Publish
+Content-Type: application/json
+Authorization: Bearer {{JwtToken}}
+
+{
+  "title": "我的第一篇测试帖子",
+  "content": "这是帖子的内容，可以包含**Markdown**格式。\n\n## 二级标题\n\n- 列表项1\n- 列表项2",
+  "categoryId": 1,
+  "tags": ["C#", ".NET", "测试"],
+  "isPublished": true
+}
+
+### 13. 发布帖子（最小化数据）
+POST {{Api_HostAddress}}/api/v1.0/Post/Publish
+Content-Type: application/json
+Authorization: Bearer {{JwtToken}}
+
+{
+  "title": "简单测试帖子",
+  "content": "简单的内容",
+  "categoryId": 1,
+  "isPublished": true
+}
+
+### 14. 更新帖子（需要认证）
+PUT {{Api_HostAddress}}/api/v1.0/Post/Update
+Content-Type: application/json
+Authorization: Bearer {{JwtToken}}
+
+{
+  "id": 1,
+  "title": "更新后的标题",
+  "content": "更新后的内容",
+  "categoryId": 1,
+  "tags": ["C#", ".NET"],
+  "isPublished": true
+}
+
+###############################################################################
+# 评论管理 (Comment)
+###############################################################################
+
+### 15. 获取帖子的评论树
+GET {{Api_HostAddress}}/api/v1.0/Comment/GetCommentTree?postId=1
+Accept: application/json
+
+### 16. 发表根评论（直接评论帖子）
+POST {{Api_HostAddress}}/api/v1.0/Comment/Create
+Content-Type: application/json
+Authorization: Bearer {{JwtToken}}
+
+{
+  "postId": 1,
+  "content": "这是一条测试评论",
+  "parentId": null,
+  "replyToUserId": null,
+  "replyToUserName": null
+}
+
+### 17. 发表回复评论（回复某条评论）
+POST {{Api_HostAddress}}/api/v1.0/Comment/Create
+Content-Type: application/json
+Authorization: Bearer {{JwtToken}}
+
+{
+  "postId": 1,
+  "content": "我来回复你的评论",
+  "parentId": 1,
+  "replyToUserId": 12,
+  "replyToUserName": "blogadmin"
+}
+
+### 18. 发表多级嵌套回复
+POST {{Api_HostAddress}}/api/v1.0/Comment/Create
+Content-Type: application/json
+Authorization: Bearer {{JwtToken}}
+
+{
+  "postId": 1,
+  "content": "这是第三层的回复",
+  "parentId": 2,
+  "replyToUserId": 12,
+  "replyToUserName": "blogadmin"
+}
+
+###############################################################################
+# 综合测试场景
+###############################################################################
+
+### 场景1: 完整流程 - 创建分类 -> 发布帖子 -> 发表评论
+# 步骤1: 创建分类（使用上面的"创建新分类"请求）
+# 步骤2: 发布帖子（使用上面的"发布新帖子"请求）
+# 步骤3: 查看帖子详情（使用"根据ID获取帖子详情"请求）
+# 步骤4: 发表评论（使用"发表根评论"请求）
+# 步骤5: 查看评论树（使用"获取帖子的评论树"请求）
+
+### 场景2: 边界测试 - 查询不存在的资源
+GET {{Api_HostAddress}}/api/v1.0/Category/GetById/999999
+Accept: application/json
+
+### 场景3: 边界测试 - 查询不存在的帖子
+GET {{Api_HostAddress}}/api/v1.0/Post/GetById/999999
+Accept: application/json
+
+### 场景4: 边界测试 - 查询不存在的标签
+GET {{Api_HostAddress}}/api/v1.0/Tag/GetById/999999
+Accept: application/json
+
+### 场景5: 错误测试 - 发布空内容的帖子（应该失败）
+POST {{Api_HostAddress}}/api/v1.0/Post/Publish
+Content-Type: application/json
+Authorization: Bearer {{JwtToken}}
+
+{
+  "title": "",
+  "content": "",
+  "categoryId": 1,
+  "isPublished": true
+}
+
+### 场景6: 错误测试 - 发表空内容的评论（应该失败）
+POST {{Api_HostAddress}}/api/v1.0/Comment/Create
+Content-Type: application/json
+Authorization: Bearer {{JwtToken}}
+
+{
+  "postId": 1,
+  "content": "",
+  "parentId": null
+}
