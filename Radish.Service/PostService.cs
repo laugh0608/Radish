@@ -11,21 +11,24 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 {
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<PostTag> _postTagRepository;
+    private readonly IBaseRepository<Category> _categoryRepository;
+    private readonly IBaseRepository<Tag> _tagRepository;
     private readonly ITagService _tagService;
-    private readonly ICategoryService _categoryService;
 
     public PostService(
         IMapper mapper,
         IBaseRepository<Post> baseRepository,
         IBaseRepository<PostTag> postTagRepository,
-        ITagService tagService,
-        ICategoryService categoryService)
+        IBaseRepository<Category> categoryRepository,
+        IBaseRepository<Tag> tagRepository,
+        ITagService tagService)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
         _postTagRepository = postTagRepository;
+        _categoryRepository = categoryRepository;
+        _tagRepository = tagRepository;
         _tagService = tagService;
-        _categoryService = categoryService;
     }
 
     /// <summary>
@@ -44,8 +47,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         // 获取分类名称
         if (post.CategoryId > 0)
         {
-            var categories = await _categoryService.QueryAsync(c => c.Id == post.CategoryId);
-            var category = categories.FirstOrDefault();
+            var category = await _categoryRepository.QueryByIdAsync(post.CategoryId);
             if (category != null)
             {
                 postVo.CategoryName = category.Name;
@@ -75,7 +77,12 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         // 2. 更新分类的帖子数量
         if (post.CategoryId > 0)
         {
-            await _categoryService.UpdatePostCountAsync(post.CategoryId, 1);
+            var category = await _categoryRepository.QueryByIdAsync(post.CategoryId);
+            if (category != null)
+            {
+                category.PostCount++;
+                await _categoryRepository.UpdateAsync(category);
+            }
         }
 
         // 3. 处理标签
@@ -95,7 +102,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
                 await _postTagRepository.AddAsync(postTag);
 
                 // 更新标签的帖子数量
-                await _tagService.UpdatePostCountAsync(tag.Id, 1);
+                tag.PostCount++;
+                await _tagRepository.UpdateAsync(tag);
             }
         }
 
