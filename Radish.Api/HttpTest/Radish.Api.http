@@ -1,44 +1,46 @@
-#@Radish.Api_HostAddress = http://localhost:5100
+@Access_Token = eyJhbGciOiJSUzI1NiIsImtpZCI6IjgzMTVEQkQ1QTE1NkZDNUJGQUU4OEQ0QjA1RDAwM0VFNTAzQ0FGNTQiLCJ4NXQiOiJneFhiMWFGV19GdjY2STFMQmRBRDdsQThyMVEiLCJ0eXAiOiJhdCtqd3QifQ.eyJpc3MiOiJodHRwczovL2xvY2FsaG9zdDo1MDAwLyIsImV4cCI6MTc2NTU1MTE3MCwiaWF0IjoxNzY1NTQ3NTcwLCJhdWQiOiJyYWRpc2gtYXBpIiwic2NvcGUiOiJyYWRpc2gtYXBpIiwianRpIjoiY2QwNmZlYzAtZTdlNC00NWVkLWE1YjMtZTYyMDQ0YWFhNzE0IiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZWlkZW50aWZpZXIiOiIyMDAwMCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJzeXN0ZW0iLCJzdWIiOiIyMDAwMCIsIm5hbWUiOiJzeXN0ZW0iLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzeXN0ZW0iLCJ0ZW5hbnRfaWQiOiIzMDAwMCIsImdpdmVuX25hbWUiOiJTeXN0ZW0gVXNlciIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IlN5c3RlbSIsInJvbGUiOiJTeXN0ZW0iLCJvaV9wcnN0IjoicmFkaXNoLWNsaWVudCIsIm9pX2F1X2lkIjoiOGNiYTBmNGMtNzBjOC00N2FlLWFjYjQtNjMzMzY3ZWJmMDZkIiwiY2xpZW50X2lkIjoicmFkaXNoLWNsaWVudCIsIm9pX3Rrbl9pZCI6ImVjYjAyYmFhLTgyM2QtNGM1NS05ZmM5LThhYzVkZjVjZjk4OSJ9.OB_xfuHLxR5ZLUp3VrL78GNz-67A9N9dDrC0NQWBngQlK_6jMNVQL3lNnk-uldY6Si_4V5ZZ34GYcrh88oGt5ZNQ4e0iIgu6FTPcRd1BEo2VdF-ebgPyNSAlXoWdvZLpNR3l2kwXjlUQR_CHe450KC0FPfRyyAHCUSrnQ9LUIaquOTFZSYlSD2ZHtxbG_lFfGi0sex_dKLc4Yn2J619o1zvPq3kC_GkXNvmkQTsWfPdh1VpyP3SrvT66r8I3w3OKciAqYXWu_58it0w-2nWL-UM9YhBqp4Hy7v8hMD-VIf4WPVnpEEEot5U4G0NzkijRzsrlZB59DFyBGCzB8qUB_A
+@Gateway_HostAddress = https://localhost:5000
+@Api_HostAddress = http://localhost:5100
 
 ### WeatherForecast
 GET {{Api_HostAddress}}/api/WeatherForecast/Get
 Accept: application/json
-Authorization:Bearer {{JwtToken}}
+Authorization:Bearer {{Access_Token}}
 
 ### 获取全部用户
 GET {{Api_HostAddress}}/api/User/GetUserList
 Accept: application/json
-Authorization:Bearer {{JwtToken}}
+Authorization:Bearer {{Access_Token}}
 
 ### 查询指定用户
 GET {{Api_HostAddress}}/api/User/GetUserById/1
 Accept: application/json
-Authorization:Bearer {{JwtToken}}
+Authorization:Bearer {{Access_Token}}
 
 ### 获取登录用户的租户下全部业务数据-字段隔离
 GET {{Api_HostAddress}}/api/Tenant/BusinessTable
 Accept: application/json
-Authorization:Bearer {{JwtToken}}
+Authorization:Bearer {{Access_Token}}
 
 ### 获取登录用户的租户下全部业务数据-表隔离
 GET {{Api_HostAddress}}/api/Tenant/MultiBusinessTable
 Accept: application/json
-Authorization:Bearer {{JwtToken}}
+Authorization:Bearer {{Access_Token}}
 
 ### 获取登录用户的租户下全部业务数据-库隔离
 GET {{Api_HostAddress}}/api/Tenant/SubLibBusinessTable
 Accept: application/json
-Authorization:Bearer {{JwtToken}}
+Authorization:Bearer {{Access_Token}}
 
 ### 使用缓存获取全部租户列表
 GET {{Api_HostAddress}}/api/Tenant/GetTenantWithCache
 Accept: application/json
-Authorization:Bearer {{JwtToken}}
+Authorization:Bearer {{Access_Token}}
 
 ### 测试添加一个租户
 GET {{Api_HostAddress}}/api/Tenant/AddTest
 Accept: application/json
-Authorization:Bearer {{JwtToken}}
+Authorization:Bearer {{Access_Token}}
 
 ###############################################################################
 # 论坛 API 测试
@@ -49,21 +51,21 @@ Authorization:Bearer {{JwtToken}}
 ###############################################################################
 
 ### 1. 获取所有顶级分类
-GET {{Api_HostAddress}}/api/v1.0/Category/GetTopCategories
+GET {{Gateway_HostAddress}}/api/v1.0/Category/GetTopCategories
 Accept: application/json
 
 ### 2. 获取指定分类的子分类（需要先有分类ID）
-GET {{Api_HostAddress}}/api/v1.0/Category/GetChildCategories?parentId=1
+GET {{Gateway_HostAddress}}/api/v1.0/Category/GetChildCategories?parentId=1
 Accept: application/json
 
 ### 3. 根据ID获取分类详情
-GET {{Api_HostAddress}}/api/v1.0/Category/GetById/1
+GET {{Gateway_HostAddress}}/api/v1.0/Category/GetById/1
 Accept: application/json
 
 ### 4. 创建新分类（需要认证）
-POST {{Api_HostAddress}}/api/v1.0/Category/Create
+POST {{Gateway_HostAddress}}/api/v1.0/Category/Create
 Content-Type: application/json
-Authorization: Bearer {{JwtToken}}
+Authorization: Bearer {{Access_Token}}
 
 {
   "name": "测试分类",
@@ -81,19 +83,19 @@ Authorization: Bearer {{JwtToken}}
 ###############################################################################
 
 ### 5. 获取所有标签
-GET {{Api_HostAddress}}/api/v1.0/Tag/GetAll
+GET {{Gateway_HostAddress}}/api/v1.0/Tag/GetAll
 Accept: application/json
 
 ### 6. 获取热门标签（默认前20个）
-GET {{Api_HostAddress}}/api/v1.0/Tag/GetHotTags
+GET {{Gateway_HostAddress}}/api/v1.0/Tag/GetHotTags
 Accept: application/json
 
 ### 7. 获取热门标签（指定数量）
-GET {{Api_HostAddress}}/api/v1.0/Tag/GetHotTags?topCount=10
+GET {{Gateway_HostAddress}}/api/v1.0/Tag/GetHotTags?topCount=10
 Accept: application/json
 
 ### 8. 根据ID获取标签详情
-GET {{Api_HostAddress}}/api/v1.0/Tag/GetById/1
+GET {{Gateway_HostAddress}}/api/v1.0/Tag/GetById/1
 Accept: application/json
 
 ###############################################################################
@@ -101,21 +103,21 @@ Accept: application/json
 ###############################################################################
 
 ### 9. 获取所有帖子列表
-GET {{Api_HostAddress}}/api/v1.0/Post/GetList
+GET {{Gateway_HostAddress}}/api/v1.0/Post/GetList
 Accept: application/json
 
 ### 10. 获取指定分类的帖子列表
-GET {{Api_HostAddress}}/api/v1.0/Post/GetList?categoryId=1
+GET {{Gateway_HostAddress}}/api/v1.0/Post/GetList?categoryId=1
 Accept: application/json
 
 ### 11. 根据ID获取帖子详情（会自动增加浏览次数）
-GET {{Api_HostAddress}}/api/v1.0/Post/GetById/1
+GET {{Gateway_HostAddress}}/api/v1.0/Post/GetById/1
 Accept: application/json
 
 ### 12. 发布新帖子（需要认证）
-POST {{Api_HostAddress}}/api/v1.0/Post/Publish
+POST {{Gateway_HostAddress}}/api/v1.0/Post/Publish
 Content-Type: application/json
-Authorization: Bearer {{JwtToken}}
+Authorization: Bearer {{Access_Token}}
 
 {
   "title": "我的第一篇测试帖子",
@@ -126,9 +128,9 @@ Authorization: Bearer {{JwtToken}}
 }
 
 ### 13. 发布帖子（最小化数据）
-POST {{Api_HostAddress}}/api/v1.0/Post/Publish
+POST {{Gateway_HostAddress}}/api/v1.0/Post/Publish
 Content-Type: application/json
-Authorization: Bearer {{JwtToken}}
+Authorization: Bearer {{Access_Token}}
 
 {
   "title": "简单测试帖子",
@@ -138,9 +140,9 @@ Authorization: Bearer {{JwtToken}}
 }
 
 ### 14. 更新帖子（需要认证）
-PUT {{Api_HostAddress}}/api/v1.0/Post/Update
+PUT {{Gateway_HostAddress}}/api/v1.0/Post/Update
 Content-Type: application/json
-Authorization: Bearer {{JwtToken}}
+Authorization: Bearer {{Access_Token}}
 
 {
   "id": 1,
@@ -156,13 +158,13 @@ Authorization: Bearer {{JwtToken}}
 ###############################################################################
 
 ### 15. 获取帖子的评论树
-GET {{Api_HostAddress}}/api/v1.0/Comment/GetCommentTree?postId=1
+GET {{Gateway_HostAddress}}/api/v1.0/Comment/GetCommentTree?postId=1
 Accept: application/json
 
 ### 16. 发表根评论（直接评论帖子）
-POST {{Api_HostAddress}}/api/v1.0/Comment/Create
+POST {{Gateway_HostAddress}}/api/v1.0/Comment/Create
 Content-Type: application/json
-Authorization: Bearer {{JwtToken}}
+Authorization: Bearer {{Access_Token}}
 
 {
   "postId": 1,
@@ -173,9 +175,9 @@ Authorization: Bearer {{JwtToken}}
 }
 
 ### 17. 发表回复评论（回复某条评论）
-POST {{Api_HostAddress}}/api/v1.0/Comment/Create
+POST {{Gateway_HostAddress}}/api/v1.0/Comment/Create
 Content-Type: application/json
-Authorization: Bearer {{JwtToken}}
+Authorization: Bearer {{Access_Token}}
 
 {
   "postId": 1,
@@ -186,9 +188,9 @@ Authorization: Bearer {{JwtToken}}
 }
 
 ### 18. 发表多级嵌套回复
-POST {{Api_HostAddress}}/api/v1.0/Comment/Create
+POST {{Gateway_HostAddress}}/api/v1.0/Comment/Create
 Content-Type: application/json
-Authorization: Bearer {{JwtToken}}
+Authorization: Bearer {{Access_Token}}
 
 {
   "postId": 1,
@@ -210,21 +212,21 @@ Authorization: Bearer {{JwtToken}}
 # 步骤5: 查看评论树（使用"获取帖子的评论树"请求）
 
 ### 场景2: 边界测试 - 查询不存在的资源
-GET {{Api_HostAddress}}/api/v1.0/Category/GetById/999999
+GET {{Gateway_HostAddress}}/api/v1.0/Category/GetById/999999
 Accept: application/json
 
 ### 场景3: 边界测试 - 查询不存在的帖子
-GET {{Api_HostAddress}}/api/v1.0/Post/GetById/999999
+GET {{Gateway_HostAddress}}/api/v1.0/Post/GetById/999999
 Accept: application/json
 
 ### 场景4: 边界测试 - 查询不存在的标签
-GET {{Api_HostAddress}}/api/v1.0/Tag/GetById/999999
+GET {{Gateway_HostAddress}}/api/v1.0/Tag/GetById/999999
 Accept: application/json
 
 ### 场景5: 错误测试 - 发布空内容的帖子（应该失败）
-POST {{Api_HostAddress}}/api/v1.0/Post/Publish
+POST {{Gateway_HostAddress}}/api/v1.0/Post/Publish
 Content-Type: application/json
-Authorization: Bearer {{JwtToken}}
+Authorization: Bearer {{Access_Token}}
 
 {
   "title": "",
@@ -234,9 +236,9 @@ Authorization: Bearer {{JwtToken}}
 }
 
 ### 场景6: 错误测试 - 发表空内容的评论（应该失败）
-POST {{Api_HostAddress}}/api/v1.0/Comment/Create
+POST {{Gateway_HostAddress}}/api/v1.0/Comment/Create
 Content-Type: application/json
-Authorization: Bearer {{JwtToken}}
+Authorization: Bearer {{Access_Token}}
 
 {
   "postId": 1,

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Radish.Api.HttpTest;
 using Radish.Api.Resources;
 using Radish.Common;
 using Radish.Common.CacheTool;
