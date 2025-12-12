@@ -1,4 +1,4 @@
-namespace Radish.Api;
+namespace Radish.Api.HttpTest;
 
 public class WeatherForecast
 {

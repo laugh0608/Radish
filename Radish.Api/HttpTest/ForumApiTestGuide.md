@@ -129,7 +129,7 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 ## 📊 预期响应格式
 
 ### 成功响应
-```json
+```json7
 {
   "isSuccess": true,
   "statusCode": 200,
