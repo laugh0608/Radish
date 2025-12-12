@@ -1,15 +1,15 @@
-import { Icon } from './shared/ui/base/Icon';
-import { Button } from './shared/ui/base/Button';
-import { GlassPanel } from './shared/ui/desktop/GlassPanel';
-import { ContextMenu } from './shared/ui/base/ContextMenu';
-import styles from './ComponentShowcase.module.css';
+import { Icon } from '@/shared/ui/base/Icon';
+import { Button } from '@/shared/ui/base/Button';
+import { GlassPanel } from '@/shared/ui/desktop/GlassPanel';
+import { ContextMenu } from '@/shared/ui/base/ContextMenu';
+import styles from './ShowcaseApp.module.css';
 
 /**
- * 组件展示页面
+ * 组件展示应用
  *
  * 用于预览和测试所有基础组件
  */
-export const ComponentShowcase = () => {
+export const ShowcaseApp = () => {
   return (
     <div className={styles.showcase}>
       <div className={styles.container}>

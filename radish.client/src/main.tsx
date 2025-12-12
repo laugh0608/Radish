@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import './i18n'
 import App from './App.tsx'
-import { ComponentShowcase } from './ComponentShowcase.tsx'
 import { Shell } from './desktop/Shell.tsx'
 import { useUserStore } from './stores/userStore'
 
@@ -16,18 +15,18 @@ userStore.setUser({
   roles: ['User', 'Admin']
 });
 
+// 检查是否是 OIDC 回调页面
+const isBrowser = typeof window !== 'undefined';
+const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
+
 // 通过 URL 参数控制显示不同的页面
-// - /?showcase - 查看组件库
-// - /?demo - 查看原有的 OIDC Demo 页面
-// - / - 默认显示 WebOS Desktop Shell
+// - /?demo - 查看原有的 OIDC Demo 页面（保留用于测试）
+// - / - 默认显示 WebOS Desktop Shell（包含所有应用）
 const params = new URLSearchParams(window.location.search);
-const isShowcase = params.has('showcase');
 const isDemo = params.has('demo');
 
 let Page = Shell; // 默认显示 Shell
-if (isShowcase) {
-  Page = ComponentShowcase;
-} else if (isDemo) {
+if (isOidcCallback || isDemo) {
   Page = App;
 }
 
