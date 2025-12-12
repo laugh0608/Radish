@@ -181,8 +181,8 @@ Authorization: Bearer {{JwtToken}}
   "postId": 1,
   "content": "我来回复你的评论",
   "parentId": 1,
-  "replyToUserId": 12,
-  "replyToUserName": "blogadmin"
+  "replyToUserId": 20000,
+  "replyToUserName": "system"
 }
 
 ### 18. 发表多级嵌套回复
@@ -194,8 +194,8 @@ Authorization: Bearer {{JwtToken}}
   "postId": 1,
   "content": "这是第三层的回复",
   "parentId": 2,
-  "replyToUserId": 12,
-  "replyToUserName": "blogadmin"
+  "replyToUserId": 20000,
+  "replyToUserName": "system"
 }
 
 ###############################################################################

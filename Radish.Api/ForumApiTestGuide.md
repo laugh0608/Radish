@@ -31,7 +31,14 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 
 `http-client.env.json` 已经配置好：
 - **Api_HostAddress**: `http://localhost:5100`
-- **JwtToken**: 测试用的 JWT Token（用户：blogadmin，角色：System）
+- **JwtToken**: 测试用的 JWT Token
+
+**当前种子用户**：
+- `system` (ID: 20000, 角色: System) - 系统管理员
+- `admin` (ID: 20001, 角色: Admin) - 管理员
+- `test` (ID: 20002, 角色: Test) - 测试用户
+
+**注意**：JWT Token 可能已过期，如果遇到 401 错误，需要通过 Auth 服务重新获取 Token。
 
 ## 🧪 测试方式
 
@@ -146,7 +153,41 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 
 **原因**：JWT Token 过期
 
-**解决**：需要重新获取 Token（通过 Auth 服务登录）
+**解决方法**：需要重新获取 Token
+
+#### 方式1：通过 Auth 服务获取 Token（推荐）
+
+```bash
+# 1. 启动 Auth 服务
+dotnet run --project Radish.Auth
+
+# 2. 使用浏览器访问或使用 HTTP 请求获取 Token
+# POST http://localhost:5200/connect/token
+# 参数：
+#   grant_type=password
+#   client_id=radish-web
+#   client_secret=radish-secret
+#   username=system (或 admin, test)
+#   password=radish123 (默认密码)
+#   scope=openid profile radish-api
+```
+
+#### 方式2：临时使用（测试环境）
+
+如果只是临时测试，可以继续使用当前的 Token，但某些需要特定用户权限的操作可能会失败。
+
+#### 方式3：更新 http-client.env.json
+
+获取新 Token 后，更新 `Radish.Api/http-client.env.json` 文件中的 `JwtToken` 值：
+
+```json
+{
+  "Radish": {
+    "Api_HostAddress": "http://localhost:5100",
+    "JwtToken": "新的Token字符串"
+  }
+}
+```
 
 ### 2. 请求返回 404 Not Found
 
