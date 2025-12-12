@@ -1,7 +1,11 @@
 # 开发规范
 
 - 养成一个好习惯，先写接口（IService），再写实现（Service）
-- BaseRepository、BaseService、IBaseRepository、IBaseService 都已定义，后续增加业务只需要定义 Model 和 ViewModel 即可
+- BaseRepository、BaseService、IBaseRepository、IBaseService 都已定义，提供完整的 CRUD 方法
+- **重要**：简单 CRUD 操作直接使用 `IBaseService<TEntity, TVo>`，只为复杂业务逻辑创建专门的 Service
+  - ✅ 推荐：`IBaseService<Category, CategoryVo>` 用于简单的分类查询
+  - ❌ 避免：为每个实体都创建 `ICategoryService`，只是包装 BaseService 方法
+  - ✅ 推荐：`IPostService : IBaseService<Post, PostVo>` 包含复杂的 `PublishPostAsync` 逻辑
 
 ## 项目版本号规范
 
@@ -146,10 +150,16 @@ git push origin v1.2.0.251126
 - 后端项目按层次结构依赖：
   - Radish.Api 引用 radish.client（用于 SPA 代理）与 Radish.Service，并通过 Program.cs 注入 `IUserService/IUserRepository` 等接口实现；同时依赖 Radish.Common 以注册 `AppSettings` 扩展，避免在其他层重复创建配置源。
   - Radish.Service 依赖 Radish.IService（接口契约）与 Radish.Repository（数据访问实现），负责聚合业务逻辑；Service 层对外仅暴露 DTO/Vo，必须在返回前将仓储层实体映射为视图模型（推荐 AutoMapper）。
+    - **简单 CRUD 场景**：Controller 直接注入 `IBaseService<TEntity, TVo>`，无需创建专门的 Service 实现
+    - **复杂业务逻辑场景**：创建继承自 `BaseService<TEntity, TVo>` 的自定义 Service，添加特定业务方法
+    - BaseService 提供的通用方法：QueryAsync, QueryByIdAsync, QueryPageAsync, AddAsync, UpdateAsync, DeleteAsync 等
   - Radish.Repository 依赖 Radish.IRepository、Radish.Model 以及 Radish.Infrastructure 中的 SqlSugar/租户扩展，只能向 Service 层返回实体或实体集合，禁止直接引用任何 Vo/DTO；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model，以便共享实体与视图模型定义。
 - Radish.Extension 仅由宿主（Radish.Api、Radish.Gateway）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以及 Infrastructure 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
   - Radish.Core 暂时保留，无直接依赖关系
-- `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用"Controller 调用 Service，再由 Service 访问 Repository"的模式，并补齐对应接口定义
+- `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用"Controller 调用 Service，再由 Service 访问 Repository"的模式
+  - **简单 CRUD 示例**：`CategoryController` 直接注入 `IBaseService<Category, CategoryVo>`，使用 `QueryAsync(c => c.IsEnabled)` 等方法
+  - **复杂逻辑示例**：`PostController` 注入 `IPostService`，调用自定义的 `PublishPostAsync()` 方法处理多表事务
+  - 若只需简单 CRUD，无需创建专门的 `ICategoryService` 等接口
 
 ## 数据库与 SqlSugar 配置
 
@@ -270,7 +280,223 @@ git push origin v1.2.0.251126
 
 ---
 
+## BaseService 与 BaseRepository 使用指南
+
+### 设计理念
+
+Radish 项目采用泛型基类模式来避免为每个实体重复编写相同的 CRUD 代码：
+
+- **BaseRepository<TEntity>**：提供完整的数据库操作方法（基于 SqlSugar）
+- **BaseService<TEntity, TVo>**：提供完整的业务层方法（自动进行实体到 ViewModel 的映射）
+
+**核心原则**：
+- ✅ **优先使用 BaseService/BaseRepository** - 减少重复代码，保持架构简洁
+- ✅ **只为复杂业务逻辑创建自定义 Service** - 例如涉及多表事务、复杂验证的场景
+- ❌ **避免创建只包装 Base 方法的 Service** - 这会增加不必要的抽象层
+
+### BaseService 提供的完整功能
+
+#### 增（Create）
+```csharp
+Task<long> AddAsync(TEntity entity)                     // 插入单条，返回雪花ID
+Task<int> AddRangeAsync(List<TEntity> entities)         // 批量插入
+Task<List<long>> AddSplitAsync(TEntity entity)          // 分表插入
+```
+
+#### 删（Delete）
+```csharp
+Task<bool> DeleteByIdAsync(long id)                     // 根据ID删除
+Task<bool> DeleteAsync(TEntity entity)                  // 根据实体删除
+Task<int> DeleteAsync(Expression<Func<TEntity, bool>>) // 根据条件删除
+Task<int> DeleteByIdsAsync(List<long> ids)             // 批量删除
+```
+
+#### 改（Update）
+```csharp
+Task<bool> UpdateAsync(TEntity entity)                  // 更新整个实体
+Task<int> UpdateRangeAsync(List<TEntity> entities)     // 批量更新
+Task<bool> UpdateColumnsAsync(TEntity entity, columns)  // 更新指定列
+Task<int> UpdateColumnsAsync(updateExp, whereExp)      // 根据条件更新指定列
+```
+
+#### 查（Query）
+```csharp
+Task<TVo?> QueryByIdAsync(long id)                     // 根据ID查询
+Task<TVo?> QueryFirstAsync(Expression<...>)            // 查询第一条
+Task<TVo?> QuerySingleAsync(Expression<...>)           // 查询单条（多条抛异常）
+Task<List<TVo>> QueryAsync(Expression<...>)            // 条件查询列表
+Task<List<TVo>> QueryWithCacheAsync(Expression<...>)   // 带缓存的查询
+Task<(List<TVo>, int)> QueryPageAsync(...)            // 分页查询（支持排序）
+Task<int> QueryCountAsync(Expression<...>)             // 查询数量
+Task<bool> QueryExistsAsync(Expression<...>)           // 判断是否存在
+Task<List<TResult>> QueryMuchAsync<...>(...)          // 三表联查
+Task<List<TEntity>> QuerySplitAsync(...)              // 分表查询
+```
+
+### 使用场景
+
+#### 场景 1：简单 CRUD（直接使用 BaseService）
+
+✅ **推荐做法**：
+```csharp
+// Controller
+public class CategoryController : ControllerBase
+{
+    private readonly IBaseService<Category, CategoryVo> _categoryService;
+
+    public CategoryController(IBaseService<Category, CategoryVo> categoryService)
+    {
+        _categoryService = categoryService;
+    }
+
+    [HttpGet]
+    public async Task<MessageModel> GetTopCategories()
+    {
+        var categories = await _categoryService.QueryAsync(
+            c => c.ParentId == null && c.IsEnabled && !c.IsDeleted);
+        return new MessageModel { IsSuccess = true, ResponseData = categories };
+    }
+
+    [HttpGet("{id:long}")]
+    public async Task<MessageModel> GetById(long id)
+    {
+        var category = await _categoryService.QueryByIdAsync(id);
+        if (category == null)
+            return new MessageModel { IsSuccess = false, MessageInfo = "分类不存在" };
+        return new MessageModel { IsSuccess = true, ResponseData = category };
+    }
+}
+```
+
+❌ **不推荐**：创建只包装 BaseService 方法的 Service
+```csharp
+// 不要这样做！
+public interface ICategoryService : IBaseService<Category, CategoryVo>
+{
+    Task<List<CategoryVo>> GetTopCategoriesAsync(); // 只是 QueryAsync 的包装
+}
+```
+
+#### 场景 2：复杂业务逻辑（创建自定义 Service）
+
+✅ **推荐做法**：当有复杂业务逻辑时才创建自定义 Service
+```csharp
+// Service 接口
+public interface IPostService : IBaseService<Post, PostVo>
+{
+    // 复杂业务方法：发布帖子需要更新分类计数、处理标签等
+    Task<long> PublishPostAsync(Post post, List<string>? tagNames = null);
+
+    // 复杂查询：需要关联查询分类名称、标签列表
+    Task<PostVo?> GetPostDetailAsync(long postId);
+}
+
+// Service 实现
+public class PostService : BaseService<Post, PostVo>, IPostService
+{
+    private readonly IBaseRepository<Category> _categoryRepository;
+    private readonly IBaseRepository<Tag> _tagRepository;
+    private readonly IBaseRepository<PostTag> _postTagRepository;
+    private readonly ITagService _tagService;
+
+    public PostService(
+        IMapper mapper,
+        IBaseRepository<Post> baseRepository,
+        IBaseRepository<Category> categoryRepository,
+        IBaseRepository<Tag> tagRepository,
+        IBaseRepository<PostTag> postTagRepository,
+        ITagService tagService)
+        : base(mapper, baseRepository)
+    {
+        _categoryRepository = categoryRepository;
+        _tagRepository = tagRepository;
+        _postTagRepository = postTagRepository;
+        _tagService = tagService;
+    }
+
+    public async Task<long> PublishPostAsync(Post post, List<string>? tagNames = null)
+    {
+        // 1. 插入帖子（复用 BaseService 方法）
+        var postId = await AddAsync(post);
+
+        // 2. 更新分类的帖子数量
+        if (post.CategoryId > 0)
+        {
+            var category = await _categoryRepository.QueryByIdAsync(post.CategoryId);
+            if (category != null)
+            {
+                category.PostCount++;
+                await _categoryRepository.UpdateAsync(category);
+            }
+        }
+
+        // 3. 处理标签关联
+        if (tagNames != null && tagNames.Any())
+        {
+            foreach (var tagName in tagNames.Where(t => !string.IsNullOrWhiteSpace(t)))
+            {
+                var tag = await _tagService.GetOrCreateTagAsync(tagName);
+                var postTag = new PostTag(postId, tag.Id);
+                await _postTagRepository.AddAsync(postTag);
+
+                tag.PostCount++;
+                await _tagRepository.UpdateAsync(tag);
+            }
+        }
+
+        return postId;
+    }
+
+    public async Task<PostVo?> GetPostDetailAsync(long postId)
+    {
+        var post = await QueryByIdAsync(postId); // 复用 BaseService 方法
+        if (post == null) return null;
+
+        // 补充关联信息
+        var category = await _categoryRepository.QueryByIdAsync(post.CategoryId);
+        if (category != null) post.CategoryName = category.Name;
+
+        // ... 其他复杂逻辑
+        return post;
+    }
+}
+```
+
+### BaseRepository 直接使用
+
+在自定义 Service 中，如果需要操作其他实体，可以直接注入 `IBaseRepository<T>`：
+
+```csharp
+public class PostService : BaseService<Post, PostVo>, IPostService
+{
+    private readonly IBaseRepository<Category> _categoryRepository; // 直接使用 BaseRepository
+
+    public async Task SomeBusinessLogic()
+    {
+        // 直接调用 BaseRepository 方法
+        var category = await _categoryRepository.QueryByIdAsync(123);
+        category.PostCount++;
+        await _categoryRepository.UpdateAsync(category);
+    }
+}
+```
+
+### 最佳实践总结
+
+1. **默认使用 BaseService** - Controller 直接注入 `IBaseService<TEntity, TVo>`
+2. **谨慎创建自定义 Service** - 只在以下情况创建：
+   - 需要操作多个实体（事务协调）
+   - 有复杂的业务验证逻辑
+   - 需要调用外部服务/API
+3. **自定义 Service 继承 BaseService** - 复用基础方法，只添加特殊逻辑
+4. **命名规范**：
+   - 接口：`IPostService : IBaseService<Post, PostVo>`
+   - 实现：`PostService : BaseService<Post, PostVo>, IPostService`
+
+---
+
 ## 实体与视图模型规范
+
 
 - 仓储层（Radish.Repository）只处理 `Radish.Model` 中定义的实体类型，禁止将实体对象直接向外暴露；Service 层获取实体后必须映射为视图模型再返回给 Controller。
 - 视图模型命名以 `Vo` 为前缀，但不得只追加单个前缀；需结合业务含义进行缩写或扩写（例如 `VoUsrAudit`、`VoAssetReport`），从命名上进行模糊化以减少被直接猜测的风险。

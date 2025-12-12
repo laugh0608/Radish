@@ -352,20 +352,82 @@ Tests use in-memory services where possible. For integration tests requiring dat
 
 1. **Define Model** in `Radish.Model/Models` (entity) and `Radish.Model/ViewModels` (ViewModel)
 2. **Create Mapping** in `Radish.Extension/AutoMapperExtension/CustomProfiles`
-3. **Repository Layer**:
-   - Define interface in `Radish.IRepository`
-   - Implement in `Radish.Repository` (inherit from `BaseRepository<T>`)
-4. **Service Layer**:
-   - Define interface in `Radish.IService`
-   - Implement in `Radish.Service` (inherit from `BaseService<TEntity, TModel>`)
-   - Map entity to ViewModel before returning
+3. **Repository Layer** (for custom queries only):
+   - Most cases: Use `IBaseRepository<TEntity>` directly, NO need to create custom repository
+   - Only create custom repository if you need specialized database operations beyond BaseRepository
+4. **Service Layer** (IMPORTANT - avoid over-engineering):
+   - **For simple CRUD operations**: Use `IBaseService<TEntity, TVo>` directly in Controller
+     - Example: `IBaseService<Category, CategoryVo>` provides all basic operations
+     - BaseService includes: Query, QueryById, QueryPage, Add, Update, Delete, etc.
+   - **Only create custom Service when**:
+     - You have complex business logic (e.g., `PublishPostAsync` that updates multiple tables)
+     - You need transaction coordination across multiple entities
+     - You have special validation or processing rules
+   - **If you create custom Service**:
+     - Define interface in `Radish.IService` (inherit from `IBaseService<TEntity, TVo>`)
+     - Implement in `Radish.Service` (inherit from `BaseService<TEntity, TVo>`)
+     - Only add methods for complex logic; reuse base methods for simple operations
 5. **Controller** in `Radish.Api/Controllers`:
-   - Inject IService (never IRepository)
+   - **Simple CRUD**: Inject `IBaseService<TEntity, TVo>` directly
+     ```csharp
+     public CategoryController(IBaseService<Category, CategoryVo> categoryService)
+     ```
+   - **Complex logic**: Inject custom service (e.g., `IPostService`)
+   - Never inject `IBaseRepository` directly
    - Add `[Authorize]` or `[AllowAnonymous]` attribute
-   - Use `[Route("api/[controller]/[action]")]` convention
+   - Use `[Route("api/v{version:apiVersion}/[controller]/[action]")]` convention
 6. **Add HTTP Examples** in `Radish.Api/Radish.Api.http` for manual testing
 7. **Write Tests** in `Radish.Api.Tests/Controllers/`
 8. **Update Frontend** in `radish.client/src/` as needed
+
+### Service Layer Examples
+
+**✅ Good - Use BaseService directly:**
+```csharp
+// Controller
+public class CategoryController : ControllerBase
+{
+    private readonly IBaseService<Category, CategoryVo> _categoryService;
+
+    [HttpGet]
+    public async Task<MessageModel> GetAll()
+    {
+        var categories = await _categoryService.QueryAsync(c => c.IsEnabled && !c.IsDeleted);
+        return new MessageModel { IsSuccess = true, ResponseData = categories };
+    }
+}
+```
+
+**✅ Good - Create custom Service for complex logic:**
+```csharp
+// Service interface
+public interface IPostService : IBaseService<Post, PostVo>
+{
+    Task<long> PublishPostAsync(Post post, List<string>? tagNames = null);
+    Task<PostVo?> GetPostDetailAsync(long postId);
+}
+
+// Service implementation
+public class PostService : BaseService<Post, PostVo>, IPostService
+{
+    public async Task<long> PublishPostAsync(Post post, List<string>? tagNames)
+    {
+        // Complex logic: insert post, update category count, process tags
+        var postId = await AddAsync(post); // Reuse base method
+        // ... additional business logic
+        return postId;
+    }
+}
+```
+
+**❌ Bad - Creating unnecessary custom Service:**
+```csharp
+// DON'T do this - CategoryService only wraps BaseService methods
+public interface ICategoryService : IBaseService<Category, CategoryVo>
+{
+    Task<List<CategoryVo>> GetTopCategoriesAsync();  // Just QueryAsync with filter!
+}
+```
 
 ## Rust Native Extensions (Experimental)
 
@@ -401,12 +463,13 @@ Comprehensive docs in `radish.docs/docs/`:
 
 1. **Don't put business logic in Controllers** - Logic belongs in Service layer
 2. **Don't expose entities directly** - Always map to ViewModels first
-3. **Don't skip interface definitions** - Define IService/IRepository before implementations
-4. **Don't hardcode secrets** - Use environment variables or User Secrets for sensitive data
-5. **Don't forget to update Snowflake WorkId per environment** - Avoid ID collisions in production
-6. **Don't create files in Radish.Common that depend on Model/Service/Repository** - Use Radish.Extension instead
-7. **Router parameters in authorization** - Ensure `ApiModule.LinkUrl` contains regex for routes with parameters
-8. **ViewModels must be obfuscated** - Don't just add `Vo` prefix; combine with business abbreviation
+3. **Don't create unnecessary Services** - Use `BaseService<TEntity, TVo>` directly for simple CRUD; only create custom Service for complex business logic
+4. **Don't skip interface definitions** - Define IService/IRepository before implementations
+5. **Don't hardcode secrets** - Use environment variables or User Secrets for sensitive data
+6. **Don't forget to update Snowflake WorkId per environment** - Avoid ID collisions in production
+7. **Don't create files in Radish.Common that depend on Model/Service/Repository** - Use Radish.Extension instead
+8. **Router parameters in authorization** - Ensure `ApiModule.LinkUrl` contains regex for routes with parameters
+9. **ViewModels must be obfuscated** - Don't just add `Vo` prefix; combine with business abbreviation
 
 ## Git Commit Guidelines
 
