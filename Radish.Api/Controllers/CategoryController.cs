@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
 
@@ -21,9 +22,9 @@ namespace Radish.Api.Controllers;
 [Tags("论坛分类管理")]
 public class CategoryController : ControllerBase
 {
-    private readonly ICategoryService _categoryService;
+    private readonly IBaseService<Category, CategoryVo> _categoryService;
 
-    public CategoryController(ICategoryService categoryService)
+    public CategoryController(IBaseService<Category, CategoryVo> categoryService)
     {
         _categoryService = categoryService;
     }
@@ -37,7 +38,7 @@ public class CategoryController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetTopCategories()
     {
-        var categories = await _categoryService.GetTopCategoriesAsync();
+        var categories = await _categoryService.QueryAsync(c => c.ParentId == null && c.IsEnabled && !c.IsDeleted);
         return new MessageModel
         {
             IsSuccess = true,
@@ -57,7 +58,7 @@ public class CategoryController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetChildCategories(long parentId)
     {
-        var categories = await _categoryService.GetChildCategoriesAsync(parentId);
+        var categories = await _categoryService.QueryAsync(c => c.ParentId == parentId && c.IsEnabled && !c.IsDeleted);
         return new MessageModel
         {
             IsSuccess = true,
@@ -78,8 +79,7 @@ public class CategoryController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
     public async Task<MessageModel> GetById(long id)
     {
-        var categories = await _categoryService.QueryAsync(c => c.Id == id && c.IsEnabled && !c.IsDeleted);
-        var category = categories.FirstOrDefault();
+        var category = await _categoryService.QueryByIdAsync(id);
 
         if (category == null)
         {

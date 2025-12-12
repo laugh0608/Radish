@@ -48,30 +48,4 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
 
         return newTag;
     }
-
-    /// <summary>
-    /// 更新标签的帖子数量
-    /// </summary>
-    public async Task UpdatePostCountAsync(long tagId, int increment)
-    {
-        var tag = await _tagRepository.QueryByIdAsync(tagId);
-        if (tag != null)
-        {
-            tag.PostCount = Math.Max(0, tag.PostCount + increment);
-            await _tagRepository.UpdateAsync(tag);
-        }
-    }
-
-    /// <summary>
-    /// 获取热门标签
-    /// </summary>
-    public async Task<List<TagVo>> GetHotTagsAsync(int topCount = 20)
-    {
-        var tags = await _tagRepository.QueryAsync(t => t.IsEnabled && !t.IsDeleted);
-        var hotTags = tags.OrderByDescending(t => t.PostCount)
-                         .Take(topCount)
-                         .ToList();
-
-        return Mapper.Map<List<TagVo>>(hotTags);
-    }
 }

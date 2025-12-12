@@ -57,13 +57,17 @@ public class TagController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetHotTags(int topCount = 20)
     {
-        var tags = await _tagService.GetHotTagsAsync(topCount);
+        var allTags = await _tagService.QueryAsync(t => t.IsEnabled && !t.IsDeleted);
+        var hotTags = allTags.OrderByDescending(t => t.PostCount)
+                            .Take(topCount)
+                            .ToList();
+
         return new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
-            ResponseData = tags
+            ResponseData = hotTags
         };
     }
 
@@ -78,8 +82,7 @@ public class TagController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
     public async Task<MessageModel> GetById(long id)
     {
-        var tags = await _tagService.QueryAsync(t => t.Id == id && t.IsEnabled && !t.IsDeleted);
-        var tag = tags.FirstOrDefault();
+        var tag = await _tagService.QueryByIdAsync(id);
 
         if (tag == null)
         {
