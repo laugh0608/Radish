@@ -1,6 +1,7 @@
 import { WelcomeApp } from '@/apps/welcome/WelcomeApp';
 import { ShowcaseApp } from '@/apps/showcase/ShowcaseApp';
 import { AuthTestApp } from '@/apps/auth-test/AuthTestApp';
+import { ForumApp } from '@/apps/forum/ForumApp';
 import type { AppDefinition } from './types';
 
 /**
@@ -66,18 +67,18 @@ export const appRegistry: AppDefinition[] = [
     requiredRoles: ['User'],
     category: 'system'
   },
-  // 后续可以添加更多应用...
-  // {
-  //   id: 'forum',
-  //   name: '论坛',
-  //   icon: 'mdi:forum',
-  //   description: '社区讨论与内容分享',
-  //   component: ForumApp,
-  //   type: 'window',
-  //   defaultSize: { width: 1200, height: 800 },
-  //   requiredRoles: ['User'],
-  //   category: 'content'
-  // },
+  {
+    id: 'forum',
+    name: '论坛',
+    icon: 'mdi:forum',
+    description: '社区讨论与内容分享',
+    component: ForumApp,
+    type: 'window',
+    defaultSize: { width: 1200, height: 800 },
+    requiredRoles: ['User'],
+    category: 'content'
+  },
+
 ];
 
 /**

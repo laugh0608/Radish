@@ -1,5 +1,7 @@
 using System.Text;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Asp.Versioning;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -103,7 +105,12 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 });
 
 // 注册 Controller 控制器
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new Int64ToStringConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableInt64ToStringConverter());
+    });
 // 注册健康检查
 builder.Services.AddHealthChecks();
 // 配置 API 版本控制
@@ -277,3 +284,78 @@ app.Lifetime.ApplicationStarted.Register(() =>
 // -------------- App 运行阶段 ---------------
 app.Run();
 // -------------- App 运行阶段 ---------------
+
+public sealed class Int64ToStringConverter : JsonConverter<long>
+{
+    public override long Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var s = reader.GetString();
+            if (long.TryParse(s, out var value))
+            {
+                return value;
+            }
+
+            throw new JsonException($"无法将字符串 \"{s}\" 解析为 long。");
+        }
+
+        if (reader.TokenType == JsonTokenType.Number)
+        {
+            return reader.GetInt64();
+        }
+
+        throw new JsonException($"不支持的 JSON 标记类型 {reader.TokenType}，期望 string 或 number。");
+    }
+
+    public override void Write(Utf8JsonWriter writer, long value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.ToString());
+    }
+}
+
+public sealed class NullableInt64ToStringConverter : JsonConverter<long?>
+{
+    public override long? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null)
+        {
+            return null;
+        }
+
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var s = reader.GetString();
+            if (string.IsNullOrEmpty(s))
+            {
+                return null;
+            }
+
+            if (long.TryParse(s, out var value))
+            {
+                return value;
+            }
+
+            throw new JsonException($"无法将字符串 \"{s}\" 解析为 long?.");
+        }
+
+        if (reader.TokenType == JsonTokenType.Number)
+        {
+            return reader.GetInt64();
+        }
+
+        throw new JsonException($"不支持的 JSON 标记类型 {reader.TokenType}，期望 string、number 或 null。");
+    }
+
+    public override void Write(Utf8JsonWriter writer, long? value, JsonSerializerOptions options)
+    {
+        if (value.HasValue)
+        {
+            writer.WriteStringValue(value.Value.ToString());
+        }
+        else
+        {
+            writer.WriteNullValue();
+        }
+    }
+}
