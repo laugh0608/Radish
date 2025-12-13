@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import { parseApiResponse, type ApiResponse } from './api/client';
+import { useUserStore } from './stores/userStore';
 import './App.css';
 
 interface Forecast {
@@ -17,6 +18,14 @@ interface CurrentUser {
     tenantId: number;
 }
 
+// WebOS 全局用户信息结构（与 useUserStore.UserInfo 对齐）
+interface WebOsUserInfo {
+    userId: number;
+    userName: string;
+    tenantId: number;
+    roles: string[];
+}
+
 interface OidcCallbackProps {
     apiBaseUrl: string;
 }
@@ -30,6 +39,8 @@ function App() {
     const [forecasts, setForecasts] = useState<Forecast[]>();
     const [error, setError] = useState<string>();
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+    const setWebOsUser = useUserStore(state => state.setUser);
+    const clearWebOsUser = useUserStore(state => state.clearUser);
     const [userError, setUserError] = useState<string>();
 
     const apiBaseUrl = useMemo(() => {
@@ -180,10 +191,20 @@ function App() {
 
             setCurrentUser(parsed.data);
             setUserError(undefined);
+
+            // 同步到 WebOS 全局用户状态，默认赋予基础角色
+            const webOsUser: WebOsUserInfo = {
+                userId: parsed.data.userId,
+                userName: parsed.data.userName,
+                tenantId: parsed.data.tenantId,
+                roles: ['User']
+            };
+            setWebOsUser(webOsUser);
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             setUserError(`${t('auth.userInfoLoadFailedPrefix')}${message}`);
             setCurrentUser(null);
+            clearWebOsUser();
         }
     }
 }
@@ -329,6 +350,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
                 setMessage(t('oidc.loginSucceeded'));
 
                 // 使用 replace 避免在浏览器历史中留下带 code 的 URL
+                // 登录成功后跳转回 WebOS Shell（根路径）
                 window.location.replace('/');
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
