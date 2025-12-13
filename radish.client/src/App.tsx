@@ -266,24 +266,19 @@ function handleLogout(apiBaseUrl: string) {
     window.localStorage.removeItem('access_token');
     window.localStorage.removeItem('refresh_token');
 
+    // 使用 OIDC 标准的 endsession endpoint 清除 Auth Server 的会话
+    const postLogoutRedirectUri = window.location.origin;
+
+    const logoutUrl = new URL(`${apiBaseUrl}/connect/endsession`);
+    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+    logoutUrl.searchParams.set('client_id', 'radish-client');
+
     // 🌍 传递当前语言设置
     const currentLanguage = i18n.language || 'zh';
-    const logoutUrl = new URL(`${apiBaseUrl}/Account/Logout`);
     logoutUrl.searchParams.set('culture', currentLanguage);
 
-    // 调用 Auth 的 Logout，并在完成后回到首页
-    void fetch(logoutUrl.toString(), {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            Accept: 'application/json',
-            'Accept-Language': currentLanguage
-        }
-    }).catch(() => {
-        // 忽略登出接口错误，仍然清理本地状态并跳转首页
-    }).finally(() => {
-        window.location.replace('/');
-    });
+    // 重定向到 OIDC logout endpoint，Auth Server 会清除 session 并重定向回来
+    window.location.href = logoutUrl.toString();
 }
 
 function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {

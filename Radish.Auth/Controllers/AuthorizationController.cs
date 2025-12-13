@@ -249,4 +249,19 @@ public class AuthorizationController : Controller
         // 默认：其他所有 claims 只包含在 access_token 中
         yield return OpenIddictConstants.Destinations.AccessToken;
     }
+
+    /// <summary>
+    /// 处理 OIDC 标准的 endsession 请求 (/connect/endsession)。
+    /// 清除当前用户的 Cookie 认证会话并重定向到客户端指定的 post_logout_redirect_uri。
+    /// </summary>
+    [HttpGet("~/connect/endsession")]
+    [HttpPost("~/connect/endsession")]
+    public async Task<IActionResult> Logout()
+    {
+        // 清除 Cookie 认证会话
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        // 返回 SignOut 结果，由 OpenIddict 处理后续的重定向逻辑
+        return SignOut(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+    }
 }

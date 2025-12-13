@@ -45,7 +45,7 @@ public class OpenIddictSeedHostedService : IHostedService
             {
                 ClientId = "radish-client",
                 DisplayName = "Radish Web Client",
-                ConsentType = OpenIddictConstants.ConsentTypes.Explicit
+                ConsentType = OpenIddictConstants.ConsentTypes.Implicit // SSO: 无需显式授权
             };
 
             // 开发环境：前端直接访问（Vite dev server）
@@ -132,7 +132,7 @@ public class OpenIddictSeedHostedService : IHostedService
             {
                 ClientId = "radish-console",
                 DisplayName = "Radish Management Console",
-                ConsentType = OpenIddictConstants.ConsentTypes.Explicit
+                ConsentType = OpenIddictConstants.ConsentTypes.Implicit // SSO: 无需显式授权
             };
 
             // 开发环境：Console 直接访问
