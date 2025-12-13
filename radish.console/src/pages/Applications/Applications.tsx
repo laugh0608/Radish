@@ -26,7 +26,7 @@ export const Applications = () => {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [currentClient, setCurrentClient] = useState<OidcClient | null>(null);
+  const [, setCurrentClient] = useState<OidcClient | null>(null);
   const [form] = Form.useForm();
 
   useEffect(() => {

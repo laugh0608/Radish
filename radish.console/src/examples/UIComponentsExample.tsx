@@ -26,7 +26,7 @@ export const UIComponentsExample = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [email, setEmail] = useState('');
   const [selectedCity, setSelectedCity] = useState('');
-  const [isModalOpen, toggleModal, openModal, closeModal] = useToggle(false);
+  const [isModalOpen, , openModal, closeModal] = useToggle(false);
   const [count, setCount] = useLocalStorage('example-count', 0);
 
   const debouncedSearch = useDebounce(searchTerm, 500);

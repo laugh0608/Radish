@@ -22,9 +22,9 @@ function App() {
   }, []);
 
   // 检查是否是 OIDC 回调页面
-  // 统一通过 Gateway 访问，pathname 固定为 /console/callback
+  // Gateway 会把 /console 前缀剥离给下游 dev server，这里同时兼容 /console/callback 与 /callback
   const isOidcCallback = typeof window !== 'undefined' &&
-    window.location.pathname === '/console/callback';
+    (window.location.pathname === '/console/callback' || window.location.pathname === '/callback');
 
   // 如果是回调页面，显示回调处理组件
   if (isOidcCallback) {

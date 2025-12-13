@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Form, AntInput, AntButton, message } from '@radish/ui';
+import { AntButton, message } from '@radish/ui';
 import './Login.css';
 
 interface LoginProps {
