@@ -3,7 +3,7 @@ using System;
 namespace Radish.Model.ViewModels;
 
 /// <summary>OIDC 作用域视图模型</summary>
-public class VoOidcScope
+public class OidcScopeVo
 {
     /// <summary>作用域 Id</summary>
     public long Id { get; set; }

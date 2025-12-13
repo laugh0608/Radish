@@ -4,7 +4,7 @@ using Radish.Model.OpenIddict;
 namespace Radish.Model.ViewModels;
 
 /// <summary>OIDC 客户端应用视图模型</summary>
-public class VoOidcApp
+public class OidcAppVo
 {
     /// <summary>应用 Id</summary>
     public long Id { get; set; }

@@ -3,7 +3,7 @@ using System;
 namespace Radish.Model.ViewModels;
 
 /// <summary>OIDC 授权记录视图模型</summary>
-public class VoOidcAuth
+public class OidcAuthVo
 {
     /// <summary>授权 Id</summary>
     public long Id { get; set; }
