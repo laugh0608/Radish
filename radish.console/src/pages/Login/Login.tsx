@@ -12,38 +12,23 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
   const handleLogin = () => {
     setLoading(true);
 
-    // 跳转到 OIDC 登录
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
+    // 统一通过 Gateway 访问，origin 就是 Gateway 地址
     const currentOrigin = window.location.origin;
+    const redirectUri = `${currentOrigin}/console/callback`;
 
-    // 检测是否通过 Gateway 访问（通过 origin 判断，而不是 pathname）
-    // Gateway: https://localhost:5000, Direct: http://localhost:3002
-    const isGatewayAccess = currentOrigin.includes('5000');
-
-    // 如果是通过 Gateway 访问，需要保留 /console 前缀
-    const redirectUri = isGatewayAccess
-      ? `${currentOrigin}/console/callback`
-      : `${currentOrigin}/callback`;
-
-    // 调试输出
-    console.log('[Login Debug] origin:', currentOrigin);
-    console.log('[Login Debug] isGatewayAccess:', isGatewayAccess);
-    console.log('[Login Debug] redirectUri:', redirectUri);
-
-    const authorizeUrl = new URL(`${apiBaseUrl}/connect/authorize`);
+    const authorizeUrl = new URL(`${currentOrigin}/connect/authorize`);
     authorizeUrl.searchParams.set('client_id', 'radish-console');
     authorizeUrl.searchParams.set('response_type', 'code');
     authorizeUrl.searchParams.set('redirect_uri', redirectUri);
     authorizeUrl.searchParams.set('scope', 'radish-api');
-
-    console.log('[Login Debug] Full authorize URL:', authorizeUrl.toString());
 
     window.location.href = authorizeUrl.toString();
   };
 
   // 临时测试方案：使用默认账号登录获取 token
   const handleTestLogin = async () => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
+    // 统一通过 Gateway 访问
+    const apiBaseUrl = window.location.origin;
 
     try {
       setLoading(true);

@@ -44,8 +44,11 @@ function App() {
     const [userError, setUserError] = useState<string>();
 
     const apiBaseUrl = useMemo(() => {
-        const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
-        return (configured ?? defaultApiBase).replace(/\/$/, '');
+        // 统一通过 Gateway 访问，apiBaseUrl 就是当前 origin
+        if (typeof window !== 'undefined') {
+            return window.location.origin;
+        }
+        return 'https://localhost:5000'; // fallback for SSR
     }, []);
 
     const isBrowser = typeof window !== 'undefined';

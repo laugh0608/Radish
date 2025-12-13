@@ -107,6 +107,9 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
+// 启用 WebSocket 支持（用于 Vite HMR）
+app.UseWebSockets();
+
 app.UseCors("GatewayCorsPolicy");
 
 app.UseRouting();
