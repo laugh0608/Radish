@@ -17,7 +17,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@iconify/react": "^6.0.2"
+    "@iconify/react": "^6.0.2",
+    "antd": "^6.1.0"
   },
   "peerDependencies": {
     "react": "^19.1.1",
