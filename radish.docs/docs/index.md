@@ -42,6 +42,12 @@ features:
 - 前端设计说明：[/FrontendDesign](/FrontendDesign)
 - Gateway 规划：[/GatewayPlan](/GatewayPlan)
 
+### 前端组件库
+
+- UI 组件库：[/UIComponentLibrary](/UIComponentLibrary) - @radish/ui 设置和使用指南
+- 组件详细说明：[/UIComponentsSummary](/UIComponentsSummary) - 所有组件、Hooks、工具函数
+- 快速参考：[/UIQuickReference](/UIQuickReference) - 常用 API 速查表
+
 ### 认证与安全
 
 - 认证与权限指南：[/AuthenticationGuide](/AuthenticationGuide)

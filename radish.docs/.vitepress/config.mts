@@ -50,6 +50,14 @@ export default defineConfig({
           ]
         },
         {
+          text: '前端组件库',
+          items: [
+            { text: 'UI 组件库', link: '/UIComponentLibrary' },
+            { text: '组件详细说明', link: '/UIComponentsSummary' },
+            { text: '快速参考', link: '/UIQuickReference' }
+          ]
+        },
+        {
           text: '部署与运维',
           items: [
             { text: '部署指南', link: '/DeploymentGuide' },

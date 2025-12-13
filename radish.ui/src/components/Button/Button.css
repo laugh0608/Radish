@@ -1,0 +1,56 @@
+.radish-button {
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.radish-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Variants */
+.radish-button--primary {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.radish-button--primary:hover:not(:disabled) {
+  background-color: #45a049;
+}
+
+.radish-button--secondary {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.radish-button--secondary:hover:not(:disabled) {
+  background-color: #e0e0e0;
+}
+
+.radish-button--danger {
+  background-color: #f44336;
+  color: white;
+}
+
+.radish-button--danger:hover:not(:disabled) {
+  background-color: #da190b;
+}
+
+/* Sizes */
+.radish-button--small {
+  padding: 6px 12px;
+  font-size: 14px;
+}
+
+.radish-button--medium {
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
+.radish-button--large {
+  padding: 14px 28px;
+  font-size: 18px;
+}
