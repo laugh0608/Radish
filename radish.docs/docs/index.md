@@ -47,6 +47,7 @@ features:
 - UI 组件库：[/UIComponentLibrary](/UIComponentLibrary) - @radish/ui 设置和使用指南
 - 组件详细说明：[/UIComponentsSummary](/UIComponentsSummary) - 所有组件、Hooks、工具函数
 - 快速参考：[/UIQuickReference](/UIQuickReference) - 常用 API 速查表
+- 开发指南：[/UIComponentDevelopment](/UIComponentDevelopment) - 开发工作流和热更新机制
 
 ### 认证与安全
 

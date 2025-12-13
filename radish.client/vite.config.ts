@@ -13,7 +13,9 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))
-        }
+        },
+        // 保留符号链接，让 Vite 能正确监听 @radish/ui 的变化
+        preserveSymlinks: false
     },
     server: {
         proxy: {
@@ -22,6 +24,12 @@ export default defineConfig({
                 secure: false
             }
         },
-        port: parseInt(env.DEV_SERVER_PORT || '3000', 10)
+        port: parseInt(env.DEV_SERVER_PORT || '3000', 10),
+        // 监听符号链接指向的文件变化
+        watch: {
+            followSymlinks: true,
+            // 忽略 node_modules，但不忽略 @radish/ui（通过符号链接）
+            ignored: ['!**/node_modules/@radish/**']
+        }
     }
 });
