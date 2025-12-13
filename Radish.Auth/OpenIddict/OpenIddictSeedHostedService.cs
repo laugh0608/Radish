@@ -48,12 +48,7 @@ public class OpenIddictSeedHostedService : IHostedService
                 ConsentType = OpenIddictConstants.ConsentTypes.Implicit // SSO: 无需显式授权
             };
 
-            // 开发环境：前端直接访问（Vite dev server）
-            descriptor.RedirectUris.Add(new Uri("http://localhost:3000/oidc/callback"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000/"));
-
-            // 生产环境：通过 Gateway 访问
+            // 统一通过 Gateway 访问（开发和生产）
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/oidc/callback"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/"));
@@ -80,17 +75,14 @@ public class OpenIddictSeedHostedService : IHostedService
         }
         else
         {
-            // 如果客户端已存在，更新 redirect_uri 配置（确保包含开发和生产环境的地址）
+            // 如果客户端已存在，更新配置（确保使用 Gateway URL）
             var descriptor = new OpenIddictApplicationDescriptor();
             await _applicationManager.PopulateAsync(descriptor, existingClient, cancellationToken);
 
             descriptor.RedirectUris.Clear();
-            descriptor.RedirectUris.Add(new Uri("http://localhost:3000/oidc/callback"));
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/oidc/callback"));
 
             descriptor.PostLogoutRedirectUris.Clear();
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000/"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/"));
 
@@ -141,12 +133,7 @@ public class OpenIddictSeedHostedService : IHostedService
                 ConsentType = OpenIddictConstants.ConsentTypes.Implicit // SSO: 无需显式授权
             };
 
-            // 开发环境：Console 直接访问
-            descriptor.RedirectUris.Add(new Uri("http://localhost:3002/callback"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002/"));
-
-            // 生产环境：通过 Gateway 访问
+            // 统一通过 Gateway 访问（开发和生产）
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/console/callback"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console/"));
@@ -170,17 +157,14 @@ public class OpenIddictSeedHostedService : IHostedService
         }
         else
         {
-            // 如果客户端已存在，更新 redirect_uri 配置
+            // 如果客户端已存在，更新配置（确保使用 Gateway URL）
             var descriptor = new OpenIddictApplicationDescriptor();
             await _applicationManager.PopulateAsync(descriptor, existingConsole, cancellationToken);
 
             descriptor.RedirectUris.Clear();
-            descriptor.RedirectUris.Add(new Uri("http://localhost:3002/callback"));
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/console/callback"));
 
             descriptor.PostLogoutRedirectUris.Clear();
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002/"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console/"));
 

@@ -21,12 +21,10 @@ function App() {
     }
   }, []);
 
-  // 检查是否是 OIDC 回调页面（支持直接访问和通过 Gateway 访问）
-  // 通过 origin 判断：Gateway 是 5000 端口，直接访问是 3002 端口
-  const isOidcCallback = typeof window !== 'undefined' && (
-    (window.location.origin.includes('5000') && window.location.pathname === '/console/callback') ||
-    (window.location.origin.includes('3002') && window.location.pathname === '/callback')
-  );
+  // 检查是否是 OIDC 回调页面
+  // 统一通过 Gateway 访问，pathname 固定为 /console/callback
+  const isOidcCallback = typeof window !== 'undefined' &&
+    window.location.pathname === '/console/callback';
 
   // 如果是回调页面，显示回调处理组件
   if (isOidcCallback) {
@@ -57,18 +55,11 @@ function App() {
     localStorage.removeItem('refresh_token');
 
     // 使用 OIDC 标准的 endsession endpoint 清除 Auth Server 的会话
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
-
-    // 检测是否通过 Gateway 访问（通过 origin 判断）
+    // 统一通过 Gateway 访问，origin 就是 Gateway 地址
     const currentOrigin = window.location.origin;
-    const isGatewayAccess = currentOrigin.includes('5000');
+    const postLogoutRedirectUri = `${currentOrigin}/console/`;
 
-    // post_logout_redirect_uri 必须与注册时的保持一致（包含 trailing slash）
-    const postLogoutRedirectUri = isGatewayAccess
-      ? `${currentOrigin}/console/`
-      : `${currentOrigin}/`;
-
-    const logoutUrl = new URL(`${apiBaseUrl}/connect/endsession`);
+    const logoutUrl = new URL(`${currentOrigin}/connect/endsession`);
     logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
     logoutUrl.searchParams.set('client_id', 'radish-console');
 
@@ -144,16 +135,9 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
       return;
     }
 
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
-
-    // 检测是否通过 Gateway 访问（通过 origin 判断）
+    // 统一通过 Gateway 访问，origin 就是 Gateway 地址
     const currentOrigin = window.location.origin;
-    const isGatewayAccess = currentOrigin.includes('5000');
-
-    // redirect_uri 必须与登录时的保持一致
-    const redirectUri = isGatewayAccess
-      ? `${currentOrigin}/console/callback`
-      : `${currentOrigin}/callback`;
+    const redirectUri = `${currentOrigin}/console/callback`;
 
     const fetchToken = async () => {
       const body = new URLSearchParams();
@@ -163,7 +147,7 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
       body.set('redirect_uri', redirectUri);
 
       try {
-        const response = await fetch(`${apiBaseUrl}/connect/token`, {
+        const response = await fetch(`${currentOrigin}/connect/token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -193,11 +177,11 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
         message.success('登录成功');
 
         // 通知父组件登录成功，并跳转到首页
+        onSuccess();
+
+        // 跳转到 Console 首页
         setTimeout(() => {
-          onSuccess();
-          // 跳转到正确的首页路径（通过 Gateway 访问时需要保留 /console 前缀）
-          const homePath = isGatewayAccess ? '/console/' : '/';
-          window.location.replace(homePath);
+          window.location.replace('/console/');
         }, 500);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);

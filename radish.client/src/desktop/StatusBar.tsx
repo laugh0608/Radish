@@ -15,9 +15,12 @@ export const StatusBar = () => {
   const { userName, userId, isAuthenticated, clearUser, setUser } = useUserStore();
   const [time, setTime] = useState(new Date());
 
+  // 统一通过 Gateway 访问，apiBaseUrl 就是当前 origin
   const apiBaseUrl = useMemo(() => {
-    const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
-    return (configured ?? defaultApiBase).replace(/\/$/, '');
+    if (typeof window !== 'undefined') {
+      return window.location.origin;
+    }
+    return 'https://localhost:5000'; // fallback
   }, []);
 
   const loggedIn = isAuthenticated();
@@ -74,10 +77,25 @@ export const StatusBar = () => {
   const handleLogoutClick = () => {
     if (typeof window === 'undefined') return;
 
+    // 清理本地保存的 Token
     window.localStorage.removeItem('access_token');
     window.localStorage.removeItem('refresh_token');
     clearUser();
-    window.location.replace('/');
+
+    // 使用 OIDC 标准的 endsession endpoint 清除 Auth Server 的会话
+    // 添加 trailing slash 以匹配 PostLogoutRedirectUris 配置
+    const postLogoutRedirectUri = window.location.origin + '/';
+
+    const logoutUrl = new URL(`${apiBaseUrl}/connect/endsession`);
+    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+    logoutUrl.searchParams.set('client_id', 'radish-client');
+
+    // 传递当前语言设置
+    const currentLanguage = i18n.language || 'zh';
+    logoutUrl.searchParams.set('culture', currentLanguage);
+
+    // 重定向到 OIDC logout endpoint，Auth Server 会清除 session 并重定向回来
+    window.location.href = logoutUrl.toString();
   };
 
   // 从 API 恢复当前登录用户到 WebOS 全局状态
