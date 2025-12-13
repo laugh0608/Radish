@@ -3,7 +3,6 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Auth.OpenIddict;
@@ -220,7 +219,7 @@ builder.Services.AddOpenIddict()
         // 启用 OIDC 端点
         options.SetAuthorizationEndpointUris("/connect/authorize")
                .SetTokenEndpointUris("/connect/token")
-               .SetLogoutEndpointUris("/connect/endsession")
+               .SetEndSessionEndpointUris("/connect/endsession")
                .SetUserInfoEndpointUris("/connect/userinfo")
                .SetIntrospectionEndpointUris("/connect/introspect")
                .SetRevocationEndpointUris("/connect/revoke");
@@ -252,7 +251,7 @@ builder.Services.AddOpenIddict()
         // 注册 ASP.NET Core 宿主
         options.UseAspNetCore()
                .EnableAuthorizationEndpointPassthrough()
-               .EnableLogoutEndpointPassthrough()
+               .EnableEndSessionEndpointPassthrough()
                .EnableUserInfoEndpointPassthrough()
                .DisableTransportSecurityRequirement(); // 允许 HTTP（仅开发环境）
     });
