@@ -59,15 +59,24 @@ dotnet watch --project Radish.Api           # 热重载
 dotnet test Radish.Api.Tests                # 运行测试
 dotnet build Radish.slnx -c Debug           # 构建解决方案
 
-# 前端开发
+# 前端开发（必须在项目根目录运行）
 npm run dev --workspace=radish.client       # 前端开发服务器
 npm run dev --workspace=radish.console      # 控制台开发服务器
 npm run build --prefix radish.client        # 生产构建
 npm run lint --prefix radish.client         # 代码检查
 
+# 或使用快捷脚本
+npm run dev:frontend                        # 启动 radish.client
+npm run dev:console                         # 启动 radish.console
+npm run dev:docs                            # 启动文档站
+
 # UI 组件库开发
 npm run type-check --workspace=@radish/ui   # 类型检查
 npm run lint --workspace=@radish/ui         # 代码检查
+
+# Windows 用户注意：
+# 如果需要在子项目目录中直接运行 npm 命令，请先以管理员身份运行：
+# pwsh ./setup-workspace-links.ps1
 ```
 
 ## 项目结构
