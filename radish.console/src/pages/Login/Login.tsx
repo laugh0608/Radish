@@ -16,20 +16,27 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
     const currentOrigin = window.location.origin;
 
-    // 检测是否通过 Gateway 的 /console 路径访问
-    const pathname = window.location.pathname;
-    const isGatewayConsole = pathname.startsWith('/console');
+    // 检测是否通过 Gateway 访问（通过 origin 判断，而不是 pathname）
+    // Gateway: https://localhost:5000, Direct: http://localhost:3002
+    const isGatewayAccess = currentOrigin.includes('5000');
 
     // 如果是通过 Gateway 访问，需要保留 /console 前缀
-    const redirectUri = isGatewayConsole
+    const redirectUri = isGatewayAccess
       ? `${currentOrigin}/console/callback`
       : `${currentOrigin}/callback`;
+
+    // 调试输出
+    console.log('[Login Debug] origin:', currentOrigin);
+    console.log('[Login Debug] isGatewayAccess:', isGatewayAccess);
+    console.log('[Login Debug] redirectUri:', redirectUri);
 
     const authorizeUrl = new URL(`${apiBaseUrl}/connect/authorize`);
     authorizeUrl.searchParams.set('client_id', 'radish-console');
     authorizeUrl.searchParams.set('response_type', 'code');
     authorizeUrl.searchParams.set('redirect_uri', redirectUri);
     authorizeUrl.searchParams.set('scope', 'radish-api');
+
+    console.log('[Login Debug] Full authorize URL:', authorizeUrl.toString());
 
     window.location.href = authorizeUrl.toString();
   };
