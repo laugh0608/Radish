@@ -51,10 +51,12 @@ public class OpenIddictSeedHostedService : IHostedService
             // 开发环境：前端直接访问（Vite dev server）
             descriptor.RedirectUris.Add(new Uri("http://localhost:3000/oidc/callback"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000/"));
 
             // 生产环境：通过 Gateway 访问
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/oidc/callback"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/"));
 
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
@@ -87,7 +89,9 @@ public class OpenIddictSeedHostedService : IHostedService
 
             descriptor.PostLogoutRedirectUris.Clear();
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000/"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/"));
 
             // 确保扩展属性存在
             descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 社区平台前端应用");
@@ -138,10 +142,12 @@ public class OpenIddictSeedHostedService : IHostedService
             // 开发环境：Console 直接访问
             descriptor.RedirectUris.Add(new Uri("http://localhost:3002/callback"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002/"));
 
             // 生产环境：通过 Gateway 访问
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/console/callback"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console/"));
 
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
@@ -171,7 +177,9 @@ public class OpenIddictSeedHostedService : IHostedService
 
             descriptor.PostLogoutRedirectUris.Clear();
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002/"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console/"));
 
             // 确保扩展属性存在
             descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 后台管理控制台");
