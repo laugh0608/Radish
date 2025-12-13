@@ -124,6 +124,62 @@ public class OpenIddictSeedHostedService : IHostedService
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
         }
 
+        // 初始化后台管理控制台客户端：radish-console
+        var existingConsole = await _applicationManager.FindByClientIdAsync("radish-console", cancellationToken);
+        if (existingConsole is null)
+        {
+            var descriptor = new OpenIddictApplicationDescriptor
+            {
+                ClientId = "radish-console",
+                DisplayName = "Radish Management Console",
+                ConsentType = OpenIddictConstants.ConsentTypes.Explicit
+            };
+
+            // 开发环境：Console 直接访问
+            descriptor.RedirectUris.Add(new Uri("http://localhost:3002/callback"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002"));
+
+            // 生产环境：通过 Gateway 访问
+            descriptor.RedirectUris.Add(new Uri("https://localhost:5000/console/callback"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console"));
+
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.RefreshToken);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "openid");
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "profile");
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "offline_access");
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
+
+            // 扩展属性：客户端展示信息
+            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 后台管理控制台");
+            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
+
+            await _applicationManager.CreateAsync(descriptor, cancellationToken);
+        }
+        else
+        {
+            // 如果客户端已存在，更新 redirect_uri 配置
+            var descriptor = new OpenIddictApplicationDescriptor();
+            await _applicationManager.PopulateAsync(descriptor, existingConsole, cancellationToken);
+
+            descriptor.RedirectUris.Clear();
+            descriptor.RedirectUris.Add(new Uri("http://localhost:3002/callback"));
+            descriptor.RedirectUris.Add(new Uri("https://localhost:5000/console/callback"));
+
+            descriptor.PostLogoutRedirectUris.Clear();
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console"));
+
+            // 确保扩展属性存在
+            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 后台管理控制台");
+            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
+
+            await _applicationManager.UpdateAsync(existingConsole, descriptor, cancellationToken);
+        }
+
         // 初始化后台/服务端客户端：radish-rust-ext（示例：Rust 扩展或后台任务）
         if (await _applicationManager.FindByClientIdAsync("radish-rust-ext", cancellationToken) is null)
         {
