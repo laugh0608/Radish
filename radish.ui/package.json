@@ -16,6 +16,9 @@
     "lint": "eslint .",
     "type-check": "tsc --noEmit"
   },
+  "dependencies": {
+    "@iconify/react": "^6.0.2"
+  },
   "peerDependencies": {
     "react": "^19.1.1",
     "react-dom": "^19.1.1"

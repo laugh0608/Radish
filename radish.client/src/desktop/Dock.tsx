@@ -1,6 +1,6 @@
 import { useWindowStore } from '@/stores/windowStore';
 import { getAppById } from './AppRegistry';
-import { Icon } from '@/shared/ui/base/Icon';
+import { Icon } from '@radish/ui';
 import styles from './Dock.module.css';
 
 /**
