@@ -15,7 +15,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Radish is a modern community platform built with a self-designed layered architecture:
 - **Backend**: ASP.NET Core 10 + SQLSugar ORM + PostgreSQL (SQLite for local dev)
 - **Gateway**: Radish.Gateway - Service portal and API gateway (Phase 0: portal page; P1+: routing, auth, aggregation)
-- **Frontend**: React 19 + Vite (using Rolldown bundler) + TypeScript with a desktop-like UI paradigm
+- **Auth**: Radish.Auth - OIDC authentication server based on OpenIddict
+- **Frontend**: React 19 + Vite (using Rolldown bundler) + TypeScript with a desktop-like UI paradigm (WebOS)
+- **UI Library**: @radish/ui - Shared component library using npm workspaces
+- **Console**: radish.console - Management console frontend
+- **Docs**: radish.docs - VitePress documentation site
 - **Solution**: Radish.slnx contains all backend projects and can be developed cohesively
 
 ## Essential Commands
@@ -46,16 +50,29 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj
 ### Frontend Development
 ```bash
 # Install dependencies (run from repo root)
-npm install --prefix radish.client
+npm install
 
-# Start dev server (default: http://localhost:3000)
-npm run dev --prefix radish.client
+# Start dev servers
+npm run dev --workspace=radish.client    # Frontend (http://localhost:3000)
+npm run dev --workspace=radish.console   # Console (http://localhost:3002)
 
 # Build for production
 npm run build --prefix radish.client
 
 # Lint
 npm run lint --prefix radish.client
+```
+
+### UI Component Library Development
+```bash
+# Type check
+npm run type-check --workspace=@radish/ui
+
+# Lint
+npm run lint --workspace=@radish/ui
+
+# The UI library uses npm workspaces with symlinks
+# Changes to radish.ui/ are automatically reflected in client/console via HMR
 ```
 
 ### Quick Start Scripts
@@ -325,23 +342,61 @@ Not yet configured extensively. Plan to add unit/integration tests in `radish.cl
 ### Test Isolation
 Tests use in-memory services where possible. For integration tests requiring database, consider SQLite in-memory mode or dedicated test DB.
 
-## Frontend Architecture (radish.client)
+## Frontend Architecture
 
-### Desktop-like UI Paradigm
+### UI Component Library (@radish/ui)
+
+**Location**: `radish.ui/`
+
+**Purpose**: Shared component library for radish.client and radish.console
+
+**Key Features**:
+- **npm Workspaces**: Uses symlinks for instant hot-reload across projects
+- **Components**: Button, Input, Select, Modal, Icon, ContextMenu
+- **Hooks**: useDebounce, useLocalStorage, useToggle, useClickOutside
+- **Utils**: Date formatting, validation, string manipulation
+- **TypeScript**: Complete type definitions for all exports
+
+**Usage**:
+```typescript
+// Import components
+import { Button, Input, Modal, Icon } from '@radish/ui';
+
+// Import hooks
+import { useDebounce, useToggle } from '@radish/ui/hooks';
+
+// Import utils
+import { formatDate, isEmail } from '@radish/ui/utils';
+```
+
+**Development**:
+- Changes to `radish.ui/` automatically reflect in client/console via Vite HMR
+- No need to restart dev servers or reinstall dependencies
+- Run `npm run type-check --workspace=@radish/ui` before committing
+
+**Documentation**: See [UIComponentLibrary.md](radish.docs/docs/UIComponentLibrary.md)
+
+### WebOS Desktop UI (radish.client)
+
+**Desktop-like UI Paradigm**:
 - **Top**: Status bar (username, IP, system status)
 - **Bottom**: Dock (core feature shortcuts)
 - **Left**: Desktop icons (double-click opens modal windows)
 - **Windows**: macOS-style minimize/close buttons, draggable, taskbar when minimized
 - Reference: `radish.client/public/webos.html` (Nebula OS prototype)
 
-### React Conventions
+**Component Organization**:
+- **Shared components** → `@radish/ui` (Icon, Button, ContextMenu, etc.)
+- **WebOS-specific** → `radish.client/src/` (GlassPanel, AppIcon, DesktopWindow, etc.)
+
+**React Conventions**:
 1. **Function components only** (no class components)
 2. Use `const` for component definitions, avoid `function` declarations
 3. Avoid `var`, default to `const`, use `let` only when reassignment needed
 4. State management: `useState` + `useMemo` + `useEffect`
 5. React Compiler: Experimental, not enabled in main branch yet
 
-### Frontend-Backend Communication
+**Frontend-Backend Communication**:
 - All requests over HTTPS (TLS provides transport encryption)
 - **Password Security**: Passwords are transmitted as plaintext over HTTPS and hashed with Argon2id on the server. See [PasswordSecurity.md](radish.docs/docs/PasswordSecurity.md) for details.
 - **No frontend encryption**: Frontend code is fully exposed to users, so client-side encryption (like RSA) provides no real security benefit
@@ -349,6 +404,8 @@ Tests use in-memory services where possible. For integration tests requiring dat
 - CORS configured in `appsettings.json` under `Cors.AllowedOrigins`
 
 ## Adding New Features (Complete Flow)
+
+### Backend Features
 
 1. **Define Model** in `Radish.Model/Models` (entity) and `Radish.Model/ViewModels` (ViewModel)
 2. **Create Mapping** in `Radish.Extension/AutoMapperExtension/CustomProfiles`
@@ -379,6 +436,28 @@ Tests use in-memory services where possible. For integration tests requiring dat
 6. **Add HTTP Examples** in `Radish.Api/Radish.Api.http` for manual testing
 7. **Write Tests** in `Radish.Api.Tests/Controllers/`
 8. **Update Frontend** in `radish.client/src/` as needed
+
+### Frontend Features
+
+#### Adding UI Components
+
+**For general-purpose components** (usable in both client and console):
+1. Create component in `radish.ui/src/components/ComponentName/`
+2. Export from `radish.ui/src/components/index.ts`
+3. Use in client/console: `import { ComponentName } from '@radish/ui'`
+4. Changes auto-reload via HMR
+
+**For WebOS-specific components** (desktop, windows, etc.):
+1. Create in `radish.client/src/` (widgets/, desktop/, or shared/ui/desktop/)
+2. Keep WebOS-specific logic isolated from general components
+
+#### Component Guidelines
+
+- **General components** → @radish/ui (Button, Input, Modal, Icon, etc.)
+- **WebOS components** → radish.client (GlassPanel, AppIcon, DesktopWindow, etc.)
+- Use `.radish-` prefix for CSS classes in @radish/ui
+- Complete TypeScript types for all props
+- JSDoc comments for public APIs
 
 ### Service Layer Examples
 
