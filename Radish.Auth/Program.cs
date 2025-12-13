@@ -220,6 +220,7 @@ builder.Services.AddOpenIddict()
         // 启用 OIDC 端点
         options.SetAuthorizationEndpointUris("/connect/authorize")
                .SetTokenEndpointUris("/connect/token")
+               .SetLogoutEndpointUris("/connect/endsession")
                .SetUserInfoEndpointUris("/connect/userinfo")
                .SetIntrospectionEndpointUris("/connect/introspect")
                .SetRevocationEndpointUris("/connect/revoke");
@@ -251,6 +252,7 @@ builder.Services.AddOpenIddict()
         // 注册 ASP.NET Core 宿主
         options.UseAspNetCore()
                .EnableAuthorizationEndpointPassthrough()
+               .EnableLogoutEndpointPassthrough()
                .EnableUserInfoEndpointPassthrough()
                .DisableTransportSecurityRequirement(); // 允许 HTTP（仅开发环境）
     });
