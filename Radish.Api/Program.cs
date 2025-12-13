@@ -113,8 +113,8 @@ builder.Services.AddApiVersioning(options =>
     options.ReportApiVersions = true;
     // 当客户端未指定版本时，使用默认版本
     options.AssumeDefaultVersionWhenUnspecified = true;
-    // 设置默认版本为 1.0
-    options.DefaultApiVersion = new ApiVersion(1, 0);
+    // 设置默认版本为 1
+    options.DefaultApiVersion = new ApiVersion(1);
     // 使用 URL 路径版本控制（推荐）
     // 例如：/api/v1/User/GetUserList
 })

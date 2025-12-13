@@ -14,7 +14,7 @@ namespace Radish.Api.Controllers.v2;
 /// 此接口为 v2 版本，演示跨语言互操作和版本控制。
 /// </remarks>
 [ApiController]
-[ApiVersion("2.0")]
+[ApiVersion(2)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Authorize(Policy = "RadishAuthPolicy")]

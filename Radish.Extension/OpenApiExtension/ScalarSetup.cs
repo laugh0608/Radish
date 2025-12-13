@@ -160,7 +160,7 @@ public static class ScalarSetup
                 var versionName = description.GroupName;
                 var displayName = description.IsDeprecated
                     ? $"{versionName.ToUpper()} (已弃用)"
-                    : $"{versionName.ToUpper()} ({description.ApiVersion})";
+                    : versionName.ToUpper();
 
                 // 第一个版本设为默认
                 var isDefault = i == 0;

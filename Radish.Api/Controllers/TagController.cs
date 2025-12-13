@@ -15,7 +15,7 @@ namespace Radish.Api.Controllers;
 /// 提供标签的查询、热门标签等接口
 /// </remarks>
 [ApiController]
-[ApiVersion("1.0")]
+[ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Tags("论坛标签管理")]
