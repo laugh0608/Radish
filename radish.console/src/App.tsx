@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import './App.css';
+import { UIComponentsExample } from './examples/UIComponentsExample';
+import { Button } from '@radish/ui';
 
 interface Service {
     key: string;
@@ -91,6 +93,7 @@ const services: Service[] = [
 
 function App() {
     const [statuses, setStatuses] = useState<Record<string, ServiceStatus>>({});
+    const [showUITest, setShowUITest] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -178,6 +181,24 @@ function App() {
         return 'status-fail';
     };
 
+    // 如果显示 UI 测试页面，则渲染测试组件
+    if (showUITest) {
+        return (
+            <div className="container">
+                <div style={{ padding: '20px' }}>
+                    <Button
+                        variant="secondary"
+                        onClick={() => setShowUITest(false)}
+                        style={{ marginBottom: '20px' }}
+                    >
+                        ← 返回服务状态页面
+                    </Button>
+                    <UIComponentsExample />
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="container">
             <header className="header">
@@ -185,6 +206,14 @@ function App() {
                 <p className="subtitle">
                     Radish 微服务控制台 - 查看服务状态、路径配置与健康检查
                 </p>
+                <div style={{ marginTop: '15px' }}>
+                    <Button
+                        variant="primary"
+                        onClick={() => setShowUITest(true)}
+                    >
+                        查看 UI 组件测试页面
+                    </Button>
+                </div>
             </header>
 
             <div className="services-table">
