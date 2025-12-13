@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode, type ReactElement, cloneElement } from 'react';
 import { createPortal } from 'react-dom';
-import styles from './ContextMenu.module.css';
+import './ContextMenu.css';
 
 export interface ContextMenuItem {
   /**
@@ -74,12 +74,6 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
 
   // 处理右键点击
   const handleContextMenu = (e: React.MouseEvent) => {
-    console.log('ContextMenu: handleContextMenu triggered', {
-      clientX: e.clientX,
-      clientY: e.clientY,
-      pageX: e.pageX,
-      pageY: e.pageY
-    });
     e.preventDefault();
     e.stopPropagation();
 
@@ -168,29 +162,29 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
   // 渲染菜单项
   const renderMenuItem = (item: ContextMenuItem, level = 0) => {
     if (item.divider) {
-      return <div key={item.id} className={styles.divider} />;
+      return <div key={item.id} className="radish-context-menu-divider" />;
     }
 
     const hasChildren = item.children && item.children.length > 0;
     const isSubmenuOpen = submenuState[item.id];
 
     return (
-      <div key={item.id} className={styles.menuItemWrapper}>
+      <div key={item.id} className="radish-context-menu-item-wrapper">
         <div
-          className={`${styles.menuItem} ${item.disabled ? styles.disabled : ''}`}
+          className={`radish-context-menu-item ${item.disabled ? 'radish-context-menu-item--disabled' : ''}`}
           onClick={() => handleItemClick(item)}
           style={{ paddingLeft: `${12 + level * 16}px` }}
         >
-          {item.icon && <span className={styles.icon}>{item.icon}</span>}
-          <span className={styles.label}>{item.label}</span>
+          {item.icon && <span className="radish-context-menu-icon">{item.icon}</span>}
+          <span className="radish-context-menu-label">{item.label}</span>
           {hasChildren && (
-            <span className={styles.arrow}>
+            <span className="radish-context-menu-arrow">
               {isSubmenuOpen ? '▼' : '▶'}
             </span>
           )}
         </div>
         {hasChildren && isSubmenuOpen && (
-          <div className={styles.submenu}>
+          <div className="radish-context-menu-submenu">
             {item.children!.map(child => renderMenuItem(child, level + 1))}
           </div>
         )}
@@ -206,7 +200,7 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
       {visible && createPortal(
         <div
           ref={menuRef}
-          className={styles.contextMenu}
+          className="radish-context-menu"
           style={{
             left: `${position.x}px`,
             top: `${position.y}px`
