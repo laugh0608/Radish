@@ -37,9 +37,7 @@ function App() {
   const handleUserMenuClick = (key: string) => {
     switch (key) {
       case 'logout':
-        localStorage.removeItem('access_token');
-        setIsLoggedIn(false);
-        message.success('已退出登录');
+        handleLogout();
         break;
       case 'profile':
         message.info('个人信息功能待实现');
@@ -48,6 +46,31 @@ function App() {
         message.info('设置功能待实现');
         break;
     }
+  };
+
+  const handleLogout = () => {
+    // 清理本地保存的 Token
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
+    // 使用 OIDC 标准的 endsession endpoint 清除 Auth Server 的会话
+    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
+
+    // 检测是否通过 Gateway 的 /console 路径访问
+    const pathname = window.location.pathname;
+    const isGatewayConsole = pathname.startsWith('/console');
+
+    // post_logout_redirect_uri 必须与注册时的保持一致（包含 trailing slash）
+    const postLogoutRedirectUri = isGatewayConsole
+      ? `${window.location.origin}/console/`
+      : `${window.location.origin}/`;
+
+    const logoutUrl = new URL(`${apiBaseUrl}/connect/endsession`);
+    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+    logoutUrl.searchParams.set('client_id', 'radish-console');
+
+    // 重定向到 OIDC logout endpoint，Auth Server 会清除 session 并重定向回来
+    window.location.href = logoutUrl.toString();
   };
 
   const handleLoginSuccess = () => {

@@ -267,7 +267,8 @@ function handleLogout(apiBaseUrl: string) {
     window.localStorage.removeItem('refresh_token');
 
     // 使用 OIDC 标准的 endsession endpoint 清除 Auth Server 的会话
-    const postLogoutRedirectUri = window.location.origin;
+    // 添加 trailing slash 以匹配 PostLogoutRedirectUris 配置
+    const postLogoutRedirectUri = window.location.origin + '/';
 
     const logoutUrl = new URL(`${apiBaseUrl}/connect/endsession`);
     logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
