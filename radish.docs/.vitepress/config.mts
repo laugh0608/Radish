@@ -54,7 +54,8 @@ export default defineConfig({
           items: [
             { text: 'UI 组件库', link: '/UIComponentLibrary' },
             { text: '组件详细说明', link: '/UIComponentsSummary' },
-            { text: '快速参考', link: '/UIQuickReference' }
+            { text: '快速参考', link: '/UIQuickReference' },
+            { text: '开发指南', link: '/UIComponentDevelopment' }
           ]
         },
         {
