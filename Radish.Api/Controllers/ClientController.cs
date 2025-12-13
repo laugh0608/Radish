@@ -13,7 +13,7 @@ namespace Radish.Api.Controllers;
 /// 客户端管理 API
 /// </summary>
 [ApiController]
-[ApiVersion("1.0")]
+[ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Authorize(Roles = "System,Admin")]
 public class ClientController : ControllerBase

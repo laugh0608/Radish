@@ -16,7 +16,7 @@ namespace Radish.Api.Controllers;
 /// 提供评论的查询、发表、点赞等接口
 /// </remarks>
 [ApiController]
-[ApiVersion("1.0")]
+[ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Tags("论坛评论管理")]

@@ -648,7 +648,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
 ```csharp
 [ApiController]
-[ApiVersion("1.0")]  // 声明为 v1 版本
+[ApiVersion(1)]  // 声明为 v1 版本
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Tags("功能模块")]
@@ -694,8 +694,8 @@ public class MyController : ControllerBase
 ```csharp
 // 在 ScalarSetup.cs 中自动配置
 options
-    .AddDocument("v1", "V1 (1.0)", "/openapi/v1.json", isDefault: true)
-    .AddDocument("v2", "V2 (2.0)", "/openapi/v2.json");
+    .AddDocument("v1", "V1", "/openapi/v1.json", isDefault: true)
+    .AddDocument("v2", "V2", "/openapi/v2.json");
 ```
 
 ### XML 注释规范
@@ -747,8 +747,8 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 
 **跨版本支持：**
 ```csharp
-[ApiVersion("1.0")]
-[ApiVersion("2.0")]
+[ApiVersion(1)]
+[ApiVersion(2)]
 public class MyController : ControllerBase
 ```
 - Controller 可同时支持多个版本
@@ -761,7 +761,7 @@ builder.Services.AddApiVersioning(options =>
 {
     options.ReportApiVersions = true;  // 响应头报告支持的版本
     options.AssumeDefaultVersionWhenUnspecified = true;  // 未指定版本时使用默认版本
-    options.DefaultApiVersion = new ApiVersion(1, 0);  // 默认版本 1.0
+    options.DefaultApiVersion = new ApiVersion(1);  // 默认版本 1
 })
 .AddMvc()
 .AddApiExplorer(options =>
@@ -805,7 +805,7 @@ api-deprecated-versions: (空或已弃用的版本)
 ### 常见问题
 
 **Q: 是否可以不指定版本？**
-A: 不推荐。虽然系统会使用默认版本 (v1.0)，但显式指定版本更清晰。
+A: 不推荐。虽然系统会使用默认版本 (v1)，但显式指定版本更清晰。
 
 **Q: 如何在权限表中配置版本化 URL？**
 A: `ApiModule.LinkUrl` 中必须包含版本号的正则，例如：`/api/v1/User/GetUserList` 或 `/api/v\d+/User/GetUserList`。
