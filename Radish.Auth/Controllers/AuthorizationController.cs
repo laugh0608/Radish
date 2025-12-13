@@ -72,9 +72,10 @@ public class AuthorizationController : Controller
         var clientName = await _applicationManager.GetDisplayNameAsync(application, HttpContext.RequestAborted)
                           ?? clientId;
 
-        // 约定：radish-client 视为一方应用，默认跳过授权确认；
+        // 约定：radish-client 和 radish-console 视为一方应用，默认跳过授权确认；
         // 其他使用 Explicit 的客户端（如第三方应用）需要显式授权。
-        var isFirstPartyClient = string.Equals(clientId, "radish-client", StringComparison.OrdinalIgnoreCase);
+        var isFirstPartyClient = string.Equals(clientId, "radish-client", StringComparison.OrdinalIgnoreCase) ||
+                                  string.Equals(clientId, "radish-console", StringComparison.OrdinalIgnoreCase);
 
         string? userDecision = null;
         if (string.Equals(Request.Method, "POST", StringComparison.OrdinalIgnoreCase) &&
@@ -258,10 +259,11 @@ public class AuthorizationController : Controller
     [HttpPost("~/connect/endsession")]
     public async Task<IActionResult> Logout()
     {
-        // 清除 Cookie 认证会话
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-        // 返回 SignOut 结果，由 OpenIddict 处理后续的重定向逻辑
-        return SignOut(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        // 同时清除 Cookie 认证会话和 OpenIddict 会话
+        // 注意：必须先清除 Cookie，然后让 OpenIddict 处理重定向
+        return SignOut(
+            new AuthenticationProperties(),
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 }

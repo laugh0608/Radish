@@ -21,8 +21,9 @@ function App() {
     }
   }, []);
 
-  // 检查是否是 OIDC 回调页面
-  const isOidcCallback = typeof window !== 'undefined' && window.location.pathname === '/callback';
+  // 检查是否是 OIDC 回调页面（支持直接访问和通过 Gateway 访问）
+  const isOidcCallback = typeof window !== 'undefined' &&
+    (window.location.pathname === '/callback' || window.location.pathname === '/console/callback');
 
   // 如果是回调页面，显示回调处理组件
   if (isOidcCallback) {
@@ -118,7 +119,15 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
     }
 
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
-    const redirectUri = `${window.location.origin}/callback`;
+
+    // 检测是否通过 Gateway 的 /console 路径访问
+    const pathname = window.location.pathname;
+    const isGatewayConsole = pathname.startsWith('/console');
+
+    // redirect_uri 必须与登录时的保持一致
+    const redirectUri = isGatewayConsole
+      ? `${window.location.origin}/console/callback`
+      : `${window.location.origin}/callback`;
 
     const fetchToken = async () => {
       const body = new URLSearchParams();
@@ -160,7 +169,9 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
         // 通知父组件登录成功，并跳转到首页
         setTimeout(() => {
           onSuccess();
-          window.location.replace('/');
+          // 跳转到正确的首页路径（通过 Gateway 访问时需要保留 /console 前缀）
+          const homePath = isGatewayConsole ? '/console/' : '/';
+          window.location.replace(homePath);
         }, 500);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);

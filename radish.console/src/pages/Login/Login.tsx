@@ -15,7 +15,15 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
     // 跳转到 OIDC 登录
     const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
     const currentOrigin = window.location.origin;
-    const redirectUri = `${currentOrigin}/callback`;
+
+    // 检测是否通过 Gateway 的 /console 路径访问
+    const pathname = window.location.pathname;
+    const isGatewayConsole = pathname.startsWith('/console');
+
+    // 如果是通过 Gateway 访问，需要保留 /console 前缀
+    const redirectUri = isGatewayConsole
+      ? `${currentOrigin}/console/callback`
+      : `${currentOrigin}/callback`;
 
     const authorizeUrl = new URL(`${apiBaseUrl}/connect/authorize`);
     authorizeUrl.searchParams.set('client_id', 'radish-console');
