@@ -3,7 +3,7 @@ using System;
 namespace Radish.Model.ViewModels;
 
 /// <summary>OIDC Token 视图模型</summary>
-public class VoOidcToken
+public class OidcTokenVo
 {
     /// <summary>Token Id</summary>
     public long Id { get; set; }
