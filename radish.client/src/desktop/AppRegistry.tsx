@@ -91,14 +91,7 @@ export const getAppById = (id: string): AppDefinition | undefined => {
 /**
  * 根据用户角色过滤可见应用
  */
+// 当前阶段：默认所有应用在桌面可见，后续如需按角色控制可再扩展
 export const getVisibleApps = (userRoles: string[] = []): AppDefinition[] => {
-  return appRegistry.filter(app => {
-    // 如果应用没有设置角色要求，默认所有人都可见
-    if (!app.requiredRoles || app.requiredRoles.length === 0) {
-      return true;
-    }
-
-    // 检查用户是否有任意一个所需角色
-    return app.requiredRoles.some(role => userRoles.includes(role));
-  });
+  return appRegistry;
 };

@@ -2,19 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from '@/i18n';
 import { parseApiResponse, type ApiResponse } from '@/api/client';
+import { useUserStore } from '@/stores/userStore';
 import styles from './AuthTestApp.module.css';
 
-interface Forecast {
-    date: string;
-    temperatureC: number;
-    temperatureF: number;
-    summary: string;
-}
-
 interface CurrentUser {
-    userId: number;
-    userName: string;
-    tenantId: number;
+  userId: number;
+  userName: string;
+  tenantId: number;
 }
 
 // 默认通过 Gateway 暴露的 API 入口
@@ -23,220 +17,203 @@ const defaultApiBase = 'https://localhost:5000';
 /**
  * 认证测试应用
  *
- * 用于测试 OIDC 登录、API 调用和国际化
+ * 专注展示当前登录状态和用户信息
  */
 export const AuthTestApp = () => {
-    const { t } = useTranslation();
+  const { t } = useTranslation();
 
-    const [forecasts, setForecasts] = useState<Forecast[]>();
-    const [error, setError] = useState<string>();
-    const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-    const [userError, setUserError] = useState<string>();
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [userError, setUserError] = useState<string>();
 
-    const apiBaseUrl = useMemo(() => {
-        const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
-        return (configured ?? defaultApiBase).replace(/\/$/, '');
-    }, []);
+  const { roles, isAuthenticated } = useUserStore();
 
-    const isBrowser = typeof window !== 'undefined';
+  const apiBaseUrl = useMemo(() => {
+    const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
+    return (configured ?? defaultApiBase).replace(/\/$/, '');
+  }, []);
 
-    useEffect(() => {
-        populateWeatherData();
-        populateCurrentUser();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [apiBaseUrl]);
+  const isBrowser = typeof window !== 'undefined';
 
-    const contents = forecasts === undefined
-        ? <p><em>{error ?? t('weather.loading')}</em></p>
-        : <table className={styles.table} aria-labelledby="tableLabel">
-            <thead>
-                <tr>
-                    <th>{t('weather.date')}</th>
-                    <th>{t('weather.tempC')}</th>
-                    <th>{t('weather.tempF')}</th>
-                    <th>{t('weather.summary')}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {forecasts.map(forecast =>
-                    <tr key={forecast.date}>
-                        <td>{forecast.date}</td>
-                        <td>{forecast.temperatureC}</td>
-                        <td>{forecast.temperatureF}</td>
-                        <td>{forecast.summary}</td>
-                    </tr>
-                )}
-            </tbody>
-        </table>;
+  useEffect(() => {
+    void populateCurrentUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apiBaseUrl]);
 
-    return (
-        <div className={styles.container}>
-            <div className={styles.langButtons}>
-                <button type="button" onClick={() => i18n.changeLanguage('zh')}>
-                    {t('lang.zh')}
-                </button>
-                <button type="button" onClick={() => i18n.changeLanguage('en')}>
-                    {t('lang.en')}
-                </button>
+  const loggedIn = isAuthenticated();
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.langButtons}>
+        <button type="button" onClick={() => i18n.changeLanguage('zh')}>
+          {t('lang.zh')}
+        </button>
+        <button type="button" onClick={() => i18n.changeLanguage('en')}>
+          {t('lang.en')}
+        </button>
+      </div>
+
+      <h1 className={styles.title}>{t('app.title')}</h1>
+      <p className={styles.description}>{t('app.description')}</p>
+
+      <section className={styles.section}>
+        <h2>{t('auth.sectionTitle')}</h2>
+        <div className={styles.authSection}>
+          <div className={styles.buttonGroup}>
+            <button type="button" onClick={() => handleLogin(apiBaseUrl)}>
+              {loggedIn ? t('auth.relogin') : t('auth.login')}
+            </button>
+            {loggedIn && (
+              <button type="button" onClick={() => handleLogout(apiBaseUrl)}>
+                退出登录
+              </button>
+            )}
+          </div>
+
+          <div className={styles.userInfo}>
+            <div className={styles.userInfoRow}>
+              <span className={styles.userInfoLabel}>登录状态：</span>
+              <span className={styles.userInfoValue}>{loggedIn ? '已登录' : '未登录'}</span>
             </div>
 
-            <h1 className={styles.title}>{t('app.title')}</h1>
-            <p className={styles.description}>{t('app.description')}</p>
-
-            <section className={styles.section}>
-                <h2>{t('auth.sectionTitle')}</h2>
-                <div className={styles.authSection}>
-                    <div className={styles.buttonGroup}>
-                        <button type="button" onClick={() => handleLogin(apiBaseUrl)}>
-                            {t('auth.login')}
-                        </button>
-                        {currentUser && (
-                            <button type="button" onClick={() => handleLogout(apiBaseUrl)}>
-                                退出登录
-                            </button>
-                        )}
-                    </div>
-                    <div className={styles.userInfo}>
-                        {currentUser && (
-                            <span>
-                                {t('auth.currentUser', {
-                                    userName: currentUser.userName,
-                                    userId: currentUser.userId,
-                                    tenantId: currentUser.tenantId
-                                })}
-                            </span>
-                        )}
-                        {!currentUser && !userError && (
-                            <span>{t('auth.notLoggedIn')}</span>
-                        )}
-                        {userError && (
-                            <span className={styles.error}>{t('auth.userInfoLoadFailedPrefix')}{userError}</span>
-                        )}
-                    </div>
+            {currentUser && (
+              <>
+                <div className={styles.userInfoRow}>
+                  <span className={styles.userInfoLabel}>用户名：</span>
+                  <span className={styles.userInfoValue}>{currentUser.userName}</span>
                 </div>
-            </section>
+                <div className={styles.userInfoRow}>
+                  <span className={styles.userInfoLabel}>用户 ID：</span>
+                  <span className={styles.userInfoValue}>{currentUser.userId}</span>
+                </div>
+                <div className={styles.userInfoRow}>
+                  <span className={styles.userInfoLabel}>租户 ID：</span>
+                  <span className={styles.userInfoValue}>{currentUser.tenantId}</span>
+                </div>
+              </>
+            )}
 
-            <section className={styles.section}>
-                <h2>天气预报 API 测试</h2>
-                {contents}
-            </section>
+            <div className={styles.userInfoRow}>
+              <span className={styles.userInfoLabel}>角色：</span>
+              <span className={styles.userInfoValue}>
+                {roles && roles.length > 0 ? roles.join(', ') : '无（或未从服务端加载）'}
+              </span>
+            </div>
+
+            {userError && (
+              <div className={styles.error}>
+                {t('auth.userInfoLoadFailedPrefix')}
+                {userError}
+              </div>
+            )}
+
+            {!currentUser && !userError && (
+              <div className={styles.userInfoRow}>
+                <span className={styles.userInfoLabel}>当前用户：</span>
+                <span className={styles.userInfoValue}>{t('auth.notLoggedIn')}</span>
+              </div>
+            )}
+          </div>
         </div>
-    );
+      </section>
+    </div>
+  );
 
-    async function populateWeatherData() {
-        const requestUrl = `${apiBaseUrl}/api/WeatherForecast/GetStandard`;
-        try {
-            const response = await apiFetch(requestUrl);
-            const json = await response.json() as ApiResponse<Forecast[]>;
-            const parsed = parseApiResponse(json, t);
-
-            if (!parsed.ok || !parsed.data) {
-                throw new Error(parsed.message || t('error.weather.load_failed'));
-            }
-
-            setForecasts(parsed.data);
-            setError(undefined);
-        } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            setError(message);
-            setForecasts(undefined);
-        }
+  async function populateCurrentUser() {
+    if (!isBrowser) {
+      return;
     }
 
-    async function populateCurrentUser() {
-        if (!isBrowser) {
-            return;
-        }
+    const requestUrl = `${apiBaseUrl}/api/v1/User/GetUserByHttpContext`;
+    try {
+      const response = await apiFetch(requestUrl, { withAuth: true });
 
-        const requestUrl = `${apiBaseUrl}/api/v1/User/GetUserByHttpContext`;
-        try {
-            const response = await apiFetch(requestUrl, { withAuth: true });
+      const json = await response.json() as ApiResponse<CurrentUser>;
+      const parsed = parseApiResponse(json, t);
 
-            const json = await response.json() as ApiResponse<CurrentUser>;
-            const parsed = parseApiResponse(json, t);
+      if (!parsed.ok || !parsed.data) {
+        throw new Error(parsed.message || t('auth.userInfoLoadFailedPrefix'));
+      }
 
-            if (!parsed.ok || !parsed.data) {
-                throw new Error(parsed.message || t('auth.userInfoLoadFailedPrefix'));
-            }
-
-            setCurrentUser(parsed.data);
-            setUserError(undefined);
-        } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            setUserError(`${t('auth.userInfoLoadFailedPrefix')}${message}`);
-            setCurrentUser(null);
-        }
+      setCurrentUser(parsed.data);
+      setUserError(undefined);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setUserError(message);
+      setCurrentUser(null);
     }
+  }
 };
 
 interface ApiFetchOptions extends RequestInit {
-    withAuth?: boolean;
+  withAuth?: boolean;
 }
 
 function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
-    const { withAuth, headers, ...rest } = options;
+  const { withAuth, headers, ...rest } = options;
 
-    const finalHeaders: HeadersInit = {
-        Accept: 'application/json',
-        'Accept-Language': i18n.language || 'zh',
-        ...headers,
-    };
+  const finalHeaders: HeadersInit = {
+    Accept: 'application/json',
+    'Accept-Language': i18n.language || 'zh',
+    ...headers,
+  };
 
-    if (withAuth && typeof window !== 'undefined') {
-        const token = window.localStorage.getItem('access_token');
-        if (token) {
-            (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
-        }
+  if (withAuth && typeof window !== 'undefined') {
+    const token = window.localStorage.getItem('access_token');
+    if (token) {
+      (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
     }
+  }
 
-    return fetch(input, {
-        ...rest,
-        headers: finalHeaders,
-    });
+  return fetch(input, {
+    ...rest,
+    headers: finalHeaders,
+  });
 }
 
 function handleLogin(apiBaseUrl: string) {
-    if (typeof window === 'undefined') {
-        return;
-    }
+  if (typeof window === 'undefined') {
+    return;
+  }
 
-    const redirectUri = `${window.location.origin}/oidc/callback`;
+  const redirectUri = `${window.location.origin}/oidc/callback`;
 
-    const authorizeUrl = new URL(`${apiBaseUrl}/connect/authorize`);
-    authorizeUrl.searchParams.set('client_id', 'radish-client');
-    authorizeUrl.searchParams.set('response_type', 'code');
-    authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-    authorizeUrl.searchParams.set('scope', 'radish-api');
+  const authorizeUrl = new URL(`${apiBaseUrl}/connect/authorize`);
+  authorizeUrl.searchParams.set('client_id', 'radish-client');
+  authorizeUrl.searchParams.set('response_type', 'code');
+  authorizeUrl.searchParams.set('redirect_uri', redirectUri);
+  authorizeUrl.searchParams.set('scope', 'radish-api');
 
-    const currentLanguage = i18n.language || 'zh';
-    authorizeUrl.searchParams.set('culture', currentLanguage);
-    authorizeUrl.searchParams.set('ui-culture', currentLanguage);
+  const currentLanguage = i18n.language || 'zh';
+  authorizeUrl.searchParams.set('culture', currentLanguage);
+  authorizeUrl.searchParams.set('ui-culture', currentLanguage);
 
-    window.location.href = authorizeUrl.toString();
+  window.location.href = authorizeUrl.toString();
 }
 
 function handleLogout(apiBaseUrl: string) {
-    if (typeof window === 'undefined') {
-        return;
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  // 清理本地保存的 Token
+  window.localStorage.removeItem('access_token');
+  window.localStorage.removeItem('refresh_token');
+
+  const currentLanguage = i18n.language || 'zh';
+  const logoutUrl = new URL(`${apiBaseUrl}/Account/Logout`);
+  logoutUrl.searchParams.set('culture', currentLanguage);
+
+  // 调用 Auth 的 Logout，并在完成后回到首页
+  void fetch(logoutUrl.toString(), {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'Accept-Language': currentLanguage
     }
-
-    window.localStorage.removeItem('access_token');
-    window.localStorage.removeItem('refresh_token');
-
-    const currentLanguage = i18n.language || 'zh';
-    const logoutUrl = new URL(`${apiBaseUrl}/Account/Logout`);
-    logoutUrl.searchParams.set('culture', currentLanguage);
-
-    void fetch(logoutUrl.toString(), {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            Accept: 'application/json',
-            'Accept-Language': currentLanguage
-        }
-    }).catch(() => {
-        // 忽略登出接口错误
-    }).finally(() => {
-        window.location.replace('/');
-    });
+  }).catch(() => {
+    // 忽略登出接口错误
+  }).finally(() => {
+    window.location.replace('/');
+  });
 }
