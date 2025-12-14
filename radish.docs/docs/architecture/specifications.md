@@ -344,6 +344,7 @@ Task<List<TEntity>> QuerySplitAsync(...)              // 分表查询
 #### 场景 1：简单 CRUD（直接使用 BaseService）
 
 ✅ **推荐做法**：
+
 ```csharp
 // Controller
 public class CategoryController : ControllerBase
@@ -375,6 +376,7 @@ public class CategoryController : ControllerBase
 ```
 
 ❌ **不推荐**：创建只包装 BaseService 方法的 Service
+
 ```csharp
 // 不要这样做！
 public interface ICategoryService : IBaseService<Category, CategoryVo>
@@ -386,6 +388,7 @@ public interface ICategoryService : IBaseService<Category, CategoryVo>
 #### 场景 2：复杂业务逻辑（创建自定义 Service）
 
 ✅ **推荐做法**：当有复杂业务逻辑时才创建自定义 Service
+
 ```csharp
 // Service 接口
 public interface IPostService : IBaseService<Post, PostVo>
