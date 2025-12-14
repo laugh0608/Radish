@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AdminLayout } from './components/AdminLayout';
 import { Dashboard } from './pages/Dashboard';
 import { Applications } from './pages/Applications';
@@ -22,11 +22,10 @@ function App() {
   }, []);
 
   // 检查是否是 OIDC 回调页面
-  // Gateway 会把 /console 前缀剥离给下游 dev server，所以这里同时兼容两种访问方式：
-  // - 通过 Gateway: /console/callback -> 剥离后 -> /callback
-  // - 直接访问: /callback
+  // - 通过 Gateway 访问时：路径为 /console/callback（Gateway 保留完整路径）
+  // - 直接访问开发服务器时：路径为 /console/callback（base: '/console/'）
   const isOidcCallback = typeof window !== 'undefined' &&
-    window.location.pathname === '/callback';
+    window.location.pathname.endsWith('/callback');
 
   // 如果是回调页面，显示回调处理组件
   if (isOidcCallback) {
@@ -160,11 +159,18 @@ interface OidcCallbackProps {
 function OidcCallback({ onSuccess }: OidcCallbackProps) {
   const [error, setError] = useState<string>();
   const [messageText, setMessageText] = useState<string>('正在完成登录...');
+  const hasProcessed = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
+
+    // 防止重复执行（React StrictMode 会导致 useEffect 执行两次）
+    if (hasProcessed.current) {
+      return;
+    }
+    hasProcessed.current = true;
 
     const url = new URL(window.location.href);
     const code = url.searchParams.get('code');
@@ -197,7 +203,8 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
     /**
      * 获取 redirect_uri
      * - 通过 Gateway 访问时：https://localhost:5000/console/callback
-     * - 直接访问开发服务器时：http://localhost:3002/callback
+     * - 直接访问开发服务器时：http://localhost:3002/console/callback
+     * 注意：由于 Vite base 是 /console/，所以两种方式都需要 /console/ 前缀
      */
     const getRedirectUri = (): string => {
       const currentOrigin = window.location.origin;
@@ -207,8 +214,8 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
         return `${currentOrigin}/console/callback`;
       }
 
-      // 直接访问开发服务器
-      return `${currentOrigin}/callback`;
+      // 直接访问开发服务器（端口 3002，也需要 /console/ 前缀）
+      return `${currentOrigin}/console/callback`;
     };
 
     const redirectUri = getRedirectUri();
