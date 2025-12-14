@@ -1,0 +1,55 @@
+.container {
+  width: 220px;
+  border-right: 1px solid #333;
+  padding-right: 8px;
+  overflow-y: auto;
+}
+
+.title {
+  margin-top: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.loadingText,
+.emptyText {
+  font-size: 14px;
+  color: #888;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.categoryButton {
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background-color: transparent;
+  color: #ccc;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.categoryButton:hover {
+  background-color: #1f2937;
+  color: #fff;
+}
+
+.categoryButton.active {
+  background-color: #2d6cdf;
+  color: #fff;
+  font-weight: 500;
+}
+
+.categoryButton:focus {
+  outline: 2px solid #2d6cdf;
+  outline-offset: 2px;
+}

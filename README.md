@@ -59,19 +59,37 @@ dotnet watch --project Radish.Api           # 热重载
 dotnet test Radish.Api.Tests                # 运行测试
 dotnet build Radish.slnx -c Debug           # 构建解决方案
 
-# 前端开发
-npm run dev --prefix radish.client          # 开发服务器
+# 前端开发（必须在项目根目录运行）
+npm run dev --workspace=radish.client       # 前端开发服务器
+npm run dev --workspace=radish.console      # 控制台开发服务器
 npm run build --prefix radish.client        # 生产构建
 npm run lint --prefix radish.client         # 代码检查
+
+# 或使用快捷脚本
+npm run dev:frontend                        # 启动 radish.client
+npm run dev:console                         # 启动 radish.console
+npm run dev:docs                            # 启动文档站
+
+# UI 组件库开发
+npm run type-check --workspace=@radish/ui   # 类型检查
+npm run lint --workspace=@radish/ui         # 代码检查
+
+# Windows 用户注意：
+# 如果需要在子项目目录中直接运行 npm 命令，请先以管理员身份运行：
+# pwsh ./setup-workspace-links.ps1
 ```
 
 ## 项目结构
 
 ```
 Radish/
-├── Docs/                        # 📚 完整文档（开发规范、架构设计、部署指南等）
-├── radish.client/               # ⚛️ React 前端应用
+├── radish.docs/                 # 📚 VitePress 文档站（开发规范、架构设计、部署指南等）
+├── radish.client/               # ⚛️ React 前端应用（WebOS 桌面环境）
+├── radish.console/              # 🎛️ 管理控制台前端
+├── radish.ui/                   # 🎨 UI 组件库（共享组件、Hooks、工具函数）
+├── Radish.Gateway/              # 🚪 API 网关（YARP 反向代理）
 ├── Radish.Api/                  # 🌐 ASP.NET Core API 宿主
+├── Radish.Auth/                 # 🔐 OIDC 认证服务器（OpenIddict）
 ├── Radish.Service/              # 💼 应用服务层（业务逻辑编排）
 ├── Radish.Repository/           # 💾 数据访问层（SQLSugar 实现）
 ├── Radish.Core/                 # 🏛️ 领域模型层
@@ -81,7 +99,7 @@ Radish/
 ├── Radish.Infrastructure/       # 🏗️ 基础设施（SqlSugar 扩展、多租户）
 ├── Radish.IService/             # 📋 服务接口契约
 ├── Radish.IRepository/          # 📋 仓储接口契约
-├── Radish.Shared/               # 🌍 前后端共享常量、枚举
+├── Radish.Shared/               # 🌍 后端共享常量、枚举（C#）
 ├── Radish.Api.Tests/            # 🧪 单元测试
 └── Radish.slnx                  # 📁 解决方案文件
 ```
@@ -102,6 +120,12 @@ Radish/
 - 🚪 [**Gateway 规划**](radish.docs/docs/GatewayPlan.md) - API 网关改造方案与实施路线
 - 🚀 [**部署指南**](radish.docs/docs/DeploymentGuide.md) - 容器化、CI/CD、生产部署
 
+### UI 组件库
+- 🎨 [**UI 组件库**](radish.docs/docs/UIComponentLibrary.md) - @radish/ui 设置和使用指南
+- 📦 [**组件详细说明**](radish.docs/docs/UIComponentsSummary.md) - 所有组件、Hooks、工具函数
+- ⚡ [**快速参考**](radish.docs/docs/UIQuickReference.md) - 常用 API 速查表
+- 🔧 [**开发指南**](radish.docs/docs/UIComponentDevelopment.md) - 开发工作流和热更新机制
+
 ### 其他资源
 - 📖 [**文档索引**](radish.docs/docs/README.md) - 所有文档的完整目录
 - 🤝 [**贡献指南**](AGENTS.md) - 参与项目开发的指引
@@ -109,20 +133,31 @@ Radish/
 
 ## 关键特性
 
+### 后端架构
 - ✅ **分层架构**：清晰的职责分离（API → Service → Repository → Database）
 - ✅ **多租户支持**：字段级、表级、库级三种隔离模式
-- ✅ **认证授权**：JWT + 基于角色的 API 权限控制
+- ✅ **认证授权**：JWT + OIDC（OpenIddict）+ 基于角色的 API 权限控制
 - ✅ **日志系统**：Serilog 结构化日志 + SQL 审计日志
 - ✅ **缓存策略**：Redis / 内存缓存自动切换
 - ✅ **AOP 拦截**：服务层自动日志、事务、异常处理
-- ✅ **桌面化前端**：React 19 + macOS 风格交互体验
+- ✅ **API 网关**：YARP 反向代理，统一入口和路由
+
+### 前端架构
+- ✅ **桌面化 UI**：React 19 + macOS 风格交互体验（WebOS）
+- ✅ **UI 组件库**：@radish/ui 共享组件库（4 个组件 + 4 个 Hooks + 12 个工具函数）
+- ✅ **npm Workspaces**：monorepo 管理，组件热更新
+- ✅ **TypeScript**：完整的类型定义和类型安全
+- ✅ **Vite (Rolldown)**：极速构建和热模块替换
+
+### 其他特性
 - ✅ **Rust 扩展**：预留高性能原生模块支持
+- ✅ **文档站点**：VitePress 构建的完整文档系统
 
 ## 配置说明
 
 ### 数据库配置
 
-默认使用 SQLite（`Radish.db` 和 `RadishLog.db`），首次运行自动创建。
+默认使用 SQLite（`Radish.db` 和 `Radish.Log.db`），首次运行自动创建。
 
 切换到 PostgreSQL：编辑 `Radish.Api/appsettings.Development.json`：
 

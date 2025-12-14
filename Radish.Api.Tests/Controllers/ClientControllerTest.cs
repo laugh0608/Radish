@@ -45,7 +45,7 @@ public class ClientControllerTest
         return controller;
     }
 
-    [Fact(Skip = "OpenIddictApplicationManager mocking TODO – test skeleton only")]
+    [Fact]
     public async Task GetClients_Should_Exclude_SoftDeleted_And_Apply_Pagination()
     {
         // Arrange
@@ -90,7 +90,7 @@ public class ClientControllerTest
         Assert.Equal("client-1", result.ResponseData.Data[0].ClientId);
     }
 
-    [Fact(Skip = "OpenIddictApplicationManager mocking TODO – test skeleton only")]
+    [Fact]
     public async Task CreateClient_Should_Fail_When_ClientId_Already_Exists_And_Not_Deleted()
     {
         // Arrange
@@ -123,7 +123,7 @@ public class ClientControllerTest
         Assert.Contains("已存在", result.MessageInfo);
     }
 
-    [Fact(Skip = "OpenIddictApplicationManager mocking TODO – test skeleton only")]
+    [Fact]
     public async Task CreateClient_Should_Succeed_And_Return_Secret_When_Required()
     {
         // Arrange
@@ -154,7 +154,7 @@ public class ClientControllerTest
         Assert.Contains(clients, c => c.ClientId == "new-client");
     }
 
-    [Fact(Skip = "OpenIddictApplicationManager mocking TODO – test skeleton only")]
+    [Fact]
     public async Task DeleteClient_Should_Mark_Client_As_Deleted()
     {
         // Arrange
@@ -182,7 +182,7 @@ public class ClientControllerTest
         Assert.Equal("true", value.GetString());
     }
 
-    [Fact(Skip = "OpenIddictApplicationManager mocking TODO – test skeleton only")]
+    [Fact]
     public async Task ResetClientSecret_Should_Update_Secret_And_Return_New_Value()
     {
         // Arrange
@@ -271,19 +271,44 @@ public class ClientControllerTest
             .Returns(new ValueTask<string?>((string?)null));
 
         mock.Setup(m => m.GetPermissionsAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
-            .Returns(new ValueTask<System.Collections.Immutable.ImmutableArray<string>>(System.Collections.Immutable.ImmutableArray<string>.Empty));
+            .Returns((object app, CancellationToken _) =>
+            {
+                var client = (FakeClient)app;
+                return new ValueTask<System.Collections.Immutable.ImmutableArray<string>>(
+                    System.Collections.Immutable.ImmutableArray.CreateRange(client.Permissions));
+            });
 
         mock.Setup(m => m.GetRedirectUrisAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
-            .Returns(new ValueTask<System.Collections.Immutable.ImmutableArray<string>>(System.Collections.Immutable.ImmutableArray<string>.Empty));
+            .Returns((object app, CancellationToken _) =>
+            {
+                var client = (FakeClient)app;
+                return new ValueTask<System.Collections.Immutable.ImmutableArray<string>>(
+                    System.Collections.Immutable.ImmutableArray.CreateRange(client.RedirectUris.Select(u => u.ToString())));
+            });
 
         mock.Setup(m => m.GetPostLogoutRedirectUrisAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
-            .Returns(new ValueTask<System.Collections.Immutable.ImmutableArray<string>>(System.Collections.Immutable.ImmutableArray<string>.Empty));
+            .Returns((object app, CancellationToken _) =>
+            {
+                var client = (FakeClient)app;
+                return new ValueTask<System.Collections.Immutable.ImmutableArray<string>>(
+                    System.Collections.Immutable.ImmutableArray.CreateRange(client.PostLogoutRedirectUris.Select(u => u.ToString())));
+            });
 
         mock.Setup(m => m.GetRequirementsAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
-            .Returns(new ValueTask<System.Collections.Immutable.ImmutableArray<string>>(System.Collections.Immutable.ImmutableArray<string>.Empty));
+            .Returns((object app, CancellationToken _) =>
+            {
+                var client = (FakeClient)app;
+                return new ValueTask<System.Collections.Immutable.ImmutableArray<string>>(
+                    System.Collections.Immutable.ImmutableArray.CreateRange(client.Requirements));
+            });
 
         mock.Setup(m => m.GetPropertiesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
-            .Returns(new ValueTask<System.Collections.Immutable.ImmutableDictionary<string, JsonElement>>(System.Collections.Immutable.ImmutableDictionary<string, JsonElement>.Empty));
+            .Returns((object app, CancellationToken _) =>
+            {
+                var client = (FakeClient)app;
+                return new ValueTask<System.Collections.Immutable.ImmutableDictionary<string, JsonElement>>(
+                    System.Collections.Immutable.ImmutableDictionary.CreateRange(client.Properties));
+            });
 
         // Populate：从 FakeClient 填充到 descriptor（供 Delete/ResetSecret/Update 使用）
         mock.Setup(m => m.PopulateAsync(It.IsAny<OpenIddictApplicationDescriptor>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
@@ -332,7 +357,7 @@ public class ClientControllerTest
                 foreach (var kv in descriptor.Properties) client.Properties[kv.Key] = kv.Value;
 
                 clients.Add(client);
-                return ValueTask.CompletedTask;
+                return new ValueTask<object>(client);
             });
 
         // Update：用 descriptor 覆盖现有 FakeClient

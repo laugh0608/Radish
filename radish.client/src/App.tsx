@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import { parseApiResponse, type ApiResponse } from './api/client';
+import { useUserStore } from './stores/userStore';
 import './App.css';
 
 interface Forecast {
@@ -17,6 +18,14 @@ interface CurrentUser {
     tenantId: number;
 }
 
+// WebOS 全局用户信息结构（与 useUserStore.UserInfo 对齐）
+interface WebOsUserInfo {
+    userId: number;
+    userName: string;
+    tenantId: number;
+    roles: string[];
+}
+
 interface OidcCallbackProps {
     apiBaseUrl: string;
 }
@@ -30,11 +39,16 @@ function App() {
     const [forecasts, setForecasts] = useState<Forecast[]>();
     const [error, setError] = useState<string>();
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+    const setWebOsUser = useUserStore(state => state.setUser);
+    const clearWebOsUser = useUserStore(state => state.clearUser);
     const [userError, setUserError] = useState<string>();
 
     const apiBaseUrl = useMemo(() => {
-        const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
-        return (configured ?? defaultApiBase).replace(/\/$/, '');
+        // 统一通过 Gateway 访问，apiBaseUrl 就是当前 origin
+        if (typeof window !== 'undefined') {
+            return window.location.origin;
+        }
+        return 'https://localhost:5000'; // fallback for SSR
     }, []);
 
     const isBrowser = typeof window !== 'undefined';
@@ -180,10 +194,20 @@ function App() {
 
             setCurrentUser(parsed.data);
             setUserError(undefined);
+
+            // 同步到 WebOS 全局用户状态，默认赋予基础角色
+            const webOsUser: WebOsUserInfo = {
+                userId: parsed.data.userId,
+                userName: parsed.data.userName,
+                tenantId: parsed.data.tenantId,
+                roles: ['User']
+            };
+            setWebOsUser(webOsUser);
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
             setUserError(`${t('auth.userInfoLoadFailedPrefix')}${message}`);
             setCurrentUser(null);
+            clearWebOsUser();
         }
     }
 }
@@ -214,14 +238,41 @@ function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
     });
 }
 
+/**
+ * 获取 Auth Server 的基础 URL
+ * - 通过 Gateway 访问时（https://localhost:5000）：使用 Gateway 地址
+ * - 直接访问开发服务器时（http://localhost:3000）：使用 Auth Server 直接地址
+ */
+function getAuthServerBaseUrl(): string {
+    if (typeof window === 'undefined') {
+        return 'https://localhost:5000';
+    }
+
+    const currentOrigin = window.location.origin;
+
+    // 通过 Gateway 访问（生产环境或开发时通过 Gateway）
+    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+        return currentOrigin;
+    }
+
+    // 直接访问前端开发服务器（开发环境）
+    if (currentOrigin === 'http://localhost:3000' || currentOrigin === 'https://localhost:3000') {
+        return 'http://localhost:5200'; // Auth Server 直接地址
+    }
+
+    // 默认使用 Gateway（生产环境）
+    return currentOrigin;
+}
+
 function handleLogin(apiBaseUrl: string) {
     if (typeof window === 'undefined') {
         return;
     }
 
     const redirectUri = `${window.location.origin}/oidc/callback`;
+    const authServerBaseUrl = getAuthServerBaseUrl();
 
-    const authorizeUrl = new URL(`${apiBaseUrl}/connect/authorize`);
+    const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
     authorizeUrl.searchParams.set('client_id', 'radish-client');
     authorizeUrl.searchParams.set('response_type', 'code');
     authorizeUrl.searchParams.set('redirect_uri', redirectUri);
@@ -245,24 +296,21 @@ function handleLogout(apiBaseUrl: string) {
     window.localStorage.removeItem('access_token');
     window.localStorage.removeItem('refresh_token');
 
+    // 使用 OIDC 标准的 endsession endpoint 实现 Single Sign-Out
+    // 注意：不要添加 trailing slash，因为 .NET Uri 类会将 https://localhost:5000 和 https://localhost:5000/ 视为相同
+    const postLogoutRedirectUri = window.location.origin;
+    const authServerBaseUrl = getAuthServerBaseUrl();
+
+    const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
+    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+    logoutUrl.searchParams.set('client_id', 'radish-client');
+
     // 🌍 传递当前语言设置
     const currentLanguage = i18n.language || 'zh';
-    const logoutUrl = new URL(`${apiBaseUrl}/Account/Logout`);
     logoutUrl.searchParams.set('culture', currentLanguage);
 
-    // 调用 Auth 的 Logout，并在完成后回到首页
-    void fetch(logoutUrl.toString(), {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            Accept: 'application/json',
-            'Accept-Language': currentLanguage
-        }
-    }).catch(() => {
-        // 忽略登出接口错误，仍然清理本地状态并跳转首页
-    }).finally(() => {
-        window.location.replace('/');
-    });
+    // 重定向到 OIDC logout endpoint，Auth Server 会清除 session 并重定向回来
+    window.location.href = logoutUrl.toString();
 }
 
 function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
@@ -291,6 +339,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
         }
 
         const redirectUri = `${window.location.origin}/oidc/callback`;
+        const authServerBaseUrl = getAuthServerBaseUrl();
 
         const fetchToken = async () => {
             const body = new URLSearchParams();
@@ -300,7 +349,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
             body.set('redirect_uri', redirectUri);
 
             try {
-                const response = await fetch(`${apiBaseUrl}/connect/token`, {
+                const response = await fetch(`${authServerBaseUrl}/connect/token`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded'
@@ -329,6 +378,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
                 setMessage(t('oidc.loginSucceeded'));
 
                 // 使用 replace 避免在浏览器历史中留下带 code 的 URL
+                // 登录成功后跳转回 WebOS Shell（根路径）
                 window.location.replace('/');
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);

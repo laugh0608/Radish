@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common;
 using Radish.IService;
@@ -12,7 +13,8 @@ namespace Radish.Api.Controllers;
 
 /// <summary>测试事务-订单交易接口控制器</summary>
 [ApiController]
-[Route("api/[controller]/[action]")]
+[ApiVersion(1)]
+[Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Authorize(Policy = "RadishAuthPolicy")]
 public class TransactionController : ControllerBase

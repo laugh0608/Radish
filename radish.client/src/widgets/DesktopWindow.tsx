@@ -23,17 +23,14 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
   }
 
   const AppComponent = app.component;
-  const defaultWidth = app.defaultSize?.width || 800;
-  const defaultHeight = app.defaultSize?.height || 600;
+
+  // 动态计算 iframe URL（支持字符串或函数）
+  const iframeUrl = app.type === 'iframe' && app.url
+    ? typeof app.url === 'function' ? app.url() : app.url
+    : undefined;
 
   return (
     <Rnd
-      default={{
-        x: 100 + (window.zIndex - 1) * 30,
-        y: 80 + (window.zIndex - 1) * 30,
-        width: defaultWidth,
-        height: defaultHeight
-      }}
       size={window.size}
       position={window.position}
       minWidth={400}
@@ -55,7 +52,7 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
         updateWindowPosition(window.id, position);
       }}
     >
-      <div className={styles.window}>
+      <div className={`${styles.window} ${window.isMaximized ? styles.windowMaximized : ''}`}>
         {/* 窗口标题栏 */}
         <div className={`${styles.titleBar} window-drag-handle`}>
           <span className={styles.title}>{app.name}</span>
@@ -68,21 +65,24 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
             <button
               className={`${styles.controlBtn} ${styles.maximizeBtn}`}
               onClick={() => {
-                const parentWidth = window.innerWidth || 0;
-                const parentHeight = window.innerHeight || 0;
-                const dockHeight = 80; // Dock 高度（Dock.module.css 中为 80px）
-                const padding = 16; // 与边缘留一点距离，避免贴边
-
                 if (window.isMaximized) {
                   unmaximizeWindow(window.id);
                   return;
                 }
 
+                // 使用 globalThis.window 获取浏览器窗口尺寸，避免与 props 的 window 冲突
+                const browserWindow = globalThis.window;
+                const viewportWidth = browserWindow.innerWidth || 0;
+                const viewportHeight = browserWindow.innerHeight || 0;
+                const statusBarHeight = 40; // StatusBar.module.css 中为 40px
+                const dockHeight = 80; // Dock.module.css 中为 80px
+
+                // 最大化时填满 StatusBar 和 Dock 之间的区域
                 maximizeWindow(window.id, {
-                  width: parentWidth - padding * 2,
-                  height: parentHeight - dockHeight - padding * 2,
-                  x: padding,
-                  y: padding
+                  width: viewportWidth,
+                  height: viewportHeight - statusBarHeight - dockHeight,
+                  x: 0,
+                  y: statusBarHeight
                 });
               }}
               title={window.isMaximized ? '还原' : '最大化'}
@@ -97,7 +97,16 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
 
         {/* 窗口内容区 */}
         <div className={styles.content}>
-          <AppComponent />
+          {app.type === 'iframe' && iframeUrl ? (
+            <iframe
+              src={iframeUrl}
+              className={styles.iframe}
+              title={app.name}
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-top-navigation"
+            />
+          ) : (
+            <AppComponent />
+          )}
         </div>
       </div>
     </Rnd>

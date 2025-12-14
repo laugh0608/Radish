@@ -1,262 +1,294 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { AdminLayout } from './components/AdminLayout';
+import { Dashboard } from './pages/Dashboard';
+import { Applications } from './pages/Applications';
+import { Login } from './pages/Login';
+import { message } from '@radish/ui';
 import './App.css';
 
-interface Service {
-    key: string;
-    name: string;
-    description: string;
-    // Gateway 暴露的路径（相对网关根路径）
-    gatewayPath: string;
-    // Gateway 完整 URL（开发环境）
-    gatewayUrl: string;
-    // 内部服务地址（本地开发时的实际端口）
-    internalUrl?: string;
-    // 用于健康检查的路径（相对当前 origin）
-    healthPath?: string;
-}
-
-type ServiceState = 'pending' | 'ok' | 'fail';
-
-interface ServiceStatus {
-    state: ServiceState;
-    latency?: number;
-    message?: string;
-}
-
-const services: Service[] = [
-    {
-        key: 'gateway',
-        name: 'Gateway',
-        description: 'Radish Gateway 反向代理与统一入口',
-        gatewayPath: '/server',
-        gatewayUrl: 'https://localhost:5000/server',
-        internalUrl: 'https://localhost:5000',
-        healthPath: '/healthz'
-    },
-    {
-        key: 'frontend',
-        name: 'Frontend (WebOS)',
-        description: '桌面式主入口，提供应用图标和窗口管理',
-        gatewayPath: '/',
-        gatewayUrl: 'https://localhost:5000/',
-        internalUrl: 'http://localhost:3000',
-        healthPath: '/'
-    },
-    {
-        key: 'docs',
-        name: 'Docs',
-        description: 'VitePress 文档站，通过 Gateway 暴露',
-        gatewayPath: '/docs',
-        gatewayUrl: 'https://localhost:5000/docs',
-        internalUrl: 'http://localhost:3001',
-        healthPath: '/docs'
-    },
-    {
-        key: 'api',
-        name: 'API',
-        description: 'Radish.Api 后端服务，提供 RESTful API',
-        gatewayPath: '/api',
-        gatewayUrl: 'https://localhost:5000/api',
-        internalUrl: 'http://localhost:5100',
-        healthPath: '/api/health'
-    },
-    {
-        key: 'auth',
-        name: 'Auth (OIDC)',
-        description: 'Radish.Auth OIDC 认证服务器，基于 OpenIddict',
-        gatewayPath: '/auth',
-        gatewayUrl: 'https://localhost:5000/auth',
-        internalUrl: 'http://localhost:5200',
-        healthPath: undefined // Auth 暂时没有暴露健康检查端点
-    },
-    {
-        key: 'scalar',
-        name: 'Scalar',
-        description: 'API Scalar 可视化文档，交互式 API 调试工具',
-        gatewayPath: '/scalar',
-        gatewayUrl: 'https://localhost:5000/scalar',
-        internalUrl: undefined,
-        healthPath: '/scalar'
-    },
-    {
-        key: 'console',
-        name: 'Console',
-        description: '当前管理控制台前端（radish.console）',
-        gatewayPath: '/console',
-        gatewayUrl: 'https://localhost:5000/console',
-        internalUrl: 'http://localhost:3002',
-        healthPath: '/console'
-    }
-];
+type MenuItem = 'dashboard' | 'applications' | 'users' | 'roles' | 'service-status';
 
 function App() {
-    const [statuses, setStatuses] = useState<Record<string, ServiceStatus>>({});
+  const [currentMenu, setCurrentMenu] = useState<MenuItem>('dashboard');
+  const [user] = useState({ name: 'Admin', avatar: undefined });
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-    useEffect(() => {
-        let cancelled = false;
+  useEffect(() => {
+    // 检查是否有 token
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      setIsLoggedIn(true);
+    }
+  }, []);
 
-        const checkService = async (service: Service) => {
-            if (!service.healthPath) return;
+  // 检查是否是 OIDC 回调页面
+  // - 通过 Gateway 访问时：路径为 /console/callback（Gateway 保留完整路径）
+  // - 直接访问开发服务器时：路径为 /console/callback（base: '/console/'）
+  const isOidcCallback = typeof window !== 'undefined' &&
+    window.location.pathname.endsWith('/callback');
 
-            setStatuses(prev => ({
-                ...prev,
-                [service.key]: { state: 'pending' }
-            }));
+  // 如果是回调页面，显示回调处理组件
+  if (isOidcCallback) {
+    return <OidcCallback onSuccess={() => setIsLoggedIn(true)} />;
+  }
 
-            try {
-                const start = performance.now();
-                const response = await fetch(service.healthPath, { cache: 'no-store' });
-                const duration = Math.round(performance.now() - start);
+  const handleMenuClick = (key: string) => {
+    setCurrentMenu(key as MenuItem);
+  };
 
-                if (response.ok || (response.status >= 200 && response.status < 400)) {
-                    if (!cancelled) {
-                        setStatuses(prev => ({
-                            ...prev,
-                            [service.key]: {
-                                state: 'ok',
-                                latency: duration
-                            }
-                        }));
-                    }
-                } else {
-                    if (!cancelled) {
-                        setStatuses(prev => ({
-                            ...prev,
-                            [service.key]: {
-                                state: 'fail',
-                                latency: duration,
-                                message: `HTTP ${response.status}`
-                            }
-                        }));
-                    }
-                }
-            } catch {
-                if (!cancelled) {
-                    setStatuses(prev => ({
-                        ...prev,
-                        [service.key]: {
-                            state: 'fail',
-                            message: '无法访问'
-                        }
-                    }));
-                }
-            }
-        };
+  const handleUserMenuClick = (key: string) => {
+    switch (key) {
+      case 'logout':
+        handleLogout();
+        break;
+      case 'profile':
+        message.info('个人信息功能待实现');
+        break;
+      case 'settings':
+        message.info('设置功能待实现');
+        break;
+    }
+  };
 
-        services.forEach(service => {
-            void checkService(service);
+  /**
+   * 获取 Auth Server 的基础 URL
+   * - 通过 Gateway 访问时（https://localhost:5000）：使用 Gateway 地址
+   * - 直接访问开发服务器时（http://localhost:3002）：使用 Auth Server 直接地址
+   */
+  const getAuthServerBaseUrl = (): string => {
+    const currentOrigin = window.location.origin;
+
+    // 通过 Gateway 访问（生产环境或开发时通过 Gateway）
+    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+      return currentOrigin;
+    }
+
+    // 直接访问 console 开发服务器（开发环境）
+    if (currentOrigin === 'http://localhost:3002' || currentOrigin === 'https://localhost:3002') {
+      return 'http://localhost:5200'; // Auth Server 直接地址
+    }
+
+    // 默认使用 Gateway（生产环境）
+    return currentOrigin;
+  };
+
+  /**
+   * 获取 post_logout_redirect_uri
+   * - 通过 Gateway 访问时：https://localhost:5000/console/
+   * - 直接访问开发服务器时：http://localhost:3002/
+   */
+  const getPostLogoutRedirectUri = (): string => {
+    const currentOrigin = window.location.origin;
+
+    // 通过 Gateway 访问
+    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+      return `${currentOrigin}/console/`;
+    }
+
+    // 直接访问开发服务器
+    return `${currentOrigin}/`;
+  };
+
+  const handleLogout = () => {
+    // 清理本地保存的 Token
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
+    // 使用 OIDC 标准的 endsession endpoint 实现 Single Sign-Out
+    const postLogoutRedirectUri = getPostLogoutRedirectUri();
+    const authServerBaseUrl = getAuthServerBaseUrl();
+
+    const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
+    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+    logoutUrl.searchParams.set('client_id', 'radish-console');
+
+    // 重定向到 OIDC logout endpoint，Auth Server 会清除 session 并重定向回来
+    window.location.href = logoutUrl.toString();
+  };
+
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+  };
+
+  // 如果未登录，显示登录页面
+  if (!isLoggedIn) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  const renderContent = () => {
+    switch (currentMenu) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'applications':
+        return <Applications />;
+      case 'users':
+        return (
+          <div>
+            <h2>用户管理</h2>
+            <p>用户管理功能待实现</p>
+          </div>
+        );
+      case 'roles':
+        return (
+          <div>
+            <h2>角色管理</h2>
+            <p>角色管理功能待实现</p>
+          </div>
+        );
+      default:
+        return <Dashboard />;
+    }
+  };
+
+  return (
+    <AdminLayout
+      selectedKey={currentMenu}
+      onMenuClick={handleMenuClick}
+      user={user}
+      onUserMenuClick={handleUserMenuClick}
+    >
+      {renderContent()}
+    </AdminLayout>
+  );
+}
+
+interface OidcCallbackProps {
+  onSuccess: () => void;
+}
+
+function OidcCallback({ onSuccess }: OidcCallbackProps) {
+  const [error, setError] = useState<string>();
+  const [messageText, setMessageText] = useState<string>('正在完成登录...');
+  const hasProcessed = useRef(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    // 防止重复执行（React StrictMode 会导致 useEffect 执行两次）
+    if (hasProcessed.current) {
+      return;
+    }
+    hasProcessed.current = true;
+
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get('code');
+
+    if (!code) {
+      setError('授权码缺失');
+      setMessageText('登录失败');
+      return;
+    }
+
+    /**
+     * 获取 Auth Server 的基础 URL
+     */
+    const getAuthServerBaseUrl = (): string => {
+      const currentOrigin = window.location.origin;
+
+      // 通过 Gateway 访问
+      if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+        return currentOrigin;
+      }
+
+      // 直接访问 console 开发服务器
+      if (currentOrigin === 'http://localhost:3002' || currentOrigin === 'https://localhost:3002') {
+        return 'http://localhost:5200';
+      }
+
+      return currentOrigin;
+    };
+
+    /**
+     * 获取 redirect_uri
+     * - 通过 Gateway 访问时：https://localhost:5000/console/callback
+     * - 直接访问开发服务器时：http://localhost:3002/console/callback
+     * 注意：由于 Vite base 是 /console/，所以两种方式都需要 /console/ 前缀
+     */
+    const getRedirectUri = (): string => {
+      const currentOrigin = window.location.origin;
+
+      // 通过 Gateway 访问
+      if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+        return `${currentOrigin}/console/callback`;
+      }
+
+      // 直接访问开发服务器（端口 3002，也需要 /console/ 前缀）
+      return `${currentOrigin}/console/callback`;
+    };
+
+    const redirectUri = getRedirectUri();
+    const authServerBaseUrl = getAuthServerBaseUrl();
+
+    const fetchToken = async () => {
+      const body = new URLSearchParams();
+      body.set('grant_type', 'authorization_code');
+      body.set('client_id', 'radish-console');
+      body.set('code', code);
+      body.set('redirect_uri', redirectUri);
+
+      try {
+        const response = await fetch(`${authServerBaseUrl}/connect/token`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body
         });
 
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    const getStatusIcon = (service: Service): string => {
-        if (!service.healthPath) return '⚪';
-        const status = statuses[service.key];
-        if (!status || status.state === 'pending') return '🔵';
-        if (status.state === 'ok') return '🟢';
-        return '🔴';
-    };
-
-    const renderStatus = (service: Service): string => {
-        if (!service.healthPath) return '未配置检查';
-        const status = statuses[service.key];
-        if (!status || status.state === 'pending') return '检测中...';
-        if (status.state === 'ok') {
-            return status.latency != null ? `${status.latency} ms` : '正常';
+        if (!response.ok) {
+          throw new Error(`Token 请求失败: ${response.status} ${response.statusText}`);
         }
-        return status.message ? status.message : '异常';
+
+        const tokenSet = await response.json() as {
+          access_token?: string;
+          refresh_token?: string;
+        };
+
+        if (!tokenSet.access_token) {
+          throw new Error('未收到 access_token');
+        }
+
+        window.localStorage.setItem('access_token', tokenSet.access_token);
+        if (tokenSet.refresh_token) {
+          window.localStorage.setItem('refresh_token', tokenSet.refresh_token);
+        }
+
+        setMessageText('登录成功，正在跳转...');
+        message.success('登录成功');
+
+        // 通知父组件登录成功，并跳转到首页
+        onSuccess();
+
+        // 跳转到 Console 首页
+        // 通过 Gateway 访问时跳转到 /console/，直接访问时跳转到 /
+        const currentOrigin = window.location.origin;
+        const homePath = (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000')
+          ? '/console/'
+          : '/';
+
+        setTimeout(() => {
+          window.location.replace(homePath);
+        }, 500);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setError(msg);
+        setMessageText('登录失败');
+        message.error('登录失败：' + msg);
+      }
     };
 
-    const getStatusClass = (service: Service): string => {
-        if (!service.healthPath) return 'status-unchecked';
-        const status = statuses[service.key];
-        if (!status || status.state === 'pending') return 'status-pending';
-        if (status.state === 'ok') return 'status-ok';
-        return 'status-fail';
-    };
+    void fetchToken();
+  }, [onSuccess]);
 
-    return (
-        <div className="container">
-            <header className="header">
-                <h1>🌿 Radish Console</h1>
-                <p className="subtitle">
-                    Radish 微服务控制台 - 查看服务状态、路径配置与健康检查
-                </p>
-            </header>
-
-            <div className="services-table">
-                <table aria-label="service overview">
-                    <thead>
-                        <tr>
-                            <th>状态</th>
-                            <th>服务名称</th>
-                            <th>Gateway 路径</th>
-                            <th>内部地址</th>
-                            <th>健康检查</th>
-                            <th>说明</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {services.map(service => (
-                            <tr key={service.key}>
-                                <td className="status-icon">
-                                    <span className={getStatusClass(service)} title={renderStatus(service)}>
-                                        {getStatusIcon(service)}
-                                    </span>
-                                </td>
-                                <td className="service-name">
-                                    <strong>{service.name}</strong>
-                                </td>
-                                <td className="service-url">
-                                    <a
-                                        href={service.gatewayUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        title={service.gatewayUrl}
-                                    >
-                                        {service.gatewayPath}
-                                    </a>
-                                </td>
-                                <td className="service-url">
-                                    {service.internalUrl ? (
-                                        <a
-                                            href={service.internalUrl}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            title={service.internalUrl}
-                                        >
-                                            {service.internalUrl.replace('http://', '').replace('https://', '')}
-                                        </a>
-                                    ) : (
-                                        <span className="text-muted">-</span>
-                                    )}
-                                </td>
-                                <td className={`health-status ${getStatusClass(service)}`}>
-                                    {renderStatus(service)}
-                                </td>
-                                <td className="service-description">
-                                    {service.description}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            <footer className="footer">
-                <p>
-                    <strong>端口约定：</strong>
-                    Gateway (5000/5001) · API (5100) · Auth (5200) · Frontend (3000) · Docs (3001) · Console (3002)
-                </p>
-                <p className="text-muted">
-                    所有对外访问通过 Gateway (https://localhost:5000) 统一入口，内部服务仅用于开发调试
-                </p>
-            </footer>
-        </div>
-    );
+  return (
+    <div style={{ padding: '40px', textAlign: 'center' }}>
+      <h1>OIDC 回调处理</h1>
+      <p>{messageText}</p>
+      {error && <p style={{ color: 'red' }}>错误详情：{error}</p>}
+    </div>
+  );
 }
 
 export default App;

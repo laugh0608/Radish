@@ -15,7 +15,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Radish is a modern community platform built with a self-designed layered architecture:
 - **Backend**: ASP.NET Core 10 + SQLSugar ORM + PostgreSQL (SQLite for local dev)
 - **Gateway**: Radish.Gateway - Service portal and API gateway (Phase 0: portal page; P1+: routing, auth, aggregation)
-- **Frontend**: React 19 + Vite (using Rolldown bundler) + TypeScript with a desktop-like UI paradigm
+- **Auth**: Radish.Auth - OIDC authentication server based on OpenIddict
+- **Frontend**: React 19 + Vite (using Rolldown bundler) + TypeScript with a desktop-like UI paradigm (WebOS)
+- **UI Library**: @radish/ui - Shared component library using npm workspaces
+- **Console**: radish.console - Management console frontend
+- **Docs**: radish.docs - VitePress documentation site
 - **Solution**: Radish.slnx contains all backend projects and can be developed cohesively
 
 ## Essential Commands
@@ -46,10 +50,11 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj
 ### Frontend Development
 ```bash
 # Install dependencies (run from repo root)
-npm install --prefix radish.client
+npm install
 
-# Start dev server (default: http://localhost:3000)
-npm run dev --prefix radish.client
+# Start dev servers
+npm run dev --workspace=radish.client    # Frontend (http://localhost:3000)
+npm run dev --workspace=radish.console   # Console (http://localhost:3002)
 
 # Build for production
 npm run build --prefix radish.client
@@ -58,14 +63,25 @@ npm run build --prefix radish.client
 npm run lint --prefix radish.client
 ```
 
+### UI Component Library Development
+```bash
+# Type check
+npm run type-check --workspace=@radish/ui
+
+# Lint
+npm run lint --workspace=@radish/ui
+
+# The UI library uses npm workspaces with symlinks
+# Changes to radish.ui/ are automatically reflected in client/console via HMR
+```
+
 ### Quick Start Scripts
 ```bash
 # Interactive menu to start API, Gateway, Auth, frontend, docs, console or run tests
 # Current options include:
-# - Single services: API / Gateway / frontend / docs / console / Auth / tests (1-8)
-# - Combinations (PowerShell): Gateway+Auth+API, or start ALL (1 0)
-# - Combinations (Shell): Gateway+API, Gateway+frontend, Gateway+docs, Gateway+console,
-#   Gateway+Auth, Gateway+Auth+API, start ALL (9-15)
+# - Single services: API / Gateway / frontend / docs / console / Auth / DbMigrate / tests (1-8)
+# - Combinations: Gateway+Auth+API, Frontend+Console+Docs (9-10)
+# - Start ALL: All services (11)
 pwsh ./start.ps1    # Windows/PowerShell
 ./start.sh          # Linux/macOS
 ```
@@ -227,11 +243,11 @@ SnowFlakeSingle.DatacenterId = snowflakeSection.GetValue<int>("DataCenterId");
 - Log entities like `AuditSqlLog` use `[Tenant(configId: "log")]` + `[SplitTable(SplitType.Month)]` for monthly partitioning
 
 ### Local Dev (SQLite)
-Default setup uses `Radish.db` (main) and `RadishLog.db` (logs) in `DataBases/` folder. Auto-created on first run. For PostgreSQL, update `Databases[].ConnectionString` and `DbType=4`.
+Default setup uses `Radish.db` (main) and `Radish.Log.db` (logs) in `DataBases/` folder. Auto-created on first run. For PostgreSQL, update `Databases[].ConnectionString` and `DbType=4`.
 
 **IMPORTANT - Database Sharing Between Projects**:
-- **API and Auth projects share the same business databases**: Both `Radish.Api` and `Radish.Auth` use `Radish.db` (main) and `RadishLog.db` (logs) for business data (users, roles, permissions, tenants, etc.)
-- **OpenIddict uses a separate database**: `RadishAuth.OpenIddict.db` is managed by EF Core and stores OIDC-specific data (clients, authorizations, tokens, scopes)
+- **API and Auth projects share the same business databases**: Both `Radish.Api` and `Radish.Auth` use `Radish.db` (main) and `Radish.Log.db` (logs) for business data (users, roles, permissions, tenants, etc.)
+- **OpenIddict uses a separate database**: `Radish.OpenIddict.db` is managed by EF Core and stores OIDC-specific data (clients, authorizations, tokens, scopes)
 - **Why share business databases?**: Auth and API need access to the same user/role/permission data for authentication and authorization
 - **Database location**: All database files are stored in the solution root's `DataBases/` folder
 
@@ -326,23 +342,94 @@ Not yet configured extensively. Plan to add unit/integration tests in `radish.cl
 ### Test Isolation
 Tests use in-memory services where possible. For integration tests requiring database, consider SQLite in-memory mode or dedicated test DB.
 
-## Frontend Architecture (radish.client)
+## Frontend Architecture
 
-### Desktop-like UI Paradigm
+### UI Component Library (@radish/ui)
+
+**Location**: `radish.ui/`
+
+**Purpose**: Shared component library for radish.client and radish.console
+
+**Key Features**:
+- **npm Workspaces**: Uses symlinks for instant hot-reload across projects
+- **Components**: Button, Input, Select, Modal, Icon, ContextMenu
+- **Hooks**: useDebounce, useLocalStorage, useToggle, useClickOutside
+- **Utils**: Date formatting, validation, string manipulation
+- **TypeScript**: Complete type definitions for all exports
+
+**Usage**:
+```typescript
+// Import components
+import { Button, Input, Modal, Icon } from '@radish/ui';
+
+// Import hooks
+import { useDebounce, useToggle } from '@radish/ui/hooks';
+
+// Import utils
+import { formatDate, isEmail } from '@radish/ui/utils';
+```
+
+**Development**:
+- Changes to `radish.ui/` automatically reflect in client/console via Vite HMR
+- No need to restart dev servers or reinstall dependencies
+- Run `npm run type-check --workspace=@radish/ui` before committing
+
+**Documentation**: See [UIComponentLibrary.md](radish.docs/docs/UIComponentLibrary.md)
+
+### WebOS Desktop UI (radish.client)
+
+**Desktop-like UI Paradigm**:
 - **Top**: Status bar (username, IP, system status)
 - **Bottom**: Dock (core feature shortcuts)
 - **Left**: Desktop icons (double-click opens modal windows)
 - **Windows**: macOS-style minimize/close buttons, draggable, taskbar when minimized
 - Reference: `radish.client/public/webos.html` (Nebula OS prototype)
 
-### React Conventions
+**Component Organization**:
+- **Shared components** → `@radish/ui` (Icon, Button, ContextMenu, etc.)
+- **WebOS-specific** → `radish.client/src/` (GlassPanel, AppIcon, DesktopWindow, etc.)
+
+**Application Architecture Decision**:
+
+Client 项目采用**混合架构**,根据应用复杂度和独立性选择不同集成方式:
+
+1. **内置应用 (Built-in Apps)** - 使用 `type: 'window'`
+   - 简单功能模块,无需独立部署
+   - 可直接复用 Client 的认证状态和共享组件
+   - 示例:论坛(Forum)、聊天室(Chat)、设置(Settings)
+   - 实现:React 组件,直接在 WebOS 窗口中渲染
+
+2. **嵌入应用 (Embedded Apps)** - 使用 `type: 'iframe'`
+   - 无需认证或简单认证的展示型应用
+   - 无复杂路由需求,用户主要被动浏览
+   - 示例:文档站(Docs)、帮助中心
+   - 实现:通过 iframe 嵌入,保持独立性但在 WebOS 窗口内显示
+
+3. **外部应用 (External Apps)** - 使用 `type: 'external'`
+   - 完整的独立 SPA,有自己的 OIDC 认证流程
+   - 复杂的路由系统,需要控制浏览器地址栏
+   - 需要独立访问和部署
+   - 示例:管理控制台(Console)、商城(Shop - 未来)
+   - 实现:在新标签页打开,完全独立运行
+
+**为什么不合并 Console 到 Client?**
+- **关注点分离**:Client 面向普通用户,Console 面向管理员
+- **权限隔离**:管理功能不应与用户功能混在同一代码库
+- **部署灵活性**:Console 可部署到内网,Client 部署到公网
+- **代码体积**:避免普通用户加载管理功能代码
+- **开发独立性**:两个团队可并行开发,互不影响
+- **技术选型自由**:各自可选择适合的 UI 库和技术栈
+
+详见 [FrontendDesign.md](radish.docs/docs/FrontendDesign.md) 第 10.4 节的架构决策分析。
+
+**React Conventions**:
 1. **Function components only** (no class components)
 2. Use `const` for component definitions, avoid `function` declarations
 3. Avoid `var`, default to `const`, use `let` only when reassignment needed
 4. State management: `useState` + `useMemo` + `useEffect`
 5. React Compiler: Experimental, not enabled in main branch yet
 
-### Frontend-Backend Communication
+**Frontend-Backend Communication**:
 - All requests over HTTPS (TLS provides transport encryption)
 - **Password Security**: Passwords are transmitted as plaintext over HTTPS and hashed with Argon2id on the server. See [PasswordSecurity.md](radish.docs/docs/PasswordSecurity.md) for details.
 - **No frontend encryption**: Frontend code is fully exposed to users, so client-side encryption (like RSA) provides no real security benefit
@@ -351,22 +438,108 @@ Tests use in-memory services where possible. For integration tests requiring dat
 
 ## Adding New Features (Complete Flow)
 
+### Backend Features
+
 1. **Define Model** in `Radish.Model/Models` (entity) and `Radish.Model/ViewModels` (ViewModel)
 2. **Create Mapping** in `Radish.Extension/AutoMapperExtension/CustomProfiles`
-3. **Repository Layer**:
-   - Define interface in `Radish.IRepository`
-   - Implement in `Radish.Repository` (inherit from `BaseRepository<T>`)
-4. **Service Layer**:
-   - Define interface in `Radish.IService`
-   - Implement in `Radish.Service` (inherit from `BaseService<TEntity, TModel>`)
-   - Map entity to ViewModel before returning
+3. **Repository Layer** (for custom queries only):
+   - Most cases: Use `IBaseRepository<TEntity>` directly, NO need to create custom repository
+   - Only create custom repository if you need specialized database operations beyond BaseRepository
+4. **Service Layer** (IMPORTANT - avoid over-engineering):
+   - **For simple CRUD operations**: Use `IBaseService<TEntity, TVo>` directly in Controller
+     - Example: `IBaseService<Category, CategoryVo>` provides all basic operations
+     - BaseService includes: Query, QueryById, QueryPage, Add, Update, Delete, etc.
+   - **Only create custom Service when**:
+     - You have complex business logic (e.g., `PublishPostAsync` that updates multiple tables)
+     - You need transaction coordination across multiple entities
+     - You have special validation or processing rules
+   - **If you create custom Service**:
+     - Define interface in `Radish.IService` (inherit from `IBaseService<TEntity, TVo>`)
+     - Implement in `Radish.Service` (inherit from `BaseService<TEntity, TVo>`)
+     - Only add methods for complex logic; reuse base methods for simple operations
 5. **Controller** in `Radish.Api/Controllers`:
-   - Inject IService (never IRepository)
+   - **Simple CRUD**: Inject `IBaseService<TEntity, TVo>` directly
+     ```csharp
+     public CategoryController(IBaseService<Category, CategoryVo> categoryService)
+     ```
+   - **Complex logic**: Inject custom service (e.g., `IPostService`)
+   - Never inject `IBaseRepository` directly
    - Add `[Authorize]` or `[AllowAnonymous]` attribute
-   - Use `[Route("api/[controller]/[action]")]` convention
+   - Use `[Route("api/v{version:apiVersion}/[controller]/[action]")]` convention
 6. **Add HTTP Examples** in `Radish.Api/Radish.Api.http` for manual testing
 7. **Write Tests** in `Radish.Api.Tests/Controllers/`
 8. **Update Frontend** in `radish.client/src/` as needed
+
+### Frontend Features
+
+#### Adding UI Components
+
+**For general-purpose components** (usable in both client and console):
+1. Create component in `radish.ui/src/components/ComponentName/`
+2. Export from `radish.ui/src/components/index.ts`
+3. Use in client/console: `import { ComponentName } from '@radish/ui'`
+4. Changes auto-reload via HMR
+
+**For WebOS-specific components** (desktop, windows, etc.):
+1. Create in `radish.client/src/` (widgets/, desktop/, or shared/ui/desktop/)
+2. Keep WebOS-specific logic isolated from general components
+
+#### Component Guidelines
+
+- **General components** → @radish/ui (Button, Input, Modal, Icon, etc.)
+- **WebOS components** → radish.client (GlassPanel, AppIcon, DesktopWindow, etc.)
+- Use `.radish-` prefix for CSS classes in @radish/ui
+- Complete TypeScript types for all props
+- JSDoc comments for public APIs
+
+### Service Layer Examples
+
+**✅ Good - Use BaseService directly:**
+```csharp
+// Controller
+public class CategoryController : ControllerBase
+{
+    private readonly IBaseService<Category, CategoryVo> _categoryService;
+
+    [HttpGet]
+    public async Task<MessageModel> GetAll()
+    {
+        var categories = await _categoryService.QueryAsync(c => c.IsEnabled && !c.IsDeleted);
+        return new MessageModel { IsSuccess = true, ResponseData = categories };
+    }
+}
+```
+
+**✅ Good - Create custom Service for complex logic:**
+```csharp
+// Service interface
+public interface IPostService : IBaseService<Post, PostVo>
+{
+    Task<long> PublishPostAsync(Post post, List<string>? tagNames = null);
+    Task<PostVo?> GetPostDetailAsync(long postId);
+}
+
+// Service implementation
+public class PostService : BaseService<Post, PostVo>, IPostService
+{
+    public async Task<long> PublishPostAsync(Post post, List<string>? tagNames)
+    {
+        // Complex logic: insert post, update category count, process tags
+        var postId = await AddAsync(post); // Reuse base method
+        // ... additional business logic
+        return postId;
+    }
+}
+```
+
+**❌ Bad - Creating unnecessary custom Service:**
+```csharp
+// DON'T do this - CategoryService only wraps BaseService methods
+public interface ICategoryService : IBaseService<Category, CategoryVo>
+{
+    Task<List<CategoryVo>> GetTopCategoriesAsync();  // Just QueryAsync with filter!
+}
+```
 
 ## Rust Native Extensions (Experimental)
 
@@ -402,12 +575,13 @@ Comprehensive docs in `radish.docs/docs/`:
 
 1. **Don't put business logic in Controllers** - Logic belongs in Service layer
 2. **Don't expose entities directly** - Always map to ViewModels first
-3. **Don't skip interface definitions** - Define IService/IRepository before implementations
-4. **Don't hardcode secrets** - Use environment variables or User Secrets for sensitive data
-5. **Don't forget to update Snowflake WorkId per environment** - Avoid ID collisions in production
-6. **Don't create files in Radish.Common that depend on Model/Service/Repository** - Use Radish.Extension instead
-7. **Router parameters in authorization** - Ensure `ApiModule.LinkUrl` contains regex for routes with parameters
-8. **ViewModels must be obfuscated** - Don't just add `Vo` prefix; combine with business abbreviation
+3. **Don't create unnecessary Services** - Use `BaseService<TEntity, TVo>` directly for simple CRUD; only create custom Service for complex business logic
+4. **Don't skip interface definitions** - Define IService/IRepository before implementations
+5. **Don't hardcode secrets** - Use environment variables or User Secrets for sensitive data
+6. **Don't forget to update Snowflake WorkId per environment** - Avoid ID collisions in production
+7. **Don't create files in Radish.Common that depend on Model/Service/Repository** - Use Radish.Extension instead
+8. **Router parameters in authorization** - Ensure `ApiModule.LinkUrl` contains regex for routes with parameters
+9. **ViewModels must be obfuscated** - Don't just add `Vo` prefix; combine with business abbreviation
 
 ## Git Commit Guidelines
 

@@ -9,6 +9,8 @@
   padding: 0 1rem;
   color: white;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 10000; /* 确保 StatusBar 始终在窗口之上 */
 }
 
 .left {

@@ -1,5 +1,5 @@
 import { useUserStore } from '@/stores/userStore';
-import { Icon } from '@/shared/ui/base/Icon';
+import { Icon } from '@radish/ui';
 import styles from './WelcomeApp.module.css';
 
 /**

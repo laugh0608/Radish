@@ -88,15 +88,13 @@ print_menu() {
   echo "  8. 运行单元测试       (Radish.Api.Tests)"
   echo
   echo "[组合启动]"
-  echo "  9. 启动 Gateway + API"
-  echo " 10. 启动 Gateway + Frontend"
-  echo " 11. 启动 Gateway + Docs"
-  echo " 12. 启动 Gateway + Console"
-  echo " 13. 启动 Gateway + Auth"
-  echo " 14. 启动 Gateway + Auth + API"
-  echo " 15. 一键启动全部服务 (Gateway + API + Auth + Frontend + Docs + Console)"
+  echo "  9. 启动 Gateway + Auth + API"
+  echo " 10. 启动 Frontend + Console + Docs"
   echo
-  echo "提示: 组合启动会将 Gateway / 前端 / 文档 / Console / Auth 置于后台, API 通常在前台运行以便查看日志。"
+  echo "[全部启动]"
+  echo " 11. 一键启动全部服务 (Gateway + API + Auth + Frontend + Docs + Console)"
+  echo
+  echo "提示: 组合启动会将相关服务置于后台运行以便并行开发。"
   echo
 }
 
@@ -221,51 +219,6 @@ run_tests() {
 
 # ---- 组合启动函数 ----
 
-start_gateway_api() {
-  echo "[组合] 启动 Gateway + API..."
-  build_all
-  start_gateway_no_build &
-  add_bg_pid $!
-  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
-  start_api_no_build
-}
-
-start_gateway_frontend() {
-  echo "[组合] 启动 Gateway + Frontend..."
-  build_all
-  start_gateway_no_build &
-  add_bg_pid $!
-  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
-  start_frontend
-}
-
-start_gateway_docs() {
-  echo "[组合] 启动 Gateway + Docs..."
-  build_all
-  start_gateway_no_build &
-  add_bg_pid $!
-  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
-  start_docs
-}
-
-start_gateway_console() {
-  echo "[组合] 启动 Gateway + Console..."
-  build_all
-  start_gateway_no_build &
-  add_bg_pid $!
-  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
-  start_console
-}
-
-start_gateway_auth() {
-  echo "[组合] 启动 Gateway + Auth..."
-  build_all
-  start_gateway_no_build &
-  add_bg_pid $!
-  echo "  - Gateway 已在后台启动 (https://localhost:5000)."
-  start_auth_no_build
-}
-
 start_gateway_auth_api() {
   echo "[组合] 启动 Gateway + Auth + API..."
   build_all
@@ -297,6 +250,17 @@ start_all() {
   add_bg_pid $!
   echo "  - Console 已在后台启动 (https://localhost:3002)."
   start_api_no_build
+}
+
+start_frontend_console_docs() {
+  echo "[组合] 启动 Frontend + Console + Docs..."
+  start_frontend &
+  add_bg_pid $!
+  echo "  - Frontend 已在后台启动 (https://localhost:3000)."
+  start_console &
+  add_bg_pid $!
+  echo "  - Console 已在后台启动 (https://localhost:3002)."
+  start_docs
 }
 
 # ---- 主逻辑 ----
@@ -335,24 +299,12 @@ case "$choice" in
     run_tests
     ;;
   9)
-    start_gateway_api
-    ;;
-  10)
-    start_gateway_frontend
-    ;;
-  11)
-    start_gateway_docs
-    ;;
-  12)
-    start_gateway_console
-    ;;
-  13)
-    start_gateway_auth
-    ;;
-  14)
     start_gateway_auth_api
     ;;
-  15)
+  10)
+    start_frontend_console_docs
+    ;;
+  11)
     start_all
     ;;
   *)

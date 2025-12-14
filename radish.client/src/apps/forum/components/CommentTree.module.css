@@ -1,0 +1,22 @@
+.container {
+  margin-top: 20px;
+}
+
+.title {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.loadingText,
+.emptyText {
+  font-size: 14px;
+  color: #888;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

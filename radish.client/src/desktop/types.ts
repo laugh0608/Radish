@@ -14,12 +14,21 @@ export interface AppDefinition {
   description?: string;
   /** 应用组件 */
   component: ComponentType;
-  /** 窗口类型 */
-  type: 'window' | 'fullscreen' | 'iframe';
+  /**
+   * 窗口类型
+   *
+   * - window: 内置应用,在可拖动窗口中渲染
+   * - fullscreen: 内置应用,全屏显示
+   * - iframe: 嵌入应用,在窗口中通过 iframe 加载外部 URL
+   * - external: 外部应用,在新标签页打开(适用于有独立 OIDC 认证的复杂 SPA)
+   */
+  type: 'window' | 'fullscreen' | 'iframe' | 'external';
   /** 默认窗口大小 */
   defaultSize?: { width: number; height: number };
-  /** iframe URL（type 为 iframe 时使用） */
-  url?: string;
+  /** iframe URL（type 为 iframe 时使用）- 支持字符串或函数（运行时动态计算） */
+  url?: string | (() => string);
+  /** 外部链接 URL（type 为 external 时使用） */
+  externalUrl?: string;
   /** 需要的用户角色 */
   requiredRoles?: string[];
   /** 应用分类 */

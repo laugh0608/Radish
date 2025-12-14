@@ -1,0 +1,66 @@
+.radish-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.radish-input-wrapper--full-width {
+  max-width: none;
+}
+
+.radish-input-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.radish-input-required {
+  color: #f44336;
+  margin-left: 4px;
+}
+
+.radish-input {
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  outline: none;
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.radish-input:hover:not(:disabled) {
+  border-color: #a0a0a0;
+}
+
+.radish-input:focus {
+  border-color: #4CAF50;
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+}
+
+.radish-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.radish-input--error {
+  border-color: #f44336;
+}
+
+.radish-input--error:focus {
+  border-color: #f44336;
+  box-shadow: 0 0 0 3px rgba(244, 67, 54, 0.1);
+}
+
+.radish-input-error {
+  font-size: 12px;
+  color: #f44336;
+}
+
+.radish-input-helper {
+  font-size: 12px;
+  color: #666;
+}

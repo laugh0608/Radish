@@ -1,5 +1,7 @@
 using System.Text;
 using System.IO;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Asp.Versioning;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
@@ -103,7 +105,12 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 });
 
 // 注册 Controller 控制器
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new Int64ToStringConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableInt64ToStringConverter());
+    });
 // 注册健康检查
 builder.Services.AddHealthChecks();
 // 配置 API 版本控制
@@ -113,8 +120,8 @@ builder.Services.AddApiVersioning(options =>
     options.ReportApiVersions = true;
     // 当客户端未指定版本时，使用默认版本
     options.AssumeDefaultVersionWhenUnspecified = true;
-    // 设置默认版本为 1.0
-    options.DefaultApiVersion = new ApiVersion(1, 0);
+    // 设置默认版本为 1
+    options.DefaultApiVersion = new ApiVersion(1);
     // 使用 URL 路径版本控制（推荐）
     // 例如：/api/v1/User/GetUserList
 })
@@ -161,7 +168,7 @@ if (string.IsNullOrEmpty(openIddictConnectionString))
     var solutionRoot = currentDir?.FullName ?? AppContext.BaseDirectory;
     var dbDirectory = Path.Combine(solutionRoot, "DataBases");
     Directory.CreateDirectory(dbDirectory);
-    var dbPath = Path.Combine(dbDirectory, "RadishAuth.OpenIddict.db");
+    var dbPath = Path.Combine(dbDirectory, "Radish.OpenIddict.db");
     openIddictConnectionString = $"Data Source={dbPath}";
 }
 builder.Services.AddDbContext<Radish.Auth.OpenIddict.AuthOpenIddictDbContext>(options =>
@@ -193,7 +200,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ClockSkew = System.TimeSpan.Zero
+            ClockSkew = System.TimeSpan.Zero,
+            // 指定 role claim 类型为 OIDC 标准的 "role"
+            RoleClaimType = "role"
         };
     });
 // 注册 JWT 授权方案，核心是通过解析请求头中的 JWT Token，然后匹配策略中的 key 和字段值
@@ -277,3 +286,78 @@ app.Lifetime.ApplicationStarted.Register(() =>
 // -------------- App 运行阶段 ---------------
 app.Run();
 // -------------- App 运行阶段 ---------------
+
+public sealed class Int64ToStringConverter : JsonConverter<long>
+{
+    public override long Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var s = reader.GetString();
+            if (long.TryParse(s, out var value))
+            {
+                return value;
+            }
+
+            throw new JsonException($"无法将字符串 \"{s}\" 解析为 long。");
+        }
+
+        if (reader.TokenType == JsonTokenType.Number)
+        {
+            return reader.GetInt64();
+        }
+
+        throw new JsonException($"不支持的 JSON 标记类型 {reader.TokenType}，期望 string 或 number。");
+    }
+
+    public override void Write(Utf8JsonWriter writer, long value, JsonSerializerOptions options)
+    {
+        writer.WriteStringValue(value.ToString());
+    }
+}
+
+public sealed class NullableInt64ToStringConverter : JsonConverter<long?>
+{
+    public override long? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null)
+        {
+            return null;
+        }
+
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var s = reader.GetString();
+            if (string.IsNullOrEmpty(s))
+            {
+                return null;
+            }
+
+            if (long.TryParse(s, out var value))
+            {
+                return value;
+            }
+
+            throw new JsonException($"无法将字符串 \"{s}\" 解析为 long?.");
+        }
+
+        if (reader.TokenType == JsonTokenType.Number)
+        {
+            return reader.GetInt64();
+        }
+
+        throw new JsonException($"不支持的 JSON 标记类型 {reader.TokenType}，期望 string、number 或 null。");
+    }
+
+    public override void Write(Utf8JsonWriter writer, long? value, JsonSerializerOptions options)
+    {
+        if (value.HasValue)
+        {
+            writer.WriteStringValue(value.Value.ToString());
+        }
+        else
+        {
+            writer.WriteNullValue();
+        }
+    }
+}
