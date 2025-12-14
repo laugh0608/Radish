@@ -16,6 +16,7 @@
 }
 
 .iconImage {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -46,4 +47,64 @@
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   max-width: 100%;
   word-break: break-word;
+}
+
+/* 外部应用样式 - 更明显的区分 */
+.external .iconImage {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.2));
+  border: 2px solid rgba(59, 130, 246, 0.4);
+}
+
+.external:hover .iconImage {
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+/* iframe 应用样式 - 轻微区分 */
+.iframe .iconImage {
+  border: 1.5px solid rgba(168, 85, 247, 0.3);
+}
+
+.iframe:hover .iconImage {
+  border-color: rgba(168, 85, 247, 0.5);
+}
+
+/* 外部应用角标 */
+.externalBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.9);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.externalBadge svg {
+  color: white;
+}
+
+/* iframe 应用角标 */
+.iframeBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(168, 85, 247, 0.9);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.iframeBadge svg {
+  color: white;
 }

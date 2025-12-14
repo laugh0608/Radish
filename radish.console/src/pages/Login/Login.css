@@ -4,15 +4,73 @@
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
 }
 
 .login-box {
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   width: 100%;
-  max-width: 400px;
-  padding: 40px;
+  max-width: 900px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+  min-height: 500px;
+}
+
+/* 左侧信息区域 */
+.login-info {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.login-info h2 {
+  font-size: 28px;
+  margin: 0 0 16px 0;
+  font-weight: 600;
+}
+
+.login-info p {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0 0 24px 0;
+  opacity: 0.9;
+}
+
+.login-info-features {
+  margin-top: 32px;
+}
+
+.login-info-feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.login-info-feature-icon {
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 右侧登录区域 */
+.login-form {
+  padding: 60px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .login-header {
@@ -50,4 +108,20 @@
 
 .login-tip p {
   margin: 4px 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .login-box {
+    grid-template-columns: 1fr;
+    max-width: 400px;
+  }
+
+  .login-info {
+    display: none;
+  }
+
+  .login-form {
+    padding: 40px 30px;
+  }
 }

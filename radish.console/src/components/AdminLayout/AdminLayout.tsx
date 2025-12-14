@@ -130,7 +130,7 @@ export const AdminLayout = ({
           onClick={({ key }) => onMenuClick?.(key)}
         />
       </Sider>
-      <Layout>
+      <Layout className={collapsed ? 'collapsed' : ''}>
         <Header className="admin-header">
           <div className="admin-header-left">
             {collapsed ? (
