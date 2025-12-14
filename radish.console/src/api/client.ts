@@ -37,14 +37,15 @@ export async function apiFetch(
 }
 
 /**
- * API 响应类型
+ * API 响应类型 - 匹配后端 MessageModel 结构
  */
 export interface ApiResponse<T = any> {
-  success: boolean;
-  message?: string;
-  response?: T;
-  status?: number;
+  isSuccess: boolean;
+  messageInfo?: string;
+  responseData?: T;
   statusCode?: number;
+  code?: string;
+  messageKey?: string;
 }
 
 /**
@@ -53,9 +54,9 @@ export interface ApiResponse<T = any> {
 export function parseApiResponse<T>(
   data: ApiResponse<T>
 ): { ok: boolean; data?: T; message?: string } {
-  if (data.success) {
-    return { ok: true, data: data.response };
+  if (data.isSuccess) {
+    return { ok: true, data: data.responseData };
   } else {
-    return { ok: false, message: data.message || '请求失败' };
+    return { ok: false, message: data.messageInfo || '请求失败' };
   }
 }
