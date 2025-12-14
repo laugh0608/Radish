@@ -1,0 +1,110 @@
+.container {
+  margin-top: 16px;
+  border-top: 1px solid #333;
+  padding-top: 12px;
+}
+
+.title {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.loginPrompt {
+  margin-bottom: 12px;
+  padding: 8px 12px;
+  background-color: #3f1f1f;
+  color: #f97373;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.loginButton {
+  margin-left: 8px;
+  padding: 4px 12px;
+  background-color: #2d6cdf;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background-color 0.2s ease;
+}
+
+.loginButton:hover {
+  background-color: #2558b5;
+}
+
+.userInfo {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+}
+
+.input {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background-color: #1f2937;
+  border: 1px solid #444;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #2d6cdf;
+}
+
+.input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.textarea {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background-color: #1f2937;
+  border: 1px solid #444;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #2d6cdf;
+}
+
+.textarea:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submitButton {
+  padding: 8px 16px;
+  background-color: #2d6cdf;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #2558b5;
+}
+
+.submitButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
