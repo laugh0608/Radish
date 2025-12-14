@@ -17,7 +17,8 @@
 |------|----------|------|------|
 | WebOS 前端 | `radish-client` | Internal | 桌面系统 + 所有子应用（论坛/聊天/商城/后台管理） |
 | API 文档 | `radish-scalar` | Internal | Scalar API 文档 |
-| Rust 扩展 | `radish-rust-ext` | Internal | Rust 原生扩展项目 |
+| 后台控制台 | `radish-console` | Internal | 管理控制台 |
+| 商城应用 | `radish-shop` | Internal | 商城应用（占位，未来实现） |
 | 第三方应用 | `{custom}` | ThirdParty | 动态注册 |
 
 **说明**：

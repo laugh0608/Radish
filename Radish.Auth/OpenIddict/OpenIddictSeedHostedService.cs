@@ -6,6 +6,9 @@ namespace Radish.Auth.OpenIddict;
 /// <summary>
 /// 初始化 OpenIddict 所需的基础数据：
 /// - radish-client：前端 Web 客户端（授权码 + PKCE + refresh_token）
+/// - radish-console：后台管理控制台（授权码 + refresh_token）
+/// - radish-scalar：API 文档和调试工具（授权码）
+/// - radish-shop：商城应用（授权码 + refresh_token，占位）
 /// - radish-api Scope：资源服务器标识
 /// </summary>
 public class OpenIddictSeedHostedService : IHostedService
@@ -214,25 +217,69 @@ public class OpenIddictSeedHostedService : IHostedService
             await _applicationManager.UpdateAsync(existingConsole, descriptor, cancellationToken);
         }
 
-        // 初始化后台/服务端客户端：radish-rust-ext（示例：Rust 扩展或后台任务）
-        if (await _applicationManager.FindByClientIdAsync("radish-rust-ext", cancellationToken) is null)
+        // 初始化商城客户端：radish-shop（占位，未来实现）
+        var existingShop = await _applicationManager.FindByClientIdAsync("radish-shop", cancellationToken);
+        if (existingShop is null)
         {
             var descriptor = new OpenIddictApplicationDescriptor
             {
-                ClientId = "radish-rust-ext",
-                ClientSecret = "radish-rust-ext-dev-secret", // 本地开发示例，生产请使用强随机密钥并通过配置管理
-                DisplayName = "Radish Rust Extension",
+                ClientId = "radish-shop",
+                DisplayName = "Radish Shop",
+                ConsentType = OpenIddictConstants.ConsentTypes.Implicit // SSO: 无需显式授权
             };
 
+            // 通过 Gateway 访问（生产环境）
+            descriptor.RedirectUris.Add(new Uri("https://localhost:5000/shop/callback"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/shop"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/shop/"));
+
+            // 直接访问 shop 开发服务器（开发环境，预留端口 3003）
+            descriptor.RedirectUris.Add(new Uri("http://localhost:3003/callback"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3003"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3003/"));
+
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.ClientCredentials);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.EndSession);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.RefreshToken);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "openid");
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "profile");
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "offline_access");
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
 
             // 扩展属性：客户端展示信息
-            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 后台服务和 Rust 原生扩展");
+            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 商城应用（占位，未来实现）");
             descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
+        }
+        else
+        {
+            // 如果客户端已存在，更新配置（确保包含所有访问方式的 URL）
+            var descriptor = new OpenIddictApplicationDescriptor();
+            await _applicationManager.PopulateAsync(descriptor, existingShop, cancellationToken);
+
+            descriptor.RedirectUris.Clear();
+            // 通过 Gateway 访问（生产环境）
+            descriptor.RedirectUris.Add(new Uri("https://localhost:5000/shop/callback"));
+            // 直接访问 shop 开发服务器（开发环境，预留端口 3003）
+            descriptor.RedirectUris.Add(new Uri("http://localhost:3003/callback"));
+
+            descriptor.PostLogoutRedirectUris.Clear();
+            // 通过 Gateway 访问（生产环境）
+            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/shop"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/shop/"));
+            // 直接访问 shop 开发服务器（开发环境，预留端口 3003）
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3003"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3003/"));
+
+            // 确保扩展属性存在
+            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 商城应用（占位，未来实现）");
+            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
+
+            await _applicationManager.UpdateAsync(existingShop, descriptor, cancellationToken);
         }
     }
 

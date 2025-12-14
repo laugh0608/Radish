@@ -131,7 +131,8 @@
     - 为所有客户端添加 `description` 和 `developerName` 属性（存储在 OpenIddict Properties 字典中）
     - `radish-client`：描述为"Radish 社区平台前端应用"
     - `radish-scalar`：描述为"Radish API 文档和调试工具"
-    - `radish-rust-ext`：描述为"Radish 后台服务和 Rust 原生扩展"
+    - `radish-console`：描述为"Radish 后台管理控制台"
+    - `radish-shop`：描述为"Radish 商城应用（占位，未来实现）"
     - 更新逻辑确保现有客户端也能自动补充扩展属性
   - **日志优化**：将调试日志从 `Console.WriteLine` 改为 `Serilog`，使用 `Log.Debug` 记录解析过程，`Log.Warning` 记录客户端不存在等异常情况
   - **技术说明**：
@@ -412,7 +413,7 @@
 - **plan(auth/next)**: 规划 Auth 项目后续工作（按优先级）
   1. 创建 OIDC 端点控制器（AuthorizationController、TokenController、UserInfoController、AccountController）
   2. 实现 OpenIddict 自定义 SqlSugar Store（替代当前的内存存储，支持生产环境持久化）（2025.12.09 更新：本计划已取消，统一改为长期使用 EF Core `AuthOpenIddictDbContext`）
-  3. 创建 Radish.DbSeed 项目（数据库初始化、预注册 OIDC 客户端：radish-client、radish-scalar、radish-rust-ext）
+  3. 创建 Radish.DbSeed 项目（数据库初始化、预注册 OIDC 客户端：radish-client、radish-scalar、radish-console、radish-shop）
   4. 实现客户端管理 API（CRUD 接口管理 OIDC 客户端应用）
   5. 配置 Radish.Api 为资源服务器（添加 JWT Bearer 验证，从 Auth 服务验证访问令牌）
   6. 前端集成（WebOS 前端对接 OIDC 登录流程）
@@ -454,10 +455,11 @@
 - **design(clients)**: 预定义 OIDC 客户端注册：
   - `radish-client` - WebOS 前端客户端（包含论坛/聊天/商城/后台管理子应用）
   - `radish-scalar` - API 文档客户端
-  - `radish-rust-ext` - Rust 扩展项目客户端
+  - `radish-console` - 后台管理控制台
+  - `radish-shop` - 商城应用（占位，未来实现）
 - **docs**: 更新 DevelopmentPlan.md 里程碑概览与周计划，详细描述第 3-4 周的 OIDC 相关任务与验收标准
 - **arch(open-platform)**: 确认开放平台需求，OIDC 客户端需支持后台动态配置：
-  - 内部应用：radish-client（WebOS）、radish-scalar、radish-rust-ext
+  - 内部应用：radish-client（WebOS）、radish-scalar、radish-console、radish-shop
   - 第三方应用：未来支持动态注册和接入
   - 后台管理（作为 WebOS 子应用）需提供应用管理界面（CRUD、重置 Secret、启用/禁用）
 - **arch(frontend/webos)**: 确认采用 **WebOS/超级应用** 架构，Radish 是运行在浏览器中的操作系统：
