@@ -238,14 +238,41 @@ function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
     });
 }
 
+/**
+ * 获取 Auth Server 的基础 URL
+ * - 通过 Gateway 访问时（https://localhost:5000）：使用 Gateway 地址
+ * - 直接访问开发服务器时（http://localhost:3000）：使用 Auth Server 直接地址
+ */
+function getAuthServerBaseUrl(): string {
+    if (typeof window === 'undefined') {
+        return 'https://localhost:5000';
+    }
+
+    const currentOrigin = window.location.origin;
+
+    // 通过 Gateway 访问（生产环境或开发时通过 Gateway）
+    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+        return currentOrigin;
+    }
+
+    // 直接访问前端开发服务器（开发环境）
+    if (currentOrigin === 'http://localhost:3000' || currentOrigin === 'https://localhost:3000') {
+        return 'http://localhost:5200'; // Auth Server 直接地址
+    }
+
+    // 默认使用 Gateway（生产环境）
+    return currentOrigin;
+}
+
 function handleLogin(apiBaseUrl: string) {
     if (typeof window === 'undefined') {
         return;
     }
 
     const redirectUri = `${window.location.origin}/oidc/callback`;
+    const authServerBaseUrl = getAuthServerBaseUrl();
 
-    const authorizeUrl = new URL(`${apiBaseUrl}/connect/authorize`);
+    const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
     authorizeUrl.searchParams.set('client_id', 'radish-client');
     authorizeUrl.searchParams.set('response_type', 'code');
     authorizeUrl.searchParams.set('redirect_uri', redirectUri);
@@ -269,11 +296,12 @@ function handleLogout(apiBaseUrl: string) {
     window.localStorage.removeItem('access_token');
     window.localStorage.removeItem('refresh_token');
 
-    // 使用 OIDC 标准的 endsession endpoint 清除 Auth Server 的会话
-    // 添加 trailing slash 以匹配 PostLogoutRedirectUris 配置
-    const postLogoutRedirectUri = window.location.origin + '/';
+    // 使用 OIDC 标准的 endsession endpoint 实现 Single Sign-Out
+    // 注意：不要添加 trailing slash，因为 .NET Uri 类会将 https://localhost:5000 和 https://localhost:5000/ 视为相同
+    const postLogoutRedirectUri = window.location.origin;
+    const authServerBaseUrl = getAuthServerBaseUrl();
 
-    const logoutUrl = new URL(`${apiBaseUrl}/connect/endsession`);
+    const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
     logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
     logoutUrl.searchParams.set('client_id', 'radish-client');
 
@@ -311,6 +339,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
         }
 
         const redirectUri = `${window.location.origin}/oidc/callback`;
+        const authServerBaseUrl = getAuthServerBaseUrl();
 
         const fetchToken = async () => {
             const body = new URLSearchParams();
@@ -320,7 +349,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
             body.set('redirect_uri', redirectUri);
 
             try {
-                const response = await fetch(`${apiBaseUrl}/connect/token`, {
+                const response = await fetch(`${authServerBaseUrl}/connect/token`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded'
