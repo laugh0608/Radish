@@ -1,0 +1,37 @@
+.dashboard-page {
+  width: 100%;
+}
+
+.dashboard-page h2 {
+  margin: 0 0 16px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+}
+
+.dashboard-page p {
+  margin: 0 0 24px 0;
+  font-size: 16px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.dashboard-page h3 {
+  margin: 0 0 16px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.dashboard-page ul {
+  margin: 0;
+  padding: 0 0 0 24px;
+  list-style: disc;
+}
+
+.dashboard-page li {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+}

@@ -28,10 +28,15 @@
 .admin-layout > .ant-layout {
   margin-left: 200px;
   transition: margin-left 0.2s;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: calc(100% - 200px);
 }
 
 .admin-layout > .ant-layout.collapsed {
   margin-left: 80px;
+  width: calc(100% - 80px);
 }
 
 .admin-header {
@@ -88,4 +93,6 @@
   background: #fff;
   min-height: 280px;
   border-radius: 8px;
+  flex: 1;
+  overflow: auto;
 }

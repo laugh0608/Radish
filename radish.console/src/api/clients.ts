@@ -60,8 +60,8 @@ export const clientApi = {
   /**
    * 更新客户端
    */
-  async updateClient(data: UpdateClientRequest): Promise<{ ok: boolean; message?: string }> {
-    const response = await apiFetch('/api/v1/Client/UpdateClient', {
+  async updateClient(id: string, data: Omit<UpdateClientRequest, 'id'>): Promise<{ ok: boolean; message?: string }> {
+    const response = await apiFetch(`/api/v1/Client/UpdateClient/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
