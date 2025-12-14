@@ -52,7 +52,10 @@ export default defineConfig({
         {
           text: '前端组件库',
           items: [
-            { text: 'UI 组件库', link: '/UIComponentLibrary' },
+            { text: 'UI 组件库概览', link: '/UIComponentLibrary' },
+            { text: 'API 客户端使用指南', link: '/APIClientGuide' },
+            { text: '错误处理指南', link: '/ErrorHandlingGuide' },
+            { text: 'DataTable 组件', link: '/DataTableComponent' },
             { text: '组件详细说明', link: '/UIComponentsSummary' },
             { text: '快速参考', link: '/UIQuickReference' },
             { text: '开发指南', link: '/UIComponentDevelopment' }

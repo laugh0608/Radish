@@ -1,314 +1,309 @@
-# @radish/ui 前端 UI 组件库设置完成
+# @radish/ui 组件库
 
-## ✅ 已完成
+## 概述
 
-我已经为你创建了正确的前端 UI 组件库 `@radish/ui`（不是之前错误的 `@radish/shared`）。
+`@radish/ui` 是 Radish 项目的统一前端 UI 组件库，为所有前端应用（radish.client、radish.console 等）提供一致的组件和工具函数。
 
-### 项目结构
+### 核心目标
+
+- 🎨 **统一设计**：保持所有应用的视觉风格一致
+- 📦 **开箱即用**：提供常用组件和工具函数
+- 🔧 **易于配置**：灵活的配置选项
+- 📘 **类型安全**：完整的 TypeScript 支持
+- 🚀 **高性能**：优化的组件性能
+
+## 项目结构
 
 ```
-radish.ui/                    # 前端 UI 组件库 (新建)
+radish.ui/
 ├── src/
-│   ├── components/
-│   │   └── Button/
-│   │       ├── Button.tsx
-│   │       └── Button.css
-│   ├── hooks/
-│   │   └── useDebounce.ts
-│   ├── utils/
-│   │   └── format.ts
-│   ├── types/
+│   ├── api/                  # API 客户端和错误处理
+│   │   ├── types.ts         # API 类型定义
+│   │   ├── client.ts        # API 客户端
+│   │   ├── error-handler.ts # 错误处理
 │   │   └── index.ts
-│   └── index.ts
+│   ├── components/          # UI 组件
+│   │   ├── Button/
+│   │   ├── Input/
+│   │   ├── Modal/
+│   │   ├── DataTable/       # 数据表格
+│   │   └── index.ts
+│   ├── hooks/               # React Hooks
+│   │   ├── useDebounce.ts
+│   │   ├── useToggle.ts
+│   │   ├── useLocalStorage.ts
+│   │   └── index.ts
+│   ├── utils/               # 工具函数
+│   │   ├── format.ts
+│   │   ├── validation.ts
+│   │   └── index.ts
+│   └── index.ts             # 主入口
 ├── package.json
-├── tsconfig.json
-├── eslint.config.js
-└── README.md
-
-Radish.Shared/                # C# 后端项目 (已存在，未修改)
-├── CustomEnum/
-│   ├── AuthorityScopeKindEnum.cs
-│   ├── DepartmentStatusCodeEnum.cs
-│   ├── HttpStatusCodeEnum.cs
-│   ├── UserSexEnum.cs
-│   └── UserStatusCodeEnum.cs
-└── Radish.Shared.csproj
+└── tsconfig.json
 ```
 
-### 命名说明
+## 快速开始
 
-- **radish.ui**: 前端 UI 组件库 (TypeScript/React) - **新创建**
-- **Radish.Shared**: 后端共享代码 (C#/.NET) - **已存在**
+### 安装
 
-两者完全独立，服务于不同的层次，不会冲突。
+`@radish/ui` 使用 npm workspaces，无需单独安装。在项目根目录运行：
 
-## 🚀 使用方法
+```bash
+npm install
+```
 
-### 在 radish.client 或 radish.console 中导入
+### 使用
+
+在 `radish.client` 或 `radish.console` 中导入：
 
 ```typescript
 // 导入组件
-import { Button } from '@radish/ui';
+import { Button, Input, Modal, DataTable } from '@radish/ui';
+
+// 导入 Ant Design 组件（已封装）
+import { AntButton, Table, Form, message } from '@radish/ui';
 
 // 导入 Hooks
-import { useDebounce } from '@radish/ui/hooks';
+import { useDebounce, useToggle, useLocalStorage } from '@radish/ui';
 
 // 导入工具函数
-import { formatDate, formatFileSize } from '@radish/ui/utils';
+import { formatDate, isEmail } from '@radish/ui';
 
-// 导入类型
-import type { ApiResponse, PaginatedResponse } from '@radish/ui/types';
+// 导入 API 客户端
+import {
+  configureApiClient,
+  apiGet,
+  apiPost,
+  handleError,
+} from '@radish/ui';
 ```
 
-### 完整示例
+## 核心模块
 
-```tsx
-import { Button } from '@radish/ui';
-import { useDebounce } from '@radish/ui/hooks';
-import { formatDate } from '@radish/ui/utils';
+### 1. API 客户端 (api/)
 
-function MyComponent() {
-  const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearch = useDebounce(searchTerm, 300);
+统一的 API 请求和错误处理机制。
 
-  return (
-    <div>
-      <p>当前时间: {formatDate(new Date())}</p>
-      <input
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-      />
-      <Button variant="primary" onClick={() => console.log(debouncedSearch)}>
-        搜索
-      </Button>
-    </div>
-  );
+**主要功能：**
+- 配置化的 API 客户端
+- 自动处理认证 token
+- 统一的响应格式解析
+- 完善的错误处理
+- 请求/响应拦截器
+
+**详细文档：** [API 客户端使用指南](./APIClientGuide.md)
+
+### 2. UI 组件 (components/)
+
+#### 基础组件
+- **Button** - 按钮组件
+- **Input** - 输入框组件
+- **Select** - 下拉选择组件
+- **Modal** - 模态框组件
+- **Icon** - 图标组件
+- **ContextMenu** - 右键菜单组件
+
+#### 数据展示
+- **DataTable** - 数据表格组件（支持分页、loading、empty 状态）
+
+#### Ant Design 组件封装
+`@radish/ui` 重新导出了常用的 Ant Design 组件，确保版本一致：
+
+```typescript
+// Layout
+Layout, Menu
+
+// Form
+Form, AntInput, InputNumber, AntSelect, Switch, DatePicker, Checkbox, Radio
+
+// Table
+Table
+
+// Feedback
+AntModal, message, notification
+
+// Data Display
+Tag, Badge, Tooltip, Avatar, Dropdown
+
+// General
+AntButton, Space, Divider
+
+// Other
+Popconfirm
+```
+
+**详细文档：** [DataTable 组件](./DataTableComponent.md)
+
+### 3. React Hooks (hooks/)
+
+常用的自定义 Hooks：
+
+```typescript
+// 防抖
+const debouncedValue = useDebounce(value, 300);
+
+// 切换状态
+const [isOpen, toggle] = useToggle(false);
+
+// LocalStorage
+const [value, setValue] = useLocalStorage('key', defaultValue);
+
+// 点击外部关闭
+useClickOutside(ref, () => setIsOpen(false));
+```
+
+### 4. 工具函数 (utils/)
+
+#### 格式化 (format.ts)
+```typescript
+formatDate(date)           // 格式化日期
+formatDateTime(date)       // 格式化日期时间
+formatTime(date)          // 格式化时间
+formatFileSize(bytes)     // 格式化文件大小
+formatNumber(num)         // 格式化数字
+```
+
+#### 验证 (validation.ts)
+```typescript
+isEmail(email)            // 验证邮箱
+isPhone(phone)            // 验证手机号
+isUrl(url)                // 验证 URL
+isEmpty(value)            // 检查是否为空
+```
+
+#### 字符串 (string.ts)
+```typescript
+capitalize(str)           // 首字母大写
+truncate(str, length)     // 截断字符串
+slugify(str)              // 生成 slug
+```
+
+## 开发模式
+
+### 热更新
+
+修改 `radish.ui/` 中的代码会自动触发 Vite HMR，无需重启开发服务器。
+
+### 类型检查
+
+```bash
+# 在 radish.ui 中进行类型检查
+npm run type-check --workspace=@radish/ui
+
+# Lint 检查
+npm run lint --workspace=@radish/ui
+```
+
+## 最佳实践
+
+### 1. 组件使用
+
+**推荐：** 优先使用 `@radish/ui` 提供的组件
+
+```typescript
+// ✅ 推荐
+import { AntButton, message } from '@radish/ui';
+
+// ❌ 不推荐（版本可能不一致）
+import { Button, message } from 'antd';
+```
+
+### 2. API 调用
+
+**推荐：** 使用统一的 API 客户端
+
+```typescript
+// ✅ 推荐
+import { apiGet, apiPost } from '@radish/ui';
+
+const result = await apiGet('/api/v1/Users', { withAuth: true });
+
+// ❌ 不推荐（每个项目自己实现 fetch）
+const response = await fetch('/api/v1/Users', {
+  headers: { Authorization: `Bearer ${token}` }
+});
+```
+
+### 3. 错误处理
+
+**推荐：** 配置统一的错误处理
+
+```typescript
+// ✅ 推荐
+import { configureErrorHandling, message } from '@radish/ui';
+
+configureErrorHandling({
+  autoShowMessage: true,
+  showMessage: (msg) => message.error(msg),
+});
+
+// ❌ 不推荐（每个地方都写 try-catch）
+try {
+  await apiCall();
+} catch (error) {
+  message.error(error.message);
 }
 ```
 
-## ✨ 已包含的内容
+## 版本管理
 
-### 组件
-- **Button**: 支持 3 种变体 (primary/secondary/danger) 和 3 种尺寸 (small/medium/large)
+`@radish/ui` 使用 npm workspaces 管理，版本与主项目保持同步。
 
-### Hooks
-- **useDebounce**: 防抖 Hook
+### 添加新依赖
 
-### 工具函数
-- **formatDate**: 日期格式化
-- **formatFileSize**: 文件大小格式化
+```bash
+# 为 @radish/ui 添加依赖
+npm install <package> --workspace=@radish/ui
 
-### 类型定义
-- **ApiResponse<T>**: API 响应通用结构
-- **PaginationParams**: 分页参数
-- **PaginatedResponse<T>**: 分页响应
+# 为 @radish/ui 添加开发依赖
+npm install -D <package> --workspace=@radish/ui
+```
 
-## 📦 Workspaces 配置
+## 相关文档
 
-### 根 package.json
+- [API 客户端使用指南](./APIClientGuide.md)
+- [错误处理指南](./ErrorHandlingGuide.md)
+- [DataTable 组件](./DataTableComponent.md)
+- [组件开发指南](./UIComponentDevelopment.md)
+
+## 常见问题
+
+### Q: 修改 radish.ui 后需要重启服务器吗？
+
+**A:** 不需要。Vite 的 HMR 会自动更新。
+
+### Q: 如何在新应用中使用 @radish/ui？
+
+**A:** 在 `package.json` 中添加依赖：
 
 ```json
 {
-  "workspaces": [
-    "radish.client",
-    "radish.console",
-    "radish.ui"
-  ]
+  "dependencies": {
+    "@radish/ui": "workspace:*"
+  }
 }
 ```
 
-### 依赖关系
+然后运行 `npm install`。
 
-- `radish.client` → 依赖 `@radish/ui`
-- `radish.console` → 依赖 `@radish/ui`
-- `@radish/ui` → 独立包，使用 peerDependencies
+### Q: Ant Design 组件冲突怎么办？
 
-### 验证结果
+**A:** 统一从 `@radish/ui` 导入，不要直接从 `antd` 导入：
 
-```bash
-$ ls -la node_modules/@radish/
-lrwxrwxrwx ui -> ../../radish.ui
+```typescript
+// ✅ 正确
+import { AntButton, message } from '@radish/ui';
 
-$ npm run type-check --workspace=@radish/ui
-✓ TypeScript 类型检查通过
+// ❌ 错误
+import { Button, message } from 'antd';
 ```
 
-## 🎯 下一步建议
+### Q: 类型错误怎么处理？
 
-### 1. 查看示例代码
-
-```bash
-# 查看完整使用示例
-cat radish.console/src/examples/SharedComponentExample.tsx
-```
-
-### 2. 添加更多组件
-
-建议添加的组件：
-- **Input**: 输入框组件
-- **Select**: 下拉选择组件
-- **Modal**: 模态框组件
-- **Table**: 表格组件
-- **Form**: 表单组件
-- **Pagination**: 分页组件
-
-### 3. 迁移现有代码
-
-将 `radish.client` 和 `radish.console` 中的通用代码迁移到 `@radish/ui`：
+**A:** 运行类型检查：
 
 ```bash
-# 示例：迁移通用按钮组件
-# 1. 将组件复制到 radish.ui/src/components/
-# 2. 在 radish.ui/src/components/index.ts 中导出
-# 3. 更新 client 和 console 中的导入路径
-# 4. 删除原项目中的旧文件
-```
-
-### 4. 完善文档
-
-为每个组件添加：
-- 使用说明
-- Props 文档
-- 示例代码
-- 最佳实践
-
-## 💡 关键特性
-
-### 1. 修改立即生效
-
-由于使用符号链接，修改 `radish.ui` 中的代码会立即在 `radish.client` 和 `radish.console` 中生效，无需重新安装。
-
-### 2. 完整类型支持
-
-所有导出都有完整的 TypeScript 类型定义，享受完整的 IDE 智能提示。
-
-### 3. Tree-shaking 支持
-
-使用子路径导入（如 `@radish/ui/hooks`）支持更好的 tree-shaking，减小打包体积。
-
-### 4. 热模块替换 (HMR)
-
-Vite 的 HMR 会自动检测变化并更新，无需手动刷新。
-
-## 🔧 开发命令
-
-```bash
-# 安装所有依赖
-npm install
-
-# 运行类型检查
 npm run type-check --workspace=@radish/ui
-
-# 运行 Lint
-npm run lint --workspace=@radish/ui
-
-# 启动 client 开发服务器
-npm run dev --workspace=radish.client
-
-# 启动 console 开发服务器
-npm run dev --workspace=radish.console
 ```
 
-## ⚠️ 注意事项
-
-### 1. 不要混淆两个 Shared 项目
-
-- **radish.ui**: 前端 UI 组件库 (TypeScript/React)
-- **Radish.Shared**: 后端共享代码 (C#/.NET)
-
-### 2. 修改 package.json 后需要重新安装
-
-如果修改了 `radish.ui/package.json`，需要运行 `npm install`。
-
-### 3. CSS 类名使用前缀
-
-使用 `.radish-` 前缀避免样式冲突：
-
-```css
-.radish-button {
-  /* ... */
-}
-```
-
-### 4. 保持包的轻量
-
-避免在 `@radish/ui` 中引入大型第三方库，保持包的轻量和灵活。
-
-## 📚 文档位置
-
-- **radish.ui/README.md**: 组件库概述和使用说明
-- **radish.console/src/examples/SharedComponentExample.tsx**: 完整使用示例
-- **UI_PACKAGE_SETUP.md**: 本文档（设置说明）
-
-## 🎉 总结
-
-创建 `@radish/ui` 前端 UI 组件库已完成：
-
-### 已完成的工作
-
-- ✅ 配置 npm workspaces
-- ✅ 创建包结构
-- ✅ 实现 4 个 UI 组件 (Button, Input, Select, Modal)
-- ✅ 实现 4 个 Hooks (useDebounce, useLocalStorage, useToggle, useClickOutside)
-- ✅ 实现 12 个工具函数 (日期、验证、字符串处理)
-- ✅ 配置 TypeScript 和 ESLint
-- ✅ 更新 client 和 console 依赖
-- ✅ 验证类型检查和链接
-- ✅ 编写完整示例代码
-- ✅ 编写详细文档
-
-### 组件库内容
-
-**组件 (4 个)**:
-- Button - 按钮组件 (3 种变体, 3 种尺寸)
-- Input - 输入框组件 (支持标签、错误提示、帮助文本)
-- Select - 下拉选择组件 (支持选项数组、占位符)
-- Modal - 模态框组件 (3 种尺寸、动画效果)
-
-**Hooks (4 个)**:
-- useDebounce - 防抖
-- useLocalStorage - localStorage 持久化
-- useToggle - 布尔值切换
-- useClickOutside - 点击外部检测
-
-**工具函数 (12 个)**:
-- 日期和文件: formatDate, formatFileSize
-- 验证: isEmail, isPhone, isUrl, isIdCard, getPasswordStrength
-- 字符串: truncate, capitalize, camelToKebab, kebabToCamel, randomString
-
-**类型定义 (3 个)**:
-- ApiResponse<T>, PaginationParams, PaginatedResponse<T>
-
-### 质量保证
-
-- ✅ TypeScript 类型检查通过
-- ✅ ESLint 检查通过
-- ✅ 所有组件有完整类型定义
-- ✅ 所有工具函数有 JSDoc 注释
-- ✅ 完整的使用示例
-
-### 文档
-
-- `radish.ui/README.md` - 组件库概述
-- `radish.ui/COMPONENTS_SUMMARY.md` - 组件库详细总结
-- `radish.console/src/examples/UIComponentsExample.tsx` - 完整使用示例
-- `UI_PACKAGE_SETUP.md` - 本文档
-
-### 收益
-
-- 代码复用 - 避免重复编写相同组件
-- 统一 UI 风格 - 保持一致的用户体验
-- 更好的维护性 - 集中管理通用代码
-- 更好的开发体验 - 完整的 TypeScript 支持
-- 类型安全 - 编译时错误检查
-
-现在你可以在 `radish.client` 和 `radish.console` 中使用 `@radish/ui` 的所有组件、Hooks 和工具函数了！
-
-查看 `radish.console/src/examples/UIComponentsExample.tsx` 获取完整的使用示例。
-
----
-
-**创建日期**: 2025-12-13
-**npm 版本**: 11.6.1
-**包名**: @radish/ui (不是 @radish/shared)
-**组件数量**: 4 个组件 + 4 个 Hooks + 12 个工具函数
+确保所有组件都有完整的类型定义。
