@@ -389,6 +389,39 @@ import { formatDate, isEmail } from '@radish/ui/utils';
 - **Shared components** → `@radish/ui` (Icon, Button, ContextMenu, etc.)
 - **WebOS-specific** → `radish.client/src/` (GlassPanel, AppIcon, DesktopWindow, etc.)
 
+**Application Architecture Decision**:
+
+Client 项目采用**混合架构**,根据应用复杂度和独立性选择不同集成方式:
+
+1. **内置应用 (Built-in Apps)** - 使用 `type: 'window'`
+   - 简单功能模块,无需独立部署
+   - 可直接复用 Client 的认证状态和共享组件
+   - 示例:论坛(Forum)、聊天室(Chat)、设置(Settings)
+   - 实现:React 组件,直接在 WebOS 窗口中渲染
+
+2. **嵌入应用 (Embedded Apps)** - 使用 `type: 'iframe'`
+   - 无需认证或简单认证的展示型应用
+   - 无复杂路由需求,用户主要被动浏览
+   - 示例:文档站(Docs)、帮助中心
+   - 实现:通过 iframe 嵌入,保持独立性但在 WebOS 窗口内显示
+
+3. **外部应用 (External Apps)** - 使用 `type: 'external'`
+   - 完整的独立 SPA,有自己的 OIDC 认证流程
+   - 复杂的路由系统,需要控制浏览器地址栏
+   - 需要独立访问和部署
+   - 示例:管理控制台(Console)、商城(Shop - 未来)
+   - 实现:在新标签页打开,完全独立运行
+
+**为什么不合并 Console 到 Client?**
+- **关注点分离**:Client 面向普通用户,Console 面向管理员
+- **权限隔离**:管理功能不应与用户功能混在同一代码库
+- **部署灵活性**:Console 可部署到内网,Client 部署到公网
+- **代码体积**:避免普通用户加载管理功能代码
+- **开发独立性**:两个团队可并行开发,互不影响
+- **技术选型自由**:各自可选择适合的 UI 库和技术栈
+
+详见 [FrontendDesign.md](radish.docs/docs/FrontendDesign.md) 第 10.4 节的架构决策分析。
+
 **React Conventions**:
 1. **Function components only** (no class components)
 2. Use `const` for component definitions, avoid `function` declarations

@@ -44,8 +44,8 @@
 | Web Host | ASP.NET Core WebApplication | Program.cs 中最小宿主，按需要拆 Controller/Minimal API |
 | ORM | [SQLSugar](https://github.com/donet5/SqlSugar) | Code First + Migration，仓储层集中管理上下文，支持读写分离配置 |
 | 数据库 | PostgreSQL 16 | 默认端口 5432，连接通过 `ConnectionStrings__Default` 注入 |
-| 前端 | React 19 + Vite + TypeScript | Node 24，使用 pnpm/npm 均可；建议 React Query + Zustand/TanStack Router |
-| 前端构建 | Vite Rolldown，ESLint 9，Vitest | 统一在 `radish.client` 目录运行 |
+| 前端 | React 19 + Vite + TypeScript | radish.client (WebOS)、radish.console (管理控制台)、radish.ui (@radish/ui 组件库)；使用 npm workspaces；建议 React Query + Zustand |
+| 前端构建 | Vite Rolldown，ESLint 9，Vitest | 各项目独立构建：radish.client、radish.console、radish.docs (VitePress) |
 | 测试 | xUnit 3 + Shouldly + NSubstitute | `Radish.Api.Tests` 目录；后续可按层拆分 |
 | 日志 / 配置 | Serilog + `Microsoft.Extensions.Configuration` | 支持 JSON + 环境变量 + 用户密钥；生产日志输出到 Console + Seq/Elastic 预留 |
 | 容器 | Dockerfile（Radish.Api）+ Docker Compose | Compose 负责 PostgreSQL + API + 前端静态站点 |
@@ -63,17 +63,34 @@
 ### 分层视图
 
 ```
-radish.client (React SPA)                    浏览器访问
-        │ REST/JSON                                │
-Radish.Api (ASP.NET Core Host)  ←────── Radish.Gateway (Portal & Router)
-        │ 调用应用服务 + DTO                        │
-Radish.Service (Application Layer)             │
-        │ 调度                          服务欢迎页面、健康检查
-Radish.Core (Domain Layer)                   API 文档入口
-        │ 抽象 + 领域事件                (P1+: 路由转发、统一认证)
-Radish.Repository (Infrastructure, SQLSugar)
-        │ SQL
-PostgreSQL
+浏览器访问 Gateway (https://localhost:5000)
+        │
+    统一入口
+        ├─→ / (radish.client - WebOS 桌面)
+        ├─→ /docs (radish.docs - VitePress)
+        ├─→ /console (radish.console - 管理控制台)
+        ├─→ /api (Radish.Api - REST API)
+        └─→ /scalar (API 文档)
+
+radish.client (WebOS)           radish.console (独立 SPA)
+        │                              │
+        ├─ 内置应用 (window)            ├─ OIDC 认证
+        ├─ 嵌入应用 (iframe)            ├─ 独立路由
+        └─ 外部应用 (external)          └─ 管理功能
+              │
+              └─ Console (新标签页打开)
+
+        共享组件库: @radish/ui
+
+Radish.Api (ASP.NET Core)  ←────── Radish.Gateway
+        │                          (YARP 反向代理)
+Radish.Service (应用服务)
+        │
+Radish.Core (领域模型)
+        │
+Radish.Repository (SQLSugar)
+        │
+PostgreSQL / SQLite
 ```
 
 **Phase 0 阶段**：Gateway 仅提供门户页面展示，不参与 API 请求转发

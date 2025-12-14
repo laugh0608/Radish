@@ -123,7 +123,9 @@ git push origin v1.2.0.251126
 
 - docs/：项目文档，实际文件夹，映射解决方案中的 docs 目录，包含开发规范、设计文档等
 - others/：其他资源文件，虚拟文件夹，只是解决方案中的文件夹，其中所有文件均为项目根目录下的，包括 Dockerfile、GitHub 配置、start.ps1 脚本 等
-- radish.client：主要 - 前端 React 应用代码，TypeScript 编写
+- radish.client：主要 - 前端 React 应用代码（WebOS 桌面环境），TypeScript 编写；采用混合架构支持三种应用集成方式：内置应用(type: 'window')、嵌入应用(type: 'iframe')、外部应用(type: 'external')。详见 [FrontendDesign.md](FrontendDesign.md) 第 10.4 节
+- radish.console：主要 - 管理控制台前端应用，独立的 SPA；通过 OIDC 认证，有独立的路由系统；不嵌入 radish.client，在新标签页独立运行
+- radish.ui：主要 - UI 组件库，通过 npm workspaces 供 radish.client 和 radish.console 共享基础组件、Hooks 和工具函数
 - Radish.Gateway：主要 - 服务门户与网关项目，ASP.NET Core 编写；Phase 0 阶段承载服务欢迎页面、健康检查展示、API 文档入口等功能；后续阶段（P1+）将实现 API 路由转发、统一认证、聚合接口等 Gateway 功能。详细规划见 `docs/GatewayPlan.md`。
 - Radish.Api：主要 - 后端服务代码，ASP.NET Core 编写；专注于提供 REST API 接口，不包含页面展示功能
 - Radish.Common：后端服务使用的普通工具类，例如基础日志、基础配置等；**仅能引用外部 NuGet 包，不允许依赖任何内部业务层**。若某工具/扩展需要访问 `Radish.Model`、Service 或 Repository 中的类型（如 DTO、实体、仓储服务等），应放置在 `Radish.Extension` 中，以免 Common 层被反向依赖导致环状引用。
@@ -142,7 +144,11 @@ git push origin v1.2.0.251126
 
 ## 分层依赖约定
 
-- 前端项目（radish.client）仅依赖 npm 包
+- 前端项目：
+  - radish.client：仅依赖 npm 包和 @radish/ui 组件库
+  - radish.console：仅依赖 npm 包和 @radish/ui 组件库，完全独立于 radish.client
+  - radish.ui：仅依赖外部 npm 包，不依赖任何业务项目
+  - **重要**：radish.client 和 radish.console 是两个完全独立的 SPA，各自有独立的路由、认证流程和部署方式；它们通过 @radish/ui 共享基础组件，但业务逻辑和状态管理完全隔离
 - Gateway 项目（Radish.Gateway）：
   - Phase 0 阶段：依赖 `Radish.Common`（配置工具）和 `Radish.Extension`（日志扩展），提供 Razor Pages 页面展示和静态文件服务
   - P1+ 阶段：额外引入 `Ocelot` 或 `YARP` 实现路由转发，可能需要引用 `Radish.Service` 实现聚合接口和统一认证

@@ -7,7 +7,35 @@ import type { AppDefinition } from './types';
 /**
  * 应用注册表
  *
- * 所有可用应用都在这里注册
+ * Radish WebOS 支持三种应用集成方式:
+ *
+ * 1. 内置应用 (type: 'window')
+ *    - 简单功能模块,无需独立部署
+ *    - 直接使用 React 组件,在 WebOS 窗口中渲染
+ *    - 可共享认证状态和全局状态
+ *    - 示例: Forum(论坛), Chat(聊天), Settings(设置)
+ *
+ * 2. 嵌入应用 (type: 'iframe')
+ *    - 展示型应用,无需认证或简单认证
+ *    - 通过 iframe 嵌入,但在 WebOS 窗口内显示
+ *    - 无复杂路由,用户主要被动浏览
+ *    - 示例: Docs(文档站), Help(帮助中心)
+ *
+ * 3. 外部应用 (type: 'external')
+ *    - 完整的独立 SPA,有自己的 OIDC 认证流程
+ *    - 复杂的路由系统,需要控制浏览器地址栏
+ *    - 在新标签页打开,完全独立运行
+ *    - 需要独立访问和部署
+ *    - 示例: Console(管理控制台), Shop(商城)
+ *
+ * 为什么不把所有应用都嵌入 WebOS?
+ * - OIDC 认证流程在 iframe 中无法正常工作
+ * - 复杂路由会与 WebOS 路由冲突
+ * - 关注点分离: 用户应用 vs 管理应用
+ * - 部署灵活性: 公网 vs 内网
+ * - 代码体积控制: 避免普通用户加载管理功能
+ *
+ * 详见: radish.docs/docs/FrontendDesign.md 第 10.4 节
  */
 export const appRegistry: AppDefinition[] = [
   {
