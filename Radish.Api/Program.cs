@@ -200,7 +200,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = false,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ClockSkew = System.TimeSpan.Zero
+            ClockSkew = System.TimeSpan.Zero,
+            // 指定 role claim 类型为 OIDC 标准的 "role"
+            RoleClaimType = "role"
         };
     });
 // 注册 JWT 授权方案，核心是通过解析请求头中的 JWT Token，然后匹配策略中的 key 和字段值

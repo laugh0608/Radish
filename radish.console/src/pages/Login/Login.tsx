@@ -58,7 +58,7 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
     authorizeUrl.searchParams.set('client_id', 'radish-console');
     authorizeUrl.searchParams.set('response_type', 'code');
     authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-    authorizeUrl.searchParams.set('scope', 'radish-api');
+    authorizeUrl.searchParams.set('scope', 'openid profile radish-api');
 
     window.location.href = authorizeUrl.toString();
   };
