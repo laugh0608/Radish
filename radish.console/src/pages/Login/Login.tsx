@@ -34,7 +34,7 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
   /**
    * 获取 redirect_uri
    * - 通过 Gateway 访问时：https://localhost:5000/console/callback
-   * - 直接访问开发服务器时：http://localhost:3002/callback（无 /console 前缀）
+   * - 直接访问开发服务器时：http://localhost:3002/callback
    */
   const getRedirectUri = (): string => {
     const currentOrigin = window.location.origin;
