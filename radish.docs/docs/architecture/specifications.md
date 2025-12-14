@@ -345,9 +345,9 @@ Task<List<TEntity>> QuerySplitAsync(...)              // 分表查询
 
 ### 使用场景
 
-#### 场景 1：简单 CRUD（直接使用 BaseService）
-
 <div v-pre>
+
+#### 场景 1：简单 CRUD（直接使用 BaseService）
 
 ✅ **推荐做法**：
 
@@ -381,11 +381,7 @@ public class CategoryController : ControllerBase
 }
 ```
 
-</div>
-
 #### 场景 2：复杂业务逻辑（创建自定义 Service）
-
-<div v-pre>
 
 ❌ **不推荐**：创建只包装 BaseService 方法的 Service
 
