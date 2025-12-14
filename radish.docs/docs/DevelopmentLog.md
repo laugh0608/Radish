@@ -4,6 +4,45 @@
 
 > OIDC 认证中心与前端框架搭建
 
+### 2025.12.14
+
+- **feat(client)**: 将 Console 应用改为在新标签页打开
+  - **架构决策**：经过深入分析，确认 Console 不应嵌入 WebOS iframe
+  - **技术限制**：
+    - OIDC 认证流程在 iframe 中无法正常工作（无法处理 redirect_uri 回调）
+    - 复杂路由系统会与 WebOS 路由冲突
+    - Gateway 路径剥离导致 Console 路径识别混乱
+  - **架构优势**：
+    - 关注点分离：Client 面向普通用户，Console 面向管理员
+    - 权限隔离：管理功能不应与用户功能混在同一代码库
+    - 部署灵活性：Console 可部署到内网，Client 部署到公网
+    - 代码体积控制：避免普通用户加载管理功能代码
+  - **实现方式**：
+    - 新增 `external` 应用类型，在新标签页打开外部链接
+    - 更新 `windowStore.openApp` 方法，识别 external 类型并调用 `window.open`
+    - 简化 OIDC 回调路径判断逻辑，统一使用 `/callback`
+  - **提交**：`feat: 将 Console 应用改为在新标签页打开并简化路径处理` (a893cfc)
+
+- **docs**: 完善前端应用架构决策文档
+  - **CLAUDE.md**：
+    - 添加"Application Architecture Decision"章节
+    - 说明三种应用集成方式（内置/嵌入/外部）的选择标准
+    - 详细解释为什么不合并 Console 到 Client
+  - **FrontendDesign.md**：
+    - 新增第 10.4 节"应用集成架构决策"
+    - 10.4.1：三种应用类型的选择标准对照表
+    - 10.4.2：详细分析 Console 无法嵌入的技术限制和架构理由
+    - 10.4.3：应用集成最佳实践和决策流程
+  - **DevelopmentSpecifications.md**：
+    - 更新项目结构约定，明确 radish.client、radish.console、radish.ui 的定位
+    - 完善分层依赖约定，说明前端项目的独立性
+  - **DevelopmentFramework.md**：
+    - 更新前端技术栈描述，列出所有前端项目
+    - 重构分层视图，展示 Gateway 统一入口和前端项目结构
+  - **AppRegistry.tsx & types.ts**：
+    - 添加详细的文档注释，说明三种应用集成方式
+    - 为 `AppDefinition.type` 字段添加完整说明
+
 ### 2025.12.12
 
 - **test(api)**: 完善 ClientController 测试并启用跳过的测试用例
