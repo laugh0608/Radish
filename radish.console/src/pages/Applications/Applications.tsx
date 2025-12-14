@@ -26,7 +26,7 @@ export const Applications = () => {
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [, setCurrentClient] = useState<OidcClient | null>(null);
+  const [currentClient, setCurrentClient] = useState<OidcClient | null>(null);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -147,9 +147,20 @@ export const Applications = () => {
         } else {
           message.error(result.message || '创建失败');
         }
-      } else {
-        // TODO: 实现编辑功能
-        message.info('编辑功能待实现');
+      } else if (modalMode === 'edit' && currentClient) {
+        const data = {
+          displayName: values.displayName,
+          redirectUris: values.redirectUris?.split('\n').filter((s: string) => s.trim()) || [],
+          postLogoutRedirectUris: values.postLogoutRedirectUris?.split('\n').filter((s: string) => s.trim()) || [],
+        };
+        const result = await clientApi.updateClient(currentClient.id, data);
+        if (result.ok) {
+          message.success('更新成功');
+          setIsModalOpen(false);
+          await loadClients();
+        } else {
+          message.error(result.message || '更新失败');
+        }
       }
     } catch (error) {
       console.error('表单验证失败:', error);

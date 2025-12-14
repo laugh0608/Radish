@@ -41,13 +41,12 @@ export interface CreateClientRequest {
 export interface UpdateClientRequest {
   id: string;
   displayName?: string;
-  description?: string;
-  logo?: string;
-  developerName?: string;
-  developerEmail?: string;
   redirectUris?: string[];
   postLogoutRedirectUris?: string[];
-  permissions?: string[];
+  grantTypes?: string[];
+  scopes?: string[];
+  consentType?: string;
+  requirePkce?: boolean;
 }
 
 /**
