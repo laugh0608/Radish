@@ -102,39 +102,66 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
   return (
     <div className="login-container">
       <div className="login-box">
-        <div className="login-header">
-          <h1>🌿 Radish Console</h1>
-          <p>后台管理系统</p>
+        {/* 左侧信息区域 */}
+        <div className="login-info">
+          <h2>🌿 Radish Console</h2>
+          <p>现代化社区平台管理控制台</p>
+          <p>统一管理用户、应用、权限和系统配置</p>
+
+          <div className="login-info-features">
+            <div className="login-info-feature">
+              <div className="login-info-feature-icon">✓</div>
+              <span>统一身份认证 (OIDC)</span>
+            </div>
+            <div className="login-info-feature">
+              <div className="login-info-feature-icon">✓</div>
+              <span>细粒度权限控制</span>
+            </div>
+            <div className="login-info-feature">
+              <div className="login-info-feature-icon">✓</div>
+              <span>实时系统监控</span>
+            </div>
+            <div className="login-info-feature">
+              <div className="login-info-feature-icon">✓</div>
+              <span>应用生态管理</span>
+            </div>
+          </div>
         </div>
 
-        <div className="login-content">
-          <h3>选择登录方式</h3>
+        {/* 右侧登录表单区域 */}
+        <div className="login-form">
+          <div className="login-header">
+            <h1>登录</h1>
+            <p>选择登录方式进入管理控制台</p>
+          </div>
 
-          <AntButton
-            type="primary"
-            size="large"
-            block
-            onClick={handleLogin}
-            loading={loading}
-            style={{ marginBottom: '12px' }}
-          >
-            OIDC 登录（推荐）
-          </AntButton>
+          <div className="login-content">
+            <AntButton
+              type="primary"
+              size="large"
+              block
+              onClick={handleLogin}
+              loading={loading}
+              style={{ marginBottom: '12px' }}
+            >
+              OIDC 登录（推荐）
+            </AntButton>
 
-          <AntButton
-            size="large"
-            block
-            onClick={() => void handleTestLogin()}
-            loading={loading}
-          >
-            测试账号登录
-          </AntButton>
+            <AntButton
+              size="large"
+              block
+              onClick={() => void handleTestLogin()}
+              loading={loading}
+            >
+              测试账号登录
+            </AntButton>
 
-          <div className="login-tip">
-            <p>测试账号信息（选择任一账号）：</p>
-            <p><strong>超级管理员:</strong> system / system123456</p>
-            <p><strong>管理员:</strong> admin / admin123456</p>
-            <p><strong>测试用户:</strong> test / test123456</p>
+            <div className="login-tip">
+              <p>测试账号信息（选择任一账号）：</p>
+              <p><strong>超级管理员:</strong> system / system123456</p>
+              <p><strong>管理员:</strong> admin / admin123456</p>
+              <p><strong>测试用户:</strong> test / test123456</p>
+            </div>
           </div>
         </div>
       </div>
