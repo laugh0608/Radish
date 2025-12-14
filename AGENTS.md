@@ -34,7 +34,7 @@
 - 配置加载顺序：`appsettings.json` → `appsettings.{Environment}.json` → `appsettings.Local.json`（忽略提交） → 环境变量。新成员应复制 `Radish.Api/appsettings.Local.example.json`，并通过 `AppSettings.RadishApp` 或实现 `IConfigurableOptions` 读取强类型配置。
 - `Snowflake.WorkId/DataCenterId` 在每个环境必须唯一；多实例部署需在对应 `appsettings.{Env}.json` 中覆盖，避免 ID 冲突。
 - `Databases` 节至少包含 `ConnId=Main` 与 `ConnId=Log`（名称固定），缺少日志库将导致启动异常；`builder.Services.AddSqlSugarSetup()` 注入 `SqlSugarScope` 并关联租户/多库配置。需要按租户隔离时：字段隔离实现 `ITenantEntity`，表隔离使用 `[MultiTenant(TenantTypeEnum.Tables)]`，分库隔离使用 `[MultiTenant(TenantTypeEnum.DataBases)]`；日志实体（如 `AuditSqlLog`）需显式 `[Tenant(configId: "log")] + [SplitTable(SplitType.Month)]`。
-- 默认 SQLite（`Radish.db`、`RadishLog.db`）自动创建，切换 PostgreSQL 时仅需更新连接串与 `DbType=4`。连接串、Redis、密钥等敏感信息只能出现在 Local/环境变量中，严禁写入版本库。
+- 默认 SQLite（`Radish.db`、`Radish.Log.db`）自动创建，切换 PostgreSQL 时仅需更新连接串与 `DbType=4`。连接串、Redis、密钥等敏感信息只能出现在 Local/环境变量中，严禁写入版本库。
 - Serilog 由 `builder.Host.AddSerilogSetup()` 配置，日志落盘 `Log/Log.txt` 与 `Log/AopSql/AopSql.txt` 并启用异步写入；AOP SQL 日志通过 `LogContextTool.LogSource` 区分。安全相关策略：所有前后端流量强制 HTTPS、登录等敏感字段在前端用 RSA 公钥加密、API 权限依赖 JWT+角色策略、CORS 白名单位于 `appsettings.json` 的 `Cors:AllowedOrigins`。
 
 ## 版本、里程碑与分支策略

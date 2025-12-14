@@ -153,7 +153,7 @@ if (string.IsNullOrEmpty(openIddictConnectionString))
     var solutionRoot = currentDir?.FullName ?? AppContext.BaseDirectory;
     var dbDirectory = Path.Combine(solutionRoot, "DataBases");
     Directory.CreateDirectory(dbDirectory); // 确保目录存在
-    var dbPath = Path.Combine(dbDirectory, "RadishAuth.OpenIddict.db");
+    var dbPath = Path.Combine(dbDirectory, "Radish.OpenIddict.db");
     openIddictConnectionString = $"Data Source={dbPath}";
 }
 

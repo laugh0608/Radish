@@ -157,7 +157,7 @@ Radish/
 
 ### 数据库配置
 
-默认使用 SQLite（`Radish.db` 和 `RadishLog.db`），首次运行自动创建。
+默认使用 SQLite（`Radish.db` 和 `Radish.Log.db`），首次运行自动创建。
 
 切换到 PostgreSQL：编辑 `Radish.Api/appsettings.Development.json`：
 
