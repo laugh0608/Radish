@@ -40,6 +40,15 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
   openApp: (appId: string) => {
     const { openWindows } = get();
 
+    // 获取应用定义
+    const app = getAppById(appId);
+
+    // 如果是外部链接类型，直接在新标签页打开
+    if (app?.type === 'external' && app.externalUrl) {
+      window.open(app.externalUrl, '_blank');
+      return;
+    }
+
     // 如果应用已打开，聚焦窗口
     const existingWindow = openWindows.find(w => w.appId === appId);
     if (existingWindow) {
@@ -56,7 +65,6 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     const viewportHeight = window.innerHeight;
 
     // 获取应用定义以获取默认尺寸
-    const app = getAppById(appId);
     const defaultWidth = app?.defaultSize?.width || 800;
     const defaultHeight = app?.defaultSize?.height || 600;
 

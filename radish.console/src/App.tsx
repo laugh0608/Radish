@@ -22,9 +22,11 @@ function App() {
   }, []);
 
   // 检查是否是 OIDC 回调页面
-  // Gateway 会把 /console 前缀剥离给下游 dev server，这里同时兼容 /console/callback 与 /callback
+  // Gateway 会把 /console 前缀剥离给下游 dev server，所以这里同时兼容两种访问方式：
+  // - 通过 Gateway: /console/callback -> 剥离后 -> /callback
+  // - 直接访问: /callback
   const isOidcCallback = typeof window !== 'undefined' &&
-    (window.location.pathname === '/console/callback' || window.location.pathname === '/callback');
+    window.location.pathname === '/callback';
 
   // 如果是回调页面，显示回调处理组件
   if (isOidcCallback) {
@@ -74,7 +76,7 @@ function App() {
   /**
    * 获取 post_logout_redirect_uri
    * - 通过 Gateway 访问时：https://localhost:5000/console/
-   * - 直接访问开发服务器时：http://localhost:3002/（无 /console 前缀）
+   * - 直接访问开发服务器时：http://localhost:3002/
    */
   const getPostLogoutRedirectUri = (): string => {
     const currentOrigin = window.location.origin;
@@ -194,6 +196,8 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
 
     /**
      * 获取 redirect_uri
+     * - 通过 Gateway 访问时：https://localhost:5000/console/callback
+     * - 直接访问开发服务器时：http://localhost:3002/callback
      */
     const getRedirectUri = (): string => {
       const currentOrigin = window.location.origin;

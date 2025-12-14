@@ -24,6 +24,11 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
 
   const AppComponent = app.component;
 
+  // 动态计算 iframe URL（支持字符串或函数）
+  const iframeUrl = app.type === 'iframe' && app.url
+    ? typeof app.url === 'function' ? app.url() : app.url
+    : undefined;
+
   return (
     <Rnd
       size={window.size}
@@ -92,12 +97,12 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
 
         {/* 窗口内容区 */}
         <div className={styles.content}>
-          {app.type === 'iframe' && app.url ? (
+          {app.type === 'iframe' && iframeUrl ? (
             <iframe
-              src={app.url}
+              src={iframeUrl}
               className={styles.iframe}
               title={app.name}
-              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals"
+              sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-top-navigation"
             />
           ) : (
             <AppComponent />

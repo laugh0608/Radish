@@ -60,20 +60,13 @@ export const appRegistry: AppDefinition[] = [
     name: '控制台',
     icon: 'mdi:console',
     description: 'Radish 管理控制台',
-    component: () => null, // iframe 应用不需要实际组件
-    type: 'iframe',
-    // 使用函数动态获取 URL，确保在运行时获取正确的 origin
-    url: (() => {
-      if (typeof window === 'undefined') return 'http://localhost:3002';
-      const origin = window.location.origin;
-      // 通过 Gateway 访问时使用相对路径
-      if (origin === 'https://localhost:5000' || origin === 'http://localhost:5000') {
-        return '/console/';
-      }
-      // 直接访问开发服务器时使用绝对路径
-      return 'http://localhost:3002';
-    })(),
-    defaultSize: { width: 1400, height: 900 },
+    component: () => null, // external 应用不需要实际组件
+    type: 'external',
+    // 通过 Gateway 访问时使用相对路径，直接访问时使用绝对路径
+    externalUrl: typeof window !== 'undefined' &&
+      (window.location.origin === 'https://localhost:5000' || window.location.origin === 'http://localhost:5000')
+      ? '/console/'
+      : 'http://localhost:3002',
     requiredRoles: ['User'],
     category: 'system'
   },

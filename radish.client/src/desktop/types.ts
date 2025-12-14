@@ -15,11 +15,13 @@ export interface AppDefinition {
   /** 应用组件 */
   component: ComponentType;
   /** 窗口类型 */
-  type: 'window' | 'fullscreen' | 'iframe';
+  type: 'window' | 'fullscreen' | 'iframe' | 'external';
   /** 默认窗口大小 */
   defaultSize?: { width: number; height: number };
-  /** iframe URL（type 为 iframe 时使用） */
-  url?: string;
+  /** iframe URL（type 为 iframe 时使用）- 支持字符串或函数（运行时动态计算） */
+  url?: string | (() => string);
+  /** 外部链接 URL（type 为 external 时使用） */
+  externalUrl?: string;
   /** 需要的用户角色 */
   requiredRoles?: string[];
   /** 应用分类 */
