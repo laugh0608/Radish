@@ -302,9 +302,11 @@ Radish 项目采用泛型基类模式来避免为每个实体重复编写相同�
 
 ### BaseService 提供的完整功能
 
+<div v-pre>
+
 #### 增（Create）
 ```csharp
-Task<long> AddAsync(TEntity entity)                     // 插入单条，返回雪花ID
+Task<long> AddAsync(TEntity entity)                     // 插入单条,返回雪花ID
 Task<int> AddRangeAsync(List<TEntity> entities)         // 批量插入
 Task<List<long>> AddSplitAsync(TEntity entity)          // 分表插入
 ```
@@ -339,11 +341,15 @@ Task<List<TResult>> QueryMuchAsync<...>(...)          // 三表联查
 Task<List<TEntity>> QuerySplitAsync(...)              // 分表查询
 ```
 
+</div>
+
 ### 使用场景
 
 #### 场景 1：简单 CRUD（直接使用 BaseService）
 
 ✅ **推荐做法**：
+
+<div v-pre>
 
 ```csharp
 // Controller
@@ -375,7 +381,11 @@ public class CategoryController : ControllerBase
 }
 ```
 
+</div>
+
 ❌ **不推荐**：创建只包装 BaseService 方法的 Service
+
+<div v-pre>
 
 ```csharp
 // 不要这样做！
@@ -385,9 +395,13 @@ public interface ICategoryService : IBaseService<Category, CategoryVo>
 }
 ```
 
+</div>
+
 #### 场景 2：复杂业务逻辑（创建自定义 Service）
 
 ✅ **推荐做法**：当有复杂业务逻辑时才创建自定义 Service
+
+<div v-pre>
 
 ```csharp
 // Service 接口
@@ -471,9 +485,13 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 }
 ```
 
+</div>
+
 ### BaseRepository 直接使用
 
 在自定义 Service 中，如果需要操作其他实体，可以直接注入 `IBaseRepository<T>`：
+
+<div v-pre>
 
 ```csharp
 public class PostService : BaseService<Post, PostVo>, IPostService
@@ -489,6 +507,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     }
 }
 ```
+
+</div>
 
 ### 最佳实践总结
 
@@ -711,6 +731,8 @@ options
 
 所有 Controller 和 Action 必须提供完整的 XML 注释：
 
+<div v-pre>
+
 ```csharp
 /// <summary>
 /// 功能简述
@@ -732,6 +754,8 @@ options
 public async Task<MessageModel<T>> MyAction(string paramName)
 ```
 
+</div>
+
 **关键要求：**
 - 必须启用 XML 文档生成（在 `.csproj` 中配置 `<GenerateDocumentationFile>true</GenerateDocumentationFile>`）
 - 使用 `[ProducesResponseType]` 明确声明所有可能的响应状态码
@@ -747,23 +771,37 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 4. 在 `ScalarSetup.cs` 中为新版本添加专属描述
 
 **弃用旧版本：**
+
+<div v-pre>
+
 ```csharp
 [ApiVersion("1.0", Deprecated = true)]
 ```
+
+</div>
+
 - 添加 `Deprecated = true` 标记
 - OpenAPI 文档会自动显示"已弃用"警告
 - 保留至少一个完整版本周期再移除
 
 **跨版本支持：**
+
+<div v-pre>
+
 ```csharp
 [ApiVersion(1)]
 [ApiVersion(2)]
 public class MyController : ControllerBase
 ```
+
+</div>
+
 - Controller 可同时支持多个版本
 - 使用 `[MapToApiVersion("2.0")]` 标记特定 Action 的版本
 
 ### 版本控制配置（Program.cs）
+
+<div v-pre>
 
 ```csharp
 builder.Services.AddApiVersioning(options =>
@@ -779,6 +817,8 @@ builder.Services.AddApiVersioning(options =>
     options.SubstituteApiVersionInUrl = true;  // 自动替换路由中的版本占位符
 });
 ```
+
+</div>
 
 ### URL 格式示例
 
