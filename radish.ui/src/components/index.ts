@@ -17,6 +17,9 @@ export type { IconProps } from './Icon/Icon';
 export { ContextMenu } from './ContextMenu/ContextMenu';
 export type { ContextMenuProps, ContextMenuItem } from './ContextMenu/ContextMenu';
 
+export { DataTable } from './DataTable/DataTable';
+export type { DataTableProps } from './DataTable/DataTable';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout
