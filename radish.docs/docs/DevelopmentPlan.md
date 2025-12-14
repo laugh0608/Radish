@@ -87,7 +87,8 @@
 - 预置内部 OIDC 客户端（通过数据库存储，非硬编码）：
   - `radish-client` - WebOS 前端客户端（包含所有子应用）
   - `radish-scalar` - API 文档客户端
-  - `radish-rust-ext` - Rust 扩展项目客户端
+  - `radish-console` - 后台管理控制台
+  - `radish-shop` - 商城应用（占位，未来实现）
 
 #### 3.4 客户端管理 API
 - **数据模型扩展**：
@@ -149,7 +150,7 @@
 - Checklist:
   - [ ] 梳理当前各处初始化逻辑（Auth 内部 `OpenIddictSeedHostedService` + Radish.DbMigrate 现有种子）
   - [ ] 设计统一初始化流程，明确 Auth 与 Api/主库的职责边界
-  - [ ] 在 `Radish.DbMigrate` 中补全以下种子：默认租户、管理员用户、基础角色、系统权限与 API 模块、内置 OIDC 客户端（radish-client/radish-scalar/radish-rust-ext）
+  - [ ] 在 `Radish.DbMigrate` 中补全以下种子：默认租户、管理员用户、基础角色、系统权限与 API 模块、内置 OIDC 客户端（radish-client/radish-scalar/radish-console/radish-shop）
   - [ ] 确保种子流程幂等，可重复执行
   - [ ] 提供命令调用方式并在 DeploymentGuide 中补充使用说明
 - Acceptance:
