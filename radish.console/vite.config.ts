@@ -6,6 +6,10 @@ import { env } from 'process';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+    // 设置 base 为 /console/，让所有资源路径都带上这个前缀
+    // 这样通过 Gateway 访问 https://localhost:5000/console/ 时，
+    // 资源请求会是 https://localhost:5000/console/assets/... 而不是 https://localhost:5000/assets/...
+    base: '/console/',
     plugins: [plugin()],
     resolve: {
         alias: {
