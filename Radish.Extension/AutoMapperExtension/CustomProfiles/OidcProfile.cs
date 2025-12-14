@@ -18,30 +18,30 @@ public class OidcProfile : Profile
 
         // RadishApplication 映射
         RecognizeDestinationPrefixes("Vo");
-        CreateMap<RadishApplication, VoOidcApp>()
+        CreateMap<RadishApplication, OidcAppVo>()
             .ForMember(dest => dest.ClientSecret, opt => opt.Ignore()); // 安全考虑：默认不返回密钥
         RecognizePrefixes("Vo");
-        CreateMap<VoOidcApp, RadishApplication>();
+        CreateMap<OidcAppVo, RadishApplication>();
 
         // RadishAuthorization 映射
         RecognizeDestinationPrefixes("Vo");
-        CreateMap<RadishAuthorization, VoOidcAuth>();
+        CreateMap<RadishAuthorization, OidcAuthVo>();
         RecognizePrefixes("Vo");
-        CreateMap<VoOidcAuth, RadishAuthorization>();
+        CreateMap<OidcAuthVo, RadishAuthorization>();
 
         // RadishScope 映射
         RecognizeDestinationPrefixes("Vo");
-        CreateMap<RadishScope, VoOidcScope>();
+        CreateMap<RadishScope, OidcScopeVo>();
         RecognizePrefixes("Vo");
-        CreateMap<VoOidcScope, RadishScope>();
+        CreateMap<OidcScopeVo, RadishScope>();
 
         // RadishToken 映射
         RecognizeDestinationPrefixes("Vo");
-        CreateMap<RadishToken, VoOidcToken>()
+        CreateMap<RadishToken, OidcTokenVo>()
             .ForMember(dest => dest.PayloadPreview, opt => opt.MapFrom(src =>
                 src.Payload.Length > 100 ? src.Payload.Substring(0, 100) + "..." : src.Payload)); // 只返回前 100 个字符
         RecognizePrefixes("Vo");
-        CreateMap<VoOidcToken, RadishToken>()
+        CreateMap<OidcTokenVo, RadishToken>()
             .ForMember(dest => dest.Payload, opt => opt.Ignore()); // 不允许从 Vo 反向映射 Payload
     }
 }

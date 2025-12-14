@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Radish.Api.HttpTest;
 using Radish.Api.Resources;
 using Radish.Common;
 using Radish.Common.CacheTool;
@@ -18,7 +19,7 @@ namespace Radish.Api.Controllers.v2;
 [ApiController]
 // [Authorize(Roles = "Client")] // 可以写多个
 // [Authorize(Policy = "SystemOrAdmin")]
-[ApiVersion("2.0")]
+[ApiVersion(2)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Authorize(Policy = "RadishAuthPolicy")]

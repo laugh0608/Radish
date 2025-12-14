@@ -8,6 +8,8 @@
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 10000; /* 确保 Dock 始终在窗口之上 */
 }
 
 .dockInner {

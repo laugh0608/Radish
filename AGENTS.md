@@ -1,29 +1,40 @@
 # AGENTS 指南
 
 ## 快速认知
-- Radish 是基于 ASP.NET Core 10 + SQLSugar + PostgreSQL（本地默认 SQLite）的分层内容社区，前端为 React 19 + Vite + TypeScript，网关 Radish.Gateway 承载门户及后续路由能力。
+- Radish 是基于 ASP.NET Core 10 + SQLSugar + PostgreSQL（本地默认 SQLite）的分层内容社区，前端为 React 19 + Vite + TypeScript，采用 WebOS 桌面化 UI 设计，网关 Radish.Gateway 承载门户及后续路由能力。
+- 前端采用 **npm workspaces** 管理多个包：`radish.client`（WebOS 桌面）、`radish.console`（管理后台）、`radish.ui`（共享 UI 组件库）。
 - 当前协作主分支为 `dev`；所有沟通、文档说明默认使用中文（代码与技术标识除外）。
-- `Radish.slnx` 收纳全部后端项目，`radish.docs/docs/` 保持规范/计划/日志的唯一真相源；如需了解架构与需求，优先查阅 `radish.docs/docs/DevelopmentFramework.md` 与 `radish.docs/docs/README.md` 的索引（根目录 `Docs/` 提供跳转入口，方便 GitHub 浏览）。
+- `Radish.slnx` 收纳全部后端项目，`radish.docs/docs/` 保持规范/计划/日志的唯一真相源；如需了解架构与需求，优先查阅 `radish.docs/docs/DevelopmentFramework.md` 与 `radish.docs/docs/README.md` 的索引。
 
 ## 仓库结构与分层职责
-- 目录要点：`Radish.Api`（Web API 宿主）、`Radish.Gateway`（门户&未来网关）、`Radish.Service`/`Radish.Repository`/`Radish.Core`/`Radish.Model`（业务分层）、`Radish.Common`（通用工具，仅能引用外部包）、`Radish.Extension`（宿主引用的扩展/Autofac/AutoMapper/Redis/Serilog 注册）、`Radish.IService` 与 `Radish.IRepository`（接口契约）、`Radish.Shared`（跨端常量/DTO）、`Radish.Api.Tests`（xUnit 示例）、`radish.client`（React 应用）、`Docs/`（所有文档）、`Radish.Core/test_lib`（Rust POC，正式原生库放 `native/rust`）。
-- 层级依赖：Common → Shared → Model → Infrastructure → IRepository/Repository → IService/Service → Extension → Api/Gateway；`radish.client` 仅依赖 npm 包。Gateway Phase 0 只依赖 Common+Extension，后续 P1+ 才可引用 Service。
-- 示例链路 `UserController -> IUserService -> IUserRepository` 体现 Controller → Service → Repository 调用顺序，任何新功能必须沿用该模式并补齐接口定义。
+
+### 后端项目
+- **目录要点**：`Radish.Api`（Web API 宿主）、`Radish.Gateway`（门户&未来网关）、`Radish.Auth`（OIDC 认证服务器）、`Radish.Service`/`Radish.Repository`/`Radish.Core`/`Radish.Model`（业务分层）、`Radish.Common`（通用工具，仅能引用外部包）、`Radish.Extension`（宿主引用的扩展/Autofac/AutoMapper/Redis/Serilog 注册）、`Radish.IService` 与 `Radish.IRepository`（接口契约）、`Radish.Shared`（后端共享常量/枚举，C#）、`Radish.Api.Tests`（xUnit 示例）、`Radish.Core/test_lib`（Rust POC，正式原生库放 `native/rust`）。
+- **层级依赖**：Common → Shared → Model → Infrastructure → IRepository/Repository → IService/Service → Extension → Api/Gateway/Auth。Gateway Phase 0 只依赖 Common+Extension，后续 P1+ 才可引用 Service。
+- **示例链路**：`UserController -> IUserService -> IUserRepository` 体现 Controller → Service → Repository 调用顺序，任何新功能必须沿用该模式并补齐接口定义。
+
+### 前端项目
+- **radish.client**：WebOS 桌面环境，面向普通用户的前台应用
+- **radish.console**：管理控制台，面向管理员的后台应用
+- **radish.ui**：共享 UI 组件库，包含通用组件、Hooks、工具函数
+- **radish.docs**：VitePress 文档站，所有文档的唯一真相源
+- **依赖关系**：client 和 console 都依赖 @radish/ui，通过 npm workspaces 符号链接实现热更新
 
 ## 环境要求与启动方式
-- 基础环境：.NET SDK 10（`global.json` 已锁定 10.0.0），Node.js 24+，PostgreSQL 16+（或使用仓库附带的 SQLite）。
-- 一键脚本：`pwsh ./start.ps1`（单服务 1-8；组合仅 Gateway+Auth+API、ALL）或 `./start.sh`（单服务 1-8；组合 9-15 覆盖 Gateway+API/Frontend/Docs/Console/Auth 及 ALL），均提供 `Radish.Api.Tests` 入口，支持 `Configuration`/`CONFIGURATION` 注入构建配置。
-- 常用命令：
+- **基础环境**：.NET SDK 10（`global.json` 已锁定 10.0.0），Node.js 24+，PostgreSQL 16+（或使用仓库附带的 SQLite）。
+- **一键脚本**：`pwsh ./start.ps1`（单服务 1-8；组合仅 Gateway+Auth+API、ALL）或 `./start.sh`（单服务 1-8；组合 9-15 覆盖 Gateway+API/Frontend/Docs/Console/Auth 及 ALL），均提供 `Radish.Api.Tests` 入口，支持 `Configuration`/`CONFIGURATION` 注入构建配置。
+- **常用命令**：
   - 后端：`dotnet restore && dotnet build Radish.slnx -c Debug`、`dotnet run --project Radish.Api/Radish.Api.csproj`、`dotnet watch --project Radish.Api`、`dotnet run --project Radish.Gateway/Radish.Gateway.csproj`、`dotnet test Radish.Api.Tests`。
-  - 前端：`npm install --prefix radish.client`、`npm run dev --prefix radish.client`、`npm run build --prefix radish.client`、`npm run lint --prefix radish.client`。
+  - 前端：`npm install`（根目录，配置 workspaces）、`npm run dev --workspace=radish.client`、`npm run dev --workspace=radish.console`、`npm run build --prefix radish.client`、`npm run lint --prefix radish.client`。
+  - UI 组件库：`npm run type-check --workspace=@radish/ui`、`npm run lint --workspace=@radish/ui`。修改 `radish.ui/` 中的组件会通过符号链接自动热更新到 client 和 console。
   - 单测筛选：`dotnet test --list-tests`、`dotnet test --filter "FullyQualifiedName~UserControllerTest"`。
-- 默认端口：API `http://localhost:5100`（内部）、Gateway `https://localhost:5000` / `http://localhost:5001`（外部唯一入口）、前端 Vite `http://localhost:3000`、Docs `http://localhost:3001`、Console `http://localhost:3002`。所有对外 API/Docs/Console 均通过 Gateway 暴露：`https://localhost:5000/api`、`https://localhost:5000/docs`、`https://localhost:5000/console`，Scalar UI 位于 `/scalar`（对外入口 `https://localhost:5000/scalar`，本机直连 `http://localhost:5100/scalar`，旧 `/api/docs` 路径仅保留重定向）。
+- **默认端口**：API `http://localhost:5100`（内部）、Auth `http://localhost:5200`（内部）、Gateway `https://localhost:5000` / `http://localhost:5001`（外部唯一入口）、前端 Vite `http://localhost:3000`、Docs `http://localhost:3001`、Console `http://localhost:3002`。所有对外 API/Docs/Console 均通过 Gateway 暴露：`https://localhost:5000/api`、`https://localhost:5000/docs`、`https://localhost:5000/console`，Scalar UI 位于 `/scalar`（对外入口 `https://localhost:5000/scalar`，本机直连 `http://localhost:5100/scalar`，旧 `/api/docs` 路径仅保留重定向）。
 
 ## 配置、数据库与安全
 - 配置加载顺序：`appsettings.json` → `appsettings.{Environment}.json` → `appsettings.Local.json`（忽略提交） → 环境变量。新成员应复制 `Radish.Api/appsettings.Local.example.json`，并通过 `AppSettings.RadishApp` 或实现 `IConfigurableOptions` 读取强类型配置。
 - `Snowflake.WorkId/DataCenterId` 在每个环境必须唯一；多实例部署需在对应 `appsettings.{Env}.json` 中覆盖，避免 ID 冲突。
 - `Databases` 节至少包含 `ConnId=Main` 与 `ConnId=Log`（名称固定），缺少日志库将导致启动异常；`builder.Services.AddSqlSugarSetup()` 注入 `SqlSugarScope` 并关联租户/多库配置。需要按租户隔离时：字段隔离实现 `ITenantEntity`，表隔离使用 `[MultiTenant(TenantTypeEnum.Tables)]`，分库隔离使用 `[MultiTenant(TenantTypeEnum.DataBases)]`；日志实体（如 `AuditSqlLog`）需显式 `[Tenant(configId: "log")] + [SplitTable(SplitType.Month)]`。
-- 默认 SQLite（`Radish.db`、`RadishLog.db`）自动创建，切换 PostgreSQL 时仅需更新连接串与 `DbType=4`。连接串、Redis、密钥等敏感信息只能出现在 Local/环境变量中，严禁写入版本库。
+- 默认 SQLite（`Radish.db`、`Radish.Log.db`）自动创建，切换 PostgreSQL 时仅需更新连接串与 `DbType=4`。连接串、Redis、密钥等敏感信息只能出现在 Local/环境变量中，严禁写入版本库。
 - Serilog 由 `builder.Host.AddSerilogSetup()` 配置，日志落盘 `Log/Log.txt` 与 `Log/AopSql/AopSql.txt` 并启用异步写入；AOP SQL 日志通过 `LogContextTool.LogSource` 区分。安全相关策略：所有前后端流量强制 HTTPS、登录等敏感字段在前端用 RSA 公钥加密、API 权限依赖 JWT+角色策略、CORS 白名单位于 `appsettings.json` 的 `Cors:AllowedOrigins`。
 
 ## 版本、里程碑与分支策略
@@ -62,6 +73,26 @@
 - 合规提醒：禁止把真实连接串、证书、`.user` 文件或其他敏感数据加入版本库；正式部署前依据 `radish.docs/docs/DeploymentGuide.md` 准备 Docker/Compose 配置与探针。
 
 ## 参考资料
-- 设计与规范：`radish.docs/docs/DevelopmentFramework.md`、`radish.docs/docs/DevelopmentSpecifications.md`、`radish.docs/docs/FrontendDesign.md`、`radish.docs/docs/GatewayPlan.md`、`radish.docs/docs/AuthenticationGuide.md`、`radish.docs/docs/ConfigurationGuide.md`、`radish.docs/docs/DeploymentGuide.md`。
-- 计划与记录：`radish.docs/docs/DevelopmentPlan.md`（里程碑/周计划）、`radish.docs/docs/DevelopmentLog.md`（日更日志）。
-- 运行指南：根目录 `README.md`（快速开始）、`CLAUDE.md`（AI 协作者说明，包含命令、分层图与常见陷阱）。
+
+### 设计与规范
+- `radish.docs/docs/DevelopmentFramework.md` - 架构设计
+- `radish.docs/docs/DevelopmentSpecifications.md` - 开发规范
+- `radish.docs/docs/FrontendDesign.md` - 前端设计
+- `radish.docs/docs/GatewayPlan.md` - Gateway 规划
+- `radish.docs/docs/AuthenticationGuide.md` - 认证授权
+- `radish.docs/docs/ConfigurationGuide.md` - 配置指南
+- `radish.docs/docs/DeploymentGuide.md` - 部署指南
+
+### UI 组件库
+- `radish.docs/docs/UIComponentLibrary.md` - UI 组件库完整文档
+- `radish.docs/docs/UIComponentsSummary.md` - 组件详细说明
+- `radish.docs/docs/UIQuickReference.md` - 快速参考
+- `radish.docs/docs/UIComponentDevelopment.md` - 开发指南
+
+### 计划与记录
+- `radish.docs/docs/DevelopmentPlan.md` - 里程碑/周计划
+- `radish.docs/docs/DevelopmentLog.md` - 日更日志
+
+### 运行指南
+- 根目录 `README.md` - 快速开始
+- `CLAUDE.md` - AI 协作者说明，包含命令、分层图与常见陷阱

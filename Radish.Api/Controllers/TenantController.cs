@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common.TenantTool;
@@ -13,7 +14,8 @@ namespace Radish.Api.Controllers;
 /// 多租户- 租户 Id 方案
 /// </summary>
 [ApiController]
-[Route("api/[controller]/[action]")]
+[ApiVersion(1)]
+[Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Authorize(Policy = "RadishAuthPolicy")]
 public class TenantController : ControllerBase

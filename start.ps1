@@ -68,9 +68,12 @@ function Show-Menu {
     Write-Host
     Write-Host "[Combinations]"
     Write-Host "  9. Start Gateway + Auth + API"
-    Write-Host " 10. Start ALL (Gateway + API + Auth + Frontend + Docs + Console)"
+    Write-Host " 10. Start Frontend + Console + Docs"
     Write-Host
-    Write-Host "Hint: combinations launch Gateway / Frontend / Docs / Console / Auth in separate terminals while this window usually keeps API logs."
+    Write-Host "[Start ALL]"
+    Write-Host " 11. Start ALL (Gateway + API + Auth + Frontend + Docs + Console)"
+    Write-Host
+    Write-Host "Hint: combinations launch services in separate terminals for parallel development."
     Write-Host
 }
 
@@ -309,6 +312,13 @@ function Start-All {
     Start-BackendNoBuild
 }
 
+function Start-FrontendConsoleDocs {
+    Write-Host "[Combo] Frontend + Console + Docs..."
+    Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
+    Start-BackgroundShell "Console running at http://localhost:3002" "npm run dev --prefix radish.console"
+    Start-Docs
+}
+
 # ---- Main ----
 
 Show-Banner
@@ -326,7 +336,8 @@ switch ($choice) {
     "7"  { Start-DbMigrate }
     "8"  { Run-Tests }
     "9"  { Start-GatewayAuthApi }
-    "10" { Start-All }
+    "10" { Start-FrontendConsoleDocs }
+    "11" { Start-All }
     default {
         Write-Error ('Unknown choice: ' + $choice)
         exit 1

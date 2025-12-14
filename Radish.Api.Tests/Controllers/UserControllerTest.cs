@@ -88,7 +88,22 @@ public class UserControllerTest
         public Task<List<UserVo>> GetUsersAsync() => throw new System.NotImplementedException();
         public Task<bool> TestTranPropagationUser() => throw new System.NotImplementedException();
         public Task<long> AddAsync(User entity) => throw new System.NotImplementedException();
+        public Task<int> AddRangeAsync(List<User> entities) => throw new System.NotImplementedException();
         public Task<List<long>> AddSplitAsync(User entity) => throw new System.NotImplementedException();
+        public Task<bool> DeleteByIdAsync(long id) => throw new System.NotImplementedException();
+        public Task<bool> DeleteAsync(User entity) => throw new System.NotImplementedException();
+        public Task<int> DeleteAsync(System.Linq.Expressions.Expression<System.Func<User, bool>> whereExpression) => throw new System.NotImplementedException();
+        public Task<int> DeleteByIdsAsync(List<long> ids) => throw new System.NotImplementedException();
+        public Task<bool> UpdateAsync(User entity) => throw new System.NotImplementedException();
+        public Task<int> UpdateRangeAsync(List<User> entities) => throw new System.NotImplementedException();
+        public Task<bool> UpdateColumnsAsync(User entity, System.Linq.Expressions.Expression<System.Func<User, object>> updateColumns) => throw new System.NotImplementedException();
+        public Task<int> UpdateColumnsAsync(System.Linq.Expressions.Expression<System.Func<User, User>> updateColumns, System.Linq.Expressions.Expression<System.Func<User, bool>> whereExpression) => throw new System.NotImplementedException();
+        public Task<UserVo?> QueryByIdAsync(long id) => throw new System.NotImplementedException();
+        public Task<UserVo?> QueryFirstAsync(System.Linq.Expressions.Expression<System.Func<User, bool>>? whereExpression = null) => throw new System.NotImplementedException();
+        public Task<UserVo?> QuerySingleAsync(System.Linq.Expressions.Expression<System.Func<User, bool>> whereExpression) => throw new System.NotImplementedException();
+        public Task<(List<UserVo> data, int totalCount)> QueryPageAsync(System.Linq.Expressions.Expression<System.Func<User, bool>>? whereExpression = null, int pageIndex = 1, int pageSize = 20, System.Linq.Expressions.Expression<System.Func<User, object>>? orderByExpression = null, SqlSugar.OrderByType orderByType = SqlSugar.OrderByType.Asc) => throw new System.NotImplementedException();
+        public Task<int> QueryCountAsync(System.Linq.Expressions.Expression<System.Func<User, bool>>? whereExpression = null) => throw new System.NotImplementedException();
+        public Task<bool> QueryExistsAsync(System.Linq.Expressions.Expression<System.Func<User, bool>> whereExpression) => throw new System.NotImplementedException();
         public Task<List<UserVo>> QueryWithCacheAsync(System.Linq.Expressions.Expression<System.Func<User, bool>>? whereExpression = null, int cacheTime = 10) => throw new System.NotImplementedException();
         public Task<List<TResult>> QueryMuchAsync<T, T2, T3, TResult>(
             System.Linq.Expressions.Expression<System.Func<T, T2, T3, object[]>> joinExpression,

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { WindowState } from '@/desktop/types';
+import { getAppById } from '@/desktop/AppRegistry';
 
 interface WindowStore {
   /** 打开的窗口列表 */
@@ -39,6 +40,15 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
   openApp: (appId: string) => {
     const { openWindows } = get();
 
+    // 获取应用定义
+    const app = getAppById(appId);
+
+    // 如果是外部链接类型，直接在新标签页打开
+    if (app?.type === 'external' && app.externalUrl) {
+      window.open(app.externalUrl, '_blank');
+      return;
+    }
+
     // 如果应用已打开，聚焦窗口
     const existingWindow = openWindows.find(w => w.appId === appId);
     if (existingWindow) {
@@ -50,14 +60,39 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
       return;
     }
 
-    // 创建新窗口
+    // 获取视口尺寸
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // 获取应用定义以获取默认尺寸
+    const defaultWidth = app?.defaultSize?.width || 800;
+    const defaultHeight = app?.defaultSize?.height || 600;
+
+    // 根据视口大小计算窗口尺寸
+    // 窗口最大不超过视口的 80% 宽度和 85% 高度（留空间给状态栏和 Dock）
+    const maxWidth = viewportWidth * 0.80;
+    const maxHeight = viewportHeight * 0.85;
+
+    const finalWidth = Math.min(defaultWidth, maxWidth);
+    const finalHeight = Math.min(defaultHeight, maxHeight);
+
+    // 创建新窗口，设置初始位置和大小
     const maxZIndex = Math.max(0, ...openWindows.map(w => w.zIndex));
+    const offsetIndex = openWindows.length; // 用于错开窗口位置
     const newWindow: WindowState = {
       id: `win-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       appId,
       zIndex: maxZIndex + 1,
       isMinimized: false,
-      isMaximized: false
+      isMaximized: false,
+      position: {
+        x: 100 + offsetIndex * 30,
+        y: 80 + offsetIndex * 30
+      },
+      size: {
+        width: finalWidth,
+        height: finalHeight
+      }
     };
 
     set({ openWindows: [...openWindows, newWindow] });

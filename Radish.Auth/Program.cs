@@ -3,7 +3,6 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Auth.OpenIddict;
@@ -154,7 +153,7 @@ if (string.IsNullOrEmpty(openIddictConnectionString))
     var solutionRoot = currentDir?.FullName ?? AppContext.BaseDirectory;
     var dbDirectory = Path.Combine(solutionRoot, "DataBases");
     Directory.CreateDirectory(dbDirectory); // 确保目录存在
-    var dbPath = Path.Combine(dbDirectory, "RadishAuth.OpenIddict.db");
+    var dbPath = Path.Combine(dbDirectory, "Radish.OpenIddict.db");
     openIddictConnectionString = $"Data Source={dbPath}";
 }
 
@@ -220,6 +219,7 @@ builder.Services.AddOpenIddict()
         // 启用 OIDC 端点
         options.SetAuthorizationEndpointUris("/connect/authorize")
                .SetTokenEndpointUris("/connect/token")
+               .SetEndSessionEndpointUris("/connect/endsession")
                .SetUserInfoEndpointUris("/connect/userinfo")
                .SetIntrospectionEndpointUris("/connect/introspect")
                .SetRevocationEndpointUris("/connect/revoke");
@@ -230,7 +230,7 @@ builder.Services.AddOpenIddict()
                .AllowClientCredentialsFlow();
 
         // 注册允许的 Scopes
-        options.RegisterScopes("openid", "profile", "offline_access", "radish-api");
+        options.RegisterScopes("openid", "profile", "email", "offline_access", "radish-api");
 
         // 配置加密和签名证书（默认使用 certs/dev-auth-cert.pfx）
         var useDevelopmentKeys = openIddictCertificateSection.GetValue<bool?>("UseDevelopmentKeys") ?? false;
@@ -251,6 +251,7 @@ builder.Services.AddOpenIddict()
         // 注册 ASP.NET Core 宿主
         options.UseAspNetCore()
                .EnableAuthorizationEndpointPassthrough()
+               .EnableEndSessionEndpointPassthrough()
                .EnableUserInfoEndpointPassthrough()
                .DisableTransportSecurityRequirement(); // 允许 HTTP（仅开发环境）
     });

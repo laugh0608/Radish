@@ -18,7 +18,7 @@ namespace Radish.Api.Controllers;
 /// 所有接口均返回统一的 MessageModel 格式。
 /// </remarks>
 [ApiController]
-[ApiVersion("1.0")]
+[ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Tags("认证管理")]

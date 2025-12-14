@@ -5,11 +5,12 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 const resources = {
     en: {
         translation: {
-            'app.title': 'Radish Weather Forecast',
-            'app.description': 'Display WeatherForecast sample data from Radish.Api to verify connectivity.',
+            'app.title': 'Radish Auth Test',
+            'app.description': 'Inspect OIDC login status and current user information from Radish services.',
 
             'auth.sectionTitle': 'Authentication',
             'auth.login': 'Login via OIDC',
+            'auth.relogin': 'Re-login via OIDC',
             'auth.logout': 'Logout',
             'auth.currentUser': 'Current user: {{userName}} (Id: {{userId}}, Tenant: {{tenantId}})',
             'auth.notLoggedIn': 'Not logged in',
@@ -39,11 +40,12 @@ const resources = {
     },
     zh: {
         translation: {
-            'app.title': 'Radish 天气预报',
-            'app.description': '实时展示来自 Radish.Api 的 WeatherForecast 示例数据，便于验证前后端联通性。',
+            'app.title': 'Radish 认证测试',
+            'app.description': '用于查看 OIDC 登录状态和当前用户信息，验证认证链路是否正常。',
 
             'auth.sectionTitle': '认证',
             'auth.login': '通过 OIDC 登录',
+            'auth.relogin': '重新通过 OIDC 登录',
             'auth.logout': '退出登录',
             'auth.currentUser': '当前用户：{{userName}}（Id: {{userId}}, Tenant: {{tenantId}}）',
             'auth.notLoggedIn': '当前未登录',
