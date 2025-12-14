@@ -1,0 +1,66 @@
+.container {
+  flex: 1;
+  border-right: 1px solid #333;
+  padding: 0 8px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  margin-top: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.loadingText,
+.emptyText {
+  font-size: 14px;
+  color: #888;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.postButton {
+  width: 100%;
+  text-align: left;
+  padding: 12px;
+  margin-bottom: 8px;
+  background-color: transparent;
+  border-radius: 6px;
+  border: 1px solid #444;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.postButton:hover {
+  background-color: #1f2937;
+  border-color: #555;
+}
+
+.postButton.active {
+  background-color: #1f2937;
+  border-color: #2d6cdf;
+}
+
+.postButton:focus {
+  outline: 2px solid #2d6cdf;
+  outline-offset: 2px;
+}
+
+.postTitle {
+  font-weight: 600;
+  font-size: 15px;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.postMeta {
+  font-size: 12px;
+  color: #999;
+}
