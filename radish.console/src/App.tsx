@@ -49,17 +49,55 @@ function App() {
     }
   };
 
+  /**
+   * 获取 Auth Server 的基础 URL
+   * - 通过 Gateway 访问时（https://localhost:5000）：使用 Gateway 地址
+   * - 直接访问开发服务器时（http://localhost:3002）：使用 Auth Server 直接地址
+   */
+  const getAuthServerBaseUrl = (): string => {
+    const currentOrigin = window.location.origin;
+
+    // 通过 Gateway 访问（生产环境或开发时通过 Gateway）
+    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+      return currentOrigin;
+    }
+
+    // 直接访问 console 开发服务器（开发环境）
+    if (currentOrigin === 'http://localhost:3002' || currentOrigin === 'https://localhost:3002') {
+      return 'http://localhost:5200'; // Auth Server 直接地址
+    }
+
+    // 默认使用 Gateway（生产环境）
+    return currentOrigin;
+  };
+
+  /**
+   * 获取 post_logout_redirect_uri
+   * - 通过 Gateway 访问时：https://localhost:5000/console/
+   * - 直接访问开发服务器时：http://localhost:3002/（无 /console 前缀）
+   */
+  const getPostLogoutRedirectUri = (): string => {
+    const currentOrigin = window.location.origin;
+
+    // 通过 Gateway 访问
+    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+      return `${currentOrigin}/console/`;
+    }
+
+    // 直接访问开发服务器
+    return `${currentOrigin}/`;
+  };
+
   const handleLogout = () => {
     // 清理本地保存的 Token
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
 
-    // 使用 OIDC 标准的 endsession endpoint 清除 Auth Server 的会话
-    // 统一通过 Gateway 访问，origin 就是 Gateway 地址
-    const currentOrigin = window.location.origin;
-    const postLogoutRedirectUri = `${currentOrigin}/console/`;
+    // 使用 OIDC 标准的 endsession endpoint 实现 Single Sign-Out
+    const postLogoutRedirectUri = getPostLogoutRedirectUri();
+    const authServerBaseUrl = getAuthServerBaseUrl();
 
-    const logoutUrl = new URL(`${currentOrigin}/connect/endsession`);
+    const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
     logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
     logoutUrl.searchParams.set('client_id', 'radish-console');
 
@@ -135,9 +173,42 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
       return;
     }
 
-    // 统一通过 Gateway 访问，origin 就是 Gateway 地址
-    const currentOrigin = window.location.origin;
-    const redirectUri = `${currentOrigin}/console/callback`;
+    /**
+     * 获取 Auth Server 的基础 URL
+     */
+    const getAuthServerBaseUrl = (): string => {
+      const currentOrigin = window.location.origin;
+
+      // 通过 Gateway 访问
+      if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+        return currentOrigin;
+      }
+
+      // 直接访问 console 开发服务器
+      if (currentOrigin === 'http://localhost:3002' || currentOrigin === 'https://localhost:3002') {
+        return 'http://localhost:5200';
+      }
+
+      return currentOrigin;
+    };
+
+    /**
+     * 获取 redirect_uri
+     */
+    const getRedirectUri = (): string => {
+      const currentOrigin = window.location.origin;
+
+      // 通过 Gateway 访问
+      if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+        return `${currentOrigin}/console/callback`;
+      }
+
+      // 直接访问开发服务器
+      return `${currentOrigin}/callback`;
+    };
+
+    const redirectUri = getRedirectUri();
+    const authServerBaseUrl = getAuthServerBaseUrl();
 
     const fetchToken = async () => {
       const body = new URLSearchParams();
@@ -147,7 +218,7 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
       body.set('redirect_uri', redirectUri);
 
       try {
-        const response = await fetch(`${currentOrigin}/connect/token`, {
+        const response = await fetch(`${authServerBaseUrl}/connect/token`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -180,8 +251,14 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
         onSuccess();
 
         // 跳转到 Console 首页
+        // 通过 Gateway 访问时跳转到 /console/，直接访问时跳转到 /
+        const currentOrigin = window.location.origin;
+        const homePath = (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000')
+          ? '/console/'
+          : '/';
+
         setTimeout(() => {
-          window.location.replace('/console/');
+          window.location.replace(homePath);
         }, 500);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);

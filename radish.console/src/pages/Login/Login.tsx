@@ -9,14 +9,52 @@ interface LoginProps {
 export const Login = ({ onLoginSuccess }: LoginProps) => {
   const [loading, setLoading] = useState(false);
 
+  /**
+   * 获取 Auth Server 的基础 URL
+   * - 通过 Gateway 访问时（https://localhost:5000）：使用 Gateway 地址
+   * - 直接访问开发服务器时（http://localhost:3002）：使用 Auth Server 直接地址
+   */
+  const getAuthServerBaseUrl = (): string => {
+    const currentOrigin = window.location.origin;
+
+    // 通过 Gateway 访问（生产环境或开发时通过 Gateway）
+    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+      return currentOrigin;
+    }
+
+    // 直接访问 console 开发服务器（开发环境）
+    if (currentOrigin === 'http://localhost:3002' || currentOrigin === 'https://localhost:3002') {
+      return 'http://localhost:5200'; // Auth Server 直接地址
+    }
+
+    // 默认使用 Gateway（生产环境）
+    return currentOrigin;
+  };
+
+  /**
+   * 获取 redirect_uri
+   * - 通过 Gateway 访问时：https://localhost:5000/console/callback
+   * - 直接访问开发服务器时：http://localhost:3002/callback（无 /console 前缀）
+   */
+  const getRedirectUri = (): string => {
+    const currentOrigin = window.location.origin;
+
+    // 通过 Gateway 访问
+    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+      return `${currentOrigin}/console/callback`;
+    }
+
+    // 直接访问开发服务器
+    return `${currentOrigin}/callback`;
+  };
+
   const handleLogin = () => {
     setLoading(true);
 
-    // 统一通过 Gateway 访问，origin 就是 Gateway 地址
-    const currentOrigin = window.location.origin;
-    const redirectUri = `${currentOrigin}/console/callback`;
+    const redirectUri = getRedirectUri();
+    const authServerBaseUrl = getAuthServerBaseUrl();
 
-    const authorizeUrl = new URL(`${currentOrigin}/connect/authorize`);
+    const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
     authorizeUrl.searchParams.set('client_id', 'radish-console');
     authorizeUrl.searchParams.set('response_type', 'code');
     authorizeUrl.searchParams.set('redirect_uri', redirectUri);

@@ -23,9 +23,12 @@ public class OpenIddictSeedHostedService : IHostedService
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
+        Console.WriteLine("[OpenIddictSeed] StartAsync 开始执行");
+
         // 初始化 radish-api Scope
         if (await _scopeManager.FindByNameAsync("radish-api", cancellationToken) is null)
         {
+            Console.WriteLine("[OpenIddictSeed] 创建 radish-api scope");
             var descriptor = new OpenIddictScopeDescriptor
             {
                 Name = "radish-api",
@@ -36,11 +39,16 @@ public class OpenIddictSeedHostedService : IHostedService
 
             await _scopeManager.CreateAsync(descriptor, cancellationToken);
         }
+        else
+        {
+            Console.WriteLine("[OpenIddictSeed] radish-api scope 已存在");
+        }
 
         // 初始化前端 Web 客户端：radish-client
         var existingClient = await _applicationManager.FindByClientIdAsync("radish-client", cancellationToken);
         if (existingClient is null)
         {
+            Console.WriteLine("[OpenIddictSeed] 创建 radish-client 客户端");
             var descriptor = new OpenIddictApplicationDescriptor
             {
                 ClientId = "radish-client",
@@ -48,10 +56,17 @@ public class OpenIddictSeedHostedService : IHostedService
                 ConsentType = OpenIddictConstants.ConsentTypes.Implicit // SSO: 无需显式授权
             };
 
-            // 统一通过 Gateway 访问（开发和生产）
+            // 通过 Gateway 访问（生产环境）
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/oidc/callback"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/"));
+
+            // 直接访问前端开发服务器（开发环境）
+            descriptor.RedirectUris.Add(new Uri("http://localhost:3000/oidc/callback"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000/"));
+
+            Console.WriteLine($"[OpenIddictSeed] PostLogoutRedirectUris 数量: {descriptor.PostLogoutRedirectUris.Count}");
 
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
@@ -72,25 +87,37 @@ public class OpenIddictSeedHostedService : IHostedService
             //descriptor.Requirements.Add(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
+            Console.WriteLine("[OpenIddictSeed] radish-client 客户端创建完成");
         }
         else
         {
-            // 如果客户端已存在，更新配置（确保使用 Gateway URL）
+            Console.WriteLine("[OpenIddictSeed] radish-client 客户端已存在，更新配置");
+            // 如果客户端已存在，更新配置（确保包含所有访问方式的 URL）
             var descriptor = new OpenIddictApplicationDescriptor();
             await _applicationManager.PopulateAsync(descriptor, existingClient, cancellationToken);
 
             descriptor.RedirectUris.Clear();
+            // 通过 Gateway 访问（生产环境）
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/oidc/callback"));
+            // 直接访问前端开发服务器（开发环境）
+            descriptor.RedirectUris.Add(new Uri("http://localhost:3000/oidc/callback"));
 
             descriptor.PostLogoutRedirectUris.Clear();
+            // 通过 Gateway 访问（生产环境）
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/"));
+            // 直接访问前端开发服务器（开发环境）
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000/"));
+
+            Console.WriteLine($"[OpenIddictSeed] 更新后 PostLogoutRedirectUris 数量: {descriptor.PostLogoutRedirectUris.Count}");
 
             // 确保扩展属性存在
             descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 社区平台前端应用");
             descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
 
             await _applicationManager.UpdateAsync(existingClient, descriptor, cancellationToken);
+            Console.WriteLine("[OpenIddictSeed] radish-client 客户端更新完成");
         }
 
         // 初始化 Scalar 文档客户端：radish-scalar（用于 /scalar OAuth 调试）
@@ -133,10 +160,15 @@ public class OpenIddictSeedHostedService : IHostedService
                 ConsentType = OpenIddictConstants.ConsentTypes.Implicit // SSO: 无需显式授权
             };
 
-            // 统一通过 Gateway 访问（开发和生产）
+            // 通过 Gateway 访问（生产环境）
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/console/callback"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console/"));
+
+            // 直接访问 console 开发服务器（开发环境）
+            descriptor.RedirectUris.Add(new Uri("http://localhost:3002/callback"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002/"));
 
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
@@ -157,16 +189,23 @@ public class OpenIddictSeedHostedService : IHostedService
         }
         else
         {
-            // 如果客户端已存在，更新配置（确保使用 Gateway URL）
+            // 如果客户端已存在，更新配置（确保包含所有访问方式的 URL）
             var descriptor = new OpenIddictApplicationDescriptor();
             await _applicationManager.PopulateAsync(descriptor, existingConsole, cancellationToken);
 
             descriptor.RedirectUris.Clear();
+            // 通过 Gateway 访问（生产环境）
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/console/callback"));
+            // 直接访问 console 开发服务器（开发环境）
+            descriptor.RedirectUris.Add(new Uri("http://localhost:3002/callback"));
 
             descriptor.PostLogoutRedirectUris.Clear();
+            // 通过 Gateway 访问（生产环境）
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console/"));
+            // 直接访问 console 开发服务器（开发环境）
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002/"));
 
             // 确保扩展属性存在
             descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 后台管理控制台");
