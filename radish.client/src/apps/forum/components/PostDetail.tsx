@@ -1,4 +1,5 @@
 import type { PostDetail as PostDetailType } from '@/types/forum';
+import { MarkdownRenderer } from '@/shared/ui/MarkdownRenderer';
 import styles from './PostDetail.module.css';
 
 interface PostDetailProps {
@@ -35,7 +36,7 @@ export const PostDetail = ({ post, loading = false }: PostDetailProps) => {
           {post.createTime && <span> · {post.createTime}</span>}
           {post.viewCount !== undefined && <span> · 浏览 {post.viewCount}</span>}
         </div>
-        <div className={styles.postBody}>{post.content}</div>
+        <MarkdownRenderer content={post.content} className={styles.postBody} />
         {post.tagNames && post.tagNames.length > 0 && (
           <div className={styles.postTags}>
             {post.tagNames.map((tag, index) => (
