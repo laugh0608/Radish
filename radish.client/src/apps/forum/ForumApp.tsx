@@ -34,6 +34,12 @@ export const ForumApp = () => {
   const [selectedPost, setSelectedPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
 
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   // 加载状态
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [loadingPosts, setLoadingPosts] = useState(false);
@@ -50,10 +56,16 @@ export const ForumApp = () => {
     void loadCategories();
   }, []);
 
-  // 当选择分类时加载帖子列表
+  // 当选择分类时加载帖子列表并重置页码
   useEffect(() => {
+    setCurrentPage(1); // 切换分类时重置到第一页
     void loadPosts();
   }, [selectedCategoryId]);
+
+  // 当页码变化时加载帖子列表
+  useEffect(() => {
+    void loadPosts();
+  }, [currentPage]);
 
   async function loadCategories() {
     setLoadingCategories(true);
@@ -76,8 +88,10 @@ export const ForumApp = () => {
     setLoadingPosts(true);
     setError(null);
     try {
-      const data = await getPostList(selectedCategoryId, t);
-      setPosts(data);
+      const pageModel = await getPostList(selectedCategoryId, t, currentPage, pageSize);
+      setPosts(pageModel.data);
+      setTotalCount(pageModel.dataCount);
+      setTotalPages(pageModel.pageCount);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -138,7 +152,8 @@ export const ForumApp = () => {
         },
         t
       );
-      // 发布成功后重新加载帖子列表
+      // 发布成功后重新加载帖子列表（回到第一页）
+      setCurrentPage(1);
       await loadPosts();
       // 自动选择新发布的帖子
       await handleSelectPost(postId);
@@ -146,6 +161,10 @@ export const ForumApp = () => {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
     }
+  }
+
+  function handlePageChange(page: number) {
+    setCurrentPage(page);
   }
 
   async function handleCreateComment(content: string) {
@@ -191,6 +210,9 @@ export const ForumApp = () => {
           selectedPostId={selectedPost?.id || null}
           onSelectPost={handleSelectPost}
           loading={loadingPosts}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
         />
         <PublishPostForm
           isAuthenticated={loggedIn}
