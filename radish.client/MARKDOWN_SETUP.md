@@ -10,18 +10,11 @@
 # 进入项目根目录
 cd D:\Code\Radish
 
-# 安装 Markdown 相关依赖
+# 安装 Markdown 相关依赖（一条命令即可）
 npm install --workspace=radish.client react-markdown remark-gfm rehype-highlight highlight.js
-
-# 安装 TypeScript 类型定义（开发依赖）
-npm install --workspace=radish.client @types/react-markdown -D
 ```
 
-### 或者使用单个命令
-
-```bash
-npm install --workspace=radish.client react-markdown remark-gfm rehype-highlight highlight.js && npm install --workspace=radish.client @types/react-markdown -D
-```
+**注意**：`react-markdown` v9 已内置 TypeScript 类型定义，无需单独安装 `@types/react-markdown`。
 
 ---
 
@@ -29,11 +22,10 @@ npm install --workspace=radish.client react-markdown remark-gfm rehype-highlight
 
 | 包名 | 版本 | 大小 | 说明 |
 |------|------|------|------|
-| `react-markdown` | ^9.0.0 | ~86KB | React Markdown 渲染库 |
+| `react-markdown` | ^9.0.0 | ~86KB | React Markdown 渲染库（内置 TS 类型） |
 | `remark-gfm` | ^4.0.0 | ~15KB | GitHub Flavored Markdown 支持（表格、删除线、任务列表） |
 | `rehype-highlight` | ^7.0.0 | ~8KB | 代码高亮插件（基于 highlight.js） |
 | `highlight.js` | ^11.9.0 | ~500KB | 代码高亮库（支持 190+ 编程语言） |
-| `@types/react-markdown` | ^8.0.0 | - | TypeScript 类型定义（开发依赖） |
 
 **总大小**：约 610KB（gzipped 后约 180KB）
 
@@ -50,12 +42,11 @@ npm install --workspace=radish.client react-markdown remark-gfm rehype-highlight
     "remark-gfm": "^4.0.0",
     "rehype-highlight": "^7.0.0",
     "highlight.js": "^11.9.0"
-  },
-  "devDependencies": {
-    "@types/react-markdown": "^8.0.7"
   }
 }
 ```
+
+**注意**：`react-markdown` v9 内置了 TypeScript 类型，不需要 `@types/react-markdown`。
 
 ---
 
