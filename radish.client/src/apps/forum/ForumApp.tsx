@@ -7,7 +7,8 @@ import {
   getPostById,
   getCommentTree,
   publishPost,
-  createComment
+  createComment,
+  likePost
 } from '@/api/forum';
 import type {
   Category,
@@ -37,7 +38,6 @@ export const ForumApp = () => {
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
-  const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
   // 排序状态
@@ -45,6 +45,16 @@ export const ForumApp = () => {
 
   // 搜索状态
   const [searchKeyword, setSearchKeyword] = useState('');
+
+  // 点赞状态（使用 localStorage 记录用户点赞过的帖子）
+  const [likedPosts, setLikedPosts] = useState<Set<number>>(() => {
+    try {
+      const stored = localStorage.getItem('forum_liked_posts');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
 
   // 加载状态
   const [loadingCategories, setLoadingCategories] = useState(false);
@@ -103,7 +113,6 @@ export const ForumApp = () => {
         searchKeyword
       );
       setPosts(pageModel.data);
-      setTotalCount(pageModel.dataCount);
       setTotalPages(pageModel.pageCount);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -190,6 +199,47 @@ export const ForumApp = () => {
     setCurrentPage(1); // 搜索时重置到第一页
   }, []);
 
+  async function handleLikePost(postId: number) {
+    if (!loggedIn) {
+      setError('请先登录后再点赞');
+      return;
+    }
+
+    const isCurrentlyLiked = likedPosts.has(postId);
+    const isLike = !isCurrentlyLiked;
+
+    try {
+      // 乐观更新：先更新UI
+      const newLikedPosts = new Set(likedPosts);
+      if (isLike) {
+        newLikedPosts.add(postId);
+      } else {
+        newLikedPosts.delete(postId);
+      }
+      setLikedPosts(newLikedPosts);
+      localStorage.setItem('forum_liked_posts', JSON.stringify([...newLikedPosts]));
+
+      // 更新选中帖子的点赞数
+      if (selectedPost && selectedPost.id === postId) {
+        setSelectedPost({
+          ...selectedPost,
+          likeCount: (selectedPost.likeCount || 0) + (isLike ? 1 : -1)
+        });
+      }
+
+      // 调用API
+      await likePost(postId, isLike, t);
+
+      // 刷新帖子详情（确保同步）
+      await loadPostDetail(postId);
+    } catch (err) {
+      // 失败时回滚
+      setLikedPosts(new Set(likedPosts));
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+    }
+  }
+
   async function handleCreateComment(content: string) {
     if (!selectedPost) {
       setError('请先选择要评论的帖子');
@@ -250,7 +300,13 @@ export const ForumApp = () => {
 
       {/* 帖子详情 + 评论区 */}
       <div className={styles.rightColumn}>
-        <PostDetailView post={selectedPost} loading={loadingPostDetail} />
+        <PostDetailView
+          post={selectedPost}
+          loading={loadingPostDetail}
+          isLiked={selectedPost ? likedPosts.has(selectedPost.id) : false}
+          onLike={handleLikePost}
+          isAuthenticated={loggedIn}
+        />
         <CommentTree
           comments={comments}
           loading={loadingComments}

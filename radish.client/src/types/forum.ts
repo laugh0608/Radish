@@ -49,6 +49,8 @@ export interface PostDetail extends PostItem {
   content: string;
   categoryName?: string;
   tagNames?: string[];
+  likeCount?: number;
+  commentCount?: number;
 }
 
 /**

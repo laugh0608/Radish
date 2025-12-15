@@ -188,6 +188,25 @@ export async function createComment(request: CreateCommentRequest, t: TFunction)
 }
 
 /**
+ * 点赞/取消点赞帖子
+ * @param postId 帖子 ID
+ * @param isLike true 为点赞，false 为取消点赞
+ */
+export async function likePost(postId: number, isLike: boolean, t: TFunction): Promise<void> {
+  const url = `${getApiBaseUrl()}/api/v1/Post/Like?postId=${postId}&isLike=${isLike}`;
+  const response = await apiFetch(url, {
+    method: 'POST',
+    withAuth: true
+  });
+  const json = await response.json() as ApiResponse<null>;
+  const parsed = parseApiResponse<null>(json, t);
+
+  if (!parsed.ok) {
+    throw new Error(parsed.message || '点赞操作失败');
+  }
+}
+
+/**
  * 生成 OIDC 登录 URL
  */
 export function getOidcLoginUrl(): string {

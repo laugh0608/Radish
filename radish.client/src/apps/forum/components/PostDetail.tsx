@@ -5,9 +5,18 @@ import styles from './PostDetail.module.css';
 interface PostDetailProps {
   post: PostDetailType | null;
   loading?: boolean;
+  isLiked?: boolean;
+  onLike?: (postId: number) => void;
+  isAuthenticated?: boolean;
 }
 
-export const PostDetail = ({ post, loading = false }: PostDetailProps) => {
+export const PostDetail = ({
+  post,
+  loading = false,
+  isLiked = false,
+  onLike,
+  isAuthenticated = false
+}: PostDetailProps) => {
   if (loading) {
     return (
       <div className={styles.container}>
@@ -46,6 +55,23 @@ export const PostDetail = ({ post, loading = false }: PostDetailProps) => {
             ))}
           </div>
         )}
+
+        {/* 点赞按钮 */}
+        <div className={styles.actions}>
+          <button
+            type="button"
+            onClick={() => onLike?.(post.id)}
+            className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
+            disabled={!isAuthenticated}
+            title={!isAuthenticated ? '请先登录' : isLiked ? '取消点赞' : '点赞'}
+          >
+            <span className={styles.likeIcon}>{isLiked ? '❤️' : '🤍'}</span>
+            <span className={styles.likeCount}>{post.likeCount || 0}</span>
+          </button>
+          <span className={styles.commentCount}>
+            💬 {post.commentCount || 0} 条评论
+          </span>
+        </div>
       </div>
     </div>
   );
