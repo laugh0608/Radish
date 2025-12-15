@@ -67,35 +67,73 @@ public class PostController : ControllerBase
     }
 
     /// <summary>
-    /// 获取帖子列表（支持分页）
+    /// 获取帖子列表（支持分页和排序）
     /// </summary>
     /// <param name="categoryId">分类 ID（可选）</param>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页数量（默认 20）</param>
+    /// <param name="sortBy">排序方式：newest（最新，默认）、hottest（最热）、essence（精华）</param>
     /// <returns>分页帖子列表</returns>
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetList(long? categoryId = null, int pageIndex = 1, int pageSize = 20)
+    public async Task<MessageModel> GetList(
+        long? categoryId = null,
+        int pageIndex = 1,
+        int pageSize = 20,
+        string sortBy = "newest")
     {
         // 参数校验
         if (pageIndex < 1) pageIndex = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 20;
+        sortBy = sortBy?.ToLowerInvariant() ?? "newest";
 
-        // 构建查询条件
-        var (data, totalCount) = categoryId.HasValue
-            ? await _postService.QueryPageAsync(
-                p => p.CategoryId == categoryId.Value && p.IsPublished && !p.IsDeleted,
-                pageIndex,
-                pageSize,
-                p => p.CreateTime,
-                SqlSugar.OrderByType.Desc)
-            : await _postService.QueryPageAsync(
-                p => p.IsPublished && !p.IsDeleted,
-                pageIndex,
-                pageSize,
-                p => p.CreateTime,
-                SqlSugar.OrderByType.Desc);
+        // 构建基础查询条件
+        var baseCondition = categoryId.HasValue
+            ? (Post p) => p.CategoryId == categoryId.Value && p.IsPublished && !p.IsDeleted
+            : (Post p) => p.IsPublished && !p.IsDeleted;
+
+        List<PostVo> data;
+        int totalCount;
+
+        // 根据排序方式执行不同的查询逻辑
+        switch (sortBy)
+        {
+            case "hottest":
+                // 按热度排序：置顶在前，然后按热度值排序（综合浏览、点赞、评论）
+                // 热度计算公式：ViewCount + LikeCount*2 + CommentCount*3
+                var allPosts = await _postService.QueryAsync(baseCondition);
+                totalCount = allPosts.Count;
+
+                data = allPosts
+                    .OrderByDescending(p => p.IsTop)
+                    .ThenByDescending(p => p.ViewCount + p.LikeCount * 2 + p.CommentCount * 3)
+                    .Skip((pageIndex - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+                break;
+
+            case "essence":
+                // 按精华排序：置顶在前，然后精华在前，最后按创建时间倒序
+                (data, totalCount) = await _postService.QueryPageAsync(
+                    baseCondition,
+                    pageIndex,
+                    pageSize,
+                    p => new { p.IsTop, p.IsEssence, p.CreateTime },
+                    SqlSugar.OrderByType.Desc);
+                break;
+
+            case "newest":
+            default:
+                // 按最新排序：置顶在前，然后按创建时间倒序
+                (data, totalCount) = await _postService.QueryPageAsync(
+                    baseCondition,
+                    pageIndex,
+                    pageSize,
+                    p => new { p.IsTop, p.CreateTime },
+                    SqlSugar.OrderByType.Desc);
+                break;
+        }
 
         // 构建分页模型
         var pageModel = new PageModel<PostVo>

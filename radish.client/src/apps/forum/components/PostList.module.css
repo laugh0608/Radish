@@ -7,11 +7,49 @@
   flex-direction: column;
 }
 
+/* 标题栏和排序按钮容器 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 .title {
-  margin-top: 0;
+  margin: 0;
   font-size: 16px;
   font-weight: 600;
   color: #fff;
+}
+
+/* 排序按钮组 */
+.sortButtons {
+  display: flex;
+  gap: 4px;
+}
+
+.sortButton {
+  padding: 4px 12px;
+  font-size: 13px;
+  background-color: transparent;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #aaa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sortButton:hover {
+  background-color: #1f2937;
+  border-color: #555;
+  color: #fff;
+}
+
+.sortButton.sortActive {
+  background-color: #2d6cdf;
+  border-color: #2d6cdf;
+  color: #fff;
+  font-weight: 500;
 }
 
 .loadingText,
