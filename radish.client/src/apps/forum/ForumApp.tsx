@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
 import {
@@ -43,6 +43,9 @@ export const ForumApp = () => {
   // 排序状态
   const [sortBy, setSortBy] = useState<'newest' | 'hottest' | 'essence'>('newest');
 
+  // 搜索状态
+  const [searchKeyword, setSearchKeyword] = useState('');
+
   // 加载状态
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [loadingPosts, setLoadingPosts] = useState(false);
@@ -65,10 +68,10 @@ export const ForumApp = () => {
     void loadPosts();
   }, [selectedCategoryId]);
 
-  // 当页码或排序方式变化时加载帖子列表
+  // 当页码或排序方式或搜索关键词变化时加载帖子列表
   useEffect(() => {
     void loadPosts();
-  }, [currentPage, sortBy]);
+  }, [currentPage, sortBy, searchKeyword]);
 
   async function loadCategories() {
     setLoadingCategories(true);
@@ -91,7 +94,14 @@ export const ForumApp = () => {
     setLoadingPosts(true);
     setError(null);
     try {
-      const pageModel = await getPostList(selectedCategoryId, t, currentPage, pageSize, sortBy);
+      const pageModel = await getPostList(
+        selectedCategoryId,
+        t,
+        currentPage,
+        pageSize,
+        sortBy,
+        searchKeyword
+      );
       setPosts(pageModel.data);
       setTotalCount(pageModel.dataCount);
       setTotalPages(pageModel.pageCount);
@@ -175,6 +185,11 @@ export const ForumApp = () => {
     setCurrentPage(1); // 切换排序时重置到第一页
   }
 
+  const handleSearchChange = useCallback((keyword: string) => {
+    setSearchKeyword(keyword);
+    setCurrentPage(1); // 搜索时重置到第一页
+  }, []);
+
   async function handleCreateComment(content: string) {
     if (!selectedPost) {
       setError('请先选择要评论的帖子');
@@ -223,6 +238,8 @@ export const ForumApp = () => {
           onPageChange={handlePageChange}
           sortBy={sortBy}
           onSortChange={handleSortChange}
+          searchKeyword={searchKeyword}
+          onSearchChange={handleSearchChange}
         />
         <PublishPostForm
           isAuthenticated={loggedIn}

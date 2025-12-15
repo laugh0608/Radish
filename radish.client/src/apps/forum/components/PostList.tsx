@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { PostItem } from '@/types/forum';
 import styles from './PostList.module.css';
 
@@ -11,6 +12,8 @@ interface PostListProps {
   onPageChange: (page: number) => void;
   sortBy: 'newest' | 'hottest' | 'essence';
   onSortChange: (sortBy: 'newest' | 'hottest' | 'essence') => void;
+  searchKeyword: string;
+  onSearchChange: (keyword: string) => void;
 }
 
 export const PostList = ({
@@ -22,8 +25,21 @@ export const PostList = ({
   totalPages,
   onPageChange,
   sortBy,
-  onSortChange
+  onSortChange,
+  searchKeyword,
+  onSearchChange
 }: PostListProps) => {
+  // 本地搜索输入状态（用于即时显示用户输入）
+  const [localSearch, setLocalSearch] = useState(searchKeyword);
+
+  // 使用 useEffect 实现 debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearchChange(localSearch);
+    }, 500); // 500ms 延迟
+
+    return () => clearTimeout(timer);
+  }, [localSearch, onSearchChange]);
   // 生成页码数组（简单分页，显示前后各2页）
   const getPageNumbers = () => {
     const pages: (number | string)[] = [];
@@ -93,8 +109,34 @@ export const PostList = ({
           </button>
         </div>
       </div>
+
+      {/* 搜索框 */}
+      <div className={styles.searchBox}>
+        <input
+          type="text"
+          placeholder="搜索帖子标题或内容..."
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+          className={styles.searchInput}
+        />
+        {localSearch && (
+          <button
+            type="button"
+            onClick={() => setLocalSearch('')}
+            className={styles.clearButton}
+            title="清除搜索"
+          >
+            ×
+          </button>
+        )}
+      </div>
+
       {loading && <p className={styles.loadingText}>加载帖子中...</p>}
-      {!loading && posts.length === 0 && <p className={styles.emptyText}>该分类下暂无帖子</p>}
+      {!loading && posts.length === 0 && (
+        <p className={styles.emptyText}>
+          {searchKeyword ? '未找到匹配的帖子' : '该分类下暂无帖子'}
+        </p>
+      )}
       <ul className={styles.list}>
         {posts.map(post => (
           <li key={post.id}>
