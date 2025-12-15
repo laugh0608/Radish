@@ -9,6 +9,8 @@ interface PostListProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  sortBy: 'newest' | 'hottest' | 'essence';
+  onSortChange: (sortBy: 'newest' | 'hottest' | 'essence') => void;
 }
 
 export const PostList = ({
@@ -18,7 +20,9 @@ export const PostList = ({
   loading = false,
   currentPage,
   totalPages,
-  onPageChange
+  onPageChange,
+  sortBy,
+  onSortChange
 }: PostListProps) => {
   // 生成页码数组（简单分页，显示前后各2页）
   const getPageNumbers = () => {
@@ -63,7 +67,32 @@ export const PostList = ({
 
   return (
     <div className={styles.container}>
-      <h3 className={styles.title}>帖子</h3>
+      <div className={styles.header}>
+        <h3 className={styles.title}>帖子</h3>
+        <div className={styles.sortButtons}>
+          <button
+            type="button"
+            onClick={() => onSortChange('newest')}
+            className={`${styles.sortButton} ${sortBy === 'newest' ? styles.sortActive : ''}`}
+          >
+            最新
+          </button>
+          <button
+            type="button"
+            onClick={() => onSortChange('hottest')}
+            className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.sortActive : ''}`}
+          >
+            最热
+          </button>
+          <button
+            type="button"
+            onClick={() => onSortChange('essence')}
+            className={`${styles.sortButton} ${sortBy === 'essence' ? styles.sortActive : ''}`}
+          >
+            精华
+          </button>
+        </div>
+      </div>
       {loading && <p className={styles.loadingText}>加载帖子中...</p>}
       {!loading && posts.length === 0 && <p className={styles.emptyText}>该分类下暂无帖子</p>}
       <ul className={styles.list}>

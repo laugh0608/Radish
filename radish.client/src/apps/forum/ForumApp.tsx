@@ -40,6 +40,9 @@ export const ForumApp = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
+  // 排序状态
+  const [sortBy, setSortBy] = useState<'newest' | 'hottest' | 'essence'>('newest');
+
   // 加载状态
   const [loadingCategories, setLoadingCategories] = useState(false);
   const [loadingPosts, setLoadingPosts] = useState(false);
@@ -62,10 +65,10 @@ export const ForumApp = () => {
     void loadPosts();
   }, [selectedCategoryId]);
 
-  // 当页码变化时加载帖子列表
+  // 当页码或排序方式变化时加载帖子列表
   useEffect(() => {
     void loadPosts();
-  }, [currentPage]);
+  }, [currentPage, sortBy]);
 
   async function loadCategories() {
     setLoadingCategories(true);
@@ -88,7 +91,7 @@ export const ForumApp = () => {
     setLoadingPosts(true);
     setError(null);
     try {
-      const pageModel = await getPostList(selectedCategoryId, t, currentPage, pageSize);
+      const pageModel = await getPostList(selectedCategoryId, t, currentPage, pageSize, sortBy);
       setPosts(pageModel.data);
       setTotalCount(pageModel.dataCount);
       setTotalPages(pageModel.pageCount);
@@ -167,6 +170,11 @@ export const ForumApp = () => {
     setCurrentPage(page);
   }
 
+  function handleSortChange(newSortBy: 'newest' | 'hottest' | 'essence') {
+    setSortBy(newSortBy);
+    setCurrentPage(1); // 切换排序时重置到第一页
+  }
+
   async function handleCreateComment(content: string) {
     if (!selectedPost) {
       setError('请先选择要评论的帖子');
@@ -213,6 +221,8 @@ export const ForumApp = () => {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={handlePageChange}
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
         />
         <PublishPostForm
           isAuthenticated={loggedIn}
