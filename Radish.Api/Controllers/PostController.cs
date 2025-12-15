@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -67,12 +68,13 @@ public class PostController : ControllerBase
     }
 
     /// <summary>
-    /// 获取帖子列表（支持分页和排序）
+    /// 获取帖子列表（支持分页、排序和搜索）
     /// </summary>
     /// <param name="categoryId">分类 ID（可选）</param>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页数量（默认 20）</param>
     /// <param name="sortBy">排序方式：newest（最新，默认）、hottest（最热）、essence（精华）</param>
+    /// <param name="keyword">搜索关键词（搜索标题和内容）</param>
     /// <returns>分页帖子列表</returns>
     [HttpGet]
     [AllowAnonymous]
@@ -81,17 +83,34 @@ public class PostController : ControllerBase
         long? categoryId = null,
         int pageIndex = 1,
         int pageSize = 20,
-        string sortBy = "newest")
+        string sortBy = "newest",
+        string? keyword = null)
     {
         // 参数校验
         if (pageIndex < 1) pageIndex = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 20;
         sortBy = sortBy?.ToLowerInvariant() ?? "newest";
+        keyword = keyword?.Trim();
 
         // 构建基础查询条件
-        var baseCondition = categoryId.HasValue
-            ? (Post p) => p.CategoryId == categoryId.Value && p.IsPublished && !p.IsDeleted
-            : (Post p) => p.IsPublished && !p.IsDeleted;
+        Expression<Func<Post, bool>> baseCondition;
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            // 有搜索关键词：搜索标题或内容包含关键词的帖子
+            baseCondition = categoryId.HasValue
+                ? p => p.CategoryId == categoryId.Value && p.IsPublished && !p.IsDeleted
+                       && (p.Title.Contains(keyword) || p.Content.Contains(keyword))
+                : p => p.IsPublished && !p.IsDeleted
+                       && (p.Title.Contains(keyword) || p.Content.Contains(keyword));
+        }
+        else
+        {
+            // 无搜索关键词：正常查询
+            baseCondition = categoryId.HasValue
+                ? p => p.CategoryId == categoryId.Value && p.IsPublished && !p.IsDeleted
+                : p => p.IsPublished && !p.IsDeleted;
+        }
 
         List<PostVo> data;
         int totalCount;
