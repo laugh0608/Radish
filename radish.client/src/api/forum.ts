@@ -68,15 +68,27 @@ export async function getTopCategories(t: TFunction): Promise<Category[]> {
 }
 
 /**
- * 获取帖子列表
+ * 获取帖子列表（支持分页）
  * @param categoryId 可选的分类 ID，不传则获取所有帖子
+ * @param pageIndex 页码（从 1 开始）
+ * @param pageSize 每页数量（默认 20）
  */
-export async function getPostList(categoryId: number | null, t: TFunction): Promise<PostItem[]> {
+export async function getPostList(
+  categoryId: number | null,
+  t: TFunction,
+  pageIndex: number = 1,
+  pageSize: number = 20
+): Promise<import('@/types/forum').PageModel<PostItem>> {
   const baseUrl = `${getApiBaseUrl()}/api/v1/Post/GetList`;
-  const url = categoryId ? `${baseUrl}?categoryId=${categoryId}` : baseUrl;
+  const params = new URLSearchParams();
+  if (categoryId) params.set('categoryId', categoryId.toString());
+  params.set('pageIndex', pageIndex.toString());
+  params.set('pageSize', pageSize.toString());
+
+  const url = `${baseUrl}?${params.toString()}`;
   const response = await apiFetch(url);
-  const json = await response.json() as ApiResponse<PostItem[]>;
-  const parsed = parseApiResponse<PostItem[]>(json, t);
+  const json = await response.json() as ApiResponse<import('@/types/forum').PageModel<PostItem>>;
+  const parsed = parseApiResponse<import('@/types/forum').PageModel<PostItem>>(json, t);
 
   if (!parsed.ok || !parsed.data) {
     throw new Error(parsed.message || '加载帖子失败');

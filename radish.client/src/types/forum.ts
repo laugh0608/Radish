@@ -3,6 +3,22 @@
  */
 
 /**
+ * 分页模型
+ */
+export interface PageModel<T> {
+  /** 当前页码 */
+  page: number;
+  /** 每页数量 */
+  pageSize: number;
+  /** 总数据量 */
+  dataCount: number;
+  /** 总页数 */
+  pageCount: number;
+  /** 数据列表 */
+  data: T[];
+}
+
+/**
  * 分类
  */
 export interface Category {
