@@ -56,6 +56,8 @@ configureApiClient({
 
 ### 2. 发起请求
 
+<div v-pre>
+
 ```typescript
 import { apiGet, apiPost, apiPut, apiDelete } from '@radish/ui';
 
@@ -77,9 +79,13 @@ const result = await apiPut<User>('/api/v1/Users/1', {
 const result = await apiDelete<void>('/api/v1/Users/1', { withAuth: true });
 ```
 
+</div>
+
 ### 3. 处理响应
 
 所有便捷方法返回 `ParsedApiResponse<T>` 类型：
+
+<div v-pre>
 
 ```typescript
 interface ParsedApiResponse<T> {
@@ -91,7 +97,11 @@ interface ParsedApiResponse<T> {
 }
 ```
 
+</div>
+
 **示例：**
+
+<div v-pre>
 
 ```typescript
 const result = await apiGet<User[]>('/api/v1/Users', { withAuth: true });
@@ -105,11 +115,15 @@ if (result.ok && result.data) {
 }
 ```
 
+</div>
+
 ## API 类型定义
 
 ### ApiResponse<T>
 
 对应后端的 `MessageModel<T>` 结构：
+
+<div v-pre>
 
 ```typescript
 interface ApiResponse<T> {
@@ -123,9 +137,13 @@ interface ApiResponse<T> {
 }
 ```
 
+</div>
+
 ### PagedResponse<T>
 
 分页数据结构：
+
+<div v-pre>
 
 ```typescript
 interface PagedResponse<T> {
@@ -137,9 +155,13 @@ interface PagedResponse<T> {
 }
 ```
 
+</div>
+
 ### ApiRequestOptions
 
 请求配置选项：
+
+<div v-pre>
 
 ```typescript
 interface ApiRequestOptions extends RequestInit {
@@ -149,9 +171,13 @@ interface ApiRequestOptions extends RequestInit {
 }
 ```
 
+</div>
+
 ## 完整示例
 
 ### Console 应用示例
+
+<div v-pre>
 
 ```typescript
 // src/api/clients.ts
@@ -248,7 +274,11 @@ export const clientApi = {
 };
 ```
 
+</div>
+
 ### 组件中使用
+
+<div v-pre>
 
 ```typescript
 // src/pages/Applications.tsx
@@ -298,11 +328,15 @@ export const Applications = () => {
 };
 ```
 
+</div>
+
 ## 高级用法
 
 ### 使用原始 apiFetch
 
 如果便捷方法不满足需求，可以使用底层的 `apiFetch`：
+
+<div v-pre>
 
 ```typescript
 import { apiFetch, parseApiResponse } from '@radish/ui';
@@ -322,6 +356,8 @@ const response = await apiFetch('/api/v1/Custom', {
 const json = await response.json() as ApiResponse<MyType>;
 const result = parseApiResponse(json);
 ```
+
+</div>
 
 ### 动态修改配置
 
@@ -395,6 +431,8 @@ configureApiClient({ /* ... */ });
 
 **推荐：** 使用泛型指定响应类型
 
+<div v-pre>
+
 ```typescript
 // ✅ 有类型提示
 const result = await apiGet<User[]>('/api/v1/Users');
@@ -404,6 +442,8 @@ if (result.ok && result.data) {
   });
 }
 ```
+
+</div>
 
 **不推荐：** 不指定类型
 
