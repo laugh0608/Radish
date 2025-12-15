@@ -1,5 +1,5 @@
 import type { PostDetail as PostDetailType } from '@/types/forum';
-import { MarkdownRenderer } from '@/shared/ui/MarkdownRenderer';
+import { MarkdownRenderer } from '@radish/ui';
 import styles from './PostDetail.module.css';
 
 interface PostDetailProps {
