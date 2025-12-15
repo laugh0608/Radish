@@ -20,6 +20,11 @@ export type { ContextMenuProps, ContextMenuItem } from './ContextMenu/ContextMen
 export { DataTable } from './DataTable/DataTable';
 export type { DataTableProps } from './DataTable/DataTable';
 
+export { GlassPanel } from './GlassPanel/GlassPanel';
+export type { GlassPanelProps } from './GlassPanel/GlassPanel';
+
+export { MarkdownRenderer } from './MarkdownRenderer/MarkdownRenderer';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout

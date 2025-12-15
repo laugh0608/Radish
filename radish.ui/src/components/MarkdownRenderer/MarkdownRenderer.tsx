@@ -2,8 +2,9 @@
  * Markdown 渲染器组件
  *
  * 依赖包（需要在 Windows 中安装）：
- * npm install --workspace=radish.client react-markdown remark-gfm rehype-highlight
- * npm install --workspace=radish.client @types/react-markdown -D
+ * npm install --workspace=@radish/ui react-markdown remark-gfm rehype-highlight highlight.js
+ *
+ * 注意：react-markdown v9 已内置 TypeScript 类型定义，无需安装 @types/react-markdown
  */
 
 import ReactMarkdown from 'react-markdown';

@@ -1,5 +1,5 @@
 import type { CommentNode as CommentNodeType } from '@/types/forum';
-import { MarkdownRenderer } from '@/shared/ui/MarkdownRenderer';
+import { MarkdownRenderer } from '@radish/ui';
 import styles from './CommentNode.module.css';
 
 interface CommentNodeProps {
