@@ -330,7 +330,10 @@ public class PostController : ControllerBase
             {
                 Title = request.Title,
                 Content = request.Content,
-                CategoryId = request.CategoryId ?? post.CategoryId
+                CategoryId = request.CategoryId ?? post.CategoryId,
+                ModifyTime = DateTime.Now,
+                ModifyBy = _httpContextUser.UserName,
+                ModifyId = _httpContextUser.UserId
             },
             p => p.Id == request.PostId);
 
@@ -378,11 +381,14 @@ public class PostController : ControllerBase
             };
         }
 
-        // 软删除：设置 IsDeleted = true
+        // 软删除：设置 IsDeleted = true，并记录删除者信息
         await _postService.UpdateColumnsAsync(
             p => new Post
             {
-                IsDeleted = true
+                IsDeleted = true,
+                ModifyTime = DateTime.Now,
+                ModifyBy = _httpContextUser.UserName,
+                ModifyId = _httpContextUser.UserId
             },
             p => p.Id == postId);
 
