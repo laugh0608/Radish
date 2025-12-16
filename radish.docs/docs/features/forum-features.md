@@ -2,9 +2,9 @@
 
 > Radish 论坛应用核心功能实现文档
 >
-> **版本**: v1.0
+> **版本**: v0.1.1
 >
-> **最后更新**: 2025.12.15
+> **最后更新**: 2025.12.16
 
 ---
 
@@ -594,6 +594,375 @@ async function handleLikePost(postId: number) {
 **数据显示**:
 - 点赞数量：实时更新
 - 评论数量：只读显示
+
+---
+
+### 6. 内容管理
+
+**实现时间**: 2025.12.16
+
+**目标**: 允许用户编辑和删除自己发布的内容，提供草稿自动保存功能，提升内容管理体验。
+
+**后端实现**:
+
+#### 6.1 帖子编辑
+
+**API 端点**: `PUT /api/v1/Post/Update`
+
+**请求参数**:
+```typescript
+{
+  postId: number,      // 帖子ID
+  title: string,       // 帖子标题
+  content: string,     // 帖子内容
+  categoryId?: number  // 分类ID（可选，不传则保持原分类）
+}
+```
+
+**权限验证**:
+- 查询帖子是否存在且未删除
+- 验证 `post.AuthorId == currentUserId`
+- 不是作者返回 403 Forbidden
+
+**实现逻辑**:
+```csharp
+[HttpPut]
+public async Task<MessageModel> Update([FromBody] UpdatePostRequest request)
+{
+    // 查询帖子
+    var post = await _postService.QueryFirstAsync(p => p.Id == request.PostId && !p.IsDeleted);
+    if (post == null) return NotFound();
+
+    // 权限验证：只有作者本人可以编辑
+    if (post.AuthorId != _httpContextUser.UserId)
+        return new MessageModel { StatusCode = 403, MessageInfo = "无权编辑此帖子" };
+
+    // 更新帖子
+    await _postService.UpdateColumnsAsync(
+        p => new Post {
+            Title = request.Title,
+            Content = request.Content,
+            ModifyTime = DateTime.Now,
+            ModifyBy = _httpContextUser.UserName
+        },
+        p => p.Id == request.PostId
+    );
+
+    return new MessageModel { IsSuccess = true, MessageInfo = "编辑成功" };
+}
+```
+
+**审计字段**:
+- `ModifyTime`: 修改时间
+- `ModifyBy`: 修改者用户名
+- `ModifyId`: 修改者用户ID
+
+#### 6.2 帖子删除
+
+**API 端点**: `DELETE /api/v1/Post/Delete?postId={id}`
+
+**权限验证**:
+- 作者本人或管理员（Admin/System 角色）可以删除
+- 使用软删除（`IsDeleted = true`）
+
+**实现逻辑**:
+```csharp
+[HttpDelete]
+public async Task<MessageModel> Delete(long postId)
+{
+    var post = await _postService.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted);
+    if (post == null) return NotFound();
+
+    // 权限验证
+    var roles = _httpContextUser.GetClaimValueByType("role");
+    var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+    if (post.AuthorId != _httpContextUser.UserId && !isAdmin)
+        return Forbidden();
+
+    // 软删除
+    await _postService.UpdateColumnsAsync(
+        p => new Post {
+            IsDeleted = true,
+            ModifyTime = DateTime.Now,
+            ModifyBy = _httpContextUser.UserName
+        },
+        p => p.Id == postId
+    );
+
+    return Success();
+}
+```
+
+**软删除优势**:
+- 数据可恢复（管理后台可查看已删除内容）
+- 保留审计记录
+- 避免外键约束问题
+
+#### 6.3 评论删除
+
+**API 端点**: `DELETE /api/v1/Comment/Delete?commentId={id}`
+
+**权限验证**: 与帖子删除相同（作者或管理员）
+
+**实现逻辑**: 软删除 + 审计字段更新
+
+**前端实现**:
+
+#### 6.4 EditPostModal（编辑帖子对话框）
+
+**新增组件**: `radish.client/src/apps/forum/components/EditPostModal.tsx`
+
+**功能特性**:
+- 使用 `Modal` 组件实现对话框（@radish/ui）
+- 表单字段：标题输入框、内容文本域
+- 自动填充当前帖子内容
+- 实时表单验证（标题和内容不能为空）
+- 保存按钮 loading 状态
+- 完整的错误处理和提示
+
+**组件代码**:
+```tsx
+<Modal
+  isOpen={isOpen}
+  onClose={onClose}
+  title="编辑帖子"
+  size="large"
+  footer={
+    <div className={styles.footer}>
+      <Button variant="secondary" onClick={onClose} disabled={saving}>
+        取消
+      </Button>
+      <Button variant="primary" onClick={handleSave} disabled={saving}>
+        {saving ? '保存中...' : '保存'}
+      </Button>
+    </div>
+  }
+>
+  <div className={styles.container}>
+    {error && <div className={styles.error}>{error}</div>}
+    <div className={styles.formGroup}>
+      <label>标题</label>
+      <input
+        type="text"
+        value={title}
+        onChange={e => setTitle(e.target.value)}
+        disabled={saving}
+      />
+    </div>
+    <div className={styles.formGroup}>
+      <label>内容（支持 Markdown）</label>
+      <textarea
+        value={content}
+        onChange={e => setContent(e.target.value)}
+        rows={15}
+        disabled={saving}
+      />
+    </div>
+  </div>
+</Modal>
+```
+
+**交互流程**:
+1. 用户点击"编辑"按钮 → 打开对话框
+2. 自动填充当前帖子内容
+3. 用户修改标题或内容
+4. 点击"保存" → 调用 API
+5. 成功后关闭对话框 + 刷新帖子详情和列表
+6. 失败时显示错误提示（不关闭对话框）
+
+#### 6.5 权限控制按钮
+
+**PostDetail 组件更新**:
+
+**编辑和删除按钮**:
+```tsx
+{isAuthor && (
+  <div className={styles.authorActions}>
+    <button onClick={() => onEdit?.(post.id)} className={styles.editButton}>
+      <Icon icon="mdi:pencil" size={18} />
+      编辑
+    </button>
+    <button onClick={() => onDelete?.(post.id)} className={styles.deleteButton}>
+      <Icon icon="mdi:delete" size={18} />
+      删除
+    </button>
+  </div>
+)}
+```
+
+**权限判断**:
+```typescript
+const isAuthor = post && currentUserId > 0 && post.authorId === currentUserId;
+```
+
+**样式设计**:
+- 编辑按钮：蓝色高亮（hover 时边框和文字变蓝）
+- 删除按钮：红色高亮（hover 时边框和文字变红）
+- 使用 Icon 组件显示图标（mdi:pencil, mdi:delete）
+- flex 布局，自动右对齐
+
+**CommentNode 组件更新**:
+
+**删除按钮**:
+```tsx
+{isAuthor && onDelete && (
+  <button onClick={() => onDelete(node.id)} className={styles.deleteButton}>
+    <Icon icon="mdi:delete" size={14} />
+  </button>
+)}
+```
+
+**特性**:
+- 仅在评论右侧显示（使用 flex + margin-left: auto）
+- 小尺寸图标（14px）
+- hover 时背景变红
+- 递归传递给所有子评论节点
+
+#### 6.6 删除确认对话框
+
+**使用 ConfirmDialog 组件**:
+```tsx
+// 删除帖子确认
+<ConfirmDialog
+  isOpen={isDeleteDialogOpen}
+  title="确认删除"
+  message="确定要删除这篇帖子吗？删除后无法恢复。"
+  confirmText="删除"
+  cancelText="取消"
+  danger={true}
+  onConfirm={confirmDeletePost}
+  onCancel={cancelDeletePost}
+/>
+
+// 删除评论确认
+<ConfirmDialog
+  isOpen={isDeleteCommentDialogOpen}
+  title="确认删除"
+  message="确定要删除这条评论吗？删除后无法恢复。"
+  confirmText="删除"
+  cancelText="取消"
+  danger={true}
+  onConfirm={confirmDeleteComment}
+  onCancel={cancelDeleteComment}
+/>
+```
+
+**特性**:
+- 危险操作样式（红色按钮）
+- 清晰的警告文案
+- 二次确认机制（防止误操作）
+- ESC 键快速取消
+- 点击遮罩层关闭
+
+#### 6.7 草稿自动保存
+
+**功能目标**: 防止用户意外丢失编辑中的内容。
+
+**实现位置**: `PublishPostForm` 组件
+
+**localStorage 存储**:
+```typescript
+const DRAFT_STORAGE_KEY = 'forum_post_draft';
+
+// 存储结构
+{
+  title: string,
+  content: string,
+  savedAt: number  // 时间戳（用于后续扩展：过期清理）
+}
+```
+
+**自动保存逻辑**:
+```typescript
+// 监听标题和内容变化
+useEffect(() => {
+  if (title || content) {
+    try {
+      localStorage.setItem(
+        DRAFT_STORAGE_KEY,
+        JSON.stringify({ title, content, savedAt: Date.now() })
+      );
+    } catch (err) {
+      console.error('Failed to save draft:', err);
+    }
+  }
+}, [title, content]);
+```
+
+**特性**:
+- 任一字段变化时自动保存
+- 使用 try-catch 处理存储异常（如 localStorage 已满）
+- 仅在有内容时才保存（避免空白覆盖）
+
+**草稿恢复逻辑**:
+```typescript
+// 组件加载时恢复草稿
+useEffect(() => {
+  try {
+    const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (savedDraft) {
+      const draft = JSON.parse(savedDraft);
+      if (draft.title || draft.content) {
+        setTitle(draft.title || '');
+        setContent(draft.content || '');
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load draft:', err);
+  }
+}, []);
+```
+
+**草稿清理**:
+```typescript
+// 发布成功后清空草稿
+const handleSubmit = () => {
+  if (!title.trim() || !content.trim()) return;
+
+  onPublish(title, content);
+
+  // 清空表单和草稿
+  setTitle('');
+  setContent('');
+  try {
+    localStorage.removeItem(DRAFT_STORAGE_KEY);
+  } catch (err) {
+    console.error('Failed to clear draft:', err);
+  }
+};
+```
+
+**用户体验**:
+- ✅ 无需手动保存，自动持久化
+- ✅ 页面刷新后内容不丢失
+- ✅ 关闭浏览器后下次打开仍然保留
+- ✅ 发布成功后自动清空（不会保留已发布的内容）
+
+**后续优化方向**:
+- 多个草稿支持（使用唯一 key）
+- 过期草稿自动清理（基于 savedAt 时间戳）
+- 草稿列表管理界面
+- 云端同步（需要后端支持）
+
+#### 6.8 数据同步
+
+**编辑成功后**:
+- 同时刷新帖子详情和帖子列表
+- 确保所有展示位置的数据一致性
+- 使用 `Promise.all` 并行刷新
+
+**删除成功后**:
+- 帖子删除：清空选中状态 + 刷新列表 + 清空评论树
+- 评论删除：重新加载评论树（保持当前帖子状态）
+
+**类型定义更新**:
+- `PostDetail` 接口新增 `authorId: number` 字段
+- 新增 `UpdatePostRequest` 接口
+
+**Bug 修复**:
+- 修复 `ConfirmDialog` 组件导入路径问题：
+  - 从相对路径 `'../Modal'` 改为完整路径 `'../Modal/Modal'`
+  - 解决 Vite 导入分析错误
 
 ---
 
