@@ -231,6 +231,52 @@ public class PostController : ControllerBase
             MessageInfo = isLike ? "点赞成功" : "取消点赞成功"
         };
     }
+
+    /// <summary>
+    /// 获取指定用户的帖子列表
+    /// </summary>
+    /// <param name="userId">用户 ID</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页数量（默认 20）</param>
+    /// <returns>分页帖子列表</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetUserPosts(
+        long userId,
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        // 参数校验
+        if (pageIndex < 1) pageIndex = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        // 查询用户的帖子（只查询已发布且未删除的）
+        var (data, totalCount) = await _postService.QueryPageAsync(
+            p => p.AuthorId == userId && p.IsPublished && !p.IsDeleted,
+            pageIndex,
+            pageSize,
+            p => p.CreateTime,
+            SqlSugar.OrderByType.Desc);
+
+        // 构建分页模型
+        var pageModel = new PageModel<PostVo>
+        {
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = (int)Math.Ceiling(totalCount / (double)pageSize),
+            Data = data
+        };
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = pageModel
+        };
+    }
 }
 
 /// <summary>

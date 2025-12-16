@@ -30,10 +30,19 @@ public class UserController : ControllerBase
     private readonly IUserService _userService;
     private readonly IHttpContextUser  _httpContextUser;
 
-    public UserController(IUserService userService, IHttpContextUser httpContextUser)
+    private readonly IPostService _postService;
+    private readonly ICommentService _commentService;
+
+    public UserController(
+        IUserService userService,
+        IHttpContextUser httpContextUser,
+        IPostService postService,
+        ICommentService commentService)
     {
         _userService = userService;
         _httpContextUser = httpContextUser;
+        _postService = postService;
+        _commentService = commentService;
     }
 
     /// <summary>
@@ -164,6 +173,52 @@ public class UserController : ControllerBase
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             ResponseData = userInfo
+        };
+    }
+
+    /// <summary>
+    /// 获取用户统计信息
+    /// </summary>
+    /// <param name="userId">用户 ID</param>
+    /// <returns>用户统计信息（发帖数、评论数、获赞数）</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetUserStats(long userId)
+    {
+        // 统计发帖数
+        var postCount = await _postService.QueryCountAsync(
+            p => p.AuthorId == userId && p.IsPublished && !p.IsDeleted);
+
+        // 统计评论数
+        var commentCount = await _commentService.QueryCountAsync(
+            c => c.AuthorId == userId && !c.IsDeleted);
+
+        // 统计帖子获赞数
+        var posts = await _postService.QueryAsync(
+            p => p.AuthorId == userId && p.IsPublished && !p.IsDeleted);
+        var postLikeCount = posts.Sum(p => p.LikeCount);
+
+        // 统计评论获赞数
+        var comments = await _commentService.QueryAsync(
+            c => c.AuthorId == userId && !c.IsDeleted);
+        var commentLikeCount = comments.Sum(c => c.LikeCount);
+
+        var stats = new
+        {
+            postCount,
+            commentCount,
+            totalLikeCount = postLikeCount + commentLikeCount,
+            postLikeCount,
+            commentLikeCount
+        };
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = stats
         };
     }
 }
