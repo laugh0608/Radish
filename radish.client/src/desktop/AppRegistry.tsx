@@ -2,6 +2,7 @@ import { WelcomeApp } from '@/apps/welcome/WelcomeApp';
 import { ShowcaseApp } from '@/apps/showcase/ShowcaseApp';
 import { AuthTestApp } from '@/apps/auth-test/AuthTestApp';
 import { ForumApp } from '@/apps/forum/ForumApp';
+import { ProfileApp } from '@/apps/profile/ProfileApp';
 import type { AppDefinition } from './types';
 
 /**
@@ -108,6 +109,17 @@ export const appRegistry: AppDefinition[] = [
     defaultSize: { width: 1200, height: 800 },
     requiredRoles: ['User'],
     category: 'content'
+  },
+  {
+    id: 'profile',
+    name: '个人主页',
+    icon: 'mdi:account',
+    description: '查看个人信息、帖子和评论',
+    component: ProfileApp,
+    type: 'window',
+    defaultSize: { width: 1000, height: 700 },
+    requiredRoles: ['User'],
+    category: 'user'
   },
 
 ];
