@@ -207,6 +207,64 @@ export async function likePost(postId: number, isLike: boolean, t: TFunction): P
 }
 
 /**
+ * 编辑帖子
+ * @param request 编辑请求
+ */
+export async function updatePost(request: import('@/types/forum').UpdatePostRequest, t: TFunction): Promise<void> {
+  const url = `${getApiBaseUrl()}/api/v1/Post/Update`;
+  const response = await apiFetch(url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(request),
+    withAuth: true
+  });
+  const json = await response.json() as ApiResponse<null>;
+  const parsed = parseApiResponse<null>(json, t);
+
+  if (!parsed.ok) {
+    throw new Error(parsed.message || '编辑帖子失败');
+  }
+}
+
+/**
+ * 删除帖子（软删除）
+ * @param postId 帖子 ID
+ */
+export async function deletePost(postId: number, t: TFunction): Promise<void> {
+  const url = `${getApiBaseUrl()}/api/v1/Post/Delete?postId=${postId}`;
+  const response = await apiFetch(url, {
+    method: 'DELETE',
+    withAuth: true
+  });
+  const json = await response.json() as ApiResponse<null>;
+  const parsed = parseApiResponse<null>(json, t);
+
+  if (!parsed.ok) {
+    throw new Error(parsed.message || '删除帖子失败');
+  }
+}
+
+/**
+ * 删除评论（软删除）
+ * @param commentId 评论 ID
+ */
+export async function deleteComment(commentId: number, t: TFunction): Promise<void> {
+  const url = `${getApiBaseUrl()}/api/v1/Comment/Delete?commentId=${commentId}`;
+  const response = await apiFetch(url, {
+    method: 'DELETE',
+    withAuth: true
+  });
+  const json = await response.json() as ApiResponse<null>;
+  const parsed = parseApiResponse<null>(json, t);
+
+  if (!parsed.ok) {
+    throw new Error(parsed.message || '删除评论失败');
+  }
+}
+
+/**
  * 生成 OIDC 登录 URL
  */
 export function getOidcLoginUrl(): string {

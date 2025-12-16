@@ -1,5 +1,5 @@
-import { Modal } from '../Modal';
-import { Button } from '../Button';
+import { Modal } from '../Modal/Modal';
+import { Button } from '../Button/Button';
 import styles from './ConfirmDialog.module.css';
 
 export interface ConfirmDialogProps {

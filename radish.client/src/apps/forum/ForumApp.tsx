@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
+import { ConfirmDialog } from '@radish/ui';
 import {
   getTopCategories,
   getPostList,
@@ -8,7 +9,10 @@ import {
   getCommentTree,
   publishPost,
   createComment,
-  likePost
+  likePost,
+  updatePost,
+  deletePost,
+  deleteComment
 } from '@/api/forum';
 import type {
   Category,
@@ -22,11 +26,12 @@ import { PublishPostForm } from './components/PublishPostForm';
 import { PostDetail as PostDetailView } from './components/PostDetail';
 import { CommentTree } from './components/CommentTree';
 import { CreateCommentForm } from './components/CreateCommentForm';
+import { EditPostModal } from './components/EditPostModal';
 import styles from './ForumApp.module.css';
 
 export const ForumApp = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, userName } = useUserStore();
+  const { isAuthenticated, userName, userId } = useUserStore();
 
   // 数据状态
   const [categories, setCategories] = useState<Category[]>([]);
@@ -45,6 +50,13 @@ export const ForumApp = () => {
 
   // 搜索状态
   const [searchKeyword, setSearchKeyword] = useState('');
+
+  // 编辑和删除状态
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<number | null>(null);
+  const [isDeleteCommentDialogOpen, setIsDeleteCommentDialogOpen] = useState(false);
+  const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
 
   // 点赞状态（使用 localStorage 记录用户点赞过的帖子）
   const [likedPosts, setLikedPosts] = useState<Set<number>>(() => {
@@ -266,6 +278,98 @@ export const ForumApp = () => {
     }
   }
 
+  // 编辑帖子
+  function handleEditPost(postId: number) {
+    if (!selectedPost || selectedPost.id !== postId) {
+      setError('请先选择要编辑的帖子');
+      return;
+    }
+    setIsEditModalOpen(true);
+  }
+
+  // 保存编辑的帖子
+  async function handleSaveEdit(postId: number, title: string, content: string) {
+    setError(null);
+    try {
+      await updatePost(
+        {
+          postId,
+          title,
+          content
+        },
+        t
+      );
+      // 编辑成功后重新加载帖子详情和帖子列表
+      await Promise.all([loadPostDetail(postId), loadPosts()]);
+      setIsEditModalOpen(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      throw new Error(message);
+    }
+  }
+
+  // 删除帖子
+  function handleDeletePost(postId: number) {
+    setPostToDelete(postId);
+    setIsDeleteDialogOpen(true);
+  }
+
+  // 确认删除帖子
+  async function confirmDeletePost() {
+    if (!postToDelete) return;
+
+    setError(null);
+    try {
+      await deletePost(postToDelete, t);
+      // 删除成功后关闭对话框，清空选中的帖子，重新加载帖子列表
+      setIsDeleteDialogOpen(false);
+      setPostToDelete(null);
+      setSelectedPost(null);
+      setComments([]);
+      await loadPosts();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      setIsDeleteDialogOpen(false);
+    }
+  }
+
+  // 取消删除帖子
+  function cancelDeletePost() {
+    setIsDeleteDialogOpen(false);
+    setPostToDelete(null);
+  }
+
+  // 删除评论
+  function handleDeleteComment(commentId: number) {
+    setCommentToDelete(commentId);
+    setIsDeleteCommentDialogOpen(true);
+  }
+
+  // 确认删除评论
+  async function confirmDeleteComment() {
+    if (!commentToDelete || !selectedPost) return;
+
+    setError(null);
+    try {
+      await deleteComment(commentToDelete, t);
+      // 删除成功后关闭对话框，重新加载评论列表
+      setIsDeleteCommentDialogOpen(false);
+      setCommentToDelete(null);
+      await loadComments(selectedPost.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      setIsDeleteCommentDialogOpen(false);
+    }
+  }
+
+  // 取消删除评论
+  function cancelDeleteComment() {
+    setIsDeleteCommentDialogOpen(false);
+    setCommentToDelete(null);
+  }
+
   return (
     <div className={styles.container}>
       {/* 分类列表 */}
@@ -306,11 +410,16 @@ export const ForumApp = () => {
           isLiked={selectedPost ? likedPosts.has(selectedPost.id) : false}
           onLike={handleLikePost}
           isAuthenticated={loggedIn}
+          currentUserId={userId ?? 0}
+          onEdit={handleEditPost}
+          onDelete={handleDeletePost}
         />
         <CommentTree
           comments={comments}
           loading={loadingComments}
           hasPost={selectedPost !== null}
+          currentUserId={userId ?? 0}
+          onDeleteComment={handleDeleteComment}
         />
         <CreateCommentForm
           isAuthenticated={loggedIn}
@@ -321,6 +430,38 @@ export const ForumApp = () => {
         {/* 错误提示 */}
         {error && <p className={styles.errorText}>错误：{error}</p>}
       </div>
+
+      {/* 编辑帖子 Modal */}
+      <EditPostModal
+        isOpen={isEditModalOpen}
+        post={selectedPost}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleSaveEdit}
+      />
+
+      {/* 删除确认对话框 */}
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        title="确认删除"
+        message="确定要删除这篇帖子吗？删除后无法恢复。"
+        confirmText="删除"
+        cancelText="取消"
+        danger={true}
+        onConfirm={confirmDeletePost}
+        onCancel={cancelDeletePost}
+      />
+
+      {/* 删除评论确认对话框 */}
+      <ConfirmDialog
+        isOpen={isDeleteCommentDialogOpen}
+        title="确认删除"
+        message="确定要删除这条评论吗？删除后无法恢复。"
+        confirmText="删除"
+        cancelText="取消"
+        danger={true}
+        onConfirm={confirmDeleteComment}
+        onCancel={cancelDeleteComment}
+      />
     </div>
   );
 };

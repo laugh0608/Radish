@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { getOidcLoginUrl } from '@/api/forum';
 import styles from './PublishPostForm.module.css';
 
@@ -9,6 +9,8 @@ interface PublishPostFormProps {
   disabled?: boolean;
 }
 
+const DRAFT_STORAGE_KEY = 'forum_post_draft';
+
 export const PublishPostForm = ({
   isAuthenticated,
   userName,
@@ -18,13 +20,49 @@ export const PublishPostForm = ({
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
 
+  // 组件加载时恢复草稿
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (savedDraft) {
+        const draft = JSON.parse(savedDraft);
+        if (draft.title || draft.content) {
+          setTitle(draft.title || '');
+          setContent(draft.content || '');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load draft:', err);
+    }
+  }, []);
+
+  // 自动保存草稿（标题或内容变化时）
+  useEffect(() => {
+    if (title || content) {
+      try {
+        localStorage.setItem(
+          DRAFT_STORAGE_KEY,
+          JSON.stringify({ title, content, savedAt: Date.now() })
+        );
+      } catch (err) {
+        console.error('Failed to save draft:', err);
+      }
+    }
+  }, [title, content]);
+
   const handleSubmit = () => {
     if (!title.trim() || !content.trim()) {
       return;
     }
     onPublish(title, content);
+    // 发布成功后清空表单和草稿
     setTitle('');
     setContent('');
+    try {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch (err) {
+      console.error('Failed to clear draft:', err);
+    }
   };
 
   const handleLoginClick = () => {
