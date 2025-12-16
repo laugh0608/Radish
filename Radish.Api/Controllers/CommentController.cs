@@ -157,6 +157,58 @@ public class CommentController : ControllerBase
             ResponseData = pageModel
         };
     }
+
+    /// <summary>
+    /// 删除评论（软删除）
+    /// </summary>
+    /// <param name="commentId">评论 ID</param>
+    /// <returns>操作结果</returns>
+    [HttpDelete]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> Delete(long commentId)
+    {
+        // 查询评论
+        var comment = await _commentService.QueryFirstAsync(c => c.Id == commentId && !c.IsDeleted);
+        if (comment == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "评论不存在"
+            };
+        }
+
+        // 权限验证：只有作者本人或管理员可以删除
+        var roles = _httpContextUser.GetClaimValueByType("role");
+        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        if (comment.AuthorId != _httpContextUser.UserId && !isAdmin)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "无权删除此评论"
+            };
+        }
+
+        // 软删除：设置 IsDeleted = true
+        await _commentService.UpdateColumnsAsync(
+            c => new Comment
+            {
+                IsDeleted = true
+            },
+            c => c.Id == commentId);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "删除成功"
+        };
+    }
 }
 
 /// <summary>

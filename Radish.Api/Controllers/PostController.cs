@@ -277,6 +277,140 @@ public class PostController : ControllerBase
             ResponseData = pageModel
         };
     }
+
+    /// <summary>
+    /// 编辑帖子
+    /// </summary>
+    /// <param name="request">编辑请求</param>
+    /// <returns>操作结果</returns>
+    [HttpPut]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> Update([FromBody] UpdatePostRequest request)
+    {
+        // 参数校验
+        if (string.IsNullOrWhiteSpace(request.Title))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "帖子标题不能为空"
+            };
+        }
+
+        // 查询帖子
+        var post = await _postService.QueryFirstAsync(p => p.Id == request.PostId && !p.IsDeleted);
+        if (post == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "帖子不存在"
+            };
+        }
+
+        // 权限验证：只有作者本人可以编辑
+        if (post.AuthorId != _httpContextUser.UserId)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "无权编辑此帖子"
+            };
+        }
+
+        // 更新帖子
+        await _postService.UpdateColumnsAsync(
+            p => new Post
+            {
+                Title = request.Title,
+                Content = request.Content,
+                CategoryId = request.CategoryId ?? post.CategoryId
+            },
+            p => p.Id == request.PostId);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "编辑成功"
+        };
+    }
+
+    /// <summary>
+    /// 删除帖子（软删除）
+    /// </summary>
+    /// <param name="postId">帖子 ID</param>
+    /// <returns>操作结果</returns>
+    [HttpDelete]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> Delete(long postId)
+    {
+        // 查询帖子
+        var post = await _postService.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted);
+        if (post == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "帖子不存在"
+            };
+        }
+
+        // 权限验证：只有作者本人或管理员可以删除
+        var roles = _httpContextUser.GetClaimValueByType("role");
+        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        if (post.AuthorId != _httpContextUser.UserId && !isAdmin)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "无权删除此帖子"
+            };
+        }
+
+        // 软删除：设置 IsDeleted = true
+        await _postService.UpdateColumnsAsync(
+            p => new Post
+            {
+                IsDeleted = true
+            },
+            p => p.Id == postId);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "删除成功"
+        };
+    }
+}
+
+/// <summary>
+/// 编辑帖子请求对象
+/// </summary>
+public class UpdatePostRequest
+{
+    /// <summary>帖子 ID</summary>
+    public long PostId { get; set; }
+
+    /// <summary>帖子标题</summary>
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>帖子内容</summary>
+    public string Content { get; set; } = string.Empty;
+
+    /// <summary>分类 ID（可选，不传则保持原分类）</summary>
+    public long? CategoryId { get; set; }
 }
 
 /// <summary>
