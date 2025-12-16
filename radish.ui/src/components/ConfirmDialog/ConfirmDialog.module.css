@@ -1,0 +1,16 @@
+.content {
+  padding: 20px 0;
+}
+
+.message {
+  margin: 0 0 24px 0;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}

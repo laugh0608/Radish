@@ -25,6 +25,9 @@ export type { GlassPanelProps } from './GlassPanel/GlassPanel';
 
 export { MarkdownRenderer } from './MarkdownRenderer/MarkdownRenderer';
 
+export { ConfirmDialog } from './ConfirmDialog/ConfirmDialog';
+export type { ConfirmDialogProps } from './ConfirmDialog/ConfirmDialog';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout
