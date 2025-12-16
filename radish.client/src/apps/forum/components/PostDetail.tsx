@@ -1,5 +1,5 @@
 import type { PostDetail as PostDetailType } from '@/types/forum';
-import { MarkdownRenderer } from '@radish/ui';
+import { MarkdownRenderer, Icon } from '@radish/ui';
 import styles from './PostDetail.module.css';
 
 interface PostDetailProps {
@@ -8,6 +8,9 @@ interface PostDetailProps {
   isLiked?: boolean;
   onLike?: (postId: number) => void;
   isAuthenticated?: boolean;
+  currentUserId?: number;
+  onEdit?: (postId: number) => void;
+  onDelete?: (postId: number) => void;
 }
 
 export const PostDetail = ({
@@ -15,8 +18,13 @@ export const PostDetail = ({
   loading = false,
   isLiked = false,
   onLike,
-  isAuthenticated = false
+  isAuthenticated = false,
+  currentUserId = 0,
+  onEdit,
+  onDelete
 }: PostDetailProps) => {
+  // 判断是否是作者本人
+  const isAuthor = post && currentUserId > 0 && post.authorId === currentUserId;
   if (loading) {
     return (
       <div className={styles.container}>
@@ -56,7 +64,7 @@ export const PostDetail = ({
           </div>
         )}
 
-        {/* 点赞按钮 */}
+        {/* 操作按钮 */}
         <div className={styles.actions}>
           <button
             type="button"
@@ -71,6 +79,30 @@ export const PostDetail = ({
           <span className={styles.commentCount}>
             💬 {post.commentCount || 0} 条评论
           </span>
+
+          {/* 编辑和删除按钮（仅作者可见） */}
+          {isAuthor && (
+            <div className={styles.authorActions}>
+              <button
+                type="button"
+                onClick={() => onEdit?.(post.id)}
+                className={styles.editButton}
+                title="编辑帖子"
+              >
+                <Icon icon="mdi:pencil" size={18} />
+                编辑
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete?.(post.id)}
+                className={styles.deleteButton}
+                title="删除帖子"
+              >
+                <Icon icon="mdi:delete" size={18} />
+                删除
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
