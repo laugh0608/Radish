@@ -194,11 +194,14 @@ public class CommentController : ControllerBase
             };
         }
 
-        // 软删除：设置 IsDeleted = true
+        // 软删除：设置 IsDeleted = true，并记录删除者信息
         await _commentService.UpdateColumnsAsync(
             c => new Comment
             {
-                IsDeleted = true
+                IsDeleted = true,
+                ModifyTime = DateTime.Now,
+                ModifyBy = _httpContextUser.UserName,
+                ModifyId = _httpContextUser.UserId
             },
             c => c.Id == commentId);
 
