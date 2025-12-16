@@ -47,6 +47,7 @@ export interface PostItem {
  */
 export interface PostDetail extends PostItem {
   content: string;
+  authorId: number;
   categoryName?: string;
   tagNames?: string[];
   likeCount?: number;
@@ -77,6 +78,16 @@ export interface PublishPostRequest {
   content: string;
   categoryId: number;
   tagNames?: string[];
+}
+
+/**
+ * 编辑帖子请求
+ */
+export interface UpdatePostRequest {
+  postId: number;
+  title: string;
+  content: string;
+  categoryId?: number;
 }
 
 /**

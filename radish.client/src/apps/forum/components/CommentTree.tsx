@@ -6,9 +6,17 @@ interface CommentTreeProps {
   comments: CommentNodeType[];
   loading?: boolean;
   hasPost?: boolean;
+  currentUserId?: number;
+  onDeleteComment?: (commentId: number) => void;
 }
 
-export const CommentTree = ({ comments, loading = false, hasPost = false }: CommentTreeProps) => {
+export const CommentTree = ({
+  comments,
+  loading = false,
+  hasPost = false,
+  currentUserId = 0,
+  onDeleteComment
+}: CommentTreeProps) => {
   return (
     <div className={styles.container}>
       <h4 className={styles.title}>评论</h4>
@@ -21,7 +29,13 @@ export const CommentTree = ({ comments, loading = false, hasPost = false }: Comm
       )}
       <div className={styles.list}>
         {comments.map(comment => (
-          <CommentNode key={comment.id} node={comment} level={0} />
+          <CommentNode
+            key={comment.id}
+            node={comment}
+            level={0}
+            currentUserId={currentUserId}
+            onDelete={onDeleteComment}
+          />
         ))}
       </div>
     </div>
