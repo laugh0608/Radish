@@ -1,7 +1,11 @@
 .desktop {
-  flex: 1;
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   padding: 2rem;
+  padding-bottom: 80px; /* 为底部 Dock 留出空间，避免桌面图标被遮挡 */
   display: grid;
   grid-template-columns: repeat(auto-fill, 100px);
   grid-auto-rows: 120px;
