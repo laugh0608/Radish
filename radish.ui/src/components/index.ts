@@ -28,6 +28,9 @@ export { MarkdownRenderer } from './MarkdownRenderer/MarkdownRenderer';
 export { ConfirmDialog } from './ConfirmDialog/ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog/ConfirmDialog';
 
+export { UserMention } from './UserMention/UserMention';
+export type { UserMentionProps, UserMentionOption } from './UserMention/UserMention';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout

@@ -8,6 +8,7 @@ interface CommentTreeProps {
   hasPost?: boolean;
   currentUserId?: number;
   onDeleteComment?: (commentId: number) => void;
+  onLikeComment?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
 }
 
 export const CommentTree = ({
@@ -15,7 +16,8 @@ export const CommentTree = ({
   loading = false,
   hasPost = false,
   currentUserId = 0,
-  onDeleteComment
+  onDeleteComment,
+  onLikeComment
 }: CommentTreeProps) => {
   return (
     <div className={styles.container}>
@@ -35,6 +37,7 @@ export const CommentTree = ({
             level={0}
             currentUserId={currentUserId}
             onDelete={onDeleteComment}
+            onLike={onLikeComment}
           />
         ))}
       </div>

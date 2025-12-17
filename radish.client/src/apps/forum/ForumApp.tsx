@@ -10,6 +10,7 @@ import {
   publishPost,
   createComment,
   likePost,
+  toggleCommentLike,
   updatePost,
   deletePost,
   deleteComment
@@ -278,6 +279,24 @@ export const ForumApp = () => {
     }
   }
 
+  // 处理评论点赞
+  async function handleCommentLike(commentId: number): Promise<{ isLiked: boolean; likeCount: number }> {
+    if (!loggedIn) {
+      setError('请先登录后再点赞');
+      throw new Error('未登录');
+    }
+
+    setError(null);
+    try {
+      const result = await toggleCommentLike(commentId, t);
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      throw err;
+    }
+  }
+
   // 编辑帖子
   function handleEditPost(postId: number) {
     if (!selectedPost || selectedPost.id !== postId) {
@@ -420,6 +439,7 @@ export const ForumApp = () => {
           hasPost={selectedPost !== null}
           currentUserId={userId ?? 0}
           onDeleteComment={handleDeleteComment}
+          onLikeComment={handleCommentLike}
         />
         <CreateCommentForm
           isAuthenticated={loggedIn}
