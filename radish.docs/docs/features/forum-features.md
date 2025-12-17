@@ -2,9 +2,9 @@
 
 > Radish 论坛应用核心功能实现文档
 >
-> **版本**: v0.1.1
+> **版本**: v0.1.2
 >
-> **最后更新**: 2025.12.16
+> **最后更新**: 2025.12.17
 
 ---
 
@@ -966,6 +966,597 @@ const handleSubmit = () => {
 
 ---
 
+### 7. 评论回复与懒加载
+
+**实现时间**: 2025.12.17
+
+**目标**: 实现 Reddit/小红书风格的评论回复UI，支持懒加载子评论，提升大量评论场景下的性能和用户体验。
+
+**架构改进**:
+
+#### 7.1 Repository 层二级排序支持（关键改进）
+
+**问题**: Service层直接使用 `base.Db.Queryable<Comment>()` 访问数据库，违反了 Repository 模式的分层原则。
+
+**解决方案**: 扩展 `IBaseRepository` 和 `BaseRepository`，添加二级排序支持。
+
+**接口定义** (`IBaseRepository.cs`):
+```csharp
+/// <summary>分页查询（支持二级排序）</summary>
+Task<(List<TEntity> data, int totalCount)> QueryPageAsync(
+    Expression<Func<TEntity, bool>>? whereExpression,
+    int pageIndex,
+    int pageSize,
+    Expression<Func<TEntity, object>>? orderByExpression,
+    OrderByType orderByType,
+    Expression<Func<TEntity, object>>? thenByExpression,
+    OrderByType thenByType);
+```
+
+**实现** (`BaseRepository.cs`):
+```csharp
+public async Task<(List<TEntity> data, int totalCount)> QueryPageAsync(
+    Expression<Func<TEntity, bool>>? whereExpression,
+    int pageIndex,
+    int pageSize,
+    Expression<Func<TEntity, object>>? orderByExpression,
+    OrderByType orderByType,
+    Expression<Func<TEntity, object>>? thenByExpression,
+    OrderByType thenByType)
+{
+    RefAsync<int> totalCount = 0;
+    var query = DbClientBase.Queryable<TEntity>()
+        .WhereIF(whereExpression != null, whereExpression);
+
+    // 主排序
+    if (orderByExpression != null)
+    {
+        query = orderByType == OrderByType.Asc
+            ? query.OrderBy(orderByExpression)
+            : query.OrderByDescending(orderByExpression);
+    }
+
+    // 次级排序（使用 SqlSugar 的 OrderBy 重载）
+    if (thenByExpression != null)
+    {
+        query = query.OrderBy(thenByExpression, thenByType);
+    }
+
+    var data = await query.ToPageListAsync(pageIndex, pageSize, totalCount);
+    return (data, totalCount);
+}
+```
+
+**优势**:
+- ✅ 保持正确的分层架构（Service → Repository → Database）
+- ✅ 可供全项目其他 Service 复用
+- ✅ 提升代码可维护性和一致性
+- ✅ 遵循项目架构规范
+
+**后端实现**:
+
+#### 7.2 子评论分页加载 API
+
+**API 端点**: `GET /api/v1/Comment/GetChildComments`
+
+**请求参数**:
+```typescript
+{
+  parentId: number,    // 父评论ID
+  pageIndex: number,   // 页码（从1开始）
+  pageSize: number     // 每页数量（默认10）
+}
+```
+
+**响应格式**:
+```typescript
+{
+  page: number,         // 当前页码
+  pageSize: number,     // 每页数量
+  dataCount: number,    // 总评论数
+  pageCount: number,    // 总页数
+  data: CommentVo[]     // 子评论列表
+}
+```
+
+**排序规则**:
+```
+主排序：点赞数降序 (LikeCount DESC)
+次级排序：创建时间降序 (CreateTime DESC)
+```
+
+**实现逻辑** (`CommentService.GetChildCommentsPageAsync`):
+```csharp
+public async Task<(List<CommentVo> comments, int total)> GetChildCommentsPageAsync(
+    long parentId,
+    int pageIndex,
+    int pageSize,
+    long? userId = null)
+{
+    // 使用 Repository 的二级排序方法查询子评论
+    var (comments, total) = await _commentRepository.QueryPageAsync(
+        whereExpression: c => c.ParentId == parentId && !c.IsDeleted,
+        pageIndex: pageIndex,
+        pageSize: pageSize,
+        orderByExpression: c => c.LikeCount,      // 主排序：点赞数
+        orderByType: OrderByType.Desc,
+        thenByExpression: c => c.CreateTime,      // 次级排序：创建时间
+        thenByType: OrderByType.Desc
+    );
+
+    // 转换为 ViewModel
+    var commentVos = base.Mapper.Map<List<CommentVo>>(comments);
+
+    // 如果用户已登录，填充点赞状态
+    if (userId.HasValue && commentVos.Any())
+    {
+        var commentIds = commentVos.Select(c => c.Id).ToList();
+        var likeStatus = await GetUserLikeStatusAsync(userId.Value, commentIds);
+        foreach (var comment in commentVos)
+        {
+            comment.IsLiked = likeStatus.GetValueOrDefault(comment.Id, false);
+        }
+    }
+
+    return (commentVos, total);
+}
+```
+
+**权限控制**:
+- 使用 `[AllowAnonymous]` 允许匿名用户浏览
+- 已登录用户自动填充点赞状态（`IsLiked`）
+
+**前端实现**:
+
+#### 7.3 CommentNode 组件重构（懒加载核心）
+
+**状态管理**:
+```typescript
+// 子评论展开状态
+const [isExpanded, setIsExpanded] = useState(false);
+const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(node.children || []);
+const [currentPage, setCurrentPage] = useState(1);
+const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+// 计算属性
+const hasChildren = (node.childrenTotal && node.childrenTotal > 0) || (node.children && node.children.length > 0);
+const totalChildren = node.childrenTotal ?? node.children?.length ?? 0;
+const loadedCount = loadedChildren.length;
+const hasMore = loadedCount < totalChildren;
+```
+
+**显示逻辑**:
+```typescript
+// 决定显示哪些子评论
+const displayChildren = level === 0 && !isExpanded && hasChildren
+  ? loadedChildren.slice(0, 1)  // 顶级评论未展开：只显示最热的1条
+  : loadedChildren;              // 已展开或非顶级评论：显示所有已加载的
+```
+
+**展开/收起逻辑**:
+```typescript
+const handleToggleExpand = async () => {
+  if (!isExpanded) {
+    // 展开：如果还没有加载数据，则加载第一页
+    if (loadedCount === 0 && onLoadMoreChildren) {
+      setIsLoadingMore(true);
+      try {
+        const children = await onLoadMoreChildren(node.id, 1, pageSize);
+        setLoadedChildren(children);
+        setCurrentPage(1);
+      } catch (error) {
+        console.error('加载子评论失败:', error);
+      } finally {
+        setIsLoadingMore(false);
+      }
+    }
+    setIsExpanded(true);
+  } else {
+    // 收起：回到初始状态（只显示1条）
+    setIsExpanded(false);
+  }
+};
+```
+
+**加载更多逻辑**:
+```typescript
+const handleLoadMore = async () => {
+  if (!onLoadMoreChildren || isLoadingMore) return;
+
+  setIsLoadingMore(true);
+  try {
+    const nextPage = currentPage + 1;
+    const moreChildren = await onLoadMoreChildren(node.id, nextPage, pageSize);
+    setLoadedChildren([...loadedChildren, ...moreChildren]);  // 追加到末尾
+    setCurrentPage(nextPage);
+  } catch (error) {
+    console.error('加载更多子评论失败:', error);
+  } finally {
+    setIsLoadingMore(false);
+  }
+};
+```
+
+**UI 结构**:
+```tsx
+{/* 子评论区域 */}
+{hasChildren && (
+  <div className={styles.childrenSection}>
+    {/* 显示子评论 */}
+    {displayChildren.length > 0 && (
+      <div className={styles.children}>
+        {displayChildren.map(child => (
+          <CommentNode
+            key={child.id}
+            node={child}
+            level={level + 1}
+            currentUserId={currentUserId}
+            pageSize={pageSize}
+            onDelete={onDelete}
+            onLike={onLike}
+            onReply={onReply}
+            onLoadMoreChildren={onLoadMoreChildren}
+          />
+        ))}
+      </div>
+    )}
+
+    {/* 展开/收起按钮（仅顶级评论显示） */}
+    {level === 0 && totalChildren > 1 && (
+      <div className={styles.expandSection}>
+        {!isExpanded ? (
+          <button onClick={handleToggleExpand} disabled={isLoadingMore}>
+            <Icon icon="mdi:chevron-down" size={16} />
+            {isLoadingMore ? '加载中...' : `展开 ${totalChildren - 1} 条回复`}
+          </button>
+        ) : (
+          <>
+            {/* 加载更多按钮 */}
+            {hasMore && (
+              <button onClick={handleLoadMore} disabled={isLoadingMore}>
+                <Icon icon="mdi:chevron-down" size={16} />
+                {isLoadingMore ? '加载中...' : `加载更多 (${loadedCount}/${totalChildren})`}
+              </button>
+            )}
+
+            {/* 收起按钮 */}
+            <button onClick={handleToggleExpand}>
+              <Icon icon="mdi:chevron-up" size={16} />
+              收起回复
+            </button>
+          </>
+        )}
+      </div>
+    )}
+  </div>
+)}
+```
+
+**交互特性**:
+- ✅ 初始状态：只显示1条最热子评论
+- ✅ 点击"展开"：加载第一页子评论（默认10条）
+- ✅ 点击"加载更多"：增量加载下一页
+- ✅ 点击"收起"：回到初始状态（只显示1条）
+- ✅ 加载状态提示：按钮禁用、文字变化
+- ✅ 进度提示：显示 "已加载数/总数"
+
+#### 7.4 回复功能实现
+
+**CommentNode 组件更新**:
+
+**添加回复按钮**:
+```tsx
+{/* 回复按钮 */}
+{onReply && (
+  <button
+    type="button"
+    onClick={handleReply}
+    className={`${styles.actionButton} ${styles.replyButton}`}
+    title="回复"
+  >
+    <Icon icon="mdi:reply" size={16} />
+    <span>回复</span>
+  </button>
+)}
+```
+
+**回复处理函数**:
+```typescript
+const handleReply = () => {
+  if (onReply) {
+    onReply(node.id, node.authorName);
+  }
+};
+```
+
+**CreateCommentForm 组件更新**:
+
+**Props 定义**:
+```typescript
+interface CreateCommentFormProps {
+  isAuthenticated: boolean;
+  hasPost: boolean;
+  onSubmit: (content: string) => void;
+  disabled?: boolean;
+  replyTo?: { commentId: number; authorName: string } | null;  // 新增
+  onCancelReply?: () => void;                                   // 新增
+}
+```
+
+**回复提示 UI**:
+```tsx
+{replyTo && (
+  <div className={styles.replyHint}>
+    <span className={styles.replyText}>
+      正在回复 <span className={styles.replyTarget}>@{replyTo.authorName}</span>
+    </span>
+    {onCancelReply && (
+      <button
+        type="button"
+        onClick={onCancelReply}
+        className={styles.cancelReplyButton}
+        title="取消回复"
+      >
+        <Icon icon="mdi:close" size={16} />
+      </button>
+    )}
+  </div>
+)}
+```
+
+**ForumApp 状态管理**:
+
+**回复状态**:
+```typescript
+const [replyTo, setReplyTo] = useState<{ commentId: number; authorName: string } | null>(null);
+```
+
+**回复处理函数**:
+```typescript
+// 处理回复评论
+function handleReplyComment(commentId: number, authorName: string) {
+  setReplyTo({ commentId, authorName });
+  // 自动聚焦评论框并滚动到可见区域
+  setTimeout(() => {
+    const commentForm = document.querySelector('textarea');
+    commentForm?.focus();
+    commentForm?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 100);
+}
+
+// 取消回复
+function handleCancelReply() {
+  setReplyTo(null);
+}
+
+// 创建评论（使用回复信息）
+async function handleCreateComment(content: string) {
+  if (!selectedPost) {
+    setError('请先选择要评论的帖子');
+    return;
+  }
+
+  setError(null);
+  try {
+    await createComment(
+      {
+        postId: selectedPost.id,
+        content,
+        parentId: replyTo?.commentId ?? null,  // 使用回复的评论ID作为父ID
+        replyToUserId: null,
+        replyToUserName: replyTo?.authorName ?? null
+      },
+      t
+    );
+    // 发表成功后清除回复状态
+    setReplyTo(null);
+    await loadComments(selectedPost.id);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    setError(message);
+  }
+}
+```
+
+**加载子评论回调**:
+```typescript
+async function handleLoadMoreChildren(
+  parentId: number,
+  pageIndex: number,
+  pageSize: number
+): Promise<CommentNode[]> {
+  try {
+    const result = await getChildComments(parentId, pageIndex, pageSize, t);
+    return result.comments;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    setError(message);
+    return [];
+  }
+}
+```
+
+**样式实现**:
+
+**CommentNode.module.css**:
+```css
+/* 回复按钮 */
+.replyButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background-color: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.replyButton:hover {
+  background-color: #333;
+  border-color: #4a9eff;
+  color: #4a9eff;
+}
+
+/* 展开/收起按钮 */
+.expandButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: rgba(42, 42, 42, 0.6);
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #aaa;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+.expandButton:hover:not(:disabled) {
+  background-color: #333;
+  border-color: #555;
+  color: #fff;
+}
+
+.expandButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+```
+
+**CreateCommentForm.module.css**:
+```css
+/* 回复提示框 */
+.replyHint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: #2a2a2a;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.replyText {
+  font-size: 13px;
+  color: #aaa;
+}
+
+.replyTarget {
+  color: #4a9eff;
+  font-weight: 600;
+}
+
+/* 取消回复按钮 */
+.cancelReplyButton {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: none;
+  border-radius: 50%;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+.cancelReplyButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+```
+
+**类型定义更新**:
+
+**CommentNode 接口**:
+```typescript
+export interface CommentNode {
+  id: number;
+  postId: number;
+  content: string;
+  authorId: number;
+  authorName: string;
+  parentId?: number | null;
+  replyToUserId?: number | null;
+  replyToUserName?: string | null;
+  createTime?: string;
+  likeCount?: number;
+  isLiked?: boolean;
+  children?: CommentNode[];
+  childrenTotal?: number;  // 新增：子评论总数（用于懒加载显示）
+}
+```
+
+**API 函数**:
+```typescript
+// 获取子评论分页数据
+export async function getChildComments(
+  parentId: number,
+  pageIndex: number,
+  pageSize: number,
+  t: TFunction
+): Promise<{ comments: CommentNode[]; total: number }> {
+  const response = await apiGet<PageModel<CommentNode>>(
+    `/api/v1/Comment/GetChildComments?parentId=${parentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    t
+  );
+  return {
+    comments: response.data || [],
+    total: response.dataCount || 0
+  };
+}
+```
+
+**Bug 修复**:
+
+1. **SqlSugar 二级排序语法错误**:
+   - 错误：`CS1061: "ISugarQueryable<Comment>"未包含"ThenByDescending"的定义`
+   - 修复：使用 `.OrderBy(c => c.CreateTime, OrderByType.Desc)` 替代 `.ThenByDescending()`
+
+2. **字段名称错误**:
+   - 错误：`无法解析符号'CreatedAt'`
+   - 修复：Comment 实体使用 `CreateTime` 而非 `CreatedAt`
+
+3. **MarkdownRenderer 类型错误**（临时方案）:
+   - 错误：`Uncaught Assertion: Unexpected value for 'children' prop, expected 'string'`
+   - 原因：尝试传递 `(string | JSX.Element)[]` 到只接受 `string` 的 MarkdownRenderer
+   - 修复：移除 `renderContentWithMention` 函数，直接传递 `node.content` 到 MarkdownRenderer
+   - 注意：@提及高亮功能暂时移除，待后续优化
+
+**技术亮点**:
+
+1. **架构优化**:
+   - ✅ 正确的分层架构（Repository → Service → Controller）
+   - ✅ Repository 层二级排序方法可供全项目复用
+   - ✅ 遵循项目架构规范和最佳实践
+
+2. **性能优化**:
+   - ✅ 懒加载：按需加载子评论，减少初始数据量
+   - ✅ 分页查询：只加载当前页数据，避免全表扫描
+   - ✅ 增量加载：追加式加载，保留已加载数据
+
+3. **用户体验**:
+   - ✅ 即时反馈：加载状态、进度提示
+   - ✅ 自动聚焦：回复时自动滚动到评论框
+   - ✅ 清晰标识：回复提示显示目标用户名
+   - ✅ 灵活交互：展开/收起/加载更多按钮
+
+4. **可维护性**:
+   - ✅ 完整的类型定义（TypeScript）
+   - ✅ 清晰的状态管理（React hooks）
+   - ✅ 合理的职责分离（组件拆分）
+   - ✅ 完整的错误处理和日志记录
+
+---
+
 ## 功能协同
 
 以上功能并非独立工作，而是协同配合：
@@ -1095,16 +1686,21 @@ const handleSubmit = () => {
    - Markdown 编辑器
    - 实时预览
    - 图片上传
+   - Emoji 选择器
 
-2. **评论互动**:
-   - 评论点赞
-   - 评论回复
-   - @提及用户
+2. **评论互动增强**:
+   - ✅ 评论点赞（已完成）
+   - ✅ 评论回复（已完成）
+   - ✅ 懒加载子评论（已完成）
+   - ⏳ @提及高亮显示（待优化 - 修复 MarkdownRenderer）
+   - ⏳ 评论编辑功能（仅作者可编辑，时间窗口限制）
+   - ⏳ @提及用户搜索下拉框
 
 3. **个人中心**:
    - 我的帖子
    - 我的点赞
    - 我的收藏
+   - 我的评论
 
 4. **高级搜索**:
    - 标签筛选
@@ -1116,6 +1712,12 @@ const handleSubmit = () => {
    - 关注作者
    - 私信功能
    - 用户主页
+
+6. **通知系统**:
+   - 评论通知
+   - 点赞通知
+   - @提及通知
+   - 系统通知
 
 ---
 
