@@ -57,4 +57,14 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     /// <param name="userId">用户 Id（可选，用于填充点赞状态）</param>
     /// <returns>评论树（包含点赞状态）</returns>
     Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null);
+
+    /// <summary>
+    /// 分页获取子评论
+    /// </summary>
+    /// <param name="parentId">父评论 Id</param>
+    /// <param name="pageIndex">页码（从1开始）</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <param name="userId">用户 Id（可选，用于填充点赞状态）</param>
+    /// <returns>子评论列表和总数</returns>
+    Task<(List<CommentVo> comments, int total)> GetChildCommentsPageAsync(long parentId, int pageIndex, int pageSize, long? userId = null);
 }

@@ -33,8 +33,6 @@ export const UserMention = ({
   const [loading, setLoading] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  console.log('UserMention渲染:', { keyword, position, users: users.length });
-
   // 搜索用户
   useEffect(() => {
     let cancelled = false;

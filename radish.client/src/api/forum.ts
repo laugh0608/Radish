@@ -289,6 +289,42 @@ export async function deleteComment(commentId: number, t: TFunction): Promise<vo
 }
 
 /**
+ * 分页获取子评论（按点赞数降序）
+ * @param parentId 父评论 ID
+ * @param pageIndex 页码（从 1 开始）
+ * @param pageSize 每页数量
+ * @param t i18n 翻译函数
+ * @returns 子评论列表、总数、页码信息
+ */
+export async function getChildComments(
+  parentId: number | string,
+  pageIndex: number,
+  pageSize: number,
+  t: TFunction
+): Promise<{ comments: Comment[]; total: number; pageIndex: number; pageSize: number }> {
+  const url = `${getApiBaseUrl()}/api/v1/Comment/GetChildComments?parentId=${parentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`;
+  const response = await apiFetch(url); // 匿名访问
+
+  if (!response.ok) {
+    throw new Error(`获取子评论失败: HTTP ${response.status}`);
+  }
+
+  const json = await response.json() as ApiResponse<{
+    comments: Comment[];
+    total: number;
+    pageIndex: number;
+    pageSize: number;
+  }>;
+  const parsed = parseApiResponse(json, t);
+
+  if (!parsed.ok || !parsed.data) {
+    throw new Error(parsed.message || '获取子评论失败');
+  }
+
+  return parsed.data;
+}
+
+/**
  * 生成 OIDC 登录 URL
  */
 export function getOidcLoginUrl(): string {
