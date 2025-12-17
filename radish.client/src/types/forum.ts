@@ -67,7 +67,17 @@ export interface CommentNode {
   replyToUserId?: number | null;
   replyToUserName?: string | null;
   createTime?: string;
+  likeCount?: number;
+  isLiked?: boolean;
   children?: CommentNode[];
+}
+
+/**
+ * 评论点赞操作结果
+ */
+export interface CommentLikeResult {
+  isLiked: boolean;
+  likeCount: number;
 }
 
 /**

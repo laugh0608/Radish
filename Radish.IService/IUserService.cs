@@ -19,9 +19,17 @@ public interface IUserService : IBaseService<User, UserVo>
     /// </summary>
     /// <returns>List RoleModulePermission</returns>
     Task<List<RoleModulePermission>> RoleModuleMaps();
-    
+
     /// <summary>测试使用同事务</summary>
     /// <remarks>仅为示例，无任何作用</remarks>
     /// <returns></returns>
     Task<bool> TestTranPropagationUser();
+
+    /// <summary>
+    /// 搜索用户（用于@提及功能）
+    /// </summary>
+    /// <param name="keyword">搜索关键词（匹配用户名）</param>
+    /// <param name="limit">返回结果数量限制（默认10）</param>
+    /// <returns>用户提及视图模型列表</returns>
+    Task<List<UserMentionVo>> SearchUsersForMentionAsync(string keyword, int limit = 10);
 }

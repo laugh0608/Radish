@@ -33,16 +33,21 @@ public class CommentController : ControllerBase
     }
 
     /// <summary>
-    /// 获取帖子的评论树
+    /// 获取帖子的评论树（带点赞状态）
     /// </summary>
     /// <param name="postId">帖子 ID</param>
-    /// <returns>评论树（树形结构）</returns>
+    /// <returns>评论树（树形结构，包含当前用户的点赞状态）</returns>
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetCommentTree(long postId)
     {
-        var comments = await _commentService.GetCommentTreeAsync(postId);
+        // 获取当前用户ID（如果已登录）
+        long? userId = _httpContextUser.UserId > 0 ? _httpContextUser.UserId : null;
+
+        // 获取带点赞状态的评论树
+        var comments = await _commentService.GetCommentTreeWithLikeStatusAsync(postId, userId);
+
         return new MessageModel
         {
             IsSuccess = true,
@@ -94,21 +99,53 @@ public class CommentController : ControllerBase
     }
 
     /// <summary>
-    /// 点赞/取消点赞评论
+    /// 切换评论点赞状态（点赞/取消点赞）
     /// </summary>
     /// <param name="commentId">评论 ID</param>
-    /// <param name="isLike">true 为点赞，false 为取消点赞</param>
-    /// <returns>操作结果</returns>
+    /// <returns>点赞操作结果（当前状态和最新点赞数）</returns>
     [HttpPost]
-    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> Like(long commentId, bool isLike = true)
+    [ProducesResponseType(typeof(MessageModel<CommentLikeResultDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    public async Task<MessageModel> ToggleLike(long commentId)
     {
-        await _commentService.UpdateLikeCountAsync(commentId, isLike ? 1 : -1);
+        try
+        {
+            var result = await _commentService.ToggleLikeAsync(_httpContextUser.UserId, commentId);
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = result.IsLiked ? "点赞成功" : "取消点赞成功",
+                ResponseData = result
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+    }
+
+    /// <summary>
+    /// 批量查询评论点赞状态
+    /// </summary>
+    /// <param name="commentIds">评论 ID 列表</param>
+    /// <returns>点赞状态字典（评论ID → 是否已点赞）</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(MessageModel<Dictionary<long, bool>>), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetLikeStatus([FromBody] List<long> commentIds)
+    {
+        var likeStatus = await _commentService.GetUserLikeStatusAsync(_httpContextUser.UserId, commentIds);
         return new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = isLike ? "点赞成功" : "取消点赞成功"
+            MessageInfo = "获取成功",
+            ResponseData = likeStatus
         };
     }
 

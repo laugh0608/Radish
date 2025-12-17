@@ -89,6 +89,7 @@ public class UserControllerTest
         public Task<List<RoleModulePermission>> RoleModuleMaps() => throw new System.NotImplementedException();
         public Task<List<UserVo>> GetUsersAsync() => throw new System.NotImplementedException();
         public Task<bool> TestTranPropagationUser() => throw new System.NotImplementedException();
+        public Task<List<UserMentionVo>> SearchUsersForMentionAsync(string keyword, int limit = 10) => throw new System.NotImplementedException();
         public Task<long> AddAsync(User entity) => throw new System.NotImplementedException();
         public Task<int> AddRangeAsync(List<User> entities) => throw new System.NotImplementedException();
         public Task<List<long>> AddSplitAsync(User entity) => throw new System.NotImplementedException();
@@ -176,6 +177,9 @@ public class UserControllerTest
         public Task<List<CommentVo>> GetCommentTreeAsync(long postId) => throw new System.NotImplementedException();
         public Task UpdateLikeCountAsync(long commentId, int delta) => throw new System.NotImplementedException();
         public Task UpdateReplyCountAsync(long commentId, int delta) => throw new System.NotImplementedException();
+        public Task<CommentLikeResultDto> ToggleLikeAsync(long userId, long commentId) => throw new System.NotImplementedException();
+        public Task<System.Collections.Generic.Dictionary<long, bool>> GetUserLikeStatusAsync(long userId, System.Collections.Generic.List<long> commentIds) => throw new System.NotImplementedException();
+        public Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null) => throw new System.NotImplementedException();
         public Task<long> AddAsync(Comment entity) => throw new System.NotImplementedException();
         public Task<int> AddRangeAsync(List<Comment> entities) => throw new System.NotImplementedException();
         public Task<List<long>> AddSplitAsync(Comment entity) => throw new System.NotImplementedException();

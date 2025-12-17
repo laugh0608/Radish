@@ -62,5 +62,17 @@ public class UserProfile : Profile
             .ForMember(a => a.RoleNames, o => o.MapFrom(d => d.VoRoNas))
             .ForMember(a => a.DepartmentIds, o => o.MapFrom(d => d.VoDeIds))
             .ForMember(a => a.Remark, o => o.MapFrom(d => d.VoRemark));
+
+        // User → UserMentionVo（用于@提及功能的用户搜索）
+        CreateMap<User, UserMentionVo>()
+            .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.UserRealName))
+            .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
+
+        // UserVo → UserMentionVo（用于从Service层返回的UserVo转换）
+        CreateMap<UserVo, UserMentionVo>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Uuid))
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.VoUsName))
+            .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.VoReNa))
+            .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
     }
 }

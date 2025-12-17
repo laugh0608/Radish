@@ -107,4 +107,49 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
         return true;
     }
+
+    /// <summary>
+    /// 搜索用户（用于@提及功能）
+    /// </summary>
+    /// <param name="keyword">搜索关键词（匹配用户名）</param>
+    /// <param name="limit">返回结果数量限制（默认10）</param>
+    /// <returns>用户提及视图模型列表</returns>
+    public async Task<List<UserMentionVo>> SearchUsersForMentionAsync(string keyword, int limit = 10)
+    {
+        // 参数验证
+        if (string.IsNullOrWhiteSpace(keyword))
+        {
+            return new List<UserMentionVo>();
+        }
+
+        // 限制最大查询数量
+        if (limit <= 0) limit = 10;
+        if (limit > 50) limit = 50;
+
+        // 多查询一些结果用于排序（最多100条）
+        var fetchSize = Math.Min(limit * 3, 100);
+
+        // 使用分页查询，取第一页，按用户名排序
+        var (data, _) = await base.QueryPageAsync(
+            whereExpression: u => u.UserName.Contains(keyword) && u.IsEnable && !u.IsDeleted,
+            pageIndex: 1,
+            pageSize: fetchSize,
+            orderByExpression: u => u.UserName,
+            orderByType: OrderByType.Asc
+        );
+
+        // 在应用层按匹配度排序：
+        // 1. 优先显示以关键词开头的用户（不区分大小写）
+        // 2. 然后按字母顺序排序
+        // 3. 最后取limit个结果
+        var sorted = data
+            .OrderBy(u => u.VoUsName.StartsWith(keyword, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(u => u.VoUsName)
+            .Take(limit)
+            .ToList();
+
+        // 映射到UserMentionVo
+        var result = base.Mapper.Map<List<UserMentionVo>>(sorted);
+        return result;
+    }
 }

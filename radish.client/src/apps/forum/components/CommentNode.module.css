@@ -53,6 +53,56 @@
   font-size: 14px;
 }
 
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.likeButton {
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.likeButton:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+}
+
+.likeButton:active:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.2);
+  transform: scale(0.95);
+}
+
+.likeButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.likeButton.liked {
+  color: #ef4444;
+}
+
+.likeButton.liked:hover:not(:disabled) {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+.likeCount {
+  font-size: 12px;
+  font-weight: 500;
+}
+
 .children {
   margin-top: 8px;
 }

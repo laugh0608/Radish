@@ -26,8 +26,13 @@ public class ForumProfile : Profile
 
         // Comment -> CommentVo
         CreateMap<Comment, CommentVo>()
-            .ForMember(dest => dest.Children, opt => opt.Ignore()); // 树形结构在 Service 中构建
+            .ForMember(dest => dest.Children, opt => opt.Ignore())  // 树形结构在 Service 中构建
+            .ForMember(dest => dest.IsLiked, opt => opt.Ignore());  // 点赞状态在 Service 中动态填充
         CreateMap<CommentVo, Comment>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore()); // 避免从 VO 覆盖租户 ID
+
+        // UserCommentLike -> UserCommentLikeVo
+        CreateMap<UserCommentLike, UserCommentLikeVo>();
+        CreateMap<UserCommentLikeVo, UserCommentLike>();
     }
 }

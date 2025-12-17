@@ -10,7 +10,8 @@ import type {
   PostDetail,
   CommentNode,
   PublishPostRequest,
-  CreateCommentRequest
+  CreateCommentRequest,
+  CommentLikeResult
 } from '@/types/forum';
 
 const defaultApiBase = 'https://localhost:5000';
@@ -124,11 +125,13 @@ export async function getPostById(postId: number, t: TFunction): Promise<PostDet
 }
 
 /**
- * 获取帖子的评论树
+ * 获取帖子的评论树（自动包含当前用户的点赞状态）
  */
 export async function getCommentTree(postId: number, t: TFunction): Promise<CommentNode[]> {
   const url = `${getApiBaseUrl()}/api/v1/Comment/GetCommentTree?postId=${postId}`;
-  const response = await apiFetch(url);
+  // 如果用户已登录，自动发送token以获取点赞状态
+  const hasToken = typeof window !== 'undefined' && window.localStorage.getItem('access_token');
+  const response = await apiFetch(url, { withAuth: !!hasToken });
   const json = await response.json() as ApiResponse<CommentNode[]>;
   const parsed = parseApiResponse<CommentNode[]>(json, t);
 
@@ -204,6 +207,27 @@ export async function likePost(postId: number, isLike: boolean, t: TFunction): P
   if (!parsed.ok) {
     throw new Error(parsed.message || '点赞操作失败');
   }
+}
+
+/**
+ * 切换评论点赞状态（智能切换：已点赞则取消，未点赞则点赞）
+ * @param commentId 评论 ID
+ * @returns 点赞操作结果（新的点赞状态和点赞总数）
+ */
+export async function toggleCommentLike(commentId: number, t: TFunction): Promise<CommentLikeResult> {
+  const url = `${getApiBaseUrl()}/api/v1/Comment/ToggleLike?commentId=${commentId}`;
+  const response = await apiFetch(url, {
+    method: 'POST',
+    withAuth: true
+  });
+  const json = await response.json() as ApiResponse<CommentLikeResult>;
+  const parsed = parseApiResponse<CommentLikeResult>(json, t);
+
+  if (!parsed.ok || !parsed.data) {
+    throw new Error(parsed.message || '点赞操作失败');
+  }
+
+  return parsed.data;
 }
 
 /**

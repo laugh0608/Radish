@@ -10,15 +10,18 @@ namespace Radish.Service;
 public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 {
     private readonly IBaseRepository<Comment> _commentRepository;
+    private readonly IBaseRepository<UserCommentLike> _userCommentLikeRepository;
     private readonly IPostService _postService;
 
     public CommentService(
         IMapper mapper,
         IBaseRepository<Comment> baseRepository,
+        IBaseRepository<UserCommentLike> userCommentLikeRepository,
         IPostService postService)
         : base(mapper, baseRepository)
     {
         _commentRepository = baseRepository;
+        _userCommentLikeRepository = userCommentLikeRepository;
         _postService = postService;
     }
 
@@ -109,6 +112,129 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         {
             comment.ReplyCount = Math.Max(0, comment.ReplyCount + increment);
             await _commentRepository.UpdateAsync(comment);
+        }
+    }
+
+    /// <summary>
+    /// 切换评论点赞状态（点赞/取消点赞）
+    /// </summary>
+    public async Task<CommentLikeResultDto> ToggleLikeAsync(long userId, long commentId)
+    {
+        // 1. 检查评论是否存在
+        var comment = await _commentRepository.QueryByIdAsync(commentId);
+        if (comment == null || comment.IsDeleted)
+        {
+            throw new InvalidOperationException("评论不存在或已被删除");
+        }
+
+        // 2. 检查是否已点赞
+        var existingLikes = await _userCommentLikeRepository.QueryAsync(
+            x => x.UserId == userId && x.CommentId == commentId);
+
+        bool isLiked;
+        int likeCountDelta;
+
+        if (existingLikes.Any())
+        {
+            // 取消点赞
+            await _userCommentLikeRepository.DeleteByIdAsync(existingLikes.First().Id);
+            isLiked = false;
+            likeCountDelta = -1;
+        }
+        else
+        {
+            // 添加点赞
+            var newLike = new UserCommentLike
+            {
+                UserId = userId,
+                CommentId = commentId,
+                PostId = comment.PostId,
+                LikedAt = DateTime.UtcNow
+            };
+            await _userCommentLikeRepository.AddAsync(newLike);
+            isLiked = true;
+            likeCountDelta = 1;
+        }
+
+        // 3. 更新评论的点赞计数
+        comment.LikeCount = Math.Max(0, comment.LikeCount + likeCountDelta);
+        await _commentRepository.UpdateAsync(comment);
+
+        return new CommentLikeResultDto
+        {
+            IsLiked = isLiked,
+            LikeCount = comment.LikeCount
+        };
+    }
+
+    /// <summary>
+    /// 批量查询用户对评论的点赞状态
+    /// </summary>
+    public async Task<Dictionary<long, bool>> GetUserLikeStatusAsync(long userId, List<long> commentIds)
+    {
+        if (!commentIds.Any())
+        {
+            return new Dictionary<long, bool>();
+        }
+
+        var likedComments = await _userCommentLikeRepository.QueryAsync(
+            x => x.UserId == userId && commentIds.Contains(x.CommentId));
+
+        var likedSet = likedComments.Select(x => x.CommentId).ToHashSet();
+
+        return commentIds.ToDictionary(id => id, id => likedSet.Contains(id));
+    }
+
+    /// <summary>
+    /// 获取帖子的评论树（带点赞状态）
+    /// </summary>
+    public async Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null)
+    {
+        // 1. 获取评论树（复用现有方法）
+        var commentTree = await GetCommentTreeAsync(postId);
+
+        // 2. 如果用户已登录，批量查询点赞状态
+        if (userId.HasValue && commentTree.Any())
+        {
+            var allCommentIds = GetAllCommentIds(commentTree);
+            var likeStatus = await GetUserLikeStatusAsync(userId.Value, allCommentIds);
+
+            // 3. 递归填充点赞状态
+            FillLikeStatus(commentTree, likeStatus);
+        }
+
+        return commentTree;
+    }
+
+    /// <summary>
+    /// 递归获取评论树中的所有评论ID
+    /// </summary>
+    private List<long> GetAllCommentIds(List<CommentVo> comments)
+    {
+        var ids = new List<long>();
+        foreach (var comment in comments)
+        {
+            ids.Add(comment.Id);
+            if (comment.Children?.Any() == true)
+            {
+                ids.AddRange(GetAllCommentIds(comment.Children));
+            }
+        }
+        return ids;
+    }
+
+    /// <summary>
+    /// 递归填充评论树的点赞状态
+    /// </summary>
+    private void FillLikeStatus(List<CommentVo> comments, Dictionary<long, bool> likeStatus)
+    {
+        foreach (var comment in comments)
+        {
+            comment.IsLiked = likeStatus.GetValueOrDefault(comment.Id, false);
+            if (comment.Children?.Any() == true)
+            {
+                FillLikeStatus(comment.Children, likeStatus);
+            }
         }
     }
 }

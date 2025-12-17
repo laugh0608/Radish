@@ -221,4 +221,31 @@ public class UserController : ControllerBase
             ResponseData = stats
         };
     }
+
+    /// <summary>
+    /// 搜索用户（用于@提及功能）
+    /// </summary>
+    /// <param name="keyword">搜索关键词（匹配用户名）</param>
+    /// <param name="limit">返回结果数量限制（默认10，最大50）</param>
+    /// <returns>用户列表</returns>
+    /// <remarks>
+    /// 根据关键词搜索用户名，返回匹配的用户列表供@提及功能使用。
+    /// 允许匿名访问。
+    /// </remarks>
+    /// <response code="200">搜索成功，返回用户列表</response>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> SearchForMention(string keyword, int limit = 10)
+    {
+        var users = await _userService.SearchUsersForMentionAsync(keyword, limit);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "搜索成功",
+            ResponseData = users
+        };
+    }
 }
