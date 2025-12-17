@@ -15,19 +15,23 @@
 
 ## 里程碑概览
 
-| 周次 | 主题 | 目标 | 验收 |
-| --- | --- | --- | --- |
-| M1 | 基线设施 | API 宿主、SQLSugar 与 PostgreSQL 通路、健康检查、React 脚手架 | `dotnet run Radish.Api` + React dev server 均可访问；数据库初始化脚本可重复执行 |
-| M2 | 领域建模 | 分类/帖子/评论聚合、SQLSugar 仓储、迁移/种子脚本 | CRUD + 分页 API 可用，单测覆盖核心聚合 |
-| M3 | OIDC 认证中心 | Radish.Auth 项目、OpenIddict 配置、用户/角色/租户/权限模型、DbSeed 初始化、客户端管理 API | OIDC 发现文档可访问；Scalar 可通过 OAuth 授权调试 API；客户端 CRUD API 可用 |
-| M4 | 前端框架与认证 | 桌面模式骨架、基础组件库、OIDC 客户端集成、后台应用管理界面 | React 可完成 OIDC 登录/登出/自动续期；后台可动态配置客户端；桌面 Shell 可用 |
-| M5 | React MVP | 列表/详情/发帖/评论链路、状态管理（React Query）、桌面化 UI 规范 | 前端提供桌面模式的社区主要流程，含 Loading/Empty/Error 状态 |
-| M6 | 积分与商城 | 积分规则、事件订阅、商城商品与库存、购买链路 | 发帖/互动触发积分，商城购买扣减积分并更新权益 |
-| M7 | 可观测性与测试 | 日志/Tracing、性能调优、自动化测试、CI 脚本 | `dotnet test` + `npm run test` 通过；Serilog/O11y 配置完成；性能基线达到 P95≤200ms |
-| M8 | 部署与运维 | Dockerfile/Compose、自监控、变更文档 | `docker compose up --build` 一键拉起 PostgreSQL + API + Auth + 前端；文档覆盖常见排障 |
-| M9（暂缓） | Gateway & BFF 策略 | Gateway PoC（Ocelot 路由 + 认证透传）与聚合 API 设计，仅在多服务/多入口明确后启动 | 在 `DevelopmentLog` 记录启动审批 + 回滚预案；保证现有 API 维持直连能力 |
+| 周次 | 主题 | 目标 | 验收 | 状态 |
+| --- | --- | --- | --- | --- |
+| M1 | 基线设施 | API 宿主、SQLSugar 与 PostgreSQL 通路、健康检查、React 脚手架 | `dotnet run Radish.Api` + React dev server 均可访问；数据库初始化脚本可重复执行 | ✅ 已完成 |
+| M2 | 领域建模 | 分类/帖子/评论聚合、SQLSugar 仓储、迁移/种子脚本 | CRUD + 分页 API 可用，单测覆盖核心聚合 | ✅ 已完成 |
+| M3 | OIDC 认证中心 | Radish.Auth 项目、OpenIddict 配置、用户/角色/租户/权限模型、DbSeed 初始化、客户端管理 API | OIDC 发现文档可访问；Scalar 可通过 OAuth 授权调试 API；客户端 CRUD API 可用 | ✅ 已完成 (2025.12.14) |
+| M4 | 前端框架与认证 | 桌面模式骨架、基础组件库、OIDC 客户端集成、后台应用管理界面 | React 可完成 OIDC 登录/登出/自动续期；后台可动态配置客户端；桌面 Shell 可用 | 🚧 进行中 (2025.12.15~) |
+| M5 | React MVP | 列表/详情/发帖/评论链路、状态管理（React Query）、桌面化 UI 规范 | 前端提供桌面模式的社区主要流程，含 Loading/Empty/Error 状态 | ⏳ 计划中 |
+| M6 | 积分与商城 | 积分规则、事件订阅、商城商品与库存、购买链路 | 发帖/互动触发积分，商城购买扣减积分并更新权益 | ⏳ 计划中 |
+| M7 | 可观测性与测试 | 日志/Tracing、性能调优、自动化测试、CI 脚本 | `dotnet test` + `npm run test` 通过；Serilog/O11y 配置完成；性能基线达到 P95≤200ms | ⏳ 计划中 |
+| M8 | 部署与运维 | Dockerfile/Compose、自监控、变更文档 | `docker compose up --build` 一键拉起 PostgreSQL + API + Auth + 前端；文档覆盖常见排障 | ⏳ 计划中 |
+| M9（暂缓） | Gateway & BFF 策略 | Gateway PoC（Ocelot 路由 + 认证透传）与聚合 API 设计，仅在多服务/多入口明确后启动 | 在 `DevelopmentLog` 记录启动审批 + 回滚预案；保证现有 API 维持直连能力 | ⏸️ 暂缓 |
 
-> 当前迭代聚焦 M3-M4 的 Radish.Auth 与 WebOS OIDC 接入。Gateway 完整能力（路由转发/聚合/BFF 等）仍排在 M9 之后的专门迭代，但 **Phase 0（Gateway 门户 + 健康检查 + `/docs` 在线文档入口）已经提前在当前代码中落地**，并作为本地开发的统一入口使用。
+> **当前进度**：✅ M3（OIDC 认证中心）已于 2025.12.14 完成，🚧 M4（前端框架与认证）于 2025.12.15 开始。
+>
+> **M3 完成情况**：Radish.Auth 项目完整实现、OIDC 授权码流程打通、客户端管理 API 完整可用、Scalar OAuth 集成验证通过、数据库初始化幂等可靠。详见 [2025.12 开发日志](./changelog/2025-12.md) 第三阶段总结。
+>
+> **M4 进度说明**：WebOS Desktop Shell、Console 应用、@radish/ui 组件库已在 M3 阶段提前完成，M4 阶段重点是论坛应用开发和安全增强。Gateway 完整能力（路由转发/聚合/BFF 等）仍排在 M9 之后的专门迭代，但 **Phase 0（Gateway 门户 + 健康检查 + `/docs` 在线文档入口）已经提前在当前代码中落地**，并作为本地开发的统一入口使用。
 
 ## 按周计划
 
@@ -195,6 +199,38 @@
 - DbSeed 可重复执行且幂等
 - Scalar 文档通过 OAuth 授权后可调试受保护 API
 - 多客户端（Scalar、前端、后台）注册完成
+
+---
+
+#### ✅ 第三周完成总结（2025.12.14）
+
+**状态**：✅ 所有核心目标已完成，所有验收标准已达成
+
+**核心成果**：
+1. ✅ Radish.Auth 项目创建完成，集成 OpenIddict 7.2.0
+2. ✅ OIDC 标准端点全部实现并验证通过
+3. ✅ 身份数据模型与 OpenIddict 实体完整
+4. ✅ Radish.DbMigrate 完善，支持幂等执行
+5. ✅ 客户端管理 API 完整可用（5 个单元测试全部通过）
+6. ✅ Scalar OAuth 集成验证通过
+7. ✅ Gateway + OIDC 全链路打通
+
+**工作项完成情况**：
+- ✅ W3-BE-1：OpenIddict EF Core 存储巩固
+- ✅ W3-BE-2：Radish.DbMigrate 统一初始化
+- ✅ W3-BE-3：OIDC 客户端管理 API
+- ✅ W3-BE-4：Radish.Api 资源服务器 Claim 映射
+- ✅ W3-BE-5：Scalar OAuth 全链路校验
+
+**额外完成**：
+- 🚀 WebOS Desktop Shell（提前完成第四周部分工作）
+- 🚀 Console 应用 OIDC 认证完整
+- 🚀 @radish/ui 组件库完善
+- 🚀 文档结构重构
+
+**详细日志**：见 [2025.12 开发日志](./changelog/2025-12.md) 第三阶段总结
+
+---
 
 ### 第 4 周｜前端 WebOS 架构与 OIDC 认证
 

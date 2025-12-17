@@ -36,6 +36,48 @@
   background-color: #2558b5;
 }
 
+.replyHint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background-color: #1e293b;
+  border-left: 3px solid #60a5fa;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.replyText {
+  color: #94a3b8;
+}
+
+.replyTarget {
+  color: #60a5fa;
+  font-weight: 500;
+}
+
+.cancelReplyButton {
+  padding: 4px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.cancelReplyButton:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.textareaWrapper {
+  position: relative;
+}
+
 .textarea {
   width: 100%;
   margin-bottom: 8px;

@@ -7,12 +7,104 @@
   flex-direction: column;
 }
 
+/* 标题栏和排序按钮容器 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
 .title {
-  margin-top: 0;
+  margin: 0;
   font-size: 16px;
   font-weight: 600;
   color: #fff;
 }
+
+/* 排序按钮组 */
+.sortButtons {
+  display: flex;
+  gap: 4px;
+}
+
+.sortButton {
+  padding: 4px 12px;
+  font-size: 13px;
+  background-color: transparent;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #aaa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sortButton:hover {
+  background-color: #1f2937;
+  border-color: #555;
+  color: #fff;
+}
+
+.sortButton.sortActive {
+  background-color: #2d6cdf;
+  border-color: #2d6cdf;
+  color: #fff;
+  font-weight: 500;
+}
+
+/* 搜索框 */
+.searchBox {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 32px 8px 12px;
+  font-size: 14px;
+  background-color: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  color: #fff;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.searchInput::placeholder {
+  color: #666;
+}
+
+.searchInput:focus {
+  border-color: #2d6cdf;
+  background-color: #1f2937;
+}
+
+.clearButton {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background-color: #444;
+  border: none;
+  border-radius: 50%;
+  color: #aaa;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clearButton:hover {
+  background-color: #555;
+  color: #fff;
+}
+
 
 .loadingText,
 .emptyText {
@@ -63,4 +155,50 @@
 .postMeta {
   font-size: 12px;
   color: #999;
+}
+
+/* 分页控件样式 */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: auto;
+  padding: 16px 0;
+  border-top: 1px solid #333;
+}
+
+.paginationButton {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  background-color: transparent;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+  background-color: #1f2937;
+  border-color: #555;
+}
+
+.paginationButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.paginationButton.paginationActive {
+  background-color: #2d6cdf;
+  border-color: #2d6cdf;
+  font-weight: 600;
+}
+
+.paginationEllipsis {
+  color: #888;
+  padding: 0 4px;
+  user-select: none;
 }
