@@ -61,7 +61,6 @@ export const CreateCommentForm = ({
 
       // @符号后面不能有空格或换行
       if (!/[\s\n]/.test(textAfterAt)) {
-        console.log('触发@提及:', { keyword: textAfterAt, lastAtIndex });
         setMentionKeyword(textAfterAt);
         setMentionStartPos(lastAtIndex);
         setShowMention(true);
@@ -69,12 +68,10 @@ export const CreateCommentForm = ({
         // 计算下拉框位置
         if (textareaRef.current) {
           const rect = textareaRef.current.getBoundingClientRect();
-          const position = {
+          setMentionPosition({
             top: rect.bottom,
             left: rect.left
-          };
-          console.log('下拉框位置:', position, 'textarea位置:', rect);
-          setMentionPosition(position);
+          });
         }
         return;
       }

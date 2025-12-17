@@ -150,6 +150,42 @@ public class CommentController : ControllerBase
     }
 
     /// <summary>
+    /// 分页获取子评论（按点赞数降序）
+    /// </summary>
+    /// <param name="parentId">父评论 ID</param>
+    /// <param name="pageIndex">页码（从 1 开始，默认 1）</param>
+    /// <param name="pageSize">每页数量（默认 10）</param>
+    /// <returns>子评论列表和总数</returns>
+    /// <remarks>
+    /// 用于懒加载子评论，按点赞数降序排列。
+    /// 支持匿名访问，如果用户已登录则返回点赞状态。
+    /// </remarks>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetChildComments(long parentId, int pageIndex = 1, int pageSize = 10)
+    {
+        // 获取用户ID（如果已登录）
+        long? userId = _httpContextUser.UserId > 0 ? _httpContextUser.UserId : null;
+
+        var (comments, total) = await _commentService.GetChildCommentsPageAsync(parentId, pageIndex, pageSize, userId);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = new
+            {
+                comments,
+                total,
+                pageIndex,
+                pageSize
+            }
+        };
+    }
+
+    /// <summary>
     /// 获取指定用户的评论列表
     /// </summary>
     /// <param name="userId">用户 ID</param>

@@ -237,4 +237,45 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             }
         }
     }
+
+    /// <summary>
+    /// 分页获取子评论（按点赞数降序排列）
+    /// </summary>
+    public async Task<(List<CommentVo> comments, int total)> GetChildCommentsPageAsync(
+        long parentId,
+        int pageIndex,
+        int pageSize,
+        long? userId = null)
+    {
+        // 1. 查询子评论总数
+        var total = await base.Db.Queryable<Comment>()
+            .Where(c => c.ParentId == parentId && !c.IsDeleted)
+            .CountAsync();
+
+        // 2. 分页查询子评论（按点赞数降序）
+        var comments = await base.Db.Queryable<Comment>()
+            .Where(c => c.ParentId == parentId && !c.IsDeleted)
+            .OrderByDescending(c => c.LikeCount)
+            .ThenByDescending(c => c.CreatedAt)
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        // 3. 转换为ViewModel
+        var commentVos = base.Mapper.Map<List<CommentVo>>(comments);
+
+        // 4. 如果用户已登录，填充点赞状态
+        if (userId.HasValue && commentVos.Any())
+        {
+            var commentIds = commentVos.Select(c => c.Id).ToList();
+            var likeStatus = await GetUserLikeStatusAsync(userId.Value, commentIds);
+
+            foreach (var comment in commentVos)
+            {
+                comment.IsLiked = likeStatus.GetValueOrDefault(comment.Id, false);
+            }
+        }
+
+        return (commentVos, total);
+    }
 }
