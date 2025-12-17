@@ -70,6 +70,7 @@ export interface CommentNode {
   likeCount?: number;
   isLiked?: boolean;
   children?: CommentNode[];
+  childrenTotal?: number; // 子评论总数（用于懒加载显示）
 }
 
 /**

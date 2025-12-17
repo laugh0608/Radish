@@ -3,6 +3,7 @@ using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using SqlSugar;
 
 namespace Radish.Service;
 
@@ -247,24 +248,21 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         int pageSize,
         long? userId = null)
     {
-        // 1. 查询子评论总数
-        var total = await base.Db.Queryable<Comment>()
-            .Where(c => c.ParentId == parentId && !c.IsDeleted)
-            .CountAsync();
+        // 使用Repository的二级排序方法查询子评论
+        var (comments, total) = await _commentRepository.QueryPageAsync(
+            whereExpression: c => c.ParentId == parentId && !c.IsDeleted,
+            pageIndex: pageIndex,
+            pageSize: pageSize,
+            orderByExpression: c => c.LikeCount,
+            orderByType: OrderByType.Desc,
+            thenByExpression: c => c.CreateTime,
+            thenByType: OrderByType.Desc
+        );
 
-        // 2. 分页查询子评论（按点赞数降序）
-        var comments = await base.Db.Queryable<Comment>()
-            .Where(c => c.ParentId == parentId && !c.IsDeleted)
-            .OrderByDescending(c => c.LikeCount)
-            .ThenByDescending(c => c.CreatedAt)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
-            .ToListAsync();
-
-        // 3. 转换为ViewModel
+        // 转换为ViewModel
         var commentVos = base.Mapper.Map<List<CommentVo>>(comments);
 
-        // 4. 如果用户已登录，填充点赞状态
+        // 如果用户已登录，填充点赞状态
         if (userId.HasValue && commentVos.Any())
         {
             var commentIds = commentVos.Select(c => c.Id).ToList();

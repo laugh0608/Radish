@@ -128,6 +128,24 @@ public interface IBaseRepository<TEntity> where TEntity : class
         Expression<Func<TEntity, object>>? orderByExpression = null,
         OrderByType orderByType = OrderByType.Asc);
 
+    /// <summary>分页查询（支持二级排序）</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <param name="orderByExpression">主排序表达式，可空</param>
+    /// <param name="orderByType">主排序类型（Asc/Desc），默认 Asc</param>
+    /// <param name="thenByExpression">次级排序表达式，可空</param>
+    /// <param name="thenByType">次级排序类型（Asc/Desc），默认 Asc</param>
+    /// <returns>分页数据和总数</returns>
+    Task<(List<TEntity> data, int totalCount)> QueryPageAsync(
+        Expression<Func<TEntity, bool>>? whereExpression,
+        int pageIndex,
+        int pageSize,
+        Expression<Func<TEntity, object>>? orderByExpression,
+        OrderByType orderByType,
+        Expression<Func<TEntity, object>>? thenByExpression,
+        OrderByType thenByType);
+
     /// <summary>查询数量</summary>
     /// <param name="whereExpression">Where 表达式，可空</param>
     /// <returns>记录数</returns>

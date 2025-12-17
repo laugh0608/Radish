@@ -7,8 +7,11 @@ interface CommentTreeProps {
   loading?: boolean;
   hasPost?: boolean;
   currentUserId?: number;
+  pageSize?: number;
   onDeleteComment?: (commentId: number) => void;
   onLikeComment?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
+  onReplyComment?: (commentId: number, authorName: string) => void;
+  onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
 }
 
 export const CommentTree = ({
@@ -16,8 +19,11 @@ export const CommentTree = ({
   loading = false,
   hasPost = false,
   currentUserId = 0,
+  pageSize = 10,
   onDeleteComment,
-  onLikeComment
+  onLikeComment,
+  onReplyComment,
+  onLoadMoreChildren
 }: CommentTreeProps) => {
   return (
     <div className={styles.container}>
@@ -36,8 +42,11 @@ export const CommentTree = ({
             node={comment}
             level={0}
             currentUserId={currentUserId}
+            pageSize={pageSize}
             onDelete={onDeleteComment}
             onLike={onLikeComment}
+            onReply={onReplyComment}
+            onLoadMoreChildren={onLoadMoreChildren}
           />
         ))}
       </div>

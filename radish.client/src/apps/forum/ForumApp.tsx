@@ -7,6 +7,7 @@ import {
   getPostList,
   getPostById,
   getCommentTree,
+  getChildComments,
   publishPost,
   createComment,
   likePost,
@@ -58,6 +59,9 @@ export const ForumApp = () => {
   const [postToDelete, setPostToDelete] = useState<number | null>(null);
   const [isDeleteCommentDialogOpen, setIsDeleteCommentDialogOpen] = useState(false);
   const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
+
+  // 回复状态
+  const [replyTo, setReplyTo] = useState<{ commentId: number; authorName: string } | null>(null);
 
   // 点赞状态（使用 localStorage 记录用户点赞过的帖子）
   const [likedPosts, setLikedPosts] = useState<Set<number>>(() => {
@@ -265,17 +269,50 @@ export const ForumApp = () => {
         {
           postId: selectedPost.id,
           content,
-          parentId: null,
-          replyToUserId: null,
-          replyToUserName: null
+          parentId: replyTo?.commentId ?? null,
+          replyToUserId: null, // TODO: 可以从replyTo中获取userId
+          replyToUserName: replyTo?.authorName ?? null
         },
         t
       );
-      // 发表成功后重新加载评论列表
+      // 发表成功后清除回复状态并重新加载评论列表
+      setReplyTo(null);
       await loadComments(selectedPost.id);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
+    }
+  }
+
+  // 处理回复评论
+  function handleReplyComment(commentId: number, authorName: string) {
+    setReplyTo({ commentId, authorName });
+    // 可选：滚动到评论框
+    setTimeout(() => {
+      const commentForm = document.querySelector('textarea');
+      commentForm?.focus();
+      commentForm?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 100);
+  }
+
+  // 取消回复
+  function handleCancelReply() {
+    setReplyTo(null);
+  }
+
+  // 加载更多子评论
+  async function handleLoadMoreChildren(
+    parentId: number,
+    pageIndex: number,
+    pageSize: number
+  ): Promise<CommentNode[]> {
+    try {
+      const result = await getChildComments(parentId, pageIndex, pageSize, t);
+      return result.comments;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      return [];
     }
   }
 
@@ -438,13 +475,18 @@ export const ForumApp = () => {
           loading={loadingComments}
           hasPost={selectedPost !== null}
           currentUserId={userId ?? 0}
+          pageSize={10}
           onDeleteComment={handleDeleteComment}
           onLikeComment={handleCommentLike}
+          onReplyComment={handleReplyComment}
+          onLoadMoreChildren={handleLoadMoreChildren}
         />
         <CreateCommentForm
           isAuthenticated={loggedIn}
           hasPost={selectedPost !== null}
           onSubmit={handleCreateComment}
+          replyTo={replyTo}
+          onCancelReply={handleCancelReply}
         />
 
         {/* 错误提示 */}
