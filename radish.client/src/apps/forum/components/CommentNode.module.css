@@ -53,6 +53,19 @@
   font-size: 14px;
 }
 
+/* @用户名高亮 */
+.mention {
+  color: #60a5fa;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.mention:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
 .actions {
   display: flex;
   align-items: center;
@@ -60,7 +73,8 @@
   margin-top: 8px;
 }
 
-.likeButton {
+/* 通用操作按钮样式 */
+.actionButton {
   padding: 4px 8px;
   background: transparent;
   border: none;
@@ -74,6 +88,21 @@
   font-size: 13px;
 }
 
+.actionButton:hover:not(:disabled) {
+  background-color: rgba(156, 163, 175, 0.1);
+  color: #d1d5db;
+}
+
+.actionButton:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.actionButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 点赞按钮特殊样式 */
 .likeButton:hover:not(:disabled) {
   background-color: rgba(239, 68, 68, 0.1);
   color: #f87171;
@@ -81,12 +110,6 @@
 
 .likeButton:active:not(:disabled) {
   background-color: rgba(239, 68, 68, 0.2);
-  transform: scale(0.95);
-}
-
-.likeButton:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
 }
 
 .likeButton.liked {
@@ -98,11 +121,69 @@
   color: #dc2626;
 }
 
-.likeCount {
+/* 回复按钮特殊样式 */
+.replyButton:hover:not(:disabled) {
+  background-color: rgba(96, 165, 250, 0.1);
+  color: #60a5fa;
+}
+
+/* 计数显示 */
+.count {
   font-size: 12px;
   font-weight: 500;
 }
 
+/* 子评论区域 */
+.childrenSection {
+  margin-top: 12px;
+}
+
 .children {
   margin-top: 8px;
+}
+
+/* 展开/收起按钮区域 */
+.expandSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #334155;
+}
+
+.expandButton,
+.collapseButton {
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid #475569;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.expandButton:hover:not(:disabled),
+.collapseButton:hover {
+  background-color: #1e293b;
+  border-color: #60a5fa;
+  color: #60a5fa;
+}
+
+.expandButton:active:not(:disabled),
+.collapseButton:active {
+  transform: scale(0.98);
+}
+
+.expandButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.collapseButton {
+  margin-left: auto;
 }

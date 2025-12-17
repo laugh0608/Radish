@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Icon } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { UserMention, type UserMentionOption } from '@radish/ui';
@@ -10,13 +11,17 @@ interface CreateCommentFormProps {
   hasPost: boolean;
   onSubmit: (content: string) => void;
   disabled?: boolean;
+  replyTo?: { commentId: number; authorName: string } | null;
+  onCancelReply?: () => void;
 }
 
 export const CreateCommentForm = ({
   isAuthenticated,
   hasPost,
   onSubmit,
-  disabled = false
+  disabled = false,
+  replyTo = null,
+  onCancelReply
 }: CreateCommentFormProps) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
@@ -125,6 +130,20 @@ export const CreateCommentForm = ({
           <button type="button" onClick={handleLoginClick} className={styles.loginButton}>
             去登录
           </button>
+        </div>
+      )}
+
+      {/* 回复提示 */}
+      {replyTo && (
+        <div className={styles.replyHint}>
+          <span className={styles.replyText}>
+            正在回复 <span className={styles.replyTarget}>@{replyTo.authorName}</span>
+          </span>
+          {onCancelReply && (
+            <button type="button" onClick={onCancelReply} className={styles.cancelReplyButton} title="取消回复">
+              <Icon icon="mdi:close" size={16} />
+            </button>
+          )}
         </div>
       )}
 
