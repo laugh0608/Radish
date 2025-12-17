@@ -33,4 +33,38 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     /// <param name="commentId">评论 Id</param>
     /// <param name="increment">增量（可为负数）</param>
     Task UpdateReplyCountAsync(long commentId, int increment);
+
+    /// <summary>
+    /// 切换评论点赞状态（点赞/取消点赞）
+    /// </summary>
+    /// <param name="userId">用户 Id</param>
+    /// <param name="commentId">评论 Id</param>
+    /// <returns>点赞操作结果（当前状态和最新点赞数）</returns>
+    Task<CommentLikeResultDto> ToggleLikeAsync(long userId, long commentId);
+
+    /// <summary>
+    /// 批量查询用户对评论的点赞状态
+    /// </summary>
+    /// <param name="userId">用户 Id</param>
+    /// <param name="commentIds">评论 Id 列表</param>
+    /// <returns>点赞状态字典（评论Id → 是否已点赞）</returns>
+    Task<Dictionary<long, bool>> GetUserLikeStatusAsync(long userId, List<long> commentIds);
+
+    /// <summary>
+    /// 获取帖子的评论树（带点赞状态）
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="userId">用户 Id（可选，用于填充点赞状态）</param>
+    /// <returns>评论树（包含点赞状态）</returns>
+    Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null);
+
+    /// <summary>
+    /// 分页获取子评论
+    /// </summary>
+    /// <param name="parentId">父评论 Id</param>
+    /// <param name="pageIndex">页码（从1开始）</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <param name="userId">用户 Id（可选，用于填充点赞状态）</param>
+    /// <returns>子评论列表和总数</returns>
+    Task<(List<CommentVo> comments, int total)> GetChildCommentsPageAsync(long parentId, int pageIndex, int pageSize, long? userId = null);
 }

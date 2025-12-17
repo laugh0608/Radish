@@ -2,6 +2,9 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import './i18n'
+// 代码高亮样式（用于 Markdown 渲染器）
+// 注意：需要先安装 highlight.js: npm install --workspace=radish.client highlight.js
+import 'highlight.js/styles/github-dark.css'
 import App from './App.tsx'
 import { Shell } from './desktop/Shell.tsx'
 

@@ -35,7 +35,7 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
       position={window.position}
       minWidth={400}
       minHeight={300}
-      bounds="parent"
+      bounds={window.isMaximized ? undefined : "parent"}
       dragHandleClassName="window-drag-handle"
       style={{ zIndex: window.zIndex }}
       onMouseDown={() => focusWindow(window.id)}
@@ -74,15 +74,13 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
                 const browserWindow = globalThis.window;
                 const viewportWidth = browserWindow.innerWidth || 0;
                 const viewportHeight = browserWindow.innerHeight || 0;
-                const statusBarHeight = 40; // StatusBar.module.css 中为 40px
-                const dockHeight = 80; // Dock.module.css 中为 80px
 
-                // 最大化时填满 StatusBar 和 Dock 之间的区域
+                // 最大化时完全填满屏幕，Dock 栏会浮动在窗口之上
                 maximizeWindow(window.id, {
                   width: viewportWidth,
-                  height: viewportHeight - statusBarHeight - dockHeight,
+                  height: viewportHeight,
                   x: 0,
-                  y: statusBarHeight
+                  y: 0
                 });
               }}
               title={window.isMaximized ? '还原' : '最大化'}

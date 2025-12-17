@@ -20,6 +20,17 @@ export type { ContextMenuProps, ContextMenuItem } from './ContextMenu/ContextMen
 export { DataTable } from './DataTable/DataTable';
 export type { DataTableProps } from './DataTable/DataTable';
 
+export { GlassPanel } from './GlassPanel/GlassPanel';
+export type { GlassPanelProps } from './GlassPanel/GlassPanel';
+
+export { MarkdownRenderer } from './MarkdownRenderer/MarkdownRenderer';
+
+export { ConfirmDialog } from './ConfirmDialog/ConfirmDialog';
+export type { ConfirmDialogProps } from './ConfirmDialog/ConfirmDialog';
+
+export { UserMention } from './UserMention/UserMention';
+export type { UserMentionProps, UserMentionOption } from './UserMention/UserMention';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout

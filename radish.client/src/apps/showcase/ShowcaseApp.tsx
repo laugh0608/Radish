@@ -1,7 +1,4 @@
-import { Icon } from '@radish/ui';
-import { Button } from '@radish/ui';
-import { GlassPanel } from '@/shared/ui/desktop/GlassPanel';
-import { ContextMenu } from '@radish/ui';
+import { Icon, Button, GlassPanel, ContextMenu } from '@radish/ui';
 import styles from './ShowcaseApp.module.css';
 
 /**

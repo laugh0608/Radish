@@ -1,65 +1,320 @@
+/* Dock 容器 - 固定在底部中间 */
+.dockContainer {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  pointer-events: none;
+}
+
+/* Dock 主体 */
 .dock {
-  height: 80px;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+/* 展开状态 */
+.dock.expanded {
+  border-radius: 20px;
+  padding: 12px 20px;
+}
+
+/* 缩小状态（灵动岛） */
+.dock.collapsed {
+  border-radius: 50px;
+  padding: 6px 14px;
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.dock.collapsed:hover {
+  background: rgba(0, 0, 0, 0.85);
+}
+
+/* 展开内容 */
+.expandedContent {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: white;
+}
+
+/* 用户区域 */
+.userSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 1rem;
-  background: rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  position: relative;
-  z-index: 10000; /* 确保 Dock 始终在窗口之上 */
+  color: white;
 }
 
-.dockInner {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 1.5rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.dockItem {
-  position: relative;
-  width: 56px;
-  height: 56px;
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.5);
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.userName {
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  line-height: 1.2;
+}
+
+.userId {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.2;
+}
+
+/* 分隔线 */
+.divider {
+  width: 1px;
+  height: 32px;
   background: rgba(255, 255, 255, 0.15);
-  border: none;
+}
+
+/* 应用区域 */
+.appsSection {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.appIcon {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   color: white;
 }
 
-.dockItem:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-4px);
-}
-
-.dockItem.active {
+.appIcon:hover {
   background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
 
-.dockItem.minimized {
-  opacity: 0.6;
+.appIcon.active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.appIcon.minimized {
+  opacity: 0.5;
 }
 
 .emoji {
-  font-size: 2rem;
+  font-size: 1.75rem;
 }
 
-.indicator {
+.activeIndicator {
   position: absolute;
-  bottom: 4px;
+  bottom: -6px;
   width: 4px;
   height: 4px;
-  background: white;
+  background: #00d4ff;
   border-radius: 50%;
-  box-shadow: 0 0 4px rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.8);
+}
+
+/* 右侧区域 */
+.rightSection {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.time {
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: center;
+}
+
+.authButton {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+}
+
+.authButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+/* 缩小内容（灵动岛） */
+.collapsedContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: white;
+}
+
+.miniAvatar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.statusDot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background: #30d158;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 6px rgba(48, 209, 88, 0.6);
+}
+
+.miniBadge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  background: #ff3b30;
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 6px rgba(255, 59, 48, 0.5);
+}
+
+.miniAppIcon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.miniEmoji {
+  font-size: 1rem;
+}
+
+.miniActiveIndicator {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 6px;
+  height: 6px;
+  background: #00d4ff;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 6px rgba(0, 212, 255, 0.8);
+}
+
+.moreIndicator {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0 4px;
+}
+
+.miniTime {
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  font-variant-numeric: tabular-nums;
+  margin-left: 4px;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .dock.expanded {
+    padding: 10px 16px;
+  }
+
+  .expandedContent {
+    gap: 12px;
+  }
+
+  .userInfo {
+    display: none;
+  }
+
+  .time {
+    font-size: 13px;
+    min-width: 42px;
+  }
+
+  .appIcon {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* 动画 */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.statusDot {
+  animation: pulse 2s ease-in-out infinite;
 }

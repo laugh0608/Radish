@@ -265,6 +265,39 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         return (data, totalCount);
     }
 
+    /// <summary>分页查询（支持二级排序）</summary>
+    public async Task<(List<TEntity> data, int totalCount)> QueryPageAsync(
+        Expression<Func<TEntity, bool>>? whereExpression,
+        int pageIndex,
+        int pageSize,
+        Expression<Func<TEntity, object>>? orderByExpression,
+        OrderByType orderByType,
+        Expression<Func<TEntity, object>>? thenByExpression,
+        OrderByType thenByType)
+    {
+        RefAsync<int> totalCount = 0;
+        var query = DbClientBase.Queryable<TEntity>()
+            .WhereIF(whereExpression != null, whereExpression);
+
+        // 主排序
+        if (orderByExpression != null)
+        {
+            query = orderByType == OrderByType.Asc
+                ? query.OrderBy(orderByExpression)
+                : query.OrderByDescending(orderByExpression);
+        }
+
+        // 次级排序
+        if (thenByExpression != null)
+        {
+            query = query.OrderBy(thenByExpression, thenByType);
+        }
+
+        var data = await query.ToPageListAsync(pageIndex, pageSize, totalCount);
+
+        return (data, totalCount);
+    }
+
     /// <summary>查询数量</summary>
     /// <param name="whereExpression">Where 表达式，可空</param>
     /// <returns>记录数</returns>

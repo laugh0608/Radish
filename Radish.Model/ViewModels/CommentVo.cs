@@ -84,4 +84,10 @@ public class CommentVo
     /// 子评论列表（用于树形结构）
     /// </summary>
     public List<CommentVo>? Children { get; set; }
+
+    /// <summary>
+    /// 当前用户是否已点赞
+    /// </summary>
+    /// <remarks>需要在Service层动态填充，默认为false</remarks>
+    public bool IsLiked { get; set; }
 }
