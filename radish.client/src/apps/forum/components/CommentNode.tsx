@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { CommentNode as CommentNodeType } from '@/types/forum';
 import { Icon } from '@radish/ui';
 import styles from './CommentNode.module.css';
@@ -8,6 +8,7 @@ interface CommentNodeProps {
   level: number;
   currentUserId?: number;
   pageSize?: number; // 每次加载子评论数量
+  isGodComment?: boolean; // 是否是神评
   onDelete?: (commentId: number) => void;
   onLike?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReply?: (commentId: number, authorName: string) => void;
@@ -36,6 +37,7 @@ export const CommentNode = ({
   level,
   currentUserId = 0,
   pageSize = 10,
+  isGodComment = false,
   onDelete,
   onLike,
   onReply,
@@ -51,14 +53,45 @@ export const CommentNode = ({
 
   // 子评论展开状态
   const [isExpanded, setIsExpanded] = useState(false);
-  const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(node.children || []);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [childSortBy, setChildSortBy] = useState<'newest' | 'hottest' | null>(null); // null表示默认排序(时间升序)
+
+  // 初始化已加载的子评论（默认时间升序）
+  const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(() => {
+    const children = node.children || [];
+    // 默认按时间升序排序
+    return [...children].sort((a, b) =>
+      new Date(a.createTime || 0).getTime() - new Date(b.createTime || 0).getTime()
+    );
+  });
+
+  // 找出沙发（点赞数最多的子评论，如果点赞数相同则按时间最新）
+  const sofaComment = node.children && node.children.length > 0
+    ? [...node.children].sort((a, b) => {
+        // 先按点赞数降序
+        if ((b.likeCount || 0) !== (a.likeCount || 0)) {
+          return (b.likeCount || 0) - (a.likeCount || 0);
+        }
+        // 点赞数相同时按时间降序（最新的在前）
+        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+      })[0]
+    : null;
 
   const hasChildren = (node.childrenTotal && node.childrenTotal > 0) || (node.children && node.children.length > 0);
   const totalChildren = node.childrenTotal ?? node.children?.length ?? 0;
   const loadedCount = loadedChildren.length;
   const hasMore = loadedCount < totalChildren;
+
+  // 监听 node.children 变化,重新初始化子评论列表
+  useEffect(() => {
+    const children = node.children || [];
+    const sorted = [...children].sort((a, b) =>
+      new Date(a.createTime || 0).getTime() - new Date(b.createTime || 0).getTime()
+    );
+    setLoadedChildren(sorted);
+    setChildSortBy(null); // 重置排序方式为默认值
+  }, [node.children]);
 
   // 处理点赞
   const handleLike = async () => {
@@ -125,16 +158,60 @@ export const CommentNode = ({
     }
   };
 
+  // 处理子评论排序切换
+  const handleChildSortChange = (newSortBy: 'newest' | 'hottest') => {
+    setChildSortBy(newSortBy);
+    // 立即对已加载的子评论重新排序
+    const sorted = [...loadedChildren].sort((a, b) => {
+      if (newSortBy === 'hottest') {
+        // 最热：按点赞数降序
+        if (b.likeCount !== a.likeCount) {
+          return (b.likeCount || 0) - (a.likeCount || 0);
+        }
+        // 点赞数相同时按时间降序
+        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+      } else {
+        // 最新：按创建时间降序
+        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+      }
+    });
+    setLoadedChildren(sorted);
+  };
+
   // 决定显示哪些子评论
-  const displayChildren = level === 0 && !isExpanded && hasChildren
-    ? loadedChildren.slice(0, 1) // 顶级评论未展开：只显示最热的1条
-    : loadedChildren; // 已展开或非顶级评论：显示所有已加载的
+  const displayChildren = (() => {
+    if (level !== 0 || !hasChildren) {
+      return loadedChildren;
+    }
+
+    if (!isExpanded) {
+      // 未展开：只显示沙发
+      return sofaComment ? [sofaComment] : [];
+    }
+
+    if (childSortBy === null && sofaComment) {
+      // 展开且未手动排序：沙发置顶 + 其他按时间升序
+      const others = loadedChildren.filter(c => c.id !== sofaComment.id);
+      return [sofaComment, ...others];
+    }
+
+    // 展开且手动排序：按排序结果显示
+    return loadedChildren;
+  })();
 
   return (
     <div className={styles.container} style={{ marginLeft: level * 16 }}>
       <div className={styles.header}>
         <span className={styles.author}>{node.authorName}</span>
         {node.createTime && <span className={styles.time}> · {node.createTime}</span>}
+        {/* 沙发标识（仅子评论） */}
+        {level === 1 && isGodComment && (
+          <span className={styles.sofaBadge}>沙发</span>
+        )}
+        {/* 神评标识（仅父评论） */}
+        {level === 0 && isGodComment && (
+          <span className={styles.godCommentBadge}>神评</span>
+        )}
         {isAuthor && onDelete && (
           <button
             type="button"
@@ -186,6 +263,26 @@ export const CommentNode = ({
       {/* 子评论区域（仅顶级评论显示，限制2级结构） */}
       {level === 0 && hasChildren && (
         <div className={styles.childrenSection}>
+          {/* 子评论排序按钮（仅展开时显示） */}
+          {isExpanded && totalChildren > 1 && (
+            <div className={styles.childSortButtons}>
+              <button
+                type="button"
+                className={`${styles.childSortButton} ${childSortBy === 'newest' ? styles.active : ''}`}
+                onClick={() => handleChildSortChange('newest')}
+              >
+                最新
+              </button>
+              <button
+                type="button"
+                className={`${styles.childSortButton} ${childSortBy === 'hottest' ? styles.active : ''}`}
+                onClick={() => handleChildSortChange('hottest')}
+              >
+                最热
+              </button>
+            </div>
+          )}
+
           {/* 显示子评论 */}
           {displayChildren.length > 0 && (
             <div className={styles.children}>
@@ -196,6 +293,7 @@ export const CommentNode = ({
                   level={1}
                   currentUserId={currentUserId}
                   pageSize={pageSize}
+                  isGodComment={sofaComment !== null && child.id === sofaComment.id}
                   onDelete={onDelete}
                   onLike={onLike}
                   onReply={onReply}

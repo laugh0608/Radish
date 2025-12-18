@@ -222,7 +222,26 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         // 3. 根据排序方式排序父评论和子评论
-        if (sortBy == "hottest")
+        if (sortBy == "newest")
+        {
+            // 最新排序：按创建时间降序
+            rootComments = rootComments
+                .OrderByDescending(c => c.IsTop)
+                .ThenByDescending(c => c.CreateTime)
+                .ToList();
+
+            // 子评论也按时间降序
+            foreach (var root in rootComments)
+            {
+                if (root.Children?.Any() == true)
+                {
+                    root.Children = root.Children
+                        .OrderByDescending(c => c.CreateTime)
+                        .ToList();
+                }
+            }
+        }
+        else if (sortBy == "hottest")
         {
             // 最热排序：按点赞数降序
             rootComments = rootComments
@@ -231,7 +250,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 .ThenByDescending(c => c.CreateTime)
                 .ToList();
 
-            // 子评论也按点赞数排序
+            // 子评论也按点赞数降序
             foreach (var root in rootComments)
             {
                 if (root.Children?.Any() == true)
@@ -245,19 +264,19 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
         else
         {
-            // 最新排序：按创建时间降序（默认）
+            // 默认排序：按创建时间升序（oldest first）
             rootComments = rootComments
                 .OrderByDescending(c => c.IsTop)
-                .ThenByDescending(c => c.CreateTime)
+                .ThenBy(c => c.CreateTime)
                 .ToList();
 
-            // 子评论也按时间排序
+            // 子评论也按时间升序
             foreach (var root in rootComments)
             {
                 if (root.Children?.Any() == true)
                 {
                     root.Children = root.Children
-                        .OrderByDescending(c => c.CreateTime)
+                        .OrderBy(c => c.CreateTime)
                         .ToList();
                 }
             }
