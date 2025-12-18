@@ -49,7 +49,7 @@ export const ForumApp = () => {
 
   // 排序状态
   const [sortBy, setSortBy] = useState<'newest' | 'hottest' | 'essence'>('newest');
-  const [commentSortBy, setCommentSortBy] = useState<'newest' | 'hottest'>('newest');
+  const [commentSortBy, setCommentSortBy] = useState<'newest' | 'hottest' | null>(null); // null表示默认排序(时间升序)
 
   // 搜索状态
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -160,7 +160,8 @@ export const ForumApp = () => {
     setLoadingComments(true);
     setError(null);
     try {
-      const data = await getCommentTree(postId, commentSortBy, t);
+      const sortParam = commentSortBy || 'default'; // null时传'default'
+      const data = await getCommentTree(postId, sortParam, t);
       setComments(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -173,11 +174,31 @@ export const ForumApp = () => {
   function handleCommentSortChange(newSortBy: 'newest' | 'hottest') {
     setCommentSortBy(newSortBy);
     if (selectedPost) {
-      void loadComments(selectedPost.id);
+      // 直接使用新的排序值，而不是依赖状态
+      const sortParam = newSortBy;
+      setLoadingComments(true);
+      setError(null);
+      getCommentTree(selectedPost.id, sortParam, t)
+        .then(data => {
+          setComments(data);
+        })
+        .catch(err => {
+          const message = err instanceof Error ? err.message : String(err);
+          setError(message);
+        })
+        .finally(() => {
+          setLoadingComments(false);
+        });
     }
   }
 
+  // 重置评论排序为默认
+  function resetCommentSort() {
+    setCommentSortBy(null);
+  }
+
   async function handleSelectPost(postId: number) {
+    resetCommentSort(); // 切换帖子时重置评论排序
     await loadPostDetail(postId);
     await loadComments(postId);
   }

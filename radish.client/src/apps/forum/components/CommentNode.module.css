@@ -24,6 +24,34 @@
   color: #888;
 }
 
+/* 沙发标识（子评论） */
+.sofaBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 3px;
+  margin-left: 4px;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+}
+
+/* 神评标识（父评论） */
+.godCommentBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 3px;
+  margin-left: 4px;
+  box-shadow: 0 1px 3px rgba(251, 191, 36, 0.3);
+}
+
 .deleteButton {
   margin-left: auto;
   padding: 2px 6px;
@@ -140,6 +168,38 @@
 /* 子评论区域 */
 .childrenSection {
   margin-top: 12px;
+}
+
+/* 子评论排序按钮 */
+.childSortButtons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+
+.childSortButton {
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid #475569;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 12px;
+}
+
+.childSortButton:hover {
+  background-color: #1e293b;
+  border-color: #60a5fa;
+  color: #60a5fa;
+}
+
+.childSortButton.active {
+  background-color: #60a5fa;
+  border-color: #60a5fa;
+  color: #fff;
+  font-weight: 500;
 }
 
 .children {
