@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { CommentNode as CommentNodeType } from '@/types/forum';
-import { MarkdownRenderer, Icon } from '@radish/ui';
+import { Icon } from '@radish/ui';
 import styles from './CommentNode.module.css';
 
 interface CommentNodeProps {
@@ -13,6 +13,23 @@ interface CommentNodeProps {
   onReply?: (commentId: number, authorName: string) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
 }
+
+/**
+ * 将评论内容中的@用户名高亮显示
+ */
+const highlightMentions = (content: string): string => {
+  // 转义HTML特殊字符以防止XSS攻击
+  const escapeHtml = (text: string): string => {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  };
+
+  const escapedContent = escapeHtml(content);
+
+  // 替换@用户名为高亮样式
+  return escapedContent.replace(/@([^\s@]+)/g, '<span class="mention">@$1</span>');
+};
 
 export const CommentNode = ({
   node,
@@ -130,10 +147,11 @@ export const CommentNode = ({
         )}
       </div>
 
-      {/* 渲染内容（使用MarkdownRenderer） */}
-      <div className={styles.content}>
-        <MarkdownRenderer content={node.content} />
-      </div>
+      {/* 渲染内容（纯文本，支持@用户名高亮） */}
+      <div
+        className={styles.content}
+        dangerouslySetInnerHTML={{ __html: highlightMentions(node.content) }}
+      />
 
       {/* 操作按钮区域 */}
       <div className={styles.actions}>
