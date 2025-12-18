@@ -36,17 +36,18 @@ public class CommentController : ControllerBase
     /// 获取帖子的评论树（带点赞状态）
     /// </summary>
     /// <param name="postId">帖子 ID</param>
+    /// <param name="sortBy">排序方式：newest=最新，hottest=最热（默认：newest）</param>
     /// <returns>评论树（树形结构，包含当前用户的点赞状态）</returns>
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetCommentTree(long postId)
+    public async Task<MessageModel> GetCommentTree(long postId, string sortBy = "newest")
     {
         // 获取当前用户ID（如果已登录）
         long? userId = _httpContextUser.UserId > 0 ? _httpContextUser.UserId : null;
 
         // 获取带点赞状态的评论树
-        var comments = await _commentService.GetCommentTreeWithLikeStatusAsync(postId, userId);
+        var comments = await _commentService.GetCommentTreeWithLikeStatusAsync(postId, userId, sortBy);
 
         return new MessageModel
         {

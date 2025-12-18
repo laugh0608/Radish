@@ -49,6 +49,7 @@ export const ForumApp = () => {
 
   // 排序状态
   const [sortBy, setSortBy] = useState<'newest' | 'hottest' | 'essence'>('newest');
+  const [commentSortBy, setCommentSortBy] = useState<'newest' | 'hottest'>('newest');
 
   // 搜索状态
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -159,13 +160,20 @@ export const ForumApp = () => {
     setLoadingComments(true);
     setError(null);
     try {
-      const data = await getCommentTree(postId, t);
+      const data = await getCommentTree(postId, commentSortBy, t);
       setComments(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
     } finally {
       setLoadingComments(false);
+    }
+  }
+
+  function handleCommentSortChange(newSortBy: 'newest' | 'hottest') {
+    setCommentSortBy(newSortBy);
+    if (selectedPost) {
+      void loadComments(selectedPost.id);
     }
   }
 
@@ -475,7 +483,9 @@ export const ForumApp = () => {
           loading={loadingComments}
           hasPost={selectedPost !== null}
           currentUserId={userId ?? 0}
-          pageSize={10}
+          pageSize={5}
+          sortBy={commentSortBy}
+          onSortChange={handleCommentSortChange}
           onDeleteComment={handleDeleteComment}
           onLikeComment={handleCommentLike}
           onReplyComment={handleReplyComment}

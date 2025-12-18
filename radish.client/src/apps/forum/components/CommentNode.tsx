@@ -183,8 +183,8 @@ export const CommentNode = ({
         )}
       </div>
 
-      {/* 子评论区域 */}
-      {hasChildren && (
+      {/* 子评论区域（仅顶级评论显示，限制2级结构） */}
+      {level === 0 && hasChildren && (
         <div className={styles.childrenSection}>
           {/* 显示子评论 */}
           {displayChildren.length > 0 && (
@@ -193,20 +193,20 @@ export const CommentNode = ({
                 <CommentNode
                   key={child.id}
                   node={child}
-                  level={level + 1}
+                  level={1}
                   currentUserId={currentUserId}
                   pageSize={pageSize}
                   onDelete={onDelete}
                   onLike={onLike}
                   onReply={onReply}
-                  onLoadMoreChildren={onLoadMoreChildren}
+                  onLoadMoreChildren={undefined} // 2级结构，子评论不再加载更多
                 />
               ))}
             </div>
           )}
 
-          {/* 展开/收起按钮（仅顶级评论显示） */}
-          {level === 0 && totalChildren > 1 && (
+          {/* 展开/收起按钮 */}
+          {totalChildren > 1 && (
             <div className={styles.expandSection}>
               {!isExpanded ? (
                 <button
