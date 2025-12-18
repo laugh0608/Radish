@@ -171,6 +171,11 @@ public class UserControllerTest
             return Task.FromResult(0);
         }
 
+        public Task<(List<CommentVo> comments, int total)> GetChildCommentsPageAsync(long parentId, int pageIndex, int pageSize, long? userId = null)
+        {
+            return Task.FromResult((new List<CommentVo>(), 0));
+        }
+
         #region 未在当前测试中使用的方法
 
         public Task<long> AddCommentAsync(Comment comment) => throw new System.NotImplementedException();
