@@ -187,24 +187,88 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     }
 
     /// <summary>
-    /// 获取帖子的评论树（带点赞状态）
+    /// 获取帖子的评论树（带点赞状态和排序）
     /// </summary>
-    public async Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null)
+    public async Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null, string sortBy = "newest")
     {
-        // 1. 获取评论树（复用现有方法）
-        var commentTree = await GetCommentTreeAsync(postId);
+        // 1. 获取所有评论
+        var comments = await QueryAsync(c => c.PostId == postId && c.IsEnabled && !c.IsDeleted);
 
-        // 2. 如果用户已登录，批量查询点赞状态
-        if (userId.HasValue && commentTree.Any())
+        // 2. 构建树形结构
+        var commentMap = comments.ToDictionary(c => c.Id);
+        var rootComments = new List<CommentVo>();
+
+        foreach (var comment in comments)
         {
-            var allCommentIds = GetAllCommentIds(commentTree);
-            var likeStatus = await GetUserLikeStatusAsync(userId.Value, allCommentIds);
+            if (comment.ParentId == null)
+            {
+                // 顶级评论
+                rootComments.Add(comment);
+            }
+            else if (commentMap.TryGetValue(comment.ParentId.Value, out var parent))
+            {
+                // 子评论
+                parent.Children ??= new List<CommentVo>();
+                parent.Children.Add(comment);
 
-            // 3. 递归填充点赞状态
-            FillLikeStatus(commentTree, likeStatus);
+                // 填充 ChildrenTotal
+                parent.ChildrenTotal = (parent.ChildrenTotal ?? 0) + 1;
+            }
         }
 
-        return commentTree;
+        // 3. 根据排序方式排序父评论和子评论
+        if (sortBy == "hottest")
+        {
+            // 最热排序：按点赞数降序
+            rootComments = rootComments
+                .OrderByDescending(c => c.IsTop)
+                .ThenByDescending(c => c.LikeCount)
+                .ThenByDescending(c => c.CreateTime)
+                .ToList();
+
+            // 子评论也按点赞数排序
+            foreach (var root in rootComments)
+            {
+                if (root.Children?.Any() == true)
+                {
+                    root.Children = root.Children
+                        .OrderByDescending(c => c.LikeCount)
+                        .ThenByDescending(c => c.CreateTime)
+                        .ToList();
+                }
+            }
+        }
+        else
+        {
+            // 最新排序：按创建时间降序（默认）
+            rootComments = rootComments
+                .OrderByDescending(c => c.IsTop)
+                .ThenByDescending(c => c.CreateTime)
+                .ToList();
+
+            // 子评论也按时间排序
+            foreach (var root in rootComments)
+            {
+                if (root.Children?.Any() == true)
+                {
+                    root.Children = root.Children
+                        .OrderByDescending(c => c.CreateTime)
+                        .ToList();
+                }
+            }
+        }
+
+        // 4. 如果用户已登录，批量查询点赞状态
+        if (userId.HasValue && rootComments.Any())
+        {
+            var allCommentIds = GetAllCommentIds(rootComments);
+            var likeStatus = await GetUserLikeStatusAsync(userId.Value, allCommentIds);
+
+            // 5. 递归填充点赞状态
+            FillLikeStatus(rootComments, likeStatus);
+        }
+
+        return rootComments;
     }
 
     /// <summary>

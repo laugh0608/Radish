@@ -127,8 +127,8 @@ export async function getPostById(postId: number, t: TFunction): Promise<PostDet
 /**
  * 获取帖子的评论树（自动包含当前用户的点赞状态）
  */
-export async function getCommentTree(postId: number, t: TFunction): Promise<CommentNode[]> {
-  const url = `${getApiBaseUrl()}/api/v1/Comment/GetCommentTree?postId=${postId}`;
+export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest', t: TFunction): Promise<CommentNode[]> {
+  const url = `${getApiBaseUrl()}/api/v1/Comment/GetCommentTree?postId=${postId}&sortBy=${sortBy}`;
   // 如果用户已登录，自动发送token以获取点赞状态
   const hasToken = typeof window !== 'undefined' && window.localStorage.getItem('access_token');
   const response = await apiFetch(url, { withAuth: !!hasToken });
