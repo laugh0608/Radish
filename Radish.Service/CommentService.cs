@@ -194,7 +194,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         // 1. 获取所有评论
         var comments = await QueryAsync(c => c.PostId == postId && c.IsEnabled && !c.IsDeleted);
 
-        // 2. 构建树形结构
+        // 2. 构建2级树形结构（父评论 + 所有子评论都挂在根评论下）
         var commentMap = comments.ToDictionary(c => c.Id);
         var rootComments = new List<CommentVo>();
 
@@ -205,14 +205,19 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 // 顶级评论
                 rootComments.Add(comment);
             }
-            else if (commentMap.TryGetValue(comment.ParentId.Value, out var parent))
+            else
             {
-                // 子评论
-                parent.Children ??= new List<CommentVo>();
-                parent.Children.Add(comment);
+                // 子评论：找到根评论，挂到根评论的Children下
+                var rootId = comment.RootId ?? comment.ParentId!.Value;
 
-                // 填充 ChildrenTotal
-                parent.ChildrenTotal = (parent.ChildrenTotal ?? 0) + 1;
+                if (commentMap.TryGetValue(rootId, out var root))
+                {
+                    root.Children ??= new List<CommentVo>();
+                    root.Children.Add(comment);
+
+                    // 填充 ChildrenTotal
+                    root.ChildrenTotal = (root.ChildrenTotal ?? 0) + 1;
+                }
             }
         }
 
