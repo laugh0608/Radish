@@ -14,6 +14,7 @@ using Radish.Model.OpenIddict;
 using System.Linq;
 using Microsoft.AspNetCore.WebUtilities;
 using Serilog;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Radish.Auth.Controllers;
 
@@ -53,6 +54,7 @@ public class AccountController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("login")]
     public async Task<IActionResult> Login([FromForm] string username, [FromForm] string password, [FromForm] string? returnUrl = null)
     {
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
