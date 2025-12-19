@@ -21,6 +21,7 @@ using Radish.Extension.RedisExtension;
 using Radish.Extension.SerilogExtension;
 using Radish.Extension.SqlSugarExtension;
 using Radish.Extension.OpenApiExtension;
+using Radish.Extension.RateLimitExtension;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Repository;
@@ -145,6 +146,8 @@ builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
 builder.Services.AddAllOptionRegister();
 // 注册缓存相关服务
 builder.Services.AddCacheSetup();
+// 注册速率限制服务
+builder.Services.AddRateLimitSetup();
 // 注册 SqlSugar 服务
 builder.Services.AddSqlSugarSetup();
 // 增强 SqlSugar 的雪花 ID 算法，防止重复
@@ -259,6 +262,8 @@ app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
 // 先认证，再授权
 app.UseAuthentication();
 app.UseAuthorization();
+// 启用速率限制中间件（在授权之后，路由之前）
+app.UseRateLimitSetup();
 app.MapControllers();
 // 映射健康检查端点
 app.MapHealthChecks("/health");
