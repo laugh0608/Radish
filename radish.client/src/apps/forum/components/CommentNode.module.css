@@ -79,6 +79,7 @@
   line-height: 1.5;
   color: #e5e7eb;
   font-size: 14px;
+  text-align: left;
 }
 
 /* @用户名高亮（全局样式，因为使用dangerouslySetInnerHTML） */
