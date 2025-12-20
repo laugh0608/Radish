@@ -25,6 +25,9 @@ export type { GlassPanelProps } from './GlassPanel/GlassPanel';
 
 export { MarkdownRenderer } from './MarkdownRenderer/MarkdownRenderer';
 
+export { MarkdownEditor } from './MarkdownEditor/MarkdownEditor';
+export type { MarkdownEditorProps } from './MarkdownEditor/MarkdownEditor';
+
 export { ConfirmDialog } from './ConfirmDialog/ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog/ConfirmDialog';
 
