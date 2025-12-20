@@ -364,4 +364,45 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
         return (commentVos, total);
     }
+
+    /// <summary>
+    /// 更新评论内容
+    /// </summary>
+    public async Task<(bool success, string message)> UpdateCommentAsync(long commentId, string newContent, long userId, string userName)
+    {
+        // 1. 查询评论
+        var comment = await _commentRepository.QueryByIdAsync(commentId);
+        if (comment == null || comment.IsDeleted)
+        {
+            return (false, "评论不存在或已被删除");
+        }
+
+        // 2. 检查作者权限
+        if (comment.AuthorId != userId)
+        {
+            return (false, "只有作者本人可以编辑评论");
+        }
+
+        // 3. 检查时间窗口（5分钟 = 300秒）
+        var timeSinceCreation = DateTime.Now - comment.CreateTime;
+        if (timeSinceCreation.TotalSeconds > 300)
+        {
+            return (false, "评论发布超过5分钟，无法编辑");
+        }
+
+        // 4. 验证内容
+        if (string.IsNullOrWhiteSpace(newContent))
+        {
+            return (false, "评论内容不能为空");
+        }
+
+        // 5. 更新评论
+        comment.Content = newContent.Trim();
+        comment.ModifyTime = DateTime.Now;
+        comment.ModifyBy = userName;
+        comment.ModifyId = userId;
+        await _commentRepository.UpdateAsync(comment);
+
+        return (true, "编辑成功");
+    }
 }
