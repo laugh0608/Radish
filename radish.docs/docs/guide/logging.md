@@ -1,6 +1,6 @@
 # 日志系统
 
-Radish 项目采用多层次的日志系统，结合 Serilog 结构化日志和数据库持久化，提供完整的应用监控和审计能力。
+Radish 项目采用 Serilog 结构化日志，提供完整的应用监控和审计能力。
 
 ## 架构概述
 
@@ -11,24 +11,28 @@ Radish 的日志系统分为三个层次：
 | 日志类型 | 用途 | 存储位置 | 实现方式 |
 |---------|------|---------|---------|
 | **应用日志** | 记录应用运行状态、错误、警告等 | 文件系统 (`Log/` 目录) | Serilog |
-| **SQL 审计日志** | 记录所有 SQL 执行语句和性能 | 文件 + 数据库 (`AuditSqlLog` 表) | SqlSugar AOP + Serilog |
-| **业务审计日志** | 记录敏感操作（登录、权限变更、数据删除等） | 数据库 (`AuditLog` 表) | 审计中间件 + Serilog |
+| **SQL 日志** | 记录所有 SQL 执行语句和性能 | 文件系统 (`Log/AopSql/` 目录) | SqlSugar AOP + Serilog |
+| **业务审计日志** | 记录敏感操作（登录、权限变更、数据删除等） | 数据库 (`AuditLog` 表) + 文件 | 审计中间件 + Serilog |
 
 ### 日志流向
 
 ```
 应用代码
   ├─> Serilog.Log.* 方法
-  │     └─> Log/{ProjectName}/Log.txt (应用日志)
+  │     └─> Log/{ProjectName}/Log.txt (应用日志文件)
   │
   ├─> SqlSugar AOP
-  │     ├─> Log/{ProjectName}/AopSql/AopSql.txt (SQL 日志文件)
-  │     └─> Radish.Log.db -> AuditSqlLog_YYYYMMDD (SQL 日志数据库)
+  │     └─> Log/{ProjectName}/AopSql/AopSql.txt (SQL 日志文件)
   │
   └─> AuditLogMiddleware
         ├─> Log/{ProjectName}/Log.txt (审计日志文件)
         └─> Radish.Log.db -> AuditLog_YYYYMMDD (审计日志数据库)
 ```
+
+**注意**：
+- 应用日志和 SQL 日志目前只输出到文件系统，不写入数据库
+- 只有业务审计日志通过中间件写入数据库
+- 如需将应用日志和 SQL 日志写入数据库，需要实现 Serilog 自定义 Sink（参见"扩展功能"章节）
 
 ## Serilog 配置
 
@@ -168,27 +172,34 @@ using (LogContext.PushProperty("TraceId", traceId))
 }
 ```
 
-## SQL 审计日志
+## SQL 日志
 
 ### 配置
 
-SqlSugar AOP 在 `SqlSugarSetup` 中自动配置：
+SqlSugar AOP 在 `SqlSugarSetup` 中自动配置，将 SQL 执行日志输出到文件：
 
 ```csharp
-// Radish.Extension/SqlSugarExtension/SqlSugarSetup.cs
-db.Aop.OnLogExecuting = (sql, pars) =>
+// Radish.Extension/AopExtension/SqlSugarAop.cs
+public static void OnLogExecuting(ISqlSugarClient sqlSugarScopeProvider, string user, string table, string operate,
+    string sql, SugarParameter[] p, ConnectionConfig config)
 {
     // 使用 LogContextTool 标记日志来源
-    using (LogContext.PushProperty("LogSource", "AopSql"))
+    using (LogContextTool.Create.SqlAopPushProperty(sqlSugarScopeProvider))
     {
-        Log.Information("SQL: {Sql}, Parameters: {@Parameters}", sql, pars);
+        Log.Information($"User:[{user}] Table:[{table}] Operate:[{operate}] ConnId:[{config.ConfigId}] SQL: {sql}");
     }
-};
+}
 ```
 
-### 数据模型
+**日志输出位置**：
+- 文件：`Log/{ProjectName}/AopSql/AopSql.txt`
+- 控制台：同时输出到控制台（开发环境）
 
-SQL 日志存储在 `AuditSqlLog` 表中：
+**注意**：SQL 日志目前只输出到文件系统，不写入数据库。如需写入数据库，参见"扩展功能"章节。
+
+### 数据模型（预留）
+
+`AuditSqlLog` 实体已定义，但目前未使用：
 
 ```csharp
 [Tenant(configId: "Log")]              // 使用独立的日志数据库
@@ -204,15 +215,19 @@ public class AuditSqlLog : BaseLog
 }
 ```
 
-### 查询示例
+**说明**：该实体为将来实现 SQL 日志数据库持久化预留，目前 SQL 日志只通过 Serilog 输出到文件。
 
-```csharp
-// 查询今天的 SQL 日志
-var today = DateTime.Today;
-var logs = await _auditSqlLogService.QuerySplitAsync(
-    x => x.DateTime >= today && x.DateTime < today.AddDays(1),
-    orderByFields: "DateTime"
-);
+### 查看 SQL 日志
+
+```bash
+# 查看最新的 SQL 日志
+tail -f Log/Radish.Api/AopSql/AopSql.txt
+
+# 搜索特定表的 SQL
+grep "Table:\[User\]" Log/Radish.Api/AopSql/AopSql.txt
+
+# 查看今天的 SQL 日志
+cat Log/Radish.Api/AopSql/AopSql.txt | grep "$(date +%Y-%m-%d)"
 ```
 
 ## 业务审计日志
@@ -613,6 +628,118 @@ db.Aop.OnLogExecuting = (sql, pars) =>
 };
 ```
 
+## 扩展功能
+
+### 将日志写入数据库
+
+目前应用日志和 SQL 日志只输出到文件系统。如需将它们写入数据库，可以实现 Serilog 自定义 Sink。
+
+**参考实现**（位于 `reference/Blog.Core/Blog.Core.Serilog/`）：
+
+1. **创建自定义 Sink**：
+
+```csharp
+// Radish.Extension/SerilogExtension/LogBatchingSink.cs
+public class LogBatchingSink : IBatchedLogEventSink
+{
+    public async Task EmitBatchAsync(IEnumerable<LogEvent> batch)
+    {
+        var sugar = App.GetService<ISqlSugarClient>();
+
+        // 分离 SQL 日志和普通日志
+        await WriteSqlLog(sugar, batch.FilterSqlLog());
+        await WriteLogs(sugar, batch.FilterRemoveOtherLog());
+    }
+
+    private async Task WriteSqlLog(ISqlSugarClient db, IEnumerable<LogEvent> batch)
+    {
+        var logs = batch.Select(e => new AuditSqlLog
+        {
+            Message = e.RenderMessage(),
+            DateTime = e.Timestamp.DateTime,
+            Level = e.Level.ToString()
+        }).ToList();
+
+        await db.AsTenant().InsertableWithAttr(logs).SplitTable().ExecuteReturnSnowflakeIdAsync();
+    }
+}
+```
+
+2. **注册 Sink**：
+
+```csharp
+// Radish.Extension/SerilogExtension/SerilogSetup.cs
+public static IHostBuilder AddSerilogSetup(this IHostBuilder host)
+{
+    var loggerConfiguration = new LoggerConfiguration()
+        .ReadFrom.Configuration(AppSettingsTool.Configuration)
+        .Enrich.FromLogContext()
+        .WriteToConsole()
+        .WriteToFile()
+        .WriteToLogBatching();  // 添加数据库 Sink
+
+    Log.Logger = loggerConfiguration.CreateLogger();
+    host.UseSerilog();
+    return host;
+}
+```
+
+3. **配置开关**：
+
+```json
+{
+  "AppSettings": {
+    "LogToDb": true  // 控制是否写入数据库
+  }
+}
+```
+
+**注意事项**：
+- 批量写入以提高性能（使用 `PeriodicBatchingSink`）
+- 区分不同日志级别（Information、Warning、Error）
+- 使用 `LogSource` 属性区分 SQL 日志和普通日志
+- 考虑数据库写入失败的降级策略
+
+### 集成日志中心
+
+对于生产环境，建议集成集中式日志管理系统：
+
+**Seq**（推荐用于 .NET 项目）：
+
+```csharp
+var loggerConfiguration = new LoggerConfiguration()
+    .WriteTo.Seq("http://localhost:5341", apiKey: "your-api-key");
+```
+
+**Elasticsearch + Kibana**：
+
+```csharp
+var loggerConfiguration = new LoggerConfiguration()
+    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("http://localhost:9200"))
+    {
+        AutoRegisterTemplate = true,
+        IndexFormat = "radish-logs-{0:yyyy.MM.dd}"
+    });
+```
+
+**配置示例**：
+
+```json
+{
+  "Serilog": {
+    "WriteTo": [
+      {
+        "Name": "Seq",
+        "Args": {
+          "serverUrl": "http://localhost:5341",
+          "apiKey": "your-api-key"
+        }
+      }
+    ]
+  }
+}
+```
+
 ## 相关文档
 
 - [配置管理](./configuration.md) - 日志配置详解
@@ -625,3 +752,4 @@ db.Aop.OnLogExecuting = (sql, pars) =>
 - [Serilog 官方文档](https://serilog.net/)
 - [SqlSugar 文档](https://www.donet5.com/Home/Doc)
 - [结构化日志最佳实践](https://github.com/serilog/serilog/wiki/Structured-Data)
+- [Serilog.Sinks.PeriodicBatching](https://github.com/serilog/serilog-sinks-periodicbatching) - 批量写入 Sink
