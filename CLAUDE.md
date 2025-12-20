@@ -270,32 +270,31 @@ API routes must start with `/` for permission matching. If using path parameters
 
 ## Logging with Serilog
 
-### Initialization
-`Program.cs` calls `builder.Host.AddSerilogSetup()` to configure Serilog. Logs are written to the solution root's `Log/` folder with the following structure:
-- `Log/{ProjectName}/Log.txt` - General application logs
-- `Log/{ProjectName}/AopSql/AopSql.txt` - SQL logs via AOP
-- `Log/{ProjectName}/SerilogDebug/Serilog{date}.txt` - Serilog internal debug logs
+Radish 使用 Serilog 结构化日志和数据库持久化，提供完整的应用监控和审计能力。
 
-Where `{ProjectName}` is automatically detected from the running project (e.g., Radish.Api, Radish.Gateway, Radish.Auth).
+### Quick Start
 
-### Log Location Auto-Detection
-The logging system automatically:
-1. Finds the solution root by searching upward for `*.slnx` or `*.sln` files
-2. Identifies the current project name from the `.csproj` file
-3. Creates project-specific subdirectories under the solution's `Log/` folder
+**初始化**（在 `Program.cs` 中）：
+```csharp
+builder.Host.AddSerilogSetup();
+```
 
-This ensures all projects log to a centralized location while maintaining clear separation.
-
-### Usage
-Prefer static Serilog methods over injecting `ILogger<T>`:
+**使用**（推荐静态方法）：
 ```csharp
 Log.Information("User {UserId} logged in", userId);
 Log.Warning("Cache miss for key {Key}", cacheKey);
 Log.Error(ex, "Failed to process order {OrderId}", orderId);
 ```
 
-### SQL Logging
-`SqlSugarAop.OnLogExecuting` captures all SQL executions. `LogContextTool` tags them with `LogSource=AopSql`. Use `WriteTo.Async()` to avoid blocking requests.
+### 日志类型
+
+| 类型 | 存储位置 | 用途 |
+|-----|---------|------|
+| **应用日志** | `Log/{ProjectName}/Log.txt` | 应用运行状态、错误、警告 |
+| **SQL 日志** | `Log/{ProjectName}/AopSql/AopSql.txt` + 数据库 | SQL 执行和性能 |
+| **审计日志** | 数据库 `AuditLog_YYYYMMDD` 表 | 敏感操作记录 |
+
+**详细文档**: 参见 [日志系统文档](radish.docs/docs/guide/logging.md) 了解完整配置、最佳实践和故障排查。
 
 ## Caching Strategy
 
