@@ -53,7 +53,15 @@ public static class SerilogSetup
         }
 
         var debugLogPath = Path.Combine(debugLogDir, $"Serilog{DateTime.Now:yyyyMMdd}.txt");
-        var file = File.CreateText(debugLogPath);
-        SelfLog.Enable(TextWriter.Synchronized(file));
+
+        // 使用 FileStream 并允许共享读写,避免多进程或重启时文件被占用
+        var fileStream = new FileStream(
+            debugLogPath,
+            FileMode.Append,
+            FileAccess.Write,
+            FileShare.ReadWrite);
+        var streamWriter = new StreamWriter(fileStream);
+
+        SelfLog.Enable(TextWriter.Synchronized(streamWriter));
     }
 }
