@@ -86,7 +86,7 @@ public static class LogConfigExtension
 
         var batchingSink = new LogBatchingSink(
             serviceProvider.GetRequiredService<SqlSugar.ISqlSugarClient>(),
-            serviceProvider.GetRequiredService<IOptionsSnapshot<SerilogOptions>>()
+            options
         );
 
         var batchingOptions = new PeriodicBatchingSinkOptions

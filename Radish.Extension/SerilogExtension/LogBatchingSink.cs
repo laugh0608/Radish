@@ -16,10 +16,10 @@ public class LogBatchingSink : IBatchedLogEventSink
     private readonly ISqlSugarClient _db;
     private readonly SerilogOptions _options;
 
-    public LogBatchingSink(ISqlSugarClient db, IOptionsSnapshot<SerilogOptions> options)
+    public LogBatchingSink(ISqlSugarClient db, SerilogOptions options)
     {
         _db = db ?? throw new ArgumentNullException(nameof(db));
-        _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
     public async Task EmitBatchAsync(IEnumerable<LogEvent> batch)

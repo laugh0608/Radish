@@ -19,8 +19,8 @@ public static class SerilogSetup
 
         host.UseSerilog((context, services, loggerConfiguration) =>
         {
-            // 获取配置选项
-            var options = services.GetRequiredService<IOptionsSnapshot<SerilogOptions>>().Value;
+            // 获取配置选项（使用 IOptions 而非 IOptionsSnapshot，因为 Serilog 在 root provider 中初始化）
+            var options = services.GetRequiredService<IOptions<SerilogOptions>>().Value;
 
             // 解析最小日志级别
             var minimumLevel = Enum.TryParse<LogEventLevel>(options.MinimumLevel, true, out var level)
