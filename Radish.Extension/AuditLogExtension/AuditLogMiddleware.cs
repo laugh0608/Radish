@@ -58,35 +58,29 @@ public class AuditLogMiddleware
             // 恢复原始响应流
             await responseBody.CopyToAsync(originalBodyStream);
 
-            // 异步记录审计日志
-            _ = Task.Run(async () =>
+            // 记录审计日志（在请求上下文中执行，确保 ServiceProvider 可用）
+            try
             {
-                try
-                {
-                    await LogAuditAsync(context, requestBody, responseBodyText, stopwatch.ElapsedMilliseconds, serviceProvider);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "[AuditLog] 记录审计日志失败");
-                }
-            });
+                await LogAuditAsync(context, requestBody, responseBodyText, stopwatch.ElapsedMilliseconds, serviceProvider);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[AuditLog] 记录审计日志失败");
+            }
         }
         catch (Exception ex)
         {
             stopwatch.Stop();
 
-            // 记录失败的审计日志
-            _ = Task.Run(async () =>
+            // 记录失败的审计日志（在请求上下文中执行）
+            try
             {
-                try
-                {
-                    await LogAuditAsync(context, null, null, stopwatch.ElapsedMilliseconds, serviceProvider, ex);
-                }
-                catch (Exception logEx)
-                {
-                    Log.Error(logEx, "[AuditLog] 记录失败审计日志失败");
-                }
-            });
+                await LogAuditAsync(context, null, null, stopwatch.ElapsedMilliseconds, serviceProvider, ex);
+            }
+            catch (Exception logEx)
+            {
+                Log.Error(logEx, "[AuditLog] 记录失败审计日志失败");
+            }
 
             throw;
         }
@@ -277,7 +271,14 @@ public class AuditLogMiddleware
                     Level = auditLogDto.IsSuccess ? "Information" : "Warning"
                 };
 
-                await auditLogService.AddAsync(auditLog);
+                // 使用 AddSplitAsync 因为 AuditLog 有 SplitTable 特性
+                // 注意：AddSplitAsync 返回 List<long>，我们只需要第一个 ID
+                var ids = await auditLogService.AddSplitAsync(auditLog);
+
+                if (ids != null && ids.Count > 0)
+                {
+                    auditLog.Id = ids[0];
+                }
 
                 if (_options.EnableLogging)
                 {
