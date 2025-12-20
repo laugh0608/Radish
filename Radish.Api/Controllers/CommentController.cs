@@ -286,6 +286,50 @@ public class CommentController : ControllerBase
             MessageInfo = "删除成功"
         };
     }
+
+    /// <summary>
+    /// 更新评论内容
+    /// </summary>
+    /// <param name="request">更新请求</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 只有作者本人可以编辑评论，且仅限发布后5分钟内。
+    /// 编辑后会显示"已编辑"标记。
+    /// </remarks>
+    [HttpPut]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    public async Task<MessageModel> Update([FromBody] UpdateCommentRequest request)
+    {
+        var (success, message) = await _commentService.UpdateCommentAsync(
+            request.CommentId,
+            request.Content,
+            _httpContextUser.UserId,
+            _httpContextUser.UserName);
+
+        if (!success)
+        {
+            // 根据错误信息判断状态码
+            var statusCode = message.Contains("无法编辑") || message.Contains("只有作者")
+                ? HttpStatusCodeEnum.Forbidden
+                : HttpStatusCodeEnum.BadRequest;
+
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)statusCode,
+                MessageInfo = message
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = message
+        };
+    }
 }
 
 /// <summary>
@@ -307,4 +351,16 @@ public class CreateCommentRequest
 
     /// <summary>被回复用户名称</summary>
     public string? ReplyToUserName { get; set; }
+}
+
+/// <summary>
+/// 更新评论请求对象
+/// </summary>
+public class UpdateCommentRequest
+{
+    /// <summary>评论 ID</summary>
+    public long CommentId { get; set; }
+
+    /// <summary>新的评论内容</summary>
+    public string Content { get; set; } = string.Empty;
 }

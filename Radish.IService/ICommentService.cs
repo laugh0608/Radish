@@ -68,4 +68,14 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     /// <param name="userId">用户 Id（可选，用于填充点赞状态）</param>
     /// <returns>子评论列表和总数</returns>
     Task<(List<CommentVo> comments, int total)> GetChildCommentsPageAsync(long parentId, int pageIndex, int pageSize, long? userId = null);
+
+    /// <summary>
+    /// 更新评论内容
+    /// </summary>
+    /// <param name="commentId">评论 Id</param>
+    /// <param name="newContent">新的评论内容</param>
+    /// <param name="userId">操作用户 Id</param>
+    /// <param name="userName">操作用户名称</param>
+    /// <returns>更新结果（是否成功，错误信息）</returns>
+    Task<(bool success, string message)> UpdateCommentAsync(long commentId, string newContent, long userId, string userName);
 }

@@ -200,6 +200,36 @@ Authorization: Bearer {{Access_Token}}
   "replyToUserName": "system"
 }
 
+### 19. 更新评论内容（需要在5分钟内，且只能作者本人编辑）
+PUT {{Gateway_HostAddress}}/api/v1/Comment/Update
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "commentId": 1,
+  "content": "这是修改后的评论内容"
+}
+
+### 20. 测试更新评论 - 超时场景（应该失败，如果评论已超过5分钟）
+PUT {{Gateway_HostAddress}}/api/v1/Comment/Update
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "commentId": 1999694582291365888,
+  "content": "尝试修改超过5分钟的评论"
+}
+
+### 21. 测试更新评论 - 空内容（应该失败）
+PUT {{Gateway_HostAddress}}/api/v1/Comment/Update
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "commentId": 1,
+  "content": ""
+}
+
 ###############################################################################
 # 综合测试场景
 ###############################################################################
