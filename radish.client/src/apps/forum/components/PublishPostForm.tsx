@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { MarkdownEditor } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
 import styles from './PublishPostForm.module.css';
 
@@ -100,13 +101,13 @@ export const PublishPostForm = ({
         disabled={!isAuthenticated || disabled}
       />
 
-      <textarea
-        placeholder="帖子内容（支持 Markdown）"
+      <MarkdownEditor
         value={content}
-        onChange={e => setContent(e.target.value)}
-        rows={4}
-        className={styles.textarea}
+        onChange={setContent}
+        placeholder="帖子内容（支持 Markdown）"
+        minHeight={200}
         disabled={!isAuthenticated || disabled}
+        showToolbar={true}
       />
 
       <button
