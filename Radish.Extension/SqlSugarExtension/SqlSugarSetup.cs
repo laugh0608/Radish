@@ -67,12 +67,16 @@ public static class SqlSugarSetup
             // return new SqlSugarScope(BaseDbConfig.AllConfigs);
             return new SqlSugarScope(BaseDbConfig.AllConfigs, db =>
             {
-                BaseDbConfig.ValidConfig.ForEach(config =>
+                BaseDbConfig.AllConfigs.ForEach(config =>
                 {
                     var dbProvider = db.GetConnectionScope((string)config.ConfigId);
-                    // 配置实体数据权限（多租户）
-                    RepositorySetting.SetTenantEntityFilter(dbProvider);
-            
+
+                    // 只对非 Log 库配置实体数据权限（多租户）
+                    if (!SqlSugarConst.LogConfigId.ToLower().Equals(config.ConfigId.ToString().ToLower()))
+                    {
+                        RepositorySetting.SetTenantEntityFilter(dbProvider);
+                    }
+
                     // 打印 SQL 语句
                     dbProvider.Aop.OnLogExecuting = (s, parameters) =>
                     {
