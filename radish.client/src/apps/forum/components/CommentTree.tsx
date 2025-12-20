@@ -11,6 +11,7 @@ interface CommentTreeProps {
   pageSize?: number;
   sortBy?: 'newest' | 'hottest' | null; // null表示默认排序
   onDeleteComment?: (commentId: number) => void;
+  onEditComment?: (commentId: number, newContent: string) => Promise<void>;
   onLikeComment?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment?: (commentId: number, authorName: string) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
@@ -25,6 +26,7 @@ export const CommentTree = ({
   pageSize = 10,
   sortBy = null,
   onDeleteComment,
+  onEditComment,
   onLikeComment,
   onReplyComment,
   onLoadMoreChildren,
@@ -97,6 +99,7 @@ export const CommentTree = ({
             pageSize={pageSize}
             isGodComment={godComment !== null && comment.id === godComment.id}
             onDelete={onDeleteComment}
+            onEdit={onEditComment}
             onLike={onLikeComment}
             onReply={onReplyComment}
             onLoadMoreChildren={onLoadMoreChildren}

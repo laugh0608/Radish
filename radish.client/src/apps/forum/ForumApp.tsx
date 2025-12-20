@@ -13,6 +13,7 @@ import {
   likePost,
   toggleCommentLike,
   updatePost,
+  updateComment,
   deletePost,
   deleteComment
 } from '@/api/forum';
@@ -425,6 +426,31 @@ export const ForumApp = () => {
     setPostToDelete(null);
   }
 
+  // 编辑评论
+  async function handleEditComment(commentId: number, newContent: string): Promise<void> {
+    if (!selectedPost) {
+      setError('请先选择帖子');
+      throw new Error('未选择帖子');
+    }
+
+    setError(null);
+    try {
+      await updateComment(
+        {
+          commentId,
+          content: newContent
+        },
+        t
+      );
+      // 编辑成功后重新加载评论列表
+      await loadComments(selectedPost.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      throw err;
+    }
+  }
+
   // 删除评论
   function handleDeleteComment(commentId: number) {
     setCommentToDelete(commentId);
@@ -508,6 +534,7 @@ export const ForumApp = () => {
           sortBy={commentSortBy}
           onSortChange={handleCommentSortChange}
           onDeleteComment={handleDeleteComment}
+          onEditComment={handleEditComment}
           onLikeComment={handleCommentLike}
           onReplyComment={handleReplyComment}
           onLoadMoreChildren={handleLoadMoreChildren}

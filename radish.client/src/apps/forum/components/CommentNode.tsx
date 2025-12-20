@@ -10,6 +10,7 @@ interface CommentNodeProps {
   pageSize?: number; // 每次加载子评论数量
   isGodComment?: boolean; // 是否是神评
   onDelete?: (commentId: number) => void;
+  onEdit?: (commentId: number, newContent: string) => Promise<void>;
   onLike?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReply?: (commentId: number, authorName: string) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
@@ -39,12 +40,27 @@ export const CommentNode = ({
   pageSize = 10,
   isGodComment = false,
   onDelete,
+  onEdit,
   onLike,
   onReply,
   onLoadMoreChildren
 }: CommentNodeProps) => {
   // 判断是否是作者本人
   const isAuthor = currentUserId > 0 && node.authorId === currentUserId;
+
+  // 判断是否在5分钟编辑窗口内
+  const canEdit = (() => {
+    if (!isAuthor || !node.createTime) return false;
+    const createTime = new Date(node.createTime).getTime();
+    const now = Date.now();
+    const diffMinutes = (now - createTime) / 1000 / 60;
+    return diffMinutes <= 5;
+  })();
+
+  // 编辑状态
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 本地点赞状态（用于乐观更新）
   const [isLiked, setIsLiked] = useState(node.isLiked ?? false);
@@ -116,6 +132,34 @@ export const CommentNode = ({
     if (onReply) {
       onReply(node.id, node.authorName);
     }
+  };
+
+  // 处理编辑
+  const handleEdit = () => {
+    setEditContent(node.content);
+    setIsEditing(true);
+  };
+
+  // 保存编辑
+  const handleSaveEdit = async () => {
+    if (!onEdit || !editContent.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await onEdit(node.id, editContent.trim());
+      setIsEditing(false);
+    } catch (error) {
+      console.error('编辑评论失败:', error);
+      // 可以添加错误提示
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 取消编辑
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent('');
   };
 
   // 展开/收起子评论
@@ -212,23 +256,69 @@ export const CommentNode = ({
         {level === 0 && isGodComment && (
           <span className={styles.godCommentBadge}>神评</span>
         )}
-        {isAuthor && onDelete && (
-          <button
-            type="button"
-            onClick={() => onDelete(node.id)}
-            className={styles.deleteButton}
-            title="删除评论"
-          >
-            <Icon icon="mdi:delete" size={14} />
-          </button>
+        {isAuthor && (
+          <div className={styles.authorActions}>
+            {canEdit && onEdit && (
+              <button
+                type="button"
+                onClick={handleEdit}
+                className={styles.editButton}
+                title="编辑评论"
+                disabled={isEditing}
+              >
+                <Icon icon="mdi:pencil" size={14} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(node.id)}
+                className={styles.deleteButton}
+                title="删除评论"
+              >
+                <Icon icon="mdi:delete" size={14} />
+              </button>
+            )}
+          </div>
         )}
       </div>
 
       {/* 渲染内容（纯文本，支持@用户名高亮） */}
-      <div
-        className={styles.content}
-        dangerouslySetInnerHTML={{ __html: highlightMentions(node.content) }}
-      />
+      {isEditing ? (
+        <div className={styles.editForm}>
+          <textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className={styles.editTextarea}
+            placeholder="编辑评论内容..."
+            disabled={isSubmitting}
+            autoFocus
+          />
+          <div className={styles.editActions}>
+            <button
+              type="button"
+              onClick={handleSaveEdit}
+              className={styles.saveButton}
+              disabled={isSubmitting || !editContent.trim()}
+            >
+              {isSubmitting ? '保存中...' : '保存'}
+            </button>
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className={styles.cancelButton}
+              disabled={isSubmitting}
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={styles.content}
+          dangerouslySetInnerHTML={{ __html: highlightMentions(node.content) }}
+        />
+      )}
 
       {/* 操作按钮区域 */}
       <div className={styles.actions}>
@@ -295,6 +385,7 @@ export const CommentNode = ({
                   pageSize={pageSize}
                   isGodComment={sofaComment !== null && child.id === sofaComment.id}
                   onDelete={onDelete}
+                  onEdit={onEdit}
                   onLike={onLike}
                   onReply={onReply}
                   onLoadMoreChildren={undefined} // 2级结构，子评论不再加载更多
