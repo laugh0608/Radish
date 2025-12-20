@@ -271,6 +271,34 @@ export async function deletePost(postId: number, t: TFunction): Promise<void> {
 }
 
 /**
+ * 编辑评论
+ * @param request 编辑评论请求参数
+ */
+export async function updateComment(
+  request: { commentId: number; content: string },
+  t: TFunction
+): Promise<void> {
+  const url = `${getApiBaseUrl()}/api/v1/Comment/Update`;
+  const response = await apiFetch(url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      commentId: request.commentId,
+      content: request.content
+    }),
+    withAuth: true
+  });
+  const json = await response.json() as ApiResponse<null>;
+  const parsed = parseApiResponse<null>(json, t);
+
+  if (!parsed.ok) {
+    throw new Error(parsed.message || '编辑评论失败');
+  }
+}
+
+/**
  * 删除评论（软删除）
  * @param commentId 评论 ID
  */
