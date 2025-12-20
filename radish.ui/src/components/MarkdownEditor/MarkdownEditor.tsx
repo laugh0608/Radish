@@ -1,6 +1,6 @@
 import { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
-import { Icon } from '../Icon';
-import { MarkdownRenderer } from '../MarkdownRenderer';
+import { Icon } from '../Icon/Icon';
+import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
 import styles from './MarkdownEditor.module.css';
 
 export interface MarkdownEditorProps {
