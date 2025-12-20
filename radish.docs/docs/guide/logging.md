@@ -10,19 +10,21 @@ Radish 的日志系统分为三个层次：
 
 | 日志类型 | 用途 | 存储位置 | 实现方式 |
 |---------|------|---------|---------|
-| **应用日志** | 记录应用运行状态、错误、警告等 | 文件系统 (`Log/` 目录) | Serilog |
-| **SQL 日志** | 记录所有 SQL 执行语句和性能 | 文件系统 (`Log/AopSql/` 目录) | SqlSugar AOP + Serilog |
-| **业务审计日志** | 记录敏感操作（登录、权限变更、数据删除等） | 数据库 (`AuditLog` 表) + 文件 | 审计中间件 + Serilog |
+| **应用日志** | 记录应用运行状态、错误、警告等 | 文件系统 + 数据库(可选) | Serilog |
+| **SQL 日志** | 记录所有 SQL 执行语句和性能 | 文件系统 + 数据库(可选) | SqlSugar AOP + Serilog |
+| **业务审计日志** | 记录敏感操作（登录、权限变更、数据删除等） | 数据库 + 文件 | 审计中间件 + Serilog |
 
 ### 日志流向
 
 ```
 应用代码
   ├─> Serilog.Log.* 方法
-  │     └─> Log/{ProjectName}/Log.txt (应用日志文件)
+  │     ├─> Log/{ProjectName}/Log.txt (应用日志文件)
+  │     └─> Radish.Log.db -> InformationLog/WarningLog/ErrorLog_YYYYMMDD (可选)
   │
   ├─> SqlSugar AOP
-  │     └─> Log/{ProjectName}/AopSql/AopSql.txt (SQL 日志文件)
+  │     ├─> Log/{ProjectName}/AopSql/AopSql.txt (SQL 日志文件)
+  │     └─> Radish.Log.db -> AuditSqlLog_YYYYMMDD (可选)
   │
   └─> AuditLogMiddleware
         ├─> Log/{ProjectName}/Log.txt (审计日志文件)
@@ -30,9 +32,9 @@ Radish 的日志系统分为三个层次：
 ```
 
 **注意**：
-- 应用日志和 SQL 日志目前只输出到文件系统，不写入数据库
-- 只有业务审计日志通过中间件写入数据库
-- 如需将应用日志和 SQL 日志写入数据库，需要实现 Serilog 自定义 Sink（参见"扩展功能"章节）
+- 应用日志和 SQL 日志默认只输出到文件系统
+- 可通过配置 `Serilog.Database.Enable = true` 启用数据库持久化
+- 业务审计日志始终写入数据库和文件
 
 ## Serilog 配置
 
@@ -75,19 +77,70 @@ Log/
 
 ### 日志级别配置
 
-在 `appsettings.json` 中配置：
+在 `appsettings.json` 中配置:
 
 ```json
 {
   "Serilog": {
-    "MinimumLevel": {
-      "Default": "Information",
-      "Override": {
-        "Microsoft": "Warning",
-        "Microsoft.Hosting.Lifetime": "Information",
-        "Microsoft.AspNetCore": "Warning",
-        "System": "Warning"
-      }
+    "MinimumLevel": "Information",
+
+    "Console": {
+      "Enable": true,
+      "EnableApplicationLog": true,
+      "EnableSqlLog": true
+    },
+
+    "File": {
+      "Enable": true,
+      "EnableApplicationLog": true,
+      "EnableSqlLog": true,
+      "RetainedFileCountLimit": 31
+    },
+
+    "Database": {
+      "Enable": false,
+      "EnableApplicationLog": true,
+      "EnableSqlLog": true,
+      "LogSelectQueries": true,
+      "BatchSizeLimit": 500,
+      "PeriodSeconds": 1,
+      "EagerlyEmitFirstEvent": true,
+      "QueueLimit": 10000
+    }
+  }
+}
+```
+
+**配置说明**：
+
+| 配置项 | 说明 | 默认值 |
+|-------|------|--------|
+| `MinimumLevel` | 最小日志级别 (Verbose/Debug/Information/Warning/Error/Fatal) | Information |
+| `Console.Enable` | 是否启用控制台输出 | true |
+| `Console.EnableApplicationLog` | 是否输出应用日志到控制台 | true |
+| `Console.EnableSqlLog` | 是否输出 SQL 日志到控制台 | true |
+| `File.Enable` | 是否启用文件输出 | true |
+| `File.EnableApplicationLog` | 是否输出应用日志到文件 | true |
+| `File.EnableSqlLog` | 是否输出 SQL 日志到文件 | true |
+| `File.RetainedFileCountLimit` | 文件保留天数 | 31 |
+| `Database.Enable` | 是否启用数据库输出 | false |
+| `Database.EnableApplicationLog` | 是否记录应用日志到数据库 | true |
+| `Database.EnableSqlLog` | 是否记录 SQL 日志到数据库 | true |
+| `Database.LogSelectQueries` | 是否记录 SELECT 查询 | true |
+| `Database.BatchSizeLimit` | 批处理大小限制 | 500 |
+| `Database.PeriodSeconds` | 批处理周期(秒) | 1 |
+| `Database.EagerlyEmitFirstEvent` | 是否立即发送第一个事件 | true |
+| `Database.QueueLimit` | 队列限制 | 10000 |
+
+**启用数据库日志**：
+
+在 `appsettings.Local.json` 中覆盖配置：
+
+```json
+{
+  "Serilog": {
+    "Database": {
+      "Enable": true
     }
   }
 }
@@ -172,11 +225,85 @@ using (LogContext.PushProperty("TraceId", traceId))
 }
 ```
 
+### 数据库持久化
+
+应用日志支持按级别分表存储到数据库：
+
+**数据模型**：
+
+```csharp
+// InformationLog - Information 级别日志
+[Tenant(configId: "Log")]
+[SplitTable(SplitType.Month)]
+[SugarTable("InformationLog_{year}{month}{day}")]
+public class InformationLog : BaseLog
+{
+    // 继承自 BaseLog:
+    // - Id: long (Snowflake ID)
+    // - DateTime: DateTime
+    // - Level: string
+    // - Message: string
+    // - MessageTemplate: string
+    // - Properties: string (JSON 格式的附加属性)
+}
+
+// WarningLog - Warning 级别日志
+[Tenant(configId: "Log")]
+[SplitTable(SplitType.Month)]
+[SugarTable("WarningLog_{year}{month}{day}")]
+public class WarningLog : BaseLog { }
+
+// ErrorLog - Error/Fatal 级别日志
+[Tenant(configId: "Log")]
+[SplitTable(SplitType.Month)]
+[SugarTable("ErrorLog_{year}{month}{day}")]
+public class ErrorLog : BaseLog
+{
+    public string? Exception { get; set; }  // 异常堆栈信息
+}
+```
+
+**启用数据库持久化**：
+
+在 `appsettings.Local.json` 中配置：
+
+```json
+{
+  "Serilog": {
+    "Database": {
+      "Enable": true,
+      "EnableApplicationLog": true
+    }
+  }
+}
+```
+
+**查询示例**：
+
+```sql
+-- 查询今天的 Information 日志
+SELECT * FROM InformationLog_20251201
+WHERE DateTime >= '2025-12-20 00:00:00'
+ORDER BY DateTime DESC;
+
+-- 查询今天的错误日志
+SELECT * FROM ErrorLog_20251201
+WHERE DateTime >= '2025-12-20 00:00:00'
+ORDER BY DateTime DESC;
+
+-- 统计各级别日志数量
+SELECT 'Information' as Level, COUNT(*) as Count FROM InformationLog_20251201
+UNION ALL
+SELECT 'Warning', COUNT(*) FROM WarningLog_20251201
+UNION ALL
+SELECT 'Error', COUNT(*) FROM ErrorLog_20251201;
+```
+
 ## SQL 日志
 
 ### 配置
 
-SqlSugar AOP 在 `SqlSugarSetup` 中自动配置，将 SQL 执行日志输出到文件：
+SqlSugar AOP 在 `SqlSugarSetup` 中自动配置，将 SQL 执行日志输出到文件和数据库（可选）：
 
 ```csharp
 // Radish.Extension/AopExtension/SqlSugarAop.cs
@@ -194,12 +321,11 @@ public static void OnLogExecuting(ISqlSugarClient sqlSugarScopeProvider, string 
 **日志输出位置**：
 - 文件：`Log/{ProjectName}/AopSql/AopSql.txt`
 - 控制台：同时输出到控制台（开发环境）
+- 数据库：`Radish.Log.db -> AuditSqlLog_YYYYMMDD`（需启用）
 
-**注意**：SQL 日志目前只输出到文件系统，不写入数据库。如需写入数据库，参见"扩展功能"章节。
+### 数据模型
 
-### 数据模型（预留）
-
-`AuditSqlLog` 实体已定义，但目前未使用：
+`AuditSqlLog` 实体用于存储 SQL 日志：
 
 ```csharp
 [Tenant(configId: "Log")]              // 使用独立的日志数据库
@@ -211,11 +337,27 @@ public class AuditSqlLog : BaseLog
     // - Id: long (Snowflake ID)
     // - DateTime: DateTime
     // - Level: string
-    // - Message: string
+    // - Message: string (包含完整的 SQL 语句)
+    // - MessageTemplate: string
+    // - Properties: string (JSON 格式的附加属性)
 }
 ```
 
-**说明**：该实体为将来实现 SQL 日志数据库持久化预留，目前 SQL 日志只通过 Serilog 输出到文件。
+**启用数据库持久化**：
+
+在 `appsettings.Local.json` 中配置：
+
+```json
+{
+  "Serilog": {
+    "Database": {
+      "Enable": true,
+      "EnableSqlLog": true,
+      "LogSelectQueries": true  // false 时仅记录 INSERT/UPDATE/DELETE
+    }
+  }
+}
+```
 
 ### 查看 SQL 日志
 
@@ -389,16 +531,18 @@ GET {{Api_HostAddress}}/api/v1/AuditLog/GetUserStatistics?topN=10
 日志表采用按月分表策略：
 
 ```
-AuditSqlLog_20251201   # 2025年12月的 SQL 日志
-AuditSqlLog_20260101   # 2026年1月的 SQL 日志
-AuditLog_20251201      # 2025年12月的审计日志
-AuditLog_20260101      # 2026年1月的审计日志
+InformationLog_20251201   # 2025年12月的 Information 日志
+WarningLog_20251201       # 2025年12月的 Warning 日志
+ErrorLog_20251201         # 2025年12月的 Error 日志
+AuditSqlLog_20251201      # 2025年12月的 SQL 日志
+AuditLog_20251201         # 2025年12月的审计日志
 ```
 
 **优势**：
 - 提高查询性能（只查询相关月份的表）
 - 便于归档和清理历史数据
 - 避免单表数据量过大
+- 按日志级别分表,便于分析和统计
 
 ### 数据库初始化
 
@@ -522,6 +666,21 @@ grep "Error" Log/Radish.Api/Log20251220.txt
 ### 数据库日志查询
 
 ```sql
+-- 查询今天的应用日志(Information 级别)
+SELECT * FROM InformationLog_20251201
+WHERE DateTime >= '2025-12-20 00:00:00'
+ORDER BY DateTime DESC;
+
+-- 查询今天的错误日志
+SELECT * FROM ErrorLog_20251201
+WHERE DateTime >= '2025-12-20 00:00:00'
+ORDER BY DateTime DESC;
+
+-- 查询今天的 SQL 日志
+SELECT * FROM AuditSqlLog_20251201
+WHERE DateTime >= '2025-12-20 00:00:00'
+ORDER BY DateTime DESC;
+
 -- 查询今天的审计日志
 SELECT * FROM AuditLog_20251201
 WHERE DateTime >= '2025-12-20 00:00:00'
@@ -532,6 +691,13 @@ SELECT OperationType, COUNT(*) as Count
 FROM AuditLog_20251201
 GROUP BY OperationType;
 
+-- 统计各日志级别的数量
+SELECT 'Information' as Level, COUNT(*) as Count FROM InformationLog_20251201
+UNION ALL
+SELECT 'Warning', COUNT(*) FROM WarningLog_20251201
+UNION ALL
+SELECT 'Error', COUNT(*) FROM ErrorLog_20251201;
+
 -- 查询失败的操作
 SELECT * FROM AuditLog_20251201
 WHERE IsSuccess = 0
@@ -541,6 +707,11 @@ ORDER BY DateTime DESC;
 SELECT * FROM AuditLog_20251201
 WHERE Duration > 1000
 ORDER BY Duration DESC;
+
+-- 查询包含特定关键字的日志
+SELECT * FROM InformationLog_20251201
+WHERE Message LIKE '%User%'
+ORDER BY DateTime DESC;
 ```
 
 ## 日志归档与清理
@@ -558,8 +729,11 @@ Serilog 自动滚动日志文件：
 
 ```sql
 -- 删除3个月前的日志表
-DROP TABLE IF EXISTS AuditLog_20250901;
+DROP TABLE IF EXISTS InformationLog_20250901;
+DROP TABLE IF EXISTS WarningLog_20250901;
+DROP TABLE IF EXISTS ErrorLog_20250901;
 DROP TABLE IF EXISTS AuditSqlLog_20250901;
+DROP TABLE IF EXISTS AuditLog_20250901;
 
 -- 或导出后删除
 -- 1. 导出数据到文件
@@ -578,8 +752,11 @@ MONTHS_AGO=3
 TARGET_DATE=$(date -d "$MONTHS_AGO months ago" +%Y%m01)
 
 sqlite3 DataBases/Radish.Log.db <<EOF
-DROP TABLE IF EXISTS AuditLog_$TARGET_DATE;
+DROP TABLE IF EXISTS InformationLog_$TARGET_DATE;
+DROP TABLE IF EXISTS WarningLog_$TARGET_DATE;
+DROP TABLE IF EXISTS ErrorLog_$TARGET_DATE;
 DROP TABLE IF EXISTS AuditSqlLog_$TARGET_DATE;
+DROP TABLE IF EXISTS AuditLog_$TARGET_DATE;
 EOF
 
 echo "Cleaned up logs older than $TARGET_DATE"
@@ -606,6 +783,23 @@ echo "Cleaned up logs older than $TARGET_DATE"
 3. 检查日志数据库配置：`ConnId=Log` 必须存在
 4. 查看应用日志中的错误信息：`grep "AuditLog" Log/Radish.Api/Log.txt`
 
+### 应用日志/SQL日志未写入数据库
+
+**问题**：启用了数据库日志但数据库中没有记录
+
+**解决方案**：
+1. 检查 `Serilog.Database.Enable` 是否为 `true`
+2. 检查 `Serilog.Database.EnableApplicationLog` 或 `EnableSqlLog` 是否启用
+3. 检查日志数据库配置：`ConnId=Log` 必须存在且正确
+4. 查看 Serilog 调试日志：`Log/{ProjectName}/SerilogDebug/Serilog*.txt`
+5. 确认 SqlSugar 配置正确初始化了 Log 数据库连接
+
+**常见错误**：
+```
+SqlSugar.SqlSugarException: ConfigId was not found Log
+```
+**原因**：SqlSugar 将 ConfigId 转换为小写,代码中需使用 `SqlSugarConst.LogConfigId.ToLower()`
+
 ### SQL 日志性能影响
 
 **问题**：SQL 日志导致性能下降
@@ -630,13 +824,29 @@ db.Aop.OnLogExecuting = (sql, pars) =>
 
 ## 扩展功能
 
-### 将日志写入数据库
+### 日志数据库持久化架构
 
-目前应用日志和 SQL 日志只输出到文件系统。如需将它们写入数据库，可以实现 Serilog 自定义 Sink。
+应用日志和 SQL 日志的数据库持久化已实现,采用以下架构:
 
-**参考实现**（位于 `reference/Blog.Core/Blog.Core.Serilog/`）：
+**核心组件**：
 
-1. **创建自定义 Sink**：
+1. **LogBatchingSink** - 批处理 Sink
+   - 实现 `IBatchedLogEventSink` 接口
+   - 使用 `PeriodicBatchingSink` 进行批量写入
+   - 自动区分应用日志和 SQL 日志
+   - 按日志级别路由到不同表
+
+2. **LogFilterExtensions** - 日志过滤扩展
+   - `FilterSqlLog()` - 过滤 SQL 日志
+   - `FilterApplicationLog()` - 过滤应用日志
+   - 支持选择性记录 SELECT 查询
+
+3. **SerilogOptions** - 配置类
+   - 实现 `IConfigurableOptions` 接口
+   - 支持控制台/文件/数据库三种输出方式
+   - 可配置批处理参数
+
+**实现细节**：
 
 ```csharp
 // Radish.Extension/SerilogExtension/LogBatchingSink.cs
@@ -644,61 +854,48 @@ public class LogBatchingSink : IBatchedLogEventSink
 {
     public async Task EmitBatchAsync(IEnumerable<LogEvent> batch)
     {
-        var sugar = App.GetService<ISqlSugarClient>();
+        // 分离 SQL 日志和应用日志
+        var sqlLogs = batch.FilterSqlLog(_options.Database.LogSelectQueries);
+        var appLogs = batch.FilterApplicationLog();
 
-        // 分离 SQL 日志和普通日志
-        await WriteSqlLog(sugar, batch.FilterSqlLog());
-        await WriteLogs(sugar, batch.FilterRemoveOtherLog());
-    }
-
-    private async Task WriteSqlLog(ISqlSugarClient db, IEnumerable<LogEvent> batch)
-    {
-        var logs = batch.Select(e => new AuditSqlLog
+        // 写入 SQL 日志
+        if (_options.Database.EnableSqlLog && sqlLogs.Any())
         {
-            Message = e.RenderMessage(),
-            DateTime = e.Timestamp.DateTime,
-            Level = e.Level.ToString()
-        }).ToList();
+            await WriteSqlLogAsync(sqlLogs);
+        }
 
-        await db.AsTenant().InsertableWithAttr(logs).SplitTable().ExecuteReturnSnowflakeIdAsync();
+        // 写入应用日志(按级别分表)
+        if (_options.Database.EnableApplicationLog && appLogs.Any())
+        {
+            await WriteApplicationLogsAsync(appLogs);
+        }
+    }
+
+    private async Task WriteInformationLogAsync(IEnumerable<LogEvent> batch)
+    {
+        var logs = batch.Select(MapToInformationLog).ToList();
+        if (logs.Any())
+        {
+            // 注意: SqlSugar 在初始化时会将 ConfigId 转换为小写
+            var logDb = ((SqlSugarScope)_db).GetConnectionScope(SqlSugarConst.LogConfigId.ToLower());
+            await logDb.Insertable(logs).SplitTable().ExecuteReturnSnowflakeIdAsync();
+        }
     }
 }
 ```
 
-2. **注册 Sink**：
+**性能优化**：
 
-```csharp
-// Radish.Extension/SerilogExtension/SerilogSetup.cs
-public static IHostBuilder AddSerilogSetup(this IHostBuilder host)
-{
-    var loggerConfiguration = new LoggerConfiguration()
-        .ReadFrom.Configuration(AppSettingsTool.Configuration)
-        .Enrich.FromLogContext()
-        .WriteToConsole()
-        .WriteToFile()
-        .WriteToLogBatching();  // 添加数据库 Sink
-
-    Log.Logger = loggerConfiguration.CreateLogger();
-    host.UseSerilog();
-    return host;
-}
-```
-
-3. **配置开关**：
-
-```json
-{
-  "AppSettings": {
-    "LogToDb": true  // 控制是否写入数据库
-  }
-}
-```
+- 批量写入减少数据库连接开销
+- 异步处理避免阻塞请求线程
+- 可配置批处理大小和周期
+- 队列限制防止内存溢出
 
 **注意事项**：
-- 批量写入以提高性能（使用 `PeriodicBatchingSink`）
-- 区分不同日志级别（Information、Warning、Error）
-- 使用 `LogSource` 属性区分 SQL 日志和普通日志
-- 考虑数据库写入失败的降级策略
+
+- SqlSugar 会将 ConfigId 自动转换为小写,代码中需使用 `SqlSugarConst.LogConfigId.ToLower()`
+- 使用 `((SqlSugarScope)_db).GetConnectionScope()` 获取特定数据库连接
+- 日志表按月自动分表,无需手动创建
 
 ### 集成日志中心
 
