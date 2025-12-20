@@ -2,13 +2,13 @@
 
 ## 📋 概述
 
-本文档详细描述 Radish 项目的文件上传功能设计方案，包括存储方案选型、上传方式对比、安全性设计、性能优化等内容。
+本文档详细描述 Radish 项目的文件上传功能设计方案。
 
-**目标**：
+**核心目标**：
 - 🎯 支持图片、文档等多种文件类型上传
 - 🔒 确保上传安全性和数据完整性
 - ⚡ 优化上传性能和用户体验
-- 🏗️ 易于扩展和维护的架构设计
+- 🏗️ 可配置、易扩展的架构设计
 
 **适用场景**：
 - 论坛帖子配图
@@ -19,151 +19,73 @@
 
 ---
 
-## 📦 存储方案对比
+## ✅ 已确认的技术方案（2025-12-20）
 
-### 方案 1：本地文件系统存储
+### 1. 存储架构
+- **架构模式**：统一接口 + 多实现（`IFileStorage`）
+- **开发环境**：本地文件系统（`DataBases/Uploads/`）
+- **生产环境**：MinIO（可选 docker-compose 部署或远程 OSS）
+- **配置切换**：通过 `appsettings.json` 切换存储实现
 
-**适用场景**：小型项目、开发测试环境
+### 2. 上传方式
+- **实现方式**：直接上传到 API 服务器，服务器根据配置路由到存储
+- **当前支持**：同步上传（适合 < 10MB）
+- **未来扩展**：预留分片上传 API（`UploadChunk` / `MergeChunks`）
 
-#### 优点
-- ✅ **实现简单**：无需额外服务，代码直接操作文件系统
-- ✅ **零成本**：不需要付费，只占用服务器磁盘空间
-- ✅ **访问速度快**：局域网或本机访问，延迟低
-- ✅ **完全可控**：文件完全在自己掌控之下，无第三方依赖
-- ✅ **调试方便**：可直接查看文件内容，便于开发调试
+### 3. 文件类型支持
+- **图片**：`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
+- **文档**：`.pdf`, `.doc`, `.docx`, `.txt`
+- **扩展方式**：配置文件白名单
 
-#### 缺点
-- ❌ **扩展性差**：单机存储容量有限，磁盘满了需要手动扩容
-- ❌ **不支持分布式**：多服务器部署时，文件不能共享
-- ❌ **备份容灾复杂**：需要自己实现备份策略和容灾方案
-- ❌ **无 CDN 加速**：需要额外配置 Nginx 反向代理 + CDN
-- ❌ **磁盘故障风险**：硬盘损坏可能导致文件丢失
-- ❌ **带宽限制**：大量下载会占用服务器带宽
+### 4. 文件大小限制（可配置）
+- 头像：2MB
+- 图片：5MB
+- 文档：10MB
 
-#### 目录结构设计
+### 5. 图片处理
+- **处理时机**：上传时同步处理
+- **基础功能**：缩略图生成、图片压缩（JPEG 85%）
+- **增强功能**：多尺寸、水印、内容审核（Phase 2）
+- **性能方案**：优先使用 C# (ImageSharp)，性能不足时切换 Rust
+
+### 6. 删除策略
+- **软删除**：标记 `IsDeleted = true`，文件保留
+- **自动清理**：定时任务清理过期文件（默认 30 天）
+
+---
+
+## 📦 存储方案技术对比
+
+### 本地文件系统存储
+
+**目录结构**：
 ```
 DataBases/Uploads/
-├── Images/                    # 图片文件
-│   ├── 2025/                 # 按年份分目录
-│   │   ├── 12/               # 按月份分目录
-│   │   │   ├── original/     # 原图
-│   │   │   │   ├── 1234567890123456.jpg
-│   │   │   │   └── 1234567890123457.png
-│   │   │   ├── thumb/        # 缩略图 (150x150)
-│   │   │   │   ├── 1234567890123456.jpg
-│   │   │   ├── small/        # 小图 (400x300)
-│   │   │   ├── medium/       # 中图 (800x600)
-│   │   │   └── large/        # 大图 (1200x900)
-├── Documents/                 # 文档文件
-│   ├── 2025/12/
-│   │   ├── xxx.pdf
-│   │   └── yyy.docx
-├── Avatars/                   # 用户头像
-│   ├── 2025/12/
-│   │   ├── user_1.jpg
-│   │   └── user_2.png
-└── Temp/                      # 临时文件（定期清理）
-    ├── upload_xxx.tmp
+├── Images/
+│   └── 2025/12/
+│       ├── original/    # 原图
+│       ├── thumb/       # 缩略图 150x150
+│       ├── small/       # 小图 400x300
+│       └── medium/      # 中图 800x600
+├── Documents/
+│   └── 2025/12/
+└── Temp/                # 临时文件
 ```
 
-#### 静态文件访问配置
-```csharp
-// Program.cs
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "DataBases", "Uploads")),
-    RequestPath = "/uploads",
-    OnPrepareResponse = ctx =>
-    {
-        // 设置缓存
-        ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
-    }
-});
-```
+**优点**：实现简单、零成本、调试方便
+**缺点**：扩展性差、不支持分布式、无 CDN
+**适用**：开发测试环境
 
-**访问 URL**：`https://api.example.com/uploads/Images/2025/12/original/xxx.jpg`
+### MinIO（S3 兼容存储）
 
----
+**优点**：开源免费、S3 兼容、私有部署、高性能
+**缺点**：需要运维、无自带 CDN
+**适用**：生产环境私有云部署
 
-### 方案 2：云对象存储（OSS/S3）
-
-**适用场景**：生产环境、有一定规模的项目
-
-#### 主流服务商对比
-
-| 服务商 | 特点 | 适用场景 | 价格（参考） |
-|--------|------|----------|--------------|
-| **阿里云 OSS** | 国内访问快，生态完善 | 国内业务为主 | 存储：0.12元/GB/月<br>流量：0.5元/GB |
-| **腾讯云 COS** | 与微信生态集成好 | 微信小程序等 | 存储：0.11元/GB/月<br>流量：0.5元/GB |
-| **AWS S3** | 国际标准，生态最完善 | 国际业务 | 存储：$0.023/GB/月<br>流量：$0.09/GB |
-| **七牛云 KODO** | 免费额度大，适合小项目 | 初创项目 | 10GB存储免费<br>10GB流量免费/月 |
-| **MinIO** | 开源自建，S3兼容 | 私有云部署 | 免费（自建成本） |
-
-#### 优点
-- ✅ **高可用**：99.9999999% 数据可靠性，多副本自动备份
-- ✅ **无限扩展**：不用担心存储容量，按需扩展
-- ✅ **自带 CDN**：全球节点分发，访问速度快
-- ✅ **按量付费**：用多少付多少，成本可控
-- ✅ **图片处理**：内置缩略图、水印、裁剪、格式转换等功能
-- ✅ **权限控制**：精细的访问控制（公开/私有/临时授权）
-- ✅ **日志审计**：完善的访问日志和统计分析
-- ✅ **生命周期管理**：自动删除过期文件，节省成本
-
-#### 缺点
-- ❌ **需要付费**：虽然不贵，但需要成本预算
-- ❌ **学习成本**：需要了解 SDK 和 API 使用
-- ❌ **第三方依赖**：依赖云服务商稳定性
-- ❌ **网络要求**：需要服务器能访问公网
-
-#### 阿里云 OSS 示例配置
-```json
-{
-  "OSS": {
-    "Endpoint": "oss-cn-hangzhou.aliyuncs.com",
-    "BucketName": "radish-uploads",
-    "AccessKeyId": "YOUR_ACCESS_KEY_ID",
-    "AccessKeySecret": "YOUR_ACCESS_KEY_SECRET",
-    "Domain": "https://cdn.example.com",  // 自定义域名
-    "IsPrivate": false,  // 是否私有 Bucket
-    "EnableCdn": true,   // 是否启用 CDN
-    "ImageProcess": {
-      "Thumb": "image/resize,m_fill,w_150,h_150",      // 缩略图
-      "Small": "image/resize,m_lfit,w_400,h_300",      // 小图
-      "Medium": "image/resize,m_lfit,w_800,h_600",     // 中图
-      "Watermark": "image/watermark,text_UmFkaXNo"     // 水印
-    }
-  }
-}
-```
-
-**访问 URL**：`https://cdn.example.com/images/xxx.jpg?x-oss-process=image/resize,w_400`
-
----
-
-### 方案 3：MinIO（开源 S3 兼容存储）
-
-**适用场景**：私有云部署、对数据安全有严格要求的场景
-
-#### 优点
-- ✅ **开源免费**：无需付费，代码开源可审计
-- ✅ **S3 兼容**：兼容 AWS S3 API，易于迁移
-- ✅ **私有部署**：数据完全掌控，不依赖第三方
-- ✅ **性能优异**：高性能对象存储，支持 SSD
-- ✅ **易于部署**：Docker 一键部署，开箱即用
-- ✅ **分布式**：支持分布式部署，高可用
-
-#### 缺点
-- ❌ **运维成本**：需要自己维护服务器
-- ❌ **无 CDN**：需要自己配置 CDN 或反向代理
-- ❌ **备份成本**：需要自己实现备份策略
-
-#### Docker 部署示例
+**Docker 部署**：
 ```bash
-# 单节点模式（开发环境）
 docker run -d \
-  -p 9000:9000 \
-  -p 9001:9001 \
+  -p 9000:9000 -p 9001:9001 \
   --name minio \
   -v /data/minio:/data \
   -e "MINIO_ROOT_USER=admin" \
@@ -171,17 +93,16 @@ docker run -d \
   minio/minio server /data --console-address ":9001"
 ```
 
-**访问 URL**：`http://localhost:9000/radish-uploads/images/xxx.jpg`
+### 云对象存储（OSS/COS/S3）
 
----
+**优点**：高可用、无限扩展、自带 CDN、图片处理
+**缺点**：需要付费、第三方依赖
+**适用**：大规模生产环境
 
-### 方案 4：混合方案（推荐）⭐
+### 混合方案架构（推荐）⭐
 
-**核心思想**：定义统一的存储接口，通过配置切换不同的存储实现
-
-#### 架构设计
+**接口设计**：
 ```csharp
-// 统一接口
 public interface IFileStorage
 {
     Task<FileUploadResult> UploadAsync(Stream stream, string fileName, string contentType);
@@ -191,94 +112,29 @@ public interface IFileStorage
     Task<bool> ExistsAsync(string filePath);
 }
 
-// 本地存储实现
-public class LocalFileStorage : IFileStorage
-{
-    // 实现细节...
-}
-
-// OSS 存储实现
-public class OssFileStorage : IFileStorage
-{
-    // 实现细节...
-}
-
-// MinIO 存储实现
-public class MinioFileStorage : IFileStorage
-{
-    // 实现细节...
-}
-
-// 工厂类
-public class FileStorageFactory
-{
-    public static IFileStorage Create(FileStorageOptions options)
-    {
-        return options.Type switch
-        {
-            StorageType.Local => new LocalFileStorage(options.Local),
-            StorageType.OSS => new OssFileStorage(options.OSS),
-            StorageType.MinIO => new MinioFileStorage(options.MinIO),
-            _ => throw new NotSupportedException()
-        };
-    }
-}
+// 实现类
+- LocalFileStorage    // 本地存储
+- MinioFileStorage    // MinIO 存储
+- OssFileStorage      // 阿里云 OSS（可选）
 ```
 
-#### 配置文件
+**配置示例**：
 ```json
 {
   "FileStorage": {
-    "Type": "Local",  // Local / OSS / MinIO
-    "MaxFileSize": 5242880,  // 5MB
-    "AllowedExtensions": [".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".doc", ".docx"],
+    "Type": "Local",  // 切换：Local / MinIO / OSS
     "Local": {
       "BasePath": "DataBases/Uploads",
       "BaseUrl": "/uploads"
-    },
-    "OSS": {
-      "Endpoint": "oss-cn-hangzhou.aliyuncs.com",
-      "BucketName": "radish-uploads",
-      "AccessKeyId": "",
-      "AccessKeySecret": "",
-      "Domain": "https://cdn.example.com"
     },
     "MinIO": {
       "Endpoint": "localhost:9000",
       "BucketName": "radish-uploads",
       "AccessKey": "admin",
-      "SecretKey": "",
+      "SecretKey": "password",
       "UseSSL": false
     }
   }
-}
-```
-
-#### 优点
-- ✅ **灵活切换**：开发用本地，测试用 MinIO，生产用 OSS
-- ✅ **易于迁移**：更换存储方案只需改配置
-- ✅ **降低成本**：开发阶段不需要云存储费用
-- ✅ **统一接口**：业务代码无需修改
-
-#### 使用示例
-```csharp
-// Controller
-public class UploadController : ControllerBase
-{
-    private readonly IFileStorage _fileStorage;
-
-    public UploadController(IFileStorage fileStorage)
-    {
-        _fileStorage = fileStorage;
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> Upload(IFormFile file)
-    {
-        using var stream = file.OpenReadStream();
-        var result = await _fileStorage.UploadAsync(stream, file.FileName, file.ContentType);
-        return Ok(new { url = result.Url });
-    }
 }
 ```
 
@@ -286,648 +142,147 @@ public class UploadController : ControllerBase
 
 ## 🚀 上传方式对比
 
-### 方式 1：直接上传到应用服务器
+### 方式 1：直接上传到服务器（推荐 MVP）⭐
 
-#### 流程图
-```
-┌─────────┐    HTTP POST    ┌──────────────┐    保存文件    ┌─────────┐
-│  前端   │ ──────────────> │ API 服务器   │ ───────────> │  存储   │
-│ (浏览器) │                 │ (ASP.NET)    │              │(Local/OSS)│
-└─────────┘                 └──────────────┘              └─────────┘
-```
+**流程**：浏览器 → API 服务器 → 存储后端
 
-#### 优点
-- ✅ **实现简单**：使用 `IFormFile` 即可，代码量少
-- ✅ **易于控制**：完全掌控上传流程，便于添加业务逻辑
-- ✅ **安全性好**：统一鉴权和校验，不易被绕过
-- ✅ **便于审计**：所有上传都经过服务器，易于记录日志
+**优点**：实现简单、易于控制、便于审计
+**缺点**：占用服务器带宽、大文件慢
+**适用**：小文件（< 5MB）、中低并发
 
-#### 缺点
-- ❌ **占用带宽**：文件流经服务器，占用上行带宽
-- ❌ **性能瓶颈**：大量并发上传会给服务器带来压力
-- ❌ **大文件慢**：大文件上传需要占用服务器连接时间
-- ❌ **扩展性差**：服务器数量增加时，需要共享存储
-
-#### 适用场景
-- 小文件（< 5MB）
-- 并发量不大（< 100 并发）
-- 需要严格校验和审核
-- 开发和测试环境
-
-#### 实现示例
+**实现示例**：
 ```csharp
 [HttpPost]
 [RequestSizeLimit(5_242_880)] // 5MB
 public async Task<IActionResult> Upload(IFormFile file)
 {
-    if (file == null || file.Length == 0)
-        return BadRequest("文件不能为空");
+    // 1. 校验文件类型和大小
+    if (!ValidateFile(file))
+        return BadRequest("文件校验失败");
 
-    // 1. 校验文件类型
-    if (!IsAllowedExtension(file.FileName))
-        return BadRequest("不支持的文件类型");
-
-    // 2. 校验文件大小
-    if (file.Length > 5_242_880)
-        return BadRequest("文件大小超过限制");
-
-    // 3. 上传文件
+    // 2. 上传到存储
     using var stream = file.OpenReadStream();
     var result = await _fileStorage.UploadAsync(stream, file.FileName, file.ContentType);
 
-    // 4. 保存记录到数据库
-    var attachment = new Attachment
-    {
-        OriginalName = file.FileName,
-        StoredName = result.StoredName,
-        FileSize = file.Length,
-        Url = result.Url,
-        UploaderId = _currentUser.UserId
-    };
+    // 3. 保存记录
+    var attachment = new Attachment { /* ... */ };
     await _attachmentService.AddAsync(attachment);
 
     return Ok(new { url = result.Url, id = attachment.Id });
 }
 ```
 
----
+### 方式 2：前端直传 OSS（生产环境优化）
 
-### 方式 2：前端直传 OSS（推荐生产环境）⭐
+**流程**：浏览器 → 获取签名 → 直接上传 OSS → 通知服务器
 
-#### 流程图
-```
-┌─────────┐  1.请求签名   ┌──────────────┐
-│  前端   │ ──────────> │ API 服务器   │
-│ (浏览器) │ <────────── │ (ASP.NET)    │
-└─────────┘  2.返回签名  └──────────────┘
-     │
-     │ 3.直接上传
-     ↓
-┌─────────┐  4.上传成功  ┌──────────────┐
-│   OSS   │ ──────────> │ API 服务器   │
-│ (阿里云) │             │ (回调/通知)   │
-└─────────┘             └──────────────┘
-```
+**优点**：不占服务器带宽、速度快、支持大文件
+**缺点**：实现复杂、需要跨域配置
+**适用**：大文件（> 10MB）、高并发场景
 
-#### 优点
-- ✅ **不占用服务器带宽**：文件直接上传到 OSS，不经过服务器
-- ✅ **上传速度快**：OSS 有多个节点，就近上传
-- ✅ **支持大文件**：可上传 GB 级文件，支持断点续传
-- ✅ **减轻服务器压力**：服务器只需要生成签名
-
-#### 缺点
-- ❌ **实现稍复杂**：需要前端集成 SDK，处理签名逻辑
-- ❌ **跨域配置**：需要在 OSS 配置 CORS 规则
-- ❌ **安全性要求高**：签名机制要设计好，防止滥用
-
-#### 适用场景
-- 生产环境
-- 大文件上传（> 10MB）
-- 高并发场景
-- 需要 CDN 加速
-
-#### 后端实现（生成签名）
-```csharp
-[HttpPost("upload/signature")]
-public IActionResult GetUploadSignature([FromBody] SignatureRequest request)
-{
-    // 1. 生成唯一文件名
-    var fileName = $"{DateTime.Now:yyyyMMdd}/{Guid.NewGuid()}{Path.GetExtension(request.FileName)}";
-
-    // 2. 生成上传策略
-    var policy = new
-    {
-        expiration = DateTime.UtcNow.AddMinutes(10).ToString("yyyy-MM-ddTHH:mm:ssZ"),
-        conditions = new[]
-        {
-            new { bucket = "radish-uploads" },
-            new[] { "content-length-range", 0, 5242880 }, // 最大 5MB
-            new[] { "starts-with", "$key", "images/" }
-        }
-    };
-
-    // 3. 计算签名
-    var signature = CalculateSignature(policy);
-
-    return Ok(new
-    {
-        accessKeyId = _ossConfig.AccessKeyId,
-        policy = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(policy))),
-        signature = signature,
-        bucket = "radish-uploads",
-        key = fileName,
-        host = $"https://{_ossConfig.BucketName}.{_ossConfig.Endpoint}"
-    });
-}
-```
-
-#### 前端实现（直传 OSS）
-```typescript
-// 1. 获取签名
-const getSignature = async (fileName: string) => {
-  const response = await apiPost('/api/v1/Upload/signature', { fileName });
-  return response.data;
-};
-
-// 2. 上传文件
-const uploadToOss = async (file: File) => {
-  const signature = await getSignature(file.name);
-
-  const formData = new FormData();
-  formData.append('OSSAccessKeyId', signature.accessKeyId);
-  formData.append('policy', signature.policy);
-  formData.append('signature', signature.signature);
-  formData.append('key', signature.key);
-  formData.append('file', file);
-
-  await axios.post(signature.host, formData, {
-    onUploadProgress: (e) => {
-      const percent = Math.round((e.loaded * 100) / e.total);
-      console.log(`上传进度: ${percent}%`);
-    }
-  });
-
-  // 3. 通知后端
-  const fileUrl = `${signature.host}/${signature.key}`;
-  await apiPost('/api/v1/Upload/callback', {
-    url: fileUrl,
-    fileName: file.name,
-    fileSize: file.size
-  });
-
-  return fileUrl;
-};
-```
-
----
+**核心思路**：后端生成上传签名，前端直接上传到 OSS，完成后回调通知。
 
 ### 方式 3：分片上传（大文件专用）
 
-#### 适用场景
-- 超大文件（> 100MB）
-- 需要断点续传
-- 网络不稳定环境
+**适用**：超大文件（> 100MB）、需要断点续传
 
-#### 优点
-- ✅ **支持超大文件**：可上传 GB 甚至 TB 级文件
-- ✅ **断点续传**：网络中断后可继续上传，不需要重头开始
-- ✅ **并行上传**：多个分片可并行上传，提升速度
-- ✅ **节省带宽**：失败只需重传出错的分片
-
-#### 实现流程
-```
-1. 前端：将文件切片（如每片 2MB）
-2. 前端：逐片上传，记录进度
-3. 后端：接收分片，临时存储
-4. 前端：所有分片上传完成后，通知后端合并
-5. 后端：合并分片，生成最终文件
-6. 后端：删除临时分片
-```
-
-#### 技术要点
-```typescript
-// 前端：文件切片
-const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB
-
-const uploadFile = async (file: File) => {
-  const chunks = Math.ceil(file.size / CHUNK_SIZE);
-  const fileHash = await calculateHash(file); // MD5
-
-  for (let i = 0; i < chunks; i++) {
-    const start = i * CHUNK_SIZE;
-    const end = Math.min(start + CHUNK_SIZE, file.size);
-    const chunk = file.slice(start, end);
-
-    await uploadChunk({
-      file: chunk,
-      chunkIndex: i,
-      totalChunks: chunks,
-      fileHash: fileHash
-    });
-  }
-
-  // 通知合并
-  await mergeChunks({ fileHash, fileName: file.name });
-};
-```
-
-```csharp
-// 后端：接收分片
-[HttpPost("upload/chunk")]
-public async Task<IActionResult> UploadChunk([FromForm] ChunkUploadRequest request)
-{
-    var chunkPath = Path.Combine(_tempPath, request.FileHash, $"{request.ChunkIndex}.tmp");
-
-    Directory.CreateDirectory(Path.GetDirectoryName(chunkPath));
-
-    using var stream = new FileStream(chunkPath, FileMode.Create);
-    await request.File.CopyToAsync(stream);
-
-    return Ok();
-}
-
-// 后端：合并分片
-[HttpPost("upload/merge")]
-public async Task<IActionResult> MergeChunks([FromBody] MergeRequest request)
-{
-    var chunkDir = Path.Combine(_tempPath, request.FileHash);
-    var chunks = Directory.GetFiles(chunkDir).OrderBy(f => int.Parse(Path.GetFileNameWithoutExtension(f)));
-
-    var finalPath = Path.Combine(_uploadPath, $"{Guid.NewGuid()}{Path.GetExtension(request.FileName)}");
-
-    using var finalStream = new FileStream(finalPath, FileMode.Create);
-    foreach (var chunkPath in chunks)
-    {
-        using var chunkStream = new FileStream(chunkPath, FileMode.Open);
-        await chunkStream.CopyToAsync(finalStream);
-    }
-
-    // 删除临时文件
-    Directory.Delete(chunkDir, true);
-
-    return Ok(new { url = GetFileUrl(finalPath) });
-}
-```
+**实现思路**：
+1. 前端：文件切片（每片 2MB）
+2. 逐片上传到服务器
+3. 服务器临时存储分片
+4. 所有分片完成后，服务器合并
+5. 清理临时分片
 
 ---
 
-## 🔒 安全性设计
+## 🔒 安全性设计（核心要点）
 
 ### 1. 文件类型校验
 
-#### 白名单机制（推荐）
+**白名单机制**：
 ```csharp
 private static readonly Dictionary<string, string[]> AllowedTypes = new()
 {
-    ["image"] = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" },
-    ["document"] = new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt" },
-    ["video"] = new[] { ".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv" },
-    ["audio"] = new[] { ".mp3", ".wav", ".ogg", ".m4a", ".flac" }
-};
-
-// 禁止的扩展名（黑名单）
-private static readonly string[] ForbiddenExtensions = new[]
-{
-    ".exe", ".bat", ".cmd", ".sh", ".dll", ".so", ".dylib",
-    ".js", ".vbs", ".ps1", ".php", ".asp", ".jsp", ".html"
+    ["image"] = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" },
+    ["document"] = new[] { ".pdf", ".doc", ".docx", ".txt" }
 };
 ```
 
-#### Magic Number 检查（文件头校验）
+**Magic Number 检查**（文件头校验）：
 ```csharp
+// 验证文件真实类型，防止扩展名伪装
 private static readonly Dictionary<string, byte[]> FileSignatures = new()
 {
     [".jpg"] = new byte[] { 0xFF, 0xD8, 0xFF },
-    [".png"] = new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A },
-    [".gif"] = new byte[] { 0x47, 0x49, 0x46, 0x38 },
+    [".png"] = new byte[] { 0x89, 0x50, 0x4E, 0x47 },
     [".pdf"] = new byte[] { 0x25, 0x50, 0x44, 0x46 },
-    [".zip"] = new byte[] { 0x50, 0x4B, 0x03, 0x04 },
 };
-
-private bool ValidateFileSignature(Stream stream, string extension)
-{
-    if (!FileSignatures.TryGetValue(extension.ToLower(), out var expectedSignature))
-        return false;
-
-    var buffer = new byte[expectedSignature.Length];
-    stream.Read(buffer, 0, buffer.Length);
-    stream.Position = 0; // 重置流位置
-
-    return buffer.SequenceEqual(expectedSignature);
-}
 ```
 
 ### 2. 文件大小限制
 
 ```csharp
-public class FileSizeLimits
-{
-    public const long Avatar = 2 * 1024 * 1024;        // 2MB
-    public const long Image = 5 * 1024 * 1024;         // 5MB
-    public const long Document = 10 * 1024 * 1024;     // 10MB
-    public const long Video = 100 * 1024 * 1024;       // 100MB
-}
-
-// 配置请求大小限制
-[RequestSizeLimit(FileSizeLimits.Image)]
-[RequestFormLimits(MultipartBodyLengthLimit = FileSizeLimits.Image)]
+[RequestSizeLimit(5_242_880)] // 5MB
+[RequestFormLimits(MultipartBodyLengthLimit = 5_242_880)]
 public async Task<IActionResult> Upload(IFormFile file) { }
 ```
 
 ### 3. 文件名处理
 
-```csharp
-public class FileNameGenerator
-{
-    // 使用雪花ID生成唯一文件名
-    public static string GenerateUniqueFileName(string originalName)
-    {
-        var extension = Path.GetExtension(originalName);
-        var uniqueName = $"{SnowFlakeSingle.Instance.NextId()}{extension}";
-        return uniqueName;
-    }
-
-    // 生成带日期的路径
-    public static string GenerateFilePath(string category, string fileName)
-    {
-        var now = DateTime.Now;
-        return Path.Combine(category, now.Year.ToString(), now.Month.ToString("D2"), fileName);
-    }
-
-    // 清理文件名（移除特殊字符）
-    public static string SanitizeFileName(string fileName)
-    {
-        var invalidChars = Path.GetInvalidFileNameChars();
-        var sanitized = string.Join("_", fileName.Split(invalidChars));
-        return sanitized;
-    }
-}
-```
+- 使用雪花ID生成唯一文件名
+- 按年月分目录存储
+- 原始文件名仅用于展示，不作为存储文件名
 
 ### 4. 访问权限控制
 
-#### 公开文件
-```csharp
-// 任何人可访问
-public string GetPublicUrl(string filePath)
-{
-    return $"{_baseUrl}/{filePath}";
-}
-```
-
-#### 私有文件（需要鉴权）
-```csharp
-[Authorize]
-[HttpGet("download/{id}")]
-public async Task<IActionResult> Download(long id)
-{
-    var attachment = await _attachmentService.QueryByIdAsync(id);
-    if (attachment == null)
-        return NotFound();
-
-    // 权限检查
-    if (!attachment.IsPublic && attachment.UploaderId != _currentUser.UserId)
-        return Forbid();
-
-    var stream = await _fileStorage.DownloadAsync(attachment.StoragePath);
-    return File(stream, attachment.MimeType, attachment.OriginalName);
-}
-```
-
-#### 临时授权 URL（带签名）
-```csharp
-public string GetTemporaryUrl(string filePath, int expirationMinutes = 60)
-{
-    var expiration = DateTimeOffset.UtcNow.AddMinutes(expirationMinutes).ToUnixTimeSeconds();
-    var signature = GenerateSignature(filePath, expiration);
-
-    return $"{_baseUrl}/{filePath}?expires={expiration}&signature={signature}";
-}
-
-private string GenerateSignature(string filePath, long expiration)
-{
-    var data = $"{filePath}|{expiration}";
-    using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_secretKey));
-    var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
-    return Convert.ToBase64String(hash);
-}
-```
+**公开文件**：任何人可访问（帖子图片）
+**私有文件**：需要鉴权（用户私密文档）
+**临时授权 URL**：带签名的临时访问链接（有效期 1 小时）
 
 ### 5. 恶意文件防护
 
-#### 图片安全处理
-```csharp
-// 去除 EXIF 信息（可能含有恶意代码或隐私信息）
-public async Task<Stream> SanitizeImage(Stream inputStream)
-{
-    using var image = await Image.LoadAsync(inputStream);
-
-    // 移除 EXIF 数据
-    image.Metadata.ExifProfile = null;
-
-    // 重新编码
-    var outputStream = new MemoryStream();
-    await image.SaveAsJpegAsync(outputStream);
-    outputStream.Position = 0;
-
-    return outputStream;
-}
-```
-
-#### 病毒扫描（可选）
-```csharp
-// 集成 ClamAV 病毒扫描
-public async Task<bool> ScanForVirus(Stream stream)
-{
-    // 使用 ClamAV 或其他反病毒引擎扫描
-    var clam = new ClamClient("localhost", 3310);
-    var result = await clam.SendAndScanFileAsync(stream);
-
-    return result.Result == ClamScanResults.Clean;
-}
-```
-
-#### 内容审核（云服务）
-```csharp
-// 调用阿里云内容安全 API
-public async Task<ContentAuditResult> AuditContent(string imageUrl)
-{
-    var client = new ContentAuditClient(_config);
-    var result = await client.ScanImageAsync(imageUrl);
-
-    return new ContentAuditResult
-    {
-        IsSafe = result.Suggestion == "pass",
-        Labels = result.Labels, // 违规标签：porn, terrorism, ad等
-        Score = result.Score
-    };
-}
-```
+- **图片安全处理**：去除 EXIF 信息（可能含恶意代码）
+- **病毒扫描**：可选集成 ClamAV（Phase 3）
+- **内容审核**：调用云服务 API 检测违规内容（Phase 3）
 
 ---
 
-## ⚡ 性能优化
+## ⚡ 性能优化策略
 
-### 1. 图片处理策略
+### 1. 图片处理
 
-#### 上传时自动处理
-```csharp
-public async Task<ImageUploadResult> UploadImage(Stream stream, string fileName)
-{
-    var result = new ImageUploadResult();
+**上传时处理（推荐）**：
+- 生成缩略图（150x150）
+- 生成多尺寸（small/medium/large）
+- 压缩原图（JPEG 质量 85%）
+- 可选：添加水印
 
-    // 加载图片
-    using var image = await Image.LoadAsync(stream);
-
-    // 1. 生成多种尺寸
-    result.Thumbnail = await GenerateThumbnail(image, 150, 150);   // 缩略图
-    result.Small = await ResizeImage(image, 400, 300);             // 小图
-    result.Medium = await ResizeImage(image, 800, 600);            // 中图
-    result.Large = await ResizeImage(image, 1200, 900);            // 大图
-
-    // 2. 压缩原图（质量 85%）
-    result.Original = await CompressImage(image, 85);
-
-    // 3. 可选：添加水印
-    if (_options.EnableWatermark)
-    {
-        result.Original = await AddWatermark(result.Original);
-    }
-
-    return result;
-}
-
-private async Task<string> ResizeImage(Image image, int maxWidth, int maxHeight)
-{
-    var clone = image.Clone(ctx => ctx.Resize(new ResizeOptions
-    {
-        Mode = ResizeMode.Max,
-        Size = new Size(maxWidth, maxHeight)
-    }));
-
-    var fileName = $"{Guid.NewGuid()}.jpg";
-    var filePath = Path.Combine(_uploadPath, "resized", fileName);
-
-    await clone.SaveAsJpegAsync(filePath, new JpegEncoder { Quality = 85 });
-
-    return filePath;
-}
+**使用 ImageSharp 库**：
+```bash
+dotnet add package SixLabors.ImageSharp --version 3.1.0
 ```
 
-#### 图片格式转换
-```csharp
-// 自动转换为 WebP 格式（更小的文件体积）
-public async Task<string> ConvertToWebP(Stream inputStream)
-{
-    using var image = await Image.LoadAsync(inputStream);
+### 2. CDN 加速（生产环境）
 
-    var outputPath = Path.Combine(_uploadPath, $"{Guid.NewGuid()}.webp");
-    await image.SaveAsWebpAsync(outputPath, new WebpEncoder { Quality = 85 });
-
-    return outputPath;
-}
-```
-
-### 2. CDN 加速配置
-
-#### OSS + CDN 配置
-```json
-{
-  "CDN": {
-    "Enable": true,
-    "Domain": "https://cdn.example.com",
-    "CacheControl": "public, max-age=31536000",  // 1年
-    "ImageProcess": {
-      "Thumbnail": "?x-oss-process=image/resize,m_fill,w_150,h_150/quality,q_85",
-      "Small": "?x-oss-process=image/resize,m_lfit,w_400/quality,q_85",
-      "Watermark": "?x-oss-process=image/watermark,text_UmFkaXNo,color_FFFFFF,size_20,g_se"
-    }
-  }
-}
-```
-
-#### 使用示例
-```csharp
-public string GetCdnUrl(string filePath, ImageSize size = ImageSize.Original)
-{
-    var baseUrl = _cdnConfig.Enable ? _cdnConfig.Domain : _baseUrl;
-    var url = $"{baseUrl}/{filePath}";
-
-    // 添加图片处理参数
-    if (size != ImageSize.Original && _cdnConfig.ImageProcess.ContainsKey(size.ToString()))
-    {
-        url += _cdnConfig.ImageProcess[size.ToString()];
-    }
-
-    return url;
-}
-```
+- 配置 CDN 域名
+- 设置缓存策略（`Cache-Control: public, max-age=31536000`）
+- OSS 内置图片处理参数（缩略图/水印）
 
 ### 3. 懒加载和渐进式加载
 
-#### 前端实现
-```typescript
-// 1. 列表页：加载缩略图，懒加载
-<img
-  src={getThumbnailUrl(image.url)}
-  loading="lazy"
-  data-original={getOriginalUrl(image.url)}
-  onClick={handleImageClick}
-/>
+```tsx
+// 列表页：加载缩略图
+<img src={getThumbnailUrl(image.url)} loading="lazy" />
 
-// 2. 点击查看大图
-const handleImageClick = (e: React.MouseEvent<HTMLImageElement>) => {
-  const img = e.currentTarget;
-  const originalUrl = img.dataset.original;
-
-  // 显示 Modal，加载原图
-  setLightboxImage(originalUrl);
-};
-
-// 3. 渐进式加载（先模糊后清晰）
-const ProgressiveImage = ({ src, placeholder }: Props) => {
-  const [loaded, setLoaded] = useState(false);
-
-  return (
-    <div className={styles.imageContainer}>
-      <img src={placeholder} className={styles.placeholder} />
-      <img
-        src={src}
-        onLoad={() => setLoaded(true)}
-        className={loaded ? styles.loaded : styles.loading}
-      />
-    </div>
-  );
-};
+// 点击查看：加载原图
+<img src={getOriginalUrl(image.url)} />
 ```
 
-### 4. 上传进度和优化
+### 4. 上传优化
 
-#### 显示上传进度
-```typescript
-const [uploadProgress, setUploadProgress] = useState(0);
-
-const uploadFile = async (file: File) => {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  await axios.post('/api/v1/Upload', formData, {
-    onUploadProgress: (progressEvent) => {
-      const percentCompleted = Math.round(
-        (progressEvent.loaded * 100) / progressEvent.total!
-      );
-      setUploadProgress(percentCompleted);
-    }
-  });
-};
-
-// UI 组件
-<div className={styles.uploadProgress}>
-  <div className={styles.progressBar} style={{ width: `${uploadProgress}%` }} />
-  <span>{uploadProgress}%</span>
-</div>
-```
-
-#### 压缩后上传
-```typescript
-// 使用 browser-image-compression 库
-import imageCompression from 'browser-image-compression';
-
-const compressAndUpload = async (file: File) => {
-  // 压缩配置
-  const options = {
-    maxSizeMB: 1,              // 最大 1MB
-    maxWidthOrHeight: 1920,    // 最大宽高
-    useWebWorker: true         // 使用 Web Worker
-  };
-
-  // 压缩图片
-  const compressedFile = await imageCompression(file, options);
-
-  // 上传压缩后的文件
-  await uploadFile(compressedFile);
-};
-```
+- **前端压缩**：使用 `browser-image-compression` 库压缩后上传
+- **进度显示**：`axios` 的 `onUploadProgress` 回调
+- **错误重试**：自动重试 3 次，指数退避
 
 ---
 
@@ -1103,89 +458,765 @@ public class AttachmentVo
 
 ---
 
-## 🤔 待讨论的问题
+## 🤔 待讨论的问题与决策记录
 
-### 1. 存储方案选择
-- [ ] **问题**：是现在就用 MinIO，还是先用本地存储？
-- **方案 A**：本地存储（快速开发，后续迁移）
-- **方案 B**：直接用 MinIO（Docker 部署，S3 兼容）
-- **建议**：方案 A（先快速实现，接口设计好便于迁移）
+### ✅ 已确认的决策
 
-### 2. 图片处理
-- [ ] **问题**：图片处理在上传时还是访问时？
-- **方案 A**：上传时处理（生成多尺寸，占用存储）
-- **方案 B**：访问时处理（按需处理，节省存储）
-- **建议**：方案 A（性能好，用户体验佳）
+#### 第一批决策（2025-12-20 上午）
 
-### 3. 是否需要水印
-- [ ] **问题**：帖子图片是否添加水印？
-- **考虑**：防止盗图 vs 用户体验
-- **建议**：可选配置，默认关闭
+**1. 存储方案选择** ✅
+- 采用**可配置的混合方案**
+- 开发环境：本地文件系统（`DataBases/Uploads/`）
+- 生产环境：MinIO（可选 docker-compose 部署或远程 OSS）
+- 架构原则：定义统一的 `IFileStorage` 接口，通过配置文件切换实现
 
-### 4. 文件删除策略
-- [ ] **问题**：删除帖子/评论时，是否删除图片？
-- **方案 A**：软删除（标记为删除，定期清理）
-- **方案 B**：硬删除（立即删除文件）
-- **建议**：方案 A（可恢复，防止误删）
+**2. 上传方式** ✅
+- 直接上传到 API 服务器，由服务器根据配置路由到存储后端
+- 当前实现：同步上传（适合 < 50MB 文件）
+- 架构保证：设计必须兼容未来的分片上传（预留 `UploadChunk` / `MergeChunks` API）
 
-### 5. 图片审核
-- [ ] **问题**：是否需要内容审核？
-- **考虑**：安全合规 vs 成本
-- **建议**：MVP 阶段不做，生产环境可选
+**3. MVP 文件类型支持** ✅
+- 同时支持**图片和文档**
+- 图片类型：`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`
+- 文档类型：`.pdf`, `.doc`, `.docx`, `.txt`
+- 扩展性：允许的文件扩展名通过配置文件管理（白名单机制）
 
-### 6. 文件大小限制
-- [ ] **问题**：各类型文件的大小限制？
-- **当前建议**：
-  - 头像：2MB
-  - 帖子图片：5MB
-  - 文档：10MB
-- **需要确认**：是否合理？
+**4. 文件大小限制（可配置）** ✅
+- 头像：2MB
+- 图片：5MB
+- 文档：10MB
+- 配置路径：`appsettings.json` → `FileStorage:MaxFileSize`
 
-### 7. 支持的文件类型
-- [ ] **问题**：除了图片，是否支持视频、文档？
-- **MVP 阶段**：只支持图片
-- **后续扩展**：PDF、Office 文档、视频
-- **建议**：先图片，后续按需扩展
+**5. 图片处理时机** ✅
+- 上传时同步处理
+- 理由：性能更好、用户体验佳、便于缓存
+- 处理内容：缩略图生成、多尺寸、压缩、可选水印
 
-### 8. 上传并发限制
-- [ ] **问题**：单个用户同时上传文件数限制？
-- **建议**：单用户最多 5 个并发上传
+**6. 文件删除策略** ✅
+- 软删除 + 自动清理机制
+- 标记 `IsDeleted = true` 和 `DeleteTime`
+- 定时任务清理过期文件（默认：30 天）
+
+#### 第二批决策（2025-12-20 晚上）
+
+**7. 图片处理实现方案** ✅
+- **混合架构**：同时提供 C# 和 Rust 两种实现
+- **默认使用**：C# (ImageSharp)
+- **Rust 实现**：作为高性能备选方案，方便切换测试
+- **切换方式**：通过配置文件 `ImageProcessing:UseRustExtension`
+- **Rust 项目名称**：`radish-lib`（统一的 Rust 扩展库）
+- **项目位置**：`Radish.Core/native/rust/radish-lib`
+- **MVP 实现**：图片加水印算法
+
+**8. 水印具体设计** ✅
+- **默认类型**：文字水印
+- **水印内容**：`"Radish"`
+- **位置**：右下角
+- **透明度**：50%
+- **字体大小**：相对图片宽度的 5%
+- **用户选择**：上传时可选择是否添加水印
+- **可配置项**：内容、位置、透明度、字体大小、颜色
+
+**9. 内容审核方案** ✅
+- **审核方式**：本地算法 + 人工审核
+- **开发阶段**：先不实现审核功能，只记录上传日志
+- **未来实现**：
+  - Phase 1：日志记录
+  - Phase 2：本地 NSFW 模型（ONNX Runtime）
+  - Phase 3：人工审核工具（管理后台）
+
+**10. 文件去重策略** ✅
+- **实现去重**：基于 SHA256 哈希
+- **去重逻辑**：
+  1. 上传时计算文件哈希
+  2. 查询数据库是否存在相同哈希
+  3. 存在则复用文件，只创建新的附件记录
+  4. 不存在则上传文件并保存记录
+- **性能优化**：哈希计算考虑使用 Rust 扩展（计算密集型操作）
+
+**11. 分片上传触发条件** ✅
+- **可配置**：通过 `ChunkedUpload:Threshold` 配置
+- **默认阈值**：50MB（50 * 1024 * 1024 = 52428800 字节）
+- **分片大小**：2MB / 片
+- **实施阶段**：Phase 1 预留 API 和配置，Phase 2 实现
+
+**12. 并发上传限制** ✅
+- **单用户并发**：最多 5 个文件同时上传
+- **速率限制**：每分钟最多 20 个文件
+- **总大小限制**：每天最多上传 100MB
+- **用户分级**：暂不区分，所有用户统一限制
+- **实现方式**：Redis 计数器（或内存缓存单机模式）
+
+**13. 临时文件清理** ✅
+- **临时目录**：`DataBases/Uploads/Temp/`
+- **清理策略**：
+  - 定时任务：每小时执行一次
+  - 保留时间：2 小时未完成的上传视为失败
+  - 分片文件：24 小时后清理
+- **配置项**：`TempFileCleanup:IntervalMinutes`, `RetentionHours`
+
+**14. 错误处理和重试** ✅
+- **前端重试**：
+  - 自动重试 3 次
+  - 指数退避：1s, 2s, 4s
+  - 超过 3 次提示用户
+- **后端错误码**：
+  - 507：磁盘空间不足
+  - 415：文件类型不支持
+  - 413：文件过大
+  - 503：存储服务不可用
+
+**15. Rust 扩展架构** ✅
+- **项目名称**：`radish-lib`（统一的 Rust 扩展库）
+- **项目位置**：`Radish.Core/native/rust/radish-lib`
+- **重构现有**：将现有的 `test_lib` 重构为正式的 `radish-lib`
+- **初期功能**：
+  - 图片加水印（`add_watermark`）
+  - 文件哈希计算（`calculate_file_hash`，可选）
+- **调用方式**：C# DllImport
+- **配置切换**：`ImageProcessing:UseRustExtension = true/false`
 
 ---
 
-## 📝 下一步行动
+### 📋 完整配置文件示例
 
-### 1. 确认方案
-- [ ] 讨论并确认上述"待讨论的问题"
-- [ ] 明确 MVP 阶段的功能范围
+根据以上所有决策，完整的 `appsettings.json` 配置示例如下：
 
-### 2. 技术准备
-- [ ] 安装图片处理库（如 SixLabors.ImageSharp）
-- [ ] 准备测试图片素材
+```json
+{
+  "FileStorage": {
+    "Type": "Local",  // Local / MinIO / OSS (可切换)
 
-### 3. 开发计划
-1. **后端**：
-   - [ ] 创建 `Attachment` 实体和表
-   - [ ] 实现 `IFileStorage` 接口
-   - [ ] 实现 `LocalFileStorage` 本地存储
-   - [ ] 创建 `AttachmentService`
-   - [ ] 实现上传 API
-   - [ ] 添加文件校验和安全检查
+    // 文件大小限制（字节）
+    "MaxFileSize": {
+      "Avatar": 2097152,      // 2MB
+      "Image": 5242880,       // 5MB
+      "Document": 10485760    // 10MB
+    },
 
-2. **前端**：
-   - [ ] 创建文件上传组件
-   - [ ] 集成到 MarkdownEditor（图片按钮）
-   - [ ] 显示上传进度
-   - [ ] 图片预览功能
+    // 允许的文件扩展名（白名单）
+    "AllowedExtensions": {
+      "Image": [".jpg", ".jpeg", ".png", ".gif", ".webp"],
+      "Document": [".pdf", ".doc", ".docx", ".txt"]
+    },
 
-3. **测试**：
-   - [ ] 单元测试
-   - [ ] 集成测试
-   - [ ] 压力测试
+    // 本地存储配置
+    "Local": {
+      "BasePath": "DataBases/Uploads",
+      "BaseUrl": "/uploads"
+    },
 
-4. **文档**：
-   - [ ] API 文档
-   - [ ] 使用说明
+    // MinIO 配置（生产环境）
+    "MinIO": {
+      "Endpoint": "localhost:9000",
+      "BucketName": "radish-uploads",
+      "AccessKey": "admin",
+      "SecretKey": "your_password",
+      "UseSSL": false
+    },
+
+    // 阿里云 OSS 配置（可选）
+    "OSS": {
+      "Endpoint": "oss-cn-hangzhou.aliyuncs.com",
+      "BucketName": "radish-uploads",
+      "AccessKeyId": "",
+      "AccessKeySecret": "",
+      "Domain": "https://cdn.example.com"
+    },
+
+    // 图片处理配置
+    "ImageProcessing": {
+      "UseRustExtension": false,  // true: 使用 Rust, false: 使用 C#
+      "GenerateThumbnail": true,
+      "ThumbnailSize": { "Width": 150, "Height": 150 },
+      "GenerateMultipleSizes": true,
+      "Sizes": {
+        "Small": { "Width": 400, "Height": 300 },
+        "Medium": { "Width": 800, "Height": 600 },
+        "Large": { "Width": 1200, "Height": 900 }
+      },
+      "CompressQuality": 85,  // JPEG 压缩质量 (1-100)
+      "RemoveExif": true      // 移除 EXIF 信息
+    },
+
+    // 水印配置
+    "Watermark": {
+      "Enable": false,  // 全局开关（用户仍可选择）
+      "Type": "Text",   // Text / Image
+      "Text": {
+        "Content": "Radish",
+        "Position": "BottomRight",  // TopLeft, TopRight, BottomLeft, BottomRight, Center
+        "FontSize": 24,
+        "FontSizeRelative": 0.05,  // 相对图片宽度的 5%
+        "Color": "#FFFFFF",
+        "Opacity": 0.5
+      },
+      "Image": {
+        "Path": "wwwroot/images/watermark.png",
+        "Position": "BottomRight",
+        "Scale": 0.1  // 图片宽度的 10%
+      }
+    },
+
+    // 文件去重配置
+    "Deduplication": {
+      "Enable": true,
+      "HashAlgorithm": "SHA256",  // MD5 / SHA256
+      "UseRustExtension": false   // 哈希计算是否使用 Rust
+    },
+
+    // 分片上传配置
+    "ChunkedUpload": {
+      "Enable": false,  // Phase 1 关闭，Phase 2 启用
+      "Threshold": 52428800,  // 50MB (50 * 1024 * 1024)
+      "ChunkSize": 2097152     // 2MB (2 * 1024 * 1024)
+    },
+
+    // 并发上传限制
+    "RateLimit": {
+      "MaxConcurrentUploads": 5,      // 单用户最多同时上传
+      "MaxUploadsPerMinute": 20,       // 每分钟最多上传文件数
+      "MaxDailyUploadSize": 104857600  // 每天最多上传 100MB
+    },
+
+    // 临时文件清理
+    "TempFileCleanup": {
+      "Enable": true,
+      "IntervalMinutes": 60,   // 每小时执行一次
+      "RetentionHours": 2,     // 保留 2 小时
+      "ChunkRetentionHours": 24 // 分片保留 24 小时
+    },
+
+    // 软删除文件清理
+    "DeletedFileCleanup": {
+      "Enable": true,
+      "RetentionDays": 30,  // 软删除后保留 30 天
+      "CleanupTime": "03:00"  // 每天凌晨 3 点执行
+    },
+
+    // 内容审核配置（Phase 1 不启用）
+    "ContentAudit": {
+      "Enable": false,
+      "Type": "Local",  // Local / Cloud / Manual
+      "AutoReject": false  // 是否自动拒绝违规内容
+    }
+  }
+}
+```
+
+---
+
+### 🦀 Rust 扩展架构详细设计
+
+根据决策，将现有的 `test_lib` 重构为正式的 `radish-lib` 统一扩展库。
+
+#### 项目结构
+
+```
+Radish.Core/
+└── native/
+    └── rust/
+        └── radish-lib/          # 统一的 Rust 扩展库
+            ├── Cargo.toml
+            ├── src/
+            │   ├── lib.rs       # 入口和 FFI 导出
+            │   ├── image/       # 图片处理模块
+            │   │   ├── mod.rs
+            │   │   ├── watermark.rs    # 水印功能
+            │   │   ├── resize.rs       # 缩放功能（可选）
+            │   │   └── compress.rs     # 压缩功能（可选）
+            │   ├── hash/        # 哈希计算模块
+            │   │   ├── mod.rs
+            │   │   └── file_hash.rs    # 文件哈希
+            │   └── utils/       # 工具函数
+            │       └── mod.rs
+            ├── build.sh         # Linux/macOS 编译脚本
+            ├── build.ps1        # Windows 编译脚本
+            └── README.md        # Rust 扩展使用说明
+```
+
+#### Cargo.toml 配置
+
+```toml
+[package]
+name = "radish-lib"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]  # 编译为动态库
+
+[dependencies]
+image = "0.25"            # 图片处理
+imageproc = "0.25"        # 图片处理（水印、文字）
+rusttype = "0.9"          # 字体渲染
+sha2 = "0.10"             # SHA256 哈希
+
+[profile.release]
+opt-level = 3             # 最大优化
+lto = true                # 链接时优化
+codegen-units = 1         # 单个代码生成单元（更好的优化）
+```
+
+#### Rust 实现示例（MVP: 图片加水印）
+
+**src/lib.rs**：
+```rust
+use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
+
+mod image;
+mod hash;
+
+// 导出图片加水印函数
+#[no_mangle]
+pub extern "C" fn add_text_watermark(
+    input_path: *const c_char,
+    output_path: *const c_char,
+    text: *const c_char,
+    font_size: u32,
+    opacity: f32,
+    position: u8,  // 0=TopLeft, 1=TopRight, 2=BottomLeft, 3=BottomRight, 4=Center
+) -> i32 {
+    // 安全转换 C 字符串
+    let input = unsafe { CStr::from_ptr(input_path).to_str().unwrap() };
+    let output = unsafe { CStr::from_ptr(output_path).to_str().unwrap() };
+    let watermark_text = unsafe { CStr::from_ptr(text).to_str().unwrap() };
+
+    // 调用内部实现
+    match image::watermark::add_watermark(input, output, watermark_text, font_size, opacity, position) {
+        Ok(_) => 0,   // 成功
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            -1  // 失败
+        }
+    }
+}
+
+// 导出文件哈希计算函数（可选）
+#[no_mangle]
+pub extern "C" fn calculate_file_sha256(
+    file_path: *const c_char,
+    hash_output: *mut c_char,
+    output_len: usize,
+) -> i32 {
+    let path = unsafe { CStr::from_ptr(file_path).to_str().unwrap() };
+
+    match hash::file_hash::calculate_sha256(path) {
+        Ok(hash) => {
+            let c_hash = CString::new(hash).unwrap();
+            let bytes = c_hash.as_bytes_with_nul();
+            if bytes.len() <= output_len {
+                unsafe {
+                    std::ptr::copy_nonoverlapping(bytes.as_ptr(), hash_output as *mut u8, bytes.len());
+                }
+                0
+            } else {
+                -2  // 缓冲区太小
+            }
+        }
+        Err(e) => {
+            eprintln!("Error: {}", e);
+            -1
+        }
+    }
+}
+```
+
+**src/image/watermark.rs**：
+```rust
+use image::{DynamicImage, GenericImageView, Rgba};
+use imageproc::drawing::draw_text_mut;
+use rusttype::{Font, Scale};
+
+pub fn add_watermark(
+    input_path: &str,
+    output_path: &str,
+    text: &str,
+    font_size: u32,
+    opacity: f32,
+    position: u8,
+) -> Result<(), Box<dyn std::error::Error>> {
+    // 加载图片
+    let mut img = image::open(input_path)?;
+
+    // 加载字体（需要内嵌或指定字体文件）
+    let font_data = include_bytes!("../../fonts/DejaVuSans.ttf");
+    let font = Font::try_from_bytes(font_data as &[u8]).unwrap();
+
+    // 计算文字位置
+    let (img_width, img_height) = img.dimensions();
+    let scale = Scale::uniform(font_size as f32);
+
+    // 根据 position 计算坐标
+    let (x, y) = match position {
+        0 => (10, 10),  // TopLeft
+        1 => (img_width - 200, 10),  // TopRight
+        2 => (10, img_height - 50),  // BottomLeft
+        3 => (img_width - 200, img_height - 50),  // BottomRight
+        4 => (img_width / 2 - 50, img_height / 2),  // Center
+        _ => (10, 10),
+    };
+
+    // 绘制半透明文字
+    let color = Rgba([255u8, 255u8, 255u8, (255.0 * opacity) as u8]);
+    draw_text_mut(&mut img, color, x, y, scale, &font, text);
+
+    // 保存图片
+    img.save(output_path)?;
+
+    Ok(())
+}
+```
+
+#### C# 调用封装
+
+**Radish.Core/NativeExtensions/RustImageProcessor.cs**：
+```csharp
+using System.Runtime.InteropServices;
+
+namespace Radish.Core.NativeExtensions;
+
+/// <summary>
+/// Rust 图片处理扩展
+/// </summary>
+public class RustImageProcessor : IImageProcessor
+{
+    private const string LibraryName = "radish_lib";
+
+    [DllImport(LibraryName, EntryPoint = "add_text_watermark")]
+    private static extern int AddTextWatermarkNative(
+        string inputPath,
+        string outputPath,
+        string text,
+        uint fontSize,
+        float opacity,
+        byte position
+    );
+
+    [DllImport(LibraryName, EntryPoint = "calculate_file_sha256")]
+    private static extern int CalculateFileSha256Native(
+        string filePath,
+        [Out] StringBuilder hashOutput,
+        int outputLen
+    );
+
+    public async Task<string> AddWatermarkAsync(
+        string inputPath,
+        string text,
+        WatermarkOptions options
+    )
+    {
+        var outputPath = GenerateOutputPath(inputPath);
+
+        var result = AddTextWatermarkNative(
+            inputPath,
+            outputPath,
+            text,
+            (uint)options.FontSize,
+            options.Opacity,
+            (byte)options.Position
+        );
+
+        if (result != 0)
+            throw new ImageProcessingException($"Rust watermark failed: code {result}");
+
+        return outputPath;
+    }
+
+    public string CalculateFileHash(string filePath)
+    {
+        var buffer = new StringBuilder(65);  // SHA256 = 64 chars + null
+
+        var result = CalculateFileSha256Native(filePath, buffer, buffer.Capacity);
+
+        if (result != 0)
+            throw new Exception($"Rust hash calculation failed: code {result}");
+
+        return buffer.ToString();
+    }
+}
+```
+
+#### 编译脚本
+
+**build.sh** (Linux/macOS):
+```bash
+#!/bin/bash
+cd "$(dirname "$0")"
+
+echo "Building radish-lib for Rust..."
+cargo build --release
+
+# 复制到输出目录
+cp target/release/libradish_lib.so ../../../Radish.Api/bin/Debug/net10.0/ 2>/dev/null || true
+cp target/release/libradish_lib.dylib ../../../Radish.Api/bin/Debug/net10.0/ 2>/dev/null || true
+
+echo "Build complete!"
+```
+
+**build.ps1** (Windows):
+```powershell
+Set-Location $PSScriptRoot
+
+Write-Host "Building radish-lib for Rust..." -ForegroundColor Green
+cargo build --release
+
+# 复制到输出目录
+Copy-Item "target\release\radish_lib.dll" "..\..\..\Radish.Api\bin\Debug\net10.0\" -Force
+
+Write-Host "Build complete!" -ForegroundColor Green
+```
+
+#### 配置切换实现
+
+**Radish.Extension/ImageProcessorFactory.cs**：
+```csharp
+public class ImageProcessorFactory
+{
+    public static IImageProcessor Create(ImageProcessingOptions options)
+    {
+        if (options.UseRustExtension)
+        {
+            // 检查 Rust 库是否存在
+            var rustLibPath = GetRustLibraryPath();
+            if (File.Exists(rustLibPath))
+            {
+                Log.Information("Using Rust image processor");
+                return new RustImageProcessor(options);
+            }
+            else
+            {
+                Log.Warning("Rust library not found, fallback to C# processor");
+                return new CSharpImageProcessor(options);
+            }
+        }
+
+        return new CSharpImageProcessor(options);
+    }
+}
+```
+
+---
+
+## 📝 实施计划
+
+### Phase 1: MVP 基础功能（预计 5-7 天）
+
+#### 后端开发（3-4 天）
+
+**1. 数据模型和存储接口**
+   - [ ] 创建 `Attachment` 实体和数据库迁移
+   - [ ] 定义 `IFileStorage` 接口
+   - [ ] 实现 `LocalFileStorage`（本地存储）
+   - [ ] 定义 `IImageProcessor` 接口
+   - [ ] 实现 `CSharpImageProcessor`（使用 ImageSharp）
+
+**2. Rust 扩展基础架构（与上面并行，1-2 天）**
+   - [ ] 重构 `test_lib` 为 `radish-lib`
+   - [ ] 实现图片加水印功能（Rust）
+   - [ ] 实现文件哈希计算（Rust，可选）
+   - [ ] 创建 C# FFI 调用封装
+   - [ ] 实现 `RustImageProcessor`
+   - [ ] 实现 `ImageProcessorFactory`（配置切换）
+   - [ ] 编写编译脚本（build.sh / build.ps1）
+
+**3. 业务逻辑**
+   - [ ] 创建 `AttachmentService`（CRUD + 上传逻辑）
+   - [ ] 文件校验（类型、大小、Magic Number）
+   - [ ] 文件去重逻辑（SHA256 哈希）
+   - [ ] 图片处理（缩略图、多尺寸、压缩）
+   - [ ] 文件名生成（雪花ID + 年月目录）
+
+**4. API 端点**
+   - [ ] `POST /api/v1/Upload/Image` - 上传图片（可选水印）
+   - [ ] `POST /api/v1/Upload/Document` - 上传文档
+   - [ ] `GET /api/v1/Upload/{id}` - 获取文件信息
+   - [ ] `DELETE /api/v1/Upload/{id}` - 软删除文件
+   - [ ] 配置静态文件中间件
+   - [ ] 预留分片上传 API（不实现）
+     - `POST /api/v1/Upload/Chunk`
+     - `POST /api/v1/Upload/Merge`
+
+#### 前端开发（2-3 天）
+
+**1. 上传组件**
+   - [ ] 创建 `FileUpload` 组件（拖拽 + 点击上传）
+   - [ ] 上传进度显示
+   - [ ] 图片预览
+   - [ ] 错误提示和重试逻辑
+   - [ ] 水印选项（用户可选）
+
+**2. 集成到 MarkdownEditor**
+   - [ ] 图片按钮点击触发上传
+   - [ ] 上传成功后插入 Markdown 图片语法
+   - [ ] 支持粘贴图片上传（Ctrl+V）
+   - [ ] 支持拖拽图片上传
+
+**3. 文件管理界面**（可选，Phase 2 可做）
+   - [ ] 我的附件列表
+   - [ ] 删除附件
+   - [ ] 查看附件详情
+
+#### 配置和测试
+
+**1. 配置文件**
+   - [ ] 添加完整的 `FileStorage` 配置到 `appsettings.json`
+   - [ ] 添加 `appsettings.Local.json` 示例
+
+**2. 测试**
+   - [ ] 单元测试（AttachmentService）
+   - [ ] 集成测试（上传 API）
+   - [ ] Rust 扩展性能对比测试
+   - [ ] 文件去重测试
+
+---
+
+### Phase 2: 生产环境支持（预计 3-4 天）
+
+**1. MinIO 集成**
+   - [ ] 实现 `MinioFileStorage`
+   - [ ] Docker Compose 配置（MinIO + Radish）
+   - [ ] MinIO 初始化脚本（创建 Bucket、设置权限）
+   - [ ] 配置切换测试（Local ↔ MinIO）
+
+**2. 图片处理增强**
+   - [ ] 多尺寸生成（Small, Medium, Large）
+   - [ ] 水印功能完整实现（文字 + 图片水印）
+   - [ ] 图片格式转换（WebP）
+   - [ ] Rust vs C# 性能对比测试
+   - [ ] 根据测试结果决定默认实现
+
+**3. 定时任务（Hangfire）**
+   - [ ] 集成 Hangfire
+   - [ ] 软删除文件清理任务（每天凌晨 3 点）
+   - [ ] 临时文件清理任务（每小时）
+   - [ ] 任务监控和日志
+
+**4. 并发控制和限流**
+   - [ ] Redis 集成（或内存缓存）
+   - [ ] 单用户并发限制（5 个）
+   - [ ] 速率限制（20 文件/分钟）
+   - [ ] 日上传大小限制（100MB）
+
+---
+
+### Phase 3: 高级特性（按需实施）
+
+**1. 分片上传（2-3 天）**
+   - [ ] 实现 `POST /api/v1/Upload/Chunk`
+   - [ ] 实现 `POST /api/v1/Upload/Merge`
+   - [ ] 前端分片逻辑（2MB/片）
+   - [ ] 断点续传支持
+   - [ ] 进度持久化
+
+**2. 内容审核（3-5 天）**
+   - [ ] 本地 NSFW 模型集成（ONNX Runtime）
+   - [ ] 人工审核工具（管理后台）
+   - [ ] 审核工作流（待审核 → 通过/拒绝）
+   - [ ] 审核日志和统计
+
+**3. Rust 扩展增强（按需）**
+   - [ ] 图片缩放（Rust）
+   - [ ] 图片压缩（Rust）
+   - [ ] 图片格式转换（Rust）
+   - [ ] 完整性能测试和优化
+
+**4. 安全增强**
+   - [ ] 病毒扫描（ClamAV 集成）
+   - [ ] 临时授权 URL（带签名）
+   - [ ] 访问日志和审计
+   - [ ] 防盗链（Referer 检查）
+
+**5. CDN 集成（生产环境）**
+   - [ ] CDN 域名配置
+   - [ ] 缓存策略优化
+   - [ ] OSS 图片处理参数
+
+---
+
+### 技术准备清单
+
+#### NuGet 包
+```bash
+# 图片处理（必需）
+dotnet add package SixLabors.ImageSharp --version 3.1.0 --project Radish.Core
+
+# MinIO SDK（Phase 2）
+dotnet add package Minio --version 6.0.0 --project Radish.Infrastructure
+
+# 定时任务（Phase 2）
+dotnet add package Hangfire.AspNetCore --version 1.8.0 --project Radish.Api
+dotnet add package Hangfire.SqlSugar --version 1.0.0 --project Radish.Api
+```
+
+#### npm 包
+```bash
+# 前端图片压缩（可选）
+npm install browser-image-compression --workspace=radish.client
+
+# Axios 已安装，无需额外安装
+```
+
+#### Rust 工具链
+```bash
+# 安装 Rust（如果还没有）
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# 验证安装
+rustc --version
+cargo --version
+
+# 添加 Windows MSVC 工具链（Windows 用户）
+rustup target add x86_64-pc-windows-msvc
+```
+
+---
+
+### 开发优先级建议
+
+**第一周（Phase 1）**：
+- Day 1-2：后端核心功能（IFileStorage, LocalFileStorage, Attachment, AttachmentService）
+- Day 2-3：Rust 扩展基础架构（重构 test_lib, 实现水印, FFI 封装）
+- Day 3-4：图片处理和文件去重
+- Day 4-5：前端上传组件和 API 集成
+- Day 5：测试和文档
+
+**第二周（Phase 2）**：
+- Day 6-7：MinIO 集成和 Docker 配置
+- Day 8：定时任务和清理机制
+- Day 9：并发控制和限流
+- Day 10：性能测试和优化
+
+**后续（Phase 3）**：
+- 按需实施分片上传
+- 按需实施内容审核
+- 按需增强 Rust 扩展
+
+---
+
+### 成功标准
+
+**Phase 1 完成标准**：
+- [x] 可以上传图片和文档到本地存储
+- [x] 自动生成缩略图和压缩原图
+- [x] 文件去重功能正常工作
+- [x] 水印功能可选配置
+- [x] C# 和 Rust 两种实现都能正常工作且可切换
+- [x] 前端可以上传文件并显示进度
+- [x] MarkdownEditor 集成图片上传
+
+**Phase 2 完成标准**：
+- [x] MinIO 可正常使用并通过配置切换
+- [x] 定时清理任务正常运行
+- [x] 并发限制生效
+- [x] 性能测试报告完成
+
+**Phase 3 完成标准**：
+- [x] 分片上传支持大文件（> 50MB）
+- [x] 内容审核功能可用（如果实施）
+
+---
 
 ---
 
@@ -1194,16 +1225,15 @@ public class AttachmentVo
 ### 技术文档
 - [ASP.NET Core 文件上传](https://learn.microsoft.com/en-us/aspnet/core/mvc/models/file-uploads)
 - [SixLabors.ImageSharp 文档](https://docs.sixlabors.com/articles/imagesharp/index.html)
-- [阿里云 OSS 文档](https://help.aliyun.com/product/31815.html)
 - [MinIO 文档](https://min.io/docs/minio/linux/index.html)
+- [阿里云 OSS 文档](https://help.aliyun.com/product/31815.html)
 
 ### 开源项目参考
-- [Ant Design ProComponents - Upload](https://procomponents.ant.design/components/upload)
 - [Uppy - 文件上传库](https://uppy.io/)
 - [FilePond - 优雅的文件上传](https://pqina.nl/filepond/)
 
 ---
 
-**文档状态**：草稿待讨论
+**文档状态**：设计完成，待实施
 **最后更新**：2025-12-20
-**责任人**：开发团队
+**版本**：v1.0
