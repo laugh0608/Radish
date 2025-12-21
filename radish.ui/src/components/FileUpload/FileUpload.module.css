@@ -211,6 +211,54 @@
   color: #fff;
 }
 
+/* 上传选项 */
+.uploadOptions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-light, #f0f0f0);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.optionLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary, #666);
+  cursor: pointer;
+  user-select: none;
+}
+
+.optionLabel:hover {
+  color: var(--color-text, #333);
+}
+
+.checkbox {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.watermarkInput {
+  padding: 6px 10px;
+  border: 1px solid var(--color-border, #d9d9d9);
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s ease;
+  margin-left: 22px;
+}
+
+.watermarkInput:focus {
+  border-color: var(--color-primary, #1890ff);
+}
+
+.watermarkInput::placeholder {
+  color: var(--color-text-placeholder, #bfbfbf);
+}
+
 /* 响应式 */
 @media (max-width: 768px) {
   .uploadArea {
