@@ -114,7 +114,8 @@ public class FileCleanupJob
         {
             Log.Information("[FileCleanup] 开始清理临时文件，保留小时数：{RetentionHours}", retentionHours);
 
-            var tempPath = _fileStorage.GetFullPath("Temp");
+            // 使用统一的 DataBases/Temp 目录
+            var tempPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DataBases", "Temp");
 
             if (!Directory.Exists(tempPath))
             {
@@ -137,17 +138,15 @@ public class FileCleanupJob
                     // 检查文件最后修改时间
                     if (fileInfo.LastWriteTime < cutoffTime)
                     {
-                        // 移动到回收站
-                        var relativePath = Path.GetRelativePath(_fileStorage.GetFullPath(""), filePath);
-                        await MoveToRecycleBinAsync(relativePath, "temp");
-
+                        // 直接删除临时文件（不需要移动到回收站）
+                        File.Delete(filePath);
                         cleanedCount++;
-                        Log.Information("[FileCleanup] 已将临时文件移至回收站：{FilePath}", relativePath);
+                        Log.Information("[FileCleanup] 已删除临时文件：{FilePath}", filePath);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[FileCleanup] 移动临时文件到回收站失败：{FilePath}", filePath);
+                    Log.Error(ex, "[FileCleanup] 删除临时文件失败：{FilePath}", filePath);
                 }
             }
 
