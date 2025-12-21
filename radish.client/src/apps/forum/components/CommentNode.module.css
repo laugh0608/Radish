@@ -24,6 +24,34 @@
   color: #888;
 }
 
+/* 沙发标识（子评论） */
+.sofaBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 3px;
+  margin-left: 4px;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
+}
+
+/* 神评标识（父评论） */
+.godCommentBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 3px;
+  margin-left: 4px;
+  box-shadow: 0 1px 3px rgba(251, 191, 36, 0.3);
+}
+
 .deleteButton {
   margin-left: auto;
   padding: 2px 6px;
@@ -51,18 +79,23 @@
   line-height: 1.5;
   color: #e5e7eb;
   font-size: 14px;
+  text-align: left;
 }
 
-/* @用户名高亮 */
-.mention {
+/* @用户名高亮（全局样式，因为使用dangerouslySetInnerHTML） */
+.content :global(.mention) {
   color: #60a5fa;
-  font-weight: 500;
+  background-color: rgba(96, 165, 250, 0.15);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 600;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: all 0.2s;
 }
 
-.mention:hover {
+.content :global(.mention:hover) {
   color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.25);
   text-decoration: underline;
 }
 
@@ -138,6 +171,38 @@
   margin-top: 12px;
 }
 
+/* 子评论排序按钮 */
+.childSortButtons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+
+.childSortButton {
+  padding: 3px 10px;
+  background: transparent;
+  border: 1px solid #475569;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 12px;
+}
+
+.childSortButton:hover {
+  background-color: #1e293b;
+  border-color: #60a5fa;
+  color: #60a5fa;
+}
+
+.childSortButton.active {
+  background-color: #60a5fa;
+  border-color: #60a5fa;
+  color: #fff;
+  font-weight: 500;
+}
+
 .children {
   margin-top: 8px;
 }
@@ -186,4 +251,126 @@
 
 .collapseButton {
   margin-left: auto;
+}
+
+/* 作者操作按钮区域 */
+.authorActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 编辑按钮 */
+.editButton {
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  color: #60a5fa;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editButton:hover:not(:disabled) {
+  background-color: rgba(96, 165, 250, 0.1);
+}
+
+.editButton:active:not(:disabled) {
+  background-color: rgba(96, 165, 250, 0.2);
+}
+
+.editButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* 编辑表单 */
+.editForm {
+  margin-top: 8px;
+}
+
+.editTextarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 8px 12px;
+  background-color: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 6px;
+  color: #e5e7eb;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.editTextarea:focus {
+  outline: none;
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.editTextarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.editActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.saveButton,
+.cancelButton {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saveButton {
+  background-color: #60a5fa;
+  color: #fff;
+}
+
+.saveButton:hover:not(:disabled) {
+  background-color: #3b82f6;
+}
+
+.saveButton:active:not(:disabled) {
+  background-color: #2563eb;
+  transform: scale(0.98);
+}
+
+.saveButton:disabled {
+  background-color: #475569;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cancelButton {
+  background-color: #374151;
+  color: #d1d5db;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background-color: #4b5563;
+}
+
+.cancelButton:active:not(:disabled) {
+  background-color: #6b7280;
+  transform: scale(0.98);
+}
+
+.cancelButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }

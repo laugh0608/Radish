@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { CommentNode as CommentNodeType } from '@/types/forum';
-import { MarkdownRenderer, Icon } from '@radish/ui';
+import { Icon } from '@radish/ui';
 import styles from './CommentNode.module.css';
 
 interface CommentNodeProps {
@@ -8,24 +8,59 @@ interface CommentNodeProps {
   level: number;
   currentUserId?: number;
   pageSize?: number; // 每次加载子评论数量
+  isGodComment?: boolean; // 是否是神评
   onDelete?: (commentId: number) => void;
+  onEdit?: (commentId: number, newContent: string) => Promise<void>;
   onLike?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReply?: (commentId: number, authorName: string) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
 }
+
+/**
+ * 将评论内容中的@用户名高亮显示
+ */
+const highlightMentions = (content: string): string => {
+  // 转义HTML特殊字符以防止XSS攻击
+  const escapeHtml = (text: string): string => {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  };
+
+  const escapedContent = escapeHtml(content);
+
+  // 替换@用户名为高亮样式
+  return escapedContent.replace(/@([^\s@]+)/g, '<span class="mention">@$1</span>');
+};
 
 export const CommentNode = ({
   node,
   level,
   currentUserId = 0,
   pageSize = 10,
+  isGodComment = false,
   onDelete,
+  onEdit,
   onLike,
   onReply,
   onLoadMoreChildren
 }: CommentNodeProps) => {
   // 判断是否是作者本人
   const isAuthor = currentUserId > 0 && node.authorId === currentUserId;
+
+  // 判断是否在5分钟编辑窗口内
+  const canEdit = (() => {
+    if (!isAuthor || !node.createTime) return false;
+    const createTime = new Date(node.createTime).getTime();
+    const now = Date.now();
+    const diffMinutes = (now - createTime) / 1000 / 60;
+    return diffMinutes <= 5;
+  })();
+
+  // 编辑状态
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 本地点赞状态（用于乐观更新）
   const [isLiked, setIsLiked] = useState(node.isLiked ?? false);
@@ -34,14 +69,45 @@ export const CommentNode = ({
 
   // 子评论展开状态
   const [isExpanded, setIsExpanded] = useState(false);
-  const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(node.children || []);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [childSortBy, setChildSortBy] = useState<'newest' | 'hottest' | null>(null); // null表示默认排序(时间升序)
+
+  // 初始化已加载的子评论（默认时间升序）
+  const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(() => {
+    const children = node.children || [];
+    // 默认按时间升序排序
+    return [...children].sort((a, b) =>
+      new Date(a.createTime || 0).getTime() - new Date(b.createTime || 0).getTime()
+    );
+  });
+
+  // 找出沙发（点赞数最多的子评论，如果点赞数相同则按时间最新）
+  const sofaComment = node.children && node.children.length > 0
+    ? [...node.children].sort((a, b) => {
+        // 先按点赞数降序
+        if ((b.likeCount || 0) !== (a.likeCount || 0)) {
+          return (b.likeCount || 0) - (a.likeCount || 0);
+        }
+        // 点赞数相同时按时间降序（最新的在前）
+        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+      })[0]
+    : null;
 
   const hasChildren = (node.childrenTotal && node.childrenTotal > 0) || (node.children && node.children.length > 0);
   const totalChildren = node.childrenTotal ?? node.children?.length ?? 0;
   const loadedCount = loadedChildren.length;
   const hasMore = loadedCount < totalChildren;
+
+  // 监听 node.children 变化,重新初始化子评论列表
+  useEffect(() => {
+    const children = node.children || [];
+    const sorted = [...children].sort((a, b) =>
+      new Date(a.createTime || 0).getTime() - new Date(b.createTime || 0).getTime()
+    );
+    setLoadedChildren(sorted);
+    setChildSortBy(null); // 重置排序方式为默认值
+  }, [node.children]);
 
   // 处理点赞
   const handleLike = async () => {
@@ -66,6 +132,34 @@ export const CommentNode = ({
     if (onReply) {
       onReply(node.id, node.authorName);
     }
+  };
+
+  // 处理编辑
+  const handleEdit = () => {
+    setEditContent(node.content);
+    setIsEditing(true);
+  };
+
+  // 保存编辑
+  const handleSaveEdit = async () => {
+    if (!onEdit || !editContent.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      await onEdit(node.id, editContent.trim());
+      setIsEditing(false);
+    } catch (error) {
+      console.error('编辑评论失败:', error);
+      // 可以添加错误提示
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // 取消编辑
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditContent('');
   };
 
   // 展开/收起子评论
@@ -108,32 +202,123 @@ export const CommentNode = ({
     }
   };
 
+  // 处理子评论排序切换
+  const handleChildSortChange = (newSortBy: 'newest' | 'hottest') => {
+    setChildSortBy(newSortBy);
+    // 立即对已加载的子评论重新排序
+    const sorted = [...loadedChildren].sort((a, b) => {
+      if (newSortBy === 'hottest') {
+        // 最热：按点赞数降序
+        if (b.likeCount !== a.likeCount) {
+          return (b.likeCount || 0) - (a.likeCount || 0);
+        }
+        // 点赞数相同时按时间降序
+        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+      } else {
+        // 最新：按创建时间降序
+        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+      }
+    });
+    setLoadedChildren(sorted);
+  };
+
   // 决定显示哪些子评论
-  const displayChildren = level === 0 && !isExpanded && hasChildren
-    ? loadedChildren.slice(0, 1) // 顶级评论未展开：只显示最热的1条
-    : loadedChildren; // 已展开或非顶级评论：显示所有已加载的
+  const displayChildren = (() => {
+    if (level !== 0 || !hasChildren) {
+      return loadedChildren;
+    }
+
+    if (!isExpanded) {
+      // 未展开：只显示沙发
+      return sofaComment ? [sofaComment] : [];
+    }
+
+    if (childSortBy === null && sofaComment) {
+      // 展开且未手动排序：沙发置顶 + 其他按时间升序
+      const others = loadedChildren.filter(c => c.id !== sofaComment.id);
+      return [sofaComment, ...others];
+    }
+
+    // 展开且手动排序：按排序结果显示
+    return loadedChildren;
+  })();
 
   return (
     <div className={styles.container} style={{ marginLeft: level * 16 }}>
       <div className={styles.header}>
         <span className={styles.author}>{node.authorName}</span>
         {node.createTime && <span className={styles.time}> · {node.createTime}</span>}
-        {isAuthor && onDelete && (
-          <button
-            type="button"
-            onClick={() => onDelete(node.id)}
-            className={styles.deleteButton}
-            title="删除评论"
-          >
-            <Icon icon="mdi:delete" size={14} />
-          </button>
+        {/* 沙发标识（仅子评论） */}
+        {level === 1 && isGodComment && (
+          <span className={styles.sofaBadge}>沙发</span>
+        )}
+        {/* 神评标识（仅父评论） */}
+        {level === 0 && isGodComment && (
+          <span className={styles.godCommentBadge}>神评</span>
+        )}
+        {isAuthor && (
+          <div className={styles.authorActions}>
+            {canEdit && onEdit && (
+              <button
+                type="button"
+                onClick={handleEdit}
+                className={styles.editButton}
+                title="编辑评论"
+                disabled={isEditing}
+              >
+                <Icon icon="mdi:pencil" size={14} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(node.id)}
+                className={styles.deleteButton}
+                title="删除评论"
+              >
+                <Icon icon="mdi:delete" size={14} />
+              </button>
+            )}
+          </div>
         )}
       </div>
 
-      {/* 渲染内容（使用MarkdownRenderer） */}
-      <div className={styles.content}>
-        <MarkdownRenderer content={node.content} />
-      </div>
+      {/* 渲染内容（纯文本，支持@用户名高亮） */}
+      {isEditing ? (
+        <div className={styles.editForm}>
+          <textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className={styles.editTextarea}
+            placeholder="编辑评论内容..."
+            disabled={isSubmitting}
+            autoFocus
+          />
+          <div className={styles.editActions}>
+            <button
+              type="button"
+              onClick={handleSaveEdit}
+              className={styles.saveButton}
+              disabled={isSubmitting || !editContent.trim()}
+            >
+              {isSubmitting ? '保存中...' : '保存'}
+            </button>
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              className={styles.cancelButton}
+              disabled={isSubmitting}
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={styles.content}
+          dangerouslySetInnerHTML={{ __html: highlightMentions(node.content) }}
+        />
+      )}
 
       {/* 操作按钮区域 */}
       <div className={styles.actions}>
@@ -165,9 +350,29 @@ export const CommentNode = ({
         )}
       </div>
 
-      {/* 子评论区域 */}
-      {hasChildren && (
+      {/* 子评论区域（仅顶级评论显示，限制2级结构） */}
+      {level === 0 && hasChildren && (
         <div className={styles.childrenSection}>
+          {/* 子评论排序按钮（仅展开时显示） */}
+          {isExpanded && totalChildren > 1 && (
+            <div className={styles.childSortButtons}>
+              <button
+                type="button"
+                className={`${styles.childSortButton} ${childSortBy === 'newest' ? styles.active : ''}`}
+                onClick={() => handleChildSortChange('newest')}
+              >
+                最新
+              </button>
+              <button
+                type="button"
+                className={`${styles.childSortButton} ${childSortBy === 'hottest' ? styles.active : ''}`}
+                onClick={() => handleChildSortChange('hottest')}
+              >
+                最热
+              </button>
+            </div>
+          )}
+
           {/* 显示子评论 */}
           {displayChildren.length > 0 && (
             <div className={styles.children}>
@@ -175,20 +380,22 @@ export const CommentNode = ({
                 <CommentNode
                   key={child.id}
                   node={child}
-                  level={level + 1}
+                  level={1}
                   currentUserId={currentUserId}
                   pageSize={pageSize}
+                  isGodComment={sofaComment !== null && child.id === sofaComment.id}
                   onDelete={onDelete}
+                  onEdit={onEdit}
                   onLike={onLike}
                   onReply={onReply}
-                  onLoadMoreChildren={onLoadMoreChildren}
+                  onLoadMoreChildren={undefined} // 2级结构，子评论不再加载更多
                 />
               ))}
             </div>
           )}
 
-          {/* 展开/收起按钮（仅顶级评论显示） */}
-          {level === 0 && totalChildren > 1 && (
+          {/* 展开/收起按钮 */}
+          {totalChildren > 1 && (
             <div className={styles.expandSection}>
               {!isExpanded ? (
                 <button

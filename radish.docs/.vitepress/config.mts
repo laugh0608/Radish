@@ -48,7 +48,9 @@ export default defineConfig({
             { text: '快速开始', link: '/guide/getting-started' },
             { text: '认证与权限', link: '/guide/authentication' },
             { text: '配置管理', link: '/guide/configuration' },
-            { text: '密码安全', link: '/guide/password-security' }
+            { text: '日志系统', link: '/guide/logging' },
+            { text: '密码安全', link: '/guide/password-security' },
+            { text: '速率限制', link: '/guide/rate-limiting' }
           ]
         },
         {

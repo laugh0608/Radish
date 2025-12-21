@@ -171,6 +171,11 @@ public class UserControllerTest
             return Task.FromResult(0);
         }
 
+        public Task<(List<CommentVo> comments, int total)> GetChildCommentsPageAsync(long parentId, int pageIndex, int pageSize, long? userId = null)
+        {
+            return Task.FromResult((new List<CommentVo>(), 0));
+        }
+
         #region 未在当前测试中使用的方法
 
         public Task<long> AddCommentAsync(Comment comment) => throw new System.NotImplementedException();
@@ -179,7 +184,8 @@ public class UserControllerTest
         public Task UpdateReplyCountAsync(long commentId, int delta) => throw new System.NotImplementedException();
         public Task<CommentLikeResultDto> ToggleLikeAsync(long userId, long commentId) => throw new System.NotImplementedException();
         public Task<System.Collections.Generic.Dictionary<long, bool>> GetUserLikeStatusAsync(long userId, System.Collections.Generic.List<long> commentIds) => throw new System.NotImplementedException();
-        public Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null) => throw new System.NotImplementedException();
+        public Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null, string sortBy = "newest") => throw new System.NotImplementedException();
+        public Task<(bool success, string message)> UpdateCommentAsync(long commentId, string newContent, long userId, string userName) => throw new System.NotImplementedException();
         public Task<long> AddAsync(Comment entity) => throw new System.NotImplementedException();
         public Task<int> AddRangeAsync(List<Comment> entities) => throw new System.NotImplementedException();
         public Task<List<long>> AddSplitAsync(Comment entity) => throw new System.NotImplementedException();

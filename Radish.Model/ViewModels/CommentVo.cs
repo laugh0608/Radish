@@ -86,6 +86,12 @@ public class CommentVo
     public List<CommentVo>? Children { get; set; }
 
     /// <summary>
+    /// 子评论总数（用于懒加载显示，前端分页用）
+    /// </summary>
+    /// <remarks>需要在Service层动态计算并填充</remarks>
+    public int? ChildrenTotal { get; set; }
+
+    /// <summary>
     /// 当前用户是否已点赞
     /// </summary>
     /// <remarks>需要在Service层动态填充，默认为false</remarks>

@@ -12,6 +12,7 @@ using Radish.Extension.AutoMapperExtension;
 using Radish.Extension.RedisExtension;
 using Radish.Extension.SerilogExtension;
 using Radish.Extension.SqlSugarExtension;
+using Radish.Extension.RateLimitExtension;
 using Serilog;
 using SqlSugar;
 using System.Globalization;
@@ -73,6 +74,9 @@ SnowFlakeSingle.DatacenterId = snowflakeSection.GetValue<int>("DataCenterId");
 
 // Redis / 内存缓存
 builder.Services.AddCacheSetup();
+
+// 速率限制
+builder.Services.AddRateLimitSetup();
 
 // CORS
 var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
@@ -300,6 +304,9 @@ app.UseAuthentication();
 
 // 授权
 app.UseAuthorization();
+
+// 速率限制（在授权之后，路由之前）
+app.UseRateLimitSetup();
 
 // 控制器路由
 app.MapControllers();

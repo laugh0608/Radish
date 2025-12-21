@@ -2,11 +2,47 @@
   margin-top: 20px;
 }
 
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .title {
-  margin: 0 0 12px 0;
+  margin: 0;
   font-size: 15px;
   font-weight: 600;
   color: #fff;
+}
+
+.sortButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.sortButton {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid #475569;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+
+.sortButton:hover {
+  background-color: #1e293b;
+  border-color: #60a5fa;
+  color: #60a5fa;
+}
+
+.sortButton.active {
+  background-color: #60a5fa;
+  border-color: #60a5fa;
+  color: #fff;
+  font-weight: 500;
 }
 
 .loadingText,

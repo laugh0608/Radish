@@ -58,7 +58,7 @@ npm install
 
 ```typescript
 // 导入组件
-import { Button, Input, Modal, DataTable } from '@radish/ui';
+import { Button, Input, Modal, DataTable, MarkdownEditor } from '@radish/ui';
 
 // 导入 Ant Design 组件（已封装）
 import { AntButton, Table, Form, message } from '@radish/ui';
@@ -77,6 +77,39 @@ import {
   handleError,
 } from '@radish/ui';
 ```
+
+### MarkdownEditor 使用示例
+
+```typescript
+import { useState } from 'react';
+import { MarkdownEditor } from '@radish/ui';
+
+function MyComponent() {
+  const [content, setContent] = useState('');
+
+  return (
+    <MarkdownEditor
+      value={content}
+      onChange={setContent}
+      placeholder="输入内容，支持 Markdown..."
+      minHeight={200}
+      maxHeight={500}
+      showToolbar={true}
+      disabled={false}
+    />
+  );
+}
+```
+
+**Props 说明：**
+- `value: string` - 当前内容
+- `onChange: (value: string) => void` - 内容变化回调
+- `placeholder?: string` - 占位符文本
+- `minHeight?: number` - 最小高度（像素）
+- `maxHeight?: number` - 最大高度（像素）
+- `showToolbar?: boolean` - 是否显示工具栏（默认 true）
+- `disabled?: boolean` - 是否禁用（默认 false）
+- `className?: string` - 自定义样式类名
 
 ## 核心模块
 
@@ -100,11 +133,26 @@ import {
 - **Input** - 输入框组件
 - **Select** - 下拉选择组件
 - **Modal** - 模态框组件
-- **Icon** - 图标组件
+- **Icon** - 图标组件（基于 Iconify）
 - **ContextMenu** - 右键菜单组件
+- **ConfirmDialog** - 确认对话框组件
+- **UserMention** - 用户提及组件（@用户名）
+
+#### 内容编辑
+- **MarkdownEditor** - Markdown 富文本编辑器
+  - 完整的工具栏（标题、加粗、斜体、代码、列表、链接、图片等）
+  - 编辑/预览模式切换
+  - Emoji 选择器（160+ 常用表情）
+  - 快捷键支持（Ctrl+B、Ctrl+I、Ctrl+K）
+  - 可配置高度和禁用状态
+- **MarkdownRenderer** - Markdown 渲染组件
+  - 支持 GitHub Flavored Markdown
+  - 代码高亮（基于 highlight.js）
+  - 暗色主题优化
 
 #### 数据展示
 - **DataTable** - 数据表格组件（支持分页、loading、empty 状态）
+- **GlassPanel** - 毛玻璃面板组件
 
 #### Ant Design 组件封装
 `@radish/ui` 重新导出了常用的 Ant Design 组件，确保版本一致：
