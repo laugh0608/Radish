@@ -97,6 +97,21 @@ public class Attachment : RootEntityTKey<long>
     [SugarColumn(Length = 500, IsNullable = true)]
     public string? ThumbnailPath { get; set; } = string.Empty;
 
+    /// <summary>小尺寸图片路径（Small）</summary>
+    /// <remarks>可空，最大 500 字符</remarks>
+    [SugarColumn(Length = 500, IsNullable = true)]
+    public string? SmallPath { get; set; }
+
+    /// <summary>中尺寸图片路径（Medium）</summary>
+    /// <remarks>可空，最大 500 字符</remarks>
+    [SugarColumn(Length = 500, IsNullable = true)]
+    public string? MediumPath { get; set; }
+
+    /// <summary>大尺寸图片路径（Large）</summary>
+    /// <remarks>可空，最大 500 字符</remarks>
+    [SugarColumn(Length = 500, IsNullable = true)]
+    public string? LargePath { get; set; }
+
     /// <summary>访问 URL</summary>
     /// <remarks>不可为空，最大 1000 字符</remarks>
     [SugarColumn(Length = 1000, IsNullable = false)]
