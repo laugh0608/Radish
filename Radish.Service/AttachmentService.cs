@@ -68,26 +68,37 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 var hashBytes = await sha256.ComputeHashAsync(memoryStream);
                 fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
 
-                // 检查是否已存在相同文件（去重）
-                var existingAttachment = await _attachmentRepository.QueryFirstAsync(
-                    a => a.FileHash == fileHash && !a.IsDeleted
-                );
+                // 只有在没有特殊处理选项时才启用去重
+                // 如果用户指定了水印、多尺寸等处理，则不去重，允许上传新文件
+                var hasSpecialProcessing = options.AddWatermark || options.GenerateMultipleSizes;
 
-                if (existingAttachment != null)
+                if (!hasSpecialProcessing)
                 {
-                    // 验证物理文件是否存在
-                    var physicalFileExists = await _fileStorage.ExistsAsync(existingAttachment.StoragePath);
-                    if (physicalFileExists)
+                    // 检查是否已存在相同文件（去重）
+                    var existingAttachment = await _attachmentRepository.QueryFirstAsync(
+                        a => a.FileHash == fileHash && !a.IsDeleted
+                    );
+
+                    if (existingAttachment != null)
                     {
-                        Log.Information("文件已存在，返回已有记录：{FileHash}", fileHash);
-                        return Mapper.Map<AttachmentVo>(existingAttachment);
+                        // 验证物理文件是否存在
+                        var physicalFileExists = await _fileStorage.ExistsAsync(existingAttachment.StoragePath);
+                        if (physicalFileExists)
+                        {
+                            Log.Information("文件已存在，返回已有记录：{FileHash}", fileHash);
+                            return Mapper.Map<AttachmentVo>(existingAttachment);
+                        }
+                        else
+                        {
+                            // 物理文件不存在，删除旧记录并继续上传
+                            Log.Warning("文件记录存在但物理文件缺失，删除旧记录：{AttachmentId}, {FileHash}", existingAttachment.Id, fileHash);
+                            await _attachmentRepository.DeleteByIdAsync(existingAttachment.Id);
+                        }
                     }
-                    else
-                    {
-                        // 物理文件不存在，删除旧记录并继续上传
-                        Log.Warning("文件记录存在但物理文件缺失，删除旧记录：{AttachmentId}, {FileHash}", existingAttachment.Id, fileHash);
-                        await _attachmentRepository.DeleteByIdAsync(existingAttachment.Id);
-                    }
+                }
+                else
+                {
+                    Log.Information("用户指定了特殊处理选项（水印/多尺寸），跳过去重检查");
                 }
             }
 
