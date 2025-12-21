@@ -270,6 +270,18 @@ public class LocalFileStorage : IFileStorage
 
     #endregion
 
+    #region GetFullPath
+
+    /// <summary>
+    /// 获取文件的完整物理路径
+    /// </summary>
+    public string GetFullPath(string relativePath)
+    {
+        return Path.Combine(_rootPath, relativePath);
+    }
+
+    #endregion
+
     #region Private Helper Methods
 
     /// <summary>
