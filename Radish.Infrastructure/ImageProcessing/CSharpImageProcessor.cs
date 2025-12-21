@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using Radish.Common.OptionTool;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
@@ -12,6 +14,12 @@ namespace Radish.Infrastructure.ImageProcessing;
 /// </summary>
 public class CSharpImageProcessor : IImageProcessor
 {
+    private readonly ImageProcessingOptions _options;
+
+    public CSharpImageProcessor(IOptions<FileStorageOptions> fileStorageOptions)
+    {
+        _options = fileStorageOptions.Value.ImageProcessing;
+    }
     #region GenerateThumbnail
 
     /// <summary>
@@ -20,12 +28,17 @@ public class CSharpImageProcessor : IImageProcessor
     public async Task<ImageProcessResult> GenerateThumbnailAsync(
         Stream sourceStream,
         string outputPath,
-        int width = 150,
-        int height = 150,
-        int quality = 85)
+        int width = 0,
+        int height = 0,
+        int quality = 0)
     {
         try
         {
+            // 使用配置的默认值
+            if (width <= 0) width = _options.ThumbnailSize.Width;
+            if (height <= 0) height = _options.ThumbnailSize.Height;
+            if (quality <= 0) quality = _options.CompressQuality;
+
             sourceStream.Position = 0;
 
             using var image = await Image.LoadAsync(sourceStream);
@@ -146,10 +159,13 @@ public class CSharpImageProcessor : IImageProcessor
     public async Task<ImageProcessResult> CompressAsync(
         Stream sourceStream,
         string outputPath,
-        int quality = 85)
+        int quality = 0)
     {
         try
         {
+            // 使用配置的默认值
+            if (quality <= 0) quality = _options.CompressQuality;
+
             sourceStream.Position = 0;
 
             using var image = await Image.LoadAsync(sourceStream);

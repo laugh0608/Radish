@@ -250,7 +250,8 @@ app.MapStaticAssets();
 app.UseStaticFiles();
 
 // 配置上传文件的静态文件服务
-var uploadsPath = builder.Configuration.GetSection("FileStorage:RootPath").Value ?? "uploads";
+var uploadsPath = builder.Configuration.GetSection("FileStorage:Local:BasePath").Value ?? "DataBases/Uploads";
+var uploadsUrl = builder.Configuration.GetSection("FileStorage:Local:BaseUrl").Value ?? "/uploads";
 var uploadsFullPath = Path.IsPathRooted(uploadsPath)
     ? uploadsPath
     : Path.Combine(app.Environment.ContentRootPath, uploadsPath);
@@ -261,7 +262,7 @@ Directory.CreateDirectory(uploadsFullPath);
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsFullPath),
-    RequestPath = "/uploads"
+    RequestPath = uploadsUrl
 });
 
 // Configure the HTTP request pipeline.

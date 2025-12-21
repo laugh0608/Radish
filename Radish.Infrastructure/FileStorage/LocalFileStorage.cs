@@ -27,9 +27,9 @@ public class LocalFileStorage : IFileStorage
         _environment = environment;
 
         // 将相对路径转换为绝对路径
-        _rootPath = Path.IsPathRooted(_options.RootPath)
-            ? _options.RootPath
-            : Path.Combine(_environment.ContentRootPath, _options.RootPath);
+        _rootPath = Path.IsPathRooted(_options.Local.BasePath)
+            ? _options.Local.BasePath
+            : Path.Combine(_environment.ContentRootPath, _options.Local.BasePath);
 
         // 确保根目录存在
         if (!Directory.Exists(_rootPath))
@@ -53,14 +53,17 @@ public class LocalFileStorage : IFileStorage
         {
             options ??= new FileUploadOptions();
 
+            // 根据业务类型获取文件大小限制
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            var maxSize = GetMaxFileSizeByType(options.BusinessType, extension);
+
             // 验证文件大小
-            if (stream.Length > _options.MaxFileSize)
+            if (stream.Length > maxSize)
             {
-                return FileUploadResult.Fail($"文件大小超过限制（最大 {_options.MaxFileSize / 1024 / 1024}MB）");
+                return FileUploadResult.Fail($"文件大小超过限制（最大 {maxSize / 1024 / 1024}MB）");
             }
 
             // 验证文件类型
-            var extension = Path.GetExtension(fileName).ToLowerInvariant();
             if (!IsAllowedFileType(extension))
             {
                 return FileUploadResult.Fail($"不支持的文件类型：{extension}");
@@ -212,7 +215,7 @@ public class LocalFileStorage : IFileStorage
     {
         // 将 Windows 路径分隔符替换为 URL 分隔符
         var urlPath = filePath.Replace('\\', '/');
-        return $"{_options.UrlPrefix}/{urlPath}";
+        return $"{_options.Local.BaseUrl}/{urlPath}";
     }
 
     #endregion
@@ -274,10 +277,10 @@ public class LocalFileStorage : IFileStorage
     /// </summary>
     private bool IsAllowedFileType(string extension)
     {
-        return _options.AllowedImageTypes.Contains(extension) ||
-               _options.AllowedDocumentTypes.Contains(extension) ||
-               _options.AllowedVideoTypes.Contains(extension) ||
-               _options.AllowedAudioTypes.Contains(extension);
+        return _options.AllowedExtensions.Image.Contains(extension) ||
+               _options.AllowedExtensions.Document.Contains(extension) ||
+               _options.AllowedExtensions.Video.Contains(extension) ||
+               _options.AllowedExtensions.Audio.Contains(extension);
     }
 
     /// <summary>
@@ -285,7 +288,46 @@ public class LocalFileStorage : IFileStorage
     /// </summary>
     private bool IsImageFile(string extension)
     {
-        return _options.AllowedImageTypes.Contains(extension);
+        return _options.AllowedExtensions.Image.Contains(extension);
+    }
+
+    /// <summary>
+    /// 根据业务类型和文件扩展名获取文件大小限制
+    /// </summary>
+    /// <param name="businessType">业务类型（Avatar/Post/Document等）</param>
+    /// <param name="extension">文件扩展名</param>
+    /// <returns>文件大小限制（字节）</returns>
+    private long GetMaxFileSizeByType(string businessType, string extension)
+    {
+        // 如果明确指定了 Avatar，使用头像限制
+        if (businessType?.Equals("Avatar", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            return _options.MaxFileSize.Avatar;
+        }
+
+        // 根据文件扩展名判断文件类型
+        if (_options.AllowedExtensions.Image.Contains(extension))
+        {
+            return _options.MaxFileSize.Image;
+        }
+
+        if (_options.AllowedExtensions.Document.Contains(extension))
+        {
+            return _options.MaxFileSize.Document;
+        }
+
+        if (_options.AllowedExtensions.Video.Contains(extension))
+        {
+            return _options.MaxFileSize.Video;
+        }
+
+        if (_options.AllowedExtensions.Audio.Contains(extension))
+        {
+            return _options.MaxFileSize.Audio;
+        }
+
+        // 默认使用文档限制（10MB）
+        return _options.MaxFileSize.Document;
     }
 
     /// <summary>
