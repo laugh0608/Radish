@@ -22,6 +22,9 @@ export const PublishPostForm = ({
 }: PublishPostFormProps) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [addWatermark, setAddWatermark] = useState(false);
+  const [watermarkText, setWatermarkText] = useState('Radish');
+  const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
   const { t } = useTranslation();
 
   // 组件加载时恢复草稿
@@ -83,6 +86,9 @@ export const PublishPostForm = ({
         file,
         businessType: 'Post',
         generateThumbnail: true,
+        generateMultipleSizes,
+        addWatermark,
+        watermarkText,
         removeExif: true
       }, t);
 
@@ -123,6 +129,40 @@ export const PublishPostForm = ({
         className={styles.input}
         disabled={!isAuthenticated || disabled}
       />
+
+      {/* 图片上传选项 */}
+      {isAuthenticated && (
+        <div className={styles.uploadOptions}>
+          <label className={styles.optionLabel}>
+            <input
+              type="checkbox"
+              checked={addWatermark}
+              onChange={e => setAddWatermark(e.target.checked)}
+              disabled={disabled}
+            />
+            <span>为上传的图片添加水印</span>
+          </label>
+          {addWatermark && (
+            <input
+              type="text"
+              placeholder="水印文本"
+              value={watermarkText}
+              onChange={e => setWatermarkText(e.target.value)}
+              className={styles.watermarkInput}
+              disabled={disabled}
+            />
+          )}
+          <label className={styles.optionLabel}>
+            <input
+              type="checkbox"
+              checked={generateMultipleSizes}
+              onChange={e => setGenerateMultipleSizes(e.target.checked)}
+              disabled={disabled}
+            />
+            <span>生成多尺寸图片（Small/Medium/Large）</span>
+          </label>
+        </div>
+      )}
 
       <MarkdownEditor
         value={content}

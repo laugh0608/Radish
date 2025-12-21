@@ -64,6 +64,62 @@
   cursor: not-allowed;
 }
 
+.uploadOptions {
+  margin-bottom: 12px;
+  padding: 12px;
+  background-color: #1f2937;
+  border: 1px solid #444;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.optionLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #ccc;
+  cursor: pointer;
+  user-select: none;
+}
+
+.optionLabel:hover {
+  color: #fff;
+}
+
+.optionLabel input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.watermarkInput {
+  margin-left: 24px;
+  padding: 6px 10px;
+  background-color: #111827;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.watermarkInput:focus {
+  border-color: #2d6cdf;
+}
+
+.watermarkInput::placeholder {
+  color: #666;
+}
+
+.watermarkInput:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .textarea {
   width: 100%;
   margin-bottom: 8px;
