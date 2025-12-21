@@ -422,7 +422,16 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         try
         {
             var fullPath = _fileStorage.GetFullPath(filePath);
-            var tempPath = fullPath + ".tmp";
+
+            // 使用 DataBases/Temp 目录存放临时文件
+            var tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DataBases", "Temp");
+            if (!Directory.Exists(tempDir))
+            {
+                Directory.CreateDirectory(tempDir);
+            }
+
+            var tempFileName = $"{Path.GetFileNameWithoutExtension(fullPath)}_{Guid.NewGuid():N}{Path.GetExtension(fullPath)}";
+            var tempPath = Path.Combine(tempDir, tempFileName);
 
             var watermarkOptions = new WatermarkOptions
             {
@@ -470,7 +479,16 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         try
         {
             var fullPath = _fileStorage.GetFullPath(filePath);
-            var tempPath = fullPath + ".tmp";
+
+            // 使用 DataBases/Temp 目录存放临时文件
+            var tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DataBases", "Temp");
+            if (!Directory.Exists(tempDir))
+            {
+                Directory.CreateDirectory(tempDir);
+            }
+
+            var tempFileName = $"{Path.GetFileNameWithoutExtension(fullPath)}_{Guid.NewGuid():N}{Path.GetExtension(fullPath)}";
+            var tempPath = Path.Combine(tempDir, tempFileName);
 
             await using (var sourceStream = File.OpenRead(fullPath))
             {
@@ -481,6 +499,14 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                     File.Delete(fullPath);
                     File.Move(tempPath, fullPath);
                     Log.Information("EXIF 信息已移除：{FilePath}", filePath);
+                }
+                else
+                {
+                    // 清理临时文件
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
                 }
             }
         }
