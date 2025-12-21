@@ -90,7 +90,10 @@ public class LocalFileStorage : IFileStorage
                 storedName
             );
 
-            var fullPath = Path.Combine(_rootPath, relativePath);
+            // 标准化路径分隔符为正斜杠（URL 格式）
+            relativePath = relativePath.Replace('\\', '/');
+
+            var fullPath = Path.Combine(_rootPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
 
             // 确保目录存在
             var directory = Path.GetDirectoryName(fullPath);
