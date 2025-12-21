@@ -40,6 +40,9 @@ public class AttachmentController : ControllerBase
     /// <param name="file">图片文件</param>
     /// <param name="businessType">业务类型（Post/Comment/Avatar 等）</param>
     /// <param name="generateThumbnail">是否生成缩略图（默认 true）</param>
+    /// <param name="generateMultipleSizes">是否生成多尺寸（默认 false）</param>
+    /// <param name="addWatermark">是否添加水印（默认 false）</param>
+    /// <param name="watermarkText">水印文本（默认 "Radish"）</param>
     /// <param name="removeExif">是否移除 EXIF 信息（默认 true）</param>
     /// <returns>上传结果（包含文件 URL）</returns>
     [HttpPost]
@@ -50,6 +53,9 @@ public class AttachmentController : ControllerBase
         [FromForm] IFormFile file,
         [FromForm] string businessType = "General",
         [FromForm] bool generateThumbnail = true,
+        [FromForm] bool generateMultipleSizes = false,
+        [FromForm] bool addWatermark = false,
+        [FromForm] string? watermarkText = null,
         [FromForm] bool removeExif = true)
     {
         if (file == null || file.Length == 0)
@@ -80,8 +86,9 @@ public class AttachmentController : ControllerBase
             OriginalFileName = file.FileName,
             BusinessType = businessType,
             GenerateThumbnail = generateThumbnail,
-            GenerateMultipleSizes = false,
-            AddWatermark = false,
+            GenerateMultipleSizes = generateMultipleSizes,
+            AddWatermark = addWatermark,
+            WatermarkText = watermarkText ?? "Radish",
             CalculateHash = true,
             RemoveExif = removeExif
         };
