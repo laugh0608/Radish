@@ -36,17 +36,18 @@ public class CommentController : ControllerBase
     /// 获取帖子的评论树（带点赞状态）
     /// </summary>
     /// <param name="postId">帖子 ID</param>
+    /// <param name="sortBy">排序方式：newest=最新，hottest=最热（默认：newest）</param>
     /// <returns>评论树（树形结构，包含当前用户的点赞状态）</returns>
     [HttpGet]
     [AllowAnonymous]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetCommentTree(long postId)
+    public async Task<MessageModel> GetCommentTree(long postId, string sortBy = "newest")
     {
         // 获取当前用户ID（如果已登录）
         long? userId = _httpContextUser.UserId > 0 ? _httpContextUser.UserId : null;
 
         // 获取带点赞状态的评论树
-        var comments = await _commentService.GetCommentTreeWithLikeStatusAsync(postId, userId);
+        var comments = await _commentService.GetCommentTreeWithLikeStatusAsync(postId, userId, sortBy);
 
         return new MessageModel
         {
@@ -285,6 +286,50 @@ public class CommentController : ControllerBase
             MessageInfo = "删除成功"
         };
     }
+
+    /// <summary>
+    /// 更新评论内容
+    /// </summary>
+    /// <param name="request">更新请求</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 只有作者本人可以编辑评论，且仅限发布后5分钟内。
+    /// 编辑后会显示"已编辑"标记。
+    /// </remarks>
+    [HttpPut]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    public async Task<MessageModel> Update([FromBody] UpdateCommentRequest request)
+    {
+        var (success, message) = await _commentService.UpdateCommentAsync(
+            request.CommentId,
+            request.Content,
+            _httpContextUser.UserId,
+            _httpContextUser.UserName);
+
+        if (!success)
+        {
+            // 根据错误信息判断状态码
+            var statusCode = message.Contains("无法编辑") || message.Contains("只有作者")
+                ? HttpStatusCodeEnum.Forbidden
+                : HttpStatusCodeEnum.BadRequest;
+
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)statusCode,
+                MessageInfo = message
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = message
+        };
+    }
 }
 
 /// <summary>
@@ -306,4 +351,16 @@ public class CreateCommentRequest
 
     /// <summary>被回复用户名称</summary>
     public string? ReplyToUserName { get; set; }
+}
+
+/// <summary>
+/// 更新评论请求对象
+/// </summary>
+public class UpdateCommentRequest
+{
+    /// <summary>评论 ID</summary>
+    public long CommentId { get; set; }
+
+    /// <summary>新的评论内容</summary>
+    public string Content { get; set; } = string.Empty;
 }

@@ -127,8 +127,8 @@ export async function getPostById(postId: number, t: TFunction): Promise<PostDet
 /**
  * 获取帖子的评论树（自动包含当前用户的点赞状态）
  */
-export async function getCommentTree(postId: number, t: TFunction): Promise<CommentNode[]> {
-  const url = `${getApiBaseUrl()}/api/v1/Comment/GetCommentTree?postId=${postId}`;
+export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest' | 'default', t: TFunction): Promise<CommentNode[]> {
+  const url = `${getApiBaseUrl()}/api/v1/Comment/GetCommentTree?postId=${postId}&sortBy=${sortBy}`;
   // 如果用户已登录，自动发送token以获取点赞状态
   const hasToken = typeof window !== 'undefined' && window.localStorage.getItem('access_token');
   const response = await apiFetch(url, { withAuth: !!hasToken });
@@ -267,6 +267,34 @@ export async function deletePost(postId: number, t: TFunction): Promise<void> {
 
   if (!parsed.ok) {
     throw new Error(parsed.message || '删除帖子失败');
+  }
+}
+
+/**
+ * 编辑评论
+ * @param request 编辑评论请求参数
+ */
+export async function updateComment(
+  request: { commentId: number; content: string },
+  t: TFunction
+): Promise<void> {
+  const url = `${getApiBaseUrl()}/api/v1/Comment/Update`;
+  const response = await apiFetch(url, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      commentId: request.commentId,
+      content: request.content
+    }),
+    withAuth: true
+  });
+  const json = await response.json() as ApiResponse<null>;
+  const parsed = parseApiResponse<null>(json, t);
+
+  if (!parsed.ok) {
+    throw new Error(parsed.message || '编辑评论失败');
   }
 }
 

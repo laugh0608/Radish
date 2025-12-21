@@ -1,0 +1,407 @@
+###############################################################################
+# 速率限制中间件测试
+# 测试 ASP.NET Core Rate Limiting 的 4 种限流算法
+###############################################################################
+#
+# 测试前准备：
+# 1. 确保 Radish.Api 和 Radish.Auth 服务正在运行
+# 2. 确保 appsettings.json 中 RateLimit.Enable = true
+# 3. 建议使用 REST Client 扩展的 "Send Request" 功能
+# 4. 某些测试需要快速连续发送请求，可以使用脚本或工具辅助
+#
+# 配置参考（appsettings.json）：
+# - Global: 每个 IP 每分钟 200 个请求（Fixed Window）
+# - Login: 每个 IP 15 分钟 10 次登录尝试（Sliding Window）
+# - Sensitive: Token Bucket，20 个令牌，每 60 秒补充 20 个
+# - Concurrency: 每个 IP 最多 100 个并发请求
+#
+###############################################################################
+
+@Gateway_HostAddress = https://localhost:5000
+@Api_HostAddress = http://localhost:5100
+@Auth_HostAddress = http://localhost:5200
+
+# 测试用的 Access Token（需要先通过 OIDC 流程获取）
+@Access_Token = eyJhbGciOiJSUzI1NiIsImtpZCI6IjgzMTVEQkQ1QTE1NkZDNUJGQUU4OEQ0QjA1RDAwM0VFNTAzQ0FGNTQiLCJ4NXQiOiJneFhiMWFGV19GdjY2STFMQmRBRDdsQThyMVEiLCJ0eXAiOiJhdCtqd3QifQ.eyJpc3MiOiJodHRwczovL2xvY2FsaG9zdDo1MDAwLyIsImV4cCI6MTc2NTU1MTE3MCwiaWF0IjoxNzY1NTQ3NTcwLCJhdWQiOiJyYWRpc2gtYXBpIiwic2NvcGUiOiJyYWRpc2gtYXBpIiwianRpIjoiY2QwNmZlYzAtZTdlNC00NWVkLWE1YjMtZTYyMDQ0YWFhNzE0IiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZWlkZW50aWZpZXIiOiIyMDAwMCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJzeXN0ZW0iLCJzdWIiOiIyMDAwMCIsIm5hbWUiOiJzeXN0ZW0iLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzeXN0ZW0iLCJ0ZW5hbnRfaWQiOiIzMDAwMCIsImdpdmVuX25hbWUiOiJTeXN0ZW0gVXNlciIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IlN5c3RlbSIsInJvbGUiOiJTeXN0ZW0iLCJvaV9wcnN0IjoicmFkaXNoLWNsaWVudCIsIm9pX2F1X2lkIjoiOGNiYTBmNGMtNzBjOC00N2FlLWFjYjQtNjMzMzY3ZWJmMDZkIiwiY2xpZW50X2lkIjoicmFkaXNoLWNsaWVudCIsIm9pX3Rrbl9pZCI6ImVjYjAyYmFhLTgyM2QtNGM1NS05ZmM5LThhYzVkZjVjZjk4OSJ9.OB_xfuHLxR5ZLUp3VrL78GNz-67A9N9dDrC0NQWBngQlK_6jMNVQL3lNnk-uldY6Si_4V5ZZ34GYcrh88oGt5ZNQ4e0iIgu6FTPcRd1BEo2VdF-ebgPyNSAlXoWdvZLpNR3l2kwXjlUQR_CHe450KC0FPfRyyAHCUSrnQ9LUIaquOTFZSYlSD2ZHtxbG_lFfGi0sex_dKLc4Yn2J619o1zvPq3kC_GkXNvmkQTsWfPdh1VpyP3SrvT66r8I3w3OKciAqYXWu_58it0w-2nWL-UM9YhBqp4Hy7v8hMD-VIf4WPVnpEEEot5U4G0NzkijRzsrlZB59DFyBGCzB8qUB_A
+
+###############################################################################
+# 1. 全局限流测试（Fixed Window 算法）
+# 配置：每个 IP 每分钟最多 200 个请求
+# 预期：第 201 个请求返回 429 Too Many Requests
+###############################################################################
+
+### 1.1 正常请求（应该成功）
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+### 1.2 快速连续请求测试
+# 说明：需要使用脚本或工具快速发送 201 个请求
+# 可以使用以下 PowerShell 脚本测试：
+#
+# for ($i = 1; $i -le 201; $i++) {
+#     $response = Invoke-WebRequest -Uri "http://localhost:5100/health" -Method GET
+#     Write-Host "Request $i : $($response.StatusCode)"
+#     if ($response.StatusCode -eq 429) {
+#         Write-Host "Rate limit triggered at request $i"
+#         break
+#     }
+# }
+#
+# 或使用 bash 脚本：
+# for i in {1..201}; do
+#     echo "Request $i"
+#     curl -s -o /dev/null -w "%{http_code}\n" http://localhost:5100/health
+# done
+
+### 1.3 验证 429 响应格式
+# 手动触发限流后，检查响应格式
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+# 预期响应（触发限流时）：
+# HTTP/1.1 429 Too Many Requests
+# Retry-After: 60
+# {
+#   "status": 429,
+#   "message": "请求过于频繁，请稍后再试",
+#   "success": false,
+#   "retryAfter": 60
+# }
+
+###############################################################################
+# 2. 登录限流测试（Sliding Window 算法）
+# 配置：每个 IP 15 分钟最多 10 次登录尝试
+# 预期：第 11 次登录请求返回 429
+###############################################################################
+
+### 2.1 正常登录请求（应该成功或返回登录错误）
+POST {{Auth_HostAddress}}/Account/Login
+Content-Type: application/x-www-form-urlencoded
+
+username=testuser&password=wrongpassword&__RequestVerificationToken=test
+
+### 2.2 快速连续登录测试
+# 说明：需要快速发送 11 次登录请求
+# PowerShell 脚本示例：
+#
+# $body = @{
+#     username = "testuser"
+#     password = "wrongpassword"
+# }
+# for ($i = 1; $i -le 11; $i++) {
+#     try {
+#         $response = Invoke-WebRequest -Uri "http://localhost:5200/Account/Login" `
+#             -Method POST -Body $body -ContentType "application/x-www-form-urlencoded"
+#         Write-Host "Login attempt $i : $($response.StatusCode)"
+#     } catch {
+#         Write-Host "Login attempt $i : $($_.Exception.Response.StatusCode.value__)"
+#         if ($_.Exception.Response.StatusCode.value__ -eq 429) {
+#             Write-Host "Login rate limit triggered at attempt $i"
+#             break
+#         }
+#     }
+# }
+
+### 2.3 验证登录限流响应
+POST {{Auth_HostAddress}}/Account/Login
+Content-Type: application/x-www-form-urlencoded
+
+username=testuser&password=wrongpassword
+
+###############################################################################
+# 3. 敏感操作限流测试（Token Bucket 算法）
+# 配置：令牌桶容量 20，每 60 秒补充 20 个令牌
+# 预期：快速消耗 20 个令牌后，后续请求返回 429
+###############################################################################
+
+### 3.1 创建测试用的敏感操作端点
+# 说明：需要在控制器上添加 [EnableRateLimiting("sensitive")] 特性
+# 示例：删除客户端、删除用户、权限变更等操作
+
+### 3.2 测试敏感操作限流（示例：删除客户端）
+# 注意：这个端点需要先实现并添加 [EnableRateLimiting("sensitive")] 特性
+DELETE {{Api_HostAddress}}/api/v1/Client/test-client-id
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 3.3 快速连续敏感操作测试
+# PowerShell 脚本示例：
+#
+# $headers = @{
+#     "Authorization" = "Bearer YOUR_TOKEN"
+#     "Accept" = "application/json"
+# }
+# for ($i = 1; $i -le 21; $i++) {
+#     try {
+#         $response = Invoke-WebRequest -Uri "http://localhost:5100/api/v1/Client/test-$i" `
+#             -Method DELETE -Headers $headers
+#         Write-Host "Sensitive operation $i : $($response.StatusCode)"
+#     } catch {
+#         Write-Host "Sensitive operation $i : $($_.Exception.Response.StatusCode.value__)"
+#         if ($_.Exception.Response.StatusCode.value__ -eq 429) {
+#             Write-Host "Sensitive operation rate limit triggered at attempt $i"
+#             break
+#         }
+#     }
+# }
+
+###############################################################################
+# 4. 并发限流测试（Concurrency Limiter）
+# 配置：每个 IP 最多 100 个并发请求，队列限制 50
+# 预期：超过 150 个并发请求时返回 429
+###############################################################################
+
+### 4.1 并发请求测试
+# 说明：需要使用并发工具（如 Apache Bench、wrk、hey）
+#
+# 使用 Apache Bench 测试：
+# ab -n 200 -c 150 http://localhost:5100/health
+#
+# 使用 PowerShell 并发测试：
+# $jobs = @()
+# for ($i = 1; $i -le 150; $i++) {
+#     $jobs += Start-Job -ScriptBlock {
+#         Invoke-WebRequest -Uri "http://localhost:5100/health" -Method GET
+#     }
+# }
+# $jobs | Wait-Job | Receive-Job
+
+### 4.2 验证并发限流响应
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+###############################################################################
+# 5. 黑名单测试
+# 配置：需要在 appsettings.Local.json 中启用并配置黑名单
+# 预期：黑名单中的 IP 返回 403 Forbidden
+###############################################################################
+
+### 5.1 配置黑名单
+# 在 appsettings.Local.json 中添加：
+# {
+#   "RateLimit": {
+#     "Blacklist": {
+#       "Enable": true,
+#       "IpAddresses": ["127.0.0.1", "::1"]
+#     }
+#   }
+# }
+
+### 5.2 测试黑名单（配置后重启服务）
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+# 预期响应（黑名单 IP）：
+# HTTP/1.1 403 Forbidden
+# {
+#   "status": 403,
+#   "message": "您的 IP 地址已被封禁",
+#   "success": false
+# }
+
+### 5.3 测试 CIDR 格式黑名单
+# 配置示例：
+# "IpAddresses": ["192.168.1.0/24", "10.0.0.0/8"]
+
+###############################################################################
+# 6. 白名单测试
+# 配置：需要在 appsettings.Local.json 中启用并配置白名单
+# 预期：白名单中的 IP 不受限流限制
+###############################################################################
+
+### 6.1 配置白名单
+# 在 appsettings.Local.json 中添加：
+# {
+#   "RateLimit": {
+#     "Whitelist": {
+#       "Enable": true,
+#       "IpAddresses": ["127.0.0.1", "::1"]
+#     }
+#   }
+# }
+
+### 6.2 测试白名单（配置后重启服务）
+# 白名单 IP 应该可以无限制访问
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+### 6.3 快速连续请求测试（白名单 IP 不应触发限流）
+# 使用脚本快速发送 300 个请求，应该全部成功
+
+###############################################################################
+# 7. 自动封禁测试
+# 配置：触发限流 N 次后自动加入黑名单
+# 预期：触发限流指定次数后，IP 被自动封禁
+###############################################################################
+
+### 7.1 配置自动封禁
+# 在 appsettings.Local.json 中添加：
+# {
+#   "RateLimit": {
+#     "Blacklist": {
+#       "Enable": true,
+#       "AutoBlockAfterRejections": 5,
+#       "AutoBlockDurationSeconds": 3600
+#     }
+#   }
+# }
+
+### 7.2 测试自动封禁
+# 1. 快速发送请求触发限流 5 次
+# 2. 验证 IP 是否被自动封禁（返回 403）
+# 3. 等待 3600 秒后验证是否自动解封
+
+###############################################################################
+# 8. 禁用限流测试
+# 配置：端点添加 [DisableRateLimiting] 特性
+# 预期：该端点不受限流限制
+###############################################################################
+
+### 8.1 测试禁用限流的端点（如健康检查）
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+# 说明：如果 /health 端点添加了 [DisableRateLimiting] 特性，
+# 则无论发送多少请求都不会触发限流
+
+###############################################################################
+# 9. 反向代理场景测试
+# 配置：通过 Gateway 访问，验证 X-Forwarded-For 识别
+# 预期：正确识别真实 IP 并应用限流
+###############################################################################
+
+### 9.1 通过 Gateway 访问 API
+GET {{Gateway_HostAddress}}/api/health
+Accept: application/json
+
+### 9.2 验证 X-Forwarded-For 头
+GET {{Gateway_HostAddress}}/api/health
+Accept: application/json
+X-Forwarded-For: 192.168.1.100
+
+### 9.3 验证 X-Real-IP 头
+GET {{Gateway_HostAddress}}/api/health
+Accept: application/json
+X-Real-IP: 192.168.1.100
+
+###############################################################################
+# 10. 限流日志验证
+# 配置：RateLimit.EnableLogging = true
+# 预期：触发限流时在日志中记录
+###############################################################################
+
+### 10.1 触发限流并检查日志
+# 1. 触发任意限流策略
+# 2. 检查 Log/Radish.Api/Log.txt 或 Log/Radish.Auth/Log.txt
+# 3. 验证日志中包含限流信息（IP、端点、时间）
+
+###############################################################################
+# 11. 性能测试
+# 测试限流中间件对性能的影响
+###############################################################################
+
+### 11.1 基准测试（无限流）
+# 1. 临时禁用限流（RateLimit.Enable = false）
+# 2. 使用 Apache Bench 测试：ab -n 10000 -c 100 http://localhost:5100/health
+# 3. 记录 RPS（每秒请求数）
+
+### 11.2 限流性能测试
+# 1. 启用限流（RateLimit.Enable = true）
+# 2. 使用 Apache Bench 测试：ab -n 10000 -c 100 http://localhost:5100/health
+# 3. 记录 RPS 并与基准测试对比
+
+###############################################################################
+# 12. 边界条件测试
+###############################################################################
+
+### 12.1 测试时间窗口边界
+# 在时间窗口即将结束时发送请求，验证计数器重置
+
+### 12.2 测试令牌补充
+# Token Bucket：消耗令牌后等待 60 秒，验证令牌是否补充
+
+### 12.3 测试滑动窗口
+# Sliding Window：在 15 分钟内分散发送 10 次登录请求，验证滑动窗口逻辑
+
+###############################################################################
+# 测试脚本示例
+###############################################################################
+
+# PowerShell 完整测试脚本：
+#
+# # 1. 全局限流测试
+# Write-Host "=== Testing Global Rate Limit ==="
+# for ($i = 1; $i -le 201; $i++) {
+#     try {
+#         $response = Invoke-WebRequest -Uri "http://localhost:5100/health" -Method GET
+#         Write-Host "Request $i : $($response.StatusCode)"
+#     } catch {
+#         $statusCode = $_.Exception.Response.StatusCode.value__
+#         Write-Host "Request $i : $statusCode"
+#         if ($statusCode -eq 429) {
+#             Write-Host "✓ Global rate limit triggered at request $i"
+#             break
+#         }
+#     }
+# }
+#
+# # 等待时间窗口重置
+# Write-Host "Waiting 60 seconds for window reset..."
+# Start-Sleep -Seconds 60
+#
+# # 2. 登录限流测试
+# Write-Host "`n=== Testing Login Rate Limit ==="
+# $loginBody = @{
+#     username = "testuser"
+#     password = "wrongpassword"
+# }
+# for ($i = 1; $i -le 11; $i++) {
+#     try {
+#         $response = Invoke-WebRequest -Uri "http://localhost:5200/Account/Login" `
+#             -Method POST -Body $loginBody -ContentType "application/x-www-form-urlencoded"
+#         Write-Host "Login attempt $i : $($response.StatusCode)"
+#     } catch {
+#         $statusCode = $_.Exception.Response.StatusCode.value__
+#         Write-Host "Login attempt $i : $statusCode"
+#         if ($statusCode -eq 429) {
+#             Write-Host "✓ Login rate limit triggered at attempt $i"
+#             break
+#         }
+#     }
+# }
+#
+# Write-Host "`n=== Rate Limit Tests Completed ==="
+
+# Bash 完整测试脚本：
+#
+# #!/bin/bash
+#
+# echo "=== Testing Global Rate Limit ==="
+# for i in {1..201}; do
+#     status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:5100/health)
+#     echo "Request $i : $status"
+#     if [ "$status" -eq 429 ]; then
+#         echo "✓ Global rate limit triggered at request $i"
+#         break
+#     fi
+# done
+#
+# echo "Waiting 60 seconds for window reset..."
+# sleep 60
+#
+# echo ""
+# echo "=== Testing Login Rate Limit ==="
+# for i in {1..11}; do
+#     status=$(curl -s -o /dev/null -w "%{http_code}" \
+#         -X POST http://localhost:5200/Account/Login \
+#         -H "Content-Type: application/x-www-form-urlencoded" \
+#         -d "username=testuser&password=wrongpassword")
+#     echo "Login attempt $i : $status"
+#     if [ "$status" -eq 429 ]; then
+#         echo "✓ Login rate limit triggered at attempt $i"
+#         break
+#     fi
+# done
+#
+# echo ""
+# echo "=== Rate Limit Tests Completed ==="

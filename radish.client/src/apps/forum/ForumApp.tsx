@@ -13,6 +13,7 @@ import {
   likePost,
   toggleCommentLike,
   updatePost,
+  updateComment,
   deletePost,
   deleteComment
 } from '@/api/forum';
@@ -49,6 +50,7 @@ export const ForumApp = () => {
 
   // 排序状态
   const [sortBy, setSortBy] = useState<'newest' | 'hottest' | 'essence'>('newest');
+  const [commentSortBy, setCommentSortBy] = useState<'newest' | 'hottest' | null>(null); // null表示默认排序(时间升序)
 
   // 搜索状态
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -159,7 +161,8 @@ export const ForumApp = () => {
     setLoadingComments(true);
     setError(null);
     try {
-      const data = await getCommentTree(postId, t);
+      const sortParam = commentSortBy || 'default'; // null时传'default'
+      const data = await getCommentTree(postId, sortParam, t);
       setComments(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -169,7 +172,34 @@ export const ForumApp = () => {
     }
   }
 
+  function handleCommentSortChange(newSortBy: 'newest' | 'hottest') {
+    setCommentSortBy(newSortBy);
+    if (selectedPost) {
+      // 直接使用新的排序值，而不是依赖状态
+      const sortParam = newSortBy;
+      setLoadingComments(true);
+      setError(null);
+      getCommentTree(selectedPost.id, sortParam, t)
+        .then(data => {
+          setComments(data);
+        })
+        .catch(err => {
+          const message = err instanceof Error ? err.message : String(err);
+          setError(message);
+        })
+        .finally(() => {
+          setLoadingComments(false);
+        });
+    }
+  }
+
+  // 重置评论排序为默认
+  function resetCommentSort() {
+    setCommentSortBy(null);
+  }
+
   async function handleSelectPost(postId: number) {
+    resetCommentSort(); // 切换帖子时重置评论排序
     await loadPostDetail(postId);
     await loadComments(postId);
   }
@@ -396,6 +426,31 @@ export const ForumApp = () => {
     setPostToDelete(null);
   }
 
+  // 编辑评论
+  async function handleEditComment(commentId: number, newContent: string): Promise<void> {
+    if (!selectedPost) {
+      setError('请先选择帖子');
+      throw new Error('未选择帖子');
+    }
+
+    setError(null);
+    try {
+      await updateComment(
+        {
+          commentId,
+          content: newContent
+        },
+        t
+      );
+      // 编辑成功后重新加载评论列表
+      await loadComments(selectedPost.id);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      throw err;
+    }
+  }
+
   // 删除评论
   function handleDeleteComment(commentId: number) {
     setCommentToDelete(commentId);
@@ -475,8 +530,11 @@ export const ForumApp = () => {
           loading={loadingComments}
           hasPost={selectedPost !== null}
           currentUserId={userId ?? 0}
-          pageSize={10}
+          pageSize={5}
+          sortBy={commentSortBy}
+          onSortChange={handleCommentSortChange}
           onDeleteComment={handleDeleteComment}
+          onEditComment={handleEditComment}
           onLikeComment={handleCommentLike}
           onReplyComment={handleReplyComment}
           onLoadMoreChildren={handleLoadMoreChildren}

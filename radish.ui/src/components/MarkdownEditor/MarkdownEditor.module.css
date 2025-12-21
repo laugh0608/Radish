@@ -1,0 +1,201 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  background-color: #0f172a;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #1e293b;
+  border-bottom: 1px solid #475569;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.toolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbarButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toolbarButton:hover:not(:disabled) {
+  background-color: #334155;
+  color: #e2e8f0;
+}
+
+.toolbarButton:active:not(:disabled) {
+  background-color: #475569;
+}
+
+.toolbarButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.toolbarButton.active {
+  background-color: #60a5fa;
+  color: #fff;
+}
+
+.toolbarButton.active:hover:not(:disabled) {
+  background-color: #3b82f6;
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 24px;
+  background-color: #475569;
+  margin: 0 4px;
+}
+
+.toolbarSpacer {
+  flex: 1;
+}
+
+/* Emoji 选择器 */
+.emojiPickerWrapper {
+  position: relative;
+}
+
+.emojiPicker {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  background-color: #1e293b;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  width: 320px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.emojiGrid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+}
+
+.emojiButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 20px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.emojiButton:hover {
+  background-color: #334155;
+}
+
+.emojiButton:active {
+  background-color: #475569;
+  transform: scale(0.95);
+}
+
+/* 内容区域 */
+.content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.textarea {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  max-height: inherit;
+  padding: 16px;
+  background-color: transparent;
+  border: none;
+  color: #e2e8f0;
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: inherit;
+  resize: vertical;
+  outline: none;
+}
+
+.textarea::placeholder {
+  color: #64748b;
+}
+
+.textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* 预览区域 */
+.preview {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  max-height: inherit;
+  padding: 16px;
+  overflow-y: auto;
+  text-align: left;
+}
+
+.previewEmpty {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
+}
+
+/* 滚动条样式 */
+.textarea::-webkit-scrollbar,
+.preview::-webkit-scrollbar,
+.emojiPicker::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.textarea::-webkit-scrollbar-track,
+.preview::-webkit-scrollbar-track,
+.emojiPicker::-webkit-scrollbar-track {
+  background-color: #1e293b;
+}
+
+.textarea::-webkit-scrollbar-thumb,
+.preview::-webkit-scrollbar-thumb,
+.emojiPicker::-webkit-scrollbar-thumb {
+  background-color: #475569;
+  border-radius: 4px;
+}
+
+.textarea::-webkit-scrollbar-thumb:hover,
+.preview::-webkit-scrollbar-thumb:hover,
+.emojiPicker::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b;
+}
