@@ -1,0 +1,454 @@
+using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Radish.Common.HttpContextTool;
+using Radish.IService;
+using Radish.Model;
+using Radish.Model.DTOs;
+using Radish.Shared;
+using Radish.Shared.CustomEnum;
+
+namespace Radish.Api.Controllers;
+
+/// <summary>
+/// 附件管理控制器
+/// </summary>
+/// <remarks>
+/// 提供文件上传、下载、删除等接口
+/// </remarks>
+[ApiController]
+[ApiVersion(1)]
+[Route("api/v{version:apiVersion}/[controller]/[action]")]
+[Produces("application/json")]
+[Tags("附件管理")]
+public class AttachmentController : ControllerBase
+{
+    private readonly IAttachmentService _attachmentService;
+    private readonly IHttpContextUser _httpContextUser;
+
+    public AttachmentController(IAttachmentService attachmentService, IHttpContextUser httpContextUser)
+    {
+        _attachmentService = attachmentService;
+        _httpContextUser = httpContextUser;
+    }
+
+    #region Upload
+
+    /// <summary>
+    /// 上传图片
+    /// </summary>
+    /// <param name="file">图片文件</param>
+    /// <param name="businessType">业务类型（Post/Comment/Avatar 等）</param>
+    /// <param name="generateThumbnail">是否生成缩略图（默认 true）</param>
+    /// <param name="removeExif">是否移除 EXIF 信息（默认 true）</param>
+    /// <returns>上传结果（包含文件 URL）</returns>
+    [HttpPost]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    public async Task<MessageModel> UploadImage(
+        [FromForm] IFormFile file,
+        [FromForm] string businessType = "General",
+        [FromForm] bool generateThumbnail = true,
+        [FromForm] bool removeExif = true)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "文件不能为空"
+            };
+        }
+
+        // 验证是否为图片
+        var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!imageExtensions.Contains(extension))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "仅支持图片格式（jpg/jpeg/png/gif/bmp/webp/svg）"
+            };
+        }
+
+        var options = new FileUploadOptions
+        {
+            OriginalFileName = file.FileName,
+            BusinessType = businessType,
+            GenerateThumbnail = generateThumbnail,
+            GenerateMultipleSizes = false,
+            AddWatermark = false,
+            CalculateHash = true,
+            RemoveExif = removeExif
+        };
+
+        var userId = _httpContextUser.UserId;
+        var userName = _httpContextUser.UserName;
+
+        var attachment = await _attachmentService.UploadFileAsync(file, options, userId, userName);
+
+        if (attachment == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
+                MessageInfo = "文件上传失败"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "上传成功",
+            ResponseData = attachment
+        };
+    }
+
+    /// <summary>
+    /// 上传文档
+    /// </summary>
+    /// <param name="file">文档文件</param>
+    /// <param name="businessType">业务类型（Document 等）</param>
+    /// <returns>上传结果（包含文件 URL）</returns>
+    [HttpPost]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    public async Task<MessageModel> UploadDocument(
+        [FromForm] IFormFile file,
+        [FromForm] string businessType = "Document")
+    {
+        if (file == null || file.Length == 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "文件不能为空"
+            };
+        }
+
+        // 验证是否为文档
+        var documentExtensions = new[] { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".md" };
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!documentExtensions.Contains(extension))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "仅支持文档格式（pdf/doc/docx/xls/xlsx/ppt/pptx/txt/md）"
+            };
+        }
+
+        var options = new FileUploadOptions
+        {
+            OriginalFileName = file.FileName,
+            BusinessType = businessType,
+            GenerateThumbnail = false,
+            GenerateMultipleSizes = false,
+            AddWatermark = false,
+            CalculateHash = true,
+            RemoveExif = false
+        };
+
+        var userId = _httpContextUser.UserId;
+        var userName = _httpContextUser.UserName;
+
+        var attachment = await _attachmentService.UploadFileAsync(file, options, userId, userName);
+
+        if (attachment == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
+                MessageInfo = "文件上传失败"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "上传成功",
+            ResponseData = attachment
+        };
+    }
+
+    #endregion
+
+    #region Query
+
+    /// <summary>
+    /// 根据 ID 获取附件信息
+    /// </summary>
+    /// <param name="id">附件 ID</param>
+    /// <returns>附件信息</returns>
+    [HttpGet("{id:long}")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetById(long id)
+    {
+        var attachment = await _attachmentService.QueryByIdAsync(id);
+
+        if (attachment == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "附件不存在"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = attachment
+        };
+    }
+
+    /// <summary>
+    /// 根据业务类型和业务 ID 获取附件列表
+    /// </summary>
+    /// <param name="businessType">业务类型</param>
+    /// <param name="businessId">业务 ID</param>
+    /// <returns>附件列表</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetByBusiness(string businessType, long businessId)
+    {
+        var attachments = await _attachmentService.GetByBusinessAsync(businessType, businessId);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = attachments
+        };
+    }
+
+    #endregion
+
+    #region Download
+
+    /// <summary>
+    /// 下载附件
+    /// </summary>
+    /// <param name="id">附件 ID</param>
+    /// <returns>文件流</returns>
+    [HttpGet("{id:long}")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Download(long id)
+    {
+        var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(id);
+
+        if (stream == null || attachment == null)
+        {
+            return NotFound(new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "文件不存在或无权访问"
+            });
+        }
+
+        return File(stream, attachment.MimeType, attachment.OriginalName);
+    }
+
+    #endregion
+
+    #region Delete
+
+    /// <summary>
+    /// 删除附件
+    /// </summary>
+    /// <param name="id">附件 ID</param>
+    /// <returns>删除结果</returns>
+    [HttpDelete("{id:long}")]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    public async Task<MessageModel> Delete(long id)
+    {
+        // 检查附件是否存在
+        var attachment = await _attachmentService.QueryByIdAsync(id);
+        if (attachment == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "附件不存在"
+            };
+        }
+
+        // 权限检查：只有上传者或管理员可以删除
+        var userId = _httpContextUser.UserId;
+        var roles = _httpContextUser.GetClaimValueByType("role");
+        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+
+        if (attachment.UploaderId != userId && !isAdmin)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "无权删除该附件"
+            };
+        }
+
+        var deleted = await _attachmentService.DeleteFileAsync(id);
+
+        if (!deleted)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
+                MessageInfo = "删除失败"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "删除成功"
+        };
+    }
+
+    /// <summary>
+    /// 批量删除附件
+    /// </summary>
+    /// <param name="ids">附件 ID 列表</param>
+    /// <returns>删除结果</returns>
+    [HttpPost]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> DeleteBatch([FromBody] List<long> ids)
+    {
+        if (ids == null || ids.Count == 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "ID 列表不能为空"
+            };
+        }
+
+        var userId = _httpContextUser.UserId;
+        var roles = _httpContextUser.GetClaimValueByType("role");
+        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+
+        // 权限检查：验证每个附件的权限
+        foreach (var id in ids)
+        {
+            var attachment = await _attachmentService.QueryByIdAsync(id);
+            if (attachment != null && attachment.UploaderId != userId && !isAdmin)
+            {
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                    MessageInfo = $"无权删除附件 ID: {id}"
+                };
+            }
+        }
+
+        var deletedCount = await _attachmentService.DeleteFilesAsync(ids);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = $"成功删除 {deletedCount}/{ids.Count} 个附件",
+            ResponseData = deletedCount
+        };
+    }
+
+    #endregion
+
+    #region Update
+
+    /// <summary>
+    /// 更新附件的业务关联
+    /// </summary>
+    /// <param name="id">附件 ID</param>
+    /// <param name="businessType">业务类型</param>
+    /// <param name="businessId">业务 ID</param>
+    /// <returns>更新结果</returns>
+    [HttpPut("{id:long}")]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> UpdateBusinessAssociation(
+        long id,
+        [FromQuery] string businessType,
+        [FromQuery] long businessId)
+    {
+        // 检查附件是否存在
+        var attachment = await _attachmentService.QueryByIdAsync(id);
+        if (attachment == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "附件不存在"
+            };
+        }
+
+        // 权限检查：只有上传者或管理员可以修改
+        var userId = _httpContextUser.UserId;
+        var roles = _httpContextUser.GetClaimValueByType("role");
+        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+
+        if (attachment.UploaderId != userId && !isAdmin)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "无权修改该附件"
+            };
+        }
+
+        var updated = await _attachmentService.UpdateBusinessAssociationAsync(id, businessType, businessId);
+
+        if (!updated)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
+                MessageInfo = "更新失败"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "更新成功"
+        };
+    }
+
+    #endregion
+}
