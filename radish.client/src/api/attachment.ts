@@ -177,6 +177,24 @@ export interface ImageUploadOptions {
   generateThumbnail?: boolean;
 
   /**
+   * 是否生成多尺寸
+   * @default false
+   */
+  generateMultipleSizes?: boolean;
+
+  /**
+   * 是否添加水印
+   * @default false
+   */
+  addWatermark?: boolean;
+
+  /**
+   * 水印文本
+   * @default "Radish"
+   */
+  watermarkText?: string;
+
+  /**
    * 是否移除 EXIF 信息
    * @default true
    */
@@ -231,6 +249,9 @@ export async function uploadImage(
       businessType = 'General',
       businessId,
       generateThumbnail = true,
+      generateMultipleSizes = false,
+      addWatermark = false,
+      watermarkText = 'Radish',
       removeExif = true,
       onProgress
     } = options;
@@ -244,6 +265,9 @@ export async function uploadImage(
       formData.append('businessId', businessId.toString());
     }
     formData.append('generateThumbnail', generateThumbnail.toString());
+    formData.append('generateMultipleSizes', generateMultipleSizes.toString());
+    formData.append('addWatermark', addWatermark.toString());
+    formData.append('watermarkText', watermarkText);
     formData.append('removeExif', removeExif.toString());
 
     // 使用 XMLHttpRequest 以支持上传进度
