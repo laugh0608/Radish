@@ -6,7 +6,7 @@ import { Login } from './pages/Login';
 import { message } from '@radish/ui';
 import './App.css';
 
-type MenuItem = 'dashboard' | 'applications' | 'users' | 'roles' | 'service-status';
+type MenuItem = 'dashboard' | 'applications' | 'users' | 'roles' | 'service-status' | 'hangfire';
 
 function App() {
   const [currentMenu, setCurrentMenu] = useState<MenuItem>('dashboard');
@@ -133,6 +133,23 @@ function App() {
           <div>
             <h2>角色管理</h2>
             <p>角色管理功能待实现</p>
+          </div>
+        );
+      case 'hangfire':
+        return (
+          <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <h2 style={{ margin: '0 0 16px 0' }}>定时任务管理</h2>
+            <iframe
+              src="/hangfire"
+              style={{
+                flex: 1,
+                border: '1px solid #d9d9d9',
+                borderRadius: '4px',
+                width: '100%',
+                minHeight: '600px'
+              }}
+              title="Hangfire Dashboard"
+            />
           </div>
         );
       default:
