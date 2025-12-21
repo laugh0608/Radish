@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MarkdownEditor } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
+import { uploadImage } from '@/api/attachment';
 import styles from './PublishPostForm.module.css';
 
 interface PublishPostFormProps {
@@ -20,6 +22,7 @@ export const PublishPostForm = ({
 }: PublishPostFormProps) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const { t } = useTranslation();
 
   // 组件加载时恢复草稿
   useEffect(() => {
@@ -73,6 +76,26 @@ export const PublishPostForm = ({
     }
   };
 
+  // 处理图片上传
+  const handleImageUpload = async (file: File) => {
+    try {
+      const result = await uploadImage({
+        file,
+        businessType: 'Post',
+        generateThumbnail: true,
+        removeExif: true
+      }, t);
+
+      return {
+        url: result.fileUrl,
+        thumbnailUrl: result.thumbnailUrl
+      };
+    } catch (error) {
+      console.error('图片上传失败:', error);
+      throw error;
+    }
+  };
+
   return (
     <div className={styles.container}>
       <h4 className={styles.title}>发帖</h4>
@@ -108,6 +131,7 @@ export const PublishPostForm = ({
         minHeight={200}
         disabled={!isAuthenticated || disabled}
         showToolbar={true}
+        onImageUpload={handleImageUpload}
       />
 
       <button
