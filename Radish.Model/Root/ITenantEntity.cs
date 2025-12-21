@@ -1,6 +1,6 @@
 using SqlSugar;
 
-namespace Radish.Model.Tenants;
+namespace Radish.Model.Root;
 
 /// <summary>
 /// 租户模型接口

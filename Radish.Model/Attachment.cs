@@ -8,7 +8,7 @@ namespace Radish.Model;
 
 /// <summary>附件实体</summary>
 /// <remarks>主键为 Id，类型为 long</remarks>
-public class Attachment : RootEntityTKey<long>, ITenantEntity
+public class Attachment : RootEntityTKey<long>
 {
     /// <summary>初始化默认附件实例</summary>
     public Attachment()
