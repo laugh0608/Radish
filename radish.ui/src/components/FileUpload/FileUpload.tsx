@@ -24,7 +24,7 @@ export interface FileUploadProps {
   /**
    * 上传成功回调
    */
-  onUpload?: (file: File) => Promise<UploadResult>;
+  onUpload?: (file: File, options?: UploadOptions) => Promise<UploadResult>;
 
   /**
    * 上传成功后的回调
@@ -57,6 +57,51 @@ export interface FileUploadProps {
    * @default true
    */
   showPreview?: boolean;
+
+  /**
+   * 是否显示水印选项（仅图片）
+   * @default false
+   */
+  showWatermarkOption?: boolean;
+
+  /**
+   * 是否显示多尺寸选项（仅图片）
+   * @default false
+   */
+  showMultipleSizesOption?: boolean;
+
+  /**
+   * 默认水印文本
+   * @default "Radish"
+   */
+  defaultWatermarkText?: string;
+}
+
+export interface UploadOptions {
+  /**
+   * 是否添加水印
+   */
+  addWatermark?: boolean;
+
+  /**
+   * 水印文本
+   */
+  watermarkText?: string;
+
+  /**
+   * 是否生成多尺寸
+   */
+  generateMultipleSizes?: boolean;
+
+  /**
+   * 是否生成缩略图
+   */
+  generateThumbnail?: boolean;
+
+  /**
+   * 是否移除 EXIF
+   */
+  removeExif?: boolean;
 }
 
 export interface UploadResult {
@@ -98,6 +143,10 @@ interface UploadState {
   progress: number;
   error: string | null;
   result: UploadResult | null;
+  // 上传选项
+  addWatermark: boolean;
+  watermarkText: string;
+  generateMultipleSizes: boolean;
 }
 
 export const FileUpload = ({
@@ -110,7 +159,10 @@ export const FileUpload = ({
   disabled = false,
   className = '',
   placeholder = '点击或拖拽文件到此处上传',
-  showPreview = true
+  showPreview = true,
+  showWatermarkOption = false,
+  showMultipleSizesOption = false,
+  defaultWatermarkText = 'Radish'
 }: FileUploadProps) => {
   const [state, setState] = useState<UploadState>({
     file: null,
@@ -118,7 +170,10 @@ export const FileUpload = ({
     uploading: false,
     progress: 0,
     error: null,
-    result: null
+    result: null,
+    addWatermark: false,
+    watermarkText: defaultWatermarkText,
+    generateMultipleSizes: false
   });
 
   const [isDragging, setIsDragging] = useState(false);
@@ -222,7 +277,16 @@ export const FileUpload = ({
         });
       }, 200);
 
-      const result = await onUpload(file);
+      // 构建上传选项
+      const uploadOptions: UploadOptions = {
+        addWatermark: state.addWatermark,
+        watermarkText: state.watermarkText,
+        generateMultipleSizes: state.generateMultipleSizes,
+        generateThumbnail: true,
+        removeExif: true
+      };
+
+      const result = await onUpload(file, uploadOptions);
 
       clearInterval(progressInterval);
 
@@ -372,6 +436,55 @@ export const FileUpload = ({
             <div className={styles.fileDetails}>
               <p className={styles.fileName}>{state.file.name}</p>
               <p className={styles.fileSize}>{formatFileSize(state.file.size)}</p>
+
+              {/* 图片上传选项 */}
+              {state.file.type.startsWith('image/') && (showWatermarkOption || showMultipleSizesOption) && (
+                <div className={styles.uploadOptions}>
+                  {showWatermarkOption && (
+                    <label className={styles.optionLabel}>
+                      <input
+                        type="checkbox"
+                        checked={state.addWatermark}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setState(prev => ({ ...prev, addWatermark: e.target.checked }));
+                        }}
+                        className={styles.checkbox}
+                      />
+                      <span>添加水印</span>
+                    </label>
+                  )}
+
+                  {showWatermarkOption && state.addWatermark && (
+                    <input
+                      type="text"
+                      value={state.watermarkText}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        setState(prev => ({ ...prev, watermarkText: e.target.value }));
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      placeholder="水印文本"
+                      className={styles.watermarkInput}
+                    />
+                  )}
+
+                  {showMultipleSizesOption && (
+                    <label className={styles.optionLabel}>
+                      <input
+                        type="checkbox"
+                        checked={state.generateMultipleSizes}
+                        onChange={(e) => {
+                          e.stopPropagation();
+                          setState(prev => ({ ...prev, generateMultipleSizes: e.target.checked }));
+                        }}
+                        className={styles.checkbox}
+                      />
+                      <span>生成多尺寸</span>
+                    </label>
+                  )}
+                </div>
+              )}
             </div>
             <button
               type="button"
