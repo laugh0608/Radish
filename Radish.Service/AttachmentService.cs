@@ -72,8 +72,19 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 var existingFile = await FindByHashAsync(fileHash);
                 if (existingFile != null)
                 {
-                    Log.Information("文件已存在，返回已有记录：{FileHash}", fileHash);
-                    return existingFile;
+                    // 验证物理文件是否存在
+                    var physicalFileExists = await _fileStorage.ExistsAsync(existingFile.StoragePath);
+                    if (physicalFileExists)
+                    {
+                        Log.Information("文件已存在，返回已有记录：{FileHash}", fileHash);
+                        return existingFile;
+                    }
+                    else
+                    {
+                        // 物理文件不存在，删除旧记录并继续上传
+                        Log.Warning("文件记录存在但物理文件缺失，删除旧记录：{AttachmentId}, {FileHash}", existingFile.Id, fileHash);
+                        await DeleteAsync(existingFile.Id);
+                    }
                 }
             }
 
