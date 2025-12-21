@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Http;
 using Radish.Model;
-using Radish.Model.DTOs;
 using Radish.Model.ViewModels;
 
 namespace Radish.IService;
@@ -12,13 +11,13 @@ public interface IAttachmentService : IBaseService<Attachment, AttachmentVo>
     /// 上传文件
     /// </summary>
     /// <param name="file">上传的文件</param>
-    /// <param name="options">上传选项</param>
+    /// <param name="optionsDto">上传选项</param>
     /// <param name="uploaderId">上传者 ID</param>
     /// <param name="uploaderName">上传者名称</param>
     /// <returns>附件信息</returns>
     Task<AttachmentVo?> UploadFileAsync(
         IFormFile file,
-        FileUploadOptions options,
+        FileUploadOptionsDto optionsDto,
         long uploaderId,
         string uploaderName);
 

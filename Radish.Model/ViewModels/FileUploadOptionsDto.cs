@@ -1,9 +1,9 @@
-namespace Radish.Model.DTOs;
+namespace Radish.Model.ViewModels;
 
 /// <summary>
 /// 文件上传选项
 /// </summary>
-public class FileUploadOptions
+public class FileUploadOptionsDto
 {
     /// <summary>
     /// 原始文件名

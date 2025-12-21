@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
-using Radish.Model.DTOs;
+using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
 
@@ -81,7 +81,7 @@ public class AttachmentController : ControllerBase
             };
         }
 
-        var options = new FileUploadOptions
+        var options = new FileUploadOptionsDto
         {
             OriginalFileName = file.FileName,
             BusinessType = businessType,
@@ -154,7 +154,7 @@ public class AttachmentController : ControllerBase
             };
         }
 
-        var options = new FileUploadOptions
+        var options = new FileUploadOptionsDto
         {
             OriginalFileName = file.FileName,
             BusinessType = businessType,
