@@ -4,6 +4,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Webp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.Fonts;
 
@@ -214,31 +215,17 @@ public class CSharpImageProcessor : IImageProcessor
 
             using var image = await Image.LoadAsync(sourceStream);
 
-            // 解析颜色
-            var color = ParseColor(options.Color);
-
-            // 创建字体
-            var fontCollection = new FontCollection();
-            // 使用系统默认字体（简化处理，生产环境可能需要指定字体文件）
-            if (!SystemFonts.Families.Any())
+            // 根据水印类型处理
+            if (options.Type == WatermarkType.Text)
             {
-                throw new Exception("未找到可用字体");
+                // 文字水印
+                await AddTextWatermarkAsync(image, options);
             }
-            var fontFamily = SystemFonts.Families.First();
-            var font = fontFamily.CreateFont(options.FontSize, FontStyle.Regular);
-
-            // 计算水印位置
-            var textOptions = new RichTextOptions(font)
+            else if (options.Type == WatermarkType.Image && !string.IsNullOrEmpty(options.ImagePath))
             {
-                Origin = CalculateWatermarkPosition(image, options.Text, font, options.Position, options.Padding)
-            };
-
-            // 添加水印
-            image.Mutate(x => x.DrawText(
-                textOptions,
-                options.Text,
-                Color.ParseHex(options.Color).WithAlpha(options.Opacity)
-            ));
+                // 图片水印
+                await AddImageWatermarkAsync(image, options);
+            }
 
             // 确保输出目录存在
             var directory = Path.GetDirectoryName(outputPath);
@@ -264,6 +251,76 @@ public class CSharpImageProcessor : IImageProcessor
         {
             return ImageProcessResult.Fail($"添加水印失败：{ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// 添加文字水印
+    /// </summary>
+    private async Task AddTextWatermarkAsync(Image image, WatermarkOptions options)
+    {
+        // 创建字体
+        var fontCollection = new FontCollection();
+        // 使用系统默认字体（简化处理，生产环境可能需要指定字体文件）
+        if (!SystemFonts.Families.Any())
+        {
+            throw new Exception("未找到可用字体");
+        }
+        var fontFamily = SystemFonts.Families.First();
+        var font = fontFamily.CreateFont(options.FontSize, FontStyle.Regular);
+
+        // 计算水印位置
+        var textOptions = new RichTextOptions(font)
+        {
+            Origin = CalculateWatermarkPosition(image, options.Text, font, options.Position, options.Padding)
+        };
+
+        // 添加水印
+        image.Mutate(x => x.DrawText(
+            textOptions,
+            options.Text,
+            Color.ParseHex(options.Color).WithAlpha(options.Opacity)
+        ));
+
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 添加图片水印
+    /// </summary>
+    private async Task AddImageWatermarkAsync(Image image, WatermarkOptions options)
+    {
+        if (string.IsNullOrEmpty(options.ImagePath) || !File.Exists(options.ImagePath))
+        {
+            throw new Exception($"水印图片不存在：{options.ImagePath}");
+        }
+
+        using var watermarkImage = await Image.LoadAsync(options.ImagePath);
+
+        // 计算水印图片的目标尺寸（相对于原图宽度）
+        var targetWidth = (int)(image.Width * options.Scale);
+        var aspectRatio = (float)watermarkImage.Height / watermarkImage.Width;
+        var targetHeight = (int)(targetWidth * aspectRatio);
+
+        // 缩放水印图片
+        watermarkImage.Mutate(x => x.Resize(new ResizeOptions
+        {
+            Size = new Size(targetWidth, targetHeight),
+            Mode = ResizeMode.Max
+        }));
+
+        // 设置水印透明度
+        watermarkImage.Mutate(x => x.Opacity(options.Opacity));
+
+        // 计算水印位置
+        var position = CalculateImageWatermarkPosition(
+            image,
+            watermarkImage,
+            options.Position,
+            options.Padding
+        );
+
+        // 添加水印
+        image.Mutate(x => x.DrawImage(watermarkImage, position, 1f));
     }
 
     #endregion
@@ -420,6 +477,7 @@ public class CSharpImageProcessor : IImageProcessor
         {
             ".jpg" or ".jpeg" => new JpegEncoder { Quality = quality },
             ".png" => new PngEncoder(),
+            ".webp" => new WebpEncoder { Quality = quality },
             _ => new JpegEncoder { Quality = quality }
         };
     }
@@ -466,6 +524,32 @@ public class CSharpImageProcessor : IImageProcessor
                 (image.Height - textSize.Height) / 2
             ),
             _ => new PointF(padding, padding)
+        };
+    }
+
+    /// <summary>
+    /// 计算图片水印位置
+    /// </summary>
+    private Point CalculateImageWatermarkPosition(
+        Image image,
+        Image watermarkImage,
+        WatermarkPosition position,
+        int padding)
+    {
+        return position switch
+        {
+            WatermarkPosition.TopLeft => new Point(padding, padding),
+            WatermarkPosition.TopRight => new Point(image.Width - watermarkImage.Width - padding, padding),
+            WatermarkPosition.BottomLeft => new Point(padding, image.Height - watermarkImage.Height - padding),
+            WatermarkPosition.BottomRight => new Point(
+                image.Width - watermarkImage.Width - padding,
+                image.Height - watermarkImage.Height - padding
+            ),
+            WatermarkPosition.Center => new Point(
+                (image.Width - watermarkImage.Width) / 2,
+                (image.Height - watermarkImage.Height) / 2
+            ),
+            _ => new Point(padding, padding)
         };
     }
 
