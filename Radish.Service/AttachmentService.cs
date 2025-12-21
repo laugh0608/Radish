@@ -69,21 +69,24 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
 
                 // 检查是否已存在相同文件（去重）
-                var existingFile = await FindByHashAsync(fileHash);
-                if (existingFile != null)
+                var existingAttachment = await _attachmentRepository.QueryFirstAsync(
+                    a => a.FileHash == fileHash && !a.IsDeleted
+                );
+
+                if (existingAttachment != null)
                 {
                     // 验证物理文件是否存在
-                    var physicalFileExists = await _fileStorage.ExistsAsync(existingFile.StoragePath);
+                    var physicalFileExists = await _fileStorage.ExistsAsync(existingAttachment.StoragePath);
                     if (physicalFileExists)
                     {
                         Log.Information("文件已存在，返回已有记录：{FileHash}", fileHash);
-                        return existingFile;
+                        return Mapper.Map<AttachmentVo>(existingAttachment);
                     }
                     else
                     {
                         // 物理文件不存在，删除旧记录并继续上传
-                        Log.Warning("文件记录存在但物理文件缺失，删除旧记录：{AttachmentId}, {FileHash}", existingFile.Id, fileHash);
-                        await DeleteAsync(existingFile.Id);
+                        Log.Warning("文件记录存在但物理文件缺失，删除旧记录：{AttachmentId}, {FileHash}", existingAttachment.Id, fileHash);
+                        await _attachmentRepository.DeleteByIdAsync(existingAttachment.Id);
                     }
                 }
             }
