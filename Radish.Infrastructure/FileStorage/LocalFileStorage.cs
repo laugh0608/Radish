@@ -356,7 +356,10 @@ public class LocalFileStorage : IFileStorage
         var extension = Path.GetExtension(originalPath);
 
         var thumbnailFileName = $"{fileName}_thumb{extension}";
-        return Path.Combine(directory, thumbnailFileName);
+        var thumbnailPath = Path.Combine(directory, thumbnailFileName);
+
+        // 标准化路径分隔符为正斜杠（URL 格式）
+        return thumbnailPath.Replace('\\', '/');
     }
 
     /// <summary>
