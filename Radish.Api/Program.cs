@@ -23,6 +23,8 @@ using Radish.Extension.SqlSugarExtension;
 using Radish.Extension.OpenApiExtension;
 using Radish.Extension.RateLimitExtension;
 using Radish.Extension.AuditLogExtension;
+using Radish.Infrastructure.FileStorage;
+using Radish.Infrastructure.ImageProcessing;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Repository;
@@ -145,6 +147,9 @@ builder.Services.AddAutoMapperSetup(builder.Configuration);
 builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
 // 注册 AppSetting 自定义扩展的扩展 ConfigurableOptions 服务
 builder.Services.AddAllOptionRegister();
+// 注册文件存储和图片处理服务
+builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
+builder.Services.AddSingleton<IImageProcessor, CSharpImageProcessor>();
 // 注册缓存相关服务
 builder.Services.AddCacheSetup();
 // 注册速率限制服务
@@ -243,6 +248,22 @@ app.UseApplicationSetup();
 app.UseDefaultFiles();
 app.MapStaticAssets();
 app.UseStaticFiles();
+
+// 配置上传文件的静态文件服务
+var uploadsPath = builder.Configuration.GetSection("FileStorage:RootPath").Value ?? "uploads";
+var uploadsFullPath = Path.IsPathRooted(uploadsPath)
+    ? uploadsPath
+    : Path.Combine(app.Environment.ContentRootPath, uploadsPath);
+
+// 确保 uploads 目录存在
+Directory.CreateDirectory(uploadsFullPath);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsFullPath),
+    RequestPath = "/uploads"
+});
+
 // Configure the HTTP request pipeline.
 // if (app.Environment.IsDevelopment())
 // {
