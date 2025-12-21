@@ -13,7 +13,10 @@ public class AttachmentProfile : Profile
         RecognizeDestinationPrefixes("Vo");
         CreateMap<Attachment, AttachmentVo>()
             .ForMember(dest => dest.FileSizeFormatted, opt => opt.MapFrom(src => FormatFileSize(src.FileSize)))
-            .ForMember(dest => dest.ThumbnailUrl, opt => opt.MapFrom(src => src.ThumbnailPath));
+            .ForMember(dest => dest.ThumbnailUrl, opt => opt.MapFrom(src =>
+                string.IsNullOrWhiteSpace(src.ThumbnailPath)
+                    ? null
+                    : $"/uploads/{src.ThumbnailPath}"));
 
         // AttachmentVo -> Attachment
         RecognizePrefixes("Vo");
