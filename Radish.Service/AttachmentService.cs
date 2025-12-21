@@ -488,7 +488,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             };
 
             await using var sourceStream = File.OpenRead(sourceFullPath);
-            var baseOutputPath = Path.Combine(directory ?? "", fileNameWithoutExt);
+            // 注意：baseOutputPath 应该包含扩展名，这样 ImageProcessor 才能正确识别格式
+            var baseOutputPath = Path.Combine(directory ?? "", fileNameWithoutExt + extension);
 
             var results = await _imageProcessor.GenerateMultipleSizesAsync(
                 sourceStream,
