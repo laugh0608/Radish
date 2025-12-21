@@ -345,8 +345,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
         try
         {
-            var sourceFullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, sourcePath);
-            var thumbnailFullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, thumbnailPath);
+            var sourceFullPath = _fileStorage.GetFullPath(sourcePath);
+            var thumbnailFullPath = _fileStorage.GetFullPath(thumbnailPath);
 
             await using var sourceStream = File.OpenRead(sourceFullPath);
             var result = await _imageProcessor.GenerateThumbnailAsync(
@@ -375,7 +375,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     {
         try
         {
-            var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, filePath);
+            var fullPath = _fileStorage.GetFullPath(filePath);
             var tempPath = fullPath + ".tmp";
 
             await using (var sourceStream = File.OpenRead(fullPath))

@@ -58,6 +58,13 @@ public interface IFileStorage
     /// <param name="filePath">文件路径（相对路径）</param>
     /// <returns>文件信息（文件大小、修改时间等）</returns>
     Task<FileStorageInfo?> GetFileInfoAsync(string filePath);
+
+    /// <summary>
+    /// 获取文件的完整物理路径
+    /// </summary>
+    /// <param name="relativePath">相对路径</param>
+    /// <returns>完整物理路径</returns>
+    string GetFullPath(string relativePath);
 }
 
 /// <summary>
