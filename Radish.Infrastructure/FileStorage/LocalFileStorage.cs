@@ -1,0 +1,366 @@
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Options;
+using Radish.Common;
+using Radish.Common.OptionTool;
+using SqlSugar;
+using System.Security.Cryptography;
+
+namespace Radish.Infrastructure.FileStorage;
+
+/// <summary>
+/// 本地文件存储实现
+/// </summary>
+/// <remarks>
+/// 将文件存储在服务器本地文件系统中
+/// 目录结构：{RootPath}/{BusinessType}/{Year}/{Month}/{UniqueFileName}
+/// </remarks>
+public class LocalFileStorage : IFileStorage
+{
+    private readonly FileStorageOptions _options;
+    private readonly string _rootPath;
+    private readonly IWebHostEnvironment _environment;
+
+    public LocalFileStorage(IOptions<FileStorageOptions> options, IWebHostEnvironment environment)
+    {
+        _options = options.Value;
+        _environment = environment;
+
+        // 将相对路径转换为绝对路径
+        _rootPath = Path.IsPathRooted(_options.RootPath)
+            ? _options.RootPath
+            : Path.Combine(_environment.ContentRootPath, _options.RootPath);
+
+        // 确保根目录存在
+        if (!Directory.Exists(_rootPath))
+        {
+            Directory.CreateDirectory(_rootPath);
+        }
+    }
+
+    #region Upload
+
+    /// <summary>
+    /// 上传文件
+    /// </summary>
+    public async Task<FileUploadResult> UploadAsync(
+        Stream stream,
+        string fileName,
+        string contentType,
+        FileUploadOptions? options = null)
+    {
+        try
+        {
+            options ??= new FileUploadOptions();
+
+            // 验证文件大小
+            if (stream.Length > _options.MaxFileSize)
+            {
+                return FileUploadResult.Fail($"文件大小超过限制（最大 {_options.MaxFileSize / 1024 / 1024}MB）");
+            }
+
+            // 验证文件类型
+            var extension = Path.GetExtension(fileName).ToLowerInvariant();
+            if (!IsAllowedFileType(extension))
+            {
+                return FileUploadResult.Fail($"不支持的文件类型：{extension}");
+            }
+
+            // 生成唯一文件名（使用 Snowflake ID + 原始扩展名）
+            var uniqueId = SnowFlakeSingle.instance.getID();
+            var storedName = $"{uniqueId}{extension}";
+
+            // 构建存储路径：{BusinessType}/{Year}/{Month}/{FileName}
+            var now = DateTime.Now;
+            var businessType = string.IsNullOrWhiteSpace(options.BusinessType) ? "General" : options.BusinessType;
+            var relativePath = Path.Combine(
+                businessType,
+                now.Year.ToString(),
+                now.Month.ToString("D2"),
+                storedName
+            );
+
+            var fullPath = Path.Combine(_rootPath, relativePath);
+
+            // 确保目录存在
+            var directory = Path.GetDirectoryName(fullPath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            // 计算文件哈希（如果需要）
+            string? fileHash = null;
+            if (options.CalculateHash)
+            {
+                stream.Position = 0;
+                fileHash = await CalculateFileHashAsync(stream);
+            }
+
+            // 保存文件
+            stream.Position = 0;
+            await using (var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write))
+            {
+                await stream.CopyToAsync(fileStream);
+            }
+
+            // 生成访问 URL
+            var url = GetFileUrl(relativePath);
+
+            // 生成缩略图路径（如果需要）
+            string? thumbnailPath = null;
+            if (options.GenerateThumbnail && IsImageFile(extension))
+            {
+                thumbnailPath = GenerateThumbnailPath(relativePath);
+                // 注意：实际的缩略图生成将在 IImageProcessor 中完成
+            }
+
+            var result = FileUploadResult.Ok(
+                storedName: storedName,
+                storagePath: relativePath,
+                url: url,
+                fileSize: stream.Length,
+                fileHash: fileHash
+            );
+            result.ThumbnailPath = thumbnailPath;
+
+            return result;
+        }
+        catch (Exception ex)
+        {
+            return FileUploadResult.Fail($"文件上传失败：{ex.Message}");
+        }
+    }
+
+    #endregion
+
+    #region Delete
+
+    /// <summary>
+    /// 删除文件
+    /// </summary>
+    public async Task<bool> DeleteAsync(string filePath)
+    {
+        try
+        {
+            var fullPath = Path.Combine(_rootPath, filePath);
+
+            if (!File.Exists(fullPath))
+            {
+                return false;
+            }
+
+            await Task.Run(() => File.Delete(fullPath));
+
+            // 删除缩略图（如果存在）
+            var thumbnailPath = GenerateThumbnailPath(filePath);
+            var fullThumbnailPath = Path.Combine(_rootPath, thumbnailPath);
+            if (File.Exists(fullThumbnailPath))
+            {
+                await Task.Run(() => File.Delete(fullThumbnailPath));
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    #endregion
+
+    #region Download
+
+    /// <summary>
+    /// 下载文件
+    /// </summary>
+    public async Task<Stream?> DownloadAsync(string filePath)
+    {
+        try
+        {
+            var fullPath = Path.Combine(_rootPath, filePath);
+
+            if (!File.Exists(fullPath))
+            {
+                return null;
+            }
+
+            var memoryStream = new MemoryStream();
+            await using (var fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read))
+            {
+                await fileStream.CopyToAsync(memoryStream);
+            }
+
+            memoryStream.Position = 0;
+            return memoryStream;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    #endregion
+
+    #region GetFileUrl
+
+    /// <summary>
+    /// 获取文件访问 URL
+    /// </summary>
+    public string GetFileUrl(string filePath)
+    {
+        // 将 Windows 路径分隔符替换为 URL 分隔符
+        var urlPath = filePath.Replace('\\', '/');
+        return $"{_options.UrlPrefix}/{urlPath}";
+    }
+
+    #endregion
+
+    #region Exists
+
+    /// <summary>
+    /// 检查文件是否存在
+    /// </summary>
+    public async Task<bool> ExistsAsync(string filePath)
+    {
+        var fullPath = Path.Combine(_rootPath, filePath);
+        return await Task.FromResult(File.Exists(fullPath));
+    }
+
+    #endregion
+
+    #region GetFileInfo
+
+    /// <summary>
+    /// 获取文件信息
+    /// </summary>
+    public async Task<FileStorageInfo?> GetFileInfoAsync(string filePath)
+    {
+        try
+        {
+            var fullPath = Path.Combine(_rootPath, filePath);
+
+            if (!File.Exists(fullPath))
+            {
+                return null;
+            }
+
+            var fileInfo = new FileInfo(fullPath);
+
+            // 根据扩展名推断 MIME 类型
+            var contentType = GetContentType(fileInfo.Extension);
+
+            return await Task.FromResult(new FileStorageInfo
+            {
+                FilePath = filePath,
+                FileSize = fileInfo.Length,
+                LastModified = fileInfo.LastWriteTime,
+                ContentType = contentType
+            });
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    #endregion
+
+    #region Private Helper Methods
+
+    /// <summary>
+    /// 验证文件类型是否允许
+    /// </summary>
+    private bool IsAllowedFileType(string extension)
+    {
+        return _options.AllowedImageTypes.Contains(extension) ||
+               _options.AllowedDocumentTypes.Contains(extension) ||
+               _options.AllowedVideoTypes.Contains(extension) ||
+               _options.AllowedAudioTypes.Contains(extension);
+    }
+
+    /// <summary>
+    /// 判断是否为图片文件
+    /// </summary>
+    private bool IsImageFile(string extension)
+    {
+        return _options.AllowedImageTypes.Contains(extension);
+    }
+
+    /// <summary>
+    /// 生成缩略图路径
+    /// </summary>
+    /// <remarks>
+    /// 在原文件名后添加 _thumb 后缀
+    /// 例如：Post/2025/12/123456.jpg -> Post/2025/12/123456_thumb.jpg
+    /// </remarks>
+    private string GenerateThumbnailPath(string originalPath)
+    {
+        var directory = Path.GetDirectoryName(originalPath) ?? string.Empty;
+        var fileName = Path.GetFileNameWithoutExtension(originalPath);
+        var extension = Path.GetExtension(originalPath);
+
+        var thumbnailFileName = $"{fileName}_thumb{extension}";
+        return Path.Combine(directory, thumbnailFileName);
+    }
+
+    /// <summary>
+    /// 计算文件 SHA256 哈希值
+    /// </summary>
+    private async Task<string> CalculateFileHashAsync(Stream stream)
+    {
+        using var sha256 = SHA256.Create();
+        var hashBytes = await sha256.ComputeHashAsync(stream);
+        return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// 根据文件扩展名获取 MIME 类型
+    /// </summary>
+    private string GetContentType(string extension)
+    {
+        return extension.ToLowerInvariant() switch
+        {
+            // Images
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".bmp" => "image/bmp",
+            ".webp" => "image/webp",
+            ".svg" => "image/svg+xml",
+
+            // Documents
+            ".pdf" => "application/pdf",
+            ".doc" => "application/msword",
+            ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            ".xls" => "application/vnd.ms-excel",
+            ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            ".ppt" => "application/vnd.ms-powerpoint",
+            ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+            ".txt" => "text/plain",
+            ".md" => "text/markdown",
+
+            // Videos
+            ".mp4" => "video/mp4",
+            ".avi" => "video/x-msvideo",
+            ".mov" => "video/quicktime",
+            ".wmv" => "video/x-ms-wmv",
+            ".flv" => "video/x-flv",
+            ".mkv" => "video/x-matroska",
+            ".webm" => "video/webm",
+
+            // Audios
+            ".mp3" => "audio/mpeg",
+            ".wav" => "audio/wav",
+            ".flac" => "audio/flac",
+            ".aac" => "audio/aac",
+            ".ogg" => "audio/ogg",
+            ".wma" => "audio/x-ms-wma",
+
+            // Default
+            _ => "application/octet-stream"
+        };
+    }
+
+    #endregion
+}
