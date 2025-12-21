@@ -24,11 +24,11 @@ public class FileCleanupJob
         _attachmentRepository = attachmentRepository;
         _fileStorage = fileStorage;
 
-        // 回收站路径
+        // 回收站路径：DataBases/Recycle
         var rootPath = Path.IsPathRooted("DataBases/Uploads")
             ? "DataBases/Uploads"
             : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DataBases/Uploads");
-        _recycleBinPath = Path.Combine(Path.GetDirectoryName(rootPath) ?? "DataBases", "回收站");
+        _recycleBinPath = Path.Combine(Path.GetDirectoryName(rootPath) ?? "DataBases", "Recycle");
 
         // 确保回收站目录存在
         if (!Directory.Exists(_recycleBinPath))
@@ -138,15 +138,18 @@ public class FileCleanupJob
                     // 检查文件最后修改时间
                     if (fileInfo.LastWriteTime < cutoffTime)
                     {
-                        // 直接删除临时文件（不需要移动到回收站）
-                        File.Delete(filePath);
+                        // 移动到回收站（保持数据安全）
+                        var relativePath = Path.GetRelativePath(tempPath, filePath);
+                        var recyclePath = Path.Combine("Temp", relativePath);
+                        await MoveToRecycleBinAsync(recyclePath, "temp", tempPath);
+
                         cleanedCount++;
-                        Log.Information("[FileCleanup] 已删除临时文件：{FilePath}", filePath);
+                        Log.Information("[FileCleanup] 已将临时文件移至回收站：{FilePath}", relativePath);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[FileCleanup] 删除临时文件失败：{FilePath}", filePath);
+                    Log.Error(ex, "[FileCleanup] 移动临时文件到回收站失败：{FilePath}", filePath);
                 }
             }
 
@@ -301,9 +304,13 @@ public class FileCleanupJob
     /// </summary>
     /// <param name="relativePath">文件相对路径</param>
     /// <param name="category">分类（deleted/temp/orphan）</param>
-    private async Task MoveToRecycleBinAsync(string relativePath, string category)
+    /// <param name="sourceBasePath">源文件基础路径（可选，用于临时文件等非标准路径）</param>
+    private async Task MoveToRecycleBinAsync(string relativePath, string category, string? sourceBasePath = null)
     {
-        var sourceFullPath = _fileStorage.GetFullPath(relativePath);
+        // 如果提供了自定义基础路径，使用它；否则使用文件存储的路径
+        var sourceFullPath = sourceBasePath != null
+            ? Path.Combine(sourceBasePath, relativePath)
+            : _fileStorage.GetFullPath(relativePath);
 
         if (!File.Exists(sourceFullPath))
         {
@@ -311,7 +318,7 @@ public class FileCleanupJob
             return;
         }
 
-        // 构建回收站目标路径：回收站/{category}/{年月日}/{原始路径}
+        // 构建回收站目标路径：DataBases/Recycle/{category}/{年月日}/{原始路径}
         var dateFolder = DateTime.Now.ToString("yyyyMMdd");
         var targetPath = Path.Combine(_recycleBinPath, category, dateFolder, relativePath);
 
