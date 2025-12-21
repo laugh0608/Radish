@@ -2,9 +2,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using Radish.Common;
 using Radish.Common.OptionTool;
-using Radish.Model.DTOs;
 using SqlSugar;
 using System.Security.Cryptography;
+using Radish.Model.ViewModels;
 
 namespace Radish.Infrastructure.FileStorage;
 
@@ -47,11 +47,11 @@ public class LocalFileStorage : IFileStorage
         Stream stream,
         string fileName,
         string contentType,
-        FileUploadOptions? options = null)
+        FileUploadOptionsDto? options = null)
     {
         try
         {
-            options ??= new FileUploadOptions();
+            options ??= new FileUploadOptionsDto();
 
             // 根据业务类型获取文件大小限制
             var extension = Path.GetExtension(fileName).ToLowerInvariant();
