@@ -7,8 +7,7 @@ using SqlSugar;
 namespace Radish.Model;
 
 /// <summary>附件实体</summary>
-/// <remarks>支持多租户，主键为 Id，类型为 long</remarks>
-[SugarTable("Attachment")]
+/// <remarks>主键为 Id，类型为 long</remarks>
 public class Attachment : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认附件实例</summary>
