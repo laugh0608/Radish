@@ -34,6 +34,9 @@ export type { ConfirmDialogProps } from './ConfirmDialog/ConfirmDialog';
 export { UserMention } from './UserMention/UserMention';
 export type { UserMentionProps, UserMentionOption } from './UserMention/UserMention';
 
+export { FileUpload } from './FileUpload/FileUpload';
+export type { FileUploadProps, UploadResult } from './FileUpload/FileUpload';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout

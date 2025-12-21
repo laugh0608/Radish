@@ -1,0 +1,229 @@
+.container {
+  width: 100%;
+}
+
+.fileInput {
+  display: none;
+}
+
+.uploadArea {
+  position: relative;
+  border: 2px dashed var(--color-border, #d9d9d9);
+  border-radius: var(--border-radius, 8px);
+  padding: 24px;
+  background: var(--color-bg-light, #fafafa);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uploadArea:hover:not(.disabled):not(.uploading) {
+  border-color: var(--color-primary, #1890ff);
+  background: var(--color-bg-lighter, #f5f5f5);
+}
+
+.uploadArea.dragging {
+  border-color: var(--color-primary, #1890ff);
+  background: var(--color-primary-light, #e6f7ff);
+  border-style: solid;
+}
+
+.uploadArea.disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: var(--color-bg-disabled, #f5f5f5);
+}
+
+.uploadArea.uploading {
+  cursor: wait;
+}
+
+.uploadArea.error {
+  border-color: var(--color-error, #ff4d4f);
+}
+
+/* Placeholder 状态 */
+.placeholder {
+  text-align: center;
+  color: var(--color-text-secondary, #8c8c8c);
+}
+
+.uploadIcon {
+  color: var(--color-text-tertiary, #bfbfbf);
+  margin-bottom: 12px;
+}
+
+.placeholderText {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0 0 8px 0;
+  color: var(--color-text, #262626);
+}
+
+.placeholderHint {
+  font-size: 14px;
+  margin: 0;
+  color: var(--color-text-secondary, #8c8c8c);
+}
+
+/* 文件信息 */
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.fileIcon {
+  color: var(--color-text-secondary, #8c8c8c);
+  flex-shrink: 0;
+}
+
+.preview {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: var(--border-radius, 8px);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.fileDetails {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.fileName {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+  color: var(--color-text, #262626);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileSize {
+  font-size: 12px;
+  margin: 0;
+  color: var(--color-text-secondary, #8c8c8c);
+}
+
+.clearButton {
+  flex-shrink: 0;
+  padding: 8px;
+  border: none;
+  background: var(--color-bg-container, #fff);
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--color-text-secondary, #8c8c8c);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clearButton:hover {
+  background: var(--color-error-light, #ffccc7);
+  color: var(--color-error, #ff4d4f);
+}
+
+/* 上传中状态 */
+.uploadingState {
+  width: 100%;
+  text-align: center;
+}
+
+.progressWrapper {
+  margin-top: 16px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background: var(--color-bg-container, #fff);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary, #1890ff), var(--color-primary-light, #40a9ff));
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.progressText {
+  font-size: 14px;
+  margin: 0;
+  color: var(--color-text-secondary, #8c8c8c);
+}
+
+/* 成功状态 */
+.successState {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.successIcon {
+  color: var(--color-success, #52c41a);
+  flex-shrink: 0;
+}
+
+/* 错误消息 */
+.errorMessage {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: var(--color-error-bg, #fff2f0);
+  border: 1px solid var(--color-error-border, #ffccc7);
+  border-radius: var(--border-radius, 8px);
+  color: var(--color-error, #ff4d4f);
+  font-size: 14px;
+}
+
+.errorMessage span {
+  flex: 1;
+}
+
+.retryButton {
+  padding: 4px 12px;
+  border: 1px solid var(--color-error, #ff4d4f);
+  background: transparent;
+  border-radius: 4px;
+  color: var(--color-error, #ff4d4f);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.retryButton:hover {
+  background: var(--color-error, #ff4d4f);
+  color: #fff;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .uploadArea {
+    padding: 16px;
+    min-height: 150px;
+  }
+
+  .preview {
+    width: 80px;
+    height: 80px;
+  }
+
+  .fileInfo {
+    gap: 12px;
+  }
+}
