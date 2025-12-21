@@ -6,12 +6,22 @@ namespace Radish.Infrastructure.ImageProcessing;
 public class WatermarkOptions
 {
     /// <summary>
-    /// 水印文本
+    /// 水印类型
+    /// </summary>
+    public WatermarkType Type { get; set; } = WatermarkType.Text;
+
+    /// <summary>
+    /// 水印文本（文字水印）
     /// </summary>
     public string Text { get; set; } = string.Empty;
 
     /// <summary>
-    /// 字体大小
+    /// 水印图片路径（图片水印）
+    /// </summary>
+    public string? ImagePath { get; set; }
+
+    /// <summary>
+    /// 字体大小（文字水印）
     /// </summary>
     public int FontSize { get; set; } = 24;
 
@@ -26,7 +36,7 @@ public class WatermarkOptions
     public WatermarkPosition Position { get; set; } = WatermarkPosition.BottomRight;
 
     /// <summary>
-    /// 水印颜色（十六进制，如 #FFFFFF）
+    /// 水印颜色（十六进制，如 #FFFFFF，仅用于文字水印）
     /// </summary>
     public string Color { get; set; } = "#FFFFFF";
 
@@ -34,6 +44,23 @@ public class WatermarkOptions
     /// 边距（像素）
     /// </summary>
     public int Padding { get; set; } = 10;
+
+    /// <summary>
+    /// 图片水印缩放比例（相对于原图宽度，0.0 - 1.0）
+    /// </summary>
+    public float Scale { get; set; } = 0.1f;
+}
+
+/// <summary>
+/// 水印类型枚举
+/// </summary>
+public enum WatermarkType
+{
+    /// <summary>文字水印</summary>
+    Text = 0,
+
+    /// <summary>图片水印</summary>
+    Image = 1
 }
 
 /// <summary>
