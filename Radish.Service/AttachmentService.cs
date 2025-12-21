@@ -95,13 +95,19 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 return null;
             }
 
-            // 4. 如果是图片，生成缩略图
+            // 4. 如果是图片，添加水印（在其他处理之前）
+            if (options.AddWatermark && IsImageFile(extension))
+            {
+                await AddWatermarkAsync(uploadResult.StoragePath, options.WatermarkText);
+            }
+
+            // 4.5. 如果是图片，生成缩略图
             if (options.GenerateThumbnail && IsImageFile(extension))
             {
                 await GenerateThumbnailAsync(uploadResult.StoragePath, uploadResult.ThumbnailPath);
             }
 
-            // 4.5. 如果是图片，生成多尺寸
+            // 4.6. 如果是图片，生成多尺寸
             Dictionary<string, string>? multipleSizes = null;
             if (options.GenerateMultipleSizes && IsImageFile(extension))
             {
@@ -375,6 +381,59 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         catch (Exception ex)
         {
             Log.Error(ex, "生成缩略图时发生异常：{SourcePath}", sourcePath);
+        }
+    }
+
+    /// <summary>
+    /// 添加水印
+    /// </summary>
+    private async Task AddWatermarkAsync(string filePath, string? watermarkText)
+    {
+        if (string.IsNullOrWhiteSpace(watermarkText))
+        {
+            watermarkText = "Radish";
+        }
+
+        try
+        {
+            var fullPath = _fileStorage.GetFullPath(filePath);
+            var tempPath = fullPath + ".tmp";
+
+            var watermarkOptions = new WatermarkOptions
+            {
+                Type = WatermarkType.Text,
+                Text = watermarkText,
+                FontSize = 24,
+                Opacity = 0.5f,
+                Position = WatermarkPosition.BottomRight,
+                Color = "#FFFFFF",
+                Padding = 10
+            };
+
+            await using (var sourceStream = File.OpenRead(fullPath))
+            {
+                var result = await _imageProcessor.AddWatermarkAsync(sourceStream, tempPath, watermarkOptions);
+                if (result.Success)
+                {
+                    // 替换原文件
+                    File.Delete(fullPath);
+                    File.Move(tempPath, fullPath);
+                    Log.Information("水印已添加：{FilePath}, 文本：{WatermarkText}", filePath, watermarkText);
+                }
+                else
+                {
+                    Log.Warning("水印添加失败：{ErrorMessage}", result.ErrorMessage);
+                    // 清理临时文件
+                    if (File.Exists(tempPath))
+                    {
+                        File.Delete(tempPath);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "添加水印时发生异常：{FilePath}", filePath);
         }
     }
 
