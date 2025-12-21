@@ -101,6 +101,13 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 await GenerateThumbnailAsync(uploadResult.StoragePath, uploadResult.ThumbnailPath);
             }
 
+            // 4.5. 如果是图片，生成多尺寸
+            Dictionary<string, string>? multipleSizes = null;
+            if (options.GenerateMultipleSizes && IsImageFile(extension))
+            {
+                multipleSizes = await GenerateMultipleSizesAsync(uploadResult.StoragePath);
+            }
+
             // 5. 如果是图片，移除 EXIF
             if (options.RemoveExif && IsImageFile(extension))
             {
@@ -118,6 +125,9 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 StorageType = "Local", // 当前只支持本地存储
                 StoragePath = uploadResult.StoragePath,
                 ThumbnailPath = uploadResult.ThumbnailPath,
+                SmallPath = multipleSizes?.GetValueOrDefault("small"),
+                MediumPath = multipleSizes?.GetValueOrDefault("medium"),
+                LargePath = multipleSizes?.GetValueOrDefault("large"),
                 Url = uploadResult.Url,
                 FileHash = fileHash,
                 UploaderId = uploaderId,
@@ -394,6 +404,67 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         {
             Log.Error(ex, "移除 EXIF 信息时发生异常：{FilePath}", filePath);
         }
+    }
+
+    /// <summary>
+    /// 生成多尺寸图片
+    /// </summary>
+    private async Task<Dictionary<string, string>> GenerateMultipleSizesAsync(string sourcePath)
+    {
+        var result = new Dictionary<string, string>();
+
+        try
+        {
+            var sourceFullPath = _fileStorage.GetFullPath(sourcePath);
+            var directory = Path.GetDirectoryName(sourceFullPath);
+            var fileNameWithoutExt = Path.GetFileNameWithoutExtension(sourceFullPath);
+            var extension = Path.GetExtension(sourceFullPath);
+
+            // 定义尺寸配置
+            var sizes = new List<ImageSize>
+            {
+                new() { Name = "small", Width = 400, Height = 300, KeepAspectRatio = true, Quality = 85 },
+                new() { Name = "medium", Width = 800, Height = 600, KeepAspectRatio = true, Quality = 85 },
+                new() { Name = "large", Width = 1200, Height = 900, KeepAspectRatio = true, Quality = 85 }
+            };
+
+            await using var sourceStream = File.OpenRead(sourceFullPath);
+            var baseOutputPath = Path.Combine(directory ?? "", fileNameWithoutExt);
+
+            var results = await _imageProcessor.GenerateMultipleSizesAsync(
+                sourceStream,
+                baseOutputPath,
+                sizes
+            );
+
+            // 转换为相对路径
+            var sourceRelativePath = sourcePath;
+            foreach (var sizeResult in results.Where(r => r.Success))
+            {
+                var sizeName = Path.GetFileNameWithoutExtension(sizeResult.OutputPath)
+                    .Replace(fileNameWithoutExt + "_", "");
+
+                // 计算相对路径（相对于存储根目录）
+                var fullPath = sizeResult.OutputPath;
+                var srcFullPath = _fileStorage.GetFullPath(sourceRelativePath);
+                var srcDirectory = Path.GetDirectoryName(srcFullPath);
+                var relativePath = Path.GetRelativePath(srcDirectory ?? "", fullPath);
+
+                // 组合为完整的相对路径
+                var finalRelativePath = Path.Combine(Path.GetDirectoryName(sourceRelativePath) ?? "", relativePath)
+                    .Replace("\\", "/");
+
+                result[sizeName] = finalRelativePath;
+
+                Log.Information("生成 {SizeName} 尺寸成功：{Path}", sizeName, finalRelativePath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "生成多尺寸图片时发生异常：{SourcePath}", sourcePath);
+        }
+
+        return result;
     }
 
     #endregion
