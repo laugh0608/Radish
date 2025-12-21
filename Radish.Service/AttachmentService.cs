@@ -260,10 +260,12 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     {
         try
         {
-            await _attachmentRepository.DbBase.Updateable<Attachment>()
-                .SetColumns(a => a.DownloadCount == a.DownloadCount + 1)
-                .Where(a => a.Id == attachmentId)
-                .ExecuteCommandAsync();
+            var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId);
+            if (attachment != null)
+            {
+                attachment.DownloadCount++;
+                await _attachmentRepository.UpdateAsync(attachment);
+            }
         }
         catch (Exception ex)
         {
