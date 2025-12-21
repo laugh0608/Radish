@@ -1,3 +1,5 @@
+using Radish.Model.Root;
+
 namespace Radish.Model.Tenants;
 
 /// <summary>
