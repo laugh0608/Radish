@@ -44,6 +44,48 @@ function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
 }
 
 /**
+ * 延迟函数（用于重试）
+ */
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * 带重试的上传函数
+ * @param uploadFn 上传函数
+ * @param maxRetries 最大重试次数（默认 3）
+ * @param baseDelay 基础延迟时间（毫秒，默认 1000）
+ * @returns 上传结果
+ */
+async function uploadWithRetry<T>(
+  uploadFn: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelay: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await uploadFn();
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // 如果是最后一次尝试，直接抛出错误
+      if (attempt === maxRetries) {
+        break;
+      }
+
+      // 指数退避：1s, 2s, 4s
+      const delayTime = baseDelay * Math.pow(2, attempt);
+      console.warn(`上传失败，${delayTime}ms 后重试（第 ${attempt + 1}/${maxRetries} 次）:`, lastError.message);
+      await delay(delayTime);
+    }
+  }
+
+  throw lastError || new Error('上传失败');
+}
+
+/**
  * 附件信息
  */
 export interface AttachmentInfo {
@@ -182,80 +224,83 @@ export async function uploadImage(
   options: ImageUploadOptions,
   t: TFunction
 ): Promise<AttachmentInfo> {
-  const {
-    file,
-    businessType = 'General',
-    businessId,
-    generateThumbnail = true,
-    removeExif = true,
-    onProgress
-  } = options;
+  // 使用重试机制包装上传逻辑
+  return uploadWithRetry(async () => {
+    const {
+      file,
+      businessType = 'General',
+      businessId,
+      generateThumbnail = true,
+      removeExif = true,
+      onProgress
+    } = options;
 
-  const url = `${getApiBaseUrl()}/api/v1/Attachment/UploadImage`;
+    const url = `${getApiBaseUrl()}/api/v1/Attachment/UploadImage`;
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('businessType', businessType);
-  if (businessId) {
-    formData.append('businessId', businessId.toString());
-  }
-  formData.append('generateThumbnail', generateThumbnail.toString());
-  formData.append('removeExif', removeExif.toString());
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('businessType', businessType);
+    if (businessId) {
+      formData.append('businessId', businessId.toString());
+    }
+    formData.append('generateThumbnail', generateThumbnail.toString());
+    formData.append('removeExif', removeExif.toString());
 
-  // 使用 XMLHttpRequest 以支持上传进度
-  return new Promise<AttachmentInfo>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
+    // 使用 XMLHttpRequest 以支持上传进度
+    return new Promise<AttachmentInfo>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
 
-    // 上传进度
-    if (onProgress) {
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const progress = Math.round((e.loaded / e.total) * 100);
-          onProgress(progress);
+      // 上传进度
+      if (onProgress) {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const progress = Math.round((e.loaded / e.total) * 100);
+            onProgress(progress);
+          }
+        });
+      }
+
+      // 上传完成
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const json = JSON.parse(xhr.responseText) as ApiResponse<AttachmentInfo>;
+            const parsed = parseApiResponse<AttachmentInfo>(json, t);
+
+            if (!parsed.ok || !parsed.data) {
+              reject(new Error(parsed.message || '上传失败'));
+            } else {
+              resolve(parsed.data);
+            }
+          } catch (error) {
+            reject(new Error('解析响应失败'));
+          }
+        } else {
+          reject(new Error(`上传失败: HTTP ${xhr.status}`));
         }
       });
-    }
 
-    // 上传完成
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const json = JSON.parse(xhr.responseText) as ApiResponse<AttachmentInfo>;
-          const parsed = parseApiResponse<AttachmentInfo>(json, t);
+      // 上传错误
+      xhr.addEventListener('error', () => {
+        reject(new Error('网络错误'));
+      });
 
-          if (!parsed.ok || !parsed.data) {
-            reject(new Error(parsed.message || '上传失败'));
-          } else {
-            resolve(parsed.data);
-          }
-        } catch (error) {
-          reject(new Error('解析响应失败'));
-        }
-      } else {
-        reject(new Error(`上传失败: HTTP ${xhr.status}`));
+      // 上传取消
+      xhr.addEventListener('abort', () => {
+        reject(new Error('上传已取消'));
+      });
+
+      // 发送请求
+      xhr.open('POST', url);
+
+      // 添加认证头
+      const token = window.localStorage.getItem('access_token');
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       }
+
+      xhr.send(formData);
     });
-
-    // 上传错误
-    xhr.addEventListener('error', () => {
-      reject(new Error('网络错误'));
-    });
-
-    // 上传取消
-    xhr.addEventListener('abort', () => {
-      reject(new Error('上传已取消'));
-    });
-
-    // 发送请求
-    xhr.open('POST', url);
-
-    // 添加认证头
-    const token = window.localStorage.getItem('access_token');
-    if (token) {
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    }
-
-    xhr.send(formData);
   });
 }
 
@@ -269,76 +314,79 @@ export async function uploadDocument(
   options: DocumentUploadOptions,
   t: TFunction
 ): Promise<AttachmentInfo> {
-  const {
-    file,
-    businessType = 'Document',
-    businessId,
-    onProgress
-  } = options;
+  // 使用重试机制包装上传逻辑
+  return uploadWithRetry(async () => {
+    const {
+      file,
+      businessType = 'Document',
+      businessId,
+      onProgress
+    } = options;
 
-  const url = `${getApiBaseUrl()}/api/v1/Attachment/UploadDocument`;
+    const url = `${getApiBaseUrl()}/api/v1/Attachment/UploadDocument`;
 
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('businessType', businessType);
-  if (businessId) {
-    formData.append('businessId', businessId.toString());
-  }
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('businessType', businessType);
+    if (businessId) {
+      formData.append('businessId', businessId.toString());
+    }
 
-  // 使用 XMLHttpRequest 以支持上传进度
-  return new Promise<AttachmentInfo>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
+    // 使用 XMLHttpRequest 以支持上传进度
+    return new Promise<AttachmentInfo>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
 
-    // 上传进度
-    if (onProgress) {
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          const progress = Math.round((e.loaded / e.total) * 100);
-          onProgress(progress);
+      // 上传进度
+      if (onProgress) {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const progress = Math.round((e.loaded / e.total) * 100);
+            onProgress(progress);
+          }
+        });
+      }
+
+      // 上传完成
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const json = JSON.parse(xhr.responseText) as ApiResponse<AttachmentInfo>;
+            const parsed = parseApiResponse<AttachmentInfo>(json, t);
+
+            if (!parsed.ok || !parsed.data) {
+              reject(new Error(parsed.message || '上传失败'));
+            } else {
+              resolve(parsed.data);
+            }
+          } catch (error) {
+            reject(new Error('解析响应失败'));
+          }
+        } else {
+          reject(new Error(`上传失败: HTTP ${xhr.status}`));
         }
       });
-    }
 
-    // 上传完成
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const json = JSON.parse(xhr.responseText) as ApiResponse<AttachmentInfo>;
-          const parsed = parseApiResponse<AttachmentInfo>(json, t);
+      // 上传错误
+      xhr.addEventListener('error', () => {
+        reject(new Error('网络错误'));
+      });
 
-          if (!parsed.ok || !parsed.data) {
-            reject(new Error(parsed.message || '上传失败'));
-          } else {
-            resolve(parsed.data);
-          }
-        } catch (error) {
-          reject(new Error('解析响应失败'));
-        }
-      } else {
-        reject(new Error(`上传失败: HTTP ${xhr.status}`));
+      // 上传取消
+      xhr.addEventListener('abort', () => {
+        reject(new Error('上传已取消'));
+      });
+
+      // 发送请求
+      xhr.open('POST', url);
+
+      // 添加认证头
+      const token = window.localStorage.getItem('access_token');
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       }
+
+      xhr.send(formData);
     });
-
-    // 上传错误
-    xhr.addEventListener('error', () => {
-      reject(new Error('网络错误'));
-    });
-
-    // 上传取消
-    xhr.addEventListener('abort', () => {
-      reject(new Error('上传已取消'));
-    });
-
-    // 发送请求
-    xhr.open('POST', url);
-
-    // 添加认证头
-    const token = window.localStorage.getItem('access_token');
-    if (token) {
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    }
-
-    xhr.send(formData);
   });
 }
 

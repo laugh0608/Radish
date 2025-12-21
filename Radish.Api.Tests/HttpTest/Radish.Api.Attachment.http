@@ -347,6 +347,60 @@ General
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
 ###############################################################################
+# 9. 文件头校验测试（Magic Number）
+###############################################################################
+
+### 9.1 上传伪装的图片文件（文本文件改扩展名为 .jpg，应返回 400 错误）
+# 测试 Magic Number 检查是否生效
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="fake-image.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/fake-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 9.2 上传伪装的 PDF 文件（HTML 文件改扩展名为 .pdf，应返回 400 错误）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadDocument
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="fake-document.pdf"
+Content-Type: application/pdf
+
+< ./test-files/fake-document.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Document
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 9.3 上传真实的 PNG 文件但声称是 JPG（应通过，因为都是图片）
+# 注意：这个测试应该成功，因为 PNG 和 JPG 都是允许的图片格式
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="real-png-as-jpg.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###############################################################################
 # 测试说明
 ###############################################################################
 #
