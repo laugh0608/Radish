@@ -1,4 +1,4 @@
-namespace Radish.Infrastructure.FileStorage;
+namespace Radish.Model.DTOs;
 
 /// <summary>
 /// 文件上传选项
