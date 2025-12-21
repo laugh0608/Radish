@@ -69,6 +69,13 @@ public class LocalFileStorage : IFileStorage
                 return FileUploadResult.Fail($"不支持的文件类型：{extension}");
             }
 
+            // 验证文件头（Magic Number）防止扩展名伪装
+            var isValidMagicNumber = await ValidateFileMagicNumberAsync(stream, extension);
+            if (!isValidMagicNumber)
+            {
+                return FileUploadResult.Fail($"文件内容与扩展名不匹配，可能是伪装文件");
+            }
+
             // 生成唯一文件名（使用 Snowflake ID + 原始扩展名）
             var uniqueId = SnowFlakeSingle.instance.getID();
             var storedName = $"{uniqueId}{extension}";
@@ -301,6 +308,92 @@ public class LocalFileStorage : IFileStorage
     private bool IsImageFile(string extension)
     {
         return _options.AllowedExtensions.Image.Contains(extension);
+    }
+
+    /// <summary>
+    /// 验证文件头（Magic Number）是否与扩展名匹配
+    /// </summary>
+    /// <param name="stream">文件流</param>
+    /// <param name="extension">文件扩展名</param>
+    /// <returns>是否匹配</returns>
+    private async Task<bool> ValidateFileMagicNumberAsync(Stream stream, string extension)
+    {
+        // 文件签名字典（Magic Numbers）
+        var fileSignatures = new Dictionary<string, byte[][]>
+        {
+            // 图片格式
+            [".jpg"] = new[] { new byte[] { 0xFF, 0xD8, 0xFF } },
+            [".jpeg"] = new[] { new byte[] { 0xFF, 0xD8, 0xFF } },
+            [".png"] = new[] { new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A } },
+            [".gif"] = new[] { new byte[] { 0x47, 0x49, 0x46, 0x38 } }, // GIF8
+            [".bmp"] = new[] { new byte[] { 0x42, 0x4D } }, // BM
+            [".webp"] = new[] { new byte[] { 0x52, 0x49, 0x46, 0x46 } }, // RIFF (需要进一步检查 WEBP)
+
+            // 文档格式
+            [".pdf"] = new[] { new byte[] { 0x25, 0x50, 0x44, 0x46 } }, // %PDF
+            [".doc"] = new[] { new byte[] { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 } }, // OLE2
+            [".docx"] = new[] { new byte[] { 0x50, 0x4B, 0x03, 0x04 } }, // ZIP (Office Open XML)
+            [".xlsx"] = new[] { new byte[] { 0x50, 0x4B, 0x03, 0x04 } }, // ZIP
+            [".pptx"] = new[] { new byte[] { 0x50, 0x4B, 0x03, 0x04 } }, // ZIP
+            [".xls"] = new[] { new byte[] { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 } }, // OLE2
+            [".ppt"] = new[] { new byte[] { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 } }, // OLE2
+
+            // 文本格式（通常没有固定签名，跳过检查）
+            [".txt"] = Array.Empty<byte[]>(),
+            [".md"] = Array.Empty<byte[]>(),
+            [".svg"] = Array.Empty<byte[]>() // SVG 是 XML 文本
+        };
+
+        // 如果扩展名不在字典中，默认通过（不检查）
+        if (!fileSignatures.ContainsKey(extension))
+        {
+            return true;
+        }
+
+        var signatures = fileSignatures[extension];
+
+        // 如果没有签名定义（如文本文件），跳过检查
+        if (signatures.Length == 0)
+        {
+            return true;
+        }
+
+        // 读取文件头（最多 8 字节）
+        var headerBytes = new byte[8];
+        var originalPosition = stream.Position;
+        stream.Position = 0;
+
+        var bytesRead = await stream.ReadAsync(headerBytes, 0, headerBytes.Length);
+        stream.Position = originalPosition; // 恢复原始位置
+
+        if (bytesRead == 0)
+        {
+            return false;
+        }
+
+        // 检查是否匹配任一签名
+        foreach (var signature in signatures)
+        {
+            if (bytesRead >= signature.Length)
+            {
+                var matches = true;
+                for (int i = 0; i < signature.Length; i++)
+                {
+                    if (headerBytes[i] != signature[i])
+                    {
+                        matches = false;
+                        break;
+                    }
+                }
+
+                if (matches)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /// <summary>
