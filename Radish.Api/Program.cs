@@ -36,6 +36,10 @@ using OpenIddict.Abstractions;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
+using Hangfire;
+using Hangfire.Storage.SQLite;
+using Radish.Service.Jobs;
+using Radish.Api.Filters;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
@@ -234,6 +238,46 @@ builder.Services.AddSingleton(new PermissionRequirement());
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 // 注册 HttpContext 获取用户信息服务
 builder.Services.AddScoped<IHttpContextUser, HttpContextUser>();
+
+// 注册 Hangfire 服务
+var hangfireConnectionString = builder.Configuration["Hangfire:ConnectionString"] ?? "Data Source=DataBases/Radish.Hangfire.db";
+// 提取数据库文件路径（Hangfire.Storage.SQLite 需要文件路径,不是连接字符串）
+var hangfireDbPath = hangfireConnectionString.Replace("Data Source=", "").Trim();
+
+// 如果是相对路径,转换为绝对路径
+if (!Path.IsPathRooted(hangfireDbPath))
+{
+    // 查找解决方案根目录
+    var currentDir = new DirectoryInfo(AppContext.BaseDirectory);
+    while (currentDir != null && !File.Exists(Path.Combine(currentDir.FullName, "Radish.slnx")))
+    {
+        currentDir = currentDir.Parent;
+    }
+    var solutionRoot = currentDir?.FullName ?? AppContext.BaseDirectory;
+    hangfireDbPath = Path.Combine(solutionRoot, hangfireDbPath);
+}
+
+// 确保数据库目录存在
+var hangfireDbDirectory = Path.GetDirectoryName(hangfireDbPath);
+if (!string.IsNullOrEmpty(hangfireDbDirectory) && !Directory.Exists(hangfireDbDirectory))
+{
+    Directory.CreateDirectory(hangfireDbDirectory);
+}
+
+builder.Services.AddHangfire(config =>
+{
+    // Hangfire.Storage.SQLite 使用文件路径,不是连接字符串
+    config.UseSQLiteStorage(hangfireDbPath);
+    config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180);
+    config.UseSimpleAssemblyNameTypeSerializer();
+    config.UseRecommendedSerializerSettings();
+});
+
+builder.Services.AddHangfireServer();
+
+// 注册 FileCleanupJob
+builder.Services.AddScoped<FileCleanupJob>();
+
 // 注册 Serilog 服务
 builder.Host.AddSerilogSetup();
 
@@ -275,6 +319,17 @@ app.UseCors(corsPolicyName);
 var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
 app.UseRequestLocalization(localizationOptions.Value);
 
+// 配置 Hangfire Dashboard
+var dashboardEnabled = builder.Configuration.GetValue<bool>("Hangfire:Dashboard:Enable", true);
+if (dashboardEnabled)
+{
+    var routePrefix = builder.Configuration["Hangfire:Dashboard:RoutePrefix"] ?? "/hangfire";
+    app.UseHangfireDashboard(routePrefix, new DashboardOptions
+    {
+        Authorization = new[] { new HangfireAuthorizationFilter() }
+    });
+}
+
 // 配置 Scalar UI
 app.UseScalarUI("/scalar");
 
@@ -314,6 +369,81 @@ app.Lifetime.ApplicationStarted.Register(() =>
     Log.Information("监听地址: {Urls}", urls);
     Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
 });
+
+// 注册 Hangfire 定时任务
+var fileCleanupConfig = builder.Configuration.GetSection("Hangfire:FileCleanup");
+
+// 1. 软删除文件清理任务
+if (fileCleanupConfig.GetValue<bool>("DeletedFiles:Enable", true))
+{
+    var retentionDays = fileCleanupConfig.GetValue<int>("DeletedFiles:RetentionDays", 30);
+    var schedule = fileCleanupConfig["DeletedFiles:Schedule"] ?? "0 3 * * *";
+
+    RecurringJob.AddOrUpdate<FileCleanupJob>(
+        "cleanup-deleted-files",
+        job => job.CleanupDeletedFilesAsync(retentionDays),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: cleanup-deleted-files (保留 {Days} 天, 计划: {Schedule})", retentionDays, schedule);
+}
+
+// 2. 临时文件清理任务
+if (fileCleanupConfig.GetValue<bool>("TempFiles:Enable", true))
+{
+    var retentionHours = fileCleanupConfig.GetValue<int>("TempFiles:RetentionHours", 2);
+    var schedule = fileCleanupConfig["TempFiles:Schedule"] ?? "0 * * * *";
+
+    RecurringJob.AddOrUpdate<FileCleanupJob>(
+        "cleanup-temp-files",
+        job => job.CleanupTempFilesAsync(retentionHours),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: cleanup-temp-files (保留 {Hours} 小时, 计划: {Schedule})", retentionHours, schedule);
+}
+
+// 3. 回收站清理任务
+if (fileCleanupConfig.GetValue<bool>("RecycleBin:Enable", true))
+{
+    var retentionDays = fileCleanupConfig.GetValue<int>("RecycleBin:RetentionDays", 90);
+    var schedule = fileCleanupConfig["RecycleBin:Schedule"] ?? "0 4 * * *";
+
+    RecurringJob.AddOrUpdate<FileCleanupJob>(
+        "cleanup-recycle-bin",
+        job => job.CleanupRecycleBinAsync(retentionDays),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: cleanup-recycle-bin (保留 {Days} 天, 计划: {Schedule})", retentionDays, schedule);
+}
+
+// 4. 孤立附件清理任务
+if (fileCleanupConfig.GetValue<bool>("OrphanAttachments:Enable", true))
+{
+    var retentionHours = fileCleanupConfig.GetValue<int>("OrphanAttachments:RetentionHours", 24);
+    var schedule = fileCleanupConfig["OrphanAttachments:Schedule"] ?? "0 5 * * *";
+
+    RecurringJob.AddOrUpdate<FileCleanupJob>(
+        "cleanup-orphan-attachments",
+        job => job.CleanupOrphanAttachmentsAsync(retentionHours),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: cleanup-orphan-attachments (保留 {Hours} 小时, 计划: {Schedule})", retentionHours, schedule);
+}
 
 // -------------- App 运行阶段 ---------------
 app.Run();
