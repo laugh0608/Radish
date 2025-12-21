@@ -378,8 +378,12 @@ public class CSharpImageProcessor : IImageProcessor
             try
             {
                 // 为每个尺寸生成输出路径
+                // baseOutputPath 应该包含扩展名，例如：/path/to/file.jpg
+                var directory = Path.GetDirectoryName(baseOutputPath);
+                var fileNameWithoutExt = Path.GetFileNameWithoutExtension(baseOutputPath);
                 var extension = Path.GetExtension(baseOutputPath);
-                var outputPath = $"{baseOutputPath}_{size.Name}{extension}";
+
+                var outputPath = Path.Combine(directory ?? "", $"{fileNameWithoutExt}_{size.Name}{extension}");
 
                 // 重置流位置
                 sourceStream.Position = 0;
