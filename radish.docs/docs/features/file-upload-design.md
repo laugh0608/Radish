@@ -1,14 +1,20 @@
-# 文件上传功能设计方案
+# 文件上传功能文档
+
+> **状态**：✅ Phase 1 MVP 已完成
+> **最后更新**：2025-12-21
+> **维护者**：Radish Team
 
 ## 📋 概述
 
-本文档详细描述 Radish 项目的文件上传功能设计方案。
+Radish 项目的文件上传功能提供了完整的文件管理解决方案，支持图片、文档等多种文件类型的上传、存储、查询和删除。
 
-**核心目标**：
-- 🎯 支持图片、文档等多种文件类型上传
-- 🔒 确保上传安全性和数据完整性
-- ⚡ 优化上传性能和用户体验
-- 🏗️ 可配置、易扩展的架构设计
+**核心特性**：
+- 🎯 支持图片（JPG/PNG/GIF/WebP）和文档（PDF/DOC/DOCX/XLSX）上传
+- 🔒 多层安全防护（文件类型校验、**Magic Number 检查**、大小限制）
+- ⚡ 自动图片处理（缩略图生成、EXIF 移除、压缩）
+- 🏗️ 可扩展架构（本地存储 / MinIO / OSS）
+- 🔄 文件去重（基于 SHA256 哈希）
+- 🌐 **前端自动重试机制**（指数退避：1s, 2s, 4s）
 
 **适用场景**：
 - 论坛帖子配图
@@ -16,6 +22,211 @@
 - 评论附件
 - 文档分享
 - 富文本编辑器图片插入
+
+---
+
+## 🚀 快速开始
+
+### 前端使用示例
+
+#### 在 MarkdownEditor 中上传图片
+
+```typescript
+import { MarkdownEditor } from '@radish/ui';
+import { uploadImage } from '@/api/attachment';
+import { useTranslation } from 'react-i18next';
+
+function MyComponent() {
+  const { t } = useTranslation();
+  const [content, setContent] = useState('');
+
+  const handleImageUpload = async (file: File) => {
+    const result = await uploadImage({
+      file,
+      businessType: 'Post',
+      generateThumbnail: true,
+      removeExif: true
+    }, t);
+
+    return {
+      url: result.fileUrl,
+      thumbnailUrl: result.thumbnailUrl
+    };
+  };
+
+  return (
+    <MarkdownEditor
+      value={content}
+      onChange={setContent}
+      onImageUpload={handleImageUpload}
+      placeholder="输入内容，支持 Markdown..."
+    />
+  );
+}
+```
+
+**支持的上传方式**：
+1. 点击工具栏图片按钮
+2. 拖拽图片到编辑器
+3. 粘贴图片（Ctrl+V）
+
+#### 使用 FileUpload 组件
+
+```typescript
+import { FileUpload } from '@radish/ui';
+import { uploadImage } from '@/api/attachment';
+
+function MyUploadForm() {
+  const { t } = useTranslation();
+
+  const handleUpload = async (file: File) => {
+    const result = await uploadImage({
+      file,
+      businessType: 'Avatar',
+      generateThumbnail: true,
+      onProgress: (progress) => {
+        console.log(`上传进度：${progress}%`);
+      }
+    }, t);
+
+    return {
+      id: result.id,
+      fileName: result.fileName,
+      fileUrl: result.fileUrl,
+      thumbnailUrl: result.thumbnailUrl
+    };
+  };
+
+  return (
+    <FileUpload
+      accept="image/*"
+      maxSize={2 * 1024 * 1024} // 2MB
+      onUpload={handleUpload}
+      onSuccess={(result) => console.log('上传成功', result)}
+      onError={(error) => console.error('上传失败', error)}
+      showPreview={true}
+    />
+  );
+}
+```
+
+### 后端 API 调用
+
+#### 上传图片
+
+```http
+POST /api/v1/Attachment/UploadImage
+Authorization: Bearer {access_token}
+Content-Type: multipart/form-data
+
+file: (binary)
+businessType: Post
+generateThumbnail: true
+removeExif: true
+```
+
+**成功响应**：
+```json
+{
+  "isSuccess": true,
+  "statusCode": 200,
+  "messageInfo": "上传成功",
+  "responseData": {
+    "id": 2002696346624065536,
+    "fileName": "2002696344824709120.jpg",
+    "originalFileName": "my-image.jpg",
+    "fileSize": 47295,
+    "fileSizeFormatted": "46.19 KB",
+    "mimeType": "image/jpeg",
+    "storageType": "Local",
+    "url": "/uploads/Post/2025/12/2002696344824709120.jpg",
+    "thumbnailUrl": "/uploads/Post/2025/12/2002696344824709120_thumb.jpg",
+    "uploaderId": 20000,
+    "uploaderName": "system",
+    "businessType": "Post",
+    "isPublic": true,
+    "downloadCount": 0,
+    "createTime": "2025-12-21T18:52:09"
+  }
+}
+```
+
+---
+
+## ✅ 已实现功能（Phase 1 MVP）
+
+### 后端功能
+
+- ✅ **数据模型和存储接口**
+  - Attachment 实体和数据库表
+  - IFileStorage 接口
+  - LocalFileStorage 实现（本地文件系统）
+  - IImageProcessor 接口
+  - CSharpImageProcessor 实现（ImageSharp）
+
+- ✅ **安全机制**
+  - 文件类型白名单校验
+  - **Magic Number 检查**（文件头校验，防止扩展名伪装）
+  - 文件大小限制（Avatar: 2MB, Image: 5MB, Document: 10MB）
+  - 文件名随机化（雪花ID）
+  - EXIF 信息移除
+
+- ✅ **图片处理**
+  - 缩略图生成（150x150）
+  - 图片压缩（JPEG 85%）
+  - EXIF 移除
+
+- ✅ **文件去重**
+  - 基于 SHA256 哈希
+  - 相同文件秒传
+
+- ✅ **业务逻辑**
+  - AttachmentService（CRUD + 上传逻辑）
+  - 文件校验
+  - 文件去重
+  - 图片处理
+  - 文件名生成
+
+- ✅ **API 端点**
+  - POST /api/v1/Attachment/UploadImage
+  - POST /api/v1/Attachment/UploadDocument
+  - GET /api/v1/Attachment/GetById/{id}
+  - GET /api/v1/Attachment/GetByBusiness
+  - GET /api/v1/Attachment/Download/{id}
+  - DELETE /api/v1/Attachment/Delete/{id}
+  - POST /api/v1/Attachment/DeleteBatch
+  - PUT /api/v1/Attachment/UpdateBusinessAssociation/{id}
+
+### 前端功能
+
+- ✅ **上传组件**
+  - FileUpload 组件（拖拽 + 点击上传）
+  - 上传进度显示
+  - 图片预览
+  - 错误提示
+  - **自动重试机制**（指数退避：1s, 2s, 4s，最多 3 次）
+
+- ✅ **MarkdownEditor 集成**
+  - 图片按钮点击触发上传
+  - 上传成功后插入 Markdown 图片语法
+  - 支持粘贴图片上传（Ctrl+V）
+  - 支持拖拽图片上传
+  - 上传状态显示（loading、error）
+
+- ✅ **API 服务层**
+  - uploadImage() 函数
+  - uploadDocument() 函数
+  - 完整的 TypeScript 类型定义
+  - 自动重试逻辑
+
+### 配置和测试
+
+- ✅ FileStorage 配置（appsettings.json）
+- ✅ Gateway YARP 路由配置（/uploads）
+- ✅ HTTP 测试文件（Radish.Api.Attachment.http）
+- ✅ 自动化测试脚本（test-attachment-upload.sh/ps1）
+- ✅ 测试指南（AttachmentApiTestGuide.md）
+- ✅ 测试报告（AttachmentApiTestReport.md）
 
 ---
 
