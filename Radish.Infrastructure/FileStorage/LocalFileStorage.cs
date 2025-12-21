@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using Radish.Common;
 using Radish.Common.OptionTool;
+using Radish.Model.DTOs;
 using SqlSugar;
 using System.Security.Cryptography;
 

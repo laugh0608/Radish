@@ -1,3 +1,5 @@
+using Radish.Model.DTOs;
+
 namespace Radish.Infrastructure.FileStorage;
 
 /// <summary>
