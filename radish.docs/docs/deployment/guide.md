@@ -25,6 +25,21 @@ docker build \
 ## 运行容器
 镜像默认监听 8080/8081（HTTP/HTTPS）。启动容器示例：
 
+**文件上传目录挂载（生产环境建议）**：
+- 本地存储模式下，上传文件存放在 `DataBases/Uploads/`
+- 建议挂载到宿主机持久化目录，避免容器重启丢失文件
+
+示例（挂载上传目录）：
+```bash
+docker run -d --name radish-api \
+  -p 8080:8080 -p 8081:8081 \
+  -v /data/radish/uploads:/app/DataBases/Uploads \
+  -e ASPNETCORE_ENVIRONMENT=Production \
+  -e ConnectionStrings__Default="Host=db;Port=5432;Database=radish;Username=radish;Password=radish" \
+  -e ASPNETCORE_URLS="http://+:8080" \
+  radish/server:local
+```
+
 ```bash
 docker run -d --name radish-api \
   -p 8080:8080 -p 8081:8081 \

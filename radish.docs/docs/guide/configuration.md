@@ -322,6 +322,116 @@ services:
 - **OpenIddict 使用独立的数据库**（`RadishAuth.OpenIddict.db`），由 EF Core 管理，存储 OIDC 认证相关数据（客户端、授权码、令牌等）
 - **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
 
+### 2.1 文件存储配置（FileStorage）
+
+文件上传相关的所有配置集中在 `FileStorage` 节点中，包含存储后端、图片处理、水印、去重等选项。
+
+**核心配置示例**：
+```json
+{
+  "FileStorage": {
+    "Type": "Local",
+    "MaxFileSize": {
+      "Avatar": 2097152,
+      "Image": 5242880,
+      "Document": 10485760,
+      "Video": 52428800,
+      "Audio": 10485760
+    },
+    "AllowedExtensions": {
+      "Image": [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"],
+      "Document": [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".md"],
+      "Video": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
+      "Audio": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"]
+    },
+    "Local": {
+      "BasePath": "DataBases/Uploads",
+      "BaseUrl": "/uploads"
+    },
+    "ImageProcessing": {
+      "GenerateThumbnail": true,
+      "GenerateMultipleSizes": false,
+      "Sizes": {
+        "Small": { "Width": 400, "Height": 300 },
+        "Medium": { "Width": 800, "Height": 600 },
+        "Large": { "Width": 1200, "Height": 900 }
+      },
+      "CompressQuality": 85,
+      "RemoveExif": true
+    },
+    "Watermark": {
+      "Enable": false,
+      "Type": "Text",
+      "Text": {
+        "Content": "Radish",
+        "Position": "BottomRight",
+        "FontSize": 24,
+        "FontSizeRelative": 0.05,
+        "Color": "#FFFFFF",
+        "Opacity": 0.5
+      }
+    },
+    "Deduplication": {
+      "Enable": true,
+      "HashAlgorithm": "SHA256"
+    }
+  }
+}
+```
+
+**说明**：
+- `Type`：存储后端类型（`Local`/`MinIO`/`OSS`）
+- `Local.BasePath`：本地文件存储根目录（相对于仓库根目录）
+- `Local.BaseUrl`：对外访问 URL 前缀
+- `ImageProcessing.GenerateMultipleSizes`：是否生成多尺寸图片
+- `Watermark`：水印配置（默认关闭）
+- `Deduplication`：文件去重配置（默认启用）
+
+### 2.2 Hangfire 定时任务配置
+
+Hangfire 用于执行后台定时任务（如文件清理），配置位于 `Hangfire` 节点：
+
+```json
+{
+  "Hangfire": {
+    "ConnectionString": "Data Source=DataBases/Radish.Hangfire.db",
+    "Dashboard": {
+      "Enable": true,
+      "RoutePrefix": "/hangfire",
+      "AllowLocalOnly": true
+    },
+    "FileCleanup": {
+      "DeletedFiles": {
+        "Enable": true,
+        "Schedule": "0 3 * * *",
+        "RetentionDays": 30
+      },
+      "TempFiles": {
+        "Enable": true,
+        "Schedule": "0 * * * *",
+        "RetentionHours": 2
+      },
+      "RecycleBin": {
+        "Enable": true,
+        "Schedule": "0 4 * * *",
+        "RetentionDays": 90
+      },
+      "OrphanAttachments": {
+        "Enable": true,
+        "Schedule": "0 5 * * *",
+        "RetentionHours": 24
+      }
+    }
+  }
+}
+```
+
+**说明**：
+- `Dashboard.RoutePrefix`：Dashboard 访问路径
+- `FileCleanup.*.Schedule`：Cron 表达式
+- `FileCleanup.*.Retention*`：保留周期（天/小时）
+- 详细说明见：`/guide/hangfire-scheduled-jobs`
+
 #### SQLite（默认，适合本地开发）
 
 ```json
