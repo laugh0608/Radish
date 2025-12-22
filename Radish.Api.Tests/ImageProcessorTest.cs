@@ -9,6 +9,7 @@ using Shouldly;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
+using WatermarkOptions = Radish.Infrastructure.ImageProcessing.WatermarkOptions;
 
 namespace Radish.Api.Tests;
 
@@ -27,7 +28,7 @@ public class ImageProcessorTest
         {
             ImageProcessing = new ImageProcessingOptions
             {
-                ThumbnailSize = new ImageProcessing.ImageSize
+                ThumbnailSize = new ImageSizeOptions
                 {
                     Width = 150,
                     Height = 150
