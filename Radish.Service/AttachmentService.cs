@@ -5,7 +5,6 @@ using Radish.Infrastructure.ImageProcessing;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
-using Radish.Model.DTOs;
 using Radish.Model.ViewModels;
 using Serilog;
 
@@ -37,7 +36,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     /// </summary>
     public async Task<AttachmentVo?> UploadFileAsync(
         IFormFile file,
-        FileUploadOptions options,
+        FileUploadOptionsDto optionsDto,
         long uploaderId,
         string uploaderName)
     {
@@ -58,7 +57,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
             // 2. 计算文件哈希（用于去重）
             string? fileHash = null;
-            if (options.CalculateHash)
+            if (optionsDto.CalculateHash)
             {
                 using var memoryStream = new MemoryStream();
                 await file.CopyToAsync(memoryStream);
@@ -70,7 +69,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
                 // 只有在没有特殊处理选项时才启用去重
                 // 如果用户指定了水印、多尺寸等处理，则不去重，允许上传新文件
-                var hasSpecialProcessing = options.AddWatermark || options.GenerateMultipleSizes;
+                var hasSpecialProcessing = optionsDto.AddWatermark || optionsDto.GenerateMultipleSizes;
 
                 if (!hasSpecialProcessing)
                 {
@@ -110,7 +109,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                     stream,
                     fileName,
                     contentType,
-                    options
+                    optionsDto
                 );
             }
 
@@ -121,26 +120,26 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             }
 
             // 4. 如果是图片，添加水印（在其他处理之前）
-            if (options.AddWatermark && IsImageFile(extension))
+            if (optionsDto.AddWatermark && IsImageFile(extension))
             {
-                await AddWatermarkAsync(uploadResult.StoragePath, options.WatermarkText);
+                await AddWatermarkAsync(uploadResult.StoragePath, optionsDto.WatermarkText);
             }
 
             // 4.5. 如果是图片，生成缩略图
-            if (options.GenerateThumbnail && IsImageFile(extension))
+            if (optionsDto.GenerateThumbnail && IsImageFile(extension))
             {
                 await GenerateThumbnailAsync(uploadResult.StoragePath, uploadResult.ThumbnailPath);
             }
 
             // 4.6. 如果是图片，生成多尺寸
             Dictionary<string, string>? multipleSizes = null;
-            if (options.GenerateMultipleSizes && IsImageFile(extension))
+            if (optionsDto.GenerateMultipleSizes && IsImageFile(extension))
             {
                 multipleSizes = await GenerateMultipleSizesAsync(uploadResult.StoragePath);
             }
 
             // 5. 如果是图片，移除 EXIF
-            if (options.RemoveExif && IsImageFile(extension))
+            if (optionsDto.RemoveExif && IsImageFile(extension))
             {
                 await RemoveExifAsync(uploadResult.StoragePath);
             }
@@ -148,7 +147,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             // 6. 保存到数据库
             var attachment = new Attachment
             {
-                OriginalName = string.IsNullOrWhiteSpace(options.OriginalFileName) ? fileName : options.OriginalFileName,
+                OriginalName = string.IsNullOrWhiteSpace(optionsDto.OriginalFileName) ? fileName : optionsDto.OriginalFileName,
                 StoredName = uploadResult.StoredName,
                 Extension = extension,
                 FileSize = uploadResult.FileSize,
@@ -163,7 +162,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 FileHash = fileHash,
                 UploaderId = uploaderId,
                 UploaderName = uploaderName,
-                BusinessType = options.BusinessType,
+                BusinessType = optionsDto.BusinessType,
                 IsPublic = true,
                 DownloadCount = 0
             };
