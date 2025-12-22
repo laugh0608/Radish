@@ -1,7 +1,10 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Options;
+using Radish.Common.OptionTool;
 using Radish.Infrastructure.FileStorage;
 using Radish.Infrastructure.ImageProcessing;
+using InfraWatermarkOptions = Radish.Infrastructure.ImageProcessing.WatermarkOptions;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
@@ -16,17 +19,20 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IFileStorage _fileStorage;
     private readonly IImageProcessor _imageProcessor;
+    private readonly FileStorageOptions _fileStorageOptions;
 
     public AttachmentService(
         IMapper mapper,
         IBaseRepository<Attachment> baseRepository,
         IFileStorage fileStorage,
-        IImageProcessor imageProcessor)
+        IImageProcessor imageProcessor,
+        IOptions<FileStorageOptions> fileStorageOptions)
         : base(mapper, baseRepository)
     {
         _attachmentRepository = baseRepository;
         _fileStorage = fileStorage;
         _imageProcessor = imageProcessor;
+        _fileStorageOptions = fileStorageOptions.Value;
     }
 
     #region Upload
@@ -122,7 +128,15 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             // 4. 如果是图片，添加水印（在其他处理之前）
             if (optionsDto.AddWatermark && IsImageFile(extension))
             {
-                await AddWatermarkAsync(uploadResult.StoragePath, optionsDto.WatermarkText);
+                // 检查配置文件中的水印开关
+                if (_fileStorageOptions.Watermark?.Enable == true)
+                {
+                    await AddWatermarkAsync(uploadResult.StoragePath, optionsDto.WatermarkText);
+                }
+                else
+                {
+                    Log.Information("水印功能未在配置文件中启用，跳过水印处理");
+                }
             }
 
             // 4.5. 如果是图片，生成缩略图
@@ -432,25 +446,49 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var tempFileName = $"{Path.GetFileNameWithoutExtension(fullPath)}_{Guid.NewGuid():N}{Path.GetExtension(fullPath)}";
             var tempPath = Path.Combine(tempDir, tempFileName);
 
-            var watermarkOptions = new WatermarkOptions
+            // 使用配置文件中的水印设置
+            var watermarkConfig = _fileStorageOptions.Watermark?.Text ?? new TextWatermarkOptions();
+
+            // 解析水印位置
+            var position = watermarkConfig.Position?.ToLowerInvariant() switch
             {
-                Type = WatermarkType.Text,
+                "topleft" => WatermarkPosition.TopLeft,
+                "topright" => WatermarkPosition.TopRight,
+                "bottomleft" => WatermarkPosition.BottomLeft,
+                "bottomright" => WatermarkPosition.BottomRight,
+                "center" => WatermarkPosition.Center,
+                _ => WatermarkPosition.BottomRight
+            };
+
+            var watermarkOptions = new InfraWatermarkOptions
+            {
+                Type = _fileStorageOptions.Watermark?.Type?.ToLowerInvariant() == "image"
+                    ? WatermarkType.Image
+                    : WatermarkType.Text,
                 Text = watermarkText,
-                FontSize = 24,
-                Opacity = 0.5f,
-                Position = WatermarkPosition.BottomRight,
-                Color = "#FFFFFF",
+                FontSize = watermarkConfig.FontSize,
+                Opacity = (float)watermarkConfig.Opacity,
+                Position = position,
+                Color = watermarkConfig.Color ?? "#FFFFFF",
                 Padding = 10
             };
 
+            // 修复文件锁问题：先读取源文件到内存，关闭文件流后再处理
+            byte[] fileBytes;
             await using (var sourceStream = File.OpenRead(fullPath))
             {
-                var result = await _imageProcessor.AddWatermarkAsync(sourceStream, tempPath, watermarkOptions);
+                fileBytes = new byte[sourceStream.Length];
+                await sourceStream.ReadAsync(fileBytes, 0, fileBytes.Length);
+            }
+
+            // 使用内存流处理图片
+            await using (var memoryStream = new MemoryStream(fileBytes))
+            {
+                var result = await _imageProcessor.AddWatermarkAsync(memoryStream, tempPath, watermarkOptions);
                 if (result.Success)
                 {
-                    // 替换原文件
-                    File.Delete(fullPath);
-                    File.Move(tempPath, fullPath);
+                    // 替换原文件（添加重试机制）
+                    ReplaceFileWithRetry(tempPath, fullPath, 3);
                     Log.Information("水印已添加：{FilePath}, 文本：{WatermarkText}", filePath, watermarkText);
                 }
                 else
@@ -468,6 +506,36 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         {
             Log.Error(ex, "添加水印时发生异常：{FilePath}", filePath);
         }
+    }
+
+    /// <summary>
+    /// 带重试机制的文件替换
+    /// </summary>
+    private void ReplaceFileWithRetry(string sourcePath, string targetPath, int maxRetries)
+    {
+        for (int i = 0; i < maxRetries; i++)
+        {
+            try
+            {
+                // 如果目标文件存在，先删除
+                if (File.Exists(targetPath))
+                {
+                    File.Delete(targetPath);
+                }
+
+                // 移动文件
+                File.Move(sourcePath, targetPath);
+                return; // 成功，退出重试循环
+            }
+            catch (IOException ex) when (i < maxRetries - 1)
+            {
+                Log.Warning("文件替换失败，正在重试 ({0}/{1}): {2}", i + 1, maxRetries, ex.Message);
+                Thread.Sleep(100); // 等待 100ms 后重试
+            }
+        }
+
+        // 最后一次重试仍然失败，抛出异常
+        throw new IOException($"无法替换文件：{targetPath}");
     }
 
     /// <summary>
@@ -489,14 +557,22 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var tempFileName = $"{Path.GetFileNameWithoutExtension(fullPath)}_{Guid.NewGuid():N}{Path.GetExtension(fullPath)}";
             var tempPath = Path.Combine(tempDir, tempFileName);
 
+            // 修复文件锁问题：先读取源文件到内存，关闭文件流后再处理
+            byte[] fileBytes;
             await using (var sourceStream = File.OpenRead(fullPath))
             {
-                var removed = await _imageProcessor.RemoveExifAsync(sourceStream, tempPath);
+                fileBytes = new byte[sourceStream.Length];
+                await sourceStream.ReadAsync(fileBytes, 0, fileBytes.Length);
+            }
+
+            // 使用内存流处理图片
+            await using (var memoryStream = new MemoryStream(fileBytes))
+            {
+                var removed = await _imageProcessor.RemoveExifAsync(memoryStream, tempPath);
                 if (removed)
                 {
-                    // 替换原文件
-                    File.Delete(fullPath);
-                    File.Move(tempPath, fullPath);
+                    // 替换原文件（添加重试机制）
+                    ReplaceFileWithRetry(tempPath, fullPath, 3);
                     Log.Information("EXIF 信息已移除：{FilePath}", filePath);
                 }
                 else
