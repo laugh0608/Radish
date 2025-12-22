@@ -226,6 +226,61 @@ public sealed class TextWatermarkOptions
     /// <summary>不透明度</summary>
     /// <remarks>范围 0-1，默认 0.5（50%透明）</remarks>
     public double Opacity { get; set; } = 0.5;
+
+    /// <summary>字体配置</summary>
+    public FontOptions Font { get; set; } = new();
+}
+
+/// <summary>字体配置</summary>
+public sealed class FontOptions
+{
+    /// <summary>字体名称列表（按优先级排序）</summary>
+    /// <remarks>
+    /// 支持跨平台字体选择，会按顺序尝试加载第一个可用的字体。
+    /// 预置常见字体：Windows (Arial/Calibri), macOS (San Francisco/Helvetica), Linux (DejaVu/Ubuntu/Noto)
+    /// </remarks>
+    public List<string> PreferredFonts { get; set; } = new()
+    {
+        // Windows 系统
+        "Arial",
+        "Calibri",
+        "Microsoft Sans Serif",
+
+        // macOS 系统
+        "San Francisco",
+        "Helvetica",
+        "Helvetica Neue",
+
+        // Linux 系统
+        "DejaVu Sans",
+        "Ubuntu",
+        "Liberation Sans",
+        "Noto Sans",
+
+        // 通用备选
+        "Sans",
+        "System UI"
+    };
+
+    /// <summary>自定义字体文件路径</summary>
+    /// <remarks>优先使用自定义字体，如果为空则使用系统字体</remarks>
+    public string? CustomFontPath { get; set; }
+
+    /// <summary>字体样式</summary>
+    /// <remarks>Regular/Bold/Italic/BoldItalic</remarks>
+    public string Style { get; set; } = "Regular";
+
+    /// <summary>是否使用相对字体大小</summary>
+    /// <remarks>true: 根据图片宽度计算, false: 使用固定像素值</remarks>
+    public bool UseRelativeSize { get; set; } = true;
+
+    /// <summary>最小字体大小（像素）</summary>
+    /// <remarks>当使用相对大小时的最小值</remarks>
+    public int MinFontSize { get; set; } = 12;
+
+    /// <summary>最大字体大小（像素）</summary>
+    /// <remarks>当使用相对大小时的最大值</remarks>
+    public int MaxFontSize { get; set; } = 72;
 }
 
 /// <summary>图片水印配置</summary>
