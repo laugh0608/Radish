@@ -38,7 +38,8 @@ export default defineConfig({
           text: '快速开始',
           items: [
             { text: '项目概览', link: '/' },
-            { text: '开发计划', link: '/development-plan' }
+            { text: '开发计划', link: '/development-plan' },
+            { text: '文件上传 API', link: '/api/file-upload-api' }
           ]
         },
         {
@@ -50,7 +51,8 @@ export default defineConfig({
             { text: '配置管理', link: '/guide/configuration' },
             { text: '日志系统', link: '/guide/logging' },
             { text: '密码安全', link: '/guide/password-security' },
-            { text: '速率限制', link: '/guide/rate-limiting' }
+            { text: '速率限制', link: '/guide/rate-limiting' },
+            { text: 'Hangfire 定时任务', link: '/guide/hangfire-scheduled-jobs' }
           ]
         },
         {
@@ -91,7 +93,8 @@ export default defineConfig({
           items: [
             { text: '论坛应用评估', link: '/features/forum-assessment' },
             { text: '论坛重构总结', link: '/features/forum-refactoring' },
-            { text: '开放平台指南', link: '/features/open-platform' }
+            { text: '开放平台指南', link: '/features/open-platform' },
+            { text: '文件上传功能设计', link: '/features/file-upload-design' }
           ]
         },
         {
