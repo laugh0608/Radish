@@ -9,7 +9,8 @@ using Shouldly;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
-using WatermarkOptions = Radish.Infrastructure.ImageProcessing.WatermarkOptions;
+using CommonWatermarkOptions = Radish.Common.OptionTool.WatermarkOptions;
+using InfraWatermarkOptions = Radish.Infrastructure.ImageProcessing.WatermarkOptions;
 
 namespace Radish.Api.Tests;
 
@@ -34,18 +35,60 @@ public class ImageProcessorTest
                     Height = 150
                 },
                 CompressQuality = 85
+            },
+            Watermark = new CommonWatermarkOptions
+            {
+                Text = new TextWatermarkOptions
+                {
+                    Font = new FontOptions
+                    {
+                        // Linux 环境优先使用 DejaVu Sans
+                        PreferredFonts = new List<string>
+                        {
+                            "DejaVu Sans",
+                            "Ubuntu",
+                            "Liberation Sans",
+                            "Noto Sans",
+                            "Arial"
+                        },
+                        UseRelativeSize = false, // 测试使用固定大小
+                        MinFontSize = 12,
+                        MaxFontSize = 48
+                    }
+                }
             }
         };
 
         var options = Options.Create(fileStorageOptions);
         _imageProcessor = new CSharpImageProcessor(options);
 
-        // 创建测试输出目录
-        _testOutputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "TestOutput");
-        if (!Directory.Exists(_testOutputPath))
+        // 创建测试输出目录（项目根目录 DataBases 下）
+        var repoRoot = ResolveRepoRoot();
+        _testOutputPath = Path.Combine(repoRoot, "DataBases", "TestOutput");
+        Directory.CreateDirectory(_testOutputPath);
+    }
+
+    /// <summary>
+    /// 解析项目根目录
+    /// </summary>
+    private static string ResolveRepoRoot()
+    {
+        var currentDir = Directory.GetCurrentDirectory();
+        var dir = new DirectoryInfo(currentDir);
+
+        // 向上查找包含 .git 或 Radish.slnx 的目录
+        while (dir != null)
         {
-            Directory.CreateDirectory(_testOutputPath);
+            if (dir.GetFiles("Radish.slnx", SearchOption.TopDirectoryOnly).Length > 0 ||
+                dir.GetFiles(".git", SearchOption.TopDirectoryOnly).Length > 0)
+            {
+                return dir.FullName;
+            }
+            dir = dir.Parent;
         }
+
+        // 如果没找到，使用当前目录
+        return currentDir;
     }
 
     /// <summary>
@@ -80,7 +123,7 @@ public class ImageProcessorTest
         var sourceStream = CreateTestImage(800, 600);
         var outputPath = Path.Combine(_testOutputPath, "watermark_test.jpg");
 
-        var watermarkOptions = new WatermarkOptions
+        var watermarkOptions = new InfraWatermarkOptions
         {
             Type = WatermarkType.Text,
             Text = "Radish Test",
@@ -196,7 +239,7 @@ public class ImageProcessorTest
         var sourceStream = CreateTestImage(800, 600);
         var outputPath = Path.Combine(_testOutputPath, "watermark_topleft.jpg");
 
-        var watermarkOptions = new WatermarkOptions
+        var watermarkOptions = new InfraWatermarkOptions
         {
             Type = WatermarkType.Text,
             Text = "TopLeft",
@@ -225,7 +268,7 @@ public class ImageProcessorTest
         var sourceStream = CreateTestImage(800, 600);
         var outputPath = Path.Combine(_testOutputPath, "watermark_center.jpg");
 
-        var watermarkOptions = new WatermarkOptions
+        var watermarkOptions = new InfraWatermarkOptions
         {
             Type = WatermarkType.Text,
             Text = "Center Watermark",

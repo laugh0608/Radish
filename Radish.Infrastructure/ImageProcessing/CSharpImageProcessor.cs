@@ -16,10 +16,13 @@ namespace Radish.Infrastructure.ImageProcessing;
 public class CSharpImageProcessor : IImageProcessor
 {
     private readonly ImageProcessingOptions _options;
+    private readonly TextWatermarkOptions _textWatermarkOptions;
 
     public CSharpImageProcessor(IOptions<FileStorageOptions> fileStorageOptions)
     {
-        _options = fileStorageOptions.Value.ImageProcessing;
+        var options = fileStorageOptions.Value;
+        _options = options.ImageProcessing;
+        _textWatermarkOptions = options.Watermark?.Text ?? new TextWatermarkOptions();
     }
     #region GenerateThumbnail
 
@@ -258,15 +261,29 @@ public class CSharpImageProcessor : IImageProcessor
     /// </summary>
     private async Task AddTextWatermarkAsync(Image image, WatermarkOptions options)
     {
-        // 创建字体
-        var fontCollection = new FontCollection();
-        // 使用系统默认字体（简化处理，生产环境可能需要指定字体文件）
-        if (!SystemFonts.Families.Any())
+        // 获取字体配置
+        var fontConfig = _textWatermarkOptions?.Font ?? new FontOptions();
+
+        // 计算字体大小
+        var fontSize = CalculateFontSize(image.Width, fontConfig, options.FontSize);
+
+        // 获取字体样式
+        var fontStyle = ParseFontStyle(fontConfig.Style);
+
+        Font font;
+
+        // 优先使用自定义字体文件
+        if (!string.IsNullOrEmpty(fontConfig.CustomFontPath) && File.Exists(fontConfig.CustomFontPath))
         {
-            throw new Exception("未找到可用字体");
+            var fontCollection = new FontCollection();
+            var customFont = fontCollection.Add(fontConfig.CustomFontPath);
+            font = customFont.CreateFont(fontSize, fontStyle);
         }
-        var fontFamily = SystemFonts.Families.First();
-        var font = fontFamily.CreateFont(options.FontSize, FontStyle.Regular);
+        else
+        {
+            // 使用系统字体，按优先级尝试
+            font = GetSystemFont(fontConfig.PreferredFonts, fontSize, fontStyle);
+        }
 
         // 计算水印位置
         var textOptions = new RichTextOptions(font)
@@ -282,6 +299,69 @@ public class CSharpImageProcessor : IImageProcessor
         ));
 
         await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// 计算字体大小
+    /// </summary>
+    private int CalculateFontSize(int imageWidth, FontOptions fontConfig, int defaultSize)
+    {
+        if (!fontConfig.UseRelativeSize)
+        {
+            return defaultSize;
+        }
+
+        var relativeSize = (int)(imageWidth * _textWatermarkOptions.FontSizeRelative);
+        return Math.Clamp(relativeSize, fontConfig.MinFontSize, fontConfig.MaxFontSize);
+    }
+
+    /// <summary>
+    /// 解析字体样式
+    /// </summary>
+    private FontStyle ParseFontStyle(string style)
+    {
+        return style.ToLowerInvariant() switch
+        {
+            "bold" => FontStyle.Bold,
+            "italic" => FontStyle.Italic,
+            "bolditalic" => FontStyle.Bold | FontStyle.Italic,
+            _ => FontStyle.Regular
+        };
+    }
+
+    /// <summary>
+    /// 获取系统字体
+    /// </summary>
+    private Font GetSystemFont(List<string> preferredFonts, int fontSize, FontStyle fontStyle)
+    {
+        if (!SystemFonts.Families.Any())
+        {
+            throw new Exception("未找到可用字体");
+        }
+
+        // 按优先级尝试加载字体
+        foreach (var fontName in preferredFonts)
+        {
+            var family = SystemFonts.Families.FirstOrDefault(f =>
+                string.Equals(f.Name, fontName, StringComparison.OrdinalIgnoreCase) ||
+                f.Name.Contains(fontName, StringComparison.OrdinalIgnoreCase));
+
+            if (family != null)
+            {
+                try
+                {
+                    return family.CreateFont(fontSize, fontStyle);
+                }
+                catch
+                {
+                    // 字体创建失败，尝试下一个
+                    continue;
+                }
+            }
+        }
+
+        // 如果所有偏好字体都不可用，使用第一个可用字体
+        return SystemFonts.Families.First().CreateFont(fontSize, fontStyle);
     }
 
     /// <summary>
