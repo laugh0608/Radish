@@ -721,7 +721,7 @@ public class AttachmentVo
 - **Rust 实现**：作为高性能备选方案，方便切换测试
 - **切换方式**：通过配置文件 `ImageProcessing:UseRustExtension`
 - **Rust 项目名称**：`radish-lib`（统一的 Rust 扩展库）
-- **项目位置**：`Radish.Core/native/rust/radish-lib`
+- **项目位置**：`Radish.Core/radish-lib`
 - **MVP 实现**：图片加水印算法
 
 **8. 水印具体设计** ✅
@@ -784,7 +784,7 @@ public class AttachmentVo
 
 **15. Rust 扩展架构** ✅
 - **项目名称**：`radish-lib`（统一的 Rust 扩展库）
-- **项目位置**：`Radish.Core/native/rust/radish-lib`
+- **项目位置**：`Radish.Core/radish-lib`
 - **重构现有**：将现有的 `test_lib` 重构为正式的 `radish-lib`
 - **初期功能**：
   - 图片加水印（`add_watermark`）

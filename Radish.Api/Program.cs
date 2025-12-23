@@ -154,8 +154,13 @@ builder.Services.AddAllOptionRegister();
 // 注册文件存储和图片处理服务
 // 根据 FileStorage:Type 动态选择存储后端（Local/MinIO/OSS）
 builder.Services.AddSingleton<IFileStorage>(sp => FileStorageFactory.Create(sp));
-// 图片处理目前使用 C# ImageSharp 实现（Rust 扩展后续可通过配置切换）
-builder.Services.AddSingleton<IImageProcessor, CSharpImageProcessor>();
+// 图片处理：根据 ImageProcessing:UseRustExtension 动态选择实现（C# ImageSharp / Rust）
+builder.Services.AddSingleton<ImageProcessorFactory>();
+builder.Services.AddScoped<IImageProcessor>(sp =>
+{
+    var factory = sp.GetRequiredService<ImageProcessorFactory>();
+    return factory.Create();
+});
 // 注册缓存相关服务
 builder.Services.AddCacheSetup();
 // 注册速率限制服务

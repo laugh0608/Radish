@@ -408,7 +408,7 @@
 
 **Rust 扩展集成**（与上面并行，1-2 天）：
 - 重构 `Radish.Core/test_lib` 为 `radish-lib`
-  - 项目位置：`Radish.Core/native/rust/radish-lib`
+  - 项目位置：`Radish.Core/radish-lib`
   - Cargo.toml 配置（依赖：image, imageproc, rusttype, sha2）
 - 实现图片加水印功能（Rust）
   - `add_text_watermark()` FFI 函数
