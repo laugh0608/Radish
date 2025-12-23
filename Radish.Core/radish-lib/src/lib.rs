@@ -4,6 +4,7 @@ use std::os::raw::c_char;
 mod image;
 mod hash;
 mod utils;
+pub mod benchmark;  // 性能测试模块（从 test_lib 迁移）
 
 /// Add text watermark to an image
 ///
