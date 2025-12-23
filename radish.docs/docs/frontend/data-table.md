@@ -681,6 +681,6 @@ const columns: TableColumnsType<User> = [
 
 ## 相关文档
 
-- [UI 组件库概览](./UIComponentLibrary.md)
-- [API 客户端使用指南](./APIClientGuide.md)
+- [UI 组件库概览](./ui-library.md)
+- [API 客户端使用指南](./api-client.md)
 - [Ant Design Table 文档](https://ant.design/components/table-cn)

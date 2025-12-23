@@ -302,9 +302,8 @@ import { Button, useDebounce } from '@radish/ui';
 
 ## 🔗 相关文档
 
-- [UI 组件库完整文档](./UIComponentLibrary.md)
-- [组件详细说明](./UIComponentsSummary.md)
-- [快速参考](./UIQuickReference.md)
+- [UI 组件库完整文档](./ui-library.md)
+- [快速参考](./quick-reference.md)
 
 ## 📝 总结
 

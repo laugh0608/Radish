@@ -109,25 +109,26 @@ Radish/
 完整的开发文档现位于 `radish.docs/docs/` 目录（同时也是在线文档站的源文件）：
 
 ### 核心文档
-- 📘 [**开发规范**](radish.docs/docs/DevelopmentSpecifications.md) - 目录职责、分层依赖、代码约定
-- 📗 [**架构设计**](radish.docs/docs/DevelopmentFramework.md) - 技术选型、分层架构、数据持久化
-- 📙 [**开发计划**](radish.docs/docs/DevelopmentPlan.md) - 里程碑与迭代计划
-- 📕 [**开发日志**](radish.docs/docs/DevelopmentLog.md) - 阶段性进展与决策记录
+- 📘 [**开发规范**](radish.docs/docs/architecture/specifications.md) - 目录职责、分层依赖、代码约定
+- 📗 [**架构设计**](radish.docs/docs/architecture/framework.md) - 技术选型、分层架构、数据持久化
+- 📙 [**开发计划**](radish.docs/docs/development-plan.md) - 里程碑与迭代计划
+- 📕 [**开发日志**](radish.docs/docs/changelog/) - 按月份/周记录的开发历程
 
 ### 专项文档
-- 🔐 [**认证授权指南**](radish.docs/docs/AuthenticationGuide.md) - JWT 认证、角色权限、API 授权
-- 🎨 [**前端设计**](radish.docs/docs/FrontendDesign.md) - 桌面化 UI、React 架构、跨端策略
-- 🚪 [**Gateway 规划**](radish.docs/docs/GatewayPlan.md) - API 网关改造方案与实施路线
-- 🚀 [**部署指南**](radish.docs/docs/DeploymentGuide.md) - 容器化、CI/CD、生产部署
+- 🔐 [**认证与权限**](radish.docs/docs/guide/authentication.md) - OIDC 认证流程与权限体系
+- 🎨 [**前端设计**](radish.docs/docs/frontend/design.md) - WebOS 桌面范式与应用集成方式
+- 🚪 [**Gateway 规划**](radish.docs/docs/architecture/gateway-plan.md) - API 网关设计与实施计划
+- 🚀 [**部署指南**](radish.docs/docs/deployment/guide.md) - 容器化、CI/CD、生产部署
+- 🧩 [**文件上传设计**](radish.docs/docs/features/file-upload-design.md) - 文件上传与图片处理方案
+- 🦀 [**Rust 扩展**](radish.docs/docs/guide/rust-extensions.md) - radish-lib 使用指南
 
-### UI 组件库
-- 🎨 [**UI 组件库**](radish.docs/docs/UIComponentLibrary.md) - @radish/ui 设置和使用指南
-- 📦 [**组件详细说明**](radish.docs/docs/UIComponentsSummary.md) - 所有组件、Hooks、工具函数
-- ⚡ [**快速参考**](radish.docs/docs/UIQuickReference.md) - 常用 API 速查表
-- 🔧 [**开发指南**](radish.docs/docs/UIComponentDevelopment.md) - 开发工作流和热更新机制
+### 前端文档
+- 🎨 [**UI 组件库**](radish.docs/docs/frontend/ui-library.md) - @radish/ui 入口文档
+- 🧱 [**组件说明**](radish.docs/docs/frontend/components.md) - 组件与用法说明
+- ⚡ [**快速参考**](radish.docs/docs/frontend/quick-reference.md) - 常用 API 速查表
 
 ### 其他资源
-- 📖 [**文档索引**](radish.docs/docs/README.md) - 所有文档的完整目录
+- 📖 [**文档首页**](radish.docs/docs/index.md) - 文档地图与推荐阅读路径
 - 🤝 [**贡献指南**](AGENTS.md) - 参与项目开发的指引
 - 🤖 [**AI 开发助手配置**](CLAUDE.md) - Claude Code 工作指南
 
@@ -190,7 +191,7 @@ export Redis__Enable=true
 export Redis__ConnectionString="localhost:6379"
 ```
 
-更多配置细节参见 [开发规范](radish.docs/docs/DevelopmentSpecifications.md)。
+更多配置细节参见 [开发规范](radish.docs/docs/architecture/specifications.md)。
 
 ## 开发规范要点
 
@@ -200,17 +201,17 @@ export Redis__ConnectionString="localhost:6379"
 - **配置统一读取**：使用 `AppSettings.RadishApp()` 或 `IOptions<T>`
 - **日志使用 Serilog 静态方法**：避免注入 `ILogger<T>`（除非框架要求）
 
-完整规范详见 [DevelopmentSpecifications.md](radish.docs/docs/DevelopmentSpecifications.md)。
+完整规范详见 [architecture/specifications.md](radish.docs/docs/architecture/specifications.md)。
 
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
 
 请确保：
-1. 代码遵循项目 [开发规范](radish.docs/docs/DevelopmentSpecifications.md)
+1. 代码遵循项目 [开发规范](radish.docs/docs/architecture/specifications.md)
 2. 单元测试通过（`dotnet test`）
 3. 提交前运行 `npm run lint --prefix radish.client`
-4. 在 [DevelopmentLog.md](radish.docs/docs/DevelopmentLog.md) 中记录重大变更
+4. 在 [开发日志](radish.docs/docs/changelog/) 中记录重大变更
 
 ## 许可
 
@@ -220,4 +221,4 @@ export Redis__ConnectionString="localhost:6379"
 
 - [在线文档](radish.docs/docs/README.md) - 完整文档目录
 - [API 文档](https://localhost:5000/scalar) - Scalar 交互式文档（推荐通过 Gateway 访问，内部由 Radish.Api 提供 `/scalar`，旧 `/api/docs` 路径仅做重定向兼容）
-- [项目计划](radish.docs/docs/DevelopmentPlan.md) - 迭代规划与里程碑
+- [开发计划](radish.docs/docs/development-plan.md) - 迭代规划与里程碑

@@ -365,7 +365,7 @@ networks:
 
 ### OIDC 证书滚动更新流程
 
-1. **准备新证书**：参考《AuthenticationGuide.md》的“证书生成示例”生成新 `.pfx`（签名/加密可拆分）。
+1. **准备新证书**：参考《[鉴权与授权指南](../guide/authentication.md)》的“证书生成示例”生成新 `.pfx`（签名/加密可拆分）。
 2. **上传/挂载**：将新证书放到宿主机（如 `/etc/radish/certs/auth-signing-2025Q1.pfx`），并映射到容器的 `/app/certs`。
 3. **更新环境变量**：
    ```bash

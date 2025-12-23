@@ -159,7 +159,7 @@ Configuration files are loaded in the following order (later sources override ea
 - `appsettings.Local.json` is used for local development and contains sensitive data (database passwords, API keys, etc.). This file is ignored by Git.
 - Configuration uses **deep merge** strategy: later configs override earlier ones by key path.
 - For arrays (like `Databases`), provide the complete array in Local.json to avoid partial overrides.
-- See [ConfigurationGuide.md](radish.docs/docs/ConfigurationGuide.md) for detailed merge behavior examples.
+- See [配置指南](radish.docs/docs/guide/configuration.md) for detailed merge behavior examples.
 
 ### Quick Setup for New Developers
 
@@ -195,7 +195,7 @@ dotnet run --project Radish.Api
 - See `appsettings.Local.json.example` for minimal templates with common overrides (API & Auth only)
 - For Gateway production deployment, see `Radish.Gateway/README.md`
 
-For detailed configuration instructions, see [ConfigurationGuide.md](radish.docs/docs/ConfigurationGuide.md).
+For detailed configuration instructions, see [配置指南](radish.docs/docs/guide/configuration.md).
 
 ### Reading Configuration
 ```csharp
@@ -373,7 +373,7 @@ import { formatDate, isEmail } from '@radish/ui/utils';
 - No need to restart dev servers or reinstall dependencies
 - Run `npm run type-check --workspace=@radish/ui` before committing
 
-**Documentation**: See [UIComponentLibrary.md](radish.docs/docs/UIComponentLibrary.md)
+**Documentation**: See [UI 组件库](radish.docs/docs/frontend/ui-library.md)
 
 ### WebOS Desktop UI (radish.client)
 
@@ -419,7 +419,7 @@ Client 项目采用**混合架构**,根据应用复杂度和独立性选择不�
 - **开发独立性**:两个团队可并行开发,互不影响
 - **技术选型自由**:各自可选择适合的 UI 库和技术栈
 
-详见 [FrontendDesign.md](radish.docs/docs/FrontendDesign.md) 第 10.4 节的架构决策分析。
+详见 [前端设计文档](radish.docs/docs/frontend/design.md) 第 10.4 节的架构决策分析。
 
 **React Conventions**:
 1. **Function components only** (no class components)
@@ -430,7 +430,7 @@ Client 项目采用**混合架构**,根据应用复杂度和独立性选择不�
 
 **Frontend-Backend Communication**:
 - All requests over HTTPS (TLS provides transport encryption)
-- **Password Security**: Passwords are transmitted as plaintext over HTTPS and hashed with Argon2id on the server. See [PasswordSecurity.md](radish.docs/docs/PasswordSecurity.md) for details.
+- **Password Security**: Passwords are transmitted as plaintext over HTTPS and hashed with Argon2id on the server. See [密码安全](radish.docs/docs/guide/password-security.md) for details.
 - **No frontend encryption**: Frontend code is fully exposed to users, so client-side encryption (like RSA) provides no real security benefit
 - VITE_API_BASE_URL env var points to backend
 - CORS configured in `appsettings.json` under `Cors.AllowedOrigins`
@@ -581,14 +581,14 @@ The system automatically falls back to C# implementation if Rust library is not 
 ## Documentation
 
 Comprehensive docs in `radish.docs/docs/`:
-- `DevelopmentSpecifications.md` - Directory structure, layering, dependency rules
-- `DevelopmentFramework.md` - Overall architecture, tech decisions, milestones
-- `DevelopmentPlan.md` - Weekly delivery plan
-- `DevelopmentLog.md` - Daily progress log
-- `AuthenticationGuide.md` - Auth flow details
-- `FrontendDesign.md` - UI paradigm, component planning, cross-platform strategy
-- `GatewayPlan.md` - API Gateway refactoring plan
-- `DeploymentGuide.md` - Containerization and deployment
+- `docs/architecture/specifications.md` - Directory structure, layering, dependency rules
+- `docs/architecture/framework.md` - Overall architecture, tech decisions, milestones
+- `docs/development-plan.md` - Weekly delivery plan
+- `docs/changelog/` - Daily/weekly progress logs
+- `docs/guide/authentication.md` - Auth flow details
+- `docs/frontend/design.md` - UI paradigm, component planning, cross-platform strategy
+- `docs/architecture/gateway-plan.md` - API Gateway refactoring plan
+- `docs/deployment/guide.md` - Containerization and deployment
 
 **Always consult these docs before making architectural changes.**
 
@@ -637,5 +637,5 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - Use Vite's HMR for instant frontend updates
 - Scalar API docs available at `/scalar` when running locally (API direct: `http://localhost:5100/scalar`, via Gateway: `https://localhost:5000/scalar`)
 - Example requests in `Radish.Api/Radish.Api.http` (use REST Client extension)
-- Check `Docs/DevelopmentLog.md` for recent changes and known issues
+- Check `radish.docs/docs/changelog/` for recent changes and known issues
 - When adding new repositories/services, register them in Autofac module or use the generic pattern

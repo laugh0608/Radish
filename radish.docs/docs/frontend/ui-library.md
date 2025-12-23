@@ -124,7 +124,7 @@ function MyComponent() {
 - 完善的错误处理
 - 请求/响应拦截器
 
-**详细文档：** [API 客户端使用指南](./APIClientGuide.md)
+**详细文档：** [API 客户端使用指南](./api-client.md)
 
 ### 2. UI 组件 (components/)
 
@@ -180,7 +180,7 @@ AntButton, Space, Divider
 Popconfirm
 ```
 
-**详细文档：** [DataTable 组件](./DataTableComponent.md)
+**详细文档：** [DataTable 组件](./data-table.md)
 
 ### 3. React Hooks (hooks/)
 
@@ -309,10 +309,10 @@ npm install -D <package> --workspace=@radish/ui
 
 ## 相关文档
 
-- [API 客户端使用指南](./APIClientGuide.md)
-- [错误处理指南](./ErrorHandlingGuide.md)
-- [DataTable 组件](./DataTableComponent.md)
-- [组件开发指南](./UIComponentDevelopment.md)
+- [API 客户端使用指南](./api-client.md)
+- [错误处理指南](./error-handling.md)
+- [DataTable 组件](./data-table.md)
+- [快速参考](./quick-reference.md)
 
 ## 常见问题
 

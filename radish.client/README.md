@@ -25,9 +25,9 @@ npm run build
 
 完整文档请访问：[radish.docs/docs](../radish.docs/docs/)
 
-- [WebOS 快速开始指南](../radish.docs/docs/WebOSQuickStart.md) - 详细的使用指南
-- [组件库文档](../radish.docs/docs/ComponentLibrary.md) - UI 组件使用文档
-- [前端设计文档](../radish.docs/docs/FrontendDesign.md) - WebOS 架构设计
+- [WebOS 快速开始指南](../radish.docs/docs/frontend/webos-quick-start.md) - 详细的使用指南
+- [UI 组件库文档](../radish.docs/docs/frontend/ui-library.md) - UI 组件使用文档
+- [前端设计文档](../radish.docs/docs/frontend/design.md) - WebOS 架构设计
 - [开发规范](../CLAUDE.md) - 项目开发规范
 
 ## 🎨 技术栈
