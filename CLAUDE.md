@@ -540,21 +540,43 @@ public interface ICategoryService : IBaseService<Category, CategoryVo>
 }
 ```
 
-## Rust Native Extensions (Experimental)
+## Rust Native Extensions
 
-Located in `Radish.Core/test_lib` (example only, production modules should go in `native/rust/{library}`).
+Located in `Radish.Core/radish-lib/` - a unified Rust extension library for high-performance operations.
 
-### Building Rust Libs
+### Building Rust Extensions
 ```bash
-cd Radish.Core/test_lib
+cd Radish.Core/radish-lib
 cargo build --release
-# Output: target/release/test_lib.dll (Windows) or libtest_lib.so (Linux)
+# Output: target/release/radish_lib.dll (Windows) or libradish_lib.so (Linux) or libradish_lib.dylib (macOS)
 ```
 
-Copy the compiled library to `Radish.Api/bin/Debug/net10.0/` for runtime loading.
+Or use the provided build scripts:
+- Windows: `./build.ps1`
+- Linux/macOS: `./build.sh`
+
+The build scripts automatically copy the compiled library to `Radish.Api/bin/Debug/net10.0/`.
 
 ### Usage Example
-`RustTestController` demonstrates `[DllImport("test_lib")]` for performance-critical algorithms. See endpoints like `/api/RustTest/TestSum1` for benchmarks.
+`RustTestController` demonstrates `[DllImport("radish_lib")]` for performance-critical algorithms. See endpoints like `/api/v2/RustTest/TestSum1` for benchmarks.
+
+### Modules
+- **image**: Image processing (watermarking)
+- **hash**: File hashing (SHA256)
+- **benchmark**: Performance testing (migrated from test_lib)
+- **utils**: Utility functions
+
+### Configuration
+Switch between C# and Rust implementations via `appsettings.json`:
+```json
+{
+  "ImageProcessor": {
+    "UseRustImplementation": true  // false to use C# implementation
+  }
+}
+```
+
+The system automatically falls back to C# implementation if Rust library is not available.
 
 ## Documentation
 
