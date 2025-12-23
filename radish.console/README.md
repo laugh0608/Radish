@@ -115,8 +115,8 @@ dotnet run
 ## 📚 相关文档
 
 - [CLAUDE.md](../CLAUDE.md) - 项目总体指南
-- [DevelopmentPlan.md](../radish.docs/docs/DevelopmentPlan.md) - 开发计划
-- [UIComponentLibrary.md](../radish.docs/docs/UIComponentLibrary.md) - UI 组件库说明
+- [开发计划](../radish.docs/docs/development-plan.md) - 项目里程碑与迭代计划
+- [UI 组件库](../radish.docs/docs/frontend/ui-library.md) - @radish/ui 组件库说明
 
 ## ⚠️ 注意事项
 

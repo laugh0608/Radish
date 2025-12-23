@@ -107,7 +107,7 @@ git push origin v1.2.0.251126
 4. **版本号更新**：统一更新前后端版本号
 5. **Git 标签**：创建版本标签并推送到远程仓库
 6. **Release Notes**：编写详细的发布说明
-7. **部署发布**：按照 [DeploymentGuide.md](DeploymentGuide.md) 进行部署
+7. **部署发布**：按照 [deployment/guide.md](../deployment/guide.md) 进行部署
 
 ### 与 API 版本控制的关系
 
@@ -123,10 +123,10 @@ git push origin v1.2.0.251126
 
 - docs/：项目文档，实际文件夹，映射解决方案中的 docs 目录，包含开发规范、设计文档等
 - others/：其他资源文件，虚拟文件夹，只是解决方案中的文件夹，其中所有文件均为项目根目录下的，包括 Dockerfile、GitHub 配置、start.ps1 脚本 等
-- radish.client：主要 - 前端 React 应用代码（WebOS 桌面环境），TypeScript 编写；采用混合架构支持三种应用集成方式：内置应用(type: 'window')、嵌入应用(type: 'iframe')、外部应用(type: 'external')。详见 [FrontendDesign.md](FrontendDesign.md) 第 10.4 节
+- radish.client：主要 - 前端 React 应用代码（WebOS 桌面环境），TypeScript 编写；采用混合架构支持三种应用集成方式：内置应用(type: 'window')、嵌入应用(type: 'iframe')、外部应用(type: 'external')。详见 [frontend/design.md](../frontend/design.md)
 - radish.console：主要 - 管理控制台前端应用，独立的 SPA；通过 OIDC 认证，有独立的路由系统；不嵌入 radish.client，在新标签页独立运行
 - radish.ui：主要 - UI 组件库，通过 npm workspaces 供 radish.client 和 radish.console 共享基础组件、Hooks 和工具函数
-- Radish.Gateway：主要 - 服务门户与网关项目，ASP.NET Core 编写；Phase 0 阶段承载服务欢迎页面、健康检查展示、API 文档入口等功能；后续阶段（P1+）将实现 API 路由转发、统一认证、聚合接口等 Gateway 功能。详细规划见 `docs/GatewayPlan.md`。
+- Radish.Gateway：主要 - 服务门户与网关项目，ASP.NET Core 编写；Phase 0 阶段承载服务欢迎页面、健康检查展示、API 文档入口等功能；后续阶段（P1+）将实现 API 路由转发、统一认证、聚合接口等 Gateway 功能。详细规划见 `docs/architecture/gateway-plan.md`。
 - Radish.Api：主要 - 后端服务代码，ASP.NET Core 编写；专注于提供 REST API 接口，不包含页面展示功能
 - Radish.Common：后端服务使用的普通工具类，例如基础日志、基础配置等；**仅能引用外部 NuGet 包，不允许依赖任何内部业务层**。若某工具/扩展需要访问 `Radish.Model`、Service 或 Repository 中的类型（如 DTO、实体、仓储服务等），应放置在 `Radish.Extension` 中，以免 Common 层被反向依赖导致环状引用。
 - Radish.Core：后端核心业务逻辑与算法类，保留模块，为后续流程模拟与算法实现做准备
@@ -140,7 +140,7 @@ git push origin v1.2.0.251126
 - Radish.Service：后端服务实现类，具体实现业务逻辑接口
 - Radish.Shared：前后端共享的模型和工具类，例如 DTO、枚举等
 - Radish.Api.Tests：xUnit 测试工程，目前包含 UserController 示例测试，约束接口返回示例数据
-- native/rust（规划目录）：承载 Rust 扩展库或性能模块源码与 `cargo` 构建脚本，位于解决方案根目录；当前 `Radish.Core/test_lib` 只是互操作示例，正式原生模块应迁移到该目录并作为 Solution Folder 挂载。
+- Rust 原生扩展：当前统一实现位于 `Radish.Core/radish-lib`（统一 Rust 扩展库，构建后拷贝到 `Radish.Api/bin/<Configuration>/net10.0/`）；如后续需要从 Core 抽离，再迁到根目录 `native/rust/{library}` 并作为 Solution Folder 挂载。
 
 ## 分层依赖约定
 
@@ -216,13 +216,14 @@ git push origin v1.2.0.251126
 
 ## 跨语言扩展（Rust 原生库）
 
-- 目的：为 CPU 密集或高并发算法提供 Rust 实现，并通过 `[DllImport("test_lib")]` 在 `Radish.Api.Controllers.RustTest` 中验证性能差异。本阶段的 `Radish.Core/test_lib` 仅为演示，后续需将实际扩展迁入解决方案根目录的 `native/rust/{library}`，确保 Core 层保持纯 C# 领域模型。
+- 目的：为 CPU 密集或高并发任务提供 Rust 实现，并通过 `RustTestController`（v2）验证性能差异；当前统一扩展库为 `Radish.Core/radish-lib`，并以 `[DllImport("radish_lib")]` 进行加载。
 - 构建流程：
-  1. 安装 Rust 工具链（rustup + nightly/stable 均可），在仓库根目录执行 `cd Radish.Core/test_lib && cargo build --release`。
-  2. 构建完成后会在 `target/release/` 生成 `test_lib.dll`（Windows）、`libtest_lib.so`（Linux）或 `libtest_lib.dylib`（macOS）。MSBuild/Docker 构建需在 `AfterBuild`/脚本阶段把对应文件拷贝到 `Radish.Api/bin/<Configuration>/net10.0/` 或发布目录，以便运行期自动加载。
-  3. `RustTest` 控制器提供 `/api/RustTest/TestSum1~4` 四个端点，演示累加、类斐波那契、埃拉托斯特尼筛与并行质数计数；发布前请以 `?iterations=1_000_000` 等参数在本地验证返回结果与耗时。
-- 目录规划：真实业务扩展应在 `native/rust/<库名>` 下维护 Cargo 工程，并附 README 说明导出函数签名/调用约定。`Radish.Core/test_lib` 仅保留最小示例，迁移完成后可以删除或仅做文档参考。
-- 提交规范：Rust `target/` 目录与生成的 `.dll/.so/.dylib` 依旧忽略，必要时在 `.gitignore` 中新增排除项；若需要在 CI 中编译 Rust，请在构建脚本中加入 `cargo build --release` 与共享库复制步骤，保持与 DevelopmentPlan 中的原生扩展规划一致。
+  1. 安装 Rust 工具链（rustup + stable 均可）。
+  2. 在仓库根目录执行：`cd Radish.Core/radish-lib && cargo build --release`（或使用 `build.sh` / `build.ps1`）。
+  3. 构建产物位于 `target/release/`：`radish_lib.dll`（Windows）、`libradish_lib.so`（Linux）、`libradish_lib.dylib`（macOS）。需要拷贝到 `Radish.Api/bin/<Configuration>/net10.0/` 或发布目录以便运行期自动加载（脚本已自动复制到 Debug 输出目录）。
+  4. `RustTestController` 提供 `/api/v2/RustTest/TestSum1~4` 端点，演示累加、类斐波那契、埃拉托斯特尼筛与并行质数计数；可使用 `?iterations=1_000_000` 等参数在本地验证返回结果与耗时。
+- 目录规划：如未来需要把原生模块从 Core 层抽离，可迁至 `native/rust/<library>` 下维护 Cargo 工程，并附 README 说明导出函数签名/调用约定；当前以 `Radish.Core/radish-lib` 作为统一扩展库。
+- 提交规范：Rust `target/` 目录与生成的 `.dll/.so/.dylib` 依旧忽略；若需要在 CI 中编译 Rust，请在构建脚本中加入 `cargo build --release` 与共享库复制步骤。
 
 ## 枚举与魔术数字规范
 
@@ -615,7 +616,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
 ## 前端桌面化 UI 规范
 
-> 详细的交互、设计 Token、跨端策略以 [FrontendDesign.md](FrontendDesign.md) 为准，此处保留关键守则，便于与后端规范并列查看。
+> 详细的交互、设计 Token、跨端策略以 [frontend/design.md](../frontend/design.md) 为准，此处保留关键守则，便于与后端规范并列查看。
 
 - radish.client 以桌面模式为核心交互范式，首页加载后呈现类似 macOS 的桌面界面。
 - 顶部为状态栏，需显示当前登录用户名、IP 地址以及预留系统状态信息区域。
@@ -627,7 +628,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
 ## radish.client 前端规范
 
-> 技术栈、目录结构、状态管理、测试策略等完整说明见 [FrontendDesign.md](FrontendDesign.md)，以下列出与后端协作密切的约束。
+> 技术栈、目录结构、状态管理、测试策略等完整说明见 [frontend/design.md](../frontend/design.md)，以下列出与后端协作密切的约束。
 
 1. 前后端传输的敏感字段计划使用 `encryptByPublicKey()` 加密，后端通过 `DecryptByPrivateKey()` 解密；方法虽未实现，但需提前规划调用点，保证接口兼容性。
 2. 组件统一使用函数式写法，结合 `useState`、`useMemo`、`useEffect` 等 Hook 管理状态与生命周期，避免继续编写 Class 组件。

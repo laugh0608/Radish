@@ -177,12 +177,14 @@
 - [ ] 图片处理
   - 定义 `IImageProcessor` 接口
   - 实现 `CSharpImageProcessor`（使用 ImageSharp：生成缩略图、多尺寸、压缩、移除 EXIF、水印）
-- [ ] Rust 扩展集成（1-2 天）
-  - 重构 `test_lib` 为 `radish-lib`
-  - 实现图片加水印功能（Rust FFI）
-  - 实现文件哈希计算（Rust，可选）
-  - 创建 C# FFI 调用封装（`RustImageProcessor`、`ImageProcessorFactory`）
-  - 编写编译脚本（build.sh / build.ps1）
+- [x] Rust 扩展集成
+  - ✅ 重构 `test_lib` 为 `radish-lib`
+  - ✅ 实现图片加水印功能（Rust FFI）
+  - ✅ 实现文件哈希计算（Rust）
+  - ✅ 创建 C# FFI 调用封装（`RustImageProcessor`、`ImageProcessorFactory`）
+  - ✅ 编写编译脚本（build.sh / build.ps1）
+  - ✅ 迁移性能测试模块（benchmark：sum/fib/sieve/parallel primes）
+  - ✅ 更新 `RustTestController` 使用 `DllImport("radish_lib")`
 - [ ] 业务逻辑
   - 创建 `AttachmentService`（CRUD + 上传逻辑）
   - 文件校验（类型白名单、大小限制、Magic Number）

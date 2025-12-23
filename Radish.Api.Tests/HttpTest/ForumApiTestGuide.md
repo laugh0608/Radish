@@ -236,6 +236,6 @@ dotnet run --project Radish.Auth
 
 ## 📚 相关文档
 
-- [开发规范](../radish.docs/docs/DevelopmentSpecifications.md)
-- [BaseService 使用指南](../radish.docs/docs/DevelopmentSpecifications.md#baseservice-与-baserepository-使用指南)
+- [开发规范](../radish.docs/docs/architecture/specifications.md)
+- [BaseService 使用指南](../radish.docs/docs/architecture/specifications.md#baseservice-与-baserepository-使用指南)
 - [论坛模型设计](../radish.docs/docs/ForumDesign.md)

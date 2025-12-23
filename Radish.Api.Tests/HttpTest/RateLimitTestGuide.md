@@ -333,7 +333,7 @@ wrk -t4 -c100 -d30s http://localhost:5100/health
 
 - [ASP.NET Core Rate Limiting 官方文档](https://learn.microsoft.com/en-us/aspnet/core/performance/rate-limit)
 - [Radish 开发日志 - 2025.12.19](../../../radish.docs/docs/changelog/2025-12.md)
-- [Radish 配置指南](../../../radish.docs/docs/ConfigurationGuide.md)
+- [Radish 配置指南](../../../radish.docs/docs/guide/configuration.md)
 
 ## 🤝 贡献
 

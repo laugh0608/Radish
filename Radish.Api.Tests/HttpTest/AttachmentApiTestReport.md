@@ -1032,8 +1032,8 @@ public class TestHelperController : ControllerBase
 **报告审核**: 待审核
 
 **相关文档**:
-- [Radish 开发规范](../../radish.docs/docs/DevelopmentSpecifications.md)
-- [Radish 认证指南](../../radish.docs/docs/AuthenticationGuide.md)
+- [Radish 开发规范](../../radish.docs/docs/architecture/specifications.md)
+- [Radish 认证指南](../../radish.docs/docs/guide/authentication.md)
 - [文件上传功能设计](../../radish.docs/docs/features/file-upload-design.md)
 
 **联系方式**:

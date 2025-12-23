@@ -229,7 +229,7 @@ public bool VerifyPasswordWithMigration(string password, string storedHash)
 - [x] 移除 `LoginController.cs` 中的 MD5 加密注释（第 55 行）
 - [x] 更新 `InitialDataSeeder.cs` 中的密码哈希方式
 - [x] 更新 `LoginController.cs` 和 `AccountController.cs` 的验证逻辑
-- [x] 更新 `AuthenticationGuide.md` 中的密码安全说明
+- [x] 更新 `guide/authentication.md` 中的密码安全说明
 - [x] 更新 `CLAUDE.md` 中的前后端通信说明
 
 ## 5. 安全最佳实践
@@ -381,6 +381,6 @@ CREATE INDEX idx_user_loginname ON User(LoginName) WHERE IsDeleted = false;
 ---
 
 **相关文档**：
-- [AuthenticationGuide.md](AuthenticationGuide.md) - 完整的认证架构说明
-- [ConfigurationGuide.md](ConfigurationGuide.md) - 配置管理指南
-- [DevelopmentSpecifications.md](DevelopmentSpecifications.md) - 开发规范
+- [鉴权与授权指南](./authentication.md) - 完整的认证架构说明
+- [配置指南](./configuration.md) - 配置管理指南
+- [开发规范](../architecture/specifications.md) - 开发规范

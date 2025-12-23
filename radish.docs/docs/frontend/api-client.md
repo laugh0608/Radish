@@ -564,5 +564,5 @@ const response = await apiFetch('/api/v1/Upload', {
 
 ## 相关文档
 
-- [错误处理指南](./ErrorHandlingGuide.md)
-- [UI 组件库概览](./UIComponentLibrary.md)
+- [错误处理指南](./error-handling.md)
+- [UI 组件库概览](./ui-library.md)
