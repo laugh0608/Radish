@@ -152,7 +152,9 @@ builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
 // 注册 AppSetting 自定义扩展的扩展 ConfigurableOptions 服务
 builder.Services.AddAllOptionRegister();
 // 注册文件存储和图片处理服务
-builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
+// 根据 FileStorage:Type 动态选择存储后端（Local/MinIO/OSS）
+builder.Services.AddSingleton<IFileStorage>(sp => FileStorageFactory.Create(sp));
+// 图片处理目前使用 C# ImageSharp 实现（Rust 扩展后续可通过配置切换）
 builder.Services.AddSingleton<IImageProcessor, CSharpImageProcessor>();
 // 注册缓存相关服务
 builder.Services.AddCacheSetup();
