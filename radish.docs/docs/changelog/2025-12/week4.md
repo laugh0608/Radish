@@ -2,7 +2,7 @@
 
 > 文件上传功能、图片处理
 
-**时间范围**：2025-12-22 至 2025-12-31
+**时间范围**：2025-12-22 至 2025-12-28
 
 ---
 
@@ -205,7 +205,7 @@
 
 ---
 
-## 2025-12-23 (周一)
+## 2025-12-23 (周二)
 
 ### Rust 扩展架构实现与迁移
 
@@ -374,3 +374,19 @@ Radish.Core/
 - [ ] 通知系统
 - [ ] 标签功能完善
 - [ ] 图片预览和管理
+
+---
+
+## 2025-12-25 (周四)
+
+### radish-lib 跨平台构建修复与文档补充
+
+- **fix(rust)**: 修复 radish-lib 在 Rust 2024 下的编译问题
+  - `#[no_mangle]` 迁移为 `#[unsafe(no_mangle)]`
+  - `benchmark` 并行计算补齐 `rayon` 依赖与导入
+  - `watermark` 改用 `ab_glyph` 以匹配 `imageproc` 的字体/scale 类型
+  - 修复水印加载图片时的错误消息格式
+- **docs(rust)**: 补充 Linux/WSL 构建依赖说明
+  - Ubuntu/Debian/WSL 需要 `build-essential` 以提供 `cc/gcc` 与 `crt*.o`
+  - 建议同时安装 `clang`、`pkg-config`
+- **提交**：`7ca3a79 fix: 修复 radish-lib Rust 2024 编译`
