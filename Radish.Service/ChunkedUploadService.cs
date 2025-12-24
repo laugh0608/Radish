@@ -65,7 +65,7 @@ public class ChunkedUploadService : IChunkedUploadService
             ModifyTime = DateTime.Now
         };
 
-        await _sessionRepository.InsertAsync(session);
+        await _sessionRepository.AddAsync(session);
 
         // 创建会话专用目录
         var sessionDir = GetSessionDirectory(sessionId);
