@@ -744,10 +744,18 @@ Content-Type: application/json
 # 说明：上传分片索引为 0 的数据
 # 注意：需要准备一个 2MB 的测试文件作为分片
 @SessionId = <从上一步获取的 sessionId>
-POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk?sessionId={{SessionId}}&chunkIndex=0
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk
 Authorization: Bearer {{Access_Token}}
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="sessionId"
+
+{{SessionId}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkIndex"
+
+0
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
 Content-Disposition: form-data; name="chunkData"; filename="chunk_0"
 Content-Type: application/octet-stream
@@ -756,10 +764,18 @@ Content-Type: application/octet-stream
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
 ### 10.3 上传第二个分片
-POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk?sessionId={{SessionId}}&chunkIndex=1
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk
 Authorization: Bearer {{Access_Token}}
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="sessionId"
+
+{{SessionId}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkIndex"
+
+1
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
 Content-Disposition: form-data; name="chunkData"; filename="chunk_1"
 Content-Type: application/octet-stream
@@ -769,7 +785,7 @@ Content-Type: application/octet-stream
 
 ### 10.4 获取上传会话状态
 # 说明：查看当前上传进度
-GET {{Api_HostAddress}}/api/v1/ChunkedUpload/GetSession/{{SessionId}}
+GET {{Api_HostAddress}}/api/v1/ChunkedUpload/GetSession?sessionId={{SessionId}}
 Authorization: Bearer {{Access_Token}}
 
 ### 10.5 合并分片并创建附件
@@ -788,8 +804,11 @@ Content-Type: application/json
 
 ### 10.6 取消上传会话
 # 说明：取消未完成的上传会话
-DELETE {{Api_HostAddress}}/api/v1/ChunkedUpload/CancelSession/{{SessionId}}
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/CancelSession
 Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+"{{SessionId}}"
 
 ### 10.7 测试断点续传
 # 说明：模拟网络中断后继续上传
@@ -802,10 +821,18 @@ Authorization: Bearer {{Access_Token}}
 
 ### 10.8 测试分片大小限制
 # 说明：上传超过 10MB 的单个分片，应返回 400 错误
-POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk?sessionId={{SessionId}}&chunkIndex=0
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk
 Authorization: Bearer {{Access_Token}}
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
 
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="sessionId"
+
+{{SessionId}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkIndex"
+
+0
 ------WebKitFormBoundary7MA4YWxkTrZu0gW
 Content-Disposition: form-data; name="chunkData"; filename="large_chunk"
 Content-Type: application/octet-stream
@@ -835,7 +862,7 @@ Content-Type: application/json
 ### 11.2 使用令牌下载文件（无需认证）
 # 说明：使用返回的 token 直接下载文件，无需 Authorization 头
 @AccessToken = <从上一步获取的 token>
-GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/{{AccessToken}}
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token={{AccessToken}}
 
 ### 11.3 创建限制访问次数的令牌
 # 说明：创建只能访问 1 次的令牌
@@ -883,12 +910,15 @@ Content-Type: application/json
 ### 11.6 撤销访问令牌
 # 说明：立即撤销令牌，使其失效
 @TokenToRevoke = <要撤销的 token>
-DELETE {{Api_HostAddress}}/api/v1/Attachment/RevokeAccessToken/{{TokenToRevoke}}
+POST {{Api_HostAddress}}/api/v1/Attachment/RevokeAccessToken
 Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+"{{TokenToRevoke}}"
 
 ### 11.7 获取附件的所有令牌
 # 说明：查看某个附件的所有访问令牌
-GET {{Api_HostAddress}}/api/v1/Attachment/GetAttachmentTokens/{{PrivateAttachmentId}}
+GET {{Api_HostAddress}}/api/v1/Attachment/GetAttachmentTokens?attachmentId={{PrivateAttachmentId}}
 Authorization: Bearer {{Access_Token}}
 
 ### 11.8 测试过期令牌
@@ -906,7 +936,7 @@ Content-Type: application/json
 }
 
 # 等待 2 秒后尝试访问（应返回 403 错误）
-GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/<过期的token>
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<过期的token>
 
 ### 11.9 测试访问次数限制
 # 说明：创建只能访问 2 次的令牌，第 3 次访问应失败
@@ -923,17 +953,17 @@ Content-Type: application/json
 }
 
 # 第 1 次访问（成功）
-GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/<token>
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<token>
 
 # 第 2 次访问（成功）
-GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/<token>
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<token>
 
 # 第 3 次访问（失败，返回 403）
-GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/<token>
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<token>
 
 ### 11.10 测试无效令牌
-# 说明：使用不存在的令牌访问，应返回 404 错误
-GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/invalid-token-12345
+# 说明：使用不存在的令牌访问，应返回 403（当前实现无区分 404）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=invalid-token-12345
 
 ###############################################################################
 # 分片上传和临时授权测试说明
