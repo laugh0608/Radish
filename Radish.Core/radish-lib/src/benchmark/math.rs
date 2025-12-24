@@ -1,3 +1,4 @@
+use rayon::iter::IntoParallelIterator;
 use rayon::prelude::*;
 use std::sync::atomic::{AtomicI64, Ordering};
 
@@ -8,7 +9,7 @@ use std::sync::atomic::{AtomicI64, Ordering};
 ///
 /// # 返回
 /// 所有整数之和
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn calculate_sum_rust(iterations: i64) -> i64 {
     let mut sum: i64 = 0;
     for i in 1..=iterations {
@@ -20,7 +21,7 @@ pub extern "C" fn calculate_sum_rust(iterations: i64) -> i64 {
 /// 模拟计算斐波那契数列的第 `iterations` 项
 ///
 /// 主要目的是模拟 CPU 密集型计算
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn calculate_fibonacci_like_rust(iterations: i64) -> i64 {
     if iterations <= 0 {
         return 0;
@@ -50,7 +51,7 @@ pub extern "C" fn calculate_fibonacci_like_rust(iterations: i64) -> i64 {
 ///
 /// # 返回
 /// 小于等于 `limit` 的质数数量
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn count_primes_sieve_rust(limit: i64) -> i64 {
     if limit < 2 {
         return 0;
@@ -109,7 +110,7 @@ fn is_prime(n: i64) -> bool {
 ///
 /// # 返回
 /// 小于等于 `limit` 的质数数量
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn count_primes_parallel_rust(limit: i64) -> i64 {
     if limit < 2 {
         return 0;

@@ -1,7 +1,7 @@
-use image::{DynamicImage, GenericImageView, Rgba, RgbaImage};
+use anyhow::{Context, Result};
+use ab_glyph::{FontArc, PxScale};
+use image::{Rgba, RgbaImage};
 use imageproc::drawing::draw_text_mut;
-use rusttype::{Font, Scale};
-use anyhow::{Result, Context};
 
 /// Watermark position
 #[derive(Debug, Clone, Copy)]
@@ -37,21 +37,18 @@ pub fn add_watermark(
 ) -> Result<()> {
     // Load image
     let img = image::open(input_path)
-        .context(format!("Failed to open image: ", input_path))?;
+        .with_context(|| format!("Failed to open image: {}", input_path))?;
 
     // Convert to RGBA for watermark processing
     let mut img_rgba = img.to_rgba8();
 
     // Load embedded font (DejaVu Sans)
-    // Note: You need to add a font file to the fonts directory
-    // For now, we'll use a simple approach without external fonts
     let font_data = include_bytes!("../../fonts/DejaVuSans.ttf");
-    let font = Font::try_from_bytes(font_data as &[u8])
-        .context("Failed to load font")?;
+    let font = FontArc::try_from_slice(font_data as &[u8]).context("Failed to load font")?;
 
     // Calculate text position
     let (img_width, img_height) = img_rgba.dimensions();
-    let scale = Scale::uniform(font_size as f32);
+    let scale = PxScale::from(font_size as f32);
 
     let position_enum = WatermarkPosition::from(position);
     let (x, y) = calculate_text_position(
@@ -83,8 +80,8 @@ fn calculate_text_position(
     img_width: u32,
     img_height: u32,
     text: &str,
-    font: &Font,
-    scale: Scale,
+    _font: &FontArc,
+    scale: PxScale,
 ) -> (u32, u32) {
     // Estimate text width (rough approximation)
     let text_width = (text.len() as f32 * scale.x * 0.6) as u32;

@@ -19,7 +19,7 @@ pub mod benchmark;  // 性能测试模块（从 test_lib 迁移）
 /// # Returns
 /// - 0: Success
 /// - -1: Error
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn add_text_watermark(
     input_path: *const c_char,
     output_path: *const c_char,
@@ -74,7 +74,7 @@ pub extern "C" fn add_text_watermark(
 /// - 0: Success
 /// - -1: Error
 /// - -2: Buffer too small
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn calculate_file_sha256(
     file_path: *const c_char,
     hash_output: *mut c_char,

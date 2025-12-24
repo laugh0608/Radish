@@ -33,6 +33,19 @@ radish-lib/
 
 ## Prerequisites
 
+### Linux / WSL (系统依赖)
+
+在 Ubuntu/Debian（含 WSL Ubuntu）上构建需要系统级的 C 工具链与基础链接文件，否则会出现 `linker \`cc\` not found` 或找不到 `crt*.o` / `-lc` 等错误。
+
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential clang pkg-config
+```
+
+- `build-essential`：提供 `cc/gcc`、`libc6-dev`（含 `crt*.o`）、`make` 等
+- `clang`：可选，但建议安装以便需要时切换链接/编译器
+- `pkg-config`：部分依赖在探测系统库时会用到
+
 ### Rust Toolchain
 
 ```bash
