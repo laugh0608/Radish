@@ -156,6 +156,99 @@ removeExif: true
 }
 ```
 
+#### 分片上传（大文件）✨ Phase 3 新增
+
+```http
+# 1. 创建上传会话
+POST /api/v1/ChunkedUpload/CreateSession
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "fileName": "large-video.mp4",
+  "totalSize": 104857600,
+  "mimeType": "video/mp4",
+  "chunkSize": 2097152,
+  "businessType": "Video"
+}
+
+# 响应
+{
+  "isSuccess": true,
+  "responseData": {
+    "sessionId": "abc123...",
+    "fileName": "large-video.mp4",
+    "totalSize": 104857600,
+    "chunkSize": 2097152,
+    "totalChunks": 50,
+    "uploadedChunks": 0,
+    "progress": 0,
+    "status": "Uploading",
+    "expiresAt": "2025-12-25T18:52:09"
+  }
+}
+
+# 2. 上传分片（循环上传所有分片）
+POST /api/v1/ChunkedUpload/UploadChunk?sessionId={sessionId}&chunkIndex=0
+Authorization: Bearer {access_token}
+Content-Type: multipart/form-data
+
+chunkData: (binary)
+
+# 3. 合并分片
+POST /api/v1/ChunkedUpload/MergeChunks
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "sessionId": "abc123...",
+  "generateThumbnail": false
+}
+
+# 响应
+{
+  "isSuccess": true,
+  "responseData": {
+    "id": 2002696346624065536,
+    "fileName": "large-video.mp4",
+    "fileSize": 104857600,
+    "url": "/uploads/Video/2025/12/2002696344824709120.mp4"
+  }
+}
+```
+
+#### 创建临时访问令牌 ✨ Phase 3 新增
+
+```http
+# ���私有附件创建临时访问链接
+POST /api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {access_token}
+Content-Type: application/json
+
+{
+  "attachmentId": 2002696346624065536,
+  "validHours": 24,
+  "maxAccessCount": 10,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+# 响应
+{
+  "isSuccess": true,
+  "responseData": {
+    "token": "xyz789...",
+    "downloadUrl": "/api/v1/Attachment/DownloadByToken/xyz789...",
+    "expiresAt": "2025-12-25T18:52:09",
+    "maxAccessCount": 10,
+    "accessCount": 0
+  }
+}
+
+# 使用令牌下载（无需认证）
+GET /api/v1/Attachment/DownloadByToken/xyz789...
+```
+
 ---
 
 ## ✅ 已实现功能（Phase 1 MVP）
@@ -202,6 +295,16 @@ removeExif: true
   - DELETE /api/v1/Attachment/Delete/{id}
   - POST /api/v1/Attachment/DeleteBatch
   - PUT /api/v1/Attachment/UpdateBusinessAssociation/{id}
+  - **Phase 3 新增**：
+    - POST /api/v1/ChunkedUpload/CreateSession（创建分片上传会话）
+    - POST /api/v1/ChunkedUpload/UploadChunk（上传分片）
+    - POST /api/v1/ChunkedUpload/MergeChunks（合并分片）
+    - GET /api/v1/ChunkedUpload/GetSession/{sessionId}（获取会话状态）
+    - DELETE /api/v1/ChunkedUpload/CancelSession/{sessionId}（取消会话）
+    - POST /api/v1/Attachment/CreateAccessToken（创建临时访问令牌）
+    - GET /api/v1/Attachment/DownloadByToken/{token}（通过令牌下载）
+    - DELETE /api/v1/Attachment/RevokeAccessToken/{token}（撤销令牌）
+    - GET /api/v1/Attachment/GetAttachmentTokens/{attachmentId}（获取附件令牌列表）
 
 ### 前端功能
 
@@ -668,12 +771,151 @@ public class Attachment : RootEntityTKey<long>
 }
 ```
 
+### UploadSession 表（分片上传会话表）✨ Phase 3 新增
+
+```csharp
+/// <summary>
+/// 分片上传会话表
+/// </summary>
+[SugarTable("UploadSession")]
+public class UploadSession : RootEntityTKey<long>
+{
+    /// <summary>会话ID（GUID）</summary>
+    [SugarColumn(Length = 50, IsNullable = false)]
+    public string SessionId { get; set; }
+
+    /// <summary>原始文件名</summary>
+    [SugarColumn(Length = 255, IsNullable = false)]
+    public string FileName { get; set; }
+
+    /// <summary>文件总大小（字节）</summary>
+    public long TotalSize { get; set; }
+
+    /// <summary>文件 MIME 类型</summary>
+    [SugarColumn(Length = 100, IsNullable = true)]
+    public string? MimeType { get; set; }
+
+    /// <summary>分片大小（字节）</summary>
+    public int ChunkSize { get; set; }
+
+    /// <summary>总分片数</summary>
+    public int TotalChunks { get; set; }
+
+    /// <summary>已上传分片数</summary>
+    public int UploadedChunks { get; set; }
+
+    /// <summary>已上传分片索引列表（JSON 数组）</summary>
+    [SugarColumn(ColumnDataType = "text", IsNullable = true)]
+    public string? UploadedChunkIndexes { get; set; }
+
+    /// <summary>业务类型</summary>
+    [SugarColumn(Length = 50, IsNullable = false)]
+    public string BusinessType { get; set; }
+
+    /// <summary>业务ID（可选）</summary>
+    public long? BusinessId { get; set; }
+
+    /// <summary>上传用户ID</summary>
+    public long UserId { get; set; }
+
+    /// <summary>上传用户名</summary>
+    [SugarColumn(Length = 50, IsNullable = false)]
+    public string UserName { get; set; }
+
+    /// <summary>会话状态（Uploading/Completed/Failed/Cancelled）</summary>
+    [SugarColumn(Length = 20, IsNullable = false)]
+    public string Status { get; set; } = "Uploading";
+
+    /// <summary>最终附件ID（完成后）</summary>
+    public long? AttachmentId { get; set; }
+
+    /// <summary>过期时间（默认24小时）</summary>
+    public DateTime ExpiresAt { get; set; }
+
+    /// <summary>错误信息</summary>
+    [SugarColumn(Length = 500, IsNullable = true)]
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>创建时间</summary>
+    [SugarColumn(IsNullable = false, IsOnlyIgnoreUpdate = true)]
+    public DateTime CreateTime { get; set; }
+
+    /// <summary>修改时间</summary>
+    [SugarColumn(IsNullable = true)]
+    public DateTime? ModifyTime { get; set; }
+}
+```
+
+### FileAccessToken 表（文件访问令牌表）✨ Phase 3 新增
+
+```csharp
+/// <summary>
+/// 临时授权访问令牌表
+/// </summary>
+[SugarTable("FileAccessToken")]
+public class FileAccessToken : RootEntityTKey<long>
+{
+    /// <summary>令牌（GUID）</summary>
+    [SugarColumn(Length = 50, IsNullable = false, UniqueGroupNameList = new[] { "UK_Token" })]
+    public string Token { get; set; }
+
+    /// <summary>附件ID</summary>
+    public long AttachmentId { get; set; }
+
+    /// <summary>授权用户ID（可选，为空表示任何人可访问）</summary>
+    public long? AuthorizedUserId { get; set; }
+
+    /// <summary>授权IP地址（可选）</summary>
+    [SugarColumn(Length = 50, IsNullable = true)]
+    public string? AuthorizedIp { get; set; }
+
+    /// <summary>最大访问次数（0表示无限制）</summary>
+    public int MaxAccessCount { get; set; } = 1;
+
+    /// <summary>已访问次数</summary>
+    public int AccessCount { get; set; } = 0;
+
+    /// <summary>过期时间</summary>
+    public DateTime ExpiresAt { get; set; }
+
+    /// <summary>创建用户ID</summary>
+    public long CreatedBy { get; set; }
+
+    /// <summary>是否已撤销</summary>
+    public bool IsRevoked { get; set; } = false;
+
+    /// <summary>撤销时间</summary>
+    public DateTime? RevokedAt { get; set; }
+
+    /// <summary>最后访问时间</summary>
+    public DateTime? LastAccessedAt { get; set; }
+
+    /// <summary>创建时间</summary>
+    [SugarColumn(IsNullable = false, IsOnlyIgnoreUpdate = true)]
+    public DateTime CreateTime { get; set; }
+
+    /// <summary>修改时间</summary>
+    [SugarColumn(IsNullable = true)]
+    public DateTime? ModifyTime { get; set; }
+}
+```
+
 ### 索引设计
 ```csharp
-// 创建索引
+// Attachment 表索引
 [SugarIndex("idx_uploader", nameof(UploaderId), OrderByType.Asc)]
 [SugarIndex("idx_business", nameof(BusinessType) + "," + nameof(BusinessId), OrderByType.Asc)]
 [SugarIndex("idx_hash", nameof(FileHash), OrderByType.Asc)]
+
+// UploadSession 表索引
+[SugarIndex("idx_session_id", nameof(SessionId), OrderByType.Asc)]
+[SugarIndex("idx_user_status", nameof(UserId) + "," + nameof(Status), OrderByType.Asc)]
+[SugarIndex("idx_expires", nameof(ExpiresAt), OrderByType.Asc)]
+
+// FileAccessToken 表索引
+[SugarIndex("idx_token", nameof(Token), OrderByType.Asc)]
+[SugarIndex("idx_attachment", nameof(AttachmentId), OrderByType.Asc)]
+[SugarIndex("idx_expires", nameof(ExpiresAt), OrderByType.Asc)]
 ```
 
 ### ViewModel
@@ -963,11 +1205,13 @@ public class AttachmentVo
       "UseRustExtension": false   // 哈希计算是否使用 Rust
     },
 
-    // 分片上传配置
+    // 分片上传配置 ✅ Phase 3 已完成
     "ChunkedUpload": {
-      "Enable": false,  // Phase 1 关闭，Phase 2 启用
-      "Threshold": 52428800,  // 50MB (50 * 1024 * 1024)
-      "ChunkSize": 2097152     // 2MB (2 * 1024 * 1024)
+      "Enable": true,  // ✅ Phase 3 已启用
+      "DefaultChunkSize": 2097152,     // 2MB (2 * 1024 * 1024)
+      "MinChunkSize": 1048576,         // 1MB
+      "MaxChunkSize": 10485760,        // 10MB
+      "SessionExpirationHours": 24     // 会话过期时间（小时）
     },
 
     // 并发上传限制
