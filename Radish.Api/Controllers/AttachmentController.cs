@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Radish.Common.HttpContextTool;
+using Radish.Common.OptionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -25,11 +27,19 @@ public class AttachmentController : ControllerBase
 {
     private readonly IAttachmentService _attachmentService;
     private readonly IHttpContextUser _httpContextUser;
+    private readonly IUploadRateLimitService _rateLimitService;
+    private readonly UploadRateLimitOptions _rateLimitOptions;
 
-    public AttachmentController(IAttachmentService attachmentService, IHttpContextUser httpContextUser)
+    public AttachmentController(
+        IAttachmentService attachmentService,
+        IHttpContextUser httpContextUser,
+        IUploadRateLimitService rateLimitService,
+        IOptions<UploadRateLimitOptions> rateLimitOptions)
     {
         _attachmentService = attachmentService;
         _httpContextUser = httpContextUser;
+        _rateLimitService = rateLimitService;
+        _rateLimitOptions = rateLimitOptions.Value;
     }
 
     #region Upload
@@ -49,6 +59,7 @@ public class AttachmentController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status429TooManyRequests)]
     public async Task<MessageModel> UploadImage(
         [FromForm] IFormFile file,
         [FromForm] string businessType = "General",
@@ -81,40 +92,88 @@ public class AttachmentController : ControllerBase
             };
         }
 
-        var options = new FileUploadOptionsDto
-        {
-            OriginalFileName = file.FileName,
-            BusinessType = businessType,
-            GenerateThumbnail = generateThumbnail,
-            GenerateMultipleSizes = generateMultipleSizes,
-            AddWatermark = addWatermark,
-            WatermarkText = watermarkText ?? "Radish",
-            CalculateHash = true,
-            RemoveExif = removeExif
-        };
-
         var userId = _httpContextUser.UserId;
         var userName = _httpContextUser.UserName;
 
-        var attachment = await _attachmentService.UploadFileAsync(file, options, userId, userName);
-
-        if (attachment == null)
+        // 限流检查
+        if (_rateLimitOptions.Enable)
         {
-            return new MessageModel
+            var (isAllowed, errorMessage) = await _rateLimitService.CheckUploadAllowedAsync(userId, file.Length);
+            if (!isAllowed)
             {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = "文件上传失败"
-            };
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = 429, // Too Many Requests
+                    MessageInfo = errorMessage ?? "上传请求过于频繁，请稍后再试"
+                };
+            }
         }
 
-        return new MessageModel
+        // 生成上传 ID
+        var uploadId = Guid.NewGuid().ToString();
+
+        try
         {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "上传成功",
-            ResponseData = attachment
-        };
+            // 记录上传开始
+            if (_rateLimitOptions.Enable)
+            {
+                await _rateLimitService.RecordUploadStartAsync(userId, uploadId);
+            }
+
+            var options = new FileUploadOptionsDto
+            {
+                OriginalFileName = file.FileName,
+                BusinessType = businessType,
+                GenerateThumbnail = generateThumbnail,
+                GenerateMultipleSizes = generateMultipleSizes,
+                AddWatermark = addWatermark,
+                WatermarkText = watermarkText ?? "Radish",
+                CalculateHash = true,
+                RemoveExif = removeExif
+            };
+
+            var attachment = await _attachmentService.UploadFileAsync(file, options, userId, userName);
+
+            if (attachment == null)
+            {
+                // 记录上传失败
+                if (_rateLimitOptions.Enable)
+                {
+                    await _rateLimitService.RecordUploadFailedAsync(userId, uploadId);
+                }
+
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
+                    MessageInfo = "文件上传失败"
+                };
+            }
+
+            // 记录上传完成
+            if (_rateLimitOptions.Enable)
+            {
+                await _rateLimitService.RecordUploadCompleteAsync(userId, uploadId, file.Length);
+            }
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "上传成功",
+                ResponseData = attachment
+            };
+        }
+        catch (Exception)
+        {
+            // 记录上传失败
+            if (_rateLimitOptions.Enable)
+            {
+                await _rateLimitService.RecordUploadFailedAsync(userId, uploadId);
+            }
+            throw;
+        }
     }
 
     /// <summary>
@@ -127,6 +186,7 @@ public class AttachmentController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status429TooManyRequests)]
     public async Task<MessageModel> UploadDocument(
         [FromForm] IFormFile file,
         [FromForm] string businessType = "Document")
@@ -154,39 +214,87 @@ public class AttachmentController : ControllerBase
             };
         }
 
-        var options = new FileUploadOptionsDto
-        {
-            OriginalFileName = file.FileName,
-            BusinessType = businessType,
-            GenerateThumbnail = false,
-            GenerateMultipleSizes = false,
-            AddWatermark = false,
-            CalculateHash = true,
-            RemoveExif = false
-        };
-
         var userId = _httpContextUser.UserId;
         var userName = _httpContextUser.UserName;
 
-        var attachment = await _attachmentService.UploadFileAsync(file, options, userId, userName);
-
-        if (attachment == null)
+        // 限流检查
+        if (_rateLimitOptions.Enable)
         {
-            return new MessageModel
+            var (isAllowed, errorMessage) = await _rateLimitService.CheckUploadAllowedAsync(userId, file.Length);
+            if (!isAllowed)
             {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = "文件上传失败"
-            };
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = 429, // Too Many Requests
+                    MessageInfo = errorMessage ?? "上传请求过于频繁，请稍后再试"
+                };
+            }
         }
 
-        return new MessageModel
+        // 生成上传 ID
+        var uploadId = Guid.NewGuid().ToString();
+
+        try
         {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "上传成功",
-            ResponseData = attachment
-        };
+            // 记录上传开始
+            if (_rateLimitOptions.Enable)
+            {
+                await _rateLimitService.RecordUploadStartAsync(userId, uploadId);
+            }
+
+            var options = new FileUploadOptionsDto
+            {
+                OriginalFileName = file.FileName,
+                BusinessType = businessType,
+                GenerateThumbnail = false,
+                GenerateMultipleSizes = false,
+                AddWatermark = false,
+                CalculateHash = true,
+                RemoveExif = false
+            };
+
+            var attachment = await _attachmentService.UploadFileAsync(file, options, userId, userName);
+
+            if (attachment == null)
+            {
+                // 记录上传失败
+                if (_rateLimitOptions.Enable)
+                {
+                    await _rateLimitService.RecordUploadFailedAsync(userId, uploadId);
+                }
+
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
+                    MessageInfo = "文件上传失败"
+                };
+            }
+
+            // 记录上传完成
+            if (_rateLimitOptions.Enable)
+            {
+                await _rateLimitService.RecordUploadCompleteAsync(userId, uploadId, file.Length);
+            }
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "上传成功",
+                ResponseData = attachment
+            };
+        }
+        catch (Exception)
+        {
+            // 记录上传失败
+            if (_rateLimitOptions.Enable)
+            {
+                await _rateLimitService.RecordUploadFailedAsync(userId, uploadId);
+            }
+            throw;
+        }
     }
 
     #endregion
@@ -244,6 +352,27 @@ public class AttachmentController : ControllerBase
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = attachments
+        };
+    }
+
+    /// <summary>
+    /// 获取当前用户的上传统计信息
+    /// </summary>
+    /// <returns>上传统计信息</returns>
+    [HttpGet]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetUploadStatistics()
+    {
+        var userId = _httpContextUser.UserId;
+        var statistics = await _rateLimitService.GetUploadStatisticsAsync(userId);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = statistics
         };
     }
 

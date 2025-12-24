@@ -1,7 +1,7 @@
 # 文件上传功能文档
 
-> **状态**：✅ Phase 1 MVP 已完成
-> **最后更新**：2025-12-21
+> **状态**：✅ Phase 1 MVP 已完成 | ✅ Phase 2 基本完成（限流已实现）
+> **最后更新**：2025-12-24
 > **维护者**：Radish Team
 
 ## 📋 概述
@@ -192,6 +192,7 @@ removeExif: true
   - POST /api/v1/Attachment/UploadDocument
   - GET /api/v1/Attachment/GetById/{id}
   - GET /api/v1/Attachment/GetByBusiness
+  - GET /api/v1/Attachment/GetUploadStatistics（上传统计）
   - GET /api/v1/Attachment/Download/{id}
   - DELETE /api/v1/Attachment/Delete/{id}
   - POST /api/v1/Attachment/DeleteBatch
@@ -460,6 +461,82 @@ public async Task<IActionResult> Upload(IFormFile file) { }
 - **图片安全处理**：去除 EXIF 信息（可能含恶意代码）
 - **病毒扫描**：可选集成 ClamAV（Phase 3）
 - **内容审核**：调用云服务 API 检测违规内容（Phase 3）
+
+### 6. 上传限流控制 ✅ **已实现（2025-12-24）**
+
+为防止滥用和资源耗尽，实现了完整的上传限流机制：
+
+**限流维度**：
+1. **并发控制**：单用户最多 5 个文件同时上传
+2. **速率限制**：每分钟最多 20 个文件
+3. **日上传大小限制**：每天最多 100MB
+
+**实现方式**：
+```csharp
+// 限流检查
+var (isAllowed, errorMessage) = await _rateLimitService.CheckUploadAllowedAsync(userId, fileSize);
+if (!isAllowed)
+{
+    return new MessageModel
+    {
+        IsSuccess = false,
+        StatusCode = 429, // Too Many Requests
+        MessageInfo = errorMessage
+    };
+}
+
+// 记录上传开始（增加并发计数）
+await _rateLimitService.RecordUploadStartAsync(userId, uploadId);
+
+// 上传完成后记录（减少并发计数，增加速率和大小计数）
+await _rateLimitService.RecordUploadCompleteAsync(userId, uploadId, fileSize);
+```
+
+**配置选项**（`appsettings.json`）：
+```json
+{
+  "UploadRateLimit": {
+    "Enable": true,
+    "MaxConcurrentUploads": 5,
+    "MaxUploadsPerMinute": 20,
+    "MaxDailyUploadSize": 104857600  // 100MB
+  }
+}
+```
+
+**错误响应示例**：
+```json
+{
+  "isSuccess": false,
+  "statusCode": 429,
+  "messageInfo": "您当前有 5 个文件正在上传，已达到并发上传限制（最多 5 个）"
+}
+```
+
+**统计查询接口**：
+```http
+GET /api/v1/Attachment/GetUploadStatistics
+Authorization: Bearer {token}
+
+Response:
+{
+  "currentConcurrentUploads": 2,
+  "uploadsThisMinute": 5,
+  "uploadedSizeToday": 52428800,
+  "uploadedSizeTodayFormatted": "50 MB",
+  "maxConcurrentUploads": 5,
+  "maxUploadsPerMinute": 20,
+  "maxDailyUploadSize": 104857600,
+  "maxDailyUploadSizeFormatted": "100 MB"
+}
+```
+
+**技术特点**：
+- 基于 Redis/内存缓存实现
+- 自动过期机制（并发：1小时，速率：1分钟，日大小：当天结束）
+- 用户隔离（不同用户的限流独立）
+- 可配置开关（Enable 参数）
+- 友好的错误提示（包含具体数值和剩余配额）
 
 ---
 
@@ -1291,29 +1368,35 @@ public class ImageProcessorFactory
 ### Phase 2: 生产环境支持（预计 3-4 天）
 
 **1. MinIO 集成**
-   - [ ] 实现 `MinioFileStorage`
+   - [x] 实现 `MinioFileStorage`
    - [ ] Docker Compose 配置（MinIO + Radish）
    - [ ] MinIO 初始化脚本（创建 Bucket、设置权限）
-   - [ ] 配置切换测试（Local ↔ MinIO）
+   - [x] 配置切换测试（Local ↔ MinIO）
 
 **2. 图片处理增强**
-   - [ ] 多尺寸生成（Small, Medium, Large）
-   - [ ] 水印功能完整实现（文字 + 图片水印）
+   - [x] 多尺寸生成（Small, Medium, Large）
+   - [x] 水印功能完整实现（文字 + 图片水印）
    - [ ] 图片格式转换（WebP）
-   - [ ] Rust vs C# 性能对比测试
-   - [ ] 根据测试结果决定默认实现
+   - [x] Rust vs C# 性能对比测试
+   - [x] 根据测试结果决定默认实现
 
 **3. 定时任务（Hangfire）**
-   - [ ] 集成 Hangfire
-   - [ ] 软删除文件清理任务（每天凌晨 3 点）
-   - [ ] 临时文件清理任务（每小时）
-   - [ ] 任务监控和日志
+   - [x] 集成 Hangfire
+   - [x] 软删除文件清理任务（每天凌晨 3 点）
+   - [x] 临时文件清理任务（每小时）
+   - [x] 任务监控和日志
 
-**4. 并发控制和限流**
-   - [ ] Redis 集成（或内存缓存）
-   - [ ] 单用户并发限制（5 个）
-   - [ ] 速率限制（20 文件/分钟）
-   - [ ] 日上传大小限制（100MB）
+**4. 并发控制和限流** ✅ **已完成（2025-12-24）**
+   - [x] Redis 集成（或内存缓存）
+   - [x] 单用户并发限制（5 个）
+   - [x] 速率限制（20 文件/分钟）
+   - [x] 日上传大小限制（100MB）
+   - [x] 限流服务实现（`IUploadRateLimitService`）
+   - [x] 集成到上传接口（`UploadImage` / `UploadDocument`）
+   - [x] 上传统计查询接口（`GetUploadStatistics`）
+   - [x] 单元测试（`UploadRateLimitServiceTest`）
+   - [x] HTTP 测试用例
+   - [x] 配置选项（`UploadRateLimitOptions`）
 
 ---
 
