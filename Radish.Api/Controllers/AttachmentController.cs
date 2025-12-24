@@ -29,17 +29,20 @@ public class AttachmentController : ControllerBase
     private readonly IHttpContextUser _httpContextUser;
     private readonly IUploadRateLimitService _rateLimitService;
     private readonly UploadRateLimitOptions _rateLimitOptions;
+    private readonly IFileAccessTokenService _fileAccessTokenService;
 
     public AttachmentController(
         IAttachmentService attachmentService,
         IHttpContextUser httpContextUser,
         IUploadRateLimitService rateLimitService,
-        IOptions<UploadRateLimitOptions> rateLimitOptions)
+        IOptions<UploadRateLimitOptions> rateLimitOptions,
+        IFileAccessTokenService fileAccessTokenService)
     {
         _attachmentService = attachmentService;
         _httpContextUser = httpContextUser;
         _rateLimitService = rateLimitService;
         _rateLimitOptions = rateLimitOptions.Value;
+        _fileAccessTokenService = fileAccessTokenService;
     }
 
     #region Upload
@@ -404,6 +407,169 @@ public class AttachmentController : ControllerBase
         }
 
         return File(stream, attachment.MimeType, attachment.OriginalName);
+    }
+
+    #endregion
+
+    #region Token Access
+
+    /// <summary>
+    /// 创建文件访问令牌
+    /// </summary>
+    /// <param name="dto">创建请求</param>
+    /// <returns>令牌信息</returns>
+    [HttpPost]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    public async Task<MessageModel> CreateAccessToken([FromBody] CreateFileAccessTokenDto dto)
+    {
+        try
+        {
+            var userId = _httpContextUser.UserId;
+            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+
+            var token = await _fileAccessTokenService.CreateTokenAsync(dto, userId, baseUrl);
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "创建访问令牌成功",
+                ResponseData = token
+            };
+        }
+        catch (Exception ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+    }
+
+    /// <summary>
+    /// 通过令牌下载文件
+    /// </summary>
+    /// <param name="token">访问令牌</param>
+    /// <returns>文件流</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DownloadByToken([FromQuery] string token)
+    {
+        try
+        {
+            var userId = _httpContextUser.UserId;
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+            // 验证令牌
+            var attachmentId = await _fileAccessTokenService.ValidateAndUseTokenAsync(token, userId, ipAddress);
+            if (!attachmentId.HasValue)
+            {
+                return StatusCode(403, new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = 403,
+                    MessageInfo = "令牌无效、已过期或已达访问次数上限"
+                });
+            }
+
+            // 下载文件
+            var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(attachmentId.Value);
+            if (stream == null || attachment == null)
+            {
+                return NotFound(new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                    MessageInfo = "文件不存在"
+                });
+            }
+
+            return File(stream, attachment.MimeType, attachment.OriginalName);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = 500,
+                MessageInfo = ex.Message
+            });
+        }
+    }
+
+    /// <summary>
+    /// 撤销访问令牌
+    /// </summary>
+    /// <param name="token">令牌</param>
+    /// <returns>操作结果</returns>
+    [HttpPost]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    public async Task<MessageModel> RevokeAccessToken([FromBody] string token)
+    {
+        try
+        {
+            var userId = _httpContextUser.UserId;
+            await _fileAccessTokenService.RevokeTokenAsync(token, userId);
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "撤销令牌成功"
+            };
+        }
+        catch (Exception ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+    }
+
+    /// <summary>
+    /// 获取附件的所有访问令牌
+    /// </summary>
+    /// <param name="attachmentId">附件ID</param>
+    /// <returns>令牌列表</returns>
+    [HttpGet]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    public async Task<MessageModel> GetAttachmentTokens([FromQuery] long attachmentId)
+    {
+        try
+        {
+            var userId = _httpContextUser.UserId;
+            var tokens = await _fileAccessTokenService.GetAttachmentTokensAsync(attachmentId, userId);
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "获取成功",
+                ResponseData = tokens
+            };
+        }
+        catch (Exception ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
     }
 
     #endregion

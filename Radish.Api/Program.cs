@@ -452,6 +452,38 @@ if (fileCleanupConfig.GetValue<bool>("OrphanAttachments:Enable", true))
     Log.Information("[Hangfire] 已注册定时任务: cleanup-orphan-attachments (保留 {Hours} 小时, 计划: {Schedule})", retentionHours, schedule);
 }
 
+// 注册分片上传会话清理任务
+{
+    var schedule = "0 6 * * *"; // 每天凌晨 6 点
+
+    RecurringJob.AddOrUpdate<IChunkedUploadService>(
+        "cleanup-expired-upload-sessions",
+        service => service.CleanupExpiredSessionsAsync(),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: cleanup-expired-upload-sessions (计划: {Schedule})", schedule);
+}
+
+// 注册文件访问令牌清理任务
+{
+    var schedule = "0 7 * * *"; // 每天凌晨 7 点
+
+    RecurringJob.AddOrUpdate<IFileAccessTokenService>(
+        "cleanup-expired-access-tokens",
+        service => service.CleanupExpiredTokensAsync(),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: cleanup-expired-access-tokens (计划: {Schedule})", schedule);
+}
+
 // -------------- App 运行阶段 ---------------
 app.Run();
 // -------------- App 运行阶段 ---------------
