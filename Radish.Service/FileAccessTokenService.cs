@@ -1,5 +1,6 @@
 using Radish.IRepository;
 using Radish.IService;
+using Radish.Model;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
 using Serilog;
@@ -35,7 +36,7 @@ public class FileAccessTokenService : IFileAccessTokenService
         }
 
         // 检查用户是否有权限创建令牌（附件所有者或管理员）
-        if (attachment.UserId != userId)
+        if (attachment.UploaderId != userId)
         {
             // TODO: 检查是否是管理员
             throw new Exception("无权为此附件创建访问令牌");
@@ -59,7 +60,7 @@ public class FileAccessTokenService : IFileAccessTokenService
             ModifyTime = DateTime.Now
         };
 
-        await _tokenRepository.InsertAsync(tokenEntity);
+        await _tokenRepository.AddAsync(tokenEntity);
 
         Log.Information("[FileAccessToken] 创建令牌: {Token}, 附件: {AttachmentId}, 有效期: {Hours}小时",
             token, dto.AttachmentId, dto.ValidHours);
@@ -188,7 +189,7 @@ public class FileAccessTokenService : IFileAccessTokenService
             throw new Exception($"附件不存在: {attachmentId}");
         }
 
-        if (attachment.UserId != userId)
+        if (attachment.UploaderId != userId)
         {
             // TODO: 检查是否是管理员
             throw new Exception("无权查看此附件的令牌");

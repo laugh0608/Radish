@@ -720,3 +720,266 @@ Test
 #    - 或等待定时任务自动清理
 #
 ###############################################################################
+
+###############################################################################
+# 10. 分片上传测试
+###############################################################################
+
+### 10.1 创建分片上传会话
+# 说明：为大文件创建上传会话，获取 sessionId
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/CreateSession
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "fileName": "large-video.mp4",
+  "totalSize": 104857600,
+  "mimeType": "video/mp4",
+  "chunkSize": 2097152,
+  "businessType": "Video",
+  "businessId": null
+}
+
+### 10.2 上传第一个分片
+# 说明：上传分片索引为 0 的数据
+# 注意：需要准备一个 2MB 的测试文件作为分片
+@SessionId = <从上一步获取的 sessionId>
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk?sessionId={{SessionId}}&chunkIndex=0
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkData"; filename="chunk_0"
+Content-Type: application/octet-stream
+
+< ./test-files/chunk_0.bin
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 10.3 上传第二个分片
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk?sessionId={{SessionId}}&chunkIndex=1
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkData"; filename="chunk_1"
+Content-Type: application/octet-stream
+
+< ./test-files/chunk_1.bin
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 10.4 获取上传会话状态
+# 说明：查看当前上传进度
+GET {{Api_HostAddress}}/api/v1/ChunkedUpload/GetSession/{{SessionId}}
+Authorization: Bearer {{Access_Token}}
+
+### 10.5 合并分片并创建附件
+# 说明：所有分片上传完成后，合并为完整文件
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/MergeChunks
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "sessionId": "{{SessionId}}",
+  "generateThumbnail": false,
+  "generateMultipleSizes": false,
+  "addWatermark": false,
+  "removeExif": false
+}
+
+### 10.6 取消上传会话
+# 说明：取消未完成的上传会话
+DELETE {{Api_HostAddress}}/api/v1/ChunkedUpload/CancelSession/{{SessionId}}
+Authorization: Bearer {{Access_Token}}
+
+### 10.7 测试断点续传
+# 说明：模拟网络中断后继续上传
+# 步骤：
+# 1. 创建会话（10.1）
+# 2. 上传部分分片（10.2）
+# 3. 获取会话状态（10.4）- 查看已上传的分片索引
+# 4. 继续上传剩余分片（10.3）
+# 5. 合并分片（10.5）
+
+### 10.8 测试分片大小限制
+# 说明：上传超过 10MB 的单个分片，应返回 400 错误
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk?sessionId={{SessionId}}&chunkIndex=0
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkData"; filename="large_chunk"
+Content-Type: application/octet-stream
+
+< ./test-files/large_chunk_11mb.bin
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###############################################################################
+# 11. 临时授权 URL 测试
+###############################################################################
+
+### 11.1 为附件创建临时访问令牌
+# 说明：为私有附件生成临时访问链接
+@PrivateAttachmentId = <私有附件的ID>
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 24,
+  "maxAccessCount": 10,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+### 11.2 使用令牌下载文件（无需认证）
+# 说明：使用返回的 token 直接下载文件，无需 Authorization 头
+@AccessToken = <从上一步获取的 token>
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/{{AccessToken}}
+
+### 11.3 创建限制访问次数的令牌
+# 说明：创建只能访问 1 次的令牌
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 1,
+  "maxAccessCount": 1,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+### 11.4 创建限制用户的令牌
+# 说明：创建只允许特定用户访问的令牌
+@TargetUserId = 20001
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 24,
+  "maxAccessCount": 0,
+  "authorizedUserId": {{TargetUserId}},
+  "authorizedIp": null
+}
+
+### 11.5 创建限制 IP 的令牌
+# 说明：创建只允许特定 IP 访问的令牌
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 24,
+  "maxAccessCount": 0,
+  "authorizedUserId": null,
+  "authorizedIp": "192.168.1.100"
+}
+
+### 11.6 撤销访问令牌
+# 说明：立即撤销令牌，使其失效
+@TokenToRevoke = <要撤销的 token>
+DELETE {{Api_HostAddress}}/api/v1/Attachment/RevokeAccessToken/{{TokenToRevoke}}
+Authorization: Bearer {{Access_Token}}
+
+### 11.7 获取附件的所有令牌
+# 说明：查看某个附件的所有访问令牌
+GET {{Api_HostAddress}}/api/v1/Attachment/GetAttachmentTokens/{{PrivateAttachmentId}}
+Authorization: Bearer {{Access_Token}}
+
+### 11.8 测试过期令牌
+# 说明：创建一个 1 秒后过期的令牌，等待过期后尝试访问
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 0.0003,
+  "maxAccessCount": 0,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+# 等待 2 秒后尝试访问（应返回 403 错误）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/<过期的token>
+
+### 11.9 测试访问次数限制
+# 说明：创建只能访问 2 次的令牌，第 3 次访问应失败
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 24,
+  "maxAccessCount": 2,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+# 第 1 次访问（成功）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/<token>
+
+# 第 2 次访问（成功）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/<token>
+
+# 第 3 次访问（失败，返回 403）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/<token>
+
+### 11.10 测试无效令牌
+# 说明：使用不存在的令牌访问，应返回 404 错误
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken/invalid-token-12345
+
+###############################################################################
+# 分片上传和临时授权测试说明
+###############################################################################
+#
+# 1. 分片上传测试准备：
+#    - 准备测试文件分片（可以使用任意文件切分为 2MB 的块）
+#    - 创建 test-files 目录并放入分片文件
+#    - 分片文件命名：chunk_0.bin, chunk_1.bin, chunk_2.bin...
+#
+# 2. 分片上传测试流程：
+#    a. 创建会话（10.1）- 获取 sessionId
+#    b. 上传所有分片（10.2, 10.3）- 按顺序或乱序上传
+#    c. 查看进度（10.4）- 确认已上传的分片
+#    d. 合并分片（10.5）- 生成最终文件
+#    e. 断点续传测试（10.7）- 模拟中断后继续
+#
+# 3. 临时授权测试准备：
+#    - 先上传一个私有附件（isPublic = false）
+#    - 记录附件 ID 用于后续测试
+#
+# 4. 临时授权测试流程：
+#    a. 创建令牌（11.1）- 获取 token
+#    b. 使用令牌下载（11.2）- 无需认证
+#    c. 测试限制条件（11.3-11.5）- 次数、用户、IP
+#    d. 撤销令牌（11.6）- 使令牌失效
+#    e. 查看令牌列表（11.7）- 管理令牌
+#    f. 测试过期和次数限制（11.8-11.9）
+#
+# 5. 预期结果：
+#    - 分片上传：所有分片上传成功，合并后文件完整
+#    - 断点续传：中断后可以继续上传剩余分片
+#    - 临时授权：令牌有效期内可以访问，过期/撤销后无法访问
+#    - 访问限制：超过次数限制或不符合 IP/用户限制时返回 403
+#
+# 6. 验证要点：
+#    - 分片文件是否正确保存到临时目录
+#    - 合并后的文件大小是否正确
+#    - 会话过期后临时文件是否被清理
+#    - 令牌访问次数是否正确计数
+#    - 令牌过期后是否无法访问
+#    - 撤销令牌后是否立即失效
+#
+# 7. 清理测试数据：
+#    - 测试完成后删除测试上传的文件
+#    - 撤销所有测试令牌
+#    - 或等待定时任务自动清理过期会话和令牌
+#
+###############################################################################

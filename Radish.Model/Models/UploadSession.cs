@@ -96,4 +96,16 @@ public class UploadSession : RootEntityTKey<long>
     /// </summary>
     [SugarColumn(Length = 500, IsNullable = true)]
     public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// 创建时间
+    /// </summary>
+    [SugarColumn(IsNullable = false, IsOnlyIgnoreUpdate = true)]
+    public DateTime CreateTime { get; set; } = DateTime.Now;
+
+    /// <summary>
+    /// 修改时间
+    /// </summary>
+    [SugarColumn(IsNullable = true)]
+    public DateTime? ModifyTime { get; set; }
 }

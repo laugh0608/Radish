@@ -1,6 +1,6 @@
 # 文件上传功能文档
 
-> **状态**：✅ Phase 1 MVP 已完成 | ✅ Phase 2 基本完成（限流已实现）
+> **状态**：✅ Phase 1 MVP 已完成 | ✅ Phase 2 已完成（限流已实现）| ✅ Phase 3 已完成（分片上传和临时授权）
 > **最后更新**：2025-12-24
 > **维护者**：Radish Team
 
@@ -15,6 +15,9 @@ Radish 项目的文件上传功能提供了完整的文件管理解决方案，�
 - 🏗️ 可扩展架构（本地存储 / MinIO / OSS）
 - 🔄 文件去重（基于 SHA256 哈希）
 - 🌐 **前端自动重试机制**（指数退避：1s, 2s, 4s）
+- 🚀 **分片上传**（支持大文件上传和断点续传）
+- 🔐 **临时授权 URL**（私有文件访问控制）
+- ⏱️ **上传限流**（并发控制、速率限制、日上传大小限制）
 
 **适用场景**：
 - 论坛帖子配图
@@ -22,6 +25,8 @@ Radish 项目的文件上传功能提供了完整的文件管理解决方案，�
 - 评论附件
 - 文档分享
 - 富文本编辑器图片插入
+- 大文件上传（视频、压缩包等）
+- 私有文件分享（临时链接）
 
 ---
 
@@ -1402,32 +1407,49 @@ public class ImageProcessorFactory
 
 ### Phase 3: 高级特性（按需实施）
 
-**1. 分片上传（2-3 天）**
-   - [ ] 实现 `POST /api/v1/Upload/Chunk`
-   - [ ] 实现 `POST /api/v1/Upload/Merge`
-   - [ ] 前端分片逻辑（2MB/片）
-   - [ ] 断点续传支持
-   - [ ] 进度持久化
+**1. 分片上传 ✅ 已完成（2-3 天）**
+   - [x] 实现 `POST /api/v1/ChunkedUpload/CreateSession`
+   - [x] 实现 `POST /api/v1/ChunkedUpload/UploadChunk`
+   - [x] 实现 `POST /api/v1/ChunkedUpload/MergeChunks`
+   - [x] 实现 `GET /api/v1/ChunkedUpload/GetSession`
+   - [x] 实现 `DELETE /api/v1/ChunkedUpload/CancelSession`
+   - [x] 断点续传支持（通过会话状态查询）
+   - [x] 分片大小限制（默认 2MB，最大 10MB）
+   - [x] 会话过期清理（Hangfire 定时任务）
+   - [x] HTTP 测试用例
+   - [ ] 前端分片逻辑（待实现）
 
-**2. 内容审核（3-5 天）**
+**2. 临时授权 URL ✅ 已完成（1 天）**
+   - [x] 实现 `POST /api/v1/Attachment/CreateAccessToken`
+   - [x] 实现 `GET /api/v1/Attachment/DownloadByToken`
+   - [x] 实现 `DELETE /api/v1/Attachment/RevokeAccessToken`
+   - [x] 实现 `GET /api/v1/Attachment/GetAttachmentTokens`
+   - [x] 令牌过期时间控制
+   - [x] 访问次数限制
+   - [x] 用户和 IP 限制
+   - [x] 令牌撤销功能
+   - [x] 过期令牌清理（Hangfire 定时任务）
+   - [x] HTTP 测试用例
+
+**3. 内容审核（待实施）**
    - [ ] 本地 NSFW 模型集成（ONNX Runtime）
    - [ ] 人工审核工具（管理后台）
    - [ ] 审核工作流（待审核 → 通过/拒绝）
    - [ ] 审核日志和统计
 
-**3. Rust 扩展增强（按需）**
+**4. Rust 扩展增强（按需）**
    - [ ] 图片缩放（Rust）
    - [ ] 图片压缩（Rust）
    - [ ] 图片格式转换（Rust）
    - [ ] 完整性能测试和优化
 
-**4. 安全增强**
+**5. 安全增强（部分完成）**
    - [ ] 病毒扫描（ClamAV 集成）
-   - [ ] 临时授权 URL（带签名）
+   - [x] 临时授权 URL（带签名）✅
    - [ ] 访问日志和审计
    - [ ] 防盗链（Referer 检查）
 
-**5. CDN 集成（生产环境）**
+**6. CDN 集成（生产环境）**
    - [ ] CDN 域名配置
    - [ ] 缓存策略优化
    - [ ] OSS 图片处理参数
