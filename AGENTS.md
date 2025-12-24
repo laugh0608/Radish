@@ -6,6 +6,54 @@
 - 当前协作主分支为 `dev`；所有沟通、文档说明默认使用中文（代码与技术标识除外）。
 - `Radish.slnx` 收纳全部后端项目，`radish.docs/docs/` 保持规范/计划/日志的唯一真相源；如需了解架构与需求，优先查阅 `radish.docs/docs/architecture/framework.md` 与 `radish.docs/docs/README.md` 的索引。
 
+## 包管理与测试规范
+
+**重要：包安装与项目启动规则**
+
+在协作开发时，AI 必须遵循以下规则：
+
+1. **包安装 - 禁止直接执行**：
+   - **禁止**直接运行 `dotnet add package`、`npm install` 或任何包安装命令
+   - **正确做法**：告知用户需要安装哪些包，由用户自行执行
+   - 示例："请安装以下 NuGet 包：`dotnet add package Newtonsoft.Json --version 13.0.3`"
+   - 示例："请在根目录运行：`npm install axios --workspace=radish.client`"
+
+2. **项目启动测试 - 禁止直接执行**：
+   - **禁止**运行 `dotnet run`、`dotnet watch`、`npm run dev` 或任何用于测试的项目启动命令
+   - **正确做法**：告知用户需要启动哪个项目以及如何启动
+   - 示例："请启动 API 项目进行测试：`dotnet run --project Radish.Api/Radish.Api.csproj`"
+   - 示例："请启动前端开发服务器：`npm run dev --workspace=radish.client`"
+   - 示例："请使用 start 脚本启动所有服务：`pwsh ./start.ps1` 并选择选项 11 (ALL)"
+
+3. **AI 可以执行的操作**：
+   - 读取和分析代码
+   - 编写新代码或修改现有代码
+   - 运行构建命令（`dotnet build`、`npm run build`）
+   - 运行测试（`dotnet test`、`npm run test`）
+   - 运行代码检查（`npm run lint`、`npm run type-check`）
+   - 执行 git 命令（status、diff、commit 等）
+   - 使用开发工具（grep、find 等）
+
+4. **原因说明**：
+   - 包安装可能需要网络访问、身份验证或特定环境配置
+   - 项目启动需要监控输出、处理交互式提示，且可能无限期运行
+   - 用户对自己的开发环境有更好的控制，能更有效地排查问题
+
+**工作流示例**：
+```
+❌ 错误做法：
+AI: "我现在安装 Serilog 包..."
+AI: [执行] dotnet add package Serilog
+AI: "我现在启动 API 进行测试..."
+AI: [执行] dotnet run --project Radish.Api
+
+✅ 正确做法：
+AI: "我已经添加了日志配置代码。请按以下步骤操作："
+AI: "1. 安装依赖包：`dotnet add package Serilog.AspNetCore --version 8.0.0`"
+AI: "2. 启动 API 项目测试日志功能：`dotnet run --project Radish.Api/Radish.Api.csproj`"
+AI: "3. 访问 http://localhost:5100/api/v2/Test/Log 查看日志输出"
+```
+
 ## 仓库结构与分层职责
 
 ### 后端项目

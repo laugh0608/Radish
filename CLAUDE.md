@@ -10,6 +10,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Quoting from English documentation or error messages
 - The user explicitly requests a different language
 
+## Package Management & Testing Guidelines
+
+**CRITICAL: Package Installation and Project Startup Rules**
+
+When working with this repository, follow these strict rules for package management and testing:
+
+1. **Package Installation - DO NOT Execute Directly**:
+   - **NEVER** run `dotnet add package`, `npm install`, or any package installation commands directly
+   - **INSTEAD**: Tell the user which packages need to be installed and let them execute the commands
+   - Example: "请安装以下 NuGet 包：`dotnet add package Newtonsoft.Json --version 13.0.3`"
+   - Example: "请在根目录运行：`npm install axios --workspace=radish.client`"
+
+2. **Project Startup for Testing - DO NOT Execute Directly**:
+   - **NEVER** run `dotnet run`, `dotnet watch`, `npm run dev`, or any project startup commands for testing purposes
+   - **INSTEAD**: Tell the user which project needs to be started and how to start it
+   - Example: "请启动 API 项目进行测试：`dotnet run --project Radish.Api/Radish.Api.csproj`"
+   - Example: "请启动前端开发服务器：`npm run dev --workspace=radish.client`"
+   - Example: "请使用 start 脚本启动所有服务：`pwsh ./start.ps1` 并选择选项 11 (ALL)"
+
+3. **What AI CAN Do**:
+   - Read and analyze code
+   - Write new code or modify existing code
+   - Run build commands (`dotnet build`, `npm run build`)
+   - Run tests (`dotnet test`, `npm run test`)
+   - Run linting and type checking (`npm run lint`, `npm run type-check`)
+   - Execute git commands (status, diff, commit, etc.)
+   - Use development tools (grep, find, etc.)
+
+4. **Rationale**:
+   - Package installation may require network access, authentication, or specific environment setup
+   - Project startup for testing requires monitoring output, handling interactive prompts, and may run indefinitely
+   - The user has better control over their development environment and can troubleshoot issues more effectively
+
+**Example Workflow**:
+```
+❌ BAD:
+AI: "我现在安装 Serilog 包..."
+AI: [Executes] dotnet add package Serilog
+AI: "我现在启动 API 进行测试..."
+AI: [Executes] dotnet run --project Radish.Api
+
+✅ GOOD:
+AI: "我已经添加了日志配置代码。请按以下步骤操作："
+AI: "1. 安装依赖包：`dotnet add package Serilog.AspNetCore --version 8.0.0`"
+AI: "2. 启动 API 项目测试日志功能：`dotnet run --project Radish.Api/Radish.Api.csproj`"
+AI: "3. 访问 http://localhost:5100/api/v2/Test/Log 查看日志输出"
+```
+
 ## Project Overview
 
 Radish is a modern community platform built with a self-designed layered architecture:
