@@ -102,7 +102,7 @@ npm install
 
 # Start dev servers
 npm run dev --workspace=radish.client    # Frontend (http://localhost:3000)
-npm run dev --workspace=radish.console   # Console (http://localhost:3002)
+npm run dev --workspace=radish.console   # Console (http://localhost:3200)
 
 # Build for production
 npm run build --prefix radish.client

@@ -79,7 +79,10 @@ export const appRegistry: AppDefinition[] = [
     description: 'Radish 项目文档',
     component: () => null, // iframe 应用不需要实际组件
     type: 'iframe',
-    url: 'http://localhost:3001/docs/',
+    url: typeof window !== 'undefined' &&
+      (window.location.origin === 'https://localhost:5000' || window.location.origin === 'http://localhost:5000')
+      ? '/docs/'
+      : 'http://localhost:3100/docs/',
     defaultSize: { width: 1200, height: 800 },
     requiredRoles: ['User'],
     category: 'development'
@@ -95,7 +98,7 @@ export const appRegistry: AppDefinition[] = [
     externalUrl: typeof window !== 'undefined' &&
       (window.location.origin === 'https://localhost:5000' || window.location.origin === 'http://localhost:5000')
       ? '/console/'
-      : 'http://localhost:3002',
+      : 'http://localhost:3200',
     requiredRoles: ['User'],
     category: 'system'
   },

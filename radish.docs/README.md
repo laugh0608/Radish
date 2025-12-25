@@ -9,7 +9,7 @@
 npm install
 
 # 开发模式（热重载）
-# 默认开发地址：http://localhost:3001/docs
+# 默认开发地址：http://localhost:3100/docs
 npm run docs:dev
 
 # 构建生产版本

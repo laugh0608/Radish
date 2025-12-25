@@ -12,7 +12,7 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
   /**
    * 获取 Auth Server 的基础 URL
    * - 通过 Gateway 访问时（https://localhost:5000）：使用 Gateway 地址
-   * - 直接访问开发服务器时（http://localhost:3002）：使用 Auth Server 直接地址
+   * - 直接访问开发服务器时（http://localhost:3200）：使用 Auth Server 直接地址
    */
   const getAuthServerBaseUrl = (): string => {
     const currentOrigin = window.location.origin;
@@ -23,7 +23,7 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
     }
 
     // 直接访问 console 开发服务器（开发环境）
-    if (currentOrigin === 'http://localhost:3002' || currentOrigin === 'https://localhost:3002') {
+    if (currentOrigin === 'http://localhost:3200' || currentOrigin === 'https://localhost:3200') {
       return 'http://localhost:5200'; // Auth Server 直接地址
     }
 
@@ -34,7 +34,7 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
   /**
    * 获取 redirect_uri
    * - 通过 Gateway 访问时：https://localhost:5000/console/callback
-   * - 直接访问开发服务器时：http://localhost:3002/callback
+   * - 直接访问开发服务器时：http://localhost:3200/callback
    */
   const getRedirectUri = (): string => {
     const currentOrigin = window.location.origin;

@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
-    "dev": "vitepress dev . --port 3001",
+    "dev": "vitepress dev . --port 3100",
     "build": "vitepress build .",
     "preview": "vitepress preview .",
     "docs:dev": "npm run dev",

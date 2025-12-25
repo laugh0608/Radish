@@ -76,7 +76,7 @@ AI: "3. 访问 http://localhost:5100/api/v2/Test/Log 查看日志输出"
   - 前端：`npm install`（根目录，配置 workspaces）、`npm run dev --workspace=radish.client`、`npm run dev --workspace=radish.console`、`npm run build --prefix radish.client`、`npm run lint --prefix radish.client`。
   - UI 组件库：`npm run type-check --workspace=@radish/ui`、`npm run lint --workspace=@radish/ui`。修改 `radish.ui/` 中的组件会通过符号链接自动热更新到 client 和 console。
   - 单测筛选：`dotnet test --list-tests`、`dotnet test --filter "FullyQualifiedName~UserControllerTest"`。
-- **默认端口**：API `http://localhost:5100`（内部）、Auth `http://localhost:5200`（内部）、Gateway `https://localhost:5000` / `http://localhost:5001`（外部唯一入口）、前端 Vite `http://localhost:3000`、Docs `http://localhost:3001`、Console `http://localhost:3002`。所有对外 API/Docs/Console 均通过 Gateway 暴露：`https://localhost:5000/api`、`https://localhost:5000/docs`、`https://localhost:5000/console`，Scalar UI 位于 `/scalar`（对外入口 `https://localhost:5000/scalar`，本机直连 `http://localhost:5100/scalar`，旧 `/api/docs` 路径仅保留重定向）。
+- **默认端口**：API `http://localhost:5100`（内部）、Auth `http://localhost:5200`（内部）、Gateway `https://localhost:5000` / `http://localhost:5001`（外部唯一入口）、前端 Vite `http://localhost:3000`、Docs `http://localhost:3100`、Console `http://localhost:3200`。所有对外 API/Docs/Console 均通过 Gateway 暴露：`https://localhost:5000/api`、`https://localhost:5000/docs`、`https://localhost:5000/console`，Scalar UI 位于 `/scalar`（对外入口 `https://localhost:5000/scalar`，本机直连 `http://localhost:5100/scalar`，旧 `/api/docs` 路径仅保留重定向）。
 
 ## 配置、数据库与安全
 - 配置加载顺序：`appsettings.json` → `appsettings.{Environment}.json` → `appsettings.Local.json`（忽略提交） → 环境变量。新成员应复制 `Radish.Api/appsettings.Local.example.json`，并通过 `AppSettings.RadishApp` 或实现 `IConfigurableOptions` 读取强类型配置。
