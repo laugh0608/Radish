@@ -326,7 +326,7 @@ Radish.Api 作为资源服务器验证 Token（当前本地开发配置已经与
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        // 本地开发：直接信任 Radish.Auth 的 OpenIddict Server
+        // Authority 指向 Auth Server 地址（本地开发）
         options.Authority = "http://localhost:5200";
         // 生产环境部署到网关后，可切换为网关暴露的 https 地址
         // options.Authority = "https://your-gateway-domain";
@@ -337,30 +337,41 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            // 若生产环境统一配置 Issuer，可开启严格校验
-            ValidateIssuer = false,
+            ValidateIssuer = true,
             ValidateAudience = false,
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.Zero,
+            RoleClaimType = "role"
         };
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    // Client 策略：基于 scope=radish-api 控制访问资源服务器
-    options.AddPolicy("Client", policy =>
-        policy.RequireClaim("scope", "radish-api"));
+builder.Services.AddAuthorizationBuilder()
+    // Client 策略：基于 scope 包含 radish-api 控制访问资源服务器
+    // 注意：OIDC/OpenIddict 通常会把多个 scope 用空格拼成一个字符串（例如："openid profile radish-api"），所以需要拆分判断
+    .AddPolicy("Client", policy => policy.RequireAssertion(ctx =>
+    {
+        foreach (var claim in ctx.User.FindAll("scope"))
+        {
+            if (string.IsNullOrWhiteSpace(claim.Value))
+                continue;
 
-    options.AddPolicy("System", policy =>
-        policy.RequireRole("System"));
+            var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            foreach (var s in scopes)
+            {
+                if (string.Equals(s, "radish-api", StringComparison.Ordinal))
+                    return true;
+            }
+        }
 
-    options.AddPolicy("SystemOrAdmin", policy =>
-        policy.RequireRole("System", "Admin"));
+        return false;
+    }).Build())
+
+    .AddPolicy("System", policy => policy.RequireRole("System").Build())
+    .AddPolicy("SystemOrAdmin", policy => policy.RequireRole("System", "Admin").Build())
 
     // 动态权限策略
-    options.AddPolicy("RadishAuthPolicy", policy =>
-        policy.Requirements.Add(new PermissionRequirement()));
-});
+    .AddPolicy("RadishAuthPolicy", policy => policy.Requirements.Add(new PermissionRequirement()));
 ```
 
 ## 6. 前端集成
