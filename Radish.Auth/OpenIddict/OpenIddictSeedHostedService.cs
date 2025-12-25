@@ -169,9 +169,9 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console/"));
 
             // 直接访问 console 开发服务器（开发环境）
-            descriptor.RedirectUris.Add(new Uri("http://localhost:3002/callback"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002/"));
+            descriptor.RedirectUris.Add(new Uri("http://localhost:3200/callback"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3200"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3200/"));
 
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
@@ -200,15 +200,15 @@ public class OpenIddictSeedHostedService : IHostedService
             // 通过 Gateway 访问（生产环境）
             descriptor.RedirectUris.Add(new Uri("https://localhost:5000/console/callback"));
             // 直接访问 console 开发服务器（开发环境）
-            descriptor.RedirectUris.Add(new Uri("http://localhost:3002/callback"));
+            descriptor.RedirectUris.Add(new Uri("http://localhost:3200/callback"));
 
             descriptor.PostLogoutRedirectUris.Clear();
             // 通过 Gateway 访问（生产环境）
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/console/"));
             // 直接访问 console 开发服务器（开发环境）
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3002/"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3200"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3200/"));
 
             // 确保扩展属性存在
             descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 后台管理控制台");

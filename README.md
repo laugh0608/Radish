@@ -48,8 +48,8 @@ npm run dev --prefix radish.client
 - **后端 API（内部调试）**：http://localhost:5100
 - **API 文档（直连）**：http://localhost:5100/scalar
 - **前端 dev**：http://localhost:3000
-- **Docs dev**：http://localhost:3001/docs
-- **Console dev**：http://localhost:3002
+- **Docs dev**：http://localhost:3100/docs
+- **Console dev**：http://localhost:3200
 
 ### 常用命令
 

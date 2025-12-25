@@ -60,8 +60,8 @@ function Show-Menu {
     Write-Host "  1. Start API           (Radish.Api           @ http://localhost:5100)"
     Write-Host "  2. Start Gateway       (Radish.Gateway       @ https://localhost:5000)"
     Write-Host "  3. Start Frontend      (radish.client        @ http://localhost:3000)"
-    Write-Host "  4. Start Docs          (radish.docs          @ http://localhost:3001/docs/)"
-    Write-Host "  5. Start Console       (radish.console       @ http://localhost:3002)"
+    Write-Host "  4. Start Docs          (radish.docs          @ http://localhost:3100/docs/)"
+    Write-Host "  5. Start Console       (radish.console       @ http://localhost:3200)"
     Write-Host "  6. Start Auth          (Radish.Auth          @ http://localhost:5200)"
     Write-Host "  7. Run DbMigrate       (Radish.DbMigrate     @ init/seed)"
     Write-Host "  8. Run unit tests      (Radish.Api.Tests)"
@@ -307,15 +307,15 @@ function Start-All {
     Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
     Start-BackgroundShell "Auth running at http://localhost:5200" "dotnet run --no-build --project Radish.Auth/Radish.Auth.csproj --launch-profile http"
     Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
-    Start-BackgroundShell "Docs running at http://localhost:3001/docs/" "npm run docs:dev --prefix radish.docs"
-    Start-BackgroundShell "Console running at http://localhost:3002" "npm run dev --prefix radish.console"
+    Start-BackgroundShell "Docs running at http://localhost:3100/docs/" "npm run docs:dev --prefix radish.docs"
+    Start-BackgroundShell "Console running at http://localhost:3200" "npm run dev --prefix radish.console"
     Start-BackendNoBuild
 }
 
 function Start-FrontendConsoleDocs {
     Write-Host "[Combo] Frontend + Console + Docs..."
     Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
-    Start-BackgroundShell "Console running at http://localhost:3002" "npm run dev --prefix radish.console"
+    Start-BackgroundShell "Console running at http://localhost:3200" "npm run dev --prefix radish.console"
     Start-Docs
 }
 

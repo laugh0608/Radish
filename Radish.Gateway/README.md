@@ -37,7 +37,7 @@ FrontendService__BaseUrl=https://your-frontend-domain.com
 # YARP 反向代理集群地址
 ReverseProxy__Clusters__api-cluster__Destinations__api__Address=http://radish-api:5100
 ReverseProxy__Clusters__auth-cluster__Destinations__auth__Address=http://radish-auth:5200
-ReverseProxy__Clusters__docs-cluster__Destinations__docs__Address=http://radish-docs:3001
+ReverseProxy__Clusters__docs-cluster__Destinations__docs__Address=http://radish-docs:3100
 ```
 
 ### Docker Compose 示例

@@ -97,7 +97,7 @@ export default defineConfig({
    - 浏览器自动刷新，无需手动操作
 
 3. **验证更新**
-   - 打开 `http://localhost:3000` (client) 或 `http://localhost:3002` (console)
+   - 打开 `http://localhost:3000` (client) 或 `http://localhost:3200` (console)
    - 查看组件是否已更新
 
 ## 📝 开发工作流

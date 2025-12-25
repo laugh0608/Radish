@@ -53,7 +53,7 @@ function App() {
   /**
    * 获取 Auth Server 的基础 URL
    * - 通过 Gateway 访问时（https://localhost:5000）：使用 Gateway 地址
-   * - 直接访问开发服务器时（http://localhost:3002）：使用 Auth Server 直接地址
+   * - 直接访问开发服务器时（http://localhost:3200）：使用 Auth Server 直接地址
    */
   const getAuthServerBaseUrl = (): string => {
     const currentOrigin = window.location.origin;
@@ -64,7 +64,7 @@ function App() {
     }
 
     // 直接访问 console 开发服务器（开发环境）
-    if (currentOrigin === 'http://localhost:3002' || currentOrigin === 'https://localhost:3002') {
+    if (currentOrigin === 'http://localhost:3200' || currentOrigin === 'https://localhost:3200') {
       return 'http://localhost:5200'; // Auth Server 直接地址
     }
 
@@ -75,7 +75,7 @@ function App() {
   /**
    * 获取 post_logout_redirect_uri
    * - 通过 Gateway 访问时：https://localhost:5000/console/
-   * - 直接访问开发服务器时：http://localhost:3002/
+   * - 直接访问开发服务器时：http://localhost:3200/
    */
   const getPostLogoutRedirectUri = (): string => {
     const currentOrigin = window.location.origin;
@@ -210,7 +210,7 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
       }
 
       // 直接访问 console 开发服务器
-      if (currentOrigin === 'http://localhost:3002' || currentOrigin === 'https://localhost:3002') {
+      if (currentOrigin === 'http://localhost:3200' || currentOrigin === 'https://localhost:3200') {
         return 'http://localhost:5200';
       }
 
@@ -220,7 +220,7 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
     /**
      * 获取 redirect_uri
      * - 通过 Gateway 访问时：https://localhost:5000/console/callback
-     * - 直接访问开发服务器时：http://localhost:3002/console/callback
+     * - 直接访问开发服务器时：http://localhost:3200/console/callback
      * 注意：由于 Vite base 是 /console/，所以两种方式都需要 /console/ 前缀
      */
     const getRedirectUri = (): string => {
@@ -231,7 +231,7 @@ function OidcCallback({ onSuccess }: OidcCallbackProps) {
         return `${currentOrigin}/console/callback`;
       }
 
-      // 直接访问开发服务器（端口 3002，也需要 /console/ 前缀）
+      // 直接访问开发服务器（端口 3200，也需要 /console/ 前缀）
       return `${currentOrigin}/console/callback`;
     };
 

@@ -31,7 +31,7 @@ Hangfire 是一个开源的 .NET 后台作业处理框架，支持定时任务�
 Hangfire Dashboard 已集成到 Gateway 和 Console 项目中：
 
 - **Gateway 环境**：访问 `https://localhost:5000/hangfire`
-- **Console 环境**：访问 `http://localhost:3002/hangfire`
+- **Console 环境**：访问 `http://localhost:3200/hangfire`
 - **直接访问 API**：`http://localhost:5100/hangfire`
 
 **权限要求**：
