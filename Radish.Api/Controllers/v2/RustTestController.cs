@@ -17,7 +17,8 @@ namespace Radish.Api.Controllers.v2;
 [ApiVersion(2)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = "RadishAuthPolicy")]
+// [Authorize(Policy = "RadishAuthPolicy")]
+[Authorize(Policy = "Client")]
 [Tags("性能测试")]
 public class RustTestController : ControllerBase
 {

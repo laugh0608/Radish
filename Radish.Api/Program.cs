@@ -230,7 +230,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // 注册 JWT 授权方案，核心是通过解析请求头中的 JWT Token，然后匹配策略中的 key 和字段值
 builder.Services.AddAuthorizationBuilder()
            // Client 授权方案，基于 scope 控制访问 radish-api
-           .AddPolicy("Client", policy => policy.RequireClaim("scope", "radish-api").Build())
+           // OpenIddict 默认会把多个 scope 以空格拼成一个字符串（例如："openid profile radish-api"），因此这里需要按空格拆分判断
+           .AddPolicy("Client", policy => policy.RequireAssertion(ctx =>
+           {
+               foreach (var claim in ctx.User.FindAll("scope"))
+               {
+                   if (string.IsNullOrWhiteSpace(claim.Value))
+                       continue;
+
+                   var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                   foreach (var s in scopes)
+                   {
+                       if (string.Equals(s, "radish-api", StringComparison.Ordinal))
+                           return true;
+                   }
+               }
+
+               return false;
+           }).Build())
            // System 授权方案，RequireRole 方式
            .AddPolicy("System", policy => policy.RequireRole("System").Build())
            // SystemOrAdmin 授权方案，RequireRole 方式
