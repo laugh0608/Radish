@@ -1726,7 +1726,7 @@ export async function getChildComments(
 - [论坛架构评估](./forum-assessment.md)
 - [论坛重构方案](./forum-refactoring.md)
 - [开放平台规划](./open-platform.md)
-- [前端设计文档](../frontend/FrontendDesign.md)
+- [前端设计文档](../frontend/design.md)
 - [12月开发日志](../changelog/2025-12.md)
 
 ---

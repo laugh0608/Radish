@@ -25,6 +25,21 @@ docker build \
 ## 运行容器
 镜像默认监听 8080/8081（HTTP/HTTPS）。启动容器示例：
 
+**文件上传目录挂载（生产环境建议）**：
+- 本地存储模式下，上传文件存放在 `DataBases/Uploads/`
+- 建议挂载到宿主机持久化目录，避免容器重启丢失文件
+
+示例（挂载上传目录）：
+```bash
+docker run -d --name radish-api \
+  -p 8080:8080 -p 8081:8081 \
+  -v /data/radish/uploads:/app/DataBases/Uploads \
+  -e ASPNETCORE_ENVIRONMENT=Production \
+  -e ConnectionStrings__Default="Host=db;Port=5432;Database=radish;Username=radish;Password=radish" \
+  -e ASPNETCORE_URLS="http://+:8080" \
+  radish/server:local
+```
+
 ```bash
 docker run -d --name radish-api \
   -p 8080:8080 -p 8081:8081 \
@@ -350,7 +365,7 @@ networks:
 
 ### OIDC 证书滚动更新流程
 
-1. **准备新证书**：参考《AuthenticationGuide.md》的“证书生成示例”生成新 `.pfx`（签名/加密可拆分）。
+1. **准备新证书**：参考《[鉴权与授权指南](../guide/authentication.md)》的“证书生成示例”生成新 `.pfx`（签名/加密可拆分）。
 2. **上传/挂载**：将新证书放到宿主机（如 `/etc/radish/certs/auth-signing-2025Q1.pfx`），并映射到容器的 `/app/certs`。
 3. **更新环境变量**：
    ```bash

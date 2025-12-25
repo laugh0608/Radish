@@ -63,9 +63,9 @@ function MyComponent() {
 
 完整文档请查看：
 
-- **[组件库完整文档](../radish.docs/docs/UIComponentLibrary.md)** - 设置说明和使用指南
-- **[组件详细说明](../radish.docs/docs/UIComponentsSummary.md)** - 所有组件、Hooks、工具函数的详细说明
-- **[快速参考](../radish.docs/docs/UIQuickReference.md)** - 常用 API 速查表
+- **[UI 组件库概览](../radish.docs/docs/frontend/ui-library.md)** - @radish/ui 的入口文档
+- **[前端组件文档](../radish.docs/docs/frontend/components.md)** - 组件与用法说明
+- **[前端快速参考](../radish.docs/docs/frontend/quick-reference.md)** - 常用 API 速查表
 - **[完整示例](../radish.console/src/examples/UIComponentsExample.tsx)** - 可运行的完整示例代码
 
 ## 开发
@@ -104,4 +104,4 @@ radish.ui/
 
 **版本**: 0.1.0
 **维护**: Radish Team
-**文档**: [radish.docs/docs/UIComponentLibrary.md](../radish.docs/docs/UIComponentLibrary.md)
+**文档**: [frontend/ui-library.md](../radish.docs/docs/frontend/ui-library.md)

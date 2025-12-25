@@ -1,4 +1,4 @@
-import { useState, useRef, KeyboardEvent, ChangeEvent } from 'react';
+import { useState, useRef, KeyboardEvent, ChangeEvent, ClipboardEvent, DragEvent } from 'react';
 import { Icon } from '../Icon/Icon';
 import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
 import styles from './MarkdownEditor.module.css';
@@ -12,6 +12,11 @@ export interface MarkdownEditorProps {
   disabled?: boolean;
   showToolbar?: boolean;
   className?: string;
+  /**
+   * 图片上传处理函数
+   * 如果不提供，图片按钮将插入默认的 Markdown 语法
+   */
+  onImageUpload?: (file: File) => Promise<{ url: string; thumbnailUrl?: string }>;
 }
 
 type ToolbarAction = 'bold' | 'italic' | 'strikethrough' | 'heading' | 'quote' | 'code' | 'codeblock' | 'ul' | 'ol' | 'link' | 'image' | 'hr';
@@ -24,11 +29,15 @@ export const MarkdownEditor = ({
   maxHeight,
   disabled = false,
   showToolbar = true,
-  className = ''
+  className = '',
+  onImageUpload
 }: MarkdownEditorProps) => {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 常用 Emoji
   const emojis = [
@@ -75,6 +84,86 @@ export const MarkdownEditor = ({
     }, 0);
   };
 
+  // 处理图片上传
+  const handleImageUpload = async (file: File) => {
+    if (!onImageUpload) {
+      // 如果没有提供上传函数，使用默认行为
+      insertText('![', '](url)', '图片描述');
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const result = await onImageUpload(file);
+      const imageUrl = result.thumbnailUrl || result.url;
+
+      // 插入图片 Markdown 语法
+      insertText(`![${file.name}](${imageUrl})`, '', '');
+
+      setUploading(false);
+    } catch (error) {
+      setUploading(false);
+      setUploadError(error instanceof Error ? error.message : '上传失败');
+      console.error('图片上传失败:', error);
+    }
+  };
+
+  // 处理文件选择
+  const handleFileInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      await handleImageUpload(file);
+    }
+    // 清空文件输入，允许重复选择同一个文件
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // 处理粘贴事件
+  const handlePaste = async (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!onImageUpload) return;
+
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          await handleImageUpload(file);
+        }
+        break;
+      }
+    }
+  };
+
+  // 处理拖拽上传
+  const handleDrop = async (e: DragEvent<HTMLTextAreaElement>) => {
+    if (!onImageUpload) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const files = e.dataTransfer?.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+    if (file.type.startsWith('image/')) {
+      await handleImageUpload(file);
+    }
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLTextAreaElement>) => {
+    if (!onImageUpload) return;
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   // 工具栏操作
   const handleToolbarAction = (action: ToolbarAction) => {
     switch (action) {
@@ -109,7 +198,13 @@ export const MarkdownEditor = ({
         insertText('[', '](url)', '链接文本');
         break;
       case 'image':
-        insertText('![', '](url)', '图片描述');
+        if (onImageUpload) {
+          // 如果提供了上传函数，触发文件选择
+          fileInputRef.current?.click();
+        } else {
+          // 否则插入默认模板
+          insertText('![', '](url)', '图片描述');
+        }
         break;
       case 'hr':
         insertText('\n---\n', '', '');
@@ -166,6 +261,15 @@ export const MarkdownEditor = ({
 
   return (
     <div className={`${styles.container} ${className}`}>
+      {/* 隐藏的文件输入 */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: 'none' }}
+        onChange={handleFileInputChange}
+      />
+
       {/* 工具栏 */}
       {showToolbar && (
         <div className={styles.toolbar}>
@@ -353,15 +457,39 @@ export const MarkdownEditor = ({
       {/* 编辑/预览区域 */}
       <div className={styles.content} style={containerStyle}>
         {mode === 'edit' ? (
-          <textarea
-            ref={textareaRef}
-            className={styles.textarea}
-            value={value}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            disabled={disabled}
-          />
+          <>
+            <textarea
+              ref={textareaRef}
+              className={styles.textarea}
+              value={value}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              onPaste={handlePaste}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              placeholder={placeholder}
+              disabled={disabled || uploading}
+            />
+            {uploading && (
+              <div className={styles.uploadingOverlay}>
+                <Icon icon="mdi:loading" size={24} className={styles.spinIcon} />
+                <span>上传中...</span>
+              </div>
+            )}
+            {uploadError && (
+              <div className={styles.uploadError}>
+                <Icon icon="mdi:alert-circle" size={16} />
+                <span>{uploadError}</span>
+                <button
+                  type="button"
+                  className={styles.dismissError}
+                  onClick={() => setUploadError(null)}
+                >
+                  <Icon icon="mdi:close" size={14} />
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className={styles.preview}>
             {value ? (

@@ -1,0 +1,1015 @@
+###############################################################################
+# Radish.Api - 附件管理 API 测试
+###############################################################################
+# 说明：
+# 1. 本文件用于测试附件上传、下载、删除等功能
+# 2. 需要先获取有效的 Access Token（从 Radish.Api.AuthFlow.http 获取）
+# 3. 使用 REST Client 或 HTTP Client 插件运行测试
+# 4. 文件上传需要准备测试图片/文档文件
+###############################################################################
+
+@Access_Token = eyJhbGciOiJSUzI1NiIsImtpZCI6IjgzMTVEQkQ1QTE1NkZDNUJGQUU4OEQ0QjA1RDAwM0VFNTAzQ0FGNTQiLCJ4NXQiOiJneFhiMWFGV19GdjY2STFMQmRBRDdsQThyMVEiLCJ0eXAiOiJhdCtqd3QifQ.eyJpc3MiOiJodHRwczovL2xvY2FsaG9zdDo1MDAwLyIsImV4cCI6MTc2NTU1MTE3MCwiaWF0IjoxNzY1NTQ3NTcwLCJhdWQiOiJyYWRpc2gtYXBpIiwic2NvcGUiOiJyYWRpc2gtYXBpIiwianRpIjoiY2QwNmZlYzAtZTdlNC00NWVkLWE1YjMtZTYyMDQ0YWFhNzE0IiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZWlkZW50aWZpZXIiOiIyMDAwMCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJzeXN0ZW0iLCJzdWIiOiIyMDAwMCIsIm5hbWUiOiJzeXN0ZW0iLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzeXN0ZW0iLCJ0ZW5hbnRfaWQiOiIzMDAwMCIsImdpdmVuX25hbWUiOiJTeXN0ZW0gVXNlciIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IlN5c3RlbSIsInJvbGUiOiJTeXN0ZW0iLCJvaV9wcnN0IjoicmFkaXNoLWNsaWVudCIsIm9pX2F1X2lkIjoiOGNiYTBmNGMtNzBjOC00N2FlLWFjYjQtNjMzMzY3ZWJmMDZkIiwiY2xpZW50X2lkIjoicmFkaXNoLWNsaWVudCIsIm9pX3Rrbl9pZCI6ImVjYjAyYmFhLTgyM2QtNGM1NS05ZmM5LThhYzVkZjVjZjk4OSJ9.OB_xfuHLxR5ZLUp3VrL78GNz-67A9N9dDrC0NQWBngQlK_6jMNVQL3lNnk-uldY6Si_4V5ZZ34GYcrh88oGt5ZNQ4e0iIgu6FTPcRd1BEo2VdF-ebgPyNSAlXoWdvZLpNR3l2kwXjlUQR_CHe450KC0FPfRyyAHCUSrnQ9LUIaquOTFZSYlSD2ZHtxbG_lFfGi0sex_dKLc4Yn2J619o1zvPq3kC_GkXNvmkQTsWfPdh1VpyP3SrvT66r8I3w3OKciAqYXWu_58it0w-2nWL-UM9YhBqp4Hy7v8hMD-VIf4WPVnpEEEot5U4G0NzkijRzsrlZB59DFyBGCzB8qUB_A
+@Gateway_HostAddress = https://localhost:5000
+@Api_HostAddress = http://localhost:5100
+
+# 测试变量（根据实际情况修改）
+@AttachmentId = 1
+@BusinessType = Post
+@BusinessId = 70001
+
+###############################################################################
+# 1. 图片上传测试
+###############################################################################
+
+### 1.1 上传图片（基础）
+# 注意：需要准备一个测试图片文件，修改文件路径
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-image.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1.2 上传图片（指定业务类型为 Post）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="post-image.png"
+Content-Type: image/png
+
+< ./test-files/test-image.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Post
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1.3 上传头像图片（业务类型为 Avatar）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/avatar.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Avatar
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1.4 上传图片（不生成缩略图）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="no-thumbnail.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+false
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+false
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1.5 上传图片（测试文件去重功能）
+# 上传相同的文件，应该返回已存在的附件记录
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="duplicate-test.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1.6 上传图片（生成多尺寸）
+# 测试多尺寸生成功能：Small(400x300), Medium(800x600), Large(1200x900)
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="multi-size-test.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Post
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateMultipleSizes"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1.7 上传图片（添加文字水印）
+# 测试��字水印功能
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="watermark-test.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Post
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="addWatermark"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="watermarkText"
+
+Radish © 2025
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1.8 上传 WebP 格式图片
+# 测试 WebP 格式支持
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-webp.webp"
+Content-Type: image/webp
+
+< ./test-files/test-image.webp
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Post
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 1.9 上传图片（完整功能测试）
+# 测试所有功能：缩略图 + 多尺寸 + 水印 + 移除 EXIF
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="full-feature-test.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Post
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateMultipleSizes"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="addWatermark"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="watermarkText"
+
+Radish © 2025
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###############################################################################
+# 2. 文档上传测试
+###############################################################################
+
+### 2.1 上传 PDF 文档
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadDocument
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-document.pdf"
+Content-Type: application/pdf
+
+< ./test-files/test-document.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Document
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 2.2 上传 Markdown 文档
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadDocument
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-document.md"
+Content-Type: text/markdown
+
+< ./test-files/test-document.md
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Document
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 2.3 上传 Excel 文档
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadDocument
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-spreadsheet.xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+< ./test-files/test-spreadsheet.xlsx
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Document
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###############################################################################
+# 3. 附件查询测试
+###############################################################################
+
+### 3.1 根据 ID 获取附件信息
+GET {{Api_HostAddress}}/api/v1/Attachment/GetById/{{AttachmentId}}
+Accept: application/json
+
+### 3.2 根据业务类型和业务 ID 获取附件列表
+GET {{Api_HostAddress}}/api/v1/Attachment/GetByBusiness?businessType={{BusinessType}}&businessId={{BusinessId}}
+Accept: application/json
+
+### 3.3 获取指定 Post 的所有附件
+GET {{Api_HostAddress}}/api/v1/Attachment/GetByBusiness?businessType=Post&businessId=70001
+Accept: application/json
+
+### 3.4 获取指定 Comment 的所有附件
+GET {{Api_HostAddress}}/api/v1/Attachment/GetByBusiness?businessType=Comment&businessId=90001
+Accept: application/json
+
+###############################################################################
+# 4. 附件下载测试
+###############################################################################
+
+### 4.1 下载指定附件
+# 注意：这个请求会返回文件流，浏览器会自动下载
+GET {{Api_HostAddress}}/api/v1/Attachment/Download/{{AttachmentId}}
+
+### 4.2 直接访问上传的文件（通过静态文件路径）
+# 例如：http://localhost:5100/uploads/General/2025/12/1234567890.jpg
+# 需要根据上传后返回的 URL 进行访问
+GET {{Api_HostAddress}}/uploads/General/2025/12/1234567890.jpg
+
+### 4.3 访问缩略图
+# 例如：http://localhost:5100/uploads/General/2025/12/1234567890_thumb.jpg
+GET {{Api_HostAddress}}/uploads/General/2025/12/1234567890_thumb.jpg
+
+###############################################################################
+# 5. 附件更新测试
+###############################################################################
+
+### 5.1 更新附件的业务关联
+# 将附件关联到指定的业务对象（例如将临时上传的图片关联到发布的帖子）
+PUT {{Api_HostAddress}}/api/v1/Attachment/UpdateBusinessAssociation/{{AttachmentId}}?businessType=Post&businessId=70001
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+### 5.2 更新附件关联到 Comment
+PUT {{Api_HostAddress}}/api/v1/Attachment/UpdateBusinessAssociation/{{AttachmentId}}?businessType=Comment&businessId=90001
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+###############################################################################
+# 6. 附件删除测试
+###############################################################################
+
+### 6.1 删除单个附件
+# 只有上传者或管理员可以删除
+DELETE {{Api_HostAddress}}/api/v1/Attachment/Delete/{{AttachmentId}}
+Authorization: Bearer {{Access_Token}}
+
+### 6.2 批量删除附件
+POST {{Api_HostAddress}}/api/v1/Attachment/DeleteBatch
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+[1, 2, 3, 4, 5]
+
+### 6.3 删除指定 ID 的附件（需要替换为实际的附件 ID）
+DELETE {{Api_HostAddress}}/api/v1/Attachment/Delete/1234567890
+Authorization: Bearer {{Access_Token}}
+
+###############################################################################
+# 7. 错误场景测试
+###############################################################################
+
+### 7.1 上传空文件（应返回 400 错误）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 7.2 上传不支持的文件类型（应返回 400 错误）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.exe"
+Content-Type: application/octet-stream
+
+< ./test-files/test.exe
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 7.3 未认证时上传文件（应返回 401 错误）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-image.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 7.4 删除不存在的附件（应返回 404 错误）
+DELETE {{Api_HostAddress}}/api/v1/Attachment/Delete/999999999
+Authorization: Bearer {{Access_Token}}
+
+### 7.5 下载不存在的附件（应返回 404 错误）
+GET {{Api_HostAddress}}/api/v1/Attachment/Download/999999999
+
+### 7.6 普通用户删除别人的附件（应返回 403 错误）
+# 需要先用普通用户的 Token（非 System/Admin）
+DELETE {{Api_HostAddress}}/api/v1/Attachment/Delete/{{AttachmentId}}
+Authorization: Bearer <普通用户的Token>
+
+###############################################################################
+# 8. 文件大小限制测试
+###############################################################################
+
+### 8.1 上传超大文件（超过 100MB，应返回 400 错误）
+# 注意：需要准备一个超过 100MB 的文件
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="large-file.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/large-file.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###############################################################################
+# 9. 文件头校验测试（Magic Number）
+###############################################################################
+
+### 9.1 上传伪装的图片文件（文本文件改扩展名为 .jpg，应返回 400 错误）
+# 测试 Magic Number 检查是否生效
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="fake-image.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/fake-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 9.2 上传伪装的 PDF 文件（HTML 文件改扩展名为 .pdf，应返回 400 错误）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadDocument
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="fake-document.pdf"
+Content-Type: application/pdf
+
+< ./test-files/fake-document.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Document
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 9.3 上传真实的 PNG 文件但声称是 JPG（应通过，因为都是图片）
+# 注意：这个测试应该成功，因为 PNG 和 JPG 都是允许的图片格式
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="real-png-as-jpg.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###############################################################################
+# 测试说明
+###############################################################################
+#
+# 1. 测试前准备：
+#    - 在 HttpTest/test-files/ 目录下准备测试文件
+#    - 从 Radish.Api.AuthFlow.http 获取有效的 Access_Token
+#    - 确保 API 服务已启动（dotnet run --project Radish.Api）
+#
+# 2. 测试文件准备：
+#    mkdir -p HttpTest/test-files
+#    - test-image.jpg (任意 JPG 图片，小于 100MB)
+#    - test-image.png (任意 PNG 图片)
+#    - test-image.webp (任意 WebP 图片，用于测试 WebP 格式支持)
+#    - avatar.jpg (头像测试图片)
+#    - test-document.pdf (任意 PDF 文件)
+#    - test-document.md (任意 Markdown 文件)
+#    - test-spreadsheet.xlsx (任意 Excel 文件)
+#
+# 3. 测试流程：
+#    a. 上传测试：1.1 → 1.2 → 1.5 (测试去重) → 1.6 (多尺寸) → 1.7 (水印) → 1.8 (WebP) → 1.9 (完整功能) → 2.1 → 2.2
+#    b. 查询测试：3.1 → 3.2 → 3.3
+#    c. 下载测试：4.1 → 4.2 → 4.3
+#    d. 更新测试：5.1 → 5.2
+#    e. 删除测试：6.1 → 6.2
+#    f. 错误测试：7.1 → 7.2 → 7.3 → 7.4 → 7.5 → 7.6
+#    g. 大文件测试：8.1
+#
+# 4. 预期结果：
+#    - 上传成功返回 200，包含附件信息（ID、URL、文件大小等）
+#    - 多尺寸上传返回 SmallPath、MediumPath、LargePath 字段
+#    - 水印上传返回的图片应包含水印文字
+#    - WebP 格式上传成功并正确识别
+#    - 去重上传返回已存在的附件记录
+#    - 查询返回附件详情或列表
+#    - 下载返回文件流
+#    - 更新成功返回 200
+#    - 删除成功返回 200
+#    - 错误场景返回对应的错误码（400/401/403/404）
+#
+# 5. 验证要点：
+#    - 文件是否正确保存到 uploads 目录
+#    - 缩略图是否正确生成（_thumb 文件）
+#    - 多尺寸图片是否正确生成（_small、_medium、_large 文件）
+#    - 水印是否正确添加到图片上
+#    - WebP 格式是否正确处理
+#    - 文件去重功能是否生效（相同文件不重复存储）
+#    - 权限控制是否正确（只有上传者/管理员可以删除）
+#    - 错误提示是否清晰友好
+#
+# 6. 新功能测试要点：
+#    a. 多尺寸生成测试 (1.6)：
+#       - 检查返回的 JSON 中是否包含 smallPath、mediumPath、largePath
+#       - 验证生成的文件尺寸是否正确（Small: 400x300, Medium: 800x600, Large: 1200x900）
+#       - 检查文件是否保存在正确的目录
+#
+#    b. 水印功能测试 (1.7)：
+#       - 下载上传后的图片，检查是否包含水印文字
+#       - 验证水印位置是否正确（默认右下角）
+#       - 测试不同的水印文本
+#
+#    c. WebP 格式测试 (1.8)：
+#       - 验证 WebP 格式图片是否能正确上传
+#       - 检查返回的 MIME 类型是否为 image/webp
+#       - 验证缩略图是否正确生成
+#
+#    d. 完整功能测试 (1.9)：
+#       - 同时测试缩略图、多尺寸、水印、EXIF 移除
+#       - 验证所有功能是否正常工作
+#       - 检查生成的文件数量（原图 + 缩略图 + 3个尺寸 = 5个文件）
+#
+###############################################################################
+
+###############################################################################
+# 9. 上传限流测试
+###############################################################################
+
+### 9.1 获取当前用户的上传统计信息
+GET {{Api_HostAddress}}/api/v1/Attachment/GetUploadStatistics
+Authorization: Bearer {{Access_Token}}
+
+### 9.2 测试并发上传限制（需要快速连续上传多个文件）
+# 说明：默认限制为 5 个并发上传，超过后会返回 429 错误
+# 测试方法：快速连续发送 6 个上传请求，第 6 个应该失败
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-concurrent-1.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Test
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 9.3 测试速率限制（每分钟最多 20 个文件）
+# 说明：在 1 分钟内上传超过 20 个文件会触发速率限制
+# 预期结果：第 21 个上传请求返回 429 错误
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-rate-limit.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Test
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 9.4 测试日上传大小限制（默认 100MB）
+# 说明：上传一个大文件（或多个文件累计超过 100MB）会触发日上传大小限制
+# 预期结果：超过限制后返回 429 错误，提示剩余配额不足
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="large-file.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/large-test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Test
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 9.5 验证限流错误响应格式
+# 预期响应示例：
+# {
+#   "isSuccess": false,
+#   "statusCode": 429,
+#   "messageInfo": "您当前有 5 个文件正在上传，已达到并发上传限制（最多 5 个）"
+# }
+# 或
+# {
+#   "isSuccess": false,
+#   "statusCode": 429,
+#   "messageInfo": "您本分钟已上传 20 个文件，已达到速率限制（最多 20 次/分钟），请稍后再试"
+# }
+# 或
+# {
+#   "isSuccess": false,
+#   "statusCode": 429,
+#   "messageInfo": "您今日已上传 95.5 MB，剩余配额 4.5 MB，无法上传此文件（10 MB）"
+# }
+
+###############################################################################
+# 限流测试说明
+###############################################################################
+# 
+# 1. 测试前准备：
+#    - 确保 Redis 或内存缓存正常运行
+#    - 确认 appsettings.json 中 UploadRateLimit.Enable = true
+#    - 准备测试图片文件（小文件和大文件）
+#
+# 2. 测试步骤：
+#    a. 获取上传统计信息（9.1）- 查看当前限流状态
+#    b. 测试并发限制（9.2）- 快速连续发送 6 个请求
+#    c. 测试速率限制（9.3）- 1 分钟内发送 21 个请求
+#    d. 测试日上传大小限制（9.4）- 上传大文件或多个文件累计超过 100MB
+#    e. 验证错误响应（9.5）- 检查返回的错误信息是否清晰
+#
+# 3. 配置调整（用于测试）：
+#    可以在 appsettings.Local.json 中临时调整限流参数：
+#    {
+#      "UploadRateLimit": {
+#        "Enable": true,
+#        "MaxConcurrentUploads": 2,      // 降低到 2 便于测试
+#        "MaxUploadsPerMinute": 5,        // 降低到 5 便于测试
+#        "MaxDailyUploadSize": 10485760   // 降低到 10MB 便于测试
+#      }
+#    }
+#
+# 4. 预期结果：
+#    - 正常上传返回 200，包含附件信息
+#    - 超过限制返回 429，包含清晰的错误提示
+#    - GetUploadStatistics 返回当前用户的上传统计信息
+#    - 限流计数在 Redis/内存中正确维护
+#
+# 5. 验证要点：
+#    - 并发计数是否正确（上传开始 +1，完成/失败 -1）
+#    - 速率计数是否按分钟重置
+#    - 日上传大小是否按天重置
+#    - 错误提示是否友好且包含具体数值
+#    - 限流不影响其他用户的上传
+#
+# 6. 清理测试数据：
+#    - 测试完成后，可以删除测试上传的文件（businessType = "Test"）
+#    - 或等待定时任务自动清理
+#
+###############################################################################
+
+###############################################################################
+# 10. 分片上传测试
+###############################################################################
+
+### 10.1 创建分片上传会话
+# 说明：为大文件创建上传会话，获取 sessionId
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/CreateSession
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "fileName": "large-video.mp4",
+  "totalSize": 104857600,
+  "mimeType": "video/mp4",
+  "chunkSize": 2097152,
+  "businessType": "Video",
+  "businessId": null
+}
+
+### 10.2 上传第一个分片
+# 说明：上传分片索引为 0 的数据
+# 注意：需要准备一个 2MB 的测试文件作为分片
+@SessionId = <从上一步获取的 sessionId>
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="sessionId"
+
+{{SessionId}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkIndex"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkData"; filename="chunk_0"
+Content-Type: application/octet-stream
+
+< ./test-files/chunk_0.bin
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 10.3 上传第二个分片
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="sessionId"
+
+{{SessionId}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkIndex"
+
+1
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkData"; filename="chunk_1"
+Content-Type: application/octet-stream
+
+< ./test-files/chunk_1.bin
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 10.4 获取上传会话状态
+# 说明：查看当前上传进度
+GET {{Api_HostAddress}}/api/v1/ChunkedUpload/GetSession?sessionId={{SessionId}}
+Authorization: Bearer {{Access_Token}}
+
+### 10.5 合并分片并创建附件
+# 说明：所有分片上传完成后，合并为完整文件
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/MergeChunks
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "sessionId": "{{SessionId}}",
+  "generateThumbnail": false,
+  "generateMultipleSizes": false,
+  "addWatermark": false,
+  "removeExif": false
+}
+
+### 10.6 取消上传会话
+# 说明：取消未完成的上传会话
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/CancelSession
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+"{{SessionId}}"
+
+### 10.7 测试断点续传
+# 说明：模拟网络中断后继续上传
+# 步骤：
+# 1. 创建会话（10.1）
+# 2. 上传部分分片（10.2）
+# 3. 获取会话状态（10.4）- 查看已上传的分片索引
+# 4. 继续上传剩余分片（10.3）
+# 5. 合并分片（10.5）
+
+### 10.8 测试分片大小限制
+# 说明：上传超过 10MB 的单个分片，应返回 400 错误
+POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="sessionId"
+
+{{SessionId}}
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkIndex"
+
+0
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="chunkData"; filename="large_chunk"
+Content-Type: application/octet-stream
+
+< ./test-files/large_chunk_11mb.bin
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+###############################################################################
+# 11. 临时授权 URL 测试
+###############################################################################
+
+### 11.1 为附件创建临时访问令牌
+# 说明：为私有附件生成临时访问链接
+@PrivateAttachmentId = <私有附件的ID>
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 24,
+  "maxAccessCount": 10,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+### 11.2 使用令牌下载文件（无需认证）
+# 说明：使用返回的 token 直接下载文件，无需 Authorization 头
+@AccessToken = <从上一步获取的 token>
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token={{AccessToken}}
+
+### 11.3 创建限制访问次数的令牌
+# 说明：创建只能访问 1 次的令牌
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 1,
+  "maxAccessCount": 1,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+### 11.4 创建限制用户的令牌
+# 说明：创建只允许特定用户访问的令牌
+@TargetUserId = 20001
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 24,
+  "maxAccessCount": 0,
+  "authorizedUserId": {{TargetUserId}},
+  "authorizedIp": null
+}
+
+### 11.5 创建限制 IP 的令牌
+# 说明：创建只允许特定 IP 访问的令牌
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 24,
+  "maxAccessCount": 0,
+  "authorizedUserId": null,
+  "authorizedIp": "192.168.1.100"
+}
+
+### 11.6 撤销访问令牌
+# 说明：立即撤销令牌，使其失效
+@TokenToRevoke = <要撤销的 token>
+POST {{Api_HostAddress}}/api/v1/Attachment/RevokeAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+"{{TokenToRevoke}}"
+
+### 11.7 获取附件的所有令牌
+# 说明：查看某个附件的所有访问令牌
+GET {{Api_HostAddress}}/api/v1/Attachment/GetAttachmentTokens?attachmentId={{PrivateAttachmentId}}
+Authorization: Bearer {{Access_Token}}
+
+### 11.8 测试过期令牌
+# 说明：创建一个 1 秒后过期的令牌，等待过期后尝试访问
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 0.0003,
+  "maxAccessCount": 0,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+# 等待 2 秒后尝试访问（应返回 403 错误）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<过期的token>
+
+### 11.9 测试访问次数限制
+# 说明：创建只能访问 2 次的令牌，第 3 次访问应失败
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 24,
+  "maxAccessCount": 2,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+# 第 1 次访问（成功）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<token>
+
+# 第 2 次访问（成功）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<token>
+
+# 第 3 次访问（失败，返回 403）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<token>
+
+### 11.10 测试无效令牌
+# 说明：使用不存在的令牌访问，应返回 403（当前实现无区分 404）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=invalid-token-12345
+
+###############################################################################
+# 分片上传和临时授权测试说明
+###############################################################################
+#
+# 1. 分片上传测试准备：
+#    - 准备测试文件分片（可以使用任意文件切分为 2MB 的块）
+#    - 创建 test-files 目录并放入分片文件
+#    - 分片文件命名：chunk_0.bin, chunk_1.bin, chunk_2.bin...
+#
+# 2. 分片上传测试流程：
+#    a. 创建会话（10.1）- 获取 sessionId
+#    b. 上传所有分片（10.2, 10.3）- 按顺序或乱序上传
+#    c. 查看进度（10.4）- 确认已上传的分片
+#    d. 合并分片（10.5）- 生成最终文件
+#    e. 断点续传测试（10.7）- 模拟中断后继续
+#
+# 3. 临时授权测试准备：
+#    - 先上传一个私有附件（isPublic = false）
+#    - 记录附件 ID 用于后续测试
+#
+# 4. 临时授权测试流程：
+#    a. 创建令牌（11.1）- 获取 token
+#    b. 使用令牌下载（11.2）- 无需认证
+#    c. 测试限制条件（11.3-11.5）- 次数、用户、IP
+#    d. 撤销令牌（11.6）- 使令牌失效
+#    e. 查看令牌列表（11.7）- 管理令牌
+#    f. 测试过期和次数限制（11.8-11.9）
+#
+# 5. 预期结果：
+#    - 分片上传：所有分片上传成功，合并后文件完整
+#    - 断点续传：中断后可以继续上传剩余分片
+#    - 临时授权：令牌有效期内可以访问，过期/撤销后无法访问
+#    - 访问限制：超过次数限制或不符合 IP/用户限制时返回 403
+#
+# 6. 验证要点：
+#    - 分片文件是否正确保存到临时目录
+#    - 合并后的文件大小是否正确
+#    - 会话过期后临时文件是否被清理
+#    - 令牌访问次数是否正确计数
+#    - 令牌过期后是否无法访问
+#    - 撤销令牌后是否立即失效
+#
+# 7. 清理测试数据：
+#    - 测试完成后删除测试上传的文件
+#    - 撤销所有测试令牌
+#    - 或等待定时任务自动清理过期会话和令牌
+#
+###############################################################################

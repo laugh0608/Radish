@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MarkdownEditor } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
+import { uploadImage } from '@/api/attachment';
 import styles from './PublishPostForm.module.css';
 
 interface PublishPostFormProps {
@@ -20,6 +22,10 @@ export const PublishPostForm = ({
 }: PublishPostFormProps) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [addWatermark, setAddWatermark] = useState(false);
+  const [watermarkText, setWatermarkText] = useState('Radish');
+  const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
+  const { t } = useTranslation();
 
   // 组件加载时恢复草稿
   useEffect(() => {
@@ -73,6 +79,29 @@ export const PublishPostForm = ({
     }
   };
 
+  // 处理图片上传
+  const handleImageUpload = async (file: File) => {
+    try {
+      const result = await uploadImage({
+        file,
+        businessType: 'Post',
+        generateThumbnail: true,
+        generateMultipleSizes,
+        addWatermark,
+        watermarkText,
+        removeExif: true
+      }, t);
+
+      return {
+        url: result.fileUrl,
+        thumbnailUrl: result.thumbnailUrl
+      };
+    } catch (error) {
+      console.error('图片上传失败:', error);
+      throw error;
+    }
+  };
+
   return (
     <div className={styles.container}>
       <h4 className={styles.title}>发帖</h4>
@@ -101,6 +130,40 @@ export const PublishPostForm = ({
         disabled={!isAuthenticated || disabled}
       />
 
+      {/* 图片上传选项 */}
+      {isAuthenticated && (
+        <div className={styles.uploadOptions}>
+          <label className={styles.optionLabel}>
+            <input
+              type="checkbox"
+              checked={addWatermark}
+              onChange={e => setAddWatermark(e.target.checked)}
+              disabled={disabled}
+            />
+            <span>为上传的图片添加水印</span>
+          </label>
+          {addWatermark && (
+            <input
+              type="text"
+              placeholder="水印文本"
+              value={watermarkText}
+              onChange={e => setWatermarkText(e.target.value)}
+              className={styles.watermarkInput}
+              disabled={disabled}
+            />
+          )}
+          <label className={styles.optionLabel}>
+            <input
+              type="checkbox"
+              checked={generateMultipleSizes}
+              onChange={e => setGenerateMultipleSizes(e.target.checked)}
+              disabled={disabled}
+            />
+            <span>生成多尺寸图片（Small/Medium/Large）</span>
+          </label>
+        </div>
+      )}
+
       <MarkdownEditor
         value={content}
         onChange={setContent}
@@ -108,6 +171,7 @@ export const PublishPostForm = ({
         minHeight={200}
         disabled={!isAuthenticated || disabled}
         showToolbar={true}
+        onImageUpload={handleImageUpload}
       />
 
       <button

@@ -1,17 +1,17 @@
 # 开发路线图（按周计划）
 
-> 本计划基于当前仓库分层结构（Radish.Api、Radish.Core、Radish.Service、Radish.Repository、Radish.Model、radish.client 等）制定，聚焦「.NET 10 + SQLSugar + PostgreSQL + React 19 (Vite + Node 24)」技术栈。与 [docs/DevelopmentFramework.md](DevelopmentFramework.md) 描述的总体架构保持一致，但更强调按周可交付的节奏与验收标准。
+> 本计划基于当前仓库分层结构（Radish.Api、Radish.Core、Radish.Service、Radish.Repository、Radish.Model、radish.client 等）制定，聚焦「.NET 10 + SQLSugar + PostgreSQL + React 19 (Vite + Node 24)」技术栈。与 [architecture/framework.md](architecture/framework.md) 描述的总体架构保持一致，但更强调按周可交付的节奏与验收标准。
 
 相关文档
-- 开发日志: [DevelopmentLog.md](DevelopmentLog.md)
-- 部署指引: [DeploymentGuide.md](DeploymentGuide.md)
+- 开发日志: [/changelog/](/changelog/)
+- 部署指引: [deployment/guide.md](deployment/guide.md)
 
 ## 目标与范围
 
 - **基础基线**：.NET 10 SDK、SQLSugar、PostgreSQL 16、本地或容器化运行；前端统一使用 React（不再维护 Angular）。
 - **配置策略**：`appsettings.{Env}.json` + 环境变量 + `.env`; 前端通过 `.env.local` 注入 `VITE_API_BASE_URL` 等；敏感值仅存储在 Secret Manager 或密钥管控服务。
 - **交付要求**：每周至少完成一个端到端可演示的用例（后端 API + 前端界面 + 文档/测试），并在 DevelopmentLog 中留下记录。
-- **前端体验**：桌面化 UI、移动适配与 React Native 规划须遵循 [FrontendDesign.md](FrontendDesign.md)，各阶段完成度以该文档的 Token/组件/交互 checklist 为准。
+- **前端体验**：桌面化 UI、移动适配与 React Native 规划须遵循 [frontend/design.md](frontend/design.md)，各阶段完成度以该文档的 Token/组件/交互 checklist 为准。
 
 ## 里程碑概览
 
@@ -246,7 +246,7 @@
   │   ├── shared/          # 共享代码
   │   └── stores/          # 全局状态
   ```
-- 详见 `FrontendDesign.md`
+- 详见 [前端设计文档](./frontend/design.md)
 
 #### 4.2 桌面系统基础
 - **核心组件**：
@@ -407,18 +407,18 @@
   - 水印功能（文字水印）
 
 **Rust 扩展集成**（与上面并行，1-2 天）：
-- 重构 `Radish.Core/test_lib` 为 `radish-lib`
-  - 项目位置：`Radish.Core/native/rust/radish-lib`
-  - Cargo.toml 配置（依赖：image, imageproc, rusttype, sha2）
-- 实现图片加水印功能（Rust）
+- ✅ 已完成：重构 `Radish.Core/test_lib` 为 `radish-lib`
+  - 项目位置：`Radish.Core/radish-lib`
+  - Cargo.toml 配置（依赖：image, imageproc, rusttype, sha2；benchmark 额外依赖 rayon, num_cpus）
+- ✅ 已完成：实现图片加水印功能（Rust）
   - `add_text_watermark()` FFI 函数
   - 支持位置、字体大小、透明度配置
-- 实现文件哈希计算（Rust，可选）
+- ✅ 已完成：实现文件哈希计算（Rust）
   - `calculate_file_sha256()` FFI 函数
-- 创建 C# FFI 调用封装
+- ✅ 已完成：创建 C# FFI 调用封装
   - `RustImageProcessor` 类
   - `ImageProcessorFactory`（配置切换 C#/Rust）
-- 编写编译脚本（build.sh / build.ps1）
+- ✅ 已完成：编写编译脚本（build.sh / build.ps1）
 
 **业务逻辑**：
 - 创建 `AttachmentService`（CRUD + 上传逻辑）
@@ -521,11 +521,11 @@
 - 自动化：补齐 xUnit/Vitest + Playwright（可选）测试，纳入 CI。
 - 性能：PostgreSQL 索引审计、缓存策略（IMemoryCache/redis 预留）、SQLSugar Profiling。
 - Observability：Serilog → Seq/Console JSON；OpenTelemetry 采样；健康检查拓展。
-- 原生扩展（Rust）：将 `Radish.Core/test_lib` 演示项目抽离为解决方案根目录下的 `native/rust/*`，编写 `cargo build --release` + `dotnet` 构建后拷贝脚本，使共享库自动复制到 `Radish.Api` 输出目录，后续所有 Rust 扩展统一按该目录结构维护。
+- 原生扩展（Rust）：当前统一扩展库为 `Radish.Core/radish-lib`（已替代 `test_lib`）；如后续需要从 Core 抽离再迁到 `native/rust/*`。建议补齐 CI/构建脚本：`cargo build --release` + 拷贝产物到 `Radish.Api/bin/<Configuration>/net10.0/`（Windows: `radish_lib.dll`；Linux: `libradish_lib.so`；macOS: `libradish_lib.dylib`）。
 - 验收：
   - `dotnet test`, `npm run test`, `npm run lint`, `npm run build` 均通过。
   - P95 指标满足目标；日志可追踪请求链路。
-  - `/api/RustTest/*` 在 CI/本地构建后可直接加载 `native/rust` 输出的 `test_lib`（DLL/SO/Dylib），无须手动复制。
+  - `/api/v2/RustTest/*` 在 CI/本地构建后可直接加载 `radish-lib` 输出的 `radish_lib`（DLL/SO/Dylib），无须手动复制。
 
 ### 第 8 周｜部署、运维与交付
 - Docker：完善 `Radish.Api/Dockerfile`（Node/SQLSugar 依赖）与 compose（PostgreSQL + API + 前端静态站点）。
@@ -573,6 +573,6 @@
 
 ## 后续规划：API Gateway
 
-- 详细任务拆解见 [GatewayPlan.md](GatewayPlan.md)，当前阶段专注既有 M1-M8 交付，Gateway 作为 M9 之后的专项迭代。
+- 详细任务拆解见 [architecture/gateway-plan.md](architecture/gateway-plan.md)，当前阶段专注既有 M1-M8 交付，Gateway 作为 M9 之后的专项迭代。
 - 触发条件：后端核心用例和认证机制稳定、日志/监控链路可复用。届时启动 P1（项目基线）→ P2（认证）→ P3（路由/聚合）的工作包，并在 DevelopmentLog 记录进度。
 - 在日常开发中提前预留：规范 Header（`X-Request-Id`、`X-Client-Id`）、CORS 配置、登录控制器可被 Gateway 复用，减少后续迁移成本。

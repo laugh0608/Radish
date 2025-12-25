@@ -293,6 +293,10 @@ tempkey.jwk
 *.db
 *.db-shm
 *.db-wal
+*.db-journal
+
+# DataBases directory (contains SQLite databases and uploaded files)
+DataBases/
 
 # Environment files
 .env
