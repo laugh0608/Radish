@@ -10,6 +10,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Quoting from English documentation or error messages
 - The user explicitly requests a different language
 
+## Package Management & Testing Guidelines
+
+**CRITICAL: Package Installation and Project Startup Rules**
+
+When working with this repository, follow these strict rules for package management and testing:
+
+1. **Package Installation - DO NOT Execute Directly**:
+   - **NEVER** run `dotnet add package`, `npm install`, or any package installation commands directly
+   - **INSTEAD**: Tell the user which packages need to be installed and let them execute the commands
+   - Example: "请安装以下 NuGet 包：`dotnet add package Newtonsoft.Json --version 13.0.3`"
+   - Example: "请在根目录运行：`npm install axios --workspace=radish.client`"
+
+2. **Project Startup for Testing - DO NOT Execute Directly**:
+   - **NEVER** run `dotnet run`, `dotnet watch`, `npm run dev`, or any project startup commands for testing purposes
+   - **INSTEAD**: Tell the user which project needs to be started and how to start it
+   - Example: "请启动 API 项目进行测试：`dotnet run --project Radish.Api/Radish.Api.csproj`"
+   - Example: "请启动前端开发服务器：`npm run dev --workspace=radish.client`"
+   - Example: "请使用 start 脚本启动所有服务：`pwsh ./start.ps1` 并选择选项 11 (ALL)"
+
+3. **What AI CAN Do**:
+   - Read and analyze code
+   - Write new code or modify existing code
+   - Run build commands (`dotnet build`, `npm run build`)
+   - Run tests (`dotnet test`, `npm run test`)
+   - Run linting and type checking (`npm run lint`, `npm run type-check`)
+   - Execute git commands (status, diff, commit, etc.)
+   - Use development tools (grep, find, etc.)
+
+4. **Rationale**:
+   - Package installation may require network access, authentication, or specific environment setup
+   - Project startup for testing requires monitoring output, handling interactive prompts, and may run indefinitely
+   - The user has better control over their development environment and can troubleshoot issues more effectively
+
+**Example Workflow**:
+```
+❌ BAD:
+AI: "我现在安装 Serilog 包..."
+AI: [Executes] dotnet add package Serilog
+AI: "我现在启动 API 进行测试..."
+AI: [Executes] dotnet run --project Radish.Api
+
+✅ GOOD:
+AI: "我已经添加了日志配置代码。请按以下步骤操作："
+AI: "1. 安装依赖包：`dotnet add package Serilog.AspNetCore --version 8.0.0`"
+AI: "2. 启动 API 项目测试日志功能：`dotnet run --project Radish.Api/Radish.Api.csproj`"
+AI: "3. 访问 http://localhost:5100/api/v2/Test/Log 查看日志输出"
+```
+
 ## Project Overview
 
 Radish is a modern community platform built with a self-designed layered architecture:
@@ -54,7 +102,7 @@ npm install
 
 # Start dev servers
 npm run dev --workspace=radish.client    # Frontend (http://localhost:3000)
-npm run dev --workspace=radish.console   # Console (http://localhost:3002)
+npm run dev --workspace=radish.console   # Console (http://localhost:3200)
 
 # Build for production
 npm run build --prefix radish.client
@@ -159,7 +207,7 @@ Configuration files are loaded in the following order (later sources override ea
 - `appsettings.Local.json` is used for local development and contains sensitive data (database passwords, API keys, etc.). This file is ignored by Git.
 - Configuration uses **deep merge** strategy: later configs override earlier ones by key path.
 - For arrays (like `Databases`), provide the complete array in Local.json to avoid partial overrides.
-- See [ConfigurationGuide.md](radish.docs/docs/ConfigurationGuide.md) for detailed merge behavior examples.
+- See [配置指南](radish.docs/docs/guide/configuration.md) for detailed merge behavior examples.
 
 ### Quick Setup for New Developers
 
@@ -195,7 +243,7 @@ dotnet run --project Radish.Api
 - See `appsettings.Local.json.example` for minimal templates with common overrides (API & Auth only)
 - For Gateway production deployment, see `Radish.Gateway/README.md`
 
-For detailed configuration instructions, see [ConfigurationGuide.md](radish.docs/docs/ConfigurationGuide.md).
+For detailed configuration instructions, see [配置指南](radish.docs/docs/guide/configuration.md).
 
 ### Reading Configuration
 ```csharp
@@ -373,7 +421,7 @@ import { formatDate, isEmail } from '@radish/ui/utils';
 - No need to restart dev servers or reinstall dependencies
 - Run `npm run type-check --workspace=@radish/ui` before committing
 
-**Documentation**: See [UIComponentLibrary.md](radish.docs/docs/UIComponentLibrary.md)
+**Documentation**: See [UI 组件库](radish.docs/docs/frontend/ui-library.md)
 
 ### WebOS Desktop UI (radish.client)
 
@@ -419,7 +467,7 @@ Client 项目采用**混合架构**,根据应用复杂度和独立性选择不�
 - **开发独立性**:两个团队可并行开发,互不影响
 - **技术选型自由**:各自可选择适合的 UI 库和技术栈
 
-详见 [FrontendDesign.md](radish.docs/docs/FrontendDesign.md) 第 10.4 节的架构决策分析。
+详见 [前端设计文档](radish.docs/docs/frontend/design.md) 第 10.4 节的架构决策分析。
 
 **React Conventions**:
 1. **Function components only** (no class components)
@@ -430,7 +478,7 @@ Client 项目采用**混合架构**,根据应用复杂度和独立性选择不�
 
 **Frontend-Backend Communication**:
 - All requests over HTTPS (TLS provides transport encryption)
-- **Password Security**: Passwords are transmitted as plaintext over HTTPS and hashed with Argon2id on the server. See [PasswordSecurity.md](radish.docs/docs/PasswordSecurity.md) for details.
+- **Password Security**: Passwords are transmitted as plaintext over HTTPS and hashed with Argon2id on the server. See [密码安全](radish.docs/docs/guide/password-security.md) for details.
 - **No frontend encryption**: Frontend code is fully exposed to users, so client-side encryption (like RSA) provides no real security benefit
 - VITE_API_BASE_URL env var points to backend
 - CORS configured in `appsettings.json` under `Cors.AllowedOrigins`
@@ -540,33 +588,55 @@ public interface ICategoryService : IBaseService<Category, CategoryVo>
 }
 ```
 
-## Rust Native Extensions (Experimental)
+## Rust Native Extensions
 
-Located in `Radish.Core/test_lib` (example only, production modules should go in `native/rust/{library}`).
+Located in `Radish.Core/radish-lib/` - a unified Rust extension library for high-performance operations.
 
-### Building Rust Libs
+### Building Rust Extensions
 ```bash
-cd Radish.Core/test_lib
+cd Radish.Core/radish-lib
 cargo build --release
-# Output: target/release/test_lib.dll (Windows) or libtest_lib.so (Linux)
+# Output: target/release/radish_lib.dll (Windows) or libradish_lib.so (Linux) or libradish_lib.dylib (macOS)
 ```
 
-Copy the compiled library to `Radish.Api/bin/Debug/net10.0/` for runtime loading.
+Or use the provided build scripts:
+- Windows: `./build.ps1`
+- Linux/macOS: `./build.sh`
+
+The build scripts automatically copy the compiled library to `Radish.Api/bin/Debug/net10.0/`.
 
 ### Usage Example
-`RustTestController` demonstrates `[DllImport("test_lib")]` for performance-critical algorithms. See endpoints like `/api/RustTest/TestSum1` for benchmarks.
+`RustTestController` demonstrates `[DllImport("radish_lib")]` for performance-critical algorithms. See endpoints like `/api/v2/RustTest/TestSum1` for benchmarks.
+
+### Modules
+- **image**: Image processing (watermarking)
+- **hash**: File hashing (SHA256)
+- **benchmark**: Performance testing (migrated from test_lib)
+- **utils**: Utility functions
+
+### Configuration
+Switch between C# and Rust implementations via `appsettings.json`:
+```json
+{
+  "ImageProcessor": {
+    "UseRustImplementation": true  // false to use C# implementation
+  }
+}
+```
+
+The system automatically falls back to C# implementation if Rust library is not available.
 
 ## Documentation
 
 Comprehensive docs in `radish.docs/docs/`:
-- `DevelopmentSpecifications.md` - Directory structure, layering, dependency rules
-- `DevelopmentFramework.md` - Overall architecture, tech decisions, milestones
-- `DevelopmentPlan.md` - Weekly delivery plan
-- `DevelopmentLog.md` - Daily progress log
-- `AuthenticationGuide.md` - Auth flow details
-- `FrontendDesign.md` - UI paradigm, component planning, cross-platform strategy
-- `GatewayPlan.md` - API Gateway refactoring plan
-- `DeploymentGuide.md` - Containerization and deployment
+- `docs/architecture/specifications.md` - Directory structure, layering, dependency rules
+- `docs/architecture/framework.md` - Overall architecture, tech decisions, milestones
+- `docs/development-plan.md` - Weekly delivery plan
+- `docs/changelog/` - Daily/weekly progress logs
+- `docs/guide/authentication.md` - Auth flow details
+- `docs/frontend/design.md` - UI paradigm, component planning, cross-platform strategy
+- `docs/architecture/gateway-plan.md` - API Gateway refactoring plan
+- `docs/deployment/guide.md` - Containerization and deployment
 
 **Always consult these docs before making architectural changes.**
 
@@ -615,5 +685,5 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 - Use Vite's HMR for instant frontend updates
 - Scalar API docs available at `/scalar` when running locally (API direct: `http://localhost:5100/scalar`, via Gateway: `https://localhost:5000/scalar`)
 - Example requests in `Radish.Api/Radish.Api.http` (use REST Client extension)
-- Check `Docs/DevelopmentLog.md` for recent changes and known issues
+- Check `radish.docs/docs/changelog/` for recent changes and known issues
 - When adding new repositories/services, register them in Autofac module or use the generic pattern

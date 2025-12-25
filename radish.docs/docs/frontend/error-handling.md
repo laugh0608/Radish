@@ -604,5 +604,5 @@ configureErrorHandling({
 
 ## 相关文档
 
-- [API 客户端使用指南](./APIClientGuide.md)
-- [UI 组件库概览](./UIComponentLibrary.md)
+- [API 客户端使用指南](./api-client.md)
+- [UI 组件库概览](./ui-library.md)

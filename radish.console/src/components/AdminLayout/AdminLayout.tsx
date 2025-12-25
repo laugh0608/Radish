@@ -15,6 +15,7 @@ import {
   AppstoreOutlined,
   TeamOutlined,
   SafetyOutlined,
+  ClockCircleOutlined,
 } from '@radish/ui';
 import './AdminLayout.css';
 
@@ -78,6 +79,11 @@ export const AdminLayout = ({
       key: 'roles',
       icon: <SafetyOutlined />,
       label: '角色管理',
+    },
+    {
+      key: 'hangfire',
+      icon: <ClockCircleOutlined />,
+      label: '定时任务',
     },
   ];
 

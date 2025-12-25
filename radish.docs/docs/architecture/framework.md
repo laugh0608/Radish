@@ -103,7 +103,7 @@ PostgreSQL / SQLite
   - 雪花 ID：`Program` 在注册 SqlSugar 之后从 `Snowflake` 节读取 `WorkId`、`DataCenterId` 并写入 `SnowFlakeSingle`，多实例部署必须在各自的 `appsettings.{Env}.json` 中配置不同 WorkId；若缺省则读取基础文件的兜底值，禁止把生产与本地设置为同一个编号。
   - 日志：宿主调用 `builder.Host.AddSerilogSetup()`，由 `Radish.Extension.SerilogExtension` 统一配置输出目标。Serilog 默认读取 appsettings，写入控制台与 `Log/` 目录（普通日志 -> `Log.txt`，SqlSugar AOP 日志 -> `AopSql/AopSql.txt`），内部基于 `LogContextTool.LogSource` 区分日志类型并通过 `WriteTo.Async()` 异步落盘，避免阻塞请求线程；业务代码默认直接使用 `Serilog.Log` 静态方法输出日志，仅在依赖外部框架时才注入 `ILogger<T>`。
   - API 文档：开发环境把 Scalar UI 映射到 `/scalar`（`/api/docs` 重定向到 `/scalar`），并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Api/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
-  - API 版本控制：采用 **URL 路径版本控制**（`/api/v{version}/[controller]/[action]`），基于 `Asp.Versioning.Mvc` (8.1.0) 实现；Controller 通过 `[ApiVersion("x.0")]` 特性声明版本，未指定版本时默认使用 v1.0。v1 包含核心稳定接口（Login、User），v2 包含新功能与实验接口（AppSetting、RustTest）；OpenAPI 文档通过 `IApiVersionDescriptionProvider` 自动发现所有版本，为每个版本生成独立文档（`/openapi/v1.json`、`/openapi/v2.json`），Scalar UI 提供版本下拉菜单，切换时文档自动过滤只显示对应版本的接口。详细规范见 `DevelopmentSpecifications.md` 的"API 版本控制规范"章节。
+  - API 版本控制：采用 **URL 路径版本控制**（`/api/v{version}/[controller]/[action]`），基于 `Asp.Versioning.Mvc` (8.1.0) 实现；Controller 通过 `[ApiVersion("x.0")]` 特性声明版本，未指定版本时默认使用 v1.0。v1 包含核心稳定接口（Login、User），v2 包含新功能与实验接口（AppSetting、RustTest）；OpenAPI 文档通过 `IApiVersionDescriptionProvider` 自动发现所有版本，为每个版本生成独立文档（`/openapi/v1.json`、`/openapi/v2.json`），Scalar UI 提供版本下拉菜单，切换时文档自动过滤只显示对应版本的接口。详细规范见 [开发规范](./specifications.md) 的"API 版本控制规范"章节。
   - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为"联调开关"。
   - 跨域：`appsettings.json` 中的 `Cors:AllowedOrigins` 维护允许访问 API 的前端地址，预设了 `localhost:3000` 以及 Rolldown 默认端口 `58794` 的多个别名（`vite.dev.localhost`、`host.*` 等）。更换端口或外网域名时记得同步更新该列表。
 - `Radish.Gateway`
@@ -111,7 +111,7 @@ PostgreSQL / SQLite
   - **依赖**：复用 `Radish.Common`（配置工具）和 `Radish.Extension`（日志扩展），保持与 `Radish.Api` 一致的配置加载和日志输出方式。
   - **监听端口**：`https://localhost:5000`（主要对外入口）和 `http://localhost:5001`（HTTP 仅用于重定向到 5000）。
   - **健康检查**：自身暴露 `/health`、`/healthz`，下游 `Radish.Api` 健康通过 `/api/health` 统一对外；Console 通过 Gateway 路径 `/`、`/docs`、`/api/health`、`/console` 聚合展示多服务状态。
-  - **架构演进**：Phase 0 为简化门户，不引入 Ocelot；P1+ 阶段将继续增强路由转发、统一认证、请求聚合等 Gateway 核心功能。详见 `GatewayPlan.md`。
+  - **架构演进**：Phase 0 为简化门户，不引入 Ocelot；P1+ 阶段将继续增强路由转发、统一认证、请求聚合等 Gateway 核心功能。详见 `architecture/gateway-plan.md`。
 - 配置与服务访问：Program.cs 依次调用 `hostingContext.Configuration.ConfigureApplication()` → `builder.ConfigureApplication()` → `app.ConfigureApplication()` → `app.UseApplicationSetup()`，把 Configuration/HostEnvironment/RootServices 注入到 `Radish.Common.Core.App`；在非 DI 管道下可使用 `App.GetService*`、`App.GetOptions*` 手动解析服务或配置。常规字符串读取仍统一使用 `AppSettings.RadishApp("Section", ...)`，批量强类型配置通过 `ConfigurableOptions + AddAllOptionRegister` 自动绑定 `IConfigurableOptions`。
 - `Radish.Service`
   - 应用服务（`*AppService`）封装用例流程、权限校验、事务控制、DTO 转换。
@@ -198,7 +198,7 @@ graph LR
 
 ## 前端架构与规范
 
-- 详细的前端设计、桌面/移动交互规范与未来 React Native 规划均见 [FrontendDesign.md](FrontendDesign.md)，下文仅保留核心约束。
+- 详细的前端设计、桌面/移动交互规范与未来 React Native 规划均见 [frontend/design.md](../frontend/design.md)，下文仅保留核心约束。
 - Vite 配置 HTTPS、代理 API、环境变量区分（`.env.development` / `.env.production`），并在 `radish.client` 中启用 React 19 + Rolldown。
 - 目录建议：`app/`（入口、providers、路由）、`features/*`（按业务拆包）、`widgets/*`（桌面组件）、`shared/*`（api/ui/config），保持与未来 RN 工程一致，方便共享包。
 - 认证：封装 API 客户端自动附带 Token，失效触发刷新；敏感数据统一通过 RSA 公钥加密。
@@ -228,7 +228,7 @@ graph LR
 
 - **最新决策（2025-11-27）**：Gateway 项目**提前启动**，首要任务是将 `Radish.Api` 中的服务欢迎页面抽离至独立的 `Radish.Gateway` 项目（Phase 0）。
 - **Phase 0 目标**：实现关注点分离，让 API 项目专注于提供接口服务，Gateway 承担服务门户展示职责。Phase 0 阶段不引入 Ocelot，仅实现静态页面展示和健康检查聚合。
-- **后续阶段（P1-P6）**：在 Phase 0 基础上渐进式引入路由转发、统一认证、请求聚合、服务发现、可观测性、服务拆分等功能。详细规划、任务清单、实施指南见 [GatewayPlan.md](GatewayPlan.md)。
+- **后续阶段（P1-P6）**：在 Phase 0 基础上渐进式引入路由转发、统一认证、请求聚合、服务发现、可观测性、服务拆分等功能。详细规划、任务清单、实施指南见 [architecture/gateway-plan.md](gateway-plan.md)。
 - **架构演进路径**：Phase 0（门户页面） → P1（路由转发） → P2（统一认证） → P3（请求聚合） → P4（服务发现） → P5（可观测性） → P6（服务拆分）。
 - 新增服务/接口仍需在评审阶段勾勒“若未来接入 Gateway 的 URL/Scope/聚合需求”，但不落地任何代码或基础设施。
 

@@ -77,8 +77,8 @@ public class RustTestController : ControllerBase
         catch (DllNotFoundException)
         {
             result.Message = $"ERROR: Rust library '{RustLibName}' not found. " +
-                             "Please ensure 'test_lib.dll' (Windows) or 'test_lib.so' (Linux) " +
-                             "or 'test_lib.dylib' (macOS) is in the application's output directory.";
+                             "Please ensure 'radish_lib.dll' (Windows) or 'libradish_lib.so' (Linux) " +
+                             "or 'libradish_lib.dylib' (macOS) is in the application's output directory.";
             result.RustExecutionTimeMs = -1; // 表示失败
         }
         catch (Exception ex)
@@ -154,8 +154,8 @@ public class RustTestController : ControllerBase
         catch (DllNotFoundException)
         {
             result.Message = $"ERROR: Rust library '{RustLibName}' not found. " +
-                             "Ensure 'test_lib.dll' (Windows) or 'test_lib.so' (Linux) " +
-                             "or 'test_lib.dylib' (macOS) is in the application's output directory.";
+                             "Ensure 'radish_lib.dll' (Windows) or 'libradish_lib.so' (Linux) " +
+                             "or 'libradish_lib.dylib' (macOS) is in the application's output directory.";
             result.RustExecutionTimeMs = -1;
         }
         catch (Exception ex)
@@ -229,8 +229,8 @@ public class RustTestController : ControllerBase
         catch (DllNotFoundException)
         {
             result.Message = $"ERROR: Rust library '{RustLibName}' not found. " +
-                             "Ensure 'rust_lib.dll' (Windows) or 'librust_lib.so' (Linux) " +
-                             "or 'librust_lib.dylib' (macOS) is in the application's output directory.";
+                             "Ensure 'radish_lib.dll' (Windows) or 'libradish_lib.so' (Linux) " +
+                             "or 'libradish_lib.dylib' (macOS) is in the application's output directory.";
             result.RustExecutionTimeMs = -1;
         }
         catch (Exception ex)
@@ -306,8 +306,8 @@ public class RustTestController : ControllerBase
         catch (DllNotFoundException)
         {
             result.Message = $"ERROR: Rust library '{RustLibName}' not found. " +
-                             "Ensure 'test_lib.dll' (Windows) or 'test_lib.so' (Linux) " +
-                             "or 'test_lib.dylib' (macOS) is in the application's output directory.";
+                             "Ensure 'radish_lib.dll' (Windows) or 'libradish_lib.so' (Linux) " +
+                             "or 'libradish_lib.dylib' (macOS) is in the application's output directory.";
             result.RustExecutionTimeMs = -1;
         }
         catch (Exception ex)
@@ -339,9 +339,9 @@ public class RustTestController : ControllerBase
         public string Message { get; set; } = string.Empty;
     }
 
-    // 定义 Rust 库的名称。在 Windows上 是 test_lib.dll，在Linux/macOS上 是 test_lib.so/test_lib.dylib。
+    // 定义 Rust 库的名称。在 Windows上 是 radish_lib.dll，在Linux/macOS上 是 libradish_lib.so/libradish_lib.dylib。
     // DllImport 会根据操作系统自动查找。
-    private const string RustLibName = "test_lib";
+    private const string RustLibName = "radish_lib";
 
     // 导入 Rust 库中的 calculate_sum_rust 函数，累加计算
     [DllImport(RustLibName, EntryPoint = "calculate_sum_rust", CallingConvention = CallingConvention.Cdecl)]

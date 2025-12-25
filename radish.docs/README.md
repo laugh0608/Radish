@@ -9,7 +9,7 @@
 npm install
 
 # 开发模式（热重载）
-# 默认开发地址：http://localhost:3001/docs
+# 默认开发地址：http://localhost:3100/docs
 npm run docs:dev
 
 # 构建生产版本
@@ -134,5 +134,5 @@ A: 不需要。当前文档工程不依赖符号链接或 junction，直接使�
 ## 相关文档
 
 - [VitePress 官方文档](https://vitepress.dev/)
-- [Gateway 部署指南](docs/DeploymentGuide.md)
-- [开发规范](docs/DevelopmentSpecifications.md)
+- [部署指南](docs/deployment/guide.md)
+- [开发规范](docs/architecture/specifications.md)

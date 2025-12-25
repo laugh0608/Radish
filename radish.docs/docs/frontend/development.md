@@ -97,7 +97,7 @@ export default defineConfig({
    - 浏览器自动刷新，无需手动操作
 
 3. **验证更新**
-   - 打开 `http://localhost:3000` (client) 或 `http://localhost:3002` (console)
+   - 打开 `http://localhost:3000` (client) 或 `http://localhost:3200` (console)
    - 查看组件是否已更新
 
 ## 📝 开发工作流
@@ -302,9 +302,8 @@ import { Button, useDebounce } from '@radish/ui';
 
 ## 🔗 相关文档
 
-- [UI 组件库完整文档](./UIComponentLibrary.md)
-- [组件详细说明](./UIComponentsSummary.md)
-- [快速参考](./UIQuickReference.md)
+- [UI 组件库完整文档](./ui-library.md)
+- [快速参考](./quick-reference.md)
 
 ## 📝 总结
 
