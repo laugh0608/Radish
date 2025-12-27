@@ -724,7 +724,7 @@ options
 
 所有 Controller 和 Action 必须提供完整的 XML 注释：
 
-<div v-pre>
+::: v-pre
 
 ```csharp
 /// <summary>
@@ -747,7 +747,7 @@ options
 public async Task<MessageModel<T>> MyAction(string paramName)
 ```
 
-</div>
+:::
 
 **关键要求：**
 - 必须启用 XML 文档生成（在 `.csproj` 中配置 `<GenerateDocumentationFile>true</GenerateDocumentationFile>`）
@@ -765,13 +765,13 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 
 **弃用旧版本：**
 
-<div v-pre>
+::: v-pre
 
 ```csharp
 [ApiVersion("1.0", Deprecated = true)]
 ```
 
-</div>
+:::
 
 - 添加 `Deprecated = true` 标记
 - OpenAPI 文档会自动显示"已弃用"警告
@@ -779,7 +779,7 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 
 **跨版本支持：**
 
-<div v-pre>
+::: v-pre
 
 ```csharp
 [ApiVersion(1)]
@@ -787,14 +787,14 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 public class MyController : ControllerBase
 ```
 
-</div>
+:::
 
 - Controller 可同时支持多个版本
 - 使用 `[MapToApiVersion("2.0")]` 标记特定 Action 的版本
 
 ### 版本控制配置（Program.cs）
 
-<div v-pre>
+::: v-pre
 
 ```csharp
 builder.Services.AddApiVersioning(options =>
@@ -811,7 +811,7 @@ builder.Services.AddApiVersioning(options =>
 });
 ```
 
-</div>
+:::
 
 ### URL 格式示例
 
