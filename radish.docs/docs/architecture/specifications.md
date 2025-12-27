@@ -303,7 +303,7 @@ Radish 项目采用泛型基类模式来避免为每个实体重复编写相同�
 
 ### BaseService 提供的完整功能
 
-<div v-pre>
+::: v-pre
 
 #### 增（Create）
 ```csharp
@@ -342,11 +342,11 @@ Task<List<TResult>> QueryMuchAsync<...>(...)          // 三表联查
 Task<List<TEntity>> QuerySplitAsync(...)              // 分表查询
 ```
 
-</div>
+:::
 
 ### 使用场景
 
-<div v-pre>
+::: v-pre
 
 #### 场景 1：简单 CRUD（直接使用 BaseService）
 
@@ -478,13 +478,13 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 }
 ```
 
-</div>
+:::
 
 ### BaseRepository 直接使用
 
 在自定义 Service 中，如果需要操作其他实体，可以直接注入 `IBaseRepository<T>`：
 
-<div v-pre>
+::: v-pre
 
 ```csharp
 public class PostService : BaseService<Post, PostVo>, IPostService
@@ -501,7 +501,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 }
 ```
 
-</div>
+:::
 
 ### 最佳实践总结
 
