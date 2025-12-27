@@ -334,7 +334,7 @@ services:
     "MaxFileSize": {
       "Avatar": 2097152,
       "Image": 5242880,
-      "Document": 10485760,
+      "Document": 31457280,
       "Video": 52428800,
       "Audio": 10485760
     },

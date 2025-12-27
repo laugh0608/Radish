@@ -14,6 +14,9 @@ import { formatDate, isEmail, truncate } from '@radish/ui/utils';
 
 // 类型
 import type { ApiResponse, PaginationParams } from '@radish/ui/types';
+
+// API 分页模型（后端 PagedResponse）
+import type { PagedResponse } from '@radish/ui';
 ```
 
 ## 🎨 组件速查
@@ -137,9 +140,12 @@ randomString(8)                           // "aB3xY9zQ"
 ```typescript
 interface ApiResponse<T = unknown> {
   isSuccess: boolean;
-  message?: string;
+  statusCode: number;
+  messageInfo: string;
+  messageInfoDev?: string;
   responseData?: T;
-  statusCode?: number;
+  code?: string;
+  messageKey?: string;
 }
 ```
 
@@ -152,15 +158,15 @@ interface PaginationParams {
 }
 ```
 
-### PaginatedResponse
+### PagedResponse
 
 ```typescript
-interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
+interface PagedResponse<T> {
   page: number;
   pageSize: number;
-  totalPages: number;
+  dataCount: number;
+  pageCount: number;
+  data: T[];
 }
 ```
 

@@ -1,6 +1,6 @@
 # 文件上传与附件管理（Radish.Api）
 
-> **最后更新**：2025-12-24
+> **最后更新**：2025-12-27
 
 本文档是 Radish 当前版本的“使用说明文档”，仅描述已落地的实现、接口、配置与测试方法。
 
@@ -122,7 +122,7 @@
 - `FileStorage:Type`：`Local` / `MinIO` / `OSS`
 - `FileStorage:Local:BasePath`：默认 `DataBases/Uploads`
 - `FileStorage:Local:BaseUrl`：默认 `/uploads`
-- `FileStorage:MaxFileSize`：按业务类型控制单文件大小
+- `FileStorage:MaxFileSize`：按业务类型控制单文件大小（当前默认 `Document=30MB`）
 - `FileStorage:AllowedExtensions`：按业务类型控制扩展名白名单
 - `FileStorage:Deduplication:Enable`：是否启用去重
 - `FileStorage:Deduplication:HashAlgorithm`：默认 `SHA256`
@@ -179,7 +179,7 @@
 
 ## 未完成事项（TODO）
 
-- 前端分片上传实现（切片、并发、重试、断点续传 UI/交互）
+- 前端分片上传交互完善（暂停/恢复、断点续传 UI、失败重试策略可视化）
 - 分片上传服务接入配置项并做参数校验（`MinChunkSize/MaxChunkSize/TempChunkPath/SessionExpirationHours`）
 - 临时令牌权限：管理员判定、审计与管理界面
 - 分片上传与临时令牌的单元/集成测试覆盖（服务层 + 控制器）
