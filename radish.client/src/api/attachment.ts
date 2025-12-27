@@ -86,7 +86,7 @@ async function uploadWithRetry<T>(
 }
 
 /**
- * 附件信息
+ * 附件信息（匹配后端 AttachmentVo）
  */
 export interface AttachmentInfo {
   /**
@@ -95,14 +95,14 @@ export interface AttachmentInfo {
   id: number | string;
 
   /**
-   * 文件名
-   */
-  fileName: string;
-
-  /**
    * 原始文件名
    */
-  originalFileName?: string;
+  originalName: string;
+
+  /**
+   * 文件扩展名
+   */
+  extension: string;
 
   /**
    * 文件大小（字节）
@@ -110,14 +110,24 @@ export interface AttachmentInfo {
   fileSize: number;
 
   /**
+   * 文件大小（格式化后，如 1.5MB）
+   */
+  fileSizeFormatted?: string;
+
+  /**
    * MIME 类型
    */
   mimeType: string;
 
   /**
-   * 文件 URL
+   * 存储类型（Local/MinIO/OSS）
    */
-  fileUrl: string;
+  storageType?: string;
+
+  /**
+   * 访问 URL
+   */
+  url: string;
 
   /**
    * 缩略图 URL（仅图片）
@@ -125,9 +135,14 @@ export interface AttachmentInfo {
   thumbnailUrl?: string;
 
   /**
-   * 文件哈希
+   * 上传者 ID
    */
-  fileHash?: string;
+  uploaderId?: number | string;
+
+  /**
+   * 上传者名称
+   */
+  uploaderName?: string;
 
   /**
    * 业务类型
@@ -140,12 +155,27 @@ export interface AttachmentInfo {
   businessId?: number | string;
 
   /**
-   * 上传者 ID
+   * 是否公开
    */
-  uploaderId?: number | string;
+  isPublic?: boolean;
 
   /**
-   * 上传时间
+   * 下载次数
+   */
+  downloadCount?: number;
+
+  /**
+   * 内容审核状态（Pending/Pass/Reject）
+   */
+  auditStatus?: string;
+
+  /**
+   * 备注
+   */
+  remark?: string;
+
+  /**
+   * 创建时间
    */
   createTime?: string;
 }
@@ -219,7 +249,7 @@ export interface DocumentUploadOptions {
    * 业务类型
    * @default "Document"
    */
-  businessType?: 'Document' | 'General';
+  businessType?: 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document';
 
   /**
    * 业务 ID（可选）

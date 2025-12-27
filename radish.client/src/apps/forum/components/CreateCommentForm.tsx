@@ -4,6 +4,7 @@ import { Icon } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { UserMention, type UserMentionOption } from '@radish/ui';
+import { uploadImage, uploadDocument } from '@/api/attachment';
 import styles from './CreateCommentForm.module.css';
 
 interface CreateCommentFormProps {
@@ -26,12 +27,18 @@ export const CreateCommentForm = ({
   const { t } = useTranslation();
   const [content, setContent] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
 
   // @提及功能状态
   const [showMention, setShowMention] = useState(false);
   const [mentionKeyword, setMentionKeyword] = useState('');
   const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
   const [mentionStartPos, setMentionStartPos] = useState(0);
+
+  // 上传状态
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const handleSubmit = () => {
     if (!content.trim()) {
@@ -120,6 +127,96 @@ export const CreateCommentForm = ({
     }, 0);
   };
 
+  // 插入文本到光标位置
+  const insertTextAtCursor = (text: string) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const newContent = content.substring(0, start) + text + content.substring(end);
+    setContent(newContent);
+
+    // 设置光标位置到插入文本后面
+    setTimeout(() => {
+      const newCursorPos = start + text.length;
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  // 处理图片上传
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const result = await uploadImage({
+        file,
+        businessType: 'Comment',
+        generateThumbnail: true,
+        generateMultipleSizes: false,
+        removeExif: true
+      }, t);
+
+      // 插入 Markdown 图片语法
+      const imageMarkdown = `![${file.name}](${result.fileUrl})`;
+      insertTextAtCursor(imageMarkdown);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '图片上传失败';
+      setUploadError(errorMessage);
+      console.error('图片上传失败:', error);
+    } finally {
+      setUploading(false);
+      // 清空 input 以允许重复上传同一文件
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
+      }
+    }
+  };
+
+  // 处理文档上传
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const result = await uploadDocument({
+        file,
+        businessType: 'Comment'
+      }, t);
+
+      // 插入 Markdown 链接语法
+      const linkMarkdown = `[${file.name}](${result.fileUrl})`;
+      insertTextAtCursor(linkMarkdown);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '文档上传失败';
+      setUploadError(errorMessage);
+      console.error('文档上传失败:', error);
+    } finally {
+      setUploading(false);
+      // 清空 input 以允许重复上传同一文件
+      if (documentInputRef.current) {
+        documentInputRef.current.value = '';
+      }
+    }
+  };
+
+  // 触发文件选择
+  const handleImageButtonClick = () => {
+    imageInputRef.current?.click();
+  };
+
+  const handleDocumentButtonClick = () => {
+    documentInputRef.current?.click();
+  };
+
   return (
     <div className={styles.container}>
       <h5 className={styles.title}>发表评论</h5>
@@ -155,7 +252,7 @@ export const CreateCommentForm = ({
           onChange={handleTextChange}
           rows={3}
           className={styles.textarea}
-          disabled={!isAuthenticated || !hasPost || disabled}
+          disabled={!isAuthenticated || !hasPost || disabled || uploading}
         />
 
         {showMention && (
@@ -169,10 +266,64 @@ export const CreateCommentForm = ({
         )}
       </div>
 
+      {/* 上传错误提示 */}
+      {uploadError && (
+        <div className={styles.uploadError}>
+          <Icon icon="mdi:alert-circle" size={16} />
+          <span>{uploadError}</span>
+        </div>
+      )}
+
+      {/* 工具栏 */}
+      <div className={styles.toolbar}>
+        {/* 隐藏的文件输入框 */}
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          style={{ display: 'none' }}
+        />
+        <input
+          ref={documentInputRef}
+          type="file"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+          onChange={handleDocumentUpload}
+          style={{ display: 'none' }}
+        />
+
+        {/* 上传按钮 */}
+        <button
+          type="button"
+          onClick={handleImageButtonClick}
+          disabled={!isAuthenticated || !hasPost || disabled || uploading}
+          className={styles.toolbarButton}
+          title="上传图片"
+        >
+          <Icon icon={uploading ? "mdi:loading" : "mdi:image-outline"} size={18} />
+          <span>图片</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleDocumentButtonClick}
+          disabled={!isAuthenticated || !hasPost || disabled || uploading}
+          className={styles.toolbarButton}
+          title="上传文档"
+        >
+          <Icon icon={uploading ? "mdi:loading" : "mdi:file-document-outline"} size={18} />
+          <span>文档</span>
+        </button>
+
+        {uploading && (
+          <span className={styles.uploadingHint}>上传中...</span>
+        )}
+      </div>
+
       <button
         type="button"
         onClick={handleSubmit}
-        disabled={!isAuthenticated || !hasPost || disabled || !content.trim()}
+        disabled={!isAuthenticated || !hasPost || disabled || !content.trim() || uploading}
         className={styles.submitButton}
       >
         发表评论

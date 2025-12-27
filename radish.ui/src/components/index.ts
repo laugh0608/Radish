@@ -37,6 +37,14 @@ export type { UserMentionProps, UserMentionOption } from './UserMention/UserMent
 export { FileUpload } from './FileUpload/FileUpload';
 export type { FileUploadProps, UploadResult } from './FileUpload/FileUpload';
 
+export { ChunkedFileUpload } from './ChunkedFileUpload/ChunkedFileUpload';
+export type {
+  ChunkedFileUploadProps,
+  ChunkedUploadOptions,
+  ChunkedUploadResult,
+  UploadProgress
+} from './ChunkedFileUpload/ChunkedFileUpload';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout

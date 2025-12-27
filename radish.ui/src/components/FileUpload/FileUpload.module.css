@@ -164,6 +164,25 @@
   color: var(--color-text-secondary, #8c8c8c);
 }
 
+/* 分片上传详细进度 */
+.chunkedProgressDetails {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.progressDetail {
+  font-size: 12px;
+  color: var(--color-text-tertiary, #8c8c8c);
+  padding: 2px 8px;
+  background: var(--color-bg-container, #fff);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
 /* 成功状态 */
 .successState {
   display: flex;
