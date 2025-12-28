@@ -379,6 +379,47 @@ public class AttachmentController : ControllerBase
         };
     }
 
+    /// <summary>
+    /// 分页获取当前用户上传的附件列表
+    /// </summary>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页数量（默认 20）</param>
+    /// <returns>分页附件列表</returns>
+    [HttpGet]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetMyAttachments(int pageIndex = 1, int pageSize = 20)
+    {
+        if (pageIndex < 1) pageIndex = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        var userId = _httpContextUser.UserId;
+
+        var (data, totalCount) = await _attachmentService.QueryPageAsync(
+            a => a.UploaderId == userId && !a.IsDeleted,
+            pageIndex,
+            pageSize,
+            a => a.CreateTime,
+            SqlSugar.OrderByType.Desc);
+
+        var pageModel = new PageModel<AttachmentVo>
+        {
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = (int)Math.Ceiling(totalCount / (double)pageSize),
+            Data = data
+        };
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = pageModel
+        };
+    }
+
     #endregion
 
     #region Download

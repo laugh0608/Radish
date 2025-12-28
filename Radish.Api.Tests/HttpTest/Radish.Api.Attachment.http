@@ -226,6 +226,10 @@ Content-Disposition: form-data; name="generateThumbnail"
 true
 ------WebKitFormBoundary7MA4YWxkTrZu0gW--
 
+### 1.x 获取当前用户附件列表（个人中心）
+GET {{Api_HostAddress}}/api/v1/Attachment/GetMyAttachments?pageIndex=1&pageSize=10
+Authorization: Bearer {{Access_Token}}
+
 ### 1.9 上传图片（完整功能测试）
 # 测试所有功能：缩略图 + 多尺寸 + 水印 + 移除 EXIF
 POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
