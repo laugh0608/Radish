@@ -293,8 +293,8 @@ git push origin v1.2.0.251126
 
 Radish 项目采用泛型基类模式来避免为每个实体重复编写相同的 CRUD 代码：
 
-- **BaseRepository<TEntity>**：提供完整的数据库操作方法（基于 SqlSugar）
-- **BaseService<TEntity, TVo>**：提供完整的业务层方法（自动进行实体到 ViewModel 的映射）
+- **BaseRepository`<TEntity>`**：提供完整的数据库操作方法（基于 SqlSugar）
+- **BaseService`<TEntity, TVo>`**：提供完整的业务层方法（自动进行实体到 ViewModel 的映射）
 
 **核心原则**：
 - ✅ **优先使用 BaseService/BaseRepository** - 减少重复代码，保持架构简洁
@@ -303,7 +303,6 @@ Radish 项目采用泛型基类模式来避免为每个实体重复编写相同�
 
 ### BaseService 提供的完整功能
 
-::: v-pre
 
 #### 增（Create）
 ```csharp
@@ -342,11 +341,9 @@ Task<List<TResult>> QueryMuchAsync<...>(...)          // 三表联查
 Task<List<TEntity>> QuerySplitAsync(...)              // 分表查询
 ```
 
-:::
 
 ### 使用场景
 
-::: v-pre
 
 #### 场景 1：简单 CRUD（直接使用 BaseService）
 
@@ -478,13 +475,11 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 }
 ```
 
-:::
 
 ### BaseRepository 直接使用
 
 在自定义 Service 中，如果需要操作其他实体，可以直接注入 `IBaseRepository<T>`：
 
-::: v-pre
 
 ```csharp
 public class PostService : BaseService<Post, PostVo>, IPostService
@@ -501,7 +496,6 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 }
 ```
 
-:::
 
 ### 最佳实践总结
 
@@ -724,7 +718,6 @@ options
 
 所有 Controller 和 Action 必须提供完整的 XML 注释：
 
-::: v-pre
 
 ```csharp
 /// <summary>
@@ -747,7 +740,6 @@ options
 public async Task<MessageModel<T>> MyAction(string paramName)
 ```
 
-:::
 
 **关键要求：**
 - 必须启用 XML 文档生成（在 `.csproj` 中配置 `<GenerateDocumentationFile>true</GenerateDocumentationFile>`）
@@ -765,13 +757,11 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 
 **弃用旧版本：**
 
-::: v-pre
 
 ```csharp
 [ApiVersion("1.0", Deprecated = true)]
 ```
 
-:::
 
 - 添加 `Deprecated = true` 标记
 - OpenAPI 文档会自动显示"已弃用"警告
@@ -779,7 +769,6 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 
 **跨版本支持：**
 
-::: v-pre
 
 ```csharp
 [ApiVersion(1)]
@@ -787,14 +776,12 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 public class MyController : ControllerBase
 ```
 
-:::
 
 - Controller 可同时支持多个版本
 - 使用 `[MapToApiVersion("2.0")]` 标记特定 Action 的版本
 
 ### 版本控制配置（Program.cs）
 
-::: v-pre
 
 ```csharp
 builder.Services.AddApiVersioning(options =>
@@ -811,7 +798,6 @@ builder.Services.AddApiVersioning(options =>
 });
 ```
 
-:::
 
 ### URL 格式示例
 
