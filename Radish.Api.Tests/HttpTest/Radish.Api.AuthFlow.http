@@ -114,7 +114,7 @@ refresh_token={{refreshToken}}
 ###    https://localhost:5000/oidc/callback?code=xxxxx
 ### 3) 从 URL 中复制 code 参数，粘到下面的 @gatewayAuthCode 变量。
 
-@gatewayAuthCode = bAL5FuFB3uFZKUc_7kHX96llrlqoeizBRF7Q_ejjDDk
+@gatewayAuthCode = 在这里粘贴从回调 URL 中复制的授权码
 
 ### B.3 使用授权码（经 Gateway）换取 Access Token + Refresh Token
 
@@ -125,12 +125,42 @@ grant_type=authorization_code&client_id=radish-client&code={{gatewayAuthCode}}&r
 
 ### 和 A.3 一样，从响应中复制 access_token，填到下面。
 
-@gatewayAccessToken = eyJhbGciOiJSUzI1NiIsImtpZCI6IjgzMTVEQkQ1QTE1NkZDNUJGQUU4OEQ0QjA1RDAwM0VFNTAzQ0FGNTQiLCJ4NXQiOiJneFhiMWFGV19GdjY2STFMQmRBRDdsQThyMVEiLCJ0eXAiOiJhdCtqd3QifQ.eyJpc3MiOiJodHRwczovL2xvY2FsaG9zdDo1MDAwLyIsImV4cCI6MTc2NTU1MTE3MCwiaWF0IjoxNzY1NTQ3NTcwLCJhdWQiOiJyYWRpc2gtYXBpIiwic2NvcGUiOiJyYWRpc2gtYXBpIiwianRpIjoiY2QwNmZlYzAtZTdlNC00NWVkLWE1YjMtZTYyMDQ0YWFhNzE0IiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZWlkZW50aWZpZXIiOiIyMDAwMCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJzeXN0ZW0iLCJzdWIiOiIyMDAwMCIsIm5hbWUiOiJzeXN0ZW0iLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzeXN0ZW0iLCJ0ZW5hbnRfaWQiOiIzMDAwMCIsImdpdmVuX25hbWUiOiJTeXN0ZW0gVXNlciIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IlN5c3RlbSIsInJvbGUiOiJTeXN0ZW0iLCJvaV9wcnN0IjoicmFkaXNoLWNsaWVudCIsIm9pX2F1X2lkIjoiOGNiYTBmNGMtNzBjOC00N2FlLWFjYjQtNjMzMzY3ZWJmMDZkIiwiY2xpZW50X2lkIjoicmFkaXNoLWNsaWVudCIsIm9pX3Rrbl9pZCI6ImVjYjAyYmFhLTgyM2QtNGM1NS05ZmM5LThhYzVkZjVjZjk4OSJ9.OB_xfuHLxR5ZLUp3VrL78GNz-67A9N9dDrC0NQWBngQlK_6jMNVQL3lNnk-uldY6Si_4V5ZZ34GYcrh88oGt5ZNQ4e0iIgu6FTPcRd1BEo2VdF-ebgPyNSAlXoWdvZLpNR3l2kwXjlUQR_CHe450KC0FPfRyyAHCUSrnQ9LUIaquOTFZSYlSD2ZHtxbG_lFfGi0sex_dKLc4Yn2J619o1zvPq3kC_GkXNvmkQTsWfPdh1VpyP3SrvT66r8I3w3OKciAqYXWu_58it0w-2nWL-UM9YhBqp4Hy7v8hMD-VIf4WPVnpEEEot5U4G0NzkijRzsrlZB59DFyBGCzB8qUB_A
+@gatewayAccessToken = 在这里粘贴上一步返回的 access_token
 
 ### B.4 通过 Gateway 调用 Radish.Api 受保护接口
 
 GET {{gatewayBase}}/api/v1/User/GetUserByHttpContext
 Authorization: Bearer {{gatewayAccessToken}}
+
+### B.5 个人中心：获取我的资料
+GET {{gatewayBase}}/api/v1/User/GetMyProfile
+Authorization: Bearer {{gatewayAccessToken}}
+
+### B.6 个人中心：获取我的积分（占位）
+GET {{gatewayBase}}/api/v1/User/GetMyPoints
+Authorization: Bearer {{gatewayAccessToken}}
+
+### B.7 个人中心：更新我的资料
+POST {{gatewayBase}}/api/v1/User/UpdateMyProfile
+Authorization: Bearer {{gatewayAccessToken}}
+Content-Type: application/json
+
+{
+  "userName": "test",
+  "userEmail": "test@example.com",
+  "realName": "Test User",
+  "age": 18,
+  "address": "Earth"
+}
+
+### B.8 个人中心：设置我的头像（先用 Attachment 上传头像拿到 attachmentId）
+POST {{gatewayBase}}/api/v1/User/SetMyAvatar
+Authorization: Bearer {{gatewayAccessToken}}
+Content-Type: application/json
+
+{
+  "attachmentId": 1
+}
 
 ### 预期：
 ### - 状态码 200

@@ -36,8 +36,9 @@ public class UserControllerTest
         var userService = new FakeUserService();
         var postService = new FakePostService();
         var commentService = new FakeCommentService();
+        var attachmentService = new FakeAttachmentService();
 
-        var controller = new UserController(userService, httpContextUser, postService, commentService)
+        var controller = new UserController(userService, httpContextUser, postService, commentService, attachmentService)
         {
             ControllerContext = new ControllerContext
             {
@@ -205,6 +206,51 @@ public class UserControllerTest
         public Task<List<CommentVo>> QueryWithCacheAsync(System.Linq.Expressions.Expression<System.Func<Comment, bool>>? whereExpression = null, int cacheTime = 10) => throw new System.NotImplementedException();
         public Task<List<TResult>> QueryMuchAsync<T, T2, T3, TResult>(System.Linq.Expressions.Expression<System.Func<T, T2, T3, object[]>> joinExpression, System.Linq.Expressions.Expression<System.Func<T, T2, T3, TResult>> selectExpression, System.Linq.Expressions.Expression<System.Func<T, T2, T3, bool>>? whereLambda = null) where T : class, new() => throw new System.NotImplementedException();
         public Task<List<Comment>> QuerySplitAsync(System.Linq.Expressions.Expression<System.Func<Comment, bool>>? whereExpression, string orderByFields = "Id") => throw new System.NotImplementedException();
+
+        #endregion
+    }
+
+    private sealed class FakeAttachmentService : IAttachmentService
+    {
+        public Task<List<AttachmentVo>> QueryAsync(System.Linq.Expressions.Expression<System.Func<Attachment, bool>>? whereExpression = null)
+        {
+            return Task.FromResult(new List<AttachmentVo>());
+        }
+
+        public Task<AttachmentVo?> QueryFirstAsync(System.Linq.Expressions.Expression<System.Func<Attachment, bool>>? whereExpression = null)
+        {
+            return Task.FromResult<AttachmentVo?>(null);
+        }
+
+        #region 未在当前测试中使用的方法，抛出 NotImplemented 以防误用
+
+        public Task<AttachmentVo?> UploadFileAsync(Microsoft.AspNetCore.Http.IFormFile file, FileUploadOptionsDto optionsDto, long uploaderId, string uploaderName) => throw new System.NotImplementedException();
+        public Task<bool> DeleteFileAsync(long attachmentId) => throw new System.NotImplementedException();
+        public Task<int> DeleteFilesAsync(List<long> attachmentIds) => throw new System.NotImplementedException();
+        public Task<List<AttachmentVo>> GetByBusinessAsync(string businessType, long businessId) => throw new System.NotImplementedException();
+        public Task<AttachmentVo?> FindByHashAsync(string fileHash) => throw new System.NotImplementedException();
+        public Task<bool> UpdateBusinessAssociationAsync(long attachmentId, string businessType, long businessId) => throw new System.NotImplementedException();
+        public Task IncrementDownloadCountAsync(long attachmentId) => throw new System.NotImplementedException();
+        public Task<(System.IO.Stream? stream, AttachmentVo? attachment)> GetDownloadStreamAsync(long attachmentId) => throw new System.NotImplementedException();
+        public Task<long> AddAsync(Attachment entity) => throw new System.NotImplementedException();
+        public Task<int> AddRangeAsync(List<Attachment> entities) => throw new System.NotImplementedException();
+        public Task<List<long>> AddSplitAsync(Attachment entity) => throw new System.NotImplementedException();
+        public Task<bool> DeleteByIdAsync(long id) => throw new System.NotImplementedException();
+        public Task<bool> DeleteAsync(Attachment entity) => throw new System.NotImplementedException();
+        public Task<int> DeleteAsync(System.Linq.Expressions.Expression<System.Func<Attachment, bool>> whereExpression) => throw new System.NotImplementedException();
+        public Task<int> DeleteByIdsAsync(List<long> ids) => throw new System.NotImplementedException();
+        public Task<bool> UpdateAsync(Attachment entity) => throw new System.NotImplementedException();
+        public Task<int> UpdateRangeAsync(List<Attachment> entities) => throw new System.NotImplementedException();
+        public Task<bool> UpdateColumnsAsync(Attachment entity, System.Linq.Expressions.Expression<System.Func<Attachment, object>> updateColumns) => throw new System.NotImplementedException();
+        public Task<int> UpdateColumnsAsync(System.Linq.Expressions.Expression<System.Func<Attachment, Attachment>> updateColumns, System.Linq.Expressions.Expression<System.Func<Attachment, bool>> whereExpression) => throw new System.NotImplementedException();
+        public Task<AttachmentVo?> QueryByIdAsync(long id) => throw new System.NotImplementedException();
+        public Task<AttachmentVo?> QuerySingleAsync(System.Linq.Expressions.Expression<System.Func<Attachment, bool>> whereExpression) => throw new System.NotImplementedException();
+        public Task<(List<AttachmentVo> data, int totalCount)> QueryPageAsync(System.Linq.Expressions.Expression<System.Func<Attachment, bool>>? whereExpression = null, int pageIndex = 1, int pageSize = 20, System.Linq.Expressions.Expression<System.Func<Attachment, object>>? orderByExpression = null, SqlSugar.OrderByType orderByType = SqlSugar.OrderByType.Asc) => throw new System.NotImplementedException();
+        public Task<int> QueryCountAsync(System.Linq.Expressions.Expression<System.Func<Attachment, bool>>? whereExpression = null) => throw new System.NotImplementedException();
+        public Task<bool> QueryExistsAsync(System.Linq.Expressions.Expression<System.Func<Attachment, bool>> whereExpression) => throw new System.NotImplementedException();
+        public Task<List<AttachmentVo>> QueryWithCacheAsync(System.Linq.Expressions.Expression<System.Func<Attachment, bool>>? whereExpression = null, int cacheTime = 10) => throw new System.NotImplementedException();
+        public Task<List<TResult>> QueryMuchAsync<T, T2, T3, TResult>(System.Linq.Expressions.Expression<System.Func<T, T2, T3, object[]>> joinExpression, System.Linq.Expressions.Expression<System.Func<T, T2, T3, TResult>> selectExpression, System.Linq.Expressions.Expression<System.Func<T, T2, T3, bool>>? whereLambda = null) where T : class, new() => throw new System.NotImplementedException();
+        public Task<List<Attachment>> QuerySplitAsync(System.Linq.Expressions.Expression<System.Func<Attachment, bool>>? whereExpression, string orderByFields = "Id") => throw new System.NotImplementedException();
 
         #endregion
     }
