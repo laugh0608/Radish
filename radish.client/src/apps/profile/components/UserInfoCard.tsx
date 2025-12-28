@@ -62,6 +62,7 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const [editUserName, setEditUserName] = useState('');
   const [editUserEmail, setEditUserEmail] = useState('');
@@ -139,27 +140,39 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
 
   const handleSave = async () => {
     setConfirmOpen(false);
+    setSaveError(null);
 
     const ageNum = editAge.trim() ? Number(editAge.trim()) : undefined;
 
-    await fetch(`${apiBaseUrl}/api/v1/User/UpdateMyProfile`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...(authHeader ? { Authorization: authHeader } : {})
-      },
-      body: JSON.stringify({
-        userName: editUserName.trim() || undefined,
-        userEmail: editUserEmail.trim() || undefined,
-        realName: editRealName.trim() || undefined,
-        age: Number.isFinite(ageNum) ? ageNum : undefined,
-        address: editAddress.trim() || undefined
-      })
-    });
+    try {
+      const res = await fetch(`${apiBaseUrl}/api/v1/User/UpdateMyProfile`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          ...(authHeader ? { Authorization: authHeader } : {})
+        },
+        body: JSON.stringify({
+          userName: editUserName.trim() || undefined,
+          userEmail: editUserEmail.trim() || undefined,
+          realName: editRealName.trim() || undefined,
+          age: Number.isFinite(ageNum) ? ageNum : undefined,
+          address: editAddress.trim() || undefined
+        })
+      });
 
-    setIsEditOpen(false);
-    await loadProfile();
+      const json = (await res.json()) as ApiResponse<unknown>;
+
+      if (!res.ok || !json.isSuccess) {
+        setSaveError(json.messageInfo || `保存失败: HTTP ${res.status}`);
+        return;
+      }
+
+      setIsEditOpen(false);
+      await loadProfile();
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const handleUploadAvatar = async (file: File) => {
@@ -199,6 +212,24 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
     return uploadResult;
   };
 
+  const handleRemoveAvatar = async () => {
+    try {
+      await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          ...(authHeader ? { Authorization: authHeader } : {})
+        },
+        body: JSON.stringify({ attachmentId: 0 })
+      });
+
+      await loadProfile();
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <div className={styles.card}>
       <div className={styles.header}>
@@ -232,6 +263,11 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
           onUpload={handleUploadAvatar}
           showPreview={false}
         />
+        {avatarSrc && (
+          <Button variant="secondary" size="small" onClick={handleRemoveAvatar} style={{ marginTop: '8px' }}>
+            移除头像
+          </Button>
+        )}
       </div>
 
       {(loading || loadingProfile) && (
@@ -258,7 +294,14 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
         </div>
       )}
 
-      <Modal isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} title="编辑个人资料">
+      <Modal
+        isOpen={isEditOpen}
+        onClose={() => {
+          setIsEditOpen(false);
+          setSaveError(null);
+        }}
+        title="编辑个人资料"
+      >
         <div className={styles.editForm}>
           <Input label="昵称" value={editUserName} onChange={(e) => setEditUserName(e.target.value)} fullWidth />
           <Input label="邮箱" value={editUserEmail} onChange={(e) => setEditUserEmail(e.target.value)} fullWidth />
@@ -266,8 +309,16 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
           <Input label="年龄" value={editAge} onChange={(e) => setEditAge(e.target.value)} fullWidth />
           <Input label="地址" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} fullWidth />
 
+          {saveError && <div className={styles.saveError}>{saveError}</div>}
+
           <div className={styles.editActions}>
-            <Button variant="secondary" onClick={() => setIsEditOpen(false)}>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setIsEditOpen(false);
+                setSaveError(null);
+              }}
+            >
               取消
             </Button>
             <Button onClick={() => setConfirmOpen(true)}>保存</Button>

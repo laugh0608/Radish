@@ -474,12 +474,39 @@ public class UserController : ControllerBase
     /// <summary>
     /// 设置当前用户头像（通过绑定 Avatar 附件）
     /// </summary>
+    /// <param name="dto">附件 ID（0 表示清空头像）</param>
     [HttpPost]
     [Authorize(Policy = "Client")]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> SetMyAvatar([FromBody] SetMyAvatarDto dto)
     {
         var userId = _httpContextUser.UserId;
+        var now = DateTime.Now;
+        var modifierName = _httpContextUser.UserName;
+
+        // 如果 attachmentId == 0，表示清空头像
+        if (dto.AttachmentId == 0)
+        {
+            await _attachmentService.UpdateColumnsAsync(
+                a => new Attachment
+                {
+                    BusinessId = null,
+                    ModifyTime = now,
+                    ModifyBy = modifierName,
+                    ModifyId = userId
+                },
+                a => a.UploaderId == userId &&
+                     !a.IsDeleted &&
+                     a.BusinessType == "Avatar" &&
+                     a.BusinessId == userId);
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "已清空头像"
+            };
+        }
 
         var attachment = await _attachmentService.QueryFirstAsync(a => a.Id == dto.AttachmentId && !a.IsDeleted);
         if (attachment == null)
@@ -505,11 +532,8 @@ public class UserController : ControllerBase
             };
         }
 
-        var now = DateTime.Now;
-        var modifierName = _httpContextUser.UserName;
-
         // 先取消旧头像关联（同一用户只保留最新 Avatar 关联）
-        // 保留 BusinessType=Avatar，仅清空 BusinessId，便于在“我的附件”里仍能按 Avatar 过滤查看历史头像
+        // 保留 BusinessType=Avatar，仅清空 BusinessId，便于在"我的附件"里仍能按 Avatar 过滤查看历史头像
         await _attachmentService.UpdateColumnsAsync(
             a => new Attachment
             {
