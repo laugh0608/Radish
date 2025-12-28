@@ -61,6 +61,16 @@
   margin-top: 8px;
 }
 
+.saveError {
+  padding: 10px;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  color: #d14343;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
 .info {
   flex: 1;
 }
