@@ -3,6 +3,7 @@ import { useUserStore } from '@/stores/userStore';
 import { UserInfoCard } from './components/UserInfoCard';
 import { UserPostList } from './components/UserPostList';
 import { UserCommentList } from './components/UserCommentList';
+import { UserAttachmentList } from './components/UserAttachmentList';
 import styles from './ProfileApp.module.css';
 
 interface UserStats {
@@ -15,7 +16,7 @@ interface UserStats {
 
 export const ProfileApp = () => {
   const { userId, userName, isAuthenticated } = useUserStore();
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'attachments'>('posts');
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -88,6 +89,12 @@ export const ProfileApp = () => {
           >
             我的评论
           </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'attachments' ? styles.active : ''}`}
+            onClick={() => setActiveTab('attachments')}
+          >
+            我的附件
+          </button>
         </div>
 
         <div className={styles.tabContent}>
@@ -96,6 +103,9 @@ export const ProfileApp = () => {
           )}
           {activeTab === 'comments' && (
             <UserCommentList userId={userId} apiBaseUrl={apiBaseUrl} />
+          )}
+          {activeTab === 'attachments' && (
+            <UserAttachmentList apiBaseUrl={apiBaseUrl} />
           )}
         </div>
       </div>
