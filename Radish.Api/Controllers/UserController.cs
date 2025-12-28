@@ -326,6 +326,119 @@ public class UserController : ControllerBase
         var birth = dto.Birth;
         var now = DateTime.Now;
 
+        if (normalizedUserName != null && normalizedUserName.Length > 200)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "用户名长度不能超过 200"
+            };
+        }
+
+        if (normalizedUserEmail != null)
+        {
+            if (normalizedUserEmail.Length > 200)
+            {
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                    MessageInfo = "邮箱长度不能超过 200"
+                };
+            }
+
+            try
+            {
+                _ = new System.Net.Mail.MailAddress(normalizedUserEmail);
+            }
+            catch
+            {
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                    MessageInfo = "邮箱格式不正确"
+                };
+            }
+        }
+
+        if (normalizedRealName != null && normalizedRealName.Length > 50)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "真实姓名长度不能超过 50"
+            };
+        }
+
+        if (normalizedAddress != null && normalizedAddress.Length > 2000)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "地址长度不能超过 2000"
+            };
+        }
+
+        if (sex.HasValue && (sex.Value < (int)UserSexEnum.Unknown || sex.Value > (int)UserSexEnum.Female))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "性别值不合法"
+            };
+        }
+
+        if (age.HasValue && age.Value < 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "年龄不能为负数"
+            };
+        }
+
+        if (normalizedUserName != null)
+        {
+            var nameExists = await _userService.QueryExistsAsync(u =>
+                u.UserName == normalizedUserName &&
+                !u.IsDeleted &&
+                u.Id != userId);
+
+            if (nameExists)
+            {
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                    MessageInfo = "用户名已被占用"
+                };
+            }
+        }
+
+        if (normalizedUserEmail != null)
+        {
+            var emailExists = await _userService.QueryExistsAsync(u =>
+                u.UserEmail == normalizedUserEmail &&
+                !u.IsDeleted &&
+                u.Id != userId);
+
+            if (emailExists)
+            {
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                    MessageInfo = "邮箱已被占用"
+                };
+            }
+        }
+
         var affectedRows = await _userService.UpdateColumnsAsync(
             u => new User
             {
@@ -391,6 +504,25 @@ public class UserController : ControllerBase
                 MessageInfo = "无权设置该附件为头像"
             };
         }
+
+        var now = DateTime.Now;
+        var modifierName = _httpContextUser.UserName;
+
+        // 先取消旧头像关联（同一用户只保留最新 Avatar 关联）
+        // 保留 BusinessType=Avatar，仅清空 BusinessId，便于在“我的附件”里仍能按 Avatar 过滤查看历史头像
+        await _attachmentService.UpdateColumnsAsync(
+            a => new Attachment
+            {
+                BusinessId = null,
+                ModifyTime = now,
+                ModifyBy = modifierName,
+                ModifyId = userId
+            },
+            a => a.UploaderId == userId &&
+                 !a.IsDeleted &&
+                 a.BusinessType == "Avatar" &&
+                 a.BusinessId == userId &&
+                 a.Id != dto.AttachmentId);
 
         var updated = await _attachmentService.UpdateBusinessAssociationAsync(dto.AttachmentId, "Avatar", userId);
         if (!updated)
