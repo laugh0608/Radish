@@ -86,6 +86,46 @@
 .actions {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.actionButton {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.actionButton:hover {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.dangerButton {
+  border-color: #f0d0d0;
+  color: #d14343;
+}
+
+.dangerButton:hover {
+  border-color: #d14343;
+  color: #d14343;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.toolbarRight {
+  margin-left: auto;
+  color: #999;
+  font-size: 13px;
 }
 
 .link {

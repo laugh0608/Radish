@@ -9,6 +9,7 @@ using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
+using System.Linq.Expressions;
 
 namespace Radish.Api.Controllers;
 
@@ -388,15 +389,45 @@ public class AttachmentController : ControllerBase
     [HttpGet]
     [Authorize]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetMyAttachments(int pageIndex = 1, int pageSize = 20)
+    public async Task<MessageModel> GetMyAttachments(
+        int pageIndex = 1,
+        int pageSize = 20,
+        string? businessType = null,
+        string? keyword = null)
     {
         if (pageIndex < 1) pageIndex = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 20;
+        businessType = businessType?.Trim();
+        keyword = keyword?.Trim();
 
         var userId = _httpContextUser.UserId;
 
+        // 基础条件：仅自己的、未删除
+        Expression<Func<Attachment, bool>> where;
+
+        if (!string.IsNullOrWhiteSpace(businessType) && !string.IsNullOrWhiteSpace(keyword))
+        {
+            where = a => a.UploaderId == userId && !a.IsDeleted
+                        && a.BusinessType == businessType
+                        && a.OriginalName.Contains(keyword);
+        }
+        else if (!string.IsNullOrWhiteSpace(businessType))
+        {
+            where = a => a.UploaderId == userId && !a.IsDeleted
+                        && a.BusinessType == businessType;
+        }
+        else if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            where = a => a.UploaderId == userId && !a.IsDeleted
+                        && a.OriginalName.Contains(keyword);
+        }
+        else
+        {
+            where = a => a.UploaderId == userId && !a.IsDeleted;
+        }
+
         var (data, totalCount) = await _attachmentService.QueryPageAsync(
-            a => a.UploaderId == userId && !a.IsDeleted,
+            where,
             pageIndex,
             pageSize,
             a => a.CreateTime,

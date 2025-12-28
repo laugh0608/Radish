@@ -74,6 +74,7 @@ export const ProfileApp = () => {
           userName={userName}
           stats={stats || undefined}
           loading={loadingStats}
+          apiBaseUrl={apiBaseUrl}
         />
 
         <div className={styles.tabs}>

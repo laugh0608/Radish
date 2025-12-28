@@ -4,11 +4,13 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Radish.Api.Resources;
+using SqlSugar;
 
 namespace Radish.Api.Controllers;
 
@@ -27,6 +29,8 @@ namespace Radish.Api.Controllers;
 [Tags("用户管理")]
 public class UserController : ControllerBase
 {
+    private readonly IAttachmentService _attachmentService;
+
     private readonly IUserService _userService;
     private readonly IHttpContextUser  _httpContextUser;
 
@@ -37,12 +41,14 @@ public class UserController : ControllerBase
         IUserService userService,
         IHttpContextUser httpContextUser,
         IPostService postService,
-        ICommentService commentService)
+        ICommentService commentService,
+        IAttachmentService attachmentService)
     {
         _userService = userService;
         _httpContextUser = httpContextUser;
         _postService = postService;
         _commentService = commentService;
+        _attachmentService = attachmentService;
     }
 
     /// <summary>
@@ -248,4 +254,187 @@ public class UserController : ControllerBase
             ResponseData = users
         };
     }
+
+    /// <summary>
+    /// 获取当前登录用户的个人资料（个人中心）
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = "Client")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetMyProfile()
+    {
+        var userId = _httpContextUser.UserId;
+        var user = await _userService.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted);
+        if (user == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "用户不存在"
+            };
+        }
+
+        // 当前方案：头像通过 Attachment 的 Avatar 业务类型关联（BusinessId = userId）实现
+        var avatar = await _attachmentService.QueryFirstAsync(a =>
+            a.UploaderId == userId &&
+            !a.IsDeleted &&
+            a.BusinessType == "Avatar" &&
+            a.BusinessId == userId);
+
+        var profile = new UserProfileVo
+        {
+            UserId = user.Uuid,
+            UserName = user.VoUsName,
+            UserEmail = user.VoUsEmail,
+            RealName = user.VoReNa,
+            Sex = user.VoSexDo,
+            Age = user.VoAgeDo,
+            Birth = user.VoBiTh,
+            Address = user.VoAdRes,
+            CreateTime = user.VoCreateTime,
+            AvatarAttachmentId = avatar?.Id,
+            AvatarUrl = avatar?.Url,
+            AvatarThumbnailUrl = avatar?.ThumbnailUrl
+        };
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = profile
+        };
+    }
+
+    /// <summary>
+    /// 更新当前登录用户的个人资料（个人中心）
+    /// </summary>
+    [HttpPost]
+    [Authorize(Policy = "Client")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> UpdateMyProfile([FromBody] UpdateMyProfileDto dto)
+    {
+        var userId = _httpContextUser.UserId;
+
+        var normalizedUserName = string.IsNullOrWhiteSpace(dto.UserName) ? null : dto.UserName.Trim();
+        var normalizedUserEmail = string.IsNullOrWhiteSpace(dto.UserEmail) ? null : dto.UserEmail.Trim();
+        var normalizedRealName = string.IsNullOrWhiteSpace(dto.RealName) ? null : dto.RealName.Trim();
+        var normalizedAddress = string.IsNullOrWhiteSpace(dto.Address) ? null : dto.Address.Trim();
+        var sex = dto.Sex;
+        var age = dto.Age;
+        var birth = dto.Birth;
+        var now = DateTime.Now;
+
+        var affectedRows = await _userService.UpdateColumnsAsync(
+            u => new User
+            {
+                UserName = normalizedUserName ?? u.UserName,
+                UserEmail = normalizedUserEmail ?? u.UserEmail,
+                UserRealName = normalizedRealName ?? u.UserRealName,
+                UserSex = sex ?? u.UserSex,
+                UserAge = age ?? u.UserAge,
+                UserBirth = birth ?? u.UserBirth,
+                UserAddress = normalizedAddress ?? u.UserAddress,
+                UpdateTime = now
+            },
+            u => u.Id == userId && !u.IsDeleted);
+
+        if (affectedRows <= 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "用户不存在"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "更新成功"
+        };
+    }
+
+    /// <summary>
+    /// 设置当前用户头像（通过绑定 Avatar 附件）
+    /// </summary>
+    [HttpPost]
+    [Authorize(Policy = "Client")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> SetMyAvatar([FromBody] SetMyAvatarDto dto)
+    {
+        var userId = _httpContextUser.UserId;
+
+        var attachment = await _attachmentService.QueryFirstAsync(a => a.Id == dto.AttachmentId && !a.IsDeleted);
+        if (attachment == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "附件不存在"
+            };
+        }
+
+        // 只有上传者或管理员可以绑定为头像
+        var roles = _httpContextUser.GetClaimValueByType("role");
+        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        if (attachment.UploaderId != userId && !isAdmin)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "无权设置该附件为头像"
+            };
+        }
+
+        var updated = await _attachmentService.UpdateBusinessAssociationAsync(dto.AttachmentId, "Avatar", userId);
+        if (!updated)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
+                MessageInfo = "设置头像失败"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "设置成功"
+        };
+    }
+
+    /// <summary>
+    /// 获取当前用户积分余额（占位，M6 将接入真实积分系统）
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = "Client")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetMyPoints()
+    {
+        await Task.CompletedTask;
+        var userId = _httpContextUser.UserId;
+
+        var vo = new UserPointsVo
+        {
+            UserId = userId,
+            Balance = 0
+        };
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = vo
+        };
+    }
 }
+
