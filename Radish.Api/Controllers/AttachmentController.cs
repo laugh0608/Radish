@@ -466,7 +466,17 @@ public class AttachmentController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Download(long id)
     {
-        var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(id);
+        // 获取当前用户信息（如果已登录）
+        long? userId = null;
+        List<string>? roles = null;
+
+        if (_httpContextUser.UserId > 0)
+        {
+            userId = _httpContextUser.UserId;
+            roles = _httpContextUser.GetClaimValueByType("role");
+        }
+
+        var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(id, userId, roles);
 
         if (stream == null || attachment == null)
         {
@@ -551,7 +561,17 @@ public class AttachmentController : ControllerBase
             }
 
             // 下载文件
-            var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(attachmentId.Value);
+            // 获取当前用户信息（如果已登录）
+            long? downloadUserId = null;
+            List<string>? downloadRoles = null;
+
+            if (userId > 0)
+            {
+                downloadUserId = userId;
+                downloadRoles = _httpContextUser.GetClaimValueByType("role");
+            }
+
+            var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(attachmentId.Value, downloadUserId, downloadRoles);
             if (stream == null || attachment == null)
             {
                 return NotFound(new MessageModel
