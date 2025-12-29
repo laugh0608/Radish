@@ -523,9 +523,98 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
 
 ---
 
-## 14. 讨论问题清单
+## 14. 落地实现清单（建议按优先级推进）
 
-### 14.1 待确认的设计细节
+> 本节用于把“设计方案”落到可直接开发的任务列表，避免实现时反复补洞。
+
+### 14.1 数据模型与约束（必须先定）
+
+1. **平台账户模型（Platform Account）**
+   - 明确“平台账户”是全局唯一还是按租户隔离（建议：按 `TenantId` 一套平台账户）。
+   - 在业务实现中，平台手续费收入统一归集到平台账户（`to_user_id = platformUserId`）。
+
+2. **交易流水号（transaction_no）与幂等性**
+   - 明确流水号生成方：
+     - 建议：**服务端生成** `transaction_no`（对外提供 `Idempotency-Key`），客户端只负责传入幂等键。
+   - 幂等键存储与约束：
+     - `idempotency_key`（建议新增字段）+ `business_type` + `business_id` + `from_user_id` 组合唯一。
+     - 同一请求重试必须返回同一笔交易结果（SUCCESS/FAILED/PENDING）。
+
+3. **交易表与账本表职责边界（coin_transaction vs balance_change_log）**
+   - `coin_transaction`：记录“业务交易意图与结果”（谁给谁、多少、手续费、业务关联、状态）。
+   - `balance_change_log`：记录“账户分录”（每个 user 的余额变动明细），可用于对账与追溯。
+   - 建议口径：
+     - 每笔 `coin_transaction` 至少对应 1 条或多条 `balance_change_log`（转账通常是 2~3 条：转出、转入、平台手续费）。
+
+4. **去重/防刷的落地键（Daily Once Rule）**
+   - 需要明确去重维度：
+     - `user_id + action_type + target_type + target_id + date`。
+   - 建议新增“奖励去重表”（或在 `coin_transaction` 上用唯一键实现）：
+     - 例如：`LIKE_REWARD` 以 `business_type=POST_LIKE`、`business_id=postId`、`from_user_id=NULL`、`to_user_id=authorId`、`reward_date` 唯一。
+
+5. **金额字段的非负与溢出边界**
+   - 统一约束：余额不得为负；手续费/金额不得为负。
+   - 所有金额运算使用 `checked`（C#）或在写库前做上限校验，防止极端输入造成溢出。
+
+### 14.2 事务与并发策略（必须写进实现规范）
+
+1. **单库事务原则**
+   - 一次余额变动（扣款/转账/奖励）必须在同一个数据库事务内完成：
+     - 写 `coin_transaction`（PENDING）→ 更新余额 → 写 `balance_change_log` → 更新 `coin_transaction`（SUCCESS/FAILED）。
+
+2. **乐观锁 vs 悲观锁：明确默认方案**
+   - 默认建议：乐观锁（`version` 字段），冲突重试 N 次。
+   - 高并发热点场景（例如点赞奖励）可评估：悲观锁或“按用户维度串行化”（队列/锁）。
+
+3. **冻结余额的使用边界**
+   - 明确哪些场景需要 `frozen_balance`：
+     - 典型：支付/消费类需要先冻结再确认扣除。
+     - 纯奖励类通常不需要冻结。
+
+### 14.3 接口草案（MVP 先把最小闭环跑通）
+
+> 先实现“余额查询 + 系统发放 + 转账 + 账单查询”，再逐步接入奖励/消费。
+
+1. `GET /api/v1/Coin/Balance`
+   - 返回：可用余额、冻结余额、累计获得/消费等。
+
+2. `GET /api/v1/Coin/Transactions`
+   - 参数：pageIndex/pageSize、transactionType、status、dateRange
+   - 返回：`coin_transaction` 列表（分页）。
+
+3. `POST /api/v1/Coin/Transfer`
+   - 入参：toUserId、amount、idempotencyKey
+   - 规则：校验限额、手续费、余额充足；写交易与分录。
+
+4. `POST /api/v1/Coin/AdminAdjust`（管理员）
+   - 入参：userId、deltaAmount（可正可负）、reason、idempotencyKey
+   - 必须写审计日志与分录。
+
+### 14.4 与论坛/神评沙发的对接点（建议明确触发时机）
+
+1. **点赞奖励（LIKE_REWARD）**
+   - 触发点建议：点赞成功后异步发放（避免接口被奖励逻辑拖慢）。
+   - 去重：同一用户对同一内容每日仅奖励一次（见 14.1）。
+
+2. **神评/沙发奖励**
+   - 当前你已经有定时统计：建议以统计任务为发放入口（每日结算），避免实时刷赞套利。
+   - 奖励上限：每日/每帖/每用户上限建议写清楚。
+
+### 14.5 对账口径与定时任务（上线前必须有）
+
+1. **资金守恒公式落地**
+   - 需要明确“发行量/消耗量”的口径来自哪些 `transaction_type`。
+
+2. **每日对账任务**
+   - 建议实现一个 Hangfire Job：
+     - 汇总用户余额、平台余额、当日发行/消耗，写入 `daily_balance_report`。
+     - 差异非 0：告警 + 标记 UNBALANCED。
+
+---
+
+## 15. 讨论问题清单
+
+### 15.1 待确认的设计细节
 
 1. **手续费率是否合理？**
    - 当前设计：10% / 5% / 3% 三档
@@ -551,7 +640,7 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
    - 手续费收入如何使用？
    - 是否用于活动奖励、公益捐赠？
 
-### 14.2 技术选型
+### 15.2 技术选型
 
 1. **并发控制方案**
    - 乐观锁 vs 悲观锁？
@@ -567,7 +656,7 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
 
 ---
 
-## 15. 参考资料
+## 16. 参考资料
 
 - [支付宝积分规则](https://render.alipay.com/p/f/fd-izto3ght/index.html)
 - [微信支付分设计](https://pay.weixin.qq.com/index.php/public/wechatpay_score)
@@ -578,6 +667,6 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
 
 **文档版本**：v1.0
 **创建日期**：2025-12-28
-**最后更新**：2025-12-28
+**最后更新**：2025-12-29
 **负责人**：待定
-**审核状态**：待讨论
+**审核状态**：讨论中（已补充落地清单）
