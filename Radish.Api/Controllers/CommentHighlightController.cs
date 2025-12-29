@@ -6,7 +6,6 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Service.Jobs;
-using Radish.Shared;
 using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers;
@@ -153,18 +152,18 @@ public class CommentHighlightController : ControllerBase
     [HttpPost]
     [Authorize(Roles = "Admin,System")]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> TriggerStatJob(DateTime? statDate = null)
+    public Task<MessageModel> TriggerStatJob(DateTime? statDate = null)
     {
         var jobId = BackgroundJob.Enqueue<CommentHighlightJob>(
             job => job.ExecuteAsync(statDate));
 
-        return new MessageModel
+        return Task.FromResult(new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = $"统计任务已触发，任务 ID: {jobId}",
             ResponseData = new { jobId, statDate = statDate ?? DateTime.Today.AddDays(-1) }
-        };
+        });
     }
 
     /// <summary>
