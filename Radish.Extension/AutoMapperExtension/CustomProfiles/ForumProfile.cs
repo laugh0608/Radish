@@ -34,5 +34,9 @@ public class ForumProfile : Profile
         // UserCommentLike -> UserCommentLikeVo
         CreateMap<UserCommentLike, UserCommentLikeVo>();
         CreateMap<UserCommentLikeVo, UserCommentLike>();
+
+        // CommentHighlight -> CommentHighlightVo
+        CreateMap<CommentHighlight, CommentHighlightVo>();
+        CreateMap<CommentHighlightVo, CommentHighlight>();
     }
 }

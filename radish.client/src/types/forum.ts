@@ -71,6 +71,30 @@ export interface CommentNode {
   isLiked?: boolean;
   children?: CommentNode[];
   childrenTotal?: number; // 子评论总数（用于懒加载显示）
+
+  // 神评/沙发标识
+  isGodComment?: boolean;  // 是否为神评
+  isSofa?: boolean;        // 是否为沙发
+  highlightRank?: number;  // 高亮排名（1=第一名）
+}
+
+/**
+ * 神评/沙发高亮记录
+ */
+export interface CommentHighlight {
+  id: number;
+  postId: number;
+  commentId: number;
+  parentCommentId: number | null;
+  highlightType: number;       // 1=神评, 2=沙发
+  statDate: string;
+  likeCount: number;
+  rank: number;
+  contentSnapshot: string | null;
+  authorId: number;
+  authorName: string;
+  isCurrent: boolean;
+  createTime: string;
 }
 
 /**

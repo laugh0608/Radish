@@ -501,6 +501,24 @@ if (fileCleanupConfig.GetValue<bool>("OrphanAttachments:Enable", true))
     Log.Information("[Hangfire] 已注册定时任务: cleanup-expired-access-tokens (计划: {Schedule})", schedule);
 }
 
+// 神评/沙发统计任务
+var commentHighlightConfig = builder.Configuration.GetSection("Hangfire:CommentHighlight");
+if (commentHighlightConfig.GetValue<bool>("Enable", true))
+{
+    var schedule = commentHighlightConfig["Schedule"] ?? "0 1 * * *";
+
+    RecurringJob.AddOrUpdate<CommentHighlightJob>(
+        "comment-highlight-stat",
+        job => job.ExecuteAsync(null),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: comment-highlight-stat (计划: {Schedule})", schedule);
+}
+
 // -------------- App 运行阶段 ---------------
 app.Run();
 // -------------- App 运行阶段 ---------------
