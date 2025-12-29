@@ -1593,9 +1593,10 @@ export async function getChildComments(
 - 不同排序方式下保持神评/沙发标识
 
 **性能优化**:
-- 4 个复合索引覆盖常用查询场景
+- 采用多个单字段索引组合满足常用查询（避免 SqlSugar Code First 复合索引解析异常）
 - 并行加载评论树和神评/沙发标识
 - 错误容错：神评/沙发加载失败不影响评论显示
+- 子评论预览：无沙发统计数据时，收起态展示“最热一条回复”；必要时自动预加载第一页子评论
 
 #### 8.3 API 接口
 
@@ -1627,10 +1628,11 @@ export async function getChildComments(
 - 冗余字段：`ContentSnapshot`, `AuthorName`（避免 JOIN 查询）
 
 **索引设计**:
-- `idx_post_type_current`: 查询某个帖子的当前神评/沙发
-- `idx_parent_type_current`: 查询某个父评论的当前沙发
-- `idx_stat_date`: 按日期查询历史记录
-- `idx_comment_id`: 查询某个评论的历史记录
+- `idx_post_id`: PostId
+- `idx_parent_comment_id`: ParentCommentId
+- `idx_stat_date`: StatDate
+- `idx_comment_id`: CommentId
+- `idx_is_current`: IsCurrent
 
 #### 8.5 使用指南
 

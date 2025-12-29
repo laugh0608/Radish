@@ -126,17 +126,14 @@
 **索引设计**：
 
 ```csharp
-// 查询某个帖子的当前神评/沙发
-[SugarIndex("idx_post_type_current", nameof(PostId), nameof(HighlightType), nameof(IsCurrent))]
+// 说明：SqlSugar 的复合索引特性在本项目当前用法下容易触发 Code First 解析异常，
+// 因此这里采用“多个单字段索引”组合来满足查询需求。
 
-// 查询某个父评论的当前沙发
-[SugarIndex("idx_parent_type_current", nameof(ParentCommentId), nameof(HighlightType), nameof(IsCurrent))]
-
-// 按日期查询历史记录
-[SugarIndex("idx_stat_date", nameof(StatDate))]
-
-// 查询某个评论的历史记录
-[SugarIndex("idx_comment_id", nameof(CommentId))]
+[SugarIndex("idx_post_id", nameof(PostId), OrderByType.Asc)]
+[SugarIndex("idx_parent_comment_id", nameof(ParentCommentId), OrderByType.Asc)]
+[SugarIndex("idx_stat_date", nameof(StatDate), OrderByType.Desc)]
+[SugarIndex("idx_comment_id", nameof(CommentId), OrderByType.Asc)]
+[SugarIndex("idx_is_current", nameof(IsCurrent), OrderByType.Asc)]
 ```
 
 **设计要点**：
@@ -583,16 +580,16 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentSofas?parentCommentI
 ### 数据库优化
 
 1. **索引优化**：
-   - 4 个复合索引覆盖常用查询场景
-   - `IsCurrent` 字段快速过滤当前有效记录
-   - 避免全表扫描
+   - 当前实现采用多个单字段索引组合（`PostId`/`ParentCommentId`/`StatDate`/`CommentId`/`IsCurrent`）
+   - `IsCurrent` 字段用于快速过滤当前有效记录
+   - 若后续需要更强查询性能，可评估在 SqlSugar CodeFirst 之外以迁移脚本方式创建复合索引
 
 2. **冗余字段**：
    - `ContentSnapshot`、`AuthorName` 等冗余字段
    - 避免 JOIN 查询，提升查询性能
 
 3. **批量插入**：
-   - 使用 `AddAsync(List<CommentHighlight>)` 批量插入
+   - 使用 `AddRangeAsync(List<CommentHighlight>)` 批量插入
    - 减少数据库往返次数
 
 ### 前端优化
@@ -605,9 +602,10 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentSofas?parentCommentI
    - 神评/沙发加载失败不影响评论显示
    - 使用 `.catch(() => [])` 返回空数组
 
-3. **懒加载**：
-   - 子评论按需加载
-   - 沙发标识在展开子评论时加载
+3. **子评论加载与预览**：
+   - 若后端在评论树中不返回 `children` 详情，仅返回 `childrenTotal`，前端会自动预加载第一页子评论用于展示预览
+   - 收起态优先展示“沙发”，若没有沙发统计数据则展示当前已加载子评论中的“最热一条”作为预览
+   - 展开后支持分页加载更多子评论
 
 ### 缓存策略（可选）
 
