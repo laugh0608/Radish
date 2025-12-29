@@ -112,6 +112,28 @@ export const CommentNode = ({
     setChildSortBy(null); // 重置排序方式为默认值
   }, [node.children]);
 
+  // 若后端只返回 childrenTotal（不带 children 列表），为了“收起态也能看到一条回复”，这里自动预加载第一页子评论
+  useEffect(() => {
+    if (level !== 0) return;
+    if (!hasChildren) return;
+    if (loadedChildren.length > 0) return;
+    if (!onLoadMoreChildren) return;
+    if (isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    onLoadMoreChildren(node.id, 1, pageSize)
+      .then(children => {
+        setLoadedChildren(children);
+        setCurrentPage(1);
+      })
+      .catch(error => {
+        console.error('预加载子评论失败:', error);
+      })
+      .finally(() => {
+        setIsLoadingMore(false);
+      });
+  }, [hasChildren, isLoadingMore, level, loadedChildren.length, node.id, onLoadMoreChildren, pageSize]);
+
   // 处理点赞
   const handleLike = async () => {
     if (!onLike || isLiking) return;
@@ -231,9 +253,20 @@ export const CommentNode = ({
       return loadedChildren;
     }
 
+    // 收起状态下：优先展示“沙发”（如果有），否则展示当前已加载子评论里最热的一条
+    const collapsedPreview = (() => {
+      if (topSofaComment) return topSofaComment;
+      if (loadedChildren.length === 0) return null;
+
+      return [...loadedChildren].sort((a, b) => {
+        const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
+        if (likeDiff !== 0) return likeDiff;
+        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+      })[0];
+    })();
+
     if (!isExpanded) {
-      // 未展开：只显示当前点赞数最高的沙发
-      return topSofaComment ? [topSofaComment] : [];
+      return collapsedPreview ? [collapsedPreview] : [];
     }
 
     if (childSortBy === null && topSofaComment) {
