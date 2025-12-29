@@ -42,16 +42,17 @@ public class CommentHighlightController : ControllerBase
         var godComments = await _highlightService.QueryAsync(
             h => h.PostId == postId &&
                  h.HighlightType == 1 &&
-                 h.IsCurrent,
-            h => h.Rank,
-            SqlSugar.OrderByType.Asc);
+                 h.IsCurrent);
+
+        // 在内存中按排名升序排序
+        var sortedComments = godComments.OrderBy(h => h.Rank).ToList();
 
         return new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
-            ResponseData = godComments
+            ResponseData = sortedComments
         };
     }
 
@@ -68,16 +69,17 @@ public class CommentHighlightController : ControllerBase
         var sofas = await _highlightService.QueryAsync(
             h => h.ParentCommentId == parentCommentId &&
                  h.HighlightType == 2 &&
-                 h.IsCurrent,
-            h => h.Rank,
-            SqlSugar.OrderByType.Asc);
+                 h.IsCurrent);
+
+        // 在内存中按排名升序排序
+        var sortedSofas = sofas.OrderBy(h => h.Rank).ToList();
 
         return new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
-            ResponseData = sofas
+            ResponseData = sortedSofas
         };
     }
 
@@ -180,16 +182,17 @@ public class CommentHighlightController : ControllerBase
         var trend = await _highlightService.QueryAsync(
             h => h.PostId == postId &&
                  h.HighlightType == 1 &&
-                 h.StatDate >= startDate,
-            h => h.StatDate,
-            SqlSugar.OrderByType.Desc);
+                 h.StatDate >= startDate);
+
+        // 在内存中按统计日期降序排序
+        var sortedTrend = trend.OrderByDescending(h => h.StatDate).ToList();
 
         return new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
-            ResponseData = trend
+            ResponseData = sortedTrend
         };
     }
 }
