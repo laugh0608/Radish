@@ -82,9 +82,12 @@ export const CommentNode = ({
     );
   });
 
-  // 找出沙发（点赞数最多的子评论，如果点赞数相同则按时间最新）
-  const sofaComment = node.children && node.children.length > 0
-    ? [...node.children].sort((a, b) => {
+  // 找出所有沙发（后端标记的）
+  const sofaComments = loadedChildren.filter(c => c.isSofa);
+
+  // 找出当前点赞数最高的沙发（用于置顶显示）
+  const topSofaComment = sofaComments.length > 0
+    ? [...sofaComments].sort((a, b) => {
         // 先按点赞数降序
         if ((b.likeCount || 0) !== (a.likeCount || 0)) {
           return (b.likeCount || 0) - (a.likeCount || 0);
@@ -229,14 +232,14 @@ export const CommentNode = ({
     }
 
     if (!isExpanded) {
-      // 未展开：只显示沙发
-      return sofaComment ? [sofaComment] : [];
+      // 未展开：只显示当前点赞数最高的沙发
+      return topSofaComment ? [topSofaComment] : [];
     }
 
-    if (childSortBy === null && sofaComment) {
-      // 展开且未手动排序：沙发置顶 + 其他按时间升序
-      const others = loadedChildren.filter(c => c.id !== sofaComment.id);
-      return [sofaComment, ...others];
+    if (childSortBy === null && topSofaComment) {
+      // 展开且未手动排序：当前点赞数最高的沙发置顶 + 其他按时间升序
+      const others = loadedChildren.filter(c => c.id !== topSofaComment.id);
+      return [topSofaComment, ...others];
     }
 
     // 展开且手动排序：按排序结果显示
@@ -248,13 +251,13 @@ export const CommentNode = ({
       <div className={styles.header}>
         <span className={styles.author}>{node.authorName}</span>
         {node.createTime && <span className={styles.time}> · {node.createTime}</span>}
-        {/* 沙发标识（仅子评论） */}
-        {level === 1 && isGodComment && (
-          <span className={styles.sofaBadge}>沙发</span>
-        )}
         {/* 神评标识（仅父评论） */}
         {level === 0 && isGodComment && (
           <span className={styles.godCommentBadge}>神评</span>
+        )}
+        {/* 沙发标识（仅子评论） */}
+        {level === 1 && node.isSofa && (
+          <span className={styles.sofaBadge}>沙发</span>
         )}
         {isAuthor && (
           <div className={styles.authorActions}>
