@@ -1,0 +1,38 @@
+### 神评/沙发管理 API 测试
+
+@baseUrl = http://localhost:5100/api/v1
+@token = your_jwt_token_here
+
+### 1. 获取帖子的当前神评列表
+GET {{baseUrl}}/CommentHighlight/GetCurrentGodComments?postId=1
+Content-Type: application/json
+
+### 2. 获取父评论的当前沙发列表
+GET {{baseUrl}}/CommentHighlight/GetCurrentSofas?parentCommentId=1
+Content-Type: application/json
+
+### 3. 检查评论是否为神评或沙发
+GET {{baseUrl}}/CommentHighlight/CheckHighlight?commentId=1
+Content-Type: application/json
+
+### 4. 获取评论的历史高亮记录（分页）
+GET {{baseUrl}}/CommentHighlight/GetCommentHistory?commentId=1&pageIndex=1&pageSize=20
+Content-Type: application/json
+
+### 5. 手动触发神评/沙发统计任务（需要管理员权限）
+POST {{baseUrl}}/CommentHighlight/TriggerStatJob
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 6. 手动触发神评/沙发统计任务（指定日期）
+POST {{baseUrl}}/CommentHighlight/TriggerStatJob?statDate=2025-12-28
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+### 7. 获取帖子的神评历史趋势（最近 30 天）
+GET {{baseUrl}}/CommentHighlight/GetGodCommentTrend?postId=1&days=30
+Content-Type: application/json
+
+### 8. 获取帖子的神评历史趋势（最近 7 天）
+GET {{baseUrl}}/CommentHighlight/GetGodCommentTrend?postId=1&days=7
+Content-Type: application/json
