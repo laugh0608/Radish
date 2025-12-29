@@ -386,7 +386,7 @@ export const CommentNode = ({
                   level={1}
                   currentUserId={currentUserId}
                   pageSize={pageSize}
-                  isGodComment={sofaComment !== null && child.id === sofaComment.id}
+                  isGodComment={false} // 子评论不可能是神评，沙发标识通过 node.isSofa 判断
                   onDelete={onDelete}
                   onEdit={onEdit}
                   onLike={onLike}
