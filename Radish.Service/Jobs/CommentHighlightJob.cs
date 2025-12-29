@@ -63,7 +63,7 @@ public class CommentHighlightJob
         try
         {
             // 查询所有有评论的帖子
-            var postsWithComments = await _commentRepository.Context.Queryable<Comment>()
+            var postsWithComments = await _commentRepository.DbBase.Queryable<Comment>()
                 .Where(c => !c.IsDeleted && c.IsEnabled && c.ParentId == null)
                 .GroupBy(c => c.PostId)
                 .Select(g => g.PostId)
@@ -81,13 +81,13 @@ public class CommentHighlightJob
             foreach (var postId in postsWithComments)
             {
                 // 查询该帖子的所有父评论，按点赞数降序、创建时间降序
-                var topComments = await _commentRepository.Context.Queryable<Comment>()
+                var topComments = await _commentRepository.DbBase.Queryable<Comment>()
                     .Where(c => c.PostId == postId &&
                                c.ParentId == null &&
                                !c.IsDeleted &&
                                c.IsEnabled)
-                    .OrderByDescending(c => c.LikeCount)
-                    .ThenByDescending(c => c.CreateTime)
+                    .OrderBy(c => c.LikeCount, OrderByType.Desc)
+                    .OrderBy(c => c.CreateTime, OrderByType.Desc)
                     .Take(5) // 取前5名，用于排名
                     .ToListAsync();
 
@@ -157,7 +157,7 @@ public class CommentHighlightJob
             // 批量插入
             if (godComments.Any())
             {
-                await _highlightRepository.AddAsync(godComments);
+                await _highlightRepository.AddRangeAsync(godComments);
                 Log.Information("[CommentHighlight] 新增神评记录：{Count} 条", godComments.Count);
             }
 
@@ -178,7 +178,7 @@ public class CommentHighlightJob
         try
         {
             // 查询所有有子评论的父评论
-            var parentsWithChildren = await _commentRepository.Context.Queryable<Comment>()
+            var parentsWithChildren = await _commentRepository.DbBase.Queryable<Comment>()
                 .Where(c => !c.IsDeleted && c.IsEnabled && c.ParentId != null)
                 .GroupBy(c => c.ParentId)
                 .Select(g => g.ParentId)
@@ -198,12 +198,12 @@ public class CommentHighlightJob
                 if (!parentId.HasValue) continue;
 
                 // 查询该父评论下的所有子评论，按点赞数降序、创建时间降序
-                var topChildren = await _commentRepository.Context.Queryable<Comment>()
+                var topChildren = await _commentRepository.DbBase.Queryable<Comment>()
                     .Where(c => c.ParentId == parentId.Value &&
                                !c.IsDeleted &&
                                c.IsEnabled)
-                    .OrderByDescending(c => c.LikeCount)
-                    .ThenByDescending(c => c.CreateTime)
+                    .OrderBy(c => c.LikeCount, OrderByType.Desc)
+                    .OrderBy(c => c.CreateTime, OrderByType.Desc)
                     .Take(5) // 取前5名
                     .ToListAsync();
 
@@ -277,7 +277,7 @@ public class CommentHighlightJob
             // 批量插入
             if (sofas.Any())
             {
-                await _highlightRepository.AddAsync(sofas);
+                await _highlightRepository.AddRangeAsync(sofas);
                 Log.Information("[CommentHighlight] 新增沙发记录：{Count} 条", sofas.Count);
             }
 
