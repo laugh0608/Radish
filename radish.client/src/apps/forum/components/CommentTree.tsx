@@ -32,32 +32,37 @@ export const CommentTree = ({
   onLoadMoreChildren,
   onSortChange
 }: CommentTreeProps) => {
-  // 找出神评（点赞数最多的父评论，如果点赞数相同则按时间最新）
-  const godComment = useMemo(() => {
-    if (comments.length === 0) return null;
-    return [...comments].sort((a, b) => {
+  // 找出所有神评（后端标记的）
+  const godComments = useMemo(() => {
+    return comments.filter(c => c.isGodComment);
+  }, [comments]);
+
+  // 找出当前点赞数最高的神评（用于置顶显示）
+  const topGodComment = useMemo(() => {
+    if (godComments.length === 0) return null;
+    return [...godComments].sort((a, b) => {
       // 先按点赞数降序
       if ((b.likeCount || 0) !== (a.likeCount || 0)) {
         return (b.likeCount || 0) - (a.likeCount || 0);
       }
-      // 点赞数相同时按时间降序（最新的在前）
+      // 点赞数相同时按创建时间降序（最新的在前）
       return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
     })[0];
-  }, [comments]);
+  }, [godComments]);
 
   // 根据排序状态决定显示顺序
   const displayComments = useMemo(() => {
     if (comments.length === 0) return [];
 
-    if (sortBy === null && godComment) {
-      // 默认排序：神评置顶 + 其他按时间升序
-      const others = comments.filter(c => c.id !== godComment.id);
-      return [godComment, ...others];
+    if (sortBy === null && topGodComment) {
+      // 默认排序：当前点赞数最高的神评置顶 + 其他按时间升序
+      const others = comments.filter(c => c.id !== topGodComment.id);
+      return [topGodComment, ...others];
     }
 
     // 手动排序时，直接使用后端返回的顺序（此时不再需要前端重新排序）
     return comments;
-  }, [comments, sortBy, godComment]);
+  }, [comments, sortBy, topGodComment]);
 
   return (
     <div className={styles.container}>
@@ -97,7 +102,7 @@ export const CommentTree = ({
             level={0}
             currentUserId={currentUserId}
             pageSize={pageSize}
-            isGodComment={godComment !== null && comment.id === godComment.id}
+            isGodComment={comment.isGodComment || false}
             onDelete={onDeleteComment}
             onEdit={onEditComment}
             onLike={onLikeComment}
