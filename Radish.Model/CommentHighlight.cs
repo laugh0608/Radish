@@ -11,10 +11,10 @@ namespace Radish.Model;
 /// <remarks>
 /// 记录每日统计的神评（父评论点赞最高）和沙发（子评论点赞最高）
 /// </remarks>
-[SugarIndex("idx_post_type_current", nameof(PostId), nameof(HighlightType), nameof(IsCurrent), OrderByType = OrderByType.Asc)]
-[SugarIndex("idx_parent_type_current", nameof(ParentCommentId), nameof(HighlightType), nameof(IsCurrent), OrderByType = OrderByType.Asc)]
-[SugarIndex("idx_stat_date", nameof(StatDate), OrderByType = OrderByType.Desc)]
-[SugarIndex("idx_comment_id", nameof(CommentId), OrderByType = OrderByType.Asc)]
+[SugarIndex("idx_post_type_current", $"{nameof(PostId)},{nameof(HighlightType)},{nameof(IsCurrent)}", OrderByType.Asc)]
+[SugarIndex("idx_parent_type_current", $"{nameof(ParentCommentId)},{nameof(HighlightType)},{nameof(IsCurrent)}", OrderByType.Asc)]
+[SugarIndex("idx_stat_date", nameof(StatDate), OrderByType.Desc)]
+[SugarIndex("idx_comment_id", nameof(CommentId), OrderByType.Asc)]
 public class CommentHighlight : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>帖子 ID</summary>
