@@ -129,7 +129,12 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 // 添加控制器 + 视图（用于登录页）
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews()
+    .AddJsonOptions(options =>
+    {
+        // 🚀 配置 JSON 序列化使用 camelCase 命名策略（保持与 API 一致）
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    });
 
 // OpenIddict 初始化种子数据（使用 EF Core 存储）
 builder.Services.AddHostedService<OpenIddictSeedHostedService>();

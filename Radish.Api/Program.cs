@@ -116,6 +116,8 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
+        // 🚀 配置 JSON 序列化使用 camelCase 命名策略（前端期望 authorName，而不是 AuthorName）
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.Converters.Add(new Int64ToStringConverter());
         options.JsonSerializerOptions.Converters.Add(new NullableInt64ToStringConverter());
     });
