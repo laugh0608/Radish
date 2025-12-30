@@ -1,8 +1,10 @@
 using AutoMapper;
+using Radish.Common.CacheTool;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Serilog;
 using SqlSugar;
 
 namespace Radish.Service;
@@ -12,18 +14,24 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 {
     private readonly IBaseRepository<Comment> _commentRepository;
     private readonly IBaseRepository<UserCommentLike> _userCommentLikeRepository;
+    private readonly IBaseRepository<CommentHighlight> _highlightRepository;
     private readonly IPostService _postService;
+    private readonly ICaching _caching;
 
     public CommentService(
         IMapper mapper,
         IBaseRepository<Comment> baseRepository,
         IBaseRepository<UserCommentLike> userCommentLikeRepository,
-        IPostService postService)
+        IBaseRepository<CommentHighlight> highlightRepository,
+        IPostService postService,
+        ICaching caching)
         : base(mapper, baseRepository)
     {
         _commentRepository = baseRepository;
         _userCommentLikeRepository = userCommentLikeRepository;
+        _highlightRepository = highlightRepository;
         _postService = postService;
+        _caching = caching;
     }
 
     /// <summary>
@@ -160,6 +168,28 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         // 3. 更新评论的点赞计数
         comment.LikeCount = Math.Max(0, comment.LikeCount + likeCountDelta);
         await _commentRepository.UpdateAsync(comment);
+
+        // 🚀 事件驱动优化：异步触发神评/沙发检查（不阻塞用户操作）
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                if (comment.ParentId == null)
+                {
+                    // 父评论：检查神评
+                    await CheckAndUpdateGodCommentAsync(comment.PostId);
+                }
+                else
+                {
+                    // 子评论：检查沙发
+                    await CheckAndUpdateSofaAsync(comment.ParentId.Value, comment.PostId);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "[CommentService] 点赞后神评/沙发检查失败：CommentId={CommentId}", commentId);
+            }
+        });
 
         return new CommentLikeResultDto
         {
@@ -404,5 +434,198 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         await _commentRepository.UpdateAsync(comment);
 
         return (true, "编辑成功");
+    }
+
+    /// <summary>
+    /// 检查并更新帖子的神评
+    /// </summary>
+    /// <remarks>
+    /// 当父评论被点赞/取消点赞时调用，实时更新神评状态
+    /// </remarks>
+    private async Task CheckAndUpdateGodCommentAsync(long postId)
+    {
+        try
+        {
+            // 只查询这一个帖子的父评论（利用索引，超快）
+            var topComments = await _commentRepository.DbBase.Queryable<Comment>()
+                .Where(c => c.PostId == postId && c.ParentId == null && !c.IsDeleted && c.IsEnabled)
+                .OrderBy(c => c.LikeCount, OrderByType.Desc)
+                .OrderBy(c => c.CreateTime, OrderByType.Desc)
+                .Take(5) // 取前5名用于排名
+                .ToListAsync();
+
+            if (!topComments.Any())
+            {
+                return;
+            }
+
+            // 检查是否需要更新
+            var existingHighlight = await _highlightRepository.QueryFirstAsync(
+                h => h.PostId == postId && h.HighlightType == 1 && h.IsCurrent);
+
+            var currentTopComment = topComments.First();
+
+            // 如果神评没变化，且点赞数也没变，跳过更新
+            bool shouldUpdate = existingHighlight == null ||
+                               existingHighlight.CommentId != currentTopComment.Id ||
+                               existingHighlight.LikeCount != currentTopComment.LikeCount;
+
+            if (!shouldUpdate)
+            {
+                return;
+            }
+
+            // 标记旧记录为非当前
+            if (existingHighlight != null)
+            {
+                await _highlightRepository.UpdateColumnsAsync(
+                    h => new CommentHighlight { IsCurrent = false },
+                    h => h.PostId == postId && h.HighlightType == 1 && h.IsCurrent);
+            }
+
+            // 添加新的神评记录（支持并列第一）
+            var newHighlights = new List<CommentHighlight>();
+            var rank = 1;
+            var topLikeCount = topComments.First().LikeCount;
+
+            foreach (var comment in topComments)
+            {
+                if (comment.LikeCount < topLikeCount)
+                {
+                    break; // 只记录点赞数最高的（可能有多个并列）
+                }
+
+                newHighlights.Add(new CommentHighlight
+                {
+                    PostId = postId,
+                    CommentId = comment.Id,
+                    ParentCommentId = null,
+                    HighlightType = 1, // 神评
+                    StatDate = DateTime.Today,
+                    LikeCount = comment.LikeCount,
+                    Rank = rank,
+                    ContentSnapshot = comment.Content,
+                    AuthorId = comment.AuthorId,
+                    AuthorName = comment.AuthorName,
+                    IsCurrent = true,
+                    TenantId = comment.TenantId,
+                    CreateTime = DateTime.Now,
+                    CreateBy = "CommentService.RealTime"
+                });
+
+                rank++;
+            }
+
+            if (newHighlights.Any())
+            {
+                await _highlightRepository.AddRangeAsync(newHighlights);
+
+                // 🚀 清除缓存（触发下次查询时重新加载）
+                var cacheKey = $"god_comments:post:{postId}";
+                await _caching.RemoveAsync(cacheKey);
+
+                Log.Information("[CommentService] 实时更新神评：PostId={PostId}, Count={Count}", postId, newHighlights.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[CommentService] 检查神评失败：PostId={PostId}", postId);
+        }
+    }
+
+    /// <summary>
+    /// 检查并更新父评论的沙发
+    /// </summary>
+    /// <remarks>
+    /// 当子评论被点赞/取消点赞时调用，实时更新沙发状态
+    /// </remarks>
+    private async Task CheckAndUpdateSofaAsync(long parentCommentId, long postId)
+    {
+        try
+        {
+            // 只查询这一个父评论的子评论
+            var topChildren = await _commentRepository.DbBase.Queryable<Comment>()
+                .Where(c => c.ParentId == parentCommentId && !c.IsDeleted && c.IsEnabled)
+                .OrderBy(c => c.LikeCount, OrderByType.Desc)
+                .OrderBy(c => c.CreateTime, OrderByType.Desc)
+                .Take(5)
+                .ToListAsync();
+
+            if (!topChildren.Any())
+            {
+                return;
+            }
+
+            // 检查是否需要更新
+            var existingHighlight = await _highlightRepository.QueryFirstAsync(
+                h => h.ParentCommentId == parentCommentId && h.HighlightType == 2 && h.IsCurrent);
+
+            var currentTopChild = topChildren.First();
+
+            bool shouldUpdate = existingHighlight == null ||
+                               existingHighlight.CommentId != currentTopChild.Id ||
+                               existingHighlight.LikeCount != currentTopChild.LikeCount;
+
+            if (!shouldUpdate)
+            {
+                return;
+            }
+
+            // 标记旧记录为非当前
+            if (existingHighlight != null)
+            {
+                await _highlightRepository.UpdateColumnsAsync(
+                    h => new CommentHighlight { IsCurrent = false },
+                    h => h.ParentCommentId == parentCommentId && h.HighlightType == 2 && h.IsCurrent);
+            }
+
+            // 添加新的沙发记录
+            var newHighlights = new List<CommentHighlight>();
+            var rank = 1;
+            var topLikeCount = topChildren.First().LikeCount;
+
+            foreach (var child in topChildren)
+            {
+                if (child.LikeCount < topLikeCount)
+                {
+                    break;
+                }
+
+                newHighlights.Add(new CommentHighlight
+                {
+                    PostId = postId,
+                    CommentId = child.Id,
+                    ParentCommentId = parentCommentId,
+                    HighlightType = 2, // 沙发
+                    StatDate = DateTime.Today,
+                    LikeCount = child.LikeCount,
+                    Rank = rank,
+                    ContentSnapshot = child.Content,
+                    AuthorId = child.AuthorId,
+                    AuthorName = child.AuthorName,
+                    IsCurrent = true,
+                    TenantId = child.TenantId,
+                    CreateTime = DateTime.Now,
+                    CreateBy = "CommentService.RealTime"
+                });
+
+                rank++;
+            }
+
+            if (newHighlights.Any())
+            {
+                await _highlightRepository.AddRangeAsync(newHighlights);
+
+                // 🚀 清除缓存（触发下次查询时重新加载）
+                var cacheKey = $"sofas:parent:{parentCommentId}";
+                await _caching.RemoveAsync(cacheKey);
+
+                Log.Information("[CommentService] 实时更新沙发：ParentId={ParentId}, Count={Count}", parentCommentId, newHighlights.Count);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[CommentService] 检查沙发失败：ParentCommentId={ParentId}", parentCommentId);
+        }
     }
 }

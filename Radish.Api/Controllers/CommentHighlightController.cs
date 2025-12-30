@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Common.CacheTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -21,11 +22,14 @@ namespace Radish.Api.Controllers;
 public class CommentHighlightController : ControllerBase
 {
     private readonly IBaseService<CommentHighlight, CommentHighlightVo> _highlightService;
+    private readonly ICaching _caching;
 
     public CommentHighlightController(
-        IBaseService<CommentHighlight, CommentHighlightVo> highlightService)
+        IBaseService<CommentHighlight, CommentHighlightVo> highlightService,
+        ICaching caching)
     {
         _highlightService = highlightService;
+        _caching = caching;
     }
 
     /// <summary>
@@ -38,6 +42,22 @@ public class CommentHighlightController : ControllerBase
     [ProducesResponseType(typeof(MessageModel<List<CommentHighlightVo>>), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetCurrentGodComments(long postId)
     {
+        // 🚀 Redis 缓存优化：先查缓存
+        var cacheKey = $"god_comments:post:{postId}";
+        var cached = await _caching.GetAsync<List<CommentHighlightVo>>(cacheKey);
+
+        if (cached != null && cached.Any())
+        {
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "获取成功（缓存）",
+                ResponseData = cached
+            };
+        }
+
+        // 缓存未命中，查询数据库
         var godComments = await _highlightService.QueryAsync(
             h => h.PostId == postId &&
                  h.HighlightType == 1 &&
@@ -45,6 +65,12 @@ public class CommentHighlightController : ControllerBase
 
         // 在内存中按排名升序排序
         var sortedComments = godComments.OrderBy(h => h.Rank).ToList();
+
+        // 写入缓存（TTL 1小时）
+        if (sortedComments.Any())
+        {
+            await _caching.SetAsync(cacheKey, sortedComments, TimeSpan.FromHours(1));
+        }
 
         return new MessageModel
         {
@@ -65,6 +91,22 @@ public class CommentHighlightController : ControllerBase
     [ProducesResponseType(typeof(MessageModel<List<CommentHighlightVo>>), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetCurrentSofas(long parentCommentId)
     {
+        // 🚀 Redis 缓存优化：先查缓存
+        var cacheKey = $"sofas:parent:{parentCommentId}";
+        var cached = await _caching.GetAsync<List<CommentHighlightVo>>(cacheKey);
+
+        if (cached != null && cached.Any())
+        {
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "获取成功（缓存）",
+                ResponseData = cached
+            };
+        }
+
+        // 缓存未命中，查询数据库
         var sofas = await _highlightService.QueryAsync(
             h => h.ParentCommentId == parentCommentId &&
                  h.HighlightType == 2 &&
@@ -72,6 +114,12 @@ public class CommentHighlightController : ControllerBase
 
         // 在内存中按排名升序排序
         var sortedSofas = sofas.OrderBy(h => h.Rank).ToList();
+
+        // 写入缓存（TTL 1小时）
+        if (sortedSofas.Any())
+        {
+            await _caching.SetAsync(cacheKey, sortedSofas, TimeSpan.FromHours(1));
+        }
 
         return new MessageModel
         {
