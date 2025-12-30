@@ -62,18 +62,25 @@ public class CommentHighlightJob
     {
         try
         {
-            // 查询所有有评论的帖子
+            // 🚀 增量扫描优化：只查询最近 24 小时有活动的帖子
+            // 逻辑：ModifyTime > yesterday（已修改的）OR (ModifyTime == null AND CreateTime > yesterday)（新创建且未修改的）
+            var yesterday = DateTime.Now.AddDays(-1);
+
             var postsWithComments = await _commentRepository.DbBase.Queryable<Comment>()
-                .Where(c => !c.IsDeleted && c.IsEnabled && c.ParentId == null)
+                .Where(c => !c.IsDeleted && c.IsEnabled && c.ParentId == null
+                    && ((c.ModifyTime != null && c.ModifyTime > yesterday)
+                        || (c.ModifyTime == null && c.CreateTime > yesterday)))
                 .GroupBy(c => c.PostId)
                 .Select(g => g.PostId)
                 .ToListAsync();
 
             if (!postsWithComments.Any())
             {
-                Log.Information("[CommentHighlight] 没有找到有父评论的帖子");
+                Log.Information("[CommentHighlight] 最近 24 小时内没有活跃的帖子");
                 return 0;
             }
+
+            Log.Information("[CommentHighlight] 找到 {Count} 个活跃帖子（24h 内有更新）", postsWithComments.Count);
 
             var godComments = new List<CommentHighlight>();
 
@@ -177,18 +184,25 @@ public class CommentHighlightJob
     {
         try
         {
-            // 查询所有有子评论的父评论
+            // 🚀 增量扫描优化：只查询最近 24 小时有活动的子评论
+            // 逻辑：ModifyTime > yesterday（已修改的）OR (ModifyTime == null AND CreateTime > yesterday)（新创建且未修改的）
+            var yesterday = DateTime.Now.AddDays(-1);
+
             var parentsWithChildren = await _commentRepository.DbBase.Queryable<Comment>()
-                .Where(c => !c.IsDeleted && c.IsEnabled && c.ParentId != null)
+                .Where(c => !c.IsDeleted && c.IsEnabled && c.ParentId != null
+                    && ((c.ModifyTime != null && c.ModifyTime > yesterday)
+                        || (c.ModifyTime == null && c.CreateTime > yesterday)))
                 .GroupBy(c => c.ParentId)
                 .Select(g => g.ParentId)
                 .ToListAsync();
 
             if (!parentsWithChildren.Any())
             {
-                Log.Information("[CommentHighlight] 没有找到有子评论的父评论");
+                Log.Information("[CommentHighlight] 最近 24 小时内没有活跃的子评论");
                 return 0;
             }
+
+            Log.Information("[CommentHighlight] 找到 {Count} 个有活跃子评论的父评论（24h 内有更新）", parentsWithChildren.Count);
 
             var sofas = new List<CommentHighlight>();
 
