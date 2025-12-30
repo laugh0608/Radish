@@ -96,4 +96,22 @@ public class CommentVo
     /// </summary>
     /// <remarks>需要在Service层动态填充，默认为false</remarks>
     public bool IsLiked { get; set; }
+
+    /// <summary>
+    /// 是否为当前神评（父评论中点赞数最高的）
+    /// </summary>
+    /// <remarks>需要在Service层动态填充，默认为false</remarks>
+    public bool IsGodComment { get; set; }
+
+    /// <summary>
+    /// 是否为当前沙发（父评论下子评论中点赞数最高的）
+    /// </summary>
+    /// <remarks>需要在Service层动态填充，默认为false</remarks>
+    public bool IsSofa { get; set; }
+
+    /// <summary>
+    /// 高亮排名（1=第一名，2=第二名，等等）
+    /// </summary>
+    /// <remarks>需要在Service层动态填充，仅当 IsGodComment 或 IsSofa 为 true 时有值</remarks>
+    public int? HighlightRank { get; set; }
 }

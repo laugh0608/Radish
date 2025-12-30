@@ -322,6 +322,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             FillLikeStatus(rootComments, likeStatus);
         }
 
+        // 6. 填充神评/沙发标识
+        if (rootComments.Any())
+        {
+            await FillHighlightStatusAsync(postId, rootComments);
+        }
+
         return rootComments;
     }
 
@@ -626,6 +632,69 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         catch (Exception ex)
         {
             Log.Error(ex, "[CommentService] 检查沙发失败：ParentCommentId={ParentId}", parentCommentId);
+        }
+    }
+
+    /// <summary>
+    /// 填充评论树的神评/沙发标识
+    /// </summary>
+    /// <param name="postId">帖子ID</param>
+    /// <param name="rootComments">根评论列表</param>
+    private async Task FillHighlightStatusAsync(long postId, List<CommentVo> rootComments)
+    {
+        try
+        {
+            // 1. 查询该帖子的所有当前神评
+            var godComments = await _highlightRepository.QueryAsync(
+                h => h.PostId == postId && h.HighlightType == 1 && h.IsCurrent);
+
+            var godCommentMap = godComments.ToDictionary(h => h.CommentId, h => h.Rank);
+
+            // 2. 收集所有父评论的ID，批量查询沙发
+            var parentCommentIds = rootComments.Select(c => c.Id).ToList();
+            var sofas = await _highlightRepository.QueryAsync(
+                h => parentCommentIds.Contains(h.ParentCommentId!.Value) && h.HighlightType == 2 && h.IsCurrent);
+
+            var sofaMap = sofas.ToDictionary(h => h.CommentId, h => h.Rank);
+
+            // 3. 递归填充标识
+            FillHighlightStatusRecursive(rootComments, godCommentMap, sofaMap);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "[CommentService] 填充神评/沙发标识失败：PostId={PostId}", postId);
+        }
+    }
+
+    /// <summary>
+    /// 递归填充神评/沙发标识
+    /// </summary>
+    private void FillHighlightStatusRecursive(
+        List<CommentVo> comments,
+        Dictionary<long, int> godCommentMap,
+        Dictionary<long, int> sofaMap)
+    {
+        foreach (var comment in comments)
+        {
+            // 填充神评标识（仅父评论）
+            if (comment.ParentId == null && godCommentMap.TryGetValue(comment.Id, out var godRank))
+            {
+                comment.IsGodComment = true;
+                comment.HighlightRank = godRank;
+            }
+
+            // 填充沙发标识（仅子评论）
+            if (comment.ParentId != null && sofaMap.TryGetValue(comment.Id, out var sofaRank))
+            {
+                comment.IsSofa = true;
+                comment.HighlightRank = sofaRank;
+            }
+
+            // 递归处理子评论
+            if (comment.Children?.Any() == true)
+            {
+                FillHighlightStatusRecursive(comment.Children, godCommentMap, sofaMap);
+            }
         }
     }
 }
