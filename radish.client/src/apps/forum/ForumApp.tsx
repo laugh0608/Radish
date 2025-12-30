@@ -15,9 +15,7 @@ import {
   updatePost,
   updateComment,
   deletePost,
-  deleteComment,
-  getCurrentGodComments,
-  getCurrentSofas
+  deleteComment
 } from '@/api/forum';
 import type {
   Category,
@@ -165,56 +163,11 @@ export const ForumApp = () => {
     try {
       const sortParam = commentSortBy || 'default'; // null时传'default'
 
-      // 并行加载评论树和神评列表
-      const [commentsData, godCommentsData] = await Promise.all([
-        getCommentTree(postId, sortParam, t),
-        getCurrentGodComments(postId, t).catch(() => []) // 神评加载失败不影响评论显示
-      ]);
+      // 后端已经在 GetCommentTreeWithLikeStatusAsync 中填充了神评和沙发标识
+      // 不需要再额外调用 getCurrentGodComments 和 getCurrentSofas API
+      const commentsData = await getCommentTree(postId, sortParam, t);
 
-      // 将神评标识合并到评论节点中
-      const commentsWithGodHighlight = commentsData.map(comment => {
-        const godCommentRecord = godCommentsData.find(gc => gc.commentId === comment.id);
-        if (godCommentRecord) {
-          return {
-            ...comment,
-            isGodComment: true,
-            highlightRank: godCommentRecord.rank
-          };
-        }
-        return comment;
-      });
-
-      // 为每个父评论加载沙发标识
-      const commentsWithAllHighlights = await Promise.all(
-        commentsWithGodHighlight.map(async (comment) => {
-          if (!comment.children || comment.children.length === 0) {
-            return comment;
-          }
-
-          // 加载该父评论的沙发列表
-          const sofasData = await getCurrentSofas(comment.id, t).catch(() => []);
-
-          // 将沙发标识合并到子评论中
-          const childrenWithSofa = comment.children.map(child => {
-            const sofaRecord = sofasData.find(s => s.commentId === child.id);
-            if (sofaRecord) {
-              return {
-                ...child,
-                isSofa: true,
-                highlightRank: sofaRecord.rank
-              };
-            }
-            return child;
-          });
-
-          return {
-            ...comment,
-            children: childrenWithSofa
-          };
-        })
-      );
-
-      setComments(commentsWithAllHighlights);
+      setComments(commentsData);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -231,56 +184,11 @@ export const ForumApp = () => {
       setLoadingComments(true);
       setError(null);
 
-      // 并行加载评论树和神评列表
-      Promise.all([
-        getCommentTree(selectedPost.id, sortParam, t),
-        getCurrentGodComments(selectedPost.id, t).catch(() => [])
-      ])
-        .then(async ([commentsData, godCommentsData]) => {
-          // 将神评标识合并到评论节点中
-          const commentsWithGodHighlight = commentsData.map(comment => {
-            const godCommentRecord = godCommentsData.find(gc => gc.commentId === comment.id);
-            if (godCommentRecord) {
-              return {
-                ...comment,
-                isGodComment: true,
-                highlightRank: godCommentRecord.rank
-              };
-            }
-            return comment;
-          });
-
-          // 为每个父评论加载沙发标识
-          const commentsWithAllHighlights = await Promise.all(
-            commentsWithGodHighlight.map(async (comment) => {
-              if (!comment.children || comment.children.length === 0) {
-                return comment;
-              }
-
-              // 加载该父评论的沙发列表
-              const sofasData = await getCurrentSofas(comment.id, t).catch(() => []);
-
-              // 将沙发标识合并到子评论中
-              const childrenWithSofa = comment.children.map(child => {
-                const sofaRecord = sofasData.find(s => s.commentId === child.id);
-                if (sofaRecord) {
-                  return {
-                    ...child,
-                    isSofa: true,
-                    highlightRank: sofaRecord.rank
-                  };
-                }
-                return child;
-              });
-
-              return {
-                ...comment,
-                children: childrenWithSofa
-              };
-            })
-          );
-
-          setComments(commentsWithAllHighlights);
+      // 后端已经在 GetCommentTreeWithLikeStatusAsync 中填充了神评和沙发标识
+      // 不需要再额外调用 getCurrentGodComments 和 getCurrentSofas API
+      getCommentTree(selectedPost.id, sortParam, t)
+        .then(commentsData => {
+          setComments(commentsData);
         })
         .catch(err => {
           const message = err instanceof Error ? err.message : String(err);
