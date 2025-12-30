@@ -91,7 +91,10 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>受影响的行数</returns>
     public async Task<int> AddRangeAsync(List<TEntity> entities)
     {
-        return await DbClientBase.Insertable(entities).ExecuteCommandAsync();
+        // 🚀 使用 ExecuteReturnSnowflakeIdListAsync 为每条记录生成唯一的 Snowflake ID
+        // 避免批量插入时产生重复 ID 导致 UNIQUE constraint 错误
+        var ids = await DbClientBase.Insertable(entities).ExecuteReturnSnowflakeIdListAsync();
+        return ids.Count;
     }
 
     /// <summary>分表-写入实体数据</summary>
