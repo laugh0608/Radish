@@ -193,13 +193,13 @@ export const Dock = () => {
               <div className={styles.avatar}>
                 {loggedIn ? (
                   <>
-                    <Icon icon="mdi:account-circle" size={32} />
+                    <Icon icon="mdi:account-circle" size={40} />
                     {unreadMessages > 0 && (
                       <div className={styles.badge}>{unreadMessages}</div>
                     )}
                   </>
                 ) : (
-                  <Icon icon="mdi:account-circle-outline" size={32} />
+                  <Icon icon="mdi:account-circle-outline" size={40} />
                 )}
               </div>
               {loggedIn && userName && (
@@ -229,7 +229,7 @@ export const Dock = () => {
                       title={app!.name}
                     >
                       {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
-                        <Icon icon={app!.icon} size={28} />
+                        <Icon icon={app!.icon} size={40} />
                       ) : (
                         <span className={styles.emoji}>{app!.icon}</span>
                       )}
@@ -251,7 +251,7 @@ export const Dock = () => {
                 className={styles.authButton}
                 onClick={loggedIn ? handleLogoutClick : handleLoginClick}
               >
-                <Icon icon={loggedIn ? 'mdi:logout' : 'mdi:login'} size={20} />
+                <Icon icon={loggedIn ? 'mdi:logout' : 'mdi:login'} size={28} />
               </button>
             </div>
           </div>
