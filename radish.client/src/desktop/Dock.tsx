@@ -18,10 +18,10 @@ import styles from './Dock.module.css';
  */
 export const Dock = () => {
   const { openWindows, openApp, restoreWindow } = useWindowStore();
-  const { userName, userId, isAuthenticated, clearUser, setUser } = useUserStore();
+  const { userName, userId, avatarUrl, avatarThumbnailUrl, isAuthenticated, clearUser, setUser } = useUserStore();
   const [time, setTime] = useState(new Date());
   const [isExpanded, setIsExpanded] = useState(false); // 默认为灵动岛状态
-  const [unreadMessages] = useState(3); // 消息数量占位
+  const [unreadMessages, setUnreadMessages] = useState(0); // 真实消息数量
 
   const loggedIn = isAuthenticated();
 
@@ -43,6 +43,8 @@ export const Dock = () => {
     userId: number;
     userName: string;
     tenantId: number;
+    avatarUrl?: string;
+    avatarThumbnailUrl?: string;
   }
 
   interface ApiFetchOptions extends RequestInit {
@@ -148,10 +150,35 @@ export const Dock = () => {
         userId: json.responseData.userId,
         userName: json.responseData.userName,
         tenantId: json.responseData.tenantId,
-        roles: ['User']
+        roles: ['User'],
+        avatarUrl: json.responseData.avatarUrl,
+        avatarThumbnailUrl: json.responseData.avatarThumbnailUrl
       });
     } catch {
       clearUser();
+    }
+  };
+
+  // 获取未读消息数量
+  const fetchUnreadMessageCount = async () => {
+    if (typeof window === 'undefined') return;
+    const token = window.localStorage.getItem('access_token');
+    if (!token) {
+      setUnreadMessages(0);
+      return;
+    }
+
+    const requestUrl = `${apiBaseUrl}/api/v1/User/GetUnreadMessageCount`;
+
+    try {
+      const response = await apiFetch(requestUrl, { withAuth: true });
+      const json = await response.json() as ApiResponse<{ userId: number; unreadCount: number }>;
+
+      if (json.isSuccess && json.responseData) {
+        setUnreadMessages(json.responseData.unreadCount);
+      }
+    } catch {
+      // 静默失败，保持当前状态
     }
   };
 
@@ -163,6 +190,17 @@ export const Dock = () => {
 
     if (typeof window !== 'undefined') {
       void hydrateCurrentUser();
+      void fetchUnreadMessageCount();
+
+      // 每30秒刷新一次未读消息数量
+      const messageTimer = setInterval(() => {
+        void fetchUnreadMessageCount();
+      }, 30000);
+
+      return () => {
+        clearInterval(timer);
+        clearInterval(messageTimer);
+      };
     }
 
     return () => clearInterval(timer);
@@ -193,7 +231,20 @@ export const Dock = () => {
               <div className={styles.avatar}>
                 {loggedIn ? (
                   <>
-                    <Icon icon="mdi:account-circle" size={40} />
+                    {avatarThumbnailUrl || avatarUrl ? (
+                      <img
+                        src={avatarThumbnailUrl || avatarUrl}
+                        alt={userName}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      <Icon icon="mdi:account-circle" size={40} />
+                    )}
                     {unreadMessages > 0 && (
                       <div className={styles.badge}>{unreadMessages}</div>
                     )}

@@ -27,6 +27,8 @@ export const StatusBar = () => {
     userId: number;
     userName: string;
     tenantId: number;
+    avatarUrl?: string;
+    avatarThumbnailUrl?: string;
   }
 
   interface ApiFetchOptions extends RequestInit {
@@ -146,7 +148,9 @@ export const StatusBar = () => {
         userId: json.responseData.userId,
         userName: json.responseData.userName,
         tenantId: json.responseData.tenantId,
-        roles: ['User']
+        roles: ['User'],
+        avatarUrl: json.responseData.avatarUrl,
+        avatarThumbnailUrl: json.responseData.avatarThumbnailUrl
       });
     } catch {
       clearUser();

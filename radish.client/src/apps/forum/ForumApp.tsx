@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
-import { ConfirmDialog } from '@radish/ui';
+import { ConfirmDialog, Modal } from '@radish/ui';
 import {
   getTopCategories,
   getPostList,
@@ -587,6 +587,18 @@ export const ForumApp = () => {
     <div className={styles.container}>
       {/* 左栏：分类和标签 */}
       <div className={styles.leftColumn}>
+        {/* 发帖按钮 */}
+        <div className={styles.publishSection}>
+          <button
+            className={styles.publishButton}
+            onClick={() => setIsPublishModalOpen(true)}
+            disabled={!loggedIn}
+            title={!loggedIn ? '请先登录后再发帖' : '发布新帖'}
+          >
+            发帖
+          </button>
+        </div>
+
         <div className={styles.categorySection}>
           <CategoryList
             categories={categories}
@@ -649,14 +661,6 @@ export const ForumApp = () => {
               </button>
             )}
           </div>
-
-          <button
-            className={styles.publishButton}
-            onClick={() => setIsPublishModalOpen(true)}
-            disabled={!loggedIn}
-          >
-            发帖
-          </button>
         </div>
 
         {/* 帖子瀑布流 */}
@@ -750,43 +754,53 @@ export const ForumApp = () => {
         onPublish={handlePublishPost}
       />
 
-      {/* 帖子详情 Modal - TODO: 实现详情视图 */}
-      {selectedPost && (
-        <div style={{ display: 'none' }}>
-          {/* 暂时隐藏，后续实现为 Modal 或独立页面 */}
-          <PostDetailView
-            post={selectedPost}
-            loading={loadingPostDetail}
-            isLiked={selectedPost ? likedPosts.has(selectedPost.id) : false}
-            onLike={handleLikePost}
-            isAuthenticated={loggedIn}
-            currentUserId={userId ?? 0}
-            onEdit={handleEditPost}
-            onDelete={handleDeletePost}
-          />
-          <CommentTree
-            comments={comments}
-            loading={loadingComments}
-            hasPost={selectedPost !== null}
-            currentUserId={userId ?? 0}
-            pageSize={5}
-            sortBy={commentSortBy}
-            onSortChange={handleCommentSortChange}
-            onDeleteComment={handleDeleteComment}
-            onEditComment={handleEditComment}
-            onLikeComment={handleCommentLike}
-            onReplyComment={handleReplyComment}
-            onLoadMoreChildren={handleLoadMoreChildren}
-          />
-          <CreateCommentForm
-            isAuthenticated={loggedIn}
-            hasPost={selectedPost !== null}
-            onSubmit={handleCreateComment}
-            replyTo={replyTo}
-            onCancelReply={handleCancelReply}
-          />
-        </div>
-      )}
+      {/* 帖子详情 Modal */}
+      <Modal
+        isOpen={selectedPost !== null}
+        onClose={() => {
+          setSelectedPost(null);
+          setComments([]);
+          resetCommentSort();
+        }}
+        title=""
+        size="large"
+      >
+        {selectedPost && (
+          <div className={styles.postDetailContainer}>
+            <PostDetailView
+              post={selectedPost}
+              loading={loadingPostDetail}
+              isLiked={selectedPost ? likedPosts.has(selectedPost.id) : false}
+              onLike={handleLikePost}
+              isAuthenticated={loggedIn}
+              currentUserId={userId ?? 0}
+              onEdit={handleEditPost}
+              onDelete={handleDeletePost}
+            />
+            <CommentTree
+              comments={comments}
+              loading={loadingComments}
+              hasPost={selectedPost !== null}
+              currentUserId={userId ?? 0}
+              pageSize={5}
+              sortBy={commentSortBy}
+              onSortChange={handleCommentSortChange}
+              onDeleteComment={handleDeleteComment}
+              onEditComment={handleEditComment}
+              onLikeComment={handleCommentLike}
+              onReplyComment={handleReplyComment}
+              onLoadMoreChildren={handleLoadMoreChildren}
+            />
+            <CreateCommentForm
+              isAuthenticated={loggedIn}
+              hasPost={selectedPost !== null}
+              onSubmit={handleCreateComment}
+              replyTo={replyTo}
+              onCancelReply={handleCancelReply}
+            />
+          </div>
+        )}
+      </Modal>
 
       {/* 编辑帖子 Modal */}
       <EditPostModal

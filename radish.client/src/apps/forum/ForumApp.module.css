@@ -40,6 +40,12 @@
   background-color: #0f1419;
 }
 
+.publishSection {
+  flex-shrink: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid #27272a;
+}
+
 .categorySection {
   flex-shrink: 0;
   padding: 20px;
@@ -116,7 +122,8 @@
 }
 
 .publishButton {
-  padding: 8px 20px;
+  width: 100%;
+  padding: 10px 20px;
   font-size: 14px;
   font-weight: 600;
   background: linear-gradient(135deg, #2d6cdf, #2558b8);
@@ -125,12 +132,16 @@
   color: #fff;
   cursor: pointer;
   transition: all 0.2s ease;
-  white-space: nowrap;
 }
 
-.publishButton:hover {
+.publishButton:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(45, 108, 223, 0.3);
+}
+
+.publishButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .searchBox {
@@ -262,4 +273,13 @@
   background-color: #3f1f1f;
   border-radius: 6px;
   font-size: 14px;
+}
+
+/* 帖子详情容器 */
+.postDetailContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
 }

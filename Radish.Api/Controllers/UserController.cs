@@ -168,12 +168,24 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel> GetUserByHttpContext()
     {
-        await Task.CompletedTask;
         var userId = _httpContextUser.UserId;
         var userName = _httpContextUser.UserName;
         var tenantId = _httpContextUser.TenantId;
-        // var userInfo = await _userService.QueryAsync(d => d.Id == res);
-        var userInfo = new { userId, userName, tenantId };
+
+        // 获取用户头像
+        var avatar = await _attachmentService.QueryFirstAsync(a =>
+            a.UploaderId == userId &&
+            !a.IsDeleted &&
+            a.BusinessType == "Avatar" &&
+            a.BusinessId == userId);
+
+        var userInfo = new {
+            userId,
+            userName,
+            tenantId,
+            avatarUrl = avatar?.Url,
+            avatarThumbnailUrl = avatar?.ThumbnailUrl
+        };
         return new MessageModel
         {
             IsSuccess = true,
@@ -590,6 +602,32 @@ public class UserController : ControllerBase
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = vo
+        };
+    }
+
+    /// <summary>
+    /// 获取当前用户未读消息数量（占位，将来接入真实通知系统）
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = "Client")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetUnreadMessageCount()
+    {
+        await Task.CompletedTask;
+        var userId = _httpContextUser.UserId;
+
+        var result = new
+        {
+            userId,
+            unreadCount = 0
+        };
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = result
         };
     }
 }
