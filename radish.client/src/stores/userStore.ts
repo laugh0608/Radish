@@ -27,7 +27,9 @@ export const useUserStore = create<UserStore>((set, get) => ({
       userId: user.userId,
       userName: user.userName,
       tenantId: user.tenantId,
-      roles: user.roles || []
+      roles: user.roles || [],
+      avatarUrl: user.avatarUrl,
+      avatarThumbnailUrl: user.avatarThumbnailUrl
     });
   },
 
