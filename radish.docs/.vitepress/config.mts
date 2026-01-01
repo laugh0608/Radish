@@ -83,7 +83,8 @@ export default defineConfig({
             { text: '日志系统', link: '/guide/logging' },
             { text: '密码安全', link: '/guide/password-security' },
             { text: '速率限制', link: '/guide/rate-limiting' },
-            { text: 'Hangfire 定时任务', link: '/guide/hangfire-scheduled-jobs' }
+            { text: 'Hangfire 定时任务', link: '/guide/hangfire-scheduled-jobs' },
+            { text: 'Gateway 服务网关', link: '/guide/gateway' }
           ]
         },
         {
@@ -107,7 +108,6 @@ export default defineConfig({
           items: [
             { text: '开发框架说明', link: '/architecture/framework' },
             { text: '开发规范', link: '/architecture/specifications' },
-            { text: 'Gateway 规划', link: '/architecture/gateway-plan' },
             { text: '国际化指南', link: '/architecture/i18n' }
           ]
         },

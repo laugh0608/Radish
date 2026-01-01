@@ -111,7 +111,7 @@ PostgreSQL / SQLite
   - **依赖**：复用 `Radish.Common`（配置工具）和 `Radish.Extension`（日志扩展），保持与 `Radish.Api` 一致的配置加载和日志输出方式。
   - **监听端口**：`https://localhost:5000`（主要对外入口）和 `http://localhost:5001`（HTTP 仅用于重定向到 5000）。
   - **健康检查**：自身暴露 `/health`、`/healthz`，下游 `Radish.Api` 健康通过 `/api/health` 统一对外；Console 通过 Gateway 路径 `/`、`/docs`、`/api/health`、`/console` 聚合展示多服务状态。
-  - **架构演进**：Phase 0 为简化门户，不引入 Ocelot；P1+ 阶段将继续增强路由转发、统一认证、请求聚合等 Gateway 核心功能。详见 `architecture/gateway-plan.md`。
+  - **架构演进**：Phase 0 为简化门户，已实现 YARP 路由转发、统一入口规划等核心功能。详见 [Gateway 服务网关](../guide/gateway.md)。
 - 配置与服务访问：Program.cs 依次调用 `hostingContext.Configuration.ConfigureApplication()` → `builder.ConfigureApplication()` → `app.ConfigureApplication()` → `app.UseApplicationSetup()`，把 Configuration/HostEnvironment/RootServices 注入到 `Radish.Common.Core.App`；在非 DI 管道下可使用 `App.GetService*`、`App.GetOptions*` 手动解析服务或配置。常规字符串读取仍统一使用 `AppSettings.RadishApp("Section", ...)`，批量强类型配置通过 `ConfigurableOptions + AddAllOptionRegister` 自动绑定 `IConfigurableOptions`。
 - `Radish.Service`
   - 应用服务（`*AppService`）封装用例流程、权限校验、事务控制、DTO 转换。
@@ -224,13 +224,13 @@ graph LR
    - PR 必须附带 `dotnet test` 与 `npm run build` 结果；若变更数据库需提供迁移脚本与回滚建议。
    - 关键模块需要 Code Review + Pair Walkthrough。
 
-## API Gateway 规划（进行中）
+## API Gateway 规划（已完成 Phase 0）
 
-- **最新决策（2025-11-27）**：Gateway 项目**提前启动**，首要任务是将 `Radish.Api` 中的服务欢迎页面抽离至独立的 `Radish.Gateway` 项目（Phase 0）。
-- **Phase 0 目标**：实现关注点分离，让 API 项目专注于提供接口服务，Gateway 承担服务门户展示职责。Phase 0 阶段不引入 Ocelot，仅实现静态页面展示和健康检查聚合。
-- **后续阶段（P1-P6）**：在 Phase 0 基础上渐进式引入路由转发、统一认证、请求聚合、服务发现、可观测性、服务拆分等功能。详细规划、任务清单、实施指南见 [architecture/gateway-plan.md](gateway-plan.md)。
-- **架构演进路径**：Phase 0（门户页面） → P1（路由转发） → P2（统一认证） → P3（请求聚合） → P4（服务发现） → P5（可观测性） → P6（服务拆分）。
-- 新增服务/接口仍需在评审阶段勾勒“若未来接入 Gateway 的 URL/Scope/聚合需求”，但不落地任何代码或基础设施。
+- **当前状态**：Gateway 项目已完成 Phase 0 实施，实现了服务门户、YARP 路由转发、健康检查聚合等核心功能。
+- **Phase 0 成果**：实现关注点分离，API 项目专注于提供接口服务，Gateway 承担统一入口和路由转发职责。
+- **技术实现**：使用 YARP (Yet Another Reverse Proxy) 实现反向代理，支持 API、Auth、Docs、Console 等服务的路由转发。
+- **详细文档**：完整的架构说明、配置指南、部署方案见 [Gateway 服务网关](../guide/gateway.md)。
+- 新增服务/接口需要在 Gateway 配置中添加相应的路由规则，确保统一入口访问。
 
 ---
 

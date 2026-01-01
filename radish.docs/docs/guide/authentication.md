@@ -2,7 +2,7 @@
 
 Radish 采用 **OIDC（OpenID Connect）** 架构实现统一身份认证，基于 **OpenIddict** 构建认证服务器。本文档梳理整体架构、配置要点与扩展方式。
 
-> **相关文档**：本文档专注于认证的技术实现细节。关于密码安全与用户密码存储策略，请参阅 [密码安全](./password-security.md)。关于 Gateway 架构下的统一认证规划（Phase 2），请参阅 [Gateway 规划](../architecture/gateway-plan.md#phase-2-认证集成)。
+> **相关文档**：本文档专注于认证的技术实现细节。关于密码安全与用户密码存储策略，请参阅 [密码安全](./password-security.md)。关于 Gateway 架构与服务集成，请参阅 [Gateway 服务网关](./gateway.md)。
 
 ## 1. 架构概览
 

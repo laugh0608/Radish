@@ -126,7 +126,7 @@ git push origin v1.2.0.251126
 - radish.client：主要 - 前端 React 应用代码（WebOS 桌面环境），TypeScript 编写；采用混合架构支持三种应用集成方式：内置应用(type: 'window')、嵌入应用(type: 'iframe')、外部应用(type: 'external')。详见 [frontend/design.md](../frontend/design.md)
 - radish.console：主要 - 管理控制台前端应用，独立的 SPA；通过 OIDC 认证，有独立的路由系统；不嵌入 radish.client，在新标签页独立运行
 - radish.ui：主要 - UI 组件库，通过 npm workspaces 供 radish.client 和 radish.console 共享基础组件、Hooks 和工具函数
-- Radish.Gateway：主要 - 服务门户与网关项目，ASP.NET Core 编写；Phase 0 阶段承载服务欢迎页面、健康检查展示、API 文档入口等功能；后续阶段（P1+）将实现 API 路由转发、统一认证、聚合接口等 Gateway 功能。详细规划见 `docs/architecture/gateway-plan.md`。
+- Radish.Gateway：主要 - 服务门户与网关项目，ASP.NET Core 编写；已实现统一服务入口、YARP 路由转发、健康检查聚合等核心功能。详细说明见 [Gateway 服务网关](../guide/gateway.md)。
 - Radish.Api：主要 - 后端服务代码，ASP.NET Core 编写；专注于提供 REST API 接口，不包含页面展示功能
 - Radish.Common：后端服务使用的普通工具类，例如基础日志、基础配置等；**仅能引用外部 NuGet 包，不允许依赖任何内部业务层**。若某工具/扩展需要访问 `Radish.Model`、Service 或 Repository 中的类型（如 DTO、实体、仓储服务等），应放置在 `Radish.Extension` 中，以免 Common 层被反向依赖导致环状引用。
 - Radish.Core：后端核心业务逻辑与算法类，保留模块，为后续流程模拟与算法实现做准备

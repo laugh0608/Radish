@@ -431,7 +431,7 @@ Authorization: Bearer {admin_token}
 - [鉴权与授权指南](../guide/authentication.md)：OIDC 技术实现细节
 - [开发计划](../development-plan.md)：开发计划和里程碑
 - [前端设计文档](../frontend/design.md)：后台管理界面设计规范
-- [Gateway 规划](../architecture/gateway-plan.md)：未来 Gateway 可能需要感知客户端信息
+- [Gateway 服务网关](../guide/gateway.md)：统一服务入口与路由转发
 
 ---
 
