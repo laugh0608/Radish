@@ -116,8 +116,13 @@ AI: "3. 访问 http://localhost:5100/api/v2/Test/Log 查看日志输出"
 
 ## 文档、协作与提交要求
 - 文档更新：任何流程/配置/脚本/规范变更同步到 `radish.docs/docs/`（如 `architecture/specifications.md`、`guide/configuration.md`、`deployment/guide.md`），并在 `radish.docs/docs/changelog/` 记录关键节点（根目录 `Docs/` 作为入口即可）。
+- **更新日志规范**：
+  - 时间以**亚洲/上海时区**为准（UTC+8）
+  - 内容应**简洁明了**，只写重点完成的工作，避免过度详细的描述
+  - 格式：按月份和周次组织（如 `2026-01/week1.md`），月度文件（如 `2026-01.md`）提供总览
+  - 重点记录：核心功能、技术亮点、重要变更，不需要详细的实现细节
 - PR 说明需包含：变更摘要、测试结果、关联 Issue；前端 UI 贴截图/GIF，后端接口提供 `.http` 示例。多语言文档优先中文描述，可附英文注解。
-- 提交遵循 Conventional Commits（`feat:`、`fix:`、`chore:`、`docs:` 等），描述具体变更，禁止使用诸如“update files”或带 AI 签名/Co-Authored 标记。一次提交聚焦单一主题，必要时拆分。
+- 提交遵循 Conventional Commits（`feat:`、`fix:`、`chore:`、`docs:` 等），描述具体变更，禁止使用诸如"update files"或带 AI 签名/Co-Authored 标记。一次提交聚焦单一主题，必要时拆分。
 - 合规提醒：禁止把真实连接串、证书、`.user` 文件或其他敏感数据加入版本库；正式部署前依据 `radish.docs/docs/deployment/guide.md` 准备 Docker/Compose 配置与探针。
 
 ## 参考资料

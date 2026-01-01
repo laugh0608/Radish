@@ -640,6 +640,14 @@ Comprehensive docs in `radish.docs/docs/`:
 
 **Always consult these docs before making architectural changes.**
 
+### Changelog Guidelines
+
+When updating development logs in `docs/changelog/`:
+- **Timezone**: Use **Asia/Shanghai (UTC+8)** for all timestamps
+- **Content**: Keep it **concise and focused** - only highlight key accomplishments, avoid excessive detail
+- **Format**: Organize by month and week (e.g., `2026-01/week1.md`), with monthly summary files (e.g., `2026-01.md`)
+- **Focus on**: Core features, technical highlights, important changes - skip implementation details
+
 ## Common Pitfalls
 
 1. **Don't put business logic in Controllers** - Logic belongs in Service layer
