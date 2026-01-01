@@ -88,6 +88,174 @@
 - 每日转账次数上限：`20 次`
 - 每日转账总额上限：`50000 胡萝卜`（50 白萝卜）
 
+**多租户配额控制**：
+
+不同租户可根据业务规模和付费等级设置不同的配额限制：
+
+1. **租户级配额表设计**：
+   ```sql
+   CREATE TABLE tenant_coin_quota (
+       tenant_id BIGINT PRIMARY KEY,
+       -- 转账限制
+       min_transfer_amount BIGINT DEFAULT 10,
+       max_single_transfer BIGINT DEFAULT 10000,
+       daily_transfer_count_limit INT DEFAULT 20,
+       daily_transfer_amount_limit BIGINT DEFAULT 50000,
+
+       -- 获取限制
+       daily_reward_cap BIGINT DEFAULT 500,           -- 每日奖励总上限
+       daily_like_reward_cap BIGINT DEFAULT 50,       -- 每日点赞奖励上限
+
+       -- 消费限制
+       daily_consume_limit BIGINT DEFAULT 100000,     -- 每日消费上限
+
+       -- 余额限制
+       max_user_balance BIGINT DEFAULT 1000000,       -- 单用户余额上限（100 白萝卜）
+       platform_balance_alert BIGINT DEFAULT 10000000,-- 平台账户余额告警阈值
+
+       -- 发行控制
+       daily_issuance_limit BIGINT DEFAULT 100000,    -- 每日系统发行上限
+       total_issuance_cap BIGINT,                     -- 总发行量上限（NULL=无限制）
+
+       -- 配置元数据
+       quota_level VARCHAR(20) DEFAULT 'STANDARD',    -- FREE / STANDARD / PREMIUM / ENTERPRISE
+       effective_from TIMESTAMP NOT NULL,
+       created_at TIMESTAMP NOT NULL,
+       updated_at TIMESTAMP NOT NULL,
+
+       INDEX idx_level (quota_level)
+   );
+   ```
+
+2. **配额等级说明**：
+   | 等级 | 日转账限额 | 日奖励上限 | 单用户余额上限 | 适用场景 |
+   |-----|-----------|-----------|--------------|---------|
+   | **FREE** | 10000 胡萝卜 | 100 胡萝卜 | 50000 胡萝卜 | 测试租户、小型社区 |
+   | **STANDARD** | 50000 胡萝卜 | 500 胡萝卜 | 100000 胡萝卜 | 普通社区 |
+   | **PREMIUM** | 200000 胡萝卜 | 2000 胡萝卜 | 500000 胡萝卜 | 活跃社区 |
+   | **ENTERPRISE** | 无限制 | 无限制 | 无限制 | 大型平台、企业客户 |
+
+3. **配额检查实现**：
+   ```csharp
+   public class TenantQuotaValidator
+   {
+       private readonly ICaching _cache;
+       private readonly IBaseRepository<TenantCoinQuota> _quotaRepository;
+
+       public async Task<QuotaCheckResult> CheckTransferQuotaAsync(
+           long tenantId, long userId, long amount)
+       {
+           // 1. 获取租户配额（优先从缓存）
+           var quota = await GetTenantQuotaAsync(tenantId);
+
+           // 2. 检查单笔限额
+           if (amount < quota.MinTransferAmount)
+               return QuotaCheckResult.Fail($"最小转账金额为 {quota.MinTransferAmount} 胡萝卜");
+
+           if (amount > quota.MaxSingleTransfer)
+               return QuotaCheckResult.Fail($"单笔转账不得超过 {quota.MaxSingleTransfer} 胡萝卜");
+
+           // 3. 检查每日转账次数（基于 Redis 计数器）
+           var todayCountKey = $"quota:transfer:count:{tenantId}:{userId}:{DateTime.Today:yyyyMMdd}";
+           var todayCount = await _cache.GetAsync<int>(todayCountKey);
+
+           if (todayCount >= quota.DailyTransferCountLimit)
+               return QuotaCheckResult.Fail($"今日转账次数已达上限（{quota.DailyTransferCountLimit} 次）");
+
+           // 4. 检查每日转账总额（基于 Redis 累加）
+           var todayAmountKey = $"quota:transfer:amount:{tenantId}:{userId}:{DateTime.Today:yyyyMMdd}";
+           var todayAmount = await _cache.GetAsync<long>(todayAmountKey);
+
+           if (todayAmount + amount > quota.DailyTransferAmountLimit)
+               return QuotaCheckResult.Fail($"今日转账总额已达上限（{quota.DailyTransferAmountLimit} 胡萝卜）");
+
+           return QuotaCheckResult.Success();
+       }
+
+       public async Task IncrementTransferCountAsync(long tenantId, long userId, long amount)
+       {
+           var today = DateTime.Today.ToString("yyyyMMdd");
+           var countKey = $"quota:transfer:count:{tenantId}:{userId}:{today}";
+           var amountKey = $"quota:transfer:amount:{tenantId}:{userId}:{today}";
+
+           // 增加计数器（过期时间：次日凌晨）
+           var expiry = DateTime.Today.AddDays(1) - DateTime.Now;
+
+           await _cache.IncrementAsync(countKey, 1, expiry);
+           await _cache.IncrementAsync(amountKey, amount, expiry);
+       }
+   }
+   ```
+
+4. **租户配额告警机制**：
+   ```csharp
+   public class TenantQuotaMonitor
+   {
+       [AutomaticRetry(Attempts = 3)]
+       public async Task MonitorQuotaUsageAsync()
+       {
+           var tenants = await _quotaRepository.QueryAsync();
+
+           foreach (var quota in tenants)
+           {
+               // 1. 检查今日发行量
+               var todayIssuance = await GetTodayIssuanceAsync(quota.TenantId);
+               if (todayIssuance > quota.DailyIssuanceLimit * 0.9m)
+               {
+                   await SendAlertAsync(quota.TenantId,
+                       $"租户 {quota.TenantId} 今日发行量已达 90%（{todayIssuance}/{quota.DailyIssuanceLimit}）");
+               }
+
+               // 2. 检查平台账户余额
+               var platformBalance = await GetPlatformBalanceAsync(quota.TenantId);
+               if (platformBalance > quota.PlatformBalanceAlert)
+               {
+                   await SendAlertAsync(quota.TenantId,
+                       $"租户 {quota.TenantId} 平台账户余额过高（{platformBalance}），建议进行活动回馈");
+               }
+
+               // 3. 检查总发行量上限（如果配置了）
+               if (quota.TotalIssuanceCap.HasValue)
+               {
+                   var totalIssuance = await GetTotalIssuanceAsync(quota.TenantId);
+                   if (totalIssuance > quota.TotalIssuanceCap.Value * 0.95m)
+                   {
+                       await SendAlertAsync(quota.TenantId,
+                           $"租户 {quota.TenantId} 总发行量已达 95%，即将触及上限");
+                   }
+               }
+           }
+       }
+   }
+   ```
+
+5. **配额管理 API（管理员）**：
+   ```csharp
+   [Authorize(Roles = "System,Admin")]
+   [HttpPost("api/v2/Coin/Admin/UpdateTenantQuota")]
+   public async Task<MessageModel> UpdateTenantQuota([FromBody] UpdateTenantQuotaDto dto)
+   {
+       var quota = await _quotaRepository.QueryByIdAsync(dto.TenantId);
+       if (quota == null)
+           return Failed("租户配额配置不存在");
+
+       // 更新配额配置
+       await _quotaRepository.UpdateAsync(new TenantCoinQuota
+       {
+           TenantId = dto.TenantId,
+           QuotaLevel = dto.QuotaLevel,
+           MaxSingleTransfer = dto.MaxSingleTransfer,
+           DailyTransferCountLimit = dto.DailyTransferCountLimit,
+           // ... 其他字段
+       });
+
+       // 清除缓存
+       await _cache.DelAsync($"tenant:quota:{dto.TenantId}");
+
+       return Success("配额更新成功");
+   }
+   ```
+
 ### 4.2 手续费规则
 
 **计算公式**：
@@ -95,19 +263,82 @@
 手续费 = max(转账金额 × 费率, 最低手续费)
 ```
 
-**费率表**：
+**基础费率表**：
 | 转账金额（胡萝卜） | 费率 | 最低手续费 |
 |-------------------|------|-----------|
 | 10 - 99 | 10% | 1 胡萝卜 |
 | 100 - 999 | 5% | 10 胡萝卜 |
-| 1000+ | 3% | 50 胡萝卜 |
+| 1000 - 49999 | 3% | 50 胡萝卜 |
+| 50000+ | 1% | 500 胡萝卜 |
 
 **示例**：
 - 转账 `50 胡萝卜`：手续费 = `max(50 × 10%, 1)` = `5 胡萝卜`
 - 转账 `500 胡萝卜`：手续费 = `max(500 × 5%, 10)` = `25 胡萝卜`
 - 转账 `5000 胡萝卜`：手续费 = `max(5000 × 3%, 50)` = `150 胡萝卜`
+- 转账 `100000 胡萝卜`：手续费 = `max(100000 × 1%, 500)` = `1000 胡萝卜`
 
 **手续费向上取整**，确保平台收入不因精度问题损失。
+
+**动态调整策略**：
+
+1. **用户等级优惠**
+   - VIP 用户：手续费 7 折
+   - 普通用户：全价
+   - 示例：VIP 用户转账 500 胡萝卜，手续费 = `25 × 0.7 = 18 胡萝卜`（向上取整）
+
+2. **活动期间减免**
+   - 节日活动期间：手续费减半
+   - 新用户首次转账：免手续费
+   - 周年庆等特殊活动：手续费全免
+
+3. **实现示例**
+   ```csharp
+   public class DynamicFeeCalculator
+   {
+       public long CalculateFee(long amount, UserLevel level, bool isEventPeriod)
+       {
+           // 1. 计算基础费率
+           var baseRate = GetBaseRate(amount); // 10% / 5% / 3% / 1%
+           var minFee = GetMinFee(amount);     // 1 / 10 / 50 / 500
+
+           // 2. 应用折扣
+           var levelDiscount = level == UserLevel.VIP ? 0.7m : 1.0m;
+           var eventDiscount = isEventPeriod ? 0.5m : 1.0m;
+
+           // 3. 计算最终手续费
+           var finalRate = baseRate * levelDiscount * eventDiscount;
+           var calculatedFee = (long)Math.Ceiling(amount * finalRate);
+
+           // 4. 确保不低于最低手续费（折扣后）
+           var adjustedMinFee = (long)Math.Ceiling(minFee * levelDiscount * eventDiscount);
+           return Math.Max(calculatedFee, adjustedMinFee);
+       }
+
+       private decimal GetBaseRate(long amount)
+       {
+           if (amount < 100) return 0.10m;
+           if (amount < 1000) return 0.05m;
+           if (amount < 50000) return 0.03m;
+           return 0.01m;
+       }
+   }
+   ```
+
+4. **配置文件**
+   ```json
+   {
+       "CoinSystem": {
+           "FeeRates": [
+               { "Max": 99, "Rate": 0.10, "MinFee": 1 },
+               { "Max": 999, "Rate": 0.05, "MinFee": 10 },
+               { "Max": 49999, "Rate": 0.03, "MinFee": 50 },
+               { "Max": null, "Rate": 0.01, "MinFee": 500 }
+           ],
+           "VipDiscount": 0.7,
+           "EventDiscount": 0.5
+       }
+   }
+   ```
 
 ---
 
@@ -136,6 +367,105 @@
 **失败回滚**：
 - 业务逻辑失败时，自动释放锁定并退还金额
 - 记录失败原因，便于排查
+
+### 5.3 退款机制
+
+**自动退款场景**：
+
+1. **帖子置顶失败**
+   - 场景：帖子在置顶期间被删除或违规下架
+   - 退款规则：按剩余时长比例退款
+   - 示例：置顶 3 天（300 胡萝卜），使用 1 天后被删除，退款 = `300 × (2/3) = 200 胡萝卜`
+
+2. **付费内容解锁失败**
+   - 场景：支付后发现内容已删除或不可访问
+   - 退款规则：全额退款
+   - 时限：支付后 24 小时内
+
+3. **系统故障导致的消费失败**
+   - 场景：扣款成功但服务未生效（如高亮未应用）
+   - 退款规则：自动检测并全额退款
+
+**手动退款流程**：
+
+1. **用户发起退款申请**
+   - 申请入口：消费记录详情页
+   - 时限：消费后 7 天内
+   - 必填信息：退款原因、凭证截图
+
+2. **管理员审核**
+   - 查看消费记录和业务日志
+   - 验证退款原因的合理性
+   - 审核时限：48 小时内
+
+3. **退款执行**
+   - 审核通过：退还金额 - 10% 手续费
+   - 审核拒绝：通知用户拒绝原因
+   - 特殊情况（如系统故障）：全额退款
+
+**退款记录追溯**：
+
+```sql
+CREATE TABLE coin_refund (
+    id BIGINT PRIMARY KEY,
+    original_transaction_id BIGINT NOT NULL,  -- 原交易ID
+    refund_transaction_id BIGINT NOT NULL,    -- 退款交易ID
+    refund_amount BIGINT NOT NULL,            -- 退款金额
+    refund_type VARCHAR(50) NOT NULL,         -- AUTO/MANUAL
+    refund_reason VARCHAR(500),               -- 退款原因
+    auditor_id BIGINT,                        -- 审核人（手动退款）
+    created_at TIMESTAMP NOT NULL,
+    INDEX idx_original_tx (original_transaction_id),
+    INDEX idx_refund_tx (refund_transaction_id)
+);
+```
+
+**实现示例**：
+
+```csharp
+public async Task<long> RefundAsync(long originalTransactionId, string reason, RefundType type)
+{
+    var original = await GetTransactionAsync(originalTransactionId);
+
+    // 检查: 是否已退款
+    var existingRefund = await GetRefundByOriginalTxAsync(originalTransactionId);
+    if (existingRefund != null)
+        throw new BusinessException("该交易已退款");
+
+    // 检查: 7天内（手动退款）
+    if (type == RefundType.Manual && (DateTime.Now - original.CreatedAt).TotalDays > 7)
+        throw new BusinessException("超过退款期限");
+
+    // 计算退款金额
+    var refundAmount = type == RefundType.Auto
+        ? original.Amount  // 自动退款全额
+        : (long)(original.Amount * 0.9m); // 手动退款扣10%
+
+    // 创建退款交易
+    var refundTx = new CoinTransaction
+    {
+        TransactionType = "REFUND",
+        FromUserId = null,
+        ToUserId = original.FromUserId,
+        Amount = refundAmount,
+        Remark = $"退款: {reason} (原交易: {originalTransactionId})"
+    };
+
+    var refundTxId = await CreateTransactionAsync(refundTx);
+
+    // 记录退款关联
+    await InsertRefundRecordAsync(new CoinRefund
+    {
+        OriginalTransactionId = originalTransactionId,
+        RefundTransactionId = refundTxId,
+        RefundAmount = refundAmount,
+        RefundType = type.ToString(),
+        RefundReason = reason
+    });
+
+    return refundTxId;
+}
+```
 
 ---
 
@@ -351,6 +681,68 @@ UPDATE user_balance SET balance = balance - @amount WHERE user_id = @userId;
 - 新用户转账限额更低（注册7天内）
 - 检测到异常行为自动冻结账户，需人工审核
 - 记录设备指纹，防止批量注册刷币
+
+**智能风控升级**：
+
+1. **设备指纹 + IP 关联分析**
+   - 检测同一设备或 IP 下的多个账号互刷行为
+   - 记录设备特征（浏览器指纹、操作系统、屏幕分辨率等）
+   - 关联分析：同一设备下多账号频繁互相转账或点赞
+
+2. **行为模式识别**
+   - **正常用户特征**：
+     - 点赞/评论分散在不同帖子和时间段
+     - 行为间隔不规律（符合人类随机性）
+     - 浏览时长与互动频率成正比
+   - **刷子特征**：
+     - 点赞/评论集中在少数几个帖子（前3个帖子占80%以上）
+     - 时间间隔规律（标准差小于5秒，机器行为）
+     - 无浏览行为直接点赞（秒点）
+
+3. **信用分系统**
+   - 新用户初始信用分：`100`
+   - 正常行为加分：连续登录、发布优质内容、获得点赞
+   - 异常行为扣分：
+     - 被检测到刷币行为：-20 分
+     - 短时间大量小额转账：-10 分
+     - 设备指纹关联多账号：-30 分
+   - 信用分等级：
+     - 90-100：正常用户，无限制
+     - 60-89：观察用户，转账限额减半
+     - 0-59：高风险用户，禁止转账，仅保留查询功能
+
+4. **实现示例**
+   ```csharp
+   public class AntiFraudDetector
+   {
+       public async Task<FraudRisk> DetectAsync(long userId)
+       {
+           var recentActions = await GetRecentActionsAsync(userId, hours: 24);
+
+           // 检测1: 点赞集中度（前3个帖子点赞数占总数80%以上）
+           var topPostsRatio = recentActions.GroupBy(a => a.PostId)
+               .OrderByDescending(g => g.Count())
+               .Take(3)
+               .Sum(g => g.Count()) / (double)recentActions.Count;
+
+           // 检测2: 时间间隔规律性（标准差小于5秒）
+           var intervals = recentActions.Zip(recentActions.Skip(1),
+               (a, b) => (b.CreatedAt - a.CreatedAt).TotalSeconds);
+           var stdDev = CalculateStdDev(intervals);
+
+           // 检测3: 设备指纹关联
+           var deviceAccounts = await GetDeviceFingerprintAccountsAsync(userId);
+
+           if (topPostsRatio > 0.8 && stdDev < 5)
+               return FraudRisk.High; // 高风险
+
+           if (deviceAccounts.Count > 5)
+               return FraudRisk.Medium; // 中风险
+
+           return FraudRisk.Low;
+       }
+   }
+   ```
 
 ### 9.3 审计日志
 
@@ -600,15 +992,148 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
    - 当前你已经有定时统计：建议以统计任务为发放入口（每日结算），避免实时刷赞套利。
    - 奖励上限：每日/每帖/每用户上限建议写清楚。
 
+**异步奖励机制的健壮性保障**：
+
+3. **死信队列（DLQ）**
+   - 异步发放失败的奖励进入死信队列
+   - 定期重试（每小时一次，最多重试 3 次）
+   - 超过重试次数后人工介入
+
+4. **补偿机制**
+   - 每日对账时检测"已点赞但未发放奖励"的记录
+   - 自动补发缺失的奖励
+   - 记录补偿日志便于审计
+
+5. **幂等性保证**
+   - 使用 `业务类型 + 业务ID + 用户ID + 日期` 作为唯一键
+   - 防止消息队列重复消费导致重复发放
+   - 数据库唯一索引约束
+
+6. **实现示例**
+   ```csharp
+   public interface ICoinRewardQueue
+   {
+       // 入队奖励消息
+       Task EnqueueRewardAsync(RewardMessage message);
+
+       // 重试失败的奖励（定时任务调用）
+       Task RetryFailedRewardsAsync();
+
+       // 对账补偿（每日对账时调用）
+       Task CompensateMissingRewardsAsync(DateTime date);
+   }
+
+   public class RewardMessage
+   {
+       public string BusinessType { get; set; }  // POST_LIKE / COMMENT_REPLY
+       public long BusinessId { get; set; }      // PostId / CommentId
+       public long ToUserId { get; set; }        // 奖励接收者
+       public long Amount { get; set; }          // 奖励金额
+       public string IdempotencyKey { get; set; } // 幂等键: {BusinessType}_{BusinessId}_{ToUserId}_{Date}
+   }
+
+   // 定时任务：每小时重试死信队列
+   [AutomaticRetry(Attempts = 0)]
+   public async Task RetryDeadLetterQueueAsync()
+   {
+       await _rewardQueue.RetryFailedRewardsAsync();
+   }
+
+   // 定时任务：每日凌晨3点补偿昨日缺失奖励
+   [AutomaticRetry(Attempts = 0)]
+   public async Task CompensateMissingRewardsAsync()
+   {
+       await _rewardQueue.CompensateMissingRewardsAsync(DateTime.Today.AddDays(-1));
+   }
+   ```
+
 ### 14.5 对账口径与定时任务（上线前必须有）
 
 1. **资金守恒公式落地**
-   - 需要明确“发行量/消耗量”的口径来自哪些 `transaction_type`。
+   - 需要明确"发行量/消耗量"的口径来自哪些 `transaction_type`。
 
 2. **每日对账任务**
    - 建议实现一个 Hangfire Job：
      - 汇总用户余额、平台余额、当日发行/消耗，写入 `daily_balance_report`。
      - 差异非 0：告警 + 标记 UNBALANCED。
+
+**实时监控与告警增强**：
+
+3. **实时账本校验**
+   - 每笔交易后立即校验：`sum(balance_change_log.change_amount) = 交易金额 + 手续费`
+   - 校验失败立即记录异常日志并告警
+   - 示例实现：
+     ```csharp
+     public class RealTimeBalanceMonitor
+     {
+         public async Task<bool> VerifyTransactionAsync(long transactionId)
+         {
+             var transaction = await GetTransactionAsync(transactionId);
+             var logs = await GetBalanceChangeLogsAsync(transactionId);
+
+             // 校验: 交易金额 + 手续费 = 变动日志总和
+             var expectedTotal = transaction.Amount + transaction.Fee;
+             var actualTotal = logs.Sum(l => Math.Abs(l.ChangeAmount));
+
+             if (expectedTotal != actualTotal)
+             {
+                 await _alertService.SendAlertAsync(
+                     $"交易 {transactionId} 账本不一致: 预期 {expectedTotal}, 实际 {actualTotal}"
+                 );
+                 return false;
+             }
+             return true;
+         }
+     }
+     ```
+
+4. **异常交易即时告警**
+   - **大额交易告警**：单笔交易超过 10 万胡萝卜
+   - **高频交易告警**：单用户 1 小时内交易次数超过 50 次
+   - **平台账户异常告警**：平台账户余额异常下降（应只增不减）
+   - 告警渠道：邮件 + 企业微信 + 管理后台通知
+
+5. **对账差异自动冻结**
+   - 差异非 0 时，自动冻结所有转账操作（仅保留查询）
+   - 冻结后在管理后台显著提示
+   - 差异修复后需管理员手动解除冻结
+   - 冻结期间记录所有查询操作日志
+
+6. **对账差异追溯工具**
+   ```csharp
+   public class ReconciliationDifferenceTracer
+   {
+       // 找出差异来源
+       public async Task<List<TransactionAnomaly>> TraceAnomaliesAsync(DateTime date)
+       {
+           var anomalies = new List<TransactionAnomaly>();
+
+           // 1. 找出变动日志缺失的交易
+           var txWithoutLogs = await FindTransactionsWithoutLogsAsync(date);
+           anomalies.AddRange(txWithoutLogs.Select(tx => new TransactionAnomaly
+           {
+               TransactionId = tx.Id,
+               Type = "缺少变动日志",
+               Description = $"交易 {tx.Id} 未生成对应的 balance_change_log"
+           }));
+
+           // 2. 找出金额不匹配的交易
+           var amountMismatches = await FindAmountMismatchesAsync(date);
+           anomalies.AddRange(amountMismatches);
+
+           // 3. 找出孤立的变动日志（无对应交易）
+           var orphanLogs = await FindOrphanLogsAsync(date);
+           anomalies.AddRange(orphanLogs.Select(log => new TransactionAnomaly
+           {
+               TransactionId = log.TransactionId,
+               Type = "孤立变动日志",
+               Description = $"变动日志 {log.Id} 对应的交易 {log.TransactionId} 不存在"
+           }));
+
+           return anomalies;
+       }
+   }
+   ```
 
 ---
 
@@ -721,12 +1246,123 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
    - 每日结算：每天凌晨 2 点统计昨日点赞增量，发放加成奖励
    - 失去地位不扣回：一旦发放不再追回（避免用户体验问题）
 
-4. **数据库设计**
+4. **点赞加成上限（防止无限增长）**
+   - **神评点赞加成上限**：200 个点赞（2000 胡萝卜）
+     - 超过 200 个点赞后不再增加加成奖励
+     - 最高总奖励：500（基础）+ 2000（加成）= 2500 胡萝卜（2.5 白萝卜）
+   - **沙发点赞加成上限**：100 个点赞（500 胡萝卜）
+     - 超过 100 个点赞后不再增加加成奖励
+     - 最高总奖励：300（基础）+ 500（加成）= 800 胡萝卜（0.8 白萝卜）
+   - **实现示例**：
+     ```csharp
+     public class HighlightRewardCalculator
+     {
+         private const int GOD_COMMENT_LIKE_CAP = 200;
+         private const int SOFA_LIKE_CAP = 100;
+
+         public long CalculateGodCommentReward(int likeCount)
+         {
+             const long baseReward = 500;
+             const long perLikeBonus = 10;
+
+             var cappedLikes = Math.Min(likeCount, GOD_COMMENT_LIKE_CAP);
+             return baseReward + cappedLikes * perLikeBonus;
+         }
+
+         public long CalculateSofaReward(int likeCount)
+         {
+             const long baseReward = 300;
+             const long perLikeBonus = 5;
+
+             var cappedLikes = Math.Min(likeCount, SOFA_LIKE_CAP);
+             return baseReward + cappedLikes * perLikeBonus;
+         }
+     }
+     ```
+
+5. **保留奖励机制（鼓励持续优质内容）**
+   - **神评保留天数奖励**：
+     - 连续保持神评地位每满 7 天，额外奖励 500 胡萝卜
+     - 最多连续 4 周（28 天），总额外奖励 2000 胡萝卜
+   - **沙发保留天数奖励**：
+     - 连续保持沙发地位每满 7 天，额外奖励 200 胡萝卜
+     - 最多连续 4 周（28 天），总额外奖励 800 胡萝卜
+   - **检测逻辑**：
+     - 每日凌晨 2 点检查神评/沙发的保留天数
+     - 如果当天失去地位，则停止发放保留奖励（但不追回已发放的）
+   - **实现示例**：
+     ```csharp
+     public class RetentionRewardJob
+     {
+         [AutomaticRetry(Attempts = 3)]
+         public async Task ProcessRetentionRewardsAsync()
+         {
+             var date = DateTime.Today;
+
+             // 1. 获取所有活跃的神评/沙发记录
+             var highlights = await _highlightRepository.QueryAsync(h =>
+                 h.IsActive && h.CreatedAt <= date.AddDays(-7));
+
+             foreach (var highlight in highlights)
+             {
+                 // 2. 计算保留天数（向下取整到周）
+                 var retentionDays = (date - highlight.CreatedAt.Date).Days;
+                 var retentionWeeks = retentionDays / 7;
+
+                 // 3. 检查是否需要发放保留奖励
+                 var lastRewardWeek = highlight.LastRetentionRewardWeek ?? 0;
+
+                 if (retentionWeeks > lastRewardWeek && retentionWeeks <= 4)
+                 {
+                     // 4. 计算并发放奖励
+                     var rewardAmount = highlight.HighlightType == "GodComment" ? 500 : 200;
+
+                     await _coinRewardService.GrantRetentionRewardAsync(
+                         highlightId: highlight.Id,
+                         userId: highlight.UserId,
+                         amount: rewardAmount,
+                         week: retentionWeeks
+                     );
+
+                     // 5. 更新最后发放周数
+                     await _highlightRepository.UpdateColumnsAsync(
+                         h => h.Id == highlight.Id,
+                         h => new CommentHighlight { LastRetentionRewardWeek = retentionWeeks }
+                     );
+                 }
+             }
+         }
+     }
+     ```
+
+6. **数据库设计**
    ```sql
    -- 在 CommentHighlight 表中记录奖励发放
    ALTER TABLE comment_highlight ADD COLUMN coin_rewarded BOOLEAN DEFAULT FALSE;
    ALTER TABLE comment_highlight ADD COLUMN coin_amount BIGINT DEFAULT 0;
    ALTER TABLE comment_highlight ADD COLUMN last_reward_at TIMESTAMP;
+   ALTER TABLE comment_highlight ADD COLUMN last_retention_reward_week INT DEFAULT 0;  -- 最后发放保留奖励的周数
+   ALTER TABLE comment_highlight ADD COLUMN total_retention_reward BIGINT DEFAULT 0;   -- 累计保留奖励金额
+
+   -- 神评/沙发奖励配置表（支持动态调整）
+   CREATE TABLE highlight_reward_config (
+       id BIGINT PRIMARY KEY,
+       highlight_type VARCHAR(20) NOT NULL,     -- GodComment / Sofa
+       base_reward BIGINT NOT NULL,             -- 基础奖励
+       per_like_bonus BIGINT NOT NULL,          -- 每点赞加成
+       like_cap INT NOT NULL,                   -- 点赞加成上限
+       retention_reward BIGINT NOT NULL,        -- 保留奖励（每周）
+       max_retention_weeks INT NOT NULL,        -- 最大保留周数
+       is_enabled BOOLEAN DEFAULT TRUE,
+       created_at TIMESTAMP NOT NULL,
+       updated_at TIMESTAMP NOT NULL,
+       INDEX idx_type (highlight_type)
+   );
+
+   -- 初始化配置数据
+   INSERT INTO highlight_reward_config (id, highlight_type, base_reward, per_like_bonus, like_cap, retention_reward, max_retention_weeks, created_at, updated_at) VALUES
+   (1, 'GodComment', 500, 10, 200, 500, 4, NOW(), NOW()),
+   (2, 'Sofa', 300, 5, 100, 200, 4, NOW(), NOW());
    ```
 
 ### 16.3 平台账户的具体实现
@@ -982,6 +1618,656 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
    - 并发转账的幂等性测试
    - 余额不足的异常处理测试
    - 对账逻辑的准确性测试
+
+### 16.9 前端展示优化
+
+**问题**：用户对萝卜币的感知和参与度直接影响系统的活跃度，需要优化前端展示体验。
+
+**建议方案**：
+
+1. **实时余额更新（WebSocket/SignalR）**
+
+   **问题场景**：
+   - 用户 A 在个人中心查看余额时，其他用户打赏或点赞导致余额变化，但页面不刷新看不到
+   - 用户完成任务后，需要手动刷新才能看到奖励到账
+
+   **解决方案**：
+   ```csharp
+   // 后端 - SignalR Hub
+   public class CoinNotificationHub : Hub
+   {
+       private readonly IHubContext<CoinNotificationHub> _hubContext;
+
+       // 余额变动通知
+       public async Task NotifyBalanceChangeAsync(long userId, long newBalance, long changeAmount, string reason)
+       {
+           await _hubContext.Clients.User(userId.ToString()).SendAsync("BalanceChanged", new
+           {
+               NewBalance = newBalance,
+               ChangeAmount = changeAmount,
+               Reason = reason,
+               Timestamp = DateTime.Now
+           });
+       }
+   }
+
+   // 在 CoinTransactionService 中集成
+   public async Task<long> CreateTransactionAsync(CoinTransaction transaction)
+   {
+       // ... 交易逻辑
+
+       // 发送实时通知
+       if (transaction.ToUserId.HasValue)
+       {
+           await _coinNotificationHub.NotifyBalanceChangeAsync(
+               transaction.ToUserId.Value,
+               newBalance,
+               transaction.Amount,
+               transaction.Remark
+           );
+       }
+
+       return transactionId;
+   }
+   ```
+
+   ```typescript
+   // 前端 - React Hook
+   import { HubConnection, HubConnectionBuilder } from '@microsoft/signalr';
+   import { useEffect, useState } from 'react';
+
+   export function useCoinBalance() {
+       const [balance, setBalance] = useState(0);
+       const [connection, setConnection] = useState<HubConnection | null>(null);
+
+       useEffect(() => {
+           const conn = new HubConnectionBuilder()
+               .withUrl('/hub/coin-notification', {
+                   accessTokenFactory: () => localStorage.getItem('access_token') || ''
+               })
+               .withAutomaticReconnect()
+               .build();
+
+           conn.on('BalanceChanged', (data: {
+               NewBalance: number;
+               ChangeAmount: number;
+               Reason: string;
+               Timestamp: string;
+           }) => {
+               setBalance(data.NewBalance);
+
+               // 显示动画提示
+               if (data.ChangeAmount > 0) {
+                   showCoinAnimation(data.ChangeAmount, data.Reason);
+               }
+           });
+
+           conn.start().catch(console.error);
+           setConnection(conn);
+
+           return () => { conn.stop(); };
+       }, []);
+
+       return { balance, connection };
+   }
+   ```
+
+2. **萝卜币飞入动画**
+
+   **视觉效果**：当用户获得萝卜币时，显示金币从触发位置飞向余额显示区的动画。
+
+   ```tsx
+   // radish.client/src/components/CoinAnimation/CoinFlyAnimation.tsx
+   import React, { useState, useEffect } from 'react';
+   import styles from './CoinFlyAnimation.module.css';
+
+   interface CoinFlyAnimationProps {
+       amount: number;
+       fromX: number;  // 起始 X 坐标
+       fromY: number;  // 起始 Y 坐标
+       toX: number;    // 目标 X 坐标（余额显示位置）
+       toY: number;    // 目标 Y 坐标
+       onComplete?: () => void;
+   }
+
+   export const CoinFlyAnimation: React.FC<CoinFlyAnimationProps> = ({
+       amount, fromX, fromY, toX, toY, onComplete
+   }) => {
+       const [isVisible, setIsVisible] = useState(true);
+
+       useEffect(() => {
+           const timer = setTimeout(() => {
+               setIsVisible(false);
+               onComplete?.();
+           }, 1000);
+
+           return () => clearTimeout(timer);
+       }, [onComplete]);
+
+       if (!isVisible) return null;
+
+       return (
+           <div
+               className={styles.coinFly}
+               style={{
+                   '--from-x': `${fromX}px`,
+                   '--from-y': `${fromY}px`,
+                   '--to-x': `${toX}px`,
+                   '--to-y': `${toY}px`,
+               } as React.CSSProperties}
+           >
+               <div className={styles.coin}>
+                   <img src="/assets/carrot-icon.png" alt="胡萝卜" />
+                   <span className={styles.amount}>+{amount}</span>
+               </div>
+           </div>
+       );
+   };
+   ```
+
+   ```css
+   /* CoinFlyAnimation.module.css */
+   .coinFly {
+       position: fixed;
+       z-index: 9999;
+       pointer-events: none;
+       animation: flyToWallet 1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+   }
+
+   @keyframes flyToWallet {
+       0% {
+           transform: translate(var(--from-x), var(--from-y)) scale(1);
+           opacity: 1;
+       }
+       50% {
+           transform: translate(
+               calc((var(--from-x) + var(--to-x)) / 2),
+               calc((var(--from-y) + var(--to-y)) / 2 - 50px)
+           ) scale(1.2);
+           opacity: 1;
+       }
+       100% {
+           transform: translate(var(--to-x), var(--to-y)) scale(0.3);
+           opacity: 0;
+       }
+   }
+
+   .coin {
+       display: flex;
+       align-items: center;
+       gap: 4px;
+       background: linear-gradient(135deg, #ffd700, #ffed4e);
+       border-radius: 50%;
+       padding: 8px;
+       box-shadow: 0 4px 12px rgba(255, 215, 0, 0.5);
+   }
+
+   .amount {
+       font-weight: bold;
+       color: #ff6b00;
+       font-size: 16px;
+       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+   }
+   ```
+
+3. **余额趋势图表（Recharts）**
+
+   ```tsx
+   // radish.client/src/apps/profile/components/CoinBalanceChart.tsx
+   import React, { useEffect, useState } from 'react';
+   import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+   import { getCoinBalanceHistory } from '@/api/coin';
+
+   interface BalanceHistory {
+       date: string;
+       balance: number;
+       earned: number;
+       spent: number;
+   }
+
+   export const CoinBalanceChart: React.FC = () => {
+       const [data, setData] = useState<BalanceHistory[]>([]);
+       const [period, setPeriod] = useState<'week' | 'month' | 'year'>('week');
+
+       useEffect(() => {
+           const fetchData = async () => {
+               const response = await getCoinBalanceHistory(period);
+               setData(response.data);
+           };
+
+           fetchData();
+       }, [period]);
+
+       return (
+           <div className="coin-balance-chart">
+               <div className="chart-header">
+                   <h3>萝卜币趋势</h3>
+                   <div className="period-selector">
+                       <button onClick={() => setPeriod('week')} className={period === 'week' ? 'active' : ''}>
+                           近7天
+                       </button>
+                       <button onClick={() => setPeriod('month')} className={period === 'month' ? 'active' : ''}>
+                           近30天
+                       </button>
+                       <button onClick={() => setPeriod('year')} className={period === 'year' ? 'active' : ''}>
+                           近一年
+                       </button>
+                   </div>
+               </div>
+
+               <ResponsiveContainer width="100%" height={300}>
+                   <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                       <CartesianGrid strokeDasharray="3 3" />
+                       <XAxis dataKey="date" />
+                       <YAxis />
+                       <Tooltip
+                           formatter={(value: number, name: string) => {
+                               const labels: Record<string, string> = {
+                                   balance: '余额',
+                                   earned: '获得',
+                                   spent: '消费'
+                               };
+                               return [`${value} 胡萝卜`, labels[name]];
+                           }}
+                       />
+                       <Line type="monotone" dataKey="balance" stroke="#ff6b00" strokeWidth={2} name="余额" />
+                       <Line type="monotone" dataKey="earned" stroke="#52c41a" strokeWidth={2} name="获得" />
+                       <Line type="monotone" dataKey="spent" stroke="#f5222d" strokeWidth={2} name="消费" />
+                   </LineChart>
+               </ResponsiveContainer>
+           </div>
+       );
+   };
+   ```
+
+4. **Toast 通知组件**
+
+   ```tsx
+   // radish.client/src/components/CoinToast/CoinToast.tsx
+   import React from 'react';
+   import { Toast } from '@radish/ui';
+   import styles from './CoinToast.module.css';
+
+   interface CoinToastProps {
+       amount: number;
+       reason: string;
+       type: 'earn' | 'spend' | 'transfer';
+       visible: boolean;
+       onClose: () => void;
+   }
+
+   export const CoinToast: React.FC<CoinToastProps> = ({
+       amount, reason, type, visible, onClose
+   }) => {
+       const icons = {
+           earn: '🎉',
+           spend: '💸',
+           transfer: '💰'
+       };
+
+       const colors = {
+           earn: '#52c41a',
+           spend: '#f5222d',
+           transfer: '#1890ff'
+       };
+
+       return (
+           <Toast
+               visible={visible}
+               onClose={onClose}
+               duration={3000}
+               position="top-right"
+           >
+               <div className={styles.coinToast} style={{ borderColor: colors[type] }}>
+                   <div className={styles.icon}>{icons[type]}</div>
+                   <div className={styles.content}>
+                       <div className={styles.amount} style={{ color: colors[type] }}>
+                           {type === 'earn' ? '+' : '-'}{amount} 胡萝卜
+                       </div>
+                       <div className={styles.reason}>{reason}</div>
+                   </div>
+               </div>
+           </Toast>
+       );
+   };
+   ```
+
+5. **萝卜币钱包页面（完整示例）**
+
+   ```tsx
+   // radish.client/src/apps/profile/pages/CoinWallet.tsx
+   import React from 'react';
+   import { useCoinBalance } from '@/hooks/useCoinBalance';
+   import { CoinBalanceChart } from '../components/CoinBalanceChart';
+   import { CoinTransactionList } from '../components/CoinTransactionList';
+   import styles from './CoinWallet.module.css';
+
+   export const CoinWallet: React.FC = () => {
+       const { balance, loading } = useCoinBalance();
+
+       return (
+           <div className={styles.coinWallet}>
+               <div className={styles.balanceCard}>
+                   <div className={styles.balanceHeader}>
+                       <img src="/assets/carrot-icon.png" alt="胡萝卜" className={styles.icon} />
+                       <h2>我的萝卜币</h2>
+                   </div>
+
+                   <div className={styles.balanceDisplay}>
+                       <div className={styles.mainBalance}>
+                           {loading ? (
+                               <div className={styles.skeleton} />
+                           ) : (
+                               <>
+                                   <span className={styles.amount}>{balance.toLocaleString()}</span>
+                                   <span className={styles.unit}>胡萝卜</span>
+                               </>
+                           )}
+                       </div>
+                       <div className={styles.radishEquivalent}>
+                           ≈ {(balance / 1000).toFixed(3)} 白萝卜
+                       </div>
+                   </div>
+
+                   <div className={styles.stats}>
+                       <div className={styles.statItem}>
+                           <span className={styles.label}>累计获得</span>
+                           <span className={styles.value}>12,345</span>
+                       </div>
+                       <div className={styles.statItem}>
+                           <span className={styles.label}>累计消费</span>
+                           <span className={styles.value}>3,456</span>
+                       </div>
+                       <div className={styles.statItem}>
+                           <span className={styles.label}>今日获得</span>
+                           <span className={styles.value}>+123</span>
+                       </div>
+                   </div>
+               </div>
+
+               <div className={styles.chartSection}>
+                   <CoinBalanceChart />
+               </div>
+
+               <div className={styles.transactionSection}>
+                   <h3>交易记录</h3>
+                   <CoinTransactionList />
+               </div>
+           </div>
+       );
+   };
+   ```
+
+6. **后端 API 支持（余额历史）**
+
+   ```csharp
+   // Radish.Api/Controllers/v2/CoinController.cs
+   [HttpGet("api/v2/Coin/BalanceHistory")]
+   [Authorize(Policy = "Client")]
+   public async Task<MessageModel> GetBalanceHistory([FromQuery] string period = "week")
+   {
+       var userId = long.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+       var startDate = period switch
+       {
+           "week" => DateTime.Today.AddDays(-7),
+           "month" => DateTime.Today.AddDays(-30),
+           "year" => DateTime.Today.AddYears(-1),
+           _ => DateTime.Today.AddDays(-7)
+       };
+
+       // 按日期聚合余额历史
+       var history = await _db.Queryable<BalanceChangeLog>()
+           .Where(l => l.UserId == userId && l.CreatedAt >= startDate)
+           .GroupBy(l => l.CreatedAt.Date)
+           .Select(g => new
+           {
+               Date = g.Key.ToString("yyyy-MM-dd"),
+               Earned = g.Sum(l => l.ChangeAmount > 0 ? l.ChangeAmount : 0),
+               Spent = g.Sum(l => l.ChangeAmount < 0 ? -l.ChangeAmount : 0),
+               Balance = g.Max(l => l.BalanceAfter)
+           })
+           .ToListAsync();
+
+       return Success(history);
+   }
+   ```
+
+**实施优先级**：
+- **P0（MVP）**：Toast 通知、基础余额显示
+- **P1**：WebSocket 实时更新、交易记录列表
+- **P2**：萝卜币飞入动画、余额趋势图表
+- **P3**：高级统计分析、自定义图表周期
+
+---
+
+### 16.10 性能测试与容量规划
+
+**问题**：萝卜币系统作为核心功能，需要确保在高并发场景下的稳定性和性能。
+
+**建议方案**：
+
+1. **性能测试指标**
+
+   **关键性能指标（KPI）**：
+   | 指标 | 目标值 | 测试方法 |
+   |-----|--------|---------|
+   | **转账 TPS** | ≥ 1000 次/秒 | JMeter 压测 |
+   | **余额查询 QPS** | ≥ 5000 次/秒 | Redis 缓存命中率 ≥ 95% |
+   | **对账任务耗时** | ≤ 5 分钟（10万用户） | Hangfire 监控 |
+   | **交易成功率** | ≥ 99.9% | 排除余额不足等业务失败 |
+   | **平均响应时间** | ≤ 200ms（P95） | APM 工具监控 |
+   | **数据库连接池** | ≤ 80% 使用率 | SqlSugar AOP 监控 |
+
+2. **压力测试脚本（JMeter）**
+
+   **场景1：高并发转账**
+   ```xml
+   <!-- JMeter Test Plan: Coin Transfer Stress Test -->
+   <jmeterTestPlan version="1.2" properties="5.0">
+       <hashTree>
+           <ThreadGroup guiclass="ThreadGroupGui" testname="Transfer Test">
+               <intProp name="ThreadGroup.num_threads">500</intProp>
+               <intProp name="ThreadGroup.ramp_time">10</intProp>
+               <longProp name="ThreadGroup.duration">60</longProp>
+
+               <HTTPSamplerProxy>
+                   <elementProp name="HTTPsampler.Arguments">
+                       <collectionProp>
+                           <elementProp>
+                               <stringProp name="Argument.name">toUserId</stringProp>
+                               <stringProp name="Argument.value">${__Random(1,10000)}</stringProp>
+                           </elementProp>
+                           <elementProp>
+                               <stringProp name="Argument.name">amount</stringProp>
+                               <stringProp name="Argument.value">${__Random(10,1000)}</stringProp>
+                           </elementProp>
+                       </collectionProp>
+                   </elementProp>
+                   <stringProp name="HTTPSampler.path">/api/v2/Coin/Transfer</stringProp>
+                   <stringProp name="HTTPSampler.method">POST</stringProp>
+               </HTTPSamplerProxy>
+           </ThreadGroup>
+       </hashTree>
+   </jmeterTestPlan>
+   ```
+
+   **场景2：混合负载测试**
+   - 60% 余额查询（轻量级）
+   - 25% 交易记录查询（中量级）
+   - 10% 转账操作（重量级）
+   - 5% 对账操作（极重量级）
+
+3. **容量规划模型**
+
+   **数据库容量估算**：
+   ```csharp
+   public class CoinSystemCapacityPlanner
+   {
+       // 假设参数
+       private const int DAILY_ACTIVE_USERS = 100_000;        // 日活用户
+       private const int AVG_TRANSACTIONS_PER_USER = 5;       // 人均日交易数
+       private const int TRANSACTION_RECORD_SIZE = 500;       // 单条交易记录大小（字节）
+       private const int BALANCE_LOG_SIZE = 300;              // 单条余额日志大小（字节）
+
+       public CapacityReport Calculate(int months)
+       {
+           var dailyTransactions = DAILY_ACTIVE_USERS * AVG_TRANSACTIONS_PER_USER;
+           var totalDays = months * 30;
+           var totalTransactions = dailyTransactions * totalDays;
+
+           // 交易记录表容量（按月分表）
+           var transactionTableSize = totalTransactions * TRANSACTION_RECORD_SIZE;
+
+           // 余额变动日志表容量（每笔交易至少2条日志）
+           var balanceLogSize = totalTransactions * 2 * BALANCE_LOG_SIZE;
+
+           // 索引开销（估算 30%）
+           var indexOverhead = (transactionTableSize + balanceLogSize) * 0.3;
+
+           return new CapacityReport
+           {
+               TotalTransactions = totalTransactions,
+               TransactionTableSizeGB = transactionTableSize / 1024.0 / 1024.0 / 1024.0,
+               BalanceLogSizeGB = balanceLogSize / 1024.0 / 1024.0 / 1024.0,
+               TotalStorageGB = (transactionTableSize + balanceLogSize + indexOverhead) / 1024.0 / 1024.0 / 1024.0,
+               RecommendedShardingStrategy = totalTransactions > 100_000_000
+                   ? "建议启用分库分表（按月分表 + 按用户ID哈希分库）"
+                   : "当前单库单表可支撑"
+           };
+       }
+   }
+
+   // 输出示例（12 个月）：
+   // 总交易数：1.8 亿笔
+   // 交易表容量：84 GB
+   // 日志表容量：100 GB
+   // 总存储需求：239 GB（含索引）
+   // 分片建议：建议启用分库分表
+   ```
+
+4. **缓存容量规划**
+
+   **Redis 内存估算**：
+   ```
+   余额缓存：
+   - Key 格式: "coin:balance:{userId}"
+   - 单条大小: 100 字节（Key + Value + 元数据）
+   - 10 万活跃用户 × 100 字节 ≈ 10 MB
+
+   配额计数器：
+   - Key 格式: "quota:transfer:count:{tenantId}:{userId}:{date}"
+   - 单条大小: 80 字节
+   - 10 万用户 × 2 个 Key（count + amount） × 80 字节 ≈ 16 MB
+
+   交易幂等键：
+   - Key 格式: "tx:idempotency:{transactionNo}"
+   - 过期时间: 24 小时
+   - 日均 50 万笔交易 × 120 字节 ≈ 60 MB
+
+   总计：~100 MB（建议预留 1 GB Redis 内存用于萝卜币系统）
+   ```
+
+5. **数据库连接池配置**
+
+   ```json
+   // appsettings.Production.json
+   {
+       "Databases": [
+           {
+               "ConnId": "Main",
+               "DbType": 4,
+               "ConnectionString": "...",
+               "MaxConnectionPoolSize": 200,       // 最大连接数
+               "MinConnectionPoolSize": 10,        // 最小连接数
+               "ConnectionTimeout": 30,
+               "CommandTimeout": 60
+           }
+       ]
+   }
+   ```
+
+   **连接池监控**：
+   ```csharp
+   public class DatabaseConnectionMonitor
+   {
+       [AutomaticRetry(Attempts = 0)]
+       public async Task MonitorConnectionPoolAsync()
+       {
+           var db = _db.AsTenant().GetConnection("Main");
+           var poolStats = db.Ado.GetDataTable("SHOW STATUS LIKE 'Threads_connected'");
+           var threadsConnected = int.Parse(poolStats.Rows[0]["Value"].ToString());
+
+           if (threadsConnected > 160) // 80% of 200
+           {
+               await _alertService.SendAlertAsync(
+                   $"数据库连接池使用率过高: {threadsConnected}/200 ({threadsConnected * 100 / 200}%)"
+               );
+           }
+       }
+   }
+   ```
+
+6. **性能优化 Checklist**
+
+   - [ ] **数据库索引优化**
+     - `coin_transaction(from_user_id, created_at)` - 转账发起人查询
+     - `coin_transaction(to_user_id, created_at)` - 收款人查询
+     - `balance_change_log(user_id, created_at)` - 余额历史查询
+     - `user_balance(balance)` - 富豪榜查询
+
+   - [ ] **缓存策略**
+     - 用户余额缓存（TTL: 5 分钟，LRU 淘汰）
+     - 租户配额缓存（TTL: 1 小时）
+     - 热点交易记录缓存（最近 100 条）
+
+   - [ ] **异步化改造**
+     - 奖励发放：同步写库 → 消息队列异步处理
+     - 神评/沙发统计：实时计算 → 定时任务批量计算
+     - 对账任务：串行执行 → 并行分片对账
+
+   - [ ] **分库分表**
+     - 交易记录表：按月分表（`coin_transaction_202501`）
+     - 余额变动日志：按月分表 + 按用户ID哈希分库
+     - 对账报告：独立存储（归档到对象存储）
+
+   - [ ] **限流保护**
+     - 用户级限流：每秒 10 次转账请求（滑动窗口）
+     - 租户级限流：按配额等级动态调整
+     - 全局限流：转账 API 总 QPS 不超过 5000
+
+7. **容灾与高可用**
+
+   **数据库主从复制**：
+   - 主库（Master）：处理所有写操作
+   - 从库（Slave）：处理读操作（余额查询、交易记录查询）
+   - 读写分离：SqlSugar `SlaveConnectionConfigs` 配置
+
+   **Redis 高可用**：
+   - Redis Sentinel 模式（1 主 + 2 从 + 3 哨兵）
+   - 自动故障转移（Failover）
+   - 配置示例：
+     ```json
+     {
+         "Redis": {
+             "Enable": true,
+             "Sentinel": {
+                 "MasterName": "radish-coin-master",
+                 "Endpoints": [
+                     "sentinel1:26379",
+                     "sentinel2:26379",
+                     "sentinel3:26379"
+                 ]
+             }
+         }
+     }
+     ```
+
+**压测时间表**：
+- **Phase 1（开发环境）**：单接口压测，确认基准性能
+- **Phase 2（预发布环境）**：混合负载测试，模拟真实流量
+- **Phase 3（生产环境灰度）**：10% 真实流量验证
+- **Phase 4（全量上线）**：持续监控，逐步放开限流
 
 ---
 
