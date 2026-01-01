@@ -635,7 +635,7 @@ Comprehensive docs in `radish.docs/docs/`:
 - `docs/changelog/` - Daily/weekly progress logs
 - `docs/guide/authentication.md` - Auth flow details
 - `docs/frontend/design.md` - UI paradigm, component planning, cross-platform strategy
-- `docs/architecture/gateway-plan.md` - API Gateway refactoring plan
+- `docs/guide/gateway.md` - Gateway service architecture and deployment
 - `docs/deployment/guide.md` - Containerization and deployment
 
 **Always consult these docs before making architectural changes.**

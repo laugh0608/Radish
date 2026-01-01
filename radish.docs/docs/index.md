@@ -54,7 +54,7 @@ features:
 
 ### 架构与规划
 
-- [Gateway 规划](/architecture/gateway-plan) - API 网关设计与实施计划
+- [Gateway 服务网关](/guide/gateway) - 统一服务入口与路由转发
 - [国际化指南](/architecture/i18n) - 多语言支持方案
 - [开放平台](/features/open-platform) - 第三方应用接入指南
 

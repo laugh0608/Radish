@@ -10,7 +10,7 @@ Radish 项目的完整文档已迁移至 `radish.docs/docs/` 目录（同时也�
 - [部署指南](../radish.docs/docs/deployment/guide.md)
 - [认证与权限](../radish.docs/docs/guide/authentication.md)
 - [前端设计](../radish.docs/docs/frontend/design.md)
-- [Gateway 规划](../radish.docs/docs/architecture/gateway-plan.md)
+- [Gateway 服务网关](../radish.docs/docs/guide/gateway.md)
 - [开发计划](../radish.docs/docs/development-plan.md)
 - [开发日志](../radish.docs/docs/changelog/)
 

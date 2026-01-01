@@ -573,6 +573,6 @@
 
 ## 后续规划：API Gateway
 
-- 详细任务拆解见 [architecture/gateway-plan.md](architecture/gateway-plan.md)，当前阶段专注既有 M1-M8 交付，Gateway 作为 M9 之后的专项迭代。
-- 触发条件：后端核心用例和认证机制稳定、日志/监控链路可复用。届时启动 P1（项目基线）→ P2（认证）→ P3（路由/聚合）的工作包，并在 DevelopmentLog 记录进度。
+- Gateway 项目已完成 Phase 0 实施，实现了统一服务入口、YARP 路由转发、健康检查聚合等核心功能。详见 [Gateway 服务网关](guide/gateway.md)。
+- 当前阶段专注既有 M1-M8 交付，Gateway 的进一步增强（如统一认证、API 聚合、服务发现等）将根据实际需求在后续迭代中实施。
 - 在日常开发中提前预留：规范 Header（`X-Request-Id`、`X-Client-Id`）、CORS 配置、登录控制器可被 Gateway 复用，减少后续迁移成本。

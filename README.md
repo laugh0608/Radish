@@ -117,7 +117,7 @@ Radish/
 ### 专项文档
 - 🔐 [**认证与权限**](radish.docs/docs/guide/authentication.md) - OIDC 认证流程与权限体系
 - 🎨 [**前端设计**](radish.docs/docs/frontend/design.md) - WebOS 桌面范式与应用集成方式
-- 🚪 [**Gateway 规划**](radish.docs/docs/architecture/gateway-plan.md) - API 网关设计与实施计划
+- 🚪 [**Gateway 服务网关**](radish.docs/docs/guide/gateway.md) - 统一服务入口与路由转发
 - 🚀 [**部署指南**](radish.docs/docs/deployment/guide.md) - 容器化、CI/CD、生产部署
 - 🧩 [**文件上传设计**](radish.docs/docs/features/file-upload-design.md) - 文件上传与图片处理方案
 - 🦀 [**Rust 扩展**](radish.docs/docs/guide/rust-extensions.md) - radish-lib 使用指南

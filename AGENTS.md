@@ -126,7 +126,7 @@ AI: "3. 访问 http://localhost:5100/api/v2/Test/Log 查看日志输出"
 - `radish.docs/docs/architecture/framework.md` - 架构设计
 - `radish.docs/docs/architecture/specifications.md` - 开发规范
 - `radish.docs/docs/frontend/design.md` - 前端设计
-- `radish.docs/docs/architecture/gateway-plan.md` - Gateway 规划
+- `radish.docs/docs/guide/gateway.md` - Gateway 服务网关
 - `radish.docs/docs/guide/authentication.md` - 认证授权
 - `radish.docs/docs/guide/configuration.md` - 配置指南
 - `radish.docs/docs/deployment/guide.md` - 部署指南

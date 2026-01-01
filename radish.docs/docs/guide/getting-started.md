@@ -14,8 +14,8 @@
    - 掌握登录、权限模型与网关侧控制
 5. [前端设计](/frontend/design)
    - 理解 WebOS 桌面范式、窗口系统与组件规划
-6. [Gateway 规划](/architecture/gateway-plan)
-   - 查看网关路由、聚合、认证一体化设计
+6. [Gateway 服务网关](/guide/gateway)
+   - 了解统一服务入口与路由转发架构
 7. [部署指南](/deployment/guide)
    - 理解容器化、环境配置与上线流程
 8. [开发计划](/development-plan)
