@@ -9,8 +9,6 @@ import styles from './StatusBar.module.css';
  *
  * 显示系统信息、用户信息和时间
  */
-const defaultApiBase = 'https://localhost:5000';
-
 export const StatusBar = () => {
   const { userName, userId, isAuthenticated, clearUser, setUser } = useUserStore();
   const [time, setTime] = useState(new Date());
@@ -35,7 +33,7 @@ export const StatusBar = () => {
     withAuth?: boolean;
   }
 
-  function apiFetch<T = unknown>(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
+  function apiFetch<_T = unknown>(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
     const { withAuth, headers, ...rest } = options;
 
     const finalHeaders: HeadersInit = {

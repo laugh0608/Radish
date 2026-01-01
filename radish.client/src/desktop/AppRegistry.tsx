@@ -1,6 +1,5 @@
 import { WelcomeApp } from '@/apps/welcome/WelcomeApp';
 import { ShowcaseApp } from '@/apps/showcase/ShowcaseApp';
-import { AuthTestApp } from '@/apps/auth-test/AuthTestApp';
 import { ForumApp } from '@/apps/forum/ForumApp';
 import { ProfileApp } from '@/apps/profile/ProfileApp';
 import type { AppDefinition } from './types';
@@ -58,17 +57,6 @@ export const appRegistry: AppDefinition[] = [
     component: ShowcaseApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
-    requiredRoles: ['User'],
-    category: 'development'
-  },
-  {
-    id: 'auth-test',
-    name: '认证测试',
-    icon: 'mdi:shield-account',
-    description: '测试 OIDC 登录和 API 调用',
-    component: AuthTestApp,
-    type: 'window',
-    defaultSize: { width: 1000, height: 700 },
     requiredRoles: ['User'],
     category: 'development'
   },
@@ -138,6 +126,6 @@ export const getAppById = (id: string): AppDefinition | undefined => {
  * 根据用户角色过滤可见应用
  */
 // 当前阶段：默认所有应用在桌面可见，后续如需按角色控制可再扩展
-export const getVisibleApps = (userRoles: string[] = []): AppDefinition[] => {
+export const getVisibleApps = (_userRoles: string[] = []): AppDefinition[] => {
   return appRegistry;
 };
