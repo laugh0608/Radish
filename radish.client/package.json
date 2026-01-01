@@ -12,6 +12,7 @@
   "dependencies": {
     "@iconify/react": "^6.0.2",
     "@radish/ui": "*",
+    "date-fns": "^4.1.0",
     "highlight.js": "^11.11.1",
     "i18next": "^23.0.0",
     "i18next-browser-languagedetector": "^7.0.0",

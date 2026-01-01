@@ -1,22 +1,258 @@
 .container {
-  display: flex;
+  display: grid;
+  grid-template-columns: 260px 1fr 320px;
   height: 100%;
-  padding: 8px;
-  box-sizing: border-box;
-  gap: 12px;
+  background-color: #0f1419;
+  overflow: hidden;
+  transition: grid-template-columns 0.3s ease;
+}
+
+/* 响应式：中等窗口（隐藏右侧栏） */
+@media (max-width: 1200px) {
+  .container {
+    grid-template-columns: 260px 1fr;
+  }
+
+  .rightColumn {
+    display: none;
+  }
+}
+
+/* 响应式：小窗口（只显示中间栏） */
+@media (max-width: 768px) {
+  .container {
+    grid-template-columns: 1fr;
+  }
+
+  .leftColumn,
+  .rightColumn {
+    display: none;
+  }
+}
+
+/* 左侧栏 */
+.leftColumn {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-right: 1px solid #27272a;
+  overflow: hidden;
   background-color: #0f1419;
 }
 
-.middleColumn {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+.categorySection {
+  flex-shrink: 0;
+  padding: 20px;
+  border-bottom: 1px solid #27272a;
 }
 
-.rightColumn {
-  flex: 1.2;
-  padding-left: 8px;
+.tagsSection {
+  flex: 1;
   overflow-y: auto;
+  padding: 20px;
+}
+
+/* 中间栏（主内容区） */
+.middleColumn {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background-color: #0f1419;
+}
+
+.toolbar {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #27272a;
+  background-color: #0f1419;
+  gap: 16px;
+}
+
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbarTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin: 0;
+}
+
+.sortButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.sortButton {
+  padding: 6px 14px;
+  font-size: 13px;
+  background-color: transparent;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.sortButton:hover {
+  background-color: #27272a;
+  border-color: #52525b;
+  color: #f4f4f5;
+}
+
+.sortButton.sortActive {
+  background-color: #2d6cdf;
+  border-color: #2d6cdf;
+  color: #fff;
+  font-weight: 600;
+}
+
+.publishButton {
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #2d6cdf, #2558b8);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.publishButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 108, 223, 0.3);
+}
+
+.searchBox {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 8px 36px 8px 14px;
+  font-size: 14px;
+  background-color: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  color: #fff;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.searchInput::placeholder {
+  color: #71717a;
+}
+
+.searchInput:focus {
+  border-color: #2d6cdf;
+  background-color: #27272a;
+  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
+}
+
+.clearButton {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background-color: #3f3f46;
+  border: none;
+  border-radius: 50%;
+  color: #a1a1aa;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clearButton:hover {
+  background-color: #52525b;
+  color: #fff;
+}
+
+.postsFeed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.loadingText,
+.emptyText {
+  text-align: center;
+  padding: 40px 20px;
+  font-size: 14px;
+  color: #71717a;
+}
+
+.pagination {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  border-top: 1px solid #27272a;
+  background-color: #0f1419;
+}
+
+.paginationButton {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  background-color: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  color: #f4f4f5;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+  background-color: #27272a;
+  border-color: #52525b;
+}
+
+.paginationButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.paginationButton.paginationActive {
+  background-color: #2d6cdf;
+  border-color: #2d6cdf;
+  font-weight: 600;
+}
+
+.paginationEllipsis {
+  color: #71717a;
+  padding: 0 4px;
+  user-select: none;
+}
+
+/* 右侧栏 */
+.rightColumn {
+  height: 100%;
+  border-left: 1px solid #27272a;
+  overflow: hidden;
+  background-color: #0f1419;
 }
 
 .errorText {
