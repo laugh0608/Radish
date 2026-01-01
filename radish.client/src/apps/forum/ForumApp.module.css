@@ -1,3 +1,12 @@
+.containerShell {
+  /* 让布局基于“窗口容器宽度”响应式，而不是 viewport */
+  container-type: inline-size;
+  container-name: forum-container;
+
+  height: 100%;
+  min-width: 0;
+}
+
 .container {
   display: grid;
   grid-template-columns: 260px 1fr 320px;
@@ -7,7 +16,84 @@
   transition: grid-template-columns 0.3s ease;
 }
 
-/* 响应式：中等窗口（隐藏右侧栏） */
+/* 容器查询（优先用于“窗口化”场景） */
+@supports (container-type: inline-size) {
+  /* 响应式：中等窗口（隐藏右侧栏） - 基于容器宽度 */
+  @container forum-container (max-width: 1200px) {
+    .container {
+      grid-template-columns: 260px 1fr;
+    }
+
+    .rightColumn {
+      display: none;
+    }
+  }
+
+  /* 响应式：小窗口（只显示中间栏） - 基于容器宽度 */
+  @container forum-container (max-width: 900px) {
+    .container {
+      grid-template-columns: 1fr;
+    }
+
+    .leftColumn,
+    .rightColumn {
+      display: none;
+    }
+
+    /* 在小窗口时调整工具栏布局 */
+    .toolbar {
+      flex-wrap: wrap;
+    }
+
+    .toolbarLeft {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .searchBox {
+      flex: 1;
+      max-width: none;
+      min-width: 200px;
+    }
+  }
+
+  /* 超小窗口优化 */
+  @container forum-container (max-width: 600px) {
+    .toolbar {
+      padding: 12px 16px;
+    }
+
+    .toolbarTitle {
+      font-size: 16px;
+    }
+
+    .sortButtons {
+      gap: 6px;
+    }
+
+    .sortButton {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .postsFeed {
+      padding: 12px;
+    }
+
+    .pagination {
+      padding: 12px;
+      gap: 6px;
+    }
+
+    .paginationButton {
+      min-width: 32px;
+      height: 32px;
+      font-size: 13px;
+    }
+  }
+}
+
+/* 兜底：不支持容器查询时，仍按 viewport 响应（移动端/老浏览器） */
 @media (max-width: 1200px) {
   .container {
     grid-template-columns: 260px 1fr;
@@ -18,8 +104,7 @@
   }
 }
 
-/* 响应式：小窗口（只显示中间栏） */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .container {
     grid-template-columns: 1fr;
   }
@@ -27,6 +112,55 @@
   .leftColumn,
   .rightColumn {
     display: none;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+  }
+
+  .toolbarLeft {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .searchBox {
+    flex: 1;
+    max-width: none;
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 600px) {
+  .toolbar {
+    padding: 12px 16px;
+  }
+
+  .toolbarTitle {
+    font-size: 16px;
+  }
+
+  .sortButtons {
+    gap: 6px;
+  }
+
+  .sortButton {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  .postsFeed {
+    padding: 12px;
+  }
+
+  .pagination {
+    padding: 12px;
+    gap: 6px;
+  }
+
+  .paginationButton {
+    min-width: 32px;
+    height: 32px;
+    font-size: 13px;
   }
 }
 

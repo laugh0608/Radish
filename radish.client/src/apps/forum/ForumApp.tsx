@@ -584,7 +584,8 @@ export const ForumApp = () => {
   }
 
   return (
-    <div className={styles.container}>
+    <div className={styles.containerShell}>
+      <div className={styles.container}>
       {/* 左栏：分类和标签 */}
       <div className={styles.leftColumn}>
         {/* 发帖按钮 */}
@@ -836,6 +837,7 @@ export const ForumApp = () => {
 
       {/* 错误提示 */}
       {error && <p className={styles.errorText}>错误：{error}</p>}
+      </div>
     </div>
   );
 };
