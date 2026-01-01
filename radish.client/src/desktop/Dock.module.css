@@ -225,7 +225,7 @@
   background: #30d158;
   border-radius: 50%;
   border: 2px solid rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 6px rgba(48, 209, 88, 0.6);
+  box-shadow: 0 0 8px rgba(48, 209, 88, 0.8);
 }
 
 .miniBadge {
@@ -265,12 +265,12 @@
   position: absolute;
   top: -2px;
   right: -2px;
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   background: #00d4ff;
   border-radius: 50%;
-  border: 1.5px solid rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 6px rgba(0, 212, 255, 0.8);
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.8);
 }
 
 .moreIndicator {
