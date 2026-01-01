@@ -129,6 +129,10 @@
   color: white;
 }
 
+.appIcon svg {
+  flex-shrink: 0;
+}
+
 .appIcon:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-4px);
@@ -174,17 +178,21 @@
 }
 
 .authButton {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   color: white;
+}
+
+.authButton svg {
+  flex-shrink: 0;
 }
 
 .authButton:hover {
