@@ -30,9 +30,6 @@ interface OidcCallbackProps {
     apiBaseUrl: string;
 }
 
-// 默认通过 Gateway 暴露的 API 入口
-const defaultApiBase = 'https://localhost:5000';
-
 function App() {
     const { t } = useTranslation();
 
@@ -264,7 +261,7 @@ function getAuthServerBaseUrl(): string {
     return currentOrigin;
 }
 
-function handleLogin(apiBaseUrl: string) {
+function handleLogin(_apiBaseUrl: string) {
     if (typeof window === 'undefined') {
         return;
     }
@@ -287,7 +284,7 @@ function handleLogin(apiBaseUrl: string) {
     window.location.href = authorizeUrl.toString();
 }
 
-function handleLogout(apiBaseUrl: string) {
+function handleLogout(_apiBaseUrl: string) {
     if (typeof window === 'undefined') {
         return;
     }

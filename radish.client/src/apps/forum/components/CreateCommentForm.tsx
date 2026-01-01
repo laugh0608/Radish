@@ -163,7 +163,7 @@ export const CreateCommentForm = ({
       }, t);
 
       // 插入 Markdown 图片语法
-      const imageMarkdown = `![${file.name}](${result.fileUrl})`;
+      const imageMarkdown = `![${file.name}](${result.url})`;
       insertTextAtCursor(imageMarkdown);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '图片上传失败';
@@ -193,7 +193,7 @@ export const CreateCommentForm = ({
       }, t);
 
       // 插入 Markdown 链接语法
-      const linkMarkdown = `[${file.name}](${result.fileUrl})`;
+      const linkMarkdown = `[${file.name}](${result.url})`;
       insertTextAtCursor(linkMarkdown);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '文档上传失败';
