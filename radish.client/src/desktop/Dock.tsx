@@ -33,6 +33,16 @@ export const Dock = () => {
     return 'https://localhost:5000';
   }, []);
 
+  // 解析头像 URL（处理相对路径）
+  const resolveAvatarUrl = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith('/')) return `${apiBaseUrl}${url}`;
+    return `${apiBaseUrl}/${url}`;
+  };
+
+  const avatarSrc = resolveAvatarUrl(avatarThumbnailUrl || avatarUrl);
+
   // 只显示打开的应用（包括最小化的）
   const runningApps = openWindows.map(window => ({
     window,
@@ -231,9 +241,9 @@ export const Dock = () => {
               <div className={styles.avatar}>
                 {loggedIn ? (
                   <>
-                    {avatarThumbnailUrl || avatarUrl ? (
+                    {avatarSrc ? (
                       <img
-                        src={avatarThumbnailUrl || avatarUrl}
+                        src={avatarSrc}
                         alt={userName}
                         style={{
                           width: '40px',
