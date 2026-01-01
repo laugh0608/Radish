@@ -1,0 +1,167 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.titleInput {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  background-color: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  color: #f4f4f5;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.titleInput::placeholder {
+  color: #71717a;
+  font-weight: 400;
+}
+
+.titleInput:focus {
+  border-color: #2d6cdf;
+  background-color: #27272a;
+  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
+}
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background-color: #18181b;
+  border-radius: 8px;
+  border: 1px solid #3f3f46;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #a1a1aa;
+  cursor: pointer;
+  user-select: none;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.watermarkInput {
+  margin-left: 24px;
+  padding: 6px 12px;
+  font-size: 14px;
+  background-color: #27272a;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  color: #f4f4f5;
+  outline: none;
+  transition: all 0.2s ease;
+  max-width: 200px;
+}
+
+.watermarkInput:focus {
+  border-color: #2d6cdf;
+  background-color: #3f3f46;
+}
+
+.editorWrapper {
+  min-height: 400px;
+}
+
+.footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-top: 16px;
+  border-top: 1px solid #3f3f46;
+}
+
+.publishButton {
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 600;
+  background-color: #2d6cdf;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.publishButton:hover:not(:disabled) {
+  background-color: #2558b8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 108, 223, 0.3);
+}
+
+.publishButton:disabled {
+  background-color: #3f3f46;
+  color: #71717a;
+  cursor: not-allowed;
+}
+
+.cancelButton {
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 500;
+  background-color: transparent;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancelButton:hover {
+  background-color: #27272a;
+  border-color: #52525b;
+  color: #f4f4f5;
+}
+
+/* 未登录提示 */
+.loginPrompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.loginPrompt p {
+  font-size: 16px;
+  color: #a1a1aa;
+  margin: 0;
+}
+
+.loginButton {
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  background-color: #2d6cdf;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.loginButton:hover {
+  background-color: #2558b8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 108, 223, 0.3);
+}

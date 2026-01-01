@@ -15,17 +15,20 @@ import {
   updatePost,
   updateComment,
   deletePost,
-  deleteComment
+  deleteComment,
+  getCurrentGodComments
 } from '@/api/forum';
 import type {
   Category,
   PostItem,
   PostDetail,
-  CommentNode
+  CommentNode,
+  CommentHighlight
 } from '@/types/forum';
 import { CategoryList } from './components/CategoryList';
-import { PostList } from './components/PostList';
-import { PublishPostForm } from './components/PublishPostForm';
+import { PostCard } from './components/PostCard';
+import { PublishPostModal } from './components/PublishPostModal';
+import { TrendingSidebar } from './components/TrendingSidebar';
 import { PostDetail as PostDetailView } from './components/PostDetail';
 import { CommentTree } from './components/CommentTree';
 import { CreateCommentForm } from './components/CreateCommentForm';
@@ -34,7 +37,7 @@ import styles from './ForumApp.module.css';
 
 export const ForumApp = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, userName, userId } = useUserStore();
+  const { isAuthenticated, userId } = useUserStore();
 
   // 数据状态
   const [categories, setCategories] = useState<Category[]>([]);
@@ -42,6 +45,11 @@ export const ForumApp = () => {
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [selectedPost, setSelectedPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
+
+  // 新增：热门帖子和神评数据
+  const [hotPosts, setHotPosts] = useState<PostItem[]>([]);
+  const [trendingGodComments, setTrendingGodComments] = useState<CommentNode[]>([]);
+  const [postGodComments, setPostGodComments] = useState<Map<number, CommentHighlight>>(new Map());
 
   // 分页状态
   const [currentPage, setCurrentPage] = useState(1);
@@ -54,6 +62,9 @@ export const ForumApp = () => {
 
   // 搜索状态
   const [searchKeyword, setSearchKeyword] = useState('');
+
+  // 新增：发帖 Modal 状态
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
 
   // 编辑和删除状态
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -80,6 +91,7 @@ export const ForumApp = () => {
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [loadingPostDetail, setLoadingPostDetail] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [loadingTrending, setLoadingTrending] = useState(false);
 
   // 错误状态
   const [error, setError] = useState<string | null>(null);
@@ -89,6 +101,11 @@ export const ForumApp = () => {
   // 加载分类列表
   useEffect(() => {
     void loadCategories();
+  }, []);
+
+  // 加载热门内容（启动时加载一次）
+  useEffect(() => {
+    void loadTrendingContent();
   }, []);
 
   // 当选择分类时加载帖子列表并重置页码
@@ -133,12 +150,88 @@ export const ForumApp = () => {
       );
       setPosts(pageModel.data);
       setTotalPages(pageModel.pageCount);
+
+      // 加载每个帖子的神评（如果有）
+      await loadGodCommentsForPosts(pageModel.data);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
     } finally {
       setLoadingPosts(false);
     }
+  }
+
+  // 加载热门内容（热门帖子和热门神评）
+  async function loadTrendingContent() {
+    setLoadingTrending(true);
+    try {
+      // 获取热门帖子（前10条）
+      const hotPostsModel = await getPostList(
+        null, // 全部分类
+        t,
+        1,
+        10,
+        'hottest' // 按热度排序
+      );
+      setHotPosts(hotPostsModel.data);
+
+      // 获取全局热门神评：从热门帖子中收集神评
+      const allGodComments: CommentNode[] = [];
+      for (const post of hotPostsModel.data.slice(0, 5)) { // 只取前5个热门帖子的神评
+        try {
+          const godComments = await getCurrentGodComments(post.id, t);
+          if (godComments.length > 0) {
+            const topGodComment = godComments[0]; // 取第一个神评
+            allGodComments.push({
+              id: topGodComment.commentId,
+              content: topGodComment.contentSnapshot || '',
+              authorId: topGodComment.authorId,
+              authorName: topGodComment.authorName,
+              createTime: topGodComment.createTime,
+              likeCount: topGodComment.likeCount,
+              isLiked: false,
+              isGodComment: true,
+              isSofa: false,
+              postId: post.id,
+              parentId: null,
+              replyToUserId: null,
+              replyToUserName: null,
+              children: []
+            });
+          }
+        } catch {
+          // 忽略单个帖子的错误
+        }
+      }
+      // 按点赞数排序，取前10条
+      allGodComments.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+      setTrendingGodComments(allGodComments.slice(0, 10));
+    } catch (err) {
+      console.error('加载热门内容失败:', err);
+    } finally {
+      setLoadingTrending(false);
+    }
+  }
+
+  // 为帖子列表加载神评预览
+  async function loadGodCommentsForPosts(postList: PostItem[]) {
+    const godCommentsMap = new Map<number, CommentHighlight>();
+
+    // 并行加载所有帖子的神评
+    await Promise.all(
+      postList.map(async (post) => {
+        try {
+          const godComments = await getCurrentGodComments(post.id, t);
+          if (godComments.length > 0) {
+            godCommentsMap.set(post.id, godComments[0]); // 只取第一个神评
+          }
+        } catch {
+          // 忽略单个帖子的错误
+        }
+      })
+    );
+
+    setPostGodComments(godCommentsMap);
   }
 
   async function loadPostDetail(postId: number) {
@@ -228,7 +321,8 @@ export const ForumApp = () => {
         },
         t
       );
-      // 发布成功后重新加载帖子列表（回到第一页）
+      // 发布成功后关闭 Modal 并重新加载帖子列表（回到第一页）
+      setIsPublishModalOpen(false);
       setCurrentPage(1);
       await loadPosts();
       // 自动选择新发布的帖子
@@ -236,6 +330,7 @@ export const ForumApp = () => {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
+      throw err; // 让 Modal 显示错误
     }
   }
 
@@ -490,73 +585,208 @@ export const ForumApp = () => {
 
   return (
     <div className={styles.container}>
-      {/* 分类列表 */}
-      <CategoryList
-        categories={categories}
-        selectedCategoryId={selectedCategoryId}
-        onSelectCategory={setSelectedCategoryId}
-        loading={loadingCategories}
+      {/* 左栏：分类和标签 */}
+      <div className={styles.leftColumn}>
+        <div className={styles.categorySection}>
+          <CategoryList
+            categories={categories}
+            selectedCategoryId={selectedCategoryId}
+            onSelectCategory={setSelectedCategoryId}
+            loading={loadingCategories}
+          />
+        </div>
+        {/* TODO: 标签区域 */}
+        <div className={styles.tagsSection}>
+          {/* 未来添加标签列表 */}
+        </div>
+      </div>
+
+      {/* 中间栏：帖子瀑布流 */}
+      <div className={styles.middleColumn}>
+        {/* 工具栏 */}
+        <div className={styles.toolbar}>
+          <div className={styles.toolbarLeft}>
+            <h2 className={styles.toolbarTitle}>
+              {categories.find(c => c.id === selectedCategoryId)?.name || '全部帖子'}
+            </h2>
+            <div className={styles.sortButtons}>
+              <button
+                className={`${styles.sortButton} ${sortBy === 'newest' ? styles.sortActive : ''}`}
+                onClick={() => handleSortChange('newest')}
+              >
+                最新
+              </button>
+              <button
+                className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.sortActive : ''}`}
+                onClick={() => handleSortChange('hottest')}
+              >
+                最热
+              </button>
+              <button
+                className={`${styles.sortButton} ${sortBy === 'essence' ? styles.sortActive : ''}`}
+                onClick={() => handleSortChange('essence')}
+              >
+                精华
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.searchBox}>
+            <input
+              type="text"
+              className={styles.searchInput}
+              placeholder="搜索帖子..."
+              value={searchKeyword}
+              onChange={(e) => handleSearchChange(e.target.value)}
+            />
+            {searchKeyword && (
+              <button
+                className={styles.clearButton}
+                onClick={() => handleSearchChange('')}
+                aria-label="清除搜索"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          <button
+            className={styles.publishButton}
+            onClick={() => setIsPublishModalOpen(true)}
+            disabled={!loggedIn}
+          >
+            发帖
+          </button>
+        </div>
+
+        {/* 帖子瀑布流 */}
+        <div className={styles.postsFeed}>
+          {loadingPosts ? (
+            <p className={styles.loadingText}>加载中...</p>
+          ) : posts.length === 0 ? (
+            <p className={styles.emptyText}>暂无帖子</p>
+          ) : (
+            posts.map((post) => {
+              const godComment = postGodComments.get(post.id);
+              return (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onClick={() => handleSelectPost(post.id)}
+                  godComment={
+                    godComment
+                      ? {
+                          content: godComment.contentSnapshot || '',
+                          authorName: godComment.authorName,
+                          likeCount: godComment.likeCount
+                        }
+                      : null
+                  }
+                />
+              );
+            })
+          )}
+        </div>
+
+        {/* 分页 */}
+        {totalPages > 1 && (
+          <div className={styles.pagination}>
+            <button
+              className={styles.paginationButton}
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            >
+              ‹
+            </button>
+            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+              let pageNum: number;
+              if (totalPages <= 7) {
+                pageNum = i + 1;
+              } else if (currentPage <= 4) {
+                pageNum = i + 1;
+              } else if (currentPage >= totalPages - 3) {
+                pageNum = totalPages - 6 + i;
+              } else {
+                pageNum = currentPage - 3 + i;
+              }
+              return (
+                <button
+                  key={pageNum}
+                  className={`${styles.paginationButton} ${
+                    currentPage === pageNum ? styles.paginationActive : ''
+                  }`}
+                  onClick={() => handlePageChange(pageNum)}
+                >
+                  {pageNum}
+                </button>
+              );
+            })}
+            <button
+              className={styles.paginationButton}
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            >
+              ›
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 右栏：热门帖子和神评 */}
+      <div className={styles.rightColumn}>
+        <TrendingSidebar
+          hotPosts={hotPosts}
+          godComments={trendingGodComments}
+          onPostClick={handleSelectPost}
+          loading={loadingTrending}
+        />
+      </div>
+
+      {/* 发帖 Modal */}
+      <PublishPostModal
+        isOpen={isPublishModalOpen}
+        isAuthenticated={loggedIn}
+        onClose={() => setIsPublishModalOpen(false)}
+        onPublish={handlePublishPost}
       />
 
-      {/* 帖子列表 + 发帖表单 */}
-      <div className={styles.middleColumn}>
-        <PostList
-          posts={posts}
-          selectedPostId={selectedPost?.id || null}
-          onSelectPost={handleSelectPost}
-          loading={loadingPosts}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          sortBy={sortBy}
-          onSortChange={handleSortChange}
-          searchKeyword={searchKeyword}
-          onSearchChange={handleSearchChange}
-        />
-        <PublishPostForm
-          isAuthenticated={loggedIn}
-          userName={userName}
-          onPublish={handlePublishPost}
-        />
-      </div>
-
-      {/* 帖子详情 + 评论区 */}
-      <div className={styles.rightColumn}>
-        <PostDetailView
-          post={selectedPost}
-          loading={loadingPostDetail}
-          isLiked={selectedPost ? likedPosts.has(selectedPost.id) : false}
-          onLike={handleLikePost}
-          isAuthenticated={loggedIn}
-          currentUserId={userId ?? 0}
-          onEdit={handleEditPost}
-          onDelete={handleDeletePost}
-        />
-        <CommentTree
-          comments={comments}
-          loading={loadingComments}
-          hasPost={selectedPost !== null}
-          currentUserId={userId ?? 0}
-          pageSize={5}
-          sortBy={commentSortBy}
-          onSortChange={handleCommentSortChange}
-          onDeleteComment={handleDeleteComment}
-          onEditComment={handleEditComment}
-          onLikeComment={handleCommentLike}
-          onReplyComment={handleReplyComment}
-          onLoadMoreChildren={handleLoadMoreChildren}
-        />
-        <CreateCommentForm
-          isAuthenticated={loggedIn}
-          hasPost={selectedPost !== null}
-          onSubmit={handleCreateComment}
-          replyTo={replyTo}
-          onCancelReply={handleCancelReply}
-        />
-
-        {/* 错误提示 */}
-        {error && <p className={styles.errorText}>错误：{error}</p>}
-      </div>
+      {/* 帖子详情 Modal - TODO: 实现详情视图 */}
+      {selectedPost && (
+        <div style={{ display: 'none' }}>
+          {/* 暂时隐藏，后续实现为 Modal 或独立页面 */}
+          <PostDetailView
+            post={selectedPost}
+            loading={loadingPostDetail}
+            isLiked={selectedPost ? likedPosts.has(selectedPost.id) : false}
+            onLike={handleLikePost}
+            isAuthenticated={loggedIn}
+            currentUserId={userId ?? 0}
+            onEdit={handleEditPost}
+            onDelete={handleDeletePost}
+          />
+          <CommentTree
+            comments={comments}
+            loading={loadingComments}
+            hasPost={selectedPost !== null}
+            currentUserId={userId ?? 0}
+            pageSize={5}
+            sortBy={commentSortBy}
+            onSortChange={handleCommentSortChange}
+            onDeleteComment={handleDeleteComment}
+            onEditComment={handleEditComment}
+            onLikeComment={handleCommentLike}
+            onReplyComment={handleReplyComment}
+            onLoadMoreChildren={handleLoadMoreChildren}
+          />
+          <CreateCommentForm
+            isAuthenticated={loggedIn}
+            hasPost={selectedPost !== null}
+            onSubmit={handleCreateComment}
+            replyTo={replyTo}
+            onCancelReply={handleCancelReply}
+          />
+        </div>
+      )}
 
       {/* 编辑帖子 Modal */}
       <EditPostModal
@@ -589,6 +819,9 @@ export const ForumApp = () => {
         onConfirm={confirmDeleteComment}
         onCancel={cancelDeleteComment}
       />
+
+      {/* 错误提示 */}
+      {error && <p className={styles.errorText}>错误：{error}</p>}
     </div>
   );
 };

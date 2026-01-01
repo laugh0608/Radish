@@ -40,6 +40,9 @@ export interface PostItem {
   authorName?: string | null;
   createTime?: string;
   viewCount?: number;
+  likeCount?: number;
+  browseCount?: number;
+  commentCount?: number;
 }
 
 /**

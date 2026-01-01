@@ -1,0 +1,120 @@
+.card {
+  background-color: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.card:hover {
+  background-color: #27272a;
+  border-color: #52525b;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 13px;
+  color: #a1a1aa;
+  margin-bottom: 12px;
+}
+
+.meta > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta svg {
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.author {
+  font-weight: 500;
+  color: #d4d4d8;
+}
+
+.time,
+.likes,
+.views,
+.comments {
+  color: #a1a1aa;
+}
+
+/* 神评预览 */
+.godComment {
+  margin-top: 12px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(245, 158, 11, 0.05));
+  border-left: 3px solid #fbbf24;
+  border-radius: 6px;
+}
+
+.godCommentHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.godBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 11px;
+  color: #18181b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.godAuthor {
+  font-weight: 500;
+  color: #fbbf24;
+}
+
+.godLikes {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #fbbf24;
+  margin-left: auto;
+}
+
+.godLikes svg {
+  fill: #fbbf24;
+}
+
+.godCommentContent {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #e4e4e7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
