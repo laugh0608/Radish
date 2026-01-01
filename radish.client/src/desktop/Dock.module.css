@@ -210,6 +210,8 @@
 
 .miniAvatar {
   position: relative;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -263,14 +265,15 @@
 
 .miniActiveIndicator {
   position: absolute;
-  top: -2px;
-  right: -2px;
+  top: 0;
+  right: 0;
   width: 8px;
   height: 8px;
   background: #00d4ff;
   border-radius: 50%;
   border: 2px solid rgba(0, 0, 0, 0.6);
   box-shadow: 0 0 8px rgba(0, 212, 255, 0.8);
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .moreIndicator {
