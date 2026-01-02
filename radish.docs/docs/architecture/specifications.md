@@ -7,6 +7,15 @@
   - ❌ 避免：为每个实体都创建 `ICategoryService`，只是包装 BaseService 方法
   - ✅ 推荐：`IPostService : IBaseService<Post, PostVo>` 包含复杂的 `PublishPostAsync` 逻辑
 
+## 代码质量标准
+
+**单个源文件行数建议**：为保持代码可读性与可维护性，建议单文件控制在 **500-1000 行**；非必要不超过 **1000 行**。
+
+当文件接近或超过上限时，优先考虑：
+- 拆分为更小的模块/类/组件
+- 提取自定义 Hooks（前端）或抽离 Service/Utility（后端/前端）
+- 分离业务逻辑与展示逻辑，按功能拆分目录
+
 ## 项目版本号规范
 
 Radish 项目采用**语义化版本号（Semantic Versioning）**规范，确保版本号能够清晰传达变更的性质和影响范围。
