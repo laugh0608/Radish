@@ -314,9 +314,15 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
     const { t } = useTranslation();
     const [error, setError] = useState<string>();
     const [message, setMessage] = useState<string>(t('oidc.completingLogin'));
+    const [hasExecuted, setHasExecuted] = useState(false);
 
     useEffect(() => {
         if (typeof window === 'undefined') {
+            return;
+        }
+
+        // 防止 React StrictMode 导致的重复执行（授权码只能使用一次）
+        if (hasExecuted) {
             return;
         }
 
@@ -334,6 +340,9 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
             setMessage(t('oidc.loginFailed'));
             return;
         }
+
+        // 标记为已执行，防止重复请求
+        setHasExecuted(true);
 
         const redirectUri = `${window.location.origin}/oidc/callback`;
         const authServerBaseUrl = getAuthServerBaseUrl();
@@ -385,7 +394,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
         };
 
         void fetchToken();
-    }, [apiBaseUrl]);
+    }, [apiBaseUrl, hasExecuted, t]);
 
     return (
         <div>
