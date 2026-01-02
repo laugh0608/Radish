@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
-import { ConfirmDialog, Modal } from '@radish/ui';
+import { ConfirmDialog, Icon } from '@radish/ui';
 import {
   getTopCategories,
   getPostList,
@@ -614,126 +614,184 @@ export const ForumApp = () => {
         </div>
       </div>
 
-      {/* 中间栏：帖子瀑布流 */}
+      {/* 中间栏：帖子瀑布流或帖子详情 */}
       <div className={styles.middleColumn}>
-        {/* 工具栏 */}
-        <div className={styles.toolbar}>
-          <div className={styles.toolbarLeft}>
-            <h2 className={styles.toolbarTitle}>
-              {categories.find(c => c.id === selectedCategoryId)?.name || '全部帖子'}
-            </h2>
-            <div className={styles.sortButtons}>
+        {selectedPost ? (
+          /* 帖子详情视图 */
+          <>
+            {/* 返回按钮 */}
+            <div className={styles.detailToolbar}>
               <button
-                className={`${styles.sortButton} ${sortBy === 'newest' ? styles.sortActive : ''}`}
-                onClick={() => handleSortChange('newest')}
+                className={styles.backButton}
+                onClick={() => {
+                  setSelectedPost(null);
+                  setComments([]);
+                  resetCommentSort();
+                }}
               >
-                最新
-              </button>
-              <button
-                className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.sortActive : ''}`}
-                onClick={() => handleSortChange('hottest')}
-              >
-                最热
-              </button>
-              <button
-                className={`${styles.sortButton} ${sortBy === 'essence' ? styles.sortActive : ''}`}
-                onClick={() => handleSortChange('essence')}
-              >
-                精华
+                <Icon icon="mdi:arrow-left" size={20} />
+                返回列表
               </button>
             </div>
-          </div>
 
-          <div className={styles.searchBox}>
-            <input
-              type="text"
-              className={styles.searchInput}
-              placeholder="搜索帖子..."
-              value={searchKeyword}
-              onChange={(e) => handleSearchChange(e.target.value)}
-            />
-            {searchKeyword && (
-              <button
-                className={styles.clearButton}
-                onClick={() => handleSearchChange('')}
-                aria-label="清除搜索"
-              >
-                ×
-              </button>
-            )}
-          </div>
-        </div>
+            {/* 帖子详情内容 */}
+            <div className={styles.detailContent}>
+              <PostDetailView
+                post={selectedPost}
+                loading={loadingPostDetail}
+                isLiked={selectedPost ? likedPosts.has(selectedPost.id) : false}
+                onLike={handleLikePost}
+                isAuthenticated={loggedIn}
+                currentUserId={userId ?? 0}
+                onEdit={handleEditPost}
+                onDelete={handleDeletePost}
+              />
+              <CommentTree
+                comments={comments}
+                loading={loadingComments}
+                hasPost={selectedPost !== null}
+                currentUserId={userId ?? 0}
+                pageSize={5}
+                sortBy={commentSortBy}
+                onSortChange={handleCommentSortChange}
+                onDeleteComment={handleDeleteComment}
+                onEditComment={handleEditComment}
+                onLikeComment={handleCommentLike}
+                onReplyComment={handleReplyComment}
+                onLoadMoreChildren={handleLoadMoreChildren}
+              />
+              <CreateCommentForm
+                isAuthenticated={loggedIn}
+                hasPost={selectedPost !== null}
+                onSubmit={handleCreateComment}
+                replyTo={replyTo}
+                onCancelReply={handleCancelReply}
+              />
+            </div>
+          </>
+        ) : (
+          /* 帖子列表视图 */
+          <>
+            {/* 工具栏 */}
+            <div className={styles.toolbar}>
+              <div className={styles.toolbarLeft}>
+                <h2 className={styles.toolbarTitle}>
+                  {categories.find(c => c.id === selectedCategoryId)?.name || '全部帖子'}
+                </h2>
+                <div className={styles.sortButtons}>
+                  <button
+                    className={`${styles.sortButton} ${sortBy === 'newest' ? styles.sortActive : ''}`}
+                    onClick={() => handleSortChange('newest')}
+                  >
+                    最新
+                  </button>
+                  <button
+                    className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.sortActive : ''}`}
+                    onClick={() => handleSortChange('hottest')}
+                  >
+                    最热
+                  </button>
+                  <button
+                    className={`${styles.sortButton} ${sortBy === 'essence' ? styles.sortActive : ''}`}
+                    onClick={() => handleSortChange('essence')}
+                  >
+                    精华
+                  </button>
+                </div>
+              </div>
 
-        {/* 帖子瀑布流 */}
-        <div className={styles.postsFeed}>
-          {loadingPosts ? (
-            <p className={styles.loadingText}>加载中...</p>
-          ) : posts.length === 0 ? (
-            <p className={styles.emptyText}>暂无帖子</p>
-          ) : (
-            posts.map((post) => {
-              const godComment = postGodComments.get(post.id);
-              return (
-                <PostCard
-                  key={post.id}
-                  post={post}
-                  onClick={() => handleSelectPost(post.id)}
-                  godComment={
-                    godComment
-                      ? {
-                          content: godComment.contentSnapshot || '',
-                          authorName: godComment.authorName,
-                          likeCount: godComment.likeCount
-                        }
-                      : null
-                  }
+              <div className={styles.searchBox}>
+                <input
+                  type="text"
+                  className={styles.searchInput}
+                  placeholder="搜索帖子..."
+                  value={searchKeyword}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                 />
-              );
-            })
-          )}
-        </div>
+                {searchKeyword && (
+                  <button
+                    className={styles.clearButton}
+                    onClick={() => handleSearchChange('')}
+                    aria-label="清除搜索"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
 
-        {/* 分页 */}
-        {totalPages > 1 && (
-          <div className={styles.pagination}>
-            <button
-              className={styles.paginationButton}
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              ‹
-            </button>
-            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              let pageNum: number;
-              if (totalPages <= 7) {
-                pageNum = i + 1;
-              } else if (currentPage <= 4) {
-                pageNum = i + 1;
-              } else if (currentPage >= totalPages - 3) {
-                pageNum = totalPages - 6 + i;
-              } else {
-                pageNum = currentPage - 3 + i;
-              }
-              return (
+            {/* 帖子瀑布流 */}
+            <div className={styles.postsFeed}>
+              {loadingPosts ? (
+                <p className={styles.loadingText}>加载中...</p>
+              ) : posts.length === 0 ? (
+                <p className={styles.emptyText}>暂无帖子</p>
+              ) : (
+                posts.map((post) => {
+                  const godComment = postGodComments.get(post.id);
+                  return (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      onClick={() => handleSelectPost(post.id)}
+                      godComment={
+                        godComment
+                          ? {
+                              content: godComment.contentSnapshot || '',
+                              authorName: godComment.authorName,
+                              likeCount: godComment.likeCount
+                            }
+                          : null
+                      }
+                    />
+                  );
+                })
+              )}
+            </div>
+
+            {/* 分页 */}
+            {totalPages > 1 && (
+              <div className={styles.pagination}>
                 <button
-                  key={pageNum}
-                  className={`${styles.paginationButton} ${
-                    currentPage === pageNum ? styles.paginationActive : ''
-                  }`}
-                  onClick={() => handlePageChange(pageNum)}
+                  className={styles.paginationButton}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
                 >
-                  {pageNum}
+                  ‹
                 </button>
-              );
-            })}
-            <button
-              className={styles.paginationButton}
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              ›
-            </button>
-          </div>
+                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 7) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 4) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 3) {
+                    pageNum = totalPages - 6 + i;
+                  } else {
+                    pageNum = currentPage - 3 + i;
+                  }
+                  return (
+                    <button
+                      key={pageNum}
+                      className={`${styles.paginationButton} ${
+                        currentPage === pageNum ? styles.paginationActive : ''
+                      }`}
+                      onClick={() => handlePageChange(pageNum)}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                <button
+                  className={styles.paginationButton}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  ›
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -744,6 +802,7 @@ export const ForumApp = () => {
           godComments={trendingGodComments}
           onPostClick={handleSelectPost}
           loading={loadingTrending}
+          selectedPost={selectedPost}
         />
       </div>
 
@@ -754,54 +813,6 @@ export const ForumApp = () => {
         onClose={() => setIsPublishModalOpen(false)}
         onPublish={handlePublishPost}
       />
-
-      {/* 帖子详情 Modal */}
-      <Modal
-        isOpen={selectedPost !== null}
-        onClose={() => {
-          setSelectedPost(null);
-          setComments([]);
-          resetCommentSort();
-        }}
-        title=""
-        size="large"
-      >
-        {selectedPost && (
-          <div className={styles.postDetailContainer}>
-            <PostDetailView
-              post={selectedPost}
-              loading={loadingPostDetail}
-              isLiked={selectedPost ? likedPosts.has(selectedPost.id) : false}
-              onLike={handleLikePost}
-              isAuthenticated={loggedIn}
-              currentUserId={userId ?? 0}
-              onEdit={handleEditPost}
-              onDelete={handleDeletePost}
-            />
-            <CommentTree
-              comments={comments}
-              loading={loadingComments}
-              hasPost={selectedPost !== null}
-              currentUserId={userId ?? 0}
-              pageSize={5}
-              sortBy={commentSortBy}
-              onSortChange={handleCommentSortChange}
-              onDeleteComment={handleDeleteComment}
-              onEditComment={handleEditComment}
-              onLikeComment={handleCommentLike}
-              onReplyComment={handleReplyComment}
-              onLoadMoreChildren={handleLoadMoreChildren}
-            />
-            <CreateCommentForm
-              isAuthenticated={loggedIn}
-              hasPost={selectedPost !== null}
-              onSubmit={handleCreateComment}
-              replyTo={replyTo}
-              onCancelReply={handleCancelReply}
-            />
-          </div>
-        )}
-      </Modal>
 
       {/* 编辑帖子 Modal */}
       <EditPostModal

@@ -1,4 +1,5 @@
-import type { PostItem, CommentNode } from '@/types/forum';
+import type { PostItem, CommentNode, PostDetail } from '@/types/forum';
+import { PostInfoCard } from './PostInfoCard';
 import styles from './TrendingSidebar.module.css';
 
 interface TrendingSidebarProps {
@@ -6,13 +7,15 @@ interface TrendingSidebarProps {
   godComments: CommentNode[];
   onPostClick: (postId: number) => void;
   loading?: boolean;
+  selectedPost?: PostDetail | null;
 }
 
 export const TrendingSidebar = ({
   hotPosts,
   godComments,
   onPostClick,
-  loading = false
+  loading = false,
+  selectedPost = null
 }: TrendingSidebarProps) => {
   // 简单的时间格式化函数（待安装 date-fns 后替换）
   const formatTime = (dateString?: string) => {
@@ -45,6 +48,9 @@ export const TrendingSidebar = ({
 
   return (
     <aside className={styles.sidebar}>
+      {/* 帖子信息卡片（仅在查看帖子详情时显示） */}
+      {selectedPost && <PostInfoCard post={selectedPost} />}
+
       {/* 热门帖子 */}
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>
