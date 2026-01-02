@@ -178,6 +178,7 @@
 }
 
 .authButton {
+  position: relative;
   width: 44px;
   height: 44px;
   display: flex;
@@ -198,6 +199,44 @@
 .authButton:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: scale(1.1);
+}
+
+/* 已登录状态 - 绿色主题 */
+.authButton.loggedIn {
+  background: rgba(48, 209, 88, 0.2);
+  border-color: rgba(48, 209, 88, 0.4);
+  color: #30d158;
+}
+
+.authButton.loggedIn:hover {
+  background: rgba(48, 209, 88, 0.3);
+  border-color: rgba(48, 209, 88, 0.6);
+}
+
+/* 未登录状态 - 蓝色主题 */
+.authButton.loggedOut {
+  background: rgba(10, 132, 255, 0.15);
+  border-color: rgba(10, 132, 255, 0.3);
+  color: #0a84ff;
+}
+
+.authButton.loggedOut:hover {
+  background: rgba(10, 132, 255, 0.25);
+  border-color: rgba(10, 132, 255, 0.5);
+}
+
+/* 在线状态指示器 */
+.onlineIndicator {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 10px;
+  height: 10px;
+  background: #30d158;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 8px rgba(48, 209, 88, 0.8);
+  animation: pulse 2s ease-in-out infinite;
 }
 
 /* 缩小内容（灵动岛） */
