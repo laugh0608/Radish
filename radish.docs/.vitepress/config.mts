@@ -83,6 +83,7 @@ export default defineConfig({
             { text: '日志系统', link: '/guide/logging' },
             { text: '密码安全', link: '/guide/password-security' },
             { text: '速率限制', link: '/guide/rate-limiting' },
+            { text: '通知实时推送', link: '/guide/notification-realtime' },
             { text: 'Hangfire 定时任务', link: '/guide/hangfire-scheduled-jobs' },
             { text: 'Gateway 服务网关', link: '/guide/gateway' }
           ]
