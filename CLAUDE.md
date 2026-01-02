@@ -10,6 +10,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Quoting from English documentation or error messages
 - The user explicitly requests a different language
 
+## Code Quality Standards
+
+### File Size Guidelines
+
+**Single Source File Line Count**: To maintain code readability and maintainability, follow these guidelines for source file sizes:
+
+- **Recommended Range**: 500-1000 lines per file
+- **Hard Limit**: Avoid exceeding 1000 lines unless absolutely necessary
+- **When to Refactor**: If a file approaches or exceeds 1000 lines, consider refactoring using these strategies:
+  1. **Extract Custom Hooks** (React): Move state management and side effects into separate hooks
+     - Example: `useForumData.ts` for data fetching, `useForumActions.ts` for event handlers
+  2. **Create View Components**: Split large components into smaller, focused view components
+     - Example: `PostListView.tsx`, `PostDetailView.tsx` for different UI states
+  3. **Separate Business Logic**: Extract complex logic into utility functions or service modules
+  4. **Split by Feature**: Organize related functionality into feature-specific modules
+
+**Example Refactoring**:
+```
+Before: ForumApp.tsx (854 lines)
+After:
+  - ForumApp.tsx (179 lines) - Main component orchestration
+  - hooks/useForumData.ts (307 lines) - Data management
+  - hooks/useForumActions.ts (443 lines) - Event handlers
+  - views/PostListView.tsx (162 lines) - List view
+  - views/PostDetailContentView.tsx (108 lines) - Detail view
+```
+
+**Benefits**:
+- Improved code readability and navigation
+- Easier testing and debugging
+- Better code reusability
+- Reduced cognitive load for developers
+- Simplified code reviews
+
 ## Package Management & Testing Guidelines
 
 **CRITICAL: Package Installation and Project Startup Rules**
