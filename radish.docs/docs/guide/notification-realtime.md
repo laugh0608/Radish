@@ -37,8 +37,8 @@
 
 > Radish 在架构文档中已明确“实时交互统一使用 SignalR Hub 承载”，避免重复造轮子。
 
-- 参考：`radish.docs/docs/architecture/framework.md` 的“实时交互（SignalR）”章节
-- 参考：`radish.docs/docs/architecture/specifications.md` 的“SignalR 实时交互规范”章节
+- 参考：[开发框架说明](/architecture/framework) 的“实时交互（SignalR）”章节
+- 参考：[开发规范](/architecture/specifications) 的“SignalR 实时交互规范”章节
 
 ### 3.1 为什么不是纯轮询
 
@@ -955,7 +955,7 @@ public async Task StressTest_10000Connections()
 - **未读数占位接口**：`Radish.Api/Controllers/UserController.cs:614`
 - **Dock 轮询实现**：`radish.client/src/desktop/Dock.tsx:172`
 - **SignalR 规划与规范**：
-  - `radish.docs/docs/architecture/framework.md`（"实时交互（SignalR）"章节）
+  - [开发框架说明](/architecture/framework)（"实时交互（SignalR）"章节）
   - `radish.docs/docs/architecture/specifications.md`（"SignalR 实时交互规范"章节）
 - **Gateway WebSocket 现状**：`Radish.Gateway/Program.cs:110`
 - **萝卜币实时推送示例**：`radish.docs/docs/guide/radish-coin-system.md`（第 16.9 节）
@@ -1000,11 +1000,11 @@ public async Task StressTest_10000Connections()
 
 ### 14.1 内部文档
 
-- [开发框架说明](../architecture/framework.md) - SignalR 实时交互章节
-- [开发规范](../architecture/specifications.md) - SignalR 实时交互规范
-- [萝卜币系统设计](./radish-coin-system.md) - 实时推送示例（第 16.9 节）
-- [神评/沙发功能](../features/comment-highlight.md) - 通知触发点参考
-- [Gateway 服务网关](./gateway.md) - WebSocket 路由配置
+- [开发框架说明](/architecture/framework) - SignalR 实时交互章节
+- [开发规范](/architecture/specifications) - SignalR 实时交互规范
+- [萝卜币系统设计](/guide/radish-coin-system) - 实时推送示例（第 16.9 节）
+- [神评/沙发功能](/features/comment-highlight) - 通知触发点参考
+- [Gateway 服务网关](/guide/gateway) - WebSocket 路由配置
 
 ### 14.2 外部资源
 

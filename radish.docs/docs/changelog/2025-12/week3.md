@@ -252,7 +252,7 @@
 - ✅ 单个图片上传处理时间 &lt; 2 秒（&lt; 5MB 图片）
 
 **备注**：
-- 详细方案见 [文件上传设计方案](../features/file-upload-design.md)
+- 详细方案见 [文件上传设计方案](/features/file-upload-design)
 - 本阶段重点是文件上传的 MVP 实现（Phase 1）
 - MinIO 集成、定时任务、内容审核等功能延后到 Phase 2/3
 

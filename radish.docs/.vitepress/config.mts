@@ -59,7 +59,7 @@ export default defineConfig({
     nav: [
       { text: '首页', link: '/' },
       { text: '开发指南', link: '/guide/getting-started' },
-      { text: '架构设计', link: '/architecture/framework' },
+      { text: '架构设计', link: '/architecture/overview' },
       { text: '开发日志', link: '/changelog/' },
       { text: '部署运维', link: '/deployment/guide' }
     ],
@@ -107,6 +107,7 @@ export default defineConfig({
           text: '架构设计',
           collapsible: true,
           items: [
+            { text: '架构总览', link: '/architecture/overview' },
             { text: '开发框架说明', link: '/architecture/framework' },
             { text: '开发规范', link: '/architecture/specifications' },
             { text: '国际化指南', link: '/architecture/i18n' }

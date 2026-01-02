@@ -243,9 +243,9 @@ const [theme, setTheme] = useLocalStorage('theme', 'light');
 
 ## 🔗 相关文档
 
-- [README.md](./README.md) - 完整文档
-- [COMPONENTS_SUMMARY.md](./COMPONENTS_SUMMARY.md) - 组件库总结
-- [UIComponentsExample.tsx](../radish.console/src/examples/UIComponentsExample.tsx) - 完整示例
+- [UI 组件库](/frontend/ui-library) - @radish/ui 入口文档
+- `radish.ui/README.md` - 组件库 README（仓库内）
+- `radish.console/src/examples/UIComponentsExample.tsx` - 完整示例
 
 ---
 
