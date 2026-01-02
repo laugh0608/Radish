@@ -140,6 +140,10 @@ Authorization: Bearer {{gatewayAccessToken}}
 GET {{gatewayBase}}/api/v1/User/GetMyPoints
 Authorization: Bearer {{gatewayAccessToken}}
 
+### B.6.1 个人中心：获取未读消息数量（占位）
+GET {{gatewayBase}}/api/v1/User/GetUnreadMessageCount
+Authorization: Bearer {{gatewayAccessToken}}
+
 ### B.7 个人中心：更新我的资料
 POST {{gatewayBase}}/api/v1/User/UpdateMyProfile
 Authorization: Bearer {{gatewayAccessToken}}
