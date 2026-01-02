@@ -309,10 +309,12 @@ export const Dock = () => {
               </div>
               <button
                 type="button"
-                className={styles.authButton}
+                className={`${styles.authButton} ${loggedIn ? styles.loggedIn : styles.loggedOut}`}
                 onClick={loggedIn ? handleLogoutClick : handleLoginClick}
+                title={loggedIn ? '退出登录' : '登录'}
               >
-                <Icon icon={loggedIn ? 'mdi:logout' : 'mdi:login'} size={28} />
+                <Icon icon={loggedIn ? 'mdi:account-check' : 'mdi:login-variant'} size={28} />
+                {loggedIn && <div className={styles.onlineIndicator} />}
               </button>
             </div>
           </div>
