@@ -12,7 +12,7 @@ hero:
       link: /guide/getting-started
     - theme: alt
       text: 架构总览
-      link: /architecture/framework
+      link: /architecture/overview
     - theme: alt
       text: 前端 WebOS 设计
       link: /frontend/design
@@ -39,7 +39,8 @@ features:
 
 - [快速开始](/guide/getting-started) - 开发环境搭建和基础概念
 - [开发规范](/architecture/specifications) - 代码风格、目录结构与分层约定
-- [开发框架说明](/architecture/framework) - 整体架构与技术栈介绍
+- [架构总览](/architecture/overview) - 系统拓扑、项目职责与关键约定
+- [开发框架说明](/architecture/framework) - 架构与工程实现细节
 - [认证与权限](/guide/authentication) - OIDC 认证流程与权限体系
 - [配置管理](/guide/configuration) - 配置文件结构与最佳实践
 
@@ -67,7 +68,7 @@ features:
 ::: tip 如何开始？
 如果你是第一次接触 Radish，推荐阅读顺序：
 
-1. 浏览[开发框架说明](/architecture/framework)了解整体架构
+1. 浏览[架构总览](/architecture/overview)了解整体架构
 2. 阅读[开发规范](/architecture/specifications)掌握代码风格与约定
 3. 根据[快速开始](/guide/getting-started)启动本地环境
 4. 参考[前端设计](/frontend/design)熟悉 WebOS 桌面交互

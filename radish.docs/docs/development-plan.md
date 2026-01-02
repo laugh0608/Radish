@@ -1,10 +1,14 @@
 # 开发路线图（按周计划）
 
-> 本计划基于当前仓库分层结构（Radish.Api、Radish.Core、Radish.Service、Radish.Repository、Radish.Model、radish.client 等）制定，聚焦「.NET 10 + SQLSugar + PostgreSQL + React 19 (Vite + Node 24)」技术栈。与 [architecture/framework.md](architecture/framework.md) 描述的总体架构保持一致，但更强调按周可交付的节奏与验收标准。
+> 本文聚焦“按周可交付的节奏与验收标准”。
+>
+> - 先建立整体认知：见 [架构总览](/architecture/overview)
+> - 查看架构与工程细节：见 [开发框架说明](/architecture/framework)
+> - 查看前端 WebOS 与应用集成：见 [前端设计](/frontend/design)
 
 相关文档
 - 开发日志: [/changelog/](/changelog/)
-- 部署指引: [deployment/guide.md](deployment/guide.md)
+- 部署指引: [部署指南](/deployment/guide)
 
 ## 目标与范围
 
@@ -568,11 +572,11 @@
 - 周度计划可根据实际迭代情况滚动调整，但需在 DevelopmentLog 中记录偏差原因与新目标。
 - 新增数据库字段或模块时，同步更新迁移脚本与文档（架构/部署/贡献者指南）。
 - 前端与后端共享的 DTO 请优先在 `Radish.Model` 中维护，React 侧生成对应的 TypeScript 类型，避免漂移。
-- 若出现新的关键技术选型（例如引入 redis、消息队列等），请同步更新 DevelopmentFramework 与本文件，保持信息一致。
+- 若出现新的关键技术选型（例如引入 redis、消息队列等），请同步更新 [开发框架说明](/architecture/framework) 与本文件，保持信息一致。
 - React Compiler（实验）：React 19 新编译器暂不在主干启用；待官方正式发布并通过 Vite/Babel 稳定支持后，再在独立分支验证收益（减少手写 memo、优化渲染），评估通过后才会合入主线。
 
 ## 后续规划：API Gateway
 
-- Gateway 项目已完成 Phase 0 实施，实现了统一服务入口、YARP 路由转发、健康检查聚合等核心功能。详见 [Gateway 服务网关](guide/gateway.md)。
+- Gateway 项目已完成 Phase 0 实施，实现了统一服务入口、YARP 路由转发、健康检查聚合等核心功能。详见 [Gateway 服务网关](/guide/gateway)。
 - 当前阶段专注既有 M1-M8 交付，Gateway 的进一步增强（如统一认证、API 聚合、服务发现等）将根据实际需求在后续迭代中实施。
 - 在日常开发中提前预留：规范 Header（`X-Request-Id`、`X-Client-Id`）、CORS 配置、登录控制器可被 Gateway 复用，减少后续迁移成本。

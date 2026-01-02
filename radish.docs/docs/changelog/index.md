@@ -54,6 +54,7 @@ Radish 项目的开发历程记录，按月份组织。
 
 ## 相关文档
 
-- [开发计划](../development-plan.md) - 项目里程碑和周计划
-- [开发框架说明](../architecture/framework.md) - 整体架构设计
-- [开发规范](../architecture/specifications.md) - 代码规范和约定
+- [开发计划](/development-plan) - 项目里程碑和周计划
+- [架构总览](/architecture/overview) - 系统拓扑与职责边界
+- [开发框架说明](/architecture/framework) - 架构与工程实现细节
+- [开发规范](/architecture/specifications) - 代码规范和约定

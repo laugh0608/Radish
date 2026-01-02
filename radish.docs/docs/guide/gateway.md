@@ -872,4 +872,4 @@ VITE_API_BASE_URL=http://localhost:5100
 - [Serilog 文档](https://serilog.net/)
 - [Radish 认证指南](./authentication.md)
 - [Radish 配置指南](./configuration.md)
-- [Radish 部署指南](../deployment/guide.md)
+- [Radish 部署指南](/deployment/guide)

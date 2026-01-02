@@ -383,4 +383,4 @@ CREATE INDEX idx_user_loginname ON User(LoginName) WHERE IsDeleted = false;
 **相关文档**：
 - [鉴权与授权指南](./authentication.md) - 完整的认证架构说明
 - [配置指南](./configuration.md) - 配置管理指南
-- [开发规范](../architecture/specifications.md) - 开发规范
+- [开发规范](/architecture/specifications) - 开发规范
