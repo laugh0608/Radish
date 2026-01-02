@@ -91,7 +91,42 @@ AI: "3. 访问 http://localhost:5100/api/v2/Test/Log 查看日志输出"
 - 项目里程碑与范围参阅 `radish.docs/docs/architecture/framework.md`、`radish.docs/docs/development-plan.md`，重大变更请同步到 `radish.docs/docs/changelog/`。
 
 ## 编码规范与架构约束
-- “先接口后实现”：新增服务/仓储必须先在 `Radish.IService`/`Radish.IRepository` 声明，再在 `Radish.Service`/`Radish.Repository` 扩展；继承 `BaseService`/`BaseRepository` 以复用通用逻辑。
+
+### 代码质量标准
+
+**单个源文件行数规范**：为保持代码可读性和可维护性，遵循以下文件大小指南：
+
+- **推荐范围**：500-1000 行/文件
+- **硬性限制**：非必要不超过 1000 行
+- **何时重构**：当文件接近或超过 1000 行时，考虑使用以下策略重构：
+  1. **提取自定义 Hooks**（React）：将状态管理和副作用移到独立 hooks
+     - 示例：`useForumData.ts` 负责数据获取，`useForumActions.ts` 负责事件处理
+  2. **创建视图组件**：将大型组件拆分为更小、更专注的视图组件
+     - 示例：`PostListView.tsx`、`PostDetailContentView.tsx` 用于不同 UI 状态
+  3. **分离业务逻辑**：将复杂逻辑提取到工具函数或服务模块
+  4. **按功能拆分**：将相关功能组织到特定功能模块中
+
+**重构示例**：
+```
+重构前：ForumApp.tsx (854 行)
+重构后：
+  - ForumApp.tsx (179 行) - 主组件编排
+  - hooks/useForumData.ts (307 行) - 数据管理
+  - hooks/useForumActions.ts (443 行) - 事件处理
+  - views/PostListView.tsx (162 行) - 列表视图
+  - views/PostDetailContentView.tsx (108 行) - 详情视图
+```
+
+**收益**：
+- 提高代码可读性和导航性
+- 更易于测试和调试
+- 更好的代码复用性
+- 降低开发者认知负担
+- 简化代码审查
+
+### 架构约束
+
+- "先接口后实现"：新增服务/仓储必须先在 `Radish.IService`/`Radish.IRepository` 声明，再在 `Radish.Service`/`Radish.Repository` 扩展；继承 `BaseService`/`BaseRepository` 以复用通用逻辑。
 - 责任边界：`Radish.Common` 只容纳不依赖内部项目的通用工具；需要访问 Model/Service 的扩展请放 `Radish.Extension`。`Radish.Api`/`Radish.Gateway` 只作为宿主，配置/DI/日志统一在 Extension 中注册。
 - 实体不可离开仓储层：实体定义位于 `Radish.Model/Models`，Controller 对外只返回 DTO/Vo（`Radish.Model/ViewModels`），AutoMapper Profile 统一在 `Radish.Extension/AutoMapperExtension` 注册。Service 层负责实体→DTO 的转换与业务编排。
 - Controller 不得直接注入 Repository/IBaseRepository，所有数据访问必须通过 IService。业务逻辑、事务与权限判断放在 Service；全局拦截/日志/缓存等横切逻辑通过 `Radish.Extension` 的 Autofac 拦截器完成。
