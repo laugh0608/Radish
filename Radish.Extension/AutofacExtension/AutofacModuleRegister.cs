@@ -19,7 +19,8 @@ public class AutofacModuleRegister: Autofac.Module
         var repositoryDllFile = Path.Combine(basePath, "Radish.Repository.dll");
         
         // 注册 AOP
-        var aopTypes = new List<Type>(){typeof(ServiceAop)};
+        var aopTypes = new List<Type>(){typeof(TranAop), typeof(ServiceAop)};
+        builder.RegisterType<TranAop>();
         builder.RegisterType<ServiceAop>();
         // 注册服务
         builder.RegisterGeneric(typeof(BaseService<,>)).As(typeof(IBaseService<,>))
