@@ -1,10 +1,10 @@
-@model Radish.Auth.ViewModels.Account.LoginViewModel
+@model Radish.Auth.ViewModels.Account.RegisterViewModel
 @using System.Globalization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Radish.Auth.Resources.Errors> Localizer
 
 @{
-    ViewData["Title"] = Localizer["auth.login.title"];
+    ViewData["Title"] = "注册新账号";
     var client = Model.Client;
 }
 
@@ -26,7 +26,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(circle at top, #fef3f3, #f8fafc);
+            background: radial-gradient(circle at top, #f0fdf4, #f8fafc);
             padding: 24px;
         }
 
@@ -47,9 +47,9 @@
         }
 
         .client-panel {
-            background: linear-gradient(135deg, #f472b6, #fb7185);
+            background: linear-gradient(135deg, #34d399, #10b981);
             padding: 48px;
-            color: #fff7fb;
+            color: #f0fdf4;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -160,34 +160,6 @@
             margin-bottom: 1.5rem;
         }
 
-        .test-account {
-            background: #f8fafc;
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            margin-bottom: 20px;
-        }
-
-        .test-account h3 {
-            margin: 0 0 10px 0;
-            color: #1e293b;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-        }
-
-        .test-account ul {
-            margin: 0;
-            padding-left: 20px;
-            color: #475569;
-        }
-
-        .test-account code {
-            background: #e2e8f0;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
         .success {
             color: #047857;
             background: #d1fae5;
@@ -217,7 +189,14 @@
             font-weight: 600;
         }
 
+        label .optional {
+            font-weight: 400;
+            color: #64748b;
+            font-size: 0.85em;
+        }
+
         input[type="text"],
+        input[type="email"],
         input[type="password"] {
             width: 100%;
             padding: 12px 14px;
@@ -228,10 +207,11 @@
         }
 
         input[type="text"]:focus,
+        input[type="email"]:focus,
         input[type="password"]:focus {
             outline: none;
-            border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
         }
 
         .password-field {
@@ -256,14 +236,14 @@
         }
 
         .toggle-password:hover {
-            background: #eef2ff;
-            border-color: #6366f1;
-            color: #3730a3;
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #047857;
         }
 
         .toggle-password:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
         }
 
         .button-group {
@@ -278,34 +258,64 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            background: linear-gradient(135deg, #10b981, #059669);
             color: #fff;
-            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.25);
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.25);
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
         button[type="submit"]:hover {
             transform: translateY(-1px);
-            box-shadow: 0 15px 30px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.3);
         }
 
-        .register-link {
+        .login-link {
             margin-top: 20px;
             text-align: center;
             color: #64748b;
             font-size: 14px;
         }
 
-        .register-link a {
-            color: #f472b6;
+        .login-link a {
+            color: #10b981;
             text-decoration: none;
             font-weight: 600;
             transition: color 0.2s;
         }
 
-        .register-link a:hover {
-            color: #fb7185;
+        .login-link a:hover {
+            color: #059669;
             text-decoration: underline;
+        }
+
+        .reward-badge {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #fcd34d;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .reward-badge .icon {
+            font-size: 24px;
+        }
+
+        .reward-badge .text {
+            flex: 1;
+        }
+
+        .reward-badge .text strong {
+            color: #92400e;
+            display: block;
+            font-size: 14px;
+        }
+
+        .reward-badge .text small {
+            color: #78350f;
+            font-size: 12px;
         }
 
         @@media (max-width: 900px) {
@@ -346,27 +356,27 @@
                 <div class="client-logo">
                     @if (!string.IsNullOrWhiteSpace(client.Logo))
                     {
-                        <img src="@client.Logo" alt="@Localizer["auth.login.client.logoAlt"]" />
+                        <img src="@client.Logo" alt="Client Logo" />
                     }
                     else
                     {
                         <div class="client-logo-placeholder">@(string.IsNullOrEmpty(client.DisplayName) ? "R" : client.DisplayName.First())</div>
                     }
                 </div>
-                <p class="client-title">@Localizer["auth.login.client.title"]</p>
-                <h2 class="client-name">@(string.IsNullOrWhiteSpace(client.DisplayName) ? Localizer["auth.login.client.unknown"] : client.DisplayName)</h2>
+                <p class="client-title">新用户注册</p>
+                <h2 class="client-name">@(string.IsNullOrWhiteSpace(client.DisplayName) ? "Radish 社区" : client.DisplayName)</h2>
                 <p class="client-id">
-                    <strong>@Localizer["auth.login.client.id"]</strong>
+                    <strong>Client ID</strong>
                     @(string.IsNullOrWhiteSpace(client.ClientId) ? "-" : client.ClientId)
                 </p>
                 <p class="client-desc">
-                    <strong>@Localizer["auth.login.client.description"]</strong>
-                    @(string.IsNullOrWhiteSpace(client.Description) ? Localizer["auth.login.client.defaultDescription"] : client.Description)
+                    <strong>服务说明</strong>
+                    @(string.IsNullOrWhiteSpace(client.Description) ? "Radish 统一身份认证服务" : client.Description)
                 </p>
                 @if (!string.IsNullOrWhiteSpace(client.DeveloperName))
                 {
                     <p class="client-developer">
-                        <strong>@Localizer["auth.login.client.developer", client.DeveloperName]</strong>
+                        <strong>开发者：@client.DeveloperName</strong>
                     </p>
                 }
             </section>
@@ -377,8 +387,16 @@
                     <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "active" : "")" onclick="switchLanguage('en')">English</button>
                 </div>
 
-                <h1>@Localizer["auth.login.heading"]</h1>
-                <p class="description">@Localizer["auth.login.description"]</p>
+                <h1>创建新账号</h1>
+                <p class="description">加入 Radish 社区，开启你的创作之旅</p>
+
+                <div class="reward-badge">
+                    <div class="icon">🎁</div>
+                    <div class="text">
+                        <strong>新用户福利</strong>
+                        <small>注册即送 50 胡萝卜，立即开始你的社区之旅！</small>
+                    </div>
+                </div>
 
                 @if (!string.IsNullOrEmpty(Model.SuccessMessage))
                 {
@@ -390,49 +408,56 @@
                     <div class="error">@Model.ErrorMessage</div>
                 }
 
-                <div class="test-account">
-                    <h3>@Localizer["auth.login.testAccount"]</h3>
-                    <ul>
-                        <li>@Localizer["auth.login.testAccount.username"]<code>test</code></li>
-                        <li>@Localizer["auth.login.testAccount.password"]<code>test123456</code></li>
-                    </ul>
-                </div>
-
-                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
-                {
-                    <div class="error">@Model.ErrorMessage</div>
-                }
-
-                <form asp-controller="Account" asp-action="Login" method="post">
+                <form asp-controller="Account" asp-action="Register" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
 
                     <div class="form-group">
-                        <label>@Localizer["auth.login.usernameLabel"]</label>
-                        <input type="text" name="username" value="@(string.IsNullOrWhiteSpace(Model.PrefillUserName) ? "test" : Model.PrefillUserName)" />
+                        <label>用户名</label>
+                        <input type="text" name="username" asp-for="Username" placeholder="3-50 个字符，支持字母、数字、下划线、中文" required />
                     </div>
 
                     <div class="form-group">
-                        <label>@Localizer["auth.login.passwordLabel"]</label>
+                        <label>密码</label>
                         <div class="password-field">
-                            <input id="passwordInput" type="password" name="password" value="test123456" />
+                            <input id="passwordInput" type="password" name="password" asp-for="Password" placeholder="至少 6 个字符" required />
                             <button type="button"
                                     id="togglePassword"
                                     class="toggle-password"
-                                    data-show="@Localizer["auth.login.password.show"]"
-                                    data-hide="@Localizer["auth.login.password.hide"]"
+                                    data-show="显示"
+                                    data-hide="隐藏"
                                     aria-pressed="false">
-                                @Localizer["auth.login.password.show"]
+                                显示
                             </button>
                         </div>
                     </div>
 
-                    <div class="button-group">
-                        <button type="submit">@Localizer["auth.login.submit"]</button>
+                    <div class="form-group">
+                        <label>确认密码</label>
+                        <div class="password-field">
+                            <input id="confirmPasswordInput" type="password" name="confirmPassword" asp-for="ConfirmPassword" placeholder="再次输入密码" required />
+                            <button type="button"
+                                    id="toggleConfirmPassword"
+                                    class="toggle-password"
+                                    data-show="显示"
+                                    data-hide="隐藏"
+                                    aria-pressed="false">
+                                显示
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="register-link">
-                        没有账号？<a href="@Url.Action("Register", "Account", new { returnUrl = Model.ReturnUrl })">立即注册</a>
+                    <div class="form-group">
+                        <label>电子邮箱 <span class="optional">(可选)</span></label>
+                        <input type="email" name="email" asp-for="Email" placeholder="用于找回密码和接收通知" />
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit">立即注册</button>
+                    </div>
+
+                    <div class="login-link">
+                        已有账号？<a href="@Url.Action("Login", "Account", new { returnUrl = Model.ReturnUrl })">立即登录</a>
                     </div>
                 </form>
             </section>
@@ -448,18 +473,24 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const passwordInput = document.getElementById('passwordInput');
-            const toggleButton = document.getElementById('togglePassword');
-            if (!passwordInput || !toggleButton) {
-                return;
+            // Toggle password visibility
+            function setupPasswordToggle(inputId, buttonId) {
+                const passwordInput = document.getElementById(inputId);
+                const toggleButton = document.getElementById(buttonId);
+                if (!passwordInput || !toggleButton) {
+                    return;
+                }
+
+                toggleButton.addEventListener('click', () => {
+                    const shouldShow = passwordInput.type === 'password';
+                    passwordInput.type = shouldShow ? 'text' : 'password';
+                    toggleButton.textContent = shouldShow ? toggleButton.dataset.hide : toggleButton.dataset.show;
+                    toggleButton.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+                });
             }
 
-            toggleButton.addEventListener('click', () => {
-                const shouldShow = passwordInput.type === 'password';
-                passwordInput.type = shouldShow ? 'text' : 'password';
-                toggleButton.textContent = shouldShow ? toggleButton.dataset.hide : toggleButton.dataset.show;
-                toggleButton.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
-            });
+            setupPasswordToggle('passwordInput', 'togglePassword');
+            setupPasswordToggle('confirmPasswordInput', 'toggleConfirmPassword');
         });
     </script>
 </body>

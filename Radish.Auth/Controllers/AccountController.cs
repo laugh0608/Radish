@@ -52,6 +52,7 @@ public class AccountController : Controller
             ReturnUrl = returnUrl,
             PrefillUserName = username,
             ErrorMessage = TempData["LoginError"] as string,
+            SuccessMessage = TempData["RegisterSuccess"] as string,
             Client = await ResolveClientAsync(returnUrl)
         };
 
@@ -231,14 +232,14 @@ public class AccountController : Controller
 
             Log.Information("用户 {Username} (ID: {UserId}) 注册成功", model.Username, userId);
 
-            // 5. 发放注册奖励（50 白萝卜 = 50000 胡萝卜）
+            // 5. 发放注册奖励（50 胡萝卜）
             if (_coinService != null)
             {
                 try
                 {
                     var transactionNo = await _coinService.GrantCoinAsync(
                         userId: userId,
-                        amount: 50000,  // 50 白萝卜 = 50000 胡萝卜
+                        amount: 50,  // 50 胡萝卜
                         transactionType: "SYSTEM_GRANT",
                         businessType: "UserRegistration",
                         businessId: userId,
@@ -260,7 +261,7 @@ public class AccountController : Controller
             }
 
             // 6. 注册成功，跳转到登录页
-            TempData["RegisterSuccess"] = "注册成功！已赠送 50 白萝卜，请登录。";
+            TempData["RegisterSuccess"] = "注册成功！已赠送 50 胡萝卜，请登录。";
             return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl, username = model.Username });
         }
         catch (Exception ex)
