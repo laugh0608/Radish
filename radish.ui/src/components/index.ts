@@ -45,6 +45,9 @@ export type {
   UploadProgress
 } from './ChunkedFileUpload/ChunkedFileUpload';
 
+export { Toast, ToastContainer, toast, toastManager } from './Toast/Toast';
+export type { ToastProps } from './Toast/Toast';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout

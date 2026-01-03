@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import i18n from '@/i18n';
 import type { ApiResponse } from '@/api/client';
+import { CoinBalance } from './components/CoinBalance';
 import styles from './StatusBar.module.css';
 
 /**
@@ -181,6 +182,7 @@ export const StatusBar = () => {
         )}
       </div>
       <div className={styles.right}>
+        <CoinBalance />
         <button
           type="button"
           className={styles.authButton}

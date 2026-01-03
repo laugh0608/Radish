@@ -2,6 +2,7 @@ import { WelcomeApp } from '@/apps/welcome/WelcomeApp';
 import { ShowcaseApp } from '@/apps/showcase/ShowcaseApp';
 import { ForumApp } from '@/apps/forum/ForumApp';
 import { ProfileApp } from '@/apps/profile/ProfileApp';
+import { CoinRewardDemo } from '@/apps/coin-demo';
 import type { AppDefinition } from './types';
 
 /**
@@ -111,6 +112,17 @@ export const appRegistry: AppDefinition[] = [
     defaultSize: { width: 1000, height: 700 },
     requiredRoles: ['User'],
     category: 'user'
+  },
+  {
+    id: 'coin-demo',
+    name: '萝卜币演示',
+    icon: 'mdi:carrot',
+    description: '萝卜币奖励通知演示',
+    component: CoinRewardDemo,
+    type: 'window',
+    defaultSize: { width: 900, height: 750 },
+    requiredRoles: ['User'],
+    category: 'development'
   },
 
 ];
