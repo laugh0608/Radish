@@ -19,14 +19,15 @@ public class CoinProfile : Profile
         // UserBalance -> UserBalanceVo
         RecognizeDestinationPrefixes("Vo");
         CreateMap<UserBalance, UserBalanceVo>()
-            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
             .ForMember(dest => dest.BalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.Balance)))
             .ForMember(dest => dest.FrozenBalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.FrozenBalance)));
 
         // UserBalanceVo -> UserBalance
         RecognizePrefixes("Vo");
         CreateMap<UserBalanceVo, UserBalance>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId));
+            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
+            .ForMember(dest => dest.Id, opt => opt.Ignore());
     }
 
     /// <summary>配置交易记录映射</summary>

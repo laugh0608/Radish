@@ -36,9 +36,18 @@ interface ProfileInfo {
   avatarThumbnailUrl?: string | null;
 }
 
-interface PointsInfo {
-  userId: number;
-  balance: number;
+interface CoinBalanceInfo {
+  userId: number | string;
+  balance: number | string;
+  balanceDisplay: string;
+  frozenBalance: number | string;
+  frozenBalanceDisplay: string;
+  totalEarned: number | string;
+  totalSpent: number | string;
+  totalTransferredIn: number | string;
+  totalTransferredOut: number | string;
+  createTime: string;
+  modifyTime?: string | null;
 }
 
 interface ApiResponse<T> {
@@ -54,11 +63,39 @@ function resolveUrl(apiBaseUrl: string, url: string | null | undefined): string 
   return `${apiBaseUrl}/${url}`;
 }
 
+function formatCoinAmount(amount: number | string | null | undefined): string {
+  const parsed = typeof amount === 'string' ? Number(amount) : amount;
+  const value = Number.isFinite(parsed) ? (parsed as number) : 0;
+  const negative = value < 0;
+  const abs = Math.abs(value);
+
+  const whiteRadish = Math.floor(abs / 1000);
+  const carrot = abs % 1000;
+
+  const parts: string[] = [];
+  if (whiteRadish > 0) parts.push(`${whiteRadish} 白萝卜`);
+  if (carrot > 0 || parts.length === 0) parts.push(`${carrot} 胡萝卜`);
+
+  const result = parts.join(' ');
+  return negative ? `-${result}` : result;
+}
+
+async function readJsonIfPossible<T>(res: Response): Promise<T | null> {
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.toLowerCase().includes('json')) return null;
+
+  try {
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBaseUrl }: UserInfoCardProps) => {
   const { t } = useTranslation();
 
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
-  const [points, setPoints] = useState<PointsInfo | null>(null);
+  const [coinBalance, setCoinBalance] = useState<CoinBalanceInfo | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -70,11 +107,11 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
   const [editAge, setEditAge] = useState('');
   const [editAddress, setEditAddress] = useState('');
 
-  const authHeader = useMemo(() => {
+  const getAuthHeader = () => {
     if (typeof window === 'undefined') return undefined;
     const token = window.localStorage.getItem('access_token');
     return token ? `Bearer ${token}` : undefined;
-  }, []);
+  };
 
   useEffect(() => {
     void loadProfile();
@@ -84,36 +121,43 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
   const loadProfile = async () => {
     setLoadingProfile(true);
     try {
-      const [profileRes, pointsRes] = await Promise.all([
+      const [profileResult, coinBalanceResult] = await Promise.allSettled([
         fetch(`${apiBaseUrl}/api/v1/User/GetMyProfile`, {
           headers: {
             Accept: 'application/json',
-            ...(authHeader ? { Authorization: authHeader } : {})
+            ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
           }
         }),
-        fetch(`${apiBaseUrl}/api/v1/User/GetMyPoints`, {
+        fetch(`${apiBaseUrl}/api/v1/Coin/GetBalance`, {
           headers: {
             Accept: 'application/json',
-            ...(authHeader ? { Authorization: authHeader } : {})
+            ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
           }
         })
       ]);
 
-      const profileJson = (await profileRes.json()) as ApiResponse<ProfileInfo>;
-      const pointsJson = (await pointsRes.json()) as ApiResponse<PointsInfo>;
+      if (profileResult.status === 'fulfilled') {
+        const profileRes = profileResult.value;
+        const profileJson = await readJsonIfPossible<ApiResponse<ProfileInfo>>(profileRes);
 
-      if (profileRes.ok && profileJson.isSuccess && profileJson.responseData) {
-        setProfile(profileJson.responseData);
+        if (profileRes.ok && profileJson?.isSuccess && profileJson.responseData) {
+          setProfile(profileJson.responseData);
 
-        setEditUserName(profileJson.responseData.userName || userName);
-        setEditUserEmail(profileJson.responseData.userEmail || '');
-        setEditRealName(profileJson.responseData.realName || '');
-        setEditAge(String(profileJson.responseData.age ?? ''));
-        setEditAddress(profileJson.responseData.address || '');
+          setEditUserName(profileJson.responseData.userName || userName);
+          setEditUserEmail(profileJson.responseData.userEmail || '');
+          setEditRealName(profileJson.responseData.realName || '');
+          setEditAge(String(profileJson.responseData.age ?? ''));
+          setEditAddress(profileJson.responseData.address || '');
+        }
       }
 
-      if (pointsRes.ok && pointsJson.isSuccess && pointsJson.responseData) {
-        setPoints(pointsJson.responseData);
+      if (coinBalanceResult.status === 'fulfilled') {
+        const coinBalanceRes = coinBalanceResult.value;
+        const coinBalanceJson = await readJsonIfPossible<ApiResponse<CoinBalanceInfo>>(coinBalanceRes);
+
+        if (coinBalanceRes.ok && coinBalanceJson?.isSuccess && coinBalanceJson.responseData) {
+          setCoinBalance(coinBalanceJson.responseData);
+        }
       }
     } catch {
       // ignore
@@ -150,7 +194,7 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          ...(authHeader ? { Authorization: authHeader } : {})
+          ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
         },
         body: JSON.stringify({
           userName: editUserName.trim() || undefined,
@@ -193,7 +237,7 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
       headers: {
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        ...(authHeader ? { Authorization: authHeader } : {})
+        ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
       },
       body: JSON.stringify({ attachmentId: result.id })
     });
@@ -219,7 +263,7 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
-          ...(authHeader ? { Authorization: authHeader } : {})
+          ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
         },
         body: JSON.stringify({ attachmentId: 0 })
       });
@@ -245,7 +289,7 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
           <p className={styles.userId}>ID: {userId}</p>
           <div className={styles.profileMeta}>
             <span className={styles.metaItem}>邮箱：{profile?.userEmail || '-'}</span>
-            <span className={styles.metaItem}>积分：{points?.balance ?? 0}</span>
+            <span className={styles.metaItem}>余额：{formatCoinAmount(coinBalance?.balance)}</span>
           </div>
         </div>
         <div className={styles.headerActions}>

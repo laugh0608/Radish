@@ -6,9 +6,12 @@ using SqlSugar;
 namespace Radish.Model;
 
 /// <summary>用户余额实体</summary>
-/// <remarks>主键为 UserId，类型为 long，萝卜币系统核心表</remarks>
+/// <remarks>
+/// - 主键为 Id（雪花ID）
+/// - 通过 UserId 与 User 表一对一关联（唯一约束）
+/// </remarks>
 [SugarTable("UserBalance")]
-public class UserBalance : RootEntityTKey<long>
+public class UserBalance : RootEntityTKey<long>, IHasUserId
 {
     /// <summary>初始化默认用户余额实例</summary>
     public UserBalance()
@@ -19,6 +22,7 @@ public class UserBalance : RootEntityTKey<long>
     /// <summary>统一设置默认值</summary>
     private void InitializeDefaults()
     {
+        UserId = 0;
         Balance = 0;
         FrozenBalance = 0;
         TotalEarned = 0;
@@ -31,6 +35,11 @@ public class UserBalance : RootEntityTKey<long>
         CreateBy = "System";
         CreateId = 0;
     }
+
+    /// <summary>用户 Id</summary>
+    /// <remarks>不可为空，与 User 表一对一，通过唯一约束保证每个用户只有一条余额记录</remarks>
+    [SugarColumn(IsNullable = false, ColumnDescription = "用户ID", UniqueGroupNameList = new[] { "UK_UserBalance_UserId" })]
+    public long UserId { get; set; } = 0;
 
     #region 余额信息
 

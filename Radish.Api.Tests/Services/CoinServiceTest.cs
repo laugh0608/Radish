@@ -55,7 +55,7 @@ public class CoinServiceTest
         const long userId = 123456;
         var userBalance = new UserBalance
         {
-            Id = userId,
+            UserId = userId,
             Balance = 50000,
             FrozenBalance = 0,
             TotalEarned = 50000,
@@ -73,7 +73,7 @@ public class CoinServiceTest
         };
 
         _userBalanceRepositoryMock
-            .Setup(r => r.QueryByIdAsync(userId))
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<UserBalance, bool>>>() ))
             .ReturnsAsync(userBalance);
 
         _mapperMock
@@ -102,12 +102,12 @@ public class CoinServiceTest
         const long userId = 999999;
 
         _userBalanceRepositoryMock
-            .Setup(r => r.QueryByIdAsync(userId))
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<UserBalance, bool>>>() ))
             .ReturnsAsync((UserBalance?)null);
 
         var initializedBalance = new UserBalance
         {
-            Id = userId,
+            UserId = userId,
             Balance = 0,
             FrozenBalance = 0,
             TotalEarned = 0,
@@ -152,9 +152,9 @@ public class CoinServiceTest
         var userIds = new List<long> { 1, 2, 3 };
         var userBalances = new List<UserBalance>
         {
-            new() { Id = 1, Balance = 10000 },
-            new() { Id = 2, Balance = 20000 },
-            new() { Id = 3, Balance = 30000 }
+            new() { UserId = 1, Balance = 10000 },
+            new() { UserId = 2, Balance = 20000 },
+            new() { UserId = 3, Balance = 30000 }
         };
 
         _userBalanceRepositoryMock
@@ -165,7 +165,7 @@ public class CoinServiceTest
             .Setup(m => m.Map<UserBalanceVo>(It.IsAny<UserBalance>()))
             .Returns<UserBalance>(ub => new UserBalanceVo
             {
-                UserId = ub.Id,
+                UserId = ub.UserId,
                 Balance = ub.Balance
             });
 
