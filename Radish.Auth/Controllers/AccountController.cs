@@ -222,10 +222,17 @@ public class AccountController : Controller
                 LoginPassword = hashedPassword,
                 UserEmail = model.Email ?? string.Empty,  // 处理 null 值
                 UserName = model.Username,  // 默认昵称与用户名相同
+                UserRealName = string.Empty,
+                UserBirth = null,  // 明确设置为 null
+                UserAddress = string.Empty,
                 TenantId = 0,  // 默认租户
+                DepartmentId = 0,
+                StatusCode = 0,
                 IsEnable = true,
                 IsDeleted = false,
-                CreateTime = DateTime.Now
+                CreateTime = DateTime.Now,
+                UpdateTime = DateTime.Now,
+                ErrorCount = 0
             };
 
             var userId = await _userService.AddAsync(newUser);
