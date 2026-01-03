@@ -304,7 +304,7 @@
 5. **配额管理 API（管理员）**：
    ```csharp
    [Authorize(Roles = "System,Admin")]
-   [HttpPost("api/v2/Coin/Admin/UpdateTenantQuota")]
+   [HttpPost("api/v1/Coin/Admin/UpdateTenantQuota")]
    public async Task<MessageModel> UpdateTenantQuota([FromBody] UpdateTenantQuotaDto dto)
    {
        var quota = await _quotaRepository.QueryByIdAsync(dto.TenantId);
@@ -1516,7 +1516,7 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
 
 1. **转账接口**
    ```http
-   POST /api/v2/Coin/Transfer
+   POST /api/v1/Coin/Transfer
    Content-Type: application/json
    Authorization: Bearer {token}
 
@@ -1553,7 +1553,7 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
 
 2. **查询余额接口**
    ```http
-   GET /api/v2/Coin/Balance
+   GET /api/v1/Coin/Balance
    Authorization: Bearer {token}
 
    // Response
@@ -2065,8 +2065,8 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
 6. **后端 API 支持（余额历史）**
 
    ```csharp
-   // Radish.Api/Controllers/v2/CoinController.cs
-   [HttpGet("api/v2/Coin/BalanceHistory")]
+   // Radish.Api/Controllers/v1/CoinController.cs
+   [HttpGet("api/v1/Coin/BalanceHistory")]
    [Authorize(Policy = "Client")]
    public async Task<MessageModel> GetBalanceHistory([FromQuery] string period = "week")
    {
@@ -2148,7 +2148,7 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
                            </elementProp>
                        </collectionProp>
                    </elementProp>
-                   <stringProp name="HTTPSampler.path">/api/v2/Coin/Transfer</stringProp>
+                   <stringProp name="HTTPSampler.path">/api/v1/Coin/Transfer</stringProp>
                    <stringProp name="HTTPSampler.method">POST</stringProp>
                </HTTPSamplerProxy>
            </ThreadGroup>
