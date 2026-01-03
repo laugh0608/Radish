@@ -4,6 +4,7 @@ import { UserInfoCard } from './components/UserInfoCard';
 import { UserPostList } from './components/UserPostList';
 import { UserCommentList } from './components/UserCommentList';
 import { UserAttachmentList } from './components/UserAttachmentList';
+import { CoinWallet } from './components/CoinWallet';
 import styles from './ProfileApp.module.css';
 
 interface UserStats {
@@ -16,7 +17,7 @@ interface UserStats {
 
 export const ProfileApp = () => {
   const { userId, userName, isAuthenticated } = useUserStore();
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'attachments'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'attachments' | 'wallet'>('posts');
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -96,6 +97,12 @@ export const ProfileApp = () => {
           >
             我的附件
           </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'wallet' ? styles.active : ''}`}
+            onClick={() => setActiveTab('wallet')}
+          >
+            我的钱包
+          </button>
         </div>
 
         <div className={styles.tabContent}>
@@ -107,6 +114,9 @@ export const ProfileApp = () => {
           )}
           {activeTab === 'attachments' && (
             <UserAttachmentList apiBaseUrl={apiBaseUrl} />
+          )}
+          {activeTab === 'wallet' && (
+            <CoinWallet apiBaseUrl={apiBaseUrl} />
           )}
         </div>
       </div>
