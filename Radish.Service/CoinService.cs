@@ -46,7 +46,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     {
         try
         {
-            var userBalance = await _userBalanceRepository.QueryByIdAsync(userId);
+            var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId);
 
             if (userBalance == null)
             {
@@ -72,11 +72,11 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         try
         {
             var userBalances = await _userBalanceRepository.QueryAsync(
-                u => userIds.Contains(u.Id)
+                u => userIds.Contains(u.UserId)
             );
 
             return userBalances.ToDictionary(
-                u => u.Id,
+                u => u.UserId,
                 u => Mapper.Map<UserBalanceVo>(u)
             );
         }
@@ -94,7 +94,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     {
         var userBalance = new UserBalance
         {
-            Id = userId,
+            UserId = userId,
             Balance = 0,
             FrozenBalance = 0,
             TotalEarned = 0,
@@ -173,7 +173,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         string? remark)
     {
         // 1. 确保用户余额记录存在
-        var userBalance = await _userBalanceRepository.QueryByIdAsync(userId);
+        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId);
         if (userBalance == null)
         {
             userBalance = await InitializeUserBalanceAsync(userId);
@@ -217,7 +217,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
                 ModifyBy = "System",
                 ModifyId = 0
             },
-            u => u.Id == userId && u.Version == userBalance.Version
+            u => u.UserId == userId && u.Version == userBalance.Version
         );
 
         if (updatedRows == 0)
@@ -444,7 +444,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         string operatorName)
     {
         // 1. 确保用户余额记录存在
-        var userBalance = await _userBalanceRepository.QueryByIdAsync(userId);
+        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId);
         if (userBalance == null)
         {
             userBalance = await InitializeUserBalanceAsync(userId);
@@ -495,7 +495,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
                 ModifyBy = operatorName,
                 ModifyId = operatorId
             },
-            u => u.Id == userId && u.Version == userBalance.Version
+            u => u.UserId == userId && u.Version == userBalance.Version
         );
 
         if (updatedRows == 0)
