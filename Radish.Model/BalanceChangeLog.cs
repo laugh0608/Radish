@@ -6,8 +6,14 @@ using SqlSugar;
 namespace Radish.Model;
 
 /// <summary>余额变动日志实体</summary>
-/// <remarks>主键为 Id，类型为 long（雪花ID），记录每笔交易的账户分录</remarks>
-[SugarTable("balance_change_log")]
+/// <remarks>
+/// 主键为 Id，类型为 long（雪花ID），记录每笔交易的账户分录
+/// - 使用独立的 Log 数据库存储
+/// - 按月分表，便于归档和查询
+/// </remarks>
+[Tenant(configId: "Log")] // 使用 Log 数据库
+[SplitTable(SplitType.Month)] // 按月分表
+[SugarTable($@"{nameof(BalanceChangeLog)}_{{year}}{{month}}{{day}}")] // 标准格式：BalanceChangeLog_20260103
 [SugarIndex("idx_user_time", nameof(UserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_transaction", nameof(TransactionId), OrderByType.Asc)]
 public class BalanceChangeLog : RootEntityTKey<long>

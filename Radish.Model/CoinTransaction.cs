@@ -7,7 +7,7 @@ namespace Radish.Model;
 
 /// <summary>萝卜币交易记录实体</summary>
 /// <remarks>主键为 Id，类型为 long（雪花ID），记录所有萝卜币交易流水</remarks>
-[SugarTable("coin_transaction")]
+[SugarTable("CoinTransaction")]
 [SugarIndex("idx_from_user_created", nameof(FromUserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_to_user_created", nameof(ToUserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_transaction_no", nameof(TransactionNo), OrderByType.Asc)]
