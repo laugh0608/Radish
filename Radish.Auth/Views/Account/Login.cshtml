@@ -422,13 +422,13 @@
 
                     <div class="form-group">
                         <label>@Localizer["auth.login.usernameLabel"]</label>
-                        <input type="text" name="username" value="@(string.IsNullOrWhiteSpace(Model.PrefillUserName) ? "test" : Model.PrefillUserName)" />
+                        <input type="text" name="username" value="@(string.IsNullOrWhiteSpace(Model.PrefillUserName) ? string.Empty : Model.PrefillUserName)" />
                     </div>
 
                     <div class="form-group">
                         <label>@Localizer["auth.login.passwordLabel"]</label>
                         <div class="password-field">
-                            <input id="passwordInput" type="password" name="password" value="test123456" />
+                            <input id="passwordInput" type="password" name="password" value="" />
                             <button type="button"
                                     id="togglePassword"
                                     class="toggle-password"
