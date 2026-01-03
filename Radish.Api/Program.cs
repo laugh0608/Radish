@@ -303,8 +303,10 @@ builder.Services.AddHangfire(config =>
 
 builder.Services.AddHangfireServer();
 
-// 注册 FileCleanupJob
+// 注册 Job 类
 builder.Services.AddScoped<FileCleanupJob>();
+builder.Services.AddScoped<CommentHighlightJob>();
+builder.Services.AddScoped<RetentionRewardJob>();
 
 // 注册 Serilog 服务
 builder.Host.AddSerilogSetup();
@@ -521,6 +523,24 @@ if (commentHighlightConfig.GetValue<bool>("Enable", true))
         });
 
     Log.Information("[Hangfire] 已注册定时任务: comment-highlight-stat (计划: {Schedule})", schedule);
+}
+
+// 保留奖励任务（神评/沙发每周奖励）
+var retentionRewardConfig = builder.Configuration.GetSection("Hangfire:RetentionReward");
+if (retentionRewardConfig.GetValue<bool>("Enable", true))
+{
+    var schedule = retentionRewardConfig["Schedule"] ?? "0 2 * * 0";
+
+    RecurringJob.AddOrUpdate<RetentionRewardJob>(
+        "retention-reward",
+        job => job.ExecuteAsync(),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: retention-reward (计划: {Schedule})", schedule);
 }
 
 // -------------- App 运行阶段 ---------------
