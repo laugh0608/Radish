@@ -46,15 +46,87 @@
 - **新用户注册**：赠送 `50 胡萝卜`
 - 记录类型：`系统赠送`，备注：`新用户注册奖励`
 
+#### 3.1.1 用户注册奖励集成指南
+
+**集成位置**：在用户注册流程中（`Radish.Auth/AccountController.Register` 或 `Radish.Api/UserController.Register`）
+
+**实现步骤**：
+
+1. **注入 ICoinService**：
+   ```csharp
+   private readonly ICoinService _coinService;
+
+   public AccountController(ICoinService coinService, ...)
+   {
+       _coinService = coinService;
+   }
+   ```
+
+2. **在注册成功后发放奖励**：
+   ```csharp
+   [HttpPost]
+   [AllowAnonymous]
+   public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+   {
+       // 1. 创建用户
+       var userId = await _userService.AddAsync(newUser);
+
+       // 2. 发放注册奖励（50 胡萝卜）
+       try
+       {
+           await _coinService.GrantCoinAsync(
+               userId: userId,
+               amount: 50,
+               transactionType: "SYSTEM_GRANT",
+               businessType: "UserRegistration",
+               businessId: userId,
+               remark: "新用户注册奖励"
+           );
+
+           Log.Information("用户 {UserId} 注册成功，已发放 50 胡萝卜奖励", userId);
+       }
+       catch (Exception ex)
+       {
+           // 注册奖励发放失败不应影响注册流程
+           Log.Error(ex, "用户 {UserId} 注册奖励发放失败", userId);
+       }
+
+       return Success("注册成功！已赠送 50 胡萝卜");
+   }
+   ```
+
+3. **错误处理策略**：
+   - **推荐**：注册奖励发放失败 **不应影响** 用户注册流程
+   - **原因**：用户注册是核心功能，币奖励是附加功能
+   - **处理**：记录日志，后续可通过对账任务或管理员手动补发
+
+4. **幂等性保证**：
+   ```csharp
+   // 在发放奖励前检查是否已发放过（可选）
+   var existingGrant = await _coinService.GetTransactionsAsync(
+       userId: userId,
+       pageIndex: 1,
+       pageSize: 1,
+       transactionType: "SYSTEM_GRANT"
+   );
+
+   if (existingGrant.Data.Any(t => t.BusinessType == "UserRegistration"))
+   {
+       Log.Warning("用户 {UserId} 已领取过注册奖励，跳过发放", userId);
+       return; // 跳过发放
+   }
+   ```
+
 ### 3.2 互动奖励
 
 | 行为 | 获得方 | 奖励金额 | 说明 |
 |------|--------|----------|------|
 | **发布帖子** | 作者 | 待定 | 鼓励内容创作 |
-| **被点赞** | 作者 | `2 胡萝卜/次` | 内容质量认可 |
-| **点赞他人** | 点赞者 | `1 胡萝卜/次` | 鼓励互动（每日上限） |
-| **评论被回复** | 评论者 | `1 胡萝卜/次` | 促进讨论 |
-| **神评/沙发** | 评论者 | 待定 | 需重新设计机制 |
+| **被点赞** | 作者 | `+2 胡萝卜/次` | 内容质量认可 |
+| **点赞他人** | 点赞者 | `+1 胡萝卜/次` | 鼓励互动（每日上限 50） |
+| **评论被回复** | 评论者 | `+1 胡萝卜/次` | 促进讨论 |
+| **神评** | 评论者 | 基础 `+8` + 点赞加成 `+5/点赞` + 保留奖励 `+15/周` | 详见 Section 16.2 |
+| **沙发** | 评论者 | 基础 `+5` + 点赞加成 `+3/点赞` + 保留奖励 `+10/周` | 详见 Section 16.2 |
 
 **防刷机制**：
 - 同一用户对同一内容的点赞/评论奖励，每日仅计算一次
@@ -1227,19 +1299,19 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
 
 ### 16.2 神评/沙发的萝卜币奖励机制
 
-**问题**：文档第 15.3 节标注为"待定"，但这是论坛的核心激励机制。
+**问题**：文档第 3.2 节神评/沙发需要具体的奖励机制实现细节。
 
-**建议方案**：
+**最终方案**：
 
 1. **神评奖励规则**
-   - 基础奖励：500 胡萝卜（0.5 白萝卜）
-   - 点赞加成：每个点赞 +10 胡萝卜
-   - 示例：一条点赞数为 50 的神评可获得 500 + 50×10 = 1000 胡萝卜（1 白萝卜）
+   - 基础奖励：`8 胡萝卜`
+   - 点赞加成：每个点赞 `+5 胡萝卜`
+   - 示例：一条点赞数为 10 的神评可获得 8 + 10×5 = 58 胡萝卜
 
 2. **沙发奖励规则**
-   - 基础奖励：300 胡萝卜（0.3 白萝卜）
-   - 点赞加成：每个点赞 +5 胡萝卜
-   - 示例：一条点赞数为 30 的沙发可获得 300 + 30×5 = 450 胡萝卜（0.45 白萝卜）
+   - 基础奖励：`5 胡萝卜`
+   - 点赞加成：每个点赞 `+3 胡萝卜`
+   - 示例：一条点赞数为 10 的沙发可获得 5 + 10×3 = 35 胡萝卜
 
 3. **发放时机**
    - 实时发放：当评论成为神评/沙发时立即发放基础奖励
@@ -1247,46 +1319,37 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
    - 失去地位不扣回：一旦发放不再追回（避免用户体验问题）
 
 4. **点赞加成上限（防止无限增长）**
-   - **神评点赞加成上限**：200 个点赞（2000 胡萝卜）
-     - 超过 200 个点赞后不再增加加成奖励
-     - 最高总奖励：500（基础）+ 2000（加成）= 2500 胡萝卜（2.5 白萝卜）
-   - **沙发点赞加成上限**：100 个点赞（500 胡萝卜）
-     - 超过 100 个点赞后不再增加加成奖励
-     - 最高总奖励：300（基础）+ 500（加成）= 800 胡萝卜（0.8 白萝卜）
+   - **神评点赞加成上限**：暂不设上限（根据运营情况后续调整）
+   - **沙发点赞加成上限**：暂不设上限（根据运营情况后续调整）
    - **实现示例**：
      ```csharp
      public class HighlightRewardCalculator
      {
-         private const int GOD_COMMENT_LIKE_CAP = 200;
-         private const int SOFA_LIKE_CAP = 100;
-
          public long CalculateGodCommentReward(int likeCount)
          {
-             const long baseReward = 500;
-             const long perLikeBonus = 10;
+             const long baseReward = 8;        // 基础奖励 8 胡萝卜
+             const long perLikeBonus = 5;      // 每点赞 +5 胡萝卜
 
-             var cappedLikes = Math.Min(likeCount, GOD_COMMENT_LIKE_CAP);
-             return baseReward + cappedLikes * perLikeBonus;
+             return baseReward + likeCount * perLikeBonus;
          }
 
          public long CalculateSofaReward(int likeCount)
          {
-             const long baseReward = 300;
-             const long perLikeBonus = 5;
+             const long baseReward = 5;        // 基础奖励 5 胡萝卜
+             const long perLikeBonus = 3;      // 每点赞 +3 胡萝卜
 
-             var cappedLikes = Math.Min(likeCount, SOFA_LIKE_CAP);
-             return baseReward + cappedLikes * perLikeBonus;
+             return baseReward + likeCount * perLikeBonus;
          }
      }
      ```
 
 5. **保留奖励机制（鼓励持续优质内容）**
    - **神评保留天数奖励**：
-     - 连续保持神评地位每满 7 天，额外奖励 500 胡萝卜
-     - 最多连续 4 周（28 天），总额外奖励 2000 胡萝卜
+     - 连续保持神评地位每满 7 天，额外奖励 `15 胡萝卜`
+     - 最多连续 3 周（21 天），总额外奖励 45 胡萝卜
    - **沙发保留天数奖励**：
-     - 连续保持沙发地位每满 7 天，额外奖励 200 胡萝卜
-     - 最多连续 4 周（28 天），总额外奖励 800 胡萝卜
+     - 连续保持沙发地位每满 7 天，额外奖励 `10 胡萝卜`
+     - 最多连续 3 周（21 天），总额外奖励 30 胡萝卜
    - **检测逻辑**：
      - 每日凌晨 2 点检查神评/沙发的保留天数
      - 如果当天失去地位，则停止发放保留奖励（但不追回已发放的）
@@ -1312,10 +1375,11 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
                  // 3. 检查是否需要发放保留奖励
                  var lastRewardWeek = highlight.LastRetentionRewardWeek ?? 0;
 
-                 if (retentionWeeks > lastRewardWeek && retentionWeeks <= 4)
+                 // 最多 3 周
+                 if (retentionWeeks > lastRewardWeek && retentionWeeks <= 3)
                  {
                      // 4. 计算并发放奖励
-                     var rewardAmount = highlight.HighlightType == "GodComment" ? 500 : 200;
+                     var rewardAmount = highlight.HighlightType == "GodComment" ? 15 : 10;
 
                      await _coinRewardService.GrantRetentionRewardAsync(
                          highlightId: highlight.Id,
@@ -1361,8 +1425,8 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
 
    -- 初始化配置数据
    INSERT INTO highlight_reward_config (id, highlight_type, base_reward, per_like_bonus, like_cap, retention_reward, max_retention_weeks, created_at, updated_at) VALUES
-   (1, 'GodComment', 500, 10, 200, 500, 4, NOW(), NOW()),
-   (2, 'Sofa', 300, 5, 100, 200, 4, NOW(), NOW());
+   (1, 'GodComment', 8, 5, 999999, 15, 3, NOW(), NOW()),
+   (2, 'Sofa', 5, 3, 999999, 10, 3, NOW(), NOW());
    ```
 
 ### 16.3 平台账户的具体实现
@@ -2280,8 +2344,8 @@ string transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
 
 ---
 
-**文档版本**：v1.1
+**文档版本**：v1.2
 **创建日期**：2025-12-28
-**最后更新**：2025-12-30
+**最后更新**：2026-01-03
 **负责人**：待定
-**审核状态**：评审中（已补充实施落地建议）
+**审核状态**：已更新（奖励数额已调整，注册奖励集成指南已合并）

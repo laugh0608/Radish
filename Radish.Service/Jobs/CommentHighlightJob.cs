@@ -1,4 +1,5 @@
 using Radish.IRepository;
+using Radish.IService;
 using Radish.Model;
 using Serilog;
 using SqlSugar;
@@ -9,19 +10,22 @@ namespace Radish.Service.Jobs;
 /// 神评/沙发统计定时任务
 /// </summary>
 /// <remarks>
-/// 每天凌晨 1 点执行，统计前一天的神评和沙发
+/// 每天凌晨 1 点执行，统计前一天的神评和沙发，并发放点赞加成奖励
 /// </remarks>
 public class CommentHighlightJob
 {
     private readonly IBaseRepository<Comment> _commentRepository;
     private readonly IBaseRepository<CommentHighlight> _highlightRepository;
+    private readonly ICoinRewardService _coinRewardService;
 
     public CommentHighlightJob(
         IBaseRepository<Comment> commentRepository,
-        IBaseRepository<CommentHighlight> highlightRepository)
+        IBaseRepository<CommentHighlight> highlightRepository,
+        ICoinRewardService coinRewardService)
     {
         _commentRepository = commentRepository;
         _highlightRepository = highlightRepository;
+        _coinRewardService = coinRewardService;
     }
 
     /// <summary>
@@ -66,13 +70,11 @@ public class CommentHighlightJob
             // 逻辑：ModifyTime > yesterday（已修改的）OR (ModifyTime == null AND CreateTime > yesterday)（新创建且未修改的）
             var yesterday = DateTime.Now.AddDays(-1);
 
-            var postsWithComments = await _commentRepository.DbBase.Queryable<Comment>()
-                .Where(c => !c.IsDeleted && c.IsEnabled && c.ParentId == null
+            var postsWithComments = await _commentRepository.QueryDistinctAsync(
+                c => c.PostId,
+                c => !c.IsDeleted && c.IsEnabled && c.ParentId == null
                     && ((c.ModifyTime != null && c.ModifyTime > yesterday)
-                        || (c.ModifyTime == null && c.CreateTime > yesterday)))
-                .GroupBy(c => c.PostId)
-                .Select(g => g.PostId)
-                .ToListAsync();
+                        || (c.ModifyTime == null && c.CreateTime > yesterday)));
 
             if (!postsWithComments.Any())
             {
@@ -88,15 +90,17 @@ public class CommentHighlightJob
             foreach (var postId in postsWithComments)
             {
                 // 查询该帖子的所有父评论，按点赞数降序、创建时间降序
-                var topComments = await _commentRepository.DbBase.Queryable<Comment>()
-                    .Where(c => c.PostId == postId &&
+                var (topComments, _) = await _commentRepository.QueryPageAsync(
+                    whereExpression: c => c.PostId == postId &&
                                c.ParentId == null &&
                                !c.IsDeleted &&
-                               c.IsEnabled)
-                    .OrderBy(c => c.LikeCount, OrderByType.Desc)
-                    .OrderBy(c => c.CreateTime, OrderByType.Desc)
-                    .Take(5) // 取前5名，用于排名
-                    .ToListAsync();
+                               c.IsEnabled,
+                    pageIndex: 1,
+                    pageSize: 5,
+                    orderByExpression: c => c.LikeCount,
+                    orderByType: OrderByType.Desc,
+                    thenByExpression: c => c.CreateTime,
+                    thenByType: OrderByType.Desc);
 
                 if (!topComments.Any())
                 {
@@ -118,6 +122,14 @@ public class CommentHighlightJob
 
                 if (shouldAdd)
                 {
+                    // 计算点赞增量（用于发放加成奖励）
+                    int likeIncrement = 0;
+                    if (existingHighlight != null && existingHighlight.CommentId == currentTopComment.Id)
+                    {
+                        // 同一评论，点赞数增长
+                        likeIncrement = currentTopComment.LikeCount - existingHighlight.LikeCount;
+                    }
+
                     // 将之前的记录标记为非当前
                     if (existingHighlight != null)
                     {
@@ -158,6 +170,32 @@ public class CommentHighlightJob
 
                         rank++;
                     }
+
+                    // 🎁 发放点赞加成奖励（仅当点赞数有增长时）
+                    if (likeIncrement > 0 && existingHighlight != null)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var rewardResult = await _coinRewardService.GrantLikeBonusRewardAsync(
+                                    existingHighlight.Id,
+                                    currentTopComment.AuthorId,
+                                    likeIncrement,
+                                    "GodComment");
+
+                                if (rewardResult.IsSuccess)
+                                {
+                                    Log.Information("神评点赞加成奖励发放成功：CommentId={CommentId}, 增量={Increment}, 奖励={Amount}",
+                                        currentTopComment.Id, likeIncrement, rewardResult.Amount);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "发放神评点赞加成奖励失败：CommentId={CommentId}", currentTopComment.Id);
+                            }
+                        });
+                    }
                 }
             }
 
@@ -188,38 +226,39 @@ public class CommentHighlightJob
             // 逻辑：ModifyTime > yesterday（已修改的）OR (ModifyTime == null AND CreateTime > yesterday)（新创建且未修改的）
             var yesterday = DateTime.Now.AddDays(-1);
 
-            var parentsWithChildren = await _commentRepository.DbBase.Queryable<Comment>()
-                .Where(c => !c.IsDeleted && c.IsEnabled && c.ParentId != null
+            var parentsWithChildren = await _commentRepository.QueryDistinctAsync(
+                c => c.ParentId,
+                c => !c.IsDeleted && c.IsEnabled && c.ParentId != null
                     && ((c.ModifyTime != null && c.ModifyTime > yesterday)
-                        || (c.ModifyTime == null && c.CreateTime > yesterday)))
-                .GroupBy(c => c.ParentId)
-                .Select(g => g.ParentId)
-                .ToListAsync();
+                        || (c.ModifyTime == null && c.CreateTime > yesterday)));
 
-            if (!parentsWithChildren.Any())
+            // 过滤掉 null 值（ParentId 是可空类型）
+            var validParents = parentsWithChildren.Where(p => p.HasValue).Select(p => p!.Value).ToList();
+
+            if (!validParents.Any())
             {
                 Log.Information("[CommentHighlight] 最近 24 小时内没有活跃的子评论");
                 return 0;
             }
 
-            Log.Information("[CommentHighlight] 找到 {Count} 个有活跃子评论的父评论（24h 内有更新）", parentsWithChildren.Count);
+            Log.Information("[CommentHighlight] 找到 {Count} 个有活跃子评论的父评论（24h 内有更新）", validParents.Count);
 
             var sofas = new List<CommentHighlight>();
 
             // 遍历每个父评论，找出沙发
-            foreach (var parentId in parentsWithChildren)
+            foreach (var parentId in validParents)
             {
-                if (!parentId.HasValue) continue;
-
                 // 查询该父评论下的所有子评论，按点赞数降序、创建时间降序
-                var topChildren = await _commentRepository.DbBase.Queryable<Comment>()
-                    .Where(c => c.ParentId == parentId.Value &&
+                var (topChildren, _) = await _commentRepository.QueryPageAsync(
+                    whereExpression: c => c.ParentId == parentId &&
                                !c.IsDeleted &&
-                               c.IsEnabled)
-                    .OrderBy(c => c.LikeCount, OrderByType.Desc)
-                    .OrderBy(c => c.CreateTime, OrderByType.Desc)
-                    .Take(5) // 取前5名
-                    .ToListAsync();
+                               c.IsEnabled,
+                    pageIndex: 1,
+                    pageSize: 5,
+                    orderByExpression: c => c.LikeCount,
+                    orderByType: OrderByType.Desc,
+                    thenByExpression: c => c.CreateTime,
+                    thenByType: OrderByType.Desc);
 
                 if (!topChildren.Any())
                 {
@@ -227,12 +266,12 @@ public class CommentHighlightJob
                 }
 
                 // 获取父评论信息（用于获取 PostId）
-                var parentComment = await _commentRepository.QueryByIdAsync(parentId.Value);
+                var parentComment = await _commentRepository.QueryByIdAsync(parentId);
                 if (parentComment == null) continue;
 
                 // 检查是否需要追加新的沙发
                 var existingHighlight = await _highlightRepository.QueryFirstAsync(
-                    h => h.ParentCommentId == parentId.Value &&
+                    h => h.ParentCommentId == parentId &&
                          h.HighlightType == 2 &&
                          h.IsCurrent);
 
@@ -244,12 +283,20 @@ public class CommentHighlightJob
 
                 if (shouldAdd)
                 {
+                    // 计算点赞增量（用于发放加成奖励）
+                    int likeIncrement = 0;
+                    if (existingHighlight != null && existingHighlight.CommentId == currentTopChild.Id)
+                    {
+                        // 同一评论，点赞数增长
+                        likeIncrement = currentTopChild.LikeCount - existingHighlight.LikeCount;
+                    }
+
                     // 将之前的记录标记为非当前
                     if (existingHighlight != null)
                     {
                         await _highlightRepository.UpdateColumnsAsync(
                             h => new CommentHighlight { IsCurrent = false },
-                            h => h.ParentCommentId == parentId.Value &&
+                            h => h.ParentCommentId == parentId &&
                                  h.HighlightType == 2 &&
                                  h.IsCurrent);
                     }
@@ -269,7 +316,7 @@ public class CommentHighlightJob
                         {
                             PostId = parentComment.PostId,
                             CommentId = child.Id,
-                            ParentCommentId = parentId.Value,
+                            ParentCommentId = parentId,
                             HighlightType = 2, // 沙发
                             StatDate = statDate,
                             LikeCount = child.LikeCount,
@@ -284,6 +331,32 @@ public class CommentHighlightJob
                         });
 
                         rank++;
+                    }
+
+                    // 🎁 发放点赞加成奖励（仅当点赞数有增长时）
+                    if (likeIncrement > 0 && existingHighlight != null)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var rewardResult = await _coinRewardService.GrantLikeBonusRewardAsync(
+                                    existingHighlight.Id,
+                                    currentTopChild.AuthorId,
+                                    likeIncrement,
+                                    "Sofa");
+
+                                if (rewardResult.IsSuccess)
+                                {
+                                    Log.Information("沙发点赞加成奖励发放成功：CommentId={CommentId}, 增量={Increment}, 奖励={Amount}",
+                                        currentTopChild.Id, likeIncrement, rewardResult.Amount);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "发放沙发点赞加成奖励失败：CommentId={CommentId}", currentTopChild.Id);
+                            }
+                        });
                     }
                 }
             }
