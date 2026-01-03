@@ -169,6 +169,14 @@ git push origin v1.2.0.251126
     - **复杂业务逻辑场景**：创建继承自 `BaseService<TEntity, TVo>` 的自定义 Service，添加特定业务方法
     - BaseService 提供的通用方法：QueryAsync, QueryByIdAsync, QueryPageAsync, AddAsync, UpdateAsync, DeleteAsync 等
   - Radish.Repository 依赖 Radish.IRepository、Radish.Model 以及 Radish.Infrastructure 中的 SqlSugar/租户扩展，只能向 Service 层返回实体或实体集合，禁止直接引用任何 Vo/DTO；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model，以便共享实体与视图模型定义。
+  - **Service 层数据访问约束**（重要）：
+    - **严禁**在 Service 层直接使用 `_repository.Db.Queryable` 或 `_repository.DbBase.Queryable` 访问数据库实例
+    - **所有**数据访问必须通过 Repository 方法完成
+    - ❌ 错误示例：`await _repository.Db.Queryable<Comment>().Where(...).GroupBy(...).ToListAsync()`
+    - ✅ 正确示例：`await _repository.QueryDistinctAsync(c => c.PostId, c => c.IsEnabled)`
+    - **仓储扩展策略**（按优先级顺序）：
+      1. **优先**：在 BaseRepository 中添加泛型方法（如 `QueryDistinctAsync`、`QuerySumAsync`）- 可跨实体复用，适用于通用聚合、去重、排序等操作
+      2. **次选**：创建实体专属仓储类（如 `UserRepository : BaseRepository<User>, IUserRepository`）- 适用于复杂联表查询、特定业务查询、性能优化场景
 - Radish.Extension 仅由宿主（Radish.Api、Radish.Gateway）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以及 Infrastructure 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
   - Radish.Core 暂时保留，无直接依赖关系
 - `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用"Controller 调用 Service，再由 Service 访问 Repository"的模式
