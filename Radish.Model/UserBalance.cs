@@ -7,7 +7,7 @@ namespace Radish.Model;
 
 /// <summary>用户余额实体</summary>
 /// <remarks>主键为 UserId，类型为 long，萝卜币系统核心表</remarks>
-[SugarTable("user_balance")]
+[SugarTable("UserBalance")]
 public class UserBalance : RootEntityTKey<long>
 {
     /// <summary>初始化默认用户余额实例</summary>
