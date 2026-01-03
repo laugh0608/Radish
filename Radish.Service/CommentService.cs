@@ -17,6 +17,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private readonly IBaseRepository<CommentHighlight> _highlightRepository;
     private readonly IPostService _postService;
     private readonly ICaching _caching;
+    private readonly ICoinRewardService _coinRewardService;
 
     public CommentService(
         IMapper mapper,
@@ -24,7 +25,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         IBaseRepository<UserCommentLike> userCommentLikeRepository,
         IBaseRepository<CommentHighlight> highlightRepository,
         IPostService postService,
-        ICaching caching)
+        ICaching caching,
+        ICoinRewardService coinRewardService)
         : base(mapper, baseRepository)
     {
         _commentRepository = baseRepository;
@@ -32,6 +34,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         _highlightRepository = highlightRepository;
         _postService = postService;
         _caching = caching;
+        _coinRewardService = coinRewardService;
     }
 
     /// <summary>
@@ -72,6 +75,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     /// </summary>
     public async Task<long> AddCommentAsync(Comment comment)
     {
+        long? parentAuthorId = null;
+
         // 1. 计算层级和路径
         if (comment.ParentId.HasValue)
         {
@@ -84,6 +89,9 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     : $"{parentComment.Path}-{parentComment.Id}";
                 comment.RootId = parentComment.RootId ?? parentComment.Id;
 
+                // 记录父评论作者ID，用于奖励发放
+                parentAuthorId = parentComment.AuthorId;
+
                 // 更新父评论的回复数
                 await UpdateReplyCountAsync(parentComment.Id, 1);
             }
@@ -94,6 +102,32 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
         // 3. 更新帖子的评论数
         await _postService.UpdateCommentCountAsync(comment.PostId, 1);
+
+        // 4. 🎁 发放评论奖励（异步，不阻塞）
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                // 4.1 评论发布奖励 +1 胡萝卜
+                await _coinRewardService.GrantCommentRewardAsync(commentId, comment.AuthorId, comment.PostId);
+                Log.Information("评论发布奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}", commentId, comment.AuthorId);
+
+                // 4.2 评论被回复奖励（如果是回复评论）
+                if (comment.ParentId.HasValue && parentAuthorId.HasValue)
+                {
+                    await _coinRewardService.GrantCommentReplyRewardAsync(
+                        comment.ParentId.Value,
+                        parentAuthorId.Value,
+                        commentId);
+                    Log.Information("评论被回复奖励发放成功：ParentCommentId={ParentCommentId}, ParentAuthorId={ParentAuthorId}",
+                        comment.ParentId.Value, parentAuthorId.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "发放评论奖励失败：CommentId={CommentId}, AuthorId={AuthorId}", commentId, comment.AuthorId);
+            }
+        });
 
         return commentId;
     }
@@ -169,7 +203,33 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         comment.LikeCount = Math.Max(0, comment.LikeCount + likeCountDelta);
         await _commentRepository.UpdateAsync(comment);
 
-        // 🚀 事件驱动优化：异步触发神评/沙发检查（不阻塞用户操作）
+        // 4. 🎁 发放点赞奖励（仅在点赞时，不在取消点赞时发放）
+        if (isLiked)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var rewardResult = await _coinRewardService.GrantCommentLikeRewardAsync(
+                        commentId,
+                        comment.AuthorId,
+                        userId);
+
+                    if (rewardResult.IsSuccess)
+                    {
+                        Log.Information("评论点赞奖励发放成功：CommentId={CommentId}, 作者={AuthorId} (+{AuthorReward}), 点赞者={LikerId}",
+                            commentId, comment.AuthorId, userId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "发放评论点赞奖励失败：CommentId={CommentId}, AuthorId={AuthorId}, LikerId={LikerId}",
+                        commentId, comment.AuthorId, userId);
+                }
+            });
+        }
+
+        // 5. 🚀 事件驱动优化：异步触发神评/沙发检查（不阻塞用户操作）
         _ = Task.Run(async () =>
         {
             try
@@ -453,12 +513,14 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         try
         {
             // 只查询这一个帖子的父评论（利用索引，超快）
-            var topComments = await _commentRepository.DbBase.Queryable<Comment>()
-                .Where(c => c.PostId == postId && c.ParentId == null && !c.IsDeleted && c.IsEnabled)
-                .OrderBy(c => c.LikeCount, OrderByType.Desc)
-                .OrderBy(c => c.CreateTime, OrderByType.Desc)
-                .Take(5) // 取前5名用于排名
-                .ToListAsync();
+            var (topComments, _) = await _commentRepository.QueryPageAsync(
+                whereExpression: c => c.PostId == postId && c.ParentId == null && !c.IsDeleted && c.IsEnabled,
+                pageIndex: 1,
+                pageSize: 5,
+                orderByExpression: c => c.LikeCount,
+                orderByType: OrderByType.Desc,
+                thenByExpression: c => c.CreateTime,
+                thenByType: OrderByType.Desc);
 
             if (!topComments.Any())
             {
@@ -531,6 +593,32 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 await _caching.RemoveAsync(cacheKey);
 
                 Log.Information("[CommentService] 实时更新神评：PostId={PostId}, Count={Count}", postId, newHighlights.Count);
+
+                // 🎁 发放神评基础奖励（异步，不阻塞）
+                foreach (var highlight in newHighlights)
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            var rewardResult = await _coinRewardService.GrantGodCommentRewardAsync(
+                                highlight.CommentId,
+                                highlight.AuthorId,
+                                highlight.LikeCount);
+
+                            if (rewardResult.IsSuccess)
+                            {
+                                Log.Information("神评基础奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}, 奖励={Amount}",
+                                    highlight.CommentId, highlight.AuthorId, rewardResult.Amount);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "发放神评基础奖励失败：CommentId={CommentId}, AuthorId={AuthorId}",
+                                highlight.CommentId, highlight.AuthorId);
+                        }
+                    });
+                }
             }
         }
         catch (Exception ex)
@@ -552,12 +640,14 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             Log.Information("[CommentService] 触发沙发检查：ParentId={ParentId}, PostId={PostId}", parentCommentId, postId);
 
             // 只查询这一个父评论的子评论
-            var topChildren = await _commentRepository.DbBase.Queryable<Comment>()
-                .Where(c => c.ParentId == parentCommentId && !c.IsDeleted && c.IsEnabled)
-                .OrderBy(c => c.LikeCount, OrderByType.Desc)
-                .OrderBy(c => c.CreateTime, OrderByType.Desc)
-                .Take(5)
-                .ToListAsync();
+            var (topChildren, _) = await _commentRepository.QueryPageAsync(
+                whereExpression: c => c.ParentId == parentCommentId && !c.IsDeleted && c.IsEnabled,
+                pageIndex: 1,
+                pageSize: 5,
+                orderByExpression: c => c.LikeCount,
+                orderByType: OrderByType.Desc,
+                thenByExpression: c => c.CreateTime,
+                thenByType: OrderByType.Desc);
 
             if (!topChildren.Any())
             {
@@ -644,6 +734,32 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     await _caching.RemoveAsync(cacheKey);
 
                     Log.Information("[CommentService] 实时更新沙发成功：ParentId={ParentId}, Count={Count}", parentCommentId, newHighlights.Count);
+
+                    // 🎁 发放沙发基础奖励（异步，不阻塞）
+                    foreach (var highlight in newHighlights)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                var rewardResult = await _coinRewardService.GrantSofaRewardAsync(
+                                    highlight.CommentId,
+                                    highlight.AuthorId,
+                                    highlight.LikeCount);
+
+                                if (rewardResult.IsSuccess)
+                                {
+                                    Log.Information("沙发基础奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}, 奖励={Amount}",
+                                        highlight.CommentId, highlight.AuthorId, rewardResult.Amount);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "发放沙发基础奖励失败：CommentId={CommentId}, AuthorId={AuthorId}",
+                                    highlight.CommentId, highlight.AuthorId);
+                            }
+                        });
+                    }
                 }
                 catch (Exception insertEx)
                 {
