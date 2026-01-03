@@ -1,183 +1,159 @@
 # AGENTS 指南
 
 ## 快速认知
-- Radish 是基于 ASP.NET Core 10 + SQLSugar + PostgreSQL（本地默认 SQLite）的分层内容社区，前端为 React 19 + Vite + TypeScript，采用 WebOS 桌面化 UI 设计，网关 Radish.Gateway 承载门户及后续路由能力。
-- 前端采用 **npm workspaces** 管理多个包：`radish.client`（WebOS 桌面）、`radish.console`（管理后台）、`radish.ui`（共享 UI 组件库）。
-- 当前协作主分支为 `dev`；所有沟通、文档说明默认使用中文（代码与技术标识除外）。
-- `Radish.slnx` 收纳全部后端项目，`radish.docs/docs/` 保持规范/计划/日志的唯一真相源；如需了解架构与需求，优先查阅 `radish.docs/docs/architecture/framework.md` 与 `radish.docs/docs/README.md` 的索引。
+- **技术栈**: ASP.NET Core 10 + SQLSugar + PostgreSQL (本地 SQLite) / React 19 + Vite + TypeScript (WebOS 桌面化 UI)
+- **前端**: npm workspaces 管理 `radish.client` (WebOS)、`radish.console` (管理后台)、`radish.ui` (共享组件库)
+- **协作分支**: `dev` (主开发分支)
+- **文档源**: `radish.docs/docs/` 为唯一真相源，架构/需求优先查阅 `framework.md` 和索引 `README.md`
+- **语言**: 默认中文（代码/技术标识除外）
 
 ## 包管理与测试规范
 
-**重要：包安装与项目启动规则**
+**AI 协作规则**:
 
-在协作开发时，AI 必须遵循以下规则：
+**禁止直接执行**:
+- ❌ 包安装: `dotnet add package`, `npm install`
+- ❌ 项目启动: `dotnet run`, `npm run dev` (用于测试)
 
-1. **包安装 - 禁止直接执行**：
-   - **禁止**直接运行 `dotnet add package`、`npm install` 或任何包安装命令
-   - **正确做法**：告知用户需要安装哪些包，由用户自行执行
-   - 示例："请安装以下 NuGet 包：`dotnet add package Newtonsoft.Json --version 13.0.3`"
-   - 示例："请在根目录运行：`npm install axios --workspace=radish.client`"
+**正确做法**:
+- ✅ 告知用户需要安装的包: "请安装：`dotnet add package Serilog.AspNetCore --version 8.0.0`"
+- ✅ 告知启动方式: "请启动 API 测试：`dotnet run --project Radish.Api`"
 
-2. **项目启动测试 - 禁止直接执行**：
-   - **禁止**运行 `dotnet run`、`dotnet watch`、`npm run dev` 或任何用于测试的项目启动命令
-   - **正确做法**：告知用户需要启动哪个项目以及如何启动
-   - 示例："请启动 API 项目进行测试：`dotnet run --project Radish.Api/Radish.Api.csproj`"
-   - 示例："请启动前端开发服务器：`npm run dev --workspace=radish.client`"
-   - 示例："请使用 start 脚本启动所有服务：`pwsh ./start.ps1` 并选择选项 11 (ALL)"
+**可执行操作**:
+- ✅ 代码读写、构建 (`dotnet build`, `npm run build`)、测试 (`dotnet test`, `npm run test`)、代码检查、git 操作
 
-3. **AI 可以执行的操作**：
-   - 读取和分析代码
-   - 编写新代码或修改现有代码
-   - 运行构建命令（`dotnet build`、`npm run build`）
-   - 运行测试（`dotnet test`、`npm run test`）
-   - 运行代码检查（`npm run lint`、`npm run type-check`）
-   - 执行 git 命令（status、diff、commit 等）
-   - 使用开发工具（grep、find 等）
-
-4. **原因说明**：
-   - 包安装可能需要网络访问、身份验证或特定环境配置
-   - 项目启动需要监控输出、处理交互式提示，且可能无限期运行
-   - 用户对自己的开发环境有更好的控制，能更有效地排查问题
-
-**工作流示例**：
-```
-❌ 错误做法：
-AI: "我现在安装 Serilog 包..."
-AI: [执行] dotnet add package Serilog
-AI: "我现在启动 API 进行测试..."
-AI: [执行] dotnet run --project Radish.Api
-
-✅ 正确做法：
-AI: "我已经添加了日志配置代码。请按以下步骤操作："
-AI: "1. 安装依赖包：`dotnet add package Serilog.AspNetCore --version 8.0.0`"
-AI: "2. 启动 API 项目测试日志功能：`dotnet run --project Radish.Api/Radish.Api.csproj`"
-AI: "3. 访问 http://localhost:5100/api/v2/Test/Log 查看日志输出"
-```
-
-## 仓库结构与分层职责
+## 仓库结构
 
 ### 后端项目
-- **目录要点**：`Radish.Api`（Web API 宿主）、`Radish.Gateway`（门户&未来网关）、`Radish.Auth`（OIDC 认证服务器）、`Radish.Service`/`Radish.Repository`/`Radish.Core`/`Radish.Model`（业务分层）、`Radish.Common`（通用工具，仅能引用外部包）、`Radish.Extension`（宿主引用的扩展/Autofac/AutoMapper/Redis/Serilog 注册）、`Radish.IService` 与 `Radish.IRepository`（接口契约）、`Radish.Shared`（后端共享常量/枚举，C#）、`Radish.Api.Tests`（xUnit 示例）、`Radish.Core/radish-lib`（统一 Rust 扩展库，构建后拷贝到 `Radish.Api/bin/<Configuration>/net10.0/`；如后续需要从 Core 抽离再迁到 `native/rust/{library}`）。
-- **层级依赖**：Common → Shared → Model → Infrastructure → IRepository/Repository → IService/Service → Extension → Api/Gateway/Auth。Gateway Phase 0 只依赖 Common+Extension，后续 P1+ 才可引用 Service。
-- **示例链路**：`UserController -> IUserService -> IUserRepository` 体现 Controller → Service → Repository 调用顺序，任何新功能必须沿用该模式并补齐接口定义。
+- **宿主**: `Radish.Api` (Web API)、`Radish.Gateway` (门户&网关)、`Radish.Auth` (OIDC 认证)
+- **业务分层**: `Service/Repository/Core/Model` (业务逻辑/数据/领域/模型)
+- **基础设施**: `Common` (仅外部包依赖)、`Extension` (宿主扩展/Autofac/AutoMapper/Redis/Serilog)、`IService/IRepository` (接口契约)、`Shared` (常量/枚举)
+- **测试**: `Radish.Api.Tests` (xUnit)
+- **Rust扩展**: `Radish.Core/radish-lib` (统一原生库，构建后拷贝到 `Radish.Api/bin/`)
+
+**层级依赖**: Common → Shared → Model → Infrastructure → IRepository/Repository → IService/Service → Extension → Api/Gateway/Auth
 
 ### 前端项目
-- **radish.client**：WebOS 桌面环境，面向普通用户的前台应用
-- **radish.console**：管理控制台，面向管理员的后台应用
-- **radish.ui**：共享 UI 组件库，包含通用组件、Hooks、工具函数
-- **radish.docs**：VitePress 文档站，所有文档的唯一真相源
-- **依赖关系**：client 和 console 都依赖 @radish/ui，通过 npm workspaces 符号链接实现热更新
+- `radish.client`: WebOS 桌面，面向用户
+- `radish.console`: 管理后台，面向管理员
+- `radish.ui`: 共享 UI 组件库
+- `radish.docs`: VitePress 文档站
+- **依赖**: client 和 console 依赖 `@radish/ui`，通过 npm workspaces 热更新
 
-## 环境要求与启动方式
-- **基础环境**：.NET SDK 10（`global.json` 已锁定 10.0.0），Node.js 24+，PostgreSQL 16+（或使用仓库附带的 SQLite）。
-- **一键脚本**：`pwsh ./start.ps1`（单服务 1-8；组合仅 Gateway+Auth+API、ALL）或 `./start.sh`（单服务 1-8；组合 9-15 覆盖 Gateway+API/Frontend/Docs/Console/Auth 及 ALL），均提供 `Radish.Api.Tests` 入口，支持 `Configuration`/`CONFIGURATION` 注入构建配置。
-- **常用命令**：
-  - 后端：`dotnet restore && dotnet build Radish.slnx -c Debug`、`dotnet run --project Radish.Api/Radish.Api.csproj`、`dotnet watch --project Radish.Api`、`dotnet run --project Radish.Gateway/Radish.Gateway.csproj`、`dotnet test Radish.Api.Tests`。
-  - 前端：`npm install`（根目录，配置 workspaces）、`npm run dev --workspace=radish.client`、`npm run dev --workspace=radish.console`、`npm run build --prefix radish.client`、`npm run lint --prefix radish.client`。
-  - UI 组件库：`npm run type-check --workspace=@radish/ui`、`npm run lint --workspace=@radish/ui`。修改 `radish.ui/` 中的组件会通过符号链接自动热更新到 client 和 console。
-  - 单测筛选：`dotnet test --list-tests`、`dotnet test --filter "FullyQualifiedName~UserControllerTest"`。
-- **默认端口**：API `http://localhost:5100`（内部）、Auth `http://localhost:5200`（内部）、Gateway `https://localhost:5000` / `http://localhost:5001`（外部唯一入口）、前端 Vite `http://localhost:3000`、Docs `http://localhost:3100`、Console `http://localhost:3200`。所有对外 API/Docs/Console 均通过 Gateway 暴露：`https://localhost:5000/api`、`https://localhost:5000/docs`、`https://localhost:5000/console`，Scalar UI 位于 `/scalar`（对外入口 `https://localhost:5000/scalar`，本机直连 `http://localhost:5100/scalar`，旧 `/api/docs` 路径仅保留重定向）。
+## 环境与启动
 
-## 配置、数据库与安全
-- 配置加载顺序：`appsettings.json` → `appsettings.{Environment}.json` → `appsettings.Local.json`（忽略提交） → 环境变量。新成员应复制 `Radish.Api/appsettings.Local.example.json`，并通过 `AppSettings.RadishApp` 或实现 `IConfigurableOptions` 读取强类型配置。
-- `Snowflake.WorkId/DataCenterId` 在每个环境必须唯一；多实例部署需在对应 `appsettings.{Env}.json` 中覆盖，避免 ID 冲突。
-- `Databases` 节至少包含 `ConnId=Main` 与 `ConnId=Log`（名称固定），缺少日志库将导致启动异常；`builder.Services.AddSqlSugarSetup()` 注入 `SqlSugarScope` 并关联租户/多库配置。需要按租户隔离时：字段隔离实现 `ITenantEntity`，表隔离使用 `[MultiTenant(TenantTypeEnum.Tables)]`，分库隔离使用 `[MultiTenant(TenantTypeEnum.DataBases)]`；日志实体（如 `AuditSqlLog`）需显式 `[Tenant(configId: "log")] + [SplitTable(SplitType.Month)]`。
-- 默认 SQLite（`Radish.db`、`Radish.Log.db`）自动创建，切换 PostgreSQL 时仅需更新连接串与 `DbType=4`。连接串、Redis、密钥等敏感信息只能出现在 Local/环境变量中，严禁写入版本库。
-- Serilog 由 `builder.Host.AddSerilogSetup()` 配置，日志落盘 `Log/Log.txt` 与 `Log/AopSql/AopSql.txt` 并启用异步写入；AOP SQL 日志通过 `LogContextTool.LogSource` 区分。安全相关策略：所有前后端流量强制 HTTPS、登录等敏感字段在前端用 RSA 公钥加密、API 权限依赖 JWT+角色策略、CORS 白名单位于 `appsettings.json` 的 `Cors:AllowedOrigins`。
+**基础环境**: .NET SDK 10、Node.js 24+、PostgreSQL 16+ (或 SQLite)
 
-## 版本、里程碑与分支策略
-- 遵循语义化版本号 `vMAJOR.MINOR.PATCH`，当日热修或阶段性合并可追加日期后缀 `v1.2.3.YYMMDD`。正式发布前移除日期后缀并在 GitHub Release 中记录 Feature/Bug Fix/Performance/Breaking Changes/Dependencies。
-- 发布前需：规划版本 → 代码冻结 → 完整测试 → 同步更新 `Radish.Api/Radish.Api.csproj` `<Version>` 与 `radish.client/package.json` `version` → 打标签（`git tag -a vX.Y.Z`）→ 推送 Release → 按 `radish.docs/docs/deployment/guide.md` 部署。
-- 项目里程碑与范围参阅 `radish.docs/docs/architecture/framework.md`、`radish.docs/docs/development-plan.md`，重大变更请同步到 `radish.docs/docs/changelog/`。
-
-## 编码规范与架构约束
-
-### 代码质量标准
-
-**单个源文件行数规范**：为保持代码可读性和可维护性，遵循以下文件大小指南：
-
-- **推荐范围**：500-1000 行/文件
-- **硬性限制**：非必要不超过 1000 行
-- **何时重构**：当文件接近或超过 1000 行时，考虑使用以下策略重构：
-  1. **提取自定义 Hooks**（React）：将状态管理和副作用移到独立 hooks
-     - 示例：`useForumData.ts` 负责数据获取，`useForumActions.ts` 负责事件处理
-  2. **创建视图组件**：将大型组件拆分为更小、更专注的视图组件
-     - 示例：`PostListView.tsx`、`PostDetailContentView.tsx` 用于不同 UI 状态
-  3. **分离业务逻辑**：将复杂逻辑提取到工具函数或服务模块
-  4. **按功能拆分**：将相关功能组织到特定功能模块中
-
-**重构示例**：
-```
-重构前：ForumApp.tsx (854 行)
-重构后：
-  - ForumApp.tsx (179 行) - 主组件编排
-  - hooks/useForumData.ts (307 行) - 数据管理
-  - hooks/useForumActions.ts (443 行) - 事件处理
-  - views/PostListView.tsx (162 行) - 列表视图
-  - views/PostDetailContentView.tsx (108 行) - 详情视图
+**快速启动**:
+```bash
+pwsh ./start.ps1  # 或 ./start.sh - 交互式菜单
 ```
 
-**收益**：
-- 提高代码可读性和导航性
-- 更易于测试和调试
-- 更好的代码复用性
-- 降低开发者认知负担
-- 简化代码审查
+**常用命令**:
+```bash
+# 后端
+dotnet build Radish.slnx -c Debug
+dotnet run --project Radish.Api       # http://localhost:5100
+dotnet run --project Radish.Gateway   # https://localhost:5000
+dotnet run --project Radish.Auth      # http://localhost:5200
+dotnet test Radish.Api.Tests
+
+# 前端
+npm install                           # 根目录
+npm run dev --workspace=radish.client # http://localhost:3000
+npm run dev --workspace=radish.console # http://localhost:3200
+npm run type-check --workspace=@radish/ui
+```
+
+**默认端口**:
+- API `http://localhost:5100` (内部)
+- Auth `http://localhost:5200` (内部)
+- Gateway `https://localhost:5000` (外部唯一入口)
+- Frontend `http://localhost:3000`
+- Console `http://localhost:3200`
+- Docs `http://localhost:3100`
+- Scalar `/scalar` (Gateway: `https://localhost:5000/scalar`，API 直连: `http://localhost:5100/scalar`)
+
+## 配置与数据库
+
+**配置加载**: `appsettings.json` → `appsettings.{Environment}.json` → `appsettings.Local.json` (Git 忽略) → 环境变量
+
+**关键配置**:
+- `Snowflake.WorkId/DatacenterId`: 每环境唯一 (0-30)
+- `Databases`: 至少 `ConnId=Main` 和 `ConnId=Log`
+- `Redis.Enable`: true (Redis) / false (内存缓存)
+
+**数据库共享**:
+- API 和 Auth **共享** `Radish.db` 和 `Radish.Log.db` (业务数据)
+- Auth 独享 `Radish.OpenIddict.db` (OIDC 数据，EF Core)
+- 所有数据库在 `DataBases/` 目录
+
+**多租户**: 字段级 (`ITenantEntity`) / 表级 (`[MultiTenant(Tables)]`) / 库级 (`[MultiTenant(DataBases)]`)
+
+**配置读取**: `AppSettings.RadishApp("Section", "Key")` 或实现 `IConfigurableOptions`
+
+## 编码规范
+
+### 代码质量
+**文件行数**: 500-1000 行/文件，硬限 1000 行，超过需重构（提取 Hooks/组件/Service/工具函数）
 
 ### 架构约束
 
-- "先接口后实现"：新增服务/仓储必须先在 `Radish.IService`/`Radish.IRepository` 声明，再在 `Radish.Service`/`Radish.Repository` 扩展；继承 `BaseService`/`BaseRepository` 以复用通用逻辑。
-- 责任边界：`Radish.Common` 只容纳不依赖内部项目的通用工具；需要访问 Model/Service 的扩展请放 `Radish.Extension`。`Radish.Api`/`Radish.Gateway` 只作为宿主，配置/DI/日志统一在 Extension 中注册。
-- 实体不可离开仓储层：实体定义位于 `Radish.Model/Models`，Controller 对外只返回 DTO/Vo（`Radish.Model/ViewModels`），AutoMapper Profile 统一在 `Radish.Extension/AutoMapperExtension` 注册。Service 层负责实体→DTO 的转换与业务编排。
-- Controller 不得直接注入 Repository/IBaseRepository，所有数据访问必须通过 IService。业务逻辑、事务与权限判断放在 Service；全局拦截/日志/缓存等横切逻辑通过 `Radish.Extension` 的 Autofac 拦截器完成。
-- C# 代码采用 4 空格缩进、文件范围命名空间、启用 nullable；公共成员 PascalCase，局部变量 camelCase，接口以 `I` 开头。React 组件/Hook 均用 TypeScript，组件文件 PascalCase.tsx、Hook `use` 前缀，使用 `const` 函数组件、避免 `var`，优先 `useState/useMemo/useEffect`，提交前运行 `npm run lint`。
-- `radish.client` 采用桌面化 UI（顶栏状态、Dock、桌面图标/窗口交互），接口地址通过 `VITE_API_BASE_URL` 管理；敏感请求使用 HTTPS+RSA。
-- Rust 扩展当前实现位于 `Radish.Core/radish-lib`（统一扩展库）；构建后需拷贝到 `Radish.Api/bin/<Configuration>/net10.0/`。如后续需要把原生模块从 Core 层抽离，再迁到根目录 `native/rust/{library}`。
+- **先接口后实现**: IService/IRepository → Service/Repository，继承 BaseService/BaseRepository 复用 CRUD
+- **责任边界**: Common 仅外部包，Extension 容纳访问 Model/Service 的工具
+- **实体不离仓储**: 实体在 `Model/Models`，Controller 返回 DTO/Vo (`Model/ViewModels`)，AutoMapper 映射在 `Extension/AutoMapperExtension`
+- **Service 层数据库访问约束**:
+  - ❌ 严禁: `_repository.Db.Queryable` 或 `_repository.DbBase.Queryable`
+  - ✅ 正确: 通过 Repository 方法
+  - **仓储扩展策略** (优先级):
+    1. **优先**: 扩展 BaseRepository 泛型方法 (`QueryDistinctAsync`, `QuerySumAsync`) - 跨实体复用
+    2. **次选**: 创建实体专属仓储 (`UserRepository : BaseRepository<User>`) - 复杂查询/联表/性能优化
+- **Controller 不直接注入 Repository**: 数据访问通过 IService
+- **代码风格**: C# 4 空格/文件范围命名空间/nullable；React TypeScript/`const` 组件/避免 `var`/`useState`+`useMemo`+`useEffect`
+- **前端架构**: WebOS 桌面 UI (顶栏/Dock/图标/窗口)，`VITE_API_BASE_URL` 管理接口地址
+- **Rust 扩展**: `Radish.Core/radish-lib`，构建后拷贝到 `Radish.Api/bin/`
 
-## 常见开发流程
-1. 在 `Radish.Model` 中添加实体/DTO/ViewModel，并按需扩展 `Radish.Shared` 的常量/枚举。
-2. 在 `Radish.IRepository`/`Radish.Repository` 定义并实现仓储，使用 SqlSugar 特性（`TenantAttribute`、`SplitTable` 等）描述多租户或分表需求。
-3. 在 `Radish.IService`/`Radish.Service` 补齐接口与实现，利用 AutoMapper/ICaching/IUnitOfWork 组织业务逻辑。
-4. 在 `Radish.Api` 控制器中注入 IService 并暴露 API；需要示例请求时同步维护 `Radish.Api/Radish.Api.http`。
-5. 更新 `Radish.Extension`（AutoMapper、Autofac 模块、配置）或 `Radish.Infrastructure`（租户/连接配置）以注册新模块。
-6. 编写/更新单元测试（`Radish.Api.Tests`）与前端联动逻辑，必要时在 `radish.client` 同步 DTO 并更新页面/Hook。
-7. 重大流程或约定变更请在 `Docs` 中追加说明，并在 `radish.docs/docs/changelog/` 写明日期和影响面。
+## 开发流程
 
-## 测试与质量保障
-- 后端：`dotnet test Radish.Api.Tests`（或 `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj`），调试单例测试可借助 `--filter`。修改示例 Controller（如 UserController、RustTest）时务必同步更新对应测试。
-- 前端：规划使用 Vitest + React Testing Library；在 `radish.client` 中创建 `*.test.tsx` 并通过 `npm run test --prefix radish.client` 执行。提交前至少运行 `npm run lint`。
-- 持续运行：`dotnet watch --project Radish.Api`、`npm run dev --prefix radish.client` 提供热重载；`start` 菜单中的测试选项可快速执行后端测试。
-- 关键链路需补充 `.http` 手工验证、SQLSugar Profile 和 Gateway 健康页检查；性能或安全改动要记录验证方法。
+1. `Radish.Model` 添加实体/DTO/ViewModel，`Radish.Shared` 扩展常量/枚举
+2. `IRepository/Repository` 定义实现仓储，SqlSugar 特性标注多租户/分表
+3. `IService/Service` 补齐接口实现，AutoMapper/ICaching/IUnitOfWork 组织业务逻辑
+4. `Radish.Api` 控制器注入 IService 暴露 API，维护 `Radish.Api.http` 示例
+5. 更新 `Extension` (AutoMapper/Autofac) 或 `Infrastructure` (租户/连接配置)
+6. 编写测试 (`Radish.Api.Tests`)，前端同步 DTO 更新页面/Hook
+7. 重大变更追加文档 (`radish.docs/docs/`)，`changelog/` 记录影响面
 
-## 文档、协作与提交要求
-- 文档更新：任何流程/配置/脚本/规范变更同步到 `radish.docs/docs/`（如 `architecture/specifications.md`、`guide/configuration.md`、`deployment/guide.md`），并在 `radish.docs/docs/changelog/` 记录关键节点（根目录 `Docs/` 作为入口即可）。
-- **更新日志规范**：
-  - 时间以**亚洲/上海时区**为准（UTC+8）
-  - 内容应**简洁明了**，只写重点完成的工作，避免过度详细的描述
-  - 格式：按月份和周次组织（如 `2026-01/week1.md`），月度文件（如 `2026-01.md`）提供总览
-  - 重点记录：核心功能、技术亮点、重要变更，不需要详细的实现细节
-- PR 说明需包含：变更摘要、测试结果、关联 Issue；前端 UI 贴截图/GIF，后端接口提供 `.http` 示例。多语言文档优先中文描述，可附英文注解。
-- 提交遵循 Conventional Commits（`feat:`、`fix:`、`chore:`、`docs:` 等），描述具体变更，禁止使用诸如"update files"或带 AI 签名/Co-Authored 标记。一次提交聚焦单一主题，必要时拆分。
-- 合规提醒：禁止把真实连接串、证书、`.user` 文件或其他敏感数据加入版本库；正式部署前依据 `radish.docs/docs/deployment/guide.md` 准备 Docker/Compose 配置与探针。
+## 测试与质量
+
+- **后端**: `dotnet test Radish.Api.Tests`，`--filter` 筛选单测
+- **前端**: Vitest + React Testing Library (规划中)，提交前 `npm run lint`
+- **热重载**: `dotnet watch --project Radish.Api`，`npm run dev --prefix radish.client`
+- **验证**: `.http` 手工验证、SqlSugar Profile、Gateway 健康检查
+
+## 文档与提交
+
+**文档更新**: 流程/配置/脚本/规范变更同步 `radish.docs/docs/` (`architecture/specifications.md`、`guide/`、`deployment/guide.md`)
+
+**更新日志规范**:
+- **时区**: Asia/Shanghai (UTC+8)
+- **内容**: 简洁明了，只写重点
+- **格式**: 月/周组织 (`2026-01/week1.md`)，月度总览 (`2026-01.md`)
+- **重点**: 核心功能/技术亮点/重要变更，不含实现细节
+
+**提交规范**: Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`)，禁止 AI 签名/Co-Authored 标记，单一主题，必要时拆分
+
+**合规**: 禁止提交敏感数据 (连接串/证书/`.user`)，部署参考 `deployment/guide.md`
 
 ## 参考资料
 
-### 设计与规范
-- `radish.docs/docs/architecture/framework.md` - 架构设计
-- `radish.docs/docs/architecture/specifications.md` - 开发规范
-- `radish.docs/docs/frontend/design.md` - 前端设计
-- `radish.docs/docs/guide/gateway.md` - Gateway 服务网关
-- `radish.docs/docs/guide/authentication.md` - 认证授权
-- `radish.docs/docs/guide/configuration.md` - 配置指南
-- `radish.docs/docs/deployment/guide.md` - 部署指南
+**核心文档** (radish.docs/docs/):
+- `architecture/framework.md` - 架构设计
+- `architecture/specifications.md` - 开发规范详细
+- `frontend/design.md` - 前端设计
+- `guide/` - 配置/认证/日志/网关
+- `development-plan.md` - 里程碑/周计划
+- `changelog/` - 更新日志
+- `deployment/guide.md` - 部署指南
+- `frontend/ui-library.md` - UI 组件库
 
-### UI 组件库
-- `radish.docs/docs/frontend/ui-library.md` - UI 组件库完整文档
-
-### 计划与记录
-- `radish.docs/docs/development-plan.md` - 里程碑/周计划
-- `radish.docs/docs/changelog/` - 更新日志
-
-### 运行指南
-- 根目录 `README.md` - 快速开始
-- `CLAUDE.md` - AI 协作者说明，包含命令、分层图与常见陷阱
+**详细指南**: `CLAUDE.md` (AI 协作者详细说明)
