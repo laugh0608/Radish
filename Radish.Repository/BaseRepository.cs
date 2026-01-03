@@ -357,5 +357,35 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             .ToListAsync();
     }
 
+    /// <summary>查询不同的字段值列表（去重）</summary>
+    /// <typeparam name="TResult">返回字段类型</typeparam>
+    /// <param name="selectExpression">选择字段表达式（例如：c => c.PostId）</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>去重后的字段值列表</returns>
+    public async Task<List<TResult>> QueryDistinctAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await DbClientBase.Queryable<TEntity>()
+            .WhereIF(whereExpression != null, whereExpression)
+            .Select(selectExpression)
+            .Distinct()
+            .ToListAsync();
+    }
+
+    /// <summary>查询字段求和（聚合）</summary>
+    /// <typeparam name="TResult">返回类型（通常为 int, long, decimal）</typeparam>
+    /// <param name="selectExpression">选择要求和的字段（例如：t => t.Amount）</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>求和结果</returns>
+    public async Task<TResult> QuerySumAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await DbClientBase.Queryable<TEntity>()
+            .WhereIF(whereExpression != null, whereExpression)
+            .SumAsync(selectExpression);
+    }
+
     #endregion
 }
