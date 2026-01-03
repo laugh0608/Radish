@@ -220,7 +220,7 @@ public class AccountController : Controller
             {
                 LoginName = model.Username,
                 LoginPassword = hashedPassword,
-                UserEmail = model.Email,
+                UserEmail = model.Email ?? string.Empty,  // 处理 null 值
                 UserName = model.Username,  // 默认昵称与用户名相同
                 TenantId = 0,  // 默认租户
                 IsEnable = true,
@@ -266,8 +266,8 @@ public class AccountController : Controller
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "用户注册失败: {Username}", model.Username);
-            TempData["RegisterError"] = "注册失败，请稍后重试";
+            Log.Error(ex, "用户注册失败: {Username}, 错误: {ErrorMessage}", model.Username, ex.Message);
+            TempData["RegisterError"] = $"注册失败：{ex.Message}";
             return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
         }
     }
