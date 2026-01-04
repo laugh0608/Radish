@@ -60,6 +60,18 @@ public class CoinTransactionVo
     public string FeeDisplay { get; set; } = "0.000";
 
     /// <summary>
+    /// 理论金额（精确计算结果）
+    /// </summary>
+    /// <remarks>用于审计和对账，仅在有比例计算时才有值</remarks>
+    public decimal? TheoreticalAmount { get; set; }
+
+    /// <summary>
+    /// 舍入差额（理论金额 - 实际金额）
+    /// </summary>
+    /// <remarks>用于财务对账，记录舍入产生的差额</remarks>
+    public decimal? RoundingDiff { get; set; }
+
+    /// <summary>
     /// 交易类型
     /// </summary>
     /// <remarks>

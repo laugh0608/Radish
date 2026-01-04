@@ -191,6 +191,7 @@ public class CoinServiceTest
     [InlineData(-100, "SYSTEM_GRANT", "发放金额必须大于 0")]
     [InlineData(100, "", "交易类型不能为空")]
     [InlineData(100, null, "交易类型不能为空")]
+    [InlineData(0, null, "发放金额必须大于 0")]
     public async Task GrantCoinAsync_ShouldThrowArgumentException_WhenParametersInvalid(
         long amount,
         string? transactionType,
