@@ -1,5 +1,7 @@
 using AutoMapper;
+using Microsoft.Extensions.Options;
 using Radish.Common.CacheTool;
+using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
@@ -18,6 +20,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private readonly IPostService _postService;
     private readonly ICaching _caching;
     private readonly ICoinRewardService _coinRewardService;
+    private readonly CommentHighlightOptions _highlightOptions;
 
     public CommentService(
         IMapper mapper,
@@ -26,7 +29,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         IBaseRepository<CommentHighlight> highlightRepository,
         IPostService postService,
         ICaching caching,
-        ICoinRewardService coinRewardService)
+        ICoinRewardService coinRewardService,
+        IOptions<CommentHighlightOptions> highlightOptions)
         : base(mapper, baseRepository)
     {
         _commentRepository = baseRepository;
@@ -35,6 +39,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         _postService = postService;
         _caching = caching;
         _coinRewardService = coinRewardService;
+        _highlightOptions = highlightOptions.Value;
     }
 
     /// <summary>
@@ -512,6 +517,26 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     {
         try
         {
+            // 仅在父评论数量超过配置的最小值时生效（避免评论太少时过早产生"神评"）
+            var parentCommentCount = await _commentRepository.QueryCountAsync(
+                c => c.PostId == postId && c.ParentId == null && !c.IsDeleted && c.IsEnabled);
+
+            if (parentCommentCount <= _highlightOptions.MinParentCommentCount)
+            {
+                // 评论数量不足时，确保不保留旧的"当前神评"
+                var updatedRows = await _highlightRepository.UpdateColumnsAsync(
+                    it => new CommentHighlight { IsCurrent = false },
+                    h => h.PostId == postId && h.HighlightType == 1 && h.IsCurrent);
+
+                if (updatedRows > 0)
+                {
+                    var cacheKey = $"god_comments:post:{postId}";
+                    await _caching.RemoveAsync(cacheKey);
+                }
+
+                return;
+            }
+
             // 只查询这一个帖子的父评论（利用索引，超快）
             var (topComments, _) = await _commentRepository.QueryPageAsync(
                 whereExpression: c => c.PostId == postId && c.ParentId == null && !c.IsDeleted && c.IsEnabled,
@@ -547,7 +572,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             if (existingHighlights.Any())
             {
                 await _highlightRepository.UpdateColumnsAsync(
-                    h => new CommentHighlight { IsCurrent = false },
+                    it => new CommentHighlight { IsCurrent = false },
                     h => h.PostId == postId && h.HighlightType == 1 && h.IsCurrent);
             }
 
@@ -639,6 +664,26 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         {
             Log.Information("[CommentService] 触发沙发检查：ParentId={ParentId}, PostId={PostId}", parentCommentId, postId);
 
+            // 仅在子评论数量超过配置的最小值时生效（避免回复太少时过早产生"沙发"）
+            var childCommentCount = await _commentRepository.QueryCountAsync(
+                c => c.ParentId == parentCommentId && !c.IsDeleted && c.IsEnabled);
+
+            if (childCommentCount <= _highlightOptions.MinChildCommentCount)
+            {
+                // 子评论数量不足时，确保不保留旧的"当前沙发"
+                var updatedRows = await _highlightRepository.UpdateColumnsAsync(
+                    it => new CommentHighlight { IsCurrent = false },
+                    h => h.ParentCommentId == parentCommentId && h.HighlightType == 2 && h.IsCurrent);
+
+                if (updatedRows > 0)
+                {
+                    var cacheKey = $"sofas:parent:{parentCommentId}";
+                    await _caching.RemoveAsync(cacheKey);
+                }
+
+                return;
+            }
+
             // 只查询这一个父评论的子评论
             var (topChildren, _) = await _commentRepository.QueryPageAsync(
                 whereExpression: c => c.ParentId == parentCommentId && !c.IsDeleted && c.IsEnabled,
@@ -683,7 +728,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     parentCommentId, existingHighlights.Count);
 
                 await _highlightRepository.UpdateColumnsAsync(
-                    h => new CommentHighlight { IsCurrent = false },
+                    it => new CommentHighlight { IsCurrent = false },
                     h => h.ParentCommentId == parentCommentId && h.HighlightType == 2 && h.IsCurrent);
             }
 

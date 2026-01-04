@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Options;
+using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
@@ -17,15 +19,18 @@ public class CommentHighlightJob
     private readonly IBaseRepository<Comment> _commentRepository;
     private readonly IBaseRepository<CommentHighlight> _highlightRepository;
     private readonly ICoinRewardService _coinRewardService;
+    private readonly CommentHighlightOptions _highlightOptions;
 
     public CommentHighlightJob(
         IBaseRepository<Comment> commentRepository,
         IBaseRepository<CommentHighlight> highlightRepository,
-        ICoinRewardService coinRewardService)
+        ICoinRewardService coinRewardService,
+        IOptions<CommentHighlightOptions> highlightOptions)
     {
         _commentRepository = commentRepository;
         _highlightRepository = highlightRepository;
         _coinRewardService = coinRewardService;
+        _highlightOptions = highlightOptions.Value;
     }
 
     /// <summary>
@@ -89,6 +94,20 @@ public class CommentHighlightJob
             // 遍历每个帖子，找出神评
             foreach (var postId in postsWithComments)
             {
+                // 仅在父评论数量超过配置的最小值时生效
+                var parentCommentCount = await _commentRepository.QueryCountAsync(
+                    c => c.PostId == postId && c.ParentId == null && !c.IsDeleted && c.IsEnabled);
+
+                if (parentCommentCount <= _highlightOptions.MinParentCommentCount)
+                {
+                    // 评论数量不足时，确保不保留旧的"当前神评"
+                    await _highlightRepository.UpdateColumnsAsync(
+                        it => new CommentHighlight { IsCurrent = false },
+                        h => h.PostId == postId && h.HighlightType == 1 && h.IsCurrent);
+
+                    continue;
+                }
+
                 // 查询该帖子的所有父评论，按点赞数降序、创建时间降序
                 var (topComments, _) = await _commentRepository.QueryPageAsync(
                     whereExpression: c => c.PostId == postId &&
@@ -134,7 +153,7 @@ public class CommentHighlightJob
                     if (existingHighlight != null)
                     {
                         await _highlightRepository.UpdateColumnsAsync(
-                            h => new CommentHighlight { IsCurrent = false },
+                            it => new CommentHighlight { IsCurrent = false },
                             h => h.PostId == postId && h.HighlightType == 1 && h.IsCurrent);
                     }
 
@@ -248,6 +267,19 @@ public class CommentHighlightJob
             // 遍历每个父评论，找出沙发
             foreach (var parentId in validParents)
             {
+                // 仅在子评论数量超过配置的最小值时生效
+                var childCommentCount = await _commentRepository.QueryCountAsync(
+                    c => c.ParentId == parentId && !c.IsDeleted && c.IsEnabled);
+
+                if (childCommentCount <= _highlightOptions.MinChildCommentCount)
+                {
+                    // 子评论数量不足时，确保不保留旧的"当前沙发"
+                    await _highlightRepository.UpdateColumnsAsync(
+                        it => new CommentHighlight { IsCurrent = false },
+                        h => h.ParentCommentId == parentId && h.HighlightType == 2 && h.IsCurrent);
+                    continue;
+                }
+
                 // 查询该父评论下的所有子评论，按点赞数降序、创建时间降序
                 var (topChildren, _) = await _commentRepository.QueryPageAsync(
                     whereExpression: c => c.ParentId == parentId &&
@@ -295,7 +327,7 @@ public class CommentHighlightJob
                     if (existingHighlight != null)
                     {
                         await _highlightRepository.UpdateColumnsAsync(
-                            h => new CommentHighlight { IsCurrent = false },
+                            it => new CommentHighlight { IsCurrent = false },
                             h => h.ParentCommentId == parentId &&
                                  h.HighlightType == 2 &&
                                  h.IsCurrent);
