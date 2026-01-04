@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { getAppById } from './AppRegistry';
@@ -18,10 +18,10 @@ import styles from './Dock.module.css';
  */
 export const Dock = () => {
   const { openWindows, openApp, restoreWindow } = useWindowStore();
-  const { userName, userId, isAuthenticated, clearUser, setUser } = useUserStore();
+  const { userName, userId, avatarUrl, avatarThumbnailUrl, isAuthenticated, clearUser, setUser } = useUserStore();
   const [time, setTime] = useState(new Date());
   const [isExpanded, setIsExpanded] = useState(false); // 默认为灵动岛状态
-  const [unreadMessages] = useState(3); // 消息数量占位
+  const [unreadMessages, setUnreadMessages] = useState(0); // 真实消息数量
 
   const loggedIn = isAuthenticated();
 
@@ -33,6 +33,16 @@ export const Dock = () => {
     return 'https://localhost:5000';
   }, []);
 
+  // 解析头像 URL（处理相对路径）
+  const resolveAvatarUrl = (url: string | undefined): string | undefined => {
+    if (!url) return undefined;
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith('/')) return `${apiBaseUrl}${url}`;
+    return `${apiBaseUrl}/${url}`;
+  };
+
+  const avatarSrc = resolveAvatarUrl(avatarThumbnailUrl || avatarUrl);
+
   // 只显示打开的应用（包括最小化的）
   const runningApps = openWindows.map(window => ({
     window,
@@ -43,6 +53,8 @@ export const Dock = () => {
     userId: number;
     userName: string;
     tenantId: number;
+    avatarUrl?: string;
+    avatarThumbnailUrl?: string;
   }
 
   interface ApiFetchOptions extends RequestInit {
@@ -148,10 +160,35 @@ export const Dock = () => {
         userId: json.responseData.userId,
         userName: json.responseData.userName,
         tenantId: json.responseData.tenantId,
-        roles: ['User']
+        roles: ['User'],
+        avatarUrl: json.responseData.avatarUrl,
+        avatarThumbnailUrl: json.responseData.avatarThumbnailUrl
       });
     } catch {
       clearUser();
+    }
+  };
+
+  // 获取未读消息数量
+  const fetchUnreadMessageCount = async () => {
+    if (typeof window === 'undefined') return;
+    const token = window.localStorage.getItem('access_token');
+    if (!token) {
+      setUnreadMessages(0);
+      return;
+    }
+
+    const requestUrl = `${apiBaseUrl}/api/v1/User/GetUnreadMessageCount`;
+
+    try {
+      const response = await apiFetch(requestUrl, { withAuth: true });
+      const json = await response.json() as ApiResponse<{ userId: number; unreadCount: number }>;
+
+      if (json.isSuccess && json.responseData) {
+        setUnreadMessages(json.responseData.unreadCount);
+      }
+    } catch {
+      // 静默失败，保持当前状态
     }
   };
 
@@ -163,6 +200,17 @@ export const Dock = () => {
 
     if (typeof window !== 'undefined') {
       void hydrateCurrentUser();
+      void fetchUnreadMessageCount();
+
+      // 每30秒刷新一次未读消息数量
+      const messageTimer = setInterval(() => {
+        void fetchUnreadMessageCount();
+      }, 30000);
+
+      return () => {
+        clearInterval(timer);
+        clearInterval(messageTimer);
+      };
     }
 
     return () => clearInterval(timer);
@@ -193,13 +241,26 @@ export const Dock = () => {
               <div className={styles.avatar}>
                 {loggedIn ? (
                   <>
-                    <Icon icon="mdi:account-circle" size={32} />
+                    {avatarSrc ? (
+                      <img
+                        src={avatarSrc}
+                        alt={userName}
+                        style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          objectFit: 'cover'
+                        }}
+                      />
+                    ) : (
+                      <Icon icon="mdi:account-circle" size={40} />
+                    )}
                     {unreadMessages > 0 && (
                       <div className={styles.badge}>{unreadMessages}</div>
                     )}
                   </>
                 ) : (
-                  <Icon icon="mdi:account-circle-outline" size={32} />
+                  <Icon icon="mdi:account-circle-outline" size={40} />
                 )}
               </div>
               {loggedIn && userName && (
@@ -229,7 +290,7 @@ export const Dock = () => {
                       title={app!.name}
                     >
                       {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
-                        <Icon icon={app!.icon} size={28} />
+                        <Icon icon={app!.icon} size={40} />
                       ) : (
                         <span className={styles.emoji}>{app!.icon}</span>
                       )}
@@ -248,10 +309,12 @@ export const Dock = () => {
               </div>
               <button
                 type="button"
-                className={styles.authButton}
+                className={`${styles.authButton} ${loggedIn ? styles.loggedIn : styles.loggedOut}`}
                 onClick={loggedIn ? handleLogoutClick : handleLoginClick}
+                title={loggedIn ? '退出登录' : '登录'}
               >
-                <Icon icon={loggedIn ? 'mdi:logout' : 'mdi:login'} size={20} />
+                <Icon icon={loggedIn ? 'mdi:account-check' : 'mdi:login-variant'} size={28} />
+                {loggedIn && <div className={styles.onlineIndicator} />}
               </button>
             </div>
           </div>

@@ -334,7 +334,7 @@ services:
     "MaxFileSize": {
       "Avatar": 2097152,
       "Image": 5242880,
-      "Document": 10485760,
+      "Document": 31457280,
       "Video": 52428800,
       "Audio": 10485760
     },
@@ -631,7 +631,7 @@ Gateway 门户页面需要配置服务的公开访问地址，用于页面展示
 - 生产环境 `DownstreamServices.ApiService.BaseUrl` 使用内网地址（如 Docker 容器名 `http://api:5100`）
 - 公开地址（`PublicUrl`）使用域名，配合反向代理使用
 - Nginx 反向代理会将公网 HTTPS 请求转发到内网 HTTP 端口
-- 详细的反向代理配置请参考 [部署指南](../deployment/guide.md)
+- 详细的反向代理配置请参考 [部署指南](/deployment/guide)
 
 ## 配置示例
 
@@ -943,8 +943,8 @@ git push origin --force --all
 ## 相关文档
 
 - [ASP.NET Core 配置系统](https://learn.microsoft.com/zh-cn/aspnet/core/fundamentals/configuration/)
-- [开发规范](../architecture/specifications.md)
-- [部署指南](../deployment/guide.md)
+- [开发规范](/architecture/specifications)
+- [部署指南](/deployment/guide)
 
 ## 变更日志
 

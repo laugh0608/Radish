@@ -39,6 +39,23 @@
   background-color: #da190b;
 }
 
+.radish-button--ghost {
+  background-color: transparent;
+  color: #667eea;
+  border: 1px solid #667eea;
+}
+
+.radish-button--ghost:hover:not(:disabled) {
+  background-color: rgba(102, 126, 234, 0.1);
+}
+
+/* Icon */
+.radish-button__icon {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
 /* Sizes */
 .radish-button--small {
   padding: 6px 12px;

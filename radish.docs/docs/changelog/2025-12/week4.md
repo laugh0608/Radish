@@ -6,6 +6,62 @@
 
 ---
 
+
+## 2025-12-30 (周二)
+
+### 萝卜币系统设计完善
+
+- **docs(coin-system)**: 补充萝卜币系统实施落地建议
+  - 新增 Section 16「实施落地待完善事项」（8个子节，348行）
+  - 明确神评/沙发奖励机制（500+10/like, 300+5/like）
+  - 定义 ICoinRewardService 接口用于论坛集成
+  - 设计平台账户初始化方案（UserId=1）
+  - 补充 Polly 并发重试策略（指数退避：100ms→200ms→400ms）
+  - 完善 API 契约（Transfer/Balance 接口详细示例）
+  - 设计对账任务与监控机制（reconciliation_log + Hangfire）
+  - 规划实施优先级（Phase 0-4，预计 10-14 天）
+  - 文档版本：v1.0 → v1.1
+  - 审核状态：待定 → 评审中（已补充实施落地建议）
+
+**文件变更统计**：
+- 修改：`radish.docs/docs/guide/radish-coin-system.md` (+348 行)
+
+**今日工作总结**：
+- ✅ 完成萝卜币系统设计评审
+- ✅ 补充 6 个关键实施细节（集成/奖励/平台账户/重试/API/监控）
+- ✅ 提供完整实施路线图（Phase 0-4）
+- 📊 文档更新：1 个文件
+
+---
+## 2025-12-29 (周一)
+
+### 论坛：神评/沙发定时统计与评论展示修复
+
+- **feat(comment-highlight)**: 新增神评/沙发历史记录与定时统计
+  - 新增 `CommentHighlight` 实体与相关 API（当前神评/沙发、历史记录、趋势、手动触发统计）
+  - Hangfire 定时任务：每天凌晨 1 点统计（可配置 Cron）
+  - 前端并行加载神评/沙发标识，默认排序置顶展示
+
+- **fix(comment-highlight)**: 修复 SqlSugar Code First 索引解析异常
+  - `CommentHighlight` 改为多个单字段索引组合，避免复合索引特性触发异常
+
+- **fix(forum)**: 修复子评论在收起态不可见的问题
+  - 无沙发统计数据时，收起态展示“最热一条回复”作为预览
+  - 当后端仅返回 `childrenTotal` 时，自动预加载第一页子评论用于展示
+
+---
+
+## 2025-12-25 (周四)
+
+### 工程修复与开发体验
+
+- 修复 SqlSugar AOP SQL 日志输出的 `FormatException`
+- 避免 Log 库写入触发 SQL AOP 的递归，解决日志刷屏问题
+- 修复 `Client` 授权策略对空格分隔 `scope` 的校验，Scalar 调用受保护 API 不再 403
+- 构建阶段自动将 `radish_lib` 原生库（`.dll/.so/.dylib`）复制到应用输出目录
+
+---
+
 ## 2025-12-21 (周六)
 
 ### 图片上传与处理功能完整实现
@@ -368,9 +424,18 @@ Radish.Core/
    - 6个单元测试
    - 4个 HTTP 测试
 
+5. **个人中心功能**（2025-12-28 新增）：
+   - 个人资料管理（查看/编辑）
+   - 头像上传/更换/移除
+   - 附件管理（列表/筛选/删除/复制链接）
+   - 积分余额显示（占位）
+   - 完整的输入校验（长度/格式/唯一性）
+   - 附件下载权限控制
+
 ### 下周计划
 
-- [ ] 个人中心页面
+- [x] 个人中心页面（已完成）
+- [ ] 积分系统设计与实现
 - [ ] 通知系统
 - [ ] 标签功能完善
 - [ ] 图片预览和管理
@@ -390,3 +455,155 @@ Radish.Core/
   - Ubuntu/Debian/WSL 需要 `build-essential` 以提供 `cc/gcc` 与 `crt*.o`
   - 建议同时安装 `clang`、`pkg-config`
 - **提交**：`7ca3a79 fix: 修复 radish-lib Rust 2024 编译`
+
+---
+
+## 2025-12-28 (周六)
+
+### 个人中心功能完善与体验优化
+
+#### 1. 个人中心核心功能实现
+
+- **feat(profile)**: 实现个人中心完整功能
+  - **个人资料管理**：
+    - 新增 `GetMyProfile` 接口（获取当前用户资料+头像）
+    - 新增 `UpdateMyProfile` 接口（更新昵称/邮箱/真实姓名/年龄/地址）
+    - 新增 `SetMyAvatar` 接口（绑定头像附件）
+    - 新增 `GetMyPoints` 接口（积分余额占位，M6 将接入真实数据）
+  - **数据模型**：
+    - `UserProfileVo`：个人资料响应（包含头像 URL）
+    - `UpdateMyProfileDto`：资料更新请求
+    - `SetMyAvatarDto`：头像绑定请求
+    - `UserPointsVo`：积分余额响应
+  - **前端实现**：
+    - `UserInfoCard` 组件：资料卡片+编辑表单+头像上传
+    - `UserAttachmentList` 组件：附件列表+筛选+删除+复制链接
+    - 新增"我的附件"标签页
+  - **HTTP 测试**：
+    - 在 `Radish.Api.AuthFlow.http` 中新增 B.5-B.8 测试用例
+  - **提交**：`69e4be0 feat: 个人主页新增我的附件列表`、`3919214 feat: 个人中心完善（资料/头像/附件管理）`
+
+#### 2. 资料更新校验增强
+
+- **fix(profile)**: 为个人资料更新增加完整校验
+  - **长度限制**：
+    - 用户名 ≤ 200 字符
+    - 邮箱 ≤ 200 字符
+    - 真实姓名 ≤ 50 字符
+    - 地址 ≤ 2000 字符
+  - **格式校验**：
+    - 邮箱格式验证（`System.Net.Mail.MailAddress`）
+    - 性别值范围检查
+    - 年龄非负数检查
+  - **唯一性校验**：
+    - 用户名唯一性（排除自己）
+    - 邮箱唯一性（排除自己）
+  - **架构优化**：
+    - 移除 `UserController` 对 `IUserService.Db` 的直接访问
+    - 改用 `IUserService.UpdateColumnsAsync` 方法
+    - 修复单元测试中缺失的 `IAttachmentService` 依赖
+  - **提交**：`c14b61b fix: 个人中心资料更新校验`
+
+#### 3. 用户体验优化
+
+- **feat(ux)**: 个人中心体验优化
+  - **前端错误提示**：
+    - 编辑资料保存失败时显示后端 `MessageInfo`
+    - 错误提示样式（红色背景+边框）
+    - 关闭弹窗时自动清空错误提示
+  - **清空头像功能**：
+    - 后端支持 `attachmentId=0` 表示清空头像
+    - 前端增加"移除头像"按钮（仅当有头像时显示）
+    - 清空头像时保留 `BusinessType=Avatar`，仅清空 `BusinessId`
+  - **头像关联策略**：
+    - 同一用户只保留最新头像关联
+    - 设置新头像时自动取消旧头像的 `BusinessId`
+    - 历史头像仍可在"我的附件"中按 Avatar 类型筛选查看
+  - **提交**：`d86653c feat: 个人中心体验优化`
+
+#### 4. 附件下载权限校验
+
+- **feat(security)**: 为非公开附件下载增加权限校验
+  - **权限规则**：
+    - 公开附件（`IsPublic=true`）：任何人可下载（包括匿名用户）
+    - 非公开附件（`IsPublic=false`）：仅上传者本人和 Admin/System 角色可下载
+  - **实现方式**：
+    - 修改 `IAttachmentService.GetDownloadStreamAsync` 签名
+    - 增加 `requestUserId` 和 `requestUserRoles` 参数
+    - 在 `AttachmentController.Download` 中传递当前用户信息
+    - 在 `AttachmentController.DownloadByToken` 中同样应用权限检查
+  - **日志记录**：
+    - 记录非授权下载尝试（用户 ID、附件 ID、上传者 ID）
+  - **提交**：`0896f3e feat: 附件下载增加权限校验`
+
+#### 5. HTTP 测试脚本清理
+
+- **chore(test)**: 清理 HTTP 测试脚本中的硬编码 token
+  - 移除 `Radish.Api.AuthFlow.http` 中的过期 access_token
+  - 移除 `Radish.Api.Forum.http` 中的硬编码 token
+  - 移除 `Radish.Api.RateLimit.http` 中的硬编码 token
+  - 移除 `Radish.Api.Attachment.http` 中的硬编码 token
+  - 统一改为占位符提示用户粘贴自己的 token
+  - **提交**：包含在 `3919214` 中
+
+**技术亮点**：
+
+1. **完整的个人中心功能**：
+   - 资料查看/编辑（昵称、邮箱、真实姓名、年龄、地址）
+   - 头像上传/更换/移除
+   - 附件管理（列表、筛选、删除、复制链接）
+   - 积分余额显示（占位）
+
+2. **数据安全与校验**：
+   - 完整的输入校验（长度、格式、唯一性）
+   - 附件下载权限控制
+   - 头像关联策略（只保留最新）
+   - 历史数据可追溯（旧头像保留 BusinessType）
+
+3. **用户体验优化**：
+   - 实时错误提示（后端校验失败时显示具体原因）
+   - 清空头像功能（一键移除）
+   - 附件筛选（按业务类型）
+   - 附件搜索（按文件名关键字）
+   - 复制链接（一键复制附件 URL）
+
+4. **架构改进**：
+   - 移除 Controller 对 `.Db` 的直接访问
+   - 统一使用 Service 层方法
+   - 权限检查下沉到 Service 层
+   - 单元测试覆盖更新
+
+**文件变更统计**：
+- 新增：`Radish.Model/ViewModels/UserProfileVo.cs` (~40 行)
+- 新增：`Radish.Model/ViewModels/UpdateMyProfileDto.cs` (~15 行)
+- 新增：`Radish.Model/ViewModels/SetMyAvatarDto.cs` (~10 行)
+- 新增：`Radish.Model/ViewModels/UserPointsVo.cs` (~10 行)
+- 新增：`radish.client/src/utils/clipboard.ts` (~25 行)
+- 修改：`Radish.Api/Controllers/UserController.cs` (+250 行)
+- 修改：`Radish.Api/Controllers/AttachmentController.cs` (+30 行)
+- 修改：`Radish.IService/IAttachmentService.cs` (+5 行)
+- 修改：`Radish.Service/AttachmentService.cs` (+25 行)
+- 修改：`Radish.Api.Tests/Controllers/UserControllerTest.cs` (+80 行)
+- 修改：`radish.client/src/apps/profile/components/UserInfoCard.tsx` (+120 行)
+- 修改：`radish.client/src/apps/profile/components/UserInfoCard.module.css` (+15 行)
+- 修改：`radish.client/src/apps/profile/components/UserAttachmentList.tsx` (+80 行)
+- 修改：`radish.client/src/apps/profile/components/UserAttachmentList.module.css` (+50 行)
+- 修改：`Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http` (+40 行)
+- 修改：`Radish.Api.Tests/HttpTest/Radish.Api.Attachment.http` (+20 行)
+
+**今日工作总结**：
+- ✅ 实现个人中心完整功能（资料/头像/附件）
+- ✅ 增加完整的输入校验（长度/格式/唯一性）
+- ✅ 实现附件下载权限控制
+- ✅ 优化用户体验（错误提示/清空头像）
+- ✅ 修复架构问题（移除 Controller 对 .Db 的访问）
+- ✅ 清理测试脚本中的硬编码 token
+- 📊 代码提交：6 个提交
+- 📝 功能增强：
+  - 个人中心核心功能完成
+  - 附件权限控制完善
+  - 前端体验优化
+- 🎯 架构改进：
+  - Service 层职责更清晰
+  - 权限检查统一管理
+  - 单元测试覆盖提升

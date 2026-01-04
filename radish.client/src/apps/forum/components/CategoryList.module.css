@@ -1,52 +1,58 @@
 .container {
-  width: 220px;
-  border-right: 1px solid #333;
-  padding-right: 8px;
-  overflow-y: auto;
+  width: 100%;
+  padding: 0;
 }
 
 .title {
-  margin-top: 0;
-  font-size: 16px;
+  margin: 0 0 8px 0;
+  font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .loadingText,
 .emptyText {
   font-size: 14px;
   color: #888;
+  padding: 8px 0;
 }
 
 .list {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .categoryButton {
   width: 100%;
-  text-align: left;
-  padding: 8px 12px;
-  margin-bottom: 4px;
+  padding: 10px 16px;
   background-color: transparent;
-  color: #ccc;
-  border: none;
+  color: #aaa;
+  border: 1px solid #3f3f46;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 500;
   transition: all 0.2s ease;
+  text-align: left;
 }
 
 .categoryButton:hover {
-  background-color: #1f2937;
+  background-color: #27272a;
+  border-color: #52525b;
   color: #fff;
 }
 
 .categoryButton.active {
   background-color: #2d6cdf;
+  border-color: #2d6cdf;
   color: #fff;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .categoryButton:focus {

@@ -1,0 +1,292 @@
+.container {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.loading,
+.error,
+.empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.error {
+  color: #d14343;
+}
+
+/* 筛选器 */
+.filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterGroup label {
+  font-size: 14px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.filterGroup select {
+  padding: 6px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filterGroup select:hover {
+  border-color: #667eea;
+}
+
+.filterGroup select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* 交易列表 */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transaction {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.transaction:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.transactionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+/* 交易类型标签 */
+.type {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.type.SYSTEM_GRANT {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.type.LIKE_REWARD {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.type.COMMENT_REWARD {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.type.HIGHLIGHT_REWARD {
+  background: #fff9c4;
+  color: #f57f17;
+}
+
+.type.TRANSFER {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.type.ADMIN_ADJUST {
+  background: #fce4ec;
+  color: #c2185b;
+}
+
+/* 交易状态标签 */
+.status {
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status.SUCCESS {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status.PENDING {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.status.FAILED {
+  background: #ffebee;
+  color: #c62828;
+}
+
+/* 交易详情 */
+.transactionBody {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px;
+  gap: 16px;
+}
+
+.info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.participants {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.from,
+.to {
+  color: #333;
+  font-weight: 500;
+}
+
+.arrow {
+  color: #999;
+  font-size: 16px;
+}
+
+.remark {
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border-radius: 6px;
+}
+
+.meta {
+  display: flex;
+  gap: 16px;
+  font-size: 12px;
+  color: #999;
+  flex-wrap: wrap;
+}
+
+.transactionNo {
+  font-family: monospace;
+  padding: 2px 6px;
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.time {
+  color: #999;
+}
+
+/* 金额显示 */
+.amounts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  min-width: 120px;
+}
+
+.amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.fee {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 分页 */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.pageButton {
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.pageButton:hover:not(:disabled) {
+  background: #5568d3;
+  transform: translateY(-1px);
+}
+
+.pageButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.pageInfo {
+  font-size: 14px;
+  color: #666;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .transactionBody {
+    flex-direction: column;
+  }
+
+  .amounts {
+    align-items: flex-start;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+
+  .filterGroup {
+    width: 100%;
+  }
+
+  .filterGroup select {
+    flex: 1;
+  }
+}

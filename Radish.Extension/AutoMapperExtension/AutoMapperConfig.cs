@@ -18,6 +18,7 @@ public class AutoMapperConfig
         cfg.AddProfile<OidcProfile>();
         cfg.AddProfile<ForumProfile>();
         cfg.AddProfile<AttachmentProfile>();
+        cfg.AddProfile<CoinProfile>();
     }
 
     #region 已弃用

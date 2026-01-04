@@ -16,6 +16,61 @@
   color: #667eea;
 }
 
+.avatarImg {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(102, 126, 234, 0.25);
+}
+
+.headerActions {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.profileMeta {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 13px;
+  color: #666;
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+}
+
+.avatarUpload {
+  margin-bottom: 16px;
+}
+
+.editForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.saveError {
+  padding: 10px;
+  background: #fee;
+  border: 1px solid #fcc;
+  border-radius: 6px;
+  color: #d14343;
+  font-size: 14px;
+  margin-top: 4px;
+}
+
 .info {
   flex: 1;
 }

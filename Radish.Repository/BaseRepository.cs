@@ -91,7 +91,10 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>受影响的行数</returns>
     public async Task<int> AddRangeAsync(List<TEntity> entities)
     {
-        return await DbClientBase.Insertable(entities).ExecuteCommandAsync();
+        // 🚀 使用 ExecuteReturnSnowflakeIdListAsync 为每条记录生成唯一的 Snowflake ID
+        // 避免批量插入时产生重复 ID 导致 UNIQUE constraint 错误
+        var ids = await DbClientBase.Insertable(entities).ExecuteReturnSnowflakeIdListAsync();
+        return ids.Count;
     }
 
     /// <summary>分表-写入实体数据</summary>
@@ -352,6 +355,36 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             .OrderByIF(!string.IsNullOrEmpty(orderByFields), orderByFields)
             .WhereIF(whereExpression != null, whereExpression)
             .ToListAsync();
+    }
+
+    /// <summary>查询不同的字段值列表（去重）</summary>
+    /// <typeparam name="TResult">返回字段类型</typeparam>
+    /// <param name="selectExpression">选择字段表达式（例如：c => c.PostId）</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>去重后的字段值列表</returns>
+    public async Task<List<TResult>> QueryDistinctAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await DbClientBase.Queryable<TEntity>()
+            .WhereIF(whereExpression != null, whereExpression)
+            .Select(selectExpression)
+            .Distinct()
+            .ToListAsync();
+    }
+
+    /// <summary>查询字段求和（聚合）</summary>
+    /// <typeparam name="TResult">返回类型（通常为 int, long, decimal）</typeparam>
+    /// <param name="selectExpression">选择要求和的字段（例如：t => t.Amount）</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>求和结果</returns>
+    public async Task<TResult> QuerySumAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await DbClientBase.Queryable<TEntity>()
+            .WhereIF(whereExpression != null, whereExpression)
+            .SumAsync(selectExpression);
     }
 
     #endregion

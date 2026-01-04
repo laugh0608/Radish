@@ -217,18 +217,21 @@ public class PostController : ControllerBase
     /// 点赞/取消点赞帖子
     /// </summary>
     /// <param name="postId">帖子 ID</param>
-    /// <param name="isLike">true 为点赞，false 为取消点赞</param>
+    /// <param name="isLike">true 为点赞，false 为取消点赞（已废弃，使用toggle模式）</param>
     /// <returns>操作结果</returns>
     [HttpPost]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> Like(long postId, bool isLike = true)
     {
-        await _postService.UpdateLikeCountAsync(postId, isLike ? 1 : -1);
+        var userId = _httpContextUser.UserId;
+        var result = await _postService.ToggleLikeAsync(userId, postId);
+
         return new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = isLike ? "点赞成功" : "取消点赞成功"
+            MessageInfo = result.IsLiked ? "点赞成功" : "取消点赞成功",
+            ResponseData = new { result.IsLiked, result.LikeCount }
         };
     }
 

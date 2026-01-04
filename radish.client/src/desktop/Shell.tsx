@@ -1,3 +1,4 @@
+import { ToastContainer } from '@radish/ui';
 import { Desktop } from './Desktop';
 import { Dock } from './Dock';
 import { WindowManager } from './WindowManager';
@@ -14,6 +15,7 @@ export const Shell = () => {
       <Desktop />
       <WindowManager />
       <Dock />
+      <ToastContainer />
     </div>
   );
 };

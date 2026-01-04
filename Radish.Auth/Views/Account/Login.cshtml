@@ -188,6 +188,15 @@
             border-radius: 4px;
         }
 
+        .success {
+            color: #047857;
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+        }
+
         .error {
             color: #b3261e;
             background: #fdecea;
@@ -223,6 +232,19 @@
             outline: none;
             border-color: #6366f1;
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        /* 隐藏浏览器自带的密码显示/隐藏按钮 */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+
+        input[type="password"]::-webkit-credentials-auto-fill-button,
+        input[type="password"]::-webkit-contacts-auto-fill-button {
+            visibility: hidden;
+            pointer-events: none;
+            position: absolute;
         }
 
         .password-field {
@@ -278,6 +300,25 @@
         button[type="submit"]:hover {
             transform: translateY(-1px);
             box-shadow: 0 15px 30px rgba(79, 70, 229, 0.3);
+        }
+
+        .register-link {
+            margin-top: 20px;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .register-link a {
+            color: #f472b6;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .register-link a:hover {
+            color: #fb7185;
+            text-decoration: underline;
         }
 
         @@media (max-width: 900px) {
@@ -352,6 +393,16 @@
                 <h1>@Localizer["auth.login.heading"]</h1>
                 <p class="description">@Localizer["auth.login.description"]</p>
 
+                @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                {
+                    <div class="success">@Model.SuccessMessage</div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="error">@Model.ErrorMessage</div>
+                }
+
                 <div class="test-account">
                     <h3>@Localizer["auth.login.testAccount"]</h3>
                     <ul>
@@ -371,13 +422,13 @@
 
                     <div class="form-group">
                         <label>@Localizer["auth.login.usernameLabel"]</label>
-                        <input type="text" name="username" value="@(string.IsNullOrWhiteSpace(Model.PrefillUserName) ? "test" : Model.PrefillUserName)" />
+                        <input type="text" name="username" value="@(string.IsNullOrWhiteSpace(Model.PrefillUserName) ? string.Empty : Model.PrefillUserName)" />
                     </div>
 
                     <div class="form-group">
                         <label>@Localizer["auth.login.passwordLabel"]</label>
                         <div class="password-field">
-                            <input id="passwordInput" type="password" name="password" value="test123456" />
+                            <input id="passwordInput" type="password" name="password" value="" />
                             <button type="button"
                                     id="togglePassword"
                                     class="toggle-password"
@@ -391,6 +442,10 @@
 
                     <div class="button-group">
                         <button type="submit">@Localizer["auth.login.submit"]</button>
+                    </div>
+
+                    <div class="register-link">
+                        没有账号？<a href="@Url.Action("Register", "Account", new { returnUrl = Model.ReturnUrl })">立即注册</a>
                     </div>
                 </form>
             </section>

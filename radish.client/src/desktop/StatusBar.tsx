@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import i18n from '@/i18n';
 import type { ApiResponse } from '@/api/client';
+import { CoinBalance } from './components/CoinBalance';
 import styles from './StatusBar.module.css';
 
 /**
@@ -9,8 +10,6 @@ import styles from './StatusBar.module.css';
  *
  * 显示系统信息、用户信息和时间
  */
-const defaultApiBase = 'https://localhost:5000';
-
 export const StatusBar = () => {
   const { userName, userId, isAuthenticated, clearUser, setUser } = useUserStore();
   const [time, setTime] = useState(new Date());
@@ -29,13 +28,15 @@ export const StatusBar = () => {
     userId: number;
     userName: string;
     tenantId: number;
+    avatarUrl?: string;
+    avatarThumbnailUrl?: string;
   }
 
   interface ApiFetchOptions extends RequestInit {
     withAuth?: boolean;
   }
 
-  function apiFetch<T = unknown>(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
+  function apiFetch<_T = unknown>(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
     const { withAuth, headers, ...rest } = options;
 
     const finalHeaders: HeadersInit = {
@@ -148,7 +149,9 @@ export const StatusBar = () => {
         userId: json.responseData.userId,
         userName: json.responseData.userName,
         tenantId: json.responseData.tenantId,
-        roles: ['User']
+        roles: ['User'],
+        avatarUrl: json.responseData.avatarUrl,
+        avatarThumbnailUrl: json.responseData.avatarThumbnailUrl
       });
     } catch {
       clearUser();
@@ -179,6 +182,7 @@ export const StatusBar = () => {
         )}
       </div>
       <div className={styles.right}>
+        <CoinBalance />
         <button
           type="button"
           className={styles.authButton}

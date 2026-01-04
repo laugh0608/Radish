@@ -71,4 +71,8 @@ export interface UserInfo {
   tenantId: number;
   /** 用户角色 */
   roles?: string[];
+  /** 用户头像 URL */
+  avatarUrl?: string;
+  /** 用户头像缩略图 URL */
+  avatarThumbnailUrl?: string;
 }

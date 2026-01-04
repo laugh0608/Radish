@@ -10,25 +10,31 @@ namespace Radish.Service;
 public class PostService : BaseService<Post, PostVo>, IPostService
 {
     private readonly IBaseRepository<Post> _postRepository;
+    private readonly IBaseRepository<UserPostLike> _userPostLikeRepository;
     private readonly IBaseRepository<PostTag> _postTagRepository;
     private readonly IBaseRepository<Category> _categoryRepository;
     private readonly IBaseRepository<Tag> _tagRepository;
     private readonly ITagService _tagService;
+    private readonly ICoinRewardService _coinRewardService;
 
     public PostService(
         IMapper mapper,
         IBaseRepository<Post> baseRepository,
+        IBaseRepository<UserPostLike> userPostLikeRepository,
         IBaseRepository<PostTag> postTagRepository,
         IBaseRepository<Category> categoryRepository,
         IBaseRepository<Tag> tagRepository,
-        ITagService tagService)
+        ITagService tagService,
+        ICoinRewardService coinRewardService)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
+        _userPostLikeRepository = userPostLikeRepository;
         _postTagRepository = postTagRepository;
         _categoryRepository = categoryRepository;
         _tagRepository = tagRepository;
         _tagService = tagService;
+        _coinRewardService = coinRewardService;
     }
 
     /// <summary>
@@ -147,5 +153,82 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             post.CommentCount = Math.Max(0, post.CommentCount + increment);
             await _postRepository.UpdateAsync(post);
         }
+    }
+
+    /// <summary>
+    /// 切换帖子点赞状态（点赞/取消点赞）
+    /// </summary>
+    public async Task<PostLikeResultDto> ToggleLikeAsync(long userId, long postId)
+    {
+        // 1. 检查帖子是否存在
+        var post = await _postRepository.QueryByIdAsync(postId);
+        if (post == null || post.IsDeleted)
+        {
+            throw new InvalidOperationException("帖子不存在或已被删除");
+        }
+
+        // 2. 检查是否已点赞
+        var existingLikes = await _userPostLikeRepository.QueryAsync(
+            x => x.UserId == userId && x.PostId == postId);
+
+        bool isLiked;
+        int likeCountDelta;
+
+        if (existingLikes.Any())
+        {
+            // 取消点赞
+            await _userPostLikeRepository.DeleteByIdAsync(existingLikes.First().Id);
+            isLiked = false;
+            likeCountDelta = -1;
+        }
+        else
+        {
+            // 添加点赞
+            var newLike = new UserPostLike
+            {
+                UserId = userId,
+                PostId = postId,
+                LikedAt = DateTime.UtcNow
+            };
+            await _userPostLikeRepository.AddAsync(newLike);
+            isLiked = true;
+            likeCountDelta = 1;
+        }
+
+        // 3. 更新帖子的点赞计数
+        post.LikeCount = Math.Max(0, post.LikeCount + likeCountDelta);
+        await _postRepository.UpdateAsync(post);
+
+        // 4. 🎁 发放点赞奖励（仅在点赞时，不在取消点赞时发放）
+        if (isLiked)
+        {
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var rewardResult = await _coinRewardService.GrantLikeRewardAsync(
+                        postId,
+                        post.AuthorId,
+                        userId);
+
+                    if (rewardResult.IsSuccess)
+                    {
+                        Serilog.Log.Information("帖子点赞奖励发放成功：PostId={PostId}, 作者={AuthorId}, 点赞者={LikerId}",
+                            postId, post.AuthorId, userId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Serilog.Log.Error(ex, "发放帖子点赞奖励失败：PostId={PostId}, AuthorId={AuthorId}, LikerId={LikerId}",
+                        postId, post.AuthorId, userId);
+                }
+            });
+        }
+
+        return new PostLikeResultDto
+        {
+            IsLiked = isLiked,
+            LikeCount = post.LikeCount
+        };
     }
 }

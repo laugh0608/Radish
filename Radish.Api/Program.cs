@@ -116,6 +116,8 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
+        // 🚀 配置 JSON 序列化使用 camelCase 命名策略（前端期望 authorName，而不是 AuthorName）
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.Converters.Add(new Int64ToStringConverter());
         options.JsonSerializerOptions.Converters.Add(new NullableInt64ToStringConverter());
     });
@@ -224,13 +226,32 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ClockSkew = System.TimeSpan.Zero,
             // 指定 role claim 类型为 OIDC 标准的 "role"
-            RoleClaimType = "role"
+            RoleClaimType = "role",
+            // 指定 name claim 类型为 OIDC 标准的 "name"
+            NameClaimType = "name"
         };
     });
 // 注册 JWT 授权方案，核心是通过解析请求头中的 JWT Token，然后匹配策略中的 key 和字段值
 builder.Services.AddAuthorizationBuilder()
            // Client 授权方案，基于 scope 控制访问 radish-api
-           .AddPolicy("Client", policy => policy.RequireClaim("scope", "radish-api").Build())
+           // OpenIddict 默认会把多个 scope 以空格拼成一个字符串（例如："openid profile radish-api"），因此这里需要按空格拆分判断
+           .AddPolicy("Client", policy => policy.RequireAssertion(ctx =>
+           {
+               foreach (var claim in ctx.User.FindAll("scope"))
+               {
+                   if (string.IsNullOrWhiteSpace(claim.Value))
+                       continue;
+
+                   var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                   foreach (var s in scopes)
+                   {
+                       if (string.Equals(s, "radish-api", StringComparison.Ordinal))
+                           return true;
+                   }
+               }
+
+               return false;
+           }).Build())
            // System 授权方案，RequireRole 方式
            .AddPolicy("System", policy => policy.RequireRole("System").Build())
            // SystemOrAdmin 授权方案，RequireRole 方式
@@ -282,8 +303,10 @@ builder.Services.AddHangfire(config =>
 
 builder.Services.AddHangfireServer();
 
-// 注册 FileCleanupJob
+// 注册 Job 类
 builder.Services.AddScoped<FileCleanupJob>();
+builder.Services.AddScoped<CommentHighlightJob>();
+builder.Services.AddScoped<RetentionRewardJob>();
 
 // 注册 Serilog 服务
 builder.Host.AddSerilogSetup();
@@ -482,6 +505,42 @@ if (fileCleanupConfig.GetValue<bool>("OrphanAttachments:Enable", true))
         });
 
     Log.Information("[Hangfire] 已注册定时任务: cleanup-expired-access-tokens (计划: {Schedule})", schedule);
+}
+
+// 神评/沙发统计任务
+var commentHighlightConfig = builder.Configuration.GetSection("Hangfire:CommentHighlight");
+if (commentHighlightConfig.GetValue<bool>("Enable", true))
+{
+    var schedule = commentHighlightConfig["Schedule"] ?? "0 1 * * *";
+
+    RecurringJob.AddOrUpdate<CommentHighlightJob>(
+        "comment-highlight-stat",
+        job => job.ExecuteAsync(null),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: comment-highlight-stat (计划: {Schedule})", schedule);
+}
+
+// 保留奖励任务（神评/沙发每周奖励）
+var retentionRewardConfig = builder.Configuration.GetSection("Hangfire:RetentionReward");
+if (retentionRewardConfig.GetValue<bool>("Enable", true))
+{
+    var schedule = retentionRewardConfig["Schedule"] ?? "0 2 * * 0";
+
+    RecurringJob.AddOrUpdate<RetentionRewardJob>(
+        "retention-reward",
+        job => job.ExecuteAsync(),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: retention-reward (计划: {Schedule})", schedule);
 }
 
 // -------------- App 运行阶段 ---------------

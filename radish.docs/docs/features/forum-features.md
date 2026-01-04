@@ -1557,6 +1557,105 @@ export async function getChildComments(
 
 ---
 
+### 8. 神评/沙发功能
+
+**实现时间**: 2025.12.29
+
+**目标**: 通过定时统计评论点赞数，自动标记和展示最受欢迎的评论，提升用户参与度和内容质量。
+
+#### 8.1 核心概念
+
+**神评（God Comment）**:
+- 定义：每个帖子的父评论中点赞数最高的评论
+- 视觉标识：金色"神评"徽章
+- 显示位置：评论列表顶部（默认排序时）
+
+**沙发（Sofa Comment）**:
+- 定义：每个父评论下的子评论中点赞数最高的评论
+- 视觉标识：绿色"沙发"徽章
+- 显示位置：子评论列表顶部（默认排序时）
+
+#### 8.2 实现特性
+
+**定时统计机制**:
+- 使用 Hangfire 定时任务框架
+- 每天凌晨 1 点自动执行统计
+- 统计前一天的神评和沙发数据
+
+**追加机制**:
+- 点赞数变化时追加新记录
+- 保留所有历史记录
+- 使用 `IsCurrent` 字段标记当前有效记录
+
+**动态置顶**:
+- 前端始终显示当前点赞数最高的神评/沙发
+- 支持并列第一名（点赞数相同时按创建时间排序）
+- 不同排序方式下保持神评/沙发标识
+
+**性能优化**:
+- 采用多个单字段索引组合满足常用查询（避免 SqlSugar Code First 复合索引解析异常）
+- 并行加载评论树和神评/沙发标识
+- 错误容错：神评/沙发加载失败不影响评论显示
+- 子评论预览：无沙发统计数据时，收起态展示“最热一条回复”；必要时自动预加载第一页子评论
+
+#### 8.3 API 接口
+
+**后端接口**:
+- `GET /api/v1/CommentHighlight/GetCurrentGodComments` - 获取当前神评列表
+- `GET /api/v1/CommentHighlight/GetCurrentSofas` - 获取当前沙发列表
+- `GET /api/v1/CommentHighlight/CheckHighlight` - 检查评论是否为神评/沙发
+- `GET /api/v1/CommentHighlight/GetCommentHistory` - 获取历史记录（分页）
+- `POST /api/v1/CommentHighlight/TriggerStatJob` - 手动触发统计任务（管理员）
+- `GET /api/v1/CommentHighlight/GetGodCommentTrend` - 获取神评趋势
+
+**前端集成**:
+- 扩展 `CommentNode` 类型定义（`isGodComment`, `isSofa`, `highlightRank`）
+- 新增 `getCurrentGodComments()` 和 `getCurrentSofas()` API 函数
+- ForumApp 加载评论时并行获取神评/沙发标识
+- CommentTree 和 CommentNode 组件显示徽章和置顶逻辑
+
+#### 8.4 数据库设计
+
+**CommentHighlight 表**:
+- `PostId`: 帖子 ID
+- `CommentId`: 评论 ID
+- `ParentCommentId`: 父评论 ID（神评为 null，沙发为父评论 ID）
+- `HighlightType`: 高亮类型（1=神评，2=沙发）
+- `StatDate`: 统计日期
+- `LikeCount`: 点赞数快照
+- `Rank`: 排名（1=第一名）
+- `IsCurrent`: 是否当前有效
+- 冗余字段：`ContentSnapshot`, `AuthorName`（避免 JOIN 查询）
+
+**索引设计**:
+- `idx_post_id`: PostId
+- `idx_parent_comment_id`: ParentCommentId
+- `idx_stat_date`: StatDate
+- `idx_comment_id`: CommentId
+- `idx_is_current`: IsCurrent
+
+#### 8.5 使用指南
+
+**手动触发统计**（需要管理员权限）:
+```bash
+POST http://localhost:5100/api/v1/CommentHighlight/TriggerStatJob
+Authorization: Bearer {admin_token}
+```
+
+**查看 Hangfire Dashboard**:
+```
+http://localhost:5100/hangfire
+```
+
+**查询神评列表**:
+```bash
+GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentGodComments?postId=1
+```
+
+**详细文档**: 参见 [神评/沙发功能详细文档](./comment-highlight.md)
+
+---
+
 ## 功能协同
 
 以上功能并非独立工作，而是协同配合：
@@ -1692,6 +1791,7 @@ export async function getChildComments(
    - ✅ 评论点赞（已完成）
    - ✅ 评论回复（已完成）
    - ✅ 懒加载子评论（已完成）
+   - ✅ 神评/沙发功能（已完成）
    - ⏳ @提及高亮显示（待优化 - 修复 MarkdownRenderer）
    - ⏳ 评论编辑功能（仅作者可编辑，时间窗口限制）
    - ⏳ @提及用户搜索下拉框
@@ -1725,9 +1825,10 @@ export async function getChildComments(
 
 - [论坛架构评估](./forum-assessment.md)
 - [论坛重构方案](./forum-refactoring.md)
+- [神评/沙发功能详细文档](./comment-highlight.md)
 - [开放平台规划](./open-platform.md)
-- [前端设计文档](../frontend/design.md)
-- [12月开发日志](../changelog/2025-12.md)
+- [前端设计文档](/frontend/design)
+- [12月开发日志](/changelog/2025-12)
 
 ---
 

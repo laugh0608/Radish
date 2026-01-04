@@ -1,4 +1,5 @@
-import { useState, useRef, DragEvent, ChangeEvent } from 'react';
+import { useState, useRef } from 'react';
+import type { DragEvent, ChangeEvent } from 'react';
 import { Icon } from '../Icon/Icon';
 import styles from './FileUpload.module.css';
 
@@ -22,9 +23,22 @@ export interface FileUploadProps {
   multiple?: boolean;
 
   /**
-   * 上传成功回调
+   * 普通上传回调（小文件）
    */
   onUpload?: (file: File, options?: UploadOptions) => Promise<UploadResult>;
+
+  /**
+   * 分片上传回调（大文件）
+   * 返回 Promise<UploadResult>
+   */
+  onChunkedUpload?: (file: File, options?: UploadOptions, onProgress?: (progress: ChunkedUploadProgress) => void) => Promise<UploadResult>;
+
+  /**
+   * 分片上传阈值（字节）
+   * 文件大小超过此值时使用分片上传
+   * @default 10 * 1024 * 1024 (10MB)
+   */
+  chunkedUploadThreshold?: number;
 
   /**
    * 上传成功后的回调
@@ -77,6 +91,46 @@ export interface FileUploadProps {
   defaultWatermarkText?: string;
 }
 
+/**
+ * 分片上传进度信息
+ */
+export interface ChunkedUploadProgress {
+  /**
+   * 已上传字节数
+   */
+  uploadedBytes: number;
+
+  /**
+   * 总字节数
+   */
+  totalBytes: number;
+
+  /**
+   * 进度百分比 (0-100)
+   */
+  percentage: number;
+
+  /**
+   * 上传速度 (字节/秒)
+   */
+  speed?: number;
+
+  /**
+   * 剩余时间 (秒)
+   */
+  remainingTime?: number;
+
+  /**
+   * 已上传分片数
+   */
+  uploadedChunks?: number;
+
+  /**
+   * 总分片数
+   */
+  totalChunks?: number;
+}
+
 export interface UploadOptions {
   /**
    * 是否添加水印
@@ -111,14 +165,14 @@ export interface UploadResult {
   id: number | string;
 
   /**
-   * 文件名
+   * 原始文件名
    */
-  fileName: string;
+  originalName: string;
 
   /**
-   * 文件 URL
+   * 访问 URL
    */
-  fileUrl: string;
+  url: string;
 
   /**
    * 缩略图 URL（可选）
@@ -147,13 +201,18 @@ interface UploadState {
   addWatermark: boolean;
   watermarkText: string;
   generateMultipleSizes: boolean;
+  // 分片上传相关
+  isChunkedUpload: boolean;
+  chunkedProgress?: ChunkedUploadProgress;
 }
 
 export const FileUpload = ({
   accept = 'image/*',
   maxSize = 5 * 1024 * 1024, // 5MB
+  chunkedUploadThreshold = 10 * 1024 * 1024, // 10MB
   multiple = false,
   onUpload,
+  onChunkedUpload,
   onSuccess,
   onError,
   disabled = false,
@@ -173,7 +232,9 @@ export const FileUpload = ({
     result: null,
     addWatermark: false,
     watermarkText: defaultWatermarkText,
-    generateMultipleSizes: false
+    generateMultipleSizes: false,
+    isChunkedUpload: false,
+    chunkedProgress: undefined
   });
 
   const [isDragging, setIsDragging] = useState(false);
@@ -186,6 +247,23 @@ export const FileUpload = ({
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  };
+
+  // 格式化速度
+  const formatSpeed = (bytesPerSecond: number): string => {
+    if (bytesPerSecond === 0) return '0 B/s';
+    const k = 1024;
+    const sizes = ['B/s', 'KB/s', 'MB/s', 'GB/s'];
+    const i = Math.floor(Math.log(bytesPerSecond) / Math.log(k));
+    return `${parseFloat((bytesPerSecond / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  };
+
+  // 格式化时间
+  const formatTime = (seconds: number): string => {
+    if (!isFinite(seconds) || seconds < 0) return '--';
+    if (seconds < 60) return `${Math.round(seconds)} 秒`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} 分 ${Math.round(seconds % 60)} 秒`;
+    return `${Math.floor(seconds / 3600)} 小时 ${Math.floor((seconds % 3600) / 60)} 分`;
   };
 
   // 验证文件
@@ -240,6 +318,9 @@ export const FileUpload = ({
       return;
     }
 
+    // 判断是否使用分片上传
+    const useChunkedUpload = file.size >= chunkedUploadThreshold && !!onChunkedUpload;
+
     // 生成预览
     const previewUrl = showPreview ? generatePreview(file) : null;
 
@@ -250,11 +331,15 @@ export const FileUpload = ({
       error: null,
       uploading: false,
       progress: 0,
-      result: null
+      result: null,
+      isChunkedUpload: useChunkedUpload,
+      chunkedProgress: undefined
     }));
 
     // 如果提供了上传函数，自动开始上传
-    if (onUpload) {
+    if (useChunkedUpload) {
+      await startChunkedUpload(file);
+    } else if (onUpload) {
       await startUpload(file);
     }
   };
@@ -289,6 +374,55 @@ export const FileUpload = ({
       const result = await onUpload(file, uploadOptions);
 
       clearInterval(progressInterval);
+
+      setState(prev => ({
+        ...prev,
+        uploading: false,
+        progress: 100,
+        result,
+        error: null
+      }));
+
+      if (onSuccess) {
+        onSuccess(result);
+      }
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        uploading: false,
+        progress: 0,
+        error: error instanceof Error ? error.message : '上传失败'
+      }));
+
+      if (onError) {
+        onError(error instanceof Error ? error : new Error('上传失败'));
+      }
+    }
+  };
+
+  // 开始分片上传
+  const startChunkedUpload = async (file: File) => {
+    if (!onChunkedUpload) return;
+
+    setState(prev => ({ ...prev, uploading: true, progress: 0, error: null }));
+
+    try {
+      // 构建上传选项
+      const uploadOptions: UploadOptions = {
+        addWatermark: state.addWatermark,
+        watermarkText: state.watermarkText,
+        generateMultipleSizes: state.generateMultipleSizes,
+        generateThumbnail: true,
+        removeExif: true
+      };
+
+      const result = await onChunkedUpload(file, uploadOptions, (progress) => {
+        setState(prev => ({
+          ...prev,
+          progress: progress.percentage,
+          chunkedProgress: progress
+        }));
+      });
 
       setState(prev => ({
         ...prev,
@@ -376,7 +510,12 @@ export const FileUpload = ({
       uploading: false,
       progress: 0,
       error: null,
-      result: null
+      result: null,
+      addWatermark: false,
+      watermarkText: defaultWatermarkText,
+      generateMultipleSizes: false,
+      isChunkedUpload: false,
+      chunkedProgress: undefined
     });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -386,7 +525,11 @@ export const FileUpload = ({
   // 重试上传
   const handleRetry = () => {
     if (state.file) {
-      startUpload(state.file);
+      if (state.isChunkedUpload) {
+        startChunkedUpload(state.file);
+      } else {
+        startUpload(state.file);
+      }
     }
   };
 
@@ -512,24 +655,46 @@ export const FileUpload = ({
                   style={{ width: `${state.progress}%` }}
                 />
               </div>
-              <p className={styles.progressText}>上传中... {state.progress}%</p>
+              <p className={styles.progressText}>
+                上传中... {Math.round(state.progress)}%
+              </p>
+              {/* 分片上传详细进度 */}
+              {state.isChunkedUpload && state.chunkedProgress && (
+                <div className={styles.chunkedProgressDetails}>
+                  {state.chunkedProgress.speed !== undefined && state.chunkedProgress.speed > 0 && (
+                    <span className={styles.progressDetail}>
+                      速度: {formatSpeed(state.chunkedProgress.speed)}
+                    </span>
+                  )}
+                  {state.chunkedProgress.remainingTime !== undefined && state.chunkedProgress.remainingTime > 0 && (
+                    <span className={styles.progressDetail}>
+                      剩余: {formatTime(state.chunkedProgress.remainingTime)}
+                    </span>
+                  )}
+                  {state.chunkedProgress.uploadedChunks !== undefined && state.chunkedProgress.totalChunks !== undefined && (
+                    <span className={styles.progressDetail}>
+                      分片: {state.chunkedProgress.uploadedChunks}/{state.chunkedProgress.totalChunks}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {state.result && (
           <div className={styles.successState}>
-            {state.result.thumbnailUrl || state.result.fileUrl ? (
+            {state.result.thumbnailUrl || state.result.url ? (
               <img
-                src={state.result.thumbnailUrl || state.result.fileUrl}
-                alt={state.result.fileName}
+                src={state.result.thumbnailUrl || state.result.url}
+                alt={state.result.originalName}
                 className={styles.preview}
               />
             ) : (
               <Icon icon="mdi:check-circle" size={48} className={styles.successIcon} />
             )}
             <div className={styles.fileDetails}>
-              <p className={styles.fileName}>{state.result.fileName}</p>
+              <p className={styles.fileName}>{state.result.originalName}</p>
               {state.result.fileSize && (
                 <p className={styles.fileSize}>{formatFileSize(state.result.fileSize)}</p>
               )}

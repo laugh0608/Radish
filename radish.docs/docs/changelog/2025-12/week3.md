@@ -249,10 +249,10 @@
 - ✅ MarkdownEditor 集成图片上传（按钮、粘贴、拖拽）
 - ✅ 上传成功后自动插入 Markdown 图片语法
 - ✅ Rust vs C# 性能对比测试完成（生成性能报告）
-- ✅ 单个图片上传处理时间 < 2 秒（< 5MB 图片）
+- ✅ 单个图片上传处理时间 &lt; 2 秒（&lt; 5MB 图片）
 
 **备注**：
-- 详细方案见 [文件上传设计方案](../features/file-upload-design.md)
+- 详细方案见 [文件上传设计方案](/features/file-upload-design)
 - 本阶段重点是文件上传的 MVP 实现（Phase 1）
 - MinIO 集成、定时任务、内容审核等功能延后到 Phase 2/3
 
@@ -792,7 +792,7 @@
 
 - **test(api)**: 完善 ClientController 测试并启用跳过的测试用例
   - 完善 OpenIddictApplicationManager mock 实现,正确返回 FakeClient 属性
-  - 修复 CreateAsync 返回值类型 (从 ValueTask 改为 ValueTask<object>)
+  - 修复 CreateAsync 返回值类型 (从 ValueTask 改为 `ValueTask<object>`)
   - 启用之前跳过的 5 个测试用例 (GetClients、CreateClient、DeleteClient、ResetClientSecret 等)
   - 所有测试通过,验证客户端管理 API 的核心功能
 

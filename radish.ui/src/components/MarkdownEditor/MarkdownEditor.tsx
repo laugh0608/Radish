@@ -1,4 +1,5 @@
-import { useState, useRef, KeyboardEvent, ChangeEvent, ClipboardEvent, DragEvent } from 'react';
+import { useState, useRef } from 'react';
+import type { KeyboardEvent, ChangeEvent, ClipboardEvent, DragEvent } from 'react';
 import { Icon } from '../Icon/Icon';
 import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
 import styles from './MarkdownEditor.module.css';
@@ -17,9 +18,14 @@ export interface MarkdownEditorProps {
    * 如果不提供，图片按钮将插入默认的 Markdown 语法
    */
   onImageUpload?: (file: File) => Promise<{ url: string; thumbnailUrl?: string }>;
+  /**
+   * 文档上传处理函数
+   * 如果不提供，文档按钮将不显示
+   */
+  onDocumentUpload?: (file: File) => Promise<{ url: string; fileName: string }>;
 }
 
-type ToolbarAction = 'bold' | 'italic' | 'strikethrough' | 'heading' | 'quote' | 'code' | 'codeblock' | 'ul' | 'ol' | 'link' | 'image' | 'hr';
+type ToolbarAction = 'bold' | 'italic' | 'strikethrough' | 'heading' | 'quote' | 'code' | 'codeblock' | 'ul' | 'ol' | 'link' | 'image' | 'document' | 'hr';
 
 export const MarkdownEditor = ({
   value,
@@ -30,7 +36,8 @@ export const MarkdownEditor = ({
   disabled = false,
   showToolbar = true,
   className = '',
-  onImageUpload
+  onImageUpload,
+  onDocumentUpload
 }: MarkdownEditorProps) => {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -38,6 +45,7 @@ export const MarkdownEditor = ({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const documentInputRef = useRef<HTMLInputElement>(null);
 
   // 常用 Emoji
   const emojis = [
@@ -110,6 +118,29 @@ export const MarkdownEditor = ({
     }
   };
 
+  // 处理文档上传
+  const handleDocumentUpload = async (file: File) => {
+    if (!onDocumentUpload) {
+      return;
+    }
+
+    setUploading(true);
+    setUploadError(null);
+
+    try {
+      const result = await onDocumentUpload(file);
+
+      // 插入文档链接 Markdown 语法
+      insertText(`[${result.fileName || file.name}](${result.url})`, '', '');
+
+      setUploading(false);
+    } catch (error) {
+      setUploading(false);
+      setUploadError(error instanceof Error ? error.message : '文档上传失败');
+      console.error('文档上传失败:', error);
+    }
+  };
+
   // 处理文件选择
   const handleFileInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,6 +150,18 @@ export const MarkdownEditor = ({
     // 清空文件输入，允许重复选择同一个文件
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  // 处理文档文件选择
+  const handleDocumentInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      await handleDocumentUpload(file);
+    }
+    // 清空文件输入，允许重复选择同一个文件
+    if (documentInputRef.current) {
+      documentInputRef.current.value = '';
     }
   };
 
@@ -206,6 +249,12 @@ export const MarkdownEditor = ({
           insertText('![', '](url)', '图片描述');
         }
         break;
+      case 'document':
+        if (onDocumentUpload) {
+          // 触发文档文件选择
+          documentInputRef.current?.click();
+        }
+        break;
       case 'hr':
         insertText('\n---\n', '', '');
         break;
@@ -268,6 +317,13 @@ export const MarkdownEditor = ({
         accept="image/*"
         style={{ display: 'none' }}
         onChange={handleFileInputChange}
+      />
+      <input
+        ref={documentInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+        style={{ display: 'none' }}
+        onChange={handleDocumentInputChange}
       />
 
       {/* 工具栏 */}
@@ -388,6 +444,17 @@ export const MarkdownEditor = ({
             >
               <Icon icon="mdi:image" size={18} />
             </button>
+            {onDocumentUpload && (
+              <button
+                type="button"
+                className={styles.toolbarButton}
+                onClick={() => handleToolbarAction('document')}
+                title="文档"
+                disabled={disabled}
+              >
+                <Icon icon="mdi:file-document-outline" size={18} />
+              </button>
+            )}
             <button
               type="button"
               className={styles.toolbarButton}

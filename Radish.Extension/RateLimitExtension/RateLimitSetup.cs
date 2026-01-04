@@ -18,6 +18,7 @@ public static class RateLimitSetup
     {
         public const string Global = "global";
         public const string Login = "login";
+        public const string Register = "register";
         public const string Sensitive = "sensitive";
         public const string Concurrency = "concurrency";
     }
@@ -70,6 +71,21 @@ public static class RateLimitSetup
 
                 Log.Information("[RateLimit] 登录限流策略已启用: {PermitLimit} 请求/{WindowSeconds}秒",
                     options.Login.PermitLimit, options.Login.WindowSeconds);
+            }
+
+            // 注册限流策略（Fixed Window，比登录更严格）
+            if (options.Login.Enable)  // 复用 Login 配置，但更严格
+            {
+                limiterOptions.AddFixedWindowLimiter(PolicyNames.Register, fixedOptions =>
+                {
+                    fixedOptions.PermitLimit = Math.Max(1, options.Login.PermitLimit / 2);  // 注册限制更严格
+                    fixedOptions.Window = TimeSpan.FromSeconds(options.Login.WindowSeconds);
+                    fixedOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    fixedOptions.QueueLimit = 0;
+                });
+
+                Log.Information("[RateLimit] 注册限流策略已启用: {PermitLimit} 请求/{WindowSeconds}秒",
+                    Math.Max(1, options.Login.PermitLimit / 2), options.Login.WindowSeconds);
             }
 
             // 敏感操作限流策略（Token Bucket）
