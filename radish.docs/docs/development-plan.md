@@ -26,23 +26,35 @@
 | M3 | OIDC 认证中心 | Radish.Auth 项目、OpenIddict 配置、用户/角色/租户/权限模型、DbSeed 初始化、客户端管理 API | OIDC 发现文档可访问；Scalar 可通过 OAuth 授权调试 API；客户端 CRUD API 可用 | ✅ 已完成 (2025.12.14) |
 | M4 | 前端框架与认证 | 桌面模式骨架、基础组件库、OIDC 客户端集成、后台应用管理界面、论坛应用完整实现、安全增强 | React 可完成 OIDC 登录/登出/自动续期；后台可动态配置客户端；桌面 Shell 可用；论坛应用基本可用 | ✅ 已完成 (2025.12.21) |
 | M5 | 文件上传与内容增强 | 文件上传（图片/文档）、Rust 扩展集成、图片处理、MarkdownEditor 图片上传集成、个人中心功能 | 可上传图片/文档；自动生成缩略图；MarkdownEditor 支持图片上传；文件去重功能；个人中心资料管理 | ✅ 已完成 (2025.12.21~2025.12.28) |
-| M6 | 积分与商城 | 积分规则、事件订阅、商城商品与库存、购买链路 | 发帖/互动触发积分，商城购买扣减积分并更新权益 | 🚧 进行中 (2025.12.28~2026.01.03) |
-| M7 | 可观测性与测试 | 日志/Tracing、性能调优、自动化测试、CI 脚本 | `dotnet test` + `npm run test` 通过；Serilog/O11y 配置完成；性能基线达到 P95≤200ms | ⏳ 计划中 |
-| M8 | 部署与运维 | Dockerfile/Compose、自监控、变更文档 | `docker compose up --build` 一键拉起 PostgreSQL + API + Auth + 前端；文档覆盖常见排障 | ⏳ 计划中 |
-| M9（暂缓） | Gateway & BFF 策略 | Gateway PoC（Ocelot 路由 + 认证透传）与聚合 API 设计，仅在多服务/多入口明确后启动 | 在 `DevelopmentLog` 记录启动审批 + 回滚预案；保证现有 API 维持直连能力 | ⏸️ 暂缓 |
+| M6 | 萝卜币系统 | 萝卜币基础服务、论坛奖励规则、神评沙发统计、精确计算系统 | 发帖/互动触发萝卜币奖励，神评/沙发保留奖励正常发放，前端余额显示与钱包页面可用 | ✅ 已完成 (2025.12.28~2026.01.03) |
+| M7 | 消息通知系统 | SignalR/WebSocket 实时推送、通知中心、推送模板、多端同步 | 替代轮询机制，实时推送点赞/评论/系统消息；通知中心可查看历史消息 | ⏳ 计划中 |
+| M8 | 用户等级与经验值 | 11 级修仙体系、经验值计算、升级奖励、等级徽章、成就系统 | 用户行为触发经验值增长，升级获得萝卜币奖励，个人主页显示等级徽章 | ⏳ 计划中 |
+| M9 | 商城系统 | 商品管理、库存管理、购买链路、订单系统、权益发放 | 可浏览商品列表，萝卜币购买商品并扣减库存，订单记录可追溯 | ⏳ 计划中 |
+| M10 | 可观测性与测试 | 日志/Tracing、性能调优、自动化测试、CI 脚本 | `dotnet test` + `npm run test` 通过；Serilog/O11y 配置完成；性能基线达到 P95≤200ms | ⏳ 计划中 |
+| M11 | 部署与运维 | Dockerfile/Compose、自监控、变更文档 | `docker compose up --build` 一键拉起 PostgreSQL + API + Auth + 前端；文档覆盖常见排障 | ⏳ 计划中 |
+| M12（暂缓） | Gateway & BFF 策略 | Gateway PoC（Ocelot 路由 + 认证透传）与聚合 API 设计，仅在多服务/多入口明确后启动 | 在 `DevelopmentLog` 记录启动审批 + 回滚预案；保证现有 API 维持直连能力 | ⏸️ 暂缓 |
 
-> **当前进度**：✅ M5（文件上传与内容增强）已于 2025.12.28 完成，🚧 M6（积分与商城）萝卜币系统 MVP 已于 2026.01.03 完成。
+> **当前进度**：✅ M6（萝卜币系统）已于 2026.01.03 完成。
 >
 > **M5 完成情况**：文件上传功能（图片水印、多尺寸、EXIF 移除、WebP 支持、文件去重）、Rust 扩展架构（radish-lib 统一库）、个人中心功能（资料管理、头像上传、附件管理、积分占位）、附件下载权限控制。详见 [2025.12 开发日志](./changelog/2025-12.md) 第四周总结。
 >
-> **M6 进度说明**：
-> - ✅ **萝卜币系统 MVP 已完成**（2026.01.03）：
+> **M6 完成情况**：
+> - ✅ **萝卜币系统完整实现**（2026.01.03）：
 >   - 萝卜币基础服务（余额管理、交易记录、系统赠送）
 >   - 论坛奖励服务（点赞、评论、神评、沙发奖励，含防刷机制）
->   - 定时任务（神评沙发统计、保留奖励发放）
+>   - 精确计算系统（CoinCalculator 工具类，52 个单元测试全通过）
+>   - 定时任务（神评沙发统计、保留奖励发放，支持可配置阈值）
 >   - 前端集成（Toast 组件、余额显示、钱包页面）
 >   - 注册奖励集成（新用户 50 胡萝卜）
-> - ⏳ **待完成**：商城商品与库存管理、购买链路
+>   - 详细文档（萝卜币系统设计、精确计算规范）
+> - 详见 [2026.01 开发日志](./changelog/2026-01.md) 第一周总结
+>
+> **里程碑调整说明**（2026.01.03）：
+> - M6 聚焦萝卜币系统（已完成），商城系统推迟到 M9
+> - M7 实现消息通知系统（SignalR 实时推送，替代轮询）
+> - M8 实现用户等级与经验值系统（修仙主题，与萝卜币集成）
+> - M9 实现商城系统（依赖通知和等级系统，功能更完备）
+> - 原 M7/M8 依次顺延到 M10/M11
 
 ## 按周计划
 
@@ -526,9 +538,246 @@
 - 点赞/收藏：后端提供幂等接口（Upsert），前端按钮即时反馈与回滚。
 - 积分：事件（发帖/评论/点赞）触发积分流水；`PointLedger`、`PointTransaction`。
 - 商城雏形：商品管理、库存、购买接口；前端展示商品列表与购买流程。
-- 验收：触发积分后可在“个人中心”看到余额与流水；购买商品扣减库存与积分。
+- 验收：触发积分后可在"个人中心"看到余额与流水；购买商品扣减库存与积分。
 
-### 第 7 周｜可观测性、测试与性能
+### 第 7 周｜消息通知系统（M7）
+
+> **阶段目标**：实现 SignalR/WebSocket 实时推送系统，替代当前的轮询机制，提供点赞/评论/系统消息的即时推送能力。详细方案见 [消息通知系统设计](./guide/notification-realtime.md)。
+
+#### 7.1 后端核心功能（Phase 0 - 3-5 天）
+
+**数据模型设计**：
+- 创建 `Notification` 实体和数据库迁移
+  - 字段：接收者 ID、发送者 ID、通知类型、标题、内容、关联实体类型、关联实体 ID、已读状态、创建时间
+  - 支持：软删除、审计字段、多租户、按月分表（`Notification_YYYYMM`）
+- 创建 `NotificationSetting` 实体（用户通知偏好配置）
+  - 字段：用户 ID、通知类型、是否启用、推送渠道（站内/邮件/短信）
+
+**SignalR Hub 实现**：
+- 创建 `NotificationHub`（`/hubs/notification`）
+  - `OnConnectedAsync()` - 连接建立时加入用户组
+  - `OnDisconnectedAsync()` - 断开时清理连接
+  - `MarkAsRead(notificationId)` - 标记已读
+  - `MarkAllAsRead()` - 全部已读
+- 实现连接管理
+  - 用户 ID → 连接 ID 映射（支持多端同时在线）
+  - 使用 `Groups.AddToGroupAsync(connectionId, userId)` 管理用户组
+
+**通知推送服务**：
+- 创建 `INotificationService` 接口
+  - `SendNotificationAsync(userId, type, title, content, relatedId)` - 发送通知
+  - `SendBatchNotificationsAsync(userIds, ...)` - 批量发送
+  - `GetUnreadCountAsync(userId)` - 获取未读数量
+  - `GetNotificationsAsync(userId, pageIndex, pageSize)` - 分页查询
+  - `MarkAsReadAsync(notificationId)` - 标记已读
+  - `MarkAllAsReadAsync(userId)` - 全部已读
+- 实现 `NotificationService`
+  - 保存通知到数据库
+  - 通过 `IHubContext<NotificationHub>` 推送到客户端
+  - 支持推送失败时的降级策略（仅保存数据库）
+
+**集成到论坛业务**：
+- 点赞通知：`CommentService.LikeAsync()` → 通知被点赞者
+- 评论通知：`CommentService.CreateAsync()` → 通知帖子作者/父评论作者
+- 神评/沙发通知：`CommentHighlightJob` → 通知获奖者
+- 系统通知：注册奖励、升级奖励等
+
+**API 端点**：
+- `GET /api/v1/Notification/Unread` - 获取未读数量
+- `GET /api/v1/Notification/List` - 获取通知列表（分页）
+- `PUT /api/v1/Notification/{id}/Read` - 标记已读
+- `PUT /api/v1/Notification/ReadAll` - 全部已读
+- `DELETE /api/v1/Notification/{id}` - 删除通知
+
+#### 7.2 前端开发（2-3 天）
+
+**SignalR 客户端集成**：
+- 安装 `@microsoft/signalr`
+- 创建 `NotificationHub` 连接管理器（`shared/services/notificationHub.ts`）
+  ```typescript
+  class NotificationHubService {
+    private connection: HubConnection;
+
+    async start() {
+      this.connection = new HubConnectionBuilder()
+        .withUrl('/hubs/notification', {
+          accessTokenFactory: () => authService.getToken()
+        })
+        .withAutomaticReconnect()
+        .build();
+
+      this.connection.on('ReceiveNotification', this.handleNotification);
+      await this.connection.start();
+    }
+
+    private handleNotification(notification: Notification) {
+      // 更新未读数量
+      // 显示 Toast 提示
+      // 触发事件通知订阅者
+    }
+  }
+  ```
+
+**通知中心组件**：
+- 创建 `NotificationCenter` 组件（@radish/ui）
+  - 顶部状态栏的通知图标（显示未读数量徽章）
+  - 点击展开通知列表下拉面板
+  - 通知列表项（标题、内容、时间、已读状态）
+  - 全部已读按钮
+  - 查看更多跳转到通知页面
+- 创建 `NotificationList` 页面（完整的通知列表）
+  - 分页加载
+  - 按类型筛选（点赞/评论/系统）
+  - 单个/批量标记已读
+  - 跳转到关联内容（帖子/评论）
+
+**实时推送集成**：
+- 登录成功后自动连接 SignalR Hub
+- 接收到通知时：
+  - 更新未读数量徽章
+  - 显示 Toast 提示
+  - 如果通知中心已打开，实时追加到列表顶部
+- 断线重连机制（自动重连 + 重新加载未读数量）
+
+**状态栏集成**：
+- 在 `StatusBar` 组件中添加通知图标
+- 显示未读数量徽章（红点或数字）
+- 点击展开通知中心下拉面板
+
+#### 7.3 配置和测试
+
+**配置文件**：
+- 添加 `Notification` 配置到 `appsettings.json`
+  ```json
+  "Notification": {
+    "Enable": true,
+    "SignalR": {
+      "HubPath": "/hubs/notification",
+      "KeepAliveIntervalSeconds": 15,
+      "ClientTimeoutSeconds": 30
+    },
+    "Retention": {
+      "DaysToKeep": 90,
+      "AutoCleanup": true
+    }
+  }
+  ```
+
+**测试**：
+- 单元测试（NotificationService、推送逻辑）
+- SignalR Hub 集成测试（连接、推送、断线重连）
+- 前端测试（通知中心组件、实时推送）
+- 性能测试（1000+ 用户同时在线推送）
+
+#### 验收标准
+
+**后端**：
+- ✅ SignalR Hub 可正常连接（WebSocket 或 Long Polling）
+- ✅ 用户登录后自动加入用户组
+- ✅ 点赞/评论触发通知推送到对应用户
+- ✅ 批量推送功能正常工作（神评/沙发通知）
+- ✅ 推送失败时降级策略生效（仅保存数据库）
+- ✅ 通知列表 API 可分页查询
+- ✅ 标记已读功能正常工作
+
+**前端**：
+- ✅ 登录后自动连接 SignalR Hub
+- ✅ 接收到通知时显示 Toast 提示
+- ✅ 未读数量徽章实时更新
+- ✅ 通知中心下拉面板可展开/收起
+- ✅ 点击通知可跳转到关联内容
+- ✅ 全部已读功能正常工作
+- ✅ 断线后自动重连
+
+**性能**：
+- ✅ 1000 用户同时在线时推送延迟 < 500ms
+- ✅ 单用户未读通知查询 < 100ms
+
+### 第 8 周｜用户等级与经验值系统（M8）
+
+> **阶段目标**：实现修仙主题的 11 级等级体系，用户行为触发经验值增长，升级获得萝卜币奖励。详细方案见 [用户等级与经验值系统设计](./guide/experience-level-system.md)。
+
+#### 8.1 后端核心功能（约 2 周）
+
+**数据模型设计**：
+- 创建 `UserLevel` 实体（用户等级信息）
+  - 字段：用户 ID、当前等级、当前经验值、总经验值、升级时间、等级称号
+- 创建 `ExperienceTransaction` 实体（经验值流水）
+  - 字段：用户 ID、经验值变动、变动原因、关联实体类型、关联实体 ID、创建时间
+- 创建 `LevelConfig` 实体（等级配置表）
+  - 字段：等级、称号、所需经验值、升级奖励（萝卜币）、等级图标、等级颜色
+
+**等级计算服务**：
+- 创建 `ILevelService` 接口
+  - `GetUserLevelAsync(userId)` - 获取用户等级信息
+  - `AddExperienceAsync(userId, amount, reason, relatedId)` - 增加经验值
+  - `CalculateLevelAsync(totalExp)` - 根据总经验值计算等级
+  - `GetNextLevelRequiredExpAsync(currentLevel)` - 获取下一级所需经验
+- 实现经验值规则
+  - 发帖：+10 经验
+  - 评论：+5 经验
+  - 收到点赞：+2 经验
+  - 神评：+50 经验
+  - 沙发：+30 经验
+  - 每日签到：+5 经验
+
+**升级奖励集成**：
+- 升级时自动发放萝卜币奖励
+- 通过 `ICoinRewardService` 发放奖励
+- 通过 `INotificationService` 推送升级通知
+
+**API 端点**：
+- `GET /api/v1/Level/Current` - 获取当前用户等级信息
+- `GET /api/v1/Level/{userId}` - 获取指定用户等级信息
+- `GET /api/v1/Level/Leaderboard` - 等级排行榜
+- `GET /api/v1/Experience/History` - 经验值流水历史
+
+#### 8.2 前端开发（1 周）
+
+**等级徽章组件**：
+- 创建 `LevelBadge` 组件（@radish/ui）
+  - 显示等级称号、图标、颜色
+  - 悬停显示经验值进度条
+  - 支持不同尺寸（小/中/大）
+
+**个人主页集成**：
+- 在个人主页显示等级徽章
+- 显示经验值进度条（当前经验/下一级所需经验）
+- 显示经验值流水历史
+
+**等级排行榜**：
+- 创建等级排行榜页面
+- 显示前 100 名用户
+- 支持按等级、经验值排序
+
+**升级动画**：
+- 升级时显示动画特效
+- 播放音效（可选）
+- 显示升级奖励（萝卜币）
+
+#### 验收标准
+
+**后端**：
+- ✅ 用户行为触发经验值增长
+- ✅ 经验值累积到阈值时自动升级
+- ✅ 升级时自动发放萝卜币奖励
+- ✅ 升级时推送通知到用户
+- ✅ 等级排行榜 API 可用
+
+**前端**：
+- ✅ 个人主页显示等级徽章和经验值进度条
+- ✅ 升级时显示动画特效和奖励提示
+- ✅ 等级排行榜可正常显示
+
+### 第 9 周｜商城系统（M9）
+
+- 商品管理：商品 CRUD、分类、上下架、库存管理
+- 购买链路：购物车、订单创建、萝卜币支付、库存扣减
+- 权益发放：购买成功后自动发放对应权益（VIP、徽章等）
+- 订单系统：订单列表、详情、状态追踪
+- 验收：可浏览商品列表，萝卜币购买商品并扣减库存，订单记录可追溯
+
+### 第 10 周｜可观测性、测试与性能（M10）
 - 自动化：补齐 xUnit/Vitest + Playwright（可选）测试，纳入 CI。
 - 性能：PostgreSQL 索引审计、缓存策略（IMemoryCache/redis 预留）、SQLSugar Profiling。
 - Observability：Serilog → Seq/Console JSON；OpenTelemetry 采样；健康检查拓展。
@@ -538,7 +787,7 @@
   - P95 指标满足目标；日志可追踪请求链路。
   - `/api/v2/RustTest/*` 在 CI/本地构建后可直接加载 `radish-lib` 输出的 `radish_lib`（DLL/SO/Dylib），无须手动复制。
 
-### 第 8 周｜部署、运维与交付
+### 第 11 周｜部署、运维与交付（M11）
 - Docker：完善 `Radish.Api/Dockerfile`（Node/SQLSugar 依赖）与 compose（PostgreSQL + API + 前端静态站点）。
 - 配置：`appsettings.Production.json` 模板、环境变量清单、Secret 注入示例。
 - 文档：补充运维手册、常见问题、回滚策略。
