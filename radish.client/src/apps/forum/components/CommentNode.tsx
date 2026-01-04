@@ -82,9 +82,12 @@ export const CommentNode = ({
     );
   });
 
-  // 找出沙发（点赞数最多的子评论，如果点赞数相同则按时间最新）
-  const sofaComment = node.children && node.children.length > 0
-    ? [...node.children].sort((a, b) => {
+  // 找出所有沙发（后端标记的）
+  const sofaComments = loadedChildren.filter(c => c.isSofa);
+
+  // 找出当前点赞数最高的沙发（用于置顶显示）
+  const topSofaComment = sofaComments.length > 0
+    ? [...sofaComments].sort((a, b) => {
         // 先按点赞数降序
         if ((b.likeCount || 0) !== (a.likeCount || 0)) {
           return (b.likeCount || 0) - (a.likeCount || 0);
@@ -108,6 +111,28 @@ export const CommentNode = ({
     setLoadedChildren(sorted);
     setChildSortBy(null); // 重置排序方式为默认值
   }, [node.children]);
+
+  // 若后端只返回 childrenTotal（不带 children 列表），为了“收起态也能看到一条回复”，这里自动预加载第一页子评论
+  useEffect(() => {
+    if (level !== 0) return;
+    if (!hasChildren) return;
+    if (loadedChildren.length > 0) return;
+    if (!onLoadMoreChildren) return;
+    if (isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    onLoadMoreChildren(node.id, 1, pageSize)
+      .then(children => {
+        setLoadedChildren(children);
+        setCurrentPage(1);
+      })
+      .catch(error => {
+        console.error('预加载子评论失败:', error);
+      })
+      .finally(() => {
+        setIsLoadingMore(false);
+      });
+  }, [hasChildren, isLoadingMore, level, loadedChildren.length, node.id, onLoadMoreChildren, pageSize]);
 
   // 处理点赞
   const handleLike = async () => {
@@ -228,15 +253,26 @@ export const CommentNode = ({
       return loadedChildren;
     }
 
+    // 收起状态下：优先展示“沙发”（如果有），否则展示当前已加载子评论里最热的一条
+    const collapsedPreview = (() => {
+      if (topSofaComment) return topSofaComment;
+      if (loadedChildren.length === 0) return null;
+
+      return [...loadedChildren].sort((a, b) => {
+        const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
+        if (likeDiff !== 0) return likeDiff;
+        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+      })[0];
+    })();
+
     if (!isExpanded) {
-      // 未展开：只显示沙发
-      return sofaComment ? [sofaComment] : [];
+      return collapsedPreview ? [collapsedPreview] : [];
     }
 
-    if (childSortBy === null && sofaComment) {
-      // 展开且未手动排序：沙发置顶 + 其他按时间升序
-      const others = loadedChildren.filter(c => c.id !== sofaComment.id);
-      return [sofaComment, ...others];
+    if (childSortBy === null && topSofaComment) {
+      // 展开且未手动排序：当前点赞数最高的沙发置顶 + 其他按时间升序
+      const others = loadedChildren.filter(c => c.id !== topSofaComment.id);
+      return [topSofaComment, ...others];
     }
 
     // 展开且手动排序：按排序结果显示
@@ -248,13 +284,13 @@ export const CommentNode = ({
       <div className={styles.header}>
         <span className={styles.author}>{node.authorName}</span>
         {node.createTime && <span className={styles.time}> · {node.createTime}</span>}
-        {/* 沙发标识（仅子评论） */}
-        {level === 1 && isGodComment && (
-          <span className={styles.sofaBadge}>沙发</span>
-        )}
         {/* 神评标识（仅父评论） */}
         {level === 0 && isGodComment && (
           <span className={styles.godCommentBadge}>神评</span>
+        )}
+        {/* 沙发标识（仅子评论） */}
+        {level === 1 && node.isSofa && (
+          <span className={styles.sofaBadge}>沙发</span>
         )}
         {isAuthor && (
           <div className={styles.authorActions}>
@@ -383,7 +419,7 @@ export const CommentNode = ({
                   level={1}
                   currentUserId={currentUserId}
                   pageSize={pageSize}
-                  isGodComment={sofaComment !== null && child.id === sofaComment.id}
+                  isGodComment={false} // 子评论不可能是神评，沙发标识通过 node.isSofa 判断
                   onDelete={onDelete}
                   onEdit={onEdit}
                   onLike={onLike}

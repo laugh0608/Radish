@@ -940,8 +940,8 @@ var loggerConfiguration = new LoggerConfiguration()
 ## 相关文档
 
 - [配置管理](./configuration.md) - 日志配置详解
-- [架构规范](../architecture/specifications.md) - 日志模型规范
-- [开发框架](../architecture/framework.md) - 日志架构设计
+- [开发规范](/architecture/specifications) - 日志模型规范
+- [开发框架说明](/architecture/framework) - 日志架构设计
 - [速率限制](./rate-limiting.md) - 速率限制日志
 
 ## 参考资源

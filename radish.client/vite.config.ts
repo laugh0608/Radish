@@ -2,11 +2,12 @@ import { fileURLToPath, URL } from 'node:url';
 
 import { defineConfig } from 'vite';
 import plugin from '@vitejs/plugin-react';
+import svgr from 'vite-plugin-svgr';
 import { env } from 'process';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [plugin()],
+    plugins: [plugin(), svgr()],
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -22,7 +23,7 @@ export default defineConfig({
         hmr: {
             protocol: 'ws',
             host: 'localhost',
-            port: 3000,
+            port: parseInt(env.DEV_SERVER_PORT || '3000', 10),
             // 使用轮询作为后备，避免 WebSocket 问题
             overlay: true
         },

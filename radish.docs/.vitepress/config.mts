@@ -24,11 +24,42 @@ export default defineConfig({
   // 通过 Gateway 在 /docs 路径下反向代理访问
   base: '/docs/',
 
+  // 配置 markdown-it 来转义代码块中的 Vue 模板语法
+  markdown: {
+    config: (md) => {
+      // 保存原始的 fence 渲染器
+      const defaultFenceRender = md.renderer.rules.fence || function(tokens, idx, options, env, slf) {
+        return slf.renderToken(tokens, idx, options)
+      }
+
+      // 覆盖 fence 渲染器
+      md.renderer.rules.fence = (tokens, idx, options, env, slf) => {
+        const token = tokens[idx]
+        const info = token.info ? md.utils.unescapeAll(token.info).trim() : ''
+        const langName = info.split(/(\s+)/g)[0]
+
+        // 只处理 csharp/cs/c# 代码块
+        if (langName === 'csharp' || langName === 'cs' || langName === 'c#') {
+          // 转义可能导致 Vue 解析错误的字符
+          // 1. 转义箭头函数语法 =>
+          // 2. 转义泛型类型的尖括号 < >
+          token.content = token.content
+            .replace(/=>/g, '=&gt;')  // 将 => 转义为 =&gt;
+            .replace(/</g, '&lt;')    // 将 < 转义为 &lt;
+            .replace(/>/g, '&gt;')    // 将 > 转义为 &gt;
+        }
+
+        // 调用默认渲染器
+        return defaultFenceRender(tokens, idx, options, env, slf)
+      }
+    }
+  },
+
   themeConfig: {
     nav: [
       { text: '首页', link: '/' },
       { text: '开发指南', link: '/guide/getting-started' },
-      { text: '架构设计', link: '/architecture/framework' },
+      { text: '架构设计', link: '/architecture/overview' },
       { text: '开发日志', link: '/changelog/' },
       { text: '部署运维', link: '/deployment/guide' }
     ],
@@ -52,7 +83,9 @@ export default defineConfig({
             { text: '日志系统', link: '/guide/logging' },
             { text: '密码安全', link: '/guide/password-security' },
             { text: '速率限制', link: '/guide/rate-limiting' },
-            { text: 'Hangfire 定时任务', link: '/guide/hangfire-scheduled-jobs' }
+            { text: '通知实时推送', link: '/guide/notification-realtime' },
+            { text: 'Hangfire 定时任务', link: '/guide/hangfire-scheduled-jobs' },
+            { text: 'Gateway 服务网关', link: '/guide/gateway' }
           ]
         },
         {
@@ -74,9 +107,9 @@ export default defineConfig({
           text: '架构设计',
           collapsible: true,
           items: [
+            { text: '架构总览', link: '/architecture/overview' },
             { text: '开发框架说明', link: '/architecture/framework' },
             { text: '开发规范', link: '/architecture/specifications' },
-            { text: 'Gateway 规划', link: '/architecture/gateway-plan' },
             { text: '国际化指南', link: '/architecture/i18n' }
           ]
         },

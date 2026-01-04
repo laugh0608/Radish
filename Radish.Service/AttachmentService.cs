@@ -334,7 +334,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     /// <summary>
     /// 获取附件下载流
     /// </summary>
-    public async Task<(Stream? stream, AttachmentVo? attachment)> GetDownloadStreamAsync(long attachmentId)
+    public async Task<(Stream? stream, AttachmentVo? attachment)> GetDownloadStreamAsync(long attachmentId, long? requestUserId = null, List<string>? requestUserRoles = null)
     {
         try
         {
@@ -345,12 +345,21 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 return (null, null);
             }
 
-            // 2. 检查权限（如果不是公开文件，这里可以添加权限检查逻辑）
+            // 2. 检查权限（如果不是公开文件，需要权限检查）
             if (!attachment.IsPublic)
             {
-                // TODO: 权限检查
-                Log.Warning("尝试下载非公开文件：{AttachmentId}", attachmentId);
-                return (null, null);
+                // 权限规则：
+                // - 上传者本人可下载
+                // - Admin/System 角色可下载
+                // - 其他用户无权下载
+                var isUploader = requestUserId.HasValue && attachment.UploaderId == requestUserId.Value;
+                var isAdmin = requestUserRoles != null && (requestUserRoles.Contains("Admin") || requestUserRoles.Contains("System"));
+
+                if (!isUploader && !isAdmin)
+                {
+                    Log.Warning("用户 {UserId} 尝试下载非公开文件：{AttachmentId}（上传者：{UploaderId}）", requestUserId, attachmentId, attachment.UploaderId);
+                    return (null, null);
+                }
             }
 
             // 3. 获取文件流

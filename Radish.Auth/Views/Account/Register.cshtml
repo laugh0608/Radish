@@ -1,0 +1,510 @@
+@model Radish.Auth.ViewModels.Account.RegisterViewModel
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<Radish.Auth.Resources.Errors> Localizer
+
+@{
+    ViewData["Title"] = "注册新账号";
+    var client = Model.Client;
+}
+
+<!DOCTYPE html>
+<html lang="@(CultureInfo.CurrentUICulture.Name)">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <style>
+        :root {
+            color-scheme: light;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at top, #f0fdf4, #f8fafc);
+            padding: 24px;
+        }
+
+        .auth-shell {
+            width: 100%;
+            max-width: 960px;
+            background: rgba(255,255,255,0.85);
+            border-radius: 32px;
+            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+        }
+
+        .auth-layout {
+            display: grid;
+            grid-template-columns: minmax(280px, 1fr) minmax(380px, 1fr);
+            gap: 0;
+        }
+
+        .client-panel {
+            background: linear-gradient(135deg, #34d399, #10b981);
+            padding: 48px;
+            color: #f0fdf4;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        .client-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.2), transparent 45%);
+            pointer-events: none;
+        }
+
+        .client-logo {
+            width: 72px;
+            height: 72px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+        }
+
+        .client-logo img {
+            width: 64px;
+            height: 64px;
+            border-radius: 16px;
+            object-fit: cover;
+        }
+
+        .client-logo-placeholder {
+            font-size: 28px;
+            font-weight: 600;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .client-title {
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 12px;
+        }
+
+        .client-name {
+            font-size: 2rem;
+            margin: 0 0 16px;
+            line-height: 1.2;
+        }
+
+        .client-id, .client-desc, .client-developer {
+            margin: 8px 0;
+            font-size: 0.95rem;
+            color: rgba(255,255,255,0.85);
+        }
+
+        .client-id strong,
+        .client-desc strong,
+        .client-developer strong {
+            display: block;
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .form-panel {
+            padding: 48px;
+            background: #fff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .lang-switcher {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .lang-button {
+            padding: 6px 12px;
+            background: transparent;
+            color: #0f172a;
+            border: 1px solid #94a3b8;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .lang-button:hover,
+        .lang-button.active {
+            background: #0f172a;
+            color: #fff;
+            border-color: #0f172a;
+        }
+
+        h1 {
+            color: #0f172a;
+            margin-bottom: 0.5rem;
+        }
+
+        .description {
+            color: #475569;
+            margin-bottom: 1.5rem;
+        }
+
+        .success {
+            color: #047857;
+            background: #d1fae5;
+            border: 1px solid #6ee7b7;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+        }
+
+        .error {
+            color: #b3261e;
+            background: #fdecea;
+            border: 1px solid #f8c9c4;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 18px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        label .optional {
+            font-weight: 400;
+            color: #64748b;
+            font-size: 0.85em;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #cbd5f5;
+            border-radius: 12px;
+            font-size: 15px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+
+        /* 隐藏浏览器自带的密码显示/隐藏按钮 */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none;
+        }
+
+        input[type="password"]::-webkit-credentials-auto-fill-button,
+        input[type="password"]::-webkit-contacts-auto-fill-button {
+            visibility: hidden;
+            pointer-events: none;
+            position: absolute;
+        }
+
+        .password-field {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .password-field input {
+            flex: 1;
+        }
+
+        .toggle-password {
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid #cbd5f5;
+            background: #f8fafc;
+            cursor: pointer;
+            font-size: 13px;
+            color: #475569;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-password:hover {
+            background: #d1fae5;
+            border-color: #10b981;
+            color: #047857;
+        }
+
+        .toggle-password:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+        }
+
+        .button-group {
+            margin-top: 24px;
+        }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 999px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.25);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .login-link {
+            margin-top: 20px;
+            text-align: center;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .login-link a {
+            color: #10b981;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .login-link a:hover {
+            color: #059669;
+            text-decoration: underline;
+        }
+
+        .reward-badge {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 1px solid #fcd34d;
+            padding: 12px 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .reward-badge .icon {
+            font-size: 24px;
+        }
+
+        .reward-badge .text {
+            flex: 1;
+        }
+
+        .reward-badge .text strong {
+            color: #92400e;
+            display: block;
+            font-size: 14px;
+        }
+
+        .reward-badge .text small {
+            color: #78350f;
+            font-size: 12px;
+        }
+
+        @@media (max-width: 900px) {
+            body {
+                padding: 16px;
+            }
+
+            .auth-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .client-panel,
+            .form-panel {
+                padding: 32px;
+            }
+
+            .client-panel {
+                min-height: 280px;
+            }
+        }
+
+        @@media (max-width: 600px) {
+            .client-panel,
+            .form-panel {
+                padding: 24px;
+            }
+
+            .client-name {
+                font-size: 1.6rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-shell">
+        <div class="auth-layout">
+            <section class="client-panel">
+                <div class="client-logo">
+                    @if (!string.IsNullOrWhiteSpace(client.Logo))
+                    {
+                        <img src="@client.Logo" alt="Client Logo" />
+                    }
+                    else
+                    {
+                        <div class="client-logo-placeholder">@(string.IsNullOrEmpty(client.DisplayName) ? "R" : client.DisplayName.First())</div>
+                    }
+                </div>
+                <p class="client-title">新用户注册</p>
+                <h2 class="client-name">@(string.IsNullOrWhiteSpace(client.DisplayName) ? "Radish 社区" : client.DisplayName)</h2>
+                <p class="client-id">
+                    <strong>Client ID</strong>
+                    @(string.IsNullOrWhiteSpace(client.ClientId) ? "-" : client.ClientId)
+                </p>
+                <p class="client-desc">
+                    <strong>服务说明</strong>
+                    @(string.IsNullOrWhiteSpace(client.Description) ? "Radish 统一身份认证服务" : client.Description)
+                </p>
+                @if (!string.IsNullOrWhiteSpace(client.DeveloperName))
+                {
+                    <p class="client-developer">
+                        <strong>开发者：@client.DeveloperName</strong>
+                    </p>
+                }
+            </section>
+
+            <section class="form-panel">
+                <div class="lang-switcher">
+                    <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh") ? "active" : "")" onclick="switchLanguage('zh')">中文</button>
+                    <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "active" : "")" onclick="switchLanguage('en')">English</button>
+                </div>
+
+                <h1>创建新账号</h1>
+                <p class="description">加入 Radish 社区，开启你的创作之旅</p>
+
+                <div class="reward-badge">
+                    <div class="icon">🎁</div>
+                    <div class="text">
+                        <strong>新用户福利</strong>
+                        <small>注册即送 50 胡萝卜，立即开始你的社区之旅！</small>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                {
+                    <div class="success">@Model.SuccessMessage</div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                {
+                    <div class="error">@Model.ErrorMessage</div>
+                }
+
+                <form asp-controller="Account" asp-action="Register" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+                    <div class="form-group">
+                        <label>用户名</label>
+                        <input type="text" name="username" asp-for="Username" placeholder="3-50 个字符，支持字母、数字、下划线、中文" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label>密码</label>
+                        <div class="password-field">
+                            <input id="passwordInput" type="password" name="password" asp-for="Password" placeholder="至少 6 个字符" required />
+                            <button type="button"
+                                    id="togglePassword"
+                                    class="toggle-password"
+                                    data-show="显示"
+                                    data-hide="隐藏"
+                                    aria-pressed="false">
+                                显示
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>确认密码</label>
+                        <div class="password-field">
+                            <input id="confirmPasswordInput" type="password" name="confirmPassword" asp-for="ConfirmPassword" placeholder="再次输入密码" required />
+                            <button type="button"
+                                    id="toggleConfirmPassword"
+                                    class="toggle-password"
+                                    data-show="显示"
+                                    data-hide="隐藏"
+                                    aria-pressed="false">
+                                显示
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>电子邮箱 <span class="optional">(可选)</span></label>
+                        <input type="email" name="email" asp-for="Email" placeholder="用于找回密码和接收通知" />
+                    </div>
+
+                    <div class="button-group">
+                        <button type="submit">立即注册</button>
+                    </div>
+
+                    <div class="login-link">
+                        已有账号？<a href="@Url.Action("Login", "Account", new { returnUrl = Model.ReturnUrl })">立即登录</a>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        function switchLanguage(culture) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('culture', culture);
+            url.searchParams.set('ui-culture', culture);
+            window.location.href = url.toString();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Toggle password visibility
+            function setupPasswordToggle(inputId, buttonId) {
+                const passwordInput = document.getElementById(inputId);
+                const toggleButton = document.getElementById(buttonId);
+                if (!passwordInput || !toggleButton) {
+                    return;
+                }
+
+                toggleButton.addEventListener('click', () => {
+                    const shouldShow = passwordInput.type === 'password';
+                    passwordInput.type = shouldShow ? 'text' : 'password';
+                    toggleButton.textContent = shouldShow ? toggleButton.dataset.hide : toggleButton.dataset.show;
+                    toggleButton.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+                });
+            }
+
+            setupPasswordToggle('passwordInput', 'togglePassword');
+            setupPasswordToggle('confirmPasswordInput', 'toggleConfirmPassword');
+        });
+    </script>
+</body>
+</html>

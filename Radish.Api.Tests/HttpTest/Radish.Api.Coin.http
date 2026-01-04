@@ -1,0 +1,259 @@
+### Radish.Api 萝卜币系统 API 测试
+### 包含：
+### - 余额查询（当前用户/指定用户）
+### - 交易记录查询（分页、筛选、详情）
+### - 管理员调账
+###
+### 前置条件：
+### 1. 已经通过 OIDC 认证获取了 access_token
+### 2. 如需查看完整认证流程，参考 Radish.Api.AuthFlow.http
+
+### 环境变量
+@apiBase = http://localhost:5100
+@gatewayBase = https://localhost:5000
+
+### 从 AuthFlow.http 中获取的 access_token（普通用户）
+@accessToken = 在这里粘贴 access_token
+
+### 管理员 access_token（需要有 Admin 或 System 角色）
+@adminAccessToken = 在这里粘贴管理员的 access_token
+
+########################################################
+### 1. 余额查询
+########################################################
+
+### 1.1 获取当前用户余额信息
+GET {{apiBase}}/api/v1/Coin/GetBalance
+Authorization: Bearer {{accessToken}}
+
+### 预期响应：
+### {
+###   "isSuccess": true,
+###   "statusCode": 200,
+###   "messageInfo": "获取余额成功",
+###   "responseData": {
+###     "userId": "123456789",
+###     "balance": 50000,
+###     "balanceDisplay": "50.000",
+###     "frozenBalance": 0,
+###     "frozenBalanceDisplay": "0.000",
+###     "totalEarned": 50000,
+###     "totalSpent": 0,
+###     "totalTransferredIn": 0,
+###     "totalTransferredOut": 0,
+###     "version": 0
+###   }
+### }
+
+### 1.2 根据用户 ID 获取余额信息（仅管理员）
+GET {{apiBase}}/api/v1/Coin/GetBalanceByUserId?userId=123456789
+Authorization: Bearer {{adminAccessToken}}
+
+### 预期：
+### - 管理员访问：200 OK，返回指定用户余额
+### - 普通用户访问：403 Forbidden
+
+########################################################
+### 2. 交易记录查询
+########################################################
+
+### 2.1 获取当前用户交易记录（默认分页）
+GET {{apiBase}}/api/v1/Coin/GetTransactions?pageIndex=1&pageSize=20
+Authorization: Bearer {{accessToken}}
+
+### 预期响应：
+### {
+###   "isSuccess": true,
+###   "statusCode": 200,
+###   "messageInfo": "获取交易记录成功",
+###   "responseData": {
+###     "page": 1,
+###     "pageSize": 20,
+###     "dataCount": 5,
+###     "pageCount": 1,
+###     "data": [
+###       {
+###         "id": "...",
+###         "transactionNo": "TXN_...",
+###         "fromUserId": null,
+###         "fromUserName": "系统",
+###         "toUserId": "123456789",
+###         "toUserName": "用户123456789",
+###         "amount": 50000,
+###         "amountDisplay": "50.000",
+###         "fee": 0,
+###         "feeDisplay": "0.000",
+###         "transactionType": "SYSTEM_GRANT",
+###         "transactionTypeDisplay": "系统赠送",
+###         "status": "SUCCESS",
+###         "statusDisplay": "成功",
+###         "businessType": "UserRegistration",
+###         "businessId": null,
+###         "remark": "新用户注册奖励",
+###         "createTime": "2026-01-03T..."
+###       }
+###     ]
+###   }
+### }
+
+### 2.2 筛选指定类型的交易记录
+GET {{apiBase}}/api/v1/Coin/GetTransactions?pageIndex=1&pageSize=20&transactionType=SYSTEM_GRANT
+Authorization: Bearer {{accessToken}}
+
+### 可用的交易类型：
+### - SYSTEM_GRANT: 系统赠送
+### - LIKE_REWARD: 点赞奖励
+### - COMMENT_REWARD: 评论奖励
+### - TRANSFER: 用户转账
+### - TIP: 打赏
+### - CONSUME: 消费
+### - REFUND: 退款
+### - PENALTY: 惩罚扣除
+### - ADMIN_ADJUST: 管理员调整
+
+### 2.3 筛选指定状态的交易记录
+GET {{apiBase}}/api/v1/Coin/GetTransactions?pageIndex=1&pageSize=20&status=SUCCESS
+Authorization: Bearer {{accessToken}}
+
+### 可用的交易状态：
+### - PENDING: 待处理
+### - SUCCESS: 成功
+### - FAILED: 失败
+
+### 2.4 组合筛选（类型 + 状态）
+GET {{apiBase}}/api/v1/Coin/GetTransactions?pageIndex=1&pageSize=20&transactionType=ADMIN_ADJUST&status=SUCCESS
+Authorization: Bearer {{accessToken}}
+
+### 2.5 根据交易流水号获取交易详情
+GET {{apiBase}}/api/v1/Coin/GetTransactionByNo?transactionNo=TXN_123456789
+Authorization: Bearer {{accessToken}}
+
+### 预期：
+### - 交易存在：200 OK，返回交易详情
+### - 交易不存在：404 Not Found
+
+########################################################
+### 3. 管理员操作
+########################################################
+
+### 3.1 管理员增加用户余额
+POST {{apiBase}}/api/v1/Coin/AdminAdjustBalance
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "userId": 123456789,
+  "deltaAmount": 10000,
+  "reason": "活动奖励：参与2026新年活动"
+}
+
+### 预期响应：
+### {
+###   "isSuccess": true,
+###   "statusCode": 200,
+###   "messageInfo": "余额调整成功",
+###   "responseData": {
+###     "transactionNo": "TXN_987654321"
+###   }
+### }
+
+### 3.2 管理员减少用户余额
+POST {{apiBase}}/api/v1/Coin/AdminAdjustBalance
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "userId": 123456789,
+  "deltaAmount": -5000,
+  "reason": "违规处罚：发布违规内容"
+}
+
+### 预期：
+### - 余额充足：200 OK，扣款成功
+### - 余额不足：400 Bad Request，错误信息提示余额不足
+
+### 3.3 错误测试：调整金额为 0
+POST {{apiBase}}/api/v1/Coin/AdminAdjustBalance
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "userId": 123456789,
+  "deltaAmount": 0,
+  "reason": "测试零金额"
+}
+
+### 预期：400 Bad Request，错误信息：调整金额不能为 0
+
+### 3.4 错误测试：原因为空
+POST {{apiBase}}/api/v1/Coin/AdminAdjustBalance
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "userId": 123456789,
+  "deltaAmount": 1000,
+  "reason": ""
+}
+
+### 预期：400 Bad Request，错误信息：调整原因不能为空
+
+########################################################
+### 4. 权限测试
+########################################################
+
+### 4.1 普通用户尝试访问管理员接口（应该失败）
+POST {{apiBase}}/api/v1/Coin/AdminAdjustBalance
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "userId": 123456789,
+  "deltaAmount": 1000,
+  "reason": "普通用户尝试调账"
+}
+
+### 预期：403 Forbidden
+
+### 4.2 未认证访问（应该失败）
+GET {{apiBase}}/api/v1/Coin/GetBalance
+
+### 预期：401 Unauthorized
+
+########################################################
+### 5. 通过 Gateway 访问（生产环境推荐）
+########################################################
+
+### 5.1 通过 Gateway 获取余额
+GET {{gatewayBase}}/api/v1/Coin/GetBalance
+Authorization: Bearer {{accessToken}}
+
+### 5.2 通过 Gateway 获取交易记录
+GET {{gatewayBase}}/api/v1/Coin/GetTransactions?pageIndex=1&pageSize=20
+Authorization: Bearer {{accessToken}}
+
+### 5.3 通过 Gateway 管理员调账
+POST {{gatewayBase}}/api/v1/Coin/AdminAdjustBalance
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "userId": 123456789,
+  "deltaAmount": 10000,
+  "reason": "通过 Gateway 测试调账"
+}
+
+########################################################
+### 6. 性能测试（可选）
+########################################################
+
+### 6.1 高并发余额查询（可以用 JMeter 或 k6 进行压测）
+### GET {{apiBase}}/api/v1/Coin/GetBalance
+
+### 6.2 高并发交易记录查询
+### GET {{apiBase}}/api/v1/Coin/GetTransactions?pageIndex=1&pageSize=100
+
+### 注意：
+### - 萝卜币系统使用了乐观锁（Version 字段）防止并发冲突
+### - 服务层配置了 Polly 重试策略（最多 3 次，指数退避）
+### - 所有余额修改操作都包含在数据库事务中，确保数据一致性

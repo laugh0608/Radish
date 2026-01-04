@@ -911,39 +911,11 @@ Client  Console   Shop    Docs
 
 > 具体 sitemap 和 robots 的生成/托管位置建议在后端与部署文档中补充，这里只约束前端 URL 与可索引页面的范围。
 
-## 11. 迭代计划
+## 11. 迭代与交付（导航）
 
-### 阶段一：M4（桌面系统基础）
-
-- [x] Desktop Shell 骨架（Shell、StatusBar、Desktop、Dock 已实现）
-- [x] 应用注册系统（AppRegistry.tsx 已实现，支持权限、类型、分类）
-- [x] 窗口管理器（窗口/全屏/iframe）（WindowManager.tsx + DesktopWindow.tsx 已实现 react-rnd）
-- [x] 权限控制（基于 requiredRoles 的应用过滤，支持角色级访问控制）
-- [ ] 论坛应用（MVP）（仅实现了 WelcomeApp 作为演示应用）
-- [x] 用 WebOS 桌面 Shell 取代当前 `src/App.tsx` Demo 页（已通过 main.tsx URL 参数实现：默认 Shell，?demo 访问原页面，?showcase 查看组件库）
-
-### 阶段二：M5（核心应用）
-
-- [ ] 聊天室应用
-- [ ] 商城应用
-- [ ] 后台管理应用（应用管理模块）
-- [ ] Dock 运行指示
-- [ ] 窗口动画
-
-### 阶段三：M6-M7（增强体验）
-
-- [ ] 移动端适配
-- [ ] 快捷键支持
-- [ ] 桌面小部件
-- [ ] 多桌面/工作区
-- [ ] 性能优化
-
-### 阶段四：M8+（扩展生态）
-
-- [ ] 第三方应用接入
-- [ ] 应用商店
-- [ ] React Native 版本
-- [ ] 插件系统
+- 里程碑、按周计划与当前进度：以 [开发路线图](/development-plan) 为准
+- 具体周更与变更记录：以 [开发日志](/changelog/) 为准
+- 本文档仅描述前端架构与设计约束；若迭代中出现影响架构的关键决策，请在本文追加“设计决策”小节并在开发日志中记录。
 
 ## 12. 参考资料
 
@@ -954,4 +926,4 @@ Client  Console   Shop    Docs
 
 ---
 
-> 本文档是 Radish 前端架构的唯一事实来源，其他文档仅保留摘要与引用。
+> 本文档是 Radish 前端架构与 WebOS 交互范式的事实来源；里程碑/进度请以 [开发路线图](/development-plan) 与 [开发日志](/changelog/) 为准。

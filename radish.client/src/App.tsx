@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import { parseApiResponse, type ApiResponse } from './api/client';
@@ -29,9 +29,6 @@ interface WebOsUserInfo {
 interface OidcCallbackProps {
     apiBaseUrl: string;
 }
-
-// 默认通过 Gateway 暴露的 API 入口
-const defaultApiBase = 'https://localhost:5000';
 
 function App() {
     const { t } = useTranslation();
@@ -264,7 +261,7 @@ function getAuthServerBaseUrl(): string {
     return currentOrigin;
 }
 
-function handleLogin(apiBaseUrl: string) {
+function handleLogin(_apiBaseUrl: string) {
     if (typeof window === 'undefined') {
         return;
     }
@@ -287,7 +284,7 @@ function handleLogin(apiBaseUrl: string) {
     window.location.href = authorizeUrl.toString();
 }
 
-function handleLogout(apiBaseUrl: string) {
+function handleLogout(_apiBaseUrl: string) {
     if (typeof window === 'undefined') {
         return;
     }
@@ -317,9 +314,17 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
     const { t } = useTranslation();
     const [error, setError] = useState<string>();
     const [message, setMessage] = useState<string>(t('oidc.completingLogin'));
+    // 使用 useRef 而不是 useState，因为 React StrictMode 会卸载并重新挂载组件
+    // useState 会被重置，但 useRef 在整个页面生命周期内保持值
+    const hasExecutedRef = useRef(false);
 
     useEffect(() => {
         if (typeof window === 'undefined') {
+            return;
+        }
+
+        // 防止 React StrictMode 导致的重复执行（授权码只能使用一次）
+        if (hasExecutedRef.current) {
             return;
         }
 
@@ -337,6 +342,9 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
             setMessage(t('oidc.loginFailed'));
             return;
         }
+
+        // 标记为已执行，防止重复请求
+        hasExecutedRef.current = true;
 
         const redirectUri = `${window.location.origin}/oidc/callback`;
         const authServerBaseUrl = getAuthServerBaseUrl();
@@ -388,7 +396,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
         };
 
         void fetchToken();
-    }, [apiBaseUrl]);
+    }, [apiBaseUrl, t]);
 
     return (
         <div>

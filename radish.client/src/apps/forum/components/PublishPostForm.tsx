@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MarkdownEditor } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
-import { uploadImage } from '@/api/attachment';
+import { uploadImage, uploadDocument } from '@/api/attachment';
 import styles from './PublishPostForm.module.css';
 
 interface PublishPostFormProps {
@@ -93,11 +93,29 @@ export const PublishPostForm = ({
       }, t);
 
       return {
-        url: result.fileUrl,
+        url: result.url,
         thumbnailUrl: result.thumbnailUrl
       };
     } catch (error) {
       console.error('图片上传失败:', error);
+      throw error;
+    }
+  };
+
+  // 处理文档上传
+  const handleDocumentUpload = async (file: File) => {
+    try {
+      const result = await uploadDocument({
+        file,
+        businessType: 'Post'
+      }, t);
+
+      return {
+        url: result.url,
+        fileName: result.originalName || file.name
+      };
+    } catch (error) {
+      console.error('文档上传失败:', error);
       throw error;
     }
   };
@@ -172,6 +190,7 @@ export const PublishPostForm = ({
         disabled={!isAuthenticated || disabled}
         showToolbar={true}
         onImageUpload={handleImageUpload}
+        onDocumentUpload={handleDocumentUpload}
       />
 
       <button

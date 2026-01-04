@@ -11,7 +11,8 @@ import type {
   CommentNode,
   PublishPostRequest,
   CreateCommentRequest,
-  CommentLikeResult
+  CommentLikeResult,
+  CommentHighlight
 } from '@/types/forum';
 
 const defaultApiBase = 'https://localhost:5000';
@@ -329,7 +330,7 @@ export async function getChildComments(
   pageIndex: number,
   pageSize: number,
   t: TFunction
-): Promise<{ comments: Comment[]; total: number; pageIndex: number; pageSize: number }> {
+): Promise<{ comments: CommentNode[]; total: number; pageIndex: number; pageSize: number }> {
   const url = `${getApiBaseUrl()}/api/v1/Comment/GetChildComments?parentId=${parentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`;
   const response = await apiFetch(url); // 匿名访问
 
@@ -338,7 +339,7 @@ export async function getChildComments(
   }
 
   const json = await response.json() as ApiResponse<{
-    comments: Comment[];
+    comments: CommentNode[];
     total: number;
     pageIndex: number;
     pageSize: number;
@@ -347,6 +348,50 @@ export async function getChildComments(
 
   if (!parsed.ok || !parsed.data) {
     throw new Error(parsed.message || '获取子评论失败');
+  }
+
+  return parsed.data;
+}
+
+/**
+ * 获取帖子的当前神评列表
+ * @param postId 帖子 ID
+ * @param t i18n 翻译函数
+ * @returns 神评列表（按排名升序）
+ */
+export async function getCurrentGodComments(
+  postId: number,
+  t: TFunction
+): Promise<CommentHighlight[]> {
+  const url = `${getApiBaseUrl()}/api/v1/CommentHighlight/GetCurrentGodComments?postId=${postId}`;
+  const response = await apiFetch(url);
+  const json = await response.json() as ApiResponse<CommentHighlight[]>;
+  const parsed = parseApiResponse<CommentHighlight[]>(json, t);
+
+  if (!parsed.ok || !parsed.data) {
+    throw new Error(parsed.message || '获取神评列表失败');
+  }
+
+  return parsed.data;
+}
+
+/**
+ * 获取父评论的当前沙发列表
+ * @param parentCommentId 父评论 ID
+ * @param t i18n 翻译函数
+ * @returns 沙发列表（按排名升序）
+ */
+export async function getCurrentSofas(
+  parentCommentId: number,
+  t: TFunction
+): Promise<CommentHighlight[]> {
+  const url = `${getApiBaseUrl()}/api/v1/CommentHighlight/GetCurrentSofas?parentCommentId=${parentCommentId}`;
+  const response = await apiFetch(url);
+  const json = await response.json() as ApiResponse<CommentHighlight[]>;
+  const parsed = parseApiResponse<CommentHighlight[]>(json, t);
+
+  if (!parsed.ok || !parsed.data) {
+    throw new Error(parsed.message || '获取沙发列表失败');
   }
 
   return parsed.data;

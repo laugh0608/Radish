@@ -30,12 +30,18 @@ public class AccountController : Controller
     private readonly IStringLocalizer<Errors> _errorsLocalizer;
     private readonly IUserService _userService;
     private readonly IOpenIddictApplicationManager _applicationManager;
+    private readonly ICoinService? _coinService;
 
-    public AccountController(IStringLocalizer<Errors> errorsLocalizer, IUserService userService, IOpenIddictApplicationManager applicationManager)
+    public AccountController(
+        IStringLocalizer<Errors> errorsLocalizer,
+        IUserService userService,
+        IOpenIddictApplicationManager applicationManager,
+        ICoinService? coinService = null)  // 可选注入，避免循环依赖
     {
         _errorsLocalizer = errorsLocalizer;
         _userService = userService;
         _applicationManager = applicationManager;
+        _coinService = coinService;
     }
 
     [HttpGet]
@@ -46,6 +52,7 @@ public class AccountController : Controller
             ReturnUrl = returnUrl,
             PrefillUserName = username,
             ErrorMessage = TempData["LoginError"] as string,
+            SuccessMessage = TempData["RegisterSuccess"] as string,
             Client = await ResolveClientAsync(returnUrl)
         };
 
@@ -149,6 +156,127 @@ public class AccountController : Controller
         var message = _errorsLocalizer["auth.logout.success"];
 
         return Ok(message);
+    }
+
+    /// <summary>
+    /// 注册页面（GET）
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Register(string? returnUrl = null)
+    {
+        var model = new RegisterViewModel
+        {
+            ReturnUrl = returnUrl,
+            ErrorMessage = TempData["RegisterError"] as string,
+            SuccessMessage = TempData["RegisterSuccess"] as string,
+            Client = await ResolveClientAsync(returnUrl)
+        };
+
+        return View(model);
+    }
+
+    /// <summary>
+    /// 注册提交（POST）
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [EnableRateLimiting("register")]
+    public async Task<IActionResult> Register([FromForm] RegisterViewModel model)
+    {
+        // 1. 参数验证
+        if (!ModelState.IsValid)
+        {
+            var errors = string.Join("; ", ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage));
+            TempData["RegisterError"] = errors;
+            return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+        }
+
+        try
+        {
+            // 2. 检查用户名是否已存在
+            var existingUsers = await _userService.QueryAsync(u => u.LoginName == model.Username);
+            if (existingUsers.Any())
+            {
+                TempData["RegisterError"] = "用户名已存在";
+                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+            }
+
+            // 3. 检查邮箱是否已存在（如果提供了邮箱）
+            if (!string.IsNullOrWhiteSpace(model.Email))
+            {
+                var existingEmails = await _userService.QueryAsync(u => u.UserEmail == model.Email);
+                if (existingEmails.Any())
+                {
+                    TempData["RegisterError"] = "邮箱已被注册";
+                    return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+                }
+            }
+
+            // 4. 创建用户（使用 Argon2id 哈希密码）
+            var hashedPassword = PasswordHasher.HashPassword(model.Password);
+            var newUser = new Radish.Model.User
+            {
+                LoginName = model.Username,
+                LoginPassword = hashedPassword,
+                UserEmail = model.Email ?? string.Empty,  // 处理 null 值
+                UserName = model.Username,  // 默认昵称与用户名相同
+                UserRealName = string.Empty,
+                UserBirth = null,  // 明确设置为 null
+                UserAddress = string.Empty,
+                TenantId = 0,  // 默认租户
+                DepartmentId = 0,
+                StatusCode = 0,
+                IsEnable = true,
+                IsDeleted = false,
+                CreateTime = DateTime.Now,
+                UpdateTime = DateTime.Now,
+                ErrorCount = 0
+            };
+
+            var userId = await _userService.AddAsync(newUser);
+
+            Log.Information("用户 {Username} (ID: {UserId}) 注册成功", model.Username, userId);
+
+            // 5. 发放注册奖励（50 胡萝卜）
+            if (_coinService != null)
+            {
+                try
+                {
+                    var transactionNo = await _coinService.GrantCoinAsync(
+                        userId: userId,
+                        amount: 50,  // 50 胡萝卜
+                        transactionType: "SYSTEM_GRANT",
+                        businessType: "UserRegistration",
+                        businessId: userId,
+                        remark: "新用户注册奖励"
+                    );
+
+                    Log.Information("用户 {UserId} 注册奖励发放成功，流水号: {TransactionNo}", userId, transactionNo);
+                }
+                catch (Exception ex)
+                {
+                    // 注册奖励发放失败不应影响注册流程
+                    // 记录错误日志，后续可通过对账任务补发
+                    Log.Error(ex, "用户 {UserId} 注册奖励发放失败", userId);
+                }
+            }
+            else
+            {
+                Log.Warning("CoinService 未注入，跳过注册奖励发放");
+            }
+
+            // 6. 注册成功，跳转到登录页
+            TempData["RegisterSuccess"] = "注册成功！已赠送 50 胡萝卜，请登录。";
+            return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl, username = model.Username });
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "用户注册失败: {Username}, 错误: {ErrorMessage}", model.Username, ex.Message);
+            TempData["RegisterError"] = $"注册失败：{ex.Message}";
+            return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+        }
     }
 
     private async Task<ClientSummaryViewModel> ResolveClientAsync(string? returnUrl)

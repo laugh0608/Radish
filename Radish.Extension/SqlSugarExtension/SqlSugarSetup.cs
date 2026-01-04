@@ -78,12 +78,16 @@ public static class SqlSugarSetup
                     }
 
                     // 打印 SQL 语句
-                    dbProvider.Aop.OnLogExecuting = (s, parameters) =>
+                    // 注意：Log 库会被 Serilog 数据库 Sink 写入；如果对 Log 库也启用 SQL AOP，会出现“写日志 -> 触发 SQL AOP -> 再写日志”的递归，导致日志疯狂刷新
+                    if (!SqlSugarConst.LogConfigId.ToLower().Equals(config.ConfigId.ToString().ToLower()))
                     {
-                        SqlSugarAop.OnLogExecuting(dbProvider, App.HttpContextUser?.UserName.ObjToString(), ExtractTableName(s),
-                            Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType), s, parameters,
-                            config);
-                    };
+                        dbProvider.Aop.OnLogExecuting = (s, parameters) =>
+                        {
+                            SqlSugarAop.OnLogExecuting(dbProvider, App.HttpContextUser?.UserName.ObjToString(), ExtractTableName(s),
+                                Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType), s, parameters,
+                                config);
+                        };
+                    }
                 });
             });
         });

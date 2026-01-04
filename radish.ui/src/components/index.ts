@@ -37,6 +37,17 @@ export type { UserMentionProps, UserMentionOption } from './UserMention/UserMent
 export { FileUpload } from './FileUpload/FileUpload';
 export type { FileUploadProps, UploadResult } from './FileUpload/FileUpload';
 
+export { ChunkedFileUpload } from './ChunkedFileUpload/ChunkedFileUpload';
+export type {
+  ChunkedFileUploadProps,
+  ChunkedUploadOptions,
+  ChunkedUploadResult,
+  UploadProgress
+} from './ChunkedFileUpload/ChunkedFileUpload';
+
+export { Toast, ToastContainer, toast, toastManager } from './Toast/Toast';
+export type { ToastProps } from './Toast/Toast';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout

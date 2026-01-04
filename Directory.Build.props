@@ -1,5 +1,64 @@
 <Project>
   <PropertyGroup>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+
+    <!-- Rust native outputs (built by cargo) -->
+    <RadishRustTargetDir>$(MSBuildThisFileDirectory)Radish.Core/radish-lib/target</RadishRustTargetDir>
   </PropertyGroup>
+
+  <!--
+    将 Rust 原生库（radish_lib）自动复制到可执行项目的输出目录。
+
+    背景：
+    - C# 通过 DllImport("radish_lib") 加载原生库；运行时通常从应用的输出目录（TargetDir / PublishDir）查找。
+    - Rust 库由 cargo 产出在 Radish.Core/radish-lib/target/{debug|release}/ 下。
+
+    说明：
+    - 只做“复制已存在的产物”，不在 dotnet build 阶段自动执行 cargo build（避免引入额外依赖/耗时/跨平台差异）。
+    - 优先复制 release 产物；如果不存在则尝试 debug。
+  -->
+  <Target Name="RadishCopyRustNativeToTargetDir" AfterTargets="Build" Condition="'$(OutputType)' != 'Library'">
+    <PropertyGroup>
+      <_RadishRustNativeLibPath></_RadishRustNativeLibPath>
+
+      <!-- Windows: radish_lib.dll -->
+      <_RadishRustNativeLibPath Condition="'$(OS)' == 'Windows_NT' and Exists('$(RadishRustTargetDir)/release/radish_lib.dll')">$(RadishRustTargetDir)/release/radish_lib.dll</_RadishRustNativeLibPath>
+      <_RadishRustNativeLibPath Condition="'$(_RadishRustNativeLibPath)' == '' and '$(OS)' == 'Windows_NT' and Exists('$(RadishRustTargetDir)/debug/radish_lib.dll')">$(RadishRustTargetDir)/debug/radish_lib.dll</_RadishRustNativeLibPath>
+
+      <!-- Linux: libradish_lib.so -->
+      <_RadishRustNativeLibPath Condition="'$(_RadishRustNativeLibPath)' == '' and '$(OS)' != 'Windows_NT' and Exists('$(RadishRustTargetDir)/release/libradish_lib.so')">$(RadishRustTargetDir)/release/libradish_lib.so</_RadishRustNativeLibPath>
+      <_RadishRustNativeLibPath Condition="'$(_RadishRustNativeLibPath)' == '' and '$(OS)' != 'Windows_NT' and Exists('$(RadishRustTargetDir)/debug/libradish_lib.so')">$(RadishRustTargetDir)/debug/libradish_lib.so</_RadishRustNativeLibPath>
+
+      <!-- macOS: libradish_lib.dylib -->
+      <_RadishRustNativeLibPath Condition="'$(_RadishRustNativeLibPath)' == '' and '$(OS)' != 'Windows_NT' and Exists('$(RadishRustTargetDir)/release/libradish_lib.dylib')">$(RadishRustTargetDir)/release/libradish_lib.dylib</_RadishRustNativeLibPath>
+      <_RadishRustNativeLibPath Condition="'$(_RadishRustNativeLibPath)' == '' and '$(OS)' != 'Windows_NT' and Exists('$(RadishRustTargetDir)/debug/libradish_lib.dylib')">$(RadishRustTargetDir)/debug/libradish_lib.dylib</_RadishRustNativeLibPath>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(_RadishRustNativeLibPath)' != ''">
+      <_RadishRustNativeLib Include="$(_RadishRustNativeLibPath)" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_RadishRustNativeLib)" DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" Condition="'@(_RadishRustNativeLib)' != ''" />
+  </Target>
+
+  <Target Name="RadishCopyRustNativeToPublishDir" AfterTargets="Publish" Condition="'$(OutputType)' != 'Library' and '$(PublishDir)' != ''">
+    <PropertyGroup>
+      <_RadishRustNativeLibPath></_RadishRustNativeLibPath>
+
+      <_RadishRustNativeLibPath Condition="'$(OS)' == 'Windows_NT' and Exists('$(RadishRustTargetDir)/release/radish_lib.dll')">$(RadishRustTargetDir)/release/radish_lib.dll</_RadishRustNativeLibPath>
+      <_RadishRustNativeLibPath Condition="'$(_RadishRustNativeLibPath)' == '' and '$(OS)' == 'Windows_NT' and Exists('$(RadishRustTargetDir)/debug/radish_lib.dll')">$(RadishRustTargetDir)/debug/radish_lib.dll</_RadishRustNativeLibPath>
+
+      <_RadishRustNativeLibPath Condition="'$(_RadishRustNativeLibPath)' == '' and '$(OS)' != 'Windows_NT' and Exists('$(RadishRustTargetDir)/release/libradish_lib.so')">$(RadishRustTargetDir)/release/libradish_lib.so</_RadishRustNativeLibPath>
+      <_RadishRustNativeLibPath Condition="'$(_RadishRustNativeLibPath)' == '' and '$(OS)' != 'Windows_NT' and Exists('$(RadishRustTargetDir)/debug/libradish_lib.so')">$(RadishRustTargetDir)/debug/libradish_lib.so</_RadishRustNativeLibPath>
+
+      <_RadishRustNativeLibPath Condition="'$(_RadishRustNativeLibPath)' == '' and '$(OS)' != 'Windows_NT' and Exists('$(RadishRustTargetDir)/release/libradish_lib.dylib')">$(RadishRustTargetDir)/release/libradish_lib.dylib</_RadishRustNativeLibPath>
+      <_RadishRustNativeLibPath Condition="'$(_RadishRustNativeLibPath)' == '' and '$(OS)' != 'Windows_NT' and Exists('$(RadishRustTargetDir)/debug/libradish_lib.dylib')">$(RadishRustTargetDir)/debug/libradish_lib.dylib</_RadishRustNativeLibPath>
+    </PropertyGroup>
+
+    <ItemGroup Condition="'$(_RadishRustNativeLibPath)' != ''">
+      <_RadishRustNativeLib Include="$(_RadishRustNativeLibPath)" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_RadishRustNativeLib)" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" Condition="'@(_RadishRustNativeLib)' != ''" />
+  </Target>
 </Project>

@@ -263,6 +263,7 @@ public class User : RootEntityTKey<long>
 
     /// <summary>生日</summary>
     /// <remarks>可空，限定格式为 yyyy-MM-dd</remarks>
+    [SugarColumn(IsNullable = true)]
     [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
     public DateTime? UserBirth { get; set; }
 

@@ -102,6 +102,59 @@
   cursor: not-allowed;
 }
 
+/* 工具栏 */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.toolbarButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #444;
+  border-radius: 6px;
+  background: #1f2937;
+  color: #d1d5db;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toolbarButton:hover:not(:disabled) {
+  border-color: #2d6cdf;
+  background: #2d3748;
+  color: #fff;
+}
+
+.toolbarButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.uploadingHint {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-left: 4px;
+}
+
+/* 上传错误提示 */
+.uploadError {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: #3f1d1d;
+  border: 1px solid #7f1d1d;
+  border-radius: 6px;
+  color: #f87171;
+  font-size: 14px;
+}
+
 .submitButton {
   padding: 8px 16px;
   background-color: #2d6cdf;

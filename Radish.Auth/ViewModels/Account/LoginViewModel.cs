@@ -10,6 +10,7 @@ public sealed class LoginViewModel
     public string? ReturnUrl { get; init; }
     public string? PrefillUserName { get; init; }
     public string? ErrorMessage { get; init; }
+    public string? SuccessMessage { get; init; }
     public ClientSummaryViewModel Client { get; init; } = ClientSummaryViewModel.Empty;
 }
 

@@ -468,7 +468,7 @@ services.AddStackExchangeRedisCache(options =>
 
 - [配置指南](./configuration.md) - 配置文件管理
 - [认证指南](./authentication.md) - OIDC 认证流程
-- [开发日志](../changelog/2025-12.md#2025-12-19) - 速率限制实现详情
+- [开发日志](/changelog/2025-12#2025-12-19) - 速率限制实现详情
 
 ## 总结
 

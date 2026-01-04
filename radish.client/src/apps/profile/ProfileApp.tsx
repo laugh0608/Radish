@@ -3,6 +3,8 @@ import { useUserStore } from '@/stores/userStore';
 import { UserInfoCard } from './components/UserInfoCard';
 import { UserPostList } from './components/UserPostList';
 import { UserCommentList } from './components/UserCommentList';
+import { UserAttachmentList } from './components/UserAttachmentList';
+import { CoinWallet } from './components/CoinWallet';
 import styles from './ProfileApp.module.css';
 
 interface UserStats {
@@ -15,7 +17,7 @@ interface UserStats {
 
 export const ProfileApp = () => {
   const { userId, userName, isAuthenticated } = useUserStore();
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'attachments' | 'wallet'>('posts');
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
@@ -73,6 +75,7 @@ export const ProfileApp = () => {
           userName={userName}
           stats={stats || undefined}
           loading={loadingStats}
+          apiBaseUrl={apiBaseUrl}
         />
 
         <div className={styles.tabs}>
@@ -88,6 +91,18 @@ export const ProfileApp = () => {
           >
             我的评论
           </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'attachments' ? styles.active : ''}`}
+            onClick={() => setActiveTab('attachments')}
+          >
+            我的附件
+          </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'wallet' ? styles.active : ''}`}
+            onClick={() => setActiveTab('wallet')}
+          >
+            我的钱包
+          </button>
         </div>
 
         <div className={styles.tabContent}>
@@ -96,6 +111,12 @@ export const ProfileApp = () => {
           )}
           {activeTab === 'comments' && (
             <UserCommentList userId={userId} apiBaseUrl={apiBaseUrl} />
+          )}
+          {activeTab === 'attachments' && (
+            <UserAttachmentList apiBaseUrl={apiBaseUrl} />
+          )}
+          {activeTab === 'wallet' && (
+            <CoinWallet apiBaseUrl={apiBaseUrl} />
           )}
         </div>
       </div>

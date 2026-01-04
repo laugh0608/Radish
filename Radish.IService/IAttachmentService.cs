@@ -69,6 +69,8 @@ public interface IAttachmentService : IBaseService<Attachment, AttachmentVo>
     /// 获取附件下载流
     /// </summary>
     /// <param name="attachmentId">附件 ID</param>
+    /// <param name="requestUserId">请求用户 ID（可选，用于权限检查）</param>
+    /// <param name="requestUserRoles">请求用户角色（可选，用于权限检查）</param>
     /// <returns>文件流和文件信息</returns>
-    Task<(Stream? stream, AttachmentVo? attachment)> GetDownloadStreamAsync(long attachmentId);
+    Task<(Stream? stream, AttachmentVo? attachment)> GetDownloadStreamAsync(long attachmentId, long? requestUserId = null, List<string>? requestUserRoles = null);
 }

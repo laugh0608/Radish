@@ -7,6 +7,15 @@
   - ❌ 避免：为每个实体都创建 `ICategoryService`，只是包装 BaseService 方法
   - ✅ 推荐：`IPostService : IBaseService<Post, PostVo>` 包含复杂的 `PublishPostAsync` 逻辑
 
+## 代码质量标准
+
+**单个源文件行数建议**：为保持代码可读性与可维护性，建议单文件控制在 **500-1000 行**；非必要不超过 **1000 行**。
+
+当文件接近或超过上限时，优先考虑：
+- 拆分为更小的模块/类/组件
+- 提取自定义 Hooks（前端）或抽离 Service/Utility（后端/前端）
+- 分离业务逻辑与展示逻辑，按功能拆分目录
+
 ## 项目版本号规范
 
 Radish 项目采用**语义化版本号（Semantic Versioning）**规范，确保版本号能够清晰传达变更的性质和影响范围。
@@ -107,7 +116,7 @@ git push origin v1.2.0.251126
 4. **版本号更新**：统一更新前后端版本号
 5. **Git 标签**：创建版本标签并推送到远程仓库
 6. **Release Notes**：编写详细的发布说明
-7. **部署发布**：按照 [deployment/guide.md](../deployment/guide.md) 进行部署
+7. **部署发布**：按照 [部署指南](/deployment/guide) 进行部署
 
 ### 与 API 版本控制的关系
 
@@ -123,10 +132,10 @@ git push origin v1.2.0.251126
 
 - docs/：项目文档，实际文件夹，映射解决方案中的 docs 目录，包含开发规范、设计文档等
 - others/：其他资源文件，虚拟文件夹，只是解决方案中的文件夹，其中所有文件均为项目根目录下的，包括 Dockerfile、GitHub 配置、start.ps1 脚本 等
-- radish.client：主要 - 前端 React 应用代码（WebOS 桌面环境），TypeScript 编写；采用混合架构支持三种应用集成方式：内置应用(type: 'window')、嵌入应用(type: 'iframe')、外部应用(type: 'external')。详见 [frontend/design.md](../frontend/design.md)
+- radish.client：主要 - 前端 React 应用代码（WebOS 桌面环境），TypeScript 编写；采用混合架构支持三种应用集成方式：内置应用(type: 'window')、嵌入应用(type: 'iframe')、外部应用(type: 'external')。详见 [前端设计](/frontend/design)
 - radish.console：主要 - 管理控制台前端应用，独立的 SPA；通过 OIDC 认证，有独立的路由系统；不嵌入 radish.client，在新标签页独立运行
 - radish.ui：主要 - UI 组件库，通过 npm workspaces 供 radish.client 和 radish.console 共享基础组件、Hooks 和工具函数
-- Radish.Gateway：主要 - 服务门户与网关项目，ASP.NET Core 编写；Phase 0 阶段承载服务欢迎页面、健康检查展示、API 文档入口等功能；后续阶段（P1+）将实现 API 路由转发、统一认证、聚合接口等 Gateway 功能。详细规划见 `docs/architecture/gateway-plan.md`。
+- Radish.Gateway：主要 - 服务门户与网关项目，ASP.NET Core 编写；已实现统一服务入口、YARP 路由转发、健康检查聚合等核心功能。详细说明见 [Gateway 服务网关](/guide/gateway)。
 - Radish.Api：主要 - 后端服务代码，ASP.NET Core 编写；专注于提供 REST API 接口，不包含页面展示功能
 - Radish.Common：后端服务使用的普通工具类，例如基础日志、基础配置等；**仅能引用外部 NuGet 包，不允许依赖任何内部业务层**。若某工具/扩展需要访问 `Radish.Model`、Service 或 Repository 中的类型（如 DTO、实体、仓储服务等），应放置在 `Radish.Extension` 中，以免 Common 层被反向依赖导致环状引用。
 - Radish.Core：后端核心业务逻辑与算法类，保留模块，为后续流程模拟与算法实现做准备
@@ -160,6 +169,14 @@ git push origin v1.2.0.251126
     - **复杂业务逻辑场景**：创建继承自 `BaseService<TEntity, TVo>` 的自定义 Service，添加特定业务方法
     - BaseService 提供的通用方法：QueryAsync, QueryByIdAsync, QueryPageAsync, AddAsync, UpdateAsync, DeleteAsync 等
   - Radish.Repository 依赖 Radish.IRepository、Radish.Model 以及 Radish.Infrastructure 中的 SqlSugar/租户扩展，只能向 Service 层返回实体或实体集合，禁止直接引用任何 Vo/DTO；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model，以便共享实体与视图模型定义。
+  - **Service 层数据访问约束**（重要）：
+    - **严禁**在 Service 层直接使用 `_repository.Db.Queryable` 或 `_repository.DbBase.Queryable` 访问数据库实例
+    - **所有**数据访问必须通过 Repository 方法完成
+    - ❌ 错误示例：`await _repository.Db.Queryable<Comment>().Where(...).GroupBy(...).ToListAsync()`
+    - ✅ 正确示例：`await _repository.QueryDistinctAsync(c => c.PostId, c => c.IsEnabled)`
+    - **仓储扩展策略**（按优先级顺序）：
+      1. **优先**：在 BaseRepository 中添加泛型方法（如 `QueryDistinctAsync`、`QuerySumAsync`）- 可跨实体复用，适用于通用聚合、去重、排序等操作
+      2. **次选**：创建实体专属仓储类（如 `UserRepository : BaseRepository<User>, IUserRepository`）- 适用于复杂联表查询、特定业务查询、性能优化场景
 - Radish.Extension 仅由宿主（Radish.Api、Radish.Gateway）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以及 Infrastructure 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
   - Radish.Core 暂时保留，无直接依赖关系
 - `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用"Controller 调用 Service，再由 Service 访问 Repository"的模式
@@ -293,8 +310,8 @@ git push origin v1.2.0.251126
 
 Radish 项目采用泛型基类模式来避免为每个实体重复编写相同的 CRUD 代码：
 
-- **BaseRepository<TEntity>**：提供完整的数据库操作方法（基于 SqlSugar）
-- **BaseService<TEntity, TVo>**：提供完整的业务层方法（自动进行实体到 ViewModel 的映射）
+- **BaseRepository`<TEntity>`**：提供完整的数据库操作方法（基于 SqlSugar）
+- **BaseService`<TEntity, TVo>`**：提供完整的业务层方法（自动进行实体到 ViewModel 的映射）
 
 **核心原则**：
 - ✅ **优先使用 BaseService/BaseRepository** - 减少重复代码，保持架构简洁
@@ -303,7 +320,6 @@ Radish 项目采用泛型基类模式来避免为每个实体重复编写相同�
 
 ### BaseService 提供的完整功能
 
-<div v-pre>
 
 #### 增（Create）
 ```csharp
@@ -342,11 +358,9 @@ Task<List<TResult>> QueryMuchAsync<...>(...)          // 三表联查
 Task<List<TEntity>> QuerySplitAsync(...)              // 分表查询
 ```
 
-</div>
 
 ### 使用场景
 
-<div v-pre>
 
 #### 场景 1：简单 CRUD（直接使用 BaseService）
 
@@ -478,13 +492,11 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 }
 ```
 
-</div>
 
 ### BaseRepository 直接使用
 
 在自定义 Service 中，如果需要操作其他实体，可以直接注入 `IBaseRepository<T>`：
 
-<div v-pre>
 
 ```csharp
 public class PostService : BaseService<Post, PostVo>, IPostService
@@ -501,7 +513,6 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 }
 ```
 
-</div>
 
 ### 最佳实践总结
 
@@ -594,7 +605,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 - 前端（radish.client）负责界面文案、交互提示等 UI 文本的多语言管理，统一使用 `react-i18next`：
   - 所有新页面禁止写死中文/英文字符串，必须通过 `t('app.title')`、`t('auth.login')` 等 key 访问文案。
   - i18n key 采用“小写 + 点号分隔”的层级命名：`{domain}[.{subDomain}].{meaning}`，推荐顶级域包括：`app.*`、`auth.*`、`user.*`、`weather.*`、`oidc.*`、`error.*`、`info.*`、`lang.*` 等。
-  - 详细示例与最佳实践见 [I18nGuide.md](I18nGuide.md) 的“前端国际化规范”。
+  - 详细示例与最佳实践见 [国际化指南](/architecture/i18n) 的“前端国际化规范”。
 - 后端（Radish.Api / Radish.Auth）负责错误/提示类系统消息的多语言资源管理：
   - `.resx` 资源文件统一命名为 `Errors.<culture>.resx`，使用中性语言代码后缀：
     - API：`Radish.Api/Resources/Errors.zh.resx`、`Errors.en.resx`
@@ -616,7 +627,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
 ## 前端桌面化 UI 规范
 
-> 详细的交互、设计 Token、跨端策略以 [frontend/design.md](../frontend/design.md) 为准，此处保留关键守则，便于与后端规范并列查看。
+> 详细的交互、设计 Token、跨端策略以 [前端设计](/frontend/design) 为准，此处保留关键守则，便于与后端规范并列查看。
 
 - radish.client 以桌面模式为核心交互范式，首页加载后呈现类似 macOS 的桌面界面。
 - 顶部为状态栏，需显示当前登录用户名、IP 地址以及预留系统状态信息区域。
@@ -628,7 +639,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
 ## radish.client 前端规范
 
-> 技术栈、目录结构、状态管理、测试策略等完整说明见 [frontend/design.md](../frontend/design.md)，以下列出与后端协作密切的约束。
+> 技术栈、目录结构、状态管理、测试策略等完整说明见 [前端设计](/frontend/design)，以下列出与后端协作密切的约束。
 
 1. 前后端传输的敏感字段计划使用 `encryptByPublicKey()` 加密，后端通过 `DecryptByPrivateKey()` 解密；方法虽未实现，但需提前规划调用点，保证接口兼容性。
 2. 组件统一使用函数式写法，结合 `useState`、`useMemo`、`useEffect` 等 Hook 管理状态与生命周期，避免继续编写 Class 组件。
@@ -724,7 +735,6 @@ options
 
 所有 Controller 和 Action 必须提供完整的 XML 注释：
 
-<div v-pre>
 
 ```csharp
 /// <summary>
@@ -747,7 +757,6 @@ options
 public async Task<MessageModel<T>> MyAction(string paramName)
 ```
 
-</div>
 
 **关键要求：**
 - 必须启用 XML 文档生成（在 `.csproj` 中配置 `<GenerateDocumentationFile>true</GenerateDocumentationFile>`）
@@ -765,13 +774,11 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 
 **弃用旧版本：**
 
-<div v-pre>
 
 ```csharp
 [ApiVersion("1.0", Deprecated = true)]
 ```
 
-</div>
 
 - 添加 `Deprecated = true` 标记
 - OpenAPI 文档会自动显示"已弃用"警告
@@ -779,7 +786,6 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 
 **跨版本支持：**
 
-<div v-pre>
 
 ```csharp
 [ApiVersion(1)]
@@ -787,14 +793,12 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 public class MyController : ControllerBase
 ```
 
-</div>
 
 - Controller 可同时支持多个版本
 - 使用 `[MapToApiVersion("2.0")]` 标记特定 Action 的版本
 
 ### 版本控制配置（Program.cs）
 
-<div v-pre>
 
 ```csharp
 builder.Services.AddApiVersioning(options =>
@@ -811,7 +815,6 @@ builder.Services.AddApiVersioning(options =>
 });
 ```
 
-</div>
 
 ### URL 格式示例
 

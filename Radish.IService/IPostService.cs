@@ -40,4 +40,12 @@ public interface IPostService : IBaseService<Post, PostVo>
     /// <param name="postId">帖子 Id</param>
     /// <param name="increment">增量（可为负数）</param>
     Task UpdateCommentCountAsync(long postId, int increment);
+
+    /// <summary>
+    /// 切换帖子点赞状态（点赞/取消点赞）
+    /// </summary>
+    /// <param name="userId">用户 Id</param>
+    /// <param name="postId">帖子 Id</param>
+    /// <returns>点赞操作结果（当前状态和最新点赞数）</returns>
+    Task<PostLikeResultDto> ToggleLikeAsync(long userId, long postId);
 }

@@ -1,10 +1,10 @@
 .container {
   flex: 1;
-  border-right: 1px solid #333;
-  padding: 0 8px;
+  padding: 12px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
+  min-height: 0;
 }
 
 /* 标题栏和排序按钮容器 */
@@ -12,12 +12,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .title {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: #fff;
 }
@@ -25,23 +26,23 @@
 /* 排序按钮组 */
 .sortButtons {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .sortButton {
-  padding: 4px 12px;
+  padding: 6px 14px;
   font-size: 13px;
   background-color: transparent;
-  border: 1px solid #444;
-  border-radius: 4px;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
   color: #aaa;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .sortButton:hover {
-  background-color: #1f2937;
-  border-color: #555;
+  background-color: #27272a;
+  border-color: #52525b;
   color: #fff;
 }
 
@@ -49,48 +50,50 @@
   background-color: #2d6cdf;
   border-color: #2d6cdf;
   color: #fff;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* 搜索框 */
 .searchBox {
   position: relative;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .searchInput {
   width: 100%;
-  padding: 8px 32px 8px 12px;
+  padding: 10px 36px 10px 14px;
   font-size: 14px;
-  background-color: #1a1a1a;
-  border: 1px solid #444;
-  border-radius: 6px;
+  background-color: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 8px;
   color: #fff;
   outline: none;
   transition: all 0.2s ease;
 }
 
 .searchInput::placeholder {
-  color: #666;
+  color: #71717a;
 }
 
 .searchInput:focus {
   border-color: #2d6cdf;
-  background-color: #1f2937;
+  background-color: #27272a;
+  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
 }
 
 .clearButton {
   position: absolute;
-  right: 8px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   padding: 0;
-  background-color: #444;
+  background-color: #3f3f46;
   border: none;
   border-radius: 50%;
-  color: #aaa;
+  color: #a1a1aa;
   font-size: 16px;
   line-height: 1;
   cursor: pointer;
@@ -101,7 +104,7 @@
 }
 
 .clearButton:hover {
-  background-color: #555;
+  background-color: #52525b;
   color: #fff;
 }
 
@@ -110,34 +113,41 @@
 .emptyText {
   font-size: 14px;
   color: #888;
+  text-align: center;
+  padding: 32px 16px;
 }
 
 .list {
   list-style: none;
   padding: 0;
   margin: 0;
+  flex: 1;
+  overflow-y: auto;
 }
 
 .postButton {
   width: 100%;
   text-align: left;
-  padding: 12px;
-  margin-bottom: 8px;
-  background-color: transparent;
-  border-radius: 6px;
-  border: 1px solid #444;
+  padding: 14px;
+  margin-bottom: 10px;
+  background-color: #18181b;
+  border-radius: 8px;
+  border: 1px solid #3f3f46;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .postButton:hover {
-  background-color: #1f2937;
-  border-color: #555;
+  background-color: #27272a;
+  border-color: #52525b;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .postButton.active {
-  background-color: #1f2937;
+  background-color: #1e3a5f;
   border-color: #2d6cdf;
+  box-shadow: 0 0 0 2px rgba(45, 108, 223, 0.2);
 }
 
 .postButton:focus {
@@ -148,13 +158,28 @@
 .postTitle {
   font-weight: 600;
   font-size: 15px;
-  color: #fff;
-  margin-bottom: 4px;
+  color: #f4f4f5;
+  margin-bottom: 6px;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .postMeta {
   font-size: 12px;
-  color: #999;
+  color: #a1a1aa;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.postMeta > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* 分页控件样式 */
@@ -162,28 +187,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  margin-top: auto;
-  padding: 16px 0;
-  border-top: 1px solid #333;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 16px 0 8px;
+  border-top: 1px solid #27272a;
+  flex-shrink: 0;
 }
 
 .paginationButton {
-  min-width: 32px;
-  height: 32px;
-  padding: 0 8px;
-  background-color: transparent;
-  border: 1px solid #444;
-  border-radius: 4px;
-  color: #fff;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  background-color: #18181b;
+  border: 1px solid #3f3f46;
+  border-radius: 6px;
+  color: #f4f4f5;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .paginationButton:hover:not(:disabled) {
-  background-color: #1f2937;
-  border-color: #555;
+  background-color: #27272a;
+  border-color: #52525b;
 }
 
 .paginationButton:disabled {
@@ -198,7 +224,7 @@
 }
 
 .paginationEllipsis {
-  color: #888;
+  color: #71717a;
   padding: 0 4px;
   user-select: none;
 }

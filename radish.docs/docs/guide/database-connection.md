@@ -368,7 +368,7 @@ var config = new ConnectionConfig()
 
 - [日志系统](./logging.md) - 日志数据库使用说明
 - [配置管理](./configuration.md) - 数据库配置详解
-- [架构规范](../architecture/specifications.md) - 数据库设计规范
+- [开发规范](/architecture/specifications) - 数据库设计规范
 
 ## 参考资源
 
