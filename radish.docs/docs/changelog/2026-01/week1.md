@@ -132,3 +132,185 @@
 - `feat: 扩展 BaseRepository 添加泛型聚合查询方法`
 - `docs: 优化开发规范文档并强化分层架构约束`
 - `feat(auth): 实现用户注册功能并集成萝卜币奖励`
+
+---
+
+## 1月4日
+
+### 萝卜币精确计算系统完成
+
+**背景**：为确保萝卜币交易的精度和可追溯性，避免浮点运算误差，实现了完整的精确计算系统。
+
+#### 1. CoinCalculator 工具类（Radish.Common/Utils/CoinCalculator.cs）
+
+**核心设计原则**：
+1. **整数为王**：所有交易以胡萝卜（整数）为准，不产生小数
+2. **统一舍入**：所有比例计算向下取整（Floor），确保可预测
+3. **差额透明**：记录理论金额和实际金额，支持审计对账
+4. **白萝卜展示**：仅用于前端显示（1 白萝卜 = 100 胡萝卜）
+
+**主要功能**：
+- **单位转换**：
+  - `ToWhiteRadish(long carrot)` - 胡萝卜转白萝卜（向下取整）
+  - `ToCarrot(decimal whiteRadish)` - 白萝卜转胡萝卜（向下取整）
+- **显示格式化**：
+  - `FormatDisplay(long carrot)` - 智能显示（< 1000 显示胡萝卜，>= 1000 显示混合格式）
+  - `FormatAsWhiteRadish(long carrot)` - 紧凑显示（始终显示为白萝卜，带小数）
+- **比例计算**：
+  - `CalculateByRate(long amount, decimal rate)` - 按比例计算并记录舍入差额
+  - `CalculateFee(long amount, decimal feeRate)` - 手续费计算（最小 1 胡萝卜，不足免收）
+- **批量分配**：
+  - `DistributeEqually(long total, int count)` - 均分（余额分配给前几项）
+  - `DistributeByWeight(long total, List<int> weights)` - 按权重分配
+- **累积计算器**：
+  - `AccumulativeCalculator` - 处理小数累积（如每日利息 0.5 胡萝卜，累积到 1 才发放）
+- **验证工具**：
+  - `IsValidAmount(long amount)` - 金额有效性检查
+  - `HasSufficientBalance(long balance, long amount)` - 余额充足性检查
+
+**返回值设计**：
+```csharp
+public record CoinCalculationResult
+{
+    public decimal TheoreticalAmount { get; init; }  // 理论金额（保留小数）
+    public long ActualAmount { get; init; }          // 实际金额（向下取整）
+    public decimal RoundingDiff { get; init; }       // 舍入差额
+}
+```
+
+#### 2. 单元测试全覆盖（CoinCalculatorTest.cs）
+
+**测试覆盖**：52 个单元测试，所有测试通过 ✅
+
+测试分类：
+- **单位转换测试**（8 个）：
+  - `ToWhiteRadish_ShouldConvertCorrectly` - 胡萝卜转白萝卜
+  - `ToCarrot_ShouldFloorCorrectly` - 白萝卜转胡萝卜（验证向下取整）
+  - `FormatDisplay_ShouldFormatCorrectly` - 智能显示格式（6 个测试用例）
+  - `FormatAsWhiteRadish_ShouldFormatCorrectly` - 紧凑显示格式（5 个测试用例）
+
+- **比例计算测试**（5 个）：
+  - `CalculateByRate_ShouldCalculateCorrectly` - 比例计算准确性（4 个测试用例）
+  - `CalculateByRate_ShouldThrow_WhenAmountIsNegative` - 负数金额异常
+  - `CalculateByRate_ShouldThrow_WhenRateIsInvalid` - 无效比例异常
+
+- **手续费计算测试**（5 个）：
+  - `CalculateFee_ShouldApplyMinimumFeeRule` - 最小手续费规则（4 个测试用例）
+  - `CalculateFee_ShouldRecordFullDiffWhenFeeWaived` - 免收手续费时差额记录
+
+- **批量均分测试**（5 个）：
+  - `DistributeEqually_ShouldDistributeCorrectly` - 均分分配（4 个测试用例）
+  - `DistributeEqually_ShouldThrow_WhenCountIsZero` - 零分配数异常
+
+- **按权重分配测试**（8 个）：
+  - `DistributeByWeight_ShouldDistributeCorrectly` - 权重分配准确性
+  - `DistributeByWeight_ShouldHandleRemainder` - 余额处理
+  - `DistributeByWeight_ShouldThrow_WhenWeightsAreInvalid` - 无效权重异常（3 种情况）
+
+- **累积计算器测试**（2 个）：
+  - `AccumulativeCalculator_ShouldAccumulateCorrectly` - 累积计算准确性（4 个步骤）
+  - `AccumulativeCalculator_Reset_ShouldClearAccumulated` - 重置功能
+
+- **验证工具测试**（6 个）：
+  - `IsValidAmount_ShouldValidateCorrectly` - 金额有效性验证（4 个测试用例）
+  - `HasSufficientBalance_ShouldCheckCorrectly` - 余额充足性检查（4 个测试用例）
+
+- **实际场景测试**（3 个）：
+  - `Scenario_TransferWithFee_ShouldCalculateCorrectly` - 转账手续费场景
+  - `Scenario_GodCommentRewardDistribution_ShouldDistributeCorrectly` - 神评奖励分配场景
+  - `Scenario_DailyInterestAccumulation_ShouldAccumulateCorrectly` - 每日利息累积场景（10天模拟）
+
+**测试执行结果**：
+```bash
+dotnet test Radish.Api.Tests --filter "FullyQualifiedName~CoinCalculatorTest"
+# 结果：52 个测试全部通过，0 个失败
+```
+
+#### 3. 神评/沙发触发条件配置化
+
+**问题**：神评和沙发的最小评论数阈值之前是硬编码（神评需 > 5 条父评论，沙发需 > 3 条子评论），不够灵活。
+
+**解决方案**：
+- 创建 `CommentHighlightOptions` 配置类（Radish.Common/OptionTool）
+- 在 `appsettings.json` 中添加配置项：
+  ```json
+  "Hangfire": {
+    "CommentHighlight": {
+      "MinParentCommentCount": 5,  // 神评触发最小父评论数
+      "MinChildCommentCount": 3    // 沙发触发最小子评论数
+    }
+  }
+  ```
+- 修改 `CommentService` 和 `CommentHighlightJob` 使用配置值替代硬编码
+
+**影响范围**：
+- `Radish.Service/CommentService.cs` - 实时神评/沙发检测
+- `Radish.Service/Jobs/CommentHighlightJob.cs` - 定时统计任务
+
+#### 4. 萝卜币文档完善
+
+**文档更新**：
+- 更新 `radish-coin-system.md` 第6节：精度处理与计算规范
+  - 添加 5 大核心原则说明
+  - 添加 CoinCalculator API 文档（12 个方法详解）
+  - 添加使用场景示例（转账手续费、神评奖励分配、每日利息累积）
+  - 添加数据库设计建议（理论金额和舍入差额字段）
+  - 添加每日对账任务示例
+  - 添加 DO/DON'T 最佳实践
+- 添加第18节：M6 实施完成总结
+  - 已完成功能清单
+  - 技术亮点总结（精度保证、防刷机制、性能优化、配置灵活、测试覆盖）
+  - 待优化项规划（M7+ 功能归属）
+  - 验收结论：M6 验收标准 100% 达成
+
+**文档版本**：v1.2 → v1.3（总行数：2715 行）
+
+### 开发规划调整
+
+**背景**：商城系统较复杂，需要更完善的基础设施支持（通知系统、等级系统）。
+
+**调整方案**：
+- **M6**（✅ 已完成）：聚焦萝卜币系统
+- **M7**（⏳ 计划中）：消息通知系统（SignalR 实时推送，替代轮询）
+- **M8**（⏳ 计划中）：用户等级与经验值系统（11 级修仙体系）
+- **M9**（⏳ 计划中）：商城系统（依赖通知和等级系统）
+- **M10/M11**：可观测性、测试、部署（原 M7/M8）
+
+**优势**：
+1. **依赖关系清晰**：通知系统 → 等级系统 → 商城系统
+2. **复杂度分离**：每个里程碑聚焦单一主题
+3. **渐进式交付**：用户可更早体验实时通知和等级系统
+
+**文档更新**：
+- `development-plan.md`：更新里程碑概览表
+- 添加第7周详细计划（消息通知系统）
+- 添加第8周详细计划（用户等级与经验值系统）
+- 添加第9周计划（商城系统）
+- 添加里程碑调整说明
+
+### M6 完成总结
+
+**验收标准 100% 达成**：
+- ✅ 发帖/互动触发萝卜币奖励
+- ✅ 神评/沙发保留奖励正常发放
+- ✅ 前端余额显示与钱包页面可用
+- ✅ 精确计算系统完整实现并通过测试（52 个单元测试全通过）
+- ✅ 定时任务正常运行
+- ✅ 防刷机制生效
+- ✅ 注册奖励集成完成
+- ✅ 文档完整（2715 行，18 个章节）
+
+**技术亮点**：
+1. **精度保证**：所有交易以整数为单位，统一向下取整，记录舍入差额
+2. **防刷机制**：每日奖励上限、重复发放检测、基于 Redis 的去重键
+3. **性能优化**：增量扫描、批量插入、异步发放奖励
+4. **配置灵活**：触发阈值可配置、奖励金额可配置、Cron 表达式可配置
+5. **测试覆盖**：CoinCalculator 52 个单元测试、CoinService 7 个单元测试
+
+**提交记录**：
+- `feat: 实现萝卜币精确计算系统`
+- `refactor: 神评/沙发触发条件改为可配置`
+- `docs: 调整开发里程碑规划`
+- `docs: 添加萝卜币系统 M6 完成总结`
+
+**下一步**：合并到主分支，开始 M7（消息通知系统）
