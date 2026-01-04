@@ -66,6 +66,16 @@ public class CoinTransaction : RootEntityTKey<long>
     [SugarColumn(IsNullable = false, ColumnDescription = "手续费")]
     public long Fee { get; set; } = 0;
 
+    /// <summary>理论金额（精确计算结果）</summary>
+    /// <remarks>可空，用于记录比例计算时的理论金额，支持审计和对账</remarks>
+    [SugarColumn(IsNullable = true, DecimalDigits = 6, Length = 18, ColumnDescription = "理论金额")]
+    public decimal? TheoreticalAmount { get; set; }
+
+    /// <summary>舍入差额（理论金额 - 实际金额）</summary>
+    /// <remarks>可空，用于记录舍入产生的差额，支持财务审计</remarks>
+    [SugarColumn(IsNullable = true, DecimalDigits = 6, Length = 18, ColumnDescription = "舍入差额")]
+    public decimal? RoundingDiff { get; set; }
+
     #endregion
 
     #region 交易类型与状态

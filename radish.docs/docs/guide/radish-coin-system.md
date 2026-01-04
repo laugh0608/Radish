@@ -19,23 +19,50 @@
 | 币种 | 英文名 | 换算关系 | 说明 |
 |------|--------|----------|------|
 | **胡萝卜** | Carrot | 基础单位 | 最小交易单位，不可再分 |
-| **白萝卜** | Radish | 1 白萝卜 = 1000 胡萝卜 | 高级单位，便于大额显示 |
+| **白萝卜** | Radish | 1 白萝卜 = 100 胡萝卜 | 高级单位，便于大额显示 |
 
 **换算规则**：
 - 系统内部统一使用**胡萝卜（Carrot）**作为存储单位（整数）
 - 白萝卜仅用于显示，换算时向下取整（避免精度丢失）
-- 示例：
-  - 用户余额：`12345 胡萝卜` = `12 白萝卜 345 胡萝卜`
-  - 显示模式：
-    - 仅胡萝卜：`12345 胡萝卜`
-    - 仅白萝卜：`12.345 白萝卜`（小数点后3位）
-    - 混合显示：`12 白萝卜 345 胡萝卜`
 
-### 2.2 最小交易单位
+**显示规则** 🎯：
+- **小于 1000 胡萝卜**：直接显示胡萝卜
+  - 示例：`999 胡萝卜`、`500 胡萝卜`、`1 胡萝卜`
+- **大于等于 1000 胡萝卜**：显示为 "x 白萝卜 x 胡萝卜"（混合显示）
+  - 示例：
+    - `1000 胡萝卜` → `10 白萝卜`
+    - `12345 胡萝卜` → `123 白萝卜 45 胡萝卜`
+    - `50000 胡萝卜` → `500 白萝卜`
+- **紧凑显示模式**（可选）：始终显示为白萝卜（带小数）
+  - 示例：`12345 胡萝卜` → `123.45 白萝卜`
 
+**代码示例**：
+```csharp
+// 标准显示（智能切换）
+string display1 = CoinCalculator.FormatDisplay(999);      // "999 胡萝卜"
+string display2 = CoinCalculator.FormatDisplay(1000);     // "10 白萝卜"
+string display3 = CoinCalculator.FormatDisplay(12345);    // "123 白萝卜 45 胡萝卜"
+
+// 紧凑显示（始终白萝卜）
+string compact = CoinCalculator.FormatAsWhiteRadish(12345); // "123.45 白萝卜"
+```
+
+### 2.2 最小交易单位与计算规则
+
+**最小交易金额**：
 - **最小消费金额**：`1 胡萝卜`
 - **最小转账金额**：`1 胡萝卜`
-- **手续费最小值**：`1 胡萝卜`（手续费计算结果向上取整）
+- **手续费最小值**：`1 胡萝卜`（不足 1 胡萝卜时免收）
+
+**核心计算原则** 🎯：
+1. **整数为王**：所有交易链路以胡萝卜（整数）为准，**不产生小数**
+2. **统一舍入**：所有比例计算**向下取整（Floor）**，确保可预测
+3. **差额透明**：记录理论金额和实际金额，支持审计对账
+4. **白萝卜展示**：仅用于前端显示，实际交易以胡萝卜为准（1 白萝卜 = 100 胡萝卜）
+
+**计算工具**：
+- 使用 `Radish.Common.Utils.CoinCalculator` 统一处理所有金额计算
+- 自动记录舍入差额，防止累积误差导致对账困难
 
 ---
 
@@ -541,57 +568,257 @@ public async Task<long> RefundAsync(long originalTransactionId, string reason, R
 
 ---
 
-## 6. 精度处理方案
+## 6. 精度处理与计算规范
 
-### 6.1 存储设计
+### 6.1 核心设计原则
 
-**数据库字段类型**：
-- 使用 `BIGINT`（64位整数）存储胡萝卜数量
-- **禁止使用** `DECIMAL`、`FLOAT`、`DOUBLE`（避免浮点误差）
+**五大关键原则** 🎯：
 
-**示例**：
+1. **强制整数运算**
+   - 所有金额字段使用 `long` 类型（64位整数）
+   - **禁止**使用 `decimal`、`float`、`double` 存储余额
+   - 白萝卜仅用于前端展示，后端统一使用胡萝卜
+
+2. **统一舍入规则**
+   - 所有比例计算**向下取整（Floor）**
+   - 手续费不足最小值（1 胡萝卜）时免收
+   - 文档化并在代码中集中管理（`CoinCalculator` 工具类）
+
+3. **透明化差额**
+   - `CoinTransaction` 表新增字段：
+     - `theoretical_amount` (DECIMAL(18,6))：理论金额（精确计算结果）
+     - `rounding_diff` (DECIMAL(18,6))：舍入差额（理论 - 实际）
+   - 记录每次舍入产生的差额，支持审计
+
+4. **业务规则保底**
+   - 设置最小金额阈值（1 胡萝卜）
+   - 避免 1 胡萝卜以下的交易
+   - 手续费不足最小值时直接免收
+
+5. **定期对账**
+   - 每日/每周汇总舍入差额
+   - 确保账务平衡：`Σ理论金额 - Σ实际金额 = Σ舍入差额`
+   - 差额超过阈值时触发告警
+
+### 6.2 CoinCalculator 工具类
+
+**位置**：`Radish.Common/Utils/CoinCalculator.cs`
+
+**功能概览**：
+```csharp
+// 1. 单位转换（展示用）
+decimal whiteRadish = CoinCalculator.ToWhiteRadish(12345);  // 123.45 白萝卜
+long carrot = CoinCalculator.ToCarrot(123.45m);             // 12345 胡萝卜
+
+// 2. 比例计算（向下取整）
+var result = CoinCalculator.CalculateByRate(100, 0.055m);  // 5.5% 手续费
+// result.TheoreticalAmount = 5.5
+// result.ActualAmount = 5
+// result.RoundingDiff = 0.5
+
+// 3. 手续费计算（不足最小值免收）
+var feeResult = CoinCalculator.CalculateFee(50, 0.01m);    // 1% 手续费
+// feeResult.ActualAmount = 0（理论 0.5，不足 1 免收）
+
+// 4. 批量均分（余额分配）
+var shares = CoinCalculator.DistributeEqually(100, 3);
+// shares = [34, 33, 33]（总和 100，精确分配）
+
+// 5. 按权重分配
+var weights = new List<int> { 3, 2, 1 };
+var allocations = CoinCalculator.DistributeByWeight(100, weights);
+// weights 3:2:1 → 分配 [50, 33, 17]（总和 100）
+
+// 6. 累积计算器（利息、分红等）
+var calculator = new CoinCalculator.AccumulativeCalculator();
+var settled1 = calculator.Add(0.3m);  // 返回 0（未满 1）
+var settled2 = calculator.Add(0.8m);  // 返回 1（累积 1.1，结算 1，剩余 0.1）
+```
+
+### 6.3 使用场景示例
+
+**场景 1：手续费扣除（避免小数）**
+```csharp
+// ❌ 错误：直接计算可能产生小数
+long transferAmount = 100;
+long fee = (long)(transferAmount * 0.055m);  // 可能是 5 或 6，不确定
+
+// ✅ 正确：使用 CoinCalculator
+var feeResult = CoinCalculator.CalculateFee(transferAmount, 0.055m);
+long actualFee = feeResult.ActualAmount;  // 5 胡萝卜（向下取整）
+
+// 创建交易记录（含差额追踪）
+var transaction = new CoinTransaction
+{
+    Amount = transferAmount - actualFee,
+    Fee = actualFee,
+    TheoreticalAmount = feeResult.TheoreticalAmount,  // 5.5
+    RoundingDiff = feeResult.RoundingDiff              // 0.5
+};
+```
+
+**场景 2：按比例分配奖励（神评奖励池）**
+```csharp
+// 场景：100 胡萝卜奖励池，按点赞数分配给 3 个神评作者
+long totalReward = 100;
+var likeWeights = new List<int> { 50, 30, 20 };  // 点赞数
+
+var allocations = CoinCalculator.DistributeByWeight(totalReward, likeWeights);
+
+// 结果：[50, 30, 20]（精确分配，无差额）
+foreach (var allocation in allocations)
+{
+    await _coinService.GrantCoinAsync(
+        userId: userIds[allocation.Index],
+        amount: allocation.ActualAmount,
+        transactionType: "HIGHLIGHT_REWARD"
+    );
+}
+```
+
+**场景 3：每日利息累积（避免频繁小额发放）**
+```csharp
+// 场景：存款利息每日 0.05%，累积到满 1 胡萝卜再发放
+var interestCalculator = new CoinCalculator.AccumulativeCalculator();
+
+for (int day = 1; day <= 365; day++)
+{
+    long principal = 1000;  // 1000 胡萝卜本金
+    decimal dailyInterest = principal * 0.0005m;  // 0.5 胡萝卜/天
+
+    long toSettle = interestCalculator.Add(dailyInterest);
+
+    if (toSettle > 0)
+    {
+        // 累积满 1 胡萝卜时发放
+        await _coinService.GrantCoinAsync(userId, toSettle, "INTEREST");
+    }
+}
+// 累积策略：第1天 0.5 未发，第2天 1.0 发放 1，剩余 0，第3天 0.5 未发...
+```
+
+### 6.4 数据库字段设计
+
+**user_balance 表**：
 ```sql
 CREATE TABLE user_balance (
     user_id BIGINT PRIMARY KEY,
-    balance BIGINT NOT NULL DEFAULT 0,  -- 胡萝卜数量（整数）
-    frozen_balance BIGINT NOT NULL DEFAULT 0,  -- 冻结金额
+    balance BIGINT NOT NULL DEFAULT 0,           -- 可用余额（胡萝卜）
+    frozen_balance BIGINT NOT NULL DEFAULT 0,    -- 冻结余额
+    version INT NOT NULL DEFAULT 0,              -- 乐观锁版本号
     updated_at TIMESTAMP NOT NULL
 );
 ```
 
-### 6.2 计算规则
+**coin_transaction 表**（新增差额追踪字段）：
+```sql
+CREATE TABLE coin_transaction (
+    id BIGINT PRIMARY KEY,
+    transaction_no VARCHAR(64) UNIQUE NOT NULL,
+    amount BIGINT NOT NULL,                      -- 实际交易金额（胡萝卜）
+    fee BIGINT NOT NULL DEFAULT 0,               -- 实际手续费（胡萝卜）
+    theoretical_amount DECIMAL(18,6),            -- 理论金额（精确计算）
+    rounding_diff DECIMAL(18,6),                 -- 舍入差额
+    -- 其他字段...
+    created_at TIMESTAMP NOT NULL,
+    INDEX idx_created_at (created_at)
+);
+```
 
-**加减运算**：
+### 6.5 对账与差额汇总
+
+**差额汇总视图**：
+```sql
+CREATE VIEW v_rounding_summary AS
+SELECT
+    DATE(created_at) as date,
+    transaction_type,
+    SUM(rounding_diff) as total_rounding_diff,
+    COUNT(*) as transaction_count,
+    SUM(amount) as total_actual_amount,
+    SUM(theoretical_amount) as total_theoretical_amount
+FROM coin_transaction
+WHERE rounding_diff > 0
+GROUP BY DATE(created_at), transaction_type;
+```
+
+**对账任务示例**：
 ```csharp
-// ✅ 正确：整数运算
+public class DailyRoundingReportJob
+{
+    [AutomaticRetry(Attempts = 3)]
+    public async Task GenerateDailyRoundingReportAsync()
+    {
+        var yesterday = DateTime.Today.AddDays(-1);
+
+        // 汇总昨日舍入差额
+        var roundingSummary = await _db.Queryable<CoinTransaction>()
+            .Where(t => t.CreateTime.Date == yesterday && t.RoundingDiff.HasValue)
+            .GroupBy(t => t.TransactionType)
+            .Select(g => new {
+                TransactionType = g.Key,
+                TotalRoundingDiff = g.Sum(t => t.RoundingDiff.Value),
+                TransactionCount = g.Count()
+            })
+            .ToListAsync();
+
+        // 记录日报
+        foreach (var summary in roundingSummary)
+        {
+            Log.Information("舍入差额日报：{Type} - 差额 {Diff}，交易数 {Count}",
+                summary.TransactionType, summary.TotalRoundingDiff, summary.TransactionCount);
+        }
+
+        // 差额超过阈值时告警（如每日差额超过 100 胡萝卜）
+        var totalDiff = roundingSummary.Sum(s => s.TotalRoundingDiff);
+        if (totalDiff > 100)
+        {
+            await _alertService.SendAlertAsync(
+                $"萝卜币舍入差额异常：昨日总差额 {totalDiff:F2}（超过阈值 100）"
+            );
+        }
+    }
+}
+```
+
+### 6.6 计算规则最佳实践
+
+**DO✅**：
+```csharp
+// 1. 使用 CoinCalculator 处理所有比例计算
+var feeResult = CoinCalculator.CalculateFee(amount, feeRate);
+
+// 2. 记录差额到数据库
+transaction.TheoreticalAmount = feeResult.TheoreticalAmount;
+transaction.RoundingDiff = feeResult.RoundingDiff;
+
+// 3. 所有金额使用 long 类型
 long balance = 12345;  // 12345 胡萝卜
-long amount = 100;
-long newBalance = balance - amount;  // 12245 胡萝卜
 
-// ❌ 错误：浮点运算
-decimal balance = 12.345m;  // 12.345 白萝卜
-decimal amount = 0.1m;
-decimal newBalance = balance - amount;  // 可能产生精度误差
+// 4. 展示时根据金额大小智能切换
+string display = CoinCalculator.FormatDisplay(balance);
+// balance < 1000: "999 胡萝卜"
+// balance >= 1000: "123 白萝卜 45 胡萝卜"
 ```
 
-**换算显示**：
+**DON'T❌**：
 ```csharp
-// 胡萝卜 → 白萝卜（仅用于显示）
-long carrotBalance = 12345;
-decimal radishBalance = carrotBalance / 1000m;  // 12.345 白萝卜
-string display = radishBalance.ToString("F3");  // "12.345"
+// 1. 直接使用浮点运算
+decimal balance = 123.45m;  // ❌ 余额不应使用 decimal
 
-// 白萝卜 → 胡萝卜（用户输入时）
-decimal inputRadish = 12.345m;
-long carrotAmount = (long)(inputRadish * 1000);  // 12345 胡萝卜
-```
+// 2. 手动向上取整
+long fee = (long)Math.Ceiling(amount * 0.05m);  // ❌ 应使用 Floor
 
-**手续费计算**：
-```csharp
-// 手续费向上取整
-long amount = 50;
-decimal feeRate = 0.1m;  // 10%
-long fee = (long)Math.Ceiling(amount * feeRate);  // 5 胡萝卜
+// 3. 忽略差额记录
+transaction.Amount = calculatedAmount;  // ❌ 缺少 TheoreticalAmount 和 RoundingDiff
+
+// 4. 在内存中累加小数
+decimal totalInterest = 0.3m + 0.5m + 0.8m;  // ❌ 应使用 AccumulativeCalculator
+
+// 5. 硬编码显示规则
+string display = balance < 1000
+    ? $"{balance} 胡萝卜"
+    : $"{balance/100} 白萝卜 {balance%100} 胡萝卜";  // ❌ 应使用 FormatDisplay
 ```
 
 ---
