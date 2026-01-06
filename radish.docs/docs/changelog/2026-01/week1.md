@@ -314,3 +314,107 @@ dotnet test Radish.Api.Tests --filter "FullyQualifiedName~CoinCalculatorTest"
 - `docs: 添加萝卜币系统 M6 完成总结`
 
 **下一步**：合并到主分支，开始 M7（消息通知系统）
+
+---
+
+## 1月7日
+
+### 通知系统 SignalR 连接修复
+
+**问题背景**：SignalR Hub 连接出现"无法获取用户 ID"错误，经诊断发现 WebSocket HTTP 101 握手成功，但后端 `OnConnectedAsync` 方法未被调用。
+
+#### 问题诊断过程
+
+**现象**：
+1. ✅ WebSocket HTTP 101 Switching Protocols 成功
+2. ✅ JWT 认证成功，Claims 正确提取
+3. ✅ Authorization 策略验证通过
+4. ❌ 但 `OnConnectedAsync` 从未执行，无 Hub 日志
+
+**调试步骤**：
+1. 添加详细的 JWT Bearer Events 日志（OnMessageReceived、OnTokenValidated、OnAuthenticationFailed、OnChallenge）
+2. 临时移除 Hub 的 `[Authorize]` 属性测试 → 问题依旧
+3. 排查前端连接逻辑，发现 React StrictMode 导致的组件双重挂载问题
+
+**根本原因**：
+
+React StrictMode 在开发模式下故意双重挂载组件以检测副作用：
+
+```
+Mount → start() 启动连接 → Unmount → cleanup stop() → Re-mount
+              ↓
+      WebSocket 101 成功，但 SignalR 协议握手被 cleanup 中断
+```
+
+当 `useEffect` 的 cleanup 函数立即调用 `notificationHub.stop()` 时，会在 SignalR 完成协议握手之前关闭连接，导致 Hub 生命周期方法未执行。
+
+#### 解决方案
+
+**后端改进**（`Radish.Api/Program.cs`）：
+1. 添加 SignalR 服务注册和配置
+2. 优化 CORS 配置，添加 `AllowCredentials` 支持 WebSocket
+3. 禁用 JWT claim type 映射，保持 OIDC 标准 claims 原样
+4. 添加详细的 JWT 认证调试日志（开发阶段保留）
+5. 映射 NotificationHub 端点到 `/hub/notification`
+
+**前端修复**（`radish.client/src/desktop/Shell.tsx`）：
+
+使用 `useRef` 跟踪连接状态，延迟 cleanup 执行：
+
+```typescript
+const hasStartedRef = useRef(false);
+
+useEffect(() => {
+  const token = window.localStorage.getItem('access_token');
+
+  // 防止 React StrictMode 导致重复启动连接
+  if (token && !hasStartedRef.current) {
+    hasStartedRef.current = true;
+    void notificationHub.start();
+  } else if (!token) {
+    hasStartedRef.current = false;
+    void notificationHub.stop();
+  }
+
+  // cleanup 函数：仅在组件真正卸载时执行
+  return () => {
+    // 延迟执行 stop，给 StrictMode 的第二次 mount 一个机会
+    setTimeout(() => {
+      // 再次检查：如果组件已重新挂载，hasStartedRef 会是 true，不执行 stop
+      if (!hasStartedRef.current) {
+        void notificationHub.stop();
+      }
+    }, 100);
+  };
+}, []);
+```
+
+**关键技术点**：
+1. **useRef 防重复**：跟踪连接状态，避免 StrictMode 双重挂载时多次调用 `start()`
+2. **延迟 cleanup**：`setTimeout(100ms)` 给 StrictMode 重新挂载的时间窗口
+3. **智能判断**：cleanup 中再次检查 ref，只在组件真正卸载时执行 `stop()`
+
+#### 验证结果
+
+✅ StrictMode 启用后，连接正常：
+```
+[2026-01-06T17:27:14.304Z] Information: Using HubProtocol 'json'.
+[NotificationHub] 连接成功
+[NotificationHub] 未读数更新: 0
+```
+
+#### 文档更新
+
+**更新文档**：`radish.docs/docs/guide/notification-frontend.md` v1.0 → v1.1
+- 添加第 11 节：常见问题
+- 记录 React StrictMode 问题的诊断过程、根本原因和解决方案
+- 提供完整的代码示例和验证方法
+
+**提交记录**：
+- `fix: 修复 SignalR 在 React StrictMode 下连接失败问题`
+- `docs: 更新通知系统前端文档，记录 StrictMode 兼容方案`
+
+**技术价值**：
+1. 解决了 React 18+ 开发模式下 SignalR 连接的常见问题
+2. 提供了 StrictMode 兼容的 WebSocket 连接管理模式
+3. 建立了完整的调试日志体系，便于未来问题排查
