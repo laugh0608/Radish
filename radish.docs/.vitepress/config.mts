@@ -83,7 +83,16 @@ export default defineConfig({
             { text: '日志系统', link: '/guide/logging' },
             { text: '密码安全', link: '/guide/password-security' },
             { text: '速率限制', link: '/guide/rate-limiting' },
-            { text: '通知实时推送', link: '/guide/notification-realtime' },
+            {
+              text: '通知系统',
+              collapsed: true,
+              items: [
+                { text: '总体规划', link: '/guide/notification-realtime' },
+                { text: '实现细节', link: '/guide/notification-implementation' },
+                { text: 'API 文档', link: '/guide/notification-api' },
+                { text: '前端集成', link: '/guide/notification-frontend' }
+              ]
+            },
             { text: 'Hangfire 定时任务', link: '/guide/hangfire-scheduled-jobs' },
             { text: 'Gateway 服务网关', link: '/guide/gateway' }
           ]
