@@ -1,8 +1,8 @@
 # 通知系统前端集成指南
 
-> **文档版本**：v1.0
+> **文档版本**：v1.1
 > **创建日期**：2026-01-06
-> **最后更新**：2026-01-06
+> **最后更新**：2026-01-07
 > **关联文档**：[通知系统总体规划](/guide/notification-realtime)
 
 本文档提供通知系统前端集成的完整指南，包括 SignalR 连接管理、状态管理、组件实现和最佳实践。
@@ -1312,8 +1312,91 @@ npm run dev --workspace=radish.client
 
 ---
 
-**文档版本**：v1.0
-**状态**：待实施
+## 11. 常见问题
+
+### 11.1 React StrictMode 导致连接失败
+
+**问题描述**
+
+在 React 18+ 开发模式下启用 `<StrictMode>` 时，SignalR 连接可能会失败，表现为：
+- WebSocket HTTP 101 握手成功
+- 但后端 `OnConnectedAsync` 方法未被调用
+- 前端无法收到服务端推送的消息
+
+**根本原因**
+
+React StrictMode 在开发模式下会**故意双重挂载组件**以检测副作用：
+
+```
+Mount → 启动 SignalR 连接 → Unmount → cleanup 调用 stop() → Re-mount
+              ↓
+      WebSocket HTTP 101 成功，但 SignalR 协议握手被中断
+```
+
+当 `useEffect` 的 cleanup 函数立即调用 `notificationHub.stop()` 时，会在 SignalR 完成协议握手之前关闭连接，导致 Hub 生命周期方法未执行。
+
+**解决方案**
+
+使用 `useRef` 跟踪连接状态，并延迟 cleanup 执行：
+
+```tsx
+// radish.client/src/desktop/Shell.tsx
+import { useEffect, useRef } from 'react';
+import { notificationHub } from '@/services/notificationHub';
+
+export const Shell = () => {
+  // 使用 ref 防止 React StrictMode 双重挂载导致重复连接
+  const hasStartedRef = useRef(false);
+
+  useEffect(() => {
+    const token = window.localStorage.getItem('access_token');
+
+    // 防止 React StrictMode 导致重复启动连接
+    if (token && !hasStartedRef.current) {
+      hasStartedRef.current = true;
+      void notificationHub.start();
+    } else if (!token) {
+      hasStartedRef.current = false;
+      void notificationHub.stop();
+    }
+
+    // cleanup 函数：仅在组件真正卸载时执行
+    return () => {
+      // 延迟执行 stop，给 StrictMode 的第二次 mount 一个机会
+      // 如果是 StrictMode 导致的卸载，会在几毫秒内重新挂载，此时不应 stop
+      setTimeout(() => {
+        // 再次检查：如果组件已重新挂载，hasStartedRef 会是 true，不执行 stop
+        // 只有真正卸载时（用户登出、路由切换），才会执行 stop
+        if (!hasStartedRef.current) {
+          void notificationHub.stop();
+        }
+      }, 100);
+    };
+  }, []);
+
+  return (
+    // ...组件内容
+  );
+};
+```
+
+**关键技术点**
+
+1. **useRef 防重复**：`hasStartedRef` 跟踪连接状态，避免 StrictMode 双重挂载时多次调用 `start()`
+2. **延迟 cleanup**：`setTimeout(100ms)` 给 StrictMode 重新挂载的时间窗口
+3. **智能判断**：cleanup 中再次检查 ref，只在组件真正卸载时执行 `stop()`
+
+**验证方法**
+
+启用 StrictMode 后，检查：
+1. 后端日志出现 `[NotificationHub] 连接建立` 日志
+2. 前端控制台显示 `[NotificationHub] 连接成功`
+3. 前端能正常接收服务端推送的未读数更新
+
+---
+
+**文档版本**：v1.1
+**状态**：P0 已实现，P1-P3 待实施
 **关联文档**：
 - [通知系统总体规划](/guide/notification-realtime)
 - [通知系统实现细节](/guide/notification-implementation)
