@@ -20,10 +20,15 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
+using System.IdentityModel.Tokens.Jwt;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
 // -------------- 容器构建阶段 ---------------
+
+// 🔧 禁用 JWT 默认的 claim type 映射，保持 OIDC 标准 claims（sub, name, role 等）原样
+// 这样避免 "sub" 被映射为 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 #region 配置加载
 

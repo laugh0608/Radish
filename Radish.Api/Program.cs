@@ -40,10 +40,16 @@ using Hangfire;
 using Hangfire.Storage.SQLite;
 using Radish.Service.Jobs;
 using Radish.Api.Filters;
+using Radish.Api.Hubs;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
 // -------------- 容器构建阶段 ---------------
+
+// 🔧 禁用 JWT 默认的 claim type 映射，保持 OIDC 标准 claims（sub, name, role 等）原样
+// 这样避免 "sub" 被映射为 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 // 使用 Autofac 配置 Host 与容器
 builder.Host
@@ -82,13 +88,17 @@ builder.Services.AddCors(options =>
         {
             policyBuilder.WithOrigins(allowedOrigins)
                 .AllowAnyHeader()
-                .AllowAnyMethod();
+                .AllowAnyMethod()
+                .AllowCredentials();  // SignalR 需要 AllowCredentials
         }
         else
         {
-            policyBuilder.AllowAnyOrigin()
+            // 开发环境：允许任意来源但不能同时使用 AllowCredentials
+            // 生产环境必须配置 Cors:AllowedOrigins
+            policyBuilder.SetIsOriginAllowed(_ => true)
                 .AllowAnyHeader()
-                .AllowAnyMethod();
+                .AllowAnyMethod()
+                .AllowCredentials();
         }
     });
 });
@@ -169,6 +179,16 @@ builder.Services.AddCacheSetup();
 builder.Services.AddRateLimitSetup();
 // 注册审计日志服务
 builder.Services.AddAuditLogSetup();
+
+// 注册 SignalR 服务
+builder.Services.AddSignalR(options =>
+{
+    options.EnableDetailedErrors = builder.Environment.IsDevelopment();
+    options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+    options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
+    options.MaximumReceiveMessageSize = 32 * 1024; // 32 KB
+});
+
 // 注册 SqlSugar 服务
 builder.Services.AddSqlSugarSetup();
 // 增强 SqlSugar 的雪花 ID 算法，防止重复
@@ -217,6 +237,50 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         //options.Audience = "radish-api";
         options.RequireHttpsMetadata = false;
 
+        // SignalR (WebSocket) 在浏览器端无法稳定携带 Authorization Header，
+        // 会把 token 放在 query string 的 access_token 上；这里需要显式取出来。
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"].ToString();
+                var path = context.HttpContext.Request.Path;
+
+                Log.Information("[JWT] OnMessageReceived - Path: {Path}, HasToken: {HasToken}",
+                    path, !string.IsNullOrWhiteSpace(accessToken));
+
+                if (!string.IsNullOrWhiteSpace(accessToken)
+                    && path.StartsWithSegments("/hub/notification"))
+                {
+                    context.Token = accessToken;
+                    Log.Information("[JWT] 从 query string 提取 token 成功");
+                }
+
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                var path = context.HttpContext.Request.Path;
+                var userId = context.Principal?.FindFirst("sub")?.Value;
+                Log.Information("[JWT] OnTokenValidated - Path: {Path}, UserId: {UserId}", path, userId);
+                return Task.CompletedTask;
+            },
+            OnAuthenticationFailed = context =>
+            {
+                var path = context.HttpContext.Request.Path;
+                Log.Error(context.Exception, "[JWT] OnAuthenticationFailed - Path: {Path}, Error: {Error}",
+                    path, context.Exception.Message);
+                return Task.CompletedTask;
+            },
+            OnChallenge = context =>
+            {
+                var path = context.HttpContext.Request.Path;
+                Log.Warning("[JWT] OnChallenge - Path: {Path}, Error: {Error}, ErrorDescription: {ErrorDescription}",
+                    path, context.Error, context.ErrorDescription);
+                return Task.CompletedTask;
+            }
+        };
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -225,10 +289,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             ClockSkew = System.TimeSpan.Zero,
+            // 指定 NameClaimType 为 OIDC 标准的 "sub"（用于用户标识）
+            NameClaimType = "sub",
             // 指定 role claim 类型为 OIDC 标准的 "role"
-            RoleClaimType = "role",
-            // 指定 name claim 类型为 OIDC 标准的 "name"
-            NameClaimType = "name"
+            RoleClaimType = "role"
         };
     });
 // 注册 JWT 授权方案，核心是通过解析请求头中的 JWT Token，然后匹配策略中的 key 和字段值
@@ -237,19 +301,33 @@ builder.Services.AddAuthorizationBuilder()
            // OpenIddict 默认会把多个 scope 以空格拼成一个字符串（例如："openid profile radish-api"），因此这里需要按空格拆分判断
            .AddPolicy("Client", policy => policy.RequireAssertion(ctx =>
            {
-               foreach (var claim in ctx.User.FindAll("scope"))
+               // 【调试】输出所有 claims，用于诊断授权失败问题
+               var allClaims = ctx.User.Claims.Select(c => $"{c.Type}={c.Value}").ToArray();
+               Log.Information("[Client Policy] 所有 Claims: {Claims}", string.Join(", ", allClaims));
+
+               var scopeClaims = ctx.User.FindAll("scope").ToList();
+               Log.Information("[Client Policy] 找到 {Count} 个 scope claims", scopeClaims.Count);
+
+               foreach (var claim in scopeClaims)
                {
+                   Log.Information("[Client Policy] scope claim value: {Value}", claim.Value);
+
                    if (string.IsNullOrWhiteSpace(claim.Value))
                        continue;
 
                    var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
                    foreach (var s in scopes)
                    {
+                       Log.Information("[Client Policy] 检查 scope: {Scope}", s);
                        if (string.Equals(s, "radish-api", StringComparison.Ordinal))
+                       {
+                           Log.Information("[Client Policy] ✓ 找到 radish-api scope，授权成功");
                            return true;
+                       }
                    }
                }
 
+               Log.Warning("[Client Policy] ✗ 未找到 radish-api scope，授权失败");
                return false;
            }).Build())
            // System 授权方案，RequireRole 方式
@@ -376,6 +454,10 @@ app.UseAuthorization();
 app.UseRateLimitSetup();
 // 启用审计日志中间件（在授权之后，速率限制之后）
 app.UseAuditLogSetup();
+
+// 映射 SignalR Hub 端点
+app.MapHub<NotificationHub>("/hub/notification");
+
 app.MapControllers();
 // 映射健康检查端点
 app.MapHealthChecks("/health");
