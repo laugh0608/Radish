@@ -153,8 +153,8 @@ Log.Information("User {UserId} logged in", userId);  // 使用
 ```
 
 **日志类型**:
-- 应用日志: `Log/{ProjectName}/Log.txt`
-- SQL 日志: `Log/{ProjectName}/AopSql/AopSql.txt` + 数据库
+- 应用日志: `Logs/{ProjectName}/Log.txt`
+- SQL 日志: `Logs/{ProjectName}/AopSql/AopSql.txt` + 数据库
 - 审计日志: 数据库 `AuditLog_YYYYMMDD` 表
 
 详见 [日志系统文档](radish.docs/docs/guide/logging.md)
