@@ -189,6 +189,9 @@ builder.Services.AddSignalR(options =>
     options.MaximumReceiveMessageSize = 32 * 1024; // 32 KB
 });
 
+// 注册通知推送服务（基于 SignalR）
+builder.Services.AddScoped<INotificationPushService, Radish.Api.Services.NotificationPushService>();
+
 // 注册 SqlSugar 服务
 builder.Services.AddSqlSugarSetup();
 // 增强 SqlSugar 的雪花 ID 算法，防止重复

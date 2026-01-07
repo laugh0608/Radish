@@ -36,18 +36,21 @@ public class UserController : ControllerBase
 
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
+    private readonly INotificationPushService _notificationPushService;
 
     public UserController(
         IUserService userService,
         IHttpContextUser httpContextUser,
         IPostService postService,
         ICommentService commentService,
-        IAttachmentService attachmentService)
+        IAttachmentService attachmentService,
+        INotificationPushService notificationPushService)
     {
         _userService = userService;
         _httpContextUser = httpContextUser;
         _postService = postService;
         _commentService = commentService;
+        _notificationPushService = notificationPushService;
         _attachmentService = attachmentService;
     }
 
@@ -628,6 +631,29 @@ public class UserController : ControllerBase
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = result
+        };
+    }
+
+    /// <summary>
+    /// 【P0 测试接口】手动触发未读数推送（仅用于验证 SignalR 推送机制）
+    /// </summary>
+    /// <param name="count">要推送的未读数量，默认为随机数</param>
+    [HttpPost]
+    [Authorize(Policy = "Client")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> TestPushUnreadCount([FromQuery] int? count = null)
+    {
+        var userId = _httpContextUser.UserId;
+        var unreadCount = count ?? new Random().Next(1, 100);
+
+        await _notificationPushService.PushUnreadCountAsync(userId, unreadCount);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = $"已推送未读数 {unreadCount} 到用户 {userId}",
+            ResponseData = new { userId, unreadCount }
         };
     }
 }
