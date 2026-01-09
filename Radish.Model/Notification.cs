@@ -9,9 +9,9 @@ namespace Radish.Model;
 /// <summary>通知实体</summary>
 /// <remarks>
 /// 支持按月分表和多租户隔离，主键为 Id，类型为 long
-/// 分表格式：Notification_YYYYMM
+/// 分表格式：Notification_YYYYMM（例如：Notification_202601）
 /// </remarks>
-[SugarTable("Notification")]
+[SugarTable("Notification_{year}{month}")]
 [SplitTable(SplitType.Month)]
 public class Notification : RootEntityTKey<long>, ITenantEntity
 {
