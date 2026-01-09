@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Radish.IService;
 using Serilog;
 
 namespace Radish.Api.Hubs;
@@ -11,10 +12,14 @@ namespace Radish.Api.Hubs;
 [Authorize(Policy = "Client")]
 public class NotificationHub : Hub
 {
+    private readonly INotificationPushService _notificationPushService;
     private readonly ILogger<NotificationHub> _logger;
 
-    public NotificationHub(ILogger<NotificationHub> logger)
+    public NotificationHub(
+        INotificationPushService notificationPushService,
+        ILogger<NotificationHub> logger)
     {
+        _notificationPushService = notificationPushService;
         _logger = logger;
     }
 
@@ -23,12 +28,6 @@ public class NotificationHub : Hub
     /// </summary>
     public override async Task OnConnectedAsync()
     {
-        // 【调试】输出所有 claims，用于诊断 UserId 获取失败问题
-        var allClaims = Context.User?.Claims
-            .Select(c => $"{c.Type}={c.Value}")
-            .ToArray() ?? Array.Empty<string>();
-        _logger.LogInformation("[NotificationHub] 所有 Claims: {Claims}", string.Join(", ", allClaims));
-
         var userId = GetUserId();
         var connectionId = Context.ConnectionId;
         var clientIp = Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
@@ -40,8 +39,13 @@ public class NotificationHub : Hub
         // 将连接加入用户组（支持多端同时在线）
         await Groups.AddToGroupAsync(connectionId, $"user:{userId}");
 
-        // 推送当前未读数（P0 阶段先返回 0，后续从缓存/数据库获取）
-        await Clients.Caller.SendAsync("UnreadCountChanged", new { unreadCount = 0 });
+        // 获取并推送真实的未读数
+        var unreadCount = await _notificationPushService.GetUnreadCountAsync(userId);
+        await Clients.Caller.SendAsync("UnreadCountChanged", new { unreadCount });
+
+        _logger.LogInformation(
+            "[NotificationHub] 已推送未读数到用户 {UserId}，未读数：{UnreadCount}",
+            userId, unreadCount);
 
         await base.OnConnectedAsync();
     }
