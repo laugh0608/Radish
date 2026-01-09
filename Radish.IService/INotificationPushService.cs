@@ -35,4 +35,11 @@ public interface INotificationPushService
     /// <param name="notificationIds">已读的通知 ID 列表</param>
     /// <returns></returns>
     Task PushNotificationReadAsync(long userId, long[] notificationIds);
+
+    /// <summary>
+    /// 获取用户的未读通知数量
+    /// </summary>
+    /// <param name="userId">用户 ID</param>
+    /// <returns>未读数量</returns>
+    Task<int> GetUnreadCountAsync(long userId);
 }
