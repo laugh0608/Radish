@@ -116,8 +116,8 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
                 }
             }
 
-            // 如果实体没有 [Tenant] 注解，只在主库中初始化（排除 Log 库）
-            return !string.Equals(configIdStr, "Log", StringComparison.OrdinalIgnoreCase);
+            // 如果实体没有 [Tenant] 注解，只在主库中初始化（排除 Log 库和 Message 库）
+            return string.Equals(configIdStr, "Main", StringComparison.OrdinalIgnoreCase);
         }).ToList();
 
         foreach (var type in entityTypesForConfig)
