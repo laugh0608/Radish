@@ -1,11 +1,13 @@
 # 通知系统实现细节
 
-> **文档版本**：v1.0
+> **文档版本**：v1.1
 > **创建日期**：2026-01-06
-> **最后更新**：2026-01-06
+> **最后更新**：2026-01-09
 > **关联文档**：[通知系统总体规划](/guide/notification-realtime)
 
 本文档包含通知系统的详细实现方案，包括数据模型、服务层设计、缓存策略、异步化方案等核心技术细节。
+
+**实施状态**：M7 P1 阶段已完成（2026-01-09），P2 阶段进行中。
 
 ## 1. 数据模型设计
 
@@ -1733,8 +1735,69 @@ RecurringJob.AddOrUpdate<UnreadCountConsistencyJob>(
 
 ---
 
-**文档版本**：v1.0
-**状态**：待实施
+## 12. 实施进度
+
+### 12.1 M7 P1 阶段（✅ 已完成 - 2026-01-09）
+
+**核心功能**：
+- ✅ 数据模型（Notification、UserNotification、NotificationSetting）
+- ✅ ViewModel 和 DTO（NotificationVo、CreateNotificationDto 等）
+- ✅ NotificationService 核心业务逻辑
+- ✅ NotificationPushService SignalR 推送服务
+- ✅ NotificationController API 接口
+- ✅ AutoMapper 映射配置
+- ✅ 集成到 CommentService（评论回复通知）
+- ✅ 独立消息数据库架构（Radish.Message.db）
+
+**数据库架构**：
+```
+DataBases/
+├── Radish.db              # 主业务数据库
+├── Radish.Log.db          # 日志数据库
+├── Radish.Message.db      # 消息数据库 (NEW!)
+│   ├── Notification_20260101  (按月分表)
+│   ├── UserNotification
+│   └── NotificationSetting
+```
+
+**技术亮点**：
+- 按月分表（`Notification_{year}{month}{day}`）
+- 软删除模式（`IsDeleted` 标记）
+- 异步推送（`Task.Run` 避免阻塞主流程）
+- 性能隔离（独立数据库，不影响核心业务）
+
+### 12.2 待实施功能
+
+**P2 阶段（计划中）**：
+- ⏳ NotificationCacheService（未读数缓存管理）
+- ⏳ 集成通知到点赞功能（PostService、CommentService）
+- ⏳ 前端 NotificationCenter 组件
+- ⏳ 前端 NotificationList 页面
+
+**P3 阶段（计划中）**：
+- ⏳ NotificationTemplateService（通知模板）
+- ⏳ NotificationDedupService（通知去重）
+- ⏳ 推送失败重试机制
+- ⏳ 未读数一致性检查任务
+
+**P4 阶段（计划中）**：
+- ⏳ 通知偏好设置功能
+- ⏳ 按类型分组的未读数统计
+- ⏳ 邮件推送渠道
+- ⏳ 端到端测试和验收
+
+### 12.3 下一步行动
+
+**明日优先级**：
+1. 实现 NotificationCacheService（Redis 缓存未读数）
+2. 集成通知到点赞功能（PostLiked、CommentLiked）
+3. 前端 NotificationCenter 组件（顶栏通知铃铛）
+
+---
+
+**文档版本**：v1.1
+**最后更新**：2026-01-09
+**状态**：P1 阶段已完成，P2 阶段进行中
 **关联文档**：
 - [通知系统总体规划](/guide/notification-realtime)
 - [通知系统 API 文档](/guide/notification-api)
