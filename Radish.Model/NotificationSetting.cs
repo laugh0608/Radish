@@ -10,7 +10,9 @@ namespace Radish.Model;
 /// <remarks>
 /// 记录用户对各类通知的偏好配置，支持多租户隔离，主键为 Id，类型为 long
 /// 每个用户对每种通知类型可以单独配置是否启用、推送渠道等
+/// 存储位置：独立的 Message 数据库，与业务数据隔离
 /// </remarks>
+[Tenant(configId: "Message")]
 [SugarTable("NotificationSetting")]
 public class NotificationSetting : RootEntityTKey<long>, ITenantEntity
 {

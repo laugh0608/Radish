@@ -9,10 +9,13 @@ namespace Radish.Model;
 /// <summary>通知实体</summary>
 /// <remarks>
 /// 支持按月分表和多租户隔离，主键为 Id，类型为 long
-/// 分表格式：Notification_YYYYMM（例如：Notification_202601）
+/// 分表格式：Notification_YYYYMMDD（例如：Notification_20260101）
+/// 说明：SqlSugar 分表表名需要包含 {{year}}{{month}}{{day}} 占位符，否则 Code First 初始化会抛异常
+/// 存储位置：独立的 Message 数据库，与业务数据隔离
 /// </remarks>
-[SugarTable("Notification_{year}{month}")]
+[Tenant(configId: "Message")]
 [SplitTable(SplitType.Month)]
+[SugarTable($@"{nameof(Notification)}_{{year}}{{month}}{{day}}")]
 public class Notification : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认通知实例</summary>

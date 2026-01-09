@@ -10,7 +10,9 @@ namespace Radish.Model;
 /// <remarks>
 /// 记录用户与通知的关联关系，支持多租户隔离，主键为 Id，类型为 long
 /// 一条通知可以发送给多个用户，每个用户有独立的已读状态和推送状态
+/// 存储位置：独立的 Message 数据库，与业务数据隔离
 /// </remarks>
+[Tenant(configId: "Message")]
 [SugarTable("UserNotification")]
 public class UserNotification : RootEntityTKey<long>, ITenantEntity
 {
