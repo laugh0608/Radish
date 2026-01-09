@@ -63,6 +63,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
     }
 
+    // 仅测试使用，在 Service 层直接操作 DbBase 实例，正常业务工况请使用 BaseRepository 或业务自己的特殊仓储中的 CURD 方法
     /// <summary>供外部使用的公开 ISqlSugarClient 数据库实例</summary>
     /// <remarks>继承自私有 ISqlSugarClient _dbClientBase 进而支持多租户切换数据库</remarks>
     public ISqlSugarClient DbBase => DbClientBase;
