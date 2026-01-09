@@ -418,3 +418,81 @@ useEffect(() => {
 1. 解决了 React 18+ 开发模式下 SignalR 连接的常见问题
 2. 提供了 StrictMode 兼容的 WebSocket 连接管理模式
 3. 建立了完整的调试日志体系，便于未来问题排查
+
+---
+
+## 1月9日
+
+### 通知系统 M7 P1 阶段完成
+
+**核心功能实现**：
+
+1. **数据模型与 ViewModel**
+   - 创建 `Notification`、`UserNotification`、`NotificationSetting` 实体
+   - 实现 `NotificationVo`、`UserNotificationVo`、`NotificationSettingVo`
+   - 实现 `CreateNotificationDto`、`NotificationListQueryDto`、`MarkAsReadDto`、`UnreadCountDto`
+   - 配置 AutoMapper 映射关系
+
+2. **NotificationService 核心业务逻辑**
+   - `CreateNotificationAsync`：创建通知并发送给指定用户，自动推送未读数
+   - `GetUserNotificationsAsync`：分页查询用户通知列表
+   - `GetUnreadCountAsync`：查询未读通知数量
+   - `MarkAsReadAsync`：标记通知为已读，推送未读数和已读状态变更
+   - `MarkAllAsReadAsync`：标记所有通知为已读
+   - `DeleteNotificationAsync`：软删除通知
+   - `GetUnreadCountDetailAsync`：获取按类型分组的未读数（待实现）
+
+3. **NotificationPushService SignalR 推送**
+   - `PushUnreadCountAsync`：推送未读数变更到指定用户
+   - `PushNotificationReadAsync`：推送已读状态变更（多端同步）
+   - `GetUnreadCountAsync`：获取真实未读数（替代 Hub 中的硬编码）
+   - 更新 `NotificationHub.OnConnectedAsync` 返回真实未读数
+
+4. **NotificationController API 接口**
+   - `GET /api/v1/Notification/GetNotificationList`：获取通知列表（分页）
+   - `GET /api/v1/Notification/GetUnreadCount`：获取未读数量
+   - `PUT /api/v1/Notification/MarkAsRead`：标记已读
+   - `PUT /api/v1/Notification/MarkAllAsRead`：标记全部已读
+   - `DELETE /api/v1/Notification/{notificationId}`：删除通知
+
+5. **集成到 CommentService**
+   - 评论回复时自动发送通知给被回复者
+   - 通知类型：`CommentReplied`
+   - 异步推送未读数到接收者
+
+6. **独立消息数据库架构**
+   - 新增 `Message` 数据库（`Radish.Message.db`）
+   - 通知表使用 `[Tenant(configId: "Message")]` 特性
+   - 添加 `SqlSugarConst.MessageConfigId` 常量
+   - 修复 DbMigrate 逻辑，确保表正确分配到对应数据库
+
+**架构优势**：
+- **性能隔离**：通知高频读写不影响核心业务表
+- **架构解耦**：消息系统独立，故障不影响主业务
+- **扩展性强**：未来可独立迁移到 MongoDB/Redis
+- **数据管理**：独立备份、清理历史数据更方便
+
+**技术亮点**：
+- 按月分表（`Notification_{year}{month}{day}`）
+- 软删除模式（`IsDeleted` 标记）
+- 异步推送（`Task.Run` 避免阻塞主流程）
+- 架构规范（Service 层禁止直接访问 DB 实例）
+
+**提交记录**：
+- `feat(notification): 实现 M7 P1 阶段通知系统基础设施`
+- `feat(notification): 实现 NotificationService 和 API 接口`
+- `feat(notification): 集成评论回复通知功能`
+- `fix(notification): 修复分表配置，添加月份占位符`
+- `refactor(notification): 迁移通知系统到独立消息数据库`
+- `fix(dbmigrate): 修复数据库初始化逻辑，确保表正确分配到对应数据库`
+
+**下一步计划**：
+- 实现 NotificationCacheService（未读数缓存管理）
+- 集成通知到点赞功能（PostService、CommentService）
+- 前端实现 NotificationCenter 组件
+- 前端实现完整的 NotificationList 页面
+- 实现 NotificationTemplateService（通知模板）
+- 实现 NotificationDedupService（通知去重）
+- 端到端测试和验收
+
+---
