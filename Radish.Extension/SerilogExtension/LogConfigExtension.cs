@@ -39,8 +39,8 @@ public static class LogConfigExtension
     }
 
     /// <summary>
-    /// 将日志输出到 Log 文件夹中的日志文件
-    /// 自动将不同项目的日志输出到解决方案根目录的 Log/{ProjectName}/ 文件夹下
+    /// 将日志输出到 Logs 文件夹中的日志文件
+    /// 自动将不同项目的日志输出到解决方案根目录的 Logs/{ProjectName}/ 文件夹下
     /// </summary>
     public static LoggerConfiguration WriteToFile(this LoggerConfiguration loggerConfiguration, SerilogOptions options)
     {

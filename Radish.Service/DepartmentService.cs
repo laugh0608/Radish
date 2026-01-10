@@ -36,6 +36,7 @@ public class DepartmentService : BaseService<Department, UserVo>, IDepartmentSer
             Pid = 0
         });
 
+        // 仅测试使用，在 Service 层直接读取 Db 实例，正常业务工况请使用 BaseRepository 或业务自己的特殊仓储中的 CURD 方法
         await Console.Out.WriteLineAsync($"db context id : {base.Db.ContextID}");
 
         return true;

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import type { TFunction } from 'i18next';
 import {
   publishPost,
@@ -72,7 +73,7 @@ interface UseForumActionsParams {
   userId: number;
   selectedCategoryId: number | null;
   selectedPost: PostDetail | null;
-  setSelectedPost: (post: PostDetail | null) => void;
+  setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: (comments: CommentNode[]) => void;
   setCurrentPage: (page: number) => void;
   setSortBy: (sortBy: 'newest' | 'hottest' | 'essence') => void;
@@ -170,33 +171,39 @@ export const useForumActions = (
       return;
     }
 
-    const isCurrentlyLiked = likedPosts.has(postId);
-    const isLike = !isCurrentlyLiked;
-
+    setError(null);
+    const previousLikedPosts = likedPosts;
     try {
-      // 乐观更新
-      const newLikedPosts = new Set(likedPosts);
-      if (isLike) {
-        newLikedPosts.add(postId);
+      // 乐观更新：先切换高亮状态
+      const optimisticLikedPosts = new Set(previousLikedPosts);
+      if (optimisticLikedPosts.has(postId)) {
+        optimisticLikedPosts.delete(postId);
       } else {
-        newLikedPosts.delete(postId);
+        optimisticLikedPosts.add(postId);
       }
-      setLikedPosts(newLikedPosts);
-      localStorage.setItem('forum_liked_posts', JSON.stringify([...newLikedPosts]));
+      setLikedPosts(optimisticLikedPosts);
+      localStorage.setItem('forum_liked_posts', JSON.stringify([...optimisticLikedPosts]));
 
-      // 更新选中帖子的点赞数
-      if (selectedPost && selectedPost.id === postId) {
-        setSelectedPost({
-          ...selectedPost,
-          likeCount: (selectedPost.likeCount || 0) + (isLike ? 1 : -1)
-        });
+      // 以服务端返回为准，修正本地状态与点赞数
+      const result = await likePost(postId, t);
+      const reconciledLikedPosts = new Set(optimisticLikedPosts);
+      if (result.isLiked) {
+        reconciledLikedPosts.add(postId);
+      } else {
+        reconciledLikedPosts.delete(postId);
       }
+      setLikedPosts(reconciledLikedPosts);
+      localStorage.setItem('forum_liked_posts', JSON.stringify([...reconciledLikedPosts]));
 
-      await likePost(postId, isLike, t);
-      await loadPostDetail(postId);
+      setSelectedPost((current) =>
+        current && current.id === postId
+          ? { ...current, likeCount: result.likeCount }
+          : current
+      );
     } catch (err) {
       // 失败时回滚
-      setLikedPosts(new Set(likedPosts));
+      setLikedPosts(previousLikedPosts);
+      localStorage.setItem('forum_liked_posts', JSON.stringify([...previousLikedPosts]));
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
     }

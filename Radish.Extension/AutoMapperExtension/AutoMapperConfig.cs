@@ -19,6 +19,7 @@ public class AutoMapperConfig
         cfg.AddProfile<ForumProfile>();
         cfg.AddProfile<AttachmentProfile>();
         cfg.AddProfile<CoinProfile>();
+        cfg.AddProfile<NotificationProfile>();
     }
 
     #region 已弃用

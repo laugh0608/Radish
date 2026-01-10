@@ -6,7 +6,7 @@ namespace Radish.Common.LogTool;
 public class LogContextTool: IDisposable
 {
     /// <summary>
-    /// 日志根目录（解决方案根目录的 Log 文件夹）
+    /// 日志根目录（解决方案根目录的 Logs 文件夹）
     /// </summary>
     public static readonly string BaseLogs = GetSolutionLogDirectory();
 
@@ -77,7 +77,7 @@ public class LogContextTool: IDisposable
     }
 
     /// <summary>
-    /// 获取解决方案根目录的 Log 文件夹路径
+    /// 获取解决方案根目录的 Logs 文件夹路径
     /// 通过向上查找 .slnx 或 .sln 文件来定位解决方案根目录
     /// </summary>
     private static string GetSolutionLogDirectory()
@@ -98,7 +98,7 @@ public class LogContextTool: IDisposable
                 if (solutionFiles.Length > 0)
                 {
                     // 找到解决方案根目录，返回其下的 Log 文件夹路径
-                    return Path.Combine(currentDir.FullName, "Log");
+                    return Path.Combine(currentDir.FullName, "Logs");
                 }
 
                 currentDir = currentDir.Parent;
@@ -110,7 +110,7 @@ public class LogContextTool: IDisposable
         }
 
         // 降级方案：使用相对路径
-        return "Log";
+        return "Logs";
     }
 
     /// <summary>

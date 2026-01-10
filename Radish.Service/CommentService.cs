@@ -20,6 +20,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private readonly IPostService _postService;
     private readonly ICaching _caching;
     private readonly ICoinRewardService _coinRewardService;
+    private readonly INotificationService _notificationService;
+    private readonly INotificationDedupService _dedupService;
     private readonly CommentHighlightOptions _highlightOptions;
 
     public CommentService(
@@ -30,6 +32,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         IPostService postService,
         ICaching caching,
         ICoinRewardService coinRewardService,
+        INotificationService notificationService,
+        INotificationDedupService dedupService,
         IOptions<CommentHighlightOptions> highlightOptions)
         : base(mapper, baseRepository)
     {
@@ -39,6 +43,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         _postService = postService;
         _caching = caching;
         _coinRewardService = coinRewardService;
+        _notificationService = notificationService;
+        _dedupService = dedupService;
         _highlightOptions = highlightOptions.Value;
     }
 
@@ -126,6 +132,34 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                         commentId);
                     Log.Information("评论被回复奖励发放成功：ParentCommentId={ParentCommentId}, ParentAuthorId={ParentAuthorId}",
                         comment.ParentId.Value, parentAuthorId.Value);
+
+                    // 4.3 发送评论回复通知（不给自己发通知）
+                    if (parentAuthorId.Value != comment.AuthorId)
+                    {
+                        try
+                        {
+                            await _notificationService.CreateNotificationAsync(new CreateNotificationDto
+                            {
+                                Type = NotificationType.CommentReplied,
+                                Title = "评论回复",
+                                Content = comment.Content,
+                                Priority = (int)NotificationPriority.Normal,
+                                BusinessType = BusinessType.Comment,
+                                BusinessId = commentId,
+                                TriggerId = comment.AuthorId,
+                                TriggerName = comment.AuthorName,
+                                TriggerAvatar = null, // 头像字段可以后续从用户表查询
+                                ReceiverUserIds = new List<long> { parentAuthorId.Value }
+                            });
+                            Log.Information("评论回复通知发送成功：CommentId={CommentId}, 接收者={ReceiverId}",
+                                commentId, parentAuthorId.Value);
+                        }
+                        catch (Exception notifyEx)
+                        {
+                            Log.Error(notifyEx, "发送评论回复通知失败：CommentId={CommentId}, 接收者={ReceiverId}",
+                                commentId, parentAuthorId.Value);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -215,6 +249,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             {
                 try
                 {
+                    // 4.1 发放萝卜币奖励
                     var rewardResult = await _coinRewardService.GrantCommentLikeRewardAsync(
                         commentId,
                         comment.AuthorId,
@@ -224,6 +259,56 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     {
                         Log.Information("评论点赞奖励发放成功：CommentId={CommentId}, 作者={AuthorId} (+{AuthorReward}), 点赞者={LikerId}",
                             commentId, comment.AuthorId, userId);
+                    }
+
+                    // 4.2 发送点赞通知（不给自己发通知）
+                    if (comment.AuthorId != userId)
+                    {
+                        // 检查是否应该去重
+                        var shouldDedup = await _dedupService.ShouldDedupAsync(
+                            comment.AuthorId,
+                            NotificationType.CommentLiked,
+                            commentId);
+
+                        if (!shouldDedup)
+                        {
+                            try
+                            {
+                                await _notificationService.CreateNotificationAsync(new CreateNotificationDto
+                                {
+                                    Type = NotificationType.CommentLiked,
+                                    Title = "评论被点赞",
+                                    Content = comment.Content,
+                                    Priority = (int)NotificationPriority.Low,
+                                    BusinessType = BusinessType.Comment,
+                                    BusinessId = commentId,
+                                    TriggerId = userId,
+                                    TriggerName = null, // TODO: 从用户上下文获取用户名
+                                    TriggerAvatar = null, // TODO: 从用户表查询头像
+                                    ReceiverUserIds = new List<long> { comment.AuthorId }
+                                });
+
+                                // 记录去重键（5分钟内不重复通知）
+                                await _dedupService.RecordDedupKeyAsync(
+                                    comment.AuthorId,
+                                    NotificationType.CommentLiked,
+                                    commentId,
+                                    windowSeconds: 300);
+
+                                Log.Information("评论点赞通知发送成功：CommentId={CommentId}, 接收者={ReceiverId}",
+                                    commentId, comment.AuthorId);
+                            }
+                            catch (Exception notifyEx)
+                            {
+                                Log.Error(notifyEx, "发送评论点赞通知失败：CommentId={CommentId}, 接收者={ReceiverId}",
+                                    commentId, comment.AuthorId);
+                            }
+                        }
+                        else
+                        {
+                            Log.Debug("评论点赞通知被去重：CommentId={CommentId}, 接收者={ReceiverId}",
+                                commentId, comment.AuthorId);
+                        }
                     }
                 }
                 catch (Exception ex)

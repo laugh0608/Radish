@@ -16,6 +16,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     private readonly IBaseRepository<Tag> _tagRepository;
     private readonly ITagService _tagService;
     private readonly ICoinRewardService _coinRewardService;
+    private readonly INotificationService _notificationService;
+    private readonly INotificationDedupService _dedupService;
 
     public PostService(
         IMapper mapper,
@@ -25,7 +27,9 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         IBaseRepository<Category> categoryRepository,
         IBaseRepository<Tag> tagRepository,
         ITagService tagService,
-        ICoinRewardService coinRewardService)
+        ICoinRewardService coinRewardService,
+        INotificationService notificationService,
+        INotificationDedupService dedupService)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
@@ -35,6 +39,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         _tagRepository = tagRepository;
         _tagService = tagService;
         _coinRewardService = coinRewardService;
+        _notificationService = notificationService;
+        _dedupService = dedupService;
     }
 
     /// <summary>
@@ -206,6 +212,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             {
                 try
                 {
+                    // 4.1 发放萝卜币奖励
                     var rewardResult = await _coinRewardService.GrantLikeRewardAsync(
                         postId,
                         post.AuthorId,
@@ -215,6 +222,56 @@ public class PostService : BaseService<Post, PostVo>, IPostService
                     {
                         Serilog.Log.Information("帖子点赞奖励发放成功：PostId={PostId}, 作者={AuthorId}, 点赞者={LikerId}",
                             postId, post.AuthorId, userId);
+                    }
+
+                    // 4.2 发送点赞通知（不给自己发通知）
+                    if (post.AuthorId != userId)
+                    {
+                        // 检查是否应该去重
+                        var shouldDedup = await _dedupService.ShouldDedupAsync(
+                            post.AuthorId,
+                            NotificationType.PostLiked,
+                            postId);
+
+                        if (!shouldDedup)
+                        {
+                            try
+                            {
+                                await _notificationService.CreateNotificationAsync(new CreateNotificationDto
+                                {
+                                    Type = NotificationType.PostLiked,
+                                    Title = "帖子被点赞",
+                                    Content = $"你的帖子《{post.Title}》收到了一个赞",
+                                    Priority = (int)NotificationPriority.Low,
+                                    BusinessType = BusinessType.Post,
+                                    BusinessId = postId,
+                                    TriggerId = userId,
+                                    TriggerName = null, // TODO: 从用户上下文获取用户名
+                                    TriggerAvatar = null, // TODO: 从用户表查询头像
+                                    ReceiverUserIds = new List<long> { post.AuthorId }
+                                });
+
+                                // 记录去重键（5分钟内不重复通知）
+                                await _dedupService.RecordDedupKeyAsync(
+                                    post.AuthorId,
+                                    NotificationType.PostLiked,
+                                    postId,
+                                    windowSeconds: 300);
+
+                                Serilog.Log.Information("帖子点赞通知发送成功：PostId={PostId}, 接收者={ReceiverId}",
+                                    postId, post.AuthorId);
+                            }
+                            catch (Exception notifyEx)
+                            {
+                                Serilog.Log.Error(notifyEx, "发送帖子点赞通知失败：PostId={PostId}, 接收者={ReceiverId}",
+                                    postId, post.AuthorId);
+                            }
+                        }
+                        else
+                        {
+                            Serilog.Log.Debug("帖子点赞通知被去重：PostId={PostId}, 接收者={ReceiverId}",
+                                postId, post.AuthorId);
+                        }
                     }
                 }
                 catch (Exception ex)

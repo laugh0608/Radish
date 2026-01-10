@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import { parseApiResponse, type ApiResponse } from './api/client';
+import { notificationHub } from '@/services/notificationHub';
+import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from './stores/userStore';
 import './App.css';
 
@@ -39,6 +41,8 @@ function App() {
     const setWebOsUser = useUserStore(state => state.setUser);
     const clearWebOsUser = useUserStore(state => state.clearUser);
     const [userError, setUserError] = useState<string>();
+    const unreadCount = useNotificationStore(state => state.unreadCount);
+    const hubState = useNotificationStore(state => state.connectionState);
 
     const apiBaseUrl = useMemo(() => {
         // 统一通过 Gateway 访问，apiBaseUrl 就是当前 origin
@@ -74,6 +78,23 @@ function App() {
         populateCurrentUser();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [apiBaseUrl]);
+
+    // 通知 Hub：登录后自动连接，登出后断开
+    useEffect(() => {
+        if (!isBrowser || isOidcCallback) return;
+
+        const token = window.localStorage.getItem('access_token');
+        if (token) {
+            void notificationHub.start();
+        } else {
+            void notificationHub.stop();
+        }
+
+        // 页面卸载时断开连接
+        return () => {
+            void notificationHub.stop();
+        };
+    }, [isBrowser, isOidcCallback]);
 
     // OIDC 回调页面：单独渲染回调组件
     if (isOidcCallback) {
@@ -145,6 +166,12 @@ function App() {
                         {userError && (
                             <span>{t('auth.userInfoLoadFailedPrefix')}{userError}</span>
                         )}
+                    </div>
+
+                    <div>
+                        <strong>通知</strong>
+                        <div>Hub: {hubState}</div>
+                        <div>未读: {unreadCount}</div>
                     </div>
                 </div>
             </section>

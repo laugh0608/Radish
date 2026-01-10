@@ -48,6 +48,18 @@ export type {
 export { Toast, ToastContainer, toast, toastManager } from './Toast/Toast';
 export type { ToastProps } from './Toast/Toast';
 
+export { Notification } from './Notification/Notification';
+export type { NotificationProps, NotificationItemData } from './Notification/Notification';
+
+export { NotificationBadge } from './Notification/NotificationBadge';
+export type { NotificationBadgeProps } from './Notification/NotificationBadge';
+
+export { NotificationCenter } from './Notification/NotificationCenter';
+export type { NotificationCenterProps } from './Notification/NotificationCenter';
+
+export { NotificationList } from './Notification/NotificationList';
+export type { NotificationListProps } from './Notification/NotificationList';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout
