@@ -187,6 +187,14 @@ builder.Services.AddSignalR(options =>
     options.KeepAliveInterval = TimeSpan.FromSeconds(15);
     options.ClientTimeoutInterval = TimeSpan.FromSeconds(30);
     options.MaximumReceiveMessageSize = 32 * 1024; // 32 KB
+}).AddJsonProtocol(options =>
+{
+    // 与 Controller 的 JSON 策略保持一致：
+    // - long / long? 以字符串形式传输，避免 JS 精度丢失
+    // - 允许从字符串读取 long 参数（客户端 invoke 时常以 string 传入）
+    options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.PayloadSerializerOptions.Converters.Add(new Int64ToStringConverter());
+    options.PayloadSerializerOptions.Converters.Add(new NullableInt64ToStringConverter());
 });
 
 // 注册通知推送服务（基于 SignalR）
