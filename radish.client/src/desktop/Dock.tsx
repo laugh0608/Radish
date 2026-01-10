@@ -28,6 +28,15 @@ export const Dock = () => {
   const [pollingUnreadCount, setPollingUnreadCount] = useState(0); // 轮询降级时的未读数
 
   const loggedIn = isAuthenticated();
+  const hasAccessToken = (() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return Boolean(window.localStorage.getItem('access_token'));
+    } catch {
+      return false;
+    }
+  })();
+  const canAccessNotification = loggedIn || hasAccessToken;
 
   // 根据连接状态决定显示哪个未读数
   const unreadMessages = connectionState === 'connected' ? storeUnreadCount : pollingUnreadCount;
@@ -276,9 +285,7 @@ export const Dock = () => {
                     ) : (
                       <Icon icon="mdi:account-circle" size={40} />
                     )}
-                    {unreadMessages > 0 && (
-                      <div className={styles.badge}>{unreadMessages}</div>
-                    )}
+                    <div className={styles.statusDot} />
                   </>
                 ) : (
                   <Icon icon="mdi:account-circle-outline" size={40} />
@@ -326,7 +333,7 @@ export const Dock = () => {
             <div className={styles.divider} />
             <div className={styles.rightSection}>
               {/* 通知中心快捷入口 */}
-              {loggedIn && (
+              {canAccessNotification && (
                 <button
                   type="button"
                   className={styles.notificationButton}
@@ -365,7 +372,7 @@ export const Dock = () => {
             </div>
 
             {/* 通知中心快捷入口（灵动岛） */}
-            {loggedIn && (
+            {canAccessNotification && (
               <button
                 type="button"
                 className={styles.miniNotificationButton}
