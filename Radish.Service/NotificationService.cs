@@ -17,6 +17,7 @@ public class NotificationService : INotificationService
     private readonly IBaseRepository<Notification> _notificationRepository;
     private readonly IBaseRepository<UserNotification> _userNotificationRepository;
     private readonly INotificationPushService _pushService;
+    private readonly INotificationCacheService _cacheService;
     private readonly IMapper _mapper;
     private readonly ILogger<NotificationService> _logger;
 
@@ -24,12 +25,14 @@ public class NotificationService : INotificationService
         IBaseRepository<Notification> notificationRepository,
         IBaseRepository<UserNotification> userNotificationRepository,
         INotificationPushService pushService,
+        INotificationCacheService cacheService,
         IMapper mapper,
         ILogger<NotificationService> logger)
     {
         _notificationRepository = notificationRepository;
         _userNotificationRepository = userNotificationRepository;
         _pushService = pushService;
+        _cacheService = cacheService;
         _mapper = mapper;
         _logger = logger;
     }
@@ -97,7 +100,8 @@ public class NotificationService : INotificationService
                 {
                     foreach (var userId in dto.ReceiverUserIds)
                     {
-                        var unreadCount = await GetUnreadCountAsync(userId);
+                        // 使用缓存服务增量更新未读数
+                        var unreadCount = await _cacheService.IncrementUnreadCountAsync(userId);
                         await _pushService.PushUnreadCountAsync(userId, (int)unreadCount);
                     }
                 }
@@ -162,9 +166,8 @@ public class NotificationService : INotificationService
     {
         try
         {
-            var count = await _userNotificationRepository.QueryCountAsync(
-                un => un.UserId == userId && !un.IsRead && !un.IsDeleted);
-
+            // 使用缓存服务（优先从缓存读取）
+            var count = await _cacheService.GetUnreadCountAsync(userId);
             return count;
         }
         catch (Exception ex)
@@ -203,8 +206,8 @@ public class NotificationService : INotificationService
                     "[NotificationService] 标记已读成功，UserId: {UserId}, Count: {Count}",
                     userId, affectedRows);
 
-                // 推送未读数变更
-                var unreadCount = await GetUnreadCountAsync(userId);
+                // 使用缓存服务减量更新未读数
+                var unreadCount = await _cacheService.DecrementUnreadCountAsync(userId, affectedRows);
                 await _pushService.PushUnreadCountAsync(userId, (int)unreadCount);
 
                 // 推送已读状态变更（多端同步）
@@ -243,7 +246,8 @@ public class NotificationService : INotificationService
                     "[NotificationService] 标记全部已读成功，UserId: {UserId}, Count: {Count}",
                     userId, affectedRows);
 
-                // 推送未读数变更（应该是 0）
+                // 使用缓存服务设置未读数为 0
+                await _cacheService.SetUnreadCountAsync(userId, 0);
                 await _pushService.PushUnreadCountAsync(userId, 0);
             }
 
@@ -265,6 +269,18 @@ public class NotificationService : INotificationService
     {
         try
         {
+            // 先查询通知是否未读
+            var userNotification = await _userNotificationRepository.QueryFirstAsync(
+                un => un.UserId == userId && un.NotificationId == notificationId && !un.IsDeleted);
+
+            if (userNotification == null)
+            {
+                return false;
+            }
+
+            var wasUnread = !userNotification.IsRead;
+
+            // 删除通知
             var affectedRows = await _userNotificationRepository.UpdateColumnsAsync(
                 un => new UserNotification
                 {
@@ -279,9 +295,12 @@ public class NotificationService : INotificationService
                     "[NotificationService] 删除通知成功，UserId: {UserId}, NotificationId: {NotificationId}",
                     userId, notificationId);
 
-                // 如果删除的是未读通知，推送未读数变更
-                var unreadCount = await GetUnreadCountAsync(userId);
-                await _pushService.PushUnreadCountAsync(userId, (int)unreadCount);
+                // 如果删除的是未读通知，减量更新未读数
+                if (wasUnread)
+                {
+                    var unreadCount = await _cacheService.DecrementUnreadCountAsync(userId, 1);
+                    await _pushService.PushUnreadCountAsync(userId, (int)unreadCount);
+                }
             }
 
             return affectedRows > 0;
