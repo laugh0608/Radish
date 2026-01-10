@@ -58,11 +58,30 @@ export const Dock = () => {
 
   const avatarSrc = resolveAvatarUrl(avatarThumbnailUrl || avatarUrl);
 
-  // 只显示打开的应用（包括最小化的）
-  const runningApps = openWindows.map(window => ({
-    window,
-    app: getAppById(window.appId)
-  })).filter(item => item.app !== undefined);
+  // 显示在 Dock 中的应用（通知中心常驻 + 运行中的其他应用）
+  const dockApps = useMemo(() => {
+    const notificationApp = getAppById('notification');
+    const notificationWindow = openWindows.find(w => w.appId === 'notification');
+
+    // 其他运行中的应用
+    const otherApps = openWindows
+      .filter(window => window.appId !== 'notification')
+      .map(window => ({
+        window,
+        app: getAppById(window.appId),
+        isPinned: false
+      }))
+      .filter(item => item.app !== undefined);
+
+    // 通知中心始终显示（固定在第一个位置）
+    const notificationItem = notificationApp ? [{
+      window: notificationWindow,
+      app: notificationApp,
+      isPinned: true // 标记为固定应用
+    }] : [];
+
+    return [...notificationItem, ...otherApps];
+  }, [openWindows]);
 
   interface CurrentUser {
     userId: number;
@@ -152,14 +171,6 @@ export const Dock = () => {
     logoutUrl.searchParams.set('culture', currentLanguage);
 
     window.location.href = logoutUrl.toString();
-  };
-
-  const handleOpenNotificationClick = () => {
-    if (!loggedIn && !hasAccessToken()) {
-      handleLoginClick();
-      return;
-    }
-    openApp('notification');
   };
 
   const hydrateCurrentUser = async () => {
@@ -306,32 +317,57 @@ export const Dock = () => {
               )}
             </div>
 
-            {/* 中间：运行中的应用 */}
-            {runningApps.length > 0 && (
+            {/* 中间：Dock 应用（通知中心常驻 + 运行中的应用） */}
+            {dockApps.length > 0 && (
               <>
                 <div className={styles.divider} />
                 <div className={styles.appsSection}>
-                  {runningApps.map(({ window, app }) => (
-                    <button
-                      key={window.id}
-                      className={`${styles.appIcon} ${window.isMinimized ? styles.minimized : styles.active}`}
-                      onClick={() => {
-                        if (window.isMinimized) {
-                          restoreWindow(window.id);
-                        } else {
-                          openApp(app!.id);
-                        }
-                      }}
-                      title={app!.name}
-                    >
-                      {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
-                        <Icon icon={app!.icon} size={40} />
-                      ) : (
-                        <span className={styles.emoji}>{app!.icon}</span>
-                      )}
-                      {!window.isMinimized && <div className={styles.activeIndicator} />}
-                    </button>
-                  ))}
+                  {dockApps.map(({ window, app, isPinned }) => {
+                    const isNotification = app!.id === 'notification';
+                    const isRunning = window !== undefined;
+                    const isMinimized = window?.isMinimized ?? false;
+
+                    return (
+                      <button
+                        key={app!.id}
+                        className={`${styles.appIcon} ${
+                          isRunning && !isMinimized ? styles.active :
+                          isRunning && isMinimized ? styles.minimized :
+                          isPinned ? styles.pinned : ''
+                        }`}
+                        onClick={() => {
+                          // 如果是通知中心，未登录时先登录
+                          if (isNotification && !loggedIn && !hasAccessToken()) {
+                            handleLoginClick();
+                            return;
+                          }
+
+                          // 如果窗口存在且最小化，恢复窗口
+                          if (window && isMinimized) {
+                            restoreWindow(window.id);
+                          } else {
+                            // 否则打开或聚焦应用
+                            openApp(app!.id);
+                          }
+                        }}
+                        title={app!.name}
+                      >
+                        <div style={{ position: 'relative' }}>
+                          {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
+                            <Icon icon={app!.icon} size={40} />
+                          ) : (
+                            <span className={styles.emoji}>{app!.icon}</span>
+                          )}
+                          {/* 通知中心的未读数徽章 */}
+                          {isNotification && unreadMessages > 0 && (
+                            <div className={styles.notificationBadge}>{unreadMessages}</div>
+                          )}
+                        </div>
+                        {/* 运行中指示器 */}
+                        {isRunning && !isMinimized && <div className={styles.activeIndicator} />}
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -339,18 +375,6 @@ export const Dock = () => {
             {/* 右侧：时间和登录按钮 */}
             <div className={styles.divider} />
             <div className={styles.rightSection}>
-              {/* 通知中心快捷入口 */}
-              <button
-                type="button"
-                className={styles.notificationButton}
-                onClick={handleOpenNotificationClick}
-                title="通知中心"
-              >
-                🔔
-                {unreadMessages > 0 && (
-                  <div className={styles.notificationBadge}>{unreadMessages}</div>
-                )}
-              </button>
               <div className={styles.time}>
                 {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
               </div>
@@ -376,34 +400,52 @@ export const Dock = () => {
               {loggedIn && <div className={styles.statusDot} />}
             </div>
 
-            {/* 通知中心快捷入口（灵动岛） */}
-            <button
-              type="button"
-              className={styles.miniNotificationButton}
-              onClick={handleOpenNotificationClick}
-              title="通知中心"
-            >
-              🔔
-              {unreadMessages > 0 && (
-                <div className={styles.miniNotificationBadge}>{unreadMessages}</div>
-              )}
-            </button>
+            {/* Dock 应用（最多显示4个） */}
+            {dockApps.slice(0, 4).map(({ window, app, isPinned }) => {
+              const isNotification = app!.id === 'notification';
+              const isRunning = window !== undefined;
+              const isMinimized = window?.isMinimized ?? false;
 
-            {/* 运行中的应用（最多显示3个） */}
-            {runningApps.slice(0, 3).map(({ window, app }) => (
-              <div key={window.id} className={styles.miniAppIcon}>
-                {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
-                  <Icon icon={app!.icon} size={16} />
-                ) : (
-                  <span className={styles.miniEmoji}>{app!.icon}</span>
-                )}
-                {!window.isMinimized && <div className={styles.miniActiveIndicator} />}
-              </div>
-            ))}
+              return (
+                <div
+                  key={app!.id}
+                  className={styles.miniAppIcon}
+                  style={{ position: 'relative', cursor: 'pointer' }}
+                  onClick={() => {
+                    // 如果是通知中心，未登录时先登录
+                    if (isNotification && !loggedIn && !hasAccessToken()) {
+                      handleLoginClick();
+                      return;
+                    }
+
+                    // 如果窗口存在且最小化，恢复窗口
+                    if (window && isMinimized) {
+                      restoreWindow(window.id);
+                    } else {
+                      // 否则打开或聚焦应用
+                      openApp(app!.id);
+                    }
+                  }}
+                  title={app!.name}
+                >
+                  {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
+                    <Icon icon={app!.icon} size={16} />
+                  ) : (
+                    <span className={styles.miniEmoji}>{app!.icon}</span>
+                  )}
+                  {/* 通知中心的未读数徽章（迷你版） */}
+                  {isNotification && unreadMessages > 0 && (
+                    <div className={styles.miniNotificationBadge}>{unreadMessages}</div>
+                  )}
+                  {/* 运行中指示器 */}
+                  {isRunning && !isMinimized && <div className={styles.miniActiveIndicator} />}
+                </div>
+              );
+            })}
 
             {/* 更多应用指示器 */}
-            {runningApps.length > 3 && (
-              <div className={styles.moreIndicator}>+{runningApps.length - 3}</div>
+            {dockApps.length > 4 && (
+              <div className={styles.moreIndicator}>+{dockApps.length - 4}</div>
             )}
 
             {/* 时间 */}
