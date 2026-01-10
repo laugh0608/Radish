@@ -35,8 +35,8 @@ export const quickStartSteps: QuickStartCategory[] = [
         icon: 'mdi:close-circle'
       },
       {
-        title: '底部 Dock 显示运行中的应用',
-        description: '屏幕底部的 Dock 栏会显示所有正在运行的应用，点击可以切换或恢复窗口',
+        title: '顶部 Dock 显示运行中的应用',
+        description: '屏幕顶部中间的 Dock 栏会显示所有正在运行的应用，点击可以切换或恢复窗口',
         icon: 'mdi:dock-bottom'
       }
     ]
