@@ -12,6 +12,7 @@ import type {
   PublishPostRequest,
   CreateCommentRequest,
   CommentLikeResult,
+  PostLikeResult,
   CommentHighlight
 } from '@/types/forum';
 
@@ -194,20 +195,22 @@ export async function createComment(request: CreateCommentRequest, t: TFunction)
 /**
  * 点赞/取消点赞帖子
  * @param postId 帖子 ID
- * @param isLike true 为点赞，false 为取消点赞
+ * @returns 点赞操作结果（新的点赞状态和点赞总数）
  */
-export async function likePost(postId: number, isLike: boolean, t: TFunction): Promise<void> {
-  const url = `${getApiBaseUrl()}/api/v1/Post/Like?postId=${postId}&isLike=${isLike}`;
+export async function likePost(postId: number, t: TFunction): Promise<PostLikeResult> {
+  const url = `${getApiBaseUrl()}/api/v1/Post/Like?postId=${postId}`;
   const response = await apiFetch(url, {
     method: 'POST',
     withAuth: true
   });
-  const json = await response.json() as ApiResponse<null>;
-  const parsed = parseApiResponse<null>(json, t);
+  const json = await response.json() as ApiResponse<PostLikeResult>;
+  const parsed = parseApiResponse<PostLikeResult>(json, t);
 
-  if (!parsed.ok) {
+  if (!parsed.ok || !parsed.data) {
     throw new Error(parsed.message || '点赞操作失败');
   }
+
+  return parsed.data;
 }
 
 /**
