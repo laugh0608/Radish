@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",
-    "antd": "^6.1.0"
+    "antd": "^6.1.0",
+    "date-fns": "^4.1.0"
   },
   "peerDependencies": {
     "react": "^19.1.1",
