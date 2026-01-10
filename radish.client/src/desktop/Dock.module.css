@@ -253,6 +253,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   color: white;
+  font-size: 28px; /* emoji 大小 */
 }
 
 .notificationButton svg {
@@ -387,6 +388,13 @@
   cursor: pointer;
   color: white;
   transition: all 0.2s ease;
+  flex-shrink: 0; /* 防止被压缩 */
+  font-size: 16px; /* emoji 大小 */
+}
+
+.miniNotificationButton svg {
+  flex-shrink: 0;
+  z-index: 1; /* 确保图标在徽章下方 */
 }
 
 .miniNotificationButton:hover {
@@ -410,6 +418,7 @@
   justify-content: center;
   border: 1.5px solid rgba(0, 0, 0, 0.6);
   box-shadow: 0 2px 6px rgba(255, 59, 48, 0.5);
+  z-index: 2; /* 确保徽章在图标上方 */
 }
 
 /* 响应式调整 */

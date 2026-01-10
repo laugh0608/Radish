@@ -346,7 +346,7 @@ export const Dock = () => {
                 onClick={handleOpenNotificationClick}
                 title="通知中心"
               >
-                <Icon icon="mdi:bell" size={28} />
+                🔔
                 {unreadMessages > 0 && (
                   <div className={styles.notificationBadge}>{unreadMessages}</div>
                 )}
@@ -383,7 +383,7 @@ export const Dock = () => {
               onClick={handleOpenNotificationClick}
               title="通知中心"
             >
-              <Icon icon="mdi:bell" size={16} />
+              🔔
               {unreadMessages > 0 && (
                 <div className={styles.miniNotificationBadge}>{unreadMessages}</div>
               )}
