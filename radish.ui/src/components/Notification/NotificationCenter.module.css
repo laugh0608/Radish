@@ -1,0 +1,205 @@
+.container {
+  position: relative;
+  display: inline-block;
+}
+
+/* 触发按钮 */
+.trigger {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+  transition: all 0.2s ease;
+}
+
+.trigger:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.trigger.active {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.trigger .badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+}
+
+/* 下拉面板 */
+.panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 400px;
+  max-height: 600px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 面板头部 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+}
+
+.markAllBtn {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.markAllBtn:hover {
+  background: #f5f5f5;
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+/* 通知列表 */
+.list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 480px;
+}
+
+.list > * {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.list > *:last-child {
+  border-bottom: none;
+}
+
+/* 滚动条样式 */
+.list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.list::-webkit-scrollbar-thumb {
+  background: #d9d9d9;
+  border-radius: 3px;
+}
+
+.list::-webkit-scrollbar-thumb:hover {
+  background: #bfbfbf;
+}
+
+/* 加载状态 */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+/* 空状态 */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.3;
+}
+
+.emptyText {
+  font-size: 14px;
+  color: #999;
+}
+
+/* 面板底部 */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.viewMoreBtn {
+  padding: 8px 16px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #1890ff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.viewMoreBtn:hover {
+  background: #f0f7ff;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .panel {
+    position: fixed;
+    top: 60px;
+    right: 10px;
+    left: 10px;
+    width: auto;
+    max-height: calc(100vh - 70px);
+  }
+
+  .list {
+    max-height: calc(100vh - 200px);
+  }
+}
