@@ -401,7 +401,7 @@ export const Dock = () => {
             </div>
 
             {/* Dock 应用（最多显示4个） */}
-            {dockApps.slice(0, 4).map(({ window, app, isPinned }) => {
+            {dockApps.slice(0, 4).map(({ window, app }) => {
               const isNotification = app!.id === 'notification';
               const isRunning = window !== undefined;
               const isMinimized = window?.isMinimized ?? false;
