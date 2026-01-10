@@ -1,7 +1,7 @@
-/* Dock 容器 - 固定在底部中间 */
+/* Dock 容器 - 固定在顶部中间 */
 .dockContainer {
   position: fixed;
-  bottom: 16px;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 10000;
