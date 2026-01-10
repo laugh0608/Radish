@@ -47,8 +47,65 @@ export const notificationApi = {
       { withAuth: true }
     );
 
-    const json = await response.json() as ApiResponse<NotificationListResponse>;
-    return json.responseData!;
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || `获取通知列表失败（HTTP ${response.status}）`);
+    }
+
+    const json = await response.json() as ApiResponse<{
+      page: number;
+      dataCount: number;
+      pageCount: number;
+      data: Array<{
+        id: number;
+        userId: number;
+        notificationId: number;
+        isRead: boolean;
+        readAt?: string;
+        deliveryStatus: string;
+        deliveredAt?: string;
+        createTime: string;
+        notification?: {
+          id: number;
+          type: string;
+          priority: number;
+          title: string;
+          content: string;
+          businessType?: string;
+          businessId?: number;
+          triggerId?: number;
+          triggerName?: string;
+          triggerAvatar?: string;
+          extData?: string;
+          createTime: string;
+        };
+      }>;
+    }>;
+
+    // 将后端的 PageModel<UserNotificationVo> 转换为前端期望的格式
+    const pageModel = json.responseData!;
+    const notifications: NotificationItemData[] = pageModel.data.map(userNotif => {
+      const notif = userNotif.notification;
+      return {
+        id: userNotif.notificationId,
+        type: notif?.type || 'System',
+        title: notif?.title || '',
+        content: notif?.content || '',
+        priority: notif?.priority || 1,
+        businessType: notif?.businessType,
+        businessId: notif?.businessId,
+        triggerId: notif?.triggerId,
+        triggerName: notif?.triggerName,
+        triggerAvatar: notif?.triggerAvatar,
+        isRead: userNotif.isRead,
+        createdAt: notif?.createTime || userNotif.createTime
+      };
+    });
+
+    return {
+      notifications,
+      total: pageModel.dataCount
+    };
   },
 
   /**
@@ -60,6 +117,11 @@ export const notificationApi = {
       { withAuth: true }
     );
 
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || `获取未读数量失败（HTTP ${response.status}）`);
+    }
+
     const json = await response.json() as ApiResponse<UnreadCountResponse>;
     return json.responseData!.unreadCount;
   },
@@ -68,31 +130,46 @@ export const notificationApi = {
    * 标记已读
    */
   async markAsRead(notificationIds: number[]): Promise<void> {
-    await apiFetch('/api/v1/Notification/MarkAsRead', {
+    const response = await apiFetch('/api/v1/Notification/MarkAsRead', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ notificationIds }),
       withAuth: true
     });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || `标记已读失败（HTTP ${response.status}）`);
+    }
   },
 
   /**
    * 标记全部已读
    */
   async markAllAsRead(): Promise<void> {
-    await apiFetch('/api/v1/Notification/ReadAll', {
+    const response = await apiFetch('/api/v1/Notification/MarkAllAsRead', {
       method: 'PUT',
       withAuth: true
     });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || `标记全部已读失败（HTTP ${response.status}）`);
+    }
   },
 
   /**
    * 删除通知
    */
   async deleteNotification(notificationId: number): Promise<void> {
-    await apiFetch(`/api/v1/Notification/${notificationId}`, {
+    const response = await apiFetch(`/api/v1/Notification/DeleteNotification/${notificationId}`, {
       method: 'DELETE',
       withAuth: true
     });
+
+    if (!response.ok) {
+      const text = await response.text().catch(() => '');
+      throw new Error(text || `删除通知失败（HTTP ${response.status}）`);
+    }
   }
 };

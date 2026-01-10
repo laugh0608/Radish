@@ -141,8 +141,33 @@ public class NotificationService : INotificationService
                 un => un.CreateTime,
                 OrderByType.Desc); // 按创建时间倒序
 
-            // 映射为 ViewModel
-            var voList = _mapper.Map<List<UserNotificationVo>>(result.data);
+            if (result.data == null || result.data.Count == 0)
+            {
+                return (new List<UserNotificationVo>(), result.totalCount);
+            }
+
+            // 获取所有通知 ID
+            var notificationIds = result.data.Select(un => un.NotificationId).ToList();
+
+            // 批量查询关联的通知详情（使用分表查询）
+            var notifications = await _notificationRepository.QuerySplitAsync(
+                n => notificationIds.Contains(n.Id),
+                "Id");
+            var notificationDict = notifications.ToDictionary(n => n.Id);
+
+            // 映射为 ViewModel 并填充通知详情
+            var voList = result.data.Select(un =>
+            {
+                var vo = _mapper.Map<UserNotificationVo>(un);
+
+                // 填充关联的通知详情
+                if (notificationDict.TryGetValue(un.NotificationId, out var notification))
+                {
+                    vo.Notification = _mapper.Map<NotificationVo>(notification);
+                }
+
+                return vo;
+            }).ToList();
 
             _logger.LogDebug(
                 "[NotificationService] 查询用户通知列表，UserId: {UserId}, Total: {Total}",

@@ -57,6 +57,9 @@ export type { NotificationBadgeProps } from './Notification/NotificationBadge';
 export { NotificationCenter } from './Notification/NotificationCenter';
 export type { NotificationCenterProps } from './Notification/NotificationCenter';
 
+export { NotificationList } from './Notification/NotificationList';
+export type { NotificationListProps } from './Notification/NotificationList';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout
