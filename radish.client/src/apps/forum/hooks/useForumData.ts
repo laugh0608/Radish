@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import type { TFunction } from 'i18next';
 import {
   getTopCategories,
@@ -51,7 +52,7 @@ export interface ForumDataState {
 
 export interface ForumDataActions {
   setSelectedCategoryId: (id: number | null) => void;
-  setSelectedPost: (post: PostDetail | null) => void;
+  setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: (comments: CommentNode[]) => void;
   setCurrentPage: (page: number) => void;
   setSortBy: (sortBy: 'newest' | 'hottest' | 'essence') => void;

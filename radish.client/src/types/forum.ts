@@ -109,6 +109,14 @@ export interface CommentLikeResult {
 }
 
 /**
+ * 帖子点赞操作结果
+ */
+export interface PostLikeResult {
+  isLiked: boolean;
+  likeCount: number;
+}
+
+/**
  * 发布帖子请求
  */
 export interface PublishPostRequest {
