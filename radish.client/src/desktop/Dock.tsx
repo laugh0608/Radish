@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
+import { useNotificationStore } from '@/stores/notificationStore';
+import { notificationHub } from '@/services/notificationHub';
 import { getAppById } from './AppRegistry';
 import { Icon } from '@radish/ui';
 import i18n from '@/i18n';
@@ -15,15 +17,28 @@ import styles from './Dock.module.css';
  * - 显示运行中的应用
  * - 10秒无操作自动缩小为"灵动岛"样式
  * - 状态指示器（小圆点）
+ * - 实时未读数推送（SignalR）+ 降级轮询
  */
 export const Dock = () => {
   const { openWindows, openApp, restoreWindow } = useWindowStore();
   const { userName, userId, avatarUrl, avatarThumbnailUrl, isAuthenticated, clearUser, setUser } = useUserStore();
+  const { unreadCount: storeUnreadCount, connectionState } = useNotificationStore();
   const [time, setTime] = useState(new Date());
   const [isExpanded, setIsExpanded] = useState(false); // 默认为灵动岛状态
-  const [unreadMessages, setUnreadMessages] = useState(0); // 真实消息数量
+  const [pollingUnreadCount, setPollingUnreadCount] = useState(0); // 轮询降级时的未读数
 
   const loggedIn = isAuthenticated();
+  const hasAccessToken = () => {
+    if (typeof window === 'undefined') return false;
+    try {
+      return Boolean(window.localStorage.getItem('access_token'));
+    } catch {
+      return false;
+    }
+  };
+
+  // 根据连接状态决定显示哪个未读数
+  const unreadMessages = connectionState === 'connected' ? storeUnreadCount : pollingUnreadCount;
 
   // 统一通过 Gateway 访问
   const apiBaseUrl = useMemo(() => {
@@ -43,11 +58,30 @@ export const Dock = () => {
 
   const avatarSrc = resolveAvatarUrl(avatarThumbnailUrl || avatarUrl);
 
-  // 只显示打开的应用（包括最小化的）
-  const runningApps = openWindows.map(window => ({
-    window,
-    app: getAppById(window.appId)
-  })).filter(item => item.app !== undefined);
+  // 显示在 Dock 中的应用（通知中心常驻 + 运行中的其他应用）
+  const dockApps = useMemo(() => {
+    const notificationApp = getAppById('notification');
+    const notificationWindow = openWindows.find(w => w.appId === 'notification');
+
+    // 其他运行中的应用
+    const otherApps = openWindows
+      .filter(window => window.appId !== 'notification')
+      .map(window => ({
+        window,
+        app: getAppById(window.appId),
+        isPinned: false
+      }))
+      .filter(item => item.app !== undefined);
+
+    // 通知中心始终显示（固定在第一个位置）
+    const notificationItem = notificationApp ? [{
+      window: notificationWindow,
+      app: notificationApp,
+      isPinned: true // 标记为固定应用
+    }] : [];
+
+    return [...notificationItem, ...otherApps];
+  }, [openWindows]);
 
   interface CurrentUser {
     userId: number;
@@ -169,12 +203,12 @@ export const Dock = () => {
     }
   };
 
-  // 获取未读消息数量
+  // 获取未读消息数量（降级轮询时使用）
   const fetchUnreadMessageCount = async () => {
     if (typeof window === 'undefined') return;
     const token = window.localStorage.getItem('access_token');
     if (!token) {
-      setUnreadMessages(0);
+      setPollingUnreadCount(0);
       return;
     }
 
@@ -185,14 +219,14 @@ export const Dock = () => {
       const json = await response.json() as ApiResponse<{ userId: number; unreadCount: number }>;
 
       if (json.isSuccess && json.responseData) {
-        setUnreadMessages(json.responseData.unreadCount);
+        setPollingUnreadCount(json.responseData.unreadCount);
       }
     } catch {
       // 静默失败，保持当前状态
     }
   };
 
-  // 时间更新
+  // 时间更新 + SignalR 连接 + 降级轮询
   useEffect(() => {
     const timer = setInterval(() => {
       setTime(new Date());
@@ -200,22 +234,36 @@ export const Dock = () => {
 
     if (typeof window !== 'undefined') {
       void hydrateCurrentUser();
+
+      // 如果用户已登录，启动 SignalR 连接
+      if (loggedIn) {
+        void notificationHub.start();
+      }
+
+      // 初始化时获取一次未读数（作为降级数据）
       void fetchUnreadMessageCount();
 
-      // 每30秒刷新一次未读消息数量
-      const messageTimer = setInterval(() => {
-        void fetchUnreadMessageCount();
-      }, 30000);
+      // 降级轮询：仅在 SignalR 连接失败时使用（60秒间隔）
+      // 注意：这里不能在依赖中使用 connectionState，否则会导致重启循环
+      const pollingTimer = setInterval(() => {
+        // 从 store 中实时读取 connectionState
+        const state = useNotificationStore.getState().connectionState;
+        if (state !== 'connected') {
+          void fetchUnreadMessageCount();
+        }
+      }, 60000);
 
       return () => {
         clearInterval(timer);
-        clearInterval(messageTimer);
+        clearInterval(pollingTimer);
+        // 组件卸载时停止 SignalR 连接
+        void notificationHub.stop();
       };
     }
 
     return () => clearInterval(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loggedIn]);
 
   // 鼠标移入展开，移出缩小
   const handleMouseEnter = () => {
@@ -255,9 +303,7 @@ export const Dock = () => {
                     ) : (
                       <Icon icon="mdi:account-circle" size={40} />
                     )}
-                    {unreadMessages > 0 && (
-                      <div className={styles.badge}>{unreadMessages}</div>
-                    )}
+                    <div className={styles.statusDot} />
                   </>
                 ) : (
                   <Icon icon="mdi:account-circle-outline" size={40} />
@@ -271,32 +317,57 @@ export const Dock = () => {
               )}
             </div>
 
-            {/* 中间：运行中的应用 */}
-            {runningApps.length > 0 && (
+            {/* 中间：Dock 应用（通知中心常驻 + 运行中的应用） */}
+            {dockApps.length > 0 && (
               <>
                 <div className={styles.divider} />
                 <div className={styles.appsSection}>
-                  {runningApps.map(({ window, app }) => (
-                    <button
-                      key={window.id}
-                      className={`${styles.appIcon} ${window.isMinimized ? styles.minimized : styles.active}`}
-                      onClick={() => {
-                        if (window.isMinimized) {
-                          restoreWindow(window.id);
-                        } else {
-                          openApp(app!.id);
-                        }
-                      }}
-                      title={app!.name}
-                    >
-                      {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
-                        <Icon icon={app!.icon} size={40} />
-                      ) : (
-                        <span className={styles.emoji}>{app!.icon}</span>
-                      )}
-                      {!window.isMinimized && <div className={styles.activeIndicator} />}
-                    </button>
-                  ))}
+                  {dockApps.map(({ window, app, isPinned }) => {
+                    const isNotification = app!.id === 'notification';
+                    const isRunning = window !== undefined;
+                    const isMinimized = window?.isMinimized ?? false;
+
+                    return (
+                      <button
+                        key={app!.id}
+                        className={`${styles.appIcon} ${
+                          isRunning && !isMinimized ? styles.active :
+                          isRunning && isMinimized ? styles.minimized :
+                          isPinned ? styles.pinned : ''
+                        }`}
+                        onClick={() => {
+                          // 如果是通知中心，未登录时先登录
+                          if (isNotification && !loggedIn && !hasAccessToken()) {
+                            handleLoginClick();
+                            return;
+                          }
+
+                          // 如果窗口存在且最小化，恢复窗口
+                          if (window && isMinimized) {
+                            restoreWindow(window.id);
+                          } else {
+                            // 否则打开或聚焦应用
+                            openApp(app!.id);
+                          }
+                        }}
+                        title={app!.name}
+                      >
+                        <div style={{ position: 'relative' }}>
+                          {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
+                            <Icon icon={app!.icon} size={40} />
+                          ) : (
+                            <span className={styles.emoji}>{app!.icon}</span>
+                          )}
+                          {/* 通知中心的未读数徽章 */}
+                          {isNotification && unreadMessages > 0 && (
+                            <div className={styles.notificationBadge}>{unreadMessages}</div>
+                          )}
+                        </div>
+                        {/* 运行中指示器 */}
+                        {isRunning && !isMinimized && <div className={styles.activeIndicator} />}
+                      </button>
+                    );
+                  })}
                 </div>
               </>
             )}
@@ -327,26 +398,54 @@ export const Dock = () => {
             <div className={styles.miniAvatar}>
               <Icon icon={loggedIn ? 'mdi:account-circle' : 'mdi:account-circle-outline'} size={20} />
               {loggedIn && <div className={styles.statusDot} />}
-              {unreadMessages > 0 && (
-                <div className={styles.miniBadge}>{unreadMessages}</div>
-              )}
             </div>
 
-            {/* 运行中的应用（最多显示3个） */}
-            {runningApps.slice(0, 3).map(({ window, app }) => (
-              <div key={window.id} className={styles.miniAppIcon}>
-                {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
-                  <Icon icon={app!.icon} size={16} />
-                ) : (
-                  <span className={styles.miniEmoji}>{app!.icon}</span>
-                )}
-                {!window.isMinimized && <div className={styles.miniActiveIndicator} />}
-              </div>
-            ))}
+            {/* Dock 应用（最多显示4个） */}
+            {dockApps.slice(0, 4).map(({ window, app }) => {
+              const isNotification = app!.id === 'notification';
+              const isRunning = window !== undefined;
+              const isMinimized = window?.isMinimized ?? false;
+
+              return (
+                <div
+                  key={app!.id}
+                  className={styles.miniAppIcon}
+                  style={{ position: 'relative', cursor: 'pointer' }}
+                  onClick={() => {
+                    // 如果是通知中心，未登录时先登录
+                    if (isNotification && !loggedIn && !hasAccessToken()) {
+                      handleLoginClick();
+                      return;
+                    }
+
+                    // 如果窗口存在且最小化，恢复窗口
+                    if (window && isMinimized) {
+                      restoreWindow(window.id);
+                    } else {
+                      // 否则打开或聚焦应用
+                      openApp(app!.id);
+                    }
+                  }}
+                  title={app!.name}
+                >
+                  {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
+                    <Icon icon={app!.icon} size={16} />
+                  ) : (
+                    <span className={styles.miniEmoji}>{app!.icon}</span>
+                  )}
+                  {/* 通知中心的未读数徽章（迷你版） */}
+                  {isNotification && unreadMessages > 0 && (
+                    <div className={styles.miniNotificationBadge}>{unreadMessages}</div>
+                  )}
+                  {/* 运行中指示器 */}
+                  {isRunning && !isMinimized && <div className={styles.miniActiveIndicator} />}
+                </div>
+              );
+            })}
 
             {/* 更多应用指示器 */}
-            {runningApps.length > 3 && (
-              <div className={styles.moreIndicator}>+{runningApps.length - 3}</div>
+            {dockApps.length > 4 && (
+              <div className={styles.moreIndicator}>+{dockApps.length - 4}</div>
             )}
 
             {/* 时间 */}

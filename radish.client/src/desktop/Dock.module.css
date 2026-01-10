@@ -1,7 +1,7 @@
-/* Dock 容器 - 固定在底部中间 */
+/* Dock 容器 - 固定在顶部中间 */
 .dockContainer {
   position: fixed;
-  bottom: 16px;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
   left: 50%;
   transform: translateX(-50%);
   z-index: 10000;
@@ -239,6 +239,51 @@
   animation: pulse 2s ease-in-out infinite;
 }
 
+/* 通知按钮（展开状态） */
+.notificationButton {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+  font-size: 28px; /* emoji 大小 */
+}
+
+.notificationButton svg {
+  flex-shrink: 0;
+}
+
+.notificationButton:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.notificationBadge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  background: #ff3b30;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.5);
+}
+
 /* 缩小内容（灵动岛） */
 .collapsedContent {
   display: flex;
@@ -328,6 +373,52 @@
   color: white;
   font-variant-numeric: tabular-nums;
   margin-left: 4px;
+}
+
+/* 通知按钮（灵动岛） */
+.miniNotificationButton {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s ease;
+  flex-shrink: 0; /* 防止被压缩 */
+  font-size: 16px; /* emoji 大小 */
+}
+
+.miniNotificationButton svg {
+  flex-shrink: 0;
+  z-index: 1; /* 确保图标在徽章下方 */
+}
+
+.miniNotificationButton:hover {
+  transform: scale(1.2);
+}
+
+.miniNotificationBadge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  background: #ff3b30;
+  color: white;
+  font-size: 9px;
+  font-weight: 600;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid rgba(0, 0, 0, 0.6);
+  box-shadow: 0 2px 6px rgba(255, 59, 48, 0.5);
+  z-index: 2; /* 确保徽章在图标上方 */
 }
 
 /* 响应式调整 */
