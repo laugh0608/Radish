@@ -40,8 +40,14 @@ interface NotificationStore {
   /** 设置连接状态 */
   setConnectionState: (state: ConnectionState) => void;
 
+  /** 设置最近通知（覆盖） */
+  setRecentNotifications: (notifications: NotificationItem[]) => void;
+
   /** 添加新通知 */
   addNotification: (notification: NotificationItem) => void;
+
+  /** 移除通知（按通知 ID） */
+  removeNotification: (notificationId: number) => void;
 
   /** 标记通知已读 */
   markAsRead: (notificationIds: number[]) => void;
@@ -70,11 +76,53 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
     set({ connectionState });
   },
 
+  setRecentNotifications: (notifications: NotificationItem[]) => {
+    const unique: NotificationItem[] = [];
+    const seen = new Set<number>();
+
+    for (const item of notifications) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      unique.push(item);
+    }
+
+    set({ recentNotifications: unique.slice(0, 20) });
+  },
+
   addNotification: (notification: NotificationItem) => {
     set(state => ({
-      recentNotifications: [notification, ...state.recentNotifications].slice(0, 20),
-      unreadCount: notification.isRead ? state.unreadCount : state.unreadCount + 1
+      recentNotifications: (() => {
+        const existingIndex = state.recentNotifications.findIndex(n => n.id === notification.id);
+        if (existingIndex === -1) {
+          return [notification, ...state.recentNotifications].slice(0, 20);
+        }
+
+        const next = state.recentNotifications.slice();
+        next[existingIndex] = { ...next[existingIndex], ...notification };
+        return next;
+      })(),
+      unreadCount: (() => {
+        const existing = state.recentNotifications.find(n => n.id === notification.id);
+        if (!existing) {
+          return notification.isRead ? state.unreadCount : state.unreadCount + 1;
+        }
+
+        const wasUnread = !existing.isRead;
+        const nowUnread = !notification.isRead;
+        const delta = (nowUnread ? 1 : 0) - (wasUnread ? 1 : 0);
+        return Math.max(0, state.unreadCount + delta);
+      })()
     }));
+  },
+
+  removeNotification: (notificationId: number) => {
+    set(state => {
+      const removedUnread = state.recentNotifications.filter(n => n.id === notificationId && !n.isRead).length;
+      return {
+        recentNotifications: state.recentNotifications.filter(n => n.id !== notificationId),
+        unreadCount: Math.max(0, state.unreadCount - removedUnread)
+      };
+    });
   },
 
   markAsRead: (notificationIds: number[]) => {

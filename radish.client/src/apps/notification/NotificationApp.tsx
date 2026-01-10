@@ -20,20 +20,27 @@ export const NotificationApp = () => {
 
   // 将 Store 中的通知转换为 UI 组件需要的格式
   useEffect(() => {
-    const converted: NotificationItemData[] = recentNotifications.map(n => ({
-      id: n.id,
-      type: n.type,
-      title: n.title,
-      content: n.content,
-      priority: 1,
-      businessType: n.sourceType,
-      businessId: n.sourceId,
-      triggerId: n.actorId,
-      triggerName: n.actorName,
-      triggerAvatar: n.actorAvatar,
-      isRead: n.isRead,
-      createdAt: n.createdAt
-    }));
+    const converted: NotificationItemData[] = [];
+    const seen = new Set<number>();
+
+    for (const n of recentNotifications) {
+      if (seen.has(n.id)) continue;
+      seen.add(n.id);
+      converted.push({
+        id: n.id,
+        type: n.type,
+        title: n.title,
+        content: n.content,
+        priority: 1,
+        businessType: n.sourceType,
+        businessId: n.sourceId,
+        triggerId: n.actorId,
+        triggerName: n.actorName,
+        triggerAvatar: n.actorAvatar,
+        isRead: n.isRead,
+        createdAt: n.createdAt
+      });
+    }
     setNotifications(converted);
   }, [recentNotifications]);
 
@@ -51,10 +58,9 @@ export const NotificationApp = () => {
           pageSize: 20
         });
 
-        // API 已经返回了正确格式的数据，直接添加到 Store
         const store = useNotificationStore.getState();
-        result.notifications.forEach(n => {
-          store.addNotification({
+        store.setRecentNotifications(
+          result.notifications.map(n => ({
             id: n.id,
             type: mapNotificationTypeToStore(n.type),
             title: n.title,
@@ -66,8 +72,8 @@ export const NotificationApp = () => {
             actorId: n.triggerId,
             actorName: n.triggerName,
             actorAvatar: n.triggerAvatar
-          });
-        });
+          }))
+        );
       } catch (error) {
         console.error('加载通知列表失败:', error);
         toast.error('加载通知列表失败');
@@ -99,8 +105,21 @@ export const NotificationApp = () => {
   // 标记已读
   const handleMarkAsRead = useCallback(async (id: number) => {
     try {
-      await notificationHub.markAsRead(id);
+      // 通过 SignalR 推送（如果连接断开会失败，不影响主流程）
+      try {
+        await notificationHub.markAsRead(id);
+      } catch (err) {
+        console.warn('SignalR 推送失败，继续使用 HTTP API:', err);
+      }
+
+      // 调用 HTTP API
       await notificationApi.markAsRead([id]);
+
+      // 更新 Store 状态
+      const store = useNotificationStore.getState();
+      store.markAsRead([id]);
+
+      toast.success('已标记为已读');
     } catch (error) {
       console.error('标记已读失败:', error);
       toast.error('标记已读失败');
@@ -110,8 +129,20 @@ export const NotificationApp = () => {
   // 标记全部已读
   const handleMarkAllAsRead = useCallback(async () => {
     try {
-      await notificationHub.markAllAsRead();
+      // 通过 SignalR 推送（如果连接断开会失败，不影响主流程）
+      try {
+        await notificationHub.markAllAsRead();
+      } catch (err) {
+        console.warn('SignalR 推送失败，继续使用 HTTP API:', err);
+      }
+
+      // 调用 HTTP API
       await notificationApi.markAllAsRead();
+
+      // 更新 Store 状态
+      const store = useNotificationStore.getState();
+      store.markAllAsRead();
+
       toast.success('已标记全部为已读');
     } catch (error) {
       console.error('标记全部已读失败:', error);
@@ -124,19 +155,16 @@ export const NotificationApp = () => {
     try {
       await notificationApi.deleteNotification(id);
 
-      // 从 Store 中移除
+      // 更新 Store：从列表中移除该通知
       const store = useNotificationStore.getState();
-      const notification = recentNotifications.find(n => n.id === id);
-      if (notification && !notification.isRead) {
-        store.setUnreadCount(unreadCount - 1);
-      }
+      store.removeNotification(id);
 
       toast.success('通知已删除');
     } catch (error) {
       console.error('删除通知失败:', error);
       toast.error('删除通知失败');
     }
-  }, [recentNotifications, unreadCount]);
+  }, []);
 
   return (
     <div className={styles.notificationApp}>
