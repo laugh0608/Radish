@@ -1,29 +1,22 @@
 import { useEffect, useState, useCallback } from 'react';
 import { NotificationCenter, notificationApi, type NotificationItemData } from '@radish/ui';
 import { useNotificationStore } from '@/stores/notificationStore';
-import { useNotificationHub } from '@/services/notificationHub';
+import { notificationHub } from '@/services/notificationHub';
 import { toast } from '@radish/ui';
-import styles from './NotificationCenterAdapter.module.css';
+import styles from './NotificationApp.module.css';
 
 /**
- * NotificationCenter 适配器
+ * 通知中心 App
  *
- * 连接 @radish/ui 的 NotificationCenter 组件与 radish.client 的状态管理和 API
+ * 作为独立应用在 WebOS 中运行，显示完整的通知列表和管理功能
+ *
+ * 注意：SignalR 连接由 Shell 统一管理，此组件只负责读取状态和调用方法
  */
-export const NotificationCenterAdapter = () => {
+export const NotificationApp = () => {
   const { unreadCount, recentNotifications } = useNotificationStore();
-  const { start, stop, markAsRead: hubMarkAsRead, markAllAsRead: hubMarkAllAsRead } = useNotificationHub();
 
   const [notifications, setNotifications] = useState<NotificationItemData[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // 启动 SignalR 连接
-  useEffect(() => {
-    void start();
-    return () => {
-      void stop();
-    };
-  }, [start, stop]);
 
   // 将 Store 中的通知转换为 UI 组件需要的格式
   useEffect(() => {
@@ -32,7 +25,7 @@ export const NotificationCenterAdapter = () => {
       type: mapNotificationType(n.type),
       title: n.title,
       content: n.content,
-      priority: 1, // 默认优先级
+      priority: 1,
       businessType: n.sourceType,
       businessId: n.sourceId,
       triggerId: n.actorId,
@@ -55,7 +48,7 @@ export const NotificationCenterAdapter = () => {
       try {
         const result = await notificationApi.getList({
           pageIndex: 1,
-          pageSize: 10
+          pageSize: 20
         });
 
         // 将 API 返回的通知添加到 Store
@@ -105,32 +98,25 @@ export const NotificationCenterAdapter = () => {
   // 标记已读
   const handleMarkAsRead = useCallback(async (id: number) => {
     try {
-      // 通过 SignalR Hub 标记已读（会同步到其他端）
-      await hubMarkAsRead(id);
-
-      // 同时调用 API 确保持久化
+      await notificationHub.markAsRead(id);
       await notificationApi.markAsRead([id]);
     } catch (error) {
       console.error('标记已读失败:', error);
       toast.error('标记已读失败');
     }
-  }, [hubMarkAsRead]);
+  }, []);
 
   // 标记全部已读
   const handleMarkAllAsRead = useCallback(async () => {
     try {
-      // 通过 SignalR Hub 标记全部已读
-      await hubMarkAllAsRead();
-
-      // 同时调用 API 确保持久化
+      await notificationHub.markAllAsRead();
       await notificationApi.markAllAsRead();
-
       toast.success('已标记全部为已读');
     } catch (error) {
       console.error('标记全部已读失败:', error);
       toast.error('标记全部已读失败');
     }
-  }, [hubMarkAllAsRead]);
+  }, []);
 
   // 删除通知
   const handleDelete = useCallback(async (id: number) => {
@@ -153,22 +139,31 @@ export const NotificationCenterAdapter = () => {
 
   // 查看更多
   const handleViewMore = useCallback(() => {
-    // TODO: 跳转到通知列表页面
     toast.info('跳转到通知列表页面（待实现）');
   }, []);
 
   return (
-    <div className={styles.notificationWrapper}>
-      <NotificationCenter
-        unreadCount={unreadCount}
-        notifications={notifications}
-        loading={loading}
-        onNotificationClick={handleNotificationClick}
-        onMarkAsRead={handleMarkAsRead}
-        onMarkAllAsRead={handleMarkAllAsRead}
-        onDelete={handleDelete}
-        onViewMore={handleViewMore}
-      />
+    <div className={styles.notificationApp}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>通知中心</h1>
+        <div className={styles.stats}>
+          <span className={styles.count}>
+            {unreadCount > 0 ? `${unreadCount} 条未读` : '全部已读'}
+          </span>
+        </div>
+      </div>
+      <div className={styles.content}>
+        <NotificationCenter
+          unreadCount={unreadCount}
+          notifications={notifications}
+          loading={loading}
+          onNotificationClick={handleNotificationClick}
+          onMarkAsRead={handleMarkAsRead}
+          onMarkAllAsRead={handleMarkAllAsRead}
+          onDelete={handleDelete}
+          onViewMore={handleViewMore}
+        />
+      </div>
     </div>
   );
 };

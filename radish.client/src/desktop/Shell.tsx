@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ToastContainer } from '@radish/ui';
 import { notificationHub } from '@/services/notificationHub';
-import { StatusBar } from './StatusBar';
 import { Desktop } from './Desktop';
 import { Dock } from './Dock';
 import { WindowManager } from './WindowManager';
@@ -10,7 +9,7 @@ import styles from './Shell.module.css';
 /**
  * Desktop Shell - 桌面外壳
  *
- * WebOS 的主容器，包含桌面、窗口管理器和增强版 Dock
+ * WebOS 的主容器，包含桌面、窗口管理器和 Dock（含灵动岛）
  */
 export const Shell = () => {
   // 使用 ref 防止 React StrictMode 双重挂载导致重复连接
@@ -44,7 +43,6 @@ export const Shell = () => {
 
   return (
     <div className={styles.shell}>
-      <StatusBar />
       <Desktop />
       <WindowManager />
       <Dock />
