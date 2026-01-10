@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ToastContainer } from '@radish/ui';
 import { notificationHub } from '@/services/notificationHub';
+import { StatusBar } from './StatusBar';
 import { Desktop } from './Desktop';
 import { Dock } from './Dock';
 import { WindowManager } from './WindowManager';
@@ -43,6 +44,7 @@ export const Shell = () => {
 
   return (
     <div className={styles.shell}>
+      <StatusBar />
       <Desktop />
       <WindowManager />
       <Dock />
