@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiFetch } from './client';
 import type { ApiResponse } from './types';
 import type { NotificationItemData } from '../components/Notification/Notification';
 
@@ -36,41 +36,63 @@ export const notificationApi = {
    * 获取通知列表
    */
   async getList(query: NotificationListQuery): Promise<NotificationListResponse> {
-    const response = await apiClient.get<ApiResponse<NotificationListResponse>>(
-      '/api/v1/Notification/GetNotificationList',
-      { params: query }
+    const params = new URLSearchParams({
+      pageIndex: query.pageIndex.toString(),
+      pageSize: query.pageSize.toString(),
+      ...(query.type && { type: query.type })
+    });
+
+    const response = await apiFetch(
+      `/api/v1/Notification/GetNotificationList?${params.toString()}`,
+      { withAuth: true }
     );
-    return response.data.response;
+
+    const json = await response.json() as ApiResponse<NotificationListResponse>;
+    return json.responseData!;
   },
 
   /**
    * 获取未读数量
    */
   async getUnreadCount(): Promise<number> {
-    const response = await apiClient.get<ApiResponse<UnreadCountResponse>>(
-      '/api/v1/Notification/GetUnreadCount'
+    const response = await apiFetch(
+      '/api/v1/Notification/GetUnreadCount',
+      { withAuth: true }
     );
-    return response.data.response.unreadCount;
+
+    const json = await response.json() as ApiResponse<UnreadCountResponse>;
+    return json.responseData!.unreadCount;
   },
 
   /**
    * 标记已读
    */
   async markAsRead(notificationIds: number[]): Promise<void> {
-    await apiClient.put('/api/v1/Notification/MarkAsRead', { notificationIds });
+    await apiFetch('/api/v1/Notification/MarkAsRead', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notificationIds }),
+      withAuth: true
+    });
   },
 
   /**
    * 标记全部已读
    */
   async markAllAsRead(): Promise<void> {
-    await apiClient.put('/api/v1/Notification/ReadAll');
+    await apiFetch('/api/v1/Notification/ReadAll', {
+      method: 'PUT',
+      withAuth: true
+    });
   },
 
   /**
    * 删除通知
    */
   async deleteNotification(notificationId: number): Promise<void> {
-    await apiClient.delete(`/api/v1/Notification/${notificationId}`);
+    await apiFetch(`/api/v1/Notification/${notificationId}`, {
+      method: 'DELETE',
+      withAuth: true
+    });
   }
 };

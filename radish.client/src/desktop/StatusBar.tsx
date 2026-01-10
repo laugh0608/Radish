@@ -3,6 +3,8 @@ import { useUserStore } from '@/stores/userStore';
 import i18n from '@/i18n';
 import type { ApiResponse } from '@/api/client';
 import { CoinBalance } from './components/CoinBalance';
+import { NotificationCenterAdapter } from './components/NotificationCenterAdapter';
+import { ToastContainer } from '@radish/ui';
 import styles from './StatusBar.module.css';
 
 /**
@@ -172,28 +174,32 @@ export const StatusBar = () => {
   }, []);
 
   return (
-    <div className={styles.statusBar}>
-      <div className={styles.left}>
-        <span className={styles.brand}>Radish OS</span>
-        {loggedIn && userName && (
-          <span className={styles.user}>
-            👤 {userName} (ID: {userId})
+    <>
+      <div className={styles.statusBar}>
+        <div className={styles.left}>
+          <span className={styles.brand}>Radish OS</span>
+          {loggedIn && userName && (
+            <span className={styles.user}>
+              👤 {userName} (ID: {userId})
+            </span>
+          )}
+        </div>
+        <div className={styles.right}>
+          <CoinBalance />
+          {loggedIn && <NotificationCenterAdapter />}
+          <button
+            type="button"
+            className={styles.authButton}
+            onClick={loggedIn ? handleLogoutClick : handleLoginClick}
+          >
+            {loggedIn ? '退出登录' : '登录'}
+          </button>
+          <span className={styles.time}>
+            {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
           </span>
-        )}
+        </div>
       </div>
-      <div className={styles.right}>
-        <CoinBalance />
-        <button
-          type="button"
-          className={styles.authButton}
-          onClick={loggedIn ? handleLogoutClick : handleLoginClick}
-        >
-          {loggedIn ? '退出登录' : '登录'}
-        </button>
-        <span className={styles.time}>
-          {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-        </span>
-      </div>
-    </div>
+      <ToastContainer />
+    </>
   );
 };
