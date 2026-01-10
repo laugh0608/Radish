@@ -3,6 +3,7 @@ import { ShowcaseApp } from '@/apps/showcase/ShowcaseApp';
 import { ForumApp } from '@/apps/forum/ForumApp';
 import { ProfileApp } from '@/apps/profile/ProfileApp';
 import { CoinRewardDemo } from '@/apps/coin-demo';
+import { NotificationApp } from '@/apps/notification/NotificationApp';
 import type { AppDefinition } from './types';
 
 /**
@@ -123,6 +124,17 @@ export const appRegistry: AppDefinition[] = [
     defaultSize: { width: 900, height: 750 },
     requiredRoles: ['User'],
     category: 'development'
+  },
+  {
+    id: 'notification',
+    name: '通知中心',
+    icon: 'mdi:bell',
+    description: '查看和管理系统通知',
+    component: NotificationApp,
+    type: 'window',
+    defaultSize: { width: 800, height: 700 },
+    requiredRoles: ['User'],
+    category: 'system'
   },
 
 ];
