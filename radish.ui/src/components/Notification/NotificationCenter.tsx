@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Notification, NotificationItemData } from './Notification';
+import { Notification, type NotificationItemData } from './Notification';
 import { NotificationBadge } from './NotificationBadge';
 import styles from './NotificationCenter.module.css';
 
