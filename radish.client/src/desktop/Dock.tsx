@@ -28,15 +28,14 @@ export const Dock = () => {
   const [pollingUnreadCount, setPollingUnreadCount] = useState(0); // 轮询降级时的未读数
 
   const loggedIn = isAuthenticated();
-  const hasAccessToken = (() => {
+  const hasAccessToken = () => {
     if (typeof window === 'undefined') return false;
     try {
       return Boolean(window.localStorage.getItem('access_token'));
     } catch {
       return false;
     }
-  })();
-  const canAccessNotification = loggedIn || hasAccessToken;
+  };
 
   // 根据连接状态决定显示哪个未读数
   const unreadMessages = connectionState === 'connected' ? storeUnreadCount : pollingUnreadCount;
@@ -153,6 +152,14 @@ export const Dock = () => {
     logoutUrl.searchParams.set('culture', currentLanguage);
 
     window.location.href = logoutUrl.toString();
+  };
+
+  const handleOpenNotificationClick = () => {
+    if (!loggedIn && !hasAccessToken()) {
+      handleLoginClick();
+      return;
+    }
+    openApp('notification');
   };
 
   const hydrateCurrentUser = async () => {
@@ -333,19 +340,17 @@ export const Dock = () => {
             <div className={styles.divider} />
             <div className={styles.rightSection}>
               {/* 通知中心快捷入口 */}
-              {canAccessNotification && (
-                <button
-                  type="button"
-                  className={styles.notificationButton}
-                  onClick={() => openApp('notification')}
-                  title="通知中心"
-                >
-                  <Icon icon="mdi:bell" size={28} />
-                  {unreadMessages > 0 && (
-                    <div className={styles.notificationBadge}>{unreadMessages}</div>
-                  )}
-                </button>
-              )}
+              <button
+                type="button"
+                className={styles.notificationButton}
+                onClick={handleOpenNotificationClick}
+                title="通知中心"
+              >
+                <Icon icon="mdi:bell" size={28} />
+                {unreadMessages > 0 && (
+                  <div className={styles.notificationBadge}>{unreadMessages}</div>
+                )}
+              </button>
               <div className={styles.time}>
                 {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
               </div>
@@ -372,19 +377,17 @@ export const Dock = () => {
             </div>
 
             {/* 通知中心快捷入口（灵动岛） */}
-            {canAccessNotification && (
-              <button
-                type="button"
-                className={styles.miniNotificationButton}
-                onClick={() => openApp('notification')}
-                title="通知中心"
-              >
-                <Icon icon="mdi:bell" size={16} />
-                {unreadMessages > 0 && (
-                  <div className={styles.miniNotificationBadge}>{unreadMessages}</div>
-                )}
-              </button>
-            )}
+            <button
+              type="button"
+              className={styles.miniNotificationButton}
+              onClick={handleOpenNotificationClick}
+              title="通知中心"
+            >
+              <Icon icon="mdi:bell" size={16} />
+              {unreadMessages > 0 && (
+                <div className={styles.miniNotificationBadge}>{unreadMessages}</div>
+              )}
+            </button>
 
             {/* 运行中的应用（最多显示3个） */}
             {runningApps.slice(0, 3).map(({ window, app }) => (
