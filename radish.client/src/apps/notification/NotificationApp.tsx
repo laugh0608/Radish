@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { NotificationCenter, notificationApi, type NotificationItemData } from '@radish/ui';
+import { NotificationList, notificationApi, type NotificationItemData } from '@radish/ui';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
 import { toast } from '@radish/ui';
@@ -22,7 +22,7 @@ export const NotificationApp = () => {
   useEffect(() => {
     const converted: NotificationItemData[] = recentNotifications.map(n => ({
       id: n.id,
-      type: mapNotificationType(n.type),
+      type: n.type,
       title: n.title,
       content: n.content,
       priority: 1,
@@ -51,12 +51,12 @@ export const NotificationApp = () => {
           pageSize: 20
         });
 
-        // 将 API 返回的通知添加到 Store
+        // API 已经返回了正确格式的数据，直接添加到 Store
         const store = useNotificationStore.getState();
         result.notifications.forEach(n => {
           store.addNotification({
             id: n.id,
-            type: mapNotificationTypeReverse(n.type),
+            type: mapNotificationTypeToStore(n.type),
             title: n.title,
             content: n.content,
             isRead: n.isRead,
@@ -70,6 +70,7 @@ export const NotificationApp = () => {
         });
       } catch (error) {
         console.error('加载通知列表失败:', error);
+        toast.error('加载通知列表失败');
       } finally {
         setLoading(false);
       }
@@ -137,31 +138,28 @@ export const NotificationApp = () => {
     }
   }, [recentNotifications, unreadCount]);
 
-  // 查看更多
-  const handleViewMore = useCallback(() => {
-    toast.info('跳转到通知列表页面（待实现）');
-  }, []);
-
   return (
     <div className={styles.notificationApp}>
       <div className={styles.header}>
         <h1 className={styles.title}>通知中心</h1>
-        <div className={styles.stats}>
+        <div className={styles.actions}>
           <span className={styles.count}>
             {unreadCount > 0 ? `${unreadCount} 条未读` : '全部已读'}
           </span>
+          {unreadCount > 0 && (
+            <button className={styles.markAllBtn} onClick={handleMarkAllAsRead}>
+              全部已读
+            </button>
+          )}
         </div>
       </div>
       <div className={styles.content}>
-        <NotificationCenter
-          unreadCount={unreadCount}
+        <NotificationList
           notifications={notifications}
           loading={loading}
           onNotificationClick={handleNotificationClick}
           onMarkAsRead={handleMarkAsRead}
-          onMarkAllAsRead={handleMarkAllAsRead}
           onDelete={handleDelete}
-          onViewMore={handleViewMore}
         />
       </div>
     </div>
@@ -169,30 +167,19 @@ export const NotificationApp = () => {
 };
 
 /**
- * 将 Store 的通知类型映射到 UI 组件的类型
+ * 将 API 返回的通知类型映射到 Store 的类型
  */
-function mapNotificationType(type: string): string {
-  const typeMap: Record<string, string> = {
-    'system': 'System',
-    'reply': 'CommentReply',
-    'mention': 'Mention',
-    'like': 'PostLiked',
-    'follow': 'Follow'
-  };
-  return typeMap[type] || 'System';
-}
-
-/**
- * 将 UI 组件的通知类型映射回 Store 的类型
- */
-function mapNotificationTypeReverse(type: string): 'system' | 'reply' | 'mention' | 'like' | 'follow' {
+function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention' | 'like' | 'follow' {
   const typeMap: Record<string, 'system' | 'reply' | 'mention' | 'like' | 'follow'> = {
     'System': 'system',
     'CommentReply': 'reply',
+    'CommentReplied': 'reply',
     'Mention': 'mention',
+    'Mentioned': 'mention',
     'PostLiked': 'like',
     'CommentLiked': 'like',
-    'Follow': 'follow'
+    'Follow': 'follow',
+    'Followed': 'follow'
   };
   return typeMap[type] || 'system';
 }
