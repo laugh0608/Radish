@@ -3,6 +3,7 @@ import { NotificationCenter, notificationApi, type NotificationItemData } from '
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useNotificationHub } from '@/services/notificationHub';
 import { toast } from '@radish/ui';
+import styles from './NotificationCenterAdapter.module.css';
 
 /**
  * NotificationCenter 适配器
@@ -157,16 +158,18 @@ export const NotificationCenterAdapter = () => {
   }, []);
 
   return (
-    <NotificationCenter
-      unreadCount={unreadCount}
-      notifications={notifications}
-      loading={loading}
-      onNotificationClick={handleNotificationClick}
-      onMarkAsRead={handleMarkAsRead}
-      onMarkAllAsRead={handleMarkAllAsRead}
-      onDelete={handleDelete}
-      onViewMore={handleViewMore}
-    />
+    <div className={styles.notificationWrapper}>
+      <NotificationCenter
+        unreadCount={unreadCount}
+        notifications={notifications}
+        loading={loading}
+        onNotificationClick={handleNotificationClick}
+        onMarkAsRead={handleMarkAsRead}
+        onMarkAllAsRead={handleMarkAllAsRead}
+        onDelete={handleDelete}
+        onViewMore={handleViewMore}
+      />
+    </div>
   );
 };
 

@@ -1,0 +1,27 @@
+/* NotificationCenter 在 StatusBar 中的样式覆盖 */
+
+/* 确保容器正确显示 */
+.notificationWrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 覆盖触发按钮样式，适配深色 StatusBar */
+.notificationWrapper :global(.trigger) {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.notificationWrapper :global(.trigger:hover) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.notificationWrapper :global(.trigger.active) {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* 确保下拉面板在 StatusBar 之上 */
+.notificationWrapper :global(.panel) {
+  z-index: 10001;
+}
