@@ -177,6 +177,14 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
     /// <returns>是否成功</returns>
     Task<bool> UnfreezeExperienceAsync(long userId);
 
+    /// <summary>
+    /// 管理员重新计算并更新所有等级配置（根据当前配置文件）
+    /// </summary>
+    /// <param name="operatorId">操作员 ID</param>
+    /// <param name="operatorName">操作员名称</param>
+    /// <returns>更新的等级配置列表</returns>
+    Task<List<LevelConfigVo>> RecalculateLevelConfigsAsync(long operatorId, string operatorName);
+
     #endregion
 }
 

@@ -2,6 +2,7 @@ using AutoMapper;
 using Radish.Common;
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
+using Radish.Extension.ExperienceExtension;
 using Radish.Infrastructure;
 using Radish.IRepository;
 using Radish.IService;
@@ -20,6 +21,7 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
     private readonly IBaseRepository<LevelConfig> _levelConfigRepository;
     private readonly IBaseRepository<UserExpDailyStats> _dailyStatsRepository;
     private readonly IBaseRepository<User> _userRepository;
+    private readonly IExperienceCalculator _experienceCalculator;
 
     /// <summary>乐观锁冲突重试次数</summary>
     private const int MaxRetryCount = 3;
@@ -33,7 +35,8 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
         IBaseRepository<ExpTransaction> expTransactionRepository,
         IBaseRepository<LevelConfig> levelConfigRepository,
         IBaseRepository<UserExpDailyStats> dailyStatsRepository,
-        IBaseRepository<User> userRepository)
+        IBaseRepository<User> userRepository,
+        IExperienceCalculator experienceCalculator)
         : base(mapper, userExpRepository)
     {
         _userExpRepository = userExpRepository;
@@ -41,6 +44,7 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
         _levelConfigRepository = levelConfigRepository;
         _dailyStatsRepository = dailyStatsRepository;
         _userRepository = userRepository;
+        _experienceCalculator = experienceCalculator;
     }
 
     #region 经验值查询
@@ -490,6 +494,66 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
     {
         // TODO P1: 实现解冻功能
         return false;
+    }
+
+    /// <summary>
+    /// 管理员重新计算并更新所有等级配置（根据当前配置文件）
+    /// </summary>
+    public async Task<List<LevelConfigVo>> RecalculateLevelConfigsAsync(long operatorId, string operatorName)
+    {
+        try
+        {
+            Log.Information("管理员 {OperatorName}({OperatorId}) 开始重新计算等级配置", operatorName, operatorId);
+
+            // 1. 使用计算器生成新的经验值配置
+            var levelExpData = _experienceCalculator.CalculateAllLevels();
+            Log.Information("使用 {FormulaType} 公式计算经验值: {Summary}",
+                _experienceCalculator.GetFormulaType(),
+                _experienceCalculator.GetConfigSummary());
+
+            // 2. 更新数据库中的等级配置
+            var updatedConfigs = new List<LevelConfig>();
+
+            foreach (var (level, (expRequired, expCumulative)) in levelExpData)
+            {
+                var config = await _levelConfigRepository.QueryFirstAsync(l => l.Level == level);
+                if (config != null)
+                {
+                    // 更新已存在的配置
+                    config.ExpRequired = expRequired;
+                    config.ExpCumulative = expCumulative;
+                    config.ModifyTime = DateTime.Now;
+                    config.ModifyBy = operatorName;
+                    config.ModifyId = operatorId;
+
+                    await _levelConfigRepository.UpdateAsync(config);
+                    updatedConfigs.Add(config);
+
+                    Log.Information("更新等级配置: Lv.{Level} ({Name}) - ExpRequired={ExpRequired}, ExpCumulative={ExpCumulative}",
+                        level, config.LevelName, expRequired, expCumulative);
+                }
+                else
+                {
+                    Log.Warning("等级 {Level} 配置不存在，跳过更新", level);
+                }
+            }
+
+            // 3. 清除计算器缓存
+            if (_experienceCalculator is ExperienceCalculator calculator)
+            {
+                calculator.ClearCache();
+            }
+
+            Log.Information("等级配置重新计算完成，共更新 {Count} 个等级", updatedConfigs.Count);
+
+            // 4. 返回更新后的配置列表
+            return await GetLevelConfigsAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "重新计算等级配置失败");
+            throw;
+        }
     }
 
     #endregion

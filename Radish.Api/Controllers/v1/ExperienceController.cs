@@ -162,6 +162,37 @@ public class ExperienceController : ControllerBase
             : MessageModel<bool>.Message(false, "调整失败", false);
     }
 
+    /// <summary>
+    /// 管理员重新计算并更新所有等级配置
+    /// </summary>
+    /// <remarks>
+    /// 根据 appsettings.json 中的 ExperienceCalculator 配置重新计算所有等级的经验值要求。
+    /// 用于在修改配置参数后同步更新数据库中的等级配置。
+    /// </remarks>
+    /// <returns>更新后的等级配置列表</returns>
+    [HttpPost]
+    [Authorize(Policy = "SystemOrAdmin")]
+    public async Task<MessageModel<List<LevelConfigVo>>> RecalculateLevelConfigs()
+    {
+        var operatorId = GetCurrentUserId();
+        var operatorName = GetCurrentUserName();
+
+        if (operatorId <= 0)
+        {
+            return MessageModel<List<LevelConfigVo>>.Message(false, "未登录", default!);
+        }
+
+        try
+        {
+            var result = await _experienceService.RecalculateLevelConfigsAsync(operatorId, operatorName ?? "Admin");
+            return MessageModel<List<LevelConfigVo>>.Success($"成功重新计算 {result.Count} 个等级配置", result);
+        }
+        catch (Exception ex)
+        {
+            return MessageModel<List<LevelConfigVo>>.Message(false, $"重新计算失败: {ex.Message}", default!);
+        }
+    }
+
     #endregion
 
     #region 私有辅助方法
