@@ -1,11 +1,11 @@
 # 部署与容器指南
 
 ## 目标
-本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile` 构建镜像、配置环境变量，并提供一个 PostgreSQL + API 的 Compose 示例，确保与 `global.json` 指定的 .NET 10 SDK 及现有目录结构保持一致。
+本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile` 构建镜像、配置环境变量，并提供一个 PostgreSQL + API 的 Compose 示例，确保与 .NET 10 SDK 及现有目录结构保持一致。
 
 ## 先决条件
 - Docker Engine ≥ 24，能够拉取 `mcr.microsoft.com/dotnet/*` 官方镜像。
-- .NET SDK 10.0.0（满足 `global.json`），用于调试或本地 `dotnet publish`。
+- .NET SDK 10.0.0+，用于调试或本地 `dotnet publish`。
 - Node.js 20+：可选，用于本地构建前端；镜像会在 `with-node` 阶段安装 Node 响应 webpack/Vite 资源打包需求。
 - PostgreSQL 15+：本地或托管实例，需提供 `ConnectionStrings__Default`。
 - **Auth 证书**：准备好 OIDC 签名/加密证书（`.pfx` 文件），并在部署环境中通过环境变量覆盖 `OpenIddict__Encryption__*` 配置；默认的 `Certs/dev-auth-cert.pfx` 仅用于本地联调，生产必须替换。
@@ -693,4 +693,3 @@ volumes:
   2. 根据实际数据库/Redis/域名/TLS 方案，补全 Compose 中的环境变量与端口映射；
   3. 在测试环境中逐步启用各服务容器，并使用 `docker stats`/监控系统验证内存与 CPU 占用情况；
   4. 确认没有影响现有非容器化部署流程后，再考虑将该方案纳入正式的部署流水线。
-
