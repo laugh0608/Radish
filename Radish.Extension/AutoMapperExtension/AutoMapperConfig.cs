@@ -20,6 +20,7 @@ public class AutoMapperConfig
         cfg.AddProfile<AttachmentProfile>();
         cfg.AddProfile<CoinProfile>();
         cfg.AddProfile<NotificationProfile>();
+        cfg.AddProfile<ExperienceProfile>();
     }
 
     #region 已弃用
