@@ -183,10 +183,19 @@ namespace Radish.Service;
             return false;
         }
 
-        // 3. 获取所有等级配置
+        // 3. 检查每日上限（防刷机制）
+        var dailyStats = await GetOrCreateDailyStatsAsync(userId, DateTime.Today);
+        if (!CheckDailyLimit(dailyStats, amount, expType))
+        {
+            Log.Warning("用户 {UserId} 经验值已达每日上限，expType={ExpType}, 当日已获得={ExpEarned}",
+                userId, expType, dailyStats.ExpEarned);
+            return false;
+        }
+
+        // 4. 获取所有等级配置
         var levelConfigs = await GetLevelConfigsCacheAsync();
 
-        // 4. 计算新的经验值和等级
+        // 5. 计算新的经验值和等级
         var oldTotalExp = userExp.TotalExp;
         var oldLevel = userExp.CurrentLevel;
         var oldCurrentExp = userExp.CurrentExp;
@@ -194,7 +203,7 @@ namespace Radish.Service;
         var newTotalExp = oldTotalExp + amount;
         var (newLevel, newCurrentExp) = CalculateLevel(newTotalExp, levelConfigs);
 
-        // 5. 更新用户经验值（使用乐观锁）
+        // 6. 更新用户经验值（使用乐观锁）
         var updatedRows = await _userExpRepository.UpdateColumnsAsync(
             e => new UserExperience
             {
@@ -213,7 +222,10 @@ namespace Radish.Service;
             throw new ConcurrencyException("乐观锁冲突：经验值已被其他操作修改");
         }
 
-        // 6. 记录交易日志
+        // 7. 更新每日统计
+        await UpdateDailyStatsAsync(dailyStats, amount, expType);
+
+        // 8. 记录交易日志
         var transaction = new ExpTransaction
         {
             Id = SnowFlakeSingle.instance.getID(),
@@ -862,6 +874,165 @@ namespace Radish.Service;
                 userId, oldLevel, newLevel);
             throw;
         }
+    }
+
+    /// <summary>
+    /// 获取或创建每日统计记录
+    /// </summary>
+    private async Task<UserExpDailyStats> GetOrCreateDailyStatsAsync(long userId, DateTime statDate)
+    {
+        var stats = await _dailyStatsRepository.QueryFirstAsync(
+            s => s.UserId == userId && s.StatDate == statDate.Date);
+
+        if (stats == null)
+        {
+            stats = new UserExpDailyStats
+            {
+                UserId = userId,
+                StatDate = statDate.Date,
+                ExpEarned = 0,
+                ExpFromPost = 0,
+                ExpFromComment = 0,
+                ExpFromLike = 0,
+                ExpFromHighlight = 0,
+                ExpFromLogin = 0,
+                PostCount = 0,
+                CommentCount = 0,
+                LikeGivenCount = 0,
+                LikeReceivedCount = 0,
+                CreateTime = DateTime.Now
+            };
+
+            await _dailyStatsRepository.AddAsync(stats);
+        }
+
+        return stats;
+    }
+
+    /// <summary>
+    /// 检查每日上限
+    /// </summary>
+    private bool CheckDailyLimit(UserExpDailyStats dailyStats, int amount, string expType)
+    {
+        // TODO: 从配置读取每日上限（暂时硬编码）
+        const int MaxDailyExp = 500;
+        const int MaxExpFromPost = 100;
+        const int MaxExpFromComment = 100;
+        const int MaxExpFromLike = 50;
+        const int MaxExpFromHighlight = 200;
+        const int MaxExpFromLogin = 20;
+
+        // 检查总经验值上限
+        if (dailyStats.ExpEarned + amount > MaxDailyExp)
+        {
+            Log.Warning("用户每日总经验值已达上限：userId={UserId}, current={Current}, max={Max}",
+                dailyStats.UserId, dailyStats.ExpEarned, MaxDailyExp);
+            return false;
+        }
+
+        // 检查各类型经验值上限
+        switch (expType)
+        {
+            case "POST_CREATE":
+            case "FIRST_POST":
+                if (dailyStats.ExpFromPost + amount > MaxExpFromPost)
+                {
+                    Log.Warning("用户每日发帖经验值已达上限：userId={UserId}, current={Current}, max={Max}",
+                        dailyStats.UserId, dailyStats.ExpFromPost, MaxExpFromPost);
+                    return false;
+                }
+                break;
+
+            case "COMMENT_CREATE":
+            case "FIRST_COMMENT":
+                if (dailyStats.ExpFromComment + amount > MaxExpFromComment)
+                {
+                    Log.Warning("用户每日评论经验值已达上限：userId={UserId}, current={Current}, max={Max}",
+                        dailyStats.UserId, dailyStats.ExpFromComment, MaxExpFromComment);
+                    return false;
+                }
+                break;
+
+            case "RECEIVE_LIKE":
+            case "GIVE_LIKE":
+                if (dailyStats.ExpFromLike + amount > MaxExpFromLike)
+                {
+                    Log.Warning("用户每日点赞经验值已达上限：userId={UserId}, current={Current}, max={Max}",
+                        dailyStats.UserId, dailyStats.ExpFromLike, MaxExpFromLike);
+                    return false;
+                }
+                break;
+
+            case "GOD_COMMENT":
+            case "SOFA_COMMENT":
+                if (dailyStats.ExpFromHighlight + amount > MaxExpFromHighlight)
+                {
+                    Log.Warning("用户每日神评/沙发经验值已达上限：userId={UserId}, current={Current}, max={Max}",
+                        dailyStats.UserId, dailyStats.ExpFromHighlight, MaxExpFromHighlight);
+                    return false;
+                }
+                break;
+
+            case "DAILY_LOGIN":
+            case "CONTINUOUS_LOGIN":
+                if (dailyStats.ExpFromLogin + amount > MaxExpFromLogin)
+                {
+                    Log.Warning("用户每日登录经验值已达上限：userId={UserId}, current={Current}, max={Max}",
+                        dailyStats.UserId, dailyStats.ExpFromLogin, MaxExpFromLogin);
+                    return false;
+                }
+                break;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// 更新每日统计
+    /// </summary>
+    private async Task UpdateDailyStatsAsync(UserExpDailyStats dailyStats, int amount, string expType)
+    {
+        // 更新总经验值
+        dailyStats.ExpEarned += amount;
+
+        // 更新各类型经验值
+        switch (expType)
+        {
+            case "POST_CREATE":
+            case "FIRST_POST":
+                dailyStats.ExpFromPost += amount;
+                dailyStats.PostCount++;
+                break;
+
+            case "COMMENT_CREATE":
+            case "FIRST_COMMENT":
+                dailyStats.ExpFromComment += amount;
+                dailyStats.CommentCount++;
+                break;
+
+            case "RECEIVE_LIKE":
+                dailyStats.ExpFromLike += amount;
+                dailyStats.LikeReceivedCount++;
+                break;
+
+            case "GIVE_LIKE":
+                dailyStats.ExpFromLike += amount;
+                dailyStats.LikeGivenCount++;
+                break;
+
+            case "GOD_COMMENT":
+            case "SOFA_COMMENT":
+                dailyStats.ExpFromHighlight += amount;
+                break;
+
+            case "DAILY_LOGIN":
+            case "CONTINUOUS_LOGIN":
+                dailyStats.ExpFromLogin += amount;
+                break;
+        }
+
+        dailyStats.ModifyTime = DateTime.Now;
+        await _dailyStatsRepository.UpdateAsync(dailyStats);
     }
 
     #endregion
