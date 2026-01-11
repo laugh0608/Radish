@@ -37,3 +37,12 @@ export type {
   UnreadCountResponse,
   NotificationListResponse
 } from './notification';
+
+// 经验值 API
+export { experienceApi } from './experience';
+export type {
+  UserExperience,
+  ExpTransaction,
+  ExpTransactionQueryParams,
+  LeaderboardItem,
+} from './experience';

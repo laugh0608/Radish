@@ -159,7 +159,7 @@ git push origin v1.2.0.251126
   - radish.ui：仅依赖外部 npm 包，不依赖任何业务项目
   - **重要**：radish.client 和 radish.console 是两个完全独立的 SPA，各自有独立的路由、认证流程和部署方式；它们通过 @radish/ui 共享基础组件，但业务逻辑和状态管理完全隔离
 - Gateway 项目（Radish.Gateway）：
-  - Phase 0 阶段：依赖 `Radish.Common`（配置工具）和 `Radish.Extension`（日志扩展），提供 Razor Pages 页面展示和静态文件服务
+  - Phase 0 阶段：依赖 `Radish.Common`（配置工具）和 `Radish.Extension.Host`（日志扩展），提供 Razor Pages 页面展示和静态文件服务
   - P1+ 阶段：额外引入 `Ocelot` 或 `YARP` 实现路由转发，可能需要引用 `Radish.Service` 实现聚合接口和统一认证
   - 职责：服务门户展示、健康检查聚合、API 路由转发（P1+）、统一认证（P2+）、请求聚合（P3+）
 - 后端项目按层次结构依赖：
@@ -169,10 +169,10 @@ git push origin v1.2.0.251126
     - **复杂业务逻辑场景**：创建继承自 `BaseService<TEntity, TVo>` 的自定义 Service，添加特定业务方法
     - BaseService 提供的通用方法：QueryAsync, QueryByIdAsync, QueryPageAsync, AddAsync, UpdateAsync, DeleteAsync 等
   - Radish.Repository 依赖 Radish.IRepository、Radish.Model 以及 Radish.Infrastructure 中的 SqlSugar/租户扩展，只能向 Service 层返回实体或实体集合，禁止直接引用任何 Vo/DTO；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model，以便共享实体与视图模型定义。
-  - **Service 层数据访问约束**（重要）：
-    - **严禁**在 Service 层直接使用 `_repository.Db.Queryable` 或 `_repository.DbBase.Queryable` 访问数据库实例
+- **Service 层数据访问约束**（重要）：
+    - **严禁**在 Service 层直接持有/使用 `ISqlSugarClient`（Queryable/Updateable 等）访问数据库实例
     - **所有**数据访问必须通过 Repository 方法完成
-    - ❌ 错误示例：`await _repository.Db.Queryable<Comment>().Where(...).GroupBy(...).ToListAsync()`
+    - ❌ 错误示例：`await db.Queryable<Comment>().Where(...).GroupBy(...).ToListAsync()`
     - ✅ 正确示例：`await _repository.QueryDistinctAsync(c => c.PostId, c => c.IsEnabled)`
     - **仓储扩展策略**（按优先级顺序）：
       1. **优先**：在 BaseRepository 中添加泛型方法（如 `QueryDistinctAsync`、`QuerySumAsync`）- 可跨实体复用，适用于通用聚合、去重、排序等操作
@@ -594,10 +594,9 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 ## 前后端通信安全要求
 
 - 所有前后端数据交互必须通过 HTTPS 进行，禁止使用明文 HTTP，确保传输链路具备 TLS 加密。
-- 登录、密码重置、密保验证等含有敏感字段的请求，客户端需先使用项目约定的 RSA 公钥加密敏感参数，后端使用私钥解密，再进入业务流程。
+- 前端不做自定义“二次加密”（不做 RSA 前端加密）；敏感字段依赖 TLS 传输加密，后端负责安全存储与校验（见 [密码安全](/guide/password-security)）。
 - 若同时涉及本地缓存或离线存储，需确保不会以明文形式存储账号、密码、令牌等敏感信息。
-- 公私钥对统一由后端团队生成和轮换，前端需在构建阶段或运行时安全加载最新公钥。
-- 开发联调阶段同样遵循 HTTPS+RSA 约束，以防调试阶段泄漏敏感数据。
+- 开发联调阶段同样遵循 HTTPS 约束，建议始终从 Gateway 入口访问服务以贴近真实部署环境。
 
 ## 国际化（i18n）约定
 

@@ -23,6 +23,7 @@ using Radish.Extension.SqlSugarExtension;
 using Radish.Extension.OpenApiExtension;
 using Radish.Extension.RateLimitExtension;
 using Radish.Extension.AuditLogExtension;
+using Radish.Extension.ExperienceExtension;
 using Radish.Infrastructure.FileStorage;
 using Radish.Infrastructure.ImageProcessing;
 using Radish.IRepository;
@@ -179,6 +180,8 @@ builder.Services.AddCacheSetup();
 builder.Services.AddRateLimitSetup();
 // 注册审计日志服务
 builder.Services.AddAuditLogSetup();
+// 注册经验值计算器服务
+builder.Services.AddExperienceCalculator(builder.Configuration);
 
 // 注册 SignalR 服务
 builder.Services.AddSignalR(options =>

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Radish.Common\Radish.Common.csproj" />
+    <ProjectReference Include="..\Radish.Model\Radish.Model.csproj" />
+  </ItemGroup>
+
+</Project>

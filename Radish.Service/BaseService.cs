@@ -11,8 +11,6 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     private readonly IBaseRepository<TEntity> _baseRepository;
     private readonly IMapper _mapper;
 
-    // 仅测试使用，在 Service 层直接操作 DbBase 实例，正常业务工况请使用 BaseRepository 或业务自己的特殊仓储中的 CURD 方法
-    public ISqlSugarClient Db => _baseRepository.DbBase;
     protected IMapper Mapper => _mapper;
 
     /// <summary>构造函数依赖注入</summary>

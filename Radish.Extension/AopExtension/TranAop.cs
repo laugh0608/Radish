@@ -84,6 +84,13 @@ public class TranAop : IInterceptor
                 Console.WriteLine($"Begin Transaction");
                 _unitOfWorkManage.BeginTran(method);
                 break;
+            case Propagation.RequiresNew:
+                // TODO: 实现真正的独立事务（需要使用独立的数据库连接或保存点）
+                // 当前实现：总是开启新事务，类似 Nested
+                _logger.LogDebug($"Begin Independent Transaction (RequiresNew)");
+                Console.WriteLine($"Begin Independent Transaction (RequiresNew)");
+                _unitOfWorkManage.BeginTran(method);
+                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(propagation), propagation, null);
         }

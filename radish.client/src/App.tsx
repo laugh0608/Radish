@@ -5,6 +5,8 @@ import { parseApiResponse, type ApiResponse } from './api/client';
 import { notificationHub } from '@/services/notificationHub';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from './stores/userStore';
+import { LevelUpModal } from '@radish/ui';
+import { useLevelUpListener } from '@/hooks/useLevelUpListener';
 import './App.css';
 
 interface Forecast {
@@ -43,6 +45,9 @@ function App() {
     const [userError, setUserError] = useState<string>();
     const unreadCount = useNotificationStore(state => state.unreadCount);
     const hubState = useNotificationStore(state => state.connectionState);
+
+    // 升级事件监听
+    const { levelUpData, showModal, handleClose } = useLevelUpListener();
 
     const apiBaseUrl = useMemo(() => {
         // 统一通过 Gateway 访问，apiBaseUrl 就是当前 origin
@@ -125,59 +130,70 @@ function App() {
         </table>;
 
     return (
-        <main className="app-shell">
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                <button type="button" onClick={() => i18n.changeLanguage('zh')}>
-                    {t('lang.zh')}
-                </button>
-                <button type="button" onClick={() => i18n.changeLanguage('en')}>
-                    {t('lang.en')}
-                </button>
-            </div>
-            <h1 id="tableLabel">{t('app.title')}</h1>
-            <p>{t('app.description')}</p>
-
-            <section style={{ marginBottom: '1rem' }}>
-                <h2>{t('auth.sectionTitle')}</h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        <button type="button" onClick={() => handleLogin(apiBaseUrl)}>
-                            {t('auth.login')}
-                        </button>
-                        {currentUser && (
-                            <button type="button" onClick={() => handleLogout(apiBaseUrl)}>
-                                退出登录
-                            </button>
-                        )}
-                    </div>
-                    <div>
-                        {currentUser && (
-                            <span>
-                                {t('auth.currentUser', {
-                                    userName: currentUser.userName,
-                                    userId: currentUser.userId,
-                                    tenantId: currentUser.tenantId
-                                })}
-                            </span>
-                        )}
-                        {!currentUser && !userError && (
-                            <span>{t('auth.notLoggedIn')}</span>
-                        )}
-                        {userError && (
-                            <span>{t('auth.userInfoLoadFailedPrefix')}{userError}</span>
-                        )}
-                    </div>
-
-                    <div>
-                        <strong>通知</strong>
-                        <div>Hub: {hubState}</div>
-                        <div>未读: {unreadCount}</div>
-                    </div>
+        <>
+            <main className="app-shell">
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <button type="button" onClick={() => i18n.changeLanguage('zh')}>
+                        {t('lang.zh')}
+                    </button>
+                    <button type="button" onClick={() => i18n.changeLanguage('en')}>
+                        {t('lang.en')}
+                    </button>
                 </div>
-            </section>
+                <h1 id="tableLabel">{t('app.title')}</h1>
+                <p>{t('app.description')}</p>
 
-            {contents}
-        </main>
+                <section style={{ marginBottom: '1rem' }}>
+                    <h2>{t('auth.sectionTitle')}</h2>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button type="button" onClick={() => handleLogin(apiBaseUrl)}>
+                                {t('auth.login')}
+                            </button>
+                            {currentUser && (
+                                <button type="button" onClick={() => handleLogout(apiBaseUrl)}>
+                                    退出登录
+                                </button>
+                            )}
+                        </div>
+                        <div>
+                            {currentUser && (
+                                <span>
+                                    {t('auth.currentUser', {
+                                        userName: currentUser.userName,
+                                        userId: currentUser.userId,
+                                        tenantId: currentUser.tenantId
+                                    })}
+                                </span>
+                            )}
+                            {!currentUser && !userError && (
+                                <span>{t('auth.notLoggedIn')}</span>
+                            )}
+                            {userError && (
+                                <span>{t('auth.userInfoLoadFailedPrefix')}{userError}</span>
+                            )}
+                        </div>
+
+                        <div>
+                            <strong>通知</strong>
+                            <div>Hub: {hubState}</div>
+                            <div>未读: {unreadCount}</div>
+                        </div>
+                    </div>
+                </section>
+
+                {contents}
+            </main>
+
+            {/* 升级动画弹窗 */}
+            {levelUpData && (
+                <LevelUpModal
+                    isOpen={showModal}
+                    data={levelUpData}
+                    onClose={handleClose}
+                />
+            )}
+        </>
     );
 
     async function populateWeatherData() {

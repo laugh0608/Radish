@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Radish.Extension.Host\Radish.Extension.Host.csproj" />
     <ProjectReference Include="..\Radish.Extension\Radish.Extension.csproj" />
     <ProjectReference Include="..\Radish.Service\Radish.Service.csproj" />
     <ProjectReference Include="..\Radish.Auth\Radish.Auth.csproj" />

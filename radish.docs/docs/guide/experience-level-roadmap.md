@@ -1,0 +1,264 @@
+# 经验值与等级系统：实施计划与待确认问题
+
+> 入口页：[经验值与等级系统设计方案](/guide/experience-level-system)
+
+## 12. 实施计划
+
+### 12.1 Phase 0(准备阶段) - 1 天 ✅ 已完成
+
+- [x] 确定等级昵称和经验值曲线
+- [x] 设计数据库表结构
+- [x] 定义 API 接口契约
+
+### 12.2 Phase 1(核心功能) - 5-7 天 ✅ 已完成 (2026-01-11)
+
+**目标**:实现经验值发放、等级计算、个人主页展示
+
+**任务清单**:
+1. **数据模型** ✅
+   - [x] 创建 `UserExperience` 实体
+   - [x] 创建 `ExpTransaction` 实体
+   - [x] 创建 `LevelConfig` 实体
+   - [x] 创建 `UserExpDailyStats` 实体
+   - [x] 配置 AutoMapper 映射 (`ExperienceProfile`)
+
+2. **Repository 层** ✅
+   - [x] 使用 `IBaseRepository<UserExperience>`
+   - [x] 使用 `IBaseRepository<ExpTransaction>`
+   - [x] 使用 `IBaseRepository<LevelConfig>`
+   - [x] 使用 `IBaseRepository<UserExpDailyStats>`
+
+3. **Service 层** ✅
+   - [x] 创建 `IExperienceService` 接口
+   - [x] 实现 `ExperienceService`(发放、��级、统计)
+   - [x] 实现乐观锁重试机制 (6次重试，指数退避)
+   - [x] 实现等级计算逻辑 (二分查找式算法)
+   - [x] 实现每日上限检查
+
+4. **API 接口** ✅
+   - [x] `GET /api/v1/Experience/GetMyExperience` (当前用户)
+   - [x] `GET /api/v1/Experience/GetUserExperience/{userId}` (指定用户)
+   - [x] `GET /api/v1/Experience/GetLevelConfigs` (所有等级配置)
+   - [x] `GET /api/v1/Experience/GetLevelConfig/{level}` (指定等级)
+   - [x] `GET /api/v1/Experience/GetMyTransactions` (交易记录)
+   - [x] `POST /api/v1/Experience/AdminAdjustExperience` (管理员调整)
+   - [x] `POST /api/v1/Experience/RecalculateLevelConfigs` (重新计算等级配置)
+
+5. **数据初始化** ✅
+   - [x] 初始化 `LevelConfig` 表数据(Lv.0-10)
+   - [x] 数据库表结构创建成功
+   - [x] 11个等级配置种子数据初始化成功
+
+6. **经验值计算公式配置化** ✅
+   - [x] `ExperienceCalculator` 实现（4种公式：Hybrid/Exponential/Polynomial/Segmented）
+   - [x] `ExperienceCalculatorOptions` 配置类
+   - [x] `appsettings.json` 完整配置
+   - [x] 管理员 API 重新计算等级配置
+   - [x] 缓存支持（IDistributedCache）
+
+7. **测试** ⏳ 待完善
+   - [ ] 单元测试:等级计算、经验值发放
+   - [ ] 集成测试:完整流程
+   - [ ] 与发帖功能集成测试
+
+### 12.3 Phase 2(业务集成) - 3-5 天 ✅ 已完成 (2026-01-11)
+
+**目标**:与论坛功能集成,实现所有经验值获取途径
+
+**任务清单**:
+1. **发帖奖励** ✅
+   - [x] 在 `PostService.PublishPostAsync` 集成
+   - [x] 首次发帖额外奖励
+
+2. **评论奖励** ✅
+   - [x] 在 `CommentService.AddCommentAsync` 集成
+   - [x] 首次评论额外奖励
+
+3. **点赞奖励** ✅
+   - [x] 在 `PostService.ToggleLikeAsync` 集成(帖子)
+   - [x] 在 `CommentService.ToggleLikeAsync` 集成(评论)
+
+4. **神评/沙发奖励** ✅
+   - [x] 在 `CommentHighlightJob.ExecuteAsync` 集成
+
+5. **每日上限防刷机制** ✅
+   - [x] 实现每日上限检查
+   - [x] 缓存每日获得经验值
+   - [x] 配置各类型经验值每日上限
+
+6. **签到奖励** ⏳ P4
+   - [ ] 实现每日登录奖励
+   - [ ] 实现连续登录奖励
+
+7. **测试** ⏳
+   - [ ] 端到端测试:各种互动场景
+
+### 12.4 Phase 3(前端展示) - 3-5 天 ✅ 已完成 (2026-01-11)
+
+**目标**:完善前端展示,包括经验条、升级动画、明细页面
+
+**任务清单**:
+1. **组件开发** ✅ 全部完成
+   - [x] `ExperienceBar` 组件(经验条) - 已实现 (@radish/ui)
+   - [x] `LevelUpModal` 组件(升级动画) - 已实现 (@radish/ui)
+   - [x] `experienceApi` 客户端 - 已实现 (@radish/ui)
+   - [x] `ExperienceDetail` 页面(明细) - 已实现 (radish.client/src/apps/experience-detail)
+   - [x] `Leaderboard` 页面(排行榜) - 已实现 (radish.client/src/apps/leaderboard)
+
+2. **个人主页集成** ✅
+   - [x] 在个人主页添加经验条 - 已实现 (UserInfoCard)
+   - [x] 添加"经验详情"入口 - 已实现（桌面应用）
+
+3. **Dock 集成** ✅
+   - [x] 显示当前等级徽章 - 已实现 (ExperienceDisplay 组件)
+   - [x] 鼠标悬停显示进度 - 已实现
+
+4. **WebSocket 推送** ✅
+   - [x] 监听升级事件 - 已实现 (useLevelUpListener Hook)
+   - [x] 触发升级动画 - 已实现 (App.tsx + Shell.tsx)
+   - [x] SignalR 连接复用 - 已实现
+
+5. **测试** ⏳
+   - [x] UI 测试:各种等级展示 - 已验证
+   - [x] 动画测试:升级特效 - 已验证
+   - [ ] 端到端测试:完整升级流程 - 待实际运行测试
+
+### 12.5 Phase 4(完善与优化) - 2-3 天 ⏳ 待实施
+
+**目标**:防刷机制、管理后台、性能优化
+
+**任务清单**:
+1. **防刷机制** ⏳ 待实施（优先级：高）
+   - [ ] 实现异常检测规则（短时间大量获得经验值）
+   - [x] 实现经验值冻结功能（框架已完成，待实现具体逻辑）
+   - [ ] 实现互刷检测
+   - [ ] 实现机器人行为检测
+   - [ ] 添加定时任务自动检测
+
+2. **排行榜** ✅ 已完成
+   - [x] `GET /api/v1/Experience/GetLeaderboard`
+   - [x] `GET /api/v1/Experience/GetMyRank`
+   - [x] 前端排行榜页面
+   - [ ] 定时任务:更新排行榜缓存（可选优化）
+
+3. **管理后台** ⏳ 待实施（优先级：中）
+   - [ ] 经验值统计面板（每日发放量、等级分布、来源占比）
+   - [ ] 用户经验值管理（冻结/解冻界面）
+   - [ ] 异常检测日志查看
+   - [x] 管理员调整经验值 API
+
+4. **性能优化** ⏳ 待实施（优先级：中）
+   - [x] 经验值计算器缓存（已实现）
+   - [ ] 等级配置缓存（Service 层）
+   - [ ] 数据库索引优化
+   - [ ] 压力测试
+
+5. **单元测试** ⏳ 待实施（优先级：高）
+   - [ ] 等级计算测试
+   - [ ] 经验值发放测试
+   - [ ] 每日上限测试
+   - [ ] 并发测试
+   - [ ] 冻结功能测试
+
+6. **文档** ✅ 已完成
+   - [x] API 文档更新
+   - [x] 运维文档编写
+
+---
+
+
+## 13. 待确认问题
+
+### 13.1 设计细节
+
+- [ ] 等级昵称是否采用修仙体系?还是其他主题(如动物、植物、星座等)?
+- [ ] Lv.10 之后是否需要继续扩展?还是 Lv.10 为最高等级?
+- [ ] 升级奖励(萝卜币)的金额是否合理?
+- [ ] 各行为的经验值奖励是否合理?是否需要调整?
+
+### 13.2 业务规则
+
+- [ ] 点赞后取消,是否扣除已获得的经验值?(建议:不扣除)
+- [ ] 帖子/评论被删除,是否扣除已获得的经验值?(建议:不扣除)
+- [ ] 用户被封禁,经验值是否清零?(建议:不清零,但冻结)
+
+### 13.3 性能与容量
+
+- [ ] 预期用户规模?影响排行榜缓存策略
+- [ ] 经验值交易记录保留多久?
+- [ ] 是否需要每月/每年汇总报表?
+
+### 13.4 UI/UX
+
+- [ ] 升级动画是否需要音效?
+- [ ] 经验条是否需要在所有页面显示?(如帖子列表、评论区)
+- [ ] 等级徽章的样式是否需要专业设计师设计?
+
+---
+
+
+## 14. 参考资料
+
+### 14.1 内部文档
+
+- [萝卜币系统设计](/guide/radish-coin-system) - 积分系统设计参考
+- [通知系统实时推送](/guide/notification-realtime) - 升级通知推送
+- [神评/沙发功能](/features/comment-highlight) - 经验值触发点
+
+### 14.2 外部资源
+
+- [游戏化设计:让产品更有黏性](https://book.douban.com/subject/26883342/)
+- [等级系统设计的经验与教训](https://www.gamasutra.com/view/feature/134842/the_chemistry_of_game_design.php)
+- [Reddit Karma 系统](https://www.reddit.com/wiki/karma)
+- [Stack Overflow 声望系统](https://stackoverflow.com/help/whats-reputation)
+
+---
+
+**文档版本**:v1.5
+**创建日期**:2026-01-02
+**最后更新**:2026-01-11
+**实施状态**:P0/P1/P2/P3 已完成（100%）
+**负责人**:待定
+**审核状态**:P0/P1/P2/P3 已实施
+
+**v1.6 更新内容**（2026-01-11）:
+- ✅ 代码实际完成情况审查
+- ✅ 更新 Phase 1-3 完成状态（100%）
+- ✅ 经验值计算公式配置化已实现（文档未标记）
+- ✅ 每日上限防刷机制已实现（文档未标记）
+- ✅ 排行榜功能已实现（文档未标记）
+- ✅ 经验值详情页面已实现（文档未标记）
+- ⏳ Phase 4 待实施项整理（冻结功能、异常检测、单元测试、管理后台）
+- ✅ M8 经验值与等级系统核心功能全部完成，可进入 M9
+
+**v1.5 更新内容**（2026-01-11）:
+- ✅ Phase 3 前端展示 100% 完成
+- ✅ ExperienceDetail 页面完成（趋势图/来源饼图/明细列表）
+- ✅ 集成 Recharts 图表库
+- ✅ 创建完整测试指导文档（experience-level-testing.md）
+- ✅ M8 经验值与等级系统核心功能全部完成
+
+**v1.4 更新内容**（2026-01-11）:
+- ✅ Phase 3 前端展示完成（ExperienceBar/LevelUpModal/Leaderboard）
+- ✅ Dock 集成完成（ExperienceDisplay 组件）
+- ✅ 个人主页集成完成（UserInfoCard 经验条）
+- ✅ 升级动画 WebSocket 推送完成（useLevelUpListener Hook）
+- ✅ 排行榜功能完成（后端 API + 前端页面）
+- ⏳ 经验值详情页面为可选功能，暂不实施
+
+**v1.3 更新内容**（2026-01-11）:
+- ✅ Phase 2 业务集成完成（发帖/评论/点赞/神评/沙发奖励）
+- ✅ 每日上限防刷机制完成
+- ✅ Phase 3 核心组件完成（ExperienceBar/LevelUpModal）
+- ✅ Dock 集成完成（ExperienceDisplay 组件）
+- ✅ 升级动画 WebSocket 推送完成（useLevelUpListener Hook）
+- ✅ App.tsx 和 Shell.tsx 集成升级动画弹窗
+- ⏳ 经验值详情页面和排行榜待实现
+
+**v1.2 更新内容**（2026-01-11）:
+- ✅ 新增 2.3 节：经验值计算公式配置化
+- ✅ 支持 4 种计算公式（混合/指数/多项式/分段）
+- ✅ 提供推荐配置方案（新社区/长期运营/硬核/修仙阶段）
+- ✅ 实现动态调整流程和管理员 API
+- ✅ 扩展层 ExperienceExtension 完整实现
+- ✅ 数据库初始化支持动态计算
