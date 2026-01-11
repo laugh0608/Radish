@@ -30,36 +30,22 @@ public class ExperienceController : ControllerBase
     #region 经验值查询
 
     /// <summary>
-    /// 获取当前用户经验值信息
+    /// 获取用户经验值信息
     /// </summary>
+    /// <param name="userId">用户 ID（可选，不传则返回当前登录用户）</param>
     /// <returns>用户经验值信息</returns>
     [HttpGet]
-    public async Task<MessageModel<UserExperienceVo>> GetMyExperience()
+    [HttpGet("{userId:long}")]
+    public async Task<MessageModel<UserExperienceVo>> GetMyExperience(long? userId = null)
     {
-        var userId = GetCurrentUserId();
-        if (userId <= 0)
+        // 如果没有传userId，则获取当前登录用户的ID
+        var targetUserId = userId ?? GetCurrentUserId();
+        if (targetUserId <= 0)
         {
             return MessageModel<UserExperienceVo>.Message(false, "未登录", default!);
         }
 
-        var result = await _experienceService.GetUserExperienceAsync(userId);
-        if (result == null)
-        {
-            return MessageModel<UserExperienceVo>.Message(false, "用户经验值信息不存在", default!);
-        }
-
-        return MessageModel<UserExperienceVo>.Success("查询成功", result);
-    }
-
-    /// <summary>
-    /// 获取指定用户经验值信息
-    /// </summary>
-    /// <param name="userId">用户 ID</param>
-    /// <returns>用户经验值信息</returns>
-    [HttpGet("{userId:long}")]
-    public async Task<MessageModel<UserExperienceVo>> GetUserExperience(long userId)
-    {
-        var result = await _experienceService.GetUserExperienceAsync(userId);
+        var result = await _experienceService.GetUserExperienceAsync(targetUserId);
         if (result == null)
         {
             return MessageModel<UserExperienceVo>.Message(false, "用户经验值信息不存在", default!);
