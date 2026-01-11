@@ -76,7 +76,348 @@ CREATE TABLE level_config (
 }
 ```
 
-### 2.3 经验值特性
+### 2.3 经验值计算公式配置化
+
+**设计理念**:
+- **灵活调整**:通过配置文件动态调整经验值曲线,无需修改代码
+- **公式多样**:支持多种数学模型(指数/多项式/混合/分段)
+- **热更新**:管理员可通过 API 重新计算等级配置
+- **可追溯**:配置变更记录操作日志
+
+#### 2.3.1 支持的计算公式
+
+**1. 混合公式（Hybrid，默认推荐）**
+```
+ExpRequired(level) = BaseExp × (level + 1)^Exponent × ScaleFactor
+```
+
+**特点**:
+- 灵活性高,易于调优
+- 平滑增长曲线
+- 适合中长期运营
+
+**参数**:
+- `BaseExp`: 基础经验值（建议 50-200）
+- `Exponent`: 指数幂次（建议 1.5-2.5，控制曲线陡度）
+- `ScaleFactor`: 缩放因子（1.0 = 正常难度，>1 增加难度，<1 降低难度）
+
+**示例**:
+```json
+{
+  "FormulaType": "Hybrid",
+  "BaseExp": 100.0,
+  "Exponent": 2.0,
+  "ScaleFactor": 1.0
+}
+```
+
+**经验值预览**（默认配置）:
+- Lv.0 → Lv.1: 100 经验（100 × 1² × 1.0）
+- Lv.1 → Lv.2: 400 经验（100 × 2² × 1.0）
+- Lv.2 → Lv.3: 900 经验（100 × 3² × 1.0）
+- Lv.9 → Lv.10: 10000 经验（100 × 10² × 1.0）
+
+---
+
+**2. 指数增长公式（Exponential）**
+```
+ExpRequired(level) = BaseExp × Multiplier^level × ScaleFactor
+```
+
+**特点**:
+- 经典游戏公式
+- 增长速度快
+- 后期等级难度陡增
+
+**参数**:
+- `BaseExp`: 基础经验值
+- `Multiplier`: 增长倍数（建议 1.5-2.5）
+- `ScaleFactor`: 缩放因子
+
+**示例**:
+```json
+{
+  "FormulaType": "Exponential",
+  "BaseExp": 100.0,
+  "Multiplier": 2.0,
+  "ScaleFactor": 1.0
+}
+```
+
+**经验值预览**:
+- Lv.0 → Lv.1: 100（100 × 2⁰）
+- Lv.1 → Lv.2: 200（100 × 2¹）
+- Lv.2 → Lv.3: 400（100 × 2²）
+- Lv.9 → Lv.10: 51200（100 × 2⁹）
+
+---
+
+**3. 多项式公式（Polynomial）**
+```
+ExpRequired(level) = A×level³ + B×level² + C×level + D
+```
+
+**特点**:
+- 精细控制曲线形状
+- 可调整前期/中期/后期难度比例
+- 数学模型灵活
+
+**参数**:
+- `PolynomialA`: 三次项系数
+- `PolynomialB`: 二次项系数
+- `PolynomialC`: 一次项系数
+- `PolynomialD`: 常数项
+
+**示例**:
+```json
+{
+  "FormulaType": "Polynomial",
+  "PolynomialA": 10.0,
+  "PolynomialB": 50.0,
+  "PolynomialC": 100.0,
+  "PolynomialD": 0.0,
+  "ScaleFactor": 1.0
+}
+```
+
+---
+
+**4. 分段公式（Segmented）**
+```
+不同等级区间使用不同的指数:
+level ≤ Threshold1: BaseExp × (level+1)^Exponent1
+level ≤ Threshold2: BaseExp × (level+1)^Exponent2
+level > Threshold2: BaseExp × (level+1)^Exponent3
+```
+
+**特点**:
+- 符合修仙阶段特点
+- 每个境界难度可独立调整
+- 阶段性成长曲线
+
+**参数**:
+- `SegmentThreshold1`: 低级到中级分界线（默认 3）
+- `SegmentThreshold2`: 中级到高级分界线（默认 7）
+- `SegmentExponent1/2/3`: 各阶段的指数
+
+**示例**:
+```json
+{
+  "FormulaType": "Segmented",
+  "BaseExp": 100.0,
+  "SegmentThreshold1": 3,
+  "SegmentThreshold2": 7,
+  "SegmentExponent1": 1.0,
+  "SegmentExponent2": 1.5,
+  "SegmentExponent3": 2.0,
+  "ScaleFactor": 1.0
+}
+```
+
+**经验值预览**（3个阶段难度递增）:
+- Lv.0-3: 平缓增长（凡人→金丹）
+- Lv.4-7: 中速增长（元婴→合体）
+- Lv.8-10: 高速增长（大乘→飞升）
+
+#### 2.3.2 配置文件示例
+
+**位置**: `Radish.Api/appsettings.json`
+
+```json
+{
+  "ExperienceCalculator": {
+    // 计算公式类型: Exponential / Polynomial / Hybrid / Segmented
+    "FormulaType": "Hybrid",
+
+    // === 基础参数（所有公式通用） ===
+    "BaseExp": 100.0,              // 基础经验值
+    "ScaleFactor": 1.0,            // 缩放因子（调整整体难度）
+    "MinExpRequired": 10,          // 最小经验值要求
+    "MaxLevel": 10,                // 最大等级
+
+    // === 缓存配置 ===
+    "EnableCache": true,           // 是否启用缓存
+    "CacheExpirationMinutes": 60,  // 缓存过期时间
+
+    // === Hybrid/Exponential 公式参数 ===
+    "Exponent": 2.0,               // 指数幂次（控制曲线陡度）
+    "Multiplier": 2.0,             // 指数增长倍数
+
+    // === Polynomial 公式参数 ===
+    "PolynomialA": 10.0,
+    "PolynomialB": 50.0,
+    "PolynomialC": 100.0,
+    "PolynomialD": 0.0,
+
+    // === Segmented 公式参数 ===
+    "SegmentThreshold1": 3,        // 低级到中级分界线
+    "SegmentThreshold2": 7,        // 中级到高级分界线
+    "SegmentExponent1": 1.0,       // 低级段指数
+    "SegmentExponent2": 1.5,       // 中级段指数
+    "SegmentExponent3": 2.0        // 高级段指数
+  }
+}
+```
+
+#### 2.3.3 推荐配置方案
+
+**1. 新社区快速成长模式**（推荐用于早期运营）
+```json
+{
+  "FormulaType": "Hybrid",
+  "BaseExp": 50.0,
+  "Exponent": 1.8,
+  "ScaleFactor": 1.0
+}
+```
+**特点**: 升级较快,用户容易获得成就感
+
+---
+
+**2. 长期运营平衡模式**（默认配置）
+```json
+{
+  "FormulaType": "Hybrid",
+  "BaseExp": 100.0,
+  "Exponent": 2.0,
+  "ScaleFactor": 1.0
+}
+```
+**特点**: 中等难度,平衡短期激励和长期目标
+
+---
+
+**3. 硬核修仙模式**（推荐用于成熟社区）
+```json
+{
+  "FormulaType": "Exponential",
+  "BaseExp": 100.0,
+  "Multiplier": 2.2,
+  "ScaleFactor": 1.0
+}
+```
+**特点**: 后期难度高,顶级玩家稀缺性强
+
+---
+
+**4. 修仙阶段递进模式**（主题化推荐）
+```json
+{
+  "FormulaType": "Segmented",
+  "BaseExp": 100.0,
+  "SegmentThreshold1": 3,
+  "SegmentThreshold2": 7,
+  "SegmentExponent1": 1.5,
+  "SegmentExponent2": 2.0,
+  "SegmentExponent3": 2.5,
+  "ScaleFactor": 1.0
+}
+```
+**特点**: 符合修仙境界突破感,每个大境界难度递增
+
+#### 2.3.4 动态调整流程
+
+**1. 修改配置文件**
+```bash
+# 编辑 Radish.Api/appsettings.json
+vim Radish.Api/appsettings.json
+```
+
+**2. 调用管理员 API 重新计算**
+```http
+POST /api/v1/Experience/RecalculateLevelConfigs
+Authorization: Bearer {admin_token}
+
+Response:
+{
+  "isSuccess": true,
+  "messageInfo": "成功重新计算 11 个等级配置",
+  "responseData": [
+    {
+      "level": 0,
+      "levelName": "凡人",
+      "expRequired": 100,
+      "expCumulative": 0,
+      "themeColor": "#9E9E9E"
+    },
+    // ... 其他等级
+  ]
+}
+```
+
+**3. 系统自动更新**
+- 更新数据库中的 `LevelConfig` 表
+- 清除计算器缓存
+- 记录操作日志
+
+**注意事项**:
+- ⚠️ **现有用户经验值不会变动**,只影响未来的升级计算
+- ⚠️ **建议在低峰期操作**,避免影响用户体验
+- ⚠️ **提前通知用户**,说明等级曲线调整
+
+#### 2.3.5 技术实现
+
+**计算器接口**:
+```csharp
+public interface IExperienceCalculator
+{
+    /// <summary>计算指定等级升到下一级所需的经验值</summary>
+    long CalculateExpRequired(int level);
+
+    /// <summary>计算达到指定等级所需的累计经验值</summary>
+    long CalculateExpCumulative(int level);
+
+    /// <summary>批量计算所有等级的经验值配置</summary>
+    Dictionary<int, (long ExpRequired, long ExpCumulative)> CalculateAllLevels();
+
+    /// <summary>获取当前使用的公式类型</summary>
+    string GetFormulaType();
+
+    /// <summary>获取当前配置的摘要信息</summary>
+    string GetConfigSummary();
+}
+```
+
+**数据库初始化**（使用动态计算）:
+```csharp
+// Radish.DbMigrate/InitialDataSeeder.cs
+private static async Task SeedLevelConfigsAsync(ISqlSugarClient db, IServiceProvider services)
+{
+    var calculator = services.GetRequiredService<IExperienceCalculator>();
+    var levelExpData = calculator.CalculateAllLevels();
+
+    Console.WriteLine($"使用 {calculator.GetFormulaType()} 公式计算经验值");
+    Console.WriteLine($"配置摘要: {calculator.GetConfigSummary()}");
+
+    foreach (var (level, (expRequired, expCumulative)) in levelExpData)
+    {
+        // 创建等级配置...
+    }
+}
+```
+
+**管理员 API**:
+```csharp
+[HttpPost]
+[Authorize(Policy = "SystemOrAdmin")]
+public async Task<MessageModel<List<LevelConfigVo>>> RecalculateLevelConfigs()
+{
+    var operatorId = GetCurrentUserId();
+    var operatorName = GetCurrentUserName();
+
+    var result = await _experienceService.RecalculateLevelConfigsAsync(
+        operatorId,
+        operatorName ?? "Admin"
+    );
+
+    return MessageModel<List<LevelConfigVo>>.Success(
+        $"成功重新计算 {result.Count} 个等级配置",
+        result
+    );
+}
+```
+
+### 2.4 经验值特性
 
 - **存储单位**:整数(BIGINT),避免浮点计算误差
 - **不可转让**:经验值仅个人所有,不可转账或交易
@@ -1486,9 +1827,17 @@ public async Task PublishPost_ShouldGrantExp_AndTriggerLevelUp()
 
 ---
 
-**文档版本**:v1.1
+**文档版本**:v1.2
 **创建日期**:2026-01-02
 **最后更新**:2026-01-11
-**实施状态**:P0 阶段已完成，P1/P2 进行中
+**实施状态**:P0 阶段已完成（含经验值计算公式配置化），P1/P2 进行中
 **负责人**:待定
 **审核状态**:P0 已实施
+
+**v1.2 更新内容**（2026-01-11）:
+- ✅ 新增 2.3 节：经验值计算公式配置化
+- ✅ 支持 4 种计算公式（混合/指数/多项式/分段）
+- ✅ 提供推荐配置方案（新社区/长期运营/硬核/修仙阶段）
+- ✅ 实现动态调整流程和管理员 API
+- ✅ 扩展层 ExperienceExtension 完整实现
+- ✅ 数据库初始化支持动态计算
