@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { ExperienceBar } from '@radish/ui';
-import { experienceApi, type UserExperience } from '@radish/ui/api';
+import { ExperienceBar, experienceApi, type UserExperience } from '@radish/ui';
 import { useUserStore } from '@/stores/userStore';
 import styles from './ExperienceDisplay.module.css';
 
@@ -11,7 +9,6 @@ import styles from './ExperienceDisplay.module.css';
  * 显示用户的等级和经验值进度条
  */
 export const ExperienceDisplay = () => {
-  const { t } = useTranslation();
   const { isAuthenticated } = useUserStore();
   const [experience, setExperience] = useState<UserExperience | null>(null);
   const [loading, setLoading] = useState(false);

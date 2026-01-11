@@ -461,18 +461,101 @@ if (userExp == null)
 
 ---
 
-## 下一步计划
+## 升级动画弹窗前端集成完成
 
-**M8 P1 阶段**（预计 2026-01-12 开始）：
+### 核心成果
+
+**前端升级动画集成**（2026-01-11）：
+
+#### 新增文件
+1. **useLevelUpListener.ts** - 升级事件监听 Hook
+   - 监听 SignalR 推送的 `LevelUp` 事件
+   - 转换后端数据为前端 `LevelUpData` 格式
+   - 管理弹窗显示状态
+   - 自动清理事件监听器
+
+#### 修改文件
+1. **App.tsx** - 测试页面集成
+   - 导入 `LevelUpModal` 和 `useLevelUpListener`
+   - 渲染升级动画弹窗
+   - 使用 Fragment 包裹主内容和弹窗
+
+2. **Shell.tsx** - WebOS 桌面集成
+   - 导入 `LevelUpModal` 和 `useLevelUpListener`
+   - 在桌面环境中渲染升级动画弹窗
+   - 与通知系统共享 SignalR 连接
+
+3. **ExperienceDisplay.tsx** - 修复导入错误
+   - 修正 API 导入路径（从 `@radish/ui/api` 改为 `@radish/ui`）
+   - 移除未使用的 `useTranslation` 导入
+
+### 技术实现
+
+**SignalR 事件监听**：
+```typescript
+// 获取底层 SignalR 连接并注册事件监听
+const connection = notificationHub.getConnection();
+if (connection) {
+  connection.on('LevelUp', handleLevelUp);
+}
+```
+
+**数据转换**：
+```typescript
+const levelUpInfo: LevelUpData = {
+  oldLevel: data.oldLevel || 0,
+  newLevel: data.newLevel || 0,
+  oldLevelName: data.oldLevelName || '凡人',
+  newLevelName: data.newLevelName || '练气',
+  themeColor: data.themeColor || '#9E9E9E',
+  rewards: {
+    coins: data.coinReward || 0,
+    items: data.items || []
+  },
+  message: data.message || `恭喜你升级到 ${data.newLevelName}！`
+};
+```
+
+**弹窗渲染**：
+```tsx
+{levelUpData && (
+  <LevelUpModal
+    isOpen={showModal}
+    data={levelUpData}
+    onClose={handleClose}
+  />
+)}
+```
+
+### 技术亮点
+
+1. **复用 SignalR 连接**：升级事件监听复用通知系统的 SignalR 连接，无需额外连接
+2. **自动清理**：useEffect 返回清理函数，组件卸载时自动移除事件监听器
+3. **双端集成**：同时在测试页面（App.tsx）和 WebOS 桌面（Shell.tsx）集成，确保全场景覆盖
+4. **类型安全**：使用 TypeScript 类型定义，确保数据格式正确
+
+### 编译验证
+
+✅ 构建成功（0 Error, 0 Warning）
+- TypeScript 类型检查通过
+- Vite 构建成功
+- 所有导入路径正确
+
+### 下一步计划
+
+**M8 P3 阶段前端展示**（部分完成）：
+- ✅ `LevelUpModal` 组件（升级动画）- 已完成
+- ✅ WebSocket 推送监听升级事件 - 已完成
+- ✅ 触发升级动画 - 已完成
+- ⏳ `ExperienceBar` 组件（经验条）- 已实现，待集成到更多页面
+- ⏳ `ExperienceDetail` 页面（明细）- 待实现
+- ⏳ `Leaderboard` 页面（排行榜）- 待实现
+
+**M8 P1 阶段后端集成**（待继续）：
 - ✅ 升级事件处理（萝卜币奖励、通知推送）- 已完成
-- 调试并解决发帖未获得经验值的问题
-- 每日上限防刷机制
-- 与所有论坛功能集成（评论、点赞、神评、沙发）
-- 完善 API 接口（交易记录、排行榜、每日统计）
+- ⏳ 调试并解决发帖未获得经验值的问题 - 待测试
+- ⏳ 每日上限防刷机制 - 待实现
+- ⏳ 与所有论坛功能集成（评论、点赞、神评、沙发）- 待实现
+- ⏳ 完善 API 接口（交易记录、排行榜、每日统计）- 待实现
 
-**M8 P2 阶段**（预计后续）：
-- 前端等级徽章组件
-- 升级动画特效
-- 排行榜页面
-- 经验值详情页面
-- 单元测试和性能优化
+---
