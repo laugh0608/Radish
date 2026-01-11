@@ -877,3 +877,115 @@ const getExpSourceDistribution = () => {
 - ⏳ 单元测试和集成测试
 
 ---
+
+## M8 经验值系统代码审查与文档更新
+
+### 核心成果
+
+**代码实际完成情况审查**（2026-01-11）：
+
+#### 已完成但文档未标记的功能
+1. **经验值计算公式配置化** ✅
+   - `ExperienceCalculator` 完整实现（4种公式：Hybrid/Exponential/Polynomial/Segmented）
+   - `ExperienceCalculatorOptions` 配置类
+   - `appsettings.json` 完整配置（包含每日上限配置）
+   - 管理员 API：`RecalculateLevelConfigs`
+   - 缓存支持（IDistributedCache）
+   - 位置：`Radish.Extension/ExperienceExtension/`
+
+2. **每日上限防刷机制** ✅
+   - `CheckDailyLimit` - 检查每日上限
+   - `UpdateDailyStatsAsync` - 更新每日统计
+   - `GetOrCreateDailyStatsAsync` - 获取或创建统计记录
+   - 配置化的每日上限（MaxDailyExp: 500, MaxExpFromPost: 100 等）
+   - 位置：`Radish.Service/ExperienceService.cs` (line 1033-1157)
+
+3. **排行榜功能** ✅
+   - `GetLeaderboardAsync` - 分页排行榜（后端）
+   - `GetUserRankAsync` - 用户排名（后端）
+   - `LeaderboardApp` - 前端应用（radish.client/src/apps/leaderboard）
+   - 前三名特殊样式、当前用户高亮
+
+4. **经验值详情页面** ✅
+   - `ExperienceDetailApp` - 前端应用（radish.client/src/apps/experience-detail）
+   - 趋势图、来源饼图、明细列表
+   - 集成 Recharts 图表库
+
+#### 部分完成的功能
+1. **冻结/解冻功能** ⚠️
+   - ✅ 数据模型字段（ExpFrozen, FrozenUntil）
+   - ✅ 发放经验值时的冻结检查
+   - ❌ 冻结/解冻的具体实现（仅框架代码）
+   - ❌ 管理员 API 接口
+   - ❌ 前端管理界面
+
+2. **等级配置缓存** ⚠️
+   - ✅ ExperienceCalculator 已实现缓存
+   - ❌ Service 层的等级配置缓存（TODO 标记）
+
+#### 未实现的功能
+1. **单元测试** ❌
+   - 没有找到经验值相关的测试文件
+   - 测试覆盖率：0%
+
+2. **异常检测与风控** ❌
+   - 没有异常检测相关代码
+   - 没有互刷检测
+   - 没有机器人行为检测
+
+3. **签到奖励系统** ❌
+   - 没有签到相关代码
+
+4. **管理后台统计面板** ❌
+   - 没有经验值统计 API
+   - 没有等级分布统计
+   - 没有经验值来源分析
+
+### 文档更新
+
+1. **experience-level-roadmap.md** (v1.5 → v1.6)
+   - 更新 Phase 1-3 完成状态（100%）
+   - 标记经验值计算公式配置化已实现
+   - 标记每日上限防刷机制已实现
+   - 标记排行榜功能已实现
+   - 标记经验值详情页面已实现
+   - 整理 Phase 4 待实施项（冻结功能、异常检测、单元测试、管理后台）
+   - 标记 M8 核心功能全部完成，可进入 M9
+
+2. **development-plan.md**
+   - 更新 M8 里程碑状态：⏳ 计划中 → ✅ 已完成 (2026-01-11)
+   - 更新 M8 验收标准：增加排行榜和详情页
+   - 更新当前进度：准备进入 M9（商城系统）
+   - 新增 M8 完成情况总结（核心功能、待完善项）
+
+### 技术总结
+
+**M8 经验值与等级系统核心功能完成度**：
+- ✅ P0/P1/P2/P3 阶段：100% 完成
+- ⏳ P4 阶段（完善与优化）：待实施（非阻塞）
+
+**核心成就**：
+1. 11 级修仙体系完整实现
+2. 经验值发放、等级计算、升级奖励全链路打通
+3. 乐观锁并发控制（6次重试，指数退避）
+4. 每日上限防刷机制（可配置）
+5. 经验值计算公式配置化（4种公式）
+6. 排行榜功能（分页、排名查询）
+7. 经验值详情页面（趋势图、来源饼图、明细列表）
+8. 前端完整集成（ExperienceBar、LevelUpModal、Leaderboard、ExperienceDetail）
+9. SignalR 实时推送升级通知
+10. 与所有论坛功能集成（发帖/评论/点赞/神评/沙发）
+
+**待完善项**（非阻塞，可后续优化）：
+1. 冻结/解冻功能实现（预计 2-3 小时）
+2. 等级配置缓存（Service 层）（预计 1 小时）
+3. 异常检测与风控（预计 3-4 小时）
+4. 单元测试（预计 4-6 小时）
+5. 管理后台统计面板（预计 2-3 小时）
+
+**下一步**：
+- ✅ M8 经验值与等级系统核心功能全部完成
+- ✅ 文档已更新至真实进度
+- 🎯 准备进入 M9（商城系统）
+
+---
