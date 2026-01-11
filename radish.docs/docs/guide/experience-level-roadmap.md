@@ -53,59 +53,67 @@
    - [ ] 集成测试:完整流程
    - [ ] 与发帖功能集成测试
 
-### 12.3 Phase 2(业务集成) - 3-5 天
+### 12.3 Phase 2(业务集成) - 3-5 天 ✅ 已完成 (2026-01-11)
 
 **目标**:与论坛功能集成,实现所有经验值获取途径
 
 **任务清单**:
-1. **发帖奖励**
-   - [ ] 在 `PostService.PublishPostAsync` 集成
-   - [ ] 首次发帖额外奖励
+1. **发帖奖励** ✅
+   - [x] 在 `PostService.PublishPostAsync` 集成
+   - [x] 首次发帖额外奖励
 
-2. **评论奖励**
-   - [ ] 在 `CommentService.AddCommentAsync` 集成
-   - [ ] 首次评论额外奖励
+2. **评论奖励** ✅
+   - [x] 在 `CommentService.AddCommentAsync` 集成
+   - [x] 首次评论额外奖励
 
-3. **点赞奖励**
-   - [ ] 在 `PostService.ToggleLikeAsync` 集成(帖子)
-   - [ ] 在 `CommentService.ToggleLikeAsync` 集成(评论)
+3. **点赞奖励** ✅
+   - [x] 在 `PostService.ToggleLikeAsync` 集成(帖子)
+   - [x] 在 `CommentService.ToggleLikeAsync` 集成(评论)
 
-4. **神评/沙发奖励**
-   - [ ] 在 `CommentHighlightJob.ExecuteAsync` 集成
+4. **神评/沙发奖励** ✅
+   - [x] 在 `CommentHighlightJob.ExecuteAsync` 集成
 
-5. **签到奖励**
+5. **每日上限防刷机制** ✅
+   - [x] 实现每日上限检查
+   - [x] 缓存每日获得经验值
+   - [x] 配置各类型经验值每日上限
+
+6. **签到奖励** ⏳ P4
    - [ ] 实现每日登录奖励
    - [ ] 实现连续登录奖励
 
-6. **测试**
+7. **测试** ⏳
    - [ ] 端到端测试:各种互动场景
 
-### 12.4 Phase 3(前端展示) - 3-5 天
+### 12.4 Phase 3(前端展示) - 3-5 天 ⏳ 部分完成 (2026-01-11)
 
 **目标**:完善前端展示,包括经验条、升级动画、明细页面
 
 **任务清单**:
-1. **组件开发**
-   - [ ] `ExperienceBar` 组件(经验条)
-   - [ ] `LevelUpModal` 组件(升级动画)
-   - [ ] `ExperienceDetail` 页面(明细)
-   - [ ] `Leaderboard` 页面(排行榜)
+1. **组件开发** ✅ 核心组件已完成
+   - [x] `ExperienceBar` 组件(经验条) - 已实现 (@radish/ui)
+   - [x] `LevelUpModal` 组件(升级动画) - 已实现 (@radish/ui)
+   - [x] `experienceApi` 客户端 - 已实现 (@radish/ui)
+   - [ ] `ExperienceDetail` 页面(明细) - 待实现
+   - [ ] `Leaderboard` 页面(排行榜) - 待实现
 
-2. **个人主页集成**
+2. **个人主页集成** ⏳
    - [ ] 在个人主页添加经验条
    - [ ] 添加"经验详情"入口
 
-3. **Dock 集成**
-   - [ ] 显示当前等级徽章
-   - [ ] 鼠标悬停显示进度
+3. **Dock 集成** ✅
+   - [x] 显示当前等级徽章 - 已实现 (ExperienceDisplay 组件)
+   - [x] 鼠标悬停显示进度 - 已实现
 
-4. **WebSocket 推送**
-   - [ ] 监听升级事件
-   - [ ] 触发升级动画
+4. **WebSocket 推送** ✅
+   - [x] 监听升级事件 - 已实现 (useLevelUpListener Hook)
+   - [x] 触发升级动画 - 已实现 (App.tsx + Shell.tsx)
+   - [x] SignalR 连接复用 - 已实现
 
-5. **测试**
+5. **测试** ⏳
    - [ ] UI 测试:各种等级展示
    - [ ] 动画测试:升级特效
+   - [ ] 端到端测试:完整升级流程
 
 ### 12.5 Phase 4(完善与优化) - 2-3 天
 
@@ -186,12 +194,21 @@
 
 ---
 
-**文档版本**:v1.2
+**文档版本**:v1.3
 **创建日期**:2026-01-02
 **最后更新**:2026-01-11
-**实施状态**:P0 阶段已完成（含经验值计算公式配置化），P1/P2 进行中
+**实施状态**:P0/P1/P2 已完成，P3 部分完成
 **负责人**:待定
-**审核状态**:P0 已实施
+**审核状态**:P0/P1/P2 已实施
+
+**v1.3 更新内容**（2026-01-11）:
+- ✅ Phase 2 业务集成完成（发帖/评论/点赞/神评/沙发奖励）
+- ✅ 每日上限防刷机制完成
+- ✅ Phase 3 核心组件完成（ExperienceBar/LevelUpModal）
+- ✅ Dock 集成完成（ExperienceDisplay 组件）
+- ✅ 升级动画 WebSocket 推送完成（useLevelUpListener Hook）
+- ✅ App.tsx 和 Shell.tsx 集成升级动画弹窗
+- ⏳ 经验值详情页面和排行榜待实现
 
 **v1.2 更新内容**（2026-01-11）:
 - ✅ 新增 2.3 节：经验值计算公式配置化
