@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { ToastContainer } from '@radish/ui';
+import { ToastContainer, LevelUpModal } from '@radish/ui';
 import { notificationHub } from '@/services/notificationHub';
+import { useLevelUpListener } from '@/hooks/useLevelUpListener';
 import { Desktop } from './Desktop';
 import { Dock } from './Dock';
 import { WindowManager } from './WindowManager';
@@ -14,6 +15,9 @@ import styles from './Shell.module.css';
 export const Shell = () => {
   // 使用 ref 防止 React StrictMode 双重挂载导致重复连接
   const hasStartedRef = useRef(false);
+
+  // 升级事件监听
+  const { levelUpData, showModal, handleClose } = useLevelUpListener();
 
   useEffect(() => {
     const token = window.localStorage.getItem('access_token');
@@ -47,6 +51,15 @@ export const Shell = () => {
       <WindowManager />
       <Dock />
       <ToastContainer />
+
+      {/* 升级动画弹窗 */}
+      {levelUpData && (
+        <LevelUpModal
+          isOpen={showModal}
+          data={levelUpData}
+          onClose={handleClose}
+        />
+      )}
     </div>
   );
 };
