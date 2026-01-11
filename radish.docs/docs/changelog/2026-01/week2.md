@@ -632,9 +632,112 @@ const loadExperience = async () => {
 
 ---
 
+## 经验值排行榜功能完成
+
+### 核心成果
+
+**排行榜功能实现**（2026-01-11）：
+
+#### 后端实现
+1. **ExperienceService 排行榜方法**
+   - `GetLeaderboardAsync`: 分页查询排行榜
+   - `GetUserRankAsync`: 获取用户排名
+   - 按 TotalExp 降序排序，排除冻结用户
+   - 支持分页（默认 50 条/页，最大 100 条）
+   - 自动标记当前用户（IsCurrentUser）
+   - 联表查询用户信息和等级配置
+
+2. **ExperienceController 接口**
+   - `GET /api/v1/Experience/GetLeaderboard`: 获取排行榜（匿名可访问）
+   - `GET /api/v1/Experience/GetMyRank`: 获取当前用户排名（需认证）
+
+#### 前端实现
+1. **@radish/ui API 客户端**
+   - 新增 `LeaderboardItem` 类型定义
+   - `experienceApi.getLeaderboard()`: 获取排行榜
+   - `experienceApi.getMyRank()`: 获取我的排名
+
+2. **LeaderboardApp 组件**
+   - 分页浏览排行榜（50 条/页）
+   - 前三名特殊样式（🥇🥈🥉）
+   - 当前用户高亮显示
+   - 显示排名、用户名、等级、总经验值
+   - 响应式设计，移动端适配
+   - 加载状态、错误处理、空状态展示
+
+3. **WebOS 集成**
+   - 注册到应用列表（图标：mdi:trophy）
+   - 默认窗口大小：900x700
+   - 分类：user
+
+### 技术实现
+
+**后端排行榜查询**：
+```csharp
+// 数据库层面排序和分页
+var (pagedData, totalCount) = await _userExpRepository.QueryPageAsync(
+    whereExpression: e => !e.ExpFrozen, // 排除冻结用户
+    pageIndex: pageIndex,
+    pageSize: pageSize,
+    orderByExpression: e => e.TotalExp,
+    orderByType: OrderByType.Desc
+);
+
+// 联表查询用户信息和等级配置
+var userIds = pagedData.Select(e => e.UserId).ToList();
+var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
+var levelConfigs = await _levelConfigRepository.QueryAsync(l => levels.Contains(l.Level));
+```
+
+**用户排名计算**：
+```csharp
+// 统计比该用户经验值高的用户数量
+var higherCount = await _userExpRepository.QueryCountAsync(
+    e => !e.ExpFrozen && e.TotalExp > userExp.TotalExp
+);
+return (int)higherCount + 1; // 排名 = 比自己高的数量 + 1
+```
+
+**前端排行榜展示**：
+```tsx
+<div className={`${styles.item} ${item.isCurrentUser ? styles.currentUser : ''} ${getRankClass(item.rank)}`}>
+  <div className={styles.rank}>
+    {getRankIcon(item.rank) || `#${item.rank}`}
+  </div>
+  <div className={styles.userInfo}>
+    <div className={styles.userName}>{item.userName}</div>
+    <div className={styles.level} style={{ color: item.themeColor }}>
+      Lv.{item.currentLevel} {item.currentLevelName}
+    </div>
+  </div>
+  <div className={styles.exp}>
+    <div className={styles.expValue}>{Number(item.totalExp).toLocaleString()}</div>
+    <div className={styles.expLabel}>总经验值</div>
+  </div>
+</div>
+```
+
+### 技术亮点
+
+1. **性能优化**：数据库层面排序和分页，避免内存操作
+2. **用户体验**：前三名金银铜牌样式，当前用户高亮
+3. **响应式设计**：移动端适配，流畅的分页切换
+4. **错误处理**：完善的加载状态、错误提示、重试机制
+5. **匿名访问**：排行榜接口允许未登录用户查看
+
+### 编译验证
+
+✅ 后端编译成功（0 Error, 154 Warning）
+✅ 前端构建成功（0 Error, 0 Warning）
+- TypeScript 类型检查通过
+- Vite 构建成功
+- 所有导入路径正确
+
+---
+
 ### 下一步计划
 
-**M8 P3 阶段前端展示**（核心功能已完成）：
+**M8 P3 阶段前端展示**（已完成）：
 - ✅ `ExperienceBar` 组件（经验条）- 已完成 (@radish/ui)
 - ✅ `LevelUpModal` 组件（升级动画）- 已完成 (@radish/ui)
 - ✅ `experienceApi` 客户端 - 已完成 (@radish/ui)
@@ -642,5 +745,5 @@ const loadExperience = async () => {
 - ✅ WebSocket 推送监听升级事件 - 已完成 (useLevelUpListener Hook)
 - ✅ 触发升级动画 - 已完成 (App.tsx + Shell.tsx)
 - ✅ 个人主页集成经验条 - 已完成 (UserInfoCard)
-- ⏳ `ExperienceDetail` 页面（明细）- 待实现
-- ⏳ `Leaderboard` 页面（排行榜）- 待实现
+- ✅ `Leaderboard` 页面（排行榜）- 已完成
+- ⏳ `ExperienceDetail` 页面（明细）- 待实现（可选）
