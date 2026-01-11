@@ -67,6 +67,22 @@ export interface PagedResponse<T> {
 }
 
 /**
+ * 排行榜项
+ */
+export interface LeaderboardItem {
+  rank: number;
+  userId: string;
+  userName: string;
+  avatarUrl?: string;
+  currentLevel: number;
+  currentLevelName: string;
+  totalExp: string;
+  themeColor?: string;
+  badgeUrl?: string;
+  isCurrentUser: boolean;
+}
+
+/**
  * 经验值 API 客户端
  */
 export const experienceApi = {
@@ -134,29 +150,28 @@ export const experienceApi = {
   },
 
   /**
-   * 获取等级排行榜
+   * 获取经验值排行榜
    */
-  async getLevelRanking(pageIndex = 1, pageSize = 100): Promise<PagedResponse<UserExperience>> {
-    const response = await apiGet<PagedResponse<UserExperience>>(
-      `/api/v1/Experience/GetLevelRanking?pageIndex=${pageIndex}&pageSize=${pageSize}`,
-      { withAuth: true }
+  async getLeaderboard(pageIndex = 1, pageSize = 50): Promise<PagedResponse<LeaderboardItem>> {
+    const response = await apiGet<PagedResponse<LeaderboardItem>>(
+      `/api/v1/Experience/GetLeaderboard?pageIndex=${pageIndex}&pageSize=${pageSize}`
     );
     if (!response.ok) {
-      throw new Error(response.message || '获取等级排行榜失败');
+      throw new Error(response.message || '获取排行榜失败');
     }
     return response.data!;
   },
 
   /**
-   * 获取经验值排行榜
+   * 获取当前用户排名
    */
-  async getExpRanking(pageIndex = 1, pageSize = 100): Promise<PagedResponse<UserExperience>> {
-    const response = await apiGet<PagedResponse<UserExperience>>(
-      `/api/v1/Experience/GetExpRanking?pageIndex=${pageIndex}&pageSize=${pageSize}`,
+  async getMyRank(): Promise<number> {
+    const response = await apiGet<number>(
+      '/api/v1/Experience/GetMyRank',
       { withAuth: true }
     );
     if (!response.ok) {
-      throw new Error(response.message || '获取经验值排行榜失败');
+      throw new Error(response.message || '获取排名失败');
     }
     return response.data!;
   },

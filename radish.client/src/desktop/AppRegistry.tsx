@@ -4,6 +4,7 @@ import { ForumApp } from '@/apps/forum/ForumApp';
 import { ProfileApp } from '@/apps/profile/ProfileApp';
 import { CoinRewardDemo } from '@/apps/coin-demo';
 import { NotificationApp } from '@/apps/notification/NotificationApp';
+import { LeaderboardApp } from '@/apps/leaderboard/LeaderboardApp';
 import type { AppDefinition } from './types';
 
 /**
@@ -135,6 +136,17 @@ export const appRegistry: AppDefinition[] = [
     defaultSize: { width: 800, height: 700 },
     requiredRoles: ['User'],
     category: 'system'
+  },
+  {
+    id: 'leaderboard',
+    name: '排行榜',
+    icon: 'mdi:trophy',
+    description: '经验值排行榜',
+    component: LeaderboardApp,
+    type: 'window',
+    defaultSize: { width: 900, height: 700 },
+    requiredRoles: ['User'],
+    category: 'user'
   },
 
 ];

@@ -478,15 +478,77 @@ namespace Radish.Service;
         int pageSize = 50,
         long? currentUserId = null)
     {
-        // TODO P1: 实现排行榜查询
-        return new PageModel<LeaderboardItemVo>
+        try
         {
-            Page = pageIndex,
-            PageSize = pageSize,
-            DataCount = 0,
-            PageCount = 0,
-            Data = new List<LeaderboardItemVo>()
-        };
+            // 限制每页数量
+            if (pageSize > 100) pageSize = 100;
+            if (pageSize < 1) pageSize = 50;
+            if (pageIndex < 1) pageIndex = 1;
+
+            // 查询排行榜（按 TotalExp 降序，CurrentLevel 降序）
+            var (pagedData, totalCount) = await _userExpRepository.QueryPageAsync(
+                whereExpression: e => !e.ExpFrozen, // 排除冻结用户
+                pageIndex: pageIndex,
+                pageSize: pageSize,
+                orderByExpression: e => e.TotalExp,
+                orderByType: OrderByType.Desc
+            );
+
+            // 获取用户信息
+            var userIds = pagedData.Select(e => e.UserId).ToList();
+            var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
+            var userDict = users.ToDictionary(u => u.Id);
+
+            // 获取等级配置
+            var levels = pagedData.Select(e => e.CurrentLevel).Distinct().ToList();
+            var levelConfigs = await _levelConfigRepository.QueryAsync(l => levels.Contains(l.Level));
+            var levelConfigDict = levelConfigs.ToDictionary(l => l.Level);
+
+            // 计算起始排名
+            var startRank = (pageIndex - 1) * pageSize + 1;
+
+            // 映射为 LeaderboardItemVo
+            var leaderboard = new List<LeaderboardItemVo>();
+            for (int i = 0; i < pagedData.Count; i++)
+            {
+                var exp = pagedData[i];
+                var rank = startRank + i;
+
+                var item = new LeaderboardItemVo
+                {
+                    Rank = rank,
+                    UserId = exp.UserId,
+                    UserName = userDict.ContainsKey(exp.UserId) ? userDict[exp.UserId].UserName : "未知用户",
+                    CurrentLevel = exp.CurrentLevel,
+                    CurrentLevelName = levelConfigDict.ContainsKey(exp.CurrentLevel)
+                        ? levelConfigDict[exp.CurrentLevel].LevelName
+                        : $"Lv.{exp.CurrentLevel}",
+                    ThemeColor = levelConfigDict.ContainsKey(exp.CurrentLevel)
+                        ? levelConfigDict[exp.CurrentLevel].ThemeColor
+                        : "#9E9E9E",
+                    TotalExp = exp.TotalExp,
+                    IsCurrentUser = currentUserId.HasValue && exp.UserId == currentUserId.Value
+                };
+
+                leaderboard.Add(item);
+            }
+
+            var pageCount = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            return new PageModel<LeaderboardItemVo>
+            {
+                Page = pageIndex,
+                PageSize = pageSize,
+                DataCount = totalCount,
+                PageCount = pageCount,
+                Data = leaderboard
+            };
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "获取排行榜失败");
+            throw;
+        }
     }
 
     /// <summary>
@@ -494,8 +556,26 @@ namespace Radish.Service;
     /// </summary>
     public async Task<int> GetUserRankAsync(long userId)
     {
-        // TODO P1: 实现排名查询
-        return 0;
+        try
+        {
+            var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
+            if (userExp == null || userExp.ExpFrozen)
+            {
+                return 0; // 未上榜或被冻结
+            }
+
+            // 统计比该用户经验值高的用户数量
+            var higherCount = await _userExpRepository.QueryCountAsync(
+                e => !e.ExpFrozen && e.TotalExp > userExp.TotalExp
+            );
+
+            return (int)higherCount + 1; // 排名 = 比自己高的数量 + 1
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "获取用户 {UserId} 排名失败", userId);
+            return 0;
+        }
     }
 
     #endregion
