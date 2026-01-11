@@ -288,11 +288,55 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
                     if (rewardResult.IsSuccess)
                     {
-                        Serilog.Log.Information("帖子点赞奖励发放成功：PostId={PostId}, 作者={AuthorId}, 点赞者={LikerId}",
+                        Serilog.Log.Information("帖子点赞萝卜币奖励发放成功：PostId={PostId}, 作者={AuthorId}, 点赞者={LikerId}",
                             postId, post.AuthorId, userId);
                     }
 
-                    // 4.2 发送点赞通知（不给自己发通知）
+                    // 4.2 发放经验值奖励
+                    Serilog.Log.Information("准备发放帖子点赞经验值：PostId={PostId}, 作者={AuthorId}, 点赞者={LikerId}",
+                        postId, post.AuthorId, userId);
+
+                    // 4.2.1 被点赞者获得 +2 经验
+                    var receiverExpResult = await _experienceService.GrantExperienceAsync(
+                        userId: post.AuthorId,
+                        amount: 2,
+                        expType: "RECEIVE_LIKE",
+                        businessType: "Post",
+                        businessId: postId,
+                        remark: "帖子被点赞");
+
+                    if (receiverExpResult)
+                    {
+                        Serilog.Log.Information("帖子被点赞经验值发放成功：PostId={PostId}, 作者={AuthorId}, Amount=2",
+                            postId, post.AuthorId);
+                    }
+                    else
+                    {
+                        Serilog.Log.Warning("帖子被点赞经验值发放失败：PostId={PostId}, 作者={AuthorId}",
+                            postId, post.AuthorId);
+                    }
+
+                    // 4.2.2 点赞者获得 +1 经验
+                    var giverExpResult = await _experienceService.GrantExperienceAsync(
+                        userId: userId,
+                        amount: 1,
+                        expType: "GIVE_LIKE",
+                        businessType: "Post",
+                        businessId: postId,
+                        remark: "点赞帖子");
+
+                    if (giverExpResult)
+                    {
+                        Serilog.Log.Information("点赞帖子经验值发放成功：PostId={PostId}, 点赞者={LikerId}, Amount=1",
+                            postId, userId);
+                    }
+                    else
+                    {
+                        Serilog.Log.Warning("点赞帖子经验值发放失败：PostId={PostId}, 点赞者={LikerId}",
+                            postId, userId);
+                    }
+
+                    // 4.3 发送点赞通知（不给自己发通知）
                     if (post.AuthorId != userId)
                     {
                         // 检查是否应该去重
@@ -344,8 +388,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
                 }
                 catch (Exception ex)
                 {
-                    Serilog.Log.Error(ex, "发放帖子点赞奖励失败：PostId={PostId}, AuthorId={AuthorId}, LikerId={LikerId}",
-                        postId, post.AuthorId, userId);
+                    Serilog.Log.Error(ex, "发放帖子点赞奖励失败：PostId={PostId}, AuthorId={AuthorId}, LikerId={LikerId}, Message={Message}",
+                        postId, post.AuthorId, userId, ex.Message);
                 }
             });
         }

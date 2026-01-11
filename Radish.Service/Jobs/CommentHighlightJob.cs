@@ -19,17 +19,20 @@ public class CommentHighlightJob
     private readonly IBaseRepository<Comment> _commentRepository;
     private readonly IBaseRepository<CommentHighlight> _highlightRepository;
     private readonly ICoinRewardService _coinRewardService;
+    private readonly IExperienceService _experienceService;
     private readonly CommentHighlightOptions _highlightOptions;
 
     public CommentHighlightJob(
         IBaseRepository<Comment> commentRepository,
         IBaseRepository<CommentHighlight> highlightRepository,
         ICoinRewardService coinRewardService,
+        IExperienceService experienceService,
         IOptions<CommentHighlightOptions> highlightOptions)
     {
         _commentRepository = commentRepository;
         _highlightRepository = highlightRepository;
         _coinRewardService = coinRewardService;
+        _experienceService = experienceService;
         _highlightOptions = highlightOptions.Value;
     }
 
@@ -197,6 +200,7 @@ public class CommentHighlightJob
                         {
                             try
                             {
+                                // 发放萝卜币加成奖励
                                 var rewardResult = await _coinRewardService.GrantLikeBonusRewardAsync(
                                     existingHighlight.Id,
                                     currentTopComment.AuthorId,
@@ -205,13 +209,50 @@ public class CommentHighlightJob
 
                                 if (rewardResult.IsSuccess)
                                 {
-                                    Log.Information("神评点赞加成奖励发放成功：CommentId={CommentId}, 增量={Increment}, 奖励={Amount}",
+                                    Log.Information("神评点赞加成萝卜币奖励发放成功：CommentId={CommentId}, 增量={Increment}, 奖励={Amount}",
                                         currentTopComment.Id, likeIncrement, rewardResult.Amount);
                                 }
                             }
                             catch (Exception ex)
                             {
-                                Log.Error(ex, "发放神评点赞加成奖励失败：CommentId={CommentId}", currentTopComment.Id);
+                                Log.Error(ex, "发放神评点赞加成萝卜币奖励失败：CommentId={CommentId}", currentTopComment.Id);
+                            }
+                        });
+                    }
+
+                    // 🎁 发放神评经验值奖励（首次成为神评时）
+                    if (existingHighlight == null || existingHighlight.CommentId != currentTopComment.Id)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                Log.Information("准备发放神评经验值：CommentId={CommentId}, AuthorId={AuthorId}",
+                                    currentTopComment.Id, currentTopComment.AuthorId);
+
+                                var expResult = await _experienceService.GrantExperienceAsync(
+                                    userId: currentTopComment.AuthorId,
+                                    amount: 50,
+                                    expType: "GOD_COMMENT",
+                                    businessType: "Comment",
+                                    businessId: currentTopComment.Id,
+                                    remark: "评论成为神评");
+
+                                if (expResult)
+                                {
+                                    Log.Information("神评经验值奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount=50",
+                                        currentTopComment.Id, currentTopComment.AuthorId);
+                                }
+                                else
+                                {
+                                    Log.Warning("神评经验值奖励发放失败：CommentId={CommentId}, AuthorId={AuthorId}",
+                                        currentTopComment.Id, currentTopComment.AuthorId);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "发放神评经验值奖励失败：CommentId={CommentId}, AuthorId={AuthorId}",
+                                    currentTopComment.Id, currentTopComment.AuthorId);
                             }
                         });
                     }
@@ -372,6 +413,7 @@ public class CommentHighlightJob
                         {
                             try
                             {
+                                // 发放萝卜币加成奖励
                                 var rewardResult = await _coinRewardService.GrantLikeBonusRewardAsync(
                                     existingHighlight.Id,
                                     currentTopChild.AuthorId,
@@ -380,13 +422,50 @@ public class CommentHighlightJob
 
                                 if (rewardResult.IsSuccess)
                                 {
-                                    Log.Information("沙发点赞加成奖励发放成功：CommentId={CommentId}, 增量={Increment}, 奖励={Amount}",
+                                    Log.Information("沙发点赞加成萝卜币奖励发放成功：CommentId={CommentId}, 增量={Increment}, 奖励={Amount}",
                                         currentTopChild.Id, likeIncrement, rewardResult.Amount);
                                 }
                             }
                             catch (Exception ex)
                             {
-                                Log.Error(ex, "发放沙发点赞加成奖励失败：CommentId={CommentId}", currentTopChild.Id);
+                                Log.Error(ex, "发放沙发点赞加成萝卜币奖励失败：CommentId={CommentId}", currentTopChild.Id);
+                            }
+                        });
+                    }
+
+                    // 🎁 发放沙发经验值奖励（首次成为沙发时）
+                    if (existingHighlight == null || existingHighlight.CommentId != currentTopChild.Id)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                Log.Information("准备发放沙发经验值：CommentId={CommentId}, AuthorId={AuthorId}",
+                                    currentTopChild.Id, currentTopChild.AuthorId);
+
+                                var expResult = await _experienceService.GrantExperienceAsync(
+                                    userId: currentTopChild.AuthorId,
+                                    amount: 30,
+                                    expType: "SOFA_COMMENT",
+                                    businessType: "Comment",
+                                    businessId: currentTopChild.Id,
+                                    remark: "评论成为沙发");
+
+                                if (expResult)
+                                {
+                                    Log.Information("沙发经验值奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount=30",
+                                        currentTopChild.Id, currentTopChild.AuthorId);
+                                }
+                                else
+                                {
+                                    Log.Warning("沙发经验值奖励发放失败：CommentId={CommentId}, AuthorId={AuthorId}",
+                                        currentTopChild.Id, currentTopChild.AuthorId);
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log.Error(ex, "发放沙发经验值奖励失败：CommentId={CommentId}, AuthorId={AuthorId}",
+                                    currentTopChild.Id, currentTopChild.AuthorId);
                             }
                         });
                     }
