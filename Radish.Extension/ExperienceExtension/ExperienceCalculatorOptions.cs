@@ -1,4 +1,4 @@
-using Radish.Common.ConfigOptions;
+using Radish.Common.OptionTool.Core;
 
 namespace Radish.Extension.ExperienceExtension;
 

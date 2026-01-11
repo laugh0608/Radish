@@ -84,8 +84,6 @@ public class UserService : BaseService<User, UserVo>, IUserService
     [UseTran(Propagation = Propagation.Required)]
     public async Task<bool> TestTranPropagationUser()
     {
-        // 仅测试使用，在 Service 层直接读取 Db 实例，正常业务工况请使用 BaseRepository 或业务自己的特殊仓储中的 CURD 方法
-        await Console.Out.WriteLineAsync($"Db context id : {base.Db.ContextID}");
         var sysUserInfos = await base.QueryAsync();
 
         TimeSpan timeSpan = DateTime.Now.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
