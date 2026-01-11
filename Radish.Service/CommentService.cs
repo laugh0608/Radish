@@ -22,6 +22,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private readonly ICoinRewardService _coinRewardService;
     private readonly INotificationService _notificationService;
     private readonly INotificationDedupService _dedupService;
+    private readonly IExperienceService _experienceService;
     private readonly CommentHighlightOptions _highlightOptions;
 
     public CommentService(
@@ -34,6 +35,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         ICoinRewardService coinRewardService,
         INotificationService notificationService,
         INotificationDedupService dedupService,
+        IExperienceService experienceService,
         IOptions<CommentHighlightOptions> highlightOptions)
         : base(mapper, baseRepository)
     {
@@ -45,6 +47,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         _coinRewardService = coinRewardService;
         _notificationService = notificationService;
         _dedupService = dedupService;
+        _experienceService = experienceService;
         _highlightOptions = highlightOptions.Value;
     }
 
@@ -119,11 +122,64 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         {
             try
             {
-                // 4.1 评论发布奖励 +1 胡萝卜
+                // 4.1 评论发布萝卜币奖励 +1 胡萝卜
                 await _coinRewardService.GrantCommentRewardAsync(commentId, comment.AuthorId, comment.PostId);
-                Log.Information("评论发布奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}", commentId, comment.AuthorId);
+                Log.Information("评论发布萝卜币奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}", commentId, comment.AuthorId);
 
-                // 4.2 评论被回复奖励（如果是回复评论）
+                // 4.2 评论发布经验值奖励 +5 经验
+                Serilog.Log.Information("准备发放评论经验值：CommentId={CommentId}, AuthorId={AuthorId}", commentId, comment.AuthorId);
+
+                var expGrantResult = await _experienceService.GrantExperienceAsync(
+                    userId: comment.AuthorId,
+                    amount: 5,
+                    expType: "COMMENT_CREATE",
+                    businessType: "Comment",
+                    businessId: commentId,
+                    remark: "发布评论");
+
+                if (expGrantResult)
+                {
+                    Serilog.Log.Information("评论经验值发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount=5",
+                        commentId, comment.AuthorId);
+                }
+                else
+                {
+                    Serilog.Log.Warning("评论经验值发放失败：CommentId={CommentId}, AuthorId={AuthorId}",
+                        commentId, comment.AuthorId);
+                }
+
+                // 4.3 检查是否首次评论，发放额外奖励
+                var userCommentCount = await _commentRepository.QueryCountAsync(c =>
+                    c.AuthorId == comment.AuthorId && !c.IsDeleted);
+
+                Serilog.Log.Information("用户评论数量统计：AuthorId={AuthorId}, CommentCount={CommentCount}",
+                    comment.AuthorId, userCommentCount);
+
+                if (userCommentCount == 1) // 首次评论
+                {
+                    Serilog.Log.Information("检测到首次评论，准备发放额外奖励：AuthorId={AuthorId}", comment.AuthorId);
+
+                    var firstCommentResult = await _experienceService.GrantExperienceAsync(
+                        userId: comment.AuthorId,
+                        amount: 10,
+                        expType: "FIRST_COMMENT",
+                        businessType: "Comment",
+                        businessId: commentId,
+                        remark: "首次评论奖励");
+
+                    if (firstCommentResult)
+                    {
+                        Serilog.Log.Information("首次评论经验值奖励发放成功：CommentId={CommentId}, AuthorId={AuthorId}, Amount=10",
+                            commentId, comment.AuthorId);
+                    }
+                    else
+                    {
+                        Serilog.Log.Warning("首次评论经验值奖励发放失败：CommentId={CommentId}, AuthorId={AuthorId}",
+                            commentId, comment.AuthorId);
+                    }
+                }
+
+                // 4.4 评论被回复奖励（如果是回复评论）
                 if (comment.ParentId.HasValue && parentAuthorId.HasValue)
                 {
                     await _coinRewardService.GrantCommentReplyRewardAsync(
@@ -133,7 +189,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                     Log.Information("评论被回复奖励发放成功：ParentCommentId={ParentCommentId}, ParentAuthorId={ParentAuthorId}",
                         comment.ParentId.Value, parentAuthorId.Value);
 
-                    // 4.3 发送评论回复通知（不给自己发通知）
+                    // 4.5 发送评论回复通知（不给自己发通知）
                     if (parentAuthorId.Value != comment.AuthorId)
                     {
                         try
@@ -164,7 +220,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "发放评论奖励失败：CommentId={CommentId}, AuthorId={AuthorId}", commentId, comment.AuthorId);
+                Log.Error(ex, "发放评论奖励失败：CommentId={CommentId}, AuthorId={AuthorId}, Message={Message}, StackTrace={StackTrace}",
+                    commentId, comment.AuthorId, ex.Message, ex.StackTrace);
             }
         });
 
@@ -257,11 +314,55 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
                     if (rewardResult.IsSuccess)
                     {
-                        Log.Information("评论点赞奖励发放成功：CommentId={CommentId}, 作者={AuthorId} (+{AuthorReward}), 点赞者={LikerId}",
+                        Log.Information("评论点赞萝卜币奖励发放成功：CommentId={CommentId}, 作者={AuthorId} (+{AuthorReward}), 点赞者={LikerId}",
                             commentId, comment.AuthorId, userId);
                     }
 
-                    // 4.2 发送点赞通知（不给自己发通知）
+                    // 4.2 发放经验值奖励
+                    Serilog.Log.Information("准备发放评论点赞经验值：CommentId={CommentId}, 作者={AuthorId}, 点赞者={LikerId}",
+                        commentId, comment.AuthorId, userId);
+
+                    // 4.2.1 被点赞者获得 +2 经验
+                    var receiverExpResult = await _experienceService.GrantExperienceAsync(
+                        userId: comment.AuthorId,
+                        amount: 2,
+                        expType: "RECEIVE_LIKE",
+                        businessType: "Comment",
+                        businessId: commentId,
+                        remark: "评论被点赞");
+
+                    if (receiverExpResult)
+                    {
+                        Serilog.Log.Information("评论被点赞经验值发放成功：CommentId={CommentId}, 作者={AuthorId}, Amount=2",
+                            commentId, comment.AuthorId);
+                    }
+                    else
+                    {
+                        Serilog.Log.Warning("评论被点赞经验值发放失败：CommentId={CommentId}, 作者={AuthorId}",
+                            commentId, comment.AuthorId);
+                    }
+
+                    // 4.2.2 点赞者获得 +1 经验
+                    var giverExpResult = await _experienceService.GrantExperienceAsync(
+                        userId: userId,
+                        amount: 1,
+                        expType: "GIVE_LIKE",
+                        businessType: "Comment",
+                        businessId: commentId,
+                        remark: "点赞评论");
+
+                    if (giverExpResult)
+                    {
+                        Serilog.Log.Information("点赞评论经验值发放成功：CommentId={CommentId}, 点赞者={LikerId}, Amount=1",
+                            commentId, userId);
+                    }
+                    else
+                    {
+                        Serilog.Log.Warning("点赞评论经验值发放失败：CommentId={CommentId}, 点赞者={LikerId}",
+                            commentId, userId);
+                    }
+
+                    // 4.3 发送点赞通知（不给自己发通知）
                     if (comment.AuthorId != userId)
                     {
                         // 检查是否应该去重
@@ -313,8 +414,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "发放评论点赞奖励失败：CommentId={CommentId}, AuthorId={AuthorId}, LikerId={LikerId}",
-                        commentId, comment.AuthorId, userId);
+                    Log.Error(ex, "发放评论点赞奖励失败：CommentId={CommentId}, AuthorId={AuthorId}, LikerId={LikerId}, Message={Message}",
+                        commentId, comment.AuthorId, userId, ex.Message);
                 }
             });
         }
