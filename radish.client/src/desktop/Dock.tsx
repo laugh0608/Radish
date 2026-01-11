@@ -5,6 +5,8 @@ import { useNotificationStore } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
 import { getAppById } from './AppRegistry';
 import { Icon } from '@radish/ui';
+import { CoinBalance } from './components/CoinBalance';
+import { ExperienceDisplay } from './components/ExperienceDisplay';
 import i18n from '@/i18n';
 import type { ApiResponse } from '@/api/client';
 import styles from './Dock.module.css';
@@ -315,6 +317,10 @@ export const Dock = () => {
                   <div className={styles.userId}>ID: {userId}</div>
                 </div>
               )}
+              {/* 萝卜币余额 */}
+              {loggedIn && <CoinBalance />}
+              {/* 经验值显示 */}
+              {loggedIn && <ExperienceDisplay />}
             </div>
 
             {/* 中间：Dock 应用（通知中心常驻 + 运行中的应用） */}
