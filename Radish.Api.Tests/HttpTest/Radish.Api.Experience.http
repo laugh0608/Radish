@@ -5,12 +5,12 @@
 
 ### ===== 1. 经验值查询接口测试 =====
 
-### 1.1 获取当前用户经验值信息
+### 1.1 获取当前用户经验值信息（从Token中获取用户ID）
 GET {{baseUrl}}/api/v1/Experience/GetMyExperience
 Authorization: Bearer {{token}}
 
-### 1.2 获取指定用户经验值信息
-GET {{baseUrl}}/api/v1/Experience/GetUserExperience/1
+### 1.2 获取指定用户经验值信息（通过URL参数指定用户ID）
+GET {{baseUrl}}/api/v1/Experience/GetMyExperience/20002
 Authorization: Bearer {{token}}
 
 ### 1.3 获取所有等级配置
