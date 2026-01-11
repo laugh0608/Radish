@@ -130,7 +130,7 @@ export const experienceApi = {
     ).toString() : '';
 
     const response = await apiGet<PagedResponse<ExpTransaction>>(
-      `/api/v1/Experience/GetTransactions${queryString}`,
+      `/api/v1/Experience/GetMyTransactions${queryString}`,
       { withAuth: true }
     );
     if (!response.ok) {
