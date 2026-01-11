@@ -93,6 +93,19 @@ export default defineConfig({
                 { text: '前端集成', link: '/guide/notification-frontend' }
               ]
             },
+            {
+              text: '经验等级系统',
+              collapsed: true,
+              items: [
+                { text: '总体设计', link: '/guide/experience-level-system' },
+                { text: '核心概念', link: '/guide/experience-level-core-concepts' },
+                { text: '获取机制', link: '/guide/experience-level-earning' },
+                { text: '后端设计', link: '/guide/experience-level-backend' },
+                { text: '前端展示', link: '/guide/experience-level-frontend' },
+                { text: '运维与测试', link: '/guide/experience-level-ops' },
+                { text: '实施计划', link: '/guide/experience-level-roadmap' }
+              ]
+            },
             { text: 'Hangfire 定时任务', link: '/guide/hangfire-scheduled-jobs' },
             { text: 'Gateway 服务网关', link: '/guide/gateway' }
           ]
