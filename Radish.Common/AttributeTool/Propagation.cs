@@ -19,4 +19,10 @@ public enum Propagation
     /// 以嵌套事务方式执行
     /// </summary>
     Nested = 2,
+
+    /// <summary>
+    /// 新建独立事务运行。如果当前存在事务，挂起当前事务，开启新的独立事务。
+    /// 新事务提交或回滚后，恢复之前挂起的事务。
+    /// </summary>
+    RequiresNew = 3,
 }

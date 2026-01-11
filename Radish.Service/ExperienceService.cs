@@ -9,24 +9,30 @@ using Radish.Model;
 using Radish.Model.ViewModels;
 using Serilog;
 using SqlSugar;
+using System.Linq.Expressions;
 
 namespace Radish.Service;
 
-/// <summary>经验值服务实现</summary>
-public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, IExperienceService
-{
+	/// <summary>经验值服务实现</summary>
+	public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, IExperienceService
+	{
     private readonly IBaseRepository<UserExperience> _userExpRepository;
     private readonly IBaseRepository<ExpTransaction> _expTransactionRepository;
     private readonly IBaseRepository<LevelConfig> _levelConfigRepository;
     private readonly IBaseRepository<UserExpDailyStats> _dailyStatsRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IExperienceCalculator _experienceCalculator;
+    private readonly ICoinService _coinService;
+    private readonly INotificationService _notificationService;
 
-    /// <summary>乐观锁冲突重试次数</summary>
-    private const int MaxRetryCount = 3;
+	    /// <summary>乐观锁冲突重试次数</summary>
+	    private const int MaxRetryCount = 6;
 
-    /// <summary>重试基础延迟（毫秒）</summary>
-    private const int BaseRetryDelayMs = 100;
+	    /// <summary>重试基础延迟（毫秒）</summary>
+	    private const int BaseRetryDelayMs = 100;
+
+	    /// <summary>重试最大延迟（毫秒），避免指数退避无限放大</summary>
+	    private const int MaxRetryDelayMs = 1000;
 
     public ExperienceService(
         IMapper mapper,
@@ -35,7 +41,9 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
         IBaseRepository<LevelConfig> levelConfigRepository,
         IBaseRepository<UserExpDailyStats> dailyStatsRepository,
         IBaseRepository<User> userRepository,
-        IExperienceCalculator experienceCalculator)
+        IExperienceCalculator experienceCalculator,
+        ICoinService coinService,
+        INotificationService notificationService)
         : base(mapper, userExpRepository)
     {
         _userExpRepository = userExpRepository;
@@ -44,6 +52,8 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
         _dailyStatsRepository = dailyStatsRepository;
         _userRepository = userRepository;
         _experienceCalculator = experienceCalculator;
+        _coinService = coinService;
+        _notificationService = notificationService;
     }
 
     #region 经验值查询
@@ -55,7 +65,7 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
     {
         try
         {
-            var userExp = await _userExpRepository.QueryFirstAsync(e => e.Id == userId);
+            var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
 
             if (userExp == null)
             {
@@ -81,7 +91,7 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
         try
         {
             var userExps = await _userExpRepository.QueryAsync(
-                e => userIds.Contains(e.Id)
+                e => userIds.Contains(e.UserId)
             );
 
             var result = new Dictionary<long, UserExperienceVo>();
@@ -91,7 +101,7 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
                 var vo = await MapToVoAsync(userExp);
                 if (vo != null)
                 {
-                    result[userExp.Id] = vo;
+                    result[userExp.UserId] = vo;
                 }
             }
 
@@ -153,10 +163,17 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
         string? remark)
     {
         // 1. 获取或初始化用户经验值记录
-        var userExp = await _userExpRepository.QueryFirstAsync(e => e.Id == userId);
+        // 注意：不要在初始化后立即重新查询，会因事务未提交而查询不到
+        // 重试机制会重新执行整个方法，自然获取到最新版本
+        var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
         if (userExp == null)
         {
             userExp = await InitializeUserExperienceAsync(userId);
+            if (userExp == null)
+            {
+                Log.Error("用户 {UserId} 经验值记录初始化失败", userId);
+                return false;
+            }
         }
 
         // 2. 检查是否冻结
@@ -188,7 +205,7 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
                 Version = e.Version + 1,
                 ModifyTime = DateTime.Now
             },
-            e => e.Id == userId && e.Version == userExp.Version
+            e => e.UserId == userId && e.Version == userExp.Version
         );
 
         if (updatedRows == 0)
@@ -222,11 +239,24 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
             "oldLevel={OldLevel}, newLevel={NewLevel}, oldExp={OldExp}, newExp={NewExp}",
             userId, amount, expType, oldLevel, newLevel, oldTotalExp, newTotalExp);
 
-        // 8. P1 阶段：如果升级，触发升级事件（暂时留空）
+        // 8. 如果升级，触发升级事件（异步处理）
         if (newLevel > oldLevel)
         {
             Log.Information("用户 {UserId} 从 Lv.{OldLevel} 升级到 Lv.{NewLevel}", userId, oldLevel, newLevel);
-            // TODO P1: 触发升级事件（萝卜币奖励、通知推送）
+
+            // 异步处理升级奖励和通知，不影响主流程
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    await HandleLevelUpAsync(userId, oldLevel, newLevel);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "处理升级事件失败：userId={UserId}, oldLevel={OldLevel}, newLevel={NewLevel}",
+                        userId, oldLevel, newLevel);
+                }
+            });
         }
 
         return true;
@@ -333,37 +363,40 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
     {
         try
         {
-            // 构建查询条件
-            var where = new Func<ExpTransaction, bool>(t => t.UserId == userId);
+            // 构建动态 Where 条件（使用 And 扩展方法组合多个条件）
+            Expression<Func<ExpTransaction, bool>> whereExpression = t => t.UserId == userId;
 
+            // 如果有 expType 筛选条件
             if (!string.IsNullOrEmpty(expType))
             {
-                var prevWhere = where;
-                where = t => prevWhere(t) && t.ExpType == expType;
+                whereExpression = whereExpression.And(t => t.ExpType == expType);
             }
 
+            // 如果有开始日期筛选条件
             if (startDate.HasValue)
             {
-                var prevWhere = where;
-                where = t => prevWhere(t) && t.CreateTime >= startDate.Value;
+                whereExpression = whereExpression.And(t => t.CreateTime >= startDate.Value);
             }
 
+            // 如果有结束日期筛选条件
             if (endDate.HasValue)
             {
-                var prevWhere = where;
-                where = t => prevWhere(t) && t.CreateTime <= endDate.Value;
+                whereExpression = whereExpression.And(t => t.CreateTime <= endDate.Value);
             }
 
-            // 分页查询
-            var allRecords = await _expTransactionRepository.QueryAsync(t => where(t));
-            var sortedRecords = allRecords.OrderByDescending(t => t.CreateTime).ToList();
-
-            var totalCount = sortedRecords.Count;
-            var pageCount = (int)Math.Ceiling(totalCount / (double)pageSize);
-            var pagedData = sortedRecords.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+            // 使用 BaseRepository 的分页查询方法（数据库层面筛选、排序和分页）
+            var (pagedData, totalCount) = await _expTransactionRepository.QueryPageAsync(
+                whereExpression: whereExpression,
+                pageIndex: pageIndex,
+                pageSize: pageSize,
+                orderByExpression: t => t.CreateTime,
+                orderByType: OrderByType.Desc
+            );
 
             // 映射为 VO
             var transactions = Mapper.Map<List<ExpTransactionVo>>(pagedData);
+
+            var pageCount = (int)Math.Ceiling(totalCount / (double)pageSize);
 
             return new PageModel<ExpTransactionVo>
             {
@@ -557,13 +590,23 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
     #region 私有辅助方法
 
     /// <summary>
-    /// 初始化用户经验值记录
+    /// 初始化用户经验值记录（独立事务，避免被父事务回滚）
     /// </summary>
-    private async Task<UserExperience> InitializeUserExperienceAsync(long userId)
+    [UseTran(Propagation = Propagation.RequiresNew)]
+    private async Task<UserExperience?> InitializeUserExperienceAsync(long userId)
     {
+        // 先检查是否已存在（避免重复初始化）
+        var existing = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
+        if (existing != null)
+        {
+            Log.Information("用户 {UserId} 经验值记录已存在（Version={Version}），跳过初始化",
+                userId, existing.Version);
+            return existing;
+        }
+
         var userExp = new UserExperience
         {
-            Id = userId,
+            UserId = userId,
             CurrentLevel = 0,
             CurrentExp = 0,
             TotalExp = 0,
@@ -573,10 +616,29 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
             CreateTime = DateTime.Now
         };
 
-        await _userExpRepository.AddAsync(userExp);
-        Log.Information("用户 {UserId} 经验值记录初始化成功", userId);
+        try
+        {
+            await _userExpRepository.AddAsync(userExp);
+            Log.Information("用户 {UserId} 经验值记录初始化成功（独立事务）", userId);
+            return userExp;
+        }
+        catch (Exception ex)
+        {
+            // 并发竞争：其他线程已经初始化了记录
+            Log.Information(ex, "用户 {UserId} 经验值记录初始化时检测到并发，尝试查询已存在的记录", userId);
 
-        return userExp;
+            existing = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
+            if (existing != null)
+            {
+                Log.Information("用户 {UserId} 经验值记录已存在（Version={Version}），跳过初始化",
+                    userId, existing.Version);
+                return existing;
+            }
+
+            // 如果仍然查询不到，说明有其他问题
+            Log.Error(ex, "用户 {UserId} 经验值记录初始化失败且无法查询到已存在记录", userId);
+            return null;
+        }
     }
 
     /// <summary>
@@ -630,7 +692,7 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
         }
 
         // 获取用户信息
-        var user = await _userRepository.QueryFirstAsync(u => u.Id == userExp.Id);
+        var user = await _userRepository.QueryFirstAsync(u => u.Id == userExp.UserId);
         if (user != null)
         {
             vo.UserName = user.UserName;
@@ -673,10 +735,10 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
     /// <summary>
     /// 执行带重试的异步操作（乐观锁冲突时自动重试）
     /// </summary>
-    private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
-    {
-        var retryCount = 0;
-        Exception? lastException = null;
+	    private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
+	    {
+	        var retryCount = 0;
+	        Exception? lastException = null;
 
         while (retryCount <= MaxRetryCount)
         {
@@ -684,28 +746,122 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
             {
                 return await action();
             }
-            catch (ConcurrencyException ex)
-            {
-                lastException = ex;
-                retryCount++;
+	            catch (ConcurrencyException ex)
+	            {
+	                lastException = ex;
+	                retryCount++;
 
                 if (retryCount > MaxRetryCount)
                 {
                     Log.Error(ex, "乐观锁冲突重试 {MaxRetryCount} 次后仍然失败", MaxRetryCount);
                     throw;
-                }
+	                }
 
-                // 指数退避：100ms * 2^(retryCount-1)
-                var delayMs = BaseRetryDelayMs * (int)Math.Pow(2, retryCount - 1);
-                Log.Warning("乐观锁冲突，第 {RetryCount} 次重试（延迟 {DelayMs}ms）: {Message}",
-                    retryCount, delayMs, ex.Message);
+	                var exponentialDelayMs = BaseRetryDelayMs * (int)Math.Pow(2, retryCount - 1);
+	                var cappedDelayMs = Math.Min(exponentialDelayMs, MaxRetryDelayMs);
+	                var delayMs = Random.Shared.Next(0, cappedDelayMs + 1);
+	                Log.Warning("乐观锁冲突，第 {RetryCount} 次重试（延迟 {DelayMs}ms）: {Message}",
+	                    retryCount, delayMs, ex.Message);
 
-                await Task.Delay(delayMs);
-            }
+	                await Task.Delay(delayMs);
+	            }
         }
 
         // 理论上不会执行到这里，但为了类型安全
         throw lastException ?? new ConcurrencyException("重试失败");
+    }
+
+    /// <summary>
+    /// 处理用户升级事件（发放萝卜币奖励、推送通知）
+    /// </summary>
+    /// <param name="userId">用户 ID</param>
+    /// <param name="oldLevel">旧等级</param>
+    /// <param name="newLevel">新等级</param>
+    private async Task HandleLevelUpAsync(long userId, int oldLevel, int newLevel)
+    {
+        try
+        {
+            // 1. 获取新等级配置
+            var newLevelConfig = await _levelConfigRepository.QueryFirstAsync(l => l.Level == newLevel && l.IsEnabled);
+            if (newLevelConfig == null)
+            {
+                Log.Warning("未找到等级 {Level} 的配置，跳过升级奖励", newLevel);
+                return;
+            }
+
+            // 2. 获取旧等级名称（用于通知）
+            var oldLevelConfig = await _levelConfigRepository.QueryFirstAsync(l => l.Level == oldLevel && l.IsEnabled);
+            var oldLevelName = oldLevelConfig?.LevelName ?? $"Lv.{oldLevel}";
+
+            // 3. 计算并发放萝卜币奖励（等级 × 100）
+            var coinReward = newLevel * 100;
+            if (coinReward > 0)
+            {
+                try
+                {
+                    var transactionNo = await _coinService.GrantCoinAsync(
+                        userId: userId,
+                        amount: coinReward,
+                        transactionType: "LEVEL_UP_REWARD",
+                        businessType: "User",
+                        businessId: userId,
+                        remark: $"升级到 Lv.{newLevel} {newLevelConfig.LevelName}"
+                    );
+
+                    if (!string.IsNullOrEmpty(transactionNo))
+                    {
+                        Log.Information("升级萝卜币奖励发放成功：userId={UserId}, level={Level}, reward={Reward}, transactionNo={TransactionNo}",
+                            userId, newLevel, coinReward, transactionNo);
+                    }
+                    else
+                    {
+                        Log.Warning("升级萝卜币奖励发放失败：userId={UserId}, level={Level}",
+                            userId, newLevel);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "发放升级萝卜币奖励时出错：userId={UserId}, level={Level}",
+                        userId, newLevel);
+                }
+            }
+
+            // 4. 推送升级通知
+            try
+            {
+                var notificationContent = coinReward > 0
+                    ? $"恭喜你从 {oldLevelName} 升级到 {newLevelConfig.LevelName}！获得 {coinReward} 个萝卜币奖励！"
+                    : $"恭喜你从 {oldLevelName} 升级到 {newLevelConfig.LevelName}！";
+
+                await _notificationService.CreateNotificationAsync(new CreateNotificationDto
+                {
+                    Type = NotificationType.LevelUp,
+                    Title = "等级提升",
+                    Content = notificationContent,
+                    Priority = (int)NotificationPriority.High,
+                    BusinessType = BusinessType.User,
+                    BusinessId = userId,
+                    TriggerId = null, // 系统触发
+                    TriggerName = "系统",
+                    TriggerAvatar = null,
+                    ReceiverUserIds = new List<long> { userId }
+                });
+
+                Log.Information("升级通知推送成功：userId={UserId}, oldLevel={OldLevel}, newLevel={NewLevel}",
+                    userId, oldLevel, newLevel);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "推送升级通知时出错：userId={UserId}, level={Level}",
+                    userId, newLevel);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "处理升级事件时出错：userId={UserId}, oldLevel={OldLevel}, newLevel={NewLevel}",
+                userId, oldLevel, newLevel);
+            throw;
+        }
     }
 
     #endregion

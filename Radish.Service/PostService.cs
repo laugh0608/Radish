@@ -18,6 +18,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     private readonly ICoinRewardService _coinRewardService;
     private readonly INotificationService _notificationService;
     private readonly INotificationDedupService _dedupService;
+    private readonly IExperienceService _experienceService;
 
     public PostService(
         IMapper mapper,
@@ -29,7 +30,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         ITagService tagService,
         ICoinRewardService coinRewardService,
         INotificationService notificationService,
-        INotificationDedupService dedupService)
+        INotificationDedupService dedupService,
+        IExperienceService experienceService)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
@@ -41,6 +43,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         _coinRewardService = coinRewardService;
         _notificationService = notificationService;
         _dedupService = dedupService;
+        _experienceService = experienceService;
     }
 
     /// <summary>
@@ -118,6 +121,71 @@ public class PostService : BaseService<Post, PostVo>, IPostService
                 await _tagRepository.UpdateAsync(tag);
             }
         }
+
+        // 4. 🎁 发放经验值奖励（异步处理）
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                Serilog.Log.Information("准备发放发帖经验值：PostId={PostId}, UserId={UserId}", postId, post.AuthorId);
+
+                // 4.1 发放发帖经验值（POST_CREATE: +20 经验）
+                var grantResult = await _experienceService.GrantExperienceAsync(
+                    userId: post.AuthorId,
+                    amount: 20,
+                    expType: "POST_CREATE",
+                    businessType: "Post",
+                    businessId: postId,
+                    remark: "发布帖子");
+
+                if (grantResult)
+                {
+                    Serilog.Log.Information("发帖经验值发放成功：PostId={PostId}, UserId={UserId}, Amount=20",
+                        postId, post.AuthorId);
+                }
+                else
+                {
+                    Serilog.Log.Warning("发帖经验值发放失败：PostId={PostId}, UserId={UserId}",
+                        postId, post.AuthorId);
+                }
+
+                // 4.2 检查是否首次发帖，发放额外奖励
+                var userPostCount = await _postRepository.QueryCountAsync(p =>
+                    p.AuthorId == post.AuthorId && !p.IsDeleted);
+
+                Serilog.Log.Information("用户帖子数量统计：UserId={UserId}, PostCount={PostCount}",
+                    post.AuthorId, userPostCount);
+
+                if (userPostCount == 1) // 首次发帖
+                {
+                    Serilog.Log.Information("检测到首次发帖，准备发放额外奖励：UserId={UserId}", post.AuthorId);
+
+                    var firstPostResult = await _experienceService.GrantExperienceAsync(
+                        userId: post.AuthorId,
+                        amount: 30,
+                        expType: "FIRST_POST",
+                        businessType: "Post",
+                        businessId: postId,
+                        remark: "首次发帖奖励");
+
+                    if (firstPostResult)
+                    {
+                        Serilog.Log.Information("首次发帖经验值奖励发放成功：PostId={PostId}, UserId={UserId}, Amount=30",
+                            postId, post.AuthorId);
+                    }
+                    else
+                    {
+                        Serilog.Log.Warning("首次发帖经验值奖励发放失败：PostId={PostId}, UserId={UserId}",
+                            postId, post.AuthorId);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Error(ex, "发放发帖经验值失败：PostId={PostId}, UserId={UserId}, Message={Message}, StackTrace={StackTrace}",
+                    postId, post.AuthorId, ex.Message, ex.StackTrace);
+            }
+        });
 
         return postId;
     }

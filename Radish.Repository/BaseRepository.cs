@@ -78,8 +78,19 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
     public async Task<long> AddAsync(TEntity entity)
     {
-        var insert = DbClientBase.Insertable(entity);
-        return await insert.ExecuteReturnSnowflakeIdAsync();
+        // 自动检测实体是否配置了分表，如果是则自动调用 .SplitTable()
+        var splitTableAttr = typeof(TEntity).GetCustomAttribute<SplitTableAttribute>();
+
+        if (splitTableAttr != null)
+        {
+            var splitInsert = DbClientBase.Insertable(entity).SplitTable();
+            return await splitInsert.ExecuteReturnSnowflakeIdAsync();
+        }
+        else
+        {
+            var insert = DbClientBase.Insertable(entity);
+            return await insert.ExecuteReturnSnowflakeIdAsync();
+        }
     }
 
     /// <summary>批量写入实体数据</summary>
@@ -87,10 +98,23 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>受影响的行数</returns>
     public async Task<int> AddRangeAsync(List<TEntity> entities)
     {
+        // 自动检测实体是否配置了分表
+        var splitTableAttr = typeof(TEntity).GetCustomAttribute<SplitTableAttribute>();
+
         // 🚀 使用 ExecuteReturnSnowflakeIdListAsync 为每条记录生成唯一的 Snowflake ID
         // 避免批量插入时产生重复 ID 导致 UNIQUE constraint 错误
-        var ids = await DbClientBase.Insertable(entities).ExecuteReturnSnowflakeIdListAsync();
-        return ids.Count;
+        if (splitTableAttr != null)
+        {
+            var splitInsertable = DbClientBase.Insertable(entities).SplitTable();
+            var ids = await splitInsertable.ExecuteReturnSnowflakeIdListAsync();
+            return ids.Count;
+        }
+        else
+        {
+            var insertable = DbClientBase.Insertable(entities);
+            var ids = await insertable.ExecuteReturnSnowflakeIdListAsync();
+            return ids.Count;
+        }
     }
 
     /// <summary>分表-写入实体数据</summary>
