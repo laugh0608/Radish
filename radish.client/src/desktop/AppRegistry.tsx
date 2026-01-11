@@ -5,6 +5,7 @@ import { ProfileApp } from '@/apps/profile/ProfileApp';
 import { CoinRewardDemo } from '@/apps/coin-demo';
 import { NotificationApp } from '@/apps/notification/NotificationApp';
 import { LeaderboardApp } from '@/apps/leaderboard/LeaderboardApp';
+import { ExperienceDetailApp } from '@/apps/experience-detail/ExperienceDetailApp';
 import type { AppDefinition } from './types';
 
 /**
@@ -145,6 +146,17 @@ export const appRegistry: AppDefinition[] = [
     component: LeaderboardApp,
     type: 'window',
     defaultSize: { width: 900, height: 700 },
+    requiredRoles: ['User'],
+    category: 'user'
+  },
+  {
+    id: 'experience-detail',
+    name: '经验详情',
+    icon: 'mdi:chart-line',
+    description: '经验值详情与统计',
+    component: ExperienceDetailApp,
+    type: 'window',
+    defaultSize: { width: 1000, height: 800 },
     requiredRoles: ['User'],
     category: 'user'
   },
