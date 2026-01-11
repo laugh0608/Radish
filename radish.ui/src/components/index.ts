@@ -63,6 +63,9 @@ export type { NotificationListProps } from './Notification/NotificationList';
 export { ExperienceBar } from './ExperienceBar/ExperienceBar';
 export type { ExperienceBarProps, ExperienceData } from './ExperienceBar/ExperienceBar';
 
+export { LevelUpModal } from './LevelUpModal/LevelUpModal';
+export type { LevelUpModalProps, LevelUpData } from './LevelUpModal/LevelUpModal';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout
