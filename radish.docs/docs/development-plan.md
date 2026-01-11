@@ -67,6 +67,21 @@
 > - M9 实现商城系统（依赖通知和等级系统，功能更完备）
 > - 原 M7/M8 依次顺延到 M10/M11
 
+## 工程治理（分层与依赖收敛）
+
+> 目标：减少循环依赖与“超级聚合项目”，让分层约束尽可能被结构/编译期强制，而不是仅靠约定。
+
+### 优先建议（P0/P1）
+
+- [x] **用结构约束替代约定约束**：收口 Service 层直连数据库能力（移除/隔离 `IBaseRepository<TEntity>.DbBase`、`BaseService.Db`），复杂查询通过 Repository 扩展方法或专属仓储承载。
+- [x] **拆分 `Radish.Extension` 的职责**：新增 `Radish.Extension.Host` 承载宿主级扩展（如 Serilog），避免 Gateway 因引用 `Radish.Extension` 被迫间接依赖业务层。
+- [ ] **DbMigrate 解耦宿主**：避免 `Radish.DbMigrate` 直接引用 `Radish.Api`，改为引用“组合根/基础设施注册”以复用 DI 与配置，降低控制台迁移工具与 WebHost 的耦合。
+
+### 中长期优化（P2+）
+
+- [ ] **抽象下沉、实现上浮**：将可替换策略接口下沉到 `IService`/独立 Abstractions，实现放在 `Infrastructure/Extension` 并由宿主注入；Service 层禁止依赖具体实现类型。
+- [ ] **引入组合根项目**：新增 `Radish.Bootstrapper`（或 `Radish.Abstractions` + `Radish.Bootstrapper`）统一装配 DI 与模块注册，避免 `Radish.Extension` 持续膨胀为“超级聚合项目”。
+
 ## 按周计划
 
 ### 第 1 周｜运行基线 & 数据接入
