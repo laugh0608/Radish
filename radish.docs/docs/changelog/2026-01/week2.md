@@ -572,3 +572,75 @@ const levelUpInfo: LevelUpData = {
 - ⏳ 单元测试和集成测试
 
 ---
+
+## 个人主页经验值条集成完成
+
+### 核心成果
+
+**个人主页经验值集成**（2026-01-11）：
+
+#### 修改文件
+1. **UserInfoCard.tsx** - 个人主页用户信息卡片
+   - 导入 `ExperienceBar` 和 `experienceApi`
+   - 新增 `loadExperience` 方法获取用户经验值
+   - 在头像上传区域下方渲染经验值条
+   - 使用 medium 尺寸，显示等级、进度和悬停提示
+
+### 技术实现
+
+**经验值加载**：
+```typescript
+const loadExperience = async () => {
+  try {
+    const exp = await experienceApi.getMyExperience();
+    setExperience(exp);
+  } catch (error) {
+    console.error('加载经验值失败:', error);
+  }
+};
+```
+
+**经验值条渲染**：
+```tsx
+{experience && (
+  <div style={{ marginBottom: '24px' }}>
+    <ExperienceBar
+      data={experience}
+      size="medium"
+      showLevel={true}
+      showProgress={true}
+      showTooltip={true}
+      animated={true}
+    />
+  </div>
+)}
+```
+
+### 技术亮点
+
+1. **异步加载**：经验值与个人资料并行加载，互不阻塞
+2. **错误处理**：加载失败不影响其他功能正常显示
+3. **响应式设计**：经验值条自适应容器宽度
+4. **动画效果**：进度条支持平滑动画
+
+### 编译验证
+
+✅ 构建成功（0 Error, 0 Warning）
+- TypeScript 类型检查通过
+- Vite 构建成功
+- 所有导入路径正确
+
+---
+
+### 下一步计划
+
+**M8 P3 阶段前端展示**（核心功能已完成）：
+- ✅ `ExperienceBar` 组件（经验条）- 已完成 (@radish/ui)
+- ✅ `LevelUpModal` 组件（升级动画）- 已完成 (@radish/ui)
+- ✅ `experienceApi` 客户端 - 已完成 (@radish/ui)
+- ✅ Dock 集成（ExperienceDisplay 组件）- 已完成
+- ✅ WebSocket 推送监听升级事件 - 已完成 (useLevelUpListener Hook)
+- ✅ 触发升级动画 - 已完成 (App.tsx + Shell.tsx)
+- ✅ 个人主页集成经验条 - 已完成 (UserInfoCard)
+- ⏳ `ExperienceDetail` 页面（明细）- 待实现
+- ⏳ `Leaderboard` 页面（排行榜）- 待实现
