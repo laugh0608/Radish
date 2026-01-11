@@ -151,6 +151,56 @@ export function parseApiResponse<T>(
   }
 }
 
+function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as ApiResponse<T>).isSuccess === 'boolean'
+  );
+}
+
+async function parseHttpResponse<T>(response: Response): Promise<ParsedApiResponse<T>> {
+  if (response.status === 204) {
+    return { ok: true, statusCode: response.status };
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  const isJson =
+    contentType.includes('application/json') || contentType.includes('+json');
+
+  if (!isJson) {
+    const text = await response.text().catch(() => '');
+    return {
+      ok: false,
+      message: text || `HTTP ${response.status} ${response.statusText}`,
+      statusCode: response.status,
+    };
+  }
+
+  try {
+    const json = (await response.json()) as unknown;
+    if (isApiResponse<T>(json)) {
+      const parsed = parseApiResponse(json);
+      return {
+        ...parsed,
+        statusCode: parsed.statusCode ?? response.status,
+      };
+    }
+
+    return {
+      ok: false,
+      message: `HTTP ${response.status} ${response.statusText}`,
+      statusCode: response.status,
+    };
+  } catch {
+    return {
+      ok: false,
+      message: `HTTP ${response.status} ${response.statusText}`,
+      statusCode: response.status,
+    };
+  }
+}
+
 /**
  * GET 请求的便捷方法
  */
@@ -163,8 +213,7 @@ export async function apiGet<T>(
     ...options,
   });
 
-  const json = (await response.json()) as ApiResponse<T>;
-  return parseApiResponse(json);
+  return await parseHttpResponse<T>(response);
 }
 
 /**
@@ -185,8 +234,7 @@ export async function apiPost<T>(
     ...options,
   });
 
-  const json = (await response.json()) as ApiResponse<T>;
-  return parseApiResponse(json);
+  return await parseHttpResponse<T>(response);
 }
 
 /**
@@ -207,8 +255,7 @@ export async function apiPut<T>(
     ...options,
   });
 
-  const json = (await response.json()) as ApiResponse<T>;
-  return parseApiResponse(json);
+  return await parseHttpResponse<T>(response);
 }
 
 /**
@@ -223,6 +270,5 @@ export async function apiDelete<T>(
     ...options,
   });
 
-  const json = (await response.json()) as ApiResponse<T>;
-  return parseApiResponse(json);
+  return await parseHttpResponse<T>(response);
 }

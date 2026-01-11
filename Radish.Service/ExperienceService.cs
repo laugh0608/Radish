@@ -65,6 +65,12 @@ namespace Radish.Service;
     {
         try
         {
+            if (userId <= 0)
+            {
+                Log.Warning("获取用户经验值信息失败：userId 无效（{UserId}）", userId);
+                return null;
+            }
+
             var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
 
             if (userExp == null)
@@ -72,6 +78,10 @@ namespace Radish.Service;
                 // 如果用户经验值记录不存在，自动创建初始记录
                 Log.Information("用户 {UserId} 经验值记录不存在，自动创建初始记录", userId);
                 userExp = await InitializeUserExperienceAsync(userId);
+                if (userExp == null)
+                {
+                    return null;
+                }
             }
 
             return await MapToVoAsync(userExp);
@@ -129,6 +139,13 @@ namespace Radish.Service;
         long? businessId = null,
         string? remark = null)
     {
+        if (userId <= 0)
+        {
+            Log.Warning("经验值发放失败：userId 无效（{UserId}），amount={Amount}, expType={ExpType}",
+                userId, amount, expType);
+            return false;
+        }
+
         if (amount <= 0)
         {
             Log.Warning("经验值发放失败：金额必须大于 0，userId={UserId}, amount={Amount}", userId, amount);
@@ -487,7 +504,7 @@ namespace Radish.Service;
 
             // 查询排行榜（按 TotalExp 降序，CurrentLevel 降序）
             var (pagedData, totalCount) = await _userExpRepository.QueryPageAsync(
-                whereExpression: e => !e.ExpFrozen, // 排除冻结用户
+                whereExpression: e => !e.ExpFrozen && e.UserId > 0, // 排除冻结用户与无效 userId
                 pageIndex: pageIndex,
                 pageSize: pageSize,
                 orderByExpression: e => e.TotalExp,
@@ -509,16 +526,21 @@ namespace Radish.Service;
 
             // 映射为 LeaderboardItemVo
             var leaderboard = new List<LeaderboardItemVo>();
+            var rank = startRank;
             for (int i = 0; i < pagedData.Count; i++)
             {
                 var exp = pagedData[i];
-                var rank = startRank + i;
+                if (!userDict.TryGetValue(exp.UserId, out var user))
+                {
+                    Log.Warning("排行榜跳过不存在的用户：userId={UserId}", exp.UserId);
+                    continue;
+                }
 
                 var item = new LeaderboardItemVo
                 {
                     Rank = rank,
                     UserId = exp.UserId,
-                    UserName = userDict.ContainsKey(exp.UserId) ? userDict[exp.UserId].UserName : "未知用户",
+                    UserName = user.UserName,
                     CurrentLevel = exp.CurrentLevel,
                     CurrentLevelName = levelConfigDict.ContainsKey(exp.CurrentLevel)
                         ? levelConfigDict[exp.CurrentLevel].LevelName
@@ -531,6 +553,7 @@ namespace Radish.Service;
                 };
 
                 leaderboard.Add(item);
+                rank++;
             }
 
             var pageCount = (int)Math.Ceiling(totalCount / (double)pageSize);
@@ -558,6 +581,11 @@ namespace Radish.Service;
     {
         try
         {
+            if (userId <= 0)
+            {
+                return 0;
+            }
+
             var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
             if (userExp == null || userExp.ExpFrozen)
             {
@@ -566,7 +594,7 @@ namespace Radish.Service;
 
             // 统计比该用户经验值高的用户数量
             var higherCount = await _userExpRepository.QueryCountAsync(
-                e => !e.ExpFrozen && e.TotalExp > userExp.TotalExp
+                e => !e.ExpFrozen && e.UserId > 0 && e.TotalExp > userExp.TotalExp
             );
 
             return (int)higherCount + 1; // 排名 = 比自己高的数量 + 1
@@ -687,6 +715,12 @@ namespace Radish.Service;
     [UseTran(Propagation = Propagation.RequiresNew)]
     private async Task<UserExperience?> InitializeUserExperienceAsync(long userId)
     {
+        if (userId <= 0)
+        {
+            Log.Warning("初始化用户经验值记录失败：userId 无效（{UserId}）", userId);
+            return null;
+        }
+
         // 先检查是否已存在（避免重复初始化）
         var existing = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
         if (existing != null)
@@ -694,6 +728,13 @@ namespace Radish.Service;
             Log.Information("用户 {UserId} 经验值记录已存在（Version={Version}），跳过初始化",
                 userId, existing.Version);
             return existing;
+        }
+
+        var userExists = await _userRepository.QueryExistsAsync(u => u.Id == userId);
+        if (!userExists)
+        {
+            Log.Warning("初始化用户经验值记录失败：用户不存在（userId={UserId}）", userId);
+            return null;
         }
 
         var userExp = new UserExperience
