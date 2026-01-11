@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, ConfirmDialog, FileUpload, Icon, Input, Modal } from '@radish/ui';
+import { Button, ConfirmDialog, FileUpload, Icon, Input, Modal, ExperienceBar, experienceApi, type UserExperience } from '@radish/ui';
 import type { UploadResult } from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
 import { useTranslation } from 'react-i18next';
@@ -96,6 +96,7 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
 
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
   const [coinBalance, setCoinBalance] = useState<CoinBalanceInfo | null>(null);
+  const [experience, setExperience] = useState<UserExperience | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -115,8 +116,18 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
 
   useEffect(() => {
     void loadProfile();
+    void loadExperience();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  const loadExperience = async () => {
+    try {
+      const exp = await experienceApi.getMyExperience();
+      setExperience(exp);
+    } catch (error) {
+      console.error('加载经验值失败:', error);
+    }
+  };
 
   const loadProfile = async () => {
     setLoadingProfile(true);
@@ -313,6 +324,20 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
           </Button>
         )}
       </div>
+
+      {/* 经验值条 */}
+      {experience && (
+        <div style={{ marginBottom: '24px' }}>
+          <ExperienceBar
+            data={experience}
+            size="medium"
+            showLevel={true}
+            showProgress={true}
+            showTooltip={true}
+            animated={true}
+          />
+        </div>
+      )}
 
       {(loading || loadingProfile) && (
         <div className={styles.loading}>加载中...</div>

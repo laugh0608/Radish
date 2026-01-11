@@ -2,7 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Radish.Common\Radish.Common.csproj" />
-    <ProjectReference Include="..\Radish.Extension\Radish.Extension.csproj" />
+    <ProjectReference Include="..\Radish.Extension.Host\Radish.Extension.Host.csproj" />
   </ItemGroup>
 
   <ItemGroup>

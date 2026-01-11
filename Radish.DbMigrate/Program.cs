@@ -6,6 +6,7 @@ using Radish.Common.CoreTool;
 using Radish.DbMigrate;
 using Radish.Extension;
 using Radish.Extension.SqlSugarExtension;
+using Radish.Extension.ExperienceExtension;
 using Radish.Common.DbTool;
 using SqlSugar;
 
@@ -32,6 +33,8 @@ InternalApp.ConfigureApplication(builder.Configuration);
 builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
 builder.Services.AddAllOptionRegister();
 builder.Services.AddSqlSugarSetup();
+// 注册经验值计算器（用于动态计算等级配置）
+builder.Services.AddExperienceCalculator(builder.Configuration);
 
 // 标记 InternalApp 已就绪，便于 SqlSugarAop 等读取配置
 builder.Services.ConfigureApplication();
@@ -152,7 +155,7 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
     }
 
     Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
-    await InitialDataSeeder.SeedAsync(db);
+    await InitialDataSeeder.SeedAsync(db, services);
 }
 
 static void PrintHelp()

@@ -17,7 +17,7 @@
   - 管理后台（同 React 工程内实现管理视图）：分类、内容、用户、积分与商城配置。
 
 - **非功能性要求**
-  - 安全：所有外部流量通过 Gateway 强制 HTTPS，登录等敏感参数需在前端使用 RSA 公钥加密后发送，后端持私钥解密；结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。开发阶段 Radish.Api 保留 HTTPS 端口便于直接调试，但在完成 Gateway/OIDC 接入并进入生产环境前，应关闭或限制直接暴露的 API HTTPS 端口，仅通过 Gateway/反向代理对外提供服务。
+  - 安全：所有外部流量通过 Gateway 强制 HTTPS（TLS 提供传输加密）；前端不做自定义“二次加密”（不做 RSA 前端加密）。结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。开发阶段 Radish.Api 保留 HTTPS 端口便于直接调试，但在完成 Gateway/OIDC 接入并进入生产环境前，应关闭或限制直接暴露的 API HTTPS 端口，仅通过 Gateway/反向代理对外提供服务。
   - 性能：关键查询 P95 ≤ 200ms；SQLSugar Profile + PostgreSQL EXPLAIN 校验索引；读多写少场景可使用内存缓存。
   - 可用性：健康检查 `/health`, `/ready`; SQLSugar 迁移幂等；容器探针。
   - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点。
@@ -42,7 +42,7 @@
 
 | 领域 | 选型 | 说明 |
 | --- | --- | --- |
-| 语言/运行时 | C# 13, .NET 10 | `global.json` 锁定 SDK 10.0.0，开启 `Nullable` 与 `ImplicitUsings` |
+| 语言/运行时 | C# 13, .NET 10 | 使用 .NET 10 SDK，开启 `Nullable` 与 `ImplicitUsings` |
 | Web Host | ASP.NET Core WebApplication | Program.cs 中最小宿主，按需要拆 Controller/Minimal API |
 | ORM | [SQLSugar](https://github.com/donet5/SqlSugar) | Code First + Migration，仓储层集中管理上下文，支持读写分离配置 |
 | 数据库 | PostgreSQL 16 | 默认端口 5432，连接通过 `ConnectionStrings__Default` 注入 |
@@ -203,7 +203,7 @@ graph LR
 - 详细的前端设计、桌面/移动交互规范与未来 React Native 规划均见 [前端设计](/frontend/design)，下文仅保留核心约束。
 - Vite 配置 HTTPS、代理 API、环境变量区分（`.env.development` / `.env.production`），并在 `radish.client` 中启用 React 19 + Rolldown。
 - 目录建议：`app/`（入口、providers、路由）、`features/*`（按业务拆包）、`widgets/*`（桌面组件）、`shared/*`（api/ui/config），保持与未来 RN 工程一致，方便共享包。
-- 认证：封装 API 客户端自动附带 Token，失效触发刷新；敏感数据统一通过 RSA 公钥加密。
+- 认证：封装 API 客户端自动附带 Token，失效触发刷新；敏感数据依赖 HTTPS 传输加密，后端负责安全存储与校验。
 - 状态管理：TanStack Query 管理异步数据与缓存，Zustand 管理 Dock/窗口/主题等客户端状态，表单由 React Hook Form + Zod 验证。
 - UI 与可访问性：Tailwind/UnoCSS + 自研组件 + Framer Motion 动效，兼顾键盘/触屏；所有文案走 i18n。
 - 组件库：计划自研一套基础组件（Button/Input/Select/Checkbox/Radio/Switch/Transfer/Form 等），或在 antd、Arco 等库上做白标二次封装，封装层统一输出 API、主题 Token、交互规范与 Storybook 文档，供桌面/移动/RN 共享。推荐参考 [Uiverse Galaxy](https://github.com/uiverse-io/galaxy)（3500+ 社区驱动的开源 UI 组件，支持 CSS/Tailwind，MIT 许可）寻找设计灵感和参考实现。
