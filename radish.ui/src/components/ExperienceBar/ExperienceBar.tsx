@@ -1,0 +1,158 @@
+import { useState } from 'react';
+import './ExperienceBar.css';
+
+export interface ExperienceData {
+  userId: string;
+  userName?: string;
+  avatarUrl?: string;
+  currentLevel: number;
+  currentLevelName: string;
+  currentExp: string;
+  totalExp: string;
+  expToNextLevel: string;
+  nextLevel: number;
+  nextLevelName: string;
+  levelProgress: number;
+  themeColor: string;
+  iconUrl?: string;
+  badgeUrl?: string;
+  levelUpAt?: string;
+  rank?: number;
+  expFrozen: boolean;
+  frozenUntil?: string;
+  frozenReason?: string;
+}
+
+export interface ExperienceBarProps {
+  data: ExperienceData;
+  size?: 'small' | 'medium' | 'large';
+  showLevel?: boolean;
+  showProgress?: boolean;
+  showTooltip?: boolean;
+  animated?: boolean;
+  className?: string;
+}
+
+export const ExperienceBar = ({
+  data,
+  size = 'medium',
+  showLevel = true,
+  showProgress = true,
+  showTooltip = true,
+  animated = true,
+  className = ''
+}: ExperienceBarProps) => {
+  const [showDetail, setShowDetail] = useState(false);
+
+  const classes = [
+    'radish-exp-bar',
+    `radish-exp-bar--${size}`,
+    animated && 'radish-exp-bar--animated',
+    data.expFrozen && 'radish-exp-bar--frozen',
+    className
+  ].filter(Boolean).join(' ');
+
+  const progressPercentage = Math.min(100, Math.max(0, data.levelProgress));
+
+  return (
+    <div
+      className={classes}
+      onMouseEnter={() => showTooltip && setShowDetail(true)}
+      onMouseLeave={() => showTooltip && setShowDetail(false)}
+    >
+      {/* 等级徽章 */}
+      {showLevel && (
+        <div className="radish-exp-bar__level" style={{ color: data.themeColor }}>
+          <span className="radish-exp-bar__level-number">Lv.{data.currentLevel}</span>
+          <span className="radish-exp-bar__level-name">{data.currentLevelName}</span>
+        </div>
+      )}
+
+      {/* 经验条容器 */}
+      <div className="radish-exp-bar__container">
+        {/* 背景轨道 */}
+        <div className="radish-exp-bar__track">
+          {/* 进度条 */}
+          <div
+            className="radish-exp-bar__progress"
+            style={{
+              width: `${progressPercentage}%`,
+              backgroundColor: data.themeColor
+            }}
+          >
+            {/* 光泽效果 */}
+            <div className="radish-exp-bar__shine" />
+          </div>
+        </div>
+
+        {/* 经验值文本 */}
+        {showProgress && (
+          <div className="radish-exp-bar__text">
+            <span className="radish-exp-bar__current">{data.currentExp}</span>
+            <span className="radish-exp-bar__separator">/</span>
+            <span className="radish-exp-bar__max">{data.expToNextLevel}</span>
+          </div>
+        )}
+      </div>
+
+      {/* 悬停提示 */}
+      {showTooltip && showDetail && (
+        <div className="radish-exp-bar__tooltip">
+          <div className="radish-exp-bar__tooltip-header">
+            <span className="radish-exp-bar__tooltip-level">
+              {data.currentLevelName} (Lv.{data.currentLevel})
+            </span>
+            {data.rank && (
+              <span className="radish-exp-bar__tooltip-rank">
+                排名 #{data.rank}
+              </span>
+            )}
+          </div>
+
+          <div className="radish-exp-bar__tooltip-progress">
+            <div className="radish-exp-bar__tooltip-label">当前进度</div>
+            <div className="radish-exp-bar__tooltip-value">
+              {data.currentExp} / {data.expToNextLevel} ({progressPercentage.toFixed(1)}%)
+            </div>
+          </div>
+
+          <div className="radish-exp-bar__tooltip-next">
+            <div className="radish-exp-bar__tooltip-label">下一等级</div>
+            <div className="radish-exp-bar__tooltip-value">
+              {data.nextLevelName} (Lv.{data.nextLevel})
+            </div>
+            <div className="radish-exp-bar__tooltip-remaining">
+              还需 {parseInt(data.expToNextLevel) - parseInt(data.currentExp)} 经验值
+            </div>
+          </div>
+
+          <div className="radish-exp-bar__tooltip-total">
+            <div className="radish-exp-bar__tooltip-label">总经验值</div>
+            <div className="radish-exp-bar__tooltip-value">{data.totalExp}</div>
+          </div>
+
+          {data.expFrozen && (
+            <div className="radish-exp-bar__tooltip-frozen">
+              <div className="radish-exp-bar__tooltip-frozen-icon">🔒</div>
+              <div className="radish-exp-bar__tooltip-frozen-text">
+                经验值已冻结
+                {data.frozenUntil && ` 至 ${new Date(data.frozenUntil).toLocaleDateString()}`}
+              </div>
+              {data.frozenReason && (
+                <div className="radish-exp-bar__tooltip-frozen-reason">
+                  原因：{data.frozenReason}
+                </div>
+              )}
+            </div>
+          )}
+
+          {data.levelUpAt && (
+            <div className="radish-exp-bar__tooltip-levelup">
+              上次升级：{new Date(data.levelUpAt).toLocaleString()}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};

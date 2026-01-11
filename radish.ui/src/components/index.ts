@@ -60,6 +60,9 @@ export type { NotificationCenterProps } from './Notification/NotificationCenter'
 export { NotificationList } from './Notification/NotificationList';
 export type { NotificationListProps } from './Notification/NotificationList';
 
+export { ExperienceBar } from './ExperienceBar/ExperienceBar';
+export type { ExperienceBarProps, ExperienceData } from './ExperienceBar/ExperienceBar';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout
