@@ -2,7 +2,6 @@ using AutoMapper;
 using Radish.Common;
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
-using Radish.Extension.ExperienceExtension;
 using Radish.Infrastructure;
 using Radish.IRepository;
 using Radish.IService;
@@ -539,10 +538,7 @@ public class ExperienceService : BaseService<UserExperience, UserExperienceVo>, 
             }
 
             // 3. 清除计算器缓存
-            if (_experienceCalculator is ExperienceCalculator calculator)
-            {
-                calculator.ClearCache();
-            }
+            _experienceCalculator.ClearCache();
 
             Log.Information("等级配置重新计算完成，共更新 {Count} 个等级", updatedConfigs.Count);
 

@@ -1,4 +1,4 @@
-namespace Radish.Extension.ExperienceExtension;
+namespace Radish.IService;
 
 /// <summary>
 /// 经验值计算器接口
@@ -34,4 +34,9 @@ public interface IExperienceCalculator
     /// 获取当前配置的摘要信息
     /// </summary>
     string GetConfigSummary();
+
+    /// <summary>
+    /// 清除计算器缓存（配置更新时调用）
+    /// </summary>
+    void ClearCache();
 }

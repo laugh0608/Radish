@@ -7,10 +7,6 @@ namespace Radish.IRepository;
 // 这里的 where TEntity : class 的意思是对泛型进行约束，必须是类 class
 public interface IBaseRepository<TEntity> where TEntity : class
 {
-    // 仅测试使用，在 Service 层直接操作 DbBase 实例，正常业务工况请使用 BaseRepository 或业务自己的特殊仓储中的 CURD 方法
-    /// <summary>供外部使用的公开 ISqlSugarClient 数据库实例</summary>
-    ISqlSugarClient DbBase { get; }
-
     #region 增
 
     /// <summary>写入一条实体类数据</summary>
