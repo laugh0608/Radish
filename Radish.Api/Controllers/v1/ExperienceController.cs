@@ -117,6 +117,44 @@ public class ExperienceController : ControllerBase
 
     #endregion
 
+    #region 排行榜
+
+    /// <summary>
+    /// 获取经验值排行榜
+    /// </summary>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页数量（默认 50，最大 100）</param>
+    /// <returns>分页的排行榜</returns>
+    [HttpGet]
+    [AllowAnonymous] // 排行榜可以公开查看
+    public async Task<MessageModel<PageModel<LeaderboardItemVo>>> GetLeaderboard(
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 50)
+    {
+        var currentUserId = GetCurrentUserId(); // 获取当前用户 ID（如果已登录）
+        var result = await _experienceService.GetLeaderboardAsync(pageIndex, pageSize, currentUserId > 0 ? currentUserId : null);
+        return MessageModel<PageModel<LeaderboardItemVo>>.Success("查询成功", result);
+    }
+
+    /// <summary>
+    /// 获取当前用户排名
+    /// </summary>
+    /// <returns>用户排名（0 表示未上榜）</returns>
+    [HttpGet]
+    public async Task<MessageModel<int>> GetMyRank()
+    {
+        var userId = GetCurrentUserId();
+        if (userId <= 0)
+        {
+            return MessageModel<int>.Message(false, "未登录", 0);
+        }
+
+        var rank = await _experienceService.GetUserRankAsync(userId);
+        return MessageModel<int>.Success("查询成功", rank);
+    }
+
+    #endregion
+
     #region 管理员操作
 
     /// <summary>

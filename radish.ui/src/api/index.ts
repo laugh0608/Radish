@@ -44,4 +44,5 @@ export type {
   UserExperience,
   ExpTransaction,
   ExpTransactionQueryParams,
+  LeaderboardItem,
 } from './experience';
