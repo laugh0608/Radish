@@ -42,8 +42,8 @@ export const ExperienceDetailApp = () => {
       ]);
 
       setExperience(expResult);
-      setTransactions(transResult.items);
-      setTotalPages(transResult.totalPages);
+      setTransactions(transResult.data);
+      setTotalPages(transResult.pageCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载数据失败');
       console.error('加载经验值详情失败:', err);

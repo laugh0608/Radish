@@ -735,9 +735,120 @@ return (int)higherCount + 1; // 排名 = 比自己高的数量 + 1
 
 ---
 
+## 经验值详情页面完成
+
+### 核心成果
+
+**经验值详情页面实现**（2026-01-11）：
+
+#### 前端实现
+1. **ExperienceDetailApp 组件**
+   - 经验值概览卡片（当前等级、当前经验值、累计经验值、距下一级）
+   - 经验值趋势图（Recharts LineChart）
+   - 经验值来源饼图（Recharts PieChart）
+   - 经验值明细列表（分页）
+   - 支持 7天/30天 时间范围切换
+
+2. **图表集成**
+   - 安装 Recharts 图表库
+   - 响应式图表设计（ResponsiveContainer）
+   - 自定义颜色和样式
+   - 百分比标签显示
+
+3. **WebOS 集成**
+   - 注册到应用列表（图标：mdi:chart-line）
+   - 默认窗口大小：1000x800
+   - 分类：user
+
+4. **测试文档**
+   - 创建 experience-level-testing.md 测试指导文档
+   - 包含排行榜功能测试清单
+   - 包含经验值系统完整测试场景
+   - 包含集成测试和压力测试指南
+
+### 技术实现
+
+**经验值趋势图**：
+```tsx
+<ResponsiveContainer width="100%" height={300}>
+  <LineChart data={dailyStats}>
+    <CartesianGrid strokeDasharray="3 3" />
+    <XAxis dataKey="date" />
+    <YAxis />
+    <Tooltip />
+    <Legend />
+    <Line
+      type="monotone"
+      dataKey="exp"
+      stroke="#667eea"
+      strokeWidth={2}
+      name="经验值"
+    />
+  </LineChart>
+</ResponsiveContainer>
+```
+
+**经验值来源饼图**：
+```tsx
+<ResponsiveContainer width="100%" height={300}>
+  <PieChart>
+    <Pie
+      data={sourceDistribution}
+      cx="50%"
+      cy="50%"
+      labelLine={false}
+      label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+      outerRadius={100}
+      dataKey="value"
+    >
+      {sourceDistribution.map((entry, index) => (
+        <Cell key={`cell-${index}`} fill={entry.color} />
+      ))}
+    </Pie>
+    <Tooltip />
+  </PieChart>
+</ResponsiveContainer>
+```
+
+**经验值来源统计**：
+```typescript
+const getExpSourceDistribution = () => {
+  const sources: Record<string, number> = {};
+
+  transactions.forEach(tx => {
+    const type = tx.expType || '其他';
+    sources[type] = (sources[type] || 0) + tx.expAmount;
+  });
+
+  return Object.entries(sources).map(([name, value], index) => ({
+    name: getExpTypeDisplay(name),
+    value,
+    color: colors[index % colors.length]
+  }));
+};
+```
+
+### 技术亮点
+
+1. **数据可视化**：使用 Recharts 提供专业的图表展示
+2. **响应式设计**：图表自适应容器大小，移动端友好
+3. **时间范围切换**：支持 7天/30天 视图切换
+4. **实时统计**：基于交易记录动态计算来源分布
+5. **完善的状态处理**：加载、错误、空状态全覆盖
+
+### 编译验证
+
+✅ 前端构建成功（0 Error, 0 Warning）
+- TypeScript 类型检查通过
+- Vite 构建成功
+- Recharts 集成成功
+- 所有导入路径正确
+
+---
+
 ### 下一步计划
 
-**M8 P3 阶段前端展示**（已完成）：
+**M8 P3 阶段前端展示**（已完成 100%）：
 - ✅ `ExperienceBar` 组件（经验条）- 已完成 (@radish/ui)
 - ✅ `LevelUpModal` 组件（升级动画）- 已完成 (@radish/ui)
 - ✅ `experienceApi` 客户端 - 已完成 (@radish/ui)
@@ -746,4 +857,23 @@ return (int)higherCount + 1; // 排名 = 比自己高的数量 + 1
 - ✅ 触发升级动画 - 已完成 (App.tsx + Shell.tsx)
 - ✅ 个人主页集成经验条 - 已完成 (UserInfoCard)
 - ✅ `Leaderboard` 页面（排行榜）- 已完成
-- ⏳ `ExperienceDetail` 页面（明细）- 待实现（可选）
+- ✅ `ExperienceDetail` 页面（明细）- 已完成
+
+**M8 经验值与等级系统**（P0/P1/P2/P3 全部完成）：
+- ✅ 核心数据模型和 Service 层
+- ✅ RESTful API 接口
+- ✅ 所有论坛功能集成（发帖/评论/点赞/神评/沙发）
+- ✅ 每日上限防刷机制
+- ✅ 升级事件处理（萝卜币奖励、通知推送）
+- ✅ 前端完整展示（经验条/升级动画/排行榜/详情页）
+- ✅ WebOS 完整集成
+
+**M8 P4 阶段完善与优化**（待开始）：
+- ⏳ 异常检测规则
+- ⏳ 经验值冻结功能（后端已实现，待前端集成）
+- ⏳ 互刷检测
+- ⏳ 管理后台经验值统计面板
+- ⏳ 性能优化和压力测试
+- ⏳ 单元测试和集成测试
+
+---
