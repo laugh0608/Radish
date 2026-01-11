@@ -6,8 +6,9 @@ using SqlSugar;
 namespace Radish.Model;
 
 /// <summary>用户经验值实体</summary>
-/// <remarks>主键为 UserId，记录用户的等级和经验值信息</remarks>
+/// <remarks>记录用户的等级和经验值信息，通过 UserId 关联用户</remarks>
 [SugarTable("UserExperience")]
+[SugarIndex("idx_user_id", nameof(UserId), OrderByType.Asc, IsUnique = true)]
 [SugarIndex("idx_level", nameof(CurrentLevel), OrderByType.Desc)]
 [SugarIndex("idx_total_exp", nameof(TotalExp), OrderByType.Desc)]
 public class UserExperience : RootEntityTKey<long>
@@ -21,6 +22,7 @@ public class UserExperience : RootEntityTKey<long>
     /// <summary>统一设置默认值</summary>
     private void InitializeDefaults()
     {
+        UserId = 0;
         CurrentLevel = 0;
         CurrentExp = 0;
         TotalExp = 0;
@@ -34,6 +36,15 @@ public class UserExperience : RootEntityTKey<long>
         CreateBy = "System";
         CreateId = 0;
     }
+
+    #region 用户关联
+
+    /// <summary>用户ID</summary>
+    /// <remarks>不可为空，外键关联到用户表，唯一索引保证一个用户只有一条记录</remarks>
+    [SugarColumn(IsNullable = false, ColumnDescription = "用户ID")]
+    public long UserId { get; set; }
+
+    #endregion
 
     #region 经验值信息
 

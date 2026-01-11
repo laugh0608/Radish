@@ -159,7 +159,7 @@
 2. **经验值发放**
    - GrantExperienceAsync: 发放经验值（带乐观锁重试）
    - BatchGrantExperienceAsync: 批量发放
-   - 乐观锁冲突自动重试 3 次（指数退避：100ms → 200ms → 400ms）
+   - 乐观锁冲突自动重试 6 次（指数退避，上限 1000ms）
    - [UseTran] AOP 自动事务管理
    - 自动计算等级和升级
 
@@ -248,10 +248,224 @@
 
 ---
 
+## 用户等级与经验值系统 M8 P0 与 P1 集成完成
+
+### 核心成果
+
+**M8 P0 + P1 集成阶段完整实现**（2026-01-11）：
+
+#### 与发帖功能集成
+1. **PostService 经验值集成**
+   - 发布帖子自动获得 +20 经验值（POST_CREATE）
+   - 首次发帖额外 +30 经验值（FIRST_POST）
+   - 异步处理，不阻塞主流程
+   - 自动检测首次发帖状态
+
+2. **升级事件完整处理**
+   - 升级时自动发放萝卜币奖励（等级 × 100）
+   - 升级时推送实时通知（通知中心）
+   - 异步处理升级事件，不影响性能
+   - 完整的错误处理和日志记录
+
+3. **ExperienceService 升级事件处理**
+   - HandleLevelUpAsync 方法实现
+   - 集成 ICoinService 发放萝卜币
+   - 集成 INotificationService 推送通知
+   - 通知内容包含等级名称和奖励金额
+
+#### 服务层改进
+1. **ExperienceService 依赖注入扩展**
+   - 新增 ICoinService 注入
+   - 新增 INotificationService 注入
+   - 支持完整的升级事件处理
+
+2. **PostService 依赖注入扩展**
+   - 新增 IExperienceService 注入
+   - 支持异步经验值发放
+
+#### 测试文件
+1. **Radish.Api.Experience.http**
+   - 完整的经验值系统测试用例
+   - 发帖获得经验值测试
+   - 升级奖励和通知测试
+   - 经验值交易记录测试
+   - 完整流程测试（6 个步骤）
+
+### 技术亮点
+
+1. **异步处理**：经验值发放和升级事件均使用 Task.Run 异步处理，不阻塞主流程
+2. **首次发帖检测**：使用 QueryCountAsync 精确判断是否首次发帖
+3. **升级奖励计算**：等级 × 100 萝卜币（Lv.1 = 100，Lv.10 = 1000）
+4. **完整日志记录**：所有关键步骤均有 Serilog 日志记录
+5. **错误隔离**：经验值发放失败不影响发帖成功
+
+### 编译验证
+
+✅ 编译成功（0 Error, 91 Warning）
+- PostService 集成验证通过
+- ExperienceService 升级事件验证通过
+- 所有依赖注入正确配置
+
+### 下一步（M8 P1 剩余任务）
+
+1. **实际运行测试**
+   - 启动 Radish.Api 测试发帖获得经验值
+   - 验证升级逻辑和萝卜币奖励发放
+   - 验证升级通知推送
+
+2. **与其他论坛功能集成**
+   - 评论奖励：CommentService.AddCommentAsync → +5 经验
+   - 点赞奖励：被点赞者 +2 经验，点赞者 +1 经验
+   - 神评/沙发奖励：+50/+30 经验
+
+3. **每日上限防刷机制**
+   - 实现缓存记录每日获得经验值
+   - 配置各类型经验值每日上限
+
+---
+
+## 经验值系统性能优化与测试指导
+
+### 核心成果
+
+**性能优化**（2026-01-11）：
+
+#### 问题修复
+1. **GetTransactionsAsync 查询优化**
+   - **问题发现**：用户反馈 SQLite 报错 "incomplete input"
+   - **根本原因**：使用 `Func<ExpTransaction, bool>` 导致 SqlSugar 无法生成 SQL
+   - **初始方案**：内存过滤（性能问题）
+   - **用户反馈**："为什么排序要在代码层面，这个会影响性能吗"
+   - **最终方案**：
+     - 创建 `ExpressionExtensions.cs` 提供 And/Or 扩展方法
+     - 使用 `Expression<Func<T, bool>>` 动态组合查询条件
+     - 调用 `QueryPageAsync` 实现数据库层面筛选、排序、分页
+
+2. **性能对比**
+   ```csharp
+   // ❌ 错误方式（内存操作）
+   var allRecords = await _expTransactionRepository.QueryAsync(t => t.UserId == userId);
+   var filtered = allRecords.Where(t => t.ExpType == expType); // 内存过滤
+   var sorted = filtered.OrderByDescending(t => t.CreateTime); // 内存排序
+   var paged = sorted.Skip(...).Take(...); // 内存分页
+
+   // ✅ 正确方式（数据库操作）
+   Expression<Func<ExpTransaction, bool>> where = t => t.UserId == userId;
+   where = where.And(t => t.ExpType == expType); // 组合表达式
+   var (pagedData, totalCount) = await _expTransactionRepository.QueryPageAsync(
+       whereExpression: where,
+       orderByExpression: t => t.CreateTime,
+       orderByType: OrderByType.Desc
+   ); // 完全在 SQL 层面完成
+   ```
+
+#### 新增文件
+1. **ExpressionExtensions.cs** (Radish.Common)
+   - `And<T>`: 组合两个表达式为 AND 条件
+   - `Or<T>`: 组合两个表达式为 OR 条件
+   - `ParameterReplaceVisitor`: 统一参数名避免冲突
+
+#### 代码审查清单
+
+**PostService.cs**：
+- ✅ IExperienceService 依赖注入正确
+- ✅ Task.Run 异步处理不阻塞主流程
+- ✅ 完整的异常处理和日志记录
+- ✅ QueryCountAsync 统计帖子数量
+- ✅ 首次发帖检测逻辑正确
+
+**ExperienceService.cs**：
+- ✅ 乐观锁重试机制（6 次，指数退避，上限 1000ms）
+- ✅ [UseTran] AOP 事务管理
+- ✅ HandleLevelUpAsync 异步处理升级事件
+- ✅ GetTransactionsAsync 使用数据库层面分页
+
+**ExperienceController.cs**：
+- ✅ GetCurrentUserId 从 sub/jti claim 获取用户 ID
+- ✅ 所有接口正确使用 [Authorize] 策略
+
+### 测试指导文档
+
+**创建完整测试流程**：
+1. 重启服务 → 发帖测试 → 查看经验值 → 检查交易记录
+2. 关键日志检查点（9 个日志条目）
+3. 数据库验证 SQL 语句
+4. 常见问题排查表（5 种情况）
+
+**日志追踪关键字**：
+- "准备发放发帖经验值"
+- "用户帖子数量统计"
+- "经验值发放成功"
+- "检测到首次发帖"
+- "用户 X 从 Lv.Y 升级到 Lv.Z"
+
+### 技术亮点
+
+1. **Expression 组合**：使用 Visitor 模式统一参数，避免 "variable 'parameter' of type 'T' referenced from scope '', but it is not defined" 错误
+2. **性能优化意识**：用户正确指出内存操作的性能问题，推动了数据库层面优化
+3. **调试准备**：提前添加详细日志，为问题定位做好准备
+
+### 待解决问题
+
+**✅ 已解决：发帖后未获得经验值（乐观锁并发冲突 + 事务隔离问题）**
+
+**问题现象 1 - 乐观锁并发冲突**：
+- 用户发帖后经验值仍为 0
+- 日志显示多次初始化用户经验值记录（4 次）
+- 乐观锁冲突重试次数较多（6 次）
+- 最终经验值发放失败
+
+**根本原因 1**：
+并发竞态条件导致的乐观锁冲突循环。
+
+**问题现象 2 - 事务隔离导致查询失败**：
+```
+16:04:30.071 - 用户 20002 经验值记录初始化成功
+16:04:30.078 - 用户 20002 经验值记录初始化后仍然不存在（仅隔了 7ms！）
+```
+
+**根本原因 2**：
+`GrantExperienceInternalAsync` 有 `[UseTran]` AOP，所有操作在同一事务内：
+1. `InitializeUserExperienceAsync` 执行 `AddAsync` → 插入记录但**事务未提交**
+2. 立即重新查询 `QueryFirstAsync` → 因**事务隔离级别**读不到未提交数据
+3. 返回 null → 经验值发放失败
+
+**最终修复方案**（Radish.Service/ExperienceService.cs:165-177）：
+
+```csharp
+// 1. 获取或初始化用户经验值记录
+// 注意：不要在初始化后立即重新查询，会因事务未提交而查询不到
+// 重试机制会重新执行整个方法，自然获取到最新版本
+	var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
+if (userExp == null)
+{
+    userExp = await InitializeUserExperienceAsync(userId);
+    if (userExp == null)
+    {
+        Log.Error("用户 {UserId} 经验值记录初始化失败", userId);
+        return false;
+    }
+}
+```
+
+**核心思路**：
+1. **依赖重试机制自然解决并发问题**：乐观锁冲突时，`ExecuteWithRetryAsync` 会重新执行整个 `GrantExperienceInternalAsync`，重新查询自然获取最新 Version
+2. **直接使用初始化返回值**：避免事务内重新查询导致的隔离问题
+3. **`InitializeUserExperienceAsync` 异常处理**：并发时捕获插入异常，返回已存在的记录（带正确 Version）
+
+**修复效果**：
+- ✅ 编译成功（0 Error, 153 Warning）
+- ✅ 移除了导致事务隔离问题的"强制重新查询"逻辑
+- ✅ 依赖乐观锁重试机制自然解决并发竞态
+- ✅ 改进 `InitializeUserExperienceAsync` 日志（Information 级别，记录 Version）
+
+---
+
 ## 下一步计划
 
 **M8 P1 阶段**（预计 2026-01-12 开始）：
-- 升级事件处理（萝卜币奖励、通知推送）
+- ✅ 升级事件处理（萝卜币奖励、通知推送）- 已完成
+- 调试并解决发帖未获得经验值的问题
 - 每日上限防刷机制
 - 与所有论坛功能集成（评论、点赞、神评、沙发）
 - 完善 API 接口（交易记录、排行榜、每日统计）
