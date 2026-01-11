@@ -23,8 +23,8 @@ export const LeaderboardApp = () => {
 
     try {
       const response = await experienceApi.getLeaderboard(pageIndex, pageSize);
-      setLeaderboard(response.items);
-      setTotalPages(response.totalPages);
+      setLeaderboard(response.data);
+      setTotalPages(response.pageCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载排行榜失败');
       console.error('加载排行榜失败:', err);

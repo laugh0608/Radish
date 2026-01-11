@@ -1,4 +1,5 @@
 import { apiGet, apiPost } from './client';
+import type { PagedResponse } from './types';
 
 /**
  * 用户经验值信息
@@ -53,17 +54,6 @@ export interface ExpTransactionQueryParams {
   expType?: string;
   startDate?: string;
   endDate?: string;
-}
-
-/**
- * 分页响应
- */
-export interface PagedResponse<T> {
-  items: T[];
-  totalCount: number;
-  pageIndex: number;
-  pageSize: number;
-  totalPages: number;
 }
 
 /**
