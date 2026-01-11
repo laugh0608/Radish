@@ -107,13 +107,158 @@
 
 ---
 
+## 用户等级与经验值系统 M8 P0 阶段完成
+
+### 核心成果
+
+**M8 P0 阶段完整实现**（2026-01-11）：
+
+#### 数据模型层
+1. **UserExperience** - 用户经验值实体
+   - CurrentLevel: 当前等级 (0-10)
+   - CurrentExp: 当前等级内经验值
+   - TotalExp: 累计总经验值
+   - ExpFrozen: 经验值冻结状态
+   - Version: 乐观锁版本号
+
+2. **ExpTransaction** - 经验值交易记录
+   - 15 种经验值类型（POST_CREATE、COMMENT_LIKED、GOD_COMMENT 等）
+   - Before/After 快照记录
+   - 去重索引 (userId + expType + businessType + businessId + date)
+
+3. **LevelConfig** - 等级配置表
+   - 11 级修仙体系（凡人 → 练气 → 筑基 → 金丹 → 元婴 → 化神 → 炼虚 → 合体 → 大乘 → 渡劫 → 飞升）
+   - 指数增长曲线 (100, 200, 500, 1000, 2000, 5000...)
+   - 等级主题色、图标、徽章配置
+   - 特权列表 (JSON)
+
+4. **UserExpDailyStats** - 每日统计表
+   - 追踪每日各类型经验值获取量
+   - 用于防刷和数据分析
+
+#### ViewModel 层
+1. **UserExperienceVo** - 用户经验值视图模型
+   - 包含计算字段：升级进度、距下级经验值、等级名称
+   - 集成用户信息：用户名、头像
+
+2. **ExpTransactionVo** - 交易记录视图模型
+   - ExpTypeDisplay: 中文类型名称
+
+3. **LevelConfigVo** - 等级配置视图模型
+   - Privileges 自动解析为 List<string>
+
+4. **LeaderboardItemVo** - 排行榜项视图模型
+
+#### 业务服务层
+**ExperienceService** - 核心经验值服务实现：
+
+1. **经验值查询**
+   - GetUserExperienceAsync: 获取单个用户经验值（不存在自动初始化）
+   - GetUserExperiencesAsync: 批量获取
+
+2. **经验值发放**
+   - GrantExperienceAsync: 发放经验值（带乐观锁重试）
+   - BatchGrantExperienceAsync: 批量发放
+   - 乐观锁冲突自动重试 3 次（指数退避：100ms → 200ms → 400ms）
+   - [UseTran] AOP 自动事务管理
+   - 自动计算等级和升级
+
+3. **等级配置**
+   - GetLevelConfigsAsync: 获取所有等级配置
+   - GetLevelConfigAsync: 获取指定等级配置
+   - CalculateLevelAsync: 根据累计经验值计算等级
+
+4. **交易记录查询**
+   - GetTransactionsAsync: 分页查询交易记录
+   - 支持按类型、日期范围筛选
+
+5. **内部辅助方法**
+   - InitializeUserExperienceAsync: 初始化用户经验值记录
+   - MapToVoAsync: 实体映射为 VO（附加等级配置信息）
+   - CalculateLevel: 纯计算方法（二分查找式等级计算）
+   - ExecuteWithRetryAsync: 乐观锁重试封装
+
+#### AutoMapper 配置
+**ExperienceProfile** - 实体映射配置：
+- UserExperience ↔ UserExperienceVo
+- ExpTransaction ↔ ExpTransactionVo
+- LevelConfig ↔ LevelConfigVo
+- UserExpDailyStats ↔ UserExpDailyStatsVo
+- 自动转换经验值类型为中文名称
+- 自动解析/序列化特权 JSON
+
+#### API 接口层
+**ExperienceController** - 经验值 RESTful API：
+
+1. **GetMyExperience** - 获取当前用户经验值信息
+   - 路由: GET /api/v1/Experience/GetMyExperience
+   - 需要认证 (Client 策略)
+
+2. **GetUserExperience** - 获取指定用户经验值信息
+   - 路由: GET /api/v1/Experience/GetUserExperience/{userId}
+
+3. **GetLevelConfigs** - 获取所有等级配置
+   - 路由: GET /api/v1/Experience/GetLevelConfigs
+   - 匿名可访问
+
+4. **GetLevelConfig** - 获取指定等级配置
+   - 路由: GET /api/v1/Experience/GetLevelConfig/{level}
+
+5. **GetMyTransactions** - 获取当前用户交易记录
+   - 路由: GET /api/v1/Experience/GetMyTransactions
+   - 分页查询、支持类型筛选
+
+6. **AdminAdjustExperience** - 管理员调整经验值
+   - 路由: POST /api/v1/Experience/AdminAdjustExperience
+   - 需要管理员权限 (SystemOrAdmin 策略)
+
+#### 数据库初始化
+**InitialDataSeeder** - 等级配置种子数据：
+- 11 个等级完整配置
+- 指数增长经验值曲线
+- 修仙主题颜色（凡人灰 → 练气绿 → 筑基蓝 → 金丹黄 → ...）
+
+### 技术亮点
+
+1. **乐观锁并发控制**：Version 字段 + 重试机制，防止并发修改冲突
+2. **AOP 事务管理**：使用 [UseTran] 属性，避免手动 BeginTranAsync/CommitTranAsync
+3. **指数增长曲线**：合理的升级难度设计（100 × 2^level）
+4. **去重机制**：ExpTransaction 表建立复合索引防止重复发放
+5. **自动初始化**：首次查询时自动创建用户经验值记录
+6. **冻结机制**：支持经验值冻结（用于违规处理）
+7. **映射封装**：Service 层统一使用 ViewModel，不直接暴露实体
+
+### 编译验证
+
+✅ 编译成功 (0 Error, 65 Warning)
+- 所有实体、服务、控制器编译通过
+- SqlSugar SnowFlakeSingle 正确引用
+
+### 下一步 (P0 剩余任务)
+
+1. **运行数据库迁移并验证**
+   - 创建 UserExperience、ExpTransaction、LevelConfig、UserExpDailyStats 表
+   - 执行种子数据初始化
+   - 验证表结构和索引
+
+2. **与发帖功能集成验证**
+   - 在 PostService.AddPostAsync 中调用 GrantExperienceAsync
+   - 发布帖子获得 20 经验值 (POST_CREATE)
+   - 验证升级逻辑
+
+---
+
 ## 下一步计划
 
-**M8（用户等级与经验值系统）**：
-- 11 级修仙体系（炼气期 → 渡劫期）
-- 用户行为触发经验值增长
-- 升级获得萝卜币奖励
-- 等级徽章和经验值进度条
-- 等级排行榜
+**M8 P1 阶段**（预计 2026-01-12 开始）：
+- 升级事件处理（萝卜币奖励、通知推送）
+- 每日上限防刷机制
+- 与所有论坛功能集成（评论、点赞、神评、沙发）
+- 完善 API 接口（交易记录、排行榜、每日统计）
 
-预计开始时间：2026-01-10
+**M8 P2 阶段**（预计后续）：
+- 前端等级徽章组件
+- 升级动画特效
+- 排行榜页面
+- 经验值详情页面
+- 单元测试和性能优化

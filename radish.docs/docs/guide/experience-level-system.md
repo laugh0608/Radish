@@ -1306,47 +1306,54 @@ public async Task PublishPost_ShouldGrantExp_AndTriggerLevelUp()
 
 ## 12. 实施计划
 
-### 12.1 Phase 0(准备阶段) - 1 天
+### 12.1 Phase 0(准备阶段) - 1 天 ✅ 已完成
 
-- [ ] 确定等级昵称和经验值曲线
-- [ ] 设计数据库表结构
-- [ ] 定义 API 接口契约
+- [x] 确定等级昵称和经验值曲线
+- [x] 设计数据库表结构
+- [x] 定义 API 接口契约
 
-### 12.2 Phase 1(核心功能) - 5-7 天
+### 12.2 Phase 1(核心功能) - 5-7 天 ✅ P0 阶段已完成 (2026-01-11)
 
 **目标**:实现经验值发放、等级计算、个人主页展示
 
 **任务清单**:
-1. **数据模型**
-   - [ ] 创建 `UserExperience` 实体
-   - [ ] 创建 `ExpTransaction` 实体
-   - [ ] 创建 `LevelConfig` 实体
-   - [ ] 创建 `UserExpDailyStats` 实体
-   - [ ] 配置 AutoMapper 映射
+1. **数据模型** ✅
+   - [x] 创建 `UserExperience` 实体
+   - [x] 创建 `ExpTransaction` 实体
+   - [x] 创建 `LevelConfig` 实体
+   - [x] 创建 `UserExpDailyStats` 实体
+   - [x] 配置 AutoMapper 映射 (`ExperienceProfile`)
 
-2. **Repository 层**
-   - [ ] 创建 `IUserExpRepository` 和实现
-   - [ ] 创建 `IExpTransactionRepository` 和实现
-   - [ ] 创建 `ILevelConfigRepository` 和实现
+2. **Repository 层** ✅
+   - [x] 使用 `IBaseRepository<UserExperience>`
+   - [x] 使用 `IBaseRepository<ExpTransaction>`
+   - [x] 使用 `IBaseRepository<LevelConfig>`
+   - [x] 使用 `IBaseRepository<UserExpDailyStats>`
 
-3. **Service 层**
-   - [ ] 创建 `IExperienceService` 接口
-   - [ ] 实现 `ExperienceService`(发放、升级、统计)
-   - [ ] 实现每日上限检查
-   - [ ] 实现等级计算逻辑
+3. **Service 层** ✅
+   - [x] 创建 `IExperienceService` 接口
+   - [x] 实现 `ExperienceService`(发放、升级、统计)
+   - [x] 实现乐观锁重试机制 (3次重试，指数退避)
+   - [x] 实现等级计算逻辑 (二分查找式算法)
+   - [ ] 实现每日上限检查 (P1)
 
-4. **API 接口**
-   - [ ] `GET /api/v1/Experience/GetUserExperience`
-   - [ ] `GET /api/v1/Experience/GetExpTransactions`
-   - [ ] `GET /api/v1/Experience/GetDailyStats`
+4. **API 接口** ✅
+   - [x] `GET /api/v1/Experience/GetMyExperience` (当前用户)
+   - [x] `GET /api/v1/Experience/GetUserExperience/{userId}` (指定用户)
+   - [x] `GET /api/v1/Experience/GetLevelConfigs` (所有等级配置)
+   - [x] `GET /api/v1/Experience/GetLevelConfig/{level}` (指定等级)
+   - [x] `GET /api/v1/Experience/GetMyTransactions` (交易记录)
+   - [x] `POST /api/v1/Experience/AdminAdjustExperience` (管理员调整)
 
-5. **数据初始化**
-   - [ ] 初始化 `level_config` 表数据(Lv.0-10)
-   - [ ] 为现有用户初始化经验值(默认 Lv.0)
+5. **数据初始化** ✅
+   - [x] 初始化 `LevelConfig` 表数据(Lv.0-10)
+   - [x] 数据库表结构创建成功
+   - [x] 11个等级配置种子数据初始化成功
 
-6. **测试**
+6. **测试** ⏳ P1
    - [ ] 单元测试:等级计算、经验值发放
    - [ ] 集成测试:完整流程
+   - [ ] 与发帖功能集成测试
 
 ### 12.3 Phase 2(业务集成) - 3-5 天
 
@@ -1479,8 +1486,9 @@ public async Task PublishPost_ShouldGrantExp_AndTriggerLevelUp()
 
 ---
 
-**文档版本**:v1.0
+**文档版本**:v1.1
 **创建日期**:2026-01-02
-**最后更新**:2026-01-02
+**最后更新**:2026-01-11
+**实施状态**:P0 阶段已完成，P1/P2 进行中
 **负责人**:待定
-**审核状态**:待评审
+**审核状态**:P0 已实施

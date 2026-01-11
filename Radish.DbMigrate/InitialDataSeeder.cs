@@ -24,8 +24,9 @@ internal static class InitialDataSeeder
         await SeedPermissionsAsync(db);
         await SeedForumCategoriesAsync(db);
         await SeedForumTagsAsync(db);
+        await SeedLevelConfigsAsync(db);
 
-        Console.WriteLine("[Radish.DbMigrate] ✓ Seed 完成（默认角色/租户/部门/用户/用户角色/角色-API 权限/论坛分类/标签）。");
+        Console.WriteLine("[Radish.DbMigrate] ✓ Seed 完成（默认角色/租户/部门/用户/用户角色/角色-API 权限/论坛分类/标签/等级配置）。");
     }
 
     /// <summary>初始化用户-角色关系</summary>
@@ -672,6 +673,55 @@ internal static class InitialDataSeeder
         else
         {
             Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={generalTagId} 的综合标签，跳过创建。");
+        }
+    }
+
+    /// <summary>初始化等级配置（Lv.0-10 修仙体系）</summary>
+    private static async Task SeedLevelConfigsAsync(ISqlSugarClient db)
+    {
+        // 11 级修仙体系配置
+        var levelConfigs = new[]
+        {
+            new { Level = 0, Name = "凡人", ExpRequired = 100L, ExpCumulative = 0L, Color = "#9E9E9E", Desc = "新用户初始等级" },
+            new { Level = 1, Name = "练气", ExpRequired = 200L, ExpCumulative = 100L, Color = "#4CAF50", Desc = "开始修炼之路" },
+            new { Level = 2, Name = "筑基", ExpRequired = 500L, ExpCumulative = 300L, Color = "#2196F3", Desc = "打下坚实基础" },
+            new { Level = 3, Name = "金丹", ExpRequired = 1000L, ExpCumulative = 800L, Color = "#FFC107", Desc = "凝聚金丹，小有所成" },
+            new { Level = 4, Name = "元婴", ExpRequired = 2000L, ExpCumulative = 1800L, Color = "#FF9800", Desc = "修成元婴，中流砥柱" },
+            new { Level = 5, Name = "化神", ExpRequired = 4000L, ExpCumulative = 3800L, Color = "#FF5722", Desc = "化神境界，神通初显" },
+            new { Level = 6, Name = "炼虚", ExpRequired = 8000L, ExpCumulative = 7800L, Color = "#9C27B0", Desc = "炼虚合道，高手境界" },
+            new { Level = 7, Name = "合体", ExpRequired = 16000L, ExpCumulative = 15800L, Color = "#673AB7", Desc = "合体大能，社区精英" },
+            new { Level = 8, Name = "大乘", ExpRequired = 32000L, ExpCumulative = 31800L, Color = "#3F51B5", Desc = "大乘期修士，德高望重" },
+            new { Level = 9, Name = "渡劫", ExpRequired = 64000L, ExpCumulative = 63800L, Color = "#E91E63", Desc = "渡劫飞升，传说人物" },
+            new { Level = 10, Name = "飞升", ExpRequired = 0L, ExpCumulative = 127800L, Color = "#FFD700", Desc = "羽化飞升，至高荣耀" },
+        };
+
+        foreach (var config in levelConfigs)
+        {
+            var exists = await db.Queryable<LevelConfig>().AnyAsync(l => l.Level == config.Level);
+            if (!exists)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 创建等级配置 Lv.{config.Level} ({config.Name})...");
+
+                var levelConfig = new LevelConfig
+                {
+                    Level = config.Level,
+                    LevelName = config.Name,
+                    ExpRequired = config.ExpRequired,
+                    ExpCumulative = config.ExpCumulative,
+                    ThemeColor = config.Color,
+                    Description = config.Desc,
+                    IsEnabled = true,
+                    SortOrder = config.Level,
+                    CreateTime = DateTime.Now,
+                    CreateBy = "System"
+                };
+
+                await db.Insertable(levelConfig).ExecuteCommandAsync();
+            }
+            else
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 已存在 Lv.{config.Level} ({config.Name}) 的等级配置，跳过创建。");
+            }
         }
     }
 }
