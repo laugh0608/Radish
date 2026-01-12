@@ -298,7 +298,7 @@ Hub URL: /hub/notification
 
 - [开发框架说明](/architecture/framework) - SignalR 实时交互章节
 - [开发规范](/architecture/specifications) - SignalR 实时交互规范
-- [萝卜币系统设计](/guide/radish-coin-system) - 实时推送示例（第 16.9 节）
+- [萝卜币系统设计](/guide/radish-coin-implementation-review-frontend) - 实时推送示例（第 16.9 节）
 - [神评/沙发功能](/features/comment-highlight) - 通知触发点参考
 - [Gateway 服务网关](/guide/gateway) - WebSocket 路由配置
 
