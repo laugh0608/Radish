@@ -989,3 +989,29 @@ const getExpSourceDistribution = () => {
 - 🎯 准备进入 M9（商城系统）
 
 ---
+
+## M9 商城系统启动
+
+### 核心成果
+
+**商城系统基础代码**（2026-01-12）：
+
+#### 枚举类型
+新增 `Radish.Shared/CustomEnum/ShopEnums.cs`：
+- `ProductType` - 商品类型（权益/消耗品/实物）
+- `BenefitType` - 权益类型（徽章/头像框/称号/主题/功能解锁/经验加成/萝卜币加成）
+- `ConsumableType` - 消耗品类型（改名卡/置顶卡/高亮卡/经验卡/萝卜币红包/双倍经验卡/抽奖券）
+- `OrderStatus` - 订单状态（待支付/已支付/已完成/已取消/已退款/发放失败）
+- `StockType` - 库存类型（无限/限量）
+- `DurationType` - 有效期类型（永久/固定天数/固定到期时间）
+
+#### 实体模型
+- `ProductCategory` - 商品分类实体（语义化字符串主键）
+- `ProductCategoryVo` - 商品分类视图模型
+
+### 下一步
+- 创建 `Product` 商品实体
+- 添加 AutoMapper 映射配置
+- 创建种子数据
+
+---
