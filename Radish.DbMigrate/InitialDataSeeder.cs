@@ -27,8 +27,13 @@ internal static class InitialDataSeeder
         await SeedForumCategoriesAsync(db);
         await SeedForumTagsAsync(db);
         await SeedLevelConfigsAsync(db, services);
+        await SeedShopCategoriesAsync(db);
+        await SeedShopProductsAsync(db);
 
-        Console.WriteLine("[Radish.DbMigrate] ✓ Seed 完成（默认角色/租户/部门/用户/用户角色/角色-API 权限/论坛分类/标签/等级配置）。");
+        Console.WriteLine("[Radish.DbMigrate] ✓ Seed 完成:");
+        Console.WriteLine("  - 角色/租户/部门/用户/用户角色");
+        Console.WriteLine("  - 角色-API 权限/论坛分类/标签");
+        Console.WriteLine("  - 等级配置/商城分类/商品");
     }
 
     /// <summary>初始化用户-角色关系</summary>
@@ -735,6 +740,314 @@ internal static class InitialDataSeeder
             else
             {
                 Console.WriteLine($"[Radish.DbMigrate] 已存在 Lv.{meta.Level} ({meta.Name}) 的等级配置，跳过创建。");
+            }
+        }
+    }
+
+    /// <summary>初始化商城分类数据</summary>
+    private static async Task SeedShopCategoriesAsync(ISqlSugarClient db)
+    {
+        var categories = new[]
+        {
+            new ProductCategory
+            {
+                Id = "badge",
+                Name = "徽章装饰",
+                Icon = "badge",
+                Description = "专属徽章，彰显身份",
+                SortOrder = 0,
+                IsEnabled = true,
+                CreateTime = DateTime.Now
+            },
+            new ProductCategory
+            {
+                Id = "frame",
+                Name = "头像框",
+                Icon = "frame",
+                Description = "精美头像框，装点个人形象",
+                SortOrder = 1,
+                IsEnabled = true,
+                CreateTime = DateTime.Now
+            },
+            new ProductCategory
+            {
+                Id = "title",
+                Name = "称号",
+                Icon = "title",
+                Description = "独特称号，展示个性",
+                SortOrder = 2,
+                IsEnabled = true,
+                CreateTime = DateTime.Now
+            },
+            new ProductCategory
+            {
+                Id = "card",
+                Name = "功能卡片",
+                Icon = "card",
+                Description = "实用道具卡，提升体验",
+                SortOrder = 3,
+                IsEnabled = true,
+                CreateTime = DateTime.Now
+            },
+            new ProductCategory
+            {
+                Id = "boost",
+                Name = "加成道具",
+                Icon = "boost",
+                Description = "经验/萝卜币加成道具",
+                SortOrder = 4,
+                IsEnabled = true,
+                CreateTime = DateTime.Now
+            }
+        };
+
+        foreach (var category in categories)
+        {
+            var exists = await db.Queryable<ProductCategory>().AnyAsync(c => c.Id == category.Id);
+            if (!exists)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 创建商品分类 Id={category.Id}, Name={category.Name}...");
+                await db.Insertable(category).ExecuteCommandAsync();
+            }
+            else
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={category.Id} 的商品分类，跳过创建。");
+            }
+        }
+    }
+
+    /// <summary>初始化商城商品数据</summary>
+    private static async Task SeedShopProductsAsync(ISqlSugarClient db)
+    {
+        // 商品 ID 从 100000 开始
+        var products = new[]
+        {
+            // 徽章类
+            new Product
+            {
+                Id = 100001,
+                Name = "金色徽章",
+                Description = "闪耀的金色徽章，彰显尊贵身份",
+                Icon = "badge-gold",
+                CategoryId = "badge",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.Badge,
+                BenefitValue = "badge-gold",
+                Price = 500,
+                OriginalPrice = 800,
+                StockType = StockType.Unlimited,
+                DurationType = DurationType.Permanent,
+                SortOrder = 0,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            new Product
+            {
+                Id = 100002,
+                Name = "银色徽章",
+                Description = "优雅的银色徽章，低调奢华",
+                Icon = "badge-silver",
+                CategoryId = "badge",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.Badge,
+                BenefitValue = "badge-silver",
+                Price = 300,
+                StockType = StockType.Unlimited,
+                DurationType = DurationType.Permanent,
+                SortOrder = 1,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            // 头像框类
+            new Product
+            {
+                Id = 100011,
+                Name = "星光头像框",
+                Description = "闪烁的星光环绕，璀璨夺目",
+                Icon = "frame-star",
+                CategoryId = "frame",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.AvatarFrame,
+                BenefitValue = "frame-star",
+                Price = 400,
+                StockType = StockType.Unlimited,
+                DurationType = DurationType.Days,
+                DurationDays = 30,
+                SortOrder = 0,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            new Product
+            {
+                Id = 100012,
+                Name = "火焰头像框",
+                Description = "燃烧的火焰特效，热情四射",
+                Icon = "frame-fire",
+                CategoryId = "frame",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.AvatarFrame,
+                BenefitValue = "frame-fire",
+                Price = 600,
+                OriginalPrice = 800,
+                StockType = StockType.Unlimited,
+                DurationType = DurationType.Days,
+                DurationDays = 30,
+                SortOrder = 1,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            // 称号类
+            new Product
+            {
+                Id = 100021,
+                Name = "萝卜达人",
+                Description = "专属称号「萝卜达人」，显示在用户名下方",
+                Icon = "title-expert",
+                CategoryId = "title",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.Title,
+                BenefitValue = "萝卜达人",
+                Price = 200,
+                StockType = StockType.Limited,
+                Stock = 100,
+                LimitPerUser = 1,
+                DurationType = DurationType.Permanent,
+                SortOrder = 0,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            // 功能卡片类
+            new Product
+            {
+                Id = 100031,
+                Name = "改名卡",
+                Description = "使用后可修改一次昵称",
+                Icon = "card-rename",
+                CategoryId = "card",
+                ProductType = ProductType.Consumable,
+                ConsumableType = ConsumableType.RenameCard,
+                Price = 100,
+                StockType = StockType.Unlimited,
+                SortOrder = 0,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            new Product
+            {
+                Id = 100032,
+                Name = "帖子置顶卡（24小时）",
+                Description = "使用后可将帖子置顶 24 小时",
+                Icon = "card-pin",
+                CategoryId = "card",
+                ProductType = ProductType.Consumable,
+                ConsumableType = ConsumableType.PostPinCard,
+                BenefitValue = "24",
+                Price = 150,
+                StockType = StockType.Unlimited,
+                SortOrder = 1,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            new Product
+            {
+                Id = 100033,
+                Name = "帖子高亮卡（24小时）",
+                Description = "使用后帖子标题高亮显示 24 小时",
+                Icon = "card-highlight",
+                CategoryId = "card",
+                ProductType = ProductType.Consumable,
+                ConsumableType = ConsumableType.PostHighlightCard,
+                BenefitValue = "24",
+                Price = 100,
+                StockType = StockType.Unlimited,
+                SortOrder = 2,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            // 加成道具类
+            new Product
+            {
+                Id = 100041,
+                Name = "经验卡（100点）",
+                Description = "使用后立即获得 100 点经验值",
+                Icon = "card-exp",
+                CategoryId = "boost",
+                ProductType = ProductType.Consumable,
+                ConsumableType = ConsumableType.ExpCard,
+                BenefitValue = "100",
+                Price = 50,
+                StockType = StockType.Unlimited,
+                SortOrder = 0,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            new Product
+            {
+                Id = 100042,
+                Name = "萝卜币红包（50胡萝卜）",
+                Description = "使用后立即获得 50 胡萝卜",
+                Icon = "card-coin",
+                CategoryId = "boost",
+                ProductType = ProductType.Consumable,
+                ConsumableType = ConsumableType.CoinCard,
+                BenefitValue = "50",
+                Price = 40,
+                StockType = StockType.Unlimited,
+                SortOrder = 1,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            new Product
+            {
+                Id = 100043,
+                Name = "双倍经验卡（24小时）",
+                Description = "使用后 24 小时内获得的经验值翻倍",
+                Icon = "card-double-exp",
+                CategoryId = "boost",
+                ProductType = ProductType.Consumable,
+                ConsumableType = ConsumableType.DoubleExpCard,
+                BenefitValue = "24",
+                Price = 200,
+                StockType = StockType.Unlimited,
+                SortOrder = 2,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            }
+        };
+
+        foreach (var product in products)
+        {
+            var exists = await db.Queryable<Product>().AnyAsync(p => p.Id == product.Id);
+            if (!exists)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 创建商品 Id={product.Id}, Name={product.Name}...");
+                await db.Insertable(product).ExecuteCommandAsync();
+            }
+            else
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={product.Id} 的商品，跳过创建。");
             }
         }
     }
