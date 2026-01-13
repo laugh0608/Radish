@@ -990,14 +990,13 @@ const getExpSourceDistribution = () => {
 
 ---
 
-## M9 商城系统启动
+## M9 商城系统 P1/P2 阶段完成
 
 ### 核心成果
 
-**商城系统基础代码**（2026-01-12）：
+**商城系统后端完整实现**（2026-01-13）：
 
-#### 枚举类型
-新增 `Radish.Shared/CustomEnum/ShopEnums.cs`：
+#### 枚举类型 (ShopEnums.cs)
 - `ProductType` - 商品类型（权益/消耗品/实物）
 - `BenefitType` - 权益类型（徽章/头像框/称号/主题/功能解锁/经验加成/萝卜币加成）
 - `ConsumableType` - 消耗品类型（改名卡/置顶卡/高亮卡/经验卡/萝卜币红包/双倍经验卡/抽奖券）
@@ -1006,12 +1005,89 @@ const getExpSourceDistribution = () => {
 - `DurationType` - 有效期类型（永久/固定天数/固定到期时间）
 
 #### 实体模型
-- `ProductCategory` - 商品分类实体（语义化字符串主键）
-- `ProductCategoryVo` - 商品分类视图模型
+1. **ProductCategory** - 商品分类（语义化字符串主键）
+2. **Product** - 商品实体（支持权益类/消耗品/实物）
+3. **Order** - 订单实体（完整订单生命周期）
+4. **UserBenefit** - 用户权益（徽章/头像框/称号等）
+5. **UserInventory** - 用户背包（消耗品道具）
+
+#### Service 层
+1. **ProductService** - 商品服务
+   - 商品 CRUD、列表查询、库存扣减（乐观锁）
+   - 限购检查、上下架管理
+
+2. **OrderService** - 订单服务
+   - 创建订单、订单查询、状态管理
+   - 集成萝卜币支付、权益发放
+   - 购买成功通知推送
+
+3. **UserBenefitService** - 用户权益服务
+   - 权益发放、查询、激活/取消激活
+   - 权益时长叠加
+
+4. **UserInventoryService** - 用户背包服务
+   - 背包查询、道具使用、数量管理
+   - 消耗品效果实现（改名卡/经验卡/萝卜币红包等）
+
+#### Controller 层
+**ShopController** - 统一商城接口：
+- 商品分类：`GetCategories`
+- 商品列表：`GetProducts`、`GetProductDetail`
+- 购买流程：`BuyProduct`
+- 订单管理：`GetMyOrders`、`GetOrderDetail`
+- 用户权益：`GetMyBenefits`、`ActivateBenefit`、`DeactivateBenefit`
+- 用户背包：`GetMyInventory`、`UseItem`、`UseRenameCard`
+- 管理后台：`AdminGetProducts`、`CreateProduct`、`UpdateProduct` 等
+
+#### AutoMapper 配置
+**ShopProfile** - 商城模块映射：
+- Product ↔ ProductVo / ProductListItemVo
+- ProductCategory ↔ ProductCategoryVo
+- Order ↔ OrderVo / OrderListItemVo
+- UserBenefit ↔ UserBenefitVo
+- UserInventory ↔ UserInventoryVo
+
+#### 种子数据
+1. **商品分类**（5 个）：
+   - badge（徽章装饰）
+   - frame（头像框）
+   - title（称号）
+   - card（功能卡片）
+   - boost（加成道具）
+
+2. **初始商品**（11 个）：
+   - 金色徽章、银色徽章
+   - 星光头像框、火焰头像框
+   - 萝卜达人称号
+   - 改名卡、帖子置顶卡、帖子高亮卡
+   - 经验卡、萝卜币红包、双倍经验卡
+
+### 技术亮点
+
+1. **分层架构严格遵守**：Service 层通过 Repository 方法访问数据库，Controller 只注入 Service
+2. **乐观锁库存控制**：防止超卖，支持并发购买
+3. **限购机制**：支持每用户限购数量
+4. **权益时长叠加**：同类型权益自动延长有效期
+5. **消耗品效果框架**：改名卡/经验卡/萝卜币红包已完整实现
+6. **通知集成**：购买成功自动推送通知
+
+### 编译验证
+
+✅ 编译成功（0 Error）
+- 所有实体、服务、控制器编译通过
+- 代码规范检查通过
 
 ### 下一步
-- 创建 `Product` 商品实体
-- 添加 AutoMapper 映射配置
-- 创建种子数据
+
+**P3 阶段：前端页面**
+- 商城首页
+- 商品详情页
+- 订单列表页
+- 用户背包页
+
+**P4 阶段：管理后台**
+- 商品管理
+- 订单管理
+- 统计报表
 
 ---
