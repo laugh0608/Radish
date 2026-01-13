@@ -139,13 +139,18 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
 
     var db = services.GetRequiredService<ISqlSugarClient>();
 
-    // 检查 Role 表是否存在，如果不存在则先执行 init
+    // 检查核心表是否存在，如果不存在则先执行 init
     Console.WriteLine("[Radish.DbMigrate] 检查数据库表结构...");
     var roleTableExists = db.DbMaintenance.IsAnyTable("Role", false);
+    var shopTableExists = db.DbMaintenance.IsAnyTable("shop_product_category", false);
 
-    if (!roleTableExists)
+    if (!roleTableExists || !shopTableExists)
     {
-        Console.WriteLine("[Radish.DbMigrate] ⚠️  检测到数据库表结构未初始化，自动执行 init...");
+        var missingTables = new List<string>();
+        if (!roleTableExists) missingTables.Add("Role");
+        if (!shopTableExists) missingTables.Add("shop_product_category");
+
+        Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到表结构缺失 ({string.Join(", ", missingTables)})，自动执行 init...");
         await RunInitAsync(services, configuration, environment);
         Console.WriteLine();
     }
