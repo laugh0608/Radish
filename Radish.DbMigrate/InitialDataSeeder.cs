@@ -752,9 +752,9 @@ internal static class InitialDataSeeder
             new ProductCategory
             {
                 Id = "badge",
-                Name = "徽章装饰",
+                Name = "徽章收藏",
                 Icon = "badge",
-                Description = "专属徽章，彰显身份",
+                Description = "专属徽章，展示你的独特身份",
                 SortOrder = 0,
                 IsEnabled = true,
                 CreateTime = DateTime.Now
@@ -774,28 +774,38 @@ internal static class InitialDataSeeder
                 Id = "title",
                 Name = "称号",
                 Icon = "title",
-                Description = "独特称号，展示个性",
+                Description = "独特称号，彰显个性",
                 SortOrder = 2,
                 IsEnabled = true,
                 CreateTime = DateTime.Now
             },
             new ProductCategory
             {
-                Id = "card",
-                Name = "功能卡片",
-                Icon = "card",
-                Description = "实用道具卡，提升体验",
+                Id = "signature",
+                Name = "签名档",
+                Icon = "signature",
+                Description = "个性签名，留下你的专属印记",
                 SortOrder = 3,
                 IsEnabled = true,
                 CreateTime = DateTime.Now
             },
             new ProductCategory
             {
-                Id = "boost",
-                Name = "加成道具",
-                Icon = "boost",
-                Description = "经验/萝卜币加成道具",
+                Id = "effect",
+                Name = "特效装扮",
+                Icon = "sparkles",
+                Description = "点赞特效、用户名特效等",
                 SortOrder = 4,
+                IsEnabled = true,
+                CreateTime = DateTime.Now
+            },
+            new ProductCategory
+            {
+                Id = "theme",
+                Name = "主题皮肤",
+                Icon = "palette",
+                Description = "个性化界面主题",
+                SortOrder = 5,
                 IsEnabled = true,
                 CreateTime = DateTime.Now
             }
@@ -822,20 +832,21 @@ internal static class InitialDataSeeder
         // 商品 ID 从 100000 开始
         var products = new[]
         {
-            // 徽章类
+            // ========== 徽章类 ==========
             new Product
             {
                 Id = 100001,
-                Name = "金色徽章",
-                Description = "闪耀的金色徽章，彰显尊贵身份",
-                Icon = "badge-gold",
+                Name = "元老徽章",
+                Description = "社区元老专属徽章，见证社区成长",
+                Icon = "badge-veteran",
                 CategoryId = "badge",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Badge,
-                BenefitValue = "badge-gold",
+                BenefitValue = "badge-veteran",
                 Price = 500,
-                OriginalPrice = 800,
-                StockType = StockType.Unlimited,
+                StockType = StockType.Limited,
+                Stock = 100,
+                LimitPerUser = 1,
                 DurationType = DurationType.Permanent,
                 SortOrder = 0,
                 IsOnSale = true,
@@ -846,14 +857,14 @@ internal static class InitialDataSeeder
             new Product
             {
                 Id = 100002,
-                Name = "银色徽章",
-                Description = "优雅的银色徽章，低调奢华",
-                Icon = "badge-silver",
+                Name = "萝卜爱好者",
+                Description = "热爱萝卜的小伙伴专属徽章",
+                Icon = "badge-carrot-lover",
                 CategoryId = "badge",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Badge,
-                BenefitValue = "badge-silver",
-                Price = 300,
+                BenefitValue = "badge-carrot-lover",
+                Price = 200,
                 StockType = StockType.Unlimited,
                 DurationType = DurationType.Permanent,
                 SortOrder = 1,
@@ -862,7 +873,27 @@ internal static class InitialDataSeeder
                 CreateTime = DateTime.Now,
                 CreateBy = "System"
             },
-            // 头像框类
+            new Product
+            {
+                Id = 100003,
+                Name = "夜猫子",
+                Description = "深夜活跃用户专属徽章",
+                Icon = "badge-night-owl",
+                CategoryId = "badge",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.Badge,
+                BenefitValue = "badge-night-owl",
+                Price = 150,
+                StockType = StockType.Unlimited,
+                DurationType = DurationType.Permanent,
+                SortOrder = 2,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+
+            // ========== 头像框类 ==========
             new Product
             {
                 Id = 100011,
@@ -873,7 +904,7 @@ internal static class InitialDataSeeder
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.AvatarFrame,
                 BenefitValue = "frame-star",
-                Price = 400,
+                Price = 300,
                 StockType = StockType.Unlimited,
                 DurationType = DurationType.Days,
                 DurationDays = 30,
@@ -886,15 +917,14 @@ internal static class InitialDataSeeder
             new Product
             {
                 Id = 100012,
-                Name = "火焰头像框",
-                Description = "燃烧的火焰特效，热情四射",
-                Icon = "frame-fire",
+                Name = "萝卜花环",
+                Description = "可爱的萝卜花环头像框",
+                Icon = "frame-carrot-wreath",
                 CategoryId = "frame",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.AvatarFrame,
-                BenefitValue = "frame-fire",
-                Price = 600,
-                OriginalPrice = 800,
+                BenefitValue = "frame-carrot-wreath",
+                Price = 250,
                 StockType = StockType.Unlimited,
                 DurationType = DurationType.Days,
                 DurationDays = 30,
@@ -904,12 +934,32 @@ internal static class InitialDataSeeder
                 CreateTime = DateTime.Now,
                 CreateBy = "System"
             },
-            // 称号类
+            new Product
+            {
+                Id = 100013,
+                Name = "极简线条框",
+                Description = "简约而不简单的线条设计",
+                Icon = "frame-minimal",
+                CategoryId = "frame",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.AvatarFrame,
+                BenefitValue = "frame-minimal",
+                Price = 100,
+                StockType = StockType.Unlimited,
+                DurationType = DurationType.Permanent,
+                SortOrder = 2,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+
+            // ========== 称号类 ==========
             new Product
             {
                 Id = 100021,
                 Name = "萝卜达人",
-                Description = "专属称号「萝卜达人」，显示在用户名下方",
+                Description = "专属称号「萝卜达人」，显示在用户名旁",
                 Icon = "title-expert",
                 CategoryId = "title",
                 ProductType = ProductType.Benefit,
@@ -917,7 +967,7 @@ internal static class InitialDataSeeder
                 BenefitValue = "萝卜达人",
                 Price = 200,
                 StockType = StockType.Limited,
-                Stock = 100,
+                Stock = 50,
                 LimitPerUser = 1,
                 DurationType = DurationType.Permanent,
                 SortOrder = 0,
@@ -926,18 +976,59 @@ internal static class InitialDataSeeder
                 CreateTime = DateTime.Now,
                 CreateBy = "System"
             },
-            // 功能卡片类
+            new Product
+            {
+                Id = 100022,
+                Name = "用爱发电",
+                Description = "专属称号「用爱发电」，致敬每一位贡献者",
+                Icon = "title-love-power",
+                CategoryId = "title",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.Title,
+                BenefitValue = "用爱发电",
+                Price = 150,
+                StockType = StockType.Unlimited,
+                DurationType = DurationType.Permanent,
+                SortOrder = 1,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            new Product
+            {
+                Id = 100023,
+                Name = "快乐水源",
+                Description = "专属称号「快乐水源」，传递快乐的人",
+                Icon = "title-joy",
+                CategoryId = "title",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.Title,
+                BenefitValue = "快乐水源",
+                Price = 150,
+                StockType = StockType.Unlimited,
+                DurationType = DurationType.Permanent,
+                SortOrder = 2,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+
+            // ========== 签名档类 ==========
             new Product
             {
                 Id = 100031,
-                Name = "改名卡",
-                Description = "使用后可修改一次昵称",
-                Icon = "card-rename",
-                CategoryId = "card",
-                ProductType = ProductType.Consumable,
-                ConsumableType = ConsumableType.RenameCard,
+                Name = "来自萝卜星球",
+                Description = "评论签名「来自萝卜星球」",
+                Icon = "signature-planet",
+                CategoryId = "signature",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.Signature,
+                BenefitValue = "来自萝卜星球 🥕",
                 Price = 100,
                 StockType = StockType.Unlimited,
+                DurationType = DurationType.Permanent,
                 SortOrder = 0,
                 IsOnSale = true,
                 IsEnabled = true,
@@ -947,15 +1038,16 @@ internal static class InitialDataSeeder
             new Product
             {
                 Id = 100032,
-                Name = "帖子置顶卡（24小时）",
-                Description = "使用后可将帖子置顶 24 小时",
-                Icon = "card-pin",
-                CategoryId = "card",
-                ProductType = ProductType.Consumable,
-                ConsumableType = ConsumableType.PostPinCard,
-                BenefitValue = "24",
-                Price = 150,
+                Name = "深夜食堂",
+                Description = "评论签名「来自深夜食堂」",
+                Icon = "signature-midnight",
+                CategoryId = "signature",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.Signature,
+                BenefitValue = "来自深夜食堂 🌙",
+                Price = 100,
                 StockType = StockType.Unlimited,
+                DurationType = DurationType.Permanent,
                 SortOrder = 1,
                 IsOnSale = true,
                 IsEnabled = true,
@@ -965,34 +1057,38 @@ internal static class InitialDataSeeder
             new Product
             {
                 Id = 100033,
-                Name = "帖子高亮卡（24小时）",
-                Description = "使用后帖子标题高亮显示 24 小时",
-                Icon = "card-highlight",
-                CategoryId = "card",
-                ProductType = ProductType.Consumable,
-                ConsumableType = ConsumableType.PostHighlightCard,
-                BenefitValue = "24",
+                Name = "代码世界",
+                Description = "评论签名「来自代码世界」",
+                Icon = "signature-code",
+                CategoryId = "signature",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.Signature,
+                BenefitValue = "来自代码世界 💻",
                 Price = 100,
                 StockType = StockType.Unlimited,
+                DurationType = DurationType.Permanent,
                 SortOrder = 2,
                 IsOnSale = true,
                 IsEnabled = true,
                 CreateTime = DateTime.Now,
                 CreateBy = "System"
             },
-            // 加成道具类
+
+            // ========== 特效类 ==========
             new Product
             {
                 Id = 100041,
-                Name = "经验卡（100点）",
-                Description = "使用后立即获得 100 点经验值",
-                Icon = "card-exp",
-                CategoryId = "boost",
-                ProductType = ProductType.Consumable,
-                ConsumableType = ConsumableType.ExpCard,
-                BenefitValue = "100",
-                Price = 50,
+                Name = "彩虹用户名",
+                Description = "用户名显示为彩虹渐变色",
+                Icon = "effect-rainbow",
+                CategoryId = "effect",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.NameColor,
+                BenefitValue = "rainbow",
+                Price = 400,
                 StockType = StockType.Unlimited,
+                DurationType = DurationType.Days,
+                DurationDays = 30,
                 SortOrder = 0,
                 IsOnSale = true,
                 IsEnabled = true,
@@ -1002,15 +1098,17 @@ internal static class InitialDataSeeder
             new Product
             {
                 Id = 100042,
-                Name = "萝卜币红包（50胡萝卜）",
-                Description = "使用后立即获得 50 胡萝卜",
-                Icon = "card-coin",
-                CategoryId = "boost",
-                ProductType = ProductType.Consumable,
-                ConsumableType = ConsumableType.CoinCard,
-                BenefitValue = "50",
-                Price = 40,
+                Name = "金色用户名",
+                Description = "用户名显示为尊贵金色",
+                Icon = "effect-gold",
+                CategoryId = "effect",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.NameColor,
+                BenefitValue = "gold",
+                Price = 300,
                 StockType = StockType.Unlimited,
+                DurationType = DurationType.Days,
+                DurationDays = 30,
                 SortOrder = 1,
                 IsOnSale = true,
                 IsEnabled = true,
@@ -1020,16 +1118,77 @@ internal static class InitialDataSeeder
             new Product
             {
                 Id = 100043,
-                Name = "双倍经验卡（24小时）",
-                Description = "使用后 24 小时内获得的经验值翻倍",
-                Icon = "card-double-exp",
-                CategoryId = "boost",
-                ProductType = ProductType.Consumable,
-                ConsumableType = ConsumableType.DoubleExpCard,
-                BenefitValue = "24",
+                Name = "爱心点赞特效",
+                Description = "点赞时显示爱心飘散动画",
+                Icon = "effect-heart-like",
+                CategoryId = "effect",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.LikeEffect,
+                BenefitValue = "heart-burst",
                 Price = 200,
                 StockType = StockType.Unlimited,
+                DurationType = DurationType.Days,
+                DurationDays = 30,
                 SortOrder = 2,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+
+            // ========== 主题类 ==========
+            new Product
+            {
+                Id = 100051,
+                Name = "暗夜主题",
+                Description = "深邃的暗夜配色主题",
+                Icon = "theme-dark",
+                CategoryId = "theme",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.Theme,
+                BenefitValue = "theme-dark-night",
+                Price = 200,
+                StockType = StockType.Unlimited,
+                DurationType = DurationType.Permanent,
+                SortOrder = 0,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+            new Product
+            {
+                Id = 100052,
+                Name = "樱花主题",
+                Description = "浪漫的樱花粉配色主题",
+                Icon = "theme-sakura",
+                CategoryId = "theme",
+                ProductType = ProductType.Benefit,
+                BenefitType = BenefitType.Theme,
+                BenefitValue = "theme-sakura",
+                Price = 200,
+                StockType = StockType.Unlimited,
+                DurationType = DurationType.Permanent,
+                SortOrder = 1,
+                IsOnSale = true,
+                IsEnabled = true,
+                CreateTime = DateTime.Now,
+                CreateBy = "System"
+            },
+
+            // ========== 实用类 ==========
+            new Product
+            {
+                Id = 100061,
+                Name = "改名卡",
+                Description = "使用后可修改一次用户名",
+                Icon = "card-rename",
+                CategoryId = "effect",
+                ProductType = ProductType.Consumable,
+                ConsumableType = ConsumableType.RenameCard,
+                Price = 100,
+                StockType = StockType.Unlimited,
+                SortOrder = 10,
                 IsOnSale = true,
                 IsEnabled = true,
                 CreateTime = DateTime.Now,

@@ -21,9 +21,9 @@ public class UserBenefitVo
         BenefitType.AvatarFrame => "头像框",
         BenefitType.Title => "称号",
         BenefitType.Theme => "主题",
-        BenefitType.FeatureUnlock => "功能解锁",
-        BenefitType.ExpBoost => "经验加成",
-        BenefitType.CoinBoost => "萝卜币加成",
+        BenefitType.Signature => "签名档",
+        BenefitType.NameColor => "用户名颜色",
+        BenefitType.LikeEffect => "点赞特效",
         _ => "未知"
     };
 
