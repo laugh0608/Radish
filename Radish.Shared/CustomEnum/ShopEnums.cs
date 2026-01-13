@@ -35,24 +35,24 @@ public enum BenefitType
     AvatarFrame = 2,
 
     /// <summary>专属称号</summary>
-    /// <remarks>显示在用户名下方</remarks>
+    /// <remarks>显示在用户名旁</remarks>
     Title = 3,
 
     /// <summary>主题皮肤</summary>
     /// <remarks>个性化界面主题</remarks>
     Theme = 4,
 
-    /// <summary>功能解锁</summary>
-    /// <remarks>解锁特定功能</remarks>
-    FeatureUnlock = 5,
+    /// <summary>签名档</summary>
+    /// <remarks>评论/帖子底部显示的个性签名</remarks>
+    Signature = 5,
 
-    /// <summary>经验加成</summary>
-    /// <remarks>经验值获取加成</remarks>
-    ExpBoost = 6,
+    /// <summary>用户名颜色</summary>
+    /// <remarks>用户名显示特殊颜色/渐变</remarks>
+    NameColor = 6,
 
-    /// <summary>萝卜币加成</summary>
-    /// <remarks>萝卜币获取加成</remarks>
-    CoinBoost = 7
+    /// <summary>点赞特效</summary>
+    /// <remarks>点赞时显示特殊动画效果</remarks>
+    LikeEffect = 7
 }
 
 /// <summary>消耗品类型枚举</summary>
@@ -62,26 +62,26 @@ public enum BenefitType
 public enum ConsumableType
 {
     /// <summary>改名卡</summary>
-    /// <remarks>修改用���昵称</remarks>
+    /// <remarks>修改用户昵称</remarks>
     RenameCard = 1,
 
-    /// <summary>帖子置顶卡</summary>
-    /// <remarks>置顶帖子 N 小时</remarks>
+    /// <summary>帖子置顶卡（已废弃）</summary>
+    [Obsolete("不再使用，保持公平性")]
     PostPinCard = 2,
 
-    /// <summary>帖子高亮卡</summary>
-    /// <remarks>帖子标题高亮 N 小时</remarks>
+    /// <summary>帖子高亮卡（已废弃）</summary>
+    [Obsolete("不再使用，保持公平性")]
     PostHighlightCard = 3,
 
-    /// <summary>经验卡</summary>
+    /// <summary>经验卡（预留）</summary>
     /// <remarks>立即获得 N 点经验值</remarks>
     ExpCard = 4,
 
-    /// <summary>萝卜币红包</summary>
+    /// <summary>萝卜币红包（预留）</summary>
     /// <remarks>立即获得 N 萝卜币</remarks>
     CoinCard = 5,
 
-    /// <summary>双倍经验卡</summary>
+    /// <summary>双倍经验卡（预留）</summary>
     /// <remarks>N 小时内经验值 ×2</remarks>
     DoubleExpCard = 6,
 
