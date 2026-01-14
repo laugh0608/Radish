@@ -187,11 +187,11 @@
   - [x] `OrderDetail.tsx` - 订单详情
   - [x] `Inventory.tsx` - 我的背包（权益 + 消耗品）
 - [x] 组件实现
-  - [x] `ProductCard` - 商品卡片
-  - [x] `CategoryNav` - 分类导航
-  - [x] `PurchaseModal` - 购买确认弹窗
-  - [x] `OrderItem` - 订单项
-  - [x] `UseItemModal` - 使用消耗品弹窗
+  - [x] `PurchaseModal` - 购买确认弹窗（独立组件）
+  - [x] 商品卡片 - 内联在 ProductList/ProductDetail 中
+  - [x] 分类导航 - 内联在 ProductList 中
+  - [x] 订单项 - 内联在 OrderList 中
+  - [x] 道具使用弹窗 - 内联在 Inventory 中
 - [x] 样式实现
   - [x] `ShopHome.module.scss` - 商城首页样式
   - [x] `OrderList.module.scss` - 订单列表样式
