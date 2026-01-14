@@ -1,0 +1,392 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header {
+  margin-bottom: 24px;
+}
+
+.backButton {
+  background: none;
+  border: 1px solid #d9d9d9;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #666;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  border-color: #1890ff;
+  color: #1890ff;
+}
+
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: #666;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #1890ff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error {
+  text-align: center;
+  padding: 80px 24px;
+  color: #666;
+}
+
+.error h2 {
+  color: #262626;
+  margin-bottom: 12px;
+}
+
+.error p {
+  margin-bottom: 24px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* 商品主要信息 */
+.productMain {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 40px;
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.imageSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mainImage {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  background: #fafafa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.mainImage img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.defaultImage {
+  font-size: 80px;
+  color: #d9d9d9;
+}
+
+.discountBadge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: #ff4d4f;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 6px;
+}
+
+.outOfStockOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.infoSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.productType {
+  font-size: 14px;
+  color: #1890ff;
+  background: #e6f7ff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  width: fit-content;
+}
+
+.productName {
+  font-size: 28px;
+  font-weight: 600;
+  color: #262626;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.priceSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.currentPrice {
+  font-size: 32px;
+  font-weight: 700;
+  color: #ff4d4f;
+}
+
+.originalPrice {
+  font-size: 18px;
+  color: #999;
+  text-decoration: line-through;
+}
+
+.metaInfo {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.metaItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metaLabel {
+  font-size: 14px;
+  color: #666;
+}
+
+.metaValue {
+  font-size: 14px;
+  color: #262626;
+  font-weight: 500;
+}
+
+.purchaseSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.purchaseButton {
+  background: #1890ff;
+  border: none;
+  color: white;
+  padding: 16px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.purchaseButton:hover:not(.disabled) {
+  background: #40a9ff;
+  transform: translateY(-1px);
+}
+
+.purchaseButton.disabled {
+  background: #d9d9d9;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.purchaseHint {
+  font-size: 14px;
+  color: #ff4d4f;
+  text-align: center;
+  padding: 8px;
+  background: #fff2f0;
+  border-radius: 6px;
+  border: 1px solid #ffccc7;
+}
+
+/* 详情区块 */
+.detailSection,
+.noticeSection {
+  background: white;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.sectionTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #262626;
+  margin: 0 0 20px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.detailContent {
+  line-height: 1.6;
+}
+
+.description p {
+  margin: 0 0 16px 0;
+  color: #666;
+  font-size: 15px;
+}
+
+.description p:last-child {
+  margin-bottom: 0;
+}
+
+.noDescription {
+  color: #999;
+  font-style: italic;
+  margin: 0;
+}
+
+.benefitInfo {
+  margin-top: 24px;
+  padding: 20px;
+  background: #f6ffed;
+  border-radius: 8px;
+  border: 1px solid #b7eb8f;
+}
+
+.benefitInfo h3 {
+  font-size: 16px;
+  color: #389e0d;
+  margin: 0 0 12px 0;
+}
+
+.benefitValue {
+  font-size: 14px;
+  color: #666;
+  background: white;
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid #d9f7be;
+}
+
+.noticeContent ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.noticeContent li {
+  margin-bottom: 8px;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.noticeContent li:last-child {
+  margin-bottom: 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .productMain {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 20px;
+  }
+
+  .mainImage {
+    height: 300px;
+  }
+
+  .productName {
+    font-size: 24px;
+  }
+
+  .currentPrice {
+    font-size: 28px;
+  }
+
+  .originalPrice {
+    font-size: 16px;
+  }
+
+  .metaInfo {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .purchaseButton {
+    padding: 14px 24px;
+    font-size: 15px;
+  }
+
+  .detailSection,
+  .noticeSection {
+    padding: 20px;
+  }
+
+  .sectionTitle {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 0 16px;
+  }
+
+  .productMain {
+    padding: 16px;
+  }
+
+  .mainImage {
+    height: 250px;
+  }
+
+  .productName {
+    font-size: 20px;
+  }
+
+  .currentPrice {
+    font-size: 24px;
+  }
+
+  .detailSection,
+  .noticeSection {
+    padding: 16px;
+  }
+}
