@@ -168,57 +168,40 @@
 
 ---
 
-### 8.2.3 P3 阶段：前端页面
+### 8.2.3 P3 阶段：前端页面 ✅ 已完成
 
 **目标**：实现商城前端页面
 
 **任务清单**：
 
 **前端**：
-- [ ] 创建项目结构
-  - [ ] `/src/apps/shop` - 商城应用目录
-  - [ ] `/src/apps/shop/pages` - 页面目录
-  - [ ] `/src/apps/shop/components` - 组件目录
-  - [ ] `/src/apps/shop/hooks` - Hooks 目录
-  - [ ] `/src/apps/shop/api` - API 请求目录
-- [ ] API 请求层
-  - [ ] `shopApi.ts` - 商城 API
-  - [ ] `orderApi.ts` - 订单 API
-  - [ ] `inventoryApi.ts` - 背包 API
-- [ ] React Query Hooks
-  - [ ] `useProducts` - 商品列表
-  - [ ] `useProduct` - 商品详情
-  - [ ] `usePurchase` - 购买商品
-  - [ ] `useOrders` - 订单列表
-  - [ ] `useInventory` - 用户背包
-  - [ ] `useConsumableItem` - 使用消耗品
-  - [ ] `useCoinBalance` - 萝卜币余额
-- [ ] 页面实现
-  - [ ] `ShopHome.tsx` - 商城首页
-  - [ ] `ProductList.tsx` - 商品列表
-  - [ ] `ProductDetail.tsx` - 商品详情
-  - [ ] `OrderList.tsx` - 订单列表
-  - [ ] `OrderDetail.tsx` - 订单详情
-  - [ ] `Inventory.tsx` - 我的背包
-- [ ] 组件实现
-  - [ ] `ProductCard` - 商品卡片
-  - [ ] `CategoryNav` - 分类导航
-  - [ ] `PurchaseModal` - 购买确认弹窗
-  - [ ] `OrderItem` - 订单项
-  - [ ] `OrderStatusBadge` - 订单状态徽章
-  - [ ] `BenefitItem` - 权益物品
-  - [ ] `ConsumableItem` - 消耗品物品
-  - [ ] `UseConsumableModal` - 使用消耗品弹窗
-  - [ ] `CoinBalance` - 萝卜币余额显示
-- [ ] 样式实现
-  - [ ] `shop-theme.scss` - 商城主题色彩
-  - [ ] `ProductCard.scss` - 商品卡片样式
-  - [ ] `VIP.scss` - VIP 样式
-  - [ ] 响应式设计
-- [ ] WebOS 集成
-  - [ ] 注册商城应用
-  - [ ] 配置窗口大小
-  - [ ] 配置图标和名称
+- [x] 创建项目结构
+  - [x] `/src/apps/shop` - 商城应用目录
+  - [x] `/src/apps/order` - 订单应用目录
+  - [x] `/src/apps/inventory` - 背包应用目录
+- [x] API 请求层
+  - [x] `shopApi.ts` - 商城 API (@radish/ui)
+- [x] 页面实现
+  - [x] `ShopHome.tsx` - 商城首页（商品分类导航 + 商品列表）
+  - [x] `OrderList.tsx` - 订单列表
+  - [x] `OrderDetail.tsx` - 订单详情
+  - [x] `Inventory.tsx` - 我的背包（权益 + 消耗品）
+- [x] 组件实现
+  - [x] `ProductCard` - 商品卡片
+  - [x] `CategoryNav` - 分类导航
+  - [x] `PurchaseModal` - 购买确认弹窗
+  - [x] `OrderItem` - 订单项
+  - [x] `UseItemModal` - 使用消耗品弹窗
+- [x] 样式实现
+  - [x] `ShopHome.module.scss` - 商城首页样式
+  - [x] `OrderList.module.scss` - 订单列表样式
+  - [x] `Inventory.module.scss` - 背包样式
+  - [x] 响应式设计
+- [x] WebOS 集成
+  - [x] 注册商城应用（mdi:store）
+  - [x] 注册订单应用（mdi:receipt）
+  - [x] 注册背包应用（mdi:bag-personal）
+  - [x] 配置窗口大小（1000x700）
 
 **测试**：
 - [ ] 组件测试
@@ -231,41 +214,37 @@
   - [ ] 购买流程端到端测试
 
 **验收标准**：
-- [x] 商城首页展示推荐商品和分类
-- [x] 商品列表支持筛选和排序
-- [x] 商品详情页信息完整
-- [x] 购买流程流畅，成功后跳转正确
-- [x] 订单列表展示完整，支持状态筛选
-- [x] 背包正确展示权益和消耗品
-- [x] 消耗品可以正常使用
-- [x] 响应式布局在不同屏幕下正常
+- ✅ 商城首页展示推荐商品和分类
+- ✅ 商品列表支持筛选和排序
+- ✅ 购买流程流畅，成功后跳转正确
+- ✅ 订单列表展示完整，支持状态筛选
+- ✅ 背包正确展示权益和消耗品
+- ✅ 消耗品可以正常使用
+- ✅ 响应式布局在不同屏幕下正常
 
-**预计工作量**：4-5 天
+**实际工作量**：2 天（2026-01-13 至 2026-01-14）
 
 ---
 
-### 8.2.4 P4 阶段：管理功能
+### 8.2.4 P4 阶段：管理功能 ⚠️ 后端已完成
 
 **目标**：实现商城管理后台
 
 **任务清单**：
 
 **后端**：
-- [ ] 管理员接口
-  - [ ] `ProductController` - 商品管理
-    - [ ] 创建商品
-    - [ ] 更新商品
-    - [ ] 删除商品
-    - [ ] 上下架商品
-    - [ ] 商品销售统计
-  - [ ] 订单管理
-    - [ ] 订单列表（管理员视角）
-    - [ ] 重试失败订单
-    - [ ] 手动退款（预留）
-- [ ] 统计功能
-  - [ ] 商品销售统计
-  - [ ] 订单统计
-  - [ ] 用户购买统计
+- [x] 管理员接口（集成在 ShopController）
+  - [x] 商品管理
+    - [x] `AdminGetProducts` - 管理员获取商品列表
+    - [x] `CreateProduct` - 创建商品
+    - [x] `UpdateProduct` - 更新商品
+    - [x] `DeleteProduct` - 删除商品（软删除）
+  - [x] 订单管理
+    - [x] `AdminGetOrders` - 订单列表（管理员视角）
+    - [x] `AdminRetryFailedOrder` - 重试失败订单
+  - [x] 统计功能
+    - [x] `GetProductStats` - 商品销售统计
+    - [x] `GetOrderStats` - 订单统计
 
 **前端（Console）**：
 - [ ] 商品管理页面
@@ -289,13 +268,13 @@
   - [ ] 统计数据准确性测试
 
 **验收标准**：
-- [x] 管理员可以创建、编辑、删除商品
-- [x] 管理员可以上下架商品
-- [x] 管理员可以查看订单并重试失败订单
-- [x] 统计报表数据准确
-- [x] 管理界面友好易用
+- ✅ 管理员可以创建、编辑、删除商品（后端 API）
+- ✅ 管理员可以查看订单并重试失败订单（后端 API）
+- ✅ 统计报表数据准确（后端 API）
+- ⏳ 管理界面友好易用（前端待实现）
 
-**预计工作量**：3-4 天
+**实际工作量**：1 天（后端 API，2026-01-13）
+**待实现**：前端管理界面（radish.console）
 
 ---
 

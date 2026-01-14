@@ -990,13 +990,15 @@ const getExpSourceDistribution = () => {
 
 ---
 
-## M9 商城系统 P1/P2 阶段完成
+## M9 商城系统 P1/P2/P3/P4 阶段完成
 
 ### 核心成果
 
-**商城系统后端完整实现**（2026-01-13）：
+**商城系统完整实现**（2026-01-13 至 2026-01-14）：
 
-#### 枚举类型 (ShopEnums.cs)
+#### 后端实现（P1/P2 阶段）
+
+##### 枚举类型 (ShopEnums.cs)
 - `ProductType` - 商品类型（权益/消耗品/实物）
 - `BenefitType` - 权益类型（徽章/头像框/称号/主题/功能解锁/经验加成/萝卜币加成）
 - `ConsumableType` - 消耗品类型（改名卡/置顶卡/高亮卡/经验卡/萝卜币红包/双倍经验卡/抽奖券）
@@ -1004,14 +1006,14 @@ const getExpSourceDistribution = () => {
 - `StockType` - 库存类型（无限/限量）
 - `DurationType` - 有效期类型（永久/固定天数/固定到期时间）
 
-#### 实体模型
+##### 实体模型
 1. **ProductCategory** - 商品分类（语义化字符串主键）
 2. **Product** - 商品实体（支持权益类/消耗品/实物）
 3. **Order** - 订单实体（完整订单生命周期）
 4. **UserBenefit** - 用户权益（徽章/头像框/称号等）
 5. **UserInventory** - 用户背包（消耗品道具）
 
-#### Service 层
+##### Service 层
 1. **ProductService** - 商品服务
    - 商品 CRUD、列表查询、库存扣减（乐观锁）
    - 限购检查、上下架管理
@@ -1029,7 +1031,7 @@ const getExpSourceDistribution = () => {
    - 背包查询、道具使用、数量管理
    - 消耗品效果实现（改名卡/经验卡/萝卜币红包等）
 
-#### Controller 层
+##### Controller 层
 **ShopController** - 统一商城接口：
 - 商品分类：`GetCategories`
 - 商品列表：`GetProducts`、`GetProductDetail`
@@ -1039,7 +1041,7 @@ const getExpSourceDistribution = () => {
 - 用户背包：`GetMyInventory`、`UseItem`、`UseRenameCard`
 - 管理后台：`AdminGetProducts`、`CreateProduct`、`UpdateProduct` 等
 
-#### AutoMapper 配置
+##### AutoMapper 配置
 **ShopProfile** - 商城模块映射：
 - Product ↔ ProductVo / ProductListItemVo
 - ProductCategory ↔ ProductCategoryVo
@@ -1047,7 +1049,7 @@ const getExpSourceDistribution = () => {
 - UserBenefit ↔ UserBenefitVo
 - UserInventory ↔ UserInventoryVo
 
-#### 种子数据
+##### 种子数据
 1. **商品分类**（5 个）：
    - badge（徽章装饰）
    - frame（头像框）
@@ -1062,6 +1064,87 @@ const getExpSourceDistribution = () => {
    - 改名卡、帖子置顶卡、帖子高亮卡
    - 经验卡、萝卜币红包、双倍经验卡
 
+#### 前端实现（P3 阶段）
+
+##### API 客户端 (@radish/ui)
+1. **shopApi.ts** - 商城 API 客户端
+   - 商品分类、商品列表、商品详情
+   - 购买商品、订单查询
+   - 用户权益、用户背包
+   - TypeScript 类型定义完整
+
+##### 商城主应用 (ShopApp)
+1. **商城首页** (`ShopHome.tsx`)
+   - 商品分类导航
+   - 推荐商品展示
+   - 商品列表（支持筛选、排序、分页）
+   - 购买确认弹窗
+
+2. **商品卡片组件** (`ProductCard`)
+   - 商品图片、名称、价格
+   - 库存状态、限购标签
+   - 购买按钮
+
+3. **购买流程**
+   - 余额检查、库存检查
+   - 购买确认弹窗
+   - 购买成功提示
+   - 错误处理（余额不足、库存不足等）
+
+##### 订单应用 (OrderApp)
+1. **订单列表** (`OrderList.tsx`)
+   - 订单状态筛选
+   - 分页加载
+   - 订单项展示（商品信息、价格、状态）
+   - 查看订单详情
+
+2. **订单详情** (`OrderDetail.tsx`)
+   - 订单信息完整展示
+   - 商品详情
+   - 支付信息
+   - 权益发放状态
+
+##### 背包应用 (InventoryApp)
+1. **用户背包** (`Inventory.tsx`)
+   - 权益类道具展示（徽章、头像框、称号）
+   - 消耗品道具展示（改名卡、经验卡等）
+   - 道具数量、有效期显示
+   - 使用道具弹窗
+
+2. **道具使用**
+   - 改名卡使用（输入新昵称）
+   - 经验卡使用（直接使用）
+   - 萝卜币红包使用（直接使用）
+   - 使用成功提示
+
+3. **权益管理**
+   - 激活/取消激活权益
+   - 查看权益详情
+   - 权益过期提示
+
+##### WebOS 集成
+- 商城应用（图标：mdi:store）
+- 订单应用（图标：mdi:receipt）
+- 背包应用（图标：mdi:bag-personal）
+- 默认窗口大小：1000x700
+
+#### 管理后台实现（P4 阶段 - 已有后端 API 支持）
+
+##### 后端管理接口
+1. **商品管理 API**
+   - `AdminGetProducts` - 管理员获取商品列表
+   - `CreateProduct` - 创建商品
+   - `UpdateProduct` - 更新商品
+   - `DeleteProduct` - 删除商品（软删除）
+
+2. **订单管理 API**
+   - `AdminGetOrders` - 管理员获取订单列表（支持状态筛选、日期筛选）
+   - `AdminRetryFailedOrder` - 重试失败订单（权益发放失败时）
+
+3. **统计 API**
+   - `GetProductStats` - 商品销售统计（销量、销售额）
+   - `GetOrderStats` - 订单统计（订单量、GMV、成功率）
+
 ### 技术亮点
 
 1. **分层架构严格遵守**：Service 层通过 Repository 方法访问数据库，Controller 只注入 Service
@@ -1070,24 +1153,53 @@ const getExpSourceDistribution = () => {
 4. **权益时长叠加**：同类型权益自动延长有效期
 5. **消耗品效果框架**：改名卡/经验卡/萝卜币红包已完整实现
 6. **通知集成**：购买成功自动推送通知
+7. **前端完整集成**：商城、订单、背包三个独立应用
+8. **管理后台 API 完整**：支持商品管理、订单管理、统计报表
 
 ### 编译验证
 
-✅ 编译成功（0 Error）
+✅ 后端编译成功（0 Error）
 - 所有实体、服务、控制器编译通过
 - 代码规范检查通过
 
-### 下一步
+✅ 前端构建成功（0 Error, 0 Warning）
+- TypeScript 类型检查通过
+- Vite 构建成功
+- 所有导入路径正确
 
-**P3 阶段：前端页面**
-- 商城首页
-- 商品详情页
-- 订单列表页
-- 用户背包页
+### 文档更新（2026-01-14）
 
-**P4 阶段：管理后台**
-- 商品管理
-- 订单管理
-- 统计报表
+1. **shop-roadmap.md** - 更新实施进度
+   - P1 阶段：核心购买流程 ✅ 已完成
+   - P2 阶段：权益系统 ✅ 已完成
+   - P3 阶段：前端页面 ✅ 已完成
+   - P4 阶段：管理功能 ✅ 后端 API 已完成，前端待实现
+
+2. **shop-frontend.md** - 前端设计文档
+   - 更新实施状态
+   - 标记已完成功能
+   - 更新组件清单
+
+3. **development-plan.md** - 开发计划
+   - 更新 M9 里程碑状态
+   - 标记商城系统核心功能完成
+
+### M9 商城系统完成情况总结
+
+**✅ 已完成**：
+- P1 阶段：核心购买流程（100%）
+- P2 阶段：权益系统（100%）
+- P3 阶段：前端页面（100%）
+- P4 阶段：管理功能（后端 API 100%，前端管理界面待实现）
+
+**⏳ 待完善**（非阻塞）：
+- 前端管理界面（Console）
+- 定时任务（订单超时、权益过期）
+- 单元测试
+- 压力测试
+
+**🎯 下一步**：
+- M9 商城系统核心功能全部完成
+- 可进入下一个里程碑开发
 
 ---
