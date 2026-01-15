@@ -21,6 +21,7 @@ public class AutoMapperConfig
         cfg.AddProfile<CoinProfile>();
         cfg.AddProfile<NotificationProfile>();
         cfg.AddProfile<ExperienceProfile>();
+        cfg.AddProfile<ShopProfile>();
     }
 
     #region 已弃用
