@@ -10,7 +10,7 @@
 /// <summary>
 /// 订单实体
 /// </summary>
-[SugarTable("shop_order")]
+[SugarTable("ShopOrder")]
 public class Order : RootEntityTKey<long>, ITenantEntity
 {
     #region 基础信息

@@ -10,7 +10,7 @@ namespace Radish.Model;
 /// 商城商品信息，支持权益类、消耗品类商品
 /// 使用雪花 ID 作为主键
 /// </remarks>
-[SugarTable("shop_product")]
+[SugarTable("ShopProduct")]
 [SugarIndex("idx_product_category", nameof(CategoryId), OrderByType.Asc)]
 [SugarIndex("idx_product_type", nameof(ProductType), OrderByType.Asc)]
 [SugarIndex("idx_product_status", nameof(IsOnSale), OrderByType.Asc, nameof(IsEnabled), OrderByType.Asc)]

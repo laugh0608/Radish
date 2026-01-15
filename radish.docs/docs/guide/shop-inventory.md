@@ -10,7 +10,7 @@
 /// <summary>
 /// 用户权益/背包实体
 /// </summary>
-[SugarTable("shop_user_inventory")]
+[SugarTable("ShopUserInventory")]
 public class UserInventory : RootEntityTKey<long>, ITenantEntity
 {
     #region 基础信息

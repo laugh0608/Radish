@@ -10,7 +10,7 @@ namespace Radish.Model;
 /// 记录用户拥有的消耗品道具
 /// 使用雪花 ID 作为主键
 /// </remarks>
-[SugarTable("shop_user_inventory")]
+[SugarTable("ShopUserInventory")]
 [SugarIndex("idx_inventory_user", nameof(UserId), OrderByType.Asc)]
 [SugarIndex("idx_inventory_type", nameof(ConsumableType), OrderByType.Asc)]
 [SugarIndex("idx_inventory_user_type", nameof(UserId), OrderByType.Asc, nameof(ConsumableType), OrderByType.Asc)]
