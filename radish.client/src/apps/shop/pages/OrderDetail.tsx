@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Order } from '@/api/shop';
-import { getProductTypeDisplay, getOrderStatusColor, OrderStatus } from '@/api/shop';
+import { getOrderStatusColor, OrderStatus } from '@/api/shop';
 import styles from './OrderDetail.module.css';
 
 interface OrderDetailProps {

@@ -114,7 +114,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   // 取消订单
   const handleCancelOrder = useCallback(async (orderId: number, reason?: string) => {
     try {
-      const result = await shopApi.cancelOrder(orderId, reason, t);
+      const result = await shopApi.cancelOrder(orderId, t, reason);
       if (result.ok) {
         setError(null);
         // 刷新订单详情
