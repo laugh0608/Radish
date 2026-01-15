@@ -1,0 +1,130 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f5f5f5;
+}
+
+.header {
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 0 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.headerContent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1890ff;
+  margin: 0;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.title:hover {
+  color: #40a9ff;
+}
+
+.nav {
+  display: flex;
+  gap: 8px;
+}
+
+.navButton {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #666;
+  font-size: 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.navButton:hover {
+  background: #f0f0f0;
+  color: #1890ff;
+}
+
+.navButton.active {
+  background: #e6f7ff;
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.content {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.errorToast {
+  position: fixed;
+  top: 80px;
+  right: 24px;
+  background: #ff4d4f;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 16px;
+  }
+
+  .headerContent {
+    height: 56px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .nav {
+    gap: 4px;
+  }
+
+  .navButton {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .content {
+    padding: 16px;
+  }
+
+  .errorToast {
+    right: 16px;
+    left: 16px;
+    top: 72px;
+  }
+}

@@ -399,6 +399,7 @@ builder.Services.AddHangfireServer();
 builder.Services.AddScoped<FileCleanupJob>();
 builder.Services.AddScoped<CommentHighlightJob>();
 builder.Services.AddScoped<RetentionRewardJob>();
+builder.Services.AddScoped<ShopJob>();
 
 // 注册 Serilog 服务
 builder.Host.AddSerilogSetup();
@@ -637,6 +638,59 @@ if (retentionRewardConfig.GetValue<bool>("Enable", true))
         });
 
     Log.Information("[Hangfire] 已注册定时任务: retention-reward (计划: {Schedule})", schedule);
+}
+
+// 商城订单超时取消任务
+var shopConfig = builder.Configuration.GetSection("Hangfire:Shop");
+if (shopConfig.GetValue<bool>("TimeoutOrders:Enable", true))
+{
+    var timeoutMinutes = shopConfig.GetValue<int>("TimeoutOrders:TimeoutMinutes", 30);
+    var schedule = shopConfig["TimeoutOrders:Schedule"] ?? "*/10 * * * *"; // 默认每 10 分钟执行一次
+
+    RecurringJob.AddOrUpdate<ShopJob>(
+        "shop-cancel-timeout-orders",
+        job => job.CancelTimeoutOrdersAsync(timeoutMinutes),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: shop-cancel-timeout-orders (超时: {Timeout} 分钟, 计划: {Schedule})", timeoutMinutes, schedule);
+}
+
+// 商城权益过期处理任务
+if (shopConfig.GetValue<bool>("ExpiredBenefits:Enable", true))
+{
+    var schedule = shopConfig["ExpiredBenefits:Schedule"] ?? "0 0 * * *"; // 默认每天 00:00 执行
+
+    RecurringJob.AddOrUpdate<ShopJob>(
+        "shop-mark-expired-benefits",
+        job => job.MarkExpiredBenefitsAsync(),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: shop-mark-expired-benefits (计划: {Schedule})", schedule);
+}
+
+// 商城每日统计任务
+if (shopConfig.GetValue<bool>("DailyStats:Enable", false))
+{
+    var schedule = shopConfig["DailyStats:Schedule"] ?? "0 1 * * *"; // 默认每天 01:00 执行
+
+    RecurringJob.AddOrUpdate<ShopJob>(
+        "shop-daily-stats",
+        job => job.GenerateDailyStatsAsync(),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Local
+        });
+
+    Log.Information("[Hangfire] 已注册定时任务: shop-daily-stats (计划: {Schedule})", schedule);
 }
 
 // -------------- App 运行阶段 ---------------
