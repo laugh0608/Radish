@@ -71,7 +71,7 @@ export const ProductDetail = ({
            checkingCanBuy ||
            !product.inStock ||
            !product.isOnSale ||
-           (canBuy && !canBuy.canBuy);
+           (canBuy !== null && !canBuy.canBuy);
   };
 
   return (

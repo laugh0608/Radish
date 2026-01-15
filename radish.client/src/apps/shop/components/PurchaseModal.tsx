@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import type { Product } from '@/api/shop';
 import { getProductTypeDisplay } from '@/api/shop';
 import styles from './PurchaseModal.module.css';

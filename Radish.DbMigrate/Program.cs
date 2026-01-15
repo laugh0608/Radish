@@ -148,7 +148,7 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
     {
         var missingTables = new List<string>();
         if (!roleTableExists) missingTables.Add("Role");
-        if (!shopTableExists) missingTables.Add("shop_product_category");
+        if (!shopTableExists) missingTables.Add("ShopProductCategory");
 
         Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到表结构缺失 ({string.Join(", ", missingTables)})，自动执行 init...");
         await RunInitAsync(services, configuration, environment);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
 import { ShopHome } from './pages/ShopHome';
@@ -24,7 +24,7 @@ export interface ShopAppState {
 
 export const ShopApp = () => {
   const { t } = useTranslation();
-  const { isAuthenticated, userId } = useUserStore();
+  const { isAuthenticated } = useUserStore();
   const loggedIn = isAuthenticated();
 
   // 应用状态
@@ -81,6 +81,38 @@ export const ShopApp = () => {
       }
     }
   };
+
+  // 监听视图变化，加载对应数据
+  useEffect(() => {
+    switch (appState.currentView) {
+      case 'product-detail':
+        if (appState.selectedProductId) {
+          dataState.loadProductDetail(appState.selectedProductId);
+          if (loggedIn) {
+            dataState.checkCanBuy(appState.selectedProductId);
+          }
+        }
+        break;
+      case 'products':
+        dataState.loadProducts(appState.selectedCategoryId);
+        break;
+      case 'orders':
+        if (loggedIn) {
+          dataState.loadOrders();
+        }
+        break;
+      case 'order-detail':
+        if (appState.selectedOrderId && loggedIn) {
+          dataState.loadOrderDetail(appState.selectedOrderId);
+        }
+        break;
+      case 'inventory':
+        if (loggedIn) {
+          dataState.loadInventory();
+        }
+        break;
+    }
+  }, [appState.currentView, appState.selectedProductId, appState.selectedOrderId, appState.selectedCategoryId, loggedIn]);
 
   // 渲染当前视图
   const renderCurrentView = () => {
