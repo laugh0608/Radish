@@ -44,9 +44,9 @@
 
 **后端**：
 - [x] 创建数据库表
-  - [x] `shop_product` - 商品表
-  - [x] `shop_product_category` - 商品分类表
-  - [x] `shop_order` - 订单表
+  - [x] `ShopProduct` - 商品表
+  - [x] `ShopProductCategory` - 商品分类表
+  - [x] `ShopOrder` - 订单表
   - [x] 添加索引
 - [x] 实现实体模型
   - [x] `Product.cs` - 商品实体
@@ -111,8 +111,8 @@
 
 **后端**：
 - [x] 创建数据库表
-  - [x] `shop_user_inventory` - 用户背包表
-  - [x] `shop_user_benefit` - 用户权益表
+  - [x] `ShopUserInventory` - 用户背包表
+  - [x] `ShopUserBenefit` - 用户权益表
   - [x] 添加索引
 - [x] 实现实体模型
   - [x] `UserInventory.cs` - 用户背包实体

@@ -81,56 +81,56 @@ Radish.Extension/AutoMapperExtension/CustomProfiles
 
 | 表名 | 说明 | 主键 | 索引 |
 |------|------|------|------|
-| `shop_product` | 商品表 | `Id` (bigint) | `CategoryId`, `IsOnSale`, `ProductType` |
-| `shop_product_category` | 商品分类表 | `Id` (string) | `SortOrder`, `IsEnabled` |
-| `shop_order` | 订单表 | `Id` (bigint) | `UserId`, `ProductId`, `Status`, `CreateTime` |
-| `shop_user_inventory` | 用户背包表 | `Id` (bigint) | `UserId`, `Status`, `ItemType`, `ExpiresAt` |
+| `ShopProduct` | 商品表 | `Id` (bigint) | `CategoryId`, `IsOnSale`, `ProductType` |
+| `ShopProductCategory` | 商品分类表 | `Id` (string) | `SortOrder`, `IsEnabled` |
+| `ShopOrder` | 订单表 | `Id` (bigint) | `UserId`, `ProductId`, `Status`, `CreateTime` |
+| `ShopUserInventory` | 用户背包表 | `Id` (bigint) | `UserId`, `Status`, `ItemType`, `ExpiresAt` |
 
 ### 6.2.2 索引设计
 
 **商品表索引**：
 ```sql
 -- 商品列表查询
-CREATE INDEX idx_product_category_onsale ON shop_product(CategoryId, IsOnSale, SortOrder);
-CREATE INDEX idx_product_type_onsale ON shop_product(ProductType, IsOnSale, SortOrder);
+CREATE INDEX idx_product_category_onsale ON ShopProduct(CategoryId, IsOnSale, SortOrder);
+CREATE INDEX idx_product_type_onsale ON ShopProduct(ProductType, IsOnSale, SortOrder);
 
 -- 商品搜索
-CREATE INDEX idx_product_name ON shop_product(Name);
+CREATE INDEX idx_product_name ON ShopProduct(Name);
 
 -- 库存查询
-CREATE INDEX idx_product_stock ON shop_product(StockType, Stock) WHERE IsOnSale = true;
+CREATE INDEX idx_product_stock ON ShopProduct(StockType, Stock) WHERE IsOnSale = true;
 ```
 
 **订单表索引**：
 ```sql
 -- 用户订单查询
-CREATE INDEX idx_order_user_status ON shop_order(UserId, Status, CreateTime DESC);
-CREATE INDEX idx_order_user_time ON shop_order(UserId, CreateTime DESC);
+CREATE INDEX idx_order_user_status ON ShopOrder(UserId, Status, CreateTime DESC);
+CREATE INDEX idx_order_user_time ON ShopOrder(UserId, CreateTime DESC);
 
 -- 订单号查询
-CREATE UNIQUE INDEX idx_order_no ON shop_order(OrderNo);
+CREATE UNIQUE INDEX idx_order_no ON ShopOrder(OrderNo);
 
 -- 商品销售统计
-CREATE INDEX idx_order_product_status ON shop_order(ProductId, Status, CreateTime);
+CREATE INDEX idx_order_product_status ON ShopOrder(ProductId, Status, CreateTime);
 
 -- 超时订单查询
-CREATE INDEX idx_order_pending_time ON shop_order(Status, CreateTime) WHERE Status = 0;
+CREATE INDEX idx_order_pending_time ON ShopOrder(Status, CreateTime) WHERE Status = 0;
 ```
 
 **用户背包表索引**：
 ```sql
 -- 用户背包查询
-CREATE INDEX idx_inventory_user_status ON shop_user_inventory(UserId, Status, ItemType);
+CREATE INDEX idx_inventory_user_status ON ShopUserInventory(UserId, Status, ItemType);
 
 -- 权益检查
-CREATE INDEX idx_inventory_user_benefit ON shop_user_inventory(UserId, BenefitType, Status, ExpiresAt);
+CREATE INDEX idx_inventory_user_benefit ON ShopUserInventory(UserId, BenefitType, Status, ExpiresAt);
 
 -- 消耗品查询
-CREATE INDEX idx_inventory_user_consumable ON shop_user_inventory(UserId, ConsumableType, Status);
+CREATE INDEX idx_inventory_user_consumable ON ShopUserInventory(UserId, ConsumableType, Status);
 
 -- 过期检查
-CREATE INDEX idx_inventory_expires ON shop_user_inventory(Status, ExpiresAt) WHERE Status = 1;
-CREATE INDEX idx_inventory_deadline ON shop_user_inventory(Status, UseDeadline) WHERE Status = 1;
+CREATE INDEX idx_inventory_expires ON ShopUserInventory(Status, ExpiresAt) WHERE Status = 1;
+CREATE INDEX idx_inventory_deadline ON ShopUserInventory(Status, UseDeadline) WHERE Status = 1;
 ```
 
 ---

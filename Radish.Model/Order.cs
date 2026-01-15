@@ -10,7 +10,7 @@ namespace Radish.Model;
 /// 商城订单记录，记录用户购买商品的完整信息
 /// 使用雪花 ID 作为主键
 /// </remarks>
-[SugarTable("shop_order")]
+[SugarTable("ShopOrder")]
 [SugarIndex("idx_order_no", nameof(OrderNo), OrderByType.Asc)]
 [SugarIndex("idx_order_user", nameof(UserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_order_status", nameof(Status), OrderByType.Asc)]

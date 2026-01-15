@@ -274,11 +274,11 @@ export const ImageUploader = ({ value, onChange }: ImageUploaderProps) => {
 
 ```sql
 -- 创建全文搜索索引
-CREATE INDEX idx_product_search ON shop_product
+CREATE INDEX idx_product_search ON ShopProduct
 USING GIN(to_tsvector('chinese', name || ' ' || COALESCE(subtitle, '')));
 
 -- 搜索查询
-SELECT * FROM shop_product
+SELECT * FROM ShopProduct
 WHERE to_tsvector('chinese', name || ' ' || COALESCE(subtitle, '')) @@ to_tsquery('chinese', '搜索关键词')
 ORDER BY ts_rank(to_tsvector('chinese', name || ' ' || subtitle), to_tsquery('chinese', '搜索关键词')) DESC;
 ```
@@ -787,17 +787,17 @@ mkdir -p ${BACKUP_DIR}
 
 # 备份数据库
 pg_dump ${DB_NAME} \
-  --table="shop_*" \
-  --file="${BACKUP_DIR}/shop_${DATE}.sql" \
+  --table="Shop*" \
+  --file="${BACKUP_DIR}/Shop_${DATE}.sql" \
   --verbose
 
 # 压缩备份文件
-gzip "${BACKUP_DIR}/shop_${DATE}.sql"
+gzip "${BACKUP_DIR}/Shop_${DATE}.sql"
 
 # 删除旧备份
-find ${BACKUP_DIR} -name "shop_*.sql.gz" -mtime +${RETENTION_DAYS} -delete
+find ${BACKUP_DIR} -name "Shop_*.sql.gz" -mtime +${RETENTION_DAYS} -delete
 
-echo "备份完成：${BACKUP_DIR}/shop_${DATE}.sql.gz"
+echo "备份完成：${BACKUP_DIR}/Shop_${DATE}.sql.gz"
 ```
 
 ### 9.5.2 定时任务配置
@@ -840,7 +840,7 @@ echo "恢复完成"
 ### 9.6.1 审计日志表设计
 
 ```sql
-CREATE TABLE shop_audit_log (
+CREATE TABLE ShopAuditLog (
     id BIGINT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     action VARCHAR(50) NOT NULL,

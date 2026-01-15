@@ -7,7 +7,7 @@ namespace Radish.Model;
 /// 用于组织和展示商城商品
 /// 使用语义化字符串主键（如 badge, card, boost）
 /// </remarks>
-[SugarTable("shop_product_category")]
+[SugarTable("ShopProductCategory")]
 public class ProductCategory
 {
     /// <summary>分类 ID</summary>

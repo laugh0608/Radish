@@ -10,7 +10,7 @@
 /// <summary>
 /// 商品实体
 /// </summary>
-[SugarTable("shop_product")]
+[SugarTable("ShopProduct")]
 public class Product : RootEntityTKey<long>, ITenantEntity
 {
     #region 基础信息
@@ -246,7 +246,7 @@ public class Product : RootEntityTKey<long>, ITenantEntity
 /// <summary>
 /// 商品分类实体
 /// </summary>
-[SugarTable("shop_product_category")]
+[SugarTable("ShopProductCategory")]
 public class ProductCategory : RootEntityTKey<string>
 {
     /// <summary>

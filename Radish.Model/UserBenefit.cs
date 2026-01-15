@@ -10,7 +10,7 @@ namespace Radish.Model;
 /// 记录用户拥有的权益（徽章、头像框、称号等）
 /// 使用雪花 ID 作为主键
 /// </remarks>
-[SugarTable("shop_user_benefit")]
+[SugarTable("ShopUserBenefit")]
 [SugarIndex("idx_benefit_user", nameof(UserId), OrderByType.Asc)]
 [SugarIndex("idx_benefit_type", nameof(BenefitType), OrderByType.Asc)]
 [SugarIndex("idx_benefit_active", nameof(UserId), OrderByType.Asc, nameof(IsActive), OrderByType.Asc)]

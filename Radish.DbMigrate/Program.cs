@@ -142,7 +142,7 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
     // 检查核心表是否存在，如果不存在则先执行 init
     Console.WriteLine("[Radish.DbMigrate] 检查数据库表结构...");
     var roleTableExists = db.DbMaintenance.IsAnyTable("Role", false);
-    var shopTableExists = db.DbMaintenance.IsAnyTable("shop_product_category", false);
+    var shopTableExists = db.DbMaintenance.IsAnyTable("ShopProductCategory", false);
 
     if (!roleTableExists || !shopTableExists)
     {
