@@ -29,7 +29,7 @@ dotnet test Radish.Api.Tests
 ```bash
 npm install                          # 根目录，配置 workspaces
 npm run dev --workspace=radish.client    # http://localhost:3000
-npm run dev --workspace=radish.console   # http://localhost:3200
+npm run dev --workspace=radish.console   # http://localhost:3100
 npm run type-check --workspace=@radish/ui
 ```
 

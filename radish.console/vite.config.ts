@@ -21,12 +21,12 @@ export default defineConfig({
     server: {
         // 监听 0.0.0.0 让 Gateway 能访问
         host: '0.0.0.0',
-        port: parseInt(env.DEV_SERVER_PORT || '3200', 10),
+        port: parseInt(env.DEV_SERVER_PORT || '3100', 10),
         // HMR 配置：通过 Gateway 时使用轮询模式（更稳定）
         hmr: {
             protocol: 'ws',
             host: 'localhost',
-            port: parseInt(env.DEV_SERVER_PORT || '3200', 10),
+            port: parseInt(env.DEV_SERVER_PORT || '3100', 10),
             // 使用轮询作为后备，避免 WebSocket 问题
             overlay: true
         },

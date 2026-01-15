@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests
 # 前端
 npm install                           # 根目录
 npm run dev --workspace=radish.client # http://localhost:3000
-npm run dev --workspace=radish.console # http://localhost:3200
+npm run dev --workspace=radish.console # http://localhost:3100
 npm run type-check --workspace=@radish/ui
 ```
 
@@ -72,8 +72,8 @@ npm run type-check --workspace=@radish/ui
 - Auth `http://localhost:5200` (内部)
 - Gateway `https://localhost:5000` (外部唯一入口)
 - Frontend `http://localhost:3000`
-- Console `http://localhost:3200`
-- Docs `http://localhost:3100`
+- Console `http://localhost:3100`
+- Docs `http://localhost:4000`
 - Scalar `/scalar` (Gateway: `https://localhost:5000/scalar`，API 直连: `http://localhost:5100/scalar`)
 
 ## 配置与数据库
