@@ -6,6 +6,7 @@ import { CoinRewardDemo } from '@/apps/coin-demo';
 import { NotificationApp } from '@/apps/notification/NotificationApp';
 import { LeaderboardApp } from '@/apps/leaderboard/LeaderboardApp';
 import { ExperienceDetailApp } from '@/apps/experience-detail/ExperienceDetailApp';
+import { ShopApp } from '@/apps/shop/ShopApp';
 import type { AppDefinition } from './types';
 
 /**
@@ -157,6 +158,17 @@ export const appRegistry: AppDefinition[] = [
     component: ExperienceDetailApp,
     type: 'window',
     defaultSize: { width: 1000, height: 800 },
+    requiredRoles: ['User'],
+    category: 'user'
+  },
+  {
+    id: 'shop',
+    name: '萝卜商城',
+    icon: 'mdi:shopping',
+    description: '使用胡萝卜购买权益和道具',
+    component: ShopApp,
+    type: 'window',
+    defaultSize: { width: 1200, height: 800 },
     requiredRoles: ['User'],
     category: 'user'
   },
