@@ -75,7 +75,7 @@ export const appRegistry: AppDefinition[] = [
     url: typeof window !== 'undefined' &&
       (window.location.origin === 'https://localhost:5000' || window.location.origin === 'http://localhost:5000')
       ? '/docs/'
-      : 'http://localhost:3100/docs/',
+      : 'http://localhost:4000/docs/',
     defaultSize: { width: 1200, height: 800 },
     requiredRoles: ['User'],
     category: 'development'
@@ -91,7 +91,7 @@ export const appRegistry: AppDefinition[] = [
     externalUrl: typeof window !== 'undefined' &&
       (window.location.origin === 'https://localhost:5000' || window.location.origin === 'http://localhost:5000')
       ? '/console/'
-      : 'http://localhost:3200',
+      : 'http://localhost:3100',
     requiredRoles: ['User'],
     category: 'system'
   },
