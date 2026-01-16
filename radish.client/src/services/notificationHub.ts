@@ -1,11 +1,12 @@
 import * as signalR from '@microsoft/signalr';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
 
-const defaultApiBase = 'http://localhost:5100'; // 临时直连 API，绕过 Gateway
-
 function getHubUrl(): string {
-  // 临时直连 API 进行测试
-  return `${defaultApiBase}/hub/notification`;
+  // 使用当前页面的 origin，通过 Gateway 访问 API
+  // 开发环境: http://localhost:5000 (Gateway)
+  // 生产环境: 部署域名
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
+  return `${origin}/hub/notification`;
 }
 
 function getAccessToken(): string | null {
