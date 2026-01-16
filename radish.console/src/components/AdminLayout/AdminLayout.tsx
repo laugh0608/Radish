@@ -1,10 +1,12 @@
 import { useState, type ReactNode } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Layout,
   Menu,
   Dropdown,
   Avatar,
   type MenuProps,
+  message,
 } from '@radish/ui';
 import {
   MenuFoldOutlined,
@@ -16,31 +18,14 @@ import {
   TeamOutlined,
   SafetyOutlined,
   ClockCircleOutlined,
+  DashboardOutlined,
 } from '@radish/ui';
+import { ROUTES } from '../../router';
 import './AdminLayout.css';
 
 const { Header, Sider, Content } = Layout;
 
 export interface AdminLayoutProps {
-  /**
-   * 当前选中的菜单 key
-   */
-  selectedKey?: string;
-  /**
-   * 菜单项点击回调
-   */
-  onMenuClick?: (key: string) => void;
-  /**
-   * 用户信息
-   */
-  user?: {
-    name: string;
-    avatar?: string;
-  };
-  /**
-   * 用户菜单点击回调
-   */
-  onUserMenuClick?: (key: string) => void;
   /**
    * 内容区域
    */
@@ -48,21 +33,55 @@ export interface AdminLayoutProps {
 }
 
 /**
+ * 获取 Auth Server 的基础 URL
+ */
+function getAuthServerBaseUrl(): string {
+  const currentOrigin = window.location.origin;
+
+  if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+    return currentOrigin;
+  }
+
+  if (currentOrigin === 'http://localhost:3100' || currentOrigin === 'https://localhost:3100') {
+    return 'http://localhost:5200';
+  }
+
+  return currentOrigin;
+}
+
+/**
+ * 获取 post_logout_redirect_uri
+ */
+function getPostLogoutRedirectUri(): string {
+  const currentOrigin = window.location.origin;
+
+  if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+    return `${currentOrigin}/console/`;
+  }
+
+  return `${currentOrigin}/console/`;
+}
+
+/**
  * AdminLayout - Radish Console 后台管理布局
  */
-export const AdminLayout = ({
-  selectedKey,
-  onMenuClick,
-  user,
-  onUserMenuClick,
-  children,
-}: AdminLayoutProps) => {
+export function AdminLayout({ children }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // 根据当前路径获取选中的菜单 key
+  const getSelectedKey = (): string => {
+    const path = location.pathname;
+    if (path === '/' || path === '') return 'dashboard';
+    // 移除开头的 / 获取 key
+    return path.slice(1);
+  };
 
   const menuItems: MenuProps['items'] = [
     {
       key: 'dashboard',
-      icon: <AppstoreOutlined />,
+      icon: <DashboardOutlined />,
       label: '仪表盘',
     },
     {
@@ -113,8 +132,49 @@ export const AdminLayout = ({
     setCollapsed(!collapsed);
   };
 
+  const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
+    // 根据 key 导航到对应路由
+    const routeMap: Record<string, string> = {
+      dashboard: ROUTES.HOME,
+      applications: ROUTES.APPLICATIONS,
+      users: ROUTES.USERS,
+      roles: ROUTES.ROLES,
+      hangfire: ROUTES.HANGFIRE,
+    };
+    const path = routeMap[key];
+    if (path) {
+      navigate(path);
+    }
+  };
+
+  const handleLogout = () => {
+    // 清理本地保存的 Token
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
+    // 使用 OIDC 标准的 endsession endpoint 实现 Single Sign-Out
+    const postLogoutRedirectUri = getPostLogoutRedirectUri();
+    const authServerBaseUrl = getAuthServerBaseUrl();
+
+    const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
+    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
+    logoutUrl.searchParams.set('client_id', 'radish-console');
+
+    window.location.href = logoutUrl.toString();
+  };
+
   const handleUserMenuClick: MenuProps['onClick'] = ({ key }) => {
-    onUserMenuClick?.(key);
+    switch (key) {
+      case 'logout':
+        handleLogout();
+        break;
+      case 'profile':
+        message.info('个人信息功能待实现');
+        break;
+      case 'settings':
+        message.info('设置功能待实现');
+        break;
+    }
   };
 
   return (
@@ -126,14 +186,14 @@ export const AdminLayout = ({
         className="admin-sider"
       >
         <div className="admin-logo">
-          {collapsed ? '🌿' : 'Radish Console'}
+          {collapsed ? 'R' : 'Radish Console'}
         </div>
         <Menu
           theme="dark"
           mode="inline"
-          selectedKeys={selectedKey ? [selectedKey] : []}
+          selectedKeys={[getSelectedKey()]}
           items={menuItems}
-          onClick={({ key }) => onMenuClick?.(key)}
+          onClick={handleMenuClick}
         />
       </Sider>
       <Layout className={collapsed ? 'collapsed' : ''}>
@@ -152,24 +212,21 @@ export const AdminLayout = ({
             )}
           </div>
           <div className="admin-header-right">
-            {user && (
-              <Dropdown
-                menu={{
-                  items: userMenuItems,
-                  onClick: handleUserMenuClick,
-                }}
-                placement="bottomRight"
-              >
-                <div className="admin-user">
-                  <Avatar
-                    size="small"
-                    icon={<UserOutlined />}
-                    src={user.avatar}
-                  />
-                  <span className="admin-username">{user.name}</span>
-                </div>
-              </Dropdown>
-            )}
+            <Dropdown
+              menu={{
+                items: userMenuItems,
+                onClick: handleUserMenuClick,
+              }}
+              placement="bottomRight"
+            >
+              <div className="admin-user">
+                <Avatar
+                  size="small"
+                  icon={<UserOutlined />}
+                />
+                <span className="admin-username">Admin</span>
+              </div>
+            </Dropdown>
           </div>
         </Header>
         <Content className="admin-content">
@@ -178,4 +235,4 @@ export const AdminLayout = ({
       </Layout>
     </Layout>
   );
-};
+}
