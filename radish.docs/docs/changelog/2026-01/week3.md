@@ -182,6 +182,18 @@
 
 ## 文档更新
 
+### 2026-01-16 前端图标系统与 Console 进度
+
+1. 修复 WebOS 桌面与前端应用在公网/受限网络环境下图标全部丢失的问题：
+   - @radish/ui Icon 组件改为在前端启动时，通过本地 @iconify-json/mdi 图标集注册 MDI 图标
+   - 不再依赖 https://api.iconify.design 在线 API，离线/内网环境下图标也能正常显示
+   - 更新前端设计文档和 WebOS 快速上手文档，说明图标系统基于本地 Iconify JSON 集合
+2. Console 项目进度：
+   - 已接入 React Router，基础 SPA 路由框架就绪
+   - 后续将基于 @radish/ui 组件库逐步搭建商城管理、用户管理等后台页面
+
+---
+
 ### 开发计划文档
 
 1. **development-plan.md** - 更新里程碑表格
