@@ -1,52 +1,45 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AntButton, message } from '@radish/ui';
 import './Login.css';
 
-interface LoginProps {
-  onLoginSuccess: () => void;
+/**
+ * 获取 Auth Server 的基础 URL
+ */
+function getAuthServerBaseUrl(): string {
+  const currentOrigin = window.location.origin;
+
+  // 通过 Gateway 访问
+  if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+    return currentOrigin;
+  }
+
+  // 直接访问 console 开发服务器
+  if (currentOrigin === 'http://localhost:3100' || currentOrigin === 'https://localhost:3100') {
+    return 'http://localhost:5200';
+  }
+
+  return currentOrigin;
 }
 
-export const Login = ({ onLoginSuccess }: LoginProps) => {
+/**
+ * 获取 redirect_uri
+ */
+function getRedirectUri(): string {
+  const currentOrigin = window.location.origin;
+
+  // 通过 Gateway 访问
+  if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
+    return `${currentOrigin}/console/callback`;
+  }
+
+  // 直接访问开发服务器（需要 /console 前缀，因为 basename 是 /console）
+  return `${currentOrigin}/console/callback`;
+}
+
+export function Login() {
   const [loading, setLoading] = useState(false);
-
-  /**
-   * 获取 Auth Server 的基础 URL
-   * - 通过 Gateway 访问时（https://localhost:5000）：使用 Gateway 地址
-   * - 直接访问开发服务器时（http://localhost:3200）：使用 Auth Server 直接地址
-   */
-  const getAuthServerBaseUrl = (): string => {
-    const currentOrigin = window.location.origin;
-
-    // 通过 Gateway 访问（生产环境或开发时通过 Gateway）
-    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-      return currentOrigin;
-    }
-
-    // 直接访问 console 开发服务器（开发环境）
-    if (currentOrigin === 'http://localhost:3200' || currentOrigin === 'https://localhost:3200') {
-      return 'http://localhost:5200'; // Auth Server 直接地址
-    }
-
-    // 默认使用 Gateway（生产环境）
-    return currentOrigin;
-  };
-
-  /**
-   * 获取 redirect_uri
-   * - 通过 Gateway 访问时：https://localhost:5000/console/callback
-   * - 直接访问开发服务器时：http://localhost:3200/callback
-   */
-  const getRedirectUri = (): string => {
-    const currentOrigin = window.location.origin;
-
-    // 通过 Gateway 访问
-    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-      return `${currentOrigin}/console/callback`;
-    }
-
-    // 直接访问开发服务器
-    return `${currentOrigin}/callback`;
-  };
+  const navigate = useNavigate();
 
   const handleLogin = () => {
     setLoading(true);
@@ -87,7 +80,7 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
       if (result.success && result.response) {
         localStorage.setItem('access_token', result.response);
         message.success('登录成功');
-        onLoginSuccess();
+        navigate('/', { replace: true });
       } else {
         message.error(result.message || '登录失败');
       }
@@ -104,25 +97,25 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
       <div className="login-box">
         {/* 左侧信息区域 */}
         <div className="login-info">
-          <h2>🌿 Radish Console</h2>
+          <h2>Radish Console</h2>
           <p>现代化社区平台管理控制台</p>
           <p>统一管理用户、应用、权限和系统配置</p>
 
           <div className="login-info-features">
             <div className="login-info-feature">
-              <div className="login-info-feature-icon">✓</div>
+              <div className="login-info-feature-icon">+</div>
               <span>统一身份认证 (OIDC)</span>
             </div>
             <div className="login-info-feature">
-              <div className="login-info-feature-icon">✓</div>
+              <div className="login-info-feature-icon">+</div>
               <span>细粒度权限控制</span>
             </div>
             <div className="login-info-feature">
-              <div className="login-info-feature-icon">✓</div>
+              <div className="login-info-feature-icon">+</div>
               <span>实时系统监控</span>
             </div>
             <div className="login-info-feature">
-              <div className="login-info-feature-icon">✓</div>
+              <div className="login-info-feature-icon">+</div>
               <span>应用生态管理</span>
             </div>
           </div>
@@ -167,4 +160,4 @@ export const Login = ({ onLoginSuccess }: LoginProps) => {
       </div>
     </div>
   );
-};
+}

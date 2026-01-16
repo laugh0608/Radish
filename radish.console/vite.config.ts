@@ -11,6 +11,8 @@ export default defineConfig({
     // 资源请求会是 https://localhost:5000/console/assets/... 而不是 https://localhost:5000/assets/...
     base: '/console/',
     plugins: [plugin()],
+    // 确保是 SPA 模式
+    appType: 'spa',
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -37,6 +39,9 @@ export default defineConfig({
             ignored: ['!**/node_modules/@radish/**'],
             // 使用轮询模式作为后备
             usePolling: false
-        }
+        },
+        // 配置 history API fallback，确保所有路由都返回 index.html
+        // 这对于 SPA 路由至关重要
+        middlewareMode: false
     }
 });

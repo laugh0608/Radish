@@ -121,6 +121,8 @@ export {
   AppstoreOutlined,
   TeamOutlined,
   SafetyOutlined,
+  ClockCircleOutlined,
+  DashboardOutlined,
 } from '@ant-design/icons';
 
 // Re-export types
