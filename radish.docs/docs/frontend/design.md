@@ -521,8 +521,8 @@ export const tokens = {
 ### 8.3 图标系统
 
 ```typescript
-// 使用 Iconify 统一图标
-import { Icon } from '@iconify/react';
+// 使用 @radish/ui 封装的 Icon 组件（基于本地 Iconify JSON 集合）
+import { Icon } from '@radish/ui';
 
 <Icon icon="mdi:forum" />
 <Icon icon="mdi:chat" />
