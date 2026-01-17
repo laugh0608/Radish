@@ -4,6 +4,7 @@ import { Dashboard } from '../pages/Dashboard';
 import { Applications } from '../pages/Applications';
 import { Login } from '../pages/Login';
 import { OidcCallback } from '../pages/OidcCallback';
+import { ThemeTest } from '../pages/ThemeTest';
 
 /**
  * 需要认证的布局包装器
@@ -94,6 +95,10 @@ export const router = createBrowserRouter(
           path: 'hangfire',
           element: <HangfirePage />,
         },
+        {
+          path: 'theme-test',
+          element: <ThemeTest />,
+        },
       ],
     },
     {
@@ -117,4 +122,5 @@ export const ROUTES = {
   USERS: '/users',
   ROLES: '/roles',
   HANGFIRE: '/hangfire',
+  THEME_TEST: '/theme-test',
 } as const;

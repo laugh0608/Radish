@@ -1,0 +1,40 @@
+.theme-test {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.theme-test h1 {
+  color: #333;
+  margin-bottom: 24px;
+}
+
+.color-palette {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.color-item {
+  text-align: center;
+}
+
+.color-box {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.color-name {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.color-value {
+  font-size: 12px;
+  color: #666;
+  font-family: monospace;
+}
