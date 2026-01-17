@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import {
   Modal,
   Form,
-  Input,
+  AntInput as Input,
   InputNumber,
-  Select,
+  AntSelect as Select,
   Radio,
   DatePicker,
   Switch,

@@ -13,12 +13,12 @@ export const env = {
   isProd: import.meta.env.PROD,
 
   /**
-   * API 基础 URL
+   * API 基础 URL（统一走 Gateway）
    */
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000',
 
   /**
-   * Auth Server URL
+   * Auth Server URL（统一走 Gateway）
    */
   authServerUrl: import.meta.env.VITE_AUTH_SERVER_URL || 'https://localhost:5000',
 
@@ -46,31 +46,16 @@ export const env = {
 /**
  * 获取 Auth Server 基础 URL
  *
- * 根据当前访问方式动态返回正确的 Auth Server URL
+ * 统一使用配置的 URL，不再根据访问方式动态判断
  */
 export function getAuthServerBaseUrl(): string {
-  if (typeof window === 'undefined') {
-    return env.authServerUrl;
-  }
-
-  const currentOrigin = window.location.origin;
-
-  // 通过 Gateway 访问
-  if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-    return currentOrigin;
-  }
-
-  // 直接访问 console 开发服务器
-  if (currentOrigin === 'http://localhost:3100' || currentOrigin === 'https://localhost:3100') {
-    return env.authServerUrl;
-  }
-
-  // 生产环境
-  return currentOrigin;
+  return env.authServerUrl;
 }
 
 /**
  * 获取 redirect_uri
+ *
+ * 根据当前访问方式返回正确的回调地址
  */
 export function getRedirectUri(): string {
   if (typeof window === 'undefined') {
@@ -83,6 +68,8 @@ export function getRedirectUri(): string {
 
 /**
  * 获取 post_logout_redirect_uri
+ *
+ * 根据当前访问方式返回正确的登出后地址
  */
 export function getPostLogoutRedirectUri(): string {
   if (typeof window === 'undefined') {
@@ -92,3 +79,4 @@ export function getPostLogoutRedirectUri(): string {
   const currentOrigin = window.location.origin;
   return `${currentOrigin}/console/`;
 }
+
