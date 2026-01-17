@@ -1,5 +1,6 @@
-/**
 import { log } from '@/utils/logger';
+
+/**
  * 附件上传相关的 API 调用
  */
 

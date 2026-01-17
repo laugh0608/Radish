@@ -1,5 +1,6 @@
-/**
 import { log } from '@/utils/logger';
+
+/**
  * Token 刷新管理器
  */
 class TokenRefreshManager {
