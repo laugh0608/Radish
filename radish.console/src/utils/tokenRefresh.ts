@@ -1,4 +1,5 @@
 /**
+import { log } from '@/utils/logger';
  * Token 刷新管理器
  */
 class TokenRefreshManager {
@@ -68,7 +69,7 @@ class TokenRefreshManager {
 
       return data.access_token;
     } catch (error) {
-      console.error('Failed to refresh token:', error);
+      log.error('Failed to refresh token:', error);
 
       // 刷新失败，清除 Token 并跳转到登录页
       localStorage.removeItem('access_token');
@@ -129,7 +130,7 @@ class TokenRefreshManager {
       // 如果距离过期时间小于阈值，需要刷新
       return timeUntilExpiration < thresholdSeconds * 1000;
     } catch (error) {
-      console.error('Failed to parse token:', error);
+      log.error('Failed to parse token:', error);
       return false;
     }
   }

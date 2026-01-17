@@ -1,4 +1,5 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react';
+import { log } from '@/utils/logger';
 import { AntButton, Result } from '@radish/ui';
 
 interface ErrorBoundaryProps {
@@ -50,7 +51,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // 记录错误信息
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    log.error('ErrorBoundary caught an error:', error, errorInfo);
 
     // 更新状态
     this.setState({

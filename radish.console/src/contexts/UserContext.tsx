@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { log } from '@/utils/logger';
 import { userApi } from '../api/user';
 import type { UserInfo } from '../types/user';
 
@@ -39,7 +40,7 @@ export function UserProvider({ children }: UserProviderProps) {
         setUser(null);
       }
     } catch (error) {
-      console.error('Failed to fetch user info:', error);
+      log.error('Failed to fetch user info:', error);
       setUser(null);
     } finally {
       setLoading(false);
