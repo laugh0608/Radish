@@ -7,7 +7,7 @@ import {
   Space,
   Tag,
   message,
-  Modal,
+  ConfirmDialog,
   type TableColumnsType,
 } from '@radish/ui';
 import {
@@ -38,6 +38,10 @@ export const OrderList = () => {
   // 详情弹窗状态
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | undefined>();
+
+  // 确认对话框状态
+  const [confirmVisible, setConfirmVisible] = useState(false);
+  const [retryOrder, setRetryOrder] = useState<Order | undefined>();
 
   // 筛选条件
   const [userId, setUserId] = useState<number | undefined>();
@@ -95,21 +99,26 @@ export const OrderList = () => {
   };
 
   // 重试失败订单
-  const handleRetry = async (order: Order) => {
-    Modal.confirm({
-      title: '确认重试',
-      content: `确定要重新发放订单"${order.orderNo}"的权益吗？`,
-      onOk: async () => {
-        try {
-          await retryGrantBenefit(order.id);
-          message.success('重试成功');
-          loadOrders();
-        } catch (error) {
-          log.error('OrderList', '重试失败:', error);
-          message.error('重试失败');
-        }
-      },
-    });
+  const handleRetry = (order: Order) => {
+    setRetryOrder(order);
+    setConfirmVisible(true);
+  };
+
+  // 确认重试
+  const handleConfirmRetry = async () => {
+    if (!retryOrder) return;
+
+    try {
+      await retryGrantBenefit(retryOrder.id);
+      message.success('重试成功');
+      loadOrders();
+    } catch (error) {
+      log.error('OrderList', '重试失败:', error);
+      message.error('重试失败');
+    } finally {
+      setConfirmVisible(false);
+      setRetryOrder(undefined);
+    }
   };
 
   // 表格列定义
@@ -197,7 +206,7 @@ export const OrderList = () => {
       render: (_: unknown, record: Order) => (
         <Space size="small">
           <Button
-            type="link"
+            variant="ghost"
             size="small"
             icon={<EyeOutlined />}
             onClick={() => handleViewDetail(record)}
@@ -206,7 +215,7 @@ export const OrderList = () => {
           </Button>
           {record.status === 5 && ( // Failed
             <Button
-              type="link"
+              variant="ghost"
               size="small"
               icon={<SyncOutlined />}
               onClick={() => handleRetry(record)}
@@ -267,7 +276,7 @@ export const OrderList = () => {
             suffix={<SearchOutlined />}
           />
 
-          <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+          <Button variant="primary" icon={<SearchOutlined />} onClick={handleSearch}>
             搜索
           </Button>
 
@@ -308,6 +317,17 @@ export const OrderList = () => {
           if (selectedOrder) {
             handleRetry(selectedOrder);
           }
+        }}
+      />
+
+      <ConfirmDialog
+        isOpen={confirmVisible}
+        title="确认重试"
+        message={`确定要重新发放订单"${retryOrder?.orderNo}"的权益吗？`}
+        onConfirm={handleConfirmRetry}
+        onCancel={() => {
+          setConfirmVisible(false);
+          setRetryOrder(undefined);
         }}
       />
     </div>

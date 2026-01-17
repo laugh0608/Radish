@@ -143,7 +143,7 @@ export const UserList = () => {
 
   // 重置密码
   const handleResetPassword = (user: UserListItem) => {
-    Modal.confirm({
+    (Modal as any).confirm({
       title: '重置密码',
       content: `确定要重置用户 "${user.voUsName}" 的密码吗？新密码将通过邮件发送给用户。`,
       onOk: async () => {
@@ -217,7 +217,7 @@ export const UserList = () => {
       render: (_, record) => (
         <Space size="small">
           <Button
-            type="link"
+            variant="ghost"
             size="small"
             icon={<EditOutlined />}
             onClick={() => {
@@ -230,7 +230,7 @@ export const UserList = () => {
 
           {record.voIsEnable ? (
             <Button
-              type="link"
+              variant="ghost"
               size="small"
               icon={<LockOutlined />}
               onClick={() => handleUpdateStatus(record.uuid, UserStatus.Disabled)}
@@ -239,7 +239,7 @@ export const UserList = () => {
             </Button>
           ) : (
             <Button
-              type="link"
+              variant="ghost"
               size="small"
               icon={<UnlockOutlined />}
               onClick={() => handleUpdateStatus(record.uuid, UserStatus.Normal)}
@@ -249,7 +249,7 @@ export const UserList = () => {
           )}
 
           <Button
-            type="link"
+            variant="ghost"
             size="small"
             icon={<KeyOutlined />}
             onClick={() => handleResetPassword(record)}
@@ -258,7 +258,7 @@ export const UserList = () => {
           </Button>
 
           <Button
-            type="link"
+            variant="ghost"
             size="small"
             icon={<LogoutOutlined />}
             onClick={() => handleForceLogout(record.uuid)}
@@ -274,9 +274,8 @@ export const UserList = () => {
             cancelText="取消"
           >
             <Button
-              type="link"
+              variant="danger"
               size="small"
-              danger
               icon={<DeleteOutlined />}
             >
               删除
@@ -338,7 +337,7 @@ export const UserList = () => {
           </Select>
 
           <Button
-            type="primary"
+            variant="primary"
             icon={<SearchOutlined />}
             onClick={handleSearch}
           >
@@ -353,7 +352,7 @@ export const UserList = () => {
           </Button>
 
           <Button
-            type="primary"
+            variant="primary"
             icon={<PlusOutlined />}
             onClick={() => {
               // TODO: 打开新增用户弹窗

@@ -139,7 +139,7 @@ export const ProductList = () => {
 
   // 删除商品
   const handleDelete = (product: Product) => {
-    Modal.confirm({
+    (Modal as any).confirm({
       title: '确认删除',
       content: `确定要删除商品"${product.name}"吗？`,
       onOk: async () => {
@@ -264,7 +264,7 @@ export const ProductList = () => {
       render: (_: unknown, record: Product) => (
         <Space size="small">
           <Button
-            type="link"
+            variant="ghost"
             size="small"
             icon={<EditOutlined />}
             onClick={() => {
@@ -275,16 +275,15 @@ export const ProductList = () => {
             编辑
           </Button>
           <Button
-            type="link"
+            variant="ghost"
             size="small"
             onClick={() => handleToggleSale(record)}
           >
             {record.isOnSale ? '下架' : '上架'}
           </Button>
           <Button
-            type="link"
+            variant="danger"
             size="small"
-            danger
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record)}
           >
@@ -300,7 +299,7 @@ export const ProductList = () => {
       <div className="page-header">
         <h2>商品管理</h2>
         <Button
-          type="primary"
+          variant="primary"
           icon={<PlusOutlined />}
           onClick={() => {
             setEditingProduct(undefined);
@@ -359,7 +358,7 @@ export const ProductList = () => {
             suffix={<SearchOutlined />}
           />
 
-          <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>
+          <Button variant="primary" icon={<SearchOutlined />} onClick={handleSearch}>
             搜索
           </Button>
 

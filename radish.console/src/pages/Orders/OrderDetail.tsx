@@ -1,9 +1,7 @@
 import { Modal, Descriptions, Tag, Button, Space } from '@radish/ui';
 import { SyncOutlined } from '@radish/ui';
 import {
-  getOrderStatusDisplay,
   getOrderStatusColor,
-  getProductTypeDisplay,
 } from '../../api/shopApi';
 import type { Order } from '../../api/types';
 
@@ -22,13 +20,14 @@ export const OrderDetail = ({ visible, order, onClose, onRetry }: OrderDetailPro
   return (
     <Modal
       title="订单详情"
-      open={visible}
-      onCancel={onClose}
-      width={800}
+      isOpen={visible}
+      onClose={onClose}
+      size="large"
       footer={
         <Space>
           {order.status === 5 && onRetry && (
-            <Button type="primary" icon={<SyncOutlined />} onClick={onRetry}>
+            <Button variant="primary" onClick={onRetry}>
+              <SyncOutlined />
               重试发放权益
             </Button>
           )}

@@ -8,8 +8,8 @@ import {
   Radio,
   DatePicker,
   Switch,
+  Button,
   message,
-  type FormInstance,
 } from '@radish/ui';
 import { getCategories, createProduct, updateProduct } from '../../api/shopApi';
 import type {
@@ -17,11 +17,6 @@ import type {
   ProductCategory,
   CreateProductDto,
   UpdateProductDto,
-  ProductType,
-  BenefitType,
-  ConsumableType,
-  StockType,
-  DurationType,
 } from '../../api/types';
 import { log } from '../../utils/logger';
 import dayjs from 'dayjs';
@@ -119,12 +114,17 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   return (
     <Modal
       title={product ? '编辑商品' : '新建商品'}
-      open={visible}
-      onCancel={onClose}
-      onOk={handleSubmit}
-      confirmLoading={loading}
-      width={800}
-      destroyOnClose
+      isOpen={visible}
+      onClose={onClose}
+      size="large"
+      footer={
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+          <Button onClick={onClose}>取消</Button>
+          <Button variant="primary" onClick={handleSubmit} disabled={loading}>
+            {loading ? '保存中...' : '保存'}
+          </Button>
+        </div>
+      }
     >
       <Form
         form={form}
