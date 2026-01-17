@@ -20,6 +20,8 @@ interface CurrentUser {
     userId: number;
     userName: string;
     tenantId: number;
+    avatarUrl?: string;
+    avatarThumbnailUrl?: string;
 }
 
 // WebOS 全局用户信息结构（与 useUserStore.UserInfo 对齐）
@@ -28,6 +30,8 @@ interface WebOsUserInfo {
     userName: string;
     tenantId: number;
     roles: string[];
+    avatarUrl?: string;
+    avatarThumbnailUrl?: string;
 }
 
 interface OidcCallbackProps {
@@ -240,7 +244,9 @@ function App() {
                 userId: parsed.data.userId,
                 userName: parsed.data.userName,
                 tenantId: parsed.data.tenantId,
-                roles: ['User']
+                roles: ['User'],
+                avatarUrl: parsed.data.avatarUrl,
+                avatarThumbnailUrl: parsed.data.avatarThumbnailUrl
             };
             setWebOsUser(webOsUser);
         } catch (err) {

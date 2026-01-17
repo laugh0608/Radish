@@ -3,13 +3,16 @@
  */
 
 /**
- * API 响应包装
+ * API 响应包装（与后端 MessageModel 保持一致）
  */
 export interface ApiResponse<T> {
-  success: boolean;
-  msg: string;
-  response: T;
-  status: number;
+  statusCode: number;
+  isSuccess: boolean;
+  messageInfo: string;
+  messageInfoDev?: string;
+  code?: string;
+  messageKey?: string;
+  responseData?: T;
 }
 
 /**
