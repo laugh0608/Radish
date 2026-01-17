@@ -97,12 +97,12 @@ public class UserController : ControllerBase
         var userVos = result.data;
         var totalCount = result.totalCount;
 
-        var responseResult = new
+        var responseResult = new VoPagedResult<UserVo>
         {
-            items = userVos,
-            total = totalCount,
-            pageIndex,
-            pageSize
+            Items = userVos,
+            Total = totalCount,
+            PageIndex = pageIndex,
+            PageSize = pageSize
         };
 
         return new MessageModel
@@ -213,12 +213,13 @@ public class UserController : ControllerBase
             a.BusinessType == "Avatar" &&
             a.BusinessId == userId);
 
-        var userInfo = new {
-            userId,
-            userName,
-            tenantId,
-            avatarUrl = avatar?.Url,
-            avatarThumbnailUrl = avatar?.ThumbnailUrl
+        var userInfo = new VoCurrentUser
+        {
+            UserId = userId,
+            UserName = userName,
+            TenantId = tenantId,
+            AvatarUrl = avatar?.Url,
+            AvatarThumbnailUrl = avatar?.ThumbnailUrl
         };
         return new MessageModel
         {
@@ -256,13 +257,13 @@ public class UserController : ControllerBase
             c => c.AuthorId == userId && !c.IsDeleted);
         var commentLikeCount = comments.Sum(c => c.LikeCount);
 
-        var stats = new
+        var stats = new VoUserStats
         {
-            postCount,
-            commentCount,
-            totalLikeCount = postLikeCount + commentLikeCount,
-            postLikeCount,
-            commentLikeCount
+            PostCount = postCount,
+            CommentCount = commentCount,
+            TotalLikeCount = postLikeCount + commentLikeCount,
+            PostLikeCount = postLikeCount,
+            CommentLikeCount = commentLikeCount
         };
 
         return new MessageModel
@@ -650,10 +651,10 @@ public class UserController : ControllerBase
         await Task.CompletedTask;
         var userId = _httpContextUser.UserId;
 
-        var result = new
+        var result = new VoUnreadMessageCount
         {
-            userId,
-            unreadCount = 0
+            UserId = userId,
+            UnreadCount = 0
         };
 
         return new MessageModel

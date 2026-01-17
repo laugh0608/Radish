@@ -64,11 +64,18 @@ Common (工具,日志,配置) → Shared (常量,枚举) → Model (实体,DTO,V
    - ViewModel: `Radish.Model/ViewModels`，后缀 `Vo`，暴露给 Controller
    - AutoMapper: `Radish.Extension/AutoMapperExtension` 处理映射
 
-5. **Infrastructure** 集中 SqlSugar 多租户逻辑，仅 Repository 和 Extension 引用
+5. **ViewModel 设计规范** (重要):
+   - **命名规范**: 所有返回给前端的ViewModel类必须添加`Vo`前缀，与现有UserVo保持统一性
+   - **UserVo特殊设计**: UserVo的字段混淆（如VoLoName, VoUsName等）是安全设计，体现自定义映射能力，保持其特殊性
+   - **其他Vo模型**: 使用清晰的字段名，仅添加Vo前缀，不需要字段混淆（如VoCurrentUser, VoUserStats等）
+   - **前端适配规则**: 前端必须适配后端的Vo模型字段名，不得要求后端修改
+   - **匿名对象禁用**: Controller方法严禁返回匿名对象，必须使用定义好的Vo类
 
-6. **接口模式**: 先定义 IService/IRepository，再实现。`BaseRepository<T>` 和 `BaseService<TEntity, TModel>` 提供 CRUD 脚手架
+6. **Infrastructure** 集中 SqlSugar 多租户逻辑，仅 Repository 和 Extension 引用
 
-7. **Service 层数据库访问约束** (关键):
+7. **接口模式**: 先定义 IService/IRepository，再实现。`BaseRepository<T>` 和 `BaseService<TEntity, TModel>` 提供 CRUD 脚手架
+
+8. **Service 层数据库访问约束** (关键):
    - **严禁**直接使用 `_repository.Db.Queryable` 或 `_repository.DbBase.Queryable`
    - **必须**通过 Repository 方法访问数据
    - ❌ 错误: `await _repository.Db.Queryable<Entity>().Where(...).GroupBy(...).ToListAsync()`
@@ -300,7 +307,11 @@ cargo build --release
 8. **每环境设置唯一 Snowflake WorkId**，避免 ID 冲突
 9. **Common 依赖只限外部包**，需访问 Model/Service/Repository 用 Extension
 10. **路由参数**确保 `ApiModule.LinkUrl` 包含正则
-11. **ViewModel 需业务语义化**，不只是加 `Vo` 后缀
+11. **ViewModel 设计规范**:
+    - **必须使用Vo前缀**: 所有ViewModel类添加Vo前缀，保持命名统一性
+    - **禁止匿名对象**: Controller严禁返回匿名对象，必须定义具体的Vo类
+    - **UserVo特殊性**: UserVo字段混淆是安全设计，前端必须适配，不得要求后端修改
+    - **其他Vo清晰性**: 除UserVo外，其他Vo使用清晰字段名，便于理解和维护
 
 ## Git 提交规范
 

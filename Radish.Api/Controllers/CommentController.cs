@@ -176,12 +176,12 @@ public class CommentController : ControllerBase
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
-            ResponseData = new
+            ResponseData = new VoPagedResult<CommentVo>
             {
-                comments,
-                total,
-                pageIndex,
-                pageSize
+                Items = comments,
+                Total = total,
+                PageIndex = pageIndex,
+                PageSize = pageSize
             }
         };
     }
