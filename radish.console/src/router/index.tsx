@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
 import { Dashboard } from '../pages/Dashboard';
 import { Applications } from '../pages/Applications';
+import { ProductList } from '../pages/Products';
 import { Login } from '../pages/Login';
 import { OidcCallback } from '../pages/OidcCallback';
 import { ThemeTest } from '../pages/ThemeTest';
@@ -84,6 +85,10 @@ export const router = createBrowserRouter(
           element: <Applications />,
         },
         {
+          path: 'products',
+          element: <ProductList />,
+        },
+        {
           path: 'users',
           element: <PlaceholderPage title="用户管理" />,
         },
@@ -119,6 +124,7 @@ export const ROUTES = {
   LOGIN: '/login',
   CALLBACK: '/callback',
   APPLICATIONS: '/applications',
+  PRODUCTS: '/products',
   USERS: '/users',
   ROLES: '/roles',
   HANGFIRE: '/hangfire',
