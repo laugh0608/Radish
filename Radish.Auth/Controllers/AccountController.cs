@@ -102,12 +102,12 @@ public class AccountController : Controller
         {
             // 标准身份标识 (ClaimTypes)
             new(ClaimTypes.NameIdentifier, userId),
-            new(ClaimTypes.Name, username),
+            new(ClaimTypes.Name, user.VoLoName ?? username), // 优先使用显示名称
 
             // OIDC 标准 claims
             new(OpenIddictConstants.Claims.Subject, userId),
-            new(OpenIddictConstants.Claims.Name, username),
-            new(OpenIddictConstants.Claims.PreferredUsername, user.VoLoName),
+            new(OpenIddictConstants.Claims.Name, user.VoLoName ?? username), // 优先使用显示名称
+            new(OpenIddictConstants.Claims.PreferredUsername, user.VoLoName ?? username),
 
             // 多租户标识（与 AuthenticationGuide 中的约定一致）
             new("tenant_id", tenantId)

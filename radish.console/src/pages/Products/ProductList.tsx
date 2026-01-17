@@ -23,12 +23,26 @@ import {
   getCategories,
   putOnSale,
   takeOffSale,
-  getProductTypeDisplay,
 } from '../../api/shopApi';
-import type { Product, ProductCategory, ProductType } from '../../api/types';
+import type { Product, ProductCategory } from '../../api/types';
+import { ProductType } from '../../api/types';
 import { ProductForm } from './ProductForm';
 import { log } from '../../utils/logger';
 import './ProductList.css';
+
+// 本地工具函数
+function getProductTypeDisplay(type: ProductType): string {
+  switch (type) {
+    case ProductType.Benefit:
+      return '权益';
+    case ProductType.Consumable:
+      return '消耗品';
+    case ProductType.Physical:
+      return '实物';
+    default:
+      return '未知';
+  }
+}
 
 export const ProductList = () => {
   const [products, setProducts] = useState<Product[]>([]);

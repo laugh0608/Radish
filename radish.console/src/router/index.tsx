@@ -119,7 +119,7 @@ export const router = createBrowserRouter(
     },
   ],
   {
-    basename: '/console',
+    basename: '/console/',
   }
 );
 

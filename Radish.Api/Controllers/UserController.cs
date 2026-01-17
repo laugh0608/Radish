@@ -5,12 +5,9 @@ using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
-using Radish.Shared;
 using Radish.Shared.CustomEnum;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Radish.Api.Resources;
-using SqlSugar;
 
 namespace Radish.Api.Controllers;
 
@@ -57,9 +54,12 @@ public class UserController : ControllerBase
     /// <summary>
     /// 获取全部用户列表
     /// </summary>
+    /// <param name="pageIndex">页码（从1开始）</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <param name="keyword">搜索关键词</param>
     /// <returns>包含用户列表的响应对象</returns>
     /// <remarks>
-    /// 查询所有用户信息，不包含已删除的用户。
+    /// 查询用户信息，支持分页和搜索，不包含已删除的用户。
     /// 需要认证和授权。
     /// </remarks>
     /// <response code="200">查询成功，返回用户列表</response>
@@ -71,15 +71,46 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
-    public async Task<MessageModel> GetUserList()
+    public async Task<MessageModel> GetUserList(int pageIndex = 1, int pageSize = 20, string? keyword = null)
     {
-        var users = await _userService.QueryAsync();
+        // 分页查询用户
+        (List<UserVo> data, int totalCount) result;
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            // 有搜索关键词时
+            result = await _userService.QueryPageAsync(
+                u => !u.IsDeleted &&
+                     (u.UserName.Contains(keyword) ||
+                      u.LoginName.Contains(keyword) ||
+                      (u.UserEmail != null && u.UserEmail.Contains(keyword))),
+                pageIndex, pageSize, u => u.Id, SqlSugar.OrderByType.Desc);
+        }
+        else
+        {
+            // 无搜索关键词时
+            result = await _userService.QueryPageAsync(
+                u => !u.IsDeleted,
+                pageIndex, pageSize, u => u.Id, SqlSugar.OrderByType.Desc);
+        }
+
+        var userVos = result.data;
+        var totalCount = result.totalCount;
+
+        var responseResult = new
+        {
+            items = userVos,
+            total = totalCount,
+            pageIndex,
+            pageSize
+        };
+
         return new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
-            ResponseData = users
+            ResponseData = responseResult
         };
     }
 
