@@ -70,7 +70,8 @@ export type { LevelUpModalProps, LevelUpData } from './LevelUpModal/LevelUpModal
 export {
   // Layout
   Layout,
-  // Menu
+  // Navigation
+  Breadcrumb,
   Menu,
   // Form
   Form,
@@ -129,6 +130,10 @@ export {
   ShoppingOutlined,
   FileTextOutlined,
   SyncOutlined,
+  HomeOutlined,
+  LockOutlined,
+  UnlockOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 
 // Re-export types
@@ -143,4 +148,5 @@ export type {
   LayoutProps,
   ButtonProps as AntButtonProps,
   SpaceProps,
+  BreadcrumbProps,
 } from 'antd';

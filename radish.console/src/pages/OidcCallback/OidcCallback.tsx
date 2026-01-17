@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { message } from '@radish/ui';
 import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
+import { tokenService } from '../../services/tokenService';
+import { log } from '@/utils/logger';
 
 /**
  * OIDC 回调处理页面
@@ -58,17 +60,23 @@ export function OidcCallback() {
         const tokenSet = await response.json() as {
           access_token?: string;
           refresh_token?: string;
+          expires_in?: number;
+          token_type?: string;
         };
 
         if (!tokenSet.access_token) {
           throw new Error('未收到 access_token');
         }
 
-        window.localStorage.setItem('access_token', tokenSet.access_token);
-        if (tokenSet.refresh_token) {
-          window.localStorage.setItem('refresh_token', tokenSet.refresh_token);
-        }
+        // 使用 TokenService 存储 Token 信息
+        tokenService.setTokenInfo({
+          access_token: tokenSet.access_token,
+          refresh_token: tokenSet.refresh_token,
+          expires_in: tokenSet.expires_in || 3600, // 默认 1 小时
+          token_type: tokenSet.token_type || 'Bearer',
+        });
 
+        log.info('OidcCallback', 'Token 信息已保存');
         setMessageText('登录成功，正在跳转...');
         message.success('登录成功');
 

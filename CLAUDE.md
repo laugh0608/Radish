@@ -31,6 +31,9 @@ npm install                          # 根目录，配置 workspaces
 npm run dev --workspace=radish.client    # http://localhost:3000
 npm run dev --workspace=radish.console   # http://localhost:3100
 npm run type-check --workspace=@radish/ui
+
+# 注意：@radish/ui 组件库无需构建
+# 前端项目通过 npm workspaces 直接引用源码，支持 HMR 热更新
 ```
 
 ### 快速启动
@@ -176,6 +179,7 @@ var result = await cache.GetAsync<MyType>("key");
 - **内容**: Button, Input, Modal, Icon + Hooks + Utils
 - **使用**: `import { Button } from '@radish/ui';`
 - **HMR**: 修改自动热更新到 client/console
+- **重要**: 无需构建，前端项目直接引用源码，支持实时热更新
 
 ### WebOS 桌面 UI
 - 顶部状态栏 + 底部 Dock + 桌面图标/窗口

@@ -36,7 +36,7 @@
 ### 前端项目
 - `radish.client`: WebOS 桌面，面向用户
 - `radish.console`: 管理后台，面向管理员
-- `radish.ui`: 共享 UI 组件库
+- `radish.ui`: 共享 UI 组件库（**无需构建**，直接引用源码）
 - `radish.docs`: VitePress 文档站
 - **依赖**: client 和 console 依赖 `@radish/ui`，通过 npm workspaces 热更新
 
@@ -65,6 +65,9 @@ npm install                           # 根目录
 npm run dev --workspace=radish.client # http://localhost:3000
 npm run dev --workspace=radish.console # http://localhost:3100
 npm run type-check --workspace=@radish/ui
+
+# 注意：@radish/ui 组件库无需构建
+# 前端项目通过 npm workspaces 直接引用源码，支持 HMR 热更新
 ```
 
 **默认端口**:
