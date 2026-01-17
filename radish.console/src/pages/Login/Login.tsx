@@ -1,13 +1,10 @@
 import { useState } from 'react';
-import { log } from '@/utils/logger';
-import { useNavigate } from 'react-router-dom';
-import { AntButton, message } from '@radish/ui';
+import { AntButton } from '@radish/ui';
 import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
 import './Login.css';
 
 export function Login() {
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   const handleLogin = () => {
     setLoading(true);
@@ -22,42 +19,6 @@ export function Login() {
     authorizeUrl.searchParams.set('scope', 'openid profile radish-api');
 
     window.location.href = authorizeUrl.toString();
-  };
-
-  // 临时测试方案：使用默认账号登录获取 token
-  const handleTestLogin = async () => {
-    // 统一通过 Gateway 访问
-    const apiBaseUrl = window.location.origin;
-
-    try {
-      setLoading(true);
-      // 默认使用 admin 账号登录
-      const response = await fetch(`${apiBaseUrl}/api/v1/Login/GetJwtToken`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: 'admin',
-          password: 'admin123456',
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success && result.response) {
-        localStorage.setItem('access_token', result.response);
-        message.success('登录成功');
-        navigate('/', { replace: true });
-      } else {
-        message.error(result.message || '登录失败');
-      }
-    } catch (error) {
-      message.error('登录失败');
-      log.error(error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (
@@ -93,7 +54,7 @@ export function Login() {
         <div className="login-form">
           <div className="login-header">
             <h1>登录</h1>
-            <p>选择登录方式进入管理控制台</p>
+            <p>使用统一身份认证登录管理控制台</p>
           </div>
 
           <div className="login-content">
@@ -103,23 +64,9 @@ export function Login() {
               block
               onClick={handleLogin}
               loading={loading}
-              style={{ marginBottom: '12px' }}
             >
-              OIDC 登录（推荐）
+              登录
             </AntButton>
-
-            <AntButton
-              size="large"
-              block
-              onClick={() => void handleTestLogin()}
-              loading={loading}
-            >
-              测试账号登录
-            </AntButton>
-
-            <div className="login-tip">
-              <p>提示：测试账号登录仅用于开发环境快速测试</p>
-            </div>
           </div>
         </div>
       </div>
