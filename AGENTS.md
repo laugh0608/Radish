@@ -149,6 +149,12 @@ const apiUrl = import.meta.env.VITE_API_BASE_URL;
 ## 开发流程
 
 1. `Radish.Model` 添加实体/DTO/ViewModel，`Radish.Shared` 扩展常量/枚举
+   - **ViewModel 设计规范**:
+     - 添加 `Vo` 前缀，位于 `Radish.Model/ViewModels`
+     - **严禁匿名对象**: Controller 方法必须返回定义好的 Vo 类
+     - **UserVo 特殊性**: UserVo 字段混淆是安全设计，保持其特殊性
+     - **其他 Vo 清晰性**: 除 UserVo 外，其他 Vo 使用清晰字段名
+     - **前端适配**: 前端必须适配后端 Vo 字段名，不得要求后端修改
 2. `IRepository/Repository` 定义实现仓储，SqlSugar 特性标注多租户/分表
 3. `IService/Service` 补齐接口实现，AutoMapper/ICaching/IUnitOfWork 组织业务逻辑
 4. `Radish.Api` 控制器注入 IService 暴露 API，维护 `Radish.Api.http` 示例
