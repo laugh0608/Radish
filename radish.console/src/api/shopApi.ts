@@ -4,13 +4,14 @@
 
 import { env } from '../config/env';
 import type {
-  ApiResponse,
   PagedResponse,
   Product,
   ProductCategory,
   CreateProductDto,
   UpdateProductDto,
   Order,
+} from './types';
+import {
   ProductType,
   OrderStatus,
 } from './types';

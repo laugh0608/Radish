@@ -77,9 +77,10 @@ public class TenantController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<object> BusinessTable()
+    public async Task<MessageModel<List<BusinessTableVo>>> BusinessTable()
     {
-        return await _businessTableService.QueryAsync();
+        var data = await _businessTableService.QueryAsync();
+        return MessageModel<List<BusinessTableVo>>.Success("获取成功", data);
     }
 
     /// <summary>
@@ -87,9 +88,10 @@ public class TenantController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<object> MultiBusinessTable()
+    public async Task<MessageModel<List<MultiBusinessTableVo>>> MultiBusinessTable()
     {
-        return await _multiBusinessTableService.QueryAsync();
+        var data = await _multiBusinessTableService.QueryAsync();
+        return MessageModel<List<MultiBusinessTableVo>>.Success("获取成功", data);
     }
 
     /// <summary>
@@ -97,8 +99,9 @@ public class TenantController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<object> SubLibBusinessTable()
+    public async Task<MessageModel<List<SubLibBusinessTableVo>>> SubLibBusinessTable()
     {
-        return await _subLibBusinessTableService.QueryAsync();
+        var data = await _subLibBusinessTableService.QueryAsync();
+        return MessageModel<List<SubLibBusinessTableVo>>.Success("获取成功", data);
     }
 }
