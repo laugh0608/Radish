@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { log } from '@/utils/logger';
 import {
   LineChart,
   Line,
@@ -46,7 +47,7 @@ export const ExperienceDetailApp = () => {
       setTotalPages(transResult.pageCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载数据失败');
-      console.error('加载经验值详情失败:', err);
+      log.error('加载经验值详情失败:', err);
     } finally {
       setLoading(false);
     }

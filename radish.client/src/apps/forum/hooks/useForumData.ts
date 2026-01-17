@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { log } from '@/utils/logger';
 import type { Dispatch, SetStateAction } from 'react';
 import type { TFunction } from 'i18next';
 import {
@@ -185,7 +186,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       allGodComments.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
       setTrendingGodComments(allGodComments.slice(0, 10));
     } catch (err) {
-      console.error('加载热门内容失败:', err);
+      log.error('加载热门内容失败:', err);
     } finally {
       setLoadingTrending(false);
     }

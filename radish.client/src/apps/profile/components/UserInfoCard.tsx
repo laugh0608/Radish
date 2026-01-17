@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { log } from '@/utils/logger';
 import { Button, ConfirmDialog, FileUpload, Icon, Input, Modal, ExperienceBar, experienceApi, type UserExperience } from '@radish/ui';
 import type { UploadResult } from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
@@ -125,7 +126,7 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
       const exp = await experienceApi.getMyExperience();
       setExperience(exp);
     } catch (error) {
-      console.error('加载经验值失败:', error);
+      log.error('加载经验值失败:', error);
     }
   };
 

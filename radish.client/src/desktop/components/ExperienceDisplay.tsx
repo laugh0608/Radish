@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { log } from '@/utils/logger';
 import { ExperienceBar, experienceApi, type UserExperience } from '@radish/ui';
 import { useUserStore } from '@/stores/userStore';
 import styles from './ExperienceDisplay.module.css';
@@ -27,7 +28,7 @@ export const ExperienceDisplay = () => {
       setExperience(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取经验值失败');
-      console.error('获取经验值失败:', err);
+      log.error('获取经验值失败:', err);
     } finally {
       setLoading(false);
     }
