@@ -94,6 +94,29 @@ npm run type-check --workspace=@radish/ui
 
 **配置读取**: `AppSettings.RadishApp("Section", "Key")` 或实现 `IConfigurableOptions`
 
+### 前端配置
+
+**环境变量文件**:
+- `.env.development` - 开发环境（提交）
+- `.env.production` - 生产环境（提交）
+- `.env.local` - 本地覆盖（不提交）
+- `.env.local.example` - 配置示例（提交）
+
+**配置规则**:
+- 所有变量以 `VITE_` 开头
+- 通过 `env.ts` 工具访问，不直接用 `import.meta.env`
+- 敏感信息只放 `.env.local`
+
+**示例**:
+```typescript
+// ✅ 正确
+import { env } from '@/config/env';
+const apiUrl = env.apiBaseUrl;
+
+// ❌ 错误
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+```
+
 ## 编码规范
 
 ### 代码质量
@@ -113,6 +136,11 @@ npm run type-check --workspace=@radish/ui
 - **Controller 不直接注入 Repository**: 数据访问通过 IService
 - **代码风格**: C# 4 空格/文件范围命名空间/nullable；React TypeScript/`const` 组件/避免 `var`/`useState`+`useMemo`+`useEffect`
 - **前端架构**: WebOS 桌面 UI (顶栏/Dock/图标/窗口)，`VITE_API_BASE_URL` 管理接口地址
+- **前端日志规范**:
+  - ❌ 严禁: 直接使用 `console.log/info/warn/error`
+  - ✅ 正确: 使用 `log.debug/info/warn/error` (from `@/utils/logger`)
+  - `log.debug()` - 调试信息（仅 debug 模式）
+  - `log.error()` - 错误信息（总是输出）
 - **Rust 扩展**: `Radish.Core/radish-lib`，构建后拷贝到 `Radish.Api/bin/`
 
 ## 开发流程
@@ -142,7 +170,11 @@ npm run type-check --workspace=@radish/ui
 - **格式**: 月/周组织 (`2026-01/week1.md`)，月度总览 (`2026-01.md`)
 - **重点**: 核心功能/技术亮点/重要变更，不含实现细节
 
-**提交规范**: Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`)，禁止 AI 签名/Co-Authored 标记，单一主题，必要时拆分
+**提交规范**:
+- **格式**: Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`)
+- **严格禁止**: AI 签名、`Co-Authored-By: Claude` 等 AI 协作者标记
+- **要求**: 单一主题，必要时拆分提交
+- **示例**: `feat(ui): 添加主题配置` ✅ / `feat: xxx\n\nCo-Authored-By: Claude` ❌
 
 **合规**: 禁止提交敏感数据 (连接串/证书/`.user`)，部署参考 `deployment/guide.md`
 

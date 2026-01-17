@@ -206,6 +206,64 @@ var result = await cache.GetAsync<MyType>("key");
 - **通用组件** → `@radish/ui`
 - **WebOS 组件** → `radish.client/src/`
 
+## 前端开发规范
+
+### 环境配置
+
+**配置文件**：
+- `.env.development` - 开发环境配置（提交到 Git）
+- `.env.production` - 生产环境配置（提交到 Git）
+- `.env.local` - 本地覆盖配置（不提交，需手动创建）
+- `.env.local.example` - 本地配置示例（提交到 Git）
+
+**配置规则**：
+1. 所有环境变量必须以 `VITE_` 开头
+2. 敏感信息（密码、密钥）只放在 `.env.local`
+3. 代码中通过 `env.ts` 工具访问配置，不直接使用 `import.meta.env`
+
+**示例**：
+```typescript
+// ✅ 推荐：使用 env 工具
+import { env } from '@/config/env';
+const apiUrl = env.apiBaseUrl;
+const isDebug = env.debug;
+
+// ❌ 不推荐：直接使用
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+```
+
+### 日志规范
+
+**日志工具**：
+- Client: `radish.client/src/utils/logger.ts`
+- Console: `radish.console/src/utils/logger.ts`
+
+**使用规则**：
+1. **禁止**直接使用 `console.log/info/warn/error`
+2. **必须**使用统一的 `log` 工具
+3. 调试日志使用 `log.debug()`（仅 debug 模式输出）
+4. 错误日志使用 `log.error()`（总是输出）
+
+**示例**：
+```typescript
+import { log } from '@/utils/logger';
+
+// ✅ 正确
+log.debug('NotificationHub', '连接成功');
+log.warn('Token 即将过期');
+log.error('API', '请求失败:', error);
+
+// ❌ 错误
+console.log('连接成功');
+console.error('请求失败:', error);
+```
+
+**日志级别**：
+- `log.debug()` - 调试信息（仅 debug 模式）
+- `log.info()` - 一般信息（仅 debug 模式）
+- `log.warn()` - 警告信息（总是输出）
+- `log.error()` - 错误信息（总是输出）
+
 ## Rust 原生扩展
 
 **位置**: `Radish.Core/radish-lib/`
@@ -243,10 +301,41 @@ cargo build --release
 ## Git 提交规范
 
 **关键规则**:
-1. **禁止** Claude Code 署名
-2. **禁止** `Co-Authored-By: Claude`
-3. **使用**用户配置的 git 身份
-4. **遵循** Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`)
+1. **严格禁止** AI 协作者署名（如 `Co-Authored-By: Claude`）
+2. **严格禁止** Claude Code 署名
+3. **必须使用**用户配置的 git 身份
+4. **必须遵循** Conventional Commits 规范
+
+**提交格式**:
+```
+<type>(<scope>): <subject>
+
+<body>
+```
+
+**Type 类型**:
+- `feat`: 新功能
+- `fix`: Bug 修复
+- `docs`: 文档更新
+- `refactor`: 代码重构
+- `test`: 测试相关
+- `chore`: 构建/工具相关
+
+**正确示例**:
+```
+feat(ui): 添加 Ant Design 主题配置
+
+- 创建主题配置文件
+- 支持亮色/暗色主题
+- 集成到 Console 项目
+```
+
+**错误示例**（禁止）:
+```
+feat(ui): 添加主题配置
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>  ❌ 禁止
+```
 
 **正确示例**:
 ```
