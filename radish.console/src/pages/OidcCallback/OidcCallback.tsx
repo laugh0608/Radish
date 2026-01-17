@@ -1,40 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { message } from '@radish/ui';
-
-/**
- * 获取 Auth Server 的基础 URL
- */
-function getAuthServerBaseUrl(): string {
-  const currentOrigin = window.location.origin;
-
-  // 通过 Gateway 访问
-  if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-    return currentOrigin;
-  }
-
-  // 直接访问 console 开发服务器
-  if (currentOrigin === 'http://localhost:3100' || currentOrigin === 'https://localhost:3100') {
-    return 'http://localhost:5200';
-  }
-
-  return currentOrigin;
-}
-
-/**
- * 获取 redirect_uri
- */
-function getRedirectUri(): string {
-  const currentOrigin = window.location.origin;
-
-  // 通过 Gateway 访问
-  if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-    return `${currentOrigin}/console/callback`;
-  }
-
-  // 直接访问开发服务器
-  return `${currentOrigin}/console/callback`;
-}
+import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
 
 /**
  * OIDC 回调处理页面
