@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { log } from '@/utils/logger';
 import { useNavigate } from 'react-router-dom';
 import { AntButton, message } from '@radish/ui';
 import './Login.css';
@@ -86,7 +87,7 @@ export function Login() {
       }
     } catch (error) {
       message.error('登录失败');
-      console.error(error);
+      log.error(error);
     } finally {
       setLoading(false);
     }

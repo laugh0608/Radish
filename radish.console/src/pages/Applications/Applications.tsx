@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { log } from '@/utils/logger';
 import {
   Table,
   AntButton,
@@ -44,7 +45,7 @@ export const Applications = () => {
       }
     } catch (error) {
       message.error('加载失败');
-      console.error(error);
+      log.error(error);
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,7 @@ export const Applications = () => {
       }
     } catch (error) {
       message.error('删除失败');
-      console.error(error);
+      log.error(error);
     }
   };
 
@@ -108,7 +109,7 @@ export const Applications = () => {
       }
     } catch (error) {
       message.error('重置失败');
-      console.error(error);
+      log.error(error);
     }
   };
 
@@ -163,7 +164,7 @@ export const Applications = () => {
         }
       }
     } catch (error) {
-      console.error('表单验证失败:', error);
+      log.error('表单验证失败:', error);
     }
   };
 
