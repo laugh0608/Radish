@@ -150,10 +150,7 @@ export function Login() {
             </AntButton>
 
             <div className="login-tip">
-              <p>测试账号信息（选择任一账号）：</p>
-              <p><strong>超级管理员:</strong> system / system123456</p>
-              <p><strong>管理员:</strong> admin / admin123456</p>
-              <p><strong>测试用户:</strong> test / test123456</p>
+              <p>提示：测试账号登录仅用于开发环境快速测试</p>
             </div>
           </div>
         </div>

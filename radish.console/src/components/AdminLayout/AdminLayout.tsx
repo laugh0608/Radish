@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useUser } from '../../contexts/UserContext';
 import {
   Layout,
   Menu,
@@ -69,6 +70,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, loading } = useUser();
 
   // 根据当前路径获取选中的菜单 key
   const getSelectedKey = (): string => {
@@ -223,8 +225,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 <Avatar
                   size="small"
                   icon={<UserOutlined />}
+                  src={user?.avatar}
                 />
-                <span className="admin-username">Admin</span>
+                <span className="admin-username">
+                  {loading ? '加载中...' : (user?.userName || 'Unknown')}
+                </span>
               </div>
             </Dropdown>
           </div>
