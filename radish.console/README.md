@@ -102,7 +102,7 @@ cd radish.console
 npm run dev
 ```
 
-访问地址: `http://localhost:3200`
+访问地址: `http://localhost:3100/console/`
 
 ### 通过 Gateway 访问
 

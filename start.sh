@@ -248,7 +248,7 @@ start_all() {
   echo "  - Docs 已在后台启动 (http://localhost:3100/docs/)."
   start_console &
   add_bg_pid $!
-  echo "  - Console 已在后台启动 (https://localhost:3200)."
+  echo "  - Console 已在后台启动 (http://localhost:3100/console/)."
   start_api_no_build
 }
 
@@ -259,7 +259,7 @@ start_frontend_console_docs() {
   echo "  - Frontend 已在后台启动 (https://localhost:3000)."
   start_console &
   add_bg_pid $!
-  echo "  - Console 已在后台启动 (https://localhost:3200)."
+  echo "  - Console 已在后台启动 (http://localhost:3100/console/)."
   start_docs
 }
 
