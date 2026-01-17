@@ -20,6 +20,7 @@ import {
   SafetyOutlined,
   ClockCircleOutlined,
   DashboardOutlined,
+  ShoppingOutlined,
 } from '@radish/ui';
 import { ROUTES } from '../../router';
 import './AdminLayout.css';
@@ -92,6 +93,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       label: '应用管理',
     },
     {
+      key: 'products',
+      icon: <ShoppingOutlined />,
+      label: '商品管理',
+    },
+    {
       key: 'users',
       icon: <TeamOutlined />,
       label: '用户管理',
@@ -139,6 +145,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     const routeMap: Record<string, string> = {
       dashboard: ROUTES.HOME,
       applications: ROUTES.APPLICATIONS,
+      products: ROUTES.PRODUCTS,
       users: ROUTES.USERS,
       roles: ROUTES.ROLES,
       hangfire: ROUTES.HANGFIRE,

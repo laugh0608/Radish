@@ -1,0 +1,200 @@
+/**
+ * API 响应类型定义
+ */
+
+/**
+ * API 响应包装
+ */
+export interface ApiResponse<T> {
+  success: boolean;
+  msg: string;
+  response: T;
+  status: number;
+}
+
+/**
+ * 分页响应
+ */
+export interface PagedResponse<T> {
+  page: number;
+  pageSize: number;
+  dataCount: number;
+  pageCount: number;
+  data: T[];
+}
+
+/**
+ * 商品类型枚举
+ */
+export enum ProductType {
+  Benefit = 1,    // 权益
+  Consumable = 2, // 消耗品
+  Physical = 3    // 实物
+}
+
+/**
+ * 权益类型枚举
+ */
+export enum BenefitType {
+  Badge = 1,        // 徽章
+  AvatarFrame = 2,  // 头像框
+  Title = 3,        // 称号
+  Theme = 4,        // 主题
+  Signature = 5,    // 签名档
+  NameColor = 6,    // 用户名颜色
+  LikeEffect = 7    // 点赞特效
+}
+
+/**
+ * 消耗品类型枚举
+ */
+export enum ConsumableType {
+  RenameCard = 1,        // 改名卡
+  PostPinCard = 2,       // 置顶卡
+  PostHighlightCard = 3, // 高亮卡
+  ExpCard = 4,           // 经验卡
+  CoinCard = 5,          // 萝卜币红包
+  DoubleExpCard = 6,     // 双倍经验卡
+  LotteryTicket = 7      // 抽奖券
+}
+
+/**
+ * 订单状态枚举
+ */
+export enum OrderStatus {
+  Pending = 0,    // 待支付
+  Paid = 1,       // 已支付
+  Completed = 2,  // 已完成
+  Cancelled = 3,  // 已取消
+  Refunded = 4,   // 已退款
+  Failed = 5      // 发放失败
+}
+
+/**
+ * 库存类型枚举
+ */
+export enum StockType {
+  Unlimited = 0, // 无限
+  Limited = 1    // 限量
+}
+
+/**
+ * 有效期类型枚举
+ */
+export enum DurationType {
+  Permanent = 0, // 永久
+  Days = 1,      // 固定天数
+  FixedDate = 2  // 固定到期时间
+}
+
+/**
+ * 商品分类
+ */
+export interface ProductCategory {
+  id: string;
+  name: string;
+  icon?: string;
+  description?: string;
+  sortOrder: number;
+  isEnabled: boolean;
+  productCount: number;
+}
+
+/**
+ * 商品详情
+ */
+export interface Product {
+  id: number;
+  name: string;
+  description?: string;
+  icon?: string;
+  coverImage?: string;
+  categoryId: string;
+  categoryName?: string;
+  productType: ProductType;
+  productTypeDisplay: string;
+  benefitType?: BenefitType;
+  consumableType?: ConsumableType;
+  benefitValue?: string;
+  price: number;
+  originalPrice?: number;
+  hasDiscount: boolean;
+  discountPercent?: number;
+  stockType: StockType;
+  stock: number;
+  soldCount: number;
+  limitPerUser: number;
+  inStock: boolean;
+  durationType: DurationType;
+  durationDays?: number;
+  expiresAt?: string;
+  durationDisplay: string;
+  sortOrder: number;
+  isOnSale: boolean;
+  isEnabled: boolean;
+  onSaleTime?: string;
+  offSaleTime?: string;
+  createTime: string;
+}
+
+/**
+ * 创建商品 DTO
+ */
+export interface CreateProductDto {
+  name: string;
+  description?: string;
+  icon?: string;
+  coverImage?: string;
+  categoryId: string;
+  productType: ProductType;
+  benefitType?: BenefitType;
+  consumableType?: ConsumableType;
+  benefitValue?: string;
+  price: number;
+  originalPrice?: number;
+  stockType: StockType;
+  stock: number;
+  limitPerUser: number;
+  durationType: DurationType;
+  durationDays?: number;
+  expiresAt?: string;
+  sortOrder: number;
+  isOnSale: boolean;
+}
+
+/**
+ * 更新商品 DTO
+ */
+export interface UpdateProductDto extends CreateProductDto {
+  id: number;
+}
+
+/**
+ * 订单详情
+ */
+export interface Order {
+  id: number;
+  orderNo: string;
+  userId: number;
+  userName?: string;
+  productId: number;
+  productName: string;
+  productIcon?: string;
+  productType: ProductType;
+  productTypeDisplay: string;
+  benefitType?: BenefitType;
+  consumableType?: ConsumableType;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  status: OrderStatus;
+  statusDisplay: string;
+  benefitExpiresAt?: string;
+  durationDisplay?: string;
+  createTime: string;
+  paidTime?: string;
+  completedTime?: string;
+  cancelledTime?: string;
+  cancelReason?: string;
+  failReason?: string;
+}

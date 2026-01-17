@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@radish/ui": "*",
+    "dayjs": "^1.11.19",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.12.0"
