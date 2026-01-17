@@ -333,7 +333,7 @@ export async function getChildComments(
   pageIndex: number,
   pageSize: number,
   t: TFunction
-): Promise<{ comments: CommentNode[]; total: number; pageIndex: number; pageSize: number }> {
+): Promise<{ items: CommentNode[]; total: number; pageIndex: number; pageSize: number }> {
   const url = `${getApiBaseUrl()}/api/v1/Comment/GetChildComments?parentId=${parentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`;
   const response = await apiFetch(url); // 匿名访问
 
@@ -342,7 +342,7 @@ export async function getChildComments(
   }
 
   const json = await response.json() as ApiResponse<{
-    comments: CommentNode[];
+    items: CommentNode[];
     total: number;
     pageIndex: number;
     pageSize: number;

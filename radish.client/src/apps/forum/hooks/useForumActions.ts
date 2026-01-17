@@ -374,7 +374,7 @@ export const useForumActions = (
   ): Promise<CommentNode[]> => {
     try {
       const result = await getChildComments(parentId, pageIndex, pageSize, t);
-      return result.comments;
+      return result.items;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
