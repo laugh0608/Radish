@@ -308,14 +308,14 @@ function Start-All {
     Start-BackgroundShell "Auth running at http://localhost:5200" "dotnet run --no-build --project Radish.Auth/Radish.Auth.csproj --launch-profile http"
     Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
     Start-BackgroundShell "Docs running at http://localhost:3100/docs/" "npm run docs:dev --prefix radish.docs"
-    Start-BackgroundShell "Console running at http://localhost:3200" "npm run dev --prefix radish.console"
+    Start-BackgroundShell "Console running at http://localhost:3100/console/" "npm run dev --prefix radish.console"
     Start-BackendNoBuild
 }
 
 function Start-FrontendConsoleDocs {
     Write-Host "[Combo] Frontend + Console + Docs..."
     Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
-    Start-BackgroundShell "Console running at http://localhost:3200" "npm run dev --prefix radish.console"
+    Start-BackgroundShell "Console running at http://localhost:3100/console/" "npm run dev --prefix radish.console"
     Start-Docs
 }
 
