@@ -16,6 +16,7 @@ import type {
   CreateClientRequest,
   UpdateClientRequest,
 } from '../types/oidc';
+import { autoRefreshTokenInterceptor } from '../utils/tokenRefresh';
 
 // 配置 API 客户端
 const defaultApiBase = 'https://localhost:5000';
@@ -29,6 +30,10 @@ configureApiClient({
       return window.localStorage.getItem('access_token');
     }
     return null;
+  },
+  onRequest: async () => {
+    // 在每次请求前检查并刷新 Token
+    await autoRefreshTokenInterceptor();
   },
 });
 
