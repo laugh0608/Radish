@@ -1,56 +1,4 @@
 /**
- * 商品类型枚举
- */
-export enum ProductType {
-  /** 权益类（徽章、头像框、称号） */
-  Benefit = 0,
-  /** 消耗品（改名卡、经验卡等） */
-  Consumable = 1,
-  /** 实物商品 */
-  Physical = 2,
-}
-
-/**
- * 库存类型枚举
- */
-export enum StockType {
-  /** 无限库存 */
-  Unlimited = 0,
-  /** 限量库存 */
-  Limited = 1,
-}
-
-/**
- * 时长类型枚举
- */
-export enum DurationType {
-  /** 永久 */
-  Permanent = 0,
-  /** 固定天数 */
-  FixedDays = 1,
-  /** 固定时间点 */
-  FixedDate = 2,
-}
-
-/**
- * 订单状态枚举
- */
-export enum OrderStatus {
-  /** 待支付 */
-  Pending = 0,
-  /** 已支付 */
-  Paid = 1,
-  /** 已完成（权益已发放） */
-  Completed = 2,
-  /** 已取消 */
-  Cancelled = 3,
-  /** 已退款 */
-  Refunded = 4,
-  /** 失败（支付失败或权益发放失败） */
-  Failed = 5,
-}
-
-/**
  * 商品实体
  */
 export interface Product {
@@ -62,12 +10,12 @@ export interface Product {
   price: number;
   originalPrice?: number;
   imageUrl?: string;
-  productType: ProductType;
-  stockType: StockType;
+  productType: import('../api/types').ProductType;
+  stockType: import('../api/types').StockType;
   stock?: number;
   soldCount: number;
   limitPerUser?: number;
-  durationType: DurationType;
+  durationType: import('../api/types').DurationType;
   durationDays?: number;
   expiryDate?: string;
   isActive: boolean;
@@ -97,11 +45,11 @@ export interface Order {
   userName?: string;
   productId: number;
   productName: string;
-  productType: ProductType;
+  productType: import('../api/types').ProductType;
   quantity: number;
   unitPrice: number;
   totalPrice: number;
-  status: OrderStatus;
+  status: import('../api/types').OrderStatus;
   paidAt?: string;
   completedAt?: string;
   cancelledAt?: string;
@@ -120,11 +68,11 @@ export interface CreateProductRequest {
   price: number;
   originalPrice?: number;
   imageUrl?: string;
-  productType: ProductType;
-  stockType: StockType;
+  productType: import('../api/types').ProductType;
+  stockType: import('../api/types').StockType;
   stock?: number;
   limitPerUser?: number;
-  durationType: DurationType;
+  durationType: import('../api/types').DurationType;
   durationDays?: number;
   expiryDate?: string;
   isActive: boolean;
@@ -141,10 +89,10 @@ export interface UpdateProductRequest {
   price?: number;
   originalPrice?: number;
   imageUrl?: string;
-  stockType?: StockType;
+  stockType?: import('../api/types').StockType;
   stock?: number;
   limitPerUser?: number;
-  durationType?: DurationType;
+  durationType?: import('../api/types').DurationType;
   durationDays?: number;
   expiryDate?: string;
   isActive?: boolean;

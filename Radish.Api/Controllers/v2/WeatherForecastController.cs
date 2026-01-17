@@ -56,22 +56,25 @@ public class WeatherForecastController : ControllerBase
         "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
     ];
 
-    /// <summary>天气测试接口（原始示例，直接返回实体数组）</summary>
+    /// <summary>天气测试接口（规范化返回格式）</summary>
     /// <returns></returns>
     [HttpGet]
-    public IEnumerable<WeatherForecast> Get()
+    public async Task<MessageModel<List<WeatherForecastVo>>> Get()
     {
         // 测试两种日志输出
         Log.Information("Log.Information: Getting weather forecast");
         _logger.LogInformation("_logger.LogInformation: Getting weather forecast");
 
-        return Enumerable.Range(1, 5).Select(index => new WeatherForecast
+        var forecasts = await Task.Run(() => Enumerable.Range(1, 5).Select(index => new WeatherForecastVo
             {
                 Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
                 TemperatureC = Random.Shared.Next(-20, 55),
+                TemperatureF = 32 + (int)(Random.Shared.Next(-20, 55) / 0.5556),
                 Summary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
-            .ToArray();
+            .ToList());
+
+        return MessageModel<List<WeatherForecastVo>>.Success("获取成功", forecasts);
     }
 
     /// <summary>
@@ -123,10 +126,10 @@ public class WeatherForecastController : ControllerBase
     /// <param name="id"></param>
     /// <returns></returns>
     [HttpGet("{id}")] // 效果：api/WeatherForecast/GetById/1
-    public async Task<IActionResult> GetById(int id)
+    public async Task<MessageModel<GetByIdResultVo>> GetById(int id)
     {
-        var res = await Task.Run(() => new { Id = id, Name = "Radish" });
-        return Ok(res);
+        var result = await Task.Run(() => new GetByIdResultVo { Id = id, Name = "Radish" });
+        return MessageModel<GetByIdResultVo>.Success("获取成功", result);
     }
 
     /// <summary>普通依赖注入和对象关系映射测试接口</summary>
@@ -135,21 +138,23 @@ public class WeatherForecastController : ControllerBase
     /// <response code="200">Returns the requested project board.</response>
     /// <response code="404">If the project board is not found.</response>
     [HttpGet]
-    public async Task<IActionResult> Test()
+    public async Task<MessageModel<TestResultVo>> Test()
     {
         // 测试普通依赖注入和对象关系映射
         var roleList5 = await _roleService.QueryAsync();
 
-        return Ok(new
+        var result = new TestResultVo
         {
-            roleList5
-        });
+            RoleList5 = roleList5
+        };
+
+        return MessageModel<TestResultVo>.Success("获取成功", result);
     }
 
     /// <summary>Redis/内存测试接口</summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<IActionResult> CacheTest()
+    public async Task<MessageModel<CacheTestResultVo>> CacheTest()
     {
         // 测试 Redis/内存 缓存
         const string cacheKey = "radish_test_key";
@@ -162,20 +167,22 @@ public class WeatherForecastController : ControllerBase
         await _caching.RemoveAsync(cacheKey);
         var cacheKeysAfterRemove = await _caching.GetAllCacheKeysAsync();
 
-        return Ok(new
+        var result = new CacheTestResultVo
         {
-            cacheKey,
-            cacheKeysBeforeSet,
-            cacheKeysAfterSet,
-            cacheValue,
-            cacheKeysAfterRemove
-        });
+            CacheKey = cacheKey,
+            CacheKeysBeforeSet = cacheKeysBeforeSet,
+            CacheKeysAfterSet = cacheKeysAfterSet,
+            CacheValue = cacheValue,
+            CacheKeysAfterRemove = cacheKeysAfterRemove
+        };
+
+        return MessageModel<CacheTestResultVo>.Success("获取成功", result);
     }
 
     /// <summary>工厂服务测试接口</summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<IActionResult> ScopeTest()
+    public async Task<MessageModel<ScopeTestResultVo>> ScopeTest()
     {
         // 测试工厂服务
         using var scope = _scopeFactory.CreateScope();
@@ -184,40 +191,46 @@ public class WeatherForecastController : ControllerBase
         var dataStatisticService2 = scope.ServiceProvider.GetRequiredService<IBaseService<Role, RoleVo>>();
         var roleList2 = await dataStatisticService2.QueryAsync();
 
-        return Ok(new
+        var result = new ScopeTestResultVo
         {
-            roleList1,
-            roleList2
-        });
+            RoleList1 = roleList1,
+            RoleList2 = roleList2
+        };
+
+        return MessageModel<ScopeTestResultVo>.Success("获取成功", result);
     }
 
     /// <summary>App 扩展获取服务测试接口</summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<IActionResult> AppTest()
+    public async Task<MessageModel<AppTestResultVo>> AppTest()
     {
         // 测试 App.GetService 获取服务
         var dataStatisticService3 = App.GetService<IBaseService<Role, RoleVo>>(false);
         var roleList3 = await dataStatisticService3.QueryAsync();
 
-        return Ok(new
+        var result = new AppTestResultVo
         {
-            roleList3
-        });
+            RoleList3 = roleList3
+        };
+
+        return MessageModel<AppTestResultVo>.Success("获取成功", result);
     }
 
     /// <summary>属性注入测试接口</summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<IActionResult> ServiceObjTest()
+    public async Task<MessageModel<ServiceObjTestResultVo>> ServiceObjTest()
     {
         // 测试属性注入
         var roleList4 = await RoleServiceObj?.QueryAsync()!;
 
-        return Ok(new
+        var result = new ServiceObjTestResultVo
         {
-            roleList4
-        });
+            RoleList4 = roleList4
+        };
+
+        return MessageModel<ServiceObjTestResultVo>.Success("获取成功", result);
     }
 
     /// <summary>多库-日志库测试接口</summary>

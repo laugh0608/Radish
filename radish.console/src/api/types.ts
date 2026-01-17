@@ -32,7 +32,7 @@ export interface PagedResponse<T> {
 export enum ProductType {
   Benefit = 1,    // 权益
   Consumable = 2, // 消耗品
-  Physical = 3    // 实物
+  Physical = 99   // 实物
 }
 
 /**
