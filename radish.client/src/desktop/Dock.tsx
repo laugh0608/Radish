@@ -124,17 +124,8 @@ export const Dock = () => {
       return 'https://localhost:5000';
     }
 
-    const currentOrigin = window.location.origin;
-
-    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-      return currentOrigin;
-    }
-
-    if (currentOrigin === 'http://localhost:3000' || currentOrigin === 'https://localhost:3000') {
-      return 'http://localhost:5200';
-    }
-
-    return currentOrigin;
+    // 统一使用 Gateway 地址
+    return 'https://localhost:5000';
   };
 
   const handleLoginClick = () => {
