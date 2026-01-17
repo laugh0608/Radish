@@ -3,6 +3,7 @@ import { AdminLayout } from '../components/AdminLayout';
 import { Dashboard } from '../pages/Dashboard';
 import { Applications } from '../pages/Applications';
 import { ProductList } from '../pages/Products';
+import { OrderList } from '../pages/Orders';
 import { Login } from '../pages/Login';
 import { OidcCallback } from '../pages/OidcCallback';
 import { ThemeTest } from '../pages/ThemeTest';
@@ -89,6 +90,10 @@ export const router = createBrowserRouter(
           element: <ProductList />,
         },
         {
+          path: 'orders',
+          element: <OrderList />,
+        },
+        {
           path: 'users',
           element: <PlaceholderPage title="用户管理" />,
         },
@@ -125,6 +130,7 @@ export const ROUTES = {
   CALLBACK: '/callback',
   APPLICATIONS: '/applications',
   PRODUCTS: '/products',
+  ORDERS: '/orders',
   USERS: '/users',
   ROLES: '/roles',
   HANGFIRE: '/hangfire',
