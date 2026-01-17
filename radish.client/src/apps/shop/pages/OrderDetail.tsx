@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { log } from '@/utils/logger';
 import type { Order } from '@/api/shop';
 import { getOrderStatusColor, OrderStatus } from '@/api/shop';
 import styles from './OrderDetail.module.css';
@@ -57,7 +58,7 @@ export const OrderDetail = ({
       setShowCancelDialog(false);
       setCancelReason('');
     } catch (error) {
-      console.error('取消订单失败:', error);
+      log.error('取消订单失败:', error);
     } finally {
       setCancelling(false);
     }

@@ -1,4 +1,5 @@
 /**
+import { log } from '@/utils/logger';
  * 附件上传相关的 API 调用
  */
 
@@ -77,7 +78,7 @@ async function uploadWithRetry<T>(
 
       // 指数退避：1s, 2s, 4s
       const delayTime = baseDelay * Math.pow(2, attempt);
-      console.warn(`上传失败，${delayTime}ms 后重试（第 ${attempt + 1}/${maxRetries} 次）:`, lastError.message);
+      log.warn(`上传失败，${delayTime}ms 后重试（第 ${attempt + 1}/${maxRetries} 次）:`, lastError.message);
       await delay(delayTime);
     }
   }

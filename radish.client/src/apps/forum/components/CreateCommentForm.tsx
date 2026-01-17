@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
@@ -99,7 +100,7 @@ export const CreateCommentForm = ({
       const users = await searchUsersForMention(keyword, t);
       return users;
     } catch (error) {
-      console.error('搜索用户失败:', error);
+      log.error('搜索用户失败:', error);
       return [];
     }
   }, [t]);
@@ -168,7 +169,7 @@ export const CreateCommentForm = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '图片上传失败';
       setUploadError(errorMessage);
-      console.error('图片上传失败:', error);
+      log.error('图片上传失败:', error);
     } finally {
       setUploading(false);
       // 清空 input 以允许重复上传同一文件
@@ -198,7 +199,7 @@ export const CreateCommentForm = ({
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '文档上传失败';
       setUploadError(errorMessage);
-      console.error('文档上传失败:', error);
+      log.error('文档上传失败:', error);
     } finally {
       setUploading(false);
       // 清空 input 以允许重复上传同一文件

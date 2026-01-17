@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { log } from '@/utils/logger';
 import { NotificationList, notificationApi, type NotificationItemData } from '@radish/ui';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
@@ -75,7 +76,7 @@ export const NotificationApp = () => {
           }))
         );
       } catch (error) {
-        console.error('加载通知列表失败:', error);
+        log.error('加载通知列表失败:', error);
         toast.error('加载通知列表失败');
       } finally {
         setLoading(false);
@@ -87,7 +88,7 @@ export const NotificationApp = () => {
 
   // 点击通知
   const handleNotificationClick = useCallback((notification: NotificationItemData) => {
-    console.log('点击通知:', notification);
+    log.debug('点击通知:', notification);
 
     // 如果未读，标记为已读
     if (!notification.isRead) {
@@ -109,7 +110,7 @@ export const NotificationApp = () => {
       try {
         await notificationHub.markAsRead(id);
       } catch (err) {
-        console.warn('SignalR 推送失败，继续使用 HTTP API:', err);
+        log.warn('SignalR 推送失败，继续使用 HTTP API:', err);
       }
 
       // 调用 HTTP API
@@ -121,7 +122,7 @@ export const NotificationApp = () => {
 
       toast.success('已标记为已读');
     } catch (error) {
-      console.error('标记已读失败:', error);
+      log.error('标记已读失败:', error);
       toast.error('标记已读失败');
     }
   }, []);
@@ -133,7 +134,7 @@ export const NotificationApp = () => {
       try {
         await notificationHub.markAllAsRead();
       } catch (err) {
-        console.warn('SignalR 推送失败，继续使用 HTTP API:', err);
+        log.warn('SignalR 推送失败，继续使用 HTTP API:', err);
       }
 
       // 调用 HTTP API
@@ -145,7 +146,7 @@ export const NotificationApp = () => {
 
       toast.success('已标记全部为已读');
     } catch (error) {
-      console.error('标记全部已读失败:', error);
+      log.error('标记全部已读失败:', error);
       toast.error('标记全部已读失败');
     }
   }, []);
@@ -161,7 +162,7 @@ export const NotificationApp = () => {
 
       toast.success('通知已删除');
     } catch (error) {
-      console.error('删除通知失败:', error);
+      log.error('删除通知失败:', error);
       toast.error('删除通知失败');
     }
   }, []);

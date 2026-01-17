@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { log } from '@/utils/logger';
 import { experienceApi, type LeaderboardItem } from '@radish/ui';
 import { Icon } from '@radish/ui';
 import styles from './LeaderboardApp.module.css';
@@ -27,7 +28,7 @@ export const LeaderboardApp = () => {
       setTotalPages(response.pageCount);
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载排行榜失败');
-      console.error('加载排行榜失败:', err);
+      log.error('加载排行榜失败:', err);
     } finally {
       setLoading(false);
     }
@@ -38,7 +39,7 @@ export const LeaderboardApp = () => {
       const rank = await experienceApi.getMyRank();
       setMyRank(rank);
     } catch (err) {
-      console.error('加载我的排名失败:', err);
+      log.error('加载我的排名失败:', err);
     }
   };
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { Modal, MarkdownEditor } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
@@ -41,7 +42,7 @@ export const PublishPostModal = ({
           }
         }
       } catch (err) {
-        console.error('Failed to load draft:', err);
+        log.error('Failed to load draft:', err);
       }
     }
   }, [isOpen]);
@@ -55,7 +56,7 @@ export const PublishPostModal = ({
           JSON.stringify({ title, content, savedAt: Date.now() })
         );
       } catch (err) {
-        console.error('Failed to save draft:', err);
+        log.error('Failed to save draft:', err);
       }
     }
   }, [title, content, isOpen]);
@@ -74,7 +75,7 @@ export const PublishPostModal = ({
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       onClose();
     } catch (err) {
-      console.error('发布失败:', err);
+      log.error('发布失败:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -105,7 +106,7 @@ export const PublishPostModal = ({
         thumbnailUrl: result.thumbnailUrl
       };
     } catch (error) {
-      console.error('图片上传失败:', error);
+      log.error('图片上传失败:', error);
       throw error;
     }
   };
@@ -123,7 +124,7 @@ export const PublishPostModal = ({
         fileName: file.name
       };
     } catch (error) {
-      console.error('文档上传失败:', error);
+      log.error('文档上传失败:', error);
       throw error;
     }
   };
