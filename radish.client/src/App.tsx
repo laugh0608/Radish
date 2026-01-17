@@ -280,28 +280,17 @@ function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
 
 /**
  * 获取 Auth Server 的基础 URL
- * - 通过 Gateway 访问时（https://localhost:5000）：使用 Gateway 地址
- * - 直接访问开发服务器时（http://localhost:3000）：使用 Auth Server 直接地址
+ *
+ * 统一使用 Gateway 地址（https://localhost:5000）
+ * 无论是通过 Gateway 访问还是直接访问开发服务器，所有后端请求都走 Gateway
  */
 function getAuthServerBaseUrl(): string {
     if (typeof window === 'undefined') {
         return 'https://localhost:5000';
     }
 
-    const currentOrigin = window.location.origin;
-
-    // 通过 Gateway 访问（生产环境或开发时通过 Gateway）
-    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-        return currentOrigin;
-    }
-
-    // 直接访问前端开发服务器（开发环境）
-    if (currentOrigin === 'http://localhost:3000' || currentOrigin === 'https://localhost:3000') {
-        return 'http://localhost:5200'; // Auth Server 直接地址
-    }
-
-    // 默认使用 Gateway（生产环境）
-    return currentOrigin;
+    // 统一使用 Gateway 地址
+    return 'https://localhost:5000';
 }
 
 function handleLogin(_apiBaseUrl: string) {
