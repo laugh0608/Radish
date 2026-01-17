@@ -87,12 +87,15 @@ export {
   Modal as AntModal,
   message,
   notification,
+  Result,
   // Data Display
   Tag,
   Badge,
   Tooltip,
   Avatar,
   Dropdown,
+  Image,
+  Descriptions,
   // General
   Button as AntButton,
   Space,
@@ -123,6 +126,9 @@ export {
   SafetyOutlined,
   ClockCircleOutlined,
   DashboardOutlined,
+  ShoppingOutlined,
+  FileTextOutlined,
+  SyncOutlined,
 } from '@ant-design/icons';
 
 // Re-export types
