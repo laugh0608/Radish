@@ -2,41 +2,8 @@ import { useState } from 'react';
 import { log } from '@/utils/logger';
 import { useNavigate } from 'react-router-dom';
 import { AntButton, message } from '@radish/ui';
+import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
 import './Login.css';
-
-/**
- * 获取 Auth Server 的基础 URL
- */
-function getAuthServerBaseUrl(): string {
-  const currentOrigin = window.location.origin;
-
-  // 通过 Gateway 访问
-  if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-    return currentOrigin;
-  }
-
-  // 直接访问 console 开发服务器
-  if (currentOrigin === 'http://localhost:3100' || currentOrigin === 'https://localhost:3100') {
-    return 'http://localhost:5200';
-  }
-
-  return currentOrigin;
-}
-
-/**
- * 获取 redirect_uri
- */
-function getRedirectUri(): string {
-  const currentOrigin = window.location.origin;
-
-  // 通过 Gateway 访问
-  if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-    return `${currentOrigin}/console/callback`;
-  }
-
-  // 直接访问开发服务器（需要 /console 前缀，因为 basename 是 /console）
-  return `${currentOrigin}/console/callback`;
-}
 
 export function Login() {
   const [loading, setLoading] = useState(false);

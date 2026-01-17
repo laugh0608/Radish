@@ -1,4 +1,5 @@
 import { log } from '@/utils/logger';
+import { getAuthServerBaseUrl } from '@/config/env';
 
 /**
  * Token 刷新管理器
@@ -39,7 +40,7 @@ class TokenRefreshManager {
       }
 
       // 获取 Auth Server 基础 URL
-      const authServerBaseUrl = this.getAuthServerBaseUrl();
+      const authServerBaseUrl = getAuthServerBaseUrl();
 
       // 调用 Token 端点
       const response = await fetch(`${authServerBaseUrl}/connect/token`, {
@@ -83,29 +84,6 @@ class TokenRefreshManager {
 
       return null;
     }
-  }
-
-  /**
-   * 获取 Auth Server 基础 URL
-   */
-  private getAuthServerBaseUrl(): string {
-    if (typeof window === 'undefined') {
-      return '';
-    }
-
-    const currentOrigin = window.location.origin;
-
-    // 通过 Gateway 访问
-    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-      return currentOrigin;
-    }
-
-    // 直接访问 console 开发服务器
-    if (currentOrigin === 'http://localhost:3100' || currentOrigin === 'https://localhost:3100') {
-      return 'http://localhost:5200';
-    }
-
-    return currentOrigin;
   }
 
   /**

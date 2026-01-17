@@ -24,6 +24,7 @@ import {
   FileTextOutlined,
 } from '@radish/ui';
 import { ROUTES } from '../../router';
+import { getAuthServerBaseUrl, getPostLogoutRedirectUri } from '@/config/env';
 import './AdminLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -33,36 +34,6 @@ export interface AdminLayoutProps {
    * 内容区域
    */
   children: ReactNode;
-}
-
-/**
- * 获取 Auth Server 的基础 URL
- */
-function getAuthServerBaseUrl(): string {
-  const currentOrigin = window.location.origin;
-
-  if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-    return currentOrigin;
-  }
-
-  if (currentOrigin === 'http://localhost:3100' || currentOrigin === 'https://localhost:3100') {
-    return 'http://localhost:5200';
-  }
-
-  return currentOrigin;
-}
-
-/**
- * 获取 post_logout_redirect_uri
- */
-function getPostLogoutRedirectUri(): string {
-  const currentOrigin = window.location.origin;
-
-  if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-    return `${currentOrigin}/console/`;
-  }
-
-  return `${currentOrigin}/console/`;
 }
 
 /**
