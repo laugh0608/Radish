@@ -49,13 +49,13 @@ async function apiFetch<T>(
     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
 
-  const json = await response.json() as ApiResponse<T>;
+  const json = await response.json() as any;
 
-  if (!json.success) {
-    throw new Error(json.msg || '请求失败');
+  if (!json.isSuccess) {
+    throw new Error(json.messageInfo || '请求失败');
   }
 
-  return json.response;
+  return json.responseData;
 }
 
 // ==================== 商品分类 API ====================

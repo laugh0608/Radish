@@ -1,5 +1,6 @@
 import { apiGet, apiPost, apiPut, apiDelete } from '@radish/ui';
 import type { ParsedApiResponse } from '@radish/ui';
+import type { UserListItem } from '../types/user';
 
 /**
  * 用户状态枚举
@@ -8,21 +9,6 @@ export enum UserStatus {
   Normal = 0,
   Disabled = 1,
   Locked = 2,
-}
-
-/**
- * 用户信息接口
- */
-export interface UserInfo {
-  id: number;
-  userName: string;
-  email?: string;
-  avatar?: string;
-  status: UserStatus;
-  roles: string[];
-  createdAt: string;
-  lastLoginAt?: string;
-  loginCount: number;
 }
 
 /**
@@ -37,10 +23,10 @@ export interface UserListParams {
 }
 
 /**
- * 用户列表响应
+ * 用户列表响应（与后端返回结构对应）
  */
 export interface UserListResponse {
-  items: UserInfo[];
+  items: UserListItem[];
   total: number;
   pageIndex: number;
   pageSize: number;
@@ -102,7 +88,7 @@ export const userManagementApi = {
     }
 
     const queryString = searchParams.toString();
-    const url = `/api/v1/User/GetList${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/v1/User/GetUserList${queryString ? `?${queryString}` : ''}`;
 
     return apiGet<UserListResponse>(url, { withAuth: true });
   },
@@ -110,22 +96,22 @@ export const userManagementApi = {
   /**
    * 获取用户详情
    */
-  async getUserById(id: number): Promise<ParsedApiResponse<UserInfo>> {
-    return apiGet<UserInfo>(`/api/v1/User/GetById/${id}`, { withAuth: true });
+  async getUserById(id: number): Promise<ParsedApiResponse<UserListItem>> {
+    return apiGet<UserListItem>(`/api/v1/User/GetUserById/${id}`, { withAuth: true });
   },
 
   /**
    * 创建用户
    */
-  async createUser(params: UserCreateParams): Promise<ParsedApiResponse<UserInfo>> {
-    return apiPost<UserInfo>('/api/v1/User/Create', params, { withAuth: true });
+  async createUser(params: UserCreateParams): Promise<ParsedApiResponse<UserListItem>> {
+    return apiPost<UserListItem>('/api/v1/User/Create', params, { withAuth: true });
   },
 
   /**
    * 更新用户
    */
-  async updateUser(params: UserUpdateParams): Promise<ParsedApiResponse<UserInfo>> {
-    return apiPut<UserInfo>(`/api/v1/User/Update/${params.id}`, params, { withAuth: true });
+  async updateUser(params: UserUpdateParams): Promise<ParsedApiResponse<UserListItem>> {
+    return apiPut<UserListItem>(`/api/v1/User/Update/${params.id}`, params, { withAuth: true });
   },
 
   /**
@@ -166,8 +152,11 @@ export const userManagementApi = {
   /**
    * 获取用户统计信息
    */
-  async getUserStats(): Promise<ParsedApiResponse<UserStats>> {
-    return apiGet<UserStats>('/api/v1/User/GetStats', { withAuth: true });
+  async getUserStats(userId?: number): Promise<ParsedApiResponse<UserStats>> {
+    const url = userId
+      ? `/api/v1/User/GetUserStats?userId=${userId}`
+      : '/api/v1/User/GetUserStats';
+    return apiGet<UserStats>(url, { withAuth: true });
   },
 };
 

@@ -29,14 +29,15 @@ import {
   getUserStatusDisplay,
   getUserStatusColor,
   UserStatus,
-  type UserInfo,
+  type UserListResponse,
   type UserListParams,
 } from '../../api/userManagement';
+import type { UserListItem } from '../../types/user';
 import { log } from '../../utils/logger';
 import './UserList.css';
 
 export const UserList = () => {
-  const [users, setUsers] = useState<UserInfo[]>([]);
+  const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [pageIndex, setPageIndex] = useState(1);
@@ -91,9 +92,9 @@ export const UserList = () => {
   };
 
   // 更新用户状态
-  const handleUpdateStatus = async (id: number, newStatus: UserStatus) => {
+  const handleUpdateStatus = async (uuid: number, newStatus: UserStatus) => {
     try {
-      const response = await userManagementApi.updateUserStatus(id, newStatus);
+      const response = await userManagementApi.updateUserStatus(uuid, newStatus);
 
       if (response.ok) {
         message.success('用户状态更新成功');
@@ -108,9 +109,9 @@ export const UserList = () => {
   };
 
   // 删除用户
-  const handleDeleteUser = async (id: number) => {
+  const handleDeleteUser = async (uuid: number) => {
     try {
-      const response = await userManagementApi.deleteUser(id);
+      const response = await userManagementApi.deleteUser(uuid);
 
       if (response.ok) {
         message.success('用户删除成功');
@@ -125,9 +126,9 @@ export const UserList = () => {
   };
 
   // 强制用户下线
-  const handleForceLogout = async (id: number) => {
+  const handleForceLogout = async (uuid: number) => {
     try {
-      const response = await userManagementApi.forceLogout(id);
+      const response = await userManagementApi.forceLogout(uuid);
 
       if (response.ok) {
         message.success('用户已强制下线');
@@ -141,15 +142,15 @@ export const UserList = () => {
   };
 
   // 重置密码
-  const handleResetPassword = (user: UserInfo) => {
+  const handleResetPassword = (user: UserListItem) => {
     Modal.confirm({
       title: '重置密码',
-      content: `确定要重置用户 "${user.userName}" 的密码吗？新密码将通过邮件发送给用户。`,
+      content: `确定要重置用户 "${user.voUsName}" 的密码吗？新密码将通过邮件发送给用户。`,
       onOk: async () => {
         try {
           // 生成临时密码
           const tempPassword = Math.random().toString(36).slice(-8);
-          const response = await userManagementApi.resetPassword(user.id, tempPassword);
+          const response = await userManagementApi.resetPassword(user.uuid, tempPassword);
 
           if (response.ok) {
             message.success('密码重置成功，新密码已发送给用户');
@@ -165,7 +166,7 @@ export const UserList = () => {
   };
 
   // 表格列定义
-  const columns: TableColumnsType<UserInfo> = [
+  const columns: TableColumnsType<UserListItem> = [
     {
       title: '用户',
       key: 'user',
@@ -174,65 +175,39 @@ export const UserList = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Avatar
             size="small"
-            src={record.avatar}
             icon={<UserOutlined />}
           />
           <div>
-            <div style={{ fontWeight: 500 }}>{record.userName}</div>
-            {record.email && (
-              <div style={{ fontSize: '12px', color: '#666' }}>{record.email}</div>
+            <div style={{ fontWeight: 500 }}>{record.voUsName}</div>
+            {record.voUsEmail && (
+              <div style={{ fontSize: '12px', color: '#666' }}>{record.voUsEmail}</div>
             )}
           </div>
         </div>
       ),
     },
     {
+      title: '登录名',
+      dataIndex: 'voLoName',
+      key: 'voLoName',
+      width: 150,
+    },
+    {
       title: '状态',
-      dataIndex: 'status',
       key: 'status',
       width: 100,
-      render: (status: UserStatus) => (
-        <Tag color={getUserStatusColor(status)}>
-          {getUserStatusDisplay(status)}
+      render: (_, record) => (
+        <Tag color={record.voIsEnable ? 'success' : 'error'}>
+          {record.voIsEnable ? '启用' : '禁用'}
         </Tag>
       ),
     },
     {
-      title: '角色',
-      dataIndex: 'roles',
-      key: 'roles',
-      width: 150,
-      render: (roles: string[]) => (
-        <div>
-          {roles.map((role) => (
-            <Tag key={role} size="small">
-              {role}
-            </Tag>
-          ))}
-        </div>
-      ),
-    },
-    {
-      title: '登录次数',
-      dataIndex: 'loginCount',
-      key: 'loginCount',
-      width: 100,
-      align: 'center',
-    },
-    {
-      title: '最后登录',
-      dataIndex: 'lastLoginAt',
-      key: 'lastLoginAt',
-      width: 150,
-      render: (lastLoginAt: string) =>
-        lastLoginAt ? new Date(lastLoginAt).toLocaleString() : '从未登录',
-    },
-    {
       title: '创建时间',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
+      dataIndex: 'voCreateTime',
+      key: 'voCreateTime',
       width: 150,
-      render: (createdAt: string) => new Date(createdAt).toLocaleString(),
+      render: (voCreateTime: string) => new Date(voCreateTime).toLocaleString(),
     },
     {
       title: '操作',
@@ -253,12 +228,12 @@ export const UserList = () => {
             编辑
           </Button>
 
-          {record.status === UserStatus.Normal ? (
+          {record.voIsEnable ? (
             <Button
               type="link"
               size="small"
               icon={<LockOutlined />}
-              onClick={() => handleUpdateStatus(record.id, UserStatus.Disabled)}
+              onClick={() => handleUpdateStatus(record.uuid, UserStatus.Disabled)}
             >
               禁用
             </Button>
@@ -267,7 +242,7 @@ export const UserList = () => {
               type="link"
               size="small"
               icon={<UnlockOutlined />}
-              onClick={() => handleUpdateStatus(record.id, UserStatus.Normal)}
+              onClick={() => handleUpdateStatus(record.uuid, UserStatus.Normal)}
             >
               启用
             </Button>
@@ -286,7 +261,7 @@ export const UserList = () => {
             type="link"
             size="small"
             icon={<LogoutOutlined />}
-            onClick={() => handleForceLogout(record.id)}
+            onClick={() => handleForceLogout(record.uuid)}
           >
             强制下线
           </Button>
@@ -294,7 +269,7 @@ export const UserList = () => {
           <Popconfirm
             title="确定要删除这个用户吗？"
             description="删除后无法恢复，请谨慎操作。"
-            onConfirm={() => handleDeleteUser(record.id)}
+            onConfirm={() => handleDeleteUser(record.uuid)}
             okText="确定"
             cancelText="取消"
           >
@@ -394,7 +369,7 @@ export const UserList = () => {
       <Table
         columns={columns}
         dataSource={users}
-        rowKey="id"
+        rowKey="uuid"
         loading={loading}
         pagination={{
           current: pageIndex,

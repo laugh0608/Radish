@@ -50,9 +50,10 @@ public class HttpContextUser : IHttpContextUser
         }
 
         // 最后再使用 Identity.Name
-        if (_accessor.HttpContext.User.Identity?.Name.IsNotEmptyOrNull() == true)
+        var identityName = _accessor.HttpContext.User.Identity?.Name;
+        if (identityName.IsNotEmptyOrNull())
         {
-            return _accessor.HttpContext.User.Identity.Name;
+            return identityName;
         }
 
         return "";

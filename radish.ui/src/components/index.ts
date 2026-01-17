@@ -73,6 +73,8 @@ export {
   // Navigation
   Breadcrumb,
   Menu,
+  // App
+  App,
   // Form
   Form,
   Input as AntInput,

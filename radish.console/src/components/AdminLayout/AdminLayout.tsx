@@ -211,7 +211,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 <Avatar
                   size="small"
                   icon={<UserOutlined />}
-                  src={user?.avatar}
+                  src={user?.avatarUrl}
                 />
                 <span className="admin-username">
                   {loading ? '加载中...' : (user?.userName || 'Unknown')}
