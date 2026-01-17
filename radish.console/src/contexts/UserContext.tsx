@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { log } from '@/utils/logger';
 import { userApi } from '../api/user';
+import { tokenService } from '../services/tokenService';
 import type { UserInfo } from '../types/user';
 
 interface UserContextValue {
@@ -25,7 +26,7 @@ export function UserProvider({ children }: UserProviderProps) {
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
-    const token = localStorage.getItem('access_token');
+    const token = tokenService.getAccessToken();
     if (!token) {
       setUser(null);
       setLoading(false);
@@ -34,13 +35,13 @@ export function UserProvider({ children }: UserProviderProps) {
 
     try {
       const response = await userApi.getCurrentUser();
-      if (response.success && response.data) {
+      if (response.ok && response.data) {
         setUser(response.data);
       } else {
         setUser(null);
       }
     } catch (error) {
-      log.error('Failed to fetch user info:', error);
+      log.error('UserContext', 'Failed to fetch user info:', error);
       setUser(null);
     } finally {
       setLoading(false);

@@ -4,9 +4,11 @@ import { Dashboard } from '../pages/Dashboard';
 import { Applications } from '../pages/Applications';
 import { ProductList } from '../pages/Products';
 import { OrderList } from '../pages/Orders';
+import { UserList } from '../pages/Users';
 import { Login } from '../pages/Login';
 import { OidcCallback } from '../pages/OidcCallback';
 import { ThemeTest } from '../pages/ThemeTest';
+import { NotFound } from '../components/NotFound';
 
 /**
  * 需要认证的布局包装器
@@ -95,7 +97,7 @@ export const router = createBrowserRouter(
         },
         {
           path: 'users',
-          element: <PlaceholderPage title="用户管理" />,
+          element: <UserList />,
         },
         {
           path: 'roles',
@@ -113,7 +115,7 @@ export const router = createBrowserRouter(
     },
     {
       path: '*',
-      element: <Navigate to="/" replace />,
+      element: <NotFound />,
     },
   ],
   {

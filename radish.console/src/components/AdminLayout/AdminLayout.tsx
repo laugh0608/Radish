@@ -25,6 +25,8 @@ import {
 } from '@radish/ui';
 import { ROUTES } from '../../router';
 import { getAuthServerBaseUrl, getPostLogoutRedirectUri } from '@/config/env';
+import { tokenService } from '../../services/tokenService';
+import { AppBreadcrumb } from '../Breadcrumb';
 import './AdminLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -135,9 +137,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const handleLogout = () => {
-    // 清理本地保存的 Token
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+    // 使用 TokenService 清理 Token
+    tokenService.clearTokens();
 
     // 使用 OIDC 标准的 endsession endpoint 实现 Single Sign-Out
     const postLogoutRedirectUri = getPostLogoutRedirectUri();
@@ -220,6 +221,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </Header>
         <Content className="admin-content">
+          <AppBreadcrumb />
           {children}
         </Content>
       </Layout>
