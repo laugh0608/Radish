@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import {
   Table,
   Button,
-  Input,
-  Select,
+  AntInput as Input,
+  AntSelect as Select,
   Space,
   Tag,
   message,
