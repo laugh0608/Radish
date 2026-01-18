@@ -1,4 +1,4 @@
-namespace Radish.Model.DTOs;
+namespace Radish.Model.DtoModels;
 
 /// <summary>
 /// 文件上传选项

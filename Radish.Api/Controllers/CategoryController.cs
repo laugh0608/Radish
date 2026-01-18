@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.IService;
 using Radish.Model;
-using Radish.Model.DTOs;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;

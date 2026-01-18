@@ -1,4 +1,4 @@
-namespace Radish.Model.DTOs;
+namespace Radish.Model.DtoModels;
 
 /// <summary>帖子点赞操作结果DTO</summary>
 public class PostLikeResultDto
