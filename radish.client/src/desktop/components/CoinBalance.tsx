@@ -79,7 +79,7 @@ export const CoinBalance = () => {
     <div
       className={styles.coinBalance}
       onClick={handleToggleMode}
-      title={balance ? `点击切换显示模式\n胡萝卜: ${balance.balance.toLocaleString()}\n白萝卜: ${balance.balanceDisplay}` : '加载中...'}
+      title={balance ? `点击切换显示模式\n胡萝卜: ${(balance.balance || 0).toLocaleString()}\n白萝卜: ${balance.balanceDisplay || '0 白萝卜'}` : '加载中...'}
     >
       <span className={styles.icon}>
         {displayMode === 'carrot' ? '🥕' : '🌿'}
@@ -87,8 +87,8 @@ export const CoinBalance = () => {
       <span className={styles.amount}>
         {balance ? (
           displayMode === 'carrot'
-            ? balance.balance.toLocaleString()
-            : balance.balanceDisplay
+            ? (balance.balance || 0).toLocaleString()
+            : (balance.balanceDisplay || '0 白萝卜')
         ) : (
           loading ? '...' : (error ? '错误' : '0')
         )}
