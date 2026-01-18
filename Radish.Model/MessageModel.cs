@@ -233,13 +233,21 @@ public class MessageModel
     /// 返回给用户的消息信息
     /// </summary>
     public string MessageInfo { get; set; } = string.Empty;
-
+    
     /// <summary>
-    /// 响应数据（object 类型）
+    /// 业务错误码
     /// </summary>
+    /// <value>用于客户端精确识别错误类型，例如 "Auth.InvalidCredentials"</value>
     public string? Code { get; set; }
 
+    /// <summary>
+    /// 多语言消息 key
+    /// </summary>
+    /// <value>例如 "error.auth.invalid_credentials"，用于前端 i18n 匹配</value>
     public string? MessageKey { get; set; }
 
+    /// <summary>
+    /// 返回的数据对象
+    /// </summary>
     public object? ResponseData { get; set; }
 }
