@@ -3,6 +3,7 @@
  */
 
 import { apiGet, apiPost, apiPut, configureApiClient, type PagedResponse } from '@radish/ui';
+import { mapNotification, type NotificationData } from '@/utils/viewModelMapper';
 
 // 配置 API 客户端
 const defaultApiBase = 'https://localhost:5000';
@@ -13,9 +14,9 @@ configureApiClient({
 });
 
 /**
- * 通知信息
+ * 通知信息（后端 ViewModel，带 Vo 前缀）
  */
-export interface Notification {
+interface NotificationVo {
   VoId: number;
   VoUserId: number;
   VoTitle: string;
@@ -36,6 +37,11 @@ export interface Notification {
 }
 
 /**
+ * 导出前端友好的通知类型
+ */
+export type Notification = NotificationData;
+
+/**
  * 通知 API
  */
 export const notificationApi = {
@@ -54,11 +60,19 @@ export const notificationApi = {
       url += `&isRead=${isRead}`;
     }
 
-    const response = await apiGet<PagedResponse<Notification>>(url, {
+    const response = await apiGet<PagedResponse<NotificationVo>>(url, {
       withAuth: true,
     });
 
-    return response.ok ? response.data || null : null;
+    if (!response.ok || !response.data) {
+      return null;
+    }
+
+    // 映射 Vo 字段为前端友好的字段名
+    return {
+      ...response.data,
+      data: response.data.data.map(mapNotification),
+    };
   },
 
   /**
@@ -91,6 +105,7 @@ export const notificationApi = {
       withAuth: true,
     });
 
+    // 处理 Vo 前缀字段
     return response.ok && response.data ? response.data.VoUnreadCount : 0;
   },
 
