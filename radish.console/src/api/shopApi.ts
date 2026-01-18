@@ -15,6 +15,7 @@ import {
   ProductType,
   OrderStatus,
 } from './types';
+import { mapProduct, mapOrder, mapProductCategory } from '@/utils/viewModelMapper';
 
 // 配置 API 客户端
 const defaultApiBase = 'https://localhost:5000';
@@ -30,20 +31,20 @@ configureApiClient({
  * 获取商品分类列表
  */
 export async function getCategories(): Promise<ProductCategory[]> {
-  const response = await apiGet<ProductCategory[]>('/api/v1/Shop/GetCategories', { withAuth: true });
+  const response = await apiGet<any[]>('/api/v1/Shop/GetCategories', { withAuth: true });
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取分类列表失败');
   }
 
-  return response.data;
+  return response.data.map(mapProductCategory);
 }
 
 /**
  * 获取分类详情
  */
 export async function getCategory(categoryId: string): Promise<ProductCategory> {
-  const response = await apiGet<ProductCategory>(
+  const response = await apiGet<any>(
     `/api/v1/Shop/GetCategory/${encodeURIComponent(categoryId)}`,
     { withAuth: true }
   );
@@ -52,7 +53,7 @@ export async function getCategory(categoryId: string): Promise<ProductCategory> 
     throw new Error(response.message || '获取分类详情失败');
   }
 
-  return response.data;
+  return mapProductCategory(response.data);
 }
 
 // ==================== 商品管理 API ====================
@@ -77,7 +78,7 @@ export async function adminGetProducts(params: {
   searchParams.append('pageIndex', (params.pageIndex || 1).toString());
   searchParams.append('pageSize', (params.pageSize || 20).toString());
 
-  const response = await apiGet<PagedResponse<Product>>(
+  const response = await apiGet<PagedResponse<any>>(
     `/api/v1/Shop/AdminGetProducts?${searchParams.toString()}`,
     { withAuth: true }
   );
@@ -86,14 +87,17 @@ export async function adminGetProducts(params: {
     throw new Error(response.message || '获取商品列表失败');
   }
 
-  return response.data;
+  return {
+    ...response.data,
+    data: response.data.data.map(mapProduct),
+  };
 }
 
 /**
  * 获取商品详情（管理后台）
  */
 export async function adminGetProduct(productId: number): Promise<Product> {
-  const response = await apiGet<Product>(
+  const response = await apiGet<any>(
     `/api/v1/Shop/AdminGetProduct/${productId}`,
     { withAuth: true }
   );
@@ -102,7 +106,7 @@ export async function adminGetProduct(productId: number): Promise<Product> {
     throw new Error(response.message || '获取商品详情失败');
   }
 
-  return response.data;
+  return mapProduct(response.data);
 }
 
 /**
@@ -192,7 +196,7 @@ export async function adminGetOrders(params: {
   searchParams.append('pageIndex', (params.pageIndex || 1).toString());
   searchParams.append('pageSize', (params.pageSize || 20).toString());
 
-  const response = await apiGet<PagedResponse<Order>>(
+  const response = await apiGet<PagedResponse<any>>(
     `/api/v1/Shop/AdminGetOrders?${searchParams.toString()}`,
     { withAuth: true }
   );
@@ -201,20 +205,23 @@ export async function adminGetOrders(params: {
     throw new Error(response.message || '获取订单列表失败');
   }
 
-  return response.data;
+  return {
+    ...response.data,
+    data: response.data.data.map(mapOrder),
+  };
 }
 
 /**
  * 获取订单详情（管理后台）
  */
 export async function adminGetOrder(orderId: number): Promise<Order> {
-  const response = await apiGet<Order>(`/api/v1/Shop/AdminGetOrder/${orderId}`, { withAuth: true });
+  const response = await apiGet<any>(`/api/v1/Shop/AdminGetOrder/${orderId}`, { withAuth: true });
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取订单详情失败');
   }
 
-  return response.data;
+  return mapOrder(response.data);
 }
 
 /**

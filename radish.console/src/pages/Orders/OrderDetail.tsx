@@ -25,7 +25,7 @@ export const OrderDetail = ({ visible, order, onClose, onRetry }: OrderDetailPro
       size="large"
       footer={
         <Space>
-          {order.status === 5 && onRetry && (
+          {order.status === 'Failed' && onRetry && (
             <Button variant="primary" onClick={onRetry}>
               <SyncOutlined />
               重试发放权益

@@ -2,6 +2,8 @@
  * API 响应类型定义
  */
 
+import type { ProductData, OrderData, ProductCategoryData } from '@/utils/viewModelMapper';
+
 /**
  * API 响应包装（与后端 MessageModel 保持一致）
  */
@@ -91,54 +93,14 @@ export enum DurationType {
 }
 
 /**
- * 商品分类
+ * 商品分类（导出映射后的类型）
  */
-export interface ProductCategory {
-  id: string;
-  name: string;
-  icon?: string;
-  description?: string;
-  sortOrder: number;
-  isEnabled: boolean;
-  productCount: number;
-}
+export type ProductCategory = ProductCategoryData;
 
 /**
- * 商品详情
+ * 商品详情（导出映射后的类型）
  */
-export interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  icon?: string;
-  coverImage?: string;
-  categoryId: string;
-  categoryName?: string;
-  productType: ProductType;
-  productTypeDisplay: string;
-  benefitType?: BenefitType;
-  consumableType?: ConsumableType;
-  benefitValue?: string;
-  price: number;
-  originalPrice?: number;
-  hasDiscount: boolean;
-  discountPercent?: number;
-  stockType: StockType;
-  stock: number;
-  soldCount: number;
-  limitPerUser: number;
-  inStock: boolean;
-  durationType: DurationType;
-  durationDays?: number;
-  expiresAt?: string;
-  durationDisplay: string;
-  sortOrder: number;
-  isOnSale: boolean;
-  isEnabled: boolean;
-  onSaleTime?: string;
-  offSaleTime?: string;
-  createTime: string;
-}
+export type Product = ProductData;
 
 /**
  * 创建商品 DTO
@@ -173,31 +135,6 @@ export interface UpdateProductDto extends CreateProductDto {
 }
 
 /**
- * 订单详情
+ * 订单详情（导出映射后的类型）
  */
-export interface Order {
-  id: number;
-  orderNo: string;
-  userId: number;
-  userName?: string;
-  productId: number;
-  productName: string;
-  productIcon?: string;
-  productType: ProductType;
-  productTypeDisplay: string;
-  benefitType?: BenefitType;
-  consumableType?: ConsumableType;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  status: OrderStatus;
-  statusDisplay: string;
-  benefitExpiresAt?: string;
-  durationDisplay?: string;
-  createTime: string;
-  paidTime?: string;
-  completedTime?: string;
-  cancelledTime?: string;
-  cancelReason?: string;
-  failReason?: string;
-}
+export type Order = OrderData;
