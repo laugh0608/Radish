@@ -55,7 +55,7 @@ export const notificationApi = {
   }): Promise<PagedResponse<Notification> | null> {
     const { pageIndex = 1, pageSize = 20, isRead } = params;
 
-    let url = `/api/v1/Notification/GetMyNotifications?pageIndex=${pageIndex}&pageSize=${pageSize}`;
+    let url = `/api/v1/Notification/GetNotificationList?pageIndex=${pageIndex}&pageSize=${pageSize}`;
     if (isRead !== undefined) {
       url += `&isRead=${isRead}`;
     }

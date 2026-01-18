@@ -29,13 +29,13 @@ export interface CategoryData {
  */
 export function mapCategory(vo: any): CategoryData {
   return {
-    id: vo.VoId,
+    id: parseInt(vo.VoId, 10), // 将字符串ID转换为数字
     name: vo.VoName,
     slug: vo.VoSlug,
     description: vo.VoDescription,
     icon: vo.VoIcon,
     coverImage: vo.VoCoverImage,
-    parentId: vo.VoParentId,
+    parentId: vo.VoParentId ? parseInt(vo.VoParentId, 10) : null,
     level: vo.VoLevel,
     orderSort: vo.VoOrderSort,
     postCount: vo.VoPostCount,
@@ -289,10 +289,10 @@ export function mapProductListItem(vo: any): ProductListItemData {
     coverImage: vo.VoCoverImage,
     categoryId: vo.VoCategoryId,
     productType: vo.VoProductType,
-    price: vo.VoPrice,
-    originalPrice: vo.VoOriginalPrice,
+    price: vo.VoPrice || 0, // 确保价格不为null/undefined
+    originalPrice: vo.VoOriginalPrice || undefined,
     hasDiscount: vo.VoHasDiscount,
-    soldCount: vo.VoSoldCount,
+    soldCount: vo.VoSoldCount || 0,
     inStock: vo.VoInStock,
     durationDisplay: vo.VoDurationDisplay,
   };
@@ -351,8 +351,8 @@ export function mapProduct(vo: any): ProductData {
     benefitType: vo.VoBenefitType,
     consumableType: vo.VoConsumableType,
     benefitValue: vo.VoBenefitValue,
-    price: vo.VoPrice,
-    originalPrice: vo.VoOriginalPrice,
+    price: vo.VoPrice || 0, // 确保价格不为null/undefined
+    originalPrice: vo.VoOriginalPrice || undefined,
     hasDiscount: vo.VoHasDiscount,
     discountPercent: vo.VoDiscountPercent,
     stockType: vo.VoStockType,
@@ -397,7 +397,7 @@ export function mapOrderListItem(vo: any): OrderListItemData {
     productName: vo.VoProductName,
     productIcon: vo.VoProductIcon,
     quantity: vo.VoQuantity,
-    totalPrice: vo.VoTotalPrice,
+    totalPrice: vo.VoTotalPrice || 0,
     status: vo.VoStatus,
     statusDisplay: vo.VoStatusDisplay,
     createTime: vo.VoCreateTime,
@@ -451,8 +451,8 @@ export function mapOrder(vo: any): OrderData {
     benefitType: vo.VoBenefitType,
     consumableType: vo.VoConsumableType,
     quantity: vo.VoQuantity,
-    unitPrice: vo.VoUnitPrice,
-    totalPrice: vo.VoTotalPrice,
+    unitPrice: vo.VoUnitPrice || 0,
+    totalPrice: vo.VoTotalPrice || 0,
     status: vo.VoStatus,
     statusDisplay: vo.VoStatusDisplay,
     benefitExpiresAt: vo.VoBenefitExpiresAt,
@@ -685,18 +685,18 @@ export interface LeaderboardItemData {
  */
 export function mapLeaderboardItem(vo: any): LeaderboardItemData {
   return {
-    userId: vo.VoUserId || 0,
-    userName: vo.VoUserName || '未知用户',
-    avatar: vo.VoAvatar || '',
-    currentLevel: vo.VoCurrentLevel || 1,
-    totalExp: vo.VoTotalExp || 0,
-    levelName: vo.VoLevelName || '新手',
-    rank: vo.VoRank || 0,
-    expGainedThisWeek: vo.VoExpGainedThisWeek || 0,
-    expGainedThisMonth: vo.VoExpGainedThisMonth || 0,
-    isCurrentUser: vo.VoIsCurrentUser || false,
-    themeColor: '#3b82f6', // 默认主题色
-    currentLevelName: vo.VoLevelName || '新手',
+    userId: parseInt(vo.voUserId || vo.VoUserId, 10) || 0,
+    userName: vo.voUserName || vo.VoUserName || '未知用户',
+    avatar: vo.voAvatarUrl || vo.VoAvatar || vo.VoAvatarUrl || '',
+    currentLevel: vo.voCurrentLevel || vo.VoCurrentLevel || 1,
+    totalExp: parseInt(vo.voTotalExp || vo.VoTotalExp, 10) || 0,
+    levelName: vo.voCurrentLevelName || vo.VoLevelName || vo.voLevelName || '新手',
+    rank: vo.voRank || vo.VoRank || 0,
+    expGainedThisWeek: vo.voExpGainedThisWeek || vo.VoExpGainedThisWeek || 0,
+    expGainedThisMonth: vo.voExpGainedThisMonth || vo.VoExpGainedThisMonth || 0,
+    isCurrentUser: vo.voIsCurrentUser || vo.VoIsCurrentUser || false,
+    themeColor: vo.voThemeColor || vo.VoThemeColor || '#3b82f6', // 默认主题色
+    currentLevelName: vo.voCurrentLevelName || vo.VoLevelName || vo.voLevelName || '新手',
   };
 }
 
