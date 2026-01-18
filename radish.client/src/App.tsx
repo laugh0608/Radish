@@ -7,6 +7,7 @@ import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from './stores/userStore';
 import { LevelUpModal } from '@radish/ui';
 import { useLevelUpListener } from '@/hooks/useLevelUpListener';
+import { log } from '@/utils/logger';
 import './App.css';
 
 interface Forecast {
@@ -17,11 +18,11 @@ interface Forecast {
 }
 
 interface CurrentUser {
-    userId: number;
-    userName: string;
-    tenantId: number;
-    avatarUrl?: string;
-    avatarThumbnailUrl?: string;
+    voUserId: number;
+    voUserName: string;
+    voTenantId: number;
+    voAvatarUrl?: string;
+    voAvatarThumbnailUrl?: string;
 }
 
 // WebOS 全局用户信息结构（与 useUserStore.UserInfo 对齐）
@@ -85,6 +86,15 @@ function App() {
     useEffect(() => {
         populateWeatherData();
         populateCurrentUser();
+        
+        // 验证 userStore 状态
+        setTimeout(() => {
+            const userState = useUserStore.getState();
+            log.info('App', '========== 验证 userStore 状态 ==========');
+            log.info('App', 'userId:', userState.userId);
+            log.info('App', 'userName:', userState.userName);
+            log.info('App', 'isAuthenticated:', userState.isAuthenticated());
+        }, 1000);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [apiBaseUrl]);
 
@@ -164,9 +174,9 @@ function App() {
                             {currentUser && (
                                 <span>
                                     {t('auth.currentUser', {
-                                        userName: currentUser.userName,
-                                        userId: currentUser.userId,
-                                        tenantId: currentUser.tenantId
+                                        userName: currentUser.voUserName,
+                                        userId: currentUser.voUserId,
+                                        tenantId: currentUser.voTenantId
                                     })}
                                 </span>
                             )}
@@ -201,7 +211,7 @@ function App() {
     );
 
     async function populateWeatherData() {
-        const requestUrl = `${apiBaseUrl}/api/WeatherForecast/GetStandard`;
+        const requestUrl = `${apiBaseUrl}/api/v2/WeatherForecast/GetStandard`;
         try {
             const response = await apiFetch(requestUrl);
             const json = await response.json() as ApiResponse<Forecast[]>;
@@ -225,35 +235,112 @@ function App() {
             return;
         }
 
+        log.info('App', '========== 主页面开始获取用户信息 ==========');
+
+        // 优先使用缓存的用户信息（从登录回调页面预加载）
+        const cachedUserInfo = window.localStorage.getItem('cached_user_info');
+        log.info('App', '检查 localStorage 缓存:', cachedUserInfo ? '✅ 存在' : '❌ 不存在');
+
+        if (cachedUserInfo) {
+            try {
+                const userData = JSON.parse(cachedUserInfo) as CurrentUser;
+                log.info('App', '✅ 使用缓存的用户信息');
+                log.info('App', '缓存数据详情:', {
+                    userId: userData.voUserId,
+                    userName: userData.voUserName,
+                    tenantId: userData.voTenantId,
+                    hasAvatar: !!userData.voAvatarUrl
+                });
+
+                // 验证缓存数据的有效性
+                if (!userData.voUserId || !userData.voUserName) {
+                    log.error('App', '❌ 缓存数据无效，userId 或 userName 为空');
+                    window.localStorage.removeItem('cached_user_info');
+                    // 继续从服务器获取
+                } else {
+                    setCurrentUser(userData);
+                    setUserError(undefined);
+
+                    // 同步到 WebOS 全局用户状态
+                    const webOsUser: WebOsUserInfo = {
+                        userId: userData.voUserId,
+                        userName: userData.voUserName,
+                        tenantId: userData.voTenantId,
+                        roles: ['User'],
+                        avatarUrl: userData.voAvatarUrl,
+                        avatarThumbnailUrl: userData.voAvatarThumbnailUrl
+                    };
+                    setWebOsUser(webOsUser);
+                    log.info('App', '✅ WebOS 用户状态已更新');
+                    log.info('App', 'WebOS 状态详情:', {
+                        userId: webOsUser.userId,
+                        userName: webOsUser.userName,
+                        tenantId: webOsUser.tenantId
+                    });
+
+                    // 清除缓存，避免使用过期数据
+                    window.localStorage.removeItem('cached_user_info');
+                    log.info('App', '========== 用户信息加载完成（使用缓存）==========');
+                    return;
+                }
+            } catch (err) {
+                // 缓存数据解析失败，继续从服务器获取
+                log.error('App', '❌ 缓存数据解析失败:', err);
+                window.localStorage.removeItem('cached_user_info');
+            }
+        }
+
         const requestUrl = `${apiBaseUrl}/api/v1/User/GetUserByHttpContext`;
+        log.info('App', '📡 从服务器获取用户信息:', requestUrl);
+
         try {
             const response = await apiFetch(requestUrl, { withAuth: true });
+            log.info('App', '用户信息请求响应状态:', response.status);
 
             const json = await response.json() as ApiResponse<CurrentUser>;
+            log.debug('App', '用户信息响应数据:', json);
+
             const parsed = parseApiResponse(json);
 
             if (!parsed.ok || !parsed.data) {
                 throw new Error(parsed.message || t('auth.userInfoLoadFailedPrefix'));
             }
 
+            log.info('App', '✅ 用户信息获取成功');
+            log.info('App', '服务器数据详情:', {
+                userId: parsed.data.voUserId,
+                userName: parsed.data.voUserName,
+                tenantId: parsed.data.voTenantId,
+                hasAvatar: !!parsed.data.voAvatarUrl
+            });
+
             setCurrentUser(parsed.data);
             setUserError(undefined);
 
             // 同步到 WebOS 全局用户状态，默认赋予基础角色
             const webOsUser: WebOsUserInfo = {
-                userId: parsed.data.userId,
-                userName: parsed.data.userName,
-                tenantId: parsed.data.tenantId,
+                userId: parsed.data.voUserId,
+                userName: parsed.data.voUserName,
+                tenantId: parsed.data.voTenantId,
                 roles: ['User'],
-                avatarUrl: parsed.data.avatarUrl,
-                avatarThumbnailUrl: parsed.data.avatarThumbnailUrl
+                avatarUrl: parsed.data.voAvatarUrl,
+                avatarThumbnailUrl: parsed.data.voAvatarThumbnailUrl
             };
             setWebOsUser(webOsUser);
+            log.info('App', '✅ WebOS 用户状态已更新');
+            log.info('App', 'WebOS 状态详情:', {
+                userId: webOsUser.userId,
+                userName: webOsUser.userName,
+                tenantId: webOsUser.tenantId
+            });
+            log.info('App', '========== 用户信息加载完成（从服务器）==========');
         } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
+            log.error('App', '❌ 获取用户信息失败:', message);
             setUserError(`${t('auth.userInfoLoadFailedPrefix')}${message}`);
             setCurrentUser(null);
             clearWebOsUser();
+            log.info('App', '========== 用户信息加载失败 ==========');
         }
     }
 }
@@ -421,6 +508,47 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
                     window.localStorage.setItem('refresh_token', tokenSet.refresh_token);
                 }
 
+                // 立即获取用户信息并缓存，避免主页面加载时的竞态条件
+                log.info('OidcCallback', '========== 回调页面开始预加载用户信息 ==========');
+                try {
+                    const userResponse = await apiFetch(
+                        `${apiBaseUrl}/api/v1/User/GetUserByHttpContext`,
+                        { withAuth: true }
+                    );
+                    log.info('OidcCallback', '用户信息请求响应状态:', userResponse.status);
+
+                    const userJson = await userResponse.json() as ApiResponse<CurrentUser>;
+                    log.debug('OidcCallback', '用户信息响应数据:', userJson);
+
+                    const userParsed = parseApiResponse(userJson);
+
+                    if (userParsed.ok && userParsed.data) {
+                        // 验证数据有效性
+                        if (!userParsed.data.voUserId || !userParsed.data.voUserName) {
+                            log.error('OidcCallback', '❌ 用户数据无效，userId 或 userName 为空');
+                            log.error('OidcCallback', '无效数据:', userParsed.data);
+                        } else {
+                            // 缓存用户信息到 localStorage，主页面可以优先使用
+                            const cacheData = JSON.stringify(userParsed.data);
+                            window.localStorage.setItem('cached_user_info', cacheData);
+                            log.info('OidcCallback', '✅ 用户信息已缓存到 localStorage');
+                            log.info('OidcCallback', '缓存数据详情:', {
+                                userId: userParsed.data.voUserId,
+                                userName: userParsed.data.voUserName,
+                                tenantId: userParsed.data.voTenantId,
+                                hasAvatar: !!userParsed.data.voAvatarUrl,
+                                cacheLength: cacheData.length
+                            });
+                        }
+                    } else {
+                        log.warn('OidcCallback', '❌ 用户信息解析失败:', userParsed.message);
+                    }
+                } catch (err) {
+                    // 忽略错误，主页面会重新获取
+                    log.error('OidcCallback', '❌ 预加载用户信息失败:', err);
+                }
+
+                log.info('OidcCallback', '========== 即将跳转到主页面 ==========');
                 setMessage(t('oidc.loginSucceeded'));
 
                 // 使用 replace 避免在浏览器历史中留下带 code 的 URL

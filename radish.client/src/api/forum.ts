@@ -12,6 +12,18 @@ import {
   type ApiResponse
 } from '@radish/ui';
 import type { TFunction } from 'i18next';
+import {
+  mapCategory,
+  mapPostItem,
+  mapPostDetail,
+  mapComment,
+  mapCommentHighlight,
+  type CategoryData,
+  type PostItemData,
+  type PostDetailData,
+  type CommentNodeData,
+  type CommentHighlightData
+} from '@/utils/viewModelMapper';
 import type {
   Category,
   PostItem,
@@ -36,13 +48,13 @@ configureApiClient({
  * 获取顶级分类列表
  */
 export async function getTopCategories(t: TFunction): Promise<Category[]> {
-  const response = await apiGet<Category[]>('/api/v1/Category/GetTopCategories');
+  const response = await apiGet<any[]>('/api/v1/Category/GetTopCategories');
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载分类失败');
   }
 
-  return response.data;
+  return response.data.map(mapCategory);
 }
 
 /**
@@ -68,7 +80,7 @@ export async function getPostList(
   params.set('sortBy', sortBy);
   if (keyword.trim()) params.set('keyword', keyword.trim());
 
-  const response = await apiGet<import('@/types/forum').PageModel<PostItem>>(
+  const response = await apiGet<import('@/types/forum').PageModel<any>>(
     `/api/v1/Post/GetList?${params.toString()}`
   );
 
@@ -76,14 +88,17 @@ export async function getPostList(
     throw new Error(response.message || '加载帖子失败');
   }
 
-  return response.data;
+  return {
+    ...response.data,
+    data: response.data.data.map(mapPostItem)
+  };
 }
 
 /**
  * 获取帖子详情
  */
 export async function getPostById(postId: number, t: TFunction): Promise<PostDetail> {
-  const response = await apiGet<PostDetail>(`/api/v1/Post/GetById/${postId}`);
+  const response = await apiGet<any>(`/api/v1/Post/GetById/${postId}`);
 
   if (!response.ok || !response.data) {
     // 针对帖子不存在的情况给出友好提示
@@ -93,7 +108,7 @@ export async function getPostById(postId: number, t: TFunction): Promise<PostDet
     throw new Error(response.message || '加载帖子详情失败');
   }
 
-  return response.data;
+  return mapPostDetail(response.data);
 }
 
 /**
@@ -103,7 +118,7 @@ export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest
   // 如果用户已登录，自动发送token以获取点赞状态
   const hasToken = typeof window !== 'undefined' && window.localStorage.getItem('access_token');
 
-  const response = await apiGet<CommentNode[]>(
+  const response = await apiGet<any[]>(
     `/api/v1/Comment/GetCommentTree?postId=${postId}&sortBy=${sortBy}`,
     { withAuth: !!hasToken }
   );
@@ -112,7 +127,7 @@ export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest
     throw new Error(response.message || '加载评论失败');
   }
 
-  return response.data;
+  return response.data.map(mapComment);
 }
 
 /**
