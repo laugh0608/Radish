@@ -145,7 +145,7 @@ export const UserList = () => {
   const handleResetPassword = (user: UserListItem) => {
     (Modal as any).confirm({
       title: '重置密码',
-      content: `确定要重置用户 "${user.voUsName}" 的密码吗？新密码将通过邮件发送给用户。`,
+      content: `确定要重置用户 "${user.voUserName}" 的密码吗？新密码将通过邮件发送给用户。`,
       onOk: async () => {
         try {
           // 生成临时密码
@@ -178,9 +178,9 @@ export const UserList = () => {
             icon={<UserOutlined />}
           />
           <div>
-            <div style={{ fontWeight: 500 }}>{record.voUsName}</div>
-            {record.voUsEmail && (
-              <div style={{ fontSize: '12px', color: '#666' }}>{record.voUsEmail}</div>
+            <div style={{ fontWeight: 500 }}>{record.voUserName}</div>
+            {record.voUserEmail && (
+              <div style={{ fontSize: '12px', color: '#666' }}>{record.voUserEmail}</div>
             )}
           </div>
         </div>
@@ -188,8 +188,8 @@ export const UserList = () => {
     },
     {
       title: '登录名',
-      dataIndex: 'voLoName',
-      key: 'voLoName',
+      dataIndex: 'voLoginName',
+      key: 'voLoginName',
       width: 150,
     },
     {

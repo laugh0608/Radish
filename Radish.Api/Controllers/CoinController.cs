@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
 
@@ -242,7 +243,7 @@ public class CoinController : ControllerBase
                 IsSuccess = true,
                 StatusCode = (int)HttpStatusCodeEnum.Success,
                 MessageInfo = "余额调整成功",
-                ResponseData = new { TransactionNo = transactionNo }
+                ResponseData = new TransactionResultVo { VoTransactionNo = transactionNo }
             };
         }
         catch (InvalidOperationException ex)
