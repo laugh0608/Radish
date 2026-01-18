@@ -106,7 +106,7 @@ export const experienceApi = {
     const { pageIndex = 1, pageSize = 20 } = params;
 
     const response = await apiGet<PagedResponse<ExpTransaction>>(
-      `/api/v1/Experience/GetTransactions?pageIndex=${pageIndex}&pageSize=${pageSize}`,
+      `/api/v1/Experience/GetMyTransactions?pageIndex=${pageIndex}&pageSize=${pageSize}`,
       { withAuth: true }
     );
 
