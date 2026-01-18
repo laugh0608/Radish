@@ -38,12 +38,7 @@ configureApiClient({
 });
 
 // 配置错误处理
-configureErrorHandling({
-  autoShowMessage: true,
-  showMessage: (msg) => {
-    message.error(msg);
-  },
-});
+configureErrorHandling({});
 
 /**
  * OIDC 客户端 API

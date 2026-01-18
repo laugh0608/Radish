@@ -30,7 +30,7 @@ export const CoinBalance = () => {
       if (result.ok && result.data) {
         setBalance(result.data);
       } else {
-        setError(result.message);
+        setError(result.message || '获取余额失败');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取余额失败');

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { log } from '@/utils/logger';
-import { Button, ConfirmDialog, FileUpload, Icon, Input, Modal, ExperienceBar, experienceApi, type UserExperience } from '@radish/ui';
+import { Button, ConfirmDialog, FileUpload, Icon, Input, Modal, ExperienceBar } from '@radish/ui';
+import { experienceApi, type ExperienceData } from '@/api/experience';
 import type { UploadResult } from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
 import { useTranslation } from 'react-i18next';
@@ -97,7 +98,7 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
 
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
   const [coinBalance, setCoinBalance] = useState<CoinBalanceInfo | null>(null);
-  const [experience, setExperience] = useState<UserExperience | null>(null);
+  const [experience, setExperience] = useState<ExperienceData | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -330,7 +331,7 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
       {experience && (
         <div style={{ marginBottom: '24px' }}>
           <ExperienceBar
-            data={experience}
+            data={experience as any}
             size="medium"
             showLevel={true}
             showProgress={true}

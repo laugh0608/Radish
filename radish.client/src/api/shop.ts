@@ -2,7 +2,7 @@
  * 商城系统相关的 API 调用
  */
 
-import { parseApiResponseWithI18n, apiGet, apiPost, configureApiClient, type ApiResponse } from '@radish/ui';
+import { parseApiResponse, type ApiResponse } from '@radish/ui';
 import type { TFunction } from 'i18next';
 
 const defaultApiBase = 'https://localhost:5000';
@@ -338,7 +338,7 @@ export async function getCategories(t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<ProductCategory[]>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -356,7 +356,7 @@ export async function getCategory(categoryId: string, t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<ProductCategory>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -395,7 +395,7 @@ export async function getProducts(
   }
 
   const json = await response.json() as ApiResponse<PagedResponse<ProductListItem>>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -413,7 +413,7 @@ export async function getProduct(productId: number, t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<Product>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -428,7 +428,7 @@ export async function checkCanBuy(productId: number, quantity: number = 1, t: TF
   }
 
   const json = await response.json() as ApiResponse<{ canBuy: boolean; reason: string }>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -447,7 +447,7 @@ export async function purchaseProduct(request: CreateOrderRequest, t: TFunction)
   }
 
   const json = await response.json() as ApiResponse<PurchaseResult>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -476,7 +476,7 @@ export async function getMyOrders(
   }
 
   const json = await response.json() as ApiResponse<PagedResponse<OrderListItem>>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -494,7 +494,7 @@ export async function getOrder(orderId: number, t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<Order>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -515,7 +515,7 @@ export async function cancelOrder(orderId: number, t: TFunction, reason?: string
   }
 
   const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -530,7 +530,7 @@ export async function getMyBenefits(includeExpired: boolean = false, t: TFunctio
   }
 
   const json = await response.json() as ApiResponse<UserBenefit[]>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -545,7 +545,7 @@ export async function getMyActiveBenefits(t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<UserBenefit[]>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -563,7 +563,7 @@ export async function activateBenefit(benefitId: number, t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -581,7 +581,7 @@ export async function deactivateBenefit(benefitId: number, t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -596,7 +596,7 @@ export async function getMyInventory(t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<UserInventoryItem[]>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -615,7 +615,7 @@ export async function useItem(request: UseItemRequest, t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<UseItemResult>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -633,7 +633,7 @@ export async function useRenameCard(inventoryId: number, newNickname: string, t:
   }
 
   const json = await response.json() as ApiResponse<UseItemResult>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**

@@ -2,8 +2,7 @@
  * 分片上传相关的 API 调用
  */
 
-import { parseApiResponseWithI18n, apiGet, apiPost, configureApiClient, type ApiResponse } from '@radish/ui';
-import type { TFunction } from 'i18next';
+import { parseApiResponse, type ApiResponse } from '@radish/ui';
 import type { AttachmentInfo } from '@/api/attachment';
 
 const defaultApiBase = 'https://localhost:5000';
@@ -186,8 +185,7 @@ export interface MergeChunksOptions {
  * @returns 上传会话信息
  */
 export async function createSession(
-  options: CreateSessionOptions,
-  t: TFunction
+  options: CreateSessionOptions
 ): Promise<UploadSession> {
   const {
     fileName,
@@ -221,7 +219,7 @@ export async function createSession(
   }
 
   const json = await response.json() as ApiResponse<UploadSession>;
-  const parsed = parseApiResponse<UploadSession>(json, t);
+  const parsed = parseApiResponse<UploadSession>(json);
 
   if (!parsed.ok || !parsed.data) {
     throw new Error(parsed.message || '创建上传会话失败');
@@ -243,8 +241,7 @@ export async function uploadChunk(
   sessionId: string,
   chunkIndex: number,
   chunkBlob: Blob,
-  onProgress?: (progress: number) => void,
-  t?: TFunction
+  onProgress?: (progress: number) => void
 ): Promise<UploadSession> {
   const url = `${getApiBaseUrl()}/api/v1/ChunkedUpload/UploadChunk`;
 
@@ -272,9 +269,7 @@ export async function uploadChunk(
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
           const json = JSON.parse(xhr.responseText) as ApiResponse<UploadSession>;
-          const parsed = t
-            ? parseApiResponse<UploadSession>(json, t)
-            : { ok: json.isSuccess, data: json.responseData as UploadSession, message: json.messageInfo };
+          const parsed = parseApiResponse<UploadSession>(json);
 
           if (!parsed.ok || !parsed.data) {
             reject(new Error(parsed.message || '上传分片失败'));
@@ -319,8 +314,7 @@ export async function uploadChunk(
  * @returns 上传会话信息
  */
 export async function getSession(
-  sessionId: string,
-  t: TFunction
+  sessionId: string
 ): Promise<UploadSession> {
   const url = `${getApiBaseUrl()}/api/v1/ChunkedUpload/GetSession?sessionId=${encodeURIComponent(sessionId)}`;
 
@@ -331,7 +325,7 @@ export async function getSession(
   }
 
   const json = await response.json() as ApiResponse<UploadSession>;
-  const parsed = parseApiResponse<UploadSession>(json, t);
+  const parsed = parseApiResponse<UploadSession>(json);
 
   if (!parsed.ok || !parsed.data) {
     throw new Error(parsed.message || '获取上传会话失败');
@@ -347,8 +341,7 @@ export async function getSession(
  * @returns 附件信息
  */
 export async function mergeChunks(
-  options: MergeChunksOptions,
-  t: TFunction
+  options: MergeChunksOptions
 ): Promise<AttachmentInfo> {
   const {
     sessionId,
@@ -382,7 +375,7 @@ export async function mergeChunks(
   }
 
   const json = await response.json() as ApiResponse<AttachmentInfo>;
-  const parsed = parseApiResponse<AttachmentInfo>(json, t);
+  const parsed = parseApiResponse<AttachmentInfo>(json);
 
   if (!parsed.ok || !parsed.data) {
     throw new Error(parsed.message || '合并分片失败');
@@ -397,8 +390,7 @@ export async function mergeChunks(
  * @param t i18n 翻译函数
  */
 export async function cancelSession(
-  sessionId: string,
-  t: TFunction
+  sessionId: string
 ): Promise<void> {
   const url = `${getApiBaseUrl()}/api/v1/ChunkedUpload/CancelSession`;
 
@@ -416,7 +408,7 @@ export async function cancelSession(
   }
 
   const json = await response.json() as ApiResponse<void>;
-  const parsed = parseApiResponse<void>(json, t);
+  const parsed = parseApiResponse<void>(json);
 
   if (!parsed.ok) {
     throw new Error(parsed.message || '取消上传会话失败');

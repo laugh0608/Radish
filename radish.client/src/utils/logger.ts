@@ -3,12 +3,14 @@ import { env } from '@/config/env';
 /**
  * 日志级别
  */
-export enum LogLevel {
-  DEBUG = 0,
-  INFO = 1,
-  WARN = 2,
-  ERROR = 3,
-}
+export const LogLevel = {
+  DEBUG: 0,
+  INFO: 1,
+  WARN: 2,
+  ERROR: 3,
+} as const;
+
+export type LogLevel = typeof LogLevel[keyof typeof LogLevel];
 
 /**
  * 日志工具类

@@ -13,13 +13,13 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { experienceApi, type UserExperience, type ExpTransaction } from '@radish/ui';
+import { experienceApi, type ExperienceData, type ExpTransactionData } from '@/api/experience';
 import { Icon } from '@radish/ui';
 import styles from './ExperienceDetailApp.module.css';
 
 export const ExperienceDetailApp = () => {
-  const [experience, setExperience] = useState<UserExperience | null>(null);
-  const [transactions, setTransactions] = useState<ExpTransaction[]>([]);
+  const [experience, setExperience] = useState<ExperienceData | null>(null);
+  const [transactions, setTransactions] = useState<ExpTransactionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(1);
@@ -43,8 +43,10 @@ export const ExperienceDetailApp = () => {
       ]);
 
       setExperience(expResult);
-      setTransactions(transResult.data);
-      setTotalPages(transResult.pageCount);
+      if (transResult) {
+        setTransactions(transResult.data);
+        setTotalPages(transResult.pageCount);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载数据失败');
       log.error('加载经验值详情失败:', err);
