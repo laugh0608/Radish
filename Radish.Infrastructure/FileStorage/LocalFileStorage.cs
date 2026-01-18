@@ -1,3 +1,4 @@
+using Radish.Model.DTOs;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using Radish.Common;

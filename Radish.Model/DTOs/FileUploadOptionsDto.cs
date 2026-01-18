@@ -1,4 +1,4 @@
-namespace Radish.Model.ViewModels;
+namespace Radish.Model.DTOs;
 
 /// <summary>
 /// 文件上传选项

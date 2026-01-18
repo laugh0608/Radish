@@ -1,4 +1,4 @@
-namespace Radish.Model.ViewModels;
+namespace Radish.Model.DTOs;
 
 /// <summary>
 /// 创建通知 DTO

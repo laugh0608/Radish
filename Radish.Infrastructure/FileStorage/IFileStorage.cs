@@ -1,3 +1,4 @@
+using Radish.Model.DTOs;
 using Radish.Model.ViewModels;
 
 namespace Radish.Infrastructure.FileStorage;
