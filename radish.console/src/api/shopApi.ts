@@ -175,6 +175,9 @@ export async function adminGetOrders(params: {
   endDate?: string;
   pageIndex?: number;
   pageSize?: number;
+  userId?: number;
+  productId?: number;
+  orderNo?: string;
 }): Promise<PagedResponse<Order>> {
   const searchParams = new URLSearchParams();
 
@@ -183,6 +186,9 @@ export async function adminGetOrders(params: {
   if (params.keyword) searchParams.append('keyword', params.keyword);
   if (params.startDate) searchParams.append('startDate', params.startDate);
   if (params.endDate) searchParams.append('endDate', params.endDate);
+  if (params.userId) searchParams.append('userId', params.userId.toString());
+  if (params.productId) searchParams.append('productId', params.productId.toString());
+  if (params.orderNo) searchParams.append('orderNo', params.orderNo);
   searchParams.append('pageIndex', (params.pageIndex || 1).toString());
   searchParams.append('pageSize', (params.pageSize || 20).toString());
 
@@ -249,5 +255,112 @@ export async function refundOrder(orderId: number, reason: string): Promise<void
 
   if (!response.ok) {
     throw new Error(response.message || '退款订单失败');
+  }
+}
+
+// ==================== 工具函数 ====================
+
+/**
+ * 获取订单状态颜色
+ */
+export function getOrderStatusColor(status: OrderStatus): string {
+  switch (status) {
+    case OrderStatus.Pending:
+      return '#faad14'; // 橙色
+    case OrderStatus.Paid:
+      return '#52c41a'; // 绿色
+    case OrderStatus.Completed:
+      return '#52c41a'; // 绿色
+    case OrderStatus.Cancelled:
+      return '#ff4d4f'; // 红色
+    case OrderStatus.Refunded:
+      return '#722ed1'; // 紫色
+    case OrderStatus.Failed:
+      return '#ff4d4f'; // 红色
+    default:
+      return '#d9d9d9'; // 灰色
+  }
+}
+
+/**
+ * 获取订单状态显示文本
+ */
+export function getOrderStatusDisplay(status: OrderStatus): string {
+  switch (status) {
+    case OrderStatus.Pending:
+      return '待付款';
+    case OrderStatus.Paid:
+      return '已付款';
+    case OrderStatus.Completed:
+      return '已完成';
+    case OrderStatus.Cancelled:
+      return '已取消';
+    case OrderStatus.Refunded:
+      return '已退款';
+    case OrderStatus.Failed:
+      return '发放失败';
+    default:
+      return '未知状态';
+  }
+}
+
+/**
+ * 获取商品类型显示文本
+ */
+export function getProductTypeDisplay(type: ProductType): string {
+  switch (type) {
+    case ProductType.Benefit:
+      return '权益商品';
+    case ProductType.Consumable:
+      return '消耗品';
+    case ProductType.Physical:
+      return '实体商品';
+    default:
+      return '未知类型';
+  }
+}
+
+/**
+ * 重试发放权益
+ */
+export async function retryGrantBenefit(orderId: number): Promise<void> {
+  const response = await apiPost<null>(
+    `/api/v1/Shop/RetryGrantBenefit/${orderId}`,
+    {},
+    { withAuth: true }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '重试发放权益失败');
+  }
+}
+
+/**
+ * 商品上架
+ */
+export async function putOnSale(productId: number): Promise<void> {
+  const response = await apiPut<null>(
+    `/api/v1/Shop/PutOnSale/${productId}`,
+    {},
+    { withAuth: true }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '商品上架失败');
+  }
+}
+
+/**
+ * 商品下架
+ */
+export async function takeOffSale(productId: number): Promise<void> {
+  const response = await apiPut<null>(
+    `/api/v1/Shop/TakeOffSale/${productId}`,
+    {},
+    { withAuth: true }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '商品下架失败');
   }
 }

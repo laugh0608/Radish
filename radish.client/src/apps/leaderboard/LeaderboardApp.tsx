@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
-import { experienceApi, type LeaderboardItem } from '@radish/ui';
+import { experienceApi, type LeaderboardItemData } from '@/api/experience';
 import { Icon } from '@radish/ui';
 import styles from './LeaderboardApp.module.css';
 
 export const LeaderboardApp = () => {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardItem[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardItemData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(1);
@@ -24,8 +24,10 @@ export const LeaderboardApp = () => {
 
     try {
       const response = await experienceApi.getLeaderboard(pageIndex, pageSize);
-      setLeaderboard(response.data);
-      setTotalPages(response.pageCount);
+      if (response) {
+        setLeaderboard(response.data);
+        setTotalPages(response.pageCount);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载排行榜失败');
       log.error('加载排行榜失败:', err);

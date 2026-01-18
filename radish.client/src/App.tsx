@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
-import { parseApiResponseWithI18n, type ApiResponse } from '@radish/ui';
+import { parseApiResponse, type ApiResponse } from '@radish/ui';
 import { notificationHub } from '@/services/notificationHub';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from './stores/userStore';
@@ -205,7 +205,7 @@ function App() {
         try {
             const response = await apiFetch(requestUrl);
             const json = await response.json() as ApiResponse<Forecast[]>;
-            const parsed = parseApiResponse(json, t);
+            const parsed = parseApiResponse(json);
 
             if (!parsed.ok || !parsed.data) {
                 throw new Error(parsed.message || t('error.weather.load_failed'));
@@ -230,7 +230,7 @@ function App() {
             const response = await apiFetch(requestUrl, { withAuth: true });
 
             const json = await response.json() as ApiResponse<CurrentUser>;
-            const parsed = parseApiResponse(json, t);
+            const parsed = parseApiResponse(json);
 
             if (!parsed.ok || !parsed.data) {
                 throw new Error(parsed.message || t('auth.userInfoLoadFailedPrefix'));

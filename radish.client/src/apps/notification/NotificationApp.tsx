@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { log } from '@/utils/logger';
-import { NotificationList, notificationApi, type NotificationItemData } from '@radish/ui';
+import { NotificationList, type NotificationItemData } from '@radish/ui';
+import { notificationApi } from '@/api/notification';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
 import { toast } from '@radish/ui';
@@ -54,14 +55,15 @@ export const NotificationApp = () => {
 
       setLoading(true);
       try {
-        const result = await notificationApi.getList({
+        const result = await notificationApi.getMyNotifications({
           pageIndex: 1,
           pageSize: 20
         });
 
-        const store = useNotificationStore.getState();
-        store.setRecentNotifications(
-          result.notifications.map(n => ({
+        if (result && result.data) {
+          const store = useNotificationStore.getState();
+          store.setRecentNotifications(
+            result.data.map((n: any) => ({
             id: n.id,
             type: mapNotificationTypeToStore(n.type),
             title: n.title,
@@ -74,7 +76,8 @@ export const NotificationApp = () => {
             actorName: n.triggerName,
             actorAvatar: n.triggerAvatar
           }))
-        );
+          );
+        }
       } catch (error) {
         log.error('加载通知列表失败:', error);
         toast.error('加载通知列表失败');
@@ -114,7 +117,7 @@ export const NotificationApp = () => {
       }
 
       // 调用 HTTP API
-      await notificationApi.markAsRead([id]);
+      await notificationApi.markAsRead(id);
 
       // 更新 Store 状态
       const store = useNotificationStore.getState();

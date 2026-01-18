@@ -4,7 +4,7 @@ import { log } from '@/utils/logger';
  * 附件上传相关的 API 调用
  */
 
-import { parseApiResponseWithI18n, apiGet, apiPost, configureApiClient, type ApiResponse } from '@radish/ui';
+import { configureApiClient, getApiClientConfig, apiFetch, parseApiResponseWithI18n, type ApiResponse } from '@radish/ui';
 import type { TFunction } from 'i18next';
 
 // 配置 API 客户端
@@ -14,6 +14,13 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined || de
 configureApiClient({
   baseUrl: apiBaseUrl.replace(/\/$/, ''),
 });
+
+/**
+ * 获取API基础URL
+ */
+function getApiBaseUrl(): string {
+  return getApiClientConfig().baseUrl;
+}
 
 /**
  * 延迟函数（用于重试）
@@ -291,7 +298,7 @@ export async function uploadImage(
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const json = JSON.parse(xhr.responseText) as ApiResponse<AttachmentInfo>;
-            const parsed = parseApiResponse<AttachmentInfo>(json, t);
+            const parsed = parseApiResponseWithI18n<AttachmentInfo>(json, t);
 
             if (!parsed.ok || !parsed.data) {
               reject(new Error(parsed.message || '上传失败'));
@@ -377,7 +384,7 @@ export async function uploadDocument(
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const json = JSON.parse(xhr.responseText) as ApiResponse<AttachmentInfo>;
-            const parsed = parseApiResponse<AttachmentInfo>(json, t);
+            const parsed = parseApiResponseWithI18n<AttachmentInfo>(json, t);
 
             if (!parsed.ok || !parsed.data) {
               reject(new Error(parsed.message || '上传失败'));
@@ -434,7 +441,7 @@ export async function getAttachmentById(
   }
 
   const json = await response.json() as ApiResponse<AttachmentInfo>;
-  const parsed = parseApiResponse<AttachmentInfo>(json, t);
+  const parsed = parseApiResponseWithI18n<AttachmentInfo>(json, t);
 
   if (!parsed.ok || !parsed.data) {
     throw new Error(parsed.message || '获取附件失败');
@@ -463,7 +470,7 @@ export async function getAttachmentsByBusiness(
   }
 
   const json = await response.json() as ApiResponse<AttachmentInfo[]>;
-  const parsed = parseApiResponse<AttachmentInfo[]>(json, t);
+  const parsed = parseApiResponseWithI18n<AttachmentInfo[]>(json, t);
 
   if (!parsed.ok || !parsed.data) {
     throw new Error(parsed.message || '获取附件列表失败');
@@ -492,7 +499,7 @@ export async function deleteAttachment(
   }
 
   const json = await response.json() as ApiResponse<void>;
-  const parsed = parseApiResponse<void>(json, t);
+  const parsed = parseApiResponseWithI18n<void>(json, t);
 
   if (!parsed.ok) {
     throw new Error(parsed.message || '删除附件失败');
@@ -523,7 +530,7 @@ export async function deleteAttachmentsBatch(
   }
 
   const json = await response.json() as ApiResponse<void>;
-  const parsed = parseApiResponse<void>(json, t);
+  const parsed = parseApiResponseWithI18n<void>(json, t);
 
   if (!parsed.ok) {
     throw new Error(parsed.message || '批量删除附件失败');
@@ -554,7 +561,7 @@ export async function updateAttachmentBusinessAssociation(
   }
 
   const json = await response.json() as ApiResponse<void>;
-  const parsed = parseApiResponse<void>(json, t);
+  const parsed = parseApiResponseWithI18n<void>(json, t);
 
   if (!parsed.ok) {
     throw new Error(parsed.message || '更新业务关联失败');

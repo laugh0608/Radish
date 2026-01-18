@@ -37,7 +37,7 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl }: CoinTransaction
         setTotalCount(result.data.dataCount);
         setTotalPages(result.data.pageCount);
       } else {
-        setError(result.message);
+        setError(result.message || '加载交易记录失败');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载交易记录失败');
