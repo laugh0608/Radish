@@ -101,7 +101,7 @@ public class ExperienceController : ControllerBase
     /// <param name="expType">经验值类型（可选）</param>
     /// <returns>分页的交易记录</returns>
     [HttpGet]
-    public async Task<MessageModel<PageModel<ExpTransactionVo>>> GetMyTransactions(
+    public async Task<MessageModel<PageModel<ExpTransactionVo>>> GetTransactions(
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] string? expType = null)
