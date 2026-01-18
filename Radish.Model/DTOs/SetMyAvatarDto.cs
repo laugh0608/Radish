@@ -1,4 +1,4 @@
-namespace Radish.Model.ViewModels;
+namespace Radish.Model.DTOs;
 
 public class SetMyAvatarDto
 {

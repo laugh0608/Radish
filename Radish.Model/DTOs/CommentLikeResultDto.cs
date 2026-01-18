@@ -1,4 +1,4 @@
-namespace Radish.Model.ViewModels;
+namespace Radish.Model.DTOs;
 
 /// <summary>评论点赞操作结果DTO</summary>
 public class CommentLikeResultDto
