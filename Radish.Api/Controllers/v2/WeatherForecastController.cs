@@ -10,6 +10,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Model.LogModels;
+using Radish.Shared.CustomEnum;
 using Serilog;
 
 namespace Radish.Api.Controllers.v2;
@@ -236,18 +237,24 @@ public class WeatherForecastController : ControllerBase
     /// <summary>多库-日志库测试接口</summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<IActionResult> TenantTest()
+    public async Task<MessageModel<List<AuditSqlLogVo>>> TenantTest()
     {
         // 测试多库之 AuditSqlLog 单独日志库
         var res = await _auditSqlLogService.QueryAsync();
 
-        return Ok(res);
+        return new MessageModel<List<AuditSqlLogVo>>
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = res
+        };
     }
 
     /// <summary>分表-日志库测试接口</summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<IActionResult> SplitTest()
+    public async Task<MessageModel<List<AuditSqlLog>>> SplitTest()
     {
         var timeSpan = DateTime.Now.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var id = timeSpan.TotalSeconds.ObjToLong();
@@ -260,17 +267,12 @@ public class WeatherForecastController : ControllerBase
 
         var res = await _auditSqlLogService.QuerySplitAsync(it => true);
 
-        return Ok(res);
+        return new MessageModel<List<AuditSqlLog>>
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = res
+        };
     }
-}
-
-public class WeatherForecast
-{
-    public DateOnly Date { get; set; }
-
-    public int TemperatureC { get; set; }
-
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-
-    public string? Summary { get; set; }
 }
