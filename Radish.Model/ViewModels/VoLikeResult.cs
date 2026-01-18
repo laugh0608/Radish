@@ -8,10 +8,10 @@ public class VoLikeResult
     /// <summary>
     /// 是否已点赞
     /// </summary>
-    public bool IsLiked { get; set; }
+    public bool VoIsLiked { get; set; }
 
     /// <summary>
     /// 点赞数量
     /// </summary>
-    public int LikeCount { get; set; }
+    public int VoLikeCount { get; set; }
 }

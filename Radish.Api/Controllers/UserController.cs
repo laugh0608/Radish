@@ -99,10 +99,10 @@ public class UserController : ControllerBase
 
         var responseResult = new VoPagedResult<UserVo>
         {
-            Items = userVos,
-            Total = totalCount,
-            PageIndex = pageIndex,
-            PageSize = pageSize
+            VoItems = userVos,
+            VoTotal = totalCount,
+            VoPageIndex = pageIndex,
+            VoPageSize = pageSize
         };
 
         return new MessageModel
@@ -331,18 +331,18 @@ public class UserController : ControllerBase
 
         var profile = new UserProfileVo
         {
-            UserId = user.Uuid,
-            UserName = user.VoUserName,
-            UserEmail = user.VoUserEmail,
-            RealName = user.VoUserRealName,
-            Sex = user.VoUserSex,
-            Age = user.VoUserAge,
-            Birth = user.VoUserBirth,
-            Address = user.VoUserAddress,
-            CreateTime = user.VoCreateTime,
-            AvatarAttachmentId = avatar?.VoId,
-            AvatarUrl = avatar?.VoUrl,
-            AvatarThumbnailUrl = avatar?.VoThumbnailUrl
+            VoUserId = user.Uuid,
+            VoUserName = user.VoUserName,
+            VoUserEmail = user.VoUserEmail,
+            VoRealName = user.VoUserRealName,
+            VoSex = user.VoUserSex,
+            VoAge = user.VoUserAge,
+            VoBirth = user.VoUserBirth,
+            VoAddress = user.VoUserAddress,
+            VoCreateTime = user.VoCreateTime,
+            VoAvatarAttachmentId = avatar?.VoId,
+            VoAvatarUrl = avatar?.VoUrl,
+            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl
         };
 
         return new MessageModel
@@ -627,8 +627,8 @@ public class UserController : ControllerBase
 
         var vo = new UserPointsVo
         {
-            UserId = userId,
-            Balance = 0
+            VoUserId = userId,
+            VoBalance = 0
         };
 
         return new MessageModel
@@ -653,8 +653,8 @@ public class UserController : ControllerBase
 
         var result = new VoUnreadMessageCount
         {
-            UserId = userId,
-            UnreadCount = 0
+            VoUserId = userId,
+            VoUnreadCount = 0
         };
 
         return new MessageModel

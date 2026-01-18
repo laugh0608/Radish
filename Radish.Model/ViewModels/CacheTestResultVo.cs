@@ -5,17 +5,17 @@ namespace Radish.Model.ViewModels;
 public class CacheTestResultVo
 {
     /// <summary>缓存键</summary>
-    public string CacheKey { get; set; } = string.Empty;
+    public string VoCacheKey { get; set; } = string.Empty;
 
     /// <summary>设置前的缓存键列表</summary>
-    public List<string> CacheKeysBeforeSet { get; set; } = new();
+    public List<string> VoCacheKeysBeforeSet { get; set; } = new();
 
     /// <summary>设置后的缓存键列表</summary>
-    public List<string> CacheKeysAfterSet { get; set; } = new();
+    public List<string> VoCacheKeysAfterSet { get; set; } = new();
 
     /// <summary>缓存值</summary>
-    public string? CacheValue { get; set; }
+    public string? VoCacheValue { get; set; }
 
     /// <summary>删除后的缓存键列表</summary>
-    public List<string> CacheKeysAfterRemove { get; set; } = new();
+    public List<string> VoCacheKeysAfterRemove { get; set; } = new();
 }

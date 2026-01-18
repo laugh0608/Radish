@@ -22,7 +22,7 @@ public class ShopProfile : Profile
     {
         // ProductCategory -> ProductCategoryVo
         CreateMap<ProductCategory, ProductCategoryVo>()
-            .ForMember(dest => dest.ProductCount, opt => opt.Ignore()); // 运行时计算
+            .ForMember(dest => dest.VoProductCount, opt => opt.Ignore()); // 运行时计算
 
         // ProductCategoryVo -> ProductCategory
         CreateMap<ProductCategoryVo, ProductCategory>()

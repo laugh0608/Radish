@@ -9,20 +9,20 @@ public class UserMentionVo
     /// <summary>
     /// 用户ID
     /// </summary>
-    public long Id { get; set; }
+    public long VoId { get; set; }
 
     /// <summary>
     /// 用户名（登录名）
     /// </summary>
-    public string UserName { get; set; } = string.Empty;
+    public string VoUserName { get; set; } = string.Empty;
 
     /// <summary>
     /// 显示名称（昵称）
     /// </summary>
-    public string? DisplayName { get; set; }
+    public string? VoDisplayName { get; set; }
 
     /// <summary>
     /// 用户头像URL
     /// </summary>
-    public string? Avatar { get; set; }
+    public string? VoAvatar { get; set; }
 }

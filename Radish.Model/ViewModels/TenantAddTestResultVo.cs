@@ -8,10 +8,10 @@ public class TenantAddTestResultVo
     /// <summary>
     /// 添加结果（返回的ID或影响行数）
     /// </summary>
-    public long Result { get; set; }
-    
+    public long VoResult { get; set; }
+
     /// <summary>
     /// 租户ID
     /// </summary>
-    public long TenantId { get; set; }
+    public long VoTenantId { get; set; }
 }

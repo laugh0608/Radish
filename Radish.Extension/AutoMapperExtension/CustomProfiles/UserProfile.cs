@@ -65,15 +65,15 @@ public class UserProfile : Profile
 
         // User → UserMentionVo（用于@提及功能的用户搜索）
         CreateMap<User, UserMentionVo>()
-            .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.UserRealName))
-            .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
+            .ForMember(dest => dest.VoDisplayName, opt => opt.MapFrom(src => src.UserRealName))
+            .ForMember(dest => dest.VoAvatar, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
 
         // UserVo → UserMentionVo（用于从Service层返回的UserVo转换）
         CreateMap<UserVo, UserMentionVo>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Uuid))
-            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.VoUserName))
-            .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.VoUserRealName))
-            .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
+            .ForMember(dest => dest.VoId, opt => opt.MapFrom(src => src.Uuid))
+            .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => src.VoUserName))
+            .ForMember(dest => dest.VoDisplayName, opt => opt.MapFrom(src => src.VoUserRealName))
+            .ForMember(dest => dest.VoAvatar, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
 
         // User → CurrentUserVo（用于获取当前用户信息）
         RecognizeDestinationPrefixes("Vo");

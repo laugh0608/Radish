@@ -369,18 +369,18 @@ public class ChunkedUploadService : IChunkedUploadService
 
         return new UploadSessionVo
         {
-            SessionId = session.SessionId,
-            FileName = session.FileName,
-            TotalSize = session.TotalSize,
-            ChunkSize = session.ChunkSize,
-            TotalChunks = session.TotalChunks,
-            UploadedChunks = session.UploadedChunks,
-            UploadedChunkIndexes = uploadedIndexes,
-            Progress = Math.Round(progress, 2),
-            Status = session.Status,
-            AttachmentId = session.AttachmentId,
-            ExpiresAt = session.ExpiresAt,
-            CreateTime = session.CreateTime
+            VoSessionId = session.SessionId,
+            VoFileName = session.FileName,
+            VoTotalSize = session.TotalSize,
+            VoChunkSize = session.ChunkSize,
+            VoTotalChunks = session.TotalChunks,
+            VoUploadedChunks = session.UploadedChunks,
+            VoUploadedChunkIndexes = uploadedIndexes,
+            VoProgress = Math.Round(progress, 2),
+            VoStatus = session.Status,
+            VoAttachmentId = session.AttachmentId,
+            VoExpiresAt = session.ExpiresAt,
+            VoCreateTime = session.CreateTime
         };
     }
 

@@ -9,20 +9,20 @@ public class VoPagedResult<T>
     /// <summary>
     /// 数据项列表
     /// </summary>
-    public List<T> Items { get; set; } = new();
+    public List<T> VoItems { get; set; } = new();
 
     /// <summary>
     /// 总记录数
     /// </summary>
-    public int Total { get; set; }
+    public int VoTotal { get; set; }
 
     /// <summary>
     /// 页码（从1开始）
     /// </summary>
-    public int PageIndex { get; set; }
+    public int VoPageIndex { get; set; }
 
     /// <summary>
     /// 每页大小
     /// </summary>
-    public int PageSize { get; set; }
+    public int VoPageSize { get; set; }
 }

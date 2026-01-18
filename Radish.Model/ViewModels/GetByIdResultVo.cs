@@ -5,8 +5,8 @@ namespace Radish.Model.ViewModels;
 public class GetByIdResultVo
 {
     /// <summary>ID</summary>
-    public int Id { get; set; }
+    public int VoId { get; set; }
 
     /// <summary>名称</summary>
-    public string Name { get; set; } = string.Empty;
+    public string VoName { get; set; } = string.Empty;
 }

@@ -19,7 +19,7 @@ public class OidcProfile : Profile
         // RadishApplication 映射
         RecognizeDestinationPrefixes("Vo");
         CreateMap<RadishApplication, OidcAppVo>()
-            .ForMember(dest => dest.ClientSecret, opt => opt.Ignore()); // 安全考虑：默认不返回密钥
+            .ForMember(dest => dest.VoClientSecret, opt => opt.Ignore()); // 安全考虑：默认不返回密钥
         RecognizePrefixes("Vo");
         CreateMap<OidcAppVo, RadishApplication>();
 
@@ -38,7 +38,7 @@ public class OidcProfile : Profile
         // RadishToken 映射
         RecognizeDestinationPrefixes("Vo");
         CreateMap<RadishToken, OidcTokenVo>()
-            .ForMember(dest => dest.PayloadPreview, opt => opt.MapFrom(src =>
+            .ForMember(dest => dest.VoPayloadPreview, opt => opt.MapFrom(src =>
                 src.Payload.Length > 100 ? src.Payload.Substring(0, 100) + "..." : src.Payload)); // 只返回前 100 个字符
         RecognizePrefixes("Vo");
         CreateMap<OidcTokenVo, RadishToken>()

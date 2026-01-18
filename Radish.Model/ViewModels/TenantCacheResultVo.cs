@@ -8,5 +8,5 @@ public class TenantCacheResultVo
     /// <summary>
     /// 租户列表
     /// </summary>
-    public List<TenantVo> Tenants { get; set; } = new();
+    public List<TenantVo> VoTenants { get; set; } = new();
 }

@@ -178,10 +178,10 @@ public class CommentController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = new VoPagedResult<CommentVo>
             {
-                Items = comments,
-                Total = total,
-                PageIndex = pageIndex,
-                PageSize = pageSize
+                VoItems = comments,
+                VoTotal = total,
+                VoPageIndex = pageIndex,
+                VoPageSize = pageSize
             }
         };
     }

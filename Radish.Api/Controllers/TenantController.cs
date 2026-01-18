@@ -69,10 +69,10 @@ public class TenantController : ControllerBase
             IsEnable = false
         };
         var res = await _tenantService.AddAsync(tenant);
-        return MessageModel<TenantAddTestResultVo>.Success("添加成功", new TenantAddTestResultVo 
-        { 
-            Result = res, 
-            TenantId = tenant.Id 
+        return MessageModel<TenantAddTestResultVo>.Success("添加成功", new TenantAddTestResultVo
+        {
+            VoResult = res,
+            VoTenantId = tenant.Id
         });
     }
 

@@ -5,5 +5,5 @@ namespace Radish.Model.ViewModels;
 public class TestResultVo
 {
     /// <summary>角色列表</summary>
-    public List<RoleVo> RoleList5 { get; set; } = new();
+    public List<RoleVo> VoRoleList5 { get; set; } = new();
 }
