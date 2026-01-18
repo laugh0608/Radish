@@ -75,8 +75,8 @@ public class UserProfile : Profile
             .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => src.VoUserRealName))
             .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
 
-        // User → VoCurrentUser（用于获取当前用户信息）
-        CreateMap<User, VoCurrentUser>()
+        // User → CurrentUserVo（用于获取当前用户信息）
+        CreateMap<User, CurrentUserVo>()
             .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
             .ForMember(dest => dest.TenantId, opt => opt.MapFrom(src => src.TenantId))

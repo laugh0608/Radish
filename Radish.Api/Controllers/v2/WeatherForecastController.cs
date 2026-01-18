@@ -8,8 +8,8 @@ using Radish.Common.CacheTool;
 using Radish.Common.CoreTool;
 using Radish.IService;
 using Radish.Model;
-using Radish.Model.LogModels;
 using Radish.Model.ViewModels;
+using Radish.Model.LogModels;
 using Serilog;
 
 namespace Radish.Api.Controllers.v2;
@@ -83,14 +83,14 @@ public class WeatherForecastController : ControllerBase
     /// <param name="fail">为 true 时返回一个模拟的业务错误</param>
     /// <returns>统一格式的天气预报响应</returns>
     [HttpGet]
-    public ActionResult<MessageModel<IEnumerable<WeatherForecast>>> GetStandard(bool fail = false)
+    public ActionResult<MessageModel<IEnumerable<WeatherForecastVo>>> GetStandard(bool fail = false)
     {
         var localizer = HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Errors>>();
 
         if (fail)
         {
             var failMessage = localizer["error.weather.load_failed"];
-            var failResult = MessageModel<IEnumerable<WeatherForecast>>.Failed(
+            var failResult = MessageModel<IEnumerable<WeatherForecastVo>>.Failed(
                 failMessage,
                 code: "Weather.LoadFailed",
                 messageKey: "error.weather.load_failed");
@@ -98,7 +98,7 @@ public class WeatherForecastController : ControllerBase
             return StatusCode(StatusCodes.Status500InternalServerError, failResult);
         }
 
-        var forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecast
+        var forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecastVo
             {
                 Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
                 TemperatureC = Random.Shared.Next(-20, 55),
@@ -107,7 +107,7 @@ public class WeatherForecastController : ControllerBase
             .ToArray();
 
         var successMessage = localizer["info.weather.load_success"];
-        var successResult = MessageModel<IEnumerable<WeatherForecast>>.Success(
+        var successResult = MessageModel<IEnumerable<WeatherForecastVo>>.Success(
             successMessage,
             forecasts,
             code: "Weather.LoadSuccess",

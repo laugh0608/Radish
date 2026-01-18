@@ -3,7 +3,7 @@ namespace Radish.Model.ViewModels;
 /// <summary>
 /// 用户统计信息ViewModel
 /// </summary>
-public class VoUserStats
+public class UserStatsVo
 {
     /// <summary>
     /// 帖子数量
