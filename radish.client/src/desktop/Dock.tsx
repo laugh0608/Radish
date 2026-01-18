@@ -8,7 +8,7 @@ import { Icon } from '@radish/ui';
 import { CoinBalance } from './components/CoinBalance';
 import { ExperienceDisplay } from './components/ExperienceDisplay';
 import i18n from '@/i18n';
-import type { ApiResponse } from '@/api/client';
+import type { ApiResponse } from '@radish/ui';
 import styles from './Dock.module.css';
 
 /**

@@ -151,6 +151,38 @@ export function parseApiResponse<T>(
   }
 }
 
+/**
+ * 解析 API 响应（支持国际化）
+ */
+export function parseApiResponseWithI18n<T>(
+  response: ApiResponse<T>,
+  t: (key: string) => string
+): ParsedApiResponse<T> {
+  if (response.isSuccess) {
+    return {
+      ok: true,
+      data: response.responseData,
+      statusCode: response.statusCode,
+    };
+  } else {
+    let message = response.messageInfo;
+
+    if (response.messageKey) {
+      const localized = t(response.messageKey);
+      if (localized && localized !== response.messageKey) {
+        message = localized;
+      }
+    }
+
+    return {
+      ok: false,
+      message,
+      code: response.code,
+      statusCode: response.statusCode,
+    };
+  }
+}
+
 function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
   return (
     typeof value === 'object' &&

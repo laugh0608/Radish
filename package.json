@@ -14,6 +14,10 @@
     "build:docs": "npm run docs:build --prefix radish.docs",
     "dev:gateway": "dotnet run --project Radish.Gateway/Radish.Gateway.csproj",
     "dev:api": "dotnet run --project Radish.Api/Radish.Api.csproj",
+    "type-check": "npm run type-check --workspace=@radish/ui && npm run type-check --workspace=radish.client && npm run type-check --workspace=radish.console",
+    "type-check:ui": "npm run type-check --workspace=@radish/ui",
+    "type-check:client": "npm run type-check --workspace=radish.client",
+    "type-check:console": "npm run type-check --workspace=radish.console",
     "install:all": "npm install"
   }
 }
