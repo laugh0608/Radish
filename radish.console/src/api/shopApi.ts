@@ -270,19 +270,19 @@ export async function refundOrder(orderId: number, reason: string): Promise<void
 /**
  * 获取订单状态颜色
  */
-export function getOrderStatusColor(status: OrderStatus): string {
+export function getOrderStatusColor(status: string): string {
   switch (status) {
-    case OrderStatus.Pending:
+    case 'Pending':
       return '#faad14'; // 橙色
-    case OrderStatus.Paid:
+    case 'Paid':
       return '#52c41a'; // 绿色
-    case OrderStatus.Completed:
+    case 'Completed':
       return '#52c41a'; // 绿色
-    case OrderStatus.Cancelled:
+    case 'Cancelled':
       return '#ff4d4f'; // 红色
-    case OrderStatus.Refunded:
+    case 'Refunded':
       return '#722ed1'; // 紫色
-    case OrderStatus.Failed:
+    case 'Failed':
       return '#ff4d4f'; // 红色
     default:
       return '#d9d9d9'; // 灰色
@@ -292,19 +292,19 @@ export function getOrderStatusColor(status: OrderStatus): string {
 /**
  * 获取订单状态显示文本
  */
-export function getOrderStatusDisplay(status: OrderStatus): string {
+export function getOrderStatusDisplay(status: string): string {
   switch (status) {
-    case OrderStatus.Pending:
+    case 'Pending':
       return '待付款';
-    case OrderStatus.Paid:
+    case 'Paid':
       return '已付款';
-    case OrderStatus.Completed:
+    case 'Completed':
       return '已完成';
-    case OrderStatus.Cancelled:
+    case 'Cancelled':
       return '已取消';
-    case OrderStatus.Refunded:
+    case 'Refunded':
       return '已退款';
-    case OrderStatus.Failed:
+    case 'Failed':
       return '发放失败';
     default:
       return '未知状态';
@@ -314,13 +314,13 @@ export function getOrderStatusDisplay(status: OrderStatus): string {
 /**
  * 获取商品类型显示文本
  */
-export function getProductTypeDisplay(type: ProductType): string {
+export function getProductTypeDisplay(type: string): string {
   switch (type) {
-    case ProductType.Benefit:
+    case 'Benefit':
       return '权益商品';
-    case ProductType.Consumable:
+    case 'Consumable':
       return '消耗品';
-    case ProductType.Physical:
+    case 'Physical':
       return '实体商品';
     default:
       return '未知类型';
