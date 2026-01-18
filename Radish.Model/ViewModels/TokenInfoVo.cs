@@ -8,21 +8,21 @@ public class TokenInfoVo
     /// <summary>
     /// 是否成功
     /// </summary>
-    public bool IsSuccess { get; set; } = false;
+    public bool VoIsSuccess { get; set; } = false;
 
     /// <summary>
     /// Token 内容
     /// </summary>
-    public string TokenInfo { get; set; } = string.Empty;
+    public string VoTokenInfo { get; set; } = string.Empty;
 
     /// <summary>
     /// 有效期时间
     /// </summary>
     /// <remarks>单位 s</remarks>
-    public double ExpiresIn { get; set; } = 0.0;
+    public double VoExpiresIn { get; set; } = 0.0;
 
     /// <summary>
     /// Token 类型
     /// </summary>
-    public string TokenType { get; set; } = string.Empty;
+    public string VoTokenType { get; set; } = string.Empty;
 }

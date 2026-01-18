@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
-import { NotificationList, notificationApi, type NotificationItemData } from '@radish/ui';
+import { log } from '@/utils/logger';
+import { NotificationList, type NotificationItemData } from '@radish/ui';
+import { notificationApi } from '@/api/notification';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
 import { toast } from '@radish/ui';
@@ -53,14 +55,15 @@ export const NotificationApp = () => {
 
       setLoading(true);
       try {
-        const result = await notificationApi.getList({
+        const result = await notificationApi.getMyNotifications({
           pageIndex: 1,
           pageSize: 20
         });
 
-        const store = useNotificationStore.getState();
-        store.setRecentNotifications(
-          result.notifications.map(n => ({
+        if (result && result.data) {
+          const store = useNotificationStore.getState();
+          store.setRecentNotifications(
+            result.data.map((n: any) => ({
             id: n.id,
             type: mapNotificationTypeToStore(n.type),
             title: n.title,
@@ -73,9 +76,10 @@ export const NotificationApp = () => {
             actorName: n.triggerName,
             actorAvatar: n.triggerAvatar
           }))
-        );
+          );
+        }
       } catch (error) {
-        console.error('加载通知列表失败:', error);
+        log.error('加载通知列表失败:', error);
         toast.error('加载通知列表失败');
       } finally {
         setLoading(false);
@@ -87,7 +91,7 @@ export const NotificationApp = () => {
 
   // 点击通知
   const handleNotificationClick = useCallback((notification: NotificationItemData) => {
-    console.log('点击通知:', notification);
+    log.debug('点击通知:', notification);
 
     // 如果未读，标记为已读
     if (!notification.isRead) {
@@ -109,11 +113,11 @@ export const NotificationApp = () => {
       try {
         await notificationHub.markAsRead(id);
       } catch (err) {
-        console.warn('SignalR 推送失败，继续使用 HTTP API:', err);
+        log.warn('SignalR 推送失败，继续使用 HTTP API:', err);
       }
 
       // 调用 HTTP API
-      await notificationApi.markAsRead([id]);
+      await notificationApi.markAsRead(id);
 
       // 更新 Store 状态
       const store = useNotificationStore.getState();
@@ -121,7 +125,7 @@ export const NotificationApp = () => {
 
       toast.success('已标记为已读');
     } catch (error) {
-      console.error('标记已读失败:', error);
+      log.error('标记已读失败:', error);
       toast.error('标记已读失败');
     }
   }, []);
@@ -133,7 +137,7 @@ export const NotificationApp = () => {
       try {
         await notificationHub.markAllAsRead();
       } catch (err) {
-        console.warn('SignalR 推送失败，继续使用 HTTP API:', err);
+        log.warn('SignalR 推送失败，继续使用 HTTP API:', err);
       }
 
       // 调用 HTTP API
@@ -145,7 +149,7 @@ export const NotificationApp = () => {
 
       toast.success('已标记全部为已读');
     } catch (error) {
-      console.error('标记全部已读失败:', error);
+      log.error('标记全部已读失败:', error);
       toast.error('标记全部已读失败');
     }
   }, []);
@@ -161,7 +165,7 @@ export const NotificationApp = () => {
 
       toast.success('通知已删除');
     } catch (error) {
-      console.error('删除通知失败:', error);
+      log.error('删除通知失败:', error);
       toast.error('删除通知失败');
     }
   }, []);

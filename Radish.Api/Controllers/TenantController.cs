@@ -47,10 +47,10 @@ public class TenantController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<MessageModel<object>> GetTenantWithCache()
+    public async Task<MessageModel<List<TenantVo>>> GetTenantWithCache()
     {
         var res = await _tenantService.QueryWithCacheAsync();
-        return MessageModel<object>.Success("获取成功", res);
+        return MessageModel<List<TenantVo>>.Success("获取成功", res);
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ public class TenantController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpPost]
-    public async Task<MessageModel<object>> AddTest()
+    public async Task<MessageModel<TenantAddTestResultVo>> AddTest()
     {
         var tenant = new Tenant()
         {
@@ -69,7 +69,11 @@ public class TenantController : ControllerBase
             IsEnable = false
         };
         var res = await _tenantService.AddAsync(tenant);
-        return MessageModel<object>.Success("添加成功", res);
+        return MessageModel<TenantAddTestResultVo>.Success("添加成功", new TenantAddTestResultVo
+        {
+            VoResult = res,
+            VoTenantId = tenant.Id
+        });
     }
 
     /// <summary>
@@ -77,9 +81,10 @@ public class TenantController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<object> BusinessTable()
+    public async Task<MessageModel<List<BusinessTableVo>>> BusinessTable()
     {
-        return await _businessTableService.QueryAsync();
+        var data = await _businessTableService.QueryAsync();
+        return MessageModel<List<BusinessTableVo>>.Success("获取成功", data);
     }
 
     /// <summary>
@@ -87,9 +92,10 @@ public class TenantController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<object> MultiBusinessTable()
+    public async Task<MessageModel<List<MultiBusinessTableVo>>> MultiBusinessTable()
     {
-        return await _multiBusinessTableService.QueryAsync();
+        var data = await _multiBusinessTableService.QueryAsync();
+        return MessageModel<List<MultiBusinessTableVo>>.Success("获取成功", data);
     }
 
     /// <summary>
@@ -97,8 +103,9 @@ public class TenantController : ControllerBase
     /// </summary>
     /// <returns></returns>
     [HttpGet]
-    public async Task<object> SubLibBusinessTable()
+    public async Task<MessageModel<List<SubLibBusinessTableVo>>> SubLibBusinessTable()
     {
-        return await _subLibBusinessTableService.QueryAsync();
+        var data = await _subLibBusinessTableService.QueryAsync();
+        return MessageModel<List<SubLibBusinessTableVo>>.Success("获取成功", data);
     }
 }

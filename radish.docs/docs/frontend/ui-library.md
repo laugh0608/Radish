@@ -133,7 +133,7 @@ function MyComponent() {
 - **Input** - 输入框组件
 - **Select** - 下拉选择组件
 - **Modal** - 模态框组件
-- **Icon** - 图标组件（基于 Iconify）
+- **Icon** - 图标组件（基于 Iconify，本地 Iconify JSON 集合加载，不依赖公共 API）
 - **ContextMenu** - 右键菜单组件
 - **ConfirmDialog** - 确认对话框组件
 - **UserMention** - 用户提及组件（@用户名）

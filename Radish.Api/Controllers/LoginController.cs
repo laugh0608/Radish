@@ -100,7 +100,7 @@ public class LoginController : ControllerBase
         // }
         //
         // // 2. 使用 Argon2id 验证密码
-        // if (!PasswordHasher.VerifyPassword(pass, firstUser.VoLoPwd))
+        // if (!PasswordHasher.VerifyPassword(pass, firstUser.VoLoginPassword))
         // {
         //     Log.Warning($"用户 {name} 密码验证失败");
         //     var failMessage = _errorsLocalizer["error.auth.invalid_credentials"];
@@ -112,10 +112,10 @@ public class LoginController : ControllerBase
         //
         // // 3. 密码验证成功，生成 Token
         // var userId = firstUser.Uuid;
-        // var tenantId = firstUser.VoTenId;
+        // var tenantId = firstUser.VoTenantId;
         //
         // // 获取用户角色（注意：这里需要传递用户名和哈希后的密码）
-        // var userRoles = await _userService.GetUserRoleNameStrAsync(name, firstUser.VoLoPwd);
+        // var userRoles = await _userService.GetUserRoleNameStrAsync(name, firstUser.VoLoginPassword);
         //
         // var claims = new List<Claim>
         // {

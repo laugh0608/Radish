@@ -6,23 +6,23 @@ namespace Radish.Model.ViewModels;
 public class UserCommentLikeVo
 {
     /// <summary>点赞记录ID</summary>
-    public long Id { get; set; }
+    public long VoId { get; set; }
 
     /// <summary>用户ID</summary>
-    public long UserId { get; set; }
+    public long VoUserId { get; set; }
 
     /// <summary>评论ID</summary>
-    public long CommentId { get; set; }
+    public long VoCommentId { get; set; }
 
     /// <summary>帖子ID</summary>
-    public long PostId { get; set; }
+    public long VoPostId { get; set; }
 
     /// <summary>点赞时间</summary>
-    public DateTime LikedAt { get; set; }
+    public DateTime VoLikedAt { get; set; }
 
     /// <summary>用户名（关联信息，按需加载）</summary>
-    public string? UserName { get; set; }
+    public string? VoUserName { get; set; }
 
     /// <summary>用户头像（关联信息，按需加载）</summary>
-    public string? UserAvatar { get; set; }
+    public string? VoUserAvatar { get; set; }
 }

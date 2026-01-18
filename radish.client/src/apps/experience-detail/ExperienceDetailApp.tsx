@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { log } from '@/utils/logger';
 import {
   LineChart,
   Line,
@@ -12,13 +13,13 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { experienceApi, type UserExperience, type ExpTransaction } from '@radish/ui';
+import { experienceApi, type ExperienceData, type ExpTransactionData } from '@/api/experience';
 import { Icon } from '@radish/ui';
 import styles from './ExperienceDetailApp.module.css';
 
 export const ExperienceDetailApp = () => {
-  const [experience, setExperience] = useState<UserExperience | null>(null);
-  const [transactions, setTransactions] = useState<ExpTransaction[]>([]);
+  const [experience, setExperience] = useState<ExperienceData | null>(null);
+  const [transactions, setTransactions] = useState<ExpTransactionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pageIndex, setPageIndex] = useState(1);
@@ -35,18 +36,24 @@ export const ExperienceDetailApp = () => {
     setError(null);
 
     try {
-      // 并行加载经验值信息和交易记录
-      const [expResult, transResult] = await Promise.all([
-        experienceApi.getMyExperience(),
-        experienceApi.getTransactions({ pageIndex, pageSize })
-      ]);
-
+      // 加载经验值信息
+      const expResult = await experienceApi.getMyExperience();
       setExperience(expResult);
-      setTransactions(transResult.data);
-      setTotalPages(transResult.pageCount);
+
+      // 尝试加载交易记录（如果 API 不存在则忽略）
+      try {
+        const transResult = await experienceApi.getTransactions({ pageIndex, pageSize });
+        if (transResult) {
+          setTransactions(transResult.data);
+          setTotalPages(transResult.pageCount);
+        }
+      } catch (transErr) {
+        log.warn('经验值交易记录 API 不可用:', transErr);
+        // 忽略交易记录加载失败，只显示经验值信息
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载数据失败');
-      console.error('加载经验值详情失败:', err);
+      log.error('加载经验值详情失败:', err);
     } finally {
       setLoading(false);
     }

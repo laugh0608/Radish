@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { log } from '@/utils/logger';
 import type { TFunction } from 'i18next';
 import * as shopApi from '@/api/shop';
 
@@ -88,7 +89,7 @@ export const useShopData = (t: TFunction) => {
         throw new Error(result.message || '获取分类失败');
       }
     } catch (error) {
-      console.error('加载分类失败:', error);
+      log.error('加载分类失败:', error);
       setError(error instanceof Error ? error.message : '加载分类失败');
       setState(prev => ({ ...prev, loadingCategories: false }));
     }
@@ -117,7 +118,7 @@ export const useShopData = (t: TFunction) => {
         throw new Error(result.message || '获取商品列表失败');
       }
     } catch (error) {
-      console.error('加载商品列表失败:', error);
+      log.error('加载商品列表失败:', error);
       setError(error instanceof Error ? error.message : '加载商品列表失败');
       setState(prev => ({ ...prev, loadingProducts: false }));
     }
@@ -139,7 +140,7 @@ export const useShopData = (t: TFunction) => {
         throw new Error(result.message || '获取推荐商品失败');
       }
     } catch (error) {
-      console.error('加载推荐商品失败:', error);
+      log.error('加载推荐商品失败:', error);
       setError(error instanceof Error ? error.message : '加载推荐商品失败');
       setState(prev => ({ ...prev, loadingFeatured: false }));
     }
@@ -160,7 +161,7 @@ export const useShopData = (t: TFunction) => {
         throw new Error(result.message || '获取商品详情失败');
       }
     } catch (error) {
-      console.error('加载商品详情失败:', error);
+      log.error('加载商品详情失败:', error);
       setError(error instanceof Error ? error.message : '加载商品详情失败');
       setState(prev => ({ ...prev, loadingProductDetail: false }));
     }
@@ -181,7 +182,7 @@ export const useShopData = (t: TFunction) => {
         throw new Error(result.message || '检查购买权限失败');
       }
     } catch (error) {
-      console.error('检查购买权限失败:', error);
+      log.error('检查购买权限失败:', error);
       setError(error instanceof Error ? error.message : '检查购买权限失败');
       setState(prev => ({ ...prev, checkingCanBuy: false }));
     }
@@ -208,7 +209,7 @@ export const useShopData = (t: TFunction) => {
         throw new Error(result.message || '获取订单列表失败');
       }
     } catch (error) {
-      console.error('加载订单列表失败:', error);
+      log.error('加载订单列表失败:', error);
       setError(error instanceof Error ? error.message : '加载订单列表失败');
       setState(prev => ({ ...prev, loadingOrders: false }));
     }
@@ -229,7 +230,7 @@ export const useShopData = (t: TFunction) => {
         throw new Error(result.message || '获取订单详情失败');
       }
     } catch (error) {
-      console.error('加载订单详情失败:', error);
+      log.error('加载订单详情失败:', error);
       setError(error instanceof Error ? error.message : '加载订单详情失败');
       setState(prev => ({ ...prev, loadingOrderDetail: false }));
     }
@@ -255,7 +256,7 @@ export const useShopData = (t: TFunction) => {
         throw new Error('获取背包数据失败');
       }
     } catch (error) {
-      console.error('加载背包数据失败:', error);
+      log.error('加载背包数据失败:', error);
       setError(error instanceof Error ? error.message : '加载背包数据失败');
       setState(prev => ({ ...prev, loadingInventory: false }));
     }

@@ -11,6 +11,8 @@ export default defineConfig({
     // 资源请求会是 https://localhost:5000/console/assets/... 而不是 https://localhost:5000/assets/...
     base: '/console/',
     plugins: [plugin()],
+    // 确保是 SPA 模式
+    appType: 'spa',
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -21,12 +23,12 @@ export default defineConfig({
     server: {
         // 监听 0.0.0.0 让 Gateway 能访问
         host: '0.0.0.0',
-        port: parseInt(env.DEV_SERVER_PORT || '3200', 10),
+        port: parseInt(env.DEV_SERVER_PORT || '3100', 10),
         // HMR 配置：通过 Gateway 时使用轮询模式（更稳定）
         hmr: {
             protocol: 'ws',
             host: 'localhost',
-            port: parseInt(env.DEV_SERVER_PORT || '3200', 10),
+            port: parseInt(env.DEV_SERVER_PORT || '3100', 10),
             // 使用轮询作为后备，避免 WebSocket 问题
             overlay: true
         },
@@ -37,6 +39,9 @@ export default defineConfig({
             ignored: ['!**/node_modules/@radish/**'],
             // 使用轮询模式作为后备
             usePolling: false
-        }
+        },
+        // 配置 history API fallback，确保所有路由都返回 index.html
+        // 这对于 SPA 路由至关重要
+        middlewareMode: false
     }
 });

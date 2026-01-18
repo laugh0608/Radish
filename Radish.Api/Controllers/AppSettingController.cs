@@ -6,6 +6,10 @@ using Newtonsoft.Json;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.OptionTool;
+using Radish.Model;
+using Radish.Model.ViewModels;
+using Radish.Shared;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers;
 
@@ -43,25 +47,33 @@ public class AppSettingController : ControllerBase
     /// - App.GetOptions
     /// </remarks>
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetRedisConfig()
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    public async Task<MessageModel> GetRedisConfig()
     {
         await Task.CompletedTask;
         // 不同的获取 appsetting 的方式 AppSettingController
         var res1 = AppSettingsTool.RadishApp(new []{"Redis", "Enable"});
         var res2 = AppSettingsTool.GetValue("Redis:ConnectionString");
-        // var res3 = JsonConvert.SerializeObject(_redisOptions.Value);
         var res3 = _redisOptions.Value.InstanceName;
         var res4 = App.GetOptions<RedisOptions>();
-        return Ok(new
+
+        var result = new RedisConfigVo
         {
-            res1,
-            res2,
-            res3,
-            res4
-        });
+            VoEnableFromRadishApp = res1,
+            VoConnectionStringFromGetValue = res2,
+            VoInstanceNameFromOptions = res3,
+            VoFullOptionsFromApp = res4
+        };
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = result
+        };
     }
     
 }

@@ -15,6 +15,60 @@ npm run dev
 npm run build
 ```
 
+## ⚙️ 环境配置
+
+项目使用 Vite 环境变量进行配置管理。
+
+### 配置文件
+
+- `.env.development` - 开发环境配置（已提交）
+- `.env.production` - 生产环境配置（已提交）
+- `.env.local` - 本地覆盖配置（不提交，需手动创建）
+- `.env.local.example` - 本地配置示例（已提交）
+
+### 可配置项
+
+```bash
+# API 基础 URL
+VITE_API_BASE_URL=https://localhost:5000
+
+# SignalR Hub URL
+VITE_SIGNALR_HUB_URL=https://localhost:5000
+
+# 是否启用 Mock 数据
+VITE_ENABLE_MOCK=false
+
+# 是否启用调试模式
+VITE_DEBUG=true
+
+# 功能开关
+VITE_FEATURE_DARK_MODE=true
+VITE_FEATURE_I18N=false
+```
+
+### 本地开发配置
+
+如需自定义本地配置，复制 `.env.local.example` 为 `.env.local`：
+
+```bash
+cp .env.local.example .env.local
+# 然后编辑 .env.local 修改配置
+```
+
+**注意**：`.env.local` 不会提交到 Git，可以安全地存放个人配置。
+
+### 在代码中使用
+
+```typescript
+// 方式 1: 直接使用
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+
+// 方式 2: 通过 env 工具（推荐）
+import { env } from '@/config/env';
+const apiUrl = env.apiBaseUrl;
+const isDebug = env.debug;
+```
+
 ## 📱 访问地址
 
 - **WebOS Desktop**: `http://localhost:3000/` - 默认桌面系统

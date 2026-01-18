@@ -8,40 +8,40 @@ public class TagVo
     /// <summary>
     /// 标签 Id
     /// </summary>
-    public long Id { get; set; }
+    public long VoId { get; set; }
 
     /// <summary>
     /// 标签名称
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public string VoName { get; set; } = string.Empty;
 
     /// <summary>
     /// URL 友好的标识符
     /// </summary>
-    public string Slug { get; set; } = string.Empty;
+    public string VoSlug { get; set; } = string.Empty;
 
     /// <summary>
     /// 标签描述
     /// </summary>
-    public string? Description { get; set; }
+    public string? VoDescription { get; set; }
 
     /// <summary>
     /// 标签颜色
     /// </summary>
-    public string? Color { get; set; }
+    public string? VoColor { get; set; }
 
     /// <summary>
     /// 帖子数量
     /// </summary>
-    public int PostCount { get; set; }
+    public int VoPostCount { get; set; }
 
     /// <summary>
     /// 是否启用
     /// </summary>
-    public bool IsEnabled { get; set; }
+    public bool VoIsEnabled { get; set; }
 
     /// <summary>
     /// 创建时间
     /// </summary>
-    public DateTime CreateTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
 }

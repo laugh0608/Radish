@@ -1,0 +1,84 @@
+.user-list {
+  padding: 0;
+}
+
+.user-list-filters {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+}
+
+.user-list-stats {
+  margin-bottom: 16px;
+}
+
+.user-list-stats .ant-statistic {
+  text-align: center;
+}
+
+.user-list-stats .ant-statistic-content-value {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.user-list-stats .ant-card {
+  border-radius: 6px;
+}
+
+/* 用户头像和信息 */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-info-details {
+  flex: 1;
+}
+
+.user-info-name {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.user-info-email {
+  font-size: 12px;
+  color: #666;
+}
+
+/* 角色标签 */
+.user-roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* 操作按钮 */
+.user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.user-actions .ant-btn-link {
+  padding: 0 4px;
+  height: auto;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .user-list-filters .ant-space {
+    width: 100%;
+  }
+
+  .user-list-filters .ant-space-item {
+    width: 100%;
+  }
+
+  .user-list-filters .ant-input,
+  .user-list-filters .ant-select {
+    width: 100% !important;
+  }
+}

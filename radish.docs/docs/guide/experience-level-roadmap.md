@@ -40,7 +40,7 @@
    - [x] `GET /api/v1/Experience/GetUserExperience/{userId}` (指定用户)
    - [x] `GET /api/v1/Experience/GetLevelConfigs` (所有等级配置)
    - [x] `GET /api/v1/Experience/GetLevelConfig/{level}` (指定等级)
-   - [x] `GET /api/v1/Experience/GetMyTransactions` (交易记录)
+   - [x] `GET /api/v1/Experience/GetTransactions` (交易记录)
    - [x] `POST /api/v1/Experience/AdminAdjustExperience` (管理员调整)
    - [x] `POST /api/v1/Experience/RecalculateLevelConfigs` (重新计算等级配置)
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { MarkdownEditor } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
@@ -39,7 +40,7 @@ export const PublishPostForm = ({
         }
       }
     } catch (err) {
-      console.error('Failed to load draft:', err);
+      log.error('Failed to load draft:', err);
     }
   }, []);
 
@@ -52,7 +53,7 @@ export const PublishPostForm = ({
           JSON.stringify({ title, content, savedAt: Date.now() })
         );
       } catch (err) {
-        console.error('Failed to save draft:', err);
+        log.error('Failed to save draft:', err);
       }
     }
   }, [title, content]);
@@ -68,7 +69,7 @@ export const PublishPostForm = ({
     try {
       localStorage.removeItem(DRAFT_STORAGE_KEY);
     } catch (err) {
-      console.error('Failed to clear draft:', err);
+      log.error('Failed to clear draft:', err);
     }
   };
 
@@ -97,7 +98,7 @@ export const PublishPostForm = ({
         thumbnailUrl: result.thumbnailUrl
       };
     } catch (error) {
-      console.error('图片上传失败:', error);
+      log.error('图片上传失败:', error);
       throw error;
     }
   };
@@ -115,7 +116,7 @@ export const PublishPostForm = ({
         fileName: result.originalName || file.name
       };
     } catch (error) {
-      console.error('文档上传失败:', error);
+      log.error('文档上传失败:', error);
       throw error;
     }
   };

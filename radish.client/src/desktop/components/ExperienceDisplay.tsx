@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { ExperienceBar, experienceApi, type UserExperience } from '@radish/ui';
+import { log } from '@/utils/logger';
+import { ExperienceBar } from '@radish/ui';
+import { experienceApi, type ExperienceData } from '@/api/experience';
 import { useUserStore } from '@/stores/userStore';
 import styles from './ExperienceDisplay.module.css';
 
@@ -10,7 +12,7 @@ import styles from './ExperienceDisplay.module.css';
  */
 export const ExperienceDisplay = () => {
   const { isAuthenticated } = useUserStore();
-  const [experience, setExperience] = useState<UserExperience | null>(null);
+  const [experience, setExperience] = useState<ExperienceData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,7 +29,7 @@ export const ExperienceDisplay = () => {
       setExperience(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取经验值失败');
-      console.error('获取经验值失败:', err);
+      log.error('获取经验值失败:', err);
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,7 @@ export const ExperienceDisplay = () => {
   return (
     <div className={styles.experienceDisplay}>
       <ExperienceBar
-        data={experience}
+        data={experience as any}
         size="small"
         showLevel={true}
         showProgress={true}

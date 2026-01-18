@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { log } from '@/utils/logger';
 import { Icon } from '@radish/ui';
 import styles from './UserCommentList.module.css';
 
@@ -38,7 +39,7 @@ export const UserCommentList = ({ userId, apiBaseUrl }: UserCommentListProps) =>
         setTotalPages(json.responseData.pageCount || 1);
       }
     } catch (error) {
-      console.error('加载评论失败:', error);
+      log.error('加载评论失败:', error);
     } finally {
       setLoading(false);
     }

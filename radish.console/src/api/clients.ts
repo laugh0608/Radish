@@ -16,6 +16,7 @@ import type {
   CreateClientRequest,
   UpdateClientRequest,
 } from '../types/oidc';
+import { autoRefreshTokenInterceptor } from '../utils/tokenRefresh';
 
 // 配置 API 客户端
 const defaultApiBase = 'https://localhost:5000';
@@ -30,15 +31,14 @@ configureApiClient({
     }
     return null;
   },
+  onRequest: async () => {
+    // 在每次请求前检查并刷新 Token
+    await autoRefreshTokenInterceptor();
+  },
 });
 
 // 配置错误处理
-configureErrorHandling({
-  autoShowMessage: true,
-  showMessage: (msg) => {
-    message.error(msg);
-  },
-});
+configureErrorHandling({});
 
 /**
  * OIDC 客户端 API

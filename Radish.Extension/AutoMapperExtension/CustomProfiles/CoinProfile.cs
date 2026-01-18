@@ -16,34 +16,31 @@ public class CoinProfile : Profile
     /// <summary>配置用户余额映射</summary>
     private void ConfigureUserBalanceMapping()
     {
-        // UserBalance -> UserBalanceVo
+        // UserBalance -> UserBalanceVo (使用前缀识别 + 手动配置格式化字段)
         RecognizeDestinationPrefixes("Vo");
         CreateMap<UserBalance, UserBalanceVo>()
-            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
-            .ForMember(dest => dest.BalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.Balance)))
-            .ForMember(dest => dest.FrozenBalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.FrozenBalance)));
+            .ForMember(dest => dest.VoBalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.Balance)))
+            .ForMember(dest => dest.VoFrozenBalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.FrozenBalance)));
 
-        // UserBalanceVo -> UserBalance
+        // UserBalanceVo -> UserBalance (使用前缀识别)
         RecognizePrefixes("Vo");
-        CreateMap<UserBalanceVo, UserBalance>()
-            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
-            .ForMember(dest => dest.Id, opt => opt.Ignore());
+        CreateMap<UserBalanceVo, UserBalance>();
     }
 
     /// <summary>配置交易记录映射</summary>
     private void ConfigureCoinTransactionMapping()
     {
-        // CoinTransaction -> CoinTransactionVo
+        // CoinTransaction -> CoinTransactionVo (使用前缀识别 + 手动配置特殊字段)
         RecognizeDestinationPrefixes("Vo");
         CreateMap<CoinTransaction, CoinTransactionVo>()
-            .ForMember(dest => dest.AmountDisplay, opt => opt.MapFrom(src => FormatToRadish(src.Amount)))
-            .ForMember(dest => dest.FeeDisplay, opt => opt.MapFrom(src => FormatToRadish(src.Fee)))
-            .ForMember(dest => dest.TransactionTypeDisplay, opt => opt.MapFrom(src => GetTransactionTypeName(src.TransactionType)))
-            .ForMember(dest => dest.StatusDisplay, opt => opt.MapFrom(src => GetStatusName(src.Status)))
-            .ForMember(dest => dest.FromUserName, opt => opt.Ignore()) // 需要在 Service 层单独设置
-            .ForMember(dest => dest.ToUserName, opt => opt.Ignore());   // 需要在 Service 层单独设置
+            .ForMember(dest => dest.VoAmountDisplay, opt => opt.MapFrom(src => FormatToRadish(src.Amount)))
+            .ForMember(dest => dest.VoFeeDisplay, opt => opt.MapFrom(src => FormatToRadish(src.Fee)))
+            .ForMember(dest => dest.VoTransactionTypeDisplay, opt => opt.MapFrom(src => GetTransactionTypeName(src.TransactionType)))
+            .ForMember(dest => dest.VoStatusDisplay, opt => opt.MapFrom(src => GetStatusName(src.Status)))
+            .ForMember(dest => dest.VoFromUserName, opt => opt.Ignore()) // 需要在 Service 层单独设置
+            .ForMember(dest => dest.VoToUserName, opt => opt.Ignore());   // 需要在 Service 层单独设置
 
-        // CoinTransactionVo -> CoinTransaction
+        // CoinTransactionVo -> CoinTransaction (使用前缀识别)
         RecognizePrefixes("Vo");
         CreateMap<CoinTransactionVo, CoinTransaction>();
     }

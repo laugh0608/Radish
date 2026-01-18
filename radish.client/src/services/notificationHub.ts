@@ -1,11 +1,13 @@
 import * as signalR from '@microsoft/signalr';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
-
-const defaultApiBase = 'http://localhost:5100'; // 临时直连 API，绕过 Gateway
+import { log } from '@/utils/logger';
 
 function getHubUrl(): string {
-  // 临时直连 API 进行测试
-  return `${defaultApiBase}/hub/notification`;
+  // 使用当前页面的 origin，通过 Gateway 访问 API
+  // 开发环境: http://localhost:5000 (Gateway)
+  // 生产环境: 部署域名
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5000';
+  return `${origin}/hub/notification`;
 }
 
 function getAccessToken(): string | null {
@@ -38,7 +40,7 @@ class NotificationHubService {
 
     const token = getAccessToken();
     if (!token) {
-      console.warn('[NotificationHub] 未找到 access_token，跳过连接');
+      log.warn('[NotificationHub] 未找到 access_token，跳过连接');
       return;
     }
 
@@ -92,7 +94,7 @@ class NotificationHubService {
         return;
       }
 
-      console.log('[NotificationHub] 连接成功');
+      log.debug('[NotificationHub] 连接成功');
       store.setConnectionState('connected');
       this.retryCount = 0;
     } catch (error) {
@@ -100,19 +102,19 @@ class NotificationHubService {
 
       // React StrictMode / 生命周期竞态：start 尚未完成就 stop() 会触发 AbortError
       if (message.includes('Failed to start the HttpConnection before stop() was called')) {
-        console.warn('[NotificationHub] 连接启动被取消（start/stop 竞态）');
+        log.warn('[NotificationHub] 连接启动被取消（start/stop 竞态）');
         store.setConnectionState('disconnected');
         return;
       }
 
-      console.error('[NotificationHub] 连接失败:', error);
+      log.error('[NotificationHub] 连接失败:', error);
       store.setConnectionState('disconnected');
 
       // 重试逻辑
       if (this.retryCount < this.maxRetries) {
         this.retryCount++;
         const delay = Math.min(1000 * Math.pow(2, this.retryCount), 30000);
-        console.log(`[NotificationHub] ${delay}ms 后重试 (${this.retryCount}/${this.maxRetries})`);
+        log.debug(`[NotificationHub] ${delay}ms 后重试 (${this.retryCount}/${this.maxRetries})`);
         setTimeout(() => this.start(), delay);
       }
     } finally {
@@ -128,11 +130,11 @@ class NotificationHubService {
     if (this.connection) {
       try {
         await this.connection.stop();
-        console.log('[NotificationHub] 连接已断开');
+        log.debug('[NotificationHub] 连接已断开');
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         if (!message.includes('Failed to start the HttpConnection before stop() was called')) {
-          console.error('[NotificationHub] 断开连接失败:', error);
+          log.error('[NotificationHub] 断开连接失败:', error);
         }
       }
       this.connection = null;
@@ -147,38 +149,38 @@ class NotificationHubService {
 
     // 连接状态变化
     this.connection.onreconnecting(() => {
-      console.log('[NotificationHub] 正在重连...');
+      log.debug('[NotificationHub] 正在重连...');
       useNotificationStore.getState().setConnectionState('reconnecting');
     });
 
     this.connection.onreconnected(() => {
-      console.log('[NotificationHub] 重连成功');
+      log.debug('[NotificationHub] 重连成功');
       useNotificationStore.getState().setConnectionState('connected');
     });
 
     this.connection.onclose((error) => {
-      console.log('[NotificationHub] 连接关闭', error);
+      log.debug('[NotificationHub] 连接关闭', error);
       useNotificationStore.getState().setConnectionState('disconnected');
     });
 
     // 服务端推送事件
     this.connection.on('UnreadCountChanged', (data: { unreadCount: number }) => {
-      console.log('[NotificationHub] 未读数更新:', data.unreadCount);
+      log.debug('[NotificationHub] 未读数更新:', data.unreadCount);
       useNotificationStore.getState().setUnreadCount(data.unreadCount);
     });
 
     this.connection.on('NewNotification', (notification: NotificationItem) => {
-      console.log('[NotificationHub] 新通知:', notification);
+      log.debug('[NotificationHub] 新通知:', notification);
       useNotificationStore.getState().addNotification(notification);
     });
 
     this.connection.on('NotificationRead', (data: { notificationIds: number[] }) => {
-      console.log('[NotificationHub] 通知已读（其他端）:', data.notificationIds);
+      log.debug('[NotificationHub] 通知已读（其他端）:', data.notificationIds);
       useNotificationStore.getState().markAsRead(data.notificationIds);
     });
 
     this.connection.on('AllNotificationsRead', () => {
-      console.log('[NotificationHub] 全部已读（其他端）');
+      log.debug('[NotificationHub] 全部已读（其他端）');
       useNotificationStore.getState().markAllAsRead();
     });
   }
@@ -186,7 +188,7 @@ class NotificationHubService {
   /** 客户端调用：标记通知已读 */
   async markAsRead(notificationId: number): Promise<void> {
     if (this.connection?.state !== signalR.HubConnectionState.Connected) {
-      console.warn('[NotificationHub] 未连接，无法标记已读');
+      log.warn('[NotificationHub] 未连接，无法标记已读');
       return;
     }
 
@@ -195,14 +197,14 @@ class NotificationHubService {
       // 本地也更新状态
       useNotificationStore.getState().markAsRead([notificationId]);
     } catch (error) {
-      console.error('[NotificationHub] 标记已读失败:', error);
+      log.error('[NotificationHub] 标记已读失败:', error);
     }
   }
 
   /** 客户端调用：标记全部已读 */
   async markAllAsRead(): Promise<void> {
     if (this.connection?.state !== signalR.HubConnectionState.Connected) {
-      console.warn('[NotificationHub] 未连接，无法标记全部已读');
+      log.warn('[NotificationHub] 未连接，无法标记全部已读');
       return;
     }
 
@@ -211,7 +213,7 @@ class NotificationHubService {
       // 本地也更新状态
       useNotificationStore.getState().markAllAsRead();
     } catch (error) {
-      console.error('[NotificationHub] 标记全部已读失败:', error);
+      log.error('[NotificationHub] 标记全部已读失败:', error);
     }
   }
 }

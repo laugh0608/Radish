@@ -70,8 +70,11 @@ export type { LevelUpModalProps, LevelUpData } from './LevelUpModal/LevelUpModal
 export {
   // Layout
   Layout,
-  // Menu
+  // Navigation
+  Breadcrumb,
   Menu,
+  // App
+  App,
   // Form
   Form,
   Input as AntInput,
@@ -87,12 +90,15 @@ export {
   Modal as AntModal,
   message,
   notification,
+  Result,
   // Data Display
   Tag,
   Badge,
   Tooltip,
   Avatar,
   Dropdown,
+  Image,
+  Descriptions,
   // General
   Button as AntButton,
   Space,
@@ -121,6 +127,15 @@ export {
   AppstoreOutlined,
   TeamOutlined,
   SafetyOutlined,
+  ClockCircleOutlined,
+  DashboardOutlined,
+  ShoppingOutlined,
+  FileTextOutlined,
+  SyncOutlined,
+  HomeOutlined,
+  LockOutlined,
+  UnlockOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 
 // Re-export types
@@ -135,4 +150,5 @@ export type {
   LayoutProps,
   ButtonProps as AntButtonProps,
   SpaceProps,
+  BreadcrumbProps,
 } from 'antd';

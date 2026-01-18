@@ -27,13 +27,13 @@ Radish.Gateway 是 Radish 项目的统一服务入口,负责提供服务门户�
 客户端 (浏览器/前端应用)
     ↓
 Radish.Gateway (https://localhost:5000)
-    ├─→ /docs/** (文档站 → radish.docs dev 服务 :3100)
+    ├─→ /docs/** (文档站 → radish.docs dev 服务 :4000)
     ├─→ /api/** (业务 API → Radish.Api :5100)
     ├─→ /uploads/** (上传文件 → Radish.Api :5100)
     ├─→ /scalar/** (API 文档 → Radish.Api :5100)
     ├─→ /openapi/** (OpenAPI 规范 → Radish.Api :5100)
     ├─→ /hangfire/** (定时任务面板 → Radish.Api :5100)
-    ├─→ /console/** (管理控制台 → radish.console :3200)
+    ├─→ /console/** (管理控制台 → radish.console :3100)
     ├─→ /Account/** (登录页面 → Radish.Auth :5200)
     ├─→ /connect/** (OIDC 端点 → Radish.Auth :5200)
     └─→ /** (前端应用 → radish.client :3000，最低优先级)
@@ -47,8 +47,8 @@ Radish.Gateway (https://localhost:5000)
 | **Radish.Api** | http://localhost:5100 | 内部服务,仅 Gateway 访问 |
 | **Radish.Auth** | http://localhost:5200 | 内部服务,仅 Gateway 访问 |
 | **radish.client** | http://localhost:3000 | 前端开发服务器 |
-| **radish.docs** | http://localhost:3100 | 文档站开发服务器 |
-| **radish.console** | http://localhost:3200 | 管理控制台开发服务器 |
+| **radish.docs** | http://localhost:4000 | 文档站开发服务器 |
+| **radish.console** | http://localhost:3100 | 管理控制台开发服务器 |
 
 **设计原则**:
 - Gateway 作为唯一对外入口,使用标准 HTTPS 端口(5000)
@@ -95,8 +95,8 @@ Gateway 的配置分为以下几个部分：
     "AllowedOrigins": [
       "http://localhost:3000",
       "https://localhost:3000",
-      "http://localhost:3200",
-      "https://localhost:3200"
+      "http://localhost:3100",
+      "https://localhost:3100"
     ]
   },
 
@@ -129,13 +129,13 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 
 | 路径模式 | 目标服务 | 说明 | 特殊配置 |
 |---------|---------|------|---------|
-| `/docs/**` | radish.docs (:3100) | 项目文档站 | - |
+| `/docs/**` | radish.docs (:4000) | 项目文档站 | - |
 | `/api/**` | Radish.Api (:5100) | 业务 API 接口 | - |
 | `/uploads/**` | Radish.Api (:5100) | 上传文件静态资源 | - |
 | `/scalar/**` | Radish.Api (:5100) | Scalar API 文档 | - |
 | `/openapi/**` | Radish.Api (:5100) | OpenAPI 规范 | - |
 | `/hangfire/**` | Radish.Api (:5100) | Hangfire 定时任务面板 | - |
-| `/console/**` | radish.console (:3200) | 管理控制台 | PathRemovePrefix, WebSocket |
+| `/console/**` | radish.console (:3100) | 管理控制台 | PathRemovePrefix, WebSocket |
 | `/Account/**` | Radish.Auth (:5200) | OIDC 登录页面 | X-Forwarded-* 头 |
 | `/connect/**` | Radish.Auth (:5200) | OIDC 协议端点 | X-Forwarded-* 头 |
 | `/**` | radish.client (:3000) | 前端应用（最低优先级） | WebSocket, Order: 1000 |
@@ -183,7 +183,7 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
     "Clusters": {
       "docs-cluster": {
         "Destinations": {
-          "docs": { "Address": "http://localhost:3100" }
+          "docs": { "Address": "http://localhost:4000" }
         }
       },
       "api-cluster": {
@@ -203,7 +203,7 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
       },
       "console-cluster": {
         "Destinations": {
-          "console": { "Address": "http://localhost:3200" }
+          "console": { "Address": "http://localhost:3100" }
         }
       }
     }
@@ -220,7 +220,7 @@ Console 路由使用 `PathRemovePrefix` 转换，将 `/console/*` 转发到下�
 ```
 客户端请求: https://localhost:5000/console/dashboard
     ↓
-Gateway 转发: http://localhost:3200/dashboard
+Gateway 转发: http://localhost:3100/dashboard
 ```
 
 这样配合 Console 的 Vite `base: '/console/'` 配置，确保资源路径正确。
@@ -271,9 +271,9 @@ FrontendService__BaseUrl=https://app.example.com
 # YARP 反向代理集群地址
 ReverseProxy__Clusters__api-cluster__Destinations__api__Address=http://radish-api:5100
 ReverseProxy__Clusters__auth-cluster__Destinations__auth__Address=http://radish-auth:5200
-ReverseProxy__Clusters__docs-cluster__Destinations__docs__Address=http://radish-docs:3100
+ReverseProxy__Clusters__docs-cluster__Destinations__docs__Address=http://radish-docs:4000
 ReverseProxy__Clusters__frontend-cluster__Destinations__frontend__Address=http://radish-frontend:3000
-ReverseProxy__Clusters__console-cluster__Destinations__console__Address=http://radish-console:3200
+ReverseProxy__Clusters__console-cluster__Destinations__console__Address=http://radish-console:3100
 ```
 
 #### Docker Compose 示例
@@ -419,8 +419,8 @@ Gateway 统一处理 CORS，下游服务无需配置 CORS。
     "AllowedOrigins": [
       "http://localhost:3000",
       "https://localhost:3000",
-      "http://localhost:3200",
-      "https://localhost:3200"
+      "http://localhost:3100",
+      "https://localhost:3100"
     ]
   }
 }
@@ -458,7 +458,7 @@ Gateway 使用 Serilog 记录结构化日志。
 ====================================
 环境: Development
 监听地址: https://localhost:5000, http://localhost:5001
-CORS 允许来源: http://localhost:3000, https://localhost:3000, http://localhost:3200, https://localhost:3200
+CORS 允许来源: http://localhost:3000, https://localhost:3000, http://localhost:3100, https://localhost:3100
 下游 API 服务: http://localhost:5100
 ```
 
@@ -528,8 +528,8 @@ dotnet watch --project Radish.Gateway/Radish.Gateway.csproj
 | API 直连 | http://localhost:5100 | 绕过 Gateway 直连 API |
 | Auth 直连 | http://localhost:5200 | 绕过 Gateway 直连 Auth |
 | 前端 dev | http://localhost:3000 | 前端开发服务器 |
-| Docs dev | http://localhost:3100 | 文档站开发服务器 |
-| Console dev | http://localhost:3200 | 控制台开发服务器 |
+| Docs dev | http://localhost:4000 | 文档站开发服务器 |
+| Console dev | http://localhost:3100 | 控制台开发服务器 |
 
 ### 添加新路由
 

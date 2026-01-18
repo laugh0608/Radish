@@ -49,8 +49,8 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             // 统计每个分类下的商品数量
             foreach (var category in categoryVos)
             {
-                category.ProductCount = await _productRepository.QueryCountAsync(
-                    p => p.CategoryId == category.Id && p.IsEnabled && p.IsOnSale);
+                category.VoProductCount = await _productRepository.QueryCountAsync(
+                    p => p.CategoryId == category.VoId && p.IsEnabled && p.IsOnSale);
             }
 
             return categoryVos;
@@ -71,7 +71,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             if (category == null) return null;
 
             var vo = Mapper.Map<ProductCategoryVo>(category);
-            vo.ProductCount = await _productRepository.QueryCountAsync(
+            vo.VoProductCount = await _productRepository.QueryCountAsync(
                 p => p.CategoryId == categoryId && p.IsEnabled && p.IsOnSale);
 
             return vo;
@@ -152,7 +152,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
 
             // 填充分类名称
             var category = await _categoryRepository.QueryFirstAsync(c => c.Id == product.CategoryId);
-            vo.CategoryName = category?.Name;
+            vo.VoCategoryName = category?.Name;
 
             return vo;
         }
@@ -492,9 +492,9 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
 
             foreach (var vo in productVos)
             {
-                if (categoryDict.TryGetValue(vo.CategoryId, out var categoryName))
+                if (categoryDict.TryGetValue(vo.VoCategoryId, out var categoryName))
                 {
-                    vo.CategoryName = categoryName;
+                    vo.VoCategoryName = categoryName;
                 }
             }
 

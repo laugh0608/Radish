@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
@@ -103,22 +104,34 @@ public class CategoryController : ControllerBase
     /// <summary>
     /// 创建分类
     /// </summary>
-    /// <param name="category">分类信息</param>
+    /// <param name="createDto">分类创建信息</param>
     /// <returns>创建的分类 ID</returns>
     [HttpPost]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
-    public async Task<MessageModel> Create([FromBody] Category category)
+    public async Task<MessageModel> Create([FromBody] CreateCategoryDto createDto)
     {
-        if (string.IsNullOrWhiteSpace(category.Name))
+        if (!ModelState.IsValid)
         {
             return new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "分类名称不能为空"
+                MessageInfo = "请求参数验证失败"
             };
         }
+
+        // 将 DTO 转换为实体
+        var category = new Category(createDto.Name)
+        {
+            Slug = createDto.Slug ?? string.Empty,
+            Description = createDto.Description ?? string.Empty,
+            Icon = createDto.Icon ?? string.Empty,
+            CoverImage = createDto.CoverImage ?? string.Empty,
+            ParentId = createDto.ParentId,
+            OrderSort = createDto.OrderSort,
+            IsEnabled = createDto.IsEnabled
+        };
 
         var categoryId = await _categoryService.AddAsync(category);
         return new MessageModel

@@ -2,27 +2,27 @@ namespace Radish.Model.ViewModels;
 
 public class UserProfileVo
 {
-    public long UserId { get; set; }
+    public long VoUserId { get; set; }
 
-    public string UserName { get; set; } = string.Empty;
+    public string VoUserName { get; set; } = string.Empty;
 
-    public string UserEmail { get; set; } = string.Empty;
+    public string VoUserEmail { get; set; } = string.Empty;
 
-    public string RealName { get; set; } = string.Empty;
+    public string VoRealName { get; set; } = string.Empty;
 
-    public int Sex { get; set; }
+    public int VoSex { get; set; }
 
-    public int Age { get; set; }
+    public int VoAge { get; set; }
 
-    public DateTime? Birth { get; set; }
+    public DateTime? VoBirth { get; set; }
 
-    public string Address { get; set; } = string.Empty;
+    public string VoAddress { get; set; } = string.Empty;
 
-    public DateTime CreateTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
 
-    public long? AvatarAttachmentId { get; set; }
+    public long? VoAvatarAttachmentId { get; set; }
 
-    public string? AvatarUrl { get; set; }
+    public string? VoAvatarUrl { get; set; }
 
-    public string? AvatarThumbnailUrl { get; set; }
+    public string? VoAvatarThumbnailUrl { get; set; }
 }

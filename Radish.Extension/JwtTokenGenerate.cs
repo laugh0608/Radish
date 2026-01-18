@@ -62,10 +62,10 @@ public class JwtTokenGenerate
         // 为了避免误用，直接返回失败结果，引导调用方改用 OIDC 登录流程。
         return new TokenInfoVo
         {
-            IsSuccess = false,
-            TokenInfo = string.Empty,
-            ExpiresIn = 0,
-            TokenType = "Bearer"
+            VoIsSuccess = false,
+            VoTokenInfo = string.Empty,
+            VoExpiresIn = 0,
+            VoTokenType = "Bearer"
         };
     }
 }

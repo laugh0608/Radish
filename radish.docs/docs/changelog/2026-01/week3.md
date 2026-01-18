@@ -182,6 +182,49 @@
 
 ## 文档更新
 
+### 2026-01-16 前端图标系统与 Console 进度
+
+1. 修复 WebOS 桌面与前端应用在公网/受限网络环境下图标全部丢失的问题：
+   - @radish/ui Icon 组件改为在前端启动时，通过本地 @iconify-json/mdi 图标集注册 MDI 图标
+   - 不再依赖 https://api.iconify.design 在线 API，离线/内网环境下图标也能正常显示
+   - 更新前端设计文档和 WebOS 快速上手文档，说明图标系统基于本地 Iconify JSON 集合
+2. Console 项目进度：
+   - 已接入 React Router，基础 SPA 路由框架就绪
+   - 后续将基于 @radish/ui 组件库逐步搭建商城管理、用户管理等后台页面
+
+### 2026-01-17 紧急安全修复与构建优化
+
+**核心工作**：
+1. **后端架构违规修复**：
+   - 修复 TenantController 3个方法返回 `object` 类型问题，改为 `MessageModel<List<XxxVo>>`
+   - 修复 CategoryController 直接接收实体类问题，创建 `CreateCategoryDto`
+   - 修复 WeatherForecastController 7个方法返回匿名对象问题，创建对应 ViewModel
+   - 新增 8 个 ViewModel 类，提升 API 类型安全性
+
+2. **前端枚举不一致修复**：
+   - 修正 `ProductType.Physical` 枚举值从 3 改为 99，与后端保持一致
+   - 删除 `types/shop.ts` 中重复枚举定义，统一使用 `api/types.ts`
+   - 修复枚举导入问题，解决前后端数据不匹配风险
+
+3. **前端构建错误修复**：
+   - 修复 TypeScript 配置问题（`erasableSyntaxOnly` 与枚举冲突）
+   - 添加路径别名映射支持 `@/` 路径
+   - 修复 UI 组件属性不匹配问题（Button variant、Modal API）
+   - 修复 @iconify/react 导入路径错误
+   - 前端项目现在可以正常构建和运行
+
+**技术成果**：
+- ✅ 后端编译成功，类型安全性提升
+- ✅ 前端构建成功，开发体验改善
+- ✅ 消除前后端数据不一致风险
+- ✅ 符合项目开发规范，为后续开发奠定基础
+
+**提交记录**：
+- `afdaef7` - 修复后端Controller架构违规和前端枚举不一致问题
+- `ffc118a` - 修复前端构建错误
+
+---
+
 ### 开发计划文档
 
 1. **development-plan.md** - 更新里程碑表格

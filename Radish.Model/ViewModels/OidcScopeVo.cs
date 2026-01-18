@@ -6,23 +6,23 @@ namespace Radish.Model.ViewModels;
 public class OidcScopeVo
 {
     /// <summary>作用域 Id</summary>
-    public long Id { get; set; }
+    public long VoId { get; set; }
 
     /// <summary>作用域名称</summary>
-    public string Name { get; set; } = string.Empty;
+    public string VoName { get; set; } = string.Empty;
 
     /// <summary>显示名称</summary>
-    public string DisplayName { get; set; } = string.Empty;
+    public string VoDisplayName { get; set; } = string.Empty;
 
     /// <summary>作用域描述</summary>
-    public string? Description { get; set; }
+    public string? VoDescription { get; set; }
 
     /// <summary>关联的资源列表</summary>
-    public string Resources { get; set; } = string.Empty;
+    public string VoResources { get; set; } = string.Empty;
 
     /// <summary>自定义属性</summary>
-    public string Properties { get; set; } = string.Empty;
+    public string VoProperties { get; set; } = string.Empty;
 
     /// <summary>创建时间</summary>
-    public DateTime CreateTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
 }

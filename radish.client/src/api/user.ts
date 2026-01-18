@@ -2,46 +2,16 @@
  * 用户相关的 API 调用
  */
 
-import { parseApiResponse, type ApiResponse } from '@/api/client';
+import { parseApiResponseWithI18n, apiGet, configureApiClient, type ApiResponse } from '@radish/ui';
 import type { TFunction } from 'i18next';
 
+// 配置 API 客户端
 const defaultApiBase = 'https://localhost:5000';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined || defaultApiBase;
 
-/**
- * 获取 API Base URL
- */
-function getApiBaseUrl(): string {
-  const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  return (configured ?? defaultApiBase).replace(/\/$/, '');
-}
-
-/**
- * 带认证的 fetch 封装
- */
-interface ApiFetchOptions extends RequestInit {
-  withAuth?: boolean;
-}
-
-function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
-  const { withAuth, headers, ...rest } = options;
-
-  const finalHeaders: HeadersInit = {
-    Accept: 'application/json',
-    ...headers
-  };
-
-  if (withAuth && typeof window !== 'undefined') {
-    const token = window.localStorage.getItem('access_token');
-    if (token) {
-      (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
-    }
-  }
-
-  return fetch(input, {
-    ...rest,
-    headers: finalHeaders
-  });
-}
+configureApiClient({
+  baseUrl: apiBaseUrl.replace(/\/$/, ''),
+});
 
 /**
  * 用户提及选项（用于@提及功能）
@@ -69,20 +39,19 @@ export async function searchUsersForMention(
     return [];
   }
 
-  const url = `${getApiBaseUrl()}/api/v1/User/SearchForMention?keyword=${encodeURIComponent(keyword)}&limit=${limit}`;
-  const response = await apiFetch(url); // 不需要认证
+  const response = await apiGet<UserMentionOption[]>(
+    `/api/v1/User/SearchForMention?keyword=${encodeURIComponent(keyword)}&limit=${limit}`
+  );
 
-  // 检查响应状态
-  if (!response.ok) {
-    throw new Error(`搜索用户失败: HTTP ${response.status}`);
+  if (!response.ok || !response.data) {
+    // 使用 i18n 解析错误消息
+    const errorResponse = response as any;
+    if (errorResponse.messageKey) {
+      const parsed = parseApiResponseWithI18n(errorResponse, t);
+      throw new Error(parsed.message || '搜索用户失败');
+    }
+    throw new Error(response.message || '搜索用户失败');
   }
 
-  const json = await response.json() as ApiResponse<UserMentionOption[]>;
-  const parsed = parseApiResponse<UserMentionOption[]>(json, t);
-
-  if (!parsed.ok || !parsed.data) {
-    throw new Error(parsed.message || '搜索用户失败');
-  }
-
-  return parsed.data;
+  return response.data;
 }

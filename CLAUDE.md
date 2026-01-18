@@ -29,8 +29,11 @@ dotnet test Radish.Api.Tests
 ```bash
 npm install                          # 根目录，配置 workspaces
 npm run dev --workspace=radish.client    # http://localhost:3000
-npm run dev --workspace=radish.console   # http://localhost:3200
+npm run dev --workspace=radish.console   # http://localhost:3100
 npm run type-check --workspace=@radish/ui
+
+# 注意：@radish/ui 组件库无需构建
+# 前端项目通过 npm workspaces 直接引用源码，支持 HMR 热更新
 ```
 
 ### 快速启动
@@ -61,11 +64,31 @@ Common (工具,日志,配置) → Shared (常量,枚举) → Model (实体,DTO,V
    - ViewModel: `Radish.Model/ViewModels`，后缀 `Vo`，暴露给 Controller
    - AutoMapper: `Radish.Extension/AutoMapperExtension` 处理映射
 
-5. **Infrastructure** 集中 SqlSugar 多租户逻辑，仅 Repository 和 Extension 引用
+5. **ViewModel 设计规范** (重要):
+   - **类名规范**: 所有返回给前端的ViewModel类必须添加`Vo`后缀（如UserVo, ProductVo, OrderVo）
+   - **字段名规范**: 所有字段必须添加`Vo`前缀
+     - **UserVo特殊设计**: `Vo`前缀 + 混淆字段名（如VoLoName, VoUsName, VoUsPwd）- 安全设计，体现自定义映射能力
+     - **其他Vo模型**: `Vo`前缀 + 清晰字段名（如VoName, VoDescription, VoCreateTime）- 便于理解和维护
+   - **前端适配规则**: 前端必须适配后端的Vo模型字段名，不得要求后端修改
+   - **匿名对象禁用**: Controller方法严禁返回匿名对象，必须使用定义好的Vo类
+   - **AutoMapper映射策略** (关键):
+     - **优先使用前缀识别自动映射** (推荐):
+       - ✅ Entity和Vo字段只有`Vo`前缀差异
+       - ✅ 字段类型完全一致
+       - ✅ 不需要特殊的转换逻辑
+       - 示例: `RecognizeDestinationPrefixes("Vo"); CreateMap<Category, CategoryVo>();`
+     - **仅在必要时使用手动映射**:
+       - ⚠️ 字段名完全不同（如`Id` → `VoUserId`）
+       - ⚠️ 需要忽略某些字段（如Service层手动填充的计算属性）
+       - ⚠️ 需要特殊的转换逻辑（如计算字段、null默认值）
+       - ⚠️ 字段类型不同需要转换
+       - 示例: `.ForMember(dest => dest.CategoryName, opt => opt.Ignore())`
 
-6. **接口模式**: 先定义 IService/IRepository，再实现。`BaseRepository<T>` 和 `BaseService<TEntity, TModel>` 提供 CRUD 脚手架
+6. **Infrastructure** 集中 SqlSugar 多租户逻辑，仅 Repository 和 Extension 引用
 
-7. **Service 层数据库访问约束** (关键):
+7. **接口模式**: 先定义 IService/IRepository，再实现。`BaseRepository<T>` 和 `BaseService<TEntity, TModel>` 提供 CRUD 脚手架
+
+8. **Service 层数据库访问约束** (关键):
    - **严禁**直接使用 `_repository.Db.Queryable` 或 `_repository.DbBase.Queryable`
    - **必须**通过 Repository 方法访问数据
    - ❌ 错误: `await _repository.Db.Queryable<Entity>().Where(...).GroupBy(...).ToListAsync()`
@@ -176,6 +199,7 @@ var result = await cache.GetAsync<MyType>("key");
 - **内容**: Button, Input, Modal, Icon + Hooks + Utils
 - **使用**: `import { Button } from '@radish/ui';`
 - **HMR**: 修改自动热更新到 client/console
+- **重要**: 无需构建，前端项目直接引用源码，支持实时热更新
 
 ### WebOS 桌面 UI
 - 顶部状态栏 + 底部 Dock + 桌面图标/窗口
@@ -205,6 +229,64 @@ var result = await cache.GetAsync<MyType>("key");
 ### 前端
 - **通用组件** → `@radish/ui`
 - **WebOS 组件** → `radish.client/src/`
+
+## 前端开发规范
+
+### 环境配置
+
+**配置文件**：
+- `.env.development` - 开发环境配置（提交到 Git）
+- `.env.production` - 生产环境配置（提交到 Git）
+- `.env.local` - 本地覆盖配置（不提交，需手动创建）
+- `.env.local.example` - 本地配置示例（提交到 Git）
+
+**配置规则**：
+1. 所有环境变量必须以 `VITE_` 开头
+2. 敏感信息（密码、密钥）只放在 `.env.local`
+3. 代码中通过 `env.ts` 工具访问配置，不直接使用 `import.meta.env`
+
+**示例**：
+```typescript
+// ✅ 推荐：使用 env 工具
+import { env } from '@/config/env';
+const apiUrl = env.apiBaseUrl;
+const isDebug = env.debug;
+
+// ❌ 不推荐：直接使用
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+```
+
+### 日志规范
+
+**日志工具**：
+- Client: `radish.client/src/utils/logger.ts`
+- Console: `radish.console/src/utils/logger.ts`
+
+**使用规则**：
+1. **禁止**直接使用 `console.log/info/warn/error`
+2. **必须**使用统一的 `log` 工具
+3. 调试日志使用 `log.debug()`（仅 debug 模式输出）
+4. 错误日志使用 `log.error()`（总是输出）
+
+**示例**：
+```typescript
+import { log } from '@/utils/logger';
+
+// ✅ 正确
+log.debug('NotificationHub', '连接成功');
+log.warn('Token 即将过期');
+log.error('API', '请求失败:', error);
+
+// ❌ 错误
+console.log('连接成功');
+console.error('请求失败:', error);
+```
+
+**日志级别**：
+- `log.debug()` - 调试信息（仅 debug 模式）
+- `log.info()` - 一般信息（仅 debug 模式）
+- `log.warn()` - 警告信息（总是输出）
+- `log.error()` - 错误信息（总是输出）
 
 ## Rust 原生扩展
 
@@ -238,15 +320,50 @@ cargo build --release
 8. **每环境设置唯一 Snowflake WorkId**，避免 ID 冲突
 9. **Common 依赖只限外部包**，需访问 Model/Service/Repository 用 Extension
 10. **路由参数**确保 `ApiModule.LinkUrl` 包含正则
-11. **ViewModel 需业务语义化**，不只是加 `Vo` 后缀
+11. **ViewModel 设计规范**:
+    - **必须使用Vo前缀**: 所有ViewModel类添加Vo前缀，保持命名统一性
+    - **禁止匿名对象**: Controller严禁返回匿名对象，必须定义具体的Vo类
+    - **UserVo特殊性**: UserVo字段混淆是安全设计，前端必须适配，不得要求后端修改
+    - **其他Vo清晰性**: 除UserVo外，其他Vo使用清晰字段名，便于理解和维护
 
 ## Git 提交规范
 
 **关键规则**:
-1. **禁止** Claude Code 署名
-2. **禁止** `Co-Authored-By: Claude`
-3. **使用**用户配置的 git 身份
-4. **遵循** Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`)
+1. **严格禁止** AI 协作者署名（如 `Co-Authored-By: Claude`）
+2. **严格禁止** Claude Code 署名
+3. **必须使用**用户配置的 git 身份
+4. **必须遵循** Conventional Commits 规范
+
+**提交格式**:
+```
+<type>(<scope>): <subject>
+
+<body>
+```
+
+**Type 类型**:
+- `feat`: 新功能
+- `fix`: Bug 修复
+- `docs`: 文档更新
+- `refactor`: 代码重构
+- `test`: 测试相关
+- `chore`: 构建/工具相关
+
+**正确示例**:
+```
+feat(ui): 添加 Ant Design 主题配置
+
+- 创建主题配置文件
+- 支持亮色/暗色主题
+- 集成到 Console 项目
+```
+
+**错误示例**（禁止）:
+```
+feat(ui): 添加主题配置
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>  ❌ 禁止
+```
 
 **正确示例**:
 ```

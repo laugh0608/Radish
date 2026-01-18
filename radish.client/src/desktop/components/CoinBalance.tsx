@@ -30,7 +30,7 @@ export const CoinBalance = () => {
       if (result.ok && result.data) {
         setBalance(result.data);
       } else {
-        setError(result.message);
+        setError(result.message || '获取余额失败');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取余额失败');
@@ -79,15 +79,19 @@ export const CoinBalance = () => {
     <div
       className={styles.coinBalance}
       onClick={handleToggleMode}
-      title={`点击切换显示模式\n胡萝卜: ${balance.balance.toLocaleString()}\n白萝卜: ${balance.balanceDisplay}`}
+      title={balance ? `点击切换显示模式\n胡萝卜: ${(balance.balance || 0).toLocaleString()}\n白萝卜: ${balance.balanceDisplay || '0 白萝卜'}` : '加载中...'}
     >
       <span className={styles.icon}>
         {displayMode === 'carrot' ? '🥕' : '🌿'}
       </span>
       <span className={styles.amount}>
-        {displayMode === 'carrot'
-          ? balance.balance.toLocaleString()
-          : balance.balanceDisplay}
+        {balance ? (
+          displayMode === 'carrot'
+            ? (balance.balance || 0).toLocaleString()
+            : (balance.balanceDisplay || '0 白萝卜')
+        ) : (
+          loading ? '...' : (error ? '错误' : '0')
+        )}
       </span>
       <span className={styles.unit}>
         {displayMode === 'carrot' ? '胡萝卜' : '白萝卜'}

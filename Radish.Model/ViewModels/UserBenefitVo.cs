@@ -6,16 +6,16 @@ namespace Radish.Model.ViewModels;
 public class UserBenefitVo
 {
     /// <summary>权益 ID</summary>
-    public long Id { get; set; }
+    public long VoId { get; set; }
 
     /// <summary>用户 ID</summary>
-    public long UserId { get; set; }
+    public long VoUserId { get; set; }
 
     /// <summary>权益类型</summary>
-    public BenefitType BenefitType { get; set; }
+    public BenefitType VoBenefitType { get; set; }
 
     /// <summary>权益类型显示名称</summary>
-    public string BenefitTypeDisplay => BenefitType switch
+    public string VoBenefitTypeDisplay => VoBenefitType switch
     {
         BenefitType.Badge => "徽章",
         BenefitType.AvatarFrame => "头像框",
@@ -28,19 +28,19 @@ public class UserBenefitVo
     };
 
     /// <summary>权益值</summary>
-    public string BenefitValue { get; set; } = string.Empty;
+    public string VoBenefitValue { get; set; } = string.Empty;
 
     /// <summary>权益名称</summary>
-    public string? BenefitName { get; set; }
+    public string? VoBenefitName { get; set; }
 
     /// <summary>权益图标</summary>
-    public string? BenefitIcon { get; set; }
+    public string? VoBenefitIcon { get; set; }
 
     /// <summary>来源类型</summary>
-    public string SourceType { get; set; } = string.Empty;
+    public string VoSourceType { get; set; } = string.Empty;
 
     /// <summary>来源类型显示名称</summary>
-    public string SourceTypeDisplay => SourceType switch
+    public string VoSourceTypeDisplay => VoSourceType switch
     {
         "Purchase" => "购买",
         "System" => "系统赠送",
@@ -50,32 +50,32 @@ public class UserBenefitVo
     };
 
     /// <summary>有效期类型</summary>
-    public DurationType DurationType { get; set; }
+    public DurationType VoDurationType { get; set; }
 
     /// <summary>生效时间</summary>
-    public DateTime EffectiveAt { get; set; }
+    public DateTime VoEffectiveAt { get; set; }
 
     /// <summary>到期时间</summary>
-    public DateTime? ExpiresAt { get; set; }
+    public DateTime? VoExpiresAt { get; set; }
 
     /// <summary>是否已过期</summary>
-    public bool IsExpired { get; set; }
+    public bool VoIsExpired { get; set; }
 
     /// <summary>是否激活使用中</summary>
-    public bool IsActive { get; set; }
+    public bool VoIsActive { get; set; }
 
     /// <summary>有效期显示文本</summary>
-    public string DurationDisplay
+    public string VoDurationDisplay
     {
         get
         {
-            if (DurationType == DurationType.Permanent)
+            if (VoDurationType == DurationType.Permanent)
                 return "永久";
-            if (ExpiresAt == null)
+            if (VoExpiresAt == null)
                 return "未知";
-            if (IsExpired)
+            if (VoIsExpired)
                 return "已过期";
-            var remaining = ExpiresAt.Value - DateTime.Now;
+            var remaining = VoExpiresAt.Value - DateTime.Now;
             if (remaining.TotalDays > 1)
                 return $"剩余 {(int)remaining.TotalDays} 天";
             if (remaining.TotalHours > 1)
@@ -85,7 +85,7 @@ public class UserBenefitVo
     }
 
     /// <summary>创建时间</summary>
-    public DateTime CreateTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
 }
 
 /// <summary>用户背包项视图模型</summary>

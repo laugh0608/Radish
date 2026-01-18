@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Radish.Shared;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers;
 
@@ -24,12 +26,19 @@ public class RoleController : ControllerBase
     }
 
     /// <summary>获取全部角色，测试泛型基类和视图对象关系映射</summary>
-    /// <returns></returns>
+    /// <returns>角色列表</returns>
     [HttpGet]
-    public async Task<IActionResult> GetRoleList()
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetRoleList()
     {
         var data = await _roleService.QueryAsync();
-        return Ok(data);
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = data
+        };
     }
     
 }
