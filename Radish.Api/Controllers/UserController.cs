@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
@@ -332,13 +332,13 @@ public class UserController : ControllerBase
         var profile = new UserProfileVo
         {
             UserId = user.Uuid,
-            UserName = user.VoUsName,
-            UserEmail = user.VoUsEmail,
-            RealName = user.VoReNa,
-            Sex = user.VoSexDo,
-            Age = user.VoAgeDo,
-            Birth = user.VoBiTh,
-            Address = user.VoAdRes,
+            UserName = user.VoUserName,
+            UserEmail = user.VoUserEmail,
+            RealName = user.VoUserRealName,
+            Sex = user.VoUserSex,
+            Age = user.VoUserAge,
+            Birth = user.VoUserBirth,
+            Address = user.VoUserAddress,
             CreateTime = user.VoCreateTime,
             AvatarAttachmentId = avatar?.Id,
             AvatarUrl = avatar?.Url,
@@ -685,7 +685,7 @@ public class UserController : ControllerBase
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = $"已推送未读数 {unreadCount} 到用户 {userId}",
-            ResponseData = new { userId, unreadCount }
+            ResponseData = new TestPushResultVo { VoUserId = userId, VoUnreadCount = unreadCount }
         };
     }
 }

@@ -84,7 +84,7 @@ public class AccountController : Controller
         }
 
         // 2. 使用 Argon2id 验证密码
-        if (!PasswordHasher.VerifyPassword(password, user.VoLoPwd))
+        if (!PasswordHasher.VerifyPassword(password, user.VoLoginPassword))
         {
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
             return RedirectToAction(nameof(Login), new { returnUrl, username });
@@ -92,38 +92,38 @@ public class AccountController : Controller
 
         // 3. 密码验证成功，生成会话
         var userId = user.Uuid.ToString();
-        var tenantId = user.VoTenId.ToString();
+        var tenantId = user.VoTenantId.ToString();
 
         // 查询用户角色字符串（逗号分隔，传递哈希后的密码）
-        var roleNamesStr = await _userService.GetUserRoleNameStrAsync(username, user.VoLoPwd);
+        var roleNamesStr = await _userService.GetUserRoleNameStrAsync(username, user.VoLoginPassword);
         var roleNames = roleNamesStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
         var claims = new List<Claim>
         {
             // 标准身份标识 (ClaimTypes)
             new(ClaimTypes.NameIdentifier, userId),
-            new(ClaimTypes.Name, user.VoLoName ?? username), // 优先使用显示名称
+            new(ClaimTypes.Name, user.VoLoginName ?? username), // 优先使用显示名称
 
             // OIDC 标准 claims
             new(OpenIddictConstants.Claims.Subject, userId),
-            new(OpenIddictConstants.Claims.Name, user.VoLoName ?? username), // 优先使用显示名称
-            new(OpenIddictConstants.Claims.PreferredUsername, user.VoLoName ?? username),
+            new(OpenIddictConstants.Claims.Name, user.VoLoginName ?? username), // 优先使用显示名称
+            new(OpenIddictConstants.Claims.PreferredUsername, user.VoLoginName ?? username),
 
             // 多租户标识（与 AuthenticationGuide 中的约定一致）
             new("tenant_id", tenantId)
         };
 
         // Email claim (如果存在)
-        if (!string.IsNullOrWhiteSpace(user.VoUsEmail))
+        if (!string.IsNullOrWhiteSpace(user.VoUserEmail))
         {
-            claims.Add(new Claim(ClaimTypes.Email, user.VoUsEmail));
-            claims.Add(new Claim(OpenIddictConstants.Claims.Email, user.VoUsEmail));
+            claims.Add(new Claim(ClaimTypes.Email, user.VoUserEmail));
+            claims.Add(new Claim(OpenIddictConstants.Claims.Email, user.VoUserEmail));
         }
 
         // 真实姓名 (如果存在)
-        if (!string.IsNullOrWhiteSpace(user.VoReNa))
+        if (!string.IsNullOrWhiteSpace(user.VoUserRealName))
         {
-            claims.Add(new Claim(OpenIddictConstants.Claims.GivenName, user.VoReNa));
+            claims.Add(new Claim(OpenIddictConstants.Claims.GivenName, user.VoUserRealName));
         }
 
         // 角色 claims

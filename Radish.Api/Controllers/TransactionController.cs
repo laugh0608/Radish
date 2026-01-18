@@ -1,4 +1,4 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common;
@@ -86,8 +86,13 @@ public class TransactionController : ControllerBase
     /// <remarks>仅为示例，无任何作用</remarks>
     /// <returns></returns>
     [HttpGet]
-    public async Task<object> TestTranPropagation()
+    public async Task<MessageModel<TransactionTestResultVo>> TestTranPropagation()
     {
-        return await _userService.TestTranPropagationUser();
+        var result = await _userService.TestTranPropagationUser();
+        return MessageModel<TransactionTestResultVo>.Success("测试成功", new TransactionTestResultVo 
+        { 
+            Result = result, 
+            Message = "事务传播测试完成" 
+        });
     }
 }

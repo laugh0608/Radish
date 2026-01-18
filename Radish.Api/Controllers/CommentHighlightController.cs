@@ -210,7 +210,11 @@ public class CommentHighlightController : ControllerBase
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = $"统计任务已触发，任务 ID: {jobId}",
-            ResponseData = new { jobId, statDate = statDate ?? DateTime.Today.AddDays(-1) }
+            ResponseData = new JobTriggerResultVo
+            {
+                VoJobId = jobId,
+                VoStatDate = statDate ?? DateTime.Today.AddDays(-1)
+            }
         });
     }
 

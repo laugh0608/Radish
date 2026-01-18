@@ -15,12 +15,12 @@ export interface UserInfo {
  */
 export interface UserListItem {
   uuid: number;
-  voLoName: string;
-  voUsName: string;
-  voUsEmail: string;
+  voLoginName: string;
+  voUserName: string;
+  voUserEmail: string;
   voIsEnable: boolean;
   voCreateTime: string;
   voUpdateTime?: string;
   voIsDeleted: boolean;
-  voTenId: number;
+  voTenantId: number;
 }

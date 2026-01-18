@@ -142,8 +142,8 @@ public class UserService : BaseService<User, UserVo>, IUserService
         // 2. 然后按字母顺序排序
         // 3. 最后取limit个结果
         var sorted = data
-            .OrderBy(u => u.VoUsName.StartsWith(keyword, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
-            .ThenBy(u => u.VoUsName)
+            .OrderBy(u => u.VoUserName.StartsWith(keyword, StringComparison.OrdinalIgnoreCase) ? 0 : 1)
+            .ThenBy(u => u.VoUserName)
             .Take(limit)
             .ToList();
 

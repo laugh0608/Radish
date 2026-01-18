@@ -38,9 +38,9 @@ public class AccountControllerTest
         var userVo = new UserVo
         {
             Uuid = 1,
-            VoLoName = username,
-            VoLoPwd = hashedPassword,
-            VoTenId = 0,
+            VoLoginName = username,
+            VoLoginPassword = hashedPassword,
+            VoTenantId = 0,
             VoIsDeleted = false,
             VoIsEnable = true
         };
