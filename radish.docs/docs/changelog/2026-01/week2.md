@@ -204,8 +204,8 @@
 4. **GetLevelConfig** - 获取指定等级配置
    - 路由: GET /api/v1/Experience/GetLevelConfig/{level}
 
-5. **GetMyTransactions** - 获取当前用户交易记录
-   - 路由: GET /api/v1/Experience/GetMyTransactions
+5. **GetTransactions** - 获取当前用户交易记录
+   - 路由: GET /api/v1/Experience/GetTransactions
    - 分页查询、支持类型筛选
 
 6. **AdminAdjustExperience** - 管理员调整经验值
