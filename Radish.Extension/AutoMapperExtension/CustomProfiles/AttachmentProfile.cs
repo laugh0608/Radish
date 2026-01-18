@@ -9,16 +9,16 @@ public class AttachmentProfile : Profile
 {
     public AttachmentProfile()
     {
-        // Attachment -> AttachmentVo
+        // Attachment -> AttachmentVo (使用前缀识别 + 手动配置特殊字段)
         RecognizeDestinationPrefixes("Vo");
         CreateMap<Attachment, AttachmentVo>()
-            .ForMember(dest => dest.FileSizeFormatted, opt => opt.MapFrom(src => FormatFileSize(src.FileSize)))
-            .ForMember(dest => dest.ThumbnailUrl, opt => opt.MapFrom(src =>
+            .ForMember(dest => dest.VoFileSizeFormatted, opt => opt.MapFrom(src => FormatFileSize(src.FileSize)))
+            .ForMember(dest => dest.VoThumbnailUrl, opt => opt.MapFrom(src =>
                 string.IsNullOrWhiteSpace(src.ThumbnailPath)
                     ? null
                     : $"/uploads/{src.ThumbnailPath}"));
 
-        // AttachmentVo -> Attachment
+        // AttachmentVo -> Attachment (使用前缀识别)
         RecognizePrefixes("Vo");
         CreateMap<AttachmentVo, Attachment>();
     }

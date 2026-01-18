@@ -8,25 +8,25 @@ public class CurrentUserVo
     /// <summary>
     /// 用户ID
     /// </summary>
-    public long UserId { get; set; }
+    public long VoUserId { get; set; }
 
     /// <summary>
     /// 用户名
     /// </summary>
-    public string UserName { get; set; } = string.Empty;
+    public string VoUserName { get; set; } = string.Empty;
 
     /// <summary>
     /// 租户ID
     /// </summary>
-    public long TenantId { get; set; }
+    public long VoTenantId { get; set; }
 
     /// <summary>
     /// 头像URL
     /// </summary>
-    public string? AvatarUrl { get; set; }
+    public string? VoAvatarUrl { get; set; }
 
     /// <summary>
     /// 头像缩略图URL
     /// </summary>
-    public string? AvatarThumbnailUrl { get; set; }
+    public string? VoAvatarThumbnailUrl { get; set; }
 }

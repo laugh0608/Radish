@@ -67,10 +67,10 @@ public class WeatherForecastController : ControllerBase
 
         var forecasts = await Task.Run(() => Enumerable.Range(1, 5).Select(index => new WeatherForecastVo
             {
-                Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                TemperatureC = Random.Shared.Next(-20, 55),
-                TemperatureF = 32 + (int)(Random.Shared.Next(-20, 55) / 0.5556),
-                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
+                VoDate = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+                VoTemperatureC = Random.Shared.Next(-20, 55),
+                VoTemperatureF = 32 + (int)(Random.Shared.Next(-20, 55) / 0.5556),
+                VoSummary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToList());
 
@@ -100,9 +100,9 @@ public class WeatherForecastController : ControllerBase
 
         var forecasts = Enumerable.Range(1, 5).Select(index => new WeatherForecastVo
             {
-                Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                TemperatureC = Random.Shared.Next(-20, 55),
-                Summary = Summaries[Random.Shared.Next(Summaries.Length)]
+                VoDate = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+                VoTemperatureC = Random.Shared.Next(-20, 55),
+                VoSummary = Summaries[Random.Shared.Next(Summaries.Length)]
             })
             .ToArray();
 

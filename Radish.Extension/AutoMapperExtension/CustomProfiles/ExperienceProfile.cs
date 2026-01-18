@@ -58,15 +58,15 @@ public class ExperienceProfile : Profile
     /// <summary>配置等级配置映射</summary>
     private void ConfigureLevelConfigMapping()
     {
-        // LevelConfig -> LevelConfigVo
+        // LevelConfig -> LevelConfigVo (使用前缀识别 + 手动配置特殊字段)
         RecognizeDestinationPrefixes("Vo");
         CreateMap<LevelConfig, LevelConfigVo>()
-            .ForMember(dest => dest.Privileges, opt => opt.MapFrom(src => ParsePrivileges(src.Privileges)));
+            .ForMember(dest => dest.VoPrivileges, opt => opt.MapFrom(src => ParsePrivileges(src.Privileges)));
 
-        // LevelConfigVo -> LevelConfig
+        // LevelConfigVo -> LevelConfig (使用前缀识别 + 手动配置特殊字段)
         RecognizePrefixes("Vo");
         CreateMap<LevelConfigVo, LevelConfig>()
-            .ForMember(dest => dest.Privileges, opt => opt.MapFrom(src => SerializePrivileges(src.Privileges)));
+            .ForMember(dest => dest.Privileges, opt => opt.MapFrom(src => SerializePrivileges(src.VoPrivileges)));
     }
 
     /// <summary>配置每日统计映射</summary>

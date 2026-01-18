@@ -215,11 +215,11 @@ public class UserController : ControllerBase
 
         var userInfo = new CurrentUserVo
         {
-            UserId = userId,
-            UserName = userName,
-            TenantId = tenantId,
-            AvatarUrl = avatar?.Url,
-            AvatarThumbnailUrl = avatar?.ThumbnailUrl
+            VoUserId = userId,
+            VoUserName = userName,
+            VoTenantId = tenantId,
+            VoAvatarUrl = avatar?.VoUrl,
+            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl
         };
         return new MessageModel
         {
@@ -255,15 +255,15 @@ public class UserController : ControllerBase
         // 统计评论获赞数
         var comments = await _commentService.QueryAsync(
             c => c.AuthorId == userId && !c.IsDeleted);
-        var commentLikeCount = comments.Sum(c => c.LikeCount);
+        var commentLikeCount = comments.Sum(c => c.VoLikeCount);
 
         var stats = new UserStatsVo
         {
-            PostCount = postCount,
-            CommentCount = commentCount,
-            TotalLikeCount = postLikeCount + commentLikeCount,
-            PostLikeCount = postLikeCount,
-            CommentLikeCount = commentLikeCount
+            VoPostCount = postCount,
+            VoCommentCount = commentCount,
+            VoTotalLikeCount = postLikeCount + commentLikeCount,
+            VoPostLikeCount = postLikeCount,
+            VoCommentLikeCount = commentLikeCount
         };
 
         return new MessageModel
@@ -340,9 +340,9 @@ public class UserController : ControllerBase
             Birth = user.VoUserBirth,
             Address = user.VoUserAddress,
             CreateTime = user.VoCreateTime,
-            AvatarAttachmentId = avatar?.Id,
-            AvatarUrl = avatar?.Url,
-            AvatarThumbnailUrl = avatar?.ThumbnailUrl
+            AvatarAttachmentId = avatar?.VoId,
+            AvatarUrl = avatar?.VoUrl,
+            AvatarThumbnailUrl = avatar?.VoThumbnailUrl
         };
 
         return new MessageModel
@@ -569,7 +569,7 @@ public class UserController : ControllerBase
         // 只有上传者或管理员可以绑定为头像
         var roles = _httpContextUser.GetClaimValueByType("role");
         var isAdmin = roles.Contains("Admin") || roles.Contains("System");
-        if (attachment.UploaderId != userId && !isAdmin)
+        if (attachment.VoUploaderId != userId && !isAdmin)
         {
             return new MessageModel
             {

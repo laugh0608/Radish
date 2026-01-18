@@ -8,25 +8,25 @@ public class UserStatsVo
     /// <summary>
     /// 帖子数量
     /// </summary>
-    public int PostCount { get; set; }
+    public int VoPostCount { get; set; }
 
     /// <summary>
     /// 评论数量
     /// </summary>
-    public int CommentCount { get; set; }
+    public int VoCommentCount { get; set; }
 
     /// <summary>
     /// 总点赞数
     /// </summary>
-    public int TotalLikeCount { get; set; }
+    public int VoTotalLikeCount { get; set; }
 
     /// <summary>
     /// 帖子点赞数
     /// </summary>
-    public int PostLikeCount { get; set; }
+    public int VoPostLikeCount { get; set; }
 
     /// <summary>
     /// 评论点赞数
     /// </summary>
-    public int CommentLikeCount { get; set; }
+    public int VoCommentLikeCount { get; set; }
 }

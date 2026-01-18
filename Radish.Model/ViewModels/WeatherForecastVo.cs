@@ -5,14 +5,14 @@ namespace Radish.Model.ViewModels;
 public class WeatherForecastVo
 {
     /// <summary>日期</summary>
-    public DateOnly Date { get; set; }
+    public DateOnly VoDate { get; set; }
 
     /// <summary>摄氏温度</summary>
-    public int TemperatureC { get; set; }
+    public int VoTemperatureC { get; set; }
 
     /// <summary>华氏温度</summary>
-    public int TemperatureF { get; set; }
+    public int VoTemperatureF { get; set; }
 
     /// <summary>天气描述</summary>
-    public string? Summary { get; set; }
+    public string? VoSummary { get; set; }
 }

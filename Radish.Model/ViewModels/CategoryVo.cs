@@ -8,65 +8,65 @@ public class CategoryVo
     /// <summary>
     /// 分类 Id
     /// </summary>
-    public long Id { get; set; }
+    public long VoId { get; set; }
 
     /// <summary>
     /// 分类名称
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public string VoName { get; set; } = string.Empty;
 
     /// <summary>
     /// URL 友好的标识符
     /// </summary>
-    public string Slug { get; set; } = string.Empty;
+    public string VoSlug { get; set; } = string.Empty;
 
     /// <summary>
     /// 分类描述
     /// </summary>
-    public string? Description { get; set; }
+    public string? VoDescription { get; set; }
 
     /// <summary>
     /// 分类图标
     /// </summary>
-    public string? Icon { get; set; }
+    public string? VoIcon { get; set; }
 
     /// <summary>
     /// 分类封面图
     /// </summary>
-    public string? CoverImage { get; set; }
+    public string? VoCoverImage { get; set; }
 
     /// <summary>
     /// 父分类 Id
     /// </summary>
-    public long? ParentId { get; set; }
+    public long? VoParentId { get; set; }
 
     /// <summary>
     /// 层级深度
     /// </summary>
-    public int Level { get; set; }
+    public int VoLevel { get; set; }
 
     /// <summary>
     /// 排序权重
     /// </summary>
-    public int OrderSort { get; set; }
+    public int VoOrderSort { get; set; }
 
     /// <summary>
     /// 帖子数量
     /// </summary>
-    public int PostCount { get; set; }
+    public int VoPostCount { get; set; }
 
     /// <summary>
     /// 是否启用
     /// </summary>
-    public bool IsEnabled { get; set; }
+    public bool VoIsEnabled { get; set; }
 
     /// <summary>
     /// 创建时间
     /// </summary>
-    public DateTime CreateTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
 
     /// <summary>
     /// 创建者名称
     /// </summary>
-    public string CreateBy { get; set; } = string.Empty;
+    public string VoCreateBy { get; set; } = string.Empty;
 }
