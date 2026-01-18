@@ -158,3 +158,51 @@ export function mapLeaderboardItem(vo: any): LeaderboardItemData {
     currentLevelName: vo.VoLevelName,
   };
 }
+
+/**
+ * 通知信息映射
+ */
+export interface NotificationData {
+  id: number;
+  userId: number;
+  title: string;
+  content: string;
+  type: string;
+  typeDisplay: string;
+  isRead: boolean;
+  relatedId: number;
+  relatedType: string;
+  relatedUrl: string;
+  icon: string;
+  color: string;
+  priority: number;
+  expiresAt: string;
+  readAt: string;
+  createTime: string;
+  updateTime: string;
+}
+
+/**
+ * 将Notification映射为NotificationData
+ */
+export function mapNotification(vo: any): NotificationData {
+  return {
+    id: vo.VoId,
+    userId: vo.VoUserId,
+    title: vo.VoTitle,
+    content: vo.VoContent,
+    type: vo.VoType,
+    typeDisplay: vo.VoTypeDisplay,
+    isRead: vo.VoIsRead,
+    relatedId: vo.VoRelatedId,
+    relatedType: vo.VoRelatedType,
+    relatedUrl: vo.VoRelatedUrl,
+    icon: vo.VoIcon,
+    color: vo.VoColor,
+    priority: vo.VoPriority,
+    expiresAt: vo.VoExpiresAt,
+    readAt: vo.VoReadAt,
+    createTime: vo.VoCreateTime,
+    updateTime: vo.VoUpdateTime,
+  };
+}
