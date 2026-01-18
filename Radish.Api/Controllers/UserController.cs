@@ -213,7 +213,7 @@ public class UserController : ControllerBase
             a.BusinessType == "Avatar" &&
             a.BusinessId == userId);
 
-        var userInfo = new VoCurrentUser
+        var userInfo = new CurrentUserVo
         {
             UserId = userId,
             UserName = userName,
@@ -257,7 +257,7 @@ public class UserController : ControllerBase
             c => c.AuthorId == userId && !c.IsDeleted);
         var commentLikeCount = comments.Sum(c => c.LikeCount);
 
-        var stats = new VoUserStats
+        var stats = new UserStatsVo
         {
             PostCount = postCount,
             CommentCount = commentCount,

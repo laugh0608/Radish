@@ -3,7 +3,7 @@ namespace Radish.Model.ViewModels;
 /// <summary>
 /// 当前用户信息ViewModel
 /// </summary>
-public class VoCurrentUser
+public class CurrentUserVo
 {
     /// <summary>
     /// 用户ID
