@@ -36,16 +36,20 @@ export const ExperienceDetailApp = () => {
     setError(null);
 
     try {
-      // 并行加载经验值信息和交易记录
-      const [expResult, transResult] = await Promise.all([
-        experienceApi.getMyExperience(),
-        experienceApi.getTransactions({ pageIndex, pageSize })
-      ]);
-
+      // 加载经验值信息
+      const expResult = await experienceApi.getMyExperience();
       setExperience(expResult);
-      if (transResult) {
-        setTransactions(transResult.data);
-        setTotalPages(transResult.pageCount);
+
+      // 尝试加载交易记录（如果 API 不存在则忽略）
+      try {
+        const transResult = await experienceApi.getTransactions({ pageIndex, pageSize });
+        if (transResult) {
+          setTransactions(transResult.data);
+          setTotalPages(transResult.pageCount);
+        }
+      } catch (transErr) {
+        log.warn('经验值交易记录 API 不可用:', transErr);
+        // 忽略交易记录加载失败，只显示经验值信息
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载数据失败');

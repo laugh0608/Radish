@@ -685,18 +685,18 @@ export interface LeaderboardItemData {
  */
 export function mapLeaderboardItem(vo: any): LeaderboardItemData {
   return {
-    userId: vo.VoUserId,
-    userName: vo.VoUserName,
-    avatar: vo.VoAvatar,
-    currentLevel: vo.VoCurrentLevel,
-    totalExp: vo.VoTotalExp,
-    levelName: vo.VoLevelName,
-    rank: vo.VoRank,
-    expGainedThisWeek: vo.VoExpGainedThisWeek,
-    expGainedThisMonth: vo.VoExpGainedThisMonth,
-    isCurrentUser: vo.VoIsCurrentUser,
+    userId: vo.VoUserId || 0,
+    userName: vo.VoUserName || '未知用户',
+    avatar: vo.VoAvatar || '',
+    currentLevel: vo.VoCurrentLevel || 1,
+    totalExp: vo.VoTotalExp || 0,
+    levelName: vo.VoLevelName || '新手',
+    rank: vo.VoRank || 0,
+    expGainedThisWeek: vo.VoExpGainedThisWeek || 0,
+    expGainedThisMonth: vo.VoExpGainedThisMonth || 0,
+    isCurrentUser: vo.VoIsCurrentUser || false,
     themeColor: '#3b82f6', // 默认主题色
-    currentLevelName: vo.VoLevelName,
+    currentLevelName: vo.VoLevelName || '新手',
   };
 }
 

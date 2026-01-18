@@ -112,9 +112,9 @@ export const LeaderboardApp = () => {
       {!loading && !error && leaderboard.length > 0 && (
         <>
           <div className={styles.leaderboard}>
-            {leaderboard.map((item) => (
+            {leaderboard.map((item, index) => (
               <div
-                key={item.userId}
+                key={`${item.userId}-${item.rank}-${index}`}
                 className={`${styles.item} ${item.isCurrentUser ? styles.currentUser : ''} ${getRankClass(item.rank)}`}
               >
                 <div className={styles.rank}>
