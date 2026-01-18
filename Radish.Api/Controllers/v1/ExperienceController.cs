@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 
 namespace Radish.Api.Controllers.v1;
@@ -164,7 +165,7 @@ public class ExperienceController : ControllerBase
     /// <returns>是否成功</returns>
     [HttpPost]
     [Authorize(Policy = "SystemOrAdmin")]
-    public async Task<MessageModel<bool>> AdminAdjustExperience([FromBody] AdminAdjustExpRequest request)
+    public async Task<MessageModel<bool>> AdminAdjustExperience([FromBody] AdminAdjustExpDto request)
     {
         var operatorId = GetCurrentUserId();
         var operatorName = GetCurrentUserName();
@@ -264,19 +265,4 @@ public class ExperienceController : ControllerBase
     }
 
     #endregion
-}
-
-/// <summary>
-/// 管理员调整经验值请求
-/// </summary>
-public class AdminAdjustExpRequest
-{
-    /// <summary>用户 ID</summary>
-    public long UserId { get; set; }
-
-    /// <summary>经验值变动量（正数=增加，负数=减少）</summary>
-    public int DeltaExp { get; set; }
-
-    /// <summary>调整原因</summary>
-    public string? Reason { get; set; }
 }

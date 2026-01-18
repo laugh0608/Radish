@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
@@ -181,7 +182,7 @@ public class PostController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
-    public async Task<MessageModel> Publish([FromBody] PublishPostRequest request)
+    public async Task<MessageModel> Publish([FromBody] PublishPostDto request)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
         {
@@ -291,7 +292,7 @@ public class PostController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
-    public async Task<MessageModel> Update([FromBody] UpdatePostRequest request)
+    public async Task<MessageModel> Update([FromBody] UpdatePostDto request)
     {
         // 参数校验
         if (string.IsNullOrWhiteSpace(request.Title))
@@ -402,43 +403,4 @@ public class PostController : ControllerBase
             MessageInfo = "删除成功"
         };
     }
-}
-
-/// <summary>
-/// 编辑帖子请求对象
-/// </summary>
-public class UpdatePostRequest
-{
-    /// <summary>帖子 ID</summary>
-    public long PostId { get; set; }
-
-    /// <summary>帖子标题</summary>
-    public string Title { get; set; } = string.Empty;
-
-    /// <summary>帖子内容</summary>
-    public string Content { get; set; } = string.Empty;
-
-    /// <summary>分类 ID（可选，不传则保持原分类）</summary>
-    public long? CategoryId { get; set; }
-}
-
-/// <summary>
-/// 发布帖子请求对象
-/// </summary>
-public class PublishPostRequest
-{
-    /// <summary>帖子标题</summary>
-    public string Title { get; set; } = string.Empty;
-
-    /// <summary>帖子内容</summary>
-    public string Content { get; set; } = string.Empty;
-
-    /// <summary>内容类型（markdown、html、text）</summary>
-    public string? ContentType { get; set; }
-
-    /// <summary>分类 ID</summary>
-    public long CategoryId { get; set; }
-
-    /// <summary>标签名称列表</summary>
-    public List<string>? TagNames { get; set; }
 }

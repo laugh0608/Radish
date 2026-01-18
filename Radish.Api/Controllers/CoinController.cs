@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
@@ -223,7 +224,7 @@ public class CoinController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
-    public async Task<MessageModel> AdminAdjustBalance([FromBody] AdminAdjustBalanceRequest request)
+    public async Task<MessageModel> AdminAdjustBalance([FromBody] AdminAdjustBalanceDto request)
     {
         try
         {
@@ -267,26 +268,4 @@ public class CoinController : ControllerBase
     }
 
     #endregion
-}
-
-/// <summary>
-/// 管理员调整余额请求参数
-/// </summary>
-public class AdminAdjustBalanceRequest
-{
-    /// <summary>
-    /// 用户 ID
-    /// </summary>
-    public long UserId { get; set; }
-
-    /// <summary>
-    /// 变动金额（胡萝卜）
-    /// </summary>
-    /// <remarks>正数表示增加，负数表示减少</remarks>
-    public long DeltaAmount { get; set; }
-
-    /// <summary>
-    /// 调整原因
-    /// </summary>
-    public string Reason { get; set; } = string.Empty;
 }
