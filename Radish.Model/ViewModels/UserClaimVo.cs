@@ -6,29 +6,29 @@ namespace Radish.Model.ViewModels;
 public class UserClaimVo
 {
     /// <summary>声明 Id</summary>
-    public long Id { get; set; }
+    public long VoId { get; set; }
 
     /// <summary>用户 Id</summary>
-    public long UserId { get; set; }
+    public long VoUserId { get; set; }
 
     /// <summary>声明类型</summary>
-    public string ClaimType { get; set; } = string.Empty;
+    public string VoClaimType { get; set; } = string.Empty;
 
     /// <summary>声明值</summary>
-    public string ClaimValue { get; set; } = string.Empty;
+    public string VoClaimValue { get; set; } = string.Empty;
 
     /// <summary>是否已被删除</summary>
-    public bool IsDeleted { get; set; }
+    public bool VoIsDeleted { get; set; }
 
     /// <summary>创建者名称</summary>
-    public string CreateBy { get; set; } = string.Empty;
+    public string VoCreateBy { get; set; } = string.Empty;
 
     /// <summary>创建时间</summary>
-    public DateTime CreateTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
 
     /// <summary>更新者名称</summary>
-    public string? ModifyBy { get; set; }
+    public string? VoModifyBy { get; set; }
 
     /// <summary>更新时间</summary>
-    public DateTime? ModifyTime { get; set; }
+    public DateTime? VoModifyTime { get; set; }
 }

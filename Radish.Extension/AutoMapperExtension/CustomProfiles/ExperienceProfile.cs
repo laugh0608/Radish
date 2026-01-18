@@ -47,8 +47,8 @@ public class ExperienceProfile : Profile
         // ExpTransaction -> ExpTransactionVo
         RecognizeDestinationPrefixes("Vo");
         CreateMap<ExpTransaction, ExpTransactionVo>()
-            .ForMember(dest => dest.ExpTypeDisplay, opt => opt.MapFrom(src => GetExpTypeName(src.ExpType)))
-            .ForMember(dest => dest.UserName, opt => opt.Ignore()); // 需要在 Service 层单独设置
+            .ForMember(dest => dest.VoExpTypeDisplay, opt => opt.MapFrom(src => GetExpTypeName(src.ExpType)))
+            .ForMember(dest => dest.VoUserName, opt => opt.Ignore()); // 需要在 Service 层单独设置
 
         // ExpTransactionVo -> ExpTransaction
         RecognizePrefixes("Vo");

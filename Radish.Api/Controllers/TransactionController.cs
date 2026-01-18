@@ -89,10 +89,10 @@ public class TransactionController : ControllerBase
     public async Task<MessageModel<TransactionTestResultVo>> TestTranPropagation()
     {
         var result = await _userService.TestTranPropagationUser();
-        return MessageModel<TransactionTestResultVo>.Success("测试成功", new TransactionTestResultVo 
-        { 
-            Result = result, 
-            Message = "事务传播测试完成" 
+        return MessageModel<TransactionTestResultVo>.Success("测试成功", new TransactionTestResultVo
+        {
+            VoResult = result,
+            VoMessage = "事务传播测试完成"
         });
     }
 }

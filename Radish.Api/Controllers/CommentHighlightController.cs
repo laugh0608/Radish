@@ -64,7 +64,7 @@ public class CommentHighlightController : ControllerBase
                  h.IsCurrent);
 
         // 在内存中按排名升序排序
-        var sortedComments = godComments.OrderBy(h => h.Rank).ToList();
+        var sortedComments = godComments.OrderBy(h => h.VoRank).ToList();
 
         // 写入缓存（TTL 1小时）
         if (sortedComments.Any())
@@ -113,7 +113,7 @@ public class CommentHighlightController : ControllerBase
                  h.IsCurrent);
 
         // 在内存中按排名升序排序
-        var sortedSofas = sofas.OrderBy(h => h.Rank).ToList();
+        var sortedSofas = sofas.OrderBy(h => h.VoRank).ToList();
 
         // 写入缓存（TTL 1小时）
         if (sortedSofas.Any())
@@ -236,7 +236,7 @@ public class CommentHighlightController : ControllerBase
                  h.StatDate >= startDate);
 
         // 在内存中按统计日期降序排序
-        var sortedTrend = trend.OrderByDescending(h => h.StatDate).ToList();
+        var sortedTrend = trend.OrderByDescending(h => h.VoStatDate).ToList();
 
         return new MessageModel
         {

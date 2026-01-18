@@ -538,18 +538,18 @@ namespace Radish.Service;
 
                 var item = new LeaderboardItemVo
                 {
-                    Rank = rank,
-                    UserId = exp.UserId,
-                    UserName = user.UserName,
-                    CurrentLevel = exp.CurrentLevel,
-                    CurrentLevelName = levelConfigDict.ContainsKey(exp.CurrentLevel)
+                    VoRank = rank,
+                    VoUserId = exp.UserId,
+                    VoUserName = user.UserName,
+                    VoCurrentLevel = exp.CurrentLevel,
+                    VoCurrentLevelName = levelConfigDict.ContainsKey(exp.CurrentLevel)
                         ? levelConfigDict[exp.CurrentLevel].LevelName
                         : $"Lv.{exp.CurrentLevel}",
-                    ThemeColor = levelConfigDict.ContainsKey(exp.CurrentLevel)
+                    VoThemeColor = levelConfigDict.ContainsKey(exp.CurrentLevel)
                         ? levelConfigDict[exp.CurrentLevel].ThemeColor
                         : "#9E9E9E",
-                    TotalExp = exp.TotalExp,
-                    IsCurrentUser = currentUserId.HasValue && exp.UserId == currentUserId.Value
+                    VoTotalExp = exp.TotalExp,
+                    VoIsCurrentUser = currentUserId.HasValue && exp.UserId == currentUserId.Value
                 };
 
                 leaderboard.Add(item);

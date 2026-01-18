@@ -5,8 +5,8 @@ namespace Radish.Model.ViewModels;
 public class ScopeTestResultVo
 {
     /// <summary>第一个服务的角色列表</summary>
-    public List<RoleVo> RoleList1 { get; set; } = new();
+    public List<RoleVo> VoRoleList1 { get; set; } = new();
 
     /// <summary>第二个服务的角色列表</summary>
-    public List<RoleVo> RoleList2 { get; set; } = new();
+    public List<RoleVo> VoRoleList2 { get; set; } = new();
 }

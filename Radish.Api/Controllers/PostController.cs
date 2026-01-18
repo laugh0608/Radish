@@ -231,7 +231,7 @@ public class PostController : ControllerBase
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = result.IsLiked ? "点赞成功" : "取消点赞成功",
-            ResponseData = new VoLikeResult { IsLiked = result.IsLiked, LikeCount = result.LikeCount }
+            ResponseData = new VoLikeResult { VoIsLiked = result.IsLiked, VoLikeCount = result.LikeCount }
         };
     }
 

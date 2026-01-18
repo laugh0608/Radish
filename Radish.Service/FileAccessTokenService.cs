@@ -240,14 +240,14 @@ public class FileAccessTokenService : IFileAccessTokenService
 
         return new FileAccessTokenVo
         {
-            Token = token.Token,
-            AttachmentId = token.AttachmentId,
-            AccessUrl = accessUrl,
-            MaxAccessCount = token.MaxAccessCount,
-            AccessCount = token.AccessCount,
-            ExpiresAt = token.ExpiresAt,
-            IsRevoked = token.IsRevoked,
-            CreateTime = token.CreateTime
+            VoToken = token.Token,
+            VoAttachmentId = token.AttachmentId,
+            VoAccessUrl = accessUrl,
+            VoMaxAccessCount = token.MaxAccessCount,
+            VoAccessCount = token.AccessCount,
+            VoExpiresAt = token.ExpiresAt,
+            VoIsRevoked = token.IsRevoked,
+            VoCreateTime = token.CreateTime
         };
     }
 

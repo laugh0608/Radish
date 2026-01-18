@@ -128,7 +128,7 @@ public class WeatherForecastController : ControllerBase
     [HttpGet("{id}")] // 效果：api/WeatherForecast/GetById/1
     public async Task<MessageModel<GetByIdResultVo>> GetById(int id)
     {
-        var result = await Task.Run(() => new GetByIdResultVo { Id = id, Name = "Radish" });
+        var result = await Task.Run(() => new GetByIdResultVo { VoId = id, VoName = "Radish" });
         return MessageModel<GetByIdResultVo>.Success("获取成功", result);
     }
 
@@ -145,7 +145,7 @@ public class WeatherForecastController : ControllerBase
 
         var result = new TestResultVo
         {
-            RoleList5 = roleList5
+            VoRoleList5 = roleList5
         };
 
         return MessageModel<TestResultVo>.Success("获取成功", result);
@@ -169,11 +169,11 @@ public class WeatherForecastController : ControllerBase
 
         var result = new CacheTestResultVo
         {
-            CacheKey = cacheKey,
-            CacheKeysBeforeSet = cacheKeysBeforeSet,
-            CacheKeysAfterSet = cacheKeysAfterSet,
-            CacheValue = cacheValue,
-            CacheKeysAfterRemove = cacheKeysAfterRemove
+            VoCacheKey = cacheKey,
+            VoCacheKeysBeforeSet = cacheKeysBeforeSet,
+            VoCacheKeysAfterSet = cacheKeysAfterSet,
+            VoCacheValue = cacheValue,
+            VoCacheKeysAfterRemove = cacheKeysAfterRemove
         };
 
         return MessageModel<CacheTestResultVo>.Success("获取成功", result);
@@ -193,8 +193,8 @@ public class WeatherForecastController : ControllerBase
 
         var result = new ScopeTestResultVo
         {
-            RoleList1 = roleList1,
-            RoleList2 = roleList2
+            VoRoleList1 = roleList1,
+            VoRoleList2 = roleList2
         };
 
         return MessageModel<ScopeTestResultVo>.Success("获取成功", result);
@@ -211,7 +211,7 @@ public class WeatherForecastController : ControllerBase
 
         var result = new AppTestResultVo
         {
-            RoleList3 = roleList3
+            VoRoleList3 = roleList3
         };
 
         return MessageModel<AppTestResultVo>.Success("获取成功", result);
@@ -227,7 +227,7 @@ public class WeatherForecastController : ControllerBase
 
         var result = new ServiceObjTestResultVo
         {
-            RoleList4 = roleList4
+            VoRoleList4 = roleList4
         };
 
         return MessageModel<ServiceObjTestResultVo>.Success("获取成功", result);

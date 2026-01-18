@@ -2,7 +2,7 @@ namespace Radish.Model.ViewModels;
 
 public class UserPointsVo
 {
-    public long UserId { get; set; }
+    public long VoUserId { get; set; }
 
-    public long Balance { get; set; }
+    public long VoBalance { get; set; }
 }
