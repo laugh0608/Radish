@@ -2,7 +2,7 @@
  * 商城系统相关的 API 调用
  */
 
-import { parseApiResponse, type ApiResponse } from '@/api/client';
+import { parseApiResponseWithI18n, apiGet, apiPost, configureApiClient, type ApiResponse } from '@radish/ui';
 import type { TFunction } from 'i18next';
 
 const defaultApiBase = 'https://localhost:5000';

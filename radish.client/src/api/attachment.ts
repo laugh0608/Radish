@@ -4,46 +4,16 @@ import { log } from '@/utils/logger';
  * 附件上传相关的 API 调用
  */
 
-import { parseApiResponse, type ApiResponse } from '@/api/client';
+import { parseApiResponseWithI18n, apiGet, apiPost, configureApiClient, type ApiResponse } from '@radish/ui';
 import type { TFunction } from 'i18next';
 
+// 配置 API 客户端
 const defaultApiBase = 'https://localhost:5000';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined || defaultApiBase;
 
-/**
- * 获取 API Base URL
- */
-function getApiBaseUrl(): string {
-  const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  return (configured ?? defaultApiBase).replace(/\/$/, '');
-}
-
-/**
- * 带认证的 fetch 封装
- */
-interface ApiFetchOptions extends RequestInit {
-  withAuth?: boolean;
-}
-
-function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
-  const { withAuth, headers, ...rest } = options;
-
-  const finalHeaders: HeadersInit = {
-    Accept: 'application/json',
-    ...headers
-  };
-
-  if (withAuth && typeof window !== 'undefined') {
-    const token = window.localStorage.getItem('access_token');
-    if (token) {
-      (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
-    }
-  }
-
-  return fetch(input, {
-    ...rest,
-    headers: finalHeaders
-  });
-}
+configureApiClient({
+  baseUrl: apiBaseUrl.replace(/\/$/, ''),
+});
 
 /**
  * 延迟函数（用于重试）

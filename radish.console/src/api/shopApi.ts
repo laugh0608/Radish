@@ -2,7 +2,7 @@
  * 商城管理 API 客户端
  */
 
-import { env } from '../config/env';
+import { apiGet, apiPost, apiPut, apiDelete, configureApiClient } from '@radish/ui';
 import type {
   PagedResponse,
   Product,
@@ -16,48 +16,13 @@ import {
   OrderStatus,
 } from './types';
 
-/**
- * 获取 Token
- */
-function getToken(): string | null {
-  return localStorage.getItem('access_token');
-}
+// 配置 API 客户端
+const defaultApiBase = 'https://localhost:5000';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBase;
 
-/**
- * 带认证的 fetch 封装
- */
-async function apiFetch<T>(
-  url: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const token = getToken();
-
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
-
-  if (token) {
-    (headers as Record<string, string>).Authorization = `Bearer ${token}`;
-  }
-
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-
-  const json = await response.json() as any;
-
-  if (!json.isSuccess) {
-    throw new Error(json.messageInfo || '请求失败');
-  }
-
-  return json.responseData;
-}
+configureApiClient({
+  baseUrl: apiBaseUrl,
+});
 
 // ==================== 商品分类 API ====================
 
@@ -65,16 +30,29 @@ async function apiFetch<T>(
  * 获取商品分类列表
  */
 export async function getCategories(): Promise<ProductCategory[]> {
-  const url = `${env.apiBaseUrl}/api/v1/Shop/GetCategories`;
-  return apiFetch<ProductCategory[]>(url);
+  const response = await apiGet<ProductCategory[]>('/api/v1/Shop/GetCategories', { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取分类列表失败');
+  }
+
+  return response.data;
 }
 
 /**
  * 获取分类详情
  */
 export async function getCategory(categoryId: string): Promise<ProductCategory> {
-  const url = `${env.apiBaseUrl}/api/v1/Shop/GetCategory/${encodeURIComponent(categoryId)}`;
-  return apiFetch<ProductCategory>(url);
+  const response = await apiGet<ProductCategory>(
+    `/api/v1/Shop/GetCategory/${encodeURIComponent(categoryId)}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取分类详情失败');
+  }
+
+  return response.data;
 }
 
 // ==================== 商品管理 API ====================
@@ -99,58 +77,89 @@ export async function adminGetProducts(params: {
   searchParams.append('pageIndex', (params.pageIndex || 1).toString());
   searchParams.append('pageSize', (params.pageSize || 20).toString());
 
-  const url = `${env.apiBaseUrl}/api/v1/Shop/AdminGetProducts?${searchParams.toString()}`;
-  return apiFetch<PagedResponse<Product>>(url);
+  const response = await apiGet<PagedResponse<Product>>(
+    `/api/v1/Shop/AdminGetProducts?${searchParams.toString()}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取商品列表失败');
+  }
+
+  return response.data;
 }
 
 /**
- * 获取商品详情
+ * 获取商品详情（管理后台）
  */
-export async function getProduct(productId: number): Promise<Product> {
-  const url = `${env.apiBaseUrl}/api/v1/Shop/GetProduct/${productId}`;
-  return apiFetch<Product>(url);
+export async function adminGetProduct(productId: number): Promise<Product> {
+  const response = await apiGet<Product>(
+    `/api/v1/Shop/AdminGetProduct/${productId}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取商品详情失败');
+  }
+
+  return response.data;
 }
 
 /**
  * 创建商品
  */
-export async function createProduct(dto: CreateProductDto): Promise<number> {
-  const url = `${env.apiBaseUrl}/api/v1/Shop/CreateProduct`;
-  return apiFetch<number>(url, {
-    method: 'POST',
-    body: JSON.stringify(dto),
-  });
+export async function createProduct(product: CreateProductDto): Promise<number> {
+  const response = await apiPost<number>('/api/v1/Shop/CreateProduct', product, { withAuth: true });
+
+  if (!response.ok || response.data === undefined) {
+    throw new Error(response.message || '创建商品失败');
+  }
+
+  return response.data;
 }
 
 /**
  * 更新商品
  */
-export async function updateProduct(dto: UpdateProductDto): Promise<boolean> {
-  const url = `${env.apiBaseUrl}/api/v1/Shop/UpdateProduct`;
-  return apiFetch<boolean>(url, {
-    method: 'PUT',
-    body: JSON.stringify(dto),
-  });
+export async function updateProduct(product: UpdateProductDto): Promise<void> {
+  const response = await apiPut<null>('/api/v1/Shop/UpdateProduct', product, { withAuth: true });
+
+  if (!response.ok) {
+    throw new Error(response.message || '更新商品失败');
+  }
+}
+
+/**
+ * 删除商品
+ */
+export async function deleteProduct(productId: number): Promise<void> {
+  const response = await apiDelete<null>(`/api/v1/Shop/DeleteProduct/${productId}`, { withAuth: true });
+
+  if (!response.ok) {
+    throw new Error(response.message || '删除商品失败');
+  }
 }
 
 /**
  * 上架商品
  */
-export async function putOnSale(productId: number): Promise<boolean> {
-  const url = `${env.apiBaseUrl}/api/v1/Shop/PutOnSale/${productId}`;
-  return apiFetch<boolean>(url, {
-    method: 'POST',
-  });
+export async function putProductOnSale(productId: number): Promise<void> {
+  const response = await apiPost<null>(`/api/v1/Shop/PutOnSale/${productId}`, undefined, { withAuth: true });
+
+  if (!response.ok) {
+    throw new Error(response.message || '上架商品失败');
+  }
 }
 
 /**
  * 下架商品
  */
-export async function takeOffSale(productId: number): Promise<boolean> {
-  const url = `${env.apiBaseUrl}/api/v1/Shop/TakeOffSale/${productId}`;
-  return apiFetch<boolean>(url, {
-    method: 'POST',
-  });
+export async function takeProductOffSale(productId: number): Promise<void> {
+  const response = await apiPost<null>(`/api/v1/Shop/TakeOffSale/${productId}`, undefined, { withAuth: true });
+
+  if (!response.ok) {
+    throw new Error(response.message || '下架商品失败');
+  }
 }
 
 // ==================== 订单管理 API ====================
@@ -159,102 +168,86 @@ export async function takeOffSale(productId: number): Promise<boolean> {
  * 获取订单列表（管理后台）
  */
 export async function adminGetOrders(params: {
-  userId?: number;
   status?: OrderStatus;
-  productId?: number;
-  orderNo?: string;
+  productType?: ProductType;
+  keyword?: string;
+  startDate?: string;
+  endDate?: string;
   pageIndex?: number;
   pageSize?: number;
 }): Promise<PagedResponse<Order>> {
   const searchParams = new URLSearchParams();
 
-  if (params.userId) searchParams.append('userId', params.userId.toString());
   if (params.status !== undefined) searchParams.append('status', params.status.toString());
-  if (params.productId) searchParams.append('productId', params.productId.toString());
-  if (params.orderNo) searchParams.append('orderNo', params.orderNo);
+  if (params.productType !== undefined) searchParams.append('productType', params.productType.toString());
+  if (params.keyword) searchParams.append('keyword', params.keyword);
+  if (params.startDate) searchParams.append('startDate', params.startDate);
+  if (params.endDate) searchParams.append('endDate', params.endDate);
   searchParams.append('pageIndex', (params.pageIndex || 1).toString());
   searchParams.append('pageSize', (params.pageSize || 20).toString());
 
-  const url = `${env.apiBaseUrl}/api/v1/Shop/AdminGetOrders?${searchParams.toString()}`;
-  return apiFetch<PagedResponse<Order>>(url);
+  const response = await apiGet<PagedResponse<Order>>(
+    `/api/v1/Shop/AdminGetOrders?${searchParams.toString()}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取订单列表失败');
+  }
+
+  return response.data;
 }
 
 /**
- * 获取订单详情
+ * 获取订单详情（管理后台）
  */
-export async function getOrder(orderId: number): Promise<Order> {
-  const url = `${env.apiBaseUrl}/api/v1/Shop/GetOrder/${orderId}`;
-  return apiFetch<Order>(url);
+export async function adminGetOrder(orderId: number): Promise<Order> {
+  const response = await apiGet<Order>(`/api/v1/Shop/AdminGetOrder/${orderId}`, { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取订单详情失败');
+  }
+
+  return response.data;
 }
 
 /**
- * 重新发放权益
+ * 处理订单（发放权益）
  */
-export async function retryGrantBenefit(orderId: number): Promise<boolean> {
-  const url = `${env.apiBaseUrl}/api/v1/Shop/RetryGrantBenefit/${orderId}`;
-  return apiFetch<boolean>(url, {
-    method: 'POST',
-  });
-}
+export async function processOrder(orderId: number): Promise<void> {
+  const response = await apiPost<null>(`/api/v1/Shop/ProcessOrder/${orderId}`, undefined, { withAuth: true });
 
-// ==================== 工具函数 ====================
-
-/**
- * 获取商品类型显示名称
- */
-export function getProductTypeDisplay(type: ProductType): string {
-  switch (type) {
-    case ProductType.Benefit:
-      return '权益';
-    case ProductType.Consumable:
-      return '消耗品';
-    case ProductType.Physical:
-      return '实物';
-    default:
-      return '未知';
+  if (!response.ok) {
+    throw new Error(response.message || '处理订单失败');
   }
 }
 
 /**
- * 获取订单状态显示名称
+ * 取消订单
  */
-export function getOrderStatusDisplay(status: OrderStatus): string {
-  switch (status) {
-    case OrderStatus.Pending:
-      return '待支付';
-    case OrderStatus.Paid:
-      return '已支付';
-    case OrderStatus.Completed:
-      return '已完成';
-    case OrderStatus.Cancelled:
-      return '已取消';
-    case OrderStatus.Refunded:
-      return '已退款';
-    case OrderStatus.Failed:
-      return '发放失败';
-    default:
-      return '未知';
+export async function cancelOrder(orderId: number, reason: string): Promise<void> {
+  const response = await apiPost<null>(
+    `/api/v1/Shop/CancelOrder/${orderId}`,
+    { reason },
+    { withAuth: true }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '取消订单失败');
   }
 }
 
 /**
- * 获取订单状态颜色
+ * 退款订单
  */
-export function getOrderStatusColor(status: OrderStatus): string {
-  switch (status) {
-    case OrderStatus.Pending:
-      return 'warning';
-    case OrderStatus.Paid:
-      return 'processing';
-    case OrderStatus.Completed:
-      return 'success';
-    case OrderStatus.Cancelled:
-      return 'default';
-    case OrderStatus.Refunded:
-      return 'default';
-    case OrderStatus.Failed:
-      return 'error';
-    default:
-      return 'default';
+export async function refundOrder(orderId: number, reason: string): Promise<void> {
+  const response = await apiPost<null>(
+    `/api/v1/Shop/RefundOrder/${orderId}`,
+    { reason },
+    { withAuth: true }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '退款订单失败');
   }
 }

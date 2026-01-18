@@ -2,46 +2,16 @@
  * 萝卜币系统相关的 API 调用
  */
 
-import { parseApiResponse, type ApiResponse } from '@/api/client';
+import { parseApiResponseWithI18n, apiGet, configureApiClient, type PagedResponse } from '@radish/ui';
 import type { TFunction } from 'i18next';
 
+// 配置 API 客户端
 const defaultApiBase = 'https://localhost:5000';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined || defaultApiBase;
 
-/**
- * 获取 API Base URL
- */
-function getApiBaseUrl(): string {
-  const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  return (configured ?? defaultApiBase).replace(/\/$/, '');
-}
-
-/**
- * 带认证的 fetch 封装
- */
-interface ApiFetchOptions extends RequestInit {
-  withAuth?: boolean;
-}
-
-function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
-  const { withAuth, headers, ...rest } = options;
-
-  const finalHeaders: HeadersInit = {
-    Accept: 'application/json',
-    ...headers
-  };
-
-  if (withAuth && typeof window !== 'undefined') {
-    const token = window.localStorage.getItem('access_token');
-    if (token) {
-      (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
-    }
-  }
-
-  return fetch(input, {
-    ...rest,
-    headers: finalHeaders
-  });
-}
+configureApiClient({
+  baseUrl: apiBaseUrl.replace(/\/$/, ''),
+});
 
 /**
  * 用户余额信息
@@ -84,31 +54,23 @@ export interface CoinTransaction {
 }
 
 /**
- * 分页响应
- */
-export interface PagedResponse<T> {
-  page: number;
-  pageSize: number;
-  dataCount: number;
-  pageCount: number;
-  data: T[];
-}
-
-/**
  * 获取当前用户余额信息
  * @param t i18n 翻译函数
  * @returns 用户余额信息
  */
 export async function getBalance(t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Coin/GetBalance`;
-  const response = await apiFetch(url, { withAuth: true });
+  const response = await apiGet<UserBalance>('/api/v1/Coin/GetBalance', { withAuth: true });
 
   if (!response.ok) {
-    throw new Error(`获取余额失败: HTTP ${response.status}`);
+    throw new Error(response.message || '获取余额失败');
   }
 
-  const json = await response.json() as ApiResponse<UserBalance>;
-  return parseApiResponse(json, t);
+  return {
+    ok: response.ok,
+    data: response.data,
+    message: response.message,
+    code: response.code,
+  } as const;
 }
 
 /**
@@ -140,15 +102,21 @@ export async function getTransactions(
     params.append('status', status);
   }
 
-  const url = `${getApiBaseUrl()}/api/v1/Coin/GetTransactions?${params.toString()}`;
-  const response = await apiFetch(url, { withAuth: true });
+  const response = await apiGet<PagedResponse<CoinTransaction>>(
+    `/api/v1/Coin/GetTransactions?${params.toString()}`,
+    { withAuth: true }
+  );
 
   if (!response.ok) {
-    throw new Error(`获取交易记录失败: HTTP ${response.status}`);
+    throw new Error(response.message || '获取交易记录失败');
   }
 
-  const json = await response.json() as ApiResponse<PagedResponse<CoinTransaction>>;
-  return parseApiResponse(json, t);
+  return {
+    ok: response.ok,
+    data: response.data,
+    message: response.message,
+    code: response.code,
+  } as const;
 }
 
 /**
@@ -158,18 +126,24 @@ export async function getTransactions(
  * @returns 交易详情
  */
 export async function getTransactionByNo(transactionNo: string, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Coin/GetTransactionByNo?transactionNo=${encodeURIComponent(transactionNo)}`;
-  const response = await apiFetch(url, { withAuth: true });
+  const response = await apiGet<CoinTransaction>(
+    `/api/v1/Coin/GetTransactionByNo?transactionNo=${encodeURIComponent(transactionNo)}`,
+    { withAuth: true }
+  );
 
   if (!response.ok) {
-    if (response.status === 404) {
+    if (response.statusCode === 404) {
       throw new Error('交易记录不存在');
     }
-    throw new Error(`获取交易详情失败: HTTP ${response.status}`);
+    throw new Error(response.message || '获取交易详情失败');
   }
 
-  const json = await response.json() as ApiResponse<CoinTransaction>;
-  return parseApiResponse(json, t);
+  return {
+    ok: response.ok,
+    data: response.data,
+    message: response.message,
+    code: response.code,
+  } as const;
 }
 
 /**

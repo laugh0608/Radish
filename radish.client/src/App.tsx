@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
-import { parseApiResponse, type ApiResponse } from './api/client';
+import { parseApiResponseWithI18n, type ApiResponse } from '@radish/ui';
 import { notificationHub } from '@/services/notificationHub';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from './stores/userStore';
