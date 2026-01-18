@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Radish.Model.DTOs;
+namespace Radish.Model.DtoModels;
 
 /// <summary>创建分类 DTO</summary>
 /// <remarks>用于接收创建分类的请求参数，避免直接暴露实体类</remarks>

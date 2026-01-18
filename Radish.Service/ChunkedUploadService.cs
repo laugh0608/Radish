@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Radish.IRepository;
 using Radish.IService;
-using Radish.Model.DTOs;
+using Radish.Model.DtoModels;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
 using Serilog;
