@@ -4,6 +4,7 @@ using Radish.Common;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using SqlSugar;
 
@@ -163,7 +164,7 @@ public class NotificationService : INotificationService
                 // 填充关联的通知详情
                 if (notificationDict.TryGetValue(un.NotificationId, out var notification))
                 {
-                    vo.Notification = _mapper.Map<NotificationVo>(notification);
+                    vo.VoNotification = _mapper.Map<NotificationVo>(notification);
                 }
 
                 return vo;

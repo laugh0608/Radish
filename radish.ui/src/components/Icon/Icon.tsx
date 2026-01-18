@@ -1,5 +1,10 @@
 import { Icon as IconifyIcon } from '@iconify/react';
 import type { IconProps as IconifyIconProps } from '@iconify/react';
+import { addCollection } from '@iconify/react';
+import mdiIcons from '@iconify-json/mdi/icons.json';
+
+// 注册本地 MDI 图标集，避免依赖在线 API
+addCollection(mdiIcons);
 
 export interface IconProps extends Omit<IconifyIconProps, 'icon'> {
   /**

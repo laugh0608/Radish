@@ -58,7 +58,7 @@ public class TagController : ControllerBase
     public async Task<MessageModel> GetHotTags(int topCount = 20)
     {
         var allTags = await _tagService.QueryAsync(t => t.IsEnabled && !t.IsDeleted);
-        var hotTags = allTags.OrderByDescending(t => t.PostCount)
+        var hotTags = allTags.OrderByDescending(t => t.VoPostCount)
                             .Take(topCount)
                             .ToList();
 

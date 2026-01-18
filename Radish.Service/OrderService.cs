@@ -5,6 +5,7 @@ using Radish.Common.AttributeTool;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
 using Serilog;
@@ -73,12 +74,12 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
             // 4. 检查用户余额
             var balance = await _coinService.GetBalanceAsync(userId);
-            if (balance == null || balance.Balance < totalPrice)
+            if (balance == null || balance.VoBalance < totalPrice)
             {
                 return new PurchaseResultDto
                 {
                     Success = false,
-                    ErrorMessage = $"萝卜币余额不足，需要 {totalPrice} 胡萝卜，当前余额 {balance?.Balance ?? 0} 胡萝卜"
+                    ErrorMessage = $"萝卜币余额不足，需要 {totalPrice} 胡萝卜，当前余额 {balance?.VoBalance ?? 0} 胡萝卜"
                 };
             }
 
@@ -217,7 +218,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 OrderNo = order.OrderNo,
                 UserBenefitId = userBenefitId,
                 DeductedCoins = totalPrice,
-                RemainingBalance = newBalance?.Balance,
+                RemainingBalance = newBalance?.VoBalance,
                 ErrorMessage = order.Status == OrderStatus.Failed ? order.FailReason : null
             };
         }
@@ -415,9 +416,9 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
             foreach (var vo in orderVos)
             {
-                if (userDict.TryGetValue(vo.UserId, out var userName))
+                if (userDict.TryGetValue(vo.VoUserId, out var userName))
                 {
-                    vo.UserName = userName;
+                    vo.VoUserName = userName;
                 }
             }
 

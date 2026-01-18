@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { log } from '@/utils/logger';
 import { Icon } from '@radish/ui';
 import styles from './UserPostList.module.css';
 
@@ -40,7 +41,7 @@ export const UserPostList = ({ userId, apiBaseUrl }: UserPostListProps) => {
         setTotalPages(json.responseData.pageCount || 1);
       }
     } catch (error) {
-      console.error('加载帖子失败:', error);
+      log.error('加载帖子失败:', error);
     } finally {
       setLoading(false);
     }

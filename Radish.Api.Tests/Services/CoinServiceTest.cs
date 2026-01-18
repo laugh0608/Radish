@@ -65,11 +65,11 @@ public class CoinServiceTest
 
         var expectedVo = new UserBalanceVo
         {
-            UserId = userId,
-            Balance = 50000,
-            BalanceDisplay = "50.000",
-            FrozenBalance = 0,
-            FrozenBalanceDisplay = "0.000"
+            VoUserId = userId,
+            VoBalance = 50000,
+            VoBalanceDisplay = "50.000",
+            VoFrozenBalance = 0,
+            VoFrozenBalanceDisplay = "0.000"
         };
 
         _userBalanceRepositoryMock
@@ -87,9 +87,9 @@ public class CoinServiceTest
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(userId, result.UserId);
-        Assert.Equal(50000, result.Balance);
-        Assert.Equal("50.000", result.BalanceDisplay);
+        Assert.Equal(userId, result.VoUserId);
+        Assert.Equal(50000, result.VoBalance);
+        Assert.Equal("50.000", result.VoBalanceDisplay);
     }
 
     /// <summary>
@@ -121,9 +121,9 @@ public class CoinServiceTest
 
         var expectedVo = new UserBalanceVo
         {
-            UserId = userId,
-            Balance = 0,
-            BalanceDisplay = "0.000"
+            VoUserId = userId,
+            VoBalance = 0,
+            VoBalanceDisplay = "0.000"
         };
 
         _mapperMock
@@ -137,8 +137,8 @@ public class CoinServiceTest
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(userId, result.UserId);
-        Assert.Equal(0, result.Balance);
+        Assert.Equal(userId, result.VoUserId);
+        Assert.Equal(0, result.VoBalance);
         _userBalanceRepositoryMock.Verify(r => r.AddAsync(It.IsAny<UserBalance>()), Times.Once);
     }
 
@@ -165,8 +165,8 @@ public class CoinServiceTest
             .Setup(m => m.Map<UserBalanceVo>(It.IsAny<UserBalance>()))
             .Returns<UserBalance>(ub => new UserBalanceVo
             {
-                UserId = ub.UserId,
-                Balance = ub.Balance
+                VoUserId = ub.UserId,
+                VoBalance = ub.Balance
             });
 
         var service = CreateCoinService();

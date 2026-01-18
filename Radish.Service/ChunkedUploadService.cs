@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using Radish.IRepository;
 using Radish.IService;
+using Radish.Model.DtoModels;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
 using Serilog;
@@ -199,7 +200,7 @@ public class ChunkedUploadService : IChunkedUploadService
             {
                 // 更新会话状态
                 session.Status = "Completed";
-                session.AttachmentId = attachment.Id;
+                session.AttachmentId = attachment.VoId;
                 session.ModifyTime = DateTime.Now;
                 await _sessionRepository.UpdateAsync(session);
 
@@ -207,7 +208,7 @@ public class ChunkedUploadService : IChunkedUploadService
                 CleanupSessionFiles(session.SessionId);
 
                 Log.Information("[ChunkedUpload] 合并完成: {SessionId}, 附件ID: {AttachmentId}",
-                    session.SessionId, attachment.Id);
+                    session.SessionId, attachment.VoId);
 
                 return attachment;
             }
@@ -369,18 +370,18 @@ public class ChunkedUploadService : IChunkedUploadService
 
         return new UploadSessionVo
         {
-            SessionId = session.SessionId,
-            FileName = session.FileName,
-            TotalSize = session.TotalSize,
-            ChunkSize = session.ChunkSize,
-            TotalChunks = session.TotalChunks,
-            UploadedChunks = session.UploadedChunks,
-            UploadedChunkIndexes = uploadedIndexes,
-            Progress = Math.Round(progress, 2),
-            Status = session.Status,
-            AttachmentId = session.AttachmentId,
-            ExpiresAt = session.ExpiresAt,
-            CreateTime = session.CreateTime
+            VoSessionId = session.SessionId,
+            VoFileName = session.FileName,
+            VoTotalSize = session.TotalSize,
+            VoChunkSize = session.ChunkSize,
+            VoTotalChunks = session.TotalChunks,
+            VoUploadedChunks = session.UploadedChunks,
+            VoUploadedChunkIndexes = uploadedIndexes,
+            VoProgress = Math.Round(progress, 2),
+            VoStatus = session.Status,
+            VoAttachmentId = session.AttachmentId,
+            VoExpiresAt = session.ExpiresAt,
+            VoCreateTime = session.CreateTime
         };
     }
 

@@ -5,6 +5,7 @@ using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Serilog;
 using SqlSugar;
@@ -60,27 +61,27 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         var comments = await QueryAsync(c => c.PostId == postId && c.IsEnabled && !c.IsDeleted);
 
         // 构建树形结构
-        var commentMap = comments.ToDictionary(c => c.Id);
+        var commentMap = comments.ToDictionary(c => c.VoId);
         var rootComments = new List<CommentVo>();
 
         foreach (var comment in comments)
         {
-            if (comment.ParentId == null)
+            if (comment.VoParentId == null)
             {
                 // 顶级评论
                 rootComments.Add(comment);
             }
-            else if (commentMap.TryGetValue(comment.ParentId.Value, out var parent))
+            else if (commentMap.TryGetValue(comment.VoParentId.Value, out var parent))
             {
                 // 子评论
-                parent.Children ??= new List<CommentVo>();
-                parent.Children.Add(comment);
+                parent.VoChildren ??= new List<CommentVo>();
+                parent.VoChildren.Add(comment);
             }
         }
 
         // 按时间排序
-        return rootComments.OrderByDescending(c => c.IsTop)
-                          .ThenBy(c => c.CreateTime)
+        return rootComments.OrderByDescending(c => c.VoIsTop)
+                          .ThenBy(c => c.VoCreateTime)
                           .ToList();
     }
 
@@ -476,12 +477,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         var comments = await QueryAsync(c => c.PostId == postId && c.IsEnabled && !c.IsDeleted);
 
         // 2. 构建2级树形结构（父评论 + 所有子评论都挂在根评论下）
-        var commentMap = comments.ToDictionary(c => c.Id);
+        var commentMap = comments.ToDictionary(c => c.VoId);
         var rootComments = new List<CommentVo>();
 
         foreach (var comment in comments)
         {
-            if (comment.ParentId == null)
+            if (comment.VoParentId == null)
             {
                 // 顶级评论
                 rootComments.Add(comment);
@@ -489,15 +490,15 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             else
             {
                 // 子评论：找到根评论，挂到根评论的Children下
-                var rootId = comment.RootId ?? comment.ParentId!.Value;
+                var rootId = comment.VoRootId ?? comment.VoParentId!.Value;
 
                 if (commentMap.TryGetValue(rootId, out var root))
                 {
-                    root.Children ??= new List<CommentVo>();
-                    root.Children.Add(comment);
+                    root.VoChildren ??= new List<CommentVo>();
+                    root.VoChildren.Add(comment);
 
                     // 填充 ChildrenTotal
-                    root.ChildrenTotal = (root.ChildrenTotal ?? 0) + 1;
+                    root.VoChildrenTotal = (root.VoChildrenTotal ?? 0) + 1;
                 }
             }
         }
@@ -507,17 +508,17 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         {
             // 最新排序：按创建时间降序
             rootComments = rootComments
-                .OrderByDescending(c => c.IsTop)
-                .ThenByDescending(c => c.CreateTime)
+                .OrderByDescending(c => c.VoIsTop)
+                .ThenByDescending(c => c.VoCreateTime)
                 .ToList();
 
             // 子评论也按时间降序
             foreach (var root in rootComments)
             {
-                if (root.Children?.Any() == true)
+                if (root.VoChildren?.Any() == true)
                 {
-                    root.Children = root.Children
-                        .OrderByDescending(c => c.CreateTime)
+                    root.VoChildren = root.VoChildren
+                        .OrderByDescending(c => c.VoCreateTime)
                         .ToList();
                 }
             }
@@ -526,19 +527,19 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         {
             // 最热排序：按点赞数降序
             rootComments = rootComments
-                .OrderByDescending(c => c.IsTop)
-                .ThenByDescending(c => c.LikeCount)
-                .ThenByDescending(c => c.CreateTime)
+                .OrderByDescending(c => c.VoIsTop)
+                .ThenByDescending(c => c.VoLikeCount)
+                .ThenByDescending(c => c.VoCreateTime)
                 .ToList();
 
             // 子评论也按点赞数降序
             foreach (var root in rootComments)
             {
-                if (root.Children?.Any() == true)
+                if (root.VoChildren?.Any() == true)
                 {
-                    root.Children = root.Children
-                        .OrderByDescending(c => c.LikeCount)
-                        .ThenByDescending(c => c.CreateTime)
+                    root.VoChildren = root.VoChildren
+                        .OrderByDescending(c => c.VoLikeCount)
+                        .ThenByDescending(c => c.VoCreateTime)
                         .ToList();
                 }
             }
@@ -547,17 +548,17 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         {
             // 默认排序：按创建时间升序（oldest first）
             rootComments = rootComments
-                .OrderByDescending(c => c.IsTop)
-                .ThenBy(c => c.CreateTime)
+                .OrderByDescending(c => c.VoIsTop)
+                .ThenBy(c => c.VoCreateTime)
                 .ToList();
 
             // 子评论也按时间升序
             foreach (var root in rootComments)
             {
-                if (root.Children?.Any() == true)
+                if (root.VoChildren?.Any() == true)
                 {
-                    root.Children = root.Children
-                        .OrderBy(c => c.CreateTime)
+                    root.VoChildren = root.VoChildren
+                        .OrderBy(c => c.VoCreateTime)
                         .ToList();
                 }
             }
@@ -590,10 +591,10 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         var ids = new List<long>();
         foreach (var comment in comments)
         {
-            ids.Add(comment.Id);
-            if (comment.Children?.Any() == true)
+            ids.Add(comment.VoId);
+            if (comment.VoChildren?.Any() == true)
             {
-                ids.AddRange(GetAllCommentIds(comment.Children));
+                ids.AddRange(GetAllCommentIds(comment.VoChildren));
             }
         }
         return ids;
@@ -606,10 +607,10 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     {
         foreach (var comment in comments)
         {
-            comment.IsLiked = likeStatus.GetValueOrDefault(comment.Id, false);
-            if (comment.Children?.Any() == true)
+            comment.VoIsLiked = likeStatus.GetValueOrDefault(comment.VoId, false);
+            if (comment.VoChildren?.Any() == true)
             {
-                FillLikeStatus(comment.Children, likeStatus);
+                FillLikeStatus(comment.VoChildren, likeStatus);
             }
         }
     }
@@ -640,12 +641,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         // 如果用户已登录，填充点赞状态
         if (userId.HasValue && commentVos.Any())
         {
-            var commentIds = commentVos.Select(c => c.Id).ToList();
+            var commentIds = commentVos.Select(c => c.VoId).ToList();
             var likeStatus = await GetUserLikeStatusAsync(userId.Value, commentIds);
 
             foreach (var comment in commentVos)
             {
-                comment.IsLiked = likeStatus.GetValueOrDefault(comment.Id, false);
+                comment.VoIsLiked = likeStatus.GetValueOrDefault(comment.VoId, false);
             }
         }
 
@@ -1022,7 +1023,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             var godCommentMap = godComments.ToDictionary(h => h.CommentId, h => h.Rank);
 
             // 2. 收集所有父评论的ID，批量查询沙发
-            var parentCommentIds = rootComments.Select(c => c.Id).ToList();
+            var parentCommentIds = rootComments.Select(c => c.VoId).ToList();
 
             // 🐛 安全检查：先查询所有沙发记录
             var sofas = await _highlightRepository.QueryAsync(
@@ -1056,26 +1057,26 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         foreach (var comment in comments)
         {
             // 填充神评标识（仅父评论）
-            if (comment.ParentId == null && godCommentMap.TryGetValue(comment.Id, out var godRank))
+            if (comment.VoParentId == null && godCommentMap.TryGetValue(comment.VoId, out var godRank))
             {
-                comment.IsGodComment = true;
-                comment.HighlightRank = godRank;
-                Log.Debug("[CommentService] 填充神评标识：CommentId={CommentId}, Rank={Rank}", comment.Id, godRank);
+                comment.VoIsGodComment = true;
+                comment.VoHighlightRank = godRank;
+                Log.Debug("[CommentService] 填充神评标识：CommentId={CommentId}, Rank={Rank}", comment.VoId, godRank);
             }
 
             // 填充沙发标识（仅子评论）
-            if (comment.ParentId != null && sofaMap.TryGetValue(comment.Id, out var sofaRank))
+            if (comment.VoParentId != null && sofaMap.TryGetValue(comment.VoId, out var sofaRank))
             {
-                comment.IsSofa = true;
-                comment.HighlightRank = sofaRank;
+                comment.VoIsSofa = true;
+                comment.VoHighlightRank = sofaRank;
                 Log.Debug("[CommentService] 填充沙发标识：CommentId={CommentId}, ParentId={ParentId}, Rank={Rank}",
-                    comment.Id, comment.ParentId, sofaRank);
+                    comment.VoId, comment.VoParentId, sofaRank);
             }
 
             // 递归处理子评论
-            if (comment.Children?.Any() == true)
+            if (comment.VoChildren?.Any() == true)
             {
-                FillHighlightStatusRecursive(comment.Children, godCommentMap, sofaMap);
+                FillHighlightStatusRecursive(comment.VoChildren, godCommentMap, sofaMap);
             }
         }
     }

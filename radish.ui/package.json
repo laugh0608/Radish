@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",
+    "@iconify-json/mdi": "^1.0.0",
     "antd": "^6.1.0",
     "date-fns": "^4.1.0"
   },

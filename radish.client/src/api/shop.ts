@@ -2,8 +2,24 @@
  * 商城系统相关的 API 调用
  */
 
-import { parseApiResponse, type ApiResponse } from '@/api/client';
+import { parseApiResponse, type ApiResponse } from '@radish/ui';
 import type { TFunction } from 'i18next';
+import {
+  mapProductCategory,
+  mapProduct,
+  mapProductListItem,
+  mapOrder,
+  mapOrderListItem,
+  mapUserBenefit,
+  mapUserInventoryItem,
+  type ProductCategoryData,
+  type ProductData,
+  type ProductListItemData,
+  type OrderData,
+  type OrderListItemData,
+  type UserBenefitData,
+  type UserInventoryItemData
+} from '@/utils/viewModelMapper';
 
 const defaultApiBase = 'https://localhost:5000';
 
@@ -337,8 +353,17 @@ export async function getCategories(t: TFunction) {
     throw new Error(`获取分类列表失败: HTTP ${response.status}`);
   }
 
-  const json = await response.json() as ApiResponse<ProductCategory[]>;
-  return parseApiResponse(json, t);
+  const json = await response.json() as ApiResponse<any[]>;
+  const parsed = parseApiResponse(json);
+
+  if (!parsed.ok || !parsed.data) {
+    return parsed;
+  }
+
+  return {
+    ...parsed,
+    data: parsed.data.map(mapProductCategory)
+  };
 }
 
 /**
@@ -355,8 +380,17 @@ export async function getCategory(categoryId: string, t: TFunction) {
     throw new Error(`获取分类详情失败: HTTP ${response.status}`);
   }
 
-  const json = await response.json() as ApiResponse<ProductCategory>;
-  return parseApiResponse(json, t);
+  const json = await response.json() as ApiResponse<any>;
+  const parsed = parseApiResponse(json);
+
+  if (!parsed.ok || !parsed.data) {
+    return parsed;
+  }
+
+  return {
+    ...parsed,
+    data: mapProductCategory(parsed.data)
+  };
 }
 
 /**
@@ -394,8 +428,20 @@ export async function getProducts(
     throw new Error(`获取商品列表失败: HTTP ${response.status}`);
   }
 
-  const json = await response.json() as ApiResponse<PagedResponse<ProductListItem>>;
-  return parseApiResponse(json, t);
+  const json = await response.json() as ApiResponse<PagedResponse<any>>;
+  const parsed = parseApiResponse(json);
+
+  if (!parsed.ok || !parsed.data) {
+    return parsed;
+  }
+
+  return {
+    ...parsed,
+    data: {
+      ...parsed.data,
+      data: parsed.data.data.map(mapProductListItem)
+    }
+  };
 }
 
 /**
@@ -412,8 +458,17 @@ export async function getProduct(productId: number, t: TFunction) {
     throw new Error(`获取商品详情失败: HTTP ${response.status}`);
   }
 
-  const json = await response.json() as ApiResponse<Product>;
-  return parseApiResponse(json, t);
+  const json = await response.json() as ApiResponse<any>;
+  const parsed = parseApiResponse(json);
+
+  if (!parsed.ok || !parsed.data) {
+    return parsed;
+  }
+
+  return {
+    ...parsed,
+    data: mapProduct(parsed.data)
+  };
 }
 
 /**
@@ -428,7 +483,7 @@ export async function checkCanBuy(productId: number, quantity: number = 1, t: TF
   }
 
   const json = await response.json() as ApiResponse<{ canBuy: boolean; reason: string }>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -447,7 +502,7 @@ export async function purchaseProduct(request: CreateOrderRequest, t: TFunction)
   }
 
   const json = await response.json() as ApiResponse<PurchaseResult>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -475,8 +530,20 @@ export async function getMyOrders(
     throw new Error(`获取订单列表失败: HTTP ${response.status}`);
   }
 
-  const json = await response.json() as ApiResponse<PagedResponse<OrderListItem>>;
-  return parseApiResponse(json, t);
+  const json = await response.json() as ApiResponse<PagedResponse<any>>;
+  const parsed = parseApiResponse(json);
+
+  if (!parsed.ok || !parsed.data) {
+    return parsed;
+  }
+
+  return {
+    ...parsed,
+    data: {
+      ...parsed.data,
+      data: parsed.data.data.map(mapOrderListItem)
+    }
+  };
 }
 
 /**
@@ -493,8 +560,17 @@ export async function getOrder(orderId: number, t: TFunction) {
     throw new Error(`获取订单详情失败: HTTP ${response.status}`);
   }
 
-  const json = await response.json() as ApiResponse<Order>;
-  return parseApiResponse(json, t);
+  const json = await response.json() as ApiResponse<any>;
+  const parsed = parseApiResponse(json);
+
+  if (!parsed.ok || !parsed.data) {
+    return parsed;
+  }
+
+  return {
+    ...parsed,
+    data: mapOrder(parsed.data)
+  };
 }
 
 /**
@@ -515,7 +591,7 @@ export async function cancelOrder(orderId: number, t: TFunction, reason?: string
   }
 
   const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -529,8 +605,17 @@ export async function getMyBenefits(includeExpired: boolean = false, t: TFunctio
     throw new Error(`获取权益列表失败: HTTP ${response.status}`);
   }
 
-  const json = await response.json() as ApiResponse<UserBenefit[]>;
-  return parseApiResponse(json, t);
+  const json = await response.json() as ApiResponse<any[]>;
+  const parsed = parseApiResponse(json);
+
+  if (!parsed.ok || !parsed.data) {
+    return parsed;
+  }
+
+  return {
+    ...parsed,
+    data: parsed.data.map(mapUserBenefit)
+  };
 }
 
 /**
@@ -544,8 +629,17 @@ export async function getMyActiveBenefits(t: TFunction) {
     throw new Error(`获取激活权益失败: HTTP ${response.status}`);
   }
 
-  const json = await response.json() as ApiResponse<UserBenefit[]>;
-  return parseApiResponse(json, t);
+  const json = await response.json() as ApiResponse<any[]>;
+  const parsed = parseApiResponse(json);
+
+  if (!parsed.ok || !parsed.data) {
+    return parsed;
+  }
+
+  return {
+    ...parsed,
+    data: parsed.data.map(mapUserBenefit)
+  };
 }
 
 /**
@@ -563,7 +657,7 @@ export async function activateBenefit(benefitId: number, t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -581,7 +675,7 @@ export async function deactivateBenefit(benefitId: number, t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -595,8 +689,17 @@ export async function getMyInventory(t: TFunction) {
     throw new Error(`获取背包失败: HTTP ${response.status}`);
   }
 
-  const json = await response.json() as ApiResponse<UserInventoryItem[]>;
-  return parseApiResponse(json, t);
+  const json = await response.json() as ApiResponse<any[]>;
+  const parsed = parseApiResponse(json);
+
+  if (!parsed.ok || !parsed.data) {
+    return parsed;
+  }
+
+  return {
+    ...parsed,
+    data: parsed.data.map(mapUserInventoryItem)
+  };
 }
 
 /**
@@ -615,7 +718,7 @@ export async function useItem(request: UseItemRequest, t: TFunction) {
   }
 
   const json = await response.json() as ApiResponse<UseItemResult>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**
@@ -633,7 +736,7 @@ export async function useRenameCard(inventoryId: number, newNickname: string, t:
   }
 
   const json = await response.json() as ApiResponse<UseItemResult>;
-  return parseApiResponse(json, t);
+  return parseApiResponse(json);
 }
 
 /**

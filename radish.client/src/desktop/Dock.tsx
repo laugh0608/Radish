@@ -8,7 +8,7 @@ import { Icon } from '@radish/ui';
 import { CoinBalance } from './components/CoinBalance';
 import { ExperienceDisplay } from './components/ExperienceDisplay';
 import i18n from '@/i18n';
-import type { ApiResponse } from '@/api/client';
+import type { ApiResponse } from '@radish/ui';
 import styles from './Dock.module.css';
 
 /**
@@ -86,11 +86,11 @@ export const Dock = () => {
   }, [openWindows]);
 
   interface CurrentUser {
-    userId: number;
-    userName: string;
-    tenantId: number;
-    avatarUrl?: string;
-    avatarThumbnailUrl?: string;
+    voUserId: number;
+    voUserName: string;
+    voTenantId: number;
+    voAvatarUrl?: string;
+    voAvatarThumbnailUrl?: string;
   }
 
   interface ApiFetchOptions extends RequestInit {
@@ -124,17 +124,8 @@ export const Dock = () => {
       return 'https://localhost:5000';
     }
 
-    const currentOrigin = window.location.origin;
-
-    if (currentOrigin === 'https://localhost:5000' || currentOrigin === 'http://localhost:5000') {
-      return currentOrigin;
-    }
-
-    if (currentOrigin === 'http://localhost:3000' || currentOrigin === 'https://localhost:3000') {
-      return 'http://localhost:5200';
-    }
-
-    return currentOrigin;
+    // 统一使用 Gateway 地址
+    return 'https://localhost:5000';
   };
 
   const handleLoginClick = () => {
@@ -193,12 +184,12 @@ export const Dock = () => {
       }
 
       setUser({
-        userId: json.responseData.userId,
-        userName: json.responseData.userName,
-        tenantId: json.responseData.tenantId,
+        userId: json.responseData.voUserId,
+        userName: json.responseData.voUserName,
+        tenantId: json.responseData.voTenantId,
         roles: ['User'],
-        avatarUrl: json.responseData.avatarUrl,
-        avatarThumbnailUrl: json.responseData.avatarThumbnailUrl
+        avatarUrl: json.responseData.voAvatarUrl,
+        avatarThumbnailUrl: json.responseData.voAvatarThumbnailUrl
       });
     } catch {
       clearUser();

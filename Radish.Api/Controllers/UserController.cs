@@ -1,16 +1,14 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
-using Radish.Shared;
 using Radish.Shared.CustomEnum;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Radish.Api.Resources;
-using SqlSugar;
+using Radish.Model.DtoModels;
 
 namespace Radish.Api.Controllers;
 
@@ -57,9 +55,12 @@ public class UserController : ControllerBase
     /// <summary>
     /// 获取全部用户列表
     /// </summary>
+    /// <param name="pageIndex">页码（从1开始）</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <param name="keyword">搜索关键词</param>
     /// <returns>包含用户列表的响应对象</returns>
     /// <remarks>
-    /// 查询所有用户信息，不包含已删除的用户。
+    /// 查询用户信息，支持分页和搜索，不包含已删除的用户。
     /// 需要认证和授权。
     /// </remarks>
     /// <response code="200">查询成功，返回用户列表</response>
@@ -71,15 +72,46 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
-    public async Task<MessageModel> GetUserList()
+    public async Task<MessageModel> GetUserList(int pageIndex = 1, int pageSize = 20, string? keyword = null)
     {
-        var users = await _userService.QueryAsync();
+        // 分页查询用户
+        (List<UserVo> data, int totalCount) result;
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            // 有搜索关键词时
+            result = await _userService.QueryPageAsync(
+                u => !u.IsDeleted &&
+                     (u.UserName.Contains(keyword) ||
+                      u.LoginName.Contains(keyword) ||
+                      (u.UserEmail != null && u.UserEmail.Contains(keyword))),
+                pageIndex, pageSize, u => u.Id, SqlSugar.OrderByType.Desc);
+        }
+        else
+        {
+            // 无搜索关键词时
+            result = await _userService.QueryPageAsync(
+                u => !u.IsDeleted,
+                pageIndex, pageSize, u => u.Id, SqlSugar.OrderByType.Desc);
+        }
+
+        var userVos = result.data;
+        var totalCount = result.totalCount;
+
+        var responseResult = new VoPagedResult<UserVo>
+        {
+            VoItems = userVos,
+            VoTotal = totalCount,
+            VoPageIndex = pageIndex,
+            VoPageSize = pageSize
+        };
+
         return new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
-            ResponseData = users
+            ResponseData = responseResult
         };
     }
 
@@ -182,12 +214,13 @@ public class UserController : ControllerBase
             a.BusinessType == "Avatar" &&
             a.BusinessId == userId);
 
-        var userInfo = new {
-            userId,
-            userName,
-            tenantId,
-            avatarUrl = avatar?.Url,
-            avatarThumbnailUrl = avatar?.ThumbnailUrl
+        var userInfo = new CurrentUserVo
+        {
+            VoUserId = userId,
+            VoUserName = userName,
+            VoTenantId = tenantId,
+            VoAvatarUrl = avatar?.VoUrl,
+            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl
         };
         return new MessageModel
         {
@@ -218,20 +251,20 @@ public class UserController : ControllerBase
         // 统计帖子获赞数
         var posts = await _postService.QueryAsync(
             p => p.AuthorId == userId && p.IsPublished && !p.IsDeleted);
-        var postLikeCount = posts.Sum(p => p.LikeCount);
+        var postLikeCount = posts.Sum(p => p.VoLikeCount);
 
         // 统计评论获赞数
         var comments = await _commentService.QueryAsync(
             c => c.AuthorId == userId && !c.IsDeleted);
-        var commentLikeCount = comments.Sum(c => c.LikeCount);
+        var commentLikeCount = comments.Sum(c => c.VoLikeCount);
 
-        var stats = new
+        var stats = new UserStatsVo
         {
-            postCount,
-            commentCount,
-            totalLikeCount = postLikeCount + commentLikeCount,
-            postLikeCount,
-            commentLikeCount
+            VoPostCount = postCount,
+            VoCommentCount = commentCount,
+            VoTotalLikeCount = postLikeCount + commentLikeCount,
+            VoPostLikeCount = postLikeCount,
+            VoCommentLikeCount = commentLikeCount
         };
 
         return new MessageModel
@@ -299,18 +332,18 @@ public class UserController : ControllerBase
 
         var profile = new UserProfileVo
         {
-            UserId = user.Uuid,
-            UserName = user.VoUsName,
-            UserEmail = user.VoUsEmail,
-            RealName = user.VoReNa,
-            Sex = user.VoSexDo,
-            Age = user.VoAgeDo,
-            Birth = user.VoBiTh,
-            Address = user.VoAdRes,
-            CreateTime = user.VoCreateTime,
-            AvatarAttachmentId = avatar?.Id,
-            AvatarUrl = avatar?.Url,
-            AvatarThumbnailUrl = avatar?.ThumbnailUrl
+            VoUserId = user.Uuid,
+            VoUserName = user.VoUserName,
+            VoUserEmail = user.VoUserEmail,
+            VoRealName = user.VoUserRealName,
+            VoSex = user.VoUserSex,
+            VoAge = user.VoUserAge,
+            VoBirth = user.VoUserBirth,
+            VoAddress = user.VoUserAddress,
+            VoCreateTime = user.VoCreateTime,
+            VoAvatarAttachmentId = avatar?.VoId,
+            VoAvatarUrl = avatar?.VoUrl,
+            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl
         };
 
         return new MessageModel
@@ -537,7 +570,7 @@ public class UserController : ControllerBase
         // 只有上传者或管理员可以绑定为头像
         var roles = _httpContextUser.GetClaimValueByType("role");
         var isAdmin = roles.Contains("Admin") || roles.Contains("System");
-        if (attachment.UploaderId != userId && !isAdmin)
+        if (attachment.VoUploaderId != userId && !isAdmin)
         {
             return new MessageModel
             {
@@ -595,8 +628,8 @@ public class UserController : ControllerBase
 
         var vo = new UserPointsVo
         {
-            UserId = userId,
-            Balance = 0
+            VoUserId = userId,
+            VoBalance = 0
         };
 
         return new MessageModel
@@ -619,10 +652,10 @@ public class UserController : ControllerBase
         await Task.CompletedTask;
         var userId = _httpContextUser.UserId;
 
-        var result = new
+        var result = new VoUnreadMessageCount
         {
-            userId,
-            unreadCount = 0
+            VoUserId = userId,
+            VoUnreadCount = 0
         };
 
         return new MessageModel
@@ -653,7 +686,7 @@ public class UserController : ControllerBase
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = $"已推送未读数 {unreadCount} 到用户 {userId}",
-            ResponseData = new { userId, unreadCount }
+            ResponseData = new TestPushResultVo { VoUserId = userId, VoUnreadCount = unreadCount }
         };
     }
 }

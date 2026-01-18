@@ -8,6 +8,7 @@ using InfraWatermarkOptions = Radish.Infrastructure.ImageProcessing.WatermarkOpt
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Serilog;
 

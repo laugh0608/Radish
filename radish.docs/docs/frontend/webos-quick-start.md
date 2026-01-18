@@ -184,7 +184,7 @@ useUserStore.getState().setUser({
 - **TypeScript** - 类型安全
 - **Zustand** - 状态管理
 - **react-rnd** - 窗口拖拽和调整大小
-- **@iconify/react** - 图标系统
+- **@radish/ui/Icon（基于 @iconify/react + 本地 Iconify JSON 集合）** - 图标系统
 - **CSS Modules** - 样式隔离
 - **Vite (Rolldown)** - 构建工具
 

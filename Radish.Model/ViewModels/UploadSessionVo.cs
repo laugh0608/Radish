@@ -10,62 +10,62 @@ public class UploadSessionVo
     /// <summary>
     /// 会话ID
     /// </summary>
-    public string SessionId { get; set; } = string.Empty;
+    public string VoSessionId { get; set; } = string.Empty;
 
     /// <summary>
     /// 原始文件名
     /// </summary>
-    public string FileName { get; set; } = string.Empty;
+    public string VoFileName { get; set; } = string.Empty;
 
     /// <summary>
     /// 文件总大小（字节）
     /// </summary>
-    public long TotalSize { get; set; }
+    public long VoTotalSize { get; set; }
 
     /// <summary>
     /// 分片大小（字节）
     /// </summary>
-    public int ChunkSize { get; set; }
+    public int VoChunkSize { get; set; }
 
     /// <summary>
     /// 总分片数
     /// </summary>
-    public int TotalChunks { get; set; }
+    public int VoTotalChunks { get; set; }
 
     /// <summary>
     /// 已上传分片数
     /// </summary>
-    public int UploadedChunks { get; set; }
+    public int VoUploadedChunks { get; set; }
 
     /// <summary>
     /// 已上传分片索引列表
     /// </summary>
-    public List<int> UploadedChunkIndexes { get; set; } = new();
+    public List<int> VoUploadedChunkIndexes { get; set; } = new();
 
     /// <summary>
     /// 上传进度（0-100）
     /// </summary>
-    public decimal Progress { get; set; }
+    public decimal VoProgress { get; set; }
 
     /// <summary>
     /// 会话状态
     /// </summary>
-    public string Status { get; set; } = string.Empty;
+    public string VoStatus { get; set; } = string.Empty;
 
     /// <summary>
     /// 最终附件ID（完成后）
     /// </summary>
-    public long? AttachmentId { get; set; }
+    public long? VoAttachmentId { get; set; }
 
     /// <summary>
     /// 过期时间
     /// </summary>
-    public DateTime ExpiresAt { get; set; }
+    public DateTime VoExpiresAt { get; set; }
 
     /// <summary>
     /// 创建时间
     /// </summary>
-    public DateTime CreateTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
 }
 
 /// <summary>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { UserInfoCard } from './components/UserInfoCard';
 import { UserPostList } from './components/UserPostList';
@@ -47,7 +48,7 @@ export const ProfileApp = () => {
         setStats(json.responseData);
       }
     } catch (error) {
-      console.error('加载统计信息失败:', error);
+      log.error('加载统计信息失败:', error);
     } finally {
       setLoadingStats(false);
     }

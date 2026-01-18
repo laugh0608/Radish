@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { log } from '@/utils/logger';
 import type { CommentNode as CommentNodeType } from '@/types/forum';
 import { Icon } from '@radish/ui';
 import styles from './CommentNode.module.css';
@@ -127,7 +128,7 @@ export const CommentNode = ({
         setCurrentPage(1);
       })
       .catch(error => {
-        console.error('预加载子评论失败:', error);
+        log.error('预加载子评论失败:', error);
       })
       .finally(() => {
         setIsLoadingMore(false);
@@ -145,7 +146,7 @@ export const CommentNode = ({
       setIsLiked(result.isLiked);
       setLikeCount(result.likeCount);
     } catch (error) {
-      console.error('点赞失败:', error);
+      log.error('点赞失败:', error);
       // 发生错误时保持原状态
     } finally {
       setIsLiking(false);
@@ -174,7 +175,7 @@ export const CommentNode = ({
       await onEdit(node.id, editContent.trim());
       setIsEditing(false);
     } catch (error) {
-      console.error('编辑评论失败:', error);
+      log.error('编辑评论失败:', error);
       // 可以添加错误提示
     } finally {
       setIsSubmitting(false);
@@ -198,7 +199,7 @@ export const CommentNode = ({
           setLoadedChildren(children);
           setCurrentPage(1);
         } catch (error) {
-          console.error('加载子评论失败:', error);
+          log.error('加载子评论失败:', error);
         } finally {
           setIsLoadingMore(false);
         }
@@ -221,7 +222,7 @@ export const CommentNode = ({
       setLoadedChildren([...loadedChildren, ...moreChildren]);
       setCurrentPage(nextPage);
     } catch (error) {
-      console.error('加载更多子评论失败:', error);
+      log.error('加载更多子评论失败:', error);
     } finally {
       setIsLoadingMore(false);
     }

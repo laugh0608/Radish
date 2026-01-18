@@ -20,7 +20,7 @@ GET {{baseUrl}}/api/v1/Experience/GetLevelConfigs
 GET {{baseUrl}}/api/v1/Experience/GetLevelConfig/1
 
 ### 1.5 获取当前用户经验值交易记录
-GET {{baseUrl}}/api/v1/Experience/GetMyTransactions?pageIndex=1&pageSize=20
+GET {{baseUrl}}/api/v1/Experience/GetTransactions?pageIndex=1&pageSize=20
 Authorization: Bearer {{token}}
 
 ### ===== 2. 发帖测试（验证经验值发放）=====
@@ -77,11 +77,11 @@ Authorization: Bearer {{token}}
 ### ===== 4. 经验值交易记录测试 =====
 
 ### 4.1 查看经验值交易记录（筛选发帖类型）
-GET {{baseUrl}}/api/v1/Experience/GetMyTransactions?pageIndex=1&pageSize=20&expType=POST_CREATE
+GET {{baseUrl}}/api/v1/Experience/GetTransactions?pageIndex=1&pageSize=20&expType=POST_CREATE
 Authorization: Bearer {{token}}
 
 ### 4.2 查看所有类型的经验值交易记录
-GET {{baseUrl}}/api/v1/Experience/GetMyTransactions?pageIndex=1&pageSize=50
+GET {{baseUrl}}/api/v1/Experience/GetTransactions?pageIndex=1&pageSize=50
 Authorization: Bearer {{token}}
 
 ### ===== 5. 完整测试流程 =====
@@ -115,7 +115,7 @@ Authorization: Bearer {{token}}
 ###
 
 ### 5.4 第四步：查看经验值交易记录
-GET {{baseUrl}}/api/v1/Experience/GetMyTransactions?pageIndex=1&pageSize=10
+GET {{baseUrl}}/api/v1/Experience/GetTransactions?pageIndex=1&pageSize=10
 Authorization: Bearer {{token}}
 
 ###

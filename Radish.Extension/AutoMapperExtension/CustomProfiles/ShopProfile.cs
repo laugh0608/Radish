@@ -22,7 +22,7 @@ public class ShopProfile : Profile
     {
         // ProductCategory -> ProductCategoryVo
         CreateMap<ProductCategory, ProductCategoryVo>()
-            .ForMember(dest => dest.ProductCount, opt => opt.Ignore()); // 运行时计算
+            .ForMember(dest => dest.VoProductCount, opt => opt.Ignore()); // 运行时计算
 
         // ProductCategoryVo -> ProductCategory
         CreateMap<ProductCategoryVo, ProductCategory>()
@@ -33,15 +33,17 @@ public class ShopProfile : Profile
     /// <summary>配置商品映射</summary>
     private void ConfigureProductMapping()
     {
-        // Product -> ProductVo
+        // Product -> ProductVo (使用前缀识别 + 手动配置特殊字段)
+        RecognizeDestinationPrefixes("Vo");
         CreateMap<Product, ProductVo>()
-            .ForMember(dest => dest.CategoryName, opt => opt.Ignore()); // 运行时填充
+            .ForMember(dest => dest.VoCategoryName, opt => opt.Ignore()); // 运行时填充
 
-        // Product -> ProductListItemVo
+        // Product -> ProductListItemVo (使用前缀识别 + 手动配置特殊字段)
+        RecognizeDestinationPrefixes("Vo");
         CreateMap<Product, ProductListItemVo>()
-            .ForMember(dest => dest.InStock, opt => opt.MapFrom(src =>
+            .ForMember(dest => dest.VoInStock, opt => opt.MapFrom(src =>
                 src.StockType == StockType.Unlimited || src.Stock > 0))
-            .ForMember(dest => dest.DurationDisplay, opt => opt.MapFrom(src =>
+            .ForMember(dest => dest.VoDurationDisplay, opt => opt.MapFrom(src =>
                 GetDurationDisplay(src.DurationType, src.DurationDays, src.ExpiresAt)));
 
         // CreateProductDto -> Product
@@ -77,13 +79,15 @@ public class ShopProfile : Profile
     /// <summary>配置订单映射</summary>
     private void ConfigureOrderMapping()
     {
-        // Order -> OrderVo
+        // Order -> OrderVo (使用前缀识别 + 手动配置特殊字段)
+        RecognizeDestinationPrefixes("Vo");
         CreateMap<Order, OrderVo>()
-            .ForMember(dest => dest.UserName, opt => opt.Ignore()) // 运行时填充
-            .ForMember(dest => dest.DurationDisplay, opt => opt.MapFrom(src =>
+            .ForMember(dest => dest.VoUserName, opt => opt.Ignore()) // 运行时填充
+            .ForMember(dest => dest.VoDurationDisplay, opt => opt.MapFrom(src =>
                 GetDurationDisplay(src.DurationType, src.DurationDays, src.BenefitExpiresAt)));
 
-        // Order -> OrderListItemVo
+        // Order -> OrderListItemVo (使用前缀识别自动映射)
+        RecognizeDestinationPrefixes("Vo");
         CreateMap<Order, OrderListItemVo>();
     }
 

@@ -521,8 +521,8 @@ export const tokens = {
 ### 8.3 图标系统
 
 ```typescript
-// 使用 Iconify 统一图标
-import { Icon } from '@iconify/react';
+// 使用 @radish/ui 封装的 Icon 组件（基于本地 Iconify JSON 集合）
+import { Icon } from '@radish/ui';
 
 <Icon icon="mdi:forum" />
 <Icon icon="mdi:chat" />
@@ -808,7 +808,7 @@ if (应用需要 OIDC 认证 && 有复杂路由) {
   icon: 'mdi:book-open-page-variant',
   component: () => null, // iframe 不需要组件
   type: 'iframe',
-  url: 'http://localhost:3100/docs/',
+  url: 'http://localhost:4000/docs/',
   defaultSize: { width: 1200, height: 800 }
 }
 
@@ -822,7 +822,7 @@ if (应用需要 OIDC 认证 && 有复杂路由) {
   externalUrl: typeof window !== 'undefined' &&
     window.location.origin.includes('localhost:5000')
     ? '/console/' // 通过 Gateway
-    : 'http://localhost:3200', // 直接访问
+    : 'http://localhost:3100', // 直接访问
   requiredRoles: ['Admin']
 }
 ```

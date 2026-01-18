@@ -6,55 +6,55 @@ namespace Radish.Model.ViewModels;
 public class AuditLogVo
 {
     /// <summary>日志 ID</summary>
-    public long Id { get; set; }
+    public long VoId { get; set; }
 
     /// <summary>日志记录时间</summary>
-    public DateTime DateTime { get; set; }
+    public DateTime VoDateTime { get; set; }
 
     /// <summary>用户 ID</summary>
-    public long? UserId { get; set; }
+    public long? VoUserId { get; set; }
 
     /// <summary>用户名</summary>
-    public string? UserName { get; set; }
+    public string? VoUserName { get; set; }
 
     /// <summary>租户 ID</summary>
-    public long? TenantId { get; set; }
+    public long? VoTenantId { get; set; }
 
     /// <summary>操作类型</summary>
-    public string OperationType { get; set; } = string.Empty;
+    public string VoOperationType { get; set; } = string.Empty;
 
     /// <summary>操作模块</summary>
-    public string? Module { get; set; }
+    public string? VoModule { get; set; }
 
     /// <summary>操作描述</summary>
-    public string? Description { get; set; }
+    public string? VoDescription { get; set; }
 
     /// <summary>客户端 IP 地址</summary>
-    public string? IpAddress { get; set; }
+    public string? VoIpAddress { get; set; }
 
     /// <summary>User-Agent</summary>
-    public string? UserAgent { get; set; }
+    public string? VoUserAgent { get; set; }
 
     /// <summary>请求路径</summary>
-    public string? RequestPath { get; set; }
+    public string? VoRequestPath { get; set; }
 
     /// <summary>请求方法</summary>
-    public string? RequestMethod { get; set; }
+    public string? VoRequestMethod { get; set; }
 
     /// <summary>响应状态码</summary>
-    public int? ResponseStatusCode { get; set; }
+    public int? VoResponseStatusCode { get; set; }
 
     /// <summary>执行时长（毫秒）</summary>
-    public long? Duration { get; set; }
+    public long? VoDuration { get; set; }
 
     /// <summary>是否成功</summary>
-    public bool IsSuccess { get; set; }
+    public bool VoIsSuccess { get; set; }
 
     /// <summary>错误信息</summary>
-    public string? ErrorMessage { get; set; }
+    public string? VoErrorMessage { get; set; }
 
     /// <summary>日志级别</summary>
-    public string Level { get; set; } = "Information";
+    public string VoLevel { get; set; } = "Information";
 }
 
 /// <summary>

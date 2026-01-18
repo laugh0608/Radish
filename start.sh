@@ -81,8 +81,8 @@ print_menu() {
   echo "  1. 启动 API           (Radish.Api           @ https://localhost:7110)"
   echo "  2. 启动 Gateway       (Radish.Gateway       @ https://localhost:5001)"
   echo "  3. 启动 Frontend      (radish.client        @ https://localhost:3000)"
-  echo "  4. 启动 Docs          (radish.docs          @ http://localhost:3100/docs/)"
-  echo "  5. 启动 Console       (radish.console       @ https://localhost:3200)"
+  echo "  4. 启动 Docs          (radish.docs          @ http://localhost:4000/docs/)"
+  echo "  5. 启动 Console       (radish.console       @ https://localhost:3100)"
   echo "  6. 启动 Auth          (Radish.Auth          @ http://localhost:5200)"
   echo "  7. 运行 DbMigrate     (Radish.DbMigrate     @ init/seed)"
   echo "  8. 运行单元测试       (Radish.Api.Tests)"
@@ -248,7 +248,7 @@ start_all() {
   echo "  - Docs 已在后台启动 (http://localhost:3100/docs/)."
   start_console &
   add_bg_pid $!
-  echo "  - Console 已在后台启动 (https://localhost:3200)."
+  echo "  - Console 已在后台启动 (http://localhost:3100/console/)."
   start_api_no_build
 }
 
@@ -259,7 +259,7 @@ start_frontend_console_docs() {
   echo "  - Frontend 已在后台启动 (https://localhost:3000)."
   start_console &
   add_bg_pid $!
-  echo "  - Console 已在后台启动 (https://localhost:3200)."
+  echo "  - Console 已在后台启动 (http://localhost:3100/console/)."
   start_docs
 }
 

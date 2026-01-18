@@ -8,52 +8,52 @@ public class FileAccessTokenVo
     /// <summary>
     /// 令牌
     /// </summary>
-    public string Token { get; set; } = string.Empty;
+    public string VoToken { get; set; } = string.Empty;
 
     /// <summary>
     /// 附件ID
     /// </summary>
-    public long AttachmentId { get; set; }
+    public long VoAttachmentId { get; set; }
 
     /// <summary>
     /// 访问URL
     /// </summary>
-    public string AccessUrl { get; set; } = string.Empty;
+    public string VoAccessUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// 最大访问次数
     /// </summary>
-    public int MaxAccessCount { get; set; }
+    public int VoMaxAccessCount { get; set; }
 
     /// <summary>
     /// 已访问次数
     /// </summary>
-    public int AccessCount { get; set; }
+    public int VoAccessCount { get; set; }
 
     /// <summary>
     /// 剩余访问次数
     /// </summary>
-    public int RemainingAccessCount => MaxAccessCount == 0 ? int.MaxValue : MaxAccessCount - AccessCount;
+    public int VoRemainingAccessCount => VoMaxAccessCount == 0 ? int.MaxValue : VoMaxAccessCount - VoAccessCount;
 
     /// <summary>
     /// 过期时间
     /// </summary>
-    public DateTime ExpiresAt { get; set; }
+    public DateTime VoExpiresAt { get; set; }
 
     /// <summary>
     /// 是否已过期
     /// </summary>
-    public bool IsExpired => DateTime.Now > ExpiresAt;
+    public bool VoIsExpired => DateTime.Now > VoExpiresAt;
 
     /// <summary>
     /// 是否已撤销
     /// </summary>
-    public bool IsRevoked { get; set; }
+    public bool VoIsRevoked { get; set; }
 
     /// <summary>
     /// 创建时间
     /// </summary>
-    public DateTime CreateTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
 }
 
 /// <summary>

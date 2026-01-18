@@ -118,16 +118,20 @@ public class ShopController : ControllerBase
     /// <returns>是否可购买</returns>
     [HttpGet("{productId:long}")]
     [Authorize(Policy = "Client")]
-    public async Task<MessageModel<object>> CheckCanBuy(long productId, int quantity = 1)
+    public async Task<MessageModel<ProductBuyCheckResultVo>> CheckCanBuy(long productId, int quantity = 1)
     {
         var userId = GetCurrentUserId();
         if (userId <= 0)
         {
-            return MessageModel<object>.Message(false, "未登录", default!);
+            return MessageModel<ProductBuyCheckResultVo>.Message(false, "未登录", default!);
         }
 
         var (canBuy, reason) = await _productService.CheckCanBuyAsync(userId, productId, quantity);
-        return MessageModel<object>.Success("查询成功", new { canBuy, reason });
+        return MessageModel<ProductBuyCheckResultVo>.Success("查询成功", new ProductBuyCheckResultVo
+        {
+            VoCanBuy = canBuy,
+            VoReason = reason
+        });
     }
 
     #endregion
