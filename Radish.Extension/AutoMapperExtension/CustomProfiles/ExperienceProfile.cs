@@ -19,26 +19,26 @@ public class ExperienceProfile : Profile
     /// <summary>配置用户经验值映射</summary>
     private void ConfigureUserExperienceMapping()
     {
-        // UserExperience -> UserExperienceVo
+        // UserExperience -> UserExperienceVo (使用前缀识别 + 手动配置特殊字段)
         RecognizeDestinationPrefixes("Vo");
         CreateMap<UserExperience, UserExperienceVo>()
-            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.Id)) // Id 就是 UserId
-            .ForMember(dest => dest.UserName, opt => opt.Ignore()) // 需要在 Service 层单独设置
-            .ForMember(dest => dest.AvatarUrl, opt => opt.Ignore()) // 需要在 Service 层单独设置
-            .ForMember(dest => dest.CurrentLevelName, opt => opt.Ignore()) // 需要在 Service 层根据 LevelConfig 设置
-            .ForMember(dest => dest.ExpToNextLevel, opt => opt.Ignore()) // 需要在 Service 层计算
-            .ForMember(dest => dest.NextLevel, opt => opt.Ignore()) // 需要在 Service 层设置
-            .ForMember(dest => dest.NextLevelName, opt => opt.Ignore()) // 需要在 Service 层设置
-            .ForMember(dest => dest.LevelProgress, opt => opt.Ignore()) // 需要在 Service 层计算
-            .ForMember(dest => dest.ThemeColor, opt => opt.Ignore()) // 需要在 Service 层根据 LevelConfig 设置
-            .ForMember(dest => dest.IconUrl, opt => opt.Ignore()) // 需要在 Service 层根据 LevelConfig 设置
-            .ForMember(dest => dest.BadgeUrl, opt => opt.Ignore()) // 需要在 Service 层根据 LevelConfig 设置
-            .ForMember(dest => dest.Rank, opt => opt.Ignore()); // 需要在 Service 层单独查询
+            .ForMember(dest => dest.VoUserId, opt => opt.MapFrom(src => src.Id)) // Id 就是 UserId
+            .ForMember(dest => dest.VoUserName, opt => opt.Ignore()) // 需要在 Service 层单独设置
+            .ForMember(dest => dest.VoAvatarUrl, opt => opt.Ignore()) // 需要在 Service 层单独设置
+            .ForMember(dest => dest.VoCurrentLevelName, opt => opt.Ignore()) // 需要在 Service 层根据 LevelConfig 设置
+            .ForMember(dest => dest.VoExpToNextLevel, opt => opt.Ignore()) // 需要在 Service 层计算
+            .ForMember(dest => dest.VoNextLevel, opt => opt.Ignore()) // 需要在 Service 层设置
+            .ForMember(dest => dest.VoNextLevelName, opt => opt.Ignore()) // 需要在 Service 层设置
+            .ForMember(dest => dest.VoLevelProgress, opt => opt.Ignore()) // 需要在 Service 层计算
+            .ForMember(dest => dest.VoThemeColor, opt => opt.Ignore()) // 需要在 Service 层根据 LevelConfig 设置
+            .ForMember(dest => dest.VoIconUrl, opt => opt.Ignore()) // 需要在 Service 层根据 LevelConfig 设置
+            .ForMember(dest => dest.VoBadgeUrl, opt => opt.Ignore()) // 需要在 Service 层根据 LevelConfig 设置
+            .ForMember(dest => dest.VoRank, opt => opt.Ignore()); // 需要在 Service 层单独查询
 
-        // UserExperienceVo -> UserExperience
+        // UserExperienceVo -> UserExperience (使用前缀识别 + 手动配置特殊字段)
         RecognizePrefixes("Vo");
         CreateMap<UserExperienceVo, UserExperience>()
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId));
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.VoUserId));
     }
 
     /// <summary>配置经验值交易记录映射</summary>

@@ -415,9 +415,9 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
             foreach (var vo in orderVos)
             {
-                if (userDict.TryGetValue(vo.UserId, out var userName))
+                if (userDict.TryGetValue(vo.VoUserId, out var userName))
                 {
-                    vo.UserName = userName;
+                    vo.VoUserName = userName;
                 }
             }
 

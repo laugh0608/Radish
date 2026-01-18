@@ -152,7 +152,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
 
             // 填充分类名称
             var category = await _categoryRepository.QueryFirstAsync(c => c.Id == product.CategoryId);
-            vo.CategoryName = category?.Name;
+            vo.VoCategoryName = category?.Name;
 
             return vo;
         }
@@ -492,9 +492,9 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
 
             foreach (var vo in productVos)
             {
-                if (categoryDict.TryGetValue(vo.CategoryId, out var categoryName))
+                if (categoryDict.TryGetValue(vo.VoCategoryId, out var categoryName))
                 {
-                    vo.CategoryName = categoryName;
+                    vo.VoCategoryName = categoryName;
                 }
             }
 

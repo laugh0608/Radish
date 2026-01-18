@@ -21,10 +21,12 @@ public class ForumProfile : Profile
         RecognizePrefixes("Vo");
         CreateMap<TagVo, Tag>();
 
-        // Post -> PostVo
+        // Post -> PostVo (使用前缀识别 + 手动配置特殊字段)
+        RecognizeDestinationPrefixes("Vo");
         CreateMap<Post, PostVo>()
-            .ForMember(dest => dest.CategoryName, opt => opt.Ignore()) // 需要在 Service 中手动填充
-            .ForMember(dest => dest.Tags, opt => opt.Ignore());         // 需要在 Service 中手动填充
+            .ForMember(dest => dest.VoCategoryName, opt => opt.Ignore()) // 需要在 Service 中手动填充
+            .ForMember(dest => dest.VoTags, opt => opt.Ignore());         // 需要在 Service 中手动填充
+        RecognizePrefixes("Vo");
         CreateMap<PostVo, Post>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore()); // 避免从 VO 覆盖租户 ID
 

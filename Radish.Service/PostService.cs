@@ -65,7 +65,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             var category = await _categoryRepository.QueryByIdAsync(post.CategoryId);
             if (category != null)
             {
-                postVo.CategoryName = category.Name;
+                postVo.VoCategoryName = category.Name;
             }
         }
 
@@ -75,7 +75,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         {
             var tagIds = postTags.Select(pt => pt.TagId).ToList();
             var tags = await _tagService.QueryAsync(t => tagIds.Contains(t.Id));
-            postVo.Tags = string.Join(", ", tags.Select(t => t.VoName));
+            postVo.VoTags = string.Join(", ", tags.Select(t => t.VoName));
         }
 
         return postVo;

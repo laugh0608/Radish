@@ -6,32 +6,32 @@ namespace Radish.Model.ViewModels;
 public class OrderVo
 {
     /// <summary>订单 ID</summary>
-    public long Id { get; set; }
+    public long VoId { get; set; }
 
     /// <summary>订单号</summary>
-    public string OrderNo { get; set; } = string.Empty;
+    public string VoOrderNo { get; set; } = string.Empty;
 
     /// <summary>用户 ID</summary>
-    public long UserId { get; set; }
+    public long VoUserId { get; set; }
 
     /// <summary>用户名</summary>
     /// <remarks>运行时填充</remarks>
-    public string? UserName { get; set; }
+    public string? VoUserName { get; set; }
 
     /// <summary>商品 ID</summary>
-    public long ProductId { get; set; }
+    public long VoProductId { get; set; }
 
     /// <summary>商品名称</summary>
-    public string ProductName { get; set; } = string.Empty;
+    public string VoProductName { get; set; } = string.Empty;
 
     /// <summary>商品图标</summary>
-    public string? ProductIcon { get; set; }
+    public string? VoProductIcon { get; set; }
 
     /// <summary>商品类型</summary>
-    public ProductType ProductType { get; set; }
+    public ProductType VoProductType { get; set; }
 
     /// <summary>商品类型显示名称</summary>
-    public string ProductTypeDisplay => ProductType switch
+    public string VoProductTypeDisplay => VoProductType switch
     {
         ProductType.Benefit => "权益",
         ProductType.Consumable => "消耗品",
@@ -40,25 +40,25 @@ public class OrderVo
     };
 
     /// <summary>权益类型</summary>
-    public BenefitType? BenefitType { get; set; }
+    public BenefitType? VoBenefitType { get; set; }
 
     /// <summary>消耗品类型</summary>
-    public ConsumableType? ConsumableType { get; set; }
+    public ConsumableType? VoConsumableType { get; set; }
 
     /// <summary>购买数量</summary>
-    public int Quantity { get; set; }
+    public int VoQuantity { get; set; }
 
     /// <summary>单价（胡萝卜）</summary>
-    public long UnitPrice { get; set; }
+    public long VoUnitPrice { get; set; }
 
     /// <summary>总价（胡萝卜）</summary>
-    public long TotalPrice { get; set; }
+    public long VoTotalPrice { get; set; }
 
     /// <summary>订单状态</summary>
-    public OrderStatus Status { get; set; }
+    public OrderStatus VoStatus { get; set; }
 
     /// <summary>订单状态显示名称</summary>
-    public string StatusDisplay => Status switch
+    public string VoStatusDisplay => VoStatus switch
     {
         OrderStatus.Pending => "待支付",
         OrderStatus.Paid => "已支付",
@@ -70,56 +70,56 @@ public class OrderVo
     };
 
     /// <summary>权益到期时间</summary>
-    public DateTime? BenefitExpiresAt { get; set; }
+    public DateTime? VoBenefitExpiresAt { get; set; }
 
     /// <summary>有效期显示文本</summary>
-    public string? DurationDisplay { get; set; }
+    public string? VoDurationDisplay { get; set; }
 
     /// <summary>创建时间</summary>
-    public DateTime CreateTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
 
     /// <summary>支付时间</summary>
-    public DateTime? PaidTime { get; set; }
+    public DateTime? VoPaidTime { get; set; }
 
     /// <summary>完成时间</summary>
-    public DateTime? CompletedTime { get; set; }
+    public DateTime? VoCompletedTime { get; set; }
 
     /// <summary>取消时间</summary>
-    public DateTime? CancelledTime { get; set; }
+    public DateTime? VoCancelledTime { get; set; }
 
     /// <summary>取消原因</summary>
-    public string? CancelReason { get; set; }
+    public string? VoCancelReason { get; set; }
 
     /// <summary>失败原因</summary>
-    public string? FailReason { get; set; }
+    public string? VoFailReason { get; set; }
 }
 
 /// <summary>订单列表项视图模型</summary>
 public class OrderListItemVo
 {
     /// <summary>订单 ID</summary>
-    public long Id { get; set; }
+    public long VoId { get; set; }
 
     /// <summary>订单号</summary>
-    public string OrderNo { get; set; } = string.Empty;
+    public string VoOrderNo { get; set; } = string.Empty;
 
     /// <summary>商品名称</summary>
-    public string ProductName { get; set; } = string.Empty;
+    public string VoProductName { get; set; } = string.Empty;
 
     /// <summary>商品图标</summary>
-    public string? ProductIcon { get; set; }
+    public string? VoProductIcon { get; set; }
 
     /// <summary>购买数量</summary>
-    public int Quantity { get; set; }
+    public int VoQuantity { get; set; }
 
     /// <summary>总价（胡萝卜）</summary>
-    public long TotalPrice { get; set; }
+    public long VoTotalPrice { get; set; }
 
     /// <summary>订单状态</summary>
-    public OrderStatus Status { get; set; }
+    public OrderStatus VoStatus { get; set; }
 
     /// <summary>订单状态显示名称</summary>
-    public string StatusDisplay => Status switch
+    public string VoStatusDisplay => VoStatus switch
     {
         OrderStatus.Pending => "待支付",
         OrderStatus.Paid => "已支付",
@@ -131,7 +131,7 @@ public class OrderListItemVo
     };
 
     /// <summary>创建时间</summary>
-    public DateTime CreateTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
 }
 
 /// <summary>创建订单 DTO</summary>
