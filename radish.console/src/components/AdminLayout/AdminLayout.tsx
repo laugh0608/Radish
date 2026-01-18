@@ -211,10 +211,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 <Avatar
                   size="small"
                   icon={<UserOutlined />}
-                  src={user?.avatarUrl}
+                  src={user?.voAvatarUrl}
                 />
                 <span className="admin-username">
-                  {loading ? '加载中...' : (user?.userName || 'Unknown')}
+                  {loading ? '加载中...' : (user?.voUserName || 'Unknown')}
                 </span>
               </div>
             </Dropdown>

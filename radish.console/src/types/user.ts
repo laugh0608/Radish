@@ -1,13 +1,12 @@
 /**
- * 用户信息类型（与后端UserVo对应）
+ * 用户信息类型（与后端CurrentUserVo对应）
  */
 export interface UserInfo {
-  userId: number;
-  userName: string;
-  email?: string;
-  avatarUrl?: string;
-  roles?: string[];
-  tenantId?: number;
+  voUserId: number;
+  voUserName: string;
+  voTenantId: number;
+  voAvatarUrl?: string;
+  voAvatarThumbnailUrl?: string;
 }
 
 /**

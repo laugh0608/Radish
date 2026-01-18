@@ -86,11 +86,11 @@ export const Dock = () => {
   }, [openWindows]);
 
   interface CurrentUser {
-    userId: number;
-    userName: string;
-    tenantId: number;
-    avatarUrl?: string;
-    avatarThumbnailUrl?: string;
+    voUserId: number;
+    voUserName: string;
+    voTenantId: number;
+    voAvatarUrl?: string;
+    voAvatarThumbnailUrl?: string;
   }
 
   interface ApiFetchOptions extends RequestInit {
@@ -184,12 +184,12 @@ export const Dock = () => {
       }
 
       setUser({
-        userId: json.responseData.userId,
-        userName: json.responseData.userName,
-        tenantId: json.responseData.tenantId,
+        userId: json.responseData.voUserId,
+        userName: json.responseData.voUserName,
+        tenantId: json.responseData.voTenantId,
         roles: ['User'],
-        avatarUrl: json.responseData.avatarUrl,
-        avatarThumbnailUrl: json.responseData.avatarThumbnailUrl
+        avatarUrl: json.responseData.voAvatarUrl,
+        avatarThumbnailUrl: json.responseData.voAvatarThumbnailUrl
       });
     } catch {
       clearUser();

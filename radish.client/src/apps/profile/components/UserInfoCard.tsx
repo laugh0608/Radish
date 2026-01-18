@@ -24,18 +24,18 @@ interface UserInfoCardProps {
 }
 
 interface ProfileInfo {
-  userId: number;
-  userName: string;
-  userEmail: string;
-  realName: string;
-  sex: number;
-  age: number;
-  birth?: string | null;
-  address: string;
-  createTime: string;
-  avatarAttachmentId?: number | string | null;
-  avatarUrl?: string | null;
-  avatarThumbnailUrl?: string | null;
+  voUserId: number;
+  voUserName: string;
+  voUserEmail: string;
+  voRealName: string;
+  voSex: number;
+  voAge: number;
+  voBirth?: string | null;
+  voAddress: string;
+  voCreateTime: string;
+  voAvatarAttachmentId?: number | string | null;
+  voAvatarUrl?: string | null;
+  voAvatarThumbnailUrl?: string | null;
 }
 
 interface CoinBalanceInfo {
@@ -156,11 +156,11 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
         if (profileRes.ok && profileJson?.isSuccess && profileJson.responseData) {
           setProfile(profileJson.responseData);
 
-          setEditUserName(profileJson.responseData.userName || userName);
-          setEditUserEmail(profileJson.responseData.userEmail || '');
-          setEditRealName(profileJson.responseData.realName || '');
-          setEditAge(String(profileJson.responseData.age ?? ''));
-          setEditAddress(profileJson.responseData.address || '');
+          setEditUserName(profileJson.responseData.voUserName || userName);
+          setEditUserEmail(profileJson.responseData.voUserEmail || '');
+          setEditRealName(profileJson.responseData.voRealName || '');
+          setEditAge(String(profileJson.responseData.voAge ?? ''));
+          setEditAddress(profileJson.responseData.voAddress || '');
         }
       }
 
@@ -180,17 +180,17 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
   };
 
   const avatarSrc = useMemo(() => {
-    const url = profile?.avatarThumbnailUrl || profile?.avatarUrl;
+    const url = profile?.voAvatarThumbnailUrl || profile?.voAvatarUrl;
     return resolveUrl(apiBaseUrl, url) || undefined;
-  }, [apiBaseUrl, profile?.avatarThumbnailUrl, profile?.avatarUrl]);
+  }, [apiBaseUrl, profile?.voAvatarThumbnailUrl, profile?.voAvatarUrl]);
 
   const handleOpenEdit = () => {
     if (profile) {
-      setEditUserName(profile.userName || userName);
-      setEditUserEmail(profile.userEmail || '');
-      setEditRealName(profile.realName || '');
-      setEditAge(String(profile.age ?? ''));
-      setEditAddress(profile.address || '');
+      setEditUserName(profile.voUserName || userName);
+      setEditUserEmail(profile.voUserEmail || '');
+      setEditRealName(profile.voRealName || '');
+      setEditAge(String(profile.voAge ?? ''));
+      setEditAddress(profile.voAddress || '');
     }
     setIsEditOpen(true);
   };
@@ -298,10 +298,10 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
           )}
         </div>
         <div className={styles.info}>
-          <h2 className={styles.userName}>{profile?.userName || userName}</h2>
+          <h2 className={styles.userName}>{profile?.voUserName || userName}</h2>
           <p className={styles.userId}>ID: {userId}</p>
           <div className={styles.profileMeta}>
-            <span className={styles.metaItem}>邮箱：{profile?.userEmail || '-'}</span>
+            <span className={styles.metaItem}>邮箱：{profile?.voUserEmail || '-'}</span>
             <span className={styles.metaItem}>余额：{formatCoinAmount(coinBalance?.balance)}</span>
           </div>
         </div>
