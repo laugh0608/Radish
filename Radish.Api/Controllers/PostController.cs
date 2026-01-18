@@ -125,8 +125,8 @@ public class PostController : ControllerBase
                 totalCount = allPosts.Count;
 
                 data = allPosts
-                    .OrderByDescending(p => p.IsTop)
-                    .ThenByDescending(p => p.ViewCount + p.LikeCount * 2 + p.CommentCount * 3)
+                    .OrderByDescending(p => p.VoIsTop)
+                    .ThenByDescending(p => p.VoViewCount + p.VoLikeCount * 2 + p.VoCommentCount * 3)
                     .Skip((pageIndex - 1) * pageSize)
                     .Take(pageSize)
                     .ToList();
@@ -317,7 +317,7 @@ public class PostController : ControllerBase
         }
 
         // 权限验证：只有作者本人可以编辑
-        if (post.AuthorId != _httpContextUser.UserId)
+        if (post.VoAuthorId != _httpContextUser.UserId)
         {
             return new MessageModel
             {
@@ -333,7 +333,7 @@ public class PostController : ControllerBase
             {
                 Title = request.Title,
                 Content = request.Content,
-                CategoryId = request.CategoryId ?? post.CategoryId,
+                CategoryId = request.CategoryId ?? post.VoCategoryId,
                 ModifyTime = DateTime.Now,
                 ModifyBy = _httpContextUser.UserName,
                 ModifyId = _httpContextUser.UserId
@@ -374,7 +374,7 @@ public class PostController : ControllerBase
         // 权限验证：只有作者本人或管理员可以删除
         var roles = _httpContextUser.GetClaimValueByType("role");
         var isAdmin = roles.Contains("Admin") || roles.Contains("System");
-        if (post.AuthorId != _httpContextUser.UserId && !isAdmin)
+        if (post.VoAuthorId != _httpContextUser.UserId && !isAdmin)
         {
             return new MessageModel
             {

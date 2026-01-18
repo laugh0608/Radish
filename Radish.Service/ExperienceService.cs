@@ -789,17 +789,17 @@ namespace Radish.Service;
 
         if (currentLevelConfig != null)
         {
-            vo.CurrentLevelName = currentLevelConfig.LevelName;
-            vo.ThemeColor = currentLevelConfig.ThemeColor ?? "#9E9E9E";
-            vo.IconUrl = currentLevelConfig.IconUrl;
-            vo.BadgeUrl = currentLevelConfig.BadgeUrl;
+            vo.VoCurrentLevelName = currentLevelConfig.LevelName;
+            vo.VoThemeColor = currentLevelConfig.ThemeColor ?? "#9E9E9E";
+            vo.VoIconUrl = currentLevelConfig.IconUrl;
+            vo.VoBadgeUrl = currentLevelConfig.BadgeUrl;
         }
 
         if (nextLevelConfig != null)
         {
-            vo.NextLevel = nextLevelConfig.Level;
-            vo.NextLevelName = nextLevelConfig.LevelName;
-            vo.ExpToNextLevel = nextLevelConfig.ExpCumulative - userExp.TotalExp;
+            vo.VoNextLevel = nextLevelConfig.Level;
+            vo.VoNextLevelName = nextLevelConfig.LevelName;
+            vo.VoExpToNextLevel = nextLevelConfig.ExpCumulative - userExp.TotalExp;
 
             // 计算进度（当前等级内的进度）
             var currentLevelBaseExp = currentLevelConfig?.ExpCumulative ?? 0;
@@ -808,27 +808,27 @@ namespace Radish.Service;
 
             if (expRange > 0)
             {
-                vo.LevelProgress = (double)(userExp.TotalExp - currentLevelBaseExp) / expRange;
+                vo.VoLevelProgress = (double)(userExp.TotalExp - currentLevelBaseExp) / expRange;
             }
             else
             {
-                vo.LevelProgress = 0;
+                vo.VoLevelProgress = 0;
             }
         }
         else
         {
             // 已达最高等级
-            vo.NextLevel = userExp.CurrentLevel;
-            vo.NextLevelName = "已达最高等级";
-            vo.ExpToNextLevel = 0;
-            vo.LevelProgress = 1.0;
+            vo.VoNextLevel = userExp.CurrentLevel;
+            vo.VoNextLevelName = "已达最高等级";
+            vo.VoExpToNextLevel = 0;
+            vo.VoLevelProgress = 1.0;
         }
 
         // 获取用户信息
         var user = await _userRepository.QueryFirstAsync(u => u.Id == userExp.UserId);
         if (user != null)
         {
-            vo.UserName = user.UserName;
+            vo.VoUserName = user.UserName;
             // TODO: 设置 AvatarUrl
         }
 

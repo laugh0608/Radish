@@ -333,8 +333,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             // TODO: 后续优化可以批量查询用户名，避免 N+1 查询
             foreach (var vo in transactionVos)
             {
-                vo.FromUserName = vo.FromUserId.HasValue ? "用户" + vo.FromUserId : "系统";
-                vo.ToUserName = vo.ToUserId.HasValue ? "用户" + vo.ToUserId : "系统";
+                vo.VoFromUserName = vo.VoFromUserId.HasValue ? "用户" + vo.VoFromUserId : "系统";
+                vo.VoToUserName = vo.VoToUserId.HasValue ? "用户" + vo.VoToUserId : "系统";
             }
 
             return new PageModel<CoinTransactionVo>
@@ -372,8 +372,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             var transactionVo = Mapper.Map<CoinTransactionVo>(transaction);
 
             // 补充用户名信息
-            transactionVo.FromUserName = transactionVo.FromUserId.HasValue ? "用户" + transactionVo.FromUserId : "系统";
-            transactionVo.ToUserName = transactionVo.ToUserId.HasValue ? "用户" + transactionVo.ToUserId : "系统";
+            transactionVo.VoFromUserName = transactionVo.VoFromUserId.HasValue ? "用户" + transactionVo.VoFromUserId : "系统";
+            transactionVo.VoToUserName = transactionVo.VoToUserId.HasValue ? "用户" + transactionVo.VoToUserId : "系统";
 
             return transactionVo;
         }

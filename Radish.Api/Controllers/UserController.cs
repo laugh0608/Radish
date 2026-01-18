@@ -250,7 +250,7 @@ public class UserController : ControllerBase
         // 统计帖子获赞数
         var posts = await _postService.QueryAsync(
             p => p.AuthorId == userId && p.IsPublished && !p.IsDeleted);
-        var postLikeCount = posts.Sum(p => p.LikeCount);
+        var postLikeCount = posts.Sum(p => p.VoLikeCount);
 
         // 统计评论获赞数
         var comments = await _commentService.QueryAsync(
