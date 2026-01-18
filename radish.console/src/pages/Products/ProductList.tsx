@@ -225,7 +225,7 @@ export const ProductList = () => {
       width: 100,
       render: (stock: number, record: Product) => (
         <div>
-          {record.stockType === 0 ? (
+          {record.stockType === 'Unlimited' ? (
             <Tag color="green">无限</Tag>
           ) : (
             <span style={{ color: stock > 0 ? '#52c41a' : '#ff4d4f' }}>

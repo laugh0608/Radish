@@ -213,7 +213,7 @@ export const OrderList = () => {
           >
             详情
           </Button>
-          {record.status === 5 && ( // Failed
+          {record.status === 'Failed' && ( // Failed
             <Button
               variant="ghost"
               size="small"
