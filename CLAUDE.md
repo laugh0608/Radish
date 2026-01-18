@@ -65,11 +65,24 @@ Common (工具,日志,配置) → Shared (常量,枚举) → Model (实体,DTO,V
    - AutoMapper: `Radish.Extension/AutoMapperExtension` 处理映射
 
 5. **ViewModel 设计规范** (重要):
-   - **命名规范**: 所有返回给前端的ViewModel类必须添加`Vo`前缀，与现有UserVo保持统一性
-   - **UserVo特殊设计**: UserVo的字段混淆（如VoLoName, VoUsName等）是安全设计，体现自定义映射能力，保持其特殊性
-   - **其他Vo模型**: 使用清晰的字段名，仅添加Vo前缀，不需要字段混淆（如VoCurrentUser, VoUserStats等）
+   - **类名规范**: 所有返回给前端的ViewModel类必须添加`Vo`后缀（如UserVo, ProductVo, OrderVo）
+   - **字段名规范**: 所有字段必须添加`Vo`前缀
+     - **UserVo特殊设计**: `Vo`前缀 + 混淆字段名（如VoLoName, VoUsName, VoUsPwd）- 安全设计，体现自定义映射能力
+     - **其他Vo模型**: `Vo`前缀 + 清晰字段名（如VoName, VoDescription, VoCreateTime）- 便于理解和维护
    - **前端适配规则**: 前端必须适配后端的Vo模型字段名，不得要求后端修改
    - **匿名对象禁用**: Controller方法严禁返回匿名对象，必须使用定义好的Vo类
+   - **AutoMapper映射策略** (关键):
+     - **优先使用前缀识别自动映射** (推荐):
+       - ✅ Entity和Vo字段只有`Vo`前缀差异
+       - ✅ 字段类型完全一致
+       - ✅ 不需要特殊的转换逻辑
+       - 示例: `RecognizeDestinationPrefixes("Vo"); CreateMap<Category, CategoryVo>();`
+     - **仅在必要时使用手动映射**:
+       - ⚠️ 字段名完全不同（如`Id` → `VoUserId`）
+       - ⚠️ 需要忽略某些字段（如Service层手动填充的计算属性）
+       - ⚠️ 需要特殊的转换逻辑（如计算字段、null默认值）
+       - ⚠️ 字段类型不同需要转换
+       - 示例: `.ForMember(dest => dest.CategoryName, opt => opt.Ignore())`
 
 6. **Infrastructure** 集中 SqlSugar 多租户逻辑，仅 Repository 和 Extension 引用
 

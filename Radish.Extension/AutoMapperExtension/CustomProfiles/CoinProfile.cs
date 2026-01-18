@@ -16,18 +16,15 @@ public class CoinProfile : Profile
     /// <summary>配置用户余额映射</summary>
     private void ConfigureUserBalanceMapping()
     {
-        // UserBalance -> UserBalanceVo
+        // UserBalance -> UserBalanceVo (使用前缀识别 + 手动配置格式化字段)
         RecognizeDestinationPrefixes("Vo");
         CreateMap<UserBalance, UserBalanceVo>()
-            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
-            .ForMember(dest => dest.BalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.Balance)))
-            .ForMember(dest => dest.FrozenBalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.FrozenBalance)));
+            .ForMember(dest => dest.VoBalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.Balance)))
+            .ForMember(dest => dest.VoFrozenBalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.FrozenBalance)));
 
-        // UserBalanceVo -> UserBalance
+        // UserBalanceVo -> UserBalance (使用前缀识别)
         RecognizePrefixes("Vo");
-        CreateMap<UserBalanceVo, UserBalance>()
-            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.UserId))
-            .ForMember(dest => dest.Id, opt => opt.Ignore());
+        CreateMap<UserBalanceVo, UserBalance>();
     }
 
     /// <summary>配置交易记录映射</summary>

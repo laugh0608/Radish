@@ -163,7 +163,7 @@ public class NotificationService : INotificationService
                 // 填充关联的通知详情
                 if (notificationDict.TryGetValue(un.NotificationId, out var notification))
                 {
-                    vo.Notification = _mapper.Map<NotificationVo>(notification);
+                    vo.VoNotification = _mapper.Map<NotificationVo>(notification);
                 }
 
                 return vo;

@@ -11,7 +11,8 @@ public class AuditLogProfile : Profile
 {
     public AuditLogProfile()
     {
-        // AuditLog -> AuditLogVo
+        // AuditLog -> AuditLogVo (使用前缀识别自动映射)
+        RecognizeDestinationPrefixes("Vo");
         CreateMap<AuditLog, AuditLogVo>();
 
         // CreateAuditLogDto -> AuditLog

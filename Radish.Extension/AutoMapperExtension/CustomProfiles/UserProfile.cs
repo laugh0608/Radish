@@ -76,11 +76,11 @@ public class UserProfile : Profile
             .ForMember(dest => dest.Avatar, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
 
         // User → CurrentUserVo（用于获取当前用户信息）
+        RecognizeDestinationPrefixes("Vo");
         CreateMap<User, CurrentUserVo>()
-            .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.UserName))
-            .ForMember(dest => dest.TenantId, opt => opt.MapFrom(src => src.TenantId))
-            .ForMember(dest => dest.AvatarUrl, opt => opt.MapFrom(src => (string?)null)) // 暂无头像字段
-            .ForMember(dest => dest.AvatarThumbnailUrl, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
+            .ForMember(dest => dest.VoUserId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => src.UserName))
+            .ForMember(dest => dest.VoAvatarUrl, opt => opt.MapFrom(src => (string?)null)) // 暂无头像字段
+            .ForMember(dest => dest.VoAvatarThumbnailUrl, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
     }
 }

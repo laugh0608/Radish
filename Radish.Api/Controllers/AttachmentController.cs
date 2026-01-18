@@ -488,7 +488,7 @@ public class AttachmentController : ControllerBase
             });
         }
 
-        return File(stream, attachment.MimeType, attachment.OriginalName);
+        return File(stream, attachment.VoMimeType, attachment.VoOriginalName);
     }
 
     #endregion
@@ -582,7 +582,7 @@ public class AttachmentController : ControllerBase
                 });
             }
 
-            return File(stream, attachment.MimeType, attachment.OriginalName);
+            return File(stream, attachment.VoMimeType, attachment.VoOriginalName);
         }
         catch (Exception ex)
         {
@@ -697,7 +697,7 @@ public class AttachmentController : ControllerBase
         var roles = _httpContextUser.GetClaimValueByType("role");
         var isAdmin = roles.Contains("Admin") || roles.Contains("System");
 
-        if (attachment.UploaderId != userId && !isAdmin)
+        if (attachment.VoUploaderId != userId && !isAdmin)
         {
             return new MessageModel
             {
@@ -755,7 +755,7 @@ public class AttachmentController : ControllerBase
         foreach (var id in ids)
         {
             var attachment = await _attachmentService.QueryByIdAsync(id);
-            if (attachment != null && attachment.UploaderId != userId && !isAdmin)
+            if (attachment != null && attachment.VoUploaderId != userId && !isAdmin)
             {
                 return new MessageModel
                 {
@@ -814,7 +814,7 @@ public class AttachmentController : ControllerBase
         var roles = _httpContextUser.GetClaimValueByType("role");
         var isAdmin = roles.Contains("Admin") || roles.Contains("System");
 
-        if (attachment.UploaderId != userId && !isAdmin)
+        if (attachment.VoUploaderId != userId && !isAdmin)
         {
             return new MessageModel
             {

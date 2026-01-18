@@ -258,7 +258,7 @@ public class CommentController : ControllerBase
         // 权限验证：只有作者本人或管理员可以删除
         var roles = _httpContextUser.GetClaimValueByType("role");
         var isAdmin = roles.Contains("Admin") || roles.Contains("System");
-        if (comment.AuthorId != _httpContextUser.UserId && !isAdmin)
+        if (comment.VoAuthorId != _httpContextUser.UserId && !isAdmin)
         {
             return new MessageModel
             {

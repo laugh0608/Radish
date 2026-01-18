@@ -532,7 +532,37 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
 
 - 仓储层（Radish.Repository）只处理 `Radish.Model` 中定义的实体类型，禁止将实体对象直接向外暴露；Service 层获取实体后必须映射为视图模型再返回给 Controller。
-- 视图模型命名以 `Vo` 为前缀，但不得只追加单个前缀；需结合业务含义进行缩写或扩写（例如 `VoUsrAudit`、`VoAssetReport`），从命名上进行模糊化以减少被直接猜测的风险。
+- **ViewModel 命名规范**:
+  - **类名**: 以 `Vo` 为后缀（如UserVo, ProductVo, OrderVo）
+  - **字段名**: 所有字段必须添加 `Vo` 前缀
+    - **UserVo特殊设计**: `Vo`前缀 + 混淆字段名（如VoLoName表示LoginName，VoUsName表示UserName，VoUsPwd表示UserPassword）- 这是安全设计，体现自定义映射能力，保持其特殊性
+    - **其他Vo模型**: `Vo`前缀 + 清晰字段名（如VoName, VoDescription, VoCreateTime, VoStatus）- 便于理解和维护
+  - **前端适配**: 前端必须适配后端的Vo模型字段名，不得要求后端修改
+  - **匿名对象禁用**: Controller方法严禁返回匿名对象，必须使用定义好的Vo类
+  - **AutoMapper映射最佳实践** (关键):
+    - **优先使用前缀识别自动映射** (推荐，减少90%+代码量):
+      ```csharp
+      // 适用条件：Entity和Vo字段只有Vo前缀差异、字段类型完全一致、不需要特殊转换
+      RecognizeDestinationPrefixes("Vo");  // Entity -> Vo
+      CreateMap<Category, CategoryVo>();
+      RecognizePrefixes("Vo");             // Vo -> Entity
+      CreateMap<CategoryVo, Category>();
+      ```
+    - **仅在必要时使用手动映射**:
+      ```csharp
+      // 适用场景：
+      // 1. 字段名完全不同（如 Id -> VoUserId）
+      // 2. 需要忽略某些字段（如Service层手动填充的计算属性）
+      // 3. 需要特殊的转换逻辑（如计算字段、null默认值）
+      // 4. 字段类型不同需要转换
+      CreateMap<Post, PostVo>()
+          .ForMember(dest => dest.CategoryName, opt => opt.Ignore())  // Service层填充
+          .ForMember(dest => dest.Tags, opt => opt.Ignore());
+
+      CreateMap<User, CurrentUserVo>()
+          .ForMember(dest => dest.VoUserId, opt => opt.MapFrom(src => src.Id))  // 字段名不同
+          .ForMember(dest => dest.VoAvatarUrl, opt => opt.MapFrom(src => (string?)null)); // 默认值
+      ```
 - AutoMapper Profile 中维护实体与视图模型的对应关系；如需手动映射，也必须在 Service 层完成，确保 Controller 不访问实体。
 - DTO/Vo 定义集中在 `Radish.Model` 或 `Radish.Shared` 的对应目录下，提交前请自检实体与视图模型字段是否同步更新。
 

@@ -199,7 +199,7 @@ public class ChunkedUploadService : IChunkedUploadService
             {
                 // 更新会话状态
                 session.Status = "Completed";
-                session.AttachmentId = attachment.Id;
+                session.AttachmentId = attachment.VoId;
                 session.ModifyTime = DateTime.Now;
                 await _sessionRepository.UpdateAsync(session);
 
@@ -207,7 +207,7 @@ public class ChunkedUploadService : IChunkedUploadService
                 CleanupSessionFiles(session.SessionId);
 
                 Log.Information("[ChunkedUpload] 合并完成: {SessionId}, 附件ID: {AttachmentId}",
-                    session.SessionId, attachment.Id);
+                    session.SessionId, attachment.VoId);
 
                 return attachment;
             }
