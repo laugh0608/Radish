@@ -22,11 +22,13 @@ import {
   DashboardOutlined,
   ShoppingOutlined,
   FileTextOutlined,
+  SearchOutlined,
 } from '@radish/ui';
 import { ROUTES } from '../../router';
 import { getAuthServerBaseUrl, getPostLogoutRedirectUri } from '@/config/env';
 import { tokenService } from '../../services/tokenService';
 import { AppBreadcrumb } from '../Breadcrumb';
+import { GlobalSearch, useGlobalSearchHotkey } from '../GlobalSearch';
 import './AdminLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -43,9 +45,13 @@ export interface AdminLayoutProps {
  */
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useUser();
+
+  // 全局搜索快捷键
+  useGlobalSearchHotkey(() => setSearchVisible(true));
 
   // 根据当前路径获取选中的菜单 key
   const getSelectedKey = (): string => {
@@ -200,6 +206,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             )}
           </div>
           <div className="admin-header-right">
+            <SearchOutlined
+              className="admin-search-icon"
+              onClick={() => setSearchVisible(true)}
+              style={{ fontSize: '18px', cursor: 'pointer', marginRight: '24px' }}
+            />
             <Dropdown
               menu={{
                 items: userMenuItems,
@@ -225,6 +236,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           {children}
         </Content>
       </Layout>
+
+      {/* 全局搜索组件 */}
+      <GlobalSearch visible={searchVisible} onClose={() => setSearchVisible(false)} />
     </Layout>
   );
 }

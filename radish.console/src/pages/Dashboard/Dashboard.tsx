@@ -1,6 +1,8 @@
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import './Dashboard.css';
 
 export const Dashboard = () => {
+  useDocumentTitle('仪表盘');
   return (
     <div className="dashboard-page">
       <h2>仪表盘</h2>

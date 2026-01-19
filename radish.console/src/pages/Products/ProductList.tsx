@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Table,
   Button,
@@ -45,6 +46,7 @@ function getProductTypeDisplay(type: ProductType): string {
 }
 
 export const ProductList = () => {
+  useDocumentTitle('商品管理');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(false);

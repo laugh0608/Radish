@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Table,
   Button,
@@ -37,6 +38,7 @@ import { log } from '../../utils/logger';
 import './UserList.css';
 
 export const UserList = () => {
+  useDocumentTitle('用户管理');
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
