@@ -6,6 +6,7 @@ import { ProductList } from '../pages/Products';
 import { OrderList } from '../pages/Orders';
 import { UserList } from '../pages/Users';
 import { UserDetail } from '../pages/Users/UserDetail';
+import { RoleList } from '../pages/Roles';
 import { Login } from '../pages/Login';
 import { OidcCallback } from '../pages/OidcCallback';
 import { ThemeTest } from '../pages/ThemeTest';
@@ -107,7 +108,7 @@ export const router = createBrowserRouter(
         },
         {
           path: 'roles',
-          element: <PlaceholderPage title="角色管理" />,
+          element: <RoleList />,
         },
         {
           path: 'hangfire',
