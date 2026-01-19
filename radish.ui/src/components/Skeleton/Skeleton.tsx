@@ -1,4 +1,4 @@
-import './TableSkeleton.css';
+import './Skeleton.css';
 
 interface TableSkeletonProps {
   /**

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { TableSkeleton } from '@/components/TableSkeleton';
 import {
+  TableSkeleton,
   Table,
   Button,
   AntInput as Input,
