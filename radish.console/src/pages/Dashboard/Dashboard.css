@@ -1,37 +1,34 @@
 .dashboard-page {
-  width: 100%;
+  padding: 24px;
 }
 
-.dashboard-page h2 {
-  margin: 0 0 16px 0;
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.dashboard-stats .ant-card {
+  text-align: center;
+}
+
+.dashboard-stats .ant-statistic {
+  padding: 16px 0;
+}
+
+.dashboard-stats .ant-statistic-title {
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.65);
+  margin-bottom: 8px;
+}
+
+.dashboard-stats .ant-statistic-content {
   font-size: 24px;
   font-weight: 600;
-  color: #333;
 }
 
-.dashboard-page p {
-  margin: 0 0 24px 0;
-  font-size: 16px;
-  color: #666;
-  line-height: 1.6;
-}
-
-.dashboard-page h3 {
-  margin: 0 0 16px 0;
-  font-size: 18px;
-  font-weight: 600;
-  color: #333;
-}
-
-.dashboard-page ul {
-  margin: 0;
-  padding: 0 0 0 24px;
-  list-style: disc;
-}
-
-.dashboard-page li {
-  margin: 0 0 12px 0;
-  font-size: 14px;
-  color: #666;
-  line-height: 1.6;
+.dashboard-stats .anticon {
+  font-size: 20px;
+  margin-right: 8px;
 }
