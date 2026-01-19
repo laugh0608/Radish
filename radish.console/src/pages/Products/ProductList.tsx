@@ -25,6 +25,7 @@ import {
   getCategories,
   putOnSale,
   takeOffSale,
+  deleteProduct,
 } from '../../api/shopApi';
 import type { Product, ProductCategory } from '../../api/types';
 import { ProductType } from '../../api/types';
@@ -147,7 +148,7 @@ export const ProductList = () => {
       content: `确定要删除商品"${product.name}"吗？`,
       onOk: async () => {
         try {
-          // TODO: 实现删除 API
+          await deleteProduct(product.id);
           message.success('删除成功');
           loadProducts();
         } catch (error) {

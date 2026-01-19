@@ -172,7 +172,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           <Radio.Group>
             <Radio value={1}>权益</Radio>
             <Radio value={2}>消耗品</Radio>
-            <Radio value={3}>实物</Radio>
+            <Radio value={99}>实物</Radio>
           </Radio.Group>
         </Form.Item>
 
