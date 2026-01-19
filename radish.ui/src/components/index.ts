@@ -119,6 +119,7 @@ export {
   SearchOutlined,
   DownOutlined,
   UpOutlined,
+  LeftOutlined,
   CheckOutlined,
   CloseOutlined,
   UserOutlined,
