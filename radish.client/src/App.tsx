@@ -55,9 +55,15 @@ function App() {
     const { levelUpData, showModal, handleClose } = useLevelUpListener();
 
     const apiBaseUrl = useMemo(() => {
-        // 统一通过 Gateway 访问，apiBaseUrl 就是当前 origin
+        // 开发环境：始终通过 Gateway (5000) 访问后端服务
+        // 生产环境：使用配置的 API 基础 URL
         if (typeof window !== 'undefined') {
-            return window.location.origin;
+            // 如果通过 Gateway 访问（5000端口），使用当前 origin
+            if (window.location.port === '5000') {
+                return window.location.origin;
+            }
+            // 如果直接访问开发服务器（3000端口），使用配置的 API URL
+            return import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
         }
         return 'https://localhost:5000'; // fallback for SSR
     }, []);
@@ -374,16 +380,21 @@ function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
 /**
  * 获取 Auth Server 的基础 URL
  *
- * 统一使用 Gateway 地址（https://localhost:5000）
- * 无论是通过 Gateway 访问还是直接访问开发服务器，所有后端请求都走 Gateway
+ * 开发环境：始终使用 Gateway 地址（https://localhost:5000）
+ * 生产环境：使用配置的认证服务器 URL
  */
 function getAuthServerBaseUrl(): string {
     if (typeof window === 'undefined') {
-        return 'https://localhost:5000';
+        return import.meta.env.VITE_AUTH_BASE_URL || 'https://localhost:5000';
     }
 
-    // 统一使用 Gateway 地址
-    return 'https://localhost:5000';
+    // 如果通过 Gateway 访问（5000端口），使用当前 origin
+    if (window.location.port === '5000') {
+        return window.location.origin;
+    }
+
+    // 否则使用配置的认证服务器 URL（开发环境下为 Gateway 地址）
+    return import.meta.env.VITE_AUTH_BASE_URL || 'https://localhost:5000';
 }
 
 function handleLogin(_apiBaseUrl: string) {
