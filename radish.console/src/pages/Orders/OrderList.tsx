@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { TableSkeleton } from '@/components/TableSkeleton';
 import {
   Table,
   Button,
@@ -229,6 +230,11 @@ export const OrderList = () => {
       ),
     },
   ];
+
+  // 如果正在加载且没有数据，显示骨架屏
+  if (loading && orders.length === 0) {
+    return <TableSkeleton rows={10} columns={6} showFilters={true} showActions={true} />;
+  }
 
   return (
     <div className="order-list-page">
