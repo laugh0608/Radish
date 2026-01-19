@@ -5,6 +5,7 @@ export interface UserInfo {
   voUserId: number;
   voUserName: string;
   voTenantId: number;
+  roles?: string[];
   voAvatarUrl?: string;
   voAvatarThumbnailUrl?: string;
 }

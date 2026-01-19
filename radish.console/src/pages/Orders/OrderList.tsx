@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Table,
   Button,
@@ -29,6 +30,7 @@ import { log } from '../../utils/logger';
 import './OrderList.css';
 
 export const OrderList = () => {
+  useDocumentTitle('订单管理');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
