@@ -200,6 +200,7 @@ ClientBin/
 !Certs/dev-auth-cert.pfx
 *.publishsettings
 node_modules/
+package-lock.json
 orleans.codegen.cs
 
 # Since there are multiple workflows, uncomment next line to ignore bower_components
