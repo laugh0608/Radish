@@ -139,6 +139,8 @@ export {
   LockOutlined,
   UnlockOutlined,
   KeyOutlined,
+  TrophyOutlined,
+  WalletOutlined,
 } from '@ant-design/icons';
 
 // Re-export types
