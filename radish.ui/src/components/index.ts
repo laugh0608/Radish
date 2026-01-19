@@ -66,6 +66,8 @@ export type { ExperienceBarProps, ExperienceData } from './ExperienceBar/Experie
 export { LevelUpModal } from './LevelUpModal/LevelUpModal';
 export type { LevelUpModalProps, LevelUpData } from './LevelUpModal/LevelUpModal';
 
+export { TableSkeleton, SimpleSkeleton, CardSkeleton } from './Skeleton';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout
