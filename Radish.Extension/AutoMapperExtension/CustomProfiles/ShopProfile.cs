@@ -10,6 +10,9 @@ public class ShopProfile : Profile
 {
     public ShopProfile()
     {
+        // 配置 Vo 前缀识别（全局设置）
+        RecognizeDestinationPrefixes("Vo");
+
         ConfigureProductCategoryMapping();
         ConfigureProductMapping();
         ConfigureOrderMapping();
@@ -34,12 +37,10 @@ public class ShopProfile : Profile
     private void ConfigureProductMapping()
     {
         // Product -> ProductVo (使用前缀识别 + 手动配置特殊字段)
-        RecognizeDestinationPrefixes("Vo");
         CreateMap<Product, ProductVo>()
             .ForMember(dest => dest.VoCategoryName, opt => opt.Ignore()); // 运行时填充
 
         // Product -> ProductListItemVo (使用前缀识别 + 手动配置特殊字段)
-        RecognizeDestinationPrefixes("Vo");
         CreateMap<Product, ProductListItemVo>()
             .ForMember(dest => dest.VoInStock, opt => opt.MapFrom(src =>
                 src.StockType == StockType.Unlimited || src.Stock > 0))
@@ -80,14 +81,12 @@ public class ShopProfile : Profile
     private void ConfigureOrderMapping()
     {
         // Order -> OrderVo (使用前缀识别 + 手动配置特殊字段)
-        RecognizeDestinationPrefixes("Vo");
         CreateMap<Order, OrderVo>()
             .ForMember(dest => dest.VoUserName, opt => opt.Ignore()) // 运行时填充
             .ForMember(dest => dest.VoDurationDisplay, opt => opt.MapFrom(src =>
                 GetDurationDisplay(src.DurationType, src.DurationDays, src.BenefitExpiresAt)));
 
         // Order -> OrderListItemVo (使用前缀识别自动映射)
-        RecognizeDestinationPrefixes("Vo");
         CreateMap<Order, OrderListItemVo>();
     }
 
