@@ -80,6 +80,11 @@ export const useShopData = (t: TFunction) => {
     try {
       const result = await shopApi.getCategories(t);
       if (result.ok && result.data) {
+        // 调试：看一下 id 是否重复
+        // log.debug(
+        //     'shop categories ids',
+        //     result.data.map(c => c.id)
+        // );
         setState(prev => ({
           ...prev,
           categories: result.data || [],
