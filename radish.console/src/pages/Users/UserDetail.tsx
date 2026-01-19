@@ -11,11 +11,11 @@ import {
 } from '@radish/ui';
 import { Card, Descriptions, Statistic, Tabs } from 'antd';
 import {
-  ArrowLeftOutlined,
   UserOutlined,
   TrophyOutlined,
   WalletOutlined,
   ShoppingOutlined,
+  LeftOutlined,
 } from '@radish/ui';
 import { log } from '@/utils/logger';
 import './UserDetail.css';
@@ -206,7 +206,7 @@ export const UserDetail = () => {
     <div className="user-detail-page">
       <div className="user-detail-header">
         <Button
-          icon={<ArrowLeftOutlined />}
+          icon={<LeftOutlined />}
           onClick={() => navigate('/users')}
         >
           返回
