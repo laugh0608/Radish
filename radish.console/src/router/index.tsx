@@ -9,7 +9,7 @@ import { Login } from '../pages/Login';
 import { OidcCallback } from '../pages/OidcCallback';
 import { ThemeTest } from '../pages/ThemeTest';
 import { NotFound } from '../components/NotFound';
-import { env } from '../config/env';
+import { getApiBaseUrl } from '../config/env';
 
 /**
  * 需要认证的布局包装器
@@ -48,7 +48,7 @@ function HangfirePage() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <h2 style={{ margin: '0 0 16px 0' }}>定时任务管理</h2>
       <iframe
-        src={`${env.apiBaseUrl}/hangfire`}
+        src={`${getApiBaseUrl()}/hangfire`}
         style={{
           flex: 1,
           border: '1px solid #d9d9d9',
