@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Table,
@@ -39,6 +40,7 @@ import './UserList.css';
 
 export const UserList = () => {
   useDocumentTitle('用户管理');
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -222,12 +224,9 @@ export const UserList = () => {
             variant="ghost"
             size="small"
             icon={<EditOutlined />}
-            onClick={() => {
-              // TODO: 打开编辑用户弹窗
-              message.info('编辑用户功能待实现');
-            }}
+            onClick={() => navigate(`/users/${record.uuid}`)}
           >
-            编辑
+            查看详情
           </Button>
 
           {record.voIsEnable ? (
