@@ -5,6 +5,7 @@ import { Applications } from '../pages/Applications';
 import { ProductList } from '../pages/Products';
 import { OrderList } from '../pages/Orders';
 import { UserList } from '../pages/Users';
+import { UserDetail } from '../pages/Users/UserDetail';
 import { Login } from '../pages/Login';
 import { OidcCallback } from '../pages/OidcCallback';
 import { ThemeTest } from '../pages/ThemeTest';
@@ -101,6 +102,10 @@ export const router = createBrowserRouter(
           element: <UserList />,
         },
         {
+          path: 'users/:userId',
+          element: <UserDetail />,
+        },
+        {
           path: 'roles',
           element: <PlaceholderPage title="角色管理" />,
         },
@@ -135,6 +140,7 @@ export const ROUTES = {
   PRODUCTS: '/products',
   ORDERS: '/orders',
   USERS: '/users',
+  USER_DETAIL: '/users/:userId',
   ROLES: '/roles',
   HANGFIRE: '/hangfire',
   THEME_TEST: '/theme-test',

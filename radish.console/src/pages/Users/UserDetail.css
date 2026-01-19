@@ -1,0 +1,31 @@
+.user-detail-page {
+  padding: 24px;
+}
+
+.user-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.user-detail-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.user-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.user-stats .ant-card {
+  text-align: center;
+}
+
+.user-stats .ant-statistic {
+  padding: 16px 0;
+}
