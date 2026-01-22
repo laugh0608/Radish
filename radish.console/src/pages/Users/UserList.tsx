@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -93,6 +93,8 @@ export const UserList = () => {
     setStatus(undefined);
     setRole(undefined);
     setPageIndex(1);
+    // 重置后重新加载
+    setTimeout(() => loadUsers(), 0);
   };
 
   // 更新用户状态
@@ -290,14 +292,7 @@ export const UserList = () => {
   // 初始化加载
   useEffect(() => {
     loadUsers();
-  }, [pageIndex, pageSize]);
-
-  // 重置时重新加载
-  useEffect(() => {
-    if (!keyword && status === undefined && role === undefined) {
-      loadUsers();
-    }
-  }, [keyword, status, role]);
+  }, []);
 
   return (
     <div className="user-list">
@@ -382,6 +377,8 @@ export const UserList = () => {
           onChange: (page, size) => {
             setPageIndex(page);
             setPageSize(size || 20);
+            // 分页变化后重新加载
+            setTimeout(() => loadUsers(), 0);
           },
         }}
         scroll={{ x: 1200 }}

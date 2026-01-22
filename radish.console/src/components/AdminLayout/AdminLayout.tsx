@@ -93,6 +93,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       label: '角色管理',
     },
     {
+      key: 'system-config',
+      icon: <SettingOutlined />,
+      label: '系统配置',
+    },
+    {
       key: 'hangfire',
       icon: <ClockCircleOutlined />,
       label: '定时任务',
@@ -134,6 +139,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       orders: ROUTES.ORDERS,
       users: ROUTES.USERS,
       roles: ROUTES.ROLES,
+      'system-config': ROUTES.SYSTEM_CONFIG,
       hangfire: ROUTES.HANGFIRE,
     };
     const path = routeMap[key];

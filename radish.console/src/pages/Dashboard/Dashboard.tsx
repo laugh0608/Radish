@@ -6,6 +6,7 @@ import {
   Button,
   Table,
   Tag,
+  message,
   type TableColumnsType,
 } from '@radish/ui';
 import { Card, Statistic } from 'antd';
@@ -18,16 +19,10 @@ import {
   EyeOutlined,
 } from '@radish/ui';
 import { adminGetOrders, getOrderStatusColor } from '@/api/shopApi';
+import { getDashboardStats, type DashboardStats } from '@/api/statisticsApi';
 import type { Order } from '@/api/types';
 import { log } from '@/utils/logger';
 import './Dashboard.css';
-
-interface DashboardStats {
-  totalUsers: number;
-  totalOrders: number;
-  totalProducts: number;
-  totalRevenue: number;
-}
 
 export const Dashboard = () => {
   useDocumentTitle('仪表盘');
@@ -40,20 +35,26 @@ export const Dashboard = () => {
   });
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   // 加载统计数据
   const loadStats = async () => {
     try {
-      // TODO: 调用统计 API
-      // 暂时使用模拟数据
+      setStatsLoading(true);
+      const data = await getDashboardStats();
+      setStats(data);
+    } catch (error) {
+      log.error('Dashboard', '加载统计数据失败:', error);
+      message.error('加载统计数据失败');
+      // 使用模拟数据作为降级方案
       setStats({
         totalUsers: 1234,
         totalOrders: 567,
         totalProducts: 89,
         totalRevenue: 12345,
       });
-    } catch (error) {
-      log.error('Dashboard', '加载统计数据失败:', error);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -68,6 +69,7 @@ export const Dashboard = () => {
       setRecentOrders(response.data);
     } catch (error) {
       log.error('Dashboard', '加载最近订单失败:', error);
+      message.error('加载最近订单失败');
     } finally {
       setLoading(false);
     }
@@ -138,7 +140,7 @@ export const Dashboard = () => {
 
       {/* 关键指标卡片 */}
       <div className="dashboard-stats">
-        <Card>
+        <Card loading={statsLoading}>
           <Statistic
             title="总用户数"
             value={stats.totalUsers}
@@ -146,7 +148,7 @@ export const Dashboard = () => {
             valueStyle={{ color: '#3f8600' }}
           />
         </Card>
-        <Card>
+        <Card loading={statsLoading}>
           <Statistic
             title="总订单数"
             value={stats.totalOrders}
@@ -154,7 +156,7 @@ export const Dashboard = () => {
             valueStyle={{ color: '#1890ff' }}
           />
         </Card>
-        <Card>
+        <Card loading={statsLoading}>
           <Statistic
             title="商品数量"
             value={stats.totalProducts}
@@ -162,7 +164,7 @@ export const Dashboard = () => {
             valueStyle={{ color: '#722ed1' }}
           />
         </Card>
-        <Card>
+        <Card loading={statsLoading}>
           <Statistic
             title="总收入"
             value={stats.totalRevenue}
