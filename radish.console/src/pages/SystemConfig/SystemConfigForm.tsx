@@ -178,7 +178,7 @@ export const SystemConfigForm = ({
       onCancel={handleCancel}
       confirmLoading={loading}
       width={600}
-      destroyOnClose
+      destroyOnHidden
     >
       <Form
         form={form}

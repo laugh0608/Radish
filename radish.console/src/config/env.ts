@@ -115,3 +115,27 @@ export function getPostLogoutRedirectUri(): string {
   return `${currentOrigin}/console/`;
 }
 
+/**
+ * 获取完整的头像URL
+ *
+ * 将相对路径的头像URL转换为完整的API服务器URL
+ */
+export function getAvatarUrl(avatarUrl?: string | null): string | undefined {
+  if (!avatarUrl) {
+    return undefined;
+  }
+
+  // 如果已经是完整URL，直接返回
+  if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
+    return avatarUrl;
+  }
+
+  // 如果是相对路径，拼接API基础URL
+  if (avatarUrl.startsWith('/')) {
+    return `${getApiBaseUrl()}${avatarUrl}`;
+  }
+
+  // 其他情况，添加前缀斜杠后拼接
+  return `${getApiBaseUrl()}/${avatarUrl}`;
+}
+

@@ -94,7 +94,7 @@ export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
       onCancel={handleClose}
       footer={null}
       width={600}
-      destroyOnClose
+      destroyOnHidden
     >
       <div className="global-search-content">
         <AntInput
