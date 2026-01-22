@@ -169,10 +169,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         handleLogout();
         break;
       case 'profile':
-        message.info('个人信息功能待实现');
+        navigate(ROUTES.PROFILE);
         break;
       case 'settings':
-        message.info('设置功能待实现');
+        navigate(ROUTES.SETTINGS);
         break;
     }
   };
