@@ -160,6 +160,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             }
 
             // 6. 保存到数据库
+            var businessId = optionsDto.BusinessType == "Avatar" ? (long?)uploaderId : null;
+
             var attachment = new Attachment
             {
                 OriginalName = string.IsNullOrWhiteSpace(optionsDto.OriginalFileName) ? fileName : optionsDto.OriginalFileName,
@@ -178,6 +180,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 UploaderId = uploaderId,
                 UploaderName = uploaderName,
                 BusinessType = optionsDto.BusinessType,
+                BusinessId = businessId, // 头像文件关联到用户ID
                 IsPublic = true,
                 DownloadCount = 0
             };

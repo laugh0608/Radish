@@ -79,8 +79,7 @@ public class UserProfile : Profile
         RecognizeDestinationPrefixes("Vo");
         CreateMap<User, CurrentUserVo>()
             .ForMember(dest => dest.VoUserId, opt => opt.MapFrom(src => src.Id))
-            .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => src.UserName))
-            .ForMember(dest => dest.VoAvatarUrl, opt => opt.MapFrom(src => (string?)null)) // 暂无头像字段
-            .ForMember(dest => dest.VoAvatarThumbnailUrl, opt => opt.MapFrom(src => (string?)null)); // 暂无头像字段
+            .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => src.UserName));
+            // 注意：VoAvatarUrl 和 VoAvatarThumbnailUrl 字段由 UserController.GetUserByHttpContext() 方法手动设置
     }
 }

@@ -14,7 +14,7 @@ import {
   EditOutlined,
 } from '@radish/ui';
 import { SaveOutlined, CameraOutlined } from '@ant-design/icons';
-import { getApiBaseUrl } from '@/config/env';
+import { getApiBaseUrl, getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 import './UserProfile.css';
 
@@ -30,7 +30,7 @@ interface UserProfileData {
 
 export const UserProfile = () => {
   useDocumentTitle('个人信息');
-  const { user, loading: userLoading } = useUser();
+  const { user, loading: userLoading, refreshUser } = useUser();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -137,6 +137,10 @@ export const UserProfile = () => {
               ...prev,
               avatarUrl: avatarUrl,
             } : null);
+
+            // 刷新UserContext中的用户信息，更新右上角导航栏头像
+            refreshUser();
+
             message.success('头像更新成功');
           } else {
             message.error('头像上传失败：未获取到文件URL');
@@ -193,7 +197,7 @@ export const UserProfile = () => {
           <div className="avatar-section">
             <Avatar
               size={80}
-              src={profileData.avatarUrl}
+              src={getAvatarUrl(profileData.avatarUrl)}
               icon={<UserOutlined />}
               className="profile-avatar"
             />

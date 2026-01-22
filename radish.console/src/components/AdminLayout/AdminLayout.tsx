@@ -25,7 +25,7 @@ import {
   SearchOutlined,
 } from '@radish/ui';
 import { ROUTES } from '../../router';
-import { getAuthServerBaseUrl, getPostLogoutRedirectUri } from '@/config/env';
+import { getAuthServerBaseUrl, getPostLogoutRedirectUri, getAvatarUrl } from '@/config/env';
 import { tokenService } from '../../services/tokenService';
 import { AppBreadcrumb } from '../Breadcrumb';
 import { GlobalSearch, useGlobalSearchHotkey } from '../GlobalSearch';
@@ -228,7 +228,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 <Avatar
                   size="small"
                   icon={<UserOutlined />}
-                  src={user?.voAvatarUrl}
+                  src={getAvatarUrl(user?.voAvatarUrl)}
                 />
                 <span className="admin-username">
                   {loading ? '加载中...' : (user?.voUserName || 'Unknown')}
