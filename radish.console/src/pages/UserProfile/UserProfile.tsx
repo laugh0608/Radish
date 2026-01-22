@@ -29,7 +29,7 @@ interface UserProfileData {
 
 export const UserProfile = () => {
   useDocumentTitle('个人信息');
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -52,8 +52,11 @@ export const UserProfile = () => {
         userName: mockProfileData.userName,
         email: mockProfileData.email,
       });
+    } else if (!userLoading) {
+      // 如果用户加载完成但没有用户信息，显示错误状态
+      setProfileData(null);
     }
-  }, [user, form]);
+  }, [user, userLoading, form]);
 
   // 保存个人信息
   const handleSave = async () => {
@@ -129,8 +132,39 @@ export const UserProfile = () => {
     },
   };
 
+  if (userLoading) {
+    return (
+      <div className="user-profile-page">
+        <Card title="个人信息" loading>
+          <div style={{ height: '200px' }} />
+        </Card>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="user-profile-page">
+        <Card title="个人信息">
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <p>无法获取用户信息，请重新登录</p>
+            <Button onClick={() => window.location.reload()}>
+              刷新页面
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   if (!profileData) {
-    return <div>加载中...</div>;
+    return (
+      <div className="user-profile-page">
+        <Card title="个人信息" loading>
+          <div style={{ height: '200px' }} />
+        </Card>
+      </div>
+    );
   }
 
   return (
