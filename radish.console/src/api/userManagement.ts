@@ -90,7 +90,25 @@ export const userManagementApi = {
     const queryString = searchParams.toString();
     const url = `/api/v1/User/GetUserList${queryString ? `?${queryString}` : ''}`;
 
-    return apiGet<UserListResponse>(url, { withAuth: true });
+    const response = await apiGet<any>(url, { withAuth: true });
+
+    // 处理后端返回的 VoPagedResult 结构
+    if (response.ok && response.data) {
+      const backendData = response.data;
+      const mappedData: UserListResponse = {
+        items: backendData.voItems || backendData.VoItems || [],
+        total: backendData.voTotal || backendData.VoTotal || 0,
+        pageIndex: backendData.voPageIndex || backendData.VoPageIndex || 1,
+        pageSize: backendData.voPageSize || backendData.VoPageSize || 20,
+      };
+
+      return {
+        ...response,
+        data: mappedData
+      };
+    }
+
+    return response as ParsedApiResponse<UserListResponse>;
   },
 
   /**

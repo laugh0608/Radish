@@ -29,21 +29,22 @@ export interface CategoryData {
  */
 export function mapCategory(vo: any): CategoryData {
   return {
-    id: parseInt(vo.VoId, 10), // 将字符串ID转换为数字
-    name: vo.VoName,
-    slug: vo.VoSlug,
-    description: vo.VoDescription,
-    icon: vo.VoIcon,
-    coverImage: vo.VoCoverImage,
-    parentId: vo.VoParentId ? parseInt(vo.VoParentId, 10) : null,
-    level: vo.VoLevel,
-    orderSort: vo.VoOrderSort,
-    postCount: vo.VoPostCount,
-    isEnabled: vo.VoIsEnabled,
-    createTime: vo.VoCreateTime,
-    createBy: vo.VoCreateBy,
+    id: vo.voId ?? vo.VoId,
+    name: vo.voName ?? vo.VoName,
+    slug: vo.voSlug ?? vo.VoSlug,
+    description: vo.voDescription ?? vo.VoDescription,
+    icon: vo.voIcon ?? vo.VoIcon,
+    coverImage: vo.voCoverImage ?? vo.VoCoverImage,
+    parentId: vo.voParentId ?? vo.VoParentId,
+    level: vo.voLevel ?? vo.VoLevel,
+    orderSort: vo.voOrderSort ?? vo.VoOrderSort,
+    postCount: vo.voPostCount ?? vo.VoPostCount,
+    isEnabled: vo.voIsEnabled ?? vo.VoIsEnabled,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
+    createBy: vo.voCreateBy ?? vo.VoCreateBy,
   };
 }
+
 
 /**
  * 帖子列表项数据（前端友好）
@@ -72,22 +73,22 @@ export interface PostItemData {
  */
 export function mapPostItem(vo: any): PostItemData {
   return {
-    id: vo.VoId,
-    title: vo.VoTitle,
-    slug: vo.VoSlug,
-    summary: vo.VoSummary,
-    categoryId: vo.VoCategoryId,
-    categoryName: vo.VoCategoryName,
-    authorId: vo.VoAuthorId,
-    authorName: vo.VoAuthorName,
-    viewCount: vo.VoViewCount,
-    likeCount: vo.VoLikeCount,
-    commentCount: vo.VoCommentCount,
-    isTop: vo.VoIsTop,
-    isEssence: vo.VoIsEssence,
-    isLocked: vo.VoIsLocked,
-    createTime: vo.VoCreateTime,
-    updateTime: vo.VoUpdateTime,
+    id: vo.voId ?? vo.VoId,
+    title: vo.voTitle ?? vo.VoTitle,
+    slug: vo.voSlug ?? vo.VoSlug,
+    summary: vo.voSummary ?? vo.VoSummary,
+    categoryId: vo.voCategoryId ?? vo.VoCategoryId,
+    categoryName: vo.voCategoryName ?? vo.VoCategoryName,
+    authorId: vo.voAuthorId ?? vo.VoAuthorId,
+    authorName: vo.voAuthorName ?? vo.VoAuthorName,
+    viewCount: vo.voViewCount ?? vo.VoViewCount,
+    likeCount: vo.voLikeCount ?? vo.VoLikeCount,
+    commentCount: vo.voCommentCount ?? vo.VoCommentCount,
+    isTop: vo.voIsTop ?? vo.VoIsTop,
+    isEssence: vo.voIsEssence ?? vo.VoIsEssence,
+    isLocked: vo.voIsLocked ?? vo.VoIsLocked,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
+    updateTime: vo.voUpdateTime ?? vo.VoUpdateTime,
   };
 }
 
@@ -106,29 +107,29 @@ export interface PostDetailData extends PostItemData {
  * 将PostVo映射为PostDetailData
  */
 export function mapPostDetail(vo: any): PostDetailData {
-  const tags = vo.VoTags;
+  const tags = vo.voTags ?? vo.VoTags ?? '';
   return {
-    id: vo.VoId,
-    title: vo.VoTitle,
-    slug: vo.VoSlug,
-    summary: vo.VoSummary,
-    content: vo.VoContent,
-    contentType: vo.VoContentType,
-    coverImage: vo.VoCoverImage,
-    categoryId: vo.VoCategoryId,
-    categoryName: vo.VoCategoryName,
-    authorId: vo.VoAuthorId,
-    authorName: vo.VoAuthorName,
-    tags: tags,
+    id: vo.voId ?? vo.VoId,
+    title: vo.voTitle ?? vo.VoTitle,
+    slug: vo.voSlug ?? vo.VoSlug,
+    summary: vo.voSummary ?? vo.VoSummary,
+    content: vo.voContent ?? vo.VoContent,
+    contentType: vo.voContentType ?? vo.VoContentType,
+    coverImage: vo.voCoverImage ?? vo.VoCoverImage,
+    categoryId: vo.voCategoryId ?? vo.VoCategoryId,
+    categoryName: vo.voCategoryName ?? vo.VoCategoryName,
+    authorId: vo.voAuthorId ?? vo.VoAuthorId,
+    authorName: vo.voAuthorName ?? vo.VoAuthorName,
+    tags,
     tagNames: tags ? tags.split(',').map((t: string) => t.trim()) : [],
-    viewCount: vo.VoViewCount,
-    likeCount: vo.VoLikeCount,
-    commentCount: vo.VoCommentCount,
-    isTop: vo.VoIsTop,
-    isEssence: vo.VoIsEssence,
-    isLocked: vo.VoIsLocked,
-    createTime: vo.VoCreateTime,
-    updateTime: vo.VoUpdateTime,
+    viewCount: vo.voViewCount ?? vo.VoViewCount,
+    likeCount: vo.voLikeCount ?? vo.VoLikeCount,
+    commentCount: vo.voCommentCount ?? vo.VoCommentCount,
+    isTop: vo.voIsTop ?? vo.VoIsTop,
+    isEssence: vo.voIsEssence ?? vo.VoIsEssence,
+    isLocked: vo.voIsLocked ?? vo.VoIsLocked,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
+    updateTime: vo.voUpdateTime ?? vo.VoUpdateTime,
   };
 }
 
@@ -165,28 +166,28 @@ export interface CommentNodeData {
  */
 export function mapComment(vo: any): CommentNodeData {
   return {
-    id: vo.VoId,
-    postId: vo.VoPostId,
-    content: vo.VoContent,
-    authorId: vo.VoAuthorId,
-    authorName: vo.VoAuthorName,
-    parentId: vo.VoParentId,
-    rootId: vo.VoRootId,
-    replyToUserId: vo.VoReplyToUserId,
-    replyToUserName: vo.VoReplyToUserName,
-    level: vo.VoLevel,
-    likeCount: vo.VoLikeCount,
-    replyCount: vo.VoReplyCount,
-    isTop: vo.VoIsTop,
-    isLiked: vo.VoIsLiked,
-    createTime: vo.VoCreateTime,
-    updateTime: vo.VoUpdateTime,
+    id: vo.voId ?? vo.VoId,
+    postId: vo.voPostId ?? vo.VoPostId,
+    content: vo.voContent ?? vo.VoContent,
+    authorId: vo.voAuthorId ?? vo.VoAuthorId,
+    authorName: vo.voAuthorName ?? vo.VoAuthorName,
+    parentId: vo.voParentId ?? vo.VoParentId,
+    rootId: vo.voRootId ?? vo.VoRootId,
+    replyToUserId: vo.voReplyToUserId ?? vo.VoReplyToUserId,
+    replyToUserName: vo.voReplyToUserName ?? vo.VoReplyToUserName,
+    level: vo.voLevel ?? vo.VoLevel,
+    likeCount: vo.voLikeCount ?? vo.VoLikeCount,
+    replyCount: vo.voReplyCount ?? vo.VoReplyCount,
+    isTop: vo.voIsTop ?? vo.VoIsTop,
+    isLiked: vo.voIsLiked ?? vo.VoIsLiked,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
+    updateTime: vo.voUpdateTime ?? vo.VoUpdateTime,
     // 前端扩展字段（如果后端返回的话）
-    children: vo.VoChildren ? vo.VoChildren.map(mapComment) : undefined,
-    childrenTotal: vo.VoChildrenTotal,
-    isGodComment: vo.VoIsGodComment,
-    isSofa: vo.VoIsSofa,
-    highlightRank: vo.VoHighlightRank,
+    children: (vo.voChildren ?? vo.VoChildren)?.map(mapComment),
+    childrenTotal: vo.voChildrenTotal ?? vo.VoChildrenTotal,
+    isGodComment: vo.voIsGodComment ?? vo.VoIsGodComment,
+    isSofa: vo.voIsSofa ?? vo.VoIsSofa,
+    highlightRank: vo.voHighlightRank ?? vo.VoHighlightRank,
   };
 }
 
@@ -214,19 +215,19 @@ export interface CommentHighlightData {
  */
 export function mapCommentHighlight(vo: any): CommentHighlightData {
   return {
-    id: vo.VoId,
-    postId: vo.VoPostId,
-    commentId: vo.VoCommentId,
-    parentCommentId: vo.VoParentCommentId,
-    highlightType: vo.VoHighlightType,
-    statDate: vo.VoStatDate,
-    likeCount: vo.VoLikeCount,
-    rank: vo.VoRank,
-    contentSnapshot: vo.VoContentSnapshot,
-    authorId: vo.VoAuthorId,
-    authorName: vo.VoAuthorName,
-    isCurrent: vo.VoIsCurrent,
-    createTime: vo.VoCreateTime,
+    id: vo.voId ?? vo.VoId,
+    postId: vo.voPostId ?? vo.VoPostId,
+    commentId: vo.voCommentId ?? vo.VoCommentId,
+    parentCommentId: vo.voParentCommentId ?? vo.VoParentCommentId,
+    highlightType: vo.voHighlightType ?? vo.VoHighlightType,
+    statDate: vo.voStatDate ?? vo.VoStatDate,
+    likeCount: vo.voLikeCount ?? vo.VoLikeCount,
+    rank: vo.voRank ?? vo.VoRank,
+    contentSnapshot: vo.voContentSnapshot ?? vo.VoContentSnapshot,
+    authorId: vo.voAuthorId ?? vo.VoAuthorId,
+    authorName: vo.voAuthorName ?? vo.VoAuthorName,
+    isCurrent: vo.voIsCurrent ?? vo.VoIsCurrent,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
   };
 }
 
@@ -249,14 +250,16 @@ export interface ProductCategoryData {
  * 将CategoryVo映射为ProductCategoryData
  */
 export function mapProductCategory(vo: any): ProductCategoryData {
+  const idValue = (vo.voId ?? vo.VoId) as string | number | undefined;
+
   return {
-    id: vo.VoId?.toString() || vo.VoSlug,
-    name: vo.VoName,
-    icon: vo.VoIcon,
-    description: vo.VoDescription,
-    sortOrder: vo.VoOrderSort,
-    isEnabled: vo.VoIsEnabled,
-    productCount: vo.VoProductCount || 0,
+    id: idValue != null ? idValue.toString() : '',
+    name: vo.voName ?? vo.VoName,
+    icon: vo.voIcon ?? vo.VoIcon,
+    description: vo.voDescription ?? vo.VoDescription,
+    sortOrder: vo.voSortOrder ?? vo.VoSortOrder ?? 0,
+    isEnabled: vo.voIsEnabled ?? vo.VoIsEnabled ?? true,
+    productCount: vo.voProductCount ?? vo.VoProductCount ?? 0,
   };
 }
 
@@ -283,18 +286,18 @@ export interface ProductListItemData {
  */
 export function mapProductListItem(vo: any): ProductListItemData {
   return {
-    id: vo.VoId,
-    name: vo.VoName,
-    icon: vo.VoIcon,
-    coverImage: vo.VoCoverImage,
-    categoryId: vo.VoCategoryId,
-    productType: vo.VoProductType,
-    price: vo.VoPrice || 0, // 确保价格不为null/undefined
-    originalPrice: vo.VoOriginalPrice || undefined,
-    hasDiscount: vo.VoHasDiscount,
-    soldCount: vo.VoSoldCount || 0,
-    inStock: vo.VoInStock,
-    durationDisplay: vo.VoDurationDisplay,
+    id: vo.voId ?? vo.VoId,
+    name: vo.voName ?? vo.VoName,
+    icon: vo.voIcon ?? vo.VoIcon,
+    coverImage: vo.voCoverImage ?? vo.VoCoverImage,
+    categoryId: vo.voCategoryId ?? vo.VoCategoryId,
+    productType: vo.voProductType ?? vo.VoProductType,
+    price: vo.voPrice ?? vo.VoPrice ?? 0, // 确保价格不为null/undefined
+    originalPrice: vo.voOriginalPrice ?? vo.VoOriginalPrice ?? undefined,
+    hasDiscount: vo.voHasDiscount ?? vo.VoHasDiscount ?? false,
+    soldCount: vo.voSoldCount ?? vo.VoSoldCount ?? 0,
+    inStock: vo.voInStock ?? vo.VoInStock ?? false,
+    durationDisplay: vo.voDurationDisplay ?? vo.VoDurationDisplay ?? '',
   };
 }
 
@@ -339,36 +342,36 @@ export interface ProductData {
  */
 export function mapProduct(vo: any): ProductData {
   return {
-    id: vo.VoId,
-    name: vo.VoName,
-    description: vo.VoDescription,
-    icon: vo.VoIcon,
-    coverImage: vo.VoCoverImage,
-    categoryId: vo.VoCategoryId,
-    categoryName: vo.VoCategoryName,
-    productType: vo.VoProductType,
-    productTypeDisplay: vo.VoProductTypeDisplay,
-    benefitType: vo.VoBenefitType,
-    consumableType: vo.VoConsumableType,
-    benefitValue: vo.VoBenefitValue,
-    price: vo.VoPrice || 0, // 确保价格不为null/undefined
-    originalPrice: vo.VoOriginalPrice || undefined,
-    hasDiscount: vo.VoHasDiscount,
-    discountPercent: vo.VoDiscountPercent,
-    stockType: vo.VoStockType,
-    stock: vo.VoStock,
-    soldCount: vo.VoSoldCount,
-    limitPerUser: vo.VoLimitPerUser,
-    durationType: vo.VoDurationType,
-    durationDays: vo.VoDurationDays,
-    expiresAt: vo.VoExpiresAt,
-    durationDisplay: vo.VoDurationDisplay,
-    sortOrder: vo.VoSortOrder,
-    isOnSale: vo.VoIsOnSale,
-    isEnabled: vo.VoIsEnabled,
-    onSaleTime: vo.VoOnSaleTime,
-    offSaleTime: vo.VoOffSaleTime,
-    createTime: vo.VoCreateTime,
+    id: vo.voId ?? vo.VoId,
+    name: vo.voName ?? vo.VoName,
+    description: vo.voDescription ?? vo.VoDescription,
+    icon: vo.voIcon ?? vo.VoIcon,
+    coverImage: vo.voCoverImage ?? vo.VoCoverImage,
+    categoryId: vo.voCategoryId ?? vo.VoCategoryId,
+    categoryName: vo.voCategoryName ?? vo.VoCategoryName,
+    productType: vo.voProductType ?? vo.VoProductType,
+    productTypeDisplay: vo.voProductTypeDisplay ?? vo.VoProductTypeDisplay,
+    benefitType: vo.voBenefitType ?? vo.VoBenefitType,
+    consumableType: vo.voConsumableType ?? vo.VoConsumableType,
+    benefitValue: vo.voBenefitValue ?? vo.VoBenefitValue,
+    price: vo.voPrice ?? vo.VoPrice ?? 0, // 确保价格不为null/undefined
+    originalPrice: vo.voOriginalPrice ?? vo.VoOriginalPrice ?? undefined,
+    hasDiscount: vo.voHasDiscount ?? vo.VoHasDiscount ?? false,
+    discountPercent: vo.voDiscountPercent ?? vo.VoDiscountPercent,
+    stockType: vo.voStockType ?? vo.VoStockType,
+    stock: vo.voStock ?? vo.VoStock,
+    soldCount: vo.voSoldCount ?? vo.VoSoldCount,
+    limitPerUser: vo.voLimitPerUser ?? vo.VoLimitPerUser,
+    durationType: vo.voDurationType ?? vo.VoDurationType,
+    durationDays: vo.voDurationDays ?? vo.VoDurationDays,
+    expiresAt: vo.voExpiresAt ?? vo.VoExpiresAt,
+    durationDisplay: vo.voDurationDisplay ?? vo.VoDurationDisplay,
+    sortOrder: vo.voSortOrder ?? vo.VoSortOrder,
+    isOnSale: vo.voIsOnSale ?? vo.VoIsOnSale,
+    isEnabled: vo.voIsEnabled ?? vo.VoIsEnabled,
+    onSaleTime: vo.voOnSaleTime ?? vo.VoOnSaleTime,
+    offSaleTime: vo.voOffSaleTime ?? vo.VoOffSaleTime,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
   };
 }
 
@@ -392,15 +395,15 @@ export interface OrderListItemData {
  */
 export function mapOrderListItem(vo: any): OrderListItemData {
   return {
-    id: vo.VoId,
-    orderNo: vo.VoOrderNo,
-    productName: vo.VoProductName,
-    productIcon: vo.VoProductIcon,
-    quantity: vo.VoQuantity,
-    totalPrice: vo.VoTotalPrice || 0,
-    status: vo.VoStatus,
-    statusDisplay: vo.VoStatusDisplay,
-    createTime: vo.VoCreateTime,
+    id: vo.voId ?? vo.VoId,
+    orderNo: vo.voOrderNo ?? vo.VoOrderNo,
+    productName: vo.voProductName ?? vo.VoProductName,
+    productIcon: vo.voProductIcon ?? vo.VoProductIcon,
+    quantity: vo.voQuantity ?? vo.VoQuantity,
+    totalPrice: vo.voTotalPrice ?? vo.VoTotalPrice ?? 0,
+    status: vo.voStatus ?? vo.VoStatus,
+    statusDisplay: vo.voStatusDisplay ?? vo.VoStatusDisplay,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
   };
 }
 
@@ -439,30 +442,30 @@ export interface OrderData {
  */
 export function mapOrder(vo: any): OrderData {
   return {
-    id: vo.VoId,
-    orderNo: vo.VoOrderNo,
-    userId: vo.VoUserId,
-    userName: vo.VoUserName,
-    productId: vo.VoProductId,
-    productName: vo.VoProductName,
-    productIcon: vo.VoProductIcon,
-    productType: vo.VoProductType,
-    productTypeDisplay: vo.VoProductTypeDisplay,
-    benefitType: vo.VoBenefitType,
-    consumableType: vo.VoConsumableType,
-    quantity: vo.VoQuantity,
-    unitPrice: vo.VoUnitPrice || 0,
-    totalPrice: vo.VoTotalPrice || 0,
-    status: vo.VoStatus,
-    statusDisplay: vo.VoStatusDisplay,
-    benefitExpiresAt: vo.VoBenefitExpiresAt,
-    durationDisplay: vo.VoDurationDisplay,
-    createTime: vo.VoCreateTime,
-    paidTime: vo.VoPaidTime,
-    completedTime: vo.VoCompletedTime,
-    cancelledTime: vo.VoCancelledTime,
-    cancelReason: vo.VoCancelReason,
-    failReason: vo.VoFailReason,
+    id: vo.voId ?? vo.VoId,
+    orderNo: vo.voOrderNo ?? vo.VoOrderNo,
+    userId: vo.voUserId ?? vo.VoUserId,
+    userName: vo.voUserName ?? vo.VoUserName,
+    productId: vo.voProductId ?? vo.VoProductId,
+    productName: vo.voProductName ?? vo.VoProductName,
+    productIcon: vo.voProductIcon ?? vo.VoProductIcon,
+    productType: vo.voProductType ?? vo.VoProductType,
+    productTypeDisplay: vo.voProductTypeDisplay ?? vo.VoProductTypeDisplay,
+    benefitType: vo.voBenefitType ?? vo.VoBenefitType,
+    consumableType: vo.voConsumableType ?? vo.VoConsumableType,
+    quantity: vo.voQuantity ?? vo.VoQuantity,
+    unitPrice: vo.voUnitPrice ?? vo.VoUnitPrice ?? 0,
+    totalPrice: vo.voTotalPrice ?? vo.VoTotalPrice ?? 0,
+    status: vo.voStatus ?? vo.VoStatus,
+    statusDisplay: vo.voStatusDisplay ?? vo.VoStatusDisplay,
+    benefitExpiresAt: vo.voBenefitExpiresAt ?? vo.VoBenefitExpiresAt,
+    durationDisplay: vo.voDurationDisplay ?? vo.VoDurationDisplay,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
+    paidTime: vo.voPaidTime ?? vo.VoPaidTime,
+    completedTime: vo.voCompletedTime ?? vo.VoCompletedTime,
+    cancelledTime: vo.voCancelledTime ?? vo.VoCancelledTime,
+    cancelReason: vo.voCancelReason ?? vo.VoCancelReason,
+    failReason: vo.voFailReason ?? vo.VoFailReason,
   };
 }
 
@@ -492,21 +495,21 @@ export interface UserBenefitData {
  */
 export function mapUserBenefit(vo: any): UserBenefitData {
   return {
-    id: vo.VoId,
-    userId: vo.VoUserId,
-    benefitType: vo.VoBenefitType,
-    benefitTypeDisplay: vo.VoBenefitTypeDisplay,
-    benefitValue: vo.VoBenefitValue,
-    sourceId: vo.VoSourceId,
-    sourceType: vo.VoSourceType,
-    sourceTypeDisplay: vo.VoSourceTypeDisplay,
-    durationType: vo.VoDurationType,
-    effectiveAt: vo.VoEffectiveAt,
-    expiresAt: vo.VoExpiresAt,
-    isExpired: vo.VoIsExpired,
-    isActive: vo.VoIsActive,
-    durationDisplay: vo.VoDurationDisplay,
-    createTime: vo.VoCreateTime,
+    id: vo.voId ?? vo.VoId,
+    userId: vo.voUserId ?? vo.VoUserId,
+    benefitType: vo.voBenefitType ?? vo.VoBenefitType,
+    benefitTypeDisplay: vo.voBenefitTypeDisplay ?? vo.VoBenefitTypeDisplay,
+    benefitValue: vo.voBenefitValue ?? vo.VoBenefitValue,
+    sourceId: vo.voSourceId ?? vo.VoSourceId,
+    sourceType: vo.voSourceType ?? vo.VoSourceType,
+    sourceTypeDisplay: vo.voSourceTypeDisplay ?? vo.VoSourceTypeDisplay,
+    durationType: vo.voDurationType ?? vo.VoDurationType,
+    effectiveAt: vo.voEffectiveAt ?? vo.VoEffectiveAt,
+    expiresAt: vo.voExpiresAt ?? vo.VoExpiresAt,
+    isExpired: vo.voIsExpired ?? vo.VoIsExpired,
+    isActive: vo.voIsActive ?? vo.VoIsActive,
+    durationDisplay: vo.voDurationDisplay ?? vo.VoDurationDisplay,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
   };
 }
 
@@ -530,15 +533,15 @@ export interface UserInventoryItemData {
  */
 export function mapUserInventoryItem(vo: any): UserInventoryItemData {
   return {
-    id: vo.VoId,
-    userId: vo.VoUserId,
-    consumableType: vo.VoConsumableType,
-    consumableTypeDisplay: vo.VoConsumableTypeDisplay,
-    itemValue: vo.VoItemValue,
-    itemName: vo.VoItemName,
-    itemIcon: vo.VoItemIcon,
-    quantity: vo.VoQuantity,
-    createTime: vo.VoCreateTime,
+    id: vo.voId ?? vo.VoId,
+    userId: vo.voUserId ?? vo.VoUserId,
+    consumableType: vo.voConsumableType ?? vo.VoConsumableType,
+    consumableTypeDisplay: vo.voConsumableTypeDisplay ?? vo.VoConsumableTypeDisplay,
+    itemValue: vo.voItemValue ?? vo.VoItemValue,
+    itemName: vo.voItemName ?? vo.VoItemName,
+    itemIcon: vo.voItemIcon ?? vo.VoItemIcon,
+    quantity: vo.voQuantity ?? vo.VoQuantity,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
   };
 }
 
@@ -577,30 +580,32 @@ export interface ExperienceData {
  * 将UserExperience映射为ExperienceData
  */
 export function mapUserExperience(vo: any): ExperienceData {
+  const userIdValue = vo.voUserId ?? vo.VoUserId;
+
   return {
-    userId: vo.VoUserId?.toString() || '0',
-    currentExp: vo.VoCurrentExp || 0,
-    currentLevel: vo.VoCurrentLevel || 1,
-    nextLevelExp: vo.VoNextLevelExp || 0,
-    totalExp: vo.VoTotalExp || 0,
-    levelProgress: vo.VoLevelProgress || 0,
-    levelName: vo.VoLevelName || '新手',
-    levelDescription: vo.VoLevelDescription || '',
-    canLevelUp: vo.VoCanLevelUp || false,
-    nextLevelName: vo.VoNextLevelName || '新手',
-    expToNextLevel: vo.VoExpToNextLevel || 0,
-    expGainedToday: vo.VoExpGainedToday || 0,
-    dailyExpLimit: vo.VoDailyExpLimit || 0,
-    remainingDailyExp: vo.VoRemainingDailyExp || 0,
-    isMaxLevel: vo.VoIsMaxLevel || false,
-    rank: vo.VoRank || 0,
-    percentile: vo.VoPercentile || 0,
-    createTime: vo.VoCreateTime || '',
-    updateTime: vo.VoUpdateTime || '',
+    userId: userIdValue != null ? userIdValue.toString() : '0',
+    currentExp: vo.voCurrentExp ?? vo.VoCurrentExp ?? 0,
+    currentLevel: vo.voCurrentLevel ?? vo.VoCurrentLevel ?? 1,
+    nextLevelExp: vo.voNextLevelExp ?? vo.VoNextLevelExp ?? 0,
+    totalExp: vo.voTotalExp ?? vo.VoTotalExp ?? 0,
+    levelProgress: vo.voLevelProgress ?? vo.VoLevelProgress ?? 0,
+    levelName: vo.voLevelName ?? vo.VoLevelName ?? '新手',
+    levelDescription: vo.voLevelDescription ?? vo.VoLevelDescription ?? '',
+    canLevelUp: vo.voCanLevelUp ?? vo.VoCanLevelUp ?? false,
+    nextLevelName: vo.voNextLevelName ?? vo.VoNextLevelName ?? '新手',
+    expToNextLevel: vo.voExpToNextLevel ?? vo.VoExpToNextLevel ?? 0,
+    expGainedToday: vo.voExpGainedToday ?? vo.VoExpGainedToday ?? 0,
+    dailyExpLimit: vo.voDailyExpLimit ?? vo.VoDailyExpLimit ?? 0,
+    remainingDailyExp: vo.voRemainingDailyExp ?? vo.VoRemainingDailyExp ?? 0,
+    isMaxLevel: vo.voIsMaxLevel ?? vo.VoIsMaxLevel ?? false,
+    rank: vo.voRank ?? vo.VoRank ?? 0,
+    percentile: vo.voPercentile ?? vo.VoPercentile ?? 0,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime ?? '',
+    updateTime: vo.voUpdateTime ?? vo.VoUpdateTime ?? '',
     themeColor: '#3b82f6', // 默认主题色
-    currentLevelName: vo.VoLevelName || '新手',
-    nextLevel: (vo.VoCurrentLevel || 1) + 1,
-    expFrozen: false,
+    currentLevelName: vo.voLevelName ?? vo.VoLevelName ?? '新手',
+    nextLevel: (vo.voCurrentLevel ?? vo.VoCurrentLevel ?? 1) + 1,
+    expFrozen: vo.voExpFrozen ?? false,
   };
 }
 
@@ -637,28 +642,28 @@ export interface ExpTransactionData {
  */
 export function mapExpTransaction(vo: any): ExpTransactionData {
   return {
-    id: vo.VoId,
-    userId: vo.VoUserId,
-    userName: vo.VoUserName,
-    expChange: vo.VoExpChange,
-    expBefore: vo.VoExpBefore,
-    expAfter: vo.VoExpAfter,
-    levelBefore: vo.VoLevelBefore,
-    levelAfter: vo.VoLevelAfter,
-    transactionType: vo.VoTransactionType,
-    transactionTypeDisplay: vo.VoTransactionTypeDisplay,
-    description: vo.VoDescription,
-    relatedId: vo.VoRelatedId,
-    relatedType: vo.VoRelatedType,
-    isPositive: vo.VoIsPositive,
-    formattedExpChange: vo.VoFormattedExpChange,
-    formattedDescription: vo.VoFormattedDescription,
-    createTime: vo.VoCreateTime,
-    updateTime: vo.VoUpdateTime,
+    id: vo.voId ?? vo.VoId,
+    userId: vo.voUserId ?? vo.VoUserId,
+    userName: vo.voUserName ?? vo.VoUserName,
+    expChange: vo.voExpChange ?? vo.VoExpChange,
+    expBefore: vo.voExpBefore ?? vo.VoExpBefore,
+    expAfter: vo.voExpAfter ?? vo.VoExpAfter,
+    levelBefore: vo.voLevelBefore ?? vo.VoLevelBefore,
+    levelAfter: vo.voLevelAfter ?? vo.VoLevelAfter,
+    transactionType: vo.voTransactionType ?? vo.VoTransactionType,
+    transactionTypeDisplay: vo.voTransactionTypeDisplay ?? vo.VoTransactionTypeDisplay,
+    description: vo.voDescription ?? vo.VoDescription,
+    relatedId: vo.voRelatedId ?? vo.VoRelatedId,
+    relatedType: vo.voRelatedType ?? vo.VoRelatedType,
+    isPositive: vo.voIsPositive ?? vo.VoIsPositive,
+    formattedExpChange: vo.voFormattedExpChange ?? vo.VoFormattedExpChange,
+    formattedDescription: vo.voFormattedDescription ?? vo.VoFormattedDescription,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
+    updateTime: vo.voUpdateTime ?? vo.VoUpdateTime,
     // 兼容旧字段名
-    expType: vo.VoTransactionType,
-    expAmount: vo.VoExpChange,
-    remark: vo.VoDescription,
+    expType: vo.voTransactionType ?? vo.VoTransactionType,
+    expAmount: vo.voExpChange ?? vo.VoExpChange,
+    remark: vo.voDescription ?? vo.VoDescription,
   };
 }
 
@@ -728,22 +733,22 @@ export interface NotificationData {
  */
 export function mapNotification(vo: any): NotificationData {
   return {
-    id: vo.VoId,
-    userId: vo.VoUserId,
-    title: vo.VoTitle,
-    content: vo.VoContent,
-    type: vo.VoType,
-    typeDisplay: vo.VoTypeDisplay,
-    isRead: vo.VoIsRead,
-    relatedId: vo.VoRelatedId,
-    relatedType: vo.VoRelatedType,
-    relatedUrl: vo.VoRelatedUrl,
-    icon: vo.VoIcon,
-    color: vo.VoColor,
-    priority: vo.VoPriority,
-    expiresAt: vo.VoExpiresAt,
-    readAt: vo.VoReadAt,
-    createTime: vo.VoCreateTime,
-    updateTime: vo.VoUpdateTime,
+    id: vo.voId ?? vo.VoId,
+    userId: vo.voUserId ?? vo.VoUserId,
+    title: vo.voTitle ?? vo.VoTitle,
+    content: vo.voContent ?? vo.VoContent,
+    type: vo.voType ?? vo.VoType,
+    typeDisplay: vo.voTypeDisplay ?? vo.VoTypeDisplay,
+    isRead: vo.voIsRead ?? vo.VoIsRead,
+    relatedId: vo.voRelatedId ?? vo.VoRelatedId,
+    relatedType: vo.voRelatedType ?? vo.VoRelatedType,
+    relatedUrl: vo.voRelatedUrl ?? vo.VoRelatedUrl,
+    icon: vo.voIcon ?? vo.VoIcon,
+    color: vo.voColor ?? vo.VoColor,
+    priority: vo.voPriority ?? vo.VoPriority,
+    expiresAt: vo.voExpiresAt ?? vo.VoExpiresAt,
+    readAt: vo.voReadAt ?? vo.VoReadAt,
+    createTime: vo.voCreateTime ?? vo.VoCreateTime,
+    updateTime: vo.voUpdateTime ?? vo.VoUpdateTime,
   };
 }

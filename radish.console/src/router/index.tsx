@@ -5,11 +5,16 @@ import { Applications } from '../pages/Applications';
 import { ProductList } from '../pages/Products';
 import { OrderList } from '../pages/Orders';
 import { UserList } from '../pages/Users';
+import { UserDetail } from '../pages/Users/UserDetail';
+import { RoleList } from '../pages/Roles';
+import { SystemConfigList } from '../pages/SystemConfig';
+import { UserProfile } from '../pages/UserProfile';
+import { Settings } from '../pages/Settings';
 import { Login } from '../pages/Login';
 import { OidcCallback } from '../pages/OidcCallback';
 import { ThemeTest } from '../pages/ThemeTest';
 import { NotFound } from '../components/NotFound';
-import { env } from '../config/env';
+import { getApiBaseUrl } from '../config/env';
 
 /**
  * 需要认证的布局包装器
@@ -45,16 +50,21 @@ function PlaceholderPage({ title }: { title: string }) {
  */
 function HangfirePage() {
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <h2 style={{ margin: '0 0 16px 0' }}>定时任务管理</h2>
+    <div style={{
+      height: 'calc(100vh - 200px)', // 减去 header 和 padding 的高度
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden' // 防止外层滚动
+    }}>
+      <h2 style={{ margin: '0 0 16px 0', flexShrink: 0 }}>定时任务管理</h2>
       <iframe
-        src={`${env.apiBaseUrl}/hangfire`}
+        src={`${getApiBaseUrl()}/hangfire`}
         style={{
           flex: 1,
           border: '1px solid #d9d9d9',
           borderRadius: '4px',
           width: '100%',
-          minHeight: '600px'
+          height: '100%'
         }}
         title="Hangfire Dashboard"
       />
@@ -101,8 +111,24 @@ export const router = createBrowserRouter(
           element: <UserList />,
         },
         {
+          path: 'users/:userId',
+          element: <UserDetail />,
+        },
+        {
           path: 'roles',
-          element: <PlaceholderPage title="角色管理" />,
+          element: <RoleList />,
+        },
+        {
+          path: 'system-config',
+          element: <SystemConfigList />,
+        },
+        {
+          path: 'profile',
+          element: <UserProfile />,
+        },
+        {
+          path: 'settings',
+          element: <Settings />,
         },
         {
           path: 'hangfire',
@@ -135,7 +161,11 @@ export const ROUTES = {
   PRODUCTS: '/products',
   ORDERS: '/orders',
   USERS: '/users',
+  USER_DETAIL: '/users/:userId',
   ROLES: '/roles',
+  SYSTEM_CONFIG: '/system-config',
+  PROFILE: '/profile',
+  SETTINGS: '/settings',
   HANGFIRE: '/hangfire',
   THEME_TEST: '/theme-test',
 } as const;

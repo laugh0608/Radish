@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
+  TableSkeleton,
   Table,
   Button,
   AntInput as Input,
@@ -29,6 +31,7 @@ import { log } from '../../utils/logger';
 import './OrderList.css';
 
 export const OrderList = () => {
+  useDocumentTitle('订单管理');
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -227,6 +230,11 @@ export const OrderList = () => {
       ),
     },
   ];
+
+  // 如果正在加载且没有数据，显示骨架屏
+  if (loading && orders.length === 0) {
+    return <TableSkeleton rows={10} columns={6} showFilters={true} showActions={true} />;
+  }
 
   return (
     <div className="order-list-page">

@@ -1,0 +1,88 @@
+.table-skeleton {
+  padding: 24px;
+}
+
+.table-skeleton-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.table-skeleton-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.table-skeleton-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.table-skeleton-table {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-skeleton-row {
+  display: flex;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  gap: 16px;
+}
+
+.table-skeleton-row:last-child {
+  border-bottom: none;
+}
+
+.table-skeleton-cell {
+  flex: 1;
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-box {
+  height: 20px;
+  margin-bottom: 8px;
+}
+
+.skeleton-box:last-child {
+  margin-bottom: 0;
+}
+
+.skeleton-input {
+  height: 32px;
+  width: 200px;
+}
+
+.skeleton-button {
+  height: 32px;
+  width: 80px;
+}
+
+.skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}

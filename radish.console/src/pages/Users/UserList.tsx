@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Table,
   Button,
@@ -37,6 +39,8 @@ import { log } from '../../utils/logger';
 import './UserList.css';
 
 export const UserList = () => {
+  useDocumentTitle('用户管理');
+  const navigate = useNavigate();
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -89,6 +93,8 @@ export const UserList = () => {
     setStatus(undefined);
     setRole(undefined);
     setPageIndex(1);
+    // 重置后重新加载
+    setTimeout(() => loadUsers(), 0);
   };
 
   // 更新用户状态
@@ -220,12 +226,9 @@ export const UserList = () => {
             variant="ghost"
             size="small"
             icon={<EditOutlined />}
-            onClick={() => {
-              // TODO: 打开编辑用户弹窗
-              message.info('编辑用户功能待实现');
-            }}
+            onClick={() => navigate(`/users/${record.uuid}`)}
           >
-            编辑
+            查看详情
           </Button>
 
           {record.voIsEnable ? (
@@ -289,14 +292,7 @@ export const UserList = () => {
   // 初始化加载
   useEffect(() => {
     loadUsers();
-  }, [pageIndex, pageSize]);
-
-  // 重置时重新加载
-  useEffect(() => {
-    if (!keyword && status === undefined && role === undefined) {
-      loadUsers();
-    }
-  }, [keyword, status, role]);
+  }, []);
 
   return (
     <div className="user-list">
@@ -381,6 +377,8 @@ export const UserList = () => {
           onChange: (page, size) => {
             setPageIndex(page);
             setPageSize(size || 20);
+            // 分页变化后重新加载
+            setTimeout(() => loadUsers(), 0);
           },
         }}
         scroll={{ x: 1200 }}

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
+  TableSkeleton,
   Table,
   Button,
   AntInput as Input,
@@ -23,6 +25,7 @@ import {
   getCategories,
   putOnSale,
   takeOffSale,
+  deleteProduct,
 } from '../../api/shopApi';
 import type { Product, ProductCategory } from '../../api/types';
 import { ProductType } from '../../api/types';
@@ -45,6 +48,7 @@ function getProductTypeDisplay(type: ProductType): string {
 }
 
 export const ProductList = () => {
+  useDocumentTitle('商品管理');
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(false);
@@ -144,7 +148,7 @@ export const ProductList = () => {
       content: `确定要删除商品"${product.name}"吗？`,
       onOk: async () => {
         try {
-          // TODO: 实现删除 API
+          await deleteProduct(product.id);
           message.success('删除成功');
           loadProducts();
         } catch (error) {
@@ -293,6 +297,11 @@ export const ProductList = () => {
       ),
     },
   ];
+
+  // 如果正在加载且没有数据，显示骨架屏
+  if (loading && products.length === 0) {
+    return <TableSkeleton rows={10} columns={6} showFilters={true} showActions={true} />;
+  }
 
   return (
     <div className="product-list-page">

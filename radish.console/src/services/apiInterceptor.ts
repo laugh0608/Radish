@@ -1,5 +1,6 @@
 import { configureApiClient } from '@radish/ui';
 import { tokenService } from '../services/tokenService';
+import { getApiBaseUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 
 /**
@@ -7,6 +8,9 @@ import { log } from '@/utils/logger';
  */
 export function setupApiInterceptors() {
   configureApiClient({
+    // 配置 API 基础 URL
+    baseUrl: getApiBaseUrl(),
+
     // 获取 Token 的函数
     getToken: () => {
       return tokenService.getAccessToken();
