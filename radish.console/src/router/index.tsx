@@ -8,6 +8,8 @@ import { UserList } from '../pages/Users';
 import { UserDetail } from '../pages/Users/UserDetail';
 import { RoleList } from '../pages/Roles';
 import { SystemConfigList } from '../pages/SystemConfig';
+import { UserProfile } from '../pages/UserProfile';
+import { Settings } from '../pages/Settings';
 import { Login } from '../pages/Login';
 import { OidcCallback } from '../pages/OidcCallback';
 import { ThemeTest } from '../pages/ThemeTest';
@@ -121,6 +123,14 @@ export const router = createBrowserRouter(
           element: <SystemConfigList />,
         },
         {
+          path: 'profile',
+          element: <UserProfile />,
+        },
+        {
+          path: 'settings',
+          element: <Settings />,
+        },
+        {
           path: 'hangfire',
           element: <HangfirePage />,
         },
@@ -154,6 +164,8 @@ export const ROUTES = {
   USER_DETAIL: '/users/:userId',
   ROLES: '/roles',
   SYSTEM_CONFIG: '/system-config',
+  PROFILE: '/profile',
+  SETTINGS: '/settings',
   HANGFIRE: '/hangfire',
   THEME_TEST: '/theme-test',
 } as const;

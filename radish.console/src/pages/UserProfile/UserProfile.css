@@ -1,0 +1,113 @@
+.user-profile-page {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.profile-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.profile-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-avatar {
+  border: 3px solid #f0f0f0;
+}
+
+.avatar-upload-btn {
+  font-size: 12px;
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.profile-roles {
+  margin: 4px 0;
+  color: #1890ff;
+  font-weight: 500;
+}
+
+.profile-id {
+  margin: 4px 0;
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+.profile-actions {
+  display: flex;
+  align-items: flex-start;
+}
+
+.profile-stats {
+  background: #fafafa;
+  padding: 16px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.stat-item:not(:last-child) {
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.stat-label {
+  font-weight: 500;
+  color: #595959;
+}
+
+.stat-value {
+  color: #262626;
+}
+
+@media (max-width: 768px) {
+  .user-profile-page {
+    padding: 16px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .profile-info {
+    width: 100%;
+  }
+
+  .profile-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .stat-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
