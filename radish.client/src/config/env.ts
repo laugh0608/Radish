@@ -18,6 +18,11 @@ export const env = {
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000',
 
   /**
+   * 认证服务器 URL
+   */
+  authBaseUrl: import.meta.env.VITE_AUTH_BASE_URL || 'https://localhost:5000',
+
+  /**
    * SignalR Hub URL
    */
   signalrHubUrl: import.meta.env.VITE_SIGNALR_HUB_URL || 'https://localhost:5000',

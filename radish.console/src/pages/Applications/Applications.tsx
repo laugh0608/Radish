@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { log } from '@/utils/logger';
 import {
   Table,
@@ -23,6 +24,7 @@ import type { OidcClient, CreateClientRequest } from '../../types/oidc';
 import './Applications.css';
 
 export const Applications = () => {
+  useDocumentTitle('应用管理');
   const [clients, setClients] = useState<OidcClient[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);

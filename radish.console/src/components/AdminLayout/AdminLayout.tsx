@@ -22,11 +22,13 @@ import {
   DashboardOutlined,
   ShoppingOutlined,
   FileTextOutlined,
+  SearchOutlined,
 } from '@radish/ui';
 import { ROUTES } from '../../router';
-import { getAuthServerBaseUrl, getPostLogoutRedirectUri } from '@/config/env';
+import { getAuthServerBaseUrl, getPostLogoutRedirectUri, getAvatarUrl } from '@/config/env';
 import { tokenService } from '../../services/tokenService';
 import { AppBreadcrumb } from '../Breadcrumb';
+import { GlobalSearch, useGlobalSearchHotkey } from '../GlobalSearch';
 import './AdminLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -43,9 +45,13 @@ export interface AdminLayoutProps {
  */
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [searchVisible, setSearchVisible] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useUser();
+
+  // 全局搜索快捷键
+  useGlobalSearchHotkey(() => setSearchVisible(true));
 
   // 根据当前路径获取选中的菜单 key
   const getSelectedKey = (): string => {
@@ -85,6 +91,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       key: 'roles',
       icon: <SafetyOutlined />,
       label: '角色管理',
+    },
+    {
+      key: 'system-config',
+      icon: <SettingOutlined />,
+      label: '系统配置',
     },
     {
       key: 'hangfire',
@@ -128,6 +139,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       orders: ROUTES.ORDERS,
       users: ROUTES.USERS,
       roles: ROUTES.ROLES,
+      'system-config': ROUTES.SYSTEM_CONFIG,
       hangfire: ROUTES.HANGFIRE,
     };
     const path = routeMap[key];
@@ -157,10 +169,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         handleLogout();
         break;
       case 'profile':
-        message.info('个人信息功能待实现');
+        navigate(ROUTES.PROFILE);
         break;
       case 'settings':
-        message.info('设置功能待实现');
+        navigate(ROUTES.SETTINGS);
         break;
     }
   };
@@ -200,6 +212,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             )}
           </div>
           <div className="admin-header-right">
+            <SearchOutlined
+              className="admin-search-icon"
+              onClick={() => setSearchVisible(true)}
+              style={{ fontSize: '18px', cursor: 'pointer', marginRight: '24px' }}
+            />
             <Dropdown
               menu={{
                 items: userMenuItems,
@@ -211,7 +228,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 <Avatar
                   size="small"
                   icon={<UserOutlined />}
-                  src={user?.voAvatarUrl}
+                  src={getAvatarUrl(user?.voAvatarUrl)}
                 />
                 <span className="admin-username">
                   {loading ? '加载中...' : (user?.voUserName || 'Unknown')}
@@ -225,6 +242,9 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           {children}
         </Content>
       </Layout>
+
+      {/* 全局搜索组件 */}
+      <GlobalSearch visible={searchVisible} onClose={() => setSearchVisible(false)} />
     </Layout>
   );
 }
