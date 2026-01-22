@@ -14,6 +14,7 @@ import {
   EditOutlined,
 } from '@radish/ui';
 import { SaveOutlined, CameraOutlined } from '@ant-design/icons';
+import { getApiBaseUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 import './UserProfile.css';
 
@@ -97,9 +98,13 @@ export const UserProfile = () => {
   // 头像上传
   const uploadProps: UploadProps = {
     name: 'file',
-    action: '/api/v1/Attachment/UploadImage', // 使用现有的图片上传接口
+    action: `${getApiBaseUrl()}/api/v1/Attachment/UploadImage`,
     headers: {
       authorization: `Bearer ${localStorage.getItem('access_token')}`,
+    },
+    data: {
+      businessType: 'Avatar',
+      generateThumbnail: true,
     },
     beforeUpload: (file) => {
       const isImage = file.type.startsWith('image/');
@@ -115,18 +120,32 @@ export const UserProfile = () => {
       return true;
     },
     onChange: (info) => {
-      if (info.file.status === 'done') {
+      if (info.file.status === 'uploading') {
+        log.debug('UserProfile', '正在上传头像...');
+      } else if (info.file.status === 'done') {
         const response = info.file.response;
-        if (response?.isSuccess && response?.responseData?.url) {
-          setProfileData(prev => prev ? {
-            ...prev,
-            avatarUrl: response.responseData.url,
-          } : null);
-          message.success('头像更新成功');
+        log.debug('UserProfile', '头像上传响应:', response);
+
+        if (response?.isSuccess && response?.responseData) {
+          // 根据后端返回的数据结构获取 URL
+          const avatarUrl = response.responseData.voUrl ||
+                           response.responseData.VoUrl ||
+                           response.responseData.url;
+
+          if (avatarUrl) {
+            setProfileData(prev => prev ? {
+              ...prev,
+              avatarUrl: avatarUrl,
+            } : null);
+            message.success('头像更新成功');
+          } else {
+            message.error('头像上传失败：未获取到文件URL');
+          }
         } else {
-          message.error('头像上传失败');
+          message.error(response?.messageInfo || '头像上传失败');
         }
       } else if (info.file.status === 'error') {
+        log.error('UserProfile', '头像上传失败:', info.file.error);
         message.error('头像上传失败');
       }
     },
