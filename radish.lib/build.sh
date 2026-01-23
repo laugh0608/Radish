@@ -50,7 +50,7 @@ if [ $? -eq 0 ]; then
     fi
 
     # Copy to Radish.Api output directory
-    API_OUTPUT_DIR="../../../Radish.Api/bin/Debug/net10.0"
+    API_OUTPUT_DIR="./Radish.Api/bin/Debug/net10.0"
 
     if [ -d "$API_OUTPUT_DIR" ]; then
         echo "Copying $LIB_NAME to $API_OUTPUT_DIR..."

@@ -3,7 +3,7 @@
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
 
     <!-- Rust native outputs (built by cargo) -->
-    <RadishRustTargetDir>$(MSBuildThisFileDirectory)Radish.Core/radish-lib/target</RadishRustTargetDir>
+    <RadishRustTargetDir>$(MSBuildThisFileDirectory)radish.lib/target</RadishRustTargetDir>
   </PropertyGroup>
 
   <!--

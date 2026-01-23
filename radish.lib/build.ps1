@@ -37,7 +37,7 @@ if ($LASTEXITCODE -eq 0) {
     $LibName = "radish_lib.dll"
 
     # Copy to Radish.Api output directory
-    $ApiOutputDir = "..\..\..\Radish.Api\bin\Debug\net10.0"
+    $ApiOutputDir = ".\Radish.Api\bin\Debug\net10.0"
 
     if (Test-Path $ApiOutputDir) {
         Write-Host "Copying $LibName to $ApiOutputDir..." -ForegroundColor Cyan
