@@ -290,11 +290,11 @@ console.error('请求失败:', error);
 
 ## Rust 原生扩展
 
-**位置**: `Radish.Core/radish-lib/`
+**位置**: `radish.lib/`
 
 **构建**:
 ```bash
-cd Radish.Core/radish-lib
+cd radish.lib
 cargo build --release
 # 或使用脚本: ./build.ps1 (Windows) / ./build.sh (Linux/macOS)
 ```

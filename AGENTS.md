@@ -29,7 +29,7 @@
 - **业务分层**: `Service/Repository/Core/Model` (业务逻辑/数据/领域/模型)
 - **基础设施**: `Common` (仅外部包依赖)、`Extension` (宿主扩展/Autofac/AutoMapper/Redis/Serilog)、`IService/IRepository` (接口契约)、`Shared` (常量/枚举)
 - **测试**: `Radish.Api.Tests` (xUnit)
-- **Rust扩展**: `Radish.Core/radish-lib` (统一原生库，构建后拷贝到 `Radish.Api/bin/`)
+- **Rust扩展**: `radish.lib` (统一原生库，构建后拷贝到 `Radish.Api/bin/`)
 
 **层级依赖**: Common → Shared → Model → Infrastructure → IRepository/Repository → IService/Service → Extension → Api/Gateway/Auth
 
@@ -144,7 +144,7 @@ const apiUrl = import.meta.env.VITE_API_BASE_URL;
   - ✅ 正确: 使用 `log.debug/info/warn/error` (from `@/utils/logger`)
   - `log.debug()` - 调试信息（仅 debug 模式）
   - `log.error()` - 错误信息（总是输出）
-- **Rust 扩展**: `Radish.Core/radish-lib`，构建后拷贝到 `Radish.Api/bin/`
+- **Rust 扩展**: `radish.lib`，构建后拷贝到 `Radish.Api/bin/`
 
 ## 开发流程
 

@@ -520,7 +520,7 @@
 
 **Rust 扩展集成**（与上面并行，1-2 天）：
 - ✅ 已完成：重构 `Radish.Core/test_lib` 为 `radish-lib`
-  - 项目位置：`Radish.Core/radish-lib`
+  - 项目位置：`radish.lib`
   - Cargo.toml 配置（依赖：image, imageproc, rusttype, sha2；benchmark 额外依赖 rayon, num_cpus）
 - ✅ 已完成：实现图片加水印功能（Rust）
   - `add_text_watermark()` FFI 函数
@@ -998,7 +998,7 @@
 - 自动化：补齐 xUnit/Vitest + Playwright（可选）测试，纳入 CI。
 - 性能：PostgreSQL 索引审计、缓存策略（IMemoryCache/redis 预留）、SQLSugar Profiling。
 - Observability：Serilog → Seq/Console JSON；OpenTelemetry 采样；健康检查拓展。
-- 原生扩展（Rust）：当前统一扩展库为 `Radish.Core/radish-lib`（已替代 `test_lib`）；如后续需要从 Core 抽离再迁到 `native/rust/*`。建议补齐 CI/构建脚本：`cargo build --release` + 拷贝产物到 `Radish.Api/bin/<Configuration>/net10.0/`（Windows: `radish_lib.dll`；Linux: `libradish_lib.so`；macOS: `libradish_lib.dylib`）。
+- 原生扩展（Rust）：已迁移到根目录 `radish.lib/`（替代原 `Radish.Core/radish-lib`）；与其他前端项目保持一致的目录结构。建议补齐 CI/构建脚本：`cargo build --release` + 拷贝产物到 `Radish.Api/bin/<Configuration>/net10.0/`（Windows: `radish_lib.dll`；Linux: `libradish_lib.so`；macOS: `libradish_lib.dylib`）。
 - 验收：
   - `dotnet test`, `npm run test`, `npm run lint`, `npm run build` 均通过。
   - P95 指标满足目标；日志可追踪请求链路。
