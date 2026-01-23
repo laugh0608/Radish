@@ -149,7 +149,7 @@ git push origin v1.2.0.251126
 - Radish.Service：后端服务实现类，具体实现业务逻辑接口
 - Radish.Shared：前后端共享的模型和工具类，例如 DTO、枚举等
 - Radish.Api.Tests：xUnit 测试工程，目前包含 UserController 示例测试，约束接口返回示例数据
-- Rust 原生扩展：当前统一实现位于 `Radish.Core/radish-lib`（统一 Rust 扩展库，构建后拷贝到 `Radish.Api/bin/<Configuration>/net10.0/`）；如后续需要从 Core 抽离，再迁到根目录 `native/rust/{library}` 并作为 Solution Folder 挂载。
+- Rust 原生扩展：已迁移到根目录 `radish.lib/`（统一 Rust 扩展库，构建后拷贝到 `Radish.Api/bin/<Configuration>/net10.0/`）；与其他前端项目保持一致的目录结构。
 
 ## 分层依赖约定
 
@@ -233,13 +233,13 @@ git push origin v1.2.0.251126
 
 ## 跨语言扩展（Rust 原生库）
 
-- 目的：为 CPU 密集或高并发任务提供 Rust 实现，并通过 `RustTestController`（v2）验证性能差异；当前统一扩展库为 `Radish.Core/radish-lib`，并以 `[DllImport("radish_lib")]` 进行加载。
+- 目的：为 CPU 密集或高并发任务提供 Rust 实现，并通过 `RustTestController`（v2）验证性能差异；统一扩展库位于 `radish.lib/`，并以 `[DllImport("radish_lib")]` 进行加载。
 - 构建流程：
   1. 安装 Rust 工具链（rustup + stable 均可）。
-  2. 在仓库根目录执行：`cd Radish.Core/radish-lib && cargo build --release`（或使用 `build.sh` / `build.ps1`）。
+  2. 在仓库根目录执行：`cd radish.lib && cargo build --release`（或使用 `build.sh` / `build.ps1`）。
   3. 构建产物位于 `target/release/`：`radish_lib.dll`（Windows）、`libradish_lib.so`（Linux）、`libradish_lib.dylib`（macOS）。需要拷贝到 `Radish.Api/bin/<Configuration>/net10.0/` 或发布目录以便运行期自动加载（脚本已自动复制到 Debug 输出目录）。
   4. `RustTestController` 提供 `/api/v2/RustTest/TestSum1~4` 端点，演示累加、类斐波那契、埃拉托斯特尼筛与并行质数计数；可使用 `?iterations=1_000_000` 等参数在本地验证返回结果与耗时。
-- 目录规划：如未来需要把原生模块从 Core 层抽离，可迁至 `native/rust/<library>` 下维护 Cargo 工程，并附 README 说明导出函数签名/调用约定；当前以 `Radish.Core/radish-lib` 作为统一扩展库。
+- 目录规划：Rust 扩展库已迁移到根目录 `radish.lib/`，与其他前端项目保持一致的目录结构，便于管理和维护。
 - 提交规范：Rust `target/` 目录与生成的 `.dll/.so/.dylib` 依旧忽略；若需要在 CI 中编译 Rust，请在构建脚本中加入 `cargo build --release` 与共享库复制步骤。
 
 ## 枚举与魔术数字规范

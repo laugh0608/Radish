@@ -50,7 +50,7 @@ cargo --version
 
 ```bash
 # Linux / macOS
-cd Radish.Core/radish-lib
+cd radish.lib
 chmod +x build.sh
 ./build.sh
 
@@ -135,7 +135,7 @@ dotnet run --project Radish.Api
 ### 组件结构
 
 ```
-Radish.Core/radish-lib/                 # 统一的 Rust 扩展库
+radish.lib/                 # 统一的 Rust 扩展库
 ├── src/
 │   ├── lib.rs                          # FFI 导出
 │   ├── image/                          # 图片处理模块
@@ -211,7 +211,7 @@ dotnet test --filter "FullyQualifiedName~WatermarkPerformance_CSharpVsRust"
 ```
 
 **解决方案**：
-1. 确认已编译 Rust 库：`cd Radish.Core/radish-lib && ./build.sh`
+1. 确认已编译 Rust 库：`cd radish.lib && ./build.sh`
 2. 检查库文件是否存在于 `Radish.Api/bin/Debug/net10.0/` 目录
 3. 确认文件名正确：
    - Linux: `libradish_lib.so`
@@ -226,7 +226,7 @@ dotnet test --filter "FullyQualifiedName~WatermarkPerformance_CSharpVsRust"
 ```
 
 **解决方案**：
-1. 确认 `Radish.Core/radish-lib/fonts/DejaVuSans.ttf` 存在
+1. 确认 `radish.lib/fonts/DejaVuSans.ttf` 存在
 2. 参考 `fonts/README.md` 获取字体文件
 3. Linux 系统可以从 `/usr/share/fonts/truetype/dejavu/` 复制
 
@@ -298,7 +298,7 @@ error: could not compile `radish-lib`
 
 4. **重新编译 Rust 库**：
    ```bash
-   cd Radish.Core/radish-lib
+   cd radish.lib
    ./build.sh
    ```
 
