@@ -1,5 +1,5 @@
 using SqlSugar;
-using Radish.Model.Models.Base;
+using Radish.Model.Root;
 
 namespace Radish.Model.Models;
 
@@ -7,6 +7,7 @@ namespace Radish.Model.Models;
 /// 用户支付密码实体
 /// </summary>
 [SugarTable("UserPaymentPassword")]
+[SugarIndex("idx_user_payment_password_user_id", nameof(UserPaymentPassword.UserId), OrderByType.Asc)]
 // [MultiTenant(TenantTypeEnum.Id)]
 public class UserPaymentPassword : RootEntityTKey<long>
 {
@@ -14,7 +15,6 @@ public class UserPaymentPassword : RootEntityTKey<long>
     /// 用户ID
     /// </summary>
     [SugarColumn(ColumnDescription = "用户ID", IsNullable = false)]
-    [SugarIndex("idx_user_payment_password_user_id", nameof(UserId), OrderByType.Asc)]
     public long UserId { get; set; }
 
     /// <summary>
