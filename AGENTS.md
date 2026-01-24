@@ -1,15 +1,16 @@
 # AGENTS 指南
 
+本文件为 AI 协作者提供 Radish 项目协作指导。详细规范请参考 `CLAUDE.md`。
+
 ## 快速认知
-- **技术栈**: ASP.NET Core 10 + SQLSugar + PostgreSQL (本地 SQLite) / React 19 + Vite + TypeScript (WebOS 桌面化 UI)
+- **技术栈**: ASP.NET Core 10 + SQLSugar ORM + PostgreSQL (本地默认 SQLite) / React 19 + Vite (Rolldown) + TypeScript (WebOS 桌面化 UI)
 - **前端**: npm workspaces 管理 `radish.client` (WebOS)、`radish.console` (管理后台)、`radish.ui` (共享组件库)
 - **协作分支**: `dev` (主开发分支)
-- **文档源**: `radish.docs/docs/` 为唯一真相源，架构/需求优先查阅 `framework.md` 和索引 `README.md`
-- **语言**: 所有对话响应/输出尽量使用中文（代码/技术标识保持原文，必要时可使用英文）
+- **文档源**: `radish.docs/docs/` 为唯一真相源
+- **语言规范**: 所有说明、讨论、文档使用中文，代码/技术标识/引用除外
+- **参考文档**: 详细规范参见 `CLAUDE.md`
 
-## 包管理与测试规范
-
-**AI 协作规则**:
+## AI 协作规则
 
 **禁止直接执行**:
 - ❌ 包安装: `dotnet add package`, `npm install`
@@ -120,87 +121,404 @@ const apiUrl = env.apiBaseUrl;
 const apiUrl = import.meta.env.VITE_API_BASE_URL;
 ```
 
+## 分层架构
+
+### 依赖流 (底→顶)
+```
+Common (工具,日志,配置) → Shared (常量,枚举) → Model (实体,DTO,ViewModel)
+→ Infrastructure (SqlSugar扩展,租户) → IRepository + Repository (数据访问)
+→ Core (领域逻辑) → IService + Service (业务逻辑)
+→ Extension (Swagger,健康检查,Autofac,AutoMapper,JWT) → Api/Gateway/Auth
+```
+
+### 核心架构规则
+
+1. **Common** 仅引用外部 NuGet 包，需访问 Model/Service/Repository 的工具放 **Extension**
+
+2. **Repository** 仅返回实体，Service 必须映射为 ViewModel/DTO 后再暴露给 Controller
+
+3. **Controller** 禁止直接注入 `IBaseRepository`，所有数据访问通过 Service
+
+4. **Entity vs ViewModel**:
+   - 实体: `Radish.Model/Models`，继承 `RootEntityTKey<TKey>`，仅 Repository 操作
+   - ViewModel: `Radish.Model/ViewModels`，后缀 `Vo`，暴露给 Controller
+   - AutoMapper: `Radish.Extension/AutoMapperExtension` 处理映射
+
+5. **ViewModel 设计规范** (重要):
+   - **类名规范**: 所有返回给前端的ViewModel类必须添加`Vo`后缀（如UserVo, ProductVo, OrderVo）
+   - **字段名规范**: 所有字段必须添加`Vo`前缀
+     - **UserVo特殊设计**: `Vo`前缀 + 混淆字段名（如VoLoName, VoUsName, VoUsPwd）- 安全设计，体现自定义映射能力
+     - **其他Vo模型**: `Vo`前缀 + 清晰字段名（如VoName, VoDescription, VoCreateTime）- 便于理解和维护
+   - **前端适配规则**: 前端必须适配后端的Vo模型字段名，不得要求后端修改
+   - **匿名对象禁用**: Controller方法严禁返回匿名对象，必须使用定义好的Vo类
+   - **AutoMapper映射策略** (关键):
+     - **优先使用前缀识别自动映射** (推荐):
+       - ✅ Entity和Vo字段只有`Vo`前缀差异
+       - ✅ 字段类型完全一致
+       - ✅ 不需要特殊的转换逻辑
+       - 示例: `RecognizeDestinationPrefixes("Vo"); CreateMap<Category, CategoryVo>();`
+     - **仅在必要时使用手动映射**:
+       - ⚠️ 字段名完全不同（如`Id` → `VoUserId`）
+       - ⚠️ 需要忽略某些字段（如Service层手动填充的计算属性）
+       - ⚠️ 需要特殊的转换逻辑（如计算字段、null默认值）
+       - ⚠️ 字段类型不同需要转换
+       - 示例: `.ForMember(dest => dest.CategoryName, opt => opt.Ignore())`
+
+6. **Infrastructure** 集中 SqlSugar 多租户逻辑，仅 Repository 和 Extension 引用
+
+7. **接口模式**: 先定义 IService/IRepository，再实现。`BaseRepository<T>` 和 `BaseService<TEntity, TModel>` 提供 CRUD 脚手架
+
+8. **Service 层数据库访问约束** (关键):
+   - **严禁**直接使用 `_repository.Db.Queryable` 或 `_repository.DbBase.Queryable`
+   - **必须**通过 Repository 方法访问数据
+   - ❌ 错误: `await _repository.Db.Queryable<Entity>().Where(...).GroupBy(...).ToListAsync()`
+   - ✅ 正确: `await _repository.QueryDistinctAsync(e => e.Field, e => e.IsEnabled)`
+
+9. **仓储扩展策略** (优先级):
+   - **优先**: 扩展 BaseRepository 泛型方法 (`QueryDistinctAsync`, `QuerySumAsync`) - 跨实体复用
+   - **次选**: 创建实体专属仓储 (`UserRepository : BaseRepository<User>`) - 复杂查询/联表/性能优化
+
+## 软删除规范
+
+### 核心原则
+- ✅ **推荐**: 业务数据使用软删除，保留完整审计轨迹
+- ❌ **避免**: 物理删除业务数据（已标记 `[Obsolete]`）
+- ✅ **自动过滤**: 查询方法自动过滤 `IsDeleted = true` 的记录
+- ✅ **可恢复**: 支持恢复已软删除的记录
+
+### 实体要求
+```csharp
+// 实体必须实现 IDeleteFilter 接口
+public class UserBalance : RootEntityTKey<long>, IDeleteFilter
+{
+    // 业务字段...
+
+    // 软删除字段（自动添加）
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+}
+```
+
+### 使用方法
+```csharp
+// Service 层软删除
+await _userService.SoftDeleteByIdAsync(userId, "Admin");
+await _userService.RestoreByIdAsync(userId);
+
+// Repository 层软删除
+await _repository.SoftDeleteAsync(u => u.IsEnabled == false, "System");
+```
+
+### 自动化特性
+- **AddAsync 自动初始化**: 新记录自动设置 `IsDeleted = false`
+- **查询自动过滤**: 所有查询方法自动过滤软删除记录
+- **审计信息记录**: 自动记录删除时间和操作者
+
 ## 编码规范
 
 ### 代码质量
 **文件行数**: 500-1000 行/文件，硬限 1000 行，超过需重构（提取 Hooks/组件/Service/工具函数）
 
-### 架构约束
+### 代码风格
+- C# 4 空格、文件范围命名空间、nullable
+- React TypeScript、`const` 组件、避免 `var`、`useState`+`useMemo`+`useEffect`
 
-- **先接口后实现**: IService/IRepository → Service/Repository，继承 BaseService/BaseRepository 复用 CRUD
-- **责任边界**: Common 仅外部包，Extension 容纳访问 Model/Service 的工具
-- **实体不离仓储**: 实体在 `Model/Models`，Controller 返回 DTO/Vo (`Model/ViewModels`)，AutoMapper 映射在 `Extension/AutoMapperExtension`
-- **Service 层数据库访问约束**:
-  - ❌ 严禁: `_repository.Db.Queryable` 或 `_repository.DbBase.Queryable`
-  - ✅ 正确: 通过 Repository 方法
-  - **仓储扩展策略** (优先级):
-    1. **优先**: 扩展 BaseRepository 泛型方法 (`QueryDistinctAsync`, `QuerySumAsync`) - 跨实体复用
-    2. **次选**: 创建实体专属仓储 (`UserRepository : BaseRepository<User>`) - 复杂查询/联表/性能优化
-- **Controller 不直接注入 Repository**: 数据访问通过 IService
-- **代码风格**: C# 4 空格/文件范围命名空间/nullable；React TypeScript/`const` 组件/避免 `var`/`useState`+`useMemo`+`useEffect`
-- **前端架构**: WebOS 桌面 UI (顶栏/Dock/图标/窗口)，`VITE_API_BASE_URL` 管理接口地址
-- **前端日志规范**:
-  - ❌ 严禁: 直接使用 `console.log/info/warn/error`
-  - ✅ 正确: 使用 `log.debug/info/warn/error` (from `@/utils/logger`)
-  - `log.debug()` - 调试信息（仅 debug 模式）
-  - `log.error()` - 错误信息（总是输出）
-- **Rust 扩展**: `radish.lib`，构建后拷贝到 `Radish.Api/bin/`
+## 日志规范（Serilog）
 
-## 开发流程
+**后端日志**:
+```csharp
+builder.Host.AddSerilogSetup();  // Program.cs 初始化
+Log.Information("User {UserId} logged in", userId);  // 使用
+```
 
-1. `Radish.Model` 添加实体/DTO/ViewModel，`Radish.Shared` 扩展常量/枚举
-   - **ViewModel 设计规范**:
-     - **类名**: 添加 `Vo` 后缀（如UserVo, ProductVo），位于 `Radish.Model/ViewModels`
-     - **字段名**: 所有字段添加 `Vo` 前缀
-       - **UserVo特殊设计**: `Vo`前缀 + 混淆字段名（如VoLoName, VoUsName）- 安全考虑
-       - **其他Vo模型**: `Vo`前缀 + 清晰字段名（如VoName, VoDescription）- 便于维护
-     - **严禁匿名对象**: Controller 方法必须返回定义好的 Vo 类
-     - **前端适配**: 前端必须适配后端 Vo 字段名，不得要求后端修改
-     - **AutoMapper映射** (关键):
-       - 优先使用前缀识别: `RecognizeDestinationPrefixes("Vo"); CreateMap<Entity, EntityVo>();`
-       - 仅在有特殊需求时手动映射（字段名不同、需要忽略字段、类型转换等）
-2. `IRepository/Repository` 定义实现仓储，SqlSugar 特性标注多租户/分表
-3. `IService/Service` 补齐接口实现，AutoMapper/ICaching/IUnitOfWork 组织业务逻辑
-4. `Radish.Api` 控制器注入 IService 暴露 API，维护 `Radish.Api.http` 示例
-5. 更新 `Extension` (AutoMapper/Autofac) 或 `Infrastructure` (租户/连接配置)
-6. 编写测试 (`Radish.Api.Tests`)，前端同步 DTO 更新页面/Hook
-7. 重大变更追加文档 (`radish.docs/docs/`)，`changelog/` 记录影响面
+- 应用日志: `Logs/{ProjectName}/Log.txt`
+- SQL 日志: `Logs/{ProjectName}/AopSql/AopSql.txt` + 数据库
+- 审计日志: 数据库 `AuditLog_YYYYMMDD` 表
 
-## 测试与质量
+**前端日志**:
+- Client: `radish.client/src/utils/logger.ts`
+- Console: `radish.console/src/utils/logger.ts`
 
-- **后端**: `dotnet test Radish.Api.Tests`，`--filter` 筛选单测
-- **前端**: Vitest + React Testing Library (规划中)，提交前 `npm run lint`
-- **热重载**: `dotnet watch --project Radish.Api`，`npm run dev --prefix radish.client`
-- **验证**: `.http` 手工验证、SqlSugar Profile、Gateway 健康检查
+**使用规则**:
+1. **禁止**直接使用 `console.log/info/warn/error`
+2. **必须**使用统一的 `log` 工具
+3. 调试日志使用 `log.debug()`（仅 debug 模式输出）
+4. 错误日志使用 `log.error()`（总是输出）
 
-## 文档与提交
+**示例**:
+```typescript
+import { log } from '@/utils/logger';
 
-**文档更新**: 流程/配置/脚本/规范变更同步 `radish.docs/docs/` (`architecture/specifications.md`、`guide/`、`deployment/guide.md`)
+// ✅ 正确
+log.debug('NotificationHub', '连接成功');
+log.warn('Token 即将过期');
+log.error('API', '请求失败:', error);
+
+// ❌ 错误
+console.log('连接成功');
+console.error('请求失败:', error);
+```
+
+**日志级别**:
+- `log.debug()` - 调试信息（仅 debug 模式）
+- `log.info()` - 一般信息（仅 debug 模式）
+- `log.warn()` - 警告信息（总是输出）
+- `log.error()` - 错误信息（总是输出）
+
+## 缓存策略
+
+```csharp
+builder.Services.AddCacheSetup();  // 根据 Redis.Enable 切换
+
+// 使用
+await cache.SetAsync("key", value, TimeSpan.FromMinutes(10));
+var result = await cache.GetAsync<MyType>("key");
+```
+
+根据配置自动选择：
+- `Redis.Enable = true`: 使用 Redis
+- `Redis.Enable = false`: 使用内存缓存
+
+## 前端架构
+
+### UI 组件库 (@radish/ui)
+- **位置**: `radish.ui/`
+- **内容**: Button, Input, Modal, Icon + Hooks + Utils
+- **使用**: `import { Button } from '@radish/ui';`
+- **HMR**: 修改自动热更新到 client/console
+- **重要**: 无需构建，前端项目直接引用源码，支持实时热更新
+
+### WebOS 桌面 UI
+- 顶部状态栏 + 底部 Dock + 桌面图标/窗口
+- 应用类型:
+  - **内置** (`type: 'window'`): Forum, Chat, Settings
+  - **嵌入** (`type: 'iframe'`): Docs
+  - **外部** (`type: 'external'`): Console (独立 OIDC 认证)
+
+### React 规范
+1. 函数组件 (`const` 定义)
+2. 避免 `var`，默认 `const`，需重新赋值用 `let`
+3. `useState` + `useMemo` + `useEffect`
+
+## 新增功能流程
+
+### 后端
+1. **Model**: `Radish.Model/Models` (实体) + `Radish.Model/ViewModels` (ViewModel)
+2. **Mapping**: `Radish.Extension/AutoMapperExtension/CustomProfiles`
+3. **Repository**: 大多数用 `IBaseRepository<TEntity>` 即可。仅复杂查询才创建自定义仓储
+4. **Service**:
+   - **简单 CRUD**: 直接用 `IBaseService<TEntity, TVo>`
+   - **复杂逻辑**: 创建自定义 Service (继承 `BaseService<TEntity, TVo>`)
+5. **Controller**: 注入 Service (简单用 `IBaseService`，复杂用自定义 `IXxxService`)
+6. **示例**: `Radish.Api/Radish.Api.http`
+7. **测试**: `Radish.Api.Tests/Controllers/`
+
+### 前端
+- **通用组件** → `@radish/ui`
+- **WebOS 组件** → `radish.client/src/`
+
+## 前端开发规范
+
+### 环境配置
+
+**配置文件**：
+- `.env.development` - 开发环境配置（提交到 Git）
+- `.env.production` - 生产环境配置（提交到 Git）
+- `.env.local` - 本地覆盖配置（不提交，需手动创建）
+- `.env.local.example` - 本地配置示例（提交到 Git）
+
+**配置规则**：
+1. 所有环境变量必须以 `VITE_` 开头
+2. 敏感信息（密码、密钥）只放在 `.env.local`
+3. 代码中通过 `env.ts` 工具访问配置，不直接使用 `import.meta.env`
+
+**示例**：
+```typescript
+// ✅ 推荐：使用 env 工具
+import { env } from '@/config/env';
+const apiUrl = env.apiBaseUrl;
+const isDebug = env.debug;
+
+// ❌ 不推荐：直接使用
+const apiUrl = import.meta.env.VITE_API_BASE_URL;
+```
+
+## Rust 原生扩展
+
+**位置**: `radish.lib/`
+
+**构建**:
+```bash
+cd radish.lib
+cargo build --release
+# 或使用脚本: ./build.ps1 (Windows) / ./build.sh (Linux/macOS)
+```
+
+**配置切换**:
+```json
+{
+  "ImageProcessor": {
+    "UseRustImplementation": true  // false 使用 C# 实现
+  }
+}
+```
+
+## 常见陷阱
+
+1. **业务逻辑放 Service**，不放 Controller
+2. **返回 ViewModel**，不直接暴露实体
+3. **简单 CRUD 用 BaseService**，避免创建不必要的 Service
+4. **先定义接口**，再写实现
+5. **Service 层禁止直接访问 Db 实例** - 用 Repository 方法或扩展 BaseRepository
+6. **避免内存过滤** - 用 `QueryDistinctAsync`/`QuerySumAsync` 等数据库级聚合
+7. **敏感数据用环境变量**，不硬编码
+8. **每环境设置唯一 Snowflake WorkId**，避免 ID 冲突
+9. **Common 依赖只限外部包**，需访问 Model/Service/Repository 用 Extension
+10. **路由参数**确保 `ApiModule.LinkUrl` 包含正则
+11. **ViewModel 设计规范**:
+    - **必须使用Vo前缀**: 所有ViewModel类添加Vo前缀，保持命名统一性
+    - **禁止匿名对象**: Controller严禁返回匿名对象，必须定义具体的Vo类
+    - **UserVo特殊性**: UserVo字段混淆是安全设计，前端必须适配，不得要求后端修改
+    - **其他Vo清晰性**: 除UserVo外，其他Vo使用清晰字段名，便于理解和维护
+12. **软删除规范** (重要):
+    - **优先使用软删除**: 业务数据必须使用 `SoftDeleteByIdAsync` 而非 `DeleteByIdAsync`
+    - **实现IDeleteFilter接口**: 新实体必须实现 `IDeleteFilter` 接口支持软删除
+    - **避免物理删除**: 物理删除方法已标记 `[Obsolete]`，仅用于系统数据清理
+    - **查询自动过滤**: 所有查询自动过滤 `IsDeleted = true` 的记录
+    - **审计信息完整**: 软删除时记录 `DeletedAt` 和 `DeletedBy` 信息
+    - **支持恢复**: 使用 `RestoreByIdAsync` 恢复软删除的记录
+
+## Git 提交规范
+
+**关键规则**:
+1. **严格禁止** AI 协作者署名（如 `Co-Authored-By: Claude`）
+2. **严格禁止** Claude Code 署名
+3. **必须使用**用户配置的 git 身份
+4. **必须遵循** Conventional Commits 规范
+
+**提交格式**:
+```
+<type>(<scope>): <subject>
+
+<body>
+```
+
+**Type 类型**:
+- `feat`: 新功能
+- `fix`: Bug 修复
+- `docs`: 文档更新
+- `refactor`: 代码重构
+- `test`: 测试相关
+- `chore`: 构建/工具相关
+
+**正确示例**:
+```
+feat(ui): 添加 Ant Design 主题配置
+
+- 创建主题配置文件
+- 支持亮色/暗色主题
+- 集成到 Console 项目
+```
+
+**错误示例**（禁止）:
+```
+feat(ui): 添加主题配置
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>  ❌ 禁止
+```
+
+**正确示例**:
+```
+feat: 添加用户权限验证中间件
+
+实现了基于角色的权限验证,支持多级权限控制
+```
+
+## 配置管理
+
+### 加载优先级
+```
+appsettings.json → appsettings.{Environment}.json
+→ appsettings.Local.json (不提交) → 环境变量
+```
+
+**重点**:
+- `appsettings.Local.json` 用于本地开发敏感数据 (密码/密钥)，Git 忽略
+- 深度合并策略，数组需完整覆盖
+- 参见 [配置指南](radish.docs/docs/guide/configuration.md)
+
+### 快速设置
+```bash
+# 默认方式: 直接运行 (SQLite + 内存缓存)
+dotnet run --project Radish.Api
+
+# 自定义配置:
+cp Radish.Api/appsettings.Local.json.example Radish.Api/appsettings.Local.json
+# 编辑 Local.json，仅覆盖需要修改的值
+```
+
+### 配置读取
+```csharp
+var value = AppSettings.RadishApp("Section", "Key");  // 简单键值
+// 或实现 IConfigurableOptions 自动绑定
+```
+
+**关键配置**:
+- `Snowflake.WorkId/DatacenterId`: 每部署实例唯一 (0-30)
+- `Databases`: 至少 `ConnId=Main` 和 `ConnId=Log`
+- `Redis.Enable`: Redis (`true`) 或内存缓存 (`false`)
+
+## 数据库 & SqlSugar
+
+### Program.cs 设置
+```csharp
+builder.Services.AddSqlSugarSetup();
+SnowFlakeSingle.WorkId = builder.Configuration.GetSection("Snowflake").GetValue<int>("WorkId");
+```
+
+### 多租户隔离
+- **字段级**: 实现 `ITenantEntity`，通过 `TenantId` 过滤
+- **表级**: `[MultiTenant(TenantTypeEnum.Tables)]`，表名变为 `TableName_{TenantId}`
+- **库级**: `[MultiTenant(TenantTypeEnum.DataBases)]`，动态解析租户连接
+
+### 本地开发
+默认 SQLite (`Radish.db`, `Radish.Log.db`)，自动创建。切换 PostgreSQL 更新连接串和 `DbType=4`。
+
+**数据库共享**:
+- API 和 Auth **共享**业务数据库 (`Radish.db`, `Radish.Log.db`)
+- Auth 独享 `Radish.OpenIddict.db` (OIDC 数据，EF Core 管理)
+- 所有数据库在 `DataBases/` 目录
+
+## 认证授权
+
+### JWT 设置
+- Issuer: "Radish"
+- Audience: "luobo"
+- Token 验证每次请求
+
+### 授权策略
+- `Client`: 需 `iss=Radish`
+- `System`: 需角色 `System`
+- `SystemOrAdmin`: 需角色 `System` 或 `Admin`
+- `RadishAuthPolicy`: 自定义权限 (`PermissionRequirement` + `ApiModule.LinkUrl` 正则匹配)
+
+**重点**: API 路由必须以 `/` 开头用于权限匹配，参数路由在 `ApiModule.LinkUrl` 中使用正则。
+
+## 文档与参考
+
+**综合文档** (唯一真相源): `radish.docs/docs/`
+- `architecture/specifications.md` - 开发规范详细说明
+- `architecture/framework.md` - 架构设计与技术决策
+- `frontend/design.md` - 前端设计方案
+- `guide/` - 配置/认证/日志/网关指南
+- `development-plan.md` - 里程碑与周计划
+- `changelog/` - 日常/周进度记录
+- `deployment/guide.md` - 部署指南
 
 **更新日志规范**:
 - **时区**: Asia/Shanghai (UTC+8)
-- **内容**: 简洁明了，只写重点
-- **格式**: 月/周组织 (`2026-01/week1.md`)，月度总览 (`2026-01.md`)
-- **重点**: 核心功能/技术亮点/重要变更，不含实现细节
+- **内容**: 简洁扼要，只记关键成果
+- **格式**: 月/周组织 (`2026-01/week1.md`)
 
-**提交规范**:
-- **格式**: Conventional Commits (`feat:`, `fix:`, `chore:`, `docs:`, `refactor:`)
-- **严格禁止**: AI 签名、`Co-Authored-By: Claude` 等 AI 协作者标记
-- **要求**: 单一主题，必要时拆分提交
-- **示例**: `feat(ui): 添加主题配置` ✅ / `feat: xxx\n\nCo-Authored-By: Claude` ❌
-
-**合规**: 禁止提交敏感数据 (连接串/证书/`.user`)，部署参考 `deployment/guide.md`
-
-## 参考资料
-
-**核心文档** (radish.docs/docs/):
-- `architecture/framework.md` - 架构设计
-- `architecture/specifications.md` - 开发规范详细
-- `frontend/design.md` - 前端设计
-- `guide/` - 配置/认证/日志/网关
-- `development-plan.md` - 里程碑/周计划
-- `changelog/` - 更新日志
-- `deployment/guide.md` - 部署指南
-- `frontend/ui-library.md` - UI 组件库
-
-**详细指南**: `CLAUDE.md` (AI 协作者详细说明)
+**重大变更必须同步更新文档**
