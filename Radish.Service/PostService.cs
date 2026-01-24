@@ -242,17 +242,19 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             throw new InvalidOperationException("帖子不存在或已被删除");
         }
 
-        // 2. 检查是否已点赞
+        // 2. 检查是否已点赞（排除软删除的记录）
         var existingLikes = await _userPostLikeRepository.QueryAsync(
-            x => x.UserId == userId && x.PostId == postId);
+            x => x.UserId == userId && x.PostId == postId && !x.IsDeleted);
 
         bool isLiked;
         int likeCountDelta;
 
         if (existingLikes.Any())
         {
-            // 取消点赞
-            await _userPostLikeRepository.DeleteByIdAsync(existingLikes.First().Id);
+            // 取消点赞（软删除）
+            await _userPostLikeRepository.UpdateColumnsAsync(
+                l => new UserPostLike { IsDeleted = true },
+                l => l.Id == existingLikes.First().Id);
             isLiked = false;
             likeCountDelta = -1;
         }

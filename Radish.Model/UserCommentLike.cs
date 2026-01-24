@@ -35,4 +35,11 @@ public class UserCommentLike : RootEntityTKey<long>
     /// <remarks>不可为空</remarks>
     [SugarColumn(ColumnDescription = "点赞时间", IsNullable = false)]
     public DateTime LikedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// 是否删除
+    /// </summary>
+    /// <remarks>不可为空，默认为 false，软删除标记</remarks>
+    [SugarColumn(ColumnDescription = "是否删除", IsNullable = false)]
+    public bool IsDeleted { get; set; } = false;
 }

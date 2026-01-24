@@ -34,6 +34,7 @@ public class UserBalance : RootEntityTKey<long>, IHasUserId
         CreateTime = DateTime.Now;
         CreateBy = "System";
         CreateId = 0;
+        IsDeleted = false;
     }
 
     /// <summary>用户 Id</summary>
@@ -130,6 +131,11 @@ public class UserBalance : RootEntityTKey<long>, IHasUserId
     /// <remarks>可空</remarks>
     [SugarColumn(IsNullable = true, ColumnDescription = "修改者ID")]
     public long? ModifyId { get; set; }
+
+    /// <summary>是否删除</summary>
+    /// <remarks>不可为空，默认为 false，软删除标记</remarks>
+    [SugarColumn(IsNullable = false, ColumnDescription = "是否删除")]
+    public bool IsDeleted { get; set; } = false;
 
     #endregion
 

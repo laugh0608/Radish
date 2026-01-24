@@ -7,7 +7,7 @@ namespace Radish.Model.Models;
 /// 用户支付密码实体
 /// </summary>
 [SugarTable("UserPaymentPassword")]
-[MultiTenant(TenantTypeEnum.Id)]
+// [MultiTenant(TenantTypeEnum.Id)]
 public class UserPaymentPassword : RootEntityTKey<long>
 {
     /// <summary>
