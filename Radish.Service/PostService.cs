@@ -246,6 +246,10 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         var existingLikes = await _userPostLikeRepository.QueryAsync(
             x => x.UserId == userId && x.PostId == postId && !x.IsDeleted);
 
+        // 同时检查是否有被软删除的点赞记录
+        var deletedLikes = await _userPostLikeRepository.QueryAsync(
+            x => x.UserId == userId && x.PostId == postId && x.IsDeleted);
+
         bool isLiked;
         int likeCountDelta;
 
@@ -258,9 +262,21 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             isLiked = false;
             likeCountDelta = -1;
         }
+        else if (deletedLikes.Any())
+        {
+            // 恢复之前的点赞记录
+            await _userPostLikeRepository.UpdateColumnsAsync(
+                l => new UserPostLike {
+                    IsDeleted = false,
+                    LikedAt = DateTime.UtcNow // 更新点赞时间
+                },
+                l => l.Id == deletedLikes.First().Id);
+            isLiked = true;
+            likeCountDelta = 1;
+        }
         else
         {
-            // 添加点赞
+            // 添加新的点赞记录
             var newLike = new UserPostLike
             {
                 UserId = userId,

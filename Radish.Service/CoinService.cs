@@ -46,7 +46,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     {
         try
         {
-            var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId);
+            var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
 
             if (userBalance == null)
             {
@@ -72,7 +72,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         try
         {
             var userBalances = await _userBalanceRepository.QueryAsync(
-                u => userIds.Contains(u.UserId)
+                u => userIds.Contains(u.UserId) && !u.IsDeleted
             );
 
             return userBalances.ToDictionary(
@@ -92,6 +92,29 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     /// </summary>
     private async Task<UserBalance> InitializeUserBalanceAsync(long userId)
     {
+        // 首先检查是否有被软删除的余额记录
+        var deletedBalance = await _userBalanceRepository.QueryFirstAsync(
+            b => b.UserId == userId && b.IsDeleted);
+
+        if (deletedBalance != null)
+        {
+            // 恢复被软删除的余额记录
+            await _userBalanceRepository.UpdateColumnsAsync(
+                b => new UserBalance
+                {
+                    IsDeleted = false,
+                    ModifyTime = DateTime.Now,
+                    ModifyBy = "System",
+                    ModifyId = 0
+                },
+                b => b.Id == deletedBalance.Id);
+
+            // 重新查询恢复后的记录
+            return await _userBalanceRepository.QueryByIdAsync(deletedBalance.Id)
+                   ?? throw new InvalidOperationException("恢复用户余额记录失败");
+        }
+
+        // 如果没有被软删除的记录，创建新记录
         var userBalance = new UserBalance
         {
             UserId = userId,
@@ -173,7 +196,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         string? remark)
     {
         // 1. 确保用户余额记录存在
-        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId);
+        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
         if (userBalance == null)
         {
             userBalance = await InitializeUserBalanceAsync(userId);
@@ -444,7 +467,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         string operatorName)
     {
         // 1. 确保用户余额记录存在
-        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId);
+        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
         if (userBalance == null)
         {
             userBalance = await InitializeUserBalanceAsync(userId);
