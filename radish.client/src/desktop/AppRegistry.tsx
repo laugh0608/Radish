@@ -3,6 +3,7 @@ import { ShowcaseApp } from '@/apps/showcase/ShowcaseApp';
 import { ForumApp } from '@/apps/forum/ForumApp';
 import { ProfileApp } from '@/apps/profile/ProfileApp';
 import { CoinRewardDemo } from '@/apps/coin-demo';
+import { RadishPitApp } from '@/apps/radish-pit';
 import { NotificationApp } from '@/apps/notification/NotificationApp';
 import { LeaderboardApp } from '@/apps/leaderboard/LeaderboardApp';
 import { ExperienceDetailApp } from '@/apps/experience-detail/ExperienceDetailApp';
@@ -114,6 +115,17 @@ export const appRegistry: AppDefinition[] = [
     component: ProfileApp,
     type: 'window',
     defaultSize: { width: 1000, height: 700 },
+    requiredRoles: ['User'],
+    category: 'user'
+  },
+  {
+    id: 'radish-pit',
+    name: '萝卜坑',
+    icon: 'mdi:wallet',
+    description: '萝卜币管理中心 - 转移、记录、统计、安全',
+    component: RadishPitApp,
+    type: 'window',
+    defaultSize: { width: 1200, height: 800 },
     requiredRoles: ['User'],
     category: 'user'
   },
