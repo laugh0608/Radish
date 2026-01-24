@@ -72,7 +72,7 @@ namespace Radish.Service;
                 return null;
             }
 
-            var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
+            var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
 
             if (userExp == null)
             {
@@ -102,7 +102,7 @@ namespace Radish.Service;
         try
         {
             var userExps = await _userExpRepository.QueryAsync(
-                e => userIds.Contains(e.UserId)
+                e => userIds.Contains(e.UserId) && !e.IsDeleted
             );
 
             var result = new Dictionary<long, UserExperienceVo>();
@@ -183,7 +183,7 @@ namespace Radish.Service;
         // 1. 获取或初始化用户经验值记录
         // 注意：不要在初始化后立即重新查询，会因事务未提交而查询不到
         // 重试机制会重新执行整个方法，自然获取到最新版本
-        var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
+        var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
         if (userExp == null)
         {
             userExp = await InitializeUserExperienceAsync(userId);
@@ -505,7 +505,7 @@ namespace Radish.Service;
 
             // 查询排行榜（按 TotalExp 降序，CurrentLevel 降序）
             var (pagedData, totalCount) = await _userExpRepository.QueryPageAsync(
-                whereExpression: e => !e.ExpFrozen && e.UserId > 0, // 排除冻结用户与无效 userId
+                whereExpression: e => !e.ExpFrozen && e.UserId > 0 && !e.IsDeleted, // 排除冻结用户、无效 userId 和软删除记录
                 pageIndex: pageIndex,
                 pageSize: pageSize,
                 orderByExpression: e => e.TotalExp,
@@ -587,7 +587,7 @@ namespace Radish.Service;
                 return 0;
             }
 
-            var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
+            var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
             if (userExp == null || userExp.ExpFrozen)
             {
                 return 0; // 未上榜或被冻结
@@ -595,7 +595,7 @@ namespace Radish.Service;
 
             // 统计比该用户经验值高的用户数量
             var higherCount = await _userExpRepository.QueryCountAsync(
-                e => !e.ExpFrozen && e.UserId > 0 && e.TotalExp > userExp.TotalExp
+                e => !e.ExpFrozen && e.UserId > 0 && e.TotalExp > userExp.TotalExp && !e.IsDeleted
             );
 
             return (int)higherCount + 1; // 排名 = 比自己高的数量 + 1
@@ -722,13 +722,34 @@ namespace Radish.Service;
             return null;
         }
 
-        // 先检查是否已存在（避免重复初始化）
-        var existing = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
+        // 先检查是否已存在未删除的记录
+        var existing = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
         if (existing != null)
         {
             Log.Information("用户 {UserId} 经验值记录已存在（Version={Version}），跳过初始化",
                 userId, existing.Version);
             return existing;
+        }
+
+        // 检查是否有被软删除的记录
+        var deletedExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && e.IsDeleted);
+        if (deletedExp != null)
+        {
+            // 恢复被软删除的经验记录
+            await _userExpRepository.UpdateColumnsAsync(
+                e => new UserExperience
+                {
+                    IsDeleted = false,
+                    ModifyTime = DateTime.Now,
+                    ModifyBy = "System",
+                    ModifyId = 0
+                },
+                e => e.Id == deletedExp.Id);
+
+            Log.Information("恢复用户 {UserId} 的经验值记录（ID={ExpId}）", userId, deletedExp.Id);
+
+            // 重新查询恢复后的记录
+            return await _userExpRepository.QueryByIdAsync(deletedExp.Id);
         }
 
         var userExists = await _userRepository.QueryExistsAsync(u => u.Id == userId);

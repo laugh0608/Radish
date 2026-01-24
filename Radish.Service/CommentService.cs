@@ -271,6 +271,10 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         var existingLikes = await _userCommentLikeRepository.QueryAsync(
             x => x.UserId == userId && x.CommentId == commentId && !x.IsDeleted);
 
+        // 同时检查是否有被软删除的点赞记录
+        var deletedLikes = await _userCommentLikeRepository.QueryAsync(
+            x => x.UserId == userId && x.CommentId == commentId && x.IsDeleted);
+
         bool isLiked;
         int likeCountDelta;
 
@@ -283,9 +287,21 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             isLiked = false;
             likeCountDelta = -1;
         }
+        else if (deletedLikes.Any())
+        {
+            // 恢复之前的点赞记录
+            await _userCommentLikeRepository.UpdateColumnsAsync(
+                l => new UserCommentLike {
+                    IsDeleted = false,
+                    LikedAt = DateTime.UtcNow // 更新点赞时间
+                },
+                l => l.Id == deletedLikes.First().Id);
+            isLiked = true;
+            likeCountDelta = 1;
+        }
         else
         {
-            // 添加点赞
+            // 添加新的点赞记录
             var newLike = new UserCommentLike
             {
                 UserId = userId,

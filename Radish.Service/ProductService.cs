@@ -98,7 +98,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         try
         {
             // 构建查询条件
-            Expression<Func<Product, bool>> where = p => p.IsEnabled && p.IsOnSale;
+            Expression<Func<Product, bool>> where = p => p.IsEnabled && p.IsOnSale && !p.IsDeleted;
 
             if (!string.IsNullOrWhiteSpace(categoryId))
             {
@@ -145,7 +145,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && p.IsEnabled);
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && p.IsEnabled && !p.IsDeleted);
             if (product == null) return null;
 
             var vo = Mapper.Map<ProductVo>(product);
@@ -168,7 +168,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId);
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
 
             if (product == null)
             {
@@ -232,7 +232,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         {
             return await ExecuteWithRetryAsync(async () =>
             {
-                var product = await _productRepository.QueryFirstAsync(p => p.Id == productId);
+                var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
                 if (product == null)
                 {
                     throw new InvalidOperationException("商品不存在");
@@ -282,7 +282,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId);
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
             if (product == null || product.StockType == StockType.Unlimited)
             {
                 return true;
