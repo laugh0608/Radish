@@ -1,6 +1,7 @@
 using Radish.IRepository;
 using Radish.Model.Models;
-using Radish.Repository.Base;
+using Radish.Repository.UnitOfWorks;
+using SqlSugar;
 
 namespace Radish.Repository;
 
@@ -9,7 +10,7 @@ namespace Radish.Repository;
 /// </summary>
 public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IPaymentPasswordRepository
 {
-    public PaymentPasswordRepository(ISqlSugarClient db) : base(db)
+    public PaymentPasswordRepository(IUnitOfWorkManage unitOfWorkManage) : base(unitOfWorkManage)
     {
     }
 
@@ -20,7 +21,7 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
     /// <returns>支付密码信息</returns>
     public async Task<UserPaymentPassword?> GetByUserIdAsync(long userId)
     {
-        return await QueryByClauseAsync(p => p.UserId == userId && p.IsEnabled);
+        return await QueryFirstAsync(p => p.UserId == userId && p.IsEnabled);
     }
 
     /// <summary>
@@ -30,7 +31,8 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
     /// <returns>是否已设置</returns>
     public async Task<bool> HasPaymentPasswordAsync(long userId)
     {
-        return await QueryCountAsync(p => p.UserId == userId && p.IsEnabled && !string.IsNullOrEmpty(p.PasswordHash)) > 0;
+        var count = await QueryCountAsync(p => p.UserId == userId && p.IsEnabled && !string.IsNullOrEmpty(p.PasswordHash));
+        return count > 0;
     }
 
     /// <summary>
@@ -47,7 +49,7 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
             {
                 FailedAttempts = failedAttempts,
                 LockedUntil = lockedUntil,
-                ModifiedAt = DateTime.Now
+                LastModifiedTime = DateTime.Now
             },
             p => p.UserId == userId && p.IsEnabled);
 
@@ -66,7 +68,7 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
             {
                 FailedAttempts = 0,
                 LockedUntil = null,
-                ModifiedAt = DateTime.Now
+                LastModifiedTime = DateTime.Now
             },
             p => p.UserId == userId && p.IsEnabled);
 
@@ -84,7 +86,7 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
             p => new UserPaymentPassword
             {
                 LastUsedTime = DateTime.Now,
-                ModifiedAt = DateTime.Now
+                LastModifiedTime = DateTime.Now
             },
             p => p.UserId == userId && p.IsEnabled);
 
@@ -112,7 +114,7 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
             p => new UserPaymentPassword
             {
                 LockedUntil = null,
-                ModifiedAt = DateTime.Now
+                LastModifiedTime = DateTime.Now
             },
             p => p.IsEnabled &&
                  p.LockedUntil.HasValue &&
