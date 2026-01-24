@@ -70,7 +70,7 @@ public class PaymentPasswordService : IPaymentPasswordService
             // 设置显示字段
             vo.VoLastUsedTimeDisplay = paymentPassword.LastUsedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "从未使用";
             vo.VoLastModifiedTimeDisplay = paymentPassword.LastModifiedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "未知";
-            vo.VoCreatedAtDisplay = "未知"; // UserPaymentPassword没有CreatedAt字段
+            vo.VoCreatedAtDisplay = paymentPassword.CreateTime.ToString("yyyy-MM-dd HH:mm:ss");
             vo.VoStrengthLevelDisplay = GetStrengthLevelDisplay(paymentPassword.StrengthLevel);
             vo.VoSecurityStatus = GetSecurityStatus(paymentPassword);
             vo.VoSecuritySuggestions = await GenerateSecuritySuggestionsAsync(userId);
@@ -126,6 +126,9 @@ public class PaymentPasswordService : IPaymentPasswordService
                 existingPassword.FailedAttempts = 0;
                 existingPassword.LockedUntil = null;
                 existingPassword.LastModifiedTime = DateTime.Now;
+                existingPassword.ModifyTime = DateTime.Now;
+                existingPassword.ModifyBy = "System";
+                existingPassword.ModifyId = 0;
 
                 await _paymentPasswordRepository.UpdateAsync(existingPassword);
             }
@@ -141,6 +144,9 @@ public class PaymentPasswordService : IPaymentPasswordService
                     StrengthLevel = strengthLevel,
                     IsEnabled = true,
                     FailedAttempts = 0,
+                    CreateTime = DateTime.Now,
+                    CreateBy = "System",
+                    CreateId = 0,
                     LastModifiedTime = DateTime.Now
                 };
 
@@ -211,6 +217,9 @@ public class PaymentPasswordService : IPaymentPasswordService
             paymentPassword.FailedAttempts = 0;
             paymentPassword.LockedUntil = null;
             paymentPassword.LastModifiedTime = DateTime.Now;
+            paymentPassword.ModifyTime = DateTime.Now;
+            paymentPassword.ModifyBy = "System";
+            paymentPassword.ModifyId = 0;
 
             await _paymentPasswordRepository.UpdateAsync(paymentPassword);
 
@@ -342,6 +351,9 @@ public class PaymentPasswordService : IPaymentPasswordService
             paymentPassword.StrengthLevel = 0;
             paymentPassword.IsEnabled = false;
             paymentPassword.LastModifiedTime = DateTime.Now;
+            paymentPassword.ModifyTime = DateTime.Now;
+            paymentPassword.ModifyBy = $"Admin_{adminUserId}";
+            paymentPassword.ModifyId = adminUserId;
             paymentPassword.Remark = $"管理员重置 - {request.Reason} - 操作人: {adminUserId}";
 
             await _paymentPasswordRepository.UpdateAsync(paymentPassword);

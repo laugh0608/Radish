@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Radish.Api.Controllers.Base;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
+using Radish.Model;
 using Radish.Model.ViewModels;
 
 namespace Radish.Api.Controllers;
@@ -12,13 +13,17 @@ namespace Radish.Api.Controllers;
 [ApiController]
 [Route("api/v1/[controller]")]
 [Authorize(Policy = "Client")]
-public class PaymentPasswordController : BaseApiController
+public class PaymentPasswordController : ControllerBase
 {
     private readonly IPaymentPasswordService _paymentPasswordService;
+    private readonly IHttpContextUser _httpContextUser;
 
-    public PaymentPasswordController(IPaymentPasswordService paymentPasswordService)
+    public PaymentPasswordController(
+        IPaymentPasswordService paymentPasswordService,
+        IHttpContextUser httpContextUser)
     {
         _paymentPasswordService = paymentPasswordService;
+        _httpContextUser = httpContextUser;
     }
 
     /// <summary>
@@ -28,8 +33,8 @@ public class PaymentPasswordController : BaseApiController
     [HttpGet("GetStatus")]
     public async Task<MessageModel<UserPaymentPasswordVo?>> GetStatus()
     {
-        var status = await _paymentPasswordService.GetPaymentPasswordStatusAsync(CurrentUserId);
-        return Success(status);
+        var status = await _paymentPasswordService.GetPaymentPasswordStatusAsync(_httpContextUser.UserId);
+        return MessageModel<UserPaymentPasswordVo?>.Success("查询成功", status);
     }
 
     /// <summary>
@@ -40,8 +45,8 @@ public class PaymentPasswordController : BaseApiController
     [HttpPost("SetPassword")]
     public async Task<MessageModel<bool>> SetPassword([FromBody] SetPaymentPasswordRequest request)
     {
-        var result = await _paymentPasswordService.SetPaymentPasswordAsync(CurrentUserId, request);
-        return Success(result, result ? "支付密码设置成功" : "支付密码设置失败");
+        var result = await _paymentPasswordService.SetPaymentPasswordAsync(_httpContextUser.UserId, request);
+        return MessageModel<bool>.Success(result ? "支付密码设置成功" : "支付密码设置失败", result);
     }
 
     /// <summary>
@@ -52,8 +57,8 @@ public class PaymentPasswordController : BaseApiController
     [HttpPost("ChangePassword")]
     public async Task<MessageModel<bool>> ChangePassword([FromBody] ChangePaymentPasswordRequest request)
     {
-        var result = await _paymentPasswordService.ChangePaymentPasswordAsync(CurrentUserId, request);
-        return Success(result, result ? "支付密码修改成功" : "支付密码修改失败");
+        var result = await _paymentPasswordService.ChangePaymentPasswordAsync(_httpContextUser.UserId, request);
+        return MessageModel<bool>.Success(result ? "支付密码修改成功" : "支付密码修改失败", result);
     }
 
     /// <summary>
@@ -64,8 +69,8 @@ public class PaymentPasswordController : BaseApiController
     [HttpPost("VerifyPassword")]
     public async Task<MessageModel<PaymentPasswordVerifyResult>> VerifyPassword([FromBody] VerifyPaymentPasswordRequest request)
     {
-        var result = await _paymentPasswordService.VerifyPaymentPasswordAsync(CurrentUserId, request);
-        return Success(result, result.IsSuccess ? "密码验证成功" : result.ErrorMessage);
+        var result = await _paymentPasswordService.VerifyPaymentPasswordAsync(_httpContextUser.UserId, request);
+        return MessageModel<PaymentPasswordVerifyResult>.Success(result.IsSuccess ? "密码验证成功" : result.ErrorMessage, result);
     }
 
     /// <summary>
@@ -88,7 +93,7 @@ public class PaymentPasswordController : BaseApiController
             _ => "未知"
         };
 
-        return Success(new PasswordStrengthVo
+        return MessageModel<object>.Success("检查完成", new PasswordStrengthVo
         {
             VoLevel = strength,
             VoDisplay = strengthDisplay,
@@ -103,8 +108,8 @@ public class PaymentPasswordController : BaseApiController
     [HttpGet("GetSecuritySuggestions")]
     public async Task<MessageModel<List<string>>> GetSecuritySuggestions()
     {
-        var suggestions = await _paymentPasswordService.GenerateSecuritySuggestionsAsync(CurrentUserId);
-        return Success(suggestions);
+        var suggestions = await _paymentPasswordService.GenerateSecuritySuggestionsAsync(_httpContextUser.UserId);
+        return MessageModel<List<string>>.Success("查询成功", suggestions);
     }
 
     #region 管理员接口
@@ -118,8 +123,8 @@ public class PaymentPasswordController : BaseApiController
     [Authorize(Policy = "SystemOrAdmin")]
     public async Task<MessageModel<bool>> AdminResetPassword([FromBody] ResetPaymentPasswordRequest request)
     {
-        var result = await _paymentPasswordService.ResetPaymentPasswordAsync(CurrentUserId, request);
-        return Success(result, result ? "重置支付密码成功" : "重置支付密码失败");
+        var result = await _paymentPasswordService.ResetPaymentPasswordAsync(_httpContextUser.UserId, request);
+        return MessageModel<bool>.Success(result ? "重置支付密码成功" : "重置支付密码失败", result);
     }
 
     /// <summary>
@@ -132,8 +137,8 @@ public class PaymentPasswordController : BaseApiController
     [Authorize(Policy = "SystemOrAdmin")]
     public async Task<MessageModel<bool>> AdminUnlockPassword([FromQuery] long userId, [FromBody] string reason)
     {
-        var result = await _paymentPasswordService.UnlockPaymentPasswordAsync(CurrentUserId, userId, reason);
-        return Success(result, result ? "解锁支付密码成功" : "解锁支付密码失败");
+        var result = await _paymentPasswordService.UnlockPaymentPasswordAsync(_httpContextUser.UserId, userId, reason);
+        return MessageModel<bool>.Success(result ? "解锁支付密码成功" : "解锁支付密码失败", result);
     }
 
     /// <summary>
@@ -145,7 +150,7 @@ public class PaymentPasswordController : BaseApiController
     public async Task<MessageModel<object>> AdminGetStats()
     {
         var stats = await _paymentPasswordService.GetPaymentPasswordStatsAsync();
-        return Success(stats);
+        return MessageModel<object>.Success("查询成功", stats);
     }
 
     /// <summary>
@@ -157,7 +162,7 @@ public class PaymentPasswordController : BaseApiController
     public async Task<MessageModel<int>> AdminClearExpiredLocks()
     {
         var clearedCount = await _paymentPasswordService.ClearExpiredLocksAsync();
-        return Success(clearedCount, $"清理了{clearedCount}个过期锁定状态");
+        return MessageModel<int>.Success($"清理了{clearedCount}个过期锁定状态", clearedCount);
     }
 
     #endregion
