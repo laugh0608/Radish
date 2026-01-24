@@ -252,3 +252,83 @@ dfb489e fix(console): 修复用户信息显示和个人信息页面问题
 - 完善的安全设置和通知中心
 - 与WebOS的完美集成
 - 表情包系统设计
+
+---
+
+## 🛡️ 软删除机制完善 (1月25日)
+
+**✅ 软删除系统全面完善，统一add和update逻辑**
+
+### 核心改进
+
+**IDeleteFilter接口扩展**：
+- 扩展软删除接口，增加 `DeletedAt` 和 `DeletedBy` 字段
+- 提供完整的软删除审计信息记录
+- 统一软删除抽象，便于实体实现
+
+**BaseRepository增强**：
+- AddAsync方法自动初始化软删除字段
+- 新增软删除方法：`SoftDeleteByIdAsync`、`RestoreByIdAsync`
+- 标记物理删除方法为过时，防止误用
+- 支持软删除记录的恢复功能
+
+**实体完善**：
+- UserPaymentPassword添加完整审计字段
+- UserBalance和Post实现IDeleteFilter接口
+- 统一字段命名：CreateTime、ModifyTime、DeletedAt、DeletedBy
+
+### 技术特性
+
+**自动化处理**：
+- 新记录自动设置 `IsDeleted = false`
+- 查询方法自动过滤软删除记录
+- 软删除时自动记录时间和操作者
+
+**安全防护**：
+- 物理删除方法标记 `[Obsolete]`
+- 编译时警告提醒使用软删除
+- 完整的审计轨迹保留
+
+**恢复机制**：
+- 支持按ID或条件恢复记录
+- 恢复时清空删除标记和审计信息
+- 完整的软删除生命周期管理
+
+### 编译验证
+
+**编译状态**：✅ 整个解决方案编译成功，0个错误
+- 修复PaymentPasswordController依赖注入问题
+- 修复RoleController缺失的IHttpContextUser依赖
+- 统一MessageModel.Success方法调用
+
+**代码质量**：
+- 所有软删除相关方法正确实现
+- 审计字段使用规范统一
+- 接口和实现保持一致
+
+### 文档更新
+
+**开发规范更新**：
+- CLAUDE.md添加软删除规范章节
+- architecture/specifications.md完善软删除文档
+- 常见陷阱增加软删除最佳实践
+
+**规范要点**：
+- 优先使用软删除，避免物理删除业务数据
+- 实体必须实现IDeleteFilter接口
+- 查询自动过滤，支持记录恢复
+- 完整的审计信息记录
+
+### 提交记录
+
+```
+79f0e80 feat: 完善UserPaymentPassword实体，修复编译错误
+b173c68 feat: 完善软删除机制，统一add和update逻辑
+c1395fd fix: 修复PaymentPasswordService中的字段名和引用错误
+```
+
+**影响范围**：
+- 7个核心文件更新，310行代码新增
+- BaseRepository/BaseService软删除方法完善
+- 实体模型软删除接口实现
+- Controller依赖注入修复
