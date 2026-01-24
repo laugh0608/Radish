@@ -19,7 +19,7 @@ public class UserVo
     public DateTime? VoLastErrorTime { get; set; }
     public int VoErrorCount { get; set; } = 0;
     public bool VoIsEnable { get; set; } = false;
-    public bool VoIsDeleted { get; set; } = true;
+    public bool VoIsDeleted { get; set; } = false;
     public long VoDepartmentId { get; set; } = 0;
     public string VoDepartmentName { get; set; } = string.Empty;
     public long VoTenantId { get; set; } = 0;

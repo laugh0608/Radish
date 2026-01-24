@@ -42,7 +42,7 @@ public class ApiModule : RootEntityTKey<long>
     private void InitializeDefaults()
     {
         ParentId = 0;
-        IsDeleted = true;
+        IsDeleted = false;
         ApiModuleName = string.Empty;
         LinkUrl = "/api/HealthCheck";
         AreaName = string.Empty;
@@ -170,7 +170,7 @@ public class ApiModule : RootEntityTKey<long>
     /// 是否被删除，逻辑上的删除，非物理删除
     /// </summary>
     [SugarColumn(IsNullable = true)]
-    public bool IsDeleted { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
 
     /// <summary>
     /// 接口名称

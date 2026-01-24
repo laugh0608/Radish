@@ -240,14 +240,22 @@ public class RoleController : ControllerBase
                 };
             }
 
-            var result = await _roleService.DeleteByIdAsync(id);
+            // 软删除：设置 IsDeleted = true，并记录删除者信息
+            await _roleService.UpdateColumnsAsync(
+                r => new Role
+                {
+                    IsDeleted = true,
+                    ModifyTime = DateTime.Now,
+                    ModifyBy = _httpContextUser.UserName,
+                    ModifyId = _httpContextUser.UserId
+                },
+                r => r.Id == id);
 
             return new MessageModel
             {
                 IsSuccess = true,
                 StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "删除成功",
-                ResponseData = result
+                MessageInfo = "删除成功"
             };
         }
         catch (Exception ex)
