@@ -63,7 +63,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
 
             // 2. 获取商品信息
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == dto.ProductId);
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == dto.ProductId && !p.IsDeleted);
             if (product == null)
             {
                 return new PurchaseResultDto { Success = false, ErrorMessage = "商品不存在" };
@@ -234,7 +234,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     {
         try
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId);
+            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId && !o.IsDeleted);
             if (order == null)
             {
                 throw new InvalidOperationException("订单不存在");
@@ -279,7 +279,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     {
         try
         {
-            Expression<Func<Order, bool>> where = o => o.UserId == userId;
+            Expression<Func<Order, bool>> where = o => o.UserId == userId && !o.IsDeleted;
 
             if (status.HasValue)
             {
@@ -316,7 +316,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     {
         try
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId);
+            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId && !o.IsDeleted);
             if (order == null) return null;
 
             return Mapper.Map<OrderVo>(order);
@@ -333,7 +333,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     {
         try
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.OrderNo == orderNo);
+            var order = await _orderRepository.QueryFirstAsync(o => o.OrderNo == orderNo && !o.IsDeleted);
             if (order == null) return null;
 
             return Mapper.Map<OrderVo>(order);
@@ -353,7 +353,8 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var count = await _orderRepository.QueryCountAsync(
                 o => o.UserId == userId &&
                      o.ProductId == productId &&
-                     (o.Status == OrderStatus.Completed || o.Status == OrderStatus.Paid));
+                     (o.Status == OrderStatus.Completed || o.Status == OrderStatus.Paid) &&
+                     !o.IsDeleted);
             return count;
         }
         catch (Exception ex)
@@ -476,7 +477,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 throw new InvalidOperationException("只能重试发放失败的订单");
             }
 
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == order.ProductId);
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == order.ProductId && !p.IsDeleted);
             if (product == null)
             {
                 throw new InvalidOperationException("商品不存在");

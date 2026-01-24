@@ -34,7 +34,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     {
         try
         {
-            Expression<Func<UserBenefit, bool>> where = b => b.UserId == userId;
+            Expression<Func<UserBenefit, bool>> where = b => b.UserId == userId && !b.IsDeleted;
 
             if (!includeExpired)
             {
@@ -79,7 +79,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         try
         {
             var benefits = await _userBenefitRepository.QueryAsync(
-                b => b.UserId == userId && b.IsActive && !b.IsExpired);
+                b => b.UserId == userId && b.IsActive && !b.IsExpired && !b.IsDeleted);
             return Mapper.Map<List<UserBenefitVo>>(benefits);
         }
         catch (Exception ex)
@@ -195,7 +195,8 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         var existingItem = await _userInventoryRepository.QueryFirstAsync(
             i => i.UserId == userId &&
                  i.ConsumableType == product.ConsumableType!.Value &&
-                 i.ItemValue == product.BenefitValue);
+                 i.ItemValue == product.BenefitValue &&
+                 !i.IsDeleted);
 
         if (existingItem != null)
         {
@@ -293,7 +294,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         try
         {
             var benefit = await _userBenefitRepository.QueryFirstAsync(
-                b => b.Id == benefitId && b.UserId == userId);
+                b => b.Id == benefitId && b.UserId == userId && !b.IsDeleted);
 
             if (benefit == null)
             {
@@ -310,7 +311,8 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 b => b.UserId == userId &&
                      b.BenefitType == benefit.BenefitType &&
                      b.IsActive &&
-                     b.Id != benefitId);
+                     b.Id != benefitId &&
+                     !b.IsDeleted);
 
             foreach (var activeBenefit in activeBenefits)
             {
@@ -382,7 +384,8 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             var expiredBenefits = await _userBenefitRepository.QueryAsync(
                 b => !b.IsExpired &&
                      b.ExpiresAt.HasValue &&
-                     b.ExpiresAt.Value < now);
+                     b.ExpiresAt.Value < now &&
+                     !b.IsDeleted);
 
             if (expiredBenefits.Count == 0)
             {
