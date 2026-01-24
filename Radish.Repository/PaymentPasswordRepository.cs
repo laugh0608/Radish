@@ -49,7 +49,10 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
             {
                 FailedAttempts = failedAttempts,
                 LockedUntil = lockedUntil,
-                LastModifiedTime = DateTime.Now
+                LastModifiedTime = DateTime.Now,
+                ModifyTime = DateTime.Now,
+                ModifyBy = "System",
+                ModifyId = 0
             },
             p => p.UserId == userId && p.IsEnabled);
 
@@ -68,7 +71,10 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
             {
                 FailedAttempts = 0,
                 LockedUntil = null,
-                LastModifiedTime = DateTime.Now
+                LastModifiedTime = DateTime.Now,
+                ModifyTime = DateTime.Now,
+                ModifyBy = "System",
+                ModifyId = 0
             },
             p => p.UserId == userId && p.IsEnabled);
 
@@ -86,7 +92,10 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
             p => new UserPaymentPassword
             {
                 LastUsedTime = DateTime.Now,
-                LastModifiedTime = DateTime.Now
+                LastModifiedTime = DateTime.Now,
+                ModifyTime = DateTime.Now,
+                ModifyBy = "System",
+                ModifyId = 0
             },
             p => p.UserId == userId && p.IsEnabled);
 
@@ -114,7 +123,10 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
             p => new UserPaymentPassword
             {
                 LockedUntil = null,
-                LastModifiedTime = DateTime.Now
+                LastModifiedTime = DateTime.Now,
+                ModifyTime = DateTime.Now,
+                ModifyBy = "System",
+                ModifyId = 0
             },
             p => p.IsEnabled &&
                  p.LockedUntil.HasValue &&
