@@ -267,17 +267,19 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             throw new InvalidOperationException("评论不存在或已被删除");
         }
 
-        // 2. 检查是否已点赞
+        // 2. 检查是否已点赞（排除软删除的记录）
         var existingLikes = await _userCommentLikeRepository.QueryAsync(
-            x => x.UserId == userId && x.CommentId == commentId);
+            x => x.UserId == userId && x.CommentId == commentId && !x.IsDeleted);
 
         bool isLiked;
         int likeCountDelta;
 
         if (existingLikes.Any())
         {
-            // 取消点赞
-            await _userCommentLikeRepository.DeleteByIdAsync(existingLikes.First().Id);
+            // 取消点赞（软删除）
+            await _userCommentLikeRepository.UpdateColumnsAsync(
+                l => new UserCommentLike { IsDeleted = true },
+                l => l.Id == existingLikes.First().Id);
             isLiked = false;
             likeCountDelta = -1;
         }
@@ -461,7 +463,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         var likedComments = await _userCommentLikeRepository.QueryAsync(
-            x => x.UserId == userId && commentIds.Contains(x.CommentId));
+            x => x.UserId == userId && commentIds.Contains(x.CommentId) && !x.IsDeleted);
 
         var likedSet = likedComments.Select(x => x.CommentId).ToHashSet();
 

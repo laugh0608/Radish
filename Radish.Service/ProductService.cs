@@ -50,7 +50,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             foreach (var category in categoryVos)
             {
                 category.VoProductCount = await _productRepository.QueryCountAsync(
-                    p => p.CategoryId == category.VoId && p.IsEnabled && p.IsOnSale);
+                    p => p.CategoryId == category.VoId && p.IsEnabled && p.IsOnSale && !p.IsDeleted);
             }
 
             return categoryVos;
@@ -72,7 +72,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
 
             var vo = Mapper.Map<ProductCategoryVo>(category);
             vo.VoProductCount = await _productRepository.QueryCountAsync(
-                p => p.CategoryId == categoryId && p.IsEnabled && p.IsOnSale);
+                p => p.CategoryId == categoryId && p.IsEnabled && p.IsOnSale && !p.IsDeleted);
 
             return vo;
         }

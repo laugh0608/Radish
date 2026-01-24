@@ -39,10 +39,11 @@ public class ShopJob
 
             var cutoffTime = DateTime.Now.AddMinutes(-timeoutMinutes);
 
-            // 查询超时的待支付订单
+            // 查询超时的待支付订单（排除软删除的记录）
             var timeoutOrders = await _orderRepository.QueryAsync(o =>
                 o.Status == OrderStatus.Pending &&
-                o.CreateTime < cutoffTime);
+                o.CreateTime < cutoffTime &&
+                !o.IsDeleted);
 
             if (timeoutOrders == null || timeoutOrders.Count == 0)
             {
@@ -167,9 +168,9 @@ public class ShopJob
             var today = DateTime.Today;
             var tomorrow = today.AddDays(1);
 
-            // 统计今日订单
+            // 统计今日订单（排除软删除的记录）
             var todayOrders = await _orderRepository.QueryAsync(o =>
-                o.CreateTime >= today && o.CreateTime < tomorrow);
+                o.CreateTime >= today && o.CreateTime < tomorrow && !o.IsDeleted);
 
             var stats = new ShopDailyStats
             {
