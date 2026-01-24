@@ -52,9 +52,44 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
 
     #region 删
 
+    /// <summary>软删除：根据 ID 删除实体</summary>
+    /// <param name="id">实体 ID</param>
+    /// <param name="deletedBy">删除操作者，可空</param>
+    /// <returns>是否成功</returns>
+    public async Task<bool> SoftDeleteByIdAsync(long id, string? deletedBy = null)
+    {
+        return await _baseRepository.SoftDeleteByIdAsync(id, deletedBy);
+    }
+
+    /// <summary>软删除：根据条件删除实体</summary>
+    /// <param name="whereExpression">Where 表达式</param>
+    /// <param name="deletedBy">删除操作者，可空</param>
+    /// <returns>受影响的行数</returns>
+    public async Task<int> SoftDeleteAsync(Expression<Func<TEntity, bool>> whereExpression, string? deletedBy = null)
+    {
+        return await _baseRepository.SoftDeleteAsync(whereExpression, deletedBy);
+    }
+
+    /// <summary>恢复软删除：根据 ID 恢复实体</summary>
+    /// <param name="id">实体 ID</param>
+    /// <returns>是否成功</returns>
+    public async Task<bool> RestoreByIdAsync(long id)
+    {
+        return await _baseRepository.RestoreByIdAsync(id);
+    }
+
+    /// <summary>恢复软删除：根据条件恢复实体</summary>
+    /// <param name="whereExpression">Where 表达式</param>
+    /// <returns>受影响的行数</returns>
+    public async Task<int> RestoreAsync(Expression<Func<TEntity, bool>> whereExpression)
+    {
+        return await _baseRepository.RestoreAsync(whereExpression);
+    }
+
     /// <summary>根据 ID 删除实体（物理删除）</summary>
     /// <param name="id">实体 ID</param>
     /// <returns>是否成功</returns>
+    [Obsolete("请使用 SoftDeleteByIdAsync 进行软删除，避免物理删除业务数据")]
     public async Task<bool> DeleteByIdAsync(long id)
     {
         return await _baseRepository.DeleteByIdAsync(id);
@@ -63,6 +98,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     /// <summary>根据实体删除（物理删除）</summary>
     /// <param name="entity">实体对象</param>
     /// <returns>是否成功</returns>
+    [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     public async Task<bool> DeleteAsync(TEntity entity)
     {
         return await _baseRepository.DeleteAsync(entity);
@@ -71,6 +107,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     /// <summary>根据条件删除（物理删除）</summary>
     /// <param name="whereExpression">Where 表达式</param>
     /// <returns>受影响的行数</returns>
+    [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     public async Task<int> DeleteAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
         return await _baseRepository.DeleteAsync(whereExpression);
@@ -79,6 +116,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     /// <summary>批量删除（物理删除）</summary>
     /// <param name="ids">ID 列表</param>
     /// <returns>受影响的行数</returns>
+    [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     public async Task<int> DeleteByIdsAsync(List<long> ids)
     {
         return await _baseRepository.DeleteByIdsAsync(ids);

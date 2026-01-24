@@ -8,7 +8,7 @@ namespace Radish.Model;
 
 /// <summary>帖子实体</summary>
 /// <remarks>支持多租户，主键为 Id，类型为 long</remarks>
-public class Post : RootEntityTKey<long>, ITenantEntity
+public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 {
     /// <summary>初始化默认帖子实例</summary>
     public Post()
@@ -63,6 +63,8 @@ public class Post : RootEntityTKey<long>, ITenantEntity
         PublishTime = null;
         IsEnabled = true;
         IsDeleted = false;
+        DeletedAt = null;
+        DeletedBy = null;
         TenantId = 0;
         CreateTime = DateTime.Now;
         CreateBy = "System";
@@ -155,6 +157,14 @@ public class Post : RootEntityTKey<long>, ITenantEntity
         if (options.IsDeleted.HasValue)
         {
             IsDeleted = options.IsDeleted.Value;
+            if (IsDeleted && options.DeletedAt.HasValue)
+            {
+                DeletedAt = options.DeletedAt.Value;
+            }
+            if (IsDeleted && !string.IsNullOrWhiteSpace(options.DeletedBy))
+            {
+                DeletedBy = options.DeletedBy.Trim();
+            }
         }
     }
 
@@ -293,6 +303,17 @@ public class Post : RootEntityTKey<long>, ITenantEntity
     [SugarColumn(IsNullable = false)]
     public bool IsDeleted { get; set; } = false;
 
+    /// <summary>删除时间</summary>
+    /// <remarks>可空，软删除时自动设置，恢复时清空</remarks>
+    [SugarColumn(IsNullable = true)]
+    [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]
+    public DateTime? DeletedAt { get; set; }
+
+    /// <summary>删除操作者</summary>
+    /// <remarks>可空，最大 50 字符，执行软删除操作的用户名或系统标识</remarks>
+    [SugarColumn(Length = 50, IsNullable = true)]
+    public string? DeletedBy { get; set; }
+
     #endregion
 
     #region 统计信息
@@ -429,6 +450,12 @@ public sealed class PostInitializationOptions
 
     /// <summary>是否删除</summary>
     public bool? IsDeleted { get; set; }
+
+    /// <summary>删除时间</summary>
+    public DateTime? DeletedAt { get; set; }
+
+    /// <summary>删除操作者</summary>
+    public string? DeletedBy { get; set; }
 
     /// <summary>租户 Id</summary>
     public long? TenantId { get; set; }
