@@ -98,6 +98,43 @@ Common (工具,日志,配置) → Shared (常量,枚举) → Model (实体,DTO,V
    - **优先**: 扩展 BaseRepository 泛型方法 (`QueryDistinctAsync`, `QuerySumAsync`) - 跨实体复用
    - **次选**: 创建实体专属仓储 (`UserRepository : BaseRepository<User>`) - 复杂查询/联表/性能优化
 
+## 软删除规范
+
+### 核心原则
+- ✅ **推荐**: 业务数据使用软删除，保留完整审计轨迹
+- ❌ **避免**: 物理删除业务数据（已标记 `[Obsolete]`）
+- ✅ **自动过滤**: 查询方法自动过滤 `IsDeleted = true` 的记录
+- ✅ **可恢复**: 支持恢复已软删除的记录
+
+### 实体要求
+```csharp
+// 实体必须实现 IDeleteFilter 接口
+public class UserBalance : RootEntityTKey<long>, IDeleteFilter
+{
+    // 业务字段...
+
+    // 软删除字段（自动添加）
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+}
+```
+
+### 使用方法
+```csharp
+// Service 层软删除
+await _userService.SoftDeleteByIdAsync(userId, "Admin");
+await _userService.RestoreByIdAsync(userId);
+
+// Repository 层软删除
+await _repository.SoftDeleteAsync(u => u.IsEnabled == false, "System");
+```
+
+### 自动化特性
+- **AddAsync 自动初始化**: 新记录自动设置 `IsDeleted = false`
+- **查询自动过滤**: 所有查询方法自动过滤软删除记录
+- **审计信息记录**: 自动记录删除时间和操作者
+
 ## 配置管理
 
 ### 加载优先级
@@ -325,6 +362,13 @@ cargo build --release
     - **禁止匿名对象**: Controller严禁返回匿名对象，必须定义具体的Vo类
     - **UserVo特殊性**: UserVo字段混淆是安全设计，前端必须适配，不得要求后端修改
     - **其他Vo清晰性**: 除UserVo外，其他Vo使用清晰字段名，便于理解和维护
+12. **软删除规范** (重要):
+    - **优先使用软删除**: 业务数据必须使用 `SoftDeleteByIdAsync` 而非 `DeleteByIdAsync`
+    - **实现IDeleteFilter接口**: 新实体必须实现 `IDeleteFilter` 接口支持软删除
+    - **避免物理删除**: 物理删除方法已标记 `[Obsolete]`，仅用于系统数据清理
+    - **查询自动过滤**: 所有查询自动过滤 `IsDeleted = true` 的记录
+    - **审计信息完整**: 软删除时记录 `DeletedAt` 和 `DeletedBy` 信息
+    - **支持恢复**: 使用 `RestoreByIdAsync` 恢复软删除的记录
 
 ## Git 提交规范
 

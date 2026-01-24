@@ -336,6 +336,50 @@ Task<int> DeleteAsync(Expression<Func<TEntity, bool>>) // 根据条件删除
 Task<int> DeleteByIdsAsync(List<long> ids)             // 批量删除
 ```
 
+**⚠️ 重要：物理删除方法已标记为过时，推荐使用软删除**
+
+#### 软删除（Soft Delete）- 推荐
+```csharp
+// 软删除方法
+Task<bool> SoftDeleteByIdAsync(long id, string? deletedBy = null)           // 根据ID软删除
+Task<int> SoftDeleteAsync(Expression<Func<TEntity, bool>>, string? deletedBy) // 根据条件软删除
+
+// 恢复方法
+Task<bool> RestoreByIdAsync(long id)                                        // 根据ID恢复
+Task<int> RestoreAsync(Expression<Func<TEntity, bool>>)                     // 根据条件恢复
+```
+
+**软删除规范**：
+- ✅ **推荐**：业务数据使用软删除，保留完整审计轨迹
+- ✅ **自动过滤**：查询方法自动过滤 `IsDeleted = true` 的记录
+- ✅ **审计信息**：记录删除时间（`DeletedAt`）和操作者（`DeletedBy`）
+- ✅ **可恢复**：支持恢复已软删除的记录
+- ❌ **避免**：物理删除业务数据（已标记 `[Obsolete]`）
+
+**实体要求**：
+```csharp
+// 实体必须实现 IDeleteFilter 接口
+public class UserBalance : RootEntityTKey<long>, IDeleteFilter
+{
+    // 业务字段...
+
+    // 软删除字段（自动添加）
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+}
+```
+
+**使用示例**：
+```csharp
+// Service 层使用
+await _userService.SoftDeleteByIdAsync(userId, "Admin");
+await _userService.RestoreByIdAsync(userId);
+
+// Repository 层使用
+await _repository.SoftDeleteAsync(u => u.IsEnabled == false, "System");
+```
+
 #### 改（Update）
 ```csharp
 Task<bool> UpdateAsync(TEntity entity)                  // 更新整个实体
@@ -530,6 +574,55 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
 ## 实体与视图模型规范
 
+### 软删除实体规范
+
+**实体软删除接口**：
+- 所有业务实体应实现 `IDeleteFilter` 接口以支持软删除功能
+- 接口定义：
+  ```csharp
+  public interface IDeleteFilter
+  {
+      bool IsDeleted { get; set; }        // 软删除标记
+      DateTime? DeletedAt { get; set; }   // 删除时间
+      string? DeletedBy { get; set; }     // 删除操作者
+  }
+  ```
+
+**实体实现示例**：
+```csharp
+[SugarTable("UserBalance")]
+public class UserBalance : RootEntityTKey<long>, IDeleteFilter
+{
+    // 业务字段...
+    public long UserId { get; set; }
+    public decimal Balance { get; set; }
+
+    #region 审计信息
+    public DateTime CreateTime { get; set; } = DateTime.Now;
+    public string CreateBy { get; set; } = "System";
+    public long CreateId { get; set; } = 0;
+    public DateTime? ModifyTime { get; set; }
+    public string? ModifyBy { get; set; }
+    public long? ModifyId { get; set; }
+
+    // 软删除字段
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+    #endregion
+}
+```
+
+**字段规范**：
+- `IsDeleted`: 不可空，默认 `false`，软删除标记
+- `DeletedAt`: 可空，软删除时自动设置，恢复时清空
+- `DeletedBy`: 可空，最大 50 字符，执行软删除操作的用户名或系统标识
+
+**自动初始化**：
+- BaseRepository 的 `AddAsync` 方法自动确保新记录的软删除字段正确初始化
+- 实现 `IDeleteFilter` 接口的实体在创建时自动设置 `IsDeleted = false`
+
+### 视图模型规范
 
 - 仓储层（Radish.Repository）只处理 `Radish.Model` 中定义的实体类型，禁止将实体对象直接向外暴露；Service 层获取实体后必须映射为视图模型再返回给 Controller。
 - **ViewModel 命名规范**:
