@@ -42,21 +42,14 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
     /// <returns>更新结果</returns>
     public async Task<bool> UpdateFailedAttemptsAsync(long userId, int failedAttempts, DateTime? lockedUntil = null)
     {
-        var updateColumns = new Dictionary<string, object>
-        {
-            { nameof(UserPaymentPassword.FailedAttempts), failedAttempts },
-            { nameof(UserPaymentPassword.ModifiedAt), DateTime.Now }
-        };
-
-        if (lockedUntil.HasValue)
-        {
-            updateColumns.Add(nameof(UserPaymentPassword.LockedUntil), lockedUntil.Value);
-        }
-
-        var result = await Db.Updateable<UserPaymentPassword>()
-            .SetColumns(updateColumns)
-            .Where(p => p.UserId == userId && p.IsEnabled)
-            .ExecuteCommandAsync();
+        var result = await UpdateColumnsAsync(
+            p => new UserPaymentPassword
+            {
+                FailedAttempts = failedAttempts,
+                LockedUntil = lockedUntil,
+                ModifiedAt = DateTime.Now
+            },
+            p => p.UserId == userId && p.IsEnabled);
 
         return result > 0;
     }
@@ -68,15 +61,14 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
     /// <returns>重置结果</returns>
     public async Task<bool> ResetFailedAttemptsAsync(long userId)
     {
-        var result = await Db.Updateable<UserPaymentPassword>()
-            .SetColumns(p => new UserPaymentPassword
+        var result = await UpdateColumnsAsync(
+            p => new UserPaymentPassword
             {
                 FailedAttempts = 0,
                 LockedUntil = null,
                 ModifiedAt = DateTime.Now
-            })
-            .Where(p => p.UserId == userId && p.IsEnabled)
-            .ExecuteCommandAsync();
+            },
+            p => p.UserId == userId && p.IsEnabled);
 
         return result > 0;
     }
@@ -88,14 +80,13 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
     /// <returns>更新结果</returns>
     public async Task<bool> UpdateLastUsedTimeAsync(long userId)
     {
-        var result = await Db.Updateable<UserPaymentPassword>()
-            .SetColumns(p => new UserPaymentPassword
+        var result = await UpdateColumnsAsync(
+            p => new UserPaymentPassword
             {
                 LastUsedTime = DateTime.Now,
                 ModifiedAt = DateTime.Now
-            })
-            .Where(p => p.UserId == userId && p.IsEnabled)
-            .ExecuteCommandAsync();
+            },
+            p => p.UserId == userId && p.IsEnabled);
 
         return result > 0;
     }
@@ -117,16 +108,15 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
     /// <returns>清理的记录数</returns>
     public async Task<int> ClearExpiredLocksAsync()
     {
-        var result = await Db.Updateable<UserPaymentPassword>()
-            .SetColumns(p => new UserPaymentPassword
+        var result = await UpdateColumnsAsync(
+            p => new UserPaymentPassword
             {
                 LockedUntil = null,
                 ModifiedAt = DateTime.Now
-            })
-            .Where(p => p.IsEnabled &&
-                       p.LockedUntil.HasValue &&
-                       p.LockedUntil.Value <= DateTime.Now)
-            .ExecuteCommandAsync();
+            },
+            p => p.IsEnabled &&
+                 p.LockedUntil.HasValue &&
+                 p.LockedUntil.Value <= DateTime.Now);
 
         return result;
     }
