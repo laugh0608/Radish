@@ -204,7 +204,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     #region Delete
 
     /// <summary>
-    /// 删除文件（同时删除物理文件和数据库记录）
+    /// 删除文件（软删除：标记为已删除，物理文件通过定时任务清理）
     /// </summary>
     public async Task<bool> DeleteFileAsync(long attachmentId)
     {
@@ -218,18 +218,27 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 return false;
             }
 
-            // 2. 删除物理文件
-            var fileDeleted = await _fileStorage.DeleteAsync(attachment.StoragePath);
-            if (!fileDeleted)
+            // 2. 软删除：标记为已删除
+            var dbDeleted = await UpdateColumnsAsync(
+                a => new Attachment
+                {
+                    IsDeleted = true,
+                    ModifyTime = DateTime.Now,
+                    ModifyBy = "System", // TODO: 从当前用户上下文获取
+                    ModifyId = 0 // TODO: 从当前用户上下文获取
+                },
+                a => a.Id == attachmentId);
+
+            if (dbDeleted > 0)
             {
-                Log.Warning("物理文件删除失败：{StoragePath}", attachment.StoragePath);
+                Log.Information("附件软删除成功：{AttachmentId}，物理文件将通过定时任务清理", attachmentId);
+                return true;
             }
-
-            // 3. 删除数据库记录
-            var dbDeleted = await DeleteByIdAsync(attachmentId);
-
-            Log.Information("附件删除成功：{AttachmentId}", attachmentId);
-            return dbDeleted;
+            else
+            {
+                Log.Warning("附件软删除失败：{AttachmentId}", attachmentId);
+                return false;
+            }
         }
         catch (Exception ex)
         {
