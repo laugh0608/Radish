@@ -7,6 +7,7 @@ using Radish.Common.CoreTool;
 using Radish.Common.TenantTool;
 using Radish.Infrastructure.Tenant;
 using Radish.Model;
+using Radish.Model.Root;
 
 namespace Radish.Repository;
 
@@ -78,6 +79,14 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
     public async Task<long> AddAsync(TEntity entity)
     {
+        // 确保软删除字段正确初始化
+        if (entity is IDeleteFilter softDeleteEntity)
+        {
+            softDeleteEntity.IsDeleted = false;
+            softDeleteEntity.DeletedAt = null;
+            softDeleteEntity.DeletedBy = null;
+        }
+
         // 自动检测实体是否配置了分表，如果是则自动调用 .SplitTable()
         var splitTableAttr = typeof(TEntity).GetCustomAttribute<SplitTableAttribute>();
 
@@ -98,6 +107,17 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>受影响的行数</returns>
     public async Task<int> AddRangeAsync(List<TEntity> entities)
     {
+        // 确保所有实体的软删除字段正确初始化
+        foreach (var entity in entities)
+        {
+            if (entity is IDeleteFilter softDeleteEntity)
+            {
+                softDeleteEntity.IsDeleted = false;
+                softDeleteEntity.DeletedAt = null;
+                softDeleteEntity.DeletedBy = null;
+            }
+        }
+
         // 自动检测实体是否配置了分表
         var splitTableAttr = typeof(TEntity).GetCustomAttribute<SplitTableAttribute>();
 
@@ -122,6 +142,14 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
     public async Task<List<long>> AddSplitAsync(TEntity entity)
     {
+        // 确保软删除字段正确初始化
+        if (entity is IDeleteFilter softDeleteEntity)
+        {
+            softDeleteEntity.IsDeleted = false;
+            softDeleteEntity.DeletedAt = null;
+            softDeleteEntity.DeletedBy = null;
+        }
+
         var insert = DbClientBase.Insertable(entity).SplitTable();
         // 插入并返回雪花ID并且自动赋值 Id
         return await insert.ExecuteReturnSnowflakeIdListAsync();
@@ -131,9 +159,138 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 
     #region 删
 
+    /// <summary>软删除：根据 ID 删除实体</summary>
+    /// <param name="id">实体 ID</param>
+    /// <param name="deletedBy">删除操作者，可空</param>
+    /// <returns>是否成功</returns>
+    public async Task<bool> SoftDeleteByIdAsync(long id, string? deletedBy = null)
+    {
+        // 检查实体是否支持软删除
+        if (!typeof(IDeleteFilter).IsAssignableFrom(typeof(TEntity)))
+        {
+            throw new NotSupportedException($"实体 {typeof(TEntity).Name} 不支持软删除功能，请实现 IDeleteFilter 接口");
+        }
+
+        // 先查询实体是否存在
+        var entity = await QueryByIdAsync(id);
+        if (entity == null)
+        {
+            return false;
+        }
+
+        // 设置软删除字段
+        if (entity is IDeleteFilter softDeleteEntity)
+        {
+            softDeleteEntity.IsDeleted = true;
+            softDeleteEntity.DeletedAt = DateTime.Now;
+            softDeleteEntity.DeletedBy = deletedBy;
+        }
+
+        // 更新实体
+        return await UpdateAsync(entity);
+    }
+
+    /// <summary>软删除：根据条件删除实体</summary>
+    /// <param name="whereExpression">Where 表达式</param>
+    /// <param name="deletedBy">删除操作者，可空</param>
+    /// <returns>受影响的行数</returns>
+    public async Task<int> SoftDeleteAsync(Expression<Func<TEntity, bool>> whereExpression, string? deletedBy = null)
+    {
+        // 检查实体是否支持软删除
+        if (!typeof(IDeleteFilter).IsAssignableFrom(typeof(TEntity)))
+        {
+            throw new NotSupportedException($"实体 {typeof(TEntity).Name} 不支持软删除功能，请实现 IDeleteFilter 接口");
+        }
+
+        // 查询要删除的实体
+        var entities = await QueryAsync(whereExpression);
+        if (!entities.Any())
+        {
+            return 0;
+        }
+
+        // 设置软删除字段
+        foreach (var entity in entities)
+        {
+            if (entity is IDeleteFilter softDeleteEntity)
+            {
+                softDeleteEntity.IsDeleted = true;
+                softDeleteEntity.DeletedAt = DateTime.Now;
+                softDeleteEntity.DeletedBy = deletedBy;
+            }
+        }
+
+        // 批量更新
+        return await UpdateRangeAsync(entities);
+    }
+
+    /// <summary>恢复软删除：根据 ID 恢复实体</summary>
+    /// <param name="id">实体 ID</param>
+    /// <returns>是否成功</returns>
+    public async Task<bool> RestoreByIdAsync(long id)
+    {
+        // 检查实体是否支持软删除
+        if (!typeof(IDeleteFilter).IsAssignableFrom(typeof(TEntity)))
+        {
+            throw new NotSupportedException($"实体 {typeof(TEntity).Name} 不支持软删除功能，请实现 IDeleteFilter 接口");
+        }
+
+        // 先查询实体是否存在（包括已删除的）
+        var entity = await DbClientBase.Queryable<TEntity>().InSingleAsync(id);
+        if (entity == null)
+        {
+            return false;
+        }
+
+        // 设置恢复字段
+        if (entity is IDeleteFilter softDeleteEntity)
+        {
+            softDeleteEntity.IsDeleted = false;
+            softDeleteEntity.DeletedAt = null;
+            softDeleteEntity.DeletedBy = null;
+        }
+
+        // 更新实体
+        return await UpdateAsync(entity);
+    }
+
+    /// <summary>恢复软删除：根据条件恢复实体</summary>
+    /// <param name="whereExpression">Where 表达式</param>
+    /// <returns>受影响的行数</returns>
+    public async Task<int> RestoreAsync(Expression<Func<TEntity, bool>> whereExpression)
+    {
+        // 检查实体是否支持软删除
+        if (!typeof(IDeleteFilter).IsAssignableFrom(typeof(TEntity)))
+        {
+            throw new NotSupportedException($"实体 {typeof(TEntity).Name} 不支持软删除功能，请实现 IDeleteFilter 接口");
+        }
+
+        // 查询要恢复的实体（包括已删除的）
+        var entities = await DbClientBase.Queryable<TEntity>().Where(whereExpression).ToListAsync();
+        if (!entities.Any())
+        {
+            return 0;
+        }
+
+        // 设置恢复字段
+        foreach (var entity in entities)
+        {
+            if (entity is IDeleteFilter softDeleteEntity)
+            {
+                softDeleteEntity.IsDeleted = false;
+                softDeleteEntity.DeletedAt = null;
+                softDeleteEntity.DeletedBy = null;
+            }
+        }
+
+        // 批量更新
+        return await UpdateRangeAsync(entities);
+    }
+
     /// <summary>根据 ID 删除实体（物理删除）</summary>
     /// <param name="id">实体 ID</param>
     /// <returns>是否成功</returns>
+    [Obsolete("请使用 SoftDeleteByIdAsync 进行软删除，避免物理删除业务数据")]
     public async Task<bool> DeleteByIdAsync(long id)
     {
         return await DbClientBase.Deleteable<TEntity>().In(id).ExecuteCommandHasChangeAsync();
@@ -142,6 +299,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <summary>根据实体删除（物理删除）</summary>
     /// <param name="entity">实体对象</param>
     /// <returns>是否成功</returns>
+    [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     public async Task<bool> DeleteAsync(TEntity entity)
     {
         return await DbClientBase.Deleteable(entity).ExecuteCommandHasChangeAsync();
@@ -150,6 +308,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <summary>根据条件删除（物理删除）</summary>
     /// <param name="whereExpression">Where 表达式</param>
     /// <returns>受影响的行数</returns>
+    [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     public async Task<int> DeleteAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
         return await DbClientBase.Deleteable<TEntity>().Where(whereExpression).ExecuteCommandAsync();
@@ -158,6 +317,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <summary>批量删除（物理删除）</summary>
     /// <param name="ids">ID 列表</param>
     /// <returns>受影响的行数</returns>
+    [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     public async Task<int> DeleteByIdsAsync(List<long> ids)
     {
         return await DbClientBase.Deleteable<TEntity>().In(ids).ExecuteCommandAsync();

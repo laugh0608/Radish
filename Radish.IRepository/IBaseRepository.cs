@@ -28,24 +28,50 @@ public interface IBaseRepository<TEntity> where TEntity : class
 
     #region 删
 
+    /// <summary>软删除：根据 ID 删除实体</summary>
+    /// <param name="id">实体 ID</param>
+    /// <param name="deletedBy">删除操作者，可空</param>
+    /// <returns>是否成功</returns>
+    Task<bool> SoftDeleteByIdAsync(long id, string? deletedBy = null);
+
+    /// <summary>软删除：根据条件删除实体</summary>
+    /// <param name="whereExpression">Where 表达式</param>
+    /// <param name="deletedBy">删除操作者，可空</param>
+    /// <returns>受影响的行数</returns>
+    Task<int> SoftDeleteAsync(Expression<Func<TEntity, bool>> whereExpression, string? deletedBy = null);
+
+    /// <summary>恢复软删除：根据 ID 恢复实体</summary>
+    /// <param name="id">实体 ID</param>
+    /// <returns>是否成功</returns>
+    Task<bool> RestoreByIdAsync(long id);
+
+    /// <summary>恢复软删除：根据条件恢复实体</summary>
+    /// <param name="whereExpression">Where 表达式</param>
+    /// <returns>受影响的行数</returns>
+    Task<int> RestoreAsync(Expression<Func<TEntity, bool>> whereExpression);
+
     /// <summary>根据 ID 删除实体（物理删除）</summary>
     /// <param name="id">实体 ID</param>
     /// <returns>是否成功</returns>
+    [Obsolete("请使用 SoftDeleteByIdAsync 进行软删除，避免物理删除业务数据")]
     Task<bool> DeleteByIdAsync(long id);
 
     /// <summary>根据实体删除（物理删除）</summary>
     /// <param name="entity">实体对象</param>
     /// <returns>是否成功</returns>
+    [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     Task<bool> DeleteAsync(TEntity entity);
 
     /// <summary>根据条件删除（物理删除）</summary>
     /// <param name="whereExpression">Where 表达式</param>
     /// <returns>受影响的行数</returns>
+    [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     Task<int> DeleteAsync(Expression<Func<TEntity, bool>> whereExpression);
 
     /// <summary>批量删除（物理删除）</summary>
     /// <param name="ids">ID 列表</param>
     /// <returns>受影响的行数</returns>
+    [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     Task<int> DeleteByIdsAsync(List<long> ids);
 
     #endregion
