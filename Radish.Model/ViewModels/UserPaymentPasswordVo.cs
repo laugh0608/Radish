@@ -200,3 +200,24 @@ public class ResetPaymentPasswordRequest
     /// </summary>
     public string Reason { get; set; } = string.Empty;
 }
+
+/// <summary>
+/// 密码强度检查结果视图模型
+/// </summary>
+public class PasswordStrengthVo
+{
+    /// <summary>
+    /// 强度等级（0-5）
+    /// </summary>
+    public int VoLevel { get; set; }
+
+    /// <summary>
+    /// 强度等级显示文本
+    /// </summary>
+    public string VoDisplay { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 密码是否有效
+    /// </summary>
+    public bool VoIsValid { get; set; }
+}

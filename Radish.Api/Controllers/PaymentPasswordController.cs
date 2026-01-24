@@ -88,11 +88,11 @@ public class PaymentPasswordController : BaseApiController
             _ => "未知"
         };
 
-        return Success(new
+        return Success(new PasswordStrengthVo
         {
-            Level = strength,
-            Display = strengthDisplay,
-            IsValid = strength > 0
+            VoLevel = strength,
+            VoDisplay = strengthDisplay,
+            VoIsValid = strength > 0
         });
     }
 
