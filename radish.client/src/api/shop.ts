@@ -2,7 +2,7 @@
  * 商城系统相关的 API 调用
  */
 
-import { parseApiResponse, type ApiResponse } from '@radish/ui';
+import { apiGet, apiPost, configureApiClient, type ParsedApiResponse } from '@radish/ui';
 import type { TFunction } from 'i18next';
 import {
   mapProductCategory,
@@ -21,44 +21,13 @@ import {
   type UserInventoryItemData
 } from '@/utils/viewModelMapper';
 
+// 配置 API 客户端
 const defaultApiBase = 'https://localhost:5000';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined || defaultApiBase;
 
-/**
- * 获取 API Base URL
- */
-function getApiBaseUrl(): string {
-  const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  return (configured ?? defaultApiBase).replace(/\/$/, '');
-}
-
-/**
- * 带认证的 fetch 封装
- */
-interface ApiFetchOptions extends RequestInit {
-  withAuth?: boolean;
-}
-
-function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
-  const { withAuth, headers, ...rest } = options;
-
-  const finalHeaders: HeadersInit = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...headers
-  };
-
-  if (withAuth && typeof window !== 'undefined') {
-    const token = window.localStorage.getItem('access_token');
-    if (token) {
-      (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
-    }
-  }
-
-  return fetch(input, {
-    ...rest,
-    headers: finalHeaders
-  });
-}
+configureApiClient({
+  baseUrl: apiBaseUrl.replace(/\/$/, ''),
+});
 
 // ==================== 类型定义 ====================
 
@@ -345,51 +314,32 @@ export interface UseItemResult {
 /**
  * 获取商品分类列表
  */
-export async function getCategories(t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetCategories`;
-  const response = await apiFetch(url);
+export async function getCategories(t: TFunction): Promise<ParsedApiResponse<ProductCategoryData[]>> {
+  const response = await apiGet<any[]>('/api/v1/Shop/GetCategories');
 
-  if (!response.ok) {
-    throw new Error(`获取分类列表失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any[]>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
+  if (!response.ok || !response.data) {
+    return response as ParsedApiResponse<ProductCategoryData[]>;
   }
 
   return {
-    ...parsed,
-    data: parsed.data.map(mapProductCategory)
+    ...response,
+    data: response.data.map(mapProductCategory)
   };
 }
 
 /**
  * 获取分类详情
  */
-export async function getCategory(categoryId: string, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetCategory/${encodeURIComponent(categoryId)}`;
-  const response = await apiFetch(url);
+export async function getCategory(categoryId: string, t: TFunction): Promise<ParsedApiResponse<ProductCategoryData>> {
+  const response = await apiGet<any>(`/api/v1/Shop/GetCategory/${encodeURIComponent(categoryId)}`);
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('分类不存在');
-    }
-    throw new Error(`获取分类详情失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
+  if (!response.ok || !response.data) {
+    return response as ParsedApiResponse<ProductCategoryData>;
   }
 
   return {
-    ...parsed,
-    data: mapProductCategory(parsed.data)
+    ...response,
+    data: mapProductCategory(response.data)
   };
 }
 
@@ -403,7 +353,7 @@ export async function getProducts(
   keyword?: string,
   pageIndex: number = 1,
   pageSize: number = 20
-) {
+): Promise<ParsedApiResponse<PagedResponse<ProductListItemData>>> {
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
     pageSize: pageSize.toString()
@@ -421,25 +371,17 @@ export async function getProducts(
     params.append('keyword', keyword);
   }
 
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetProducts?${params.toString()}`;
-  const response = await apiFetch(url);
+  const response = await apiGet<PagedResponse<any>>(`/api/v1/Shop/GetProducts?${params.toString()}`);
 
-  if (!response.ok) {
-    throw new Error(`获取商品列表失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<PagedResponse<any>>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
+  if (!response.ok || !response.data) {
+    return response as ParsedApiResponse<PagedResponse<ProductListItemData>>;
   }
 
   return {
-    ...parsed,
+    ...response,
     data: {
-      ...parsed.data,
-      data: parsed.data.data.map(mapProductListItem)
+      ...response.data,
+      data: response.data.data.map(mapProductListItem)
     }
   };
 }
@@ -447,27 +389,16 @@ export async function getProducts(
 /**
  * 获取商品详情
  */
-export async function getProduct(productId: number, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetProduct/${productId}`;
-  const response = await apiFetch(url);
+export async function getProduct(productId: number, t: TFunction): Promise<ParsedApiResponse<ProductData>> {
+  const response = await apiGet<any>(`/api/v1/Shop/GetProduct/${productId}`);
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('商品不存在');
-    }
-    throw new Error(`获取商品详情失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
+  if (!response.ok || !response.data) {
+    return response as ParsedApiResponse<ProductData>;
   }
 
   return {
-    ...parsed,
-    data: mapProduct(parsed.data)
+    ...response,
+    data: mapProduct(response.data)
   };
 }
 
@@ -475,34 +406,17 @@ export async function getProduct(productId: number, t: TFunction) {
  * 检查是否可以购买商品
  */
 export async function checkCanBuy(productId: number, quantity: number = 1, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/CheckCanBuy/${productId}?quantity=${quantity}`;
-  const response = await apiFetch(url, { withAuth: true });
-
-  if (!response.ok) {
-    throw new Error(`检查购买权限失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<{ canBuy: boolean; reason: string }>;
-  return parseApiResponse(json);
+  return await apiGet<{ canBuy: boolean; reason: string }>(
+    `/api/v1/Shop/CheckCanBuy/${productId}?quantity=${quantity}`,
+    { withAuth: true }
+  );
 }
 
 /**
  * 购买商品
  */
 export async function purchaseProduct(request: CreateOrderRequest, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/Purchase`;
-  const response = await apiFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(request),
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`购买商品失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<PurchaseResult>;
-  return parseApiResponse(json);
+  return await apiPost<PurchaseResult>('/api/v1/Shop/Purchase', request, { withAuth: true });
 }
 
 /**
@@ -513,7 +427,7 @@ export async function getMyOrders(
   status?: OrderStatus,
   pageIndex: number = 1,
   pageSize: number = 20
-) {
+): Promise<ParsedApiResponse<PagedResponse<OrderListItemData>>> {
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
     pageSize: pageSize.toString()
@@ -523,25 +437,20 @@ export async function getMyOrders(
     params.append('status', status.toString());
   }
 
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetMyOrders?${params.toString()}`;
-  const response = await apiFetch(url, { withAuth: true });
+  const response = await apiGet<PagedResponse<any>>(
+    `/api/v1/Shop/GetMyOrders?${params.toString()}`,
+    { withAuth: true }
+  );
 
-  if (!response.ok) {
-    throw new Error(`获取订单列表失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<PagedResponse<any>>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
+  if (!response.ok || !response.data) {
+    return response as ParsedApiResponse<PagedResponse<OrderListItemData>>;
   }
 
   return {
-    ...parsed,
+    ...response,
     data: {
-      ...parsed.data,
-      data: parsed.data.data.map(mapOrderListItem)
+      ...response.data,
+      data: response.data.data.map(mapOrderListItem)
     }
   };
 }
@@ -549,27 +458,16 @@ export async function getMyOrders(
 /**
  * 获取订单详情
  */
-export async function getOrder(orderId: number, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetOrder/${orderId}`;
-  const response = await apiFetch(url, { withAuth: true });
+export async function getOrder(orderId: number, t: TFunction): Promise<ParsedApiResponse<OrderData>> {
+  const response = await apiGet<any>(`/api/v1/Shop/GetOrder/${orderId}`, { withAuth: true });
 
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('订单不存在');
-    }
-    throw new Error(`获取订单详情失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
+  if (!response.ok || !response.data) {
+    return response as ParsedApiResponse<OrderData>;
   }
 
   return {
-    ...parsed,
-    data: mapOrder(parsed.data)
+    ...response,
+    data: mapOrder(response.data)
   };
 }
 
@@ -577,68 +475,42 @@ export async function getOrder(orderId: number, t: TFunction) {
  * 取消订单
  */
 export async function cancelOrder(orderId: number, t: TFunction, reason?: string) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/CancelOrder/${orderId}`;
-  const body = reason ? JSON.stringify({ reason }) : undefined;
-
-  const response = await apiFetch(url, {
-    method: 'POST',
-    body,
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`取消订单失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json);
+  const body = reason ? { reason } : undefined;
+  return await apiPost<boolean>(`/api/v1/Shop/CancelOrder/${orderId}`, body, { withAuth: true });
 }
 
 /**
  * 获取我的权益列表
  */
-export async function getMyBenefits(includeExpired: boolean = false, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetMyBenefits?includeExpired=${includeExpired}`;
-  const response = await apiFetch(url, { withAuth: true });
+export async function getMyBenefits(includeExpired: boolean = false, t: TFunction): Promise<ParsedApiResponse<UserBenefitData[]>> {
+  const response = await apiGet<any[]>(
+    `/api/v1/Shop/GetMyBenefits?includeExpired=${includeExpired}`,
+    { withAuth: true }
+  );
 
-  if (!response.ok) {
-    throw new Error(`获取权益列表失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any[]>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
+  if (!response.ok || !response.data) {
+    return response as ParsedApiResponse<UserBenefitData[]>;
   }
 
   return {
-    ...parsed,
-    data: parsed.data.map(mapUserBenefit)
+    ...response,
+    data: response.data.map(mapUserBenefit)
   };
 }
 
 /**
  * 获取我的激活权益
  */
-export async function getMyActiveBenefits(t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetMyActiveBenefits`;
-  const response = await apiFetch(url, { withAuth: true });
+export async function getMyActiveBenefits(t: TFunction): Promise<ParsedApiResponse<UserBenefitData[]>> {
+  const response = await apiGet<any[]>('/api/v1/Shop/GetMyActiveBenefits', { withAuth: true });
 
-  if (!response.ok) {
-    throw new Error(`获取激活权益失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any[]>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
+  if (!response.ok || !response.data) {
+    return response as ParsedApiResponse<UserBenefitData[]>;
   }
 
   return {
-    ...parsed,
-    data: parsed.data.map(mapUserBenefit)
+    ...response,
+    data: response.data.map(mapUserBenefit)
   };
 }
 
@@ -646,59 +518,29 @@ export async function getMyActiveBenefits(t: TFunction) {
  * 激活权益
  */
 export async function activateBenefit(benefitId: number, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/ActivateBenefit/${benefitId}`;
-  const response = await apiFetch(url, {
-    method: 'POST',
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`激活权益失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json);
+  return await apiPost<boolean>(`/api/v1/Shop/ActivateBenefit/${benefitId}`, undefined, { withAuth: true });
 }
 
 /**
  * 取消激活权益
  */
 export async function deactivateBenefit(benefitId: number, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/DeactivateBenefit/${benefitId}`;
-  const response = await apiFetch(url, {
-    method: 'POST',
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`取消激活权益失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json);
+  return await apiPost<boolean>(`/api/v1/Shop/DeactivateBenefit/${benefitId}`, undefined, { withAuth: true });
 }
 
 /**
  * 获取我的背包
  */
-export async function getMyInventory(t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetMyInventory`;
-  const response = await apiFetch(url, { withAuth: true });
+export async function getMyInventory(t: TFunction): Promise<ParsedApiResponse<UserInventoryItemData[]>> {
+  const response = await apiGet<any[]>('/api/v1/Shop/GetMyInventory', { withAuth: true });
 
-  if (!response.ok) {
-    throw new Error(`获取背包失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any[]>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
+  if (!response.ok || !response.data) {
+    return response as ParsedApiResponse<UserInventoryItemData[]>;
   }
 
   return {
-    ...parsed,
-    data: parsed.data.map(mapUserInventoryItem)
+    ...response,
+    data: response.data.map(mapUserInventoryItem)
   };
 }
 
@@ -706,37 +548,18 @@ export async function getMyInventory(t: TFunction) {
  * 使用道具
  */
 export async function useItem(request: UseItemRequest, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/UseItem`;
-  const response = await apiFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(request),
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`使用道具失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<UseItemResult>;
-  return parseApiResponse(json);
+  return await apiPost<UseItemResult>('/api/v1/Shop/UseItem', request, { withAuth: true });
 }
 
 /**
  * 使用改名卡
  */
 export async function useRenameCard(inventoryId: number, newNickname: string, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/UseRenameCard/${inventoryId}?newNickname=${encodeURIComponent(newNickname)}`;
-  const response = await apiFetch(url, {
-    method: 'POST',
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`使用改名卡失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<UseItemResult>;
-  return parseApiResponse(json);
+  return await apiPost<UseItemResult>(
+    `/api/v1/Shop/UseRenameCard/${inventoryId}?newNickname=${encodeURIComponent(newNickname)}`,
+    undefined,
+    { withAuth: true }
+  );
 }
 
 /**
