@@ -2,46 +2,16 @@
  * 分片上传相关的 API 调用
  */
 
-import { parseApiResponse, type ApiResponse } from '@radish/ui';
+import { apiGet, apiPost, configureApiClient, getApiClientConfig } from '@radish/ui';
 import type { AttachmentInfo } from '@/api/attachment';
 
+// 配置 API 客户端
 const defaultApiBase = 'https://localhost:5000';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined || defaultApiBase;
 
-/**
- * 获取 API Base URL
- */
-function getApiBaseUrl(): string {
-  const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  return (configured ?? defaultApiBase).replace(/\/$/, '');
-}
-
-/**
- * 带认证的 fetch 封装
- */
-interface ApiFetchOptions extends RequestInit {
-  withAuth?: boolean;
-}
-
-function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
-  const { withAuth, headers, ...rest } = options;
-
-  const finalHeaders: HeadersInit = {
-    Accept: 'application/json',
-    ...headers
-  };
-
-  if (withAuth && typeof window !== 'undefined') {
-    const token = window.localStorage.getItem('access_token');
-    if (token) {
-      (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
-    }
-  }
-
-  return fetch(input, {
-    ...rest,
-    headers: finalHeaders
-  });
-}
+configureApiClient({
+  baseUrl: apiBaseUrl.replace(/\/$/, ''),
+});
 
 /**
  * 上传会话信息
@@ -181,7 +151,6 @@ export interface MergeChunksOptions {
 /**
  * 创建上传会话
  * @param options 创建选项
- * @param t i18n 翻译函数
  * @returns 上传会话信息
  */
 export async function createSession(
@@ -196,36 +165,24 @@ export async function createSession(
     businessId
   } = options;
 
-  const url = `${getApiBaseUrl()}/api/v1/ChunkedUpload/CreateSession`;
-
-  const response = await apiFetch(url, {
-    method: 'POST',
-    withAuth: true,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
+  const response = await apiPost<UploadSession>(
+    '/api/v1/ChunkedUpload/CreateSession',
+    {
       fileName,
       totalSize,
       mimeType,
       chunkSize,
       businessType,
       businessId
-    })
-  });
+    },
+    { withAuth: true }
+  );
 
-  if (!response.ok) {
-    throw new Error(`创建上传会话失败: HTTP ${response.status}`);
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '创建上传会话失败');
   }
 
-  const json = await response.json() as ApiResponse<UploadSession>;
-  const parsed = parseApiResponse<UploadSession>(json);
-
-  if (!parsed.ok || !parsed.data) {
-    throw new Error(parsed.message || '创建上传会话失败');
-  }
-
-  return parsed.data;
+  return response.data;
 }
 
 /**
@@ -234,8 +191,10 @@ export async function createSession(
  * @param chunkIndex 分片索引
  * @param chunkBlob 分片数据
  * @param onProgress 上传进度回调
- * @param t i18n 翻译函数
  * @returns 更新后的上传会话信息
+ *
+ * 注意：此方法使用 XMLHttpRequest 而非统一 API 客户端，
+ * 因为需要支持上传进度回调功能
  */
 export async function uploadChunk(
   sessionId: string,
@@ -243,7 +202,8 @@ export async function uploadChunk(
   chunkBlob: Blob,
   onProgress?: (progress: number) => void
 ): Promise<UploadSession> {
-  const url = `${getApiBaseUrl()}/api/v1/ChunkedUpload/UploadChunk`;
+  const config = getApiClientConfig();
+  const url = `${config.baseUrl}/api/v1/ChunkedUpload/UploadChunk`;
 
   const formData = new FormData();
   formData.append('sessionId', sessionId);
@@ -268,13 +228,12 @@ export async function uploadChunk(
     xhr.addEventListener('load', () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
-          const json = JSON.parse(xhr.responseText) as ApiResponse<UploadSession>;
-          const parsed = parseApiResponse<UploadSession>(json);
-
-          if (!parsed.ok || !parsed.data) {
-            reject(new Error(parsed.message || '上传分片失败'));
+          const json = JSON.parse(xhr.responseText);
+          // 假设后端返回的是标准 ApiResponse 格式
+          if (json.isSuccess && json.responseData) {
+            resolve(json.responseData);
           } else {
-            resolve(parsed.data);
+            reject(new Error(json.messageInfo || '上传分片失败'));
           }
         } catch (error) {
           reject(new Error('解析响应失败'));
@@ -297,8 +256,8 @@ export async function uploadChunk(
     // 发送请求
     xhr.open('POST', url);
 
-    // 添加认证头
-    const token = window.localStorage.getItem('access_token');
+    // 添加认证头（从统一配置获取 token）
+    const token = config.getToken?.();
     if (token) {
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
     }
@@ -310,34 +269,26 @@ export async function uploadChunk(
 /**
  * 获取上传会话信息
  * @param sessionId 会话 ID
- * @param t i18n 翻译函数
  * @returns 上传会话信息
  */
 export async function getSession(
   sessionId: string
 ): Promise<UploadSession> {
-  const url = `${getApiBaseUrl()}/api/v1/ChunkedUpload/GetSession?sessionId=${encodeURIComponent(sessionId)}`;
+  const response = await apiGet<UploadSession>(
+    `/api/v1/ChunkedUpload/GetSession?sessionId=${encodeURIComponent(sessionId)}`,
+    { withAuth: true }
+  );
 
-  const response = await apiFetch(url, { withAuth: true });
-
-  if (!response.ok) {
-    throw new Error(`获取上传会话失败: HTTP ${response.status}`);
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取上传会话失败');
   }
 
-  const json = await response.json() as ApiResponse<UploadSession>;
-  const parsed = parseApiResponse<UploadSession>(json);
-
-  if (!parsed.ok || !parsed.data) {
-    throw new Error(parsed.message || '获取上传会话失败');
-  }
-
-  return parsed.data;
+  return response.data;
 }
 
 /**
  * 合并分片
  * @param options 合并选项
- * @param t i18n 翻译函数
  * @returns 附件信息
  */
 export async function mergeChunks(
@@ -352,65 +303,40 @@ export async function mergeChunks(
     removeExif = true
   } = options;
 
-  const url = `${getApiBaseUrl()}/api/v1/ChunkedUpload/MergeChunks`;
-
-  const response = await apiFetch(url, {
-    method: 'POST',
-    withAuth: true,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
+  const response = await apiPost<AttachmentInfo>(
+    '/api/v1/ChunkedUpload/MergeChunks',
+    {
       sessionId,
       generateThumbnail,
       generateMultipleSizes,
       addWatermark,
       watermarkText,
       removeExif
-    })
-  });
+    },
+    { withAuth: true }
+  );
 
-  if (!response.ok) {
-    throw new Error(`合并分片失败: HTTP ${response.status}`);
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '合并分片失败');
   }
 
-  const json = await response.json() as ApiResponse<AttachmentInfo>;
-  const parsed = parseApiResponse<AttachmentInfo>(json);
-
-  if (!parsed.ok || !parsed.data) {
-    throw new Error(parsed.message || '合并分片失败');
-  }
-
-  return parsed.data;
+  return response.data;
 }
 
 /**
  * 取消上传会话
  * @param sessionId 会话 ID
- * @param t i18n 翻译函数
  */
 export async function cancelSession(
   sessionId: string
 ): Promise<void> {
-  const url = `${getApiBaseUrl()}/api/v1/ChunkedUpload/CancelSession`;
-
-  const response = await apiFetch(url, {
-    method: 'POST',
-    withAuth: true,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(sessionId)
-  });
+  const response = await apiPost<void>(
+    '/api/v1/ChunkedUpload/CancelSession',
+    sessionId,
+    { withAuth: true }
+  );
 
   if (!response.ok) {
-    throw new Error(`取消上传会话失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<void>;
-  const parsed = parseApiResponse<void>(json);
-
-  if (!parsed.ok) {
-    throw new Error(parsed.message || '取消上传会话失败');
+    throw new Error(response.message || '取消上传会话失败');
   }
 }
