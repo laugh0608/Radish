@@ -1,0 +1,366 @@
+/* 安全建议主容器样式 */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 头部样式 */
+.header {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.titleIcon {
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* 内容区域样式 */
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 建议分组样式 */
+.tipSection {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.sectionTitle {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.sectionTitle.high {
+  color: #ef4444;
+}
+
+.sectionTitle.medium {
+  color: #f59e0b;
+}
+
+.sectionTitle.low {
+  color: #6b7280;
+}
+
+.tipsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* 建议卡片样式 */
+.tipCard {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.tipCard:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.tipCard.high {
+  border-left: 4px solid #ef4444;
+  background: #fef2f2;
+}
+
+.tipCard.medium {
+  border-left: 4px solid #f59e0b;
+  background: #fffbeb;
+}
+
+.tipCard.low {
+  border-left: 4px solid #6b7280;
+}
+
+.tipIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.tipContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.tipHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.tipTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.tipPriority {
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.tipPriority.high {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.tipPriority.medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.tipPriority.low {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.tipDescription {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.tipAction {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  background: white;
+  color: #3b82f6;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tipAction:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+}
+
+/* 安全知识样式 */
+.knowledgeSection {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.knowledgeTitle {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.knowledgeIcon {
+  font-size: 1.25rem;
+}
+
+.knowledgeCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.knowledgeCard {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.knowledgeCard:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.knowledgeCardIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.knowledgeCardContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.knowledgeCardContent h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.knowledgeCardContent p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+/* 支持区域样式 */
+.supportSection {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.supportCard {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 0.5rem;
+}
+
+.supportIcon {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.supportContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.supportContent h4 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.supportContent p {
+  margin: 0 0 1rem 0;
+  font-size: 0.875rem;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.supportActions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.supportButton {
+  padding: 0.5rem 1rem;
+  border: 1px solid #3b82f6;
+  border-radius: 0.375rem;
+  background: white;
+  color: #3b82f6;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.supportButton:hover {
+  background: #3b82f6;
+  color: white;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .tipCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tipIcon {
+    align-self: flex-start;
+  }
+
+  .tipHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .knowledgeCards {
+    grid-template-columns: 1fr;
+  }
+
+  .knowledgeCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .supportCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .supportActions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .supportButton {
+    width: 100%;
+    text-align: center;
+  }
+}

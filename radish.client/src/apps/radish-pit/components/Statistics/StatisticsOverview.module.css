@@ -1,0 +1,363 @@
+/* 统计概览主容器样式 */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* 加载状态样式 */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: #6b7280;
+}
+
+.loadingSpinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 错误状态样式 */
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.errorIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.error h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #374151;
+}
+
+.error p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* 空状态样式 */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.emptyIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.empty h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #374151;
+}
+
+.empty p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* 核心指标卡片样式 */
+.metricsCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.metricCard {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  display: flex;
+  gap: 1rem;
+  transition: all 0.2s ease;
+}
+
+.metricCard:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.metricCard.income {
+  border-left: 4px solid #10b981;
+}
+
+.metricCard.expense {
+  border-left: 4px solid #ef4444;
+}
+
+.metricCard.profit.positive {
+  border-left: 4px solid #3b82f6;
+}
+
+.metricCard.profit.negative {
+  border-left: 4px solid #f59e0b;
+}
+
+.metricIcon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.metricContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.metricLabel {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.metricValue {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+
+.metricChange {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.changePositive {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.changeNegative {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.changeText {
+  color: #9ca3af;
+}
+
+/* 快速统计样式 */
+.quickStats {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.quickStatsTitle {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.quickStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.quickStatItem {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.quickStatItem:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.quickStatIcon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+}
+
+.quickStatContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.quickStatValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.quickStatLabel {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+/* 分类排行样式 */
+.categoryRanking {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.categoryTitle {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.categoryList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.categoryItem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.categoryItem:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.categoryRank {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #3b82f6;
+  width: 2.5rem;
+  text-align: center;
+}
+
+.categoryInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.categoryName {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.categoryCount {
+  font-size: 0.8125rem;
+  color: #6b7280;
+}
+
+.categoryAmount {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #10b981;
+  white-space: nowrap;
+}
+
+.categoryProgress {
+  grid-column: 2 / 4;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.categoryProgressBar {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6 0%, #10b981 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .metricsCards {
+    grid-template-columns: 1fr;
+  }
+
+  .quickStatsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .metricCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .metricIcon {
+    align-self: flex-start;
+  }
+
+  .quickStatsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .quickStatItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .categoryItem {
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem;
+  }
+
+  .categoryAmount {
+    grid-column: 2 / 3;
+    text-align: right;
+  }
+
+  .categoryProgress {
+    grid-column: 1 / 3;
+  }
+}
