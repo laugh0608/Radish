@@ -123,7 +123,7 @@ export const TransactionHistory = () => {
         <div className={styles.headerLeft}>
           <h2 className={styles.title}>交易记录</h2>
           <p className={styles.subtitle}>
-            查看您的萝卜币交易历史，共 {totalCount.toLocaleString()} 条记录
+            查看您的萝卜交易历史，共 {totalCount.toLocaleString()} 条记录
           </p>
         </div>
         <div className={styles.headerRight}>

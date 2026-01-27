@@ -116,7 +116,7 @@ export const SecurityOverview = ({ status, loading, error, onRefresh }: Security
             <div className={styles.cardDescription}>
               {status?.hasPaymentPassword
                 ? '您已设置支付密码，转移操作更安全'
-                : '建议设置支付密码以保护您的萝卜币'}
+                : '建议设置支付密码以保护您的萝卜'}
             </div>
           </div>
           <div className={styles.cardAction}>

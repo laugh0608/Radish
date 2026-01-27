@@ -55,7 +55,7 @@ export const TransferResult = ({ result, displayMode, onStartNew }: TransferResu
 
                 <div className={styles.successMessage}>
                   <h4>转移已完成</h4>
-                  <p>您的萝卜币已成功转移，对方将立即收到</p>
+                  <p>您的萝卜已成功转移，对方将立即收到</p>
                 </div>
 
                 {result.transactionNo && (

@@ -67,7 +67,7 @@ export const TransactionList = ({
           <div className={styles.emptyIcon}>📝</div>
           <h3>暂无交易记录</h3>
           <p>当前筛选条件下没有找到交易记录</p>
-          <p className={styles.emptyHint}>尝试调整筛选条件或开始使用萝卜币</p>
+          <p className={styles.emptyHint}>尝试调整筛选条件或开始使用萝卜</p>
         </div>
       </div>
     );

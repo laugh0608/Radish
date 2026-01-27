@@ -6,7 +6,6 @@ import { Transfer } from './components/Transfer/Transfer';
 import { TransactionHistory } from './components/TransactionHistory/TransactionHistory';
 import { SecuritySettings } from './components/SecuritySettings/SecuritySettings';
 import { Statistics } from './components/Statistics/Statistics';
-import { NotificationCenter } from './components/NotificationCenter/NotificationCenter';
 import type { TabType } from './types';
 import styles from './RadishPitApp.module.css';
 
@@ -24,7 +23,7 @@ export const RadishPitApp = () => {
         <div className={styles.notLoggedIn}>
           <div className={styles.notLoggedInIcon}>🥕</div>
           <h2>欢迎来到萝卜坑</h2>
-          <p>请先登录以管理您的萝卜币</p>
+          <p>请先登录以管理您的萝卜</p>
         </div>
       </div>
     );
@@ -47,8 +46,6 @@ export const RadishPitApp = () => {
         return <SecuritySettings />;
       case 'statistics':
         return <Statistics />;
-      case 'notifications':
-        return <NotificationCenter />;
       default:
         return <AccountOverview />;
     }
@@ -64,7 +61,7 @@ export const RadishPitApp = () => {
               <span className={styles.titleIcon}>🥕</span>
               萝卜坑
             </h1>
-            <p className={styles.subtitle}>您的萝卜币管理中心</p>
+            <p className={styles.subtitle}>您的萝卜管理中心</p>
           </div>
         </div>
       </div>
@@ -106,13 +103,6 @@ export const RadishPitApp = () => {
           >
             <span className={styles.tabIcon}>📈</span>
             <span className={styles.tabText}>统计</span>
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'notifications' ? styles.active : ''}`}
-            onClick={() => handleTabChange('notifications')}
-          >
-            <span className={styles.tabIcon}>🔔</span>
-            <span className={styles.tabText}>通知</span>
           </button>
         </div>
       </div>

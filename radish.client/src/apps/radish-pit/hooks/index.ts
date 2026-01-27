@@ -16,7 +16,7 @@ import type {
 } from '../types';
 
 /**
- * 萝卜币余额Hook
+ * 萝卜余额Hook
  */
 export const useCoinBalance = () => {
   const { isAuthenticated } = useUserStore();
@@ -40,7 +40,7 @@ export const useCoinBalance = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '获取存量失败';
       setError(errorMessage);
-      log.error('获取萝卜币余额失败:', err);
+      log.error('获取萝卜余额失败:', err);
     } finally {
       setLoading(false);
     }

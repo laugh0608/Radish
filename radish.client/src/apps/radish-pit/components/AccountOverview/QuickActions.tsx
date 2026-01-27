@@ -16,7 +16,7 @@ export const QuickActions = () => {
       id: 'transfer',
       icon: '💸',
       title: '快速转移',
-      description: '向其他用户转移萝卜币',
+      description: '向其他用户转移萝卜',
       color: 'blue'
     },
     {

@@ -123,7 +123,7 @@ export const TransferConfirm = ({
             </div>
             <ul className={styles.tipsList}>
               <li>请确认接收方用户信息正确，转移后无法撤销</li>
-              <li>转移完成后，萝卜币将立即从您的账户扣除</li>
+              <li>转移完成后，萝卜将立即从您的账户扣除</li>
               <li>如有疑问，请联系客服或取消本次转移</li>
             </ul>
           </div>

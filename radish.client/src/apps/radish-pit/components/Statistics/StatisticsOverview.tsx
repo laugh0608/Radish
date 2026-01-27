@@ -51,7 +51,7 @@ export const StatisticsOverview = ({
         <div className={styles.empty}>
           <div className={styles.emptyIcon}>📊</div>
           <h3>暂无统计数据</h3>
-          <p>开始使用萝卜币后，统计数据将显示在这里</p>
+          <p>开始使用萝卜后，统计数据将显示在这里</p>
         </div>
       </div>
     );
