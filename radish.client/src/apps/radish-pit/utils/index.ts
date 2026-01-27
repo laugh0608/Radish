@@ -11,16 +11,24 @@ import { VOCABULARY_MAP } from '../types';
  * @param useWhiteRadish 是否使用白萝卜显示
  */
 export const formatCoinAmount = (
-  amount: number,
+  amount: number | undefined | null,
   showUnit: boolean = true,
   useWhiteRadish: boolean = false
 ): string => {
+  // 防御性检查：处理 undefined、null 或非数字值
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    return showUnit ? '0 胡萝卜' : '0';
+  }
+
+  // 确保 amount 是数字
+  const numAmount = Number(amount);
+
   if (useWhiteRadish) {
-    const whiteRadishAmount = (amount / 1000).toFixed(3);
+    const whiteRadishAmount = (numAmount / 1000).toFixed(3);
     return showUnit ? `${whiteRadishAmount} 白萝卜` : whiteRadishAmount;
   }
 
-  const formattedAmount = amount.toLocaleString();
+  const formattedAmount = numAmount.toLocaleString();
   return showUnit ? `${formattedAmount} 胡萝卜` : formattedAmount;
 };
 

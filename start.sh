@@ -78,7 +78,7 @@ print_menu() {
   echo "  0. 退出"
   echo
   echo "[单服务]"
-  echo "  1. 启动 API           (Radish.Api           @ https://localhost:7110)"
+  echo "  1. 启动 API           (Radish.Api           @ https://localhost:5000)"
   echo "  2. 启动 Gateway       (Radish.Gateway       @ https://localhost:5001)"
   echo "  3. 启动 Frontend      (radish.client        @ https://localhost:3000)"
   echo "  4. 启动 Docs          (radish.docs          @ http://localhost:4000/docs/)"

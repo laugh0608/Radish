@@ -14,63 +14,58 @@ configureApiClient({
 });
 
 /**
- * 用户余额信息
+ * 用户余额信息（后端ViewModel使用Vo前缀）
  */
 export interface UserBalance {
-  userId: string;
-  balance: number;
-  balanceDisplay: string;
-  frozenBalance: number;
-  frozenBalanceDisplay: string;
-  totalEarned: number;
-  totalSpent: number;
-  totalTransferredIn: number;
-  totalTransferredOut: number;
-  version: number;
+  voUserId: string;
+  voBalance: number;
+  voBalanceDisplay: string;
+  voFrozenBalance: number;
+  voFrozenBalanceDisplay: string;
+  voTotalEarned: number;
+  voTotalSpent: number;
+  voTotalTransferredIn: number;
+  voTotalTransferredOut: number;
+  voVersion: number;
 }
 
 /**
- * 交易记录
+ * 交易记录（后端ViewModel使用Vo前缀）
  */
 export interface CoinTransaction {
-  id: string;
-  transactionNo: string;
-  fromUserId: string | null;
-  fromUserName: string;
-  toUserId: string | null;
-  toUserName: string;
-  amount: number;
-  amountDisplay: string;
-  fee: number;
-  feeDisplay: string;
-  transactionType: string;
-  transactionTypeDisplay: string;
-  status: string;
-  statusDisplay: string;
-  businessType: string | null;
-  businessId: string | null;
-  remark: string | null;
-  createTime: string;
+  voId: string;
+  voTransactionNo: string;
+  voFromUserId: string | null;
+  voFromUserName: string;
+  voToUserId: string | null;
+  voToUserName: string;
+  voAmount: number;
+  voAmountDisplay: string;
+  voFee: number;
+  voFeeDisplay: string;
+  voTransactionType: string;
+  voTransactionTypeDisplay: string;
+  voStatus: string;
+  voStatusDisplay: string;
+  voBusinessType: string | null;
+  voBusinessId: string | null;
+  voRemark: string | null;
+  voCreateTime: string;
 }
 
 /**
  * 获取当前用户余额信息
- * @param t i18n 翻译函数
+ * @param t i18n 翻译函数（可选）
  * @returns 用户余额信息
  */
-export async function getBalance(t: TFunction) {
+export async function getBalance(t?: TFunction) {
   const response = await apiGet<UserBalance>('/api/v1/Coin/GetBalance', { withAuth: true });
 
   if (!response.ok) {
     throw new Error(response.message || '获取余额失败');
   }
 
-  return {
-    ok: response.ok,
-    data: response.data,
-    message: response.message,
-    code: response.code,
-  } as const;
+  return response.data;
 }
 
 /**
@@ -79,15 +74,15 @@ export async function getBalance(t: TFunction) {
  * @param pageSize 每页数量
  * @param transactionType 交易类型（可选）
  * @param status 交易状态（可选）
- * @param t i18n 翻译函数
+ * @param t i18n 翻译函数（可选）
  * @returns 分页的交易记录
  */
 export async function getTransactions(
   pageIndex: number,
   pageSize: number,
-  transactionType: string | null,
-  status: string | null,
-  t: TFunction
+  transactionType: string | null = null,
+  status: string | null = null,
+  t?: TFunction
 ) {
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
@@ -111,21 +106,16 @@ export async function getTransactions(
     throw new Error(response.message || '获取交易记录失败');
   }
 
-  return {
-    ok: response.ok,
-    data: response.data,
-    message: response.message,
-    code: response.code,
-  } as const;
+  return response.data;
 }
 
 /**
  * 根据交易流水号获取交易详情
  * @param transactionNo 交易流水号
- * @param t i18n 翻译函数
+ * @param t i18n 翻译函数（可选）
  * @returns 交易详情
  */
-export async function getTransactionByNo(transactionNo: string, t: TFunction) {
+export async function getTransactionByNo(transactionNo: string, t?: TFunction) {
   const response = await apiGet<CoinTransaction>(
     `/api/v1/Coin/GetTransactionByNo?transactionNo=${encodeURIComponent(transactionNo)}`,
     { withAuth: true }
@@ -138,12 +128,7 @@ export async function getTransactionByNo(transactionNo: string, t: TFunction) {
     throw new Error(response.message || '获取交易详情失败');
   }
 
-  return {
-    ok: response.ok,
-    data: response.data,
-    message: response.message,
-    code: response.code,
-  } as const;
+  return response.data;
 }
 
 /**
@@ -177,19 +162,27 @@ export const TransactionStatus = {
  * @param mode 显示模式：'carrot' | 'radish' | 'mixed'
  * @returns 格式化后的字符串
  */
-export function formatCoinAmount(amount: number, mode: 'carrot' | 'radish' | 'mixed' = 'carrot'): string {
-  if (mode === 'carrot') {
-    return `${amount.toLocaleString()} 胡萝卜`;
+export function formatCoinAmount(amount: number | undefined | null, mode: 'carrot' | 'radish' | 'mixed' = 'carrot'): string {
+  // 防御性检查：处理 undefined、null 或非数字值
+  if (amount === undefined || amount === null || isNaN(amount)) {
+    return '0 胡萝卜';
   }
 
-  const radish = amount / 1000;
+  // 确保 amount 是数字
+  const numAmount = Number(amount);
+
+  if (mode === 'carrot') {
+    return `${numAmount.toLocaleString()} 胡萝卜`;
+  }
+
+  const radish = numAmount / 1000;
   if (mode === 'radish') {
     return `${radish.toFixed(3)} 白萝卜`;
   }
 
   // mixed mode
   const wholeRadish = Math.floor(radish);
-  const remainingCarrot = amount % 1000;
+  const remainingCarrot = numAmount % 1000;
 
   if (wholeRadish === 0) {
     return `${remainingCarrot} 胡萝卜`;
@@ -201,3 +194,15 @@ export function formatCoinAmount(amount: number, mode: 'carrot' | 'radish' | 'mi
 
   return `${wholeRadish} 白萝卜 ${remainingCarrot} 胡萝卜`;
 }
+
+/**
+ * 萝卜币 API 对象（用于统一导入）
+ */
+export const coinApi = {
+  getBalance,
+  getTransactions,
+  getTransactionByNo,
+  formatCoinAmount,
+  TransactionType,
+  TransactionStatus,
+};

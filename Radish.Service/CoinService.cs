@@ -88,50 +88,68 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     }
 
     /// <summary>
-    /// 初始化用户余额记录
+    /// 初始化用户余额记录（带并发保护）
     /// </summary>
     private async Task<UserBalance> InitializeUserBalanceAsync(long userId)
     {
-        // 首先检查是否有被软删除的余额记录
-        var deletedBalance = await _userBalanceRepository.QueryFirstAsync(
-            b => b.UserId == userId && b.IsDeleted);
-
-        if (deletedBalance != null)
+        try
         {
-            // 恢复被软删除的余额记录
-            await _userBalanceRepository.UpdateColumnsAsync(
-                b => new UserBalance
-                {
-                    IsDeleted = false,
-                    ModifyTime = DateTime.Now,
-                    ModifyBy = "System",
-                    ModifyId = 0
-                },
-                b => b.Id == deletedBalance.Id);
+            // 首先检查是否有被软删除的余额记录
+            var deletedBalance = await _userBalanceRepository.QueryFirstAsync(
+                b => b.UserId == userId && b.IsDeleted);
 
-            // 重新查询恢复后的记录
-            return await _userBalanceRepository.QueryByIdAsync(deletedBalance.Id)
-                   ?? throw new InvalidOperationException("恢复用户余额记录失败");
+            if (deletedBalance != null)
+            {
+                // 恢复被软删除的余额记录
+                await _userBalanceRepository.UpdateColumnsAsync(
+                    b => new UserBalance
+                    {
+                        IsDeleted = false,
+                        ModifyTime = DateTime.Now,
+                        ModifyBy = "System",
+                        ModifyId = 0
+                    },
+                    b => b.Id == deletedBalance.Id);
+
+                // 重新查询恢复后的记录
+                return await _userBalanceRepository.QueryByIdAsync(deletedBalance.Id)
+                       ?? throw new InvalidOperationException("恢复用户余额记录失败");
+            }
+
+            // 如果没有被软删除的记录，创建新记录
+            var userBalance = new UserBalance
+            {
+                UserId = userId,
+                Balance = 0,
+                FrozenBalance = 0,
+                TotalEarned = 0,
+                TotalSpent = 0,
+                TotalTransferredIn = 0,
+                TotalTransferredOut = 0,
+                Version = 0,
+                CreateTime = DateTime.Now,
+                CreateBy = "System",
+                CreateId = 0
+            };
+
+            await _userBalanceRepository.AddAsync(userBalance);
+            return userBalance;
         }
-
-        // 如果没有被软删除的记录，创建新记录
-        var userBalance = new UserBalance
+        catch (SqlSugar.SqlSugarException ex) when (ex.Message.Contains("UNIQUE constraint failed"))
         {
-            UserId = userId,
-            Balance = 0,
-            FrozenBalance = 0,
-            TotalEarned = 0,
-            TotalSpent = 0,
-            TotalTransferredIn = 0,
-            TotalTransferredOut = 0,
-            Version = 0,
-            CreateTime = DateTime.Now,
-            CreateBy = "System",
-            CreateId = 0
-        };
+            // 并发情况下，其他请求可能已经创建了记录，重新查询
+            Log.Warning("用户 {UserId} 余额记录已存在（并发创建），重新查询", userId);
+            var existingBalance = await _userBalanceRepository.QueryFirstAsync(
+                b => b.UserId == userId && !b.IsDeleted);
 
-        await _userBalanceRepository.AddAsync(userBalance);
-        return userBalance;
+            if (existingBalance != null)
+            {
+                return existingBalance;
+            }
+
+            // 如果仍然查询不到，说明是其他异常，重新抛出
+            throw;
+        }
     }
 
     #endregion
