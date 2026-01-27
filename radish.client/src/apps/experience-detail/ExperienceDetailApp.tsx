@@ -1,18 +1,6 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
-import {
-  LineChart,
-  Line,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer
-} from 'recharts';
+import { LineChart, PieChart } from '@radish/ui';
 import { experienceApi, type ExperienceData, type ExpTransactionData } from '@/api/experience';
 import { Icon } from '@radish/ui';
 import styles from './ExperienceDetailApp.module.css';
@@ -196,47 +184,34 @@ export const ExperienceDetailApp = () => {
                 </button>
               </div>
             </div>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={dailyStats}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line
-                  type="monotone"
-                  dataKey="exp"
-                  stroke="#667eea"
-                  strokeWidth={2}
-                  name="经验值"
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <LineChart
+              data={dailyStats}
+              lines={[
+                { dataKey: 'exp', name: '经验值', color: '#667eea', strokeWidth: 2 }
+              ]}
+              xAxisKey="date"
+              loading={loading}
+              error={null}
+              height={300}
+              showGrid={true}
+              showLegend={true}
+            />
           </div>
 
           {/* 经验值来源分布 */}
           {sourceDistribution.length > 0 && (
             <div className={styles.chartSection}>
               <h2 className={styles.chartTitle}>经验值来源</h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={sourceDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {sourceDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              <PieChart
+                data={sourceDistribution}
+                loading={loading}
+                error={null}
+                height={300}
+                showLegend={true}
+                innerRadius={0}
+                outerRadius={100}
+                showLabel={true}
+              />
             </div>
           )}
 

@@ -68,6 +68,29 @@ export type { LevelUpModalProps, LevelUpData } from './LevelUpModal/LevelUpModal
 
 export { TableSkeleton, SimpleSkeleton, CardSkeleton } from './Skeleton';
 
+// 图表组件导出
+export {
+  ChartContainer,
+  LineChart,
+  BarChart,
+  PieChart,
+  AreaChart
+} from './Charts';
+export type {
+  ChartContainerProps,
+  LineChartProps,
+  LineChartDataPoint,
+  LineChartLine,
+  BarChartProps,
+  BarChartDataPoint,
+  BarChartBar,
+  PieChartProps,
+  PieChartDataPoint,
+  AreaChartProps,
+  AreaChartDataPoint,
+  AreaChartArea
+} from './Charts';
+
 // Re-export Ant Design 组件供 console 等项目使用
 export {
   // Layout
