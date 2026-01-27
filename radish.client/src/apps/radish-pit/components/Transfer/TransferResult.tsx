@@ -1,6 +1,7 @@
 import { formatDateTime } from '../../utils';
 import type { TransferResult as TransferResultType } from '../../types';
 import styles from './TransferResult.module.css';
+import { log } from '@/utils/logger';
 
 interface TransferResultProps {
   result: TransferResultType;
@@ -20,7 +21,7 @@ export const TransferResult = ({ result, displayMode, onStartNew }: TransferResu
       // TODO: 显示复制成功提示
       alert('流水号已复制到剪贴板');
     } catch (err) {
-      console.error('复制失败:', err);
+      log.error('TransferResult', '复制失败:', err);
       alert('复制失败，请手动复制');
     }
   };
@@ -142,7 +143,7 @@ export const TransferResult = ({ result, displayMode, onStartNew }: TransferResu
                 className={styles.secondaryButton}
                 onClick={() => {
                   // TODO: 跳转到交易记录页面
-                  console.log('查看交易记录');
+                  log.debug('TransferResult', '查看交易记录');
                 }}
               >
                 查看记录

@@ -118,7 +118,7 @@ export const RecentTransfers = ({ displayMode }: RecentTransfersProps) => {
         {transfers.length > 0 && (
           <button className={styles.viewAllButton} onClick={() => {
             // TODO: 跳转到交易记录页面并筛选转账记录
-            console.log('查看全部转账记录');
+            log.debug('RecentTransfers', '查看全部转账记录');
           }}>
             查看全部
           </button>
