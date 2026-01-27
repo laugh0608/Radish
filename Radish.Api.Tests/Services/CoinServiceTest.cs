@@ -9,6 +9,7 @@ using Moq;
 using Radish.Common.Exceptions;
 using Radish.Infrastructure;
 using Radish.IRepository;
+using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Service;
@@ -249,11 +250,14 @@ public class CoinServiceTest
     /// </summary>
     private CoinService CreateCoinService()
     {
+        var paymentPasswordServiceMock = new Mock<IPaymentPasswordService>();
+
         return new CoinService(
             _mapperMock.Object,
             _userBalanceRepositoryMock.Object,
             _coinTransactionRepositoryMock.Object,
-            _balanceChangeLogRepositoryMock.Object
+            _balanceChangeLogRepositoryMock.Object,
+            paymentPasswordServiceMock.Object
         );
     }
 
