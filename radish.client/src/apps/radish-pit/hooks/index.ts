@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { coinApi } from '@/api/coin';
+import { paymentPasswordApi } from '@/api/paymentPassword';
 import type {
   AccountStats,
   TransferFormData,
@@ -122,19 +123,21 @@ export const useTransfer = () => {
       setLoading(true);
       setError(null);
 
-      // TODO: 实现转账API调用
-      // 这里需要等待后端转账接口实现
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 模拟API调用
-
-      // 模拟成功结果
-      const result: TransferResult = {
-        success: true,
-        transactionNo: `TXN_${Date.now()}`,
-        message: '转移成功'
-      };
+      // 调用转账API
+      const result = await coinApi.transfer({
+        toUserId: formData.recipientId,
+        amount: formData.amount,
+        remark: formData.note,
+        paymentPassword: formData.paymentPassword
+      });
 
       log.info('转账成功:', result);
-      return result;
+
+      return {
+        success: true,
+        transactionNo: result.transactionNo,
+        message: '转移成功'
+      };
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '转移失败';
       setError(errorMessage);
@@ -175,16 +178,26 @@ export const useSecurityStatus = () => {
       setLoading(true);
       setError(null);
 
-      // TODO: 实现安全状态API调用
-      // 这里需要等待后端支付密码接口实现
-      await new Promise(resolve => setTimeout(resolve, 500)); // 模拟API调用
+      // 调用支付密码状态API
+      const passwordStatus = await paymentPasswordApi.getPaymentPasswordStatus();
 
-      // 模拟安全状态
-      setStatus({
-        hasPaymentPassword: false,
-        failedAttempts: 0,
-        isLocked: false
-      });
+      // 转换为前端格式
+      if (passwordStatus) {
+        setStatus({
+          hasPaymentPassword: true,
+          lastPasswordChangeTime: passwordStatus.voLastPasswordChangeTime,
+          failedAttempts: passwordStatus.voFailedAttempts,
+          isLocked: passwordStatus.voIsLocked,
+          lockedUntil: passwordStatus.voLockedUntil
+        });
+      } else {
+        // 未设置支付密码
+        setStatus({
+          hasPaymentPassword: false,
+          failedAttempts: 0,
+          isLocked: false
+        });
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '获取安全状态失败';
       setError(errorMessage);
@@ -225,28 +238,26 @@ export const useStatistics = (timeRange: 'month' | 'quarter' | 'year' = 'month')
       setLoading(true);
       setError(null);
 
-      // TODO: 实现统计数据API调用
-      // 这里需要等待后端统计接口实现
-      await new Promise(resolve => setTimeout(resolve, 800)); // 模拟API调用
+      // 调用统计数据API
+      const statistics = await coinApi.getStatistics(timeRange);
 
-      // 模拟统计数据
-      const mockData: StatisticsData = {
-        monthlyIncome: [1200, 1500, 1800, 2100, 1900, 2200],
-        monthlyExpense: [800, 900, 1200, 1100, 1300, 1000],
-        categoryStats: [
-          { category: '点赞奖励', amount: 5000, count: 50 },
-          { category: '评论奖励', amount: 3000, count: 30 },
-          { category: '神评奖励', amount: 2000, count: 10 },
-          { category: '系统赠送', amount: 1000, count: 5 }
-        ],
-        trendData: Array.from({ length: 30 }, (_, i) => ({
-          date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          income: Math.floor(Math.random() * 200) + 50,
-          expense: Math.floor(Math.random() * 150) + 20
+      // 转换后端数据格式为前端格式
+      const transformedData: StatisticsData = {
+        monthlyIncome: [],
+        monthlyExpense: [],
+        categoryStats: statistics.voCategoryStats.map(item => ({
+          category: item.voCategory,
+          amount: item.voAmount,
+          count: item.voCount
+        })),
+        trendData: statistics.voTrendData.map(item => ({
+          date: item.voDate,
+          income: item.voIncome,
+          expense: item.voExpense
         }))
       };
 
-      setData(mockData);
+      setData(transformedData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '获取统计数据失败';
       setError(errorMessage);

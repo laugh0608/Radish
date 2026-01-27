@@ -203,12 +203,37 @@ dfb489e fix(console): 修复用户信息显示和个人信息页面问题
 - 交易记录查询API（GetTransactions、GetTransactionByNo）
 - 支付密码管理API（GetStatus、SetPassword、ChangePassword、VerifyPassword）
 - 管理员调账API（AdminAdjustBalance）
+- **转账API（Transfer）** - ✅ 已完成
+- **统计数据API（GetStatistics）** - ✅ 已完成
 
-**⏳ 待实现的API**：
-- 转账API（Transfer）- 进行中
-- 统计数据API（GetStatistics）- 进行中
+**后端完成度**：100%
 
-**后端完成度**：85% → 目标100%
+### 前端API集成（1月27日）
+
+**✅ API客户端实现**：
+- 创建 `radish.client/src/api/paymentPassword.ts` - 支付密码API客户端
+- 扩展 `radish.client/src/api/coin.ts` - 添加transfer和getStatistics方法
+- 完整的TypeScript类型定义
+- 统一的错误处理机制
+
+**✅ Hooks集成真实API**：
+- `useTransfer` - 集成转账API，支持支付密码验证
+- `useStatistics` - 集成统计数据API，支持时间范围查询
+- `useSecurityStatus` - 集成支付密码状态API
+- 数据格式转换（后端Vo格式 → 前端格式）
+
+**✅ 组件适配**：
+- 修复 `CoinBalance.tsx` - 适配后端Vo字段名
+- 修复 `CoinTransactionList.tsx` - 适配后端Vo字段名
+- 类型检查通过，构建成功
+
+**前端完成度**：100%
+
+**技术亮点**：
+- 遵循统一API客户端规范（使用@radish/ui提供的apiGet/apiPost）
+- 完整的类型安全保障
+- 自动的认证token处理
+- 统一的错误处理和日志记录
 
 ### 代码规范检查结果 (1月24日)
 

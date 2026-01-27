@@ -196,12 +196,97 @@ export function formatCoinAmount(amount: number | undefined | null, mode: 'carro
 }
 
 /**
+ * 转账请求参数
+ */
+export interface TransferRequest {
+  toUserId: number;
+  amount: number;
+  remark?: string;
+  paymentPassword: string;
+}
+
+/**
+ * 转账响应（返回交易流水号）
+ */
+export interface TransferResponse {
+  transactionNo: string;
+}
+
+/**
+ * 用户转账
+ * @param request 转账请求参数
+ * @param t i18n 翻译函数（可选）
+ * @returns 交易流水号
+ */
+export async function transfer(request: TransferRequest, t?: TFunction) {
+  const { apiPost } = await import('@radish/ui');
+  const response = await apiPost<TransferResponse>(
+    '/api/v1/Coin/Transfer',
+    request,
+    { withAuth: true }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '转账失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 趋势数据项
+ */
+export interface TrendDataItem {
+  voDate: string;
+  voIncome: number;
+  voExpense: number;
+}
+
+/**
+ * 分类统计项
+ */
+export interface CategoryStatItem {
+  voCategory: string;
+  voAmount: number;
+  voCount: number;
+}
+
+/**
+ * 统计数据响应
+ */
+export interface CoinStatistics {
+  voTrendData: TrendDataItem[];
+  voCategoryStats: CategoryStatItem[];
+}
+
+/**
+ * 获取统计数据
+ * @param timeRange 时间范围（month/quarter/year）
+ * @param t i18n 翻译函数（可选）
+ * @returns 统计数据
+ */
+export async function getStatistics(timeRange: 'month' | 'quarter' | 'year' = 'month', t?: TFunction) {
+  const response = await apiGet<CoinStatistics>(
+    `/api/v1/Coin/GetStatistics?timeRange=${timeRange}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '获取统计数据失败');
+  }
+
+  return response.data;
+}
+
+/**
  * 萝卜币 API 对象（用于统一导入）
  */
 export const coinApi = {
   getBalance,
   getTransactions,
   getTransactionByNo,
+  transfer,
+  getStatistics,
   formatCoinAmount,
   TransactionType,
   TransactionStatus,
