@@ -301,6 +301,35 @@ var result = await cache.GetAsync<MyType>("key");
 2. 避免 `var`，默认 `const`，需重新赋值用 `let`
 3. `useState` + `useMemo` + `useEffect`
 
+### API 客户端规范 (重要)
+
+**统一使用 @radish/ui 提供的 API 客户端**，禁止自定义 fetch/axios 封装。
+
+```typescript
+import { apiGet, apiPost, configureApiClient } from '@radish/ui';
+
+// 配置（在 API 文件顶部）
+configureApiClient({
+  baseUrl: import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000',
+});
+
+// 使用
+export async function getProducts() {
+  const response = await apiGet<Product[]>('/api/v1/Shop/GetProducts', { withAuth: true });
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取失败');
+  }
+  return response.data;
+}
+```
+
+**特殊场景**（如上传进度）：使用 XMLHttpRequest 但必须从 `getApiClientConfig()` 获取配置。详见 `CLAUDE.md`。
+
+**禁止事项**：
+- ❌ 自定义 `apiFetch` 函数
+- ❌ 直接使用 `fetch` 或 `axios`
+- ❌ 重复实现认证逻辑
+
 ## 新增功能流程
 
 ### 后端
