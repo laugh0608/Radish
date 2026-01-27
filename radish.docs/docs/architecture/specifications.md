@@ -7,6 +7,118 @@
   - ❌ 避免：为每个实体都创建 `ICategoryService`，只是包装 BaseService 方法
   - ✅ 推荐：`IPostService : IBaseService<Post, PostVo>` 包含复杂的 `PublishPostAsync` 逻辑
 
+## 前端 API 客户端规范
+
+### 统一使用 @radish/ui 提供的 API 客户端
+
+**禁止自定义 fetch/axios 封装**，所有 API 调用必须使用 `@radish/ui` 提供的统一客户端。
+
+#### 基本使用
+
+```typescript
+import { apiGet, apiPost, apiPut, apiDelete, configureApiClient } from '@radish/ui';
+
+// 1. 配置 API 客户端（在应用入口或 API 文件顶部）
+const defaultApiBase = 'https://localhost:5000';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBase;
+
+configureApiClient({
+  baseUrl: apiBaseUrl.replace(/\/$/, ''),
+});
+
+// 2. 使用统一的 API 方法
+export async function getProducts(pageIndex: number = 1, pageSize: number = 20) {
+  const response = await apiGet<PagedResponse<Product>>(
+    `/api/v1/Shop/GetProducts?pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: true }  // 需要认证时添加此选项
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取商品列表失败');
+  }
+
+  return response.data;
+}
+
+export async function createProduct(data: CreateProductDto) {
+  return await apiPost<Product>('/api/v1/Shop/CreateProduct', data, { withAuth: true });
+}
+```
+
+#### 特殊场景：上传进度回调
+
+对于需要监听上传进度的场景（如分片上传），可以使用 XMLHttpRequest，但必须：
+1. 从 `getApiClientConfig()` 获取统一配置（baseUrl、token）
+2. 添加注释说明为什么需要特殊处理
+3. 其他方法仍使用统一客户端
+
+```typescript
+import { getApiClientConfig } from '@radish/ui';
+
+/**
+ * 上传分片
+ * 注意：此方法使用 XMLHttpRequest 而非统一 API 客户端，
+ * 因为需要支持上传进度回调功能
+ */
+export async function uploadChunk(
+  sessionId: string,
+  chunkBlob: Blob,
+  onProgress?: (progress: number) => void
+): Promise<UploadSession> {
+  const config = getApiClientConfig();
+  const url = `${config.baseUrl}/api/v1/ChunkedUpload/UploadChunk`;
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    if (onProgress) {
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+    }
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const json = JSON.parse(xhr.responseText);
+        resolve(json.responseData);
+      } else {
+        reject(new Error(`上传失败: HTTP ${xhr.status}`));
+      }
+    });
+
+    xhr.open('POST', url);
+
+    // 从统一配置获取 token
+    const token = config.getToken?.();
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+
+    const formData = new FormData();
+    formData.append('sessionId', sessionId);
+    formData.append('chunkData', chunkBlob);
+    xhr.send(formData);
+  });
+}
+```
+
+#### 优势
+
+- ✅ 统一的配置管理（baseUrl、timeout、token）
+- ✅ 统一的错误处理和拦截器
+- ✅ 减少代码重复
+- ✅ 更容易维护和调试
+- ✅ 类型安全更好
+
+#### 禁止事项
+
+- ❌ 禁止在 API 文件中自定义 `apiFetch` 函数
+- ❌ 禁止直接使用 `fetch` 或 `axios`（除非有特殊需求并添加注释）
+- ❌ 禁止在每个 API 文件中重复实现认证逻辑
+- ❌ 禁止硬编码 API Base URL（使用环境变量）
+
 ## 代码质量标准
 
 **单个源文件行数建议**：为保持代码可读性与可维护性，建议单文件控制在 **500-1000 行**；非必要不超过 **1000 行**。
