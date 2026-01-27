@@ -79,7 +79,7 @@ public class PaymentPasswordController : ControllerBase
     /// <param name="password">密码</param>
     /// <returns>强度等级</returns>
     [HttpPost("CheckStrength")]
-    public MessageModel<object> CheckStrength([FromBody] string password)
+    public MessageModel<PasswordStrengthVo> CheckStrength([FromBody] string password)
     {
         var strength = _paymentPasswordService.CheckPasswordStrength(password);
         var strengthDisplay = strength switch
@@ -93,7 +93,7 @@ public class PaymentPasswordController : ControllerBase
             _ => "未知"
         };
 
-        return MessageModel<object>.Success("检查完成", new PasswordStrengthVo
+        return MessageModel<PasswordStrengthVo>.Success("检查完成", new PasswordStrengthVo
         {
             VoLevel = strength,
             VoDisplay = strengthDisplay,

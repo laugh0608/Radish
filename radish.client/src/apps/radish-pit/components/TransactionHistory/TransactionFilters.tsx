@@ -45,7 +45,7 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
     { value: 'CANCELLED', label: '已取消' }
   ];
 
-  const handleFilterChange = (key: keyof FilterOptions, value: any) => {
+  const handleFilterChange = (key: keyof FilterOptions, value: string | { start: string; end: string } | undefined) => {
     const newFilters = { ...localFilters, [key]: value };
     setLocalFilters(newFilters);
     onFilterChange(newFilters);

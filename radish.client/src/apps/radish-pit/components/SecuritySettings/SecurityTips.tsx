@@ -1,5 +1,6 @@
 import type { SecurityStatus } from '../../types';
 import styles from './SecurityTips.module.css';
+import { log } from '@/utils/logger';
 
 interface SecurityTipsProps {
   status: SecurityStatus | null;
@@ -33,7 +34,7 @@ export const SecurityTips = ({ status }: SecurityTipsProps) => {
         actionText: '立即设置',
         onAction: () => {
           // TODO: 跳转到支付密码设置
-          console.log('跳转到支付密码设置');
+          log.debug('SecurityTips', '跳转到支付密码设置');
         }
       });
     }

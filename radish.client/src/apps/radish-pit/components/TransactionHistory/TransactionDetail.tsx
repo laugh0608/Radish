@@ -2,6 +2,7 @@ import { formatCoinAmount, formatDateTime, getTransactionTypeDisplay, getTransac
 import { useUserStore } from '@/stores/userStore';
 import type { CoinTransactionVo } from '@/api/coin';
 import styles from './TransactionDetail.module.css';
+import { log } from '@/utils/logger';
 
 interface TransactionDetailProps {
   transaction: CoinTransactionVo;
@@ -28,7 +29,7 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
       // TODO: 显示复制成功提示
       alert('流水号已复制到剪贴板');
     } catch (err) {
-      console.error('复制失败:', err);
+      log.error('TransactionDetail', '复制失败:', err);
       alert('复制失败，请手动复制');
     }
   };

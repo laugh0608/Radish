@@ -69,7 +69,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
     debouncedSearchUsers(userSearchQuery);
   }, [userSearchQuery, debouncedSearchUsers]);
 
-  const handleInputChange = (field: keyof TransferFormData, value: any) => {
+  const handleInputChange = (field: keyof TransferFormData, value: number | string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
 
     // 清除对应字段的错误
