@@ -195,7 +195,7 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
                 <div className={styles.indicatorDescription}>
                   {status?.hasPaymentPassword
                     ? '您的转移操作受到支付密码保护'
-                    : '设置支付密码可以保护您的萝卜币安全'}
+                    : '设置支付密码可以保护您的萝卜安全'}
                 </div>
               </div>
             </div>
@@ -252,7 +252,7 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
             安全提示
           </h4>
           <ul className={styles.tipsList}>
-            <li>支付密码用于保护您的萝卜币转移操作</li>
+            <li>支付密码用于保护您的萝卜转移操作</li>
             <li>支付密码应与登录密码不同，增强安全性</li>
             <li>建议使用包含数字、字母和特殊字符的复杂密码</li>
             <li>定期更换支付密码，保持账户安全</li>
@@ -273,7 +273,7 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
           </h3>
           <p className={styles.formSubtitle}>
             {action === 'set'
-              ? '设置支付密码以保护您的萝卜币转移操作'
+              ? '设置支付密码以保护您的萝卜转移操作'
               : '输入当前密码和新密码来修改支付密码'}
           </p>
         </div>

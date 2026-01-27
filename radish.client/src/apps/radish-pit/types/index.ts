@@ -3,7 +3,7 @@
  */
 
 // 导航标签类型
-export type TabType = 'overview' | 'transfer' | 'history' | 'security' | 'statistics' | 'notifications';
+export type TabType = 'overview' | 'transfer' | 'history' | 'security' | 'statistics';
 
 // 账户统计信息
 export interface AccountStats {

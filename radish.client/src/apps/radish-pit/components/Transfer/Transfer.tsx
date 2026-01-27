@@ -108,8 +108,8 @@ export const Transfer = () => {
       {/* 页面标题和操作 */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h2 className={styles.title}>转移萝卜币</h2>
-          <p className={styles.subtitle}>向其他用户转移您的萝卜币</p>
+          <h2 className={styles.title}>转移萝卜</h2>
+          <p className={styles.subtitle}>向其他用户转移您的萝卜</p>
         </div>
         <div className={styles.headerRight}>
           <button

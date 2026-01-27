@@ -101,7 +101,7 @@ export const RecentTransactions = ({ displayMode }: RecentTransactionsProps) => 
           <div className={styles.empty}>
             <div className={styles.emptyIcon}>📝</div>
             <p>暂无交易记录</p>
-            <p className={styles.emptyHint}>开始使用萝卜币后，记录将显示在这里</p>
+            <p className={styles.emptyHint}>开始使用萝卜后，记录将显示在这里</p>
           </div>
         ) : (
           <div className={styles.transactionList}>

@@ -83,7 +83,7 @@ export const Statistics = () => {
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h2 className={styles.title}>收支统计</h2>
-          <p className={styles.subtitle}>分析您的萝卜币收入和支出情况</p>
+          <p className={styles.subtitle}>分析您的萝卜收入和支出情况</p>
         </div>
         <div className={styles.headerRight}>
           <div className={styles.timeRangeSelector}>

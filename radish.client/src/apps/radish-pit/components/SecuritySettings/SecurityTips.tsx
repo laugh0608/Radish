@@ -28,7 +28,7 @@ export const SecurityTips = ({ status }: SecurityTipsProps) => {
         id: 'set-password',
         icon: '🔑',
         title: '设置支付密码',
-        description: '设置支付密码可以保护您的萝卜币转移操作，防止未经授权的转移。',
+        description: '设置支付密码可以保护您的萝卜转移操作，防止未经授权的转移。',
         priority: 'high',
         actionText: '立即设置',
         onAction: () => {
@@ -78,7 +78,7 @@ export const SecurityTips = ({ status }: SecurityTipsProps) => {
         id: 'secure-environment',
         icon: '🏠',
         title: '安全环境操作',
-        description: '在安全的网络环境下进行萝卜币操作，避免在公共WiFi或不信任的设备上输入密码。',
+        description: '在安全的网络环境下进行萝卜操作，避免在公共WiFi或不信任的设备上输入密码。',
         priority: 'medium'
       },
       {

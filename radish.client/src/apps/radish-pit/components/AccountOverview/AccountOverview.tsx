@@ -55,7 +55,7 @@ export const AccountOverview = () => {
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h2 className={styles.title}>账户总览</h2>
-          <p className={styles.subtitle}>查看您的萝卜币存量和统计信息</p>
+          <p className={styles.subtitle}>查看您的萝卜存量和统计信息</p>
         </div>
         <div className={styles.headerRight}>
           <button

@@ -5,7 +5,7 @@
 import { VOCABULARY_MAP } from '../types';
 
 /**
- * 格式化萝卜币金额显示
+ * 格式化萝卜金额显示
  * @param amount 金额（胡萝卜）
  * @param showUnit 是否显示单位
  * @param useWhiteRadish 是否使用白萝卜显示
