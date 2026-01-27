@@ -17,10 +17,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@iconify/react": "^6.0.2",
     "@iconify-json/mdi": "^1.0.0",
+    "@iconify/react": "^6.0.2",
     "antd": "^6.1.0",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "recharts": "^3.7.0"
   },
   "peerDependencies": {
     "react": "^19.1.1",
