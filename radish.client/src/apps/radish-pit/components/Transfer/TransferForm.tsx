@@ -45,17 +45,10 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
         setSearchLoading(true);
         const results = await searchUsersForMention(query, t, 10);
 
-        // 转换后端返回的数据格式
-        const formattedResults: UserMentionOption[] = results.map(user => ({
-          id: user.id,
-          userName: user.userName,
-          displayName: user.displayName,
-          avatar: user.avatar
-        }));
-
-        setUserSearchResults(formattedResults);
-        setShowUserDropdown(formattedResults.length > 0);
-        log.debug('TransferForm', '用户搜索完成', { query, count: formattedResults.length });
+        // API 已经做了格式转换，直接使用
+        setUserSearchResults(results);
+        setShowUserDropdown(results.length > 0);
+        log.debug('TransferForm', '用户搜索完成', { query, count: results.length });
       } catch (error) {
         log.error('TransferForm', '搜索用户失败:', error);
         setUserSearchResults([]);
@@ -98,7 +91,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
   const handleUserSelect = (user: UserMentionOption) => {
     // 将用户ID转换为数字（后端返回的可能是字符串）
     const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
-    const displayName = user.displayName || user.userName;
+    const displayName = user.displayName || user.userName || '未知用户';
 
     setFormData(prev => ({
       ...prev,
@@ -218,7 +211,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
               {showUserDropdown && userSearchResults.length > 0 && (
                 <div className={styles.userDropdown}>
                   {userSearchResults.map((user) => {
-                    const displayName = user.displayName || user.userName;
+                    const displayName = user.displayName || user.userName || '未知用户';
                     return (
                       <div
                         key={user.id}
@@ -234,7 +227,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
                         </div>
                         <div className={styles.userInfo}>
                           <div className={styles.userName}>{displayName}</div>
-                          {user.displayName && user.displayName !== user.userName && (
+                          {user.displayName && user.userName && user.displayName !== user.userName && (
                             <div className={styles.userLoginName}>@{user.userName}</div>
                           )}
                         </div>

@@ -24,6 +24,16 @@ export interface UserMentionOption {
 }
 
 /**
+ * 后端返回的用户提及视图模型（带Vo前缀）
+ */
+interface UserMentionVo {
+  voId: number;
+  voUserName: string;
+  voDisplayName?: string | null;
+  voAvatar?: string | null;
+}
+
+/**
  * 搜索用户（用于@提及功能）
  * @param keyword 搜索关键词
  * @param limit 返回结果数量限制（默认10）
@@ -39,19 +49,25 @@ export async function searchUsersForMention(
     return [];
   }
 
-  const response = await apiGet<UserMentionOption[]>(
+  const response = await apiGet<UserMentionVo[]>(
     `/api/v1/User/SearchForMention?keyword=${encodeURIComponent(keyword)}&limit=${limit}`
   );
 
   if (!response.ok || !response.data) {
     // 使用 i18n 解析错误消息
-    const errorResponse = response as any;
-    if (errorResponse.messageKey) {
+    const errorResponse = response as ApiResponse<unknown>;
+    if ('messageKey' in errorResponse) {
       const parsed = parseApiResponseWithI18n(errorResponse, t);
       throw new Error(parsed.message || '搜索用户失败');
     }
     throw new Error(response.message || '搜索用户失败');
   }
 
-  return response.data;
+  // 将后端Vo格式转换为前端格式
+  return response.data.map(user => ({
+    id: user.voId,
+    userName: user.voUserName,
+    displayName: user.voDisplayName,
+    avatar: user.voAvatar
+  }));
 }
