@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import type { TFunction } from 'i18next';
-import type { ProductData } from '@/utils/viewModelMapper';
+import type { Product } from '@/types/shop';
 import * as shopApi from '@/api/shop';
 import type { ShopAppState } from '../ShopApp';
 
@@ -17,7 +17,7 @@ interface UseShopActionsProps {
   loadOrderDetail: (orderId: number) => Promise<void>;
   loadInventory: () => Promise<void>;
   searchProducts: (keyword: string) => Promise<void>;
-  selectedProduct: ProductData | null;
+  selectedProduct: Product | null;
 }
 
 export const useShopActions = (props: UseShopActionsProps) => {
@@ -59,7 +59,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
     }
 
     // 加载商品详情（如果还没有）
-    if (!selectedProduct || selectedProduct.id !== productId) {
+    if (!selectedProduct || selectedProduct.voId !== productId) {
       await loadProductDetail(productId);
     }
 

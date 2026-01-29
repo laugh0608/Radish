@@ -2,25 +2,25 @@ import { useState, useEffect, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import type { TFunction } from 'i18next';
 import type {
-  ProductCategoryData,
-  ProductListItemData,
-  ProductData,
-  OrderListItemData,
-  OrderData,
-  UserBenefitData,
-  UserInventoryItemData
-} from '@/utils/viewModelMapper';
+  ProductCategory,
+  ProductListItem,
+  Product,
+  OrderListItem,
+  Order,
+  UserBenefit,
+  UserInventoryItem
+} from '@/types/shop';
 import * as shopApi from '@/api/shop';
 
 export interface ShopDataState {
   // 分类数据
-  categories: ProductCategoryData[];
+  categories: ProductCategory[];
   loadingCategories: boolean;
 
   // 商品数据
-  products: ProductListItemData[];
-  featuredProducts: ProductListItemData[];
-  selectedProduct: ProductData | null;
+  products: ProductListItem[];
+  featuredProducts: ProductListItem[];
+  selectedProduct: Product | null;
   loadingProducts: boolean;
   loadingFeatured: boolean;
   loadingProductDetail: boolean;
@@ -34,14 +34,14 @@ export interface ShopDataState {
   checkingCanBuy: boolean;
 
   // 订单数据
-  orders: OrderListItemData[];
-  selectedOrder: OrderData | null;
+  orders: OrderListItem[];
+  selectedOrder: Order | null;
   loadingOrders: boolean;
   loadingOrderDetail: boolean;
 
   // 用户权益和背包
-  userBenefits: UserBenefitData[];
-  userInventory: UserInventoryItemData[];
+  userBenefits: UserBenefit[];
+  userInventory: UserInventoryItem[];
   loadingInventory: boolean;
 
   // 错误状态
@@ -89,11 +89,6 @@ export const useShopData = (t: TFunction) => {
     try {
       const result = await shopApi.getCategories(t);
       if (result.ok && result.data) {
-        // 调试：看一下 id 是否重复
-        // log.debug(
-        //     'shop categories ids',
-        //     result.data.map(c => c.id)
-        // );
         setState(prev => ({
           ...prev,
           categories: result.data || [],

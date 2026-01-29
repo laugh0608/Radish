@@ -139,19 +139,19 @@ export const PostList = ({
       )}
       <ul className={styles.list}>
         {posts.map(post => (
-          <li key={post.id}>
+          <li key={post.voId}>
             <button
               type="button"
-              onClick={() => onSelectPost(post.id)}
+              onClick={() => onSelectPost(post.voId)}
               className={`${styles.postButton} ${
-                selectedPostId === post.id ? styles.active : ''
+                selectedPostId === post.voId ? styles.active : ''
               }`}
             >
-              <div className={styles.postTitle}>{post.title}</div>
-              {post.authorName && (
+              <div className={styles.postTitle}>{post.voTitle}</div>
+              {post.voAuthorName && (
                 <div className={styles.postMeta}>
-                  作者：{post.authorName}
-                  {post.viewCount !== undefined && <span> · 浏览 {post.viewCount}</span>}
+                  作者：{post.voAuthorName}
+                  {post.voViewCount !== undefined && <span> · 浏览 {post.voViewCount}</span>}
                 </div>
               )}
             </button>

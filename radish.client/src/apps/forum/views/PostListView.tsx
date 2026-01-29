@@ -42,7 +42,7 @@ export const PostListView = ({
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
           <h2 className={styles.toolbarTitle}>
-            {categories.find(c => c.id === selectedCategoryId)?.name || '全部帖子'}
+            {categories.find(c => c.voId === selectedCategoryId)?.voName || '全部帖子'}
           </h2>
           <div className={styles.sortButtons}>
             <button
@@ -94,18 +94,18 @@ export const PostListView = ({
           <p className={styles.emptyText}>暂无帖子</p>
         ) : (
           posts.map((post) => {
-            const godComment = postGodComments.get(post.id);
+            const godComment = postGodComments.get(post.voId);
             return (
               <PostCard
-                key={post.id}
+                key={post.voId}
                 post={post}
-                onClick={() => onPostClick(post.id)}
+                onClick={() => onPostClick(post.voId)}
                 godComment={
                   godComment
                     ? {
-                        content: godComment.contentSnapshot || '',
-                        authorName: godComment.authorName,
-                        likeCount: godComment.likeCount
+                        content: godComment.voContentSnapshot || '',
+                        authorName: godComment.voAuthorName,
+                        likeCount: godComment.voLikeCount
                       }
                     : null
                 }

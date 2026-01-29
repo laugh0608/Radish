@@ -65,9 +65,9 @@ export const TrendingSidebar = ({
           <ul className={styles.list}>
             {hotPosts.map((post, index) => (
               <li
-                key={post.id}
+                key={post.voId}
                 className={styles.hotPostItem}
-                onClick={() => onPostClick(post.id)}
+                onClick={() => onPostClick(post.voId)}
               >
                 <div className={styles.hotPostRank}>
                   <span className={index < 3 ? styles.topRank : styles.normalRank}>
@@ -75,20 +75,20 @@ export const TrendingSidebar = ({
                   </span>
                 </div>
                 <div className={styles.hotPostContent}>
-                  <h4 className={styles.hotPostTitle}>{post.title}</h4>
+                  <h4 className={styles.hotPostTitle}>{post.voTitle}</h4>
                   <div className={styles.hotPostMeta}>
                     <span className={styles.hotPostLikes}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                       </svg>
-                      {post.likeCount}
+                      {post.voLikeCount}
                     </span>
                     <span className={styles.hotPostViews}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2"/>
                         <circle cx="12" cy="12" r="3" strokeWidth="2"/>
                       </svg>
-                      {post.browseCount}
+                      {post.voViewCount}
                     </span>
                   </div>
                 </div>
@@ -112,21 +112,21 @@ export const TrendingSidebar = ({
           <ul className={styles.list}>
             {godComments.map((comment) => (
               <li
-                key={comment.id}
+                key={comment.voId}
                 className={styles.godCommentItem}
-                onClick={() => comment.postId && onPostClick(comment.postId)}
+                onClick={() => comment.voPostId && onPostClick(comment.voPostId)}
               >
                 <div className={styles.godCommentHeader}>
-                  <span className={styles.godCommentAuthor}>{comment.authorName}</span>
+                  <span className={styles.godCommentAuthor}>{comment.voAuthorName}</span>
                   <span className={styles.godCommentLikes}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
                     </svg>
-                    {comment.likeCount}
+                    {comment.voLikeCount}
                   </span>
                 </div>
-                <p className={styles.godCommentContent}>{comment.content}</p>
-                <span className={styles.godCommentTime}>{formatTime(comment.createTime)}</span>
+                <p className={styles.godCommentContent}>{comment.voContent}</p>
+                <span className={styles.godCommentTime}>{formatTime(comment.voCreateTime)}</span>
               </li>
             ))}
           </ul>

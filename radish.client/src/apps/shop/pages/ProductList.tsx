@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import type { ProductCategoryData, ProductListItemData } from '@/utils/viewModelMapper';
+import type { ProductCategory, ProductListItem } from '@/types/shop';
 import { getProductTypeDisplay } from '@/api/shop';
 import styles from './ProductList.module.css';
 
 interface ProductListProps {
-  categories: ProductCategoryData[];
-  products: ProductListItemData[];
+  categories: ProductCategory[];
+  products: ProductListItem[];
   selectedCategoryId?: string;
   currentPage: number;
   totalPages: number;
@@ -55,8 +55,8 @@ export const ProductList = ({
   // 获取当前分类名称
   const getCurrentCategoryName = () => {
     if (!selectedCategoryId) return '全部商品';
-    const category = categories.find(c => c.id === selectedCategoryId);
-    return category?.name || '未知分类';
+    const category = categories.find(c => String(c.voId) === selectedCategoryId);
+    return category?.voName || '未知分类';
   };
 
   return (
@@ -99,11 +99,11 @@ export const ProductList = ({
           </button>
           {categories.map((category) => (
             <button
-              key={category.id}
-              className={`${styles.categoryTab} ${selectedCategoryId === category.id ? styles.active : ''}`}
-              onClick={() => onCategoryChange(category.id)}
+              key={category.voId}
+              className={`${styles.categoryTab} ${selectedCategoryId === String(category.voId) ? styles.active : ''}`}
+              onClick={() => onCategoryChange(String(category.voId))}
             >
-              {category.name}
+              {category.voName}
             </button>
           ))}
         </div>
@@ -128,28 +128,28 @@ export const ProductList = ({
             <div className={styles.productsGrid}>
               {products.map((product) => (
                 <div
-                  key={product.id}
+                  key={product.voId}
                   className={styles.productCard}
-                  onClick={() => onProductClick(product.id)}
+                  onClick={() => onProductClick(product.voId)}
                 >
                   <div className={styles.productImage}>
-                    {product.coverImage ? (
-                      <img src={product.coverImage} alt={product.name} />
-                    ) : product.icon ? (
-                      <img src={product.icon} alt={product.name} />
+                    {product.voCoverImage ? (
+                      <img src={product.voCoverImage} alt={product.voName} />
+                    ) : product.voIcon ? (
+                      <img src={product.voIcon} alt={product.voName} />
                     ) : (
                       <div className={styles.defaultProductImage}>
                         <span>🎁</span>
                       </div>
                     )}
 
-                    {product.hasDiscount && (
+                    {product.voHasDiscount && (
                       <div className={styles.discountBadge}>
                         特价
                       </div>
                     )}
 
-                    {!product.inStock && (
+                    {!product.voInStock && (
                       <div className={styles.outOfStockOverlay}>
                         <span>缺货</span>
                       </div>
@@ -158,28 +158,28 @@ export const ProductList = ({
 
                   <div className={styles.productInfo}>
                     <div className={styles.productType}>
-                      {getProductTypeDisplay(product.productType)}
+                      {getProductTypeDisplay(product.voProductType)}
                     </div>
 
-                    <h3 className={styles.productName}>{product.name}</h3>
+                    <h3 className={styles.productName}>{product.voName}</h3>
 
                     <div className={styles.productPrice}>
                       <span className={styles.currentPrice}>
-                        {product.price.toLocaleString()} 胡萝卜
+                        {product.voPrice.toLocaleString()} 胡萝卜
                       </span>
-                      {product.originalPrice && product.originalPrice > product.price && (
+                      {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
                         <span className={styles.originalPrice}>
-                          {product.originalPrice.toLocaleString()}
+                          {product.voOriginalPrice.toLocaleString()}
                         </span>
                       )}
                     </div>
 
                     <div className={styles.productMeta}>
                       <span className={styles.soldCount}>
-                        已售 {product.soldCount}
+                        已售 {product.voSoldCount ?? 0}
                       </span>
                       <span className={styles.duration}>
-                        {product.durationDisplay}
+                        {product.voDurationDisplay ?? ''}
                       </span>
                     </div>
                   </div>
