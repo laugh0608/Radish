@@ -1,5 +1,6 @@
 /**
  * 论坛相关的 TypeScript 类型定义
+ * 直接使用后端 Vo 字段名，不进行映射
  */
 
 /**
@@ -19,85 +20,117 @@ export interface PageModel<T> {
 }
 
 /**
- * 分类
+ * 分类 Vo
  */
 export interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  description?: string | null;
-  parentId?: number | null;
+  voId: number;
+  voName: string;
+  voSlug: string;
+  voDescription?: string | null;
+  voIcon?: string | null;
+  voCoverImage?: string | null;
+  voParentId?: number | null;
+  voLevel?: number;
+  voOrderSort?: number;
+  voPostCount?: number;
+  voIsEnabled?: boolean;
+  voCreateTime?: string;
+  voCreateBy?: string | null;
 }
 
 /**
- * 帖子列表项
+ * 帖子列表项 Vo
  */
 export interface PostItem {
-  id: number;
-  title: string;
-  summary?: string | null;
-  categoryId: number;
-  authorName?: string | null;
-  createTime?: string;
-  viewCount?: number;
-  likeCount?: number;
-  browseCount?: number;
-  commentCount?: number;
+  voId: number;
+  voTitle: string;
+  voSlug?: string;
+  voSummary?: string | null;
+  voCategoryId: number;
+  voCategoryName?: string | null;
+  voAuthorId: number;
+  voAuthorName?: string | null;
+  voViewCount?: number;
+  voLikeCount?: number;
+  voCommentCount?: number;
+  voIsTop?: boolean;
+  voIsEssence?: boolean;
+  voIsLocked?: boolean;
+  voCreateTime?: string;
+  voUpdateTime?: string;
 }
 
 /**
- * 帖子详情
+ * 帖子详情 Vo
  */
-export interface PostDetail extends PostItem {
-  content: string;
-  authorId: number;
-  categoryName?: string;
-  tagNames?: string[];
-  likeCount?: number;
-  commentCount?: number;
+export interface PostDetail {
+  voId: number;
+  voTitle: string;
+  voSlug?: string;
+  voSummary?: string | null;
+  voContent: string;
+  voContentType?: string;
+  voCoverImage?: string | null;
+  voCategoryId: number;
+  voCategoryName?: string | null;
+  voAuthorId: number;
+  voAuthorName?: string | null;
+  voTags?: string;
+  voTagNames?: string[];
+  voViewCount?: number;
+  voLikeCount?: number;
+  voCommentCount?: number;
+  voIsTop?: boolean;
+  voIsEssence?: boolean;
+  voIsLocked?: boolean;
+  voCreateTime?: string;
+  voUpdateTime?: string;
 }
 
 /**
- * 评论节点（树形结构）
+ * 评论节点 Vo（树形结构）
  */
 export interface CommentNode {
-  id: number;
-  postId: number;
-  content: string;
-  authorId: number;
-  authorName: string;
-  parentId?: number | null;
-  replyToUserId?: number | null;
-  replyToUserName?: string | null;
-  createTime?: string;
-  likeCount?: number;
-  isLiked?: boolean;
-  children?: CommentNode[];
-  childrenTotal?: number; // 子评论总数（用于懒加载显示）
-
-  // 神评/沙发标识
-  isGodComment?: boolean;  // 是否为神评
-  isSofa?: boolean;        // 是否为沙发
-  highlightRank?: number;  // 高亮排名（1=第一名）
+  voId: number;
+  voPostId: number;
+  voContent: string;
+  voAuthorId: number;
+  voAuthorName: string;
+  voParentId?: number | null;
+  voRootId?: number | null;
+  voReplyToUserId?: number | null;
+  voReplyToUserName?: string | null;
+  voLevel?: number;
+  voLikeCount?: number;
+  voReplyCount?: number;
+  voIsTop?: boolean;
+  voIsLiked?: boolean;
+  voCreateTime?: string;
+  voUpdateTime?: string;
+  voChildren?: CommentNode[];
+  voChildrenTotal?: number;
+  voIsGodComment?: boolean;
+  voIsSofa?: boolean;
+  voHighlightRank?: number;
 }
 
 /**
- * 神评/沙发高亮记录
+ * 神评/沙发高亮记录 Vo
  */
 export interface CommentHighlight {
-  id: number;
-  postId: number;
-  commentId: number;
-  parentCommentId: number | null;
-  highlightType: number;       // 1=神评, 2=沙发
-  statDate: string;
-  likeCount: number;
-  rank: number;
-  contentSnapshot: string | null;
-  authorId: number;
-  authorName: string;
-  isCurrent: boolean;
-  createTime: string;
+  voId: number;
+  voPostId: number;
+  voCommentId: number;
+  voParentCommentId: number | null;
+  voHighlightType: number;
+  voStatDate: string;
+  voLikeCount: number;
+  voRank: number;
+  voContentSnapshot: string | null;
+  voAuthorId: number;
+  voAuthorName: string;
+  voIsCurrent: boolean;
+  voCreateTime: string;
 }
 
 /**

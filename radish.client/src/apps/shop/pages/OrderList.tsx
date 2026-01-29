@@ -1,9 +1,9 @@
-import type { OrderListItemData } from '@/utils/viewModelMapper';
+import type { OrderListItem } from '@/types/shop';
 import { getOrderStatusColor } from '@/api/shop';
 import styles from './OrderList.module.css';
 
 interface OrderListProps {
-  orders: OrderListItemData[];
+  orders: OrderListItem[];
   currentPage: number;
   totalPages: number;
   loading: boolean;
@@ -42,40 +42,40 @@ export const OrderList = ({
           <div className={styles.orderList}>
             {orders.map((order) => (
               <div
-                key={order.id}
+                key={order.voId}
                 className={styles.orderCard}
-                onClick={() => onOrderClick(order.id)}
+                onClick={() => onOrderClick(order.voId)}
               >
                 <div className={styles.orderHeader}>
-                  <span className={styles.orderNo}>订单号：{order.orderNo}</span>
+                  <span className={styles.orderNo}>订单号：{order.voOrderNo}</span>
                   <span
                     className={styles.orderStatus}
-                    style={{ color: getOrderStatusColor(order.status) }}
+                    style={{ color: getOrderStatusColor(order.voStatus) }}
                   >
-                    {order.statusDisplay}
+                    {order.voStatusDisplay ?? ''}
                   </span>
                 </div>
 
                 <div className={styles.orderContent}>
                   <div className={styles.productInfo}>
-                    {order.productIcon && (
+                    {order.voProductIcon && (
                       <img
-                        src={order.productIcon}
-                        alt={order.productName}
+                        src={order.voProductIcon}
+                        alt={order.voProductName}
                         className={styles.productIcon}
                       />
                     )}
                     <div className={styles.productDetails}>
-                      <h3 className={styles.productName}>{order.productName}</h3>
+                      <h3 className={styles.productName}>{order.voProductName}</h3>
                       <div className={styles.orderMeta}>
-                        <span>数量：{order.quantity}</span>
-                        <span>总价：{order.totalPrice.toLocaleString()} 胡萝卜</span>
+                        <span>数量：{order.voQuantity}</span>
+                        <span>总价：{order.voTotalPrice.toLocaleString()} 胡萝卜</span>
                       </div>
                     </div>
                   </div>
 
                   <div className={styles.orderTime}>
-                    {new Date(order.createTime).toLocaleString()}
+                    {order.voCreateTime ? new Date(order.voCreateTime).toLocaleString() : ''}
                   </div>
                 </div>
               </div>

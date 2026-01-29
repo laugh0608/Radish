@@ -21,15 +21,15 @@ export const CategoryList = ({
       {!loading && categories.length === 0 && <p className={styles.emptyText}>暂无分类</p>}
       <ul className={styles.list}>
         {categories.map(category => (
-          <li key={category.id}>
+          <li key={category.voId}>
             <button
               type="button"
-              onClick={() => onSelectCategory(category.id)}
+              onClick={() => onSelectCategory(category.voId)}
               className={`${styles.categoryButton} ${
-                selectedCategoryId === category.id ? styles.active : ''
+                selectedCategoryId === category.voId ? styles.active : ''
               }`}
             >
-              {category.name}
+              {category.voName}
             </button>
           </li>
         ))}

@@ -1,25 +1,24 @@
 /**
  * 商城系统相关的 API 调用
+ * 直接使用后端 Vo 字段名，不进行映射
  */
 
 import { apiGet, apiPost, configureApiClient, type ParsedApiResponse } from '@radish/ui';
 import type { TFunction } from 'i18next';
-import {
-  mapProductCategory,
-  mapProduct,
-  mapProductListItem,
-  mapOrder,
-  mapOrderListItem,
-  mapUserBenefit,
-  mapUserInventoryItem,
-  type ProductCategoryData,
-  type ProductData,
-  type ProductListItemData,
-  type OrderData,
-  type OrderListItemData,
-  type UserBenefitData,
-  type UserInventoryItemData
-} from '@/utils/viewModelMapper';
+import type {
+  ProductCategory,
+  ProductListItem,
+  Product,
+  OrderListItem,
+  Order,
+  UserBenefit,
+  UserInventoryItem,
+  PagedResponse,
+  CreateOrderRequest,
+  PurchaseResult,
+  UseItemRequest,
+  UseItemResult
+} from '@/types/shop';
 import { getApiBaseUrl } from '@/config/env';
 
 // 配置 API 客户端
@@ -29,15 +28,19 @@ configureApiClient({
 
 // ==================== 类型重导出 ====================
 
-// 从 viewModelMapper 重导出类型，保持向后兼容
 export type {
-  ProductCategoryData as ProductCategory,
-  ProductListItemData as ProductListItem,
-  ProductData as Product,
-  OrderListItemData as OrderListItem,
-  OrderData as Order,
-  UserBenefitData as UserBenefit,
-  UserInventoryItemData as UserInventoryItem
+  ProductCategory,
+  ProductListItem,
+  Product,
+  OrderListItem,
+  Order,
+  UserBenefit,
+  UserInventoryItem,
+  PagedResponse,
+  CreateOrderRequest,
+  PurchaseResult,
+  UseItemRequest,
+  UseItemResult
 };
 
 // ==================== 枚举常量（用于比较） ====================
@@ -77,90 +80,20 @@ export const StockType = {
 
 export type StockTypeValue = typeof StockType[keyof typeof StockType];
 
-/**
- * 分页响应
- */
-export interface PagedResponse<T> {
-  page: number;
-  pageSize: number;
-  dataCount: number;
-  pageCount: number;
-  data: T[];
-}
-
-/**
- * 创建订单请求
- */
-export interface CreateOrderRequest {
-  productId: number;
-  quantity?: number;
-  userRemark?: string;
-}
-
-/**
- * 购买结果
- */
-export interface PurchaseResult {
-  success: boolean;
-  orderId?: number;
-  orderNo?: string;
-  errorMessage?: string;
-  userBenefitId?: number;
-  deductedCoins?: number;
-  remainingBalance?: number;
-}
-
-/**
- * 使用道具请求
- */
-export interface UseItemRequest {
-  inventoryId: number;
-  quantity?: number;
-  targetId?: number;
-}
-
-/**
- * 使用道具结果
- */
-export interface UseItemResult {
-  success: boolean;
-  errorMessage?: string;
-  remainingQuantity: number;
-  effectDescription?: string;
-}
-
 // ==================== API 方法 ====================
 
 /**
  * 获取商品分类列表
  */
-export async function getCategories(t: TFunction): Promise<ParsedApiResponse<ProductCategoryData[]>> {
-  const response = await apiGet<any[]>('/api/v1/Shop/GetCategories');
-
-  if (!response.ok || !response.data) {
-    return response as ParsedApiResponse<ProductCategoryData[]>;
-  }
-
-  return {
-    ...response,
-    data: response.data.map(mapProductCategory)
-  };
+export async function getCategories(t: TFunction): Promise<ParsedApiResponse<ProductCategory[]>> {
+  return await apiGet<ProductCategory[]>('/api/v1/Shop/GetCategories');
 }
 
 /**
  * 获取分类详情
  */
-export async function getCategory(categoryId: string, t: TFunction): Promise<ParsedApiResponse<ProductCategoryData>> {
-  const response = await apiGet<any>(`/api/v1/Shop/GetCategory/${encodeURIComponent(categoryId)}`);
-
-  if (!response.ok || !response.data) {
-    return response as ParsedApiResponse<ProductCategoryData>;
-  }
-
-  return {
-    ...response,
-    data: mapProductCategory(response.data)
-  };
+export async function getCategory(categoryId: string, t: TFunction): Promise<ParsedApiResponse<ProductCategory>> {
+  return await apiGet<ProductCategory>(`/api/v1/Shop/GetCategory/${encodeURIComponent(categoryId)}`);
 }
 
 /**
@@ -173,7 +106,7 @@ export async function getProducts(
   keyword?: string,
   pageIndex: number = 1,
   pageSize: number = 20
-): Promise<ParsedApiResponse<PagedResponse<ProductListItemData>>> {
+): Promise<ParsedApiResponse<PagedResponse<ProductListItem>>> {
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
     pageSize: pageSize.toString()
@@ -191,35 +124,14 @@ export async function getProducts(
     params.append('keyword', keyword);
   }
 
-  const response = await apiGet<PagedResponse<any>>(`/api/v1/Shop/GetProducts?${params.toString()}`);
-
-  if (!response.ok || !response.data) {
-    return response as ParsedApiResponse<PagedResponse<ProductListItemData>>;
-  }
-
-  return {
-    ...response,
-    data: {
-      ...response.data,
-      data: response.data.data.map(mapProductListItem)
-    }
-  };
+  return await apiGet<PagedResponse<ProductListItem>>(`/api/v1/Shop/GetProducts?${params.toString()}`);
 }
 
 /**
  * 获取商品详情
  */
-export async function getProduct(productId: number, t: TFunction): Promise<ParsedApiResponse<ProductData>> {
-  const response = await apiGet<any>(`/api/v1/Shop/GetProduct/${productId}`);
-
-  if (!response.ok || !response.data) {
-    return response as ParsedApiResponse<ProductData>;
-  }
-
-  return {
-    ...response,
-    data: mapProduct(response.data)
-  };
+export async function getProduct(productId: number, t: TFunction): Promise<ParsedApiResponse<Product>> {
+  return await apiGet<Product>(`/api/v1/Shop/GetProduct/${productId}`);
 }
 
 /**
@@ -247,7 +159,7 @@ export async function getMyOrders(
   status?: OrderStatusValue,
   pageIndex: number = 1,
   pageSize: number = 20
-): Promise<ParsedApiResponse<PagedResponse<OrderListItemData>>> {
+): Promise<ParsedApiResponse<PagedResponse<OrderListItem>>> {
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
     pageSize: pageSize.toString()
@@ -257,38 +169,17 @@ export async function getMyOrders(
     params.append('status', status);
   }
 
-  const response = await apiGet<PagedResponse<any>>(
+  return await apiGet<PagedResponse<OrderListItem>>(
     `/api/v1/Shop/GetMyOrders?${params.toString()}`,
     { withAuth: true }
   );
-
-  if (!response.ok || !response.data) {
-    return response as ParsedApiResponse<PagedResponse<OrderListItemData>>;
-  }
-
-  return {
-    ...response,
-    data: {
-      ...response.data,
-      data: response.data.data.map(mapOrderListItem)
-    }
-  };
 }
 
 /**
  * 获取订单详情
  */
-export async function getOrder(orderId: number, t: TFunction): Promise<ParsedApiResponse<OrderData>> {
-  const response = await apiGet<any>(`/api/v1/Shop/GetOrder/${orderId}`, { withAuth: true });
-
-  if (!response.ok || !response.data) {
-    return response as ParsedApiResponse<OrderData>;
-  }
-
-  return {
-    ...response,
-    data: mapOrder(response.data)
-  };
+export async function getOrder(orderId: number, t: TFunction): Promise<ParsedApiResponse<Order>> {
+  return await apiGet<Order>(`/api/v1/Shop/GetOrder/${orderId}`, { withAuth: true });
 }
 
 /**
@@ -302,36 +193,18 @@ export async function cancelOrder(orderId: number, t: TFunction, reason?: string
 /**
  * 获取我的权益列表
  */
-export async function getMyBenefits(includeExpired: boolean = false, t: TFunction): Promise<ParsedApiResponse<UserBenefitData[]>> {
-  const response = await apiGet<any[]>(
+export async function getMyBenefits(includeExpired: boolean = false, t: TFunction): Promise<ParsedApiResponse<UserBenefit[]>> {
+  return await apiGet<UserBenefit[]>(
     `/api/v1/Shop/GetMyBenefits?includeExpired=${includeExpired}`,
     { withAuth: true }
   );
-
-  if (!response.ok || !response.data) {
-    return response as ParsedApiResponse<UserBenefitData[]>;
-  }
-
-  return {
-    ...response,
-    data: response.data.map(mapUserBenefit)
-  };
 }
 
 /**
  * 获取我的激活权益
  */
-export async function getMyActiveBenefits(t: TFunction): Promise<ParsedApiResponse<UserBenefitData[]>> {
-  const response = await apiGet<any[]>('/api/v1/Shop/GetMyActiveBenefits', { withAuth: true });
-
-  if (!response.ok || !response.data) {
-    return response as ParsedApiResponse<UserBenefitData[]>;
-  }
-
-  return {
-    ...response,
-    data: response.data.map(mapUserBenefit)
-  };
+export async function getMyActiveBenefits(t: TFunction): Promise<ParsedApiResponse<UserBenefit[]>> {
+  return await apiGet<UserBenefit[]>('/api/v1/Shop/GetMyActiveBenefits', { withAuth: true });
 }
 
 /**
@@ -351,17 +224,8 @@ export async function deactivateBenefit(benefitId: number, t: TFunction) {
 /**
  * 获取我的背包
  */
-export async function getMyInventory(t: TFunction): Promise<ParsedApiResponse<UserInventoryItemData[]>> {
-  const response = await apiGet<any[]>('/api/v1/Shop/GetMyInventory', { withAuth: true });
-
-  if (!response.ok || !response.data) {
-    return response as ParsedApiResponse<UserInventoryItemData[]>;
-  }
-
-  return {
-    ...response,
-    data: response.data.map(mapUserInventoryItem)
-  };
+export async function getMyInventory(t: TFunction): Promise<ParsedApiResponse<UserInventoryItem[]>> {
+  return await apiGet<UserInventoryItem[]>('/api/v1/Shop/GetMyInventory', { withAuth: true });
 }
 
 /**

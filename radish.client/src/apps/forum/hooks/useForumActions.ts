@@ -197,8 +197,8 @@ export const useForumActions = (
       localStorage.setItem('forum_liked_posts', JSON.stringify([...reconciledLikedPosts]));
 
       setSelectedPost((current) =>
-        current && current.id === postId
-          ? { ...current, likeCount: result.likeCount }
+        current && current.voId === postId
+          ? { ...current, voLikeCount: result.likeCount }
           : current
       );
     } catch (err) {
@@ -212,7 +212,7 @@ export const useForumActions = (
 
   // 编辑帖子
   const handleEditPost = (postId: number) => {
-    if (!selectedPost || selectedPost.id !== postId) {
+    if (!selectedPost || selectedPost.voId !== postId) {
       setError('请先选择要编辑的帖子');
       return;
     }
@@ -272,7 +272,7 @@ export const useForumActions = (
     try {
       await createComment(
         {
-          postId: selectedPost.id,
+          postId: selectedPost.voId,
           content,
           parentId: replyTo?.commentId ?? null,
           replyToUserId: null,
@@ -281,7 +281,7 @@ export const useForumActions = (
         t
       );
       setReplyTo(null);
-      await loadComments(selectedPost.id);
+      await loadComments(selectedPost.voId);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -332,7 +332,7 @@ export const useForumActions = (
     setError(null);
     try {
       await updateComment({ commentId, content: newContent }, t);
-      await loadComments(selectedPost.id);
+      await loadComments(selectedPost.voId);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -354,7 +354,7 @@ export const useForumActions = (
       await deleteComment(commentToDelete, t);
       setIsDeleteCommentDialogOpen(false);
       setCommentToDelete(null);
-      await loadComments(selectedPost.id);
+      await loadComments(selectedPost.voId);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -398,7 +398,7 @@ export const useForumActions = (
   const handleCommentSortChange = (newSortBy: 'newest' | 'hottest') => {
     setCommentSortBy(newSortBy);
     if (selectedPost) {
-      void loadComments(selectedPost.id);
+      void loadComments(selectedPost.voId);
     }
   };
 

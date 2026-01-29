@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { log } from '@/utils/logger';
-import type { OrderData } from '@/utils/viewModelMapper';
+import type { Order } from '@/types/shop';
 import { getOrderStatusColor, OrderStatus } from '@/api/shop';
 import styles from './OrderDetail.module.css';
 
 interface OrderDetailProps {
   orderId: number;
-  order: OrderData | null;
+  order: Order | null;
   loading: boolean;
   onBack: () => void;
   onCancelOrder: (orderId: number, reason?: string) => void;
@@ -54,7 +54,7 @@ export const OrderDetail = ({
   const handleConfirmCancel = async () => {
     setCancelling(true);
     try {
-      await onCancelOrder(order.id, cancelReason || undefined);
+      await onCancelOrder(order.voId, cancelReason || undefined);
       setShowCancelDialog(false);
       setCancelReason('');
     } catch (error) {
@@ -70,10 +70,10 @@ export const OrderDetail = ({
   };
 
   // 判断是否可以取消订单
-  const canCancel = order.status === OrderStatus.Pending || order.status === OrderStatus.Paid;
+  const canCancel = order.voStatus === OrderStatus.Pending || order.voStatus === OrderStatus.Paid;
 
   // 格式化时间
-  const formatTime = (timeStr?: string) => {
+  const formatTime = (timeStr?: string | null) => {
     if (!timeStr) return '-';
     return new Date(timeStr).toLocaleString('zh-CN', {
       year: 'numeric',
@@ -100,11 +100,11 @@ export const OrderDetail = ({
         <div className={styles.statusSection}>
           <div
             className={styles.statusBadge}
-            style={{ backgroundColor: getOrderStatusColor(order.status) }}
+            style={{ backgroundColor: getOrderStatusColor(order.voStatus) }}
           >
-            {order.statusDisplay}
+            {order.voStatusDisplay ?? ''}
           </div>
-          <div className={styles.orderNo}>订单号：{order.orderNo}</div>
+          <div className={styles.orderNo}>订单号：{order.voOrderNo}</div>
         </div>
 
         {/* 商品信息 */}
@@ -112,38 +112,38 @@ export const OrderDetail = ({
           <h2 className={styles.sectionTitle}>商品信息</h2>
           <div className={styles.productInfo}>
             <div className={styles.productImage}>
-              {order.productIcon ? (
-                <img src={order.productIcon} alt={order.productName} />
+              {order.voProductIcon ? (
+                <img src={order.voProductIcon} alt={order.voProductName} />
               ) : (
                 <div className={styles.defaultImage}>🎁</div>
               )}
             </div>
             <div className={styles.productDetails}>
               <div className={styles.productType}>
-                {order.productTypeDisplay}
+                {order.voProductTypeDisplay ?? ''}
               </div>
-              <h3 className={styles.productName}>{order.productName}</h3>
+              <h3 className={styles.productName}>{order.voProductName}</h3>
               <div className={styles.productMeta}>
                 <div className={styles.metaItem}>
                   <span className={styles.metaLabel}>单价：</span>
                   <span className={styles.metaValue}>
-                    {order.unitPrice.toLocaleString()} 胡萝卜
+                    {order.voUnitPrice.toLocaleString()} 胡萝卜
                   </span>
                 </div>
                 <div className={styles.metaItem}>
                   <span className={styles.metaLabel}>数量：</span>
-                  <span className={styles.metaValue}>{order.quantity} 件</span>
+                  <span className={styles.metaValue}>{order.voQuantity} 件</span>
                 </div>
                 <div className={styles.metaItem}>
                   <span className={styles.metaLabel}>总价：</span>
                   <span className={styles.metaValue}>
-                    {order.totalPrice.toLocaleString()} 胡萝卜
+                    {order.voTotalPrice.toLocaleString()} 胡萝卜
                   </span>
                 </div>
-                {order.durationDisplay && (
+                {order.voDurationDisplay && (
                   <div className={styles.metaItem}>
                     <span className={styles.metaLabel}>有效期：</span>
-                    <span className={styles.metaValue}>{order.durationDisplay}</span>
+                    <span className={styles.metaValue}>{order.voDurationDisplay}</span>
                   </div>
                 )}
               </div>
@@ -159,52 +159,52 @@ export const OrderDetail = ({
               <div className={styles.timelineDot}></div>
               <div className={styles.timelineContent}>
                 <div className={styles.timelineTitle}>创建订单</div>
-                <div className={styles.timelineTime}>{formatTime(order.createTime)}</div>
+                <div className={styles.timelineTime}>{formatTime(order.voCreateTime)}</div>
               </div>
             </div>
 
-            {order.paidTime && (
+            {order.voPaidTime && (
               <div className={styles.timelineItem}>
                 <div className={styles.timelineDot}></div>
                 <div className={styles.timelineContent}>
                   <div className={styles.timelineTitle}>支付完成</div>
-                  <div className={styles.timelineTime}>{formatTime(order.paidTime)}</div>
+                  <div className={styles.timelineTime}>{formatTime(order.voPaidTime)}</div>
                 </div>
               </div>
             )}
 
-            {order.completedTime && (
+            {order.voCompletedTime && (
               <div className={styles.timelineItem}>
                 <div className={styles.timelineDot}></div>
                 <div className={styles.timelineContent}>
                   <div className={styles.timelineTitle}>订单完成</div>
-                  <div className={styles.timelineTime}>{formatTime(order.completedTime)}</div>
+                  <div className={styles.timelineTime}>{formatTime(order.voCompletedTime)}</div>
                 </div>
               </div>
             )}
 
-            {order.cancelledTime && (
+            {order.voCancelledTime && (
               <div className={styles.timelineItem}>
                 <div className={`${styles.timelineDot} ${styles.cancelled}`}></div>
                 <div className={styles.timelineContent}>
                   <div className={styles.timelineTitle}>订单取消</div>
-                  <div className={styles.timelineTime}>{formatTime(order.cancelledTime)}</div>
-                  {order.cancelReason && (
+                  <div className={styles.timelineTime}>{formatTime(order.voCancelledTime)}</div>
+                  {order.voCancelReason && (
                     <div className={styles.timelineReason}>
-                      取消原因：{order.cancelReason}
+                      取消原因：{order.voCancelReason}
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            {order.status === OrderStatus.Failed && order.failReason && (
+            {order.voStatus === OrderStatus.Failed && order.voFailReason && (
               <div className={styles.timelineItem}>
                 <div className={`${styles.timelineDot} ${styles.failed}`}></div>
                 <div className={styles.timelineContent}>
                   <div className={styles.timelineTitle}>发放失败</div>
                   <div className={styles.timelineReason}>
-                    失败原因：{order.failReason}
+                    失败原因：{order.voFailReason}
                   </div>
                 </div>
               </div>
@@ -213,13 +213,13 @@ export const OrderDetail = ({
         </div>
 
         {/* 权益到期时间 */}
-        {order.benefitExpiresAt && (
+        {order.voBenefitExpiresAt && (
           <div className={styles.section}>
             <h2 className={styles.sectionTitle}>权益信息</h2>
             <div className={styles.benefitInfo}>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>权益到期时间：</span>
-                <span className={styles.infoValue}>{formatTime(order.benefitExpiresAt)}</span>
+                <span className={styles.infoValue}>{formatTime(order.voBenefitExpiresAt)}</span>
               </div>
             </div>
           </div>
