@@ -1,5 +1,46 @@
 # 2026年1月 第4周 (1月20日-26日)
 
+## 🔧 前端代码规范优化 (1月29日)
+
+**✅ 统一使用 viewModelMapper 和 env.ts 配置管理**
+
+### 类型映射统一
+
+**radish.console 商城模块**：
+- 移除重复的 `viewModelMapper.ts`，使用 `types.ts` 中的类型
+- 枚举常量改为字符串形式以匹配后端返回值
+
+**radish.client 模块重构**：
+- 通知模块：统一使用 `viewModelMapper` 中的 `NotificationData` 类型
+- 经验系统：统一使用 `viewModelMapper` 中的映射类型
+- 商城模块：移除重复类型定义，从 `viewModelMapper` 重导出类型
+- 论坛模块：统一使用 `viewModelMapper` 中的映射类型
+
+### API URL 配置统一
+
+**移除硬编码 URL**：
+- 修复 20+ 处硬编码的 `https://localhost:5000` URL
+- 统一使用 `env.ts` 中的配置函数
+
+**radish.console**：
+- `api/clients.ts`、`api/shopApi.ts` 使用 `getApiBaseUrl()`
+
+**radish.client**：
+- 9 个 API 文件使用 `getApiBaseUrl()`
+- `config/env.ts` 增强：新增 `getAuthBaseUrl()`、`getSignalrHubUrl()`
+- `App.tsx`、`Dock.tsx`、`ProfileApp.tsx` 等组件使用统一配置
+- `AppRegistry.tsx` 使用 `isAccessingViaGateway()` 简化判断
+- `notificationHub.ts` 使用 `getSignalrHubUrl()`
+
+### 提交记录
+
+```
+d2f06dd refactor(frontend): 统一使用 env.ts 配置管理 API URL
+b6e8fae refactor(frontend): 统一使用 viewModelMapper 进行类型映射
+```
+
+---
+
 ## M10 后台管理Console 完成 (1月22日)
 
 **✅ M10 后台管理Console 已于 2026-01-22 完成**
