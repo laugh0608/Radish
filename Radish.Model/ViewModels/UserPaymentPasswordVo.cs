@@ -221,3 +221,29 @@ public class PasswordStrengthVo
     /// </summary>
     public bool VoIsValid { get; set; }
 }
+
+/// <summary>
+/// 支付密码统计信息视图模型
+/// </summary>
+public class PaymentPasswordStatsVo
+{
+    /// <summary>
+    /// 总用户数
+    /// </summary>
+    public int VoTotalUsers { get; set; }
+
+    /// <summary>
+    /// 已设置密码的用户数
+    /// </summary>
+    public int VoUsersWithPassword { get; set; }
+
+    /// <summary>
+    /// 被锁定的用户数
+    /// </summary>
+    public int VoLockedUsers { get; set; }
+
+    /// <summary>
+    /// 密码设置率（百分比）
+    /// </summary>
+    public double VoPasswordSetupRate { get; set; }
+}

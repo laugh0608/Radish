@@ -179,6 +179,17 @@
   font-weight: 500;
 }
 
+.userInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.userLoginName {
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
 /* 金额输入容器 */
 .amountContainer {
   display: flex;

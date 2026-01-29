@@ -147,10 +147,10 @@ public class PaymentPasswordController : ControllerBase
     /// <returns>统计信息</returns>
     [HttpGet("Admin/GetStats")]
     [Authorize(Policy = "SystemOrAdmin")]
-    public async Task<MessageModel<object>> AdminGetStats()
+    public async Task<MessageModel<PaymentPasswordStatsVo>> AdminGetStats()
     {
         var stats = await _paymentPasswordService.GetPaymentPasswordStatsAsync();
-        return MessageModel<object>.Success("查询成功", stats);
+        return MessageModel<PaymentPasswordStatsVo>.Success("查询成功", stats);
     }
 
     /// <summary>

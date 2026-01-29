@@ -404,7 +404,7 @@ public class PaymentPasswordService : IPaymentPasswordService
     /// 获取支付密码统计信息
     /// </summary>
     /// <returns>统计信息</returns>
-    public async Task<object> GetPaymentPasswordStatsAsync()
+    public async Task<PaymentPasswordStatsVo> GetPaymentPasswordStatsAsync()
     {
         try
         {
@@ -412,12 +412,12 @@ public class PaymentPasswordService : IPaymentPasswordService
             var lockedUsers = await _paymentPasswordRepository.GetLockedUsersCountAsync();
             var usersWithPassword = await _paymentPasswordRepository.QueryCountAsync(p => p.IsEnabled && !string.IsNullOrEmpty(p.PasswordHash));
 
-            return new
+            return new PaymentPasswordStatsVo
             {
-                TotalUsers = totalUsers,
-                UsersWithPassword = usersWithPassword,
-                LockedUsers = lockedUsers,
-                PasswordSetupRate = totalUsers > 0 ? (double)usersWithPassword / totalUsers * 100 : 0
+                VoTotalUsers = totalUsers,
+                VoUsersWithPassword = usersWithPassword,
+                VoLockedUsers = lockedUsers,
+                VoPasswordSetupRate = totalUsers > 0 ? (double)usersWithPassword / totalUsers * 100 : 0
             };
         }
         catch (Exception ex)

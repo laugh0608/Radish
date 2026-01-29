@@ -59,7 +59,7 @@ public interface IPaymentPasswordService
     /// 获取支付密码统计信息
     /// </summary>
     /// <returns>统计信息</returns>
-    Task<object> GetPaymentPasswordStatsAsync();
+    Task<PaymentPasswordStatsVo> GetPaymentPasswordStatsAsync();
 
     /// <summary>
     /// 清理过期的锁定状态
