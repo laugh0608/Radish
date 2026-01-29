@@ -1,4 +1,4 @@
-import type { Category } from '@/types/forum';
+import type { Category } from '@/api/forum';
 import styles from './CategoryList.module.css';
 
 interface CategoryListProps {

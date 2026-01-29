@@ -1,10 +1,10 @@
-import type { Product } from '@/api/shop';
+import type { ProductData } from '@/utils/viewModelMapper';
 import { getProductTypeDisplay, StockType } from '@/api/shop';
 import styles from './ProductDetail.module.css';
 
 interface ProductDetailProps {
   productId: number;
-  product: Product | null;
+  product: ProductData | null;
   loading: boolean;
   canBuy: { canBuy: boolean; reason: string } | null;
   checkingCanBuy: boolean;

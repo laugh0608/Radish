@@ -10,9 +10,10 @@ import {
   updateComment,
   deletePost,
   deleteComment,
-  getChildComments
+  getChildComments,
+  type CommentNode,
+  type PostDetail
 } from '@/api/forum';
-import type { CommentNode, PostDetail } from '@/types/forum';
 
 export interface ForumActionsState {
   // Modal 状态

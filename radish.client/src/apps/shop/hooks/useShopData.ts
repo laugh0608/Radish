@@ -1,17 +1,26 @@
 import { useState, useEffect, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import type { TFunction } from 'i18next';
+import type {
+  ProductCategoryData,
+  ProductListItemData,
+  ProductData,
+  OrderListItemData,
+  OrderData,
+  UserBenefitData,
+  UserInventoryItemData
+} from '@/utils/viewModelMapper';
 import * as shopApi from '@/api/shop';
 
 export interface ShopDataState {
   // 分类数据
-  categories: shopApi.ProductCategory[];
+  categories: ProductCategoryData[];
   loadingCategories: boolean;
 
   // 商品数据
-  products: shopApi.ProductListItem[];
-  featuredProducts: shopApi.ProductListItem[];
-  selectedProduct: shopApi.Product | null;
+  products: ProductListItemData[];
+  featuredProducts: ProductListItemData[];
+  selectedProduct: ProductData | null;
   loadingProducts: boolean;
   loadingFeatured: boolean;
   loadingProductDetail: boolean;
@@ -25,14 +34,14 @@ export interface ShopDataState {
   checkingCanBuy: boolean;
 
   // 订单数据
-  orders: shopApi.OrderListItem[];
-  selectedOrder: shopApi.Order | null;
+  orders: OrderListItemData[];
+  selectedOrder: OrderData | null;
   loadingOrders: boolean;
   loadingOrderDetail: boolean;
 
   // 用户权益和背包
-  userBenefits: shopApi.UserBenefit[];
-  userInventory: shopApi.UserInventoryItem[];
+  userBenefits: UserBenefitData[];
+  userInventory: UserInventoryItemData[];
   loadingInventory: boolean;
 
   // 错误状态
@@ -103,7 +112,7 @@ export const useShopData = (t: TFunction) => {
   // 加载商品列表
   const loadProducts = useCallback(async (
     categoryId?: string,
-    productType?: shopApi.ProductType,
+    productType?: shopApi.ProductTypeValue,
     keyword?: string,
     pageIndex: number = 1,
     pageSize: number = 20
@@ -195,7 +204,7 @@ export const useShopData = (t: TFunction) => {
 
   // 加载订单列表
   const loadOrders = useCallback(async (
-    status?: shopApi.OrderStatus,
+    status?: shopApi.OrderStatusValue,
     pageIndex: number = 1,
     pageSize: number = 20
   ) => {

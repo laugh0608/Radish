@@ -112,7 +112,7 @@ export const OrderList = () => {
     if (!retryOrder) return;
 
     try {
-      await retryGrantBenefit(retryOrder.id);
+      await retryGrantBenefit(retryOrder.voId);
       message.success('重试成功');
       loadOrders();
     } catch (error) {
@@ -128,8 +128,8 @@ export const OrderList = () => {
   const columns: TableColumnsType<Order> = [
     {
       title: '订单号',
-      dataIndex: 'orderNo',
-      key: 'orderNo',
+      dataIndex: 'voOrderNo',
+      key: 'voOrderNo',
       width: 180,
       fixed: 'left',
     },
@@ -139,8 +139,8 @@ export const OrderList = () => {
       width: 150,
       render: (_: unknown, record: Order) => (
         <div>
-          <div>{record.userName || '未知'}</div>
-          <div style={{ fontSize: '12px', color: '#999' }}>ID: {record.userId}</div>
+          <div>{record.voUserName || '未知'}</div>
+          <div style={{ fontSize: '12px', color: '#999' }}>ID: {record.voUserId}</div>
         </div>
       ),
     },
@@ -150,24 +150,24 @@ export const OrderList = () => {
       width: 200,
       render: (_: unknown, record: Order) => (
         <div>
-          <div>{record.productName}</div>
+          <div>{record.voProductName}</div>
           <div style={{ fontSize: '12px', color: '#999' }}>
-            {getProductTypeDisplay(record.productType)} | ID: {record.productId}
+            {getProductTypeDisplay(record.voProductType)} | ID: {record.voProductId}
           </div>
         </div>
       ),
     },
     {
       title: '数量',
-      dataIndex: 'quantity',
-      key: 'quantity',
+      dataIndex: 'voQuantity',
+      key: 'voQuantity',
       width: 80,
       align: 'center',
     },
     {
       title: '单价',
-      dataIndex: 'unitPrice',
-      key: 'unitPrice',
+      dataIndex: 'voUnitPrice',
+      key: 'voUnitPrice',
       width: 120,
       render: (price: number) => (
         <span style={{ color: '#ff4d4f' }}>{price} 胡萝卜</span>
@@ -175,8 +175,8 @@ export const OrderList = () => {
     },
     {
       title: '总价',
-      dataIndex: 'totalPrice',
-      key: 'totalPrice',
+      dataIndex: 'voTotalPrice',
+      key: 'voTotalPrice',
       width: 120,
       render: (price: number) => (
         <span style={{ fontWeight: 'bold', color: '#ff4d4f' }}>
@@ -189,15 +189,15 @@ export const OrderList = () => {
       key: 'status',
       width: 120,
       render: (_: unknown, record: Order) => (
-        <Tag color={getOrderStatusColor(record.status)}>
-          {record.statusDisplay}
+        <Tag color={getOrderStatusColor(record.voStatus)}>
+          {record.voStatusDisplay}
         </Tag>
       ),
     },
     {
       title: '创建时间',
-      dataIndex: 'createTime',
-      key: 'createTime',
+      dataIndex: 'voCreateTime',
+      key: 'voCreateTime',
       width: 180,
       render: (time: string) => new Date(time).toLocaleString('zh-CN'),
     },
@@ -216,7 +216,7 @@ export const OrderList = () => {
           >
             详情
           </Button>
-          {record.status === 'Failed' && ( // Failed
+          {record.voStatus === 'Failed' && ( // Failed
             <Button
               variant="ghost"
               size="small"
@@ -297,7 +297,7 @@ export const OrderList = () => {
       <Table
         columns={columns}
         dataSource={orders}
-        rowKey="id"
+        rowKey="voId"
         loading={loading}
         pagination={{
           current: pageIndex,
@@ -331,7 +331,7 @@ export const OrderList = () => {
       <ConfirmDialog
         isOpen={confirmVisible}
         title="确认重试"
-        message={`确定要重新发放订单"${retryOrder?.orderNo}"的权益吗？`}
+        message={`确定要重新发放订单"${retryOrder?.voOrderNo}"的权益吗？`}
         onConfirm={handleConfirmRetry}
         onCancel={() => {
           setConfirmVisible(false);

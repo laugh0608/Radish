@@ -1,9 +1,9 @@
-import type { ProductCategory, ProductListItem } from '@/api/shop';
+import type { ProductCategoryData, ProductListItemData } from '@/utils/viewModelMapper';
 import styles from './ShopHome.module.css';
 
 interface ShopHomeProps {
-  categories: ProductCategory[];
-  featuredProducts: ProductListItem[];
+  categories: ProductCategoryData[];
+  featuredProducts: ProductListItemData[];
   loading: boolean;
   onCategoryClick: (categoryId: string) => void;
   onProductClick: (productId: number) => void;

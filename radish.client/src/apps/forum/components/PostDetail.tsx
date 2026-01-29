@@ -1,4 +1,4 @@
-import type { PostDetail as PostDetailType } from '@/types/forum';
+import type { PostDetail as PostDetailType } from '@/api/forum';
 import { MarkdownRenderer, Icon } from '@radish/ui';
 import styles from './PostDetail.module.css';
 

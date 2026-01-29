@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import type { UserBenefit, UserInventoryItem, BenefitType, ConsumableType } from '@/api/shop';
+import type { UserBenefitData, UserInventoryItemData } from '@/utils/viewModelMapper';
 import styles from './Inventory.module.css';
 
 interface InventoryProps {
-  benefits: UserBenefit[];
-  inventory: UserInventoryItem[];
+  benefits: UserBenefitData[];
+  inventory: UserInventoryItemData[];
   loading: boolean;
   onActivateBenefit: (benefitId: number) => void;
   onDeactivateBenefit: (benefitId: number) => void;
@@ -14,28 +14,28 @@ interface InventoryProps {
 
 type TabType = 'benefits' | 'consumables';
 
-const getBenefitTypeIcon = (type: BenefitType): string => {
-  const icons: Record<number, string> = {
-    0: '🏅',
-    1: '🖼️',
-    2: '🎖️',
-    3: '🎨',
-    4: '✍️',
-    5: '🌈',
-    6: '❤️'
+const getBenefitTypeIcon = (type: string): string => {
+  const icons: Record<string, string> = {
+    'Badge': '🏅',
+    'AvatarFrame': '🖼️',
+    'Title': '🎖️',
+    'Theme': '🎨',
+    'Signature': '✍️',
+    'NameColor': '🌈',
+    'LikeEffect': '❤️'
   };
   return icons[type] || '🎁';
 };
 
-const getConsumableTypeIcon = (type: ConsumableType): string => {
-  const icons: Record<number, string> = {
-    0: '📝',
-    1: '📌',
-    2: '✨',
-    3: '⭐',
-    4: '🥕',
-    5: '🚀',
-    6: '🎫'
+const getConsumableTypeIcon = (type: string): string => {
+  const icons: Record<string, string> = {
+    'RenameCard': '📝',
+    'PostPinCard': '📌',
+    'PostHighlightCard': '✨',
+    'ExpCard': '⭐',
+    'CoinCard': '🥕',
+    'DoubleExpCard': '🚀',
+    'LotteryTicket': '🎫'
   };
   return icons[type] || '📦';
 };
@@ -50,7 +50,7 @@ export const Inventory = ({
   onBack
 }: InventoryProps) => {
   const [activeTab, setActiveTab] = useState<TabType>('benefits');
-  const [selectedItem, setSelectedItem] = useState<UserInventoryItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<UserInventoryItemData | null>(null);
   const [useQuantity, setUseQuantity] = useState(1);
   const [showUseModal, setShowUseModal] = useState(false);
 
@@ -65,7 +65,7 @@ export const Inventory = ({
     });
   };
 
-  const handleUseItemClick = (item: UserInventoryItem) => {
+  const handleUseItemClick = (item: UserInventoryItemData) => {
     setSelectedItem(item);
     setUseQuantity(1);
     setShowUseModal(true);

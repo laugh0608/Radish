@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import type { Product } from '@/api/shop';
+import type { ProductData } from '@/utils/viewModelMapper';
 import { getProductTypeDisplay } from '@/api/shop';
 import styles from './PurchaseModal.module.css';
 
 interface PurchaseModalProps {
   isOpen: boolean;
-  product: Product | null;
+  product: ProductData | null;
   loading: boolean;
   onClose: () => void;
   onConfirm: (productId: number, quantity: number) => void;

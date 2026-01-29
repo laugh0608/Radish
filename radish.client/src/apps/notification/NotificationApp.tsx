@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import { NotificationList, type NotificationItemData } from '@radish/ui';
-import { notificationApi } from '@/api/notification';
+import { notificationApi, type Notification } from '@/api/notification';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
 import { toast } from '@radish/ui';
@@ -63,18 +63,18 @@ export const NotificationApp = () => {
         if (result && result.data) {
           const store = useNotificationStore.getState();
           store.setRecentNotifications(
-            result.data.map((n: any) => ({
-            id: n.id,
-            type: mapNotificationTypeToStore(n.type),
-            title: n.title,
-            content: n.content,
-            isRead: n.isRead,
-            createdAt: n.createdAt,
-            sourceId: n.businessId,
-            sourceType: n.businessType,
-            actorId: n.triggerId,
-            actorName: n.triggerName,
-            actorAvatar: n.triggerAvatar
+            result.data.map((n: Notification) => ({
+            id: n.voId,
+            type: mapNotificationTypeToStore(n.voType),
+            title: n.voTitle,
+            content: n.voContent,
+            isRead: n.voIsRead,
+            createdAt: n.voCreateTime,
+            sourceId: n.voRelatedId,
+            sourceType: n.voRelatedType,
+            actorId: 0,
+            actorName: '',
+            actorAvatar: ''
           }))
           );
         }

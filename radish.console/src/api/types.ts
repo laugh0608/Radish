@@ -1,8 +1,7 @@
 /**
  * API 响应类型定义
+ * 直接使用后端 Vo 字段名（voXxx 格式）
  */
-
-import type { ProductData, OrderData, ProductCategoryData } from '@/utils/viewModelMapper';
 
 /**
  * API 响应包装（与后端 MessageModel 保持一致）
@@ -93,14 +92,80 @@ export enum DurationType {
 }
 
 /**
- * 商品分类（导出映射后的类型）
+ * 商品分类 Vo（直接使用后端字段名）
  */
-export type ProductCategory = ProductCategoryData;
+export interface ProductCategory {
+  voId: number;
+  voName: string;
+  voDescription: string;
+  voIcon: string;
+  voSortOrder: number;
+  voIsEnabled: boolean;
+  voProductCount: number;
+  voCreateTime: string;
+  voUpdateTime: string;
+}
 
 /**
- * 商品详情（导出映射后的类型）
+ * 商品 Vo（直接使用后端字段名）
  */
-export type Product = ProductData;
+export interface Product {
+  voId: number;
+  voName: string;
+  voDescription: string;
+  voIcon: string;
+  voCoverImage: string;
+  voCategoryId: number;
+  voCategoryName: string;
+  voProductType: string;
+  voBenefitType?: string;
+  voConsumableType?: string;
+  voPrice: number;
+  voOriginalPrice: number;
+  voHasDiscount: boolean;
+  voDiscountPercent: number;
+  voStockType: string;
+  voStock: number;
+  voSoldCount: number;
+  voLimitPerUser: number;
+  voDurationType: string;
+  voDurationDays: number;
+  voExpiresAt: string;
+  voDurationDisplay: string;
+  voSortOrder: number;
+  voIsOnSale: boolean;
+  voIsEnabled: boolean;
+  voCreateTime: string;
+  voUpdateTime: string;
+}
+
+/**
+ * 订单 Vo（直接使用后端字段名）
+ */
+export interface Order {
+  voId: number;
+  voOrderNo: string;
+  voUserId: number;
+  voUserName: string;
+  voProductId: number;
+  voProductName: string;
+  voProductIcon: string;
+  voProductType: string;
+  voProductTypeDisplay: string;
+  voQuantity: number;
+  voUnitPrice: number;
+  voTotalPrice: number;
+  voStatus: string;
+  voStatusDisplay: string;
+  voBenefitExpiresAt: string;
+  voDurationDisplay: string;
+  voCreateTime: string;
+  voPaidTime: string;
+  voCompletedTime: string;
+  voCancelledTime: string;
+  voCancelReason: string;
+  voFailReason: string;
+}
 
 /**
  * 创建商品 DTO
@@ -133,8 +198,3 @@ export interface CreateProductDto {
 export interface UpdateProductDto extends CreateProductDto {
   id: number;
 }
-
-/**
- * 订单详情（导出映射后的类型）
- */
-export type Order = OrderData;

@@ -1,4 +1,4 @@
-import type { PostItem } from '@/types/forum';
+import type { PostItem } from '@/api/forum';
 import styles from './PostCard.module.css';
 
 interface PostCardProps {
