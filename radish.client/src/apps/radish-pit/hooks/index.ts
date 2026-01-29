@@ -7,6 +7,7 @@ import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { coinApi } from '@/api/coin';
 import { paymentPasswordApi } from '@/api/paymentPassword';
+import { getApiBaseUrl } from '@/config/env';
 import type {
   AccountStats,
   TransferFormData,
@@ -387,10 +388,5 @@ export const useNotifications = () => {
  * API基础URL Hook
  */
 export const useApiBaseUrl = () => {
-  return useMemo(() => {
-    if (typeof window !== 'undefined') {
-      return window.location.origin;
-    }
-    return 'https://localhost:5000';
-  }, []);
+  return useMemo(() => getApiBaseUrl(), []);
 };
