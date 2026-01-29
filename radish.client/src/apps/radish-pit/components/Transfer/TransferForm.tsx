@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import { formatCoinAmount, validateTransferAmount, debounce } from '../../utils';
+import { searchUsersForMention, type UserMentionOption } from '@/api/user';
+import { useTranslation } from 'react-i18next';
 import type { TransferFormData } from '../../types';
 import styles from './TransferForm.module.css';
 
@@ -11,16 +13,11 @@ interface TransferFormProps {
   onSubmit: (data: TransferFormData) => void;
 }
 
-interface UserSearchResult {
-  id: number;
-  name: string;
-  avatar?: string;
-}
-
 /**
  * 转账表单组件
  */
 export const TransferForm = ({ balance, displayMode, loading, onSubmit }: TransferFormProps) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<Partial<TransferFormData>>({
     amount: 0,
     note: '',
@@ -28,7 +25,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [userSearchQuery, setUserSearchQuery] = useState('');
-  const [userSearchResults, setUserSearchResults] = useState<UserSearchResult[]>([]);
+  const [userSearchResults, setUserSearchResults] = useState<UserMentionOption[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [amountValidation, setAmountValidation] = useState<{ isValid: boolean; message?: string }>({ isValid: true });
@@ -36,38 +33,42 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
   const useWhiteRadish = displayMode === 'white';
 
   // 防抖搜索用户
-  const debouncedSearchUsers = debounce(async (query: string) => {
-    if (!query.trim()) {
-      setUserSearchResults([]);
-      setShowUserDropdown(false);
-      return;
-    }
+  const searchUsers = useCallback(
+    debounce(async (query: string) => {
+      if (!query.trim()) {
+        setUserSearchResults([]);
+        setShowUserDropdown(false);
+        return;
+      }
 
-    try {
-      setSearchLoading(true);
-      // TODO: 实现用户搜索API
-      // 模拟搜索结果
-      await new Promise(resolve => setTimeout(resolve, 300));
+      try {
+        setSearchLoading(true);
+        const results = await searchUsersForMention(query, t, 10);
 
-      const mockResults: UserSearchResult[] = [
-        { id: 1, name: '张三' },
-        { id: 2, name: '李四' },
-        { id: 3, name: '王五' }
-      ].filter(user => user.name.includes(query));
+        // 转换后端返回的数据格式
+        const formattedResults: UserMentionOption[] = results.map(user => ({
+          id: user.id,
+          userName: user.userName,
+          displayName: user.displayName,
+          avatar: user.avatar
+        }));
 
-      setUserSearchResults(mockResults);
-      setShowUserDropdown(true);
-    } catch (error) {
-      log.error('搜索用户失败:', error);
-      setUserSearchResults([]);
-    } finally {
-      setSearchLoading(false);
-    }
-  }, 300);
+        setUserSearchResults(formattedResults);
+        setShowUserDropdown(formattedResults.length > 0);
+        log.debug('TransferForm', '用户搜索完成', { query, count: formattedResults.length });
+      } catch (error) {
+        log.error('TransferForm', '搜索用户失败:', error);
+        setUserSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300),
+    [t]
+  );
 
   useEffect(() => {
-    debouncedSearchUsers(userSearchQuery);
-  }, [userSearchQuery, debouncedSearchUsers]);
+    searchUsers(userSearchQuery);
+  }, [userSearchQuery, searchUsers]);
 
   const handleInputChange = (field: keyof TransferFormData, value: number | string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -94,13 +95,17 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
     }
   };
 
-  const handleUserSelect = (user: UserSearchResult) => {
+  const handleUserSelect = (user: UserMentionOption) => {
+    // 将用户ID转换为数字（后端返回的可能是字符串）
+    const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+    const displayName = user.displayName || user.userName;
+
     setFormData(prev => ({
       ...prev,
-      recipientId: user.id,
-      recipientName: user.name
+      recipientId: userId,
+      recipientName: displayName
     }));
-    setUserSearchQuery(user.name);
+    setUserSearchQuery(displayName);
     setShowUserDropdown(false);
 
     // 清除用户相关错误
@@ -212,22 +217,30 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
 
               {showUserDropdown && userSearchResults.length > 0 && (
                 <div className={styles.userDropdown}>
-                  {userSearchResults.map((user) => (
-                    <div
-                      key={user.id}
-                      className={styles.userOption}
-                      onClick={() => handleUserSelect(user)}
-                    >
-                      <div className={styles.userAvatar}>
-                        {user.avatar ? (
-                          <img src={user.avatar} alt={user.name} />
-                        ) : (
-                          <span>{user.name.charAt(0)}</span>
-                        )}
+                  {userSearchResults.map((user) => {
+                    const displayName = user.displayName || user.userName;
+                    return (
+                      <div
+                        key={user.id}
+                        className={styles.userOption}
+                        onClick={() => handleUserSelect(user)}
+                      >
+                        <div className={styles.userAvatar}>
+                          {user.avatar ? (
+                            <img src={user.avatar} alt={displayName} />
+                          ) : (
+                            <span>{displayName.charAt(0)}</span>
+                          )}
+                        </div>
+                        <div className={styles.userInfo}>
+                          <div className={styles.userName}>{displayName}</div>
+                          {user.displayName && user.displayName !== user.userName && (
+                            <div className={styles.userLoginName}>@{user.userName}</div>
+                          )}
+                        </div>
                       </div>
-                      <div className={styles.userName}>{user.name}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
