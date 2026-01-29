@@ -29,151 +29,55 @@ configureApiClient({
   baseUrl: apiBaseUrl.replace(/\/$/, ''),
 });
 
-// ==================== 类型定义 ====================
+// ==================== 类型重导出 ====================
+
+// 从 viewModelMapper 重导出类型，保持向后兼容
+export type {
+  ProductCategoryData as ProductCategory,
+  ProductListItemData as ProductListItem,
+  ProductData as Product,
+  OrderListItemData as OrderListItem,
+  OrderData as Order,
+  UserBenefitData as UserBenefit,
+  UserInventoryItemData as UserInventoryItem
+};
+
+// ==================== 枚举常量（用于比较） ====================
 
 /**
- * 商品类型枚举
+ * 商品类型枚举值（字符串形式，用于与后端返回值比较）
  */
 export const ProductType = {
-  Benefit: 0,    // 权益
-  Consumable: 1, // 消耗品
-  Physical: 2    // 实物
+  Benefit: 'Benefit',       // 权益
+  Consumable: 'Consumable', // 消耗品
+  Physical: 'Physical'      // 实物
 } as const;
 
-export type ProductType = typeof ProductType[keyof typeof ProductType];
+export type ProductTypeValue = typeof ProductType[keyof typeof ProductType];
 
 /**
- * 权益类型枚举
- */
-export const BenefitType = {
-  Badge: 0,        // 徽章
-  AvatarFrame: 1,  // 头像框
-  Title: 2,        // 称号
-  Theme: 3,        // 主题
-  Signature: 4,    // 签名档
-  NameColor: 5,    // 用户名颜色
-  LikeEffect: 6    // 点赞特效
-} as const;
-
-export type BenefitType = typeof BenefitType[keyof typeof BenefitType];
-
-/**
- * 消耗品类型枚举
- */
-export const ConsumableType = {
-  RenameCard: 0,        // 改名卡
-  PostPinCard: 1,       // 置顶卡
-  PostHighlightCard: 2, // 高亮卡
-  ExpCard: 3,           // 经验卡
-  CoinCard: 4,          // 萝卜币红包
-  DoubleExpCard: 5,     // 双倍经验卡
-  LotteryTicket: 6      // 抽奖券
-} as const;
-
-export type ConsumableType = typeof ConsumableType[keyof typeof ConsumableType];
-
-/**
- * 订单状态枚举
+ * 订单状态枚举值（字符串形式，用于与后端返回值比较）
  */
 export const OrderStatus = {
-  Pending: 0,    // 待支付
-  Paid: 1,       // 已支付
-  Completed: 2,  // 已完成
-  Cancelled: 3,  // 已取消
-  Refunded: 4,   // 已退款
-  Failed: 5      // 发放失败
+  Pending: 'Pending',       // 待支付
+  Paid: 'Paid',             // 已支付
+  Completed: 'Completed',   // 已完成
+  Cancelled: 'Cancelled',   // 已取消
+  Refunded: 'Refunded',     // 已退款
+  Failed: 'Failed'          // 发放失败
 } as const;
 
-export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
+export type OrderStatusValue = typeof OrderStatus[keyof typeof OrderStatus];
 
 /**
- * 库存类型枚举
+ * 库存类型枚举值（字符串形式）
  */
 export const StockType = {
-  Unlimited: 0, // 无限
-  Limited: 1    // 限量
+  Unlimited: 'Unlimited', // 无限
+  Limited: 'Limited'      // 限量
 } as const;
 
-export type StockType = typeof StockType[keyof typeof StockType];
-
-/**
- * 有效期类型枚举
- */
-export const DurationType = {
-  Permanent: 0, // 永久
-  Days: 1,      // 固定天数
-  FixedDate: 2  // 固定到期时间
-} as const;
-
-export type DurationType = typeof DurationType[keyof typeof DurationType];
-
-/**
- * 商品分类
- */
-export interface ProductCategory {
-  id: string;
-  name: string;
-  icon?: string;
-  description?: string;
-  sortOrder: number;
-  isEnabled: boolean;
-  productCount: number;
-}
-
-/**
- * 商品列表项
- */
-export interface ProductListItem {
-  id: number;
-  name: string;
-  icon?: string;
-  coverImage?: string;
-  categoryId: string;
-  productType: ProductType;
-  price: number;
-  originalPrice?: number;
-  hasDiscount: boolean;
-  soldCount: number;
-  inStock: boolean;
-  durationDisplay: string;
-}
-
-/**
- * 商品详情
- */
-export interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  icon?: string;
-  coverImage?: string;
-  categoryId: string;
-  categoryName?: string;
-  productType: ProductType;
-  productTypeDisplay: string;
-  benefitType?: BenefitType;
-  consumableType?: ConsumableType;
-  benefitValue?: string;
-  price: number;
-  originalPrice?: number;
-  hasDiscount: boolean;
-  discountPercent?: number;
-  stockType: StockType;
-  stock: number;
-  soldCount: number;
-  limitPerUser: number;
-  inStock: boolean;
-  durationType: DurationType;
-  durationDays?: number;
-  expiresAt?: string;
-  durationDisplay: string;
-  sortOrder: number;
-  isOnSale: boolean;
-  isEnabled: boolean;
-  onSaleTime?: string;
-  offSaleTime?: string;
-  createTime: string;
-}
+export type StockTypeValue = typeof StockType[keyof typeof StockType];
 
 /**
  * 分页响应
@@ -184,88 +88,6 @@ export interface PagedResponse<T> {
   dataCount: number;
   pageCount: number;
   data: T[];
-}
-
-/**
- * 订单列表项
- */
-export interface OrderListItem {
-  id: number;
-  orderNo: string;
-  productName: string;
-  productIcon?: string;
-  quantity: number;
-  totalPrice: number;
-  status: OrderStatus;
-  statusDisplay: string;
-  createTime: string;
-}
-
-/**
- * 订单详情
- */
-export interface Order {
-  id: number;
-  orderNo: string;
-  userId: number;
-  userName?: string;
-  productId: number;
-  productName: string;
-  productIcon?: string;
-  productType: ProductType;
-  productTypeDisplay: string;
-  benefitType?: BenefitType;
-  consumableType?: ConsumableType;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  status: OrderStatus;
-  statusDisplay: string;
-  benefitExpiresAt?: string;
-  durationDisplay?: string;
-  createTime: string;
-  paidTime?: string;
-  completedTime?: string;
-  cancelledTime?: string;
-  cancelReason?: string;
-  failReason?: string;
-}
-
-/**
- * 用户权益
- */
-export interface UserBenefit {
-  id: number;
-  userId: number;
-  benefitType: BenefitType;
-  benefitTypeDisplay: string;
-  benefitValue: string;
-  benefitName?: string;
-  benefitIcon?: string;
-  sourceType: string;
-  sourceTypeDisplay: string;
-  durationType: DurationType;
-  effectiveAt: string;
-  expiresAt?: string;
-  isExpired: boolean;
-  isActive: boolean;
-  durationDisplay: string;
-  createTime: string;
-}
-
-/**
- * 用户背包项
- */
-export interface UserInventoryItem {
-  id: number;
-  userId: number;
-  consumableType: ConsumableType;
-  consumableTypeDisplay: string;
-  itemValue?: string;
-  itemName?: string;
-  itemIcon?: string;
-  quantity: number;
-  createTime: string;
 }
 
 /**
@@ -349,7 +171,7 @@ export async function getCategory(categoryId: string, t: TFunction): Promise<Par
 export async function getProducts(
   t: TFunction,
   categoryId?: string,
-  productType?: ProductType,
+  productType?: ProductTypeValue,
   keyword?: string,
   pageIndex: number = 1,
   pageSize: number = 20
@@ -364,7 +186,7 @@ export async function getProducts(
   }
 
   if (productType !== undefined) {
-    params.append('productType', productType.toString());
+    params.append('productType', productType);
   }
 
   if (keyword) {
@@ -424,7 +246,7 @@ export async function purchaseProduct(request: CreateOrderRequest, t: TFunction)
  */
 export async function getMyOrders(
   t: TFunction,
-  status?: OrderStatus,
+  status?: OrderStatusValue,
   pageIndex: number = 1,
   pageSize: number = 20
 ): Promise<ParsedApiResponse<PagedResponse<OrderListItemData>>> {
@@ -434,7 +256,7 @@ export async function getMyOrders(
   });
 
   if (status !== undefined) {
-    params.append('status', status.toString());
+    params.append('status', status);
   }
 
   const response = await apiGet<PagedResponse<any>>(
@@ -578,7 +400,7 @@ export function formatProductPrice(price: number, originalPrice?: number): strin
 /**
  * 获取商品类型显示名称
  */
-export function getProductTypeDisplay(type: ProductType): string {
+export function getProductTypeDisplay(type: string): string {
   switch (type) {
     case ProductType.Benefit:
       return '权益';
@@ -587,14 +409,14 @@ export function getProductTypeDisplay(type: ProductType): string {
     case ProductType.Physical:
       return '实物';
     default:
-      return '未知';
+      return type || '未知';
   }
 }
 
 /**
  * 获取订单状态显示名称
  */
-export function getOrderStatusDisplay(status: OrderStatus): string {
+export function getOrderStatusDisplay(status: string): string {
   switch (status) {
     case OrderStatus.Pending:
       return '待支付';
@@ -609,14 +431,14 @@ export function getOrderStatusDisplay(status: OrderStatus): string {
     case OrderStatus.Failed:
       return '发放失败';
     default:
-      return '未知';
+      return status || '未知';
   }
 }
 
 /**
  * 获取订单状态颜色
  */
-export function getOrderStatusColor(status: OrderStatus): string {
+export function getOrderStatusColor(status: string): string {
   switch (status) {
     case OrderStatus.Pending:
       return '#faad14'; // 橙色

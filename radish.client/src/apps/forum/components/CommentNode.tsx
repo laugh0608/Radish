@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
-import type { CommentNode as CommentNodeType } from '@/types/forum';
+import type { CommentNode as CommentNodeType } from '@/api/forum';
 import { Icon } from '@radish/ui';
 import styles from './CommentNode.module.css';
 

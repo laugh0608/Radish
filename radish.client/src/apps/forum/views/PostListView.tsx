@@ -1,4 +1,4 @@
-import type { Category, PostItem, CommentHighlight } from '@/types/forum';
+import type { Category, PostItem, CommentHighlight } from '@/api/forum';
 import { PostCard } from '../components/PostCard';
 import styles from './PostListView.module.css';
 

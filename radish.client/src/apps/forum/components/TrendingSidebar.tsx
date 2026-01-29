@@ -1,4 +1,4 @@
-import type { PostItem, CommentNode, PostDetail } from '@/types/forum';
+import type { PostItem, CommentNode, PostDetail } from '@/api/forum';
 import { PostInfoCard } from './PostInfoCard';
 import styles from './TrendingSidebar.module.css';
 

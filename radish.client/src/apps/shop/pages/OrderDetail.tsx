@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { log } from '@/utils/logger';
-import type { Order } from '@/api/shop';
+import type { OrderData } from '@/utils/viewModelMapper';
 import { getOrderStatusColor, OrderStatus } from '@/api/shop';
 import styles from './OrderDetail.module.css';
 
 interface OrderDetailProps {
   orderId: number;
-  order: Order | null;
+  order: OrderData | null;
   loading: boolean;
   onBack: () => void;
   onCancelOrder: (orderId: number, reason?: string) => void;

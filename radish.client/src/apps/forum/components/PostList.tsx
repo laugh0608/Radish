@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { PostItem } from '@/types/forum';
+import type { PostItem } from '@/api/forum';
 import styles from './PostList.module.css';
 
 interface PostListProps {

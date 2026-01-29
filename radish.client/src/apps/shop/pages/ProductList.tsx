@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import type { ProductCategory, ProductListItem } from '@/api/shop';
+import type { ProductCategoryData, ProductListItemData } from '@/utils/viewModelMapper';
 import { getProductTypeDisplay } from '@/api/shop';
 import styles from './ProductList.module.css';
 
 interface ProductListProps {
-  categories: ProductCategory[];
-  products: ProductListItem[];
+  categories: ProductCategoryData[];
+  products: ProductListItemData[];
   selectedCategoryId?: string;
   currentPage: number;
   totalPages: number;

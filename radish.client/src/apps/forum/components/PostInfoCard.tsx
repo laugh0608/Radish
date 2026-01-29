@@ -1,4 +1,4 @@
-import type { PostDetail } from '@/types/forum';
+import type { PostDetail } from '@/api/forum';
 import styles from './PostInfoCard.module.css';
 
 interface PostInfoCardProps {

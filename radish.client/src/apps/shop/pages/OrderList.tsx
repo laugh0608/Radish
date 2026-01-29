@@ -1,9 +1,9 @@
-import type { OrderListItem } from '@/api/shop';
+import type { OrderListItemData } from '@/utils/viewModelMapper';
 import { getOrderStatusColor } from '@/api/shop';
 import styles from './OrderList.module.css';
 
 interface OrderListProps {
-  orders: OrderListItem[];
+  orders: OrderListItemData[];
   currentPage: number;
   totalPages: number;
   loading: boolean;

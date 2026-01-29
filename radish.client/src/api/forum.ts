@@ -3,13 +3,11 @@
  */
 
 import {
-  parseApiResponseWithI18n,
   apiGet,
   apiPost,
   apiPut,
   apiDelete,
   configureApiClient,
-  type ApiResponse
 } from '@radish/ui';
 import type { TFunction } from 'i18next';
 import {
@@ -17,7 +15,6 @@ import {
   mapPostItem,
   mapPostDetail,
   mapComment,
-  mapCommentHighlight,
   type CategoryData,
   type PostItemData,
   type PostDetailData,
@@ -25,15 +22,11 @@ import {
   type CommentHighlightData
 } from '@/utils/viewModelMapper';
 import type {
-  Category,
-  PostItem,
-  PostDetail,
-  CommentNode,
   PublishPostRequest,
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
-  CommentHighlight
+  UpdatePostRequest
 } from '@/types/forum';
 
 // 配置 API 客户端
@@ -43,6 +36,37 @@ const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined || de
 configureApiClient({
   baseUrl: apiBaseUrl.replace(/\/$/, ''),
 });
+
+// ==================== 类型重导出 ====================
+
+// 从 viewModelMapper 重导出类型，保持向后兼容
+export type {
+  CategoryData as Category,
+  PostItemData as PostItem,
+  PostDetailData as PostDetail,
+  CommentNodeData as CommentNode,
+  CommentHighlightData as CommentHighlight
+};
+
+// 从 types/forum 重导出请求/响应类型
+export type {
+  PublishPostRequest,
+  CreateCommentRequest,
+  CommentLikeResult,
+  PostLikeResult,
+  UpdatePostRequest
+};
+
+/**
+ * 分页模型
+ */
+export interface PageModel<T> {
+  page: number;
+  pageSize: number;
+  dataCount: number;
+  pageCount: number;
+  data: T[];
+}
 
 /**
  * 获取顶级分类列表
@@ -72,7 +96,7 @@ export async function getPostList(
   pageSize: number = 20,
   sortBy: string = 'newest',
   keyword: string = ''
-): Promise<import('@/types/forum').PageModel<PostItem>> {
+): Promise<PageModel<PostItemData>> {
   const params = new URLSearchParams();
   if (categoryId) params.set('categoryId', categoryId.toString());
   params.set('pageIndex', pageIndex.toString());
@@ -80,7 +104,7 @@ export async function getPostList(
   params.set('sortBy', sortBy);
   if (keyword.trim()) params.set('keyword', keyword.trim());
 
-  const response = await apiGet<import('@/types/forum').PageModel<any>>(
+  const response = await apiGet<PageModel<any>>(
     `/api/v1/Post/GetList?${params.toString()}`
   );
 
@@ -200,7 +224,7 @@ export async function toggleCommentLike(commentId: number, t: TFunction): Promis
  * 编辑帖子
  * @param request 编辑请求
  */
-export async function updatePost(request: import('@/types/forum').UpdatePostRequest, t: TFunction): Promise<void> {
+export async function updatePost(request: UpdatePostRequest, t: TFunction): Promise<void> {
   const response = await apiPut<null>('/api/v1/Post/Update', request, { withAuth: true });
 
   if (!response.ok) {

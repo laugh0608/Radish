@@ -7,15 +7,13 @@ import {
   getPostList,
   getPostById,
   getCommentTree,
-  getCurrentGodComments
+  getCurrentGodComments,
+  type Category,
+  type PostItem,
+  type PostDetail,
+  type CommentNode,
+  type CommentHighlight
 } from '@/api/forum';
-import type {
-  Category,
-  PostItem,
-  PostDetail,
-  CommentNode,
-  CommentHighlight
-} from '@/types/forum';
 
 export interface ForumDataState {
   // 数据状态

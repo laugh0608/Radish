@@ -325,6 +325,7 @@ export interface ProductData {
   stock: number;
   soldCount: number;
   limitPerUser: number;
+  inStock: boolean;
   durationType: string;
   durationDays?: number;
   expiresAt?: string;
@@ -362,6 +363,7 @@ export function mapProduct(vo: any): ProductData {
     stock: vo.voStock ?? vo.VoStock,
     soldCount: vo.voSoldCount ?? vo.VoSoldCount,
     limitPerUser: vo.voLimitPerUser ?? vo.VoLimitPerUser,
+    inStock: vo.voInStock ?? vo.VoInStock ?? false,
     durationType: vo.voDurationType ?? vo.VoDurationType,
     durationDays: vo.voDurationDays ?? vo.VoDurationDays,
     expiresAt: vo.voExpiresAt ?? vo.VoExpiresAt,

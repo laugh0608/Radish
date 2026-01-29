@@ -127,11 +127,11 @@ export const ProductList = () => {
   // 上架/下架
   const handleToggleSale = async (product: Product) => {
     try {
-      if (product.isOnSale) {
-        await takeOffSale(product.id);
+      if (product.voIsOnSale) {
+        await takeOffSale(product.voId);
         message.success('下架成功');
       } else {
-        await putOnSale(product.id);
+        await putOnSale(product.voId);
         message.success('上架成功');
       }
       loadProducts();
@@ -145,10 +145,10 @@ export const ProductList = () => {
   const handleDelete = (product: Product) => {
     (Modal as any).confirm({
       title: '确认删除',
-      content: `确定要删除商品"${product.name}"吗？`,
+      content: `确定要删除商品"${product.voName}"吗？`,
       onOk: async () => {
         try {
-          await deleteProduct(product.id);
+          await deleteProduct(product.voId);
           message.success('删除成功');
           loadProducts();
         } catch (error) {
@@ -163,19 +163,19 @@ export const ProductList = () => {
   const columns: TableColumnsType<Product> = [
     {
       title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
+      dataIndex: 'voId',
+      key: 'voId',
       width: 80,
     },
     {
       title: '商品图片',
-      dataIndex: 'coverImage',
-      key: 'coverImage',
+      dataIndex: 'voCoverImage',
+      key: 'voCoverImage',
       width: 100,
       render: (coverImage: string, record: Product) => (
         <Image
-          src={coverImage || record.icon || '/placeholder.png'}
-          alt={record.name}
+          src={coverImage || record.voIcon || '/placeholder.png'}
+          alt={record.voName}
           width={60}
           height={60}
           style={{ objectFit: 'cover', borderRadius: '4px' }}
@@ -185,20 +185,20 @@ export const ProductList = () => {
     },
     {
       title: '商品名称',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'voName',
+      key: 'voName',
       width: 200,
     },
     {
       title: '分类',
-      dataIndex: 'categoryName',
-      key: 'categoryName',
+      dataIndex: 'voCategoryName',
+      key: 'voCategoryName',
       width: 100,
     },
     {
       title: '类型',
-      dataIndex: 'productType',
-      key: 'productType',
+      dataIndex: 'voProductType',
+      key: 'voProductType',
       width: 100,
       render: (type: ProductType) => (
         <Tag color="blue">{getProductTypeDisplay(type)}</Tag>
@@ -206,17 +206,17 @@ export const ProductList = () => {
     },
     {
       title: '价格',
-      dataIndex: 'price',
-      key: 'price',
+      dataIndex: 'voPrice',
+      key: 'voPrice',
       width: 120,
       render: (price: number, record: Product) => (
         <div>
           <div style={{ fontWeight: 'bold', color: '#ff4d4f' }}>
             {price} 胡萝卜
           </div>
-          {record.originalPrice && record.originalPrice > price && (
+          {record.voOriginalPrice && record.voOriginalPrice > price && (
             <div style={{ fontSize: '12px', color: '#999', textDecoration: 'line-through' }}>
-              {record.originalPrice} 胡萝卜
+              {record.voOriginalPrice} 胡萝卜
             </div>
           )}
         </div>
@@ -224,12 +224,12 @@ export const ProductList = () => {
     },
     {
       title: '库存',
-      dataIndex: 'stock',
-      key: 'stock',
+      dataIndex: 'voStock',
+      key: 'voStock',
       width: 100,
       render: (stock: number, record: Product) => (
         <div>
-          {record.stockType === 'Unlimited' ? (
+          {record.voStockType === 'Unlimited' ? (
             <Tag color="green">无限</Tag>
           ) : (
             <span style={{ color: stock > 0 ? '#52c41a' : '#ff4d4f' }}>
@@ -241,8 +241,8 @@ export const ProductList = () => {
     },
     {
       title: '已售',
-      dataIndex: 'soldCount',
-      key: 'soldCount',
+      dataIndex: 'voSoldCount',
+      key: 'voSoldCount',
       width: 80,
     },
     {
@@ -251,11 +251,11 @@ export const ProductList = () => {
       width: 100,
       render: (_: unknown, record: Product) => (
         <Space direction="vertical" size="small">
-          <Tag color={record.isOnSale ? 'success' : 'default'}>
-            {record.isOnSale ? '已上架' : '已下架'}
+          <Tag color={record.voIsOnSale ? 'success' : 'default'}>
+            {record.voIsOnSale ? '已上架' : '已下架'}
           </Tag>
-          <Tag color={record.isEnabled ? 'success' : 'error'}>
-            {record.isEnabled ? '启用' : '禁用'}
+          <Tag color={record.voIsEnabled ? 'success' : 'error'}>
+            {record.voIsEnabled ? '启用' : '禁用'}
           </Tag>
         </Space>
       ),
@@ -283,7 +283,7 @@ export const ProductList = () => {
             size="small"
             onClick={() => handleToggleSale(record)}
           >
-            {record.isOnSale ? '下架' : '上架'}
+            {record.voIsOnSale ? '下架' : '上架'}
           </Button>
           <Button
             variant="danger"
@@ -329,8 +329,8 @@ export const ProductList = () => {
             onChange={setCategoryId}
           >
             {categories.map((cat) => (
-              <Select.Option key={cat.id} value={cat.id}>
-                {cat.name}
+              <Select.Option key={cat.voId} value={cat.voId}>
+                {cat.voName}
               </Select.Option>
             ))}
           </Select>
@@ -380,7 +380,7 @@ export const ProductList = () => {
       <Table
         columns={columns}
         dataSource={products}
-        rowKey="id"
+        rowKey="voId"
         loading={loading}
         pagination={{
           current: pageIndex,

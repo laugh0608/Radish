@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { CommentNode as CommentNodeType } from '@/types/forum';
+import type { CommentNode as CommentNodeType } from '@/api/forum';
 import { CommentNode } from './CommentNode';
 import styles from './CommentTree.module.css';
 
