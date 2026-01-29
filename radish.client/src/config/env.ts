@@ -56,8 +56,65 @@ export const env = {
 /**
  * 获取 API 基础 URL
  *
- * 兼容旧的硬编码方式
+ * 开发环境：根据当前端口智能选择
+ * - 5000端口：使用当前origin (通过Gateway)
+ * - 3000端口：使用配置的API URL (Gateway地址)
+ * 生产环境：使用配置的API URL
  */
 export function getApiBaseUrl(): string {
+  if (typeof window === 'undefined') {
+    return env.apiBaseUrl.replace(/\/$/, '');
+  }
+
+  // 如果通过 Gateway 访问（5000端口），使用当前 origin
+  if (window.location.port === '5000') {
+    return window.location.origin;
+  }
+
+  // 否则使用配置的 API URL（开发环境下为 Gateway 地址）
   return env.apiBaseUrl.replace(/\/$/, '');
+}
+
+/**
+ * 获取 Auth Server 基础 URL
+ *
+ * 开发环境：根据当前端口智能选择
+ * - 5000端口：使用当前origin (通过Gateway)
+ * - 3000端口：使用配置的Auth URL (Gateway地址)
+ * 生产环境：使用配置的Auth URL
+ */
+export function getAuthBaseUrl(): string {
+  if (typeof window === 'undefined') {
+    return env.authBaseUrl.replace(/\/$/, '');
+  }
+
+  // 如果通过 Gateway 访问（5000端口），使用当前 origin
+  if (window.location.port === '5000') {
+    return window.location.origin;
+  }
+
+  // 否则使用配置的认证服务器 URL（开发环境下为 Gateway 地址）
+  return env.authBaseUrl.replace(/\/$/, '');
+}
+
+/**
+ * 获取 SignalR Hub 基础 URL
+ *
+ * 开发环境：根据当前端口智能选择
+ * - 5000端口：使用当前origin (通过Gateway)
+ * - 3000端口：使用配置的SignalR URL (Gateway地址)
+ * 生产环境：使用配置的SignalR URL
+ */
+export function getSignalrHubUrl(): string {
+  if (typeof window === 'undefined') {
+    return env.signalrHubUrl.replace(/\/$/, '');
+  }
+
+  // 如果通过 Gateway 访问（5000端口），使用当前 origin
+  if (window.location.port === '5000') {
+    return window.location.origin;
+  }
+
+  // 否则使用配置的 SignalR URL（开发环境下为 Gateway 地址）
+  return env.signalrHubUrl.replace(/\/$/, '');
 }

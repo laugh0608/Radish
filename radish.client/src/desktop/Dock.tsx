@@ -9,6 +9,7 @@ import { CoinBalance } from './components/CoinBalance';
 import { ExperienceDisplay } from './components/ExperienceDisplay';
 import i18n from '@/i18n';
 import type { ApiResponse } from '@radish/ui';
+import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
 import styles from './Dock.module.css';
 
 /**
@@ -43,12 +44,7 @@ export const Dock = () => {
   const unreadMessages = connectionState === 'connected' ? storeUnreadCount : pollingUnreadCount;
 
   // 统一通过 Gateway 访问
-  const apiBaseUrl = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      return window.location.origin;
-    }
-    return 'https://localhost:5000';
-  }, []);
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
 
   // 解析头像 URL（处理相对路径）
   const resolveAvatarUrl = (url: string | undefined): string | undefined => {
@@ -119,20 +115,11 @@ export const Dock = () => {
     });
   }
 
-  const getAuthServerBaseUrl = (): string => {
-    if (typeof window === 'undefined') {
-      return 'https://localhost:5000';
-    }
-
-    // 统一使用 Gateway 地址
-    return 'https://localhost:5000';
-  };
-
   const handleLoginClick = () => {
     if (typeof window === 'undefined') return;
 
     const redirectUri = `${window.location.origin}/oidc/callback`;
-    const authServerBaseUrl = getAuthServerBaseUrl();
+    const authServerBaseUrl = getAuthBaseUrl();
     const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
     authorizeUrl.searchParams.set('client_id', 'radish-client');
     authorizeUrl.searchParams.set('response_type', 'code');

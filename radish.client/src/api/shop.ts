@@ -20,13 +20,11 @@ import {
   type UserBenefitData,
   type UserInventoryItemData
 } from '@/utils/viewModelMapper';
+import { getApiBaseUrl } from '@/config/env';
 
 // 配置 API 客户端
-const defaultApiBase = 'https://localhost:5000';
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined || defaultApiBase;
-
 configureApiClient({
-  baseUrl: apiBaseUrl.replace(/\/$/, ''),
+  baseUrl: getApiBaseUrl(),
 });
 
 // ==================== 类型重导出 ====================

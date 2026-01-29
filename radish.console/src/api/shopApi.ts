@@ -16,13 +16,11 @@ import {
   ProductType,
   OrderStatus,
 } from './types';
+import { getApiBaseUrl } from '@/config/env';
 
 // 配置 API 客户端
-const defaultApiBase = 'https://localhost:5000';
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBase;
-
 configureApiClient({
-  baseUrl: apiBaseUrl,
+  baseUrl: getApiBaseUrl(),
 });
 
 // ==================== 商品分类 API ====================

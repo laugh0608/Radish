@@ -10,6 +10,14 @@ import { ShopApp } from '@/apps/shop/ShopApp';
 import type { AppDefinition } from './types';
 
 /**
+ * 判断是否通过 Gateway 访问（5000端口）
+ */
+const isAccessingViaGateway = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return window.location.port === '5000';
+};
+
+/**
  * 应用注册表
  *
  * Radish WebOS 支持三种应用集成方式:
@@ -72,10 +80,7 @@ export const appRegistry: AppDefinition[] = [
     description: 'Radish 项目文档',
     component: () => null, // iframe 应用不需要实际组件
     type: 'iframe',
-    url: typeof window !== 'undefined' &&
-      (window.location.origin === 'https://localhost:5000' || window.location.origin === 'http://localhost:5000')
-      ? '/docs/'
-      : 'http://localhost:4000/docs/',
+    url: isAccessingViaGateway() ? '/docs/' : 'http://localhost:4000/docs/',
     defaultSize: { width: 1200, height: 800 },
     requiredRoles: ['User'],
     category: 'development'
@@ -88,10 +93,7 @@ export const appRegistry: AppDefinition[] = [
     component: () => null, // external 应用不需要实际组件
     type: 'external',
     // 通过 Gateway 访问时使用相对路径，直接访问时使用绝对路径
-    externalUrl: typeof window !== 'undefined' &&
-      (window.location.origin === 'https://localhost:5000' || window.location.origin === 'http://localhost:5000')
-      ? '/console/'
-      : 'http://localhost:3100',
+    externalUrl: isAccessingViaGateway() ? '/console/' : 'http://localhost:3100',
     requiredRoles: ['User'],
     category: 'system'
   },
