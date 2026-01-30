@@ -2,7 +2,7 @@ using Radish.Common.LogTool;
 using Serilog.Events;
 using SqlSugar;
 
-namespace Radish.Extension.SerilogExtension;
+namespace Radish.Extension.Log;
 
 /// <summary>
 /// 日志过滤扩展方法

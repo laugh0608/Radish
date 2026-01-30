@@ -46,7 +46,7 @@ Radish 的日志系统分为三个层次：
 builder.Host.AddSerilogSetup();
 ```
 
-该方法由 `Radish.Extension.SerilogExtension` 提供，自动配置：
+该方法由 `Radish.Extension.Log` 提供，自动配置：
 - 日志输出目标（Console + File）
 - 日志格式（结构化 JSON）
 - 日志级别（从 `appsettings.json` 读取）
@@ -849,7 +849,7 @@ db.Aop.OnLogExecuting = (sql, pars) =>
 **实现细节**：
 
 ```csharp
-// Radish.Extension/SerilogExtension/LogBatchingSink.cs
+// Radish.Extension.Log/LogBatchingSink.cs
 public class LogBatchingSink : IBatchedLogEventSink
 {
     public async Task EmitBatchAsync(IEnumerable<LogEvent> batch)

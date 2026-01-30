@@ -271,7 +271,7 @@ git push origin v1.2.0.251126
   - radish.ui：仅依赖外部 npm 包，不依赖任何业务项目
   - **重要**：radish.client 和 radish.console 是两个完全独立的 SPA，各自有独立的路由、认证流程和部署方式；它们通过 @radish/ui 共享基础组件，但业务逻辑和状态管理完全隔离
 - Gateway 项目（Radish.Gateway）：
-  - Phase 0 阶段：依赖 `Radish.Common`（配置工具）和 `Radish.Extension.Host`（日志扩展），提供 Razor Pages 页面展示和静态文件服务
+  - Phase 0 阶段：依赖 `Radish.Common`（配置工具）和 `Radish.Extension.Log`（日志扩展），提供 Razor Pages 页面展示和静态文件服务
   - P1+ 阶段：额外引入 `Ocelot` 或 `YARP` 实现路由转发，可能需要引用 `Radish.Service` 实现聚合接口和统一认证
   - 职责：服务门户展示、健康检查聚合、API 路由转发（P1+）、统一认证（P2+）、请求聚合（P3+）
 - 后端项目按层次结构依赖：

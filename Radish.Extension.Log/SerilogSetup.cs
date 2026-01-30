@@ -9,7 +9,7 @@ using Serilog;
 using Serilog.Debugging;
 using Serilog.Events;
 
-namespace Radish.Extension.SerilogExtension;
+namespace Radish.Extension.Log;
 
 public static class SerilogSetup
 {

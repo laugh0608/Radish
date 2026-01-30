@@ -158,7 +158,7 @@
 ### 优先建议（P0/P1）
 
 - [x] **用结构约束替代约定约束**：收口 Service 层直连数据库能力（移除/隔离 `IBaseRepository<TEntity>.DbBase`、`BaseService.Db`），复杂查询通过 Repository 扩展方法或专属仓储承载。
-- [x] **拆分 `Radish.Extension` 的职责**：新增 `Radish.Extension.Host` 承载宿主级扩展（如 Serilog），避免 Gateway 因引用 `Radish.Extension` 被迫间接依赖业务层。
+- [x] **拆分 `Radish.Extension` 的职责**：新增 `Radish.Extension.Log` 承载宿主级扩展（如 Serilog），避免 Gateway 因引用 `Radish.Extension` 被迫间接依赖业务层。
 - [ ] **DbMigrate 解耦宿主**：避免 `Radish.DbMigrate` 直接引用 `Radish.Api`，改为引用“组合根/基础设施注册”以复用 DI 与配置，降低控制台迁移工具与 WebHost 的耦合。
 
 ### 中长期优化（P2+）

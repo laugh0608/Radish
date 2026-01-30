@@ -23,7 +23,7 @@
   <Project Path="Radish.Common/Radish.Common.csproj" />
   <Project Path="Radish.Core/Radish.Core.csproj" />
   <Project Path="Radish.DbMigrate/Radish.DbMigrate.csproj" />
-  <Project Path="Radish.Extension.Host/Radish.Extension.Host.csproj" />
+  <Project Path="Radish.Extension.Log/Radish.Extension.Log.csproj" />
   <Project Path="Radish.Extension/Radish.Extension.csproj" />
   <Project Path="Radish.Gateway/Radish.Gateway.csproj" />
   <Project Path="Radish.Infrastructure/Radish.Infrastructure.csproj" />

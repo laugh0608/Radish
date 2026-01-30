@@ -69,6 +69,7 @@ artifacts/
 *.tmp
 *.tmp_proj
 *.log
+!Radish.Extension.Log/
 *.vspscc
 *.vssscc
 .builds
