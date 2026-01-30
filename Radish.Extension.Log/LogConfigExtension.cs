@@ -7,7 +7,7 @@ using Serilog.Events;
 using Serilog.Filters;
 using Serilog.Sinks.PeriodicBatching;
 
-namespace Radish.Extension.SerilogExtension;
+namespace Radish.Extension.Log;
 
 public static class LogConfigExtension
 {

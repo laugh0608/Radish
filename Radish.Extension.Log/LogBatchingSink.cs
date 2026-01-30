@@ -6,7 +6,7 @@ using Serilog.Events;
 using Serilog.Sinks.PeriodicBatching;
 using SqlSugar;
 
-namespace Radish.Extension.SerilogExtension;
+namespace Radish.Extension.Log;
 
 /// <summary>
 /// 日志批处理 Sink - 将日志批量写入数据库
