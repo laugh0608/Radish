@@ -203,6 +203,67 @@ export Redis__ConnectionString="localhost:6379"
 
 完整规范详见 [architecture/specifications.md](radish.docs/docs/architecture/specifications.md)。
 
+## 发版流程
+
+Radish 采用日历版本号格式：`vYY.M.RELEASE`（如 `v26.1.1` = 2026年1月第1版）
+
+### 版本号配置文件
+
+| 组件 | 配置文件 | 字段 |
+|------|----------|------|
+| 后端 (.NET) | `Directory.Build.props` | `<Version>` |
+| 前端根项目 | `package.json` | `version` |
+| radish.client | `radish.client/package.json` | `version` |
+| radish.console | `radish.console/package.json` | `version` |
+| @radish/ui | `radish.ui/package.json` | `version` |
+| radish.docs | `radish.docs/package.json` | `version` |
+| Rust 扩展 | `radish.lib/Cargo.toml` | `version` |
+
+### 发版步骤
+
+```bash
+# 1. 确保代码已合并到 master 分支
+git checkout master
+git pull origin master
+
+# 2. 更新所有版本号（以 v26.2.1 为例）
+# 后端：编辑 Directory.Build.props
+#   <Version>26.2.1</Version>
+#   <AssemblyVersion>26.2.1</AssemblyVersion>
+#   <FileVersion>26.2.1</FileVersion>
+
+# 前端：更新所有 package.json 的 version 字段为 "26.2.1"
+# Rust：更新 radish.lib/Cargo.toml 的 version 为 "26.2.1"
+
+# 3. 验证构建
+dotnet build Radish.slnx -c Release
+npm run type-check
+
+# 4. 提交版本号变更
+git add -A
+git commit -m "chore: bump version to v26.2.1"
+
+# 5. 创建 Git 标签
+git tag -a v26.2.1-release -m "Release v26.2.1: 简要描述"
+git push origin master
+git push origin v26.2.1-release
+
+# 6. 在 GitHub 创建 Release（包含 Release Notes）
+```
+
+### 版本标识
+
+| 后缀 | 说明 | 示例 |
+|------|------|------|
+| `-dev` | 开发版本 | `v26.1.1-dev` |
+| `-beta` | 公测版本 | `v26.2.1-beta` |
+| `-rc` | 发布候选 | `v26.3.1-rc` |
+| `-release` | 正式发布 | `v26.3.1-release` |
+
+热更新格式：`vYY.M.RELEASE.DDXX`（如 `v26.2.1.1203` = 12日第3次更新）
+
+详细规范参见 [版本号规范](radish.docs/docs/architecture/specifications.md#项目版本号规范)。
+
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！

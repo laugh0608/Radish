@@ -2,6 +2,11 @@
   <PropertyGroup>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
 
+    <!-- 项目版本号 (日历版本: vYY.M.RELEASE) -->
+    <Version>26.1.1</Version>
+    <AssemblyVersion>26.1.1</AssemblyVersion>
+    <FileVersion>26.1.1</FileVersion>
+
     <!-- Rust native outputs (built by cargo) -->
     <RadishRustTargetDir>$(MSBuildThisFileDirectory)radish.lib/target</RadishRustTargetDir>
   </PropertyGroup>
