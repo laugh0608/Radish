@@ -10,7 +10,7 @@ using Radish.Extension;
 using Radish.Extension.AutofacExtension;
 using Radish.Extension.AutoMapperExtension;
 using Radish.Extension.RedisExtension;
-using Radish.Extension.SerilogExtension;
+using Radish.Extension.Log;
 using Radish.Extension.SqlSugarExtension;
 using Radish.Extension.RateLimitExtension;
 using Serilog;

@@ -1,0 +1,1 @@
+Radish.Extension.Log 项目的设计目的是为轻量级服务（如 Gateway）提供日志功能，而不引入完整的业务层依赖。

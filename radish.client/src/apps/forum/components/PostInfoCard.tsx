@@ -1,4 +1,4 @@
-import type { PostDetail } from '@/types/forum';
+import type { PostDetail } from '@/api/forum';
 import styles from './PostInfoCard.module.css';
 
 interface PostInfoCardProps {
@@ -37,7 +37,7 @@ export const PostInfoCard = ({ post }: PostInfoCardProps) => {
             </svg>
             发布者
           </span>
-          <span className={styles.value}>{post.authorName || '匿名'}</span>
+          <span className={styles.value}>{post.voAuthorName || '匿名'}</span>
         </div>
 
         {/* 发布时间 */}
@@ -49,7 +49,7 @@ export const PostInfoCard = ({ post }: PostInfoCardProps) => {
             </svg>
             发布时间
           </span>
-          <span className={styles.value}>{formatTime(post.createTime)}</span>
+          <span className={styles.value}>{formatTime(post.voCreateTime)}</span>
         </div>
 
         {/* 评论数 */}
@@ -60,7 +60,7 @@ export const PostInfoCard = ({ post }: PostInfoCardProps) => {
             </svg>
             评论数
           </span>
-          <span className={styles.value}>{post.commentCount || 0}</span>
+          <span className={styles.value}>{post.voCommentCount || 0}</span>
         </div>
 
         {/* 浏览数 */}
@@ -72,7 +72,7 @@ export const PostInfoCard = ({ post }: PostInfoCardProps) => {
             </svg>
             浏览数
           </span>
-          <span className={styles.value}>{post.viewCount || 0}</span>
+          <span className={styles.value}>{post.voViewCount || 0}</span>
         </div>
 
         {/* 点赞数 */}
@@ -83,7 +83,7 @@ export const PostInfoCard = ({ post }: PostInfoCardProps) => {
             </svg>
             点赞数
           </span>
-          <span className={styles.value}>{post.likeCount || 0}</span>
+          <span className={styles.value}>{post.voLikeCount || 0}</span>
         </div>
       </div>
     </div>

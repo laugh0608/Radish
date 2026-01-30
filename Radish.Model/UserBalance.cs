@@ -11,7 +11,7 @@ namespace Radish.Model;
 /// - 通过 UserId 与 User 表一对一关联（唯一约束）
 /// </remarks>
 [SugarTable("UserBalance")]
-public class UserBalance : RootEntityTKey<long>, IHasUserId
+public class UserBalance : RootEntityTKey<long>, IHasUserId, IDeleteFilter
 {
     /// <summary>初始化默认用户余额实例</summary>
     public UserBalance()
@@ -34,6 +34,9 @@ public class UserBalance : RootEntityTKey<long>, IHasUserId
         CreateTime = DateTime.Now;
         CreateBy = "System";
         CreateId = 0;
+        IsDeleted = false;
+        DeletedAt = null;
+        DeletedBy = null;
     }
 
     /// <summary>用户 Id</summary>
@@ -130,6 +133,22 @@ public class UserBalance : RootEntityTKey<long>, IHasUserId
     /// <remarks>可空</remarks>
     [SugarColumn(IsNullable = true, ColumnDescription = "修改者ID")]
     public long? ModifyId { get; set; }
+
+    /// <summary>是否删除</summary>
+    /// <remarks>不可为空，默认为 false，软删除标记</remarks>
+    [SugarColumn(IsNullable = false, ColumnDescription = "是否删除")]
+    public bool IsDeleted { get; set; } = false;
+
+    /// <summary>删除时间</summary>
+    /// <remarks>可空，软删除时自动设置，恢复时清空</remarks>
+    [SugarColumn(IsNullable = true, ColumnDescription = "删除时间")]
+    [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]
+    public DateTime? DeletedAt { get; set; }
+
+    /// <summary>删除操作者</summary>
+    /// <remarks>可空，最大 50 字符，执行软删除操作的用户名或系统标识</remarks>
+    [SugarColumn(Length = 50, IsNullable = true, ColumnDescription = "删除操作者")]
+    public string? DeletedBy { get; set; }
 
     #endregion
 

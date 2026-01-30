@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
-import type { CommentNode as CommentNodeType } from '@/types/forum';
+import type { CommentNode as CommentNodeType } from '@/api/forum';
 import { Icon } from '@radish/ui';
 import styles from './CommentNode.module.css';
 
@@ -47,12 +47,12 @@ export const CommentNode = ({
   onLoadMoreChildren
 }: CommentNodeProps) => {
   // 判断是否是作者本人
-  const isAuthor = currentUserId > 0 && node.authorId === currentUserId;
+  const isAuthor = currentUserId > 0 && node.voAuthorId === currentUserId;
 
   // 判断是否在5分钟编辑窗口内
   const canEdit = (() => {
-    if (!isAuthor || !node.createTime) return false;
-    const createTime = new Date(node.createTime).getTime();
+    if (!isAuthor || !node.voCreateTime) return false;
+    const createTime = new Date(node.voCreateTime).getTime();
     const now = Date.now();
     const diffMinutes = (now - createTime) / 1000 / 60;
     return diffMinutes <= 5;
@@ -64,8 +64,8 @@ export const CommentNode = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 本地点赞状态（用于乐观更新）
-  const [isLiked, setIsLiked] = useState(node.isLiked ?? false);
-  const [likeCount, setLikeCount] = useState(node.likeCount ?? 0);
+  const [isLiked, setIsLiked] = useState(node.voIsLiked ?? false);
+  const [likeCount, setLikeCount] = useState(node.voLikeCount ?? 0);
   const [isLiking, setIsLiking] = useState(false);
 
   // 子评论展开状态
@@ -76,42 +76,42 @@ export const CommentNode = ({
 
   // 初始化已加载的子评论（默认时间升序）
   const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(() => {
-    const children = node.children || [];
+    const children = node.voChildren || [];
     // 默认按时间升序排序
     return [...children].sort((a, b) =>
-      new Date(a.createTime || 0).getTime() - new Date(b.createTime || 0).getTime()
+      new Date(a.voCreateTime || 0).getTime() - new Date(b.voCreateTime || 0).getTime()
     );
   });
 
   // 找出所有沙发（后端标记的）
-  const sofaComments = loadedChildren.filter(c => c.isSofa);
+  const sofaComments = loadedChildren.filter(c => c.voIsSofa);
 
   // 找出当前点赞数最高的沙发（用于置顶显示）
   const topSofaComment = sofaComments.length > 0
     ? [...sofaComments].sort((a, b) => {
         // 先按点赞数降序
-        if ((b.likeCount || 0) !== (a.likeCount || 0)) {
-          return (b.likeCount || 0) - (a.likeCount || 0);
+        if ((b.voLikeCount || 0) !== (a.voLikeCount || 0)) {
+          return (b.voLikeCount || 0) - (a.voLikeCount || 0);
         }
         // 点赞数相同时按时间降序（最新的在前）
-        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+        return new Date(b.voCreateTime || 0).getTime() - new Date(a.voCreateTime || 0).getTime();
       })[0]
     : null;
 
-  const hasChildren = (node.childrenTotal && node.childrenTotal > 0) || (node.children && node.children.length > 0);
-  const totalChildren = node.childrenTotal ?? node.children?.length ?? 0;
+  const hasChildren = (node.voChildrenTotal && node.voChildrenTotal > 0) || (node.voChildren && node.voChildren.length > 0);
+  const totalChildren = node.voChildrenTotal ?? node.voChildren?.length ?? 0;
   const loadedCount = loadedChildren.length;
   const hasMore = loadedCount < totalChildren;
 
-  // 监听 node.children 变化,重新初始化子评论列表
+  // 监听 node.voChildren 变化,重新初始化子评论列表
   useEffect(() => {
-    const children = node.children || [];
+    const children = node.voChildren || [];
     const sorted = [...children].sort((a, b) =>
-      new Date(a.createTime || 0).getTime() - new Date(b.createTime || 0).getTime()
+      new Date(a.voCreateTime || 0).getTime() - new Date(b.voCreateTime || 0).getTime()
     );
     setLoadedChildren(sorted);
     setChildSortBy(null); // 重置排序方式为默认值
-  }, [node.children]);
+  }, [node.voChildren]);
 
   // 若后端只返回 childrenTotal（不带 children 列表），为了“收起态也能看到一条回复”，这里自动预加载第一页子评论
   useEffect(() => {
@@ -122,7 +122,7 @@ export const CommentNode = ({
     if (isLoadingMore) return;
 
     setIsLoadingMore(true);
-    onLoadMoreChildren(node.id, 1, pageSize)
+    onLoadMoreChildren(node.voId, 1, pageSize)
       .then(children => {
         setLoadedChildren(children);
         setCurrentPage(1);
@@ -133,7 +133,7 @@ export const CommentNode = ({
       .finally(() => {
         setIsLoadingMore(false);
       });
-  }, [hasChildren, isLoadingMore, level, loadedChildren.length, node.id, onLoadMoreChildren, pageSize]);
+  }, [hasChildren, isLoadingMore, level, loadedChildren.length, node.voId, onLoadMoreChildren, pageSize]);
 
   // 处理点赞
   const handleLike = async () => {
@@ -141,7 +141,7 @@ export const CommentNode = ({
 
     setIsLiking(true);
     try {
-      const result = await onLike(node.id);
+      const result = await onLike(node.voId);
       // 更新本地状态
       setIsLiked(result.isLiked);
       setLikeCount(result.likeCount);
@@ -156,13 +156,13 @@ export const CommentNode = ({
   // 处理回复
   const handleReply = () => {
     if (onReply) {
-      onReply(node.id, node.authorName);
+      onReply(node.voId, node.voAuthorName);
     }
   };
 
   // 处理编辑
   const handleEdit = () => {
-    setEditContent(node.content);
+    setEditContent(node.voContent);
     setIsEditing(true);
   };
 
@@ -172,7 +172,7 @@ export const CommentNode = ({
 
     setIsSubmitting(true);
     try {
-      await onEdit(node.id, editContent.trim());
+      await onEdit(node.voId, editContent.trim());
       setIsEditing(false);
     } catch (error) {
       log.error('编辑评论失败:', error);
@@ -195,7 +195,7 @@ export const CommentNode = ({
       if (loadedCount === 0 && onLoadMoreChildren) {
         setIsLoadingMore(true);
         try {
-          const children = await onLoadMoreChildren(node.id, 1, pageSize);
+          const children = await onLoadMoreChildren(node.voId, 1, pageSize);
           setLoadedChildren(children);
           setCurrentPage(1);
         } catch (error) {
@@ -218,7 +218,7 @@ export const CommentNode = ({
     setIsLoadingMore(true);
     try {
       const nextPage = currentPage + 1;
-      const moreChildren = await onLoadMoreChildren(node.id, nextPage, pageSize);
+      const moreChildren = await onLoadMoreChildren(node.voId, nextPage, pageSize);
       setLoadedChildren([...loadedChildren, ...moreChildren]);
       setCurrentPage(nextPage);
     } catch (error) {
@@ -235,14 +235,14 @@ export const CommentNode = ({
     const sorted = [...loadedChildren].sort((a, b) => {
       if (newSortBy === 'hottest') {
         // 最热：按点赞数降序
-        if (b.likeCount !== a.likeCount) {
-          return (b.likeCount || 0) - (a.likeCount || 0);
+        if (b.voLikeCount !== a.voLikeCount) {
+          return (b.voLikeCount || 0) - (a.voLikeCount || 0);
         }
         // 点赞数相同时按时间降序
-        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+        return new Date(b.voCreateTime || 0).getTime() - new Date(a.voCreateTime || 0).getTime();
       } else {
         // 最新：按创建时间降序
-        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+        return new Date(b.voCreateTime || 0).getTime() - new Date(a.voCreateTime || 0).getTime();
       }
     });
     setLoadedChildren(sorted);
@@ -260,9 +260,9 @@ export const CommentNode = ({
       if (loadedChildren.length === 0) return null;
 
       return [...loadedChildren].sort((a, b) => {
-        const likeDiff = (b.likeCount || 0) - (a.likeCount || 0);
+        const likeDiff = (b.voLikeCount || 0) - (a.voLikeCount || 0);
         if (likeDiff !== 0) return likeDiff;
-        return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+        return new Date(b.voCreateTime || 0).getTime() - new Date(a.voCreateTime || 0).getTime();
       })[0];
     })();
 
@@ -272,7 +272,7 @@ export const CommentNode = ({
 
     if (childSortBy === null && topSofaComment) {
       // 展开且未手动排序：当前点赞数最高的沙发置顶 + 其他按时间升序
-      const others = loadedChildren.filter(c => c.id !== topSofaComment.id);
+      const others = loadedChildren.filter(c => c.voId !== topSofaComment.voId);
       return [topSofaComment, ...others];
     }
 
@@ -283,14 +283,14 @@ export const CommentNode = ({
   return (
     <div className={styles.container} style={{ marginLeft: level * 16 }}>
       <div className={styles.header}>
-        <span className={styles.author}>{node.authorName}</span>
-        {node.createTime && <span className={styles.time}> · {node.createTime}</span>}
+        <span className={styles.author}>{node.voAuthorName}</span>
+        {node.voCreateTime && <span className={styles.time}> · {node.voCreateTime}</span>}
         {/* 神评标识（仅父评论） */}
         {level === 0 && isGodComment && (
           <span className={styles.godCommentBadge}>神评</span>
         )}
         {/* 沙发标识（仅子评论） */}
-        {level === 1 && node.isSofa && (
+        {level === 1 && node.voIsSofa && (
           <span className={styles.sofaBadge}>沙发</span>
         )}
         {isAuthor && (
@@ -309,7 +309,7 @@ export const CommentNode = ({
             {onDelete && (
               <button
                 type="button"
-                onClick={() => onDelete(node.id)}
+                onClick={() => onDelete(node.voId)}
                 className={styles.deleteButton}
                 title="删除评论"
               >
@@ -353,7 +353,7 @@ export const CommentNode = ({
       ) : (
         <div
           className={styles.content}
-          dangerouslySetInnerHTML={{ __html: highlightMentions(node.content) }}
+          dangerouslySetInnerHTML={{ __html: highlightMentions(node.voContent) }}
         />
       )}
 
@@ -415,12 +415,12 @@ export const CommentNode = ({
             <div className={styles.children}>
               {displayChildren.map(child => (
                 <CommentNode
-                  key={child.id}
+                  key={child.voId}
                   node={child}
                   level={1}
                   currentUserId={currentUserId}
                   pageSize={pageSize}
-                  isGodComment={false} // 子评论不可能是神评，沙发标识通过 node.isSofa 判断
+                  isGodComment={false} // 子评论不可能是神评，沙发标识通过 node.voIsSofa 判断
                   onDelete={onDelete}
                   onEdit={onEdit}
                   onLike={onLike}

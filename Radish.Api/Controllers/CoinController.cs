@@ -190,6 +190,130 @@ public class CoinController : ControllerBase
 
     #endregion
 
+    #region 转账功能
+
+    /// <summary>
+    /// 用户转账
+    /// </summary>
+    /// <param name="request">转账请求参数</param>
+    /// <returns>交易流水号</returns>
+    /// <remarks>
+    /// 用户之间转账萝卜币。
+    ///
+    /// **请求示例**：
+    /// ```json
+    /// {
+    ///   "toUserId": 12345,
+    ///   "amount": 100,
+    ///   "remark": "感谢分享",
+    ///   "paymentPassword": "******"
+    /// }
+    /// ```
+    ///
+    /// **参数说明**：
+    /// - toUserId: 收款人用户 ID
+    /// - amount: 转账金额（单位：胡萝卜），必须大于 0
+    /// - remark: 备注信息，可选
+    /// - paymentPassword: 支付密码，必填
+    ///
+    /// **注意事项**：
+    /// - 不能向自己转账
+    /// - 转账金额不能超过当前余额
+    /// - 支付密码错误会导致转账失败
+    /// - 支付密码连续错误 5 次会被锁定 30 分钟
+    /// </remarks>
+    /// <response code="200">转账成功</response>
+    /// <response code="400">参数错误（如余额不足、支付密码错误）</response>
+    /// <response code="401">未授权</response>
+    [HttpPost]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
+    public async Task<MessageModel> Transfer([FromBody] TransferDto request)
+    {
+        try
+        {
+            var fromUserId = _httpContextUser.UserId;
+
+            var transactionNo = await _coinService.TransferAsync(
+                fromUserId,
+                request.ToUserId,
+                request.Amount,
+                request.PaymentPassword,
+                request.Remark
+            );
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "转账成功",
+                ResponseData = new TransactionResultVo { VoTransactionNo = transactionNo }
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+        catch (ArgumentException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+    }
+
+    #endregion
+
+    #region 统计数据
+
+    /// <summary>
+    /// 获取当前用户统计数据
+    /// </summary>
+    /// <param name="timeRange">时间范围（month/quarter/year，默认 month）</param>
+    /// <returns>统计数据</returns>
+    /// <remarks>
+    /// 查询当前登录用户的萝卜币统计数据，包括趋势数据和分类统计。
+    ///
+    /// **时间范围说明**：
+    /// - month: 最近一个月
+    /// - quarter: 最近三个月
+    /// - year: 最近一年
+    ///
+    /// **返回数据说明**：
+    /// - trendData: 按日期统计的收入和支出趋势
+    /// - categoryStats: 按交易类型统计的金额和次数
+    /// </remarks>
+    /// <response code="200">查询成功</response>
+    /// <response code="401">未授权</response>
+    [HttpGet]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
+    public async Task<MessageModel> GetStatistics([FromQuery] string timeRange = "month")
+    {
+        var userId = _httpContextUser.UserId;
+
+        var statistics = await _coinService.GetStatisticsAsync(userId, timeRange);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取统计数据成功",
+            ResponseData = statistics
+        };
+    }
+
+    #endregion
+
     #region 管理员操作
 
     /// <summary>

@@ -242,23 +242,41 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             throw new InvalidOperationException("帖子不存在或已被删除");
         }
 
-        // 2. 检查是否已点赞
+        // 2. 检查是否已点赞（排除软删除的记录）
         var existingLikes = await _userPostLikeRepository.QueryAsync(
-            x => x.UserId == userId && x.PostId == postId);
+            x => x.UserId == userId && x.PostId == postId && !x.IsDeleted);
+
+        // 同时检查是否有被软删除的点赞记录
+        var deletedLikes = await _userPostLikeRepository.QueryAsync(
+            x => x.UserId == userId && x.PostId == postId && x.IsDeleted);
 
         bool isLiked;
         int likeCountDelta;
 
         if (existingLikes.Any())
         {
-            // 取消点赞
-            await _userPostLikeRepository.DeleteByIdAsync(existingLikes.First().Id);
+            // 取消点赞（软删除）
+            await _userPostLikeRepository.UpdateColumnsAsync(
+                l => new UserPostLike { IsDeleted = true },
+                l => l.Id == existingLikes.First().Id);
             isLiked = false;
             likeCountDelta = -1;
         }
+        else if (deletedLikes.Any())
+        {
+            // 恢复之前的点赞记录
+            await _userPostLikeRepository.UpdateColumnsAsync(
+                l => new UserPostLike {
+                    IsDeleted = false,
+                    LikedAt = DateTime.UtcNow // 更新点赞时间
+                },
+                l => l.Id == deletedLikes.First().Id);
+            isLiked = true;
+            likeCountDelta = 1;
+        }
         else
         {
-            // 添加点赞
+            // 添加新的点赞记录
             var newLike = new UserPostLike
             {
                 UserId = userId,

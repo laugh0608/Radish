@@ -2,6 +2,7 @@ using Asp.Versioning;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -20,11 +21,13 @@ public class RoleController : ControllerBase
 {
     private readonly IBaseService<Role, RoleVo> _roleService;
     private readonly IMapper _mapper;
+    private readonly IHttpContextUser _httpContextUser;
 
-    public RoleController(IMapper mapper, IBaseService<Role, RoleVo> roleService, IServiceScopeFactory scopeFactory)
+    public RoleController(IMapper mapper, IBaseService<Role, RoleVo> roleService, IServiceScopeFactory scopeFactory, IHttpContextUser httpContextUser)
     {
         _roleService = roleService;
         _mapper = mapper;
+        _httpContextUser = httpContextUser;
     }
 
     /// <summary>获取全部角色，测试泛型基类和视图对象关系映射</summary>
@@ -240,14 +243,22 @@ public class RoleController : ControllerBase
                 };
             }
 
-            var result = await _roleService.DeleteByIdAsync(id);
+            // 软删除：设置 IsDeleted = true，并记录删除者信息
+            await _roleService.UpdateColumnsAsync(
+                r => new Role
+                {
+                    IsDeleted = true,
+                    ModifyTime = DateTime.Now,
+                    ModifyBy = _httpContextUser.UserName,
+                    ModifyId = _httpContextUser.UserId
+                },
+                r => r.Id == id);
 
             return new MessageModel
             {
                 IsSuccess = true,
                 StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "删除成功",
-                ResponseData = result
+                MessageInfo = "删除成功"
             };
         }
         catch (Exception ex)

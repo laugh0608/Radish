@@ -1,60 +1,63 @@
 /**
  * 论坛相关的 API 调用
+ * 直接使用后端 Vo 字段名，不进行映射
  */
 
 import {
-  parseApiResponseWithI18n,
   apiGet,
   apiPost,
   apiPut,
   apiDelete,
   configureApiClient,
-  type ApiResponse
 } from '@radish/ui';
 import type { TFunction } from 'i18next';
-import {
-  mapCategory,
-  mapPostItem,
-  mapPostDetail,
-  mapComment,
-  mapCommentHighlight,
-  type CategoryData,
-  type PostItemData,
-  type PostDetailData,
-  type CommentNodeData,
-  type CommentHighlightData
-} from '@/utils/viewModelMapper';
 import type {
   Category,
   PostItem,
   PostDetail,
   CommentNode,
+  CommentHighlight,
+  PageModel,
   PublishPostRequest,
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
-  CommentHighlight
+  UpdatePostRequest
 } from '@/types/forum';
+import { getApiBaseUrl } from '@/config/env';
 
 // 配置 API 客户端
-const defaultApiBase = 'https://localhost:5000';
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined || defaultApiBase;
-
 configureApiClient({
-  baseUrl: apiBaseUrl.replace(/\/$/, ''),
+  baseUrl: getApiBaseUrl(),
 });
+
+// ==================== 类型重导出 ====================
+
+export type {
+  Category,
+  PostItem,
+  PostDetail,
+  CommentNode,
+  CommentHighlight,
+  PageModel,
+  PublishPostRequest,
+  CreateCommentRequest,
+  CommentLikeResult,
+  PostLikeResult,
+  UpdatePostRequest
+};
 
 /**
  * 获取顶级分类列表
  */
 export async function getTopCategories(t: TFunction): Promise<Category[]> {
-  const response = await apiGet<any[]>('/api/v1/Category/GetTopCategories');
+  const response = await apiGet<Category[]>('/api/v1/Category/GetTopCategories');
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载分类失败');
   }
 
-  return response.data.map(mapCategory);
+  return response.data;
 }
 
 /**
@@ -72,7 +75,7 @@ export async function getPostList(
   pageSize: number = 20,
   sortBy: string = 'newest',
   keyword: string = ''
-): Promise<import('@/types/forum').PageModel<PostItem>> {
+): Promise<PageModel<PostItem>> {
   const params = new URLSearchParams();
   if (categoryId) params.set('categoryId', categoryId.toString());
   params.set('pageIndex', pageIndex.toString());
@@ -80,7 +83,7 @@ export async function getPostList(
   params.set('sortBy', sortBy);
   if (keyword.trim()) params.set('keyword', keyword.trim());
 
-  const response = await apiGet<import('@/types/forum').PageModel<any>>(
+  const response = await apiGet<PageModel<PostItem>>(
     `/api/v1/Post/GetList?${params.toString()}`
   );
 
@@ -88,17 +91,14 @@ export async function getPostList(
     throw new Error(response.message || '加载帖子失败');
   }
 
-  return {
-    ...response.data,
-    data: response.data.data.map(mapPostItem)
-  };
+  return response.data;
 }
 
 /**
  * 获取帖子详情
  */
 export async function getPostById(postId: number, t: TFunction): Promise<PostDetail> {
-  const response = await apiGet<any>(`/api/v1/Post/GetById/${postId}`);
+  const response = await apiGet<PostDetail>(`/api/v1/Post/GetById/${postId}`);
 
   if (!response.ok || !response.data) {
     // 针对帖子不存在的情况给出友好提示
@@ -108,7 +108,7 @@ export async function getPostById(postId: number, t: TFunction): Promise<PostDet
     throw new Error(response.message || '加载帖子详情失败');
   }
 
-  return mapPostDetail(response.data);
+  return response.data;
 }
 
 /**
@@ -118,7 +118,7 @@ export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest
   // 如果用户已登录，自动发送token以获取点赞状态
   const hasToken = typeof window !== 'undefined' && window.localStorage.getItem('access_token');
 
-  const response = await apiGet<any[]>(
+  const response = await apiGet<CommentNode[]>(
     `/api/v1/Comment/GetCommentTree?postId=${postId}&sortBy=${sortBy}`,
     { withAuth: !!hasToken }
   );
@@ -127,7 +127,7 @@ export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest
     throw new Error(response.message || '加载评论失败');
   }
 
-  return response.data.map(mapComment);
+  return response.data;
 }
 
 /**
@@ -200,7 +200,7 @@ export async function toggleCommentLike(commentId: number, t: TFunction): Promis
  * 编辑帖子
  * @param request 编辑请求
  */
-export async function updatePost(request: import('@/types/forum').UpdatePostRequest, t: TFunction): Promise<void> {
+export async function updatePost(request: UpdatePostRequest, t: TFunction): Promise<void> {
   const response = await apiPut<null>('/api/v1/Post/Update', request, { withAuth: true });
 
   if (!response.ok) {
@@ -327,6 +327,7 @@ export function getOidcLoginUrl(): string {
   if (typeof window === 'undefined') return '';
   const currentOrigin = window.location.origin;
   const redirectUri = `${currentOrigin}/oidc/callback`;
+  const apiBaseUrl = getApiBaseUrl();
   const authorizeUrl = new URL(`${apiBaseUrl}/connect/authorize`);
   authorizeUrl.searchParams.set('client_id', 'radish-client');
   authorizeUrl.searchParams.set('response_type', 'code');

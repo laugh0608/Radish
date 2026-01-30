@@ -1,396 +1,99 @@
 /**
  * 商城系统相关的 API 调用
+ * 直接使用后端 Vo 字段名，不进行映射
  */
 
-import { parseApiResponse, type ApiResponse } from '@radish/ui';
+import { apiGet, apiPost, configureApiClient, type ParsedApiResponse } from '@radish/ui';
 import type { TFunction } from 'i18next';
-import {
-  mapProductCategory,
-  mapProduct,
-  mapProductListItem,
-  mapOrder,
-  mapOrderListItem,
-  mapUserBenefit,
-  mapUserInventoryItem,
-  type ProductCategoryData,
-  type ProductData,
-  type ProductListItemData,
-  type OrderData,
-  type OrderListItemData,
-  type UserBenefitData,
-  type UserInventoryItemData
-} from '@/utils/viewModelMapper';
+import type {
+  ProductCategory,
+  ProductListItem,
+  Product,
+  OrderListItem,
+  Order,
+  UserBenefit,
+  UserInventoryItem,
+  PagedResponse,
+  CreateOrderRequest,
+  PurchaseResult,
+  UseItemRequest,
+  UseItemResult
+} from '@/types/shop';
+import { getApiBaseUrl } from '@/config/env';
 
-const defaultApiBase = 'https://localhost:5000';
+// 配置 API 客户端
+configureApiClient({
+  baseUrl: getApiBaseUrl(),
+});
 
-/**
- * 获取 API Base URL
- */
-function getApiBaseUrl(): string {
-  const configured = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  return (configured ?? defaultApiBase).replace(/\/$/, '');
-}
+// ==================== 类型重导出 ====================
 
-/**
- * 带认证的 fetch 封装
- */
-interface ApiFetchOptions extends RequestInit {
-  withAuth?: boolean;
-}
+export type {
+  ProductCategory,
+  ProductListItem,
+  Product,
+  OrderListItem,
+  Order,
+  UserBenefit,
+  UserInventoryItem,
+  PagedResponse,
+  CreateOrderRequest,
+  PurchaseResult,
+  UseItemRequest,
+  UseItemResult
+};
 
-function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
-  const { withAuth, headers, ...rest } = options;
-
-  const finalHeaders: HeadersInit = {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    ...headers
-  };
-
-  if (withAuth && typeof window !== 'undefined') {
-    const token = window.localStorage.getItem('access_token');
-    if (token) {
-      (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
-    }
-  }
-
-  return fetch(input, {
-    ...rest,
-    headers: finalHeaders
-  });
-}
-
-// ==================== 类型定义 ====================
+// ==================== 枚举常量（用于比较） ====================
 
 /**
- * 商品类型枚举
+ * 商品类型枚举值（字符串形式，用于与后端返回值比较）
  */
 export const ProductType = {
-  Benefit: 0,    // 权益
-  Consumable: 1, // 消耗品
-  Physical: 2    // 实物
+  Benefit: 'Benefit',       // 权益
+  Consumable: 'Consumable', // 消耗品
+  Physical: 'Physical'      // 实物
 } as const;
 
-export type ProductType = typeof ProductType[keyof typeof ProductType];
+export type ProductTypeValue = typeof ProductType[keyof typeof ProductType];
 
 /**
- * 权益类型枚举
- */
-export const BenefitType = {
-  Badge: 0,        // 徽章
-  AvatarFrame: 1,  // 头像框
-  Title: 2,        // 称号
-  Theme: 3,        // 主题
-  Signature: 4,    // 签名档
-  NameColor: 5,    // 用户名颜色
-  LikeEffect: 6    // 点赞特效
-} as const;
-
-export type BenefitType = typeof BenefitType[keyof typeof BenefitType];
-
-/**
- * 消耗品类型枚举
- */
-export const ConsumableType = {
-  RenameCard: 0,        // 改名卡
-  PostPinCard: 1,       // 置顶卡
-  PostHighlightCard: 2, // 高亮卡
-  ExpCard: 3,           // 经验卡
-  CoinCard: 4,          // 萝卜币红包
-  DoubleExpCard: 5,     // 双倍经验卡
-  LotteryTicket: 6      // 抽奖券
-} as const;
-
-export type ConsumableType = typeof ConsumableType[keyof typeof ConsumableType];
-
-/**
- * 订单状态枚举
+ * 订单状态枚举值（字符串形式，用于与后端返回值比较）
  */
 export const OrderStatus = {
-  Pending: 0,    // 待支付
-  Paid: 1,       // 已支付
-  Completed: 2,  // 已完成
-  Cancelled: 3,  // 已取消
-  Refunded: 4,   // 已退款
-  Failed: 5      // 发放失败
+  Pending: 'Pending',       // 待支付
+  Paid: 'Paid',             // 已支付
+  Completed: 'Completed',   // 已完成
+  Cancelled: 'Cancelled',   // 已取消
+  Refunded: 'Refunded',     // 已退款
+  Failed: 'Failed'          // 发放失败
 } as const;
 
-export type OrderStatus = typeof OrderStatus[keyof typeof OrderStatus];
+export type OrderStatusValue = typeof OrderStatus[keyof typeof OrderStatus];
 
 /**
- * 库存类型枚举
+ * 库存类型枚举值（字符串形式）
  */
 export const StockType = {
-  Unlimited: 0, // 无限
-  Limited: 1    // 限量
+  Unlimited: 'Unlimited', // 无限
+  Limited: 'Limited'      // 限量
 } as const;
 
-export type StockType = typeof StockType[keyof typeof StockType];
-
-/**
- * 有效期类型枚举
- */
-export const DurationType = {
-  Permanent: 0, // 永久
-  Days: 1,      // 固定天数
-  FixedDate: 2  // 固定到期时间
-} as const;
-
-export type DurationType = typeof DurationType[keyof typeof DurationType];
-
-/**
- * 商品分类
- */
-export interface ProductCategory {
-  id: string;
-  name: string;
-  icon?: string;
-  description?: string;
-  sortOrder: number;
-  isEnabled: boolean;
-  productCount: number;
-}
-
-/**
- * 商品列表项
- */
-export interface ProductListItem {
-  id: number;
-  name: string;
-  icon?: string;
-  coverImage?: string;
-  categoryId: string;
-  productType: ProductType;
-  price: number;
-  originalPrice?: number;
-  hasDiscount: boolean;
-  soldCount: number;
-  inStock: boolean;
-  durationDisplay: string;
-}
-
-/**
- * 商品详情
- */
-export interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  icon?: string;
-  coverImage?: string;
-  categoryId: string;
-  categoryName?: string;
-  productType: ProductType;
-  productTypeDisplay: string;
-  benefitType?: BenefitType;
-  consumableType?: ConsumableType;
-  benefitValue?: string;
-  price: number;
-  originalPrice?: number;
-  hasDiscount: boolean;
-  discountPercent?: number;
-  stockType: StockType;
-  stock: number;
-  soldCount: number;
-  limitPerUser: number;
-  inStock: boolean;
-  durationType: DurationType;
-  durationDays?: number;
-  expiresAt?: string;
-  durationDisplay: string;
-  sortOrder: number;
-  isOnSale: boolean;
-  isEnabled: boolean;
-  onSaleTime?: string;
-  offSaleTime?: string;
-  createTime: string;
-}
-
-/**
- * 分页响应
- */
-export interface PagedResponse<T> {
-  page: number;
-  pageSize: number;
-  dataCount: number;
-  pageCount: number;
-  data: T[];
-}
-
-/**
- * 订单列表项
- */
-export interface OrderListItem {
-  id: number;
-  orderNo: string;
-  productName: string;
-  productIcon?: string;
-  quantity: number;
-  totalPrice: number;
-  status: OrderStatus;
-  statusDisplay: string;
-  createTime: string;
-}
-
-/**
- * 订单详情
- */
-export interface Order {
-  id: number;
-  orderNo: string;
-  userId: number;
-  userName?: string;
-  productId: number;
-  productName: string;
-  productIcon?: string;
-  productType: ProductType;
-  productTypeDisplay: string;
-  benefitType?: BenefitType;
-  consumableType?: ConsumableType;
-  quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  status: OrderStatus;
-  statusDisplay: string;
-  benefitExpiresAt?: string;
-  durationDisplay?: string;
-  createTime: string;
-  paidTime?: string;
-  completedTime?: string;
-  cancelledTime?: string;
-  cancelReason?: string;
-  failReason?: string;
-}
-
-/**
- * 用户权益
- */
-export interface UserBenefit {
-  id: number;
-  userId: number;
-  benefitType: BenefitType;
-  benefitTypeDisplay: string;
-  benefitValue: string;
-  benefitName?: string;
-  benefitIcon?: string;
-  sourceType: string;
-  sourceTypeDisplay: string;
-  durationType: DurationType;
-  effectiveAt: string;
-  expiresAt?: string;
-  isExpired: boolean;
-  isActive: boolean;
-  durationDisplay: string;
-  createTime: string;
-}
-
-/**
- * 用户背包项
- */
-export interface UserInventoryItem {
-  id: number;
-  userId: number;
-  consumableType: ConsumableType;
-  consumableTypeDisplay: string;
-  itemValue?: string;
-  itemName?: string;
-  itemIcon?: string;
-  quantity: number;
-  createTime: string;
-}
-
-/**
- * 创建订单请求
- */
-export interface CreateOrderRequest {
-  productId: number;
-  quantity?: number;
-  userRemark?: string;
-}
-
-/**
- * 购买结果
- */
-export interface PurchaseResult {
-  success: boolean;
-  orderId?: number;
-  orderNo?: string;
-  errorMessage?: string;
-  userBenefitId?: number;
-  deductedCoins?: number;
-  remainingBalance?: number;
-}
-
-/**
- * 使用道具请求
- */
-export interface UseItemRequest {
-  inventoryId: number;
-  quantity?: number;
-  targetId?: number;
-}
-
-/**
- * 使用道具结果
- */
-export interface UseItemResult {
-  success: boolean;
-  errorMessage?: string;
-  remainingQuantity: number;
-  effectDescription?: string;
-}
+export type StockTypeValue = typeof StockType[keyof typeof StockType];
 
 // ==================== API 方法 ====================
 
 /**
  * 获取商品分类列表
  */
-export async function getCategories(t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetCategories`;
-  const response = await apiFetch(url);
-
-  if (!response.ok) {
-    throw new Error(`获取分类列表失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any[]>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
-  }
-
-  return {
-    ...parsed,
-    data: parsed.data.map(mapProductCategory)
-  };
+export async function getCategories(t: TFunction): Promise<ParsedApiResponse<ProductCategory[]>> {
+  return await apiGet<ProductCategory[]>('/api/v1/Shop/GetCategories');
 }
 
 /**
  * 获取分类详情
  */
-export async function getCategory(categoryId: string, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetCategory/${encodeURIComponent(categoryId)}`;
-  const response = await apiFetch(url);
-
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('分类不存在');
-    }
-    throw new Error(`获取分类详情失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
-  }
-
-  return {
-    ...parsed,
-    data: mapProductCategory(parsed.data)
-  };
+export async function getCategory(categoryId: string, t: TFunction): Promise<ParsedApiResponse<ProductCategory>> {
+  return await apiGet<ProductCategory>(`/api/v1/Shop/GetCategory/${encodeURIComponent(categoryId)}`);
 }
 
 /**
@@ -399,11 +102,11 @@ export async function getCategory(categoryId: string, t: TFunction) {
 export async function getProducts(
   t: TFunction,
   categoryId?: string,
-  productType?: ProductType,
+  productType?: ProductTypeValue,
   keyword?: string,
   pageIndex: number = 1,
   pageSize: number = 20
-) {
+): Promise<ParsedApiResponse<PagedResponse<ProductListItem>>> {
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
     pageSize: pageSize.toString()
@@ -414,95 +117,38 @@ export async function getProducts(
   }
 
   if (productType !== undefined) {
-    params.append('productType', productType.toString());
+    params.append('productType', productType);
   }
 
   if (keyword) {
     params.append('keyword', keyword);
   }
 
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetProducts?${params.toString()}`;
-  const response = await apiFetch(url);
-
-  if (!response.ok) {
-    throw new Error(`获取商品列表失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<PagedResponse<any>>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
-  }
-
-  return {
-    ...parsed,
-    data: {
-      ...parsed.data,
-      data: parsed.data.data.map(mapProductListItem)
-    }
-  };
+  return await apiGet<PagedResponse<ProductListItem>>(`/api/v1/Shop/GetProducts?${params.toString()}`);
 }
 
 /**
  * 获取商品详情
  */
-export async function getProduct(productId: number, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetProduct/${productId}`;
-  const response = await apiFetch(url);
-
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('商品不存在');
-    }
-    throw new Error(`获取商品详情失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
-  }
-
-  return {
-    ...parsed,
-    data: mapProduct(parsed.data)
-  };
+export async function getProduct(productId: number, t: TFunction): Promise<ParsedApiResponse<Product>> {
+  return await apiGet<Product>(`/api/v1/Shop/GetProduct/${productId}`);
 }
 
 /**
  * 检查是否可以购买商品
  */
 export async function checkCanBuy(productId: number, quantity: number = 1, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/CheckCanBuy/${productId}?quantity=${quantity}`;
-  const response = await apiFetch(url, { withAuth: true });
-
-  if (!response.ok) {
-    throw new Error(`检查购买权限失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<{ canBuy: boolean; reason: string }>;
-  return parseApiResponse(json);
+  return await apiGet<{ canBuy: boolean; reason: string }>(
+    `/api/v1/Shop/CheckCanBuy/${productId}?quantity=${quantity}`,
+    { withAuth: true }
+  );
 }
 
 /**
  * 购买商品
  */
 export async function purchaseProduct(request: CreateOrderRequest, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/Purchase`;
-  const response = await apiFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(request),
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`购买商品失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<PurchaseResult>;
-  return parseApiResponse(json);
+  return await apiPost<PurchaseResult>('/api/v1/Shop/Purchase', request, { withAuth: true });
 }
 
 /**
@@ -510,233 +156,94 @@ export async function purchaseProduct(request: CreateOrderRequest, t: TFunction)
  */
 export async function getMyOrders(
   t: TFunction,
-  status?: OrderStatus,
+  status?: OrderStatusValue,
   pageIndex: number = 1,
   pageSize: number = 20
-) {
+): Promise<ParsedApiResponse<PagedResponse<OrderListItem>>> {
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
     pageSize: pageSize.toString()
   });
 
   if (status !== undefined) {
-    params.append('status', status.toString());
+    params.append('status', status);
   }
 
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetMyOrders?${params.toString()}`;
-  const response = await apiFetch(url, { withAuth: true });
-
-  if (!response.ok) {
-    throw new Error(`获取订单列表失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<PagedResponse<any>>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
-  }
-
-  return {
-    ...parsed,
-    data: {
-      ...parsed.data,
-      data: parsed.data.data.map(mapOrderListItem)
-    }
-  };
+  return await apiGet<PagedResponse<OrderListItem>>(
+    `/api/v1/Shop/GetMyOrders?${params.toString()}`,
+    { withAuth: true }
+  );
 }
 
 /**
  * 获取订单详情
  */
-export async function getOrder(orderId: number, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetOrder/${orderId}`;
-  const response = await apiFetch(url, { withAuth: true });
-
-  if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error('订单不存在');
-    }
-    throw new Error(`获取订单详情失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
-  }
-
-  return {
-    ...parsed,
-    data: mapOrder(parsed.data)
-  };
+export async function getOrder(orderId: number, t: TFunction): Promise<ParsedApiResponse<Order>> {
+  return await apiGet<Order>(`/api/v1/Shop/GetOrder/${orderId}`, { withAuth: true });
 }
 
 /**
  * 取消订单
  */
 export async function cancelOrder(orderId: number, t: TFunction, reason?: string) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/CancelOrder/${orderId}`;
-  const body = reason ? JSON.stringify({ reason }) : undefined;
-
-  const response = await apiFetch(url, {
-    method: 'POST',
-    body,
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`取消订单失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json);
+  const body = reason ? { reason } : undefined;
+  return await apiPost<boolean>(`/api/v1/Shop/CancelOrder/${orderId}`, body, { withAuth: true });
 }
 
 /**
  * 获取我的权益列表
  */
-export async function getMyBenefits(includeExpired: boolean = false, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetMyBenefits?includeExpired=${includeExpired}`;
-  const response = await apiFetch(url, { withAuth: true });
-
-  if (!response.ok) {
-    throw new Error(`获取权益列表失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any[]>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
-  }
-
-  return {
-    ...parsed,
-    data: parsed.data.map(mapUserBenefit)
-  };
+export async function getMyBenefits(includeExpired: boolean = false, t: TFunction): Promise<ParsedApiResponse<UserBenefit[]>> {
+  return await apiGet<UserBenefit[]>(
+    `/api/v1/Shop/GetMyBenefits?includeExpired=${includeExpired}`,
+    { withAuth: true }
+  );
 }
 
 /**
  * 获取我的激活权益
  */
-export async function getMyActiveBenefits(t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetMyActiveBenefits`;
-  const response = await apiFetch(url, { withAuth: true });
-
-  if (!response.ok) {
-    throw new Error(`获取激活权益失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any[]>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
-  }
-
-  return {
-    ...parsed,
-    data: parsed.data.map(mapUserBenefit)
-  };
+export async function getMyActiveBenefits(t: TFunction): Promise<ParsedApiResponse<UserBenefit[]>> {
+  return await apiGet<UserBenefit[]>('/api/v1/Shop/GetMyActiveBenefits', { withAuth: true });
 }
 
 /**
  * 激活权益
  */
 export async function activateBenefit(benefitId: number, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/ActivateBenefit/${benefitId}`;
-  const response = await apiFetch(url, {
-    method: 'POST',
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`激活权益失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json);
+  return await apiPost<boolean>(`/api/v1/Shop/ActivateBenefit/${benefitId}`, undefined, { withAuth: true });
 }
 
 /**
  * 取消激活权益
  */
 export async function deactivateBenefit(benefitId: number, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/DeactivateBenefit/${benefitId}`;
-  const response = await apiFetch(url, {
-    method: 'POST',
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`取消激活权益失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<boolean>;
-  return parseApiResponse(json);
+  return await apiPost<boolean>(`/api/v1/Shop/DeactivateBenefit/${benefitId}`, undefined, { withAuth: true });
 }
 
 /**
  * 获取我的背包
  */
-export async function getMyInventory(t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/GetMyInventory`;
-  const response = await apiFetch(url, { withAuth: true });
-
-  if (!response.ok) {
-    throw new Error(`获取背包失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<any[]>;
-  const parsed = parseApiResponse(json);
-
-  if (!parsed.ok || !parsed.data) {
-    return parsed;
-  }
-
-  return {
-    ...parsed,
-    data: parsed.data.map(mapUserInventoryItem)
-  };
+export async function getMyInventory(t: TFunction): Promise<ParsedApiResponse<UserInventoryItem[]>> {
+  return await apiGet<UserInventoryItem[]>('/api/v1/Shop/GetMyInventory', { withAuth: true });
 }
 
 /**
  * 使用道具
  */
 export async function useItem(request: UseItemRequest, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/UseItem`;
-  const response = await apiFetch(url, {
-    method: 'POST',
-    body: JSON.stringify(request),
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`使用道具失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<UseItemResult>;
-  return parseApiResponse(json);
+  return await apiPost<UseItemResult>('/api/v1/Shop/UseItem', request, { withAuth: true });
 }
 
 /**
  * 使用改名卡
  */
 export async function useRenameCard(inventoryId: number, newNickname: string, t: TFunction) {
-  const url = `${getApiBaseUrl()}/api/v1/Shop/UseRenameCard/${inventoryId}?newNickname=${encodeURIComponent(newNickname)}`;
-  const response = await apiFetch(url, {
-    method: 'POST',
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`使用改名卡失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<UseItemResult>;
-  return parseApiResponse(json);
+  return await apiPost<UseItemResult>(
+    `/api/v1/Shop/UseRenameCard/${inventoryId}?newNickname=${encodeURIComponent(newNickname)}`,
+    undefined,
+    { withAuth: true }
+  );
 }
 
 /**
@@ -755,7 +262,7 @@ export function formatProductPrice(price: number, originalPrice?: number): strin
 /**
  * 获取商品类型显示名称
  */
-export function getProductTypeDisplay(type: ProductType): string {
+export function getProductTypeDisplay(type: string): string {
   switch (type) {
     case ProductType.Benefit:
       return '权益';
@@ -764,14 +271,14 @@ export function getProductTypeDisplay(type: ProductType): string {
     case ProductType.Physical:
       return '实物';
     default:
-      return '未知';
+      return type || '未知';
   }
 }
 
 /**
  * 获取订单状态显示名称
  */
-export function getOrderStatusDisplay(status: OrderStatus): string {
+export function getOrderStatusDisplay(status: string): string {
   switch (status) {
     case OrderStatus.Pending:
       return '待支付';
@@ -786,14 +293,14 @@ export function getOrderStatusDisplay(status: OrderStatus): string {
     case OrderStatus.Failed:
       return '发放失败';
     default:
-      return '未知';
+      return status || '未知';
   }
 }
 
 /**
  * 获取订单状态颜色
  */
-export function getOrderStatusColor(status: OrderStatus): string {
+export function getOrderStatusColor(status: string): string {
   switch (status) {
     case OrderStatus.Pending:
       return '#faad14'; // 橙色

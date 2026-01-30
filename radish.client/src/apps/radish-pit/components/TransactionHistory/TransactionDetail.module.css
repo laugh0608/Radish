@@ -1,0 +1,450 @@
+/* 交易详情模态框样式 */
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 头部 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #f3f4f6;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.transactionIcon {
+  font-size: 2rem;
+  width: 3rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-radius: 50%;
+  border: 2px solid #3b82f6;
+}
+
+.headerInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.transactionType {
+  font-size: 0.9rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.closeButton {
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 50%;
+  color: #6b7280;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.closeButton:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* 内容 */
+.content {
+  flex: 1;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* 金额区域 */
+.amountSection {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border-radius: 0.75rem;
+  border: 1px solid #bae6fd;
+}
+
+.amountLabel {
+  font-size: 0.9rem;
+  color: #0369a1;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.amountValue {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.amountValue.positive {
+  color: #059669;
+}
+
+.amountValue.negative {
+  color: #dc2626;
+}
+
+.feeInfo {
+  font-size: 0.8rem;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* 状态区域 */
+.statusSection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.statusBadge {
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+}
+
+.statusBadge.success {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.statusBadge.warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statusBadge.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.statusBadge.default {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.statusTime {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+/* 区域样式 */
+.section {
+  margin-bottom: 2rem;
+}
+
+.sectionTitle {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+/* 参与方 */
+.participants {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #fafafa;
+  border-radius: 0.75rem;
+  border: 1px solid #f3f4f6;
+}
+
+.participantItem {
+  flex: 1;
+  text-align: center;
+}
+
+.participantLabel {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.participantValue {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.currentUser {
+  color: #3b82f6;
+}
+
+.systemUser {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.arrow {
+  font-size: 1.5rem;
+  color: #9ca3af;
+  flex-shrink: 0;
+}
+
+/* 信息网格 */
+.infoGrid {
+  display: grid;
+  gap: 1rem;
+}
+
+.infoItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: #fafafa;
+  border-radius: 0.5rem;
+  border: 1px solid #f3f4f6;
+}
+
+.infoLabel {
+  font-size: 0.875rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.infoValue {
+  font-size: 0.875rem;
+  color: #1f2937;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.transactionNo {
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  background: #f3f4f6;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.copyButton {
+  padding: 0.25rem;
+  border: none;
+  background: #e5e7eb;
+  border-radius: 0.25rem;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+}
+
+.copyButton:hover {
+  background: #d1d5db;
+  color: #374151;
+}
+
+/* 备注内容 */
+.noteContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: #fafafa;
+  border-radius: 0.75rem;
+  border-left: 4px solid #3b82f6;
+  font-style: italic;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.noteIcon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+/* 计算详情 */
+.calculationDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #fafafa;
+  border-radius: 0.75rem;
+  border: 1px solid #f3f4f6;
+}
+
+.calculationItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.calculationLabel {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.calculationValue {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  font-family: 'Courier New', monospace;
+}
+
+/* 底部 */
+.footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #f3f4f6;
+  background: #fafafa;
+  display: flex;
+  justify-content: center;
+}
+
+.closeFooterButton {
+  padding: 0.75rem 2rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: white;
+  color: #374151;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.closeFooterButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .backdrop {
+    padding: 0.5rem;
+  }
+
+  .modal {
+    max-height: 95vh;
+  }
+
+  .header {
+    padding: 1rem;
+  }
+
+  .headerLeft {
+    gap: 0.75rem;
+  }
+
+  .transactionIcon {
+    font-size: 1.5rem;
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .title {
+    font-size: 1.1rem;
+  }
+
+  .content {
+    padding: 1rem;
+  }
+
+  .amountSection {
+    padding: 1rem;
+  }
+
+  .amountValue {
+    font-size: 1.5rem;
+  }
+
+  .participants {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .arrow {
+    transform: rotate(90deg);
+    font-size: 1.25rem;
+  }
+
+  .infoItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .infoValue {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .header {
+    padding: 0.75rem;
+  }
+
+  .content {
+    padding: 0.75rem;
+  }
+
+  .footer {
+    padding: 0.75rem;
+  }
+
+  .amountValue {
+    font-size: 1.25rem;
+  }
+
+  .statusSection {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

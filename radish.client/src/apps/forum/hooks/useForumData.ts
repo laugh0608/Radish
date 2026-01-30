@@ -7,15 +7,13 @@ import {
   getPostList,
   getPostById,
   getCommentTree,
-  getCurrentGodComments
+  getCurrentGodComments,
+  type Category,
+  type PostItem,
+  type PostDetail,
+  type CommentNode,
+  type CommentHighlight
 } from '@/api/forum';
-import type {
-  Category,
-  PostItem,
-  PostDetail,
-  CommentNode,
-  CommentHighlight
-} from '@/types/forum';
 
 export interface ForumDataState {
   // 数据状态
@@ -111,7 +109,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       const data = await getTopCategories(t);
       setCategories(data);
       if (data.length > 0 && selectedCategoryId == null) {
-        setSelectedCategoryId(data[0].id);
+        setSelectedCategoryId(data[0].voId);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -159,31 +157,31 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       const allGodComments: CommentNode[] = [];
       for (const post of hotPostsModel.data.slice(0, 5)) {
         try {
-          const godComments = await getCurrentGodComments(post.id, t);
+          const godComments = await getCurrentGodComments(post.voId, t);
           if (godComments.length > 0) {
             const topGodComment = godComments[0];
             allGodComments.push({
-              id: topGodComment.commentId,
-              content: topGodComment.contentSnapshot || '',
-              authorId: topGodComment.authorId,
-              authorName: topGodComment.authorName,
-              createTime: topGodComment.createTime,
-              likeCount: topGodComment.likeCount,
-              isLiked: false,
-              isGodComment: true,
-              isSofa: false,
-              postId: post.id,
-              parentId: null,
-              replyToUserId: null,
-              replyToUserName: null,
-              children: []
+              voId: topGodComment.voCommentId,
+              voContent: topGodComment.voContentSnapshot || '',
+              voAuthorId: topGodComment.voAuthorId,
+              voAuthorName: topGodComment.voAuthorName,
+              voCreateTime: topGodComment.voCreateTime,
+              voLikeCount: topGodComment.voLikeCount,
+              voIsLiked: false,
+              voIsGodComment: true,
+              voIsSofa: false,
+              voPostId: post.voId,
+              voParentId: null,
+              voReplyToUserId: null,
+              voReplyToUserName: null,
+              voChildren: []
             });
           }
         } catch {
           // 忽略单个帖子的错误
         }
       }
-      allGodComments.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0));
+      allGodComments.sort((a, b) => (b.voLikeCount || 0) - (a.voLikeCount || 0));
       setTrendingGodComments(allGodComments.slice(0, 10));
     } catch (err) {
       log.error('加载热门内容失败:', err);
@@ -199,9 +197,9 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     await Promise.all(
       postList.map(async (post) => {
         try {
-          const godComments = await getCurrentGodComments(post.id, t);
+          const godComments = await getCurrentGodComments(post.voId, t);
           if (godComments.length > 0) {
-            godCommentsMap.set(post.id, godComments[0]);
+            godCommentsMap.set(post.voId, godComments[0]);
           }
         } catch {
           // 忽略单个帖子的错误

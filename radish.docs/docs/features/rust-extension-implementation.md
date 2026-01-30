@@ -8,7 +8,7 @@
 
 ## ✅ 已完成的工作
 
-### 1. Rust 项目结构 (`Radish.Core/radish-lib/`)
+### 1. Rust 项目结构 (`radish.lib/`)
 
 **创建的文件**：
 - `Cargo.toml` - Rust 项目配置
@@ -133,7 +133,7 @@ anyhow = "1.0"        # 错误处理
 
 1. 编译 Rust 库：
    ```bash
-   cd Radish.Core/radish-lib
+   cd radish.lib
    ./build.sh
    ```
 
@@ -202,7 +202,7 @@ anyhow = "1.0"        # 错误处理
 ### 新增文件（Rust）
 
 ```
-Radish.Core/radish-lib/
+radish.lib/
 ├── Cargo.toml
 ├── build.sh
 ├── build.ps1

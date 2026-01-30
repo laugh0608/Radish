@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { UserBenefit, UserInventoryItem, BenefitType, ConsumableType } from '@/api/shop';
+import type { UserBenefit, UserInventoryItem } from '@/types/shop';
 import styles from './Inventory.module.css';
 
 interface InventoryProps {
@@ -14,28 +14,28 @@ interface InventoryProps {
 
 type TabType = 'benefits' | 'consumables';
 
-const getBenefitTypeIcon = (type: BenefitType): string => {
-  const icons: Record<number, string> = {
-    0: '🏅',
-    1: '🖼️',
-    2: '🎖️',
-    3: '🎨',
-    4: '✍️',
-    5: '🌈',
-    6: '❤️'
+const getBenefitTypeIcon = (type: string): string => {
+  const icons: Record<string, string> = {
+    'Badge': '🏅',
+    'AvatarFrame': '🖼️',
+    'Title': '🎖️',
+    'Theme': '🎨',
+    'Signature': '✍️',
+    'NameColor': '🌈',
+    'LikeEffect': '❤️'
   };
   return icons[type] || '🎁';
 };
 
-const getConsumableTypeIcon = (type: ConsumableType): string => {
-  const icons: Record<number, string> = {
-    0: '📝',
-    1: '📌',
-    2: '✨',
-    3: '⭐',
-    4: '🥕',
-    5: '🚀',
-    6: '🎫'
+const getConsumableTypeIcon = (type: string): string => {
+  const icons: Record<string, string> = {
+    'RenameCard': '📝',
+    'PostPinCard': '📌',
+    'PostHighlightCard': '✨',
+    'ExpCard': '⭐',
+    'CoinCard': '🥕',
+    'DoubleExpCard': '🚀',
+    'LotteryTicket': '🎫'
   };
   return icons[type] || '📦';
 };
@@ -54,7 +54,7 @@ export const Inventory = ({
   const [useQuantity, setUseQuantity] = useState(1);
   const [showUseModal, setShowUseModal] = useState(false);
 
-  const formatTime = (timeStr?: string) => {
+  const formatTime = (timeStr?: string | null) => {
     if (!timeStr) return '-';
     return new Date(timeStr).toLocaleString('zh-CN', {
       year: 'numeric',
@@ -73,7 +73,7 @@ export const Inventory = ({
 
   const handleConfirmUse = () => {
     if (selectedItem) {
-      onUseItem(selectedItem.id, useQuantity);
+      onUseItem(selectedItem.voId, useQuantity);
       setShowUseModal(false);
       setSelectedItem(null);
     }
@@ -132,49 +132,49 @@ export const Inventory = ({
             ) : (
               benefits.map((benefit) => (
                 <div
-                  key={benefit.id}
-                  className={`${styles.benefitCard} ${benefit.isExpired ? styles.expired : ''}`}
+                  key={benefit.voId}
+                  className={`${styles.benefitCard} ${benefit.voIsExpired ? styles.expired : ''}`}
                 >
                   <div className={styles.benefitIcon}>
-                    {benefit.benefitIcon ? (
-                      <img src={benefit.benefitIcon} alt={benefit.benefitName || ''} />
+                    {benefit.voBenefitIcon ? (
+                      <img src={benefit.voBenefitIcon} alt={benefit.voBenefitName || ''} />
                     ) : (
-                      <span>{getBenefitTypeIcon(benefit.benefitType)}</span>
+                      <span>{getBenefitTypeIcon(benefit.voBenefitType)}</span>
                     )}
                   </div>
                   <div className={styles.benefitInfo}>
                     <div className={styles.benefitHeader}>
                       <span className={styles.benefitName}>
-                        {benefit.benefitName || benefit.benefitTypeDisplay}
+                        {benefit.voBenefitName || benefit.voBenefitTypeDisplay}
                       </span>
-                      <span className={`${styles.benefitStatus} ${benefit.isActive ? styles.active : ''}`}>
-                        {benefit.isExpired ? '已过期' : benefit.isActive ? '已激活' : '未激活'}
+                      <span className={`${styles.benefitStatus} ${benefit.voIsActive ? styles.active : ''}`}>
+                        {benefit.voIsExpired ? '已过期' : benefit.voIsActive ? '已激活' : '未激活'}
                       </span>
                     </div>
-                    <div className={styles.benefitType}>{benefit.benefitTypeDisplay}</div>
+                    <div className={styles.benefitType}>{benefit.voBenefitTypeDisplay ?? ''}</div>
                     <div className={styles.benefitMeta}>
-                      <span>来源：{benefit.sourceTypeDisplay}</span>
-                      <span>有效期：{benefit.durationDisplay}</span>
+                      <span>来源：{benefit.voSourceTypeDisplay ?? ''}</span>
+                      <span>有效期：{benefit.voDurationDisplay ?? ''}</span>
                     </div>
-                    {benefit.expiresAt && !benefit.isExpired && (
+                    {benefit.voExpiresAt && !benefit.voIsExpired && (
                       <div className={styles.benefitExpiry}>
-                        到期时间：{formatTime(benefit.expiresAt)}
+                        到期时间：{formatTime(benefit.voExpiresAt)}
                       </div>
                     )}
                   </div>
                   <div className={styles.benefitActions}>
-                    {!benefit.isExpired && (
-                      benefit.isActive ? (
+                    {!benefit.voIsExpired && (
+                      benefit.voIsActive ? (
                         <button
                           className={styles.deactivateButton}
-                          onClick={() => onDeactivateBenefit(benefit.id)}
+                          onClick={() => onDeactivateBenefit(benefit.voId)}
                         >
                           取消激活
                         </button>
                       ) : (
                         <button
                           className={styles.activateButton}
-                          onClick={() => onActivateBenefit(benefit.id)}
+                          onClick={() => onActivateBenefit(benefit.voId)}
                         >
                           激活
                         </button>
@@ -195,28 +195,28 @@ export const Inventory = ({
               </div>
             ) : (
               inventory.map((item) => (
-                <div key={item.id} className={styles.consumableCard}>
+                <div key={item.voId} className={styles.consumableCard}>
                   <div className={styles.consumableIcon}>
-                    {item.itemIcon ? (
-                      <img src={item.itemIcon} alt={item.itemName || ''} />
+                    {item.voItemIcon ? (
+                      <img src={item.voItemIcon} alt={item.voItemName || ''} />
                     ) : (
-                      <span>{getConsumableTypeIcon(item.consumableType)}</span>
+                      <span>{getConsumableTypeIcon(item.voConsumableType)}</span>
                     )}
                   </div>
                   <div className={styles.consumableInfo}>
                     <div className={styles.consumableName}>
-                      {item.itemName || item.consumableTypeDisplay}
+                      {item.voItemName || item.voConsumableTypeDisplay}
                     </div>
-                    <div className={styles.consumableType}>{item.consumableTypeDisplay}</div>
+                    <div className={styles.consumableType}>{item.voConsumableTypeDisplay ?? ''}</div>
                     <div className={styles.consumableQuantity}>
-                      数量：<span className={styles.quantity}>{item.quantity}</span>
+                      数量：<span className={styles.quantity}>{item.voQuantity}</span>
                     </div>
                   </div>
                   <div className={styles.consumableActions}>
                     <button
                       className={styles.useButton}
                       onClick={() => handleUseItemClick(item)}
-                      disabled={item.quantity <= 0}
+                      disabled={item.voQuantity <= 0}
                     >
                       使用
                     </button>
@@ -240,18 +240,18 @@ export const Inventory = ({
             <div className={styles.modalContent}>
               <div className={styles.modalItem}>
                 <div className={styles.modalItemIcon}>
-                  {selectedItem.itemIcon ? (
-                    <img src={selectedItem.itemIcon} alt={selectedItem.itemName || ''} />
+                  {selectedItem.voItemIcon ? (
+                    <img src={selectedItem.voItemIcon} alt={selectedItem.voItemName || ''} />
                   ) : (
-                    <span>{getConsumableTypeIcon(selectedItem.consumableType)}</span>
+                    <span>{getConsumableTypeIcon(selectedItem.voConsumableType)}</span>
                   )}
                 </div>
                 <div className={styles.modalItemInfo}>
                   <div className={styles.modalItemName}>
-                    {selectedItem.itemName || selectedItem.consumableTypeDisplay}
+                    {selectedItem.voItemName || selectedItem.voConsumableTypeDisplay}
                   </div>
                   <div className={styles.modalItemQuantity}>
-                    可用数量：{selectedItem.quantity}
+                    可用数量：{selectedItem.voQuantity}
                   </div>
                 </div>
               </div>
@@ -266,8 +266,8 @@ export const Inventory = ({
                   </button>
                   <span>{useQuantity}</span>
                   <button
-                    onClick={() => setUseQuantity(Math.min(selectedItem.quantity, useQuantity + 1))}
-                    disabled={useQuantity >= selectedItem.quantity}
+                    onClick={() => setUseQuantity(Math.min(selectedItem.voQuantity, useQuantity + 1))}
+                    disabled={useQuantity >= selectedItem.voQuantity}
                   >
                     +
                   </button>

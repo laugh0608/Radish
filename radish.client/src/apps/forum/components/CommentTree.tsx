@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { CommentNode as CommentNodeType } from '@/types/forum';
+import type { CommentNode as CommentNodeType } from '@/api/forum';
 import { CommentNode } from './CommentNode';
 import styles from './CommentTree.module.css';
 
@@ -34,7 +34,7 @@ export const CommentTree = ({
 }: CommentTreeProps) => {
   // 找出所有神评（后端标记的）
   const godComments = useMemo(() => {
-    return comments.filter(c => c.isGodComment);
+    return comments.filter(c => c.voIsGodComment);
   }, [comments]);
 
   // 找出当前点赞数最高的神评（用于置顶显示）
@@ -42,11 +42,11 @@ export const CommentTree = ({
     if (godComments.length === 0) return null;
     return [...godComments].sort((a, b) => {
       // 先按点赞数降序
-      if ((b.likeCount || 0) !== (a.likeCount || 0)) {
-        return (b.likeCount || 0) - (a.likeCount || 0);
+      if ((b.voLikeCount || 0) !== (a.voLikeCount || 0)) {
+        return (b.voLikeCount || 0) - (a.voLikeCount || 0);
       }
       // 点赞数相同时按创建时间降序（最新的在前）
-      return new Date(b.createTime || 0).getTime() - new Date(a.createTime || 0).getTime();
+      return new Date(b.voCreateTime || 0).getTime() - new Date(a.voCreateTime || 0).getTime();
     })[0];
   }, [godComments]);
 
@@ -56,7 +56,7 @@ export const CommentTree = ({
 
     if (sortBy === null && topGodComment) {
       // 默认排序：当前点赞数最高的神评置顶 + 其他按时间升序
-      const others = comments.filter(c => c.id !== topGodComment.id);
+      const others = comments.filter(c => c.voId !== topGodComment.voId);
       return [topGodComment, ...others];
     }
 
@@ -97,12 +97,12 @@ export const CommentTree = ({
       <div className={styles.list}>
         {displayComments.map(comment => (
           <CommentNode
-            key={comment.id}
+            key={comment.voId}
             node={comment}
             level={0}
             currentUserId={currentUserId}
             pageSize={pageSize}
-            isGodComment={comment.isGodComment || false}
+            isGodComment={comment.voIsGodComment || false}
             onDelete={onDeleteComment}
             onEdit={onEditComment}
             onLike={onLikeComment}

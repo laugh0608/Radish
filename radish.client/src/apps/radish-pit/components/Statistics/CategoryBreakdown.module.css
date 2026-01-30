@@ -1,0 +1,142 @@
+/* 分类统计主容器样式 */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-height: 400px;
+}
+
+/* 加载状态样式 */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  color: #6b7280;
+}
+
+.loadingSpinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* 占位符样式 */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 400px;
+  background: white;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.75rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.placeholderIcon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.placeholder h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.25rem;
+  color: #374151;
+}
+
+.placeholder p {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+/* 图表容器样式（为后续实现预留） */
+.chartContainer {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  min-height: 400px;
+}
+
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.chartTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.chartControls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.chartContent {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.chartArea {
+  flex: 1;
+  min-height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.legendArea {
+  flex-shrink: 0;
+  width: 200px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .container {
+    min-height: 300px;
+  }
+
+  .placeholder {
+    height: 300px;
+  }
+
+  .placeholderIcon {
+    font-size: 3rem;
+  }
+
+  .chartContainer {
+    min-height: 300px;
+  }
+
+  .chartContent {
+    flex-direction: column;
+  }
+
+  .chartArea {
+    width: 100%;
+    min-height: 250px;
+  }
+
+  .legendArea {
+    width: 100%;
+  }
+}

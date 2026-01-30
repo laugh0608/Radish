@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal, Button } from '@radish/ui';
-import type { PostDetail } from '@/types/forum';
+import type { PostDetail } from '@/api/forum';
 import styles from './EditPostModal.module.css';
 
 interface EditPostModalProps {
@@ -19,8 +19,8 @@ export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalPr
   // 当 post 改变时更新表单
   useEffect(() => {
     if (post) {
-      setTitle(post.title);
-      setContent(post.content);
+      setTitle(post.voTitle);
+      setContent(post.voContent);
     }
   }, [post]);
 
@@ -35,7 +35,7 @@ export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalPr
     setSaving(true);
     setError(null);
     try {
-      await onSave(post.id, title, content);
+      await onSave(post.voId, title, content);
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

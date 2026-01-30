@@ -1,45 +1,45 @@
 /**
  * 通知系统相关的 API 调用
+ * 直接使用后端 Vo 字段名，无需映射
  */
 
 import { apiGet, apiPost, apiPut, configureApiClient, type PagedResponse } from '@radish/ui';
-import { mapNotification, type NotificationData } from '@/utils/viewModelMapper';
+import { getApiBaseUrl } from '@/config/env';
 
 // 配置 API 客户端
-const defaultApiBase = 'https://localhost:5000';
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined || defaultApiBase;
-
 configureApiClient({
-  baseUrl: apiBaseUrl.replace(/\/$/, ''),
+  baseUrl: getApiBaseUrl(),
 });
 
 /**
- * 通知信息（后端 ViewModel，带 Vo 前缀）
+ * 通知 Vo（直接使用后端字段名）
  */
-interface NotificationVo {
-  VoId: number;
-  VoUserId: number;
-  VoTitle: string;
-  VoContent: string;
-  VoType: string;
-  VoTypeDisplay: string;
-  VoIsRead: boolean;
-  VoRelatedId: number;
-  VoRelatedType: string;
-  VoRelatedUrl: string;
-  VoIcon: string;
-  VoColor: string;
-  VoPriority: number;
-  VoExpiresAt: string;
-  VoReadAt: string;
-  VoCreateTime: string;
-  VoUpdateTime: string;
+export interface Notification {
+  voId: number;
+  voUserId: number;
+  voTitle: string;
+  voContent: string;
+  voType: string;
+  voTypeDisplay: string;
+  voIsRead: boolean;
+  voRelatedId: number;
+  voRelatedType: string;
+  voRelatedUrl: string;
+  voIcon: string;
+  voColor: string;
+  voPriority: number;
+  voExpiresAt: string;
+  voReadAt: string;
+  voCreateTime: string;
+  voUpdateTime: string;
 }
 
 /**
- * 导出前端友好的通知类型
+ * 未读数量响应
  */
-export type Notification = NotificationData;
+interface UnreadCountResponse {
+  voUnreadCount: number;
+}
 
 /**
  * 通知 API
@@ -60,7 +60,7 @@ export const notificationApi = {
       url += `&isRead=${isRead}`;
     }
 
-    const response = await apiGet<PagedResponse<NotificationVo>>(url, {
+    const response = await apiGet<PagedResponse<Notification>>(url, {
       withAuth: true,
     });
 
@@ -68,11 +68,7 @@ export const notificationApi = {
       return null;
     }
 
-    // 映射 Vo 字段为前端友好的字段名
-    return {
-      ...response.data,
-      data: response.data.data.map(mapNotification),
-    };
+    return response.data;
   },
 
   /**
@@ -101,12 +97,11 @@ export const notificationApi = {
    * 获取未读通知数量
    */
   async getUnreadCount(): Promise<number> {
-    const response = await apiGet<{ VoUnreadCount: number }>('/api/v1/Notification/GetUnreadCount', {
+    const response = await apiGet<UnreadCountResponse>('/api/v1/Notification/GetUnreadCount', {
       withAuth: true,
     });
 
-    // 处理 Vo 前缀字段
-    return response.ok && response.data ? response.data.VoUnreadCount : 0;
+    return response.ok && response.data ? response.data.voUnreadCount : 0;
   },
 
   /**

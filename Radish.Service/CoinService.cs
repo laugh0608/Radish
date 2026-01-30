@@ -18,6 +18,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     private readonly IBaseRepository<UserBalance> _userBalanceRepository;
     private readonly IBaseRepository<CoinTransaction> _coinTransactionRepository;
     private readonly IBaseRepository<BalanceChangeLog> _balanceChangeLogRepository;
+    private readonly IPaymentPasswordService _paymentPasswordService;
 
     /// <summary>乐观锁冲突重试次数</summary>
     private const int MaxRetryCount = 3;
@@ -29,12 +30,14 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         IMapper mapper,
         IBaseRepository<UserBalance> userBalanceRepository,
         IBaseRepository<CoinTransaction> coinTransactionRepository,
-        IBaseRepository<BalanceChangeLog> balanceChangeLogRepository)
+        IBaseRepository<BalanceChangeLog> balanceChangeLogRepository,
+        IPaymentPasswordService paymentPasswordService)
         : base(mapper, userBalanceRepository)
     {
         _userBalanceRepository = userBalanceRepository;
         _coinTransactionRepository = coinTransactionRepository;
         _balanceChangeLogRepository = balanceChangeLogRepository;
+        _paymentPasswordService = paymentPasswordService;
     }
 
     #region 余额查询
@@ -46,7 +49,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     {
         try
         {
-            var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId);
+            var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
 
             if (userBalance == null)
             {
@@ -72,7 +75,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         try
         {
             var userBalances = await _userBalanceRepository.QueryAsync(
-                u => userIds.Contains(u.UserId)
+                u => userIds.Contains(u.UserId) && !u.IsDeleted
             );
 
             return userBalances.ToDictionary(
@@ -88,27 +91,68 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     }
 
     /// <summary>
-    /// 初始化用户余额记录
+    /// 初始化用户余额记录（带并发保护）
     /// </summary>
     private async Task<UserBalance> InitializeUserBalanceAsync(long userId)
     {
-        var userBalance = new UserBalance
+        try
         {
-            UserId = userId,
-            Balance = 0,
-            FrozenBalance = 0,
-            TotalEarned = 0,
-            TotalSpent = 0,
-            TotalTransferredIn = 0,
-            TotalTransferredOut = 0,
-            Version = 0,
-            CreateTime = DateTime.Now,
-            CreateBy = "System",
-            CreateId = 0
-        };
+            // 首先检查是否有被软删除的余额记录
+            var deletedBalance = await _userBalanceRepository.QueryFirstAsync(
+                b => b.UserId == userId && b.IsDeleted);
 
-        await _userBalanceRepository.AddAsync(userBalance);
-        return userBalance;
+            if (deletedBalance != null)
+            {
+                // 恢复被软删除的余额记录
+                await _userBalanceRepository.UpdateColumnsAsync(
+                    b => new UserBalance
+                    {
+                        IsDeleted = false,
+                        ModifyTime = DateTime.Now,
+                        ModifyBy = "System",
+                        ModifyId = 0
+                    },
+                    b => b.Id == deletedBalance.Id);
+
+                // 重新查询恢复后的记录
+                return await _userBalanceRepository.QueryByIdAsync(deletedBalance.Id)
+                       ?? throw new InvalidOperationException("恢复用户余额记录失败");
+            }
+
+            // 如果没有被软删除的记录，创建新记录
+            var userBalance = new UserBalance
+            {
+                UserId = userId,
+                Balance = 0,
+                FrozenBalance = 0,
+                TotalEarned = 0,
+                TotalSpent = 0,
+                TotalTransferredIn = 0,
+                TotalTransferredOut = 0,
+                Version = 0,
+                CreateTime = DateTime.Now,
+                CreateBy = "System",
+                CreateId = 0
+            };
+
+            await _userBalanceRepository.AddAsync(userBalance);
+            return userBalance;
+        }
+        catch (SqlSugar.SqlSugarException ex) when (ex.Message.Contains("UNIQUE constraint failed"))
+        {
+            // 并发情况下，其他请求可能已经创建了记录，重新查询
+            Log.Warning("用户 {UserId} 余额记录已存在（并发创建），重新查询", userId);
+            var existingBalance = await _userBalanceRepository.QueryFirstAsync(
+                b => b.UserId == userId && !b.IsDeleted);
+
+            if (existingBalance != null)
+            {
+                return existingBalance;
+            }
+
+            // 如果仍然查询不到，说明是其他异常，重新抛出
+            throw;
+        }
     }
 
     #endregion
@@ -173,7 +217,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         string? remark)
     {
         // 1. 确保用户余额记录存在
-        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId);
+        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
         if (userBalance == null)
         {
             userBalance = await InitializeUserBalanceAsync(userId);
@@ -386,6 +430,352 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 
     #endregion
 
+    #region 转账功能
+
+    /// <summary>
+    /// 用户转账
+    /// </summary>
+    public async Task<string> TransferAsync(
+        long fromUserId,
+        long toUserId,
+        long amount,
+        string paymentPassword,
+        string? remark = null)
+    {
+        try
+        {
+            // 1. 参数校验
+            if (fromUserId == toUserId)
+            {
+                throw new ArgumentException("不能向自己转账");
+            }
+
+            if (amount <= 0)
+            {
+                throw new ArgumentException("转账金额必须大于0");
+            }
+
+            if (string.IsNullOrWhiteSpace(paymentPassword))
+            {
+                throw new ArgumentException("支付密码不能为空");
+            }
+
+            Log.Information("用户转账：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
+                fromUserId, toUserId, amount);
+
+            // 2. 验证支付密码
+            var verifyRequest = new VerifyPaymentPasswordRequest
+            {
+                Password = paymentPassword
+            };
+            var verifyResult = await _paymentPasswordService.VerifyPaymentPasswordAsync(fromUserId, verifyRequest);
+
+            if (!verifyResult.IsSuccess)
+            {
+                Log.Warning("转账失败：支付密码验证失败，用户={FromUserId}, 原因={Reason}",
+                    fromUserId, verifyResult.ErrorMessage);
+                throw new InvalidOperationException(verifyResult.ErrorMessage ?? "支付密码验证失败");
+            }
+
+            // 3. 使用乐观锁重试策略执行转账操作（最多重试 3 次，指数退避）
+            var transactionNo = await ExecuteWithRetryAsync(async () =>
+                await TransferInternalAsync(fromUserId, toUserId, amount, remark)
+            );
+
+            Log.Information("用户转账成功：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}, 流水号={TransactionNo}",
+                fromUserId, toUserId, amount, transactionNo);
+
+            return transactionNo;
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "用户转账失败：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
+                fromUserId, toUserId, amount);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 转账的内部实现（包含事务和乐观锁）
+    /// </summary>
+    [UseTran(Propagation = Propagation.Required)]
+    private async Task<string> TransferInternalAsync(
+        long fromUserId,
+        long toUserId,
+        long amount,
+        string? remark)
+    {
+        // 1. 确保转出用户余额记录存在
+        var fromUserBalance = await _userBalanceRepository.QueryFirstAsync(
+            b => b.UserId == fromUserId && !b.IsDeleted);
+        if (fromUserBalance == null)
+        {
+            throw new InvalidOperationException("转出用户余额记录不存在");
+        }
+
+        // 2. 检查转出用户余额是否充足
+        if (fromUserBalance.Balance < amount)
+        {
+            throw new InvalidOperationException($"余额不足：当前余额={fromUserBalance.Balance}, 转账金额={amount}");
+        }
+
+        // 3. 确保转入用户余额记录存在
+        var toUserBalance = await _userBalanceRepository.QueryFirstAsync(
+            b => b.UserId == toUserId && !b.IsDeleted);
+        if (toUserBalance == null)
+        {
+            toUserBalance = await InitializeUserBalanceAsync(toUserId);
+        }
+
+        // 4. 生成交易流水号
+        var transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
+
+        // 5. 创建交易记录（状态为 PENDING）
+        var transaction = new CoinTransaction
+        {
+            Id = SnowFlakeSingle.Instance.NextId(),
+            TransactionNo = transactionNo,
+            FromUserId = fromUserId,
+            ToUserId = toUserId,
+            Amount = amount,
+            Fee = 0,
+            TransactionType = "TRANSFER",
+            Status = "PENDING",
+            BusinessType = "USER_TRANSFER",
+            BusinessId = null,
+            Remark = remark,
+            CreateTime = DateTime.Now,
+            CreateBy = $"User_{fromUserId}",
+            CreateId = fromUserId
+        };
+
+        await _coinTransactionRepository.AddAsync(transaction);
+
+        // 6. 记录转出用户变动前余额
+        var fromBalanceBefore = fromUserBalance.Balance;
+
+        // 7. 更新转出用户余额（使用乐观锁）
+        fromUserBalance.Balance -= amount;
+        fromUserBalance.TotalTransferredOut += amount;
+        fromUserBalance.TotalSpent += amount;
+        fromUserBalance.ModifyTime = DateTime.Now;
+        fromUserBalance.ModifyBy = $"User_{fromUserId}";
+        fromUserBalance.ModifyId = fromUserId;
+
+        var fromUpdateResult = await _userBalanceRepository.UpdateAsync(fromUserBalance);
+        if (!fromUpdateResult)
+        {
+            throw new ConcurrencyException($"更新转出用户余额失败（乐观锁冲突）：用户={fromUserId}");
+        }
+
+        // 8. 记录转出用户余额变动日志
+        var fromBalanceChangeLog = new BalanceChangeLog
+        {
+            Id = SnowFlakeSingle.Instance.NextId(),
+            UserId = fromUserId,
+            TransactionId = transaction.Id,
+            ChangeAmount = -amount,
+            BalanceBefore = fromBalanceBefore,
+            BalanceAfter = fromBalanceBefore - amount,
+            ChangeType = "TRANSFER_OUT",
+            CreateTime = DateTime.Now,
+            CreateBy = $"User_{fromUserId}",
+            CreateId = fromUserId
+        };
+
+        await _balanceChangeLogRepository.AddAsync(fromBalanceChangeLog);
+
+        // 9. 记录转入用户变动前余额
+        var toBalanceBefore = toUserBalance.Balance;
+
+        // 10. 更新转入用户余额（使用乐观锁）
+        toUserBalance.Balance += amount;
+        toUserBalance.TotalTransferredIn += amount;
+        toUserBalance.TotalEarned += amount;
+        toUserBalance.ModifyTime = DateTime.Now;
+        toUserBalance.ModifyBy = $"User_{fromUserId}";
+        toUserBalance.ModifyId = fromUserId;
+
+        var toUpdateResult = await _userBalanceRepository.UpdateAsync(toUserBalance);
+        if (!toUpdateResult)
+        {
+            throw new ConcurrencyException($"更新转入用户余额失败（乐观锁冲突）：用户={toUserId}");
+        }
+
+        // 11. 记录转入用户余额变动日志
+        var toBalanceChangeLog = new BalanceChangeLog
+        {
+            Id = SnowFlakeSingle.Instance.NextId(),
+            UserId = toUserId,
+            TransactionId = transaction.Id,
+            ChangeAmount = amount,
+            BalanceBefore = toBalanceBefore,
+            BalanceAfter = toBalanceBefore + amount,
+            ChangeType = "TRANSFER_IN",
+            CreateTime = DateTime.Now,
+            CreateBy = $"User_{fromUserId}",
+            CreateId = fromUserId
+        };
+
+        await _balanceChangeLogRepository.AddAsync(toBalanceChangeLog);
+
+        // 12. 更新交易状态为 SUCCESS
+        await _coinTransactionRepository.UpdateColumnsAsync(
+            t => new CoinTransaction
+            {
+                Status = "SUCCESS",
+                ModifyTime = DateTime.Now
+            },
+            t => t.Id == transaction.Id
+        );
+
+        return transactionNo;
+    }
+
+    #endregion
+
+    #region 统计数据
+
+    /// <summary>
+    /// 获取用户统计数据
+    /// </summary>
+    public async Task<CoinStatisticsVo> GetStatisticsAsync(long userId, string timeRange = "month")
+    {
+        try
+        {
+            // 1. 计算时间范围
+            var (startDate, endDate) = CalculateDateRange(timeRange);
+
+            Log.Information("获取用户统计数据：用户={UserId}, 时间范围={TimeRange}, 开始日期={StartDate}, 结束日期={EndDate}",
+                userId, timeRange, startDate, endDate);
+
+            // 2. 查询时间范围内的交易记录
+            var transactions = await _coinTransactionRepository.QueryAsync(
+                t => (t.FromUserId == userId || t.ToUserId == userId) &&
+                     t.Status == "SUCCESS" &&
+                     t.CreateTime >= startDate &&
+                     t.CreateTime <= endDate
+            );
+
+            // 3. 计算趋势数据（按日期分组）
+            var trendData = transactions
+                .GroupBy(t => t.CreateTime.Date)
+                .Select(g => new TrendDataItem
+                {
+                    VoDate = g.Key.ToString("yyyy-MM-dd"),
+                    VoIncome = g.Where(t => t.ToUserId == userId).Sum(t => t.Amount),
+                    VoExpense = g.Where(t => t.FromUserId == userId).Sum(t => t.Amount)
+                })
+                .OrderBy(t => t.VoDate)
+                .ToList();
+
+            // 4. 补充缺失的日期（确保每天都有数据）
+            var completeTrendData = FillMissingDates(trendData, startDate, endDate);
+
+            // 5. 计算分类统计数据
+            var categoryStats = transactions
+                .GroupBy(t => GetTransactionCategory(t, userId))
+                .Select(g => new CategoryStatItem
+                {
+                    VoCategory = g.Key,
+                    VoAmount = g.Sum(t => t.Amount),
+                    VoCount = g.Count()
+                })
+                .OrderByDescending(c => c.VoAmount)
+                .ToList();
+
+            return new CoinStatisticsVo
+            {
+                VoTrendData = completeTrendData,
+                VoCategoryStats = categoryStats
+            };
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "获取用户统计数据失败：用户={UserId}, 时间范围={TimeRange}",
+                userId, timeRange);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// 计算日期范围
+    /// </summary>
+    private (DateTime startDate, DateTime endDate) CalculateDateRange(string timeRange)
+    {
+        var now = DateTime.Now;
+        var endDate = now.Date.AddDays(1).AddSeconds(-1); // 今天的 23:59:59
+
+        return timeRange.ToLower() switch
+        {
+            "month" => (now.AddMonths(-1).Date, endDate),
+            "quarter" => (now.AddMonths(-3).Date, endDate),
+            "year" => (now.AddYears(-1).Date, endDate),
+            _ => (now.AddMonths(-1).Date, endDate) // 默认一个月
+        };
+    }
+
+    /// <summary>
+    /// 补充缺失的日期
+    /// </summary>
+    private List<TrendDataItem> FillMissingDates(List<TrendDataItem> trendData, DateTime startDate, DateTime endDate)
+    {
+        var result = new List<TrendDataItem>();
+        var currentDate = startDate.Date;
+
+        while (currentDate <= endDate.Date)
+        {
+            var dateStr = currentDate.ToString("yyyy-MM-dd");
+            var existingData = trendData.FirstOrDefault(t => t.VoDate == dateStr);
+
+            result.Add(existingData ?? new TrendDataItem
+            {
+                VoDate = dateStr,
+                VoIncome = 0,
+                VoExpense = 0
+            });
+
+            currentDate = currentDate.AddDays(1);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// 获取交易分类
+    /// </summary>
+    private string GetTransactionCategory(CoinTransaction transaction, long userId)
+    {
+        // 如果是转入
+        if (transaction.ToUserId == userId)
+        {
+            return transaction.TransactionType switch
+            {
+                "SYSTEM_GRANT" => "系统赠送",
+                "LIKE_REWARD" => "点赞奖励",
+                "COMMENT_REWARD" => "评论奖励",
+                "GODCOMMENT_REWARD" => "神评奖励",
+                "SOFA_REWARD" => "沙发奖励",
+                "TRANSFER" => "转账收入",
+                "REFUND" => "退款",
+                _ => "其他收入"
+            };
+        }
+        // 如果是转出
+        else
+        {
+            return transaction.TransactionType switch
+            {
+                "TRANSFER" => "转账支出",
+                "CONSUME" => "消费支出",
+                "PENALTY" => "惩罚扣除",
+                _ => "其他支出"
+            };
+        }
+    }
+
+    #endregion
+
     #region 管理员操作
 
     /// <summary>
@@ -444,7 +834,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         string operatorName)
     {
         // 1. 确保用户余额记录存在
-        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId);
+        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
         if (userBalance == null)
         {
             userBalance = await InitializeUserBalanceAsync(userId);

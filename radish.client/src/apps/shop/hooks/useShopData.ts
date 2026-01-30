@@ -1,17 +1,26 @@
 import { useState, useEffect, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import type { TFunction } from 'i18next';
+import type {
+  ProductCategory,
+  ProductListItem,
+  Product,
+  OrderListItem,
+  Order,
+  UserBenefit,
+  UserInventoryItem
+} from '@/types/shop';
 import * as shopApi from '@/api/shop';
 
 export interface ShopDataState {
   // 分类数据
-  categories: shopApi.ProductCategory[];
+  categories: ProductCategory[];
   loadingCategories: boolean;
 
   // 商品数据
-  products: shopApi.ProductListItem[];
-  featuredProducts: shopApi.ProductListItem[];
-  selectedProduct: shopApi.Product | null;
+  products: ProductListItem[];
+  featuredProducts: ProductListItem[];
+  selectedProduct: Product | null;
   loadingProducts: boolean;
   loadingFeatured: boolean;
   loadingProductDetail: boolean;
@@ -25,14 +34,14 @@ export interface ShopDataState {
   checkingCanBuy: boolean;
 
   // 订单数据
-  orders: shopApi.OrderListItem[];
-  selectedOrder: shopApi.Order | null;
+  orders: OrderListItem[];
+  selectedOrder: Order | null;
   loadingOrders: boolean;
   loadingOrderDetail: boolean;
 
   // 用户权益和背包
-  userBenefits: shopApi.UserBenefit[];
-  userInventory: shopApi.UserInventoryItem[];
+  userBenefits: UserBenefit[];
+  userInventory: UserInventoryItem[];
   loadingInventory: boolean;
 
   // 错误状态
@@ -80,11 +89,6 @@ export const useShopData = (t: TFunction) => {
     try {
       const result = await shopApi.getCategories(t);
       if (result.ok && result.data) {
-        // 调试：看一下 id 是否重复
-        // log.debug(
-        //     'shop categories ids',
-        //     result.data.map(c => c.id)
-        // );
         setState(prev => ({
           ...prev,
           categories: result.data || [],
@@ -103,7 +107,7 @@ export const useShopData = (t: TFunction) => {
   // 加载商品列表
   const loadProducts = useCallback(async (
     categoryId?: string,
-    productType?: shopApi.ProductType,
+    productType?: shopApi.ProductTypeValue,
     keyword?: string,
     pageIndex: number = 1,
     pageSize: number = 20
@@ -195,7 +199,7 @@ export const useShopData = (t: TFunction) => {
 
   // 加载订单列表
   const loadOrders = useCallback(async (
-    status?: shopApi.OrderStatus,
+    status?: shopApi.OrderStatusValue,
     pageIndex: number = 1,
     pageSize: number = 20
   ) => {

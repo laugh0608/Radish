@@ -19,6 +19,7 @@ public class AutoMapperConfig
         cfg.AddProfile<ForumProfile>();
         cfg.AddProfile<AttachmentProfile>();
         cfg.AddProfile<CoinProfile>();
+        cfg.AddProfile<PaymentPasswordProfile>();
         cfg.AddProfile<NotificationProfile>();
         cfg.AddProfile<ExperienceProfile>();
         cfg.AddProfile<ShopProfile>();

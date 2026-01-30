@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import type { TFunction } from 'i18next';
+import type { Product } from '@/types/shop';
 import * as shopApi from '@/api/shop';
 import type { ShopAppState } from '../ShopApp';
 
@@ -9,14 +10,14 @@ interface UseShopActionsProps {
   isAuthenticated: boolean;
   appState: ShopAppState;
   setError: (error: string | null) => void;
-  loadProducts: (categoryId?: string, productType?: shopApi.ProductType, keyword?: string, pageIndex?: number, pageSize?: number) => Promise<void>;
+  loadProducts: (categoryId?: string, productType?: shopApi.ProductTypeValue, keyword?: string, pageIndex?: number, pageSize?: number) => Promise<void>;
   loadProductDetail: (productId: number) => Promise<void>;
   checkCanBuy: (productId: number, quantity?: number) => Promise<void>;
-  loadOrders: (status?: shopApi.OrderStatus, pageIndex?: number, pageSize?: number) => Promise<void>;
+  loadOrders: (status?: shopApi.OrderStatusValue, pageIndex?: number, pageSize?: number) => Promise<void>;
   loadOrderDetail: (orderId: number) => Promise<void>;
   loadInventory: () => Promise<void>;
   searchProducts: (keyword: string) => Promise<void>;
-  selectedProduct: shopApi.Product | null;
+  selectedProduct: Product | null;
 }
 
 export const useShopActions = (props: UseShopActionsProps) => {
@@ -58,7 +59,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
     }
 
     // 加载商品详情（如果还没有）
-    if (!selectedProduct || selectedProduct.id !== productId) {
+    if (!selectedProduct || selectedProduct.voId !== productId) {
       await loadProductDetail(productId);
     }
 

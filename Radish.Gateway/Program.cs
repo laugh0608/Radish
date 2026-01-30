@@ -1,7 +1,7 @@
 using Microsoft.Extensions.FileProviders;
 using Radish.Common;
 using Radish.Common.CoreTool;
-using Radish.Extension.SerilogExtension;
+using Radish.Extension.Log;
 using Serilog;
 using Yarp.ReverseProxy;
 

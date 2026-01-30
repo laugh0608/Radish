@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Product } from '@/api/shop';
+import type { Product } from '@/types/shop';
 import { getProductTypeDisplay } from '@/api/shop';
 import styles from './PurchaseModal.module.css';
 
@@ -26,16 +26,16 @@ export const PurchaseModal = ({
   }
 
   const handleQuantityChange = (newQuantity: number) => {
-    const maxQuantity = product.limitPerUser > 0 ? product.limitPerUser : 99;
+    const maxQuantity = (product.voLimitPerUser ?? 0) > 0 ? product.voLimitPerUser! : 99;
     const validQuantity = Math.max(1, Math.min(newQuantity, maxQuantity));
     setQuantity(validQuantity);
   };
 
   const handleConfirm = () => {
-    onConfirm(product.id, quantity);
+    onConfirm(product.voId, quantity);
   };
 
-  const totalPrice = product.price * quantity;
+  const totalPrice = product.voPrice * quantity;
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -51,10 +51,10 @@ export const PurchaseModal = ({
           {/* 商品信息 */}
           <div className={styles.productInfo}>
             <div className={styles.productImage}>
-              {product.coverImage ? (
-                <img src={product.coverImage} alt={product.name} />
-              ) : product.icon ? (
-                <img src={product.icon} alt={product.name} />
+              {product.voCoverImage ? (
+                <img src={product.voCoverImage} alt={product.voName} />
+              ) : product.voIcon ? (
+                <img src={product.voIcon} alt={product.voName} />
               ) : (
                 <div className={styles.defaultImage}>🎁</div>
               )}
@@ -62,21 +62,21 @@ export const PurchaseModal = ({
 
             <div className={styles.productDetails}>
               <div className={styles.productType}>
-                {getProductTypeDisplay(product.productType)}
+                {getProductTypeDisplay(product.voProductType)}
               </div>
-              <h3 className={styles.productName}>{product.name}</h3>
+              <h3 className={styles.productName}>{product.voName}</h3>
               <div className={styles.productPrice}>
                 <span className={styles.currentPrice}>
-                  {product.price.toLocaleString()} 胡萝卜
+                  {product.voPrice.toLocaleString()} 胡萝卜
                 </span>
-                {product.originalPrice && product.originalPrice > product.price && (
+                {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
                   <span className={styles.originalPrice}>
-                    原价 {product.originalPrice.toLocaleString()}
+                    原价 {product.voOriginalPrice.toLocaleString()}
                   </span>
                 )}
               </div>
               <div className={styles.productMeta}>
-                有效期：{product.durationDisplay}
+                有效期：{product.voDurationDisplay ?? ''}
               </div>
             </div>
           </div>
@@ -98,19 +98,19 @@ export const PurchaseModal = ({
                 value={quantity}
                 onChange={(e) => handleQuantityChange(parseInt(e.target.value) || 1)}
                 min="1"
-                max={product.limitPerUser > 0 ? product.limitPerUser : 99}
+                max={(product.voLimitPerUser ?? 0) > 0 ? product.voLimitPerUser : 99}
               />
               <button
                 className={styles.quantityButton}
                 onClick={() => handleQuantityChange(quantity + 1)}
-                disabled={product.limitPerUser > 0 && quantity >= product.limitPerUser}
+                disabled={(product.voLimitPerUser ?? 0) > 0 && quantity >= (product.voLimitPerUser ?? 0)}
               >
                 +
               </button>
             </div>
-            {product.limitPerUser > 0 && (
+            {(product.voLimitPerUser ?? 0) > 0 && (
               <div className={styles.limitHint}>
-                每人限购 {product.limitPerUser} 件
+                每人限购 {product.voLimitPerUser} 件
               </div>
             )}
           </div>
@@ -119,7 +119,7 @@ export const PurchaseModal = ({
           <div className={styles.priceSection}>
             <div className={styles.priceRow}>
               <span>单价：</span>
-              <span>{product.price.toLocaleString()} 胡萝卜</span>
+              <span>{product.voPrice.toLocaleString()} 胡萝卜</span>
             </div>
             <div className={styles.priceRow}>
               <span>数量：</span>
