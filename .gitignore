@@ -69,6 +69,7 @@ artifacts/
 *.tmp
 *.tmp_proj
 *.log
+!Radish.Extension.Log/.gitkeep
 !Radish.Extension.Log/
 *.vspscc
 *.vssscc
@@ -269,18 +270,6 @@ paket-files/
 # ABP Studio
 **/.abpstudio/
 
-# Radish
-src/Radish.Web/Logs/*
-src/Radish.Web.Host/Logs/*
-src/Radish.Web.Public/Logs/*
-src/Radish.Web.Public.Host/Logs/*
-src/Radish.AuthServer/Logs/*
-src/Radish.HttpApi.Host/Logs/*
-src/Radish.HttpApi.Host/Logs/*
-src/Radish.DbMigrator/Logs/*
-src/Radish.Blazor.Server/Logs/*
-src/Radish.Blazor.Server.Tiered/Logs/*
-
 # Use abp install-libs to restore.
 **/wwwroot/libs/*
 
@@ -298,8 +287,11 @@ tempkey.jwk
 *.db-wal
 *.db-journal
 
-# DataBases directory (contains SQLite databases and uploaded files)
-DataBases/
+# DataBases directory
+DataBases/**
+!DataBases/**/
+!DataBases/Uploads/DefaultAvatars/.gitkeep
+!DataBases/Uploads/DefaultAvatars/*
 
 # Environment files
 .env
