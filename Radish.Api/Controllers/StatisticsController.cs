@@ -42,11 +42,11 @@ public class StatisticsController : ControllerBase
             // 获取总用户数
             var totalUsers = await _userService.QueryCountAsync();
 
-            // 获取总订单数
-            var totalOrders = await _orderService.QueryCountAsync();
+            // 获取总订单数（排除软删除的记录）
+            var totalOrders = await _orderService.QueryCountAsync(o => !o.IsDeleted);
 
-            // 获取商品数量
-            var totalProducts = await _productService.QueryCountAsync();
+            // 获取商品数量（排除软删除的记录）
+            var totalProducts = await _productService.QueryCountAsync(p => !p.IsDeleted);
 
             // 计算总收入（这里需要根据实际业务逻辑计算）
             var totalRevenue = await CalculateTotalRevenue();

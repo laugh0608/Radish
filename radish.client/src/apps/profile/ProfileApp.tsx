@@ -6,6 +6,7 @@ import { UserPostList } from './components/UserPostList';
 import { UserCommentList } from './components/UserCommentList';
 import { UserAttachmentList } from './components/UserAttachmentList';
 import { CoinWallet } from './components/CoinWallet';
+import { getApiBaseUrl } from '@/config/env';
 import styles from './ProfileApp.module.css';
 
 interface UserStats {
@@ -23,12 +24,7 @@ export const ProfileApp = () => {
   const [loadingStats, setLoadingStats] = useState(true);
 
   // 统一通过 Gateway 访问
-  const apiBaseUrl = useMemo(() => {
-    if (typeof window !== 'undefined') {
-      return window.location.origin;
-    }
-    return 'https://localhost:5000';
-  }, []);
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
 
   useEffect(() => {
     if (isAuthenticated() && userId > 0) {

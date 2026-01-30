@@ -78,7 +78,7 @@ export const ForumApp = () => {
               comments={dataState.comments}
               loadingPostDetail={dataState.loadingPostDetail}
               loadingComments={dataState.loadingComments}
-              isLiked={actionsState.likedPosts.has(dataState.selectedPost.id)}
+              isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
               isAuthenticated={loggedIn}
               currentUserId={userId ?? 0}
               commentSortBy={dataState.commentSortBy}

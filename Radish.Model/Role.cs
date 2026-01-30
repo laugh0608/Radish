@@ -39,7 +39,7 @@ public class Role : RootEntityTKey<long>
     /// <summary>统一设置默认值</summary>
     private void InitializeDefaults()
     {
-        IsDeleted = true;
+        IsDeleted = false;
         RoleName = string.Empty;
         RoleDescription = string.Empty;
         OrderSort = 0;
@@ -124,9 +124,9 @@ public class Role : RootEntityTKey<long>
 
 
     /// <summary>获取或设置是否禁用，逻辑上的删除，非物理删除</summary>
-    /// <remarks>不可为空，默认为 true</remarks>
+    /// <remarks>不可为空，默认为 false</remarks>
     [SugarColumn(IsNullable = true)]
-    public bool IsDeleted { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
 
     /// <summary>角色名</summary>
     /// <remarks>不可为空，最大 50 字符</remarks>

@@ -59,7 +59,7 @@ public class User : RootEntityTKey<long>
         LastErrorTime = DateTime.Now;
         ErrorCount = 0;
         IsEnable = false;
-        IsDeleted = true;
+        IsDeleted = false;
         DepartmentId = 0;
         DepartmentName = string.Empty;
         TenantId = 0;
@@ -311,7 +311,7 @@ public class User : RootEntityTKey<long>
     /// <summary>用户是否被删除</summary>
     /// <remarks>不可为空，默认为 false</remarks>
     [SugarColumn(IsNullable = true)]
-    public bool IsDeleted { get; set; } = true;
+    public bool IsDeleted { get; set; } = false;
 
     #endregion
 

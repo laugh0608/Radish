@@ -8,6 +8,7 @@ import { useUserStore } from './stores/userStore';
 import { LevelUpModal } from '@radish/ui';
 import { useLevelUpListener } from '@/hooks/useLevelUpListener';
 import { log } from '@/utils/logger';
+import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
 import './App.css';
 
 interface Forecast {
@@ -54,19 +55,7 @@ function App() {
     // 升级事件监听
     const { levelUpData, showModal, handleClose } = useLevelUpListener();
 
-    const apiBaseUrl = useMemo(() => {
-        // 开发环境：始终通过 Gateway (5000) 访问后端服务
-        // 生产环境：使用配置的 API 基础 URL
-        if (typeof window !== 'undefined') {
-            // 如果通过 Gateway 访问（5000端口），使用当前 origin
-            if (window.location.port === '5000') {
-                return window.location.origin;
-            }
-            // 如果直接访问开发服务器（3000端口），使用配置的 API URL
-            return import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
-        }
-        return 'https://localhost:5000'; // fallback for SSR
-    }, []);
+    const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
 
     const isBrowser = typeof window !== 'undefined';
     const isOidcCallback = isBrowser && window.location.pathname === '/oidc/callback';
@@ -377,33 +366,13 @@ function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
     });
 }
 
-/**
- * 获取 Auth Server 的基础 URL
- *
- * 开发环境：始终使用 Gateway 地址（https://localhost:5000）
- * 生产环境：使用配置的认证服务器 URL
- */
-function getAuthServerBaseUrl(): string {
-    if (typeof window === 'undefined') {
-        return import.meta.env.VITE_AUTH_BASE_URL || 'https://localhost:5000';
-    }
-
-    // 如果通过 Gateway 访问（5000端口），使用当前 origin
-    if (window.location.port === '5000') {
-        return window.location.origin;
-    }
-
-    // 否则使用配置的认证服务器 URL（开发环境下为 Gateway 地址）
-    return import.meta.env.VITE_AUTH_BASE_URL || 'https://localhost:5000';
-}
-
 function handleLogin(_apiBaseUrl: string) {
     if (typeof window === 'undefined') {
         return;
     }
 
     const redirectUri = `${window.location.origin}/oidc/callback`;
-    const authServerBaseUrl = getAuthServerBaseUrl();
+    const authServerBaseUrl = getAuthBaseUrl();
 
     const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
     authorizeUrl.searchParams.set('client_id', 'radish-client');
@@ -430,9 +399,8 @@ function handleLogout(_apiBaseUrl: string) {
     window.localStorage.removeItem('refresh_token');
 
     // 使用 OIDC 标准的 endsession endpoint 实现 Single Sign-Out
-    // 注意：不要添加 trailing slash，因为 .NET Uri 类会将 https://localhost:5000 和 https://localhost:5000/ 视为相同
     const postLogoutRedirectUri = window.location.origin;
-    const authServerBaseUrl = getAuthServerBaseUrl();
+    const authServerBaseUrl = getAuthBaseUrl();
 
     const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
     logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);

@@ -32,12 +32,10 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl }: CoinTransaction
 
     try {
       const result = await getTransactions(pageIndex, pageSize, filterType, filterStatus, t);
-      if (result.ok && result.data) {
-        setTransactions(result.data.data);
-        setTotalCount(result.data.dataCount);
-        setTotalPages(result.data.pageCount);
-      } else {
-        setError(result.message || '加载交易记录失败');
+      if (result) {
+        setTransactions(result.voItems);
+        setTotalCount(result.voDataCount);
+        setTotalPages(result.voPageCount);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载交易记录失败');
@@ -124,13 +122,13 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl }: CoinTransaction
       ) : (
         <div className={styles.list}>
           {transactions.map((tx) => (
-            <div key={tx.id} className={styles.transaction}>
+            <div key={tx.voId} className={styles.transaction}>
               <div className={styles.transactionHeader}>
-                <span className={`${styles.type} ${styles[tx.transactionType]}`}>
-                  {tx.transactionTypeDisplay}
+                <span className={`${styles.type} ${styles[tx.voTransactionType]}`}>
+                  {tx.voTransactionTypeDisplay}
                 </span>
-                <span className={`${styles.status} ${styles[tx.status]}`}>
-                  {tx.statusDisplay}
+                <span className={`${styles.status} ${styles[tx.voStatus]}`}>
+                  {tx.voStatusDisplay}
                 </span>
               </div>
 
@@ -138,37 +136,37 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl }: CoinTransaction
                 <div className={styles.info}>
                   <div className={styles.participants}>
                     <span className={styles.from}>
-                      从: {tx.fromUserName || '系统'}
+                      从: {tx.voFromUserName || '系统'}
                     </span>
                     <span className={styles.arrow}>→</span>
                     <span className={styles.to}>
-                      到: {tx.toUserName || '系统'}
+                      到: {tx.voToUserName || '系统'}
                     </span>
                   </div>
 
-                  {tx.remark && (
+                  {tx.voRemark && (
                     <div className={styles.remark}>
-                      备注: {tx.remark}
+                      备注: {tx.voRemark}
                     </div>
                   )}
 
                   <div className={styles.meta}>
                     <span className={styles.transactionNo}>
-                      流水号: {tx.transactionNo}
+                      流水号: {tx.voTransactionNo}
                     </span>
                     <span className={styles.time}>
-                      {new Date(tx.createTime).toLocaleString('zh-CN')}
+                      {new Date(tx.voCreateTime).toLocaleString('zh-CN')}
                     </span>
                   </div>
                 </div>
 
                 <div className={styles.amounts}>
                   <div className={styles.amount}>
-                    {tx.amountDisplay} 白萝卜
+                    {tx.voAmountDisplay} 白萝卜
                   </div>
-                  {tx.fee > 0 && (
+                  {tx.voFee > 0 && (
                     <div className={styles.fee}>
-                      手续费: {tx.feeDisplay}
+                      手续费: {tx.voFeeDisplay}
                     </div>
                   )}
                 </div>

@@ -80,6 +80,38 @@ public interface ICoinService : IBaseService<UserBalance, UserBalanceVo>
 
     #endregion
 
+    #region 转账功能
+
+    /// <summary>
+    /// 用户转账
+    /// </summary>
+    /// <param name="fromUserId">转出用户 ID</param>
+    /// <param name="toUserId">转入用户 ID</param>
+    /// <param name="amount">转账金额（胡萝卜）</param>
+    /// <param name="paymentPassword">支付密码</param>
+    /// <param name="remark">备注（可选）</param>
+    /// <returns>交易流水号</returns>
+    Task<string> TransferAsync(
+        long fromUserId,
+        long toUserId,
+        long amount,
+        string paymentPassword,
+        string? remark = null);
+
+    #endregion
+
+    #region 统计数据
+
+    /// <summary>
+    /// 获取用户统计数据
+    /// </summary>
+    /// <param name="userId">用户 ID</param>
+    /// <param name="timeRange">时间范围（month/quarter/year）</param>
+    /// <returns>统计数据</returns>
+    Task<CoinStatisticsVo> GetStatisticsAsync(long userId, string timeRange = "month");
+
+    #endregion
+
     #region 管理员操作
 
     /// <summary>

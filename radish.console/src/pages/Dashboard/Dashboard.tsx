@@ -84,26 +84,26 @@ export const Dashboard = () => {
   const orderColumns: TableColumnsType<Order> = [
     {
       title: '订单号',
-      dataIndex: 'orderNo',
-      key: 'orderNo',
+      dataIndex: 'voOrderNo',
+      key: 'voOrderNo',
       width: 180,
     },
     {
       title: '用户',
-      dataIndex: 'userName',
-      key: 'userName',
+      dataIndex: 'voUserName',
+      key: 'voUserName',
       width: 120,
     },
     {
       title: '商品',
-      dataIndex: 'productName',
-      key: 'productName',
+      dataIndex: 'voProductName',
+      key: 'voProductName',
       width: 150,
     },
     {
       title: '金额',
-      dataIndex: 'totalPrice',
-      key: 'totalPrice',
+      dataIndex: 'voTotalPrice',
+      key: 'voTotalPrice',
       width: 100,
       render: (price: number) => `${price} 胡萝卜`,
     },
@@ -112,8 +112,8 @@ export const Dashboard = () => {
       key: 'status',
       width: 100,
       render: (_, record) => (
-        <Tag color={getOrderStatusColor(record.status)}>
-          {record.statusDisplay}
+        <Tag color={getOrderStatusColor(record.voStatus)}>
+          {record.voStatusDisplay}
         </Tag>
       ),
     },
@@ -126,7 +126,7 @@ export const Dashboard = () => {
           variant="ghost"
           size="small"
           icon={<EyeOutlined />}
-          onClick={() => navigate(`/orders?orderNo=${record.orderNo}`)}
+          onClick={() => navigate(`/orders?orderNo=${record.voOrderNo}`)}
         >
           查看
         </Button>
@@ -226,7 +226,7 @@ export const Dashboard = () => {
         <Table
           columns={orderColumns}
           dataSource={recentOrders}
-          rowKey="id"
+          rowKey="voId"
           loading={loading}
           pagination={false}
           size="small"

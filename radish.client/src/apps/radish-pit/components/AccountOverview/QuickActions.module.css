@@ -1,0 +1,232 @@
+/* 快捷操作卡片样式 */
+.card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f3f4f6;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.icon {
+  font-size: 1.2rem;
+}
+
+.content {
+  width: 100%;
+}
+
+/* 操作网格 */
+.actionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+/* 操作按钮 */
+.actionButton {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 2px solid transparent;
+  border-radius: 0.75rem;
+  background: white;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.actionButton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: inherit;
+}
+
+.actionButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.actionButton:hover::before {
+  opacity: 1;
+}
+
+.actionButton:active {
+  transform: translateY(0);
+}
+
+/* 颜色主题 */
+.actionButton.blue {
+  border-color: #dbeafe;
+}
+
+.actionButton.blue::before {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.actionButton.blue:hover {
+  border-color: #3b82f6;
+}
+
+.actionButton.green {
+  border-color: #dcfce7;
+}
+
+.actionButton.green::before {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.actionButton.green:hover {
+  border-color: #10b981;
+}
+
+.actionButton.orange {
+  border-color: #fed7aa;
+}
+
+.actionButton.orange::before {
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+}
+
+.actionButton.orange:hover {
+  border-color: #f97316;
+}
+
+.actionButton.purple {
+  border-color: #e9d5ff;
+}
+
+.actionButton.purple::before {
+  background: linear-gradient(135deg, #e9d5ff 0%, #ddd6fe 100%);
+}
+
+.actionButton.purple:hover {
+  border-color: #8b5cf6;
+}
+
+/* 操作图标 */
+.actionIcon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* 操作内容 */
+.actionContent {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.actionTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.25rem;
+}
+
+.actionDescription {
+  font-size: 0.85rem;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+/* 箭头图标 */
+.actionArrow {
+  font-size: 1.25rem;
+  color: #9ca3af;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.actionButton:hover .actionArrow {
+  color: #374151;
+  transform: translateX(4px);
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .actionsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 1rem;
+  }
+
+  .actionsGrid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .actionButton {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .actionIcon {
+    font-size: 1.75rem;
+  }
+
+  .actionTitle {
+    font-size: 0.9rem;
+  }
+
+  .actionDescription {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .actionButton {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .actionIcon {
+    font-size: 1.5rem;
+  }
+
+  .actionTitle {
+    font-size: 0.85rem;
+  }
+
+  .actionDescription {
+    font-size: 0.75rem;
+  }
+
+  .actionArrow {
+    font-size: 1rem;
+  }
+}

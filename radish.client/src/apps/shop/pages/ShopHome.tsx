@@ -1,4 +1,4 @@
-import type { ProductCategory, ProductListItem } from '@/api/shop';
+import type { ProductCategory, ProductListItem } from '@/types/shop';
 import styles from './ShopHome.module.css';
 
 interface ShopHomeProps {
@@ -55,24 +55,24 @@ export const ShopHome = ({
         <div className={styles.categoriesGrid}>
           {categories.map((category) => (
             <div
-              key={category.id}
+              key={category.voId}
               className={styles.categoryCard}
-              onClick={() => onCategoryClick(category.id)}
+              onClick={() => onCategoryClick(String(category.voId))}
             >
               <div className={styles.categoryIcon}>
-                {category.icon ? (
-                  <img src={category.icon} alt={category.name} />
+                {category.voIcon ? (
+                  <img src={category.voIcon} alt={category.voName} />
                 ) : (
                   <span className={styles.defaultIcon}>📦</span>
                 )}
               </div>
               <div className={styles.categoryInfo}>
-                <h3 className={styles.categoryName}>{category.name}</h3>
+                <h3 className={styles.categoryName}>{category.voName}</h3>
                 <p className={styles.categoryDescription}>
-                  {category.description || '精选商品'}
+                  {category.voDescription || '精选商品'}
                 </p>
                 <span className={styles.categoryCount}>
-                  {category.productCount} 件商品
+                  {category.voProductCount ?? 0} 件商品
                 </span>
               </div>
             </div>
@@ -92,28 +92,28 @@ export const ShopHome = ({
         <div className={styles.productsGrid}>
           {featuredProducts.map((product) => (
             <div
-              key={product.id}
+              key={product.voId}
               className={styles.productCard}
-              onClick={() => onProductClick(product.id)}
+              onClick={() => onProductClick(product.voId)}
             >
               <div className={styles.productImage}>
-                {product.coverImage ? (
-                  <img src={product.coverImage} alt={product.name} />
-                ) : product.icon ? (
-                  <img src={product.icon} alt={product.name} />
+                {product.voCoverImage ? (
+                  <img src={product.voCoverImage} alt={product.voName} />
+                ) : product.voIcon ? (
+                  <img src={product.voIcon} alt={product.voName} />
                 ) : (
                   <div className={styles.defaultProductImage}>
                     <span>🎁</span>
                   </div>
                 )}
 
-                {product.hasDiscount && (
+                {product.voHasDiscount && (
                   <div className={styles.discountBadge}>
                     特价
                   </div>
                 )}
 
-                {!product.inStock && (
+                {!product.voInStock && (
                   <div className={styles.outOfStockOverlay}>
                     <span>缺货</span>
                   </div>
@@ -121,25 +121,25 @@ export const ShopHome = ({
               </div>
 
               <div className={styles.productInfo}>
-                <h3 className={styles.productName}>{product.name}</h3>
+                <h3 className={styles.productName}>{product.voName}</h3>
 
                 <div className={styles.productPrice}>
                   <span className={styles.currentPrice}>
-                    {product.price.toLocaleString()} 胡萝卜
+                    {product.voPrice.toLocaleString()} 胡萝卜
                   </span>
-                  {product.originalPrice && product.originalPrice > product.price && (
+                  {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
                     <span className={styles.originalPrice}>
-                      {product.originalPrice.toLocaleString()}
+                      {product.voOriginalPrice.toLocaleString()}
                     </span>
                   )}
                 </div>
 
                 <div className={styles.productMeta}>
                   <span className={styles.soldCount}>
-                    已售 {product.soldCount}
+                    已售 {product.voSoldCount ?? 0}
                   </span>
                   <span className={styles.duration}>
-                    {product.durationDisplay}
+                    {product.voDurationDisplay ?? ''}
                   </span>
                 </div>
               </div>

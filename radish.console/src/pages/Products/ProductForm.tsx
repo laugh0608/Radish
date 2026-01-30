@@ -49,8 +49,24 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   useEffect(() => {
     if (visible && product) {
       form.setFieldsValue({
-        ...product,
-        expiresAt: product.expiresAt ? dayjs(product.expiresAt) : undefined,
+        name: product.voName,
+        description: product.voDescription,
+        icon: product.voIcon,
+        coverImage: product.voCoverImage,
+        categoryId: product.voCategoryId,
+        productType: product.voProductType,
+        benefitType: product.voBenefitType,
+        consumableType: product.voConsumableType,
+        price: product.voPrice,
+        originalPrice: product.voOriginalPrice,
+        stockType: product.voStockType,
+        stock: product.voStock,
+        limitPerUser: product.voLimitPerUser,
+        durationType: product.voDurationType,
+        durationDays: product.voDurationDays,
+        sortOrder: product.voSortOrder,
+        isOnSale: product.voIsOnSale,
+        expiresAt: product.voExpiresAt ? dayjs(product.voExpiresAt) : undefined,
       } as any);
     } else if (visible) {
       form.resetFields();
@@ -89,7 +105,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
       if (product) {
         // 更新
-        await updateProduct({ ...dto, id: product.id } as UpdateProductDto);
+        await updateProduct({ ...dto, id: product.voId } as UpdateProductDto);
         message.success('更新成功');
       } else {
         // 创建
@@ -157,8 +173,8 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         >
           <Select placeholder="请选择商品分类">
             {categories.map((cat) => (
-              <Select.Option key={cat.id} value={cat.id}>
-                {cat.name}
+              <Select.Option key={cat.voId} value={cat.voId}>
+                {cat.voName}
               </Select.Option>
             ))}
           </Select>

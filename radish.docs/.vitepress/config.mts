@@ -106,6 +106,18 @@ export default defineConfig({
                 { text: '实施计划', link: '/guide/experience-level-roadmap' }
               ]
             },
+            {
+              text: '萝卜坑应用',
+              collapsed: true,
+              items: [
+                { text: '总体设计', link: '/guide/radish-pit-system' },
+                { text: '核心概念', link: '/guide/radish-pit-core-concepts' },
+                { text: '功能模块', link: '/guide/radish-pit-game-mechanics' },
+                { text: '后端设计', link: '/guide/radish-pit-backend' },
+                { text: '前端设计', link: '/guide/radish-pit-frontend' },
+                { text: '实施计划', link: '/guide/radish-pit-roadmap' }
+              ]
+            },
             { text: 'Hangfire 定时任务', link: '/guide/hangfire-scheduled-jobs' },
             { text: 'Gateway 服务网关', link: '/guide/gateway' }
           ]

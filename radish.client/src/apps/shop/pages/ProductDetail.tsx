@@ -1,4 +1,4 @@
-import type { Product } from '@/api/shop';
+import type { Product } from '@/types/shop';
 import { getProductTypeDisplay, StockType } from '@/api/shop';
 import styles from './ProductDetail.module.css';
 
@@ -54,14 +54,14 @@ export const ProductDetail = ({
       alert('请先登录');
       return;
     }
-    onPurchase(product.id);
+    onPurchase(product.voId);
   };
 
   const getPurchaseButtonText = () => {
     if (!isAuthenticated) return '请先登录';
     if (checkingCanBuy) return '检查中...';
-    if (!product.inStock) return '缺货';
-    if (!product.isOnSale) return '已下架';
+    if (!product.voInStock) return '缺货';
+    if (!product.voIsOnSale) return '已下架';
     if (canBuy && !canBuy.canBuy) return canBuy.reason;
     return '立即购买';
   };
@@ -69,8 +69,8 @@ export const ProductDetail = ({
   const isPurchaseDisabled = () => {
     return !isAuthenticated ||
            checkingCanBuy ||
-           !product.inStock ||
-           !product.isOnSale ||
+           !product.voInStock ||
+           !product.voIsOnSale ||
            (canBuy !== null && !canBuy.canBuy);
   };
 
@@ -89,23 +89,23 @@ export const ProductDetail = ({
           {/* 商品图片 */}
           <div className={styles.imageSection}>
             <div className={styles.mainImage}>
-              {product.coverImage ? (
-                <img src={product.coverImage} alt={product.name} />
-              ) : product.icon ? (
-                <img src={product.icon} alt={product.name} />
+              {product.voCoverImage ? (
+                <img src={product.voCoverImage} alt={product.voName} />
+              ) : product.voIcon ? (
+                <img src={product.voIcon} alt={product.voName} />
               ) : (
                 <div className={styles.defaultImage}>
                   <span>🎁</span>
                 </div>
               )}
 
-              {product.hasDiscount && (
+              {product.voHasDiscount && (
                 <div className={styles.discountBadge}>
-                  {product.discountPercent}折
+                  {product.voDiscountPercent}折
                 </div>
               )}
 
-              {!product.inStock && (
+              {!product.voInStock && (
                 <div className={styles.outOfStockOverlay}>
                   <span>缺货</span>
                 </div>
@@ -116,18 +116,18 @@ export const ProductDetail = ({
           {/* 商品信息 */}
           <div className={styles.infoSection}>
             <div className={styles.productType}>
-              {getProductTypeDisplay(product.productType)}
+              {getProductTypeDisplay(product.voProductType)}
             </div>
 
-            <h1 className={styles.productName}>{product.name}</h1>
+            <h1 className={styles.productName}>{product.voName}</h1>
 
             <div className={styles.priceSection}>
               <div className={styles.currentPrice}>
-                {product.price.toLocaleString()} 胡萝卜
+                {product.voPrice.toLocaleString()} 胡萝卜
               </div>
-              {product.originalPrice && product.originalPrice > product.price && (
+              {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
                 <div className={styles.originalPrice}>
-                  原价 {product.originalPrice.toLocaleString()} 胡萝卜
+                  原价 {product.voOriginalPrice.toLocaleString()} 胡萝卜
                 </div>
               )}
             </div>
@@ -135,23 +135,23 @@ export const ProductDetail = ({
             <div className={styles.metaInfo}>
               <div className={styles.metaItem}>
                 <span className={styles.metaLabel}>已售:</span>
-                <span className={styles.metaValue}>{product.soldCount} 件</span>
+                <span className={styles.metaValue}>{product.voSoldCount ?? 0} 件</span>
               </div>
               <div className={styles.metaItem}>
                 <span className={styles.metaLabel}>库存:</span>
                 <span className={styles.metaValue}>
-                  {product.stockType === StockType.Unlimited ? '无限' : `${product.stock} 件`}
+                  {product.voStockType === StockType.Unlimited ? '无限' : `${product.voStock ?? 0} 件`}
                 </span>
               </div>
               <div className={styles.metaItem}>
                 <span className={styles.metaLabel}>限购:</span>
                 <span className={styles.metaValue}>
-                  {product.limitPerUser > 0 ? `每人限购 ${product.limitPerUser} 件` : '无限制'}
+                  {(product.voLimitPerUser ?? 0) > 0 ? `每人限购 ${product.voLimitPerUser} 件` : '无限制'}
                 </span>
               </div>
               <div className={styles.metaItem}>
                 <span className={styles.metaLabel}>有效期:</span>
-                <span className={styles.metaValue}>{product.durationDisplay}</span>
+                <span className={styles.metaValue}>{product.voDurationDisplay ?? ''}</span>
               </div>
             </div>
 
@@ -179,9 +179,9 @@ export const ProductDetail = ({
           <h2 className={styles.sectionTitle}>商品详情</h2>
 
           <div className={styles.detailContent}>
-            {product.description ? (
+            {product.voDescription ? (
               <div className={styles.description}>
-                {product.description.split('\n').map((line, index) => (
+                {product.voDescription.split('\n').map((line, index) => (
                   <p key={index}>{line}</p>
                 ))}
               </div>
@@ -190,11 +190,11 @@ export const ProductDetail = ({
             )}
 
             {/* 权益/消耗品特殊信息 */}
-            {product.benefitValue && (
+            {product.voBenefitValue && (
               <div className={styles.benefitInfo}>
                 <h3>权益详情</h3>
                 <div className={styles.benefitValue}>
-                  {product.benefitValue}
+                  {product.voBenefitValue}
                 </div>
               </div>
             )}

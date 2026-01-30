@@ -98,6 +98,43 @@ Common (工具,日志,配置) → Shared (常量,枚举) → Model (实体,DTO,V
    - **优先**: 扩展 BaseRepository 泛型方法 (`QueryDistinctAsync`, `QuerySumAsync`) - 跨实体复用
    - **次选**: 创建实体专属仓储 (`UserRepository : BaseRepository<User>`) - 复杂查询/联表/性能优化
 
+## 软删除规范
+
+### 核心原则
+- ✅ **推荐**: 业务数据使用软删除，保留完整审计轨迹
+- ❌ **避免**: 物理删除业务数据（已标记 `[Obsolete]`）
+- ✅ **自动过滤**: 查询方法自动过滤 `IsDeleted = true` 的记录
+- ✅ **可恢复**: 支持恢复已软删除的记录
+
+### 实体要求
+```csharp
+// 实体必须实现 IDeleteFilter 接口
+public class UserBalance : RootEntityTKey<long>, IDeleteFilter
+{
+    // 业务字段...
+
+    // 软删除字段（自动添加）
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+}
+```
+
+### 使用方法
+```csharp
+// Service 层软删除
+await _userService.SoftDeleteByIdAsync(userId, "Admin");
+await _userService.RestoreByIdAsync(userId);
+
+// Repository 层软删除
+await _repository.SoftDeleteAsync(u => u.IsEnabled == false, "System");
+```
+
+### 自动化特性
+- **AddAsync 自动初始化**: 新记录自动设置 `IsDeleted = false`
+- **查询自动过滤**: 所有查询方法自动过滤软删除记录
+- **审计信息记录**: 自动记录删除时间和操作者
+
 ## 配置管理
 
 ### 加载优先级
@@ -213,6 +250,116 @@ var result = await cache.GetAsync<MyType>("key");
 2. 避免 `var`，默认 `const`，需重新赋值用 `let`
 3. `useState` + `useMemo` + `useEffect`
 
+### API 客户端规范 (重要)
+
+**统一使用 @radish/ui 提供的 API 客户端**，禁止自定义 fetch/axios 封装。
+
+#### 基本使用
+
+```typescript
+import { apiGet, apiPost, apiPut, apiDelete, configureApiClient } from '@radish/ui';
+
+// 1. 配置 API 客户端（在应用入口或 API 文件顶部）
+const defaultApiBase = 'https://localhost:5000';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBase;
+
+configureApiClient({
+  baseUrl: apiBaseUrl.replace(/\/$/, ''),
+});
+
+// 2. 使用统一的 API 方法
+export async function getProducts(pageIndex: number = 1, pageSize: number = 20) {
+  const response = await apiGet<PagedResponse<Product>>(
+    `/api/v1/Shop/GetProducts?pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: true }  // 需要认证时添加此选项
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取商品列表失败');
+  }
+
+  return response.data;
+}
+
+export async function createProduct(data: CreateProductDto) {
+  return await apiPost<Product>('/api/v1/Shop/CreateProduct', data, { withAuth: true });
+}
+```
+
+#### 特殊场景：上传进度回调
+
+对于需要监听上传进度的场景（如分片上传），可以使用 XMLHttpRequest，但必须：
+1. 从 `getApiClientConfig()` 获取统一配置（baseUrl、token）
+2. 添加注释说明为什么需要特殊处理
+3. 其他方法仍使用统一客户端
+
+```typescript
+import { getApiClientConfig } from '@radish/ui';
+
+/**
+ * 上传分片
+ * 注意：此方法使用 XMLHttpRequest 而非统一 API 客户端，
+ * 因为需要支持上传进度回调功能
+ */
+export async function uploadChunk(
+  sessionId: string,
+  chunkBlob: Blob,
+  onProgress?: (progress: number) => void
+): Promise<UploadSession> {
+  const config = getApiClientConfig();
+  const url = `${config.baseUrl}/api/v1/ChunkedUpload/UploadChunk`;
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    if (onProgress) {
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+    }
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const json = JSON.parse(xhr.responseText);
+        resolve(json.responseData);
+      } else {
+        reject(new Error(`上传失败: HTTP ${xhr.status}`));
+      }
+    });
+
+    xhr.open('POST', url);
+
+    // 从统一配置获取 token
+    const token = config.getToken?.();
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+
+    const formData = new FormData();
+    formData.append('sessionId', sessionId);
+    formData.append('chunkData', chunkBlob);
+    xhr.send(formData);
+  });
+}
+```
+
+#### 优势
+
+- ✅ 统一的配置管理（baseUrl、timeout、token）
+- ✅ 统一的错误处理和拦截器
+- ✅ 减少代码重复
+- ✅ 更容易维护和调试
+- ✅ 类型安全更好
+
+#### 禁止事项
+
+- ❌ 禁止在 API 文件中自定义 `apiFetch` 函数
+- ❌ 禁止直接使用 `fetch` 或 `axios`（除非有特殊需求并添加注释）
+- ❌ 禁止在每个 API 文件中重复实现认证逻辑
+- ❌ 禁止硬编码 API Base URL（使用环境变量）
+
 ## 新增功能流程
 
 ### 后端
@@ -290,11 +437,11 @@ console.error('请求失败:', error);
 
 ## Rust 原生扩展
 
-**位置**: `Radish.Core/radish-lib/`
+**位置**: `radish.lib/`
 
 **构建**:
 ```bash
-cd Radish.Core/radish-lib
+cd radish.lib
 cargo build --release
 # 或使用脚本: ./build.ps1 (Windows) / ./build.sh (Linux/macOS)
 ```
@@ -325,6 +472,13 @@ cargo build --release
     - **禁止匿名对象**: Controller严禁返回匿名对象，必须定义具体的Vo类
     - **UserVo特殊性**: UserVo字段混淆是安全设计，前端必须适配，不得要求后端修改
     - **其他Vo清晰性**: 除UserVo外，其他Vo使用清晰字段名，便于理解和维护
+12. **软删除规范** (重要):
+    - **优先使用软删除**: 业务数据必须使用 `SoftDeleteByIdAsync` 而非 `DeleteByIdAsync`
+    - **实现IDeleteFilter接口**: 新实体必须实现 `IDeleteFilter` 接口支持软删除
+    - **避免物理删除**: 物理删除方法已标记 `[Obsolete]`，仅用于系统数据清理
+    - **查询自动过滤**: 所有查询自动过滤 `IsDeleted = true` 的记录
+    - **审计信息完整**: 软删除时记录 `DeletedAt` 和 `DeletedBy` 信息
+    - **支持恢复**: 使用 `RestoreByIdAsync` 恢复软删除的记录
 
 ## Git 提交规范
 

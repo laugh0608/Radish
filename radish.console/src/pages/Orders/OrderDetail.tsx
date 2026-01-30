@@ -25,7 +25,7 @@ export const OrderDetail = ({ visible, order, onClose, onRetry }: OrderDetailPro
       size="large"
       footer={
         <Space>
-          {order.status === 'Failed' && onRetry && (
+          {order.voStatus === 'Failed' && onRetry && (
             <Button variant="primary" onClick={onRetry}>
               <SyncOutlined />
               重试发放权益
@@ -37,93 +37,93 @@ export const OrderDetail = ({ visible, order, onClose, onRetry }: OrderDetailPro
     >
       <Descriptions bordered column={2}>
         <Descriptions.Item label="订单号" span={2}>
-          {order.orderNo}
+          {order.voOrderNo}
         </Descriptions.Item>
 
         <Descriptions.Item label="订单状态">
-          <Tag color={getOrderStatusColor(order.status)}>
-            {order.statusDisplay}
+          <Tag color={getOrderStatusColor(order.voStatus)}>
+            {order.voStatusDisplay}
           </Tag>
         </Descriptions.Item>
 
         <Descriptions.Item label="创建时间">
-          {new Date(order.createTime).toLocaleString('zh-CN')}
+          {new Date(order.voCreateTime).toLocaleString('zh-CN')}
         </Descriptions.Item>
 
-        {order.paidTime && (
+        {order.voPaidTime && (
           <Descriptions.Item label="支付时间" span={2}>
-            {new Date(order.paidTime).toLocaleString('zh-CN')}
+            {new Date(order.voPaidTime).toLocaleString('zh-CN')}
           </Descriptions.Item>
         )}
 
-        {order.completedTime && (
+        {order.voCompletedTime && (
           <Descriptions.Item label="完成时间" span={2}>
-            {new Date(order.completedTime).toLocaleString('zh-CN')}
+            {new Date(order.voCompletedTime).toLocaleString('zh-CN')}
           </Descriptions.Item>
         )}
 
-        {order.cancelledTime && (
+        {order.voCancelledTime && (
           <>
             <Descriptions.Item label="取消时间">
-              {new Date(order.cancelledTime).toLocaleString('zh-CN')}
+              {new Date(order.voCancelledTime).toLocaleString('zh-CN')}
             </Descriptions.Item>
             <Descriptions.Item label="取消原因">
-              {order.cancelReason || '-'}
+              {order.voCancelReason || '-'}
             </Descriptions.Item>
           </>
         )}
 
-        {order.failReason && (
+        {order.voFailReason && (
           <Descriptions.Item label="失败原因" span={2}>
-            <span style={{ color: '#ff4d4f' }}>{order.failReason}</span>
+            <span style={{ color: '#ff4d4f' }}>{order.voFailReason}</span>
           </Descriptions.Item>
         )}
 
         <Descriptions.Item label="用户 ID">
-          {order.userId}
+          {order.voUserId}
         </Descriptions.Item>
 
         <Descriptions.Item label="用户名">
-          {order.userName || '未知'}
+          {order.voUserName || '未知'}
         </Descriptions.Item>
 
         <Descriptions.Item label="商品 ID">
-          {order.productId}
+          {order.voProductId}
         </Descriptions.Item>
 
         <Descriptions.Item label="商品名称">
-          {order.productName}
+          {order.voProductName}
         </Descriptions.Item>
 
         <Descriptions.Item label="商品类型">
-          <Tag color="blue">{order.productTypeDisplay}</Tag>
+          <Tag color="blue">{order.voProductTypeDisplay}</Tag>
         </Descriptions.Item>
 
         <Descriptions.Item label="数量">
-          {order.quantity}
+          {order.voQuantity}
         </Descriptions.Item>
 
         <Descriptions.Item label="单价">
           <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
-            {order.unitPrice} 胡萝卜
+            {order.voUnitPrice} 胡萝卜
           </span>
         </Descriptions.Item>
 
         <Descriptions.Item label="总价">
           <span style={{ color: '#ff4d4f', fontWeight: 'bold', fontSize: '16px' }}>
-            {order.totalPrice} 胡萝卜
+            {order.voTotalPrice} 胡萝卜
           </span>
         </Descriptions.Item>
 
-        {order.benefitExpiresAt && (
+        {order.voBenefitExpiresAt && (
           <Descriptions.Item label="权益到期时间" span={2}>
-            {new Date(order.benefitExpiresAt).toLocaleString('zh-CN')}
+            {new Date(order.voBenefitExpiresAt).toLocaleString('zh-CN')}
           </Descriptions.Item>
         )}
 
-        {order.durationDisplay && (
+        {order.voDurationDisplay && (
           <Descriptions.Item label="有效期" span={2}>
-            {order.durationDisplay}
+            {order.voDurationDisplay}
           </Descriptions.Item>
         )}
       </Descriptions>

@@ -7,6 +7,118 @@
   - ❌ 避免：为每个实体都创建 `ICategoryService`，只是包装 BaseService 方法
   - ✅ 推荐：`IPostService : IBaseService<Post, PostVo>` 包含复杂的 `PublishPostAsync` 逻辑
 
+## 前端 API 客户端规范
+
+### 统一使用 @radish/ui 提供的 API 客户端
+
+**禁止自定义 fetch/axios 封装**，所有 API 调用必须使用 `@radish/ui` 提供的统一客户端。
+
+#### 基本使用
+
+```typescript
+import { apiGet, apiPost, apiPut, apiDelete, configureApiClient } from '@radish/ui';
+
+// 1. 配置 API 客户端（在应用入口或 API 文件顶部）
+const defaultApiBase = 'https://localhost:5000';
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || defaultApiBase;
+
+configureApiClient({
+  baseUrl: apiBaseUrl.replace(/\/$/, ''),
+});
+
+// 2. 使用统一的 API 方法
+export async function getProducts(pageIndex: number = 1, pageSize: number = 20) {
+  const response = await apiGet<PagedResponse<Product>>(
+    `/api/v1/Shop/GetProducts?pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: true }  // 需要认证时添加此选项
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取商品列表失败');
+  }
+
+  return response.data;
+}
+
+export async function createProduct(data: CreateProductDto) {
+  return await apiPost<Product>('/api/v1/Shop/CreateProduct', data, { withAuth: true });
+}
+```
+
+#### 特殊场景：上传进度回调
+
+对于需要监听上传进度的场景（如分片上传），可以使用 XMLHttpRequest，但必须：
+1. 从 `getApiClientConfig()` 获取统一配置（baseUrl、token）
+2. 添加注释说明为什么需要特殊处理
+3. 其他方法仍使用统一客户端
+
+```typescript
+import { getApiClientConfig } from '@radish/ui';
+
+/**
+ * 上传分片
+ * 注意：此方法使用 XMLHttpRequest 而非统一 API 客户端，
+ * 因为需要支持上传进度回调功能
+ */
+export async function uploadChunk(
+  sessionId: string,
+  chunkBlob: Blob,
+  onProgress?: (progress: number) => void
+): Promise<UploadSession> {
+  const config = getApiClientConfig();
+  const url = `${config.baseUrl}/api/v1/ChunkedUpload/UploadChunk`;
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    if (onProgress) {
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          onProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+    }
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        const json = JSON.parse(xhr.responseText);
+        resolve(json.responseData);
+      } else {
+        reject(new Error(`上传失败: HTTP ${xhr.status}`));
+      }
+    });
+
+    xhr.open('POST', url);
+
+    // 从统一配置获取 token
+    const token = config.getToken?.();
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+
+    const formData = new FormData();
+    formData.append('sessionId', sessionId);
+    formData.append('chunkData', chunkBlob);
+    xhr.send(formData);
+  });
+}
+```
+
+#### 优势
+
+- ✅ 统一的配置管理（baseUrl、timeout、token）
+- ✅ 统一的错误处理和拦截器
+- ✅ 减少代码重复
+- ✅ 更容易维护和调试
+- ✅ 类型安全更好
+
+#### 禁止事项
+
+- ❌ 禁止在 API 文件中自定义 `apiFetch` 函数
+- ❌ 禁止直接使用 `fetch` 或 `axios`（除非有特殊需求并添加注释）
+- ❌ 禁止在每个 API 文件中重复实现认证逻辑
+- ❌ 禁止硬编码 API Base URL（使用环境变量）
+
 ## 代码质量标准
 
 **单个源文件行数建议**：为保持代码可读性与可维护性，建议单文件控制在 **500-1000 行**；非必要不超过 **1000 行**。
@@ -149,7 +261,7 @@ git push origin v1.2.0.251126
 - Radish.Service：后端服务实现类，具体实现业务逻辑接口
 - Radish.Shared：前后端共享的模型和工具类，例如 DTO、枚举等
 - Radish.Api.Tests：xUnit 测试工程，目前包含 UserController 示例测试，约束接口返回示例数据
-- Rust 原生扩展：当前统一实现位于 `Radish.Core/radish-lib`（统一 Rust 扩展库，构建后拷贝到 `Radish.Api/bin/<Configuration>/net10.0/`）；如后续需要从 Core 抽离，再迁到根目录 `native/rust/{library}` 并作为 Solution Folder 挂载。
+- Rust 原生扩展：已迁移到根目录 `radish.lib/`（统一 Rust 扩展库，构建后拷贝到 `Radish.Api/bin/<Configuration>/net10.0/`）；与其他前端项目保持一致的目录结构。
 
 ## 分层依赖约定
 
@@ -159,7 +271,7 @@ git push origin v1.2.0.251126
   - radish.ui：仅依赖外部 npm 包，不依赖任何业务项目
   - **重要**：radish.client 和 radish.console 是两个完全独立的 SPA，各自有独立的路由、认证流程和部署方式；它们通过 @radish/ui 共享基础组件，但业务逻辑和状态管理完全隔离
 - Gateway 项目（Radish.Gateway）：
-  - Phase 0 阶段：依赖 `Radish.Common`（配置工具）和 `Radish.Extension.Host`（日志扩展），提供 Razor Pages 页面展示和静态文件服务
+  - Phase 0 阶段：依赖 `Radish.Common`（配置工具）和 `Radish.Extension.Log`（日志扩展），提供 Razor Pages 页面展示和静态文件服务
   - P1+ 阶段：额外引入 `Ocelot` 或 `YARP` 实现路由转发，可能需要引用 `Radish.Service` 实现聚合接口和统一认证
   - 职责：服务门户展示、健康检查聚合、API 路由转发（P1+）、统一认证（P2+）、请求聚合（P3+）
 - 后端项目按层次结构依赖：
@@ -233,13 +345,13 @@ git push origin v1.2.0.251126
 
 ## 跨语言扩展（Rust 原生库）
 
-- 目的：为 CPU 密集或高并发任务提供 Rust 实现，并通过 `RustTestController`（v2）验证性能差异；当前统一扩展库为 `Radish.Core/radish-lib`，并以 `[DllImport("radish_lib")]` 进行加载。
+- 目的：为 CPU 密集或高并发任务提供 Rust 实现，并通过 `RustTestController`（v2）验证性能差异；统一扩展库位于 `radish.lib/`，并以 `[DllImport("radish_lib")]` 进行加载。
 - 构建流程：
   1. 安装 Rust 工具链（rustup + stable 均可）。
-  2. 在仓库根目录执行：`cd Radish.Core/radish-lib && cargo build --release`（或使用 `build.sh` / `build.ps1`）。
+  2. 在仓库根目录执行：`cd radish.lib && cargo build --release`（或使用 `build.sh` / `build.ps1`）。
   3. 构建产物位于 `target/release/`：`radish_lib.dll`（Windows）、`libradish_lib.so`（Linux）、`libradish_lib.dylib`（macOS）。需要拷贝到 `Radish.Api/bin/<Configuration>/net10.0/` 或发布目录以便运行期自动加载（脚本已自动复制到 Debug 输出目录）。
   4. `RustTestController` 提供 `/api/v2/RustTest/TestSum1~4` 端点，演示累加、类斐波那契、埃拉托斯特尼筛与并行质数计数；可使用 `?iterations=1_000_000` 等参数在本地验证返回结果与耗时。
-- 目录规划：如未来需要把原生模块从 Core 层抽离，可迁至 `native/rust/<library>` 下维护 Cargo 工程，并附 README 说明导出函数签名/调用约定；当前以 `Radish.Core/radish-lib` 作为统一扩展库。
+- 目录规划：Rust 扩展库已迁移到根目录 `radish.lib/`，与其他前端项目保持一致的目录结构，便于管理和维护。
 - 提交规范：Rust `target/` 目录与生成的 `.dll/.so/.dylib` 依旧忽略；若需要在 CI 中编译 Rust，请在构建脚本中加入 `cargo build --release` 与共享库复制步骤。
 
 ## 枚举与魔术数字规范
@@ -334,6 +446,50 @@ Task<bool> DeleteByIdAsync(long id)                     // 根据ID删除
 Task<bool> DeleteAsync(TEntity entity)                  // 根据实体删除
 Task<int> DeleteAsync(Expression<Func<TEntity, bool>>) // 根据条件删除
 Task<int> DeleteByIdsAsync(List<long> ids)             // 批量删除
+```
+
+**⚠️ 重要：物理删除方法已标记为过时，推荐使用软删除**
+
+#### 软删除（Soft Delete）- 推荐
+```csharp
+// 软删除方法
+Task<bool> SoftDeleteByIdAsync(long id, string? deletedBy = null)           // 根据ID软删除
+Task<int> SoftDeleteAsync(Expression<Func<TEntity, bool>>, string? deletedBy) // 根据条件软删除
+
+// 恢复方法
+Task<bool> RestoreByIdAsync(long id)                                        // 根据ID恢复
+Task<int> RestoreAsync(Expression<Func<TEntity, bool>>)                     // 根据条件恢复
+```
+
+**软删除规范**：
+- ✅ **推荐**：业务数据使用软删除，保留完整审计轨迹
+- ✅ **自动过滤**：查询方法自动过滤 `IsDeleted = true` 的记录
+- ✅ **审计信息**：记录删除时间（`DeletedAt`）和操作者（`DeletedBy`）
+- ✅ **可恢复**：支持恢复已软删除的记录
+- ❌ **避免**：物理删除业务数据（已标记 `[Obsolete]`）
+
+**实体要求**：
+```csharp
+// 实体必须实现 IDeleteFilter 接口
+public class UserBalance : RootEntityTKey<long>, IDeleteFilter
+{
+    // 业务字段...
+
+    // 软删除字段（自动添加）
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+}
+```
+
+**使用示例**：
+```csharp
+// Service 层使用
+await _userService.SoftDeleteByIdAsync(userId, "Admin");
+await _userService.RestoreByIdAsync(userId);
+
+// Repository 层使用
+await _repository.SoftDeleteAsync(u => u.IsEnabled == false, "System");
 ```
 
 #### 改（Update）
@@ -530,6 +686,55 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
 ## 实体与视图模型规范
 
+### 软删除实体规范
+
+**实体软删除接口**：
+- 所有业务实体应实现 `IDeleteFilter` 接口以支持软删除功能
+- 接口定义：
+  ```csharp
+  public interface IDeleteFilter
+  {
+      bool IsDeleted { get; set; }        // 软删除标记
+      DateTime? DeletedAt { get; set; }   // 删除时间
+      string? DeletedBy { get; set; }     // 删除操作者
+  }
+  ```
+
+**实体实现示例**：
+```csharp
+[SugarTable("UserBalance")]
+public class UserBalance : RootEntityTKey<long>, IDeleteFilter
+{
+    // 业务字段...
+    public long UserId { get; set; }
+    public decimal Balance { get; set; }
+
+    #region 审计信息
+    public DateTime CreateTime { get; set; } = DateTime.Now;
+    public string CreateBy { get; set; } = "System";
+    public long CreateId { get; set; } = 0;
+    public DateTime? ModifyTime { get; set; }
+    public string? ModifyBy { get; set; }
+    public long? ModifyId { get; set; }
+
+    // 软删除字段
+    public bool IsDeleted { get; set; } = false;
+    public DateTime? DeletedAt { get; set; }
+    public string? DeletedBy { get; set; }
+    #endregion
+}
+```
+
+**字段规范**：
+- `IsDeleted`: 不可空，默认 `false`，软删除标记
+- `DeletedAt`: 可空，软删除时自动设置，恢复时清空
+- `DeletedBy`: 可空，最大 50 字符，执行软删除操作的用户名或系统标识
+
+**自动初始化**：
+- BaseRepository 的 `AddAsync` 方法自动确保新记录的软删除字段正确初始化
+- 实现 `IDeleteFilter` 接口的实体在创建时自动设置 `IsDeleted = false`
+
+### 视图模型规范
 
 - 仓储层（Radish.Repository）只处理 `Radish.Model` 中定义的实体类型，禁止将实体对象直接向外暴露；Service 层获取实体后必须映射为视图模型再返回给 Controller。
 - **ViewModel 命名规范**:

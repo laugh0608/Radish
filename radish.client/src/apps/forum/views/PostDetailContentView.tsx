@@ -1,5 +1,5 @@
 import { Icon } from '@radish/ui';
-import type { PostDetail, CommentNode } from '@/types/forum';
+import type { PostDetail, CommentNode } from '@/api/forum';
 import { PostDetail as PostDetailComponent } from '../components/PostDetail';
 import { CommentTree } from '../components/CommentTree';
 import { CreateCommentForm } from '../components/CreateCommentForm';
