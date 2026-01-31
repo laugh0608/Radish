@@ -226,5 +226,48 @@ public interface IBaseRepository<TEntity> where TEntity : class
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null);
 
+    /// <summary>根据多个 ID 批量查询实体</summary>
+    /// <param name="ids">ID 列表</param>
+    /// <returns>实体列表</returns>
+    Task<List<TEntity>> QueryByIdsAsync(List<long> ids);
+
+    /// <summary>查询字段最大值（聚合）</summary>
+    /// <typeparam name="TResult">返回类型</typeparam>
+    /// <param name="selectExpression">选择要查询最大值的字段</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>最大值</returns>
+    Task<TResult> QueryMaxAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null);
+
+    /// <summary>查询字段最小值（聚合）</summary>
+    /// <typeparam name="TResult">返回类型</typeparam>
+    /// <param name="selectExpression">选择要查询最小值的字段</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>最小值</returns>
+    Task<TResult> QueryMinAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null);
+
+    /// <summary>查询字段平均值（聚合）</summary>
+    /// <param name="selectExpression">选择要查询平均值的字段</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>平均值</returns>
+    Task<decimal> QueryAverageAsync(
+        Expression<Func<TEntity, decimal>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null);
+
+    /// <summary>带排序的列表查询</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <param name="orderByExpression">排序表达式</param>
+    /// <param name="orderByType">排序类型</param>
+    /// <param name="take">获取数量，0 表示不限制</param>
+    /// <returns>实体列表</returns>
+    Task<List<TEntity>> QueryWithOrderAsync(
+        Expression<Func<TEntity, bool>>? whereExpression,
+        Expression<Func<TEntity, object>> orderByExpression,
+        OrderByType orderByType = OrderByType.Asc,
+        int take = 0);
+
     #endregion
 }
