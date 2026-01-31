@@ -68,7 +68,7 @@ export const ExperienceDisplay = () => {
   return (
     <div className={styles.experienceDisplay}>
       <ExperienceBar
-        data={experience as any}
+        data={experience}
         size="small"
         showLevel={true}
         showProgress={true}
