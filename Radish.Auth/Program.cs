@@ -151,6 +151,18 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/Account/Login";
         options.LogoutPath = "/Account/Logout";
+
+        // Cookie 配置：确保在 Gateway 代理场景下能正确传递和清除
+        options.Cookie.Name = ".Radish.Auth.Session";
+        options.Cookie.HttpOnly = true;
+        // SameSite=None 允许跨站请求携带 Cookie（Gateway 代理场景必需）
+        // 注意：SameSite=None 必须配合 Secure=true
+        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+
+        // 会话过期时间
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
+        options.SlidingExpiration = true;
     });
 
 // OpenIddict 所用 EF Core DbContext（仅承载 OpenIddict 实体）

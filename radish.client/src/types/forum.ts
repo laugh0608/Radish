@@ -135,18 +135,20 @@ export interface CommentHighlight {
 
 /**
  * 评论点赞操作结果
+ * 注意：后端返回的字段带 vo 前缀
  */
 export interface CommentLikeResult {
-  isLiked: boolean;
-  likeCount: number;
+  voIsLiked: boolean;
+  voLikeCount: number;
 }
 
 /**
  * 帖子点赞操作结果
+ * 注意：后端返回的字段带 vo 前缀
  */
 export interface PostLikeResult {
-  isLiked: boolean;
-  likeCount: number;
+  voIsLiked: boolean;
+  voLikeCount: number;
 }
 
 /**

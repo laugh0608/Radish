@@ -114,22 +114,22 @@ export const LeaderboardApp = () => {
           <div className={styles.leaderboard}>
             {leaderboard.map((item, index) => (
               <div
-                key={`${item.userId}-${item.rank}-${index}`}
-                className={`${styles.item} ${item.isCurrentUser ? styles.currentUser : ''} ${getRankClass(item.rank)}`}
+                key={`${item.voUserId}-${item.voRank}-${index}`}
+                className={`${styles.item} ${item.voIsCurrentUser ? styles.currentUser : ''} ${getRankClass(item.voRank)}`}
               >
                 <div className={styles.rank}>
-                  {getRankIcon(item.rank) || `#${item.rank}`}
+                  {getRankIcon(item.voRank) || `#${item.voRank}`}
                 </div>
 
                 <div className={styles.userInfo}>
-                  <div className={styles.userName}>{item.userName}</div>
-                  <div className={styles.level} style={{ color: item.themeColor || '#9E9E9E' }}>
-                    Lv.{item.currentLevel} {item.currentLevelName}
+                  <div className={styles.userName}>{item.voUserName}</div>
+                  <div className={styles.level} style={{ color: item.voThemeColor || '#9E9E9E' }}>
+                    Lv.{item.voCurrentLevel} {item.voLevelName}
                   </div>
                 </div>
 
                 <div className={styles.exp}>
-                  <div className={styles.expValue}>{Number(item.totalExp).toLocaleString()}</div>
+                  <div className={styles.expValue}>{Number(item.voTotalExp).toLocaleString()}</div>
                   <div className={styles.expLabel}>总经验值</div>
                 </div>
               </div>

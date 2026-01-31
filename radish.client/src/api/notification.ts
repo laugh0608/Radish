@@ -12,7 +12,41 @@ configureApiClient({
 });
 
 /**
- * 通知 Vo（直接使用后端字段名）
+ * 通知详情 Vo（嵌套在 UserNotificationVo 中）
+ */
+export interface NotificationVo {
+  voId: number;
+  voType: string;
+  voPriority: number;
+  voTitle: string;
+  voContent: string;
+  voBusinessType: string | null;
+  voBusinessId: number | null;
+  voTriggerId: number | null;
+  voTriggerName: string | null;
+  voTriggerAvatar: string | null;
+  voExtData: string | null;
+  voCreateTime: string;
+}
+
+/**
+ * 用户通知 Vo（后端实际返回的结构）
+ */
+export interface UserNotificationVo {
+  voId: number;
+  voUserId: number;
+  voNotificationId: number;
+  voIsRead: boolean;
+  voReadAt: string | null;
+  voDeliveryStatus: string;
+  voDeliveredAt: string | null;
+  voCreateTime: string;
+  voNotification: NotificationVo | null;
+}
+
+/**
+ * 旧的扁平化通知接口（保留兼容性）
+ * @deprecated 使用 UserNotificationVo 代替
  */
 export interface Notification {
   voId: number;
@@ -47,12 +81,13 @@ interface UnreadCountResponse {
 export const notificationApi = {
   /**
    * 获取我的通知列表
+   * 返回 UserNotificationVo 结构，通知详情在 voNotification 字段中
    */
   async getMyNotifications(params: {
     pageIndex?: number;
     pageSize?: number;
     isRead?: boolean;
-  }): Promise<PagedResponse<Notification> | null> {
+  }): Promise<PagedResponse<UserNotificationVo> | null> {
     const { pageIndex = 1, pageSize = 20, isRead } = params;
 
     let url = `/api/v1/Notification/GetNotificationList?pageIndex=${pageIndex}&pageSize=${pageSize}`;
@@ -60,7 +95,7 @@ export const notificationApi = {
       url += `&isRead=${isRead}`;
     }
 
-    const response = await apiGet<PagedResponse<Notification>>(url, {
+    const response = await apiGet<PagedResponse<UserNotificationVo>>(url, {
       withAuth: true,
     });
 

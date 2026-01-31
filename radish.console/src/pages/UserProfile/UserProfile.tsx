@@ -19,13 +19,13 @@ import { log } from '@/utils/logger';
 import './UserProfile.css';
 
 interface UserProfileData {
-  id: number;
-  userName: string;
-  email: string;
-  avatarUrl?: string;
-  createTime: string;
-  lastLoginTime?: string;
-  roles: string[];
+  voId: number;
+  voUserName: string;
+  voEmail: string;
+  voAvatarUrl?: string;
+  voCreateTime: string;
+  voLastLoginTime?: string;
+  voRoles: string[];
 }
 
 export const UserProfile = () => {
@@ -40,18 +40,18 @@ export const UserProfile = () => {
   useEffect(() => {
     if (user) {
       const mockProfileData: UserProfileData = {
-        id: user.voUserId,
-        userName: user.voUserName,
-        email: 'admin@radish.com', // 模拟邮箱
-        avatarUrl: user.voAvatarUrl,
-        createTime: '2024-01-01T00:00:00Z',
-        lastLoginTime: new Date().toISOString(),
-        roles: user.roles || ['Admin'],
+        voId: user.voUserId,
+        voUserName: user.voUserName,
+        voEmail: 'admin@radish.com', // 模拟邮箱
+        voAvatarUrl: user.voAvatarUrl,
+        voCreateTime: '2024-01-01T00:00:00Z',
+        voLastLoginTime: new Date().toISOString(),
+        voRoles: user.roles || ['Admin'],
       };
       setProfileData(mockProfileData);
       form.setFieldsValue({
-        userName: mockProfileData.userName,
-        email: mockProfileData.email,
+        voUserName: mockProfileData.voUserName,
+        voEmail: mockProfileData.voEmail,
       });
     } else if (!userLoading) {
       // 如果用户加载完成但没有用户信息，显示错误状态
@@ -70,8 +70,8 @@ export const UserProfile = () => {
 
       setProfileData(prev => prev ? {
         ...prev,
-        userName: values.userName,
-        email: values.email,
+        voUserName: values.voUserName,
+        voEmail: values.voEmail,
       } : null);
 
       message.success('个人信息更新成功');
@@ -88,8 +88,8 @@ export const UserProfile = () => {
   const handleCancel = () => {
     if (profileData) {
       form.setFieldsValue({
-        userName: profileData.userName,
-        email: profileData.email,
+        voUserName: profileData.voUserName,
+        voEmail: profileData.voEmail,
       });
     }
     setEditing(false);
@@ -135,7 +135,7 @@ export const UserProfile = () => {
           if (avatarUrl) {
             setProfileData(prev => prev ? {
               ...prev,
-              avatarUrl: avatarUrl,
+              voAvatarUrl: avatarUrl,
             } : null);
 
             // 刷新UserContext中的用户信息，更新右上角导航栏头像
@@ -197,7 +197,7 @@ export const UserProfile = () => {
           <div className="avatar-section">
             <Avatar
               size={80}
-              src={getAvatarUrl(profileData.avatarUrl)}
+              src={getAvatarUrl(profileData.voAvatarUrl)}
               icon={<UserOutlined />}
               className="profile-avatar"
             />
@@ -212,12 +212,12 @@ export const UserProfile = () => {
             </Upload>
           </div>
           <div className="profile-info">
-            <h3>{profileData.userName}</h3>
+            <h3>{profileData.voUserName}</h3>
             <p className="profile-roles">
-              角色: {profileData.roles.join(', ')}
+              角色: {profileData.voRoles.join(', ')}
             </p>
             <p className="profile-id">
-              用户ID: {profileData.id}
+              用户ID: {profileData.voId}
             </p>
           </div>
           <div className="profile-actions">
@@ -254,7 +254,7 @@ export const UserProfile = () => {
           disabled={!editing}
         >
           <Form.Item
-            name="userName"
+            name="voUserName"
             label="用户名"
             rules={[
               { required: true, message: '请输入用户名' },
@@ -265,7 +265,7 @@ export const UserProfile = () => {
           </Form.Item>
 
           <Form.Item
-            name="email"
+            name="voEmail"
             label="邮箱"
             rules={[
               { required: true, message: '请输入邮箱' },
@@ -282,14 +282,14 @@ export const UserProfile = () => {
           <div className="stat-item">
             <span className="stat-label">注册时间:</span>
             <span className="stat-value">
-              {new Date(profileData.createTime).toLocaleString('zh-CN')}
+              {new Date(profileData.voCreateTime).toLocaleString('zh-CN')}
             </span>
           </div>
           <div className="stat-item">
             <span className="stat-label">最后登录:</span>
             <span className="stat-value">
-              {profileData.lastLoginTime
-                ? new Date(profileData.lastLoginTime).toLocaleString('zh-CN')
+              {profileData.voLastLoginTime
+                ? new Date(profileData.voLastLoginTime).toLocaleString('zh-CN')
                 : '未知'
               }
             </span>

@@ -22,11 +22,11 @@ const CATEGORY_COLORS: Record<string, string> = {
  * 分类统计组件 - 使用饼图展示分类占比
  */
 export const CategoryBreakdown = ({ data, loading, error, displayMode }: CategoryBreakdownProps) => {
-  // 准备图表数据
-  const chartData = data?.categoryStats.map((item) => ({
-    name: item.category,
-    value: item.amount,
-    color: CATEGORY_COLORS[item.category] || '#fa709a'
+  // 准备图表数据（直接使用 vo 前缀字段）
+  const chartData = data?.voCategoryStats.map((item) => ({
+    name: item.voCategory,
+    value: item.voAmount,
+    color: CATEGORY_COLORS[item.voCategory] || '#fa709a'
   })) || [];
 
   return (

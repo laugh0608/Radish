@@ -70,8 +70,8 @@ export const ExperienceDetailApp = () => {
     const sources: Record<string, number> = {};
 
     transactions.forEach(tx => {
-      const type = tx.expType || '其他';
-      sources[type] = (sources[type] || 0) + tx.expAmount;
+      const type = tx.voTransactionType || '其他';
+      sources[type] = (sources[type] || 0) + tx.voExpChange;
     });
 
     const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b'];
@@ -147,21 +147,21 @@ export const ExperienceDetailApp = () => {
           <div className={styles.overview}>
             <div className={styles.statCard}>
               <div className={styles.statLabel}>当前等级</div>
-              <div className={styles.statValue} style={{ color: experience.themeColor }}>
-                Lv.{experience.currentLevel} {experience.currentLevelName}
+              <div className={styles.statValue} style={{ color: experience.voThemeColor || '#3b82f6' }}>
+                Lv.{experience.voCurrentLevel} {experience.voLevelName}
               </div>
             </div>
             <div className={styles.statCard}>
               <div className={styles.statLabel}>当前经验值</div>
-              <div className={styles.statValue}>{Number(experience.currentExp).toLocaleString()}</div>
+              <div className={styles.statValue}>{Number(experience.voCurrentExp).toLocaleString()}</div>
             </div>
             <div className={styles.statCard}>
               <div className={styles.statLabel}>累计经验值</div>
-              <div className={styles.statValue}>{Number(experience.totalExp).toLocaleString()}</div>
+              <div className={styles.statValue}>{Number(experience.voTotalExp).toLocaleString()}</div>
             </div>
             <div className={styles.statCard}>
               <div className={styles.statLabel}>距下一级</div>
-              <div className={styles.statValue}>{Number(experience.expToNextLevel).toLocaleString()}</div>
+              <div className={styles.statValue}>{Number(experience.voExpToNextLevel).toLocaleString()}</div>
             </div>
           </div>
 
@@ -227,21 +227,21 @@ export const ExperienceDetailApp = () => {
               <>
                 <div className={styles.transactionList}>
                   {transactions.map((tx) => (
-                    <div key={tx.id} className={styles.transactionItem}>
+                    <div key={tx.voId} className={styles.transactionItem}>
                       <div className={styles.txIcon}>
                         <Icon icon="mdi:plus-circle" size={24} />
                       </div>
                       <div className={styles.txInfo}>
-                        <div className={styles.txType}>{getExpTypeDisplay(tx.expType)}</div>
+                        <div className={styles.txType}>{getExpTypeDisplay(tx.voTransactionType)}</div>
                         <div className={styles.txTime}>
-                          {new Date(tx.createTime).toLocaleString('zh-CN')}
+                          {new Date(tx.voCreateTime).toLocaleString('zh-CN')}
                         </div>
-                        {tx.remark && (
-                          <div className={styles.txRemark}>{tx.remark}</div>
+                        {tx.voDescription && (
+                          <div className={styles.txRemark}>{tx.voDescription}</div>
                         )}
                       </div>
                       <div className={styles.txAmount}>
-                        +{tx.expAmount}
+                        +{tx.voExpChange}
                       </div>
                     </div>
                   ))}

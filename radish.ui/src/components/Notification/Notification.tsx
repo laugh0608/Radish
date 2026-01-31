@@ -2,6 +2,10 @@ import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import styles from './Notification.module.css';
 
+/**
+ * 通知项数据（纯 UI 接口，不依赖后端命名约定）
+ * 业务层负责将后端 VO 转换为此接口
+ */
 export interface NotificationItemData {
   /** 通知 ID */
   id: number;
@@ -12,17 +16,17 @@ export interface NotificationItemData {
   /** 通知内容 */
   content: string;
   /** 优先级 */
-  priority: number;
+  priority?: number;
   /** 业务类型 */
-  businessType?: string;
+  businessType?: string | null;
   /** 业务 ID */
-  businessId?: number;
+  businessId?: number | null;
   /** 触发者 ID */
-  triggerId?: number;
+  triggerId?: number | null;
   /** 触发者名称 */
-  triggerName?: string;
+  triggerName?: string | null;
   /** 触发者头像 */
-  triggerAvatar?: string;
+  triggerAvatar?: string | null;
   /** 是否已读 */
   isRead: boolean;
   /** 创建时间 */
@@ -58,10 +62,13 @@ export const Notification = ({
     switch (type) {
       case 'PostLiked':
       case 'CommentLiked':
+      case 'like':
         return '👍';
       case 'CommentReplied':
+      case 'reply':
         return '💬';
       case 'Mentioned':
+      case 'mention':
         return '@';
       case 'GodComment':
         return '⭐';
@@ -72,19 +79,22 @@ export const Notification = ({
       case 'CoinBalanceChanged':
         return '🥕';
       case 'SystemAnnouncement':
+      case 'system':
         return '📢';
       case 'AccountSecurity':
         return '🔒';
+      case 'follow':
+        return '👤';
       default:
         return 'ℹ️';
     }
   };
 
   const getTypeColor = (type: string) => {
-    if (type.endsWith('Liked')) return 'like';
-    if (type.includes('Comment') || type.includes('Replied')) return 'comment';
+    if (type.endsWith('Liked') || type === 'like') return 'like';
+    if (type.includes('Comment') || type.includes('Replied') || type === 'reply') return 'comment';
     if (type.includes('God') || type.includes('Sofa')) return 'achievement';
-    if (type.includes('System') || type.includes('Security')) return 'system';
+    if (type.includes('System') || type.includes('Security') || type === 'system') return 'system';
     return 'default';
   };
 

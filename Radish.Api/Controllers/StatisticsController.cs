@@ -34,8 +34,8 @@ public class StatisticsController : ControllerBase
     /// <summary>获取仪表盘统计数据</summary>
     /// <returns>仪表盘统计数据</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetDashboardStats()
+    [ProducesResponseType(typeof(MessageModel<DashboardStatsVo>), StatusCodes.Status200OK)]
+    public async Task<MessageModel<DashboardStatsVo>> GetDashboardStats()
     {
         try
         {
@@ -51,30 +51,19 @@ public class StatisticsController : ControllerBase
             // 计算总收入（这里需要根据实际业务逻辑计算）
             var totalRevenue = await CalculateTotalRevenue();
 
-            var stats = new
+            var stats = new DashboardStatsVo
             {
-                TotalUsers = totalUsers,
-                TotalOrders = totalOrders,
-                TotalProducts = totalProducts,
-                TotalRevenue = totalRevenue
+                VoTotalUsers = totalUsers,
+                VoTotalOrders = totalOrders,
+                VoTotalProducts = totalProducts,
+                VoTotalRevenue = totalRevenue
             };
 
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "获取成功",
-                ResponseData = stats
-            };
+            return MessageModel<DashboardStatsVo>.Success("获取成功", stats);
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"获取统计数据失败：{ex.Message}"
-            };
+            return MessageModel<DashboardStatsVo>.Failed($"获取统计数据失败：{ex.Message}");
         }
     }
 
@@ -82,17 +71,15 @@ public class StatisticsController : ControllerBase
     /// <param name="days">天数，默认30天</param>
     /// <returns>订单趋势数据</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetOrderTrend(int days = 30)
+    [ProducesResponseType(typeof(MessageModel<List<OrderTrendItemVo>>), StatusCodes.Status200OK)]
+    public async Task<MessageModel<List<OrderTrendItemVo>>> GetOrderTrend(int days = 30)
     {
         try
         {
             var endDate = DateTime.Now.Date;
             var startDate = endDate.AddDays(-days);
 
-            // 这里需要根据实际的 Repository 实现来查询数据
-            // 由于使用的是 BaseService，可能需要扩展查询方法
-            var trendData = new List<object>();
+            var trendData = new List<OrderTrendItemVo>();
 
             for (int i = 0; i < days; i++)
             {
@@ -101,30 +88,19 @@ public class StatisticsController : ControllerBase
                 var orderCount = await GetOrderCountByDate(date);
                 var revenue = await GetRevenueByDate(date);
 
-                trendData.Add(new
+                trendData.Add(new OrderTrendItemVo
                 {
-                    Date = date.ToString("yyyy-MM-dd"),
-                    OrderCount = orderCount,
-                    Revenue = revenue
+                    VoDate = date.ToString("yyyy-MM-dd"),
+                    VoOrderCount = orderCount,
+                    VoRevenue = revenue
                 });
             }
 
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "获取成功",
-                ResponseData = trendData
-            };
+            return MessageModel<List<OrderTrendItemVo>>.Success("获取成功", trendData);
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"获取订单趋势失败：{ex.Message}"
-            };
+            return MessageModel<List<OrderTrendItemVo>>.Failed($"获取订单趋势失败：{ex.Message}");
         }
     }
 
@@ -132,82 +108,60 @@ public class StatisticsController : ControllerBase
     /// <param name="limit">返回数量，默认10</param>
     /// <returns>商品销售排行</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetProductSalesRanking(int limit = 10)
+    [ProducesResponseType(typeof(MessageModel<List<ProductSalesRankingVo>>), StatusCodes.Status200OK)]
+    public async Task<MessageModel<List<ProductSalesRankingVo>>> GetProductSalesRanking(int limit = 10)
     {
         try
         {
             // TODO: 实现商品销售排行查询逻辑
             // 这里需要根据订单详情表来统计商品销量
-            var rankingData = new List<object>
+            var rankingData = new List<ProductSalesRankingVo>
             {
-                new { ProductName = "VIP会员", SalesCount = 150, Revenue = 15000 },
-                new { ProductName = "经验卡", SalesCount = 120, Revenue = 6000 },
-                new { ProductName = "改名卡", SalesCount = 80, Revenue = 4000 },
-                new { ProductName = "头像框", SalesCount = 60, Revenue = 3000 },
-                new { ProductName = "称号", SalesCount = 45, Revenue = 2250 }
+                new() { VoProductName = "VIP会员", VoSalesCount = 150, VoRevenue = 15000 },
+                new() { VoProductName = "经验卡", VoSalesCount = 120, VoRevenue = 6000 },
+                new() { VoProductName = "改名卡", VoSalesCount = 80, VoRevenue = 4000 },
+                new() { VoProductName = "头像框", VoSalesCount = 60, VoRevenue = 3000 },
+                new() { VoProductName = "称号", VoSalesCount = 45, VoRevenue = 2250 }
             };
 
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "获取成功",
-                ResponseData = rankingData.Take(limit)
-            };
+            return MessageModel<List<ProductSalesRankingVo>>.Success("获取成功", rankingData.Take(limit).ToList());
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"获取商品销售排行失败：{ex.Message}"
-            };
+            return MessageModel<List<ProductSalesRankingVo>>.Failed($"获取商品销售排行失败：{ex.Message}");
         }
     }
 
     /// <summary>获取用户等级分布</summary>
     /// <returns>用户等级分布</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetUserLevelDistribution()
+    [ProducesResponseType(typeof(MessageModel<List<UserLevelDistributionVo>>), StatusCodes.Status200OK)]
+    public async Task<MessageModel<List<UserLevelDistributionVo>>> GetUserLevelDistribution()
     {
         try
         {
             // TODO: 实现用户等级分布查询逻辑
             // 这里需要查询 UserLevel 表来统计各等级用户数量
-            var distributionData = new List<object>
+            var distributionData = new List<UserLevelDistributionVo>
             {
-                new { Level = 1, LevelName = "凡人", UserCount = 500 },
-                new { Level = 2, LevelName = "练气", UserCount = 300 },
-                new { Level = 3, LevelName = "筑基", UserCount = 150 },
-                new { Level = 4, LevelName = "金丹", UserCount = 80 },
-                new { Level = 5, LevelName = "元婴", UserCount = 40 },
-                new { Level = 6, LevelName = "化神", UserCount = 20 },
-                new { Level = 7, LevelName = "炼虚", UserCount = 10 },
-                new { Level = 8, LevelName = "合体", UserCount = 5 },
-                new { Level = 9, LevelName = "大乘", UserCount = 3 },
-                new { Level = 10, LevelName = "渡劫", UserCount = 2 },
-                new { Level = 11, LevelName = "飞升", UserCount = 1 }
+                new() { VoLevel = 1, VoLevelName = "凡人", VoUserCount = 500 },
+                new() { VoLevel = 2, VoLevelName = "练气", VoUserCount = 300 },
+                new() { VoLevel = 3, VoLevelName = "筑基", VoUserCount = 150 },
+                new() { VoLevel = 4, VoLevelName = "金丹", VoUserCount = 80 },
+                new() { VoLevel = 5, VoLevelName = "元婴", VoUserCount = 40 },
+                new() { VoLevel = 6, VoLevelName = "化神", VoUserCount = 20 },
+                new() { VoLevel = 7, VoLevelName = "炼虚", VoUserCount = 10 },
+                new() { VoLevel = 8, VoLevelName = "合体", VoUserCount = 5 },
+                new() { VoLevel = 9, VoLevelName = "大乘", VoUserCount = 3 },
+                new() { VoLevel = 10, VoLevelName = "渡劫", VoUserCount = 2 },
+                new() { VoLevel = 11, VoLevelName = "飞升", VoUserCount = 1 }
             };
 
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "获取成功",
-                ResponseData = distributionData
-            };
+            return MessageModel<List<UserLevelDistributionVo>>.Success("获取成功", distributionData);
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"获取用户等级分布失败：{ex.Message}"
-            };
+            return MessageModel<List<UserLevelDistributionVo>>.Failed($"获取用户等级分布失败：{ex.Message}");
         }
     }
 

@@ -3,6 +3,7 @@
   "private": true,
   "version": "26.1.1",
   "workspaces": [
+    "radish-api",
     "radish.client",
     "radish.console",
     "radish.ui"

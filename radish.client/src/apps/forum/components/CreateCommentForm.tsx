@@ -112,7 +112,7 @@ export const CreateCommentForm = ({
     // 替换@和关键词为@用户名
     const beforeMention = content.substring(0, mentionStartPos);
     const afterMention = content.substring(textareaRef.current.selectionStart);
-    const newContent = `${beforeMention}@${user.userName} ${afterMention}`;
+    const newContent = `${beforeMention}@${user.voUserName} ${afterMention}`;
 
     setContent(newContent);
     setShowMention(false);
@@ -120,7 +120,7 @@ export const CreateCommentForm = ({
     // 设置光标位置到@用户名后面
     setTimeout(() => {
       if (textareaRef.current) {
-        const cursorPos = mentionStartPos + user.userName.length + 2; // @ + 用户名 + 空格
+        const cursorPos = mentionStartPos + user.voUserName.length + 2; // @ + 用户名 + 空格
         textareaRef.current.selectionStart = cursorPos;
         textareaRef.current.selectionEnd = cursorPos;
         textareaRef.current.focus();

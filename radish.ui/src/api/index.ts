@@ -1,32 +1,11 @@
-// API 类型定义
-export type {
-  ApiResponse,
-  PagedResponse,
-  ApiRequestOptions,
-  ParsedApiResponse,
-} from './types';
+/**
+ * API 模块 - 重新导出 @radish/api
+ *
+ * 注意：API 客户端代码已抽离到独立的 @radish/api 包
+ * 此文件保留向后兼容性，建议直接从 @radish/api 导入
+ *
+ * @deprecated 请直接从 '@radish/api' 导入
+ */
 
-// API 客户端
-export {
-  configureApiClient,
-  getApiClientConfig,
-  apiFetch,
-  parseApiResponse,
-  parseApiResponseWithI18n,
-  apiGet,
-  apiPost,
-  apiPut,
-  apiDelete,
-} from './client';
-
-// 错误处理
-export {
-  configureErrorHandling,
-  handleError,
-  handleApiError,
-  handleNetworkError,
-  handleHttpError,
-  withErrorHandling,
-} from './error-handler';
-
-export type { ErrorHandler } from './error-handler';
+// 重新导出所有 API 相关内容
+export * from '@radish/api';
