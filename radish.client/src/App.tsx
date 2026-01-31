@@ -93,22 +93,7 @@ function App() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [apiBaseUrl]);
 
-    // 通知 Hub：登录后自动连接，登出后断开
-    useEffect(() => {
-        if (!isBrowser || isOidcCallback) return;
-
-        const token = window.localStorage.getItem('access_token');
-        if (token) {
-            void notificationHub.start();
-        } else {
-            void notificationHub.stop();
-        }
-
-        // 页面卸载时断开连接
-        return () => {
-            void notificationHub.stop();
-        };
-    }, [isBrowser, isOidcCallback]);
+    // 注意：WebSocket 连接由 Shell.tsx 统一管理，此处不再启动
 
     // OIDC 回调页面：单独渲染回调组件
     if (isOidcCallback) {
@@ -451,7 +436,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
         hasExecutedRef.current = true;
 
         const redirectUri = `${window.location.origin}/oidc/callback`;
-        const authServerBaseUrl = getAuthServerBaseUrl();
+        const authServerBaseUrl = getAuthBaseUrl();
 
         const fetchToken = async () => {
             const body = new URLSearchParams();

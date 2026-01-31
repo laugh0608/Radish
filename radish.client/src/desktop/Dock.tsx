@@ -215,17 +215,25 @@ export const Dock = () => {
     if (typeof window !== 'undefined') {
       void hydrateCurrentUser();
 
-      // 如果用户已登录，启动 SignalR 连接
+      // 注意：WebSocket 连接由 Shell.tsx 统一管理，此处不再启动
+      // 如果用户已登录，获取未读数（作为降级数据）
       if (loggedIn) {
-        void notificationHub.start();
+        // 初始化时获取一次未读数（作为降级数据）
+        void fetchUnreadMessageCount();
+      } else {
+        // 用户未登录时，清空未读数
+        setPollingUnreadCount(0);
       }
 
-      // 初始化时获取一次未读数（作为降级数据）
-      void fetchUnreadMessageCount();
-
-      // 降级轮询：仅在 SignalR 连接失败时使用（60秒间隔）
+      // 降级轮询：仅在用户已登录且 SignalR 连接失败时使用（60秒间隔）
       // 注意：这里不能在依赖中使用 connectionState，否则会导致重启循环
       const pollingTimer = setInterval(() => {
+        // 检查用户是否登录
+        const token = window.localStorage.getItem('access_token');
+        if (!token) {
+          return;
+        }
+        
         // 从 store 中实时读取 connectionState
         const state = useNotificationStore.getState().connectionState;
         if (state !== 'connected') {

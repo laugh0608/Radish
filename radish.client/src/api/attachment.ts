@@ -14,13 +14,6 @@ configureApiClient({
 });
 
 /**
- * 获取API基础URL
- */
-function getApiBaseUrl(): string {
-  return getApiClientConfig().baseUrl;
-}
-
-/**
  * 延迟函数（用于重试）
  */
 function delay(ms: number): Promise<void> {
