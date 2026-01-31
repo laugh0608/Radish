@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using AutoMapper;
+using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
 using Radish.IService.Base;
 using SqlSugar;
@@ -270,6 +271,184 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
         string orderByFields = "Id")
     {
         return await _baseRepository.QuerySplitAsync(whereExpression, orderByFields);
+    }
+
+    /// <summary>分页查询（支持二级排序，返回 ViewModel 列表）</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <param name="orderByExpression">主排序表达式，可空</param>
+    /// <param name="orderByType">主排序类型（Asc/Desc），默认 Asc</param>
+    /// <param name="thenByExpression">次级排序表达式，可空</param>
+    /// <param name="thenByType">次级排序类型（Asc/Desc），默认 Asc</param>
+    /// <returns>分页数据和总数</returns>
+    public async Task<(List<TVo> data, int totalCount)> QueryPageAsync(
+        Expression<Func<TEntity, bool>>? whereExpression,
+        int pageIndex,
+        int pageSize,
+        Expression<Func<TEntity, object>>? orderByExpression,
+        OrderByType orderByType,
+        Expression<Func<TEntity, object>>? thenByExpression,
+        OrderByType thenByType)
+    {
+        var (data, totalCount) = await _baseRepository.QueryPageAsync(
+            whereExpression, pageIndex, pageSize, orderByExpression, orderByType, thenByExpression, thenByType);
+        return (_mapper.Map<List<TVo>>(data), totalCount);
+    }
+
+    /// <summary>根据多个 ID 批量查询实体（返回 ViewModel 列表）</summary>
+    /// <param name="ids">ID 列表</param>
+    /// <returns>ViewModel 列表</returns>
+    public async Task<List<TVo>> QueryByIdsAsync(List<long> ids)
+    {
+        var entities = await _baseRepository.QueryByIdsAsync(ids);
+        return _mapper.Map<List<TVo>>(entities);
+    }
+
+    /// <summary>查询不同的字段值列表（去重）</summary>
+    /// <typeparam name="TResult">返回字段类型</typeparam>
+    /// <param name="selectExpression">选择字段表达式（例如：c => c.PostId）</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>去重后的字段值列表</returns>
+    public async Task<List<TResult>> QueryDistinctAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await _baseRepository.QueryDistinctAsync(selectExpression, whereExpression);
+    }
+
+    /// <summary>查询字段求和（聚合）</summary>
+    /// <typeparam name="TResult">返回类型（通常为 int, long, decimal）</typeparam>
+    /// <param name="selectExpression">选择要求和的字段（例如：t => t.Amount）</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>求和结果</returns>
+    public async Task<TResult> QuerySumAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await _baseRepository.QuerySumAsync(selectExpression, whereExpression);
+    }
+
+    /// <summary>查询字段最大值（聚合）</summary>
+    /// <typeparam name="TResult">返回类型</typeparam>
+    /// <param name="selectExpression">选择要查询最大值的字段</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>最大值</returns>
+    public async Task<TResult> QueryMaxAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await _baseRepository.QueryMaxAsync(selectExpression, whereExpression);
+    }
+
+    /// <summary>查询字段最小值（聚合）</summary>
+    /// <typeparam name="TResult">返回类型</typeparam>
+    /// <param name="selectExpression">选择要查询最小值的字段</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>最小值</returns>
+    public async Task<TResult> QueryMinAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await _baseRepository.QueryMinAsync(selectExpression, whereExpression);
+    }
+
+    /// <summary>查询字段平均值（聚合）</summary>
+    /// <param name="selectExpression">选择要查询平均值的字段</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>平均值</returns>
+    public async Task<decimal> QueryAverageAsync(
+        Expression<Func<TEntity, decimal>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await _baseRepository.QueryAverageAsync(selectExpression, whereExpression);
+    }
+
+    /// <summary>带排序的列表查询（返回 ViewModel 列表）</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <param name="orderByExpression">排序表达式</param>
+    /// <param name="orderByType">排序类型</param>
+    /// <param name="take">获取数量，0 表示不限制</param>
+    /// <returns>ViewModel 列表</returns>
+    public async Task<List<TVo>> QueryWithOrderAsync(
+        Expression<Func<TEntity, bool>>? whereExpression,
+        Expression<Func<TEntity, object>> orderByExpression,
+        OrderByType orderByType = OrderByType.Asc,
+        int take = 0)
+    {
+        var entities = await _baseRepository.QueryWithOrderAsync(whereExpression, orderByExpression, orderByType, take);
+        return _mapper.Map<List<TVo>>(entities);
+    }
+
+    #endregion
+
+    #region 工具方法
+
+    /// <summary>
+    /// 执行带重试的异步操作（乐观锁冲突时自动重试）
+    /// </summary>
+    /// <typeparam name="TResult">返回值类型</typeparam>
+    /// <param name="action">要执行的异步操作</param>
+    /// <param name="maxRetryCount">最大重试次数，默认 3 次</param>
+    /// <param name="baseDelayMs">基础延迟毫秒数，默认 100ms</param>
+    /// <returns>操作结果</returns>
+    /// <remarks>
+    /// 重试策略：指数退避（100ms, 200ms, 400ms...）
+    /// 仅捕获 ConcurrencyException 进行重试
+    /// </remarks>
+    public async Task<TResult> ExecuteWithRetryAsync<TResult>(
+        Func<Task<TResult>> action,
+        int maxRetryCount = 3,
+        int baseDelayMs = 100)
+    {
+        var retryCount = 0;
+        Exception? lastException = null;
+
+        while (retryCount <= maxRetryCount)
+        {
+            try
+            {
+                return await action();
+            }
+            catch (ConcurrencyException ex)
+            {
+                lastException = ex;
+                retryCount++;
+
+                if (retryCount > maxRetryCount)
+                {
+                    throw;
+                }
+
+                // 指数退避：baseDelayMs * 2^(retryCount-1)
+                var delayMs = baseDelayMs * (int)Math.Pow(2, retryCount - 1);
+                await Task.Delay(delayMs);
+            }
+        }
+
+        // 理论上不会执行到这里，但为了类型安全
+        throw lastException ?? new ConcurrencyException("重试失败");
+    }
+
+    /// <summary>
+    /// 获取或创建实体（如果不存在则创建）
+    /// </summary>
+    /// <param name="predicate">查询条件</param>
+    /// <param name="createFactory">创建实体的工厂方法</param>
+    /// <returns>已存在或新创建的实体</returns>
+    public async Task<TEntity> GetOrCreateAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        Func<TEntity> createFactory)
+    {
+        var existing = await _baseRepository.QueryFirstAsync(predicate);
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        var newEntity = createFactory();
+        await _baseRepository.AddAsync(newEntity);
+        return newEntity;
     }
 
     #endregion
