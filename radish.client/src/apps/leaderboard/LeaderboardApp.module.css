@@ -8,9 +8,50 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   padding-bottom: 16px;
   border-bottom: 2px solid #e0e0e0;
+}
+
+/* Tab 切换样式 */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  background: #f5f5f5;
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.tabActive {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: transparent;
+  color: white;
+}
+
+.tabActive:hover {
+  background: linear-gradient(135deg, #5568d3 0%, #653d8c 100%);
+  color: white;
 }
 
 .title {
@@ -171,6 +212,33 @@
   color: #999;
 }
 
+.secondaryValue {
+  font-size: 11px;
+  color: #bbb;
+  margin-top: 2px;
+}
+
+/* 商品排行榜样式 */
+.productIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  color: #667eea;
+}
+
+.productPrice {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #ff9800;
+  font-weight: 500;
+}
+
 .pagination {
   display: flex;
   justify-content: center;
@@ -224,6 +292,15 @@
     gap: 12px;
   }
 
+  .tabs {
+    gap: 6px;
+  }
+
+  .tab {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
   .item {
     padding: 12px 16px;
   }
@@ -239,5 +316,10 @@
 
   .expValue {
     font-size: 18px;
+  }
+
+  .productIcon {
+    width: 40px;
+    height: 40px;
   }
 }
