@@ -1,10 +1,10 @@
 using System.Linq.Expressions;
 using AutoMapper;
-using Radish.IRepository;
-using Radish.IService;
+using Radish.IRepository.Base;
+using Radish.IService.Base;
 using SqlSugar;
 
-namespace Radish.Service;
+namespace Radish.Service.Base;
 
 public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntity : class, new()
 {

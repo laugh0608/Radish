@@ -3,10 +3,14 @@ using Autofac;
 using Autofac.Extras.DynamicProxy;
 using Radish.Extension.AopExtension;
 using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.IService;
+using Radish.IService.Base;
 using Radish.Repository;
+using Radish.Repository.Base;
 using Radish.Repository.UnitOfWorks;
 using Radish.Service;
+using Radish.Service.Base;
 
 namespace Radish.Extension.AutofacExtension;
 

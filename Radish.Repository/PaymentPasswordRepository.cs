@@ -1,5 +1,6 @@
 using Radish.IRepository;
 using Radish.Model.Models;
+using Radish.Repository.Base;
 using Radish.Repository.UnitOfWorks;
 using SqlSugar;
 

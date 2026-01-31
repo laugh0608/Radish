@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using SqlSugar;
 
-namespace Radish.IService;
+namespace Radish.IService.Base;
 
 public interface IBaseService<TEntity, TVo> where TEntity : class
 {

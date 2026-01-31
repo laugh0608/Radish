@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Radish.Model.LogModels;
 using Radish.Model.ViewModels;
 using Radish.IService;
+using Radish.IService.Base;
 using Serilog;
 
 namespace Radish.Extension.AuditLogExtension;
