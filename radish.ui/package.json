@@ -19,7 +19,7 @@
   "dependencies": {
     "@iconify-json/mdi": "^1.0.0",
     "@iconify/react": "^6.0.2",
-    "@radish/api": "*",
+    "@radish/http": "*",
     "antd": "^6.1.0",
     "date-fns": "^4.1.0",
     "recharts": "^3.7.0"
