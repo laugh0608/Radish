@@ -57,9 +57,14 @@ export const StatisticsOverview = ({
     );
   }
 
-  const totalIncome = data.monthlyIncome.reduce((sum, amount) => sum + amount, 0);
-  const totalExpense = data.monthlyExpense.reduce((sum, amount) => sum + amount, 0);
+  // 从趋势数据中计算收入和支出总额
+  const trendData = data.voTrendData || [];
+  const totalIncome = trendData.reduce((sum, item) => sum + item.voIncome, 0);
+  const totalExpense = trendData.reduce((sum, item) => sum + item.voExpense, 0);
   const netProfit = totalIncome - totalExpense;
+
+  // 分类统计数据
+  const categoryStats = data.voCategoryStats || [];
 
   const getTimeRangeText = () => {
     switch (timeRange) {
@@ -128,7 +133,7 @@ export const StatisticsOverview = ({
             <div className={styles.quickStatIcon}>🎯</div>
             <div className={styles.quickStatContent}>
               <div className={styles.quickStatValue}>
-                {data.categoryStats.reduce((sum, cat) => sum + cat.count, 0)}
+                {categoryStats.reduce((sum, cat) => sum + cat.voCount, 0)}
               </div>
               <div className={styles.quickStatLabel}>总交易次数</div>
             </div>
@@ -138,7 +143,7 @@ export const StatisticsOverview = ({
             <div className={styles.quickStatIcon}>📅</div>
             <div className={styles.quickStatContent}>
               <div className={styles.quickStatValue}>
-                {Math.round(totalIncome / data.monthlyIncome.length)}
+                {trendData.length > 0 ? Math.round(totalIncome / trendData.length) : 0}
               </div>
               <div className={styles.quickStatLabel}>日均收入</div>
             </div>
@@ -148,7 +153,7 @@ export const StatisticsOverview = ({
             <div className={styles.quickStatIcon}>🏆</div>
             <div className={styles.quickStatContent}>
               <div className={styles.quickStatValue}>
-                {data.categoryStats.length > 0 ? data.categoryStats[0].category : '无'}
+                {categoryStats.length > 0 ? categoryStats[0].voCategory : '无'}
               </div>
               <div className={styles.quickStatLabel}>主要收入来源</div>
             </div>
@@ -170,21 +175,21 @@ export const StatisticsOverview = ({
       <div className={styles.categoryRanking}>
         <h4 className={styles.categoryTitle}>收入分类排行</h4>
         <div className={styles.categoryList}>
-          {data.categoryStats.slice(0, 5).map((category, index) => (
-            <div key={category.category} className={styles.categoryItem}>
+          {categoryStats.slice(0, 5).map((category, index) => (
+            <div key={category.voCategory} className={styles.categoryItem}>
               <div className={styles.categoryRank}>#{index + 1}</div>
               <div className={styles.categoryInfo}>
-                <div className={styles.categoryName}>{category.category}</div>
-                <div className={styles.categoryCount}>{category.count} 次</div>
+                <div className={styles.categoryName}>{category.voCategory}</div>
+                <div className={styles.categoryCount}>{category.voCount} 次</div>
               </div>
               <div className={styles.categoryAmount}>
-                {formatCoinAmount(category.amount, true, useWhiteRadish)}
+                {formatCoinAmount(category.voAmount, true, useWhiteRadish)}
               </div>
               <div className={styles.categoryProgress}>
                 <div
                   className={styles.categoryProgressBar}
                   style={{
-                    width: `${(category.amount / data.categoryStats[0].amount) * 100}%`
+                    width: `${categoryStats[0]?.voAmount ? (category.voAmount / categoryStats[0].voAmount) * 100 : 0}%`
                   }}
                 ></div>
               </div>
