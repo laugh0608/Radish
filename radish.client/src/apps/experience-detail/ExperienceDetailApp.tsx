@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
-import { LineChart, PieChart } from '@radish/ui';
+import { LineChart, PieChart, ExperienceBar } from '@radish/ui';
 import { experienceApi, type ExperienceData, type ExpTransactionData } from '@/api/experience';
 import { Icon } from '@radish/ui';
 import styles from './ExperienceDetailApp.module.css';
@@ -119,8 +119,8 @@ export const ExperienceDetailApp = () => {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>
-          <Icon icon="mdi:chart-line" size={32} />
-          经验值详情
+          <Icon icon="mdi:star-circle" size={32} />
+          等级
         </h1>
       </div>
 
@@ -143,6 +143,18 @@ export const ExperienceDetailApp = () => {
 
       {!loading && !error && experience && (
         <>
+          {/* 经验条 */}
+          <div className={styles.experienceBarSection}>
+            <ExperienceBar
+              data={experience}
+              size="large"
+              showLevel={true}
+              showProgress={true}
+              showTooltip={true}
+              animated={true}
+            />
+          </div>
+
           {/* 经验值概览 */}
           <div className={styles.overview}>
             <div className={styles.statCard}>
