@@ -3,7 +3,6 @@
     <File Path=".dockerignore" />
     <File Path=".gitattributes" />
     <File Path=".gitignore" />
-    <File Path="LICENSE.txt" />
     <File Path="README.md" />
     <File Path="AGENTS.md" />
     <File Path="Radish.sln.DotSettings.user" />
@@ -12,8 +11,10 @@
     <File Path="start.ps1" />
     <File Path="start.sh" />
     <File Path="Directory.Build.props" />
+    <File Path="LICENSE" />
     <File Path="package.json" />
     <File Path="Radish.slnLaunch" />
+    <File Path="tsconfig.base.json" />
   </Folder>
   <Folder Name="/test/">
     <Project Path="Radish.Api.Tests\Radish.Api.Tests.csproj" />
