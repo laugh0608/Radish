@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Radish.Common.CacheTool;
 using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 

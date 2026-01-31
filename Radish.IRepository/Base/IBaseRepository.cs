@@ -1,7 +1,7 @@
 using System.Linq.Expressions;
 using SqlSugar;
 
-namespace Radish.IRepository;
+namespace Radish.IRepository.Base;
 
 /// <summary>泛型基类仓储接口</summary>
 // 这里的 where TEntity : class 的意思是对泛型进行约束，必须是类 class

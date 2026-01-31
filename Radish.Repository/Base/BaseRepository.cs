@@ -1,15 +1,16 @@
 using System.Linq.Expressions;
-using Radish.IRepository;
-using Radish.Repository.UnitOfWorks;
-using SqlSugar;
 using System.Reflection;
 using Radish.Common.CoreTool;
 using Radish.Common.TenantTool;
 using Radish.Infrastructure.Tenant;
+using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.Model;
 using Radish.Model.Root;
+using Radish.Repository.UnitOfWorks;
+using SqlSugar;
 
-namespace Radish.Repository;
+namespace Radish.Repository.Base;
 
 /// <summary>泛型基类仓储</summary>
 // 这里的 where TEntity : class, new() 的意思是对泛型进行约束，首先必须是类 class，其次必须可以被实例化 new()
@@ -17,6 +18,10 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 {
     private readonly SqlSugarScope _dbScopeBase;
     private readonly IUnitOfWorkManage _unitOfWorkManage;
+
+    /// <summary>供 BaseRepository 及子类使用的 ISqlSugarClient 数据库实例</summary>
+    /// <remarks>支持多租户切换数据库</remarks>
+    protected ISqlSugarClient DbProtectedClient => DbClientBase;
 
     /// <summary>供 BaseRepository 内部使用 ISqlSugarClient 数据库实例</summary>
     /// <remarks>支持多租户切换数据库</remarks>

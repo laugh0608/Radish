@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Radish.Api.Hubs;
 using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 

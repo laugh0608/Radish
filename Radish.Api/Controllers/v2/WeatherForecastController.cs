@@ -7,6 +7,7 @@ using Radish.Common;
 using Radish.Common.CacheTool;
 using Radish.Common.CoreTool;
 using Radish.IService;
+using Radish.IService.Base;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Model.LogModels;

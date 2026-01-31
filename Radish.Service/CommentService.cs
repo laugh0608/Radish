@@ -3,10 +3,12 @@ using Microsoft.Extensions.Options;
 using Radish.Common.CacheTool;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Service.Base;
 using Serilog;
 using SqlSugar;
 

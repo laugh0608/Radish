@@ -1,3 +1,4 @@
+using Radish.IRepository.Base;
 using Radish.Model.Models;
 
 namespace Radish.IRepository;

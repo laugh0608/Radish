@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Serilog;

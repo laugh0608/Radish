@@ -1,8 +1,10 @@
 using AutoMapper;
 using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Radish.Service.Base;
 
 namespace Radish.Service;
 
