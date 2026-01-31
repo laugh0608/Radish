@@ -1,7 +1,7 @@
 {
-  "name": "@radish/api",
+  "name": "@radish/http",
   "version": "26.1.1",
-  "description": "Radish API 客户端库",
+  "description": "Radish HTTP 客户端库",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",

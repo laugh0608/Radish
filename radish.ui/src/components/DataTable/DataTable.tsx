@@ -1,6 +1,6 @@
 import { Table, Empty } from 'antd';
 import type { TableProps as AntTableProps, TableColumnsType } from 'antd';
-import type { PagedResponse } from '@radish/api';
+import type { PagedResponse } from '@radish/http';
 
 /**
  * DataTable 组件属性

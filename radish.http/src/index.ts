@@ -1,5 +1,5 @@
 /**
- * @radish/api - Radish API 客户端库
+ * @radish/http - Radish HTTP 客户端库
  *
  * 提供统一的 API 请求封装，包括：
  * - 请求/响应拦截器
