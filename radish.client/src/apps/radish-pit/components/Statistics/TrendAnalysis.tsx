@@ -14,12 +14,12 @@ interface TrendAnalysisProps {
  * 趋势分析组件 - 使用面积图展示收支趋势
  */
 export const TrendAnalysis = ({ data, loading, error, displayMode, timeRange }: TrendAnalysisProps) => {
-  // 准备图表数据
-  const chartData = data?.trendData.map((item) => ({
-    name: item.date,
-    收入: item.income,
-    支出: item.expense,
-    净收入: item.income - item.expense
+  // 准备图表数据（直接使用 vo 前缀字段）
+  const chartData = data?.voTrendData.map((item) => ({
+    name: item.voDate,
+    收入: item.voIncome,
+    支出: item.voExpense,
+    净收入: item.voIncome - item.voExpense
   })) || [];
 
   // 根据显示模式设置颜色

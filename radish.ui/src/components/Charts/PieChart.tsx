@@ -4,7 +4,8 @@ import {
   Cell,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  type PieLabelRenderProps
 } from 'recharts';
 import { ChartContainer } from './ChartContainer';
 
@@ -12,6 +13,7 @@ export interface PieChartDataPoint {
   name: string;
   value: number;
   color?: string;
+  [key: string]: string | number | undefined;  // 添加索引签名以兼容 recharts
 }
 
 export interface PieChartProps {
@@ -53,9 +55,12 @@ export const PieChart = ({
   showLabel = true,
   className
 }: PieChartProps) => {
-  const renderLabel = (entry: PieChartDataPoint) => {
-    const percent = ((entry.value / data.reduce((sum, item) => sum + item.value, 0)) * 100).toFixed(1);
-    return `${entry.name}: ${percent}%`;
+  const renderLabel = (props: PieLabelRenderProps) => {
+    const { name, value } = props;
+    if (typeof value !== 'number' || !name) return '';
+    const total = data.reduce((sum, item) => sum + item.value, 0);
+    const percent = ((value / total) * 100).toFixed(1);
+    return `${name}: ${percent}%`;
   };
 
   return (

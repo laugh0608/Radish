@@ -18,14 +18,14 @@ import {
   CheckOutlined,
   CloseOutlined,
 } from '@radish/ui';
-import { getRoleList, deleteRole, toggleRoleStatus, type Role } from '@/api/roleApi';
+import { getRoleList, deleteRole, toggleRoleStatus, type RoleVo } from '@/api/roleApi';
 import { RoleForm } from './RoleForm';
 import { log } from '@/utils/logger';
 import './RoleList.css';
 
 export const RoleList = () => {
   useDocumentTitle('角色管理');
-  const [roles, setRoles] = useState<Role[]>([]);
+  const [roles, setRoles] = useState<RoleVo[]>([]);
   const [loading, setLoading] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
@@ -57,16 +57,16 @@ export const RoleList = () => {
   };
 
   // 编辑角色
-  const handleEdit = (record: Role) => {
+  const handleEdit = (record: RoleVo) => {
     setFormMode('edit');
-    setEditingRoleId(record.id);
+    setEditingRoleId(record.voId);
     setFormVisible(true);
   };
 
   // 删除角色
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (voId: number) => {
     try {
-      await deleteRole(id);
+      await deleteRole(voId);
       message.success('删除角色成功');
       loadRoles();
     } catch (error) {
@@ -76,9 +76,9 @@ export const RoleList = () => {
   };
 
   // 启用/禁用角色
-  const handleToggleStatus = async (id: number, enabled: boolean) => {
+  const handleToggleStatus = async (voId: number, enabled: boolean) => {
     try {
-      await toggleRoleStatus(id, enabled);
+      await toggleRoleStatus(voId, enabled);
       message.success(enabled ? '启用角色成功' : '禁用角色成功');
       loadRoles();
     } catch (error) {
@@ -106,36 +106,36 @@ export const RoleList = () => {
     return scopeMap[scope] || '未知';
   };
 
-  // 表格列定义
-  const columns: TableColumnsType<Role> = [
+  // 表格列定义（使用 vo 前缀字段）
+  const columns: TableColumnsType<RoleVo> = [
     {
       title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
+      dataIndex: 'voId',
+      key: 'voId',
       width: 80,
     },
     {
       title: '角色名称',
-      dataIndex: 'roleName',
-      key: 'roleName',
+      dataIndex: 'voRoleName',
+      key: 'voRoleName',
       width: 150,
     },
     {
       title: '角色描述',
-      dataIndex: 'roleDescription',
-      key: 'roleDescription',
+      dataIndex: 'voRoleDescription',
+      key: 'voRoleDescription',
       ellipsis: true,
     },
     {
       title: '排序',
-      dataIndex: 'orderSort',
-      key: 'orderSort',
+      dataIndex: 'voOrderSort',
+      key: 'voOrderSort',
       width: 80,
     },
     {
       title: '权限范围',
-      dataIndex: 'authorityScope',
-      key: 'authorityScope',
+      dataIndex: 'voAuthorityScope',
+      key: 'voAuthorityScope',
       width: 120,
       render: (scope: number) => getAuthorityScopeText(scope),
     },
@@ -144,22 +144,22 @@ export const RoleList = () => {
       key: 'status',
       width: 100,
       render: (_, record) => (
-        <Tag color={record.isEnabled ? 'success' : 'error'}>
-          {record.isEnabled ? '启用' : '禁用'}
+        <Tag color={record.voIsEnabled ? 'success' : 'error'}>
+          {record.voIsEnabled ? '启用' : '禁用'}
         </Tag>
       ),
     },
     {
       title: '创建时间',
-      dataIndex: 'createTime',
-      key: 'createTime',
+      dataIndex: 'voCreateTime',
+      key: 'voCreateTime',
       width: 180,
       render: (time: string) => time ? new Date(time).toLocaleString('zh-CN') : '-',
     },
     {
       title: '创建者',
-      dataIndex: 'createBy',
-      key: 'createBy',
+      dataIndex: 'voCreateBy',
+      key: 'voCreateBy',
       width: 120,
     },
     {
@@ -178,17 +178,17 @@ export const RoleList = () => {
             编辑
           </Button>
           <Button
-            variant={record.isEnabled ? 'danger' : 'primary'}
+            variant={record.voIsEnabled ? 'danger' : 'primary'}
             size="small"
-            icon={record.isEnabled ? <CloseOutlined /> : <CheckOutlined />}
-            onClick={() => handleToggleStatus(record.id, !record.isEnabled)}
+            icon={record.voIsEnabled ? <CloseOutlined /> : <CheckOutlined />}
+            onClick={() => handleToggleStatus(record.voId, !record.voIsEnabled)}
           >
-            {record.isEnabled ? '禁用' : '启用'}
+            {record.voIsEnabled ? '禁用' : '启用'}
           </Button>
           <Popconfirm
             title="确认删除"
             description="确定要删除这个角色吗？此操作不可恢复。"
-            onConfirm={() => handleDelete(record.id)}
+            onConfirm={() => handleDelete(record.voId)}
             okText="确定"
             cancelText="取消"
           >
@@ -229,7 +229,7 @@ export const RoleList = () => {
       <Table
         columns={columns}
         dataSource={roles}
-        rowKey="id"
+        rowKey="voId"
         loading={loading}
         pagination={{
           showSizeChanger: true,

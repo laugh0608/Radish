@@ -1,8 +1,9 @@
 /**
  * 用户相关的 API 调用
+ * 直接使用后端 Vo 字段名，不做映射
  */
 
-import { parseApiResponseWithI18n, apiGet, configureApiClient, type ApiResponse } from '@radish/ui';
+import { apiGet, configureApiClient } from '@radish/ui';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 
@@ -12,20 +13,10 @@ configureApiClient({
 });
 
 /**
- * 用户提及选项（用于@提及功能）
+ * 用户提及选项（使用 vo 前缀，与后端 VO 保持一致）
  */
 export interface UserMentionOption {
-  id: string | number;  // 后端返回long类型会被序列化为字符串
-  userName: string;
-  displayName?: string | null;
-  avatar?: string | null;
-}
-
-/**
- * 后端返回的用户提及视图模型（带Vo前缀）
- */
-interface UserMentionVo {
-  voId: number;
+  voId: number | string;  // 后端返回long类型会被序列化为字符串
   voUserName: string;
   voDisplayName?: string | null;
   voAvatar?: string | null;
@@ -47,25 +38,14 @@ export async function searchUsersForMention(
     return [];
   }
 
-  const response = await apiGet<UserMentionVo[]>(
+  const response = await apiGet<UserMentionOption[]>(
     `/api/v1/User/SearchForMention?keyword=${encodeURIComponent(keyword)}&limit=${limit}`
   );
 
   if (!response.ok || !response.data) {
-    // 使用 i18n 解析错误消息
-    const errorResponse = response as ApiResponse<unknown>;
-    if ('messageKey' in errorResponse) {
-      const parsed = parseApiResponseWithI18n(errorResponse, t);
-      throw new Error(parsed.message || '搜索用户失败');
-    }
     throw new Error(response.message || '搜索用户失败');
   }
 
-  // 将后端Vo格式转换为前端格式
-  return response.data.map(user => ({
-    id: user.voId,
-    userName: user.voUserName,
-    displayName: user.voDisplayName,
-    avatar: user.voAvatar
-  }));
+  // 直接返回后端数据，不做字段映射
+  return response.data;
 }

@@ -1,10 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import styles from './UserMention.module.css';
 
+/**
+ * 用户提及选项（纯 UI 接口，不依赖后端命名约定）
+ * 业务层负责将后端 VO 转换为此接口
+ */
 export interface UserMentionOption {
+  /** 用户 ID */
   id: number | string;  // 支持后端long类型序列化为字符串
+  /** 用户名 */
   userName: string;
+  /** 显示名称 */
   displayName?: string | null;
+  /** 头像 URL */
   avatar?: string | null;
 }
 

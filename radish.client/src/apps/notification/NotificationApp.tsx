@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import { NotificationList, type NotificationItemData } from '@radish/ui';
-import { notificationApi, type Notification } from '@/api/notification';
-import { useNotificationStore } from '@/stores/notificationStore';
+import { notificationApi, type UserNotificationVo } from '@/api/notification';
+import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
 import { toast } from '@radish/ui';
 import styles from './NotificationApp.module.css';
@@ -28,17 +28,18 @@ export const NotificationApp = () => {
     for (const n of recentNotifications) {
       if (seen.has(n.id)) continue;
       seen.add(n.id);
+      // Store 的 NotificationItem 字段与 UI 的 NotificationItemData 字段一致
       converted.push({
         id: n.id,
         type: n.type,
         title: n.title,
         content: n.content,
         priority: 1,
-        businessType: n.sourceType,
-        businessId: n.sourceId,
-        triggerId: n.actorId,
-        triggerName: n.actorName,
-        triggerAvatar: n.actorAvatar,
+        businessType: n.businessType,
+        businessId: n.businessId,
+        triggerId: n.triggerId,
+        triggerName: n.triggerName,
+        triggerAvatar: n.triggerAvatar,
         isRead: n.isRead,
         createdAt: n.createdAt
       });
@@ -62,20 +63,25 @@ export const NotificationApp = () => {
 
         if (result && result.data) {
           const store = useNotificationStore.getState();
+          // 从嵌套的 UserNotificationVo 结构转换为 NotificationItem
+          // 这是业务层的职责：将后端 VO 转换为内部数据结构
           store.setRecentNotifications(
-            result.data.map((n: Notification) => ({
-            id: n.voId,
-            type: mapNotificationTypeToStore(n.voType),
-            title: n.voTitle,
-            content: n.voContent,
-            isRead: n.voIsRead,
-            createdAt: n.voCreateTime,
-            sourceId: n.voRelatedId,
-            sourceType: n.voRelatedType,
-            actorId: 0,
-            actorName: '',
-            actorAvatar: ''
-          }))
+            result.data.map((n: UserNotificationVo): NotificationItem => {
+              const notification = n.voNotification;
+              return {
+                id: n.voId,
+                type: mapNotificationTypeToStore(notification?.voType || 'System'),
+                title: notification?.voTitle || '',
+                content: notification?.voContent || '',
+                isRead: n.voIsRead,
+                createdAt: n.voCreateTime,
+                businessId: notification?.voBusinessId,
+                businessType: notification?.voBusinessType,
+                triggerId: notification?.voTriggerId,
+                triggerName: notification?.voTriggerName,
+                triggerAvatar: notification?.voTriggerAvatar
+              };
+            })
           );
         }
       } catch (error) {
@@ -200,6 +206,7 @@ export const NotificationApp = () => {
 
 /**
  * 将 API 返回的通知类型映射到 Store 的类型
+ * 注意：这是类型枚举映射，不是字段名映射
  */
 function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention' | 'like' | 'follow' {
   const typeMap: Record<string, 'system' | 'reply' | 'mention' | 'like' | 'follow'> = {

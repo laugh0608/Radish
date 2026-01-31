@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radish/api": "*",
     "@radish/ui": "*",
     "dayjs": "^1.11.19",
     "react": "^19.1.1",

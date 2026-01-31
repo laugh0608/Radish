@@ -3,19 +3,33 @@ import { create } from 'zustand';
 /** 通知类型 */
 export type NotificationType = 'system' | 'reply' | 'mention' | 'like' | 'follow';
 
-/** 通知项 */
+/**
+ * 通知项（Store 内部使用，与后端 VO 字段对应）
+ * 注意：这是 Store 内部的数据结构，UI 组件使用 NotificationItemData
+ */
 export interface NotificationItem {
+  /** 通知 ID */
   id: number;
+  /** 通知类型 */
   type: NotificationType;
+  /** 通知标题 */
   title: string;
+  /** 通知内容 */
   content: string;
+  /** 是否已读 */
   isRead: boolean;
+  /** 创建时间 */
   createdAt: string;
-  sourceId?: number;
-  sourceType?: string;
-  actorId?: number;
-  actorName?: string;
-  actorAvatar?: string;
+  /** 业务 ID */
+  businessId?: number | null;
+  /** 业务类型 */
+  businessType?: string | null;
+  /** 触发者 ID */
+  triggerId?: number | null;
+  /** 触发者名称 */
+  triggerName?: string | null;
+  /** 触发者头像 */
+  triggerAvatar?: string | null;
 }
 
 /** 连接状态 */

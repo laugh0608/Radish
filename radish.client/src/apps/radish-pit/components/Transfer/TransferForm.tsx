@@ -90,8 +90,8 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
 
   const handleUserSelect = (user: UserMentionOption) => {
     // 将用户ID转换为数字（后端返回的可能是字符串）
-    const userId = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
-    const displayName = user.displayName || user.userName || '未知用户';
+    const userId = typeof user.voId === 'string' ? parseInt(user.voId, 10) : user.voId;
+    const displayName = user.voDisplayName || user.voUserName || '未知用户';
 
     setFormData(prev => ({
       ...prev,
@@ -211,24 +211,24 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
               {showUserDropdown && userSearchResults.length > 0 && (
                 <div className={styles.userDropdown}>
                   {userSearchResults.map((user) => {
-                    const displayName = user.displayName || user.userName || '未知用户';
+                    const displayName = user.voDisplayName || user.voUserName || '未知用户';
                     return (
                       <div
-                        key={user.id}
+                        key={user.voId}
                         className={styles.userOption}
                         onClick={() => handleUserSelect(user)}
                       >
                         <div className={styles.userAvatar}>
-                          {user.avatar ? (
-                            <img src={user.avatar} alt={displayName} />
+                          {user.voAvatar ? (
+                            <img src={user.voAvatar} alt={displayName} />
                           ) : (
                             <span>{displayName.charAt(0)}</span>
                           )}
                         </div>
                         <div className={styles.userInfo}>
                           <div className={styles.userName}>{displayName}</div>
-                          {user.displayName && user.userName && user.displayName !== user.userName && (
-                            <div className={styles.userLoginName}>@{user.userName}</div>
+                          {user.voDisplayName && user.voUserName && user.voDisplayName !== user.voUserName && (
+                            <div className={styles.userLoginName}>@{user.voUserName}</div>
                           )}
                         </div>
                       </div>

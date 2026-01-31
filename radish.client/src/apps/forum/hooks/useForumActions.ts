@@ -50,7 +50,7 @@ export interface ForumActionsHandlers {
   handleCreateComment: (content: string) => Promise<void>;
   handleReplyComment: (commentId: number, authorName: string) => void;
   handleCancelReply: () => void;
-  handleCommentLike: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
+  handleCommentLike: (commentId: number) => Promise<{ voIsLiked: boolean; voLikeCount: number }>;
   handleEditComment: (commentId: number, newContent: string) => Promise<void>;
   handleDeleteComment: (commentId: number) => void;
   confirmDeleteComment: () => Promise<void>;
@@ -188,7 +188,7 @@ export const useForumActions = (
       // 以服务端返回为准，修正本地状态与点赞数
       const result = await likePost(postId, t);
       const reconciledLikedPosts = new Set(optimisticLikedPosts);
-      if (result.isLiked) {
+      if (result.voIsLiked) {
         reconciledLikedPosts.add(postId);
       } else {
         reconciledLikedPosts.delete(postId);
@@ -198,7 +198,7 @@ export const useForumActions = (
 
       setSelectedPost((current) =>
         current && current.voId === postId
-          ? { ...current, voLikeCount: result.likeCount }
+          ? { ...current, voLikeCount: result.voLikeCount }
           : current
       );
     } catch (err) {
@@ -305,7 +305,7 @@ export const useForumActions = (
   // 点赞评论
   const handleCommentLike = async (
     commentId: number
-  ): Promise<{ isLiked: boolean; likeCount: number }> => {
+  ): Promise<{ voIsLiked: boolean; voLikeCount: number }> => {
     if (!isAuthenticated) {
       setError('请先登录后再点赞');
       throw new Error('未登录');
@@ -314,6 +314,7 @@ export const useForumActions = (
     setError(null);
     try {
       const result = await toggleCommentLike(commentId, t);
+      // 直接返回后端的 vo 前缀字段，不做映射
       return result;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

@@ -242,23 +242,8 @@ export const useStatistics = (timeRange: 'month' | 'quarter' | 'year' = 'month')
       // 调用统计数据API
       const statistics = await coinApi.getStatistics(timeRange);
 
-      // 转换后端数据格式为前端格式
-      const transformedData: StatisticsData = {
-        monthlyIncome: [],
-        monthlyExpense: [],
-        categoryStats: statistics.voCategoryStats.map(item => ({
-          category: item.voCategory,
-          amount: item.voAmount,
-          count: item.voCount
-        })),
-        trendData: statistics.voTrendData.map(item => ({
-          date: item.voDate,
-          income: item.voIncome,
-          expense: item.voExpense
-        }))
-      };
-
-      setData(transformedData);
+      // 直接使用后端返回的 Vo 字段，不做映射
+      setData(statistics);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '获取统计数据失败';
       setError(errorMessage);
