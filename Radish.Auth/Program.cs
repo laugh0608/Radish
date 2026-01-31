@@ -134,6 +134,15 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+// 配置 Antiforgery，确保在 Gateway 代理场景下 Cookie 能正确设置
+// SameSite=None 需要 Secure=true，通过 ForwardedHeaders 识别原始 HTTPS 请求
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = ".Radish.Auth.Antiforgery";
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
 // 添加控制器 + 视图（用于登录页）
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
@@ -158,7 +167,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         // SameSite=None 允许跨站请求携带 Cookie（Gateway 代理场景必需）
         // 注意：SameSite=None 必须配合 Secure=true
         options.Cookie.SameSite = SameSiteMode.None;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        // 必须使用 Always，因为 SameSite=None 要求 Secure=true
+        // ForwardedHeaders 中间件会根据 X-Forwarded-Proto 识别原始 HTTPS 请求
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
 
         // 会话过期时间
         options.ExpireTimeSpan = TimeSpan.FromHours(2);
