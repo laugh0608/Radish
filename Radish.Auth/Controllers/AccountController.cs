@@ -148,16 +148,6 @@ public class AccountController : Controller
         return Ok(successMessage);
     }
 
-    [HttpPost]
-    public async Task<IActionResult> Logout()
-    {
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-
-        var message = _errorsLocalizer["auth.logout.success"];
-
-        return Ok(message);
-    }
-
     /// <summary>
     /// 注册页面（GET）
     /// </summary>

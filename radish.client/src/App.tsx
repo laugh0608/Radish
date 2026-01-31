@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
 import { parseApiResponse, type ApiResponse } from '@radish/ui';
-import { notificationHub } from '@/services/notificationHub';
+import { redirectToLogin, logout } from '@/services/auth';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from './stores/userStore';
 import { LevelUpModal } from '@radish/ui';
@@ -141,11 +141,11 @@ function App() {
                     <h2>{t('auth.sectionTitle')}</h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <button type="button" onClick={() => handleLogin(apiBaseUrl)}>
+                            <button type="button" onClick={() => redirectToLogin()}>
                                 {t('auth.login')}
                             </button>
                             {currentUser && (
-                                <button type="button" onClick={() => handleLogout(apiBaseUrl)}>
+                                <button type="button" onClick={() => logout()}>
                                     退出登录
                                 </button>
                             )}
@@ -349,54 +349,6 @@ function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
         ...rest,
         headers: finalHeaders,
     });
-}
-
-function handleLogin(_apiBaseUrl: string) {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    const redirectUri = `${window.location.origin}/oidc/callback`;
-    const authServerBaseUrl = getAuthBaseUrl();
-
-    const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
-    authorizeUrl.searchParams.set('client_id', 'radish-client');
-    authorizeUrl.searchParams.set('response_type', 'code');
-    authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-    // 目前后端已为 radish-client 配置了 radish-api Scope，这里只请求资源 scope，避免无关 scope 带来 invalid_scope 问题
-    authorizeUrl.searchParams.set('scope', 'radish-api');
-
-    // 🌍 传递当前语言设置到 Auth Server，实现国际化统一
-    const currentLanguage = i18n.language || 'zh';
-    authorizeUrl.searchParams.set('culture', currentLanguage);
-    authorizeUrl.searchParams.set('ui-culture', currentLanguage);
-
-    window.location.href = authorizeUrl.toString();
-}
-
-function handleLogout(_apiBaseUrl: string) {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    // 清理本地保存的 Token
-    window.localStorage.removeItem('access_token');
-    window.localStorage.removeItem('refresh_token');
-
-    // 使用 OIDC 标准的 endsession endpoint 实现 Single Sign-Out
-    const postLogoutRedirectUri = window.location.origin;
-    const authServerBaseUrl = getAuthBaseUrl();
-
-    const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
-    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
-    logoutUrl.searchParams.set('client_id', 'radish-client');
-
-    // 🌍 传递当前语言设置
-    const currentLanguage = i18n.language || 'zh';
-    logoutUrl.searchParams.set('culture', currentLanguage);
-
-    // 重定向到 OIDC logout endpoint，Auth Server 会清除 session 并重定向回来
-    window.location.href = logoutUrl.toString();
 }
 
 function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {

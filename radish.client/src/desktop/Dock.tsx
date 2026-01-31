@@ -3,13 +3,14 @@ import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
+import { redirectToLogin, logout, hasAccessToken } from '@/services/auth';
 import { getAppById } from './AppRegistry';
 import { Icon } from '@radish/ui';
 import { CoinBalance } from './components/CoinBalance';
 import { ExperienceDisplay } from './components/ExperienceDisplay';
 import i18n from '@/i18n';
 import type { ApiResponse } from '@radish/ui';
-import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
+import { getApiBaseUrl } from '@/config/env';
 import styles from './Dock.module.css';
 
 /**
@@ -31,14 +32,6 @@ export const Dock = () => {
   const [pollingUnreadCount, setPollingUnreadCount] = useState(0); // 轮询降级时的未读数
 
   const loggedIn = isAuthenticated();
-  const hasAccessToken = () => {
-    if (typeof window === 'undefined') return false;
-    try {
-      return Boolean(window.localStorage.getItem('access_token'));
-    } catch {
-      return false;
-    }
-  };
 
   // 根据连接状态决定显示哪个未读数
   const unreadMessages = connectionState === 'connected' ? storeUnreadCount : pollingUnreadCount;
@@ -115,42 +108,9 @@ export const Dock = () => {
     });
   }
 
-  const handleLoginClick = () => {
-    if (typeof window === 'undefined') return;
-
-    const redirectUri = `${window.location.origin}/oidc/callback`;
-    const authServerBaseUrl = getAuthBaseUrl();
-    const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
-    authorizeUrl.searchParams.set('client_id', 'radish-client');
-    authorizeUrl.searchParams.set('response_type', 'code');
-    authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-    authorizeUrl.searchParams.set('scope', 'radish-api');
-
-    const currentLanguage = i18n.language || 'zh';
-    authorizeUrl.searchParams.set('culture', currentLanguage);
-    authorizeUrl.searchParams.set('ui-culture', currentLanguage);
-
-    window.location.href = authorizeUrl.toString();
-  };
-
   const handleLogoutClick = () => {
-    if (typeof window === 'undefined') return;
-
-    window.localStorage.removeItem('access_token');
-    window.localStorage.removeItem('refresh_token');
     clearUser();
-
-    const postLogoutRedirectUri = window.location.origin;
-    const authServerBaseUrl = getAuthServerBaseUrl();
-
-    const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
-    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
-    logoutUrl.searchParams.set('client_id', 'radish-client');
-
-    const currentLanguage = i18n.language || 'zh';
-    logoutUrl.searchParams.set('culture', currentLanguage);
-
-    window.location.href = logoutUrl.toString();
+    logout();
   };
 
   const hydrateCurrentUser = async () => {
@@ -330,7 +290,7 @@ export const Dock = () => {
                         onClick={() => {
                           // 如果是通知中心，未登录时先登录
                           if (isNotification && !loggedIn && !hasAccessToken()) {
-                            handleLoginClick();
+                            redirectToLogin();
                             return;
                           }
 
@@ -373,7 +333,7 @@ export const Dock = () => {
               <button
                 type="button"
                 className={`${styles.authButton} ${loggedIn ? styles.loggedIn : styles.loggedOut}`}
-                onClick={loggedIn ? handleLogoutClick : handleLoginClick}
+                onClick={loggedIn ? handleLogoutClick : redirectToLogin}
                 title={loggedIn ? '退出登录' : '登录'}
               >
                 <Icon icon={loggedIn ? 'mdi:account-check' : 'mdi:login-variant'} size={28} />
@@ -406,7 +366,7 @@ export const Dock = () => {
                   onClick={() => {
                     // 如果是通知中心，未登录时先登录
                     if (isNotification && !loggedIn && !hasAccessToken()) {
-                      handleLoginClick();
+                      redirectToLogin();
                       return;
                     }
 
