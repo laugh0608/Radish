@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { log } from '@/utils/logger';
-import { Button, ConfirmDialog, FileUpload, Icon, Input, Modal, ExperienceBar, type ExperienceData as ExperienceBarData } from '@radish/ui';
-import { experienceApi, type ExperienceData } from '@/api/experience';
+import { Button, ConfirmDialog, FileUpload, Icon, Input, Modal } from '@radish/ui';
 import type { UploadResult } from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
 import { useTranslation } from 'react-i18next';
@@ -65,23 +64,6 @@ function resolveUrl(apiBaseUrl: string, url: string | null | undefined): string 
   return `${apiBaseUrl}/${url}`;
 }
 
-function mapExperienceToBarData(exp: ExperienceData): ExperienceBarData {
-  return {
-    userId: String(exp.voUserId),
-    currentLevel: exp.voCurrentLevel,
-    currentLevelName: exp.voLevelName,
-    currentExp: String(exp.voCurrentExp),
-    totalExp: String(exp.voTotalExp),
-    expToNextLevel: String(exp.voNextLevelExp),
-    nextLevel: exp.voCurrentLevel + 1,
-    nextLevelName: exp.voNextLevelName,
-    levelProgress: exp.voLevelProgress,
-    themeColor: exp.voThemeColor || '#4CAF50',
-    rank: exp.voRank,
-    expFrozen: exp.voExpFrozen || false,
-  };
-}
-
 function formatCoinAmount(amount: number | string | null | undefined): string {
   const parsed = typeof amount === 'string' ? Number(amount) : amount;
   const value = Number.isFinite(parsed) ? (parsed as number) : 0;
@@ -115,7 +97,6 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
 
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
   const [coinBalance, setCoinBalance] = useState<CoinBalanceInfo | null>(null);
-  const [experience, setExperience] = useState<ExperienceData | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -135,18 +116,8 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
 
   useEffect(() => {
     void loadProfile();
-    void loadExperience();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
-
-  const loadExperience = async () => {
-    try {
-      const exp = await experienceApi.getMyExperience();
-      setExperience(exp);
-    } catch (error) {
-      log.error('加载经验值失败:', error);
-    }
-  };
 
   const loadProfile = async () => {
     setLoadingProfile(true);
@@ -343,20 +314,6 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
           </Button>
         )}
       </div>
-
-      {/* 经验值条 */}
-      {experience && (
-        <div style={{ marginBottom: '24px' }}>
-          <ExperienceBar
-            data={mapExperienceToBarData(experience)}
-            size="medium"
-            showLevel={true}
-            showProgress={true}
-            showTooltip={true}
-            animated={true}
-          />
-        </div>
-      )}
 
       {(loading || loadingProfile) && (
         <div className={styles.loading}>加载中...</div>
