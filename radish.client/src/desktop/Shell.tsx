@@ -23,6 +23,7 @@ export const Shell = () => {
     const token = window.localStorage.getItem('access_token');
 
     // 防止 React StrictMode 导致重复启动连接
+    // 注意：这里是 WebSocket 连接的唯一启动点，其他组件不应再启动连接
     if (token && !hasStartedRef.current) {
       hasStartedRef.current = true;
       void notificationHub.start();
