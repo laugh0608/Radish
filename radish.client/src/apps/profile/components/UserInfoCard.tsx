@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { log } from '@/utils/logger';
-import { Button, ConfirmDialog, FileUpload, Icon, Input, Modal, ExperienceBar } from '@radish/ui';
+import { Button, ConfirmDialog, FileUpload, Icon, Input, Modal, ExperienceBar, type ExperienceData as ExperienceBarData } from '@radish/ui';
 import { experienceApi, type ExperienceData } from '@/api/experience';
 import type { UploadResult } from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
@@ -8,11 +8,11 @@ import { useTranslation } from 'react-i18next';
 import styles from './UserInfoCard.module.css';
 
 interface UserStats {
-  postCount: number;
-  commentCount: number;
-  totalLikeCount: number;
-  postLikeCount: number;
-  commentLikeCount: number;
+  voPostCount: number;
+  voCommentCount: number;
+  voTotalLikeCount: number;
+  voPostLikeCount: number;
+  voCommentLikeCount: number;
 }
 
 interface UserInfoCardProps {
@@ -63,6 +63,23 @@ function resolveUrl(apiBaseUrl: string, url: string | null | undefined): string 
   if (/^https?:\/\//i.test(url)) return url;
   if (url.startsWith('/')) return `${apiBaseUrl}${url}`;
   return `${apiBaseUrl}/${url}`;
+}
+
+function mapExperienceToBarData(exp: ExperienceData): ExperienceBarData {
+  return {
+    userId: String(exp.voUserId),
+    currentLevel: exp.voCurrentLevel,
+    currentLevelName: exp.voLevelName,
+    currentExp: String(exp.voCurrentExp),
+    totalExp: String(exp.voTotalExp),
+    expToNextLevel: String(exp.voNextLevelExp),
+    nextLevel: exp.voCurrentLevel + 1,
+    nextLevelName: exp.voNextLevelName,
+    levelProgress: exp.voLevelProgress,
+    themeColor: exp.voThemeColor || '#4CAF50',
+    rank: exp.voRank,
+    expFrozen: exp.voExpFrozen || false,
+  };
 }
 
 function formatCoinAmount(amount: number | string | null | undefined): string {
@@ -331,7 +348,7 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
       {experience && (
         <div style={{ marginBottom: '24px' }}>
           <ExperienceBar
-            data={experience as any}
+            data={mapExperienceToBarData(experience)}
             size="medium"
             showLevel={true}
             showProgress={true}
@@ -349,17 +366,17 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
         <div className={styles.stats}>
           <div className={styles.statItem}>
             <Icon icon="mdi:file-document" size={24} />
-            <div className={styles.statValue}>{stats.postCount}</div>
+            <div className={styles.statValue}>{stats.voPostCount}</div>
             <div className={styles.statLabel}>帖子</div>
           </div>
           <div className={styles.statItem}>
             <Icon icon="mdi:comment" size={24} />
-            <div className={styles.statValue}>{stats.commentCount}</div>
+            <div className={styles.statValue}>{stats.voCommentCount}</div>
             <div className={styles.statLabel}>评论</div>
           </div>
           <div className={styles.statItem}>
             <Icon icon="mdi:heart" size={24} />
-            <div className={styles.statValue}>{stats.totalLikeCount}</div>
+            <div className={styles.statValue}>{stats.voTotalLikeCount}</div>
             <div className={styles.statLabel}>获赞</div>
           </div>
         </div>

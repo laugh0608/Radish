@@ -4,13 +4,13 @@ import { Icon } from '@radish/ui';
 import styles from './UserPostList.module.css';
 
 interface Post {
-  id: number;
-  title: string;
-  content: string;
-  viewCount: number;
-  likeCount: number;
-  commentCount: number;
-  createTime: string;
+  voId: number;
+  voTitle: string;
+  voContent: string;
+  voViewCount: number;
+  voLikeCount: number;
+  voCommentCount: number;
+  voCreateTime: string;
 }
 
 interface UserPostListProps {
@@ -59,27 +59,27 @@ export const UserPostList = ({ userId, apiBaseUrl }: UserPostListProps) => {
     <div className={styles.container}>
       <div className={styles.list}>
         {posts.map(post => (
-          <div key={post.id} className={styles.postItem}>
-            <h3 className={styles.title}>{post.title}</h3>
+          <div key={post.voId} className={styles.postItem}>
+            <h3 className={styles.title}>{post.voTitle}</h3>
             <p className={styles.content}>
-              {post.content.substring(0, 100)}
-              {post.content.length > 100 && '...'}
+              {post.voContent?.substring(0, 100) ?? ''}
+              {(post.voContent?.length ?? 0) > 100 && '...'}
             </p>
             <div className={styles.meta}>
               <span className={styles.metaItem}>
                 <Icon icon="mdi:eye" size={16} />
-                {post.viewCount}
+                {post.voViewCount}
               </span>
               <span className={styles.metaItem}>
                 <Icon icon="mdi:heart" size={16} />
-                {post.likeCount}
+                {post.voLikeCount}
               </span>
               <span className={styles.metaItem}>
                 <Icon icon="mdi:comment" size={16} />
-                {post.commentCount}
+                {post.voCommentCount}
               </span>
               <span className={styles.time}>
-                {new Date(post.createTime).toLocaleDateString('zh-CN')}
+                {new Date(post.voCreateTime).toLocaleDateString('zh-CN')}
               </span>
             </div>
           </div>
