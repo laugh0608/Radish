@@ -298,7 +298,14 @@ git push origin v26.1.1.3003
   - Radish.Service 依赖 Radish.IService（接口契约）与 Radish.Repository（数据访问实现），负责聚合业务逻辑；Service 层对外仅暴露 DTO/Vo，必须在返回前将仓储层实体映射为视图模型（推荐 AutoMapper）。
     - **简单 CRUD 场景**：Controller 直接注入 `IBaseService<TEntity, TVo>`，无需创建专门的 Service 实现
     - **复杂业务逻辑场景**：创建继承自 `BaseService<TEntity, TVo>` 的自定义 Service，添加特定业务方法
-    - BaseService 提供的通用方法：QueryAsync, QueryByIdAsync, QueryPageAsync, AddAsync, UpdateAsync, DeleteAsync 等
+    - **判断标准**：如果只需要增删改查，直接用泛型；涉及多表事务、复杂验证才创建自定义 Service
+    - BaseService 提供的通用方法：
+      - **增**: `AddAsync`, `AddRangeAsync`, `AddSplitAsync`
+      - **删**: `SoftDeleteByIdAsync`, `SoftDeleteAsync`, `RestoreByIdAsync`, `RestoreAsync`
+      - **改**: `UpdateAsync`, `UpdateRangeAsync`, `UpdateColumnsAsync`
+      - **查**: `QueryByIdAsync`, `QueryByIdsAsync`, `QueryFirstAsync`, `QuerySingleAsync`, `QueryAsync`, `QueryWithCacheAsync`, `QueryWithOrderAsync`, `QueryPageAsync` (支持二级排序), `QueryCountAsync`, `QueryExistsAsync`, `QueryMuchAsync`, `QuerySplitAsync`
+      - **聚合**: `QueryDistinctAsync`, `QuerySumAsync`, `QueryMaxAsync`, `QueryMinAsync`, `QueryAverageAsync`
+      - **工具**: `ExecuteWithRetryAsync` (乐观锁重试), `GetOrCreateAsync` (获取或创建)
   - Radish.Repository 依赖 Radish.IRepository、Radish.Model 以及 Radish.Infrastructure 中的 SqlSugar/租户扩展，只能向 Service 层返回实体或实体集合，禁止直接引用任何 Vo/DTO；接口层 Radish.IRepository 与 Radish.IService 统一依赖 Radish.Model，以便共享实体与视图模型定义。
 - **Service 层数据访问约束**（重要）：
     - **严禁**在 Service 层直接持有/使用 `ISqlSugarClient`（Queryable/Updateable 等）访问数据库实例
@@ -522,15 +529,40 @@ Task<int> UpdateColumnsAsync(updateExp, whereExp)      // 根据条件更新指�
 #### 查（Query）
 ```csharp
 Task<TVo?> QueryByIdAsync(long id)                     // 根据ID查询
+Task<List<TVo>> QueryByIdsAsync(List<long> ids)       // 批量ID查询
 Task<TVo?> QueryFirstAsync(Expression<...>)            // 查询第一条
 Task<TVo?> QuerySingleAsync(Expression<...>)           // 查询单条（多条抛异常）
 Task<List<TVo>> QueryAsync(Expression<...>)            // 条件查询列表
 Task<List<TVo>> QueryWithCacheAsync(Expression<...>)   // 带缓存的查询
-Task<(List<TVo>, int)> QueryPageAsync(...)            // 分页查询（支持排序）
+Task<List<TVo>> QueryWithOrderAsync(...)              // 带排序的列表查询（支持Take限制）
+Task<(List<TVo>, int)> QueryPageAsync(...)            // 分页查询（支持二级排序）
 Task<int> QueryCountAsync(Expression<...>)             // 查询数量
 Task<bool> QueryExistsAsync(Expression<...>)           // 判断是否存在
 Task<List<TResult>> QueryMuchAsync<...>(...)          // 三表联查
 Task<List<TEntity>> QuerySplitAsync(...)              // 分表查询
+```
+
+#### 聚合查询
+```csharp
+Task<List<TResult>> QueryDistinctAsync<TResult>(selectExpression, whereExpression)  // 去重查询
+Task<TResult> QuerySumAsync<TResult>(selectExpression, whereExpression)             // 求和
+Task<TResult> QueryMaxAsync<TResult>(selectExpression, whereExpression)             // 最大值
+Task<TResult> QueryMinAsync<TResult>(selectExpression, whereExpression)             // 最小值
+Task<decimal> QueryAverageAsync(selectExpression, whereExpression)                  // 平均值
+```
+
+#### 工具方法
+```csharp
+// 乐观锁重试机制（指数退避：100ms, 200ms, 400ms...）
+Task<TResult> ExecuteWithRetryAsync<TResult>(
+    Func<Task<TResult>> action,
+    int maxRetryCount = 3,
+    int baseDelayMs = 100)
+
+// 获取或创建模式
+Task<TEntity> GetOrCreateAsync(
+    Expression<Func<TEntity, bool>> predicate,
+    Func<TEntity> createFactory)
 ```
 
 
