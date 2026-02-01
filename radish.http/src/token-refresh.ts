@@ -9,18 +9,16 @@
  */
 
 interface TokenRefreshConfig {
-  /** 认证服务器基础 URL */
-  authBaseUrl: string;
-  /** 客户端 ID */
-  clientId: string;
+  /** Token 刷新端点 URL */
+  refreshEndpoint: string;
+  /** 客户端 ID（可选，默认 'radish-client'） */
+  clientId?: string;
   /** 获取 refresh_token 的函数 */
   getRefreshToken: () => string | null;
-  /** 保存新 token 的函数 */
-  saveTokens: (accessToken: string, refreshToken?: string) => void;
-  /** 清除 token 的函数（刷新失败时） */
-  clearTokens: () => void;
-  /** 重定向到登录页的函数 */
-  redirectToLogin: () => void;
+  /** Token 刷新成功回调 */
+  onTokenRefreshed: (accessToken: string, refreshToken?: string) => void;
+  /** Token 刷新失败回调 */
+  onRefreshFailed: () => void;
 }
 
 let refreshConfig: TokenRefreshConfig | null = null;
@@ -54,12 +52,14 @@ async function refreshAccessToken(): Promise<string> {
     throw new Error('No refresh token available');
   }
 
+  const clientId = refreshConfig.clientId || 'radish-client';
+
   const body = new URLSearchParams();
   body.set('grant_type', 'refresh_token');
-  body.set('client_id', refreshConfig.clientId);
+  body.set('client_id', clientId);
   body.set('refresh_token', refreshToken);
 
-  const response = await fetch(`${refreshConfig.authBaseUrl}/connect/token`, {
+  const response = await fetch(refreshConfig.refreshEndpoint, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -71,7 +71,7 @@ async function refreshAccessToken(): Promise<string> {
     throw new Error(`Token refresh failed: HTTP ${response.status}`);
   }
 
-  const tokenSet = await response.json() as {
+  const tokenSet = (await response.json()) as {
     access_token?: string;
     refresh_token?: string;
   };
@@ -80,8 +80,8 @@ async function refreshAccessToken(): Promise<string> {
     throw new Error('No access_token in refresh response');
   }
 
-  // 保存新的 token
-  refreshConfig.saveTokens(tokenSet.access_token, tokenSet.refresh_token);
+  // 调用成功回调保存新的 token
+  refreshConfig.onTokenRefreshed(tokenSet.access_token, tokenSet.refresh_token);
 
   return tokenSet.access_token;
 }
@@ -101,10 +101,9 @@ export async function tryRefreshToken(): Promise<string> {
   isRefreshing = true;
   refreshPromise = refreshAccessToken()
     .catch((error) => {
-      // 刷新失败，清除 token 并重定向到登录页
+      // 刷新失败，调用失败回调
       if (refreshConfig) {
-        refreshConfig.clearTokens();
-        refreshConfig.redirectToLogin();
+        refreshConfig.onRefreshFailed();
       }
       throw error;
     })

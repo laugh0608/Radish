@@ -12,7 +12,7 @@ export interface ExperienceData {
   voNextLevelExp: number;
   voTotalExp: number;
   voLevelProgress: number;
-  voLevelName: string;
+  voCurrentLevelName: string;
   voLevelDescription?: string;
   voCanLevelUp?: boolean;
   voNextLevelName: string;
@@ -63,7 +63,8 @@ export const ExperienceBar = ({
     className
   ].filter(Boolean).join(' ');
 
-  const progressPercentage = Math.min(100, Math.max(0, data.voLevelProgress));
+  // voLevelProgress 是 0-1 之间的小数，需要转换为百分比
+  const progressPercentage = Math.min(100, Math.max(0, data.voLevelProgress * 100));
 
   return (
     <div
@@ -75,8 +76,8 @@ export const ExperienceBar = ({
       {showLevel && (
         <div className="radish-exp-bar__level" style={{ color: themeColor }}>
           <span className="radish-exp-bar__level-number">Lv.{data.voCurrentLevel}</span>
-          {data.voLevelName && (
-            <span className="radish-exp-bar__level-name">{data.voLevelName}</span>
+          {data.voCurrentLevelName && (
+            <span className="radish-exp-bar__level-name">{data.voCurrentLevelName}</span>
           )}
         </div>
       )}
@@ -113,7 +114,7 @@ export const ExperienceBar = ({
         <div className="radish-exp-bar__tooltip">
           <div className="radish-exp-bar__tooltip-header">
             <span className="radish-exp-bar__tooltip-level">
-              {data.voLevelName} (Lv.{data.voCurrentLevel})
+              {data.voCurrentLevelName} (Lv.{data.voCurrentLevel})
             </span>
             {data.voRank && (
               <span className="radish-exp-bar__tooltip-rank">
