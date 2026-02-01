@@ -298,28 +298,47 @@ export const ExperienceDetailApp = () => {
             ) : (
               <>
                 <div className={styles.transactionList}>
-                  {transactions.map((tx) => (
-                    <div key={tx.voId} className={styles.transactionItem}>
-                      <div className={styles.txIcon}>
-                        <Icon icon={tx.voExpAmount > 0 ? "mdi:plus-circle" : "mdi:minus-circle"} size={24} />
-                      </div>
-                      <div className={styles.txInfo}>
-                        <div className={styles.txType}>{tx.voExpTypeDisplay}</div>
-                        <div className={styles.txTime}>
-                          {new Date(tx.voCreateTime).toLocaleString('zh-CN', {
-                            month: '2-digit',
-                            day: '2-digit',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                  {transactions.map((tx) => {
+                    const isPositive = tx.voExpAmount > 0;
+                    const typeLabel = getExpTypeDisplay(tx.voExpTypeDisplay || tx.voExpType);
+                    const timeLabel = new Date(tx.voCreateTime).toLocaleString('zh-CN', {
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+                    return (
+                      <div
+                        key={tx.voId}
+                        className={`${styles.transactionItem} ${isPositive ? styles.positive : styles.negative}`}
+                      >
+                        <div className={`${styles.txBadge} ${isPositive ? styles.txBadgePositive : styles.txBadgeNegative}`}>
+                          <Icon icon={isPositive ? "mdi:plus" : "mdi:minus"} size={18} />
                         </div>
-                        {tx.voRemark && <div className={styles.txRemark}>{tx.voRemark}</div>}
+                        <div className={styles.txInfo}>
+                          <div className={styles.txTitleRow}>
+                            <div className={styles.txType}>{typeLabel}</div>
+                            {tx.voIsLevelUp && <span className={styles.txLevelUp}>升级</span>}
+                          </div>
+                          <div className={styles.txMeta}>
+                            <span className={styles.txTime}>{timeLabel}</span>
+                            <span className={styles.txLevelChange}>
+                              Lv.{tx.voLevelBefore} → Lv.{tx.voLevelAfter}
+                            </span>
+                          </div>
+                          {tx.voRemark && <div className={styles.txRemark}>{tx.voRemark}</div>}
+                        </div>
+                        <div className={styles.txAmountWrap}>
+                          <div className={styles.txAmount}>
+                            {isPositive ? '+' : ''}{tx.voExpAmount}
+                          </div>
+                          <div className={styles.txBalance}>
+                            余额 {Number(tx.voExpAfter).toLocaleString()}
+                          </div>
+                        </div>
                       </div>
-                      <div className={styles.txAmount} style={{ color: tx.voExpAmount > 0 ? '#43e97b' : '#f56565' }}>
-                        {tx.voExpAmount > 0 ? '+' : ''}{tx.voExpAmount}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className={styles.pagination}>

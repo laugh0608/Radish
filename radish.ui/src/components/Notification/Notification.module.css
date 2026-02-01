@@ -1,72 +1,96 @@
 .notification {
+  --accent: #94a3b8;
+  --accent-weak: #e2e8f0;
   position: relative;
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 12px 16px;
-  background: white;
-  border-radius: 8px;
-  border-left: 4px solid;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #edf1f6;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  overflow: hidden;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+  width: 100%;
 }
 
 .notification:hover {
-  background: #f5f5f5;
-  transform: translateX(-2px);
+  transform: translateY(-1px);
+  border-color: #dbe3ef;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
 }
 
 .notification.unread {
-  background: #f0f7ff;
+  background: #f6faff;
+  border-color: #cfe1ff;
 }
 
 .notification.unread:hover {
-  background: #e6f3ff;
+  border-color: #b9d4ff;
 }
 
 /* 未读指示器 */
 .unreadDot {
   position: absolute;
-  top: 16px;
-  left: 8px;
-  width: 8px;
-  height: 8px;
-  background: #1890ff;
+  top: 10px;
+  right: 10px;
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
   border-radius: 50%;
+  box-shadow: none;
 }
 
 /* 类型颜色 */
 .notification.like {
-  border-left-color: #ff4d4f;
+  --accent: #f97316;
+  --accent-weak: #ffedd5;
 }
 
 .notification.comment {
-  border-left-color: #1890ff;
+  --accent: #0ea5e9;
+  --accent-weak: #e0f2fe;
 }
 
 .notification.achievement {
-  border-left-color: #faad14;
+  --accent: #f59e0b;
+  --accent-weak: #fef3c7;
 }
 
 .notification.system {
-  border-left-color: #52c41a;
+  --accent: #10b981;
+  --accent-weak: #dcfce7;
 }
 
 .notification.default {
-  border-left-color: #d9d9d9;
+  --accent: #94a3b8;
+  --accent-weak: #e2e8f0;
+}
+
+.notification::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--accent) 0%, #111827 160%);
 }
 
 /* 头像/图标 */
 .avatar {
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
   overflow: hidden;
-  background: #f0f0f0;
+  background: var(--accent-weak);
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
 .avatar img {
@@ -76,7 +100,8 @@
 }
 
 .icon {
-  font-size: 20px;
+  font-size: 14px;
+  color: var(--accent);
 }
 
 /* 内容区域 */
@@ -90,31 +115,32 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: 0.2px;
 }
 
 .time {
-  font-size: 12px;
-  color: #999;
+  font-size: 10px;
+  color: #94a3b8;
   white-space: nowrap;
 }
 
 .message {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.5;
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.4;
   word-break: break-word;
 }
 
 .triggerName {
   font-weight: 500;
-  color: #1890ff;
+  color: var(--accent);
 }
 
 /* 操作按钮 */
@@ -134,46 +160,46 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border: none;
   background: transparent;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  color: #999;
+  color: #64748b;
   transition: all 0.2s ease;
 }
 
 .actionBtn:hover {
-  background: rgba(0, 0, 0, 0.06);
-  color: #333;
+  background: #eef2ff;
+  color: #1f2937;
 }
 
 /* 已读状态 */
 .notification.read .title,
 .notification.read .message {
-  color: #999;
+  color: #94a3b8;
 }
 
 /* 响应式 */
 @media (max-width: 768px) {
   .notification {
-    padding: 10px 12px;
+    padding: 10px 10px;
     gap: 10px;
   }
 
   .avatar {
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
   }
 
   .icon {
-    font-size: 18px;
+    font-size: 14px;
   }
 
   .title {
-    font-size: 13px;
+    font-size: 12px;
   }
 
   .message {
