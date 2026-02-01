@@ -20,12 +20,12 @@ export interface ExperienceData {
   voAvatarUrl?: string;
   voCurrentLevel: number;
   voCurrentLevelName: string;  // 后端字段名
-  voCurrentExp: number;
-  voTotalExp: number;
-  voExpToNextLevel: number;
+  voCurrentExp: number;  // 当前等级内的经验值进度
+  voTotalExp: number;  // 累计总经验值
+  voExpToNextLevel: number;  // 距离下一级还需多少经验
   voNextLevel: number;
   voNextLevelName: string;
-  voLevelProgress: number;
+  voLevelProgress: number;  // 0-1 之间的小数
   voThemeColor: string;
   voIconUrl?: string;
   voBadgeUrl?: string;

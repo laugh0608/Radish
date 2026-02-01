@@ -111,8 +111,8 @@ export const ExperienceDetailApp = () => {
       'COMMENT_LIKED': '评论被点赞',
       'LIKE_POST': '点赞帖子',
       'LIKE_COMMENT': '点赞评论',
-      'GIVE_LIKE': '点赞他人',
-      'RECEIVE_LIKE': '获得点赞',
+      'GIVE_LIKE': '给出点赞',
+      'RECEIVE_LIKE': '收到点赞',
       'GOD_COMMENT': '神评',
       'SOFA': '沙发',
       'ADMIN_ADJUST': '管理员调整',
@@ -176,8 +176,12 @@ export const ExperienceDetailApp = () => {
                 <ExperienceBar
                   data={{
                     ...experience,
-                    voLevelName: experience.voCurrentLevelName,
-                    voNextLevelExp: experience.voCurrentExp + experience.voExpToNextLevel
+                    // 使用 voLevelProgress 反推 voNextLevelExp
+                    // voLevelProgress = voCurrentExp / voNextLevelExp
+                    // 所以 voNextLevelExp = voCurrentExp / voLevelProgress
+                    voNextLevelExp: experience.voLevelProgress > 0
+                      ? Math.round(experience.voCurrentExp / experience.voLevelProgress)
+                      : experience.voCurrentExp + experience.voExpToNextLevel
                   }}
                   size="medium"
                   showLevel={true}
@@ -193,13 +197,13 @@ export const ExperienceDetailApp = () => {
                 <ExperienceBar
                   data={{
                     ...experience,
-                    voLevelName: `${experience.voCurrentLevelName} → 满级`,
+                    voCurrentLevelName: `${experience.voCurrentLevelName} → 满级`,
                     voCurrentExp: experience.voTotalExp,
                     voNextLevelExp: 999999, // 假设满级需要的总经验值，实际应该从后端获取
                     voLevelProgress: (experience.voTotalExp / 999999) * 100
                   }}
                   size="medium"
-                  showLevel={false}
+                  showLevel={true}
                   showProgress={true}
                   showTooltip={false}
                   animated={true}
@@ -230,55 +234,58 @@ export const ExperienceDetailApp = () => {
             </div>
           </div>
 
-          {/* 经验值趋势图 */}
-          <div className={styles.chartSection}>
-            <div className={styles.chartHeader}>
-              <h2 className={styles.chartTitle}>经验值趋势</h2>
-              <div className={styles.chartControls}>
-                <button
-                  className={`${styles.controlButton} ${days === 7 ? styles.active : ''}`}
-                  onClick={() => setDays(7)}
-                >
-                  最近7天
-                </button>
-                <button
-                  className={`${styles.controlButton} ${days === 30 ? styles.active : ''}`}
-                  onClick={() => setDays(30)}
-                >
-                  最近30天
-                </button>
-              </div>
-            </div>
-            <LineChart
-              data={dailyStats}
-              lines={[
-                { dataKey: 'exp', name: '经验值', color: '#667eea', strokeWidth: 2 }
-              ]}
-              xAxisKey="date"
-              loading={loading}
-              error={null}
-              height={220}
-              showGrid={true}
-              showLegend={true}
-            />
-          </div>
-
-          {/* 经验值来源分布 */}
-          {sourceDistribution.length > 0 && (
+          {/* 图表区域 - 两列布局 */}
+          <div className={styles.chartContainer}>
+            {/* 经验值趋势图 */}
             <div className={styles.chartSection}>
-              <h2 className={styles.chartTitle}>经验值来源</h2>
-              <PieChart
-                data={sourceDistribution}
+              <div className={styles.chartHeader}>
+                <h2 className={styles.chartTitle}>经验值趋势</h2>
+                <div className={styles.chartControls}>
+                  <button
+                    className={`${styles.controlButton} ${days === 7 ? styles.active : ''}`}
+                    onClick={() => setDays(7)}
+                  >
+                    最近7天
+                  </button>
+                  <button
+                    className={`${styles.controlButton} ${days === 30 ? styles.active : ''}`}
+                    onClick={() => setDays(30)}
+                  >
+                    最近30天
+                  </button>
+                </div>
+              </div>
+              <LineChart
+                data={dailyStats}
+                lines={[
+                  { dataKey: 'exp', name: '经验值', color: '#667eea', strokeWidth: 2 }
+                ]}
+                xAxisKey="date"
                 loading={loading}
                 error={null}
                 height={220}
+                showGrid={true}
                 showLegend={true}
-                innerRadius={0}
-                outerRadius={80}
-                showLabel={true}
               />
             </div>
-          )}
+
+            {/* 经验值来源分布 */}
+            {sourceDistribution.length > 0 && (
+              <div className={`${styles.chartSection} ${styles.pieChart}`}>
+                <h2 className={styles.chartTitle}>经验值来源</h2>
+                <PieChart
+                  data={sourceDistribution}
+                  loading={loading}
+                  error={null}
+                  height={300}
+                  showLegend={true}
+                  innerRadius={0}
+                  outerRadius={100}
+                  showLabel={true}
+                />
+              </div>
+            )}
+          </div>
 
           {/* 经验值明细列表 */}
           <div className={styles.transactionSection}>
@@ -294,27 +301,21 @@ export const ExperienceDetailApp = () => {
                   {transactions.map((tx) => (
                     <div key={tx.voId} className={styles.transactionItem}>
                       <div className={styles.txIcon}>
-                        <Icon icon="mdi:plus-circle" size={24} />
+                        <Icon icon={tx.voExpAmount > 0 ? "mdi:plus-circle" : "mdi:minus-circle"} size={24} />
                       </div>
                       <div className={styles.txInfo}>
-                        <div className={styles.txType}>
-                          {tx.voExpTypeDisplay || getExpTypeDisplay(tx.voExpType)}
-                        </div>
+                        <div className={styles.txType}>{tx.voExpTypeDisplay}</div>
                         <div className={styles.txTime}>
                           {new Date(tx.voCreateTime).toLocaleString('zh-CN', {
-                            year: 'numeric',
                             month: '2-digit',
                             day: '2-digit',
                             hour: '2-digit',
-                            minute: '2-digit',
-                            second: '2-digit'
+                            minute: '2-digit'
                           })}
                         </div>
-                        {tx.voRemark && (
-                          <div className={styles.txRemark}>{tx.voRemark}</div>
-                        )}
+                        {tx.voRemark && <div className={styles.txRemark}>{tx.voRemark}</div>}
                       </div>
-                      <div className={styles.txAmount}>
+                      <div className={styles.txAmount} style={{ color: tx.voExpAmount > 0 ? '#43e97b' : '#f56565' }}>
                         {tx.voExpAmount > 0 ? '+' : ''}{tx.voExpAmount}
                       </div>
                     </div>
