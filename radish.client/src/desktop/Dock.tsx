@@ -234,7 +234,12 @@ export const Dock = () => {
           <div className={styles.expandedContent}>
             {/* 左侧：用户信息 */}
             <div className={styles.userSection}>
-              <div className={styles.avatar}>
+              <div
+                className={styles.avatar}
+                onClick={() => loggedIn && openApp('profile')}
+                style={{ cursor: loggedIn ? 'pointer' : 'default' }}
+                title={loggedIn ? '打开个人主页' : undefined}
+              >
                 {loggedIn ? (
                   <>
                     {avatarSrc ? (
@@ -242,31 +247,32 @@ export const Dock = () => {
                         src={avatarSrc}
                         alt={userName}
                         style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '50%',
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '6px',
                           objectFit: 'cover'
                         }}
                       />
                     ) : (
-                      <Icon icon="mdi:account-circle" size={40} />
+                      <Icon icon="mdi:account-circle" size={28} />
                     )}
                     <div className={styles.statusDot} />
                   </>
                 ) : (
-                  <Icon icon="mdi:account-circle-outline" size={40} />
+                  <Icon icon="mdi:account-circle-outline" size={28} />
                 )}
               </div>
               {loggedIn && userName && (
-                <div className={styles.userInfo}>
+                <div
+                  className={styles.userInfo}
+                  onClick={() => openApp('profile')}
+                  style={{ cursor: 'pointer' }}
+                  title="打开个人主页"
+                >
                   <div className={styles.userName}>{userName}</div>
                   <div className={styles.userId}>ID: {userId}</div>
                 </div>
               )}
-              {/* 萝卜币余额 */}
-              {loggedIn && <CoinBalance />}
-              {/* 经验值显示 */}
-              {loggedIn && <ExperienceDisplay />}
             </div>
 
             {/* 中间：Dock 应用（通知中心常驻 + 运行中的应用） */}
@@ -306,7 +312,7 @@ export const Dock = () => {
                       >
                         <div style={{ position: 'relative' }}>
                           {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
-                            <Icon icon={app!.icon} size={40} />
+                            <Icon icon={app!.icon} size={32} />
                           ) : (
                             <span className={styles.emoji}>{app!.icon}</span>
                           )}
@@ -348,7 +354,7 @@ export const Dock = () => {
           <div className={styles.collapsedContent}>
             {/* 用户头像 */}
             <div className={styles.miniAvatar}>
-              <Icon icon={loggedIn ? 'mdi:account-circle' : 'mdi:account-circle-outline'} size={20} />
+              <Icon icon={loggedIn ? 'mdi:account-circle' : 'mdi:account-circle-outline'} size={16} />
               {loggedIn && <div className={styles.statusDot} />}
             </div>
 
@@ -381,13 +387,13 @@ export const Dock = () => {
                   title={app!.name}
                 >
                   {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
-                    <Icon icon={app!.icon} size={16} />
+                    <Icon icon={app!.icon} size={14} />
                   ) : (
                     <span className={styles.miniEmoji}>{app!.icon}</span>
                   )}
-                  {/* 通知中心的未读数徽章（迷你版） */}
+                  {/* 通知中心的未读提示（红点） */}
                   {isNotification && unreadMessages > 0 && (
-                    <div className={styles.miniNotificationBadge}>{unreadMessages}</div>
+                    <div className={styles.miniNotificationDot} />
                   )}
                   {/* 运行中指示器 */}
                   {isRunning && !isMinimized && <div className={styles.miniActiveIndicator} />}

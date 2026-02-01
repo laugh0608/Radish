@@ -24,14 +24,14 @@
 
 /* 展开状态 */
 .dock.expanded {
-  border-radius: 20px;
-  padding: 12px 20px;
+  border-radius: 16px;
+  padding: 8px 16px;
 }
 
 /* 缩小状态（灵动岛） */
 .dock.collapsed {
   border-radius: 50px;
-  padding: 6px 14px;
+  padding: 4px 12px;
   background: rgba(0, 0, 0, 0.75);
 }
 
@@ -43,7 +43,7 @@
 .expandedContent {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   color: white;
 }
 
@@ -56,10 +56,21 @@
 
 .avatar {
   position: relative;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
   color: white;
+  transition: all 0.2s ease;
+}
+
+.avatar:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
 }
 
 .badge {
@@ -85,6 +96,11 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  transition: all 0.2s ease;
+}
+
+.userInfo:hover {
+  transform: translateY(-2px);
 }
 
 .userName {
@@ -116,14 +132,14 @@
 
 .appIcon {
   position: relative;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   color: white;
@@ -148,7 +164,7 @@
 }
 
 .emoji {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
 }
 
 .activeIndicator {
@@ -179,14 +195,14 @@
 
 .authButton {
   position: relative;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   color: white;
@@ -267,14 +283,14 @@
 
 .notificationBadge {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: -4px;
+  right: -4px;
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
   background: #ff3b30;
   color: white;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
   border-radius: 8px;
   display: flex;
@@ -288,14 +304,14 @@
 .collapsedContent {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: white;
 }
 
 .miniAvatar {
   position: relative;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -304,8 +320,8 @@
 
 .statusDot {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: -2px;
+  right: -2px;
   width: 8px;
   height: 8px;
   background: #30d158;
@@ -335,8 +351,8 @@
 
 .miniAppIcon {
   position: relative;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -344,7 +360,7 @@
 }
 
 .miniEmoji {
-  font-size: 1rem;
+  font-size: 0.875rem;
 }
 
 .miniActiveIndicator {
@@ -368,11 +384,11 @@
 }
 
 .miniTime {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   color: white;
   font-variant-numeric: tabular-nums;
-  margin-left: 4px;
+  margin-left: 2px;
 }
 
 /* 通知按钮（灵动岛） */
@@ -399,6 +415,21 @@
 
 .miniNotificationButton:hover {
   transform: scale(1.2);
+}
+
+/* 通知中心未读提示红点（灵动岛状态） */
+.miniNotificationDot {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 6px;
+  background: #ff3b30;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 6px rgba(255, 59, 48, 0.8);
+  z-index: 2;
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .miniNotificationBadge {

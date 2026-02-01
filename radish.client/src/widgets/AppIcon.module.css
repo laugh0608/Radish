@@ -1,11 +1,11 @@
 .icon {
-  width: 100px;
+  width: 70px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  border-radius: 8px;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 6px;
   cursor: pointer;
   transition: background 0.2s ease;
   user-select: none;
@@ -20,9 +20,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   transition: transform 0.2s ease;
@@ -37,16 +37,17 @@
 }
 
 .emoji {
-  font-size: 2.5rem;
+  font-size: 1.75rem;
 }
 
 .iconName {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: white;
   text-align: center;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   max-width: 100%;
   word-break: break-word;
+  line-height: 1.2;
 }
 
 /* 外部应用样式 - 更明显的区分 */
