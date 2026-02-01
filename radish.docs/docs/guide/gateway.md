@@ -237,6 +237,12 @@ Auth 路由添加 `X-Forwarded-*` 头，确保 OIDC 重定向 URL 正确：
 
 Console 和 Frontend 路由启用 `RequestHeaderOriginalHost`，支持 Vite HMR 的 WebSocket 连接。
 
+**WebSocket 配置说明**：
+- Vite 开发服务器使用 WebSocket 进行热模块替换（HMR）
+- `RequestHeaderOriginalHost` 转换确保 WebSocket 握手时 Host 头正确
+- SignalR 实时通信也依赖 WebSocket 连接
+- 生产环境需要确保反向代理支持 WebSocket 协议升级
+
 **4. 路由优先级**
 
 Frontend 根路由设置 `Order: 1000`（最低优先级），确保其他具体路由优先匹配。
@@ -810,6 +816,89 @@ VITE_API_BASE_URL=http://localhost:5100
 ```
 
 **注意**：直连模式下需要在 API 服务中配置 CORS，允许前端域名访问。
+
+### Q6: Cookie SecurePolicy 配置问题
+
+**A**: 如果遇到 Cookie 无法正确设置的问题（特别是 `SameSite=None` 的 Cookie），需要检查 Cookie SecurePolicy 配置。
+
+**问题原因**：
+- `SameSite=None` 要求 Cookie 必须设置 `Secure=true`
+- 如果 `SecurePolicy` 设置为 `SameAsRequest`，在 HTTP 环境下会导致 Cookie 无法正确设置
+
+**解决方案**：
+
+在 Auth 服务的 `Program.cs` 中，将 Cookie SecurePolicy 设置为 `Always`：
+
+```csharp
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // 改为 Always
+});
+```
+
+**相关提交**：参见 commit `b91b035` - fix(auth): 修复 Cookie SecurePolicy 配置
+
+### Q7: SignalR WebSocket 连接失败
+
+**A**: 如果 SignalR 实时通知无法正常工作，检查以下配置：
+
+**1. 检查 WebSocket 支持**
+
+确保 Gateway 路由配置了 `RequestHeaderOriginalHost` 转换：
+
+```json
+{
+  "frontend-route": {
+    "Transforms": [
+      { "RequestHeaderOriginalHost": "true" }
+    ]
+  }
+}
+```
+
+**2. 检查认证状态**
+
+SignalR 连接需要有效的 JWT Token：
+
+```typescript
+// 前端代码
+import { hasAccessToken } from '@/services/auth';
+
+// 仅在已登录时建立连接
+if (hasAccessToken()) {
+  const token = localStorage.getItem('access_token');
+  const connection = new HubConnectionBuilder()
+    .withUrl('https://localhost:5000/hubs/notification', {
+      accessTokenFactory: () => token || '',
+    })
+    .build();
+}
+```
+
+**3. 检查 CORS 配置**
+
+确保 Gateway 的 CORS 配置允许前端域名：
+
+```json
+{
+  "Cors": {
+    "AllowedOrigins": [
+      "http://localhost:3000",
+      "https://localhost:3000"
+    ]
+  }
+}
+```
+
+**4. 检查防火墙和代理**
+
+- 确保防火墙允许 WebSocket 连接
+- 如果使用反向代理（如 Nginx），确保配置了 WebSocket 支持
+
+**相关文档**：
+- [认证服务统一指南](./authentication-service.md)
+- [前端设计文档](../frontend/design.md)
 
 ### Q6: Gateway 日志在哪里查看？
 
