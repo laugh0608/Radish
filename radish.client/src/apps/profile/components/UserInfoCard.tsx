@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { log } from '@/utils/logger';
-import { Button, ConfirmDialog, FileUpload, Icon, Input, Modal } from '@radish/ui';
-import type { UploadResult } from '@radish/ui';
-import { uploadImage } from '@/api/attachment';
+import { Button, ConfirmDialog, Icon, Input, Modal } from '@radish/ui';
 import { useTranslation } from 'react-i18next';
+import { AvatarUploadModal } from './AvatarUploadModal';
 import styles from './UserInfoCard.module.css';
 
 interface UserStats {
@@ -101,6 +100,8 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   const [editUserName, setEditUserName] = useState('');
   const [editUserEmail, setEditUserEmail] = useState('');
@@ -141,14 +142,22 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
         const profileRes = profileResult.value;
         const profileJson = await readJsonIfPossible<ApiResponse<ProfileInfo>>(profileRes);
 
-        if (profileRes.ok && profileJson?.isSuccess && profileJson.responseData) {
-          setProfile(profileJson.responseData);
+        log.debug('UserInfoCard', 'GetMyProfile 响应:', profileJson);
 
-          setEditUserName(profileJson.responseData.voUserName || userName);
-          setEditUserEmail(profileJson.responseData.voUserEmail || '');
-          setEditRealName(profileJson.responseData.voRealName || '');
-          setEditAge(String(profileJson.responseData.voAge ?? ''));
-          setEditAddress(profileJson.responseData.voAddress || '');
+        if (profileRes.ok && profileJson?.isSuccess && profileJson.responseData) {
+          const profile = profileJson.responseData;
+          log.debug('UserInfoCard', '头像信息:', {
+            avatarAttachmentId: profile.voAvatarAttachmentId,
+            avatarUrl: profile.voAvatarUrl,
+            avatarThumbnailUrl: profile.voAvatarThumbnailUrl
+          });
+          setProfile(profile);
+
+          setEditUserName(profile.voUserName || userName);
+          setEditUserEmail(profile.voUserEmail || '');
+          setEditRealName(profile.voRealName || '');
+          setEditAge(String(profile.voAge ?? ''));
+          setEditAddress(profile.voAddress || '');
         }
       }
 
@@ -160,8 +169,8 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
           setCoinBalance(coinBalanceJson.responseData);
         }
       }
-    } catch {
-      // ignore
+    } catch (error) {
+      log.error('UserInfoCard', '加载用户资料失败:', error);
     } finally {
       setLoadingProfile(false);
     }
@@ -169,7 +178,15 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
 
   const avatarSrc = useMemo(() => {
     const url = profile?.voAvatarThumbnailUrl || profile?.voAvatarUrl;
-    return resolveUrl(apiBaseUrl, url) || undefined;
+    const resolved = resolveUrl(apiBaseUrl, url);
+
+    if (resolved) {
+      log.debug('UserInfoCard', '解析后的头像 URL:', resolved);
+    } else {
+      log.debug('UserInfoCard', '没有头像 URL');
+    }
+
+    return resolved || undefined;
   }, [apiBaseUrl, profile?.voAvatarThumbnailUrl, profile?.voAvatarUrl]);
 
   const handleOpenEdit = () => {
@@ -181,6 +198,20 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
       setEditAddress(profile.voAddress || '');
     }
     setIsEditOpen(true);
+  };
+
+  const handleAvatarClick = () => {
+    setIsAvatarModalOpen(true);
+  };
+
+  const handleAvatarUploadSuccess = async () => {
+    setIsAvatarModalOpen(false);
+    await loadProfile();
+  };
+
+  const handleAvatarError = () => {
+    log.error('UserInfoCard', '头像加载失败:', avatarSrc);
+    setAvatarLoadError(true);
   };
 
   const handleSave = async () => {
@@ -220,77 +251,48 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
     }
   };
 
-  const handleUploadAvatar = async (file: File) => {
-    const result = await uploadImage(
-      {
-        file,
-        businessType: 'Avatar',
-        generateThumbnail: true,
-        generateMultipleSizes: false,
-        addWatermark: false,
-        removeExif: true
-      },
-      t
-    );
-
-    await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
-      },
-      body: JSON.stringify({ attachmentId: result.id })
-    });
-
-    await loadProfile();
-
-    const uploadResult: UploadResult = {
-      id: result.id,
-      originalName: result.originalName,
-      url: result.url,
-      thumbnailUrl: result.thumbnailUrl,
-      fileSize: result.fileSize,
-      mimeType: result.mimeType
-    };
-
-    return uploadResult;
-  };
-
-  const handleRemoveAvatar = async () => {
-    try {
-      await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
-        },
-        body: JSON.stringify({ attachmentId: 0 })
-      });
-
-      await loadProfile();
-    } catch {
-      // ignore
-    }
-  };
-
   return (
     <div className={styles.card}>
       <div className={styles.header}>
-        <div className={styles.avatar}>
-          {avatarSrc ? (
-            <img className={styles.avatarImg} src={avatarSrc} alt={userName} />
-          ) : (
-            <Icon icon="mdi:account-circle" size={64} />
-          )}
+        <div className={styles.avatarSection} onClick={handleAvatarClick}>
+          <div className={styles.avatar}>
+            {avatarSrc ? (
+              <img
+                className={styles.avatarImg}
+                src={avatarSrc}
+                alt={userName}
+                onError={handleAvatarError}
+              />
+            ) : (
+              <Icon icon="mdi:account-circle" size={80} />
+            )}
+          </div>
+          <div className={styles.avatarHint}>点击更换头像</div>
         </div>
         <div className={styles.info}>
           <h2 className={styles.userName}>{profile?.voUserName || userName}</h2>
           <p className={styles.userId}>ID: {userId}</p>
           <div className={styles.profileMeta}>
-            <span className={styles.metaItem}>邮箱：{profile?.voUserEmail || '-'}</span>
-            <span className={styles.metaItem}>余额：{formatCoinAmount(coinBalance?.balance)}</span>
+            <div className={styles.metaItem}>
+              <Icon icon="mdi:email" size={16} />
+              <span>{profile?.voUserEmail || '未设置邮箱'}</span>
+            </div>
+            <div className={styles.metaItem}>
+              <Icon icon="mdi:wallet" size={16} />
+              <span>{formatCoinAmount(coinBalance?.balance)}</span>
+            </div>
+            {profile?.voRealName && (
+              <div className={styles.metaItem}>
+                <Icon icon="mdi:account" size={16} />
+                <span>{profile.voRealName}</span>
+              </div>
+            )}
+            {profile?.voAddress && (
+              <div className={styles.metaItem}>
+                <Icon icon="mdi:map-marker" size={16} />
+                <span>{profile.voAddress}</span>
+              </div>
+            )}
           </div>
         </div>
         <div className={styles.headerActions}>
@@ -298,21 +300,6 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
             编辑资料
           </Button>
         </div>
-      </div>
-
-      <div className={styles.avatarUpload}>
-        <FileUpload
-          accept="image/*"
-          maxSize={2 * 1024 * 1024}
-          placeholder="上传头像（2MB以内）"
-          onUpload={handleUploadAvatar}
-          showPreview={false}
-        />
-        {avatarSrc && (
-          <Button variant="secondary" size="small" onClick={handleRemoveAvatar} style={{ marginTop: '8px' }}>
-            移除头像
-          </Button>
-        )}
       </div>
 
       {(loading || loadingProfile) && (
@@ -377,6 +364,13 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
         message="确定要保存个人资料修改吗？"
         onCancel={() => setConfirmOpen(false)}
         onConfirm={handleSave}
+      />
+
+      <AvatarUploadModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        onSuccess={handleAvatarUploadSuccess}
+        apiBaseUrl={apiBaseUrl}
       />
     </div>
   );

@@ -7,9 +7,27 @@
 
 .header {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 20px;
   margin-bottom: 24px;
+}
+
+.avatarSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.avatarSection:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
 .avatar {
@@ -17,35 +35,53 @@
 }
 
 .avatarImg {
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   object-fit: cover;
-  border: 2px solid rgba(102, 126, 234, 0.25);
+  border: 3px solid rgba(102, 126, 234, 0.25);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+  transition: all 0.3s ease;
+}
+
+.avatarSection:hover .avatarImg {
+  border-color: rgba(102, 126, 234, 0.5);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.avatarHint {
+  font-size: 12px;
+  color: #667eea;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.avatarSection:hover .avatarHint {
+  opacity: 1;
 }
 
 .headerActions {
   display: flex;
   align-items: flex-start;
   gap: 8px;
+  margin-left: auto;
 }
 
 .profileMeta {
-  margin-top: 6px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
   font-size: 13px;
   color: #666;
 }
 
 .metaItem {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-}
-
-.avatarUpload {
-  margin-bottom: 16px;
+  gap: 6px;
+  padding: 4px 0;
 }
 
 .editForm {
@@ -73,6 +109,7 @@
 
 .info {
   flex: 1;
+  min-width: 0;
 }
 
 .userName {
@@ -80,12 +117,14 @@
   font-size: 24px;
   font-weight: 600;
   color: #1a1a1a;
+  line-height: 1.3;
 }
 
 .userId {
   margin: 4px 0 0 0;
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: #999;
+  font-weight: 500;
 }
 
 .loading {
@@ -128,6 +167,25 @@
 }
 
 @media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .avatarSection {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .headerActions {
+    margin-left: 0;
+    justify-content: center;
+  }
+
+  .profileMeta {
+    grid-template-columns: 1fr;
+  }
+
   .stats {
     grid-template-columns: 1fr;
   }

@@ -45,6 +45,9 @@ export type {
   UploadProgress
 } from './ChunkedFileUpload/ChunkedFileUpload';
 
+export { ImageCropper } from './ImageCropper/ImageCropper';
+export type { ImageCropperProps } from './ImageCropper/ImageCropper';
+
 export { Toast, ToastContainer, toast, toastManager } from './Toast/Toast';
 export type { ToastProps } from './Toast/Toast';
 
