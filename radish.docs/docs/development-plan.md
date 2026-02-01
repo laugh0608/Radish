@@ -38,7 +38,7 @@
 
 > **当前进度**：🎉 **M10（后台管理Console）已于 2026-01-22 完成**，Console 后台管理系统具备完整的管理功能。**正式进入 M11 查漏补缺阶段**。
 >
-> **M11 查漏补缺阶段进展**（2026.01.29 更新）：
+> **M11 查漏补缺阶段进展**（2026.01.31 更新）：
 > - ✅ **萝卜坑应用核心功能100%完成**（2026-01-27）
 > - ✅ **前端代码规范优化**（2026-01-29）：
 >   - 统一使用 viewModelMapper 进行类型映射
@@ -46,7 +46,24 @@
 >   - 统一使用 env.ts 配置管理 API URL
 >   - 修复 20+ 处硬编码的 localhost:5000 URL
 >   - 类型检查全部通过
-> - 🔄 **代码规范优化**：后端规范符合度95%，前端规范符合度94%
+> - ✅ **排行榜系统完整实现**（2026-01-31）：
+>   - 支持 8 种排行榜类型（等级、余额、花销、购买、热门商品、发帖、评论、人气）
+>   - 统一数据结构设计（UnifiedLeaderboardItemVo）
+>   - 数据库级聚合查询，性能优化
+>   - 前端完整集成（LeaderboardApp、排行榜项组件）
+>   - 详见 [排行榜功能文档](./features/leaderboard.md)
+> - ✅ **BaseService 功能大幅扩展**（2026-01-31）：
+>   - 聚合查询方法（QueryDistinct/Sum/Max/Min/Average）
+>   - 批量查询方法（QueryByIds）
+>   - 排序查询方法（QueryWithOrder、二级排序分页）
+>   - 工具方法（ExecuteWithRetry、GetOrCreate）
+>   - 详见 [BaseService 扩展方法指南](./guide/base-service-advanced.md)
+> - ✅ **前端架构优化**（2026-01-31）：
+>   - @radish/http 包独立（从 @radish/ui 抽离）
+>   - 统一认证服务（auth.ts）
+>   - 消除匿名对象，统一 ViewModel 规范
+>   - 详见 [@radish/http 包文档](./frontend/http-client.md) 和 [认证服务统一指南](./guide/authentication-service.md)
+> - 🔄 **代码规范优化**：后端规范符合度98%，前端规范符合度96%
 > - 🎯 **待完成**：WebOS UI美化、论坛功能丰富、主题配置开发、i18n国际化完善
 >
 > **M6 完成情况**：

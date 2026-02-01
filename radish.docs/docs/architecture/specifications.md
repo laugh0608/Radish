@@ -543,15 +543,130 @@ Task<List<TEntity>> QuerySplitAsync(...)              // 分表查询
 ```
 
 #### 聚合查询
+
+**数据库级聚合，避免内存过滤**：
+
 ```csharp
-Task<List<TResult>> QueryDistinctAsync<TResult>(selectExpression, whereExpression)  // 去重查询
-Task<TResult> QuerySumAsync<TResult>(selectExpression, whereExpression)             // 求和
-Task<TResult> QueryMaxAsync<TResult>(selectExpression, whereExpression)             // 最大值
-Task<TResult> QueryMinAsync<TResult>(selectExpression, whereExpression)             // 最小值
-Task<decimal> QueryAverageAsync(selectExpression, whereExpression)                  // 平均值
+// 去重查询 - 查询某个字段的不同值列表
+Task<List<TResult>> QueryDistinctAsync<TResult>(selectExpression, whereExpression)
+
+// 求和 - 对某个字段进行求和
+Task<TResult> QuerySumAsync<TResult>(selectExpression, whereExpression)
+
+// 最大值 - 查询某个字段的最大值
+Task<TResult> QueryMaxAsync<TResult>(selectExpression, whereExpression)
+
+// 最小值 - 查询某个字段的最小值
+Task<TResult> QueryMinAsync<TResult>(selectExpression, whereExpression)
+
+// 平均值 - 查询某个字段的平均值
+Task<decimal> QueryAverageAsync(selectExpression, whereExpression)
+```
+
+**使用示例**：
+
+```csharp
+// 获取所有不同的帖子 ID（评论表）
+var postIds = await _commentService.QueryDistinctAsync(
+    c => c.PostId,
+    c => c.IsEnabled);
+
+// 计算用户的总消费金额
+var totalSpent = await _orderService.QuerySumAsync<decimal>(
+    o => o.TotalAmount,
+    o => o.UserId == userId && o.Status == OrderStatus.Completed);
+
+// 查询商品的最高价格
+var maxPrice = await _productService.QueryMaxAsync<decimal>(
+    p => p.Price,
+    p => p.IsEnabled);
+
+// 计算商品的平均价格
+var avgPrice = await _productService.QueryAverageAsync(
+    p => p.Price,
+    p => p.IsEnabled);
+```
+
+**性能对比**：
+
+```csharp
+// ❌ 错误：内存聚合（查询所有数据）
+var orders = await _orderService.QueryAsync(o => o.UserId == userId);
+var totalSpent = orders.Sum(o => o.TotalAmount);
+
+// ✅ 正确：数据库级聚合
+var totalSpent = await _orderService.QuerySumAsync<decimal>(
+    o => o.TotalAmount,
+    o => o.UserId == userId);
+```
+
+#### 批量查询
+
+```csharp
+// 根据多个 ID 批量查询实体（避免 N+1 查询）
+Task<List<TVo>> QueryByIdsAsync(List<long> ids)
+```
+
+**使用示例**：
+
+```csharp
+// ✅ 正确：批量查询
+var userIds = new List<long> { 1, 2, 3, 4, 5 };
+var users = await _userService.QueryByIdsAsync(userIds);
+
+// ❌ 错误：循环查询（N+1 问题）
+var users = new List<UserVo>();
+foreach (var userId in userIds)
+{
+    var user = await _userService.QueryByIdAsync(userId);
+    if (user != null) users.Add(user);
+}
+```
+
+#### 排序查询
+
+```csharp
+// 带排序的列表查询，可选限制数量
+Task<List<TVo>> QueryWithOrderAsync(
+    whereExpression,
+    orderByExpression,
+    orderByType = OrderByType.Asc,
+    take = 0)
+
+// 二级排序分页查询
+Task<(List<TVo> data, int totalCount)> QueryPageAsync(
+    whereExpression,
+    pageIndex,
+    pageSize,
+    orderByExpression,
+    orderByType,
+    thenByExpression,
+    thenByType)
+```
+
+**使用示例**：
+
+```csharp
+// 查询最新的 10 条帖子
+var latestPosts = await _postService.QueryWithOrderAsync(
+    p => p.IsEnabled,
+    p => p.CreateTime,
+    OrderByType.Desc,
+    take: 10);
+
+// 查询商品：先按分类升序，再按销量降序
+var (products, total) = await _productService.QueryPageAsync(
+    whereExpression: p => p.IsEnabled,
+    pageIndex: 1,
+    pageSize: 20,
+    orderByExpression: p => p.CategoryId,
+    orderByType: OrderByType.Asc,
+    thenByExpression: p => p.SalesCount,
+    thenByType: OrderByType.Desc);
 ```
 
 #### 工具方法
+
 ```csharp
 // 乐观锁重试机制（指数退避：100ms, 200ms, 400ms...）
 Task<TResult> ExecuteWithRetryAsync<TResult>(
@@ -564,6 +679,37 @@ Task<TEntity> GetOrCreateAsync(
     Expression<Func<TEntity, bool>> predicate,
     Func<TEntity> createFactory)
 ```
+
+**使用示例**：
+
+```csharp
+// 扣减库存（高并发场景，使用乐观锁重试）
+var success = await _productService.ExecuteWithRetryAsync(async () =>
+{
+    var product = await _productRepository.QueryByIdAsync(productId);
+    if (product == null || product.Stock < quantity)
+    {
+        return false;
+    }
+
+    product.Stock -= quantity;
+    product.SalesCount += quantity;
+    return await _productRepository.UpdateAsync(product);
+}, maxRetryCount: 5);
+
+// 获取或创建用户余额记录
+var balance = await _userBalanceService.GetOrCreateAsync(
+    b => b.UserId == userId,
+    () => new UserBalance
+    {
+        UserId = userId,
+        CurrentBalance = 0,
+        TotalIncome = 0,
+        TotalSpent = 0
+    });
+```
+
+**详细文档**：参见 [BaseService 扩展方法指南](../guide/base-service-advanced.md)
 
 
 ### 使用场景
