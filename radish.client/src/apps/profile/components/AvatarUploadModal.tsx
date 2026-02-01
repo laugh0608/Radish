@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, ImageCropper } from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import styles from './AvatarUploadModal.module.css';
 
@@ -17,6 +18,7 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
   onSuccess,
   apiBaseUrl,
 }) => {
+  const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,8 +58,18 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
 
       log.debug('AvatarUploadModal', '开始上传裁切后的头像');
 
-      // 上传图片
-      const uploadResult = await uploadImage(croppedFile);
+      // 上传图片 - 修复：传递正确的参数格式
+      const uploadResult = await uploadImage(
+        {
+          file: croppedFile,
+          businessType: 'Avatar',
+          generateThumbnail: true,
+          generateMultipleSizes: false,
+          addWatermark: false,
+          removeExif: true,
+        },
+        t
+      );
       log.debug('AvatarUploadModal', '图片上传成功:', uploadResult);
 
       // 设置头像

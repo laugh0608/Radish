@@ -3,6 +3,7 @@ import type {
   ApiRequestOptions,
   ParsedApiResponse,
 } from './types';
+import { shouldRefreshToken, tryRefreshToken } from './token-refresh';
 
 /**
  * API 客户端配置
@@ -115,6 +116,34 @@ export async function apiFetch(
 
     // 响应拦截器
     currentConfig.onResponse?.(response);
+
+    // 检查是否需要刷新 token
+    if (withAuth && shouldRefreshToken(response)) {
+      try {
+        // 刷新 token
+        const newToken = await tryRefreshToken();
+
+        // 使用新 token 重试请求
+        const retryHeaders = {
+          ...finalHeaders,
+          Authorization: `Bearer ${newToken}`,
+        };
+
+        const retryResponse = await fetch(url, {
+          ...fetchOptions,
+          headers: retryHeaders,
+        });
+
+        // 响应拦截器
+        currentConfig.onResponse?.(retryResponse);
+
+        return retryResponse;
+      } catch (refreshError) {
+        // Token 刷新失败，返回原始 401 响应
+        console.error('[API Client] Token refresh failed:', refreshError);
+        return response;
+      }
+    }
 
     return response;
   } catch (error) {

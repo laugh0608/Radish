@@ -40,3 +40,9 @@ export {
 } from './error-handler';
 
 export type { ErrorHandler } from './error-handler';
+
+// Token 刷新
+export {
+  configureTokenRefresh,
+  getTokenRefreshConfig,
+} from './token-refresh';

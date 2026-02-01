@@ -9,6 +9,7 @@ import { LevelUpModal } from '@radish/ui';
 import { useLevelUpListener } from '@/hooks/useLevelUpListener';
 import { log } from '@/utils/logger';
 import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
+import { configureTokenRefresh } from '@radish/http';
 import './App.css';
 
 interface Forecast {
@@ -79,9 +80,37 @@ function App() {
     }, [isBrowser, isOidcCallback]);
 
     useEffect(() => {
+        // 配置 token 自动刷新
+        const authServerBaseUrl = getAuthBaseUrl();
+        configureTokenRefresh({
+            refreshEndpoint: `${authServerBaseUrl}/connect/token`,
+            getRefreshToken: () => {
+                if (typeof window === 'undefined') return null;
+                return window.localStorage.getItem('refresh_token');
+            },
+            onTokenRefreshed: (accessToken, refreshToken) => {
+                if (typeof window === 'undefined') return;
+                window.localStorage.setItem('access_token', accessToken);
+                if (refreshToken) {
+                    window.localStorage.setItem('refresh_token', refreshToken);
+                }
+                log.info('App', '✅ Token 自动刷新成功');
+            },
+            onRefreshFailed: () => {
+                log.error('App', '❌ Token 刷新失败，跳转到登录页');
+                // 清除本地存储的 token
+                if (typeof window !== 'undefined') {
+                    window.localStorage.removeItem('access_token');
+                    window.localStorage.removeItem('refresh_token');
+                }
+                // 跳转到登录页
+                redirectToLogin();
+            }
+        });
+
         populateWeatherData();
         populateCurrentUser();
-        
+
         // 验证 userStore 状态
         setTimeout(() => {
             const userState = useUserStore.getState();
