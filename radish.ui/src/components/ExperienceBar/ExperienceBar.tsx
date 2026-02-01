@@ -75,7 +75,9 @@ export const ExperienceBar = ({
       {showLevel && (
         <div className="radish-exp-bar__level" style={{ color: themeColor }}>
           <span className="radish-exp-bar__level-number">Lv.{data.voCurrentLevel}</span>
-          <span className="radish-exp-bar__level-name">{data.voLevelName}</span>
+          {data.voLevelName && (
+            <span className="radish-exp-bar__level-name">{data.voLevelName}</span>
+          )}
         </div>
       )}
 

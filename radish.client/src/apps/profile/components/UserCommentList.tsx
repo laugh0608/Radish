@@ -4,19 +4,20 @@ import { Icon } from '@radish/ui';
 import styles from './UserCommentList.module.css';
 
 interface Comment {
-  id: number;
-  content: string;
-  postId: number;
-  likeCount: number;
-  createTime: string;
+  voId: number;
+  voContent: string;
+  voPostId: number;
+  voLikeCount: number;
+  voCreateTime: string;
 }
 
 interface UserCommentListProps {
   userId: number;
   apiBaseUrl: string;
+  onCommentClick?: (postId: number, commentId: number) => void;
 }
 
-export const UserCommentList = ({ userId, apiBaseUrl }: UserCommentListProps) => {
+export const UserCommentList = ({ userId, apiBaseUrl, onCommentClick }: UserCommentListProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -57,15 +58,20 @@ export const UserCommentList = ({ userId, apiBaseUrl }: UserCommentListProps) =>
     <div className={styles.container}>
       <div className={styles.list}>
         {comments.map(comment => (
-          <div key={comment.id} className={styles.commentItem}>
-            <p className={styles.content}>{comment.content}</p>
+          <div
+            key={comment.voId}
+            className={styles.commentItem}
+            onClick={() => onCommentClick?.(comment.voPostId, comment.voId)}
+            style={{ cursor: onCommentClick ? 'pointer' : 'default' }}
+          >
+            <p className={styles.content}>{comment.voContent}</p>
             <div className={styles.meta}>
               <span className={styles.metaItem}>
                 <Icon icon="mdi:heart" size={16} />
-                {comment.likeCount}
+                {comment.voLikeCount}
               </span>
               <span className={styles.time}>
-                {new Date(comment.createTime).toLocaleDateString('zh-CN')}
+                {new Date(comment.voCreateTime).toLocaleDateString('zh-CN')}
               </span>
             </div>
           </div>
