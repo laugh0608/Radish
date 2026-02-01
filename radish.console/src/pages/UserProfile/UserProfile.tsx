@@ -16,6 +16,7 @@ import {
 import { SaveOutlined, CameraOutlined } from '@ant-design/icons';
 import { getApiBaseUrl, getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
+import { userApi } from '@/api/user';
 import './UserProfile.css';
 
 interface UserProfileData {
@@ -127,23 +128,39 @@ export const UserProfile = () => {
         log.debug('UserProfile', '头像上传响应:', response);
 
         if (response?.isSuccess && response?.responseData) {
-          // 根据后端返回的数据结构获取 URL
+          // 获取文件ID和URL
+          const fileId = response.responseData.voId;
           const avatarUrl = response.responseData.voUrl ||
                            response.responseData.VoUrl ||
                            response.responseData.url;
 
-          if (avatarUrl) {
-            setProfileData(prev => prev ? {
-              ...prev,
-              voAvatarUrl: avatarUrl,
-            } : null);
+          if (fileId && avatarUrl) {
+            // 调用后端接口保存头像关联（fileId 是字符串类型的雪花ID）
+            userApi.setMyAvatar(String(fileId))
+              .then(setAvatarResponse => {
+                if (setAvatarResponse.ok) {
+                  // 更新本地状态
+                  setProfileData(prev => prev ? {
+                    ...prev,
+                    voAvatarUrl: avatarUrl,
+                  } : null);
 
-            // 刷新UserContext中的用户信息，更新右上角导航栏头像
-            refreshUser();
+                  // 刷新UserContext中的用户信息，更新右上角导航栏头像
+                  refreshUser();
 
-            message.success('头像更新成功');
+                  message.success('头像更新成功');
+                  log.debug('UserProfile', '头像已保存到数据库');
+                } else {
+                  message.error(setAvatarResponse.message || '保存头像失败');
+                  log.error('UserProfile', '保存头像失败:', setAvatarResponse.message);
+                }
+              })
+              .catch(error => {
+                message.error('保存头像失败');
+                log.error('UserProfile', '保存头像异常:', error);
+              });
           } else {
-            message.error('头像上传失败：未获取到文件URL');
+            message.error('头像上传失败：未获取到文件信息');
           }
         } else {
           message.error(response?.messageInfo || '头像上传失败');
