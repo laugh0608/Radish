@@ -196,32 +196,74 @@
 }
 
 .transactionList {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
   margin-bottom: 16px;
 }
 
 .transactionItem {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
-  background: #f9f9f9;
-  border-radius: 6px;
-  transition: all 0.2s;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  border-radius: 12px;
+  border: 1px solid #eef0f6;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 
 .transactionItem:hover {
-  background: #f0f0f0;
+  transform: translateY(-1px);
+  border-color: #dbe2f0;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
-.txIcon {
-  color: #667eea;
+.transactionItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+  background: #e5e7eb;
+}
+
+.positive::before {
+  background: linear-gradient(180deg, #34d399 0%, #22c55e 100%);
+}
+
+.negative::before {
+  background: linear-gradient(180deg, #f97316 0%, #ef4444 100%);
+}
+
+.txBadge {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f2937;
+  background: #eef2ff;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.txBadgePositive {
+  color: #16a34a;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.txBadgeNegative {
+  color: #dc2626;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
 }
 
 .txInfo {
@@ -232,10 +274,37 @@
   min-width: 0;
 }
 
+.txTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .txType {
   font-size: 14px;
   font-weight: 600;
   color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.txLevelUp {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7c2d12;
+  background: #ffedd5;
+  border-radius: 999px;
+  letter-spacing: 0.2px;
+}
+
+.txMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .txTime {
@@ -243,19 +312,43 @@
   color: #999;
 }
 
+.txLevelChange {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
 .txRemark {
   font-size: 12px;
-  color: #666;
-  font-style: italic;
+  color: #6b7280;
   margin-top: 2px;
 }
 
-.txAmount {
-  font-size: 18px;
-  font-weight: 700;
-  color: #43e97b;
+.txAmountWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
   flex-shrink: 0;
-  margin-left: auto;
+}
+
+.txAmount {
+  font-size: 20px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: 0.3px;
+}
+
+.positive .txAmount {
+  color: #16a34a;
+}
+
+.negative .txAmount {
+  color: #dc2626;
+}
+
+.txBalance {
+  font-size: 11px;
+  color: #94a3b8;
 }
 
 /* 分页 */
@@ -321,12 +414,14 @@
   }
 
   .transactionItem {
-    padding: 12px;
-    grid-template-columns: auto 1fr auto;
+    padding: 12px 12px 12px 14px;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 8px;
   }
 
   .txInfo {
-    grid-template-columns: 1fr;
+    grid-column: 2 / -1;
   }
 
   .txTime {
@@ -339,5 +434,10 @@
 
   .txAmount {
     font-size: 18px;
+  }
+
+  .txAmountWrap {
+    grid-column: 2 / -1;
+    align-items: flex-start;
   }
 }
