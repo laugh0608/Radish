@@ -246,20 +246,14 @@ export const Dock = () => {
                       <img
                         src={avatarSrc}
                         alt={userName}
-                        style={{
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '6px',
-                          objectFit: 'cover'
-                        }}
                       />
                     ) : (
-                      <Icon icon="mdi:account-circle" size={28} />
+                      <Icon icon="mdi:account-circle" size={40} />
                     )}
                     <div className={styles.statusDot} />
                   </>
                 ) : (
-                  <Icon icon="mdi:account-circle-outline" size={28} />
+                  <Icon icon="mdi:account-circle-outline" size={40} />
                 )}
               </div>
               {loggedIn && userName && (
@@ -342,8 +336,7 @@ export const Dock = () => {
                 onClick={loggedIn ? handleLogoutClick : redirectToLogin}
                 title={loggedIn ? '退出登录' : '登录'}
               >
-                <Icon icon={loggedIn ? 'mdi:account-check' : 'mdi:login-variant'} size={28} />
-                {loggedIn && <div className={styles.onlineIndicator} />}
+                <Icon icon={loggedIn ? 'mdi:logout' : 'mdi:login'} size={28} />
               </button>
             </div>
           </div>

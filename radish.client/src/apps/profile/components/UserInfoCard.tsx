@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { log } from '@/utils/logger';
 import { Button, ConfirmDialog, Icon, Input, Modal } from '@radish/ui';
 import { useTranslation } from 'react-i18next';
+import { useUserStore } from '@/stores/userStore';
 import { AvatarUploadModal } from './AvatarUploadModal';
 import styles from './UserInfoCard.module.css';
 
@@ -93,6 +94,7 @@ async function readJsonIfPossible<T>(res: Response): Promise<T | null> {
 
 export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBaseUrl }: UserInfoCardProps) => {
   const { t } = useTranslation();
+  const { setUser, tenantId, roles } = useUserStore();
 
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
   const [coinBalance, setCoinBalance] = useState<CoinBalanceInfo | null>(null);
@@ -152,6 +154,16 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
             avatarThumbnailUrl: profile.voAvatarThumbnailUrl
           });
           setProfile(profile);
+
+          // 更新全局 userStore，使 Dock 栏能实时刷新头像
+          setUser({
+            userId: profile.voUserId,
+            userName: profile.voUserName,
+            tenantId: tenantId,
+            roles: roles || ['User'],
+            avatarUrl: profile.voAvatarUrl || undefined,
+            avatarThumbnailUrl: profile.voAvatarThumbnailUrl || undefined
+          });
 
           setEditUserName(profile.voUserName || userName);
           setEditUserEmail(profile.voUserEmail || '');
