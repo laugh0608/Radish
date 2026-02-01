@@ -1,6 +1,6 @@
 .container {
   margin-top: 16px;
-  border-top: 1px solid #333;
+  border-top: 1px solid #e5e7eb;
   padding-top: 12px;
 }
 
@@ -8,14 +8,14 @@
   margin: 0 0 12px 0;
   font-size: 15px;
   font-weight: 600;
-  color: #fff;
+  color: #1f2937;
 }
 
 .loginPrompt {
   margin-bottom: 12px;
   padding: 8px 12px;
-  background-color: #3f1f1f;
-  color: #f97373;
+  background-color: #fef2f2;
+  color: #dc2626;
   border-radius: 6px;
   font-size: 13px;
 }
@@ -38,7 +38,7 @@
 
 .userInfo {
   font-size: 12px;
-  color: #999;
+  color: #6b7280;
   margin-bottom: 8px;
 }
 
@@ -46,10 +46,10 @@
   width: 100%;
   margin-bottom: 8px;
   padding: 8px 12px;
-  background-color: #1f2937;
-  border: 1px solid #444;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  color: #fff;
+  color: #1f2937;
   font-size: 14px;
   box-sizing: border-box;
 }
@@ -57,18 +57,20 @@
 .input:focus {
   outline: none;
   border-color: #2d6cdf;
+  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
 }
 
 .input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background-color: #f9fafb;
 }
 
 .uploadOptions {
   margin-bottom: 12px;
   padding: 12px;
-  background-color: #1f2937;
-  border: 1px solid #444;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -80,13 +82,13 @@
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  color: #ccc;
+  color: #6b7280;
   cursor: pointer;
   user-select: none;
 }
 
 .optionLabel:hover {
-  color: #fff;
+  color: #1f2937;
 }
 
 .optionLabel input[type="checkbox"] {
@@ -98,10 +100,10 @@
 .watermarkInput {
   margin-left: 24px;
   padding: 6px 10px;
-  background-color: #111827;
-  border: 1px solid #444;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 4px;
-  color: #fff;
+  color: #1f2937;
   font-size: 13px;
   outline: none;
   transition: border-color 0.2s ease;
@@ -109,25 +111,27 @@
 
 .watermarkInput:focus {
   border-color: #2d6cdf;
+  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
 }
 
 .watermarkInput::placeholder {
-  color: #666;
+  color: #9ca3af;
 }
 
 .watermarkInput:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background-color: #f9fafb;
 }
 
 .textarea {
   width: 100%;
   margin-bottom: 8px;
   padding: 8px 12px;
-  background-color: #1f2937;
-  border: 1px solid #444;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  color: #fff;
+  color: #1f2937;
   font-size: 14px;
   resize: vertical;
   box-sizing: border-box;
@@ -137,11 +141,13 @@
 .textarea:focus {
   outline: none;
   border-color: #2d6cdf;
+  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
 }
 
 .textarea:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background-color: #f9fafb;
 }
 
 .submitButton {
