@@ -1,4 +1,4 @@
-import { apiGet } from '@radish/ui';
+import { apiGet, apiPost } from '@radish/ui';
 import type { ParsedApiResponse } from '@radish/ui';
 import type { UserInfo } from '../types/user';
 
@@ -34,5 +34,17 @@ export const userApi = {
     }
 
     return response as ParsedApiResponse<UserInfo>;
+  },
+
+  /**
+   * 设置当前用户头像
+   * @param attachmentId 附件ID（字符串类型的雪花ID，"0"表示清空头像）
+   */
+  async setMyAvatar(attachmentId: string): Promise<ParsedApiResponse<null>> {
+    return await apiPost<null>(
+      '/api/v1/User/SetMyAvatar',
+      { AttachmentId: attachmentId },
+      { withAuth: true }
+    );
   },
 };

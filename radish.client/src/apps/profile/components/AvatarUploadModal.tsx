@@ -73,6 +73,8 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
       log.debug('AvatarUploadModal', '图片上传成功:', uploadResult);
 
       // 设置头像
+      // 注意：后端返回的字段名是 voId 或 VoId（字符串类型的雪花ID）
+      const attachmentId = (uploadResult as any).voId || (uploadResult as any).VoId || uploadResult.id;
       const token = localStorage.getItem('access_token');
       const res = await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
         method: 'POST',
@@ -81,7 +83,7 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
           Accept: 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ attachmentId: uploadResult.id }),
+        body: JSON.stringify({ AttachmentId: String(attachmentId) }),
       });
 
       const json = await res.json();
