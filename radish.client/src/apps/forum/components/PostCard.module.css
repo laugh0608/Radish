@@ -1,6 +1,6 @@
 .card {
-  background-color: #18181b;
-  border: 1px solid #3f3f46;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
   padding: 20px;
   cursor: pointer;
@@ -9,16 +9,16 @@
 }
 
 .card:hover {
-  background-color: #27272a;
-  border-color: #52525b;
+  background-color: #f9fafb;
+  border-color: #d1d5db;
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
 }
 
 .title {
   font-size: 18px;
   font-weight: 600;
-  color: #f4f4f5;
+  color: #1f2937;
   margin: 0 0 12px 0;
   line-height: 1.5;
   overflow: hidden;
@@ -33,7 +33,7 @@
   flex-wrap: wrap;
   gap: 16px;
   font-size: 13px;
-  color: #a1a1aa;
+  color: #6b7280;
   margin-bottom: 12px;
 }
 
@@ -50,14 +50,14 @@
 
 .author {
   font-weight: 500;
-  color: #d4d4d8;
+  color: #374151;
 }
 
 .time,
 .likes,
 .views,
 .comments {
-  color: #a1a1aa;
+  color: #6b7280;
 }
 
 /* 神评预览 */
@@ -85,21 +85,21 @@
   border-radius: 4px;
   font-weight: 600;
   font-size: 11px;
-  color: #18181b;
+  color: #ffffff;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .godAuthor {
   font-weight: 500;
-  color: #fbbf24;
+  color: #d97706;
 }
 
 .godLikes {
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #fbbf24;
+  color: #d97706;
   margin-left: auto;
 }
 
@@ -111,7 +111,7 @@
   margin: 0;
   font-size: 14px;
   line-height: 1.6;
-  color: #e4e4e7;
+  color: #374151;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;

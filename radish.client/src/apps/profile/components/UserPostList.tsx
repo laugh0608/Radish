@@ -16,9 +16,10 @@ interface Post {
 interface UserPostListProps {
   userId: number;
   apiBaseUrl: string;
+  onPostClick?: (postId: number) => void;
 }
 
-export const UserPostList = ({ userId, apiBaseUrl }: UserPostListProps) => {
+export const UserPostList = ({ userId, apiBaseUrl, onPostClick }: UserPostListProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -59,7 +60,12 @@ export const UserPostList = ({ userId, apiBaseUrl }: UserPostListProps) => {
     <div className={styles.container}>
       <div className={styles.list}>
         {posts.map(post => (
-          <div key={post.voId} className={styles.postItem}>
+          <div
+            key={post.voId}
+            className={styles.postItem}
+            onClick={() => onPostClick?.(post.voId)}
+            style={{ cursor: onPostClick ? 'pointer' : 'default' }}
+          >
             <h3 className={styles.title}>{post.voTitle}</h3>
             <p className={styles.content}>
               {post.voContent?.substring(0, 100) ?? ''}

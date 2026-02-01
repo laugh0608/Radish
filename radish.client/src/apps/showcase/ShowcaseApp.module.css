@@ -1,7 +1,7 @@
 /* 展示页面容器 */
 .showcase {
   min-height: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
   padding: 2rem;
 }
 
@@ -15,14 +15,14 @@
 .title {
   font-size: 3rem;
   font-weight: 700;
-  color: white;
+  color: #1f2937;
   margin: 0 0 0.5rem 0;
   text-align: center;
 }
 
 .subtitle {
   font-size: 1.125rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: #6b7280;
   margin: 0 0 2rem 0;
   text-align: center;
 }
@@ -35,29 +35,31 @@
   gap: 0.5rem;
   margin-bottom: 2rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 12px;
 }
 
 .navItem {
   padding: 0.5rem 1rem;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.9);
+  color: #6b7280;
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .navItem:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: #f3f4f6;
+  border-color: #9ca3af;
+  color: #1f2937;
 }
 
 .navItem.active {
-  background: rgba(255, 255, 255, 0.25);
-  border-color: white;
+  background: #2d6cdf;
+  border-color: #2d6cdf;
   color: white;
   font-weight: 600;
 }
@@ -70,13 +72,13 @@
 .sectionTitle {
   font-size: 1.75rem;
   font-weight: 600;
-  color: white;
+  color: #1f2937;
   margin: 0 0 0.5rem 0;
 }
 
 .description {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #6b7280;
   margin: 0 0 1rem 0;
 }
 
@@ -103,12 +105,12 @@
 }
 
 .iconItem:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: #f3f4f6;
 }
 
 .iconItem span {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: #6b7280;
 }
 
 /* Button 组 */
@@ -121,7 +123,7 @@
 .buttonGroup h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
   margin: 0 0 0.75rem 0;
 }
 
@@ -145,13 +147,13 @@
 .demoCard h3 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
   margin: 0 0 0.5rem 0;
 }
 
 .demoCard p {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #6b7280;
   margin: 0.25rem 0;
 }
 
@@ -171,13 +173,13 @@
 .cardHeader h3 {
   font-size: 1.25rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
   margin: 0;
 }
 
 .cardHeader p {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: #6b7280;
   margin: 0.25rem 0 0 0;
 }
 
@@ -192,23 +194,25 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.15);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  transition: background 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .notification:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: #f3f4f6;
+  border-color: #d1d5db;
 }
 
 .notification span {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
 }
 
 .time {
   margin-left: auto;
-  color: rgba(255, 255, 255, 0.6) !important;
+  color: #9ca3af !important;
   font-size: 0.75rem !important;
 }
 
@@ -228,7 +232,7 @@
 .contextMenuDemo h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
   margin: 0 0 1rem 0;
 }
 
@@ -237,18 +241,18 @@
   align-items: center;
   justify-content: center;
   padding: 3rem 2rem;
-  background: rgba(255, 255, 255, 0.15);
-  border: 2px dashed rgba(255, 255, 255, 0.3);
+  background: #f9fafb;
+  border: 2px dashed #d1d5db;
   border-radius: 12px;
-  color: rgba(255, 255, 255, 0.9);
+  color: #6b7280;
   font-size: 0.875rem;
   cursor: context-menu;
   transition: all 0.2s ease;
 }
 
 .contextMenuTarget:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
+  background: #f3f4f6;
+  border-color: #9ca3af;
 }
 
 /* 表单组 */
@@ -269,7 +273,7 @@
 .expBarDemo h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
   margin: 0 0 0.75rem 0;
 }
 
@@ -283,7 +287,7 @@
 .skeletonDemo h3 {
   font-size: 1rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
   margin: 0 0 1rem 0;
 }
 
@@ -301,7 +305,7 @@
 .chartCard h3 {
   font-size: 1.125rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.95);
+  color: #1f2937;
   margin: 0 0 1rem 0;
 }
 

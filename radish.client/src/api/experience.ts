@@ -16,26 +16,24 @@ configureApiClient({
  */
 export interface ExperienceData {
   voUserId: number;
-  voCurrentExp: number;
+  voUserName?: string;
+  voAvatarUrl?: string;
   voCurrentLevel: number;
-  voNextLevelExp: number;
+  voCurrentLevelName: string;  // 后端字段名
+  voCurrentExp: number;
   voTotalExp: number;
-  voLevelProgress: number;
-  voLevelName: string;
-  voLevelDescription: string;
-  voCanLevelUp: boolean;
-  voNextLevelName: string;
   voExpToNextLevel: number;
-  voExpGainedToday: number;
-  voDailyExpLimit: number;
-  voRemainingDailyExp: number;
-  voIsMaxLevel: boolean;
-  voRank: number;
-  voPercentile: number;
-  voCreateTime: string;
-  voUpdateTime: string;
-  voExpFrozen?: boolean;
-  voThemeColor?: string;
+  voNextLevel: number;
+  voNextLevelName: string;
+  voLevelProgress: number;
+  voThemeColor: string;
+  voIconUrl?: string;
+  voBadgeUrl?: string;
+  voLevelUpAt?: string;
+  voRank?: number;
+  voExpFrozen: boolean;
+  voFrozenUntil?: string;
+  voFrozenReason?: string;
 }
 
 /**
@@ -44,22 +42,19 @@ export interface ExperienceData {
 export interface ExpTransactionData {
   voId: number;
   voUserId: number;
-  voUserName: string;
-  voExpChange: number;
+  voUserName?: string;
+  voExpType: string;  // 后端字段名
+  voExpTypeDisplay: string;  // 后端字段名
+  voExpAmount: number;  // 后端字段名（经验值变动量）
+  voBusinessType?: string;  // 后端字段名
+  voBusinessId?: number;  // 后端字段名
+  voRemark?: string;  // 后端字段名（备注）
   voExpBefore: number;
   voExpAfter: number;
   voLevelBefore: number;
   voLevelAfter: number;
-  voTransactionType: string;
-  voTransactionTypeDisplay: string;
-  voDescription: string;
-  voRelatedId: number;
-  voRelatedType: string;
-  voIsPositive: boolean;
-  voFormattedExpChange: string;
-  voFormattedDescription: string;
+  voIsLevelUp: boolean;  // 后端计算属性
   voCreateTime: string;
-  voUpdateTime: string;
 }
 
 /**
@@ -67,15 +62,15 @@ export interface ExpTransactionData {
  */
 export interface LeaderboardItemData {
   voUserId: number;
-  voUserName: string;
+  voUserName?: string;
   voAvatarUrl?: string;
   voCurrentLevel: number;
   voTotalExp: number;
-  voLevelName: string;
-  voRank: number;
-  voExpGainedThisWeek: number;
-  voExpGainedThisMonth: number;
-  voIsCurrentUser: boolean;
+  voCurrentLevelName: string;  // 后端字段名
+  voRank?: number;
+  voExpGainedThisWeek?: number;
+  voExpGainedThisMonth?: number;
+  voIsCurrentUser?: boolean;
   voThemeColor?: string;
 }
 

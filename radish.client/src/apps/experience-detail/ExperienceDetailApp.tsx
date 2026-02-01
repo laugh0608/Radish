@@ -70,8 +70,8 @@ export const ExperienceDetailApp = () => {
     const sources: Record<string, number> = {};
 
     transactions.forEach(tx => {
-      const type = tx.voTransactionType || '其他';
-      sources[type] = (sources[type] || 0) + tx.voExpChange;
+      const type = tx.voExpType || '其他';
+      sources[type] = (sources[type] || 0) + tx.voExpAmount;
     });
 
     const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b'];
@@ -146,7 +146,11 @@ export const ExperienceDetailApp = () => {
           {/* 经验条 */}
           <div className={styles.experienceBarSection}>
             <ExperienceBar
-              data={experience}
+              data={{
+                ...experience,
+                voLevelName: experience.voCurrentLevelName,  // 映射字段名
+                voNextLevelExp: experience.voCurrentExp + experience.voExpToNextLevel  // 计算总经验值
+              }}
               size="large"
               showLevel={true}
               showProgress={true}
@@ -160,7 +164,7 @@ export const ExperienceDetailApp = () => {
             <div className={styles.statCard}>
               <div className={styles.statLabel}>当前等级</div>
               <div className={styles.statValue} style={{ color: experience.voThemeColor || '#3b82f6' }}>
-                Lv.{experience.voCurrentLevel} {experience.voLevelName}
+                Lv.{experience.voCurrentLevel} {experience.voCurrentLevelName}
               </div>
             </div>
             <div className={styles.statCard}>
@@ -244,16 +248,25 @@ export const ExperienceDetailApp = () => {
                         <Icon icon="mdi:plus-circle" size={24} />
                       </div>
                       <div className={styles.txInfo}>
-                        <div className={styles.txType}>{getExpTypeDisplay(tx.voTransactionType)}</div>
-                        <div className={styles.txTime}>
-                          {new Date(tx.voCreateTime).toLocaleString('zh-CN')}
+                        <div className={styles.txType}>
+                          {tx.voExpTypeDisplay || getExpTypeDisplay(tx.voExpType)}
                         </div>
-                        {tx.voDescription && (
-                          <div className={styles.txRemark}>{tx.voDescription}</div>
+                        <div className={styles.txTime}>
+                          {new Date(tx.voCreateTime).toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })}
+                        </div>
+                        {tx.voRemark && (
+                          <div className={styles.txRemark}>{tx.voRemark}</div>
                         )}
                       </div>
                       <div className={styles.txAmount}>
-                        +{tx.voExpChange}
+                        {tx.voExpAmount > 0 ? '+' : ''}{tx.voExpAmount}
                       </div>
                     </div>
                   ))}

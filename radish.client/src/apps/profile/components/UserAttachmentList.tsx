@@ -6,16 +6,16 @@ import { useTranslation } from 'react-i18next';
 import styles from './UserAttachmentList.module.css';
 
 interface Attachment {
-  id: string | number;
-  originalName: string;
-  extension: string;
-  fileSize: number;
-  fileSizeFormatted?: string;
-  mimeType: string;
-  url: string;
-  thumbnailUrl?: string | null;
-  businessType?: string;
-  createTime: string;
+  voId: string | number;
+  voOriginalName: string;
+  voExtension?: string;
+  voFileSize: number;
+  voFileSizeFormatted?: string;
+  voMimeType: string;
+  voUrl: string;
+  voThumbnailUrl?: string | null;
+  voBusinessType?: string;
+  voCreateTime: string;
 }
 
 interface PageModel<T> {
@@ -38,7 +38,8 @@ interface UserAttachmentListProps {
 
 type BusinessTypeFilter = 'All' | 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document';
 
-function isImageExtension(extension: string): boolean {
+function isImageExtension(extension: string | undefined | null): boolean {
+  if (!extension) return false;
   const ext = extension.toLowerCase();
   return ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'].includes(ext);
 }
@@ -214,34 +215,34 @@ export const UserAttachmentList = ({ apiBaseUrl }: UserAttachmentListProps) => {
       ) : (
         <div className={styles.list}>
           {attachments.map(att => {
-            const isImage = isImageExtension(att.extension);
-            const href = resolveUrl(apiBaseUrl, att.url);
+            const isImage = isImageExtension(att.voExtension);
+            const href = resolveUrl(apiBaseUrl, att.voUrl);
 
             return (
-              <div key={String(att.id)} className={styles.item}>
+              <div key={String(att.voId)} className={styles.item}>
                 <div className={styles.fileRow}>
                   <div className={styles.icon}>
                     <Icon icon={isImage ? 'mdi:image' : 'mdi:file-document-outline'} size={22} />
                   </div>
 
-                  {att.thumbnailUrl && isImage && (
+                  {att.voThumbnailUrl && isImage && (
                     <img
                       className={styles.thumbnail}
-                      src={resolveUrl(apiBaseUrl, att.thumbnailUrl)}
-                      alt={att.originalName}
+                      src={resolveUrl(apiBaseUrl, att.voThumbnailUrl)}
+                      alt={att.voOriginalName}
                       loading="lazy"
                     />
                   )}
 
                   <div className={styles.fileInfo}>
-                    <div className={styles.fileName} title={att.originalName}>
-                      {att.originalName}
+                    <div className={styles.fileName} title={att.voOriginalName}>
+                      {att.voOriginalName}
                     </div>
                     <div className={styles.meta}>
-                      <span className={styles.metaItem}>{att.fileSizeFormatted || `${att.fileSize} B`}</span>
-                      <span className={styles.metaItem}>{att.businessType || 'General'}</span>
+                      <span className={styles.metaItem}>{att.voFileSizeFormatted || `${att.voFileSize} B`}</span>
+                      <span className={styles.metaItem}>{att.voBusinessType || 'General'}</span>
                       <span className={styles.metaItem}>
-                        {att.createTime ? new Date(att.createTime).toLocaleDateString('zh-CN') : ''}
+                        {att.voCreateTime ? new Date(att.voCreateTime).toLocaleDateString('zh-CN') : ''}
                       </span>
                     </div>
                   </div>
@@ -261,7 +262,7 @@ export const UserAttachmentList = ({ apiBaseUrl }: UserAttachmentListProps) => {
                     )}
                     <button
                       className={`${styles.actionButton} ${styles.dangerButton}`}
-                      onClick={() => openDeleteConfirm(att.id)}
+                      onClick={() => openDeleteConfirm(att.voId)}
                     >
                       删除
                     </button>
