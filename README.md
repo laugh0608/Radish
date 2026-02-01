@@ -17,6 +17,7 @@ Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NE
 ## 快速开始
 
 ### 前置要求
+
 - .NET 10 SDK
 - Node.js 24+
 - PostgreSQL 16+ （或使用默认的 SQLite）
