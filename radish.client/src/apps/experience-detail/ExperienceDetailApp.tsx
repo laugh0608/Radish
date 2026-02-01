@@ -47,22 +47,40 @@ export const ExperienceDetailApp = () => {
     }
   };
 
-  // 模拟每日统计数据（实际应该从 API 获取）
+  // 从交易记录计算每日统计数据
   const getDailyStats = () => {
-    const stats = [];
+    if (transactions.length === 0) {
+      // 如果没有交易记录，返回空数组
+      return [];
+    }
+
+    const stats: Record<string, number> = {};
     const today = new Date();
 
+    // 初始化最近 N 天的数据
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-
-      stats.push({
-        date: `${date.getMonth() + 1}/${date.getDate()}`,
-        exp: Math.floor(Math.random() * 100) + 20 // 模拟数据
-      });
+      const dateKey = `${date.getMonth() + 1}/${date.getDate()}`;
+      stats[dateKey] = 0;
     }
 
-    return stats;
+    // 统计交易记录中的经验值
+    transactions.forEach(tx => {
+      const txDate = new Date(tx.voCreateTime);
+      const dateKey = `${txDate.getMonth() + 1}/${txDate.getDate()}`;
+
+      // 只统计最近 N 天的数据
+      if (stats.hasOwnProperty(dateKey)) {
+        stats[dateKey] += tx.voExpAmount;
+      }
+    });
+
+    // 转换为数组格式
+    return Object.entries(stats).map(([date, exp]) => ({
+      date,
+      exp
+    }));
   };
 
   // 计算经验值来源分布
@@ -93,9 +111,15 @@ export const ExperienceDetailApp = () => {
       'COMMENT_LIKED': '评论被点赞',
       'LIKE_POST': '点赞帖子',
       'LIKE_COMMENT': '点赞评论',
+      'GIVE_LIKE': '点赞他人',
+      'RECEIVE_LIKE': '获得点赞',
       'GOD_COMMENT': '神评',
       'SOFA': '沙发',
-      'ADMIN_ADJUST': '管理员调整'
+      'ADMIN_ADJUST': '管理员调整',
+      'DAILY_LOGIN': '每日登录',
+      'WEEKLY_LOGIN': '每周登录',
+      'PROFILE_COMPLETE': '完善资料',
+      'PENALTY': '违规扣分'
     };
     return typeMap[type] || type;
   };
@@ -143,20 +167,45 @@ export const ExperienceDetailApp = () => {
 
       {!loading && !error && experience && (
         <>
-          {/* 经验条 */}
+          {/* 经验条区域 */}
           <div className={styles.experienceBarSection}>
-            <ExperienceBar
-              data={{
-                ...experience,
-                voLevelName: experience.voCurrentLevelName,  // 映射字段名
-                voNextLevelExp: experience.voCurrentExp + experience.voExpToNextLevel  // 计算总经验值
-              }}
-              size="large"
-              showLevel={true}
-              showProgress={true}
-              showTooltip={true}
-              animated={true}
-            />
+            <div className={styles.expBarGroup}>
+              {/* 当前等级进度条 */}
+              <div className={styles.expBarItem}>
+                <div className={styles.expBarLabel}>当前等级进度</div>
+                <ExperienceBar
+                  data={{
+                    ...experience,
+                    voLevelName: experience.voCurrentLevelName,
+                    voNextLevelExp: experience.voCurrentExp + experience.voExpToNextLevel
+                  }}
+                  size="medium"
+                  showLevel={true}
+                  showProgress={true}
+                  showTooltip={true}
+                  animated={true}
+                />
+              </div>
+
+              {/* 总进度条（到满级） */}
+              <div className={styles.expBarItem}>
+                <div className={styles.expBarLabel}>总进度（到满级）</div>
+                <ExperienceBar
+                  data={{
+                    ...experience,
+                    voLevelName: `${experience.voCurrentLevelName} → 满级`,
+                    voCurrentExp: experience.voTotalExp,
+                    voNextLevelExp: 999999, // 假设满级需要的总经验值，实际应该从后端获取
+                    voLevelProgress: (experience.voTotalExp / 999999) * 100
+                  }}
+                  size="medium"
+                  showLevel={false}
+                  showProgress={true}
+                  showTooltip={false}
+                  animated={true}
+                />
+              </div>
+            </div>
           </div>
 
           {/* 经验值概览 */}
@@ -208,7 +257,7 @@ export const ExperienceDetailApp = () => {
               xAxisKey="date"
               loading={loading}
               error={null}
-              height={300}
+              height={220}
               showGrid={true}
               showLegend={true}
             />
@@ -222,10 +271,10 @@ export const ExperienceDetailApp = () => {
                 data={sourceDistribution}
                 loading={loading}
                 error={null}
-                height={300}
+                height={220}
                 showLegend={true}
                 innerRadius={0}
-                outerRadius={100}
+                outerRadius={80}
                 showLabel={true}
               />
             </div>

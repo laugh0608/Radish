@@ -15,22 +15,22 @@
   padding: 12px 16px;
   font-size: 16px;
   font-weight: 600;
-  background-color: #18181b;
-  border: 1px solid #3f3f46;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  color: #f4f4f5;
+  color: #1f2937;
   outline: none;
   transition: all 0.2s ease;
 }
 
 .titleInput::placeholder {
-  color: #71717a;
+  color: #9ca3af;
   font-weight: 400;
 }
 
 .titleInput:focus {
   border-color: #2d6cdf;
-  background-color: #27272a;
+  background-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
 }
 
@@ -39,9 +39,9 @@
   flex-direction: column;
   gap: 10px;
   padding: 12px;
-  background-color: #18181b;
+  background-color: #f9fafb;
   border-radius: 8px;
-  border: 1px solid #3f3f46;
+  border: 1px solid #e5e7eb;
 }
 
 .checkboxLabel {
@@ -49,7 +49,7 @@
   align-items: center;
   gap: 8px;
   font-size: 14px;
-  color: #a1a1aa;
+  color: #6b7280;
   cursor: pointer;
   user-select: none;
 }
@@ -64,10 +64,10 @@
   margin-left: 24px;
   padding: 6px 12px;
   font-size: 14px;
-  background-color: #27272a;
-  border: 1px solid #3f3f46;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  color: #f4f4f5;
+  color: #1f2937;
   outline: none;
   transition: all 0.2s ease;
   max-width: 200px;
@@ -75,7 +75,8 @@
 
 .watermarkInput:focus {
   border-color: #2d6cdf;
-  background-color: #3f3f46;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
 }
 
 .editorWrapper {
@@ -87,7 +88,7 @@
   gap: 12px;
   justify-content: flex-end;
   padding-top: 16px;
-  border-top: 1px solid #3f3f46;
+  border-top: 1px solid #e5e7eb;
 }
 
 .publishButton {
@@ -109,8 +110,8 @@
 }
 
 .publishButton:disabled {
-  background-color: #3f3f46;
-  color: #71717a;
+  background-color: #e5e7eb;
+  color: #9ca3af;
   cursor: not-allowed;
 }
 
@@ -119,17 +120,17 @@
   font-size: 15px;
   font-weight: 500;
   background-color: transparent;
-  border: 1px solid #3f3f46;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  color: #a1a1aa;
+  color: #6b7280;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .cancelButton:hover {
-  background-color: #27272a;
-  border-color: #52525b;
-  color: #f4f4f5;
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+  color: #1f2937;
 }
 
 /* 未登录提示 */
@@ -144,7 +145,7 @@
 
 .loginPrompt p {
   font-size: 16px;
-  color: #a1a1aa;
+  color: #6b7280;
   margin: 0;
 }
 
