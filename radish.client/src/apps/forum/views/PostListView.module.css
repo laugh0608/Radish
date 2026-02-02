@@ -2,11 +2,12 @@
 .toolbar {
   flex-shrink: 0;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid #27272a;
-  background-color: #0f1419;
+  flex-wrap: wrap;
+  padding: 16px 20px 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #ffffff;
   gap: 16px;
 }
 
@@ -14,36 +15,40 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .toolbarTitle {
   font-size: 20px;
   font-weight: 600;
-  color: #f4f4f5;
+  color: #1f2937;
   margin: 0;
 }
 
 .sortButtons {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+  row-gap: 6px;
 }
 
 .sortButton {
   padding: 6px 14px;
   font-size: 13px;
   background-color: transparent;
-  border: 1px solid #3f3f46;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  color: #a1a1aa;
+  color: #6b7280;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .sortButton:hover {
-  background-color: #27272a;
-  border-color: #52525b;
-  color: #f4f4f5;
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+  color: #1f2937;
 }
 
 .sortButton.sortActive {
@@ -55,29 +60,32 @@
 
 .searchBox {
   position: relative;
-  flex: 1;
-  max-width: 400px;
+  flex: 0 1 240px;
+  max-width: 260px;
+  min-width: 140px;
+  margin-left: 12px;
+  margin-right: 0;
 }
 
 .searchInput {
   width: 100%;
   padding: 8px 36px 8px 14px;
   font-size: 14px;
-  background-color: #18181b;
-  border: 1px solid #3f3f46;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  color: #fff;
+  color: #1f2937;
   outline: none;
   transition: all 0.2s ease;
 }
 
 .searchInput::placeholder {
-  color: #71717a;
+  color: #9ca3af;
 }
 
 .searchInput:focus {
   border-color: #2d6cdf;
-  background-color: #27272a;
+  background-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
 }
 
@@ -89,10 +97,10 @@
   width: 20px;
   height: 20px;
   padding: 0;
-  background-color: #3f3f46;
+  background-color: #d1d5db;
   border: none;
   border-radius: 50%;
-  color: #a1a1aa;
+  color: #6b7280;
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -103,8 +111,8 @@
 }
 
 .clearButton:hover {
-  background-color: #52525b;
-  color: #fff;
+  background-color: #9ca3af;
+  color: #1f2937;
 }
 
 /* 帖子列表 */
@@ -119,7 +127,7 @@
   text-align: center;
   padding: 40px 20px;
   font-size: 14px;
-  color: #71717a;
+  color: #9ca3af;
 }
 
 /* 分页 */
@@ -130,26 +138,26 @@
   justify-content: center;
   gap: 8px;
   padding: 20px;
-  border-top: 1px solid #27272a;
-  background-color: #0f1419;
+  border-top: 1px solid #e5e7eb;
+  background-color: #ffffff;
 }
 
 .paginationButton {
   min-width: 36px;
   height: 36px;
   padding: 0 10px;
-  background-color: #18181b;
-  border: 1px solid #3f3f46;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  color: #f4f4f5;
+  color: #1f2937;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .paginationButton:hover:not(:disabled) {
-  background-color: #27272a;
-  border-color: #52525b;
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
 }
 
 .paginationButton:disabled {

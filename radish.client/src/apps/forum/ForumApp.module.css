@@ -9,7 +9,7 @@
 
 .container {
   display: grid;
-  grid-template-columns: 260px 1fr 320px;
+  grid-template-columns: 260px minmax(0, 1fr) 320px;
   height: 100%;
   background-color: #ffffff;
   overflow: hidden;
@@ -21,7 +21,7 @@
   /* 响应式：中等窗口（隐藏右侧栏） - 基于容器宽度 */
   @container forum-container (max-width: 1200px) {
     .container {
-      grid-template-columns: 260px 1fr;
+      grid-template-columns: 260px minmax(0, 1fr);
     }
 
     .rightColumn {
@@ -32,7 +32,7 @@
   /* 响应式：小窗口（只显示中间栏） - 基于容器宽度 */
   @container forum-container (max-width: 900px) {
     .container {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .leftColumn,
@@ -96,7 +96,7 @@
 /* 兜底：不支持容器查询时，仍按 viewport 响应（移动端/老浏览器） */
 @media (max-width: 1200px) {
   .container {
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 260px minmax(0, 1fr);
   }
 
   .rightColumn {
@@ -106,7 +106,7 @@
 
 @media (max-width: 900px) {
   .container {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .leftColumn,
@@ -197,6 +197,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-width: 0;
   overflow: hidden;
   background-color: #ffffff;
 }
