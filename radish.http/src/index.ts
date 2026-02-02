@@ -45,4 +45,5 @@ export type { ErrorHandler } from './error-handler';
 export {
   configureTokenRefresh,
   getTokenRefreshConfig,
+  TokenRefreshErrorType,
 } from './token-refresh';
