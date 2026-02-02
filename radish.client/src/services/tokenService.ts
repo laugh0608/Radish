@@ -17,9 +17,11 @@ interface TokenInfo {
 class TokenService {
   private static instance: TokenService;
   private refreshPromise: Promise<string> | null = null;
+  private refreshTimer: NodeJS.Timeout | null = null;
   private readonly TOKEN_KEY = 'access_token';
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly TOKEN_EXPIRES_KEY = 'token_expires_at';
+  private readonly CHECK_INTERVAL = 2 * 60 * 1000; // 每 2 分钟检查一次
 
   private constructor() {}
 
@@ -66,6 +68,7 @@ class TokenService {
     localStorage.removeItem(this.TOKEN_EXPIRES_KEY);
     localStorage.removeItem('cached_user_info');
     this.refreshPromise = null;
+    this.stopAutoRefresh(); // 清除 Token 时停止自动刷新
     log.debug('TokenService', 'Token 信息已清除');
   }
 
@@ -247,6 +250,51 @@ class TokenService {
     }
 
     return currentToken;
+  }
+
+  /**
+   * 启动自动刷新定时器
+   */
+  startAutoRefresh(): void {
+    // 如果已经有定时器在运行，先停止
+    if (this.refreshTimer) {
+      this.stopAutoRefresh();
+    }
+
+    log.debug('TokenService', '启动自动刷新定时器');
+
+    // 每 2 分钟检查一次 Token 是否即将过期
+    this.refreshTimer = setInterval(async () => {
+      const token = this.getAccessToken();
+      if (!token) {
+        log.debug('TokenService', '没有 Token，停止自动刷新');
+        this.stopAutoRefresh();
+        return;
+      }
+
+      if (this.isTokenExpiringSoon()) {
+        log.debug('TokenService', 'Token 即将过期，自动刷新');
+        try {
+          await this.refreshAccessToken();
+          log.debug('TokenService', '自动刷新成功');
+        } catch (error) {
+          log.error('TokenService', '自动刷新失败', error);
+          // 刷新失败，停止定时器
+          this.stopAutoRefresh();
+        }
+      }
+    }, this.CHECK_INTERVAL);
+  }
+
+  /**
+   * 停止自动刷新定时器
+   */
+  stopAutoRefresh(): void {
+    if (this.refreshTimer) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+      log.debug('TokenService', '停止自动刷新定时器');
+    }
   }
 }
 

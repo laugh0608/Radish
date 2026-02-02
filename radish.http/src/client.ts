@@ -118,7 +118,7 @@ export async function apiFetch(
     currentConfig.onResponse?.(response);
 
     // 检查是否需要刷新 token
-    if (withAuth && shouldRefreshToken(response)) {
+    if (withAuth && shouldRefreshToken(response) && !(options as any)._isRetry) {
       try {
         // 刷新 token
         const newToken = await tryRefreshToken();
@@ -139,8 +139,9 @@ export async function apiFetch(
 
         return retryResponse;
       } catch (refreshError) {
-        // Token 刷新失败，返回原始 401 响应
+        // Token 刷新失败，触发全局登出事件
         console.error('[API Client] Token refresh failed:', refreshError);
+        window.dispatchEvent(new CustomEvent('auth:token-expired'));
         return response;
       }
     }

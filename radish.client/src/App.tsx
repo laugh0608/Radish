@@ -9,7 +9,7 @@ import { LevelUpModal } from '@radish/ui';
 import { useLevelUpListener } from '@/hooks/useLevelUpListener';
 import { log } from '@/utils/logger';
 import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
-import { configureTokenRefresh } from '@radish/http';
+import { bootstrapAuth, type CurrentUser } from '@/services/authBootstrap';
 import './App.css';
 
 interface Forecast {
@@ -17,14 +17,6 @@ interface Forecast {
     temperatureC: number;
     temperatureF: number;
     summary: string;
-}
-
-interface CurrentUser {
-    voUserId: number;
-    voUserName: string;
-    voTenantId: number;
-    voAvatarUrl?: string;
-    voAvatarThumbnailUrl?: string;
 }
 
 // WebOS 全局用户信息结构（与 useUserStore.UserInfo 对齐）
@@ -80,45 +72,36 @@ function App() {
     }, [isBrowser, isOidcCallback]);
 
     useEffect(() => {
-        // 配置 token 自动刷新
-        const authServerBaseUrl = getAuthBaseUrl();
-        configureTokenRefresh({
-            refreshEndpoint: `${authServerBaseUrl}/connect/token`,
-            getRefreshToken: () => {
-                if (typeof window === 'undefined') return null;
-                return window.localStorage.getItem('refresh_token');
+        const cleanupAuth = bootstrapAuth({
+            apiBaseUrl,
+            onUserLoaded: (userData) => {
+                setCurrentUser(userData);
+                setUserError(undefined);
+
+                // 同步到 WebOS 全局用户状态
+                const webOsUser: WebOsUserInfo = {
+                    userId: typeof userData.voUserId === 'string' ? parseInt(userData.voUserId, 10) : userData.voUserId,
+                    userName: userData.voUserName,
+                    tenantId: typeof userData.voTenantId === 'string' ? parseInt(userData.voTenantId, 10) : userData.voTenantId,
+                    roles: ['User'],
+                    avatarUrl: userData.voAvatarUrl,
+                    avatarThumbnailUrl: userData.voAvatarThumbnailUrl
+                };
+                setWebOsUser(webOsUser);
             },
-            onTokenRefreshed: (accessToken, refreshToken) => {
-                if (typeof window === 'undefined') return;
-                window.localStorage.setItem('access_token', accessToken);
-                if (refreshToken) {
-                    window.localStorage.setItem('refresh_token', refreshToken);
-                }
-                log.info('App', '✅ Token 自动刷新成功');
-            },
-            onRefreshFailed: () => {
-                log.error('App', '❌ Token 刷新失败，跳转到登录页');
-                // 清除本地存储的 token
-                if (typeof window !== 'undefined') {
-                    window.localStorage.removeItem('access_token');
-                    window.localStorage.removeItem('refresh_token');
-                }
-                // 跳转到登录页
-                redirectToLogin();
+            onUserLoadFailed: (error) => {
+                setUserError(`${t('auth.userInfoLoadFailedPrefix')}${error.message}`);
+                setCurrentUser(null);
+                clearWebOsUser();
             }
         });
 
+        // 加载数据（用户信息加载成功后会自动设置认证状态）
         populateWeatherData();
-        populateCurrentUser();
 
-        // 验证 userStore 状态
-        setTimeout(() => {
-            const userState = useUserStore.getState();
-            log.info('App', '========== 验证 userStore 状态 ==========');
-            log.info('App', 'userId:', userState.userId);
-            log.info('App', 'userName:', userState.userName);
-            log.info('App', 'isAuthenticated:', userState.isAuthenticated());
-        }, 1000);
+        return () => {
+            cleanupAuth();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [apiBaseUrl]);
 
@@ -239,119 +222,6 @@ function App() {
         }
     }
 
-    async function populateCurrentUser() {
-        if (!isBrowser) {
-            return;
-        }
-
-        log.info('App', '========== 主页面开始获取用户信息 ==========');
-
-        // 优先使用缓存的用户信息（从登录回调页面预加载）
-        const cachedUserInfo = window.localStorage.getItem('cached_user_info');
-        log.info('App', '检查 localStorage 缓存:', cachedUserInfo ? '✅ 存在' : '❌ 不存在');
-
-        if (cachedUserInfo) {
-            try {
-                const userData = JSON.parse(cachedUserInfo) as CurrentUser;
-                log.info('App', '✅ 使用缓存的用户信息');
-                log.info('App', '缓存数据详情:', {
-                    userId: userData.voUserId,
-                    userName: userData.voUserName,
-                    tenantId: userData.voTenantId,
-                    hasAvatar: !!userData.voAvatarUrl
-                });
-
-                // 验证缓存数据的有效性
-                if (!userData.voUserId || !userData.voUserName) {
-                    log.error('App', '❌ 缓存数据无效，userId 或 userName 为空');
-                    window.localStorage.removeItem('cached_user_info');
-                    // 继续从服务器获取
-                } else {
-                    setCurrentUser(userData);
-                    setUserError(undefined);
-
-                    // 同步到 WebOS 全局用户状态
-                    const webOsUser: WebOsUserInfo = {
-                        userId: userData.voUserId,
-                        userName: userData.voUserName,
-                        tenantId: userData.voTenantId,
-                        roles: ['User'],
-                        avatarUrl: userData.voAvatarUrl,
-                        avatarThumbnailUrl: userData.voAvatarThumbnailUrl
-                    };
-                    setWebOsUser(webOsUser);
-                    log.info('App', '✅ WebOS 用户状态已更新');
-                    log.info('App', 'WebOS 状态详情:', {
-                        userId: webOsUser.userId,
-                        userName: webOsUser.userName,
-                        tenantId: webOsUser.tenantId
-                    });
-
-                    // 清除缓存，避免使用过期数据
-                    window.localStorage.removeItem('cached_user_info');
-                    log.info('App', '========== 用户信息加载完成（使用缓存）==========');
-                    return;
-                }
-            } catch (err) {
-                // 缓存数据解析失败，继续从服务器获取
-                log.error('App', '❌ 缓存数据解析失败:', err);
-                window.localStorage.removeItem('cached_user_info');
-            }
-        }
-
-        const requestUrl = `${apiBaseUrl}/api/v1/User/GetUserByHttpContext`;
-        log.info('App', '📡 从服务器获取用户信息:', requestUrl);
-
-        try {
-            const response = await apiFetch(requestUrl, { withAuth: true });
-            log.info('App', '用户信息请求响应状态:', response.status);
-
-            const json = await response.json() as ApiResponse<CurrentUser>;
-            log.debug('App', '用户信息响应数据:', json);
-
-            const parsed = parseApiResponse(json);
-
-            if (!parsed.ok || !parsed.data) {
-                throw new Error(parsed.message || t('auth.userInfoLoadFailedPrefix'));
-            }
-
-            log.info('App', '✅ 用户信息获取成功');
-            log.info('App', '服务器数据详情:', {
-                userId: parsed.data.voUserId,
-                userName: parsed.data.voUserName,
-                tenantId: parsed.data.voTenantId,
-                hasAvatar: !!parsed.data.voAvatarUrl
-            });
-
-            setCurrentUser(parsed.data);
-            setUserError(undefined);
-
-            // 同步到 WebOS 全局用户状态，默认赋予基础角色
-            const webOsUser: WebOsUserInfo = {
-                userId: parsed.data.voUserId,
-                userName: parsed.data.voUserName,
-                tenantId: parsed.data.voTenantId,
-                roles: ['User'],
-                avatarUrl: parsed.data.voAvatarUrl,
-                avatarThumbnailUrl: parsed.data.voAvatarThumbnailUrl
-            };
-            setWebOsUser(webOsUser);
-            log.info('App', '✅ WebOS 用户状态已更新');
-            log.info('App', 'WebOS 状态详情:', {
-                userId: webOsUser.userId,
-                userName: webOsUser.userName,
-                tenantId: webOsUser.tenantId
-            });
-            log.info('App', '========== 用户信息加载完成（从服务器）==========');
-        } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            log.error('App', '❌ 获取用户信息失败:', message);
-            setUserError(`${t('auth.userInfoLoadFailedPrefix')}${message}`);
-            setCurrentUser(null);
-            clearWebOsUser();
-            log.info('App', '========== 用户信息加载失败 ==========');
-        }
-    }
 }
 
 interface ApiFetchOptions extends RequestInit {

@@ -8,6 +8,20 @@
  * - 防止并发刷新（多个请求同时失败时只刷新一次）
  */
 
+/**
+ * Token 刷新错误类型
+ */
+export enum TokenRefreshErrorType {
+  /** 网络错误，可重试 */
+  NetworkError = 'network_error',
+  /** Refresh Token 无效，需重新登录 */
+  InvalidRefreshToken = 'invalid_token',
+  /** 服务器错误，可重试 */
+  ServerError = 'server_error',
+  /** 未知错误 */
+  Unknown = 'unknown'
+}
+
 interface TokenRefreshConfig {
   /** Token 刷新端点 URL */
   refreshEndpoint: string;
@@ -18,7 +32,7 @@ interface TokenRefreshConfig {
   /** Token 刷新成功回调 */
   onTokenRefreshed: (accessToken: string, refreshToken?: string) => void;
   /** Token 刷新失败回调 */
-  onRefreshFailed: () => void;
+  onRefreshFailed: (errorType: TokenRefreshErrorType, error: Error) => void;
 }
 
 let refreshConfig: TokenRefreshConfig | null = null;
@@ -40,6 +54,28 @@ export function getTokenRefreshConfig(): TokenRefreshConfig | null {
 }
 
 /**
+ * 判断错误类型
+ */
+function determineErrorType(error: unknown, status?: number): TokenRefreshErrorType {
+  // 401/400 表示 Refresh Token 无效
+  if (status === 401 || status === 400) {
+    return TokenRefreshErrorType.InvalidRefreshToken;
+  }
+
+  // 5xx 表示服务器错误
+  if (status && status >= 500) {
+    return TokenRefreshErrorType.ServerError;
+  }
+
+  // 网络错误
+  if (error instanceof TypeError && error.message.includes('fetch')) {
+    return TokenRefreshErrorType.NetworkError;
+  }
+
+  return TokenRefreshErrorType.Unknown;
+}
+
+/**
  * 刷新 access_token
  */
 async function refreshAccessToken(): Promise<string> {
@@ -49,7 +85,8 @@ async function refreshAccessToken(): Promise<string> {
 
   const refreshToken = refreshConfig.getRefreshToken();
   if (!refreshToken) {
-    throw new Error('No refresh token available');
+    const error = new Error('No refresh token available');
+    throw { error, errorType: TokenRefreshErrorType.InvalidRefreshToken };
   }
 
   const clientId = refreshConfig.clientId || 'radish-client';
@@ -59,31 +96,46 @@ async function refreshAccessToken(): Promise<string> {
   body.set('client_id', clientId);
   body.set('refresh_token', refreshToken);
 
-  const response = await fetch(refreshConfig.refreshEndpoint, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body,
-  });
+  try {
+    const response = await fetch(refreshConfig.refreshEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    });
 
-  if (!response.ok) {
-    throw new Error(`Token refresh failed: HTTP ${response.status}`);
+    if (!response.ok) {
+      const error = new Error(`Token refresh failed: HTTP ${response.status}`);
+      const errorType = determineErrorType(error, response.status);
+      throw { error, errorType };
+    }
+
+    const tokenSet = (await response.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+    };
+
+    if (!tokenSet.access_token) {
+      const error = new Error('No access_token in refresh response');
+      throw { error, errorType: TokenRefreshErrorType.ServerError };
+    }
+
+    // 调用成功回调保存新的 token
+    refreshConfig.onTokenRefreshed(tokenSet.access_token, tokenSet.refresh_token);
+
+    return tokenSet.access_token;
+  } catch (err: any) {
+    // 如果已经是我们包装的错误，直接抛出
+    if (err.error && err.errorType) {
+      throw err;
+    }
+
+    // 否则判断错误类型
+    const error = err instanceof Error ? err : new Error(String(err));
+    const errorType = determineErrorType(error);
+    throw { error, errorType };
   }
-
-  const tokenSet = (await response.json()) as {
-    access_token?: string;
-    refresh_token?: string;
-  };
-
-  if (!tokenSet.access_token) {
-    throw new Error('No access_token in refresh response');
-  }
-
-  // 调用成功回调保存新的 token
-  refreshConfig.onTokenRefreshed(tokenSet.access_token, tokenSet.refresh_token);
-
-  return tokenSet.access_token;
 }
 
 /**
@@ -100,12 +152,14 @@ export async function tryRefreshToken(): Promise<string> {
   // 开始刷新
   isRefreshing = true;
   refreshPromise = refreshAccessToken()
-    .catch((error) => {
+    .catch((err: any) => {
       // 刷新失败，调用失败回调
       if (refreshConfig) {
-        refreshConfig.onRefreshFailed();
+        const error = err.error || new Error(String(err));
+        const errorType = err.errorType || TokenRefreshErrorType.Unknown;
+        refreshConfig.onRefreshFailed(errorType, error);
       }
-      throw error;
+      throw err;
     })
     .finally(() => {
       // 刷新完成，重置状态

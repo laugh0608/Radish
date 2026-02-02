@@ -1,7 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { ToastContainer, LevelUpModal } from '@radish/ui';
+import { getApiBaseUrl } from '@/config/env';
 import { notificationHub } from '@/services/notificationHub';
 import { useLevelUpListener } from '@/hooks/useLevelUpListener';
+import { useAuthStore } from '@/stores/authStore';
+import { useUserStore } from '@/stores/userStore';
+import { useNotificationStore } from '@/stores/notificationStore';
+import { tokenService } from '@/services/tokenService';
+import { bootstrapAuth } from '@/services/authBootstrap';
 import { Desktop } from './Desktop';
 import { Dock } from './Dock';
 import { WindowManager } from './WindowManager';
@@ -15,19 +21,42 @@ import styles from './Shell.module.css';
 export const Shell = () => {
   // 使用 ref 防止 React StrictMode 双重挂载导致重复连接
   const hasStartedRef = useRef(false);
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
 
   // 升级事件监听
   const { levelUpData, showModal, handleClose } = useLevelUpListener();
 
-  useEffect(() => {
-    const token = window.localStorage.getItem('access_token');
+  // 从 authStore 读取认证状态
+  const { isAuthenticated } = useAuthStore();
+  const currentUser = useUserStore(state => state.userId);
+  const clearUser = useUserStore(state => state.clearUser);
 
+  // 监听认证状态变化，同步清除用户信息和通知
+  useEffect(() => {
+    const hasToken = !!tokenService.getAccessToken();
+    if (!isAuthenticated && !hasToken && currentUser) {
+      // 认证失效，清除用户信息
+      clearUser();
+
+      // 清除通知
+      const notificationStore = useNotificationStore.getState();
+      notificationStore.clearRecentNotifications();
+      notificationStore.setUnreadCount(0);
+    }
+  }, [isAuthenticated, currentUser, clearUser]);
+
+  useEffect(() => {
+    const cleanup = bootstrapAuth({ apiBaseUrl });
+    return () => cleanup();
+  }, [apiBaseUrl]);
+
+  // 根据认证状态控制 SignalR 连接
+  useEffect(() => {
     // 防止 React StrictMode 导致重复启动连接
-    // 注意：这里是 WebSocket 连接的唯一启动点，其他组件不应再启动连接
-    if (token && !hasStartedRef.current) {
+    if (isAuthenticated && !hasStartedRef.current) {
       hasStartedRef.current = true;
       void notificationHub.start();
-    } else if (!token) {
+    } else if (!isAuthenticated && hasStartedRef.current) {
       hasStartedRef.current = false;
       void notificationHub.stop();
     }
@@ -35,16 +64,13 @@ export const Shell = () => {
     // cleanup 函数：仅在组件真正卸载时执行
     return () => {
       // 延迟执行 stop，给 StrictMode 的第二次 mount 一个机会
-      // 如果是 StrictMode 导致的卸载，会在几毫秒内重新挂载，此时不应 stop
       setTimeout(() => {
-        // 再次检查：如果组件已重新挂载，hasStartedRef 会是 true，不执行 stop
-        // 只有真正卸载时（用户登出、路由切换），才会执行 stop
         if (!hasStartedRef.current) {
           void notificationHub.stop();
         }
       }, 100);
     };
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <div className={styles.shell}>

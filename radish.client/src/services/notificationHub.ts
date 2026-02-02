@@ -1,5 +1,7 @@
 import * as signalR from '@microsoft/signalr';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
+import { useAuthStore } from '@/stores/authStore';
+import { tokenService } from './tokenService';
 import { log } from '@/utils/logger';
 import { getSignalrHubUrl } from '@/config/env';
 
@@ -82,17 +84,17 @@ class NotificationHubService {
       return;
     }
 
-    const token = getAccessToken();
-    if (!token) {
-      log.warn('[NotificationHub] 未找到 access_token，跳过连接');
+    // 1. 检查认证状态
+    const { isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated) {
+      log.warn('[NotificationHub] 未登录，跳过连接');
       return;
     }
 
-    // 验证 token 是否有效（未过期）
-    if (!isTokenValid(token)) {
-      log.warn('[NotificationHub] Token 无效或已过期，跳过连接');
-      const store = useNotificationStore.getState();
-      store.setConnectionState('disconnected');
+    // 2. 检查 Token 有效性
+    const token = await tokenService.getValidAccessToken();
+    if (!token) {
+      log.warn('[NotificationHub] Token 无效，跳过连接');
       return;
     }
 
