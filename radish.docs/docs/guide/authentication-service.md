@@ -284,52 +284,37 @@ export async function connectToNotificationHub() {
 
 ### 5. 自动刷新 Token
 
-```typescript
-import { redirectToLogin } from '@/services/auth';
+Radish 使用 **refresh_token** 自动续期 access_token，需要在登录时申请 `offline_access` scope：
 
-// 解析 JWT Token
-function parseJwt(token: string) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch {
-    return null;
-  }
-}
-
-// 检查 Token 是否即将过期
-function isTokenExpiringSoon(token: string): boolean {
-  const payload = parseJwt(token);
-  if (!payload || !payload.exp) return true;
-
-  const expirationTime = payload.exp * 1000; // 转换为毫秒
-  const currentTime = Date.now();
-  const timeUntilExpiration = expirationTime - currentTime;
-
-  // 如果 Token 在 5 分钟内过期，返回 true
-  return timeUntilExpiration < 5 * 60 * 1000;
-}
-
-// 定期检查 Token 状态
-export function startTokenRefreshCheck() {
-  setInterval(() => {
-    const token = localStorage.getItem('access_token');
-    if (!token) return;
-
-    if (isTokenExpiringSoon(token)) {
-      console.log('Token 即将过期，重新登录');
-      redirectToLogin();
-    }
-  }, 60 * 1000); // 每分钟检查一次
-}
 ```
+scope=openid profile offline_access radish-api
+```
+
+前端通过 `@radish/http` + `tokenService` 统一处理刷新：
+
+```typescript
+import { configureTokenRefresh } from '@radish/http';
+import { tokenService } from '@/services/tokenService';
+
+configureTokenRefresh({
+  refreshEndpoint: `${authServerBaseUrl}/connect/token`,
+  getRefreshToken: () => localStorage.getItem('refresh_token'),
+  onTokenRefreshed: (accessToken, refreshToken) => {
+    tokenService.setTokenInfoFromJwt(accessToken, refreshToken);
+  },
+  onRefreshFailed: () => {
+    tokenService.clearTokens();
+  }
+});
+
+tokenService.startAutoRefresh();
+```
+
+**说明**：
+
+- `tokenService` 会持久化 `token_expires_at` 与 `token_refresh_at`，短 Token 使用动态提前量刷新
+- 401 响应会触发刷新并重试（通过 `apiGet/apiPost` 等统一客户端）
+- 没有 `refresh_token` 时不会自动续期，需要重新登录
 
 ## Token 管理最佳实践
 
@@ -341,6 +326,8 @@ export function startTokenRefreshCheck() {
 // 存储 Token
 localStorage.setItem('access_token', token);
 localStorage.setItem('refresh_token', refreshToken);
+localStorage.setItem('token_expires_at', String(expiresAt));
+localStorage.setItem('token_refresh_at', String(refreshAt));
 
 // 读取 Token
 const token = localStorage.getItem('access_token');
@@ -348,6 +335,8 @@ const token = localStorage.getItem('access_token');
 // 清除 Token
 localStorage.removeItem('access_token');
 localStorage.removeItem('refresh_token');
+localStorage.removeItem('token_expires_at');
+localStorage.removeItem('token_refresh_at');
 ```
 
 **注意事项**:
