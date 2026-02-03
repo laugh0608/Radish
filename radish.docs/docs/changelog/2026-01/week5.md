@@ -1,5 +1,12 @@
 # 2026-01 第五周 (01-27 至 02-02)
 
+## 2026-02-02 (周一)
+
+### 认证与配置
+
+- **OpenIddict 生命周期配置落地**：Access/Refresh/AuthorizationCode 三类 Token 的有效期从 `appsettings.json` 读取并应用
+- **短 Token 测试准备**：本地将 Access/Refresh/AuthorizationCode 调整为 3/15/3 分钟，用于验证自动续期与登录态保持
+
 ## 2026-01-31 (周五)
 
 ### 架构重构

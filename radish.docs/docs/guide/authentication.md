@@ -552,6 +552,33 @@ builder.Services.AddOpenIddict()
     });
 ```
 
+### 7.5 Token 生命周期配置
+
+Radish.Auth 支持通过配置统一控制 Token 有效期（单位：分钟），并在启动时自动应用到 OpenIddict：
+
+```json
+// Radish.Auth/appsettings.json
+"OpenIddict": {
+  "Server": {
+    "AccessTokenLifetime": 60,
+    "RefreshTokenLifetime": 43200,
+    "AuthorizationCodeLifetime": 5
+  }
+}
+```
+
+对应的配置在 `Program.cs` 中会被读取并映射到：
+
+- `options.SetAccessTokenLifetime(...)`
+- `options.SetRefreshTokenLifetime(...)`
+- `options.SetAuthorizationCodeLifetime(...)`
+
+**注意**：
+
+- 只影响新签发的 Token，已签发的不会变化
+- 修改配置后需要重启 Auth 服务
+- 做短 Token 测试时，建议搭配 `offline_access` 获取 refresh_token
+
 ## 8. Claim 与内部用户模型映射约定
 
 访问令牌（Access Token）由 Radish.Auth 负责签发，Radish.Api 及领域层通过 `IHttpContextUser` 获取“当前用户视图”。
