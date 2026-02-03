@@ -1,9 +1,10 @@
 .container {
   margin-bottom: 8px;
   padding: 8px 12px;
-  background-color: #1a1f2e;
-  border-left: 2px solid #444;
-  border-radius: 4px;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-left: 3px solid #cbd5e1;
+  border-radius: 6px;
 }
 
 .header {
@@ -11,17 +12,17 @@
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: #999;
+  color: #6b7280;
   margin-bottom: 4px;
 }
 
 .author {
-  color: #60a5fa;
+  color: #2d6cdf;
   font-weight: 500;
 }
 
 .time {
-  color: #888;
+  color: #9ca3af;
 }
 
 /* 沙发标识（子评论） */
@@ -77,15 +78,15 @@
 .content {
   white-space: pre-wrap;
   line-height: 1.5;
-  color: #e5e7eb;
+  color: #374151;
   font-size: 14px;
   text-align: left;
 }
 
 /* @用户名高亮（全局样式，因为使用dangerouslySetInnerHTML） */
 .content :global(.mention) {
-  color: #60a5fa;
-  background-color: rgba(96, 165, 250, 0.15);
+  color: #2d6cdf;
+  background-color: rgba(45, 108, 223, 0.12);
   padding: 2px 4px;
   border-radius: 3px;
   font-weight: 600;
@@ -94,8 +95,8 @@
 }
 
 .content :global(.mention:hover) {
-  color: #3b82f6;
-  background-color: rgba(59, 130, 246, 0.25);
+  color: #1d4ed8;
+  background-color: rgba(29, 78, 216, 0.18);
   text-decoration: underline;
 }
 
@@ -111,7 +112,7 @@
   padding: 4px 8px;
   background: transparent;
   border: none;
-  color: #9ca3af;
+  color: #6b7280;
   cursor: pointer;
   border-radius: 4px;
   transition: all 0.2s;
@@ -122,8 +123,8 @@
 }
 
 .actionButton:hover:not(:disabled) {
-  background-color: rgba(156, 163, 175, 0.1);
-  color: #d1d5db;
+  background-color: #f3f4f6;
+  color: #374151;
 }
 
 .actionButton:active:not(:disabled) {
@@ -156,8 +157,8 @@
 
 /* 回复按钮特殊样式 */
 .replyButton:hover:not(:disabled) {
-  background-color: rgba(96, 165, 250, 0.1);
-  color: #60a5fa;
+  background-color: rgba(45, 108, 223, 0.1);
+  color: #2d6cdf;
 }
 
 /* 计数显示 */
@@ -182,8 +183,8 @@
 .childSortButton {
   padding: 3px 10px;
   background: transparent;
-  border: 1px solid #475569;
-  color: #94a3b8;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
   cursor: pointer;
   border-radius: 4px;
   transition: all 0.2s;
@@ -191,14 +192,14 @@
 }
 
 .childSortButton:hover {
-  background-color: #1e293b;
-  border-color: #60a5fa;
-  color: #60a5fa;
+  background-color: #eff6ff;
+  border-color: #2d6cdf;
+  color: #2d6cdf;
 }
 
 .childSortButton.active {
-  background-color: #60a5fa;
-  border-color: #60a5fa;
+  background-color: #2d6cdf;
+  border-color: #2d6cdf;
   color: #fff;
   font-weight: 500;
 }
@@ -214,15 +215,15 @@
   gap: 12px;
   margin-top: 12px;
   padding-top: 8px;
-  border-top: 1px solid #334155;
+  border-top: 1px solid #e5e7eb;
 }
 
 .expandButton,
 .collapseButton {
   padding: 6px 12px;
   background: transparent;
-  border: 1px solid #475569;
-  color: #94a3b8;
+  border: 1px solid #d1d5db;
+  color: #6b7280;
   cursor: pointer;
   border-radius: 6px;
   transition: all 0.2s;
@@ -234,9 +235,9 @@
 
 .expandButton:hover:not(:disabled),
 .collapseButton:hover {
-  background-color: #1e293b;
-  border-color: #60a5fa;
-  color: #60a5fa;
+  background-color: #eff6ff;
+  border-color: #2d6cdf;
+  color: #2d6cdf;
 }
 
 .expandButton:active:not(:disabled),
@@ -266,7 +267,7 @@
   padding: 2px 6px;
   background: transparent;
   border: none;
-  color: #60a5fa;
+  color: #2d6cdf;
   cursor: pointer;
   border-radius: 4px;
   transition: background-color 0.2s;
@@ -276,11 +277,11 @@
 }
 
 .editButton:hover:not(:disabled) {
-  background-color: rgba(96, 165, 250, 0.1);
+  background-color: rgba(45, 108, 223, 0.1);
 }
 
 .editButton:active:not(:disabled) {
-  background-color: rgba(96, 165, 250, 0.2);
+  background-color: rgba(45, 108, 223, 0.2);
 }
 
 .editButton:disabled {
@@ -297,10 +298,10 @@
   width: 100%;
   min-height: 80px;
   padding: 8px 12px;
-  background-color: #0f172a;
-  border: 1px solid #475569;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  color: #e5e7eb;
+  color: #1f2937;
   font-size: 14px;
   line-height: 1.5;
   resize: vertical;
@@ -310,8 +311,8 @@
 
 .editTextarea:focus {
   outline: none;
-  border-color: #60a5fa;
-  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+  border-color: #2d6cdf;
+  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.12);
 }
 
 .editTextarea:disabled {
@@ -337,36 +338,36 @@
 }
 
 .saveButton {
-  background-color: #60a5fa;
+  background-color: #2d6cdf;
   color: #fff;
 }
 
 .saveButton:hover:not(:disabled) {
-  background-color: #3b82f6;
+  background-color: #2558b5;
 }
 
 .saveButton:active:not(:disabled) {
-  background-color: #2563eb;
+  background-color: #1d4ed8;
   transform: scale(0.98);
 }
 
 .saveButton:disabled {
-  background-color: #475569;
+  background-color: #cbd5e1;
   cursor: not-allowed;
   opacity: 0.6;
 }
 
 .cancelButton {
-  background-color: #374151;
-  color: #d1d5db;
+  background-color: #e5e7eb;
+  color: #374151;
 }
 
 .cancelButton:hover:not(:disabled) {
-  background-color: #4b5563;
+  background-color: #d1d5db;
 }
 
 .cancelButton:active:not(:disabled) {
-  background-color: #6b7280;
+  background-color: #cbd5e1;
   transform: scale(0.98);
 }
 

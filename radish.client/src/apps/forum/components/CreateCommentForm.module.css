@@ -1,6 +1,6 @@
 .container {
   margin-top: 16px;
-  border-top: 1px solid #333;
+  border-top: 1px solid #e5e7eb;
   padding-top: 12px;
 }
 
@@ -8,14 +8,14 @@
   margin: 0 0 12px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #fff;
+  color: #1f2937;
 }
 
 .loginPrompt {
   margin-bottom: 12px;
   padding: 8px 12px;
-  background-color: #3f1f1f;
-  color: #f97373;
+  background-color: #fef2f2;
+  color: #b91c1c;
   border-radius: 6px;
   font-size: 13px;
 }
@@ -42,18 +42,18 @@
   justify-content: space-between;
   margin-bottom: 8px;
   padding: 8px 12px;
-  background-color: #1e293b;
-  border-left: 3px solid #60a5fa;
+  background-color: #eff6ff;
+  border-left: 3px solid #2d6cdf;
   border-radius: 4px;
   font-size: 13px;
 }
 
 .replyText {
-  color: #94a3b8;
+  color: #475569;
 }
 
 .replyTarget {
-  color: #60a5fa;
+  color: #2d6cdf;
   font-weight: 500;
 }
 
@@ -82,10 +82,10 @@
   width: 100%;
   margin-bottom: 8px;
   padding: 8px 12px;
-  background-color: #1f2937;
-  border: 1px solid #444;
+  background-color: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  color: #fff;
+  color: #111827;
   font-size: 14px;
   resize: vertical;
   box-sizing: border-box;
@@ -115,10 +115,10 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  border: 1px solid #444;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  background: #1f2937;
-  color: #d1d5db;
+  background: #f9fafb;
+  color: #475569;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -126,8 +126,8 @@
 
 .toolbarButton:hover:not(:disabled) {
   border-color: #2d6cdf;
-  background: #2d3748;
-  color: #fff;
+  background: #eff6ff;
+  color: #1f2937;
 }
 
 .toolbarButton:disabled {
@@ -137,7 +137,7 @@
 
 .uploadingHint {
   font-size: 13px;
-  color: #9ca3af;
+  color: #94a3b8;
   margin-left: 4px;
 }
 
@@ -148,10 +148,10 @@
   gap: 6px;
   margin-bottom: 8px;
   padding: 8px 12px;
-  background: #3f1d1d;
-  border: 1px solid #7f1d1d;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
   border-radius: 6px;
-  color: #f87171;
+  color: #b91c1c;
   font-size: 14px;
 }
 
