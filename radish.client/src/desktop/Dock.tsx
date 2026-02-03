@@ -5,7 +5,7 @@ import { useNotificationStore } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
 import { redirectToLogin, logout, hasAccessToken } from '@/services/auth';
 import { getAppById } from './AppRegistry';
-import { Icon } from '@radish/ui';
+import { Icon, toast } from '@radish/ui';
 import { CoinBalance } from './components/CoinBalance';
 import { ExperienceDisplay } from './components/ExperienceDisplay';
 import i18n from '@/i18n';
@@ -111,6 +111,9 @@ export const Dock = () => {
   const handleLogoutClick = () => {
     clearUser();
     logout();
+  };
+  const notifyLoginRequired = () => {
+    toast.info('需要登录才能访问，请点击登录按钮');
   };
 
   const hydrateCurrentUser = async () => {
@@ -281,7 +284,7 @@ export const Dock = () => {
                         onClick={() => {
                           // 如果是通知中心，未登录时先登录
                           if (isNotification && !loggedIn && !hasAccessToken()) {
-                            redirectToLogin();
+                            notifyLoginRequired();
                             return;
                           }
 
@@ -356,7 +359,7 @@ export const Dock = () => {
                   onClick={() => {
                     // 如果是通知中心，未登录时先登录
                     if (isNotification && !loggedIn && !hasAccessToken()) {
-                      redirectToLogin();
+                      notifyLoginRequired();
                       return;
                     }
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { log } from '@/utils/logger';
-import { Button, ConfirmDialog, Icon, Input, Modal } from '@radish/ui';
+import { apiGet, configureApiClient, Button, ConfirmDialog, Icon, Input, Modal } from '@radish/ui';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
 import { AvatarUploadModal } from './AvatarUploadModal';
@@ -51,12 +51,6 @@ interface CoinBalanceInfo {
   modifyTime?: string | null;
 }
 
-interface ApiResponse<T> {
-  isSuccess: boolean;
-  messageInfo?: string;
-  responseData?: T;
-}
-
 function resolveUrl(apiBaseUrl: string, url: string | null | undefined): string | null {
   if (!url) return null;
   if (/^https?:\/\//i.test(url)) return url;
@@ -81,17 +75,6 @@ function formatCoinAmount(amount: number | string | null | undefined): string {
   return negative ? `-${result}` : result;
 }
 
-async function readJsonIfPossible<T>(res: Response): Promise<T | null> {
-  const contentType = res.headers.get('content-type') || '';
-  if (!contentType.toLowerCase().includes('json')) return null;
-
-  try {
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  }
-}
-
 export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBaseUrl }: UserInfoCardProps) => {
   const { t } = useTranslation();
   const { setUser, tenantId, roles } = useUserStore();
@@ -111,11 +94,11 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
   const [editAge, setEditAge] = useState('');
   const [editAddress, setEditAddress] = useState('');
 
-  const getAuthHeader = () => {
-    if (typeof window === 'undefined') return undefined;
-    const token = window.localStorage.getItem('access_token');
-    return token ? `Bearer ${token}` : undefined;
-  };
+  useEffect(() => {
+    configureApiClient({
+      baseUrl: apiBaseUrl,
+    });
+  }, [apiBaseUrl]);
 
   useEffect(() => {
     void loadProfile();
@@ -126,28 +109,17 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
     setLoadingProfile(true);
     try {
       const [profileResult, coinBalanceResult] = await Promise.allSettled([
-        fetch(`${apiBaseUrl}/api/v1/User/GetMyProfile`, {
-          headers: {
-            Accept: 'application/json',
-            ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
-          }
-        }),
-        fetch(`${apiBaseUrl}/api/v1/Coin/GetBalance`, {
-          headers: {
-            Accept: 'application/json',
-            ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
-          }
-        })
+        apiGet<ProfileInfo>('/api/v1/User/GetMyProfile', { withAuth: true }),
+        apiGet<CoinBalanceInfo>('/api/v1/Coin/GetBalance', { withAuth: true })
       ]);
 
       if (profileResult.status === 'fulfilled') {
         const profileRes = profileResult.value;
-        const profileJson = await readJsonIfPossible<ApiResponse<ProfileInfo>>(profileRes);
 
-        log.debug('UserInfoCard', 'GetMyProfile 响应:', profileJson);
+        log.debug('UserInfoCard', 'GetMyProfile 响应:', profileRes);
 
-        if (profileRes.ok && profileJson?.isSuccess && profileJson.responseData) {
-          const profile = profileJson.responseData;
+        if (profileRes.ok && profileRes.data) {
+          const profile = profileRes.data;
           log.debug('UserInfoCard', '头像信息:', {
             avatarAttachmentId: profile.voAvatarAttachmentId,
             avatarUrl: profile.voAvatarUrl,
@@ -175,10 +147,9 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
 
       if (coinBalanceResult.status === 'fulfilled') {
         const coinBalanceRes = coinBalanceResult.value;
-        const coinBalanceJson = await readJsonIfPossible<ApiResponse<CoinBalanceInfo>>(coinBalanceRes);
 
-        if (coinBalanceRes.ok && coinBalanceJson?.isSuccess && coinBalanceJson.responseData) {
-          setCoinBalance(coinBalanceJson.responseData);
+        if (coinBalanceRes.ok && coinBalanceRes.data) {
+          setCoinBalance(coinBalanceRes.data);
         }
       }
     } catch (error) {

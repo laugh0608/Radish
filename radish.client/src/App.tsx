@@ -10,14 +10,8 @@ import { useLevelUpListener } from '@/hooks/useLevelUpListener';
 import { log } from '@/utils/logger';
 import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
 import { bootstrapAuth, type CurrentUser } from '@/services/authBootstrap';
+import { tokenService } from '@/services/tokenService';
 import './App.css';
-
-interface Forecast {
-    date: string;
-    temperatureC: number;
-    temperatureF: number;
-    summary: string;
-}
 
 // WebOS 全局用户信息结构（与 useUserStore.UserInfo 对齐）
 interface WebOsUserInfo {
@@ -36,8 +30,6 @@ interface OidcCallbackProps {
 function App() {
     const { t } = useTranslation();
 
-    const [forecasts, setForecasts] = useState<Forecast[]>();
-    const [error, setError] = useState<string>();
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
     const setWebOsUser = useUserStore(state => state.setUser);
     const clearWebOsUser = useUserStore(state => state.clearUser);
@@ -96,9 +88,6 @@ function App() {
             }
         });
 
-        // 加载数据（用户信息加载成功后会自动设置认证状态）
-        populateWeatherData();
-
         return () => {
             cleanupAuth();
         };
@@ -111,29 +100,6 @@ function App() {
     if (isOidcCallback) {
         return <OidcCallback apiBaseUrl={apiBaseUrl} />;
     }
-
-    const contents = forecasts === undefined
-        ? <p><em>{error ?? t('weather.loading')}</em></p>
-        : <table className="table table-striped" aria-labelledby="tableLabel">
-            <thead>
-                <tr>
-                    <th>{t('weather.date')}</th>
-                    <th>{t('weather.tempC')}</th>
-                    <th>{t('weather.tempF')}</th>
-                    <th>{t('weather.summary')}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {forecasts.map(forecast =>
-                    <tr key={forecast.date}>
-                        <td>{forecast.date}</td>
-                        <td>{forecast.temperatureC}</td>
-                        <td>{forecast.temperatureF}</td>
-                        <td>{forecast.summary}</td>
-                    </tr>
-                )}
-            </tbody>
-        </table>;
 
     return (
         <>
@@ -188,7 +154,6 @@ function App() {
                     </div>
                 </section>
 
-                {contents}
             </main>
 
             {/* 升级动画弹窗 */}
@@ -201,26 +166,6 @@ function App() {
             )}
         </>
     );
-
-    async function populateWeatherData() {
-        const requestUrl = `${apiBaseUrl}/api/v2/WeatherForecast/GetStandard`;
-        try {
-            const response = await apiFetch(requestUrl);
-            const json = await response.json() as ApiResponse<Forecast[]>;
-            const parsed = parseApiResponse(json);
-
-            if (!parsed.ok || !parsed.data) {
-                throw new Error(parsed.message || t('error.weather.load_failed'));
-            }
-
-            setForecasts(parsed.data);
-            setError(undefined);
-        } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            setError(message);
-            setForecasts(undefined);
-        }
-    }
 
 }
 
@@ -312,15 +257,23 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
                 const tokenSet = await response.json() as {
                     access_token?: string;
                     refresh_token?: string;
+                    expires_in?: number;
+                    token_type?: string;
                 };
 
                 if (!tokenSet.access_token) {
                     throw new Error(t('oidc.missingAccessToken'));
                 }
 
-                window.localStorage.setItem('access_token', tokenSet.access_token);
-                if (tokenSet.refresh_token) {
-                    window.localStorage.setItem('refresh_token', tokenSet.refresh_token);
+                if (tokenSet.expires_in) {
+                    tokenService.setTokenInfo({
+                        access_token: tokenSet.access_token,
+                        refresh_token: tokenSet.refresh_token,
+                        expires_in: tokenSet.expires_in,
+                        token_type: tokenSet.token_type || 'Bearer'
+                    });
+                } else {
+                    tokenService.setTokenInfoFromJwt(tokenSet.access_token, tokenSet.refresh_token);
                 }
 
                 // 立即获取用户信息并缓存，避免主页面加载时的竞态条件

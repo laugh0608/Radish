@@ -21,7 +21,11 @@ class TokenService {
   private readonly TOKEN_KEY = 'access_token';
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly TOKEN_EXPIRES_KEY = 'token_expires_at';
-  private readonly CHECK_INTERVAL = 2 * 60 * 1000; // 每 2 分钟检查一次
+  private readonly TOKEN_REFRESH_AT_KEY = 'token_refresh_at';
+  private readonly MIN_REFRESH_BUFFER_SECONDS = 30;
+  private readonly MAX_REFRESH_BUFFER_SECONDS = 300;
+  private readonly MIN_CHECK_INTERVAL_MS = 15 * 1000;
+  private readonly MAX_CHECK_INTERVAL_MS = 2 * 60 * 1000;
 
   private constructor() {}
 
@@ -45,6 +49,11 @@ class TokenService {
     return expiresAt ? parseInt(expiresAt, 10) : null;
   }
 
+  getTokenRefreshAt(): number | null {
+    const refreshAt = localStorage.getItem(this.TOKEN_REFRESH_AT_KEY);
+    return refreshAt ? parseInt(refreshAt, 10) : null;
+  }
+
   setTokenInfo(tokenInfo: TokenInfo): void {
     localStorage.setItem(this.TOKEN_KEY, tokenInfo.access_token);
 
@@ -52,13 +61,31 @@ class TokenService {
       localStorage.setItem(this.REFRESH_TOKEN_KEY, tokenInfo.refresh_token);
     }
 
-    // 计算过期时间（提前 5 分钟刷新）
-    const expiresAt = Date.now() + (tokenInfo.expires_in - 300) * 1000;
+    // 计算过期时间与刷新时间（短 Token 使用动态提前量）
+    const refreshBufferSeconds = this.getRefreshBufferSeconds(tokenInfo.expires_in);
+    const expiresAt = Date.now() + tokenInfo.expires_in * 1000;
+    const refreshAt = Date.now() + Math.max(tokenInfo.expires_in - refreshBufferSeconds, 0) * 1000;
     localStorage.setItem(this.TOKEN_EXPIRES_KEY, expiresAt.toString());
+    localStorage.setItem(this.TOKEN_REFRESH_AT_KEY, refreshAt.toString());
 
     log.debug('TokenService', 'Token 信息已更新', {
       expires_in: tokenInfo.expires_in,
       expires_at: new Date(expiresAt).toISOString(),
+      refresh_at: new Date(refreshAt).toISOString(),
+    });
+
+    if (this.refreshTimer) {
+      this.startAutoRefresh();
+    }
+  }
+
+  setTokenInfoFromJwt(accessToken: string, refreshToken?: string): void {
+    const expiresIn = this.getExpiresInFromJwt(accessToken);
+    this.setTokenInfo({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+      expires_in: expiresIn,
+      token_type: 'Bearer',
     });
   }
 
@@ -66,6 +93,7 @@ class TokenService {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.TOKEN_EXPIRES_KEY);
+    localStorage.removeItem(this.TOKEN_REFRESH_AT_KEY);
     localStorage.removeItem('cached_user_info');
     this.refreshPromise = null;
     this.stopAutoRefresh(); // 清除 Token 时停止自动刷新
@@ -76,17 +104,23 @@ class TokenService {
    * 检查 Token 是否即将过期（提前 5 分钟）
    */
   isTokenExpiringSoon(): boolean {
-    const expiresAt = this.getTokenExpiresAt();
-    if (!expiresAt) {
-      // 没有过期时间信息，尝试从 JWT 解析
-      const token = this.getAccessToken();
-      if (token) {
-        return this.shouldRefreshFromJwt(token);
-      }
-      return true;
+    const refreshAt = this.getTokenRefreshAt();
+    if (refreshAt) {
+      return Date.now() >= refreshAt;
     }
 
-    return Date.now() >= expiresAt - 300000;
+    // 兼容旧数据：若没有 refreshAt，退化为使用 token_expires_at 作为刷新时间
+    const legacyRefreshAt = this.getTokenExpiresAt();
+    if (legacyRefreshAt) {
+      return Date.now() >= legacyRefreshAt;
+    }
+
+    // 没有过期时间信息，尝试从 JWT 解析
+    const token = this.getAccessToken();
+    if (token) {
+      return this.shouldRefreshFromJwt(token);
+    }
+    return true;
   }
 
   /**
@@ -117,8 +151,9 @@ class TokenService {
 
       const expirationTime = payload.exp * 1000;
       const currentTime = Date.now();
-      // 提前 5 分钟刷新
-      return currentTime >= expirationTime - 300000;
+      const remainingSeconds = Math.max(0, Math.floor((expirationTime - currentTime) / 1000));
+      const refreshBufferSeconds = this.getRefreshBufferSeconds(remainingSeconds);
+      return currentTime >= expirationTime - refreshBufferSeconds * 1000;
     } catch {
       return false;
     }
@@ -157,6 +192,16 @@ class TokenService {
     } catch {
       return null;
     }
+  }
+
+  private getExpiresInFromJwt(token: string): number {
+    const payload = this.parseJwt(token);
+    if (!payload?.exp) {
+      return 0;
+    }
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    return Math.max(0, payload.exp - nowSeconds);
   }
 
   /**
@@ -263,8 +308,7 @@ class TokenService {
 
     log.debug('TokenService', '启动自动刷新定时器');
 
-    // 每 2 分钟检查一次 Token 是否即将过期
-    this.refreshTimer = setInterval(async () => {
+    const runCheck = async () => {
       const token = this.getAccessToken();
       if (!token) {
         log.debug('TokenService', '没有 Token，停止自动刷新');
@@ -283,7 +327,11 @@ class TokenService {
           this.stopAutoRefresh();
         }
       }
-    }, this.CHECK_INTERVAL);
+    };
+
+    const intervalMs = this.getCheckIntervalMs();
+    void runCheck();
+    this.refreshTimer = setInterval(runCheck, intervalMs);
   }
 
   /**
@@ -295,6 +343,37 @@ class TokenService {
       this.refreshTimer = null;
       log.debug('TokenService', '停止自动刷新定时器');
     }
+  }
+
+  private getRefreshBufferSeconds(expiresInSeconds: number): number {
+    if (!Number.isFinite(expiresInSeconds) || expiresInSeconds <= 0) {
+      return this.MIN_REFRESH_BUFFER_SECONDS;
+    }
+
+    const dynamicBuffer = Math.floor(expiresInSeconds * 0.2);
+    return Math.min(
+      this.MAX_REFRESH_BUFFER_SECONDS,
+      Math.max(this.MIN_REFRESH_BUFFER_SECONDS, dynamicBuffer)
+    );
+  }
+
+  private getCheckIntervalMs(): number {
+    const now = Date.now();
+    const refreshAt = this.getTokenRefreshAt();
+    const expiresAt = this.getTokenExpiresAt();
+    const targetAt = refreshAt ?? expiresAt;
+
+    if (!targetAt) {
+      return this.MAX_CHECK_INTERVAL_MS;
+    }
+
+    const remainingMs = targetAt - now;
+    if (remainingMs <= 0) {
+      return this.MIN_CHECK_INTERVAL_MS;
+    }
+
+    const interval = Math.floor(remainingMs / 2);
+    return Math.min(this.MAX_CHECK_INTERVAL_MS, Math.max(this.MIN_CHECK_INTERVAL_MS, interval));
   }
 }
 

@@ -332,6 +332,6 @@ export function getOidcLoginUrl(): string {
   authorizeUrl.searchParams.set('client_id', 'radish-client');
   authorizeUrl.searchParams.set('response_type', 'code');
   authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-  authorizeUrl.searchParams.set('scope', 'radish-api');
+  authorizeUrl.searchParams.set('scope', 'openid profile offline_access radish-api');
   return authorizeUrl.toString();
 }
