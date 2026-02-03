@@ -20,7 +20,7 @@ export function redirectToLogin(): void {
   authorizeUrl.searchParams.set('client_id', CLIENT_ID);
   authorizeUrl.searchParams.set('response_type', 'code');
   authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-  authorizeUrl.searchParams.set('scope', 'radish-api');
+  authorizeUrl.searchParams.set('scope', 'openid profile offline_access radish-api');
 
   // 传递当前语言设置
   const currentLanguage = i18n.language || 'zh';

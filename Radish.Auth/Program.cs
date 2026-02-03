@@ -270,6 +270,16 @@ builder.Services.AddOpenIddict()
         // 注册允许的 Scopes
         options.RegisterScopes("openid", "profile", "email", "offline_access", "radish-api");
 
+        // 从配置读取并设置令牌生命周期（分钟）
+        var serverSection = builder.Configuration.GetSection("OpenIddict:Server");
+        var accessMinutes = serverSection.GetValue<int?>("AccessTokenLifetime") ?? 60;
+        var refreshMinutes = serverSection.GetValue<int?>("RefreshTokenLifetime") ?? 43200;
+        var codeMinutes = serverSection.GetValue<int?>("AuthorizationCodeLifetime") ?? 5;
+
+        options.SetAccessTokenLifetime(TimeSpan.FromMinutes(accessMinutes));
+        options.SetRefreshTokenLifetime(TimeSpan.FromMinutes(refreshMinutes));
+        options.SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(codeMinutes));
+
         // 配置加密和签名证书（默认使用 certs/dev-auth-cert.pfx）
         var useDevelopmentKeys = openIddictCertificateSection.GetValue<bool?>("UseDevelopmentKeys") ?? false;
         if (useDevelopmentKeys)

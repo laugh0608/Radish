@@ -1,7 +1,6 @@
 import { configureTokenRefresh, TokenRefreshErrorType } from '@radish/http';
 import { parseApiResponse, type ApiResponse } from '@radish/ui';
 import { getAuthBaseUrl } from '@/config/env';
-import { redirectToLogin } from '@/services/auth';
 import { tokenService } from '@/services/tokenService';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
@@ -67,7 +66,7 @@ export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<Cu
   const authStore = useAuthStore.getState();
   const userStore = useUserStore.getState();
 
-  const token = tokenService.getAccessToken();
+  const token = await tokenService.getValidAccessToken();
   if (!token) {
     authStore.setAuthenticated(false);
     return null;
@@ -127,10 +126,7 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
     },
     onTokenRefreshed: (accessToken, refreshToken) => {
       if (typeof window === 'undefined') return;
-      window.localStorage.setItem('access_token', accessToken);
-      if (refreshToken) {
-        window.localStorage.setItem('refresh_token', refreshToken);
-      }
+      tokenService.setTokenInfoFromJwt(accessToken, refreshToken);
       log.info('AuthBootstrap', '✅ Token 自动刷新成功');
       authStore.setAuthenticated(true);
     },
@@ -138,7 +134,6 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
       log.error('AuthBootstrap', '❌ Token 刷新失败:', errorType, error.message);
       if (errorType === TokenRefreshErrorType.InvalidRefreshToken) {
         authStore.logout();
-        redirectToLogin();
       }
     }
   });
