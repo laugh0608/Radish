@@ -24,6 +24,7 @@ export const ForumApp = () => {
     t,
     isAuthenticated: loggedIn,
     userId: userId ?? 0,
+    commentSortBy: dataState.commentSortBy,
     selectedCategoryId: dataState.selectedCategoryId,
     selectedPost: dataState.selectedPost,
     setSelectedPost: dataState.setSelectedPost,
