@@ -86,13 +86,17 @@ export const notificationApi = {
   async getMyNotifications(params: {
     pageIndex?: number;
     pageSize?: number;
-    isRead?: boolean;
+    onlyUnread?: boolean;
+    type?: string;
   }): Promise<PagedResponse<UserNotificationVo> | null> {
-    const { pageIndex = 1, pageSize = 20, isRead } = params;
+    const { pageIndex = 1, pageSize = 20, onlyUnread, type } = params;
 
     let url = `/api/v1/Notification/GetNotificationList?pageIndex=${pageIndex}&pageSize=${pageSize}`;
-    if (isRead !== undefined) {
-      url += `&isRead=${isRead}`;
+    if (onlyUnread !== undefined) {
+      url += `&onlyUnread=${onlyUnread}`;
+    }
+    if (type) {
+      url += `&type=${encodeURIComponent(type)}`;
     }
 
     const response = await apiGet<PagedResponse<UserNotificationVo>>(url, {
@@ -110,7 +114,9 @@ export const notificationApi = {
    * 标记通知为已读
    */
   async markAsRead(notificationId: number): Promise<boolean> {
-    const response = await apiPut<void>(`/api/v1/Notification/MarkAsRead/${notificationId}`, undefined, {
+    const response = await apiPut<void>('/api/v1/Notification/MarkAsRead', {
+      notificationIds: [notificationId]
+    }, {
       withAuth: true,
     });
 

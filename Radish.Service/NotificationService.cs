@@ -95,16 +95,37 @@ public class NotificationService : INotificationService
                 "[NotificationService] 创建用户通知关联成功，接收者数量: {Count}",
                 userNotifications.Count);
 
-            // 4. 异步推送未读数变更到所有接收者
+            // 4. 异步推送未读数变更 + 通知内容到所有接收者
             _ = Task.Run(async () =>
             {
                 try
                 {
-                    foreach (var userId in dto.ReceiverUserIds)
+                    var storeType = MapToStoreType(notification.Type);
+                    foreach (var userNotification in userNotifications)
                     {
+                        var userId = userNotification.UserId;
+
                         // 使用缓存服务增量更新未读数
                         var unreadCount = await _cacheService.IncrementUnreadCountAsync(userId);
                         await _pushService.PushUnreadCountAsync(userId, (int)unreadCount);
+
+                        // 推送完整通知（P1）
+                        var payload = new
+                        {
+                            id = notification.Id,
+                            type = storeType,
+                            title = notification.Title,
+                            content = notification.Content,
+                            isRead = userNotification.IsRead,
+                            createdAt = userNotification.CreateTime,
+                            businessId = notification.BusinessId,
+                            businessType = notification.BusinessType,
+                            triggerId = notification.TriggerId,
+                            triggerName = notification.TriggerName,
+                            triggerAvatar = notification.TriggerAvatar
+                        };
+
+                        await _pushService.PushNotificationAsync(userId, payload);
                     }
                 }
                 catch (Exception ex)
@@ -126,6 +147,28 @@ public class NotificationService : INotificationService
         }
     }
 
+    private static string MapToStoreType(string type)
+    {
+        return type switch
+        {
+            "CommentReply" => "reply",
+            NotificationType.CommentReplied => "reply",
+            NotificationType.CommentLiked => "like",
+            NotificationType.PostLiked => "like",
+            "Mention" => "mention",
+            NotificationType.Mentioned => "mention",
+            "Follow" => "follow",
+            "Followed" => "follow",
+            NotificationType.SystemAnnouncement => "system",
+            NotificationType.AccountSecurity => "system",
+            NotificationType.LevelUp => "system",
+            NotificationType.GodComment => "system",
+            NotificationType.Sofa => "system",
+            NotificationType.CoinBalanceChanged => "system",
+            _ => "system"
+        };
+    }
+
     /// <summary>
     /// 获取用户的通知列表（分页）
     /// </summary>
@@ -135,9 +178,36 @@ public class NotificationService : INotificationService
     {
         try
         {
+            var onlyUnread = query.OnlyUnread == true;
+            List<long>? typeNotificationIds = null;
+
+            if (!string.IsNullOrWhiteSpace(query.Type))
+            {
+                var types = query.Type
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(t => t.Trim())
+                    .Where(t => !string.IsNullOrWhiteSpace(t))
+                    .Distinct()
+                    .ToList();
+
+                if (types.Count > 0)
+                {
+                    var typeNotifications = await _notificationRepository.QueryAsync(n => types.Contains(n.Type));
+                    typeNotificationIds = typeNotifications.Select(n => n.Id).ToList();
+                }
+            }
+
+            if (typeNotificationIds != null && typeNotificationIds.Count == 0)
+            {
+                return (new List<UserNotificationVo>(), 0);
+            }
+
             // 查询用户的通知关系（分页）
             var result = await _userNotificationRepository.QueryPageAsync(
-                un => un.UserId == userId && !un.IsDeleted,
+                un => un.UserId == userId
+                      && !un.IsDeleted
+                      && (!onlyUnread || !un.IsRead)
+                      && (typeNotificationIds == null || typeNotificationIds.Contains(un.NotificationId)),
                 query.PageIndex,
                 query.PageSize,
                 un => un.CreateTime,

@@ -220,6 +220,37 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                         }
                     }
                 }
+                // 4.6 评论帖子通知（顶级评论，不给自己发通知）
+                if (!comment.ParentId.HasValue)
+                {
+                    try
+                    {
+                        var post = await _postService.GetPostDetailAsync(comment.PostId);
+                        if (post != null && post.VoAuthorId != comment.AuthorId)
+                        {
+                            await _notificationService.CreateNotificationAsync(new CreateNotificationDto
+                            {
+                                Type = NotificationType.CommentReplied,
+                                Title = "帖子被评论",
+                                Content = comment.Content,
+                                Priority = (int)NotificationPriority.Normal,
+                                BusinessType = BusinessType.Post,
+                                BusinessId = comment.PostId,
+                                TriggerId = comment.AuthorId,
+                                TriggerName = comment.AuthorName,
+                                TriggerAvatar = null,
+                                ReceiverUserIds = new List<long> { post.VoAuthorId }
+                            });
+                            Log.Information("帖子评论通知发送成功：PostId={PostId}, CommentId={CommentId}, 接收者={ReceiverId}",
+                                comment.PostId, commentId, post.VoAuthorId);
+                        }
+                    }
+                    catch (Exception notifyEx)
+                    {
+                        Log.Error(notifyEx, "发送帖子评论通知失败：PostId={PostId}, CommentId={CommentId}",
+                            comment.PostId, commentId);
+                    }
+                }
             }
             catch (Exception ex)
             {
