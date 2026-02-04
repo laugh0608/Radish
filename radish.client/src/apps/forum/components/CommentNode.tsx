@@ -12,7 +12,7 @@ interface CommentNodeProps {
   isGodComment?: boolean; // 是否是神评
   onDelete?: (commentId: number) => void;
   onEdit?: (commentId: number, newContent: string) => Promise<void>;
-  onLike?: (commentId: number) => Promise<{ voIsLiked: boolean; voLikeCount: number }>;
+  onLike?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReply?: (commentId: number, authorName: string) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
 }
@@ -142,9 +142,9 @@ export const CommentNode = ({
     setIsLiking(true);
     try {
       const result = await onLike(node.voId);
-      // 更新本地状态（直接使用 vo 前缀字段）
-      setIsLiked(result.voIsLiked);
-      setLikeCount(result.voLikeCount);
+      // 更新本地状态（直接使用后端返回字段）
+      setIsLiked(result.isLiked);
+      setLikeCount(result.likeCount);
     } catch (error) {
       log.error('点赞失败:', error);
       // 发生错误时保持原状态
