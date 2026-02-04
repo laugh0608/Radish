@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
+import { useUserStore } from '@/stores/userStore';
 import type { TFunction } from 'i18next';
 import {
   publishPost,
@@ -72,10 +73,11 @@ interface UseForumActionsParams {
   t: TFunction;
   isAuthenticated: boolean;
   userId: number;
+  commentSortBy: 'newest' | 'hottest' | null;
   selectedCategoryId: number | null;
   selectedPost: PostDetail | null;
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
-  setComments: (comments: CommentNode[]) => void;
+  setComments: Dispatch<SetStateAction<CommentNode[]>>;
   setCurrentPage: (page: number) => void;
   setSortBy: (sortBy: 'newest' | 'hottest' | 'essence') => void;
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
@@ -93,6 +95,7 @@ export const useForumActions = (
   const {
     t,
     isAuthenticated,
+    userId,
     selectedCategoryId,
     selectedPost,
     setSelectedPost,
@@ -105,7 +108,8 @@ export const useForumActions = (
     loadPostDetail,
     loadComments,
     loadPosts,
-    resetCommentSort
+    resetCommentSort,
+    commentSortBy
   } = params;
 
   // Modal 状态
@@ -270,7 +274,7 @@ export const useForumActions = (
 
     setError(null);
     try {
-      await createComment(
+      const commentId = await createComment(
         {
           postId: selectedPost.voId,
           content,
@@ -280,8 +284,82 @@ export const useForumActions = (
         },
         t
       );
+
+      const userStore = useUserStore.getState();
+      const authorName = userStore.userName || '我';
+      const now = new Date().toISOString();
+      const parentId = replyTo?.commentId ?? null;
+
+      const isSameId = (a: number | string | null | undefined, b: number | string | null | undefined) => {
+        if (a == null || b == null) return false;
+        return String(a) === String(b);
+      };
+
+      const mergeCommentIntoTree = (
+        list: CommentNode[],
+        targetParentId: number | string | null,
+        comment: CommentNode
+      ): CommentNode[] => {
+        if (!targetParentId) {
+          const exists = list.some(item => isSameId(item.voId, comment.voId));
+          if (exists) return list;
+          return commentSortBy === 'newest' ? [comment, ...list] : [...list, comment];
+        }
+
+        let inserted = false;
+        const next = list.map(root => {
+          const isRoot = isSameId(root.voId, targetParentId);
+          const isChild = root.voChildren?.some(child => isSameId(child.voId, targetParentId));
+          if (!isRoot && !isChild) {
+            return root;
+          }
+
+          if (root.voChildren?.some(child => isSameId(child.voId, comment.voId))) {
+            inserted = true;
+            return root;
+          }
+
+          inserted = true;
+          const childComment = { ...comment, voRootId: root.voId };
+          const nextChildren = root.voChildren ? [...root.voChildren, childComment] : [childComment];
+          const nextTotal = (root.voChildrenTotal ?? root.voChildren?.length ?? 0) + 1;
+
+          return {
+            ...root,
+            voChildren: nextChildren,
+            voChildrenTotal: nextTotal
+          };
+        });
+
+        return inserted ? next : list;
+      };
+
+      const newComment: CommentNode = {
+        voId: commentId,
+        voPostId: selectedPost.voId,
+        voContent: content.trim(),
+        voAuthorId: userId,
+        voAuthorName: authorName,
+        voParentId: parentId,
+        voRootId: parentId,
+        voReplyToUserId: null,
+        voReplyToUserName: replyTo?.authorName ?? null,
+        voLevel: parentId ? 1 : 0,
+        voLikeCount: 0,
+        voIsLiked: false,
+        voCreateTime: now,
+        voChildren: [],
+        voChildrenTotal: 0,
+        voIsGodComment: false,
+        voIsSofa: false
+      };
+
+      setComments(prev => mergeCommentIntoTree(prev, parentId, newComment));
+
       setReplyTo(null);
       await loadComments(selectedPost.voId);
+
+      setComments(prev => mergeCommentIntoTree(prev, parentId, newComment));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -376,7 +454,7 @@ export const useForumActions = (
   ): Promise<CommentNode[]> => {
     try {
       const result = await getChildComments(parentId, pageIndex, pageSize, t);
-      return result.items;
+      return result.voItems ?? [];
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);

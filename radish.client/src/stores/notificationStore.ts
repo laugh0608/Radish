@@ -100,7 +100,13 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
       unique.push(item);
     }
 
-    set({ recentNotifications: unique.slice(0, 20) });
+    const trimmed = unique.slice(0, 20);
+    const unreadCount = trimmed.filter(item => !item.isRead).length;
+
+    set({
+      recentNotifications: trimmed,
+      unreadCount
+    });
   },
 
   addNotification: (notification: NotificationItem) => {

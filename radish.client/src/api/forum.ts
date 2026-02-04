@@ -267,19 +267,33 @@ export async function getChildComments(
   pageIndex: number,
   pageSize: number,
   t: TFunction
-): Promise<{ items: CommentNode[]; total: number; pageIndex: number; pageSize: number }> {
+): Promise<{ voItems: CommentNode[]; voTotal: number; voPageIndex: number; voPageSize: number }> {
   const response = await apiGet<{
-    items: CommentNode[];
-    total: number;
-    pageIndex: number;
-    pageSize: number;
-  }>(`/api/v1/Comment/GetChildComments?parentId=${parentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`);
+    voItems: CommentNode[];
+    voTotal: number;
+    voPageIndex: number;
+    voPageSize: number;
+  }>(
+    `/api/v1/Comment/GetChildComments?parentId=${parentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`
+  );
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取子评论失败');
   }
 
-  return response.data;
+  // 兼容后端 VoPagedResult 与历史 PageModel 结构
+  const raw = response.data;
+  const items = raw.items ?? raw.voItems ?? raw.data ?? [];
+  const total = raw.total ?? raw.voTotal ?? raw.dataCount ?? items.length;
+  const resolvedPageIndex = raw.pageIndex ?? raw.voPageIndex ?? raw.page ?? pageIndex;
+  const resolvedPageSize = raw.pageSize ?? raw.voPageSize ?? pageSize;
+
+  return {
+    items,
+    total,
+    pageIndex: resolvedPageIndex,
+    pageSize: resolvedPageSize
+  };
 }
 
 /**

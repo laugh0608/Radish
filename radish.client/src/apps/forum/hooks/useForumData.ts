@@ -52,7 +52,7 @@ export interface ForumDataState {
 export interface ForumDataActions {
   setSelectedCategoryId: (id: number | null) => void;
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
-  setComments: (comments: CommentNode[]) => void;
+  setComments: Dispatch<SetStateAction<CommentNode[]>>;
   setCurrentPage: (page: number) => void;
   setSortBy: (sortBy: 'newest' | 'hottest' | 'essence') => void;
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
@@ -155,11 +155,19 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
 
       // 获取全局热门神评
       const allGodComments: CommentNode[] = [];
+      const godCommentsMap = new Map(postGodComments);
       for (const post of hotPostsModel.data.slice(0, 5)) {
         try {
-          const godComments = await getCurrentGodComments(post.voId, t);
-          if (godComments.length > 0) {
-            const topGodComment = godComments[0];
+          let topGodComment = godCommentsMap.get(post.voId);
+          if (!topGodComment) {
+            const godComments = await getCurrentGodComments(post.voId, t);
+            if (godComments.length > 0) {
+              topGodComment = godComments[0];
+              godCommentsMap.set(post.voId, topGodComment);
+            }
+          }
+
+          if (topGodComment) {
             allGodComments.push({
               voId: topGodComment.voCommentId,
               voContent: topGodComment.voContentSnapshot || '',
@@ -183,6 +191,13 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       }
       allGodComments.sort((a, b) => (b.voLikeCount || 0) - (a.voLikeCount || 0));
       setTrendingGodComments(allGodComments.slice(0, 10));
+      setPostGodComments(prev => {
+        const next = new Map(prev);
+        for (const [postId, highlight] of godCommentsMap.entries()) {
+          next.set(postId, highlight);
+        }
+        return next;
+      });
     } catch (err) {
       log.error('加载热门内容失败:', err);
     } finally {
@@ -192,22 +207,33 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
 
   // 为帖子列表加载神评预览
   const loadGodCommentsForPosts = async (postList: PostItem[]) => {
-    const godCommentsMap = new Map<number, CommentHighlight>();
+    const godCommentsMap = new Map(postGodComments);
+    const missingPosts = postList.filter(post => !godCommentsMap.has(post.voId));
+    const batchSize = 4;
 
-    await Promise.all(
-      postList.map(async (post) => {
-        try {
-          const godComments = await getCurrentGodComments(post.voId, t);
-          if (godComments.length > 0) {
-            godCommentsMap.set(post.voId, godComments[0]);
+    for (let i = 0; i < missingPosts.length; i += batchSize) {
+      const batch = missingPosts.slice(i, i + batchSize);
+      await Promise.all(
+        batch.map(async (post) => {
+          try {
+            const godComments = await getCurrentGodComments(post.voId, t);
+            if (godComments.length > 0) {
+              godCommentsMap.set(post.voId, godComments[0]);
+            }
+          } catch {
+            // 忽略单个帖子的错误
           }
-        } catch {
-          // 忽略单个帖子的错误
-        }
-      })
-    );
+        })
+      );
+    }
 
-    setPostGodComments(godCommentsMap);
+    setPostGodComments(prev => {
+      const next = new Map(prev);
+      for (const [postId, highlight] of godCommentsMap.entries()) {
+        next.set(postId, highlight);
+      }
+      return next;
+    });
   };
 
   // 加载帖子详情

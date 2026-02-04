@@ -73,10 +73,11 @@ export const CommentNode = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [childSortBy, setChildSortBy] = useState<'newest' | 'hottest' | null>(null); // null表示默认排序(时间升序)
+  const [hasPreloadedChildren, setHasPreloadedChildren] = useState(false);
 
   // 初始化已加载的子评论（默认时间升序）
   const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(() => {
-    const children = node.voChildren || [];
+    const children = Array.isArray(node.voChildren) ? node.voChildren : [];
     // 默认按时间升序排序
     return [...children].sort((a, b) =>
       new Date(a.voCreateTime || 0).getTime() - new Date(b.voCreateTime || 0).getTime()
@@ -105,13 +106,18 @@ export const CommentNode = ({
 
   // 监听 node.voChildren 变化,重新初始化子评论列表
   useEffect(() => {
-    const children = node.voChildren || [];
+    const children = Array.isArray(node.voChildren) ? node.voChildren : [];
     const sorted = [...children].sort((a, b) =>
       new Date(a.voCreateTime || 0).getTime() - new Date(b.voCreateTime || 0).getTime()
     );
     setLoadedChildren(sorted);
     setChildSortBy(null); // 重置排序方式为默认值
   }, [node.voChildren]);
+
+  // 父评论或子评论总数变化时，重置预加载状态
+  useEffect(() => {
+    setHasPreloadedChildren(false);
+  }, [node.voId, node.voChildrenTotal]);
 
   // 若后端只返回 childrenTotal（不带 children 列表），为了“收起态也能看到一条回复”，这里自动预加载第一页子评论
   useEffect(() => {
@@ -120,11 +126,14 @@ export const CommentNode = ({
     if (loadedChildren.length > 0) return;
     if (!onLoadMoreChildren) return;
     if (isLoadingMore) return;
+    if (hasPreloadedChildren) return;
 
+    setHasPreloadedChildren(true);
     setIsLoadingMore(true);
     onLoadMoreChildren(node.voId, 1, pageSize)
       .then(children => {
-        setLoadedChildren(children);
+        const normalized = Array.isArray(children) ? children : [];
+        setLoadedChildren(normalized);
         setCurrentPage(1);
       })
       .catch(error => {
@@ -196,7 +205,8 @@ export const CommentNode = ({
         setIsLoadingMore(true);
         try {
           const children = await onLoadMoreChildren(node.voId, 1, pageSize);
-          setLoadedChildren(children);
+          const normalized = Array.isArray(children) ? children : [];
+          setLoadedChildren(normalized);
           setCurrentPage(1);
         } catch (error) {
           log.error('加载子评论失败:', error);
@@ -219,7 +229,8 @@ export const CommentNode = ({
     try {
       const nextPage = currentPage + 1;
       const moreChildren = await onLoadMoreChildren(node.voId, nextPage, pageSize);
-      setLoadedChildren([...loadedChildren, ...moreChildren]);
+      const normalized = Array.isArray(moreChildren) ? moreChildren : [];
+      setLoadedChildren([...loadedChildren, ...normalized]);
       setCurrentPage(nextPage);
     } catch (error) {
       log.error('加载更多子评论失败:', error);
