@@ -104,7 +104,7 @@ public class NotificationPushService : INotificationPushService
             // P1 阶段：推送完整的通知对象
             await _hubContext.Clients
                 .Group($"user:{userId}")
-                .SendAsync("NotificationReceived", notification);
+                .SendAsync("NewNotification", notification);
 
             _logger.LogDebug(
                 "[NotificationPushService] 成功推送通知到用户 {UserId}",
