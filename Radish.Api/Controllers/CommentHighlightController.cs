@@ -83,6 +83,92 @@ public class CommentHighlightController : ControllerBase
     }
 
     /// <summary>
+    /// 批量获取帖子的当前神评（每帖 Top1）
+    /// </summary>
+    /// <param name="postIds">帖子 ID 列表</param>
+    /// <returns>帖子 ID → 神评（Top1）</returns>
+    [HttpPost]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel<Dictionary<long, CommentHighlightVo>>), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetCurrentGodCommentsBatch([FromBody] List<long> postIds)
+    {
+        if (postIds == null || postIds.Count == 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "获取成功",
+                ResponseData = new Dictionary<long, CommentHighlightVo>()
+            };
+        }
+
+        var uniqueIds = postIds.Where(id => id > 0).Distinct().ToList();
+        if (uniqueIds.Count == 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "获取成功",
+                ResponseData = new Dictionary<long, CommentHighlightVo>()
+            };
+        }
+
+        var result = new Dictionary<long, CommentHighlightVo>();
+        var missingIds = new List<long>();
+
+        foreach (var postId in uniqueIds)
+        {
+            var cacheKey = $"god_comments:post:{postId}";
+            var cached = await _caching.GetAsync<List<CommentHighlightVo>>(cacheKey);
+            if (cached != null && cached.Any())
+            {
+                var top = cached.OrderBy(h => h.VoRank).FirstOrDefault();
+                if (top != null)
+                {
+                    result[postId] = top;
+                }
+            }
+            else
+            {
+                missingIds.Add(postId);
+            }
+        }
+
+        if (missingIds.Count > 0)
+        {
+            var highlights = await _highlightService.QueryAsync(
+                h => missingIds.Contains(h.PostId) &&
+                     h.HighlightType == 1 &&
+                     h.IsCurrent);
+
+            foreach (var group in highlights.GroupBy(h => h.VoPostId))
+            {
+                var sorted = group.OrderBy(h => h.VoRank).ToList();
+                if (sorted.Count == 0)
+                {
+                    continue;
+                }
+
+                var top = sorted[0];
+                result[group.Key] = top;
+
+                var cacheKey = $"god_comments:post:{group.Key}";
+                await _caching.SetAsync(cacheKey, sorted, TimeSpan.FromHours(1));
+            }
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = result
+        };
+    }
+
+    /// <summary>
     /// 获取父评论的当前沙发列表
     /// </summary>
     /// <param name="parentCommentId">父评论 ID</param>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { log } from '@/utils/logger';
 import type { Dispatch, SetStateAction } from 'react';
 import type { TFunction } from 'i18next';
@@ -7,7 +7,7 @@ import {
   getPostList,
   getPostById,
   getCommentTree,
-  getCurrentGodComments,
+  getCurrentGodCommentsBatch,
   type Category,
   type PostItem,
   type PostDetail,
@@ -97,9 +97,13 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const [loadingPostDetail, setLoadingPostDetail] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [loadingTrending, setLoadingTrending] = useState(false);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
 
   // 错误状态
   const [error, setError] = useState<string | null>(null);
+  const inFlightGodCommentsRef = useRef<Set<number>>(new Set());
+  const inFlightPostListRef = useRef<Set<string>>(new Set());
+  const trendingLoadedRef = useRef(false);
 
   // 加载分类列表
   const loadCategories = async () => {
@@ -116,11 +120,20 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       setError(message);
     } finally {
       setLoadingCategories(false);
+      setCategoriesLoaded(true);
     }
   };
 
   // 加载帖子列表
   const loadPosts = async () => {
+    if (!categoriesLoaded && selectedCategoryId == null) {
+      return;
+    }
+    const loadKey = `${selectedCategoryId ?? 'all'}|${currentPage}|${pageSize}|${sortBy}|${searchKeyword.trim()}`;
+    if (inFlightPostListRef.current.has(loadKey)) {
+      return;
+    }
+    inFlightPostListRef.current.add(loadKey);
     setLoadingPosts(true);
     setError(null);
     try {
@@ -142,11 +155,16 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       setError(message);
     } finally {
       setLoadingPosts(false);
+      inFlightPostListRef.current.delete(loadKey);
     }
   };
 
   // 加载热门内容
   const loadTrendingContent = async () => {
+    if (trendingLoadedRef.current) {
+      return;
+    }
+    trendingLoadedRef.current = true;
     setLoadingTrending(true);
     try {
       // 获取热门帖子
@@ -156,38 +174,38 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       // 获取全局热门神评
       const allGodComments: CommentNode[] = [];
       const godCommentsMap = new Map(postGodComments);
-      for (const post of hotPostsModel.data.slice(0, 5)) {
-        try {
-          let topGodComment = godCommentsMap.get(post.voId);
-          if (!topGodComment) {
-            const godComments = await getCurrentGodComments(post.voId, t);
-            if (godComments.length > 0) {
-              topGodComment = godComments[0];
-              godCommentsMap.set(post.voId, topGodComment);
-            }
-          }
-
-          if (topGodComment) {
-            allGodComments.push({
-              voId: topGodComment.voCommentId,
-              voContent: topGodComment.voContentSnapshot || '',
-              voAuthorId: topGodComment.voAuthorId,
-              voAuthorName: topGodComment.voAuthorName,
-              voCreateTime: topGodComment.voCreateTime,
-              voLikeCount: topGodComment.voLikeCount,
-              voIsLiked: false,
-              voIsGodComment: true,
-              voIsSofa: false,
-              voPostId: post.voId,
-              voParentId: null,
-              voReplyToUserId: null,
-              voReplyToUserName: null,
-              voChildren: []
-            });
-          }
-        } catch {
-          // 忽略单个帖子的错误
+      const hotPostIds = hotPostsModel.data
+        .slice(0, 5)
+        .map(post => post.voId)
+        .filter(postId => !inFlightGodCommentsRef.current.has(postId));
+      hotPostIds.forEach(postId => inFlightGodCommentsRef.current.add(postId));
+      try {
+        const batchResult = await getCurrentGodCommentsBatch(hotPostIds, t);
+        for (const postId of hotPostIds) {
+          const topGodComment = batchResult[postId];
+          if (!topGodComment) continue;
+          godCommentsMap.set(postId, topGodComment);
+          allGodComments.push({
+            voId: topGodComment.voCommentId,
+            voContent: topGodComment.voContentSnapshot || '',
+            voAuthorId: topGodComment.voAuthorId,
+            voAuthorName: topGodComment.voAuthorName,
+            voCreateTime: topGodComment.voCreateTime,
+            voLikeCount: topGodComment.voLikeCount,
+            voIsLiked: false,
+            voIsGodComment: true,
+            voIsSofa: false,
+            voPostId: postId,
+            voParentId: null,
+            voReplyToUserId: null,
+            voReplyToUserName: null,
+            voChildren: []
+          });
         }
+      } catch {
+        // 忽略热门神评批量请求错误
+      } finally {
+        hotPostIds.forEach(postId => inFlightGodCommentsRef.current.delete(postId));
       }
       allGodComments.sort((a, b) => (b.voLikeCount || 0) - (a.voLikeCount || 0));
       setTrendingGodComments(allGodComments.slice(0, 10));
@@ -200,6 +218,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       });
     } catch (err) {
       log.error('加载热门内容失败:', err);
+      trendingLoadedRef.current = false;
     } finally {
       setLoadingTrending(false);
     }
@@ -208,23 +227,27 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   // 为帖子列表加载神评预览
   const loadGodCommentsForPosts = async (postList: PostItem[]) => {
     const godCommentsMap = new Map(postGodComments);
-    const missingPosts = postList.filter(post => !godCommentsMap.has(post.voId));
-    const batchSize = 4;
+    const missingPostIds = postList
+      .filter(post => !godCommentsMap.has(post.voId) && !inFlightGodCommentsRef.current.has(post.voId))
+      .map(post => post.voId);
 
-    for (let i = 0; i < missingPosts.length; i += batchSize) {
-      const batch = missingPosts.slice(i, i + batchSize);
-      await Promise.all(
-        batch.map(async (post) => {
-          try {
-            const godComments = await getCurrentGodComments(post.voId, t);
-            if (godComments.length > 0) {
-              godCommentsMap.set(post.voId, godComments[0]);
-            }
-          } catch {
-            // 忽略单个帖子的错误
-          }
-        })
-      );
+    if (missingPostIds.length === 0) {
+      return;
+    }
+
+    try {
+      missingPostIds.forEach(postId => inFlightGodCommentsRef.current.add(postId));
+      const batchResult = await getCurrentGodCommentsBatch(missingPostIds, t);
+      for (const [postIdStr, highlight] of Object.entries(batchResult)) {
+        const postId = Number(postIdStr);
+        if (!Number.isNaN(postId) && highlight) {
+          godCommentsMap.set(postId, highlight);
+        }
+      }
+    } catch {
+      // 忽略批量神评请求错误
+    } finally {
+      missingPostIds.forEach(postId => inFlightGodCommentsRef.current.delete(postId));
     }
 
     setPostGodComments(prev => {
@@ -283,13 +306,12 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   // 当选择分类时重新加载帖子
   useEffect(() => {
     setCurrentPage(1);
-    void loadPosts();
   }, [selectedCategoryId]);
 
   // 当页码、排序或搜索变化时重新加载帖子
   useEffect(() => {
     void loadPosts();
-  }, [currentPage, sortBy, searchKeyword]);
+  }, [categoriesLoaded, selectedCategoryId, currentPage, sortBy, searchKeyword]);
 
   return {
     // 状态
