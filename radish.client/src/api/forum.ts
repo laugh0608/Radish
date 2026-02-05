@@ -316,6 +316,31 @@ export async function getCurrentGodComments(
 }
 
 /**
+ * 批量获取帖子当前神评（每帖 Top1）
+ * @param postIds 帖子 ID 列表
+ * @param t i18n 翻译函数
+ */
+export async function getCurrentGodCommentsBatch(
+  postIds: number[],
+  t: TFunction
+): Promise<Record<number, CommentHighlight>> {
+  if (!postIds.length) {
+    return {};
+  }
+
+  const response = await apiPost<Record<number, CommentHighlight>>(
+    '/api/v1/CommentHighlight/GetCurrentGodCommentsBatch',
+    postIds
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '批量获取神评失败');
+  }
+
+  return response.data;
+}
+
+/**
  * 获取父评论的当前沙发列表
  * @param parentCommentId 父评论 ID
  * @param t i18n 翻译函数
