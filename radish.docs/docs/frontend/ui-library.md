@@ -95,6 +95,7 @@ function MyComponent() {
       minHeight={200}
       maxHeight={500}
       showToolbar={true}
+      theme="light"
       disabled={false}
     />
   );
@@ -109,6 +110,8 @@ function MyComponent() {
 - `maxHeight?: number` - 最大高度（像素）
 - `showToolbar?: boolean` - 是否显示工具栏（默认 true）
 - `disabled?: boolean` - 是否禁用（默认 false）
+- `theme?: 'dark' | 'light'` - 主题风格（默认 dark）
+- `toolbarExtras?: ReactNode` - 工具栏右侧扩展内容
 - `className?: string` - 自定义样式类名
 
 ## 核心模块
@@ -133,7 +136,7 @@ function MyComponent() {
 - **Input** - 输入框组件
 - **Select** - 下拉选择组件
 - **Modal** - 模态框组件
-- **Icon** - 图标组件（基于 Iconify，本地 Iconify JSON 集合加载，不依赖公共 API）
+- **Icon** - 图标组件（基于 Iconify，本地 Iconify JSON 集合加载，不依赖公共 API，内置渲染兜底）
 - **ContextMenu** - 右键菜单组件
 - **ConfirmDialog** - 确认对话框组件
 - **UserMention** - 用户提及组件（@用户名）
