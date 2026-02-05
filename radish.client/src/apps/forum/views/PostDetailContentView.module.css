@@ -43,6 +43,7 @@
 /* 详情内容区域 */
 .detailBody {
   position: relative;
+  display: flex;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -51,6 +52,7 @@
 .detailContent {
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
   padding: 20px 84px 20px 20px;
   display: flex;
   flex-direction: column;
@@ -112,6 +114,23 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+}
+
+.toolIcon {
+  width: 20px;
+  height: 20px;
+  display: block;
+  color: currentColor;
+  min-width: 20px;
+  min-height: 20px;
+}
+
+.toolIcon svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  fill: currentColor;
+  stroke: currentColor;
 }
 
 .toolButton:hover {

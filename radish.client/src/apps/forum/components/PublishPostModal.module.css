@@ -63,52 +63,6 @@
   background: #e2e8f0;
 }
 
-.options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.optionCard {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  background-color: #f8fafc;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.optionCard:hover {
-  border-color: #cbd5f5;
-  background-color: #f1f5f9;
-}
-
-.optionCard input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
-}
-
-.optionText {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.optionTitle {
-  font-size: 14px;
-  font-weight: 600;
-  color: #0f172a;
-}
-
-.optionHint {
-  font-size: 12px;
-  color: #64748b;
-}
-
 .watermarkInput {
   padding: 8px 12px;
   font-size: 14px;
@@ -129,14 +83,60 @@
 
 .editorWrapper {
   border-radius: 14px;
-  border: 1px solid #d8e1ec;
+  border: 1px solid #e2e8f0;
   overflow: hidden;
-  background: #0f172a;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
 }
 
 .editor {
   border-radius: 0;
+}
+
+.editorToggles {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editorToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  background: #e2e8f0;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editorToggleActive {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.editorToggle:hover {
+  transform: translateY(-1px);
+}
+
+.watermarkRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.watermarkLabel {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
 }
 
 .footer {

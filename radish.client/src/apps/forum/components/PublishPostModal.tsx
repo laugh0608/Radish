@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
-import { BottomSheet, MarkdownEditor } from '@radish/ui';
+import { BottomSheet, Icon, MarkdownEditor } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import styles from './PublishPostModal.module.css';
@@ -144,6 +144,29 @@ export const PublishPostModal = ({
     </div>
   );
 
+  const editorToolbarExtras = (
+    <div className={styles.editorToggles}>
+      <button
+        type="button"
+        className={`${styles.editorToggle} ${addWatermark ? styles.editorToggleActive : ''}`}
+        onClick={() => setAddWatermark(!addWatermark)}
+        aria-pressed={addWatermark}
+      >
+        <Icon icon="mdi:watermark" size={16} />
+        <span>水印</span>
+      </button>
+      <button
+        type="button"
+        className={`${styles.editorToggle} ${generateMultipleSizes ? styles.editorToggleActive : ''}`}
+        onClick={() => setGenerateMultipleSizes(!generateMultipleSizes)}
+        aria-pressed={generateMultipleSizes}
+      >
+        <Icon icon="mdi:aspect-ratio" size={16} />
+        <span>多尺寸</span>
+      </button>
+    </div>
+  );
+
   if (!isAuthenticated) {
     return (
       <BottomSheet isOpen={isOpen} onClose={onClose} title="发布新帖" height="70%">
@@ -177,40 +200,6 @@ export const PublishPostModal = ({
           <span className={styles.titleCount}>{title.length}/100</span>
         </div>
 
-        <div className={styles.options}>
-          <label className={styles.optionCard}>
-            <input
-              type="checkbox"
-              checked={addWatermark}
-              onChange={(e) => setAddWatermark(e.target.checked)}
-            />
-            <div className={styles.optionText}>
-              <span className={styles.optionTitle}>图片水印</span>
-              <span className={styles.optionHint}>为上传图片添加标记</span>
-            </div>
-          </label>
-          <label className={styles.optionCard}>
-            <input
-              type="checkbox"
-              checked={generateMultipleSizes}
-              onChange={(e) => setGenerateMultipleSizes(e.target.checked)}
-            />
-            <div className={styles.optionText}>
-              <span className={styles.optionTitle}>多尺寸输出</span>
-              <span className={styles.optionHint}>Small / Medium / Large</span>
-            </div>
-          </label>
-          {addWatermark && (
-            <input
-              type="text"
-              placeholder="水印文字"
-              value={watermarkText}
-              onChange={(e) => setWatermarkText(e.target.value)}
-              className={styles.watermarkInput}
-            />
-          )}
-        </div>
-
         <div className={styles.editorWrapper}>
           <MarkdownEditor
             value={content}
@@ -220,8 +209,23 @@ export const PublishPostModal = ({
             onDocumentUpload={handleDocumentUpload}
             minHeight={320}
             className={styles.editor}
+            theme="light"
+            toolbarExtras={editorToolbarExtras}
           />
         </div>
+
+        {addWatermark && (
+          <div className={styles.watermarkRow}>
+            <span className={styles.watermarkLabel}>水印文字</span>
+            <input
+              type="text"
+              placeholder="输入水印文字"
+              value={watermarkText}
+              onChange={(e) => setWatermarkText(e.target.value)}
+              className={styles.watermarkInput}
+            />
+          </div>
+        )}
       </div>
     </BottomSheet>
   );
