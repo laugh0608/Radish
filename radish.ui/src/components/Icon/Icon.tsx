@@ -1,7 +1,8 @@
-import { Icon as IconifyIcon } from '@iconify/react';
+import { Icon as IconifyIcon, getIcon } from '@iconify/react';
 import type { IconProps as IconifyIconProps } from '@iconify/react';
 import { addCollection } from '@iconify/react';
 import mdiIcons from '@iconify-json/mdi/icons.json';
+import './Icon.css';
 
 // 注册本地 MDI 图标集，避免依赖在线 API
 addCollection(mdiIcons);
@@ -36,13 +37,35 @@ export interface IconProps extends Omit<IconifyIconProps, 'icon'> {
  * <Icon icon="mdi:account-circle" size={32} />
  * ```
  */
-export const Icon = ({ icon, size = 24, color = 'currentColor', ...props }: IconProps) => {
+export const Icon = ({
+  icon,
+  size = 24,
+  color = 'currentColor',
+  className,
+  style,
+  ...props
+}: IconProps) => {
+  const resolveIcon = () => {
+    if (typeof icon !== 'string') return icon;
+    let resolved = getIcon(icon);
+    if (!resolved && icon.startsWith('mdi:')) {
+      addCollection(mdiIcons);
+      resolved = getIcon(icon);
+    }
+    return resolved || icon;
+  };
+
+  const mergedClassName = ['radish-icon', className].filter(Boolean).join(' ');
+
   return (
     <IconifyIcon
-      icon={icon}
+      icon={resolveIcon()}
       width={size}
       height={size}
-      color={color}
+      color={color || undefined}
+      inline={true}
+      className={mergedClassName}
+      style={style}
       {...props}
     />
   );

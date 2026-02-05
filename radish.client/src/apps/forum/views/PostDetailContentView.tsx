@@ -144,13 +144,13 @@ export const PostDetailContentView = ({
 
         <div className={styles.floatingTools}>
           <button className={styles.toolButton} onClick={handleScrollTop} title="滚动到顶部">
-            <Icon icon="mdi:arrow-up" size={18} />
+            <Icon icon="mdi:chevron-up" size={20} className={styles.toolIcon} />
           </button>
           <button className={styles.toolButton} onClick={handleScrollBottom} title="滚动到底部">
-            <Icon icon="mdi:arrow-down" size={18} />
+            <Icon icon="mdi:chevron-down" size={20} className={styles.toolIcon} />
           </button>
           <button className={styles.toolButton} onClick={handleOpenCommentSheet} title="快速评论">
-            <Icon icon="mdi:message-text-outline" size={18} />
+            <Icon icon="mdi:comment-outline" size={18} className={styles.toolIcon} />
           </button>
         </div>
       </div>
