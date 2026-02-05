@@ -15,6 +15,7 @@ interface CreateCommentFormProps {
   disabled?: boolean;
   replyTo?: { commentId: number; authorName: string } | null;
   onCancelReply?: () => void;
+  variant?: 'inline' | 'sheet';
 }
 
 export const CreateCommentForm = ({
@@ -23,7 +24,8 @@ export const CreateCommentForm = ({
   onSubmit,
   disabled = false,
   replyTo = null,
-  onCancelReply
+  onCancelReply,
+  variant = 'inline'
 }: CreateCommentFormProps) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
@@ -218,9 +220,13 @@ export const CreateCommentForm = ({
     documentInputRef.current?.click();
   };
 
+  const containerClassName = `${styles.container} ${variant === 'sheet' ? styles.containerSheet : ''}`;
+  const titleClassName = `${styles.title} ${variant === 'sheet' ? styles.titleSheet : ''}`;
+  const submitClassName = `${styles.submitButton} ${variant === 'sheet' ? styles.submitButtonSheet : ''}`;
+
   return (
-    <div className={styles.container}>
-      <h5 className={styles.title}>发表评论</h5>
+    <div className={containerClassName}>
+      <h5 className={titleClassName}>发表评论</h5>
 
       {!isAuthenticated && (
         <div className={styles.loginPrompt}>
@@ -325,7 +331,7 @@ export const CreateCommentForm = ({
         type="button"
         onClick={handleSubmit}
         disabled={!isAuthenticated || !hasPost || disabled || !content.trim() || uploading}
-        className={styles.submitButton}
+        className={submitClassName}
       >
         发表评论
       </button>

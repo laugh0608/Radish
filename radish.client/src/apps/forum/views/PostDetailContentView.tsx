@@ -1,4 +1,5 @@
-import { Icon } from '@radish/ui';
+import { useEffect, useRef, useState } from 'react';
+import { BottomSheet, Icon } from '@radish/ui';
 import type { PostDetail, CommentNode } from '@/api/forum';
 import { PostDetail as PostDetailComponent } from '../components/PostDetail';
 import { CommentTree } from '../components/CommentTree';
@@ -59,8 +60,43 @@ export const PostDetailContentView = ({
   onCreateComment,
   onCancelReply
 }: PostDetailContentViewProps) => {
+  const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (replyTo) {
+      setIsCommentSheetOpen(true);
+    }
+  }, [replyTo]);
+
+  const handleScrollTop = () => {
+    contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleScrollBottom = () => {
+    if (!contentRef.current) return;
+    contentRef.current.scrollTo({
+      top: contentRef.current.scrollHeight,
+      behavior: 'smooth'
+    });
+  };
+
+  const handleOpenCommentSheet = () => {
+    setIsCommentSheetOpen(true);
+  };
+
+  const handleCloseCommentSheet = () => {
+    setIsCommentSheetOpen(false);
+    onCancelReply();
+  };
+
+  const handleCreateComment = async (content: string) => {
+    await onCreateComment(content);
+    setIsCommentSheetOpen(false);
+  };
+
   return (
-    <>
+    <div className={styles.detailView}>
       {/* 返回按钮 */}
       <div className={styles.detailToolbar}>
         <button className={styles.backButton} onClick={onBack}>
@@ -70,39 +106,70 @@ export const PostDetailContentView = ({
       </div>
 
       {/* 帖子详情内容 */}
-      <div className={styles.detailContent}>
-        <PostDetailComponent
-          post={post}
-          loading={loadingPostDetail}
-          isLiked={isLiked}
-          onLike={onLike}
-          isAuthenticated={isAuthenticated}
-          currentUserId={currentUserId}
-          onEdit={onEdit}
-          onDelete={onDelete}
-        />
-        <CommentTree
-          comments={comments}
-          loading={loadingComments}
-          hasPost={true}
-          currentUserId={currentUserId}
-          pageSize={5}
-          sortBy={commentSortBy}
-          onSortChange={onCommentSortChange}
-          onDeleteComment={onDeleteComment}
-          onEditComment={onEditComment}
-          onLikeComment={onLikeComment}
-          onReplyComment={onReplyComment}
-          onLoadMoreChildren={onLoadMoreChildren}
-        />
+      <div className={styles.detailBody}>
+        <div className={styles.detailContent} ref={contentRef}>
+          <PostDetailComponent
+            post={post}
+            loading={loadingPostDetail}
+            isLiked={isLiked}
+            onLike={onLike}
+            isAuthenticated={isAuthenticated}
+            currentUserId={currentUserId}
+            onEdit={onEdit}
+            onDelete={onDelete}
+          />
+          <CommentTree
+            comments={comments}
+            loading={loadingComments}
+            hasPost={true}
+            currentUserId={currentUserId}
+            pageSize={5}
+            sortBy={commentSortBy}
+            onSortChange={onCommentSortChange}
+            onDeleteComment={onDeleteComment}
+            onEditComment={onEditComment}
+            onLikeComment={onLikeComment}
+            onReplyComment={(commentId, authorName) => {
+              onReplyComment(commentId, authorName);
+              setIsCommentSheetOpen(true);
+            }}
+            onLoadMoreChildren={onLoadMoreChildren}
+          />
+          <div className={styles.commentCta}>
+            <button className={styles.commentButton} onClick={handleOpenCommentSheet}>
+              发表评论
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.floatingTools}>
+          <button className={styles.toolButton} onClick={handleScrollTop} title="滚动到顶部">
+            <Icon icon="mdi:arrow-up" size={18} />
+          </button>
+          <button className={styles.toolButton} onClick={handleScrollBottom} title="滚动到底部">
+            <Icon icon="mdi:arrow-down" size={18} />
+          </button>
+          <button className={styles.toolButton} onClick={handleOpenCommentSheet} title="快速评论">
+            <Icon icon="mdi:message-text-outline" size={18} />
+          </button>
+        </div>
+      </div>
+
+      <BottomSheet
+        isOpen={isCommentSheetOpen}
+        onClose={handleCloseCommentSheet}
+        title="发表评论"
+        height="70%"
+      >
         <CreateCommentForm
           isAuthenticated={isAuthenticated}
           hasPost={true}
-          onSubmit={onCreateComment}
+          onSubmit={handleCreateComment}
           replyTo={replyTo}
           onCancelReply={onCancelReply}
+          variant="sheet"
         />
-      </div>
-    </>
+      </BottomSheet>
+    </div>
   );
 };
