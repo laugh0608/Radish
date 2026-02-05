@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
-import { Modal, MarkdownEditor } from '@radish/ui';
+import { BottomSheet, MarkdownEditor } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import styles from './PublishPostModal.module.css';
@@ -129,24 +129,43 @@ export const PublishPostModal = ({
     }
   };
 
+  const footer = (
+    <div className={styles.footer}>
+      <button
+        onClick={handleSubmit}
+        disabled={!title.trim() || !content.trim() || isSubmitting}
+        className={styles.publishButton}
+      >
+        {isSubmitting ? '发布中...' : '发布帖子'}
+      </button>
+      <button onClick={onClose} className={styles.cancelButton}>
+        取消
+      </button>
+    </div>
+  );
+
   if (!isAuthenticated) {
     return (
-      <Modal isOpen={isOpen} onClose={onClose} title="发布新帖">
+      <BottomSheet isOpen={isOpen} onClose={onClose} title="发布新帖" height="70%">
         <div className={styles.loginPrompt}>
           <p>请先登录后再发帖</p>
           <button onClick={handleLoginClick} className={styles.loginButton}>
             前往登录
           </button>
         </div>
-      </Modal>
+      </BottomSheet>
     );
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="发布新帖" size="large">
+    <BottomSheet isOpen={isOpen} onClose={onClose} title="发布新帖" height="70%" footer={footer}>
       <div className={styles.container}>
-        <div className={styles.form}>
-          {/* 标题输入 */}
+        <div className={styles.lead}>
+          <h3 className={styles.leadTitle}>写下你的新发现</h3>
+          <p className={styles.leadHint}>清晰的标题与排版会获得更多互动</p>
+        </div>
+
+        <div className={styles.titleRow}>
           <input
             type="text"
             placeholder="帖子标题"
@@ -155,62 +174,55 @@ export const PublishPostModal = ({
             className={styles.titleInput}
             maxLength={100}
           />
+          <span className={styles.titleCount}>{title.length}/100</span>
+        </div>
 
-          {/* 图片上传选项 */}
-          <div className={styles.options}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={addWatermark}
-                onChange={(e) => setAddWatermark(e.target.checked)}
-              />
-              为上传的图片添加水印
-            </label>
-            {addWatermark && (
-              <input
-                type="text"
-                placeholder="水印文字"
-                value={watermarkText}
-                onChange={(e) => setWatermarkText(e.target.value)}
-                className={styles.watermarkInput}
-              />
-            )}
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={generateMultipleSizes}
-                onChange={(e) => setGenerateMultipleSizes(e.target.checked)}
-              />
-              生成多尺寸图片（Small/Medium/Large）
-            </label>
-          </div>
-
-          {/* Markdown 编辑器 */}
-          <div className={styles.editorWrapper}>
-            <MarkdownEditor
-              value={content}
-              onChange={setContent}
-              placeholder="帖子内容（支持 Markdown）"
-              onImageUpload={handleImageUpload}
-              onDocumentUpload={handleDocumentUpload}
+        <div className={styles.options}>
+          <label className={styles.optionCard}>
+            <input
+              type="checkbox"
+              checked={addWatermark}
+              onChange={(e) => setAddWatermark(e.target.checked)}
             />
-          </div>
+            <div className={styles.optionText}>
+              <span className={styles.optionTitle}>图片水印</span>
+              <span className={styles.optionHint}>为上传图片添加标记</span>
+            </div>
+          </label>
+          <label className={styles.optionCard}>
+            <input
+              type="checkbox"
+              checked={generateMultipleSizes}
+              onChange={(e) => setGenerateMultipleSizes(e.target.checked)}
+            />
+            <div className={styles.optionText}>
+              <span className={styles.optionTitle}>多尺寸输出</span>
+              <span className={styles.optionHint}>Small / Medium / Large</span>
+            </div>
+          </label>
+          {addWatermark && (
+            <input
+              type="text"
+              placeholder="水印文字"
+              value={watermarkText}
+              onChange={(e) => setWatermarkText(e.target.value)}
+              className={styles.watermarkInput}
+            />
+          )}
+        </div>
 
-          {/* 提交按钮 */}
-          <div className={styles.footer}>
-            <button
-              onClick={handleSubmit}
-              disabled={!title.trim() || !content.trim() || isSubmitting}
-              className={styles.publishButton}
-            >
-              {isSubmitting ? '发布中...' : '发布帖子'}
-            </button>
-            <button onClick={onClose} className={styles.cancelButton}>
-              取消
-            </button>
-          </div>
+        <div className={styles.editorWrapper}>
+          <MarkdownEditor
+            value={content}
+            onChange={setContent}
+            placeholder="帖子内容（支持 Markdown）"
+            onImageUpload={handleImageUpload}
+            onDocumentUpload={handleDocumentUpload}
+            minHeight={320}
+            className={styles.editor}
+          />
         </div>
       </div>
-    </Modal>
+    </BottomSheet>
   );
 };

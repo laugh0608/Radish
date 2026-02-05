@@ -11,6 +11,9 @@ export type { SelectProps, SelectOption } from './Select/Select';
 export { Modal } from './Modal/Modal';
 export type { ModalProps } from './Modal/Modal';
 
+export { BottomSheet } from './BottomSheet/BottomSheet';
+export type { BottomSheetProps } from './BottomSheet/BottomSheet';
+
 export { Icon } from './Icon/Icon';
 export type { IconProps } from './Icon/Icon';
 

@@ -1,116 +1,169 @@
 .container {
   display: flex;
   flex-direction: column;
-  max-height: 80vh;
+  gap: 18px;
+  padding-bottom: 4px;
 }
 
-.form {
+.lead {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 6px;
+}
+
+.leadTitle {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.leadHint {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
 }
 
 .titleInput {
   width: 100%;
-  padding: 12px 16px;
+  padding: 14px 16px;
   font-size: 16px;
   font-weight: 600;
   background-color: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  color: #1f2937;
+  border: 1px solid #d8e1ec;
+  border-radius: 12px;
+  color: #0f172a;
   outline: none;
   transition: all 0.2s ease;
 }
 
 .titleInput::placeholder {
-  color: #9ca3af;
-  font-weight: 400;
+  color: #94a3b8;
+  font-weight: 500;
 }
 
 .titleInput:focus {
-  border-color: #2d6cdf;
+  border-color: #60a5fa;
   background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.titleCount {
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e2e8f0;
 }
 
 .options {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px;
-  background-color: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
 }
 
-.checkboxLabel {
+.optionCard {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #6b7280;
+  gap: 10px;
+  padding: 12px 14px;
+  background-color: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
   cursor: pointer;
-  user-select: none;
+  transition: all 0.2s ease;
 }
 
-.checkboxLabel input[type="checkbox"] {
+.optionCard:hover {
+  border-color: #cbd5f5;
+  background-color: #f1f5f9;
+}
+
+.optionCard input[type="checkbox"] {
   width: 16px;
   height: 16px;
   cursor: pointer;
 }
 
+.optionText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.optionTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.optionHint {
+  font-size: 12px;
+  color: #64748b;
+}
+
 .watermarkInput {
-  margin-left: 24px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   font-size: 14px;
   background-color: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  color: #1f2937;
+  border: 1px solid #d8e1ec;
+  border-radius: 10px;
+  color: #0f172a;
   outline: none;
   transition: all 0.2s ease;
-  max-width: 200px;
+  max-width: 240px;
 }
 
 .watermarkInput:focus {
-  border-color: #2d6cdf;
+  border-color: #60a5fa;
   background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
 }
 
 .editorWrapper {
-  min-height: 400px;
+  border-radius: 14px;
+  border: 1px solid #d8e1ec;
+  overflow: hidden;
+  background: #0f172a;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+.editor {
+  border-radius: 0;
 }
 
 .footer {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  padding-top: 16px;
-  border-top: 1px solid #e5e7eb;
 }
 
 .publishButton {
-  padding: 10px 24px;
+  padding: 10px 26px;
   font-size: 15px;
   font-weight: 600;
-  background-color: #2d6cdf;
+  background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
   border: none;
-  border-radius: 8px;
-  color: #fff;
+  border-radius: 10px;
+  color: #0f172a;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .publishButton:hover:not(:disabled) {
-  background-color: #2558b8;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(45, 108, 223, 0.3);
+  box-shadow: 0 10px 20px rgba(52, 211, 153, 0.3);
 }
 
 .publishButton:disabled {
-  background-color: #e5e7eb;
+  background: #e2e8f0;
   color: #9ca3af;
   cursor: not-allowed;
 }
@@ -118,19 +171,19 @@
 .cancelButton {
   padding: 10px 24px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   background-color: transparent;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  color: #6b7280;
+  border: 1px solid #cbd5f5;
+  border-radius: 10px;
+  color: #475569;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .cancelButton:hover {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
-  color: #1f2937;
+  background-color: #e2e8f0;
+  border-color: #94a3b8;
+  color: #0f172a;
 }
 
 /* 未登录提示 */
@@ -139,13 +192,13 @@
   flex-direction: column;
   align-items: center;
   gap: 20px;
-  padding: 40px 20px;
+  padding: 32px 20px 48px;
   text-align: center;
 }
 
 .loginPrompt p {
   font-size: 16px;
-  color: #6b7280;
+  color: #64748b;
   margin: 0;
 }
 
@@ -153,16 +206,15 @@
   padding: 12px 32px;
   font-size: 15px;
   font-weight: 600;
-  background-color: #2d6cdf;
+  background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
   border: none;
-  border-radius: 8px;
-  color: #fff;
+  border-radius: 10px;
+  color: #0f172a;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .loginButton:hover {
-  background-color: #2558b8;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(45, 108, 223, 0.3);
+  box-shadow: 0 10px 18px rgba(52, 211, 153, 0.3);
 }
