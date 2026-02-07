@@ -4,6 +4,7 @@ import type { PostDetail, CommentNode } from '@/api/forum';
 import { PostDetail as PostDetailComponent } from '../components/PostDetail';
 import { CommentTree } from '../components/CommentTree';
 import { CreateCommentForm } from '../components/CreateCommentForm';
+import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import styles from './PostDetailContentView.module.css';
 
 interface PostDetailContentViewProps {
@@ -14,6 +15,7 @@ interface PostDetailContentViewProps {
   loadingComments: boolean;
   isLiked: boolean;
   isAuthenticated: boolean;
+  showFloatingTools?: boolean;
   currentUserId: number;
   commentSortBy: 'newest' | 'hottest' | null;
   replyTo: { commentId: number; authorName: string } | null;
@@ -44,6 +46,7 @@ export const PostDetailContentView = ({
   loadingComments,
   isLiked,
   isAuthenticated,
+  showFloatingTools = true,
   currentUserId,
   commentSortBy,
   replyTo,
@@ -68,6 +71,28 @@ export const PostDetailContentView = ({
       setIsCommentSheetOpen(true);
     }
   }, [replyTo]);
+
+  useEffect(() => {
+    const handleToolAction = (event: Event) => {
+      const action = (event as CustomEvent<ForumDetailToolAction>).detail;
+      if (action === 'scrollTop') {
+        handleScrollTop();
+        return;
+      }
+      if (action === 'scrollBottom') {
+        handleScrollBottom();
+        return;
+      }
+      if (action === 'openComment') {
+        handleOpenCommentSheet();
+      }
+    };
+
+    window.addEventListener(FORUM_DETAIL_TOOL_EVENT, handleToolAction as EventListener);
+    return () => {
+      window.removeEventListener(FORUM_DETAIL_TOOL_EVENT, handleToolAction as EventListener);
+    };
+  }, []);
 
   const handleScrollTop = () => {
     contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -107,7 +132,10 @@ export const PostDetailContentView = ({
 
       {/* 帖子详情内容 */}
       <div className={styles.detailBody}>
-        <div className={styles.detailContent} ref={contentRef}>
+        <div
+          className={`${styles.detailContent} ${showFloatingTools ? styles.withFloatingTools : ''}`}
+          ref={contentRef}
+        >
           <PostDetailComponent
             post={post}
             loading={loadingPostDetail}
@@ -142,17 +170,19 @@ export const PostDetailContentView = ({
           </div>
         </div>
 
-        <div className={styles.floatingTools}>
-          <button className={styles.toolButton} onClick={handleScrollTop} title="滚动到顶部">
-            <Icon icon="mdi:chevron-up" size={20} className={styles.toolIcon} />
-          </button>
-          <button className={styles.toolButton} onClick={handleScrollBottom} title="滚动到底部">
-            <Icon icon="mdi:chevron-down" size={20} className={styles.toolIcon} />
-          </button>
-          <button className={styles.toolButton} onClick={handleOpenCommentSheet} title="快速评论">
-            <Icon icon="mdi:comment-outline" size={18} className={styles.toolIcon} />
-          </button>
-        </div>
+        {showFloatingTools && (
+          <div className={styles.floatingTools}>
+            <button className={styles.toolButton} onClick={handleScrollTop} title="滚动到顶部">
+              <Icon icon="mdi:chevron-up" size={20} className={styles.toolIcon} />
+            </button>
+            <button className={styles.toolButton} onClick={handleScrollBottom} title="滚动到底部">
+              <Icon icon="mdi:chevron-down" size={20} className={styles.toolIcon} />
+            </button>
+            <button className={styles.toolButton} onClick={handleOpenCommentSheet} title="快速评论">
+              <Icon icon="mdi:comment-outline" size={18} className={styles.toolIcon} />
+            </button>
+          </div>
+        )}
       </div>
 
       <BottomSheet

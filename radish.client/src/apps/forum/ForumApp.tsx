@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
 import { ConfirmDialog } from '@radish/ui';
@@ -15,6 +16,36 @@ export const ForumApp = () => {
   const { t } = useTranslation();
   const { isAuthenticated, userId } = useUserStore();
   const loggedIn = isAuthenticated();
+  const containerShellRef = useRef<HTMLDivElement>(null);
+  const [showDetailFloatingTools, setShowDetailFloatingTools] = useState(true);
+
+  useEffect(() => {
+    const element = containerShellRef.current;
+    if (!element) {
+      return;
+    }
+
+    const syncByWidth = (width: number) => {
+      setShowDetailFloatingTools(width <= 1200);
+    };
+
+    syncByWidth(element.clientWidth);
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver(entries => {
+      const entry = entries[0];
+      if (!entry) {
+        return;
+      }
+      syncByWidth(entry.contentRect.width);
+    });
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   // 数据管理
   const dataState = useForumData(t);
@@ -41,7 +72,7 @@ export const ForumApp = () => {
   });
 
   return (
-    <div className={styles.containerShell}>
+    <div className={styles.containerShell} ref={containerShellRef}>
       <div className={styles.container}>
         {/* 左栏：分类和标签 */}
         <div className={styles.leftColumn}>
@@ -81,6 +112,7 @@ export const ForumApp = () => {
               loadingComments={dataState.loadingComments}
               isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
               isAuthenticated={loggedIn}
+              showFloatingTools={showDetailFloatingTools}
               currentUserId={userId ?? 0}
               commentSortBy={dataState.commentSortBy}
               replyTo={actionsState.replyTo}
