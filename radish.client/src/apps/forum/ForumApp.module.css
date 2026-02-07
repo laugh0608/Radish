@@ -398,6 +398,7 @@
 /* 右侧栏 */
 .rightColumn {
   height: 100%;
+  min-width: 0;
   border-left: 1px solid #e5e7eb;
   overflow: hidden;
   background-color: #ffffff;

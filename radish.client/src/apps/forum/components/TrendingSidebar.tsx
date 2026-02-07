@@ -1,4 +1,5 @@
 import type { PostItem, CommentNode, PostDetail } from '@/api/forum';
+import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { PostInfoCard } from './PostInfoCard';
 import styles from './TrendingSidebar.module.css';
 
@@ -17,6 +18,10 @@ export const TrendingSidebar = ({
   loading = false,
   selectedPost = null
 }: TrendingSidebarProps) => {
+  const emitDetailToolAction = (action: ForumDetailToolAction) => {
+    window.dispatchEvent(new CustomEvent<ForumDetailToolAction>(FORUM_DETAIL_TOOL_EVENT, { detail: action }));
+  };
+
   // 简单的时间格式化函数（待安装 date-fns 后替换）
   const formatTime = (dateString?: string) => {
     if (!dateString) return '未知时间';
@@ -38,6 +43,50 @@ export const TrendingSidebar = ({
     }
   };
 
+  if (selectedPost) {
+    return (
+      <aside className={styles.sidebar}>
+        <PostInfoCard post={selectedPost} />
+
+        <section className={styles.detailToolsSection}>
+          <h3 className={styles.sectionTitle}>快捷操作</h3>
+          <div className={styles.detailTools}>
+            <button
+              className={styles.detailToolButton}
+              onClick={() => emitDetailToolAction('scrollTop')}
+              title="滚动到顶部"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M18 15l-6-6-6 6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              回到顶部
+            </button>
+            <button
+              className={styles.detailToolButton}
+              onClick={() => emitDetailToolAction('scrollBottom')}
+              title="滚动到底部"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M6 9l6 6 6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              到达底部
+            </button>
+            <button
+              className={styles.detailToolButton}
+              onClick={() => emitDetailToolAction('openComment')}
+              title="快速评论"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              快速评论
+            </button>
+          </div>
+        </section>
+      </aside>
+    );
+  }
+
   if (loading) {
     return (
       <aside className={styles.sidebar}>
@@ -48,9 +97,6 @@ export const TrendingSidebar = ({
 
   return (
     <aside className={styles.sidebar}>
-      {/* 帖子信息卡片（仅在查看帖子详情时显示） */}
-      {selectedPost && <PostInfoCard post={selectedPost} />}
-
       {/* 热门帖子 */}
       <section className={styles.section}>
         <h3 className={styles.sectionTitle}>
