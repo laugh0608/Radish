@@ -10,6 +10,9 @@
 
 论坛应用 (ForumApp) 已实现基本的社区论坛功能，包括分类浏览、帖子发布、评论系统等核心功能。代码结构清晰，与后端 API 集成良好，具备完整的身份验证流程。
 
+> 分类与标签的现状与后续规划已独立整理：
+> [论坛帖子分类与标签（专题）](./forum-category-tag.md)
+
 **完成度**: ⭐⭐⭐⭐☆ (4/5)
 
 ---
@@ -192,6 +195,8 @@
 | 发布帖子 | `POST /api/v1/Post/Publish` | ✅ |
 | 获取评论树 | `GET /api/v1/Comment/GetCommentTree?postId={id}` | ✅ |
 | 创建评论 | `POST /api/v1/Comment/Create` | ✅ |
+
+> 分类/标签接口与前后端落地差距请统一参考：[论坛帖子分类与标签（专题）](./forum-category-tag.md)
 
 ### 5.2 未使用的 API ⚠️
 
