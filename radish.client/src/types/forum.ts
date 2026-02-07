@@ -144,11 +144,11 @@ export interface CommentLikeResult {
 
 /**
  * 帖子点赞操作结果
- * 注意：后端返回字段为 isLiked / likeCount
+ * 注意：后端返回字段为 voIsLiked / voLikeCount
  */
 export interface PostLikeResult {
-  isLiked: boolean;
-  likeCount: number;
+  voIsLiked: boolean;
+  voLikeCount: number;
 }
 
 /**

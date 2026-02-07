@@ -192,7 +192,7 @@ export const useForumActions = (
       // 以服务端返回为准，修正本地状态与点赞数
       const result = await likePost(postId, t);
       const reconciledLikedPosts = new Set(optimisticLikedPosts);
-      if (result.isLiked) {
+      if (result.voIsLiked) {
         reconciledLikedPosts.add(postId);
       } else {
         reconciledLikedPosts.delete(postId);
@@ -202,7 +202,7 @@ export const useForumActions = (
 
       setSelectedPost((current) =>
         current && current.voId === postId
-          ? { ...current, voLikeCount: result.likeCount }
+          ? { ...current, voLikeCount: result.voLikeCount }
           : current
       );
     } catch (err) {
