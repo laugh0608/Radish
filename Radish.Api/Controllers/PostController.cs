@@ -156,6 +156,29 @@ public class PostController : ControllerBase
         }
 
         // 构建分页模型
+        if (data.Any())
+        {
+            var detailTasks = data.Select(post => _postService.GetPostDetailAsync(post.VoId));
+            var detailResults = await Task.WhenAll(detailTasks);
+            var detailMap = detailResults
+                .Where(detail => detail != null)
+                .ToDictionary(detail => detail!.VoId, detail => detail!);
+
+            foreach (var post in data)
+            {
+                if (!detailMap.TryGetValue(post.VoId, out var detail))
+                {
+                    continue;
+                }
+
+                post.VoTags = detail.VoTags;
+                if (string.IsNullOrWhiteSpace(post.VoCategoryName))
+                {
+                    post.VoCategoryName = detail.VoCategoryName;
+                }
+            }
+        }
+
         var pageModel = new PageModel<PostVo>
         {
             Page = pageIndex,
@@ -194,6 +217,25 @@ public class PostController : ControllerBase
             };
         }
 
+        var normalizedTagNames = request.TagNames?
+            .Where(tag => !string.IsNullOrWhiteSpace(tag))
+            .Select(tag => tag.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? new List<string>();
+
+        if (normalizedTagNames.Count is < 1 or > 5)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "发布帖子时标签数量必须在 1 到 5 个之间"
+            };
+        }
+
+        var roles = _httpContextUser.GetClaimValueByType("role");
+        var allowCreateTag = roles.Contains("Admin") || roles.Contains("System");
+
         var post = new Post(new PostInitializationOptions(request.Title, request.Content)
         {
             AuthorId = _httpContextUser.UserId,
@@ -204,14 +246,35 @@ public class PostController : ControllerBase
             TenantId = _httpContextUser.TenantId
         });
 
-        var postId = await _postService.PublishPostAsync(post, request.TagNames);
-        return new MessageModel
+        try
         {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "发布成功",
-            ResponseData = postId
-        };
+            var postId = await _postService.PublishPostAsync(post, normalizedTagNames, allowCreateTag);
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "发布成功",
+                ResponseData = postId
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = ex.Message
+            };
+        }
+        catch (ArgumentException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
     }
 
     /// <summary>

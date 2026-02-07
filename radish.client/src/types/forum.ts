@@ -39,6 +39,24 @@ export interface Category {
 }
 
 /**
+ * 标签 Vo
+ */
+export interface Tag {
+  voId: number;
+  voName: string;
+  voSlug: string;
+  voDescription?: string | null;
+  voColor?: string | null;
+  voSortOrder?: number;
+  voPostCount?: number;
+  voIsEnabled?: boolean;
+  voIsFixed?: boolean;
+  voIsDeleted?: boolean;
+  voCreateTime?: string;
+  voModifyTime?: string | null;
+}
+
+/**
  * 帖子列表项 Vo
  */
 export interface PostItem {
@@ -46,6 +64,7 @@ export interface PostItem {
   voTitle: string;
   voSlug?: string;
   voSummary?: string | null;
+  voTags?: string;
   voCategoryId: number;
   voCategoryName?: string | null;
   voAuthorId: number;
@@ -158,7 +177,7 @@ export interface PublishPostRequest {
   title: string;
   content: string;
   categoryId: number;
-  tagNames?: string[];
+  tagNames: string[];
 }
 
 /**

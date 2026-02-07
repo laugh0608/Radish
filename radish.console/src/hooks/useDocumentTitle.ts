@@ -42,6 +42,7 @@ export const routeTitleMap: Record<string, string> = {
   '/orders': '订单管理',
   '/users': '用户管理',
   '/roles': '角色管理',
+  '/tags': '标签管理',
   '/hangfire': '定时任务',
   '/theme-test': '主题测试',
   '/login': '登录',

@@ -98,6 +98,71 @@ Accept: application/json
 GET {{Gateway_HostAddress}}/api/v1/Tag/GetById/1
 Accept: application/json
 
+### 8.1 获取固定标签列表
+GET {{Gateway_HostAddress}}/api/v1/Tag/GetFixedTags
+Accept: application/json
+
+### 8.2 管理端分页查询标签
+GET {{Gateway_HostAddress}}/api/v1/Tag/GetPage?pageIndex=1&pageSize=10&isFixed=true
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 8.3 管理端创建标签
+POST {{Gateway_HostAddress}}/api/v1/Tag/Create
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "name": "测试固定标签",
+  "slug": "test-fixed-tag",
+  "description": "测试用固定标签",
+  "color": "#1677FF",
+  "sortOrder": 99,
+  "isEnabled": true,
+  "isFixed": true
+}
+
+### 8.4 管理端更新标签
+PUT {{Gateway_HostAddress}}/api/v1/Tag/Update/90104
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "name": "公告",
+  "slug": "notice",
+  "description": "社区公告与通知",
+  "color": "#F5222D",
+  "sortOrder": 5,
+  "isEnabled": true,
+  "isFixed": true
+}
+
+### 8.5 管理端切换标签状态
+PUT {{Gateway_HostAddress}}/api/v1/Tag/ToggleStatus/90103/status?enabled=true
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{}
+
+### 8.6 管理端更新排序
+PUT {{Gateway_HostAddress}}/api/v1/Tag/UpdateSort/90103/sort?sortOrder=4
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{}
+
+### 8.7 管理端软删除标签
+DELETE {{Gateway_HostAddress}}/api/v1/Tag/Delete/90103
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 8.8 管理端恢复标签
+PUT {{Gateway_HostAddress}}/api/v1/Tag/Restore/90103/restore
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{}
+
 ###############################################################################
 # 帖子管理 (Post)
 ###############################################################################
@@ -123,7 +188,7 @@ Authorization: Bearer {{Access_Token}}
   "title": "我的第一篇测试帖子",
   "content": "这是帖子的内容，可以包含**Markdown**格式。\n\n## 二级标题\n\n- 列表项1\n- 列表项2",
   "categoryId": 1,
-  "tags": ["C#", ".NET", "测试"],
+  "tagNames": ["C#", ".NET", "测试"],
   "isPublished": true
 }
 
@@ -145,12 +210,10 @@ Content-Type: application/json
 Authorization: Bearer {{Access_Token}}
 
 {
-  "id": 1,
+  "postId": 1,
   "title": "更新后的标题",
   "content": "更新后的内容",
-  "categoryId": 1,
-  "tags": ["C#", ".NET"],
-  "isPublished": true
+  "categoryId": 1
 }
 
 ###############################################################################

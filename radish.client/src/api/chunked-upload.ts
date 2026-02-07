@@ -2,7 +2,7 @@
  * 分片上传相关的 API 调用
  */
 
-import { apiGet, apiPost, configureApiClient, getApiClientConfig } from '@radish/ui';
+import { apiGet, apiPost, configureApiClient, getApiClientConfig } from '@radish/http';
 import type { AttachmentInfo } from '@/api/attachment';
 import { getApiBaseUrl } from '@/config/env';
 

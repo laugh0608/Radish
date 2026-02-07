@@ -3,7 +3,7 @@
  * 直接使用后端 Vo 字段名，不进行映射
  */
 
-import { apiGet, apiPost, configureApiClient, type ParsedApiResponse } from '@radish/ui';
+import { apiGet, apiPost, configureApiClient, type ParsedApiResponse } from '@radish/http';
 import type { TFunction } from 'i18next';
 import type {
   ProductCategory,

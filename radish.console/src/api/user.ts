@@ -1,5 +1,5 @@
-import { apiGet, apiPost } from '@radish/ui';
-import type { ParsedApiResponse } from '@radish/ui';
+import { apiGet, apiPost } from '@radish/http';
+import type { ParsedApiResponse } from '@radish/http';
 import type { UserInfo } from '../types/user';
 
 /**

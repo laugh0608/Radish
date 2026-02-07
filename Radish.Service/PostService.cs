@@ -77,7 +77,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         if (postTags.Any())
         {
             var tagIds = postTags.Select(pt => pt.TagId).ToList();
-            var tags = await _tagService.QueryAsync(t => tagIds.Contains(t.Id));
+            var tags = await _tagService.QueryAsync(t => tagIds.Contains(t.Id) && t.IsEnabled && !t.IsDeleted);
             postVo.VoTags = string.Join(", ", tags.Select(t => t.VoName));
         }
 
@@ -87,8 +87,24 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     /// <summary>
     /// 发布帖子
     /// </summary>
-    public async Task<long> PublishPostAsync(Post post, List<string>? tagNames = null)
+    public async Task<long> PublishPostAsync(Post post, List<string>? tagNames = null, bool allowCreateTag = true)
     {
+        if (tagNames == null)
+        {
+            throw new ArgumentException("发布帖子时至少需要一个标签", nameof(tagNames));
+        }
+
+        var normalizedTagNames = tagNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (normalizedTagNames.Count is < 1 or > 5)
+        {
+            throw new ArgumentException("标签数量必须在 1 到 5 个之间", nameof(tagNames));
+        }
+
         // 1. 插入帖子
         var postId = await AddAsync(post);
 
@@ -104,12 +120,24 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         }
 
         // 3. 处理标签
-        if (tagNames != null && tagNames.Any())
+        if (normalizedTagNames.Any())
         {
-            foreach (var tagName in tagNames.Where(t => !string.IsNullOrWhiteSpace(t)))
+            foreach (var tagName in normalizedTagNames)
             {
-                // 获取或创建标签
-                var tag = await _tagService.GetOrCreateTagAsync(tagName);
+                Tag? tag;
+                var existingTags = await _tagRepository.QueryAsync(t => t.Name == tagName && t.IsEnabled && !t.IsDeleted);
+                tag = existingTags.FirstOrDefault();
+
+                if (tag == null)
+                {
+                    if (!allowCreateTag)
+                    {
+                        throw new InvalidOperationException($"标签不存在且当前用户无权限创建：{tagName}");
+                    }
+
+                    // 获取或创建标签
+                    tag = await _tagService.GetOrCreateTagAsync(tagName);
+                }
 
                 // 创建帖子-标签关联
                 var postTag = new PostTag(postId, tag.Id)

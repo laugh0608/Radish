@@ -3,7 +3,7 @@
  * 直接使用后端 Vo 字段名，无需映射
  */
 
-import { apiGet, apiPost, apiPut, apiDelete, configureApiClient } from '@radish/ui';
+import { apiGet, apiPost, apiPut, apiDelete, configureApiClient } from '@radish/http';
 import type {
   PagedResponse,
   Product,

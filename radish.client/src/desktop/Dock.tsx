@@ -9,7 +9,7 @@ import { Icon, toast } from '@radish/ui';
 import { CoinBalance } from './components/CoinBalance';
 import { ExperienceDisplay } from './components/ExperienceDisplay';
 import i18n from '@/i18n';
-import type { ApiResponse } from '@radish/ui';
+import type { ApiResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 import styles from './Dock.module.css';
 

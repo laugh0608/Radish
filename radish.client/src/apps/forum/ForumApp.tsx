@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
 import { ConfirmDialog } from '@radish/ui';
 import { CategoryList } from './components/CategoryList';
+import { TagSection } from './components/TagSection';
 import { PublishPostModal } from './components/PublishPostModal';
 import { TrendingSidebar } from './components/TrendingSidebar';
 import { EditPostModal } from './components/EditPostModal';
@@ -57,6 +58,7 @@ export const ForumApp = () => {
     userId: userId ?? 0,
     commentSortBy: dataState.commentSortBy,
     selectedCategoryId: dataState.selectedCategoryId,
+    selectedTagName: dataState.selectedTagName,
     selectedPost: dataState.selectedPost,
     setSelectedPost: dataState.setSelectedPost,
     setComments: dataState.setComments,
@@ -97,7 +99,15 @@ export const ForumApp = () => {
             />
           </div>
           <div className={styles.tagsSection}>
-            {/* TODO: 标签区域 */}
+            <TagSection
+              fixedTags={dataState.fixedTags}
+              hotTags={dataState.hotTags.filter(
+                tag => !dataState.fixedTags.some(fixedTag => fixedTag.voName.toLowerCase() === tag.voName.toLowerCase())
+              )}
+              selectedTagName={dataState.selectedTagName}
+              loading={dataState.loadingHotTags}
+              onSelectTag={dataState.setSelectedTagName}
+            />
           </div>
         </div>
 
@@ -138,6 +148,7 @@ export const ForumApp = () => {
             <PostListView
               categories={dataState.categories}
               selectedCategoryId={dataState.selectedCategoryId}
+              selectedTagName={dataState.selectedTagName}
               posts={dataState.posts}
               postGodComments={dataState.postGodComments}
               currentPage={dataState.currentPage}
@@ -169,8 +180,8 @@ export const ForumApp = () => {
           isOpen={actionsState.isPublishModalOpen}
           isAuthenticated={loggedIn}
           onClose={() => actionsState.setIsPublishModalOpen(false)}
-          onPublish={actionsState.handlePublishPost}
-        />
+              onPublish={actionsState.handlePublishPost}
+            />
 
         {/* 编辑帖子 Modal */}
         <EditPostModal

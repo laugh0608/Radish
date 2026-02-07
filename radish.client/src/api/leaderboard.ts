@@ -3,7 +3,7 @@
  * 直接使用后端 Vo 字段名，无需映射
  */
 
-import { apiGet, configureApiClient, type PagedResponse } from '@radish/ui';
+import { apiGet, configureApiClient, type PagedResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 
 // 配置 API 客户端

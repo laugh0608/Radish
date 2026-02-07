@@ -31,6 +31,11 @@ public class TagVo
     public string? VoColor { get; set; }
 
     /// <summary>
+    /// 排序值
+    /// </summary>
+    public int VoSortOrder { get; set; }
+
+    /// <summary>
     /// 帖子数量
     /// </summary>
     public int VoPostCount { get; set; }
@@ -41,7 +46,22 @@ public class TagVo
     public bool VoIsEnabled { get; set; }
 
     /// <summary>
+    /// 是否固定标签
+    /// </summary>
+    public bool VoIsFixed { get; set; }
+
+    /// <summary>
+    /// 是否已删除
+    /// </summary>
+    public bool VoIsDeleted { get; set; }
+
+    /// <summary>
     /// 创建时间
     /// </summary>
     public DateTime VoCreateTime { get; set; }
+
+    /// <summary>
+    /// 修改时间
+    /// </summary>
+    public DateTime? VoModifyTime { get; set; }
 }

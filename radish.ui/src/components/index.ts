@@ -170,6 +170,7 @@ export {
   KeyOutlined,
   TrophyOutlined,
   WalletOutlined,
+  TagsOutlined,
 } from '@ant-design/icons';
 
 // Re-export types

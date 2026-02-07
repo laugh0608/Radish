@@ -1,4 +1,4 @@
-import { configureApiClient } from '@radish/ui';
+import { configureApiClient } from '@radish/http';
 import { tokenService } from '../services/tokenService';
 import { getApiBaseUrl } from '@/config/env';
 import { log } from '@/utils/logger';

@@ -32,6 +32,14 @@ export const PostCard = ({ post, onClick, godComment }: PostCardProps) => {
     }
   };
 
+  const tagList = post.voTags
+    ? post.voTags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(Boolean)
+        .slice(0, 3)
+    : [];
+
   return (
     <article className={styles.card} onClick={onClick}>
       {/* 帖子标题 */}
@@ -88,6 +96,16 @@ export const PostCard = ({ post, onClick, godComment }: PostCardProps) => {
             </span>
           </div>
           <p className={styles.godCommentContent}>{godComment.content}</p>
+        </div>
+      )}
+
+      {tagList.length > 0 && (
+        <div className={styles.tagsRow}>
+          {tagList.map(tag => (
+            <span key={`${post.voId}-${tag}`} className={styles.tagChip}>
+              #{tag}
+            </span>
+          ))}
         </div>
       )}
     </article>

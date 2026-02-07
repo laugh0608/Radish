@@ -1,5 +1,5 @@
 import { configureTokenRefresh, TokenRefreshErrorType } from '@radish/http';
-import { parseApiResponse, type ApiResponse } from '@radish/ui';
+import { parseApiResponse, type ApiResponse } from '@radish/http';
 import { getAuthBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
 import { useAuthStore } from '@/stores/authStore';

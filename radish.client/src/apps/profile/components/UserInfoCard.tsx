@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { log } from '@/utils/logger';
-import { apiGet, configureApiClient, Button, ConfirmDialog, Icon, Input, Modal } from '@radish/ui';
+import { apiGet, configureApiClient } from '@radish/http';
+import { Button, ConfirmDialog, Icon, Input, Modal } from '@radish/ui';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
 import { AvatarUploadModal } from './AvatarUploadModal';

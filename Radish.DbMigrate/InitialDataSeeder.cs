@@ -570,116 +570,61 @@ internal static class InitialDataSeeder
     /// <summary>初始化论坛标签数据</summary>
     private static async Task SeedForumTagsAsync(ISqlSugarClient db)
     {
-        // 默认标签 ID
-        const long csharpTagId = 90000;
-        const long dotnetTagId = 90001;
-        const long webTagId = 90002;
-        const long databaseTagId = 90003;
-        const long generalTagId = 90004;
-
-        // C# 标签
-        var csharpExists = await db.Queryable<Tag>().AnyAsync(t => t.Id == csharpTagId);
-        if (!csharpExists)
+        var fixedTags = new[]
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认标签 Id={csharpTagId}, Name=C#...");
+            new { Id = 90100L, Name = "社区新闻", Color = "#1677FF", SortOrder = 1 },
+            new { Id = 90101L, Name = "社区活动", Color = "#52C41A", SortOrder = 2 },
+            new { Id = 90102L, Name = "精华帖", Color = "#FAAD14", SortOrder = 3 },
+            new { Id = 90103L, Name = "碎碎念", Color = "#722ED1", SortOrder = 4 },
+            new { Id = 90104L, Name = "公告", Color = "#F5222D", SortOrder = 5 }
+        };
 
-            var csharpTag = new Tag("C#")
+        foreach (var meta in fixedTags)
+        {
+            var existingByName = await db.Queryable<Tag>()
+                .FirstAsync(t => t.Name == meta.Name);
+
+            if (existingByName != null)
             {
-                Id = csharpTagId,
-                Color = "#68217A",
+                existingByName.Color = meta.Color;
+                existingByName.SortOrder = meta.SortOrder;
+                existingByName.IsEnabled = true;
+                existingByName.IsFixed = true;
+                existingByName.IsDeleted = false;
+                existingByName.DeletedAt = null;
+                existingByName.DeletedBy = null;
+                existingByName.ModifyTime = DateTime.Now;
+                existingByName.ModifyBy = "System";
+
+                await db.Updateable(existingByName).ExecuteCommandAsync();
+                Console.WriteLine($"[Radish.DbMigrate] 已更新固定标签 Name={meta.Name} 的配置。");
+                continue;
+            }
+
+            var existsById = await db.Queryable<Tag>().AnyAsync(t => t.Id == meta.Id);
+            if (existsById)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] Id={meta.Id} 已存在且名称不同，跳过创建 Name={meta.Name}。");
+                continue;
+            }
+
+            Console.WriteLine($"[Radish.DbMigrate] 创建固定标签 Id={meta.Id}, Name={meta.Name}...");
+
+            var tag = new Tag(new TagInitializationOptions(meta.Name)
+            {
+                Color = meta.Color,
+                SortOrder = meta.SortOrder,
                 IsEnabled = true,
+                IsFixed = true,
                 IsDeleted = false,
+                CreateBy = "System",
+                CreateId = 0
+            })
+            {
+                Id = meta.Id
             };
 
-            await db.Insertable(csharpTag).ExecuteCommandAsync();
-        }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={csharpTagId} 的 C# 标签，跳过创建。");
-        }
-
-        // .NET 标签
-        var dotnetExists = await db.Queryable<Tag>().AnyAsync(t => t.Id == dotnetTagId);
-        if (!dotnetExists)
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认标签 Id={dotnetTagId}, Name=.NET...");
-
-            var dotnetTag = new Tag(".NET")
-            {
-                Id = dotnetTagId,
-                Color = "#512BD4",
-                IsEnabled = true,
-                IsDeleted = false,
-            };
-
-            await db.Insertable(dotnetTag).ExecuteCommandAsync();
-        }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={dotnetTagId} 的 .NET 标签，跳过创建。");
-        }
-
-        // Web开发 标签
-        var webExists = await db.Queryable<Tag>().AnyAsync(t => t.Id == webTagId);
-        if (!webExists)
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认标签 Id={webTagId}, Name=Web开发...");
-
-            var webTag = new Tag("Web开发")
-            {
-                Id = webTagId,
-                Color = "#0078D4",
-                IsEnabled = true,
-                IsDeleted = false,
-            };
-
-            await db.Insertable(webTag).ExecuteCommandAsync();
-        }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={webTagId} 的 Web开发 标签，跳过创建。");
-        }
-
-        // 数据库 标签
-        var databaseExists = await db.Queryable<Tag>().AnyAsync(t => t.Id == databaseTagId);
-        if (!databaseExists)
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认标签 Id={databaseTagId}, Name=数据库...");
-
-            var databaseTag = new Tag("数据库")
-            {
-                Id = databaseTagId,
-                Color = "#107C10",
-                IsEnabled = true,
-                IsDeleted = false,
-            };
-
-            await db.Insertable(databaseTag).ExecuteCommandAsync();
-        }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={databaseTagId} 的数据库标签，跳过创建。");
-        }
-
-        // 综合 标签
-        var generalExists = await db.Queryable<Tag>().AnyAsync(t => t.Id == generalTagId);
-        if (!generalExists)
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认标签 Id={generalTagId}, Name=综合...");
-
-            var generalTag = new Tag("综合")
-            {
-                Id = generalTagId,
-                Color = "#8A8A8A",
-                IsEnabled = true,
-                IsDeleted = false,
-            };
-
-            await db.Insertable(generalTag).ExecuteCommandAsync();
-        }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={generalTagId} 的综合标签，跳过创建。");
+            await db.Insertable(tag).ExecuteCommandAsync();
         }
     }
 

@@ -1,0 +1,80 @@
+.container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.clearButton {
+  border: none;
+  background: transparent;
+  color: #2d6cdf;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.groupTitle {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.tagWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tagButton {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #4b5563;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tagButton:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+  color: #1f2937;
+}
+
+.tagButton.active {
+  border-color: #2d6cdf;
+  background: rgba(45, 108, 223, 0.12);
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.loadingText,
+.emptyText {
+  margin: 0;
+  font-size: 13px;
+  color: #9ca3af;
+}
