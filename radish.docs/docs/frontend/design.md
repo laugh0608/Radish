@@ -942,6 +942,9 @@ Client  Console   Shop    Docs
 - 公开内容（需 SEO）：
   - 帖子列表：`/forum`、`/forum/category/{id}`、`/forum/tag/{tag}`
   - 帖子详情：`/forum/post/{id}` 或 `/forum/post/{id}-{slug}`
+
+> 论坛分类与标签能力边界、实现现状与后续计划请参考：
+> [论坛帖子分类与标签（专题）](/features/forum-category-tag)
 - 登录后功能（不要求 SEO）：
   - 发帖/编辑：`/forum/create`、`/forum/edit/{id}`
   - 用户中心：`/me`、`/settings` 等

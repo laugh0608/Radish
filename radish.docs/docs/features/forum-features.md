@@ -12,6 +12,9 @@
 
 Radish 论坛应用是一个基于 WebOS 架构的现代化社区讨论平台，提供完整的帖子浏览、发布、评论和互动功能。本文档详细说明了当前已实现的核心功能。
 
+> 分类与标签能力已拆分为专题文档，避免本页重复维护：
+> [论坛帖子分类与标签（专题）](./forum-category-tag.md)
+
 ## 架构概览
 
 ### 技术栈
@@ -1803,7 +1806,7 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentGodComments?postId=1
    - 我的评论
 
 4. **高级搜索**:
-   - 标签筛选
+   - 标签筛选（详见 [分类与标签专题](./forum-category-tag.md)）
    - 作者筛选
    - 日期范围
    - 全文索引（Elasticsearch）
@@ -1824,6 +1827,7 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentGodComments?postId=1
 ## 相关文档
 
 - [论坛架构评估](./forum-assessment.md)
+- [论坛帖子分类与标签（专题）](./forum-category-tag.md)
 - [论坛重构方案](./forum-refactoring.md)
 - [神评/沙发功能详细文档](./comment-highlight.md)
 - [开放平台规划](./open-platform.md)
