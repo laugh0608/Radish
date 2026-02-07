@@ -570,6 +570,9 @@ internal static class InitialDataSeeder
     /// <summary>初始化论坛标签数据</summary>
     private static async Task SeedForumTagsAsync(ISqlSugarClient db)
     {
+        db.CodeFirst.InitTables<Tag>();
+        Console.WriteLine("[Radish.DbMigrate] 已同步 Tag 表结构（自动补齐缺失列）。");
+
         var fixedTags = new[]
         {
             new { Id = 90100L, Name = "社区新闻", Color = "#1677FF", SortOrder = 1 },
