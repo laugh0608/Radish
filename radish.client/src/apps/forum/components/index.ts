@@ -9,3 +9,4 @@ export { CommentTree } from './CommentTree';
 export { CommentNode } from './CommentNode';
 export { PublishPostForm } from './PublishPostForm';
 export { CreateCommentForm } from './CreateCommentForm';
+export { TagSection } from './TagSection';

@@ -3,7 +3,7 @@
  * 直接使用后端 Vo 字段名，不做映射
  */
 
-import { apiGet, configureApiClient } from '@radish/ui';
+import { apiGet, configureApiClient } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 

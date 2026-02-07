@@ -23,6 +23,7 @@ import {
   ShoppingOutlined,
   FileTextOutlined,
   SearchOutlined,
+  TagsOutlined,
 } from '@radish/ui';
 import { ROUTES } from '../../router';
 import { getAuthServerBaseUrl, getPostLogoutRedirectUri, getAvatarUrl } from '@/config/env';
@@ -93,6 +94,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       label: '角色管理',
     },
     {
+      key: 'tags',
+      icon: <TagsOutlined />,
+      label: '标签管理',
+    },
+    {
       key: 'system-config',
       icon: <SettingOutlined />,
       label: '系统配置',
@@ -139,6 +145,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       orders: ROUTES.ORDERS,
       users: ROUTES.USERS,
       roles: ROUTES.ROLES,
+      tags: ROUTES.TAGS,
       'system-config': ROUTES.SYSTEM_CONFIG,
       hangfire: ROUTES.HANGFIRE,
     };

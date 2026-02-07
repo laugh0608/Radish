@@ -9,10 +9,11 @@ import {
   apiPut,
   apiDelete,
   configureApiClient,
-} from '@radish/ui';
+} from '@radish/http';
 import type { TFunction } from 'i18next';
 import type {
   Category,
+  Tag,
   PostItem,
   PostDetail,
   CommentNode,
@@ -35,6 +36,7 @@ configureApiClient({
 
 export type {
   Category,
+  Tag,
   PostItem,
   PostDetail,
   CommentNode,
@@ -46,6 +48,46 @@ export type {
   PostLikeResult,
   UpdatePostRequest
 };
+
+/**
+ * 获取所有标签
+ */
+export async function getAllTags(t: TFunction): Promise<Tag[]> {
+  const response = await apiGet<Tag[]>('/api/v1/Tag/GetAll');
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载标签失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 获取固定标签
+ */
+export async function getFixedTags(t: TFunction): Promise<Tag[]> {
+  const response = await apiGet<Tag[]>('/api/v1/Tag/GetFixedTags');
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载固定标签失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 获取热门标签
+ * @param topCount 返回数量（默认 20）
+ */
+export async function getHotTags(t: TFunction, topCount: number = 20): Promise<Tag[]> {
+  const response = await apiGet<Tag[]>(`/api/v1/Tag/GetHotTags?topCount=${topCount}`);
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载热门标签失败');
+  }
+
+  return response.data;
+}
 
 /**
  * 获取顶级分类列表

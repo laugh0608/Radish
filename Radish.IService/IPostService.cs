@@ -20,8 +20,9 @@ public interface IPostService : IBaseService<Post, PostVo>
     /// </summary>
     /// <param name="post">帖子实体</param>
     /// <param name="tagNames">标签名称列表</param>
+    /// <param name="allowCreateTag">是否允许自动创建新标签（通常仅管理员可用）</param>
     /// <returns>帖子 Id</returns>
-    Task<long> PublishPostAsync(Post post, List<string>? tagNames = null);
+    Task<long> PublishPostAsync(Post post, List<string>? tagNames = null, bool allowCreateTag = true);
 
     /// <summary>
     /// 更新帖子浏览次数

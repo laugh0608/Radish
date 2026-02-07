@@ -29,8 +29,16 @@
   - `POST /api/v1/Category/Create`
 - **标签接口已具备**
   - `GET /api/v1/Tag/GetAll`
+  - `GET /api/v1/Tag/GetFixedTags`
   - `GET /api/v1/Tag/GetHotTags`
   - `GET /api/v1/Tag/GetById/{id}`
+  - `GET /api/v1/Tag/GetPage`（管理端分页）
+  - `POST /api/v1/Tag/Create`（管理端）
+  - `PUT /api/v1/Tag/Update/{id}`（管理端）
+  - `PUT /api/v1/Tag/ToggleStatus/{id}/status`（管理端）
+  - `PUT /api/v1/Tag/UpdateSort/{id}/sort`（管理端）
+  - `DELETE /api/v1/Tag/Delete/{id}`（管理端软删除）
+  - `PUT /api/v1/Tag/Restore/{id}/restore`（管理端恢复）
 - **发布帖子支持标签写入**
   - `PostController.Publish` 接收 `PublishPostDto.TagNames`
   - `PostService.PublishPostAsync` 会自动：
@@ -47,6 +55,18 @@
 - **标签数据契约与前端展示字段不完全一致**
   - 后端详情返回 `VoTags`（字符串）。
   - 前端详情组件当前读取 `voTagNames`（数组）。
+- **发帖标签规则已收敛，但筛选仍建议后端化**
+  - 发布帖子已要求标签数量 `1~5`。
+  - 非管理员发布时不允许自动创建新标签。
+  - 标签筛选当前以前端兼容实现为主，后续建议后端支持查询参数。
+
+### 新增能力（固定标签后端驱动）
+
+- 固定标签来源已切换为后端数据库，不再由前端 `env` 注入。
+- `radish.client` 通过 `GET /api/v1/Tag/GetFixedTags` 渲染固定标签。
+- 固定标签支持管理端增删改查、启停与排序调整。
+- 删除采用软删除，支持恢复接口。
+- 默认固定标签种子：`社区新闻`、`社区活动`、`精华帖`、`碎碎念`、`公告`。
 
 ---
 
@@ -60,14 +80,9 @@
 
 ### 未实现
 
-- **标签区仍为占位**
-  - `ForumApp` 左侧存在 `tagsSection`，当前仅 `TODO`。
-- **发帖未提供标签输入**
-  - 前端发布逻辑固定传 `tagNames: []`。
-- **帖子详情标签展示未打通**
-  - 组件读取 `voTagNames`，但当前主数据契约实际是 `voTags`。
-- **未接入标签相关 API**
-  - 前端 `api/forum.ts` 尚无 `Tag/GetAll` / `Tag/GetHotTags` 调用封装。
+- **标签筛选缺少后端原生支持**
+  - 当前 `Post/GetList` 仍未支持 `tagName/tagId` 参数。
+  - 大数据量下不宜长期依赖前端侧筛选。
 
 ---
 
@@ -103,4 +118,3 @@
 - [论坛应用评估报告](./forum-assessment.md)
 - [论坛重构方案](./forum-refactoring.md)
 - [前端设计文档](/frontend/design)
-

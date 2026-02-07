@@ -23,6 +23,14 @@ export const PostDetail = ({
   onEdit,
   onDelete
 }: PostDetailProps) => {
+  const parsedTags = post?.voTags
+    ? post.voTags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(Boolean)
+    : [];
+  const tagList = post?.voTagNames && post.voTagNames.length > 0 ? post.voTagNames : parsedTags;
+
   // 判断是否是作者本人
   const isAuthor = post && currentUserId > 0 && post.voAuthorId === currentUserId;
   if (loading) {
@@ -54,9 +62,9 @@ export const PostDetail = ({
           {post.voViewCount !== undefined && <span> · 浏览 {post.voViewCount}</span>}
         </div>
         <MarkdownRenderer content={post.voContent} className={styles.postBody} />
-        {post.voTagNames && post.voTagNames.length > 0 && (
+        {tagList.length > 0 && (
           <div className={styles.postTags}>
-            {post.voTagNames.map((tag, index) => (
+            {tagList.map((tag, index) => (
               <span key={index} className={styles.tag}>
                 {tag}
               </span>

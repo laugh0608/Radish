@@ -4,7 +4,7 @@ import { log } from '@/utils/logger';
  * 附件上传相关的 API 调用
  */
 
-import { configureApiClient, getApiClientConfig, apiFetch, parseApiResponseWithI18n, type ApiResponse } from '@radish/ui';
+import { configureApiClient, getApiClientConfig, apiFetch, parseApiResponseWithI18n, type ApiResponse } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 

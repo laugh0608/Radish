@@ -4,11 +4,14 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { TFunction } from 'i18next';
 import {
   getTopCategories,
+  getHotTags,
+  getFixedTags,
   getPostList,
   getPostById,
   getCommentTree,
   getCurrentGodCommentsBatch,
   type Category,
+  type Tag,
   type PostItem,
   type PostDetail,
   type CommentNode,
@@ -18,7 +21,10 @@ import {
 export interface ForumDataState {
   // 数据状态
   categories: Category[];
+  fixedTags: Tag[];
+  hotTags: Tag[];
   selectedCategoryId: number | null;
+  selectedTagName: string | null;
   posts: PostItem[];
   selectedPost: PostDetail | null;
   comments: CommentNode[];
@@ -40,6 +46,7 @@ export interface ForumDataState {
 
   // 加载状态
   loadingCategories: boolean;
+  loadingHotTags: boolean;
   loadingPosts: boolean;
   loadingPostDetail: boolean;
   loadingComments: boolean;
@@ -51,6 +58,7 @@ export interface ForumDataState {
 
 export interface ForumDataActions {
   setSelectedCategoryId: (id: number | null) => void;
+  setSelectedTagName: (tagName: string | null) => void;
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: Dispatch<SetStateAction<CommentNode[]>>;
   setCurrentPage: (page: number) => void;
@@ -59,6 +67,8 @@ export interface ForumDataActions {
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
   loadCategories: () => Promise<void>;
+  loadFixedTags: () => Promise<void>;
+  loadHotTags: () => Promise<void>;
   loadPosts: () => Promise<void>;
   loadTrendingContent: () => Promise<void>;
   loadPostDetail: (postId: number) => Promise<void>;
@@ -69,7 +79,10 @@ export interface ForumDataActions {
 export const useForumData = (t: TFunction): ForumDataState & ForumDataActions => {
   // 数据状态
   const [categories, setCategories] = useState<Category[]>([]);
+  const [fixedTags, setFixedTags] = useState<Tag[]>([]);
+  const [hotTags, setHotTags] = useState<Tag[]>([]);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedTagName, setSelectedTagName] = useState<string | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [selectedPost, setSelectedPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
@@ -93,6 +106,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
 
   // 加载状态
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [loadingHotTags, setLoadingHotTags] = useState(false);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [loadingPostDetail, setLoadingPostDetail] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
@@ -124,12 +138,39 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     }
   };
 
+  // 加载热门标签
+  const loadFixedTags = async () => {
+    try {
+      const tags = await getFixedTags(t);
+      setFixedTags(tags);
+    } catch (err) {
+      log.warn('加载固定标签失败:', err);
+      setFixedTags([]);
+    }
+  };
+
+  // 加载热门标签
+  const loadHotTags = async () => {
+    setLoadingHotTags(true);
+    try {
+      const tags = await getHotTags(t, 20);
+      setHotTags(tags);
+    } catch (err) {
+      log.warn('加载热门标签失败:', err);
+      setHotTags([]);
+    } finally {
+      setLoadingHotTags(false);
+    }
+  };
+
   // 加载帖子列表
   const loadPosts = async () => {
     if (!categoriesLoaded && selectedCategoryId == null) {
       return;
     }
-    const loadKey = `${selectedCategoryId ?? 'all'}|${currentPage}|${pageSize}|${sortBy}|${searchKeyword.trim()}`;
+    const resolvedPageIndex = selectedTagName ? 1 : currentPage;
+    const resolvedPageSize = selectedTagName ? 100 : pageSize;
+    const loadKey = `${selectedCategoryId ?? 'all'}|${resolvedPageIndex}|${resolvedPageSize}|${sortBy}|${searchKeyword.trim()}|${selectedTagName ?? ''}`;
     if (inFlightPostListRef.current.has(loadKey)) {
       return;
     }
@@ -140,13 +181,29 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       const pageModel = await getPostList(
         selectedCategoryId,
         t,
-        currentPage,
-        pageSize,
+        resolvedPageIndex,
+        resolvedPageSize,
         sortBy,
         searchKeyword
       );
-      setPosts(pageModel.data);
-      setTotalPages(pageModel.pageCount);
+      const filteredPosts = selectedTagName
+        ? pageModel.data.filter(post => {
+            const rawTags = post.voTags || '';
+            if (!rawTags.trim()) {
+              return false;
+            }
+
+            const tags = rawTags
+              .split(',')
+              .map(item => item.trim())
+              .filter(Boolean);
+
+            return tags.some(tag => tag.toLowerCase() === selectedTagName.toLowerCase());
+          })
+        : pageModel.data;
+
+      setPosts(filteredPosts);
+      setTotalPages(selectedTagName ? (filteredPosts.length > 0 ? 1 : 0) : pageModel.pageCount);
 
       // 加载每个帖子的神评
       await loadGodCommentsForPosts(pageModel.data);
@@ -300,23 +357,28 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   // 初始化：加载分类和热门内容
   useEffect(() => {
     void loadCategories();
+    void loadFixedTags();
+    void loadHotTags();
     void loadTrendingContent();
   }, []);
 
   // 当选择分类时重新加载帖子
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategoryId]);
+  }, [selectedCategoryId, selectedTagName]);
 
   // 当页码、排序或搜索变化时重新加载帖子
   useEffect(() => {
     void loadPosts();
-  }, [categoriesLoaded, selectedCategoryId, currentPage, sortBy, searchKeyword]);
+  }, [categoriesLoaded, selectedCategoryId, selectedTagName, currentPage, sortBy, searchKeyword]);
 
   return {
     // 状态
     categories,
+    fixedTags,
+    hotTags,
     selectedCategoryId,
+    selectedTagName,
     posts,
     selectedPost,
     comments,
@@ -330,6 +392,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     commentSortBy,
     searchKeyword,
     loadingCategories,
+    loadingHotTags,
     loadingPosts,
     loadingPostDetail,
     loadingComments,
@@ -338,6 +401,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
 
     // 操作
     setSelectedCategoryId,
+    setSelectedTagName,
     setSelectedPost,
     setComments,
     setCurrentPage,
@@ -346,6 +410,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     setSearchKeyword,
     setError,
     loadCategories,
+    loadFixedTags,
+    loadHotTags,
     loadPosts,
     loadTrendingContent,
     loadPostDetail,

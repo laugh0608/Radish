@@ -39,7 +39,7 @@ export interface ForumActionsHandlers {
 
   // 帖子操作
   handleSelectPost: (postId: number) => Promise<void>;
-  handlePublishPost: (title: string, content: string) => Promise<void>;
+  handlePublishPost: (title: string, content: string, tagNames: string[]) => Promise<void>;
   handleLikePost: (postId: number) => Promise<void>;
   handleEditPost: (postId: number) => void;
   handleSaveEdit: (postId: number, title: string, content: string) => Promise<void>;
@@ -75,6 +75,7 @@ interface UseForumActionsParams {
   userId: number;
   commentSortBy: 'newest' | 'hottest' | null;
   selectedCategoryId: number | null;
+  selectedTagName: string | null;
   selectedPost: PostDetail | null;
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: Dispatch<SetStateAction<CommentNode[]>>;
@@ -97,6 +98,7 @@ export const useForumActions = (
     isAuthenticated,
     userId,
     selectedCategoryId,
+    selectedTagName,
     selectedPost,
     setSelectedPost,
     setComments,
@@ -141,7 +143,7 @@ export const useForumActions = (
   };
 
   // 发布帖子
-  const handlePublishPost = async (title: string, content: string) => {
+  const handlePublishPost = async (title: string, content: string, tagNames: string[]) => {
     if (!selectedCategoryId) {
       setError('请先选择分类');
       return;
@@ -154,7 +156,7 @@ export const useForumActions = (
           title,
           content,
           categoryId: selectedCategoryId,
-          tagNames: []
+          tagNames
         },
         t
       );

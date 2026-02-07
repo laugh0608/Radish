@@ -6,6 +6,7 @@ interface PostListViewProps {
   // 数据
   categories: Category[];
   selectedCategoryId: number | null;
+  selectedTagName?: string | null;
   posts: PostItem[];
   postGodComments: Map<number, CommentHighlight>;
   currentPage: number;
@@ -24,6 +25,7 @@ interface PostListViewProps {
 export const PostListView = ({
   categories,
   selectedCategoryId,
+  selectedTagName,
   posts,
   postGodComments,
   currentPage,
@@ -42,7 +44,9 @@ export const PostListView = ({
       <div className={styles.toolbar}>
         <div className={styles.toolbarLeft}>
           <h2 className={styles.toolbarTitle}>
-            {categories.find(c => c.voId === selectedCategoryId)?.voName || '全部帖子'}
+            {selectedTagName
+              ? `#${selectedTagName}`
+              : categories.find(c => c.voId === selectedCategoryId)?.voName || '全部帖子'}
           </h2>
           <div className={styles.sortButtons}>
             <button

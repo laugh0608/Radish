@@ -3,7 +3,7 @@
  * 直接使用后端 Vo 字段名，不做映射
  */
 
-import { apiGet, apiPost, apiPut, apiDelete } from '@radish/ui';
+import { apiGet, apiPost, apiPut, apiDelete } from '@radish/http';
 
 /**
  * 角色数据类型（使用 vo 前缀，与后端 VO 保持一致）

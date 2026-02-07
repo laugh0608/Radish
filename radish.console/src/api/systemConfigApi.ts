@@ -3,7 +3,7 @@
  * 使用后端 Vo 字段名
  */
 
-import { apiGet, apiPost, apiPut, apiDelete } from '@radish/ui';
+import { apiGet, apiPost, apiPut, apiDelete } from '@radish/http';
 
 /**
  * 系统配置数据类型（使用 Vo 前缀）

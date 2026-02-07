@@ -3,7 +3,7 @@
  * 使用后端 Vo 字段名
  */
 
-import { apiGet } from '@radish/ui';
+import { apiGet } from '@radish/http';
 
 /**
  * 仪表盘统计数据类型（使用 Vo 前缀）
