@@ -107,6 +107,11 @@ export default defineConfig({
           if (normalized.includes('/src/apps/forum/components/CommentNode')) return 'forum-detail-view';
           if (normalized.includes('/src/apps/forum/components/CreateCommentForm')) return 'forum-detail-view';
 
+          if (normalized.includes('/src/apps/radish-pit/components/Statistics/')) return 'pit-statistics';
+          if (normalized.includes('/src/apps/radish-pit/components/SecuritySettings/')) return 'pit-security';
+          if (normalized.includes('/src/apps/radish-pit/components/TransactionHistory/')) return 'pit-history';
+          if (normalized.includes('/src/apps/radish-pit/components/Transfer/')) return 'pit-transfer';
+
           if (normalized.includes('/src/apps/forum/')) return 'app-forum';
           if (normalized.includes('/src/apps/profile/')) return 'app-profile';
           if (normalized.includes('/src/apps/radish-pit/')) return 'app-radish-pit';
