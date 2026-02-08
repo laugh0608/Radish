@@ -24,7 +24,13 @@
 - **页级懒加载**：`RadishPitApp` 将 `AccountOverview` / `Transfer` / `TransactionHistory` / `SecuritySettings` / `Statistics` 改为按需加载。
 - **统计页二级懒加载**：`Statistics` 将 `IncomeExpenseChart` / `CategoryBreakdown` / `TrendAnalysis` 改为按需加载。
 - **分包规则细化**：`vite.config.ts` 新增 `pit-transfer` / `pit-history` / `pit-security` / `pit-statistics` chunk 规则。
-- **构建结果**：`app-radish-pit` 从约 `491.91 kB` 降至约 `25.32 kB`，并拆分出多个萝卜坑子 chunk；当前超 500k 仅剩 `app-showcase`。
+- **构建结果**：`app-radish-pit` 从约 `491.91 kB` 降至约 `25.32 kB`，并拆分出多个萝卜坑子 chunk。
+
+### Client Showcase 包体治理
+
+- **子路径导入改造**：`ShowcaseApp` 从 `@radish/ui` 桶导入迁移为 `@radish/ui/*` 子路径导入。
+- **UI 导出补齐**：`@radish/ui` 新增 `glass-panel` / `context-menu` / `skeleton` 子路径导出，支持展示页按需引入。
+- **构建结果**：`app-showcase` 从约 `751.21 kB` 降至约 `410.06 kB`，当前已无超 500k chunk 告警。
 
 ## 2026-02-07 (周六)
 

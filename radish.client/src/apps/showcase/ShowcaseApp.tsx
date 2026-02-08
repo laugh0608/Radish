@@ -1,25 +1,19 @@
 import { useState } from 'react';
-import {
-  Icon,
-  Button,
-  GlassPanel,
-  ContextMenu,
-  Input,
-  Select,
-  Modal,
-  ConfirmDialog,
-  ToastContainer,
-  toast,
-  ExperienceBar,
-  TableSkeleton,
-  SimpleSkeleton,
-  CardSkeleton,
-  LineChart,
-  BarChart,
-  PieChart,
-  AreaChart,
-  type ExperienceData
-} from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
+import { Button } from '@radish/ui/button';
+import { GlassPanel } from '@radish/ui/glass-panel';
+import { ContextMenu } from '@radish/ui/context-menu';
+import { Input } from '@radish/ui/input';
+import { Select } from '@radish/ui/select';
+import { Modal } from '@radish/ui/modal';
+import { ConfirmDialog } from '@radish/ui/confirm-dialog';
+import { ToastContainer, toast } from '@radish/ui/toast';
+import { ExperienceBar, type ExperienceData } from '@radish/ui/experience-bar';
+import { TableSkeleton, SimpleSkeleton, CardSkeleton } from '@radish/ui/skeleton';
+import { LineChart } from '@radish/ui/line-chart';
+import { BarChart } from '@radish/ui/bar-chart';
+import { PieChart } from '@radish/ui/pie-chart';
+import { AreaChart } from '@radish/ui/area-chart';
 import styles from './ShowcaseApp.module.css';
 
 /**
