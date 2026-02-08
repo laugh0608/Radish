@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common.TenantTool;
 using Radish.IService;
+using Radish.IService.Base;
 using Radish.Model;
 using Radish.Model.Tenants;
 using Radish.Model.ViewModels;

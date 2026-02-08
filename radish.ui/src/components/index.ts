@@ -11,6 +11,9 @@ export type { SelectProps, SelectOption } from './Select/Select';
 export { Modal } from './Modal/Modal';
 export type { ModalProps } from './Modal/Modal';
 
+export { BottomSheet } from './BottomSheet/BottomSheet';
+export type { BottomSheetProps } from './BottomSheet/BottomSheet';
+
 export { Icon } from './Icon/Icon';
 export type { IconProps } from './Icon/Icon';
 
@@ -24,6 +27,8 @@ export { GlassPanel } from './GlassPanel/GlassPanel';
 export type { GlassPanelProps } from './GlassPanel/GlassPanel';
 
 export { MarkdownRenderer } from './MarkdownRenderer/MarkdownRenderer';
+export { ImageLightbox } from './ImageLightbox/ImageLightbox';
+export type { LightboxImageItem } from './ImageLightbox/ImageLightbox';
 
 export { MarkdownEditor } from './MarkdownEditor/MarkdownEditor';
 export type { MarkdownEditorProps } from './MarkdownEditor/MarkdownEditor';
@@ -44,6 +49,9 @@ export type {
   ChunkedUploadResult,
   UploadProgress
 } from './ChunkedFileUpload/ChunkedFileUpload';
+
+export { ImageCropper } from './ImageCropper/ImageCropper';
+export type { ImageCropperProps } from './ImageCropper/ImageCropper';
 
 export { Toast, ToastContainer, toast, toastManager } from './Toast/Toast';
 export type { ToastProps } from './Toast/Toast';
@@ -164,6 +172,7 @@ export {
   KeyOutlined,
   TrophyOutlined,
   WalletOutlined,
+  TagsOutlined,
 } from '@ant-design/icons';
 
 // Re-export types

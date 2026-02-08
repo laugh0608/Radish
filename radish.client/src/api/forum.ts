@@ -9,10 +9,11 @@ import {
   apiPut,
   apiDelete,
   configureApiClient,
-} from '@radish/ui';
+} from '@radish/http';
 import type { TFunction } from 'i18next';
 import type {
   Category,
+  Tag,
   PostItem,
   PostDetail,
   CommentNode,
@@ -35,6 +36,7 @@ configureApiClient({
 
 export type {
   Category,
+  Tag,
   PostItem,
   PostDetail,
   CommentNode,
@@ -46,6 +48,46 @@ export type {
   PostLikeResult,
   UpdatePostRequest
 };
+
+/**
+ * 获取所有标签
+ */
+export async function getAllTags(t: TFunction): Promise<Tag[]> {
+  const response = await apiGet<Tag[]>('/api/v1/Tag/GetAll');
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载标签失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 获取固定标签
+ */
+export async function getFixedTags(t: TFunction): Promise<Tag[]> {
+  const response = await apiGet<Tag[]>('/api/v1/Tag/GetFixedTags');
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载固定标签失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 获取热门标签
+ * @param topCount 返回数量（默认 20）
+ */
+export async function getHotTags(t: TFunction, topCount: number = 20): Promise<Tag[]> {
+  const response = await apiGet<Tag[]>(`/api/v1/Tag/GetHotTags?topCount=${topCount}`);
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载热门标签失败');
+  }
+
+  return response.data;
+}
 
 /**
  * 获取顶级分类列表
@@ -267,13 +309,15 @@ export async function getChildComments(
   pageIndex: number,
   pageSize: number,
   t: TFunction
-): Promise<{ items: CommentNode[]; total: number; pageIndex: number; pageSize: number }> {
+): Promise<{ voItems: CommentNode[]; voTotal: number; voPageIndex: number; voPageSize: number }> {
   const response = await apiGet<{
-    items: CommentNode[];
-    total: number;
-    pageIndex: number;
-    pageSize: number;
-  }>(`/api/v1/Comment/GetChildComments?parentId=${parentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`);
+    voItems: CommentNode[];
+    voTotal: number;
+    voPageIndex: number;
+    voPageSize: number;
+  }>(
+    `/api/v1/Comment/GetChildComments?parentId=${parentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`
+  );
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取子评论失败');
@@ -296,6 +340,31 @@ export async function getCurrentGodComments(
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取神评列表失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 批量获取帖子当前神评（每帖 Top1）
+ * @param postIds 帖子 ID 列表
+ * @param t i18n 翻译函数
+ */
+export async function getCurrentGodCommentsBatch(
+  postIds: number[],
+  t: TFunction
+): Promise<Record<number, CommentHighlight>> {
+  if (!postIds.length) {
+    return {};
+  }
+
+  const response = await apiPost<Record<number, CommentHighlight>>(
+    '/api/v1/CommentHighlight/GetCurrentGodCommentsBatch',
+    postIds
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '批量获取神评失败');
   }
 
   return response.data;
@@ -332,6 +401,6 @@ export function getOidcLoginUrl(): string {
   authorizeUrl.searchParams.set('client_id', 'radish-client');
   authorizeUrl.searchParams.set('response_type', 'code');
   authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-  authorizeUrl.searchParams.set('scope', 'radish-api');
+  authorizeUrl.searchParams.set('scope', 'openid profile offline_access radish-api');
   return authorizeUrl.toString();
 }

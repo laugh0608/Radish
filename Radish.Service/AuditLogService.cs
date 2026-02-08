@@ -1,10 +1,12 @@
 using System.Linq.Expressions;
 using AutoMapper;
 using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.LogModels;
 using Radish.Model.ViewModels;
+using Radish.Service.Base;
 using SqlSugar;
 
 namespace Radish.Service;

@@ -5,6 +5,10 @@
 ## 语言规范
 **默认中文**：所有说明、讨论、文档使用中文，代码/技术标识/引用除外。
 
+## 协作流程
+- 编写任何代码之前，先描述方案并等待批准。
+- 如需求不明确，必须先提出问题并澄清后再写代码。
+
 ## 项目概览
 - **后端**: ASP.NET Core 10 + SQLSugar ORM + PostgreSQL (本地默认 SQLite)
 - **网关**: Radish.Gateway - 服务门户及 API 网关 (Phase 0:门户页面; P1+:路由/认证/聚合)
@@ -367,8 +371,9 @@ export async function uploadChunk(
 2. **Mapping**: `Radish.Extension/AutoMapperExtension/CustomProfiles`
 3. **Repository**: 大多数用 `IBaseRepository<TEntity>` 即可。仅复杂查询才创建自定义仓储
 4. **Service**:
-   - **简单 CRUD**: 直接用 `IBaseService<TEntity, TVo>`
+   - **简单 CRUD**: 直接用 `IBaseService<TEntity, TVo>`，无需创建自定义 Service
    - **复杂逻辑**: 创建自定义 Service (继承 `BaseService<TEntity, TVo>`)
+   - BaseService 已提供完整 CRUD + 聚合查询 + 工具方法，详见 `IBaseService.cs`
 5. **Controller**: 注入 Service (简单用 `IBaseService`，复杂用自定义 `IXxxService`)
 6. **示例**: `Radish.Api/Radish.Api.http`
 7. **测试**: `Radish.Api.Tests/Controllers/`

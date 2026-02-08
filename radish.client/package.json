@@ -1,7 +1,7 @@
 {
   "name": "radish.client",
   "private": true,
-  "version": "0.0.0",
+  "version": "26.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
   "dependencies": {
     "@iconify/react": "^6.0.2",
     "@microsoft/signalr": "^10.0.0",
+    "@radish/http": "*",
     "@radish/ui": "*",
     "date-fns": "^4.1.0",
     "highlight.js": "^11.11.1",

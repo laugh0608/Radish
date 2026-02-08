@@ -3,13 +3,15 @@ import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
+import { redirectToLogin, logout, hasAccessToken } from '@/services/auth';
 import { getAppById } from './AppRegistry';
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
+import { toast } from '@radish/ui/toast';
 import { CoinBalance } from './components/CoinBalance';
 import { ExperienceDisplay } from './components/ExperienceDisplay';
 import i18n from '@/i18n';
-import type { ApiResponse } from '@radish/ui';
-import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
+import type { ApiResponse } from '@radish/http';
+import { getApiBaseUrl } from '@/config/env';
 import styles from './Dock.module.css';
 
 /**
@@ -31,14 +33,6 @@ export const Dock = () => {
   const [pollingUnreadCount, setPollingUnreadCount] = useState(0); // 轮询降级时的未读数
 
   const loggedIn = isAuthenticated();
-  const hasAccessToken = () => {
-    if (typeof window === 'undefined') return false;
-    try {
-      return Boolean(window.localStorage.getItem('access_token'));
-    } catch {
-      return false;
-    }
-  };
 
   // 根据连接状态决定显示哪个未读数
   const unreadMessages = connectionState === 'connected' ? storeUnreadCount : pollingUnreadCount;
@@ -115,42 +109,12 @@ export const Dock = () => {
     });
   }
 
-  const handleLoginClick = () => {
-    if (typeof window === 'undefined') return;
-
-    const redirectUri = `${window.location.origin}/oidc/callback`;
-    const authServerBaseUrl = getAuthBaseUrl();
-    const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
-    authorizeUrl.searchParams.set('client_id', 'radish-client');
-    authorizeUrl.searchParams.set('response_type', 'code');
-    authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-    authorizeUrl.searchParams.set('scope', 'radish-api');
-
-    const currentLanguage = i18n.language || 'zh';
-    authorizeUrl.searchParams.set('culture', currentLanguage);
-    authorizeUrl.searchParams.set('ui-culture', currentLanguage);
-
-    window.location.href = authorizeUrl.toString();
-  };
-
   const handleLogoutClick = () => {
-    if (typeof window === 'undefined') return;
-
-    window.localStorage.removeItem('access_token');
-    window.localStorage.removeItem('refresh_token');
     clearUser();
-
-    const postLogoutRedirectUri = window.location.origin;
-    const authServerBaseUrl = getAuthServerBaseUrl();
-
-    const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
-    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
-    logoutUrl.searchParams.set('client_id', 'radish-client');
-
-    const currentLanguage = i18n.language || 'zh';
-    logoutUrl.searchParams.set('culture', currentLanguage);
-
-    window.location.href = logoutUrl.toString();
+    logout();
+  };
+  const notifyLoginRequired = () => {
+    toast.info('需要登录才能访问，请点击登录按钮');
   };
 
   const hydrateCurrentUser = async () => {
@@ -206,26 +170,27 @@ export const Dock = () => {
     }
   };
 
-  // 时间更新 + SignalR 连接 + 降级轮询
+  // 时间更新 + 降级轮询
   useEffect(() => {
     const timer = setInterval(() => {
       setTime(new Date());
     }, 1000);
 
-    if (typeof window !== 'undefined') {
-      void hydrateCurrentUser();
+    // 注意：用户信息由 App.tsx 统一管理，此处不再重复获取
+    // 注意：WebSocket 连接由 Shell.tsx 统一管理，此处不再启动
 
-      // 如果用户已登录，启动 SignalR 连接
-      if (loggedIn) {
-        void notificationHub.start();
-      }
-
+    if (typeof window !== 'undefined' && loggedIn) {
       // 初始化时获取一次未读数（作为降级数据）
       void fetchUnreadMessageCount();
 
-      // 降级轮询：仅在 SignalR 连接失败时使用（60秒间隔）
-      // 注意：这里不能在依赖中使用 connectionState，否则会导致重启循环
+      // 降级轮询：仅在用户已登录且 SignalR 连接失败时使用（60秒间隔）
       const pollingTimer = setInterval(() => {
+        // 检查用户是否登录
+        const token = window.localStorage.getItem('access_token');
+        if (!token) {
+          return;
+        }
+
         // 从 store 中实时读取 connectionState
         const state = useNotificationStore.getState().connectionState;
         if (state !== 'connected') {
@@ -236,8 +201,6 @@ export const Dock = () => {
       return () => {
         clearInterval(timer);
         clearInterval(pollingTimer);
-        // 组件卸载时停止 SignalR 连接
-        void notificationHub.stop();
       };
     }
 
@@ -266,19 +229,18 @@ export const Dock = () => {
           <div className={styles.expandedContent}>
             {/* 左侧：用户信息 */}
             <div className={styles.userSection}>
-              <div className={styles.avatar}>
+              <div
+                className={styles.avatar}
+                onClick={() => loggedIn && openApp('profile')}
+                style={{ cursor: loggedIn ? 'pointer' : 'default' }}
+                title={loggedIn ? '打开个人主页' : undefined}
+              >
                 {loggedIn ? (
                   <>
                     {avatarSrc ? (
                       <img
                         src={avatarSrc}
                         alt={userName}
-                        style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '50%',
-                          objectFit: 'cover'
-                        }}
                       />
                     ) : (
                       <Icon icon="mdi:account-circle" size={40} />
@@ -290,15 +252,16 @@ export const Dock = () => {
                 )}
               </div>
               {loggedIn && userName && (
-                <div className={styles.userInfo}>
+                <div
+                  className={styles.userInfo}
+                  onClick={() => openApp('profile')}
+                  style={{ cursor: 'pointer' }}
+                  title="打开个人主页"
+                >
                   <div className={styles.userName}>{userName}</div>
                   <div className={styles.userId}>ID: {userId}</div>
                 </div>
               )}
-              {/* 萝卜币余额 */}
-              {loggedIn && <CoinBalance />}
-              {/* 经验值显示 */}
-              {loggedIn && <ExperienceDisplay />}
             </div>
 
             {/* 中间：Dock 应用（通知中心常驻 + 运行中的应用） */}
@@ -322,7 +285,7 @@ export const Dock = () => {
                         onClick={() => {
                           // 如果是通知中心，未登录时先登录
                           if (isNotification && !loggedIn && !hasAccessToken()) {
-                            handleLoginClick();
+                            notifyLoginRequired();
                             return;
                           }
 
@@ -338,7 +301,7 @@ export const Dock = () => {
                       >
                         <div style={{ position: 'relative' }}>
                           {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
-                            <Icon icon={app!.icon} size={40} />
+                            <Icon icon={app!.icon} size={32} />
                           ) : (
                             <span className={styles.emoji}>{app!.icon}</span>
                           )}
@@ -365,11 +328,10 @@ export const Dock = () => {
               <button
                 type="button"
                 className={`${styles.authButton} ${loggedIn ? styles.loggedIn : styles.loggedOut}`}
-                onClick={loggedIn ? handleLogoutClick : handleLoginClick}
+                onClick={loggedIn ? handleLogoutClick : redirectToLogin}
                 title={loggedIn ? '退出登录' : '登录'}
               >
-                <Icon icon={loggedIn ? 'mdi:account-check' : 'mdi:login-variant'} size={28} />
-                {loggedIn && <div className={styles.onlineIndicator} />}
+                <Icon icon={loggedIn ? 'mdi:logout' : 'mdi:login'} size={28} />
               </button>
             </div>
           </div>
@@ -380,7 +342,7 @@ export const Dock = () => {
           <div className={styles.collapsedContent}>
             {/* 用户头像 */}
             <div className={styles.miniAvatar}>
-              <Icon icon={loggedIn ? 'mdi:account-circle' : 'mdi:account-circle-outline'} size={20} />
+              <Icon icon={loggedIn ? 'mdi:account-circle' : 'mdi:account-circle-outline'} size={16} />
               {loggedIn && <div className={styles.statusDot} />}
             </div>
 
@@ -398,7 +360,7 @@ export const Dock = () => {
                   onClick={() => {
                     // 如果是通知中心，未登录时先登录
                     if (isNotification && !loggedIn && !hasAccessToken()) {
-                      handleLoginClick();
+                      notifyLoginRequired();
                       return;
                     }
 
@@ -413,13 +375,13 @@ export const Dock = () => {
                   title={app!.name}
                 >
                   {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
-                    <Icon icon={app!.icon} size={16} />
+                    <Icon icon={app!.icon} size={14} />
                   ) : (
                     <span className={styles.miniEmoji}>{app!.icon}</span>
                   )}
-                  {/* 通知中心的未读数徽章（迷你版） */}
+                  {/* 通知中心的未读提示（红点） */}
                   {isNotification && unreadMessages > 0 && (
-                    <div className={styles.miniNotificationBadge}>{unreadMessages}</div>
+                    <div className={styles.miniNotificationDot} />
                   )}
                   {/* 运行中指示器 */}
                   {isRunning && !isMinimized && <div className={styles.miniActiveIndicator} />}

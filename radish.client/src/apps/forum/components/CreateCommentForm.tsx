@@ -1,10 +1,10 @@
 import { useState, useRef, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
-import { UserMention, type UserMentionOption } from '@radish/ui';
+import { UserMention, type UserMentionOption as UiUserMentionOption } from '@radish/ui/user-mention';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import styles from './CreateCommentForm.module.css';
 
@@ -15,7 +15,20 @@ interface CreateCommentFormProps {
   disabled?: boolean;
   replyTo?: { commentId: number; authorName: string } | null;
   onCancelReply?: () => void;
+  variant?: 'inline' | 'sheet';
 }
+
+const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
+  const params = new URLSearchParams();
+  if (fullUrl) {
+    params.set('full', fullUrl);
+  }
+  if (scalePercent && Number.isFinite(scalePercent)) {
+    params.set('scale', String(Math.min(Math.max(scalePercent, 10), 100)));
+  }
+  const meta = params.toString();
+  return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
+};
 
 export const CreateCommentForm = ({
   isAuthenticated,
@@ -23,7 +36,8 @@ export const CreateCommentForm = ({
   onSubmit,
   disabled = false,
   replyTo = null,
-  onCancelReply
+  onCancelReply,
+  variant = 'inline'
 }: CreateCommentFormProps) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
@@ -95,10 +109,15 @@ export const CreateCommentForm = ({
   };
 
   // 搜索用户
-  const handleSearchUsers = useCallback(async (keyword: string): Promise<UserMentionOption[]> => {
+  const handleSearchUsers = useCallback(async (keyword: string): Promise<UiUserMentionOption[]> => {
     try {
       const users = await searchUsersForMention(keyword, t);
-      return users;
+      return users.map(user => ({
+        id: user.voId,
+        userName: user.voUserName,
+        displayName: user.voDisplayName,
+        avatar: user.voAvatar
+      }));
     } catch (error) {
       log.error('搜索用户失败:', error);
       return [];
@@ -106,7 +125,7 @@ export const CreateCommentForm = ({
   }, [t]);
 
   // 选择用户
-  const handleSelectUser = (user: UserMentionOption) => {
+  const handleSelectUser = (user: UiUserMentionOption) => {
     if (!textareaRef.current) return;
 
     // 替换@和关键词为@用户名
@@ -163,8 +182,10 @@ export const CreateCommentForm = ({
         removeExif: true
       }, t);
 
-      // 插入 Markdown 图片语法
-      const imageMarkdown = `![${file.name}](${result.url})`;
+      // 评论区默认插入缩略图，点开查看原图
+      const displayUrl = result.voThumbnailUrl || result.voUrl;
+      const markdownUrl = appendImageMeta(displayUrl, result.voUrl);
+      const imageMarkdown = `![${file.name}](${markdownUrl})`;
       insertTextAtCursor(imageMarkdown);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '图片上传失败';
@@ -194,7 +215,7 @@ export const CreateCommentForm = ({
       }, t);
 
       // 插入 Markdown 链接语法
-      const linkMarkdown = `[${file.name}](${result.url})`;
+      const linkMarkdown = `[${result.voOriginalName || file.name}](${result.voUrl})`;
       insertTextAtCursor(linkMarkdown);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '文档上传失败';
@@ -218,9 +239,13 @@ export const CreateCommentForm = ({
     documentInputRef.current?.click();
   };
 
+  const containerClassName = `${styles.container} ${variant === 'sheet' ? styles.containerSheet : ''}`;
+  const titleClassName = `${styles.title} ${variant === 'sheet' ? styles.titleSheet : ''}`;
+  const submitClassName = `${styles.submitButton} ${variant === 'sheet' ? styles.submitButtonSheet : ''}`;
+
   return (
-    <div className={styles.container}>
-      <h5 className={styles.title}>发表评论</h5>
+    <div className={containerClassName}>
+      <h5 className={titleClassName}>发表评论</h5>
 
       {!isAuthenticated && (
         <div className={styles.loginPrompt}>
@@ -325,7 +350,7 @@ export const CreateCommentForm = ({
         type="button"
         onClick={handleSubmit}
         disabled={!isAuthenticated || !hasPost || disabled || !content.trim() || uploading}
-        className={styles.submitButton}
+        className={submitClassName}
       >
         发表评论
       </button>

@@ -12,6 +12,10 @@
 
 ## AI 协作规则
 
+**先说明方案再动手**:
+- ✅ 编写任何代码之前，必须先描述你的方案并等待批准
+- ✅ 如需求不明确，必须先提出问题并澄清后再写代码
+
 **禁止直接执行**:
 - ❌ 包安装: `dotnet add package`, `npm install`
 - ❌ 项目启动: `dotnet run`, `npm run dev` (用于测试)
@@ -337,8 +341,9 @@ export async function getProducts() {
 2. **Mapping**: `Radish.Extension/AutoMapperExtension/CustomProfiles`
 3. **Repository**: 大多数用 `IBaseRepository<TEntity>` 即可。仅复杂查询才创建自定义仓储
 4. **Service**:
-   - **简单 CRUD**: 直接用 `IBaseService<TEntity, TVo>`
+   - **简单 CRUD**: 直接用 `IBaseService<TEntity, TVo>`，无需创建自定义 Service
    - **复杂逻辑**: 创建自定义 Service (继承 `BaseService<TEntity, TVo>`)
+   - BaseService 已提供完整 CRUD + 聚合查询 + 工具方法，详见 `IBaseService.cs`
 5. **Controller**: 注入 Service (简单用 `IBaseService`，复杂用自定义 `IXxxService`)
 6. **示例**: `Radish.Api/Radish.Api.http`
 7. **测试**: `Radish.Api.Tests/Controllers/`

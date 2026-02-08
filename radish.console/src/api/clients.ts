@@ -1,16 +1,14 @@
 import {
   configureApiClient,
-  configureErrorHandling,
   apiGet,
   apiPost,
   apiPut,
   apiDelete,
-  message,
-} from '@radish/ui';
+} from '@radish/http';
 import type {
   PagedResponse,
   ParsedApiResponse,
-} from '@radish/ui';
+} from '@radish/http';
 import type {
   OidcClient,
   CreateClientRequest,
@@ -34,9 +32,6 @@ configureApiClient({
     await autoRefreshTokenInterceptor();
   },
 });
-
-// 配置错误处理
-configureErrorHandling({});
 
 /**
  * OIDC 客户端 API

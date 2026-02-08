@@ -1,17 +1,17 @@
 import { formatCoinAmount, formatDateTime, getTransactionTypeDisplay, getTransactionStatusColor, getSafeUserDisplayName } from '../../utils';
 import { useUserStore } from '@/stores/userStore';
-import type { CoinTransactionVo } from '@/api/coin';
+import type { CoinTransaction } from '@/api/coin';
 import styles from './TransactionList.module.css';
 
 interface TransactionListProps {
-  transactions: CoinTransactionVo[];
+  transactions: CoinTransaction[];
   loading: boolean;
   error: string | null;
   displayMode: 'carrot' | 'white';
   currentPage: number;
   totalPages: number;
   totalCount: number;
-  onTransactionClick: (transaction: CoinTransactionVo) => void;
+  onTransactionClick: (transaction: CoinTransaction) => void;
   onPageChange: (page: number) => void;
   onRefresh: () => void;
 }
@@ -32,6 +32,7 @@ export const TransactionList = ({
   onRefresh
 }: TransactionListProps) => {
   const { userId } = useUserStore();
+  const currentUserId = String(userId);
   const useWhiteRadish = displayMode === 'white';
 
   if (loading) {
@@ -185,16 +186,16 @@ export const TransactionList = ({
                     {getTransactionTypeDisplay(transaction.voTransactionType)}
                   </div>
                   <div className={styles.transactionParties}>
-                    {renderTransactionParties(transaction, userId)}
+                    {renderTransactionParties(transaction, currentUserId)}
                   </div>
                 </div>
 
                 <div className={styles.transactionRight}>
                   <div className={styles.transactionAmount}>
                     <span className={`${styles.amountValue} ${
-                      getAmountDirection(transaction, userId) === 'in' ? styles.positive : styles.negative
+                      getAmountDirection(transaction, currentUserId) === 'in' ? styles.positive : styles.negative
                     }`}>
-                      {getAmountDirection(transaction, userId) === 'in' ? '+' : '-'}
+                      {getAmountDirection(transaction, currentUserId) === 'in' ? '+' : '-'}
                       {formatCoinAmount(Math.abs(transaction.voAmount), true, useWhiteRadish)}
                     </span>
                   </div>
@@ -206,17 +207,17 @@ export const TransactionList = ({
 
               <div className={styles.transactionDetails}>
                 <div className={styles.transactionTime}>
-                  {formatDateTime(transaction.voCreatedAt)}
+                  {formatDateTime(transaction.voCreateTime)}
                 </div>
                 <div className={styles.transactionNo}>
                   流水号: {transaction.voTransactionNo}
                 </div>
               </div>
 
-              {transaction.voNote && (
+              {transaction.voRemark && (
                 <div className={styles.transactionNote}>
                   <span className={styles.noteIcon}>💬</span>
-                  {transaction.voNote}
+                  {transaction.voRemark}
                 </div>
               )}
             </div>
@@ -256,7 +257,7 @@ const getTransactionIcon = (transactionType: string): string => {
 /**
  * 渲染交易参与方信息
  */
-const renderTransactionParties = (transaction: CoinTransactionVo, currentUserId: number): string => {
+const renderTransactionParties = (transaction: CoinTransaction, currentUserId: string): string => {
   const fromUser = transaction.voFromUserName;
   const toUser = transaction.voToUserName;
 
@@ -278,7 +279,7 @@ const renderTransactionParties = (transaction: CoinTransactionVo, currentUserId:
 /**
  * 获取金额方向（收入/支出）
  */
-const getAmountDirection = (transaction: CoinTransactionVo, currentUserId: number): 'in' | 'out' => {
+const getAmountDirection = (transaction: CoinTransaction, currentUserId: string): 'in' | 'out' => {
   // 如果当前用户是接收方，则为收入
   if (transaction.voToUserId === currentUserId) {
     return 'in';

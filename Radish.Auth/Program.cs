@@ -134,6 +134,15 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
     options.KnownProxies.Clear();
 });
 
+// 配置 Antiforgery，确保在 Gateway 代理场景下 Cookie 能正确设置
+// SameSite=None 需要 Secure=true，通过 ForwardedHeaders 识别原始 HTTPS 请求
+builder.Services.AddAntiforgery(options =>
+{
+    options.Cookie.Name = ".Radish.Auth.Antiforgery";
+    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
 // 添加控制器 + 视图（用于登录页）
 builder.Services.AddControllersWithViews()
     .AddJsonOptions(options =>
@@ -151,6 +160,20 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/Account/Login";
         options.LogoutPath = "/Account/Logout";
+
+        // Cookie 配置：确保在 Gateway 代理场景下能正确传递和清除
+        options.Cookie.Name = ".Radish.Auth.Session";
+        options.Cookie.HttpOnly = true;
+        // SameSite=None 允许跨站请求携带 Cookie（Gateway 代理场景必需）
+        // 注意：SameSite=None 必须配合 Secure=true
+        options.Cookie.SameSite = SameSiteMode.None;
+        // 必须使用 Always，因为 SameSite=None 要求 Secure=true
+        // ForwardedHeaders 中间件会根据 X-Forwarded-Proto 识别原始 HTTPS 请求
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+
+        // 会话过期时间
+        options.ExpireTimeSpan = TimeSpan.FromHours(2);
+        options.SlidingExpiration = true;
     });
 
 // OpenIddict 所用 EF Core DbContext（仅承载 OpenIddict 实体）
@@ -246,6 +269,16 @@ builder.Services.AddOpenIddict()
 
         // 注册允许的 Scopes
         options.RegisterScopes("openid", "profile", "email", "offline_access", "radish-api");
+
+        // 从配置读取并设置令牌生命周期（分钟）
+        var serverSection = builder.Configuration.GetSection("OpenIddict:Server");
+        var accessMinutes = serverSection.GetValue<int?>("AccessTokenLifetime") ?? 60;
+        var refreshMinutes = serverSection.GetValue<int?>("RefreshTokenLifetime") ?? 43200;
+        var codeMinutes = serverSection.GetValue<int?>("AuthorizationCodeLifetime") ?? 5;
+
+        options.SetAccessTokenLifetime(TimeSpan.FromMinutes(accessMinutes));
+        options.SetRefreshTokenLifetime(TimeSpan.FromMinutes(refreshMinutes));
+        options.SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(codeMinutes));
 
         // 配置加密和签名证书（默认使用 certs/dev-auth-cert.pfx）
         var useDevelopmentKeys = openIddictCertificateSection.GetValue<bool?>("UseDevelopmentKeys") ?? false;

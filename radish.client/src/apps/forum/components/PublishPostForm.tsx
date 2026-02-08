@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
-import { MarkdownEditor } from '@radish/ui';
+import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { getOidcLoginUrl } from '@/api/forum';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import styles from './PublishPostForm.module.css';
@@ -14,6 +14,19 @@ interface PublishPostFormProps {
 }
 
 const DRAFT_STORAGE_KEY = 'forum_post_draft';
+const IMAGE_SCALE_OPTIONS = [30, 50, 70, 100] as const;
+
+const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
+  const params = new URLSearchParams();
+  if (fullUrl) {
+    params.set('full', fullUrl);
+  }
+  if (scalePercent && Number.isFinite(scalePercent)) {
+    params.set('scale', String(Math.min(Math.max(scalePercent, 10), 100)));
+  }
+  const meta = params.toString();
+  return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
+};
 
 export const PublishPostForm = ({
   isAuthenticated,
@@ -26,6 +39,7 @@ export const PublishPostForm = ({
   const [addWatermark, setAddWatermark] = useState(false);
   const [watermarkText, setWatermarkText] = useState('Radish');
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
+  const [imageScalePercent, setImageScalePercent] = useState<number>(70);
   const { t } = useTranslation();
 
   // 组件加载时恢复草稿
@@ -94,8 +108,8 @@ export const PublishPostForm = ({
       }, t);
 
       return {
-        url: result.url,
-        thumbnailUrl: result.thumbnailUrl
+        url: appendImageMeta(result.voUrl, result.voUrl, imageScalePercent),
+        thumbnailUrl: result.voThumbnailUrl
       };
     } catch (error) {
       log.error('图片上传失败:', error);
@@ -112,8 +126,8 @@ export const PublishPostForm = ({
       }, t);
 
       return {
-        url: result.url,
-        fileName: result.originalName || file.name
+        url: result.voUrl,
+        fileName: result.voOriginalName || file.name
       };
     } catch (error) {
       log.error('文档上传失败:', error);
@@ -193,6 +207,22 @@ export const PublishPostForm = ({
         onImageUpload={handleImageUpload}
         onDocumentUpload={handleDocumentUpload}
       />
+
+      {isAuthenticated && (
+        <div className={styles.imageScaleRow}>
+          <span className={styles.imageScaleLabel}>正文图片缩放</span>
+          <select
+            className={styles.imageScaleSelect}
+            value={imageScalePercent}
+            onChange={e => setImageScalePercent(Number(e.target.value))}
+            disabled={disabled}
+          >
+            {IMAGE_SCALE_OPTIONS.map(scale => (
+              <option key={scale} value={scale}>{scale}%</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <button
         type="button"

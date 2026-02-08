@@ -6,12 +6,17 @@
   bottom: 0;
   padding: 2rem;
   padding-top: 80px; /* 为顶部 Dock 留出空间，避免桌面图标被遮挡 */
-  display: grid;
-  grid-template-columns: repeat(auto-fill, 100px);
-  grid-auto-rows: 120px;
+  display: flex;
+  flex-direction: column; /* 纵向排列 */
+  flex-wrap: wrap; /* 允许换列 */
+  align-content: flex-start; /* 列靠左对齐 */
   gap: 1rem;
-  align-content: start;
   overflow: auto;
+}
+
+.desktop > * {
+  width: 70px;
+  height: 80px;
 }
 
 /* 自定义滚动条 */

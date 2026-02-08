@@ -39,19 +39,17 @@ export interface SecurityStatus {
   lockedUntil?: string;
 }
 
-// 统计数据
+// 统计数据（直接使用后端 Vo 字段名）
 export interface StatisticsData {
-  monthlyIncome: number[];
-  monthlyExpense: number[];
-  categoryStats: {
-    category: string;
-    amount: number;
-    count: number;
+  voCategoryStats: {
+    voCategory: string;
+    voAmount: number;
+    voCount: number;
   }[];
-  trendData: {
-    date: string;
-    income: number;
-    expense: number;
+  voTrendData: {
+    voDate: string;
+    voIncome: number;
+    voExpense: number;
   }[];
 }
 

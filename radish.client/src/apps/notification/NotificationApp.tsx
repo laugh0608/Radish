@@ -1,10 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { log } from '@/utils/logger';
-import { NotificationList, type NotificationItemData } from '@radish/ui';
-import { notificationApi, type Notification } from '@/api/notification';
-import { useNotificationStore } from '@/stores/notificationStore';
+import { NotificationList } from '@radish/ui/notification-list';
+import type { NotificationItemData } from '@radish/ui/notification';
+import { notificationApi, type UserNotificationVo } from '@/api/notification';
+import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
-import { toast } from '@radish/ui';
+import { toast } from '@radish/ui/toast';
 import styles from './NotificationApp.module.css';
 
 /**
@@ -19,31 +20,92 @@ export const NotificationApp = () => {
 
   const [notifications, setNotifications] = useState<NotificationItemData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [pageIndex, setPageIndex] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'mention' | 'comment' | 'like'>('all');
+  const pageSize = 20;
+
+  const mapApiNotificationToStore = (n: UserNotificationVo): NotificationItem => {
+    const notification = n.voNotification;
+    return {
+      id: n.voNotificationId,
+      type: mapNotificationTypeToStore(notification?.voType || 'System'),
+      title: notification?.voTitle || '',
+      content: notification?.voContent || '',
+      isRead: n.voIsRead,
+      createdAt: n.voCreateTime,
+      businessId: notification?.voBusinessId,
+      businessType: notification?.voBusinessType,
+      triggerId: notification?.voTriggerId,
+      triggerName: notification?.voTriggerName,
+      triggerAvatar: notification?.voTriggerAvatar
+    };
+  };
+
+  const mapApiNotificationToUi = (n: UserNotificationVo): NotificationItemData => {
+    const notification = n.voNotification;
+    return {
+      id: n.voNotificationId,
+      type: mapNotificationTypeToStore(notification?.voType || 'System'),
+      title: notification?.voTitle || '',
+      content: notification?.voContent || '',
+      priority: notification?.voPriority ?? 1,
+      businessType: notification?.voBusinessType,
+      businessId: notification?.voBusinessId,
+      triggerId: notification?.voTriggerId,
+      triggerName: notification?.voTriggerName,
+      triggerAvatar: notification?.voTriggerAvatar,
+      isRead: n.voIsRead,
+      createdAt: n.voCreateTime
+    };
+  };
+
+  const mapStoreToUi = (items: NotificationItem[]): NotificationItemData[] => {
+    return items.map((n) => ({
+      id: n.id,
+      type: n.type,
+      title: n.title,
+      content: n.content,
+      priority: 1,
+      businessType: n.businessType,
+      businessId: n.businessId,
+      triggerId: n.triggerId,
+      triggerName: n.triggerName,
+      triggerAvatar: n.triggerAvatar,
+      isRead: n.isRead,
+      createdAt: n.createdAt
+    }));
+  };
+
+  const mergeNotifications = (
+    base: NotificationItemData[],
+    incoming: NotificationItemData[]
+  ) => {
+    if (incoming.length === 0) return base;
+    const baseMap = new Map<number, NotificationItemData>();
+    for (const item of base) {
+      baseMap.set(item.id, item);
+    }
+    const result: NotificationItemData[] = [];
+    const seen = new Set<number>();
+    for (const item of incoming) {
+      const existing = baseMap.get(item.id);
+      result.push(existing ? { ...existing, ...item } : item);
+      seen.add(item.id);
+    }
+    for (const item of base) {
+      if (!seen.has(item.id)) {
+        result.push(item);
+      }
+    }
+    return result;
+  };
 
   // 将 Store 中的通知转换为 UI 组件需要的格式
   useEffect(() => {
-    const converted: NotificationItemData[] = [];
-    const seen = new Set<number>();
-
-    for (const n of recentNotifications) {
-      if (seen.has(n.id)) continue;
-      seen.add(n.id);
-      converted.push({
-        id: n.id,
-        type: n.type,
-        title: n.title,
-        content: n.content,
-        priority: 1,
-        businessType: n.sourceType,
-        businessId: n.sourceId,
-        triggerId: n.actorId,
-        triggerName: n.actorName,
-        triggerAvatar: n.actorAvatar,
-        isRead: n.isRead,
-        createdAt: n.createdAt
-      });
-    }
-    setNotifications(converted);
+    const converted = mapStoreToUi(recentNotifications);
+    setNotifications(prev => mergeNotifications(prev, converted));
   }, [recentNotifications]);
 
   // 初始加载通知列表
@@ -57,30 +119,27 @@ export const NotificationApp = () => {
       try {
         const result = await notificationApi.getMyNotifications({
           pageIndex: 1,
-          pageSize: 20
+          pageSize
         });
 
         if (result && result.data) {
           const store = useNotificationStore.getState();
+          // 从嵌套的 UserNotificationVo 结构转换为 NotificationItem
+          // 这是业务层的职责：将后端 VO 转换为内部数据结构
           store.setRecentNotifications(
-            result.data.map((n: Notification) => ({
-            id: n.voId,
-            type: mapNotificationTypeToStore(n.voType),
-            title: n.voTitle,
-            content: n.voContent,
-            isRead: n.voIsRead,
-            createdAt: n.voCreateTime,
-            sourceId: n.voRelatedId,
-            sourceType: n.voRelatedType,
-            actorId: 0,
-            actorName: '',
-            actorAvatar: ''
-          }))
+            result.data.map(mapApiNotificationToStore)
           );
+          const firstPage = result.data.map(mapApiNotificationToUi);
+          setNotifications(firstPage);
+          setPageIndex(result.page);
+          setHasMore(result.page < result.pageCount);
+        } else {
+          setHasMore(false);
         }
       } catch (error) {
         log.error('加载通知列表失败:', error);
         toast.error('加载通知列表失败');
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
@@ -88,6 +147,60 @@ export const NotificationApp = () => {
 
     void loadNotifications();
   }, []);
+
+  const handleLoadMore = useCallback(async () => {
+    if (loadingMore || loading || !hasMore) return;
+    const nextPage = pageIndex + 1;
+    setLoadingMore(true);
+    try {
+      const result = await notificationApi.getMyNotifications({
+        pageIndex: nextPage,
+        pageSize
+      });
+      if (result && result.data) {
+        const nextItems = result.data.map(mapApiNotificationToUi);
+        setNotifications(prev => {
+          const indexMap = new Map<number, number>();
+          const merged = prev.slice();
+          merged.forEach((item, idx) => indexMap.set(item.id, idx));
+          for (const item of nextItems) {
+            const existingIndex = indexMap.get(item.id);
+            if (existingIndex !== undefined) {
+              merged[existingIndex] = { ...merged[existingIndex], ...item };
+            } else {
+              indexMap.set(item.id, merged.length);
+              merged.push(item);
+            }
+          }
+          return merged;
+        });
+        setPageIndex(result.page);
+        setHasMore(result.page < result.pageCount);
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      log.error('加载更多通知失败:', error);
+      toast.error('加载更多通知失败');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [hasMore, loading, loadingMore, pageIndex, pageSize]);
+
+  const filteredNotifications = useMemo(() => {
+    switch (activeFilter) {
+      case 'unread':
+        return notifications.filter(n => !n.isRead);
+      case 'mention':
+        return notifications.filter(n => n.type === 'mention');
+      case 'comment':
+        return notifications.filter(n => n.type === 'reply');
+      case 'like':
+        return notifications.filter(n => n.type === 'like');
+      default:
+        return notifications;
+    }
+  }, [activeFilter, notifications]);
 
   // 点击通知
   const handleNotificationClick = useCallback((notification: NotificationItemData) => {
@@ -122,6 +235,7 @@ export const NotificationApp = () => {
       // 更新 Store 状态
       const store = useNotificationStore.getState();
       store.markAsRead([id]);
+      setNotifications(prev => prev.map(n => (n.id === id ? { ...n, isRead: true } : n)));
 
       toast.success('已标记为已读');
     } catch (error) {
@@ -146,6 +260,7 @@ export const NotificationApp = () => {
       // 更新 Store 状态
       const store = useNotificationStore.getState();
       store.markAllAsRead();
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
 
       toast.success('已标记全部为已读');
     } catch (error) {
@@ -162,6 +277,7 @@ export const NotificationApp = () => {
       // 更新 Store：从列表中移除该通知
       const store = useNotificationStore.getState();
       store.removeNotification(id);
+      setNotifications(prev => prev.filter(n => n.id !== id));
 
       toast.success('通知已删除');
     } catch (error) {
@@ -173,22 +289,64 @@ export const NotificationApp = () => {
   return (
     <div className={styles.notificationApp}>
       <div className={styles.header}>
-        <h1 className={styles.title}>通知中心</h1>
-        <div className={styles.actions}>
-          <span className={styles.count}>
-            {unreadCount > 0 ? `${unreadCount} 条未读` : '全部已读'}
-          </span>
-          {unreadCount > 0 && (
-            <button className={styles.markAllBtn} onClick={handleMarkAllAsRead}>
-              全部已读
-            </button>
-          )}
+        <div className={styles.headerTop}>
+          <h1 className={styles.title}>通知中心</h1>
+          <div className={styles.actions}>
+            <span className={styles.count}>
+              {unreadCount > 0 ? `${unreadCount} 条未读` : '全部已读'}
+            </span>
+            {unreadCount > 0 && (
+              <button className={styles.markAllBtn} onClick={handleMarkAllAsRead}>
+                全部已读
+              </button>
+            )}
+          </div>
+        </div>
+        <div className={styles.filters}>
+          <button
+            type="button"
+            className={`${styles.filterTab} ${activeFilter === 'all' ? styles.filterActive : ''}`}
+            onClick={() => setActiveFilter('all')}
+          >
+            全部
+          </button>
+          <button
+            type="button"
+            className={`${styles.filterTab} ${activeFilter === 'unread' ? styles.filterActive : ''}`}
+            onClick={() => setActiveFilter('unread')}
+          >
+            未读
+          </button>
+          <button
+            type="button"
+            className={`${styles.filterTab} ${activeFilter === 'mention' ? styles.filterActive : ''}`}
+            onClick={() => setActiveFilter('mention')}
+          >
+            @我
+          </button>
+          <button
+            type="button"
+            className={`${styles.filterTab} ${activeFilter === 'comment' ? styles.filterActive : ''}`}
+            onClick={() => setActiveFilter('comment')}
+          >
+            评论
+          </button>
+          <button
+            type="button"
+            className={`${styles.filterTab} ${activeFilter === 'like' ? styles.filterActive : ''}`}
+            onClick={() => setActiveFilter('like')}
+          >
+            点赞
+          </button>
         </div>
       </div>
       <div className={styles.content}>
         <NotificationList
-          notifications={notifications}
+          notifications={filteredNotifications}
           loading={loading}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
+          onEndReached={handleLoadMore}
           onNotificationClick={handleNotificationClick}
           onMarkAsRead={handleMarkAsRead}
           onDelete={handleDelete}
@@ -200,6 +358,7 @@ export const NotificationApp = () => {
 
 /**
  * 将 API 返回的通知类型映射到 Store 的类型
+ * 注意：这是类型枚举映射，不是字段名映射
  */
 function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention' | 'like' | 'follow' {
   const typeMap: Record<string, 'system' | 'reply' | 'mention' | 'like' | 'follow'> = {

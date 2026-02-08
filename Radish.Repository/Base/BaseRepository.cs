@@ -1,15 +1,16 @@
 using System.Linq.Expressions;
-using Radish.IRepository;
-using Radish.Repository.UnitOfWorks;
-using SqlSugar;
 using System.Reflection;
 using Radish.Common.CoreTool;
 using Radish.Common.TenantTool;
 using Radish.Infrastructure.Tenant;
+using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.Model;
 using Radish.Model.Root;
+using Radish.Repository.UnitOfWorks;
+using SqlSugar;
 
-namespace Radish.Repository;
+namespace Radish.Repository.Base;
 
 /// <summary>泛型基类仓储</summary>
 // 这里的 where TEntity : class, new() 的意思是对泛型进行约束，首先必须是类 class，其次必须可以被实例化 new()
@@ -17,6 +18,10 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 {
     private readonly SqlSugarScope _dbScopeBase;
     private readonly IUnitOfWorkManage _unitOfWorkManage;
+
+    /// <summary>供 BaseRepository 及子类使用的 ISqlSugarClient 数据库实例</summary>
+    /// <remarks>支持多租户切换数据库</remarks>
+    protected ISqlSugarClient DbProtectedClient => DbClientBase;
 
     /// <summary>供 BaseRepository 内部使用 ISqlSugarClient 数据库实例</summary>
     /// <remarks>支持多租户切换数据库</remarks>
@@ -565,6 +570,87 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         return await DbClientBase.Queryable<TEntity>()
             .WhereIF(whereExpression != null, whereExpression)
             .SumAsync(selectExpression);
+    }
+
+    /// <summary>根据多个 ID 批量查询实体</summary>
+    /// <param name="ids">ID 列表</param>
+    /// <returns>实体列表</returns>
+    public async Task<List<TEntity>> QueryByIdsAsync(List<long> ids)
+    {
+        if (ids == null || !ids.Any())
+        {
+            return new List<TEntity>();
+        }
+
+        return await DbClientBase.Queryable<TEntity>().In(ids).ToListAsync();
+    }
+
+    /// <summary>查询字段最大值（聚合）</summary>
+    /// <typeparam name="TResult">返回类型</typeparam>
+    /// <param name="selectExpression">选择要查询最大值的字段</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>最大值</returns>
+    public async Task<TResult> QueryMaxAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await DbClientBase.Queryable<TEntity>()
+            .WhereIF(whereExpression != null, whereExpression)
+            .MaxAsync(selectExpression);
+    }
+
+    /// <summary>查询字段最小值（聚合）</summary>
+    /// <typeparam name="TResult">返回类型</typeparam>
+    /// <param name="selectExpression">选择要查询最小值的字段</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>最小值</returns>
+    public async Task<TResult> QueryMinAsync<TResult>(
+        Expression<Func<TEntity, TResult>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await DbClientBase.Queryable<TEntity>()
+            .WhereIF(whereExpression != null, whereExpression)
+            .MinAsync(selectExpression);
+    }
+
+    /// <summary>查询字段平均值（聚合）</summary>
+    /// <param name="selectExpression">选择要查询平均值的字段</param>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <returns>平均值</returns>
+    public async Task<decimal> QueryAverageAsync(
+        Expression<Func<TEntity, decimal>> selectExpression,
+        Expression<Func<TEntity, bool>>? whereExpression = null)
+    {
+        return await DbClientBase.Queryable<TEntity>()
+            .WhereIF(whereExpression != null, whereExpression)
+            .AvgAsync(selectExpression);
+    }
+
+    /// <summary>带排序的列表查询</summary>
+    /// <param name="whereExpression">Where 表达式，可空</param>
+    /// <param name="orderByExpression">排序表达式</param>
+    /// <param name="orderByType">排序类型</param>
+    /// <param name="take">获取数量，0 表示不限制</param>
+    /// <returns>实体列表</returns>
+    public async Task<List<TEntity>> QueryWithOrderAsync(
+        Expression<Func<TEntity, bool>>? whereExpression,
+        Expression<Func<TEntity, object>> orderByExpression,
+        OrderByType orderByType = OrderByType.Asc,
+        int take = 0)
+    {
+        var query = DbClientBase.Queryable<TEntity>()
+            .WhereIF(whereExpression != null, whereExpression);
+
+        query = orderByType == OrderByType.Asc
+            ? query.OrderBy(orderByExpression)
+            : query.OrderByDescending(orderByExpression);
+
+        if (take > 0)
+        {
+            query = query.Take(take);
+        }
+
+        return await query.ToListAsync();
     }
 
     #endregion

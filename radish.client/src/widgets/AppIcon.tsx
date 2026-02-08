@@ -1,4 +1,4 @@
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import type { AppDefinition } from '@/desktop/types';
 import styles from './AppIcon.module.css';
 
@@ -32,7 +32,7 @@ export const AppIcon = ({ app, onDoubleClick }: AppIconProps) => {
     >
       <div className={styles.iconImage}>
         {app.icon.startsWith('mdi:') || app.icon.startsWith('ic:') ? (
-          <Icon icon={app.icon} size={48} />
+          <Icon icon={app.icon} size={36} />
         ) : (
           <span className={styles.emoji}>{app.icon}</span>
         )}

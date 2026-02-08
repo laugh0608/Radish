@@ -1,21 +1,21 @@
 .container {
-  padding: 24px;
+  padding: 16px;
   max-width: 1400px;
   margin: 0 auto;
 }
 
 .header {
-  margin-bottom: 24px;
-  padding-bottom: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
   border-bottom: 2px solid #e0e0e0;
 }
 
 .title {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   margin: 0;
-  font-size: 28px;
+  font-size: 22px;
   font-weight: 700;
   color: #1a1a1a;
 }
@@ -65,51 +65,89 @@
 }
 
 /* 经验值概览 */
+.experienceBarSection {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-bottom: 16px;
+}
+
+.expBarGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.expBarItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.expBarLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
 .overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  margin-bottom: 32px;
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
 .statCard {
   background: white;
-  padding: 20px;
-  border-radius: 12px;
+  padding: 10px 8px;
+  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   text-align: center;
 }
 
 .statLabel {
-  font-size: 14px;
+  font-size: 12px;
   color: #666;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .statValue {
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 700;
   color: #667eea;
 }
 
 /* 图表区域 */
+.chartContainer {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
 .chartSection {
   background: white;
-  padding: 24px;
-  border-radius: 12px;
+  padding: 16px;
+  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  margin-bottom: 24px;
+  min-height: 280px;
+}
+
+.chartSection.pieChart {
+  min-height: 360px;
 }
 
 .chartHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .chartTitle {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   color: #1a1a1a;
   margin: 0;
@@ -117,16 +155,16 @@
 
 .chartControls {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .controlButton {
-  padding: 6px 16px;
+  padding: 4px 12px;
   background: white;
   border: 1px solid #ddd;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
   transition: all 0.2s;
 }
@@ -145,41 +183,87 @@
 /* 交易明细 */
 .transactionSection {
   background: white;
-  padding: 24px;
-  border-radius: 12px;
+  padding: 16px;
+  border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .sectionTitle {
-  font-size: 20px;
+  font-size: 16px;
   font-weight: 600;
   color: #1a1a1a;
-  margin: 0 0 20px 0;
+  margin: 0 0 12px 0;
 }
 
 .transactionList {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .transactionItem {
-  display: flex;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 16px;
-  padding: 16px;
-  background: #f9f9f9;
-  border-radius: 8px;
-  transition: all 0.2s;
+  gap: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  border-radius: 12px;
+  border: 1px solid #eef0f6;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 
 .transactionItem:hover {
-  background: #f0f0f0;
+  transform: translateY(-1px);
+  border-color: #dbe2f0;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
-.txIcon {
-  color: #667eea;
+.transactionItem::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 12px 0 0 12px;
+  background: #e5e7eb;
+}
+
+.positive::before {
+  background: linear-gradient(180deg, #34d399 0%, #22c55e 100%);
+}
+
+.negative::before {
+  background: linear-gradient(180deg, #f97316 0%, #ef4444 100%);
+}
+
+.txBadge {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f2937;
+  background: #eef2ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.txBadgePositive {
+  color: #16a34a;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+}
+
+.txBadgeNegative {
+  color: #dc2626;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
 }
 
 .txInfo {
@@ -187,29 +271,84 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+}
+
+.txTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .txType {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: #1a1a1a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.txLevelUp {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7c2d12;
+  background: #ffedd5;
+  border-radius: 999px;
+  letter-spacing: 0.2px;
+}
+
+.txMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .txTime {
-  font-size: 13px;
+  font-size: 12px;
   color: #999;
 }
 
+.txLevelChange {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
 .txRemark {
-  font-size: 13px;
-  color: #666;
-  font-style: italic;
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.txAmountWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
 .txAmount {
   font-size: 20px;
-  font-weight: 700;
-  color: #43e97b;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: 0.3px;
+}
+
+.positive .txAmount {
+  color: #16a34a;
+}
+
+.negative .txAmount {
+  color: #dc2626;
+}
+
+.txBalance {
+  font-size: 11px;
+  color: #94a3b8;
 }
 
 /* 分页 */
@@ -217,8 +356,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px;
-  padding-top: 24px;
+  gap: 12px;
+  padding-top: 16px;
   border-top: 1px solid #e0e0e0;
 }
 
@@ -226,12 +365,12 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 8px 16px;
+  padding: 6px 12px;
   background: white;
   border: 1px solid #ddd;
   border-radius: 6px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
   transition: all 0.2s;
 }
@@ -248,19 +387,24 @@
 }
 
 .pageInfo {
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
-  min-width: 120px;
+  min-width: 100px;
   text-align: center;
 }
 
 @media (max-width: 768px) {
   .container {
-    padding: 16px;
+    padding: 12px;
   }
 
   .overview {
-    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .chartContainer {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .chartHeader {
@@ -270,7 +414,18 @@
   }
 
   .transactionItem {
-    padding: 12px;
+    padding: 12px 12px 12px 14px;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 8px;
+  }
+
+  .txInfo {
+    grid-column: 2 / -1;
+  }
+
+  .txTime {
+    text-align: left;
   }
 
   .txType {
@@ -279,5 +434,10 @@
 
   .txAmount {
     font-size: 18px;
+  }
+
+  .txAmountWrap {
+    grid-column: 2 / -1;
+    align-items: flex-start;
   }
 }

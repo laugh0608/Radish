@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { useStatistics } from '../../hooks';
 import { StatisticsOverview } from './StatisticsOverview';
-import { IncomeExpenseChart } from './IncomeExpenseChart';
-import { CategoryBreakdown } from './CategoryBreakdown';
-import { TrendAnalysis } from './TrendAnalysis';
 import styles from './Statistics.module.css';
+
+const IncomeExpenseChart = lazy(() =>
+  import('./IncomeExpenseChart').then((module) => ({ default: module.IncomeExpenseChart }))
+);
+const CategoryBreakdown = lazy(() =>
+  import('./CategoryBreakdown').then((module) => ({ default: module.CategoryBreakdown }))
+);
+const TrendAnalysis = lazy(() =>
+  import('./TrendAnalysis').then((module) => ({ default: module.TrendAnalysis }))
+);
 
 type StatisticsTab = 'overview' | 'chart' | 'category' | 'trend';
 type TimeRange = 'month' | 'quarter' | 'year';
@@ -79,7 +86,6 @@ export const Statistics = () => {
 
   return (
     <div className={styles.container}>
-      {/* 页面标题和操作 */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
           <h2 className={styles.title}>收支统计</h2>
@@ -120,7 +126,6 @@ export const Statistics = () => {
         </div>
       </div>
 
-      {/* 导航标签 */}
       <div className={styles.navigation}>
         <div className={styles.tabList}>
           <button
@@ -154,9 +159,10 @@ export const Statistics = () => {
         </div>
       </div>
 
-      {/* 内容区域 */}
       <div className={styles.content}>
-        {renderTabContent()}
+        <Suspense fallback={<div>统计模块加载中...</div>}>
+          {renderTabContent()}
+        </Suspense>
       </div>
     </div>
   );

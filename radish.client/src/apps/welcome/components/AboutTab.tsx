@@ -1,4 +1,4 @@
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import { aboutContent } from '../data/aboutContent';
 import styles from './AboutTab.module.css';
 

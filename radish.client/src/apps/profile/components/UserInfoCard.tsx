@@ -1,18 +1,26 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { log } from '@/utils/logger';
-import { Button, ConfirmDialog, FileUpload, Icon, Input, Modal, ExperienceBar } from '@radish/ui';
-import { experienceApi, type ExperienceData } from '@/api/experience';
-import type { UploadResult } from '@radish/ui';
-import { uploadImage } from '@/api/attachment';
+import { apiGet, configureApiClient } from '@radish/http';
+import type { ApiResponse } from '@radish/http';
+import { Button } from '@radish/ui/button';
+import { ConfirmDialog } from '@radish/ui/confirm-dialog';
+import { Icon } from '@radish/ui/icon';
+import { Input } from '@radish/ui/input';
+import { Modal } from '@radish/ui/modal';
 import { useTranslation } from 'react-i18next';
+import { useUserStore } from '@/stores/userStore';
 import styles from './UserInfoCard.module.css';
 
+const AvatarUploadModal = lazy(() =>
+  import('./AvatarUploadModal').then((module) => ({ default: module.AvatarUploadModal }))
+);
+
 interface UserStats {
-  postCount: number;
-  commentCount: number;
-  totalLikeCount: number;
-  postLikeCount: number;
-  commentLikeCount: number;
+  voPostCount: number;
+  voCommentCount: number;
+  voTotalLikeCount: number;
+  voPostLikeCount: number;
+  voCommentLikeCount: number;
 }
 
 interface UserInfoCardProps {
@@ -39,23 +47,23 @@ interface ProfileInfo {
 }
 
 interface CoinBalanceInfo {
-  userId: number | string;
-  balance: number | string;
-  balanceDisplay: string;
-  frozenBalance: number | string;
-  frozenBalanceDisplay: string;
-  totalEarned: number | string;
-  totalSpent: number | string;
-  totalTransferredIn: number | string;
-  totalTransferredOut: number | string;
-  createTime: string;
-  modifyTime?: string | null;
+  voUserId: number | string;
+  voBalance: number | string;
+  voBalanceDisplay: string;
+  voFrozenBalance: number | string;
+  voFrozenBalanceDisplay: string;
+  voTotalEarned: number | string;
+  voTotalSpent: number | string;
+  voTotalTransferredIn: number | string;
+  voTotalTransferredOut: number | string;
+  voCreateTime: string;
+  voModifyTime?: string | null;
 }
 
-interface ApiResponse<T> {
-  isSuccess: boolean;
-  messageInfo?: string;
-  responseData?: T;
+function getAuthHeader(): string | null {
+  if (typeof window === 'undefined') return null;
+  const token = window.localStorage.getItem('access_token');
+  return token ? `Bearer ${token}` : null;
 }
 
 function resolveUrl(apiBaseUrl: string, url: string | null | undefined): string | null {
@@ -82,27 +90,18 @@ function formatCoinAmount(amount: number | string | null | undefined): string {
   return negative ? `-${result}` : result;
 }
 
-async function readJsonIfPossible<T>(res: Response): Promise<T | null> {
-  const contentType = res.headers.get('content-type') || '';
-  if (!contentType.toLowerCase().includes('json')) return null;
-
-  try {
-    return (await res.json()) as T;
-  } catch {
-    return null;
-  }
-}
-
 export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBaseUrl }: UserInfoCardProps) => {
   const { t } = useTranslation();
+  const { setUser, tenantId, roles } = useUserStore();
 
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
   const [coinBalance, setCoinBalance] = useState<CoinBalanceInfo | null>(null);
-  const [experience, setExperience] = useState<ExperienceData | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   const [editUserName, setEditUserName] = useState('');
   const [editUserEmail, setEditUserEmail] = useState('');
@@ -110,70 +109,66 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
   const [editAge, setEditAge] = useState('');
   const [editAddress, setEditAddress] = useState('');
 
-  const getAuthHeader = () => {
-    if (typeof window === 'undefined') return undefined;
-    const token = window.localStorage.getItem('access_token');
-    return token ? `Bearer ${token}` : undefined;
-  };
+  useEffect(() => {
+    configureApiClient({
+      baseUrl: apiBaseUrl,
+    });
+  }, [apiBaseUrl]);
 
   useEffect(() => {
     void loadProfile();
-    void loadExperience();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
-
-  const loadExperience = async () => {
-    try {
-      const exp = await experienceApi.getMyExperience();
-      setExperience(exp);
-    } catch (error) {
-      log.error('加载经验值失败:', error);
-    }
-  };
 
   const loadProfile = async () => {
     setLoadingProfile(true);
     try {
       const [profileResult, coinBalanceResult] = await Promise.allSettled([
-        fetch(`${apiBaseUrl}/api/v1/User/GetMyProfile`, {
-          headers: {
-            Accept: 'application/json',
-            ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
-          }
-        }),
-        fetch(`${apiBaseUrl}/api/v1/Coin/GetBalance`, {
-          headers: {
-            Accept: 'application/json',
-            ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
-          }
-        })
+        apiGet<ProfileInfo>('/api/v1/User/GetMyProfile', { withAuth: true }),
+        apiGet<CoinBalanceInfo>('/api/v1/Coin/GetBalance', { withAuth: true })
       ]);
 
       if (profileResult.status === 'fulfilled') {
         const profileRes = profileResult.value;
-        const profileJson = await readJsonIfPossible<ApiResponse<ProfileInfo>>(profileRes);
 
-        if (profileRes.ok && profileJson?.isSuccess && profileJson.responseData) {
-          setProfile(profileJson.responseData);
+        log.debug('UserInfoCard', 'GetMyProfile 响应:', profileRes);
 
-          setEditUserName(profileJson.responseData.voUserName || userName);
-          setEditUserEmail(profileJson.responseData.voUserEmail || '');
-          setEditRealName(profileJson.responseData.voRealName || '');
-          setEditAge(String(profileJson.responseData.voAge ?? ''));
-          setEditAddress(profileJson.responseData.voAddress || '');
+        if (profileRes.ok && profileRes.data) {
+          const profile = profileRes.data;
+          log.debug('UserInfoCard', '头像信息:', {
+            avatarAttachmentId: profile.voAvatarAttachmentId,
+            avatarUrl: profile.voAvatarUrl,
+            avatarThumbnailUrl: profile.voAvatarThumbnailUrl
+          });
+          setProfile(profile);
+
+          // 更新全局 userStore，使 Dock 栏能实时刷新头像
+          setUser({
+            userId: profile.voUserId,
+            userName: profile.voUserName,
+            tenantId: tenantId,
+            roles: roles || ['User'],
+            avatarUrl: profile.voAvatarUrl || undefined,
+            avatarThumbnailUrl: profile.voAvatarThumbnailUrl || undefined
+          });
+
+          setEditUserName(profile.voUserName || userName);
+          setEditUserEmail(profile.voUserEmail || '');
+          setEditRealName(profile.voRealName || '');
+          setEditAge(String(profile.voAge ?? ''));
+          setEditAddress(profile.voAddress || '');
         }
       }
 
       if (coinBalanceResult.status === 'fulfilled') {
         const coinBalanceRes = coinBalanceResult.value;
-        const coinBalanceJson = await readJsonIfPossible<ApiResponse<CoinBalanceInfo>>(coinBalanceRes);
 
-        if (coinBalanceRes.ok && coinBalanceJson?.isSuccess && coinBalanceJson.responseData) {
-          setCoinBalance(coinBalanceJson.responseData);
+        if (coinBalanceRes.ok && coinBalanceRes.data) {
+          setCoinBalance(coinBalanceRes.data);
         }
       }
-    } catch {
-      // ignore
+    } catch (error) {
+      log.error('UserInfoCard', '加载用户资料失败:', error);
     } finally {
       setLoadingProfile(false);
     }
@@ -181,7 +176,15 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
 
   const avatarSrc = useMemo(() => {
     const url = profile?.voAvatarThumbnailUrl || profile?.voAvatarUrl;
-    return resolveUrl(apiBaseUrl, url) || undefined;
+    const resolved = resolveUrl(apiBaseUrl, url);
+
+    if (resolved) {
+      log.debug('UserInfoCard', '解析后的头像 URL:', resolved);
+    } else {
+      log.debug('UserInfoCard', '没有头像 URL');
+    }
+
+    return resolved || undefined;
   }, [apiBaseUrl, profile?.voAvatarThumbnailUrl, profile?.voAvatarUrl]);
 
   const handleOpenEdit = () => {
@@ -195,6 +198,20 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
     setIsEditOpen(true);
   };
 
+  const handleAvatarClick = () => {
+    setIsAvatarModalOpen(true);
+  };
+
+  const handleAvatarUploadSuccess = async () => {
+    setIsAvatarModalOpen(false);
+    await loadProfile();
+  };
+
+  const handleAvatarError = () => {
+    log.error('UserInfoCard', '头像加载失败:', avatarSrc);
+    setAvatarLoadError(true);
+  };
+
   const handleSave = async () => {
     setConfirmOpen(false);
     setSaveError(null);
@@ -202,13 +219,18 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
     const ageNum = editAge.trim() ? Number(editAge.trim()) : undefined;
 
     try {
+      const authHeader = getAuthHeader();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      };
+      if (authHeader) {
+        headers.Authorization = authHeader;
+      }
+
       const res = await fetch(`${apiBaseUrl}/api/v1/User/UpdateMyProfile`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
-        },
+        headers,
         body: JSON.stringify({
           userName: editUserName.trim() || undefined,
           userEmail: editUserEmail.trim() || undefined,
@@ -232,77 +254,48 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
     }
   };
 
-  const handleUploadAvatar = async (file: File) => {
-    const result = await uploadImage(
-      {
-        file,
-        businessType: 'Avatar',
-        generateThumbnail: true,
-        generateMultipleSizes: false,
-        addWatermark: false,
-        removeExif: true
-      },
-      t
-    );
-
-    await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
-      },
-      body: JSON.stringify({ attachmentId: result.id })
-    });
-
-    await loadProfile();
-
-    const uploadResult: UploadResult = {
-      id: result.id,
-      originalName: result.originalName,
-      url: result.url,
-      thumbnailUrl: result.thumbnailUrl,
-      fileSize: result.fileSize,
-      mimeType: result.mimeType
-    };
-
-    return uploadResult;
-  };
-
-  const handleRemoveAvatar = async () => {
-    try {
-      await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
-        },
-        body: JSON.stringify({ attachmentId: 0 })
-      });
-
-      await loadProfile();
-    } catch {
-      // ignore
-    }
-  };
-
   return (
     <div className={styles.card}>
       <div className={styles.header}>
-        <div className={styles.avatar}>
-          {avatarSrc ? (
-            <img className={styles.avatarImg} src={avatarSrc} alt={userName} />
-          ) : (
-            <Icon icon="mdi:account-circle" size={64} />
-          )}
+        <div className={styles.avatarSection} onClick={handleAvatarClick}>
+          <div className={styles.avatar}>
+            {avatarSrc ? (
+              <img
+                className={styles.avatarImg}
+                src={avatarSrc}
+                alt={userName}
+                onError={handleAvatarError}
+              />
+            ) : (
+              <Icon icon="mdi:account-circle" size={80} />
+            )}
+          </div>
+          <div className={styles.avatarHint}>点击更换头像</div>
         </div>
         <div className={styles.info}>
           <h2 className={styles.userName}>{profile?.voUserName || userName}</h2>
           <p className={styles.userId}>ID: {userId}</p>
           <div className={styles.profileMeta}>
-            <span className={styles.metaItem}>邮箱：{profile?.voUserEmail || '-'}</span>
-            <span className={styles.metaItem}>余额：{formatCoinAmount(coinBalance?.balance)}</span>
+            <div className={styles.metaItem}>
+              <Icon icon="mdi:email" size={16} />
+              <span>{profile?.voUserEmail || '未设置邮箱'}</span>
+            </div>
+            <div className={styles.metaItem}>
+              <Icon icon="mdi:wallet" size={16} />
+              <span>{formatCoinAmount(coinBalance?.voBalance)}</span>
+            </div>
+            {profile?.voRealName && (
+              <div className={styles.metaItem}>
+                <Icon icon="mdi:account" size={16} />
+                <span>{profile.voRealName}</span>
+              </div>
+            )}
+            {profile?.voAddress && (
+              <div className={styles.metaItem}>
+                <Icon icon="mdi:map-marker" size={16} />
+                <span>{profile.voAddress}</span>
+              </div>
+            )}
           </div>
         </div>
         <div className={styles.headerActions}>
@@ -312,35 +305,6 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
         </div>
       </div>
 
-      <div className={styles.avatarUpload}>
-        <FileUpload
-          accept="image/*"
-          maxSize={2 * 1024 * 1024}
-          placeholder="上传头像（2MB以内）"
-          onUpload={handleUploadAvatar}
-          showPreview={false}
-        />
-        {avatarSrc && (
-          <Button variant="secondary" size="small" onClick={handleRemoveAvatar} style={{ marginTop: '8px' }}>
-            移除头像
-          </Button>
-        )}
-      </div>
-
-      {/* 经验值条 */}
-      {experience && (
-        <div style={{ marginBottom: '24px' }}>
-          <ExperienceBar
-            data={experience as any}
-            size="medium"
-            showLevel={true}
-            showProgress={true}
-            showTooltip={true}
-            animated={true}
-          />
-        </div>
-      )}
-
       {(loading || loadingProfile) && (
         <div className={styles.loading}>加载中...</div>
       )}
@@ -349,17 +313,17 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
         <div className={styles.stats}>
           <div className={styles.statItem}>
             <Icon icon="mdi:file-document" size={24} />
-            <div className={styles.statValue}>{stats.postCount}</div>
+            <div className={styles.statValue}>{stats.voPostCount}</div>
             <div className={styles.statLabel}>帖子</div>
           </div>
           <div className={styles.statItem}>
             <Icon icon="mdi:comment" size={24} />
-            <div className={styles.statValue}>{stats.commentCount}</div>
+            <div className={styles.statValue}>{stats.voCommentCount}</div>
             <div className={styles.statLabel}>评论</div>
           </div>
           <div className={styles.statItem}>
             <Icon icon="mdi:heart" size={24} />
-            <div className={styles.statValue}>{stats.totalLikeCount}</div>
+            <div className={styles.statValue}>{stats.voTotalLikeCount}</div>
             <div className={styles.statLabel}>获赞</div>
           </div>
         </div>
@@ -404,6 +368,17 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
         onCancel={() => setConfirmOpen(false)}
         onConfirm={handleSave}
       />
+
+      {isAvatarModalOpen && (
+        <Suspense fallback={null}>
+          <AvatarUploadModal
+            isOpen={isAvatarModalOpen}
+            onClose={() => setIsAvatarModalOpen(false)}
+            onSuccess={handleAvatarUploadSuccess}
+            apiBaseUrl={apiBaseUrl}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

@@ -1,13 +1,24 @@
-import { useState } from 'react';
+import { lazy, Suspense, useState } from 'react';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
-import { AccountOverview } from './components/AccountOverview/AccountOverview';
-import { Transfer } from './components/Transfer/Transfer';
-import { TransactionHistory } from './components/TransactionHistory/TransactionHistory';
-import { SecuritySettings } from './components/SecuritySettings/SecuritySettings';
-import { Statistics } from './components/Statistics/Statistics';
 import type { TabType } from './types';
 import styles from './RadishPitApp.module.css';
+
+const AccountOverview = lazy(() =>
+  import('./components/AccountOverview/AccountOverview').then((module) => ({ default: module.AccountOverview }))
+);
+const Transfer = lazy(() =>
+  import('./components/Transfer/Transfer').then((module) => ({ default: module.Transfer }))
+);
+const TransactionHistory = lazy(() =>
+  import('./components/TransactionHistory/TransactionHistory').then((module) => ({ default: module.TransactionHistory }))
+);
+const SecuritySettings = lazy(() =>
+  import('./components/SecuritySettings/SecuritySettings').then((module) => ({ default: module.SecuritySettings }))
+);
+const Statistics = lazy(() =>
+  import('./components/Statistics/Statistics').then((module) => ({ default: module.Statistics }))
+);
 
 /**
  * 萝卜坑应用主组件
@@ -16,7 +27,6 @@ export const RadishPitApp = () => {
   const { isAuthenticated } = useUserStore();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
-  // 检查用户认证状态
   if (!isAuthenticated()) {
     return (
       <div className={styles.container}>
@@ -53,7 +63,6 @@ export const RadishPitApp = () => {
 
   return (
     <div className={styles.container}>
-      {/* 头部 */}
       <div className={styles.header}>
         <div className={styles.headerContent}>
           <div className={styles.titleSection}>
@@ -66,7 +75,6 @@ export const RadishPitApp = () => {
         </div>
       </div>
 
-      {/* 导航标签 */}
       <div className={styles.navigation}>
         <div className={styles.tabList}>
           <button
@@ -107,9 +115,10 @@ export const RadishPitApp = () => {
         </div>
       </div>
 
-      {/* 内容区域 */}
       <div className={styles.content}>
-        {renderTabContent()}
+        <Suspense fallback={<div className={styles.notLoggedIn}>加载中...</div>}>
+          {renderTabContent()}
+        </Suspense>
       </div>
     </div>
   );

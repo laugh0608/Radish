@@ -2,7 +2,7 @@
  * 支付密码相关的 API 调用
  */
 
-import { apiGet, apiPost, configureApiClient } from '@radish/ui';
+import { apiGet, apiPost, configureApiClient } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 

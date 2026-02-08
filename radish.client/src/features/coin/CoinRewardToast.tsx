@@ -1,4 +1,4 @@
-import { toast } from '@radish/ui';
+import { toast } from '@radish/ui/toast';
 import styles from './CoinRewardToast.module.css';
 
 export interface CoinRewardInfo {

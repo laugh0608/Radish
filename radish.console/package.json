@@ -1,7 +1,7 @@
 {
   "name": "radish.console",
   "private": true,
-  "version": "0.0.0",
+  "version": "26.1.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radish/http": "*",
     "@radish/ui": "*",
     "dayjs": "^1.11.19",
     "react": "^19.1.1",

@@ -43,6 +43,10 @@ using Radish.Service.Jobs;
 using Radish.Api.Filters;
 using Radish.Api.Hubs;
 using Microsoft.IdentityModel.JsonWebTokens;
+using Radish.IRepository.Base;
+using Radish.IService.Base;
+using Radish.Repository.Base;
+using Radish.Service.Base;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);

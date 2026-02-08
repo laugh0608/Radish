@@ -1,34 +1,51 @@
-import { useState, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useMemo } from 'react';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
+import { useWindowStore } from '@/stores/windowStore';
 import { UserInfoCard } from './components/UserInfoCard';
-import { UserPostList } from './components/UserPostList';
-import { UserCommentList } from './components/UserCommentList';
-import { UserAttachmentList } from './components/UserAttachmentList';
-import { CoinWallet } from './components/CoinWallet';
 import { getApiBaseUrl } from '@/config/env';
 import styles from './ProfileApp.module.css';
 
+const UserPostList = lazy(() =>
+  import('./components/UserPostList').then((module) => ({ default: module.UserPostList }))
+);
+const UserCommentList = lazy(() =>
+  import('./components/UserCommentList').then((module) => ({ default: module.UserCommentList }))
+);
+const UserAttachmentList = lazy(() =>
+  import('./components/UserAttachmentList').then((module) => ({ default: module.UserAttachmentList }))
+);
+
 interface UserStats {
-  postCount: number;
-  commentCount: number;
-  totalLikeCount: number;
-  postLikeCount: number;
-  commentLikeCount: number;
+  voPostCount: number;
+  voCommentCount: number;
+  voTotalLikeCount: number;
+  voPostLikeCount: number;
+  voCommentLikeCount: number;
 }
 
 export const ProfileApp = () => {
   const { userId, userName, isAuthenticated } = useUserStore();
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'attachments' | 'wallet'>('posts');
+  const { openApp } = useWindowStore();
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'attachments'>('posts');
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
-  // 统一通过 Gateway 访问
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
+
+  const handlePostClick = (postId: number) => {
+    openApp('forum');
+    log.debug('ProfileApp', `打开帖子: ${postId}`);
+  };
+
+  const handleCommentClick = (postId: number, commentId: number) => {
+    openApp('forum');
+    log.debug('ProfileApp', `打开帖子 ${postId} 的评论 ${commentId}`);
+  };
 
   useEffect(() => {
     if (isAuthenticated() && userId > 0) {
-      loadStats();
+      void loadStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
@@ -94,27 +111,20 @@ export const ProfileApp = () => {
           >
             我的附件
           </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'wallet' ? styles.active : ''}`}
-            onClick={() => setActiveTab('wallet')}
-          >
-            我的钱包
-          </button>
         </div>
 
         <div className={styles.tabContent}>
-          {activeTab === 'posts' && (
-            <UserPostList userId={userId} apiBaseUrl={apiBaseUrl} />
-          )}
-          {activeTab === 'comments' && (
-            <UserCommentList userId={userId} apiBaseUrl={apiBaseUrl} />
-          )}
-          {activeTab === 'attachments' && (
-            <UserAttachmentList apiBaseUrl={apiBaseUrl} />
-          )}
-          {activeTab === 'wallet' && (
-            <CoinWallet apiBaseUrl={apiBaseUrl} />
-          )}
+          <Suspense fallback={<div className={styles.notLoggedIn}>加载中...</div>}>
+            {activeTab === 'posts' && (
+              <UserPostList userId={userId} apiBaseUrl={apiBaseUrl} onPostClick={handlePostClick} />
+            )}
+            {activeTab === 'comments' && (
+              <UserCommentList userId={userId} apiBaseUrl={apiBaseUrl} onCommentClick={handleCommentClick} />
+            )}
+            {activeTab === 'attachments' && (
+              <UserAttachmentList apiBaseUrl={apiBaseUrl} />
+            )}
+          </Suspense>
         </div>
       </div>
     </div>

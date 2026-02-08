@@ -1,9 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { log } from '@/utils/logger';
-import { LineChart, PieChart } from '@radish/ui';
+import { ExperienceBar } from '@radish/ui/experience-bar';
+import { Icon } from '@radish/ui/icon';
 import { experienceApi, type ExperienceData, type ExpTransactionData } from '@/api/experience';
-import { Icon } from '@radish/ui';
 import styles from './ExperienceDetailApp.module.css';
+
+const LineChart = lazy(() =>
+  import('@radish/ui/line-chart').then((module) => ({ default: module.LineChart }))
+);
+
+const PieChart = lazy(() =>
+  import('@radish/ui/pie-chart').then((module) => ({ default: module.PieChart }))
+);
 
 export const ExperienceDetailApp = () => {
   const [experience, setExperience] = useState<ExperienceData | null>(null);
@@ -47,22 +55,40 @@ export const ExperienceDetailApp = () => {
     }
   };
 
-  // 模拟每日统计数据（实际应该从 API 获取）
+  // 从交易记录计算每日统计数据
   const getDailyStats = () => {
-    const stats = [];
+    if (transactions.length === 0) {
+      // 如果没有交易记录，返回空数组
+      return [];
+    }
+
+    const stats: Record<string, number> = {};
     const today = new Date();
 
+    // 初始化最近 N 天的数据
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-
-      stats.push({
-        date: `${date.getMonth() + 1}/${date.getDate()}`,
-        exp: Math.floor(Math.random() * 100) + 20 // 模拟数据
-      });
+      const dateKey = `${date.getMonth() + 1}/${date.getDate()}`;
+      stats[dateKey] = 0;
     }
 
-    return stats;
+    // 统计交易记录中的经验值
+    transactions.forEach(tx => {
+      const txDate = new Date(tx.voCreateTime);
+      const dateKey = `${txDate.getMonth() + 1}/${txDate.getDate()}`;
+
+      // 只统计最近 N 天的数据
+      if (stats.hasOwnProperty(dateKey)) {
+        stats[dateKey] += tx.voExpAmount;
+      }
+    });
+
+    // 转换为数组格式
+    return Object.entries(stats).map(([date, exp]) => ({
+      date,
+      exp
+    }));
   };
 
   // 计算经验值来源分布
@@ -70,8 +96,8 @@ export const ExperienceDetailApp = () => {
     const sources: Record<string, number> = {};
 
     transactions.forEach(tx => {
-      const type = tx.expType || '其他';
-      sources[type] = (sources[type] || 0) + tx.expAmount;
+      const type = tx.voExpType || '其他';
+      sources[type] = (sources[type] || 0) + tx.voExpAmount;
     });
 
     const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b'];
@@ -93,9 +119,15 @@ export const ExperienceDetailApp = () => {
       'COMMENT_LIKED': '评论被点赞',
       'LIKE_POST': '点赞帖子',
       'LIKE_COMMENT': '点赞评论',
+      'GIVE_LIKE': '给出点赞',
+      'RECEIVE_LIKE': '收到点赞',
       'GOD_COMMENT': '神评',
       'SOFA': '沙发',
-      'ADMIN_ADJUST': '管理员调整'
+      'ADMIN_ADJUST': '管理员调整',
+      'DAILY_LOGIN': '每日登录',
+      'WEEKLY_LOGIN': '每周登录',
+      'PROFILE_COMPLETE': '完善资料',
+      'PENALTY': '违规扣分'
     };
     return typeMap[type] || type;
   };
@@ -119,8 +151,8 @@ export const ExperienceDetailApp = () => {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>
-          <Icon icon="mdi:chart-line" size={32} />
-          经验值详情
+          <Icon icon="mdi:star-circle" size={32} />
+          等级
         </h1>
       </div>
 
@@ -143,77 +175,129 @@ export const ExperienceDetailApp = () => {
 
       {!loading && !error && experience && (
         <>
+          {/* 经验条区域 */}
+          <div className={styles.experienceBarSection}>
+            <div className={styles.expBarGroup}>
+              {/* 当前等级进度条 */}
+              <div className={styles.expBarItem}>
+                <div className={styles.expBarLabel}>当前等级进度</div>
+                <ExperienceBar
+                  data={{
+                    ...experience,
+                    // 使用 voLevelProgress 反推 voNextLevelExp
+                    // voLevelProgress = voCurrentExp / voNextLevelExp
+                    // 所以 voNextLevelExp = voCurrentExp / voLevelProgress
+                    voNextLevelExp: experience.voLevelProgress > 0
+                      ? Math.round(experience.voCurrentExp / experience.voLevelProgress)
+                      : experience.voCurrentExp + experience.voExpToNextLevel
+                  }}
+                  size="medium"
+                  showLevel={true}
+                  showProgress={true}
+                  showTooltip={true}
+                  animated={true}
+                />
+              </div>
+
+              {/* 总进度条（到满级） */}
+              <div className={styles.expBarItem}>
+                <div className={styles.expBarLabel}>总进度（到满级）</div>
+                <ExperienceBar
+                  data={{
+                    ...experience,
+                    voCurrentLevelName: `${experience.voCurrentLevelName} → 满级`,
+                    voCurrentExp: experience.voTotalExp,
+                    voNextLevelExp: 999999, // 假设满级需要的总经验值，实际应该从后端获取
+                    voLevelProgress: (experience.voTotalExp / 999999) * 100
+                  }}
+                  size="medium"
+                  showLevel={true}
+                  showProgress={true}
+                  showTooltip={false}
+                  animated={true}
+                />
+              </div>
+            </div>
+          </div>
+
           {/* 经验值概览 */}
           <div className={styles.overview}>
             <div className={styles.statCard}>
               <div className={styles.statLabel}>当前等级</div>
-              <div className={styles.statValue} style={{ color: experience.themeColor }}>
-                Lv.{experience.currentLevel} {experience.currentLevelName}
+              <div className={styles.statValue} style={{ color: experience.voThemeColor || '#3b82f6' }}>
+                Lv.{experience.voCurrentLevel} {experience.voCurrentLevelName}
               </div>
             </div>
             <div className={styles.statCard}>
               <div className={styles.statLabel}>当前经验值</div>
-              <div className={styles.statValue}>{Number(experience.currentExp).toLocaleString()}</div>
+              <div className={styles.statValue}>{Number(experience.voCurrentExp).toLocaleString()}</div>
             </div>
             <div className={styles.statCard}>
               <div className={styles.statLabel}>累计经验值</div>
-              <div className={styles.statValue}>{Number(experience.totalExp).toLocaleString()}</div>
+              <div className={styles.statValue}>{Number(experience.voTotalExp).toLocaleString()}</div>
             </div>
             <div className={styles.statCard}>
               <div className={styles.statLabel}>距下一级</div>
-              <div className={styles.statValue}>{Number(experience.expToNextLevel).toLocaleString()}</div>
+              <div className={styles.statValue}>{Number(experience.voExpToNextLevel).toLocaleString()}</div>
             </div>
           </div>
 
-          {/* 经验值趋势图 */}
-          <div className={styles.chartSection}>
-            <div className={styles.chartHeader}>
-              <h2 className={styles.chartTitle}>经验值趋势</h2>
-              <div className={styles.chartControls}>
-                <button
-                  className={`${styles.controlButton} ${days === 7 ? styles.active : ''}`}
-                  onClick={() => setDays(7)}
-                >
-                  最近7天
-                </button>
-                <button
-                  className={`${styles.controlButton} ${days === 30 ? styles.active : ''}`}
-                  onClick={() => setDays(30)}
-                >
-                  最近30天
-                </button>
-              </div>
-            </div>
-            <LineChart
-              data={dailyStats}
-              lines={[
-                { dataKey: 'exp', name: '经验值', color: '#667eea', strokeWidth: 2 }
-              ]}
-              xAxisKey="date"
-              loading={loading}
-              error={null}
-              height={300}
-              showGrid={true}
-              showLegend={true}
-            />
-          </div>
-
-          {/* 经验值来源分布 */}
-          {sourceDistribution.length > 0 && (
+          {/* 图表区域 - 两列布局 */}
+          <div className={styles.chartContainer}>
+            {/* 经验值趋势图 */}
             <div className={styles.chartSection}>
-              <h2 className={styles.chartTitle}>经验值来源</h2>
-              <PieChart
-                data={sourceDistribution}
-                loading={loading}
-                error={null}
-                height={300}
-                showLegend={true}
-                innerRadius={0}
-                outerRadius={100}
-                showLabel={true}
-              />
+              <div className={styles.chartHeader}>
+                <h2 className={styles.chartTitle}>经验值趋势</h2>
+                <div className={styles.chartControls}>
+                  <button
+                    className={`${styles.controlButton} ${days === 7 ? styles.active : ''}`}
+                    onClick={() => setDays(7)}
+                  >
+                    最近7天
+                  </button>
+                  <button
+                    className={`${styles.controlButton} ${days === 30 ? styles.active : ''}`}
+                    onClick={() => setDays(30)}
+                  >
+                    最近30天
+                  </button>
+                </div>
+              </div>
+              <Suspense fallback={<div className={styles.empty}>图表加载中...</div>}>
+                <LineChart
+                  data={dailyStats}
+                  lines={[
+                    { dataKey: 'exp', name: '经验值', color: '#667eea', strokeWidth: 2 }
+                  ]}
+                  xAxisKey="date"
+                  loading={loading}
+                  error={null}
+                  height={220}
+                  showGrid={true}
+                  showLegend={true}
+                />
+              </Suspense>
             </div>
-          )}
+
+            {/* 经验值来源分布 */}
+            {sourceDistribution.length > 0 && (
+              <div className={`${styles.chartSection} ${styles.pieChart}`}>
+                <h2 className={styles.chartTitle}>经验值来源</h2>
+                <Suspense fallback={<div className={styles.empty}>图表加载中...</div>}>
+                  <PieChart
+                    data={sourceDistribution}
+                    loading={loading}
+                    error={null}
+                    height={300}
+                    showLegend={true}
+                    innerRadius={0}
+                    outerRadius={100}
+                    showLabel={true}
+                  />
+                </Suspense>
+              </div>
+            )}
+          </div>
 
           {/* 经验值明细列表 */}
           <div className={styles.transactionSection}>
@@ -226,25 +310,47 @@ export const ExperienceDetailApp = () => {
             ) : (
               <>
                 <div className={styles.transactionList}>
-                  {transactions.map((tx) => (
-                    <div key={tx.id} className={styles.transactionItem}>
-                      <div className={styles.txIcon}>
-                        <Icon icon="mdi:plus-circle" size={24} />
-                      </div>
-                      <div className={styles.txInfo}>
-                        <div className={styles.txType}>{getExpTypeDisplay(tx.expType)}</div>
-                        <div className={styles.txTime}>
-                          {new Date(tx.createTime).toLocaleString('zh-CN')}
+                  {transactions.map((tx) => {
+                    const isPositive = tx.voExpAmount > 0;
+                    const typeLabel = getExpTypeDisplay(tx.voExpTypeDisplay || tx.voExpType);
+                    const timeLabel = new Date(tx.voCreateTime).toLocaleString('zh-CN', {
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+                    return (
+                      <div
+                        key={tx.voId}
+                        className={`${styles.transactionItem} ${isPositive ? styles.positive : styles.negative}`}
+                      >
+                        <div className={`${styles.txBadge} ${isPositive ? styles.txBadgePositive : styles.txBadgeNegative}`}>
+                          <Icon icon={isPositive ? "mdi:plus" : "mdi:minus"} size={18} />
                         </div>
-                        {tx.remark && (
-                          <div className={styles.txRemark}>{tx.remark}</div>
-                        )}
+                        <div className={styles.txInfo}>
+                          <div className={styles.txTitleRow}>
+                            <div className={styles.txType}>{typeLabel}</div>
+                            {tx.voIsLevelUp && <span className={styles.txLevelUp}>升级</span>}
+                          </div>
+                          <div className={styles.txMeta}>
+                            <span className={styles.txTime}>{timeLabel}</span>
+                            <span className={styles.txLevelChange}>
+                              Lv.{tx.voLevelBefore} → Lv.{tx.voLevelAfter}
+                            </span>
+                          </div>
+                          {tx.voRemark && <div className={styles.txRemark}>{tx.voRemark}</div>}
+                        </div>
+                        <div className={styles.txAmountWrap}>
+                          <div className={styles.txAmount}>
+                            {isPositive ? '+' : ''}{tx.voExpAmount}
+                          </div>
+                          <div className={styles.txBalance}>
+                            余额 {Number(tx.voExpAfter).toLocaleString()}
+                          </div>
+                        </div>
                       </div>
-                      <div className={styles.txAmount}>
-                        +{tx.expAmount}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className={styles.pagination}>

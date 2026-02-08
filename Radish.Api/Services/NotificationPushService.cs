@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Radish.Api.Hubs;
 using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 
@@ -103,7 +104,7 @@ public class NotificationPushService : INotificationPushService
             // P1 阶段：推送完整的通知对象
             await _hubContext.Clients
                 .Group($"user:{userId}")
-                .SendAsync("NotificationReceived", notification);
+                .SendAsync("NewNotification", notification);
 
             _logger.LogDebug(
                 "[NotificationPushService] 成功推送通知到用户 {UserId}",

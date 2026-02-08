@@ -1,6 +1,6 @@
 {
   "name": "@radish/ui",
-  "version": "0.1.0",
+  "version": "26.1.1",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -8,9 +8,33 @@
   "exports": {
     ".": "./src/index.ts",
     "./components": "./src/components/index.ts",
+    "./icon": "./src/components/Icon/Icon.tsx",
+    "./experience-bar": "./src/components/ExperienceBar/ExperienceBar.tsx",
+    "./line-chart": "./src/components/Charts/LineChart.tsx",
+    "./pie-chart": "./src/components/Charts/PieChart.tsx",
     "./hooks": "./src/hooks/index.ts",
     "./utils": "./src/utils/index.ts",
-    "./types": "./src/types/index.ts"
+    "./types": "./src/types/index.ts",
+    "./confirm-dialog": "./src/components/ConfirmDialog/ConfirmDialog.tsx",
+    "./bottom-sheet": "./src/components/BottomSheet/BottomSheet.tsx",
+    "./markdown-editor": "./src/components/MarkdownEditor/MarkdownEditor.tsx",
+    "./markdown-renderer": "./src/components/MarkdownRenderer/MarkdownRenderer.tsx",
+    "./image-lightbox": "./src/components/ImageLightbox/ImageLightbox.tsx",
+    "./image-cropper": "./src/components/ImageCropper/ImageCropper.tsx",
+    "./user-mention": "./src/components/UserMention/UserMention.tsx",
+    "./modal": "./src/components/Modal/Modal.tsx",
+    "./button": "./src/components/Button/Button.tsx",
+    "./glass-panel": "./src/components/GlassPanel/GlassPanel.tsx",
+    "./context-menu": "./src/components/ContextMenu/ContextMenu.tsx",
+    "./skeleton": "./src/components/Skeleton/index.ts",
+    "./input": "./src/components/Input/Input.tsx",
+    "./select": "./src/components/Select/Select.tsx",
+    "./level-up-modal": "./src/components/LevelUpModal/LevelUpModal.tsx",
+    "./bar-chart": "./src/components/Charts/BarChart.tsx",
+    "./area-chart": "./src/components/Charts/AreaChart.tsx",
+    "./notification-list": "./src/components/Notification/NotificationList.tsx",
+    "./toast": "./src/components/Toast/Toast.tsx",
+    "./notification": "./src/components/Notification/Notification.tsx"
   },
   "scripts": {
     "lint": "eslint .",
@@ -19,8 +43,10 @@
   "dependencies": {
     "@iconify-json/mdi": "^1.0.0",
     "@iconify/react": "^6.0.2",
+    "@radish/http": "*",
     "antd": "^6.1.0",
     "date-fns": "^4.1.0",
+    "react-easy-crop": "^5.5.6",
     "recharts": "^3.7.0"
   },
   "peerDependencies": {

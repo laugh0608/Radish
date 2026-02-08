@@ -259,11 +259,14 @@ public class AuthorizationController : Controller
     [HttpPost("~/connect/endsession")]
     public async Task<IActionResult> Logout()
     {
-        // 同时清除 Cookie 认证会话和 OpenIddict 会话
-        // 注意：必须先清除 Cookie，然后让 OpenIddict 处理重定向
+        // 1. 先显式清除 Cookie 认证会话
+        // 这是关键步骤：确保 Cookie 被删除，否则下次登录时会跳过登录页面
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+        // 2. 然后让 OpenIddict 处理 OIDC 登出逻辑和重定向
+        // OpenIddict 会验证 post_logout_redirect_uri 并重定向到客户端
         return SignOut(
             new AuthenticationProperties(),
-            CookieAuthenticationDefaults.AuthenticationScheme,
             OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 }

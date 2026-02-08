@@ -2,8 +2,8 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Model;
+using Radish.Model.ViewModels;
 using Radish.Shared;
-using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers;
 
@@ -25,169 +25,158 @@ public class SystemConfigController : ControllerBase
     /// <summary>获取系统配置列表</summary>
     /// <returns>系统配置列表</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetSystemConfigs()
+    [ProducesResponseType(typeof(MessageModel<List<SystemConfigVo>>), StatusCodes.Status200OK)]
+    public async Task<MessageModel<List<SystemConfigVo>>> GetSystemConfigs()
     {
         try
         {
-            var configs = new List<object>
+            var configs = new List<SystemConfigVo>
             {
-                new
+                new()
                 {
-                    Id = 1,
-                    Category = "商城配置",
-                    Key = "Shop.OrderTimeoutMinutes",
-                    Name = "订单超时时间",
-                    Value = "30",
-                    Description = "订单超时时间（分钟）",
-                    Type = "number",
-                    IsEnabled = true,
-                    CreateTime = DateTime.Now.AddDays(-30),
-                    ModifyTime = DateTime.Now.AddDays(-1)
+                    VoId = 1,
+                    VoCategory = "商城配置",
+                    VoKey = "Shop.OrderTimeoutMinutes",
+                    VoName = "订单超时时间",
+                    VoValue = "30",
+                    VoDescription = "订单超时时间（分钟）",
+                    VoType = "number",
+                    VoIsEnabled = true,
+                    VoCreateTime = DateTime.Now.AddDays(-30),
+                    VoModifyTime = DateTime.Now.AddDays(-1)
                 },
-                new
+                new()
                 {
-                    Id = 2,
-                    Category = "商城配置",
-                    Key = "Shop.StockWarningThreshold",
-                    Name = "库存预警阈值",
-                    Value = "10",
-                    Description = "商品库存低于此值时发出预警",
-                    Type = "number",
-                    IsEnabled = true,
-                    CreateTime = DateTime.Now.AddDays(-30),
-                    ModifyTime = DateTime.Now.AddDays(-2)
+                    VoId = 2,
+                    VoCategory = "商城配置",
+                    VoKey = "Shop.StockWarningThreshold",
+                    VoName = "库存预警阈值",
+                    VoValue = "10",
+                    VoDescription = "商品库存低于此值时发出预警",
+                    VoType = "number",
+                    VoIsEnabled = true,
+                    VoCreateTime = DateTime.Now.AddDays(-30),
+                    VoModifyTime = DateTime.Now.AddDays(-2)
                 },
-                new
+                new()
                 {
-                    Id = 3,
-                    Category = "萝卜币配置",
-                    Key = "Coin.DailyRewardLimit",
-                    Name = "每日奖励上限",
-                    Value = "100",
-                    Description = "用户每日可获得的萝卜币奖励上限",
-                    Type = "number",
-                    IsEnabled = true,
-                    CreateTime = DateTime.Now.AddDays(-25),
-                    ModifyTime = DateTime.Now.AddDays(-3)
+                    VoId = 3,
+                    VoCategory = "萝卜币配置",
+                    VoKey = "Coin.DailyRewardLimit",
+                    VoName = "每日奖励上限",
+                    VoValue = "100",
+                    VoDescription = "用户每日可获得的萝卜币奖励上限",
+                    VoType = "number",
+                    VoIsEnabled = true,
+                    VoCreateTime = DateTime.Now.AddDays(-25),
+                    VoModifyTime = DateTime.Now.AddDays(-3)
                 },
-                new
+                new()
                 {
-                    Id = 4,
-                    Category = "萝卜币配置",
-                    Key = "Coin.PostReward",
-                    Name = "发帖奖励",
-                    Value = "5",
-                    Description = "用户发帖可获得的萝卜币奖励",
-                    Type = "number",
-                    IsEnabled = true,
-                    CreateTime = DateTime.Now.AddDays(-25),
-                    ModifyTime = DateTime.Now.AddDays(-4)
+                    VoId = 4,
+                    VoCategory = "萝卜币配置",
+                    VoKey = "Coin.PostReward",
+                    VoName = "发帖奖励",
+                    VoValue = "5",
+                    VoDescription = "用户发帖可获得的萝卜币奖励",
+                    VoType = "number",
+                    VoIsEnabled = true,
+                    VoCreateTime = DateTime.Now.AddDays(-25),
+                    VoModifyTime = DateTime.Now.AddDays(-4)
                 },
-                new
+                new()
                 {
-                    Id = 5,
-                    Category = "经验值配置",
-                    Key = "Experience.PostReward",
-                    Name = "发帖经验奖励",
-                    Value = "10",
-                    Description = "用户发帖可获得的经验值",
-                    Type = "number",
-                    IsEnabled = true,
-                    CreateTime = DateTime.Now.AddDays(-20),
-                    ModifyTime = DateTime.Now.AddDays(-5)
+                    VoId = 5,
+                    VoCategory = "经验值配置",
+                    VoKey = "Experience.PostReward",
+                    VoName = "发帖经验奖励",
+                    VoValue = "10",
+                    VoDescription = "用户发帖可获得的经验值",
+                    VoType = "number",
+                    VoIsEnabled = true,
+                    VoCreateTime = DateTime.Now.AddDays(-20),
+                    VoModifyTime = DateTime.Now.AddDays(-5)
                 },
-                new
+                new()
                 {
-                    Id = 6,
-                    Category = "经验值配置",
-                    Key = "Experience.CommentReward",
-                    Name = "评论经验奖励",
-                    Value = "5",
-                    Description = "用户评论可获得的经验值",
-                    Type = "number",
-                    IsEnabled = true,
-                    CreateTime = DateTime.Now.AddDays(-20),
-                    ModifyTime = DateTime.Now.AddDays(-6)
+                    VoId = 6,
+                    VoCategory = "经验值配置",
+                    VoKey = "Experience.CommentReward",
+                    VoName = "评论经验奖励",
+                    VoValue = "5",
+                    VoDescription = "用户评论可获得的经验值",
+                    VoType = "number",
+                    VoIsEnabled = true,
+                    VoCreateTime = DateTime.Now.AddDays(-20),
+                    VoModifyTime = DateTime.Now.AddDays(-6)
                 },
-                new
+                new()
                 {
-                    Id = 7,
-                    Category = "通知配置",
-                    Key = "Notification.Enable",
-                    Name = "启用通知推送",
-                    Value = "true",
-                    Description = "是否启用实时通知推送",
-                    Type = "boolean",
-                    IsEnabled = true,
-                    CreateTime = DateTime.Now.AddDays(-15),
-                    ModifyTime = DateTime.Now.AddDays(-7)
+                    VoId = 7,
+                    VoCategory = "通知配置",
+                    VoKey = "Notification.Enable",
+                    VoName = "启用通知推送",
+                    VoValue = "true",
+                    VoDescription = "是否启用实时通知推送",
+                    VoType = "boolean",
+                    VoIsEnabled = true,
+                    VoCreateTime = DateTime.Now.AddDays(-15),
+                    VoModifyTime = DateTime.Now.AddDays(-7)
                 },
-                new
+                new()
                 {
-                    Id = 8,
-                    Category = "通知配置",
-                    Key = "Notification.DedupWindowMinutes",
-                    Name = "通知去重时间窗口",
-                    Value = "5",
-                    Description = "相同类型通知的去重时间窗口（分钟）",
-                    Type = "number",
-                    IsEnabled = true,
-                    CreateTime = DateTime.Now.AddDays(-15),
-                    ModifyTime = DateTime.Now.AddDays(-8)
+                    VoId = 8,
+                    VoCategory = "通知配置",
+                    VoKey = "Notification.DedupWindowMinutes",
+                    VoName = "通知去重时间窗口",
+                    VoValue = "5",
+                    VoDescription = "相同类型通知的去重时间窗口（分钟）",
+                    VoType = "number",
+                    VoIsEnabled = true,
+                    VoCreateTime = DateTime.Now.AddDays(-15),
+                    VoModifyTime = DateTime.Now.AddDays(-8)
                 },
-                new
+                new()
                 {
-                    Id = 9,
-                    Category = "文件上传",
-                    Key = "FileUpload.MaxImageSize",
-                    Name = "图片最大大小",
-                    Value = "5242880",
-                    Description = "图片文件最大大小（字节），默认5MB",
-                    Type = "number",
-                    IsEnabled = true,
-                    CreateTime = DateTime.Now.AddDays(-10),
-                    ModifyTime = DateTime.Now.AddDays(-9)
+                    VoId = 9,
+                    VoCategory = "文件上传",
+                    VoKey = "FileUpload.MaxImageSize",
+                    VoName = "图片最大大小",
+                    VoValue = "5242880",
+                    VoDescription = "图片文件最大大小（字节），默认5MB",
+                    VoType = "number",
+                    VoIsEnabled = true,
+                    VoCreateTime = DateTime.Now.AddDays(-10),
+                    VoModifyTime = DateTime.Now.AddDays(-9)
                 },
-                new
+                new()
                 {
-                    Id = 10,
-                    Category = "文件上传",
-                    Key = "FileUpload.AllowedImageTypes",
-                    Name = "允许的图片类型",
-                    Value = "jpg,jpeg,png,gif,webp",
-                    Description = "允许上传的图片文件类型",
-                    Type = "string",
-                    IsEnabled = true,
-                    CreateTime = DateTime.Now.AddDays(-10),
-                    ModifyTime = DateTime.Now.AddDays(-10)
+                    VoId = 10,
+                    VoCategory = "文件上传",
+                    VoKey = "FileUpload.AllowedImageTypes",
+                    VoName = "允许的图片类型",
+                    VoValue = "jpg,jpeg,png,gif,webp",
+                    VoDescription = "允许上传的图片文件类型",
+                    VoType = "string",
+                    VoIsEnabled = true,
+                    VoCreateTime = DateTime.Now.AddDays(-10),
+                    VoModifyTime = DateTime.Now.AddDays(-10)
                 }
             };
 
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "获取成功",
-                ResponseData = configs
-            };
+            return MessageModel<List<SystemConfigVo>>.Success("获取成功", configs);
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"获取系统配置失败：{ex.Message}"
-            };
+            return MessageModel<List<SystemConfigVo>>.Failed($"获取系统配置失败：{ex.Message}");
         }
     }
 
     /// <summary>获取配置分类列表</summary>
     /// <returns>配置分类列表</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetConfigCategories()
+    [ProducesResponseType(typeof(MessageModel<List<string>>), StatusCodes.Status200OK)]
+    public async Task<MessageModel<List<string>>> GetConfigCategories()
     {
         try
         {
@@ -203,22 +192,11 @@ public class SystemConfigController : ControllerBase
                 "日志配置"
             };
 
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "获取成功",
-                ResponseData = categories
-            };
+            return MessageModel<List<string>>.Success("获取成功", categories);
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"获取配置分类失败：{ex.Message}"
-            };
+            return MessageModel<List<string>>.Failed($"获取配置分类失败：{ex.Message}");
         }
     }
 
@@ -226,42 +204,31 @@ public class SystemConfigController : ControllerBase
     /// <param name="id">配置ID</param>
     /// <returns>配置详情</returns>
     [HttpGet]
-    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetConfigById(int id)
+    [ProducesResponseType(typeof(MessageModel<SystemConfigVo>), StatusCodes.Status200OK)]
+    public async Task<MessageModel<SystemConfigVo>> GetConfigById(int id)
     {
         try
         {
             // TODO: 从数据库或配置文件中获取具体配置
-            var config = new
+            var config = new SystemConfigVo
             {
-                Id = id,
-                Category = "商城配置",
-                Key = "Shop.OrderTimeoutMinutes",
-                Name = "订单超时时间",
-                Value = "30",
-                Description = "订单超时时间（分钟）",
-                Type = "number",
-                IsEnabled = true,
-                CreateTime = DateTime.Now.AddDays(-30),
-                ModifyTime = DateTime.Now.AddDays(-1)
+                VoId = id,
+                VoCategory = "商城配置",
+                VoKey = "Shop.OrderTimeoutMinutes",
+                VoName = "订单超时时间",
+                VoValue = "30",
+                VoDescription = "订单超时时间（分钟）",
+                VoType = "number",
+                VoIsEnabled = true,
+                VoCreateTime = DateTime.Now.AddDays(-30),
+                VoModifyTime = DateTime.Now.AddDays(-1)
             };
 
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "获取成功",
-                ResponseData = config
-            };
+            return MessageModel<SystemConfigVo>.Success("获取成功", config);
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"获取配置详情失败：{ex.Message}"
-            };
+            return MessageModel<SystemConfigVo>.Failed($"获取配置详情失败：{ex.Message}");
         }
     }
 
@@ -277,32 +244,17 @@ public class SystemConfigController : ControllerBase
         {
             if (request == null)
             {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = "请求参数不能为空"
-                };
+                return MessageModel.Failed("请求参数不能为空");
             }
 
             // TODO: 实现配置更新逻辑
             // 这里需要根据实际需求实现配置的持久化存储
 
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "更新成功"
-            };
+            return MessageModel.Success("更新成功");
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"更新配置失败：{ex.Message}"
-            };
+            return MessageModel.Failed($"更新配置失败：{ex.Message}");
         }
     }
 
@@ -317,31 +269,16 @@ public class SystemConfigController : ControllerBase
         {
             if (request == null)
             {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = "请求参数不能为空"
-                };
+                return MessageModel.Failed("请求参数不能为空");
             }
 
             // TODO: 实现配置创建逻辑
 
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "创建成功"
-            };
+            return MessageModel.Success("创建成功");
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"创建配置失败：{ex.Message}"
-            };
+            return MessageModel.Failed($"创建配置失败：{ex.Message}");
         }
     }
 
@@ -356,21 +293,11 @@ public class SystemConfigController : ControllerBase
         {
             // TODO: 实现配置删除逻辑
 
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "删除成功"
-            };
+            return MessageModel.Success("删除成功");
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"删除配置失败：{ex.Message}"
-            };
+            return MessageModel.Failed($"删除配置失败：{ex.Message}");
         }
     }
 }

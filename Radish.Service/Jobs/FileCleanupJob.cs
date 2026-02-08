@@ -1,5 +1,6 @@
 using Radish.Infrastructure.FileStorage;
 using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.Model;
 using Serilog;
 

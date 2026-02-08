@@ -182,6 +182,15 @@
   border-radius: 6px;
 }
 
+.markdownBody .markdownImage {
+  display: block;
+  margin: 10px 0;
+}
+
+.markdownBody .clickableImage {
+  cursor: zoom-in;
+}
+
 /* 删除线 */
 .markdownBody del {
   text-decoration: line-through;

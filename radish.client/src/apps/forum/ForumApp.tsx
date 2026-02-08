@@ -1,20 +1,61 @@
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
-import { ConfirmDialog } from '@radish/ui';
+import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { CategoryList } from './components/CategoryList';
-import { PublishPostModal } from './components/PublishPostModal';
+import { TagSection } from './components/TagSection';
 import { TrendingSidebar } from './components/TrendingSidebar';
-import { EditPostModal } from './components/EditPostModal';
 import { PostListView } from './views/PostListView';
-import { PostDetailContentView } from './views/PostDetailContentView';
 import { useForumData } from './hooks/useForumData';
 import { useForumActions } from './hooks/useForumActions';
 import styles from './ForumApp.module.css';
+
+const PublishPostModal = lazy(() =>
+  import('./components/PublishPostModal').then((module) => ({ default: module.PublishPostModal }))
+);
+
+const EditPostModal = lazy(() =>
+  import('./components/EditPostModal').then((module) => ({ default: module.EditPostModal }))
+);
+
+const PostDetailContentView = lazy(() =>
+  import('./views/PostDetailContentView').then((module) => ({ default: module.PostDetailContentView }))
+);
 
 export const ForumApp = () => {
   const { t } = useTranslation();
   const { isAuthenticated, userId } = useUserStore();
   const loggedIn = isAuthenticated();
+  const containerShellRef = useRef<HTMLDivElement>(null);
+  const [showDetailFloatingTools, setShowDetailFloatingTools] = useState(true);
+
+  useEffect(() => {
+    const element = containerShellRef.current;
+    if (!element) {
+      return;
+    }
+
+    const syncByWidth = (width: number) => {
+      setShowDetailFloatingTools(width <= 1200);
+    };
+
+    syncByWidth(element.clientWidth);
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const observer = new ResizeObserver(entries => {
+      const entry = entries[0];
+      if (!entry) {
+        return;
+      }
+      syncByWidth(entry.contentRect.width);
+    });
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   // 数据管理
   const dataState = useForumData(t);
@@ -24,7 +65,9 @@ export const ForumApp = () => {
     t,
     isAuthenticated: loggedIn,
     userId: userId ?? 0,
+    commentSortBy: dataState.commentSortBy,
     selectedCategoryId: dataState.selectedCategoryId,
+    selectedTagName: dataState.selectedTagName,
     selectedPost: dataState.selectedPost,
     setSelectedPost: dataState.setSelectedPost,
     setComments: dataState.setComments,
@@ -40,7 +83,7 @@ export const ForumApp = () => {
   });
 
   return (
-    <div className={styles.containerShell}>
+    <div className={styles.containerShell} ref={containerShellRef}>
       <div className={styles.container}>
         {/* 左栏：分类和标签 */}
         <div className={styles.leftColumn}>
@@ -65,46 +108,57 @@ export const ForumApp = () => {
             />
           </div>
           <div className={styles.tagsSection}>
-            {/* TODO: 标签区域 */}
+            <TagSection
+              fixedTags={dataState.fixedTags}
+              hotTags={dataState.hotTags.filter(
+                tag => !dataState.fixedTags.some(fixedTag => fixedTag.voName.toLowerCase() === tag.voName.toLowerCase())
+              )}
+              selectedTagName={dataState.selectedTagName}
+              loading={dataState.loadingHotTags}
+              onSelectTag={dataState.setSelectedTagName}
+            />
           </div>
         </div>
 
         {/* 中间栏：帖子瀑布流或帖子详情 */}
         <div className={styles.middleColumn}>
           {dataState.selectedPost ? (
-            /* 帖子详情视图 */
-            <PostDetailContentView
-              post={dataState.selectedPost}
-              comments={dataState.comments}
-              loadingPostDetail={dataState.loadingPostDetail}
-              loadingComments={dataState.loadingComments}
-              isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
-              isAuthenticated={loggedIn}
-              currentUserId={userId ?? 0}
-              commentSortBy={dataState.commentSortBy}
-              replyTo={actionsState.replyTo}
-              onBack={() => {
-                dataState.setSelectedPost(null);
-                dataState.setComments([]);
-                dataState.resetCommentSort();
-              }}
-              onLike={actionsState.handleLikePost}
-              onEdit={actionsState.handleEditPost}
-              onDelete={actionsState.handleDeletePost}
-              onCommentSortChange={actionsState.handleCommentSortChange}
-              onDeleteComment={actionsState.handleDeleteComment}
-              onEditComment={actionsState.handleEditComment}
-              onLikeComment={actionsState.handleCommentLike}
-              onReplyComment={actionsState.handleReplyComment}
-              onLoadMoreChildren={actionsState.handleLoadMoreChildren}
-              onCreateComment={actionsState.handleCreateComment}
-              onCancelReply={actionsState.handleCancelReply}
-            />
+            <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center' }}>详情加载中...</div>}>
+              <PostDetailContentView
+                post={dataState.selectedPost}
+                comments={dataState.comments}
+                loadingPostDetail={dataState.loadingPostDetail}
+                loadingComments={dataState.loadingComments}
+                isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
+                isAuthenticated={loggedIn}
+                showFloatingTools={showDetailFloatingTools}
+                currentUserId={userId ?? 0}
+                commentSortBy={dataState.commentSortBy}
+                replyTo={actionsState.replyTo}
+                onBack={() => {
+                  dataState.setSelectedPost(null);
+                  dataState.setComments([]);
+                  dataState.resetCommentSort();
+                }}
+                onLike={actionsState.handleLikePost}
+                onEdit={actionsState.handleEditPost}
+                onDelete={actionsState.handleDeletePost}
+                onCommentSortChange={actionsState.handleCommentSortChange}
+                onDeleteComment={actionsState.handleDeleteComment}
+                onEditComment={actionsState.handleEditComment}
+                onLikeComment={actionsState.handleCommentLike}
+                onReplyComment={actionsState.handleReplyComment}
+                onLoadMoreChildren={actionsState.handleLoadMoreChildren}
+                onCreateComment={actionsState.handleCreateComment}
+                onCancelReply={actionsState.handleCancelReply}
+              />
+            </Suspense>
           ) : (
             /* 帖子列表视图 */
             <PostListView
               categories={dataState.categories}
               selectedCategoryId={dataState.selectedCategoryId}
+              selectedTagName={dataState.selectedTagName}
               posts={dataState.posts}
               postGodComments={dataState.postGodComments}
               currentPage={dataState.currentPage}
@@ -131,21 +185,27 @@ export const ForumApp = () => {
           />
         </div>
 
-        {/* 发帖 Modal */}
-        <PublishPostModal
-          isOpen={actionsState.isPublishModalOpen}
-          isAuthenticated={loggedIn}
-          onClose={() => actionsState.setIsPublishModalOpen(false)}
-          onPublish={actionsState.handlePublishPost}
-        />
+        {actionsState.isPublishModalOpen && (
+          <Suspense fallback={null}>
+            <PublishPostModal
+              isOpen={actionsState.isPublishModalOpen}
+              isAuthenticated={loggedIn}
+              onClose={() => actionsState.setIsPublishModalOpen(false)}
+              onPublish={actionsState.handlePublishPost}
+            />
+          </Suspense>
+        )}
 
-        {/* 编辑帖子 Modal */}
-        <EditPostModal
-          isOpen={actionsState.isEditModalOpen}
-          post={dataState.selectedPost}
-          onClose={() => actionsState.setIsEditModalOpen(false)}
-          onSave={actionsState.handleSaveEdit}
-        />
+        {actionsState.isEditModalOpen && dataState.selectedPost && (
+          <Suspense fallback={null}>
+            <EditPostModal
+              isOpen={actionsState.isEditModalOpen}
+              post={dataState.selectedPost}
+              onClose={() => actionsState.setIsEditModalOpen(false)}
+              onSave={actionsState.handleSaveEdit}
+            />
+          </Suspense>
+        )}
 
         {/* 删除帖子确认对话框 */}
         <ConfirmDialog

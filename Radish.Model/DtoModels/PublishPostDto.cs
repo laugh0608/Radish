@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Radish.Model.DtoModels;
 
@@ -28,4 +29,14 @@ public class PublishPostDto
 
     /// <summary>标签名称列表</summary>
     public List<string>? TagNames { get; set; }
+
+    /// <summary>
+    /// 向后兼容旧字段 tags
+    /// </summary>
+    [JsonPropertyName("tags")]
+    public List<string>? Tags
+    {
+        get => TagNames;
+        set => TagNames = value;
+    }
 }

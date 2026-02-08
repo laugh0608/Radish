@@ -1,8 +1,12 @@
-import { useState, useRef } from 'react';
+import { lazy, Suspense, useState, useRef } from 'react';
+import type { ReactNode } from 'react';
 import type { KeyboardEvent, ChangeEvent, ClipboardEvent, DragEvent } from 'react';
 import { Icon } from '../Icon/Icon';
-import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
 import styles from './MarkdownEditor.module.css';
+
+const MarkdownRenderer = lazy(() =>
+  import('../MarkdownRenderer/MarkdownRenderer').then((module) => ({ default: module.MarkdownRenderer }))
+);
 
 export interface MarkdownEditorProps {
   value: string;
@@ -12,6 +16,8 @@ export interface MarkdownEditorProps {
   maxHeight?: number;
   disabled?: boolean;
   showToolbar?: boolean;
+  theme?: 'dark' | 'light';
+  toolbarExtras?: ReactNode;
   className?: string;
   /**
    * 图片上传处理函数
@@ -35,6 +41,8 @@ export const MarkdownEditor = ({
   maxHeight,
   disabled = false,
   showToolbar = true,
+  theme = 'dark',
+  toolbarExtras,
   className = '',
   onImageUpload,
   onDocumentUpload
@@ -308,8 +316,10 @@ export const MarkdownEditor = ({
     ...(maxHeight ? { maxHeight: `${maxHeight}px` } : {})
   };
 
+  const themeClassName = theme === 'light' ? styles.themeLight : '';
+
   return (
-    <div className={`${styles.container} ${className}`}>
+    <div className={`${styles.container} ${themeClassName} ${className}`}>
       {/* 隐藏的文件输入 */}
       <input
         ref={fileInputRef}
@@ -500,6 +510,10 @@ export const MarkdownEditor = ({
 
           <div className={styles.toolbarSpacer} />
 
+          {toolbarExtras && (
+            <div className={styles.toolbarExtras}>{toolbarExtras}</div>
+          )}
+
           <div className={styles.toolbarGroup}>
             <button
               type="button"
@@ -560,7 +574,9 @@ export const MarkdownEditor = ({
         ) : (
           <div className={styles.preview}>
             {value ? (
-              <MarkdownRenderer content={value} />
+              <Suspense fallback={<p className={styles.previewEmpty}>预览加载中...</p>}>
+                <MarkdownRenderer content={value} />
+              </Suspense>
             ) : (
               <p className={styles.previewEmpty}>没有内容可预览</p>
             )}

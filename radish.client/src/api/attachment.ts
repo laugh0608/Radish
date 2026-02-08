@@ -4,7 +4,7 @@ import { log } from '@/utils/logger';
  * 附件上传相关的 API 调用
  */
 
-import { configureApiClient, getApiClientConfig, apiFetch, parseApiResponseWithI18n, type ApiResponse } from '@radish/ui';
+import { configureApiClient, getApiClientConfig, apiFetch, parseApiResponseWithI18n, type ApiResponse } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 
@@ -12,13 +12,6 @@ import { getApiBaseUrl } from '@/config/env';
 configureApiClient({
   baseUrl: getApiBaseUrl(),
 });
-
-/**
- * 获取API基础URL
- */
-function getApiBaseUrl(): string {
-  return getApiClientConfig().baseUrl;
-}
 
 /**
  * 延迟函数（用于重试）
@@ -69,92 +62,92 @@ export interface AttachmentInfo {
   /**
    * 附件 ID
    */
-  id: number | string;
+  voId: number | string;
 
   /**
    * 原始文件名
    */
-  originalName: string;
+  voOriginalName: string;
 
   /**
    * 文件扩展名
    */
-  extension: string;
+  voExtension: string;
 
   /**
    * 文件大小（字节）
    */
-  fileSize: number;
+  voFileSize: number | string;
 
   /**
    * 文件大小（格式化后，如 1.5MB）
    */
-  fileSizeFormatted?: string;
+  voFileSizeFormatted?: string;
 
   /**
    * MIME 类型
    */
-  mimeType: string;
+  voMimeType: string;
 
   /**
    * 存储类型（Local/MinIO/OSS）
    */
-  storageType?: string;
+  voStorageType?: string;
 
   /**
    * 访问 URL
    */
-  url: string;
+  voUrl: string;
 
   /**
    * 缩略图 URL（仅图片）
    */
-  thumbnailUrl?: string;
+  voThumbnailUrl?: string;
 
   /**
    * 上传者 ID
    */
-  uploaderId?: number | string;
+  voUploaderId?: number | string;
 
   /**
    * 上传者名称
    */
-  uploaderName?: string;
+  voUploaderName?: string;
 
   /**
    * 业务类型
    */
-  businessType?: string;
+  voBusinessType?: string;
 
   /**
    * 业务 ID
    */
-  businessId?: number | string;
+  voBusinessId?: number | string | null;
 
   /**
    * 是否公开
    */
-  isPublic?: boolean;
+  voIsPublic?: boolean;
 
   /**
    * 下载次数
    */
-  downloadCount?: number;
+  voDownloadCount?: number;
 
   /**
    * 内容审核状态（Pending/Pass/Reject）
    */
-  auditStatus?: string;
+  voAuditStatus?: string | null;
 
   /**
    * 备注
    */
-  remark?: string;
+  voRemark?: string;
 
   /**
    * 创建时间
    */
-  createTime?: string;
+  voCreateTime?: string;
 }
 
 /**

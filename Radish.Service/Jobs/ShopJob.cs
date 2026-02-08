@@ -1,4 +1,5 @@
 using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.Model;
 using Radish.Shared.CustomEnum;
 using Serilog;

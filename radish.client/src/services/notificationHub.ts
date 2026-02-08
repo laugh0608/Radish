@@ -1,5 +1,7 @@
 import * as signalR from '@microsoft/signalr';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
+import { useAuthStore } from '@/stores/authStore';
+import { tokenService } from './tokenService';
 import { log } from '@/utils/logger';
 import { getSignalrHubUrl } from '@/config/env';
 
@@ -11,6 +13,52 @@ function getHubUrl(): string {
 function getAccessToken(): string | null {
   if (typeof window === 'undefined') return null;
   return window.localStorage.getItem('access_token');
+}
+
+/**
+ * 验证 JWT token 是否有效（未过期）
+ * @param token JWT token
+ * @returns true 表示有效，false 表示无效或过期
+ */
+function isTokenValid(token: string): boolean {
+  try {
+    // JWT 格式: header.payload.signature
+    const parts = token.split('.');
+    if (parts.length !== 3) {
+      log.warn('[NotificationHub] Token 格式无效');
+      return false;
+    }
+
+    // 解码 payload (Base64URL)
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    
+    // 检查过期时间 (exp 字段，Unix 时间戳，单位：秒)
+    if (!payload.exp) {
+      log.warn('[NotificationHub] Token 缺少过期时间');
+      return false;
+    }
+
+    const now = Math.floor(Date.now() / 1000); // 当前时间（秒）
+    const expiresAt = payload.exp;
+
+    if (now >= expiresAt) {
+      log.warn('[NotificationHub] Token 已过期', {
+        expiresAt: new Date(expiresAt * 1000).toISOString(),
+        now: new Date(now * 1000).toISOString()
+      });
+      // 清理过期 token
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('access_token');
+        window.localStorage.removeItem('refresh_token');
+      }
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    log.error('[NotificationHub] Token 验证失败:', error);
+    return false;
+  }
 }
 
 /** SignalR Hub 连接管理器 */
@@ -36,9 +84,17 @@ class NotificationHubService {
       return;
     }
 
-    const token = getAccessToken();
+    // 1. 检查认证状态
+    const { isAuthenticated } = useAuthStore.getState();
+    if (!isAuthenticated) {
+      log.warn('[NotificationHub] 未登录，跳过连接');
+      return;
+    }
+
+    // 2. 检查 Token 有效性
+    const token = await tokenService.getValidAccessToken();
     if (!token) {
-      log.warn('[NotificationHub] 未找到 access_token，跳过连接');
+      log.warn('[NotificationHub] Token 无效，跳过连接');
       return;
     }
 
@@ -62,8 +118,8 @@ class NotificationHubService {
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(getHubUrl(), {
           accessTokenFactory: () => token,
-          transport: signalR.HttpTransportType.WebSockets,
-          skipNegotiation: true
+          // 移除 skipNegotiation，让 SignalR 先协商再升级到 WebSocket
+          // 这样可以兼容 YARP 反向代理
         })
         .withAutomaticReconnect({
           nextRetryDelayInMilliseconds: (retryContext) => {

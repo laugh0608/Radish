@@ -475,6 +475,98 @@ const MobileShell = () => {
 | 后台组件 | Ant Design (仅 admin 应用使用) |
 | 表单 | React Hook Form + Zod |
 | 国际化 | react-i18next |
+| HTTP 客户端 | @radish/http (统一 API 客户端) |
+| 认证 | OIDC (OpenIddict) + 统一认证服务 |
+
+### 7.1 HTTP 客户端 (@radish/http)
+
+**统一的 API 请求封装**，从 `@radish/ui` 中独立出来，专注于 HTTP 通信。
+
+**核心特性**：
+- 统一配置管理（baseUrl、timeout、token）
+- 类型安全的 TypeScript 定义
+- 自动添加 Bearer Token 认证
+- 请求/响应/错误拦截器
+- 超时控制和错误处理
+
+**使用示例**：
+
+```typescript
+import { apiGet, apiPost, configureApiClient } from '@radish/http';
+
+// 配置 API 客户端
+configureApiClient({
+  baseUrl: 'https://localhost:5000',
+  timeout: 30000,
+  getToken: () => localStorage.getItem('access_token'),
+});
+
+// 发送请求
+const response = await apiGet<Product[]>('/api/v1/Shop/GetProducts', {
+  withAuth: true,
+});
+
+if (response.ok && response.data) {
+  console.log('商品列表:', response.data);
+}
+```
+
+**详细文档**：参见 [@radish/http 包文档](./http-client.md)
+
+### 7.2 认证服务
+
+**统一的 OIDC 认证管理**，位于 `radish.client/src/services/auth.ts`。
+
+**核心方法**：
+- `redirectToLogin()` - 跳转到 OIDC 登录页面
+- `logout()` - 执行 OIDC 登出，清除本地 Token
+- `hasAccessToken()` - 检查是否有有效的 access_token
+
+**认证流程**：
+
+```
+用户访问 → 检查 Token → 未登录 → redirectToLogin()
+                ↓
+            已登录 → 加载桌面 → 打开应用
+                ↓
+        API 请求自动添加 Token (withAuth: true)
+                ↓
+        Token 过期 → 401 错误 → redirectToLogin()
+```
+
+**使用示例**：
+
+```typescript
+import { redirectToLogin, logout, hasAccessToken } from '@/services/auth';
+
+// 检查登录状态
+if (!hasAccessToken()) {
+  redirectToLogin();
+}
+
+// 登出
+const handleLogout = () => {
+  logout();
+};
+```
+
+**WebSocket 认证集成**：
+
+```typescript
+import { hasAccessToken } from '@/services/auth';
+
+// 仅在已登录时建立 WebSocket 连接
+if (hasAccessToken()) {
+  const token = localStorage.getItem('access_token');
+  const connection = new HubConnectionBuilder()
+    .withUrl('/hubs/notification', {
+      accessTokenFactory: () => token || '',
+    })
+    .build();
+}
+```
+
+**详细文档**：参见 [认证服务统一指南](../guide/authentication-service.md)
 
 ## 8. 设计系统
 
@@ -522,7 +614,7 @@ export const tokens = {
 
 ```typescript
 // 使用 @radish/ui 封装的 Icon 组件（基于本地 Iconify JSON 集合）
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 
 <Icon icon="mdi:forum" />
 <Icon icon="mdi:chat" />
@@ -850,6 +942,9 @@ Client  Console   Shop    Docs
 - 公开内容（需 SEO）：
   - 帖子列表：`/forum`、`/forum/category/{id}`、`/forum/tag/{tag}`
   - 帖子详情：`/forum/post/{id}` 或 `/forum/post/{id}-{slug}`
+
+> 论坛分类与标签能力边界、实现现状与后续计划请参考：
+> [论坛帖子分类与标签（专题）](/features/forum-category-tag)
 - 登录后功能（不要求 SEO）：
   - 发帖/编辑：`/forum/create`、`/forum/edit/{id}`
   - 用户中心：`/me`、`/settings` 等
@@ -917,7 +1012,39 @@ Client  Console   Shop    Docs
 - 具体周更与变更记录：以 [开发日志](/changelog/) 为准
 - 本文档仅描述前端架构与设计约束；若迭代中出现影响架构的关键决策，请在本文追加“设计决策”小节并在开发日志中记录。
 
-## 12. 参考资料
+## 12. 构建拆包策略（manualChunks + 动态导入）
+
+为降低首屏负载并提升 WebOS 子应用的按需加载体验，`radish.client` 采用如下策略：
+
+### 12.1 动态导入（按应用懒加载）
+
+- 在 `src/main.tsx` 中使用 `React.lazy + Suspense`，按入口场景懒加载 `App` / `Shell`。
+- 在 `src/desktop/AppRegistry.tsx` 中将窗口应用改为懒加载注册，打开窗口时再下载对应子应用代码。
+- 目标：避免一次性加载论坛、商城、个人中心、萝卜坑等所有应用资源。
+
+### 12.2 手动分包（manualChunks）
+
+- 在 `vite.config.ts` 中启用 `build.rollupOptions.output.manualChunks`。
+- 将常见基础依赖与大体积依赖拆分为稳定 vendor chunk（如 React、i18n、window、markdown 等）。
+- 对 WebOS 业务子应用按目录进行应用级 chunk 切分（如 `app-forum`、`app-shop`、`app-radish-pit`）。
+
+### 12.3 结果与后续
+
+- 构建结果已从“单一超大入口包”转为“入口小包 + 子应用懒加载包”结构。
+- `ExperienceDetailApp` 已采用图表二级懒加载（`LineChart/PieChart`），将大图表依赖从应用主包中分离。
+- 论坛应用新增二级懒加载：`PublishPostModal` / `EditPostModal` / `PostDetailContentView` 在触发时再加载；发帖弹窗内 `MarkdownEditor` 与预览 `MarkdownRenderer` 也改为按需加载。
+- 论坛详情视图继续细分为 `forum-detail-view`（壳层）、`forum-detail-post`（正文）、`forum-detail-comments`（评论），并将 Markdown 生态依赖统一归入分包规则。
+- `ProfileApp` 新增 Tab 内容按需加载与头像裁切弹窗懒加载，避免在个人页首屏静态打入附件/裁切相关代码。
+- `@radish/ui/Icon` 改为加载 `mdi` 子集（`mdi-subset.json`）并按需异步注册，避免引入整份图标数据。
+- `@radish/ui` 在 `package.json` 增加组件子路径导出（如 `icon`、`toast`、`modal`、`input`、`select`、`bar-chart`、`area-chart` 等），client 侧优先使用子路径导入，降低 barrel export 连带打包风险。
+- 最新构建（2026-02-08）中，`app-profile` 已从约 `792.80 kB` 降至约 `59.12 kB`，`app-forum` 约 `42.30 kB`。
+- 发帖弹窗主 chunk 进一步收敛：`forum-publish-modal` 从约 `341.12 kB` 降至约 `10.36 kB`，编辑器与渲染器拆至独立异步 chunk（`MarkdownEditor` / `MarkdownRenderer`）。
+- 萝卜坑已完成页级拆分：`app-radish-pit` 约 `25.32 kB`，并拆出 `pit-transfer` / `pit-history` / `pit-security` / `pit-statistics` 独立 chunk。
+- Showcase 已从桶导入迁移到子路径导入，`app-showcase` 从约 `751.21 kB` 降至约 `410.06 kB`。
+- `forum-detail-view` 已从约 `349.00 kB` 拆分为：`forum-detail-view` 约 `5.49 kB`、`forum-detail-post` 约 `3.91 kB`、`forum-detail-comments` 约 `19.85 kB`。
+- 当前已无超过 500k 的业务 chunk。
+
+## 13. 参考资料
 
 - Nebula OS 原型：`public/webos.html`
 - 窗口拖拽：react-rnd

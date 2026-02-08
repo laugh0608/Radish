@@ -1,6 +1,11 @@
+import { lazy, Suspense } from 'react';
 import type { PostDetail as PostDetailType } from '@/api/forum';
-import { MarkdownRenderer, Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import styles from './PostDetail.module.css';
+
+const MarkdownRenderer = lazy(() =>
+  import('@radish/ui/markdown-renderer').then((module) => ({ default: module.MarkdownRenderer }))
+);
 
 interface PostDetailProps {
   post: PostDetailType | null;
@@ -23,8 +28,15 @@ export const PostDetail = ({
   onEdit,
   onDelete
 }: PostDetailProps) => {
-  // 判断是否是作者本人
-  const isAuthor = post && currentUserId > 0 && post.voAuthorId === currentUserId;
+  const parsedTags = post?.voTags
+    ? post.voTags
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(Boolean)
+    : [];
+  const tagList = post?.voTagNames && post.voTagNames.length > 0 ? post.voTagNames : parsedTags;
+
+  const isAuthor = post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
   if (loading) {
     return (
       <div className={styles.container}>
@@ -53,10 +65,12 @@ export const PostDetail = ({
           {post.voCreateTime && <span> · {post.voCreateTime}</span>}
           {post.voViewCount !== undefined && <span> · 浏览 {post.voViewCount}</span>}
         </div>
-        <MarkdownRenderer content={post.voContent} className={styles.postBody} />
-        {post.voTagNames && post.voTagNames.length > 0 && (
+        <Suspense fallback={<div className={styles.postBody}>正文渲染中...</div>}>
+          <MarkdownRenderer content={post.voContent} className={styles.postBody} />
+        </Suspense>
+        {tagList.length > 0 && (
           <div className={styles.postTags}>
-            {post.voTagNames.map((tag, index) => (
+            {tagList.map((tag, index) => (
               <span key={index} className={styles.tag}>
                 {tag}
               </span>
@@ -64,7 +78,6 @@ export const PostDetail = ({
           </div>
         )}
 
-        {/* 操作按钮 */}
         <div className={styles.actions}>
           <button
             type="button"
@@ -80,7 +93,6 @@ export const PostDetail = ({
             💬 {post.voCommentCount || 0} 条评论
           </span>
 
-          {/* 编辑和删除按钮（仅作者可见） */}
           {isAuthor && (
             <div className={styles.authorActions}>
               <button

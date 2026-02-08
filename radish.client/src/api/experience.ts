@@ -3,7 +3,7 @@
  * 直接使用后端 Vo 字段名，无需映射
  */
 
-import { apiGet, configureApiClient, type PagedResponse } from '@radish/ui';
+import { apiGet, configureApiClient, type PagedResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 
 // 配置 API 客户端
@@ -16,49 +16,25 @@ configureApiClient({
  */
 export interface ExperienceData {
   voUserId: number;
-  voCurrentExp: number;
+  voUserName?: string;
+  voAvatarUrl?: string;
   voCurrentLevel: number;
-  voNextLevelExp: number;
-  voTotalExp: number;
-  voLevelProgress: number;
-  voLevelName: string;
-  voLevelDescription: string;
-  voCanLevelUp: boolean;
+  voCurrentLevelName: string;  // 后端字段名
+  voCurrentExp: number;  // 当前等级内的经验值进度
+  voNextLevelExp: number;  // 当前等级升级所需总经验值
+  voTotalExp: number;  // 累计总经验值
+  voExpToNextLevel: number;  // 距离下一级还需多少经验
+  voNextLevel: number;
   voNextLevelName: string;
-  voExpToNextLevel: number;
-  voExpGainedToday: number;
-  voDailyExpLimit: number;
-  voRemainingDailyExp: number;
-  voIsMaxLevel: boolean;
-  voRank: number;
-  voPercentile: number;
-  voCreateTime: string;
-  voUpdateTime: string;
-  voExpFrozen?: boolean;
-  // 前端扩展字段（用于 UI 组件兼容）
-  userId?: string;
-  currentExp?: number;
-  currentLevel?: number;
-  nextLevelExp?: number;
-  totalExp?: number;
-  levelProgress?: number;
-  levelName?: string;
-  levelDescription?: string;
-  canLevelUp?: boolean;
-  nextLevelName?: string;
-  expToNextLevel?: number;
-  expGainedToday?: number;
-  dailyExpLimit?: number;
-  remainingDailyExp?: number;
-  isMaxLevel?: boolean;
-  rank?: number;
-  percentile?: number;
-  createTime?: string;
-  updateTime?: string;
-  themeColor?: string;
-  currentLevelName?: string;
-  nextLevel?: number;
-  expFrozen?: boolean;
+  voLevelProgress: number;  // 0-1 之间的小数
+  voThemeColor: string;
+  voIconUrl?: string;
+  voBadgeUrl?: string;
+  voLevelUpAt?: string;
+  voRank?: number;
+  voExpFrozen: boolean;
+  voFrozenUntil?: string;
+  voFrozenReason?: string;
 }
 
 /**
@@ -67,28 +43,19 @@ export interface ExperienceData {
 export interface ExpTransactionData {
   voId: number;
   voUserId: number;
-  voUserName: string;
-  voExpChange: number;
+  voUserName?: string;
+  voExpType: string;  // 后端字段名
+  voExpTypeDisplay: string;  // 后端字段名
+  voExpAmount: number;  // 后端字段名（经验值变动量）
+  voBusinessType?: string;  // 后端字段名
+  voBusinessId?: number;  // 后端字段名
+  voRemark?: string;  // 后端字段名（备注）
   voExpBefore: number;
   voExpAfter: number;
   voLevelBefore: number;
   voLevelAfter: number;
-  voTransactionType: string;
-  voTransactionTypeDisplay: string;
-  voDescription: string;
-  voRelatedId: number;
-  voRelatedType: string;
-  voIsPositive: boolean;
-  voFormattedExpChange: string;
-  voFormattedDescription: string;
+  voIsLevelUp: boolean;  // 后端计算属性
   voCreateTime: string;
-  voUpdateTime: string;
-  // 兼容旧字段名（用于 UI 组件）
-  id?: number;
-  expType?: string;
-  expAmount?: number;
-  remark?: string;
-  createTime?: string;
 }
 
 /**
@@ -96,30 +63,16 @@ export interface ExpTransactionData {
  */
 export interface LeaderboardItemData {
   voUserId: number;
-  voUserName: string;
+  voUserName?: string;
   voAvatarUrl?: string;
   voCurrentLevel: number;
   voTotalExp: number;
-  voLevelName: string;
-  voRank: number;
-  voExpGainedThisWeek: number;
-  voExpGainedThisMonth: number;
-  voIsCurrentUser: boolean;
+  voCurrentLevelName: string;  // 后端字段名
+  voRank?: number;
+  voExpGainedThisWeek?: number;
+  voExpGainedThisMonth?: number;
+  voIsCurrentUser?: boolean;
   voThemeColor?: string;
-  voCurrentLevelName?: string;
-  // 兼容旧字段名（用于 UI 组件）
-  userId?: number;
-  userName?: string;
-  avatar?: string;
-  currentLevel?: number;
-  totalExp?: number;
-  levelName?: string;
-  rank?: number;
-  expGainedThisWeek?: number;
-  expGainedThisMonth?: number;
-  isCurrentUser?: boolean;
-  themeColor?: string;
-  currentLevelName?: string;
 }
 
 /**
@@ -127,73 +80,6 @@ export interface LeaderboardItemData {
  */
 interface RankResponse {
   voRank: number;
-}
-
-/**
- * 为 ExperienceData 添加兼容字段
- */
-function addExperienceCompatFields(data: ExperienceData): ExperienceData {
-  return {
-    ...data,
-    userId: data.voUserId?.toString() || '0',
-    currentExp: data.voCurrentExp,
-    currentLevel: data.voCurrentLevel,
-    nextLevelExp: data.voNextLevelExp,
-    totalExp: data.voTotalExp,
-    levelProgress: data.voLevelProgress,
-    levelName: data.voLevelName,
-    levelDescription: data.voLevelDescription,
-    canLevelUp: data.voCanLevelUp,
-    nextLevelName: data.voNextLevelName,
-    expToNextLevel: data.voExpToNextLevel,
-    expGainedToday: data.voExpGainedToday,
-    dailyExpLimit: data.voDailyExpLimit,
-    remainingDailyExp: data.voRemainingDailyExp,
-    isMaxLevel: data.voIsMaxLevel,
-    rank: data.voRank,
-    percentile: data.voPercentile,
-    createTime: data.voCreateTime,
-    updateTime: data.voUpdateTime,
-    themeColor: '#3b82f6',
-    currentLevelName: data.voLevelName,
-    nextLevel: (data.voCurrentLevel || 1) + 1,
-    expFrozen: data.voExpFrozen,
-  };
-}
-
-/**
- * 为 ExpTransactionData 添加兼容字段
- */
-function addTransactionCompatFields(data: ExpTransactionData): ExpTransactionData {
-  return {
-    ...data,
-    id: data.voId,
-    expType: data.voTransactionType,
-    expAmount: data.voExpChange,
-    remark: data.voDescription,
-    createTime: data.voCreateTime,
-  };
-}
-
-/**
- * 为 LeaderboardItemData 添加兼容字段
- */
-function addLeaderboardCompatFields(data: LeaderboardItemData): LeaderboardItemData {
-  return {
-    ...data,
-    userId: data.voUserId,
-    userName: data.voUserName,
-    avatar: data.voAvatarUrl || '',
-    currentLevel: data.voCurrentLevel,
-    totalExp: data.voTotalExp,
-    levelName: data.voLevelName,
-    rank: data.voRank,
-    expGainedThisWeek: data.voExpGainedThisWeek,
-    expGainedThisMonth: data.voExpGainedThisMonth,
-    isCurrentUser: data.voIsCurrentUser,
-    themeColor: data.voThemeColor || '#3b82f6',
-    currentLevelName: data.voCurrentLevelName || data.voLevelName,
-  };
 }
 
 /**
@@ -209,7 +95,7 @@ export const experienceApi = {
     });
 
     if (response.ok && response.data) {
-      return addExperienceCompatFields(response.data);
+      return response.data;
     }
     return null;
   },
@@ -229,10 +115,7 @@ export const experienceApi = {
     );
 
     if (response.ok && response.data) {
-      return {
-        ...response.data,
-        data: response.data.data.map(addTransactionCompatFields),
-      };
+      return response.data;
     }
     return null;
   },
@@ -247,10 +130,7 @@ export const experienceApi = {
     );
 
     if (response.ok && response.data) {
-      return {
-        ...response.data,
-        data: response.data.data.map(addLeaderboardCompatFields),
-      };
+      return response.data;
     }
     return null;
   },

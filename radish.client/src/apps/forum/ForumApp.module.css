@@ -9,9 +9,10 @@
 
 .container {
   display: grid;
-  grid-template-columns: 260px 1fr 320px;
+  grid-template-columns: 260px minmax(0, 1fr) 320px;
   height: 100%;
-  background-color: #0f1419;
+  min-height: 0;
+  background-color: #ffffff;
   overflow: hidden;
   transition: grid-template-columns 0.3s ease;
 }
@@ -21,7 +22,7 @@
   /* 响应式：中等窗口（隐藏右侧栏） - 基于容器宽度 */
   @container forum-container (max-width: 1200px) {
     .container {
-      grid-template-columns: 260px 1fr;
+      grid-template-columns: 260px minmax(0, 1fr);
     }
 
     .rightColumn {
@@ -32,7 +33,7 @@
   /* 响应式：小窗口（只显示中间栏） - 基于容器宽度 */
   @container forum-container (max-width: 900px) {
     .container {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
 
     .leftColumn,
@@ -96,7 +97,7 @@
 /* 兜底：不支持容器查询时，仍按 viewport 响应（移动端/老浏览器） */
 @media (max-width: 1200px) {
   .container {
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 260px minmax(0, 1fr);
   }
 
   .rightColumn {
@@ -106,7 +107,7 @@
 
 @media (max-width: 900px) {
   .container {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .leftColumn,
@@ -169,21 +170,21 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  border-right: 1px solid #27272a;
+  border-right: 1px solid #e5e7eb;
   overflow: hidden;
-  background-color: #0f1419;
+  background-color: #ffffff;
 }
 
 .publishSection {
   flex-shrink: 0;
   padding: 16px 20px;
-  border-bottom: 1px solid #27272a;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .categorySection {
   flex-shrink: 0;
   padding: 20px;
-  border-bottom: 1px solid #27272a;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .tagsSection {
@@ -197,8 +198,10 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 0;
+  min-width: 0;
   overflow: hidden;
-  background-color: #0f1419;
+  background-color: #ffffff;
 }
 
 .toolbar {
@@ -207,8 +210,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #27272a;
-  background-color: #0f1419;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #ffffff;
   gap: 16px;
 }
 
@@ -221,7 +224,7 @@
 .toolbarTitle {
   font-size: 20px;
   font-weight: 600;
-  color: #f4f4f5;
+  color: #1f2937;
   margin: 0;
 }
 
@@ -234,18 +237,18 @@
   padding: 6px 14px;
   font-size: 13px;
   background-color: transparent;
-  border: 1px solid #3f3f46;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  color: #a1a1aa;
+  color: #6b7280;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .sortButton:hover {
-  background-color: #27272a;
-  border-color: #52525b;
-  color: #f4f4f5;
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+  color: #1f2937;
 }
 
 .sortButton.sortActive {
@@ -288,21 +291,21 @@
   width: 100%;
   padding: 8px 36px 8px 14px;
   font-size: 14px;
-  background-color: #18181b;
-  border: 1px solid #3f3f46;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  color: #fff;
+  color: #1f2937;
   outline: none;
   transition: all 0.2s ease;
 }
 
 .searchInput::placeholder {
-  color: #71717a;
+  color: #9ca3af;
 }
 
 .searchInput:focus {
   border-color: #2d6cdf;
-  background-color: #27272a;
+  background-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
 }
 
@@ -314,10 +317,10 @@
   width: 20px;
   height: 20px;
   padding: 0;
-  background-color: #3f3f46;
+  background-color: #d1d5db;
   border: none;
   border-radius: 50%;
-  color: #a1a1aa;
+  color: #6b7280;
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -328,8 +331,8 @@
 }
 
 .clearButton:hover {
-  background-color: #52525b;
-  color: #fff;
+  background-color: #9ca3af;
+  color: #1f2937;
 }
 
 .postsFeed {
@@ -343,7 +346,7 @@
   text-align: center;
   padding: 40px 20px;
   font-size: 14px;
-  color: #71717a;
+  color: #9ca3af;
 }
 
 .pagination {
@@ -353,26 +356,26 @@
   justify-content: center;
   gap: 8px;
   padding: 20px;
-  border-top: 1px solid #27272a;
-  background-color: #0f1419;
+  border-top: 1px solid #e5e7eb;
+  background-color: #ffffff;
 }
 
 .paginationButton {
   min-width: 36px;
   height: 36px;
   padding: 0 10px;
-  background-color: #18181b;
-  border: 1px solid #3f3f46;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  color: #f4f4f5;
+  color: #1f2937;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .paginationButton:hover:not(:disabled) {
-  background-color: #27272a;
-  border-color: #52525b;
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
 }
 
 .paginationButton:disabled {
@@ -387,7 +390,7 @@
 }
 
 .paginationEllipsis {
-  color: #71717a;
+  color: #9ca3af;
   padding: 0 4px;
   user-select: none;
 }
@@ -395,9 +398,10 @@
 /* 右侧栏 */
 .rightColumn {
   height: 100%;
-  border-left: 1px solid #27272a;
+  min-width: 0;
+  border-left: 1px solid #e5e7eb;
   overflow: hidden;
-  background-color: #0f1419;
+  background-color: #ffffff;
 }
 
 .errorText {
@@ -424,8 +428,8 @@
   display: flex;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #27272a;
-  background-color: #0f1419;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: #ffffff;
 }
 
 .backButton {
@@ -434,17 +438,17 @@
   gap: 8px;
   padding: 8px 16px;
   background-color: transparent;
-  border: 1px solid #3f3f46;
+  border: 1px solid #d1d5db;
   border-radius: 6px;
-  color: #f4f4f5;
+  color: #1f2937;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .backButton:hover {
-  background-color: #27272a;
-  border-color: #52525b;
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
   transform: translateX(-2px);
 }
 

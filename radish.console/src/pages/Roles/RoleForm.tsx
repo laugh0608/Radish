@@ -8,7 +8,7 @@ import {
   AntSelect as Select,
   message,
 } from '@radish/ui';
-import { createRole, updateRole, getRoleById, type Role, type RoleRequest } from '@/api/roleApi';
+import { createRole, updateRole, getRoleById, type RoleVo, type CreateRoleRequest } from '@/api/roleApi';
 import { log } from '@/utils/logger';
 
 interface RoleFormProps {
@@ -39,13 +39,14 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
     try {
       setInitialLoading(true);
       const role = await getRoleById(id);
+      // 直接使用 vo 前缀字段
       form.setFieldsValue({
-        roleName: role.roleName,
-        roleDescription: role.roleDescription,
-        orderSort: role.orderSort,
-        departmentIds: role.departmentIds,
-        authorityScope: role.authorityScope,
-        isEnabled: role.isEnabled,
+        voRoleName: role.voRoleName,
+        voRoleDescription: role.voRoleDescription,
+        voOrderSort: role.voOrderSort,
+        voDepartmentIds: role.voDepartmentIds,
+        voAuthorityScope: role.voAuthorityScope,
+        voIsEnabled: role.voIsEnabled,
       });
     } catch (error) {
       log.error('RoleForm', '加载角色详情失败:', error);
@@ -61,13 +62,14 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
       const values = await form.validateFields();
       setLoading(true);
 
-      const roleData: RoleRequest = {
-        roleName: values.roleName,
-        roleDescription: values.roleDescription,
-        orderSort: values.orderSort,
-        departmentIds: values.departmentIds,
-        authorityScope: values.authorityScope,
-        isEnabled: values.isEnabled,
+      // 直接使用 vo 前缀字段构建请求
+      const roleData: CreateRoleRequest = {
+        voRoleName: values.voRoleName,
+        voRoleDescription: values.voRoleDescription,
+        voOrderSort: values.voOrderSort,
+        voDepartmentIds: values.voDepartmentIds,
+        voAuthorityScope: values.voAuthorityScope,
+        voIsEnabled: values.voIsEnabled,
       };
 
       if (mode === 'create') {
@@ -101,9 +103,9 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
       } else {
         // 创建模式，设置默认值
         form.setFieldsValue({
-          orderSort: 0,
-          authorityScope: -1,
-          isEnabled: true,
+          voOrderSort: 0,
+          voAuthorityScope: -1,
+          voIsEnabled: true,
         });
       }
     } else {
@@ -127,7 +129,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
         disabled={initialLoading}
       >
         <Form.Item
-          name="roleName"
+          name="voRoleName"
           label="角色名称"
           rules={[
             { required: true, message: '请输入角色名称' },
@@ -138,7 +140,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
         </Form.Item>
 
         <Form.Item
-          name="roleDescription"
+          name="voRoleDescription"
           label="角色描述"
           rules={[
             { max: 500, message: '角色描述不能超过500个字符' },
@@ -153,7 +155,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
         </Form.Item>
 
         <Form.Item
-          name="orderSort"
+          name="voOrderSort"
           label="排序"
           rules={[
             { required: true, message: '请输入排序值' },
@@ -168,7 +170,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
         </Form.Item>
 
         <Form.Item
-          name="authorityScope"
+          name="voAuthorityScope"
           label="权限范围"
           rules={[
             { required: true, message: '请选择权限范围' },
@@ -181,7 +183,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
         </Form.Item>
 
         <Form.Item
-          name="departmentIds"
+          name="voDepartmentIds"
           label="部门ID"
           tooltip="自定义权限时使用，多个部门ID用逗号分隔"
         >
@@ -189,7 +191,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
         </Form.Item>
 
         <Form.Item
-          name="isEnabled"
+          name="voIsEnabled"
           label="启用状态"
           valuePropName="checked"
         >

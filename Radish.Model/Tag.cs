@@ -7,7 +7,7 @@ namespace Radish.Model;
 
 /// <summary>标签实体</summary>
 /// <remarks>用于帖子标签功能，主键为 Id，类型为 long</remarks>
-public class Tag : RootEntityTKey<long>
+public class Tag : RootEntityTKey<long>, IDeleteFilter
 {
     /// <summary>初始化默认标签实例</summary>
     public Tag()
@@ -41,9 +41,13 @@ public class Tag : RootEntityTKey<long>
         Slug = string.Empty;
         Description = string.Empty;
         Color = string.Empty;
+        SortOrder = 0;
         PostCount = 0;
         IsEnabled = true;
+        IsFixed = false;
         IsDeleted = false;
+        DeletedAt = null;
+        DeletedBy = null;
         CreateTime = DateTime.Now;
         CreateBy = "System";
         CreateId = 0;
@@ -78,9 +82,19 @@ public class Tag : RootEntityTKey<long>
     /// <summary>处理状态信息</summary>
     private void ApplyStatusInformation(TagInitializationOptions options)
     {
+        if (options.SortOrder.HasValue && options.SortOrder.Value >= 0)
+        {
+            SortOrder = options.SortOrder.Value;
+        }
+
         if (options.IsEnabled.HasValue)
         {
             IsEnabled = options.IsEnabled.Value;
+        }
+
+        if (options.IsFixed.HasValue)
+        {
+            IsFixed = options.IsFixed.Value;
         }
 
         if (options.IsDeleted.HasValue)
@@ -135,6 +149,11 @@ public class Tag : RootEntityTKey<long>
     [SugarColumn(Length = 20, IsNullable = true)]
     public string Color { get; set; } = string.Empty;
 
+    /// <summary>排序值</summary>
+    /// <remarks>不可空，数值越小越靠前</remarks>
+    [SugarColumn(IsNullable = false)]
+    public int SortOrder { get; set; } = 0;
+
     #endregion
 
     #region 统计信息
@@ -153,10 +172,26 @@ public class Tag : RootEntityTKey<long>
     [SugarColumn(IsNullable = false)]
     public bool IsEnabled { get; set; } = true;
 
+    /// <summary>是否固定标签</summary>
+    /// <remarks>不可为空，默认为 false</remarks>
+    [SugarColumn(IsNullable = false)]
+    public bool IsFixed { get; set; } = false;
+
     /// <summary>是否删除</summary>
     /// <remarks>不可为空，默认为 false</remarks>
     [SugarColumn(IsNullable = false)]
     public bool IsDeleted { get; set; } = false;
+
+    /// <summary>删除时间</summary>
+    /// <remarks>可空，软删除时自动设置，恢复时清空</remarks>
+    [SugarColumn(IsNullable = true)]
+    [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]
+    public DateTime? DeletedAt { get; set; }
+
+    /// <summary>删除操作者</summary>
+    /// <remarks>可空，最大 50 字符，执行软删除操作的用户名或系统标识</remarks>
+    [SugarColumn(Length = 50, IsNullable = true)]
+    public string? DeletedBy { get; set; }
 
     #endregion
 
@@ -221,6 +256,12 @@ public sealed class TagInitializationOptions
 
     /// <summary>是否启用</summary>
     public bool? IsEnabled { get; set; }
+
+    /// <summary>是否固定标签</summary>
+    public bool? IsFixed { get; set; }
+
+    /// <summary>排序值</summary>
+    public int? SortOrder { get; set; }
 
     /// <summary>是否删除</summary>
     public bool? IsDeleted { get; set; }

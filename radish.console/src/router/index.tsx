@@ -7,6 +7,7 @@ import { OrderList } from '../pages/Orders';
 import { UserList } from '../pages/Users';
 import { UserDetail } from '../pages/Users/UserDetail';
 import { RoleList } from '../pages/Roles';
+import { TagList } from '../pages/Tags';
 import { SystemConfigList } from '../pages/SystemConfig';
 import { UserProfile } from '../pages/UserProfile';
 import { Settings } from '../pages/Settings';
@@ -119,6 +120,10 @@ export const router = createBrowserRouter(
           element: <RoleList />,
         },
         {
+          path: 'tags',
+          element: <TagList />,
+        },
+        {
           path: 'system-config',
           element: <SystemConfigList />,
         },
@@ -163,6 +168,7 @@ export const ROUTES = {
   USERS: '/users',
   USER_DETAIL: '/users/:userId',
   ROLES: '/roles',
+  TAGS: '/tags',
   SYSTEM_CONFIG: '/system-config',
   PROFILE: '/profile',
   SETTINGS: '/settings',

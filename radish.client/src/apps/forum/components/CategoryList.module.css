@@ -7,7 +7,7 @@
   margin: 0 0 8px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #888;
+  color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -15,7 +15,7 @@
 .loadingText,
 .emptyText {
   font-size: 14px;
-  color: #888;
+  color: #9ca3af;
   padding: 8px 0;
 }
 
@@ -32,8 +32,8 @@
   width: 100%;
   padding: 10px 16px;
   background-color: transparent;
-  color: #aaa;
-  border: 1px solid #3f3f46;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
@@ -43,9 +43,9 @@
 }
 
 .categoryButton:hover {
-  background-color: #27272a;
-  border-color: #52525b;
-  color: #fff;
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #1f2937;
 }
 
 .categoryButton.active {

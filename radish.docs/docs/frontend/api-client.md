@@ -508,20 +508,30 @@ VITE_API_BASE_URL=https://api.production.com
 
 ### Q: 如何处理认证失败（401）？
 
-**A:** 可以在错误拦截器中统一处理：
+**A:** 统一使用 `@radish/http` 的刷新机制，优先自动续期，失败再清理并跳转登录：
 
 ```typescript
-configureApiClient({
-  onError: (error) => {
-    if (error.message.includes('401')) {
-      // 清除 token
-      localStorage.removeItem('access_token');
-      // 跳转到登录页
-      window.location.href = '/login';
-    }
+import { configureTokenRefresh } from '@radish/http';
+import { tokenService } from '@/services/tokenService';
+import { redirectToLogin } from '@/services/auth';
+
+configureTokenRefresh({
+  refreshEndpoint: `${authServerBaseUrl}/connect/token`,
+  getRefreshToken: () => localStorage.getItem('refresh_token'),
+  onTokenRefreshed: (accessToken, refreshToken) => {
+    tokenService.setTokenInfoFromJwt(accessToken, refreshToken);
   },
+  onRefreshFailed: () => {
+    tokenService.clearTokens();
+    redirectToLogin();
+  }
 });
 ```
+
+**注意事项**：
+
+- 登录时必须申请 `offline_access` scope 才能拿到 refresh_token
+- 统一通过 `apiGet/apiPost` 触发 401 自动刷新并重试，避免裸 `fetch`
 
 ### Q: 如何取消请求？
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
-import { ExperienceBar } from '@radish/ui';
+import { ExperienceBar } from '@radish/ui/experience-bar';
 import { experienceApi, type ExperienceData } from '@/api/experience';
 import { useUserStore } from '@/stores/userStore';
 import styles from './ExperienceDisplay.module.css';
@@ -68,7 +68,7 @@ export const ExperienceDisplay = () => {
   return (
     <div className={styles.experienceDisplay}>
       <ExperienceBar
-        data={experience as any}
+        data={experience}
         size="small"
         showLevel={true}
         showProgress={true}

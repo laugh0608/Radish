@@ -1,13 +1,53 @@
-import { WelcomeApp } from '@/apps/welcome/WelcomeApp';
-import { ShowcaseApp } from '@/apps/showcase/ShowcaseApp';
-import { ForumApp } from '@/apps/forum/ForumApp';
-import { ProfileApp } from '@/apps/profile/ProfileApp';
-import { RadishPitApp } from '@/apps/radish-pit';
-import { NotificationApp } from '@/apps/notification/NotificationApp';
-import { LeaderboardApp } from '@/apps/leaderboard/LeaderboardApp';
-import { ExperienceDetailApp } from '@/apps/experience-detail/ExperienceDetailApp';
-import { ShopApp } from '@/apps/shop/ShopApp';
+import { lazy, Suspense, type ComponentType } from 'react';
 import type { AppDefinition } from './types';
+
+const createLazyWindowApp = (loader: () => Promise<{ default: ComponentType }>): ComponentType => {
+  const LazyComponent = lazy(loader);
+
+  return function LazyWindowApp() {
+    return (
+      <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center' }}>应用加载中...</div>}>
+        <LazyComponent />
+      </Suspense>
+    );
+  };
+};
+
+const WelcomeApp = createLazyWindowApp(() =>
+  import('@/apps/welcome/WelcomeApp').then((module) => ({ default: module.WelcomeApp }))
+);
+
+const ShowcaseApp = createLazyWindowApp(() =>
+  import('@/apps/showcase/ShowcaseApp').then((module) => ({ default: module.ShowcaseApp }))
+);
+
+const ForumApp = createLazyWindowApp(() =>
+  import('@/apps/forum/ForumApp').then((module) => ({ default: module.ForumApp }))
+);
+
+const ProfileApp = createLazyWindowApp(() =>
+  import('@/apps/profile/ProfileApp').then((module) => ({ default: module.ProfileApp }))
+);
+
+const RadishPitApp = createLazyWindowApp(() =>
+  import('@/apps/radish-pit').then((module) => ({ default: module.RadishPitApp }))
+);
+
+const NotificationApp = createLazyWindowApp(() =>
+  import('@/apps/notification/NotificationApp').then((module) => ({ default: module.NotificationApp }))
+);
+
+const LeaderboardApp = createLazyWindowApp(() =>
+  import('@/apps/leaderboard/LeaderboardApp').then((module) => ({ default: module.LeaderboardApp }))
+);
+
+const ExperienceDetailApp = createLazyWindowApp(() =>
+  import('@/apps/experience-detail/ExperienceDetailApp').then((module) => ({ default: module.ExperienceDetailApp }))
+);
+
+const ShopApp = createLazyWindowApp(() =>
+  import('@/apps/shop/ShopApp').then((module) => ({ default: module.ShopApp }))
+);
 
 /**
  * 判断是否通过 Gateway 访问（5000端口）
@@ -60,42 +100,41 @@ export const appRegistry: AppDefinition[] = [
     type: 'window',
     defaultSize: { width: 900, height: 700 },
     requiredRoles: ['User'],
-    category: 'system'
+    category: 'system',
   },
   {
     id: 'showcase',
-    name: '组件展示',
-    icon: 'mdi:palette',
-    description: '查看和测试所有 UI 组件',
+    name: '组件库',
+    icon: 'mdi:view-grid-plus',
+    description: '@radish/ui 组件库预览',
     component: ShowcaseApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
     requiredRoles: ['User'],
-    category: 'development'
+    category: 'development',
   },
   {
     id: 'docs',
     name: '文档中心',
     icon: 'mdi:book-open-page-variant',
     description: 'Radish 项目文档',
-    component: () => null, // iframe 应用不需要实际组件
+    component: () => null,
     type: 'iframe',
     url: isAccessingViaGateway() ? '/docs/' : 'http://localhost:4000/docs/',
     defaultSize: { width: 1200, height: 800 },
     requiredRoles: ['User'],
-    category: 'development'
+    category: 'development',
   },
   {
     id: 'console',
     name: '控制台',
     icon: 'mdi:console',
     description: 'Radish 管理控制台',
-    component: () => null, // external 应用不需要实际组件
+    component: () => null,
     type: 'external',
-    // 通过 Gateway 访问时使用相对路径，直接访问时使用绝对路径
     externalUrl: isAccessingViaGateway() ? '/console/' : 'http://localhost:3100',
     requiredRoles: ['User'],
-    category: 'system'
+    category: 'system',
   },
   {
     id: 'forum',
@@ -106,7 +145,7 @@ export const appRegistry: AppDefinition[] = [
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
     requiredRoles: ['User'],
-    category: 'content'
+    category: 'content',
   },
   {
     id: 'profile',
@@ -117,7 +156,7 @@ export const appRegistry: AppDefinition[] = [
     type: 'window',
     defaultSize: { width: 1000, height: 700 },
     requiredRoles: ['User'],
-    category: 'user'
+    category: 'user',
   },
   {
     id: 'radish-pit',
@@ -128,7 +167,7 @@ export const appRegistry: AppDefinition[] = [
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
     requiredRoles: ['User'],
-    category: 'user'
+    category: 'user',
   },
   {
     id: 'notification',
@@ -139,7 +178,7 @@ export const appRegistry: AppDefinition[] = [
     type: 'window',
     defaultSize: { width: 800, height: 700 },
     requiredRoles: ['User'],
-    category: 'system'
+    category: 'system',
   },
   {
     id: 'leaderboard',
@@ -150,18 +189,18 @@ export const appRegistry: AppDefinition[] = [
     type: 'window',
     defaultSize: { width: 900, height: 700 },
     requiredRoles: ['User'],
-    category: 'user'
+    category: 'user',
   },
   {
     id: 'experience-detail',
-    name: '经验详情',
-    icon: 'mdi:chart-line',
-    description: '经验值详情与统计',
+    name: '等级',
+    icon: 'mdi:star-circle',
+    description: '等级与经验值详情',
     component: ExperienceDetailApp,
     type: 'window',
     defaultSize: { width: 1000, height: 800 },
     requiredRoles: ['User'],
-    category: 'user'
+    category: 'user',
   },
   {
     id: 'shop',
@@ -172,22 +211,20 @@ export const appRegistry: AppDefinition[] = [
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
     requiredRoles: ['User'],
-    category: 'user'
+    category: 'user',
   },
-
 ];
 
 /**
  * 根据 ID 获取应用定义
  */
 export const getAppById = (id: string): AppDefinition | undefined => {
-  return appRegistry.find(app => app.id === id);
+  return appRegistry.find((app) => app.id === id);
 };
 
 /**
  * 根据用户角色过滤可见应用
  */
-// 当前阶段：默认所有应用在桌面可见，后续如需按角色控制可再扩展
 export const getVisibleApps = (_userRoles: string[] = []): AppDefinition[] => {
   return appRegistry;
 };

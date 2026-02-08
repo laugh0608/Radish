@@ -1,30 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
-import { parseApiResponse, type ApiResponse } from '@radish/ui';
-import { notificationHub } from '@/services/notificationHub';
+import { parseApiResponse, type ApiResponse } from '@radish/http';
+import { redirectToLogin, logout } from '@/services/auth';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from './stores/userStore';
-import { LevelUpModal } from '@radish/ui';
+import { LevelUpModal } from '@radish/ui/level-up-modal';
 import { useLevelUpListener } from '@/hooks/useLevelUpListener';
 import { log } from '@/utils/logger';
 import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
+import { bootstrapAuth, type CurrentUser } from '@/services/authBootstrap';
+import { tokenService } from '@/services/tokenService';
 import './App.css';
-
-interface Forecast {
-    date: string;
-    temperatureC: number;
-    temperatureF: number;
-    summary: string;
-}
-
-interface CurrentUser {
-    voUserId: number;
-    voUserName: string;
-    voTenantId: number;
-    voAvatarUrl?: string;
-    voAvatarThumbnailUrl?: string;
-}
 
 // WebOS 全局用户信息结构（与 useUserStore.UserInfo 对齐）
 interface WebOsUserInfo {
@@ -43,8 +30,6 @@ interface OidcCallbackProps {
 function App() {
     const { t } = useTranslation();
 
-    const [forecasts, setForecasts] = useState<Forecast[]>();
-    const [error, setError] = useState<string>();
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
     const setWebOsUser = useUserStore(state => state.setUser);
     const clearWebOsUser = useUserStore(state => state.clearUser);
@@ -79,64 +64,42 @@ function App() {
     }, [isBrowser, isOidcCallback]);
 
     useEffect(() => {
-        populateWeatherData();
-        populateCurrentUser();
-        
-        // 验证 userStore 状态
-        setTimeout(() => {
-            const userState = useUserStore.getState();
-            log.info('App', '========== 验证 userStore 状态 ==========');
-            log.info('App', 'userId:', userState.userId);
-            log.info('App', 'userName:', userState.userName);
-            log.info('App', 'isAuthenticated:', userState.isAuthenticated());
-        }, 1000);
+        const cleanupAuth = bootstrapAuth({
+            apiBaseUrl,
+            onUserLoaded: (userData) => {
+                setCurrentUser(userData);
+                setUserError(undefined);
+
+                // 同步到 WebOS 全局用户状态
+                const webOsUser: WebOsUserInfo = {
+                    userId: typeof userData.voUserId === 'string' ? parseInt(userData.voUserId, 10) : userData.voUserId,
+                    userName: userData.voUserName,
+                    tenantId: typeof userData.voTenantId === 'string' ? parseInt(userData.voTenantId, 10) : userData.voTenantId,
+                    roles: ['User'],
+                    avatarUrl: userData.voAvatarUrl,
+                    avatarThumbnailUrl: userData.voAvatarThumbnailUrl
+                };
+                setWebOsUser(webOsUser);
+            },
+            onUserLoadFailed: (error) => {
+                setUserError(`${t('auth.userInfoLoadFailedPrefix')}${error.message}`);
+                setCurrentUser(null);
+                clearWebOsUser();
+            }
+        });
+
+        return () => {
+            cleanupAuth();
+        };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [apiBaseUrl]);
 
-    // 通知 Hub：登录后自动连接，登出后断开
-    useEffect(() => {
-        if (!isBrowser || isOidcCallback) return;
-
-        const token = window.localStorage.getItem('access_token');
-        if (token) {
-            void notificationHub.start();
-        } else {
-            void notificationHub.stop();
-        }
-
-        // 页面卸载时断开连接
-        return () => {
-            void notificationHub.stop();
-        };
-    }, [isBrowser, isOidcCallback]);
+    // 注意：WebSocket 连接由 Shell.tsx 统一管理，此处不再启动
 
     // OIDC 回调页面：单独渲染回调组件
     if (isOidcCallback) {
         return <OidcCallback apiBaseUrl={apiBaseUrl} />;
     }
-
-    const contents = forecasts === undefined
-        ? <p><em>{error ?? t('weather.loading')}</em></p>
-        : <table className="table table-striped" aria-labelledby="tableLabel">
-            <thead>
-                <tr>
-                    <th>{t('weather.date')}</th>
-                    <th>{t('weather.tempC')}</th>
-                    <th>{t('weather.tempF')}</th>
-                    <th>{t('weather.summary')}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {forecasts.map(forecast =>
-                    <tr key={forecast.date}>
-                        <td>{forecast.date}</td>
-                        <td>{forecast.temperatureC}</td>
-                        <td>{forecast.temperatureF}</td>
-                        <td>{forecast.summary}</td>
-                    </tr>
-                )}
-            </tbody>
-        </table>;
 
     return (
         <>
@@ -156,11 +119,11 @@ function App() {
                     <h2>{t('auth.sectionTitle')}</h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <button type="button" onClick={() => handleLogin(apiBaseUrl)}>
+                            <button type="button" onClick={() => redirectToLogin()}>
                                 {t('auth.login')}
                             </button>
                             {currentUser && (
-                                <button type="button" onClick={() => handleLogout(apiBaseUrl)}>
+                                <button type="button" onClick={() => logout()}>
                                     退出登录
                                 </button>
                             )}
@@ -191,7 +154,6 @@ function App() {
                     </div>
                 </section>
 
-                {contents}
             </main>
 
             {/* 升级动画弹窗 */}
@@ -205,139 +167,6 @@ function App() {
         </>
     );
 
-    async function populateWeatherData() {
-        const requestUrl = `${apiBaseUrl}/api/v2/WeatherForecast/GetStandard`;
-        try {
-            const response = await apiFetch(requestUrl);
-            const json = await response.json() as ApiResponse<Forecast[]>;
-            const parsed = parseApiResponse(json);
-
-            if (!parsed.ok || !parsed.data) {
-                throw new Error(parsed.message || t('error.weather.load_failed'));
-            }
-
-            setForecasts(parsed.data);
-            setError(undefined);
-        } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            setError(message);
-            setForecasts(undefined);
-        }
-    }
-
-    async function populateCurrentUser() {
-        if (!isBrowser) {
-            return;
-        }
-
-        log.info('App', '========== 主页面开始获取用户信息 ==========');
-
-        // 优先使用缓存的用户信息（从登录回调页面预加载）
-        const cachedUserInfo = window.localStorage.getItem('cached_user_info');
-        log.info('App', '检查 localStorage 缓存:', cachedUserInfo ? '✅ 存在' : '❌ 不存在');
-
-        if (cachedUserInfo) {
-            try {
-                const userData = JSON.parse(cachedUserInfo) as CurrentUser;
-                log.info('App', '✅ 使用缓存的用户信息');
-                log.info('App', '缓存数据详情:', {
-                    userId: userData.voUserId,
-                    userName: userData.voUserName,
-                    tenantId: userData.voTenantId,
-                    hasAvatar: !!userData.voAvatarUrl
-                });
-
-                // 验证缓存数据的有效性
-                if (!userData.voUserId || !userData.voUserName) {
-                    log.error('App', '❌ 缓存数据无效，userId 或 userName 为空');
-                    window.localStorage.removeItem('cached_user_info');
-                    // 继续从服务器获取
-                } else {
-                    setCurrentUser(userData);
-                    setUserError(undefined);
-
-                    // 同步到 WebOS 全局用户状态
-                    const webOsUser: WebOsUserInfo = {
-                        userId: userData.voUserId,
-                        userName: userData.voUserName,
-                        tenantId: userData.voTenantId,
-                        roles: ['User'],
-                        avatarUrl: userData.voAvatarUrl,
-                        avatarThumbnailUrl: userData.voAvatarThumbnailUrl
-                    };
-                    setWebOsUser(webOsUser);
-                    log.info('App', '✅ WebOS 用户状态已更新');
-                    log.info('App', 'WebOS 状态详情:', {
-                        userId: webOsUser.userId,
-                        userName: webOsUser.userName,
-                        tenantId: webOsUser.tenantId
-                    });
-
-                    // 清除缓存，避免使用过期数据
-                    window.localStorage.removeItem('cached_user_info');
-                    log.info('App', '========== 用户信息加载完成（使用缓存）==========');
-                    return;
-                }
-            } catch (err) {
-                // 缓存数据解析失败，继续从服务器获取
-                log.error('App', '❌ 缓存数据解析失败:', err);
-                window.localStorage.removeItem('cached_user_info');
-            }
-        }
-
-        const requestUrl = `${apiBaseUrl}/api/v1/User/GetUserByHttpContext`;
-        log.info('App', '📡 从服务器获取用户信息:', requestUrl);
-
-        try {
-            const response = await apiFetch(requestUrl, { withAuth: true });
-            log.info('App', '用户信息请求响应状态:', response.status);
-
-            const json = await response.json() as ApiResponse<CurrentUser>;
-            log.debug('App', '用户信息响应数据:', json);
-
-            const parsed = parseApiResponse(json);
-
-            if (!parsed.ok || !parsed.data) {
-                throw new Error(parsed.message || t('auth.userInfoLoadFailedPrefix'));
-            }
-
-            log.info('App', '✅ 用户信息获取成功');
-            log.info('App', '服务器数据详情:', {
-                userId: parsed.data.voUserId,
-                userName: parsed.data.voUserName,
-                tenantId: parsed.data.voTenantId,
-                hasAvatar: !!parsed.data.voAvatarUrl
-            });
-
-            setCurrentUser(parsed.data);
-            setUserError(undefined);
-
-            // 同步到 WebOS 全局用户状态，默认赋予基础角色
-            const webOsUser: WebOsUserInfo = {
-                userId: parsed.data.voUserId,
-                userName: parsed.data.voUserName,
-                tenantId: parsed.data.voTenantId,
-                roles: ['User'],
-                avatarUrl: parsed.data.voAvatarUrl,
-                avatarThumbnailUrl: parsed.data.voAvatarThumbnailUrl
-            };
-            setWebOsUser(webOsUser);
-            log.info('App', '✅ WebOS 用户状态已更新');
-            log.info('App', 'WebOS 状态详情:', {
-                userId: webOsUser.userId,
-                userName: webOsUser.userName,
-                tenantId: webOsUser.tenantId
-            });
-            log.info('App', '========== 用户信息加载完成（从服务器）==========');
-        } catch (err) {
-            const message = err instanceof Error ? err.message : String(err);
-            log.error('App', '❌ 获取用户信息失败:', message);
-            setUserError(`${t('auth.userInfoLoadFailedPrefix')}${message}`);
-            setCurrentUser(null);
-            clearWebOsUser();
-            log.info('App', '========== 用户信息加载失败 ==========');
-        }
-    }
 }
 
 interface ApiFetchOptions extends RequestInit {
@@ -364,54 +193,6 @@ function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
         ...rest,
         headers: finalHeaders,
     });
-}
-
-function handleLogin(_apiBaseUrl: string) {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    const redirectUri = `${window.location.origin}/oidc/callback`;
-    const authServerBaseUrl = getAuthBaseUrl();
-
-    const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
-    authorizeUrl.searchParams.set('client_id', 'radish-client');
-    authorizeUrl.searchParams.set('response_type', 'code');
-    authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-    // 目前后端已为 radish-client 配置了 radish-api Scope，这里只请求资源 scope，避免无关 scope 带来 invalid_scope 问题
-    authorizeUrl.searchParams.set('scope', 'radish-api');
-
-    // 🌍 传递当前语言设置到 Auth Server，实现国际化统一
-    const currentLanguage = i18n.language || 'zh';
-    authorizeUrl.searchParams.set('culture', currentLanguage);
-    authorizeUrl.searchParams.set('ui-culture', currentLanguage);
-
-    window.location.href = authorizeUrl.toString();
-}
-
-function handleLogout(_apiBaseUrl: string) {
-    if (typeof window === 'undefined') {
-        return;
-    }
-
-    // 清理本地保存的 Token
-    window.localStorage.removeItem('access_token');
-    window.localStorage.removeItem('refresh_token');
-
-    // 使用 OIDC 标准的 endsession endpoint 实现 Single Sign-Out
-    const postLogoutRedirectUri = window.location.origin;
-    const authServerBaseUrl = getAuthBaseUrl();
-
-    const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
-    logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
-    logoutUrl.searchParams.set('client_id', 'radish-client');
-
-    // 🌍 传递当前语言设置
-    const currentLanguage = i18n.language || 'zh';
-    logoutUrl.searchParams.set('culture', currentLanguage);
-
-    // 重定向到 OIDC logout endpoint，Auth Server 会清除 session 并重定向回来
-    window.location.href = logoutUrl.toString();
 }
 
 function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
@@ -451,7 +232,7 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
         hasExecutedRef.current = true;
 
         const redirectUri = `${window.location.origin}/oidc/callback`;
-        const authServerBaseUrl = getAuthServerBaseUrl();
+        const authServerBaseUrl = getAuthBaseUrl();
 
         const fetchToken = async () => {
             const body = new URLSearchParams();
@@ -476,15 +257,23 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
                 const tokenSet = await response.json() as {
                     access_token?: string;
                     refresh_token?: string;
+                    expires_in?: number;
+                    token_type?: string;
                 };
 
                 if (!tokenSet.access_token) {
                     throw new Error(t('oidc.missingAccessToken'));
                 }
 
-                window.localStorage.setItem('access_token', tokenSet.access_token);
-                if (tokenSet.refresh_token) {
-                    window.localStorage.setItem('refresh_token', tokenSet.refresh_token);
+                if (tokenSet.expires_in) {
+                    tokenService.setTokenInfo({
+                        access_token: tokenSet.access_token,
+                        refresh_token: tokenSet.refresh_token,
+                        expires_in: tokenSet.expires_in,
+                        token_type: tokenSet.token_type || 'Bearer'
+                    });
+                } else {
+                    tokenService.setTokenInfoFromJwt(tokenSet.access_token, tokenSet.refresh_token);
                 }
 
                 // 立即获取用户信息并缓存，避免主页面加载时的竞态条件

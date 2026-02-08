@@ -51,6 +51,7 @@ export const env = {
      */
     i18n: import.meta.env.VITE_FEATURE_I18N === 'true',
   },
+
 } as const;
 
 /**

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useUserStore } from '@/stores/userStore';
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import { AboutTab, QuickStartTab, RulesTab } from './components';
 import styles from './WelcomeApp.module.css';
 

@@ -1,48 +1,76 @@
-import { Icon as IconifyIcon } from '@iconify/react';
+import { useEffect, useState } from 'react';
+import { Icon as IconifyIcon, getIcon, addCollection } from '@iconify/react';
 import type { IconProps as IconifyIconProps } from '@iconify/react';
-import { addCollection } from '@iconify/react';
-import mdiIcons from '@iconify-json/mdi/icons.json';
+import './Icon.css';
 
-// 注册本地 MDI 图标集，避免依赖在线 API
-addCollection(mdiIcons);
+let mdiCollectionLoaded = false;
+let mdiCollectionLoadingPromise: Promise<void> | null = null;
+
+async function ensureMdiCollectionLoaded(): Promise<void> {
+  if (mdiCollectionLoaded) {
+    return;
+  }
+
+  if (!mdiCollectionLoadingPromise) {
+    mdiCollectionLoadingPromise = import('./mdi-subset.json')
+      .then((module) => {
+        addCollection(module.default as any);
+        mdiCollectionLoaded = true;
+      })
+      .finally(() => {
+        mdiCollectionLoadingPromise = null;
+      });
+  }
+
+  await mdiCollectionLoadingPromise;
+}
 
 export interface IconProps extends Omit<IconifyIconProps, 'icon'> {
-  /**
-   * 图标名称，支持 Iconify 图标集
-   * @example "mdi:home" "mdi:account" "mdi:settings"
-   * @see https://icon-sets.iconify.design/
-   */
   icon: string;
-  /**
-   * 图标大小（像素）
-   * @default 24
-   */
   size?: number | string;
-  /**
-   * 图标颜色
-   * @default "currentColor"
-   */
   color?: string;
 }
 
-/**
- * 图标组件
- *
- * 封装 @iconify/react，提供统一的图标使用方式
- *
- * @example
- * ```tsx
- * <Icon icon="mdi:home" size={24} color="#333" />
- * <Icon icon="mdi:account-circle" size={32} />
- * ```
- */
-export const Icon = ({ icon, size = 24, color = 'currentColor', ...props }: IconProps) => {
+export const Icon = ({
+  icon,
+  size = 24,
+  color = 'currentColor',
+  className,
+  style,
+  ...props
+}: IconProps) => {
+  const [, setCollectionVersion] = useState(0);
+
+  useEffect(() => {
+    if (typeof icon !== 'string' || !icon.startsWith('mdi:') || mdiCollectionLoaded) {
+      return;
+    }
+
+    void ensureMdiCollectionLoaded().then(() => {
+      setCollectionVersion((version) => version + 1);
+    });
+  }, [icon]);
+
+  const resolveIcon = () => {
+    if (typeof icon !== 'string') {
+      return icon;
+    }
+
+    const resolved = getIcon(icon);
+    return resolved || icon;
+  };
+
+  const mergedClassName = ['radish-icon', className].filter(Boolean).join(' ');
+
   return (
     <IconifyIcon
-      icon={icon}
+      icon={resolveIcon()}
       width={size}
       height={size}
-      color={color}
+      color={color || undefined}
+      inline={true}
+      className={mergedClassName}
+      style={style}
       {...props}
     />
   );

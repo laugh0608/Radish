@@ -1,17 +1,16 @@
 .container {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
+  background: #ffffff;
   border-radius: 12px;
   padding: 20px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid #e5e7eb;
 }
 
 .title {
   margin: 0 0 16px 0;
   font-size: 16px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
+  color: #1f2937;
 }
 
 .chartWrapper {
@@ -32,15 +31,15 @@
 .loading p,
 .error p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.7);
+  color: #6b7280;
   font-size: 14px;
 }
 
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: rgba(255, 255, 255, 0.6);
+  border: 3px solid #e5e7eb;
+  border-top-color: #667eea;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }

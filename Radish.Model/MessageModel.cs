@@ -233,7 +233,7 @@ public class MessageModel
     /// 返回给用户的消息信息
     /// </summary>
     public string MessageInfo { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 业务错误码
     /// </summary>
@@ -250,4 +250,34 @@ public class MessageModel
     /// 返回的数据对象
     /// </summary>
     public object? ResponseData { get; set; }
+
+    /// <summary>
+    /// 返回成功响应
+    /// </summary>
+    /// <param name="msg">成功消息</param>
+    /// <returns>包含成功状态和消息的响应对象</returns>
+    public static MessageModel Success(string msg)
+    {
+        return new MessageModel
+        {
+            IsSuccess = true,
+            MessageInfo = msg,
+            StatusCode = (int)HttpStatusCodeEnum.Success
+        };
+    }
+
+    /// <summary>
+    /// 返回失败响应
+    /// </summary>
+    /// <param name="msg">失败消息</param>
+    /// <returns>包含失败状态和消息的响应对象</returns>
+    public static MessageModel Failed(string msg)
+    {
+        return new MessageModel
+        {
+            IsSuccess = false,
+            MessageInfo = msg,
+            StatusCode = (int)HttpStatusCodeEnum.BadRequest
+        };
+    }
 }

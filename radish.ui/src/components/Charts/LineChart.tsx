@@ -59,28 +59,29 @@ export const LineChart = ({
     >
       <ResponsiveContainer width="100%" height="100%">
         <RechartsLineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-          {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />}
+          {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />}
           <XAxis
             dataKey={xAxisKey}
-            stroke="rgba(255, 255, 255, 0.5)"
+            stroke="#6b7280"
             style={{ fontSize: '12px' }}
           />
           <YAxis
-            stroke="rgba(255, 255, 255, 0.5)"
+            stroke="#6b7280"
             style={{ fontSize: '12px' }}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
+              backgroundColor: '#ffffff',
+              border: '1px solid #e5e7eb',
               borderRadius: '8px',
-              color: '#fff'
+              color: '#1f2937',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
             }}
           />
           {showLegend && (
             <Legend
               wrapperStyle={{
-                color: 'rgba(255, 255, 255, 0.7)',
+                color: '#1f2937',
                 fontSize: '12px'
               }}
             />

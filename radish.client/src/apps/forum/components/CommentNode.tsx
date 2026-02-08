@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { log } from '@/utils/logger';
 import type { CommentNode as CommentNodeType } from '@/api/forum';
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
+import { ImageLightbox } from '@radish/ui/image-lightbox';
 import styles from './CommentNode.module.css';
 
 interface CommentNodeProps {
@@ -34,6 +35,53 @@ const highlightMentions = (content: string): string => {
   return escapedContent.replace(/@([^\s@]+)/g, '<span class="mention">@$1</span>');
 };
 
+interface CommentImageItem {
+  displaySrc: string;
+  fullSrc: string;
+  alt: string;
+}
+
+const parseImageMeta = (src: string) => {
+  const [baseSrc, hash] = src.split('#');
+  if (!hash || !hash.startsWith('radish:')) {
+    return {
+      displaySrc: baseSrc || src,
+      fullSrc: baseSrc || src,
+    };
+  }
+
+  const params = new URLSearchParams(hash.slice('radish:'.length));
+  return {
+    displaySrc: baseSrc || src,
+    fullSrc: params.get('full') || baseSrc || src,
+  };
+};
+
+const extractCommentImages = (content: string): CommentImageItem[] => {
+  const regex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  const images: CommentImageItem[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(content)) !== null) {
+    const alt = match[1] || 'comment-image';
+    const src = match[2];
+    if (!src) continue;
+    const parsed = parseImageMeta(src);
+    images.push({
+      displaySrc: parsed.displaySrc,
+      fullSrc: parsed.fullSrc,
+      alt,
+    });
+  }
+
+  return images;
+};
+
+const normalizeCommentText = (content: string): string => {
+  const withoutImageMarkdown = content.replace(/!\[[^\]]*\]\([^)]+\)/g, '').trim();
+  return withoutImageMarkdown;
+};
+
 export const CommentNode = ({
   node,
   level,
@@ -47,7 +95,7 @@ export const CommentNode = ({
   onLoadMoreChildren
 }: CommentNodeProps) => {
   // 判断是否是作者本人
-  const isAuthor = currentUserId > 0 && node.voAuthorId === currentUserId;
+  const isAuthor = currentUserId > 0 && String(node.voAuthorId) === String(currentUserId);
 
   // 判断是否在5分钟编辑窗口内
   const canEdit = (() => {
@@ -62,6 +110,8 @@ export const CommentNode = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // 本地点赞状态（用于乐观更新）
   const [isLiked, setIsLiked] = useState(node.voIsLiked ?? false);
@@ -73,10 +123,14 @@ export const CommentNode = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [childSortBy, setChildSortBy] = useState<'newest' | 'hottest' | null>(null); // null表示默认排序(时间升序)
+  const [hasPreloadedChildren, setHasPreloadedChildren] = useState(false);
+
+  const commentImages = useMemo(() => extractCommentImages(node.voContent), [node.voContent]);
+  const textContent = useMemo(() => normalizeCommentText(node.voContent), [node.voContent]);
 
   // 初始化已加载的子评论（默认时间升序）
   const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(() => {
-    const children = node.voChildren || [];
+    const children = Array.isArray(node.voChildren) ? node.voChildren : [];
     // 默认按时间升序排序
     return [...children].sort((a, b) =>
       new Date(a.voCreateTime || 0).getTime() - new Date(b.voCreateTime || 0).getTime()
@@ -105,13 +159,18 @@ export const CommentNode = ({
 
   // 监听 node.voChildren 变化,重新初始化子评论列表
   useEffect(() => {
-    const children = node.voChildren || [];
+    const children = Array.isArray(node.voChildren) ? node.voChildren : [];
     const sorted = [...children].sort((a, b) =>
       new Date(a.voCreateTime || 0).getTime() - new Date(b.voCreateTime || 0).getTime()
     );
     setLoadedChildren(sorted);
     setChildSortBy(null); // 重置排序方式为默认值
   }, [node.voChildren]);
+
+  // 父评论或子评论总数变化时，重置预加载状态
+  useEffect(() => {
+    setHasPreloadedChildren(false);
+  }, [node.voId, node.voChildrenTotal]);
 
   // 若后端只返回 childrenTotal（不带 children 列表），为了“收起态也能看到一条回复”，这里自动预加载第一页子评论
   useEffect(() => {
@@ -120,11 +179,14 @@ export const CommentNode = ({
     if (loadedChildren.length > 0) return;
     if (!onLoadMoreChildren) return;
     if (isLoadingMore) return;
+    if (hasPreloadedChildren) return;
 
+    setHasPreloadedChildren(true);
     setIsLoadingMore(true);
     onLoadMoreChildren(node.voId, 1, pageSize)
       .then(children => {
-        setLoadedChildren(children);
+        const normalized = Array.isArray(children) ? children : [];
+        setLoadedChildren(normalized);
         setCurrentPage(1);
       })
       .catch(error => {
@@ -142,7 +204,7 @@ export const CommentNode = ({
     setIsLiking(true);
     try {
       const result = await onLike(node.voId);
-      // 更新本地状态
+      // 更新本地状态（直接使用后端返回字段）
       setIsLiked(result.isLiked);
       setLikeCount(result.likeCount);
     } catch (error) {
@@ -196,7 +258,8 @@ export const CommentNode = ({
         setIsLoadingMore(true);
         try {
           const children = await onLoadMoreChildren(node.voId, 1, pageSize);
-          setLoadedChildren(children);
+          const normalized = Array.isArray(children) ? children : [];
+          setLoadedChildren(normalized);
           setCurrentPage(1);
         } catch (error) {
           log.error('加载子评论失败:', error);
@@ -219,7 +282,8 @@ export const CommentNode = ({
     try {
       const nextPage = currentPage + 1;
       const moreChildren = await onLoadMoreChildren(node.voId, nextPage, pageSize);
-      setLoadedChildren([...loadedChildren, ...moreChildren]);
+      const normalized = Array.isArray(moreChildren) ? moreChildren : [];
+      setLoadedChildren([...loadedChildren, ...normalized]);
       setCurrentPage(nextPage);
     } catch (error) {
       log.error('加载更多子评论失败:', error);
@@ -351,10 +415,33 @@ export const CommentNode = ({
           </div>
         </div>
       ) : (
-        <div
-          className={styles.content}
-          dangerouslySetInnerHTML={{ __html: highlightMentions(node.voContent) }}
-        />
+        <div className={styles.contentWrapper}>
+          {textContent && (
+            <div
+              className={styles.content}
+              dangerouslySetInnerHTML={{ __html: highlightMentions(textContent) }}
+            />
+          )}
+
+          {commentImages.length > 0 && (
+            <div className={styles.imageGrid}>
+              {commentImages.map((img, idx) => (
+                <button
+                  type="button"
+                  key={`${img.fullSrc}-${idx}`}
+                  className={styles.imageButton}
+                  onClick={() => {
+                    setLightboxIndex(idx);
+                    setLightboxOpen(true);
+                  }}
+                  title="点击查看原图"
+                >
+                  <img src={img.displaySrc} alt={img.alt} className={styles.imageThumb} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* 操作按钮区域 */}
@@ -474,6 +561,13 @@ export const CommentNode = ({
           )}
         </div>
       )}
+
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        images={commentImages.map(item => ({ src: item.fullSrc, alt: item.alt }))}
+        initialIndex={lightboxIndex}
+        onClose={() => setLightboxOpen(false)}
+      />
     </div>
   );
 };
