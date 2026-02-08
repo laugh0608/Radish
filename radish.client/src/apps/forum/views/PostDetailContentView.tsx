@@ -1,15 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
 import type { PostDetail, CommentNode } from '@/api/forum';
-import { PostDetail as PostDetailComponent } from '../components/PostDetail';
-import { CommentTree } from '../components/CommentTree';
-import { CreateCommentForm } from '../components/CreateCommentForm';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import styles from './PostDetailContentView.module.css';
 
+const PostDetailComponent = lazy(() =>
+  import('../components/PostDetail').then((module) => ({ default: module.PostDetail }))
+);
+
+const CommentTree = lazy(() =>
+  import('../components/CommentTree').then((module) => ({ default: module.CommentTree }))
+);
+
+const CreateCommentForm = lazy(() =>
+  import('../components/CreateCommentForm').then((module) => ({ default: module.CreateCommentForm }))
+);
+
 interface PostDetailContentViewProps {
-  // 数据
   post: PostDetail;
   comments: CommentNode[];
   loadingPostDetail: boolean;
@@ -21,7 +29,6 @@ interface PostDetailContentViewProps {
   commentSortBy: 'newest' | 'hottest' | null;
   replyTo: { commentId: number; authorName: string } | null;
 
-  // 事件处理
   onBack: () => void;
   onLike: (postId: number) => void;
   onEdit: (postId: number) => void;
@@ -123,7 +130,6 @@ export const PostDetailContentView = ({
 
   return (
     <div className={styles.detailView}>
-      {/* 返回按钮 */}
       <div className={styles.detailToolbar}>
         <button className={styles.backButton} onClick={onBack}>
           <Icon icon="mdi:arrow-left" size={20} />
@@ -131,39 +137,44 @@ export const PostDetailContentView = ({
         </button>
       </div>
 
-      {/* 帖子详情内容 */}
       <div className={styles.detailBody}>
         <div
           className={`${styles.detailContent} ${showFloatingTools ? styles.withFloatingTools : ''}`}
           ref={contentRef}
         >
-          <PostDetailComponent
-            post={post}
-            loading={loadingPostDetail}
-            isLiked={isLiked}
-            onLike={onLike}
-            isAuthenticated={isAuthenticated}
-            currentUserId={currentUserId}
-            onEdit={onEdit}
-            onDelete={onDelete}
-          />
-          <CommentTree
-            comments={comments}
-            loading={loadingComments}
-            hasPost={true}
-            currentUserId={currentUserId}
-            pageSize={5}
-            sortBy={commentSortBy}
-            onSortChange={onCommentSortChange}
-            onDeleteComment={onDeleteComment}
-            onEditComment={onEditComment}
-            onLikeComment={onLikeComment}
-            onReplyComment={(commentId, authorName) => {
-              onReplyComment(commentId, authorName);
-              setIsCommentSheetOpen(true);
-            }}
-            onLoadMoreChildren={onLoadMoreChildren}
-          />
+          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>帖子内容加载中...</div>}>
+            <PostDetailComponent
+              post={post}
+              loading={loadingPostDetail}
+              isLiked={isLiked}
+              onLike={onLike}
+              isAuthenticated={isAuthenticated}
+              currentUserId={currentUserId}
+              onEdit={onEdit}
+              onDelete={onDelete}
+            />
+          </Suspense>
+
+          <Suspense fallback={<p className={styles.loadingText}>加载评论中...</p>}>
+            <CommentTree
+              comments={comments}
+              loading={loadingComments}
+              hasPost={true}
+              currentUserId={currentUserId}
+              pageSize={5}
+              sortBy={commentSortBy}
+              onSortChange={onCommentSortChange}
+              onDeleteComment={onDeleteComment}
+              onEditComment={onEditComment}
+              onLikeComment={onLikeComment}
+              onReplyComment={(commentId, authorName) => {
+                onReplyComment(commentId, authorName);
+                setIsCommentSheetOpen(true);
+              }}
+              onLoadMoreChildren={onLoadMoreChildren}
+            />
+          </Suspense>
+
           <div className={styles.commentCta}>
             <button className={styles.commentButton} onClick={handleOpenCommentSheet}>
               发表评论
@@ -192,14 +203,18 @@ export const PostDetailContentView = ({
         title="发表评论"
         height="70%"
       >
-        <CreateCommentForm
-          isAuthenticated={isAuthenticated}
-          hasPost={true}
-          onSubmit={handleCreateComment}
-          replyTo={replyTo}
-          onCancelReply={onCancelReply}
-          variant="sheet"
-        />
+        {isCommentSheetOpen && (
+          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>评论编辑器加载中...</div>}>
+            <CreateCommentForm
+              isAuthenticated={isAuthenticated}
+              hasPost={true}
+              onSubmit={handleCreateComment}
+              replyTo={replyTo}
+              onCancelReply={onCancelReply}
+              variant="sheet"
+            />
+          </Suspense>
+        )}
       </BottomSheet>
     </div>
   );

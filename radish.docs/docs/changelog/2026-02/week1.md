@@ -32,6 +32,13 @@
 - **UI 导出补齐**：`@radish/ui` 新增 `glass-panel` / `context-menu` / `skeleton` 子路径导出，支持展示页按需引入。
 - **构建结果**：`app-showcase` 从约 `751.21 kB` 降至约 `410.06 kB`，当前已无超 500k chunk 告警。
 
+### Client Forum 详情视图再拆分
+
+- **视图层拆分**：`PostDetailContentView` 中 `PostDetail` / `CommentTree` / `CreateCommentForm` 改为按需加载。
+- **正文渲染拆分**：`PostDetail` 中 `MarkdownRenderer` 改为懒加载，正文渲染依赖延后到详情打开后加载。
+- **分包规则细化**：`vite.config.ts` 将论坛详情进一步拆分为 `forum-detail-view` / `forum-detail-post` / `forum-detail-comments`。
+- **构建结果**：原 `forum-detail-view`（约 `349.00 kB`）拆分为 `forum-detail-view`（约 `5.49 kB`）、`forum-detail-post`（约 `3.91 kB`）、`forum-detail-comments`（约 `19.85 kB`）。
+
 ## 2026-02-07 (周六)
 
 ### 论坛分类与标签
