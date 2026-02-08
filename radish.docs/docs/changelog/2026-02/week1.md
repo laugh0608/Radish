@@ -7,6 +7,8 @@
 - **入口懒加载改造**：`src/main.tsx` 改为 `React.lazy + Suspense`，按场景加载 `App` / `Shell`。
 - **应用级懒加载注册**：`desktop/AppRegistry.tsx` 改为窗口应用按需加载，避免桌面首屏加载全部子应用。
 - **构建分包策略**：`vite.config.ts` 增加 `manualChunks` 规则，拆分 vendor 与应用 chunk。
+- **体验页二级懒加载**：`ExperienceDetailApp` 将 `LineChart/PieChart` 改为按需加载，应用主包显著缩小。
+- **图标数据异步加载**：`@radish/ui/Icon` 改为按需加载 MDI 图标集并缓存，避免业务包静态打入整份图标数据。
 - **构建基线验证**：`npm run build --workspace=radish.client` 通过，入口包与子应用包已拆分。
 
 ## 2026-02-07 (周六)

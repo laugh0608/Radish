@@ -8,6 +8,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./components": "./src/components/index.ts",
+    "./icon": "./src/components/Icon/Icon.tsx",
+    "./experience-bar": "./src/components/ExperienceBar/ExperienceBar.tsx",
+    "./line-chart": "./src/components/Charts/LineChart.tsx",
+    "./pie-chart": "./src/components/Charts/PieChart.tsx",
     "./hooks": "./src/hooks/index.ts",
     "./utils": "./src/utils/index.ts",
     "./types": "./src/types/index.ts"

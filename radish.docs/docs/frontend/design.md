@@ -1031,6 +1031,8 @@ Client  Console   Shop    Docs
 ### 12.3 结果与后续
 
 - 构建结果已从“单一超大入口包”转为“入口小包 + 子应用懒加载包”结构。
+- `ExperienceDetailApp` 已采用图表二级懒加载（`LineChart/PieChart`），将大图表依赖从应用主包中分离。
+- `@radish/ui/Icon` 改为 MDI 图标集异步加载（带缓存），避免业务 chunk 静态携带整份图标数据。
 - 若后续仍有超大 chunk，优先排查：
   - `@radish/ui` 的 barrel export 对 tree-shaking 的影响；
   - 子应用中重型组件（图表/编辑器）的二级懒加载机会。
