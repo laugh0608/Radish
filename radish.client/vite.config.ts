@@ -76,11 +76,26 @@ export default defineConfig({
             inPackage(id, 'highlight.js') ||
             normalized.includes('/node_modules/remark-') ||
             normalized.includes('/node_modules/rehype-') ||
+            normalized.includes('/node_modules/micromark') ||
+            normalized.includes('/node_modules/mdast-') ||
+            normalized.includes('/node_modules/hast-') ||
+            normalized.includes('/node_modules/unist-') ||
+            normalized.includes('/node_modules/vfile') ||
+            normalized.includes('/node_modules/property-information') ||
+            normalized.includes('/node_modules/space-separated-tokens') ||
+            normalized.includes('/node_modules/comma-separated-tokens') ||
+            normalized.includes('/node_modules/decode-named-character-reference') ||
+            normalized.includes('/node_modules/character-entities') ||
+            normalized.includes('/node_modules/mdurl') ||
             normalized.includes('/node_modules/unified/') ||
             normalized.includes('react-markdown') ||
             normalized.includes('remark') ||
             normalized.includes('rehype') ||
-            normalized.includes('highlight.js')
+            normalized.includes('highlight.js') ||
+            normalized.includes('micromark') ||
+            normalized.includes('mdast') ||
+            normalized.includes('hast') ||
+            normalized.includes('unist')
           ) {
             return 'vendor-markdown';
           }
@@ -102,10 +117,10 @@ export default defineConfig({
           if (normalized.includes('/src/apps/forum/components/EditPostModal')) return 'forum-publish-modal';
 
           if (normalized.includes('/src/apps/forum/views/PostDetailContentView')) return 'forum-detail-view';
-          if (normalized.includes('/src/apps/forum/components/PostDetail')) return 'forum-detail-view';
-          if (normalized.includes('/src/apps/forum/components/CommentTree')) return 'forum-detail-view';
-          if (normalized.includes('/src/apps/forum/components/CommentNode')) return 'forum-detail-view';
-          if (normalized.includes('/src/apps/forum/components/CreateCommentForm')) return 'forum-detail-view';
+          if (normalized.includes('/src/apps/forum/components/PostDetail')) return 'forum-detail-post';
+          if (normalized.includes('/src/apps/forum/components/CommentTree')) return 'forum-detail-comments';
+          if (normalized.includes('/src/apps/forum/components/CommentNode')) return 'forum-detail-comments';
+          if (normalized.includes('/src/apps/forum/components/CreateCommentForm')) return 'forum-detail-comments';
 
           if (normalized.includes('/src/apps/radish-pit/components/Statistics/')) return 'pit-statistics';
           if (normalized.includes('/src/apps/radish-pit/components/SecuritySettings/')) return 'pit-security';
