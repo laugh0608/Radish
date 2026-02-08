@@ -32,7 +32,7 @@ export const PostDetail = ({
   const tagList = post?.voTagNames && post.voTagNames.length > 0 ? post.voTagNames : parsedTags;
 
   // 判断是否是作者本人
-  const isAuthor = post && currentUserId > 0 && post.voAuthorId === currentUserId;
+  const isAuthor = post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
   if (loading) {
     return (
       <div className={styles.container}>

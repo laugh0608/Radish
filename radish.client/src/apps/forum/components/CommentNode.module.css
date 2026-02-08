@@ -83,6 +83,36 @@
   text-align: left;
 }
 
+.contentWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.imageGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.imageButton {
+  width: 88px;
+  height: 88px;
+  padding: 0;
+  border: 1px solid #dbe3ef;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8fafc;
+  cursor: zoom-in;
+}
+
+.imageThumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 /* @用户名高亮（全局样式，因为使用dangerouslySetInnerHTML） */
 .content :global(.mention) {
   color: #2d6cdf;

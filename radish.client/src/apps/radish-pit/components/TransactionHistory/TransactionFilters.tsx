@@ -1,14 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { log } from '@/utils/logger';
 import styles from './TransactionFilters.module.css';
 
-interface FilterOptions {
+export interface FilterOptions {
   transactionType?: string;
   status?: string;
-  dateRange?: {
-    start: string;
-    end: string;
-  };
+  dateRange?: { start: string; end: string };
   searchKeyword?: string;
 }
 
@@ -24,6 +21,10 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
   const [isExpanded, setIsExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState<FilterOptions>(filters);
 
+  useEffect(() => {
+    setLocalFilters(filters);
+  }, [filters]);
+
   const transactionTypes = [
     { value: '', label: '全部类型' },
     { value: 'SYSTEM_GRANT', label: '系统赠送' },
@@ -34,7 +35,7 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
     { value: 'TRANSFER_IN', label: '转入' },
     { value: 'TRANSFER_OUT', label: '转出' },
     { value: 'PURCHASE', label: '购买消费' },
-    { value: 'ADMIN_ADJUST', label: '管理员调整' }
+    { value: 'ADMIN_ADJUST', label: '管理员调整' },
   ];
 
   const statusOptions = [
@@ -42,10 +43,13 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
     { value: 'PENDING', label: '处理中' },
     { value: 'SUCCESS', label: '成功' },
     { value: 'FAILED', label: '失败' },
-    { value: 'CANCELLED', label: '已取消' }
+    { value: 'CANCELLED', label: '已取消' },
   ];
 
-  const handleFilterChange = (key: keyof FilterOptions, value: string | { start: string; end: string } | undefined) => {
+  const handleFilterChange = (
+    key: keyof FilterOptions,
+    value: string | { start: string; end: string } | undefined
+  ) => {
     const newFilters = { ...localFilters, [key]: value };
     setLocalFilters(newFilters);
     onFilterChange(newFilters);
@@ -53,9 +57,10 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
   };
 
   const handleDateRangeChange = (type: 'start' | 'end', value: string) => {
+    const currentDateRange = localFilters.dateRange || { start: '', end: '' };
     const newDateRange = {
-      ...localFilters.dateRange,
-      [type]: value
+      ...currentDateRange,
+      [type]: value,
     };
     handleFilterChange('dateRange', newDateRange);
   };
@@ -67,13 +72,20 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
     log.debug('TransactionFilters', '清空筛选条件');
   };
 
-  const hasActiveFilters = Object.keys(localFilters).some(key => {
-    const value = localFilters[key as keyof FilterOptions];
-    if (key === 'dateRange') {
-      return value && (value.start || value.end);
-    }
-    return value && value !== '';
-  });
+  const hasActiveFilters = Boolean(
+    localFilters.transactionType ||
+      localFilters.status ||
+      localFilters.searchKeyword ||
+      localFilters.dateRange?.start ||
+      localFilters.dateRange?.end
+  );
+
+  const activeFilterCount = [
+    localFilters.transactionType,
+    localFilters.status,
+    localFilters.searchKeyword,
+    localFilters.dateRange?.start || localFilters.dateRange?.end ? 'dateRange' : '',
+  ].filter(Boolean).length;
 
   const toggleExpanded = () => {
     setIsExpanded(!isExpanded);
@@ -87,19 +99,11 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
             <span className={styles.icon}>🔍</span>
             筛选条件
           </h3>
-          {hasActiveFilters && (
-            <span className={styles.activeIndicator}>
-              {Object.keys(localFilters).length} 个筛选条件
-            </span>
-          )}
+          {hasActiveFilters && <span className={styles.activeIndicator}>{activeFilterCount} 个筛选条件</span>}
         </div>
         <div className={styles.headerRight}>
           {hasActiveFilters && (
-            <button
-              className={styles.clearButton}
-              onClick={handleClearFilters}
-              title="清空筛选条件"
-            >
+            <button className={styles.clearButton} onClick={handleClearFilters} title="清空筛选条件">
               清空
             </button>
           )}
@@ -115,7 +119,6 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
 
       <div className={`${styles.content} ${isExpanded ? styles.expanded : ''}`}>
         <div className={styles.filtersGrid}>
-          {/* 搜索关键词 */}
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>搜索</label>
             <input
@@ -127,7 +130,6 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
             />
           </div>
 
-          {/* 交易类型 */}
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>交易类型</label>
             <select
@@ -143,7 +145,6 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
             </select>
           </div>
 
-          {/* 交易状态 */}
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>交易状态</label>
             <select
@@ -159,7 +160,6 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
             </select>
           </div>
 
-          {/* 日期范围 */}
           <div className={styles.filterGroup}>
             <label className={styles.filterLabel}>开始日期</label>
             <input
@@ -181,38 +181,22 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
           </div>
         </div>
 
-        {/* 快捷筛选 */}
         <div className={styles.quickFilters}>
           <span className={styles.quickFiltersLabel}>快捷筛选：</span>
           <div className={styles.quickFilterButtons}>
-            <button
-              className={styles.quickFilterButton}
-              onClick={() => handleFilterChange('transactionType', 'LIKE_REWARD')}
-            >
+            <button className={styles.quickFilterButton} onClick={() => handleFilterChange('transactionType', 'LIKE_REWARD')}>
               点赞奖励
             </button>
-            <button
-              className={styles.quickFilterButton}
-              onClick={() => handleFilterChange('transactionType', 'COMMENT_REWARD')}
-            >
+            <button className={styles.quickFilterButton} onClick={() => handleFilterChange('transactionType', 'COMMENT_REWARD')}>
               评论奖励
             </button>
-            <button
-              className={styles.quickFilterButton}
-              onClick={() => handleFilterChange('transactionType', 'TRANSFER_IN')}
-            >
+            <button className={styles.quickFilterButton} onClick={() => handleFilterChange('transactionType', 'TRANSFER_IN')}>
               转入记录
             </button>
-            <button
-              className={styles.quickFilterButton}
-              onClick={() => handleFilterChange('transactionType', 'TRANSFER_OUT')}
-            >
+            <button className={styles.quickFilterButton} onClick={() => handleFilterChange('transactionType', 'TRANSFER_OUT')}>
               转出记录
             </button>
-            <button
-              className={styles.quickFilterButton}
-              onClick={() => handleFilterChange('status', 'SUCCESS')}
-            >
+            <button className={styles.quickFilterButton} onClick={() => handleFilterChange('status', 'SUCCESS')}>
               成功交易
             </button>
           </div>

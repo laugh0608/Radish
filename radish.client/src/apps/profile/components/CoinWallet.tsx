@@ -29,10 +29,10 @@ export const CoinWallet = ({ apiBaseUrl }: CoinWalletProps) => {
 
     try {
       const result = await getBalance(t);
-      if (result.ok && result.data) {
-        setBalance(result.data);
+      if (result) {
+        setBalance(result);
       } else {
-        setError(result.message || '获取余额失败');
+        setError('获取余额失败');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '获取余额失败');
@@ -74,24 +74,24 @@ export const CoinWallet = ({ apiBaseUrl }: CoinWalletProps) => {
         <div className={styles.balanceMain}>
           <div className={styles.balanceItem}>
             <div className={styles.balanceLabel}>可用余额</div>
-            <div className={styles.balanceValue}>
-              <span className={styles.carrotAmount}>{(balance.balance || 0).toLocaleString()}</span>
+              <div className={styles.balanceValue}>
+              <span className={styles.carrotAmount}>{(balance.voBalance || 0).toLocaleString()}</span>
               <span className={styles.unit}>胡萝卜</span>
             </div>
             <div className={styles.balanceValueAlt}>
-              {balance.balanceDisplay} 白萝卜
+              {balance.voBalanceDisplay} 白萝卜
             </div>
           </div>
 
-          {(balance.frozenBalance || 0) > 0 && (
+          {(balance.voFrozenBalance || 0) > 0 && (
             <div className={styles.balanceItem}>
               <div className={styles.balanceLabel}>冻结余额</div>
               <div className={styles.balanceValue}>
-                <span className={styles.carrotAmount}>{(balance.frozenBalance || 0).toLocaleString()}</span>
+                <span className={styles.carrotAmount}>{(balance.voFrozenBalance || 0).toLocaleString()}</span>
                 <span className={styles.unit}>胡萝卜</span>
               </div>
               <div className={styles.balanceValueAlt}>
-                {balance.frozenBalanceDisplay} 白萝卜
+                {balance.voFrozenBalanceDisplay} 白萝卜
               </div>
             </div>
           )}
@@ -99,19 +99,19 @@ export const CoinWallet = ({ apiBaseUrl }: CoinWalletProps) => {
 
         <div className={styles.statsGrid}>
           <div className={styles.statItem}>
-            <div className={styles.statValue}>+{(balance.totalEarned || 0).toLocaleString()}</div>
+            <div className={styles.statValue}>+{(balance.voTotalEarned || 0).toLocaleString()}</div>
             <div className={styles.statLabel}>累计收入</div>
           </div>
           <div className={styles.statItem}>
-            <div className={styles.statValue}>-{(balance.totalSpent || 0).toLocaleString()}</div>
+            <div className={styles.statValue}>-{(balance.voTotalSpent || 0).toLocaleString()}</div>
             <div className={styles.statLabel}>累计支出</div>
           </div>
           <div className={styles.statItem}>
-            <div className={styles.statValue}>+{(balance.totalTransferredIn || 0).toLocaleString()}</div>
+            <div className={styles.statValue}>+{(balance.voTotalTransferredIn || 0).toLocaleString()}</div>
             <div className={styles.statLabel}>转入总额</div>
           </div>
           <div className={styles.statItem}>
-            <div className={styles.statValue}>-{(balance.totalTransferredOut || 0).toLocaleString()}</div>
+            <div className={styles.statValue}>-{(balance.voTotalTransferredOut || 0).toLocaleString()}</div>
             <div className={styles.statLabel}>转出总额</div>
           </div>
         </div>

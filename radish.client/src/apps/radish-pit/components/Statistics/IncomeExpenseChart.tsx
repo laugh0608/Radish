@@ -15,10 +15,10 @@ interface IncomeExpenseChartProps {
  */
 export const IncomeExpenseChart = ({ data, loading, error, displayMode, timeRange }: IncomeExpenseChartProps) => {
   // 准备图表数据
-  const chartData = data?.trendData.map((item, index) => ({
-    name: item.date,
-    收入: displayMode === 'carrot' ? item.income : item.income,
-    支出: displayMode === 'carrot' ? item.expense : item.expense
+  const chartData = data?.voTrendData.map((item) => ({
+    name: item.voDate,
+    收入: displayMode === 'carrot' ? item.voIncome : item.voIncome,
+    支出: displayMode === 'carrot' ? item.voExpense : item.voExpense
   })) || [];
 
   // 根据显示模式设置颜色

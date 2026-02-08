@@ -124,6 +124,29 @@
   background-color: #f9fafb;
 }
 
+.imageScaleRow {
+  margin-top: 8px;
+  margin-bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.imageScaleLabel {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.imageScaleSelect {
+  min-width: 90px;
+  padding: 5px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-size: 13px;
+}
+
 .textarea {
   width: 100%;
   margin-bottom: 8px;

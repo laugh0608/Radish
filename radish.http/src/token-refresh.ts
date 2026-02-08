@@ -11,16 +11,18 @@
 /**
  * Token 刷新错误类型
  */
-export enum TokenRefreshErrorType {
+export const TokenRefreshErrorType = {
   /** 网络错误，可重试 */
-  NetworkError = 'network_error',
+  NetworkError: 'network_error',
   /** Refresh Token 无效，需重新登录 */
-  InvalidRefreshToken = 'invalid_token',
+  InvalidRefreshToken: 'invalid_token',
   /** 服务器错误，可重试 */
-  ServerError = 'server_error',
+  ServerError: 'server_error',
   /** 未知错误 */
-  Unknown = 'unknown'
-}
+  Unknown: 'unknown',
+} as const;
+
+export type TokenRefreshErrorType = (typeof TokenRefreshErrorType)[keyof typeof TokenRefreshErrorType];
 
 interface TokenRefreshConfig {
   /** Token 刷新端点 URL */

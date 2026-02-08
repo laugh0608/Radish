@@ -27,6 +27,8 @@ export { GlassPanel } from './GlassPanel/GlassPanel';
 export type { GlassPanelProps } from './GlassPanel/GlassPanel';
 
 export { MarkdownRenderer } from './MarkdownRenderer/MarkdownRenderer';
+export { ImageLightbox } from './ImageLightbox/ImageLightbox';
+export type { LightboxImageItem } from './ImageLightbox/ImageLightbox';
 
 export { MarkdownEditor } from './MarkdownEditor/MarkdownEditor';
 export type { MarkdownEditorProps } from './MarkdownEditor/MarkdownEditor';

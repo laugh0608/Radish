@@ -1,11 +1,11 @@
 import { formatCoinAmount, formatDateTime, getTransactionTypeDisplay, getTransactionStatusColor, getSafeUserDisplayName } from '../../utils';
 import { useUserStore } from '@/stores/userStore';
-import type { CoinTransactionVo } from '@/api/coin';
+import type { CoinTransaction } from '@/api/coin';
 import styles from './TransactionDetail.module.css';
 import { log } from '@/utils/logger';
 
 interface TransactionDetailProps {
-  transaction: CoinTransactionVo;
+  transaction: CoinTransaction;
   displayMode: 'carrot' | 'white';
   onClose: () => void;
 }
@@ -15,6 +15,7 @@ interface TransactionDetailProps {
  */
 export const TransactionDetail = ({ transaction, displayMode, onClose }: TransactionDetailProps) => {
   const { userId } = useUserStore();
+  const currentUserId = String(userId);
   const useWhiteRadish = displayMode === 'white';
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -35,8 +36,8 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
   };
 
   const getAmountDirection = (): 'in' | 'out' => {
-    if (transaction.voToUserId === userId) return 'in';
-    if (transaction.voFromUserId === userId) return 'out';
+    if (transaction.voToUserId === currentUserId) return 'in';
+    if (transaction.voFromUserId === currentUserId) return 'out';
     return transaction.voAmount > 0 ? 'in' : 'out';
   };
 
@@ -50,9 +51,9 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
           <div className={styles.participantLabel}>发起方</div>
           <div className={styles.participantValue}>
             {fromUser ? (
-              <span className={transaction.voFromUserId === userId ? styles.currentUser : ''}>
-                {getSafeUserDisplayName(fromUser, transaction.voFromUserId === userId)}
-                {transaction.voFromUserId === userId && ' (我)'}
+              <span className={transaction.voFromUserId === currentUserId ? styles.currentUser : ''}>
+                {getSafeUserDisplayName(fromUser, transaction.voFromUserId === currentUserId)}
+                {transaction.voFromUserId === currentUserId && ' (我)'}
               </span>
             ) : (
               <span className={styles.systemUser}>系统</span>
@@ -66,9 +67,9 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
           <div className={styles.participantLabel}>接收方</div>
           <div className={styles.participantValue}>
             {toUser ? (
-              <span className={transaction.voToUserId === userId ? styles.currentUser : ''}>
-                {getSafeUserDisplayName(toUser, transaction.voToUserId === userId)}
-                {transaction.voToUserId === userId && ' (我)'}
+              <span className={transaction.voToUserId === currentUserId ? styles.currentUser : ''}>
+                {getSafeUserDisplayName(toUser, transaction.voToUserId === currentUserId)}
+                {transaction.voToUserId === currentUserId && ' (我)'}
               </span>
             ) : (
               <span className={styles.systemUser}>系统</span>
@@ -109,7 +110,7 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
               {getAmountDirection() === 'in' ? '+' : '-'}
               {formatCoinAmount(Math.abs(transaction.voAmount), true, useWhiteRadish)}
             </div>
-            {transaction.voFee && transaction.voFee > 0 && (
+              {transaction.voFee && transaction.voFee > 0 && (
               <div className={styles.feeInfo}>
                 手续费: {formatCoinAmount(transaction.voFee, true, useWhiteRadish)}
               </div>
@@ -122,7 +123,7 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
               {transaction.voStatusDisplay}
             </div>
             <div className={styles.statusTime}>
-              {formatDateTime(transaction.voCreatedAt)}
+              {formatDateTime(transaction.voCreateTime)}
             </div>
           </div>
 
@@ -153,7 +154,7 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
               <div className={styles.infoItem}>
                 <div className={styles.infoLabel}>创建时间</div>
                 <div className={styles.infoValue}>
-                  {new Date(transaction.voCreatedAt).toLocaleString('zh-CN')}
+                  {new Date(transaction.voCreateTime).toLocaleString('zh-CN')}
                 </div>
               </div>
 
@@ -174,12 +175,12 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
           </div>
 
           {/* 备注信息 */}
-          {transaction.voNote && (
+          {transaction.voRemark && (
             <div className={styles.section}>
               <h4 className={styles.sectionTitle}>备注</h4>
               <div className={styles.noteContent}>
                 <span className={styles.noteIcon}>💬</span>
-                {transaction.voNote}
+                {transaction.voRemark}
               </div>
             </div>
           )}

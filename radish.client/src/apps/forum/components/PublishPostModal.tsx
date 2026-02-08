@@ -17,6 +17,19 @@ interface PublishPostModalProps {
 const DRAFT_STORAGE_KEY = 'forum_post_draft';
 const MIN_TAG_COUNT = 1;
 const MAX_TAG_COUNT = 5;
+const IMAGE_SCALE_OPTIONS = [30, 50, 70, 100] as const;
+
+const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
+  const params = new URLSearchParams();
+  if (fullUrl) {
+    params.set('full', fullUrl);
+  }
+  if (scalePercent && Number.isFinite(scalePercent)) {
+    params.set('scale', String(Math.min(Math.max(scalePercent, 10), 100)));
+  }
+  const meta = params.toString();
+  return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
+};
 
 export const PublishPostModal = ({
   isOpen,
@@ -29,6 +42,7 @@ export const PublishPostModal = ({
   const [addWatermark, setAddWatermark] = useState(false);
   const [watermarkText, setWatermarkText] = useState('Radish');
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
+  const [imageScalePercent, setImageScalePercent] = useState<number>(70);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allTagNames, setAllTagNames] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
@@ -186,8 +200,8 @@ export const PublishPostModal = ({
       }, t);
 
       return {
-        url: result.url,
-        thumbnailUrl: result.thumbnailUrl
+        url: appendImageMeta(result.voUrl, result.voUrl, imageScalePercent),
+        thumbnailUrl: result.voThumbnailUrl
       };
     } catch (error) {
       log.error('图片上传失败:', error);
@@ -204,8 +218,8 @@ export const PublishPostModal = ({
       }, t);
 
       return {
-        url: result.url,
-        fileName: file.name
+        url: result.voUrl,
+        fileName: result.voOriginalName || file.name
       };
     } catch (error) {
       log.error('文档上传失败:', error);
@@ -248,6 +262,18 @@ export const PublishPostModal = ({
         <Icon icon="mdi:aspect-ratio" size={16} />
         <span>多尺寸</span>
       </button>
+      <label className={styles.editorScaleLabel}>
+        <span>缩放</span>
+        <select
+          value={imageScalePercent}
+          onChange={(e) => setImageScalePercent(Number(e.target.value))}
+          className={styles.editorScaleSelect}
+        >
+          {IMAGE_SCALE_OPTIONS.map(scale => (
+            <option key={scale} value={scale}>{scale}%</option>
+          ))}
+        </select>
+      </label>
     </div>
   );
 

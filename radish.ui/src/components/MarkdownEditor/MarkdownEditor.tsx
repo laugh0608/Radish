@@ -1,4 +1,5 @@
 import { useState, useRef } from 'react';
+import type { ReactNode } from 'react';
 import type { KeyboardEvent, ChangeEvent, ClipboardEvent, DragEvent } from 'react';
 import { Icon } from '../Icon/Icon';
 import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';

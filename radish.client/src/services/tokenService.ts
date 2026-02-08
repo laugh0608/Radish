@@ -17,7 +17,7 @@ interface TokenInfo {
 class TokenService {
   private static instance: TokenService;
   private refreshPromise: Promise<string> | null = null;
-  private refreshTimer: NodeJS.Timeout | null = null;
+  private refreshTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly TOKEN_KEY = 'access_token';
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly TOKEN_EXPIRES_KEY = 'token_expires_at';
