@@ -46,6 +46,13 @@
 - **构建结果**：`forum-publish-modal` 从约 `341.12 kB` 降至约 `10.36 kB`，并拆分出独立 `MarkdownEditor` / `MarkdownRenderer` 异步 chunk。
 - **整体状态**：当前已无超过 500k 的业务 chunk。
 
+### Client Forum 发布弹窗修复补记
+
+- **路径修复**：修正 `PublishPostModal` 的动态导入路径为 `@radish/ui/markdown-editor`，恢复发帖弹窗编辑器按需加载。
+- **预览修复**：`MarkdownEditor` 预览态改为 `Suspense` 懒加载 `MarkdownRenderer`，避免预览依赖提前进入编辑态包。
+- **构建验证**：执行 `npm run build --workspace=radish.client` 通过，`forum-publish-modal` 约 `10.36 kB`。
+- **提交记录**：`c32530c`。
+
 ## 2026-02-07 (周六)
 
 ### 论坛分类与标签
