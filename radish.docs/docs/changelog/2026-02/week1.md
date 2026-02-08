@@ -19,6 +19,13 @@
 - **Iconify 精简**：`@radish/ui/Icon` 由整包 MDI 改为 `mdi` 子集异步加载，显著降低图标相关体积。
 - **构建结果**：`npm run build --workspace=radish.client` 通过；`app-profile` 约 `59.13 kB`（此前约 `792.80 kB`），`app-forum` 约 `42.56 kB`，无超 500k chunk 告警。
 
+### Client 萝卜坑拆包深化
+
+- **页级懒加载**：`RadishPitApp` 将 `AccountOverview` / `Transfer` / `TransactionHistory` / `SecuritySettings` / `Statistics` 改为按需加载。
+- **统计页二级懒加载**：`Statistics` 将 `IncomeExpenseChart` / `CategoryBreakdown` / `TrendAnalysis` 改为按需加载。
+- **分包规则细化**：`vite.config.ts` 新增 `pit-transfer` / `pit-history` / `pit-security` / `pit-statistics` chunk 规则。
+- **构建结果**：`app-radish-pit` 从约 `491.91 kB` 降至约 `25.32 kB`，并拆分出多个萝卜坑子 chunk；当前超 500k 仅剩 `app-showcase`。
+
 ## 2026-02-07 (周六)
 
 ### 论坛分类与标签
