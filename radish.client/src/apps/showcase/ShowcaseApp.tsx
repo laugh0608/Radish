@@ -8,7 +8,7 @@ import {
   Select,
   Modal,
   ConfirmDialog,
-  Toast,
+  ToastContainer,
   toast,
   ExperienceBar,
   TableSkeleton,
@@ -38,13 +38,13 @@ export const ShowcaseApp = () => {
   const mockExperienceData: ExperienceData = {
     voUserId: 1,
     voCurrentLevel: 5,
-    voLevelName: '萝卜达人',
+    voCurrentLevelName: '萝卜达人',
     voCurrentExp: 2500,
     voTotalExp: 12500,
     voNextLevelExp: 3000,
     voExpToNextLevel: 500,
     voNextLevelName: '萝卜专家',
-    voLevelProgress: 83,
+    voLevelProgress: 0.83,
     voThemeColor: '#667eea',
     voRank: 42,
     voExpFrozen: false
@@ -698,7 +698,7 @@ export const ShowcaseApp = () => {
           </section>
         )}
       </div>
-      <Toast />
+      <ToastContainer />
     </div>
   );
 };

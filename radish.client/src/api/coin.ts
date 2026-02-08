@@ -2,7 +2,7 @@
  * 萝卜币系统相关的 API 调用
  */
 
-import { parseApiResponseWithI18n, apiGet, configureApiClient, type PagedResponse } from '@radish/http';
+import { apiGet, configureApiClient } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 
@@ -49,6 +49,17 @@ export interface CoinTransaction {
   voBusinessId: string | null;
   voRemark: string | null;
   voCreateTime: string;
+  voTheoreticalAmount?: number;
+  voRoundingDiff?: number;
+}
+
+
+export interface VoPagedResponse<T> {
+  voPageIndex: number;
+  voPageSize: number;
+  voTotalCount: number;
+  voTotalPages: number;
+  voItems: T[];
 }
 
 /**
@@ -56,10 +67,10 @@ export interface CoinTransaction {
  * @param t i18n 翻译函数（可选）
  * @returns 用户余额信息
  */
-export async function getBalance(t?: TFunction) {
+export async function getBalance(t?: TFunction): Promise<UserBalance> {
   const response = await apiGet<UserBalance>('/api/v1/Coin/GetBalance', { withAuth: true });
 
-  if (!response.ok) {
+  if (!response.ok || !response.data) {
     throw new Error(response.message || '获取余额失败');
   }
 
@@ -81,7 +92,7 @@ export async function getTransactions(
   transactionType: string | null = null,
   status: string | null = null,
   t?: TFunction
-) {
+): Promise<VoPagedResponse<CoinTransaction>> {
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
     pageSize: pageSize.toString()
@@ -95,12 +106,12 @@ export async function getTransactions(
     params.append('status', status);
   }
 
-  const response = await apiGet<PagedResponse<CoinTransaction>>(
+  const response = await apiGet<VoPagedResponse<CoinTransaction>>(
     `/api/v1/Coin/GetTransactions?${params.toString()}`,
     { withAuth: true }
   );
 
-  if (!response.ok) {
+  if (!response.ok || !response.data) {
     throw new Error(response.message || '获取交易记录失败');
   }
 
@@ -113,13 +124,13 @@ export async function getTransactions(
  * @param t i18n 翻译函数（可选）
  * @returns 交易详情
  */
-export async function getTransactionByNo(transactionNo: string, t?: TFunction) {
+export async function getTransactionByNo(transactionNo: string, t?: TFunction): Promise<CoinTransaction> {
   const response = await apiGet<CoinTransaction>(
     `/api/v1/Coin/GetTransactionByNo?transactionNo=${encodeURIComponent(transactionNo)}`,
     { withAuth: true }
   );
 
-  if (!response.ok) {
+  if (!response.ok || !response.data) {
     if (response.statusCode === 404) {
       throw new Error('交易记录不存在');
     }
@@ -216,7 +227,7 @@ export interface TransferResponse {
  * @param t i18n 翻译函数（可选）
  * @returns 交易流水号
  */
-export async function transfer(request: TransferRequest, t?: TFunction) {
+export async function transfer(request: TransferRequest, t?: TFunction): Promise<TransferResponse> {
   const { apiPost } = await import('@radish/http');
   const response = await apiPost<TransferResponse>(
     '/api/v1/Coin/Transfer',
@@ -224,7 +235,7 @@ export async function transfer(request: TransferRequest, t?: TFunction) {
     { withAuth: true }
   );
 
-  if (!response.ok) {
+  if (!response.ok || !response.data) {
     throw new Error(response.message || '转账失败');
   }
 
@@ -263,13 +274,13 @@ export interface CoinStatistics {
  * @param t i18n 翻译函数（可选）
  * @returns 统计数据
  */
-export async function getStatistics(timeRange: 'month' | 'quarter' | 'year' = 'month', t?: TFunction) {
+export async function getStatistics(timeRange: 'month' | 'quarter' | 'year' = 'month', t?: TFunction): Promise<CoinStatistics> {
   const response = await apiGet<CoinStatistics>(
     `/api/v1/Coin/GetStatistics?timeRange=${timeRange}`,
     { withAuth: true }
   );
 
-  if (!response.ok) {
+  if (!response.ok || !response.data) {
     throw new Error(response.message || '获取统计数据失败');
   }
 

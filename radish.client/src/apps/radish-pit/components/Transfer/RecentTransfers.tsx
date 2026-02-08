@@ -3,7 +3,7 @@ import { coinApi } from '@/api/coin';
 import { log } from '@/utils/logger';
 import { formatCoinAmount, formatDateTime, getSafeUserDisplayName } from '../../utils';
 import { useUserStore } from '@/stores/userStore';
-import type { CoinTransactionVo } from '@/api/coin';
+import type { CoinTransaction } from '@/api/coin';
 import styles from './RecentTransfers.module.css';
 
 interface RecentTransfersProps {
@@ -15,7 +15,8 @@ interface RecentTransfersProps {
  */
 export const RecentTransfers = ({ displayMode }: RecentTransfersProps) => {
   const { userId } = useUserStore();
-  const [transfers, setTransfers] = useState<CoinTransactionVo[]>([]);
+  const currentUserId = String(userId);
+  const [transfers, setTransfers] = useState<CoinTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,8 +35,8 @@ export const RecentTransfers = ({ displayMode }: RecentTransfersProps) => {
       const response = await coinApi.getTransactions(1, 10);
 
       // 筛选出转账相关的交易
-      const transferTransactions = (response.voItems || []).filter(
-        transaction =>
+      const transferTransactions = (response?.voItems || []).filter(
+        (transaction: CoinTransaction) =>
           transaction.voTransactionType === 'TRANSFER_IN' ||
           transaction.voTransactionType === 'TRANSFER_OUT'
       );
@@ -51,22 +52,22 @@ export const RecentTransfers = ({ displayMode }: RecentTransfersProps) => {
     }
   };
 
-  const getTransferDirection = (transaction: CoinTransactionVo): 'in' | 'out' => {
+  const getTransferDirection = (transaction: CoinTransaction): 'in' | 'out' => {
     return transaction.voTransactionType === 'TRANSFER_IN' ? 'in' : 'out';
   };
 
-  const getTransferParty = (transaction: CoinTransactionVo): string => {
+  const getTransferParty = (transaction: CoinTransaction): string => {
     const direction = getTransferDirection(transaction);
 
     if (direction === 'in') {
       // 转入：显示发送方
       return transaction.voFromUserName
-        ? getSafeUserDisplayName(transaction.voFromUserName, transaction.voFromUserId === userId)
+        ? getSafeUserDisplayName(transaction.voFromUserName, transaction.voFromUserId === currentUserId)
         : '系统';
     } else {
       // 转出：显示接收方
       return transaction.voToUserName
-        ? getSafeUserDisplayName(transaction.voToUserName, transaction.voToUserId === userId)
+        ? getSafeUserDisplayName(transaction.voToUserName, transaction.voToUserId === currentUserId)
         : '系统';
     }
   };
@@ -164,14 +165,14 @@ export const RecentTransfers = ({ displayMode }: RecentTransfersProps) => {
                         </span>
                       </div>
                       <div className={styles.transferTime}>
-                        {formatDateTime(transfer.voCreatedAt)}
+                        {formatDateTime(transfer.voCreateTime)}
                       </div>
                     </div>
 
-                    {transfer.voNote && (
+                    {transfer.voRemark && (
                       <div className={styles.transferNote}>
                         <span className={styles.noteIcon}>💬</span>
-                        {transfer.voNote}
+                        {transfer.voRemark}
                       </div>
                     )}
                   </div>

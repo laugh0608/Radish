@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
-import { Area, Point } from 'react-easy-crop/types';
+import type { Area, Point } from 'react-easy-crop';
 import styles from './ImageCropper.module.css';
 
 export interface ImageCropperProps {
@@ -32,7 +32,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   }, [image]);
 
   const onCropCompleteCallback = useCallback(
-    (croppedArea: Area, croppedAreaPixels: Area) => {
+    (_croppedArea: Area, croppedAreaPixels: Area) => {
       setCroppedAreaPixels(croppedAreaPixels);
     },
     []

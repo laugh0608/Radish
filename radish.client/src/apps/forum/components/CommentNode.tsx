@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { log } from '@/utils/logger';
 import type { CommentNode as CommentNodeType } from '@/api/forum';
-import { Icon } from '@radish/ui';
+import { Icon, ImageLightbox } from '@radish/ui';
 import styles from './CommentNode.module.css';
 
 interface CommentNodeProps {
@@ -34,6 +34,53 @@ const highlightMentions = (content: string): string => {
   return escapedContent.replace(/@([^\s@]+)/g, '<span class="mention">@$1</span>');
 };
 
+interface CommentImageItem {
+  displaySrc: string;
+  fullSrc: string;
+  alt: string;
+}
+
+const parseImageMeta = (src: string) => {
+  const [baseSrc, hash] = src.split('#');
+  if (!hash || !hash.startsWith('radish:')) {
+    return {
+      displaySrc: baseSrc || src,
+      fullSrc: baseSrc || src,
+    };
+  }
+
+  const params = new URLSearchParams(hash.slice('radish:'.length));
+  return {
+    displaySrc: baseSrc || src,
+    fullSrc: params.get('full') || baseSrc || src,
+  };
+};
+
+const extractCommentImages = (content: string): CommentImageItem[] => {
+  const regex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  const images: CommentImageItem[] = [];
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(content)) !== null) {
+    const alt = match[1] || 'comment-image';
+    const src = match[2];
+    if (!src) continue;
+    const parsed = parseImageMeta(src);
+    images.push({
+      displaySrc: parsed.displaySrc,
+      fullSrc: parsed.fullSrc,
+      alt,
+    });
+  }
+
+  return images;
+};
+
+const normalizeCommentText = (content: string): string => {
+  const withoutImageMarkdown = content.replace(/!\[[^\]]*\]\([^)]+\)/g, '').trim();
+  return withoutImageMarkdown;
+};
+
 export const CommentNode = ({
   node,
   level,
@@ -47,7 +94,7 @@ export const CommentNode = ({
   onLoadMoreChildren
 }: CommentNodeProps) => {
   // 判断是否是作者本人
-  const isAuthor = currentUserId > 0 && node.voAuthorId === currentUserId;
+  const isAuthor = currentUserId > 0 && String(node.voAuthorId) === String(currentUserId);
 
   // 判断是否在5分钟编辑窗口内
   const canEdit = (() => {
@@ -62,6 +109,8 @@ export const CommentNode = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // 本地点赞状态（用于乐观更新）
   const [isLiked, setIsLiked] = useState(node.voIsLiked ?? false);
@@ -74,6 +123,9 @@ export const CommentNode = ({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [childSortBy, setChildSortBy] = useState<'newest' | 'hottest' | null>(null); // null表示默认排序(时间升序)
   const [hasPreloadedChildren, setHasPreloadedChildren] = useState(false);
+
+  const commentImages = useMemo(() => extractCommentImages(node.voContent), [node.voContent]);
+  const textContent = useMemo(() => normalizeCommentText(node.voContent), [node.voContent]);
 
   // 初始化已加载的子评论（默认时间升序）
   const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(() => {
@@ -362,10 +414,33 @@ export const CommentNode = ({
           </div>
         </div>
       ) : (
-        <div
-          className={styles.content}
-          dangerouslySetInnerHTML={{ __html: highlightMentions(node.voContent) }}
-        />
+        <div className={styles.contentWrapper}>
+          {textContent && (
+            <div
+              className={styles.content}
+              dangerouslySetInnerHTML={{ __html: highlightMentions(textContent) }}
+            />
+          )}
+
+          {commentImages.length > 0 && (
+            <div className={styles.imageGrid}>
+              {commentImages.map((img, idx) => (
+                <button
+                  type="button"
+                  key={`${img.fullSrc}-${idx}`}
+                  className={styles.imageButton}
+                  onClick={() => {
+                    setLightboxIndex(idx);
+                    setLightboxOpen(true);
+                  }}
+                  title="点击查看原图"
+                >
+                  <img src={img.displaySrc} alt={img.alt} className={styles.imageThumb} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {/* 操作按钮区域 */}
@@ -485,6 +560,13 @@ export const CommentNode = ({
           )}
         </div>
       )}
+
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        images={commentImages.map(item => ({ src: item.fullSrc, alt: item.alt }))}
+        initialIndex={lightboxIndex}
+        onClose={() => setLightboxOpen(false)}
+      />
     </div>
   );
 };

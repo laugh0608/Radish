@@ -323,19 +323,7 @@ export async function getChildComments(
     throw new Error(response.message || '获取子评论失败');
   }
 
-  // 兼容后端 VoPagedResult 与历史 PageModel 结构
-  const raw = response.data;
-  const items = raw.items ?? raw.voItems ?? raw.data ?? [];
-  const total = raw.total ?? raw.voTotal ?? raw.dataCount ?? items.length;
-  const resolvedPageIndex = raw.pageIndex ?? raw.voPageIndex ?? raw.page ?? pageIndex;
-  const resolvedPageSize = raw.pageSize ?? raw.voPageSize ?? pageSize;
-
-  return {
-    items,
-    total,
-    pageIndex: resolvedPageIndex,
-    pageSize: resolvedPageSize
-  };
+  return response.data;
 }
 
 /**

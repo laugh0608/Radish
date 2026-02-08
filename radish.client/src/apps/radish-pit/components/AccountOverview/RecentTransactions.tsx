@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { coinApi } from '@/api/coin';
 import { log } from '@/utils/logger';
 import { formatCoinAmount, formatDateTime, getTransactionTypeDisplay, getTransactionStatusColor } from '../../utils';
-import type { CoinTransactionVo } from '@/api/coin';
+import type { CoinTransaction } from '@/api/coin';
 import styles from './RecentTransactions.module.css';
 
 interface RecentTransactionsProps {
@@ -13,7 +13,7 @@ interface RecentTransactionsProps {
  * 最近交易组件
  */
 export const RecentTransactions = ({ displayMode }: RecentTransactionsProps) => {
-  const [transactions, setTransactions] = useState<CoinTransactionVo[]>([]);
+  const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -128,16 +128,16 @@ export const RecentTransactions = ({ displayMode }: RecentTransactionsProps) => 
 
                   <div className={styles.transactionDetails}>
                     <div className={styles.transactionTime}>
-                      {formatDateTime(transaction.voCreatedAt)}
+                      {formatDateTime(transaction.voCreateTime)}
                     </div>
                     <div className={`${styles.transactionStatus} ${styles[getTransactionStatusColor(transaction.voStatus)]}`}>
                       {transaction.voStatusDisplay}
                     </div>
                   </div>
 
-                  {transaction.voNote && (
+                  {transaction.voRemark && (
                     <div className={styles.transactionNote}>
-                      {transaction.voNote}
+                      {transaction.voRemark}
                     </div>
                   )}
                 </div>

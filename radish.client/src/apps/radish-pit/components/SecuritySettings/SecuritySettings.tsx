@@ -63,13 +63,12 @@ export const SecuritySettings = () => {
         </div>
         <div className={styles.headerRight}>
           <div className={`${styles.securityLevel} ${
-            status?.VoSecurityStatus === '安全' ? styles.secure :
-            status?.VoSecurityStatus === '一般' ? styles.moderate :
-            status?.VoSecurityStatus === '较弱' ? styles.weak : styles.unknown
+            status?.isLocked ? styles.weak :
+            status?.hasPaymentPassword ? styles.secure : styles.moderate
           }`}>
             <span className={styles.securityIcon}>🔒</span>
             <span className={styles.securityText}>
-              {status?.VoSecurityStatus || '未知'}
+              {status?.isLocked ? '较弱' : status?.hasPaymentPassword ? '安全' : '一般'}
             </span>
           </div>
         </div>
@@ -91,7 +90,7 @@ export const SecuritySettings = () => {
           >
             <span className={styles.tabIcon}>🔑</span>
             <span className={styles.tabText}>支付密码</span>
-            {!status?.VoHasPaymentPassword && (
+            {!status?.hasPaymentPassword && (
               <span className={styles.tabBadge}>!</span>
             )}
           </button>
@@ -108,8 +107,8 @@ export const SecuritySettings = () => {
           >
             <span className={styles.tabIcon}>💡</span>
             <span className={styles.tabText}>安全建议</span>
-            {status?.VoSecuritySuggestions && status.VoSecuritySuggestions.length > 0 && (
-              <span className={styles.tabBadge}>{status.VoSecuritySuggestions.length}</span>
+            {status && !status.hasPaymentPassword && (
+              <span className={styles.tabBadge}>1</span>
             )}
           </button>
         </div>

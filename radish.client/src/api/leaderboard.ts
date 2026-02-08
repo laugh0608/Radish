@@ -14,34 +14,38 @@ configureApiClient({
 /**
  * 排行榜类型枚举
  */
-export enum LeaderboardType {
+export const LeaderboardType = {
   /** 等级排行榜 */
-  Experience = 1,
+  Experience: 1,
   /** 萝卜余额排行榜 */
-  Balance = 2,
+  Balance: 2,
   /** 萝卜花销排行榜 */
-  TotalSpent = 3,
+  TotalSpent: 3,
   /** 购买达人排行榜 */
-  PurchaseCount = 4,
+  PurchaseCount: 4,
   /** 热门商品排行榜 */
-  HotProduct = 5,
+  HotProduct: 5,
   /** 发帖达人排行榜 */
-  PostCount = 6,
+  PostCount: 6,
   /** 评论达人排行榜 */
-  CommentCount = 7,
+  CommentCount: 7,
   /** 人气排行榜 */
-  Popularity = 8,
-}
+  Popularity: 8,
+} as const;
+
+export type LeaderboardType = (typeof LeaderboardType)[keyof typeof LeaderboardType];
 
 /**
  * 排行榜分类枚举
  */
-export enum LeaderboardCategory {
+export const LeaderboardCategory = {
   /** 用户类排行榜 */
-  User = 1,
+  User: 1,
   /** 商品类排行榜 */
-  Product = 2,
-}
+  Product: 2,
+} as const;
+
+export type LeaderboardCategory = (typeof LeaderboardCategory)[keyof typeof LeaderboardCategory];
 
 /**
  * 排行榜类型 Vo

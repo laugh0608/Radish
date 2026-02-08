@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { log } from '@/utils/logger';
 import { apiGet, configureApiClient } from '@radish/http';
+import type { ApiResponse } from '@radish/http';
 import { Button, ConfirmDialog, Icon, Input, Modal } from '@radish/ui';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
@@ -39,17 +40,23 @@ interface ProfileInfo {
 }
 
 interface CoinBalanceInfo {
-  userId: number | string;
-  balance: number | string;
-  balanceDisplay: string;
-  frozenBalance: number | string;
-  frozenBalanceDisplay: string;
-  totalEarned: number | string;
-  totalSpent: number | string;
-  totalTransferredIn: number | string;
-  totalTransferredOut: number | string;
-  createTime: string;
-  modifyTime?: string | null;
+  voUserId: number | string;
+  voBalance: number | string;
+  voBalanceDisplay: string;
+  voFrozenBalance: number | string;
+  voFrozenBalanceDisplay: string;
+  voTotalEarned: number | string;
+  voTotalSpent: number | string;
+  voTotalTransferredIn: number | string;
+  voTotalTransferredOut: number | string;
+  voCreateTime: string;
+  voModifyTime?: string | null;
+}
+
+function getAuthHeader(): string | null {
+  if (typeof window === 'undefined') return null;
+  const token = window.localStorage.getItem('access_token');
+  return token ? `Bearer ${token}` : null;
 }
 
 function resolveUrl(apiBaseUrl: string, url: string | null | undefined): string | null {
@@ -205,13 +212,18 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
     const ageNum = editAge.trim() ? Number(editAge.trim()) : undefined;
 
     try {
+      const authHeader = getAuthHeader();
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      };
+      if (authHeader) {
+        headers.Authorization = authHeader;
+      }
+
       const res = await fetch(`${apiBaseUrl}/api/v1/User/UpdateMyProfile`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          ...(getAuthHeader() ? { Authorization: getAuthHeader() } : {})
-        },
+        headers,
         body: JSON.stringify({
           userName: editUserName.trim() || undefined,
           userEmail: editUserEmail.trim() || undefined,
@@ -263,7 +275,7 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
             </div>
             <div className={styles.metaItem}>
               <Icon icon="mdi:wallet" size={16} />
-              <span>{formatCoinAmount(coinBalance?.balance)}</span>
+              <span>{formatCoinAmount(coinBalance?.voBalance)}</span>
             </div>
             {profile?.voRealName && (
               <div className={styles.metaItem}>

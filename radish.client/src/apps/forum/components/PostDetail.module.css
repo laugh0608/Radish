@@ -51,6 +51,12 @@
   text-align: left;
 }
 
+.postBody :global(.markdownImage) {
+  max-width: 100%;
+  width: auto;
+  height: auto;
+}
+
 .postTags {
   display: flex;
   flex-wrap: wrap;
