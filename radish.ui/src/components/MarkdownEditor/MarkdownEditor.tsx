@@ -1,9 +1,12 @@
-import { useState, useRef } from 'react';
+import { lazy, Suspense, useState, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { KeyboardEvent, ChangeEvent, ClipboardEvent, DragEvent } from 'react';
 import { Icon } from '../Icon/Icon';
-import { MarkdownRenderer } from '../MarkdownRenderer/MarkdownRenderer';
 import styles from './MarkdownEditor.module.css';
+
+const MarkdownRenderer = lazy(() =>
+  import('../MarkdownRenderer/MarkdownRenderer').then((module) => ({ default: module.MarkdownRenderer }))
+);
 
 export interface MarkdownEditorProps {
   value: string;
@@ -571,7 +574,9 @@ export const MarkdownEditor = ({
         ) : (
           <div className={styles.preview}>
             {value ? (
-              <MarkdownRenderer content={value} />
+              <Suspense fallback={<p className={styles.previewEmpty}>预览加载中...</p>}>
+                <MarkdownRenderer content={value} />
+              </Suspense>
             ) : (
               <p className={styles.previewEmpty}>没有内容可预览</p>
             )}
