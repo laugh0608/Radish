@@ -1012,7 +1012,30 @@ Client  Console   Shop    Docs
 - 具体周更与变更记录：以 [开发日志](/changelog/) 为准
 - 本文档仅描述前端架构与设计约束；若迭代中出现影响架构的关键决策，请在本文追加“设计决策”小节并在开发日志中记录。
 
-## 12. 参考资料
+## 12. 构建拆包策略（manualChunks + 动态导入）
+
+为降低首屏负载并提升 WebOS 子应用的按需加载体验，`radish.client` 采用如下策略：
+
+### 12.1 动态导入（按应用懒加载）
+
+- 在 `src/main.tsx` 中使用 `React.lazy + Suspense`，按入口场景懒加载 `App` / `Shell`。
+- 在 `src/desktop/AppRegistry.tsx` 中将窗口应用改为懒加载注册，打开窗口时再下载对应子应用代码。
+- 目标：避免一次性加载论坛、商城、个人中心、萝卜坑等所有应用资源。
+
+### 12.2 手动分包（manualChunks）
+
+- 在 `vite.config.ts` 中启用 `build.rollupOptions.output.manualChunks`。
+- 将常见基础依赖与大体积依赖拆分为稳定 vendor chunk（如 React、i18n、window、markdown 等）。
+- 对 WebOS 业务子应用按目录进行应用级 chunk 切分（如 `app-forum`、`app-shop`、`app-radish-pit`）。
+
+### 12.3 结果与后续
+
+- 构建结果已从“单一超大入口包”转为“入口小包 + 子应用懒加载包”结构。
+- 若后续仍有超大 chunk，优先排查：
+  - `@radish/ui` 的 barrel export 对 tree-shaking 的影响；
+  - 子应用中重型组件（图表/编辑器）的二级懒加载机会。
+
+## 13. 参考资料
 
 - Nebula OS 原型：`public/webos.html`
 - 窗口拖拽：react-rnd

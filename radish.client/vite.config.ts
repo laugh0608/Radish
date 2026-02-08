@@ -5,35 +5,113 @@ import plugin from '@vitejs/plugin-react';
 import svgr from 'vite-plugin-svgr';
 import { env } from 'process';
 
-// https://vitejs.dev/config/
+const inPackage = (id: string, packageName: string): boolean => {
+  const normalized = id.replace(/\\/g, '/');
+  const pnpmName = packageName.replace('/', '+');
+
+  return (
+    normalized.includes(`/node_modules/${packageName}/`) ||
+    normalized.includes(`/node_modules/.pnpm/${pnpmName}@`) ||
+    normalized.includes(`/node_modules/.pnpm/${pnpmName}%40`)
+  );
+};
+
 export default defineConfig({
-    plugins: [plugin(), svgr()],
-    resolve: {
-        alias: {
-            '@': fileURLToPath(new URL('./src', import.meta.url))
-        },
-        // 保留符号链接，让 Vite 能正确监听 @radish/ui 的变化
-        preserveSymlinks: false
+  plugins: [plugin(), svgr()],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
-    server: {
-        // 监听 0.0.0.0 让 Gateway 能访问
-        host: '0.0.0.0',
-        port: parseInt(env.DEV_SERVER_PORT || '3000', 10),
-        // HMR 配置：通过 Gateway 时使用轮询模式（更稳定）
-        hmr: {
-            protocol: 'ws',
-            host: 'localhost',
-            port: parseInt(env.DEV_SERVER_PORT || '3000', 10),
-            // 使用轮询作为后备，避免 WebSocket 问题
-            overlay: true
+    preserveSymlinks: false,
+  },
+  server: {
+    host: '0.0.0.0',
+    port: parseInt(env.DEV_SERVER_PORT || '3000', 10),
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+      port: parseInt(env.DEV_SERVER_PORT || '3000', 10),
+      overlay: true,
+    },
+    watch: {
+      followSymlinks: true,
+      ignored: ['!**/node_modules/@radish/**'],
+      usePolling: false,
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalized = id.replace(/\\/g, '/');
+
+          if (normalized.includes('/radish.ui/') || inPackage(id, '@radish/ui')) return 'vendor-radish-ui';
+          if (normalized.includes('/radish.http/') || inPackage(id, '@radish/http')) return 'vendor-radish-http';
+
+          if (inPackage(id, 'react') || inPackage(id, 'react-dom') || inPackage(id, 'scheduler')) {
+            return 'vendor-react';
+          }
+
+          if (inPackage(id, 'i18next') || inPackage(id, 'react-i18next') || inPackage(id, 'i18next-browser-languagedetector')) {
+            return 'vendor-i18n';
+          }
+
+          if (inPackage(id, 'zustand')) return 'vendor-state';
+          if (inPackage(id, 'react-rnd')) return 'vendor-window';
+          if (inPackage(id, '@microsoft/signalr')) return 'vendor-signalr';
+
+          if (
+            inPackage(id, 'recharts') ||
+            normalized.includes('/node_modules/d3-') ||
+            normalized.includes('recharts') ||
+            normalized.includes('/d3-')
+          ) {
+            return 'vendor-charts';
+          }
+
+          if (
+            inPackage(id, 'react-markdown') ||
+            inPackage(id, 'remark-gfm') ||
+            inPackage(id, 'rehype-highlight') ||
+            inPackage(id, 'highlight.js') ||
+            normalized.includes('/node_modules/remark-') ||
+            normalized.includes('/node_modules/rehype-') ||
+            normalized.includes('/node_modules/unified/') ||
+            normalized.includes('react-markdown') ||
+            normalized.includes('remark') ||
+            normalized.includes('rehype') ||
+            normalized.includes('highlight.js')
+          ) {
+            return 'vendor-markdown';
+          }
+
+          if (
+            inPackage(id, '@iconify/react') ||
+            inPackage(id, '@iconify-json/mdi') ||
+            normalized.includes('@iconify')
+          ) {
+            return 'vendor-iconify';
+          }
+
+          if (inPackage(id, 'antd') || inPackage(id, '@ant-design/icons')) {
+            return 'vendor-antd';
+          }
+
+          if (normalized.includes('/src/apps/forum/')) return 'app-forum';
+          if (normalized.includes('/src/apps/profile/')) return 'app-profile';
+          if (normalized.includes('/src/apps/radish-pit/')) return 'app-radish-pit';
+          if (normalized.includes('/src/apps/shop/')) return 'app-shop';
+          if (normalized.includes('/src/apps/showcase/')) return 'app-showcase';
+          if (normalized.includes('/src/apps/leaderboard/')) return 'app-leaderboard';
+          if (normalized.includes('/src/apps/experience-detail/')) return 'app-experience-detail';
+          if (normalized.includes('/src/apps/notification/')) return 'app-notification';
+          if (normalized.includes('/src/apps/welcome/')) return 'app-welcome';
+
+          if (normalized.includes('/node_modules/')) return 'vendor-misc';
+
+          return undefined;
         },
-        // 监听符号链接指向的文件变化
-        watch: {
-            followSymlinks: true,
-            // 忽略 node_modules，但不忽略 @radish/ui（通过符号链接）
-            ignored: ['!**/node_modules/@radish/**'],
-            // 使用轮询模式作为后备
-            usePolling: false
-        }
-    }
+      },
+    },
+  },
 });

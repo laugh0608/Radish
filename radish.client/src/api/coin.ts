@@ -2,7 +2,7 @@
  * 萝卜币系统相关的 API 调用
  */
 
-import { apiGet, configureApiClient } from '@radish/http';
+import { apiGet, apiPost, configureApiClient } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 
@@ -228,7 +228,6 @@ export interface TransferResponse {
  * @returns 交易流水号
  */
 export async function transfer(request: TransferRequest, t?: TFunction): Promise<TransferResponse> {
-  const { apiPost } = await import('@radish/http');
   const response = await apiPost<TransferResponse>(
     '/api/v1/Coin/Transfer',
     request,
