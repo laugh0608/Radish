@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import styles from './UserPostList.module.css';
 
 interface Post {

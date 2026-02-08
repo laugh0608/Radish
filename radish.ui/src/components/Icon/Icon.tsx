@@ -12,7 +12,7 @@ async function ensureMdiCollectionLoaded(): Promise<void> {
   }
 
   if (!mdiCollectionLoadingPromise) {
-    mdiCollectionLoadingPromise = import('@iconify-json/mdi/icons.json')
+    mdiCollectionLoadingPromise = import('./mdi-subset.json')
       .then((module) => {
         addCollection(module.default as any);
         mdiCollectionLoaded = true;

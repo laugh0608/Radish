@@ -614,7 +614,7 @@ export const tokens = {
 
 ```typescript
 // 使用 @radish/ui 封装的 Icon 组件（基于本地 Iconify JSON 集合）
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 
 <Icon icon="mdi:forum" />
 <Icon icon="mdi:chat" />
@@ -1032,10 +1032,11 @@ Client  Console   Shop    Docs
 
 - 构建结果已从“单一超大入口包”转为“入口小包 + 子应用懒加载包”结构。
 - `ExperienceDetailApp` 已采用图表二级懒加载（`LineChart/PieChart`），将大图表依赖从应用主包中分离。
-- `@radish/ui/Icon` 改为 MDI 图标集异步加载（带缓存），避免业务 chunk 静态携带整份图标数据。
-- 若后续仍有超大 chunk，优先排查：
-  - `@radish/ui` 的 barrel export 对 tree-shaking 的影响；
-  - 子应用中重型组件（图表/编辑器）的二级懒加载机会。
+- 论坛应用新增二级懒加载：`PublishPostModal` / `EditPostModal` / `PostDetailContentView` 在触发时再加载，并通过 `manualChunks` 拆分为 `forum-publish-modal` 与 `forum-detail-view`。
+- `ProfileApp` 新增 Tab 内容按需加载与头像裁切弹窗懒加载，避免在个人页首屏静态打入附件/裁切相关代码。
+- `@radish/ui/Icon` 改为加载 `mdi` 子集（`mdi-subset.json`）并按需异步注册，避免引入整份图标数据。
+- `@radish/ui` 在 `package.json` 增加组件子路径导出（如 `icon`、`toast`、`modal`、`input`、`select`、`bar-chart`、`area-chart` 等），client 侧优先使用子路径导入，降低 barrel export 连带打包风险。
+- 最新构建（2026-02-08）中，`app-profile` 已从约 `792.80 kB` 降至约 `59.13 kB`，`app-forum` 约 `42.56 kB`，当前无超过 500k 的 chunk。
 
 ## 13. 参考资料
 

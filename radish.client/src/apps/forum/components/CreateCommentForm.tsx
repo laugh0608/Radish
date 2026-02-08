@@ -1,10 +1,10 @@
 import { useState, useRef, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
-import { UserMention, type UserMentionOption as UiUserMentionOption } from '@radish/ui';
+import { UserMention, type UserMentionOption as UiUserMentionOption } from '@radish/ui/user-mention';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import styles from './CreateCommentForm.module.css';
 

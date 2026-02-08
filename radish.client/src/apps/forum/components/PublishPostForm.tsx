@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
-import { MarkdownEditor } from '@radish/ui';
+import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { getOidcLoginUrl } from '@/api/forum';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import styles from './PublishPostForm.module.css';

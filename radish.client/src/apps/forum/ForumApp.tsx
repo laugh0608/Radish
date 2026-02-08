@@ -1,17 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
-import { ConfirmDialog } from '@radish/ui';
+import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { CategoryList } from './components/CategoryList';
 import { TagSection } from './components/TagSection';
-import { PublishPostModal } from './components/PublishPostModal';
 import { TrendingSidebar } from './components/TrendingSidebar';
-import { EditPostModal } from './components/EditPostModal';
 import { PostListView } from './views/PostListView';
-import { PostDetailContentView } from './views/PostDetailContentView';
 import { useForumData } from './hooks/useForumData';
 import { useForumActions } from './hooks/useForumActions';
 import styles from './ForumApp.module.css';
+
+const PublishPostModal = lazy(() =>
+  import('./components/PublishPostModal').then((module) => ({ default: module.PublishPostModal }))
+);
+
+const EditPostModal = lazy(() =>
+  import('./components/EditPostModal').then((module) => ({ default: module.EditPostModal }))
+);
+
+const PostDetailContentView = lazy(() =>
+  import('./views/PostDetailContentView').then((module) => ({ default: module.PostDetailContentView }))
+);
 
 export const ForumApp = () => {
   const { t } = useTranslation();
@@ -114,35 +123,36 @@ export const ForumApp = () => {
         {/* 中间栏：帖子瀑布流或帖子详情 */}
         <div className={styles.middleColumn}>
           {dataState.selectedPost ? (
-            /* 帖子详情视图 */
-            <PostDetailContentView
-              post={dataState.selectedPost}
-              comments={dataState.comments}
-              loadingPostDetail={dataState.loadingPostDetail}
-              loadingComments={dataState.loadingComments}
-              isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
-              isAuthenticated={loggedIn}
-              showFloatingTools={showDetailFloatingTools}
-              currentUserId={userId ?? 0}
-              commentSortBy={dataState.commentSortBy}
-              replyTo={actionsState.replyTo}
-              onBack={() => {
-                dataState.setSelectedPost(null);
-                dataState.setComments([]);
-                dataState.resetCommentSort();
-              }}
-              onLike={actionsState.handleLikePost}
-              onEdit={actionsState.handleEditPost}
-              onDelete={actionsState.handleDeletePost}
-              onCommentSortChange={actionsState.handleCommentSortChange}
-              onDeleteComment={actionsState.handleDeleteComment}
-              onEditComment={actionsState.handleEditComment}
-              onLikeComment={actionsState.handleCommentLike}
-              onReplyComment={actionsState.handleReplyComment}
-              onLoadMoreChildren={actionsState.handleLoadMoreChildren}
-              onCreateComment={actionsState.handleCreateComment}
-              onCancelReply={actionsState.handleCancelReply}
-            />
+            <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center' }}>详情加载中...</div>}>
+              <PostDetailContentView
+                post={dataState.selectedPost}
+                comments={dataState.comments}
+                loadingPostDetail={dataState.loadingPostDetail}
+                loadingComments={dataState.loadingComments}
+                isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
+                isAuthenticated={loggedIn}
+                showFloatingTools={showDetailFloatingTools}
+                currentUserId={userId ?? 0}
+                commentSortBy={dataState.commentSortBy}
+                replyTo={actionsState.replyTo}
+                onBack={() => {
+                  dataState.setSelectedPost(null);
+                  dataState.setComments([]);
+                  dataState.resetCommentSort();
+                }}
+                onLike={actionsState.handleLikePost}
+                onEdit={actionsState.handleEditPost}
+                onDelete={actionsState.handleDeletePost}
+                onCommentSortChange={actionsState.handleCommentSortChange}
+                onDeleteComment={actionsState.handleDeleteComment}
+                onEditComment={actionsState.handleEditComment}
+                onLikeComment={actionsState.handleCommentLike}
+                onReplyComment={actionsState.handleReplyComment}
+                onLoadMoreChildren={actionsState.handleLoadMoreChildren}
+                onCreateComment={actionsState.handleCreateComment}
+                onCancelReply={actionsState.handleCancelReply}
+              />
+            </Suspense>
           ) : (
             /* 帖子列表视图 */
             <PostListView
@@ -175,21 +185,27 @@ export const ForumApp = () => {
           />
         </div>
 
-        {/* 发帖 Modal */}
-        <PublishPostModal
-          isOpen={actionsState.isPublishModalOpen}
-          isAuthenticated={loggedIn}
-          onClose={() => actionsState.setIsPublishModalOpen(false)}
+        {actionsState.isPublishModalOpen && (
+          <Suspense fallback={null}>
+            <PublishPostModal
+              isOpen={actionsState.isPublishModalOpen}
+              isAuthenticated={loggedIn}
+              onClose={() => actionsState.setIsPublishModalOpen(false)}
               onPublish={actionsState.handlePublishPost}
             />
+          </Suspense>
+        )}
 
-        {/* 编辑帖子 Modal */}
-        <EditPostModal
-          isOpen={actionsState.isEditModalOpen}
-          post={dataState.selectedPost}
-          onClose={() => actionsState.setIsEditModalOpen(false)}
-          onSave={actionsState.handleSaveEdit}
-        />
+        {actionsState.isEditModalOpen && dataState.selectedPost && (
+          <Suspense fallback={null}>
+            <EditPostModal
+              isOpen={actionsState.isEditModalOpen}
+              post={dataState.selectedPost}
+              onClose={() => actionsState.setIsEditModalOpen(false)}
+              onSave={actionsState.handleSaveEdit}
+            />
+          </Suspense>
+        )}
 
         {/* 删除帖子确认对话框 */}
         <ConfirmDialog

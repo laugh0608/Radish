@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ConfirmDialog, Icon, Input, Select } from '@radish/ui';
+import { ConfirmDialog } from '@radish/ui/confirm-dialog';
+import { Icon } from '@radish/ui/icon';
+import { Input } from '@radish/ui/input';
+import { Select } from '@radish/ui/select';
 import { copyToClipboard } from '@/utils/clipboard';
 import { deleteAttachment } from '@/api/attachment';
 import { useTranslation } from 'react-i18next';

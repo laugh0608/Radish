@@ -1,4 +1,4 @@
-import { BarChart } from '@radish/ui';
+import { BarChart } from '@radish/ui/bar-chart';
 import type { StatisticsData } from '../../types';
 import styles from './IncomeExpenseChart.module.css';
 

@@ -1,4 +1,4 @@
-import { AreaChart } from '@radish/ui';
+import { AreaChart } from '@radish/ui/area-chart';
 import type { StatisticsData } from '../../types';
 import styles from './TrendAnalysis.module.css';
 

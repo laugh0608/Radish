@@ -1,5 +1,6 @@
 import type { PostDetail as PostDetailType } from '@/api/forum';
-import { MarkdownRenderer, Icon } from '@radish/ui';
+import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
+import { Icon } from '@radish/ui/icon';
 import styles from './PostDetail.module.css';
 
 interface PostDetailProps {

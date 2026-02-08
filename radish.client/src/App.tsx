@@ -5,7 +5,7 @@ import { parseApiResponse, type ApiResponse } from '@radish/http';
 import { redirectToLogin, logout } from '@/services/auth';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from './stores/userStore';
-import { LevelUpModal } from '@radish/ui';
+import { LevelUpModal } from '@radish/ui/level-up-modal';
 import { useLevelUpListener } from '@/hooks/useLevelUpListener';
 import { log } from '@/utils/logger';
 import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';

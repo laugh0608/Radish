@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { log } from '@/utils/logger';
 import { notificationHub } from '@/services/notificationHub';
-import type { LevelUpData } from '@radish/ui';
+import type { LevelUpData } from '@radish/ui/level-up-modal';
 
 /**
  * 升级事件监听 Hook

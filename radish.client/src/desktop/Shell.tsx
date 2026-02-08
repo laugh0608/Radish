@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { ToastContainer, LevelUpModal } from '@radish/ui';
+import { ToastContainer } from '@radish/ui/toast';
+import { LevelUpModal } from '@radish/ui/level-up-modal';
 import { getApiBaseUrl } from '@/config/env';
 import { notificationHub } from '@/services/notificationHub';
 import { useLevelUpListener } from '@/hooks/useLevelUpListener';

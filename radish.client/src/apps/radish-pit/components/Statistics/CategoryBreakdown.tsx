@@ -1,4 +1,4 @@
-import { PieChart } from '@radish/ui';
+import { PieChart } from '@radish/ui/pie-chart';
 import type { StatisticsData } from '../../types';
 import styles from './CategoryBreakdown.module.css';
 

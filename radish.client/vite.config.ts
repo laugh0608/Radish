@@ -97,6 +97,16 @@ export default defineConfig({
             return 'vendor-antd';
           }
 
+          if (normalized.includes('/src/apps/forum/components/PublishPostModal')) return 'forum-publish-modal';
+          if (normalized.includes('/src/apps/forum/components/PublishPostForm')) return 'forum-publish-modal';
+          if (normalized.includes('/src/apps/forum/components/EditPostModal')) return 'forum-publish-modal';
+
+          if (normalized.includes('/src/apps/forum/views/PostDetailContentView')) return 'forum-detail-view';
+          if (normalized.includes('/src/apps/forum/components/PostDetail')) return 'forum-detail-view';
+          if (normalized.includes('/src/apps/forum/components/CommentTree')) return 'forum-detail-view';
+          if (normalized.includes('/src/apps/forum/components/CommentNode')) return 'forum-detail-view';
+          if (normalized.includes('/src/apps/forum/components/CreateCommentForm')) return 'forum-detail-view';
+
           if (normalized.includes('/src/apps/forum/')) return 'app-forum';
           if (normalized.includes('/src/apps/profile/')) return 'app-profile';
           if (normalized.includes('/src/apps/radish-pit/')) return 'app-radish-pit';

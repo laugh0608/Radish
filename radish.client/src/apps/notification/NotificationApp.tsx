@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { log } from '@/utils/logger';
-import { NotificationList, type NotificationItemData } from '@radish/ui';
+import { NotificationList } from '@radish/ui/notification-list';
+import type { NotificationItemData } from '@radish/ui/notification';
 import { notificationApi, type UserNotificationVo } from '@/api/notification';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
 import { notificationHub } from '@/services/notificationHub';
-import { toast } from '@radish/ui';
+import { toast } from '@radish/ui/toast';
 import styles from './NotificationApp.module.css';
 
 /**
