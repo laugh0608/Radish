@@ -1,5 +1,5 @@
 import type { UnifiedLeaderboardItemData } from '@/api/leaderboard';
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import styles from '../LeaderboardApp.module.css';
 
 interface ProductLeaderboardItemProps {

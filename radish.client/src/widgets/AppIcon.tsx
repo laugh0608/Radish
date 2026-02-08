@@ -1,4 +1,4 @@
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import type { AppDefinition } from '@/desktop/types';
 import styles from './AppIcon.module.css';
 

@@ -1,13 +1,20 @@
-import { useState, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useState, useEffect, useMemo } from 'react';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { UserInfoCard } from './components/UserInfoCard';
-import { UserPostList } from './components/UserPostList';
-import { UserCommentList } from './components/UserCommentList';
-import { UserAttachmentList } from './components/UserAttachmentList';
 import { getApiBaseUrl } from '@/config/env';
 import styles from './ProfileApp.module.css';
+
+const UserPostList = lazy(() =>
+  import('./components/UserPostList').then((module) => ({ default: module.UserPostList }))
+);
+const UserCommentList = lazy(() =>
+  import('./components/UserCommentList').then((module) => ({ default: module.UserCommentList }))
+);
+const UserAttachmentList = lazy(() =>
+  import('./components/UserAttachmentList').then((module) => ({ default: module.UserAttachmentList }))
+);
 
 interface UserStats {
   voPostCount: number;
@@ -24,28 +31,21 @@ export const ProfileApp = () => {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
-  // 统一通过 Gateway 访问
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
 
-  // 处理帖子点击 - 打开论坛应用并跳转到帖子详情
   const handlePostClick = (postId: number) => {
-    // TODO: 需要实现论坛应用的路由参数传递
-    // 目前先打开论坛应用
     openApp('forum');
     log.debug('ProfileApp', `打开帖子: ${postId}`);
   };
 
-  // 处理评论点击 - 打开论坛应用并跳转到对应帖子的评论
   const handleCommentClick = (postId: number, commentId: number) => {
-    // TODO: 需要实现论坛应用的路由参数传递
-    // 目前先打开论坛应用
     openApp('forum');
     log.debug('ProfileApp', `打开帖子 ${postId} 的评论 ${commentId}`);
   };
 
   useEffect(() => {
     if (isAuthenticated() && userId > 0) {
-      loadStats();
+      void loadStats();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
@@ -114,15 +114,17 @@ export const ProfileApp = () => {
         </div>
 
         <div className={styles.tabContent}>
-          {activeTab === 'posts' && (
-            <UserPostList userId={userId} apiBaseUrl={apiBaseUrl} onPostClick={handlePostClick} />
-          )}
-          {activeTab === 'comments' && (
-            <UserCommentList userId={userId} apiBaseUrl={apiBaseUrl} onCommentClick={handleCommentClick} />
-          )}
-          {activeTab === 'attachments' && (
-            <UserAttachmentList apiBaseUrl={apiBaseUrl} />
-          )}
+          <Suspense fallback={<div className={styles.notLoggedIn}>加载中...</div>}>
+            {activeTab === 'posts' && (
+              <UserPostList userId={userId} apiBaseUrl={apiBaseUrl} onPostClick={handlePostClick} />
+            )}
+            {activeTab === 'comments' && (
+              <UserCommentList userId={userId} apiBaseUrl={apiBaseUrl} onCommentClick={handleCommentClick} />
+            )}
+            {activeTab === 'attachments' && (
+              <UserAttachmentList apiBaseUrl={apiBaseUrl} />
+            )}
+          </Suspense>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import { quickStartSteps } from '../data/quickStartSteps';
 import styles from './QuickStartTab.module.css';
 

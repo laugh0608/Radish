@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
-import { BottomSheet, Icon, MarkdownEditor } from '@radish/ui';
+import { BottomSheet } from '@radish/ui/bottom-sheet';
+import { Icon } from '@radish/ui/icon';
+import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { getAllTags, getOidcLoginUrl } from '@/api/forum';
 import { useUserStore } from '@/stores/userStore';
 import { uploadImage, uploadDocument } from '@/api/attachment';

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
-import { ExperienceBar } from '@radish/ui';
+import { ExperienceBar } from '@radish/ui/experience-bar';
 import { experienceApi, type ExperienceData } from '@/api/experience';
 import { useUserStore } from '@/stores/userStore';
 import styles from './ExperienceDisplay.module.css';

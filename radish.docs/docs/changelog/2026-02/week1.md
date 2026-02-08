@@ -11,6 +11,14 @@
 - **图标数据异步加载**：`@radish/ui/Icon` 改为按需加载 MDI 图标集并缓存，避免业务包静态打入整份图标数据。
 - **构建基线验证**：`npm run build --workspace=radish.client` 通过，入口包与子应用包已拆分。
 
+### Client 拆包与导入统一（持续优化）
+
+- **UI 子路径导入统一**：`radish.client`（showcase 除外）已从 `@radish/ui` 桶导入迁移为 `@radish/ui/*` 子路径导入，避免 barrel export 连带打包。
+- **Forum 二级懒加载细化**：发帖/编辑弹窗与帖子详情内容视图独立延迟加载，首屏论坛包进一步收敛。
+- **Profile 二级懒加载**：`ProfileApp` 中 `UserPostList` / `UserCommentList` / `UserAttachmentList` 及 `AvatarUploadModal` 改为按需加载。
+- **Iconify 精简**：`@radish/ui/Icon` 由整包 MDI 改为 `mdi` 子集异步加载，显著降低图标相关体积。
+- **构建结果**：`npm run build --workspace=radish.client` 通过；`app-profile` 约 `59.13 kB`（此前约 `792.80 kB`），`app-forum` 约 `42.56 kB`，无超 500k chunk 告警。
+
 ## 2026-02-07 (周六)
 
 ### 论坛分类与标签

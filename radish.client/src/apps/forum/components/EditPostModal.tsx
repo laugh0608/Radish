@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Modal, Button } from '@radish/ui';
+import { Modal } from '@radish/ui/modal';
+import { Button } from '@radish/ui/button';
 import type { PostDetail } from '@/api/forum';
 import styles from './EditPostModal.module.css';
 

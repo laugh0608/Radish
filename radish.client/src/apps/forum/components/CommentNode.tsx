@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { log } from '@/utils/logger';
 import type { CommentNode as CommentNodeType } from '@/api/forum';
-import { Icon, ImageLightbox } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
+import { ImageLightbox } from '@radish/ui/image-lightbox';
 import styles from './CommentNode.module.css';
 
 interface CommentNodeProps {

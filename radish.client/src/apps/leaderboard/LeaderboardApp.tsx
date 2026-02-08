@@ -7,7 +7,7 @@ import {
   type LeaderboardTypeData,
   type UnifiedLeaderboardItemData,
 } from '@/api/leaderboard';
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import { UserLeaderboardItem } from './components/UserLeaderboardItem';
 import { ProductLeaderboardItem } from './components/ProductLeaderboardItem';
 import styles from './LeaderboardApp.module.css';

@@ -1,12 +1,19 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { log } from '@/utils/logger';
 import { apiGet, configureApiClient } from '@radish/http';
 import type { ApiResponse } from '@radish/http';
-import { Button, ConfirmDialog, Icon, Input, Modal } from '@radish/ui';
+import { Button } from '@radish/ui/button';
+import { ConfirmDialog } from '@radish/ui/confirm-dialog';
+import { Icon } from '@radish/ui/icon';
+import { Input } from '@radish/ui/input';
+import { Modal } from '@radish/ui/modal';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
-import { AvatarUploadModal } from './AvatarUploadModal';
 import styles from './UserInfoCard.module.css';
+
+const AvatarUploadModal = lazy(() =>
+  import('./AvatarUploadModal').then((module) => ({ default: module.AvatarUploadModal }))
+);
 
 interface UserStats {
   voPostCount: number;
@@ -362,12 +369,16 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
         onConfirm={handleSave}
       />
 
-      <AvatarUploadModal
-        isOpen={isAvatarModalOpen}
-        onClose={() => setIsAvatarModalOpen(false)}
-        onSuccess={handleAvatarUploadSuccess}
-        apiBaseUrl={apiBaseUrl}
-      />
+      {isAvatarModalOpen && (
+        <Suspense fallback={null}>
+          <AvatarUploadModal
+            isOpen={isAvatarModalOpen}
+            onClose={() => setIsAvatarModalOpen(false)}
+            onSuccess={handleAvatarUploadSuccess}
+            apiBaseUrl={apiBaseUrl}
+          />
+        </Suspense>
+      )}
     </div>
   );
 };

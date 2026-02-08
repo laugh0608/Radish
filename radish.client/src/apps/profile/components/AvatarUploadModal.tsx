@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Modal, ImageCropper } from '@radish/ui';
+import { Modal } from '@radish/ui/modal';
+import { ImageCropper } from '@radish/ui/image-cropper';
 import { uploadImage } from '@/api/attachment';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';

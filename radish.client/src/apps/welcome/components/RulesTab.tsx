@@ -1,4 +1,4 @@
-import { Icon } from '@radish/ui';
+import { Icon } from '@radish/ui/icon';
 import { communityRules } from '../data/communityRules';
 import styles from './RulesTab.module.css';
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { BottomSheet, Icon } from '@radish/ui';
+import { BottomSheet } from '@radish/ui/bottom-sheet';
+import { Icon } from '@radish/ui/icon';
 import type { PostDetail, CommentNode } from '@/api/forum';
 import { PostDetail as PostDetailComponent } from '../components/PostDetail';
 import { CommentTree } from '../components/CommentTree';
