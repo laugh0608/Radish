@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
-import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { getAllTags, getOidcLoginUrl } from '@/api/forum';
 import { useUserStore } from '@/stores/userStore';
 import { uploadImage, uploadDocument } from '@/api/attachment';
@@ -20,6 +19,10 @@ const DRAFT_STORAGE_KEY = 'forum_post_draft';
 const MIN_TAG_COUNT = 1;
 const MAX_TAG_COUNT = 5;
 const IMAGE_SCALE_OPTIONS = [30, 50, 70, 100] as const;
+
+const MarkdownEditor = lazy(() =>
+  import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
+);
 
 const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
   const params = new URLSearchParams();
@@ -388,7 +391,8 @@ export const PublishPostModal = ({
         </div>
 
         <div className={styles.editorWrapper}>
-          <MarkdownEditor
+          <Suspense fallback={<div className={styles.editorLoading}>编辑器加载中...</div>}>
+            <MarkdownEditor
             value={content}
             onChange={setContent}
             placeholder="帖子内容（支持 Markdown）"
@@ -399,6 +403,7 @@ export const PublishPostModal = ({
             theme="light"
             toolbarExtras={editorToolbarExtras}
           />
+          </Suspense>
         </div>
 
         {addWatermark && (

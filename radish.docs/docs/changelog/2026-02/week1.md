@@ -39,6 +39,13 @@
 - **分包规则细化**：`vite.config.ts` 将论坛详情进一步拆分为 `forum-detail-view` / `forum-detail-post` / `forum-detail-comments`。
 - **构建结果**：原 `forum-detail-view`（约 `349.00 kB`）拆分为 `forum-detail-view`（约 `5.49 kB`）、`forum-detail-post`（约 `3.91 kB`）、`forum-detail-comments`（约 `19.85 kB`）。
 
+### Client Forum 发布弹窗再拆分
+
+- **懒加载修正**：`PublishPostModal` 动态导入统一为 `@radish/ui/markdown-editor` 子路径，避免错误路径导致分包失效。
+- **编辑器预览优化**：`MarkdownEditor` 预览区引入 `Suspense` 包裹 `MarkdownRenderer`，渲染依赖延迟到进入预览时加载。
+- **构建结果**：`forum-publish-modal` 从约 `341.12 kB` 降至约 `10.36 kB`，并拆分出独立 `MarkdownEditor` / `MarkdownRenderer` 异步 chunk。
+- **整体状态**：当前已无超过 500k 的业务 chunk。
+
 ## 2026-02-07 (周六)
 
 ### 论坛分类与标签
