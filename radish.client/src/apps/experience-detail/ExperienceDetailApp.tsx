@@ -1,9 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { log } from '@/utils/logger';
-import { LineChart, PieChart, ExperienceBar } from '@radish/ui';
+import { ExperienceBar } from '@radish/ui/experience-bar';
+import { Icon } from '@radish/ui/icon';
 import { experienceApi, type ExperienceData, type ExpTransactionData } from '@/api/experience';
-import { Icon } from '@radish/ui';
 import styles from './ExperienceDetailApp.module.css';
+
+const LineChart = lazy(() =>
+  import('@radish/ui/line-chart').then((module) => ({ default: module.LineChart }))
+);
+
+const PieChart = lazy(() =>
+  import('@radish/ui/pie-chart').then((module) => ({ default: module.PieChart }))
+);
 
 export const ExperienceDetailApp = () => {
   const [experience, setExperience] = useState<ExperienceData | null>(null);
@@ -255,34 +263,38 @@ export const ExperienceDetailApp = () => {
                   </button>
                 </div>
               </div>
-              <LineChart
-                data={dailyStats}
-                lines={[
-                  { dataKey: 'exp', name: '经验值', color: '#667eea', strokeWidth: 2 }
-                ]}
-                xAxisKey="date"
-                loading={loading}
-                error={null}
-                height={220}
-                showGrid={true}
-                showLegend={true}
-              />
+              <Suspense fallback={<div className={styles.empty}>图表加载中...</div>}>
+                <LineChart
+                  data={dailyStats}
+                  lines={[
+                    { dataKey: 'exp', name: '经验值', color: '#667eea', strokeWidth: 2 }
+                  ]}
+                  xAxisKey="date"
+                  loading={loading}
+                  error={null}
+                  height={220}
+                  showGrid={true}
+                  showLegend={true}
+                />
+              </Suspense>
             </div>
 
             {/* 经验值来源分布 */}
             {sourceDistribution.length > 0 && (
               <div className={`${styles.chartSection} ${styles.pieChart}`}>
                 <h2 className={styles.chartTitle}>经验值来源</h2>
-                <PieChart
-                  data={sourceDistribution}
-                  loading={loading}
-                  error={null}
-                  height={300}
-                  showLegend={true}
-                  innerRadius={0}
-                  outerRadius={100}
-                  showLabel={true}
-                />
+                <Suspense fallback={<div className={styles.empty}>图表加载中...</div>}>
+                  <PieChart
+                    data={sourceDistribution}
+                    loading={loading}
+                    error={null}
+                    height={300}
+                    showLegend={true}
+                    innerRadius={0}
+                    outerRadius={100}
+                    showLabel={true}
+                  />
+                </Suspense>
               </div>
             )}
           </div>
