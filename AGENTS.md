@@ -6,7 +6,7 @@
 - **技术栈**: ASP.NET Core 10 + SQLSugar ORM + PostgreSQL (本地默认 SQLite) / React 19 + Vite (Rolldown) + TypeScript (WebOS 桌面化 UI)
 - **前端**: npm workspaces 管理 `radish.client` (WebOS)、`radish.console` (管理后台)、`radish.ui` (共享组件库)
 - **协作分支**: `dev` (主开发分支)
-- **文档源**: `radish.docs/docs/` 为唯一真相源
+- **文档源**: `Docs/radish.docs/docs/` 为唯一真相源
 - **语言规范**: 所有说明、讨论、文档使用中文，代码/技术标识/引用除外
 - **参考文档**: 详细规范参见 `CLAUDE.md`
 
@@ -241,8 +241,8 @@ Log.Information("User {UserId} logged in", userId);  // 使用
 - 审计日志: 数据库 `AuditLog_YYYYMMDD` 表
 
 **前端日志**:
-- Client: `radish.client/src/utils/logger.ts`
-- Console: `radish.console/src/utils/logger.ts`
+- Client: `Frontend/radish.client/src/utils/logger.ts`
+- Console: `Frontend/radish.console/src/utils/logger.ts`
 
 **使用规则**:
 1. **禁止**直接使用 `console.log/info/warn/error`
@@ -287,7 +287,7 @@ var result = await cache.GetAsync<MyType>("key");
 ## 前端架构
 
 ### UI 组件库 (@radish/ui)
-- **位置**: `radish.ui/`
+- **位置**: `Frontend/radish.ui/`
 - **内容**: Button, Input, Modal, Icon + Hooks + Utils
 - **使用**: `import { Button } from '@radish/ui';`
 - **HMR**: 修改自动热更新到 client/console
@@ -350,7 +350,7 @@ export async function getProducts() {
 
 ### 前端
 - **通用组件** → `@radish/ui`
-- **WebOS 组件** → `radish.client/src/`
+- **WebOS 组件** → `Frontend/radish.client/src/`
 
 ## 前端开发规范
 
@@ -380,11 +380,11 @@ const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
 ## Rust 原生扩展
 
-**位置**: `radish.lib/`
+**位置**: `Lib/radish.lib/`
 
 **构建**:
 ```bash
-cd radish.lib
+cd Lib/radish.lib
 cargo build --release
 # 或使用脚本: ./build.ps1 (Windows) / ./build.sh (Linux/macOS)
 ```
@@ -480,7 +480,7 @@ appsettings.json → appsettings.{Environment}.json
 **重点**:
 - `appsettings.Local.json` 用于本地开发敏感数据 (密码/密钥)，Git 忽略
 - 深度合并策略，数组需完整覆盖
-- 参见 [配置指南](radish.docs/docs/guide/configuration.md)
+- 参见 [配置指南](Docs/radish.docs/docs/guide/configuration.md)
 
 ### 快速设置
 ```bash
@@ -541,7 +541,7 @@ SnowFlakeSingle.WorkId = builder.Configuration.GetSection("Snowflake").GetValue<
 
 ## 文档与参考
 
-**综合文档** (唯一真相源): `radish.docs/docs/`
+**综合文档** (唯一真相源): `Docs/radish.docs/docs/`
 - `architecture/specifications.md` - 开发规范详细说明
 - `architecture/framework.md` - 架构设计与技术决策
 - `frontend/design.md` - 前端设计方案

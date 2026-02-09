@@ -3,16 +3,16 @@
   "private": true,
   "version": "26.1.1",
   "workspaces": [
-    "radish.http",
-    "radish.client",
-    "radish.console",
-    "radish.ui"
+    "Frontend/radish.http",
+    "Frontend/radish.client",
+    "Frontend/radish.console",
+    "Frontend/radish.ui"
   ],
   "scripts": {
     "dev:frontend": "npm run dev --workspace=radish.client",
     "dev:console": "npm run dev --workspace=radish.console",
-    "dev:docs": "npm run docs:dev --prefix radish.docs",
-    "build:docs": "npm run docs:build --prefix radish.docs",
+    "dev:docs": "npm run docs:dev --prefix Docs/radish.docs",
+    "build:docs": "npm run docs:build --prefix Docs/radish.docs",
     "dev:gateway": "dotnet run --project Radish.Gateway/Radish.Gateway.csproj",
     "dev:api": "dotnet run --project Radish.Api/Radish.Api.csproj",
     "type-check": "npm run type-check --workspace=@radish/ui && npm run type-check --workspace=radish.client && npm run type-check --workspace=radish.console",

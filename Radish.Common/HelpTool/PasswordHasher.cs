@@ -13,7 +13,7 @@ namespace Radish.Common.HelpTool;
 /// - 可配置安全参数
 /// - 内置盐值管理
 ///
-/// 详细说明请参阅：radish.docs/docs/PasswordSecurity.md
+/// 详细说明请参阅：Docs/radish.docs/docs/PasswordSecurity.md
 /// </remarks>
 public static class PasswordHasher
 {

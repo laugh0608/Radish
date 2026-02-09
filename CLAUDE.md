@@ -150,7 +150,7 @@ appsettings.json → appsettings.{Environment}.json
 **重点**:
 - `appsettings.Local.json` 用于本地开发敏感数据 (密码/密钥)，Git 忽略
 - 深度合并策略，数组需完整覆盖
-- 参见 [配置指南](radish.docs/docs/guide/configuration.md)
+- 参见 [配置指南](Docs/radish.docs/docs/guide/configuration.md)
 
 ### 快速设置
 ```bash
@@ -221,7 +221,7 @@ Log.Information("User {UserId} logged in", userId);  // 使用
 - SQL 日志: `Logs/{ProjectName}/AopSql/AopSql.txt` + 数据库
 - 审计日志: 数据库 `AuditLog_YYYYMMDD` 表
 
-详见 [日志系统文档](radish.docs/docs/guide/logging.md)
+详见 [日志系统文档](Docs/radish.docs/docs/guide/logging.md)
 
 ## 缓存策略
 
@@ -236,7 +236,7 @@ var result = await cache.GetAsync<MyType>("key");
 ## 前端架构
 
 ### UI 组件库 (@radish/ui)
-- **位置**: `radish.ui/`
+- **位置**: `Frontend/radish.ui/`
 - **内容**: Button, Input, Modal, Icon + Hooks + Utils
 - **使用**: `import { Button } from '@radish/ui';`
 - **HMR**: 修改自动热更新到 client/console
@@ -380,7 +380,7 @@ export async function uploadChunk(
 
 ### 前端
 - **通用组件** → `@radish/ui`
-- **WebOS 组件** → `radish.client/src/`
+- **WebOS 组件** → `Frontend/radish.client/src/`
 
 ## 前端开发规范
 
@@ -411,8 +411,8 @@ const apiUrl = import.meta.env.VITE_API_BASE_URL;
 ### 日志规范
 
 **日志工具**：
-- Client: `radish.client/src/utils/logger.ts`
-- Console: `radish.console/src/utils/logger.ts`
+- Client: `Frontend/radish.client/src/utils/logger.ts`
+- Console: `Frontend/radish.console/src/utils/logger.ts`
 
 **使用规则**：
 1. **禁止**直接使用 `console.log/info/warn/error`
@@ -442,11 +442,11 @@ console.error('请求失败:', error);
 
 ## Rust 原生扩展
 
-**位置**: `radish.lib/`
+**位置**: `Lib/radish.lib/`
 
 **构建**:
 ```bash
-cd radish.lib
+cd Lib/radish.lib
 cargo build --release
 # 或使用脚本: ./build.ps1 (Windows) / ./build.sh (Linux/macOS)
 ```
@@ -533,7 +533,7 @@ feat: 添加用户权限验证中间件
 
 ## 文档与参考
 
-**综合文档** (唯一真相源): `radish.docs/docs/`
+**综合文档** (唯一真相源): `Docs/radish.docs/docs/`
 - `architecture/specifications.md` - 开发规范详细说明
 - `architecture/framework.md` - 架构设计与技术决策
 - `frontend/design.md` - 前端设计方案
