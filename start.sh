@@ -5,8 +5,9 @@ CONFIGURATION="${CONFIGURATION:-Debug}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 API_PROJECT="$ROOT_DIR/Radish.Api/Radish.Api.csproj"
 AUTH_PROJECT="$ROOT_DIR/Radish.Auth/Radish.Auth.csproj"
-CLIENT_DIR="$ROOT_DIR/radish.client"
-CONSOLE_DIR="$ROOT_DIR/radish.console"
+CLIENT_DIR="$ROOT_DIR/Frontend/radish.client"
+CONSOLE_DIR="$ROOT_DIR/Frontend/radish.console"
+DOCS_DIR="$ROOT_DIR/Docs/radish.docs"
 DBMIGRATE_PROJECT="$ROOT_DIR/Radish.DbMigrate/Radish.DbMigrate.csproj"
 TEST_PROJECT="$ROOT_DIR/Radish.Api.Tests/Radish.Api.Tests.csproj"
 
@@ -80,9 +81,9 @@ print_menu() {
   echo "[单服务]"
   echo "  1. 启动 API           (Radish.Api           @ https://localhost:5000)"
   echo "  2. 启动 Gateway       (Radish.Gateway       @ https://localhost:5001)"
-  echo "  3. 启动 Frontend      (radish.client        @ https://localhost:3000)"
-  echo "  4. 启动 Docs          (radish.docs          @ http://localhost:4000/docs/)"
-  echo "  5. 启动 Console       (radish.console       @ https://localhost:3100)"
+  echo "  3. 启动 Frontend      (Frontend/radish.client  @ https://localhost:3000)"
+  echo "  4. 启动 Docs          (Docs/radish.docs        @ http://localhost:4000/docs/)"
+  echo "  5. 启动 Console       (Frontend/radish.console @ https://localhost:3100)"
   echo "  6. 启动 Auth          (Radish.Auth          @ http://localhost:5200)"
   echo "  7. 运行 DbMigrate     (Radish.DbMigrate     @ init/seed)"
   echo "  8. 运行单元测试       (Radish.Api.Tests)"
@@ -151,7 +152,7 @@ start_frontend() {
 start_docs() {
   (
     cd "$ROOT_DIR"
-    exec npm run docs:dev --prefix radish.docs
+    exec npm run docs:dev --prefix "$DOCS_DIR"
   )
 }
 
@@ -245,7 +246,7 @@ start_all() {
   echo "  - Frontend 已在后台启动 (https://localhost:3000)."
   start_docs &
   add_bg_pid $!
-  echo "  - Docs 已在后台启动 (http://localhost:3100/docs/)."
+  echo "  - Docs 已在后台启动 (http://localhost:4000/docs/)."
   start_console &
   add_bg_pid $!
   echo "  - Console 已在后台启动 (http://localhost:3100/console/)."

@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>2c0cfafd-8a27-4112-b76c-057ddfd7389d</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <SpaRoot>..\radish.client</SpaRoot>
+    <SpaRoot>..\Frontend\radish.client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
     <SpaProxyServerUrl>https://localhost:58794</SpaProxyServerUrl>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
