@@ -968,7 +968,7 @@ public class TestHelperController : ControllerBase
 | `Radish.Api.Tests/HttpTest/Radish.Api.Attachment.http` | 手动测试请求 |
 | `Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http` | 认证流程指南 |
 | `Radish.Api.Tests/HttpTest/test-files/` | 测试文件目录 |
-| `radish.docs/docs/features/file-upload-design.md` | 功能设计文档 |
+| `Docs/radish.docs/docs/features/file-upload-design.md` | 功能设计文档 |
 | `Radish.Api/Controllers/AttachmentController.cs` | 控制器实现 |
 | `Radish.Service/Services/AttachmentService.cs` | 业务逻辑实现 |
 
@@ -1032,9 +1032,9 @@ public class TestHelperController : ControllerBase
 **报告审核**: 待审核
 
 **相关文档**:
-- [Radish 开发规范](../../radish.docs/docs/architecture/specifications.md)
-- [Radish 认证指南](../../radish.docs/docs/guide/authentication.md)
-- [文件上传功能设计](../../radish.docs/docs/features/file-upload-design.md)
+- [Radish 开发规范](../../../Docs/radish.docs/docs/architecture/specifications.md)
+- [Radish 认证指南](../../../Docs/radish.docs/docs/guide/authentication.md)
+- [文件上传功能设计](../../../Docs/radish.docs/docs/features/file-upload-design.md)
 
 **联系方式**:
 如有问题或建议，请在 GitHub Issues 中提出或联系项目维护者。

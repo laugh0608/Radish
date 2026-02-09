@@ -6,8 +6,9 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = $PSScriptRoot
 $projectPath = Join-Path $repoRoot "Radish.Api/Radish.Api.csproj"
 $authProjectPath = Join-Path $repoRoot "Radish.Auth/Radish.Auth.csproj"
-$clientPath = Join-Path $repoRoot "radish.client"
-$consolePath = Join-Path $repoRoot "radish.console"
+$clientPath = Join-Path $repoRoot "Frontend/radish.client"
+$consolePath = Join-Path $repoRoot "Frontend/radish.console"
+$docsPath = Join-Path $repoRoot "Docs/radish.docs"
 $dbMigrateProjectPath = Join-Path $repoRoot "Radish.DbMigrate/Radish.DbMigrate.csproj"
 $testProjectPath = Join-Path $repoRoot "Radish.Api.Tests/Radish.Api.Tests.csproj"
 
@@ -59,9 +60,9 @@ function Show-Menu {
     Write-Host "[Single services]"
     Write-Host "  1. Start API           (Radish.Api           @ http://localhost:5100)"
     Write-Host "  2. Start Gateway       (Radish.Gateway       @ https://localhost:5000)"
-    Write-Host "  3. Start Frontend      (radish.client        @ http://localhost:3000)"
-    Write-Host "  4. Start Docs          (radish.docs          @ http://localhost:4000/docs/)"
-    Write-Host "  5. Start Console       (radish.console       @ http://localhost:3100)"
+    Write-Host "  3. Start Frontend      (Frontend/radish.client  @ http://localhost:3000)"
+    Write-Host "  4. Start Docs          (Docs/radish.docs        @ http://localhost:4000/docs/)"
+    Write-Host "  5. Start Console       (Frontend/radish.console @ http://localhost:3100)"
     Write-Host "  6. Start Auth          (Radish.Auth          @ http://localhost:5200)"
     Write-Host "  7. Run DbMigrate       (Radish.DbMigrate     @ init/seed)"
     Write-Host "  8. Run unit tests      (Radish.Api.Tests)"
@@ -156,7 +157,7 @@ function Start-GatewayNoBuild {
 function Start-Frontend {
     Push-Location $repoRoot
     try {
-        npm run dev --prefix radish.client
+        npm run dev --prefix $clientPath
     }
     finally {
         Pop-Location
@@ -166,7 +167,7 @@ function Start-Frontend {
 function Start-Docs {
     Push-Location $repoRoot
     try {
-        npm run docs:dev --prefix radish.docs
+        npm run docs:dev --prefix $docsPath
     }
     finally {
         Pop-Location
@@ -176,7 +177,7 @@ function Start-Docs {
 function Start-Console {
     Push-Location $repoRoot
     try {
-        npm run dev --prefix radish.console
+        npm run dev --prefix $consolePath
     }
     finally {
         Pop-Location
@@ -306,16 +307,16 @@ function Start-All {
     Build-All
     Start-BackgroundShell "Gateway running at https://localhost:5000" "dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https"
     Start-BackgroundShell "Auth running at http://localhost:5200" "dotnet run --no-build --project Radish.Auth/Radish.Auth.csproj --launch-profile http"
-    Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
-    Start-BackgroundShell "Docs running at http://localhost:3100/docs/" "npm run docs:dev --prefix radish.docs"
-    Start-BackgroundShell "Console running at http://localhost:3100/console/" "npm run dev --prefix radish.console"
+    Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix Frontend/radish.client"
+    Start-BackgroundShell "Docs running at http://localhost:4000/docs/" "npm run docs:dev --prefix Docs/radish.docs"
+    Start-BackgroundShell "Console running at http://localhost:3100/console/" "npm run dev --prefix Frontend/radish.console"
     Start-BackendNoBuild
 }
 
 function Start-FrontendConsoleDocs {
     Write-Host "[Combo] Frontend + Console + Docs..."
-    Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix radish.client"
-    Start-BackgroundShell "Console running at http://localhost:3100/console/" "npm run dev --prefix radish.console"
+    Start-BackgroundShell "Frontend running at http://localhost:3000" "npm run dev --prefix Frontend/radish.client"
+    Start-BackgroundShell "Console running at http://localhost:3100/console/" "npm run dev --prefix Frontend/radish.console"
     Start-Docs
 }
 

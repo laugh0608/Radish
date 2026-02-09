@@ -8,7 +8,7 @@
     <FileVersion>26.1.1</FileVersion>
 
     <!-- Rust native outputs (built by cargo) -->
-    <RadishRustTargetDir>$(MSBuildThisFileDirectory)radish.lib/target</RadishRustTargetDir>
+    <RadishRustTargetDir>$(MSBuildThisFileDirectory)Lib/radish.lib/target</RadishRustTargetDir>
   </PropertyGroup>
 
   <!--
@@ -16,7 +16,7 @@
 
     背景：
     - C# 通过 DllImport("radish_lib") 加载原生库；运行时通常从应用的输出目录（TargetDir / PublishDir）查找。
-    - Rust 库由 cargo 产出在 Radish.Core/radish-lib/target/{debug|release}/ 下。
+    - Rust 库由 cargo 产出在 Lib/radish.lib/target/{debug|release}/ 下。
 
     说明：
     - 只做“复制已存在的产物”，不在 dotnet build 阶段自动执行 cargo build（避免引入额外依赖/耗时/跨平台差异）。
