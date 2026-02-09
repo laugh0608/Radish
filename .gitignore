@@ -290,6 +290,7 @@ tempkey.jwk
 # DataBases directory
 DataBases/**
 !DataBases/**/
+!DataBases/README.md
 !DataBases/Uploads/DefaultAvatars/.gitkeep
 !DataBases/Uploads/DefaultAvatars/*
 
