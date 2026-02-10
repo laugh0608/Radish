@@ -1,4 +1,5 @@
 using AutoMapper;
+using Radish.Common.AttributeTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -87,23 +88,11 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     /// <summary>
     /// 发布帖子
     /// </summary>
+    [UseTran]
     public async Task<long> PublishPostAsync(Post post, List<string>? tagNames = null, bool allowCreateTag = true)
     {
-        if (tagNames == null)
-        {
-            throw new ArgumentException("发布帖子时至少需要一个标签", nameof(tagNames));
-        }
-
-        var normalizedTagNames = tagNames
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Select(name => name.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (normalizedTagNames.Count is < 1 or > 5)
-        {
-            throw new ArgumentException("标签数量必须在 1 到 5 个之间", nameof(tagNames));
-        }
+        var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "发布帖子时至少需要一个标签");
+        var operatorName = string.IsNullOrWhiteSpace(post.AuthorName) ? "System" : post.AuthorName;
 
         // 1. 插入帖子
         var postId = await AddAsync(post);
@@ -120,38 +109,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         }
 
         // 3. 处理标签
-        if (normalizedTagNames.Any())
-        {
-            foreach (var tagName in normalizedTagNames)
-            {
-                Tag? tag;
-                var existingTags = await _tagRepository.QueryAsync(t => t.Name == tagName && t.IsEnabled && !t.IsDeleted);
-                tag = existingTags.FirstOrDefault();
-
-                if (tag == null)
-                {
-                    if (!allowCreateTag)
-                    {
-                        throw new InvalidOperationException($"标签不存在且当前用户无权限创建：{tagName}");
-                    }
-
-                    // 获取或创建标签
-                    tag = await _tagService.GetOrCreateTagAsync(tagName);
-                }
-
-                // 创建帖子-标签关联
-                var postTag = new PostTag(postId, tag.Id)
-                {
-                    CreateId = post.AuthorId,
-                    CreateBy = post.AuthorName
-                };
-                await _postTagRepository.AddAsync(postTag);
-
-                // 更新标签的帖子数量
-                tag.PostCount++;
-                await _tagRepository.UpdateAsync(tag);
-            }
-        }
+        await SyncPostTagsAsync(postId, post.AuthorId, operatorName, normalizedTagNames, allowCreateTag);
 
         // 4. 🎁 发放经验值奖励（异步处理）
         _ = Task.Run(async () =>
@@ -219,6 +177,178 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         });
 
         return postId;
+    }
+
+    /// <summary>
+    /// 更新帖子及标签
+    /// </summary>
+    [UseTran]
+    public async Task UpdatePostAsync(
+        long postId,
+        string title,
+        string content,
+        long? categoryId,
+        List<string>? tagNames,
+        bool allowCreateTag,
+        long operatorId,
+        string operatorName)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new ArgumentException("帖子标题不能为空", nameof(title));
+        }
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            throw new ArgumentException("帖子内容不能为空", nameof(content));
+        }
+
+        var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "编辑帖子时至少需要一个标签");
+
+        var post = await _postRepository.QueryByIdAsync(postId);
+        if (post == null || post.IsDeleted)
+        {
+            throw new InvalidOperationException("帖子不存在");
+        }
+
+        var targetCategoryId = categoryId ?? post.CategoryId;
+        if (targetCategoryId > 0 && targetCategoryId != post.CategoryId)
+        {
+            var oldCategory = await _categoryRepository.QueryByIdAsync(post.CategoryId);
+            if (oldCategory != null)
+            {
+                oldCategory.PostCount = Math.Max(0, oldCategory.PostCount - 1);
+                await _categoryRepository.UpdateAsync(oldCategory);
+            }
+
+            var newCategory = await _categoryRepository.QueryByIdAsync(targetCategoryId);
+            if (newCategory != null)
+            {
+                newCategory.PostCount++;
+                await _categoryRepository.UpdateAsync(newCategory);
+            }
+        }
+
+        var safeOperatorName = string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName;
+        post.Title = title.Trim();
+        post.Content = content.Trim();
+        post.CategoryId = targetCategoryId;
+        post.ModifyTime = DateTime.Now;
+        post.ModifyBy = safeOperatorName;
+        post.ModifyId = operatorId;
+
+        await _postRepository.UpdateAsync(post);
+        await SyncPostTagsAsync(postId, operatorId, safeOperatorName, normalizedTagNames, allowCreateTag);
+    }
+
+    private static List<string> NormalizeTagNamesOrThrow(List<string>? tagNames, string parameterName, string emptyMessage)
+    {
+        if (tagNames == null)
+        {
+            throw new ArgumentException(emptyMessage, parameterName);
+        }
+
+        var normalizedTagNames = tagNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (normalizedTagNames.Count is < 1 or > 5)
+        {
+            throw new ArgumentException("标签数量必须在 1 到 5 个之间", parameterName);
+        }
+
+        return normalizedTagNames;
+    }
+
+    private async Task<Tag> ResolveTagByNameAsync(string tagName, bool allowCreateTag)
+    {
+        var existingTags = await _tagRepository.QueryAsync(t => t.Name == tagName && t.IsEnabled && !t.IsDeleted);
+        var tag = existingTags.FirstOrDefault();
+        if (tag != null)
+        {
+            return tag;
+        }
+
+        if (!allowCreateTag)
+        {
+            throw new InvalidOperationException($"标签不存在且当前用户无权限创建：{tagName}");
+        }
+
+        return await _tagService.GetOrCreateTagAsync(tagName);
+    }
+
+    private async Task SyncPostTagsAsync(
+        long postId,
+        long operatorId,
+        string operatorName,
+        List<string> normalizedTagNames,
+        bool allowCreateTag)
+    {
+        var existingPostTags = await _postTagRepository.QueryAsync(pt => pt.PostId == postId);
+        var existingTagIdSet = existingPostTags.Select(pt => pt.TagId).ToHashSet();
+
+        var desiredTags = new Dictionary<long, Tag>();
+        foreach (var tagName in normalizedTagNames)
+        {
+            var tag = await ResolveTagByNameAsync(tagName, allowCreateTag);
+            if (!desiredTags.ContainsKey(tag.Id))
+            {
+                desiredTags[tag.Id] = tag;
+            }
+        }
+
+        var desiredTagIdSet = desiredTags.Keys.ToHashSet();
+
+        var relationsToRemove = existingPostTags
+            .Where(pt => !desiredTagIdSet.Contains(pt.TagId))
+            .ToList();
+
+        if (relationsToRemove.Any())
+        {
+            var removeCountByTagId = relationsToRemove
+                .GroupBy(pt => pt.TagId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            foreach (var relation in relationsToRemove)
+            {
+#pragma warning disable CS0618
+                await _postTagRepository.DeleteByIdAsync(relation.Id);
+#pragma warning restore CS0618
+            }
+
+            var removedTagIds = removeCountByTagId.Keys.ToList();
+            var removedTags = await _tagRepository.QueryAsync(t => removedTagIds.Contains(t.Id) && !t.IsDeleted);
+            foreach (var removedTag in removedTags)
+            {
+                if (!removeCountByTagId.TryGetValue(removedTag.Id, out var removeCount))
+                {
+                    continue;
+                }
+
+                removedTag.PostCount = Math.Max(0, removedTag.PostCount - removeCount);
+                await _tagRepository.UpdateAsync(removedTag);
+            }
+        }
+
+        var tagIdsToAdd = desiredTagIdSet
+            .Where(tagId => !existingTagIdSet.Contains(tagId))
+            .ToList();
+
+        foreach (var tagId in tagIdsToAdd)
+        {
+            var tag = desiredTags[tagId];
+            var postTag = new PostTag(postId, tag.Id)
+            {
+                CreateId = operatorId,
+                CreateBy = operatorName
+            };
+
+            await _postTagRepository.AddAsync(postTag);
+            tag.PostCount++;
+            await _tagRepository.UpdateAsync(tag);
+        }
     }
 
     /// <summary>

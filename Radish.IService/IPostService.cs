@@ -25,6 +25,27 @@ public interface IPostService : IBaseService<Post, PostVo>
     Task<long> PublishPostAsync(Post post, List<string>? tagNames = null, bool allowCreateTag = true);
 
     /// <summary>
+    /// 更新帖子及标签
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="title">帖子标题</param>
+    /// <param name="content">帖子内容</param>
+    /// <param name="categoryId">分类 Id（可空）</param>
+    /// <param name="tagNames">标签名称列表</param>
+    /// <param name="allowCreateTag">是否允许自动创建新标签（通常仅管理员可用）</param>
+    /// <param name="operatorId">操作者 Id</param>
+    /// <param name="operatorName">操作者名称</param>
+    Task UpdatePostAsync(
+        long postId,
+        string title,
+        string content,
+        long? categoryId,
+        List<string>? tagNames,
+        bool allowCreateTag,
+        long operatorId,
+        string operatorName);
+
+    /// <summary>
     /// 更新帖子浏览次数
     /// </summary>
     /// <param name="postId">帖子 Id</param>

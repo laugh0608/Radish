@@ -42,7 +42,7 @@ export interface ForumActionsHandlers {
   handlePublishPost: (title: string, content: string, tagNames: string[]) => Promise<void>;
   handleLikePost: (postId: number) => Promise<void>;
   handleEditPost: (postId: number) => void;
-  handleSaveEdit: (postId: number, title: string, content: string) => Promise<void>;
+  handleSaveEdit: (postId: number, title: string, content: string, tagNames: string[]) => Promise<void>;
   handleDeletePost: (postId: number) => void;
   confirmDeletePost: () => Promise<void>;
   cancelDeletePost: () => void;
@@ -226,10 +226,10 @@ export const useForumActions = (
   };
 
   // 保存编辑
-  const handleSaveEdit = async (postId: number, title: string, content: string) => {
+  const handleSaveEdit = async (postId: number, title: string, content: string, tagNames: string[]) => {
     setError(null);
     try {
-      await updatePost({ postId, title, content }, t);
+      await updatePost({ postId, title, content, tagNames }, t);
       await Promise.all([loadPostDetail(postId), loadPosts()]);
       setIsEditModalOpen(false);
     } catch (err) {

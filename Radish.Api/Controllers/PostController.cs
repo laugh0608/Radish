@@ -368,6 +368,22 @@ public class PostController : ControllerBase
             };
         }
 
+        var normalizedTagNames = request.TagNames?
+            .Where(tag => !string.IsNullOrWhiteSpace(tag))
+            .Select(tag => tag.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? new List<string>();
+
+        if (normalizedTagNames.Count is < 1 or > 5)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "编辑帖子时标签数量必须在 1 到 5 个之间"
+            };
+        }
+
         // 查询帖子
         var post = await _postService.QueryFirstAsync(p => p.Id == request.PostId && !p.IsDeleted);
         if (post == null)
@@ -391,18 +407,39 @@ public class PostController : ControllerBase
             };
         }
 
-        // 更新帖子
-        await _postService.UpdateColumnsAsync(
-            p => new Post
+        var roles = _httpContextUser.GetClaimValueByType("role");
+        var allowCreateTag = roles.Contains("Admin") || roles.Contains("System");
+
+        try
+        {
+            await _postService.UpdatePostAsync(
+                postId: request.PostId,
+                title: request.Title,
+                content: request.Content,
+                categoryId: request.CategoryId,
+                tagNames: normalizedTagNames,
+                allowCreateTag: allowCreateTag,
+                operatorId: _httpContextUser.UserId,
+                operatorName: _httpContextUser.UserName);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new MessageModel
             {
-                Title = request.Title,
-                Content = request.Content,
-                CategoryId = request.CategoryId ?? post.VoCategoryId,
-                ModifyTime = DateTime.Now,
-                ModifyBy = _httpContextUser.UserName,
-                ModifyId = _httpContextUser.UserId
-            },
-            p => p.Id == request.PostId);
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = ex.Message
+            };
+        }
+        catch (ArgumentException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
 
         return new MessageModel
         {

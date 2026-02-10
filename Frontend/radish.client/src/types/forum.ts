@@ -188,6 +188,7 @@ export interface UpdatePostRequest {
   title: string;
   content: string;
   categoryId?: number;
+  tagNames: string[];
 }
 
 /**
