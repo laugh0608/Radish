@@ -341,7 +341,7 @@ export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalPr
 
           {tagInput.trim() && matchedTags.length === 0 && (
             <p className={styles.tagTip}>
-              {isAdmin ? '未匹配现有标签，保存时将创建新标签。' : '未匹配现有标签，暂时仅管理员可创建。'}
+              {isAdmin ? '未匹配现有标签，发布时将创建新标签。' : '未匹配现有标签，暂时仅管理员可创建。'}
             </p>
           )}
 
