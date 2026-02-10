@@ -18,7 +18,7 @@ interface PublishPostModalProps {
 const DRAFT_STORAGE_KEY = 'forum_post_draft';
 const MIN_TAG_COUNT = 1;
 const MAX_TAG_COUNT = 5;
-const IMAGE_SCALE_OPTIONS = [30, 50, 70, 100] as const;
+const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;
 
 const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
@@ -47,14 +47,17 @@ export const PublishPostModal = ({
   const [addWatermark, setAddWatermark] = useState(false);
   const [watermarkText, setWatermarkText] = useState('Radish');
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
-  const [imageScalePercent, setImageScalePercent] = useState<number>(70);
+  const [imageScalePercent, setImageScalePercent] = useState<number>(75);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allTagNames, setAllTagNames] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagError, setTagError] = useState<string | null>(null);
   const roles = useUserStore(state => state.roles || []);
-  const isAdmin = roles.includes('Admin') || roles.includes('System');
+  const isAdmin = roles.some(role => {
+    const normalized = role.trim().toLowerCase();
+    return normalized === 'admin' || normalized === 'system';
+  });
   const { t } = useTranslation();
 
   // 组件打开时恢复草稿

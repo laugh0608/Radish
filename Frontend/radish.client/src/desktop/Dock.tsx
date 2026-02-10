@@ -12,6 +12,7 @@ import { ExperienceDisplay } from './components/ExperienceDisplay';
 import i18n from '@/i18n';
 import type { ApiResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
+import { tokenService } from '@/services/tokenService';
 import styles from './Dock.module.css';
 
 /**
@@ -138,7 +139,7 @@ export const Dock = () => {
         userId: json.responseData.voUserId,
         userName: json.responseData.voUserName,
         tenantId: json.responseData.voTenantId,
-        roles: ['User'],
+        roles: tokenService.getRolesFromAccessToken(token),
         avatarUrl: json.responseData.voAvatarUrl,
         avatarThumbnailUrl: json.responseData.voAvatarThumbnailUrl
       });

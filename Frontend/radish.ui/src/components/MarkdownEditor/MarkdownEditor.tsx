@@ -113,7 +113,7 @@ export const MarkdownEditor = ({
 
     try {
       const result = await onImageUpload(file);
-      const imageUrl = result.thumbnailUrl || result.url;
+      const imageUrl = result.url;
 
       // 插入图片 Markdown 语法
       insertText(`![${file.name}](${imageUrl})`, '', '');

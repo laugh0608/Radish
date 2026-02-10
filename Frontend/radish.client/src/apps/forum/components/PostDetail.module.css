@@ -49,6 +49,12 @@
   margin-bottom: 12px;
   font-size: 14px;
   text-align: left;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --border-color: #d1d5db;
+  --table-header-bg: #f3f4f6;
+  --table-row-bg: #f9fafb;
+  --code-bg: #f3f4f6;
 }
 
 .postBody :global(.markdownImage) {

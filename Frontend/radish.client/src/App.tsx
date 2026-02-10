@@ -13,16 +13,6 @@ import { bootstrapAuth, type CurrentUser } from '@/services/authBootstrap';
 import { tokenService } from '@/services/tokenService';
 import './App.css';
 
-// WebOS 全局用户信息结构（与 useUserStore.UserInfo 对齐）
-interface WebOsUserInfo {
-    userId: number;
-    userName: string;
-    tenantId: number;
-    roles: string[];
-    avatarUrl?: string;
-    avatarThumbnailUrl?: string;
-}
-
 interface OidcCallbackProps {
     apiBaseUrl: string;
 }
@@ -31,7 +21,6 @@ function App() {
     const { t } = useTranslation();
 
     const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-    const setWebOsUser = useUserStore(state => state.setUser);
     const clearWebOsUser = useUserStore(state => state.clearUser);
     const [userError, setUserError] = useState<string>();
     const unreadCount = useNotificationStore(state => state.unreadCount);
@@ -69,17 +58,6 @@ function App() {
             onUserLoaded: (userData) => {
                 setCurrentUser(userData);
                 setUserError(undefined);
-
-                // 同步到 WebOS 全局用户状态
-                const webOsUser: WebOsUserInfo = {
-                    userId: typeof userData.voUserId === 'string' ? parseInt(userData.voUserId, 10) : userData.voUserId,
-                    userName: userData.voUserName,
-                    tenantId: typeof userData.voTenantId === 'string' ? parseInt(userData.voTenantId, 10) : userData.voTenantId,
-                    roles: ['User'],
-                    avatarUrl: userData.voAvatarUrl,
-                    avatarThumbnailUrl: userData.voAvatarThumbnailUrl
-                };
-                setWebOsUser(webOsUser);
             },
             onUserLoadFailed: (error) => {
                 setUserError(`${t('auth.userInfoLoadFailedPrefix')}${error.message}`);

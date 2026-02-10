@@ -13,6 +13,8 @@ export interface CurrentUser {
   voTenantId: number;
   voAvatarUrl?: string;
   voAvatarThumbnailUrl?: string;
+  voRoleNames?: string[];
+  voRoles?: string[];
 }
 
 export interface AuthBootstrapOptions {
@@ -22,13 +24,33 @@ export interface AuthBootstrapOptions {
   useCache?: boolean;
 }
 
-function setUserFromCurrentUser(user: CurrentUser) {
+function resolveUserRoles(user: CurrentUser, token?: string | null): string[] {
+  const tokenRoles = tokenService.getRolesFromAccessToken(token);
+  if (tokenRoles.length > 0) {
+    return tokenRoles;
+  }
+
+  const userRoles = [
+    ...(Array.isArray(user.voRoleNames) ? user.voRoleNames : []),
+    ...(Array.isArray(user.voRoles) ? user.voRoles : []),
+  ]
+    .map((role) => role.trim())
+    .filter(Boolean);
+
+  if (userRoles.length > 0) {
+    return userRoles;
+  }
+
+  return ['User'];
+}
+
+function setUserFromCurrentUser(user: CurrentUser, token?: string | null) {
   const { setUser } = useUserStore.getState();
   setUser({
     userId: typeof user.voUserId === 'string' ? parseInt(user.voUserId, 10) : user.voUserId,
     userName: user.voUserName,
     tenantId: typeof user.voTenantId === 'string' ? parseInt(user.voTenantId, 10) : user.voTenantId,
-    roles: ['User'],
+    roles: resolveUserRoles(user, token),
     avatarUrl: user.voAvatarUrl,
     avatarThumbnailUrl: user.voAvatarThumbnailUrl
   });
@@ -78,7 +100,7 @@ export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<Cu
       try {
         const userData = JSON.parse(cachedUserInfo) as CurrentUser;
         if (userData.voUserId && userData.voUserName) {
-          setUserFromCurrentUser(userData);
+          setUserFromCurrentUser(userData, token);
           authStore.setAuthenticated(true);
           window.localStorage.removeItem('cached_user_info');
           onUserLoaded?.(userData);
@@ -95,7 +117,7 @@ export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<Cu
 
   try {
     const userData = await fetchCurrentUser(apiBaseUrl, token);
-    setUserFromCurrentUser(userData);
+    setUserFromCurrentUser(userData, token);
     authStore.setAuthenticated(true);
     onUserLoaded?.(userData);
     log.info('AuthBootstrap', '✅ 用户信息初始化完成');

@@ -14,6 +14,10 @@ interface TokenInfo {
   token_type: string;
 }
 
+type JwtPayload = Record<string, unknown> & {
+  exp?: number;
+};
+
 class TokenService {
   private static instance: TokenService;
   private refreshPromise: Promise<string> | null = null;
@@ -52,6 +56,63 @@ class TokenService {
   getTokenRefreshAt(): number | null {
     const refreshAt = localStorage.getItem(this.TOKEN_REFRESH_AT_KEY);
     return refreshAt ? parseInt(refreshAt, 10) : null;
+  }
+
+  getRolesFromAccessToken(token?: string | null): string[] {
+    const targetToken = token ?? this.getAccessToken();
+    if (!targetToken) {
+      return [];
+    }
+
+    const payload = this.parseJwt(targetToken);
+    if (!payload) {
+      return [];
+    }
+
+    const roleClaimKeys = [
+      'role',
+      'roles',
+      'http://schemas.microsoft.com/ws/2008/06/identity/claims/role',
+    ] as const;
+
+    const parseRoleClaim = (claim: unknown): string[] => {
+      if (typeof claim === 'string') {
+        return claim
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      if (Array.isArray(claim)) {
+        return claim
+          .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      return [];
+    };
+
+    const roles = roleClaimKeys.flatMap((key) => parseRoleClaim(payload[key]));
+
+    const uniqueRoles: string[] = [];
+    const roleSet = new Set<string>();
+    roles.forEach((role) => {
+      const normalizedRole = role.trim();
+      if (!normalizedRole) {
+        return;
+      }
+
+      const roleKey = normalizedRole.toLowerCase();
+      if (roleSet.has(roleKey)) {
+        return;
+      }
+
+      roleSet.add(roleKey);
+      uniqueRoles.push(normalizedRole);
+    });
+
+    return uniqueRoles;
   }
 
   setTokenInfo(tokenInfo: TokenInfo): void {
@@ -178,12 +239,17 @@ class TokenService {
   /**
    * 解析 JWT Token
    */
-  private parseJwt(token: string): { exp?: number } | null {
+  private parseJwt(token: string): JwtPayload | null {
     try {
       const base64Url = token.split('.')[1];
+      if (!base64Url) {
+        return null;
+      }
+
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const paddedBase64 = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
       const jsonPayload = decodeURIComponent(
-        atob(base64)
+        atob(paddedBase64)
           .split('')
           .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
           .join('')
