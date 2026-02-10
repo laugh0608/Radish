@@ -78,6 +78,16 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     /// <param name="newContent">新的评论内容</param>
     /// <param name="userId">操作用户 Id</param>
     /// <param name="userName">操作用户名称</param>
+    /// <param name="isAdmin">是否管理员</param>
     /// <returns>更新结果（是否成功，错误信息）</returns>
-    Task<(bool success, string message)> UpdateCommentAsync(long commentId, string newContent, long userId, string userName);
+    Task<(bool success, string message)> UpdateCommentAsync(long commentId, string newContent, long userId, string userName, bool isAdmin = false);
+
+    /// <summary>
+    /// 分页获取评论编辑历史
+    /// </summary>
+    /// <param name="commentId">评论 Id</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <returns>历史记录和总数</returns>
+    Task<(List<CommentEditHistoryVo> histories, int total)> GetCommentEditHistoryPageAsync(long commentId, int pageIndex, int pageSize);
 }

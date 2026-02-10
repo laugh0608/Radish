@@ -18,6 +18,9 @@ import type {
   PostDetail,
   CommentNode,
   CommentHighlight,
+  PostEditHistory,
+  CommentEditHistory,
+  VoPagedResult,
   PageModel,
   PublishPostRequest,
   CreateCommentRequest,
@@ -41,6 +44,9 @@ export type {
   PostDetail,
   CommentNode,
   CommentHighlight,
+  PostEditHistory,
+  CommentEditHistory,
+  VoPagedResult,
   PageModel,
   PublishPostRequest,
   CreateCommentRequest,
@@ -282,6 +288,48 @@ export async function updateComment(
   if (!response.ok) {
     throw new Error(response.message || '编辑评论失败');
   }
+}
+
+/**
+ * 获取帖子编辑历史
+ */
+export async function getPostEditHistory(
+  postId: number,
+  pageIndex: number,
+  pageSize: number,
+  t: TFunction
+): Promise<VoPagedResult<PostEditHistory>> {
+  const response = await apiGet<VoPagedResult<PostEditHistory>>(
+    `/api/v1/Post/GetEditHistory?postId=${postId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取帖子编辑历史失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 获取评论编辑历史
+ */
+export async function getCommentEditHistory(
+  commentId: number,
+  pageIndex: number,
+  pageSize: number,
+  t: TFunction
+): Promise<VoPagedResult<CommentEditHistory>> {
+  const response = await apiGet<VoPagedResult<CommentEditHistory>>(
+    `/api/v1/Comment/GetEditHistory?commentId=${commentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取评论编辑历史失败');
+  }
+
+  return response.data;
 }
 
 /**

@@ -32,10 +32,12 @@ interface PostDetailContentViewProps {
   onBack: () => void;
   onLike: (postId: number) => void;
   onEdit: (postId: number) => void;
+  onViewPostHistory: (postId: number) => void;
   onDelete: (postId: number) => void;
   onCommentSortChange: (sortBy: 'newest' | 'hottest') => void;
   onDeleteComment: (commentId: number) => void;
   onEditComment: (commentId: number, newContent: string) => Promise<void>;
+  onViewCommentHistory: (commentId: number) => void;
   onLikeComment: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment: (commentId: number, authorName: string) => void;
   onLoadMoreChildren: (
@@ -61,10 +63,12 @@ export const PostDetailContentView = ({
   onBack,
   onLike,
   onEdit,
+  onViewPostHistory,
   onDelete,
   onCommentSortChange,
   onDeleteComment,
   onEditComment,
+  onViewCommentHistory,
   onLikeComment,
   onReplyComment,
   onLoadMoreChildren,
@@ -151,6 +155,7 @@ export const PostDetailContentView = ({
               isAuthenticated={isAuthenticated}
               currentUserId={currentUserId}
               onEdit={onEdit}
+              onViewHistory={onViewPostHistory}
               onDelete={onDelete}
             />
           </Suspense>
@@ -166,6 +171,7 @@ export const PostDetailContentView = ({
               onSortChange={onCommentSortChange}
               onDeleteComment={onDeleteComment}
               onEditComment={onEditComment}
+              onViewCommentHistory={onViewCommentHistory}
               onLikeComment={onLikeComment}
               onReplyComment={(commentId, authorName) => {
                 onReplyComment(commentId, authorName);

@@ -199,6 +199,25 @@
   transition: all 0.2s ease;
 }
 
+.historyButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background-color: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  color: #1f2937;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.historyButton:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
 .editButton:hover {
   background-color: #eff6ff;
   border-color: #2d6cdf;

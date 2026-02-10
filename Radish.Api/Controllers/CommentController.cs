@@ -294,20 +294,56 @@ public class CommentController : ControllerBase
     /// <param name="request">更新请求</param>
     /// <returns>操作结果</returns>
     /// <remarks>
-    /// 只有作者本人可以编辑评论，且仅限发布后5分钟内。
-    /// 编辑后会显示"已编辑"标记。
+    /// 作者可编辑自己的评论；管理员可编辑任意评论。
+    /// 时间窗口与次数限制由 ForumEditHistory 配置控制。
     /// </remarks>
     [HttpPut]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
     public async Task<MessageModel> Update([FromBody] UpdateCommentDto request)
     {
+        if (string.IsNullOrWhiteSpace(request.Content))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "评论内容不能为空"
+            };
+        }
+
+        var comment = await _commentService.QueryFirstAsync(c => c.Id == request.CommentId && !c.IsDeleted);
+        if (comment == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "评论不存在"
+            };
+        }
+
+        var roles = _httpContextUser.GetClaimValueByType("role");
+        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+
+        if (comment.VoAuthorId != _httpContextUser.UserId && !isAdmin)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "无权编辑此评论"
+            };
+        }
+
         var (success, message) = await _commentService.UpdateCommentAsync(
             request.CommentId,
             request.Content,
             _httpContextUser.UserId,
-            _httpContextUser.UserName);
+            _httpContextUser.UserName,
+            isAdmin);
 
         if (!success)
         {
@@ -329,6 +365,47 @@ public class CommentController : ControllerBase
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = message
+        };
+    }
+
+    /// <summary>
+    /// 获取评论编辑历史（分页）
+    /// </summary>
+    /// <param name="commentId">评论 Id</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小（默认 20）</param>
+    /// <returns>编辑历史</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetEditHistory(long commentId, int pageIndex = 1, int pageSize = 20)
+    {
+        var comment = await _commentService.QueryFirstAsync(c => c.Id == commentId && !c.IsDeleted);
+        if (comment == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "评论不存在"
+            };
+        }
+
+        var (histories, total) = await _commentService.GetCommentEditHistoryPageAsync(commentId, pageIndex, pageSize);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = new VoPagedResult<CommentEditHistoryVo>
+            {
+                VoItems = histories,
+                VoTotal = total,
+                VoPageIndex = pageIndex < 1 ? 1 : pageIndex,
+                VoPageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 100)
+            }
         };
     }
 }

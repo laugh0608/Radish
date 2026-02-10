@@ -22,6 +22,10 @@ const PostDetailContentView = lazy(() =>
   import('./views/PostDetailContentView').then((module) => ({ default: module.PostDetailContentView }))
 );
 
+const EditHistoryModal = lazy(() =>
+  import('./components/EditHistoryModal').then((module) => ({ default: module.EditHistoryModal }))
+);
+
 export const ForumApp = () => {
   const { t } = useTranslation();
   const { isAuthenticated, userId } = useUserStore();
@@ -142,10 +146,12 @@ export const ForumApp = () => {
                 }}
                 onLike={actionsState.handleLikePost}
                 onEdit={actionsState.handleEditPost}
+                onViewPostHistory={actionsState.handleViewPostHistory}
                 onDelete={actionsState.handleDeletePost}
                 onCommentSortChange={actionsState.handleCommentSortChange}
                 onDeleteComment={actionsState.handleDeleteComment}
                 onEditComment={actionsState.handleEditComment}
+                onViewCommentHistory={actionsState.handleViewCommentHistory}
                 onLikeComment={actionsState.handleCommentLike}
                 onReplyComment={actionsState.handleReplyComment}
                 onLoadMoreChildren={actionsState.handleLoadMoreChildren}
@@ -230,6 +236,56 @@ export const ForumApp = () => {
           onConfirm={actionsState.confirmDeleteComment}
           onCancel={actionsState.cancelDeleteComment}
         />
+
+        {actionsState.isPostHistoryOpen && (
+          <Suspense fallback={null}>
+            <EditHistoryModal
+              isOpen={actionsState.isPostHistoryOpen}
+              title="帖子编辑历史"
+              loading={actionsState.postHistoryLoading}
+              error={actionsState.postHistoryError}
+              items={actionsState.postHistories}
+              total={actionsState.postHistoryTotal}
+              pageIndex={actionsState.postHistoryPageIndex}
+              pageSize={10}
+              onClose={actionsState.closePostHistory}
+              onPageChange={actionsState.handlePostHistoryPageChange}
+              renderContent={(item) => {
+                const history = item as import('@/types/forum').PostEditHistory;
+                return {
+                  beforeTitle: history.voOldTitle,
+                  afterTitle: history.voNewTitle,
+                  before: history.voOldContent,
+                  after: history.voNewContent
+                };
+              }}
+            />
+          </Suspense>
+        )}
+
+        {actionsState.isCommentHistoryOpen && (
+          <Suspense fallback={null}>
+            <EditHistoryModal
+              isOpen={actionsState.isCommentHistoryOpen}
+              title="评论编辑历史"
+              loading={actionsState.commentHistoryLoading}
+              error={actionsState.commentHistoryError}
+              items={actionsState.commentHistories}
+              total={actionsState.commentHistoryTotal}
+              pageIndex={actionsState.commentHistoryPageIndex}
+              pageSize={10}
+              onClose={actionsState.closeCommentHistory}
+              onPageChange={actionsState.handleCommentHistoryPageChange}
+              renderContent={(item) => {
+                const history = item as import('@/types/forum').CommentEditHistory;
+                return {
+                  before: history.voOldContent,
+                  after: history.voNewContent
+                };
+              }}
+            />
+          </Suspense>
+        )}
 
         {/* 错误提示 */}
         {dataState.error && <p className={styles.errorText}>错误：{dataState.error}</p>}

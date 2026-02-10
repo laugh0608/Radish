@@ -160,6 +160,7 @@ export default defineConfig({
           items: [
             { text: '论坛应用评估', link: '/features/forum-assessment' },
             { text: '论坛分类与标签', link: '/features/forum-category-tag' },
+            { text: '论坛编辑历史', link: '/features/forum-edit-history' },
             { text: '论坛重构总结', link: '/features/forum-refactoring' },
             { text: '开放平台指南', link: '/features/open-platform' },
             { text: '文件上传功能设计', link: '/features/file-upload-design' }

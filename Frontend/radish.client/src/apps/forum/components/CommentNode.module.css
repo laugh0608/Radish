@@ -67,6 +67,27 @@
   gap: 4px;
 }
 
+.historyButton {
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.historyButton:hover {
+  background-color: rgba(107, 114, 128, 0.1);
+}
+
+.historyButton:active {
+  background-color: rgba(107, 114, 128, 0.2);
+}
+
 .deleteButton:hover {
   background-color: rgba(239, 68, 68, 0.1);
 }

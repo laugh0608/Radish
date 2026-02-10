@@ -35,6 +35,7 @@ public interface IPostService : IBaseService<Post, PostVo>
     /// <param name="allowCreateTag">是否允许自动创建新标签（通常仅管理员可用）</param>
     /// <param name="operatorId">操作者 Id</param>
     /// <param name="operatorName">操作者名称</param>
+    /// <param name="isAdmin">是否管理员</param>
     Task UpdatePostAsync(
         long postId,
         string title,
@@ -43,7 +44,8 @@ public interface IPostService : IBaseService<Post, PostVo>
         List<string>? tagNames,
         bool allowCreateTag,
         long operatorId,
-        string operatorName);
+        string operatorName,
+        bool isAdmin = false);
 
     /// <summary>
     /// 更新帖子浏览次数
@@ -72,4 +74,13 @@ public interface IPostService : IBaseService<Post, PostVo>
     /// <param name="postId">帖子 Id</param>
     /// <returns>点赞操作结果（当前状态和最新点赞数）</returns>
     Task<PostLikeResultDto> ToggleLikeAsync(long userId, long postId);
+
+    /// <summary>
+    /// 分页获取帖子编辑历史
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <returns>历史记录和总数</returns>
+    Task<(List<PostEditHistoryVo> histories, int total)> GetPostEditHistoryPageAsync(long postId, int pageIndex, int pageSize);
 }

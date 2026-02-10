@@ -16,6 +16,7 @@ interface PostDetailProps {
   currentUserId?: number;
   onEdit?: (postId: number) => void;
   onDelete?: (postId: number) => void;
+  onViewHistory?: (postId: number) => void;
 }
 
 export const PostDetail = ({
@@ -26,7 +27,8 @@ export const PostDetail = ({
   isAuthenticated = false,
   currentUserId = 0,
   onEdit,
-  onDelete
+  onDelete,
+  onViewHistory
 }: PostDetailProps) => {
   const parsedTags = post?.voTags
     ? post.voTags
@@ -112,6 +114,15 @@ export const PostDetail = ({
               >
                 <Icon icon="mdi:delete" size={18} />
                 删除
+              </button>
+              <button
+                type="button"
+                onClick={() => onViewHistory?.(post.voId)}
+                className={styles.historyButton}
+                title="查看编辑历史"
+              >
+                <Icon icon="mdi:history" size={18} />
+                历史
               </button>
             </div>
           )}

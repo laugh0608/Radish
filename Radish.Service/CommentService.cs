@@ -27,6 +27,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private readonly INotificationDedupService _dedupService;
     private readonly IExperienceService _experienceService;
     private readonly CommentHighlightOptions _highlightOptions;
+    private readonly IBaseRepository<CommentEditHistory> _commentEditHistoryRepository;
+    private readonly ForumEditHistoryOptions _editHistoryOptions;
 
     public CommentService(
         IMapper mapper,
@@ -39,7 +41,9 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         INotificationService notificationService,
         INotificationDedupService dedupService,
         IExperienceService experienceService,
-        IOptions<CommentHighlightOptions> highlightOptions)
+        IOptions<CommentHighlightOptions> highlightOptions,
+        IBaseRepository<CommentEditHistory> commentEditHistoryRepository,
+        IOptions<ForumEditHistoryOptions> editHistoryOptions)
         : base(mapper, baseRepository)
     {
         _commentRepository = baseRepository;
@@ -52,6 +56,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         _dedupService = dedupService;
         _experienceService = experienceService;
         _highlightOptions = highlightOptions.Value;
+        _commentEditHistoryRepository = commentEditHistoryRepository;
+        _editHistoryOptions = editHistoryOptions.Value;
     }
 
     /// <summary>
@@ -707,7 +713,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     /// <summary>
     /// 更新评论内容
     /// </summary>
-    public async Task<(bool success, string message)> UpdateCommentAsync(long commentId, string newContent, long userId, string userName)
+    public async Task<(bool success, string message)> UpdateCommentAsync(long commentId, string newContent, long userId, string userName, bool isAdmin = false)
     {
         // 1. 查询评论
         var comment = await _commentRepository.QueryByIdAsync(commentId);
@@ -717,16 +723,30 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         // 2. 检查作者权限
-        if (comment.AuthorId != userId)
+        if (comment.AuthorId != userId && !isAdmin)
         {
             return (false, "只有作者本人可以编辑评论");
         }
 
-        // 3. 检查时间窗口（5分钟 = 300秒）
+        var commentOptions = _editHistoryOptions.Comment;
+        var historyEnabled = _editHistoryOptions.Enable && commentOptions.EnableHistory;
+        var historyEditCount = await _commentEditHistoryRepository.QueryCountAsync(h => h.CommentId == commentId);
+        var existingEditCount = Math.Max(comment.EditCount, historyEditCount);
+
+        // 3. 检查时间窗口
+        var editWindowMinutes = Math.Max(0, commentOptions.EditWindowMinutes);
         var timeSinceCreation = DateTime.Now - comment.CreateTime;
-        if (timeSinceCreation.TotalSeconds > 300)
+        if ((!isAdmin || !_editHistoryOptions.AdminOverride.BypassCommentEditWindow)
+            && timeSinceCreation.TotalMinutes > editWindowMinutes)
         {
-            return (false, "评论发布超过5分钟，无法编辑");
+            return (false, $"评论发布超过{editWindowMinutes}分钟，无法编辑");
+        }
+
+        // 3.1 检查编辑次数上限
+        if ((!isAdmin || !_editHistoryOptions.AdminOverride.BypassEditCountLimit)
+            && existingEditCount >= Math.Max(0, commentOptions.MaxEditCount))
+        {
+            return (false, "评论编辑次数已达上限，无法继续编辑");
         }
 
         // 4. 验证内容
@@ -735,14 +755,85 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             return (false, "评论内容不能为空");
         }
 
+        var safeUserName = string.IsNullOrWhiteSpace(userName) ? "System" : userName;
+        var trimmedContent = newContent.Trim();
+        var nextEditSequence = existingEditCount + 1;
+
+        if (historyEnabled)
+        {
+            if (nextEditSequence <= Math.Max(0, commentOptions.HistorySaveEditCount))
+            {
+                await _commentEditHistoryRepository.AddAsync(new CommentEditHistory
+                {
+                    CommentId = comment.Id,
+                    PostId = comment.PostId,
+                    EditSequence = nextEditSequence,
+                    OldContent = comment.Content,
+                    NewContent = trimmedContent,
+                    EditorId = userId,
+                    EditorName = safeUserName,
+                    EditedAt = DateTime.Now,
+                    TenantId = comment.TenantId,
+                    CreateTime = DateTime.Now,
+                    CreateBy = safeUserName,
+                    CreateId = userId
+                });
+            }
+        }
+
         // 5. 更新评论
-        comment.Content = newContent.Trim();
+        comment.Content = trimmedContent;
+        comment.EditCount = nextEditSequence;
         comment.ModifyTime = DateTime.Now;
-        comment.ModifyBy = userName;
+        comment.ModifyBy = safeUserName;
         comment.ModifyId = userId;
         await _commentRepository.UpdateAsync(comment);
 
+        if (historyEnabled)
+        {
+            await TrimCommentHistoryAsync(commentId, Math.Max(1, commentOptions.MaxHistoryRecords));
+        }
+
         return (true, "编辑成功");
+    }
+
+    public async Task<(List<CommentEditHistoryVo> histories, int total)> GetCommentEditHistoryPageAsync(long commentId, int pageIndex, int pageSize)
+    {
+        var safePageIndex = pageIndex < 1 ? 1 : pageIndex;
+        var safePageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 100);
+
+        var (histories, total) = await _commentEditHistoryRepository.QueryPageAsync(
+            h => h.CommentId == commentId,
+            safePageIndex,
+            safePageSize,
+            h => h.EditSequence,
+            SqlSugar.OrderByType.Desc,
+            h => h.CreateTime,
+            SqlSugar.OrderByType.Desc);
+
+        return (Mapper.Map<List<CommentEditHistoryVo>>(histories), total);
+    }
+
+    private async Task TrimCommentHistoryAsync(long commentId, int maxHistoryRecords)
+    {
+        var histories = await _commentEditHistoryRepository.QueryWithOrderAsync(
+            h => h.CommentId == commentId,
+            h => h.EditSequence,
+            SqlSugar.OrderByType.Desc);
+
+        if (histories.Count <= maxHistoryRecords)
+        {
+            return;
+        }
+
+        var removeIds = histories
+            .Skip(maxHistoryRecords)
+            .Select(h => h.Id)
+            .ToList();
+
+#pragma warning disable CS0618
+        await _commentEditHistoryRepository.DeleteByIdsAsync(removeIds);
+#pragma warning restore CS0618
     }
 
     /// <summary>

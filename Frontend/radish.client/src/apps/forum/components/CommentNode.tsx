@@ -13,6 +13,7 @@ interface CommentNodeProps {
   isGodComment?: boolean; // 是否是神评
   onDelete?: (commentId: number) => void;
   onEdit?: (commentId: number, newContent: string) => Promise<void>;
+  onViewHistory?: (commentId: number) => void;
   onLike?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReply?: (commentId: number, authorName: string) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
@@ -90,6 +91,7 @@ export const CommentNode = ({
   isGodComment = false,
   onDelete,
   onEdit,
+  onViewHistory,
   onLike,
   onReply,
   onLoadMoreChildren
@@ -368,6 +370,17 @@ export const CommentNode = ({
                 disabled={isEditing}
               >
                 <Icon icon="mdi:pencil" size={14} />
+              </button>
+            )}
+            {onViewHistory && (
+              <button
+                type="button"
+                onClick={() => onViewHistory(node.voId)}
+                className={styles.historyButton}
+                title="查看编辑历史"
+                disabled={isEditing}
+              >
+                <Icon icon="mdi:history" size={14} />
               </button>
             )}
             {onDelete && (

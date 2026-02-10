@@ -46,5 +46,17 @@ public class ForumProfile : Profile
         // CommentHighlight -> CommentHighlightVo
         CreateMap<CommentHighlight, CommentHighlightVo>();
         CreateMap<CommentHighlightVo, CommentHighlight>();
+
+        // PostEditHistory -> PostEditHistoryVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostEditHistory, PostEditHistoryVo>();
+        RecognizePrefixes("Vo");
+        CreateMap<PostEditHistoryVo, PostEditHistory>();
+
+        // CommentEditHistory -> CommentEditHistoryVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<CommentEditHistory, CommentEditHistoryVo>();
+        RecognizePrefixes("Vo");
+        CreateMap<CommentEditHistoryVo, CommentEditHistory>();
     }
 }

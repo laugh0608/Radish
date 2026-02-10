@@ -384,6 +384,16 @@ public class PostController : ControllerBase
             };
         }
 
+        if (string.IsNullOrWhiteSpace(request.Content))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "帖子内容不能为空"
+            };
+        }
+
         // 查询帖子
         var post = await _postService.QueryFirstAsync(p => p.Id == request.PostId && !p.IsDeleted);
         if (post == null)
@@ -396,8 +406,11 @@ public class PostController : ControllerBase
             };
         }
 
-        // 权限验证：只有作者本人可以编辑
-        if (post.VoAuthorId != _httpContextUser.UserId)
+        var roles = _httpContextUser.GetClaimValueByType("role");
+        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+
+        // 权限验证：作者本人或管理员可编辑
+        if (post.VoAuthorId != _httpContextUser.UserId && !isAdmin)
         {
             return new MessageModel
             {
@@ -407,7 +420,6 @@ public class PostController : ControllerBase
             };
         }
 
-        var roles = _httpContextUser.GetClaimValueByType("role");
         var allowCreateTag = roles.Contains("Admin") || roles.Contains("System");
 
         try
@@ -420,7 +432,8 @@ public class PostController : ControllerBase
                 tagNames: normalizedTagNames,
                 allowCreateTag: allowCreateTag,
                 operatorId: _httpContextUser.UserId,
-                operatorName: _httpContextUser.UserName);
+                operatorName: _httpContextUser.UserName,
+                isAdmin: isAdmin);
         }
         catch (InvalidOperationException ex)
         {
@@ -446,6 +459,47 @@ public class PostController : ControllerBase
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "编辑成功"
+        };
+    }
+
+    /// <summary>
+    /// 获取帖子编辑历史（分页）
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小（默认 20）</param>
+    /// <returns>编辑历史</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetEditHistory(long postId, int pageIndex = 1, int pageSize = 20)
+    {
+        var post = await _postService.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted);
+        if (post == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "帖子不存在"
+            };
+        }
+
+        var (histories, total) = await _postService.GetPostEditHistoryPageAsync(postId, pageIndex, pageSize);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = new VoPagedResult<PostEditHistoryVo>
+            {
+                VoItems = histories,
+                VoTotal = total,
+                VoPageIndex = pageIndex < 1 ? 1 : pageIndex,
+                VoPageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 100)
+            }
         };
     }
 
