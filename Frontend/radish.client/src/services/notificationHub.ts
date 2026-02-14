@@ -68,6 +68,8 @@ class NotificationHubService {
   private retryCount = 0;
   private maxRetries = 5;
   private startRequestId = 0;
+  private readonly serverTimeoutMs = 60_000;
+  private readonly keepAliveIntervalMs = 15_000;
 
   /** 获取当前连接实例 */
   getConnection(): signalR.HubConnection | null {
@@ -130,6 +132,10 @@ class NotificationHubService {
         })
         .configureLogging(signalR.LogLevel.Information)
         .build();
+
+      // 适度放宽服务端超时，降低弱网/代理抖动下的误断开概率
+      this.connection.serverTimeoutInMilliseconds = this.serverTimeoutMs;
+      this.connection.keepAliveIntervalInMilliseconds = this.keepAliveIntervalMs;
 
       // 注册事件处理器
       this.registerEventHandlers();

@@ -30,6 +30,8 @@ import type {
 } from '@/types/forum';
 import { getApiBaseUrl } from '@/config/env';
 
+const FORUM_READ_TIMEOUT_MS = 60_000;
+
 // 配置 API 客户端
 configureApiClient({
   baseUrl: getApiBaseUrl(),
@@ -59,7 +61,7 @@ export type {
  * 获取所有标签
  */
 export async function getAllTags(t: TFunction): Promise<Tag[]> {
-  const response = await apiGet<Tag[]>('/api/v1/Tag/GetAll');
+  const response = await apiGet<Tag[]>('/api/v1/Tag/GetAll', { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载标签失败');
@@ -72,7 +74,7 @@ export async function getAllTags(t: TFunction): Promise<Tag[]> {
  * 获取固定标签
  */
 export async function getFixedTags(t: TFunction): Promise<Tag[]> {
-  const response = await apiGet<Tag[]>('/api/v1/Tag/GetFixedTags');
+  const response = await apiGet<Tag[]>('/api/v1/Tag/GetFixedTags', { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载固定标签失败');
@@ -86,7 +88,7 @@ export async function getFixedTags(t: TFunction): Promise<Tag[]> {
  * @param topCount 返回数量（默认 20）
  */
 export async function getHotTags(t: TFunction, topCount: number = 20): Promise<Tag[]> {
-  const response = await apiGet<Tag[]>(`/api/v1/Tag/GetHotTags?topCount=${topCount}`);
+  const response = await apiGet<Tag[]>(`/api/v1/Tag/GetHotTags?topCount=${topCount}`, { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载热门标签失败');
@@ -99,7 +101,7 @@ export async function getHotTags(t: TFunction, topCount: number = 20): Promise<T
  * 获取顶级分类列表
  */
 export async function getTopCategories(t: TFunction): Promise<Category[]> {
-  const response = await apiGet<Category[]>('/api/v1/Category/GetTopCategories');
+  const response = await apiGet<Category[]>('/api/v1/Category/GetTopCategories', { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载分类失败');
@@ -132,7 +134,8 @@ export async function getPostList(
   if (keyword.trim()) params.set('keyword', keyword.trim());
 
   const response = await apiGet<PageModel<PostItem>>(
-    `/api/v1/Post/GetList?${params.toString()}`
+    `/api/v1/Post/GetList?${params.toString()}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {
@@ -146,7 +149,7 @@ export async function getPostList(
  * 获取帖子详情
  */
 export async function getPostById(postId: number, t: TFunction): Promise<PostDetail> {
-  const response = await apiGet<PostDetail>(`/api/v1/Post/GetById/${postId}`);
+  const response = await apiGet<PostDetail>(`/api/v1/Post/GetById/${postId}`, { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
     // 针对帖子不存在的情况给出友好提示
@@ -168,7 +171,7 @@ export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest
 
   const response = await apiGet<CommentNode[]>(
     `/api/v1/Comment/GetCommentTree?postId=${postId}&sortBy=${sortBy}`,
-    { withAuth: !!hasToken }
+    { withAuth: !!hasToken, timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {
@@ -301,7 +304,7 @@ export async function getPostEditHistory(
 ): Promise<VoPagedResult<PostEditHistory>> {
   const response = await apiGet<VoPagedResult<PostEditHistory>>(
     `/api/v1/Post/GetEditHistory?postId=${postId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
-    { withAuth: true }
+    { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {
@@ -322,7 +325,7 @@ export async function getCommentEditHistory(
 ): Promise<VoPagedResult<CommentEditHistory>> {
   const response = await apiGet<VoPagedResult<CommentEditHistory>>(
     `/api/v1/Comment/GetEditHistory?commentId=${commentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
-    { withAuth: true }
+    { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {
@@ -364,7 +367,8 @@ export async function getChildComments(
     voPageIndex: number;
     voPageSize: number;
   }>(
-    `/api/v1/Comment/GetChildComments?parentId=${parentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`
+    `/api/v1/Comment/GetChildComments?parentId=${parentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {
@@ -384,7 +388,10 @@ export async function getCurrentGodComments(
   postId: number,
   t: TFunction
 ): Promise<CommentHighlight[]> {
-  const response = await apiGet<CommentHighlight[]>(`/api/v1/CommentHighlight/GetCurrentGodComments?postId=${postId}`);
+  const response = await apiGet<CommentHighlight[]>(
+    `/api/v1/CommentHighlight/GetCurrentGodComments?postId=${postId}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取神评列表失败');
@@ -408,7 +415,8 @@ export async function getCurrentGodCommentsBatch(
 
   const response = await apiPost<Record<number, CommentHighlight>>(
     '/api/v1/CommentHighlight/GetCurrentGodCommentsBatch',
-    postIds
+    postIds,
+    { timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {
@@ -428,7 +436,10 @@ export async function getCurrentSofas(
   parentCommentId: number,
   t: TFunction
 ): Promise<CommentHighlight[]> {
-  const response = await apiGet<CommentHighlight[]>(`/api/v1/CommentHighlight/GetCurrentSofas?parentCommentId=${parentCommentId}`);
+  const response = await apiGet<CommentHighlight[]>(
+    `/api/v1/CommentHighlight/GetCurrentSofas?parentCommentId=${parentCommentId}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取沙发列表失败');

@@ -8,8 +8,10 @@ export type NotificationType = 'system' | 'reply' | 'mention' | 'like' | 'follow
  * 注意：这是 Store 内部的数据结构，UI 组件使用 NotificationItemData
  */
 export interface NotificationItem {
-  /** 通知 ID */
+  /** 列表项唯一 ID（优先使用用户通知关系 ID） */
   id: number;
+  /** 后端通知 ID（用于已读/删除等接口） */
+  notificationId?: number;
   /** 通知类型 */
   type: NotificationType;
   /** 通知标题 */
@@ -137,9 +139,13 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
 
   removeNotification: (notificationId: number) => {
     set(state => {
-      const removedUnread = state.recentNotifications.filter(n => n.id === notificationId && !n.isRead).length;
+      const removedUnread = state.recentNotifications.filter(
+        n => (n.id === notificationId || n.notificationId === notificationId) && !n.isRead
+      ).length;
       return {
-        recentNotifications: state.recentNotifications.filter(n => n.id !== notificationId),
+        recentNotifications: state.recentNotifications.filter(
+          n => n.id !== notificationId && n.notificationId !== notificationId
+        ),
         unreadCount: Math.max(0, state.unreadCount - removedUnread)
       };
     });
@@ -149,9 +155,13 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
     const idSet = new Set(notificationIds);
     set(state => {
       const updated = state.recentNotifications.map(n =>
-        idSet.has(n.id) ? { ...n, isRead: true } : n
+        (idSet.has(n.id) || (n.notificationId !== undefined && idSet.has(n.notificationId)))
+          ? { ...n, isRead: true }
+          : n
       );
-      const markedCount = state.recentNotifications.filter(n => idSet.has(n.id) && !n.isRead).length;
+      const markedCount = state.recentNotifications.filter(
+        n => (idSet.has(n.id) || (n.notificationId !== undefined && idSet.has(n.notificationId))) && !n.isRead
+      ).length;
       return {
         recentNotifications: updated,
         unreadCount: Math.max(0, state.unreadCount - markedCount)
