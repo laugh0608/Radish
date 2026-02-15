@@ -2,9 +2,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Collections.Concurrent;
 using Radish.Common.CoreTool;
-using Radish.Common.OptionTool;
 using Radish.Common.TenantTool;
-using Radish.Common.TimeTool;
 using Radish.Infrastructure.Tenant;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -417,14 +415,9 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         {
             DateTimeKind.Utc => value,
             DateTimeKind.Local => value.ToUniversalTime(),
-            _ => TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(value, DateTimeKind.Unspecified), ResolveDefaultTimeZone())
+            // 约定 Unspecified 即 UTC（兼容 SQLite 返回的 DateTime.Kind=Unspecified）
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
         };
-    }
-
-    private static TimeZoneInfo ResolveDefaultTimeZone()
-    {
-        var configuredTimeZoneId = App.GetOptions<TimeOptions>()?.DefaultTimeZoneId;
-        return TimeZoneResolver.ResolveOrUtc(configuredTimeZoneId);
     }
 
     /// <summary>根据条件更新指定列</summary>

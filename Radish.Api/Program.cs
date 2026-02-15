@@ -139,8 +139,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.Converters.Add(new Int64ToStringConverter());
         options.JsonSerializerOptions.Converters.Add(new NullableInt64ToStringConverter());
-        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter(appDefaultTimeZone));
-        options.JsonSerializerOptions.Converters.Add(new NullableUtcDateTimeJsonConverter(appDefaultTimeZone));
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableUtcDateTimeJsonConverter());
     });
 // 注册健康检查
 builder.Services.AddHealthChecks();
@@ -208,8 +208,8 @@ builder.Services.AddSignalR(options =>
     options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.PayloadSerializerOptions.Converters.Add(new Int64ToStringConverter());
     options.PayloadSerializerOptions.Converters.Add(new NullableInt64ToStringConverter());
-    options.PayloadSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter(appDefaultTimeZone));
-    options.PayloadSerializerOptions.Converters.Add(new NullableUtcDateTimeJsonConverter(appDefaultTimeZone));
+    options.PayloadSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
+    options.PayloadSerializerOptions.Converters.Add(new NullableUtcDateTimeJsonConverter());
 });
 
 // 注册通知推送服务（基于 SignalR）
@@ -787,11 +787,8 @@ public sealed class NullableInt64ToStringConverter : JsonConverter<long?>
 
 public sealed class UtcDateTimeJsonConverter : JsonConverter<DateTime>
 {
-    private readonly TimeZoneInfo _defaultTimeZone;
-
-    public UtcDateTimeJsonConverter(TimeZoneInfo defaultTimeZone)
+    public UtcDateTimeJsonConverter()
     {
-        _defaultTimeZone = defaultTimeZone;
     }
 
     public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -841,7 +838,8 @@ public sealed class UtcDateTimeJsonConverter : JsonConverter<DateTime>
         {
             DateTimeKind.Utc => value,
             DateTimeKind.Local => value.ToUniversalTime(),
-            _ => TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(value, DateTimeKind.Unspecified), _defaultTimeZone)
+            // 数据库存储统一为 UTC，SQLite 读取常为 Unspecified，这里按 UTC 解释以避免重复时区换算
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
         };
     }
 }
@@ -850,9 +848,9 @@ public sealed class NullableUtcDateTimeJsonConverter : JsonConverter<DateTime?>
 {
     private readonly UtcDateTimeJsonConverter _inner;
 
-    public NullableUtcDateTimeJsonConverter(TimeZoneInfo defaultTimeZone)
+    public NullableUtcDateTimeJsonConverter()
     {
-        _inner = new UtcDateTimeJsonConverter(defaultTimeZone);
+        _inner = new UtcDateTimeJsonConverter();
     }
 
     public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
