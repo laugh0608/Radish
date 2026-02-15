@@ -4,6 +4,7 @@ import { Icon } from '@radish/ui/icon';
 import { Input } from '@radish/ui/input';
 import { Select } from '@radish/ui/select';
 import { copyToClipboard } from '@/utils/clipboard';
+import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { deleteAttachment } from '@/api/attachment';
 import { useTranslation } from 'react-i18next';
 import styles from './UserAttachmentList.module.css';
@@ -37,6 +38,7 @@ interface ApiResponse<T> {
 
 interface UserAttachmentListProps {
   apiBaseUrl: string;
+  displayTimeZone: string;
 }
 
 type BusinessTypeFilter = 'All' | 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document';
@@ -54,7 +56,7 @@ function resolveUrl(apiBaseUrl: string, url: string): string {
   return `${apiBaseUrl}/${url}`;
 }
 
-export const UserAttachmentList = ({ apiBaseUrl }: UserAttachmentListProps) => {
+export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachmentListProps) => {
   const { t } = useTranslation();
 
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -245,7 +247,7 @@ export const UserAttachmentList = ({ apiBaseUrl }: UserAttachmentListProps) => {
                       <span className={styles.metaItem}>{att.voFileSizeFormatted || `${att.voFileSize} B`}</span>
                       <span className={styles.metaItem}>{att.voBusinessType || 'General'}</span>
                       <span className={styles.metaItem}>
-                        {att.voCreateTime ? new Date(att.voCreateTime).toLocaleDateString('zh-CN') : ''}
+                        {att.voCreateTime ? formatDateTimeByTimeZone(att.voCreateTime, displayTimeZone) : ''}
                       </span>
                     </div>
                   </div>

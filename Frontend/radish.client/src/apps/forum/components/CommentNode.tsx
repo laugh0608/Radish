@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { log } from '@/utils/logger';
 import type { CommentNode as CommentNodeType } from '@/api/forum';
+import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
 import { ImageLightbox } from '@radish/ui/image-lightbox';
 import styles from './CommentNode.module.css';
@@ -8,6 +9,7 @@ import styles from './CommentNode.module.css';
 interface CommentNodeProps {
   node: CommentNodeType;
   level: number;
+  displayTimeZone: string;
   currentUserId?: number;
   pageSize?: number; // 每次加载子评论数量
   isGodComment?: boolean; // 是否是神评
@@ -86,6 +88,7 @@ const normalizeCommentText = (content: string): string => {
 export const CommentNode = ({
   node,
   level,
+  displayTimeZone,
   currentUserId = 0,
   pageSize = 10,
   isGodComment = false,
@@ -350,7 +353,9 @@ export const CommentNode = ({
     <div className={styles.container} style={{ marginLeft: level * 16 }}>
       <div className={styles.header}>
         <span className={styles.author}>{node.voAuthorName}</span>
-        {node.voCreateTime && <span className={styles.time}> · {node.voCreateTime}</span>}
+        {node.voCreateTime && (
+          <span className={styles.time}> · {formatDateTimeByTimeZone(node.voCreateTime, displayTimeZone)}</span>
+        )}
         {/* 神评标识（仅父评论） */}
         {level === 0 && isGodComment && (
           <span className={styles.godCommentBadge}>神评</span>
@@ -518,6 +523,7 @@ export const CommentNode = ({
                   key={child.voId}
                   node={child}
                   level={1}
+                  displayTimeZone={displayTimeZone}
                   currentUserId={currentUserId}
                   pageSize={pageSize}
                   isGodComment={false} // 子评论不可能是神评，沙发标识通过 node.voIsSofa 判断

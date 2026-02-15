@@ -1,5 +1,6 @@
 using AutoMapper;
 using Radish.Model;
+using Radish.Model.Models;
 using Radish.Model.ViewModels;
 
 namespace Radish.Extension.AutoMapperExtension.CustomProfiles;
@@ -81,5 +82,9 @@ public class UserProfile : Profile
             .ForMember(dest => dest.VoUserId, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.VoUserName, opt => opt.MapFrom(src => src.UserName));
             // 注意：VoAvatarUrl 和 VoAvatarThumbnailUrl 字段由 UserController.GetUserByHttpContext() 方法手动设置
+
+        // UserTimePreference -> UserTimePreferenceVo（用户时区偏好）
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<UserTimePreference, UserTimePreferenceVo>();
     }
 }

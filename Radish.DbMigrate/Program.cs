@@ -143,12 +143,14 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
     Console.WriteLine("[Radish.DbMigrate] 检查数据库表结构...");
     var roleTableExists = db.DbMaintenance.IsAnyTable("Role", false);
     var shopTableExists = db.DbMaintenance.IsAnyTable("ShopProductCategory", false);
+    var userTimePreferenceTableExists = db.DbMaintenance.IsAnyTable("UserTimePreference", false);
 
-    if (!roleTableExists || !shopTableExists)
+    if (!roleTableExists || !shopTableExists || !userTimePreferenceTableExists)
     {
         var missingTables = new List<string>();
         if (!roleTableExists) missingTables.Add("Role");
         if (!shopTableExists) missingTables.Add("ShopProductCategory");
+        if (!userTimePreferenceTableExists) missingTables.Add("UserTimePreference");
 
         Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到表结构缺失 ({string.Join(", ", missingTables)})，自动执行 init...");
         await RunInitAsync(services, configuration, environment);

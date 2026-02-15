@@ -179,6 +179,28 @@ export const useForumActions = (
   const [activePostHistoryPostId, setActivePostHistoryPostId] = useState<number | null>(null);
   const [activeCommentHistoryCommentId, setActiveCommentHistoryCommentId] = useState<number | null>(null);
 
+  const normalizeTagNames = (tagNames: string[]): string[] => {
+    const normalized: string[] = [];
+    const seen = new Set<string>();
+
+    for (const tag of tagNames) {
+      const trimmed = tag.trim();
+      if (!trimmed) {
+        continue;
+      }
+
+      const lower = trimmed.toLowerCase();
+      if (seen.has(lower)) {
+        continue;
+      }
+
+      seen.add(lower);
+      normalized.push(trimmed);
+    }
+
+    return normalized;
+  };
+
   const loadPostHistory = async (postId: number, pageIndex: number) => {
     setPostHistoryLoading(true);
     setPostHistoryError(null);
@@ -225,6 +247,19 @@ export const useForumActions = (
       return;
     }
 
+    const normalizedTagNames = normalizeTagNames(tagNames);
+    if (normalizedTagNames.length < 1) {
+      const message = '发布帖子时至少需要 1 个标签';
+      setError(message);
+      throw new Error(message);
+    }
+
+    if (normalizedTagNames.length > 5) {
+      const message = '发布帖子时最多只能选择 5 个标签';
+      setError(message);
+      throw new Error(message);
+    }
+
     setError(null);
     try {
       const postId = await publishPost(
@@ -232,7 +267,7 @@ export const useForumActions = (
           title,
           content,
           categoryId: selectedCategoryId,
-          tagNames
+          tagNames: normalizedTagNames
         },
         t
       );

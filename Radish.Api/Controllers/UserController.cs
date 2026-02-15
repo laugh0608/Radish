@@ -1,7 +1,10 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Radish.Common.HttpContextTool;
+using Radish.Common.OptionTool;
+using Radish.Common.TimeTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -34,22 +37,28 @@ public class UserController : ControllerBase
 
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
+    private readonly IUserTimePreferenceService _userTimePreferenceService;
     private readonly INotificationPushService _notificationPushService;
+    private readonly TimeOptions _timeOptions;
 
     public UserController(
         IUserService userService,
         IHttpContextUser httpContextUser,
         IPostService postService,
         ICommentService commentService,
+        IUserTimePreferenceService userTimePreferenceService,
         IAttachmentService attachmentService,
-        INotificationPushService notificationPushService)
+        INotificationPushService notificationPushService,
+        IOptions<TimeOptions> timeOptions)
     {
         _userService = userService;
         _httpContextUser = httpContextUser;
         _postService = postService;
         _commentService = commentService;
+        _userTimePreferenceService = userTimePreferenceService;
         _notificationPushService = notificationPushService;
         _attachmentService = attachmentService;
+        _timeOptions = timeOptions.Value;
     }
 
     /// <summary>
@@ -231,6 +240,131 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// 获取系统时间配置（公开接口）
+    /// </summary>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetTimeSettings()
+    {
+        await Task.CompletedTask;
+
+        var normalizedTimeZoneId = TimeZoneResolver.NormalizeToDisplayId(_timeOptions.DefaultTimeZoneId);
+        var displayFormat = string.IsNullOrWhiteSpace(_timeOptions.DisplayFormat)
+            ? "yyyy-MM-dd HH:mm:ss"
+            : _timeOptions.DisplayFormat;
+
+        var response = new TimeSettingsVo
+        {
+            VoDefaultTimeZoneId = normalizedTimeZoneId,
+            VoDisplayFormat = displayFormat
+        };
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = response
+        };
+    }
+
+    /// <summary>
+    /// 获取当前登录用户的时间偏好
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = "Client")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetMyTimePreference()
+    {
+        var userId = _httpContextUser.UserId;
+        var systemDefaultTimeZoneId = TimeZoneResolver.NormalizeToDisplayId(_timeOptions.DefaultTimeZoneId);
+        var displayFormat = string.IsNullOrWhiteSpace(_timeOptions.DisplayFormat)
+            ? "yyyy-MM-dd HH:mm:ss"
+            : _timeOptions.DisplayFormat;
+
+        var preference = await _userTimePreferenceService.GetByUserIdAsync(userId);
+        var response = preference ?? new UserTimePreferenceVo
+        {
+            VoUserId = userId
+        };
+
+        var canResolvePreference = TimeZoneResolver.IsValidTimeZoneId(response.VoTimeZoneId);
+        response.VoTimeZoneId = canResolvePreference
+            ? TimeZoneResolver.NormalizeToDisplayId(response.VoTimeZoneId, systemDefaultTimeZoneId)
+            : (string.IsNullOrWhiteSpace(response.VoTimeZoneId) ? systemDefaultTimeZoneId : response.VoTimeZoneId);
+        response.VoIsCustomized = preference != null && !string.IsNullOrWhiteSpace(preference.VoTimeZoneId);
+        response.VoSystemDefaultTimeZoneId = systemDefaultTimeZoneId;
+        response.VoDisplayFormat = displayFormat;
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = response
+        };
+    }
+
+    /// <summary>
+    /// 更新当前登录用户的时间偏好
+    /// </summary>
+    [HttpPost]
+    [Authorize(Policy = "Client")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    public async Task<MessageModel> UpdateMyTimePreference([FromBody] UpdateMyTimePreferenceDto dto)
+    {
+        var requestedTimeZoneId = dto.TimeZoneId?.Trim();
+        if (string.IsNullOrWhiteSpace(requestedTimeZoneId))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "时区不能为空"
+            };
+        }
+
+        var isResolvableTimeZone = TimeZoneResolver.IsValidTimeZoneId(requestedTimeZoneId);
+        var isLikelyIanaTimeZone = TimeZoneResolver.IsLikelyIanaTimeZoneId(requestedTimeZoneId);
+        if (!isResolvableTimeZone && !isLikelyIanaTimeZone)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "无效时区，请传入有效的 IANA/Windows 时区 ID"
+            };
+        }
+
+        var userId = _httpContextUser.UserId;
+        var tenantId = _httpContextUser.TenantId;
+        var operatorName = string.IsNullOrWhiteSpace(_httpContextUser.UserName) ? "System" : _httpContextUser.UserName;
+        var systemDefaultTimeZoneId = TimeZoneResolver.NormalizeToDisplayId(_timeOptions.DefaultTimeZoneId);
+        var normalizedTimeZoneId = isResolvableTimeZone
+            ? TimeZoneResolver.NormalizeToDisplayId(requestedTimeZoneId, systemDefaultTimeZoneId)
+            : requestedTimeZoneId;
+        var displayFormat = string.IsNullOrWhiteSpace(_timeOptions.DisplayFormat)
+            ? "yyyy-MM-dd HH:mm:ss"
+            : _timeOptions.DisplayFormat;
+
+        var updated = await _userTimePreferenceService.UpsertAsync(userId, tenantId, normalizedTimeZoneId, operatorName);
+        updated.VoTimeZoneId = normalizedTimeZoneId;
+        updated.VoIsCustomized = true;
+        updated.VoSystemDefaultTimeZoneId = systemDefaultTimeZoneId;
+        updated.VoDisplayFormat = displayFormat;
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "更新成功",
+            ResponseData = updated
+        };
+    }
+
+    /// <summary>
     /// 获取用户统计信息
     /// </summary>
     /// <param name="userId">用户 ID</param>
@@ -372,7 +506,7 @@ public class UserController : ControllerBase
         var sex = dto.Sex;
         var age = dto.Age;
         var birth = dto.Birth;
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
 
         if (normalizedUserName != null && normalizedUserName.Length > 200)
         {
@@ -529,7 +663,7 @@ public class UserController : ControllerBase
     public async Task<MessageModel> SetMyAvatar([FromBody] SetMyAvatarDto dto)
     {
         var userId = _httpContextUser.UserId;
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         var modifierName = _httpContextUser.UserName;
 
         // 如果 attachmentId == 0，表示清空头像
@@ -690,4 +824,3 @@ public class UserController : ControllerBase
         };
     }
 }
-

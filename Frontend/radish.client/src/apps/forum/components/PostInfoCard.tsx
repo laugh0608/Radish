@@ -1,28 +1,13 @@
 import type { PostDetail } from '@/api/forum';
+import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import styles from './PostInfoCard.module.css';
 
 interface PostInfoCardProps {
   post: PostDetail;
+  displayTimeZone: string;
 }
 
-export const PostInfoCard = ({ post }: PostInfoCardProps) => {
-  // 简单的时间格式化函数
-  const formatTime = (dateString?: string) => {
-    if (!dateString) return '未知时间';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
+export const PostInfoCard = ({ post, displayTimeZone }: PostInfoCardProps) => {
   return (
     <div className={styles.card}>
       <h3 className={styles.title}>帖子信息</h3>
@@ -49,7 +34,7 @@ export const PostInfoCard = ({ post }: PostInfoCardProps) => {
             </svg>
             发布时间
           </span>
-          <span className={styles.value}>{formatTime(post.voCreateTime)}</span>
+          <span className={styles.value}>{formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone, '未知时间')}</span>
         </div>
 
         {/* 评论数 */}

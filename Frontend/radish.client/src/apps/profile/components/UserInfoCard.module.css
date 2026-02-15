@@ -63,9 +63,38 @@
 
 .headerActions {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
   margin-left: auto;
+  min-width: 280px;
+}
+
+.timeZonePanel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.timeZoneTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.timeZoneHint {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.timeZoneError {
+  font-size: 12px;
+  color: #d14343;
 }
 
 .profileMeta {
@@ -180,6 +209,7 @@
   .headerActions {
     margin-left: 0;
     justify-content: center;
+    min-width: 0;
   }
 
   .profileMeta {

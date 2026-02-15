@@ -1,8 +1,10 @@
 import type { PostItem } from '@/api/forum';
+import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import styles from './PostCard.module.css';
 
 interface PostCardProps {
   post: PostItem;
+  displayTimeZone: string;
   onClick: () => void;
   godComment?: {
     content: string;
@@ -11,27 +13,7 @@ interface PostCardProps {
   } | null;
 }
 
-export const PostCard = ({ post, onClick, godComment }: PostCardProps) => {
-  // 简单的时间格式化函数（待安装 date-fns 后替换）
-  const formatTime = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-
-      if (diffMins < 1) return '刚刚';
-      if (diffMins < 60) return `${diffMins}分钟前`;
-      if (diffHours < 24) return `${diffHours}小时前`;
-      if (diffDays < 30) return `${diffDays}天前`;
-      return date.toLocaleDateString('zh-CN');
-    } catch {
-      return dateString;
-    }
-  };
-
+export const PostCard = ({ post, displayTimeZone, onClick, godComment }: PostCardProps) => {
   const tagList = post.voTags
     ? post.voTags
         .split(',')
@@ -59,7 +41,7 @@ export const PostCard = ({ post, onClick, godComment }: PostCardProps) => {
             <circle cx="12" cy="12" r="10" strokeWidth="2"/>
             <path d="M12 6v6l4 2" strokeWidth="2" strokeLinecap="round"/>
           </svg>
-          {post.voCreateTime ? formatTime(post.voCreateTime) : '未知时间'}
+          {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone, '未知时间')}
         </span>
         <span className={styles.likes}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">

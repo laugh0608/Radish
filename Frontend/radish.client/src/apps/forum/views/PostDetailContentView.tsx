@@ -22,6 +22,7 @@ interface PostDetailContentViewProps {
   comments: CommentNode[];
   loadingPostDetail: boolean;
   loadingComments: boolean;
+  displayTimeZone: string;
   isLiked: boolean;
   isAuthenticated: boolean;
   showFloatingTools?: boolean;
@@ -54,6 +55,7 @@ export const PostDetailContentView = ({
   comments,
   loadingPostDetail,
   loadingComments,
+  displayTimeZone,
   isLiked,
   isAuthenticated,
   showFloatingTools = true,
@@ -150,6 +152,7 @@ export const PostDetailContentView = ({
             <PostDetailComponent
               post={post}
               loading={loadingPostDetail}
+              displayTimeZone={displayTimeZone}
               isLiked={isLiked}
               onLike={onLike}
               isAuthenticated={isAuthenticated}
@@ -165,6 +168,7 @@ export const PostDetailContentView = ({
               comments={comments}
               loading={loadingComments}
               hasPost={true}
+              displayTimeZone={displayTimeZone}
               currentUserId={currentUserId}
               pageSize={5}
               sortBy={commentSortBy}

@@ -7,8 +7,9 @@ import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { Icon } from '@radish/ui/icon';
 import { Input } from '@radish/ui/input';
 import { Modal } from '@radish/ui/modal';
-import { useTranslation } from 'react-i18next';
+import { Select } from '@radish/ui/select';
 import { useUserStore } from '@/stores/userStore';
+import { buildTimeZoneOptions, formatDateTimeByTimeZone, resolveTimeZoneId } from '@/utils/dateTime';
 import styles from './UserInfoCard.module.css';
 
 const AvatarUploadModal = lazy(() =>
@@ -29,6 +30,11 @@ interface UserInfoCardProps {
   stats?: UserStats;
   loading?: boolean;
   apiBaseUrl: string;
+  displayTimeZone: string;
+  systemTimeZone: string;
+  displayTimeFormat: string;
+  savingTimeZone?: boolean;
+  onTimeZoneChange: (timeZoneId: string) => Promise<void>;
 }
 
 interface ProfileInfo {
@@ -90,8 +96,18 @@ function formatCoinAmount(amount: number | string | null | undefined): string {
   return negative ? `-${result}` : result;
 }
 
-export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBaseUrl }: UserInfoCardProps) => {
-  const { t } = useTranslation();
+export const UserInfoCard = ({
+  userId,
+  userName,
+  stats,
+  loading = false,
+  apiBaseUrl,
+  displayTimeZone,
+  systemTimeZone,
+  displayTimeFormat,
+  savingTimeZone = false,
+  onTimeZoneChange
+}: UserInfoCardProps) => {
   const { setUser, tenantId, roles } = useUserStore();
 
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
@@ -108,6 +124,12 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
   const [editRealName, setEditRealName] = useState('');
   const [editAge, setEditAge] = useState('');
   const [editAddress, setEditAddress] = useState('');
+  const [customTimeZone, setCustomTimeZone] = useState(displayTimeZone);
+  const [timeZoneError, setTimeZoneError] = useState<string | null>(null);
+
+  const presetTimeZoneOptions = useMemo(() => {
+    return buildTimeZoneOptions(systemTimeZone, displayTimeZone);
+  }, [displayTimeZone, systemTimeZone]);
 
   useEffect(() => {
     configureApiClient({
@@ -119,6 +141,11 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
     void loadProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
+
+  useEffect(() => {
+    setCustomTimeZone(displayTimeZone);
+    setTimeZoneError(null);
+  }, [displayTimeZone]);
 
   const loadProfile = async () => {
     setLoadingProfile(true);
@@ -254,6 +281,18 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
     }
   };
 
+  const handleApplyTimeZone = async () => {
+    const selectedTimeZone = resolveTimeZoneId(customTimeZone, systemTimeZone);
+    setTimeZoneError(null);
+
+    try {
+      await onTimeZoneChange(selectedTimeZone);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '保存时区失败，请稍后重试';
+      setTimeZoneError(message);
+    }
+  };
+
   return (
     <div className={styles.card}>
       <div className={styles.header}>
@@ -296,12 +335,38 @@ export const UserInfoCard = ({ userId, userName, stats, loading = false, apiBase
                 <span>{profile.voAddress}</span>
               </div>
             )}
+            {profile?.voCreateTime && (
+              <div className={styles.metaItem}>
+                <Icon icon="mdi:clock-outline" size={16} />
+                <span>{formatDateTimeByTimeZone(profile.voCreateTime, displayTimeZone)}</span>
+              </div>
+            )}
           </div>
         </div>
         <div className={styles.headerActions}>
           <Button variant="secondary" size="small" onClick={handleOpenEdit}>
             编辑资料
           </Button>
+          <div className={styles.timeZonePanel}>
+            <div className={styles.timeZoneTitle}>时间显示时区</div>
+            <Select
+              options={presetTimeZoneOptions}
+              value={customTimeZone}
+              onChange={(event) => {
+                setCustomTimeZone(event.target.value);
+                setTimeZoneError(null);
+              }}
+            />
+            {timeZoneError && <div className={styles.timeZoneError}>{timeZoneError}</div>}
+            <Button size="small" onClick={() => void handleApplyTimeZone()} disabled={savingTimeZone}>
+              {savingTimeZone ? '保存中...' : '保存时区'}
+            </Button>
+            <div className={styles.timeZoneHint}>
+              <div>系统默认时区（只读）：{systemTimeZone}</div>
+              <div>当前展示时区：{displayTimeZone}</div>
+              <div>展示格式：{displayTimeFormat}</div>
+            </div>
+          </div>
         </div>
       </div>
 

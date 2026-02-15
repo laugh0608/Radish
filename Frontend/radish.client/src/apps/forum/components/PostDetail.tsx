@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import type { PostDetail as PostDetailType } from '@/api/forum';
+import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
 import styles from './PostDetail.module.css';
 
@@ -10,6 +11,7 @@ const MarkdownRenderer = lazy(() =>
 interface PostDetailProps {
   post: PostDetailType | null;
   loading?: boolean;
+  displayTimeZone: string;
   isLiked?: boolean;
   onLike?: (postId: number) => void;
   isAuthenticated?: boolean;
@@ -22,6 +24,7 @@ interface PostDetailProps {
 export const PostDetail = ({
   post,
   loading = false,
+  displayTimeZone,
   isLiked = false,
   onLike,
   isAuthenticated = false,
@@ -64,7 +67,7 @@ export const PostDetail = ({
         <h4 className={styles.postTitle}>{post.voTitle}</h4>
         <div className={styles.postMeta}>
           {post.voAuthorName && <span>作者：{post.voAuthorName}</span>}
-          {post.voCreateTime && <span> · {post.voCreateTime}</span>}
+          {post.voCreateTime && <span> · {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}</span>}
           {post.voViewCount !== undefined && <span> · 浏览 {post.voViewCount}</span>}
         </div>
         <Suspense fallback={<div className={styles.postBody}>正文渲染中...</div>}>

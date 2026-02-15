@@ -1,4 +1,5 @@
 import type { PostItem, CommentNode, PostDetail } from '@/api/forum';
+import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { PostInfoCard } from './PostInfoCard';
 import styles from './TrendingSidebar.module.css';
@@ -9,6 +10,7 @@ interface TrendingSidebarProps {
   onPostClick: (postId: number) => void;
   loading?: boolean;
   selectedPost?: PostDetail | null;
+  displayTimeZone: string;
 }
 
 export const TrendingSidebar = ({
@@ -16,37 +18,17 @@ export const TrendingSidebar = ({
   godComments,
   onPostClick,
   loading = false,
-  selectedPost = null
+  selectedPost = null,
+  displayTimeZone
 }: TrendingSidebarProps) => {
   const emitDetailToolAction = (action: ForumDetailToolAction) => {
     window.dispatchEvent(new CustomEvent<ForumDetailToolAction>(FORUM_DETAIL_TOOL_EVENT, { detail: action }));
   };
 
-  // 简单的时间格式化函数（待安装 date-fns 后替换）
-  const formatTime = (dateString?: string) => {
-    if (!dateString) return '未知时间';
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-
-      if (diffMins < 1) return '刚刚';
-      if (diffMins < 60) return `${diffMins}分钟前`;
-      if (diffHours < 24) return `${diffHours}小时前`;
-      if (diffDays < 30) return `${diffDays}天前`;
-      return date.toLocaleDateString('zh-CN');
-    } catch {
-      return dateString;
-    }
-  };
-
   if (selectedPost) {
     return (
       <aside className={styles.sidebar}>
-        <PostInfoCard post={selectedPost} />
+        <PostInfoCard post={selectedPost} displayTimeZone={displayTimeZone} />
 
         <section className={styles.detailToolsSection}>
           <h3 className={styles.sectionTitle}>快捷操作</h3>
@@ -172,7 +154,9 @@ export const TrendingSidebar = ({
                   </span>
                 </div>
                 <p className={styles.godCommentContent}>{comment.voContent}</p>
-                <span className={styles.godCommentTime}>{formatTime(comment.voCreateTime)}</span>
+                <span className={styles.godCommentTime}>
+                  {formatDateTimeByTimeZone(comment.voCreateTime, displayTimeZone, '未知时间')}
+                </span>
               </li>
             ))}
           </ul>

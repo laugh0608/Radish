@@ -7,6 +7,7 @@ interface CommentTreeProps {
   comments: CommentNodeType[];
   loading?: boolean;
   hasPost?: boolean;
+  displayTimeZone: string;
   currentUserId?: number;
   pageSize?: number;
   sortBy?: 'newest' | 'hottest' | null; // null表示默认排序
@@ -23,6 +24,7 @@ export const CommentTree = ({
   comments,
   loading = false,
   hasPost = false,
+  displayTimeZone,
   currentUserId = 0,
   pageSize = 10,
   sortBy = null,
@@ -102,6 +104,7 @@ export const CommentTree = ({
             key={comment.voId}
             node={comment}
             level={0}
+            displayTimeZone={displayTimeZone}
             currentUserId={currentUserId}
             pageSize={pageSize}
             isGodComment={comment.voIsGodComment || false}

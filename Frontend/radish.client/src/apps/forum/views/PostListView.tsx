@@ -9,6 +9,7 @@ interface PostListViewProps {
   selectedTagName?: string | null;
   posts: PostItem[];
   postGodComments: Map<number, CommentHighlight>;
+  displayTimeZone: string;
   currentPage: number;
   totalPages: number;
   sortBy: 'newest' | 'hottest' | 'essence';
@@ -28,6 +29,7 @@ export const PostListView = ({
   selectedTagName,
   posts,
   postGodComments,
+  displayTimeZone,
   currentPage,
   totalPages,
   sortBy,
@@ -103,6 +105,7 @@ export const PostListView = ({
               <PostCard
                 key={post.voId}
                 post={post}
+                displayTimeZone={displayTimeZone}
                 onClick={() => onPostClick(post.voId)}
                 godComment={
                   godComment

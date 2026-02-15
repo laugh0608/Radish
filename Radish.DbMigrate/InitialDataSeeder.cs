@@ -1,10 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Radish.Common;
 using Radish.Common.HelpTool;
 using Radish.Common.TenantTool;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.Models;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
 
@@ -22,6 +24,7 @@ internal static class InitialDataSeeder
         await SeedTenantsAsync(db);
         await SeedDepartmentsAsync(db);
         await SeedUsersAsync(db);
+        await SeedUserTimePreferencesAsync(db);
         await SeedUserRolesAsync(db);
         await SeedPermissionsAsync(db);
         await SeedForumCategoriesAsync(db);
@@ -32,8 +35,56 @@ internal static class InitialDataSeeder
 
         Console.WriteLine("[Radish.DbMigrate] ✓ Seed 完成:");
         Console.WriteLine("  - 角色/租户/部门/用户/用户角色");
+        Console.WriteLine("  - 用户时区偏好");
         Console.WriteLine("  - 角色-API 权限/论坛分类/标签");
         Console.WriteLine("  - 等级配置/商城分类/商品");
+    }
+
+    /// <summary>初始化用户时区偏好（默认值来自 Time:DefaultTimeZoneId）</summary>
+    private static async Task SeedUserTimePreferencesAsync(ISqlSugarClient db)
+    {
+        // 兼容旧库直接执行 seed：先确保 UserTimePreference 表结构存在
+        db.CodeFirst.InitTables<UserTimePreference>();
+        Console.WriteLine("[Radish.DbMigrate] 已同步 UserTimePreference 表结构（自动补齐缺失表/列）。");
+
+        const long systemUserId = 20000;
+        const long adminUserId = 20001;
+        const long testUserId = 20002;
+        const long radishTenantId = 30000;
+
+        var configuredDefaultTimeZoneId = AppSettingsTool.RadishApp("Time", "DefaultTimeZoneId");
+        var defaultTimeZoneId = string.IsNullOrWhiteSpace(configuredDefaultTimeZoneId)
+            ? "Asia/Shanghai"
+            : configuredDefaultTimeZoneId.Trim();
+
+        var seedItems = new[]
+        {
+            new { Id = 71000L, UserId = systemUserId, UserName = "system" },
+            new { Id = 71001L, UserId = adminUserId, UserName = "admin" },
+            new { Id = 71002L, UserId = testUserId, UserName = "test" }
+        };
+
+        foreach (var item in seedItems)
+        {
+            var exists = await db.Queryable<UserTimePreference>().AnyAsync(p => p.UserId == item.UserId);
+            if (exists)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 用户 Id={item.UserId} 的时区偏好已存在，跳过创建。");
+                continue;
+            }
+
+            Console.WriteLine($"[Radish.DbMigrate] 创建用户 Id={item.UserId} ({item.UserName}) 的时区偏好：{defaultTimeZoneId}...");
+            await db.Insertable(new UserTimePreference
+            {
+                Id = item.Id,
+                UserId = item.UserId,
+                TenantId = radishTenantId,
+                TimeZoneId = defaultTimeZoneId,
+                CreateBy = "System",
+                ModifyBy = "System",
+                ModifyTime = DateTime.UtcNow
+            }).ExecuteCommandAsync();
+        }
     }
 
     /// <summary>初始化用户-角色关系</summary>

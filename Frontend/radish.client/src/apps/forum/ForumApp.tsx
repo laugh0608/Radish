@@ -2,6 +2,8 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
+import { getMyTimePreference, getTimeSettings } from '@/api/time';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId, resolveTimeZoneId } from '@/utils/dateTime';
 import { CategoryList } from './components/CategoryList';
 import { TagSection } from './components/TagSection';
 import { TrendingSidebar } from './components/TrendingSidebar';
@@ -32,6 +34,7 @@ export const ForumApp = () => {
   const loggedIn = isAuthenticated();
   const containerShellRef = useRef<HTMLDivElement>(null);
   const [showDetailFloatingTools, setShowDetailFloatingTools] = useState(true);
+  const [displayTimeZone, setDisplayTimeZone] = useState(DEFAULT_TIME_ZONE);
 
   useEffect(() => {
     const element = containerShellRef.current;
@@ -60,6 +63,38 @@ export const ForumApp = () => {
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    const loadDisplayTimeZone = async () => {
+      let systemTimeZone = DEFAULT_TIME_ZONE;
+      try {
+        const settings = await getTimeSettings();
+        systemTimeZone = resolveTimeZoneId(settings.voDefaultTimeZoneId, DEFAULT_TIME_ZONE);
+      } catch {
+        systemTimeZone = DEFAULT_TIME_ZONE;
+      }
+
+      if (!loggedIn || !userId) {
+        setDisplayTimeZone(systemTimeZone);
+        return;
+      }
+
+      try {
+        const preference = await getMyTimePreference();
+        const resolvedSystemTimeZone = resolveTimeZoneId(preference.voSystemDefaultTimeZoneId, systemTimeZone);
+        const browserTimeZone = getBrowserTimeZoneId(resolvedSystemTimeZone);
+        const resolvedDisplayTimeZone = preference.voIsCustomized
+          ? resolveTimeZoneId(preference.voTimeZoneId, browserTimeZone)
+          : browserTimeZone;
+
+        setDisplayTimeZone(resolvedDisplayTimeZone);
+      } catch {
+        setDisplayTimeZone(getBrowserTimeZoneId(systemTimeZone));
+      }
+    };
+
+    void loadDisplayTimeZone();
+  }, [loggedIn, userId]);
 
   // 数据管理
   const dataState = useForumData(t);
@@ -133,6 +168,7 @@ export const ForumApp = () => {
                 comments={dataState.comments}
                 loadingPostDetail={dataState.loadingPostDetail}
                 loadingComments={dataState.loadingComments}
+                displayTimeZone={displayTimeZone}
                 isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
                 isAuthenticated={loggedIn}
                 showFloatingTools={showDetailFloatingTools}
@@ -167,6 +203,7 @@ export const ForumApp = () => {
               selectedTagName={dataState.selectedTagName}
               posts={dataState.posts}
               postGodComments={dataState.postGodComments}
+              displayTimeZone={displayTimeZone}
               currentPage={dataState.currentPage}
               totalPages={dataState.totalPages}
               sortBy={dataState.sortBy}
@@ -188,6 +225,7 @@ export const ForumApp = () => {
             onPostClick={actionsState.handleSelectPost}
             loading={dataState.loadingTrending}
             selectedPost={dataState.selectedPost}
+            displayTimeZone={displayTimeZone}
           />
         </div>
 
