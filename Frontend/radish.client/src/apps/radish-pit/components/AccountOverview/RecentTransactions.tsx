@@ -30,7 +30,7 @@ export const RecentTransactions = ({ displayMode }: RecentTransactionsProps) => 
 
       // 获取最近5条交易记录
       const response = await coinApi.getTransactions(1, 5);
-      setTransactions(response.voItems || []);
+      setTransactions(response.data);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '加载最近记录失败';
       setError(errorMessage);

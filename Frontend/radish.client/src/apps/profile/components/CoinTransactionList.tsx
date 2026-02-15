@@ -33,9 +33,9 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl }: CoinTransaction
     try {
       const result = await getTransactions(pageIndex, pageSize, filterType, filterStatus, t);
       if (result) {
-        setTransactions(result.voItems);
-        setTotalCount(result.voTotalCount);
-        setTotalPages(result.voTotalPages);
+        setTransactions(result.data);
+        setTotalCount(result.dataCount);
+        setTotalPages(result.pageCount);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载交易记录失败');

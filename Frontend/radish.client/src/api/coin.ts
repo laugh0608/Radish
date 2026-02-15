@@ -2,7 +2,7 @@
  * 萝卜币系统相关的 API 调用
  */
 
-import { apiGet, apiPost, configureApiClient } from '@radish/http';
+import { apiGet, apiPost, configureApiClient, type PagedResponse } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 
@@ -54,14 +54,6 @@ export interface CoinTransaction {
 }
 
 
-export interface VoPagedResponse<T> {
-  voPageIndex: number;
-  voPageSize: number;
-  voTotalCount: number;
-  voTotalPages: number;
-  voItems: T[];
-}
-
 /**
  * 获取当前用户余额信息
  * @param t i18n 翻译函数（可选）
@@ -92,7 +84,7 @@ export async function getTransactions(
   transactionType: string | null = null,
   status: string | null = null,
   t?: TFunction
-): Promise<VoPagedResponse<CoinTransaction>> {
+): Promise<PagedResponse<CoinTransaction>> {
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
     pageSize: pageSize.toString()
@@ -106,7 +98,7 @@ export async function getTransactions(
     params.append('status', status);
   }
 
-  const response = await apiGet<VoPagedResponse<CoinTransaction>>(
+  const response = await apiGet<PagedResponse<CoinTransaction>>(
     `/api/v1/Coin/GetTransactions?${params.toString()}`,
     { withAuth: true }
   );

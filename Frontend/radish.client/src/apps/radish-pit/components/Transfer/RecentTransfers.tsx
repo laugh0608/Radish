@@ -35,7 +35,7 @@ export const RecentTransfers = ({ displayMode }: RecentTransfersProps) => {
       const response = await coinApi.getTransactions(1, 10);
 
       // 筛选出转账相关的交易
-      const transferTransactions = (response?.voItems || []).filter(
+      const transferTransactions = response.data.filter(
         (transaction: CoinTransaction) =>
           transaction.voTransactionType === 'TRANSFER_IN' ||
           transaction.voTransactionType === 'TRANSFER_OUT'

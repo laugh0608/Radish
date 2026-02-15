@@ -89,7 +89,7 @@ export const useAccountStats = () => {
         totalSpent: balanceData.voTotalSpent || 0,
         totalTransferredIn: balanceData.voTotalTransferredIn || 0,
         totalTransferredOut: balanceData.voTotalTransferredOut || 0,
-        recentTransactionCount: recentTransactions.voItems?.length || 0
+        recentTransactionCount: recentTransactions.data.length
       });
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '获取统计信息失败';

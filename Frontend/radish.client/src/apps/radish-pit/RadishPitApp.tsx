@@ -63,15 +63,11 @@ export const RadishPitApp = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <div className={styles.titleSection}>
-            <h1 className={styles.title}>
-              <span className={styles.titleIcon}>🥕</span>
-              萝卜坑
-            </h1>
-            <p className={styles.subtitle}>您的萝卜管理中心</p>
-          </div>
+      <div className={styles.topBar}>
+        <div className={styles.brand}>
+          <span className={styles.brandIcon}>🥕</span>
+          <span className={styles.brandName}>萝卜坑</span>
+          <span className={styles.brandHint}>资产中心</span>
         </div>
       </div>
 
@@ -116,9 +112,11 @@ export const RadishPitApp = () => {
       </div>
 
       <div className={styles.content}>
-        <Suspense fallback={<div className={styles.notLoggedIn}>加载中...</div>}>
-          {renderTabContent()}
-        </Suspense>
+        <div className={styles.contentInner}>
+          <Suspense fallback={<div className={styles.loading}>加载中...</div>}>
+            {renderTabContent()}
+          </Suspense>
+        </div>
       </div>
     </div>
   );
