@@ -59,6 +59,15 @@ export interface Tag {
 /**
  * 帖子列表项 Vo
  */
+export interface PostInteractor {
+  voUserId: number;
+  voUserName: string;
+  voAvatarUrl?: string | null;
+}
+
+/**
+ * 帖子列表项 Vo
+ */
 export interface PostItem {
   voId: number;
   voTitle: string;
@@ -69,6 +78,8 @@ export interface PostItem {
   voCategoryName?: string | null;
   voAuthorId: number;
   voAuthorName?: string | null;
+  voAuthorAvatarUrl?: string | null;
+  voLatestInteractors?: PostInteractor[];
   voViewCount?: number;
   voLikeCount?: number;
   voCommentCount?: number;

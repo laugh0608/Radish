@@ -1,11 +1,10 @@
-/* 工具栏 */
 .toolbar {
   flex-shrink: 0;
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  flex-wrap: wrap;
-  padding: 16px 20px 16px 20px;
+  flex-wrap: nowrap;
+  padding: 16px 20px;
   border-bottom: 1px solid #e5e7eb;
   background-color: #ffffff;
   gap: 16px;
@@ -15,7 +14,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -24,6 +23,7 @@
   font-weight: 600;
   color: #1f2937;
   margin: 0;
+  white-space: nowrap;
 }
 
 .sortButtons {
@@ -58,64 +58,122 @@
   font-weight: 600;
 }
 
-.searchBox {
-  position: relative;
-  flex: 0 1 240px;
-  max-width: 260px;
-  min-width: 140px;
-  margin-left: 12px;
-  margin-right: 0;
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-left: auto;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.searchCapsuleCollapsed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.searchCapsuleCollapsed:hover {
+  border-color: #2d6cdf;
+  color: #1d4ed8;
+  background: rgba(45, 108, 223, 0.05);
+}
+
+.searchIcon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.searchPlaceholder {
+  white-space: nowrap;
+}
+
+.searchCapsuleExpanded {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: clamp(220px, 26vw, 360px);
+  min-width: 220px;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #ffffff;
 }
 
 .searchInput {
   width: 100%;
-  padding: 8px 36px 8px 14px;
-  font-size: 14px;
-  background-color: #f9fafb;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  color: #1f2937;
+  min-width: 0;
+  border: none;
   outline: none;
-  transition: all 0.2s ease;
+  background: transparent;
+  color: #1f2937;
+  font-size: 13px;
+  padding: 0 4px;
 }
 
 .searchInput::placeholder {
   color: #9ca3af;
 }
 
-.searchInput:focus {
-  border-color: #2d6cdf;
-  background-color: #ffffff;
-  box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
+.searchActionButton {
+  border: 1px solid #2d6cdf;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #2d6cdf, #2558b8);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 10px;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.clearButton {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  background-color: #d1d5db;
-  border: none;
-  border-radius: 50%;
-  color: #6b7280;
-  font-size: 14px;
+.searchCollapseButton {
+  width: 22px;
+  height: 22px;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 13px;
   line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+
+.publishButton {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #2d6cdf, #2558b8);
+  border: 1px solid #2d6cdf;
+  border-radius: 8px;
+  color: #fff;
   cursor: pointer;
   transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  white-space: nowrap;
 }
 
-.clearButton:hover {
-  background-color: #9ca3af;
-  color: #1f2937;
+.publishButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(45, 108, 223, 0.24);
 }
 
-/* 帖子列表 */
+.publishButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .postsFeed {
   flex: 1;
   overflow-y: auto;
@@ -130,7 +188,6 @@
   color: #9ca3af;
 }
 
-/* 分页 */
 .pagination {
   flex-shrink: 0;
   display: flex;
@@ -169,4 +226,46 @@
   background-color: #2d6cdf;
   border-color: #2d6cdf;
   font-weight: 600;
+}
+
+@media (max-width: 1120px) {
+  .toolbar {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .toolbarLeft {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+  }
+
+  .toolbarRight {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 760px) {
+  .toolbar {
+    padding: 12px 16px;
+  }
+
+  .toolbarTitle {
+    font-size: 18px;
+  }
+
+  .toolbarRight {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .searchCapsuleExpanded {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .postsFeed {
+    padding: 12px;
+  }
 }

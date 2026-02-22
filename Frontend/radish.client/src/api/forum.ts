@@ -124,7 +124,9 @@ export async function getPostList(
   pageIndex: number = 1,
   pageSize: number = 20,
   sortBy: string = 'newest',
-  keyword: string = ''
+  keyword: string = '',
+  startTime?: string,
+  endTime?: string
 ): Promise<PageModel<PostItem>> {
   const params = new URLSearchParams();
   if (categoryId) params.set('categoryId', categoryId.toString());
@@ -132,6 +134,8 @@ export async function getPostList(
   params.set('pageSize', pageSize.toString());
   params.set('sortBy', sortBy);
   if (keyword.trim()) params.set('keyword', keyword.trim());
+  if (startTime) params.set('startTime', startTime);
+  if (endTime) params.set('endTime', endTime);
 
   const response = await apiGet<PageModel<PostItem>>(
     `/api/v1/Post/GetList?${params.toString()}`,

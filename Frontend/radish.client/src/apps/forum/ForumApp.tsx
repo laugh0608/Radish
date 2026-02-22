@@ -2,12 +2,19 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
+import {
+  getPostList,
+  getCurrentGodCommentsBatch,
+  type PostItem,
+  type CommentHighlight
+} from '@/api/forum';
 import { getMyTimePreference, getTimeSettings } from '@/api/time';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId, resolveTimeZoneId } from '@/utils/dateTime';
 import { CategoryList } from './components/CategoryList';
 import { TagSection } from './components/TagSection';
 import { TrendingSidebar } from './components/TrendingSidebar';
 import { PostListView } from './views/PostListView';
+import { ForumSearchView, type SearchTimeRange } from './views/ForumSearchView';
 import { useForumData } from './hooks/useForumData';
 import { useForumActions } from './hooks/useForumActions';
 import styles from './ForumApp.module.css';
@@ -28,6 +35,8 @@ const EditHistoryModal = lazy(() =>
   import('./components/EditHistoryModal').then((module) => ({ default: module.EditHistoryModal }))
 );
 
+const SEARCH_PAGE_SIZE = 20;
+
 export const ForumApp = () => {
   const { t } = useTranslation();
   const { isAuthenticated, userId } = useUserStore();
@@ -35,6 +44,22 @@ export const ForumApp = () => {
   const containerShellRef = useRef<HTMLDivElement>(null);
   const [showDetailFloatingTools, setShowDetailFloatingTools] = useState(true);
   const [displayTimeZone, setDisplayTimeZone] = useState(DEFAULT_TIME_ZONE);
+  const [isSearchView, setIsSearchView] = useState(false);
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchDraftKeyword, setSearchDraftKeyword] = useState('');
+  const [searchSortBy, setSearchSortBy] = useState<'newest' | 'hottest'>('newest');
+  const [searchTimeRange, setSearchTimeRange] = useState<SearchTimeRange>('all');
+  const [searchCustomStartDate, setSearchCustomStartDate] = useState('');
+  const [searchCustomEndDate, setSearchCustomEndDate] = useState('');
+  const [searchAppliedStartDate, setSearchAppliedStartDate] = useState('');
+  const [searchAppliedEndDate, setSearchAppliedEndDate] = useState('');
+  const [searchCurrentPage, setSearchCurrentPage] = useState(1);
+  const [searchTotalCount, setSearchTotalCount] = useState(0);
+  const [searchTotalPages, setSearchTotalPages] = useState(0);
+  const [searchPosts, setSearchPosts] = useState<PostItem[]>([]);
+  const [searchPostGodComments, setSearchPostGodComments] = useState<Map<number, CommentHighlight>>(new Map());
+  const [loadingSearchPosts, setLoadingSearchPosts] = useState(false);
+  const searchRequestIdRef = useRef(0);
 
   useEffect(() => {
     const element = containerShellRef.current;
@@ -96,6 +121,54 @@ export const ForumApp = () => {
     void loadDisplayTimeZone();
   }, [loggedIn, userId]);
 
+  const buildSearchTimeRange = () => {
+    const now = new Date();
+    switch (searchTimeRange) {
+      case '24h': {
+        return {
+          startTime: new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString(),
+          endTime: now.toISOString()
+        };
+      }
+      case '7d': {
+        return {
+          startTime: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+          endTime: now.toISOString()
+        };
+      }
+      case '30d': {
+        return {
+          startTime: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          endTime: now.toISOString()
+        };
+      }
+      case 'custom': {
+        if (!searchAppliedStartDate && !searchAppliedEndDate) {
+          return { startTime: undefined, endTime: undefined };
+        }
+
+        const parsedStart = searchAppliedStartDate ? new Date(`${searchAppliedStartDate}T00:00:00`) : null;
+        const parsedEnd = searchAppliedEndDate ? new Date(`${searchAppliedEndDate}T23:59:59.999`) : null;
+
+        if ((parsedStart && Number.isNaN(parsedStart.getTime())) || (parsedEnd && Number.isNaN(parsedEnd.getTime()))) {
+          return { startTime: undefined, endTime: undefined };
+        }
+
+        if (parsedStart && parsedEnd && parsedStart > parsedEnd) {
+          return { startTime: parsedEnd.toISOString(), endTime: parsedStart.toISOString() };
+        }
+
+        return {
+          startTime: parsedStart ? parsedStart.toISOString() : undefined,
+          endTime: parsedEnd ? parsedEnd.toISOString() : undefined
+        };
+      }
+      case 'all':
+      default:
+        return { startTime: undefined, endTime: undefined };
+    }
+  };
+
   // 数据管理
   const dataState = useForumData(t);
 
@@ -121,20 +194,141 @@ export const ForumApp = () => {
     resetCommentSort: dataState.resetCommentSort
   });
 
+  useEffect(() => {
+    if (!isSearchView) {
+      return;
+    }
+
+    const requestId = ++searchRequestIdRef.current;
+    const loadSearchResults = async () => {
+      setLoadingSearchPosts(true);
+      dataState.setError(null);
+      try {
+        const { startTime, endTime } = buildSearchTimeRange();
+        const result = await getPostList(
+          null,
+          t,
+          searchCurrentPage,
+          SEARCH_PAGE_SIZE,
+          searchSortBy,
+          searchKeyword,
+          startTime,
+          endTime
+        );
+
+        if (requestId !== searchRequestIdRef.current) {
+          return;
+        }
+
+        setSearchPosts(result.data);
+        setSearchTotalCount(result.dataCount);
+        setSearchTotalPages(result.pageCount);
+
+        if (result.data.length === 0) {
+          setSearchPostGodComments(new Map());
+          return;
+        }
+
+        const postIds = result.data.map(post => post.voId);
+        const highlights = await getCurrentGodCommentsBatch(postIds, t);
+        if (requestId !== searchRequestIdRef.current) {
+          return;
+        }
+
+        const highlightsMap = new Map<number, CommentHighlight>();
+        for (const [postIdStr, highlight] of Object.entries(highlights)) {
+          const postId = Number(postIdStr);
+          if (!Number.isNaN(postId) && highlight) {
+            highlightsMap.set(postId, highlight);
+          }
+        }
+        setSearchPostGodComments(highlightsMap);
+      } catch (err) {
+        if (requestId !== searchRequestIdRef.current) {
+          return;
+        }
+
+        setSearchPosts([]);
+        setSearchTotalCount(0);
+        setSearchTotalPages(0);
+        const message = err instanceof Error ? err.message : String(err);
+        dataState.setError(message);
+      } finally {
+        if (requestId === searchRequestIdRef.current) {
+          setLoadingSearchPosts(false);
+        }
+      }
+    };
+
+    void loadSearchResults();
+  }, [
+    isSearchView,
+    searchKeyword,
+    searchSortBy,
+    searchCurrentPage,
+    searchTimeRange,
+    searchAppliedStartDate,
+    searchAppliedEndDate,
+    t
+  ]);
+
+  const handleOpenPublish = () => {
+    actionsState.setIsPublishModalOpen(true);
+  };
+
+  const handleShowAllPosts = () => {
+    setIsSearchView(false);
+    dataState.setSelectedTagName(null);
+    dataState.setSelectedCategoryId(null);
+    dataState.setSelectedPost(null);
+    dataState.setComments([]);
+    dataState.resetCommentSort();
+  };
+
+  const handleSelectCategory = (categoryId: number) => {
+    setIsSearchView(false);
+    dataState.setSelectedTagName(null);
+    dataState.setSelectedCategoryId(categoryId);
+  };
+
+  const handleSelectTag = (tagName: string | null) => {
+    setIsSearchView(false);
+    dataState.setSelectedTagName(tagName);
+    if (tagName) {
+      dataState.setSelectedCategoryId(null);
+    }
+  };
+
+  const handleOpenSearchView = (keyword: string) => {
+    const normalizedKeyword = keyword.trim();
+    dataState.setSelectedPost(null);
+    dataState.setComments([]);
+    dataState.resetCommentSort();
+    dataState.setError(null);
+
+    setSearchDraftKeyword(normalizedKeyword);
+    setSearchKeyword(normalizedKeyword);
+    setSearchCurrentPage(1);
+    setIsSearchView(true);
+  };
+
   return (
     <div className={styles.containerShell} ref={containerShellRef}>
       <div className={styles.container}>
         {/* 左栏：分类和标签 */}
         <div className={styles.leftColumn}>
-          {/* 发帖按钮 */}
+          {/* 全部帖子按钮 */}
           <div className={styles.publishSection}>
             <button
-              className={styles.publishButton}
-              onClick={() => actionsState.setIsPublishModalOpen(true)}
-              disabled={!loggedIn}
-              title={!loggedIn ? '请先登录后再发帖' : '发布新帖'}
+              className={`${styles.quickActionButton} ${
+                dataState.selectedCategoryId === null && !dataState.selectedTagName
+                  ? styles.quickActionButtonActive
+                  : ''
+              }`}
+              onClick={handleShowAllPosts}
+              title="查看全部帖子"
             >
-              发帖
+              全部帖子
             </button>
           </div>
 
@@ -142,7 +336,7 @@ export const ForumApp = () => {
             <CategoryList
               categories={dataState.categories}
               selectedCategoryId={dataState.selectedCategoryId}
-              onSelectCategory={dataState.setSelectedCategoryId}
+              onSelectCategory={handleSelectCategory}
               loading={dataState.loadingCategories}
             />
           </div>
@@ -154,7 +348,7 @@ export const ForumApp = () => {
               )}
               selectedTagName={dataState.selectedTagName}
               loading={dataState.loadingHotTags}
-              onSelectTag={dataState.setSelectedTagName}
+              onSelectTag={handleSelectTag}
             />
           </div>
         </div>
@@ -196,24 +390,74 @@ export const ForumApp = () => {
               />
             </Suspense>
           ) : (
-            /* 帖子列表视图 */
-            <PostListView
-              categories={dataState.categories}
-              selectedCategoryId={dataState.selectedCategoryId}
-              selectedTagName={dataState.selectedTagName}
-              posts={dataState.posts}
-              postGodComments={dataState.postGodComments}
-              displayTimeZone={displayTimeZone}
-              currentPage={dataState.currentPage}
-              totalPages={dataState.totalPages}
-              sortBy={dataState.sortBy}
-              searchKeyword={dataState.searchKeyword}
-              loadingPosts={dataState.loadingPosts}
-              onSortChange={actionsState.handleSortChange}
-              onSearchChange={actionsState.handleSearchChange}
-              onPageChange={actionsState.handlePageChange}
-              onPostClick={actionsState.handleSelectPost}
-            />
+            <>
+              {isSearchView ? (
+                <ForumSearchView
+                  keyword={searchKeyword}
+                  draftKeyword={searchDraftKeyword}
+                  sortBy={searchSortBy}
+                  timeRange={searchTimeRange}
+                  totalCount={searchTotalCount}
+                  customStartDate={searchCustomStartDate}
+                  customEndDate={searchCustomEndDate}
+                  appliedStartDate={searchAppliedStartDate}
+                  appliedEndDate={searchAppliedEndDate}
+                  isCustomRangeDirty={
+                    searchCustomStartDate !== searchAppliedStartDate ||
+                    searchCustomEndDate !== searchAppliedEndDate
+                  }
+                  posts={searchPosts}
+                  postGodComments={searchPostGodComments}
+                  loading={loadingSearchPosts}
+                  currentPage={searchCurrentPage}
+                  totalPages={searchTotalPages}
+                  displayTimeZone={displayTimeZone}
+                  onBack={() => setIsSearchView(false)}
+                  onDraftKeywordChange={setSearchDraftKeyword}
+                  onSearchSubmit={() => {
+                    setSearchKeyword(searchDraftKeyword.trim());
+                    setSearchCurrentPage(1);
+                  }}
+                  onSortChange={(value) => {
+                    setSearchSortBy(value);
+                    setSearchCurrentPage(1);
+                  }}
+                  onTimeRangeChange={(value) => {
+                    setSearchTimeRange(value);
+                    setSearchCurrentPage(1);
+                  }}
+                  onCustomStartDateChange={setSearchCustomStartDate}
+                  onCustomEndDateChange={setSearchCustomEndDate}
+                  onApplyCustomRange={() => {
+                    setSearchAppliedStartDate(searchCustomStartDate);
+                    setSearchAppliedEndDate(searchCustomEndDate);
+                    setSearchTimeRange('custom');
+                    setSearchCurrentPage(1);
+                  }}
+                  onPageChange={setSearchCurrentPage}
+                  onPostClick={actionsState.handleSelectPost}
+                />
+              ) : (
+                <PostListView
+                  categories={dataState.categories}
+                  selectedCategoryId={dataState.selectedCategoryId}
+                  selectedTagName={dataState.selectedTagName}
+                  posts={dataState.posts}
+                  postGodComments={dataState.postGodComments}
+                  displayTimeZone={displayTimeZone}
+                  currentPage={dataState.currentPage}
+                  totalPages={dataState.totalPages}
+                  sortBy={dataState.sortBy}
+                  loadingPosts={dataState.loadingPosts}
+                  onSortChange={actionsState.handleSortChange}
+                  onOpenSearch={handleOpenSearchView}
+                  onPageChange={actionsState.handlePageChange}
+                  onPostClick={actionsState.handleSelectPost}
+                  canPublish={loggedIn}
+                  onPublishClick={handleOpenPublish}
+                />
+              )}
+            </>
           )}
         </div>
 

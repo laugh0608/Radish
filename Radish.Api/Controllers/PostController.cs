@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
+using Radish.IService.Base;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
@@ -26,11 +27,19 @@ namespace Radish.Api.Controllers;
 public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
+    private readonly IBaseService<Attachment, AttachmentVo> _attachmentService;
+    private readonly IBaseService<Comment, CommentVo> _commentService;
     private readonly IHttpContextUser _httpContextUser;
 
-    public PostController(IPostService postService, IHttpContextUser httpContextUser)
+    public PostController(
+        IPostService postService,
+        IBaseService<Attachment, AttachmentVo> attachmentService,
+        IBaseService<Comment, CommentVo> commentService,
+        IHttpContextUser httpContextUser)
     {
         _postService = postService;
+        _attachmentService = attachmentService;
+        _commentService = commentService;
         _httpContextUser = httpContextUser;
     }
 
@@ -76,6 +85,8 @@ public class PostController : ControllerBase
     /// <param name="pageSize">每页数量（默认 20）</param>
     /// <param name="sortBy">排序方式：newest（最新，默认）、hottest（最热）、essence（精华）</param>
     /// <param name="keyword">搜索关键词（搜索标题和内容）</param>
+    /// <param name="startTime">筛选起始时间（可选，基于帖子创建时间）</param>
+    /// <param name="endTime">筛选结束时间（可选，基于帖子创建时间）</param>
     /// <returns>分页帖子列表</returns>
     [HttpGet]
     [AllowAnonymous]
@@ -85,33 +96,37 @@ public class PostController : ControllerBase
         int pageIndex = 1,
         int pageSize = 20,
         string sortBy = "newest",
-        string? keyword = null)
+        string? keyword = null,
+        DateTime? startTime = null,
+        DateTime? endTime = null)
     {
         // 参数校验
         if (pageIndex < 1) pageIndex = 1;
         if (pageSize < 1 || pageSize > 100) pageSize = 20;
         sortBy = sortBy?.ToLowerInvariant() ?? "newest";
         keyword = keyword?.Trim();
+        if (startTime.HasValue && endTime.HasValue && startTime > endTime)
+        {
+            (startTime, endTime) = (endTime, startTime);
+        }
 
         // 构建基础查询条件
-        Expression<Func<Post, bool>> baseCondition;
+        var normalizedKeyword = keyword ?? string.Empty;
+        var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
+        var hasCategory = categoryId.HasValue;
+        var categoryValue = categoryId ?? 0;
+        var hasStartTime = startTime.HasValue;
+        var hasEndTime = endTime.HasValue;
+        var startTimeValue = startTime ?? DateTime.MinValue;
+        var endTimeValue = endTime ?? DateTime.MaxValue;
 
-        if (!string.IsNullOrWhiteSpace(keyword))
-        {
-            // 有搜索关键词：搜索标题或内容包含关键词的帖子
-            baseCondition = categoryId.HasValue
-                ? p => p.CategoryId == categoryId.Value && p.IsPublished && !p.IsDeleted
-                       && (p.Title.Contains(keyword) || p.Content.Contains(keyword))
-                : p => p.IsPublished && !p.IsDeleted
-                       && (p.Title.Contains(keyword) || p.Content.Contains(keyword));
-        }
-        else
-        {
-            // 无搜索关键词：正常查询
-            baseCondition = categoryId.HasValue
-                ? p => p.CategoryId == categoryId.Value && p.IsPublished && !p.IsDeleted
-                : p => p.IsPublished && !p.IsDeleted;
-        }
+        Expression<Func<Post, bool>> baseCondition = post =>
+            post.IsPublished &&
+            !post.IsDeleted &&
+            (!hasCategory || post.CategoryId == categoryValue) &&
+            (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&
+            (!hasStartTime || post.CreateTime >= startTimeValue) &&
+            (!hasEndTime || post.CreateTime <= endTimeValue);
 
         List<PostVo> data;
         int totalCount;
@@ -177,6 +192,8 @@ public class PostController : ControllerBase
                     post.VoCategoryName = detail.VoCategoryName;
                 }
             }
+
+            await FillPostAvatarAndInteractorsAsync(data);
         }
 
         var pageModel = new PageModel<PostVo>
@@ -195,6 +212,85 @@ public class PostController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = pageModel
         };
+    }
+
+    private async Task FillPostAvatarAndInteractorsAsync(List<PostVo> posts)
+    {
+        if (posts.Count == 0)
+        {
+            return;
+        }
+
+        var postIds = posts
+            .Select(post => post.VoId)
+            .Distinct()
+            .ToList();
+
+        var comments = await _commentService.QueryAsync(comment =>
+            postIds.Contains(comment.PostId) &&
+            comment.IsEnabled &&
+            !comment.IsDeleted);
+
+        var commentsByPost = comments
+            .Where(comment => comment.VoAuthorId > 0)
+            .GroupBy(comment => comment.VoPostId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderByDescending(comment => comment.VoCreateTime)
+                    .ToList());
+
+        var userIds = posts
+            .Select(post => post.VoAuthorId)
+            .Concat(comments.Select(comment => comment.VoAuthorId))
+            .Where(userId => userId > 0)
+            .Distinct()
+            .ToList();
+
+        var avatarUrlMap = new Dictionary<long, string>();
+        if (userIds.Count > 0)
+        {
+            var avatarAttachments = await _attachmentService.QueryAsync(attachment =>
+                attachment.BusinessType == "Avatar" &&
+                attachment.BusinessId.HasValue &&
+                userIds.Contains(attachment.BusinessId.Value) &&
+                attachment.IsEnabled &&
+                !attachment.IsDeleted);
+
+            avatarUrlMap = avatarAttachments
+                .Where(attachment => attachment.VoBusinessId.HasValue && !string.IsNullOrWhiteSpace(attachment.VoUrl))
+                .OrderByDescending(attachment => attachment.VoCreateTime)
+                .GroupBy(attachment => attachment.VoBusinessId!.Value)
+                .ToDictionary(group => group.Key, group => group.First().VoUrl);
+        }
+
+        foreach (var post in posts)
+        {
+            if (avatarUrlMap.TryGetValue(post.VoAuthorId, out var authorAvatarUrl))
+            {
+                post.VoAuthorAvatarUrl = authorAvatarUrl;
+            }
+
+            if (!commentsByPost.TryGetValue(post.VoId, out var postComments))
+            {
+                post.VoLatestInteractors = new List<PostInteractorVo>();
+                continue;
+            }
+
+            post.VoLatestInteractors = postComments
+                .Where(comment => comment.VoAuthorId > 0 && comment.VoAuthorId != post.VoAuthorId)
+                .GroupBy(comment => comment.VoAuthorId)
+                .Select(group => group.OrderByDescending(comment => comment.VoCreateTime).First())
+                .OrderByDescending(comment => comment.VoCreateTime)
+                .Take(3)
+                .Select(comment => new PostInteractorVo
+                {
+                    VoUserId = comment.VoAuthorId,
+                    VoUserName = comment.VoAuthorName,
+                    VoAvatarUrl = avatarUrlMap.GetValueOrDefault(comment.VoAuthorId)
+                })
+                .ToList();
+        }
     }
 
     /// <summary>

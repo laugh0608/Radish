@@ -133,9 +133,6 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     try {
       const data = await getTopCategories(t);
       setCategories(data);
-      if (data.length > 0 && selectedCategoryId == null) {
-        setSelectedCategoryId(data[0].voId);
-      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);

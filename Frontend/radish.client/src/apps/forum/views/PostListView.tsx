@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import type { Category, PostItem, CommentHighlight } from '@/api/forum';
 import { PostCard } from '../components/PostCard';
 import styles from './PostListView.module.css';
@@ -13,14 +14,15 @@ interface PostListViewProps {
   currentPage: number;
   totalPages: number;
   sortBy: 'newest' | 'hottest' | 'essence';
-  searchKeyword: string;
   loadingPosts: boolean;
+  canPublish: boolean;
 
   // 事件处理
   onSortChange: (sortBy: 'newest' | 'hottest' | 'essence') => void;
-  onSearchChange: (keyword: string) => void;
+  onOpenSearch: (keyword: string) => void;
   onPageChange: (page: number) => void;
   onPostClick: (postId: number) => void;
+  onPublishClick: () => void;
 }
 
 export const PostListView = ({
@@ -33,13 +35,48 @@ export const PostListView = ({
   currentPage,
   totalPages,
   sortBy,
-  searchKeyword,
   loadingPosts,
+  canPublish,
   onSortChange,
-  onSearchChange,
+  onOpenSearch,
   onPageChange,
-  onPostClick
+  onPostClick,
+  onPublishClick
 }: PostListViewProps) => {
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchDraftKeyword, setSearchDraftKeyword] = useState('');
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchCapsuleRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isSearchExpanded) {
+      searchInputRef.current?.focus();
+    }
+  }, [isSearchExpanded]);
+
+  useEffect(() => {
+    if (!isSearchExpanded) {
+      return;
+    }
+
+    const handleDocumentMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (searchCapsuleRef.current && !searchCapsuleRef.current.contains(target)) {
+        setIsSearchExpanded(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleDocumentMouseDown);
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentMouseDown);
+    };
+  }, [isSearchExpanded]);
+
+  const submitSearch = () => {
+    onOpenSearch(searchDraftKeyword.trim());
+    setIsSearchExpanded(false);
+  };
+
   return (
     <>
       {/* 工具栏 */}
@@ -63,32 +100,67 @@ export const PostListView = ({
             >
               最热
             </button>
-            <button
-              className={`${styles.sortButton} ${sortBy === 'essence' ? styles.sortActive : ''}`}
-              onClick={() => onSortChange('essence')}
-            >
-              精华
-            </button>
           </div>
         </div>
 
-        <div className={styles.searchBox}>
-          <input
-            type="text"
-            className={styles.searchInput}
-            placeholder="搜索帖子..."
-            value={searchKeyword}
-            onChange={(e) => onSearchChange(e.target.value)}
-          />
-          {searchKeyword && (
+        <div className={styles.toolbarRight}>
+          {isSearchExpanded ? (
+            <div className={styles.searchCapsuleExpanded} ref={searchCapsuleRef}>
+              <input
+                ref={searchInputRef}
+                type="text"
+                className={styles.searchInput}
+                placeholder="输入关键词后搜索"
+                value={searchDraftKeyword}
+                onChange={(event) => setSearchDraftKeyword(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    submitSearch();
+                  }
+                  if (event.key === 'Escape') {
+                    setIsSearchExpanded(false);
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className={styles.searchActionButton}
+                onClick={submitSearch}
+                aria-label="执行搜索"
+              >
+                搜索
+              </button>
+              <button
+                type="button"
+                className={styles.searchCollapseButton}
+                onClick={() => setIsSearchExpanded(false)}
+                aria-label="收起搜索"
+              >
+                ×
+              </button>
+            </div>
+          ) : (
             <button
-              className={styles.clearButton}
-              onClick={() => onSearchChange('')}
-              aria-label="清除搜索"
+              type="button"
+              className={styles.searchCapsuleCollapsed}
+              onClick={() => setIsSearchExpanded(true)}
+              aria-label="展开搜索"
             >
-              ×
+              <span className={styles.searchIcon}>搜</span>
+              <span className={styles.searchPlaceholder}>搜索帖子</span>
             </button>
           )}
+
+          <button
+            type="button"
+            className={styles.publishButton}
+            onClick={onPublishClick}
+            disabled={!canPublish}
+            title={!canPublish ? '请先登录后再发帖' : '发布新帖'}
+          >
+            发帖
+          </button>
         </div>
       </div>
 
@@ -110,9 +182,8 @@ export const PostListView = ({
                 godComment={
                   godComment
                     ? {
-                        content: godComment.voContentSnapshot || '',
                         authorName: godComment.voAuthorName,
-                        likeCount: godComment.voLikeCount
+                        content: godComment.voContentSnapshot
                       }
                     : null
                 }
