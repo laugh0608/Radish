@@ -108,6 +108,7 @@ export const CommentNode = ({
   // 编辑状态
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState('');
+  const [editError, setEditError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -126,6 +127,7 @@ export const CommentNode = ({
 
   const commentImages = useMemo(() => extractCommentImages(node.voContent), [node.voContent]);
   const textContent = useMemo(() => normalizeCommentText(node.voContent), [node.voContent]);
+  const replyToUserName = useMemo(() => node.voReplyToUserName?.trim() || '', [node.voReplyToUserName]);
 
   // 初始化已加载的子评论（默认时间升序）
   const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(() => {
@@ -224,6 +226,7 @@ export const CommentNode = ({
   // 处理编辑
   const handleEdit = () => {
     setEditContent(node.voContent);
+    setEditError(null);
     setIsEditing(true);
   };
 
@@ -234,10 +237,12 @@ export const CommentNode = ({
     setIsSubmitting(true);
     try {
       await onEdit(node.voId, editContent.trim());
+      setEditError(null);
       setIsEditing(false);
     } catch (error) {
       log.error('编辑评论失败:', error);
-      // 可以添加错误提示
+      const message = error instanceof Error ? error.message : '编辑失败，请稍后重试';
+      setEditError(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -247,6 +252,7 @@ export const CommentNode = ({
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditContent('');
+    setEditError(null);
   };
 
   // 展开/收起子评论
@@ -401,7 +407,12 @@ export const CommentNode = ({
         <div className={styles.editForm}>
           <textarea
             value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
+            onChange={(e) => {
+              setEditContent(e.target.value);
+              if (editError) {
+                setEditError(null);
+              }
+            }}
             className={styles.editTextarea}
             placeholder="编辑评论内容..."
             disabled={isSubmitting}
@@ -425,9 +436,15 @@ export const CommentNode = ({
               取消
             </button>
           </div>
+          {editError && <div className={styles.editError}>{editError}</div>}
         </div>
       ) : (
         <div className={styles.contentWrapper}>
+          {replyToUserName && (
+            <div className={styles.replyMeta}>
+              回复 <span className={styles.replyTarget}>@{replyToUserName}</span>
+            </div>
+          )}
           {textContent && (
             <div
               className={styles.content}

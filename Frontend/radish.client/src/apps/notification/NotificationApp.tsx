@@ -4,7 +4,6 @@ import { NotificationList } from '@radish/ui/notification-list';
 import type { NotificationItemData } from '@radish/ui/notification';
 import { notificationApi, type UserNotificationVo } from '@/api/notification';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
-import { notificationHub } from '@/services/notificationHub';
 import { toast } from '@radish/ui/toast';
 import styles from './NotificationApp.module.css';
 
@@ -126,6 +125,15 @@ export const NotificationApp = () => {
     return uiId;
   }, [notifications, recentNotifications]);
 
+  const syncUnreadCountFromServer = useCallback(async () => {
+    try {
+      const unreadCountFromServer = await notificationApi.getUnreadCount();
+      useNotificationStore.getState().setUnreadCount(unreadCountFromServer);
+    } catch (error) {
+      log.warn('同步未读数量失败:', error);
+    }
+  }, []);
+
   // 将 Store 中的通知转换为 UI 组件需要的格式
   useEffect(() => {
     const converted = mapStoreToUi(recentNotifications);
@@ -157,6 +165,7 @@ export const NotificationApp = () => {
           setNotifications(firstPage);
           setPageIndex(result.page);
           setHasMore(result.page < result.pageCount);
+          await syncUnreadCountFromServer();
         } else {
           setHasMore(false);
         }
@@ -226,6 +235,28 @@ export const NotificationApp = () => {
     }
   }, [activeFilter, notifications]);
 
+  // 标记已读
+  const handleMarkAsRead = useCallback(async (id: number) => {
+    try {
+      const backendNotificationId = resolveBackendNotificationId(id);
+
+      const success = await notificationApi.markAsRead(backendNotificationId);
+      if (!success) {
+        throw new Error(`标记通知已读失败，NotificationId: ${backendNotificationId}`);
+      }
+
+      const store = useNotificationStore.getState();
+      store.markAsRead([backendNotificationId]);
+      setNotifications(prev => prev.map(n => (n.id === id ? { ...n, isRead: true } : n)));
+      await syncUnreadCountFromServer();
+
+      toast.success('已标记为已读');
+    } catch (error) {
+      log.error('标记已读失败:', error);
+      toast.error('标记已读失败');
+    }
+  }, [resolveBackendNotificationId, syncUnreadCountFromServer]);
+
   // 点击通知
   const handleNotificationClick = useCallback((notification: NotificationItemData) => {
     log.debug('点击通知:', notification);
@@ -241,59 +272,27 @@ export const NotificationApp = () => {
     } else if (notification.businessType === 'Comment' && notification.businessId) {
       toast.info(`跳转到评论 ${notification.businessId}`);
     }
-  }, []);
-
-  // 标记已读
-  const handleMarkAsRead = useCallback(async (id: number) => {
-    try {
-      const backendNotificationId = resolveBackendNotificationId(id);
-
-      // 通过 SignalR 推送（如果连接断开会失败，不影响主流程）
-      try {
-        await notificationHub.markAsRead(backendNotificationId);
-      } catch (err) {
-        log.warn('SignalR 推送失败，继续使用 HTTP API:', err);
-      }
-
-      // 调用 HTTP API
-      await notificationApi.markAsRead(backendNotificationId);
-
-      // 更新 Store 状态
-      const store = useNotificationStore.getState();
-      store.markAsRead([backendNotificationId]);
-      setNotifications(prev => prev.map(n => (n.id === id ? { ...n, isRead: true } : n)));
-
-      toast.success('已标记为已读');
-    } catch (error) {
-      log.error('标记已读失败:', error);
-      toast.error('标记已读失败');
-    }
-  }, [resolveBackendNotificationId]);
+  }, [handleMarkAsRead]);
 
   // 标记全部已读
   const handleMarkAllAsRead = useCallback(async () => {
     try {
-      // 通过 SignalR 推送（如果连接断开会失败，不影响主流程）
-      try {
-        await notificationHub.markAllAsRead();
-      } catch (err) {
-        log.warn('SignalR 推送失败，继续使用 HTTP API:', err);
+      const success = await notificationApi.markAllAsRead();
+      if (!success) {
+        throw new Error('标记全部已读失败');
       }
 
-      // 调用 HTTP API
-      await notificationApi.markAllAsRead();
-
-      // 更新 Store 状态
       const store = useNotificationStore.getState();
       store.markAllAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      await syncUnreadCountFromServer();
 
       toast.success('已标记全部为已读');
     } catch (error) {
       log.error('标记全部已读失败:', error);
       toast.error('标记全部已读失败');
     }
-  }, []);
+  }, [syncUnreadCountFromServer]);
 
   // 删除通知
   const handleDelete = useCallback(async (id: number) => {

@@ -103,11 +103,11 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
     }
 
     const trimmed = unique.slice(0, 20);
-    const unreadCount = trimmed.filter(item => !item.isRead).length;
 
+    // 仅维护最近通知列表，不用本地切片覆盖全局未读数。
+    // 全局未读数由服务端事件/接口同步，避免列表页与 Dock 角标口径不一致。
     set({
-      recentNotifications: trimmed,
-      unreadCount
+      recentNotifications: trimmed
     });
   },
 
@@ -122,17 +122,6 @@ export const useNotificationStore = create<NotificationStore>((set) => ({
         const next = state.recentNotifications.slice();
         next[existingIndex] = { ...next[existingIndex], ...notification };
         return next;
-      })(),
-      unreadCount: (() => {
-        const existing = state.recentNotifications.find(n => n.id === notification.id);
-        if (!existing) {
-          return notification.isRead ? state.unreadCount : state.unreadCount + 1;
-        }
-
-        const wasUnread = !existing.isRead;
-        const nowUnread = !notification.isRead;
-        const delta = (nowUnread ? 1 : 0) - (wasUnread ? 1 : 0);
-        return Math.max(0, state.unreadCount + delta);
       })()
     }));
   },
