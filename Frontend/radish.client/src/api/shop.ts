@@ -262,16 +262,25 @@ export function formatProductPrice(price: number, originalPrice?: number): strin
 /**
  * 获取商品类型显示名称
  */
-export function getProductTypeDisplay(type: string): string {
-  switch (type) {
+export function getProductTypeDisplay(type: string | number | null | undefined): string {
+  if (type === null || type === undefined || type === '') {
+    return '未知';
+  }
+
+  const normalizedType = String(type);
+
+  switch (normalizedType) {
     case ProductType.Benefit:
+    case '1':
       return '权益';
     case ProductType.Consumable:
+    case '2':
       return '消耗品';
     case ProductType.Physical:
+    case '99':
       return '实物';
     default:
-      return type || '未知';
+      return normalizedType || '未知';
   }
 }
 

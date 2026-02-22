@@ -128,3 +128,22 @@
     top: 72px;
   }
 }
+
+@media (max-height: 860px) {
+  .headerContent {
+    height: 56px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .navButton {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .content {
+    padding: 16px 20px;
+  }
+}

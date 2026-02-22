@@ -1,14 +1,14 @@
 .container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 100%;
 }
 
 .header {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .backButton {
@@ -28,7 +28,7 @@
 }
 
 .title {
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 600;
   color: #262626;
   margin: 0;
@@ -37,17 +37,17 @@
 /* 筛选栏 */
 .filterBar {
   background: white;
-  padding: 20px;
+  padding: 16px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .searchBox {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   max-width: 400px;
 }
 
@@ -104,10 +104,10 @@
 .categoryTab {
   background: none;
   border: 1px solid #d9d9d9;
-  padding: 8px 16px;
+  padding: 7px 14px;
   border-radius: 20px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
   transition: all 0.2s;
   white-space: nowrap;
@@ -127,16 +127,17 @@
 .searchResult {
   background: #e6f7ff;
   color: #1890ff;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   font-size: 14px;
 }
 
 /* 内容区域 */
 .content {
-  flex: 1;
-  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: visible;
 }
 
 .loading {
@@ -167,8 +168,8 @@
 .productsGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
-  margin-bottom: 32px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .productCard {
@@ -457,5 +458,62 @@
   .emptyIcon {
     font-size: 48px;
     margin-bottom: 16px;
+  }
+}
+
+@media (max-height: 860px) {
+  .header {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .backButton {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .title {
+    font-size: 20px;
+  }
+
+  .filterBar {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .searchBox {
+    margin-bottom: 10px;
+    max-width: 360px;
+  }
+
+  .searchInput {
+    padding: 7px 10px;
+  }
+
+  .searchButton {
+    padding: 7px 10px;
+  }
+
+  .clearButton {
+    padding: 7px;
+  }
+
+  .categoryTab {
+    padding: 5px 12px;
+    font-size: 12px;
+  }
+
+  .searchResult {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+  }
+
+  .productsGrid {
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+
+  .productImage {
+    height: 140px;
   }
 }
