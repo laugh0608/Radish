@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Category, PostItem, CommentHighlight } from '@/api/forum';
+import { Icon } from '@radish/ui/icon';
 import { PostCard } from '../components/PostCard';
 import styles from './PostListView.module.css';
 
@@ -147,7 +148,9 @@ export const PostListView = ({
               onClick={() => setIsSearchExpanded(true)}
               aria-label="展开搜索"
             >
-              <span className={styles.searchIcon}>搜</span>
+              <span className={styles.searchIcon} aria-hidden="true">
+                <Icon icon="mdi:magnify" size={14} />
+              </span>
               <span className={styles.searchPlaceholder}>搜索帖子</span>
             </button>
           )}

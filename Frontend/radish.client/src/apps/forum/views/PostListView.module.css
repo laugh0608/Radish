@@ -89,8 +89,10 @@
 }
 
 .searchIcon {
-  font-size: 12px;
-  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
 }
 
 .searchPlaceholder {

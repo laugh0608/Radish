@@ -102,14 +102,8 @@ export const CommentNode = ({
   // 判断是否是作者本人
   const isAuthor = currentUserId > 0 && String(node.voAuthorId) === String(currentUserId);
 
-  // 判断是否在5分钟编辑窗口内
-  const canEdit = (() => {
-    if (!isAuthor || !node.voCreateTime) return false;
-    const createTime = new Date(node.voCreateTime).getTime();
-    const now = Date.now();
-    const diffMinutes = (now - createTime) / 1000 / 60;
-    return diffMinutes <= 5;
-  })();
+  // 编辑权限交给后端最终判定（时间窗口/次数限制由服务端配置控制）
+  const canEdit = isAuthor;
 
   // 编辑状态
   const [isEditing, setIsEditing] = useState(false);
