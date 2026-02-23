@@ -412,8 +412,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
                     if (rewardResult.IsSuccess)
                     {
-                        Log.Information("评论点赞萝卜币奖励发放成功：CommentId={CommentId}, 作者={AuthorId} (+{AuthorReward}), 点赞者={LikerId}",
-                            commentId, comment.AuthorId, userId);
+                        Log.Information("评论点赞萝卜币奖励发放成功：CommentId={CommentId}, 作者={AuthorId}, 点赞者={LikerId}, 奖励总额={RewardAmount}",
+                            commentId, comment.AuthorId, userId, rewardResult.Amount);
                     }
 
                     // 4.2 发放经验值奖励
