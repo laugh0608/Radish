@@ -45,13 +45,17 @@
     - 获取或创建标签
     - 写入 `PostTag` 关联
     - 更新标签帖子计数
+- **编辑帖子支持标签更新**
+  - `PostController.Update` 接收 `UpdatePostDto.TagNames`
+  - `PostService.UpdatePostAsync` 在更新标题/正文时同步更新帖子标签关联
 - **帖子详情包含标签信息**
   - `PostService.GetPostDetailAsync` 会填充 `PostVo.VoTags`（逗号分隔字符串）
 
 ### 尚未打通/不足
 
 - **帖子列表接口尚未支持按标签筛选**
-  - `PostController.GetList` 当前仅支持 `categoryId`、`keyword`、`sortBy`。
+  - `PostController.GetList` 当前支持 `categoryId`、`keyword`、`sortBy`、`startTime`、`endTime`，
+    但仍不支持 `tagName/tagId` 原生筛选参数。
 - **标签数据契约与前端展示字段不完全一致**
   - 后端详情返回 `VoTags`（字符串）。
   - 前端详情组件当前读取 `voTagNames`（数组）。
@@ -80,6 +84,8 @@
 - **分类 UI 已完成并已接后端**
   - 分类列表、分类高亮、按分类筛帖已可用。
   - 已调用 `GET /api/v1/Category/GetTopCategories` 与 `GET /api/v1/Post/GetList?categoryId=...`。
+- **帖子编辑已支持标签变更**
+  - 编辑帖子弹窗可修改标签，并通过 `tagNames` 提交后端更新。
 
 ### 未实现
 
