@@ -23,6 +23,13 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     Task<long> AddCommentAsync(Comment comment);
 
     /// <summary>
+    /// 触发神评/沙发实时重算
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="parentCommentId">父评论 Id（为空表示重算神评，不为空表示重算该父评论下沙发）</param>
+    Task TriggerHighlightRecheckAsync(long postId, long? parentCommentId = null);
+
+    /// <summary>
     /// 更新评论点赞次数
     /// </summary>
     /// <param name="commentId">评论 Id</param>

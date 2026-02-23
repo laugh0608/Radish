@@ -280,6 +280,9 @@ public class CommentController : ControllerBase
             },
             c => c.Id == commentId);
 
+        // 删除后触发神评/沙发重算
+        await _commentService.TriggerHighlightRecheckAsync(comment.VoPostId, comment.VoParentId);
+
         return new MessageModel
         {
             IsSuccess = true,

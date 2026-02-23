@@ -265,7 +265,47 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             }
         });
 
+        // 5. 🚀 新增评论后触发神评/沙发检查（确保后续查询能拿到最新状态）
+        await TriggerHighlightRecheckAsync(comment.PostId, comment.ParentId);
+
         return commentId;
+    }
+
+    /// <summary>
+    /// 触发神评/沙发实时重算
+    /// </summary>
+    public async Task TriggerHighlightRecheckAsync(long postId, long? parentCommentId = null)
+    {
+        if (!_highlightOptions.RealtimeUpdate)
+        {
+            return;
+        }
+
+        try
+        {
+            if (parentCommentId == null)
+            {
+                await CheckAndUpdateGodCommentAsync(postId);
+            }
+            else
+            {
+                await CheckAndUpdateSofaAsync(parentCommentId.Value, postId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex,
+                "[CommentService] 实时触发神评/沙发检查失败：PostId={PostId}, ParentCommentId={ParentCommentId}",
+                postId, parentCommentId);
+        }
+    }
+
+    /// <summary>
+    /// 后台触发神评/沙发实时重算（不阻塞当前请求）
+    /// </summary>
+    private void TriggerHighlightRecheckInBackground(long postId, long? parentCommentId = null)
+    {
+        _ = Task.Run(() => TriggerHighlightRecheckAsync(postId, parentCommentId));
     }
 
     /// <summary>
@@ -479,26 +519,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         // 5. 🚀 事件驱动优化：异步触发神评/沙发检查（不阻塞用户操作）
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                if (comment.ParentId == null)
-                {
-                    // 父评论：检查神评
-                    await CheckAndUpdateGodCommentAsync(comment.PostId);
-                }
-                else
-                {
-                    // 子评论：检查沙发
-                    await CheckAndUpdateSofaAsync(comment.ParentId.Value, comment.PostId);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "[CommentService] 点赞后神评/沙发检查失败：CommentId={CommentId}", commentId);
-            }
-        });
+        TriggerHighlightRecheckInBackground(comment.PostId, comment.ParentId);
 
         return new CommentLikeResultDto
         {
