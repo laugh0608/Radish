@@ -58,5 +58,20 @@ public class ForumProfile : Profile
         CreateMap<CommentEditHistory, CommentEditHistoryVo>();
         RecognizePrefixes("Vo");
         CreateMap<CommentEditHistoryVo, CommentEditHistory>();
+
+        // StickerGroup -> StickerGroupVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<StickerGroup, StickerGroupVo>()
+            .ForMember(dest => dest.VoStickers, opt => opt.Ignore())
+            .ForMember(dest => dest.VoStickerCount, opt => opt.Ignore());
+        RecognizePrefixes("Vo");
+        CreateMap<StickerGroupVo, StickerGroup>()
+            .ForMember(dest => dest.TenantId, opt => opt.Ignore());
+
+        // Sticker -> StickerVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<Sticker, StickerVo>();
+        RecognizePrefixes("Vo");
+        CreateMap<StickerVo, Sticker>();
     }
 }
