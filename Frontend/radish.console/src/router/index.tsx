@@ -8,6 +8,7 @@ import { UserList } from '../pages/Users';
 import { UserDetail } from '../pages/Users/UserDetail';
 import { RoleList } from '../pages/Roles';
 import { TagList } from '../pages/Tags';
+import { StickerGroupList, StickerList } from '../pages/Stickers';
 import { SystemConfigList } from '../pages/SystemConfig';
 import { UserProfile } from '../pages/UserProfile';
 import { Settings } from '../pages/Settings';
@@ -124,6 +125,14 @@ export const router = createBrowserRouter(
           element: <TagList />,
         },
         {
+          path: 'stickers',
+          element: <StickerGroupList />,
+        },
+        {
+          path: 'stickers/:groupId/items',
+          element: <StickerList />,
+        },
+        {
           path: 'system-config',
           element: <SystemConfigList />,
         },
@@ -169,6 +178,8 @@ export const ROUTES = {
   USER_DETAIL: '/users/:userId',
   ROLES: '/roles',
   TAGS: '/tags',
+  STICKERS: '/stickers',
+  STICKER_ITEMS: '/stickers/:groupId/items',
   SYSTEM_CONFIG: '/system-config',
   PROFILE: '/profile',
   SETTINGS: '/settings',

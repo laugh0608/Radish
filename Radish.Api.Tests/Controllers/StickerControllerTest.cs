@@ -16,6 +16,36 @@ namespace Radish.Api.Tests.Controllers;
 public class StickerControllerTest
 {
     [Fact]
+    public async Task GetAdminGroups_Should_Return_Groups()
+    {
+        // Arrange
+        var serviceMock = CreateStickerServiceMock();
+        serviceMock
+            .Setup(s => s.GetAdminGroupsAsync(0))
+            .ReturnsAsync(new List<StickerGroupVo>
+            {
+                new()
+                {
+                    VoId = 1,
+                    VoCode = "default",
+                    VoName = "默认表情包",
+                    VoIsEnabled = true
+                }
+            });
+
+        var controller = CreateController(serviceMock.Object);
+
+        // Act
+        var result = await controller.GetAdminGroups();
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        var payload = Assert.IsType<List<StickerGroupVo>>(result.ResponseData);
+        Assert.Single(payload);
+    }
+
+    [Fact]
     public async Task BatchAddStickers_Should_Return_Conflict_When_Service_Returns_Conflicts()
     {
         // Arrange

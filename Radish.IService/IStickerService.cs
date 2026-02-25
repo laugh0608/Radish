@@ -11,6 +11,9 @@ public interface IStickerService : IBaseService<StickerGroup, StickerGroupVo>
     /// <summary>获取启用的表情包分组（含启用表情）</summary>
     Task<List<StickerGroupVo>> GetGroupsAsync(long tenantId);
 
+    /// <summary>获取表情包分组（管理端，包含禁用分组）</summary>
+    Task<List<StickerGroupVo>> GetAdminGroupsAsync(long tenantId);
+
     /// <summary>按分组编码获取分组详情</summary>
     Task<StickerGroupVo?> GetGroupDetailAsync(long tenantId, string code);
 

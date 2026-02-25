@@ -108,6 +108,47 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         return groupVos;
     }
 
+    public async Task<List<StickerGroupVo>> GetAdminGroupsAsync(long tenantId)
+    {
+        var normalizedTenantId = NormalizeTenantId(tenantId);
+
+        var groups = await _stickerGroupRepository.QueryWithOrderAsync(
+            BuildGroupTenantPredicate(normalizedTenantId, includeDisabled: true),
+            g => g.Sort,
+            OrderByType.Asc);
+
+        if (groups.Count == 0)
+        {
+            return new List<StickerGroupVo>();
+        }
+
+        var groupIds = groups.Select(g => g.Id).ToList();
+        var stickers = await _stickerRepository.QueryAsync(
+            s => groupIds.Contains(s.GroupId) && !s.IsDeleted);
+
+        var stickerLookup = stickers
+            .OrderBy(s => s.Sort)
+            .ThenBy(s => s.Id)
+            .GroupBy(s => s.GroupId)
+            .ToDictionary(g => g.Key, g => Mapper.Map<List<StickerVo>>(g.ToList()));
+
+        var groupVos = Mapper.Map<List<StickerGroupVo>>(groups);
+        foreach (var groupVo in groupVos)
+        {
+            if (!stickerLookup.TryGetValue(groupVo.VoId, out var stickerVos))
+            {
+                groupVo.VoStickers = new List<StickerVo>();
+                groupVo.VoStickerCount = 0;
+                continue;
+            }
+
+            groupVo.VoStickers = stickerVos;
+            groupVo.VoStickerCount = stickerVos.Count;
+        }
+
+        return groupVos;
+    }
+
     public async Task<StickerGroupVo?> GetGroupDetailAsync(long tenantId, string code)
     {
         if (string.IsNullOrWhiteSpace(code))

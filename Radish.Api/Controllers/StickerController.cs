@@ -43,6 +43,22 @@ public class StickerController : ControllerBase
         };
     }
 
+    /// <summary>获取全部表情包分组（管理端，包含禁用分组）</summary>
+    [HttpGet]
+    [Authorize(Policy = "SystemOrAdmin")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetAdminGroups()
+    {
+        var groups = await _stickerService.GetAdminGroupsAsync(_httpContextUser.TenantId);
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = groups
+        };
+    }
+
     /// <summary>按分组编码获取分组详情（前台）</summary>
     [HttpGet("{code}")]
     [AllowAnonymous]
