@@ -2,9 +2,9 @@
 
 > Radish 表情包系统 Console 管理后台详细设计
 >
-> **版本**: v26.2.0
+> **版本**: v26.2.1
 >
-> **最后更新**: 2026.02.24
+> **最后更新**: 2026.02.25
 >
 > **关联文档**：
 > [系统总览与数据模型](./emoji-sticker-system.md) ·
@@ -21,6 +21,28 @@
 - 管理单个表情（编辑、启用/禁用、排序、软删除）
 - 切换表情的 `AllowInline` 属性（控制是否可内嵌正文）
 
+## 当前实现状态（2026-02-25）
+
+### 已实现
+
+- Console 菜单已接入“表情包管理”
+- 分组管理：
+  - 列表查询（含禁用）
+  - 新建/编辑弹窗
+  - 软删除
+- 分组内表情管理：
+  - 列表查询（含禁用）
+  - 单个新增/编辑弹窗
+  - 软删除
+  - 批量排序保存（`BatchUpdateSort`）
+- API 封装：`Frontend/radish.console/src/api/stickerApi.ts`
+
+### 进行中 / 未实现
+
+- 批量上传四步流（上传进度、确认表格、冲突高亮重提）
+- 分组封面图上传组件（当前先用 `CoverImageUrl` 文本输入）
+- 网格模式与拖拽排序（当前为列表模式 + 数字排序）
+
 ---
 
 ## 页面结构
@@ -29,10 +51,8 @@
 Console 导航
 └── 内容管理
     └── 表情包管理
-        ├── /stickers                  → StickerGroupList（分组列表）
-        ├── /stickers/new              → StickerGroupForm（新建分组）
-        ├── /stickers/:id/edit         → StickerGroupForm（编辑分组）
-        └── /stickers/:id/items        → StickerList（分组内表情管理）
+        ├── /stickers                  → StickerGroupList（分组列表 + 分组弹窗）
+        └── /stickers/:groupId/items   → StickerList（分组内表情管理 + 表情弹窗）
 ```
 
 文件目录：
@@ -41,9 +61,10 @@ Console 导航
 Frontend/radish.console/src/pages/Stickers/
 ├── StickerGroupList.tsx       # 分组列表主页
 ├── StickerGroupForm.tsx       # 创建/编辑分组表单
-├── StickerList.tsx            # 分组内表情管理（含批量上传）
-├── BatchUploadConfirmTable.tsx # 上传后的 Code/Name 确认表格（子组件）
-└── Stickers.module.css
+├── StickerList.tsx            # 分组内表情管理（当前：列表 + 基础 CRUD）
+├── StickerForm.tsx            # 单个表情创建/编辑弹窗
+├── StickerGroupList.css
+└── index.ts
 ```
 
 ---
@@ -53,13 +74,13 @@ Frontend/radish.console/src/pages/Stickers/
 ### 功能说明
 
 - 表格展示所有分组（含已禁用），列：封面图、名称、Code、类型、表情数量、状态、排序、操作
-- 支持拖拽排序（拖拽行改变 `Sort` 字段，保存后调用批量更新接口）
+- 支持排序管理（当前通过输入 `Sort` + 批量保存）
 - 操作栏：编辑、启用/禁用、进入表情列表、删除（软删除，需二次确认）
-- 右上角"新建分组"按钮 → 跳转 `/stickers/new`
+- 右上角"新建分组"按钮 → 打开分组表单弹窗
 
 ### 关键交互
 
-**拖拽排序**：使用 `@dnd-kit/sortable`（Console 项目已有依赖），松手后立即发送 `PUT /api/v1/Sticker/Admin/UpdateGroup/{id}` 更新 Sort，失败时回滚本地状态并提示。
+**当前排序实现**：通过排序字段输入 + 提交更新（后续可演进为拖拽排序）。
 
 **删除确认**：分组删除前检查该分组内是否有已启用的表情，若有则提示"该分组含 N 个启用表情，删除后将一并禁用，确认删除？"。
 
@@ -82,7 +103,7 @@ Frontend/radish.console/src/pages/Stickers/
 
 - 新建时：用户输入名称后，自动将名称拼音化（可选，不强制）或由用户手填；输入时实时显示合法性提示
 - 编辑时：Code 字段显示为只读文本（灰色），下方提示"标识符创建后不可修改"
-- 提交前调用后端唯一性验证：`GET /api/v1/Sticker/Admin/CheckGroupCode?code=xxx`
+- 提交前调用后端唯一性验证：`GET /api/v1/Sticker/CheckGroupCode?code=xxx`
 
 ### 封面图上传
 
@@ -180,7 +201,7 @@ Frontend/radish.console/src/pages/Stickers/
 
 表格行为细节：
 
-- **Code 列**：初始值为后端清洗后的文件名（调用 `/api/v1/Sticker/Admin/NormalizeCode` 预览），可直接行内编辑；输入时实时校验 `[a-z0-9_]` 格式；若与分组内已有 Code 或本次其他行重复，显示红色边框和提示
+- **Code 列**：初始值为后端清洗后的文件名（调用 `/api/v1/Sticker/NormalizeCode` 预览），可直接行内编辑；输入时实时校验 `[a-z0-9_]` 格式；若与分组内已有 Code 或本次其他行重复，显示红色边框和提示
 - **Name 列**：初始值为清洗后的 Code 值（如 `happy_face`），管理员通常需要改为中文名；空值时提示必填
 - **AllowInline 列**：默认勾选；若图片风格不适合正文嵌入（如过于夸张的大表情），管理员可取消勾选
 - **预览图**：静图直接展示，GIF 展示第一帧（标注 "GIF" badge）；hover 时 GIF 播放动图
@@ -192,7 +213,7 @@ Frontend/radish.console/src/pages/Stickers/
 点击"保存全部"后调用：
 
 ```
-POST /api/v1/Sticker/Admin/BatchAddStickers
+POST /api/v1/Sticker/BatchAddStickers
 ```
 
 请求体：
@@ -256,7 +277,7 @@ interface BatchAddStickersRequest {
 
 - 列表模式下：拖拽行改变顺序，或直接编辑 Sort 数值
 - 网格模式下：暂不支持拖拽（网格交互复杂），通过切换到列表模式进行排序
-- 排序变更后调用 `PUT /api/v1/Sticker/Admin/UpdateSticker/{id}` 单条更新，或提供"批量保存排序"按钮一次性提交
+- 排序变更后调用 `PUT /api/v1/Sticker/UpdateSticker/{id}` 单条更新，或提供"批量保存排序"按钮一次性提交
 
 **分组排序**：在 `StickerGroupList` 页面拖拽整行，同上。
 
@@ -324,9 +345,11 @@ interface MessageModel<T> {
   "statusCode": 200,
   "messageInfo": "批量保存成功",
   "responseData": {
-    "groupId": 12,
-    "createdCount": 2,
-    "stickerIds": [10021, 10022]
+    "voGroupId": 12,
+    "voCreatedCount": 2,
+    "voStickerIds": [10021, 10022],
+    "voConflicts": [],
+    "voFailedItems": []
   }
 }
 ```
@@ -340,13 +363,14 @@ interface MessageModel<T> {
   "code": "BatchCodeConflict",
   "messageInfo": "存在重复标识符，请修改后重试",
   "responseData": {
-    "conflicts": [
+    "voConflicts": [
       {
-        "rowIndex": 0,
-        "code": "happy_face",
-        "message": "与该分组内已有表情重复"
+        "voRowIndex": 0,
+        "voCode": "happy_face",
+        "voMessage": "与该分组内已有表情重复"
       }
-    ]
+    ],
+    "voFailedItems": []
   }
 }
 ```
@@ -360,12 +384,13 @@ interface MessageModel<T> {
   "code": "ImageProcessFailed",
   "messageInfo": "缩略图生成失败，请稍后重试",
   "responseData": {
-    "failedItems": [
+    "voConflicts": [],
+    "voFailedItems": [
       {
-        "rowIndex": 1,
-        "attachmentId": 9002,
-        "code": "sad_face",
-        "message": "GIF 第一帧提取失败"
+        "voRowIndex": 1,
+        "voAttachmentId": 9002,
+        "voCode": "sad_face",
+        "voMessage": "GIF 第一帧提取失败"
       }
     ]
   }
@@ -390,11 +415,12 @@ interface MessageModel<T> {
 
 | 方法 | 路由 | 说明 |
 |------|------|------|
-| GET | `/api/v1/Sticker/Admin/CheckGroupCode?code=xxx` | Code 唯一性预检（新建分组时） |
-| GET | `/api/v1/Sticker/Admin/CheckStickerCode?groupId=&code=xxx` | Sticker Code 唯一性预检 |
-| GET | `/api/v1/Sticker/Admin/NormalizeCode?filename=xxx` | 预览文件名清洗结果（返回清洗后的 Code） |
-| GET | `/api/v1/Sticker/Admin/GetGroupStickers/{groupId}` | 获取分组内所有表情（含禁用，管理端专用） |
-| PUT | `/api/v1/Sticker/Admin/BatchUpdateSort` | 批量更新表情 Sort 字段 |
+| GET | `/api/v1/Sticker/CheckGroupCode?code=xxx` | Code 唯一性预检（新建分组时） |
+| GET | `/api/v1/Sticker/CheckStickerCode?groupId=&code=xxx` | Sticker Code 唯一性预检 |
+| GET | `/api/v1/Sticker/NormalizeCode?filename=xxx` | 预览文件名清洗结果（返回清洗后的 Code） |
+| GET | `/api/v1/Sticker/GetGroupStickers/{groupId}` | 获取分组内所有表情（含禁用，管理端专用） |
+| GET | `/api/v1/Sticker/GetAdminGroups` | 获取管理端分组（含禁用） |
+| PUT | `/api/v1/Sticker/BatchUpdateSort` | 批量更新表情 Sort 字段 |
 
 ### 管理端预检接口联调示例（补充）
 
@@ -410,7 +436,7 @@ interface MessageModel<T> {
 }
 ```
 
-**1) `GET /api/v1/Sticker/Admin/CheckGroupCode?code=radish_girl`**
+**1) `GET /api/v1/Sticker/CheckGroupCode?code=radish_girl`**
 
 成功（可用）：
 
@@ -420,8 +446,8 @@ interface MessageModel<T> {
   "statusCode": 200,
   "messageInfo": "ok",
   "responseData": {
-    "available": true,
-    "code": "radish_girl"
+    "voAvailable": true,
+    "voCode": "radish_girl"
   }
 }
 ```
@@ -435,13 +461,13 @@ interface MessageModel<T> {
   "code": "CodeAlreadyExists",
   "messageInfo": "分组标识符已存在",
   "responseData": {
-    "available": false,
-    "code": "radish_girl"
+    "voAvailable": false,
+    "voCode": "radish_girl"
   }
 }
 ```
 
-**2) `GET /api/v1/Sticker/Admin/CheckStickerCode?groupId=12&code=happy_face`**
+**2) `GET /api/v1/Sticker/CheckStickerCode?groupId=12&code=happy_face`**
 
 成功（可用）：
 
@@ -451,9 +477,9 @@ interface MessageModel<T> {
   "statusCode": 200,
   "messageInfo": "ok",
   "responseData": {
-    "available": true,
-    "groupId": 12,
-    "code": "happy_face"
+    "voAvailable": true,
+    "voGroupId": 12,
+    "voCode": "happy_face"
   }
 }
 ```
@@ -467,14 +493,14 @@ interface MessageModel<T> {
   "code": "CodeAlreadyExists",
   "messageInfo": "该分组内表情标识符已存在",
   "responseData": {
-    "available": false,
-    "groupId": 12,
-    "code": "happy_face"
+    "voAvailable": false,
+    "voGroupId": 12,
+    "voCode": "happy_face"
   }
 }
 ```
 
-**3) `GET /api/v1/Sticker/Admin/NormalizeCode?filename=héllo!.png`**
+**3) `GET /api/v1/Sticker/NormalizeCode?filename=héllo!.png`**
 
 成功：
 
@@ -484,15 +510,15 @@ interface MessageModel<T> {
   "statusCode": 200,
   "messageInfo": "ok",
   "responseData": {
-    "originalFileName": "héllo!.png",
-    "normalizedCode": "hllo",
-    "isChanged": true,
-    "changeReasons": ["removed_non_ascii", "removed_special_chars", "trimmed_extension"]
+    "voOriginalFileName": "héllo!.png",
+    "voNormalizedCode": "hllo",
+    "voIsChanged": true,
+    "voChangeReasons": ["removed_non_ascii", "trim_input"]
   }
 }
 ```
 
-**4) `PUT /api/v1/Sticker/Admin/BatchUpdateSort`**
+**4) `PUT /api/v1/Sticker/BatchUpdateSort`**
 
 请求示例：
 
@@ -514,7 +540,7 @@ interface MessageModel<T> {
   "statusCode": 200,
   "messageInfo": "排序已更新",
   "responseData": {
-    "updatedCount": 3
+    "voUpdatedCount": 3
   }
 }
 ```
