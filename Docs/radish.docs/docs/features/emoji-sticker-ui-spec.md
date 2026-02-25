@@ -318,3 +318,150 @@ Frontend/
     └── contexts/
         └── StickerGroupContext.ts      # 全局 stickerGroups 数据 Context
 ```
+
+---
+
+## 八、无障碍与键盘交互（补充）
+
+### 8.1 StickerPicker 键盘支持
+
+- 打开 Picker 后，焦点自动落在搜索框
+- `Tab / Shift+Tab`：在 Tab 栏、搜索框、网格间循环
+- `↑ ↓ ← →`：在网格内移动焦点
+- `Enter`：选择当前聚焦 emoji/sticker
+- `Esc`：关闭 Picker 并将焦点还给触发按钮
+
+### 8.2 ARIA 与可读文本
+
+- Sticker 图片按钮需提供 `aria-label`（优先 `Sticker.Name`）
+- `AllowInline=false` 的禁用项需提供原因文本（`aria-describedby`）
+- Reaction 气泡读屏文本格式：`{emojiName}，{count} 人回应，{已选择/未选择}`
+- 纯图标按钮（`+`、`···`、关闭按钮）必须有可读文本标签
+
+### 8.3 焦点可视化
+
+- 键盘聚焦态需有清晰外描边（不依赖 hover）
+- 焦点颜色对比度满足 WCAG AA（建议至少 3:1）
+
+---
+
+## 九、移动端与触屏交互（补充）
+
+### 9.1 无 hover 场景降级
+
+- 触屏设备不依赖 hover 触发动图播放
+- GIF 预览改为“点击一次播放，再次点击停止”或保持静止缩略图
+- Reaction 快速选择器改为点击 `+` 触发，不使用 hover 延迟展开
+
+### 9.2 Picker 尺寸与布局
+
+- 小屏（宽度 < 480px）时，Picker 宽度改为 `min(360px, 92vw)`
+- 内容区高度从 `280px` 降为 `240px`，避免遮挡输入框
+- Tab 栏支持手势横向滑动，保留分组图标可见性
+
+### 9.3 触控点击热区
+
+- Emoji/sticker 可点击区域最小 `36×36px`
+- Reaction 气泡点击热区最小高度 `32px`
+- 与边缘距离至少 `8px`，减少误触
+
+---
+
+## 十、Emoji 数据源与搜索规范（补充）
+
+### 10.1 数据源
+
+- Unicode Emoji 数据采用固定版本快照（建议 `15.0`），避免不同环境结果不一致
+- 数据文件建议放置在 `radish.ui` 内（如 `src/components/StickerPicker/data/emoji-data.ts`）
+- 每条数据最少字段：`char`、`name`、`keywords[]`、`category`
+
+### 10.2 搜索标准化
+
+- 搜索前统一做小写化与首尾空白裁剪
+- 连续空白折叠为单空格，提升英文多词匹配稳定性
+- 支持按 `name` 与 `keywords` 匹配，结果按“完全前缀 > 子串 > 关键词”排序
+
+### 10.3 版本升级策略
+
+- 升级 Unicode 版本时，记录变更清单（新增/弃用 emoji）
+- 对历史帖子中的 emoji 字符不做替换，保持原文语义
+- 升级后补充最小回归：搜索、分类跳转、插入行为、Reaction 显示
+
+---
+
+## 十一、组件 Props 契约（补充）
+
+### 11.1 StickerPickerProps（建议）
+
+```typescript
+type StickerPickerMode = 'insert' | 'reaction';
+
+interface StickerPickerProps {
+  mode: StickerPickerMode;
+  stickerGroups: StickerGroupVo[];
+  visible: boolean;
+  onClose: () => void;
+  onSelectEmoji: (emoji: string) => void; // unicode
+  onSelectSticker: (payload: {
+    groupCode: string;
+    stickerCode: string;
+    name: string;
+    allowInline: boolean;
+    imageUrl: string;
+    thumbnailUrl?: string;
+    isAnimated: boolean;
+  }) => void;
+  disabled?: boolean;
+}
+```
+
+行为约定：
+
+- `mode='insert'`：`AllowInline=false` 项禁用并给出提示
+- `mode='reaction'`：允许选择所有 sticker，不受 `AllowInline` 影响
+- 组件内部不发请求，仅消费上层传入数据
+
+### 11.2 ReactionBarProps（建议）
+
+```typescript
+interface ReactionBarProps {
+  targetType: 'Post' | 'Comment' | 'ChatMessage';
+  targetId: number;
+  items: ReactionSummaryVo[];
+  isLoggedIn: boolean;
+  loading?: boolean;
+  onToggle: (payload: {
+    emojiType: 'unicode' | 'sticker';
+    emojiValue: string;
+  }) => Promise<void>;
+  onOpenPicker?: () => void;
+}
+```
+
+行为约定：
+
+- 点击气泡只触发 `onToggle`，组件不直接调用 API
+- 请求中禁止重复点击（loading 态）
+- 失败由上层回滚 `items` 并提示错误
+
+---
+
+## 十二、前端回归清单（补充）
+
+### 12.1 交互回归
+
+- 插入模式：emoji 与 sticker 都可写入编辑器，光标位置正确
+- Reaction 模式：点选后计数即时变化，失败可回滚
+- 搜索：Emoji 英文关键字与 Sticker 中文名都可命中
+- 禁用态：`AllowInline=false` 在插入模式不可选、Reaction 模式可选
+
+### 12.2 兼容回归
+
+- 桌面端 Chrome/Edge 最近两个稳定版本
+- 移动端窄屏（<480px）不遮挡输入区
+- 无 hover 环境下 GIF 与快速选择器交互正常
+
+### 12.3 性能回归
+
+- 单分组 50 / 200 / 500 项三档数据下滚动与搜索体验可接受
+- 评论树批量 `BatchGetSummary` 场景下，无明显重复请求与闪烁

@@ -284,6 +284,22 @@ public class ReactionSummaryVo
 
 > 清洗逻辑在后端 `StickerService.NormalizeCode()` 中实现，前端仅做格式提示，不做清洗。
 
+### 软删除与唯一性策略（补充）
+
+为避免历史 `sticker://` 引用歧义，`Code` 采用“软删除后不可复用”策略：
+
+- `StickerGroup.Code`：同一 `TenantId` 下全局唯一，软删除后仍保留占位，不允许新建同 Code 分组
+- `Sticker.Code`：同一 `GroupId` 下唯一，软删除后不允许新建同 Code 表情
+- 需要“恢复旧表情”时，优先使用 `Restore` 而非“删后重建”
+
+`Reaction` 的软删除为“取消回应”语义，唯一键 `(UserId, TargetType, TargetId, EmojiValue)` 与软删除配合规则如下：
+
+- 已存在且 `IsDeleted=true`：`Toggle` 时恢复该行并更新审计字段
+- 不存在：新建
+- 已存在且 `IsDeleted=false`：`Toggle` 时软删除
+
+> 这样可以保证同一用户同一目标同一表情始终复用同一业务行，避免重复记录和并发抖动。
+
 ---
 
 ## 内嵌表情包语法
@@ -334,6 +350,20 @@ interface StickerGroupData {
 - `isAnimated = true` 时：`<img src={imageUrl}>` 直接展示 GIF 动画
 - 显示尺寸规范见 [UI 规范文档](./emoji-sticker-ui-spec.md)
 
+### 历史内容兼容策略（补充）
+
+`GetGroups` 仅用于选择器数据（启用分组 + 启用表情），不作为历史内容渲染的唯一数据源：
+
+- 分组/表情被禁用后：**不影响已发布内容渲染**
+- 分组/表情被软删除后：默认仍可被 `sticker://` 解析并展示，避免历史帖子“表情丢失”
+- 若资源文件确实不可用：降级为 `[已下架表情: packCode/stickerCode]` 文本占位，不显示破损图
+
+实现建议：
+
+- 新增“渲染专用解析”接口（如 `BatchResolve`），支持按 `packCode/stickerCode` 批量解析
+- 帖子/评论页渲染时先走本地 `stickerGroups` 索引，未命中再走解析接口补齐
+- 解析结果可按 `pack/sticker` 做短 TTL 缓存，避免重复查库
+
 ---
 
 ## API 设计
@@ -369,11 +399,12 @@ interface ToggleReactionRequest {
   targetId: number;
   emojiType: 'unicode' | 'sticker';
   emojiValue: string;       // "😀" 或 "radish_girl/happy"
-  thumbnailUrl?: string;    // sticker 时传入（GIF 传第一帧缩略图 URL）
 }
 ```
 
 **Toggle 响应**：返回该目标的最新 `ReactionSummaryVo[]`，前端直接替换本地状态，无需二次请求。
+
+> `sticker` 类型的缩略图由后端根据 `emojiValue` 反查 `Sticker` 生成，避免信任前端传入 URL。
 
 **Reaction 上限约束**：
 
@@ -382,6 +413,226 @@ interface ToggleReactionRequest {
 | 单条内容最多展示 Reaction 种类 | 20 种 | 超出时 `GetSummary` 仍返回全部，前端折叠展示 |
 | 单用户对同一内容最多添加 Reaction 种类 | 10 种 | Service 层校验，超出返回 400 |
 | `BatchGetSummary` 单次最大目标数 | 100 条 | 防止评论树过深导致查询超时 |
+
+### Toggle 服务端并发与幂等流程（补充）
+
+`Toggle` 需在事务内执行，推荐流程：
+
+1. 校验 `targetType` 白名单、`emojiType` 合法性、目标是否存在
+2. 若 `emojiType='sticker'`，按 `emojiValue` 反查表情并校验 `IsEnabled`
+3. 查询 `(UserId, TargetType, TargetId, EmojiValue)`（包含软删除）
+4. 按状态执行“恢复 / 软删除 / 新建”
+5. 提交事务；若触发唯一索引冲突，执行一次短重试
+6. 聚合返回最新 `ReactionSummaryVo[]`
+
+这样可覆盖“同端双击”“多端同时点击”等并发场景。
+
+### API 业务错误码约定（补充）
+
+| 场景 | HTTP | Code | 说明 |
+|------|------|------|------|
+| 未登录调用 Toggle/RecordUse | 401 | `AuthRequired` | 需登录 |
+| `emojiType` 或 `targetType` 非法 | 400 | `InvalidArgument` | 参数错误 |
+| sticker 不存在/已禁用 | 404/400 | `StickerNotAvailable` | 表情不可用 |
+| 用户 Reaction 种类超上限 | 400 | `ReactionLimitExceeded` | 达到 10 种上限 |
+| 批量查询超过 100 条 | 400 | `BatchSizeExceeded` | 请求量超限 |
+| 发生并发冲突且重试失败 | 409 | `ConcurrentConflict` | 建议前端重拉一次 |
+
+### 高频接口限流建议（补充）
+
+| 接口 | 维度 | 建议阈值 | 说明 |
+|------|------|----------|------|
+| `POST /Sticker/RecordUse` | UserId + IP | 60 次/分钟 | 防止刷热度 |
+| `POST /Reaction/Toggle` | UserId + TargetId | 20 次/分钟 | 防止快速抖动 |
+| `POST /Reaction/BatchGetSummary` | IP | 30 次/分钟 | 防止批量拉取滥用 |
+
+### API DTO 与响应示例（联调补充）
+
+为避免前后端联调歧义，以下示例统一基于后端 `MessageModel<T>`（前端经 `@radish/ui` 解析为 `ParsedApiResponse<T>`）。
+
+**统一响应壳（后端原始）**：
+
+```typescript
+interface MessageModel<T> {
+  isSuccess: boolean;
+  statusCode: number;
+  messageInfo: string;
+  messageInfoDev?: string;
+  responseData?: T;
+  code?: string;
+  messageKey?: string;
+}
+```
+
+**前端解析后（`apiGet/apiPost` 返回）**：
+
+```typescript
+interface ParsedApiResponse<T> {
+  ok: boolean;
+  data?: T;
+  message?: string;
+  code?: string;
+  statusCode?: number;
+}
+```
+
+**核心 DTO（建议）**：
+
+```typescript
+interface GetStickerGroupsResponse {
+  voId: number;
+  voCode: string;
+  voName: string;
+  voDescription?: string;
+  voCoverImageUrl?: string;
+  voGroupType: 'Official' | 'Premium';
+  voSort: number;
+  voStickers: Array<{
+    voId: number;
+    voCode: string;
+    voName: string;
+    voImageUrl: string;
+    voThumbnailUrl?: string;
+    voIsAnimated: boolean;
+    voAllowInline: boolean;
+    voUseCount: number;
+  }>;
+}
+
+interface RecordStickerUseRequest {
+  emojiType: 'unicode' | 'sticker';
+  emojiValue: string; // "😀" 或 "radish_girl/happy"
+}
+
+interface BatchGetReactionSummaryRequest {
+  targetType: 'Post' | 'Comment' | 'ChatMessage';
+  targetIds: number[]; // <= 100
+}
+
+type BatchGetReactionSummaryResponse = Record<string, ReactionSummaryVo[]>;
+// key 为 targetId 字符串，如 { "123": [...], "124": [...] }
+```
+
+**请求示例：`POST /api/v1/Sticker/RecordUse`**：
+
+```json
+{
+  "emojiType": "sticker",
+  "emojiValue": "radish_girl/happy"
+}
+```
+
+**成功响应示例：`GET /api/v1/Sticker/GetGroups`**：
+
+```json
+{
+  "isSuccess": true,
+  "statusCode": 200,
+  "messageInfo": "ok",
+  "responseData": [
+    {
+      "voId": 1,
+      "voCode": "radish_girl",
+      "voName": "萝卜娘",
+      "voCoverImageUrl": "https://cdn.example.com/stickers/radish_girl/cover.webp",
+      "voGroupType": "Official",
+      "voSort": 10,
+      "voStickers": [
+        {
+          "voId": 1001,
+          "voCode": "happy",
+          "voName": "开心",
+          "voImageUrl": "https://cdn.example.com/stickers/radish_girl/happy.gif",
+          "voThumbnailUrl": "https://cdn.example.com/stickers/radish_girl/happy-thumb.webp",
+          "voIsAnimated": true,
+          "voAllowInline": true,
+          "voUseCount": 321
+        }
+      ]
+    }
+  ]
+}
+```
+
+**成功响应示例：`POST /api/v1/Reaction/BatchGetSummary`**：
+
+```json
+{
+  "isSuccess": true,
+  "statusCode": 200,
+  "messageInfo": "ok",
+  "responseData": {
+    "101": [
+      {
+        "voEmojiType": "unicode",
+        "voEmojiValue": "😀",
+        "voCount": 2,
+        "voIsReacted": false,
+        "voThumbnailUrl": null
+      }
+    ],
+    "102": [
+      {
+        "voEmojiType": "sticker",
+        "voEmojiValue": "radish_girl/happy",
+        "voCount": 5,
+        "voIsReacted": true,
+        "voThumbnailUrl": "https://cdn.example.com/stickers/radish_girl/happy-thumb.webp"
+      }
+    ]
+  }
+}
+```
+
+**成功响应示例：`POST /api/v1/Reaction/Toggle`**：
+
+```json
+{
+  "isSuccess": true,
+  "statusCode": 200,
+  "messageInfo": "操作成功",
+  "responseData": [
+    {
+      "voEmojiType": "unicode",
+      "voEmojiValue": "😀",
+      "voCount": 12,
+      "voIsReacted": true,
+      "voThumbnailUrl": null
+    },
+    {
+      "voEmojiType": "sticker",
+      "voEmojiValue": "radish_girl/happy",
+      "voCount": 7,
+      "voIsReacted": false,
+      "voThumbnailUrl": "https://cdn.example.com/stickers/radish_girl/happy-thumb.webp"
+    }
+  ]
+}
+```
+
+**失败响应示例：超过 Reaction 上限**：
+
+```json
+{
+  "isSuccess": false,
+  "statusCode": 400,
+  "code": "ReactionLimitExceeded",
+  "messageInfo": "你已对该内容添加了 10 种回应（上限）",
+  "responseData": null
+}
+```
+
+**失败响应示例：并发冲突（重试后仍失败）**：
+
+```json
+{
+  "isSuccess": false,
+  "statusCode": 409,
+  "code": "ConcurrentConflict",
+  "messageInfo": "操作过于频繁，请刷新后重试",
+  "responseData": null
+}
+```
 
 ---
 
@@ -395,6 +646,15 @@ interface ToggleReactionRequest {
 
 **实现位置**：`StickerService.GetGroupsAsync()` 中先查缓存，未命中再查库并写入。写操作方法末尾调用 `cache.RemoveAsync($"sticker:groups:{tenantId}")` 主动失效。
 
+### Phase 3 缓存演进预留（Premium）
+
+Phase 3 引入 `VoIsOwned` 后，避免将“用户态”塞入当前公共缓存：
+
+- 保持 `sticker:groups:{tenantId}` 作为公共基础数据缓存（分组 + 贴图静态信息）
+- 新增 `user:sticker:owned:{tenantId}:{userId}` 记录已购分组 ID 列表
+- `GetGroups` 组装响应时进行“公共数据 + 用户拥有关系”叠加，降低缓存基数
+- 购买/退款时仅失效用户态缓存，不失效全局分组缓存
+
 ---
 
 ## 数据库索引建议
@@ -405,6 +665,8 @@ interface ToggleReactionRequest {
 | `Sticker` | `(GroupId, Code)` 唯一索引 | 防重复，快速按 Code 查找 |
 | `Reaction` | `(UserId, TargetType, TargetId, EmojiValue)` 唯一索引 | 幂等保障，防止同一用户重复添加相同表情 |
 | `Reaction` | `(TargetType, TargetId, IsDeleted)` 联合索引 | 快速聚合查询单目标所有 Reaction |
+
+> 说明：`StickerGroup.Code` / `Sticker.Code` 的唯一性默认覆盖软删除记录，保持历史 `sticker://` 地址稳定。
 
 ---
 
@@ -441,6 +703,100 @@ interface ToggleReactionRequest {
 | **Phase 1** 核心能力 | StickerGroup/Sticker 实体 + Console 管理 + StickerPicker 组件 + MarkdownEditor/评论框集成 + `sticker://` 渲染 | 2 个实体、2 个 Service、1 个 Controller | 2 个新组件；修改 MarkdownEditor、MarkdownRenderer、CreateCommentForm |
 | **Phase 2** Reaction 系统 | Reaction 实体 + ReactionController + ReactionBar 组件 + PostDetail/CommentNode 集成 | 1 个实体、1 个 Service、1 个 Controller | 1 个新组件；修改 PostDetail、CommentNode |
 | **Phase 3** 扩展 | 聊天室 Reaction、表情商店、UseCount 排行、实时同步 | 按需，不影响 Phase 1/2 结构 | 按需 |
+
+## Phase 1 任务拆分与验收标准（补充）
+
+| 子任务 | 主要内容 | 验收标准 |
+|------|------|------|
+| 后端实体与接口 | `StickerGroup/Sticker` + Admin API + `RecordUse` | `Radish.Api.http` 可完整走通 CRUD/批量上传/记录使用；软删除与唯一性规则生效 |
+| 渲染链路 | `sticker://` 解析、历史兼容降级、MarkdownRenderer 接入 | 历史帖子在分组禁用后仍正常显示；资源失效时显示占位文本不破版 |
+| Console 管理页 | 分组管理、批量上传确认、冲突修正重提 | 批量上传 50 张内流程可完成，冲突行高亮可修复后再次提交 |
+| UI 组件 | `StickerPicker`（insert/reaction 模式） | Markdown 编辑器与评论框都可插入；`AllowInline=false` 在插入模式禁用 |
+| 性能与稳定性 | 缓存、限流、并发冲突重试 | `GetGroups` 命中缓存；`Toggle` 快速双击无脏数据；高频接口触发限流返回明确错误码 |
+
+## 实现落地文件清单（补充）
+
+以下为建议落地位置，便于直接拆工单：
+
+### 后端（Phase 1 + Phase 2）
+
+| 目标 | 文件（建议） | 说明 |
+|------|--------------|------|
+| 实体 | `Radish.Model/StickerGroup.cs` | 新增分组实体（`ITenantEntity + IDeleteFilter`） |
+| 实体 | `Radish.Model/Sticker.cs` | 新增贴图实体（含 `ThumbnailUrl` / `AllowInline`） |
+| 实体（Phase 2） | `Radish.Model/Reaction.cs` | 新增回应实体 |
+| ViewModel | `Radish.Model/ViewModels/StickerGroupVo.cs` | 含 `VoStickers` |
+| ViewModel | `Radish.Model/ViewModels/StickerVo.cs` | Sticker 输出模型 |
+| ViewModel | `Radish.Model/ViewModels/ReactionSummaryVo.cs` | 聚合输出模型 |
+| Service 接口 | `Radish.IService/IStickerService.cs` | GetGroups/RecordUse/Admin CRUD |
+| Service 接口（Phase 2） | `Radish.IService/IReactionService.cs` | Summary/BatchSummary/Toggle |
+| Service 实现 | `Radish.Service/StickerService.cs` | 缓存、清洗、批量入库 |
+| Service 实现（Phase 2） | `Radish.Service/ReactionService.cs` | 事务 + 并发幂等 |
+| Controller | `Radish.Api/Controllers/StickerController.cs` | Public + Admin 接口 |
+| Controller（Phase 2） | `Radish.Api/Controllers/ReactionController.cs` | 汇总与 Toggle |
+| AutoMapper | `Radish.Extension/AutoMapperExtension/CustomProfiles/ForumProfile.cs` | 增加 Sticker 相关映射 |
+| 示例请求 | `Radish.Api/Radish.Api.http` | 增加接口请求样例 |
+
+### 前端（`@radish/ui` + `radish.client` + `radish.console`）
+
+| 目标 | 文件（建议） | 说明 |
+|------|--------------|------|
+| 组件 | `Frontend/radish.ui/src/components/StickerPicker/StickerPicker.tsx` | Picker 容器 |
+| 组件 | `Frontend/radish.ui/src/components/StickerPicker/EmojiTab.tsx` | Emoji 分类网格 |
+| 组件 | `Frontend/radish.ui/src/components/StickerPicker/StickerTab.tsx` | Sticker 网格 |
+| 组件 | `Frontend/radish.ui/src/components/ReactionBar/ReactionBar.tsx` | 气泡条（Phase 2） |
+| 组件 | `Frontend/radish.ui/src/components/ReactionBar/ReactionPickerPopover.tsx` | 快速选择器（Phase 2） |
+| 渲染扩展 | `Frontend/radish.ui/src/components/MarkdownRenderer/MarkdownRenderer.tsx` | `sticker://` 渲染 |
+| 编辑器接入 | `Frontend/radish.ui/src/components/MarkdownEditor/MarkdownEditor.tsx` | 插入模式接入 |
+| Forum 集成 | `Frontend/radish.client/src/apps/forum/components/CreateCommentForm.tsx` | 评论框接入 |
+| Forum 集成（Phase 2） | `Frontend/radish.client/src/apps/forum/components/PostDetail.tsx` | ReactionBar 接入 |
+| Forum 集成（Phase 2） | `Frontend/radish.client/src/apps/forum/components/CommentNode.tsx` | ReactionBar 接入 |
+| API | `Frontend/radish.client/src/api/sticker.ts` | getGroups/recordUse |
+| API（Phase 2） | `Frontend/radish.client/src/api/reaction.ts` | summary/toggle |
+| Console 页面 | `Frontend/radish.console/src/pages/Stickers/` | 管理后台页面 |
+
+## 联调顺序建议（补充）
+
+推荐按照“先静态资源，再交互，再并发”的顺序：
+
+1. 后端落地 `StickerGroup/Sticker` 实体、基础 Admin CRUD、`GetGroups`
+2. Console 先做分组 CRUD + 单图上传，确认基础链路
+3. 完成 `BatchAddStickers` 与冲突修正重提
+4. `@radish/ui` 完成 `StickerPicker`，先打通插入模式
+5. `MarkdownRenderer` 接入 `sticker://` 与历史降级逻辑
+6. Forum 发帖/评论接入并验证 `RecordUse`
+7. Phase 2 再接 `Reaction`（`GetSummary/BatchGetSummary/Toggle`）
+8. 最后做并发压测、限流验证、缓存命中验证
+
+## 测试与回归清单（补充）
+
+### 后端测试
+
+- `NormalizeCode`：覆盖中文/重音字符/空串/超长/纯符号文件名
+- `BatchAddStickers`：成功、部分冲突、图片处理失败、事务回滚
+- `Toggle`：新增、取消、恢复、并发双击、唯一键冲突重试
+- 缓存：`GetGroups` 命中/失效路径正确
+- 权限：Admin 接口仅 `System/Admin` 可访问
+
+### 前端测试
+
+- StickerPicker：Tab 切换、搜索、插入、禁用态、键盘导航、移动端点击
+- MarkdownRenderer：`sticker://` 正常渲染、异常地址降级显示
+- ReactionBar：乐观更新、失败回滚、折叠/展开、上限禁用
+- Console：批量上传流程、冲突行高亮、失败重试、排序回滚
+
+### 回归重点
+
+- 不影响现有图片灯箱与普通 Markdown 图片渲染
+- 不影响评论发布/编辑历史/通知等既有论坛链路
+- 大量表情数据（>200）时滚动流畅，无明显卡顿
+
+## 上线与观测要点（补充）
+
+- 日志：记录 `BatchAddStickers` 成功数、冲突数、失败原因分布
+- 监控：关注 `Toggle` 的 400/409 比例和 `BatchGetSummary` 响应耗时
+- 告警：`ImageProcessFailed` 异常比例超过阈值时告警
+- 回滚：保留 `sticker://` 文本降级策略，保证即使服务异常页面也不破版
 
 ---
 

@@ -218,6 +218,21 @@ interface BatchAddStickersRequest {
 
 **Code 冲突处理**：若部分 Code 冲突，接口返回冲突列表（`[{code: "happy", message: "与已有表情重复"}]`），前端高亮对应行，不关闭表格，管理员修改后重新提交。
 
+#### 第四步补充：事务边界与失败处理
+
+`BatchAddStickers` 建议采用“单请求单事务”：
+
+- **事务内**：Code 唯一性校验（最终校验）、缩略图生成、`Sticker` 批量写入
+- **事务外**：Attachment 上传（第二步已完成）
+
+失败处理策略：
+
+- 若缩略图生成或数据库写入任一步失败：本次 `BatchAddStickers` 整体回滚，不产生部分成功 `Sticker`
+- 前端保留确认表格内容与上传结果，管理员可修正后直接重试
+- 已上传 Attachment 不立即删除，交由孤儿附件清理任务处理（避免误删）
+
+> 这样可避免“分组内只写入一半表情”的脏数据状态，简化前端恢复逻辑。
+
 ---
 
 ## 单个表情编辑
@@ -255,6 +270,118 @@ interface BatchAddStickersRequest {
 | 单次 BatchAddStickers 请求表情数 | ≤ 50 | 与上传文件数一致 |
 | 并发上传数 | 3 | 前端控制，防止同时大量请求 |
 
+### BatchAddStickers 错误返回（补充）
+
+| 场景 | HTTP | Code | 前端处理 |
+|------|------|------|---------|
+| 分组不存在/已删除 | 404 | `StickerGroupNotFound` | 关闭弹窗并提示刷新页面 |
+| 部分 Code 冲突 | 409/400 | `BatchCodeConflict` | 高亮冲突行，不清空表格 |
+| 图片处理失败（缩略图生成失败） | 500/400 | `ImageProcessFailed` | 保留已上传列表，允许重试 |
+| 超过单次上限（>50） | 400 | `BatchSizeExceeded` | 在前端文件选择阶段拦截 |
+| 权限不足 | 403 | `Forbidden` | 提示无权限 |
+
+### BatchAddStickers 联调 JSON 示例（补充）
+
+统一采用后端 `MessageModel<T>` 响应壳：
+
+```typescript
+interface MessageModel<T> {
+  isSuccess: boolean;
+  statusCode: number;
+  messageInfo: string;
+  code?: string;
+  responseData?: T;
+}
+```
+
+请求示例：
+
+```json
+{
+  "groupId": 12,
+  "stickers": [
+    {
+      "attachmentId": 9001,
+      "code": "happy_face",
+      "name": "开心",
+      "allowInline": true
+    },
+    {
+      "attachmentId": 9002,
+      "code": "sad_face",
+      "name": "难过",
+      "allowInline": true
+    }
+  ]
+}
+```
+
+成功响应示例（全部写入成功）：
+
+```json
+{
+  "isSuccess": true,
+  "statusCode": 200,
+  "messageInfo": "批量保存成功",
+  "responseData": {
+    "groupId": 12,
+    "createdCount": 2,
+    "stickerIds": [10021, 10022]
+  }
+}
+```
+
+失败响应示例（部分 Code 冲突）：
+
+```json
+{
+  "isSuccess": false,
+  "statusCode": 409,
+  "code": "BatchCodeConflict",
+  "messageInfo": "存在重复标识符，请修改后重试",
+  "responseData": {
+    "conflicts": [
+      {
+        "rowIndex": 0,
+        "code": "happy_face",
+        "message": "与该分组内已有表情重复"
+      }
+    ]
+  }
+}
+```
+
+失败响应示例（图片处理失败）：
+
+```json
+{
+  "isSuccess": false,
+  "statusCode": 500,
+  "code": "ImageProcessFailed",
+  "messageInfo": "缩略图生成失败，请稍后重试",
+  "responseData": {
+    "failedItems": [
+      {
+        "rowIndex": 1,
+        "attachmentId": 9002,
+        "code": "sad_face",
+        "message": "GIF 第一帧提取失败"
+      }
+    ]
+  }
+}
+```
+
+### 孤儿 Attachment 清理策略（补充）
+
+“孤儿附件”指已上传成功但未被 `Sticker.AttachmentId` 引用的文件。
+
+- **产生场景**：管理员在确认表格删除行、取消保存、或 `BatchAddStickers` 失败回滚
+- **清理方式**：后台定时任务按 `Attachment` 引用关系扫描清理
+- **建议延迟**：仅清理创建时间超过 `24h` 的孤儿附件，避免管理员短时间重试时文件丢失
+- **审计日志**：记录清理数量与附件 ID 列表（debug/info 级别）
+- **白名单排除**：仅清理表情包上传目录/业务标记的 Attachment，避免误删其他业务图片
+
 ---
 
 ## API 补充：管理端专用
@@ -268,6 +395,135 @@ interface BatchAddStickersRequest {
 | GET | `/api/v1/Sticker/Admin/NormalizeCode?filename=xxx` | 预览文件名清洗结果（返回清洗后的 Code） |
 | GET | `/api/v1/Sticker/Admin/GetGroupStickers/{groupId}` | 获取分组内所有表情（含禁用，管理端专用） |
 | PUT | `/api/v1/Sticker/Admin/BatchUpdateSort` | 批量更新表情 Sort 字段 |
+
+### 管理端预检接口联调示例（补充）
+
+统一响应壳：
+
+```typescript
+interface MessageModel<T> {
+  isSuccess: boolean;
+  statusCode: number;
+  messageInfo: string;
+  code?: string;
+  responseData?: T;
+}
+```
+
+**1) `GET /api/v1/Sticker/Admin/CheckGroupCode?code=radish_girl`**
+
+成功（可用）：
+
+```json
+{
+  "isSuccess": true,
+  "statusCode": 200,
+  "messageInfo": "ok",
+  "responseData": {
+    "available": true,
+    "code": "radish_girl"
+  }
+}
+```
+
+失败（已存在）：
+
+```json
+{
+  "isSuccess": false,
+  "statusCode": 409,
+  "code": "CodeAlreadyExists",
+  "messageInfo": "分组标识符已存在",
+  "responseData": {
+    "available": false,
+    "code": "radish_girl"
+  }
+}
+```
+
+**2) `GET /api/v1/Sticker/Admin/CheckStickerCode?groupId=12&code=happy_face`**
+
+成功（可用）：
+
+```json
+{
+  "isSuccess": true,
+  "statusCode": 200,
+  "messageInfo": "ok",
+  "responseData": {
+    "available": true,
+    "groupId": 12,
+    "code": "happy_face"
+  }
+}
+```
+
+失败（组内重复）：
+
+```json
+{
+  "isSuccess": false,
+  "statusCode": 409,
+  "code": "CodeAlreadyExists",
+  "messageInfo": "该分组内表情标识符已存在",
+  "responseData": {
+    "available": false,
+    "groupId": 12,
+    "code": "happy_face"
+  }
+}
+```
+
+**3) `GET /api/v1/Sticker/Admin/NormalizeCode?filename=héllo!.png`**
+
+成功：
+
+```json
+{
+  "isSuccess": true,
+  "statusCode": 200,
+  "messageInfo": "ok",
+  "responseData": {
+    "originalFileName": "héllo!.png",
+    "normalizedCode": "hllo",
+    "isChanged": true,
+    "changeReasons": ["removed_non_ascii", "removed_special_chars", "trimmed_extension"]
+  }
+}
+```
+
+**4) `PUT /api/v1/Sticker/Admin/BatchUpdateSort`**
+
+请求示例：
+
+```json
+{
+  "items": [
+    { "id": 10021, "sort": 10 },
+    { "id": 10022, "sort": 20 },
+    { "id": 10023, "sort": 30 }
+  ]
+}
+```
+
+成功响应：
+
+```json
+{
+  "isSuccess": true,
+  "statusCode": 200,
+  "messageInfo": "排序已更新",
+  "responseData": {
+    "updatedCount": 3
+  }
+}
+```
+
+前端处理建议：
+
+- 预检接口用于**即时提示**，提交时仍以后端最终校验为准
+- `NormalizeCode` 仅用于展示清洗结果，不替代前端输入校验
+- `BatchUpdateSort` 失败时回滚本地排序并 toast 提示
 
 ---
 

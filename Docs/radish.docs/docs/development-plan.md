@@ -184,6 +184,16 @@
 >   - 多语言支持、语言切换、文本提取工具、翻译管理
 > - ✅ **表情包系统设计（文档）**（2026-02-24）：
 >   - 已完成数据模型、管理后台与 UI 规范设计，详见 `emoji-sticker-system` / `emoji-sticker-console` / `emoji-sticker-ui-spec`
+> - 📝 **表情包系统 Phase 1 实现拆分（规划补充）**（2026-02-25）：
+>   - 后端：`StickerGroup/Sticker` 实体与 Admin API、`RecordUse` 接口、缓存失效与限流
+>   - Console：分组 CRUD、批量上传四步流、冲突高亮重提、排序管理
+>   - 前端组件：`StickerPicker`（insert/reaction 双模式）、`MarkdownRenderer` `sticker://` 渲染
+>   - 论坛集成：`MarkdownEditor` / 评论框接入与历史内容降级策略
+>   - 验收：批量上传 ≤50 张可完成、历史内容在表情禁用后仍可渲染、`GetGroups` 缓存生效
+> - 📝 **表情包系统联调文档补全**（2026-02-25）：
+>   - 新增 API 请求/响应 JSON 示例（含错误码场景）、管理端预检接口示例、排序批量更新示例
+>   - 新增实现落地文件清单、联调顺序、测试与回归清单、上线观测要点
+>   - 新增前端组件 Props 契约（StickerPicker/ReactionBar）与移动端/无障碍补充规范
 > - ✅ **聊天室系统设计（文档）**（2026-02-24）：
 >   - 已完成后端系统设计与前端方案设计，详见 `chat-system` / `chat-frontend`
 >
