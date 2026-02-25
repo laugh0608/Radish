@@ -46,4 +46,10 @@ public interface IStickerService : IBaseService<StickerGroup, StickerGroupVo>
 
     /// <summary>预览文件名编码清洗结果</summary>
     StickerNormalizeCodeVo NormalizeCode(string filename);
+
+    /// <summary>批量新增表情</summary>
+    Task<StickerBatchAddResultVo> BatchAddStickersAsync(BatchAddStickersDto request, long operatorId, string operatorName);
+
+    /// <summary>批量更新表情排序</summary>
+    Task<int> BatchUpdateSortAsync(List<StickerSortItemDto> items, long operatorId, string operatorName);
 }

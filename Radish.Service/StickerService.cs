@@ -2,7 +2,10 @@ using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using AutoMapper;
 using Microsoft.Extensions.Logging;
+using Radish.Common.AttributeTool;
 using Radish.Common.CacheTool;
+using Radish.Infrastructure.FileStorage;
+using Radish.Infrastructure.ImageProcessing;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -24,6 +27,8 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
     private readonly IBaseRepository<Sticker> _stickerRepository;
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly ICaching _caching;
+    private readonly IFileStorage _fileStorage;
+    private readonly IImageProcessor _imageProcessor;
     private readonly ILogger<StickerService> _logger;
 
     public StickerService(
@@ -32,6 +37,8 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         IBaseRepository<Sticker> stickerRepository,
         IBaseRepository<Attachment> attachmentRepository,
         ICaching caching,
+        IFileStorage fileStorage,
+        IImageProcessor imageProcessor,
         ILogger<StickerService> logger)
         : base(mapper, baseRepository)
     {
@@ -39,6 +46,8 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         _stickerRepository = stickerRepository;
         _attachmentRepository = attachmentRepository;
         _caching = caching;
+        _fileStorage = fileStorage;
+        _imageProcessor = imageProcessor;
         _logger = logger;
     }
 
@@ -339,7 +348,9 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             createDto.AttachmentId,
             createDto.ImageUrl,
             createDto.ThumbnailUrl,
-            createDto.IsAnimated);
+            createDto.IsAnimated,
+            group.Code,
+            normalizedCode);
 
         var creator = NormalizeOperatorName(operatorName);
         var entity = new Sticker
@@ -383,11 +394,20 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
 
         if (updateDto.AttachmentId.HasValue || !string.IsNullOrWhiteSpace(updateDto.ImageUrl))
         {
+            var groupCode = string.Empty;
+            if (updateDto.AttachmentId.HasValue)
+            {
+                var group = await _stickerGroupRepository.QueryByIdAsync(entity.GroupId);
+                groupCode = group?.Code ?? string.Empty;
+            }
+
             var (imageUrl, thumbnailUrl, isAnimated) = await ResolveStickerImageDataAsync(
                 updateDto.AttachmentId,
                 updateDto.ImageUrl,
                 updateDto.ThumbnailUrl,
-                updateDto.IsAnimated);
+                updateDto.IsAnimated,
+                groupCode,
+                entity.Code);
             entity.ImageUrl = imageUrl;
             entity.ThumbnailUrl = thumbnailUrl;
             entity.IsAnimated = isAnimated;
@@ -498,11 +518,251 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         };
     }
 
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<StickerBatchAddResultVo> BatchAddStickersAsync(BatchAddStickersDto request, long operatorId, string operatorName)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request.GroupId <= 0)
+        {
+            throw new ArgumentException("分组ID无效", nameof(request.GroupId));
+        }
+
+        if (request.Stickers == null || request.Stickers.Count == 0)
+        {
+            throw new ArgumentException("表情列表不能为空", nameof(request.Stickers));
+        }
+
+        if (request.Stickers.Count > 50)
+        {
+            throw new ArgumentException("单次批量新增表情数不能超过50个", nameof(request.Stickers));
+        }
+
+        var group = await _stickerGroupRepository.QueryByIdAsync(request.GroupId);
+        if (group == null || group.IsDeleted)
+        {
+            throw new InvalidOperationException("分组不存在或已删除");
+        }
+
+        var result = new StickerBatchAddResultVo
+        {
+            VoGroupId = request.GroupId
+        };
+
+        var normalizedItems = new List<(int rowIndex, BatchAddStickerItemDto item, string code, string name)>();
+        for (var i = 0; i < request.Stickers.Count; i++)
+        {
+            var rowIndex = i;
+            var item = request.Stickers[i];
+            var normalizedCode = NormalizeCodeOnly(item.Code);
+            var normalizedName = item.Name?.Trim() ?? string.Empty;
+
+            if (item.AttachmentId <= 0)
+            {
+                result.VoConflicts.Add(new StickerBatchConflictVo
+                {
+                    VoRowIndex = rowIndex,
+                    VoCode = normalizedCode,
+                    VoMessage = "附件ID无效"
+                });
+                continue;
+            }
+
+            if (!IsValidCode(normalizedCode))
+            {
+                result.VoConflicts.Add(new StickerBatchConflictVo
+                {
+                    VoRowIndex = rowIndex,
+                    VoCode = normalizedCode,
+                    VoMessage = "标识符格式不正确，仅允许小写字母、数字和下划线"
+                });
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(normalizedName))
+            {
+                result.VoConflicts.Add(new StickerBatchConflictVo
+                {
+                    VoRowIndex = rowIndex,
+                    VoCode = normalizedCode,
+                    VoMessage = "显示名不能为空"
+                });
+                continue;
+            }
+
+            normalizedItems.Add((rowIndex, item, normalizedCode, normalizedName));
+        }
+
+        if (result.VoConflicts.Count > 0)
+        {
+            return result;
+        }
+
+        var duplicateRows = normalizedItems
+            .GroupBy(x => x.code)
+            .Where(g => g.Count() > 1)
+            .ToList();
+
+        foreach (var duplicate in duplicateRows)
+        {
+            foreach (var row in duplicate)
+            {
+                result.VoConflicts.Add(new StickerBatchConflictVo
+                {
+                    VoRowIndex = row.rowIndex,
+                    VoCode = row.code,
+                    VoMessage = "与本次批量上传中的其他表情重复"
+                });
+            }
+        }
+
+        if (result.VoConflicts.Count > 0)
+        {
+            return result;
+        }
+
+        var requestCodes = normalizedItems.Select(x => x.code).Distinct().ToList();
+        var existingStickers = await _stickerRepository.QueryAsync(
+            s => s.GroupId == request.GroupId && requestCodes.Contains(s.Code));
+        if (existingStickers.Count > 0)
+        {
+            var existingCodes = existingStickers.Select(s => s.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var row in normalizedItems.Where(x => existingCodes.Contains(x.code)))
+            {
+                result.VoConflicts.Add(new StickerBatchConflictVo
+                {
+                    VoRowIndex = row.rowIndex,
+                    VoCode = row.code,
+                    VoMessage = "与已有表情重复"
+                });
+            }
+
+            return result;
+        }
+
+        var creator = NormalizeOperatorName(operatorName);
+        var entitiesToInsert = new List<Sticker>(normalizedItems.Count);
+        foreach (var row in normalizedItems.OrderBy(x => x.rowIndex))
+        {
+            try
+            {
+                var (imageUrl, thumbnailUrl, isAnimated) = await ResolveStickerImageDataAsync(
+                    row.item.AttachmentId,
+                    imageUrl: null,
+                    thumbnailUrl: null,
+                    isAnimated: false,
+                    groupCode: group.Code,
+                    stickerCode: row.code);
+
+                entitiesToInsert.Add(new Sticker
+                {
+                    GroupId = request.GroupId,
+                    Code = row.code,
+                    Name = row.name,
+                    ImageUrl = imageUrl,
+                    ThumbnailUrl = thumbnailUrl,
+                    IsAnimated = isAnimated,
+                    AllowInline = row.item.AllowInline,
+                    AttachmentId = row.item.AttachmentId,
+                    Sort = row.rowIndex,
+                    UseCount = 0,
+                    IsEnabled = true,
+                    IsDeleted = false,
+                    CreateTime = DateTime.Now,
+                    CreateBy = creator,
+                    CreateId = operatorId
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "批量新增表情构建失败，GroupId={GroupId}, RowIndex={RowIndex}", request.GroupId, row.rowIndex);
+                result.VoFailedItems.Add(new StickerBatchFailedItemVo
+                {
+                    VoRowIndex = row.rowIndex,
+                    VoAttachmentId = row.item.AttachmentId,
+                    VoCode = row.code,
+                    VoMessage = ex.Message
+                });
+            }
+        }
+
+        if (result.VoFailedItems.Count > 0)
+        {
+            return result;
+        }
+
+        foreach (var entity in entitiesToInsert)
+        {
+            var id = await _stickerRepository.AddAsync(entity);
+            result.VoStickerIds.Add(id);
+        }
+
+        result.VoCreatedCount = result.VoStickerIds.Count;
+        await InvalidateGroupsCacheAsync(group.TenantId);
+        return result;
+    }
+
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<int> BatchUpdateSortAsync(List<StickerSortItemDto> items, long operatorId, string operatorName)
+    {
+        if (items == null || items.Count == 0)
+        {
+            return 0;
+        }
+
+        var normalizedItems = items
+            .Where(i => i.Id > 0)
+            .GroupBy(i => i.Id)
+            .Select(g => g.Last())
+            .ToList();
+
+        if (normalizedItems.Count == 0)
+        {
+            return 0;
+        }
+
+        var idList = normalizedItems.Select(i => i.Id).ToList();
+        var stickers = await _stickerRepository.QueryByIdsAsync(idList);
+        if (stickers.Count == 0)
+        {
+            return 0;
+        }
+
+        var sortMap = normalizedItems.ToDictionary(i => i.Id, i => Math.Max(0, i.Sort));
+        var modifier = NormalizeOperatorName(operatorName);
+        var now = DateTime.Now;
+
+        foreach (var sticker in stickers)
+        {
+            if (!sortMap.TryGetValue(sticker.Id, out var sort))
+            {
+                continue;
+            }
+
+            sticker.Sort = sort;
+            sticker.ModifyTime = now;
+            sticker.ModifyBy = modifier;
+            sticker.ModifyId = operatorId;
+        }
+
+        var affected = await _stickerRepository.UpdateRangeAsync(stickers);
+
+        var groupIds = stickers.Select(s => s.GroupId).Distinct().ToList();
+        foreach (var groupId in groupIds)
+        {
+            await InvalidateGroupsCacheByGroupIdAsync(groupId);
+        }
+
+        return affected;
+    }
+
     private async Task<(string imageUrl, string? thumbnailUrl, bool isAnimated)> ResolveStickerImageDataAsync(
         long? attachmentId,
         string? imageUrl,
         string? thumbnailUrl,
-        bool isAnimated)
+        bool isAnimated,
+        string? groupCode = null,
+        string? stickerCode = null)
     {
         var resolvedImageUrl = imageUrl?.Trim();
         var resolvedThumbnailUrl = thumbnailUrl?.Trim();
@@ -524,7 +784,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             if (string.IsNullOrWhiteSpace(resolvedThumbnailUrl))
             {
                 resolvedThumbnailUrl = !string.IsNullOrWhiteSpace(attachment.ThumbnailPath)
-                    ? attachment.ThumbnailPath
+                    ? ResolveFileUrl(attachment.ThumbnailPath)
                     : attachment.Url;
             }
 
@@ -532,6 +792,17 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             {
                 resolvedAnimated = string.Equals(attachment.Extension, ".gif", StringComparison.OrdinalIgnoreCase)
                                    || string.Equals(attachment.MimeType, "image/gif", StringComparison.OrdinalIgnoreCase);
+            }
+
+            if (string.IsNullOrWhiteSpace(attachment.ThumbnailPath) &&
+                !string.IsNullOrWhiteSpace(groupCode) &&
+                !string.IsNullOrWhiteSpace(stickerCode))
+            {
+                var generatedThumbnailUrl = await TryGenerateStickerThumbnailAsync(attachment, groupCode, stickerCode);
+                if (!string.IsNullOrWhiteSpace(generatedThumbnailUrl))
+                {
+                    resolvedThumbnailUrl = generatedThumbnailUrl;
+                }
             }
         }
 
@@ -541,6 +812,60 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         }
 
         return (resolvedImageUrl, resolvedThumbnailUrl, resolvedAnimated);
+    }
+
+    private async Task<string?> TryGenerateStickerThumbnailAsync(Attachment attachment, string groupCode, string stickerCode)
+    {
+        if (string.IsNullOrWhiteSpace(attachment.StoragePath))
+        {
+            return null;
+        }
+
+        try
+        {
+            if (!await _fileStorage.ExistsAsync(attachment.StoragePath))
+            {
+                return null;
+            }
+
+            await using var sourceStream = await _fileStorage.DownloadAsync(attachment.StoragePath);
+            if (sourceStream == null)
+            {
+                return null;
+            }
+
+            var thumbnailRelativePath = $"stickers/thumbnails/{groupCode}/{stickerCode}.jpg";
+            var thumbnailFullPath = _fileStorage.GetFullPath(thumbnailRelativePath);
+            var directory = Path.GetDirectoryName(thumbnailFullPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            var result = await _imageProcessor.GenerateThumbnailAsync(sourceStream, thumbnailFullPath, 96, 96, 85);
+            if (!result.Success)
+            {
+                _logger.LogWarning("生成表情缩略图失败：AttachmentId={AttachmentId}, Error={Error}", attachment.Id, result.ErrorMessage);
+                return null;
+            }
+
+            return _fileStorage.GetFileUrl(thumbnailRelativePath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "生成表情缩略图异常，AttachmentId={AttachmentId}", attachment.Id);
+            return null;
+        }
+    }
+
+    private string ResolveFileUrl(string pathOrUrl)
+    {
+        if (Uri.TryCreate(pathOrUrl, UriKind.Absolute, out _))
+        {
+            return pathOrUrl;
+        }
+
+        return _fileStorage.GetFileUrl(pathOrUrl);
     }
 
     private async Task InvalidateGroupsCacheByGroupIdAsync(long groupId)

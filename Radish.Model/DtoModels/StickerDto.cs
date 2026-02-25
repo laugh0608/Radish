@@ -119,3 +119,47 @@ public class RecordStickerUseDto
     [StringLength(200, ErrorMessage = "emojiValue 长度不能超过200个字符")]
     public string EmojiValue { get; set; } = string.Empty;
 }
+
+/// <summary>批量新增表情 DTO</summary>
+public class BatchAddStickersDto
+{
+    [Required(ErrorMessage = "分组ID不能为空")]
+    public long GroupId { get; set; }
+
+    [Required(ErrorMessage = "表情列表不能为空")]
+    public List<BatchAddStickerItemDto> Stickers { get; set; } = new();
+}
+
+/// <summary>批量新增表情项 DTO</summary>
+public class BatchAddStickerItemDto
+{
+    [Required(ErrorMessage = "附件ID不能为空")]
+    public long AttachmentId { get; set; }
+
+    [Required(ErrorMessage = "表情标识符不能为空")]
+    [StringLength(100, ErrorMessage = "表情标识符不能超过100个字符")]
+    public string Code { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "表情名称不能为空")]
+    [StringLength(200, ErrorMessage = "表情名称不能超过200个字符")]
+    public string Name { get; set; } = string.Empty;
+
+    public bool AllowInline { get; set; } = true;
+}
+
+/// <summary>批量更新排序 DTO</summary>
+public class BatchUpdateStickerSortDto
+{
+    [Required(ErrorMessage = "排序列表不能为空")]
+    public List<StickerSortItemDto> Items { get; set; } = new();
+}
+
+/// <summary>排序项 DTO</summary>
+public class StickerSortItemDto
+{
+    [Required(ErrorMessage = "表情ID不能为空")]
+    public long Id { get; set; }
+
+    [Range(0, int.MaxValue, ErrorMessage = "排序值不能为负数")]
+    public int Sort { get; set; }
+}

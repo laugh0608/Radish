@@ -294,6 +294,110 @@ public class StickerController : ControllerBase
         }
     }
 
+    /// <summary>批量新增表情（管理端）</summary>
+    [HttpPost]
+    [Authorize(Policy = "SystemOrAdmin")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> BatchAddStickers([FromBody] BatchAddStickersDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "请求参数验证失败"
+            };
+        }
+
+        try
+        {
+            var result = await _stickerService.BatchAddStickersAsync(request, _httpContextUser.UserId, _httpContextUser.UserName);
+
+            if (result.VoConflicts.Count > 0)
+            {
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = 409,
+                    Code = "BatchCodeConflict",
+                    MessageInfo = "存在重复标识符，请修改后重试",
+                    ResponseData = result
+                };
+            }
+
+            if (result.VoFailedItems.Count > 0)
+            {
+                return new MessageModel
+                {
+                    IsSuccess = false,
+                    StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
+                    Code = "ImageProcessFailed",
+                    MessageInfo = "缩略图生成失败，请稍后重试",
+                    ResponseData = result
+                };
+            }
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "批量保存成功",
+                ResponseData = result
+            };
+        }
+        catch (ArgumentException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = ex.Message,
+                Code = "StickerGroupNotFound"
+            };
+        }
+    }
+
+    /// <summary>批量更新表情排序（管理端）</summary>
+    [HttpPut]
+    [Authorize(Policy = "SystemOrAdmin")]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> BatchUpdateSort([FromBody] BatchUpdateStickerSortDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "请求参数验证失败"
+            };
+        }
+
+        var updatedCount = await _stickerService.BatchUpdateSortAsync(request.Items, _httpContextUser.UserId, _httpContextUser.UserName);
+        var result = new StickerBatchUpdateSortResultVo
+        {
+            VoUpdatedCount = updatedCount
+        };
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "排序已更新",
+            ResponseData = result
+        };
+    }
+
     /// <summary>更新单个表情（管理端）</summary>
     [HttpPut("{id:long}")]
     [Authorize(Policy = "SystemOrAdmin")]
