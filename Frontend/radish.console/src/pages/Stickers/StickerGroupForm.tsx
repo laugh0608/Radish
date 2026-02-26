@@ -4,10 +4,16 @@ import {
   Form,
   AntInput as Input,
   InputNumber,
+  Button,
+  Space,
   Switch,
   AntSelect as Select,
   message,
 } from '@radish/ui';
+import { Upload } from 'antd';
+import type { UploadProps } from 'antd';
+import { getApiClientConfig } from '@radish/http';
+import { PlusOutlined } from '@radish/ui';
 import {
   checkGroupCode,
   createStickerGroup,
@@ -29,6 +35,123 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [codeChecking, setCodeChecking] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const coverImageUrl = Form.useWatch('coverImageUrl', form) || '';
+
+  const uploadCoverImage = (file: File, onProgress: (percent: number) => void): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const config = getApiClientConfig();
+      const normalizedBaseUrl = (config.baseUrl || '').trim().replace(/\/$/, '');
+      if (!normalizedBaseUrl) {
+        reject(new Error('API baseUrl 未配置'));
+        return;
+      }
+
+      const uploadUrl = `${normalizedBaseUrl}/api/v1/Attachment/UploadImage`;
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', uploadUrl, true);
+
+      const token = config.getToken?.();
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+
+      xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable) {
+          return;
+        }
+
+        const percent = Math.round((event.loaded / event.total) * 100);
+        onProgress(Math.min(100, Math.max(0, percent)));
+      };
+
+      xhr.onerror = () => {
+        reject(new Error('封面图上传失败，请检查网络'));
+      };
+
+      xhr.onload = () => {
+        if (xhr.status < 200 || xhr.status >= 300) {
+          reject(new Error(`封面图上传失败（HTTP ${xhr.status}）`));
+          return;
+        }
+
+        let payload: Record<string, unknown> | null = null;
+        try {
+          payload = JSON.parse(xhr.responseText) as Record<string, unknown>;
+        } catch {
+          reject(new Error('封面图上传响应解析失败'));
+          return;
+        }
+
+        const isSuccess = Boolean(payload.isSuccess ?? payload.IsSuccess);
+        const messageText = String(payload.messageInfo ?? payload.MessageInfo ?? '封面图上传失败');
+        if (!isSuccess) {
+          reject(new Error(messageText));
+          return;
+        }
+
+        const responseData = (payload.responseData ?? payload.ResponseData) as Record<string, unknown> | undefined;
+        const uploadedUrl = String(responseData?.voUrl ?? responseData?.VoUrl ?? responseData?.url ?? '');
+        if (!uploadedUrl) {
+          reject(new Error('封面图上传成功但未返回 URL'));
+          return;
+        }
+
+        resolve(uploadedUrl);
+      };
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('businessType', 'StickerCover');
+      formData.append('generateThumbnail', 'true');
+      formData.append('removeExif', 'true');
+      xhr.send(formData);
+    });
+  };
+
+  const handleCoverUpload: UploadProps['customRequest'] = async (options) => {
+    const file = options.file;
+    if (!(file instanceof File)) {
+      options.onError?.(new Error('无效文件'));
+      return;
+    }
+
+    const isImage = file.type
+      ? file.type.startsWith('image/')
+      : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+    if (!isImage) {
+      const error = new Error('仅支持上传图片文件');
+      message.error(error.message);
+      options.onError?.(error);
+      return;
+    }
+
+    const isLt5M = file.size / 1024 / 1024 <= 5;
+    if (!isLt5M) {
+      const error = new Error('封面图大小不能超过 5MB');
+      message.error(error.message);
+      options.onError?.(error);
+      return;
+    }
+
+    try {
+      setCoverUploading(true);
+      const uploadedUrl = await uploadCoverImage(file, (percent) => {
+        options.onProgress?.({ percent });
+      });
+
+      form.setFieldValue('coverImageUrl', uploadedUrl);
+      options.onSuccess?.({ url: uploadedUrl });
+      message.success('封面图上传成功');
+    } catch (error) {
+      const uploadError = error instanceof Error ? error : new Error('封面图上传失败');
+      options.onError?.(uploadError);
+      message.error(uploadError.message);
+      log.error('StickerGroupForm', '上传封面图失败:', error);
+    } finally {
+      setCoverUploading(false);
+    }
+  };
 
   const handleCodeBlur = async () => {
     if (mode !== 'create') {
@@ -175,12 +298,68 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
           <Input.TextArea rows={3} maxLength={500} showCount placeholder="请输入分组描述（可选）" />
         </Form.Item>
 
-        <Form.Item
-          name="coverImageUrl"
-          label="封面图地址"
-          rules={[{ max: 500, message: '封面图地址不能超过500个字符' }]}
-        >
-          <Input placeholder="请输入封面图 URL（可选）" />
+        <Form.Item label="封面图">
+          <Form.Item
+            name="coverImageUrl"
+            noStyle
+            rules={[{ max: 500, message: '封面图地址不能超过500个字符' }]}
+          >
+            <Input style={{ display: 'none' }} />
+          </Form.Item>
+          <Space direction="vertical" style={{ width: '100%' }} size={10}>
+            <div
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: 10,
+                border: '1px solid #f0f0f0',
+                background: '#fafafa',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#999',
+                fontSize: 12,
+              }}
+            >
+              {coverImageUrl ? (
+                <img
+                  src={coverImageUrl}
+                  alt="分组封面预览"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span>暂无封面</span>
+              )}
+            </div>
+
+            <Space>
+              <Upload
+                accept="image/*"
+                showUploadList={false}
+                customRequest={handleCoverUpload}
+                disabled={coverUploading || loading}
+              >
+                <Button icon={<PlusOutlined />} disabled={coverUploading || loading}>
+                  {coverUploading ? '上传中...' : '上传封面图'}
+                </Button>
+              </Upload>
+              <Button
+                disabled={!coverImageUrl || coverUploading || loading}
+                onClick={() => {
+                  form.setFieldValue('coverImageUrl', '');
+                }}
+              >
+                清空封面
+              </Button>
+            </Space>
+
+            <Input
+              placeholder="上传后自动回填封面 URL"
+              value={coverImageUrl}
+              readOnly
+            />
+          </Space>
         </Form.Item>
 
         <Form.Item
