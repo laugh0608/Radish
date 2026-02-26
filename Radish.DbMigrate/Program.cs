@@ -144,13 +144,17 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
     var roleTableExists = db.DbMaintenance.IsAnyTable("Role", false);
     var shopTableExists = db.DbMaintenance.IsAnyTable("ShopProductCategory", false);
     var userTimePreferenceTableExists = db.DbMaintenance.IsAnyTable("UserTimePreference", false);
+    var stickerGroupTableExists = db.DbMaintenance.IsAnyTable("StickerGroup", false);
+    var stickerTableExists = db.DbMaintenance.IsAnyTable("Sticker", false);
 
-    if (!roleTableExists || !shopTableExists || !userTimePreferenceTableExists)
+    if (!roleTableExists || !shopTableExists || !userTimePreferenceTableExists || !stickerGroupTableExists || !stickerTableExists)
     {
         var missingTables = new List<string>();
         if (!roleTableExists) missingTables.Add("Role");
         if (!shopTableExists) missingTables.Add("ShopProductCategory");
         if (!userTimePreferenceTableExists) missingTables.Add("UserTimePreference");
+        if (!stickerGroupTableExists) missingTables.Add("StickerGroup");
+        if (!stickerTableExists) missingTables.Add("Sticker");
 
         Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到表结构缺失 ({string.Join(", ", missingTables)})，自动执行 init...");
         await RunInitAsync(services, configuration, environment);
@@ -162,6 +166,7 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
     }
 
     Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
+    Console.WriteLine("[Radish.DbMigrate] 表情包种子策略：当前不预置默认分组/表情，仅确保表结构可用。");
     await InitialDataSeeder.SeedAsync(db, services);
 }
 

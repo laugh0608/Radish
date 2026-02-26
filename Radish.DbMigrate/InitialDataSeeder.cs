@@ -38,6 +38,7 @@ internal static class InitialDataSeeder
         Console.WriteLine("  - 用户时区偏好");
         Console.WriteLine("  - 角色-API 权限/论坛分类/标签");
         Console.WriteLine("  - 等级配置/商城分类/商品");
+        Console.WriteLine("  - 表情包：不预置默认分组/表情（仅由 init 保证表结构）");
     }
 
     /// <summary>初始化用户时区偏好（默认值来自 Time:DefaultTimeZoneId）</summary>

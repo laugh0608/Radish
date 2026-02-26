@@ -1,4 +1,6 @@
 using AutoMapper;
+using System.Linq.Expressions;
+using Radish.Common;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -90,13 +92,30 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
         }
 
         keyword = keyword?.Trim();
+        Expression<Func<Tag, bool>> whereExpression = t => includeDeleted || !t.IsDeleted;
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var keywordValue = keyword;
+            whereExpression = whereExpression.And(t =>
+                t.Name.Contains(keywordValue) ||
+                (t.Description != null && t.Description.Contains(keywordValue)));
+        }
+
+        if (isEnabled.HasValue)
+        {
+            var enabledValue = isEnabled.Value;
+            whereExpression = whereExpression.And(t => t.IsEnabled == enabledValue);
+        }
+
+        if (isFixed.HasValue)
+        {
+            var fixedValue = isFixed.Value;
+            whereExpression = whereExpression.And(t => t.IsFixed == fixedValue);
+        }
 
         var (data, totalCount) = await QueryPageAsync(
-            whereExpression: t =>
-                (includeDeleted || !t.IsDeleted) &&
-                (string.IsNullOrWhiteSpace(keyword) || t.Name.Contains(keyword) || t.Description.Contains(keyword)) &&
-                (!isEnabled.HasValue || t.IsEnabled == isEnabled.Value) &&
-                (!isFixed.HasValue || t.IsFixed == isFixed.Value),
+            whereExpression: whereExpression,
             pageIndex: pageIndex,
             pageSize: pageSize,
             orderByExpression: t => t.SortOrder,
