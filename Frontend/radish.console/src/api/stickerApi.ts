@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPost, apiPut } from '@radish/http';
+import { apiDelete, apiFetch, apiGet, apiPost, apiPut } from '@radish/http';
 
 export interface StickerGroupVo {
   voId: number;
@@ -125,8 +125,47 @@ export interface StickerBatchUpdateSortResultVo {
   voUpdatedCount: number;
 }
 
+export interface BatchAddStickersSubmitResponse {
+  ok: boolean;
+  statusCode?: number;
+  code?: string;
+  message?: string;
+  data?: StickerBatchAddResultVo;
+}
+
+interface RawMessageModel<T> {
+  isSuccess?: boolean;
+  IsSuccess?: boolean;
+  statusCode?: number;
+  StatusCode?: number;
+  code?: string;
+  Code?: string;
+  messageInfo?: string;
+  MessageInfo?: string;
+  responseData?: T;
+  ResponseData?: T;
+}
+
 function throwRequestError(message: string, fallback: string): never {
   throw new Error(message || fallback);
+}
+
+function readRawField<T>(payload: RawMessageModel<unknown> | null, camelKey: string, pascalKey: string): T | undefined {
+  if (!payload) {
+    return undefined;
+  }
+
+  const camelValue = (payload as Record<string, unknown>)[camelKey];
+  if (camelValue !== undefined) {
+    return camelValue as T;
+  }
+
+  const pascalValue = (payload as Record<string, unknown>)[pascalKey];
+  if (pascalValue !== undefined) {
+    return pascalValue as T;
+  }
+
+  return undefined;
 }
 
 export async function getAdminStickerGroups(): Promise<StickerGroupVo[]> {
@@ -248,6 +287,43 @@ export async function batchAddStickers(request: BatchAddStickersRequest): Promis
   }
 
   return response.data;
+}
+
+export async function batchAddStickersWithDetails(request: BatchAddStickersRequest): Promise<BatchAddStickersSubmitResponse> {
+  const response = await apiFetch('/api/v1/Sticker/BatchAddStickers', {
+    method: 'POST',
+    withAuth: true,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(request),
+  });
+
+  let payload: RawMessageModel<StickerBatchAddResultVo> | null = null;
+  try {
+    payload = (await response.json()) as RawMessageModel<StickerBatchAddResultVo>;
+  } catch {
+    return {
+      ok: false,
+      statusCode: response.status,
+      message: `HTTP ${response.status} ${response.statusText}`,
+    };
+  }
+
+  const ok = Boolean(readRawField<boolean>(payload, 'isSuccess', 'IsSuccess'));
+  const data = readRawField<StickerBatchAddResultVo>(payload, 'responseData', 'ResponseData');
+  const code = readRawField<string>(payload, 'code', 'Code');
+  const message = readRawField<string>(payload, 'messageInfo', 'MessageInfo')
+    || `HTTP ${response.status} ${response.statusText}`;
+  const statusCode = readRawField<number>(payload, 'statusCode', 'StatusCode') ?? response.status;
+
+  return {
+    ok,
+    statusCode,
+    code,
+    message,
+    data,
+  };
 }
 
 export async function batchUpdateStickerSort(request: BatchUpdateStickerSortRequest): Promise<StickerBatchUpdateSortResultVo> {

@@ -28,6 +28,7 @@ import {
 import { ROUTES } from '@/router';
 import { log } from '@/utils/logger';
 import { StickerForm } from './StickerForm';
+import { StickerBatchUploadModal } from './StickerBatchUploadModal';
 
 const getPreviewUrl = (sticker: StickerVo) => sticker.voThumbnailUrl || sticker.voImageUrl;
 
@@ -46,6 +47,7 @@ export const StickerList = () => {
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingSticker, setEditingSticker] = useState<StickerVo | undefined>(undefined);
+  const [batchModalVisible, setBatchModalVisible] = useState(false);
 
   const loadStickers = async () => {
     if (parsedGroupId <= 0) {
@@ -293,6 +295,13 @@ export const StickerList = () => {
           >
             新增表情
           </Button>
+          <Button
+            onClick={() => {
+              setBatchModalVisible(true);
+            }}
+          >
+            批量上传
+          </Button>
         </Space>
       </div>
 
@@ -324,6 +333,18 @@ export const StickerList = () => {
         onCancel={() => setFormVisible(false)}
         onSuccess={() => {
           setFormVisible(false);
+          void loadStickers();
+        }}
+      />
+
+      <StickerBatchUploadModal
+        visible={batchModalVisible}
+        groupId={parsedGroupId}
+        onCancel={() => {
+          setBatchModalVisible(false);
+        }}
+        onSuccess={() => {
+          setBatchModalVisible(false);
           void loadStickers();
         }}
       />
