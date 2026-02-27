@@ -121,6 +121,10 @@
   margin-bottom: 12px;
 }
 
+.stickerPicker {
+  flex: 0 0 auto;
+}
+
 .toolbarButton {
   display: flex;
   align-items: center;

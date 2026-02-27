@@ -93,6 +93,17 @@
 - ✅ `npm exec --workspace=radish.client -- tsc -b` 通过。
 - ⚠️ `npm run build --workspace=radish.client` 受环境依赖阻塞（`@rolldown/binding-linux-x64-gnu` 缺失），与本次业务改动无直接耦合。
 
+### 评论框接入补充（2026-02-27）
+
+- **CreateCommentForm 接入 `StickerPicker`（insert 模式）**：
+  - 评论输入框工具栏支持插入 Unicode 与 Sticker，生成 `sticker://` 语法。
+  - 与 Forum 侧 `RecordUse` 上报链路打通。
+- **评论渲染支持 `sticker://`**：
+  - `CommentNode` 新增 `sticker://group/code` 解析与内联渲染（`stickerMap` 优先，hash fallback 次之）。
+  - 继续保留原有图片网格 + 灯箱链路，非 sticker 图片渲染行为不变。
+- **数据下发收口**：
+  - `PostDetailContentView` 统一加载 `stickerGroups/stickerMap`，传递给 `CommentTree` 与 `CreateCommentForm`，避免重复请求。
+
 ## 本周总结
 
 - **表情包系统进入实现阶段**：完成设计文档后，已落地后端 Phase 1 首版与 Console 首版管理能力。

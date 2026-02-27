@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import type { CommentNode as CommentNodeType } from '@/api/forum';
 import { CommentNode } from './CommentNode';
 import styles from './CommentTree.module.css';
@@ -18,6 +19,7 @@ interface CommentTreeProps {
   onReplyComment?: (commentId: number, authorName: string) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   onSortChange?: (sortBy: 'newest' | 'hottest') => void;
+  stickerMap?: MarkdownStickerMap;
 }
 
 export const CommentTree = ({
@@ -34,7 +36,8 @@ export const CommentTree = ({
   onLikeComment,
   onReplyComment,
   onLoadMoreChildren,
-  onSortChange
+  onSortChange,
+  stickerMap,
 }: CommentTreeProps) => {
   // 找出所有神评（后端标记的）
   const godComments = useMemo(() => {
@@ -114,6 +117,7 @@ export const CommentTree = ({
             onLike={onLikeComment}
             onReply={onReplyComment}
             onLoadMoreChildren={onLoadMoreChildren}
+            stickerMap={stickerMap}
           />
         ))}
       </div>

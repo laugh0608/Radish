@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { log } from '@/utils/logger';
+import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import type { CommentNode as CommentNodeType } from '@/api/forum';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
@@ -19,23 +20,20 @@ interface CommentNodeProps {
   onLike?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReply?: (commentId: number, authorName: string) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
+  stickerMap?: MarkdownStickerMap;
 }
 
 /**
  * 将评论内容中的@用户名高亮显示
  */
-const highlightMentions = (content: string): string => {
-  // 转义HTML特殊字符以防止XSS攻击
-  const escapeHtml = (text: string): string => {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  };
+const escapeHtml = (text: string): string => {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+};
 
-  const escapedContent = escapeHtml(content);
-
-  // 替换@用户名为高亮样式
-  return escapedContent.replace(/@([^\s@]+)/g, '<span class="mention">@$1</span>');
+const highlightMentions = (escapedText: string): string => {
+  return escapedText.replace(/@([^\s@]+)/g, '<span class="mention">@$1</span>');
 };
 
 interface CommentImageItem {
@@ -43,6 +41,58 @@ interface CommentImageItem {
   fullSrc: string;
   alt: string;
 }
+
+interface ParsedStickerUri {
+  groupCode: string;
+  stickerCode: string;
+  fallbackImageUrl?: string;
+  fallbackThumbnailUrl?: string;
+}
+
+const normalizeStickerCode = (value: string): string => value.trim().toLowerCase();
+
+const normalizeStickerKey = (groupCode: string, stickerCode: string): string =>
+  `${normalizeStickerCode(groupCode)}/${normalizeStickerCode(stickerCode)}`;
+
+const isSafeRemoteUrl = (value?: string | null): value is string =>
+  typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+
+const parseStickerUri = (rawSrc: string): ParsedStickerUri | null => {
+  const src = rawSrc.trim();
+  if (!src.startsWith('sticker://')) {
+    return null;
+  }
+
+  const withoutProtocol = src.slice('sticker://'.length);
+  const [pathPart, hashPart] = withoutProtocol.split('#');
+  const [groupCodeRaw, stickerCodeRaw] = pathPart.split('/');
+  const groupCode = decodeURIComponent(groupCodeRaw || '').trim();
+  const stickerCode = decodeURIComponent(stickerCodeRaw || '').trim();
+
+  if (!groupCode || !stickerCode) {
+    return null;
+  }
+
+  const parsed: ParsedStickerUri = {
+    groupCode,
+    stickerCode,
+  };
+
+  if (hashPart && hashPart.startsWith('radish:')) {
+    const params = new URLSearchParams(hashPart.slice('radish:'.length));
+    const image = params.get('image');
+    const thumbnail = params.get('thumbnail');
+
+    if (isSafeRemoteUrl(image)) {
+      parsed.fallbackImageUrl = image.trim();
+    }
+    if (isSafeRemoteUrl(thumbnail)) {
+      parsed.fallbackThumbnailUrl = thumbnail.trim();
+    }
+  }
+
+  return parsed;
+};
 
 const parseImageMeta = (src: string) => {
   const [baseSrc, hash] = src.split('#');
@@ -69,6 +119,7 @@ const extractCommentImages = (content: string): CommentImageItem[] => {
     const alt = match[1] || 'comment-image';
     const src = match[2];
     if (!src) continue;
+    if (parseStickerUri(src)) continue;
     const parsed = parseImageMeta(src);
     images.push({
       displaySrc: parsed.displaySrc,
@@ -80,9 +131,46 @@ const extractCommentImages = (content: string): CommentImageItem[] => {
   return images;
 };
 
-const normalizeCommentText = (content: string): string => {
-  const withoutImageMarkdown = content.replace(/!\[[^\]]*\]\([^)]+\)/g, '').trim();
-  return withoutImageMarkdown;
+const renderCommentHtml = (content: string, stickerMap?: MarkdownStickerMap): string => {
+  const regex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+  let html = '';
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = regex.exec(content)) !== null) {
+    const segment = content.slice(cursor, match.index);
+    if (segment) {
+      html += highlightMentions(escapeHtml(segment));
+    }
+
+    const alt = (match[1] || '').trim();
+    const src = (match[2] || '').trim();
+    const stickerMeta = parseStickerUri(src);
+    if (stickerMeta) {
+      const stickerKey = normalizeStickerKey(stickerMeta.groupCode, stickerMeta.stickerCode);
+      const mapped = stickerMap?.[stickerKey];
+      const resolvedSrc = mapped?.imageUrl || stickerMeta.fallbackImageUrl || stickerMeta.fallbackThumbnailUrl;
+      const stickerTitle = alt || mapped?.name || `${stickerMeta.groupCode}/${stickerMeta.stickerCode}`;
+
+      if (isSafeRemoteUrl(resolvedSrc)) {
+        const safeSrc = escapeHtml(resolvedSrc);
+        const safeTitle = escapeHtml(stickerTitle);
+        html += `<img src="${safeSrc}" alt="${safeTitle}" title="${safeTitle}" class="stickerInline" loading="lazy" draggable="false" />`;
+      } else {
+        const fallbackText = `:${stickerMeta.groupCode}/${stickerMeta.stickerCode}:`;
+        html += `<span class="stickerMissing">${escapeHtml(fallbackText)}</span>`;
+      }
+    }
+
+    cursor = regex.lastIndex;
+  }
+
+  const tail = content.slice(cursor);
+  if (tail) {
+    html += highlightMentions(escapeHtml(tail));
+  }
+
+  return html.trim();
 };
 
 export const CommentNode = ({
@@ -97,7 +185,8 @@ export const CommentNode = ({
   onViewHistory,
   onLike,
   onReply,
-  onLoadMoreChildren
+  onLoadMoreChildren,
+  stickerMap
 }: CommentNodeProps) => {
   // 判断是否是作者本人
   const isAuthor = currentUserId > 0 && String(node.voAuthorId) === String(currentUserId);
@@ -126,7 +215,7 @@ export const CommentNode = ({
   const [hasPreloadedChildren, setHasPreloadedChildren] = useState(false);
 
   const commentImages = useMemo(() => extractCommentImages(node.voContent), [node.voContent]);
-  const textContent = useMemo(() => normalizeCommentText(node.voContent), [node.voContent]);
+  const commentHtml = useMemo(() => renderCommentHtml(node.voContent, stickerMap), [node.voContent, stickerMap]);
   const replyToUserName = useMemo(() => node.voReplyToUserName?.trim() || '', [node.voReplyToUserName]);
 
   // 初始化已加载的子评论（默认时间升序）
@@ -402,7 +491,7 @@ export const CommentNode = ({
         )}
       </div>
 
-      {/* 渲染内容（纯文本，支持@用户名高亮） */}
+      {/* 渲染内容（支持 @ 高亮、图片和 sticker://） */}
       {isEditing ? (
         <div className={styles.editForm}>
           <textarea
@@ -445,10 +534,10 @@ export const CommentNode = ({
               回复 <span className={styles.replyTarget}>@{replyToUserName}</span>
             </div>
           )}
-          {textContent && (
+          {commentHtml && (
             <div
               className={styles.content}
-              dangerouslySetInnerHTML={{ __html: highlightMentions(textContent) }}
+              dangerouslySetInnerHTML={{ __html: commentHtml }}
             />
           )}
 
@@ -543,6 +632,7 @@ export const CommentNode = ({
                   onLike={onLike}
                   onReply={onReply}
                   onLoadMoreChildren={undefined} // 2级结构，子评论不再加载更多
+                  stickerMap={stickerMap}
                 />
               ))}
             </div>

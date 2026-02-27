@@ -3,6 +3,7 @@ import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
 import type { PostDetail, CommentNode } from '@/api/forum';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
+import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './PostDetailContentView.module.css';
 
 const PostDetailComponent = lazy(() =>
@@ -79,6 +80,7 @@ export const PostDetailContentView = ({
 }: PostDetailContentViewProps) => {
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
 
   useEffect(() => {
     if (replyTo) {
@@ -182,6 +184,7 @@ export const PostDetailContentView = ({
                 setIsCommentSheetOpen(true);
               }}
               onLoadMoreChildren={onLoadMoreChildren}
+              stickerMap={stickerMap}
             />
           </Suspense>
 
@@ -222,6 +225,10 @@ export const PostDetailContentView = ({
               replyTo={replyTo}
               onCancelReply={onCancelReply}
               variant="sheet"
+              stickerGroups={stickerGroups}
+              onStickerSelect={(selection) => {
+                void handleStickerSelect(selection);
+              }}
             />
           </Suspense>
         )}

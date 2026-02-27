@@ -165,6 +165,25 @@
   text-decoration: underline;
 }
 
+.content :global(.stickerInline) {
+  display: inline-block;
+  width: 2em;
+  height: 2em;
+  vertical-align: -0.5em;
+  margin: 0 0.1em;
+  border-radius: 2px;
+  object-fit: contain;
+}
+
+.content :global(.stickerMissing) {
+  display: inline-block;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  background: rgba(148, 163, 184, 0.2);
+}
+
 .actions {
   display: flex;
   align-items: center;
