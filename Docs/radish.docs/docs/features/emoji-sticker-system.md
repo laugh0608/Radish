@@ -2,9 +2,9 @@
 
 > Radish 表情包系统（表情选择器 + Reaction 回应）核心设计文档
 >
-> **版本**: v26.2.1
+> **版本**: v26.2.2
 >
-> **最后更新**: 2026.02.25
+> **最后更新**: 2026.02.27
 >
 > **关联文档**：
 > [Console 管理后台实现](./emoji-sticker-console.md) ·
@@ -29,7 +29,7 @@ Radish 表情包系统涵盖三层能力：
 - 无审核流程（省去 AuditStatus、StickerAuditList 等复杂度）
 - GIF 动图：StickerPicker 展示静止缩略图（第一帧），插入正文后渲染完整 GIF，用于 Reaction 时展示缩略图
 
-## 当前实现进度（2026-02-25，对齐代码）
+## 当前实现进度（2026-02-27，对齐代码）
 
 ### 已完成（后端）
 
@@ -49,12 +49,25 @@ Radish 表情包系统涵盖三层能力：
 - 已完成分组管理页面（列表 + 新建/编辑弹窗 + 删除）
 - 已完成分组内表情管理基础页面（列表 + 单个新增/编辑 + 删除 + 批量排序保存）
 - 已完成 `stickerApi.ts` 管理端 API 封装
+- 已完成批量上传四步流（文件选择/上传进度/确认表格/冲突修复重提）
+- 已完成分组封面图上传（上传 + 预览 + 清空，替换 URL 手填）
+
+### 已完成（Forum 第一阶段）
+
+- `@radish/ui` 已新增 `StickerPicker` 组件（insert 模式），支持分组 Tab、搜索、`AllowInline` 禁选
+- `MarkdownEditor` 已支持 `stickerGroups` / `stickerMap` / `onStickerSelect` 扩展 props
+- 发布/编辑入口已接入贴图插入：
+  - `PublishPostModal`、`EditPostModal`、`PublishPostForm`
+  - `CreateCommentForm`
+- 渲染链路已接入 `sticker://`：
+  - 帖子正文：`PostDetail` + `MarkdownRenderer`
+  - 评论正文：`CommentNode`（保留图片网格 + 灯箱）
+- 已接入 `RecordUse` 前端上报（unicode 与 sticker）
+- 已新增前端 `sticker` API 与 `useStickerCatalog`（分组缓存 + 映射转换）
 
 ### 未完成（下一阶段）
 
-- Console 批量上传四步流（Attachment 上传进度、确认表格、冲突高亮重提）
-- 分组封面图上传（当前为手填 URL）
-- `StickerPicker` / `MarkdownRenderer` `sticker://` 渲染接入（Forum 侧）
+- `StickerPicker` reaction 模式与 `ReactionBar` 正式接入
 - `Reaction` Phase 2（实体、服务、接口、UI 组件）
 
 ---
@@ -357,39 +370,34 @@ public class ReactionSummaryVo
 ```typescript
 interface MarkdownRendererProps {
   content: string;
-  // 新增：由父组件一次性拉取后向下传递，避免每个实例单独请求
-  stickerGroups?: StickerGroupData[];
-}
-
-interface StickerGroupData {
-  code: string;
-  stickers: Array<{
-    code: string;
-    imageUrl: string;      // GIF 时为完整动图 URL
-    thumbnailUrl?: string; // GIF 时为第一帧静止图
-    isAnimated: boolean;
-    allowInline: boolean;
+  // 当前实现：上层已归一化后的映射，key = `${groupCode}/${stickerCode}`
+  stickerMap?: Record<string, {
+    imageUrl: string;
+    thumbnailUrl?: string | null;
+    name?: string | null;
   }>;
 }
 ```
 
 渲染行为：
 - `sticker://` 图片**不触发灯箱**（与普通图片区分），阻止 click 冒泡至灯箱逻辑
-- `isAnimated = true` 时：`<img src={imageUrl}>` 直接展示 GIF 动画
+- 先按 `groupCode/stickerCode` 查 `stickerMap`，命中则使用 `imageUrl`
+- 未命中时回退读取 `sticker://...#radish:image=...&thumbnail=...` 元数据
+- 两者都不可用时降级为文本占位（`:{groupCode}/{stickerCode}:`）
 - 显示尺寸规范见 [UI 规范文档](./emoji-sticker-ui-spec.md)
 
 ### 历史内容兼容策略（补充）
 
-`GetGroups` 仅用于选择器数据（启用分组 + 启用表情），不作为历史内容渲染的唯一数据源：
+当前实现采用“双通道兜底”：
 
-- 分组/表情被禁用后：**不影响已发布内容渲染**
-- 分组/表情被软删除后：默认仍可被 `sticker://` 解析并展示，避免历史帖子“表情丢失”
-- 若资源文件确实不可用：降级为 `[已下架表情: packCode/stickerCode]` 文本占位，不显示破损图
+- 写入时：插入 `sticker://group/code#radish:image=...&thumbnail=...`
+- 渲染时：优先查 `stickerMap`，未命中再走 hash fallback
+- 两者都不可用时：降级文本占位，不显示破损图
 
-实现建议：
+后续可演进（可选）：
 
 - 新增“渲染专用解析”接口（如 `BatchResolve`），支持按 `packCode/stickerCode` 批量解析
-- 帖子/评论页渲染时先走本地 `stickerGroups` 索引，未命中再走解析接口补齐
+- 帖子/评论页渲染时先走本地 `stickerMap`，未命中再走解析接口补齐
 - 解析结果可按 `pack/sticker` 做短 TTL 缓存，避免重复查库
 
 ---

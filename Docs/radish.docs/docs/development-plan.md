@@ -38,7 +38,7 @@
 
 > **当前进度**：🎉 **M10（后台管理Console）已于 2026-01-22 完成**，Console 后台管理系统具备完整的管理功能。**正式进入 M11 查漏补缺阶段**。
 >
-> **M11 查漏补缺阶段进展**（2026.02.25 更新）：
+> **M11 查漏补缺阶段进展**（2026.02.27 更新）：
 > - ✅ **萝卜坑应用核心功能100%完成**（2026-01-27）
 > - ✅ **前端代码规范优化**（2026-01-29）：
 >   - 统一使用 viewModelMapper 进行类型映射
@@ -93,10 +93,14 @@
 > - ✅ **Console 表情包管理首版落地**（2026-02-25）：
 >   - 已完成分组管理页与分组内表情管理页基础能力（列表、弹窗 CRUD、删除、批量排序保存）。
 >   - 已完成 `stickerApi.ts` 统一 API 封装与路由/菜单接入。
-> - 📝 **次日衔接任务（2026-02-26）**：
->   - 优先实现批量上传四步流（Attachment 上传进度 + 确认表格 + 冲突高亮重提）。
->   - 补齐分组封面图上传组件（替换当前 `CoverImageUrl` 手填模式）。
->   - 开始 `StickerPicker` 与 `MarkdownRenderer` `sticker://` 渲染接入（Forum 侧第一段链路）。
+> - ✅ **表情包系统 Phase 1（Forum 首段）落地**（2026-02-27）：
+>   - `@radish/ui` 已新增 `StickerPicker`（insert 模式），接入发帖/编辑帖子/评论输入框。
+>   - `MarkdownRenderer` 与评论渲染已支持 `sticker://`（`stickerMap` 优先 + `#radish:image/thumbnail` fallback）。
+>   - 已接入 `RecordUse` 前端上报链路与 `useStickerCatalog` 分组缓存。
+> - 📝 **下一步任务（2026-02-28 起）**：
+>   - 推进 `StickerPicker` reaction 模式与 `ReactionBar` 组件实现。
+>   - 开始 Reaction 后端 Phase 2（实体/服务/接口）与 Forum 集成联调。
+>   - 持续收口历史内容降级策略与移动端交互细节。
 > - ℹ️ **构建现状说明**（2026-02-25）：
 >   - 后端测试通过（`Radish.Api.Tests`）。
 >   - Console 仍有既有 TS 存量问题（`Dashboard/SystemConfig/Tags`），与本次表情包新增代码无直接耦合。
@@ -174,7 +178,7 @@
 >   - 基础设施（组件库复用、API 封装、错误处理、加载状态）
 > - 详见 [Console 实施计划](./guide/console-roadmap.md)
 >
-> **M11 查漏补缺阶段规划**（2026.01.22 启动，2026.02.25 更新）：
+> **M11 查漏补缺阶段规划**（2026.01.22 启动，2026.02.27 更新）：
 > - 🎉 **萝卜坑应用核心功能100%完成**（2026-01-27）：
 >   - ✅ 6个功能模块全部实现（账户总览、转账、交易记录、安全设置、统计分析、通知中心）
 >   - ✅ 前后端API完整集成（API客户端、Hooks、组件适配）
@@ -216,10 +220,14 @@
 >   - 后端：基础 API + 批量新增/排序 + 缓存失效 + 缩略图链路已提交。
 >   - Console：分组管理与分组内表情管理首版页面已提交。
 >   - 测试：`Radish.Api.Tests` 已通过，表情包控制器测试已补齐。
-> - 📝 **明日可直接开工任务**（2026-02-26）：
->   - Console 批量上传四步流（文件选择/上传进度/确认表格/冲突修复重提）。
->   - Attachment 上传与 Sticker 批量新增的 UI 协同（失败重试、回滚提示）。
->   - `radish.ui` 侧 `StickerPicker` 初版（insert 模式）与 Forum 编辑器接入。
+> - ✅ **表情包系统 Forum 接入首段完成**（2026-02-27）：
+>   - `PublishPostModal` / `EditPostModal` / `PublishPostForm` / `CreateCommentForm` 已接入 `StickerPicker` insert 模式。
+>   - `PostDetail` 与 `CommentNode` 已完成 `sticker://` 渲染接入。
+>   - 类型检查通过（`npm exec --workspace=radish.client -- tsc -b`）。
+> - 📝 **下一阶段任务**（2026-02-28 起）：
+>   - `StickerPicker` reaction 模式 + `ReactionBar` UI 与 API 打通。
+>   - Reaction 聚合查询与批量接口落地，完成帖子/评论回应闭环。
+>   - 补充前端回归用例（插入/渲染/降级/移动端）。
 > - ✅ **聊天室系统设计（文档）**（2026-02-24）：
 >   - 已完成后端系统设计与前端方案设计，详见 `chat-system` / `chat-frontend`
 >

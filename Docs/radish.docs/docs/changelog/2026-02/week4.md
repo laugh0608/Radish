@@ -104,6 +104,12 @@
 - **数据下发收口**：
   - `PostDetailContentView` 统一加载 `stickerGroups/stickerMap`，传递给 `CommentTree` 与 `CreateCommentForm`，避免重复请求。
 
+### 设计文档同步对齐（2026-02-27）
+
+- 已同步更新 `emoji-sticker-system.md`，将实现进度与接口/渲染说明对齐到 2026-02-27 代码状态。
+- 已同步更新 `emoji-sticker-ui-spec.md`，补充 insert 模式落地范围、`sticker://` fallback 规范与当前代码结构。
+- 已同步更新 `development-plan.md`，将“次日任务”替换为“已完成 + 下一阶段任务”，避免文档与执行顺序偏差。
+
 ## 本周总结
 
 - **表情包系统进入实现阶段**：完成设计文档后，已落地后端 Phase 1 首版与 Console 首版管理能力。
