@@ -33,16 +33,38 @@ export function UserProvider({ children }: UserProviderProps) {
       return;
     }
 
+    const tokenUserName = tokenService.getUserNameFromAccessToken(token);
+
     try {
       const response = await userApi.getCurrentUser();
       if (response.ok && response.data) {
-        setUser(response.data);
+        const resolvedUserName = response.data.voUserName?.trim() || tokenUserName || '';
+        setUser({
+          ...response.data,
+          voUserName: resolvedUserName,
+        });
       } else {
-        setUser(null);
+        if (tokenUserName) {
+          setUser({
+            voUserId: 0,
+            voUserName: tokenUserName,
+            voTenantId: 0,
+          } satisfies UserInfo);
+        } else {
+          setUser(null);
+        }
       }
     } catch (error) {
       log.error('UserContext', 'Failed to fetch user info:', error);
-      setUser(null);
+      if (tokenUserName) {
+        setUser({
+          voUserId: 0,
+          voUserName: tokenUserName,
+          voTenantId: 0,
+        } satisfies UserInfo);
+      } else {
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }

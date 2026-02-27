@@ -110,6 +110,26 @@
 - 已同步更新 `emoji-sticker-ui-spec.md`，补充 insert 模式落地范围、`sticker://` fallback 规范与当前代码结构。
 - 已同步更新 `development-plan.md`，将“次日任务”替换为“已完成 + 下一阶段任务”，避免文档与执行顺序偏差。
 
+### 论坛表情交互与 Console 登录补丁（2026-02-27 夜间）
+
+- **Console 自动登录链路补齐**：
+  - 未登录访问 `/console/` 时改为自动跳转 `login?auto=1` 并自动发起 OIDC 登录，减少手动点击一次“登录”的步骤。
+- **评论区 StickerPicker 交互修复**：
+  - 评论输入框固定展示 StickerPicker 入口；
+  - 贴纸面板支持 `left/right` 对齐，评论场景改为左对齐，修复 BottomSheet 中面板被裁切成窄竖条的问题。
+- **发帖编辑器入口收口**：
+  - `MarkdownEditor` 统一使用 `StickerPicker`，移除旧的独立 Emoji 面板分支，确保发帖/评论一致展示“Emoji + 分组 Tab”。
+- **StickerPicker 体验增强**：
+  - Tab 增加文字分组标识（如 Emoji、radish 等）；
+  - 外部点击收起事件改为 `pointerdown`（覆盖鼠标与触屏）。
+- **Console 顶栏用户名兜底**：
+  - 当 `/api/v1/User/GetUserByHttpContext` 返回空用户名或请求失败时，前端从 access token claim（`name` / `preferred_username`）兜底展示，避免出现 `Unknown`。
+
+### 当前遗留（2026-02-27 收工前）
+
+- 本轮修复后仍有部分体验细节待继续打磨，已记录为次日继续项（2026-02-28）。
+- 本次先完成“可用性修复 + 文档对齐 + 提交收口”，避免夜间继续改动引入新回归。
+
 ## 本周总结
 
 - **表情包系统进入实现阶段**：完成设计文档后，已落地后端 Phase 1 首版与 Console 首版管理能力。

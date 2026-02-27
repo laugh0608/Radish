@@ -1,4 +1,4 @@
-import { lazy, Suspense, useMemo, useState, useRef } from 'react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { KeyboardEvent, ChangeEvent, ClipboardEvent, DragEvent } from 'react';
 import { Icon } from '../Icon/Icon';
@@ -60,7 +60,6 @@ export const MarkdownEditor = ({
   onStickerSelect,
 }: MarkdownEditorProps) => {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -375,7 +374,6 @@ export const MarkdownEditor = ({
       textarea.setSelectionRange(newPos, newPos);
     }, 0);
 
-    setShowEmojiPicker(false);
     onStickerSelect?.({ type: 'unicode', emoji });
   };
 
@@ -576,43 +574,15 @@ export const MarkdownEditor = ({
           <div className={styles.toolbarDivider} />
 
           <div className={styles.toolbarGroup}>
-            {stickerGroups && stickerGroups.length > 0 && (
-              <StickerPicker
-                groups={stickerGroups}
-                mode="insert"
-                theme={theme}
-                disabled={disabled || uploading}
-                onSelect={handleStickerPickerSelect}
-                triggerTitle="插入表情包"
-              />
-            )}
-            <div className={styles.emojiPickerWrapper}>
-              <button
-                type="button"
-                className={styles.toolbarButton}
-                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                title="Emoji"
-                disabled={disabled}
-              >
-                <Icon icon="mdi:emoticon-happy-outline" size={18} />
-              </button>
-              {showEmojiPicker && (
-                <div className={styles.emojiPicker}>
-                  <div className={styles.emojiGrid}>
-                    {emojis.map((emoji, index) => (
-                      <button
-                        key={index}
-                        type="button"
-                        className={styles.emojiButton}
-                        onClick={() => insertEmoji(emoji)}
-                      >
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+            <StickerPicker
+              groups={stickerGroups || []}
+              mode="insert"
+              theme={theme}
+              disabled={disabled || uploading}
+              onSelect={handleStickerPickerSelect}
+              triggerTitle="插入表情包"
+              emojis={emojis}
+            />
           </div>
 
           <div className={styles.toolbarSpacer} />

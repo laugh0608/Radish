@@ -43,6 +43,7 @@ export interface StickerPickerProps {
   onSelect: (selection: StickerPickerSelection) => void;
   mode?: StickerPickerMode;
   theme?: 'dark' | 'light';
+  panelPlacement?: 'left' | 'right';
   disabled?: boolean;
   className?: string;
   triggerTitle?: string;
@@ -66,6 +67,7 @@ export const StickerPicker = ({
   onSelect,
   mode = 'insert',
   theme = 'dark',
+  panelPlacement = 'right',
   disabled = false,
   className = '',
   triggerTitle = '插入表情包',
@@ -112,7 +114,7 @@ export const StickerPicker = ({
       return;
     }
 
-    const handleOutsideClick = (event: MouseEvent) => {
+    const handleOutsidePointerDown = (event: PointerEvent) => {
       if (!containerRef.current) {
         return;
       }
@@ -127,10 +129,10 @@ export const StickerPicker = ({
       }
     };
 
-    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('pointerdown', handleOutsidePointerDown, true);
     window.addEventListener('keydown', handleEsc);
     return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('pointerdown', handleOutsidePointerDown, true);
       window.removeEventListener('keydown', handleEsc);
     };
   }, [open]);
@@ -213,14 +215,22 @@ export const StickerPicker = ({
       </button>
 
       {open && (
-        <div className={styles.panel}>
+        <div
+          className={`${styles.panel} ${
+            panelPlacement === 'left' ? styles.panelLeft : styles.panelRight
+          }`}
+        >
           <div className={styles.tabs}>
             <button
               type="button"
               className={`${styles.tab} ${activeTab === 'emoji' ? styles.tabActive : ''}`}
               onClick={() => setActiveTab('emoji')}
+              title="Emoji"
             >
-              <Icon icon="mdi:emoticon-happy-outline" size={16} />
+              <span className={styles.tabIcon}>
+                <Icon icon="mdi:emoticon-happy-outline" size={16} />
+              </span>
+              <span className={styles.tabLabel}>Emoji</span>
             </button>
             {normalizedGroups.map((group) => (
               <button
@@ -230,11 +240,14 @@ export const StickerPicker = ({
                 onClick={() => setActiveTab(group.code)}
                 title={group.name}
               >
-                {group.coverImageUrl ? (
-                  <img src={group.coverImageUrl} alt={group.name} className={styles.tabImage} />
-                ) : (
-                  <span className={styles.tabText}>{group.name.slice(0, 2)}</span>
-                )}
+                <span className={styles.tabIcon}>
+                  {group.coverImageUrl ? (
+                    <img src={group.coverImageUrl} alt={group.name} className={styles.tabImage} />
+                  ) : (
+                    <span className={styles.tabText}>{group.name.slice(0, 1)}</span>
+                  )}
+                </span>
+                <span className={styles.tabLabel}>{group.name}</span>
               </button>
             ))}
           </div>

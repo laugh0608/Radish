@@ -25,7 +25,7 @@ function AuthenticatedLayout() {
   const token = localStorage.getItem('access_token');
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login?auto=1" replace />;
   }
 
   return (

@@ -30,7 +30,6 @@
 .panel {
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
   width: 360px;
   border-radius: 10px;
   border: 1px solid #475569;
@@ -40,9 +39,17 @@
   overflow: hidden;
 }
 
+.panelRight {
+  right: 0;
+}
+
+.panelLeft {
+  left: 0;
+}
+
 .tabs {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 4px;
   padding: 8px;
   overflow-x: auto;
@@ -50,13 +57,17 @@
 }
 
 .tab {
-  width: 30px;
-  height: 30px;
+  min-width: 56px;
+  width: auto;
+  height: 44px;
+  padding: 4px 6px;
   border-radius: 6px;
   border: 1px solid transparent;
   background: transparent;
   color: #cbd5e1;
   display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -73,14 +84,31 @@
 }
 
 .tabImage {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   object-fit: cover;
 }
 
+.tabIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.tabLabel {
+  max-width: 100%;
+  font-size: 10px;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .tabText {
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
 }
 

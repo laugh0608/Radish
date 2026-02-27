@@ -377,17 +377,16 @@ export const CreateCommentForm = ({
           style={{ display: 'none' }}
         />
 
-        {stickerGroups.length > 0 && (
-          <StickerPicker
-            groups={stickerGroups}
-            mode="insert"
-            theme="light"
-            onSelect={handlePickerSelect}
-            disabled={!isAuthenticated || !hasPost || disabled || uploading}
-            className={styles.stickerPicker}
-            triggerTitle="插入表情包"
-          />
-        )}
+        <StickerPicker
+          groups={stickerGroups}
+          mode="insert"
+          theme="light"
+          panelPlacement="left"
+          onSelect={handlePickerSelect}
+          disabled={!isAuthenticated || !hasPost || disabled || uploading}
+          className={styles.stickerPicker}
+          triggerTitle="插入表情包"
+        />
 
         {/* 上传按钮 */}
         <button

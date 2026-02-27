@@ -12,11 +12,13 @@
 
 ---
 
-## 当前落地状态（2026-02-27）
+## 当前落地状态（2026-02-27 夜间）
 
 - ✅ `StickerPicker` insert 模式已接入 `MarkdownEditor` 与 `CreateCommentForm`
+- ✅ `MarkdownEditor` 已统一使用 `StickerPicker`，不再保留旧独立 Emoji 面板分支
 - ✅ 帖子与评论均已支持 `sticker://` 渲染（含 fallback 与降级占位）
 - ✅ 贴图选择后已接入 `RecordUse` 上报链路
+- ✅ `StickerPicker` 已支持分组文字标签与 `left/right` 面板对齐（评论场景使用左对齐）
 - ⏳ `StickerPicker` reaction 模式与 `ReactionBar` 仍在下一阶段
 
 ---
