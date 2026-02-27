@@ -6,6 +6,7 @@ import { Icon } from '@radish/ui/icon';
 import { getAllTags, getOidcLoginUrl } from '@/api/forum';
 import { useUserStore } from '@/stores/userStore';
 import { uploadImage, uploadDocument } from '@/api/attachment';
+import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './PublishPostModal.module.css';
 
 interface PublishPostModalProps {
@@ -59,6 +60,7 @@ export const PublishPostModal = ({
     return normalized === 'admin' || normalized === 'system';
   });
   const { t } = useTranslation();
+  const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
 
   // 组件打开时恢复草稿
   useEffect(() => {
@@ -396,16 +398,21 @@ export const PublishPostModal = ({
         <div className={styles.editorWrapper}>
           <Suspense fallback={<div className={styles.editorLoading}>编辑器加载中...</div>}>
             <MarkdownEditor
-            value={content}
-            onChange={setContent}
-            placeholder="帖子内容（支持 Markdown）"
-            onImageUpload={handleImageUpload}
-            onDocumentUpload={handleDocumentUpload}
-            minHeight={320}
-            className={styles.editor}
-            theme="light"
-            toolbarExtras={editorToolbarExtras}
-          />
+              value={content}
+              onChange={setContent}
+              placeholder="帖子内容（支持 Markdown）"
+              onImageUpload={handleImageUpload}
+              onDocumentUpload={handleDocumentUpload}
+              stickerGroups={stickerGroups}
+              stickerMap={stickerMap}
+              onStickerSelect={(selection) => {
+                void handleStickerSelect(selection);
+              }}
+              minHeight={320}
+              className={styles.editor}
+              theme="light"
+              toolbarExtras={editorToolbarExtras}
+            />
           </Suspense>
         </div>
 

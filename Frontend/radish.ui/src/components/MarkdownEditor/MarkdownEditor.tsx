@@ -1,7 +1,10 @@
-import { lazy, Suspense, useState, useRef } from 'react';
+import { lazy, Suspense, useMemo, useState, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { KeyboardEvent, ChangeEvent, ClipboardEvent, DragEvent } from 'react';
 import { Icon } from '../Icon/Icon';
+import { StickerPicker } from '../StickerPicker/StickerPicker';
+import type { StickerPickerGroup, StickerPickerSelection } from '../StickerPicker/StickerPicker';
+import type { MarkdownStickerMap } from '../MarkdownRenderer/MarkdownRenderer';
 import styles from './MarkdownEditor.module.css';
 
 const MarkdownRenderer = lazy(() =>
@@ -29,6 +32,12 @@ export interface MarkdownEditorProps {
    * 如果不提供，文档按钮将不显示
    */
   onDocumentUpload?: (file: File) => Promise<{ url: string; fileName: string }>;
+  /** 贴图分组（可选，传入后显示 StickerPicker） */
+  stickerGroups?: StickerPickerGroup[];
+  /** 贴图渲染映射（可选） */
+  stickerMap?: MarkdownStickerMap;
+  /** 选择贴图/emoji 后回调（可用于埋点或记录使用） */
+  onStickerSelect?: (selection: StickerPickerSelection) => void;
 }
 
 type ToolbarAction = 'bold' | 'italic' | 'strikethrough' | 'heading' | 'quote' | 'code' | 'codeblock' | 'ul' | 'ol' | 'link' | 'image' | 'document' | 'hr';
@@ -45,7 +54,10 @@ export const MarkdownEditor = ({
   toolbarExtras,
   className = '',
   onImageUpload,
-  onDocumentUpload
+  onDocumentUpload,
+  stickerGroups,
+  stickerMap,
+  onStickerSelect,
 }: MarkdownEditorProps) => {
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -78,6 +90,65 @@ export const MarkdownEditor = ({
     '💝', '💟', '☮️', '✝️', '☪️', '🕉', '☸️', '✡️',
     '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈', '♉'
   ];
+
+  const ensureStickerCode = (value: string): string => value.trim().toLowerCase();
+
+  const escapeMarkdownAlt = (value: string): string => value.replace(/[\[\]]/g, '').trim();
+
+  const buildStickerMarkdownUrl = (
+    groupCode: string,
+    stickerCode: string,
+    imageUrl?: string,
+    thumbnailUrl?: string
+  ): string => {
+    const normalizedGroupCode = ensureStickerCode(groupCode);
+    const normalizedStickerCode = ensureStickerCode(stickerCode);
+    const params = new URLSearchParams();
+
+    if (imageUrl) {
+      params.set('image', imageUrl);
+    }
+    if (thumbnailUrl) {
+      params.set('thumbnail', thumbnailUrl);
+    }
+
+    const meta = params.toString();
+    const base = `sticker://${normalizedGroupCode}/${normalizedStickerCode}`;
+    return meta ? `${base}#radish:${meta}` : base;
+  };
+
+  const mergedStickerMap = useMemo<MarkdownStickerMap | undefined>(() => {
+    if (stickerMap) {
+      return stickerMap;
+    }
+
+    if (!stickerGroups || stickerGroups.length === 0) {
+      return undefined;
+    }
+
+    const map: MarkdownStickerMap = {};
+    for (const group of stickerGroups) {
+      const groupCode = ensureStickerCode(group.code);
+      if (!groupCode) {
+        continue;
+      }
+
+      for (const sticker of group.stickers || []) {
+        const stickerCode = ensureStickerCode(sticker.code);
+        if (!stickerCode || !sticker.imageUrl) {
+          continue;
+        }
+
+        map[`${groupCode}/${stickerCode}`] = {
+          imageUrl: sticker.imageUrl,
+          thumbnailUrl: sticker.thumbnailUrl || undefined,
+          name: sticker.name,
+        };
+      }
+    }
+
+    return map;
+  }, [stickerGroups, stickerMap]);
 
   // 插入文本
   const insertText = (before: string, after: string = '', placeholder: string = '') => {
@@ -305,6 +376,32 @@ export const MarkdownEditor = ({
     }, 0);
 
     setShowEmojiPicker(false);
+    onStickerSelect?.({ type: 'unicode', emoji });
+  };
+
+  const handleStickerPickerSelect = (selection: StickerPickerSelection) => {
+    if (selection.type === 'unicode') {
+      if (selection.emoji) {
+        insertEmoji(selection.emoji);
+      }
+      return;
+    }
+
+    const groupCode = selection.groupCode?.trim();
+    const stickerCode = selection.stickerCode?.trim();
+    if (!groupCode || !stickerCode) {
+      return;
+    }
+
+    const altText = escapeMarkdownAlt(selection.stickerName || stickerCode) || stickerCode;
+    const stickerUrl = buildStickerMarkdownUrl(
+      groupCode,
+      stickerCode,
+      selection.imageUrl,
+      selection.thumbnailUrl
+    );
+    insertText(`![${altText}](${stickerUrl})`, '', '');
+    onStickerSelect?.(selection);
   };
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -479,6 +576,16 @@ export const MarkdownEditor = ({
           <div className={styles.toolbarDivider} />
 
           <div className={styles.toolbarGroup}>
+            {stickerGroups && stickerGroups.length > 0 && (
+              <StickerPicker
+                groups={stickerGroups}
+                mode="insert"
+                theme={theme}
+                disabled={disabled || uploading}
+                onSelect={handleStickerPickerSelect}
+                triggerTitle="插入表情包"
+              />
+            )}
             <div className={styles.emojiPickerWrapper}>
               <button
                 type="button"
@@ -575,7 +682,7 @@ export const MarkdownEditor = ({
           <div className={styles.preview}>
             {value ? (
               <Suspense fallback={<p className={styles.previewEmpty}>预览加载中...</p>}>
-                <MarkdownRenderer content={value} />
+                <MarkdownRenderer content={value} stickerMap={mergedStickerMap} />
               </Suspense>
             ) : (
               <p className={styles.previewEmpty}>没有内容可预览</p>

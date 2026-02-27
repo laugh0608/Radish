@@ -64,6 +64,35 @@
 - **已完成**：T1。
 - **待继续**：T2（分组封面图上传组件）、T3（`StickerPicker` insert 模式 + Forum `sticker://` 渲染链路）。
 
+## 2026-02-27 (周五)
+
+### T2 收口确认：分组封面图上传组件
+
+- **分组封面图上传链路确认可用**：`StickerGroupForm` 已采用上传 + 预览 + 清空模式，替换 `CoverImageUrl` 手填路径。
+- **上传约束完整**：图片类型校验、5MB 大小限制、上传进度回传与失败提示已具备。
+
+### T3 首段落地：StickerPicker（insert）+ `sticker://` 渲染链路
+
+- **`@radish/ui` 新增 `StickerPicker` 组件（insert 模式）**：
+  - 支持分组 Tab、关键词过滤、Unicode/Sticker 选择与 `allowInline=false` 禁选态。
+- **`MarkdownEditor` 接入贴图插入能力**：
+  - 新增 `stickerGroups` / `stickerMap` / `onStickerSelect` 扩展 props。
+  - 选择 Sticker 后插入 `![name](sticker://group/code#radish:image=...&thumbnail=...)`，保留历史内容 fallback 渲染信息。
+- **`MarkdownRenderer` 扩展 `sticker://` 渲染**：
+  - 支持 `sticker://group/code` 解析；
+  - 优先命中 `stickerMap`，未命中时回退 `#radish:image/thumbnail`；
+  - 正文按 inline sticker 样式渲染，不触发图片灯箱。
+- **Forum 侧接入第一段链路**：
+  - 新增 `api/sticker.ts` 与 `useStickerCatalog`（分组加载、渲染映射、`RecordUse` 上报）。
+  - 发布/编辑入口已接入 `StickerPicker`：`PublishPostModal`、`EditPostModal`、`PublishPostForm`。
+  - 帖子详情 `PostDetail` 已接入 `MarkdownRenderer` 的 `stickerMap`，形成“插入 -> 渲染”闭环。
+
+### 验证状态（2026-02-27）
+
+- ✅ `npm run type-check --workspace=@radish/ui` 通过。
+- ✅ `npm exec --workspace=radish.client -- tsc -b` 通过。
+- ⚠️ `npm run build --workspace=radish.client` 受环境依赖阻塞（`@rolldown/binding-linux-x64-gnu` 缺失），与本次业务改动无直接耦合。
+
 ## 本周总结
 
 - **表情包系统进入实现阶段**：完成设计文档后，已落地后端 Phase 1 首版与 Console 首版管理能力。

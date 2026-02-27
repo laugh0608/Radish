@@ -19,6 +19,7 @@
     "./bottom-sheet": "./src/components/BottomSheet/BottomSheet.tsx",
     "./markdown-editor": "./src/components/MarkdownEditor/MarkdownEditor.tsx",
     "./markdown-renderer": "./src/components/MarkdownRenderer/MarkdownRenderer.tsx",
+    "./sticker-picker": "./src/components/StickerPicker/StickerPicker.tsx",
     "./image-lightbox": "./src/components/ImageLightbox/ImageLightbox.tsx",
     "./image-cropper": "./src/components/ImageCropper/ImageCropper.tsx",
     "./user-mention": "./src/components/UserMention/UserMention.tsx",

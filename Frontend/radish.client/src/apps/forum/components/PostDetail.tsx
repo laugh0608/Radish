@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import type { PostDetail as PostDetailType } from '@/api/forum';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
+import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './PostDetail.module.css';
 
 const MarkdownRenderer = lazy(() =>
@@ -33,6 +34,7 @@ export const PostDetail = ({
   onDelete,
   onViewHistory
 }: PostDetailProps) => {
+  const { stickerMap } = useStickerCatalog();
   const parsedTags = post?.voTags
     ? post.voTags
         .split(',')
@@ -71,7 +73,7 @@ export const PostDetail = ({
           {post.voViewCount !== undefined && <span> · 浏览 {post.voViewCount}</span>}
         </div>
         <Suspense fallback={<div className={styles.postBody}>正文渲染中...</div>}>
-          <MarkdownRenderer content={post.voContent} className={styles.postBody} />
+          <MarkdownRenderer content={post.voContent} className={styles.postBody} stickerMap={stickerMap} />
         </Suspense>
         {tagList.length > 0 && (
           <div className={styles.postTags}>

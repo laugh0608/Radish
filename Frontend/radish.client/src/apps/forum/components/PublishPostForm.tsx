@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { getOidcLoginUrl } from '@/api/forum';
 import { uploadImage, uploadDocument } from '@/api/attachment';
+import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './PublishPostForm.module.css';
 
 interface PublishPostFormProps {
@@ -41,6 +42,7 @@ export const PublishPostForm = ({
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
   const [imageScalePercent, setImageScalePercent] = useState<number>(75);
   const { t } = useTranslation();
+  const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
 
   // 组件加载时恢复草稿
   useEffect(() => {
@@ -206,6 +208,11 @@ export const PublishPostForm = ({
         showToolbar={true}
         onImageUpload={handleImageUpload}
         onDocumentUpload={handleDocumentUpload}
+        stickerGroups={stickerGroups}
+        stickerMap={stickerMap}
+        onStickerSelect={(selection) => {
+          void handleStickerSelect(selection);
+        }}
       />
 
       {isAuthenticated && (

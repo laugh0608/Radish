@@ -7,6 +7,7 @@ import { getAllTags, type PostDetail } from '@/api/forum';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { uploadDocument, uploadImage } from '@/api/attachment';
+import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './EditPostModal.module.css';
 
 interface EditPostModalProps {
@@ -38,6 +39,7 @@ const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: nu
 
 export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalProps) => {
   const { t } = useTranslation();
+  const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
   const roles = useUserStore(state => state.roles || []);
   const isAdmin = roles.some(role => {
     const normalized = role.trim().toLowerCase();
@@ -373,6 +375,11 @@ export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalPr
               placeholder="帖子内容（支持 Markdown）"
               onImageUpload={handleImageUpload}
               onDocumentUpload={handleDocumentUpload}
+              stickerGroups={stickerGroups}
+              stickerMap={stickerMap}
+              onStickerSelect={(selection) => {
+                void handleStickerSelect(selection);
+              }}
               minHeight={320}
               className={styles.editor}
               theme="light"
