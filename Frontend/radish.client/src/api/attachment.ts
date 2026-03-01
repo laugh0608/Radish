@@ -7,6 +7,7 @@ import { log } from '@/utils/logger';
 import { configureApiClient, getApiClientConfig, apiFetch, parseApiResponseWithI18n, type ApiResponse } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
+import { tokenService } from '@/services/tokenService';
 
 // 配置 API 客户端
 configureApiClient({
@@ -318,7 +319,7 @@ export async function uploadImage(
       xhr.open('POST', url);
 
       // 添加认证头
-      const token = window.localStorage.getItem('access_token');
+      const token = tokenService.getAccessToken();
       if (token) {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       }
@@ -404,7 +405,7 @@ export async function uploadDocument(
       xhr.open('POST', url);
 
       // 添加认证头
-      const token = window.localStorage.getItem('access_token');
+      const token = tokenService.getAccessToken();
       if (token) {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       }

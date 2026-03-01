@@ -6,6 +6,7 @@ import { Select } from '@radish/ui/select';
 import { copyToClipboard } from '@/utils/clipboard';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { deleteAttachment } from '@/api/attachment';
+import { tokenService } from '@/services/tokenService';
 import { useTranslation } from 'react-i18next';
 import styles from './UserAttachmentList.module.css';
 
@@ -72,8 +73,7 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
   const [deleteTargetId, setDeleteTargetId] = useState<string | number | null>(null);
 
   const authHeader = useMemo(() => {
-    if (typeof window === 'undefined') return undefined;
-    const token = window.localStorage.getItem('access_token');
+    const token = tokenService.getAccessToken();
     return token ? `Bearer ${token}` : undefined;
   }, []);
 

@@ -130,6 +130,26 @@
 - 本轮修复后仍有部分体验细节待继续打磨，已记录为次日继续项（2026-02-28）。
 - 本次先完成“可用性修复 + 文档对齐 + 提交收口”，避免夜间继续改动引入新回归。
 
+## 2026-03-01 (周日)
+
+### Forum 表情面板与 Console 用户信息修复
+
+- **StickerPicker Emoji 对齐修复**：修复 Emoji 按钮 hover 背景与字符偏移问题，统一居中与零内边距样式。
+- **Console 用户态刷新链路修复**：OIDC 回调后主动触发用户上下文刷新，修复个人信息页空白与右上角 `Unknown` 的问题。
+- **用户名展示兜底增强**：用户接口异常时优先从 token claim 解析用户名，减少导航栏空值。
+
+### Client/Console 认证隔离与回归修复
+
+- **Token 本地存储隔离**：`radish.client` 与 `radish.console` 分别改用命名空间键（`radish_client_*` / `radish_console_*`），避免同源下互相覆盖 `refresh_token`。
+- **认证读取统一收口**：两端业务代码统一通过 `tokenService` 读写 token，减少直接 `localStorage` 访问导致的散点风险。
+- **Console 401 跳转修正**：401 后统一跳转 `/console/login`，避免误跳到站点根路由导致落入 client。
+- **兼容策略调整**：移除 Console 对旧通用 token 键的自动迁移，避免误读 client 旧会话。
+
+### 验证状态
+
+- `npm run type-check --workspace=radish.client` 通过。
+- `npm run type-check --workspace=radish.console` 通过。
+
 ## 本周总结
 
 - **表情包系统进入实现阶段**：完成设计文档后，已落地后端 Phase 1 首版与 Console 首版管理能力。

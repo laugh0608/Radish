@@ -161,7 +161,7 @@ function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
     };
 
     if (withAuth && typeof window !== 'undefined') {
-        const token = window.localStorage.getItem('access_token');
+        const token = tokenService.getAccessToken();
         if (token) {
             (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
         }

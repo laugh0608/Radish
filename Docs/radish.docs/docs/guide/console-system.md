@@ -108,7 +108,7 @@ Console 回调页面 (/console/callback)
        ↓
 使用 code 换取 access_token
        ↓
-保存 token 到 localStorage
+保存 token 到 Console 专属本地键（`radish_console_*`）
        ↓
 跳转到 Console 首页 (仪表盘)
 ```

@@ -114,8 +114,10 @@ const handleLogout = () => {
 
 **工作流程**:
 1. 清除本地存储:
-   - `access_token`
-   - `refresh_token`
+   - `radish_client_access_token`
+   - `radish_client_refresh_token`
+   - `radish_client_token_expires_at`
+   - `radish_client_token_refresh_at`
    - `cached_user_info`
 2. 构建 OIDC 登出 URL (`/connect/endsession`)
 3. 设置参数:
@@ -126,7 +128,7 @@ const handleLogout = () => {
 
 #### hasAccessToken()
 
-**用途**: 检查是否有有效的 access_token
+**用途**: 检查是否有有效的客户端访问令牌
 
 **方法签名**:
 ```typescript
@@ -252,6 +254,7 @@ export async function getUserProfile() {
 ```typescript
 import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
 import { hasAccessToken } from '@/services/auth';
+import { tokenService } from '@/services/tokenService';
 
 let connection: HubConnection | null = null;
 
@@ -263,7 +266,7 @@ export async function connectToNotificationHub() {
   }
 
   // 获取 Token
-  const token = localStorage.getItem('access_token');
+  const token = tokenService.getAccessToken();
 
   // 创建连接
   connection = new HubConnectionBuilder()
@@ -298,7 +301,7 @@ import { tokenService } from '@/services/tokenService';
 
 configureTokenRefresh({
   refreshEndpoint: `${authServerBaseUrl}/connect/token`,
-  getRefreshToken: () => localStorage.getItem('refresh_token'),
+  getRefreshToken: () => tokenService.getRefreshToken(),
   onTokenRefreshed: (accessToken, refreshToken) => {
     tokenService.setTokenInfoFromJwt(accessToken, refreshToken);
   },
@@ -312,35 +315,36 @@ tokenService.startAutoRefresh();
 
 **说明**：
 
-- `tokenService` 会持久化 `token_expires_at` 与 `token_refresh_at`，短 Token 使用动态提前量刷新
+- `tokenService` 会持久化 `radish_client_token_expires_at` 与 `radish_client_token_refresh_at`，短 Token 使用动态提前量刷新
 - 401 响应会触发刷新并重试（通过 `apiGet/apiPost` 等统一客户端）
-- 没有 `refresh_token` 时不会自动续期，需要重新登录
+- 没有 `radish_client_refresh_token` 时不会自动续期，需要重新登录
 
 ## Token 管理最佳实践
 
 ### 1. Token 存储
 
-**推荐方式**: localStorage
+**推荐方式**: 通过 `tokenService` 管理 localStorage（不要在业务代码直接读写）
 
 ```typescript
+import { tokenService } from '@/services/tokenService';
+
 // 存储 Token
-localStorage.setItem('access_token', token);
-localStorage.setItem('refresh_token', refreshToken);
-localStorage.setItem('token_expires_at', String(expiresAt));
-localStorage.setItem('token_refresh_at', String(refreshAt));
+tokenService.setTokenInfo({
+  access_token: token,
+  refresh_token: refreshToken,
+  expires_in: expiresIn,
+  token_type: 'Bearer',
+});
 
 // 读取 Token
-const token = localStorage.getItem('access_token');
+const token = tokenService.getAccessToken();
 
 // 清除 Token
-localStorage.removeItem('access_token');
-localStorage.removeItem('refresh_token');
-localStorage.removeItem('token_expires_at');
-localStorage.removeItem('token_refresh_at');
+tokenService.clearTokens();
 ```
 
 **注意事项**:
-- localStorage 在同源下全局共享
+- localStorage 在同源下全局共享，不同前端应用必须使用命名空间键隔离
 - 不要在 URL 参数中传递 Token
 - 不要在 console.log 中输出 Token
 
@@ -348,6 +352,7 @@ localStorage.removeItem('token_refresh_at');
 
 ```typescript
 import { apiGet } from '@radish/http';
+import { tokenService } from '@/services/tokenService';
 import { redirectToLogin } from '@/services/auth';
 
 // 验证 Token 是否有效
@@ -359,7 +364,7 @@ export async function validateToken(): Promise<boolean> {
   if (!response.ok) {
     if (response.statusCode === 401) {
       // Token 无效，清除并重新登录
-      localStorage.removeItem('access_token');
+      tokenService.clearTokens();
       redirectToLogin();
     }
     return false;
@@ -375,6 +380,7 @@ export async function validateToken(): Promise<boolean> {
 
 ```typescript
 import { configureApiClient } from '@radish/http';
+import { tokenService } from '@/services/tokenService';
 import { redirectToLogin } from '@/services/auth';
 
 configureApiClient({
@@ -383,7 +389,7 @@ configureApiClient({
     // 检查是否是 401 错误
     if (error.message.includes('401')) {
       // 清除 Token
-      localStorage.removeItem('access_token');
+      tokenService.clearTokens();
       // 跳转到登录页
       redirectToLogin();
     }
@@ -400,7 +406,7 @@ import { hasAccessToken } from '@/services/auth';
 
 // 监听 storage 事件
 window.addEventListener('storage', (event) => {
-  if (event.key === 'access_token') {
+  if (event.key === 'radish_client_access_token') {
     if (!event.newValue && hasAccessToken()) {
       // 其他标签页已登出，刷新当前页面
       window.location.reload();
@@ -417,6 +423,7 @@ window.addEventListener('storage', (event) => {
 // src/routes/OidcCallback.tsx
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { tokenService } from '@/services/tokenService';
 
 export const OidcCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -457,10 +464,7 @@ export const OidcCallback: React.FC = () => {
 
       if (data.access_token) {
         // 存储 Token
-        localStorage.setItem('access_token', data.access_token);
-        if (data.refresh_token) {
-          localStorage.setItem('refresh_token', data.refresh_token);
-        }
+        tokenService.setTokenInfoFromJwt(data.access_token, data.refresh_token);
 
         // 跳转到首页
         navigate('/');
@@ -539,21 +543,20 @@ A: 有两种方式：
 
 推荐使用被动处理，简单可靠。
 
-### Q: 为什么不使用 Refresh Token？
+### Q: 为什么要使用 Refresh Token？
 
-A: 当前实现中，Refresh Token 存储在 localStorage 但未使用。原因：
-- OIDC 授权码流程已经足够安全
-- 简化前端逻辑
-- Token 过期后重新登录体验可接受
+A: 当前实现已启用 Refresh Token 自动续期，原因：
+- 减少短 Token 场景下的频繁重登
+- 降低页面长驻时的会话中断概率
+- 与 `@radish/http` 的 401 刷新重试机制配合
 
-如果需要实现 Refresh Token，可以在 Token 即将过期时调用 `/connect/token` 端点。
+### Q: 多个前端应用如何避免登录态互相污染？
 
-### Q: 如何在多个前端应用间共享认证？
+A: 不同前端应用必须同时做两件事：
+- 使用不同的 `client_id`（如 `radish-client`、`radish-console`）
+- 使用不同的本地存储键命名空间（如 `radish_client_*`、`radish_console_*`）
 
-A: 使用相同的 `client_id` 和 localStorage 存储：
-- `radish.client` 和 `radish.console` 使用不同的 `client_id`
-- 如果需要共享登录状态，可以使用相同的 `client_id`
-- 或者使用 Cookie 存储 Token（需要配置 SameSite）
+如果直接共用 `access_token/refresh_token`，会出现 A 应用登录覆盖 B 应用刷新令牌的问题。
 
 ### Q: 如何实现"记住我"功能？
 
@@ -596,13 +599,11 @@ const response = await apiGet('/api/v1/User/GetProfile', {
 
 登出时清理所有敏感数据：
 ```typescript
-export function logout(): void {
-  // 清理 Token
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
+import { tokenService } from '@/services/tokenService';
 
-  // 清理缓存的用户信息
-  localStorage.removeItem('cached_user_info');
+export function logout(): void {
+  // 清理 Token 与缓存
+  tokenService.clearTokens();
 
   // 清理其他敏感数据
   sessionStorage.clear();

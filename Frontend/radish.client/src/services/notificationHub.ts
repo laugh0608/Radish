@@ -11,8 +11,7 @@ function getHubUrl(): string {
 }
 
 function getAccessToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem('access_token');
+  return tokenService.getAccessToken();
 }
 
 /**
@@ -47,10 +46,7 @@ function isTokenValid(token: string): boolean {
         now: new Date(now * 1000).toISOString()
       });
       // 清理过期 token
-      if (typeof window !== 'undefined') {
-        window.localStorage.removeItem('access_token');
-        window.localStorage.removeItem('refresh_token');
-      }
+      tokenService.clearTokens();
       return false;
     }
 

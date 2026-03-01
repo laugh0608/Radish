@@ -4,6 +4,7 @@ import { ImageCropper } from '@radish/ui/image-cropper';
 import { uploadImage } from '@/api/attachment';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
+import { tokenService } from '@/services/tokenService';
 import styles from './AvatarUploadModal.module.css';
 
 interface AvatarUploadModalProps {
@@ -75,7 +76,7 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
 
       // 设置头像
       const attachmentId = uploadResult.voId;
-      const token = localStorage.getItem('access_token');
+      const token = tokenService.getAccessToken();
       const res = await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
         method: 'POST',
         headers: {
@@ -114,7 +115,7 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
       setUploading(true);
       setError(null);
 
-      const token = localStorage.getItem('access_token');
+      const token = tokenService.getAccessToken();
       const res = await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
         method: 'POST',
         headers: {

@@ -54,8 +54,8 @@ export function setupApiInterceptors() {
         tokenService.clearTokens();
 
         // 如果当前不在登录页，跳转到登录页
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+        if (window.location.pathname !== '/console/login') {
+          window.location.href = '/console/login';
         }
       }
     },

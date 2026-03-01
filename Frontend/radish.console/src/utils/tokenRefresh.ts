@@ -1,5 +1,6 @@
 import { log } from '@/utils/logger';
 import { getAuthServerBaseUrl } from '@/config/env';
+import { tokenService } from '@/services/tokenService';
 
 /**
  * Token 刷新管理器
@@ -34,7 +35,7 @@ class TokenRefreshManager {
    */
   private async doRefresh(): Promise<string | null> {
     try {
-      const refreshToken = localStorage.getItem('refresh_token');
+      const refreshToken = tokenService.getRefreshToken();
       if (!refreshToken) {
         throw new Error('No refresh token available');
       }
@@ -59,14 +60,21 @@ class TokenRefreshManager {
         throw new Error('Token refresh failed');
       }
 
-      const data = await response.json();
+      const data = await response.json() as {
+        access_token?: string;
+        refresh_token?: string;
+        expires_in?: number;
+        token_type?: string;
+      };
 
       // 保存新的 Token
       if (data.access_token) {
-        localStorage.setItem('access_token', data.access_token);
-      }
-      if (data.refresh_token) {
-        localStorage.setItem('refresh_token', data.refresh_token);
+        tokenService.setTokenInfo({
+          access_token: data.access_token,
+          refresh_token: data.refresh_token || refreshToken,
+          expires_in: typeof data.expires_in === 'number' ? data.expires_in : 3600,
+          token_type: data.token_type || 'Bearer',
+        });
       }
 
       return data.access_token;
@@ -74,8 +82,7 @@ class TokenRefreshManager {
       log.error('Failed to refresh token:', error);
 
       // 刷新失败，清除 Token 并跳转到登录页
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
+      tokenService.clearTokens();
 
       // 跳转到登录页
       if (typeof window !== 'undefined') {
@@ -145,7 +152,7 @@ export const tokenRefreshManager = new TokenRefreshManager();
  * 在 API 请求前检查 Token 是否即将过期，如果是则自动刷新
  */
 export async function autoRefreshTokenInterceptor(): Promise<void> {
-  const token = localStorage.getItem('access_token');
+  const token = tokenService.getAccessToken();
   if (!token) {
     return;
   }

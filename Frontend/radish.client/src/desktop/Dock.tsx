@@ -98,7 +98,7 @@ export const Dock = () => {
     };
 
     if (withAuth && typeof window !== 'undefined') {
-      const token = window.localStorage.getItem('access_token');
+      const token = tokenService.getAccessToken();
       if (token) {
         (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
       }
@@ -120,7 +120,7 @@ export const Dock = () => {
 
   const hydrateCurrentUser = async () => {
     if (typeof window === 'undefined') return;
-    const token = window.localStorage.getItem('access_token');
+    const token = tokenService.getAccessToken();
     if (!token) {
       return;
     }
@@ -151,7 +151,7 @@ export const Dock = () => {
   // 获取未读通知数量（降级轮询时使用）
   const fetchUnreadNotificationCount = async () => {
     if (typeof window === 'undefined') return;
-    const token = window.localStorage.getItem('access_token');
+    const token = tokenService.getAccessToken();
     if (!token) {
       setPollingUnreadCount(0);
       return;
@@ -187,7 +187,7 @@ export const Dock = () => {
       // 降级轮询：仅在用户已登录且 SignalR 连接失败时使用（60秒间隔）
       const pollingTimer = setInterval(() => {
         // 检查用户是否登录
-        const token = window.localStorage.getItem('access_token');
+        const token = tokenService.getAccessToken();
         if (!token) {
           return;
         }

@@ -9,6 +9,7 @@ import { Input } from '@radish/ui/input';
 import { Modal } from '@radish/ui/modal';
 import { Select } from '@radish/ui/select';
 import { useUserStore } from '@/stores/userStore';
+import { tokenService } from '@/services/tokenService';
 import { buildTimeZoneOptions, formatDateTimeByTimeZone, resolveTimeZoneId } from '@/utils/dateTime';
 import styles from './UserInfoCard.module.css';
 
@@ -67,8 +68,7 @@ interface CoinBalanceInfo {
 }
 
 function getAuthHeader(): string | null {
-  if (typeof window === 'undefined') return null;
-  const token = window.localStorage.getItem('access_token');
+  const token = tokenService.getAccessToken();
   return token ? `Bearer ${token}` : null;
 }
 

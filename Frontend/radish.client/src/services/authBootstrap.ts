@@ -1,4 +1,4 @@
-import { configureTokenRefresh, TokenRefreshErrorType } from '@radish/http';
+import { configureApiClient, configureTokenRefresh, TokenRefreshErrorType } from '@radish/http';
 import { parseApiResponse, type ApiResponse } from '@radish/http';
 import { getAuthBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
@@ -140,12 +140,13 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
   const authStore = useAuthStore.getState();
   const authServerBaseUrl = getAuthBaseUrl();
 
+  configureApiClient({
+    getToken: () => tokenService.getAccessToken(),
+  });
+
   configureTokenRefresh({
     refreshEndpoint: `${authServerBaseUrl}/connect/token`,
-    getRefreshToken: () => {
-      if (typeof window === 'undefined') return null;
-      return window.localStorage.getItem('refresh_token');
-    },
+    getRefreshToken: () => tokenService.getRefreshToken(),
     onTokenRefreshed: (accessToken, refreshToken) => {
       if (typeof window === 'undefined') return;
       tokenService.setTokenInfoFromJwt(accessToken, refreshToken);

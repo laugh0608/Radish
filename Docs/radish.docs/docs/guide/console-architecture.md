@@ -113,7 +113,7 @@ Console 使用 **Authorization Code Flow** 进行认证：
 ```
 1. 用户访问 /console/
    ↓
-2. 检查 localStorage 中的 access_token
+2. 通过 `tokenService` 检查 `radish_console_access_token`
    ↓ (无 token)
 3. 跳转到 Auth Server 登录页
    GET /connect/authorize?
@@ -134,7 +134,8 @@ Console 使用 **Authorization Code Flow** 进行认证：
          code=xxx&
          redirect_uri=https://localhost:5000/console/callback
    ↓
-7. 保存 access_token 和 refresh_token 到 localStorage
+7. 通过 `tokenService` 保存 Console 专属 token 键
+   (`radish_console_access_token` / `radish_console_refresh_token`)
    ↓
 8. 跳转到 Console 首页
 ```
@@ -142,12 +143,18 @@ Console 使用 **Authorization Code Flow** 进行认证：
 #### 4.2.2 Token 管理
 
 ```typescript
+import { tokenService } from '@/services/tokenService';
+
 // Token 存储
-localStorage.setItem('access_token', token);
-localStorage.setItem('refresh_token', refreshToken);
+tokenService.setTokenInfo({
+  access_token: token,
+  refresh_token: refreshToken,
+  expires_in: expiresIn,
+  token_type: 'Bearer',
+});
 
 // Token 读取
-const token = localStorage.getItem('access_token');
+const token = tokenService.getAccessToken();
 
 // API 请求携带 Token
 fetch(url, {
@@ -158,7 +165,7 @@ fetch(url, {
 
 // Token 过期处理
 // 1. API 返回 401 -> 尝试使用 refresh_token 刷新
-// 2. 刷新失败 -> 清除 token，跳转登录页
+// 2. 刷新失败 -> 清除 Console token，跳转 /console/login
 ```
 
 #### 4.2.3 Single Sign-Out
@@ -166,8 +173,7 @@ fetch(url, {
 ```typescript
 const handleLogout = () => {
   // 1. 清除本地 Token
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('refresh_token');
+  tokenService.clearTokens();
 
   // 2. 重定向到 OIDC endsession endpoint
   const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
@@ -186,6 +192,8 @@ const handleLogout = () => {
 
 ```typescript
 // api/base.ts
+import { tokenService } from '@/services/tokenService';
+
 interface ApiResponse<T = any> {
   ok: boolean;
   message?: string;
@@ -196,7 +204,7 @@ async function request<T>(
   url: string,
   options?: RequestInit
 ): Promise<ApiResponse<T>> {
-  const token = localStorage.getItem('access_token');
+  const token = tokenService.getAccessToken();
 
   const response = await fetch(url, {
     ...options,
@@ -209,7 +217,7 @@ async function request<T>(
 
   if (response.status === 401) {
     // Token 过期，跳转登录
-    window.location.href = '/console/';
+    window.location.href = '/console/login';
     throw new Error('Unauthorized');
   }
 

@@ -29,6 +29,7 @@ import type {
   UpdatePostRequest
 } from '@/types/forum';
 import { getApiBaseUrl } from '@/config/env';
+import { tokenService } from '@/services/tokenService';
 
 const FORUM_READ_TIMEOUT_MS = 60_000;
 
@@ -171,7 +172,7 @@ export async function getPostById(postId: number, t: TFunction): Promise<PostDet
  */
 export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest' | 'default', t: TFunction): Promise<CommentNode[]> {
   // 如果用户已登录，自动发送token以获取点赞状态
-  const hasToken = typeof window !== 'undefined' && window.localStorage.getItem('access_token');
+  const hasToken = Boolean(tokenService.getAccessToken());
 
   const response = await apiGet<CommentNode[]>(
     `/api/v1/Comment/GetCommentTree?postId=${postId}&sortBy=${sortBy}`,

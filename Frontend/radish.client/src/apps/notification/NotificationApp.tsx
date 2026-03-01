@@ -4,6 +4,7 @@ import { NotificationList } from '@radish/ui/notification-list';
 import type { NotificationItemData } from '@radish/ui/notification';
 import { notificationApi, type UserNotificationVo } from '@/api/notification';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
+import { tokenService } from '@/services/tokenService';
 import { toast } from '@radish/ui/toast';
 import styles from './NotificationApp.module.css';
 
@@ -144,7 +145,7 @@ export const NotificationApp = () => {
   useEffect(() => {
     const loadNotifications = async () => {
       if (typeof window === 'undefined') return;
-      const token = window.localStorage.getItem('access_token');
+      const token = tokenService.getAccessToken();
       if (!token) return;
 
       setLoading(true);

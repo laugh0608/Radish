@@ -17,12 +17,13 @@ import { OidcCallback } from '../pages/OidcCallback';
 import { ThemeTest } from '../pages/ThemeTest';
 import { NotFound } from '../components/NotFound';
 import { getApiBaseUrl } from '../config/env';
+import { tokenService } from '../services/tokenService';
 
 /**
  * 需要认证的布局包装器
  */
 function AuthenticatedLayout() {
-  const token = localStorage.getItem('access_token');
+  const token = tokenService.getAccessToken();
 
   if (!token) {
     return <Navigate to="/login?auto=1" replace />;

@@ -22,16 +22,22 @@ class TokenService {
   private static instance: TokenService;
   private refreshPromise: Promise<string> | null = null;
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly TOKEN_KEY = 'access_token';
-  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
-  private readonly TOKEN_EXPIRES_KEY = 'token_expires_at';
-  private readonly TOKEN_REFRESH_AT_KEY = 'token_refresh_at';
+  private readonly TOKEN_KEY = 'radish_client_access_token';
+  private readonly REFRESH_TOKEN_KEY = 'radish_client_refresh_token';
+  private readonly TOKEN_EXPIRES_KEY = 'radish_client_token_expires_at';
+  private readonly TOKEN_REFRESH_AT_KEY = 'radish_client_token_refresh_at';
+  private readonly LEGACY_TOKEN_KEY = 'access_token';
+  private readonly LEGACY_REFRESH_TOKEN_KEY = 'refresh_token';
+  private readonly LEGACY_TOKEN_EXPIRES_KEY = 'token_expires_at';
+  private readonly LEGACY_TOKEN_REFRESH_AT_KEY = 'token_refresh_at';
   private readonly MIN_REFRESH_BUFFER_SECONDS = 30;
   private readonly MAX_REFRESH_BUFFER_SECONDS = 300;
   private readonly MIN_CHECK_INTERVAL_MS = 15 * 1000;
   private readonly MAX_CHECK_INTERVAL_MS = 2 * 60 * 1000;
 
-  private constructor() {}
+  private constructor() {
+    this.migrateLegacyTokenStorage();
+  }
 
   static getInstance(): TokenService {
     if (!TokenService.instance) {
@@ -440,6 +446,29 @@ class TokenService {
 
     const interval = Math.floor(remainingMs / 2);
     return Math.min(this.MAX_CHECK_INTERVAL_MS, Math.max(this.MIN_CHECK_INTERVAL_MS, interval));
+  }
+
+  private migrateLegacyTokenStorage(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    this.migrateLegacyKey(this.LEGACY_TOKEN_KEY, this.TOKEN_KEY);
+    this.migrateLegacyKey(this.LEGACY_REFRESH_TOKEN_KEY, this.REFRESH_TOKEN_KEY);
+    this.migrateLegacyKey(this.LEGACY_TOKEN_EXPIRES_KEY, this.TOKEN_EXPIRES_KEY);
+    this.migrateLegacyKey(this.LEGACY_TOKEN_REFRESH_AT_KEY, this.TOKEN_REFRESH_AT_KEY);
+  }
+
+  private migrateLegacyKey(legacyKey: string, targetKey: string): void {
+    const targetValue = localStorage.getItem(targetKey);
+    if (targetValue !== null) {
+      return;
+    }
+
+    const legacyValue = localStorage.getItem(legacyKey);
+    if (legacyValue !== null) {
+      localStorage.setItem(targetKey, legacyValue);
+    }
   }
 }
 

@@ -4,6 +4,7 @@
  */
 import i18n from '@/i18n';
 import { getAuthBaseUrl } from '@/config/env';
+import { tokenService } from '@/services/tokenService';
 
 const CLIENT_ID = 'radish-client';
 
@@ -38,9 +39,7 @@ export function logout(): void {
   if (typeof window === 'undefined') return;
 
   // 清理本地 Token
-  window.localStorage.removeItem('access_token');
-  window.localStorage.removeItem('refresh_token');
-  window.localStorage.removeItem('cached_user_info');
+  tokenService.clearTokens();
 
   // 跳转到 OIDC endsession 端点
   const postLogoutRedirectUri = window.location.origin;
@@ -63,7 +62,7 @@ export function logout(): void {
 export function hasAccessToken(): boolean {
   if (typeof window === 'undefined') return false;
   try {
-    return Boolean(window.localStorage.getItem('access_token'));
+    return Boolean(tokenService.getAccessToken());
   } catch {
     return false;
   }

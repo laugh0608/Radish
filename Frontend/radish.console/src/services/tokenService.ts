@@ -31,11 +31,9 @@ type JwtPayload = Record<string, unknown>;
 class TokenService {
   private static instance: TokenService;
   private refreshPromise: Promise<string> | null = null;
-  private readonly TOKEN_KEY = 'access_token';
-  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
-  private readonly TOKEN_EXPIRES_KEY = 'token_expires_at';
-
-  private constructor() {}
+  private readonly TOKEN_KEY = 'radish_console_access_token';
+  private readonly REFRESH_TOKEN_KEY = 'radish_console_refresh_token';
+  private readonly TOKEN_EXPIRES_KEY = 'radish_console_token_expires_at';
 
   static getInstance(): TokenService {
     if (!TokenService.instance) {

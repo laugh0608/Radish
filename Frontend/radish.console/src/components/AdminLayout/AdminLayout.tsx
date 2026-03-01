@@ -244,7 +244,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   src={getAvatarUrl(user?.voAvatarUrl)}
                 />
                 <span className="admin-username">
-                  {loading ? '加载中...' : (user?.voUserName || 'Unknown')}
+                  {loading ? '加载中...' : (user?.voUserName || '未知用户')}
                 </span>
               </div>
             </Dropdown>

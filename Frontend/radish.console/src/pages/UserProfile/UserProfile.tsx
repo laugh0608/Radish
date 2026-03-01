@@ -17,6 +17,7 @@ import { SaveOutlined, CameraOutlined } from '@ant-design/icons';
 import { getApiBaseUrl, getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 import { userApi } from '@/api/user';
+import { tokenService } from '@/services/tokenService';
 import './UserProfile.css';
 
 interface UserProfileData {
@@ -101,7 +102,7 @@ export const UserProfile = () => {
     name: 'file',
     action: `${getApiBaseUrl()}/api/v1/Attachment/UploadImage`,
     headers: {
-      authorization: `Bearer ${localStorage.getItem('access_token')}`,
+      authorization: `Bearer ${tokenService.getAccessToken()}`,
     },
     data: {
       businessType: 'Avatar',
