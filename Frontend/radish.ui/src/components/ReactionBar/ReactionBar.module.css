@@ -22,6 +22,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  line-height: 1;
   cursor: pointer;
   transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
 }
@@ -43,6 +44,9 @@
 }
 
 .emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 18px;
   line-height: 1;
 }
@@ -98,6 +102,15 @@
   transition: all 0.15s ease;
 }
 
+.plusText {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 500;
+}
+
 .plusButton:hover:not(:disabled) {
   border-color: #2d6cdf;
   color: #2d6cdf;
@@ -127,9 +140,13 @@
 .quickEmoji {
   width: 30px;
   height: 30px;
+  padding: 0;
   border: none;
   border-radius: 8px;
   background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   font-size: 18px;
   line-height: 1;

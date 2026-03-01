@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Icon } from '../Icon/Icon';
 import {
   StickerPicker,
   type StickerPickerGroup,
@@ -158,15 +157,17 @@ export const ReactionBar = ({
       (item) => item.voEmojiType === 'unicode' && item.voEmojiValue === emoji
     );
 
-    await runToggle(
-      {
-        emojiType: 'unicode',
-        emojiValue: emoji,
-      },
-      existing?.voIsReacted ?? false
-    );
-
-    setPickerOpen(false);
+    try {
+      await runToggle(
+        {
+          emojiType: 'unicode',
+          emojiValue: emoji,
+        },
+        existing?.voIsReacted ?? false
+      );
+    } finally {
+      setPickerOpen(false);
+    }
   };
 
   const handlePickerSelect = async (selection: StickerPickerSelection) => {
@@ -179,14 +180,17 @@ export const ReactionBar = ({
         (item) => item.voEmojiType === 'unicode' && item.voEmojiValue === selection.emoji
       );
 
-      await runToggle(
-        {
-          emojiType: 'unicode',
-          emojiValue: selection.emoji,
-        },
-        existing?.voIsReacted ?? false
-      );
-      setPickerOpen(false);
+      try {
+        await runToggle(
+          {
+            emojiType: 'unicode',
+            emojiValue: selection.emoji,
+          },
+          existing?.voIsReacted ?? false
+        );
+      } finally {
+        setPickerOpen(false);
+      }
       return;
     }
 
@@ -201,14 +205,17 @@ export const ReactionBar = ({
       (item) => item.voEmojiType === 'sticker' && item.voEmojiValue === emojiValue
     );
 
-    await runToggle(
-      {
-        emojiType: 'sticker',
-        emojiValue,
-      },
-      existing?.voIsReacted ?? false
-    );
-    setPickerOpen(false);
+    try {
+      await runToggle(
+        {
+          emojiType: 'sticker',
+          emojiValue,
+        },
+        existing?.voIsReacted ?? false
+      );
+    } finally {
+      setPickerOpen(false);
+    }
   };
 
   const loginHint = '登录后可添加回应';
@@ -293,7 +300,7 @@ export const ReactionBar = ({
           aria-label="添加回应"
           disabled={loading}
         >
-          <Icon icon="mdi:plus" size={14} />
+          <span className={styles.plusText}>+</span>
         </button>
       </div>
 
