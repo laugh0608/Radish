@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { AntButton } from '@radish/ui';
 import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
@@ -7,8 +7,9 @@ import './Login.css';
 export function Login() {
   useDocumentTitle('登录');
   const [loading, setLoading] = useState(false);
+  const hasAutoLoginTriggeredRef = useRef(false);
 
-  const handleLogin = () => {
+  const handleLogin = useCallback(() => {
     setLoading(true);
 
     const redirectUri = getRedirectUri();
@@ -21,7 +22,25 @@ export function Login() {
     authorizeUrl.searchParams.set('scope', 'openid profile radish-api');
 
     window.location.href = authorizeUrl.toString();
-  };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (hasAutoLoginTriggeredRef.current) {
+      return;
+    }
+
+    const shouldAutoLogin = new URL(window.location.href).searchParams.get('auto') === '1';
+    if (!shouldAutoLogin) {
+      return;
+    }
+
+    hasAutoLoginTriggeredRef.current = true;
+    handleLogin();
+  }, [handleLogin]);
 
   return (
     <div className="login-container">

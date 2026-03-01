@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import type { CommentNode as CommentNodeType } from '@/api/forum';
 import { CommentNode } from './CommentNode';
 import styles from './CommentTree.module.css';
@@ -7,30 +8,36 @@ interface CommentTreeProps {
   comments: CommentNodeType[];
   loading?: boolean;
   hasPost?: boolean;
+  displayTimeZone: string;
   currentUserId?: number;
   pageSize?: number;
   sortBy?: 'newest' | 'hottest' | null; // null表示默认排序
   onDeleteComment?: (commentId: number) => void;
   onEditComment?: (commentId: number, newContent: string) => Promise<void>;
+  onViewCommentHistory?: (commentId: number) => void;
   onLikeComment?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment?: (commentId: number, authorName: string) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   onSortChange?: (sortBy: 'newest' | 'hottest') => void;
+  stickerMap?: MarkdownStickerMap;
 }
 
 export const CommentTree = ({
   comments,
   loading = false,
   hasPost = false,
+  displayTimeZone,
   currentUserId = 0,
   pageSize = 10,
   sortBy = null,
   onDeleteComment,
   onEditComment,
+  onViewCommentHistory,
   onLikeComment,
   onReplyComment,
   onLoadMoreChildren,
-  onSortChange
+  onSortChange,
+  stickerMap,
 }: CommentTreeProps) => {
   // 找出所有神评（后端标记的）
   const godComments = useMemo(() => {
@@ -100,14 +107,17 @@ export const CommentTree = ({
             key={comment.voId}
             node={comment}
             level={0}
+            displayTimeZone={displayTimeZone}
             currentUserId={currentUserId}
             pageSize={pageSize}
             isGodComment={comment.voIsGodComment || false}
             onDelete={onDeleteComment}
             onEdit={onEditComment}
+            onViewHistory={onViewCommentHistory}
             onLike={onLikeComment}
             onReply={onReplyComment}
             onLoadMoreChildren={onLoadMoreChildren}
+            stickerMap={stickerMap}
           />
         ))}
       </div>

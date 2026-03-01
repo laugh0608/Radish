@@ -99,6 +99,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       label: '标签管理',
     },
     {
+      key: 'stickers',
+      icon: <AppstoreOutlined />,
+      label: '表情包管理',
+    },
+    {
       key: 'system-config',
       icon: <SettingOutlined />,
       label: '系统配置',
@@ -146,6 +151,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       users: ROUTES.USERS,
       roles: ROUTES.ROLES,
       tags: ROUTES.TAGS,
+      stickers: ROUTES.STICKERS,
       'system-config': ROUTES.SYSTEM_CONFIG,
       hangfire: ROUTES.HANGFIRE,
     };
@@ -238,7 +244,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   src={getAvatarUrl(user?.voAvatarUrl)}
                 />
                 <span className="admin-username">
-                  {loading ? '加载中...' : (user?.voUserName || 'Unknown')}
+                  {loading ? '加载中...' : (user?.voUserName || '未知用户')}
                 </span>
               </div>
             </Dropdown>

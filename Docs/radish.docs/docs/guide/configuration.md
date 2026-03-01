@@ -532,6 +532,32 @@ Hangfire 用于执行后台定时任务（如文件清理），配置位于 `Han
 - `abortConnect=false`：连接失败时不抛异常
 - `connectTimeout=5000`：连接超时（毫秒）
 
+### 3.1 Time 时间配置（2026-02 新增）
+
+后端新增 `Time` 配置段，用于统一系统默认时区与前端展示格式：
+
+```json
+{
+  "Time": {
+    "DefaultTimeZoneId": "Asia/Shanghai",
+    "DisplayFormat": "yyyy-MM-dd HH:mm:ss"
+  }
+}
+```
+
+字段说明：
+- `DefaultTimeZoneId`：系统默认时区，建议使用 IANA 时区 ID（如 `Asia/Shanghai`）。
+- `DisplayFormat`：默认展示格式（前端按该约定渲染）。
+
+相关接口：
+- `GET /api/v1/User/GetTimeSettings`：公开接口，返回系统默认时区与展示格式。
+- `GET /api/v1/User/GetMyTimePreference`：登录用户读取个人时区偏好。
+- `POST /api/v1/User/UpdateMyTimePreference`：登录用户更新个人时区偏好（支持 IANA/Windows 时区 ID，后端会做规范化）。
+
+实现约束：
+- 数据库存储统一使用 UTC（Repository 层会规范化 `DateTime` 落库值）。
+- 前端按“用户偏好时区 > 浏览器时区 > 系统默认时区”回退策略进行展示。
+
 ### 4. AutoMapper 许可证
 
 如果你购买了 AutoMapper 的商业许可证：

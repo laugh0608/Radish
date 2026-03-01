@@ -1,5 +1,7 @@
 import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
+import { configureApiClient } from '@radish/http';
+import { tokenService } from '@/services/tokenService';
 import './index.css';
 import './i18n';
 import 'highlight.js/styles/github-dark.css';
@@ -14,6 +16,10 @@ const params = new URLSearchParams(window.location.search);
 const isDemo = params.has('demo');
 
 const Page = isOidcCallback || isDemo ? App : Shell;
+
+configureApiClient({
+  getToken: () => tokenService.getAccessToken(),
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

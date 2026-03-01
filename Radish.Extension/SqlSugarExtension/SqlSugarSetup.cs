@@ -83,7 +83,7 @@ public static class SqlSugarSetup
                     {
                         dbProvider.Aop.OnLogExecuting = (s, parameters) =>
                         {
-                            SqlSugarAop.OnLogExecuting(dbProvider, App.HttpContextUser?.UserName.ObjToString(), ExtractTableName(s),
+                            SqlSugarAop.OnLogExecuting(dbProvider, ResolveSqlAopUser(), ExtractTableName(s),
                                 Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType), s, parameters,
                                 config);
                         };
@@ -91,6 +91,25 @@ public static class SqlSugarSetup
                 });
             });
         });
+    }
+
+    /// <summary>
+    /// 解析 SQL AOP 日志中的操作人
+    /// </summary>
+    /// <remarks>
+    /// - 有登录上下文：返回真实用户名
+    /// - 有 HTTP 请求但未登录：返回 Anonymous
+    /// - 无 HTTP 上下文（如 Hangfire/后台任务）：返回 System
+    /// </remarks>
+    private static string ResolveSqlAopUser()
+    {
+        var userName = App.HttpContextUser?.UserName;
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+            return userName;
+        }
+
+        return App.HttpContext == null ? "System" : "Anonymous";
     }
 
     private static string ExtractTableName(string sql)

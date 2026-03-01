@@ -36,7 +36,7 @@ export interface ProductListItem {
   voIcon?: string | null;
   voCoverImage?: string | null;
   voCategoryId: string;
-  voProductType: string;
+  voProductType: string | number;
   voPrice: number;
   voOriginalPrice?: number | null;
   voHasDiscount?: boolean;
@@ -56,7 +56,7 @@ export interface Product {
   voCoverImage?: string | null;
   voCategoryId: string;
   voCategoryName?: string | null;
-  voProductType: string;
+  voProductType: string | number;
   voProductTypeDisplay?: string;
   voBenefitType?: string | null;
   voConsumableType?: string | null;
@@ -108,7 +108,7 @@ export interface Order {
   voProductId: number;
   voProductName: string;
   voProductIcon?: string | null;
-  voProductType: string;
+  voProductType: string | number;
   voProductTypeDisplay?: string;
   voBenefitType?: string | null;
   voConsumableType?: string | null;

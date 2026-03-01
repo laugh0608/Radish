@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { UserProvider } from './contexts/UserContext';
 import { LoadingProvider } from './contexts/LoadingContext';
@@ -8,12 +7,9 @@ import { setupApiInterceptors } from './services/apiInterceptor';
 import { router } from './router';
 import './App.css';
 
-function App() {
-  // 初始化 API 拦截器
-  useEffect(() => {
-    setupApiInterceptors();
-  }, []);
+setupApiInterceptors();
 
+function App() {
   return (
     <ErrorBoundary>
       <LoadingProvider>

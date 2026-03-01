@@ -14,20 +14,30 @@ interface TokenInfo {
   token_type: string;
 }
 
+type JwtPayload = Record<string, unknown> & {
+  exp?: number;
+};
+
 class TokenService {
   private static instance: TokenService;
   private refreshPromise: Promise<string> | null = null;
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
-  private readonly TOKEN_KEY = 'access_token';
-  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
-  private readonly TOKEN_EXPIRES_KEY = 'token_expires_at';
-  private readonly TOKEN_REFRESH_AT_KEY = 'token_refresh_at';
+  private readonly TOKEN_KEY = 'radish_client_access_token';
+  private readonly REFRESH_TOKEN_KEY = 'radish_client_refresh_token';
+  private readonly TOKEN_EXPIRES_KEY = 'radish_client_token_expires_at';
+  private readonly TOKEN_REFRESH_AT_KEY = 'radish_client_token_refresh_at';
+  private readonly LEGACY_TOKEN_KEY = 'access_token';
+  private readonly LEGACY_REFRESH_TOKEN_KEY = 'refresh_token';
+  private readonly LEGACY_TOKEN_EXPIRES_KEY = 'token_expires_at';
+  private readonly LEGACY_TOKEN_REFRESH_AT_KEY = 'token_refresh_at';
   private readonly MIN_REFRESH_BUFFER_SECONDS = 30;
   private readonly MAX_REFRESH_BUFFER_SECONDS = 300;
   private readonly MIN_CHECK_INTERVAL_MS = 15 * 1000;
   private readonly MAX_CHECK_INTERVAL_MS = 2 * 60 * 1000;
 
-  private constructor() {}
+  private constructor() {
+    this.migrateLegacyTokenStorage();
+  }
 
   static getInstance(): TokenService {
     if (!TokenService.instance) {
@@ -52,6 +62,63 @@ class TokenService {
   getTokenRefreshAt(): number | null {
     const refreshAt = localStorage.getItem(this.TOKEN_REFRESH_AT_KEY);
     return refreshAt ? parseInt(refreshAt, 10) : null;
+  }
+
+  getRolesFromAccessToken(token?: string | null): string[] {
+    const targetToken = token ?? this.getAccessToken();
+    if (!targetToken) {
+      return [];
+    }
+
+    const payload = this.parseJwt(targetToken);
+    if (!payload) {
+      return [];
+    }
+
+    const roleClaimKeys = [
+      'role',
+      'roles',
+      'http://schemas.microsoft.com/ws/2008/06/identity/claims/role',
+    ] as const;
+
+    const parseRoleClaim = (claim: unknown): string[] => {
+      if (typeof claim === 'string') {
+        return claim
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      if (Array.isArray(claim)) {
+        return claim
+          .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
+          .map((item) => item.trim())
+          .filter(Boolean);
+      }
+
+      return [];
+    };
+
+    const roles = roleClaimKeys.flatMap((key) => parseRoleClaim(payload[key]));
+
+    const uniqueRoles: string[] = [];
+    const roleSet = new Set<string>();
+    roles.forEach((role) => {
+      const normalizedRole = role.trim();
+      if (!normalizedRole) {
+        return;
+      }
+
+      const roleKey = normalizedRole.toLowerCase();
+      if (roleSet.has(roleKey)) {
+        return;
+      }
+
+      roleSet.add(roleKey);
+      uniqueRoles.push(normalizedRole);
+    });
+
+    return uniqueRoles;
   }
 
   setTokenInfo(tokenInfo: TokenInfo): void {
@@ -178,12 +245,17 @@ class TokenService {
   /**
    * 解析 JWT Token
    */
-  private parseJwt(token: string): { exp?: number } | null {
+  private parseJwt(token: string): JwtPayload | null {
     try {
       const base64Url = token.split('.')[1];
+      if (!base64Url) {
+        return null;
+      }
+
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const paddedBase64 = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
       const jsonPayload = decodeURIComponent(
-        atob(base64)
+        atob(paddedBase64)
           .split('')
           .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
           .join('')
@@ -374,6 +446,29 @@ class TokenService {
 
     const interval = Math.floor(remainingMs / 2);
     return Math.min(this.MAX_CHECK_INTERVAL_MS, Math.max(this.MIN_CHECK_INTERVAL_MS, interval));
+  }
+
+  private migrateLegacyTokenStorage(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    this.migrateLegacyKey(this.LEGACY_TOKEN_KEY, this.TOKEN_KEY);
+    this.migrateLegacyKey(this.LEGACY_REFRESH_TOKEN_KEY, this.REFRESH_TOKEN_KEY);
+    this.migrateLegacyKey(this.LEGACY_TOKEN_EXPIRES_KEY, this.TOKEN_EXPIRES_KEY);
+    this.migrateLegacyKey(this.LEGACY_TOKEN_REFRESH_AT_KEY, this.TOKEN_REFRESH_AT_KEY);
+  }
+
+  private migrateLegacyKey(legacyKey: string, targetKey: string): void {
+    const targetValue = localStorage.getItem(targetKey);
+    if (targetValue !== null) {
+      return;
+    }
+
+    const legacyValue = localStorage.getItem(legacyKey);
+    if (legacyValue !== null) {
+      localStorage.setItem(targetKey, legacyValue);
+    }
   }
 }
 

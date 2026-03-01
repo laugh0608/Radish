@@ -23,6 +23,7 @@ export const ProductDetail = ({
   onPurchase
 }: ProductDetailProps) => {
   // const { t } = useTranslation(); // 暂时不使用
+  const blockedReason = canBuy?.reason?.trim() ?? '';
 
   if (loading) {
     return (
@@ -62,7 +63,7 @@ export const ProductDetail = ({
     if (checkingCanBuy) return '检查中...';
     if (!product.voInStock) return '缺货';
     if (!product.voIsOnSale) return '已下架';
-    if (canBuy && !canBuy.canBuy) return canBuy.reason;
+    if (canBuy && !canBuy.canBuy) return blockedReason || '暂不可购买';
     return '立即购买';
   };
 
@@ -165,9 +166,9 @@ export const ProductDetail = ({
                 {getPurchaseButtonText()}
               </button>
 
-              {canBuy && !canBuy.canBuy && (
+              {canBuy && !canBuy.canBuy && blockedReason && (
                 <div className={styles.purchaseHint}>
-                  {canBuy.reason}
+                  {blockedReason}
                 </div>
               )}
             </div>

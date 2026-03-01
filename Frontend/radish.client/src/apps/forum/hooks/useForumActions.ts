@@ -12,8 +12,12 @@ import {
   deletePost,
   deleteComment,
   getChildComments,
+  getPostEditHistory,
+  getCommentEditHistory,
   type CommentNode,
-  type PostDetail
+  type PostDetail,
+  type PostEditHistory,
+  type CommentEditHistory
 } from '@/api/forum';
 
 export interface ForumActionsState {
@@ -30,6 +34,20 @@ export interface ForumActionsState {
 
   // 点赞状态
   likedPosts: Set<number>;
+
+  // 历史弹窗状态
+  isPostHistoryOpen: boolean;
+  isCommentHistoryOpen: boolean;
+  postHistories: PostEditHistory[];
+  commentHistories: CommentEditHistory[];
+  postHistoryTotal: number;
+  commentHistoryTotal: number;
+  postHistoryPageIndex: number;
+  commentHistoryPageIndex: number;
+  postHistoryLoading: boolean;
+  commentHistoryLoading: boolean;
+  postHistoryError: string | null;
+  commentHistoryError: string | null;
 }
 
 export interface ForumActionsHandlers {
@@ -42,7 +60,8 @@ export interface ForumActionsHandlers {
   handlePublishPost: (title: string, content: string, tagNames: string[]) => Promise<void>;
   handleLikePost: (postId: number) => Promise<void>;
   handleEditPost: (postId: number) => void;
-  handleSaveEdit: (postId: number, title: string, content: string) => Promise<void>;
+  handleViewPostHistory: (postId: number) => Promise<void>;
+  handleSaveEdit: (postId: number, title: string, content: string, tagNames: string[]) => Promise<void>;
   handleDeletePost: (postId: number) => void;
   confirmDeletePost: () => Promise<void>;
   cancelDeletePost: () => void;
@@ -53,6 +72,7 @@ export interface ForumActionsHandlers {
   handleCancelReply: () => void;
   handleCommentLike: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   handleEditComment: (commentId: number, newContent: string) => Promise<void>;
+  handleViewCommentHistory: (commentId: number) => Promise<void>;
   handleDeleteComment: (commentId: number) => void;
   confirmDeleteComment: () => Promise<void>;
   cancelDeleteComment: () => void;
@@ -67,6 +87,12 @@ export interface ForumActionsHandlers {
   handleSortChange: (sortBy: 'newest' | 'hottest' | 'essence') => void;
   handleCommentSortChange: (sortBy: 'newest' | 'hottest') => void;
   handleSearchChange: (keyword: string) => void;
+
+  // 历史分页与关闭
+  handlePostHistoryPageChange: (pageIndex: number) => Promise<void>;
+  handleCommentHistoryPageChange: (pageIndex: number) => Promise<void>;
+  closePostHistory: () => void;
+  closeCommentHistory: () => void;
 }
 
 interface UseForumActionsParams {
@@ -135,6 +161,78 @@ export const useForumActions = (
     }
   });
 
+  const [isPostHistoryOpen, setIsPostHistoryOpen] = useState(false);
+  const [isCommentHistoryOpen, setIsCommentHistoryOpen] = useState(false);
+  const [postHistories, setPostHistories] = useState<PostEditHistory[]>([]);
+  const [commentHistories, setCommentHistories] = useState<CommentEditHistory[]>([]);
+  const [postHistoryTotal, setPostHistoryTotal] = useState(0);
+  const [commentHistoryTotal, setCommentHistoryTotal] = useState(0);
+  const [postHistoryPageIndex, setPostHistoryPageIndex] = useState(1);
+  const [commentHistoryPageIndex, setCommentHistoryPageIndex] = useState(1);
+  const [postHistoryLoading, setPostHistoryLoading] = useState(false);
+  const [commentHistoryLoading, setCommentHistoryLoading] = useState(false);
+  const [postHistoryError, setPostHistoryError] = useState<string | null>(null);
+  const [commentHistoryError, setCommentHistoryError] = useState<string | null>(null);
+
+  const postHistoryPageSize = 10;
+  const commentHistoryPageSize = 10;
+  const [activePostHistoryPostId, setActivePostHistoryPostId] = useState<number | null>(null);
+  const [activeCommentHistoryCommentId, setActiveCommentHistoryCommentId] = useState<number | null>(null);
+
+  const normalizeTagNames = (tagNames: string[]): string[] => {
+    const normalized: string[] = [];
+    const seen = new Set<string>();
+
+    for (const tag of tagNames) {
+      const trimmed = tag.trim();
+      if (!trimmed) {
+        continue;
+      }
+
+      const lower = trimmed.toLowerCase();
+      if (seen.has(lower)) {
+        continue;
+      }
+
+      seen.add(lower);
+      normalized.push(trimmed);
+    }
+
+    return normalized;
+  };
+
+  const loadPostHistory = async (postId: number, pageIndex: number) => {
+    setPostHistoryLoading(true);
+    setPostHistoryError(null);
+    try {
+      const data = await getPostEditHistory(postId, pageIndex, postHistoryPageSize, t);
+      setPostHistories(data.voItems || []);
+      setPostHistoryTotal(data.voTotal || 0);
+      setPostHistoryPageIndex(data.voPageIndex || pageIndex);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setPostHistoryError(message);
+    } finally {
+      setPostHistoryLoading(false);
+    }
+  };
+
+  const loadCommentHistory = async (commentId: number, pageIndex: number) => {
+    setCommentHistoryLoading(true);
+    setCommentHistoryError(null);
+    try {
+      const data = await getCommentEditHistory(commentId, pageIndex, commentHistoryPageSize, t);
+      setCommentHistories(data.voItems || []);
+      setCommentHistoryTotal(data.voTotal || 0);
+      setCommentHistoryPageIndex(data.voPageIndex || pageIndex);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setCommentHistoryError(message);
+    } finally {
+      setCommentHistoryLoading(false);
+    }
+  };
+
   // 选择帖子
   const handleSelectPost = async (postId: number) => {
     resetCommentSort();
@@ -149,6 +247,19 @@ export const useForumActions = (
       return;
     }
 
+    const normalizedTagNames = normalizeTagNames(tagNames);
+    if (normalizedTagNames.length < 1) {
+      const message = '发布帖子时至少需要 1 个标签';
+      setError(message);
+      throw new Error(message);
+    }
+
+    if (normalizedTagNames.length > 5) {
+      const message = '发布帖子时最多只能选择 5 个标签';
+      setError(message);
+      throw new Error(message);
+    }
+
     setError(null);
     try {
       const postId = await publishPost(
@@ -156,7 +267,7 @@ export const useForumActions = (
           title,
           content,
           categoryId: selectedCategoryId,
-          tagNames
+          tagNames: normalizedTagNames
         },
         t
       );
@@ -225,11 +336,17 @@ export const useForumActions = (
     setIsEditModalOpen(true);
   };
 
+  const handleViewPostHistory = async (postId: number) => {
+    setActivePostHistoryPostId(postId);
+    setIsPostHistoryOpen(true);
+    await loadPostHistory(postId, 1);
+  };
+
   // 保存编辑
-  const handleSaveEdit = async (postId: number, title: string, content: string) => {
+  const handleSaveEdit = async (postId: number, title: string, content: string, tagNames: string[]) => {
     setError(null);
     try {
-      await updatePost({ postId, title, content }, t);
+      await updatePost({ postId, title, content, tagNames }, t);
       await Promise.all([loadPostDetail(postId), loadPosts()]);
       setIsEditModalOpen(false);
     } catch (err) {
@@ -421,6 +538,12 @@ export const useForumActions = (
     }
   };
 
+  const handleViewCommentHistory = async (commentId: number): Promise<void> => {
+    setActiveCommentHistoryCommentId(commentId);
+    setIsCommentHistoryOpen(true);
+    await loadCommentHistory(commentId, 1);
+  };
+
   // 删除评论
   const handleDeleteComment = (commentId: number) => {
     setCommentToDelete(commentId);
@@ -492,6 +615,38 @@ export const useForumActions = (
     [setSearchKeyword, setCurrentPage]
   );
 
+  const handlePostHistoryPageChange = async (pageIndex: number) => {
+    if (!activePostHistoryPostId) {
+      return;
+    }
+    await loadPostHistory(activePostHistoryPostId, pageIndex);
+  };
+
+  const handleCommentHistoryPageChange = async (pageIndex: number) => {
+    if (!activeCommentHistoryCommentId) {
+      return;
+    }
+    await loadCommentHistory(activeCommentHistoryCommentId, pageIndex);
+  };
+
+  const closePostHistory = () => {
+    setIsPostHistoryOpen(false);
+    setActivePostHistoryPostId(null);
+    setPostHistories([]);
+    setPostHistoryTotal(0);
+    setPostHistoryPageIndex(1);
+    setPostHistoryError(null);
+  };
+
+  const closeCommentHistory = () => {
+    setIsCommentHistoryOpen(false);
+    setActiveCommentHistoryCommentId(null);
+    setCommentHistories([]);
+    setCommentHistoryTotal(0);
+    setCommentHistoryPageIndex(1);
+    setCommentHistoryError(null);
+  };
+
   return {
     // 状态
     isPublishModalOpen,
@@ -502,6 +657,18 @@ export const useForumActions = (
     commentToDelete,
     replyTo,
     likedPosts,
+    isPostHistoryOpen,
+    isCommentHistoryOpen,
+    postHistories,
+    commentHistories,
+    postHistoryTotal,
+    commentHistoryTotal,
+    postHistoryPageIndex,
+    commentHistoryPageIndex,
+    postHistoryLoading,
+    commentHistoryLoading,
+    postHistoryError,
+    commentHistoryError,
 
     // 操作
     setIsPublishModalOpen,
@@ -510,6 +677,7 @@ export const useForumActions = (
     handlePublishPost,
     handleLikePost,
     handleEditPost,
+    handleViewPostHistory,
     handleSaveEdit,
     handleDeletePost,
     confirmDeletePost,
@@ -519,6 +687,7 @@ export const useForumActions = (
     handleCancelReply,
     handleCommentLike,
     handleEditComment,
+    handleViewCommentHistory,
     handleDeleteComment,
     confirmDeleteComment,
     cancelDeleteComment,
@@ -526,6 +695,10 @@ export const useForumActions = (
     handlePageChange,
     handleSortChange,
     handleCommentSortChange,
-    handleSearchChange
+    handleSearchChange,
+    handlePostHistoryPageChange,
+    handleCommentHistoryPageChange,
+    closePostHistory,
+    closeCommentHistory
   };
 };

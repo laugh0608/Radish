@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
+import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
 import styles from './UserCommentList.module.css';
 
@@ -14,10 +15,11 @@ interface Comment {
 interface UserCommentListProps {
   userId: number;
   apiBaseUrl: string;
+  displayTimeZone: string;
   onCommentClick?: (postId: number, commentId: number) => void;
 }
 
-export const UserCommentList = ({ userId, apiBaseUrl, onCommentClick }: UserCommentListProps) => {
+export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onCommentClick }: UserCommentListProps) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -71,7 +73,7 @@ export const UserCommentList = ({ userId, apiBaseUrl, onCommentClick }: UserComm
                 {comment.voLikeCount}
               </span>
               <span className={styles.time}>
-                {new Date(comment.voCreateTime).toLocaleDateString('zh-CN')}
+                {formatDateTimeByTimeZone(comment.voCreateTime, displayTimeZone)}
               </span>
             </div>
           </div>

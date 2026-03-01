@@ -16,17 +16,13 @@ import type {
 } from '../types/oidc';
 import { autoRefreshTokenInterceptor } from '../utils/tokenRefresh';
 import { getApiBaseUrl } from '@/config/env';
+import { tokenService } from '../services/tokenService';
 
 // 配置 API 客户端
 configureApiClient({
   baseUrl: getApiBaseUrl(),
   timeout: 30000,
-  getToken: () => {
-    if (typeof window !== 'undefined') {
-      return window.localStorage.getItem('access_token');
-    }
-    return null;
-  },
+  getToken: () => tokenService.getAccessToken(),
   onRequest: async () => {
     // 在每次请求前检查并刷新 Token
     await autoRefreshTokenInterceptor();

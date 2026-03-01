@@ -216,6 +216,11 @@ Authorization: Bearer {{Access_Token}}
   "categoryId": 1
 }
 
+### 14.1 获取帖子编辑历史（分页）
+GET {{Gateway_HostAddress}}/api/v1/Post/GetEditHistory?postId=1&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
 ###############################################################################
 # 评论管理 (Comment)
 ###############################################################################
@@ -292,6 +297,11 @@ Authorization: Bearer {{Access_Token}}
   "commentId": 1,
   "content": ""
 }
+
+### 21.1 获取评论编辑历史（分页）
+GET {{Gateway_HostAddress}}/api/v1/Comment/GetEditHistory?commentId=1&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
 
 ###############################################################################
 # 综合测试场景

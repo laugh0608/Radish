@@ -14,6 +14,14 @@ import rehypeHighlight from 'rehype-highlight';
 import { ImageLightbox } from '../ImageLightbox/ImageLightbox';
 import styles from './MarkdownRenderer.module.css';
 
+export interface MarkdownStickerItem {
+  imageUrl: string;
+  thumbnailUrl?: string | null;
+  name?: string | null;
+}
+
+export type MarkdownStickerMap = Record<string, MarkdownStickerItem>;
+
 interface MarkdownRendererProps {
   /** Markdown 内容 */
   content: string;
@@ -21,6 +29,8 @@ interface MarkdownRendererProps {
   className?: string;
   /** 是否启用图片灯箱 */
   enableImageLightbox?: boolean;
+  /** sticker:// 资源映射 */
+  stickerMap?: MarkdownStickerMap;
 }
 
 interface ParsedImageMeta {
@@ -29,10 +39,56 @@ interface ParsedImageMeta {
   scalePercent?: number;
 }
 
+interface ParsedStickerUri {
+  groupCode: string;
+  stickerCode: string;
+  fallbackImageUrl?: string;
+  fallbackThumbnailUrl?: string;
+}
+
+const normalizeStickerKey = (groupCode: string, stickerCode: string): string =>
+  `${groupCode.trim().toLowerCase()}/${stickerCode.trim().toLowerCase()}`;
+
+const parseStickerUri = (src: string): ParsedStickerUri | null => {
+  const raw = src.trim();
+  if (!raw.startsWith('sticker://')) {
+    return null;
+  }
+
+  const withoutProtocol = raw.slice('sticker://'.length);
+  const [pathPart, hashPart] = withoutProtocol.split('#');
+  const [groupCodeRaw, stickerCodeRaw] = pathPart.split('/');
+  const groupCode = decodeURIComponent(groupCodeRaw || '').trim();
+  const stickerCode = decodeURIComponent(stickerCodeRaw || '').trim();
+
+  if (!groupCode || !stickerCode) {
+    return null;
+  }
+
+  const parsed: ParsedStickerUri = {
+    groupCode,
+    stickerCode,
+  };
+
+  if (hashPart && hashPart.startsWith('radish:')) {
+    const params = new URLSearchParams(hashPart.slice('radish:'.length));
+    const image = params.get('image');
+    const thumbnail = params.get('thumbnail');
+
+    if (image && /^https?:\/\//i.test(image)) {
+      parsed.fallbackImageUrl = image;
+    }
+    if (thumbnail && /^https?:\/\//i.test(thumbnail)) {
+      parsed.fallbackThumbnailUrl = thumbnail;
+    }
+  }
+
+  return parsed;
+};
+
 const parseImageMeta = (src: string): ParsedImageMeta => {
   const [baseSrc, hash] = src.split('#');
   const fallback = {
-    rawSrc: src,
     displaySrc: baseSrc || src,
     fullSrc: baseSrc || src,
   };
@@ -70,6 +126,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   className,
   enableImageLightbox = true,
+  stickerMap,
 }) => {
   const imageCollection = useMemo(() => {
     const regex = /!\[[^\]]*\]\(([^)]+)\)/g;
@@ -79,6 +136,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     while ((match = regex.exec(content)) !== null) {
       const src = match[1]?.trim();
       if (!src) continue;
+      if (parseStickerUri(src)) continue;
       const parsed = parseImageMeta(src);
       images.push({ src: parsed.fullSrc });
     }
@@ -121,6 +179,35 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             },
             img: ({ node, ...props }) => {
               const rawSrc = props.src || '';
+              const stickerMeta = parseStickerUri(rawSrc);
+              if (stickerMeta) {
+                const stickerKey = normalizeStickerKey(stickerMeta.groupCode, stickerMeta.stickerCode);
+                const stickerData = stickerMap?.[stickerKey];
+                const stickerSrc = stickerData?.imageUrl
+                  || stickerMeta.fallbackImageUrl
+                  || stickerMeta.fallbackThumbnailUrl;
+                const stickerAlt = props.alt || stickerData?.name || `${stickerMeta.groupCode}/${stickerMeta.stickerCode}`;
+
+                if (!stickerSrc) {
+                  return (
+                    <span className={styles.stickerMissing}>
+                      :{stickerMeta.groupCode}/{stickerMeta.stickerCode}:
+                    </span>
+                  );
+                }
+
+                return (
+                  <img
+                    alt={stickerAlt}
+                    src={stickerSrc}
+                    title={stickerAlt}
+                    loading="lazy"
+                    draggable={false}
+                    className={styles.stickerInline}
+                  />
+                );
+              }
+
               const parsed = parseImageMeta(rawSrc);
 
               return (
@@ -155,7 +242,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                   <table {...props} />
                 </div>
               );
-            }
+            },
           }}
         >
           {content}

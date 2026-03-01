@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { getOidcLoginUrl } from '@/api/forum';
 import { uploadImage, uploadDocument } from '@/api/attachment';
+import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './PublishPostForm.module.css';
 
 interface PublishPostFormProps {
@@ -14,7 +15,7 @@ interface PublishPostFormProps {
 }
 
 const DRAFT_STORAGE_KEY = 'forum_post_draft';
-const IMAGE_SCALE_OPTIONS = [30, 50, 70, 100] as const;
+const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;
 
 const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
   const params = new URLSearchParams();
@@ -39,8 +40,9 @@ export const PublishPostForm = ({
   const [addWatermark, setAddWatermark] = useState(false);
   const [watermarkText, setWatermarkText] = useState('Radish');
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
-  const [imageScalePercent, setImageScalePercent] = useState<number>(70);
+  const [imageScalePercent, setImageScalePercent] = useState<number>(75);
   const { t } = useTranslation();
+  const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
 
   // 组件加载时恢复草稿
   useEffect(() => {
@@ -206,6 +208,11 @@ export const PublishPostForm = ({
         showToolbar={true}
         onImageUpload={handleImageUpload}
         onDocumentUpload={handleDocumentUpload}
+        stickerGroups={stickerGroups}
+        stickerMap={stickerMap}
+        onStickerSelect={(selection) => {
+          void handleStickerSelect(selection);
+        }}
       />
 
       {isAuthenticated && (

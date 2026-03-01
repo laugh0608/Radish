@@ -8,6 +8,7 @@ import { UserList } from '../pages/Users';
 import { UserDetail } from '../pages/Users/UserDetail';
 import { RoleList } from '../pages/Roles';
 import { TagList } from '../pages/Tags';
+import { StickerGroupList, StickerList } from '../pages/Stickers';
 import { SystemConfigList } from '../pages/SystemConfig';
 import { UserProfile } from '../pages/UserProfile';
 import { Settings } from '../pages/Settings';
@@ -16,15 +17,16 @@ import { OidcCallback } from '../pages/OidcCallback';
 import { ThemeTest } from '../pages/ThemeTest';
 import { NotFound } from '../components/NotFound';
 import { getApiBaseUrl } from '../config/env';
+import { tokenService } from '../services/tokenService';
 
 /**
  * 需要认证的布局包装器
  */
 function AuthenticatedLayout() {
-  const token = localStorage.getItem('access_token');
+  const token = tokenService.getAccessToken();
 
   if (!token) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login?auto=1" replace />;
   }
 
   return (
@@ -124,6 +126,14 @@ export const router = createBrowserRouter(
           element: <TagList />,
         },
         {
+          path: 'stickers',
+          element: <StickerGroupList />,
+        },
+        {
+          path: 'stickers/:groupId/items',
+          element: <StickerList />,
+        },
+        {
           path: 'system-config',
           element: <SystemConfigList />,
         },
@@ -169,6 +179,8 @@ export const ROUTES = {
   USER_DETAIL: '/users/:userId',
   ROLES: '/roles',
   TAGS: '/tags',
+  STICKERS: '/stickers',
+  STICKER_ITEMS: '/stickers/:groupId/items',
   SYSTEM_CONFIG: '/system-config',
   PROFILE: '/profile',
   SETTINGS: '/settings',

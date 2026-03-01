@@ -12,6 +12,7 @@ import { ExperienceDisplay } from './components/ExperienceDisplay';
 import i18n from '@/i18n';
 import type { ApiResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
+import { tokenService } from '@/services/tokenService';
 import styles from './Dock.module.css';
 
 /**
@@ -97,7 +98,7 @@ export const Dock = () => {
     };
 
     if (withAuth && typeof window !== 'undefined') {
-      const token = window.localStorage.getItem('access_token');
+      const token = tokenService.getAccessToken();
       if (token) {
         (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
       }
@@ -119,7 +120,7 @@ export const Dock = () => {
 
   const hydrateCurrentUser = async () => {
     if (typeof window === 'undefined') return;
-    const token = window.localStorage.getItem('access_token');
+    const token = tokenService.getAccessToken();
     if (!token) {
       return;
     }
@@ -138,7 +139,7 @@ export const Dock = () => {
         userId: json.responseData.voUserId,
         userName: json.responseData.voUserName,
         tenantId: json.responseData.voTenantId,
-        roles: ['User'],
+        roles: tokenService.getRolesFromAccessToken(token),
         avatarUrl: json.responseData.voAvatarUrl,
         avatarThumbnailUrl: json.responseData.voAvatarThumbnailUrl
       });
@@ -147,23 +148,23 @@ export const Dock = () => {
     }
   };
 
-  // 获取未读消息数量（降级轮询时使用）
-  const fetchUnreadMessageCount = async () => {
+  // 获取未读通知数量（降级轮询时使用）
+  const fetchUnreadNotificationCount = async () => {
     if (typeof window === 'undefined') return;
-    const token = window.localStorage.getItem('access_token');
+    const token = tokenService.getAccessToken();
     if (!token) {
       setPollingUnreadCount(0);
       return;
     }
 
-    const requestUrl = `${apiBaseUrl}/api/v1/User/GetUnreadMessageCount`;
+    const requestUrl = `${apiBaseUrl}/api/v1/Notification/GetUnreadCount`;
 
     try {
       const response = await apiFetch(requestUrl, { withAuth: true });
-      const json = await response.json() as ApiResponse<{ userId: number; unreadCount: number }>;
+      const json = await response.json() as ApiResponse<{ unreadCount: number }>;
 
       if (json.isSuccess && json.responseData) {
-        setPollingUnreadCount(json.responseData.unreadCount);
+        setPollingUnreadCount(Math.max(0, json.responseData.unreadCount ?? 0));
       }
     } catch {
       // 静默失败，保持当前状态
@@ -181,12 +182,12 @@ export const Dock = () => {
 
     if (typeof window !== 'undefined' && loggedIn) {
       // 初始化时获取一次未读数（作为降级数据）
-      void fetchUnreadMessageCount();
+      void fetchUnreadNotificationCount();
 
       // 降级轮询：仅在用户已登录且 SignalR 连接失败时使用（60秒间隔）
       const pollingTimer = setInterval(() => {
         // 检查用户是否登录
-        const token = window.localStorage.getItem('access_token');
+        const token = tokenService.getAccessToken();
         if (!token) {
           return;
         }
@@ -194,7 +195,7 @@ export const Dock = () => {
         // 从 store 中实时读取 connectionState
         const state = useNotificationStore.getState().connectionState;
         if (state !== 'connected') {
-          void fetchUnreadMessageCount();
+          void fetchUnreadNotificationCount();
         }
       }, 60000);
 

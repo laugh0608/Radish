@@ -53,6 +53,7 @@ public class Comment : RootEntityTKey<long>, ITenantEntity
         AuthorName = string.Empty;
         LikeCount = 0;
         ReplyCount = 0;
+        EditCount = 0;
         IsTop = false;
         IsEnabled = true;
         IsDeleted = false;
@@ -240,6 +241,11 @@ public class Comment : RootEntityTKey<long>, ITenantEntity
     /// <remarks>不可为空，默认为 0</remarks>
     [SugarColumn(IsNullable = false)]
     public int ReplyCount { get; set; } = 0;
+
+    /// <summary>编辑次数</summary>
+    /// <remarks>不可为空，默认为 0</remarks>
+    [SugarColumn(IsNullable = false)]
+    public int EditCount { get; set; } = 0;
 
     #endregion
 

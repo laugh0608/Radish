@@ -2,6 +2,34 @@ import { apiGet, apiPost } from '@radish/http';
 import type { ParsedApiResponse } from '@radish/http';
 import type { UserInfo } from '../types/user';
 
+function toNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return 0;
+}
+
+function toRoles(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const roles = value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  return roles.length > 0 ? roles : undefined;
+}
+
 /**
  * 用户 API
  */
@@ -18,13 +46,19 @@ export const userApi = {
     // 处理后端返回的 CurrentUserVo 结构，映射字段名
     if (response.ok && response.data) {
       const backendData = response.data;
+      const resolvedRoles = toRoles(
+        backendData.voRoles
+        ?? backendData.VoRoles
+        ?? backendData.roles
+        ?? backendData.Roles
+      );
       const mappedData: UserInfo = {
-        voUserId: backendData.voUserId || backendData.VoUserId || 0,
+        voUserId: toNumber(backendData.voUserId ?? backendData.VoUserId),
         voUserName: backendData.voUserName || backendData.VoUserName || '',
-        voTenantId: backendData.voTenantId || backendData.VoTenantId || 0,
+        voTenantId: toNumber(backendData.voTenantId ?? backendData.VoTenantId),
         voAvatarUrl: backendData.voAvatarUrl || backendData.VoAvatarUrl,
         voAvatarThumbnailUrl: backendData.voAvatarThumbnailUrl || backendData.VoAvatarThumbnailUrl,
-        roles: backendData.roles || ['Admin'], // 默认角色，实际应该从后端获取
+        roles: resolvedRoles || ['Admin'], // 默认角色，实际应该从后端获取
       };
 
       return {

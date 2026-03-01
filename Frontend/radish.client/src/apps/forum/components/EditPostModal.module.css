@@ -1,72 +1,308 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 16px;
 }
 
 .error {
-  padding: 0.75rem;
+  padding: 12px;
   background-color: rgba(220, 38, 38, 0.1);
   border: 1px solid rgba(220, 38, 38, 0.3);
-  border-radius: 4px;
+  border-radius: 10px;
   color: #dc2626;
-  font-size: 0.875rem;
+  font-size: 13px;
 }
 
-.formGroup {
+.lead {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 4px;
 }
 
-.label {
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: #374151;
+.leadTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
-.input {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  transition: border-color 0.2s;
+.leadHint {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
 }
 
-.input:focus {
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.titleInput {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  font-weight: 600;
+  background-color: #ffffff;
+  border: 1px solid #d8e1ec;
+  border-radius: 12px;
+  color: #0f172a;
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  transition: all 0.2s ease;
 }
 
-.input:disabled {
-  background-color: #f3f4f6;
+.titleInput::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.titleInput:focus {
+  outline: none;
+  border-color: #60a5fa;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
+}
+
+.titleInput:disabled {
+  background-color: #f8fafc;
   cursor: not-allowed;
 }
 
-.textarea {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  font-family: 'Cascadia Code', 'Consolas', 'Monaco', monospace;
-  resize: vertical;
-  transition: border-color 0.2s;
+.titleCount {
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #e2e8f0;
 }
 
-.textarea:focus {
+.tagSection {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #d8e1ec;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.tagHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.tagLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.tagHint {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.tagInputRow {
+  display: flex;
+  gap: 8px;
+}
+
+.tagInput {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 13px;
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.textarea:disabled {
-  background-color: #f3f4f6;
+.tagInput:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+}
+
+.tagInput:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.addTagButton {
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #1e293b;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.addTagButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.suggestionWrap,
+.selectedTagWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.suggestionTag {
+  border: 1px dashed #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.selectedTag {
+  border: 1px solid #93c5fd;
+  background: rgba(59, 130, 246, 0.12);
+  color: #1e40af;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.selectedTag:disabled,
+.suggestionTag:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tagTip {
+  margin: 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.tagError {
+  margin: 0;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.editorWrapper {
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.editor {
+  border-radius: 0;
+}
+
+.editorLoading {
+  padding: 16px;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.editorToggles {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.editorScaleLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.editorScaleSelect {
+  border: none;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+  color: #1e293b;
+  background: #ffffff;
+}
+
+.editorToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  background: #e2e8f0;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editorToggleActive {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.editorToggle:hover {
+  transform: translateY(-1px);
+}
+
+.watermarkRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.watermarkLabel {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.watermarkInput {
+  padding: 8px 12px;
+  font-size: 14px;
+  background-color: #ffffff;
+  border: 1px solid #d8e1ec;
+  border-radius: 10px;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.2s ease;
+  max-width: 240px;
+}
+
+.watermarkInput:focus {
+  border-color: #60a5fa;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
+}
+
+.watermarkInput:disabled {
+  background-color: #f8fafc;
   cursor: not-allowed;
 }
 
 .footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: 12px;
 }

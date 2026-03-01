@@ -13,6 +13,8 @@ using Microsoft.IdentityModel.Tokens;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.HttpContextTool;
+using Radish.Common.OptionTool;
+using Radish.Common.TimeTool;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
 using Radish.Extension.AutoMapperExtension;
@@ -85,6 +87,8 @@ builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, Servi
 // 注册跨域规则
 const string corsPolicyName = "FrontendCors";
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+var configuredTimeOptions = builder.Configuration.GetSection("Time").Get<TimeOptions>() ?? new TimeOptions();
+var appDefaultTimeZone = TimeZoneResolver.ResolveOrUtc(configuredTimeOptions.DefaultTimeZoneId);
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(corsPolicyName, policyBuilder =>
@@ -135,6 +139,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.Converters.Add(new Int64ToStringConverter());
         options.JsonSerializerOptions.Converters.Add(new NullableInt64ToStringConverter());
+        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableUtcDateTimeJsonConverter());
     });
 // 注册健康检查
 builder.Services.AddHealthChecks();
@@ -202,6 +208,8 @@ builder.Services.AddSignalR(options =>
     options.PayloadSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     options.PayloadSerializerOptions.Converters.Add(new Int64ToStringConverter());
     options.PayloadSerializerOptions.Converters.Add(new NullableInt64ToStringConverter());
+    options.PayloadSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
+    options.PayloadSerializerOptions.Converters.Add(new NullableUtcDateTimeJsonConverter());
 });
 
 // 注册通知推送服务（基于 SignalR）
@@ -499,6 +507,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
     Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
     Log.Information("监听地址: {Urls}", urls);
     Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
+    Log.Information("默认时区: {TimeZone}", TimeZoneResolver.NormalizeToDisplayId(configuredTimeOptions.DefaultTimeZoneId));
 });
 
 // 注册 Hangfire 定时任务
@@ -516,7 +525,7 @@ if (fileCleanupConfig.GetValue<bool>("DeletedFiles:Enable", true))
         schedule,
         new RecurringJobOptions
         {
-            TimeZone = TimeZoneInfo.Local
+            TimeZone = appDefaultTimeZone
         });
 
     Log.Information("[Hangfire] 已注册定时任务: cleanup-deleted-files (保留 {Days} 天, 计划: {Schedule})", retentionDays, schedule);
@@ -534,7 +543,7 @@ if (fileCleanupConfig.GetValue<bool>("TempFiles:Enable", true))
         schedule,
         new RecurringJobOptions
         {
-            TimeZone = TimeZoneInfo.Local
+            TimeZone = appDefaultTimeZone
         });
 
     Log.Information("[Hangfire] 已注册定时任务: cleanup-temp-files (保留 {Hours} 小时, 计划: {Schedule})", retentionHours, schedule);
@@ -552,7 +561,7 @@ if (fileCleanupConfig.GetValue<bool>("RecycleBin:Enable", true))
         schedule,
         new RecurringJobOptions
         {
-            TimeZone = TimeZoneInfo.Local
+            TimeZone = appDefaultTimeZone
         });
 
     Log.Information("[Hangfire] 已注册定时任务: cleanup-recycle-bin (保留 {Days} 天, 计划: {Schedule})", retentionDays, schedule);
@@ -570,7 +579,7 @@ if (fileCleanupConfig.GetValue<bool>("OrphanAttachments:Enable", true))
         schedule,
         new RecurringJobOptions
         {
-            TimeZone = TimeZoneInfo.Local
+            TimeZone = appDefaultTimeZone
         });
 
     Log.Information("[Hangfire] 已注册定时任务: cleanup-orphan-attachments (保留 {Hours} 小时, 计划: {Schedule})", retentionHours, schedule);
@@ -586,7 +595,7 @@ if (fileCleanupConfig.GetValue<bool>("OrphanAttachments:Enable", true))
         schedule,
         new RecurringJobOptions
         {
-            TimeZone = TimeZoneInfo.Local
+            TimeZone = appDefaultTimeZone
         });
 
     Log.Information("[Hangfire] 已注册定时任务: cleanup-expired-upload-sessions (计划: {Schedule})", schedule);
@@ -602,7 +611,7 @@ if (fileCleanupConfig.GetValue<bool>("OrphanAttachments:Enable", true))
         schedule,
         new RecurringJobOptions
         {
-            TimeZone = TimeZoneInfo.Local
+            TimeZone = appDefaultTimeZone
         });
 
     Log.Information("[Hangfire] 已注册定时任务: cleanup-expired-access-tokens (计划: {Schedule})", schedule);
@@ -620,7 +629,7 @@ if (commentHighlightConfig.GetValue<bool>("Enable", true))
         schedule,
         new RecurringJobOptions
         {
-            TimeZone = TimeZoneInfo.Local
+            TimeZone = appDefaultTimeZone
         });
 
     Log.Information("[Hangfire] 已注册定时任务: comment-highlight-stat (计划: {Schedule})", schedule);
@@ -638,7 +647,7 @@ if (retentionRewardConfig.GetValue<bool>("Enable", true))
         schedule,
         new RecurringJobOptions
         {
-            TimeZone = TimeZoneInfo.Local
+            TimeZone = appDefaultTimeZone
         });
 
     Log.Information("[Hangfire] 已注册定时任务: retention-reward (计划: {Schedule})", schedule);
@@ -657,7 +666,7 @@ if (shopConfig.GetValue<bool>("TimeoutOrders:Enable", true))
         schedule,
         new RecurringJobOptions
         {
-            TimeZone = TimeZoneInfo.Local
+            TimeZone = appDefaultTimeZone
         });
 
     Log.Information("[Hangfire] 已注册定时任务: shop-cancel-timeout-orders (超时: {Timeout} 分钟, 计划: {Schedule})", timeoutMinutes, schedule);
@@ -674,7 +683,7 @@ if (shopConfig.GetValue<bool>("ExpiredBenefits:Enable", true))
         schedule,
         new RecurringJobOptions
         {
-            TimeZone = TimeZoneInfo.Local
+            TimeZone = appDefaultTimeZone
         });
 
     Log.Information("[Hangfire] 已注册定时任务: shop-mark-expired-benefits (计划: {Schedule})", schedule);
@@ -691,7 +700,7 @@ if (shopConfig.GetValue<bool>("DailyStats:Enable", false))
         schedule,
         new RecurringJobOptions
         {
-            TimeZone = TimeZoneInfo.Local
+            TimeZone = appDefaultTimeZone
         });
 
     Log.Information("[Hangfire] 已注册定时任务: shop-daily-stats (计划: {Schedule})", schedule);
@@ -773,5 +782,95 @@ public sealed class NullableInt64ToStringConverter : JsonConverter<long?>
         {
             writer.WriteNullValue();
         }
+    }
+}
+
+public sealed class UtcDateTimeJsonConverter : JsonConverter<DateTime>
+{
+    public UtcDateTimeJsonConverter()
+    {
+    }
+
+    public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.String)
+        {
+            var raw = reader.GetString();
+            if (string.IsNullOrWhiteSpace(raw))
+            {
+                return default;
+            }
+
+            if (DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dto))
+            {
+                return dto.UtcDateTime;
+            }
+
+            if (DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var dt))
+            {
+                return NormalizeToUtc(dt);
+            }
+
+            throw new JsonException($"无法将字符串 \"{raw}\" 解析为 DateTime。");
+        }
+
+        if (reader.TokenType == JsonTokenType.Number && reader.TryGetInt64(out var epoch))
+        {
+            var dto = epoch > 9999999999
+                ? DateTimeOffset.FromUnixTimeMilliseconds(epoch)
+                : DateTimeOffset.FromUnixTimeSeconds(epoch);
+
+            return dto.UtcDateTime;
+        }
+
+        throw new JsonException($"不支持的 JSON 标记类型 {reader.TokenType}，期望 string 或 number。");
+    }
+
+    public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
+    {
+        var utc = NormalizeToUtc(value);
+        writer.WriteStringValue(utc.ToString("O", CultureInfo.InvariantCulture));
+    }
+
+    private DateTime NormalizeToUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            // 数据库存储统一为 UTC，SQLite 读取常为 Unspecified，这里按 UTC 解释以避免重复时区换算
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
+    }
+}
+
+public sealed class NullableUtcDateTimeJsonConverter : JsonConverter<DateTime?>
+{
+    private readonly UtcDateTimeJsonConverter _inner;
+
+    public NullableUtcDateTimeJsonConverter()
+    {
+        _inner = new UtcDateTimeJsonConverter();
+    }
+
+    public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType == JsonTokenType.Null)
+        {
+            return null;
+        }
+
+        return _inner.Read(ref reader, typeof(DateTime), options);
+    }
+
+    public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
+    {
+        if (!value.HasValue)
+        {
+            writer.WriteNullValue();
+            return;
+        }
+
+        _inner.Write(writer, value.Value, options);
     }
 }

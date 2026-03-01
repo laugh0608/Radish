@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import { log } from '@/utils/logger';
 import { userApi } from '../api/user';
 import { tokenService } from '../services/tokenService';
@@ -25,7 +25,7 @@ export function UserProvider({ children }: UserProviderProps) {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     const token = tokenService.getAccessToken();
     if (!token) {
       setUser(null);
@@ -33,24 +33,62 @@ export function UserProvider({ children }: UserProviderProps) {
       return;
     }
 
+    const tokenUserName = tokenService.getUserNameFromAccessToken(token);
+
     try {
       const response = await userApi.getCurrentUser();
       if (response.ok && response.data) {
-        setUser(response.data);
+        const resolvedUserName = response.data.voUserName?.trim() || tokenUserName || '';
+        setUser({
+          ...response.data,
+          voUserName: resolvedUserName,
+        });
       } else {
-        setUser(null);
+        if (tokenUserName) {
+          setUser({
+            voUserId: 0,
+            voUserName: tokenUserName,
+            voTenantId: 0,
+          } satisfies UserInfo);
+        } else {
+          setUser(null);
+        }
       }
     } catch (error) {
       log.error('UserContext', 'Failed to fetch user info:', error);
-      setUser(null);
+      if (tokenUserName) {
+        setUser({
+          voUserId: 0,
+          voUserName: tokenUserName,
+          voTenantId: 0,
+        } satisfies UserInfo);
+      } else {
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     void refreshUser();
-  }, []);
+  }, [refreshUser]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleTokenUpdated = () => {
+      setLoading(true);
+      void refreshUser();
+    };
+
+    window.addEventListener('auth:token-updated', handleTokenUpdated);
+    return () => {
+      window.removeEventListener('auth:token-updated', handleTokenUpdated);
+    };
+  }, [refreshUser]);
 
   return (
     <UserContext.Provider value={{ user, loading, refreshUser }}>

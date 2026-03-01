@@ -51,6 +51,11 @@ public class PostVo
     public string VoAuthorName { get; set; } = string.Empty;
 
     /// <summary>
+    /// 作者头像 URL
+    /// </summary>
+    public string? VoAuthorAvatarUrl { get; set; }
+
+    /// <summary>
     /// 分类 Id
     /// </summary>
     public long VoCategoryId { get; set; }
@@ -124,4 +129,9 @@ public class PostVo
     /// 修改时间
     /// </summary>
     public DateTime? VoModifyTime { get; set; }
+
+    /// <summary>
+    /// 最新互动用户（按最新评论时间倒序，最多 3 个）
+    /// </summary>
+    public List<PostInteractorVo> VoLatestInteractors { get; set; } = new();
 }

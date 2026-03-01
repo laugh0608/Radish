@@ -18,6 +18,13 @@ import {
   type CommentHighlight
 } from '@/api/forum';
 
+function isAbortError(error: unknown): boolean {
+  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
+    return error.name === 'AbortError';
+  }
+  return error instanceof Error && error.name === 'AbortError';
+}
+
 export interface ForumDataState {
   // 数据状态
   categories: Category[];
@@ -126,9 +133,6 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     try {
       const data = await getTopCategories(t);
       setCategories(data);
-      if (data.length > 0 && selectedCategoryId == null) {
-        setSelectedCategoryId(data[0].voId);
-      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -144,7 +148,11 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       const tags = await getFixedTags(t);
       setFixedTags(tags);
     } catch (err) {
-      log.warn('加载固定标签失败:', err);
+      if (isAbortError(err)) {
+        log.warn('加载固定标签超时，已降级为空列表');
+      } else {
+        log.warn('加载固定标签失败:', err);
+      }
       setFixedTags([]);
     }
   };
@@ -156,7 +164,11 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       const tags = await getHotTags(t, 20);
       setHotTags(tags);
     } catch (err) {
-      log.warn('加载热门标签失败:', err);
+      if (isAbortError(err)) {
+        log.warn('加载热门标签超时，已降级为空列表');
+      } else {
+        log.warn('加载热门标签失败:', err);
+      }
       setHotTags([]);
     } finally {
       setLoadingHotTags(false);
@@ -274,7 +286,11 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
         return next;
       });
     } catch (err) {
-      log.error('加载热门内容失败:', err);
+      if (isAbortError(err)) {
+        log.warn('加载热门内容超时，稍后可重试');
+      } else {
+        log.error('加载热门内容失败:', err);
+      }
       trendingLoadedRef.current = false;
     } finally {
       setLoadingTrending(false);

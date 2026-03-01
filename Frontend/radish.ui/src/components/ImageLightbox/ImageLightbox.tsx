@@ -82,7 +82,7 @@ export const ImageLightbox = ({
         />
 
         <button type="button" className={styles.close} onClick={onClose} aria-label="关闭预览">
-          <Icon icon="mdi:close" size={22} />
+          <Icon icon="mdi:close" size={18} />
         </button>
 
         {images.length > 1 && (
@@ -100,4 +100,3 @@ export const ImageLightbox = ({
     </div>
   );
 };
-

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
+import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
 import styles from './UserPostList.module.css';
 
@@ -16,10 +17,11 @@ interface Post {
 interface UserPostListProps {
   userId: number;
   apiBaseUrl: string;
+  displayTimeZone: string;
   onPostClick?: (postId: number) => void;
 }
 
-export const UserPostList = ({ userId, apiBaseUrl, onPostClick }: UserPostListProps) => {
+export const UserPostList = ({ userId, apiBaseUrl, displayTimeZone, onPostClick }: UserPostListProps) => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -85,7 +87,7 @@ export const UserPostList = ({ userId, apiBaseUrl, onPostClick }: UserPostListPr
                 {post.voCommentCount}
               </span>
               <span className={styles.time}>
-                {new Date(post.voCreateTime).toLocaleDateString('zh-CN')}
+                {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}
               </span>
             </div>
           </div>

@@ -27,6 +27,7 @@ export { GlassPanel } from './GlassPanel/GlassPanel';
 export type { GlassPanelProps } from './GlassPanel/GlassPanel';
 
 export { MarkdownRenderer } from './MarkdownRenderer/MarkdownRenderer';
+export type { MarkdownStickerItem, MarkdownStickerMap } from './MarkdownRenderer/MarkdownRenderer';
 export { ImageLightbox } from './ImageLightbox/ImageLightbox';
 export type { LightboxImageItem } from './ImageLightbox/ImageLightbox';
 
@@ -38,6 +39,15 @@ export type { ConfirmDialogProps } from './ConfirmDialog/ConfirmDialog';
 
 export { UserMention } from './UserMention/UserMention';
 export type { UserMentionProps, UserMentionOption } from './UserMention/UserMention';
+
+export { StickerPicker } from './StickerPicker/StickerPicker';
+export type {
+  StickerPickerProps,
+  StickerPickerMode,
+  StickerPickerGroup,
+  StickerPickerSticker,
+  StickerPickerSelection,
+} from './StickerPicker/StickerPicker';
 
 export { FileUpload } from './FileUpload/FileUpload';
 export type { FileUploadProps, UploadResult } from './FileUpload/FileUpload';

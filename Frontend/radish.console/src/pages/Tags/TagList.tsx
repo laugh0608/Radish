@@ -270,7 +270,7 @@ export const TagList = () => {
                 okText="确认"
                 cancelText="取消"
               >
-                <Button variant="ghost" size="small" danger icon={<DeleteOutlined />}>
+                <Button variant="danger" size="small" icon={<DeleteOutlined />}>
                   删除
                 </Button>
               </Popconfirm>

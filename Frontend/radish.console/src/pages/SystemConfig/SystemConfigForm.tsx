@@ -11,7 +11,6 @@ import {
   createConfig,
   updateConfig,
   getConfigById,
-  type SystemConfig,
   type ConfigRequest,
 } from '@/api/systemConfigApi';
 import { log } from '@/utils/logger';
@@ -51,13 +50,13 @@ export const SystemConfigForm = ({
       setInitialLoading(true);
       const config = await getConfigById(id);
       form.setFieldsValue({
-        category: config.category,
-        key: config.key,
-        name: config.name,
-        value: config.value,
-        description: config.description,
-        type: config.type,
-        isEnabled: config.isEnabled,
+        category: config.voCategory,
+        key: config.voKey,
+        name: config.voName,
+        value: config.voValue,
+        description: config.voDescription,
+        type: config.voType,
+        isEnabled: config.voIsEnabled,
       });
     } catch (error) {
       log.error('SystemConfigForm', '加载配置详情失败:', error);

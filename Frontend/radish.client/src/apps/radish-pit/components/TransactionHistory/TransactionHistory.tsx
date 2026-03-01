@@ -39,14 +39,14 @@ export const TransactionHistory = () => {
           searchFilters.status || null
         );
 
-        setTransactions(response.voItems);
-        setTotalPages(response.voTotalPages);
-        setTotalCount(response.voTotalCount);
+        setTransactions(response.data);
+        setTotalPages(response.pageCount);
+        setTotalCount(response.dataCount);
         setCurrentPage(page);
 
         log.debug('TransactionHistory', '交易记录加载完成', {
-          count: response.voItems.length,
-          totalCount: response.voTotalCount,
+          count: response.data.length,
+          totalCount: response.dataCount,
         });
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : '加载交易记录失败';

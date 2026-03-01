@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { StickerPicker, type StickerPickerGroup, type StickerPickerSelection } from '@radish/ui/sticker-picker';
 import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { UserMention, type UserMentionOption as UiUserMentionOption } from '@radish/ui/user-mention';
@@ -16,6 +17,8 @@ interface CreateCommentFormProps {
   replyTo?: { commentId: number; authorName: string } | null;
   onCancelReply?: () => void;
   variant?: 'inline' | 'sheet';
+  stickerGroups?: StickerPickerGroup[];
+  onStickerSelect?: (selection: StickerPickerSelection) => void;
 }
 
 const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
@@ -37,7 +40,9 @@ export const CreateCommentForm = ({
   disabled = false,
   replyTo = null,
   onCancelReply,
-  variant = 'inline'
+  variant = 'inline',
+  stickerGroups = [],
+  onStickerSelect,
 }: CreateCommentFormProps) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
@@ -54,6 +59,32 @@ export const CreateCommentForm = ({
   // 上传状态
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const normalizeCode = (value: string): string => value.trim().toLowerCase();
+
+  const escapeMarkdownAlt = (value: string): string => value.replace(/[\[\]]/g, '').trim();
+
+  const buildStickerMarkdownUrl = (
+    groupCode: string,
+    stickerCode: string,
+    imageUrl?: string,
+    thumbnailUrl?: string
+  ): string => {
+    const normalizedGroupCode = normalizeCode(groupCode);
+    const normalizedStickerCode = normalizeCode(stickerCode);
+    const params = new URLSearchParams();
+
+    if (imageUrl) {
+      params.set('image', imageUrl);
+    }
+    if (thumbnailUrl) {
+      params.set('thumbnail', thumbnailUrl);
+    }
+
+    const meta = params.toString();
+    const base = `sticker://${normalizedGroupCode}/${normalizedStickerCode}`;
+    return meta ? `${base}#radish:${meta}` : base;
+  };
 
   const handleSubmit = () => {
     if (!content.trim()) {
@@ -239,6 +270,34 @@ export const CreateCommentForm = ({
     documentInputRef.current?.click();
   };
 
+  const handlePickerSelect = (selection: StickerPickerSelection) => {
+    if (selection.type === 'unicode') {
+      if (!selection.emoji) {
+        return;
+      }
+
+      insertTextAtCursor(selection.emoji);
+      onStickerSelect?.(selection);
+      return;
+    }
+
+    const groupCode = selection.groupCode?.trim();
+    const stickerCode = selection.stickerCode?.trim();
+    if (!groupCode || !stickerCode) {
+      return;
+    }
+
+    const altText = escapeMarkdownAlt(selection.stickerName || stickerCode) || stickerCode;
+    const stickerUrl = buildStickerMarkdownUrl(
+      groupCode,
+      stickerCode,
+      selection.imageUrl,
+      selection.thumbnailUrl
+    );
+    insertTextAtCursor(`![${altText}](${stickerUrl})`);
+    onStickerSelect?.(selection);
+  };
+
   const containerClassName = `${styles.container} ${variant === 'sheet' ? styles.containerSheet : ''}`;
   const titleClassName = `${styles.title} ${variant === 'sheet' ? styles.titleSheet : ''}`;
   const submitClassName = `${styles.submitButton} ${variant === 'sheet' ? styles.submitButtonSheet : ''}`;
@@ -316,6 +375,17 @@ export const CreateCommentForm = ({
           accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
           onChange={handleDocumentUpload}
           style={{ display: 'none' }}
+        />
+
+        <StickerPicker
+          groups={stickerGroups}
+          mode="insert"
+          theme="light"
+          panelPlacement="left"
+          onSelect={handlePickerSelect}
+          disabled={!isAuthenticated || !hasPost || disabled || uploading}
+          className={styles.stickerPicker}
+          triggerTitle="插入表情包"
         />
 
         {/* 上传按钮 */}

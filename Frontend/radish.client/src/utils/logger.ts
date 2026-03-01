@@ -44,9 +44,10 @@ class Logger {
     }
 
     const hasTag = typeof messageOrArg === 'string';
+    const hasExtraArgs = messageOrArg !== undefined || args.length > 0;
     const tag = hasTag ? tagOrMessage : undefined;
     const message = hasTag ? messageOrArg : tagOrMessage;
-    const finalArgs = hasTag ? args : [messageOrArg, ...args];
+    const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
     console.log(this.formatPrefix('DEBUG', tag), message, ...finalArgs);
   }
@@ -62,9 +63,10 @@ class Logger {
     }
 
     const hasTag = typeof messageOrArg === 'string';
+    const hasExtraArgs = messageOrArg !== undefined || args.length > 0;
     const tag = hasTag ? tagOrMessage : undefined;
     const message = hasTag ? messageOrArg : tagOrMessage;
-    const finalArgs = hasTag ? args : [messageOrArg, ...args];
+    const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
     console.info(this.formatPrefix('INFO', tag), message, ...finalArgs);
   }
@@ -80,9 +82,10 @@ class Logger {
     }
 
     const hasTag = typeof messageOrArg === 'string';
+    const hasExtraArgs = messageOrArg !== undefined || args.length > 0;
     const tag = hasTag ? tagOrMessage : undefined;
     const message = hasTag ? messageOrArg : tagOrMessage;
-    const finalArgs = hasTag ? args : [messageOrArg, ...args];
+    const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
     console.warn(this.formatPrefix('WARN', tag), message, ...finalArgs);
   }
@@ -98,9 +101,10 @@ class Logger {
     }
 
     const hasTag = typeof messageOrArg === 'string';
+    const hasExtraArgs = messageOrArg !== undefined || args.length > 0;
     const tag = hasTag ? tagOrMessage : undefined;
     const message = hasTag ? messageOrArg : tagOrMessage;
-    const finalArgs = hasTag ? args : [messageOrArg, ...args];
+    const finalArgs = hasTag ? args : hasExtraArgs ? [messageOrArg, ...args] : [];
 
     console.error(this.formatPrefix('ERROR', tag), message, ...finalArgs);
   }

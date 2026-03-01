@@ -59,6 +59,15 @@ export interface Tag {
 /**
  * 帖子列表项 Vo
  */
+export interface PostInteractor {
+  voUserId: number;
+  voUserName: string;
+  voAvatarUrl?: string | null;
+}
+
+/**
+ * 帖子列表项 Vo
+ */
 export interface PostItem {
   voId: number;
   voTitle: string;
@@ -69,6 +78,8 @@ export interface PostItem {
   voCategoryName?: string | null;
   voAuthorId: number;
   voAuthorName?: string | null;
+  voAuthorAvatarUrl?: string | null;
+  voLatestInteractors?: PostInteractor[];
   voViewCount?: number;
   voLikeCount?: number;
   voCommentCount?: number;
@@ -134,6 +145,49 @@ export interface CommentNode {
 }
 
 /**
+ * 帖子编辑历史
+ */
+export interface PostEditHistory {
+  voId: number;
+  voPostId: number;
+  voEditSequence: number;
+  voOldTitle: string;
+  voNewTitle: string;
+  voOldContent: string;
+  voNewContent: string;
+  voEditorId: number;
+  voEditorName: string;
+  voEditedAt: string;
+  voCreateTime: string;
+}
+
+/**
+ * 评论编辑历史
+ */
+export interface CommentEditHistory {
+  voId: number;
+  voCommentId: number;
+  voPostId: number;
+  voEditSequence: number;
+  voOldContent: string;
+  voNewContent: string;
+  voEditorId: number;
+  voEditorName: string;
+  voEditedAt: string;
+  voCreateTime: string;
+}
+
+/**
+ * Vo 分页结果
+ */
+export interface VoPagedResult<T> {
+  voItems: T[];
+  voTotal: number;
+  voPageIndex: number;
+  voPageSize: number;
+}
+
+/**
  * 神评/沙发高亮记录 Vo
  */
 export interface CommentHighlight {
@@ -188,6 +242,7 @@ export interface UpdatePostRequest {
   title: string;
   content: string;
   categoryId?: number;
+  tagNames: string[];
 }
 
 /**

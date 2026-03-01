@@ -21,6 +21,8 @@ interface TokenRefreshResponse {
   token_type: string;
 }
 
+type JwtPayload = Record<string, unknown>;
+
 /**
  * Token 管理服务
  *
@@ -29,11 +31,9 @@ interface TokenRefreshResponse {
 class TokenService {
   private static instance: TokenService;
   private refreshPromise: Promise<string> | null = null;
-  private readonly TOKEN_KEY = 'access_token';
-  private readonly REFRESH_TOKEN_KEY = 'refresh_token';
-  private readonly TOKEN_EXPIRES_KEY = 'token_expires_at';
-
-  private constructor() {}
+  private readonly TOKEN_KEY = 'radish_console_access_token';
+  private readonly REFRESH_TOKEN_KEY = 'radish_console_refresh_token';
+  private readonly TOKEN_EXPIRES_KEY = 'radish_console_token_expires_at';
 
   static getInstance(): TokenService {
     if (!TokenService.instance) {
@@ -47,6 +47,38 @@ class TokenService {
    */
   getAccessToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  /**
+   * 从 Access Token 中解析用户名（用于接口兜底）
+   */
+  getUserNameFromAccessToken(token?: string | null): string | null {
+    const targetToken = token ?? this.getAccessToken();
+    if (!targetToken) {
+      return null;
+    }
+
+    const payload = this.parseJwt(targetToken);
+    if (!payload) {
+      return null;
+    }
+
+    const claimKeys = [
+      'name',
+      'preferred_username',
+      'nickname',
+      'unique_name',
+      'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
+    ] as const;
+
+    for (const key of claimKeys) {
+      const value = payload[key];
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -211,6 +243,27 @@ class TokenService {
     }
 
     return currentToken;
+  }
+
+  private parseJwt(token: string): JwtPayload | null {
+    try {
+      const base64Url = token.split('.')[1];
+      if (!base64Url) {
+        return null;
+      }
+
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const paddedBase64 = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), '=');
+      const jsonPayload = decodeURIComponent(
+        atob(paddedBase64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch {
+      return null;
+    }
   }
 }
 

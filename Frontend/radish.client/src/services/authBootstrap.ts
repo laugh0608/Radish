@@ -1,4 +1,4 @@
-import { configureTokenRefresh, TokenRefreshErrorType } from '@radish/http';
+import { configureApiClient, configureTokenRefresh, TokenRefreshErrorType } from '@radish/http';
 import { parseApiResponse, type ApiResponse } from '@radish/http';
 import { getAuthBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
@@ -13,6 +13,8 @@ export interface CurrentUser {
   voTenantId: number;
   voAvatarUrl?: string;
   voAvatarThumbnailUrl?: string;
+  voRoleNames?: string[];
+  voRoles?: string[];
 }
 
 export interface AuthBootstrapOptions {
@@ -22,13 +24,33 @@ export interface AuthBootstrapOptions {
   useCache?: boolean;
 }
 
-function setUserFromCurrentUser(user: CurrentUser) {
+function resolveUserRoles(user: CurrentUser, token?: string | null): string[] {
+  const tokenRoles = tokenService.getRolesFromAccessToken(token);
+  if (tokenRoles.length > 0) {
+    return tokenRoles;
+  }
+
+  const userRoles = [
+    ...(Array.isArray(user.voRoleNames) ? user.voRoleNames : []),
+    ...(Array.isArray(user.voRoles) ? user.voRoles : []),
+  ]
+    .map((role) => role.trim())
+    .filter(Boolean);
+
+  if (userRoles.length > 0) {
+    return userRoles;
+  }
+
+  return ['User'];
+}
+
+function setUserFromCurrentUser(user: CurrentUser, token?: string | null) {
   const { setUser } = useUserStore.getState();
   setUser({
     userId: typeof user.voUserId === 'string' ? parseInt(user.voUserId, 10) : user.voUserId,
     userName: user.voUserName,
     tenantId: typeof user.voTenantId === 'string' ? parseInt(user.voTenantId, 10) : user.voTenantId,
-    roles: ['User'],
+    roles: resolveUserRoles(user, token),
     avatarUrl: user.voAvatarUrl,
     avatarThumbnailUrl: user.voAvatarThumbnailUrl
   });
@@ -78,7 +100,7 @@ export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<Cu
       try {
         const userData = JSON.parse(cachedUserInfo) as CurrentUser;
         if (userData.voUserId && userData.voUserName) {
-          setUserFromCurrentUser(userData);
+          setUserFromCurrentUser(userData, token);
           authStore.setAuthenticated(true);
           window.localStorage.removeItem('cached_user_info');
           onUserLoaded?.(userData);
@@ -95,7 +117,7 @@ export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<Cu
 
   try {
     const userData = await fetchCurrentUser(apiBaseUrl, token);
-    setUserFromCurrentUser(userData);
+    setUserFromCurrentUser(userData, token);
     authStore.setAuthenticated(true);
     onUserLoaded?.(userData);
     log.info('AuthBootstrap', '✅ 用户信息初始化完成');
@@ -118,12 +140,13 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
   const authStore = useAuthStore.getState();
   const authServerBaseUrl = getAuthBaseUrl();
 
+  configureApiClient({
+    getToken: () => tokenService.getAccessToken(),
+  });
+
   configureTokenRefresh({
     refreshEndpoint: `${authServerBaseUrl}/connect/token`,
-    getRefreshToken: () => {
-      if (typeof window === 'undefined') return null;
-      return window.localStorage.getItem('refresh_token');
-    },
+    getRefreshToken: () => tokenService.getRefreshToken(),
     onTokenRefreshed: (accessToken, refreshToken) => {
       if (typeof window === 'undefined') return;
       tokenService.setTokenInfoFromJwt(accessToken, refreshToken);

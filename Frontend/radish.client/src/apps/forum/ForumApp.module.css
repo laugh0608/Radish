@@ -258,27 +258,30 @@
   font-weight: 600;
 }
 
-.publishButton {
+.quickActionButton {
   width: 100%;
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 600;
-  background: linear-gradient(135deg, #2d6cdf, #2558b8);
-  border: none;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  color: #fff;
+  color: #374151;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.publishButton:hover:not(:disabled) {
+.quickActionButton:hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(45, 108, 223, 0.3);
+  border-color: #9ca3af;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
 }
 
-.publishButton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.quickActionButtonActive {
+  background: linear-gradient(135deg, #2d6cdf, #2558b8);
+  border-color: #2d6cdf;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(45, 108, 223, 0.22);
 }
 
 .searchBox {

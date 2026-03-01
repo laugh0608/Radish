@@ -49,6 +49,12 @@
   margin-bottom: 12px;
   font-size: 14px;
   text-align: left;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --border-color: #d1d5db;
+  --table-header-bg: #f3f4f6;
+  --table-row-bg: #f9fafb;
+  --code-bg: #f3f4f6;
 }
 
 .postBody :global(.markdownImage) {
@@ -191,6 +197,25 @@
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.historyButton {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  background-color: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  color: #1f2937;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.historyButton:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
 }
 
 .editButton:hover {

@@ -1,0 +1,141 @@
+###############################################################################
+# Radish.Api - 表情包 API 测试
+###############################################################################
+# 说明：
+# 1. 管理端接口需要管理员 Token（Policy: SystemOrAdmin）
+# 2. 前台查询接口允许匿名访问
+# 3. 请先在附件系统上传图片，拿到 AttachmentId 后再新增表情
+###############################################################################
+
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Gateway_HostAddress = https://localhost:5000
+@Api_HostAddress = http://localhost:5100
+
+# 测试变量（请按实际数据替换）
+@GroupId = 1
+@StickerId = 1
+@GroupCode = default
+@AttachmentId1 = 1
+@AttachmentId2 = 2
+
+###############################################################################
+# 前台接口（匿名）
+###############################################################################
+
+### 1. 获取启用的表情包分组（含分组下表情）
+GET {{Gateway_HostAddress}}/api/v1/Sticker/GetGroups
+Accept: application/json
+
+### 2. 按分组编码获取详情
+GET {{Gateway_HostAddress}}/api/v1/Sticker/GetGroupDetail/{{GroupCode}}
+Accept: application/json
+
+###############################################################################
+# 管理端接口（需 Token）
+###############################################################################
+
+### 3. 创建表情分组
+POST {{Gateway_HostAddress}}/api/v1/Sticker/CreateGroup
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "name": "默认表情包",
+  "code": "default",
+  "description": "系统默认表情包",
+  "coverImageUrl": "https://example.com/stickers/default-cover.png",
+  "groupType": 1,
+  "isEnabled": true,
+  "sort": 10
+}
+
+### 4. 分组编码预检（唯一性）
+GET {{Gateway_HostAddress}}/api/v1/Sticker/CheckGroupCode?code=default
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+### 5. 文件名编码清洗预览
+GET {{Gateway_HostAddress}}/api/v1/Sticker/NormalizeCode?filename=白眼-emoji%20v2.png
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+### 6. 新增单个表情
+POST {{Gateway_HostAddress}}/api/v1/Sticker/AddSticker
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "groupId": {{GroupId}},
+  "code": "roll_eyes",
+  "name": "白眼",
+  "isAnimated": false,
+  "allowInline": true,
+  "attachmentId": {{AttachmentId1}},
+  "isEnabled": true,
+  "sort": 1
+}
+
+### 7. 组内表情编码预检（唯一性）
+GET {{Gateway_HostAddress}}/api/v1/Sticker/CheckStickerCode?groupId={{GroupId}}&code=roll_eyes
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+### 8. 批量新增表情
+POST {{Gateway_HostAddress}}/api/v1/Sticker/BatchAddStickers
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "groupId": {{GroupId}},
+  "stickers": [
+    {
+      "attachmentId": {{AttachmentId1}},
+      "code": "happy",
+      "name": "开心",
+      "allowInline": true
+    },
+    {
+      "attachmentId": {{AttachmentId2}},
+      "code": "cry",
+      "name": "哭哭",
+      "allowInline": true
+    }
+  ]
+}
+
+### 9. 批量更新排序
+PUT {{Gateway_HostAddress}}/api/v1/Sticker/BatchUpdateSort
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "items": [
+    {
+      "id": {{StickerId}},
+      "sort": 1
+    },
+    {
+      "id": 2,
+      "sort": 2
+    }
+  ]
+}
+
+### 10. 获取分组下全部表情（管理端，含禁用项）
+GET {{Gateway_HostAddress}}/api/v1/Sticker/GetGroupStickers/{{GroupId}}
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+###############################################################################
+# 使用记录接口（需登录）
+###############################################################################
+
+### 11. 记录表情使用次数
+POST {{Gateway_HostAddress}}/api/v1/Sticker/RecordUse
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "emojiType": "sticker",
+  "emojiValue": "default/happy"
+}

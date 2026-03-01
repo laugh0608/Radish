@@ -1,6 +1,8 @@
 import { lazy, Suspense } from 'react';
 import type { PostDetail as PostDetailType } from '@/api/forum';
+import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
+import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './PostDetail.module.css';
 
 const MarkdownRenderer = lazy(() =>
@@ -10,24 +12,29 @@ const MarkdownRenderer = lazy(() =>
 interface PostDetailProps {
   post: PostDetailType | null;
   loading?: boolean;
+  displayTimeZone: string;
   isLiked?: boolean;
   onLike?: (postId: number) => void;
   isAuthenticated?: boolean;
   currentUserId?: number;
   onEdit?: (postId: number) => void;
   onDelete?: (postId: number) => void;
+  onViewHistory?: (postId: number) => void;
 }
 
 export const PostDetail = ({
   post,
   loading = false,
+  displayTimeZone,
   isLiked = false,
   onLike,
   isAuthenticated = false,
   currentUserId = 0,
   onEdit,
-  onDelete
+  onDelete,
+  onViewHistory
 }: PostDetailProps) => {
+  const { stickerMap } = useStickerCatalog();
   const parsedTags = post?.voTags
     ? post.voTags
         .split(',')
@@ -62,11 +69,11 @@ export const PostDetail = ({
         <h4 className={styles.postTitle}>{post.voTitle}</h4>
         <div className={styles.postMeta}>
           {post.voAuthorName && <span>作者：{post.voAuthorName}</span>}
-          {post.voCreateTime && <span> · {post.voCreateTime}</span>}
+          {post.voCreateTime && <span> · {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}</span>}
           {post.voViewCount !== undefined && <span> · 浏览 {post.voViewCount}</span>}
         </div>
         <Suspense fallback={<div className={styles.postBody}>正文渲染中...</div>}>
-          <MarkdownRenderer content={post.voContent} className={styles.postBody} />
+          <MarkdownRenderer content={post.voContent} className={styles.postBody} stickerMap={stickerMap} />
         </Suspense>
         {tagList.length > 0 && (
           <div className={styles.postTags}>
@@ -112,6 +119,15 @@ export const PostDetail = ({
               >
                 <Icon icon="mdi:delete" size={18} />
                 删除
+              </button>
+              <button
+                type="button"
+                onClick={() => onViewHistory?.(post.voId)}
+                className={styles.historyButton}
+                title="查看编辑历史"
+              >
+                <Icon icon="mdi:history" size={18} />
+                历史
               </button>
             </div>
           )}

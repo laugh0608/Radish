@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Collections.Concurrent;
 using Radish.Common.CoreTool;
 using Radish.Common.TenantTool;
 using Radish.Infrastructure.Tenant;
@@ -18,6 +19,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 {
     private readonly SqlSugarScope _dbScopeBase;
     private readonly IUnitOfWorkManage _unitOfWorkManage;
+    private static readonly ConcurrentDictionary<Type, List<PropertyInfo>> DateTimePropertyCache = new();
 
     /// <summary>供 BaseRepository 及子类使用的 ISqlSugarClient 数据库实例</summary>
     /// <remarks>支持多租户切换数据库</remarks>
@@ -84,6 +86,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
     public async Task<long> AddAsync(TEntity entity)
     {
+        NormalizeEntityDateTimeToUtc(entity);
+
         // 确保软删除字段正确初始化
         if (entity is IDeleteFilter softDeleteEntity)
         {
@@ -115,6 +119,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         // 确保所有实体的软删除字段正确初始化
         foreach (var entity in entities)
         {
+            NormalizeEntityDateTimeToUtc(entity);
+
             if (entity is IDeleteFilter softDeleteEntity)
             {
                 softDeleteEntity.IsDeleted = false;
@@ -147,6 +153,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>插入数据的 SnowflakeId, 类型为 long</returns>
     public async Task<List<long>> AddSplitAsync(TEntity entity)
     {
+        NormalizeEntityDateTimeToUtc(entity);
+
         // 确保软删除字段正确初始化
         if (entity is IDeleteFilter softDeleteEntity)
         {
@@ -187,7 +195,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         if (entity is IDeleteFilter softDeleteEntity)
         {
             softDeleteEntity.IsDeleted = true;
-            softDeleteEntity.DeletedAt = DateTime.Now;
+            softDeleteEntity.DeletedAt = DateTime.UtcNow;
             softDeleteEntity.DeletedBy = deletedBy;
         }
 
@@ -220,7 +228,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             if (entity is IDeleteFilter softDeleteEntity)
             {
                 softDeleteEntity.IsDeleted = true;
-                softDeleteEntity.DeletedAt = DateTime.Now;
+                softDeleteEntity.DeletedAt = DateTime.UtcNow;
                 softDeleteEntity.DeletedBy = deletedBy;
             }
         }
@@ -337,6 +345,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>是否成功</returns>
     public async Task<bool> UpdateAsync(TEntity entity)
     {
+        NormalizeEntityDateTimeToUtc(entity);
         return await DbClientBase.Updateable(entity).ExecuteCommandHasChangeAsync();
     }
 
@@ -345,6 +354,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>受影响的行数</returns>
     public async Task<int> UpdateRangeAsync(List<TEntity> entities)
     {
+        foreach (var entity in entities)
+        {
+            NormalizeEntityDateTimeToUtc(entity);
+        }
+
         return await DbClientBase.Updateable(entities).ExecuteCommandAsync();
     }
 
@@ -357,7 +371,53 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// </example>
     public async Task<bool> UpdateColumnsAsync(TEntity entity, Expression<Func<TEntity, object>> updateColumns)
     {
+        NormalizeEntityDateTimeToUtc(entity);
         return await DbClientBase.Updateable(entity).UpdateColumns(updateColumns).ExecuteCommandHasChangeAsync();
+    }
+
+    /// <summary>统一将实体中的 DateTime/DateTime? 字段规范为 UTC，保证落库一致性</summary>
+    private static void NormalizeEntityDateTimeToUtc(TEntity entity)
+    {
+        if (entity == null)
+        {
+            return;
+        }
+
+        var entityType = typeof(TEntity);
+        var dateTimeProps = DateTimePropertyCache.GetOrAdd(entityType, type =>
+            type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(prop =>
+                    prop.CanRead &&
+                    prop.CanWrite &&
+                    (prop.PropertyType == typeof(DateTime) || prop.PropertyType == typeof(DateTime?)))
+                .ToList());
+
+        foreach (var prop in dateTimeProps)
+        {
+            if (prop.PropertyType == typeof(DateTime))
+            {
+                var current = (DateTime)prop.GetValue(entity)!;
+                prop.SetValue(entity, NormalizeDateTimeToUtc(current));
+                continue;
+            }
+
+            var nullable = (DateTime?)prop.GetValue(entity);
+            if (nullable.HasValue)
+            {
+                prop.SetValue(entity, NormalizeDateTimeToUtc(nullable.Value));
+            }
+        }
+    }
+
+    private static DateTime NormalizeDateTimeToUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            // 约定 Unspecified 即 UTC（兼容 SQLite 返回的 DateTime.Kind=Unspecified）
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
     }
 
     /// <summary>根据条件更新指定列</summary>

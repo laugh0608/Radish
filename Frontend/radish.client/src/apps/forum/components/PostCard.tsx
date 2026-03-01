@@ -1,113 +1,189 @@
 import type { PostItem } from '@/api/forum';
+import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import styles from './PostCard.module.css';
 
 interface PostCardProps {
   post: PostItem;
+  displayTimeZone: string;
   onClick: () => void;
   godComment?: {
-    content: string;
     authorName: string;
-    likeCount: number;
+    content?: string | null;
   } | null;
 }
 
-export const PostCard = ({ post, onClick, godComment }: PostCardProps) => {
-  // 简单的时间格式化函数（待安装 date-fns 后替换）
-  const formatTime = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-
-      if (diffMins < 1) return '刚刚';
-      if (diffMins < 60) return `${diffMins}分钟前`;
-      if (diffHours < 24) return `${diffHours}小时前`;
-      if (diffDays < 30) return `${diffDays}天前`;
-      return date.toLocaleDateString('zh-CN');
-    } catch {
-      return dateString;
-    }
-  };
-
-  const tagList = post.voTags
+export const PostCard = ({ post, displayTimeZone, onClick, godComment }: PostCardProps) => {
+  const allTags = post.voTags
     ? post.voTags
         .split(',')
         .map(tag => tag.trim())
         .filter(Boolean)
-        .slice(0, 3)
     : [];
+  const tagList = allTags.slice(0, 2);
+  const remainingTagCount = Math.max(allTags.length - tagList.length, 0);
+
+  const authorName = post.voAuthorName?.trim() || '未知用户';
+  const categoryName = post.voCategoryName?.trim() || '未分类';
+
+  const buildAvatarText = (name: string) => {
+    const source = name.trim();
+    if (!source) return '?';
+    return source.charAt(0).toUpperCase();
+  };
+
+  const buildAvatarStyle = (seed: string) => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i += 1) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const hue = Math.abs(hash) % 360;
+    return {
+      backgroundColor: `hsl(${hue} 80% 92%)`,
+      color: `hsl(${hue} 45% 30%)`
+    };
+  };
+
+  const interactorSource =
+    post.voLatestInteractors?.filter(
+      (item): item is NonNullable<PostItem['voLatestInteractors']>[number] =>
+        Boolean(item && item.voUserName?.trim())
+    ) ?? [];
+
+  const interactorItems =
+    interactorSource.length > 0
+      ? interactorSource
+          .filter(item => item.voUserId !== post.voAuthorId && item.voUserName.trim() !== authorName)
+          .slice(0, 3)
+          .map(item => ({
+            id: item.voUserId,
+            name: item.voUserName.trim(),
+            avatarUrl: item.voAvatarUrl?.trim() || null
+          }))
+      : [godComment?.authorName]
+          .filter((name): name is string => Boolean(name && name.trim()))
+          .map(name => ({
+            id: 0,
+            name: name.trim(),
+            avatarUrl: null
+          }))
+          .filter(item => item.name !== authorName)
+          .slice(0, 3);
+
+  const fallbackInteractors =
+    interactorItems.length === 0 && (post.voCommentCount ?? 0) > 0
+      ? [{ id: -1, name: '评', avatarUrl: null }]
+      : interactorItems;
+  const displayedInteractorsCount = fallbackInteractors.length > 0 ? fallbackInteractors.length : 0;
+  const remainingInteractions = Math.max((post.voCommentCount ?? 0) - displayedInteractorsCount, 0);
+  const publishedTime = formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone, '未知时间');
+  const godCommentPreview = godComment?.content?.trim() ?? '';
+  const godCommentAuthor = godComment?.authorName?.trim() || '匿名用户';
+
+  const renderAvatar = (
+    name: string,
+    avatarUrl: string | null | undefined,
+    className: string,
+    title?: string
+  ) => {
+    const normalizedUrl = avatarUrl?.trim();
+    return (
+      <span
+        className={className}
+        style={normalizedUrl ? undefined : buildAvatarStyle(name)}
+        title={title ?? name}
+      >
+        {normalizedUrl ? (
+          <img src={normalizedUrl} alt={name} className={styles.avatarImage} loading="lazy" />
+        ) : (
+          buildAvatarText(name)
+        )}
+      </span>
+    );
+  };
 
   return (
     <article className={styles.card} onClick={onClick}>
-      {/* 帖子标题 */}
-      <h3 className={styles.title}>{post.voTitle}</h3>
+      <div className={styles.layout}>
+        <div
+          className={`${styles.main} ${!godCommentPreview ? styles.mainWithoutGodComment : ''}`}
+        >
+          {/* 帖子标题 */}
+          <h3 className={styles.title}>{post.voTitle}</h3>
 
-      {/* 帖子元信息 */}
-      <div className={styles.meta}>
-        <span className={styles.author}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="12" cy="7" r="4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          {post.voAuthorName}
-        </span>
-        <span className={styles.time}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <circle cx="12" cy="12" r="10" strokeWidth="2"/>
-            <path d="M12 6v6l4 2" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-          {post.voCreateTime ? formatTime(post.voCreateTime) : '未知时间'}
-        </span>
-        <span className={styles.likes}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          {post.voLikeCount || 0}
-        </span>
-        <span className={styles.views}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" strokeWidth="2"/>
-            <circle cx="12" cy="12" r="3" strokeWidth="2"/>
-          </svg>
-          {post.voViewCount || 0}
-        </span>
-        <span className={styles.comments}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          {post.voCommentCount || 0}
-        </span>
-      </div>
-
-      {/* 神评预览 */}
-      {godComment && (
-        <div className={styles.godComment}>
-          <div className={styles.godCommentHeader}>
-            <span className={styles.godBadge}>神评</span>
-            <span className={styles.godAuthor}>{godComment.authorName}</span>
-            <span className={styles.godLikes}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-              {godComment.likeCount}
-            </span>
+          <div className={styles.metaRow}>
+            <span className={styles.categoryChip}>{categoryName}</span>
+            {tagList.length > 0 ? (
+              tagList.map(tag => (
+                <span key={`${post.voId}-${tag}`} className={styles.tagChip}>
+                  #{tag}
+                </span>
+              ))
+            ) : (
+              <span className={styles.emptyTag}>暂无标签</span>
+            )}
+            {remainingTagCount > 0 && <span className={styles.moreTag}>+{remainingTagCount}</span>}
+            {post.voIsEssence && <span className={styles.statusChip}>精华</span>}
+            {post.voIsTop && <span className={styles.statusChip}>置顶</span>}
           </div>
-          <p className={styles.godCommentContent}>{godComment.content}</p>
-        </div>
-      )}
 
-      {tagList.length > 0 && (
-        <div className={styles.tagsRow}>
-          {tagList.map(tag => (
-            <span key={`${post.voId}-${tag}`} className={styles.tagChip}>
-              #{tag}
-            </span>
-          ))}
+          {godCommentPreview ? (
+            <div className={styles.godCommentCompact} title={`${godCommentAuthor}：${godCommentPreview}`}>
+              <span className={styles.godCommentBadge}>神评</span>
+              <span className={styles.godCommentText}>
+                {godCommentAuthor}：{godCommentPreview}
+              </span>
+            </div>
+          ) : null}
         </div>
-      )}
+
+        <aside className={styles.side}>
+          <div className={styles.metaTopRow}>
+            <div className={styles.authorBlock}>
+              {renderAvatar(authorName, post.voAuthorAvatarUrl, styles.avatar, authorName)}
+              <span className={styles.authorName}>{authorName}</span>
+            </div>
+            <div className={styles.time}>{publishedTime}</div>
+          </div>
+
+          <div className={styles.statsRow}>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>赞</span>
+              <span className={styles.statValue}>{post.voLikeCount || 0}</span>
+            </div>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>评</span>
+              <span className={styles.statValue}>{post.voCommentCount || 0}</span>
+            </div>
+            <div className={styles.statItem}>
+              <span className={styles.statLabel}>阅</span>
+              <span className={styles.statValue}>{post.voViewCount || 0}</span>
+            </div>
+          </div>
+
+          <div className={styles.interactionRow}>
+            <span className={styles.interactionLabel}>互动</span>
+            <div className={styles.avatarGroup}>
+              {fallbackInteractors.length > 0 ? (
+                fallbackInteractors.map((item, index) => (
+                  <span key={`${post.voId}-${item.id}-${item.name}-${index}`} className={styles.miniAvatarWrap}>
+                    {renderAvatar(
+                      item.name,
+                      item.avatarUrl,
+                      styles.miniAvatar,
+                      item.name === '评' ? '最近有评论互动' : item.name
+                    )}
+                  </span>
+                ))
+              ) : (
+                <span className={styles.noInteraction}>暂无</span>
+              )}
+              {remainingInteractions > 0 && (
+                <span className={styles.moreCount}>+{remainingInteractions}</span>
+              )}
+            </div>
+          </div>
+        </aside>
+      </div>
     </article>
   );
 };

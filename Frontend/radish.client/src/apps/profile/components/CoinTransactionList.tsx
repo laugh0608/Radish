@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getTransactions, type CoinTransaction } from '@/api/coin';
+import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import styles from './CoinTransactionList.module.css';
 
 interface CoinTransactionListProps {
   apiBaseUrl: string;
+  displayTimeZone?: string;
 }
 
 /**
  * 萝卜币交易记录列表组件
  */
-export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl }: CoinTransactionListProps) => {
+export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl, displayTimeZone = 'Asia/Shanghai' }: CoinTransactionListProps) => {
   const { t } = useTranslation();
   const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,9 +35,9 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl }: CoinTransaction
     try {
       const result = await getTransactions(pageIndex, pageSize, filterType, filterStatus, t);
       if (result) {
-        setTransactions(result.voItems);
-        setTotalCount(result.voTotalCount);
-        setTotalPages(result.voTotalPages);
+        setTransactions(result.data);
+        setTotalCount(result.dataCount);
+        setTotalPages(result.pageCount);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载交易记录失败');
@@ -155,7 +157,7 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl }: CoinTransaction
                       流水号: {tx.voTransactionNo}
                     </span>
                     <span className={styles.time}>
-                      {new Date(tx.voCreateTime).toLocaleString('zh-CN')}
+                      {formatDateTimeByTimeZone(tx.voCreateTime, displayTimeZone)}
                     </span>
                   </div>
                 </div>

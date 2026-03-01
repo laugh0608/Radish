@@ -23,7 +23,7 @@ import {
   getSystemConfigs,
   getConfigCategories,
   deleteConfig,
-  type SystemConfig,
+  type SystemConfigVo,
 } from '@/api/systemConfigApi';
 import { SystemConfigForm } from './SystemConfigForm';
 import { log } from '@/utils/logger';
@@ -31,8 +31,8 @@ import './SystemConfigList.css';
 
 export const SystemConfigList = () => {
   useDocumentTitle('系统配置');
-  const [configs, setConfigs] = useState<SystemConfig[]>([]);
-  const [filteredConfigs, setFilteredConfigs] = useState<SystemConfig[]>([]);
+  const [configs, setConfigs] = useState<SystemConfigVo[]>([]);
+  const [filteredConfigs, setFilteredConfigs] = useState<SystemConfigVo[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
@@ -79,16 +79,16 @@ export const SystemConfigList = () => {
 
     // 按分类筛选
     if (selectedCategory) {
-      filtered = filtered.filter(config => config.category === selectedCategory);
+      filtered = filtered.filter(config => config.voCategory === selectedCategory);
     }
 
     // 按关键词搜索
     if (searchKeyword) {
       const keyword = searchKeyword.toLowerCase();
       filtered = filtered.filter(config =>
-        config.name.toLowerCase().includes(keyword) ||
-        config.key.toLowerCase().includes(keyword) ||
-        config.description?.toLowerCase().includes(keyword)
+        config.voName.toLowerCase().includes(keyword) ||
+        config.voKey.toLowerCase().includes(keyword) ||
+        config.voDescription?.toLowerCase().includes(keyword)
       );
     }
 
@@ -103,9 +103,9 @@ export const SystemConfigList = () => {
   };
 
   // 编辑配置
-  const handleEdit = (record: SystemConfig) => {
+  const handleEdit = (record: SystemConfigVo) => {
     setFormMode('edit');
-    setEditingConfigId(record.id);
+    setEditingConfigId(record.voId);
     setFormVisible(true);
   };
 
@@ -145,17 +145,17 @@ export const SystemConfigList = () => {
   };
 
   // 表格列定义
-  const columns: TableColumnsType<SystemConfig> = [
+  const columns: TableColumnsType<SystemConfigVo> = [
     {
       title: 'ID',
-      dataIndex: 'id',
-      key: 'id',
+      dataIndex: 'voId',
+      key: 'voId',
       width: 80,
     },
     {
       title: '分类',
-      dataIndex: 'category',
-      key: 'category',
+      dataIndex: 'voCategory',
+      key: 'voCategory',
       width: 120,
       render: (category: string) => (
         <Tag color="cyan">{category}</Tag>
@@ -163,14 +163,14 @@ export const SystemConfigList = () => {
     },
     {
       title: '配置名称',
-      dataIndex: 'name',
-      key: 'name',
+      dataIndex: 'voName',
+      key: 'voName',
       width: 150,
     },
     {
       title: '配置键',
-      dataIndex: 'key',
-      key: 'key',
+      dataIndex: 'voKey',
+      key: 'voKey',
       width: 200,
       render: (key: string) => (
         <code style={{ fontSize: '12px', background: '#f5f5f5', padding: '2px 4px', borderRadius: '2px' }}>
@@ -180,12 +180,12 @@ export const SystemConfigList = () => {
     },
     {
       title: '配置值',
-      dataIndex: 'value',
-      key: 'value',
+      dataIndex: 'voValue',
+      key: 'voValue',
       width: 150,
       ellipsis: true,
       render: (value: string, record) => {
-        if (record.type === 'boolean') {
+        if (record.voType === 'boolean') {
           return <Tag color={value === 'true' ? 'success' : 'error'}>{value}</Tag>;
         }
         return <span>{value}</span>;
@@ -193,8 +193,8 @@ export const SystemConfigList = () => {
     },
     {
       title: '类型',
-      dataIndex: 'type',
-      key: 'type',
+      dataIndex: 'voType',
+      key: 'voType',
       width: 80,
       render: (type: string) => (
         <Tag color={getTypeTagColor(type)}>{type}</Tag>
@@ -202,8 +202,8 @@ export const SystemConfigList = () => {
     },
     {
       title: '描述',
-      dataIndex: 'description',
-      key: 'description',
+      dataIndex: 'voDescription',
+      key: 'voDescription',
       ellipsis: true,
     },
     {
@@ -211,15 +211,15 @@ export const SystemConfigList = () => {
       key: 'status',
       width: 80,
       render: (_, record) => (
-        <Tag color={record.isEnabled ? 'success' : 'error'}>
-          {record.isEnabled ? '启用' : '禁用'}
+        <Tag color={record.voIsEnabled ? 'success' : 'error'}>
+          {record.voIsEnabled ? '启用' : '禁用'}
         </Tag>
       ),
     },
     {
       title: '修改时间',
-      dataIndex: 'modifyTime',
-      key: 'modifyTime',
+      dataIndex: 'voModifyTime',
+      key: 'voModifyTime',
       width: 180,
       render: (time: string) => time ? new Date(time).toLocaleString('zh-CN') : '-',
     },
@@ -241,7 +241,7 @@ export const SystemConfigList = () => {
           <Popconfirm
             title="确认删除"
             description="确定要删除这个配置吗？此操作不可恢复。"
-            onConfirm={() => handleDelete(record.id)}
+            onConfirm={() => handleDelete(record.voId)}
             okText="确定"
             cancelText="取消"
           >
@@ -305,7 +305,7 @@ export const SystemConfigList = () => {
       <Table
         columns={columns}
         dataSource={filteredConfigs}
-        rowKey="id"
+        rowKey="voId"
         loading={loading}
         pagination={{
           showSizeChanger: true,

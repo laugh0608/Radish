@@ -6,6 +6,7 @@ import { Icon } from '@radish/ui/icon';
 import { getAllTags, getOidcLoginUrl } from '@/api/forum';
 import { useUserStore } from '@/stores/userStore';
 import { uploadImage, uploadDocument } from '@/api/attachment';
+import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './PublishPostModal.module.css';
 
 interface PublishPostModalProps {
@@ -18,7 +19,7 @@ interface PublishPostModalProps {
 const DRAFT_STORAGE_KEY = 'forum_post_draft';
 const MIN_TAG_COUNT = 1;
 const MAX_TAG_COUNT = 5;
-const IMAGE_SCALE_OPTIONS = [30, 50, 70, 100] as const;
+const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;
 
 const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
@@ -47,15 +48,19 @@ export const PublishPostModal = ({
   const [addWatermark, setAddWatermark] = useState(false);
   const [watermarkText, setWatermarkText] = useState('Radish');
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
-  const [imageScalePercent, setImageScalePercent] = useState<number>(70);
+  const [imageScalePercent, setImageScalePercent] = useState<number>(75);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allTagNames, setAllTagNames] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagError, setTagError] = useState<string | null>(null);
   const roles = useUserStore(state => state.roles || []);
-  const isAdmin = roles.includes('Admin') || roles.includes('System');
+  const isAdmin = roles.some(role => {
+    const normalized = role.trim().toLowerCase();
+    return normalized === 'admin' || normalized === 'system';
+  });
   const { t } = useTranslation();
+  const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
 
   // 组件打开时恢复草稿
   useEffect(() => {
@@ -393,16 +398,21 @@ export const PublishPostModal = ({
         <div className={styles.editorWrapper}>
           <Suspense fallback={<div className={styles.editorLoading}>编辑器加载中...</div>}>
             <MarkdownEditor
-            value={content}
-            onChange={setContent}
-            placeholder="帖子内容（支持 Markdown）"
-            onImageUpload={handleImageUpload}
-            onDocumentUpload={handleDocumentUpload}
-            minHeight={320}
-            className={styles.editor}
-            theme="light"
-            toolbarExtras={editorToolbarExtras}
-          />
+              value={content}
+              onChange={setContent}
+              placeholder="帖子内容（支持 Markdown）"
+              onImageUpload={handleImageUpload}
+              onDocumentUpload={handleDocumentUpload}
+              stickerGroups={stickerGroups}
+              stickerMap={stickerMap}
+              onStickerSelect={(selection) => {
+                void handleStickerSelect(selection);
+              }}
+              minHeight={320}
+              className={styles.editor}
+              theme="light"
+              toolbarExtras={editorToolbarExtras}
+            />
           </Suspense>
         </div>
 

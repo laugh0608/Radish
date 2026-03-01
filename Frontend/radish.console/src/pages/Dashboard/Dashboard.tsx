@@ -19,7 +19,7 @@ import {
   EyeOutlined,
 } from '@radish/ui';
 import { adminGetOrders, getOrderStatusColor } from '@/api/shopApi';
-import { getDashboardStats, type DashboardStats } from '@/api/statisticsApi';
+import { getDashboardStats, type DashboardStatsVo } from '@/api/statisticsApi';
 import type { Order } from '@/api/types';
 import { log } from '@/utils/logger';
 import './Dashboard.css';
@@ -27,11 +27,11 @@ import './Dashboard.css';
 export const Dashboard = () => {
   useDocumentTitle('仪表盘');
   const navigate = useNavigate();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalUsers: 0,
-    totalOrders: 0,
-    totalProducts: 0,
-    totalRevenue: 0,
+  const [stats, setStats] = useState<DashboardStatsVo>({
+    voTotalUsers: 0,
+    voTotalOrders: 0,
+    voTotalProducts: 0,
+    voTotalRevenue: 0,
   });
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,10 +48,10 @@ export const Dashboard = () => {
       message.error('加载统计数据失败');
       // 使用模拟数据作为降级方案
       setStats({
-        totalUsers: 1234,
-        totalOrders: 567,
-        totalProducts: 89,
-        totalRevenue: 12345,
+        voTotalUsers: 1234,
+        voTotalOrders: 567,
+        voTotalProducts: 89,
+        voTotalRevenue: 12345,
       });
     } finally {
       setStatsLoading(false);
@@ -143,7 +143,7 @@ export const Dashboard = () => {
         <Card loading={statsLoading}>
           <Statistic
             title="总用户数"
-            value={stats.totalUsers}
+            value={stats.voTotalUsers}
             prefix={<TeamOutlined />}
             valueStyle={{ color: '#3f8600' }}
           />
@@ -151,7 +151,7 @@ export const Dashboard = () => {
         <Card loading={statsLoading}>
           <Statistic
             title="总订单数"
-            value={stats.totalOrders}
+            value={stats.voTotalOrders}
             prefix={<FileTextOutlined />}
             valueStyle={{ color: '#1890ff' }}
           />
@@ -159,7 +159,7 @@ export const Dashboard = () => {
         <Card loading={statsLoading}>
           <Statistic
             title="商品数量"
-            value={stats.totalProducts}
+            value={stats.voTotalProducts}
             prefix={<ShoppingOutlined />}
             valueStyle={{ color: '#722ed1' }}
           />
@@ -167,7 +167,7 @@ export const Dashboard = () => {
         <Card loading={statsLoading}>
           <Statistic
             title="总收入"
-            value={stats.totalRevenue}
+            value={stats.voTotalRevenue}
             suffix="胡萝卜"
             prefix={<AppstoreOutlined />}
             valueStyle={{ color: '#cf1322' }}

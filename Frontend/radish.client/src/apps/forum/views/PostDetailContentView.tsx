@@ -3,6 +3,7 @@ import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
 import type { PostDetail, CommentNode } from '@/api/forum';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
+import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './PostDetailContentView.module.css';
 
 const PostDetailComponent = lazy(() =>
@@ -22,6 +23,7 @@ interface PostDetailContentViewProps {
   comments: CommentNode[];
   loadingPostDetail: boolean;
   loadingComments: boolean;
+  displayTimeZone: string;
   isLiked: boolean;
   isAuthenticated: boolean;
   showFloatingTools?: boolean;
@@ -32,10 +34,12 @@ interface PostDetailContentViewProps {
   onBack: () => void;
   onLike: (postId: number) => void;
   onEdit: (postId: number) => void;
+  onViewPostHistory: (postId: number) => void;
   onDelete: (postId: number) => void;
   onCommentSortChange: (sortBy: 'newest' | 'hottest') => void;
   onDeleteComment: (commentId: number) => void;
   onEditComment: (commentId: number, newContent: string) => Promise<void>;
+  onViewCommentHistory: (commentId: number) => void;
   onLikeComment: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment: (commentId: number, authorName: string) => void;
   onLoadMoreChildren: (
@@ -52,6 +56,7 @@ export const PostDetailContentView = ({
   comments,
   loadingPostDetail,
   loadingComments,
+  displayTimeZone,
   isLiked,
   isAuthenticated,
   showFloatingTools = true,
@@ -61,10 +66,12 @@ export const PostDetailContentView = ({
   onBack,
   onLike,
   onEdit,
+  onViewPostHistory,
   onDelete,
   onCommentSortChange,
   onDeleteComment,
   onEditComment,
+  onViewCommentHistory,
   onLikeComment,
   onReplyComment,
   onLoadMoreChildren,
@@ -73,6 +80,7 @@ export const PostDetailContentView = ({
 }: PostDetailContentViewProps) => {
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
 
   useEffect(() => {
     if (replyTo) {
@@ -146,11 +154,13 @@ export const PostDetailContentView = ({
             <PostDetailComponent
               post={post}
               loading={loadingPostDetail}
+              displayTimeZone={displayTimeZone}
               isLiked={isLiked}
               onLike={onLike}
               isAuthenticated={isAuthenticated}
               currentUserId={currentUserId}
               onEdit={onEdit}
+              onViewHistory={onViewPostHistory}
               onDelete={onDelete}
             />
           </Suspense>
@@ -160,18 +170,21 @@ export const PostDetailContentView = ({
               comments={comments}
               loading={loadingComments}
               hasPost={true}
+              displayTimeZone={displayTimeZone}
               currentUserId={currentUserId}
               pageSize={5}
               sortBy={commentSortBy}
               onSortChange={onCommentSortChange}
               onDeleteComment={onDeleteComment}
               onEditComment={onEditComment}
+              onViewCommentHistory={onViewCommentHistory}
               onLikeComment={onLikeComment}
               onReplyComment={(commentId, authorName) => {
                 onReplyComment(commentId, authorName);
                 setIsCommentSheetOpen(true);
               }}
               onLoadMoreChildren={onLoadMoreChildren}
+              stickerMap={stickerMap}
             />
           </Suspense>
 
@@ -212,6 +225,10 @@ export const PostDetailContentView = ({
               replyTo={replyTo}
               onCancelReply={onCancelReply}
               variant="sheet"
+              stickerGroups={stickerGroups}
+              onStickerSelect={(selection) => {
+                void handleStickerSelect(selection);
+              }}
             />
           </Suspense>
         )}

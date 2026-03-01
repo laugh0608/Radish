@@ -1,4 +1,7 @@
 using AutoMapper;
+using Radish.Common.AttributeTool;
+using Microsoft.Extensions.Options;
+using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -22,6 +25,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     private readonly INotificationService _notificationService;
     private readonly INotificationDedupService _dedupService;
     private readonly IExperienceService _experienceService;
+    private readonly IBaseRepository<PostEditHistory> _postEditHistoryRepository;
+    private readonly ForumEditHistoryOptions _editHistoryOptions;
 
     public PostService(
         IMapper mapper,
@@ -34,7 +39,9 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         ICoinRewardService coinRewardService,
         INotificationService notificationService,
         INotificationDedupService dedupService,
-        IExperienceService experienceService)
+        IExperienceService experienceService,
+        IBaseRepository<PostEditHistory> postEditHistoryRepository,
+        IOptions<ForumEditHistoryOptions> editHistoryOptions)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
@@ -47,6 +54,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         _notificationService = notificationService;
         _dedupService = dedupService;
         _experienceService = experienceService;
+        _postEditHistoryRepository = postEditHistoryRepository;
+        _editHistoryOptions = editHistoryOptions.Value;
     }
 
     /// <summary>
@@ -87,23 +96,11 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     /// <summary>
     /// 发布帖子
     /// </summary>
+    [UseTran]
     public async Task<long> PublishPostAsync(Post post, List<string>? tagNames = null, bool allowCreateTag = true)
     {
-        if (tagNames == null)
-        {
-            throw new ArgumentException("发布帖子时至少需要一个标签", nameof(tagNames));
-        }
-
-        var normalizedTagNames = tagNames
-            .Where(name => !string.IsNullOrWhiteSpace(name))
-            .Select(name => name.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (normalizedTagNames.Count is < 1 or > 5)
-        {
-            throw new ArgumentException("标签数量必须在 1 到 5 个之间", nameof(tagNames));
-        }
+        var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "发布帖子时至少需要一个标签");
+        var operatorName = string.IsNullOrWhiteSpace(post.AuthorName) ? "System" : post.AuthorName;
 
         // 1. 插入帖子
         var postId = await AddAsync(post);
@@ -120,38 +117,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         }
 
         // 3. 处理标签
-        if (normalizedTagNames.Any())
-        {
-            foreach (var tagName in normalizedTagNames)
-            {
-                Tag? tag;
-                var existingTags = await _tagRepository.QueryAsync(t => t.Name == tagName && t.IsEnabled && !t.IsDeleted);
-                tag = existingTags.FirstOrDefault();
-
-                if (tag == null)
-                {
-                    if (!allowCreateTag)
-                    {
-                        throw new InvalidOperationException($"标签不存在且当前用户无权限创建：{tagName}");
-                    }
-
-                    // 获取或创建标签
-                    tag = await _tagService.GetOrCreateTagAsync(tagName);
-                }
-
-                // 创建帖子-标签关联
-                var postTag = new PostTag(postId, tag.Id)
-                {
-                    CreateId = post.AuthorId,
-                    CreateBy = post.AuthorName
-                };
-                await _postTagRepository.AddAsync(postTag);
-
-                // 更新标签的帖子数量
-                tag.PostCount++;
-                await _tagRepository.UpdateAsync(tag);
-            }
-        }
+        await SyncPostTagsAsync(postId, post.AuthorId, operatorName, normalizedTagNames, allowCreateTag);
 
         // 4. 🎁 发放经验值奖励（异步处理）
         _ = Task.Run(async () =>
@@ -219,6 +185,264 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         });
 
         return postId;
+    }
+
+    /// <summary>
+    /// 更新帖子及标签
+    /// </summary>
+    [UseTran]
+    public async Task UpdatePostAsync(
+        long postId,
+        string title,
+        string content,
+        long? categoryId,
+        List<string>? tagNames,
+        bool allowCreateTag,
+        long operatorId,
+        string operatorName,
+        bool isAdmin = false)
+    {
+        if (string.IsNullOrWhiteSpace(title))
+        {
+            throw new ArgumentException("帖子标题不能为空", nameof(title));
+        }
+
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            throw new ArgumentException("帖子内容不能为空", nameof(content));
+        }
+
+        var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "编辑帖子时至少需要一个标签");
+
+        var post = await _postRepository.QueryByIdAsync(postId);
+        if (post == null || post.IsDeleted)
+        {
+            throw new InvalidOperationException("帖子不存在");
+        }
+
+        var postOptions = _editHistoryOptions.Post;
+        var historyEnabled = _editHistoryOptions.Enable && postOptions.EnableHistory;
+        var historyEditCount = await _postEditHistoryRepository.QueryCountAsync(h => h.PostId == postId);
+        var existingEditCount = Math.Max(post.EditCount, historyEditCount);
+
+        if (!isAdmin || !_editHistoryOptions.AdminOverride.BypassEditCountLimit)
+        {
+            if (existingEditCount >= Math.Max(0, postOptions.MaxEditCount))
+            {
+                throw new InvalidOperationException("帖子编辑次数已达上限，无法继续编辑");
+            }
+        }
+
+        var targetCategoryId = categoryId ?? post.CategoryId;
+        if (targetCategoryId > 0 && targetCategoryId != post.CategoryId)
+        {
+            var oldCategory = await _categoryRepository.QueryByIdAsync(post.CategoryId);
+            if (oldCategory != null)
+            {
+                oldCategory.PostCount = Math.Max(0, oldCategory.PostCount - 1);
+                await _categoryRepository.UpdateAsync(oldCategory);
+            }
+
+            var newCategory = await _categoryRepository.QueryByIdAsync(targetCategoryId);
+            if (newCategory != null)
+            {
+                newCategory.PostCount++;
+                await _categoryRepository.UpdateAsync(newCategory);
+            }
+        }
+
+        var safeOperatorName = string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName;
+        var trimmedTitle = title.Trim();
+        var trimmedContent = content.Trim();
+        var nextEditSequence = existingEditCount + 1;
+
+        if (historyEnabled)
+        {
+            if (nextEditSequence <= Math.Max(0, postOptions.HistorySaveEditCount))
+            {
+                await _postEditHistoryRepository.AddAsync(new PostEditHistory
+                {
+                    PostId = postId,
+                    EditSequence = nextEditSequence,
+                    OldTitle = post.Title,
+                    NewTitle = trimmedTitle,
+                    OldContent = post.Content,
+                    NewContent = trimmedContent,
+                    EditorId = operatorId,
+                    EditorName = safeOperatorName,
+                    EditedAt = DateTime.Now,
+                    TenantId = post.TenantId,
+                    CreateTime = DateTime.Now,
+                    CreateBy = safeOperatorName,
+                    CreateId = operatorId
+                });
+            }
+        }
+
+        post.Title = trimmedTitle;
+        post.Content = trimmedContent;
+        post.CategoryId = targetCategoryId;
+        post.EditCount = nextEditSequence;
+        post.ModifyTime = DateTime.Now;
+        post.ModifyBy = safeOperatorName;
+        post.ModifyId = operatorId;
+
+        await _postRepository.UpdateAsync(post);
+        await SyncPostTagsAsync(postId, operatorId, safeOperatorName, normalizedTagNames, allowCreateTag);
+
+        if (historyEnabled)
+        {
+            await TrimPostHistoryAsync(postId, Math.Max(1, postOptions.MaxHistoryRecords));
+        }
+    }
+
+    public async Task<(List<PostEditHistoryVo> histories, int total)> GetPostEditHistoryPageAsync(long postId, int pageIndex, int pageSize)
+    {
+        var safePageIndex = pageIndex < 1 ? 1 : pageIndex;
+        var safePageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 100);
+
+        var (histories, total) = await _postEditHistoryRepository.QueryPageAsync(
+            h => h.PostId == postId,
+            safePageIndex,
+            safePageSize,
+            h => h.EditSequence,
+            SqlSugar.OrderByType.Desc,
+            h => h.CreateTime,
+            SqlSugar.OrderByType.Desc);
+
+        return (Mapper.Map<List<PostEditHistoryVo>>(histories), total);
+    }
+
+    private async Task TrimPostHistoryAsync(long postId, int maxHistoryRecords)
+    {
+        var histories = await _postEditHistoryRepository.QueryWithOrderAsync(
+            h => h.PostId == postId,
+            h => h.EditSequence,
+            SqlSugar.OrderByType.Desc);
+
+        if (histories.Count <= maxHistoryRecords)
+        {
+            return;
+        }
+
+        var removeIds = histories
+            .Skip(maxHistoryRecords)
+            .Select(h => h.Id)
+            .ToList();
+
+#pragma warning disable CS0618
+        await _postEditHistoryRepository.DeleteByIdsAsync(removeIds);
+#pragma warning restore CS0618
+    }
+
+    private static List<string> NormalizeTagNamesOrThrow(List<string>? tagNames, string parameterName, string emptyMessage)
+    {
+        if (tagNames == null)
+        {
+            throw new ArgumentException(emptyMessage, parameterName);
+        }
+
+        var normalizedTagNames = tagNames
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (normalizedTagNames.Count is < 1 or > 5)
+        {
+            throw new ArgumentException("标签数量必须在 1 到 5 个之间", parameterName);
+        }
+
+        return normalizedTagNames;
+    }
+
+    private async Task<Tag> ResolveTagByNameAsync(string tagName, bool allowCreateTag)
+    {
+        var existingTags = await _tagRepository.QueryAsync(t => t.Name == tagName && t.IsEnabled && !t.IsDeleted);
+        var tag = existingTags.FirstOrDefault();
+        if (tag != null)
+        {
+            return tag;
+        }
+
+        if (!allowCreateTag)
+        {
+            throw new InvalidOperationException($"标签不存在且当前用户无权限创建：{tagName}");
+        }
+
+        return await _tagService.GetOrCreateTagAsync(tagName);
+    }
+
+    private async Task SyncPostTagsAsync(
+        long postId,
+        long operatorId,
+        string operatorName,
+        List<string> normalizedTagNames,
+        bool allowCreateTag)
+    {
+        var existingPostTags = await _postTagRepository.QueryAsync(pt => pt.PostId == postId);
+        var existingTagIdSet = existingPostTags.Select(pt => pt.TagId).ToHashSet();
+
+        var desiredTags = new Dictionary<long, Tag>();
+        foreach (var tagName in normalizedTagNames)
+        {
+            var tag = await ResolveTagByNameAsync(tagName, allowCreateTag);
+            if (!desiredTags.ContainsKey(tag.Id))
+            {
+                desiredTags[tag.Id] = tag;
+            }
+        }
+
+        var desiredTagIdSet = desiredTags.Keys.ToHashSet();
+
+        var relationsToRemove = existingPostTags
+            .Where(pt => !desiredTagIdSet.Contains(pt.TagId))
+            .ToList();
+
+        if (relationsToRemove.Any())
+        {
+            var removeCountByTagId = relationsToRemove
+                .GroupBy(pt => pt.TagId)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            foreach (var relation in relationsToRemove)
+            {
+#pragma warning disable CS0618
+                await _postTagRepository.DeleteByIdAsync(relation.Id);
+#pragma warning restore CS0618
+            }
+
+            var removedTagIds = removeCountByTagId.Keys.ToList();
+            var removedTags = await _tagRepository.QueryAsync(t => removedTagIds.Contains(t.Id) && !t.IsDeleted);
+            foreach (var removedTag in removedTags)
+            {
+                if (!removeCountByTagId.TryGetValue(removedTag.Id, out var removeCount))
+                {
+                    continue;
+                }
+
+                removedTag.PostCount = Math.Max(0, removedTag.PostCount - removeCount);
+                await _tagRepository.UpdateAsync(removedTag);
+            }
+        }
+
+        var tagIdsToAdd = desiredTagIdSet
+            .Where(tagId => !existingTagIdSet.Contains(tagId))
+            .ToList();
+
+        foreach (var tagId in tagIdsToAdd)
+        {
+            var tag = desiredTags[tagId];
+            var postTag = new PostTag(postId, tag.Id)
+            {
+                CreateId = operatorId,
+                CreateBy = operatorName
+            };
+
+            await _postTagRepository.AddAsync(postTag);
+            tag.PostCount++;
+            await _tagRepository.UpdateAsync(tag);
+        }
     }
 
     /// <summary>

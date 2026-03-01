@@ -1,0 +1,28 @@
+.sticker-batch-upload-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sticker-batch-step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sticker-batch-summary {
+  color: #666;
+  font-size: 13px;
+}
+
+.sticker-batch-row-conflict td {
+  background: #fff7e6 !important;
+}
+
+.sticker-batch-issue-text {
+  color: #d46b08;
+}
+
+.sticker-batch-error-text {
+  color: #cf1322;
+}

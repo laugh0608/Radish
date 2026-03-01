@@ -72,7 +72,7 @@ export interface Notification {
  * 未读数量响应
  */
 interface UnreadCountResponse {
-  voUnreadCount: number;
+  unreadCount: number;
 }
 
 /**
@@ -142,7 +142,7 @@ export const notificationApi = {
       withAuth: true,
     });
 
-    return response.ok && response.data ? response.data.voUnreadCount : 0;
+    return response.ok && response.data ? response.data.unreadCount : 0;
   },
 
   /**

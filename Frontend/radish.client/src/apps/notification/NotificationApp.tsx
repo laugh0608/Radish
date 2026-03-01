@@ -4,7 +4,7 @@ import { NotificationList } from '@radish/ui/notification-list';
 import type { NotificationItemData } from '@radish/ui/notification';
 import { notificationApi, type UserNotificationVo } from '@/api/notification';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
-import { notificationHub } from '@/services/notificationHub';
+import { tokenService } from '@/services/tokenService';
 import { toast } from '@radish/ui/toast';
 import styles from './NotificationApp.module.css';
 
@@ -18,7 +18,11 @@ import styles from './NotificationApp.module.css';
 export const NotificationApp = () => {
   const { unreadCount, recentNotifications } = useNotificationStore();
 
-  const [notifications, setNotifications] = useState<NotificationItemData[]>([]);
+  interface NotificationListItem extends NotificationItemData {
+    notificationId?: number;
+  }
+
+  const [notifications, setNotifications] = useState<NotificationListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [pageIndex, setPageIndex] = useState(1);
@@ -29,7 +33,8 @@ export const NotificationApp = () => {
   const mapApiNotificationToStore = (n: UserNotificationVo): NotificationItem => {
     const notification = n.voNotification;
     return {
-      id: n.voNotificationId,
+      id: n.voId,
+      notificationId: n.voNotificationId,
       type: mapNotificationTypeToStore(notification?.voType || 'System'),
       title: notification?.voTitle || '',
       content: notification?.voContent || '',
@@ -43,10 +48,11 @@ export const NotificationApp = () => {
     };
   };
 
-  const mapApiNotificationToUi = (n: UserNotificationVo): NotificationItemData => {
+  const mapApiNotificationToUi = (n: UserNotificationVo): NotificationListItem => {
     const notification = n.voNotification;
     return {
-      id: n.voNotificationId,
+      id: n.voId,
+      notificationId: n.voNotificationId,
       type: mapNotificationTypeToStore(notification?.voType || 'System'),
       title: notification?.voTitle || '',
       content: notification?.voContent || '',
@@ -61,9 +67,10 @@ export const NotificationApp = () => {
     };
   };
 
-  const mapStoreToUi = (items: NotificationItem[]): NotificationItemData[] => {
+  const mapStoreToUi = (items: NotificationItem[]): NotificationListItem[] => {
     return items.map((n) => ({
       id: n.id,
+      notificationId: n.notificationId ?? n.id,
       type: n.type,
       title: n.title,
       content: n.content,
@@ -79,28 +86,54 @@ export const NotificationApp = () => {
   };
 
   const mergeNotifications = (
-    base: NotificationItemData[],
-    incoming: NotificationItemData[]
+    base: NotificationListItem[],
+    incoming: NotificationListItem[]
   ) => {
     if (incoming.length === 0) return base;
-    const baseMap = new Map<number, NotificationItemData>();
+    const getMergeKey = (item: NotificationListItem) =>
+      `${item.notificationId ?? item.id}|${item.createdAt}|${item.type}`;
+    const baseMap = new Map<string, NotificationListItem>();
     for (const item of base) {
-      baseMap.set(item.id, item);
+      baseMap.set(getMergeKey(item), item);
     }
-    const result: NotificationItemData[] = [];
-    const seen = new Set<number>();
+    const result: NotificationListItem[] = [];
+    const seen = new Set<string>();
     for (const item of incoming) {
-      const existing = baseMap.get(item.id);
+      const mergeKey = getMergeKey(item);
+      const existing = baseMap.get(mergeKey);
       result.push(existing ? { ...existing, ...item } : item);
-      seen.add(item.id);
+      seen.add(mergeKey);
     }
     for (const item of base) {
-      if (!seen.has(item.id)) {
+      if (!seen.has(getMergeKey(item))) {
         result.push(item);
       }
     }
     return result;
   };
+
+  const resolveBackendNotificationId = useCallback((uiId: number): number => {
+    const current = notifications.find(item => item.id === uiId);
+    if (current?.notificationId !== undefined) {
+      return current.notificationId;
+    }
+
+    const fromStore = recentNotifications.find(item => item.id === uiId);
+    if (fromStore?.notificationId !== undefined) {
+      return fromStore.notificationId;
+    }
+
+    return uiId;
+  }, [notifications, recentNotifications]);
+
+  const syncUnreadCountFromServer = useCallback(async () => {
+    try {
+      const unreadCountFromServer = await notificationApi.getUnreadCount();
+      useNotificationStore.getState().setUnreadCount(unreadCountFromServer);
+    } catch (error) {
+      log.warn('同步未读数量失败:', error);
+    }
+  }, []);
 
   // 将 Store 中的通知转换为 UI 组件需要的格式
   useEffect(() => {
@@ -112,7 +145,7 @@ export const NotificationApp = () => {
   useEffect(() => {
     const loadNotifications = async () => {
       if (typeof window === 'undefined') return;
-      const token = window.localStorage.getItem('access_token');
+      const token = tokenService.getAccessToken();
       if (!token) return;
 
       setLoading(true);
@@ -133,6 +166,7 @@ export const NotificationApp = () => {
           setNotifications(firstPage);
           setPageIndex(result.page);
           setHasMore(result.page < result.pageCount);
+          await syncUnreadCountFromServer();
         } else {
           setHasMore(false);
         }
@@ -202,6 +236,28 @@ export const NotificationApp = () => {
     }
   }, [activeFilter, notifications]);
 
+  // 标记已读
+  const handleMarkAsRead = useCallback(async (id: number) => {
+    try {
+      const backendNotificationId = resolveBackendNotificationId(id);
+
+      const success = await notificationApi.markAsRead(backendNotificationId);
+      if (!success) {
+        throw new Error(`标记通知已读失败，NotificationId: ${backendNotificationId}`);
+      }
+
+      const store = useNotificationStore.getState();
+      store.markAsRead([backendNotificationId]);
+      setNotifications(prev => prev.map(n => (n.id === id ? { ...n, isRead: true } : n)));
+      await syncUnreadCountFromServer();
+
+      toast.success('已标记为已读');
+    } catch (error) {
+      log.error('标记已读失败:', error);
+      toast.error('标记已读失败');
+    }
+  }, [resolveBackendNotificationId, syncUnreadCountFromServer]);
+
   // 点击通知
   const handleNotificationClick = useCallback((notification: NotificationItemData) => {
     log.debug('点击通知:', notification);
@@ -217,74 +273,45 @@ export const NotificationApp = () => {
     } else if (notification.businessType === 'Comment' && notification.businessId) {
       toast.info(`跳转到评论 ${notification.businessId}`);
     }
-  }, []);
-
-  // 标记已读
-  const handleMarkAsRead = useCallback(async (id: number) => {
-    try {
-      // 通过 SignalR 推送（如果连接断开会失败，不影响主流程）
-      try {
-        await notificationHub.markAsRead(id);
-      } catch (err) {
-        log.warn('SignalR 推送失败，继续使用 HTTP API:', err);
-      }
-
-      // 调用 HTTP API
-      await notificationApi.markAsRead(id);
-
-      // 更新 Store 状态
-      const store = useNotificationStore.getState();
-      store.markAsRead([id]);
-      setNotifications(prev => prev.map(n => (n.id === id ? { ...n, isRead: true } : n)));
-
-      toast.success('已标记为已读');
-    } catch (error) {
-      log.error('标记已读失败:', error);
-      toast.error('标记已读失败');
-    }
-  }, []);
+  }, [handleMarkAsRead]);
 
   // 标记全部已读
   const handleMarkAllAsRead = useCallback(async () => {
     try {
-      // 通过 SignalR 推送（如果连接断开会失败，不影响主流程）
-      try {
-        await notificationHub.markAllAsRead();
-      } catch (err) {
-        log.warn('SignalR 推送失败，继续使用 HTTP API:', err);
+      const success = await notificationApi.markAllAsRead();
+      if (!success) {
+        throw new Error('标记全部已读失败');
       }
 
-      // 调用 HTTP API
-      await notificationApi.markAllAsRead();
-
-      // 更新 Store 状态
       const store = useNotificationStore.getState();
       store.markAllAsRead();
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      await syncUnreadCountFromServer();
 
       toast.success('已标记全部为已读');
     } catch (error) {
       log.error('标记全部已读失败:', error);
       toast.error('标记全部已读失败');
     }
-  }, []);
+  }, [syncUnreadCountFromServer]);
 
   // 删除通知
   const handleDelete = useCallback(async (id: number) => {
     try {
-      await notificationApi.deleteNotification(id);
+      const backendNotificationId = resolveBackendNotificationId(id);
+      await notificationApi.deleteNotification(backendNotificationId);
 
-      // 更新 Store：从列表中移除该通知
+      // 更新 Store：从列表中移除该通知（兼容 id/notificationId）
       const store = useNotificationStore.getState();
-      store.removeNotification(id);
-      setNotifications(prev => prev.filter(n => n.id !== id));
+      store.removeNotification(backendNotificationId);
+      setNotifications(prev => prev.filter(n => (n.notificationId ?? n.id) !== backendNotificationId));
 
       toast.success('通知已删除');
     } catch (error) {
       log.error('删除通知失败:', error);
       toast.error('删除通知失败');
     }
-  }, []);
+  }, [resolveBackendNotificationId]);
 
   return (
     <div className={styles.notificationApp}>
