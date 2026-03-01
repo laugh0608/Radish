@@ -97,6 +97,10 @@
 >   - `@radish/ui` 已新增 `StickerPicker`（insert 模式），接入发帖/编辑帖子/评论输入框。
 >   - `MarkdownRenderer` 与评论渲染已支持 `sticker://`（`stickerMap` 优先 + `#radish:image/thumbnail` fallback）。
 >   - 已接入 `RecordUse` 前端上报链路与 `useStickerCatalog` 分组缓存。
+> - ✅ **Reaction Phase 2 设计冻结稿完成**（2026-03-01）：
+>   - 新增 Phase 2 专项设计文档，冻结 API 合同、并发/幂等状态机、前端交互状态机与验收清单。
+>   - 三份既有专题文档（系统/Console/UI）已补链并统一到同一实现基线。
+>   - 详见 [Reaction Phase 2 设计冻结稿](./features/emoji-sticker-reaction-phase2.md)
 > - 📝 **下一步任务（2026-02-28 起）**：
 >   - 推进 `StickerPicker` reaction 模式与 `ReactionBar` 组件实现。
 >   - 开始 Reaction 后端 Phase 2（实体/服务/接口）与 Forum 集成联调。

@@ -2,13 +2,14 @@
 
 > Radish 表情包系统 Console 管理后台详细设计
 >
-> **版本**: v26.2.2
+> **版本**: v26.3.0
 >
-> **最后更新**: 2026.02.27
+> **最后更新**: 2026.03.01
 >
 > **关联文档**：
 > [系统总览与数据模型](./emoji-sticker-system.md) ·
-> [UI 视觉与交互规范](./emoji-sticker-ui-spec.md)
+> [UI 视觉与交互规范](./emoji-sticker-ui-spec.md) ·
+> [Reaction Phase 2 设计冻结稿](./emoji-sticker-reaction-phase2.md)
 
 ---
 
@@ -42,6 +43,14 @@
 ### 进行中 / 未实现
 
 - 网格模式与拖拽排序（当前为列表模式 + 数字排序）
+
+### 与 Reaction Phase 2 的协作边界（2026-03-01）
+
+- Console 本阶段无需直接实现 `ReactionBar`，但需确保 Sticker 元数据可稳定支撑 Reaction 场景：
+  - `IsEnabled` 状态准确
+  - `ThumbnailUrl` 可用
+  - `Code` 稳定且不可复用
+- 若后续接入 Console 侧 Reaction 运营页，接口契约以 [Reaction Phase 2 设计冻结稿](./emoji-sticker-reaction-phase2.md) 为准
 
 ---
 

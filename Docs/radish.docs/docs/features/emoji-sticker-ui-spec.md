@@ -2,13 +2,14 @@
 
 > Radish 表情包系统前端 UI 规范，包含尺寸、颜色、动效、交互细节
 >
-> **版本**: v26.2.1
+> **版本**: v26.3.0
 >
-> **最后更新**: 2026.02.27
+> **最后更新**: 2026.03.01
 >
 > **关联文档**：
 > [系统总览与数据模型](./emoji-sticker-system.md) ·
-> [Console 管理后台实现](./emoji-sticker-console.md)
+> [Console 管理后台实现](./emoji-sticker-console.md) ·
+> [Reaction Phase 2 设计冻结稿](./emoji-sticker-reaction-phase2.md)
 
 ---
 
@@ -19,7 +20,7 @@
 - ✅ 帖子与评论均已支持 `sticker://` 渲染（含 fallback 与降级占位）
 - ✅ 贴图选择后已接入 `RecordUse` 上报链路
 - ✅ `StickerPicker` 已支持分组文字标签与 `left/right` 面板对齐（评论场景使用左对齐）
-- ⏳ `StickerPicker` reaction 模式与 `ReactionBar` 仍在下一阶段
+- ⏳ `StickerPicker` reaction 模式与 `ReactionBar` 仍在下一阶段（实现以 [Reaction Phase 2 设计冻结稿](./emoji-sticker-reaction-phase2.md) 为准）
 
 ---
 

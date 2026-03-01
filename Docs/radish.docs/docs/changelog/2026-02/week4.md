@@ -138,6 +138,12 @@
 - **Console 用户态刷新链路修复**：OIDC 回调后主动触发用户上下文刷新，修复个人信息页空白与右上角 `Unknown` 的问题。
 - **用户名展示兜底增强**：用户接口异常时优先从 token claim 解析用户名，减少导航栏空值。
 
+### 表情包 Phase 2 文档冻结与入口收口
+
+- **新增专项文档**：新增 `emoji-sticker-reaction-phase2.md`，冻结 Reaction Phase 2 的 API 合同、并发状态机、前端交互状态机、测试与发布清单。
+- **文档互链补齐**：`emoji-sticker-system.md`、`emoji-sticker-console.md`、`emoji-sticker-ui-spec.md` 已统一补充 Phase 2 链接，避免实现入口分散。
+- **规划文档同步**：`development-plan.md` 已补充“Phase 2 设计冻结完成”节点，作为后续编码基线。
+
 ### Client/Console 认证隔离与回归修复
 
 - **Token 本地存储隔离**：`radish.client` 与 `radish.console` 分别改用命名空间键（`radish_client_*` / `radish_console_*`），避免同源下互相覆盖 `refresh_token`。

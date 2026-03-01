@@ -158,6 +158,10 @@ export default defineConfig({
           text: '特定功能',
           collapsible: true,
           items: [
+            { text: '表情包系统设计', link: '/features/emoji-sticker-system' },
+            { text: '表情包 Console 方案', link: '/features/emoji-sticker-console' },
+            { text: '表情包 UI 规范', link: '/features/emoji-sticker-ui-spec' },
+            { text: '表情包 Reaction Phase 2', link: '/features/emoji-sticker-reaction-phase2' },
             { text: '论坛应用评估', link: '/features/forum-assessment' },
             { text: '论坛分类与标签', link: '/features/forum-category-tag' },
             { text: '论坛编辑历史', link: '/features/forum-edit-history' },
