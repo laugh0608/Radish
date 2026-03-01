@@ -424,17 +424,29 @@ export async function getCurrentGodCommentsBatch(
     return {};
   }
 
-  const response = await apiPost<Record<number, CommentHighlight>>(
-    '/api/v1/CommentHighlight/GetCurrentGodCommentsBatch',
-    postIds,
-    { timeout: FORUM_READ_TIMEOUT_MS }
-  );
+  const maxAttempts = 3;
+  let lastError: Error | null = null;
 
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '批量获取神评失败');
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const response = await apiPost<Record<number, CommentHighlight>>(
+      '/api/v1/CommentHighlight/GetCurrentGodCommentsBatch',
+      postIds,
+      { timeout: FORUM_READ_TIMEOUT_MS }
+    );
+
+    if (response.ok && response.data) {
+      return response.data;
+    }
+
+    lastError = new Error(response.message || '批量获取神评失败');
+    if (attempt < maxAttempts) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, attempt * 250);
+      });
+    }
   }
 
-  return response.data;
+  throw lastError || new Error('批量获取神评失败');
 }
 
 /**

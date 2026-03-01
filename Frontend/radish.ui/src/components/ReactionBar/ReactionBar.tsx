@@ -334,6 +334,7 @@ export const ReactionBar = ({
                 void handlePickerSelect(selection);
               }}
               mode="reaction"
+              theme="light"
               triggerTitle="更多表情"
               disabled={loading || reachedReactionLimit}
               panelPlacement="left"
