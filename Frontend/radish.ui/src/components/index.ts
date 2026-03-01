@@ -49,6 +49,14 @@ export type {
   StickerPickerSelection,
 } from './StickerPicker/StickerPicker';
 
+export { ReactionBar } from './ReactionBar/ReactionBar';
+export type {
+  ReactionBarProps,
+  ReactionSummaryItem,
+  ReactionTogglePayload,
+  ReactionTargetType,
+} from './ReactionBar/ReactionBar';
+
 export { FileUpload } from './FileUpload/FileUpload';
 export type { FileUploadProps, UploadResult } from './FileUpload/FileUpload';
 

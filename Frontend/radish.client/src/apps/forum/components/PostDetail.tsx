@@ -1,8 +1,10 @@
 import { lazy, Suspense } from 'react';
-import type { PostDetail as PostDetailType } from '@/api/forum';
+import type { PostDetail as PostDetailType, ReactionSummaryVo } from '@/api/forum';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
-import { useStickerCatalog } from '../hooks/useStickerCatalog';
+import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
+import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
+import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import styles from './PostDetail.module.css';
 
 const MarkdownRenderer = lazy(() =>
@@ -20,6 +22,12 @@ interface PostDetailProps {
   onEdit?: (postId: number) => void;
   onDelete?: (postId: number) => void;
   onViewHistory?: (postId: number) => void;
+  postReactions?: ReactionSummaryVo[];
+  reactionLoading?: boolean;
+  stickerGroups?: StickerPickerGroup[];
+  stickerMap?: MarkdownStickerMap;
+  onToggleReaction?: (payload: ReactionTogglePayload) => Promise<void>;
+  onRequireReactionLogin?: () => void;
 }
 
 export const PostDetail = ({
@@ -32,9 +40,14 @@ export const PostDetail = ({
   currentUserId = 0,
   onEdit,
   onDelete,
-  onViewHistory
+  onViewHistory,
+  postReactions = [],
+  reactionLoading = false,
+  stickerGroups = [],
+  stickerMap,
+  onToggleReaction,
+  onRequireReactionLogin,
 }: PostDetailProps) => {
-  const { stickerMap } = useStickerCatalog();
   const parsedTags = post?.voTags
     ? post.voTags
         .split(',')
@@ -99,6 +112,19 @@ export const PostDetail = ({
           <span className={styles.commentCount}>
             💬 {post.voCommentCount || 0} 条评论
           </span>
+
+          {onToggleReaction && (
+            <ReactionBar
+              targetType="Post"
+              targetId={post.voId}
+              items={postReactions}
+              isLoggedIn={isAuthenticated}
+              loading={reactionLoading}
+              stickerGroups={stickerGroups}
+              onToggle={onToggleReaction}
+              onRequireLogin={onRequireReactionLogin}
+            />
+          )}
 
           {isAuthor && (
             <div className={styles.authorActions}>

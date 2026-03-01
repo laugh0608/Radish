@@ -1,10 +1,12 @@
 import { useState, useEffect, useMemo } from 'react';
 import { log } from '@/utils/logger';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
-import type { CommentNode as CommentNodeType } from '@/api/forum';
+import type { CommentNode as CommentNodeType, ReactionSummaryVo } from '@/api/forum';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
 import { ImageLightbox } from '@radish/ui/image-lightbox';
+import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
+import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import styles from './CommentNode.module.css';
 
 interface CommentNodeProps {
@@ -21,6 +23,12 @@ interface CommentNodeProps {
   onReply?: (commentId: number, authorName: string) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   stickerMap?: MarkdownStickerMap;
+  reactionMap?: Record<number, ReactionSummaryVo[]>;
+  isAuthenticated?: boolean;
+  stickerGroups?: StickerPickerGroup[];
+  onToggleReaction?: (commentId: number, payload: ReactionTogglePayload) => Promise<void>;
+  isReactionPending?: (commentId: number) => boolean;
+  onRequireReactionLogin?: () => void;
 }
 
 /**
@@ -186,7 +194,13 @@ export const CommentNode = ({
   onLike,
   onReply,
   onLoadMoreChildren,
-  stickerMap
+  stickerMap,
+  reactionMap = {},
+  isAuthenticated = false,
+  stickerGroups = [],
+  onToggleReaction,
+  isReactionPending,
+  onRequireReactionLogin,
 }: CommentNodeProps) => {
   // 判断是否是作者本人
   const isAuthor = currentUserId > 0 && String(node.voAuthorId) === String(currentUserId);
@@ -246,6 +260,8 @@ export const CommentNode = ({
   const totalChildren = node.voChildrenTotal ?? node.voChildren?.length ?? 0;
   const loadedCount = loadedChildren.length;
   const hasMore = loadedCount < totalChildren;
+  const reactionItems = reactionMap[node.voId] || [];
+  const reactionLoading = isReactionPending ? isReactionPending(node.voId) : false;
 
   // 监听 node.voChildren 变化,重新初始化子评论列表
   useEffect(() => {
@@ -564,6 +580,19 @@ export const CommentNode = ({
 
       {/* 操作按钮区域 */}
       <div className={styles.actions}>
+        {onToggleReaction && (
+          <ReactionBar
+            targetType="Comment"
+            targetId={node.voId}
+            items={reactionItems}
+            isLoggedIn={isAuthenticated}
+            loading={reactionLoading}
+            stickerGroups={stickerGroups}
+            onToggle={(payload) => onToggleReaction(node.voId, payload)}
+            onRequireLogin={onRequireReactionLogin}
+          />
+        )}
+
         {/* 点赞按钮 */}
         {onLike && (
           <button
@@ -633,6 +662,12 @@ export const CommentNode = ({
                   onReply={onReply}
                   onLoadMoreChildren={undefined} // 2级结构，子评论不再加载更多
                   stickerMap={stickerMap}
+                  reactionMap={reactionMap}
+                  isAuthenticated={isAuthenticated}
+                  stickerGroups={stickerGroups}
+                  onToggleReaction={onToggleReaction}
+                  isReactionPending={isReactionPending}
+                  onRequireReactionLogin={onRequireReactionLogin}
                 />
               ))}
             </div>

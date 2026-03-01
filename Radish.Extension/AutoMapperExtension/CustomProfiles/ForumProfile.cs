@@ -73,5 +73,9 @@ public class ForumProfile : Profile
         CreateMap<Sticker, StickerVo>();
         RecognizePrefixes("Vo");
         CreateMap<StickerVo, Sticker>();
+
+        // Reaction -> ReactionSummaryVo（聚合结果中的字段允许按前缀自动映射）
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<Reaction, ReactionSummaryVo>();
     }
 }
