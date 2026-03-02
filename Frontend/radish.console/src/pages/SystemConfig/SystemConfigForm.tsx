@@ -178,6 +178,7 @@ export const SystemConfigForm = ({
       confirmLoading={loading}
       width={600}
       destroyOnHidden
+      forceRender
     >
       <Form
         form={form}

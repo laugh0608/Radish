@@ -26,6 +26,7 @@ import {
   type StickerGroupUpsertRequest,
   type StickerGroupVo,
 } from '@/api/stickerApi';
+import { getAvatarUrl } from '@/config/env';
 import { ROUTES } from '@/router';
 import { log } from '@/utils/logger';
 import { StickerGroupForm } from './StickerGroupForm';
@@ -86,7 +87,7 @@ export const StickerGroupList = () => {
     setFormVisible(true);
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await deleteStickerGroup(id);
       message.success('删除表情包分组成功');
@@ -122,15 +123,19 @@ export const StickerGroupList = () => {
       title: '封面',
       key: 'cover',
       width: 84,
-      render: (_, record) => (
-        <div className="sticker-group-cover">
-          {record.voCoverImageUrl ? (
-            <img src={record.voCoverImageUrl} alt={record.voName} />
-          ) : (
-            <span>无</span>
-          )}
-        </div>
-      ),
+      render: (_, record) => {
+        const coverImageUrl = getAvatarUrl(record.voCoverImageUrl);
+
+        return (
+          <div className="sticker-group-cover">
+            {coverImageUrl ? (
+              <img src={coverImageUrl} alt={record.voName} />
+            ) : (
+              <span>无</span>
+            )}
+          </div>
+        );
+      },
     },
     {
       title: '名称',

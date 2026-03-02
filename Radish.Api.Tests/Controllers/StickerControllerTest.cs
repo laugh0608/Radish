@@ -192,6 +192,76 @@ public class StickerControllerTest
         Assert.Equal(3, payload.VoUpdatedCount);
     }
 
+    [Fact]
+    public async Task CheckStickerCode_Should_Return_NotFound_When_Group_Not_Exists()
+    {
+        // Arrange
+        var serviceMock = CreateStickerServiceMock();
+        serviceMock
+            .Setup(s => s.CheckGroupExistsAsync(1))
+            .ReturnsAsync(false);
+
+        var controller = CreateController(serviceMock.Object);
+
+        // Act
+        var result = await controller.CheckStickerCode(1, "happy");
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(404, result.StatusCode);
+        Assert.Equal("StickerGroupNotFound", result.Code);
+        Assert.Equal("分组不存在或已删除", result.MessageInfo);
+    }
+
+    [Fact]
+    public async Task CheckStickerCode_Should_Return_Success_When_Available()
+    {
+        // Arrange
+        var serviceMock = CreateStickerServiceMock();
+        serviceMock
+            .Setup(s => s.CheckGroupExistsAsync(1))
+            .ReturnsAsync(true);
+        serviceMock
+            .Setup(s => s.CheckStickerCodeAvailableAsync(1, "happy"))
+            .ReturnsAsync(true);
+
+        var controller = CreateController(serviceMock.Object);
+
+        // Act
+        var result = await controller.CheckStickerCode(1, "happy");
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        var payload = Assert.IsType<StickerCodeCheckVo>(result.ResponseData);
+        Assert.True(payload.VoAvailable);
+        Assert.Equal("happy", payload.VoCode);
+        Assert.Equal(1, payload.VoGroupId);
+    }
+
+    [Fact]
+    public async Task CheckStickerCode_Should_Return_Conflict_When_Not_Available()
+    {
+        // Arrange
+        var serviceMock = CreateStickerServiceMock();
+        serviceMock
+            .Setup(s => s.CheckGroupExistsAsync(1))
+            .ReturnsAsync(true);
+        serviceMock
+            .Setup(s => s.CheckStickerCodeAvailableAsync(1, "happy"))
+            .ReturnsAsync(false);
+
+        var controller = CreateController(serviceMock.Object);
+
+        // Act
+        var result = await controller.CheckStickerCode(1, "happy");
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal(409, result.StatusCode);
+        Assert.Equal("CodeAlreadyExists", result.Code);
+    }
+
     private static StickerController CreateController(IStickerService stickerService)
     {
         var httpContextUserMock = new Mock<IHttpContextUser>();

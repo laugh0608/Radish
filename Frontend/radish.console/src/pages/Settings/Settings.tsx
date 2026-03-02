@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   AntInput as Input,
@@ -54,9 +54,9 @@ export const Settings = () => {
   });
 
   // 初始化表单值
-  useState(() => {
+  useEffect(() => {
     form.setFieldsValue(settings);
-  });
+  }, [form, settings]);
 
   // 保存设置
   const handleSave = async () => {
@@ -273,6 +273,7 @@ export const Settings = () => {
         }}
         confirmLoading={passwordLoading}
         width={500}
+        forceRender
       >
         <Form
           form={passwordForm}

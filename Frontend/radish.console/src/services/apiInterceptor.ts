@@ -21,6 +21,7 @@ export function setupApiInterceptors() {
       // 如果请求需要认证，确保使用有效的 Token
       const authHeader = (options.headers as Record<string, string>)?.Authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
+        log.debug('ApiInterceptor', '认证请求 Token 状态', tokenService.getTokenDebugInfo());
         try {
           const validToken = await tokenService.getValidAccessToken();
           if (validToken) {
@@ -48,14 +49,15 @@ export function setupApiInterceptors() {
 
       // 如果返回 401，可能是 Token 过期
       if (response.status === 401) {
-        log.warn('ApiInterceptor', '收到 401 响应，可能需要重新登录');
+        log.warn('ApiInterceptor', '收到 401 响应，可能需要重新登录', tokenService.getTokenDebugInfo());
 
         // 清除 Token 并跳转到登录页
         tokenService.clearTokens();
 
         // 如果当前不在登录页，跳转到登录页
-        if (window.location.pathname !== '/console/login') {
-          window.location.href = '/console/login';
+        const isLoginPage = window.location.pathname.endsWith('/login');
+        if (!isLoginPage) {
+          window.location.href = '/console/login?auto=1';
         }
       }
     },
@@ -93,17 +95,14 @@ export async function refreshToken(): Promise<boolean> {
  * 检查 Token 状态
  */
 export function getTokenStatus() {
-  const hasToken = !!tokenService.getAccessToken();
-  const hasRefreshToken = !!tokenService.getRefreshToken();
-  const isExpiringSoon = tokenService.isTokenExpiringSoon();
-  const isExpired = tokenService.isTokenExpired();
-  const expiresAt = tokenService.getTokenExpiresAt();
+  const debugInfo = tokenService.getTokenDebugInfo();
 
   return {
-    hasToken,
-    hasRefreshToken,
-    isExpiringSoon,
-    isExpired,
-    expiresAt: expiresAt ? new Date(expiresAt) : null,
+    hasToken: debugInfo.hasAccessToken,
+    hasRefreshToken: debugInfo.hasRefreshToken,
+    isExpiringSoon: debugInfo.isExpiringSoon,
+    isExpired: debugInfo.isExpired,
+    expiresAt: debugInfo.expiresAtTimestamp ? new Date(debugInfo.expiresAtTimestamp) : null,
+    debugInfo,
   };
 }

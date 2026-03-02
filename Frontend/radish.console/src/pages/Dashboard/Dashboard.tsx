@@ -145,7 +145,7 @@ export const Dashboard = () => {
             title="总用户数"
             value={stats.voTotalUsers}
             prefix={<TeamOutlined />}
-            valueStyle={{ color: '#3f8600' }}
+            styles={{ content: { color: '#3f8600' } }}
           />
         </Card>
         <Card loading={statsLoading}>
@@ -153,7 +153,7 @@ export const Dashboard = () => {
             title="总订单数"
             value={stats.voTotalOrders}
             prefix={<FileTextOutlined />}
-            valueStyle={{ color: '#1890ff' }}
+            styles={{ content: { color: '#1890ff' } }}
           />
         </Card>
         <Card loading={statsLoading}>
@@ -161,7 +161,7 @@ export const Dashboard = () => {
             title="商品数量"
             value={stats.voTotalProducts}
             prefix={<ShoppingOutlined />}
-            valueStyle={{ color: '#722ed1' }}
+            styles={{ content: { color: '#722ed1' } }}
           />
         </Card>
         <Card loading={statsLoading}>
@@ -170,7 +170,7 @@ export const Dashboard = () => {
             value={stats.voTotalRevenue}
             suffix="胡萝卜"
             prefix={<AppstoreOutlined />}
-            valueStyle={{ color: '#cf1322' }}
+            styles={{ content: { color: '#cf1322' } }}
           />
         </Card>
       </div>

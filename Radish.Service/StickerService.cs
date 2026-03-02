@@ -362,6 +362,17 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         return !exists;
     }
 
+    public async Task<bool> CheckGroupExistsAsync(long groupId)
+    {
+        if (groupId <= 0)
+        {
+            return false;
+        }
+
+        var group = await _stickerGroupRepository.QueryByIdAsync(groupId);
+        return group != null && !group.IsDeleted;
+    }
+
     public async Task<long> AddStickerAsync(CreateStickerDto createDto, long operatorId, string operatorName)
     {
         ArgumentNullException.ThrowIfNull(createDto);

@@ -173,16 +173,7 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3100/console"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3100/console/"));
 
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.EndSession);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.RefreshToken);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "openid");
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "profile");
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "offline_access");
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
+            EnsureConsolePermissions(descriptor);
 
             // 扩展属性：客户端展示信息
             descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 后台管理控制台");
@@ -213,6 +204,7 @@ public class OpenIddictSeedHostedService : IHostedService
             // 确保扩展属性存在
             descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 后台管理控制台");
             descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
+            EnsureConsolePermissions(descriptor);
 
             await _applicationManager.UpdateAsync(existingConsole, descriptor, cancellationToken);
         }
@@ -281,6 +273,20 @@ public class OpenIddictSeedHostedService : IHostedService
 
             await _applicationManager.UpdateAsync(existingShop, descriptor, cancellationToken);
         }
+    }
+
+    private static void EnsureConsolePermissions(OpenIddictApplicationDescriptor descriptor)
+    {
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.EndSession);
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.RefreshToken);
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "openid");
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "profile");
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "offline_access");
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

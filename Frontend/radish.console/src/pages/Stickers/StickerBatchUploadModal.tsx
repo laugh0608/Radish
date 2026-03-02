@@ -23,7 +23,7 @@ import './StickerBatchUploadModal.css';
 
 interface StickerBatchUploadModalProps {
   visible: boolean;
-  groupId: number;
+  groupId: string;
   onCancel: () => void;
   onSuccess: () => void;
 }
@@ -41,14 +41,14 @@ interface BatchUploadRow {
   uploadStatus: UploadStatus;
   uploadProgress: number;
   uploadError?: string;
-  attachmentId?: number;
+  attachmentId?: string;
   imageUrl?: string;
   thumbnailUrl?: string;
   serverMessage?: string;
 }
 
 interface UploadAttachmentResult {
-  attachmentId: number;
+  attachmentId: string;
   imageUrl?: string;
   thumbnailUrl?: string;
 }
@@ -78,16 +78,13 @@ function toStringOrUndefined(value: unknown): string | undefined {
   return undefined;
 }
 
-function toNumberOrUndefined(value: unknown): number | undefined {
-  if (typeof value === 'number' && Number.isFinite(value)) {
-    return value;
+function toIdString(value: unknown): string | undefined {
+  if (typeof value === 'string' && /^[1-9]\d*$/.test(value.trim())) {
+    return value.trim();
   }
 
-  if (typeof value === 'string' && value.trim()) {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) {
-      return parsed;
-    }
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return String(Math.trunc(value));
   }
 
   return undefined;
@@ -162,14 +159,14 @@ function uploadImageWithProgress(file: RcFile, onProgress: (percent: number) => 
         return;
       }
 
-      const attachmentId = toNumberOrUndefined(
+      const attachmentId = toIdString(
         responseData.voId
         ?? responseData.VoId
         ?? responseData.id
         ?? responseData.Id
       );
 
-      if (!attachmentId || attachmentId <= 0) {
+      if (!attachmentId) {
         reject(new Error('上传成功但未获取到附件 ID'));
         return;
       }
@@ -349,7 +346,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
   };
 
   const handleStartUpload = async () => {
-    if (groupId <= 0) {
+    if (!/^[1-9]\d*$/.test(groupId)) {
       message.error('分组 ID 无效');
       return;
     }
@@ -440,7 +437,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
     const requestItems: BatchAddStickerItemRequest[] = targets.map((item, index) => {
       requestIndexToRowId[index] = item.rowId;
       return {
-        attachmentId: item.attachmentId ?? 0,
+        attachmentId: item.attachmentId ?? '',
         code: item.code.trim().toLowerCase(),
         name: item.name.trim(),
         allowInline: item.allowInline,

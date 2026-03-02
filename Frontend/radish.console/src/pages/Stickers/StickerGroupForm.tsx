@@ -21,6 +21,7 @@ import {
   type StickerGroupUpsertRequest,
   type StickerGroupVo,
 } from '@/api/stickerApi';
+import { getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 
 interface StickerGroupFormProps {
@@ -37,6 +38,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
   const [codeChecking, setCodeChecking] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const coverImageUrl = Form.useWatch('coverImageUrl', form) || '';
+  const coverPreviewUrl = getAvatarUrl(coverImageUrl);
 
   const uploadCoverImage = (file: File, onProgress: (percent: number) => void): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -257,6 +259,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
       confirmLoading={loading}
       width={680}
       destroyOnHidden
+      forceRender
     >
       <Form form={form} layout="vertical">
         <Form.Item
@@ -322,9 +325,9 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
                 fontSize: 12,
               }}
             >
-              {coverImageUrl ? (
+              {coverPreviewUrl ? (
                 <img
-                  src={coverImageUrl}
+                  src={coverPreviewUrl}
                   alt="分组封面预览"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />

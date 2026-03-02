@@ -32,6 +32,9 @@ public interface IStickerService : IBaseService<StickerGroup, StickerGroupVo>
     /// <summary>校验分组编码是否可用</summary>
     Task<bool> CheckGroupCodeAvailableAsync(long tenantId, string code);
 
+    /// <summary>校验分组是否存在且未删除</summary>
+    Task<bool> CheckGroupExistsAsync(long groupId);
+
     /// <summary>新增单个表情</summary>
     Task<long> AddStickerAsync(CreateStickerDto createDto, long operatorId, string operatorName);
 

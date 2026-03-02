@@ -6,8 +6,13 @@ import {
   InputNumber,
   Switch,
   Button,
+  PlusOutlined,
+  Space,
   message,
 } from '@radish/ui';
+import { Upload } from 'antd';
+import type { UploadProps } from 'antd';
+import { getApiClientConfig } from '@radish/http';
 import {
   addSticker,
   checkStickerCode,
@@ -20,17 +25,186 @@ import { log } from '@/utils/logger';
 
 interface StickerFormProps {
   visible: boolean;
-  groupId: number;
+  groupId: string;
   mode: 'create' | 'edit';
   sticker?: StickerVo;
   onCancel: () => void;
   onSuccess: () => void;
 }
 
+interface UploadStickerImageResult {
+  attachmentId: string;
+  imageUrl?: string;
+  thumbnailUrl?: string;
+}
+
+function toStringOrUndefined(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.trim()) {
+    return value;
+  }
+
+  return undefined;
+}
+
+function toIdString(value: unknown): string | undefined {
+  if (typeof value === 'string' && /^[1-9]\d*$/.test(value.trim())) {
+    return value.trim();
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
+    return String(Math.trunc(value));
+  }
+
+  return undefined;
+}
+
+function uploadStickerImage(file: File, onProgress: (percent: number) => void): Promise<UploadStickerImageResult> {
+  return new Promise((resolve, reject) => {
+    const config = getApiClientConfig();
+    const normalizedBaseUrl = (config.baseUrl || '').trim().replace(/\/$/, '');
+    if (!normalizedBaseUrl) {
+      reject(new Error('API baseUrl 未配置'));
+      return;
+    }
+
+    const uploadUrl = `${normalizedBaseUrl}/api/v1/Attachment/UploadImage`;
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', uploadUrl, true);
+
+    const token = config.getToken?.();
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable) {
+        return;
+      }
+
+      const percent = Math.round((event.loaded / event.total) * 100);
+      onProgress(Math.min(100, Math.max(0, percent)));
+    };
+
+    xhr.onerror = () => {
+      reject(new Error('图片上传失败，请检查网络连接'));
+    };
+
+    xhr.onload = () => {
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(new Error(`图片上传失败（HTTP ${xhr.status}）`));
+        return;
+      }
+
+      let payload: Record<string, unknown> | null = null;
+      try {
+        payload = JSON.parse(xhr.responseText) as Record<string, unknown>;
+      } catch {
+        reject(new Error('图片上传响应解析失败'));
+        return;
+      }
+
+      const isSuccess = Boolean(payload.isSuccess ?? payload.IsSuccess);
+      const messageText = toStringOrUndefined(payload.messageInfo ?? payload.MessageInfo) || '图片上传失败';
+      if (!isSuccess) {
+        reject(new Error(messageText));
+        return;
+      }
+
+      const responseData = (payload.responseData ?? payload.ResponseData) as Record<string, unknown> | undefined;
+      if (!responseData) {
+        reject(new Error('图片上传成功但未返回附件信息'));
+        return;
+      }
+
+      const attachmentId = toIdString(
+        responseData.voId
+        ?? responseData.VoId
+        ?? responseData.id
+        ?? responseData.Id
+      );
+      if (!attachmentId) {
+        reject(new Error('图片上传成功但未获取到附件 ID'));
+        return;
+      }
+
+      resolve({
+        attachmentId,
+        imageUrl: toStringOrUndefined(responseData.voUrl ?? responseData.VoUrl ?? responseData.url ?? responseData.Url),
+        thumbnailUrl: toStringOrUndefined(
+          responseData.voThumbnailUrl
+          ?? responseData.VoThumbnailUrl
+          ?? responseData.thumbnailUrl
+          ?? responseData.ThumbnailUrl
+        ),
+      });
+    };
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('businessType', 'Sticker');
+    formData.append('generateThumbnail', 'true');
+    formData.append('removeExif', 'true');
+    xhr.send(formData);
+  });
+}
+
 export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSuccess }: StickerFormProps) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [codeChecking, setCodeChecking] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const imageUrl = Form.useWatch('imageUrl', form) || '';
+  const thumbnailUrl = Form.useWatch('thumbnailUrl', form) || '';
+  const attachmentId = Form.useWatch('attachmentId', form);
+  const previewUrl = thumbnailUrl || imageUrl;
+
+  const handleImageUpload: UploadProps['customRequest'] = async (options) => {
+    const file = options.file;
+    if (!(file instanceof File)) {
+      options.onError?.(new Error('无效文件'));
+      return;
+    }
+
+    const isImage = file.type
+      ? file.type.startsWith('image/')
+      : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+    if (!isImage) {
+      const error = new Error('仅支持上传图片文件');
+      options.onError?.(error);
+      message.error(error.message);
+      return;
+    }
+
+    const isLt5M = file.size / 1024 / 1024 <= 5;
+    if (!isLt5M) {
+      const error = new Error('图片大小不能超过 5MB');
+      options.onError?.(error);
+      message.error(error.message);
+      return;
+    }
+
+    try {
+      setImageUploading(true);
+      const result = await uploadStickerImage(file, (percent) => {
+        options.onProgress?.({ percent });
+      });
+
+      form.setFieldsValue({
+        attachmentId: result.attachmentId,
+        imageUrl: result.imageUrl || '',
+        thumbnailUrl: result.thumbnailUrl || '',
+      });
+      options.onSuccess?.(result);
+      message.success('图片上传成功，已自动回填');
+    } catch (error) {
+      const uploadError = error instanceof Error ? error : new Error('图片上传失败');
+      options.onError?.(uploadError);
+      log.error('StickerForm', '上传单个表情图片失败:', error);
+      message.error(uploadError.message);
+    } finally {
+      setImageUploading(false);
+    }
+  };
 
   const handleCodeBlur = async () => {
     if (mode !== 'create') {
@@ -38,7 +212,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
     }
 
     const code = String(form.getFieldValue('code') || '').trim().toLowerCase();
-    if (!code || groupId <= 0) {
+    if (!code || !/^[1-9]\d*$/.test(groupId)) {
       return;
     }
 
@@ -58,6 +232,11 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
   };
 
   const handleSubmit = async () => {
+    if (imageUploading) {
+      message.warning('图片仍在上传中，请稍候提交');
+      return;
+    }
+
     try {
       const values = await form.validateFields();
       setLoading(true);
@@ -71,14 +250,14 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
         }
 
         const request: CreateStickerRequest = {
-          groupId,
+          groupId: groupId.trim(),
           code: normalizedCode,
           name: values.name.trim(),
           imageUrl: values.imageUrl?.trim() || undefined,
           thumbnailUrl: values.thumbnailUrl?.trim() || undefined,
           isAnimated: values.isAnimated,
           allowInline: values.allowInline,
-          attachmentId: values.attachmentId || undefined,
+          attachmentId: values.attachmentId?.trim() || undefined,
           isEnabled: values.isEnabled,
           sort: values.sort,
         };
@@ -92,7 +271,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
           thumbnailUrl: values.thumbnailUrl?.trim() || undefined,
           isAnimated: values.isAnimated,
           allowInline: values.allowInline,
-          attachmentId: values.attachmentId || undefined,
+          attachmentId: values.attachmentId?.trim() || undefined,
           isEnabled: values.isEnabled,
           sort: values.sort,
         };
@@ -152,9 +331,10 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
         void handleSubmit();
       }}
       onCancel={onCancel}
-      confirmLoading={loading}
+      confirmLoading={loading || imageUploading}
       width={720}
       destroyOnHidden
+      forceRender
       footer={(_, { OkBtn, CancelBtn }) => (
         <>
           <CancelBtn />
@@ -195,18 +375,73 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
           <Input placeholder="例如：开心" />
         </Form.Item>
 
+        <Form.Item label="图片资源">
+          <Space direction="vertical" style={{ width: '100%' }} size={10}>
+            <div
+              style={{
+                width: 120,
+                height: 120,
+                borderRadius: 10,
+                border: '1px solid #f0f0f0',
+                background: '#fafafa',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#999',
+                fontSize: 12,
+              }}
+            >
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt="表情预览"
+                  style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }}
+                />
+              ) : (
+                <span>暂无图片</span>
+              )}
+            </div>
+
+            <Space>
+              <Upload
+                accept="image/*"
+                showUploadList={false}
+                customRequest={handleImageUpload}
+                disabled={imageUploading || loading}
+              >
+                <Button icon={<PlusOutlined />} disabled={imageUploading || loading}>
+                  {imageUploading ? '上传中...' : '上传图片'}
+                </Button>
+              </Upload>
+              <Button
+                disabled={!previewUrl && !attachmentId}
+                onClick={() => {
+                  form.setFieldsValue({
+                    attachmentId: undefined,
+                    imageUrl: '',
+                    thumbnailUrl: '',
+                  });
+                }}
+              >
+                清空图片
+              </Button>
+            </Space>
+          </Space>
+        </Form.Item>
+
         <Form.Item
           name="attachmentId"
           label="附件 ID"
-          tooltip="优先填写附件ID；若不填可直接填图片 URL"
-          rules={[{ type: 'number', min: 1, message: '附件ID必须大于0' }]}
+          tooltip="上传后自动回填；也可手动填写"
+          rules={[{ pattern: /^[1-9]\d*$/, message: '附件ID必须为正整数' }]}
         >
-          <InputNumber min={1} style={{ width: '100%' }} placeholder="例如：9001" />
+          <Input placeholder="例如：2028085755741470720" />
         </Form.Item>
 
         <Form.Item
           name="imageUrl"
-          label="图片 URL"
+          label="图片 URL（手填兜底）"
           rules={[{ max: 500, message: '图片 URL 不能超过500个字符' }]}
         >
           <Input placeholder="https://..." />

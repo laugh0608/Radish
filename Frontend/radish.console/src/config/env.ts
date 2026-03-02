@@ -28,6 +28,11 @@ export const env = {
   debug: import.meta.env.VITE_DEBUG === 'true',
 
   /**
+   * 是否启用 Token 自动刷新调试定时器
+   */
+  tokenAutoRefreshDebug: import.meta.env.VITE_TOKEN_AUTO_REFRESH_DEBUG === 'true',
+
+  /**
    * 功能开关
    */
   features: {
@@ -138,4 +143,3 @@ export function getAvatarUrl(avatarUrl?: string | null): string | undefined {
   // 其他情况，添加前缀斜杠后拼接
   return `${getApiBaseUrl()}/${avatarUrl}`;
 }
-
