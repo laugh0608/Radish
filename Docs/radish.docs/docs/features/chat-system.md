@@ -2,11 +2,12 @@
 
 > Radish 聊天室系统核心设计文档（数据模型 · SignalR · API）
 >
-> **版本**: v26.2.0
+> **版本**: v26.3.0
 >
-> **最后更新**: 2026.02.24
+> **最后更新**: 2026.03.02
 >
 > **关联文档**：
+> [聊天室 App 文档总览](./chat-app-index.md) ·
 > [前端架构与组件设计](./chat-frontend.md) ·
 > [表情包与 Reaction 系统](./emoji-sticker-system.md) ·
 > [文件上传设计](./file-upload-design.md)
@@ -104,6 +105,9 @@ public class Channel : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     /// <summary>最后一条消息时间（冗余，用于频道列表排序）</summary>
     public DateTime? LastMessageTime { get; set; }
 
+    /// <summary>当前置顶消息 ID（Phase 2，冗余，快速展示置顶预览条）</summary>
+    public long? PinnedMessageId { get; set; }
+
     public long TenantId { get; set; }
     public bool IsDeleted { get; set; } = false;
     public DateTime? DeletedAt { get; set; }
@@ -162,6 +166,11 @@ public class ChannelMessage : RootEntityTKey<long>, IDeleteFilter
     public string? ImageThumbnailUrl { get; set; }
 
     public DateTime CreateTime { get; set; }
+
+    // Phase 2：消息置顶
+    public bool IsPinned { get; set; } = false;
+    public DateTime? PinnedAt { get; set; }
+    public string? PinnedBy { get; set; }
 
     // IDeleteFilter（软删除 = 撤回）
     // DeletedAt 即为撤回时间，DeletedBy 即为撤回人
@@ -234,6 +243,7 @@ public class ChannelVo
     public int VoUnreadCount { get; set; }     // Service 层按当前用户填充
     public bool VoHasMention { get; set; }     // 未读中是否含 @我（红点高亮）
     public ChannelMessageVo? VoLastMessage { get; set; } // 最后一条消息预览
+    public ChannelMessageVo? VoPinnedMessage { get; set; } // Phase 2：当前置顶消息预览
 }
 ```
 
@@ -255,11 +265,12 @@ public class ChannelMessageVo
     public string? VoImageThumbnailUrl { get; set; }
     public bool VoIsRecalled { get; set; }            // IsDeleted=true 时为 true，内容置空
     public DateTime VoCreateTime { get; set; }
+    public bool VoIsPinned { get; set; }              // Phase 2：消息是否被置顶
 }
 ```
 
 **AutoMapper 策略**：
-- `Channel → ChannelVo`：自动映射（Vo 前缀），`VoUnreadCount`/`VoHasMention`/`VoLastMessage` 由 Service 手动填充
+- `Channel → ChannelVo`：自动映射（Vo 前缀），`VoUnreadCount`/`VoHasMention`/`VoLastMessage`/`VoPinnedMessage` 由 Service 手动填充
 - `ChannelMessage → ChannelMessageVo`：自动映射，`VoIsRecalled` 映射自 `IsDeleted`；`VoContent` 在 `IsDeleted=true` 时映射为 `null`（AutoMapper 条件映射）
 
 ---
@@ -343,16 +354,21 @@ public class ChatHub : Hub
     public async Task StartTyping(long channelId)
     {
         await Clients.OthersInGroup($"channel:{channelId}")
-            .SendAsync("UserTyping", userId, userName);
+            .SendAsync("UserTyping", new { channelId, userId, userName });
     }
 
-    // 标记已读（切换到该频道时调用）
+    // 标记已读（进入频道且滚动到底部后调用）
     public async Task MarkChannelAsRead(long channelId)
     {
         // 更新 ChannelMember.LastReadMessageId = 当前最新消息 ID
-        // 推送 UnreadCountChanged 给该用户所有端（多端同步）
+        // 推送 ChannelUnreadChanged 给该用户所有端（多端同步）
+        var unreadCount = 0;
+        var hasMention = false;
         await Clients.Group($"user:{userId}")
-            .SendAsync("ChannelUnreadChanged", channelId, 0);
+            .SendAsync("ChannelUnreadChanged", new { channelId, unreadCount, hasMention });
+        // Phase 2：同时广播 MemberReadUpdated 给频道内其他在线成员（阅读回执）
+        // await Clients.OthersInGroup($"channel:{channelId}")
+        //     .SendAsync("MemberReadUpdated", new { channelId, userId, lastReadMessageId = latestMessageId, userAvatarUrl });
     }
 }
 ```
@@ -367,6 +383,8 @@ public class ChatHub : Hub
 | `ChannelUnreadChanged` | 频道未读数变化 | `{ channelId, unreadCount, hasMention }` | `user:{userId}` 组（多端同步） |
 | `MemberOnline` | 用户进入频道 | `{ channelId, userId, userName }` | `channel:{channelId}` 组 |
 | `MemberOffline` | 用户离开频道 | `{ channelId, userId }` | `channel:{channelId}` 组 |
+| `MessagePinned` | 消息被置顶/取消置顶（Phase 2） | `{ channelId, pinnedMessage: ChannelMessageVo or null }` | `channel:{channelId}` 组 |
+| `MemberReadUpdated` | 成员已读位置变化（Phase 2） | `{ channelId, userId, lastReadMessageId, userAvatarUrl }` | `channel:{channelId}` 组 |
 
 ### 客户端 → 服务端调用
 
@@ -415,6 +433,8 @@ void chatHub.stop();
 | GET | `/api/v1/ChannelMessage/GetHistory` | 登录 | 分页获取历史消息（`channelId + beforeMessageId + pageSize=50`） |
 | POST | `/api/v1/ChannelMessage/Send` | 登录 | 发送消息（文字或图片），成功后 Hub 广播 `MessageReceived` |
 | DELETE | `/api/v1/ChannelMessage/Recall/{id}` | 登录 | 撤回消息（软删除），Hub 广播 `MessageRecalled` |
+| PUT | `/api/v1/ChannelMessage/Pin/{id}` | Moderator | 置顶消息（同频道自动覆盖旧置顶），Hub 广播 `MessagePinned`（Phase 2） |
+| PUT | `/api/v1/ChannelMessage/Unpin/{id}` | Moderator | 取消置顶，Hub 广播 `MessagePinned`（pinnedMessage 为 null）（Phase 2） |
 
 ### 发送消息请求体
 
@@ -503,6 +523,19 @@ GET /api/v1/ChannelMessage/GetHistory?channelId=1&beforeMessageId=&pageSize=50
 ---
 
 ## 未来规划
+
+### Phase 2：消息置顶与阅读回执
+
+消息置顶：
+- 数据模型已预留 `Channel.PinnedMessageId`、`ChannelMessage.IsPinned/PinnedAt/PinnedBy`，Phase 2 直接启用。
+- 新增 REST API：`Pin`/`Unpin`（Service 层保证同频道只有一条置顶）。
+- Hub 推送 `MessagePinned`，payload 包含完整 `ChannelMessageVo`（取消时为 null）。
+
+消息阅读回执：
+- 无需改表，`ChannelMember.LastReadMessageId` 已有。
+- `GetOnlineMembers` 返回值 ViewModel 新增 `LastReadMessageId`、`UserAvatarUrl`。
+- `MarkChannelAsRead` Hub 方法启用注释掉的 `MemberReadUpdated` 广播。
+- 前端仅展示在线成员的回执，仅对最新 5 条消息渲染（性能约束）。
 
 ### Phase 2：私聊
 

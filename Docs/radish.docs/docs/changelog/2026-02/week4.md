@@ -174,6 +174,24 @@
 - `npm run type-check --workspace=radish.client` 通过。
 - `npm run type-check --workspace=radish.console` 通过。
 
+## 2026-03-02 (周一)
+
+### 聊天室文档分层与契约对齐完善
+
+- **新增 Chat App 拆分文档**：补充 `chat-app-index.md`、`chat-app-architecture.md`、`chat-app-realtime.md`、`chat-app-ui-modules.md`、`chat-app-roadmap.md`，形成“总览 + 架构 + 实时 + UI + 路线图”可导航结构。
+- **Hub 事件契约统一**：聊天室文档统一为对象载荷说明（`UserTyping`、`ChannelUnreadChanged`），避免多参数与对象写法混用导致联调歧义。
+- **已读时机规则统一**：明确 `MarkChannelAsRead` 在“进入频道并到达消息底部”后触发，避免进入频道即清零未读。
+- **角色术语对齐**：文档统一使用 `Moderator/Owner`，去除 `Moderator/Admin` 混用描述。
+- **版本元数据同步**：`chat-system.md` 与 `chat-frontend.md` 版本更新为 `v26.3.0`，最后更新日期统一到 `2026.03.02`。
+
+### 文档站入口补齐
+
+- **VitePress 侧边栏已补齐聊天室入口**：在“特定功能”分组新增聊天室系统与 Chat App 5 篇拆分文档链接，降低文档查找成本。
+
+### 提交补录（已提交）
+
+- `2139cb5` `docs(console): 同步认证与刷新配置说明`
+
 ## 本周总结
 
 - **表情包系统进入实现阶段**：完成设计文档后，已落地后端 Phase 1 首版与 Console 首版管理能力。
