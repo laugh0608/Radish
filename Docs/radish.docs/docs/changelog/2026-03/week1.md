@@ -26,3 +26,8 @@
 - **实体路由落地**：`Channel`、`ChannelMessage`、`ChannelMember` 已增加 `[Tenant(configId: "Chat")]`，数据库路由与通知系统 `Message` 模式保持一致。
 - **配置完成对齐**：`Radish.Api` 与 `Radish.Auth` 的 `Databases` 新增 `ConnId=Chat`，SQLite 默认文件为 `Radish.Chat.db`，并补齐 PostgreSQL `radish_chat` 示例。
 - **迁移与种子对齐**：`DbMigrate` 聊天相关建表与默认频道 seed 已显式切换到 `Chat` 连接执行，避免误落主库。
+
+### DbMigrate 可维护性重构
+
+- **Seed 文件拆分**：将 `InitialDataSeeder.cs` 重构为 `partial` 多文件结构，按身份/论坛/聊天/等级/商城分类拆分，入口仅保留编排逻辑。
+- **可读性提升**：单文件长度从千行级降到可维护范围，后续新增 seed 可按领域直接落到对应文件，降低冲突与检索成本。
