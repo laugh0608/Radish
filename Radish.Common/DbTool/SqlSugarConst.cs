@@ -7,4 +7,7 @@ public class SqlSugarConst
 
     /// <summary>消息数据库标识</summary>
     public const string MessageConfigId = "Message";
+
+    /// <summary>聊天室数据库标识</summary>
+    public const string ChatConfigId = "Chat";
 }

@@ -110,6 +110,7 @@
 >   - 后端完成频道与消息最小链路：`GetList`、`GetHistory`、`Send`、`Recall`、`ChatHub`。
 >   - 前端完成 Chat App 接入与实时联动：消息收发、撤回、基础未读、输入中状态。
 >   - 已补充联调脚本 `Radish.Api.Tests/HttpTest/Radish.Api.Chat.http` 与聊天文档对齐更新。
+>   - 聊天数据已拆分至独立数据库 `Radish.Chat.db`，与主业务库/通知库隔离，API 与 Auth 配置已同步。
 > - ℹ️ **构建现状说明**（2026-02-25）：
 >   - 后端测试通过（`Radish.Api.Tests`）。
 >   - Console 仍有既有 TS 存量问题（`Dashboard/SystemConfig/Tags`），与本次表情包新增代码无直接耦合。

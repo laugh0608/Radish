@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
+using Radish.Common.DbTool;
 using Radish.Common.HelpTool;
 using Radish.Common.TenantTool;
 using Radish.IService;
@@ -688,10 +689,14 @@ internal static class InitialDataSeeder
     /// <summary>初始化聊天室默认频道数据</summary>
     private static async Task SeedChatChannelsAsync(ISqlSugarClient db)
     {
-        db.CodeFirst.InitTables<Channel>();
-        db.CodeFirst.InitTables<ChannelMessage>();
-        db.CodeFirst.InitTables<ChannelMember>();
-        Console.WriteLine("[Radish.DbMigrate] 已同步 Channel/ChannelMessage/ChannelMember 表结构。");
+        var sqlSugarScope = db as SqlSugarScope
+            ?? throw new InvalidOperationException("[Radish.DbMigrate] ISqlSugarClient 不是 SqlSugarScope，无法切换到 Chat 连接。");
+
+        var chatDb = sqlSugarScope.GetConnectionScope(SqlSugarConst.ChatConfigId);
+        chatDb.CodeFirst.InitTables<Channel>();
+        chatDb.CodeFirst.InitTables<ChannelMessage>();
+        chatDb.CodeFirst.InitTables<ChannelMember>();
+        Console.WriteLine("[Radish.DbMigrate] 已同步 Chat 库 Channel/ChannelMessage/ChannelMember 表结构。");
 
         var defaultChannels = new[]
         {
@@ -702,7 +707,7 @@ internal static class InitialDataSeeder
 
         foreach (var channelMeta in defaultChannels)
         {
-            var exists = await db.Queryable<Channel>()
+            var exists = await chatDb.Queryable<Channel>()
                 .AnyAsync(c => c.TenantId == channelMeta.TenantId && c.Slug == channelMeta.Slug && !c.IsDeleted);
             if (exists)
             {
@@ -712,7 +717,7 @@ internal static class InitialDataSeeder
 
             Console.WriteLine($"[Radish.DbMigrate] 创建默认频道 Id={channelMeta.Id}, Name={channelMeta.Name}, TenantId={channelMeta.TenantId}...");
 
-            await db.Insertable(new Channel
+            await chatDb.Insertable(new Channel
             {
                 Id = channelMeta.Id,
                 TenantId = channelMeta.TenantId,

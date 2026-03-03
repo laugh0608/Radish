@@ -20,3 +20,9 @@
 - **架构文档对齐**：`chat-app-architecture.md` 同步当前代码目录与 store/action 实现现状，标注 P1 才进行 hooks/components 拆分。
 - **实时文档收口**：`chat-app-realtime.md` 同步“连接后自动入组/重连自动回组”现状，并标记历史补拉为 P1 优化项。
 - **系统文档补充**：`chat-system.md` 增加“当前实现快照”，注明 `ChannelCategory` 暂未单独落地、在线成员头像来源待补齐。
+
+### 聊天室数据库拆分（Chat 专库）
+
+- **实体路由落地**：`Channel`、`ChannelMessage`、`ChannelMember` 已增加 `[Tenant(configId: "Chat")]`，数据库路由与通知系统 `Message` 模式保持一致。
+- **配置完成对齐**：`Radish.Api` 与 `Radish.Auth` 的 `Databases` 新增 `ConnId=Chat`，SQLite 默认文件为 `Radish.Chat.db`，并补齐 PostgreSQL `radish_chat` 示例。
+- **迁移与种子对齐**：`DbMigrate` 聊天相关建表与默认频道 seed 已显式切换到 `Chat` 连接执行，避免误落主库。

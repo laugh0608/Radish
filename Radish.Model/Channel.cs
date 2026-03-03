@@ -6,6 +6,7 @@ namespace Radish.Model;
 
 /// <summary>聊天室频道实体</summary>
 [SugarTable("Channel")]
+[Tenant(configId: "Chat")]
 [SugarIndex("idx_channel_tenant_sort", nameof(TenantId), OrderByType.Asc, nameof(Sort), OrderByType.Asc)]
 [SugarIndex("idx_channel_tenant_slug", nameof(TenantId), OrderByType.Asc, nameof(Slug), OrderByType.Asc)]
 public class Channel : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
