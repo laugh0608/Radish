@@ -14,7 +14,7 @@ internal static partial class InitialDataSeeder
         var sqlSugarScope = db as SqlSugarScope
             ?? throw new InvalidOperationException("[Radish.DbMigrate] ISqlSugarClient 不是 SqlSugarScope，无法切换到 Chat 连接。");
 
-        var chatDb = sqlSugarScope.GetConnectionScope(SqlSugarConst.ChatConfigId);
+        var chatDb = sqlSugarScope.GetConnectionScope(SqlSugarConst.ChatConfigId.ToLowerInvariant());
         chatDb.CodeFirst.InitTables<Channel>();
         chatDb.CodeFirst.InitTables<ChannelMessage>();
         chatDb.CodeFirst.InitTables<ChannelMember>();
