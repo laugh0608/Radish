@@ -1,8 +1,6 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.IService;
-using Radish.Model.Models;
+using Radish.Model;
 using SqlSugar;
 
 namespace Radish.DbMigrate;
