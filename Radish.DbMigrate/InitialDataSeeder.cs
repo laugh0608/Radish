@@ -29,6 +29,7 @@ internal static class InitialDataSeeder
         await SeedPermissionsAsync(db);
         await SeedForumCategoriesAsync(db);
         await SeedForumTagsAsync(db);
+        await SeedChatChannelsAsync(db);
         await SeedLevelConfigsAsync(db, services);
         await SeedShopCategoriesAsync(db);
         await SeedShopProductsAsync(db);
@@ -37,6 +38,7 @@ internal static class InitialDataSeeder
         Console.WriteLine("  - 角色/租户/部门/用户/用户角色");
         Console.WriteLine("  - 用户时区偏好");
         Console.WriteLine("  - 角色-API 权限/论坛分类/标签");
+        Console.WriteLine("  - 聊天室默认频道");
         Console.WriteLine("  - 等级配置/商城分类/商品");
         Console.WriteLine("  - 表情包：不预置默认分组/表情（仅由 init 保证表结构）");
     }
@@ -680,6 +682,54 @@ internal static class InitialDataSeeder
             };
 
             await db.Insertable(tag).ExecuteCommandAsync();
+        }
+    }
+
+    /// <summary>初始化聊天室默认频道数据</summary>
+    private static async Task SeedChatChannelsAsync(ISqlSugarClient db)
+    {
+        db.CodeFirst.InitTables<Channel>();
+        db.CodeFirst.InitTables<ChannelMessage>();
+        db.CodeFirst.InitTables<ChannelMember>();
+        Console.WriteLine("[Radish.DbMigrate] 已同步 Channel/ChannelMessage/ChannelMember 表结构。");
+
+        var defaultChannels = new[]
+        {
+            new { Id = 93000L, TenantId = 30000L, Name = "综合闲聊", Slug = "general", Description = "日常交流与轻松讨论", Icon = "💬", Sort = 0 },
+            new { Id = 93001L, TenantId = 30000L, Name = "技术讨论", Slug = "tech-talk", Description = "前后端与工程实践讨论", Icon = "🛠️", Sort = 1 },
+            new { Id = 93010L, TenantId = 30001L, Name = "测试闲聊", Slug = "general", Description = "测试租户默认频道", Icon = "🧪", Sort = 0 }
+        };
+
+        foreach (var channelMeta in defaultChannels)
+        {
+            var exists = await db.Queryable<Channel>()
+                .AnyAsync(c => c.TenantId == channelMeta.TenantId && c.Slug == channelMeta.Slug && !c.IsDeleted);
+            if (exists)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 租户 {channelMeta.TenantId} 频道 slug={channelMeta.Slug} 已存在，跳过。");
+                continue;
+            }
+
+            Console.WriteLine($"[Radish.DbMigrate] 创建默认频道 Id={channelMeta.Id}, Name={channelMeta.Name}, TenantId={channelMeta.TenantId}...");
+
+            await db.Insertable(new Channel
+            {
+                Id = channelMeta.Id,
+                TenantId = channelMeta.TenantId,
+                Name = channelMeta.Name,
+                Slug = channelMeta.Slug,
+                Description = channelMeta.Description,
+                IconEmoji = channelMeta.Icon,
+                Type = ChannelType.Public,
+                IsEnabled = true,
+                Sort = channelMeta.Sort,
+                LastMessageId = null,
+                LastMessageTime = null,
+                IsDeleted = false,
+                CreateTime = DateTime.Now,
+                CreateBy = "System",
+                CreateId = 0
+            }).ExecuteCommandAsync();
         }
     }
 

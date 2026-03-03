@@ -23,6 +23,7 @@ public class AutoMapperConfig
         cfg.AddProfile<NotificationProfile>();
         cfg.AddProfile<ExperienceProfile>();
         cfg.AddProfile<ShopProfile>();
+        cfg.AddProfile<ChatProfile>();
     }
 
     #region 已弃用

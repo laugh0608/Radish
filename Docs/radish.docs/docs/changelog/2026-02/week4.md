@@ -187,6 +187,7 @@
 ### 文档站入口补齐
 
 - **VitePress 侧边栏已补齐聊天室入口**：在“特定功能”分组新增聊天室系统与 Chat App 5 篇拆分文档链接，降低文档查找成本。
+- **Console 单个表情直传状态补录**：`StickerForm` 已支持单个表情上传图片并自动回填 `attachmentId/imageUrl/thumbnailUrl`，URL 手填保留兜底，M12 对应遗留项已落地。
 
 ### 提交补录（已提交）
 

@@ -2,9 +2,9 @@
 
 > Radish 聊天室前端实现设计文档
 >
-> **版本**: v26.3.0
+> **版本**: v26.3.1
 >
-> **最后更新**: 2026.03.02
+> **最后更新**: 2026.03.03
 >
 > **关联文档**：
 > [聊天室 App 文档总览](./chat-app-index.md) ·
@@ -14,6 +14,10 @@
 ---
 
 ## 应用注册
+
+> 实现状态说明（2026-03-03）：
+> 当前 P0 已在 `ChatApp.tsx + chatStore.ts + chatHub.ts + api/chat.ts` 落地主链路。
+> 本文中的 `components/*` 与 `hooks/*` 拆分方案为 P1 目标架构，不影响现有接口契约。
 
 在 `AppRegistry.tsx` 中新增：
 
@@ -25,10 +29,8 @@
   component: lazy(() => import('../apps/chat/ChatApp')),
   type: 'window',
   defaultSize: { width: 1100, height: 750 },
-  minSize: { width: 800, height: 500 },
   requiredRoles: ['User'],
   category: 'content',
-  showInDock: true,
   // Dock 图标显示总未读气泡
 }
 ```
@@ -148,11 +150,7 @@ class ChatHubService {
     this.connection.on(
       'ChannelUnreadChanged',
       (payload: { channelId: number; unreadCount: number; hasMention: boolean }) => {
-        useChatStore.getState().updateUnread(
-          payload.channelId,
-          payload.unreadCount,
-          payload.hasMention
-        );
+        useChatStore.getState().updateUnread(payload);
       }
     );
 
