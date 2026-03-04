@@ -49,6 +49,20 @@ interface ParsedStickerUri {
 const normalizeStickerKey = (groupCode: string, stickerCode: string): string =>
   `${groupCode.trim().toLowerCase()}/${stickerCode.trim().toLowerCase()}`;
 
+const isSafeStickerUrl = (value?: string | null): value is string => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return false;
+  }
+
+  // 允许站内相对路径（如 /uploads/...）和 http(s) 绝对路径
+  return normalized.startsWith('/') || /^https?:\/\//i.test(normalized);
+};
+
 const parseStickerUri = (src: string): ParsedStickerUri | null => {
   const raw = src.trim();
   if (!raw.startsWith('sticker://')) {
@@ -75,10 +89,10 @@ const parseStickerUri = (src: string): ParsedStickerUri | null => {
     const image = params.get('image');
     const thumbnail = params.get('thumbnail');
 
-    if (image && /^https?:\/\//i.test(image)) {
+    if (isSafeStickerUrl(image)) {
       parsed.fallbackImageUrl = image;
     }
-    if (thumbnail && /^https?:\/\//i.test(thumbnail)) {
+    if (isSafeStickerUrl(thumbnail)) {
       parsed.fallbackThumbnailUrl = thumbnail;
     }
   }

@@ -62,8 +62,19 @@ const normalizeStickerCode = (value: string): string => value.trim().toLowerCase
 const normalizeStickerKey = (groupCode: string, stickerCode: string): string =>
   `${normalizeStickerCode(groupCode)}/${normalizeStickerCode(stickerCode)}`;
 
-const isSafeRemoteUrl = (value?: string | null): value is string =>
-  typeof value === 'string' && /^https?:\/\//i.test(value.trim());
+const isSafeStickerUrl = (value?: string | null): value is string => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return false;
+  }
+
+  // 允许站内相对路径（如 /uploads/...）和 http(s) 绝对路径
+  return normalized.startsWith('/') || /^https?:\/\//i.test(normalized);
+};
 
 const parseStickerUri = (rawSrc: string): ParsedStickerUri | null => {
   const src = rawSrc.trim();
@@ -91,10 +102,10 @@ const parseStickerUri = (rawSrc: string): ParsedStickerUri | null => {
     const image = params.get('image');
     const thumbnail = params.get('thumbnail');
 
-    if (isSafeRemoteUrl(image)) {
+    if (isSafeStickerUrl(image)) {
       parsed.fallbackImageUrl = image.trim();
     }
-    if (isSafeRemoteUrl(thumbnail)) {
+    if (isSafeStickerUrl(thumbnail)) {
       parsed.fallbackThumbnailUrl = thumbnail.trim();
     }
   }
@@ -160,7 +171,7 @@ const renderCommentHtml = (content: string, stickerMap?: MarkdownStickerMap): st
       const resolvedSrc = mapped?.imageUrl || stickerMeta.fallbackImageUrl || stickerMeta.fallbackThumbnailUrl;
       const stickerTitle = alt || mapped?.name || `${stickerMeta.groupCode}/${stickerMeta.stickerCode}`;
 
-      if (isSafeRemoteUrl(resolvedSrc)) {
+      if (isSafeStickerUrl(resolvedSrc)) {
         const safeSrc = escapeHtml(resolvedSrc);
         const safeTitle = escapeHtml(stickerTitle);
         html += `<img src="${safeSrc}" alt="${safeTitle}" title="${safeTitle}" class="stickerInline" loading="lazy" draggable="false" />`;

@@ -58,6 +58,7 @@ export async function getStickerGroups(forceRefresh: boolean = false): Promise<S
 
   groupsRequestPromise = (async () => {
     const response = await apiGet<StickerGroupVo[]>('/api/v1/Sticker/GetGroups', {
+      withAuth: true,
       timeout: STICKER_READ_TIMEOUT_MS,
     });
     if (!response.ok || !response.data) {
