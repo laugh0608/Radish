@@ -319,13 +319,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
         }
 
         var normalizedTenantId = NormalizeTenantId(tenantId);
-        var group = await _stickerGroupRepository.QueryFirstAsync(
-            g => (normalizedTenantId <= 0
-                    ? g.TenantId == 0
-                    : (g.TenantId == normalizedTenantId || g.TenantId == 0))
-                 && g.Code == groupCode
-                 && g.IsEnabled
-                 && !g.IsDeleted);
+        var group = await QueryEnabledGroupByCodeAsync(normalizedTenantId, groupCode);
 
         if (group == null)
         {
@@ -344,6 +338,24 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
         }
 
         return sticker.ThumbnailUrl;
+    }
+
+    private async Task<StickerGroup?> QueryEnabledGroupByCodeAsync(long normalizedTenantId, string groupCode)
+    {
+        if (normalizedTenantId <= 0)
+        {
+            return await _stickerGroupRepository.QueryFirstAsync(
+                g => g.TenantId == 0
+                     && g.Code == groupCode
+                     && g.IsEnabled
+                     && !g.IsDeleted);
+        }
+
+        return await _stickerGroupRepository.QueryFirstAsync(
+            g => (g.TenantId == normalizedTenantId || g.TenantId == 0)
+                 && g.Code == groupCode
+                 && g.IsEnabled
+                 && !g.IsDeleted);
     }
 
     private static List<ReactionSummaryVo> BuildSummary(IEnumerable<Reaction> reactions, long currentUserId)
