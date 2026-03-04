@@ -1,3 +1,4 @@
+using Radish.Common.CoreTool;
 using Radish.Infrastructure.FileStorage;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -15,21 +16,28 @@ namespace Radish.Service.Jobs;
 public class FileCleanupJob
 {
     private readonly IBaseRepository<Attachment> _attachmentRepository;
+    private readonly IBaseRepository<Sticker> _stickerRepository;
     private readonly IFileStorage _fileStorage;
+    private readonly string _tempPath;
     private readonly string _recycleBinPath;
 
     public FileCleanupJob(
         IBaseRepository<Attachment> attachmentRepository,
+        IBaseRepository<Sticker> stickerRepository,
         IFileStorage fileStorage)
     {
         _attachmentRepository = attachmentRepository;
+        _stickerRepository = stickerRepository;
         _fileStorage = fileStorage;
 
-        // 回收站路径：DataBases/Recycle
-        var rootPath = Path.IsPathRooted("DataBases/Uploads")
-            ? "DataBases/Uploads"
-            : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DataBases/Uploads");
-        _recycleBinPath = Path.Combine(Path.GetDirectoryName(rootPath) ?? "DataBases", "Recycle");
+        var dataBasesPath = AppPathTool.GetDataBasesPath();
+        _tempPath = Path.Combine(dataBasesPath, "Temp");
+        _recycleBinPath = Path.Combine(dataBasesPath, "Recycle");
+
+        if (!Directory.Exists(_tempPath))
+        {
+            Directory.CreateDirectory(_tempPath);
+        }
 
         // 确保回收站目录存在
         if (!Directory.Exists(_recycleBinPath))
@@ -115,12 +123,9 @@ public class FileCleanupJob
         {
             Log.Information("[FileCleanup] 开始清理临时文件，保留小时数：{RetentionHours}", retentionHours);
 
-            // 使用统一的 DataBases/Temp 目录
-            var tempPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DataBases", "Temp");
-
-            if (!Directory.Exists(tempPath))
+            if (!Directory.Exists(_tempPath))
             {
-                Log.Information("[FileCleanup] 临时文件目录不存在：{TempPath}", tempPath);
+                Log.Information("[FileCleanup] 临时文件目录不存在：{TempPath}", _tempPath);
                 return 0;
             }
 
@@ -128,7 +133,7 @@ public class FileCleanupJob
             var cleanedCount = 0;
 
             // 获取所有临时文件
-            var tempFiles = Directory.GetFiles(tempPath, "*", SearchOption.AllDirectories);
+            var tempFiles = Directory.GetFiles(_tempPath, "*", SearchOption.AllDirectories);
 
             foreach (var filePath in tempFiles)
             {
@@ -140,9 +145,9 @@ public class FileCleanupJob
                     if (fileInfo.LastWriteTime < cutoffTime)
                     {
                         // 移动到回收站（保持数据安全）
-                        var relativePath = Path.GetRelativePath(tempPath, filePath);
+                        var relativePath = Path.GetRelativePath(_tempPath, filePath);
                         var recyclePath = Path.Combine("Temp", relativePath);
-                        await MoveToRecycleBinAsync(recyclePath, "temp", tempPath);
+                        await MoveToRecycleBinAsync(recyclePath, "temp", _tempPath);
 
                         cleanedCount++;
                         Log.Information("[FileCleanup] 已将临时文件移至回收站：{FilePath}", relativePath);
@@ -155,7 +160,7 @@ public class FileCleanupJob
             }
 
             // 清理空目录
-            CleanupEmptyDirectories(tempPath);
+            CleanupEmptyDirectories(_tempPath);
 
             Log.Information("[FileCleanup] 临时文件清理完成，共处理 {Count} 个文件", cleanedCount);
             return cleanedCount;
@@ -257,9 +262,40 @@ public class FileCleanupJob
                 return 0;
             }
 
+            var orphanAttachmentIds = orphanAttachments.Select(a => a.Id).ToList();
+            var referencedStickerAttachmentIds = new HashSet<long>();
+            if (orphanAttachmentIds.Count > 0)
+            {
+                var referencedStickers = await _stickerRepository.QueryAsync(s =>
+                    s.AttachmentId.HasValue &&
+                    orphanAttachmentIds.Contains(s.AttachmentId.Value) &&
+                    !s.IsDeleted);
+
+                referencedStickerAttachmentIds = referencedStickers
+                    .Where(s => s.AttachmentId.HasValue)
+                    .Select(s => s.AttachmentId!.Value)
+                    .ToHashSet();
+            }
+
+            var safeToCleanupAttachments = orphanAttachments
+                .Where(a => !referencedStickerAttachmentIds.Contains(a.Id))
+                .ToList();
+
+            var skippedCount = orphanAttachments.Count - safeToCleanupAttachments.Count;
+            if (skippedCount > 0)
+            {
+                Log.Information("[FileCleanup] 跳过 {Count} 个已被 Sticker 引用的附件，避免误清理", skippedCount);
+            }
+
+            if (safeToCleanupAttachments.Count == 0)
+            {
+                Log.Information("[FileCleanup] 孤立附件均被业务引用，跳过清理");
+                return 0;
+            }
+
             var cleanedCount = 0;
 
-            foreach (var attachment in orphanAttachments)
+            foreach (var attachment in safeToCleanupAttachments)
             {
                 try
                 {
