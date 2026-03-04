@@ -37,3 +37,40 @@
 - **表情包附件被误判为孤立附件**：`2026-03-03 22:40` 日志出现 `FileCleanup` 将 `Sticker/2026/03/2028451843729784832.jpg` 移入回收站，需排查 Sticker 与 Attachment 的引用关系是否被清理任务正确识别。
 - **表情包前端展示异常**：已新增表情包分组并上传表情，但前端表情包页面未显示新分组/新表情；需排查管理端写入链路、查询接口、前端缓存与刷新策略。
 - **附件目录策略待确定**：当前回收站路径出现在 `Radish.Api/bin/Debug/net10.0/DataBases/Recycle/orphan/20260303/...`，目录层级过深且不直观；需讨论并确定是否统一落在解决方案根目录 `DataBases/`（含调试便利性与 Docker 部署影响评估）。
+
+## 2026-03-04 (周三)
+
+### 昨日遗留项修复：FileCleanup 误清理 Sticker 附件
+
+- **孤立附件判定补强**：`CleanupOrphanAttachmentsAsync` 新增 Sticker 引用检测，清理前会排除已被 `Sticker.AttachmentId` 引用的附件，避免误清理。
+- **回归测试补齐**：新增 `FileCleanupJobTest`，覆盖“附件被 Sticker 引用时不应被清理”的最小回归场景。
+
+### 昨日遗留项修复：新增表情前端不展示
+
+- **租户口径修复**：`radish.client` 的 `GetGroups` 请求改为携带认证（`withAuth: true`），避免匿名请求固定落到 `TenantId=0` 导致看不到租户分组。
+- **链路结果**：Console 新增分组/表情后，Client 可按当前登录租户正确拉取与展示。
+
+### 昨日遗留项修复：附件/回收站目录策略统一
+
+- **统一路径工具落地**：新增 `AppPathTool`，统一解析 `DataBases` 根目录（优先解决方案根目录，容器内回退应用根目录）。
+- **FileCleanup 路径收口**：`Temp` 与 `Recycle` 全部改为基于统一 `DataBases` 根目录，不再写入 `bin/.../DataBases`。
+- **附件处理临时目录收口**：`AttachmentService` 的水印/EXIF 临时文件路径改为统一 `DataBases/Temp`。
+- **分片上传临时目录收口**：`ChunkedUploadService` 的分片目录改为统一 `DataBases/Temp/Chunks`。
+
+### 租户口径对齐：公共租户基线（TenantId=0）
+
+- **种子用户口径统一**：`DbMigrate` 的默认用户（`system/admin/test`）统一使用 `TenantId = 0`，与当前“暂不启用实际多租户业务”的阶段目标一致。
+- **历史数据纠偏**：`DbMigrate` 重复执行时，会自动将已存在默认用户的非 `0` 租户值修正为 `0`，避免新老库口径不一致。
+- **本周任务单列**：在 `development-plan.md` 增加“补全租户相关逻辑”独立节点，明确当前公共租户基线与后续全链路补全范围。
+
+### 验证状态
+
+- ✅ `dotnet test Radish.Api.Tests --filter FileCleanupJobTest` 通过（新增回归测试通过）。
+- ✅ `dotnet build Radish.slnx -c Debug` 通过。
+- ✅ `npm run type-check --workspace=radish.client` 通过。
+
+### 聊天室联调修复：Hub 路由与表情渲染
+
+- **Gateway 路由补齐**：新增 `/hub/chat/{**catch-all}` 反向代理规则，修复聊天室 `negotiate` 404，确保 ChatHub 可经 Gateway 建链。
+- **表情图片渲染兼容**：评论与 Markdown 渲染统一放宽贴纸 URL 安全校验，支持站内相对路径（`/uploads/...`）与 `http(s)` 绝对路径，修复“表情只显示 `:group/code:` 文本”的问题。
+- **前端验证**：`radish.client` 与 `@radish/ui` 类型检查均通过。
