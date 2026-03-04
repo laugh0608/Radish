@@ -1,7 +1,7 @@
 import { apiDelete, apiFetch, apiGet, apiPost, apiPut } from '@radish/http';
 
 export interface StickerGroupVo {
-  voId: number;
+  voId: string;
   voCode: string;
   voName: string;
   voDescription?: string | null;
@@ -9,22 +9,22 @@ export interface StickerGroupVo {
   voGroupType: number;
   voIsEnabled: boolean;
   voSort: number;
-  voTenantId: number;
+  voTenantId: string;
   voStickerCount: number;
   voCreateTime: string;
   voModifyTime?: string | null;
 }
 
 export interface StickerVo {
-  voId: number;
-  voGroupId: number;
+  voId: string;
+  voGroupId: string;
   voCode: string;
   voName: string;
   voImageUrl: string;
   voThumbnailUrl?: string | null;
   voIsAnimated: boolean;
   voAllowInline: boolean;
-  voAttachmentId?: number | null;
+  voAttachmentId?: string | null;
   voUseCount: number;
   voSort: number;
   voIsEnabled: boolean;
@@ -43,14 +43,14 @@ export interface StickerGroupUpsertRequest {
 }
 
 export interface CreateStickerRequest {
-  groupId: number;
+  groupId: string;
   code: string;
   name: string;
   imageUrl?: string;
   thumbnailUrl?: string;
   isAnimated: boolean;
   allowInline: boolean;
-  attachmentId?: number;
+  attachmentId?: string;
   isEnabled: boolean;
   sort: number;
 }
@@ -61,25 +61,25 @@ export interface UpdateStickerRequest {
   thumbnailUrl?: string;
   isAnimated: boolean;
   allowInline: boolean;
-  attachmentId?: number;
+  attachmentId?: string;
   isEnabled: boolean;
   sort: number;
 }
 
 export interface BatchAddStickerItemRequest {
-  attachmentId: number;
+  attachmentId: string;
   code: string;
   name: string;
   allowInline: boolean;
 }
 
 export interface BatchAddStickersRequest {
-  groupId: number;
+  groupId: string;
   stickers: BatchAddStickerItemRequest[];
 }
 
 export interface StickerSortItemRequest {
-  id: number;
+  id: string;
   sort: number;
 }
 
@@ -90,7 +90,7 @@ export interface BatchUpdateStickerSortRequest {
 export interface StickerCodeCheckVo {
   voAvailable: boolean;
   voCode: string;
-  voGroupId?: number;
+  voGroupId?: string;
 }
 
 export interface StickerNormalizeCodeVo {
@@ -108,15 +108,15 @@ export interface StickerBatchConflictVo {
 
 export interface StickerBatchFailedItemVo {
   voRowIndex: number;
-  voAttachmentId: number;
+  voAttachmentId: string;
   voCode: string;
   voMessage: string;
 }
 
 export interface StickerBatchAddResultVo {
-  voGroupId: number;
+  voGroupId: string;
   voCreatedCount: number;
-  voStickerIds: number[];
+  voStickerIds: string[];
   voConflicts: StickerBatchConflictVo[];
   voFailedItems: StickerBatchFailedItemVo[];
 }
@@ -178,8 +178,8 @@ export async function getAdminStickerGroups(): Promise<StickerGroupVo[]> {
   return response.data;
 }
 
-export async function createStickerGroup(request: StickerGroupUpsertRequest): Promise<number> {
-  const response = await apiPost<number>('/api/v1/Sticker/CreateGroup', request, { withAuth: true });
+export async function createStickerGroup(request: StickerGroupUpsertRequest): Promise<string> {
+  const response = await apiPost<string>('/api/v1/Sticker/CreateGroup', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
     throwRequestError(response.message, '创建表情包分组失败');
@@ -188,7 +188,7 @@ export async function createStickerGroup(request: StickerGroupUpsertRequest): Pr
   return response.data;
 }
 
-export async function updateStickerGroup(id: number, request: StickerGroupUpsertRequest): Promise<void> {
+export async function updateStickerGroup(id: string, request: StickerGroupUpsertRequest): Promise<void> {
   const response = await apiPut<boolean>(`/api/v1/Sticker/UpdateGroup/${id}`, request, { withAuth: true });
 
   if (!response.ok) {
@@ -196,7 +196,7 @@ export async function updateStickerGroup(id: number, request: StickerGroupUpsert
   }
 }
 
-export async function deleteStickerGroup(id: number): Promise<void> {
+export async function deleteStickerGroup(id: string): Promise<void> {
   const response = await apiDelete<boolean>(`/api/v1/Sticker/DeleteGroup/${id}`, { withAuth: true });
 
   if (!response.ok) {
@@ -217,9 +217,9 @@ export async function checkGroupCode(code: string): Promise<StickerCodeCheckVo> 
   return response.data;
 }
 
-export async function checkStickerCode(groupId: number, code: string): Promise<StickerCodeCheckVo> {
+export async function checkStickerCode(groupId: string, code: string): Promise<StickerCodeCheckVo> {
   const response = await apiGet<StickerCodeCheckVo>(
-    `/api/v1/Sticker/CheckStickerCode?groupId=${groupId}&code=${encodeURIComponent(code)}`,
+    `/api/v1/Sticker/CheckStickerCode?groupId=${encodeURIComponent(groupId)}&code=${encodeURIComponent(code)}`,
     { withAuth: true }
   );
 
@@ -243,7 +243,7 @@ export async function normalizeStickerCode(filename: string): Promise<StickerNor
   return response.data;
 }
 
-export async function getGroupStickers(groupId: number): Promise<StickerVo[]> {
+export async function getGroupStickers(groupId: string): Promise<StickerVo[]> {
   const response = await apiGet<StickerVo[]>(`/api/v1/Sticker/GetGroupStickers/${groupId}`, { withAuth: true });
 
   if (!response.ok || !response.data) {
@@ -253,8 +253,8 @@ export async function getGroupStickers(groupId: number): Promise<StickerVo[]> {
   return response.data;
 }
 
-export async function addSticker(request: CreateStickerRequest): Promise<number> {
-  const response = await apiPost<number>('/api/v1/Sticker/AddSticker', request, { withAuth: true });
+export async function addSticker(request: CreateStickerRequest): Promise<string> {
+  const response = await apiPost<string>('/api/v1/Sticker/AddSticker', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
     throwRequestError(response.message, '新增表情失败');
@@ -263,7 +263,7 @@ export async function addSticker(request: CreateStickerRequest): Promise<number>
   return response.data;
 }
 
-export async function updateSticker(id: number, request: UpdateStickerRequest): Promise<void> {
+export async function updateSticker(id: string, request: UpdateStickerRequest): Promise<void> {
   const response = await apiPut<boolean>(`/api/v1/Sticker/UpdateSticker/${id}`, request, { withAuth: true });
 
   if (!response.ok) {
@@ -271,7 +271,7 @@ export async function updateSticker(id: number, request: UpdateStickerRequest): 
   }
 }
 
-export async function deleteSticker(id: number): Promise<void> {
+export async function deleteSticker(id: string): Promise<void> {
   const response = await apiDelete<boolean>(`/api/v1/Sticker/DeleteSticker/${id}`, { withAuth: true });
 
   if (!response.ok) {

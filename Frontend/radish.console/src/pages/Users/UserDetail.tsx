@@ -239,7 +239,7 @@ export const UserDetail = () => {
             value={user.level}
             suffix={user.levelName}
             prefix={<TrophyOutlined />}
-            valueStyle={{ color: '#722ed1' }}
+            styles={{ content: { color: '#722ed1' } }}
           />
         </Card>
         <Card>
@@ -248,7 +248,7 @@ export const UserDetail = () => {
             value={user.currentExp}
             suffix={`/ ${user.nextLevelExp}`}
             prefix={<UserOutlined />}
-            valueStyle={{ color: '#1890ff' }}
+            styles={{ content: { color: '#1890ff' } }}
           />
         </Card>
         <Card>
@@ -256,7 +256,7 @@ export const UserDetail = () => {
             title="总经验"
             value={user.totalExp}
             prefix={<TrophyOutlined />}
-            valueStyle={{ color: '#52c41a' }}
+            styles={{ content: { color: '#52c41a' } }}
           />
         </Card>
         <Card>
@@ -264,7 +264,7 @@ export const UserDetail = () => {
             title="萝卜币余额"
             value={user.coinBalance}
             prefix={<WalletOutlined />}
-            valueStyle={{ color: '#faad14' }}
+            styles={{ content: { color: '#faad14' } }}
           />
         </Card>
       </div>

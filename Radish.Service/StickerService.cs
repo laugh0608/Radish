@@ -158,11 +158,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
 
         var normalizedCode = code.Trim().ToLowerInvariant();
         var normalizedTenantId = NormalizeTenantId(tenantId);
-        var group = await _stickerGroupRepository.QueryFirstAsync(
-            g => (normalizedTenantId <= 0 ? g.TenantId == 0 : (g.TenantId == normalizedTenantId || g.TenantId == 0))
-                 && g.Code == normalizedCode
-                 && g.IsEnabled
-                 && !g.IsDeleted);
+        var group = await QueryEnabledGroupByCodeAsync(normalizedTenantId, normalizedCode);
 
         if (group == null)
         {
@@ -203,11 +199,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         }
 
         var normalizedTenantId = NormalizeTenantId(tenantId);
-        var group = await _stickerGroupRepository.QueryFirstAsync(
-            g => (normalizedTenantId <= 0 ? g.TenantId == 0 : (g.TenantId == normalizedTenantId || g.TenantId == 0))
-                 && g.Code == groupCode
-                 && g.IsEnabled
-                 && !g.IsDeleted);
+        var group = await QueryEnabledGroupByCodeAsync(normalizedTenantId, groupCode);
         if (group == null)
         {
             return false;
@@ -360,6 +352,17 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         var exists = await _stickerGroupRepository.QueryExistsAsync(
             g => g.TenantId == normalizedTenantId && g.Code == normalizedCode);
         return !exists;
+    }
+
+    public async Task<bool> CheckGroupExistsAsync(long groupId)
+    {
+        if (groupId <= 0)
+        {
+            return false;
+        }
+
+        var group = await _stickerGroupRepository.QueryByIdAsync(groupId);
+        return group != null && !group.IsDeleted;
     }
 
     public async Task<long> AddStickerAsync(CreateStickerDto createDto, long operatorId, string operatorName)
@@ -943,6 +946,24 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         {
             _logger.LogWarning(ex, "写入表情包缓存失败，cacheKey={CacheKey}", cacheKey);
         }
+    }
+
+    private async Task<StickerGroup?> QueryEnabledGroupByCodeAsync(long normalizedTenantId, string normalizedCode)
+    {
+        if (normalizedTenantId <= 0)
+        {
+            return await _stickerGroupRepository.QueryFirstAsync(
+                g => g.TenantId == 0
+                     && g.Code == normalizedCode
+                     && g.IsEnabled
+                     && !g.IsDeleted);
+        }
+
+        return await _stickerGroupRepository.QueryFirstAsync(
+            g => (g.TenantId == normalizedTenantId || g.TenantId == 0)
+                 && g.Code == normalizedCode
+                 && g.IsEnabled
+                 && !g.IsDeleted);
     }
 
     private static Expression<Func<StickerGroup, bool>> BuildGroupTenantPredicate(long tenantId, bool includeDisabled)

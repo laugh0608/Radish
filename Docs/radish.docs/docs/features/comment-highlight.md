@@ -2,9 +2,9 @@
 
 > Radish 论坛评论高亮功能完整文档
 >
-> **版本**: v26.2.0
+> **版本**: v26.3.0
 >
-> **最后更新**: 2026.02.23
+> **最后更新**: 2026.03.01
 
 ---
 
@@ -267,6 +267,27 @@ Authorization: Bearer {token}
 **示例**：
 ```http
 GET http://localhost:5100/api/v1/CommentHighlight/GetGodCommentTrend?postId=1&days=30
+```
+
+---
+
+### 7. 批量获取多个帖子的当前神评（Top1）
+
+**接口**：`POST /api/v1/CommentHighlight/GetCurrentGodCommentsBatch`
+
+**参数**：
+- `postIds` (`long[]`): 帖子 ID 列表
+
+**返回**：`Dictionary<long, CommentHighlightVo>`（每个帖子返回当前 Top1 神评）
+
+**权限**：匿名访问
+
+**示例**：
+```http
+POST http://localhost:5100/api/v1/CommentHighlight/GetCurrentGodCommentsBatch
+Content-Type: application/json
+
+[1,2,3,4,5]
 ```
 
 ---
@@ -619,6 +640,11 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentSofas?parentCommentI
    - 若后端在评论树中不返回 `children` 详情，仅返回 `childrenTotal`，前端会自动预加载第一页子评论用于展示预览
    - 收起态优先展示“沙发”，若没有沙发统计数据则展示当前已加载子评论中的“最热一条”作为预览
    - 展开后支持分页加载更多子评论
+
+4. **帖子列表神评预览稳定性（2026-03）**：
+   - `getCurrentGodCommentsBatch` 在前端增加最多 3 次短重试（含退避）
+   - 批量加载失败改为 `warn` 日志可观测，不再静默吞错
+   - 批量接口失败时降级为空预览，不阻断帖子主列表渲染
 
 ### 缓存策略（可选）
 

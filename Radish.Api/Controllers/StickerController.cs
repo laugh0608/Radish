@@ -537,6 +537,28 @@ public class StickerController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> CheckStickerCode([FromQuery] long groupId, [FromQuery] string code)
     {
+        if (groupId <= 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "分组ID无效"
+            };
+        }
+
+        var groupExists = await _stickerService.CheckGroupExistsAsync(groupId);
+        if (!groupExists)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                Code = "StickerGroupNotFound",
+                MessageInfo = "分组不存在或已删除"
+            };
+        }
+
         var normalizedCode = string.IsNullOrWhiteSpace(code) ? string.Empty : code.Trim().ToLowerInvariant();
         var available = await _stickerService.CheckStickerCodeAvailableAsync(groupId, normalizedCode);
         var response = new StickerCodeCheckVo

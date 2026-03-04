@@ -158,10 +158,21 @@ export default defineConfig({
           text: '特定功能',
           collapsible: true,
           items: [
+            { text: '表情包系统设计', link: '/features/emoji-sticker-system' },
+            { text: '表情包 Console 方案', link: '/features/emoji-sticker-console' },
+            { text: '表情包 UI 规范', link: '/features/emoji-sticker-ui-spec' },
+            { text: '表情包 Reaction Phase 2', link: '/features/emoji-sticker-reaction-phase2' },
             { text: '论坛应用评估', link: '/features/forum-assessment' },
             { text: '论坛分类与标签', link: '/features/forum-category-tag' },
             { text: '论坛编辑历史', link: '/features/forum-edit-history' },
             { text: '论坛重构总结', link: '/features/forum-refactoring' },
+            { text: '聊天室系统设计', link: '/features/chat-system' },
+            { text: '聊天室前端架构与组件', link: '/features/chat-frontend' },
+            { text: '聊天室 App 文档总览', link: '/features/chat-app-index' },
+            { text: '聊天室 App 架构设计', link: '/features/chat-app-architecture' },
+            { text: '聊天室 App 实时与同步', link: '/features/chat-app-realtime' },
+            { text: '聊天室 App UI 模块设计', link: '/features/chat-app-ui-modules' },
+            { text: '聊天室 App 实施路线图', link: '/features/chat-app-roadmap' },
             { text: '开放平台指南', link: '/features/open-platform' },
             { text: '文件上传功能设计', link: '/features/file-upload-design' }
           ]

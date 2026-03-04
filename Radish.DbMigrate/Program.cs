@@ -119,7 +119,7 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
                 }
             }
 
-            // 如果实体没有 [Tenant] 注解，只在主库中初始化（排除 Log 库和 Message 库）
+            // 如果实体没有 [Tenant] 注解，只在主库中初始化（排除 Log/Message/Chat 等独立库）
             return string.Equals(configIdStr, "Main", StringComparison.OrdinalIgnoreCase);
         }).ToList();
 
@@ -146,8 +146,9 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
     var userTimePreferenceTableExists = db.DbMaintenance.IsAnyTable("UserTimePreference", false);
     var stickerGroupTableExists = db.DbMaintenance.IsAnyTable("StickerGroup", false);
     var stickerTableExists = db.DbMaintenance.IsAnyTable("Sticker", false);
+    var reactionTableExists = db.DbMaintenance.IsAnyTable("Reaction", false);
 
-    if (!roleTableExists || !shopTableExists || !userTimePreferenceTableExists || !stickerGroupTableExists || !stickerTableExists)
+    if (!roleTableExists || !shopTableExists || !userTimePreferenceTableExists || !stickerGroupTableExists || !stickerTableExists || !reactionTableExists)
     {
         var missingTables = new List<string>();
         if (!roleTableExists) missingTables.Add("Role");
@@ -155,6 +156,7 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
         if (!userTimePreferenceTableExists) missingTables.Add("UserTimePreference");
         if (!stickerGroupTableExists) missingTables.Add("StickerGroup");
         if (!stickerTableExists) missingTables.Add("Sticker");
+        if (!reactionTableExists) missingTables.Add("Reaction");
 
         Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到表结构缺失 ({string.Join(", ", missingTables)})，自动执行 init...");
         await RunInitAsync(services, configuration, environment);

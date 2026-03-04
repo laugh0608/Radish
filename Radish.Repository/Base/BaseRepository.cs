@@ -449,9 +449,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>实体对象，如果不存在则返回 null</returns>
     public async Task<TEntity?> QueryFirstAsync(Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        return await DbClientBase.Queryable<TEntity>()
-            .WhereIF(whereExpression != null, whereExpression)
-            .FirstAsync();
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
+
+        return await query.FirstAsync();
     }
 
     /// <summary>查询单条数据（多条会抛异常）</summary>
@@ -469,7 +473,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     {
         // DbBase 是 ISqlSugarClient 单例注入的，所以多次查询的 HASH 是一样的，对应的是 Service 层的 Repository 不是单例
         // await Console.Out.WriteLineAsync($"DbBase HashCode: {DbBase.GetHashCode().ToString()}");
-        return await DbClientBase.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).ToListAsync();
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
+
+        return await query.ToListAsync();
     }
 
     /// <summary>按照 Where 表达式查询（使用缓存）</summary>
@@ -480,7 +490,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     {
         // return await DbClientBase.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).WithCache().ToListAsync();
         // 缓存时间默认为 10 s
-        return await DbClientBase.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).WithCacheIF(true, cacheTime).ToListAsync();
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
+
+        return await query.WithCacheIF(true, cacheTime).ToListAsync();
     }
 
     /// <summary>分页查询</summary>
@@ -498,8 +514,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         OrderByType orderByType = OrderByType.Asc)
     {
         RefAsync<int> totalCount = 0;
-        var query = DbClientBase.Queryable<TEntity>()
-            .WhereIF(whereExpression != null, whereExpression);
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
 
         if (orderByExpression != null)
         {
@@ -524,8 +543,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         OrderByType thenByType)
     {
         RefAsync<int> totalCount = 0;
-        var query = DbClientBase.Queryable<TEntity>()
-            .WhereIF(whereExpression != null, whereExpression);
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
 
         // 主排序
         if (orderByExpression != null)
@@ -551,9 +573,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>记录数</returns>
     public async Task<int> QueryCountAsync(Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        return await DbClientBase.Queryable<TEntity>()
-            .WhereIF(whereExpression != null, whereExpression)
-            .CountAsync();
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
+
+        return await query.CountAsync();
     }
 
     /// <summary>查询是否存在</summary>
@@ -595,11 +621,16 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>>? whereExpression,
         string orderByFields = "Id")
     {
-        return await DbClientBase.Queryable<TEntity>()
+        var query = DbClientBase.Queryable<TEntity>()
             .SplitTable()
-            .OrderByIF(!string.IsNullOrEmpty(orderByFields), orderByFields)
-            .WhereIF(whereExpression != null, whereExpression)
-            .ToListAsync();
+            .OrderByIF(!string.IsNullOrEmpty(orderByFields), orderByFields);
+
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
+
+        return await query.ToListAsync();
     }
 
     /// <summary>查询不同的字段值列表（去重）</summary>
@@ -611,11 +642,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        return await DbClientBase.Queryable<TEntity>()
-            .WhereIF(whereExpression != null, whereExpression)
-            .Select(selectExpression)
-            .Distinct()
-            .ToListAsync();
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
+
+        return await query.Select(selectExpression).Distinct().ToListAsync();
     }
 
     /// <summary>查询字段求和（聚合）</summary>
@@ -627,9 +660,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        return await DbClientBase.Queryable<TEntity>()
-            .WhereIF(whereExpression != null, whereExpression)
-            .SumAsync(selectExpression);
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
+
+        return await query.SumAsync(selectExpression);
     }
 
     /// <summary>根据多个 ID 批量查询实体</summary>
@@ -654,9 +691,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        return await DbClientBase.Queryable<TEntity>()
-            .WhereIF(whereExpression != null, whereExpression)
-            .MaxAsync(selectExpression);
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
+
+        return await query.MaxAsync(selectExpression);
     }
 
     /// <summary>查询字段最小值（聚合）</summary>
@@ -668,9 +709,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        return await DbClientBase.Queryable<TEntity>()
-            .WhereIF(whereExpression != null, whereExpression)
-            .MinAsync(selectExpression);
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
+
+        return await query.MinAsync(selectExpression);
     }
 
     /// <summary>查询字段平均值（聚合）</summary>
@@ -681,9 +726,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, decimal>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        return await DbClientBase.Queryable<TEntity>()
-            .WhereIF(whereExpression != null, whereExpression)
-            .AvgAsync(selectExpression);
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
+
+        return await query.AvgAsync(selectExpression);
     }
 
     /// <summary>带排序的列表查询</summary>
@@ -698,8 +747,11 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         OrderByType orderByType = OrderByType.Asc,
         int take = 0)
     {
-        var query = DbClientBase.Queryable<TEntity>()
-            .WhereIF(whereExpression != null, whereExpression);
+        var query = DbClientBase.Queryable<TEntity>();
+        if (whereExpression != null)
+        {
+            query = query.Where(whereExpression);
+        }
 
         query = orderByType == OrderByType.Asc
             ? query.OrderBy(orderByExpression)

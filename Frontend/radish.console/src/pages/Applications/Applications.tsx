@@ -284,6 +284,7 @@ export const Applications = () => {
         onOk={() => void handleModalOk()}
         onCancel={() => setIsModalOpen(false)}
         width={600}
+        forceRender
       >
         <Form
           form={form}

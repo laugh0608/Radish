@@ -387,6 +387,7 @@ export const ForumApp = () => {
                 onLoadMoreChildren={actionsState.handleLoadMoreChildren}
                 onCreateComment={actionsState.handleCreateComment}
                 onCancelReply={actionsState.handleCancelReply}
+                onReactionError={dataState.setError}
               />
             </Suspense>
           ) : (

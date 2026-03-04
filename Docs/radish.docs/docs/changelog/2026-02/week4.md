@@ -138,6 +138,12 @@
 - **Console 用户态刷新链路修复**：OIDC 回调后主动触发用户上下文刷新，修复个人信息页空白与右上角 `Unknown` 的问题。
 - **用户名展示兜底增强**：用户接口异常时优先从 token claim 解析用户名，减少导航栏空值。
 
+### 表情包 Phase 2 文档冻结与入口收口
+
+- **新增专项文档**：新增 `emoji-sticker-reaction-phase2.md`，冻结 Reaction Phase 2 的 API 合同、并发状态机、前端交互状态机、测试与发布清单。
+- **文档互链补齐**：`emoji-sticker-system.md`、`emoji-sticker-console.md`、`emoji-sticker-ui-spec.md` 已统一补充 Phase 2 链接，避免实现入口分散。
+- **规划文档同步**：`development-plan.md` 已补充“Phase 2 设计冻结完成”节点，作为后续编码基线。
+
 ### Client/Console 认证隔离与回归修复
 
 - **Token 本地存储隔离**：`radish.client` 与 `radish.console` 分别改用命名空间键（`radish_client_*` / `radish_console_*`），避免同源下互相覆盖 `refresh_token`。
@@ -145,10 +151,47 @@
 - **Console 401 跳转修正**：401 后统一跳转 `/console/login`，避免误跳到站点根路由导致落入 client。
 - **兼容策略调整**：移除 Console 对旧通用 token 键的自动迁移，避免误读 client 旧会话。
 
+### Forum 神评预览与回应面板体验修复
+
+- **神评首屏稳定性增强**：帖子列表批量神评接口增加前端重试与退避，缓解 dev 重启后首次打开论坛偶发不显示神评的问题。
+- **神评失败可观测性补齐**：热门神评与帖子神评预览批量请求失败由静默吞错改为 `warn` 日志记录，便于排查环境与请求时序问题。
+- **回应快捷面板改为浮层**：`ReactionBar` 快捷面板改为绝对定位浮层，不再撑开评论卡片高度。
+- **回应面板视觉一致性修复**：Forum 中 `StickerPicker` 反应模式显式使用浅色主题，解决小面板与大面板颜色不一致。
+
+### 阶段决策：M11 收官并启动 M12 社区功能冲刺
+
+- **里程碑调整生效**：宣布 M11（查漏补缺阶段）于 2026-03-01 收官，进入 M12（社区功能冲刺阶段）。
+- **后续顺延**：原 M12（可观测性与测试）顺延为 M13，原 M13（部署与运维）顺延为 M14，原 M14（Gateway & BFF）顺延为 M15（暂缓）。
+- **M12 主线范围**：
+  - 社区主线：聊天室 MVP、关系链、内容治理、分发能力
+  - 文档体系：Markdown 导入导出、`radish.docs` 迁移到 Wiki/文档 App
+  - 体验规范：主题切换、中国风 UI 与配色规范、i18n 规范加强
+  - 权限治理：权限管理 + 菜单/按钮级权限控制
+  - 新功能孵化：文字修仙 App、抽奖/投票/问答、邮件通知、开源软件清单声明组件
+
 ### 验证状态
 
 - `npm run type-check --workspace=radish.client` 通过。
 - `npm run type-check --workspace=radish.console` 通过。
+
+## 2026-03-02 (周一)
+
+### 聊天室文档分层与契约对齐完善
+
+- **新增 Chat App 拆分文档**：补充 `chat-app-index.md`、`chat-app-architecture.md`、`chat-app-realtime.md`、`chat-app-ui-modules.md`、`chat-app-roadmap.md`，形成“总览 + 架构 + 实时 + UI + 路线图”可导航结构。
+- **Hub 事件契约统一**：聊天室文档统一为对象载荷说明（`UserTyping`、`ChannelUnreadChanged`），避免多参数与对象写法混用导致联调歧义。
+- **已读时机规则统一**：明确 `MarkChannelAsRead` 在“进入频道并到达消息底部”后触发，避免进入频道即清零未读。
+- **角色术语对齐**：文档统一使用 `Moderator/Owner`，去除 `Moderator/Admin` 混用描述。
+- **版本元数据同步**：`chat-system.md` 与 `chat-frontend.md` 版本更新为 `v26.3.0`，最后更新日期统一到 `2026.03.02`。
+
+### 文档站入口补齐
+
+- **VitePress 侧边栏已补齐聊天室入口**：在“特定功能”分组新增聊天室系统与 Chat App 5 篇拆分文档链接，降低文档查找成本。
+- **Console 单个表情直传状态补录**：`StickerForm` 已支持单个表情上传图片并自动回填 `attachmentId/imageUrl/thumbnailUrl`，URL 手填保留兜底，M12 对应遗留项已落地。
+
+### 提交补录（已提交）
+
+- `2139cb5` `docs(console): 同步认证与刷新配置说明`
 
 ## 本周总结
 

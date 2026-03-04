@@ -26,7 +26,10 @@ import type {
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
-  UpdatePostRequest
+  UpdatePostRequest,
+  ReactionSummaryVo,
+  ToggleReactionRequest,
+  BatchGetReactionSummaryRequest
 } from '@/types/forum';
 import { getApiBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
@@ -55,7 +58,10 @@ export type {
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
-  UpdatePostRequest
+  UpdatePostRequest,
+  ReactionSummaryVo,
+  ToggleReactionRequest,
+  BatchGetReactionSummaryRequest
 };
 
 /**
@@ -418,17 +424,29 @@ export async function getCurrentGodCommentsBatch(
     return {};
   }
 
-  const response = await apiPost<Record<number, CommentHighlight>>(
-    '/api/v1/CommentHighlight/GetCurrentGodCommentsBatch',
-    postIds,
-    { timeout: FORUM_READ_TIMEOUT_MS }
-  );
+  const maxAttempts = 3;
+  let lastError: Error | null = null;
 
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '批量获取神评失败');
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const response = await apiPost<Record<number, CommentHighlight>>(
+      '/api/v1/CommentHighlight/GetCurrentGodCommentsBatch',
+      postIds,
+      { timeout: FORUM_READ_TIMEOUT_MS }
+    );
+
+    if (response.ok && response.data) {
+      return response.data;
+    }
+
+    lastError = new Error(response.message || '批量获取神评失败');
+    if (attempt < maxAttempts) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, attempt * 250);
+      });
+    }
   }
 
-  return response.data;
+  throw lastError || new Error('批量获取神评失败');
 }
 
 /**
@@ -451,6 +469,63 @@ export async function getCurrentSofas(
   }
 
   return response.data;
+}
+
+/**
+ * 获取单目标 Reaction 汇总
+ */
+export async function getReactionSummary(
+  targetType: 'Post' | 'Comment' | 'ChatMessage',
+  targetId: number
+): Promise<ReactionSummaryVo[]> {
+  const response = await apiGet<ReactionSummaryVo[]>(
+    `/api/v1/Reaction/GetSummary?targetType=${encodeURIComponent(targetType)}&targetId=${targetId}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '加载回应失败');
+  }
+
+  return response.data || [];
+}
+
+/**
+ * 批量获取多个目标的 Reaction 汇总
+ */
+export async function batchGetReactionSummary(
+  request: BatchGetReactionSummaryRequest
+): Promise<Record<string, ReactionSummaryVo[]>> {
+  const response = await apiPost<Record<string, ReactionSummaryVo[]>>(
+    '/api/v1/Reaction/BatchGetSummary',
+    request,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '批量加载回应失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 切换 Reaction（添加/取消）
+ */
+export async function toggleReaction(
+  request: ToggleReactionRequest
+): Promise<ReactionSummaryVo[]> {
+  const response = await apiPost<ReactionSummaryVo[]>(
+    '/api/v1/Reaction/Toggle',
+    request,
+    { withAuth: true }
+  );
+
+  if (!response.ok) {
+    throw new Error(response.message || '回应操作失败');
+  }
+
+  return response.data || [];
 }
 
 /**

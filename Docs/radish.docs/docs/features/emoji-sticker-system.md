@@ -2,13 +2,14 @@
 
 > Radish 表情包系统（表情选择器 + Reaction 回应）核心设计文档
 >
-> **版本**: v26.2.2
+> **版本**: v26.3.0
 >
-> **最后更新**: 2026.02.27
+> **最后更新**: 2026.03.01
 >
 > **关联文档**：
 > [Console 管理后台实现](./emoji-sticker-console.md) ·
 > [UI 视觉与交互规范](./emoji-sticker-ui-spec.md) ·
+> [Reaction Phase 2 设计冻结稿](./emoji-sticker-reaction-phase2.md) ·
 > [论坛应用功能说明](./forum-features.md) ·
 > [文件上传设计](./file-upload-design.md)
 
@@ -69,6 +70,7 @@ Radish 表情包系统涵盖三层能力：
 
 - `StickerPicker` reaction 模式与 `ReactionBar` 正式接入
 - `Reaction` Phase 2（实体、服务、接口、UI 组件）
+- 执行基线请以 [Reaction Phase 2 设计冻结稿](./emoji-sticker-reaction-phase2.md) 为准（接口、状态机、验收）
 
 ---
 

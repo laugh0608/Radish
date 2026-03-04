@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using Radish.Common.CoreTool;
 using Radish.Common.OptionTool;
 using Radish.Infrastructure.FileStorage;
 using Radish.Infrastructure.ImageProcessing;
@@ -23,6 +24,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     private readonly IFileStorage _fileStorage;
     private readonly IImageProcessor _imageProcessor;
     private readonly FileStorageOptions _fileStorageOptions;
+    private readonly string _tempPath;
 
     public AttachmentService(
         IMapper mapper,
@@ -36,6 +38,12 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         _fileStorage = fileStorage;
         _imageProcessor = imageProcessor;
         _fileStorageOptions = fileStorageOptions.Value;
+        _tempPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Temp");
+
+        if (!Directory.Exists(_tempPath))
+        {
+            Directory.CreateDirectory(_tempPath);
+        }
     }
 
     #region Upload
@@ -460,15 +468,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         {
             var fullPath = _fileStorage.GetFullPath(filePath);
 
-            // 使用 DataBases/Temp 目录存放临时文件
-            var tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DataBases", "Temp");
-            if (!Directory.Exists(tempDir))
-            {
-                Directory.CreateDirectory(tempDir);
-            }
-
             var tempFileName = $"{Path.GetFileNameWithoutExtension(fullPath)}_{Guid.NewGuid():N}{Path.GetExtension(fullPath)}";
-            var tempPath = Path.Combine(tempDir, tempFileName);
+            var tempPath = Path.Combine(_tempPath, tempFileName);
 
             // 使用配置文件中的水印设置
             var watermarkConfig = _fileStorageOptions.Watermark?.Text ?? new TextWatermarkOptions();
@@ -571,15 +572,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         {
             var fullPath = _fileStorage.GetFullPath(filePath);
 
-            // 使用 DataBases/Temp 目录存放临时文件
-            var tempDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DataBases", "Temp");
-            if (!Directory.Exists(tempDir))
-            {
-                Directory.CreateDirectory(tempDir);
-            }
-
             var tempFileName = $"{Path.GetFileNameWithoutExtension(fullPath)}_{Guid.NewGuid():N}{Path.GetExtension(fullPath)}";
-            var tempPath = Path.Combine(tempDir, tempFileName);
+            var tempPath = Path.Combine(_tempPath, tempFileName);
 
             // 修复文件锁问题：先读取源文件到内存，关闭文件流后再处理
             byte[] fileBytes;

@@ -1,0 +1,186 @@
+.container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bubbles {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.bubble {
+  min-height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: rgba(0, 0, 0, 0.06);
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.bubble:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(0, 0, 0, 0.09);
+}
+
+.bubble:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.bubbleActive {
+  background: rgba(45, 108, 223, 0.14);
+  border-color: #2d6cdf;
+  color: #1d4ed8;
+}
+
+.emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.sticker {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.stickerFallback {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.count {
+  font-size: 13px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.expandBubble {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.collapseButton {
+  background: transparent;
+  border: none;
+  color: #2d6cdf;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.collapseButton:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.plusButton {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px dashed #9ca3af;
+  background: transparent;
+  color: #4b5563;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.plusText {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.plusButton:hover:not(:disabled) {
+  border-color: #2d6cdf;
+  color: #2d6cdf;
+  background: rgba(45, 108, 223, 0.08);
+}
+
+.plusButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.quickPanel {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  width: max-content;
+  max-width: min(320px, calc(100vw - 48px));
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  border-radius: 12px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  z-index: 1100;
+}
+
+.quickEmoji {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.quickEmoji:hover:not(:disabled) {
+  background: rgba(45, 108, 223, 0.12);
+  transform: scale(1.06);
+}
+
+.quickEmoji:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.morePicker {
+  display: inline-flex;
+  align-items: center;
+}
+
+.pickerTrigger :global(button) {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+
+@media (max-width: 480px) {
+  .quickPanel {
+    left: 0;
+    right: auto;
+    max-width: calc(100vw - 32px);
+  }
+}

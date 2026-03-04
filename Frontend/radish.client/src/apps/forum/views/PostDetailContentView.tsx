@@ -4,6 +4,7 @@ import { Icon } from '@radish/ui/icon';
 import type { PostDetail, CommentNode } from '@/api/forum';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
+import { useReactions } from '../hooks/useReactions';
 import styles from './PostDetailContentView.module.css';
 
 const PostDetailComponent = lazy(() =>
@@ -49,7 +50,27 @@ interface PostDetailContentViewProps {
   ) => Promise<CommentNode[]>;
   onCreateComment: (content: string) => Promise<void>;
   onCancelReply: () => void;
+  onReactionError?: (message: string) => void;
 }
+
+const collectCommentIds = (nodes: CommentNode[]): number[] => {
+  const ids: number[] = [];
+  const stack = [...nodes];
+
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (!node) {
+      continue;
+    }
+
+    ids.push(node.voId);
+    if (node.voChildren && node.voChildren.length > 0) {
+      stack.push(...node.voChildren);
+    }
+  }
+
+  return ids;
+};
 
 export const PostDetailContentView = ({
   post,
@@ -76,11 +97,13 @@ export const PostDetailContentView = ({
   onReplyComment,
   onLoadMoreChildren,
   onCreateComment,
-  onCancelReply
+  onCancelReply,
+  onReactionError,
 }: PostDetailContentViewProps) => {
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
+  const reactionsState = useReactions({ onError: onReactionError });
 
   useEffect(() => {
     if (replyTo) {
@@ -110,6 +133,19 @@ export const PostDetailContentView = ({
     };
   }, []);
 
+  useEffect(() => {
+    if (!post?.voId) {
+      return;
+    }
+
+    void reactionsState.loadPostReactions(post.voId);
+  }, [post?.voId]);
+
+  useEffect(() => {
+    const commentIds = collectCommentIds(comments);
+    void reactionsState.loadCommentReactions(commentIds, { replace: true });
+  }, [comments]);
+
   const handleScrollTop = () => {
     contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -134,6 +170,23 @@ export const PostDetailContentView = ({
   const handleCreateComment = async (content: string) => {
     await onCreateComment(content);
     setIsCommentSheetOpen(false);
+  };
+
+  const handleLoadMoreChildren = async (
+    parentId: number,
+    pageIndex: number,
+    pageSize: number
+  ): Promise<CommentNode[]> => {
+    const children = await onLoadMoreChildren(parentId, pageIndex, pageSize);
+    const childIds = collectCommentIds(children);
+    if (childIds.length > 0) {
+      await reactionsState.loadCommentReactions(childIds);
+    }
+    return children;
+  };
+
+  const handleRequireReactionLogin = () => {
+    onReactionError?.('请先登录后再回应');
   };
 
   return (
@@ -162,6 +215,12 @@ export const PostDetailContentView = ({
               onEdit={onEdit}
               onViewHistory={onViewPostHistory}
               onDelete={onDelete}
+              postReactions={reactionsState.postItems}
+              reactionLoading={reactionsState.loadingPost || reactionsState.isPending('Post', post.voId)}
+              stickerGroups={stickerGroups}
+              stickerMap={stickerMap}
+              onToggleReaction={(payload) => reactionsState.togglePostReaction(post.voId, payload)}
+              onRequireReactionLogin={handleRequireReactionLogin}
             />
           </Suspense>
 
@@ -183,8 +242,14 @@ export const PostDetailContentView = ({
                 onReplyComment(commentId, authorName);
                 setIsCommentSheetOpen(true);
               }}
-              onLoadMoreChildren={onLoadMoreChildren}
+              onLoadMoreChildren={handleLoadMoreChildren}
               stickerMap={stickerMap}
+              reactionMap={reactionsState.commentItemsMap}
+              isAuthenticated={isAuthenticated}
+              stickerGroups={stickerGroups}
+              onToggleReaction={reactionsState.toggleCommentReaction}
+              isReactionPending={(commentId) => reactionsState.isPending('Comment', commentId)}
+              onRequireReactionLogin={handleRequireReactionLogin}
             />
           </Suspense>
 

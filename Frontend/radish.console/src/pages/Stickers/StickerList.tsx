@@ -35,7 +35,8 @@ const getPreviewUrl = (sticker: StickerVo) => sticker.voThumbnailUrl || sticker.
 export const StickerList = () => {
   const navigate = useNavigate();
   const { groupId } = useParams<{ groupId: string }>();
-  const parsedGroupId = Number(groupId || 0);
+  const normalizedGroupId = String(groupId || '').trim();
+  const isValidGroupId = /^[1-9]\d*$/.test(normalizedGroupId);
 
   useDocumentTitle('分组表情管理');
 
@@ -43,20 +44,20 @@ export const StickerList = () => {
   const [savingSort, setSavingSort] = useState(false);
   const [keyword, setKeyword] = useState('');
   const [stickers, setStickers] = useState<StickerVo[]>([]);
-  const [sortDrafts, setSortDrafts] = useState<Record<number, number>>({});
+  const [sortDrafts, setSortDrafts] = useState<Record<string, number>>({});
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingSticker, setEditingSticker] = useState<StickerVo | undefined>(undefined);
   const [batchModalVisible, setBatchModalVisible] = useState(false);
 
   const loadStickers = async () => {
-    if (parsedGroupId <= 0) {
+    if (!isValidGroupId) {
       return;
     }
 
     try {
       setLoading(true);
-      const data = await getGroupStickers(parsedGroupId);
+      const data = await getGroupStickers(normalizedGroupId);
       setStickers(data);
       setSortDrafts({});
     } catch (error) {
@@ -69,7 +70,7 @@ export const StickerList = () => {
 
   useEffect(() => {
     void loadStickers();
-  }, [parsedGroupId]);
+  }, [normalizedGroupId, isValidGroupId]);
 
   const filteredStickers = useMemo(() => {
     const normalized = keyword.trim().toLowerCase();
@@ -83,7 +84,7 @@ export const StickerList = () => {
     );
   }, [stickers, keyword]);
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
       await deleteSticker(id);
       message.success('删除表情成功');
@@ -94,7 +95,7 @@ export const StickerList = () => {
     }
   };
 
-  const handleSortChange = (id: number, value: number | null) => {
+  const handleSortChange = (id: string, value: number | null) => {
     setSortDrafts((prev) => ({
       ...prev,
       [id]: Math.max(0, Number(value || 0)),
@@ -112,7 +113,7 @@ export const StickerList = () => {
       setSavingSort(true);
       await batchUpdateStickerSort({
         items: entries.map(([id, sort]) => ({
-          id: Number(id),
+          id,
           sort,
         })),
       });
@@ -241,7 +242,7 @@ export const StickerList = () => {
     },
   ];
 
-  if (parsedGroupId <= 0) {
+  if (!isValidGroupId) {
     return (
       <div>
         <p>分组 ID 无效</p>
@@ -259,7 +260,7 @@ export const StickerList = () => {
   return (
     <div>
       <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>分组表情管理（GroupId: {parsedGroupId}）</h2>
+        <h2 style={{ margin: 0 }}>分组表情管理（GroupId: {normalizedGroupId}）</h2>
         <Space>
           <Button
             onClick={() => {
@@ -327,7 +328,7 @@ export const StickerList = () => {
 
       <StickerForm
         visible={formVisible}
-        groupId={parsedGroupId}
+        groupId={normalizedGroupId}
         mode={formMode}
         sticker={editingSticker}
         onCancel={() => setFormVisible(false)}
@@ -339,7 +340,7 @@ export const StickerList = () => {
 
       <StickerBatchUploadModal
         visible={batchModalVisible}
-        groupId={parsedGroupId}
+        groupId={normalizedGroupId}
         onCancel={() => {
           setBatchModalVisible(false);
         }}

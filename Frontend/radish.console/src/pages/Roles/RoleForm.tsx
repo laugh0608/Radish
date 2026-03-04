@@ -122,6 +122,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
       confirmLoading={loading}
       width={600}
       destroyOnHidden
+      forceRender
     >
       <Form
         form={form}

@@ -3,10 +3,12 @@ import { ToastContainer } from '@radish/ui/toast';
 import { LevelUpModal } from '@radish/ui/level-up-modal';
 import { getApiBaseUrl } from '@/config/env';
 import { notificationHub } from '@/services/notificationHub';
+import { chatHub } from '@/services/chatHub';
 import { useLevelUpListener } from '@/hooks/useLevelUpListener';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { useNotificationStore } from '@/stores/notificationStore';
+import { useChatStore } from '@/stores/chatStore';
 import { tokenService } from '@/services/tokenService';
 import { bootstrapAuth } from '@/services/authBootstrap';
 import { Desktop } from './Desktop';
@@ -31,6 +33,7 @@ export const Shell = () => {
   const { isAuthenticated } = useAuthStore();
   const currentUser = useUserStore(state => state.userId);
   const clearUser = useUserStore(state => state.clearUser);
+  const resetChatStore = useChatStore(state => state.reset);
 
   // 监听认证状态变化，同步清除用户信息和通知
   useEffect(() => {
@@ -43,8 +46,9 @@ export const Shell = () => {
       const notificationStore = useNotificationStore.getState();
       notificationStore.clearRecentNotifications();
       notificationStore.setUnreadCount(0);
+      resetChatStore();
     }
-  }, [isAuthenticated, currentUser, clearUser]);
+  }, [isAuthenticated, currentUser, clearUser, resetChatStore]);
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -57,9 +61,11 @@ export const Shell = () => {
     if (isAuthenticated && !hasStartedRef.current) {
       hasStartedRef.current = true;
       void notificationHub.start();
+      void chatHub.start();
     } else if (!isAuthenticated && hasStartedRef.current) {
       hasStartedRef.current = false;
       void notificationHub.stop();
+      void chatHub.stop();
     }
 
     // cleanup 函数：仅在组件真正卸载时执行
@@ -68,6 +74,7 @@ export const Shell = () => {
       setTimeout(() => {
         if (!hasStartedRef.current) {
           void notificationHub.stop();
+          void chatHub.stop();
         }
       }, 100);
     };

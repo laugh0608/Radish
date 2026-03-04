@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
+using Radish.Common.CoreTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -26,7 +27,7 @@ public class ChunkedUploadService : IChunkedUploadService
     {
         _sessionRepository = sessionRepository;
         _attachmentService = attachmentService;
-        _tempChunkPath = Path.Combine("DataBases", "Temp", "Chunks");
+        _tempChunkPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Temp", "Chunks");
 
         // 确保临时目录存在
         if (!Directory.Exists(_tempChunkPath))

@@ -276,7 +276,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     path, !string.IsNullOrWhiteSpace(accessToken));
 
                 if (!string.IsNullOrWhiteSpace(accessToken)
-                    && path.StartsWithSegments("/hub/notification"))
+                    && (path.StartsWithSegments("/hub/notification") || path.StartsWithSegments("/hub/chat")))
                 {
                     context.Token = accessToken;
                     Log.Information("[JWT] 从 query string 提取 token 成功");
@@ -484,6 +484,7 @@ app.UseAuditLogSetup();
 
 // 映射 SignalR Hub 端点
 app.MapHub<NotificationHub>("/hub/notification");
+app.MapHub<ChatHub>("/hub/chat");
 
 app.MapControllers();
 // 映射健康检查端点

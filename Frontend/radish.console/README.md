@@ -63,6 +63,9 @@ VITE_AUTH_SERVER_URL=http://localhost:5200
 # 是否启用调试模式
 VITE_DEBUG=true
 
+# 是否启用 Token 自动刷新调试定时器（仅调试建议开启）
+VITE_TOKEN_AUTO_REFRESH_DEBUG=false
+
 # 功能开关
 VITE_FEATURE_THEME_SWITCH=true
 VITE_FEATURE_GLOBAL_SEARCH=false

@@ -29,6 +29,11 @@ function AuthenticatedLayout() {
     return <Navigate to="/login?auto=1" replace />;
   }
 
+  if (tokenService.isTokenExpired()) {
+    tokenService.clearTokens();
+    return <Navigate to="/login?auto=1" replace />;
+  }
+
   return (
     <AdminLayout>
       <Outlet />

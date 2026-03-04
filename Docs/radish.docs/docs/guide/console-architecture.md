@@ -120,7 +120,7 @@ Console 使用 **Authorization Code Flow** 进行认证：
      client_id=radish-console&
      response_type=code&
      redirect_uri=https://localhost:5000/console/callback&
-     scope=openid profile email
+     scope=openid profile offline_access radish-api
    ↓
 4. 用户输入用户名密码
    ↓
@@ -167,6 +167,8 @@ fetch(url, {
 // 1. API 返回 401 -> 尝试使用 refresh_token 刷新
 // 2. 刷新失败 -> 清除 Console token，跳转 /console/login
 ```
+
+> 调试说明：Console 默认采用“请求触发刷新”。如需观察周期性刷新日志，可在环境变量中设置 `VITE_TOKEN_AUTO_REFRESH_DEBUG=true`。
 
 #### 4.2.3 Single Sign-Out
 

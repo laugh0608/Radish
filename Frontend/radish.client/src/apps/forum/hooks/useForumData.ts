@@ -271,8 +271,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
             voChildren: []
           });
         }
-      } catch {
-        // 忽略热门神评批量请求错误
+      } catch (err) {
+        log.warn('加载热门神评失败:', err);
       } finally {
         hotPostIds.forEach(postId => inFlightGodCommentsRef.current.delete(postId));
       }
@@ -317,8 +317,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
           godCommentsMap.set(postId, highlight);
         }
       }
-    } catch {
-      // 忽略批量神评请求错误
+    } catch (err) {
+      log.warn('加载帖子神评预览失败:', err);
     } finally {
       missingPostIds.forEach(postId => inFlightGodCommentsRef.current.delete(postId));
     }

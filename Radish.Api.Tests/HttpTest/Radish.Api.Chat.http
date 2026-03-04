@@ -1,0 +1,82 @@
+###############################################################################
+# Radish.Api - 聊天室 API 测试
+###############################################################################
+# 说明：
+# 1. 聊天室接口均需登录 Token（Policy: Client）
+# 2. 推荐通过 Gateway 测试：统一鉴权、路由与 CORS 行为
+# 3. ChatHub 实时事件（MessageReceived / MessageRecalled / ChannelUnreadChanged）
+#    需配合前端或 SignalR 客户端联调，本文件仅覆盖 REST 主链路
+###############################################################################
+
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Gateway_HostAddress = https://localhost:5000
+@Api_HostAddress = http://localhost:5100
+
+# 测试变量（请按实际数据替换）
+@ChannelId = 1
+@BeforeMessageId = 0
+@MessageId = 1
+@ImageAttachmentId = 0
+
+###############################################################################
+# 频道接口
+###############################################################################
+
+### 1. 获取频道列表
+GET {{Gateway_HostAddress}}/api/v1/Channel/GetList
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+### 2. 获取频道详情
+GET {{Gateway_HostAddress}}/api/v1/Channel/GetDetail/{{ChannelId}}
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+### 3. 获取频道在线成员
+GET {{Gateway_HostAddress}}/api/v1/Channel/GetOnlineMembers/{{ChannelId}}
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+###############################################################################
+# 消息接口
+###############################################################################
+
+### 4. 获取历史消息（最新 50 条）
+GET {{Gateway_HostAddress}}/api/v1/ChannelMessage/GetHistory?channelId={{ChannelId}}&pageSize=50
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+### 5. 获取历史消息（向上分页）
+GET {{Gateway_HostAddress}}/api/v1/ChannelMessage/GetHistory?channelId={{ChannelId}}&beforeMessageId={{BeforeMessageId}}&pageSize=20
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+### 6. 发送文本消息
+POST {{Gateway_HostAddress}}/api/v1/ChannelMessage/Send
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "channelId": {{ChannelId}},
+  "type": 1,
+  "content": "hello from http test"
+}
+
+### 7. 发送图片消息（可选）
+POST {{Gateway_HostAddress}}/api/v1/ChannelMessage/Send
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "channelId": {{ChannelId}},
+  "type": 2,
+  "content": "图片消息示例",
+  "attachmentId": {{ImageAttachmentId}},
+  "imageUrl": "https://example.com/chat/image.png",
+  "imageThumbnailUrl": "https://example.com/chat/image-thumb.png"
+}
+
+### 8. 撤回消息
+DELETE {{Gateway_HostAddress}}/api/v1/ChannelMessage/Recall/{{MessageId}}
+Authorization: Bearer {{Access_Token}}
+Accept: application/json

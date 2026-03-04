@@ -93,6 +93,7 @@ export const TagForm = ({ visible, mode, tag, onCancel, onSuccess }: TagFormProp
       confirmLoading={loading}
       width={640}
       destroyOnHidden
+      forceRender
     >
       <Form form={form} layout="vertical">
         <Form.Item

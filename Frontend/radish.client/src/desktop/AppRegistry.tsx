@@ -25,6 +25,10 @@ const ForumApp = createLazyWindowApp(() =>
   import('@/apps/forum/ForumApp').then((module) => ({ default: module.ForumApp }))
 );
 
+const ChatApp = createLazyWindowApp(() =>
+  import('@/apps/chat/ChatApp').then((module) => ({ default: module.ChatApp }))
+);
+
 const ProfileApp = createLazyWindowApp(() =>
   import('@/apps/profile/ProfileApp').then((module) => ({ default: module.ProfileApp }))
 );
@@ -144,6 +148,17 @@ export const appRegistry: AppDefinition[] = [
     component: ForumApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
+    requiredRoles: ['User'],
+    category: 'content',
+  },
+  {
+    id: 'chat',
+    name: '聊天室',
+    icon: 'mdi:message-text',
+    description: '频道制实时聊天',
+    component: ChatApp,
+    type: 'window',
+    defaultSize: { width: 1100, height: 750 },
     requiredRoles: ['User'],
     category: 'content',
   },

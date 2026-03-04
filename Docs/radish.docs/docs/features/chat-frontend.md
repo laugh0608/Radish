@@ -2,17 +2,22 @@
 
 > Radish 聊天室前端实现设计文档
 >
-> **版本**: v26.2.0
+> **版本**: v26.3.1
 >
-> **最后更新**: 2026.02.24
+> **最后更新**: 2026.03.03
 >
 > **关联文档**：
+> [聊天室 App 文档总览](./chat-app-index.md) ·
 > [系统总览与后端设计](./chat-system.md) ·
 > [表情包 UI 规范](./emoji-sticker-ui-spec.md)
 
 ---
 
 ## 应用注册
+
+> 实现状态说明（2026-03-03）：
+> 当前 P0 已在 `ChatApp.tsx + chatStore.ts + chatHub.ts + api/chat.ts` 落地主链路。
+> 本文中的 `components/*` 与 `hooks/*` 拆分方案为 P1 目标架构，不影响现有接口契约。
 
 在 `AppRegistry.tsx` 中新增：
 
@@ -24,10 +29,8 @@
   component: lazy(() => import('../apps/chat/ChatApp')),
   type: 'window',
   defaultSize: { width: 1100, height: 750 },
-  minSize: { width: 800, height: 500 },
   requiredRoles: ['User'],
   category: 'content',
-  showInDock: true,
   // Dock 图标显示总未读气泡
 }
 ```
@@ -141,12 +144,15 @@ class ChatHubService {
     this.connection.on('MessageRecalled', ({ channelId, messageId }) => {
       useChatStore.getState().recallMessage(channelId, messageId);
     });
-    this.connection.on('UserTyping', (channelId, userId, userName) => {
-      // 通知 useTypingIndicator
+    this.connection.on('UserTyping', (payload: { channelId: number; userId: number; userName: string }) => {
+      // 通知 useTypingIndicator（统一对象载荷，便于后续扩展字段）
     });
-    this.connection.on('ChannelUnreadChanged', (channelId, unreadCount, hasMention) => {
-      useChatStore.getState().updateUnread(channelId, unreadCount, hasMention);
-    });
+    this.connection.on(
+      'ChannelUnreadChanged',
+      (payload: { channelId: number; unreadCount: number; hasMention: boolean }) => {
+        useChatStore.getState().updateUnread(payload);
+      }
+    );
 
     if (requestId !== this.startRequestId) return; // StrictMode 防双重启动
     await this.connection.start();
@@ -185,8 +191,12 @@ function useChannelMessages(channelId: number) {
   useEffect(() => {
     loadInitial();
     chatHub.joinChannel(channelId);
-    chatHub.markChannelAsRead(channelId);
     return () => { chatHub.leaveChannel(channelId); };
+  }, [channelId]);
+
+  // 进入频道且消息区到达底部后标记已读（避免提前清零）
+  const markAsReadWhenAtBottom = useCallback(() => {
+    chatHub.markChannelAsRead(channelId);
   }, [channelId]);
 
   // 加载更多历史
@@ -198,7 +208,7 @@ function useChannelMessages(channelId: number) {
     useChatStore.getState().prependMessages(channelId, result);
   }
 
-  return { messages, isLoadingMore, hasMore, loadMore };
+  return { messages, isLoadingMore, hasMore, loadMore, markAsReadWhenAtBottom };
 }
 ```
 
@@ -210,11 +220,11 @@ function useTypingIndicator(channelId: number) {
 
   // 收到 UserTyping 事件后添加，3 秒后自动移除
   useEffect(() => {
-    const unsub = chatHub.onUserTyping((cId, userId, userName) => {
-      if (cId !== channelId) return;
-      setTypingUsers(prev => [...new Set([...prev, userName])]);
+    const unsub = chatHub.onUserTyping(payload => {
+      if (payload.channelId !== channelId) return;
+      setTypingUsers(prev => [...new Set([...prev, payload.userName])]);
       setTimeout(() => {
-        setTypingUsers(prev => prev.filter(n => n !== userName));
+        setTypingUsers(prev => prev.filter(n => n !== payload.userName));
       }, 3000);
     });
     return unsub;
@@ -285,7 +295,7 @@ const totalUnread = useChatStore(s =>
 **消息操作菜单**（hover 右上角出现）：
 - 所有人：😊（添加 Reaction，Phase 2）、↩ 引用回复
 - 自己的消息（30 分钟内）：🗑 撤回
-- Moderator/Admin：🗑 撤回他人消息
+- Moderator/Owner：🗑 撤回他人消息
 
 ### 引用消息（QuotedMessage）
 

@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
-import type { CommentNode as CommentNodeType } from '@/api/forum';
+import type { CommentNode as CommentNodeType, ReactionSummaryVo } from '@/api/forum';
+import type { ReactionTogglePayload } from '@radish/ui/reaction-bar';
+import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import { CommentNode } from './CommentNode';
 import styles from './CommentTree.module.css';
 
@@ -20,6 +22,12 @@ interface CommentTreeProps {
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   onSortChange?: (sortBy: 'newest' | 'hottest') => void;
   stickerMap?: MarkdownStickerMap;
+  reactionMap?: Record<number, ReactionSummaryVo[]>;
+  isAuthenticated?: boolean;
+  stickerGroups?: StickerPickerGroup[];
+  onToggleReaction?: (commentId: number, payload: ReactionTogglePayload) => Promise<void>;
+  isReactionPending?: (commentId: number) => boolean;
+  onRequireReactionLogin?: () => void;
 }
 
 export const CommentTree = ({
@@ -38,6 +46,12 @@ export const CommentTree = ({
   onLoadMoreChildren,
   onSortChange,
   stickerMap,
+  reactionMap = {},
+  isAuthenticated = false,
+  stickerGroups = [],
+  onToggleReaction,
+  isReactionPending,
+  onRequireReactionLogin,
 }: CommentTreeProps) => {
   // 找出所有神评（后端标记的）
   const godComments = useMemo(() => {
@@ -118,6 +132,12 @@ export const CommentTree = ({
             onReply={onReplyComment}
             onLoadMoreChildren={onLoadMoreChildren}
             stickerMap={stickerMap}
+            reactionMap={reactionMap}
+            isAuthenticated={isAuthenticated}
+            stickerGroups={stickerGroups}
+            onToggleReaction={onToggleReaction}
+            isReactionPending={isReactionPending}
+            onRequireReactionLogin={onRequireReactionLogin}
           />
         ))}
       </div>

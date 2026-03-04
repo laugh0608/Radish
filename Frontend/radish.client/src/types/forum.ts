@@ -216,6 +216,35 @@ export interface CommentLikeResult {
 }
 
 /**
+ * Reaction 汇总项
+ */
+export interface ReactionSummaryVo {
+  voEmojiType: 'unicode' | 'sticker';
+  voEmojiValue: string;
+  voCount: number;
+  voIsReacted: boolean;
+  voThumbnailUrl?: string | null;
+}
+
+/**
+ * 切换 Reaction 请求
+ */
+export interface ToggleReactionRequest {
+  targetType: 'Post' | 'Comment' | 'ChatMessage';
+  targetId: number;
+  emojiType: 'unicode' | 'sticker';
+  emojiValue: string;
+}
+
+/**
+ * 批量获取 Reaction 汇总请求
+ */
+export interface BatchGetReactionSummaryRequest {
+  targetType: 'Post' | 'Comment' | 'ChatMessage';
+  targetIds: number[];
+}
+
+/**
  * 帖子点赞操作结果
  * 注意：后端返回字段为 voIsLiked / voLikeCount
  */
