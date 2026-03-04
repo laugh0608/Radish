@@ -400,8 +400,8 @@ internal static partial class InitialDataSeeder
         const long adminUserId = 20001;
         const long testUserId = 20002;
 
-        // 与租户、部门保持固定 Id 对齐
-        const long radishTenantId = 30000;
+        // 当前阶段统一按公共租户运行（TenantId = 0）
+        const long publicTenantId = 0;
         const long devDeptId = 40000;
 
         // 创建 system 用户
@@ -417,7 +417,7 @@ internal static partial class InitialDataSeeder
                 UserSex = (int)UserSexEnum.Unknown,
                 UserAge = 30,
                 UserBirth = DateTime.Today.AddYears(-30),
-                TenantId = radishTenantId,
+                TenantId = publicTenantId,
                 DepartmentId = devDeptId,
                 IsEnable = true,
                 IsDeleted = false,
@@ -434,7 +434,18 @@ internal static partial class InitialDataSeeder
         }
         else
         {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={systemUserId} 的 system 用户，跳过创建。");
+            var updated = await db.Updateable<User>()
+                .SetColumns(u => new User
+                {
+                    TenantId = publicTenantId,
+                    UpdateTime = DateTime.Now
+                })
+                .Where(u => u.Id == systemUserId && u.TenantId != publicTenantId)
+                .ExecuteCommandAsync();
+
+            Console.WriteLine(updated > 0
+                ? $"[Radish.DbMigrate] 已将 system 用户租户纠正为 {publicTenantId}。"
+                : $"[Radish.DbMigrate] 已存在 Id={systemUserId} 的 system 用户，且租户已是 {publicTenantId}，跳过。");
         }
 
         // 创建 admin 用户
@@ -450,7 +461,7 @@ internal static partial class InitialDataSeeder
                 UserSex = (int)UserSexEnum.Unknown,
                 UserAge = 25,
                 UserBirth = DateTime.Today.AddYears(-25),
-                TenantId = radishTenantId,
+                TenantId = publicTenantId,
                 DepartmentId = devDeptId,
                 IsEnable = true,
                 IsDeleted = false,
@@ -467,7 +478,18 @@ internal static partial class InitialDataSeeder
         }
         else
         {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={adminUserId} 的 admin 用户，跳过创建。");
+            var updated = await db.Updateable<User>()
+                .SetColumns(u => new User
+                {
+                    TenantId = publicTenantId,
+                    UpdateTime = DateTime.Now
+                })
+                .Where(u => u.Id == adminUserId && u.TenantId != publicTenantId)
+                .ExecuteCommandAsync();
+
+            Console.WriteLine(updated > 0
+                ? $"[Radish.DbMigrate] 已将 admin 用户租户纠正为 {publicTenantId}。"
+                : $"[Radish.DbMigrate] 已存在 Id={adminUserId} 的 admin 用户，且租户已是 {publicTenantId}，跳过。");
         }
 
         // 创建 test 用户
@@ -483,7 +505,7 @@ internal static partial class InitialDataSeeder
                 UserSex = (int)UserSexEnum.Unknown,
                 UserAge = 18,
                 UserBirth = DateTime.Today.AddYears(-18),
-                TenantId = radishTenantId,
+                TenantId = publicTenantId,
                 DepartmentId = devDeptId,
                 IsEnable = true,
                 IsDeleted = false,
@@ -500,7 +522,18 @@ internal static partial class InitialDataSeeder
         }
         else
         {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={testUserId} 的 test 用户，跳过创建。");
+            var updated = await db.Updateable<User>()
+                .SetColumns(u => new User
+                {
+                    TenantId = publicTenantId,
+                    UpdateTime = DateTime.Now
+                })
+                .Where(u => u.Id == testUserId && u.TenantId != publicTenantId)
+                .ExecuteCommandAsync();
+
+            Console.WriteLine(updated > 0
+                ? $"[Radish.DbMigrate] 已将 test 用户租户纠正为 {publicTenantId}。"
+                : $"[Radish.DbMigrate] 已存在 Id={testUserId} 的 test 用户，且租户已是 {publicTenantId}，跳过。");
         }
     }
 }

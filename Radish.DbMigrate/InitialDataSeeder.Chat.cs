@@ -22,6 +22,8 @@ internal static partial class InitialDataSeeder
 
         var defaultChannels = new[]
         {
+            new { Id = 92900L, TenantId = 0L, Name = "公共闲聊", Slug = "general", Description = "公共租户默认频道：日常交流", Icon = "🌐", Sort = 0 },
+            new { Id = 92901L, TenantId = 0L, Name = "问题求助", Slug = "help", Description = "公共租户默认频道：提问与互助", Icon = "❓", Sort = 1 },
             new { Id = 93000L, TenantId = 30000L, Name = "综合闲聊", Slug = "general", Description = "日常交流与轻松讨论", Icon = "💬", Sort = 0 },
             new { Id = 93001L, TenantId = 30000L, Name = "技术讨论", Slug = "tech-talk", Description = "前后端与工程实践讨论", Icon = "🛠️", Sort = 1 },
             new { Id = 93010L, TenantId = 30001L, Name = "测试闲聊", Slug = "general", Description = "测试租户默认频道", Icon = "🧪", Sort = 0 }
