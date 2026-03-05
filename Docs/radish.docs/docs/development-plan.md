@@ -210,6 +210,15 @@
 >   - 全链路排查并补齐租户参数传递与过滤一致性，避免“匿名/鉴权”与“显式租户条件”口径不一致。
 >   - 待补改造：`RepositorySetting` 在 `TenantId <= 0` 时，查询过滤应从“跳过过滤（可见全量）”调整为“仅可见 `TenantId = 0` 公共数据”。
 >   - 在保持“当前不启用实际多租户业务”的前提下，保留并校准底层多租户能力（字段/分表/分库）以便后续启用。
+>   - ✅ **2026-03-05 进展**：
+>     - 已完成 `RepositorySetting` 口径修正：`TenantId<=0` 仅可见公共租户数据。
+>     - 已完成 `BaseRepository` 统一租户读写作用域与三表联查自动租户过滤（`QueryMuchAsync`）。
+>     - 已完成核心实体租户接入补齐（资产/经验/交易主链路）。
+>     - 已完成用户提及、附件、商城、排行榜等高风险链路收口。
+>     - 已新增租户专题文档：`architecture/tenant-isolation.md`。
+>   - 🔄 **后续续接项**：
+>     - 在 Linux 开发环境完成构建与回归测试闭环（Windows/WSL 混合环境构建不稳定）。
+>     - 评估并推进行为类实体（`Reaction`、`UserPostLike`、`UserCommentLike`、`UploadSession`、`UserPaymentPassword`）的租户策略升级。
 >
 > - 🎨 **P1：体验规范与国际化**
 >   - 主题切换能力落地（明暗基础能力 + 主题配置入口）。

@@ -74,3 +74,28 @@
 - **Gateway 路由补齐**：新增 `/hub/chat/{**catch-all}` 反向代理规则，修复聊天室 `negotiate` 404，确保 ChatHub 可经 Gateway 建链。
 - **表情图片渲染兼容**：评论与 Markdown 渲染统一放宽贴纸 URL 安全校验，支持站内相对路径（`/uploads/...`）与 `http(s)` 绝对路径，修复“表情只显示 `:group/code:` 文本”的问题。
 - **前端验证**：`radish.client` 与 `@radish/ui` 类型检查均通过。
+
+## 2026-03-05 (周四)
+
+### 租户隔离收口（M12 本周专项）
+
+- **全局过滤修复完成**：`RepositorySetting` 已统一为 `TenantId<=0` 仅可见公共租户（`TenantId=0`），修复公共租户可见范围越权问题。
+- **仓储统一化落地**：`BaseRepository` 完成租户读写作用域统一，覆盖查询、分页、聚合、更新、删除等主路径。
+- **联表查询补齐**：`QueryMuchAsync` 已接入三表联查自动租户过滤，避免联表查询绕过隔离。
+- **写入边界收口**：无租户上下文默认仅允许写公共租户；写入指定租户仅放行 `System/Admin` 或后台任务上下文。
+
+### 实体与业务链路补齐
+
+- **核心实体接入**：补齐 `UserBalance/UserBenefit/UserInventory/UserExperience/UserExpDailyStats/CoinTransaction/ExpTransaction/BalanceChangeLog` 的 `ITenantEntity`。
+- **高风险链路修复**：用户提及（`SearchForMention`）、附件查询与去重、商城商品与订单、排行榜聚合查询已统一租户口径。
+
+### 文档与回归资产
+
+- **新增专题文档**：`architecture/tenant-isolation.md`，集中沉淀隔离策略、审计结论与验收清单。
+- **规范文档更新**：`architecture/specifications.md` 增补“字段/分表/分库策略矩阵”与“写入约束规则”。
+- **回归测试样例**：新增 `TenantIsolationRegressionTests`（代码已补，待 Linux 环境执行测试闭环）。
+
+### 当前状态与后续
+
+- ✅ 代码改造与文档同步已完成并提交。
+- 🔄 下一步将切换 Linux 开发环境执行构建/测试，继续推进剩余“待评估实体”的租户策略升级。
