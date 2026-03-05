@@ -61,6 +61,13 @@
 2. `NotificationService` 仍保留 `dto.TenantId` 传入能力，建议后续补“仅系统调用可指定租户”的显式约束。  
 3. 后续若出现 4 表以上联查，可将 `QueryMuchAsync` 扩展为更通用的租户作用域构造器。
 
+### 待评估实体（策略层面）
+
+- 当前仍有部分行为类实体未采用 `ITenantEntity`，以“业务外键 + 全局雪花 ID”间接隔离：
+  - `Reaction`、`UserPostLike`、`UserCommentLike`
+  - `UploadSession`、`UserPaymentPassword`
+- 现状不是直接漏洞，但若后续需要更强审计或严格租户级统计，建议补充 `TenantId` 并迁移到字段隔离模型。
+
 ## 删库重建后的验收清单
 
 1. 公共租户账号仅能查询到 `TenantId=0` 数据。  
