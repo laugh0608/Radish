@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Radish.Model.Root;
+using Radish.Model.Tenants;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
 
@@ -15,7 +16,7 @@ namespace Radish.Model;
 [SugarIndex("idx_order_user", nameof(UserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_order_status", nameof(Status), OrderByType.Asc)]
 [SugarIndex("idx_order_product", nameof(ProductId), OrderByType.Asc)]
-public class Order : RootEntityTKey<long>, IHasUserId
+public class Order : RootEntityTKey<long>, IHasUserId, ITenantEntity
 {
     /// <summary>初始化默认订单实例</summary>
     public Order()

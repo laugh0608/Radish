@@ -9,7 +9,7 @@ namespace Radish.Model;
 /// <remarks>主键为 Id，记录用户每日经验值获取统计</remarks>
 [SugarTable("UserExpDailyStats")]
 [SugarIndex("idx_user_date", nameof(UserId), OrderByType.Asc, nameof(StatDate), OrderByType.Desc)]
-public class UserExpDailyStats : RootEntityTKey<long>
+public class UserExpDailyStats : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认每日统计实例</summary>
     public UserExpDailyStats()

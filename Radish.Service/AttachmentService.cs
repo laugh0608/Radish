@@ -59,6 +59,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     {
         try
         {
+            var normalizedTenantId = NormalizeTenantId(App.HttpContextUser?.TenantId ?? 0);
+
             // 1. 基础校验
             if (file == null || file.Length == 0)
             {
@@ -92,7 +94,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 {
                     // 检查是否已存在相同文件（去重）
                     var existingAttachment = await _attachmentRepository.QueryFirstAsync(
-                        a => a.FileHash == fileHash && !a.IsDeleted
+                        a => a.FileHash == fileHash && a.TenantId == normalizedTenantId && !a.IsDeleted
                     );
 
                     if (existingAttachment != null)
@@ -191,6 +193,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 UploaderName = uploaderName,
                 BusinessType = optionsDto.BusinessType,
                 BusinessId = businessId, // 头像文件关联到用户ID
+                TenantId = normalizedTenantId,
                 IsPublic = true,
                 DownloadCount = 0
             };
@@ -285,8 +288,13 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     /// </summary>
     public async Task<List<AttachmentVo>> GetByBusinessAsync(string businessType, long businessId)
     {
+        var normalizedTenantId = NormalizeTenantId(App.HttpContextUser?.TenantId ?? 0);
+
         var attachments = await _attachmentRepository.QueryAsync(
-            a => a.BusinessType == businessType && a.BusinessId == businessId && !a.IsDeleted
+            a => a.BusinessType == businessType
+                 && a.BusinessId == businessId
+                 && a.TenantId == normalizedTenantId
+                 && !a.IsDeleted
         );
 
         return Mapper.Map<List<AttachmentVo>>(attachments);
@@ -302,14 +310,23 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             return null;
         }
 
+        var normalizedTenantId = NormalizeTenantId(App.HttpContextUser?.TenantId ?? 0);
+
         var attachment = await _attachmentRepository.QueryFirstAsync(
-            a => a.FileHash == fileHash && !a.IsDeleted
+            a => a.FileHash == fileHash
+                 && a.TenantId == normalizedTenantId
+                 && !a.IsDeleted
         );
 
         return attachment == null ? null : Mapper.Map<AttachmentVo>(attachment);
     }
 
     #endregion
+
+    private static long NormalizeTenantId(long tenantId)
+    {
+        return tenantId > 0 ? tenantId : 0;
+    }
 
     #region Update
 

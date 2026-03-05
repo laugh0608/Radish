@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using AutoMapper;
 using Radish.Common;
+using Radish.Common.CoreTool;
 using Radish.Common.AttributeTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -54,6 +55,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     {
         try
         {
+            var tenantId = NormalizeTenantId(App.HttpContextUser?.TenantId ?? 0);
             Log.Information("用户 {UserId} 开始购买商品 {ProductId}, 数量={Quantity}",
                 userId, dto.ProductId, dto.Quantity);
 
@@ -114,6 +116,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 TotalPrice = totalPrice,
                 Status = OrderStatus.Pending,
                 UserRemark = dto.UserRemark,
+                TenantId = tenantId,
                 CreateTime = DateTime.Now,
                 CreateBy = "User",
                 CreateId = userId
@@ -381,7 +384,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     {
         try
         {
-            Expression<Func<Order, bool>> where = o => true;
+            Expression<Func<Order, bool>> where = o => !o.IsDeleted;
 
             if (userId.HasValue)
             {
@@ -446,15 +449,16 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     {
         try
         {
-            var affected = await _orderRepository.UpdateColumnsAsync(
-                o => new Order
-                {
-                    AdminRemark = remark,
-                    ModifyTime = DateTime.Now
-                },
-                o => o.Id == orderId);
+            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
+            if (order == null)
+            {
+                return false;
+            }
 
-            return affected > 0;
+            order.AdminRemark = remark;
+            order.ModifyTime = DateTime.Now;
+
+            return await _orderRepository.UpdateAsync(order);
         }
         catch (Exception ex)
         {
@@ -468,7 +472,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     {
         try
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId);
+            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
             if (order == null)
             {
                 throw new InvalidOperationException("订单不存在");
@@ -521,4 +525,9 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     }
 
     #endregion
+
+    private static long NormalizeTenantId(long tenantId)
+    {
+        return tenantId > 0 ? tenantId : 0;
+    }
 }

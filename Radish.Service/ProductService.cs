@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using AutoMapper;
 using Radish.Common;
+using Radish.Common.CoreTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -262,7 +263,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                         Version = product.Version,
                         ModifyTime = product.ModifyTime
                     },
-                    p => p.Id == productId && p.Version == currentVersion);
+                    p => p.Id == productId && p.Version == currentVersion && p.TenantId == product.TenantId);
 
                 if (affected == 0)
                 {
@@ -296,7 +297,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                     Stock = p.Stock + quantity,
                     ModifyTime = DateTime.Now
                 },
-                p => p.Id == productId);
+                p => p.Id == productId && p.TenantId == product.TenantId);
 
             return affected > 0;
         }
@@ -312,13 +313,19 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+            if (product == null)
+            {
+                return false;
+            }
+
             var affected = await _productRepository.UpdateColumnsAsync(
                 p => new Product
                 {
                     SoldCount = p.SoldCount + quantity,
                     ModifyTime = DateTime.Now
                 },
-                p => p.Id == productId);
+                p => p.Id == productId && p.TenantId == product.TenantId);
 
             return affected > 0;
         }
@@ -338,7 +345,9 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
+            var tenantId = NormalizeTenantId(App.HttpContextUser?.TenantId ?? 0);
             var product = Mapper.Map<Product>(dto);
+            product.TenantId = tenantId;
             product.CreateId = operatorId;
             product.CreateBy = operatorName;
             product.CreateTime = DateTime.Now;
@@ -394,6 +403,12 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+            if (product == null)
+            {
+                return false;
+            }
+
             var affected = await _productRepository.UpdateColumnsAsync(
                 p => new Product
                 {
@@ -401,7 +416,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                     OnSaleTime = DateTime.Now,
                     ModifyTime = DateTime.Now
                 },
-                p => p.Id == productId);
+                p => p.Id == productId && p.TenantId == product.TenantId);
 
             if (affected > 0)
             {
@@ -422,6 +437,12 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+            if (product == null)
+            {
+                return false;
+            }
+
             var affected = await _productRepository.UpdateColumnsAsync(
                 p => new Product
                 {
@@ -429,7 +450,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                     OffSaleTime = DateTime.Now,
                     ModifyTime = DateTime.Now
                 },
-                p => p.Id == productId);
+                p => p.Id == productId && p.TenantId == product.TenantId);
 
             if (affected > 0)
             {
@@ -456,7 +477,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
-            Expression<Func<Product, bool>> where = p => true;
+            Expression<Func<Product, bool>> where = p => !p.IsDeleted;
 
             if (!string.IsNullOrWhiteSpace(categoryId))
             {
@@ -544,6 +565,11 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         }
 
         throw new InvalidOperationException("重试次数已达上限");
+    }
+
+    private static long NormalizeTenantId(long tenantId)
+    {
+        return tenantId > 0 ? tenantId : 0;
     }
 
     #endregion

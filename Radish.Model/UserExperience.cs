@@ -11,7 +11,7 @@ namespace Radish.Model;
 [SugarIndex("idx_user_id", nameof(UserId), OrderByType.Asc, IsUnique = true)]
 [SugarIndex("idx_level", nameof(CurrentLevel), OrderByType.Desc)]
 [SugarIndex("idx_total_exp", nameof(TotalExp), OrderByType.Desc)]
-public class UserExperience : RootEntityTKey<long>
+public class UserExperience : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认用户经验值实例</summary>
     public UserExperience()

@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Collections.Concurrent;
+using System.Security.Claims;
 using Radish.Common.CoreTool;
 using Radish.Common.TenantTool;
 using Radish.Infrastructure.Tenant;
@@ -18,8 +19,8 @@ namespace Radish.Repository.Base;
 public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : class, new()
 {
     private readonly SqlSugarScope _dbScopeBase;
-    private readonly IUnitOfWorkManage _unitOfWorkManage;
     private static readonly ConcurrentDictionary<Type, List<PropertyInfo>> DateTimePropertyCache = new();
+    private static readonly bool IsTenantScopedEntity = typeof(ITenantEntity).IsAssignableFrom(typeof(TEntity));
 
     /// <summary>供 BaseRepository 及子类使用的 ISqlSugarClient 数据库实例</summary>
     /// <remarks>支持多租户切换数据库</remarks>
@@ -75,8 +76,172 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <param name="unitOfWorkManage"></param>
     public BaseRepository(IUnitOfWorkManage unitOfWorkManage)
     {
-        _unitOfWorkManage = unitOfWorkManage;
         _dbScopeBase = unitOfWorkManage.GetDbClient();
+    }
+
+    private static long GetCurrentTenantId()
+    {
+        var tenantId = App.HttpContextUser?.TenantId ?? 0;
+        return tenantId > 0 ? tenantId : 0;
+    }
+
+    private static bool IsTenantVisible(long tenantId)
+    {
+        var currentTenantId = GetCurrentTenantId();
+        return currentTenantId > 0
+            ? tenantId == currentTenantId || tenantId == 0
+            : tenantId == 0;
+    }
+
+    private static bool CanWriteSpecifiedTenantWithoutContext()
+    {
+        var httpContext = App.HttpContext;
+        if (httpContext == null)
+        {
+            // 无 HTTP 上下文（如后台作业）视为系统上下文
+            return true;
+        }
+
+        var user = httpContext.User;
+        if (user.Identity?.IsAuthenticated != true)
+        {
+            return false;
+        }
+
+        if (user.IsInRole("System") || user.IsInRole("Admin"))
+        {
+            return true;
+        }
+
+        return user.Claims.Any(claim =>
+            (claim.Type == ClaimTypes.Role || claim.Type == "role") &&
+            (claim.Value == "System" || claim.Value == "Admin"));
+    }
+
+    private static void NormalizeEntityTenantId(TEntity entity)
+    {
+        if (entity is ITenantEntity tenantEntity)
+        {
+            var tenantId = GetCurrentTenantId();
+            if (tenantId > 0)
+            {
+                // 请求上下文存在租户时，强制使用当前租户，避免跨租户写入
+                tenantEntity.TenantId = tenantId;
+            }
+            else
+            {
+                // 无租户上下文时：默认只允许写公共租户（TenantId=0）
+                // 若要写入指定租户，必须是 System/Admin 或后台系统任务
+                if (tenantEntity.TenantId > 0 && !CanWriteSpecifiedTenantWithoutContext())
+                {
+                    throw new UnauthorizedAccessException(
+                        $"当前上下文无租户信息，禁止写入指定租户数据（TenantId={tenantEntity.TenantId}）");
+                }
+
+                if (tenantEntity.TenantId < 0)
+                {
+                    tenantEntity.TenantId = 0;
+                }
+            }
+        }
+    }
+
+    private ISugarQueryable<TEntity> CreateTenantQueryable()
+    {
+        return ApplyTenantScope(DbClientBase.Queryable<TEntity>());
+    }
+
+    /// <summary>创建指定实体类型的租户隔离查询（供子类仓储聚合查询复用）</summary>
+    protected ISugarQueryable<TTarget> CreateTenantQueryableFor<TTarget>() where TTarget : class, new()
+    {
+        return ApplyTenantScope(DbClientBase.Queryable<TTarget>());
+    }
+
+    private ISugarQueryable<TEntity> ApplyTenantScope(ISugarQueryable<TEntity> query)
+    {
+        return ApplyTenantScope<TEntity>(query);
+    }
+
+    private static ISugarQueryable<TTarget> ApplyTenantScope<TTarget>(ISugarQueryable<TTarget> query)
+        where TTarget : class, new()
+    {
+        if (!typeof(ITenantEntity).IsAssignableFrom(typeof(TTarget)))
+        {
+            return query;
+        }
+
+        return query.Where(BuildTenantFilterExpression<TTarget>());
+    }
+
+    private IUpdateable<TEntity> ApplyTenantScope(IUpdateable<TEntity> updateable)
+    {
+        if (!IsTenantScopedEntity)
+        {
+            return updateable;
+        }
+
+        return updateable.Where(BuildTenantFilterExpression<TEntity>());
+    }
+
+    private IDeleteable<TEntity> ApplyTenantScope(IDeleteable<TEntity> deleteable)
+    {
+        if (!IsTenantScopedEntity)
+        {
+            return deleteable;
+        }
+
+        return deleteable.Where(BuildTenantFilterExpression<TEntity>());
+    }
+
+    private static Expression<Func<TTarget, bool>> BuildTenantFilterExpression<TTarget>() where TTarget : class, new()
+    {
+        var parameter = Expression.Parameter(typeof(TTarget), "it");
+        var tenantProperty = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
+        var zeroExpression = Expression.Constant(0L);
+        var tenantId = GetCurrentTenantId();
+
+        Expression body = tenantId > 0
+            ? Expression.OrElse(
+                Expression.Equal(tenantProperty, Expression.Constant(tenantId)),
+                Expression.Equal(tenantProperty, zeroExpression))
+            : Expression.Equal(tenantProperty, zeroExpression);
+
+        return Expression.Lambda<Func<TTarget, bool>>(body, parameter);
+    }
+
+    private static Expression<Func<T, T2, T3, bool>>? BuildTenantJoinFilterExpression<T, T2, T3>()
+    {
+        var tenantId = GetCurrentTenantId();
+        var parameter1 = Expression.Parameter(typeof(T), "it1");
+        var parameter2 = Expression.Parameter(typeof(T2), "it2");
+        var parameter3 = Expression.Parameter(typeof(T3), "it3");
+
+        Expression? body = null;
+        body = AppendTenantCondition(body, parameter1, tenantId);
+        body = AppendTenantCondition(body, parameter2, tenantId);
+        body = AppendTenantCondition(body, parameter3, tenantId);
+
+        return body == null
+            ? null
+            : Expression.Lambda<Func<T, T2, T3, bool>>(body, parameter1, parameter2, parameter3);
+    }
+
+    private static Expression? AppendTenantCondition(Expression? current, ParameterExpression parameter, long tenantId)
+    {
+        if (!typeof(ITenantEntity).IsAssignableFrom(parameter.Type))
+        {
+            return current;
+        }
+
+        var tenantProperty = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
+        var zeroExpression = Expression.Constant(0L);
+        Expression tenantCondition = tenantId > 0
+            ? Expression.OrElse(
+                Expression.Equal(tenantProperty, Expression.Constant(tenantId)),
+                Expression.Equal(tenantProperty, zeroExpression))
+            : Expression.Equal(tenantProperty, zeroExpression);
+
+        return current == null ? tenantCondition : Expression.AndAlso(current, tenantCondition);
     }
 
     #region 增
@@ -87,6 +252,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<long> AddAsync(TEntity entity)
     {
         NormalizeEntityDateTimeToUtc(entity);
+        NormalizeEntityTenantId(entity);
 
         // 确保软删除字段正确初始化
         if (entity is IDeleteFilter softDeleteEntity)
@@ -120,6 +286,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         foreach (var entity in entities)
         {
             NormalizeEntityDateTimeToUtc(entity);
+            NormalizeEntityTenantId(entity);
 
             if (entity is IDeleteFilter softDeleteEntity)
             {
@@ -154,6 +321,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<List<long>> AddSplitAsync(TEntity entity)
     {
         NormalizeEntityDateTimeToUtc(entity);
+        NormalizeEntityTenantId(entity);
 
         // 确保软删除字段正确初始化
         if (entity is IDeleteFilter softDeleteEntity)
@@ -249,7 +417,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
 
         // 先查询实体是否存在（包括已删除的）
-        var entity = await DbClientBase.Queryable<TEntity>().InSingleAsync(id);
+        var entity = await CreateTenantQueryable().InSingleAsync(id);
         if (entity == null)
         {
             return false;
@@ -279,7 +447,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
 
         // 查询要恢复的实体（包括已删除的）
-        var entities = await DbClientBase.Queryable<TEntity>().Where(whereExpression).ToListAsync();
+        var entities = await CreateTenantQueryable().Where(whereExpression).ToListAsync();
         if (!entities.Any())
         {
             return 0;
@@ -306,7 +474,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     [Obsolete("请使用 SoftDeleteByIdAsync 进行软删除，避免物理删除业务数据")]
     public async Task<bool> DeleteByIdAsync(long id)
     {
-        return await DbClientBase.Deleteable<TEntity>().In(id).ExecuteCommandHasChangeAsync();
+        var deleteable = ApplyTenantScope(DbClientBase.Deleteable<TEntity>().In(id));
+        return await deleteable.ExecuteCommandHasChangeAsync();
     }
 
     /// <summary>根据实体删除（物理删除）</summary>
@@ -315,7 +484,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     public async Task<bool> DeleteAsync(TEntity entity)
     {
-        return await DbClientBase.Deleteable(entity).ExecuteCommandHasChangeAsync();
+        if (entity is ITenantEntity tenantEntity && !IsTenantVisible(tenantEntity.TenantId))
+        {
+            return false;
+        }
+
+        var deleteable = ApplyTenantScope(DbClientBase.Deleteable(entity));
+        return await deleteable.ExecuteCommandHasChangeAsync();
     }
 
     /// <summary>根据条件删除（物理删除）</summary>
@@ -324,7 +499,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     public async Task<int> DeleteAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
-        return await DbClientBase.Deleteable<TEntity>().Where(whereExpression).ExecuteCommandAsync();
+        var deleteable = ApplyTenantScope(DbClientBase.Deleteable<TEntity>().Where(whereExpression));
+        return await deleteable.ExecuteCommandAsync();
     }
 
     /// <summary>批量删除（物理删除）</summary>
@@ -333,7 +509,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     public async Task<int> DeleteByIdsAsync(List<long> ids)
     {
-        return await DbClientBase.Deleteable<TEntity>().In(ids).ExecuteCommandAsync();
+        var deleteable = ApplyTenantScope(DbClientBase.Deleteable<TEntity>().In(ids));
+        return await deleteable.ExecuteCommandAsync();
     }
 
     #endregion
@@ -346,7 +523,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<bool> UpdateAsync(TEntity entity)
     {
         NormalizeEntityDateTimeToUtc(entity);
-        return await DbClientBase.Updateable(entity).ExecuteCommandHasChangeAsync();
+        if (entity is ITenantEntity tenantEntity && !IsTenantVisible(tenantEntity.TenantId))
+        {
+            return false;
+        }
+
+        var updateable = ApplyTenantScope(DbClientBase.Updateable(entity));
+        return await updateable.ExecuteCommandHasChangeAsync();
     }
 
     /// <summary>批量更新实体数据</summary>
@@ -354,12 +537,30 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>受影响的行数</returns>
     public async Task<int> UpdateRangeAsync(List<TEntity> entities)
     {
+        if (entities == null || entities.Count == 0)
+        {
+            return 0;
+        }
+
+        var updateEntities = entities;
+        if (IsTenantScopedEntity)
+        {
+            updateEntities = entities
+                .Where(entity => entity is ITenantEntity tenantEntity && IsTenantVisible(tenantEntity.TenantId))
+                .ToList();
+            if (updateEntities.Count == 0)
+            {
+                return 0;
+            }
+        }
+
         foreach (var entity in entities)
         {
             NormalizeEntityDateTimeToUtc(entity);
         }
 
-        return await DbClientBase.Updateable(entities).ExecuteCommandAsync();
+        var updateable = ApplyTenantScope(DbClientBase.Updateable(updateEntities));
+        return await updateable.ExecuteCommandAsync();
     }
 
     /// <summary>更新指定列</summary>
@@ -372,7 +573,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<bool> UpdateColumnsAsync(TEntity entity, Expression<Func<TEntity, object>> updateColumns)
     {
         NormalizeEntityDateTimeToUtc(entity);
-        return await DbClientBase.Updateable(entity).UpdateColumns(updateColumns).ExecuteCommandHasChangeAsync();
+        if (entity is ITenantEntity tenantEntity && !IsTenantVisible(tenantEntity.TenantId))
+        {
+            return false;
+        }
+
+        var updateable = ApplyTenantScope(DbClientBase.Updateable(entity).UpdateColumns(updateColumns));
+        return await updateable.ExecuteCommandHasChangeAsync();
     }
 
     /// <summary>统一将实体中的 DateTime/DateTime? 字段规范为 UTC，保证落库一致性</summary>
@@ -429,7 +636,9 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// </example>
     public async Task<int> UpdateColumnsAsync(Expression<Func<TEntity, TEntity>> updateColumns, Expression<Func<TEntity, bool>> whereExpression)
     {
-        return await DbClientBase.Updateable<TEntity>().SetColumns(updateColumns).Where(whereExpression).ExecuteCommandAsync();
+        var updateable = DbClientBase.Updateable<TEntity>().SetColumns(updateColumns).Where(whereExpression);
+        updateable = ApplyTenantScope(updateable);
+        return await updateable.ExecuteCommandAsync();
     }
 
     #endregion
@@ -441,7 +650,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>实体对象，如果不存在则返回 null</returns>
     public async Task<TEntity?> QueryByIdAsync(long id)
     {
-        return await DbClientBase.Queryable<TEntity>().InSingleAsync(id);
+        return await CreateTenantQueryable().Where("Id = @id", new { id }).FirstAsync();
     }
 
     /// <summary>查询第一条数据</summary>
@@ -449,7 +658,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>实体对象，如果不存在则返回 null</returns>
     public async Task<TEntity?> QueryFirstAsync(Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -463,7 +672,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>实体对象，如果不存在则返回 null</returns>
     public async Task<TEntity?> QuerySingleAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
-        return await DbClientBase.Queryable<TEntity>().SingleAsync(whereExpression);
+        return await CreateTenantQueryable().SingleAsync(whereExpression);
     }
 
     /// <summary>按照 Where 表达式查询</summary>
@@ -473,7 +682,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     {
         // DbBase 是 ISqlSugarClient 单例注入的，所以多次查询的 HASH 是一样的，对应的是 Service 层的 Repository 不是单例
         // await Console.Out.WriteLineAsync($"DbBase HashCode: {DbBase.GetHashCode().ToString()}");
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -490,7 +699,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     {
         // return await DbClientBase.Queryable<TEntity>().WhereIF(whereExpression != null, whereExpression).WithCache().ToListAsync();
         // 缓存时间默认为 10 s
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -514,7 +723,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         OrderByType orderByType = OrderByType.Asc)
     {
         RefAsync<int> totalCount = 0;
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -543,7 +752,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         OrderByType thenByType)
     {
         RefAsync<int> totalCount = 0;
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -573,7 +782,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>记录数</returns>
     public async Task<int> QueryCountAsync(Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -587,7 +796,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <returns>是否存在</returns>
     public async Task<bool> QueryExistsAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
-        return await DbClientBase.Queryable<TEntity>().AnyAsync(whereExpression);
+        return await CreateTenantQueryable().AnyAsync(whereExpression);
     }
 
     /// <summary>
@@ -606,12 +815,19 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<T, T2, T3, TResult>> selectExpression,
         Expression<Func<T, T2, T3, bool>>? whereLambda = null) where T : class, new()
     {
-        if (whereLambda == null)
+        var query = DbClientBase.Queryable(joinExpression);
+        var tenantFilter = BuildTenantJoinFilterExpression<T, T2, T3>();
+        if (tenantFilter != null)
         {
-            return await DbClientBase.Queryable(joinExpression).Select(selectExpression).ToListAsync();
+            query = query.Where(tenantFilter);
         }
 
-        return await DbClientBase.Queryable(joinExpression).Where(whereLambda).Select(selectExpression).ToListAsync();
+        if (whereLambda != null)
+        {
+            query = query.Where(whereLambda);
+        }
+
+        return await query.Select(selectExpression).ToListAsync();
     }
 
     /// <summary>分表-按照 Where 表达式查询</summary>
@@ -621,7 +837,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     public async Task<List<TEntity>> QuerySplitAsync(Expression<Func<TEntity, bool>>? whereExpression,
         string orderByFields = "Id")
     {
-        var query = DbClientBase.Queryable<TEntity>()
+        var query = CreateTenantQueryable()
             .SplitTable()
             .OrderByIF(!string.IsNullOrEmpty(orderByFields), orderByFields);
 
@@ -642,7 +858,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -660,7 +876,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -679,7 +895,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             return new List<TEntity>();
         }
 
-        return await DbClientBase.Queryable<TEntity>().In(ids).ToListAsync();
+        return await CreateTenantQueryable().In(ids).ToListAsync();
     }
 
     /// <summary>查询字段最大值（聚合）</summary>
@@ -691,7 +907,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -709,7 +925,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, TResult>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -726,7 +942,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, decimal>> selectExpression,
         Expression<Func<TEntity, bool>>? whereExpression = null)
     {
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -747,7 +963,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         OrderByType orderByType = OrderByType.Asc,
         int take = 0)
     {
-        var query = DbClientBase.Queryable<TEntity>();
+        var query = CreateTenantQueryable();
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);

@@ -77,6 +77,7 @@ public class UserController : ControllerBase
     /// <response code="403">禁止访问，权限不足</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet]
+    [Authorize(Policy = "SystemOrAdmin")]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -149,6 +150,7 @@ public class UserController : ControllerBase
     /// <response code="404">用户不存在</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet("{id:long}")]
+    [Authorize(Policy = "SystemOrAdmin")]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -417,16 +419,15 @@ public class UserController : ControllerBase
     /// <param name="limit">返回结果数量限制（默认10，最大50）</param>
     /// <returns>用户列表</returns>
     /// <remarks>
-    /// 根据关键词搜索用户名，返回匹配的用户列表供@提及功能使用。
-    /// 允许匿名访问。
+    /// 根据关键词搜索用户名，返回当前租户下匹配的用户列表供@提及功能使用。
     /// </remarks>
     /// <response code="200">搜索成功，返回用户列表</response>
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize(Policy = "Client")]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> SearchForMention(string keyword, int limit = 10)
     {
-        var users = await _userService.SearchUsersForMentionAsync(keyword, limit);
+        var users = await _userService.SearchUsersForMentionAsync(keyword, _httpContextUser.TenantId, limit);
 
         return new MessageModel
         {

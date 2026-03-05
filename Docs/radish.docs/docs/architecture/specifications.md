@@ -383,6 +383,30 @@ git push origin v26.1.1.3003
 - **表隔离**：`MultiBusinessTable` 标注 `[MultiTenant(TenantTypeEnum.Tables)]`，`TenantUtil.SetTenantTable()` 会在运行期改写表名为 `表名_{TenantId}`，示例接口 `GET /api/Tenant/MultiBusinessTable`。
 - **分库隔离**：`SubLibBusinessTable` 标注 `[MultiTenant(TenantTypeEnum.DataBases)]`，`TenantUtil.GetConnectionConfig()` 根据租户配置动态注入连接，示例接口 `GET /api/Tenant/SubLibBusinessTable`（参考 `.http` 文件）。租户主数据需在数据库中预配 `TenantConfigId/DbConnectionStr` 等字段，且 `App.HttpContextUser` 必须包含合法 `TenantId`。
 
+### 多租户隔离策略矩阵（实体设计规范）
+
+| 隔离方式 | 适用场景 | 优点 | 成本/限制 | Radish 当前建议 |
+| --- | --- | --- | --- | --- |
+| 字段隔离（`ITenantEntity`） | 大多数业务主数据与交易数据（用户、帖子、商品、订单、资产） | 改造成本最低，查询与聚合最灵活 | 需要严格依赖统一仓储过滤，防止手写 SQL 漏条件 | **默认方案**，新业务实体优先采用 |
+| 表隔离（`[MultiTenant(Tables)]`） | 单实体数据量极大、冷热明显、跨租户联合查询极少（如超高频消息/流水） | 物理拆表降低单表压力，单租户巡检更快 | 需要处理跨表统计、DDL 维护与分表治理 | 达到性能阈值后再引入，不提前复杂化 |
+| 分库隔离（`[MultiTenant(DataBases)]`） | 合规强隔离、超大租户独占资源、跨地域/专有化部署 | 隔离级别最高，容量与运维可独立扩展 | 运维成本最高，跨租户查询和迁移最复杂 | 仅对“战略大租户/合规场景”启用 |
+
+### 当前实体映射（M12 租户补齐）
+
+| 业务域 | 实体 | 当前隔离方式 | 备注 |
+| --- | --- | --- | --- |
+| 用户与社区 | `User`、`Post`、`Comment`、`Channel*`、`Notification*`、`Attachment` | 字段隔离（`ITenantEntity`） | 统一由 Repository 租户过滤接管 |
+| 商城交易 | `Product`、`Order`、`UserBenefit`、`UserInventory` | 字段隔离（`ITenantEntity`） | 支持公共租户（`TenantId=0`）+ 私有租户数据 |
+| 资产与经验 | `UserBalance`、`UserExperience`、`UserExpDailyStats`、`CoinTransaction`、`ExpTransaction` | 字段隔离（`ITenantEntity`） | 已纳入统一租户读写约束 |
+| 日志与审计 | `BalanceChangeLog` | 字段隔离（`ITenantEntity`）+ `Log` 库 + 按月分表 | 属于“字段隔离 + 业务库拆分 + 时间分表”组合方案 |
+| 多租户示例 | `MultiBusinessTable`、`SubLibBusinessTable` | 表隔离 / 分库隔离 | 用于验证两种高级隔离模式 |
+
+### 字段隔离写入约束（仓储统一规则）
+
+- 当 `App.HttpContextUser.TenantId > 0` 时，`BaseRepository` 在写入阶段会强制将实体 `TenantId` 归一为当前租户，避免跨租户写入。
+- 当请求上下文无租户（`TenantId<=0`）时，默认仅允许写入公共租户（`TenantId=0`）。
+- 在无租户上下文下，若要写入指定租户（`TenantId>0`），仅允许 `System/Admin` 角色或无 HTTP 上下文的后台系统任务执行；普通用户上下文会直接拒绝。
+
 ## 跨语言扩展（Rust 原生库）
 
 - 目的：为 CPU 密集或高并发任务提供 Rust 实现，并通过 `RustTestController`（v2）验证性能差异；统一扩展库位于 `Lib/radish.lib/`，并以 `[DllImport("radish_lib")]` 进行加载。
