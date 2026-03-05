@@ -93,9 +93,15 @@
 
 - **新增专题文档**：`architecture/tenant-isolation.md`，集中沉淀隔离策略、审计结论与验收清单。
 - **规范文档更新**：`architecture/specifications.md` 增补“字段/分表/分库策略矩阵”与“写入约束规则”。
-- **回归测试样例**：新增 `TenantIsolationRegressionTests`（代码已补，待 Linux 环境执行测试闭环）。
+- **回归测试补齐并执行**：`TenantIsolationRegressionTests` 已补充行为类实体断言，并在 Linux 环境执行通过（4/4）。
+
+### 续接完成：行为类实体租户升级 + Linux 验证
+
+- **行为类实体升级完成**：`Reaction`、`UserPostLike`、`UserCommentLike`、`UploadSession`、`UserPaymentPassword` 已接入 `ITenantEntity` 与 `TenantId`（默认 `0`）。
+- **Linux 构建闭环完成**：`dotnet build Radish.slnx -c Debug -m:1 /nr:false` 通过。
+- **Linux 回归闭环完成**：`dotnet test Radish.Api.Tests --filter "FullyQualifiedName~TenantIsolationRegressionTests" -m:1 /nr:false` 通过。
 
 ### 当前状态与后续
 
-- ✅ 代码改造与文档同步已完成并提交。
-- 🔄 下一步将切换 Linux 开发环境执行构建/测试，继续推进剩余“待评估实体”的租户策略升级。
+- ✅ 租户隔离本周续接项已完成（行为类实体升级 + Linux 构建/测试闭环）。
+- 🔄 下一步继续评估其余低风险实体是否需要升级为字段租户隔离（按审计收益与改造成本排序推进）。

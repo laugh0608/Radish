@@ -216,9 +216,10 @@
 >     - 已完成核心实体租户接入补齐（资产/经验/交易主链路）。
 >     - 已完成用户提及、附件、商城、排行榜等高风险链路收口。
 >     - 已新增租户专题文档：`architecture/tenant-isolation.md`。
->   - 🔄 **后续续接项**：
->     - 在 Linux 开发环境完成构建与回归测试闭环（Windows/WSL 混合环境构建不稳定）。
->     - 评估并推进行为类实体（`Reaction`、`UserPostLike`、`UserCommentLike`、`UploadSession`、`UserPaymentPassword`）的租户策略升级。
+>   - ✅ **2026-03-05 续接完成**：
+>     - 已在 Linux 开发环境完成构建与回归测试闭环（`dotnet build Radish.slnx -c Debug -m:1 /nr:false`、`dotnet test Radish.Api.Tests --filter "FullyQualifiedName~TenantIsolationRegressionTests" -m:1 /nr:false`）。
+>     - 已完成行为类实体（`Reaction`、`UserPostLike`、`UserCommentLike`、`UploadSession`、`UserPaymentPassword`）的租户策略升级。
+>     - 已补充 `TenantIsolationRegressionTests` 行为实体断言，验证公共租户上下文仅允许 `TenantId=0`。
 >
 > - 🎨 **P1：体验规范与国际化**
 >   - 主题切换能力落地（明暗基础能力 + 主题配置入口）。

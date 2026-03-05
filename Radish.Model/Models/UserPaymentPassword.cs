@@ -10,8 +10,14 @@ namespace Radish.Model.Models;
 [SugarTable("UserPaymentPassword")]
 [SugarIndex("idx_user_payment_password_user_id", nameof(UserPaymentPassword.UserId), OrderByType.Asc)]
 // [MultiTenant(TenantTypeEnum.Id)]
-public class UserPaymentPassword : RootEntityTKey<long>, IDeleteFilter
+public class UserPaymentPassword : RootEntityTKey<long>, IDeleteFilter, ITenantEntity
 {
+    /// <summary>
+    /// 租户ID
+    /// </summary>
+    [SugarColumn(ColumnDescription = "租户ID", IsNullable = false)]
+    public long TenantId { get; set; } = 0;
+
     /// <summary>
     /// 用户ID
     /// </summary>

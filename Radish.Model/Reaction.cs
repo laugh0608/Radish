@@ -9,8 +9,12 @@ namespace Radish.Model;
 [SugarIndex("idx_reaction_target", nameof(TargetType), OrderByType.Asc, nameof(TargetId), OrderByType.Asc)]
 [SugarIndex("idx_reaction_user_target", nameof(UserId), OrderByType.Asc, nameof(TargetType), OrderByType.Asc, nameof(TargetId), OrderByType.Asc)]
 [SugarIndex("idx_reaction_user_target_emoji", nameof(UserId), OrderByType.Asc, nameof(TargetType), OrderByType.Asc, nameof(TargetId), OrderByType.Asc, nameof(EmojiValue), OrderByType.Asc, IsUnique = true)]
-public class Reaction : RootEntityTKey<long>, IDeleteFilter
+public class Reaction : RootEntityTKey<long>, IDeleteFilter, ITenantEntity
 {
+    /// <summary>租户 ID</summary>
+    [SugarColumn(IsNullable = false)]
+    public long TenantId { get; set; } = 0;
+
     /// <summary>用户 ID</summary>
     [SugarColumn(IsNullable = false)]
     public long UserId { get; set; }

@@ -1,11 +1,20 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Radish.Common.CoreTool;
+using Radish.Common.HttpContextTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.Models;
 using Radish.Model.ViewModels;
 using Radish.Repository.Base;
 using Radish.Service;
@@ -22,6 +31,8 @@ public class TenantIsolationRegressionTests
     [Fact(DisplayName = "SearchUsersForMention 在公共租户上下文仅返回 TenantId=0 数据")]
     public async Task SearchUsersForMentionAsync_ShouldFilterPublicTenantOnly_WhenTenantIdIsZero()
     {
+        EnsurePublicTenantAppContext();
+
         // Arrange
         var mapper = new Mock<IMapper>();
         var userRepository = new Mock<IUserRepository>();
@@ -87,6 +98,8 @@ public class TenantIsolationRegressionTests
     [Fact(DisplayName = "QueryMuch 联表表达式在公共租户上下文仅允许 TenantId=0")]
     public void QueryMuchTenantFilter_ShouldAllowOnlyPublicTenant_WhenNoTenantContext()
     {
+        EnsurePublicTenantAppContext();
+
         // Arrange
         var method = typeof(BaseRepository<User>)
             .GetMethod("BuildTenantJoinFilterExpression", BindingFlags.NonPublic | BindingFlags.Static);
@@ -125,6 +138,8 @@ public class TenantIsolationRegressionTests
     [Fact(DisplayName = "QueryMuch 联表表达式对非租户实体不追加租户过滤")]
     public void QueryMuchTenantFilter_ShouldReturnNull_WhenEntitiesAreNotTenantScoped()
     {
+        EnsurePublicTenantAppContext();
+
         // Arrange
         var method = typeof(BaseRepository<User>)
             .GetMethod("BuildTenantJoinFilterExpression", BindingFlags.NonPublic | BindingFlags.Static);
@@ -137,5 +152,55 @@ public class TenantIsolationRegressionTests
 
         // Assert
         Assert.Null(expression);
+    }
+
+    [Fact(DisplayName = "行为类实体在公共租户上下文仅允许 TenantId=0")]
+    public void BehaviorEntitiesTenantFilter_ShouldAllowOnlyPublicTenant_WhenNoTenantContext()
+    {
+        EnsurePublicTenantAppContext();
+
+        AssertPublicTenantOnlyFilter<Reaction>();
+        AssertPublicTenantOnlyFilter<UserPostLike>();
+        AssertPublicTenantOnlyFilter<UserCommentLike>();
+        AssertPublicTenantOnlyFilter<UploadSession>();
+        AssertPublicTenantOnlyFilter<UserPaymentPassword>();
+    }
+
+    private static void EnsurePublicTenantAppContext()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+        var httpContextUserMock = new Mock<IHttpContextUser>();
+        httpContextUserMock.SetupGet(x => x.TenantId).Returns(0);
+        services.AddSingleton(httpContextUserMock.Object);
+
+        services.ConfigureApplication();
+        var provider = services.BuildServiceProvider();
+        provider.ConfigureApplication();
+
+        App.IsBuild = true;
+    }
+
+    private static void AssertPublicTenantOnlyFilter<TEntity>() where TEntity : class, new()
+    {
+        var method = typeof(BaseRepository<User>)
+            .GetMethod("BuildTenantFilterExpression", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var genericMethod = method!.MakeGenericMethod(typeof(TEntity));
+        var expression = genericMethod.Invoke(null, null) as Expression<Func<TEntity, bool>>;
+
+        Assert.NotNull(expression);
+        var predicate = expression!.Compile();
+
+        var publicEntity = new TEntity();
+        var privateEntity = new TEntity();
+
+        typeof(TEntity).GetProperty("TenantId")!.SetValue(publicEntity, 0L);
+        typeof(TEntity).GetProperty("TenantId")!.SetValue(privateEntity, 2L);
+
+        Assert.True(predicate(publicEntity));
+        Assert.False(predicate(privateEntity));
     }
 }
