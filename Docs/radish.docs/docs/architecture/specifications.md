@@ -406,6 +406,7 @@ git push origin v26.1.1.3003
 - 当 `App.HttpContextUser.TenantId > 0` 时，`BaseRepository` 在写入阶段会强制将实体 `TenantId` 归一为当前租户，避免跨租户写入。
 - 当请求上下文无租户（`TenantId<=0`）时，默认仅允许写入公共租户（`TenantId=0`）。
 - 在无租户上下文下，若要写入指定租户（`TenantId>0`），仅允许 `System/Admin` 角色或无 HTTP 上下文的后台系统任务执行；普通用户上下文会直接拒绝。
+- 详细实施和审计记录见：[tenant-isolation.md](./tenant-isolation.md)。
 
 ## 跨语言扩展（Rust 原生库）
 
