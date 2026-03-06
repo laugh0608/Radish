@@ -27,17 +27,20 @@ namespace Radish.Api.Controllers;
 public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
+    private readonly IContentModerationService _contentModerationService;
     private readonly IBaseService<Attachment, AttachmentVo> _attachmentService;
     private readonly IBaseService<Comment, CommentVo> _commentService;
     private readonly IHttpContextUser _httpContextUser;
 
     public PostController(
         IPostService postService,
+        IContentModerationService contentModerationService,
         IBaseService<Attachment, AttachmentVo> attachmentService,
         IBaseService<Comment, CommentVo> commentService,
         IHttpContextUser httpContextUser)
     {
         _postService = postService;
+        _contentModerationService = contentModerationService;
         _attachmentService = attachmentService;
         _commentService = commentService;
         _httpContextUser = httpContextUser;
@@ -326,6 +329,17 @@ public class PostController : ControllerBase
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = "发布帖子时标签数量必须在 1 到 5 个之间"
+            };
+        }
+
+        var publishPermission = await _contentModerationService.GetPublishPermissionAsync(_httpContextUser.UserId);
+        if (!publishPermission.VoCanPublish)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = publishPermission.VoDenyReason ?? "当前状态无法发布内容"
             };
         }
 

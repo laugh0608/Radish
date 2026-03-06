@@ -116,6 +116,10 @@
 >   - 前端已在论坛帖子详情接入作者关注按钮，并展示粉丝/关注计数。
 >   - 个人主页已新增“关系链”页签，支持关注动态、我的粉丝、我的关注三类分页视图。
 >   - 已补充联调脚本：`Radish.Api.Tests/HttpTest/Radish.Api.Forum.http`（UserFollow 段）。
+> - ✅ **内容治理闭环最小版落地**（2026-03-06）：
+>   - 后端新增 `ContentReport` 与 `UserModerationAction` 主链路，支持举报提交、审核队列、审核处理、手动禁言/封禁、治理记录分页查询。
+>   - 已在发帖与评论入口接入发布权限校验，命中禁言/封禁时直接阻断并返回明确原因。
+>   - 已新增 `ContentModerationController` 与控制器单测，并补充联调脚本（`Radish.Api.Forum.http` 的 ContentModeration 段）。
 > - ℹ️ **构建现状说明**（2026-02-25）：
 >   - 后端测试通过（`Radish.Api.Tests`）。
 >   - Console 仍有既有 TS 存量问题（`Dashboard/SystemConfig/Tags`），与本次表情包新增代码无直接耦合。

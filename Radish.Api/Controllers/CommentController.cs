@@ -25,11 +25,16 @@ namespace Radish.Api.Controllers;
 public class CommentController : ControllerBase
 {
     private readonly ICommentService _commentService;
+    private readonly IContentModerationService _contentModerationService;
     private readonly IHttpContextUser _httpContextUser;
 
-    public CommentController(ICommentService commentService, IHttpContextUser httpContextUser)
+    public CommentController(
+        ICommentService commentService,
+        IContentModerationService contentModerationService,
+        IHttpContextUser httpContextUser)
     {
         _commentService = commentService;
+        _contentModerationService = contentModerationService;
         _httpContextUser = httpContextUser;
     }
 
@@ -76,6 +81,17 @@ public class CommentController : ControllerBase
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = "评论内容不能为空"
+            };
+        }
+
+        var publishPermission = await _contentModerationService.GetPublishPermissionAsync(_httpContextUser.UserId);
+        if (!publishPermission.VoCanPublish)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = publishPermission.VoDenyReason ?? "当前状态无法发布内容"
             };
         }
 

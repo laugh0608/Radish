@@ -55,6 +55,62 @@ Authorization: Bearer {{Access_Token}}
   "targetUserId": 20002
 }
 
+### 提交帖子举报
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/Report
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "targetType": "Post",
+  "targetContentId": 1,
+  "reasonType": "Spam",
+  "reasonDetail": "疑似广告灌水"
+}
+
+### 获取我的治理状态
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetMyModerationStatus
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的发布权限
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetMyPublishPermission
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：获取举报审核队列（默认待处理）
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetReviewQueue?status=0&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：审核举报并禁言 24 小时
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/Review
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "reportId": 1,
+  "isApproved": true,
+  "actionType": 1,
+  "durationHours": 24,
+  "reviewRemark": "违规灌水，禁言 24 小时"
+}
+
+### 管理端：手动封禁用户（永久）
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/ApplyUserAction
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "targetUserId": 20002,
+  "actionType": 2,
+  "reason": "多次发布违规内容"
+}
+
+### 管理端：获取治理动作记录
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetActionLogs?pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
 ### 获取登录用户的租户下全部业务数据-字段隔离
 GET {{Api_HostAddress}}/api/v1/Tenant/BusinessTable
 Accept: application/json

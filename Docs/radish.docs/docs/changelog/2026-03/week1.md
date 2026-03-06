@@ -125,3 +125,10 @@
 - ✅ `dotnet build Radish.slnx -c Debug -m:1 /nr:false` 通过。
 - ✅ `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~UserFollowControllerTest" -m:1 /nr:false` 通过（4/4）。
 - ⚠️ `npm run type-check --workspace=radish.client` 未执行通过（当前环境缺少 `tsc` 命令）。
+
+### 内容治理闭环最小版（M12-P0）
+
+- **治理主链路落地**：新增 `ContentReport`（举报单）与 `UserModerationAction`（禁言/封禁记录）实体，打通举报提交、审核队列、审核处理、手动治理动作与治理记录查询。
+- **审核与动作联动**：管理员审核举报时可直接触发禁言/封禁动作，形成“举报 -> 审核 -> 治理执行 -> 记录沉淀”的最小闭环。
+- **主流程拦截接入**：`PostController.Publish`、`CommentController.Create` 已接入发布权限校验，禁言/封禁状态下阻断发帖与评论。
+- **回归资产补齐**：新增 `ContentModerationController` 及控制器单元测试；`Radish.Api.Forum.http` 已补充 ContentModeration 联调段。
