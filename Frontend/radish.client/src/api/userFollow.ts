@@ -28,6 +28,8 @@ export interface UserFollowUser {
   voFollowTime: string;
 }
 
+export type DistributionStreamType = 'recommend' | 'hot' | 'newest';
+
 export async function followUser(targetUserId: number): Promise<UserFollowStatus> {
   const response = await apiPost<UserFollowStatus>(
     '/api/v1/UserFollow/Follow',
@@ -103,6 +105,23 @@ export async function getMyFollowingFeed(pageIndex: number, pageSize: number): P
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取关系链动态失败');
+  }
+
+  return response.data;
+}
+
+export async function getMyDistributionFeed(
+  streamType: DistributionStreamType,
+  pageIndex: number,
+  pageSize: number
+): Promise<VoPagedResult<PostItem>> {
+  const response = await apiGet<VoPagedResult<PostItem>>(
+    `/api/v1/UserFollow/GetMyDistributionFeed?streamType=${streamType}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取分发流失败');
   }
 
   return response.data;

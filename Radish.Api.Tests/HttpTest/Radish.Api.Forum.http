@@ -46,6 +46,21 @@ GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyFollowingFeed?pageIndex=1&pag
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
 
+### 获取我的分发流（推荐）
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyDistributionFeed?streamType=recommend&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的分发流（热门）
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyDistributionFeed?streamType=hot&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的分发流（最新）
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyDistributionFeed?streamType=newest&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
 ### 取消关注用户
 POST {{Gateway_HostAddress}}/api/v1/UserFollow/Unfollow
 Content-Type: application/json

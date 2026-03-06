@@ -25,6 +25,9 @@ public interface IUserFollowService : IBaseService<UserFollow, UserFollowVo>
     /// <summary>分页获取我的关注动态流</summary>
     Task<VoPagedResult<PostVo>> GetMyFollowingFeedAsync(long userId, int pageIndex, int pageSize);
 
+    /// <summary>分页获取我的分发流（推荐/热门/最新）</summary>
+    Task<VoPagedResult<PostVo>> GetMyDistributionFeedAsync(long userId, string streamType, int pageIndex, int pageSize);
+
     /// <summary>获取我的关系链汇总</summary>
     Task<UserFollowSummaryVo> GetMyFollowSummaryAsync(long userId);
 }

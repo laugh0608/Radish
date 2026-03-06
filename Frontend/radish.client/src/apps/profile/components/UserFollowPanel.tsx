@@ -5,8 +5,9 @@ import type { PostItem } from '@/types/forum';
 import {
   getMyFollowers,
   getMyFollowing,
-  getMyFollowingFeed,
+  getMyDistributionFeed,
   getMyFollowSummary,
+  type DistributionStreamType,
   type UserFollowSummary,
   type UserFollowUser
 } from '@/api/userFollow';
@@ -24,6 +25,7 @@ const PAGE_SIZE = 10;
 
 export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPanelProps) => {
   const [activeTab, setActiveTab] = useState<SocialTab>('feed');
+  const [feedStreamType, setFeedStreamType] = useState<DistributionStreamType>('recommend');
   const [summary, setSummary] = useState<UserFollowSummary>({ voFollowerCount: 0, voFollowingCount: 0 });
   const [loading, setLoading] = useState(true);
   const [feedItems, setFeedItems] = useState<PostItem[]>([]);
@@ -42,7 +44,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
 
   useEffect(() => {
     if (activeTab === 'feed') {
-      void loadFeed(feedPage);
+      void loadFeed(feedPage, feedStreamType);
       return;
     }
 
@@ -52,7 +54,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
     }
 
     void loadFollowing(followingPage);
-  }, [activeTab, feedPage, followerPage, followingPage]);
+  }, [activeTab, feedPage, feedStreamType, followerPage, followingPage]);
 
   const totalPages = useMemo(() => {
     const total = activeTab === 'feed'
@@ -92,14 +94,14 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
     }
   };
 
-  const loadFeed = async (pageIndex: number) => {
+  const loadFeed = async (pageIndex: number, streamType: DistributionStreamType) => {
     setLoading(true);
     try {
-      const data = await getMyFollowingFeed(pageIndex, PAGE_SIZE);
+      const data = await getMyDistributionFeed(streamType, pageIndex, PAGE_SIZE);
       setFeedItems(data.voItems || []);
       setFeedTotal(data.voTotal || 0);
     } catch (error) {
-      log.error('UserFollowPanel', '加载关系链动态失败:', error);
+      log.error('UserFollowPanel', `加载分发流失败(${streamType}):`, error);
       setFeedItems([]);
       setFeedTotal(0);
     } finally {
@@ -137,9 +139,15 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
     }
   };
 
+  const feedStreamLabelMap: Record<DistributionStreamType, string> = {
+    recommend: '推荐',
+    hot: '热门',
+    newest: '最新'
+  };
+
   const renderFeed = () => {
     if (feedItems.length === 0) {
-      return <div className={styles.empty}>你关注的人暂时还没有新动态</div>;
+      return <div className={styles.empty}>{feedStreamLabelMap[feedStreamType]}流暂时没有内容</div>;
     }
 
     return (
@@ -238,6 +246,23 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
           我的关注
         </button>
       </div>
+
+      {activeTab === 'feed' && (
+        <div className={styles.feedStreamTabs}>
+          {(['recommend', 'hot', 'newest'] as DistributionStreamType[]).map(streamType => (
+            <button
+              key={streamType}
+              className={`${styles.feedStreamTab} ${feedStreamType === streamType ? styles.feedStreamTabActive : ''}`}
+              onClick={() => {
+                setFeedStreamType(streamType);
+                setFeedPage(1);
+              }}
+            >
+              {feedStreamLabelMap[streamType]}
+            </button>
+          ))}
+        </div>
+      )}
 
       {renderContent()}
 

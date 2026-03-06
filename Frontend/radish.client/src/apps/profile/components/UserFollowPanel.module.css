@@ -55,6 +55,28 @@
   border-color: #2563eb;
 }
 
+.feedStreamTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.feedStreamTab {
+  border: 1px solid #dbe2ea;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #475569;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.feedStreamTabActive {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
 .loading,
 .empty {
   padding: 24px 12px;
@@ -169,5 +191,9 @@
 @media (max-width: 768px) {
   .tabs {
     flex-direction: column;
+  }
+
+  .feedStreamTabs {
+    flex-wrap: wrap;
   }
 }

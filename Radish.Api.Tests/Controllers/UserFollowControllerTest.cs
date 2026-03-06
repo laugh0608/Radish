@@ -117,6 +117,39 @@ public class UserFollowControllerTest
         Assert.Equal(9527, payload.VoItems[0].VoId);
     }
 
+    [Fact]
+    public async Task GetMyDistributionFeed_Should_Return_Posts()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.GetMyDistributionFeedAsync(10001, "hot", 1, 20))
+            .ReturnsAsync(new VoPagedResult<PostVo>
+            {
+                VoItems =
+                [
+                    new PostVo
+                    {
+                        VoId = 10086,
+                        VoTitle = "热门分发帖子",
+                        VoAuthorId = 20003,
+                        VoAuthorName = "bob"
+                    }
+                ],
+                VoTotal = 1,
+                VoPageIndex = 1,
+                VoPageSize = 20
+            });
+
+        var controller = CreateController(serviceMock.Object);
+        var result = await controller.GetMyDistributionFeed("hot");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        var payload = Assert.IsType<VoPagedResult<PostVo>>(result.ResponseData);
+        Assert.Single(payload.VoItems);
+        Assert.Equal(10086, payload.VoItems[0].VoId);
+    }
+
     private static UserFollowController CreateController(IUserFollowService followService)
     {
         var httpContextUserMock = new Mock<IHttpContextUser>();

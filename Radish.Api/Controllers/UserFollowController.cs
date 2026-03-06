@@ -169,6 +169,33 @@ public class UserFollowController : ControllerBase
         };
     }
 
+    /// <summary>获取我的分发流（推荐/热门/最新）</summary>
+    [HttpGet]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    public async Task<MessageModel> GetMyDistributionFeed(string streamType = "recommend", int pageIndex = 1, int pageSize = 20)
+    {
+        var normalizedStreamType = streamType?.Trim().ToLowerInvariant() ?? "recommend";
+        if (normalizedStreamType is not ("recommend" or "hot" or "newest" or "hottest"))
+        {
+            return BuildError(HttpStatusCodeEnum.BadRequest, "streamType 仅支持 recommend、hot、newest");
+        }
+
+        var result = await _userFollowService.GetMyDistributionFeedAsync(
+            _httpContextUser.UserId,
+            normalizedStreamType,
+            pageIndex,
+            pageSize);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = result
+        };
+    }
+
     /// <summary>获取我的关系链汇总</summary>
     [HttpGet]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]

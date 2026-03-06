@@ -132,3 +132,10 @@
 - **审核与动作联动**：管理员审核举报时可直接触发禁言/封禁动作，形成“举报 -> 审核 -> 治理执行 -> 记录沉淀”的最小闭环。
 - **主流程拦截接入**：`PostController.Publish`、`CommentController.Create` 已接入发布权限校验，禁言/封禁状态下阻断发帖与评论。
 - **回归资产补齐**：新增 `ContentModerationController` 及控制器单元测试；`Radish.Api.Forum.http` 已补充 ContentModeration 联调段。
+
+### 分发能力补齐（M12-P0）
+
+- **三路分发流落地**：`UserFollowController` 新增 `GetMyDistributionFeed`，支持 `recommend/hot/newest` 三种流式查询，保留既有 `GetMyFollowingFeed` 兼容旧调用。
+- **基础权重配置化**：新增 `FeedDistributionOptions` 与 `appsettings.json` 的 `FeedDistribution` 节点，支持热门权重（浏览/点赞/评论）与推荐附加权重（关注作者加权、新鲜度衰减）动态调参。
+- **前端关系链页签升级**：`UserFollowPanel` 的“关注动态”新增“推荐/热门/最新”子切换，统一调用分发流接口并复用现有分页展示。
+- **回归资产补充**：`UserFollowControllerTest` 新增分发流用例；`Radish.Api.Forum.http` 已增加三路流联调请求样例。

@@ -1,4 +1,6 @@
 using AutoMapper;
+using Microsoft.Extensions.Options;
+using Radish.Common.OptionTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -14,17 +16,20 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
     private readonly IBaseRepository<UserFollow> _userFollowRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IPostService _postService;
+    private readonly FeedDistributionOptions _feedDistributionOptions;
 
     public UserFollowService(
         IMapper mapper,
         IBaseRepository<UserFollow> baseRepository,
         IBaseRepository<User> userRepository,
-        IPostService postService)
+        IPostService postService,
+        IOptions<FeedDistributionOptions> feedDistributionOptions)
         : base(mapper, baseRepository)
     {
         _userFollowRepository = baseRepository;
         _userRepository = userRepository;
         _postService = postService;
+        _feedDistributionOptions = feedDistributionOptions.Value;
     }
 
     public async Task<bool> FollowAsync(long followerUserId, long targetUserId, long tenantId, string? operatorName)
@@ -260,6 +265,61 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         };
     }
 
+    public async Task<VoPagedResult<PostVo>> GetMyDistributionFeedAsync(long userId, string streamType, int pageIndex, int pageSize)
+    {
+        var safePageIndex = NormalizePageIndex(pageIndex);
+        var safePageSize = NormalizePageSize(pageSize);
+        var normalizedStreamType = NormalizeStreamType(streamType);
+
+        if (normalizedStreamType == "newest")
+        {
+            var (newestPosts, newestTotal) = await _postService.QueryPageAsync(
+                p => p.IsPublished && !p.IsDeleted,
+                safePageIndex,
+                safePageSize,
+                p => new { p.IsTop, p.CreateTime },
+                OrderByType.Desc);
+
+            return new VoPagedResult<PostVo>
+            {
+                VoItems = newestPosts,
+                VoTotal = newestTotal,
+                VoPageIndex = safePageIndex,
+                VoPageSize = safePageSize
+            };
+        }
+
+        var candidates = await LoadDistributionCandidatesAsync();
+        if (candidates.Count == 0)
+        {
+            return BuildEmptyPagedResult<PostVo>(safePageIndex, safePageSize, 0);
+        }
+
+        if (normalizedStreamType == "hot")
+        {
+            var sortedHot = candidates
+                .OrderByDescending(p => p.VoIsTop)
+                .ThenByDescending(CalculateHotScore)
+                .ThenByDescending(p => p.VoCreateTime)
+                .ToList();
+
+            return BuildPostPagedResult(sortedHot, safePageIndex, safePageSize);
+        }
+
+        var followingIds = await _userFollowRepository.QueryDistinctAsync(
+            f => f.FollowingUserId,
+            f => f.FollowerUserId == userId && !f.IsDeleted);
+        var followingSet = followingIds.ToHashSet();
+
+        var sortedRecommend = candidates
+            .OrderByDescending(p => p.VoIsTop)
+            .ThenByDescending(p => CalculateRecommendScore(p, followingSet))
+            .ThenByDescending(p => p.VoCreateTime)
+            .ToList();
+
+        return BuildPostPagedResult(sortedRecommend, safePageIndex, safePageSize);
+    }
+
     public async Task<UserFollowSummaryVo> GetMyFollowSummaryAsync(long userId)
     {
         var followerCount = await _userFollowRepository.QueryCountAsync(f =>
@@ -311,5 +371,85 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         }
 
         return Math.Min(pageSize, 50);
+    }
+
+    private static string NormalizeStreamType(string? streamType)
+    {
+        if (string.IsNullOrWhiteSpace(streamType))
+        {
+            return "recommend";
+        }
+
+        return streamType.Trim().ToLowerInvariant() switch
+        {
+            "hot" or "hottest" => "hot",
+            "newest" => "newest",
+            _ => "recommend"
+        };
+    }
+
+    private async Task<List<PostVo>> LoadDistributionCandidatesAsync()
+    {
+        var maxCandidateCount = NormalizeMaxCandidateCount(_feedDistributionOptions.MaxCandidateCount);
+        var hasWindow = _feedDistributionOptions.CandidateWindowDays > 0;
+        var windowStart = DateTime.Now.AddDays(-_feedDistributionOptions.CandidateWindowDays);
+
+        return await _postService.QueryWithOrderAsync(
+            p => p.IsPublished && !p.IsDeleted && (!hasWindow || p.CreateTime >= windowStart),
+            p => p.CreateTime,
+            OrderByType.Desc,
+            maxCandidateCount);
+    }
+
+    private static int NormalizeMaxCandidateCount(int maxCandidateCount)
+    {
+        if (maxCandidateCount <= 0)
+        {
+            return 500;
+        }
+
+        return Math.Min(maxCandidateCount, 2000);
+    }
+
+    private decimal CalculateHotScore(PostVo post)
+    {
+        return (post.VoViewCount * _feedDistributionOptions.Hot.ViewWeight)
+             + (post.VoLikeCount * _feedDistributionOptions.Hot.LikeWeight)
+             + (post.VoCommentCount * _feedDistributionOptions.Hot.CommentWeight);
+    }
+
+    private decimal CalculateRecommendScore(PostVo post, HashSet<long> followingSet)
+    {
+        var score = CalculateHotScore(post);
+
+        if (followingSet.Contains(post.VoAuthorId))
+        {
+            score += _feedDistributionOptions.Recommend.FollowingAuthorBoost;
+        }
+
+        var ageHours = Math.Max(0m, (decimal)(DateTime.Now - post.VoCreateTime).TotalHours);
+        var halfLifeHours = _feedDistributionOptions.Recommend.FreshnessHalfLifeHours <= 0
+            ? 24m
+            : _feedDistributionOptions.Recommend.FreshnessHalfLifeHours;
+        var freshnessBoost = _feedDistributionOptions.Recommend.FreshnessMaxBoost / (1m + ageHours / halfLifeHours);
+
+        return score + freshnessBoost;
+    }
+
+    private static VoPagedResult<PostVo> BuildPostPagedResult(List<PostVo> sortedPosts, int pageIndex, int pageSize)
+    {
+        var total = sortedPosts.Count;
+        var items = sortedPosts
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return new VoPagedResult<PostVo>
+        {
+            VoItems = items,
+            VoTotal = total,
+            VoPageIndex = pageIndex,
+            VoPageSize = pageSize
+        };
     }
 }
