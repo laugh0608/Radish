@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -18,14 +19,14 @@ namespace Radish.Api.Controllers.v1;
 public class ExperienceController : ControllerBase
 {
     private readonly IExperienceService _experienceService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IHttpContextUser _httpContextUser;
 
     public ExperienceController(
         IExperienceService experienceService,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextUser httpContextUser)
     {
         _experienceService = experienceService;
-        _httpContextAccessor = httpContextAccessor;
+        _httpContextUser = httpContextUser;
     }
 
     #region 经验值查询
@@ -225,44 +226,14 @@ public class ExperienceController : ControllerBase
     /// <summary>
     /// 获取当前用户 ID
     /// </summary>
-    private long GetCurrentUserId()
-    {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext?.User?.Identity?.IsAuthenticated != true)
-        {
-            return 0;
-        }
-
-        // 尝试从 sub claim 获取（OIDC 标准）
-        var subClaim = httpContext.User.FindFirst("sub")?.Value;
-        if (!string.IsNullOrEmpty(subClaim) && long.TryParse(subClaim, out var userId))
-        {
-            return userId;
-        }
-
-        // 尝试从 jti claim 获取（兼容）
-        var jtiClaim = httpContext.User.FindFirst("jti")?.Value;
-        if (!string.IsNullOrEmpty(jtiClaim) && long.TryParse(jtiClaim, out userId))
-        {
-            return userId;
-        }
-
-        return 0;
-    }
+    private long GetCurrentUserId() => _httpContextUser.UserId;
 
     /// <summary>
     /// 获取当前用户名
     /// </summary>
-    private string? GetCurrentUserName()
-    {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext?.User?.Identity?.IsAuthenticated != true)
-        {
-            return null;
-        }
-
-        return httpContext.User.Identity.Name;
-    }
+    private string? GetCurrentUserName() => string.IsNullOrWhiteSpace(_httpContextUser.UserName)
+        ? null
+        : _httpContextUser.UserName;
 
     #endregion
 }

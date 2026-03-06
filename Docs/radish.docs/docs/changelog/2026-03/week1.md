@@ -157,3 +157,9 @@
 - **TenantId 回退增强**：`HttpContextUser` 新增从原始 Token 回退解析 `tenant_id` / `TenantId`，与 `UserId` 的回退策略保持一致。
 - **单测补充**：`HttpContextUserTests` 新增“仅 Bearer Token、无认证主体”场景，验证 `TenantId` 与 `UserId` 可正常解析。
 - **验证结果**：`dotnet test Radish.Api.Tests --filter "FullyQualifiedName~HttpContextUserTests"` 通过（4/4）。
+
+### 控制器 Claim 解析收口（第一批）
+
+- **统一收口到 HttpContextUser**：`ExperienceController`、`LeaderboardController`、`ShopController` 已移除手写 `sub/jti` 解析，统一通过 `IHttpContextUser` 获取当前用户信息。
+- **行为保持兼容**：`ShopController` 在用户名缺失时仍回退为 `"Unknown"`，避免管理操作审计字段空值。
+- **编译验证**：`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false` 通过（0 Error）。

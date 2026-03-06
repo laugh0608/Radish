@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -21,14 +22,14 @@ namespace Radish.Api.Controllers.v1;
 public class LeaderboardController : ControllerBase
 {
     private readonly ILeaderboardService _leaderboardService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IHttpContextUser _httpContextUser;
 
     public LeaderboardController(
         ILeaderboardService leaderboardService,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextUser httpContextUser)
     {
         _leaderboardService = leaderboardService;
-        _httpContextAccessor = httpContextAccessor;
+        _httpContextUser = httpContextUser;
     }
 
     /// <summary>
@@ -90,30 +91,7 @@ public class LeaderboardController : ControllerBase
     /// <summary>
     /// 获取当前用户 ID
     /// </summary>
-    private long GetCurrentUserId()
-    {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext?.User?.Identity?.IsAuthenticated != true)
-        {
-            return 0;
-        }
-
-        // 尝试从 sub claim 获取（OIDC 标准）
-        var subClaim = httpContext.User.FindFirst("sub")?.Value;
-        if (!string.IsNullOrEmpty(subClaim) && long.TryParse(subClaim, out var userId))
-        {
-            return userId;
-        }
-
-        // 尝试从 jti claim 获取（兼容）
-        var jtiClaim = httpContext.User.FindFirst("jti")?.Value;
-        if (!string.IsNullOrEmpty(jtiClaim) && long.TryParse(jtiClaim, out userId))
-        {
-            return userId;
-        }
-
-        return 0;
-    }
+    private long GetCurrentUserId() => _httpContextUser.UserId;
 
     #endregion
 }

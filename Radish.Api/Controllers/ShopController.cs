@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -20,20 +21,20 @@ public class ShopController : ControllerBase
     private readonly IOrderService _orderService;
     private readonly IUserBenefitService _userBenefitService;
     private readonly IUserInventoryService _userInventoryService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IHttpContextUser _httpContextUser;
 
     public ShopController(
         IProductService productService,
         IOrderService orderService,
         IUserBenefitService userBenefitService,
         IUserInventoryService userInventoryService,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextUser httpContextUser)
     {
         _productService = productService;
         _orderService = orderService;
         _userBenefitService = userBenefitService;
         _userInventoryService = userInventoryService;
-        _httpContextAccessor = httpContextAccessor;
+        _httpContextUser = httpContextUser;
     }
 
     #region 商品分类
@@ -511,27 +512,11 @@ public class ShopController : ControllerBase
     #region 私有方法
 
     /// <summary>获取当前用户 ID</summary>
-    private long GetCurrentUserId()
-    {
-        var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("sub")
-            ?? _httpContextAccessor.HttpContext?.User?.FindFirst("jti");
-
-        if (userIdClaim != null && long.TryParse(userIdClaim.Value, out var userId))
-        {
-            return userId;
-        }
-
-        return 0;
-    }
+    private long GetCurrentUserId() => _httpContextUser.UserId;
 
     /// <summary>获取当前用户名</summary>
-    private string GetCurrentUserName()
-    {
-        var nameClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("name")
-            ?? _httpContextAccessor.HttpContext?.User?.FindFirst("preferred_username");
-
-        return nameClaim?.Value ?? "Unknown";
-    }
+    private string GetCurrentUserName() =>
+        string.IsNullOrWhiteSpace(_httpContextUser.UserName) ? "Unknown" : _httpContextUser.UserName;
 
     #endregion
 }
