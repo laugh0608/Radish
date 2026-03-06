@@ -151,3 +151,9 @@
 - **数据库共享项上收**：将 `MainDb` 与 `Databases` 上收至根目录 `appsettings.Shared.json`，统一 API/Auth 默认连接配置，减少宿主重复配置漂移。
 - **Snowflake 部分共享**：将 `Snowflake.DataCenterId` 上收至共享配置，API/Auth 各自仅保留 `Snowflake.WorkId`。
 - **文档同步更新**：`guide/configuration.md`、`architecture/framework.md`、`AGENTS.md`、`CLAUDE.md` 已补充新的归属口径（共享项 vs 宿主差异项）。
+
+### OIDC Claim 解析口径补齐（HttpContextUser）
+
+- **TenantId 回退增强**：`HttpContextUser` 新增从原始 Token 回退解析 `tenant_id` / `TenantId`，与 `UserId` 的回退策略保持一致。
+- **单测补充**：`HttpContextUserTests` 新增“仅 Bearer Token、无认证主体”场景，验证 `TenantId` 与 `UserId` 可正常解析。
+- **验证结果**：`dotnet test Radish.Api.Tests --filter "FullyQualifiedName~HttpContextUserTests"` 通过（4/4）。

@@ -123,6 +123,19 @@ public class HttpContextUser : IHttpContextUser
             return legacyTenantId.ObjToLong();
         }
 
+        // 再退一步，直接从原始 Token 中解析 tenant_id/TenantId，避免中间件 Claim 映射影响
+        var tenantIdFromToken = GetUserInfoFromToken("tenant_id").FirstOrDefault();
+        if (!tenantIdFromToken.IsNullOrEmpty() && tenantIdFromToken.ObjToLong() > 0)
+        {
+            return tenantIdFromToken.ObjToLong();
+        }
+
+        var legacyTenantIdFromToken = GetUserInfoFromToken("TenantId").FirstOrDefault();
+        if (!legacyTenantIdFromToken.IsNullOrEmpty())
+        {
+            return legacyTenantIdFromToken.ObjToLong();
+        }
+
         return 0;
     }
 

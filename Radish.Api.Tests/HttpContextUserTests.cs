@@ -20,6 +20,12 @@ public class HttpContextUserTests
         return context;
     }
 
+    private static string CreateJwtToken(IEnumerable<Claim> claims)
+    {
+        var token = new JwtSecurityToken(claims: claims);
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
     [Fact]
     public void Should_Read_Oidc_Style_Claims_Correctly()
     {
@@ -93,5 +99,30 @@ public class HttpContextUserTests
         Assert.Equal(0, userId);
         Assert.Equal(string.Empty, userName);
         Assert.Equal(0, tenantId);
+    }
+
+    [Fact]
+    public void Should_Read_TenantId_From_Token_When_ClaimsPrincipal_Missing()
+    {
+        // Arrange: 无认证主体，仅携带 Authorization Bearer Token
+        var token = CreateJwtToken(new List<Claim>
+        {
+            new("sub", "20003"),
+            new("tenant_id", "30003")
+        });
+
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Headers.Authorization = $"Bearer {token}";
+
+        var accessor = new HttpContextAccessor { HttpContext = httpContext };
+        var httpContextUser = new HttpContextUser(accessor, NullLogger<HttpContextUser>.Instance);
+
+        // Act
+        var userId = httpContextUser.UserId;
+        var tenantId = httpContextUser.TenantId;
+
+        // Assert
+        Assert.Equal(20003, userId);
+        Assert.Equal(30003, tenantId);
     }
 }
