@@ -136,6 +136,10 @@
 >   - 已完成 `ExperienceController`、`LeaderboardController`、`ShopController` 的手写 claim 解析下线，统一改为 `IHttpContextUser`。
 >   - 统一了当前用户解析入口，减少控制器侧 `sub/jti` 重复解析逻辑。
 >   - 编译验证通过：`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false`（0 Error）。
+> - ✅ **控制器 Claim 解析收口（第二批）**（2026-03-06）：
+>   - 已完成 `ClientController` 的手写 `sub/jti` 解析下线，统一改为 `IHttpContextUser.UserId`。
+>   - 已同步 `ClientControllerTest` 构造注入方式，避免测试仍依赖 `HttpContext` 手工塞 claim。
+>   - 编译验证通过：`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false`（0 Error）。
 > - ℹ️ **构建现状说明**（2026-02-25）：
 >   - 后端测试通过（`Radish.Api.Tests`）。
 >   - Console 仍有既有 TS 存量问题（`Dashboard/SystemConfig/Tags`），与本次表情包新增代码无直接耦合。

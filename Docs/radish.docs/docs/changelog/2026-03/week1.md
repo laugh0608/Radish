@@ -163,3 +163,9 @@
 - **统一收口到 HttpContextUser**：`ExperienceController`、`LeaderboardController`、`ShopController` 已移除手写 `sub/jti` 解析，统一通过 `IHttpContextUser` 获取当前用户信息。
 - **行为保持兼容**：`ShopController` 在用户名缺失时仍回退为 `"Unknown"`，避免管理操作审计字段空值。
 - **编译验证**：`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false` 通过（0 Error）。
+
+### 控制器 Claim 解析收口（第二批）
+
+- **客户端管理控制器收口**：`ClientController` 已移除手写 `sub/jti` 解析，创建/更新/软删除审计字段统一改为 `IHttpContextUser.UserId`。
+- **测试同步对齐**：`ClientControllerTest` 改为注入 `IHttpContextUser` mock，不再通过 `HttpContext` 手工塞 claim。
+- **编译验证**：`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false` 通过（0 Error）。

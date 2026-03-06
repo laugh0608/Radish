@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
+using Radish.Common.HttpContextTool;
 using Radish.Model;
 using Radish.Model.ViewModels.Client;
 using System.Security.Cryptography;
@@ -19,13 +20,16 @@ namespace Radish.Api.Controllers;
 public class ClientController : ControllerBase
 {
     private readonly IOpenIddictApplicationManager _applicationManager;
+    private readonly IHttpContextUser _httpContextUser;
     private readonly ILogger<ClientController> _logger;
 
     public ClientController(
         IOpenIddictApplicationManager applicationManager,
+        IHttpContextUser httpContextUser,
         ILogger<ClientController> logger)
     {
         _applicationManager = applicationManager;
+        _httpContextUser = httpContextUser;
         _logger = logger;
     }
 
@@ -502,8 +506,7 @@ public class ClientController : ControllerBase
         var descriptor = new OpenIddictApplicationDescriptor();
         await _applicationManager.PopulateAsync(descriptor, app);
 
-        // 获取当前用户 ID（从 HttpContext）
-        var userId = User.FindFirst("sub")?.Value ?? User.FindFirst("jti")?.Value ?? "0";
+        var userId = _httpContextUser.UserId.ToString();
 
         descriptor.Properties["IsDeleted"] = JsonSerializer.SerializeToElement("true");
         descriptor.Properties["DeletedAt"] = JsonSerializer.SerializeToElement(DateTime.UtcNow.ToString("O"));
@@ -517,7 +520,7 @@ public class ClientController : ControllerBase
     /// </summary>
     private void SetCreatedInfo(OpenIddictApplicationDescriptor descriptor)
     {
-        var userId = User.FindFirst("sub")?.Value ?? User.FindFirst("jti")?.Value ?? "0";
+        var userId = _httpContextUser.UserId.ToString();
         descriptor.Properties["CreatedAt"] = JsonSerializer.SerializeToElement(DateTime.UtcNow.ToString("O"));
         descriptor.Properties["CreatedBy"] = JsonSerializer.SerializeToElement(userId);
     }
@@ -527,7 +530,7 @@ public class ClientController : ControllerBase
     /// </summary>
     private void SetUpdatedInfo(OpenIddictApplicationDescriptor descriptor)
     {
-        var userId = User.FindFirst("sub")?.Value ?? User.FindFirst("jti")?.Value ?? "0";
+        var userId = _httpContextUser.UserId.ToString();
         descriptor.Properties["UpdatedAt"] = JsonSerializer.SerializeToElement(DateTime.UtcNow.ToString("O"));
         descriptor.Properties["UpdatedBy"] = JsonSerializer.SerializeToElement(userId);
     }
