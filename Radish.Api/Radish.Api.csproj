@@ -31,4 +31,11 @@
     <ProjectReference Include="..\Radish.Auth\Radish.Auth.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\appsettings.Shared.json" Link="appsettings.Shared.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

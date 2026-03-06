@@ -54,6 +54,37 @@ using Radish.Service.Base;
 var builder = WebApplication.CreateBuilder(args);
 // -------------- 容器构建阶段 ---------------
 
+static string ResolveSharedConfigPath(string basePath, string contentRootPath)
+{
+    var candidates = new[]
+    {
+        Path.Combine(basePath, "appsettings.Shared.json"),
+        Path.Combine(contentRootPath, "appsettings.Shared.json")
+    };
+
+    foreach (var candidate in candidates)
+    {
+        if (File.Exists(candidate))
+        {
+            return candidate;
+        }
+    }
+
+    var currentDir = new DirectoryInfo(contentRootPath);
+    while (currentDir != null)
+    {
+        var candidate = Path.Combine(currentDir.FullName, "appsettings.Shared.json");
+        if (File.Exists(candidate))
+        {
+            return candidate;
+        }
+
+        currentDir = currentDir.Parent;
+    }
+
+    return Path.Combine(contentRootPath, "appsettings.Shared.json");
+}
+
 // 🔧 禁用 JWT 默认的 claim type 映射，保持 OIDC 标准 claims（sub, name, role 等）原样
 // 这样避免 "sub" 被映射为 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
 JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -72,8 +103,10 @@ builder.Host
 
         // 配置文件统一从输出目录（AppContext.BaseDirectory）读取，避免受工作目录影响
         var basePath = AppContext.BaseDirectory;
+        var sharedConfigPath = ResolveSharedConfigPath(basePath, hostingContext.HostingEnvironment.ContentRootPath);
 
         config.Sources.Clear();
+        config.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: false);
         config.AddJsonFile(Path.Combine(basePath, "appsettings.json"), optional: true, reloadOnChange: false);
         config.AddJsonFile(Path.Combine(basePath, $"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json"),
             optional: true, reloadOnChange: false);
