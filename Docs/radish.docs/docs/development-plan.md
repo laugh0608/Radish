@@ -124,6 +124,10 @@
 >   - `Redis.Enable`、`Redis.ConnectionString` 已上收至根目录 `appsettings.Shared.json` 统一维护。
 >   - `Radish.Api` 与 `Radish.Auth` 的 `Redis` 节仅保留 `InstanceName`，避免跨宿主配置漂移。
 >   - `configuration/framework/AGENTS/CLAUDE` 已同步更新配置加载顺序与 Redis 口径。
+> - ✅ **配置治理续接（数据库与 Snowflake 部分共享）**（2026-03-06）：
+>   - `MainDb`、`Databases` 已上收至根目录 `appsettings.Shared.json`，统一 API/Auth 的业务库连接基线。
+>   - `Snowflake.DataCenterId` 已上收至共享配置，API/Auth 仅保留 `Snowflake.WorkId` 宿主差异项。
+>   - 配置文档与规范（`guide/configuration`、`framework`、`AGENTS`、`CLAUDE`）已同步对齐。
 > - ℹ️ **构建现状说明**（2026-02-25）：
 >   - 后端测试通过（`Radish.Api.Tests`）。
 >   - Console 仍有既有 TS 存量问题（`Dashboard/SystemConfig/Tags`），与本次表情包新增代码无直接耦合。

@@ -169,8 +169,9 @@ var value = AppSettings.RadishApp("Section", "Key");  // 简单键值
 ```
 
 **关键配置**:
-- `Snowflake.WorkId/DatacenterId`: 每部署实例唯一 (0-30)
-- `Databases`: 至少 `ConnId=Main` 和 `ConnId=Log`
+- `Snowflake.WorkId`: 宿主差异配置（每部署实例唯一，0-30）
+- `Snowflake.DataCenterId`: 共享配置（`appsettings.Shared.json`）
+- `MainDb/Databases`: 共享配置（`appsettings.Shared.json`，至少包含 `ConnId=Main` 和 `ConnId=Log`）
 - `Redis.Enable/ConnectionString`: 共享配置（`appsettings.Shared.json`）
 - `Redis.InstanceName`: 宿主差异配置（各宿主 `appsettings.json`）
 

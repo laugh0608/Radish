@@ -49,8 +49,8 @@ Radish.Gateway/
 **配置策略**：
 - ✅ **敏感信息放在 Local.json**（仅 API 和 Auth）：数据库密码、Redis 密码、API 密钥、加密密钥等
 - ✅ **Gateway 使用环境变量**：公开域名、内部服务地址等非敏感配置
-- ✅ **跨宿主非敏感配置放在 appsettings.Shared.json**：日志级别、Redis 开关与连接串默认值等
-- ✅ **宿主私有非敏感配置放在各自 appsettings.json**：CORS、端口、服务路由、Redis.InstanceName 等
+- ✅ **跨宿主非敏感配置放在 appsettings.Shared.json**：日志级别、`Snowflake.DataCenterId`、`MainDb/Databases`、Redis 开关与连接串默认值等
+- ✅ **宿主私有非敏感配置放在各自 appsettings.json**：CORS、端口、服务路由、`Snowflake.WorkId`、`Redis.InstanceName` 等
 - ✅ **利用深度合并**：Local.json 只写需要修改的配置项，其他自动继承
 
 ## 配置加载优先级
@@ -158,7 +158,7 @@ ASP.NET Core 配置系统使用**深度合并**策略：
       "ConnId": "Log",
       "DbType": 2,
       "Enabled": true,
-      "ConnectionString": "RadishLog.db"
+      "ConnectionString": "Radish.Log.db"
     }
   ]
 }
@@ -300,37 +300,38 @@ services:
 **重要**：
 - `appsettings.Local.json` 已被 Git 忽略，不会被提交到仓库
 - **只在 Local.json 中写需要覆盖的配置项**，利用深度合并机制自动继承其他配置
-- **敏感信息**（密码、密钥）必须放在 Local.json，**非敏感配置**（CORS、日志级别）应保留在 appsettings.json
+- **敏感信息**（密码、密钥）必须放在 Local.json，**非敏感配置**应保留在 `appsettings.Shared.json` 或宿主 `appsettings.json`
 - `appsettings.Local.json.example` 提供了精简的配置模板，仅包含常见需要修改的项
-- `appsettings.json` 包含完整的配置说明和示例，可作为参考
+- `appsettings.Shared.json` + 宿主 `appsettings.json` 共同组成默认配置模板
 
 ## 配置项说明
 
 ### 1. Snowflake ID 配置
 
-雪花 ID 算法用于生成分布式唯一 ID，每个部署实例必须有唯一的 WorkId。
+雪花 ID 算法用于生成分布式唯一 ID。当前推荐：`WorkId` 按宿主配置，`DataCenterId` 放共享配置统一维护。
 
 ```json
 {
   "Snowflake": {
-    "WorkId": 0,          // 建议：本地开发=0, 生产服务器1=2, 生产服务器2=3
-    "DataCenterId": 0     // 数据中心 ID，通常保持 0
+    "WorkId": 0 // 建议：本地开发=0, 生产服务器1=2, 生产服务器2=3
   }
 }
 ```
 
 **注意事项**：
 - 不同环境的 `WorkId` 必须不同，否则可能生成重复 ID
+- `DataCenterId` 建议在 `appsettings.Shared.json` 统一配置
 - 取值范围：0-31
 - 推荐约定：本地开发统一使用 0，生产环境从 2 开始递增
 
 ### 2. 数据库配置
 
 **重要说明 - API 和 Auth 项目共享业务数据库**：
-- **Radish.Api** 和 **Radish.Auth** 项目使用**相同的业务数据库**（`Radish.db` 和 `RadishLog.db`）
+- **Radish.Api** 和 **Radish.Auth** 项目使用**相同的业务数据库**（`Radish.db` 和 `Radish.Log.db`）
 - 这两个数据库存储用户、角色、权限、租户等业务数据，需要被两个项目共同访问
 - **OpenIddict 使用独立的数据库**（`RadishAuth.OpenIddict.db`），由 EF Core 管理，存储 OIDC 认证相关数据（客户端、授权码、令牌等）
 - **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
+- `MainDb` 与 `Databases` 默认配置位于根目录 `appsettings.Shared.json`
 
 ### 2.1 文件存储配置（FileStorage）
 
@@ -444,8 +445,11 @@ Hangfire 用于执行后台定时任务（如文件清理），配置位于 `Han
 
 #### SQLite（默认，适合本地开发）
 
+`appsettings.Shared.json`：
+
 ```json
 {
+  "MainDb": "Main",
   "Databases": [
     {
       "ConnId": "Main",
@@ -458,7 +462,7 @@ Hangfire 用于执行后台定时任务（如文件清理），配置位于 `Han
       "DbType": 2,
       "Enabled": true,
       "HitRate": 50,
-      "ConnectionString": "RadishLog.db" // 日志数据库（API 和 Auth 共享）
+      "ConnectionString": "Radish.Log.db" // 日志数据库（API 和 Auth 共享）
     }
   ]
 }
@@ -468,8 +472,11 @@ Hangfire 用于执行后台定时任务（如文件清理），配置位于 `Han
 
 #### PostgreSQL（生产环境推荐）
 
+`appsettings.Shared.json` 或环境变量覆盖：
+
 ```json
 {
+  "MainDb": "Main",
   "Databases": [
     {
       "ConnId": "Main",

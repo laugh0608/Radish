@@ -145,3 +145,9 @@
 - **共享项上收**：将 `Redis.Enable` 与 `Redis.ConnectionString` 上收至根目录 `appsettings.Shared.json`，统一 API/Auth 的缓存开关与连接串默认值。
 - **宿主差异保留**：`Radish.Api/appsettings.json`、`Radish.Auth/appsettings.json` 的 `Redis` 节仅保留 `InstanceName`，用于键名前缀隔离。
 - **文档同步**：已对齐 `guide/configuration.md`、`architecture/framework.md`、`AGENTS.md`、`CLAUDE.md` 的配置加载顺序与 Redis 配置说明。
+
+### 配置治理：数据库与 Snowflake 续接收口
+
+- **数据库共享项上收**：将 `MainDb` 与 `Databases` 上收至根目录 `appsettings.Shared.json`，统一 API/Auth 默认连接配置，减少宿主重复配置漂移。
+- **Snowflake 部分共享**：将 `Snowflake.DataCenterId` 上收至共享配置，API/Auth 各自仅保留 `Snowflake.WorkId`。
+- **文档同步更新**：`guide/configuration.md`、`architecture/framework.md`、`AGENTS.md`、`CLAUDE.md` 已补充新的归属口径（共享项 vs 宿主差异项）。
