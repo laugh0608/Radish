@@ -17,6 +17,44 @@ GET {{Api_HostAddress}}/api/v1/User/GetUserById/1
 Accept: application/json
 Authorization:Bearer {{Access_Token}}
 
+### 关注用户
+POST {{Gateway_HostAddress}}/api/v1/UserFollow/Follow
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "targetUserId": 20002
+}
+
+### 获取关注状态
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetFollowStatus?targetUserId=20002
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的粉丝列表
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyFollowers?pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的关注列表
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyFollowing?pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的关系链动态流
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyFollowingFeed?pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 取消关注用户
+POST {{Gateway_HostAddress}}/api/v1/UserFollow/Unfollow
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "targetUserId": 20002
+}
+
 ### 获取登录用户的租户下全部业务数据-字段隔离
 GET {{Api_HostAddress}}/api/v1/Tenant/BusinessTable
 Accept: application/json

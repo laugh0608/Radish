@@ -22,6 +22,9 @@ const UserCommentList = lazy(() =>
 const UserAttachmentList = lazy(() =>
   import('./components/UserAttachmentList').then((module) => ({ default: module.UserAttachmentList }))
 );
+const UserFollowPanel = lazy(() =>
+  import('./components/UserFollowPanel').then((module) => ({ default: module.UserFollowPanel }))
+);
 
 interface UserStats {
   voPostCount: number;
@@ -34,7 +37,7 @@ interface UserStats {
 export const ProfileApp = () => {
   const { userId, userName, isAuthenticated } = useUserStore();
   const { openApp } = useWindowStore();
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'attachments'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'attachments' | 'social'>('posts');
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [systemTimeZone, setSystemTimeZone] = useState(DEFAULT_TIME_ZONE);
@@ -202,6 +205,12 @@ export const ProfileApp = () => {
           >
             我的附件
           </button>
+          <button
+            className={`${styles.tab} ${activeTab === 'social' ? styles.active : ''}`}
+            onClick={() => setActiveTab('social')}
+          >
+            关系链
+          </button>
         </div>
 
         <div className={styles.tabContent}>
@@ -224,6 +233,12 @@ export const ProfileApp = () => {
             )}
             {activeTab === 'attachments' && (
               <UserAttachmentList apiBaseUrl={apiBaseUrl} displayTimeZone={displayTimeZone} />
+            )}
+            {activeTab === 'social' && (
+              <UserFollowPanel
+                displayTimeZone={displayTimeZone}
+                onPostClick={handlePostClick}
+              />
             )}
           </Suspense>
         </div>

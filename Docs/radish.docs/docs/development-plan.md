@@ -111,6 +111,11 @@
 >   - 前端完成 Chat App 接入与实时联动：消息收发、撤回、基础未读、输入中状态。
 >   - 已补充联调脚本 `Radish.Api.Tests/HttpTest/Radish.Api.Chat.http` 与聊天文档对齐更新。
 >   - 聊天数据已拆分至独立数据库 `Radish.Chat.db`，与主业务库/通知库隔离，API 与 Auth 配置已同步。
+> - ✅ **社区关系链最小闭环首版落地**（2026-03-06）：
+>   - 后端已落地 `UserFollow` 主链路：关注/取关、关注状态、粉丝列表、关注列表、关注动态流。
+>   - 前端已在论坛帖子详情接入作者关注按钮，并展示粉丝/关注计数。
+>   - 个人主页已新增“关系链”页签，支持关注动态、我的粉丝、我的关注三类分页视图。
+>   - 已补充联调脚本：`Radish.Api.Tests/HttpTest/Radish.Api.Forum.http`（UserFollow 段）。
 > - ℹ️ **构建现状说明**（2026-02-25）：
 >   - 后端测试通过（`Radish.Api.Tests`）。
 >   - Console 仍有既有 TS 存量问题（`Dashboard/SystemConfig/Tags`），与本次表情包新增代码无直接耦合。

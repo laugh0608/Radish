@@ -8,6 +8,12 @@ import {
   type PostItem,
   type CommentHighlight
 } from '@/api/forum';
+import {
+  followUser,
+  getFollowStatus,
+  unfollowUser,
+  type UserFollowStatus
+} from '@/api/userFollow';
 import { getMyTimePreference, getTimeSettings } from '@/api/time';
 import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId, resolveTimeZoneId } from '@/utils/dateTime';
 import { CategoryList } from './components/CategoryList';
@@ -60,6 +66,8 @@ export const ForumApp = () => {
   const [searchPostGodComments, setSearchPostGodComments] = useState<Map<number, CommentHighlight>>(new Map());
   const [loadingSearchPosts, setLoadingSearchPosts] = useState(false);
   const searchRequestIdRef = useRef(0);
+  const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
+  const [followLoading, setFollowLoading] = useState(false);
 
   useEffect(() => {
     const element = containerShellRef.current;
@@ -272,6 +280,70 @@ export const ForumApp = () => {
     t
   ]);
 
+  useEffect(() => {
+    if (!loggedIn || !dataState.selectedPost || !dataState.selectedPost.voAuthorId) {
+      setFollowStatus(null);
+      return;
+    }
+
+    if (String(dataState.selectedPost.voAuthorId) === String(userId ?? 0)) {
+      setFollowStatus(null);
+      return;
+    }
+
+    let cancelled = false;
+    setFollowLoading(true);
+    void getFollowStatus(dataState.selectedPost.voAuthorId)
+      .then((status) => {
+        if (!cancelled) {
+          setFollowStatus(status);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setFollowStatus(null);
+          const message = err instanceof Error ? err.message : String(err);
+          dataState.setError(message);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setFollowLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    loggedIn,
+    userId,
+    dataState.selectedPost?.voId,
+    dataState.selectedPost?.voAuthorId,
+    dataState.setError
+  ]);
+
+  const handleToggleFollow = async (targetUserId: number, isFollowing: boolean) => {
+    if (!loggedIn) {
+      dataState.setError('请先登录后再关注');
+      return;
+    }
+
+    setFollowLoading(true);
+    dataState.setError(null);
+    try {
+      const status = isFollowing
+        ? await unfollowUser(targetUserId)
+        : await followUser(targetUserId);
+      setFollowStatus(status);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      dataState.setError(message);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
   const handleOpenPublish = () => {
     actionsState.setIsPublishModalOpen(true);
   };
@@ -369,6 +441,8 @@ export const ForumApp = () => {
                 currentUserId={userId ?? 0}
                 commentSortBy={dataState.commentSortBy}
                 replyTo={actionsState.replyTo}
+                followStatus={followStatus}
+                followLoading={followLoading}
                 onBack={() => {
                   dataState.setSelectedPost(null);
                   dataState.setComments([]);
@@ -388,6 +462,7 @@ export const ForumApp = () => {
                 onCreateComment={actionsState.handleCreateComment}
                 onCancelReply={actionsState.handleCancelReply}
                 onReactionError={dataState.setError}
+                onToggleFollow={handleToggleFollow}
               />
             </Suspense>
           ) : (

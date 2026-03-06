@@ -105,3 +105,23 @@
 
 - ✅ 租户隔离本周续接项已完成（行为类实体升级 + Linux 构建/测试闭环）。
 - 🔄 下一步继续评估其余低风险实体是否需要升级为字段租户隔离（按审计收益与改造成本排序推进）。
+
+## 2026-03-06 (周五)
+
+### 社区关系链最小闭环落地（M12-P0）
+
+- **后端关系链主链路上线**：新增 `UserFollow` 实体与 `UserFollowService`，完成关注/取关、关注状态、粉丝列表、关注列表与关注动态流接口。
+- **关系链控制器落地**：新增 `UserFollowController`，统一提供 `Follow`、`Unfollow`、`GetFollowStatus`、`GetMyFollowers`、`GetMyFollowing`、`GetMyFollowingFeed`、`GetMySummary`。
+- **关注动态流打通**：基于关系链聚合关注用户已发布帖子，形成“关系链动态”分页接口，满足用户主页动态流最小可用能力。
+
+### 前端接入完成
+
+- **论坛帖子详情接入关注交互**：帖子作者区新增关注/取关按钮，并展示作者粉丝数/关注数，支持实时状态刷新。
+- **个人主页新增关系链页签**：新增“关系链”页签，支持三类视图：关注动态、我的粉丝、我的关注；包含分页与互关标记展示。
+- **统一 API 封装**：新增 `api/userFollow.ts`，前端统一通过 `@radish/http` 调用关系链接口。
+
+### 回归与验证
+
+- ✅ `dotnet build Radish.slnx -c Debug -m:1 /nr:false` 通过。
+- ✅ `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~UserFollowControllerTest" -m:1 /nr:false` 通过（4/4）。
+- ⚠️ `npm run type-check --workspace=radish.client` 未执行通过（当前环境缺少 `tsc` 命令）。
