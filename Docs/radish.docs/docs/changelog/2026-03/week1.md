@@ -139,3 +139,9 @@
 - **基础权重配置化**：新增 `FeedDistributionOptions` 与 `appsettings.json` 的 `FeedDistribution` 节点，支持热门权重（浏览/点赞/评论）与推荐附加权重（关注作者加权、新鲜度衰减）动态调参。
 - **前端关系链页签升级**：`UserFollowPanel` 的“关注动态”新增“推荐/热门/最新”子切换，统一调用分发流接口并复用现有分页展示。
 - **回归资产补充**：`UserFollowControllerTest` 新增分发流用例；`Radish.Api.Forum.http` 已增加三路流联调请求样例。
+
+### 配置治理：Redis 部分共享收口
+
+- **共享项上收**：将 `Redis.Enable` 与 `Redis.ConnectionString` 上收至根目录 `appsettings.Shared.json`，统一 API/Auth 的缓存开关与连接串默认值。
+- **宿主差异保留**：`Radish.Api/appsettings.json`、`Radish.Auth/appsettings.json` 的 `Redis` 节仅保留 `InstanceName`，用于键名前缀隔离。
+- **文档同步**：已对齐 `guide/configuration.md`、`architecture/framework.md`、`AGENTS.md`、`CLAUDE.md` 的配置加载顺序与 Redis 配置说明。

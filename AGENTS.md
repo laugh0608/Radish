@@ -86,12 +86,13 @@ npm run type-check --workspace=@radish/ui
 
 ## 配置与数据库
 
-**配置加载**: `appsettings.json` → `appsettings.{Environment}.json` → `appsettings.Local.json` (Git 忽略) → 环境变量
+**配置加载**: `appsettings.Shared.json` → `appsettings.json` → `appsettings.{Environment}.json` → `appsettings.Local.json` (Git 忽略) → 环境变量
 
 **关键配置**:
 - `Snowflake.WorkId/DatacenterId`: 每环境唯一 (0-30)
 - `Databases`: 至少 `ConnId=Main` 和 `ConnId=Log`
-- `Redis.Enable`: true (Redis) / false (内存缓存)
+- `Redis.Enable/ConnectionString`: 共享配置（`appsettings.Shared.json`）
+- `Redis.InstanceName`: 宿主差异配置（各宿主 `appsettings.json`）
 
 **数据库共享**:
 - API 和 Auth **共享** `Radish.db` 和 `Radish.Log.db` (业务数据)
@@ -273,7 +274,7 @@ console.error('请求失败:', error);
 ## 缓存策略
 
 ```csharp
-builder.Services.AddCacheSetup();  // 根据 Redis.Enable 切换
+builder.Services.AddCacheSetup();  // 根据 Redis.Enable 切换（共享配置）
 
 // 使用
 await cache.SetAsync("key", value, TimeSpan.FromMinutes(10));
@@ -281,7 +282,7 @@ var result = await cache.GetAsync<MyType>("key");
 ```
 
 根据配置自动选择：
-- `Redis.Enable = true`: 使用 Redis
+- `Redis.Enable = true`: 使用 Redis（连接串由共享配置提供）
 - `Redis.Enable = false`: 使用内存缓存
 
 ## 前端架构
@@ -473,7 +474,7 @@ feat: 添加用户权限验证中间件
 
 ### 加载优先级
 ```
-appsettings.json → appsettings.{Environment}.json
+appsettings.Shared.json → appsettings.json → appsettings.{Environment}.json
 → appsettings.Local.json (不提交) → 环境变量
 ```
 
@@ -501,7 +502,8 @@ var value = AppSettings.RadishApp("Section", "Key");  // 简单键值
 **关键配置**:
 - `Snowflake.WorkId/DatacenterId`: 每部署实例唯一 (0-30)
 - `Databases`: 至少 `ConnId=Main` 和 `ConnId=Log`
-- `Redis.Enable`: Redis (`true`) 或内存缓存 (`false`)
+- `Redis.Enable/ConnectionString`: 共享配置（`appsettings.Shared.json`）
+- `Redis.InstanceName`: 宿主差异配置（各宿主 `appsettings.json`）
 
 ## 数据库 & SqlSugar
 

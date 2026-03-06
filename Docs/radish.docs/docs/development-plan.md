@@ -120,6 +120,10 @@
 >   - 后端新增 `ContentReport` 与 `UserModerationAction` 主链路，支持举报提交、审核队列、审核处理、手动禁言/封禁、治理记录分页查询。
 >   - 已在发帖与评论入口接入发布权限校验，命中禁言/封禁时直接阻断并返回明确原因。
 >   - 已新增 `ContentModerationController` 与控制器单测，并补充联调脚本（`Radish.Api.Forum.http` 的 ContentModeration 段）。
+> - ✅ **配置治理收口（Redis 部分共享）**（2026-03-06）：
+>   - `Redis.Enable`、`Redis.ConnectionString` 已上收至根目录 `appsettings.Shared.json` 统一维护。
+>   - `Radish.Api` 与 `Radish.Auth` 的 `Redis` 节仅保留 `InstanceName`，避免跨宿主配置漂移。
+>   - `configuration/framework/AGENTS/CLAUDE` 已同步更新配置加载顺序与 Redis 口径。
 > - ℹ️ **构建现状说明**（2026-02-25）：
 >   - 后端测试通过（`Radish.Api.Tests`）。
 >   - Console 仍有既有 TS 存量问题（`Dashboard/SystemConfig/Tags`），与本次表情包新增代码无直接耦合。

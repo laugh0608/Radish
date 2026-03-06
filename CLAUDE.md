@@ -143,7 +143,7 @@ await _repository.SoftDeleteAsync(u => u.IsEnabled == false, "System");
 
 ### 加载优先级
 ```
-appsettings.json → appsettings.{Environment}.json
+appsettings.Shared.json → appsettings.json → appsettings.{Environment}.json
 → appsettings.Local.json (不提交) → 环境变量
 ```
 
@@ -171,7 +171,8 @@ var value = AppSettings.RadishApp("Section", "Key");  // 简单键值
 **关键配置**:
 - `Snowflake.WorkId/DatacenterId`: 每部署实例唯一 (0-30)
 - `Databases`: 至少 `ConnId=Main` 和 `ConnId=Log`
-- `Redis.Enable`: Redis (`true`) 或内存缓存 (`false`)
+- `Redis.Enable/ConnectionString`: 共享配置（`appsettings.Shared.json`）
+- `Redis.InstanceName`: 宿主差异配置（各宿主 `appsettings.json`）
 
 ## 数据库 & SqlSugar
 
@@ -226,7 +227,7 @@ Log.Information("User {UserId} logged in", userId);  // 使用
 ## 缓存策略
 
 ```csharp
-builder.Services.AddCacheSetup();  // 根据 Redis.Enable 切换
+builder.Services.AddCacheSetup();  // 根据 Redis.Enable 切换（共享配置）
 
 // 使用
 await cache.SetAsync("key", value, TimeSpan.FromMinutes(10));
