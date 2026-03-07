@@ -19,13 +19,15 @@ namespace Radish.Api.Controllers;
 public class ContentModerationController : ControllerBase
 {
     private readonly IContentModerationService _contentModerationService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public ContentModerationController(IContentModerationService contentModerationService, IHttpContextUser httpContextUser)
+    public ContentModerationController(IContentModerationService contentModerationService, ICurrentUserAccessor currentUserAccessor)
     {
         _contentModerationService = contentModerationService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>提交举报</summary>
     [HttpPost]
@@ -48,9 +50,9 @@ public class ContentModerationController : ControllerBase
         {
             var reportId = await _contentModerationService.SubmitReportAsync(
                 dto,
-                _httpContextUser.UserId,
-                _httpContextUser.UserName,
-                _httpContextUser.TenantId);
+                Current.UserId,
+                Current.UserName,
+                Current.TenantId);
 
             return new MessageModel
             {
@@ -76,7 +78,7 @@ public class ContentModerationController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyModerationStatus()
     {
-        var status = await _contentModerationService.GetUserModerationStatusAsync(_httpContextUser.UserId);
+        var status = await _contentModerationService.GetUserModerationStatusAsync(Current.UserId);
         return new MessageModel
         {
             IsSuccess = true,
@@ -91,7 +93,7 @@ public class ContentModerationController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyPublishPermission()
     {
-        var permission = await _contentModerationService.GetPublishPermissionAsync(_httpContextUser.UserId);
+        var permission = await _contentModerationService.GetPublishPermissionAsync(Current.UserId);
         return new MessageModel
         {
             IsSuccess = true,
@@ -134,9 +136,9 @@ public class ContentModerationController : ControllerBase
         {
             var result = await _contentModerationService.ReviewReportAsync(
                 dto,
-                _httpContextUser.UserId,
-                _httpContextUser.UserName,
-                _httpContextUser.TenantId);
+                Current.UserId,
+                Current.UserName,
+                Current.TenantId);
             return new MessageModel
             {
                 IsSuccess = true,
@@ -173,9 +175,9 @@ public class ContentModerationController : ControllerBase
         {
             var result = await _contentModerationService.ApplyUserActionAsync(
                 dto,
-                _httpContextUser.UserId,
-                _httpContextUser.UserName,
-                _httpContextUser.TenantId);
+                Current.UserId,
+                Current.UserName,
+                Current.TenantId);
             return new MessageModel
             {
                 IsSuccess = true,

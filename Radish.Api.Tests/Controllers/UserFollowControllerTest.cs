@@ -152,12 +152,15 @@ public class UserFollowControllerTest
 
     private static UserFollowController CreateController(IUserFollowService followService)
     {
-        var httpContextUserMock = new Mock<IHttpContextUser>();
-        httpContextUserMock.SetupGet(x => x.UserId).Returns(10001);
-        httpContextUserMock.SetupGet(x => x.UserName).Returns("Tester");
-        httpContextUserMock.SetupGet(x => x.TenantId).Returns(0);
+        var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
+        currentUserAccessorMock.SetupGet(x => x.Current).Returns(new CurrentUser
+        {
+            UserId = 10001,
+            UserName = "Tester",
+            TenantId = 0
+        });
 
-        return new UserFollowController(followService, httpContextUserMock.Object);
+        return new UserFollowController(followService, currentUserAccessorMock.Object);
     }
 
     private static Mock<IUserFollowService> CreateServiceMock()

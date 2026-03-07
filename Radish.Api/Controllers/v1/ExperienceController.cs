@@ -19,15 +19,17 @@ namespace Radish.Api.Controllers.v1;
 public class ExperienceController : ControllerBase
 {
     private readonly IExperienceService _experienceService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public ExperienceController(
         IExperienceService experienceService,
-        IHttpContextUser httpContextUser)
+        ICurrentUserAccessor currentUserAccessor)
     {
         _experienceService = experienceService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     #region 经验值查询
 
@@ -226,14 +228,14 @@ public class ExperienceController : ControllerBase
     /// <summary>
     /// 获取当前用户 ID
     /// </summary>
-    private long GetCurrentUserId() => _httpContextUser.UserId;
+    private long GetCurrentUserId() => Current.UserId;
 
     /// <summary>
     /// 获取当前用户名
     /// </summary>
-    private string? GetCurrentUserName() => string.IsNullOrWhiteSpace(_httpContextUser.UserName)
+    private string? GetCurrentUserName() => string.IsNullOrWhiteSpace(Current.UserName)
         ? null
-        : _httpContextUser.UserName;
+        : Current.UserName;
 
     #endregion
 }

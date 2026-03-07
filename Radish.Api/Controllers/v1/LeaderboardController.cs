@@ -22,15 +22,17 @@ namespace Radish.Api.Controllers.v1;
 public class LeaderboardController : ControllerBase
 {
     private readonly ILeaderboardService _leaderboardService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public LeaderboardController(
         ILeaderboardService leaderboardService,
-        IHttpContextUser httpContextUser)
+        ICurrentUserAccessor currentUserAccessor)
     {
         _leaderboardService = leaderboardService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>
     /// 获取排行榜数据
@@ -91,7 +93,7 @@ public class LeaderboardController : ControllerBase
     /// <summary>
     /// 获取当前用户 ID
     /// </summary>
-    private long GetCurrentUserId() => _httpContextUser.UserId;
+    private long GetCurrentUserId() => Current.UserId;
 
     #endregion
 }

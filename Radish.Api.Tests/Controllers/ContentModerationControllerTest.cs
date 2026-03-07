@@ -121,12 +121,15 @@ public class ContentModerationControllerTest
 
     private static ContentModerationController CreateController(IContentModerationService moderationService)
     {
-        var httpContextUserMock = new Mock<IHttpContextUser>();
-        httpContextUserMock.SetupGet(x => x.UserId).Returns(10001);
-        httpContextUserMock.SetupGet(x => x.UserName).Returns("Tester");
-        httpContextUserMock.SetupGet(x => x.TenantId).Returns(0);
+        var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
+        currentUserAccessorMock.SetupGet(x => x.Current).Returns(new CurrentUser
+        {
+            UserId = 10001,
+            UserName = "Tester",
+            TenantId = 0
+        });
 
-        return new ContentModerationController(moderationService, httpContextUserMock.Object);
+        return new ContentModerationController(moderationService, currentUserAccessorMock.Object);
     }
 
     private static Mock<IContentModerationService> CreateServiceMock()

@@ -19,13 +19,15 @@ namespace Radish.Api.Controllers;
 public class StickerController : ControllerBase
 {
     private readonly IStickerService _stickerService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public StickerController(IStickerService stickerService, IHttpContextUser httpContextUser)
+    public StickerController(IStickerService stickerService, ICurrentUserAccessor currentUserAccessor)
     {
         _stickerService = stickerService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>获取启用的表情包分组（前台）</summary>
     [HttpGet]
@@ -33,7 +35,7 @@ public class StickerController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetGroups()
     {
-        var groups = await _stickerService.GetGroupsAsync(_httpContextUser.TenantId);
+        var groups = await _stickerService.GetGroupsAsync(Current.TenantId);
         return new MessageModel
         {
             IsSuccess = true,
@@ -49,7 +51,7 @@ public class StickerController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetAdminGroups()
     {
-        var groups = await _stickerService.GetAdminGroupsAsync(_httpContextUser.TenantId);
+        var groups = await _stickerService.GetAdminGroupsAsync(Current.TenantId);
         return new MessageModel
         {
             IsSuccess = true,
@@ -65,7 +67,7 @@ public class StickerController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetGroupDetail(string code)
     {
-        var group = await _stickerService.GetGroupDetailAsync(_httpContextUser.TenantId, code);
+        var group = await _stickerService.GetGroupDetailAsync(Current.TenantId, code);
         if (group == null)
         {
             return new MessageModel
@@ -102,11 +104,11 @@ public class StickerController : ControllerBase
         }
 
         var recorded = await _stickerService.RecordUseAsync(
-            _httpContextUser.TenantId,
+            Current.TenantId,
             request.EmojiType,
             request.EmojiValue,
-            _httpContextUser.UserId,
-            _httpContextUser.UserName);
+            Current.UserId,
+            Current.UserName);
 
         if (!recorded)
         {
@@ -146,10 +148,10 @@ public class StickerController : ControllerBase
         try
         {
             var id = await _stickerService.CreateGroupAsync(
-                _httpContextUser.TenantId,
+                Current.TenantId,
                 request,
-                _httpContextUser.UserId,
-                _httpContextUser.UserName);
+                Current.UserId,
+                Current.UserName);
 
             return new MessageModel
             {
@@ -206,7 +208,7 @@ public class StickerController : ControllerBase
             };
         }
 
-        var updated = await _stickerService.UpdateGroupAsync(id, request, _httpContextUser.UserId, _httpContextUser.UserName);
+        var updated = await _stickerService.UpdateGroupAsync(id, request, Current.UserId, Current.UserName);
         if (!updated)
         {
             return new MessageModel
@@ -242,7 +244,7 @@ public class StickerController : ControllerBase
             };
         }
 
-        var deleted = await _stickerService.DeleteGroupAsync(id, _httpContextUser.UserId, _httpContextUser.UserName);
+        var deleted = await _stickerService.DeleteGroupAsync(id, Current.UserId, Current.UserName);
         if (!deleted)
         {
             return new MessageModel
@@ -280,7 +282,7 @@ public class StickerController : ControllerBase
 
         try
         {
-            var id = await _stickerService.AddStickerAsync(request, _httpContextUser.UserId, _httpContextUser.UserName);
+            var id = await _stickerService.AddStickerAsync(request, Current.UserId, Current.UserName);
             return new MessageModel
             {
                 IsSuccess = true,
@@ -328,7 +330,7 @@ public class StickerController : ControllerBase
 
         try
         {
-            var result = await _stickerService.BatchAddStickersAsync(request, _httpContextUser.UserId, _httpContextUser.UserName);
+            var result = await _stickerService.BatchAddStickersAsync(request, Current.UserId, Current.UserName);
 
             if (result.VoConflicts.Count > 0)
             {
@@ -399,7 +401,7 @@ public class StickerController : ControllerBase
             };
         }
 
-        var updatedCount = await _stickerService.BatchUpdateSortAsync(request.Items, _httpContextUser.UserId, _httpContextUser.UserName);
+        var updatedCount = await _stickerService.BatchUpdateSortAsync(request.Items, Current.UserId, Current.UserName);
         var result = new StickerBatchUpdateSortResultVo
         {
             VoUpdatedCount = updatedCount
@@ -440,7 +442,7 @@ public class StickerController : ControllerBase
             };
         }
 
-        var updated = await _stickerService.UpdateStickerAsync(id, request, _httpContextUser.UserId, _httpContextUser.UserName);
+        var updated = await _stickerService.UpdateStickerAsync(id, request, Current.UserId, Current.UserName);
         if (!updated)
         {
             return new MessageModel
@@ -476,7 +478,7 @@ public class StickerController : ControllerBase
             };
         }
 
-        var deleted = await _stickerService.DeleteStickerAsync(id, _httpContextUser.UserId, _httpContextUser.UserName);
+        var deleted = await _stickerService.DeleteStickerAsync(id, Current.UserId, Current.UserName);
         if (!deleted)
         {
             return new MessageModel
@@ -503,7 +505,7 @@ public class StickerController : ControllerBase
     public async Task<MessageModel> CheckGroupCode([FromQuery] string code)
     {
         var normalizedCode = string.IsNullOrWhiteSpace(code) ? string.Empty : code.Trim().ToLowerInvariant();
-        var available = await _stickerService.CheckGroupCodeAvailableAsync(_httpContextUser.TenantId, normalizedCode);
+        var available = await _stickerService.CheckGroupCodeAvailableAsync(Current.TenantId, normalizedCode);
         var response = new StickerCodeCheckVo
         {
             VoAvailable = available,

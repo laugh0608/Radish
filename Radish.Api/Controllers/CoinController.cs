@@ -26,15 +26,17 @@ namespace Radish.Api.Controllers;
 public class CoinController : ControllerBase
 {
     private readonly ICoinService _coinService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public CoinController(
         ICoinService coinService,
-        IHttpContextUser httpContextUser)
+        ICurrentUserAccessor currentUserAccessor)
     {
         _coinService = coinService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     #region 余额查询
 
@@ -52,7 +54,7 @@ public class CoinController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     public async Task<MessageModel> GetBalance()
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var balance = await _coinService.GetBalanceAsync(userId);
 
@@ -136,7 +138,7 @@ public class CoinController : ControllerBase
         [FromQuery] string? transactionType = null,
         [FromQuery] string? status = null)
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var transactions = await _coinService.GetTransactionsAsync(
             userId, pageIndex, pageSize, transactionType, status);
@@ -233,7 +235,7 @@ public class CoinController : ControllerBase
     {
         try
         {
-            var fromUserId = _httpContextUser.UserId;
+            var fromUserId = Current.UserId;
 
             var transactionNo = await _coinService.TransferAsync(
                 fromUserId,
@@ -299,7 +301,7 @@ public class CoinController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     public async Task<MessageModel> GetStatistics([FromQuery] string timeRange = "month")
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var statistics = await _coinService.GetStatisticsAsync(userId, timeRange);
 
@@ -352,8 +354,8 @@ public class CoinController : ControllerBase
     {
         try
         {
-            var operatorId = _httpContextUser.UserId;
-            var operatorName = _httpContextUser.UserName;
+            var operatorId = Current.UserId;
+            var operatorName = Current.UserName;
 
             var transactionNo = await _coinService.AdminAdjustBalanceAsync(
                 request.UserId,

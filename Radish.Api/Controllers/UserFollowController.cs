@@ -20,13 +20,15 @@ namespace Radish.Api.Controllers;
 public class UserFollowController : ControllerBase
 {
     private readonly IUserFollowService _userFollowService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public UserFollowController(IUserFollowService userFollowService, IHttpContextUser httpContextUser)
+    public UserFollowController(IUserFollowService userFollowService, ICurrentUserAccessor currentUserAccessor)
     {
         _userFollowService = userFollowService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>关注用户</summary>
     [HttpPost]
@@ -40,7 +42,7 @@ public class UserFollowController : ControllerBase
             return BuildError(HttpStatusCodeEnum.BadRequest, "目标用户 ID 无效");
         }
 
-        if (dto.TargetUserId == _httpContextUser.UserId)
+        if (dto.TargetUserId == Current.UserId)
         {
             return BuildError(HttpStatusCodeEnum.BadRequest, "不能关注自己");
         }
@@ -48,11 +50,11 @@ public class UserFollowController : ControllerBase
         try
         {
             var changed = await _userFollowService.FollowAsync(
-                _httpContextUser.UserId,
+                Current.UserId,
                 dto.TargetUserId,
-                _httpContextUser.TenantId,
-                _httpContextUser.UserName);
-            var status = await _userFollowService.GetFollowStatusAsync(_httpContextUser.UserId, dto.TargetUserId);
+                Current.TenantId,
+                Current.UserName);
+            var status = await _userFollowService.GetFollowStatusAsync(Current.UserId, dto.TargetUserId);
 
             return new MessageModel
             {
@@ -83,16 +85,16 @@ public class UserFollowController : ControllerBase
             return BuildError(HttpStatusCodeEnum.BadRequest, "目标用户 ID 无效");
         }
 
-        if (dto.TargetUserId == _httpContextUser.UserId)
+        if (dto.TargetUserId == Current.UserId)
         {
             return BuildError(HttpStatusCodeEnum.BadRequest, "不能取消关注自己");
         }
 
         var changed = await _userFollowService.UnfollowAsync(
-            _httpContextUser.UserId,
+            Current.UserId,
             dto.TargetUserId,
-            _httpContextUser.UserName);
-        var status = await _userFollowService.GetFollowStatusAsync(_httpContextUser.UserId, dto.TargetUserId);
+            Current.UserName);
+        var status = await _userFollowService.GetFollowStatusAsync(Current.UserId, dto.TargetUserId);
 
         return new MessageModel
         {
@@ -114,7 +116,7 @@ public class UserFollowController : ControllerBase
             return BuildError(HttpStatusCodeEnum.BadRequest, "目标用户 ID 无效");
         }
 
-        var status = await _userFollowService.GetFollowStatusAsync(_httpContextUser.UserId, targetUserId);
+        var status = await _userFollowService.GetFollowStatusAsync(Current.UserId, targetUserId);
         return new MessageModel
         {
             IsSuccess = true,
@@ -129,7 +131,7 @@ public class UserFollowController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyFollowers(int pageIndex = 1, int pageSize = 20)
     {
-        var result = await _userFollowService.GetMyFollowersAsync(_httpContextUser.UserId, pageIndex, pageSize);
+        var result = await _userFollowService.GetMyFollowersAsync(Current.UserId, pageIndex, pageSize);
         return new MessageModel
         {
             IsSuccess = true,
@@ -144,7 +146,7 @@ public class UserFollowController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyFollowing(int pageIndex = 1, int pageSize = 20)
     {
-        var result = await _userFollowService.GetMyFollowingAsync(_httpContextUser.UserId, pageIndex, pageSize);
+        var result = await _userFollowService.GetMyFollowingAsync(Current.UserId, pageIndex, pageSize);
         return new MessageModel
         {
             IsSuccess = true,
@@ -159,7 +161,7 @@ public class UserFollowController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyFollowingFeed(int pageIndex = 1, int pageSize = 20)
     {
-        var result = await _userFollowService.GetMyFollowingFeedAsync(_httpContextUser.UserId, pageIndex, pageSize);
+        var result = await _userFollowService.GetMyFollowingFeedAsync(Current.UserId, pageIndex, pageSize);
         return new MessageModel
         {
             IsSuccess = true,
@@ -182,7 +184,7 @@ public class UserFollowController : ControllerBase
         }
 
         var result = await _userFollowService.GetMyDistributionFeedAsync(
-            _httpContextUser.UserId,
+            Current.UserId,
             normalizedStreamType,
             pageIndex,
             pageSize);
@@ -201,7 +203,7 @@ public class UserFollowController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMySummary()
     {
-        var summary = await _userFollowService.GetMyFollowSummaryAsync(_httpContextUser.UserId);
+        var summary = await _userFollowService.GetMyFollowSummaryAsync(Current.UserId);
         return new MessageModel
         {
             IsSuccess = true,

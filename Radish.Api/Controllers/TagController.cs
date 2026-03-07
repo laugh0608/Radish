@@ -25,13 +25,15 @@ namespace Radish.Api.Controllers;
 public class TagController : ControllerBase
 {
     private readonly ITagService _tagService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public TagController(ITagService tagService, IHttpContextUser httpContextUser)
+    public TagController(ITagService tagService, ICurrentUserAccessor currentUserAccessor)
     {
         _tagService = tagService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>
     /// 获取所有标签
@@ -177,7 +179,7 @@ public class TagController : ControllerBase
 
         try
         {
-            var tagId = await _tagService.CreateTagAsync(createDto, _httpContextUser.UserId, _httpContextUser.UserName);
+            var tagId = await _tagService.CreateTagAsync(createDto, Current.UserId, Current.UserName);
 
             return new MessageModel
             {
@@ -228,7 +230,7 @@ public class TagController : ControllerBase
 
         try
         {
-            var updated = await _tagService.UpdateTagAsync(id, updateDto, _httpContextUser.UserId, _httpContextUser.UserName);
+            var updated = await _tagService.UpdateTagAsync(id, updateDto, Current.UserId, Current.UserName);
             if (!updated)
             {
                 return new MessageModel
@@ -276,7 +278,7 @@ public class TagController : ControllerBase
             };
         }
 
-        var updated = await _tagService.ToggleTagStatusAsync(id, enabled, _httpContextUser.UserId, _httpContextUser.UserName);
+        var updated = await _tagService.ToggleTagStatusAsync(id, enabled, Current.UserId, Current.UserName);
         if (!updated)
         {
             return new MessageModel
@@ -324,7 +326,7 @@ public class TagController : ControllerBase
             };
         }
 
-        var updated = await _tagService.UpdateTagSortOrderAsync(id, sortOrder, _httpContextUser.UserId, _httpContextUser.UserName);
+        var updated = await _tagService.UpdateTagSortOrderAsync(id, sortOrder, Current.UserId, Current.UserName);
         if (!updated)
         {
             return new MessageModel
@@ -362,7 +364,7 @@ public class TagController : ControllerBase
             };
         }
 
-        var deleted = await _tagService.SoftDeleteTagAsync(id, _httpContextUser.UserId, _httpContextUser.UserName);
+        var deleted = await _tagService.SoftDeleteTagAsync(id, Current.UserId, Current.UserName);
         if (!deleted)
         {
             return new MessageModel
@@ -400,7 +402,7 @@ public class TagController : ControllerBase
             };
         }
 
-        var restored = await _tagService.RestoreTagAsync(id, _httpContextUser.UserId, _httpContextUser.UserName);
+        var restored = await _tagService.RestoreTagAsync(id, Current.UserId, Current.UserName);
         if (!restored)
         {
             return new MessageModel

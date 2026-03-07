@@ -18,20 +18,22 @@ namespace Radish.Api.Controllers;
 public class ChannelController : ControllerBase
 {
     private readonly IChatService _chatService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public ChannelController(IChatService chatService, IHttpContextUser httpContextUser)
+    public ChannelController(IChatService chatService, ICurrentUserAccessor currentUserAccessor)
     {
         _chatService = chatService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>获取可见频道列表</summary>
     [HttpGet]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetList()
     {
-        var channels = await _chatService.GetChannelListAsync(_httpContextUser.TenantId, _httpContextUser.UserId);
+        var channels = await _chatService.GetChannelListAsync(Current.TenantId, Current.UserId);
         return new MessageModel
         {
             IsSuccess = true,
@@ -56,7 +58,7 @@ public class ChannelController : ControllerBase
             };
         }
 
-        var channel = await _chatService.GetChannelDetailAsync(_httpContextUser.TenantId, _httpContextUser.UserId, id);
+        var channel = await _chatService.GetChannelDetailAsync(Current.TenantId, Current.UserId, id);
         if (channel == null)
         {
             return new MessageModel
@@ -91,7 +93,7 @@ public class ChannelController : ControllerBase
             };
         }
 
-        var members = await _chatService.GetOnlineMembersAsync(_httpContextUser.TenantId, id);
+        var members = await _chatService.GetOnlineMembersAsync(Current.TenantId, id);
         return new MessageModel
         {
             IsSuccess = true,

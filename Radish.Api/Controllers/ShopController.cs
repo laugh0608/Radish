@@ -21,21 +21,23 @@ public class ShopController : ControllerBase
     private readonly IOrderService _orderService;
     private readonly IUserBenefitService _userBenefitService;
     private readonly IUserInventoryService _userInventoryService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public ShopController(
         IProductService productService,
         IOrderService orderService,
         IUserBenefitService userBenefitService,
         IUserInventoryService userInventoryService,
-        IHttpContextUser httpContextUser)
+        ICurrentUserAccessor currentUserAccessor)
     {
         _productService = productService;
         _orderService = orderService;
         _userBenefitService = userBenefitService;
         _userInventoryService = userInventoryService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     #region 商品分类
 
@@ -512,11 +514,11 @@ public class ShopController : ControllerBase
     #region 私有方法
 
     /// <summary>获取当前用户 ID</summary>
-    private long GetCurrentUserId() => _httpContextUser.UserId;
+    private long GetCurrentUserId() => Current.UserId;
 
     /// <summary>获取当前用户名</summary>
     private string GetCurrentUserName() =>
-        string.IsNullOrWhiteSpace(_httpContextUser.UserName) ? "Unknown" : _httpContextUser.UserName;
+        string.IsNullOrWhiteSpace(Current.UserName) ? "Unknown" : Current.UserName;
 
     #endregion
 }

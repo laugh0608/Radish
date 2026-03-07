@@ -19,13 +19,15 @@ namespace Radish.Api.Controllers;
 public class ReactionController : ControllerBase
 {
     private readonly IReactionService _reactionService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public ReactionController(IReactionService reactionService, IHttpContextUser httpContextUser)
+    public ReactionController(IReactionService reactionService, ICurrentUserAccessor currentUserAccessor)
     {
         _reactionService = reactionService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>获取单目标回应汇总</summary>
     [HttpGet]
@@ -35,7 +37,7 @@ public class ReactionController : ControllerBase
     {
         try
         {
-            var summary = await _reactionService.GetSummaryAsync(targetType, targetId, _httpContextUser.UserId);
+            var summary = await _reactionService.GetSummaryAsync(targetType, targetId, Current.UserId);
             return new MessageModel
             {
                 IsSuccess = true,
@@ -78,7 +80,7 @@ public class ReactionController : ControllerBase
             var summary = await _reactionService.BatchGetSummaryAsync(
                 request.TargetType,
                 request.TargetIds,
-                _httpContextUser.UserId);
+                Current.UserId);
 
             return new MessageModel
             {
@@ -121,9 +123,9 @@ public class ReactionController : ControllerBase
         {
             var summary = await _reactionService.ToggleAsync(
                 request,
-                _httpContextUser.UserId,
-                _httpContextUser.UserName,
-                _httpContextUser.TenantId);
+                Current.UserId,
+                Current.UserName,
+                Current.TenantId);
 
             return new MessageModel
             {
