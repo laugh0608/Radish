@@ -172,8 +172,9 @@
 - `Radish.Common/HttpContextTool/ClaimsPrincipalNormalizer.cs`
 - `Radish.Common/HttpContextTool/IClaimsPrincipalNormalizer.cs`
 - `Radish.Common/HttpContextTool/UserClaimTypes.cs`
-- `Radish.Shared/.../SystemRoles.cs`
-- `Radish.Shared/.../SystemScopes.cs`
+- `Radish.Common/HttpContextTool/UserRoles.cs`
+- `Radish.Common/HttpContextTool/UserScopes.cs`
+- `Radish.Common/HttpContextTool/AuthorizationPolicies.cs`
 
 ### 5.2 重点改造文件
 
@@ -259,3 +260,36 @@
 - 它直接影响权限、租户、审计、Hub、控制器、Filter 等横切能力的稳定性
 - 若不先治理身份语义层，后续社区功能越多，修补成本越高
 - 该专项完成后，才能真正为权限治理、Console 扩展、Gateway/BFF 演进建立稳定基线
+
+## 11. 当前实施状态（截至 2026-03-07）
+
+### 11.1 阶段状态
+
+- **Phase 0：文档与规则先行** —— 已完成。
+- **Phase 1：建立唯一身份抽象** —— 已完成。
+- **Phase 2：迁移所有运行时入口** —— 主路径已完成。
+- **Phase 3：收缩旧逃逸接口** —— 已完成到“兼容层冻结”状态。
+- **Phase 4：协议输出收敛** —— 暂未启动，需等待外部客户端兼容性确认。
+- **Phase 5：CI 防回归** —— 规则已形成，尚待正式接入脚本/流水线。
+
+### 11.2 当前兼容层最终边界
+
+截至当前版本，兼容层只允许保留以下形态：
+
+- `Radish.Api/Program.cs` 中的 `IHttpContextUser` 兼容注册。
+- `App.HttpContextUser` 兼容属性（已标记 `[Obsolete]`，禁止新增调用）。
+- `IHttpContextUser` 与 `HttpContextUserCompatibilityExtensions` 的历史兼容方法（均已标记 `[Obsolete]`）。
+- `IHttpContextUser.GetToken()` 仅用于历史 Bearer Token 直取回退场景，不再作为新代码入口。
+
+### 11.3 当前运行时收敛结果
+
+- 控制器、Hub、中间件、Filter、Repository、Service、Infrastructure 已优先走 `CurrentUser` / `ICurrentUserAccessor` / `App.CurrentUser`。
+- `AuditLogMiddleware`、`PermissionRequirementHandler`、`ChatHub`、`NotificationHub` 等横切入口已完成统一口径治理。
+- 运行时角色、Scope、策略字符串已经收口到 `UserRoles`、`UserScopes`、`AuthorizationPolicies`。
+- 非协议边界剩余的 Claim 直接读取，仅存在于 `ClaimsPrincipalNormalizer` / `UserClaimReader` 这类标准化组件内部。
+
+### 11.4 下一步建议
+
+1. 把 `rg` 扫描规则沉淀为仓库脚本，并纳入 CI。
+2. 在确认无外部依赖后，评估移除 `IHttpContextUser` 兼容层。
+3. 清理遗留注释、示例与文档中的旧 JWT/Claim 口径，避免回归。

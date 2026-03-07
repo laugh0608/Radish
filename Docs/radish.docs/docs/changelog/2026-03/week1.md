@@ -197,3 +197,12 @@
 - ✅ `dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false` 通过。
 - ✅ `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~HttpContextUserTests" -m:1 /nr:false` 通过（4/4）。
 - ℹ️ 本轮已完成控制器、Hub、权限处理器、审计中间件四类入口的 Claim 解析收口；`Program.cs` 保持协议边界职责，不做额外抽象改造。
+
+### 身份语义专项继续收敛（兼容层冻结）
+
+- **运行时兼容层收束**：`PostController`、`CommentController`、`AttachmentController`、`UserController` 等重度控制器已完成从 `IHttpContextUser` 到 `ICurrentUserAccessor`/`CurrentUser` 的迁移，`Radish.Api` 运行时直接依赖已收束到 `Program.cs` 兼容注册。
+- **底层入口收口**：新增 `App.CurrentUser` 标准静态入口，`Repository`、`Service`、`Infrastructure`、`SQL AOP` 等底层代码改为优先读取统一身份语义；`App.HttpContextUser` 已明确标记为兼容属性。
+- **兼容残余显式冻结**：`IHttpContextUser.GetToken()`、`HttpContextUserCompatibilityExtensions` 等兼容 API 已补充 `[Obsolete]`，明确“禁止新增使用”。
+- **剩余散点收尾**：`ExperienceController` 的管理员操作者回退已改为复用 `UserRoles.Admin`，`AttachmentService.DeleteFileAsync` 已接入当前用户上下文，不再硬编码审计操作者。
+- **文档对齐**：`identity-claim-convergence.md` 与 `identity-claim-migration.md` 已补充“当前实施状态/兼容层最终边界”，后续协作以文档中的冻结边界为准。
+- **验证结果**：`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false` 与 `dotnet build Radish.Api.Tests/Radish.Api.Tests.csproj -c Debug -m:1 /nr:false` 均通过；`dotnet test` 仍受当前环境 `vstest socket` 限制，不作为失败判断依据。

@@ -136,9 +136,9 @@ public interface IClaimsPrincipalNormalizer
 - `LegacyRole`
 - `LegacyJti`
 
-#### `SystemRoles` / `SystemScopes`
+#### `UserRoles` / `UserScopes` / `AuthorizationPolicies`
 
-角色和 Scope 也应统一常量化，避免业务层再散落 `"Admin"`、`"System"`、`"radish-api"` 字面量。
+角色、Scope 与授权策略也应统一常量化，避免业务层再散落 `"Admin"`、`"System"`、`"radish-api"`、`"Client"` 等字面量。
 
 ### 4.2 目标依赖关系
 
@@ -177,7 +177,7 @@ ICurrentUserAccessor
 | `CurrentUser` | `Radish.Common.HttpContextTool` | 作为运行时上下文 DTO，无业务实体依赖 |
 | `ICurrentUserAccessor` | `Radish.Common.HttpContextTool` | 控制器/Hub/扩展层都可安全依赖 |
 | `IClaimsPrincipalNormalizer` | `Radish.Common.HttpContextTool` | 统一承载兼容逻辑 |
-| `SystemRoles` / `SystemScopes` | `Radish.Shared` | 角色与 Scope 属于跨宿主共享语义 |
+| `UserRoles` / `UserScopes` / `AuthorizationPolicies` | `Radish.Common.HttpContextTool` | 当前已在统一身份工具域内落地，便于宿主与运行时共同复用 |
 | OIDC Claim 签发逻辑 | `Radish.Auth` | 协议边界，应保留在 Auth |
 | JWT 验证/策略配置 | `Radish.Api` | 资源服务器边界，应保留在宿主 |
 
@@ -261,7 +261,30 @@ rg -n --glob '*.cs' \
 
 只要出现新增命中，就视为架构回归。
 
-## 11. 验收标准
+## 11. 当前实施状态（2026-03-07）
+
+当前专项已进入“兼容层冻结”阶段，运行时主路径基本完成收敛：
+
+- `CurrentUser` / `ICurrentUserAccessor` 已成为 `Radish.Api`、`Radish.Extension`、`Radish.Repository`、`Radish.Service`、`Radish.Infrastructure` 的默认身份读取入口。
+- `IClaimsPrincipalNormalizer` + `UserClaimReader` 已成为 Claim 兼容输入的唯一标准化入口。
+- `UserRoles`、`UserScopes`、`AuthorizationPolicies` 已完成运行时常量化，`Client` / `System` / `SystemOrAdmin` / `RadishAuthPolicy` 不再依赖字符串散点。
+- `App.CurrentUser` 已成为底层静态读取口，`App.HttpContextUser` 仅作为兼容属性保留，且已标记 `[Obsolete]`。
+- `IHttpContextUser` 当前仅保留兼容职责；`GetClaimsIdentity()`、`GetClaimValueByType(string)`、`GetUserInfoFromToken(string)`、`GetToken()` 与兼容扩展均已标记 `[Obsolete]`。
+- `Radish.Api` 运行时代码中，`IHttpContextUser` 的直接使用已收束到 `Program.cs` 的兼容注册；非协议边界已不再新增依赖。
+
+当前明确保留的边界如下：
+
+1. **协议边界保留项**：`Radish.Auth/Controllers/AccountController.cs`、`Radish.Auth/Controllers/AuthorizationController.cs`、`Radish.Auth/Controllers/UserInfoController.cs`。
+2. **协议配置保留项**：`Radish.Api/Program.cs` 中 JWT/OIDC 验证、策略配置与兼容注册。
+3. **标准化保留项**：`ClaimsPrincipalNormalizer`、`UserClaimReader`、`CurrentUserAccessor`。
+
+仍待后续阶段完成的事项：
+
+- 将静态扫描规则正式接入 CI / 本地校验脚本。
+- 评估 `IHttpContextUser` 兼容层的最终删除时机。
+- 在外部客户端确认完成前，不推动协议边界语义变更或历史 Claim 输出清退。
+
+## 12. 验收标准
 
 专项完成后，应满足以下条件：
 
@@ -271,7 +294,7 @@ rg -n --glob '*.cs' \
 4. `Auth` 侧 Claim 签发与 `Api` 侧读取口径统一为 OIDC 标准 Claim。
 5. 仓库扫描中，非协议边界运行时代码不再出现原始 Claim 解析。
 
-## 12. 后续路线
+## 13. 后续路线
 
 本设计落地分两步：
 
