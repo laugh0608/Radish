@@ -33,7 +33,7 @@ public class UserController : ControllerBase
     private readonly IAttachmentService _attachmentService;
 
     private readonly IUserService _userService;
-    private readonly IHttpContextUser  _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
@@ -43,7 +43,7 @@ public class UserController : ControllerBase
 
     public UserController(
         IUserService userService,
-        IHttpContextUser httpContextUser,
+        ICurrentUserAccessor currentUserAccessor,
         IPostService postService,
         ICommentService commentService,
         IUserTimePreferenceService userTimePreferenceService,
@@ -52,7 +52,7 @@ public class UserController : ControllerBase
         IOptions<TimeOptions> timeOptions)
     {
         _userService = userService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
         _postService = postService;
         _commentService = commentService;
         _userTimePreferenceService = userTimePreferenceService;
@@ -60,6 +60,8 @@ public class UserController : ControllerBase
         _attachmentService = attachmentService;
         _timeOptions = timeOptions.Value;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>
     /// 获取全部用户列表
@@ -214,9 +216,9 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel> GetUserByHttpContext()
     {
-        var userId = _httpContextUser.UserId;
-        var userName = _httpContextUser.UserName;
-        var tenantId = _httpContextUser.TenantId;
+        var userId = Current.UserId;
+        var userName = Current.UserName;
+        var tenantId = Current.TenantId;
 
         // 获取用户头像
         var avatar = await _attachmentService.QueryFirstAsync(a =>
@@ -279,7 +281,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyTimePreference()
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
         var systemDefaultTimeZoneId = TimeZoneResolver.NormalizeToDisplayId(_timeOptions.DefaultTimeZoneId);
         var displayFormat = string.IsNullOrWhiteSpace(_timeOptions.DisplayFormat)
             ? "yyyy-MM-dd HH:mm:ss"
@@ -340,9 +342,9 @@ public class UserController : ControllerBase
             };
         }
 
-        var userId = _httpContextUser.UserId;
-        var tenantId = _httpContextUser.TenantId;
-        var operatorName = string.IsNullOrWhiteSpace(_httpContextUser.UserName) ? "System" : _httpContextUser.UserName;
+        var userId = Current.UserId;
+        var tenantId = Current.TenantId;
+        var operatorName = string.IsNullOrWhiteSpace(Current.UserName) ? "System" : Current.UserName;
         var systemDefaultTimeZoneId = TimeZoneResolver.NormalizeToDisplayId(_timeOptions.DefaultTimeZoneId);
         var normalizedTimeZoneId = isResolvableTimeZone
             ? TimeZoneResolver.NormalizeToDisplayId(requestedTimeZoneId, systemDefaultTimeZoneId)
@@ -427,7 +429,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> SearchForMention(string keyword, int limit = 10)
     {
-        var users = await _userService.SearchUsersForMentionAsync(keyword, _httpContextUser.TenantId, limit);
+        var users = await _userService.SearchUsersForMentionAsync(keyword, Current.TenantId, limit);
 
         return new MessageModel
         {
@@ -446,7 +448,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyProfile()
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
         var user = await _userService.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted);
         if (user == null)
         {
@@ -498,7 +500,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> UpdateMyProfile([FromBody] UpdateMyProfileDto dto)
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var normalizedUserName = string.IsNullOrWhiteSpace(dto.UserName) ? null : dto.UserName.Trim();
         var normalizedUserEmail = string.IsNullOrWhiteSpace(dto.UserEmail) ? null : dto.UserEmail.Trim();
@@ -663,9 +665,9 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> SetMyAvatar([FromBody] SetMyAvatarDto dto)
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
         var now = DateTime.UtcNow;
-        var modifierName = _httpContextUser.UserName;
+        var modifierName = Current.UserName;
 
         // 如果 attachmentId == 0，表示清空头像
         if (dto.AttachmentId == 0)
@@ -703,7 +705,7 @@ public class UserController : ControllerBase
         }
 
         // 只有上传者或管理员可以绑定为头像
-        var isAdmin = _httpContextUser.IsSystemOrAdmin();
+        var isAdmin = Current.IsSystemOrAdmin();
         if (attachment.VoUploaderId != userId && !isAdmin)
         {
             return new MessageModel
@@ -758,7 +760,7 @@ public class UserController : ControllerBase
     public async Task<MessageModel> GetMyPoints()
     {
         await Task.CompletedTask;
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var vo = new UserPointsVo
         {
@@ -784,7 +786,7 @@ public class UserController : ControllerBase
     public async Task<MessageModel> GetUnreadMessageCount()
     {
         await Task.CompletedTask;
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var result = new VoUnreadMessageCount
         {
@@ -810,7 +812,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> TestPushUnreadCount([FromQuery] int? count = null)
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
         var unreadCount = count ?? new Random().Next(1, 100);
 
         await _notificationPushService.PushUnreadCountAsync(userId, unreadCount);
