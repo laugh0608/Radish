@@ -120,7 +120,8 @@ export default defineConfig({
               ]
             },
             { text: 'Hangfire 定时任务', link: '/guide/hangfire-scheduled-jobs' },
-            { text: 'Gateway 服务网关', link: '/guide/gateway' }
+            { text: 'Gateway 服务网关', link: '/guide/gateway' },
+            { text: 'Wiki / Markdown 文档体系', link: '/guide/wiki-markdown-system' }
           ]
         },
         {
