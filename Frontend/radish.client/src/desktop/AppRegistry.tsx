@@ -53,6 +53,10 @@ const ShopApp = createLazyWindowApp(() =>
   import('@/apps/shop/ShopApp').then((module) => ({ default: module.ShopApp }))
 );
 
+const WikiApp = createLazyWindowApp(() =>
+  import('@/apps/wiki/WikiApp').then((module) => ({ default: module.WikiApp }))
+);
+
 /**
  * 判断是否通过 Gateway 访问（5000端口）
  */
@@ -139,6 +143,17 @@ export const appRegistry: AppDefinition[] = [
     externalUrl: isAccessingViaGateway() ? '/console/' : 'http://localhost:3100',
     requiredRoles: ['User'],
     category: 'system',
+  },
+  {
+    id: 'wiki',
+    name: '知识库',
+    icon: 'mdi:notebook-edit-outline',
+    description: 'Wiki 与 Markdown 文档中心',
+    component: WikiApp,
+    type: 'window',
+    defaultSize: { width: 1280, height: 820 },
+    requiredRoles: ['User'],
+    category: 'content',
   },
   {
     id: 'forum',

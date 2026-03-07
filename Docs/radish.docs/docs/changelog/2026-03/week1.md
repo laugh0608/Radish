@@ -220,3 +220,10 @@
 - **路线图状态修正**：复核仓库实际代码后，`development-plan.md` 已从"身份专项仍为当前最高优先级主任务"调整为"身份语义收敛专项主体已完成，保留协议输出收敛与防回归资产两个尾项"。
 - **当前主线切换**：M12 当前功能主线已明确切换为 **P1 内容与文档体系重构**，优先推进 Markdown 导入/导出、Wiki/文档 App 承接与 `radish.docs` 迁移收口；身份专项尾项改为并行治理任务持续清理。
 - **方案文档落地**：新增 `guide/wiki-markdown-system.md`，统一说明 Wiki / Markdown 文档体系的产品边界、后端模型、API、前端 App 结构、`radish.docs` 迁移策略与分阶段实施计划，后续开发以该文档为主依据。
+
+### Wiki / Markdown 文档体系首批落地
+
+- **后端 MVP 完成**：新增 `WikiController`、`WikiDocumentService`、`WikiDocument` / `WikiDocumentRevision` 模型、`WikiProfile` 映射与 `.http` 联调脚本，已打通文档列表、树、详情、创建、更新、发布、归档、Markdown 导入导出主链路。
+- **前端 Wiki App 接入**：`radish.client` 新增 `wiki` 内置应用，已接入 WebOS 应用注册表，支持目录树浏览、搜索结果列表、Markdown 详情预览、创建/编辑、单文件导入与导出。
+- **编辑能力复用**：Wiki 编辑器已复用 `@radish/ui` 的 `MarkdownEditor` / `MarkdownRenderer`，并接入附件上传业务类型 `Wiki`，支持在文档编辑中上传图片与文档链接。
+- **验证结果**：`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false`、`dotnet build Radish.Api.Tests/Radish.Api.Tests.csproj -c Debug -m:1 /nr:false`、`npm run type-check --workspace=radish.client` 均通过。
