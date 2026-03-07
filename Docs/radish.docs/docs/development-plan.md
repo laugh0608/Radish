@@ -33,7 +33,7 @@
 | **M10** | **后台管理Console** | **Console应用完整实现、商品管理、用户管理、系统配置、统计报表** | **Console可正常登录认证；商品管理、订单管理可用；统计报表数据准确** | **✅ 已完成 (2026-01-22)** |
 | **M11** | **查漏补缺阶段** | **萝卜坑应用完整实现、代码规范优化、论坛增强与表情包闭环** | **萝卜坑应用100%完成；论坛增强与表情包/Reaction 主链路打通；文档同步完成** | **✅ 已完成 (2026-03-01)** |
 | **M12** | **社区功能冲刺** | **社区主线能力快速交付：聊天、关系链、治理、分发 + 文档/Wiki/主题/i18n/权限治理/新应用立项** | **完成社区核心功能可演示闭环；形成统一文档与权限能力基线** | **🔄 进行中 (2026-03-01 启动)** |
-| M13 | 可观测性与测试 | 日志/Tracing、性能调优、自动化测试、CI 脚本 | `dotnet test` + `npm run test` 通过；Serilog/O11y 配置完成；性能基线达到 P95≤200ms | ⏳ 计划中 |
+| M13 | 可观测性与测试 | 日志/Tracing、性能调优、自动化测试、CI 脚本、身份语义防回归扫描落地 | `dotnet test` + `npm run test` 通过；Serilog/O11y 配置完成；性能基线达到 P95≤200ms；身份语义静态扫描可本地/流水线执行 | ⏳ 计划中 |
 | M14 | 部署与运维 | Dockerfile/Compose、自监控、变更文档 | `docker compose up --build` 一键拉起 PostgreSQL + API + Auth + 前端；文档覆盖常见排障 | ⏳ 计划中 |
 | M15（暂缓） | Gateway & BFF 策略 | Gateway PoC（Ocelot 路由 + 认证透传）与聚合 API 设计，仅在多服务/多入口明确后启动 | 在 `DevelopmentLog` 记录启动审批 + 回滚预案；保证现有 API 维持直连能力 | ⏸️ 暂缓 |
 
@@ -226,8 +226,8 @@
 >   - 引入统一 Claim 标准化层，兼容 `sub/jti`、`tenant_id/TenantId`、`role/ClaimTypes.Role` 的历史输入，但禁止兼容逻辑外溢到业务与基础设施层。
 >   - 收缩 `IHttpContextUser` 的原始读取逃逸口，逐步废弃 `GetClaimsIdentity()`、`GetClaimValueByType(string)`、`GetUserInfoFromToken(string)`。
 >   - 对协议边界与运行时边界重新分层：Auth 负责 Claim 签发与 destinations，Api 负责 JWT/OIDC 验证与统一标准化，业务代码只消费 `CurrentUser`。
->   - 增加仓库扫描/CI 规则，禁止未来在运行时代码中新增 `FindFirst/FindAll/ClaimTypes/User.IsInRole` 等分散解析。
->   - **交付物**：架构设计文档、迁移计划文档、代码重构补丁、静态扫描规则、回归测试。
+>   - 形成仓库扫描规则与白名单口径，作为 M12 完成后的工程化输入，后续在 M13 阶段再落地为脚本或流水线。
+>   - **交付物**：架构设计文档、迁移计划文档、代码重构补丁、兼容层边界说明、回归测试。
 >
 > - 🚀 **P0：社区主线能力（优先保证主流程可用）**
 >   - 聊天室 MVP（频道、消息收发、历史消息、在线状态、基础未读）。
