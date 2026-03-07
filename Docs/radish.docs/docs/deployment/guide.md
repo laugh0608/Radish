@@ -147,12 +147,21 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
 
 ### 初始化基础数据（seed 子命令）
 
-`Radish.DbMigrate` 中的 `seed` 子命令用于初始化一批基础数据，当前默认会：
+`Radish.DbMigrate` 中的 `seed` 子命令用于初始化一批基础数据，当前默认会按步骤执行：
 
-- 创建固定 Id 的角色：10000 System、10001 Admin、20000 system、20001 admin；
-- 创建固定 Id 的租户：30000 Radish、30001 Test；
-- 创建固定 Id 的部门：40000 Development、40001 Test；
-- 创建固定 Id 的测试用户：20002 test（绑定租户 30000 与部门 40000）。
+- 角色
+- 租户
+- 部门
+- 用户
+- 用户时区偏好
+- 用户角色
+- 角色 API 权限
+- 论坛分类 / 标签
+- Wiki 文档（当前仅输出步骤日志，未预置默认文档）
+- 聊天室默认频道
+- 等级配置
+- 商城分类 / 商品
+- 表情包默认数据（当前仅输出步骤日志，未预置默认数据）
 
 在仓库根目录执行：
 
@@ -167,7 +176,14 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
 
 **智能初始化**：`seed` 命令会自动检测数据库表结构，如果表不存在会先执行 `init` 创建表结构，然后再填充数据。因此对于全新环境，您只需运行 `seed` 即可完成所有初始化工作。
 
-实现位于 `Radish.DbMigrate/InitialDataSeeder.cs`，并按模块拆分为 `SeedRolesAsync`、`SeedTenantsAsync`、`SeedDepartmentsAsync`、`SeedUsersAsync` 等方法，支持后续按业务扩展更多种子数据。所有插入都会先通过 `AnyAsync` 判断是否已存在，保证可以安全重复执行。
+实现位于 `Radish.DbMigrate/InitialDataSeeder.cs`，并按模块拆分为 `SeedRolesAsync`、`SeedTenantsAsync`、`SeedDepartmentsAsync`、`SeedUsersAsync` 等方法，支持后续按业务扩展更多种子数据。
+
+当前 `seed` 执行器具备以下特性：
+
+- **自动步骤日志**：每个种子步骤都会自动输出“开始 / 完成 / 耗时 / 失败”日志，新增步骤时无需再手写汇总日志。
+- **自动最终汇总**：命令结束后会按实际执行的步骤自动打印汇总，避免新增种子后遗漏日志说明。
+- **旧库幂等纠正**：针对默认用户、用户时区偏好、聊天室默认频道、商城商品等固定种子数据，重复执行 `seed` 时会优先纠正旧记录，而不是直接因唯一键冲突失败。
+- **占位步骤显式可见**：如 Wiki 文档、表情包默认数据等当前尚未预置的模块，也会在日志中明确打印“跳过”，方便确认种子覆盖范围。
 
 ---
 

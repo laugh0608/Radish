@@ -218,6 +218,38 @@
 ### 路线图口径复核更新
 
 - **路线图状态修正**：复核仓库实际代码后，`development-plan.md` 已从"身份专项仍为当前最高优先级主任务"调整为"身份语义收敛专项主体已完成，保留协议输出收敛与防回归资产两个尾项"。
+
+## 2026-03-07 (周六)
+
+### Wiki 版本历史 / 回滚能力落地
+
+- **后端接口补齐**：`WikiController` 已新增版本历史列表、版本详情与按版本回滚接口，`WikiDocumentService` 已补齐对应服务实现。
+- **回滚语义确定**：当前按“恢复为新版本”执行，仅恢复 `Title + MarkdownContent`，不回滚父级、排序、状态等结构字段，降低误操作风险。
+- **前端能力接入**：`radish.client` 的 Wiki App 已增加历史面板、版本详情预览与回滚确认交互，管理员可在详情页直接查看和回滚历史版本。
+- **回归资产同步**：补齐 `WikiControllerTest` 与 `Radish.Api.Wiki.http` 的版本历史 / 回滚覆盖，并同步更新 Wiki 系统设计文档。
+
+### Forum 空值类型错误修复
+
+- **构建阻断项清理**：修复 `PostDetail.tsx` 中 `post` 可能为 `null` 时仍访问 `voAuthorId` 的类型错误，恢复 `radish.client` 构建通过。
+
+### DbMigrate 幂等性加固
+
+- **用户时区偏好纠正**：`UserTimePreference` seed 已统一到公共租户 `TenantId=0`，重复执行会自动纠正旧记录，不再因唯一键冲突失败。
+- **聊天室默认频道纠正**：Chat 默认频道改为按固定 `Id` 执行幂等 upsert，并绕过租户过滤读取旧记录，避免 `Channel.Id` 冲突。
+- **默认用户 / 商城商品兜底**：默认用户与商城商品在命中唯一键时，会自动进入“纠正旧记录”分支，而不是直接中断 seed。
+- **统一异常判断**：`DbMigrate` 新增统一唯一约束异常识别工具，减少各 seed 文件内对 SQLite 文本报错的散落判断。
+
+### DbMigrate 自动种子日志收口
+
+- **统一步骤执行器**：`InitialDataSeeder.SeedAsync` 已改为统一步骤注册与执行，自动输出“开始 / 完成 / 耗时 / 失败”日志。
+- **自动汇总生成**：seed 结束后根据实际执行步骤自动生成汇总，不再需要手写维护固定清单。
+- **占位步骤可见化**：`Wiki 文档`、`表情包默认数据` 当前虽未预置内容，但会在 seed 日志中明确输出“跳过”，避免误判为遗漏执行。
+
+### 验证状态
+
+- ✅ `dotnet test Radish.Api.Tests --no-restore` 通过（135/135）。
+- ✅ `npm run build --workspace=radish.client` 通过。
+- ✅ `dotnet build Radish.DbMigrate/Radish.DbMigrate.csproj --no-restore` 通过。
 - **当前主线切换**：M12 当前功能主线已明确切换为 **P1 内容与文档体系重构**，优先推进 Markdown 导入/导出、Wiki/文档 App 承接与 `radish.docs` 迁移收口；身份专项尾项改为并行治理任务持续清理。
 - **方案文档落地**：新增 `guide/wiki-markdown-system.md`，统一说明 Wiki / Markdown 文档体系的产品边界、后端模型、API、前端 App 结构、`radish.docs` 迁移策略与分阶段实施计划，后续开发以该文档为主依据。
 
