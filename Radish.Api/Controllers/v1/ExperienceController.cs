@@ -171,8 +171,6 @@ public class ExperienceController : ControllerBase
     public async Task<MessageModel<bool>> AdminAdjustExperience([FromBody] AdminAdjustExpDto request)
     {
         var operatorId = GetCurrentUserId();
-        var operatorName = GetCurrentUserName();
-
         if (operatorId <= 0)
         {
             return MessageModel<bool>.Message(false, "未登录", false);
@@ -183,7 +181,7 @@ public class ExperienceController : ControllerBase
             request.DeltaExp,
             request.Reason ?? "管理员调整",
             operatorId,
-            operatorName ?? "Admin");
+            GetCurrentOperatorName());
 
         return result
             ? MessageModel<bool>.Success("调整成功", true)
@@ -203,8 +201,6 @@ public class ExperienceController : ControllerBase
     public async Task<MessageModel<List<LevelConfigVo>>> RecalculateLevelConfigs()
     {
         var operatorId = GetCurrentUserId();
-        var operatorName = GetCurrentUserName();
-
         if (operatorId <= 0)
         {
             return MessageModel<List<LevelConfigVo>>.Message(false, "未登录", default!);
@@ -212,7 +208,7 @@ public class ExperienceController : ControllerBase
 
         try
         {
-            var result = await _experienceService.RecalculateLevelConfigsAsync(operatorId, operatorName ?? "Admin");
+            var result = await _experienceService.RecalculateLevelConfigsAsync(operatorId, GetCurrentOperatorName());
             return MessageModel<List<LevelConfigVo>>.Success($"成功重新计算 {result.Count} 个等级配置", result);
         }
         catch (Exception ex)
@@ -236,6 +232,11 @@ public class ExperienceController : ControllerBase
     private string? GetCurrentUserName() => string.IsNullOrWhiteSpace(Current.UserName)
         ? null
         : Current.UserName;
+
+    /// <summary>
+    /// 获取当前操作者名称
+    /// </summary>
+    private string GetCurrentOperatorName() => GetCurrentUserName() ?? UserRoles.Admin;
 
     #endregion
 }

@@ -238,8 +238,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 {
                     IsDeleted = true,
                     ModifyTime = DateTime.Now,
-                    ModifyBy = "System", // TODO: 从当前用户上下文获取
-                    ModifyId = 0 // TODO: 从当前用户上下文获取
+                    ModifyBy = string.IsNullOrWhiteSpace(App.CurrentUser.UserName) ? "System" : App.CurrentUser.UserName,
+                    ModifyId = App.CurrentUser.UserId
                 },
                 a => a.Id == attachmentId);
 

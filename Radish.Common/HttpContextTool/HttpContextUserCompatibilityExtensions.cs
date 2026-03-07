@@ -1,5 +1,6 @@
 namespace Radish.Common.HttpContextTool;
 
+[Obsolete("禁止新增使用，请改用 CurrentUser / ICurrentUserAccessor")]
 public static class HttpContextUserCompatibilityExtensions
 {
     public static bool IsSystemOrAdmin(this IHttpContextUser httpContextUser)
