@@ -330,11 +330,21 @@ export const useForumActions = (
 
   // 编辑帖子
   const handleEditPost = (postId: number) => {
-    if (!selectedPost || selectedPost.voId !== postId) {
-      setError('请先选择要编辑的帖子');
+    if (selectedPost?.voId === postId) {
+      setError(null);
+      setIsEditModalOpen(true);
       return;
     }
-    setIsEditModalOpen(true);
+
+    setError(null);
+    void loadPostDetail(postId)
+      .then(() => {
+        setIsEditModalOpen(true);
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message);
+      });
   };
 
   const handleViewPostHistory = async (postId: number) => {
@@ -478,8 +488,6 @@ export const useForumActions = (
 
       setReplyTo(null);
       await loadComments(selectedPost.voId);
-
-      setComments(prev => mergeCommentIntoTree(prev, parentId, newComment));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -489,11 +497,6 @@ export const useForumActions = (
   // 回复评论
   const handleReplyComment = (commentId: number, authorName: string) => {
     setReplyTo({ commentId, authorName });
-    setTimeout(() => {
-      const commentForm = document.querySelector('textarea');
-      commentForm?.focus();
-      commentForm?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
   };
 
   const handleCancelReply = () => {
