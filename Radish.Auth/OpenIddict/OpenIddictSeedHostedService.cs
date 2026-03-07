@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using OpenIddict.Abstractions;
+using Radish.Common.HttpContextTool;
 
 namespace Radish.Auth.OpenIddict;
 
@@ -29,16 +30,16 @@ public class OpenIddictSeedHostedService : IHostedService
         Console.WriteLine("[OpenIddictSeed] StartAsync 开始执行");
 
         // 初始化 radish-api Scope
-        if (await _scopeManager.FindByNameAsync("radish-api", cancellationToken) is null)
+        if (await _scopeManager.FindByNameAsync(UserScopes.RadishApi, cancellationToken) is null)
         {
             Console.WriteLine("[OpenIddictSeed] 创建 radish-api scope");
             var descriptor = new OpenIddictScopeDescriptor
             {
-                Name = "radish-api",
+                Name = UserScopes.RadishApi,
                 DisplayName = "Radish API"
             };
 
-            descriptor.Resources.Add("radish-api");
+            descriptor.Resources.Add(UserScopes.RadishApi);
 
             await _scopeManager.CreateAsync(descriptor, cancellationToken);
         }
@@ -78,10 +79,10 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.RefreshToken);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
             // 允许 openid/profile/offline_access + radish-api 这几种 scope
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "openid");
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "profile");
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "offline_access");
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OpenId);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.Profile);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OfflineAccess);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
 
             // 扩展属性：客户端展示信息
             descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 社区平台前端应用");
@@ -141,9 +142,9 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
             // 当前 OpenIddict 版本未提供 Scopes.OpenId/Profile 常量，这里直接使用 Scope 前缀 + 字面值
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "openid");
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "profile");
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OpenId);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.Profile);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
 
             // 扩展属性：客户端展示信息
             descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish API 文档和调试工具");
@@ -236,10 +237,10 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.RefreshToken);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "openid");
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "profile");
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "offline_access");
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OpenId);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.Profile);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OfflineAccess);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
 
             // 扩展属性：客户端展示信息
             descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 商城应用（占位，未来实现）");
@@ -283,10 +284,10 @@ public class OpenIddictSeedHostedService : IHostedService
         descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
         descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.RefreshToken);
         descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
-        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "openid");
-        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "profile");
-        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "offline_access");
-        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "radish-api");
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OpenId);
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.Profile);
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OfflineAccess);
+        descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

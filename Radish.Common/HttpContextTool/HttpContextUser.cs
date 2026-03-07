@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Radish.Common.HttpContextTool;
 
+/// <summary>
+/// <see cref="IHttpContextUser"/> 的兼容实现，内部统一复用 <see cref="CurrentUser"/>。
+/// </summary>
 public class HttpContextUser : IHttpContextUser
 {
     private readonly IHttpContextAccessor _accessor;

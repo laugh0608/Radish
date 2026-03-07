@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi;
+using Radish.Common.HttpContextTool;
 using Scalar.AspNetCore;
 
 namespace Radish.Extension.OpenApiExtension;
@@ -92,9 +93,9 @@ public static class ScalarSetup
                                 TokenUrl = new Uri("https://localhost:5000/connect/token"),
                                 Scopes = new Dictionary<string, string>
                                 {
-                                    ["openid"] = "OpenID Connect 身份认证",
-                                    ["profile"] = "用户基本信息",
-                                    ["radish-api"] = "Radish API 访问权限"
+                                    [UserScopes.OpenId] = "OpenID Connect 身份认证",
+                                    [UserScopes.Profile] = "用户基本信息",
+                                    [UserScopes.RadishApi] = "Radish API 访问权限"
                                 }
                             }
                         }
@@ -151,7 +152,7 @@ public static class ScalarSetup
                         RedirectUri = "https://localhost:5000/scalar/oauth2-callback"
                     };
                 })
-                .AddDefaultScopes("oauth2", ["openid", "profile", "radish-api"]);
+                .AddDefaultScopes("oauth2", [UserScopes.OpenId, UserScopes.Profile, UserScopes.RadishApi]);
 
             // 动态配置多版本文档
             for (var i = 0; i < versions.Count; i++)

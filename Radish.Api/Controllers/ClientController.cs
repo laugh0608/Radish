@@ -16,7 +16,7 @@ namespace Radish.Api.Controllers;
 [ApiController]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
-[Authorize(Roles = "System,Admin")]
+[Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
 public class ClientController : ControllerBase
 {
     private readonly IOpenIddictApplicationManager _applicationManager;

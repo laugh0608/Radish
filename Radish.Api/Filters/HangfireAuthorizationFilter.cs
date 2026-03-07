@@ -30,7 +30,7 @@ public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
 
         // 检查是否为管理员角色
         var httpContextUser = httpContext.RequestServices.GetRequiredService<IHttpContextUser>();
-        return httpContextUser.IsInRole("Admin") || httpContextUser.IsInRole("System");
+        return httpContextUser.IsSystemOrAdmin();
     }
 }
 

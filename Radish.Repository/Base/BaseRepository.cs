@@ -1,8 +1,8 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Collections.Concurrent;
-using System.Security.Claims;
 using Radish.Common.CoreTool;
+using Radish.Common.HttpContextTool;
 using Radish.Common.TenantTool;
 using Radish.Infrastructure.Tenant;
 using Radish.IRepository;
@@ -108,14 +108,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             return false;
         }
 
-        if (user.IsInRole("System") || user.IsInRole("Admin"))
-        {
-            return true;
-        }
-
-        return user.Claims.Any(claim =>
-            (claim.Type == ClaimTypes.Role || claim.Type == "role") &&
-            (claim.Value == "System" || claim.Value == "Admin"));
+        return UserRoleHelper.IsSystemOrAdmin(UserClaimReader.GetRoles(user));
     }
 
     private static void NormalizeEntityTenantId(TEntity entity)

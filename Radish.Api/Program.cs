@@ -359,43 +359,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorizationBuilder()
            // Client 授权方案，基于 scope 控制访问 radish-api
            // OpenIddict 默认会把多个 scope 以空格拼成一个字符串（例如："openid profile radish-api"），因此这里需要按空格拆分判断
-           .AddPolicy("Client", policy => policy.RequireAssertion(ctx =>
+           .AddPolicy(AuthorizationPolicies.Client, policy => policy.RequireAssertion(ctx =>
            {
                // 【调试】输出所有 claims，用于诊断授权失败问题
                var allClaims = ctx.User.Claims.Select(c => $"{c.Type}={c.Value}").ToArray();
                Log.Information("[Client Policy] 所有 Claims: {Claims}", string.Join(", ", allClaims));
 
-               var scopeClaims = ctx.User.FindAll("scope").ToList();
-               Log.Information("[Client Policy] 找到 {Count} 个 scope claims", scopeClaims.Count);
+               var scopes = UserClaimReader.GetScopes(ctx.User);
+               Log.Information("[Client Policy] 归一化后 scopes: {Scopes}", string.Join(", ", scopes));
 
-               foreach (var claim in scopeClaims)
+               if (UserClaimReader.HasScope(ctx.User, UserScopes.RadishApi))
                {
-                   Log.Information("[Client Policy] scope claim value: {Value}", claim.Value);
-
-                   if (string.IsNullOrWhiteSpace(claim.Value))
-                       continue;
-
-                   var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                   foreach (var s in scopes)
-                   {
-                       Log.Information("[Client Policy] 检查 scope: {Scope}", s);
-                       if (string.Equals(s, "radish-api", StringComparison.Ordinal))
-                       {
-                           Log.Information("[Client Policy] ✓ 找到 radish-api scope，授权成功");
-                           return true;
-                       }
-                   }
+                   Log.Information("[Client Policy] ✓ 找到 {Scope} scope，授权成功", UserScopes.RadishApi);
+                   return true;
                }
 
-               Log.Warning("[Client Policy] ✗ 未找到 radish-api scope，授权失败");
+               Log.Warning("[Client Policy] ✗ 未找到 {Scope} scope，授权失败", UserScopes.RadishApi);
                return false;
            }).Build())
            // System 授权方案，RequireRole 方式
-           .AddPolicy("System", policy => policy.RequireRole("System").Build())
+           .AddPolicy(AuthorizationPolicies.System, policy => policy.RequireRole(UserRoles.System).Build())
            // SystemOrAdmin 授权方案，RequireRole 方式
-           .AddPolicy("SystemOrAdmin", policy => policy.RequireRole("System", "Admin").Build())
+           .AddPolicy(AuthorizationPolicies.SystemOrAdmin, policy => policy.RequireRole(UserRoles.System, UserRoles.Admin).Build())
            // 自定义授权策略
-           .AddPolicy("RadishAuthPolicy", policy => policy.Requirements.Add(new PermissionRequirement()));
+           .AddPolicy(AuthorizationPolicies.RadishAuthPolicy, policy => policy.Requirements.Add(new PermissionRequirement()));
 // 注册自定义授权策略中间件
 builder.Services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
 // 注册 PermissionRequirement 鉴权类

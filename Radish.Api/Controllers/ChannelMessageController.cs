@@ -152,7 +152,7 @@ public class ChannelMessageController : ControllerBase
             };
         }
 
-        var canRecallOthers = _httpContextUser.IsInRole("System") || _httpContextUser.IsInRole("Admin");
+        var canRecallOthers = _httpContextUser.IsSystemOrAdmin();
         var channelId = await _chatService.RecallMessageAsync(
             _httpContextUser.TenantId,
             _httpContextUser.UserId,

@@ -78,11 +78,11 @@ public class PermissionRequirementHandler : AuthorizationHandler<PermissionRequi
                     var currentUserRoles = currentUser.Roles;
 
                     // 超级管理员 默认拥有所有权限
-                    if (currentUserRoles.All(s => !string.Equals(s, "System", StringComparison.OrdinalIgnoreCase)))
+                    if (!currentUser.IsInRole(UserRoles.System))
                     {
                         var isMatchRole = false;
                         var permisssionRoles =
-                            requirement.PermissionItems.Where(w => currentUserRoles.Contains(w.Role));
+                            requirement.PermissionItems.Where(w => UserRoleHelper.ContainsRole(currentUserRoles, w.Role));
                         foreach (var item in permisssionRoles)
                         {
                             try

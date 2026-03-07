@@ -59,6 +59,12 @@ public static class UserClaimReader
             .ToList();
     }
 
+    public static bool HasScope(ClaimsPrincipal? principal, string scope, string? token = null)
+    {
+        return !string.IsNullOrWhiteSpace(scope)
+               && GetScopes(principal, token).Contains(scope, StringComparer.OrdinalIgnoreCase);
+    }
+
     private static string? GetFirstClaimValue(ClaimsPrincipal? principal, string claimType)
     {
         return principal?.FindFirst(claimType)?.Value;

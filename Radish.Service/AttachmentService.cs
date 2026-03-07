@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Radish.Common.CoreTool;
+using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
 using Radish.Infrastructure.FileStorage;
 using Radish.Infrastructure.ImageProcessing;
@@ -393,7 +394,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 // - Admin/System 角色可下载
                 // - 其他用户无权下载
                 var isUploader = requestUserId.HasValue && attachment.UploaderId == requestUserId.Value;
-                var isAdmin = requestUserRoles != null && (requestUserRoles.Contains("Admin") || requestUserRoles.Contains("System"));
+                var isAdmin = UserRoleHelper.IsSystemOrAdmin(requestUserRoles);
 
                 if (!isUploader && !isAdmin)
                 {

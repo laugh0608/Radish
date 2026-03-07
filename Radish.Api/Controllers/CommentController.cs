@@ -273,7 +273,7 @@ public class CommentController : ControllerBase
         }
 
         // 权限验证：只有作者本人或管理员可以删除
-        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
+        var isAdmin = _httpContextUser.IsSystemOrAdmin();
         if (comment.VoAuthorId != _httpContextUser.UserId && !isAdmin)
         {
             return new MessageModel
@@ -343,7 +343,7 @@ public class CommentController : ControllerBase
             };
         }
 
-        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
+        var isAdmin = _httpContextUser.IsSystemOrAdmin();
 
         if (comment.VoAuthorId != _httpContextUser.UserId && !isAdmin)
         {

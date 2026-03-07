@@ -86,4 +86,16 @@ public class ClaimsPrincipalNormalizerTests
         Assert.Contains("Admin", currentUser.Roles);
         Assert.Contains("radish-api", currentUser.Scopes);
     }
+
+    [Fact]
+    public void UserClaimReader_Should_Detect_Scope_From_Space_Separated_Claim()
+    {
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
+        {
+            new(UserClaimTypes.Scope, $"{UserScopes.OpenId} {UserScopes.Profile} {UserScopes.RadishApi}")
+        }, "TestAuth"));
+
+        Assert.True(UserClaimReader.HasScope(principal, UserScopes.RadishApi));
+        Assert.False(UserClaimReader.HasScope(principal, UserScopes.Email));
+    }
 }

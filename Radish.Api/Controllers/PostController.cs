@@ -343,7 +343,7 @@ public class PostController : ControllerBase
             };
         }
 
-        var allowCreateTag = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
+        var allowCreateTag = _httpContextUser.IsSystemOrAdmin();
 
         var post = new Post(new PostInitializationOptions(request.Title, request.Content)
         {
@@ -515,7 +515,7 @@ public class PostController : ControllerBase
             };
         }
 
-        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
+        var isAdmin = _httpContextUser.IsSystemOrAdmin();
 
         // 权限验证：作者本人或管理员可编辑
         if (post.VoAuthorId != _httpContextUser.UserId && !isAdmin)
@@ -528,7 +528,7 @@ public class PostController : ControllerBase
             };
         }
 
-        var allowCreateTag = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
+        var allowCreateTag = _httpContextUser.IsSystemOrAdmin();
 
         try
         {
@@ -635,7 +635,7 @@ public class PostController : ControllerBase
         }
 
         // 权限验证：只有作者本人或管理员可以删除
-        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
+        var isAdmin = _httpContextUser.IsSystemOrAdmin();
         if (post.VoAuthorId != _httpContextUser.UserId && !isAdmin)
         {
             return new MessageModel

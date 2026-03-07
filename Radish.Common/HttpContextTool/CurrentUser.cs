@@ -22,6 +22,16 @@ public sealed class CurrentUser
                && Roles.Contains(role, StringComparer.OrdinalIgnoreCase);
     }
 
+    public bool HasAnyRole(params string[] roles)
+    {
+        return UserRoleHelper.HasAnyRole(Roles, roles);
+    }
+
+    public bool IsSystemOrAdmin()
+    {
+        return HasAnyRole(UserRoles.System, UserRoles.Admin);
+    }
+
     public bool HasScope(string scope)
     {
         return !string.IsNullOrWhiteSpace(scope)

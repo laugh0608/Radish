@@ -21,6 +21,7 @@ using Microsoft.Extensions.Options;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
+using Radish.Common.HttpContextTool;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
@@ -302,7 +303,7 @@ builder.Services.AddOpenIddict()
                .AllowClientCredentialsFlow();
 
         // 注册允许的 Scopes
-        options.RegisterScopes("openid", "profile", "email", "offline_access", "radish-api");
+        options.RegisterScopes(UserScopes.OpenId, UserScopes.Profile, UserScopes.Email, UserScopes.OfflineAccess, UserScopes.RadishApi);
 
         // 从配置读取并设置令牌生命周期（分钟）
         var serverSection = builder.Configuration.GetSection("OpenIddict:Server");

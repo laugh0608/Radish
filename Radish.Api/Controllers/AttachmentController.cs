@@ -695,7 +695,7 @@ public class AttachmentController : ControllerBase
 
         // 权限检查：只有上传者或管理员可以删除
         var userId = _httpContextUser.UserId;
-        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
+        var isAdmin = _httpContextUser.IsSystemOrAdmin();
 
         if (attachment.VoUploaderId != userId && !isAdmin)
         {
@@ -748,7 +748,7 @@ public class AttachmentController : ControllerBase
         }
 
         var userId = _httpContextUser.UserId;
-        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
+        var isAdmin = _httpContextUser.IsSystemOrAdmin();
 
         // 权限检查：验证每个附件的权限
         foreach (var id in ids)
@@ -810,7 +810,7 @@ public class AttachmentController : ControllerBase
 
         // 权限检查：只有上传者或管理员可以修改
         var userId = _httpContextUser.UserId;
-        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
+        var isAdmin = _httpContextUser.IsSystemOrAdmin();
 
         if (attachment.VoUploaderId != userId && !isAdmin)
         {
