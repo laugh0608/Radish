@@ -169,3 +169,23 @@
 - **客户端管理控制器收口**：`ClientController` 已移除手写 `sub/jti` 解析，创建/更新/软删除审计字段统一改为 `IHttpContextUser.UserId`。
 - **测试同步对齐**：`ClientControllerTest` 改为注入 `IHttpContextUser` mock，不再通过 `HttpContext` 手工塞 claim。
 - **编译验证**：`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false` 通过（0 Error）。
+
+## 2026-03-07 (周六)
+
+### Claim 解析口径统一收口完成
+
+- **控制器角色读取收口**：`PostController`、`CommentController`、`AttachmentController`、`UserController`、`ChannelMessageController` 已移除分散的 `role` claim 读取与 `User.IsInRole(...)` 判断，统一改为通过 `IHttpContextUser` 暴露的角色能力判定。
+- **当前用户视图补齐**：`IHttpContextUser` / `HttpContextUser` 已补充 `Roles` 与 `IsInRole(...)`，并兼容 OIDC `role`、`ClaimTypes.Role` 及 Bearer Token 回退解析。
+- **共享解析器落地**：新增 `UserClaimReader`，统一沉淀 `UserId/UserName/TenantId/Roles` 解析逻辑，避免控制器、Hub、中间件、权限处理器重复维护多套 claim 口径。
+
+### Hub 与基础设施同步收口
+
+- **Hub 口径统一**：`ChatHub`、`NotificationHub` 已改为复用 `UserClaimReader`，不再各自手写 `sub/name/tenant_id` 解析。
+- **权限处理器收口**：`PermissionRequirementHandler` 已改为复用 `UserClaimReader.GetRoles(...)`，并下线手工 `ClaimTypes.Expiration` 过期判断，统一依赖认证中间件处理 Token 生命周期。
+- **审计中间件收口**：`AuditLogMiddleware` 已改为复用 `UserClaimReader` 获取 `UserId/UserName/TenantId`，与控制器/Hub/权限处理器保持一致的审计口径。
+
+### 验证结果
+
+- ✅ `dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false` 通过。
+- ✅ `dotnet test Radish.Api.Tests --filter "FullyQualifiedName~HttpContextUserTests" -m:1 /nr:false` 通过（4/4）。
+- ℹ️ 本轮已完成控制器、Hub、权限处理器、审计中间件四类入口的 Claim 解析收口；`Program.cs` 保持协议边界职责，不做额外抽象改造。

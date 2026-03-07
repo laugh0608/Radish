@@ -474,7 +474,7 @@ public class AttachmentController : ControllerBase
         if (_httpContextUser.UserId > 0)
         {
             userId = _httpContextUser.UserId;
-            roles = _httpContextUser.GetClaimValueByType("role");
+            roles = _httpContextUser.Roles;
         }
 
         var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(id, userId, roles);
@@ -569,7 +569,7 @@ public class AttachmentController : ControllerBase
             if (userId > 0)
             {
                 downloadUserId = userId;
-                downloadRoles = _httpContextUser.GetClaimValueByType("role");
+                downloadRoles = _httpContextUser.Roles;
             }
 
             var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(attachmentId.Value, downloadUserId, downloadRoles);
@@ -695,8 +695,7 @@ public class AttachmentController : ControllerBase
 
         // 权限检查：只有上传者或管理员可以删除
         var userId = _httpContextUser.UserId;
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
 
         if (attachment.VoUploaderId != userId && !isAdmin)
         {
@@ -749,8 +748,7 @@ public class AttachmentController : ControllerBase
         }
 
         var userId = _httpContextUser.UserId;
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
 
         // 权限检查：验证每个附件的权限
         foreach (var id in ids)
@@ -812,8 +810,7 @@ public class AttachmentController : ControllerBase
 
         // 权限检查：只有上传者或管理员可以修改
         var userId = _httpContextUser.UserId;
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
 
         if (attachment.VoUploaderId != userId && !isAdmin)
         {

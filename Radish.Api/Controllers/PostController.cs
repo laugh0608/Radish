@@ -343,8 +343,7 @@ public class PostController : ControllerBase
             };
         }
 
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var allowCreateTag = roles.Contains("Admin") || roles.Contains("System");
+        var allowCreateTag = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
 
         var post = new Post(new PostInitializationOptions(request.Title, request.Content)
         {
@@ -516,8 +515,7 @@ public class PostController : ControllerBase
             };
         }
 
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
 
         // 权限验证：作者本人或管理员可编辑
         if (post.VoAuthorId != _httpContextUser.UserId && !isAdmin)
@@ -530,7 +528,7 @@ public class PostController : ControllerBase
             };
         }
 
-        var allowCreateTag = roles.Contains("Admin") || roles.Contains("System");
+        var allowCreateTag = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
 
         try
         {
@@ -637,8 +635,7 @@ public class PostController : ControllerBase
         }
 
         // 权限验证：只有作者本人或管理员可以删除
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
         if (post.VoAuthorId != _httpContextUser.UserId && !isAdmin)
         {
             return new MessageModel

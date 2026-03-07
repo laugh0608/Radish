@@ -22,122 +22,22 @@ public class HttpContextUser : IHttpContextUser
     /// <summary>
     /// 用户名
     /// </summary>
-    public string UserName => GetName();
-
-    /// <summary>
-    /// 获取用户名
-    /// </summary>
-    /// <returns></returns>
-    private string GetName()
-    {
-        if (!IsAuthenticated() || _accessor.HttpContext == null)
-        {
-            return "";
-        }
-
-        // 优先从 OIDC 的 name Claim 获取
-        var nameFromOidc = GetClaimValueByType("name").FirstOrDefault();
-        if (!nameFromOidc.IsNullOrEmpty())
-        {
-            return nameFromOidc;
-        }
-
-        // 兼容 ClaimTypes.Name
-        var nameFromClaimTypes = GetClaimValueByType(ClaimTypes.Name).FirstOrDefault();
-        if (!nameFromClaimTypes.IsNullOrEmpty())
-        {
-            return nameFromClaimTypes;
-        }
-
-        // 最后再使用 Identity.Name
-        var identityName = _accessor.HttpContext.User.Identity?.Name;
-        if (identityName.IsNotEmptyOrNull())
-        {
-            return identityName;
-        }
-
-        return "";
-    }
+    public string UserName => UserClaimReader.GetUserName(_accessor.HttpContext?.User, GetToken(), "");
 
     /// <summary>
     /// 用户 Id
     /// </summary>
-    public long UserId => GetUserIdFromClaims();
+    public long UserId => UserClaimReader.GetUserId(_accessor.HttpContext?.User, GetToken());
 
     /// <summary>
     /// 租户 Id
     /// </summary>
-    public long TenantId => GetTenantIdFromClaims();
+    public long TenantId => UserClaimReader.GetTenantId(_accessor.HttpContext?.User, GetToken());
 
-    private long GetUserIdFromClaims()
-    {
-        // 优先使用 OIDC 标准的 sub
-        var sub = GetClaimValueByType("sub").FirstOrDefault();
-        if (!sub.IsNullOrEmpty() && sub.ObjToLong() > 0)
-        {
-            return sub.ObjToLong();
-        }
-
-        // 兼容映射后的 ClaimTypes.NameIdentifier
-        var nameId = GetClaimValueByType(ClaimTypes.NameIdentifier).FirstOrDefault();
-        if (!nameId.IsNullOrEmpty() && nameId.ObjToLong() > 0)
-        {
-            return nameId.ObjToLong();
-        }
-
-        // 兼容旧版 jti
-        var jti = GetClaimValueByType("jti").FirstOrDefault();
-        if (!jti.IsNullOrEmpty() && jti.ObjToLong() > 0)
-        {
-            return jti.ObjToLong();
-        }
-
-        // 再退一步，直接从原始 Token 中解析 sub/jti，避免中间件 Claim 映射影响
-        var subFromToken = GetUserInfoFromToken("sub").FirstOrDefault();
-        if (!subFromToken.IsNullOrEmpty() && subFromToken.ObjToLong() > 0)
-        {
-            return subFromToken.ObjToLong();
-        }
-
-        var jtiFromToken = GetUserInfoFromToken("jti").FirstOrDefault();
-        if (!jtiFromToken.IsNullOrEmpty() && jtiFromToken.ObjToLong() > 0)
-        {
-            return jtiFromToken.ObjToLong();
-        }
-
-        return 0;
-    }
-
-    private long GetTenantIdFromClaims()
-    {
-        // 优先使用 tenant_id，其次兼容旧版 TenantId
-        var tenantId = GetClaimValueByType("tenant_id").FirstOrDefault();
-        if (!tenantId.IsNullOrEmpty() && tenantId.ObjToLong() > 0)
-        {
-            return tenantId.ObjToLong();
-        }
-
-        var legacyTenantId = GetClaimValueByType("TenantId").FirstOrDefault();
-        if (!legacyTenantId.IsNullOrEmpty())
-        {
-            return legacyTenantId.ObjToLong();
-        }
-
-        // 再退一步，直接从原始 Token 中解析 tenant_id/TenantId，避免中间件 Claim 映射影响
-        var tenantIdFromToken = GetUserInfoFromToken("tenant_id").FirstOrDefault();
-        if (!tenantIdFromToken.IsNullOrEmpty() && tenantIdFromToken.ObjToLong() > 0)
-        {
-            return tenantIdFromToken.ObjToLong();
-        }
-
-        var legacyTenantIdFromToken = GetUserInfoFromToken("TenantId").FirstOrDefault();
-        if (!legacyTenantIdFromToken.IsNullOrEmpty())
-        {
-            return legacyTenantIdFromToken.ObjToLong();
-        }
-
-        return 0;
-    }
+    /// <summary>
+    /// 角色列表
+    /// </summary>
+    public List<string> Roles => UserClaimReader.GetRoles(_accessor.HttpContext?.User, GetToken());
 
     /// <summary>
     /// 是否已获得认证
@@ -223,4 +123,15 @@ public class HttpContextUser : IHttpContextUser
             where item.Type == claimType
             select item.Value).ToList();
     }
+
+    public bool IsInRole(string role)
+    {
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            return false;
+        }
+
+        return Roles.Contains(role, StringComparer.OrdinalIgnoreCase);
+    }
+
 }

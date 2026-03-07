@@ -1,9 +1,9 @@
 using System.Diagnostics;
-using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Radish.Common.HttpContextTool;
 using Radish.Model.LogModels;
 using Radish.Model.ViewModels;
 using Radish.IService;
@@ -300,10 +300,8 @@ public class AuditLogMiddleware
     /// </summary>
     private long? GetUserId(HttpContext context)
     {
-        var userIdClaim = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                          ?? context.User?.FindFirst("sub")?.Value;
-
-        return long.TryParse(userIdClaim, out var userId) ? userId : null;
+        var userId = UserClaimReader.GetUserId(context.User);
+        return userId > 0 ? userId : null;
     }
 
     /// <summary>
@@ -311,9 +309,13 @@ public class AuditLogMiddleware
     /// </summary>
     private string? GetUserName(HttpContext context)
     {
-        return context.User?.FindFirst(ClaimTypes.Name)?.Value
-               ?? context.User?.FindFirst("name")?.Value
-               ?? context.User?.FindFirst("preferred_username")?.Value;
+        var userName = UserClaimReader.GetUserName(context.User);
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+            return userName;
+        }
+
+        return context.User?.FindFirst("preferred_username")?.Value;
     }
 
     /// <summary>
@@ -321,10 +323,8 @@ public class AuditLogMiddleware
     /// </summary>
     private long? GetTenantId(HttpContext context)
     {
-        var tenantIdClaim = context.User?.FindFirst("tenant_id")?.Value
-                            ?? context.User?.FindFirst("TenantId")?.Value;
-
-        return long.TryParse(tenantIdClaim, out var tenantId) ? tenantId : null;
+        var tenantId = UserClaimReader.GetTenantId(context.User);
+        return tenantId >= 0 ? tenantId : null;
     }
 
     /// <summary>

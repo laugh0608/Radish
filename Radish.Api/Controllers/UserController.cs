@@ -703,8 +703,7 @@ public class UserController : ControllerBase
         }
 
         // 只有上传者或管理员可以绑定为头像
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var isAdmin = _httpContextUser.IsInRole("Admin") || _httpContextUser.IsInRole("System");
         if (attachment.VoUploaderId != userId && !isAdmin)
         {
             return new MessageModel

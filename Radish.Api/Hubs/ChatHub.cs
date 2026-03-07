@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 
 namespace Radish.Api.Hubs;
@@ -140,10 +140,8 @@ public class ChatHub : Hub
 
     private long GetUserId()
     {
-        var userIdClaim = Context.User?.FindFirst("sub")?.Value
-            ?? Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        if (!string.IsNullOrWhiteSpace(userIdClaim) && long.TryParse(userIdClaim, out var userId) && userId > 0)
+        var userId = UserClaimReader.GetUserId(Context.User, GetAccessToken());
+        if (userId > 0)
         {
             return userId;
         }
@@ -153,19 +151,31 @@ public class ChatHub : Hub
 
     private long GetTenantId()
     {
-        var tenantIdClaim = Context.User?.FindFirst("tenant_id")?.Value
-            ?? Context.User?.FindFirst("TenantId")?.Value;
-
-        return !string.IsNullOrWhiteSpace(tenantIdClaim) && long.TryParse(tenantIdClaim, out var tenantId)
-            ? tenantId
-            : 0;
+        return UserClaimReader.GetTenantId(Context.User, GetAccessToken());
     }
 
     private string GetUserName()
     {
-        var userName = Context.User?.FindFirst("name")?.Value
-            ?? Context.User?.FindFirst(ClaimTypes.Name)?.Value;
+        return UserClaimReader.GetUserName(Context.User, GetAccessToken(), "Unknown");
+    }
 
-        return string.IsNullOrWhiteSpace(userName) ? "Unknown" : userName;
+    private string? GetAccessToken()
+    {
+        var httpContext = Context.GetHttpContext();
+        var accessToken = httpContext?.Request.Query["access_token"].ToString();
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            return accessToken;
+        }
+
+        var authorization = httpContext?.Request.Headers.Authorization.ToString();
+        if (string.IsNullOrWhiteSpace(authorization))
+        {
+            return null;
+        }
+
+        return authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            ? authorization["Bearer ".Length..].Trim()
+            : authorization;
     }
 }

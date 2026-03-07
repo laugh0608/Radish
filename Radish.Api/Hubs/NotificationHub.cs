@@ -1,6 +1,6 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Serilog;
 
@@ -125,20 +125,12 @@ public class NotificationHub : Hub
             var allClaims = Context.User.Claims.Select(c => $"{c.Type}={c.Value}").ToArray();
             _logger.LogInformation("[NotificationHub.GetUserId] 所有 Claims: {Claims}", string.Join(", ", allClaims));
 
-            // 优先从 OIDC 标准 claim 获取用户 ID
-            // 由于我们禁用了 claim type mapping，现在 "sub" 应该保持原样
-            var userIdClaim = Context.User.FindFirst("sub")?.Value
-                ?? Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                ?? Context.User.FindFirst("userId")?.Value
-                ?? Context.User.FindFirst("UserId")?.Value
-                ?? Context.User.FindFirst("uid")?.Value
-                ?? Context.User.FindFirst("userid")?.Value;
+            var userId = UserClaimReader.GetUserId(Context.User, GetAccessToken());
 
-            _logger.LogInformation("[NotificationHub.GetUserId] 提取到的 userIdClaim: {UserIdClaim}", userIdClaim ?? "null");
+            _logger.LogInformation("[NotificationHub.GetUserId] 提取到的 userId: {UserId}", userId);
 
-            if (!string.IsNullOrWhiteSpace(userIdClaim) && long.TryParse(userIdClaim, out var userId))
+            if (userId > 0)
             {
-                _logger.LogInformation("[NotificationHub.GetUserId] 成功解析 userId: {UserId}", userId);
                 return userId;
             }
 
@@ -153,5 +145,25 @@ public class NotificationHub : Hub
             _logger.LogError(ex, "[NotificationHub] GetUserId 发生异常");
             throw;
         }
+    }
+
+    private string? GetAccessToken()
+    {
+        var httpContext = Context.GetHttpContext();
+        var accessToken = httpContext?.Request.Query["access_token"].ToString();
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            return accessToken;
+        }
+
+        var authorization = httpContext?.Request.Headers.Authorization.ToString();
+        if (string.IsNullOrWhiteSpace(authorization))
+        {
+            return null;
+        }
+
+        return authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            ? authorization["Bearer ".Length..].Trim()
+            : authorization;
     }
 }
