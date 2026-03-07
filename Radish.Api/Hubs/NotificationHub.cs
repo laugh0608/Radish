@@ -13,13 +13,16 @@ namespace Radish.Api.Hubs;
 public class NotificationHub : Hub
 {
     private readonly INotificationPushService _notificationPushService;
+    private readonly IClaimsPrincipalNormalizer _claimsPrincipalNormalizer;
     private readonly ILogger<NotificationHub> _logger;
 
     public NotificationHub(
         INotificationPushService notificationPushService,
+        IClaimsPrincipalNormalizer claimsPrincipalNormalizer,
         ILogger<NotificationHub> logger)
     {
         _notificationPushService = notificationPushService;
+        _claimsPrincipalNormalizer = claimsPrincipalNormalizer;
         _logger = logger;
     }
 
@@ -125,7 +128,7 @@ public class NotificationHub : Hub
             var allClaims = Context.User.Claims.Select(c => $"{c.Type}={c.Value}").ToArray();
             _logger.LogInformation("[NotificationHub.GetUserId] 所有 Claims: {Claims}", string.Join(", ", allClaims));
 
-            var userId = UserClaimReader.GetUserId(Context.User, GetAccessToken());
+            var userId = GetCurrentUser().UserId;
 
             _logger.LogInformation("[NotificationHub.GetUserId] 提取到的 userId: {UserId}", userId);
 
@@ -145,6 +148,11 @@ public class NotificationHub : Hub
             _logger.LogError(ex, "[NotificationHub] GetUserId 发生异常");
             throw;
         }
+    }
+
+    private CurrentUser GetCurrentUser()
+    {
+        return _claimsPrincipalNormalizer.Normalize(Context.User, GetAccessToken());
     }
 
     private string? GetAccessToken()

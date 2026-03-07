@@ -2,6 +2,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
@@ -73,11 +74,11 @@ public class PermissionRequirementHandler : AuthorizationHandler<PermissionRequi
                 {
                     if (!isTestCurrent) httpContext.User = result.Principal;
 
-                    // 获取当前用户的角色信息
-                    var currentUserRoles = UserClaimReader.GetRoles(httpContext.User);
+                    var currentUser = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().Current;
+                    var currentUserRoles = currentUser.Roles;
 
                     // 超级管理员 默认拥有所有权限
-                    if (currentUserRoles.All(s => s != "System"))
+                    if (currentUserRoles.All(s => !string.Equals(s, "System", StringComparison.OrdinalIgnoreCase)))
                     {
                         var isMatchRole = false;
                         var permisssionRoles =

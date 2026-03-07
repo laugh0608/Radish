@@ -7,46 +7,56 @@ public static class UserClaimReader
 {
     public static string GetUserName(ClaimsPrincipal? principal, string? token = null, string defaultValue = "")
     {
-        var name = GetFirstClaimValue(principal, "name")
-            ?? GetFirstClaimValue(principal, ClaimTypes.Name)
+        var name = GetFirstClaimValue(principal, UserClaimTypes.Name)
+            ?? GetFirstClaimValue(principal, UserClaimTypes.PreferredUsername)
+            ?? GetFirstClaimValue(principal, UserClaimTypes.LegacyName)
             ?? principal?.Identity?.Name
-            ?? GetFirstClaimValueFromToken(token, "name")
-            ?? GetFirstClaimValueFromToken(token, ClaimTypes.Name);
+            ?? GetFirstClaimValueFromToken(token, UserClaimTypes.Name)
+            ?? GetFirstClaimValueFromToken(token, UserClaimTypes.PreferredUsername)
+            ?? GetFirstClaimValueFromToken(token, UserClaimTypes.LegacyName);
 
         return string.IsNullOrWhiteSpace(name) ? defaultValue : name;
     }
 
     public static long GetUserId(ClaimsPrincipal? principal, string? token = null)
     {
-        return TryParsePositiveLong(GetFirstClaimValue(principal, "sub"))
-               ?? TryParsePositiveLong(GetFirstClaimValue(principal, ClaimTypes.NameIdentifier))
-               ?? TryParsePositiveLong(GetFirstClaimValue(principal, "jti"))
-               ?? TryParsePositiveLong(GetFirstClaimValueFromToken(token, "sub"))
-               ?? TryParsePositiveLong(GetFirstClaimValueFromToken(token, ClaimTypes.NameIdentifier))
-               ?? TryParsePositiveLong(GetFirstClaimValueFromToken(token, "jti"))
+        return TryParsePositiveLong(GetFirstClaimValue(principal, UserClaimTypes.Sub))
+               ?? TryParsePositiveLong(GetFirstClaimValue(principal, UserClaimTypes.LegacyNameIdentifier))
+               ?? TryParsePositiveLong(GetFirstClaimValue(principal, UserClaimTypes.LegacyJti))
+               ?? TryParsePositiveLong(GetFirstClaimValueFromToken(token, UserClaimTypes.Sub))
+               ?? TryParsePositiveLong(GetFirstClaimValueFromToken(token, UserClaimTypes.LegacyNameIdentifier))
+               ?? TryParsePositiveLong(GetFirstClaimValueFromToken(token, UserClaimTypes.LegacyJti))
                ?? 0;
     }
 
     public static long GetTenantId(ClaimsPrincipal? principal, string? token = null)
     {
-        return TryParseNonNegativeLong(GetFirstClaimValue(principal, "tenant_id"))
-               ?? TryParseNonNegativeLong(GetFirstClaimValue(principal, "TenantId"))
-               ?? TryParseNonNegativeLong(GetFirstClaimValueFromToken(token, "tenant_id"))
-               ?? TryParseNonNegativeLong(GetFirstClaimValueFromToken(token, "TenantId"))
+        return TryParseNonNegativeLong(GetFirstClaimValue(principal, UserClaimTypes.TenantId))
+               ?? TryParseNonNegativeLong(GetFirstClaimValue(principal, UserClaimTypes.LegacyTenantId))
+               ?? TryParseNonNegativeLong(GetFirstClaimValueFromToken(token, UserClaimTypes.TenantId))
+               ?? TryParseNonNegativeLong(GetFirstClaimValueFromToken(token, UserClaimTypes.LegacyTenantId))
                ?? 0;
     }
 
     public static List<string> GetRoles(ClaimsPrincipal? principal, string? token = null)
     {
-        var roles = GetClaimValues(principal, "role")
-            .Concat(GetClaimValues(principal, ClaimTypes.Role))
-            .Concat(GetClaimValuesFromToken(token, "role"))
-            .Concat(GetClaimValuesFromToken(token, ClaimTypes.Role))
+        return GetClaimValues(principal, UserClaimTypes.Role)
+            .Concat(GetClaimValues(principal, UserClaimTypes.LegacyRole))
+            .Concat(GetClaimValuesFromToken(token, UserClaimTypes.Role))
+            .Concat(GetClaimValuesFromToken(token, UserClaimTypes.LegacyRole))
             .Where(role => !string.IsNullOrWhiteSpace(role))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
 
-        return roles;
+    public static List<string> GetScopes(ClaimsPrincipal? principal, string? token = null)
+    {
+        return GetClaimValues(principal, UserClaimTypes.Scope)
+            .Concat(GetClaimValuesFromToken(token, UserClaimTypes.Scope))
+            .SelectMany(SplitSpaceSeparatedValues)
+            .Where(scope => !string.IsNullOrWhiteSpace(scope))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static string? GetFirstClaimValue(ClaimsPrincipal? principal, string claimType)
@@ -87,6 +97,16 @@ public static class UserClaimReader
             .Where(claim => claim.Type == claimType)
             .Select(claim => claim.Value)
             .ToList();
+    }
+
+    private static IEnumerable<string> SplitSpaceSeparatedValues(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return Array.Empty<string>();
+        }
+
+        return value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     }
 
     private static long? TryParsePositiveLong(string? value)

@@ -320,8 +320,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnTokenValidated = context =>
             {
                 var path = context.HttpContext.Request.Path;
-                var userId = UserClaimReader.GetUserId(context.Principal);
-                Log.Information("[JWT] OnTokenValidated - Path: {Path}, UserId: {UserId}", path, userId);
+                var currentUser = context.HttpContext.RequestServices.GetRequiredService<IClaimsPrincipalNormalizer>()
+                    .Normalize(context.Principal);
+                Log.Information("[JWT] OnTokenValidated - Path: {Path}, UserId: {UserId}", path, currentUser.UserId);
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>
@@ -402,6 +403,8 @@ builder.Services.AddSingleton(new PermissionRequirement());
 // 注册 HttpContext 上下文服务
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 // 注册 HttpContext 获取用户信息服务
+builder.Services.AddScoped<IClaimsPrincipalNormalizer, ClaimsPrincipalNormalizer>();
+builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddScoped<IHttpContextUser, HttpContextUser>();
 
 // 注册 Hangfire 服务

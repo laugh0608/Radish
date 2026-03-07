@@ -300,8 +300,8 @@ public class AuditLogMiddleware
     /// </summary>
     private long? GetUserId(HttpContext context)
     {
-        var userId = UserClaimReader.GetUserId(context.User);
-        return userId > 0 ? userId : null;
+        var currentUser = context.RequestServices.GetRequiredService<ICurrentUserAccessor>().Current;
+        return currentUser.UserId > 0 ? currentUser.UserId : null;
     }
 
     /// <summary>
@@ -309,13 +309,13 @@ public class AuditLogMiddleware
     /// </summary>
     private string? GetUserName(HttpContext context)
     {
-        var userName = UserClaimReader.GetUserName(context.User);
-        if (!string.IsNullOrWhiteSpace(userName))
+        var currentUser = context.RequestServices.GetRequiredService<ICurrentUserAccessor>().Current;
+        if (!string.IsNullOrWhiteSpace(currentUser.UserName))
         {
-            return userName;
+            return currentUser.UserName;
         }
 
-        return context.User?.FindFirst("preferred_username")?.Value;
+        return context.User?.FindFirst(UserClaimTypes.PreferredUsername)?.Value;
     }
 
     /// <summary>
@@ -323,8 +323,8 @@ public class AuditLogMiddleware
     /// </summary>
     private long? GetTenantId(HttpContext context)
     {
-        var tenantId = UserClaimReader.GetTenantId(context.User);
-        return tenantId >= 0 ? tenantId : null;
+        var currentUser = context.RequestServices.GetRequiredService<ICurrentUserAccessor>().Current;
+        return currentUser.TenantId >= 0 ? currentUser.TenantId : null;
     }
 
     /// <summary>

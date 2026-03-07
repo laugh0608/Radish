@@ -5,93 +5,78 @@ using Microsoft.Extensions.Logging;
 
 namespace Radish.Common.HttpContextTool;
 
-/// <summary>
-/// 从 HTTP 上下文中获取请求的用户信息
-/// </summary>
 public class HttpContextUser : IHttpContextUser
 {
     private readonly IHttpContextAccessor _accessor;
-    private readonly ILogger<HttpContextUser> _logger;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public HttpContextUser(IHttpContextAccessor accessor, ILogger<HttpContextUser> logger)
+        : this(accessor, logger, new CurrentUserAccessor(accessor, new ClaimsPrincipalNormalizer()))
     {
-        _accessor = accessor;
-        _logger = logger;
     }
 
-    /// <summary>
-    /// 用户名
-    /// </summary>
-    public string UserName => UserClaimReader.GetUserName(_accessor.HttpContext?.User, GetToken(), "");
+    public HttpContextUser(IHttpContextAccessor accessor, ILogger<HttpContextUser> logger, ICurrentUserAccessor currentUserAccessor)
+    {
+        _accessor = accessor;
+        _currentUserAccessor = currentUserAccessor;
+    }
 
-    /// <summary>
-    /// 用户 Id
-    /// </summary>
-    public long UserId => UserClaimReader.GetUserId(_accessor.HttpContext?.User, GetToken());
+    private CurrentUser Current => _currentUserAccessor.Current;
 
-    /// <summary>
-    /// 租户 Id
-    /// </summary>
-    public long TenantId => UserClaimReader.GetTenantId(_accessor.HttpContext?.User, GetToken());
+    public string UserName => Current.UserName;
 
-    /// <summary>
-    /// 角色列表
-    /// </summary>
-    public List<string> Roles => UserClaimReader.GetRoles(_accessor.HttpContext?.User, GetToken());
+    public long UserId => Current.UserId;
 
-    /// <summary>
-    /// 是否已获得认证
-    /// </summary>
-    /// <returns></returns>
+    public long TenantId => Current.TenantId;
+
+    public List<string> Roles => Current.Roles.ToList();
+
     public bool IsAuthenticated()
     {
         return _accessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
     }
 
-    /// <summary>
-    /// 获取 Token
-    /// </summary>
-    /// <returns></returns>
     public string GetToken()
     {
-        var token = _accessor.HttpContext?.Request?.Headers["Authorization"].ObjToString().Replace("Bearer ", "");
-        if (!token.IsNullOrEmpty())
+        var authorization = _accessor.HttpContext?.Request?.Headers.Authorization.ToString();
+        if (string.IsNullOrWhiteSpace(authorization))
         {
-            return token;
+            return string.Empty;
         }
 
-        return token;
+        return authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            ? authorization[7..]
+            : authorization;
     }
 
-    /// <summary>
-    /// 从 Token 中获取用户信息
-    /// </summary>
-    /// <param name="claimType"></param>
-    /// <returns></returns>
+    [Obsolete("禁止新增使用，请改用 CurrentUser / ICurrentUserAccessor")]
     public List<string> GetUserInfoFromToken(string claimType)
     {
         var jwtHandler = new JwtSecurityTokenHandler();
-        var token = "";
-
-        token = GetToken();
-        // token 校验
+        var token = GetToken();
         if (token.IsNotEmptyOrNull() && jwtHandler.CanReadToken(token))
         {
-            JwtSecurityToken jwtToken = jwtHandler.ReadJwtToken(token);
-
+            var jwtToken = jwtHandler.ReadJwtToken(token);
             return (from item in jwtToken.Claims
                 where item.Type == claimType
                 select item.Value).ToList();
         }
 
-        return new List<string>() { };
+        return new List<string>();
     }
 
+    [Obsolete("禁止新增使用，请改用 CurrentUser / ICurrentUserAccessor")]
     public IEnumerable<Claim> GetClaimsIdentity()
     {
-        if (_accessor.HttpContext == null) return ArraySegment<Claim>.Empty;
+        if (_accessor.HttpContext == null)
+        {
+            return ArraySegment<Claim>.Empty;
+        }
 
-        if (!IsAuthenticated()) return GetClaimsIdentity(GetToken());
+        if (!IsAuthenticated())
+        {
+            return GetClaimsFromToken(GetToken());
+        }
 
         var claims = _accessor.HttpContext.User.Claims.ToList();
         var headers = _accessor.HttpContext.Request.Headers;
@@ -103,20 +88,19 @@ public class HttpContextUser : IHttpContextUser
         return claims;
     }
 
-    public IEnumerable<Claim> GetClaimsIdentity(string token)
+    private IEnumerable<Claim> GetClaimsFromToken(string token)
     {
         var jwtHandler = new JwtSecurityTokenHandler();
-        // token 校验
         if (token.IsNotEmptyOrNull() && jwtHandler.CanReadToken(token))
         {
             var jwtToken = jwtHandler.ReadJwtToken(token);
-
             return jwtToken.Claims;
         }
 
         return new List<Claim>();
     }
 
+    [Obsolete("禁止新增使用，请改用 CurrentUser / ICurrentUserAccessor")]
     public List<string> GetClaimValueByType(string claimType)
     {
         return (from item in GetClaimsIdentity()
@@ -126,12 +110,6 @@ public class HttpContextUser : IHttpContextUser
 
     public bool IsInRole(string role)
     {
-        if (string.IsNullOrWhiteSpace(role))
-        {
-            return false;
-        }
-
-        return Roles.Contains(role, StringComparer.OrdinalIgnoreCase);
+        return Current.IsInRole(role);
     }
-
 }

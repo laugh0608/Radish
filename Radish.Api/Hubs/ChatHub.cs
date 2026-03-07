@@ -11,15 +11,18 @@ public class ChatHub : Hub
 {
     private readonly IChatService _chatService;
     private readonly IChatPresenceService _chatPresenceService;
+    private readonly IClaimsPrincipalNormalizer _claimsPrincipalNormalizer;
     private readonly ILogger<ChatHub> _logger;
 
     public ChatHub(
         IChatService chatService,
         IChatPresenceService chatPresenceService,
+        IClaimsPrincipalNormalizer claimsPrincipalNormalizer,
         ILogger<ChatHub> logger)
     {
         _chatService = chatService;
         _chatPresenceService = chatPresenceService;
+        _claimsPrincipalNormalizer = claimsPrincipalNormalizer;
         _logger = logger;
     }
 
@@ -140,10 +143,10 @@ public class ChatHub : Hub
 
     private long GetUserId()
     {
-        var userId = UserClaimReader.GetUserId(Context.User, GetAccessToken());
-        if (userId > 0)
+        var currentUser = GetCurrentUser();
+        if (currentUser.UserId > 0)
         {
-            return userId;
+            return currentUser.UserId;
         }
 
         throw new HubException("无法获取用户 Id");
@@ -151,12 +154,18 @@ public class ChatHub : Hub
 
     private long GetTenantId()
     {
-        return UserClaimReader.GetTenantId(Context.User, GetAccessToken());
+        return GetCurrentUser().TenantId;
     }
 
     private string GetUserName()
     {
-        return UserClaimReader.GetUserName(Context.User, GetAccessToken(), "Unknown");
+        var currentUser = GetCurrentUser();
+        return string.IsNullOrWhiteSpace(currentUser.UserName) ? "Unknown" : currentUser.UserName;
+    }
+
+    private CurrentUser GetCurrentUser()
+    {
+        return _claimsPrincipalNormalizer.Normalize(Context.User, GetAccessToken());
     }
 
     private string? GetAccessToken()
