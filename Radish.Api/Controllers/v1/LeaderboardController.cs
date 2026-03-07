@@ -18,7 +18,7 @@ namespace Radish.Api.Controllers.v1;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [ApiVersion(1)]
-[Authorize(Policy = "Client")]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class LeaderboardController : ControllerBase
 {
     private readonly ILeaderboardService _leaderboardService;

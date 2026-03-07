@@ -14,15 +14,16 @@ using Radish.Model.LogModels;
 using Radish.Shared.CustomEnum;
 using Serilog;
 
+using Radish.Common.HttpContextTool;
 namespace Radish.Api.Controllers.v2;
 
 [ApiController]
 // [Authorize(Roles = "Client")] // 可以写多个
-// [Authorize(Policy = "SystemOrAdmin")]
+// [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
 [ApiVersion(2)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = "RadishAuthPolicy")]
+[Authorize(Policy = AuthorizationPolicies.RadishAuthPolicy)]
 public class WeatherForecastController : ControllerBase
 {
     // 属性注入

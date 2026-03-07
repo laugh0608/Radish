@@ -20,16 +20,16 @@ namespace Radish.Api.Controllers;
 public class ClientController : ControllerBase
 {
     private readonly IOpenIddictApplicationManager _applicationManager;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
     private readonly ILogger<ClientController> _logger;
 
     public ClientController(
         IOpenIddictApplicationManager applicationManager,
-        IHttpContextUser httpContextUser,
+        ICurrentUserAccessor currentUserAccessor,
         ILogger<ClientController> logger)
     {
         _applicationManager = applicationManager;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
         _logger = logger;
     }
 
@@ -506,7 +506,7 @@ public class ClientController : ControllerBase
         var descriptor = new OpenIddictApplicationDescriptor();
         await _applicationManager.PopulateAsync(descriptor, app);
 
-        var userId = _httpContextUser.UserId.ToString();
+        var userId = _currentUserAccessor.Current.UserId.ToString();
 
         descriptor.Properties["IsDeleted"] = JsonSerializer.SerializeToElement("true");
         descriptor.Properties["DeletedAt"] = JsonSerializer.SerializeToElement(DateTime.UtcNow.ToString("O"));
@@ -520,7 +520,7 @@ public class ClientController : ControllerBase
     /// </summary>
     private void SetCreatedInfo(OpenIddictApplicationDescriptor descriptor)
     {
-        var userId = _httpContextUser.UserId.ToString();
+        var userId = _currentUserAccessor.Current.UserId.ToString();
         descriptor.Properties["CreatedAt"] = JsonSerializer.SerializeToElement(DateTime.UtcNow.ToString("O"));
         descriptor.Properties["CreatedBy"] = JsonSerializer.SerializeToElement(userId);
     }
@@ -530,7 +530,7 @@ public class ClientController : ControllerBase
     /// </summary>
     private void SetUpdatedInfo(OpenIddictApplicationDescriptor descriptor)
     {
-        var userId = _httpContextUser.UserId.ToString();
+        var userId = _currentUserAccessor.Current.UserId.ToString();
         descriptor.Properties["UpdatedAt"] = JsonSerializer.SerializeToElement(DateTime.UtcNow.ToString("O"));
         descriptor.Properties["UpdatedBy"] = JsonSerializer.SerializeToElement(userId);
     }

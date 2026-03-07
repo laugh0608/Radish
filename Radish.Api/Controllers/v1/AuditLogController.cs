@@ -6,6 +6,7 @@ using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.Constants;
 
+using Radish.Common.HttpContextTool;
 namespace Radish.Api.Controllers.v1;
 
 /// <summary>
@@ -14,7 +15,7 @@ namespace Radish.Api.Controllers.v1;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [ApiVersion(1)]
-[Authorize(Policy = "SystemOrAdmin")] // 仅系统管理员和管理员可访问
+[Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)] // 仅系统管理员和管理员可访问
 public class AuditLogController : ControllerBase
 {
     private readonly IAuditLogService _auditLogService;

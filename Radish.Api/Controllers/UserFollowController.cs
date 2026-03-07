@@ -16,7 +16,7 @@ namespace Radish.Api.Controllers;
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Tags("用户关系链")]
-[Authorize(Policy = "Client")]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class UserFollowController : ControllerBase
 {
     private readonly IUserFollowService _userFollowService;

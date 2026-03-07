@@ -5,6 +5,7 @@ using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 
+using Radish.Common.HttpContextTool;
 namespace Radish.Api.Controllers;
 
 /// <summary>系统配置控制器</summary>
@@ -12,7 +13,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = "SystemOrAdmin")]
+[Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
 public class SystemConfigController : ControllerBase
 {
     private readonly IConfiguration _configuration;

@@ -21,7 +21,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = "Client")]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 [Tags("萝卜币系统")]
 public class CoinController : ControllerBase
 {
@@ -77,7 +77,7 @@ public class CoinController : ControllerBase
     /// <response code="401">未授权</response>
     /// <response code="403">权限不足</response>
     [HttpGet]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -343,7 +343,7 @@ public class CoinController : ControllerBase
     /// <response code="401">未授权</response>
     /// <response code="403">权限不足</response>
     [HttpPost]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]

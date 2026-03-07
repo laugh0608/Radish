@@ -15,7 +15,7 @@ namespace Radish.Api.Controllers.v1;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [ApiVersion(1)]
-[Authorize(Policy = "Client")]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class ExperienceController : ControllerBase
 {
     private readonly IExperienceService _experienceService;
@@ -165,7 +165,7 @@ public class ExperienceController : ControllerBase
     /// <param name="request">调整请求</param>
     /// <returns>是否成功</returns>
     [HttpPost]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<bool>> AdminAdjustExperience([FromBody] AdminAdjustExpDto request)
     {
         var operatorId = GetCurrentUserId();
@@ -197,7 +197,7 @@ public class ExperienceController : ControllerBase
     /// </remarks>
     /// <returns>更新后的等级配置列表</returns>
     [HttpPost]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<List<LevelConfigVo>>> RecalculateLevelConfigs()
     {
         var operatorId = GetCurrentUserId();

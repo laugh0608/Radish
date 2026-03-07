@@ -23,10 +23,10 @@ public class ClientControllerTest
 {
     private static ClientController CreateController(Mock<IOpenIddictApplicationManager> managerMock)
     {
-        var httpContextUserMock = new Mock<IHttpContextUser>();
-        httpContextUserMock.SetupGet(x => x.UserId).Returns(20002);
+        var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
+        currentUserAccessorMock.SetupGet(x => x.Current).Returns(new CurrentUser { UserId = 20002 });
         var logger = NullLogger<ClientController>.Instance;
-        var controller = new ClientController(managerMock.Object, httpContextUserMock.Object, logger);
+        var controller = new ClientController(managerMock.Object, currentUserAccessorMock.Object, logger);
 
         return controller;
     }

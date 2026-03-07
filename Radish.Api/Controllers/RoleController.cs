@@ -17,7 +17,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = "SystemOrAdmin")]
+[Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
 public class RoleController : ControllerBase
 {
     private readonly IBaseService<Role, RoleVo> _roleService;

@@ -26,7 +26,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-//[Authorize(Policy = "RadishAuthPolicy")]
+//[Authorize(Policy = AuthorizationPolicies.RadishAuthPolicy)]
 [Tags("用户管理")]
 public class UserController : ControllerBase
 {
@@ -77,7 +77,7 @@ public class UserController : ControllerBase
     /// <response code="403">禁止访问，权限不足</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -150,7 +150,7 @@ public class UserController : ControllerBase
     /// <response code="404">用户不存在</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet("{id:long}")]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -207,7 +207,7 @@ public class UserController : ControllerBase
     /// <response code="403">禁止访问，权限不足</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -275,7 +275,7 @@ public class UserController : ControllerBase
     /// 获取当前登录用户的时间偏好
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyTimePreference()
     {
@@ -312,7 +312,7 @@ public class UserController : ControllerBase
     /// 更新当前登录用户的时间偏好
     /// </summary>
     [HttpPost]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     public async Task<MessageModel> UpdateMyTimePreference([FromBody] UpdateMyTimePreferenceDto dto)
@@ -423,7 +423,7 @@ public class UserController : ControllerBase
     /// </remarks>
     /// <response code="200">搜索成功，返回用户列表</response>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> SearchForMention(string keyword, int limit = 10)
     {
@@ -442,7 +442,7 @@ public class UserController : ControllerBase
     /// 获取当前登录用户的个人资料（个人中心）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyProfile()
     {
@@ -494,7 +494,7 @@ public class UserController : ControllerBase
     /// 更新当前登录用户的个人资料（个人中心）
     /// </summary>
     [HttpPost]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> UpdateMyProfile([FromBody] UpdateMyProfileDto dto)
     {
@@ -659,7 +659,7 @@ public class UserController : ControllerBase
     /// </summary>
     /// <param name="dto">附件 ID（0 表示清空头像）</param>
     [HttpPost]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> SetMyAvatar([FromBody] SetMyAvatarDto dto)
     {
@@ -753,7 +753,7 @@ public class UserController : ControllerBase
     /// 获取当前用户积分余额（占位，M6 将接入真实积分系统）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyPoints()
     {
@@ -779,7 +779,7 @@ public class UserController : ControllerBase
     /// 获取当前用户未读消息数量（占位，将来接入真实通知系统）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetUnreadMessageCount()
     {
@@ -806,7 +806,7 @@ public class UserController : ControllerBase
     /// </summary>
     /// <param name="count">要推送的未读数量，默认为随机数</param>
     [HttpPost]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> TestPushUnreadCount([FromQuery] int? count = null)
     {

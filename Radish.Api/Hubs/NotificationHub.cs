@@ -9,7 +9,7 @@ namespace Radish.Api.Hubs;
 /// <summary>
 /// 通知 SignalR Hub
 /// </summary>
-[Authorize(Policy = "Client")]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class NotificationHub : Hub
 {
     private readonly INotificationPushService _notificationPushService;

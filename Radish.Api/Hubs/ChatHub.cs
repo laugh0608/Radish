@@ -6,7 +6,7 @@ using Radish.IService;
 namespace Radish.Api.Hubs;
 
 /// <summary>聊天室 SignalR Hub</summary>
-[Authorize(Policy = "Client")]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class ChatHub : Hub
 {
     private readonly IChatService _chatService;

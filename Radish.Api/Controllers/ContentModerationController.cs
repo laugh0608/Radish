@@ -15,7 +15,7 @@ namespace Radish.Api.Controllers;
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Tags("内容治理")]
-[Authorize(Policy = "Client")]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class ContentModerationController : ControllerBase
 {
     private readonly IContentModerationService _contentModerationService;
@@ -103,7 +103,7 @@ public class ContentModerationController : ControllerBase
 
     /// <summary>获取审核队列（管理端）</summary>
     [HttpGet]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetReviewQueue(int? status = 0, int pageIndex = 1, int pageSize = 20)
     {
@@ -119,7 +119,7 @@ public class ContentModerationController : ControllerBase
 
     /// <summary>审核举报（管理端）</summary>
     [HttpPost]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
@@ -158,7 +158,7 @@ public class ContentModerationController : ControllerBase
 
     /// <summary>执行用户治理动作（管理端）</summary>
     [HttpPost]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
@@ -197,7 +197,7 @@ public class ContentModerationController : ControllerBase
 
     /// <summary>获取治理动作记录（管理端）</summary>
     [HttpGet]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetActionLogs(int pageIndex = 1, int pageSize = 20, long? targetUserId = null)
     {
