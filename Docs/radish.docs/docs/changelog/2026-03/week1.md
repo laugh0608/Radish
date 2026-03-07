@@ -214,3 +214,8 @@
 - **剩余散点收尾**：`ExperienceController` 的管理员操作者回退已改为复用 `UserRoles.Admin`，`AttachmentService.DeleteFileAsync` 已接入当前用户上下文，不再硬编码审计操作者。
 - **文档对齐**：`identity-claim-convergence.md` 与 `identity-claim-migration.md` 已补充“当前实施状态/兼容层最终边界”，后续协作以文档中的冻结边界为准。
 - **验证结果**：`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false` 与 `dotnet build Radish.Api.Tests/Radish.Api.Tests.csproj -c Debug -m:1 /nr:false` 均通过；`dotnet test` 仍受当前环境 `vstest socket` 限制，不作为失败判断依据。
+
+### 路线图口径复核更新
+
+- **路线图状态修正**：复核仓库实际代码后，`development-plan.md` 已从"身份专项仍为当前最高优先级主任务"调整为"身份语义收敛专项主体已完成，保留协议输出收敛与防回归资产两个尾项"。
+- **当前主线切换**：M12 当前功能主线已明确切换为 **P1 内容与文档体系重构**，优先推进 Markdown 导入/导出、Wiki/文档 App 承接与 `radish.docs` 迁移收口；身份专项尾项改为并行治理任务持续清理。
