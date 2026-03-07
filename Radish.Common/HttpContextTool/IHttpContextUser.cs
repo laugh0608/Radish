@@ -20,6 +20,7 @@ public interface IHttpContextUser
     [Obsolete("禁止新增使用，请改用 CurrentUser / ICurrentUserAccessor")]
     List<string> GetClaimValueByType(string claimType);
 
+    [Obsolete("禁止新增使用，请改用 ICurrentUserAccessor；仅兼容历史 Bearer Token 直取场景")]
     string GetToken();
 
     [Obsolete("禁止新增使用，请改用 CurrentUser / ICurrentUserAccessor")]

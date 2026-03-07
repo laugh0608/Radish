@@ -345,7 +345,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
-            var tenantId = NormalizeTenantId(App.HttpContextUser?.TenantId ?? 0);
+            var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
             var product = Mapper.Map<Product>(dto);
             product.TenantId = tenantId;
             product.CreateId = operatorId;

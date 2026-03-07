@@ -50,10 +50,10 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             if (mta is { TenantType: TenantTypeEnum.DataBases })
             {
                 // 获取租户信息，租户信息可以提前缓存下来 
-                if (App.HttpContextUser is { TenantId: > 0 })
+                if (App.CurrentUser is { TenantId: > 0 })
                 {
                     // .WithCache() 走缓存查询
-                    var tenant = db.Queryable<Tenant>().WithCache().Where(s => s.Id == App.HttpContextUser.TenantId)
+                    var tenant = db.Queryable<Tenant>().WithCache().Where(s => s.Id == App.CurrentUser.TenantId)
                         .First();
                     if (tenant != null)
                     {
@@ -81,7 +81,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
 
     private static long GetCurrentTenantId()
     {
-        var tenantId = App.HttpContextUser?.TenantId ?? 0;
+        var tenantId = App.CurrentUser.TenantId;
         return tenantId > 0 ? tenantId : 0;
     }
 

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Radish.Common.HelpTool;
 using Radish.Common.HttpContextTool;
+using CurrentUserContext = Radish.Common.HttpContextTool.CurrentUser;
 using Radish.Common.OptionTool.Core;
 
 namespace Radish.Common.CoreTool;
@@ -52,7 +53,10 @@ public class App
     /// </summary>
     public static HttpContext HttpContext => RootServices?.GetService<IHttpContextAccessor>()?.HttpContext;
     
-    public static IHttpContextUser HttpContextUser => GetService<IHttpContextUser>();
+    public static CurrentUserContext CurrentUser => GetService<ICurrentUserAccessor>(mustBuild: false)?.Current ?? CurrentUserContext.Anonymous;
+
+    [Obsolete("禁止新增使用，请优先改用 App.CurrentUser / ICurrentUserAccessor")]
+    public static IHttpContextUser HttpContextUser => GetService<IHttpContextUser>(mustBuild: false);
     
     #region Service
 

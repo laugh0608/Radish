@@ -15,7 +15,7 @@ public static class RepositorySetting
     /// </summary>
     public static void SetTenantEntityFilter(SqlSugarScopeProvider db)
     {
-        var tenantId = App.HttpContextUser?.TenantId ?? 0;
+        var tenantId = App.CurrentUser.TenantId;
 
         // 多租户-单表（字段）
         // 也就是说所有人的数据都在一张表里，然后根据这张表里的 TenantId 字段来区分是哪个租户的数据

@@ -39,6 +39,7 @@ public class HttpContextUser : IHttpContextUser
         return _accessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
     }
 
+    [Obsolete("禁止新增使用，请改用 ICurrentUserAccessor；仅兼容历史 Bearer Token 直取场景")]
     public string GetToken()
     {
         var authorization = _accessor.HttpContext?.Request?.Headers.Authorization.ToString();

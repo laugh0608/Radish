@@ -60,7 +60,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     {
         try
         {
-            var normalizedTenantId = NormalizeTenantId(App.HttpContextUser?.TenantId ?? 0);
+            var normalizedTenantId = NormalizeTenantId(App.CurrentUser.TenantId);
 
             // 1. 基础校验
             if (file == null || file.Length == 0)
@@ -289,7 +289,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     /// </summary>
     public async Task<List<AttachmentVo>> GetByBusinessAsync(string businessType, long businessId)
     {
-        var normalizedTenantId = NormalizeTenantId(App.HttpContextUser?.TenantId ?? 0);
+        var normalizedTenantId = NormalizeTenantId(App.CurrentUser.TenantId);
 
         var attachments = await _attachmentRepository.QueryAsync(
             a => a.BusinessType == businessType
@@ -311,7 +311,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             return null;
         }
 
-        var normalizedTenantId = NormalizeTenantId(App.HttpContextUser?.TenantId ?? 0);
+        var normalizedTenantId = NormalizeTenantId(App.CurrentUser.TenantId);
 
         var attachment = await _attachmentRepository.QueryFirstAsync(
             a => a.FileHash == fileHash

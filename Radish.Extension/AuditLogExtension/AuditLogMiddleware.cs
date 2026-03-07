@@ -315,7 +315,7 @@ public class AuditLogMiddleware
             return currentUser.UserName;
         }
 
-        return context.User?.FindFirst(UserClaimTypes.PreferredUsername)?.Value;
+        return UserClaimReader.GetUserName(context.User);
     }
 
     /// <summary>
