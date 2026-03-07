@@ -39,6 +39,8 @@
 
 > **当前进度**：🎉 **M11（查漏补缺阶段）已于 2026-03-01 收官**，现已进入 **M12（社区功能冲刺）**。
 >
+> **当前最高优先级任务**（2026-03-07 更新）：🚨 **身份语义收敛与 Claim 架构治理** 已提升为 **M12-P0 工程治理专项**，优先级高于新增功能扩张；详细设计见 [身份语义收敛与 Claim 治理设计](/architecture/identity-claim-convergence)，执行计划见 [身份语义收敛迁移计划](/guide/identity-claim-migration)。
+>
 > **M11 查漏补缺阶段收官进展**（2026-03-01 更新）：
 > - ✅ **萝卜坑应用核心功能100%完成**（2026-01-27）
 > - ✅ **前端代码规范优化**（2026-01-29）：
@@ -218,6 +220,14 @@
 > - 详见 [Console 实施计划](./guide/console-roadmap.md)
 >
 > **M12 社区功能冲刺阶段规划**（2026-03-01 启动）：
+>
+> - 🚨 **P0：身份语义收敛与 Claim 架构治理**（2026-03-07 新增，当前最高优先级）
+>   - 建立运行时唯一身份视图 `CurrentUser`，统一通过 `ICurrentUserAccessor` 提供当前用户上下文。
+>   - 引入统一 Claim 标准化层，兼容 `sub/jti`、`tenant_id/TenantId`、`role/ClaimTypes.Role` 的历史输入，但禁止兼容逻辑外溢到业务与基础设施层。
+>   - 收缩 `IHttpContextUser` 的原始读取逃逸口，逐步废弃 `GetClaimsIdentity()`、`GetClaimValueByType(string)`、`GetUserInfoFromToken(string)`。
+>   - 对协议边界与运行时边界重新分层：Auth 负责 Claim 签发与 destinations，Api 负责 JWT/OIDC 验证与统一标准化，业务代码只消费 `CurrentUser`。
+>   - 增加仓库扫描/CI 规则，禁止未来在运行时代码中新增 `FindFirst/FindAll/ClaimTypes/User.IsInRole` 等分散解析。
+>   - **交付物**：架构设计文档、迁移计划文档、代码重构补丁、静态扫描规则、回归测试。
 >
 > - 🚀 **P0：社区主线能力（优先保证主流程可用）**
 >   - 聊天室 MVP（频道、消息收发、历史消息、在线状态、基础未读）。

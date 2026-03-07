@@ -7,6 +7,14 @@
   - ❌ 避免：为每个实体都创建 `ICategoryService`，只是包装 BaseService 方法
   - ✅ 推荐：`IPostService : IBaseService<Post, PostVo>` 包含复杂的 `PublishPostAsync` 逻辑
 
+## 运行时身份读取规范
+
+- **禁止**在运行时代码中直接解析 `ClaimsPrincipal`，包括但不限于 `FindFirst(...)`、`FindAll(...)`、`ClaimTypes.*`、`User.IsInRole(...)` 以及手工读取 `"sub"`、`"jti"`、`"tenant_id"`、`"TenantId"`、`"role"`、`"scope"`。
+- **允许的协议边界**仅包括：Auth Claim 签发、`/connect/userinfo`、JWT/OIDC 配置、统一身份标准化组件。
+- **统一入口**：运行时代码统一通过 `CurrentUser` / `ICurrentUserAccessor`（迁移期可兼容 `IHttpContextUser` 外观）获取当前用户信息。
+- **旧接口限制**：`IHttpContextUser.GetClaimsIdentity()`、`GetClaimValueByType(string)`、`GetUserInfoFromToken(string)` 视为历史逃逸口，不得新增使用。
+- 详细设计与迁移顺序见 [身份语义收敛与 Claim 治理设计](/architecture/identity-claim-convergence) 与 [身份语义收敛迁移计划](/guide/identity-claim-migration)。
+
 ## 前端 API 客户端规范
 
 ### 统一使用 @radish/ui 提供的 API 客户端

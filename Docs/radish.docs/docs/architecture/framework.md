@@ -98,6 +98,13 @@ PostgreSQL / SQLite
 **Phase 0 阶段**：Gateway 仅提供门户页面展示，不参与 API 请求转发
 **P1+ 阶段**：Gateway 接管所有外部请求，转发至 Radish.Api 和其他服务
 
+## 身份语义收敛（当前工程治理重点）
+
+- 自 **2026-03-07** 起，Radish 将“Claim 解析收口”升级为“身份语义收敛”专项治理。
+- 目标不是继续在控制器、Hub、中间件层补 `FindFirst(...)`，而是建立运行时唯一身份视图 `CurrentUser`，让业务与基础设施代码不再直接理解 Claim 结构。
+- 协议边界（Auth 签发、`userinfo`、JWT/OIDC 配置）继续保留显式 Claim 语义；非协议边界运行时代码统一通过 `ICurrentUserAccessor` 获取当前用户。
+- 详细设计见 [身份语义收敛与 Claim 治理设计](/architecture/identity-claim-convergence)，执行顺序见 [身份语义收敛迁移计划](/guide/identity-claim-migration)。
+
 - `Radish.Api`
   - 负责 DI、配置、日志、全局异常、认证授权、Swagger/Scalar、HealthChecks。
   - 仅保留轻量 Controller/Endpoint，所有核心逻辑委派给 Service 层。

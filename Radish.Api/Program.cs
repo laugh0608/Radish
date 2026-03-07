@@ -320,7 +320,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnTokenValidated = context =>
             {
                 var path = context.HttpContext.Request.Path;
-                var userId = context.Principal?.FindFirst("sub")?.Value;
+                var userId = UserClaimReader.GetUserId(context.Principal);
                 Log.Information("[JWT] OnTokenValidated - Path: {Path}, UserId: {UserId}", path, userId);
                 return Task.CompletedTask;
             },

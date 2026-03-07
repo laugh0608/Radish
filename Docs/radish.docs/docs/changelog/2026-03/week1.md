@@ -172,6 +172,14 @@
 
 ## 2026-03-07 (周六)
 
+### 身份语义收敛专项立项（最高优先级）
+
+- **专项升级**：将原“Claim 解析补漏”正式升级为“身份语义收敛与 Claim 架构治理”专项，不再按控制器、Hub、中间件逐点修补，而是按统一身份语义层一次性治理。
+- **设计文档落地**：新增 `architecture/identity-claim-convergence.md`，明确 `CurrentUser`、`ICurrentUserAccessor`、统一 Claim 标准化层、协议边界保留范围与防回归规则。
+- **迁移文档落地**：新增 `guide/identity-claim-migration.md`，明确从文档、抽象、运行时迁移、旧接口废弃、协议输出收敛到 CI 防回归的完整阶段计划。
+- **规划优先级调整**：`development-plan.md` 已将该事项提升为 **M12 当前最高优先级 P0 工程治理任务**，优先级高于新增功能扩张。
+- **规范入口同步**：`framework`、`specifications`、`authentication` 与文档导航已同步增加入口，后续身份相关改造以这两份新文档为唯一执行依据。
+
 ### Claim 解析口径统一收口完成
 
 - **控制器角色读取收口**：`PostController`、`CommentController`、`AttachmentController`、`UserController`、`ChannelMessageController` 已移除分散的 `role` claim 读取与 `User.IsInRole(...)` 判断，统一改为通过 `IHttpContextUser` 暴露的角色能力判定。

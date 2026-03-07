@@ -79,6 +79,7 @@ export default defineConfig({
           items: [
             { text: '快速开始', link: '/guide/getting-started' },
             { text: '认证与权限', link: '/guide/authentication' },
+            { text: '身份语义迁移', link: '/guide/identity-claim-migration' },
             { text: '配置管理', link: '/guide/configuration' },
             { text: '日志系统', link: '/guide/logging' },
             { text: '密码安全', link: '/guide/password-security' },
@@ -143,6 +144,7 @@ export default defineConfig({
           items: [
             { text: '架构总览', link: '/architecture/overview' },
             { text: '开发框架说明', link: '/architecture/framework' },
+            { text: '身份语义收敛设计', link: '/architecture/identity-claim-convergence' },
             { text: '开发规范', link: '/architecture/specifications' },
             { text: '国际化指南', link: '/architecture/i18n' }
           ]
