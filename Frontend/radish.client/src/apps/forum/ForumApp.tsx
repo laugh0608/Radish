@@ -554,6 +554,8 @@ export const ForumApp = () => {
             <PublishPostModal
               isOpen={actionsState.isPublishModalOpen}
               isAuthenticated={loggedIn}
+              categories={dataState.categories}
+              selectedCategoryId={dataState.selectedCategoryId}
               onClose={() => actionsState.setIsPublishModalOpen(false)}
               onPublish={actionsState.handlePublishPost}
             />
@@ -565,6 +567,7 @@ export const ForumApp = () => {
             <EditPostModal
               isOpen={actionsState.isEditModalOpen}
               post={dataState.selectedPost}
+              categories={dataState.categories}
               onClose={() => actionsState.setIsEditModalOpen(false)}
               onSave={actionsState.handleSaveEdit}
             />

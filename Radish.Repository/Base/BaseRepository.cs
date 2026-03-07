@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Collections.Concurrent;
+using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.HttpContextTool;
 using Radish.Common.TenantTool;
@@ -139,51 +140,36 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
     }
 
-    private ISugarQueryable<TEntity> CreateTenantQueryable()
+    private ISugarQueryable<TEntity> CreateTenantQueryable(bool includeDeleted = false)
     {
-        return ApplyTenantScope(DbClientBase.Queryable<TEntity>());
+        return ApplyTenantScope(DbClientBase.Queryable<TEntity>(), includeDeleted);
     }
 
     /// <summary>创建指定实体类型的租户隔离查询（供子类仓储聚合查询复用）</summary>
-    protected ISugarQueryable<TTarget> CreateTenantQueryableFor<TTarget>() where TTarget : class, new()
+    protected ISugarQueryable<TTarget> CreateTenantQueryableFor<TTarget>(bool includeDeleted = false) where TTarget : class, new()
     {
-        return ApplyTenantScope(DbClientBase.Queryable<TTarget>());
+        return ApplyTenantScope(DbClientBase.Queryable<TTarget>(), includeDeleted);
     }
 
-    private ISugarQueryable<TEntity> ApplyTenantScope(ISugarQueryable<TEntity> query)
+    private ISugarQueryable<TEntity> ApplyTenantScope(ISugarQueryable<TEntity> query, bool includeDeleted = false)
     {
-        return ApplyTenantScope<TEntity>(query);
+        return ApplyTenantScope<TEntity>(query, includeDeleted);
     }
 
-    private static ISugarQueryable<TTarget> ApplyTenantScope<TTarget>(ISugarQueryable<TTarget> query)
+    private static ISugarQueryable<TTarget> ApplyTenantScope<TTarget>(ISugarQueryable<TTarget> query, bool includeDeleted = false)
         where TTarget : class, new()
     {
-        if (!typeof(ITenantEntity).IsAssignableFrom(typeof(TTarget)))
+        if (typeof(ITenantEntity).IsAssignableFrom(typeof(TTarget)))
         {
-            return query;
+            query = query.Where(BuildTenantFilterExpression<TTarget>());
         }
 
-        return query.Where(BuildTenantFilterExpression<TTarget>());
-    }
-
-    private IUpdateable<TEntity> ApplyTenantScope(IUpdateable<TEntity> updateable)
-    {
-        if (!IsTenantScopedEntity)
+        if (!includeDeleted && typeof(IDeleteFilter).IsAssignableFrom(typeof(TTarget)))
         {
-            return updateable;
+            query = query.Where(BuildNotDeletedFilterExpression<TTarget>());
         }
 
-        return updateable.Where(BuildTenantFilterExpression<TEntity>());
-    }
-
-    private IDeleteable<TEntity> ApplyTenantScope(IDeleteable<TEntity> deleteable)
-    {
-        if (!IsTenantScopedEntity)
-        {
-            return deleteable;
-        }
-
-        return deleteable.Where(BuildTenantFilterExpression<TEntity>());
+        return query;
     }
 
     private static Expression<Func<TTarget, bool>> BuildTenantFilterExpression<TTarget>() where TTarget : class, new()
@@ -198,6 +184,48 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
                 Expression.Equal(tenantProperty, Expression.Constant(tenantId)),
                 Expression.Equal(tenantProperty, zeroExpression))
             : Expression.Equal(tenantProperty, zeroExpression);
+
+        return Expression.Lambda<Func<TTarget, bool>>(body, parameter);
+    }
+
+    private static Expression<Func<TTarget, bool>> BuildNotDeletedFilterExpression<TTarget>() where TTarget : class, new()
+    {
+        var parameter = Expression.Parameter(typeof(TTarget), "it");
+        var isDeletedProperty = Expression.Property(parameter, nameof(IDeleteFilter.IsDeleted));
+        var body = Expression.Equal(isDeletedProperty, Expression.Constant(false));
+
+        return Expression.Lambda<Func<TTarget, bool>>(body, parameter);
+    }
+
+    private static Expression<Func<TTarget, bool>> BuildScopedWhereExpression<TTarget>(Expression<Func<TTarget, bool>> whereExpression)
+        where TTarget : class, new()
+    {
+        if (!typeof(ITenantEntity).IsAssignableFrom(typeof(TTarget)))
+        {
+            return whereExpression;
+        }
+
+        return whereExpression.And(BuildTenantFilterExpression<TTarget>());
+    }
+
+    private static Expression<Func<TTarget, bool>> BuildIdsFilterExpression<TTarget>(IReadOnlyCollection<long> ids)
+        where TTarget : class, new()
+    {
+        var idProperty = typeof(TTarget).GetProperty(nameof(RootEntityTKey<long>.Id));
+        if (idProperty == null || idProperty.PropertyType != typeof(long))
+        {
+            throw new InvalidOperationException($"实体 {typeof(TTarget).Name} 不支持 long 类型主键批量删除。");
+        }
+
+        var idList = ids.ToList();
+        var parameter = Expression.Parameter(typeof(TTarget), "it");
+        var property = Expression.Property(parameter, idProperty);
+        var body = Expression.Call(
+            typeof(Enumerable),
+            nameof(Enumerable.Contains),
+            [typeof(long)],
+            Expression.Constant(idList),
+            property);
 
         return Expression.Lambda<Func<TTarget, bool>>(body, parameter);
     }
@@ -410,7 +438,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
 
         // 先查询实体是否存在（包括已删除的）
-        var entity = await CreateTenantQueryable().InSingleAsync(id);
+        var entity = await CreateTenantQueryable(includeDeleted: true).InSingleAsync(id);
         if (entity == null)
         {
             return false;
@@ -440,7 +468,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
 
         // 查询要恢复的实体（包括已删除的）
-        var entities = await CreateTenantQueryable().Where(whereExpression).ToListAsync();
+        var entities = await CreateTenantQueryable(includeDeleted: true).Where(whereExpression).ToListAsync();
         if (!entities.Any())
         {
             return 0;
@@ -467,8 +495,13 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     [Obsolete("请使用 SoftDeleteByIdAsync 进行软删除，避免物理删除业务数据")]
     public async Task<bool> DeleteByIdAsync(long id)
     {
-        var deleteable = ApplyTenantScope(DbClientBase.Deleteable<TEntity>().In(id));
-        return await deleteable.ExecuteCommandHasChangeAsync();
+        var entity = await QueryByIdAsync(id);
+        if (entity == null)
+        {
+            return false;
+        }
+
+        return await DeleteAsync(entity);
     }
 
     /// <summary>根据实体删除（物理删除）</summary>
@@ -482,7 +515,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             return false;
         }
 
-        var deleteable = ApplyTenantScope(DbClientBase.Deleteable(entity));
+        var deleteable = DbClientBase.Deleteable(entity);
         return await deleteable.ExecuteCommandHasChangeAsync();
     }
 
@@ -492,7 +525,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     public async Task<int> DeleteAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
-        var deleteable = ApplyTenantScope(DbClientBase.Deleteable<TEntity>().Where(whereExpression));
+        var scopedWhereExpression = BuildScopedWhereExpression(whereExpression);
+        var deleteable = DbClientBase.Deleteable<TEntity>().Where(scopedWhereExpression);
         return await deleteable.ExecuteCommandAsync();
     }
 
@@ -502,7 +536,14 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     [Obsolete("请使用 SoftDeleteAsync 进行软删除，避免物理删除业务数据")]
     public async Task<int> DeleteByIdsAsync(List<long> ids)
     {
-        var deleteable = ApplyTenantScope(DbClientBase.Deleteable<TEntity>().In(ids));
+        if (ids == null || ids.Count == 0)
+        {
+            return 0;
+        }
+
+        var whereExpression = BuildIdsFilterExpression<TEntity>(ids);
+        var scopedWhereExpression = BuildScopedWhereExpression(whereExpression);
+        var deleteable = DbClientBase.Deleteable<TEntity>().Where(scopedWhereExpression);
         return await deleteable.ExecuteCommandAsync();
     }
 
@@ -521,7 +562,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             return false;
         }
 
-        var updateable = ApplyTenantScope(DbClientBase.Updateable(entity));
+        var updateable = DbClientBase.Updateable(entity);
         return await updateable.ExecuteCommandHasChangeAsync();
     }
 
@@ -552,7 +593,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             NormalizeEntityDateTimeToUtc(entity);
         }
 
-        var updateable = ApplyTenantScope(DbClientBase.Updateable(updateEntities));
+        var updateable = DbClientBase.Updateable(updateEntities);
         return await updateable.ExecuteCommandAsync();
     }
 
@@ -571,7 +612,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             return false;
         }
 
-        var updateable = ApplyTenantScope(DbClientBase.Updateable(entity).UpdateColumns(updateColumns));
+        var updateable = DbClientBase.Updateable(entity).UpdateColumns(updateColumns);
         return await updateable.ExecuteCommandHasChangeAsync();
     }
 
@@ -629,8 +670,8 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// </example>
     public async Task<int> UpdateColumnsAsync(Expression<Func<TEntity, TEntity>> updateColumns, Expression<Func<TEntity, bool>> whereExpression)
     {
-        var updateable = DbClientBase.Updateable<TEntity>().SetColumns(updateColumns).Where(whereExpression);
-        updateable = ApplyTenantScope(updateable);
+        var scopedWhereExpression = BuildScopedWhereExpression(whereExpression);
+        var updateable = DbClientBase.Updateable<TEntity>().SetColumns(updateColumns).Where(scopedWhereExpression);
         return await updateable.ExecuteCommandAsync();
     }
 

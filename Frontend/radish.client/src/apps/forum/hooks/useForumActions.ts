@@ -57,11 +57,11 @@ export interface ForumActionsHandlers {
 
   // 帖子操作
   handleSelectPost: (postId: number) => Promise<void>;
-  handlePublishPost: (title: string, content: string, tagNames: string[]) => Promise<void>;
+  handlePublishPost: (title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
   handleLikePost: (postId: number) => Promise<void>;
   handleEditPost: (postId: number) => void;
   handleViewPostHistory: (postId: number) => Promise<void>;
-  handleSaveEdit: (postId: number, title: string, content: string, tagNames: string[]) => Promise<void>;
+  handleSaveEdit: (postId: number, title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
   handleDeletePost: (postId: number) => void;
   confirmDeletePost: () => Promise<void>;
   cancelDeletePost: () => void;
@@ -241,10 +241,11 @@ export const useForumActions = (
   };
 
   // 发布帖子
-  const handlePublishPost = async (title: string, content: string, tagNames: string[]) => {
-    if (!selectedCategoryId) {
-      setError('请先选择分类');
-      return;
+  const handlePublishPost = async (title: string, content: string, categoryId: number, tagNames: string[]) => {
+    if (categoryId <= 0) {
+      const message = '请先选择分类';
+      setError(message);
+      throw new Error(message);
     }
 
     const normalizedTagNames = normalizeTagNames(tagNames);
@@ -266,7 +267,7 @@ export const useForumActions = (
         {
           title,
           content,
-          categoryId: selectedCategoryId,
+          categoryId,
           tagNames: normalizedTagNames
         },
         t
@@ -343,10 +344,10 @@ export const useForumActions = (
   };
 
   // 保存编辑
-  const handleSaveEdit = async (postId: number, title: string, content: string, tagNames: string[]) => {
+  const handleSaveEdit = async (postId: number, title: string, content: string, categoryId: number, tagNames: string[]) => {
     setError(null);
     try {
-      await updatePost({ postId, title, content, tagNames }, t);
+      await updatePost({ postId, title, content, categoryId, tagNames }, t);
       await Promise.all([loadPostDetail(postId), loadPosts()]);
       setIsEditModalOpen(false);
     } catch (err) {

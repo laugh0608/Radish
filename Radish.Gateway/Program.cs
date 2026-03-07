@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.FileProviders;
 using Radish.Common;
 using Radish.Common.CoreTool;
@@ -36,6 +37,26 @@ static string ResolveSharedConfigPath(string basePath, string contentRootPath)
     }
 
     return Path.Combine(contentRootPath, "appsettings.Shared.json");
+}
+
+static void RemoveHttpSysDelegationRegistrations(IServiceCollection services)
+{
+    for (var index = services.Count - 1; index >= 0; index--)
+    {
+        var descriptor = services[index];
+        var serviceTypeName = descriptor.ServiceType.FullName ?? string.Empty;
+        var implementationTypeName = descriptor.ImplementationType?.FullName ?? string.Empty;
+        var implementationFactoryMethodName = descriptor.ImplementationFactory?.Method.Name ?? string.Empty;
+        var implementationFactoryReturnTypeName = descriptor.ImplementationFactory?.Method.ReturnType.FullName ?? string.Empty;
+
+        if (serviceTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal) ||
+            implementationTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal) ||
+            implementationFactoryMethodName.Contains("HttpSysDelegation", StringComparison.Ordinal) ||
+            implementationFactoryReturnTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal))
+        {
+            services.RemoveAt(index);
+        }
+    }
 }
 
 // ===== 配置管理 =====
@@ -122,6 +143,11 @@ builder.Host.AddSerilogSetup();
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
+if (!OperatingSystem.IsWindows())
+{
+    RemoveHttpSysDelegationRegistrations(builder.Services);
+}
+
 var app = builder.Build();
 
 // 绑定 InternalApp 扩展中的服务
@@ -164,6 +190,11 @@ app.MapFallbackToPage("/Index");
 // ===== 启动日志 =====
 app.Lifetime.ApplicationStarted.Register(() =>
 {
+    if (!OperatingSystem.IsWindows())
+    {
+        Log.Information("当前运行环境非 Windows，Gateway 已跳过 YARP HttpSys delegation 注册");
+    }
+
     var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
 
     Log.Information("====================================");
