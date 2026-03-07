@@ -32,6 +32,12 @@ public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentV
 
     Task<bool> ArchiveAsync(long id, long operatorId, string operatorName);
 
+    Task<List<WikiDocumentRevisionItemVo>> GetRevisionListAsync(long documentId);
+
+    Task<WikiDocumentRevisionDetailVo?> GetRevisionDetailAsync(long revisionId);
+
+    Task<bool> RollbackAsync(long revisionId, long operatorId, string operatorName);
+
     Task<long> ImportMarkdownAsync(WikiMarkdownImportDto importDto, long operatorId, string operatorName, long tenantId);
 
     Task<(string fileName, string markdownContent)?> ExportMarkdownAsync(long id, bool includeUnpublished = false);

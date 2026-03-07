@@ -11,6 +11,7 @@
 @Gateway_HostAddress = https://localhost:5000
 @WikiDocumentId = 1
 @WikiDocumentSlug = wiki-sample
+@WikiRevisionId = 1
 
 ### 1. 获取文档列表
 GET {{Gateway_HostAddress}}/api/v1/Wiki/GetList?pageIndex=1&pageSize=20
@@ -100,3 +101,18 @@ Content-Type: text/markdown
 GET {{Gateway_HostAddress}}/api/v1/Wiki/ExportMarkdown/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: text/markdown
+
+### 12. 获取版本历史列表
+GET {{Gateway_HostAddress}}/api/v1/Wiki/GetRevisionList/{{WikiDocumentId}}
+Authorization: Bearer {{Admin_Access_Token}}
+Accept: application/json
+
+### 13. 获取版本详情
+GET {{Gateway_HostAddress}}/api/v1/Wiki/GetRevisionDetail/{{WikiRevisionId}}
+Authorization: Bearer {{Admin_Access_Token}}
+Accept: application/json
+
+### 14. 按版本回滚
+POST {{Gateway_HostAddress}}/api/v1/Wiki/Rollback/{{WikiRevisionId}}
+Authorization: Bearer {{Admin_Access_Token}}
+Accept: application/json

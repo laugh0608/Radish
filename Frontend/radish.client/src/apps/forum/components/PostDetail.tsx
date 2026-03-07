@@ -63,8 +63,8 @@ export const PostDetail = ({
     : [];
   const tagList = post?.voTagNames && post.voTagNames.length > 0 ? post.voTagNames : parsedTags;
 
-  const isAuthor = post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
-  const showFollowAction = isAuthenticated && !isAuthor && post.voAuthorId > 0;
+  const isAuthor = !!post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
+  const showFollowAction = isAuthenticated && !!post && !isAuthor && post.voAuthorId > 0;
   if (loading) {
     return (
       <div className={styles.container}>

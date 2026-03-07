@@ -340,6 +340,96 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
         return await UpdateAsync(document);
     }
 
+    public async Task<List<WikiDocumentRevisionItemVo>> GetRevisionListAsync(long documentId)
+    {
+        if (documentId <= 0)
+        {
+            return [];
+        }
+
+        var document = await _wikiDocumentRepository.QueryByIdAsync(documentId);
+        if (document == null || document.IsDeleted)
+        {
+            return [];
+        }
+
+        var revisions = await _wikiDocumentRevisionRepository.QueryWithOrderAsync(
+            r => r.DocumentId == documentId,
+            r => r.Version,
+            OrderByType.Desc);
+
+        return revisions
+            .Select(revision => MapRevisionItem(revision, document.Version))
+            .ToList();
+    }
+
+    public async Task<WikiDocumentRevisionDetailVo?> GetRevisionDetailAsync(long revisionId)
+    {
+        if (revisionId <= 0)
+        {
+            return null;
+        }
+
+        var revision = await _wikiDocumentRevisionRepository.QueryByIdAsync(revisionId);
+        if (revision == null)
+        {
+            return null;
+        }
+
+        var document = await _wikiDocumentRepository.QueryByIdAsync(revision.DocumentId);
+        if (document == null || document.IsDeleted)
+        {
+            return null;
+        }
+
+        return MapRevisionDetail(revision, document.Version);
+    }
+
+    public async Task<bool> RollbackAsync(long revisionId, long operatorId, string operatorName)
+    {
+        if (revisionId <= 0)
+        {
+            throw new ArgumentException("版本ID无效", nameof(revisionId));
+        }
+
+        var revision = await _wikiDocumentRevisionRepository.QueryByIdAsync(revisionId);
+        if (revision == null)
+        {
+            return false;
+        }
+
+        var document = await _wikiDocumentRepository.QueryByIdAsync(revision.DocumentId);
+        if (document == null || document.IsDeleted)
+        {
+            return false;
+        }
+
+        var isSameContent =
+            document.Title == revision.Title &&
+            document.MarkdownContent == revision.MarkdownContent;
+
+        if (isSameContent)
+        {
+            throw new InvalidOperationException($"当前文档已是 v{revision.Version} 的内容，无需回滚");
+        }
+
+        document.Title = revision.Title;
+        document.MarkdownContent = revision.MarkdownContent;
+        document.Version += 1;
+        document.ModifyId = operatorId;
+        document.ModifyBy = ResolveOperatorName(operatorName);
+        document.ModifyTime = DateTime.Now;
+
+        var updated = await UpdateAsync(document);
+        if (!updated)
+        {
+            return false;
+        }
+
+        await AddRevisionAsync(document, $"回滚到 v{revision.Version}", "Rollback", operatorId, operatorName);
+        return true;
+    }
+
     public async Task<long> ImportMarkdownAsync(WikiMarkdownImportDto importDto, long operatorId, string operatorName, long tenantId)
     {
         if (importDto == null)
@@ -509,5 +599,39 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
         using var stream = file.OpenReadStream();
         using var reader = new StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
         return await reader.ReadToEndAsync();
+    }
+
+    private static WikiDocumentRevisionItemVo MapRevisionItem(WikiDocumentRevision revision, int currentVersion)
+    {
+        return new WikiDocumentRevisionItemVo
+        {
+            VoId = revision.Id,
+            VoDocumentId = revision.DocumentId,
+            VoVersion = revision.Version,
+            VoTitle = revision.Title,
+            VoChangeSummary = revision.ChangeSummary,
+            VoSourceType = revision.SourceType,
+            VoCreateTime = revision.CreateTime,
+            VoCreateBy = revision.CreateBy,
+            VoIsCurrent = revision.Version == currentVersion
+        };
+    }
+
+    private static WikiDocumentRevisionDetailVo MapRevisionDetail(WikiDocumentRevision revision, int currentVersion)
+    {
+        return new WikiDocumentRevisionDetailVo
+        {
+            VoId = revision.Id,
+            VoDocumentId = revision.DocumentId,
+            VoVersion = revision.Version,
+            VoTitle = revision.Title,
+            VoMarkdownContent = revision.MarkdownContent,
+            VoChangeSummary = revision.ChangeSummary,
+            VoSourceType = revision.SourceType,
+            VoCreateTime = revision.CreateTime,
+            VoCreateBy = revision.CreateBy,
+            VoCreateId = revision.CreateId,
+            VoIsCurrent = revision.Version == currentVersion
+        };
     }
 }

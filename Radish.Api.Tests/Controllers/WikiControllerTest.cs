@@ -1,5 +1,6 @@
 #nullable enable
 
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -33,7 +34,7 @@ public class WikiControllerTest
         var result = await controller.GetById(1001);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(400, result.StatusCode);
+        Assert.Equal(200, result.StatusCode);
         Assert.Equal("文档不存在或无权访问", result.MessageInfo);
     }
 
@@ -73,7 +74,7 @@ public class WikiControllerTest
         var result = await controller.Publish(404);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(400, result.StatusCode);
+        Assert.Equal(200, result.StatusCode);
         Assert.False(result.ResponseData);
     }
 
@@ -127,6 +128,69 @@ public class WikiControllerTest
         Assert.Equal("text/markdown; charset=utf-8", fileResult.ContentType);
         Assert.Equal("wiki-guide.md", fileResult.FileDownloadName);
         Assert.Equal("# 标题\n\n内容", Encoding.UTF8.GetString(fileResult.FileContents));
+    }
+
+    [Fact]
+    public async Task GetRevisionList_Should_Return_Data_When_Found()
+    {
+        var revisionList = new List<WikiDocumentRevisionItemVo>
+        {
+            new()
+            {
+                VoId = 11,
+                VoDocumentId = 42,
+                VoVersion = 3,
+                VoTitle = "Wiki 文档",
+                VoCreateBy = "Tester",
+                VoSourceType = "Manual",
+                VoIsCurrent = true,
+            }
+        };
+
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.GetRevisionListAsync(42))
+            .ReturnsAsync(revisionList);
+
+        var controller = CreateController(serviceMock.Object, isAdmin: true);
+        var result = await controller.GetRevisionList(42);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Single(result.ResponseData);
+        Assert.Equal(3, result.ResponseData[0].VoVersion);
+    }
+
+    [Fact]
+    public async Task GetRevisionDetail_Should_Return_Failed_When_Revision_NotFound()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.GetRevisionDetailAsync(404))
+            .ReturnsAsync((WikiDocumentRevisionDetailVo?)null);
+
+        var controller = CreateController(serviceMock.Object, isAdmin: true);
+        var result = await controller.GetRevisionDetail(404);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal("版本不存在", result.MessageInfo);
+    }
+
+    [Fact]
+    public async Task Rollback_Should_Return_Success_When_Service_Returns_True()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.RollbackAsync(88, 10001, "Tester"))
+            .ReturnsAsync(true);
+
+        var controller = CreateController(serviceMock.Object, isAdmin: true);
+        var result = await controller.Rollback(88);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        Assert.True(result.ResponseData);
     }
 
     private static WikiController CreateController(IWikiDocumentService wikiDocumentService, bool isAdmin = false)

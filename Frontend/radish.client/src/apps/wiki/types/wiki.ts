@@ -19,6 +19,23 @@ export interface WikiDocumentDetailVo extends WikiDocumentVo {
   voMarkdownContent: string;
 }
 
+export interface WikiDocumentRevisionItemVo {
+  voId: number;
+  voDocumentId: number;
+  voVersion: number;
+  voTitle: string;
+  voChangeSummary?: string | null;
+  voSourceType: string;
+  voCreateTime: string;
+  voCreateBy: string;
+  voIsCurrent: boolean;
+}
+
+export interface WikiDocumentRevisionDetailVo extends WikiDocumentRevisionItemVo {
+  voMarkdownContent: string;
+  voCreateId: number;
+}
+
 export interface WikiDocumentTreeNodeVo {
   voId: number;
   voTitle: string;

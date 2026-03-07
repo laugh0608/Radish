@@ -435,10 +435,18 @@ ON WikiDocumentRevision(DocumentId, Version DESC);
 - `POST /api/v1/Wiki/ImportMarkdown`
 - `GET /api/v1/Wiki/ExportMarkdown/{id}`
 
-### 7.4 版本历史（预留但建议本期先做最小能力）
+### 7.4 版本历史（MVP 已实现）
 
 - `GET /api/v1/Wiki/GetRevisionList/{id}`
 - `GET /api/v1/Wiki/GetRevisionDetail/{revisionId}`
+- `POST /api/v1/Wiki/Rollback/{revisionId}`
+
+当前阶段约定：
+
+- 版本历史、版本详情、回滚接口仅对 `Admin/System` 开放；
+- 回滚采用“恢复为新版本”模式，不直接覆写历史版本；
+- 回滚仅恢复 `Title` 与 `MarkdownContent`，不恢复 `ParentId / Sort / Status / CoverAttachmentId` 等结构字段；
+- 回滚成功后会为当前文档生成一个新的 `WikiDocumentRevision` 快照，修改说明固定为“回滚到 vX”。
 
 ---
 
@@ -503,6 +511,13 @@ Frontend/radish.client/src/apps/wiki/
 - 使用 `diff` 算法高亮变更（如 `diff-match-patch` 库）
 - 支持”并排对比”和”行内对比”两种模式
 - 提供”恢复到此版本”操作（创建新版本，内容为历史版本）
+
+#### 当前已落地的最小前端能力
+
+- Wiki App 在文档详情页右侧提供“版本历史”面板；
+- 点击历史项可查看该版本的标题、修改说明、来源、创建时间与 Markdown 渲染结果；
+- 管理员可对非当前版本执行“回滚到此版本”；
+- 版本对比高亮仍为后续增强项，本期先保证“列表 / 详情 / 回滚”闭环。
 
 ### 8.4 与现有 `docs` 入口的关系
 

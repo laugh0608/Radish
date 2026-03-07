@@ -335,9 +335,17 @@
   color: #fde68a;
 }
 
+.documentLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
+}
+
 .markdownPanel,
 .editorPanel,
-.emptyState {
+.emptyState,
+.historyPanel,
+.revisionDetail {
   border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 16px;
   background: rgba(15, 23, 42, 0.58);
@@ -346,6 +354,116 @@
 
 .markdownPanel {
   padding: 20px;
+}
+
+.historyPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  min-width: 0;
+}
+
+.historyPanelHeader,
+.revisionDetailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.historyTitle,
+.revisionDetailTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.historyHint,
+.revisionMeta,
+.revisionSummary {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #94a3b8;
+}
+
+.historyCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(30, 41, 59, 0.85);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.historyBody {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 14px;
+  min-height: 0;
+}
+
+.historyList {
+  max-height: 720px;
+  overflow: auto;
+}
+
+.revisionItem {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.5);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.revisionItem:hover {
+  background: rgba(51, 65, 85, 0.42);
+}
+
+.revisionItemActive {
+  background: rgba(59, 130, 246, 0.2);
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+.revisionItemHeader,
+.revisionActions,
+.revisionMetaBar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.revisionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.revisionDetail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  min-width: 0;
+}
+
+.revisionPreview {
+  max-height: 720px;
+  overflow: auto;
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.35);
 }
 
 .editorPanel {
@@ -416,5 +534,26 @@
 
   .formGrid {
     grid-template-columns: 1fr;
+  }
+
+  .historyBody,
+  .documentLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .historyList,
+  .revisionPreview {
+    max-height: none;
+  }
+}
+
+@media (min-width: 1400px) {
+  .documentLayout {
+    grid-template-columns: minmax(0, 1.3fr) minmax(420px, 0.9fr);
+    align-items: start;
+  }
+
+  .historyBody {
+    grid-template-columns: 220px minmax(0, 1fr);
   }
 }

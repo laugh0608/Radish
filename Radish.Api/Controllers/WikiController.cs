@@ -156,6 +156,44 @@ public class WikiController : ControllerBase
             : MessageModel<bool>.Failed("文档不存在", false);
     }
 
+    [HttpGet("{id:long}")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    public async Task<MessageModel<List<WikiDocumentRevisionItemVo>>> GetRevisionList(long id)
+    {
+        var result = await _wikiDocumentService.GetRevisionListAsync(id);
+        return MessageModel<List<WikiDocumentRevisionItemVo>>.Success("查询成功", result);
+    }
+
+    [HttpGet("{revisionId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    public async Task<MessageModel<WikiDocumentRevisionDetailVo>> GetRevisionDetail(long revisionId)
+    {
+        var result = await _wikiDocumentService.GetRevisionDetailAsync(revisionId);
+        if (result == null)
+        {
+            return MessageModel<WikiDocumentRevisionDetailVo>.Failed("版本不存在", default!);
+        }
+
+        return MessageModel<WikiDocumentRevisionDetailVo>.Success("查询成功", result);
+    }
+
+    [HttpPost("{revisionId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    public async Task<MessageModel<bool>> Rollback(long revisionId)
+    {
+        try
+        {
+            var result = await _wikiDocumentService.RollbackAsync(revisionId, Current.UserId, Current.UserName);
+            return result
+                ? MessageModel<bool>.Success("回滚成功", true)
+                : MessageModel<bool>.Failed("版本不存在或文档已删除", false);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return MessageModel<bool>.Failed(ex.Message, false);
+        }
+    }
+
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [RequestSizeLimit(10 * 1024 * 1024)]

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { toast } from '@radish/ui/toast';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
@@ -12,9 +13,12 @@ import {
   downloadWikiMarkdown,
   getWikiDocumentById,
   getWikiList,
+  getWikiRevisionDetail,
+  getWikiRevisionList,
   getWikiTree,
   importWikiMarkdown,
   publishWikiDocument,
+  rollbackWikiRevision,
   unpublishWikiDocument,
   updateWikiDocument,
 } from './api/wiki';
@@ -22,6 +26,8 @@ import type {
   CreateWikiDocumentRequest,
   UpdateWikiDocumentRequest,
   WikiDocumentDetailVo,
+  WikiDocumentRevisionDetailVo,
+  WikiDocumentRevisionItemVo,
   WikiDocumentTreeNodeVo,
   WikiDocumentVo,
 } from './types/wiki';
@@ -139,6 +145,14 @@ function buildUpdateRequest(draft: EditorDraft): UpdateWikiDocumentRequest {
   };
 }
 
+function describeRevisionSummary(revision: WikiDocumentRevisionItemVo): string {
+  if (revision.voChangeSummary?.trim()) {
+    return revision.voChangeSummary;
+  }
+
+  return revision.voIsCurrent ? '当前版本快照' : '未填写修改说明';
+}
+
 export const WikiApp = () => {
   const { t } = useTranslation();
   const roles = useUserStore((state) => state.roles || []);
@@ -151,15 +165,21 @@ export const WikiApp = () => {
   const [documents, setDocuments] = useState<WikiDocumentVo[]>([]);
   const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<WikiDocumentDetailVo | null>(null);
+  const [revisionList, setRevisionList] = useState<WikiDocumentRevisionItemVo[]>([]);
+  const [selectedRevisionId, setSelectedRevisionId] = useState<number | null>(null);
+  const [selectedRevision, setSelectedRevision] = useState<WikiDocumentRevisionDetailVo | null>(null);
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [loadingTree, setLoadingTree] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [loadingRevisionList, setLoadingRevisionList] = useState(false);
+  const [loadingRevisionDetail, setLoadingRevisionDetail] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [editorVisible, setEditorVisible] = useState(false);
   const [editorMode, setEditorMode] = useState<EditorMode>('create');
   const [draft, setDraft] = useState<EditorDraft>(EMPTY_DRAFT);
+  const [rollbackConfirmOpen, setRollbackConfirmOpen] = useState(false);
 
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const initialLoadedRef = useRef(false);
@@ -218,6 +238,62 @@ export const WikiApp = () => {
     }
   }, []);
 
+  const loadRevisionList = useCallback(async (documentId: number, preserveSelection: boolean = true) => {
+    if (!isAdmin) {
+      setRevisionList([]);
+      setSelectedRevisionId(null);
+      setSelectedRevision(null);
+      return;
+    }
+
+    setLoadingRevisionList(true);
+
+    try {
+      const revisions = await getWikiRevisionList(documentId);
+      setRevisionList(revisions);
+
+      if (revisions.length === 0) {
+        setSelectedRevisionId(null);
+        setSelectedRevision(null);
+        return;
+      }
+
+      if (preserveSelection && selectedRevisionId && revisions.some((item) => item.voId === selectedRevisionId)) {
+        return;
+      }
+
+      setSelectedRevisionId(revisions[0].voId);
+    } catch (error) {
+      log.error('WikiApp', '加载版本历史失败:', error);
+      setRevisionList([]);
+      setSelectedRevisionId(null);
+      setSelectedRevision(null);
+      toast.error(error instanceof Error ? error.message : '加载版本历史失败');
+    } finally {
+      setLoadingRevisionList(false);
+    }
+  }, [isAdmin, selectedRevisionId]);
+
+  const loadRevisionDetail = useCallback(async (revisionId: number) => {
+    if (!isAdmin) {
+      setSelectedRevision(null);
+      return;
+    }
+
+    setLoadingRevisionDetail(true);
+
+    try {
+      const detail = await getWikiRevisionDetail(revisionId);
+      setSelectedRevision(detail);
+    } catch (error) {
+      log.error('WikiApp', '加载版本详情失败:', error);
+      setSelectedRevision(null);
+      toast.error(error instanceof Error ? error.message : '加载版本详情失败');
+    } finally {
+      setLoadingRevisionDetail(false);
+    }
+  }, [isAdmin]);
+
   useEffect(() => {
     if (initialLoadedRef.current) {
       return;
@@ -230,11 +306,24 @@ export const WikiApp = () => {
   useEffect(() => {
     if (!selectedDocumentId) {
       setSelectedDocument(null);
+      setRevisionList([]);
+      setSelectedRevisionId(null);
+      setSelectedRevision(null);
       return;
     }
 
     void loadDocumentDetail(selectedDocumentId);
-  }, [loadDocumentDetail, selectedDocumentId]);
+    void loadRevisionList(selectedDocumentId, false);
+  }, [loadDocumentDetail, loadRevisionList, selectedDocumentId]);
+
+  useEffect(() => {
+    if (!selectedRevisionId || !isAdmin) {
+      setSelectedRevision(null);
+      return;
+    }
+
+    void loadRevisionDetail(selectedRevisionId);
+  }, [isAdmin, loadRevisionDetail, selectedRevisionId]);
 
   const openCreateEditor = () => {
     setEditorMode('create');
@@ -269,6 +358,12 @@ export const WikiApp = () => {
     setDraft(EMPTY_DRAFT);
   };
 
+  const refreshDocumentWorkspace = useCallback(async (documentId: number, preserveRevisionSelection: boolean = true) => {
+    await refreshCollections(true);
+    await loadDocumentDetail(documentId);
+    await loadRevisionList(documentId, preserveRevisionSelection);
+  }, [loadDocumentDetail, loadRevisionList, refreshCollections]);
+
   const handleSearch = async () => {
     await refreshCollections(false);
   };
@@ -299,8 +394,7 @@ export const WikiApp = () => {
       await updateWikiDocument(selectedDocumentId, buildUpdateRequest(draft));
       toast.success('文档已更新');
       closeEditor();
-      await refreshCollections(true);
-      await loadDocumentDetail(selectedDocumentId);
+      await refreshDocumentWorkspace(selectedDocumentId, false);
     } catch (error) {
       log.error('WikiApp', '保存文档失败:', error);
       toast.error(error instanceof Error ? error.message : '保存文档失败');
@@ -318,8 +412,7 @@ export const WikiApp = () => {
     try {
       await publishWikiDocument(selectedDocumentId);
       toast.success('文档已发布');
-      await refreshCollections(true);
-      await loadDocumentDetail(selectedDocumentId);
+      await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
       log.error('WikiApp', '发布文档失败:', error);
       toast.error(error instanceof Error ? error.message : '发布文档失败');
@@ -337,8 +430,7 @@ export const WikiApp = () => {
     try {
       await unpublishWikiDocument(selectedDocumentId);
       toast.success('文档已转为草稿');
-      await refreshCollections(true);
-      await loadDocumentDetail(selectedDocumentId);
+      await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
       log.error('WikiApp', '撤下文档失败:', error);
       toast.error(error instanceof Error ? error.message : '撤下文档失败');
@@ -356,8 +448,7 @@ export const WikiApp = () => {
     try {
       await archiveWikiDocument(selectedDocumentId);
       toast.success('文档已归档');
-      await refreshCollections(true);
-      await loadDocumentDetail(selectedDocumentId);
+      await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
       log.error('WikiApp', '归档文档失败:', error);
       toast.error(error instanceof Error ? error.message : '归档文档失败');
@@ -449,6 +540,38 @@ export const WikiApp = () => {
       url: attachment.voUrl,
       fileName: attachment.voOriginalName || file.name,
     };
+  };
+
+  const openRollbackConfirm = () => {
+    if (!selectedRevision || selectedRevision.voIsCurrent || submitting) {
+      return;
+    }
+
+    setRollbackConfirmOpen(true);
+  };
+
+  const closeRollbackConfirm = () => {
+    setRollbackConfirmOpen(false);
+  };
+
+  const handleRollback = async () => {
+    if (!selectedDocumentId || !selectedRevisionId) {
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      await rollbackWikiRevision(selectedRevisionId);
+      toast.success(`已回滚到 v${selectedRevision?.voVersion ?? ''}，并生成新版本`);
+      setRollbackConfirmOpen(false);
+      await refreshDocumentWorkspace(selectedDocumentId, false);
+    } catch (error) {
+      log.error('WikiApp', '回滚文档版本失败:', error);
+      toast.error(error instanceof Error ? error.message : '回滚文档版本失败');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const selectedStatusText = selectedDocument ? toStatusText(selectedDocument.voStatus) : '未选择';
@@ -732,8 +855,86 @@ export const WikiApp = () => {
                   </div>
                 ) : null}
 
-                <div className={styles.markdownPanel}>
-                  <MarkdownRenderer content={selectedDocument.voMarkdownContent} />
+                <div className={styles.documentLayout}>
+                  <div className={styles.markdownPanel}>
+                    <MarkdownRenderer content={selectedDocument.voMarkdownContent} />
+                  </div>
+
+                  {isAdmin ? (
+                    <aside className={styles.historyPanel}>
+                      <div className={styles.historyPanelHeader}>
+                        <div>
+                          <h3 className={styles.historyTitle}>版本历史</h3>
+                          <p className={styles.historyHint}>查看历史快照并按版本回滚内容</p>
+                        </div>
+                        <span className={styles.historyCount}>{revisionList.length} 条</span>
+                      </div>
+
+                      <div className={styles.historyBody}>
+                        <div className={styles.historyList}>
+                          {loadingRevisionList ? (
+                            <div className={styles.loadingText}>正在加载版本历史…</div>
+                          ) : revisionList.length > 0 ? (
+                            revisionList.map((revision) => (
+                              <button
+                                key={revision.voId}
+                                type="button"
+                                className={`${styles.revisionItem} ${selectedRevisionId === revision.voId ? styles.revisionItemActive : ''}`}
+                                onClick={() => setSelectedRevisionId(revision.voId)}
+                              >
+                                <div className={styles.revisionItemHeader}>
+                                  <span className={styles.revisionTitle}>v{revision.voVersion}</span>
+                                  {revision.voIsCurrent ? (
+                                    <span className={`${styles.statusChip} ${styles.statusPublished}`}>当前</span>
+                                  ) : null}
+                                </div>
+                                <div className={styles.revisionMeta}>{revision.voTitle}</div>
+                                <div className={styles.revisionMeta}>{formatTime(revision.voCreateTime)} · {revision.voCreateBy}</div>
+                                <div className={styles.revisionSummary}>{describeRevisionSummary(revision)}</div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className={styles.mutedText}>当前文档还没有版本记录</div>
+                          )}
+                        </div>
+
+                        <div className={styles.revisionDetail}>
+                          {loadingRevisionDetail ? (
+                            <div className={styles.loadingText}>正在加载版本详情…</div>
+                          ) : selectedRevision ? (
+                            <>
+                              <div className={styles.revisionDetailHeader}>
+                                <div>
+                                  <div className={styles.revisionDetailTitle}>版本 v{selectedRevision.voVersion}</div>
+                                  <div className={styles.revisionMeta}>{selectedRevision.voTitle}</div>
+                                </div>
+                                <div className={styles.revisionActions}>
+                                  <span className={styles.metaChip}>来源：{selectedRevision.voSourceType}</span>
+                                  {!selectedRevision.voIsCurrent ? (
+                                    <button type="button" className={styles.dangerButton} onClick={openRollbackConfirm} disabled={submitting}>
+                                      回滚到此版本
+                                    </button>
+                                  ) : null}
+                                </div>
+                              </div>
+
+                              <div className={styles.revisionMetaBar}>
+                                <span className={styles.metaChip}>创建：{formatTime(selectedRevision.voCreateTime)}</span>
+                                <span className={styles.metaChip}>作者：{selectedRevision.voCreateBy}</span>
+                                <span className={styles.metaChip}>说明：{selectedRevision.voChangeSummary || '未填写修改说明'}</span>
+                              </div>
+
+                              <div className={styles.revisionPreview}>
+                                <MarkdownRenderer content={selectedRevision.voMarkdownContent} />
+                              </div>
+                            </>
+                          ) : (
+                            <div className={styles.mutedText}>请选择左侧版本查看详情</div>
+                          )}
+                        </div>
+                      </div>
+                    </aside>
+                  ) : null}
                 </div>
               </>
             ) : (
@@ -762,6 +963,16 @@ export const WikiApp = () => {
         type="file"
         accept=".md,.markdown,.txt,text/markdown,text/plain"
         onChange={(event) => void handleImportFile(event)}
+      />
+
+      <ConfirmDialog
+        isOpen={rollbackConfirmOpen}
+        title="确认回滚版本"
+        message={selectedRevision ? `确定将当前文档内容回滚到 v${selectedRevision.voVersion} 吗？系统会保留当前内容，并生成一个新的回滚版本。` : '确定执行版本回滚吗？'}
+        confirmText="确认回滚"
+        danger
+        onCancel={closeRollbackConfirm}
+        onConfirm={() => void handleRollback()}
       />
     </div>
   );

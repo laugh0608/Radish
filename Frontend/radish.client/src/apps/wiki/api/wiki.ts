@@ -13,6 +13,8 @@ import type {
   ImportWikiMarkdownRequest,
   UpdateWikiDocumentRequest,
   WikiDocumentDetailVo,
+  WikiDocumentRevisionDetailVo,
+  WikiDocumentRevisionItemVo,
   WikiDocumentTreeNodeVo,
   WikiDocumentVo,
   WikiListQuery,
@@ -83,6 +85,18 @@ export async function unpublishWikiDocument(id: number): Promise<boolean> {
 
 export async function archiveWikiDocument(id: number): Promise<boolean> {
   return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Archive/${id}`, undefined, { withAuth: true }), '归档文档失败');
+}
+
+export async function getWikiRevisionList(id: number): Promise<WikiDocumentRevisionItemVo[]> {
+  return await ensureOk(apiGet<WikiDocumentRevisionItemVo[]>(`/api/v1/Wiki/GetRevisionList/${id}`, { withAuth: true }), '加载版本历史失败');
+}
+
+export async function getWikiRevisionDetail(revisionId: number): Promise<WikiDocumentRevisionDetailVo> {
+  return await ensureOk(apiGet<WikiDocumentRevisionDetailVo>(`/api/v1/Wiki/GetRevisionDetail/${revisionId}`, { withAuth: true }), '加载版本详情失败');
+}
+
+export async function rollbackWikiRevision(revisionId: number): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Rollback/${revisionId}`, undefined, { withAuth: true }), '回滚版本失败');
 }
 
 export async function importWikiMarkdown(request: ImportWikiMarkdownRequest): Promise<number> {
