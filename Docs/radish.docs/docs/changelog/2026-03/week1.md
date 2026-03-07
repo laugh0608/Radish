@@ -137,8 +137,15 @@
 
 - **三路分发流落地**：`UserFollowController` 新增 `GetMyDistributionFeed`，支持 `recommend/hot/newest` 三种流式查询，保留既有 `GetMyFollowingFeed` 兼容旧调用。
 - **基础权重配置化**：新增 `FeedDistributionOptions` 与 `appsettings.json` 的 `FeedDistribution` 节点，支持热门权重（浏览/点赞/评论）与推荐附加权重（关注作者加权、新鲜度衰减）动态调参。
-- **前端关系链页签升级**：`UserFollowPanel` 的“关注动态”新增“推荐/热门/最新”子切换，统一调用分发流接口并复用现有分页展示。
+- **前端关系链页签升级**：`UserFollowPanel` 已区分“关注动态”主流与“推荐/热门/最新”分发子切换，避免将关系链动态流与分发流混为同一入口。
 - **回归资产补充**：`UserFollowControllerTest` 新增分发流用例；`Radish.Api.Forum.http` 已增加三路流联调请求样例。
+
+### M12-P0 社区主线收口复扫（2026-03-07）
+
+- **关系链口径修正**：个人主页“关系链”页签已恢复“关注动态”真实入口，同时保留“推荐/热门/最新”作为独立分发子视图，和后端 `GetMyFollowingFeed` / `GetMyDistributionFeed` 职责保持一致。
+- **回归资产补强**：`UserFollowControllerTest` 补充非法 `streamType` 返回 400 的回归用例；`Radish.Api.Forum.http` 补充“关注动态流”与“非法 streamType”验收请求，便于人工联调时快速识别契约回退。
+- **文档口径统一**：`development-plan.md` 已新增“社区主线收口快照”，明确“已完成可验收 / 可低风险补齐 / 留待后续阶段”三类边界，避免继续把 P1 能力误记为本轮收口项。
+- **聊天室边界维持不扩张**：本轮未继续推进 `@mention`、图片上传 UI、引用回复等 P1 内容，仅保留 P0 主链路验收口径。
 
 ### 配置治理：Redis 部分共享收口
 

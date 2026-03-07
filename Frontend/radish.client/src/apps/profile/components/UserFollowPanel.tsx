@@ -5,6 +5,7 @@ import type { PostItem } from '@/types/forum';
 import {
   getMyFollowers,
   getMyFollowing,
+  getMyFollowingFeed,
   getMyDistributionFeed,
   getMyFollowSummary,
   type DistributionStreamType,
@@ -15,6 +16,7 @@ import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import styles from './UserFollowPanel.module.css';
 
 type SocialTab = 'feed' | 'followers' | 'following';
+type FeedViewType = 'following' | DistributionStreamType;
 
 interface UserFollowPanelProps {
   displayTimeZone: string;
@@ -25,7 +27,7 @@ const PAGE_SIZE = 10;
 
 export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPanelProps) => {
   const [activeTab, setActiveTab] = useState<SocialTab>('feed');
-  const [feedStreamType, setFeedStreamType] = useState<DistributionStreamType>('recommend');
+  const [feedViewType, setFeedViewType] = useState<FeedViewType>('following');
   const [summary, setSummary] = useState<UserFollowSummary>({ voFollowerCount: 0, voFollowingCount: 0 });
   const [loading, setLoading] = useState(true);
   const [feedItems, setFeedItems] = useState<PostItem[]>([]);
@@ -44,7 +46,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
 
   useEffect(() => {
     if (activeTab === 'feed') {
-      void loadFeed(feedPage, feedStreamType);
+      void loadFeed(feedPage, feedViewType);
       return;
     }
 
@@ -54,7 +56,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
     }
 
     void loadFollowing(followingPage);
-  }, [activeTab, feedPage, feedStreamType, followerPage, followingPage]);
+  }, [activeTab, feedPage, feedViewType, followerPage, followingPage]);
 
   const totalPages = useMemo(() => {
     const total = activeTab === 'feed'
@@ -94,14 +96,16 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
     }
   };
 
-  const loadFeed = async (pageIndex: number, streamType: DistributionStreamType) => {
+  const loadFeed = async (pageIndex: number, viewType: FeedViewType) => {
     setLoading(true);
     try {
-      const data = await getMyDistributionFeed(streamType, pageIndex, PAGE_SIZE);
+      const data = viewType === 'following'
+        ? await getMyFollowingFeed(pageIndex, PAGE_SIZE)
+        : await getMyDistributionFeed(viewType, pageIndex, PAGE_SIZE);
       setFeedItems(data.voItems || []);
       setFeedTotal(data.voTotal || 0);
     } catch (error) {
-      log.error('UserFollowPanel', `加载分发流失败(${streamType}):`, error);
+      log.error('UserFollowPanel', `加载关系链内容失败(${viewType}):`, error);
       setFeedItems([]);
       setFeedTotal(0);
     } finally {
@@ -139,7 +143,8 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
     }
   };
 
-  const feedStreamLabelMap: Record<DistributionStreamType, string> = {
+  const feedViewLabelMap: Record<FeedViewType, string> = {
+    following: '关注动态',
     recommend: '推荐',
     hot: '热门',
     newest: '最新'
@@ -147,7 +152,10 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
 
   const renderFeed = () => {
     if (feedItems.length === 0) {
-      return <div className={styles.empty}>{feedStreamLabelMap[feedStreamType]}流暂时没有内容</div>;
+      const emptyText = feedViewType === 'following'
+        ? '你关注的人还没有新动态'
+        : `${feedViewLabelMap[feedViewType]}流暂时没有内容`;
+      return <div className={styles.empty}>{emptyText}</div>;
     }
 
     return (
@@ -249,16 +257,16 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
 
       {activeTab === 'feed' && (
         <div className={styles.feedStreamTabs}>
-          {(['recommend', 'hot', 'newest'] as DistributionStreamType[]).map(streamType => (
+          {(['following', 'recommend', 'hot', 'newest'] as FeedViewType[]).map(viewType => (
             <button
-              key={streamType}
-              className={`${styles.feedStreamTab} ${feedStreamType === streamType ? styles.feedStreamTabActive : ''}`}
+              key={viewType}
+              className={`${styles.feedStreamTab} ${feedViewType === viewType ? styles.feedStreamTabActive : ''}`}
               onClick={() => {
-                setFeedStreamType(streamType);
+                setFeedViewType(viewType);
                 setFeedPage(1);
               }}
             >
-              {feedStreamLabelMap[streamType]}
+              {feedViewLabelMap[viewType]}
             </button>
           ))}
         </div>

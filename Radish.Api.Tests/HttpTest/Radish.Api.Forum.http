@@ -46,6 +46,8 @@ GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyFollowingFeed?pageIndex=1&pag
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
 
+### M12-P0 验收：关系链主流应优先验证本接口，再验证下方推荐/热门/最新三路分发流
+
 ### 获取我的分发流（推荐）
 GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyDistributionFeed?streamType=recommend&pageIndex=1&pageSize=10
 Accept: application/json
@@ -58,6 +60,11 @@ Authorization: Bearer {{Access_Token}}
 
 ### 获取我的分发流（最新）
 GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyDistributionFeed?streamType=newest&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的分发流（非法 streamType，预期 400）
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyDistributionFeed?streamType=timeline&pageIndex=1&pageSize=10
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
 
@@ -91,6 +98,8 @@ Authorization: Bearer {{Access_Token}}
 GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetMyPublishPermission
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
+
+### M12-P0 验收建议顺序：举报 -> 审核 -> 查询治理记录 -> 再用受限账号验证发帖/评论被拦截
 
 ### 管理端：获取举报审核队列（默认待处理）
 GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetReviewQueue?status=0&pageIndex=1&pageSize=10

@@ -150,6 +150,18 @@ public class UserFollowControllerTest
         Assert.Equal(10086, payload.VoItems[0].VoId);
     }
 
+    [Fact]
+    public async Task GetMyDistributionFeed_Should_Return_BadRequest_When_StreamType_Invalid()
+    {
+        var serviceMock = CreateServiceMock();
+        var controller = CreateController(serviceMock.Object);
+
+        var result = await controller.GetMyDistributionFeed("timeline");
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+    }
+
     private static UserFollowController CreateController(IUserFollowService followService)
     {
         var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
