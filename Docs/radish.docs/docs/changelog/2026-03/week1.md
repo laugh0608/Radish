@@ -145,6 +145,7 @@
 - **关系链口径修正**：个人主页“关系链”页签已恢复“关注动态”真实入口，同时保留“推荐/热门/最新”作为独立分发子视图，和后端 `GetMyFollowingFeed` / `GetMyDistributionFeed` 职责保持一致。
 - **回归资产补强**：`UserFollowControllerTest` 补充非法 `streamType` 返回 400 的回归用例；`Radish.Api.Forum.http` 补充“关注动态流”与“非法 streamType”验收请求，便于人工联调时快速识别契约回退。
 - **文档口径统一**：`development-plan.md` 已新增“社区主线收口快照”，明确“已完成可验收 / 可低风险补齐 / 留待后续阶段”三类边界，避免继续把 P1 能力误记为本轮收口项。
+- **验收文档补齐**：新增 `features/community-m12-p0-acceptance.md`，沉淀四条主链的验收步骤、通过标准与后续阶段边界，并已加入 VitePress 侧边栏入口。
 - **聊天室边界维持不扩张**：本轮未继续推进 `@mention`、图片上传 UI、引用回复等 P1 内容，仅保留 P0 主链路验收口径。
 
 ### 配置治理：Redis 部分共享收口

@@ -168,6 +168,7 @@ export default defineConfig({
             { text: '论坛分类与标签', link: '/features/forum-category-tag' },
             { text: '论坛编辑历史', link: '/features/forum-edit-history' },
             { text: '论坛重构总结', link: '/features/forum-refactoring' },
+            { text: 'M12-P0 社区验收清单', link: '/features/community-m12-p0-acceptance' },
             { text: '聊天室系统设计', link: '/features/chat-system' },
             { text: '聊天室前端架构与组件', link: '/features/chat-frontend' },
             { text: '聊天室 App 文档总览', link: '/features/chat-app-index' },

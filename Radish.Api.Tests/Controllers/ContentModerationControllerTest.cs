@@ -95,6 +95,31 @@ public class ContentModerationControllerTest
     }
 
     [Fact]
+    public async Task Review_Should_Return_NotFound_When_Report_Not_Exists()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.ReviewReportAsync(
+                It.Is<ReviewContentReportDto>(dto => dto.ReportId == 99999),
+                10001,
+                "Tester",
+                0))
+            .ThrowsAsync(new InvalidOperationException("举报单不存在"));
+
+        var controller = CreateController(serviceMock.Object);
+        var result = await controller.Review(new ReviewContentReportDto
+        {
+            ReportId = 99999,
+            IsApproved = true,
+            ActionType = 1,
+            DurationHours = 24
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(404, result.StatusCode);
+    }
+
+    [Fact]
     public async Task GetMyPublishPermission_Should_Return_Permission()
     {
         var serviceMock = CreateServiceMock();
