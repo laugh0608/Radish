@@ -20,7 +20,7 @@ internal static partial class InitialDataSeeder
         const long systemUserId = 20000;
         const long adminUserId = 20001;
         const long testUserId = 20002;
-        const long radishTenantId = 30000;
+        const long publicTenantId = 0;
 
         var configuredDefaultTimeZoneId = AppSettingsTool.RadishApp("Time", "DefaultTimeZoneId");
         var defaultTimeZoneId = string.IsNullOrWhiteSpace(configuredDefaultTimeZoneId)
@@ -36,24 +36,60 @@ internal static partial class InitialDataSeeder
 
         foreach (var item in seedItems)
         {
-            var exists = await db.Queryable<UserTimePreference>().AnyAsync(p => p.UserId == item.UserId);
-            if (exists)
+            var existingPreference = await db.Queryable<UserTimePreference>()
+                .FirstAsync(p => p.UserId == item.UserId);
+
+            if (existingPreference != null)
             {
-                Console.WriteLine($"[Radish.DbMigrate] 用户 Id={item.UserId} 的时区偏好已存在，跳过创建。");
+                var updated = await db.Updateable<UserTimePreference>()
+                    .SetColumns(p => new UserTimePreference
+                    {
+                        TenantId = publicTenantId,
+                        TimeZoneId = defaultTimeZoneId,
+                        ModifyBy = "System",
+                        ModifyTime = DateTime.UtcNow
+                    })
+                    .Where(p => p.UserId == item.UserId)
+                    .ExecuteCommandAsync();
+
+                Console.WriteLine(updated > 0
+                    ? $"[Radish.DbMigrate] 用户 Id={item.UserId} 的时区偏好已存在，已纠正为 {defaultTimeZoneId}（TenantId={publicTenantId}）。"
+                    : $"[Radish.DbMigrate] 用户 Id={item.UserId} 的时区偏好已存在，跳过创建。");
                 continue;
             }
 
             Console.WriteLine($"[Radish.DbMigrate] 创建用户 Id={item.UserId} ({item.UserName}) 的时区偏好：{defaultTimeZoneId}...");
-            await db.Insertable(new UserTimePreference
+
+            try
             {
-                Id = item.Id,
-                UserId = item.UserId,
-                TenantId = radishTenantId,
-                TimeZoneId = defaultTimeZoneId,
-                CreateBy = "System",
-                ModifyBy = "System",
-                ModifyTime = DateTime.UtcNow
-            }).ExecuteCommandAsync();
+                await db.Insertable(new UserTimePreference
+                {
+                    Id = item.Id,
+                    UserId = item.UserId,
+                    TenantId = publicTenantId,
+                    TimeZoneId = defaultTimeZoneId,
+                    CreateBy = "System",
+                    ModifyBy = "System",
+                    ModifyTime = DateTime.UtcNow
+                }).ExecuteCommandAsync();
+            }
+            catch (Exception ex) when (IsUniqueConstraintViolation(ex, "UserTimePreference.UserId"))
+            {
+                var updated = await db.Updateable<UserTimePreference>()
+                    .SetColumns(p => new UserTimePreference
+                    {
+                        TenantId = publicTenantId,
+                        TimeZoneId = defaultTimeZoneId,
+                        ModifyBy = "System",
+                        ModifyTime = DateTime.UtcNow
+                    })
+                    .Where(p => p.UserId == item.UserId)
+                    .ExecuteCommandAsync();
+
+                Console.WriteLine(updated > 0
+                    ? $"[Radish.DbMigrate] 检测到用户 Id={item.UserId} 的旧时区偏好记录，已自动纠正为 {defaultTimeZoneId}（TenantId={publicTenantId}）。"
+                    : $"[Radish.DbMigrate] 用户 Id={item.UserId} 的时区偏好命中唯一键，但未能完成自动纠正，请检查现有数据。" );
+            }
         }
     }
 
@@ -430,7 +466,29 @@ internal static partial class InitialDataSeeder
                 Id = systemUserId,
             };
 
-            await db.Insertable(systemUser).ExecuteCommandAsync();
+            try
+            {
+                await db.Insertable(systemUser).ExecuteCommandAsync();
+            }
+            catch (Exception ex) when (IsUniqueConstraintViolation(ex, "User.Id"))
+            {
+                var updated = await db.Updateable<User>()
+                    .SetColumns(u => new User
+                    {
+                        TenantId = publicTenantId,
+                        DepartmentId = devDeptId,
+                        UpdateTime = DateTime.Now
+                    })
+                    .Where(u => u.Id == systemUserId)
+                    .ExecuteCommandAsync();
+
+                if (updated <= 0)
+                {
+                    throw;
+                }
+
+                Console.WriteLine($"[Radish.DbMigrate] 检测到 system 用户旧记录，已自动纠正租户与部门信息。");
+            }
         }
         else
         {
@@ -474,7 +532,29 @@ internal static partial class InitialDataSeeder
                 Id = adminUserId,
             };
 
-            await db.Insertable(adminUser).ExecuteCommandAsync();
+            try
+            {
+                await db.Insertable(adminUser).ExecuteCommandAsync();
+            }
+            catch (Exception ex) when (IsUniqueConstraintViolation(ex, "User.Id"))
+            {
+                var updated = await db.Updateable<User>()
+                    .SetColumns(u => new User
+                    {
+                        TenantId = publicTenantId,
+                        DepartmentId = devDeptId,
+                        UpdateTime = DateTime.Now
+                    })
+                    .Where(u => u.Id == adminUserId)
+                    .ExecuteCommandAsync();
+
+                if (updated <= 0)
+                {
+                    throw;
+                }
+
+                Console.WriteLine($"[Radish.DbMigrate] 检测到 admin 用户旧记录，已自动纠正租户与部门信息。");
+            }
         }
         else
         {
@@ -518,7 +598,29 @@ internal static partial class InitialDataSeeder
                 Id = testUserId,
             };
 
-            await db.Insertable(testUser).ExecuteCommandAsync();
+            try
+            {
+                await db.Insertable(testUser).ExecuteCommandAsync();
+            }
+            catch (Exception ex) when (IsUniqueConstraintViolation(ex, "User.Id"))
+            {
+                var updated = await db.Updateable<User>()
+                    .SetColumns(u => new User
+                    {
+                        TenantId = publicTenantId,
+                        DepartmentId = devDeptId,
+                        UpdateTime = DateTime.Now
+                    })
+                    .Where(u => u.Id == testUserId)
+                    .ExecuteCommandAsync();
+
+                if (updated <= 0)
+                {
+                    throw;
+                }
+
+                Console.WriteLine($"[Radish.DbMigrate] 检测到 test 用户旧记录，已自动纠正租户与部门信息。");
+            }
         }
         else
         {

@@ -10,6 +10,24 @@ namespace Radish.DbMigrate;
 /// </summary>
 internal static partial class InitialDataSeeder
 {
+    private static bool IsUniqueConstraintViolation(Exception ex, string? token = null)
+    {
+        var current = ex;
+        while (current != null)
+        {
+            if (!string.IsNullOrWhiteSpace(current.Message) &&
+                current.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase) &&
+                (string.IsNullOrWhiteSpace(token) || current.Message.Contains(token, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+
+            current = current.InnerException!;
+        }
+
+        return false;
+    }
+
     public static async Task SeedAsync(ISqlSugarClient db, IServiceProvider services)
     {
         await SeedRolesAsync(db);
