@@ -158,8 +158,10 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
     var stickerGroupTableExists = db.DbMaintenance.IsAnyTable("StickerGroup", false);
     var stickerTableExists = db.DbMaintenance.IsAnyTable("Sticker", false);
     var reactionTableExists = db.DbMaintenance.IsAnyTable("Reaction", false);
+    var wikiDocumentTableExists = db.DbMaintenance.IsAnyTable("WikiDocument", false);
+    var wikiDocumentRevisionTableExists = db.DbMaintenance.IsAnyTable("WikiDocumentRevision", false);
 
-    if (!roleTableExists || !shopTableExists || !userTimePreferenceTableExists || !stickerGroupTableExists || !stickerTableExists || !reactionTableExists)
+    if (!roleTableExists || !shopTableExists || !userTimePreferenceTableExists || !stickerGroupTableExists || !stickerTableExists || !reactionTableExists || !wikiDocumentTableExists || !wikiDocumentRevisionTableExists)
     {
         var missingTables = new List<string>();
         if (!roleTableExists) missingTables.Add("Role");
@@ -168,6 +170,8 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
         if (!stickerGroupTableExists) missingTables.Add("StickerGroup");
         if (!stickerTableExists) missingTables.Add("Sticker");
         if (!reactionTableExists) missingTables.Add("Reaction");
+        if (!wikiDocumentTableExists) missingTables.Add("WikiDocument");
+        if (!wikiDocumentRevisionTableExists) missingTables.Add("WikiDocumentRevision");
 
         Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到表结构缺失 ({string.Join(", ", missingTables)})，自动执行 init...");
         await RunInitAsync(services, configuration, environment);

@@ -227,3 +227,9 @@
 - **前端 Wiki App 接入**：`radish.client` 新增 `wiki` 内置应用，已接入 WebOS 应用注册表，支持目录树浏览、搜索结果列表、Markdown 详情预览、创建/编辑、单文件导入与导出。
 - **编辑能力复用**：Wiki 编辑器已复用 `@radish/ui` 的 `MarkdownEditor` / `MarkdownRenderer`，并接入附件上传业务类型 `Wiki`，支持在文档编辑中上传图片与文档链接。
 - **验证结果**：`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false`、`dotnet build Radish.Api.Tests/Radish.Api.Tests.csproj -c Debug -m:1 /nr:false`、`npm run type-check --workspace=radish.client` 均通过。
+
+### Wiki 首批回归资产补齐
+
+- **DbMigrate 缺表检测补齐**：`Radish.DbMigrate` 的 `seed` 预检查已纳入 `WikiDocument` 与 `WikiDocumentRevision`，当 Wiki 表缺失时会自动触发 `init`，避免新库执行 seed 后遗漏 Wiki 表结构。
+- **控制器回归测试新增**：新增 `WikiControllerTest`，覆盖文档不存在、创建成功、发布失败、Markdown 导入成功、Markdown 导出成功等最小主链路断言。
+- **验证结果**：`dotnet build Radish.DbMigrate/Radish.DbMigrate.csproj -c Debug -m:1 /nr:false` 与 `dotnet build Radish.Api.Tests/Radish.Api.Tests.csproj -c Debug -m:1 /nr:false` 通过；`dotnet test` 仍受当前环境 `vstest socket` 权限限制中断，不作为代码失败判断依据。
