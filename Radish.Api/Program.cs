@@ -42,6 +42,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
 using Hangfire;
 using Hangfire.Storage.SQLite;
+using Radish.Common.DocumentTool;
 using Radish.Service.Jobs;
 using Radish.Api.Filters;
 using Radish.Api.Hubs;
@@ -479,7 +480,7 @@ if (documentOptions.ShowBuiltInDocs)
     {
         app.UseStaticFiles(new StaticFileOptions
         {
-            FileProvider = new PhysicalFileProvider(builtInDocsRoot),
+            FileProvider = new BuiltInDocumentStaticAssetFileProvider(new PhysicalFileProvider(builtInDocsRoot)),
             RequestPath = documentOptions.StaticAssetsRequestPath
         });
     }

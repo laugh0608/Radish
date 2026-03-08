@@ -70,7 +70,7 @@ API 启动时执行固定文档同步：
 
 - `ShowBuiltInDocs=false`：关闭固定文档展示，仅保留在线文档
 - `BuiltInDocsPath`：固定文档目录
-- `StaticAssetsRequestPath`：图片、附件等静态资源访问前缀
+- `StaticAssetsRequestPath`：图片、附件等静态资源访问前缀，当前仅暴露 `Docs/images/` 下的固定文档静态资源，不直接暴露 `Docs/**/*.md` 源文件
 
 ## 4. 在线文档机制
 

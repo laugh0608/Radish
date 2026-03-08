@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Radish.Common.CoreTool;
+using Radish.Common.DocumentTool;
 using Radish.Model;
 using Radish.Shared.CustomEnum;
 
@@ -37,11 +38,6 @@ public partial class WikiDocumentService
     internal const string BuiltInSourceType = "BuiltIn";
     private static readonly Regex MarkdownLinkRegex = new(@"(?<prefix>!?\[[^\]]*\]\()(?<url>[^)]+)(?<suffix>\))", RegexOptions.Compiled);
     private static readonly HashSet<string> MarkdownExtensions = new(StringComparer.OrdinalIgnoreCase) { ".md", ".markdown" };
-    private static readonly HashSet<string> StaticAssetExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico", ".pdf", ".txt", ".json", ".yml", ".yaml"
-    };
-
     public async Task<WikiBuiltInSyncSummary> SyncBuiltInDocumentsAsync(CancellationToken cancellationToken = default)
     {
         var summary = new WikiBuiltInSyncSummary();
@@ -427,7 +423,7 @@ public partial class WikiDocumentService
             return $"/__documents__/{Uri.EscapeDataString(slug)}{query}{fragment}";
         }
 
-        if (StaticAssetExtensions.Contains(extension))
+        if (BuiltInDocumentStaticAssetPolicy.IsAllowedAssetPath(resolvedPath))
         {
             var requestPath = (_documentOptions.StaticAssetsRequestPath?.TrimEnd('/') ?? "/docs-assets").TrimEnd('/');
             return $"{requestPath}/{resolvedPath.Replace('\\', '/').TrimStart('/')}{query}{fragment}";
