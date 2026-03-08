@@ -43,6 +43,14 @@ function buildListUrl(query: WikiListQuery = {}): string {
     params.set('parentId', String(query.parentId));
   }
 
+  if (query.includeDeleted) {
+    params.set('includeDeleted', 'true');
+  }
+
+  if (query.deletedOnly) {
+    params.set('deletedOnly', 'true');
+  }
+
   return `/api/v1/Wiki/GetList?${params.toString()}`;
 }
 
@@ -63,8 +71,9 @@ export async function getWikiList(query: WikiListQuery = {}): Promise<WikiPageMo
   return await ensureOk(apiGet<WikiPageModel<WikiDocumentVo>>(buildListUrl(query), { withAuth: true }), '加载文档列表失败');
 }
 
-export async function getWikiDocumentById(id: number): Promise<WikiDocumentDetailVo> {
-  return await ensureOk(apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetById/${id}`, { withAuth: true }), '加载文档详情失败');
+export async function getWikiDocumentById(id: number, includeDeleted: boolean = false): Promise<WikiDocumentDetailVo> {
+  const suffix = includeDeleted ? '?includeDeleted=true' : '';
+  return await ensureOk(apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetById/${id}${suffix}`, { withAuth: true }), '加载文档详情失败');
 }
 
 export async function getWikiDocumentBySlug(slug: string): Promise<WikiDocumentDetailVo> {
@@ -77,6 +86,14 @@ export async function createWikiDocument(request: CreateWikiDocumentRequest): Pr
 
 export async function updateWikiDocument(id: number, request: UpdateWikiDocumentRequest): Promise<boolean> {
   return await ensureOk(apiPut<boolean>(`/api/v1/Wiki/Update/${id}`, request, { withAuth: true }), '更新文档失败');
+}
+
+export async function deleteWikiDocument(id: number): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Delete/${id}`, undefined, { withAuth: true }), '删除文档失败');
+}
+
+export async function restoreWikiDocument(id: number): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Restore/${id}`, undefined, { withAuth: true }), '恢复文档失败');
 }
 
 export async function publishWikiDocument(id: number): Promise<boolean> {

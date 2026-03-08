@@ -37,15 +37,20 @@ public class WikiController : ControllerBase
         int pageSize = 20,
         string? keyword = null,
         int? status = null,
-        long? parentId = null)
+        long? parentId = null,
+        bool includeDeleted = false,
+        bool deletedOnly = false)
     {
+        var isAdmin = Current.IsSystemOrAdmin();
         var result = await _wikiDocumentService.GetListAsync(
             pageIndex,
             pageSize,
             keyword,
             status,
             parentId,
-            includeUnpublished: Current.IsSystemOrAdmin());
+            includeUnpublished: isAdmin,
+            includeDeleted: isAdmin && includeDeleted,
+            deletedOnly: isAdmin && deletedOnly);
 
         return MessageModel<PageModel<WikiDocumentVo>>.Success("查询成功", result);
     }
@@ -60,9 +65,9 @@ public class WikiController : ControllerBase
 
     [HttpGet("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
-    public async Task<MessageModel<WikiDocumentDetailVo>> GetById(long id)
+    public async Task<MessageModel<WikiDocumentDetailVo>> GetById(long id, bool includeDeleted = false)
     {
-        var result = await _wikiDocumentService.GetDetailAsync(id, Current.IsSystemOrAdmin());
+        var result = await _wikiDocumentService.GetDetailAsync(id, Current.IsSystemOrAdmin(), Current.IsSystemOrAdmin() && includeDeleted);
         if (result == null)
         {
             return MessageModel<WikiDocumentDetailVo>.Failed("文档不存在或无权访问", default!);
@@ -119,6 +124,40 @@ public class WikiController : ControllerBase
             return updated
                 ? MessageModel<bool>.Success("更新成功", true)
                 : MessageModel<bool>.Failed("文档不存在", false);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return MessageModel<bool>.Failed(ex.Message, false);
+        }
+    }
+
+    [HttpPost("{id:long}")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    public async Task<MessageModel<bool>> Delete(long id)
+    {
+        try
+        {
+            var deleted = await _wikiDocumentService.DeleteDocumentAsync(id, Current.UserId, Current.UserName);
+            return deleted
+                ? MessageModel<bool>.Success("删除成功", true)
+                : MessageModel<bool>.Failed("文档不存在", false);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return MessageModel<bool>.Failed(ex.Message, false);
+        }
+    }
+
+    [HttpPost("{id:long}")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    public async Task<MessageModel<bool>> Restore(long id)
+    {
+        try
+        {
+            var restored = await _wikiDocumentService.RestoreDocumentAsync(id, Current.UserId, Current.UserName);
+            return restored
+                ? MessageModel<bool>.Success("恢复成功", true)
+                : MessageModel<bool>.Failed("文档不存在或无法恢复", false);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {

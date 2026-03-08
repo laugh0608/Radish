@@ -14,17 +14,23 @@ public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentV
         string? keyword = null,
         int? status = null,
         long? parentId = null,
-        bool includeUnpublished = false);
+        bool includeUnpublished = false,
+        bool includeDeleted = false,
+        bool deletedOnly = false);
 
     Task<List<WikiDocumentTreeNodeVo>> GetTreeAsync(bool includeUnpublished = false);
 
-    Task<WikiDocumentDetailVo?> GetDetailAsync(long id, bool includeUnpublished = false);
+    Task<WikiDocumentDetailVo?> GetDetailAsync(long id, bool includeUnpublished = false, bool includeDeleted = false);
 
-    Task<WikiDocumentDetailVo?> GetBySlugAsync(string slug, bool includeUnpublished = false);
+    Task<WikiDocumentDetailVo?> GetBySlugAsync(string slug, bool includeUnpublished = false, bool includeDeleted = false);
 
     Task<long> CreateDocumentAsync(CreateWikiDocumentDto createDto, long operatorId, string operatorName, long tenantId);
 
     Task<bool> UpdateDocumentAsync(long id, UpdateWikiDocumentDto updateDto, long operatorId, string operatorName);
+
+    Task<bool> DeleteDocumentAsync(long id, long operatorId, string operatorName);
+
+    Task<bool> RestoreDocumentAsync(long id, long operatorId, string operatorName);
 
     Task<bool> PublishAsync(long id, long operatorId, string operatorName);
 

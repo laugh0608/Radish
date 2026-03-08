@@ -15,6 +15,9 @@ public class WikiDocumentVo
     public string? VoSourcePath { get; set; }
     public int VoVersion { get; set; }
     public DateTime? VoPublishedAt { get; set; }
+    public bool VoIsDeleted { get; set; }
+    public DateTime? VoDeletedAt { get; set; }
+    public string? VoDeletedBy { get; set; }
     public DateTime VoCreateTime { get; set; }
     public DateTime? VoModifyTime { get; set; }
 }
@@ -35,6 +38,9 @@ public class WikiDocumentDetailVo
     public string? VoSourcePath { get; set; }
     public int VoVersion { get; set; }
     public DateTime? VoPublishedAt { get; set; }
+    public bool VoIsDeleted { get; set; }
+    public DateTime? VoDeletedAt { get; set; }
+    public string? VoDeletedBy { get; set; }
     public DateTime VoCreateTime { get; set; }
     public DateTime? VoModifyTime { get; set; }
 }

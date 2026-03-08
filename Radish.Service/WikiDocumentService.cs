@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using AutoMapper;
 using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -22,14 +23,14 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
     private static readonly Regex InvalidSlugCharRegex = new(@"[^a-z0-9-]", RegexOptions.Compiled);
     private static readonly Regex MultiDashRegex = new(@"-{2,}", RegexOptions.Compiled);
 
-    private readonly IBaseRepository<WikiDocument> _wikiDocumentRepository;
+    private readonly IWikiDocumentRepository _wikiDocumentRepository;
     private readonly IBaseRepository<WikiDocumentRevision> _wikiDocumentRevisionRepository;
     private readonly IMapper _mapper;
     private readonly DocumentOptions _documentOptions;
 
     public WikiDocumentService(
         IMapper mapper,
-        IBaseRepository<WikiDocument> wikiDocumentRepository,
+        IWikiDocumentRepository wikiDocumentRepository,
         IBaseRepository<WikiDocumentRevision> wikiDocumentRevisionRepository,
         IOptions<DocumentOptions> documentOptions)
         : base(mapper, wikiDocumentRepository)
@@ -46,7 +47,9 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         string? keyword = null,
         int? status = null,
         long? parentId = null,
-        bool includeUnpublished = false)
+        bool includeUnpublished = false,
+        bool includeDeleted = false,
+        bool deletedOnly = false)
     {
         if (pageIndex < 1)
         {
@@ -58,8 +61,13 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             pageSize = 20;
         }
 
-        var whereExpression = Expressionable.Create<WikiDocument>()
-            .And(d => !d.IsDeleted);
+        var whereExpression = Expressionable.Create<WikiDocument>();
+
+        if (deletedOnly)
+        {
+            includeDeleted = true;
+            whereExpression.And(d => d.IsDeleted);
+        }
 
         if (!ShouldIncludeBuiltInDocuments())
         {
@@ -91,14 +99,35 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             whereExpression.And(d => d.Status == (int)WikiDocumentStatusEnum.Published);
         }
 
-        var (data, totalCount) = await QueryPageAsync(
-            whereExpression.ToExpression(),
-            pageIndex,
-            pageSize,
-            d => d.Sort,
-            OrderByType.Asc,
-            d => d.Id,
-            OrderByType.Desc);
+        List<WikiDocumentVo> data;
+        int totalCount;
+
+        if (includeDeleted)
+        {
+            var (entityData, entityTotalCount) = await _wikiDocumentRepository.QueryPageIncludingDeletedAsync(
+                whereExpression.ToExpression(),
+                pageIndex,
+                pageSize,
+                d => d.Sort,
+                OrderByType.Asc,
+                d => d.Id,
+                OrderByType.Desc);
+            data = _mapper.Map<List<WikiDocumentVo>>(entityData);
+            totalCount = entityTotalCount;
+        }
+        else
+        {
+            var (voData, voTotalCount) = await QueryPageAsync(
+                whereExpression.ToExpression(),
+                pageIndex,
+                pageSize,
+                d => d.Sort,
+                OrderByType.Asc,
+                d => d.Id,
+                OrderByType.Desc);
+            data = voData;
+            totalCount = voTotalCount;
+        }
 
         return new PageModel<WikiDocumentVo>
         {
@@ -155,15 +184,17 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         return roots;
     }
 
-    public async Task<WikiDocumentDetailVo?> GetDetailAsync(long id, bool includeUnpublished = false)
+    public async Task<WikiDocumentDetailVo?> GetDetailAsync(long id, bool includeUnpublished = false, bool includeDeleted = false)
     {
-        var document = await _wikiDocumentRepository.QueryByIdAsync(id);
-        if (document == null || document.IsDeleted)
+        var document = includeDeleted
+            ? await _wikiDocumentRepository.QueryByIdIncludingDeletedAsync(id)
+            : await _wikiDocumentRepository.QueryByIdAsync(id);
+        if (document == null)
         {
             return null;
         }
 
-        if (!ShouldExposeDocument(document, includeUnpublished))
+        if (!ShouldExposeDocument(document, includeUnpublished, includeDeleted))
         {
             return null;
         }
@@ -171,7 +202,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         return _mapper.Map<WikiDocumentDetailVo>(document);
     }
 
-    public async Task<WikiDocumentDetailVo?> GetBySlugAsync(string slug, bool includeUnpublished = false)
+    public async Task<WikiDocumentDetailVo?> GetBySlugAsync(string slug, bool includeUnpublished = false, bool includeDeleted = false)
     {
         if (string.IsNullOrWhiteSpace(slug))
         {
@@ -185,7 +216,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             return null;
         }
 
-        if (!ShouldExposeDocument(document, includeUnpublished))
+        if (!ShouldExposeDocument(document, includeUnpublished, includeDeleted))
         {
             return null;
         }
@@ -204,14 +235,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         var markdownContent = NormalizeRequired(createDto.MarkdownContent, nameof(createDto.MarkdownContent));
         var slug = await EnsureUniqueSlugAsync(createDto.Slug, title, null);
 
-        if (createDto.ParentId.HasValue)
-        {
-            var parentExists = await _wikiDocumentRepository.QueryExistsAsync(d => d.Id == createDto.ParentId.Value && !d.IsDeleted);
-            if (!parentExists)
-            {
-                throw new InvalidOperationException("父级文档不存在");
-            }
-        }
+        await ValidateParentDocumentAsync(createDto.ParentId, null);
 
         var document = new WikiDocument
         {
@@ -263,19 +287,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         var markdownContent = NormalizeRequired(updateDto.MarkdownContent, nameof(updateDto.MarkdownContent));
         var slug = await EnsureUniqueSlugAsync(updateDto.Slug, title, id);
 
-        if (updateDto.ParentId == id)
-        {
-            throw new InvalidOperationException("父级文档不能是自身");
-        }
-
-        if (updateDto.ParentId.HasValue)
-        {
-            var parentExists = await _wikiDocumentRepository.QueryExistsAsync(d => d.Id == updateDto.ParentId.Value && !d.IsDeleted);
-            if (!parentExists)
-            {
-                throw new InvalidOperationException("父级文档不存在");
-            }
-        }
+        await ValidateParentDocumentAsync(updateDto.ParentId, id);
 
         var hasMeaningfulChanges =
             document.Title != title ||
@@ -309,6 +321,58 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         }
 
         return updated;
+    }
+
+    public async Task<bool> DeleteDocumentAsync(long id, long operatorId, string operatorName)
+    {
+        if (id <= 0)
+        {
+            throw new ArgumentException("文档ID无效", nameof(id));
+        }
+
+        var document = await _wikiDocumentRepository.QueryByIdAsync(id);
+        if (document == null || document.IsDeleted)
+        {
+            return false;
+        }
+
+        EnsureDocumentIsEditable(document);
+
+        var hasChildren = await _wikiDocumentRepository.QueryExistsAsync(d => d.ParentId == id && !d.IsDeleted);
+        if (hasChildren)
+        {
+            throw new InvalidOperationException("请先处理子文档后再删除当前文档");
+        }
+
+        return await _wikiDocumentRepository.SoftDeleteByIdAsync(id, ResolveOperatorName(operatorName));
+    }
+
+    public async Task<bool> RestoreDocumentAsync(long id, long operatorId, string operatorName)
+    {
+        if (id <= 0)
+        {
+            throw new ArgumentException("文档ID无效", nameof(id));
+        }
+
+        var document = await _wikiDocumentRepository.QueryByIdIncludingDeletedAsync(id);
+        if (document == null || !document.IsDeleted)
+        {
+            return false;
+        }
+
+        EnsureDocumentIsEditable(document);
+        await ValidateParentDocumentAsync(document.ParentId, document.Id);
+
+        var restored = await _wikiDocumentRepository.RestoreByIdAsync(id);
+        if (!restored)
+        {
+            return false;
+        }
+
+        document.ModifyId = operatorId;
+        document.ModifyBy = ResolveOperatorName(operatorName);
+        document.ModifyTime = DateTime.Now;
+        return await UpdateAsync(document);
     }
 
     public async Task<bool> PublishAsync(long id, long operatorId, string operatorName)
@@ -486,14 +550,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
 
         var slug = await EnsureUniqueSlugAsync(importDto.Slug, title, null);
 
-        if (importDto.ParentId.HasValue)
-        {
-            var parentExists = await _wikiDocumentRepository.QueryExistsAsync(d => d.Id == importDto.ParentId.Value && !d.IsDeleted);
-            if (!parentExists)
-            {
-                throw new InvalidOperationException("父级文档不存在");
-            }
-        }
+        await ValidateParentDocumentAsync(importDto.ParentId, null);
 
         var status = importDto.PublishAfterImport
             ? (int)WikiDocumentStatusEnum.Published
@@ -532,7 +589,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             return null;
         }
 
-        if (!ShouldExposeDocument(document, includeUnpublished))
+        if (!ShouldExposeDocument(document, includeUnpublished, includeDeleted: false))
         {
             return null;
         }
@@ -611,6 +668,45 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
     private static string ResolveOperatorName(string? operatorName)
     {
         return string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName.Trim();
+    }
+
+    private async Task ValidateParentDocumentAsync(long? parentId, long? currentDocumentId)
+    {
+        if (!parentId.HasValue)
+        {
+            return;
+        }
+
+        var candidateParentId = parentId.Value;
+        if (currentDocumentId.HasValue && candidateParentId == currentDocumentId.Value)
+        {
+            throw new InvalidOperationException("父级文档不能是自身");
+        }
+
+        var currentParent = await _wikiDocumentRepository.QueryByIdAsync(candidateParentId);
+        if (currentParent == null || currentParent.IsDeleted)
+        {
+            throw new InvalidOperationException("父级文档不存在");
+        }
+
+        if (!currentDocumentId.HasValue)
+        {
+            return;
+        }
+
+        while (currentParent.ParentId.HasValue)
+        {
+            if (currentParent.ParentId.Value == currentDocumentId.Value)
+            {
+                throw new InvalidOperationException("父级文档不能设置为当前文档的子孙节点");
+            }
+
+            currentParent = await _wikiDocumentRepository.QueryByIdAsync(currentParent.ParentId.Value);
+            if (currentParent == null || currentParent.IsDeleted)
+            {
+                break;
+            }
+        }
     }
 
     private static string? ExtractTitle(string markdownContent)

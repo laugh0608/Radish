@@ -27,7 +27,7 @@ public class WikiControllerTest
     {
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.GetDetailAsync(1001, false))
+            .Setup(s => s.GetDetailAsync(1001, false, false))
             .ReturnsAsync((WikiDocumentDetailVo?)null);
 
         var controller = CreateController(serviceMock.Object);
@@ -60,6 +60,38 @@ public class WikiControllerTest
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
         Assert.Equal(9527, result.ResponseData);
+    }
+
+    [Fact]
+    public async Task Delete_Should_Return_Success_When_Service_Returns_True()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.DeleteDocumentAsync(42, 10001, "Tester"))
+            .ReturnsAsync(true);
+
+        var controller = CreateController(serviceMock.Object, isAdmin: true);
+        var result = await controller.Delete(42);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        Assert.True(result.ResponseData);
+    }
+
+    [Fact]
+    public async Task Restore_Should_Return_Success_When_Service_Returns_True()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.RestoreDocumentAsync(42, 10001, "Tester"))
+            .ReturnsAsync(true);
+
+        var controller = CreateController(serviceMock.Object, isAdmin: true);
+        var result = await controller.Restore(42);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        Assert.True(result.ResponseData);
     }
 
     [Fact]

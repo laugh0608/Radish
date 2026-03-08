@@ -139,9 +139,9 @@ public partial class WikiDocumentService
 
     private bool ShouldIncludeBuiltInDocuments() => _documentOptions.ShowBuiltInDocs;
 
-    private bool ShouldExposeDocument(WikiDocument document, bool includeUnpublished)
+    private bool ShouldExposeDocument(WikiDocument document, bool includeUnpublished, bool includeDeleted = false)
     {
-        if (document.IsDeleted)
+        if (document.IsDeleted && !includeDeleted)
         {
             return false;
         }

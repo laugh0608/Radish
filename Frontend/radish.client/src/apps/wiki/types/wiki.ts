@@ -11,6 +11,9 @@ export interface WikiDocumentVo {
   voSourcePath?: string | null;
   voVersion: number;
   voPublishedAt?: string | null;
+  voIsDeleted: boolean;
+  voDeletedAt?: string | null;
+  voDeletedBy?: string | null;
   voCreateTime: string;
   voModifyTime?: string | null;
 }
@@ -60,6 +63,8 @@ export interface WikiListQuery {
   keyword?: string;
   status?: number;
   parentId?: number;
+  includeDeleted?: boolean;
+  deletedOnly?: boolean;
 }
 
 export interface CreateWikiDocumentRequest {

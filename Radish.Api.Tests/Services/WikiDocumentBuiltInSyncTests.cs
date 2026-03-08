@@ -10,6 +10,7 @@ using AutoMapper;
 using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.OptionTool;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -334,7 +335,7 @@ public class WikiDocumentBuiltInSyncTests
 
         public List<WikiDocumentRevision> Revisions { get; }
 
-        public Mock<IBaseRepository<WikiDocument>> DocumentRepository { get; }
+        public Mock<IWikiDocumentRepository> DocumentRepository { get; }
 
         public Mock<IBaseRepository<WikiDocumentRevision>> RevisionRepository { get; }
 
@@ -396,10 +397,10 @@ public class WikiDocumentBuiltInSyncTests
             return mapper;
         }
 
-        private Mock<IBaseRepository<WikiDocument>> CreateDocumentRepositoryMock()
+        private Mock<IWikiDocumentRepository> CreateDocumentRepositoryMock()
         {
             var nextId = _initialDocumentId;
-            var repository = new Mock<IBaseRepository<WikiDocument>>();
+            var repository = new Mock<IWikiDocumentRepository>();
 
             repository
                 .Setup(r => r.RestoreAsync(It.IsAny<Expression<Func<WikiDocument, bool>>>() ))
@@ -422,6 +423,14 @@ public class WikiDocumentBuiltInSyncTests
 
                     return Task.FromResult(count);
                 });
+
+            repository
+                .Setup(r => r.QueryByIdIncludingDeletedAsync(It.IsAny<long>()))
+                .Returns<long>(id => Task.FromResult(Documents.FirstOrDefault(d => d.Id == id)));
+
+            repository
+                .Setup(r => r.QueryByIdAsync(It.IsAny<long>()))
+                .Returns<long>(id => Task.FromResult(Documents.FirstOrDefault(d => d.Id == id && !d.IsDeleted)));
 
             repository
                 .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<WikiDocument, bool>>?>()))
