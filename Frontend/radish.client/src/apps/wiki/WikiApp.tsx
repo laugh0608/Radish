@@ -243,6 +243,8 @@ export const WikiApp = () => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const initialLoadedRef = useRef(false);
+  const selectedDocumentIdRef = useRef<number | null>(null);
+  const selectedRevisionIdRef = useRef<number | null>(null);
   const activeDocumentIds = useMemo(() => new Set(flattenTree(tree)), [tree]);
   const treeOptions = useMemo(() => flattenTreeOptions(tree), [tree]);
   const expandableNodeIds = useMemo(() => new Set(collectExpandableNodeIds(tree)), [tree]);
@@ -291,13 +293,13 @@ export const WikiApp = () => {
       setDocuments(pageData.data || []);
       setTotalResultsCount(pageData.dataCount || pageData.data?.length || 0);
 
-      if (!preserveSelection || !selectedDocumentId) {
+      if (!preserveSelection || !selectedDocumentIdRef.current) {
         setSelectedDocumentId(pickInitialDocumentId(treeData, pageData.data || []));
         return;
       }
 
-      const hasInTree = flattenTree(treeData).includes(selectedDocumentId);
-      const hasInList = (pageData.data || []).some((item) => item.voId === selectedDocumentId);
+      const hasInTree = flattenTree(treeData).includes(selectedDocumentIdRef.current);
+      const hasInList = (pageData.data || []).some((item) => item.voId === selectedDocumentIdRef.current);
 
       if (!hasInTree && !hasInList) {
         setSelectedDocumentId(pickInitialDocumentId(treeData, pageData.data || []));
@@ -310,7 +312,7 @@ export const WikiApp = () => {
       setLoadingTree(false);
       setLoadingList(false);
     }
-  }, [isAdmin, keyword, selectedDocumentId, showingDeleted, statusFilter]);
+  }, [isAdmin, keyword, showingDeleted, statusFilter]);
 
   const loadDocumentDetail = useCallback(async (documentId: number) => {
     setLoadingDetail(true);
@@ -363,7 +365,11 @@ export const WikiApp = () => {
         return;
       }
 
-      if (preserveSelection && selectedRevisionId && revisions.some((item) => item.voId === selectedRevisionId)) {
+      if (
+        preserveSelection &&
+        selectedRevisionIdRef.current &&
+        revisions.some((item) => item.voId === selectedRevisionIdRef.current)
+      ) {
         return;
       }
 
@@ -377,7 +383,7 @@ export const WikiApp = () => {
     } finally {
       setLoadingRevisionList(false);
     }
-  }, [isAdmin, selectedRevisionId]);
+  }, [isAdmin]);
 
   const loadRevisionDetail = useCallback(async (revisionId: number) => {
     if (!isAdmin) {
@@ -422,6 +428,10 @@ export const WikiApp = () => {
   }, [loadDocumentDetail, loadRevisionList, selectedDocumentId]);
 
   useEffect(() => {
+    selectedDocumentIdRef.current = selectedDocumentId;
+  }, [selectedDocumentId]);
+
+  useEffect(() => {
     if (!selectedRevisionId || !isAdmin) {
       setSelectedRevision(null);
       return;
@@ -429,6 +439,10 @@ export const WikiApp = () => {
 
     void loadRevisionDetail(selectedRevisionId);
   }, [isAdmin, loadRevisionDetail, selectedRevisionId]);
+
+  useEffect(() => {
+    selectedRevisionIdRef.current = selectedRevisionId;
+  }, [selectedRevisionId]);
 
   useEffect(() => {
     if (editorVisible || !canEditSelectedDocument) {
@@ -439,6 +453,15 @@ export const WikiApp = () => {
   useEffect(() => {
     setSidebarView(hasActiveFilters ? 'results' : 'tree');
   }, [hasActiveFilters]);
+
+  useEffect(() => {
+    if (!initialLoadedRef.current || !isAdmin) {
+      return;
+    }
+
+    setSidebarView(showingDeleted ? 'results' : 'tree');
+    void refreshCollections(false);
+  }, [deletionFilter, isAdmin, refreshCollections, showingDeleted]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -700,9 +723,17 @@ export const WikiApp = () => {
 
     setSubmitting(true);
     try {
-      await restoreWikiDocument(selectedDocumentId);
+      const restoredDocumentId = selectedDocumentId;
+      await restoreWikiDocument(restoredDocumentId);
       toast.success('文档已恢复');
-      await refreshCollections(true);
+
+      if (showingDeleted) {
+        setDeletionFilter('active');
+        setSidebarView('tree');
+        setSelectedDocumentId(restoredDocumentId);
+      } else {
+        await refreshCollections(true);
+      }
     } catch (error) {
       log.error('WikiApp', '恢复文档失败:', error);
       toast.error(error instanceof Error ? error.message : '恢复文档失败');
@@ -869,7 +900,13 @@ export const WikiApp = () => {
 
       return (
         <div key={node.voId} className={styles.treeNodeGroup}>
-          <div className={styles.treeNodeRow} style={{ paddingLeft: `${depth * 18}px` }}>
+          <div
+            className={styles.treeNodeRow}
+            style={{
+              marginLeft: `${depth * 18}px`,
+              width: `calc(100% - ${depth * 18}px)`,
+            }}
+          >
             {isExpandable ? (
               <button
                 type="button"
