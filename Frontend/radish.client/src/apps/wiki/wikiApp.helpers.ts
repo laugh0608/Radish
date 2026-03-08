@@ -5,10 +5,35 @@ export type ParentOption = {
   label: string;
 };
 
+export type WikiTreeRow = {
+  id: number;
+  title: string;
+  status: number;
+  depth: number;
+  childCount: number;
+};
+
 export const SORT_PRESET_VALUES = ['0', '10', '20', '30', '40', '50', '100'];
 
 export function flattenTree(nodes: WikiDocumentTreeNodeVo[]): number[] {
   return nodes.flatMap((node) => [node.voId, ...flattenTree(node.voChildren || [])]);
+}
+
+export function flattenTreeRows(nodes: WikiDocumentTreeNodeVo[], depth: number = 0): WikiTreeRow[] {
+  return nodes.flatMap((node) => {
+    const children = node.voChildren || [];
+
+    return [
+      {
+        id: node.voId,
+        title: node.voTitle,
+        status: node.voStatus,
+        depth,
+        childCount: children.length,
+      },
+      ...flattenTreeRows(children, depth + 1),
+    ];
+  });
 }
 
 export function flattenTreeOptions(nodes: WikiDocumentTreeNodeVo[], depth: number = 0): ParentOption[] {

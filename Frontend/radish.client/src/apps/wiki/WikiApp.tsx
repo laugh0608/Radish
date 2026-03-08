@@ -3,6 +3,7 @@ import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { toast } from '@radish/ui/toast';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
+import { Modal } from '@radish/ui/modal';
 import { useTranslation } from 'react-i18next';
 import { uploadDocument, uploadImage } from '@/api/attachment';
 import { useUserStore } from '@/stores/userStore';
@@ -46,6 +47,7 @@ import styles from './WikiApp.module.css';
 
 type EditorMode = 'create' | 'edit';
 type DeletionFilter = 'active' | 'deleted';
+type SidebarView = 'tree' | 'results';
 
 type EditorDraft = {
   title: string;
@@ -177,6 +179,31 @@ function describeRevisionSummary(revision: WikiDocumentRevisionItemVo): string {
   return revision.voIsCurrent ? '当前版本快照' : '未填写修改说明';
 }
 
+function collectExpandableNodeIds(nodes: WikiDocumentTreeNodeVo[]): number[] {
+  return nodes.flatMap((node) => {
+    const children = node.voChildren || [];
+    return children.length > 0
+      ? [node.voId, ...collectExpandableNodeIds(children)]
+      : collectExpandableNodeIds(children);
+  });
+}
+
+function findAncestorIds(nodes: WikiDocumentTreeNodeVo[], targetId: number, trail: number[] = []): number[] {
+  for (const node of nodes) {
+    if (node.voId === targetId) {
+      return trail;
+    }
+
+    const nextTrail = [...trail, node.voId];
+    const result = findAncestorIds(node.voChildren || [], targetId, nextTrail);
+    if (result.length > 0) {
+      return result;
+    }
+  }
+
+  return [];
+}
+
 export const WikiApp = () => {
   const { t } = useTranslation();
   const roles = useUserStore((state) => state.roles || []);
@@ -187,6 +214,7 @@ export const WikiApp = () => {
 
   const [tree, setTree] = useState<WikiDocumentTreeNodeVo[]>([]);
   const [documents, setDocuments] = useState<WikiDocumentVo[]>([]);
+  const [totalResultsCount, setTotalResultsCount] = useState(0);
   const [selectedDocumentId, setSelectedDocumentId] = useState<number | null>(null);
   const [selectedDocument, setSelectedDocument] = useState<WikiDocumentDetailVo | null>(null);
   const [revisionList, setRevisionList] = useState<WikiDocumentRevisionItemVo[]>([]);
@@ -206,14 +234,23 @@ export const WikiApp = () => {
   const [draft, setDraft] = useState<EditorDraft>(EMPTY_DRAFT);
   const [rollbackConfirmOpen, setRollbackConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [historyModalOpen, setHistoryModalOpen] = useState(false);
+  const [sidebarView, setSidebarView] = useState<SidebarView>('tree');
+  const [expandedNodeIds, setExpandedNodeIds] = useState<Set<number>>(new Set());
+  const [isCompactLayout, setIsCompactLayout] = useState(false);
   const [sortSuggestion, setSortSuggestion] = useState(EMPTY_DRAFT.sort);
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const initialLoadedRef = useRef(false);
   const activeDocumentIds = useMemo(() => new Set(flattenTree(tree)), [tree]);
   const treeOptions = useMemo(() => flattenTreeOptions(tree), [tree]);
+  const expandableNodeIds = useMemo(() => new Set(collectExpandableNodeIds(tree)), [tree]);
   const showingDeleted = isAdmin && deletionFilter === 'deleted';
   const totalTreeDocuments = activeDocumentIds.size;
+  const hasActiveFilters = keyword.trim().length > 0 || statusFilter !== '' || showingDeleted;
+  const currentListCount = documents.length;
+  const totalResultsText = totalResultsCount > 0 ? String(totalResultsCount) : '0';
 
   const isBuiltInDocument = useMemo(
     () => selectedDocument?.voSourceType?.trim().toLowerCase() === 'builtin',
@@ -252,6 +289,7 @@ export const WikiApp = () => {
 
       setTree(treeData);
       setDocuments(pageData.data || []);
+      setTotalResultsCount(pageData.dataCount || pageData.data?.length || 0);
 
       if (!preserveSelection || !selectedDocumentId) {
         setSelectedDocumentId(pickInitialDocumentId(treeData, pageData.data || []));
@@ -266,6 +304,7 @@ export const WikiApp = () => {
       }
     } catch (error) {
       log.error('WikiApp', '加载 Wiki 列表失败:', error);
+      setTotalResultsCount(0);
       toast.error(error instanceof Error ? error.message : '加载 Wiki 列表失败');
     } finally {
       setLoadingTree(false);
@@ -391,6 +430,71 @@ export const WikiApp = () => {
     void loadRevisionDetail(selectedRevisionId);
   }, [isAdmin, loadRevisionDetail, selectedRevisionId]);
 
+  useEffect(() => {
+    if (editorVisible || !canEditSelectedDocument) {
+      setHistoryModalOpen(false);
+    }
+  }, [canEditSelectedDocument, editorVisible]);
+
+  useEffect(() => {
+    setSidebarView(hasActiveFilters ? 'results' : 'tree');
+  }, [hasActiveFilters]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    const updateLayout = (width: number) => {
+      setIsCompactLayout(width < 1080);
+    };
+
+    updateLayout(container.clientWidth);
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) {
+        return;
+      }
+
+      updateLayout(entry.contentRect.width);
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    setExpandedNodeIds((current) => {
+      const next = new Set<number>();
+
+      current.forEach((id) => {
+        if (expandableNodeIds.has(id)) {
+          next.add(id);
+        }
+      });
+
+      if (next.size === 0) {
+        tree.forEach((node) => {
+          if ((node.voChildren || []).length > 0) {
+            next.add(node.voId);
+          }
+        });
+      }
+
+      if (selectedDocumentId) {
+        findAncestorIds(tree, selectedDocumentId).forEach((id) => {
+          if (expandableNodeIds.has(id)) {
+            next.add(id);
+          }
+        });
+      }
+
+      return next;
+    });
+  }, [expandableNodeIds, selectedDocumentId, tree]);
+
   const openCreateEditor = () => {
     const parentId = selectedDocument && !selectedDocument.voIsDeleted ? String(selectedDocument.voId) : '';
     const suggestedSort = String(getSuggestedSortValue(tree, normalizeOptionalNumber(parentId)));
@@ -433,6 +537,19 @@ export const WikiApp = () => {
     setSortSuggestion(EMPTY_DRAFT.sort);
   };
 
+  const openHistoryModal = () => {
+    if (!selectedDocumentId || !canEditSelectedDocument) {
+      return;
+    }
+
+    setHistoryModalOpen(true);
+    void loadRevisionList(selectedDocumentId);
+  };
+
+  const closeHistoryModal = () => {
+    setHistoryModalOpen(false);
+  };
+
   const handleParentChange = (nextParentId: string) => {
     const currentDocumentId = editorMode === 'edit' ? selectedDocumentId ?? undefined : undefined;
     const nextSuggestedSort = String(getSuggestedSortValue(tree, normalizeOptionalNumber(nextParentId), currentDocumentId));
@@ -452,6 +569,7 @@ export const WikiApp = () => {
   }, [loadDocumentDetail, loadRevisionList, refreshCollections]);
 
   const handleSearch = async () => {
+    setSidebarView('results');
     await refreshCollections(false);
   };
 
@@ -730,26 +848,67 @@ export const WikiApp = () => {
   const selectedStatusText = selectedDocument ? toStatusText(selectedDocument.voStatus) : '未选择';
   const selectedStatusClass = selectedDocument ? toStatusClassName(selectedDocument.voStatus) : styles.statusDraft;
 
+  const toggleTreeNode = (nodeId: number) => {
+    setExpandedNodeIds((current) => {
+      const next = new Set(current);
+      if (next.has(nodeId)) {
+        next.delete(nodeId);
+      } else {
+        next.add(nodeId);
+      }
+
+      return next;
+    });
+  };
+
   const renderTreeNodes = (nodes: WikiDocumentTreeNodeVo[], depth: number = 0): ReactNode => {
-    return nodes.map((node) => (
-      <div key={node.voId}>
-        <button
-          type="button"
-          className={`${styles.treeNode} ${selectedDocumentId === node.voId ? styles.treeNodeActive : ''}`}
-          style={{ paddingLeft: `${10 + depth * 18}px` }}
-          onClick={() => setSelectedDocumentId(node.voId)}
-        >
-          <span className={styles.treeNodeDepth} />
-          <span className={styles.treeNodeTitle}>{node.voTitle}</span>
-          <span className={`${styles.statusChip} ${toStatusClassName(node.voStatus)}`}>{toStatusText(node.voStatus)}</span>
-        </button>
-        {node.voChildren?.length ? renderTreeNodes(node.voChildren, depth + 1) : null}
-      </div>
-    ));
+    return nodes.map((node) => {
+      const children = node.voChildren || [];
+      const isExpandable = children.length > 0;
+      const isExpanded = expandedNodeIds.has(node.voId);
+
+      return (
+        <div key={node.voId} className={styles.treeNodeGroup}>
+          <div className={styles.treeNodeRow} style={{ paddingLeft: `${depth * 18}px` }}>
+            {isExpandable ? (
+              <button
+                type="button"
+                className={styles.treeToggleButton}
+                onClick={() => toggleTreeNode(node.voId)}
+                aria-label={isExpanded ? `收起 ${node.voTitle}` : `展开 ${node.voTitle}`}
+                aria-expanded={isExpanded}
+              >
+                <span className={`${styles.treeToggleIcon} ${isExpanded ? styles.treeToggleIconExpanded : ''}`}>▶</span>
+              </button>
+            ) : (
+              <span className={styles.treeToggleSpacer} aria-hidden="true" />
+            )}
+
+            <button
+              type="button"
+              className={`${styles.treeNode} ${selectedDocumentId === node.voId ? styles.treeNodeActive : ''}`}
+              onClick={() => {
+                setSelectedDocumentId(node.voId);
+                if (isExpandable) {
+                  setExpandedNodeIds((current) => new Set(current).add(node.voId));
+                }
+              }}
+            >
+              <span className={styles.treeNodeDepth} />
+              <span className={styles.treeNodeTitle}>{node.voTitle}</span>
+              {isExpandable ? <span className={styles.treeNodeMeta}>{children.length}</span> : null}
+              <span className={`${styles.statusChip} ${toStatusClassName(node.voStatus)}`}>{toStatusText(node.voStatus)}</span>
+            </button>
+          </div>
+
+          {isExpandable && isExpanded ? renderTreeNodes(children, depth + 1) : null}
+        </div>
+      );
+    });
   };
 
   return (
-    <div className={styles.container}>
+    <div ref={containerRef} className={`${styles.container} ${isCompactLayout ? styles.containerCompact : ''}`}>
       <aside className={styles.sidebar}>
         <div className={styles.sidebarHeader}>
           <div className={styles.sidebarTitleRow}>
@@ -759,31 +918,33 @@ export const WikiApp = () => {
             </div>
           </div>
 
-          <div className={styles.sidebarSummaryRow}>
-            <div className={styles.sidebarSummaryCard}>
-              <span className={styles.sidebarSummaryLabel}>目录</span>
-              <strong className={styles.sidebarSummaryValue}>{totalTreeDocuments}</strong>
+          <div className={styles.sidebarUtilityRow}>
+            <div className={styles.sidebarStatsRow}>
+              <span className={styles.sidebarStatBadge}>
+                <span className={styles.sidebarStatLabel}>目录</span>
+                <strong className={styles.sidebarStatValue}>{totalTreeDocuments}</strong>
+              </span>
+              <span className={styles.sidebarStatBadge}>
+                <span className={styles.sidebarStatLabel}>{showingDeleted ? '回收站总数' : '结果总数'}</span>
+                <strong className={styles.sidebarStatValue}>{totalResultsText}</strong>
+              </span>
             </div>
-            <div className={styles.sidebarSummaryCard}>
-              <span className={styles.sidebarSummaryLabel}>{showingDeleted ? '回收站' : '结果'}</span>
-              <strong className={styles.sidebarSummaryValue}>{documents.length}</strong>
-            </div>
-          </div>
 
-          <div className={styles.toolbarRow}>
-            <button type="button" className={styles.secondaryButton} onClick={() => void refreshCollections(true)} disabled={loadingTree || loadingList}>
-              刷新
-            </button>
-            {isAdmin ? (
-              <>
-                <button type="button" className={styles.primaryButton} onClick={openCreateEditor}>
-                  新建
-                </button>
-                <button type="button" className={styles.ghostButton} onClick={triggerImport} disabled={submitting}>
-                  导入
-                </button>
-              </>
-            ) : null}
+            <div className={styles.toolbarRow}>
+              <button type="button" className={styles.secondaryButton} onClick={() => void refreshCollections(true)} disabled={loadingTree || loadingList}>
+                刷新
+              </button>
+              {isAdmin ? (
+                <>
+                  <button type="button" className={styles.primaryButton} onClick={openCreateEditor}>
+                    新建
+                  </button>
+                  <button type="button" className={styles.ghostButton} onClick={triggerImport} disabled={submitting}>
+                    导入
+                  </button>
+                </>
+              ) : null}
+            </div>
           </div>
 
           <div className={styles.searchRow}>
@@ -832,52 +993,75 @@ export const WikiApp = () => {
         </div>
 
         <div className={styles.sidebarBody}>
-          <section className={styles.treeSection}>
-            <div className={styles.sectionHeader}>
-              <h3 className={styles.sectionTitle}>目录树</h3>
-              <span className={styles.sectionCount}>{totalTreeDocuments}</span>
-            </div>
-            <div className={styles.treeScroll}>
-              {loadingTree ? (
-                <div className={styles.loadingText}>正在加载目录…</div>
-              ) : tree.length > 0 ? (
-                renderTreeNodes(tree)
-              ) : (
-                <div className={styles.mutedText}>暂时还没有目录数据</div>
-              )}
-            </div>
-          </section>
+          <div className={styles.sidebarTabs}>
+            <button
+              type="button"
+              className={sidebarView === 'tree' ? styles.sidebarTabActive : styles.sidebarTab}
+              onClick={() => setSidebarView('tree')}
+            >
+              目录树
+            </button>
+            <button
+              type="button"
+              className={sidebarView === 'results' ? styles.sidebarTabActive : styles.sidebarTab}
+              onClick={() => setSidebarView('results')}
+            >
+              {showingDeleted ? '回收站结果' : '检索结果'}
+            </button>
+          </div>
 
-          <section className={styles.listSection}>
+          <section className={styles.sidebarPanel}>
             <div className={styles.sectionHeader}>
-              <h3 className={styles.sectionTitle}>{showingDeleted ? '回收站' : '检索结果'}</h3>
-              <span className={styles.sectionCount}>{documents.length}</span>
+              <h3 className={styles.sectionTitle}>{sidebarView === 'tree' ? '目录树' : showingDeleted ? '回收站结果' : '检索结果'}</h3>
+              <span className={styles.sectionCount}>{sidebarView === 'tree' ? totalTreeDocuments : totalResultsCount}</span>
             </div>
-            <div className={styles.listScroll}>
-              {loadingList ? (
-                <div className={styles.loadingText}>正在加载列表…</div>
-              ) : documents.length > 0 ? (
-                documents.map((document) => (
-                  <button
-                    key={document.voId}
-                    type="button"
-                    className={`${styles.listItem} ${selectedDocumentId === document.voId ? styles.listItemActive : ''}`}
-                    onClick={() => setSelectedDocumentId(document.voId)}
-                  >
-                    <div className={styles.listItemHeader}>
-                      <span className={styles.listItemTitle}>{document.voTitle}</span>
-                      <span className={`${styles.statusChip} ${document.voIsDeleted ? styles.statusDeleted : toStatusClassName(document.voStatus)}`}>{document.voIsDeleted ? '已删除' : toStatusText(document.voStatus)}</span>
-                    </div>
-                    {document.voSummary ? (
-                      <div className={styles.listItemSummary}>{document.voSummary}</div>
-                    ) : null}
-                    <div className={styles.listItemMeta}>{document.voSlug} · v{document.voVersion}</div>
-                  </button>
-                ))
-              ) : (
-                <div className={styles.mutedText}>{showingDeleted ? '回收站里暂时没有文档' : '没有匹配的文档'}</div>
-              )}
+            <div className={styles.sectionHint}>
+              {sidebarView === 'results'
+                ? totalResultsCount > currentListCount
+                  ? `当前页显示 ${currentListCount} 条，共 ${totalResultsCount} 条`
+                  : hasActiveFilters
+                    ? `当前命中 ${totalResultsCount} 条`
+                    : `当前列表共 ${totalResultsCount} 条`
+                : '按目录层级浏览全部文档'}
             </div>
+
+            {sidebarView === 'tree' ? (
+              <div className={styles.treeScroll}>
+                {loadingTree ? (
+                  <div className={styles.loadingText}>正在加载目录…</div>
+                ) : tree.length > 0 ? (
+                  renderTreeNodes(tree)
+                ) : (
+                  <div className={styles.mutedText}>暂时还没有目录数据</div>
+                )}
+              </div>
+            ) : (
+              <div className={styles.listScroll}>
+                {loadingList ? (
+                  <div className={styles.loadingText}>正在加载列表…</div>
+                ) : documents.length > 0 ? (
+                  documents.map((document) => (
+                    <button
+                      key={document.voId}
+                      type="button"
+                      className={`${styles.listItem} ${selectedDocumentId === document.voId ? styles.listItemActive : ''}`}
+                      onClick={() => setSelectedDocumentId(document.voId)}
+                    >
+                      <div className={styles.listItemHeader}>
+                        <span className={styles.listItemTitle}>{document.voTitle}</span>
+                        <span className={`${styles.statusChip} ${document.voIsDeleted ? styles.statusDeleted : toStatusClassName(document.voStatus)}`}>{document.voIsDeleted ? '已删除' : toStatusText(document.voStatus)}</span>
+                      </div>
+                      {document.voSummary ? (
+                        <div className={styles.listItemSummary}>{document.voSummary}</div>
+                      ) : null}
+                      <div className={styles.listItemMeta}>{document.voSlug} · v{document.voVersion}</div>
+                    </button>
+                  ))
+                ) : (
+                  <div className={styles.mutedText}>{showingDeleted ? '回收站里暂时没有文档' : '没有匹配的文档'}</div>
+                )}
+              </div>
+            )}
           </section>
         </div>
       </aside>
@@ -903,6 +1087,9 @@ export const WikiApp = () => {
             ) : null}
             {canEditSelectedDocument && !editorVisible && selectedDocument ? (
               <>
+                <button type="button" className={styles.secondaryButton} onClick={openHistoryModal} disabled={submitting}>
+                  版本历史
+                </button>
                 <button type="button" className={styles.primaryButton} onClick={openEditEditor}>
                   编辑
                 </button>
@@ -1094,86 +1281,8 @@ export const WikiApp = () => {
 
                 <div className={styles.documentLayout}>
                   <div className={styles.markdownPanel} onClick={handleMarkdownLinkClick}>
-                    <MarkdownRenderer content={selectedDocument.voMarkdownContent} />
+                    <MarkdownRenderer content={selectedDocument.voMarkdownContent} className={styles.markdownContent} />
                   </div>
-
-                  {isAdmin && !isBuiltInDocument && !selectedDocument.voIsDeleted ? (
-                    <aside className={styles.historyPanel}>
-                      <div className={styles.historyPanelHeader}>
-                        <div>
-                          <h3 className={styles.historyTitle}>版本历史</h3>
-                          <p className={styles.historyHint}>查看历史快照并按版本回滚内容</p>
-                        </div>
-                        <span className={styles.historyCount}>{revisionList.length} 条</span>
-                      </div>
-
-                      <div className={styles.historyBody}>
-                        <div className={styles.historyList}>
-                          {loadingRevisionList ? (
-                            <div className={styles.loadingText}>正在加载版本历史…</div>
-                          ) : revisionList.length > 0 ? (
-                            revisionList.map((revision) => (
-                              <button
-                                key={revision.voId}
-                                type="button"
-                                className={`${styles.revisionItem} ${selectedRevisionId === revision.voId ? styles.revisionItemActive : ''}`}
-                                onClick={() => setSelectedRevisionId(revision.voId)}
-                              >
-                                <div className={styles.revisionItemHeader}>
-                                  <span className={styles.revisionTitle}>v{revision.voVersion}</span>
-                                  {revision.voIsCurrent ? (
-                                    <span className={`${styles.statusChip} ${styles.statusPublished}`}>当前</span>
-                                  ) : null}
-                                </div>
-                                <div className={styles.revisionMeta}>{revision.voTitle}</div>
-                                <div className={styles.revisionMeta}>{formatTime(revision.voCreateTime)} · {revision.voCreateBy}</div>
-                                <div className={styles.revisionSummary}>{describeRevisionSummary(revision)}</div>
-                              </button>
-                            ))
-                          ) : (
-                            <div className={styles.mutedText}>当前文档还没有版本记录</div>
-                          )}
-                        </div>
-
-                        <div className={styles.revisionDetail}>
-                          {loadingRevisionDetail ? (
-                            <div className={styles.loadingText}>正在加载版本详情…</div>
-                          ) : selectedRevision ? (
-                            <>
-                              <div className={styles.revisionDetailHeader}>
-                                <div>
-                                  <div className={styles.revisionDetailTitle}>版本 v{selectedRevision.voVersion}</div>
-                                  <div className={styles.revisionMeta}>{selectedRevision.voTitle}</div>
-                                </div>
-                                <div className={styles.revisionActions}>
-                                  <span className={styles.metaChip}>来源：{toSourceText(selectedRevision.voSourceType)}</span>
-                                  {!selectedRevision.voIsCurrent ? (
-                                    <button type="button" className={styles.dangerButton} onClick={openRollbackConfirm} disabled={submitting}>
-                                      回滚到此版本
-                                    </button>
-                                  ) : null}
-                                </div>
-                              </div>
-
-                              <div className={styles.revisionMetaBar}>
-                                <span className={styles.metaChip}>创建：{formatTime(selectedRevision.voCreateTime)}</span>
-                                <span className={styles.metaChip}>作者：{selectedRevision.voCreateBy}</span>
-                                <span className={styles.metaChip}>说明：{selectedRevision.voChangeSummary || '未填写修改说明'}</span>
-                              </div>
-
-                              <div className={styles.revisionPreview}>
-                                <div onClick={handleMarkdownLinkClick}>
-                                  <MarkdownRenderer content={selectedRevision.voMarkdownContent} />
-                                </div>
-                              </div>
-                            </>
-                          ) : (
-                            <div className={styles.mutedText}>请选择左侧版本查看详情</div>
-                          )}
-                        </div>
-                      </div>
-                    </aside>
-                  ) : null}
                 </div>
               </>
             ) : (
@@ -1203,6 +1312,87 @@ export const WikiApp = () => {
         accept=".md,.markdown,.txt,text/markdown,text/plain"
         onChange={(event) => void handleImportFile(event)}
       />
+
+
+      <Modal
+        isOpen={historyModalOpen}
+        onClose={closeHistoryModal}
+        title={selectedDocument ? `版本历史 · ${selectedDocument.voTitle}` : '版本历史'}
+        size="large"
+      >
+        <div className={styles.historyModalContent}>
+          <div className={styles.historyModalSummary}>
+            <span className={styles.historyCount}>{revisionList.length} 条</span>
+            <span className={styles.historyHint}>按需查看历史快照、版本详情与回滚操作，默认阅读态不再占用正文宽度。</span>
+          </div>
+
+          <div className={styles.historyBody}>
+            <div className={styles.historyList}>
+              {loadingRevisionList ? (
+                <div className={styles.loadingText}>正在加载版本历史…</div>
+              ) : revisionList.length > 0 ? (
+                revisionList.map((revision) => (
+                  <button
+                    key={revision.voId}
+                    type="button"
+                    className={`${styles.revisionItem} ${selectedRevisionId === revision.voId ? styles.revisionItemActive : ''}`}
+                    onClick={() => setSelectedRevisionId(revision.voId)}
+                  >
+                    <div className={styles.revisionItemHeader}>
+                      <span className={styles.revisionTitle}>v{revision.voVersion}</span>
+                      {revision.voIsCurrent ? (
+                        <span className={`${styles.statusChip} ${styles.statusPublished}`}>当前</span>
+                      ) : null}
+                    </div>
+                    <div className={styles.revisionMeta}>{revision.voTitle}</div>
+                    <div className={styles.revisionMeta}>{formatTime(revision.voCreateTime)} · {revision.voCreateBy}</div>
+                    <div className={styles.revisionSummary}>{describeRevisionSummary(revision)}</div>
+                  </button>
+                ))
+              ) : (
+                <div className={styles.mutedText}>当前文档还没有版本记录</div>
+              )}
+            </div>
+
+            <div className={styles.revisionDetail}>
+              {loadingRevisionDetail ? (
+                <div className={styles.loadingText}>正在加载版本详情…</div>
+              ) : selectedRevision ? (
+                <>
+                  <div className={styles.revisionDetailHeader}>
+                    <div>
+                      <div className={styles.revisionDetailTitle}>版本 v{selectedRevision.voVersion}</div>
+                      <div className={styles.revisionMeta}>{selectedRevision.voTitle}</div>
+                    </div>
+                    <div className={styles.revisionActions}>
+                      <span className={styles.metaChip}>来源：{toSourceText(selectedRevision.voSourceType)}</span>
+                      {!selectedRevision.voIsCurrent ? (
+                        <button type="button" className={styles.dangerButton} onClick={openRollbackConfirm} disabled={submitting}>
+                          回滚到此版本
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className={styles.revisionMetaBar}>
+                    <span className={styles.metaChip}>创建：{formatTime(selectedRevision.voCreateTime)}</span>
+                    <span className={styles.metaChip}>作者：{selectedRevision.voCreateBy}</span>
+                    <span className={styles.metaChip}>说明：{selectedRevision.voChangeSummary || '未填写修改说明'}</span>
+                  </div>
+
+                  <div className={styles.revisionPreview}>
+                    <div onClick={handleMarkdownLinkClick}>
+                      <MarkdownRenderer content={selectedRevision.voMarkdownContent} className={styles.revisionMarkdownContent} />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className={styles.mutedText}>请选择左侧版本查看详情</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       <ConfirmDialog
         isOpen={deleteConfirmOpen}

@@ -1,19 +1,16 @@
 /**
  * Markdown 渲染器样式
  *
- * 代码高亮主题：使用 highlight.js 的 GitHub Dark 主题
- * 需要在主入口文件引入：
- * import 'highlight.js/styles/github-dark.css';
+ * 默认提供浅色友好的正文与代码块样式，业务侧可通过 CSS 变量按场景覆写。
  */
 
 .markdownBody {
-  color: var(--text-primary, #e0e0e0);
+  color: var(--text-primary, #1f2937);
   font-size: 15px;
-  line-height: 1.7;
+  line-height: 1.72;
   word-wrap: break-word;
 }
 
-/* 标题 */
 .markdownBody h1,
 .markdownBody h2,
 .markdownBody h3,
@@ -21,21 +18,21 @@
 .markdownBody h5,
 .markdownBody h6 {
   margin-top: 24px;
-  margin-bottom: 16px;
-  font-weight: 600;
-  line-height: 1.25;
-  color: var(--text-primary, #ffffff);
+  margin-bottom: 14px;
+  font-weight: 700;
+  line-height: 1.28;
+  color: var(--heading-color, var(--text-primary, #111827));
 }
 
 .markdownBody h1 {
   font-size: 2em;
-  border-bottom: 1px solid var(--border-color, #444);
+  border-bottom: 1px solid var(--border-color, #dbe4f0);
   padding-bottom: 0.3em;
 }
 
 .markdownBody h2 {
   font-size: 1.5em;
-  border-bottom: 1px solid var(--border-color, #444);
+  border-bottom: 1px solid var(--border-color, #dbe4f0);
   padding-bottom: 0.3em;
 }
 
@@ -53,18 +50,16 @@
 
 .markdownBody h6 {
   font-size: 0.85em;
-  color: var(--text-secondary, #a0a0a0);
+  color: var(--muted-color, var(--text-secondary, #6b7280));
 }
 
-/* 段落 */
 .markdownBody p {
   margin-top: 0;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
-/* 链接 */
 .markdownBody a {
-  color: var(--link-color, #58a6ff);
+  color: var(--link-color, #2563eb);
   text-decoration: none;
 }
 
@@ -72,12 +67,11 @@
   text-decoration: underline;
 }
 
-/* 列表 */
 .markdownBody ul,
 .markdownBody ol {
   margin-top: 0;
-  margin-bottom: 16px;
-  padding-left: 2em;
+  margin-bottom: 14px;
+  padding-left: 1.8em;
 }
 
 .markdownBody li {
@@ -88,53 +82,54 @@
   margin-top: 0.25em;
 }
 
-/* 任务列表 */
 .markdownBody input[type="checkbox"] {
   margin-right: 0.5em;
 }
 
-/* 引用块 */
 .markdownBody blockquote {
-  margin: 0 0 16px 0;
-  padding: 0 1em;
-  color: var(--text-secondary, #a0a0a0);
-  border-left: 0.25em solid var(--border-color, #444);
+  margin: 0 0 14px 0;
+  padding: 0.1em 1em;
+  color: var(--text-secondary, #4b5563);
+  background: var(--blockquote-bg, #f8fafc);
+  border-left: 0.25em solid var(--border-color, #dbe4f0);
+  border-radius: 0 10px 10px 0;
 }
 
-/* 水平分割线 */
 .markdownBody hr {
-  height: 0.25em;
+  height: 1px;
   padding: 0;
   margin: 24px 0;
-  background-color: var(--border-color, #444);
+  background-color: var(--hr-color, var(--border-color, #dbe4f0));
   border: 0;
 }
 
-/* 行内代码 */
 .markdownBody code {
-  padding: 0.2em 0.4em;
+  padding: 0.18em 0.42em;
   margin: 0;
   font-size: 85%;
-  background-color: rgba(110, 118, 129, 0.4);
+  color: var(--inline-code-color, #1d4ed8);
+  background-color: var(--inline-code-bg, #eff6ff);
   border-radius: 6px;
   font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
-/* 代码块 */
 .markdownBody .codeBlock {
   margin-bottom: 16px;
-  padding: 16px;
+  padding: 14px 16px;
   overflow: auto;
   font-size: 85%;
-  line-height: 1.45;
-  background-color: var(--code-bg, #1e1e1e);
-  border-radius: 6px;
+  line-height: 1.55;
+  color: var(--code-text, #1f2937);
+  background-color: var(--code-bg, #f8fafc);
+  border: 1px solid var(--code-border, var(--border-color, #dbe4f0));
+  border-radius: 12px;
 }
 
 .markdownBody .codeBlock code {
   display: block;
   padding: 0;
   margin: 0;
+  color: inherit;
   background-color: transparent;
   border-radius: 0;
   overflow: visible;
@@ -142,7 +137,66 @@
   white-space: pre;
 }
 
-/* 表格 */
+.markdownBody :global(.hljs) {
+  display: block;
+  color: var(--hljs-color, var(--code-text, #1f2937));
+  background: var(--hljs-bg, transparent);
+}
+
+.markdownBody :global(.hljs-comment),
+.markdownBody :global(.hljs-quote) {
+  color: var(--hljs-comment, #6b7280);
+}
+
+.markdownBody :global(.hljs-keyword),
+.markdownBody :global(.hljs-selector-tag),
+.markdownBody :global(.hljs-literal),
+.markdownBody :global(.hljs-section),
+.markdownBody :global(.hljs-link) {
+  color: var(--hljs-keyword, #7c3aed);
+}
+
+.markdownBody :global(.hljs-string),
+.markdownBody :global(.hljs-title),
+.markdownBody :global(.hljs-name),
+.markdownBody :global(.hljs-regexp) {
+  color: var(--hljs-string, #047857);
+}
+
+.markdownBody :global(.hljs-number),
+.markdownBody :global(.hljs-symbol),
+.markdownBody :global(.hljs-bullet),
+.markdownBody :global(.hljs-variable),
+.markdownBody :global(.hljs-template-variable) {
+  color: var(--hljs-number, #b45309);
+}
+
+.markdownBody :global(.hljs-built_in),
+.markdownBody :global(.hljs-type),
+.markdownBody :global(.hljs-class .hljs-title) {
+  color: var(--hljs-built-in, #9333ea);
+}
+
+.markdownBody :global(.hljs-attr),
+.markdownBody :global(.hljs-attribute),
+.markdownBody :global(.hljs-selector-class),
+.markdownBody :global(.hljs-selector-attr) {
+  color: var(--hljs-attribute, #0f766e);
+}
+
+.markdownBody :global(.hljs-meta),
+.markdownBody :global(.hljs-meta .hljs-string) {
+  color: var(--hljs-meta, #475569);
+}
+
+.markdownBody :global(.hljs-emphasis) {
+  font-style: italic;
+}
+
+.markdownBody :global(.hljs-strong) {
+  font-weight: 700;
+}
+
 .markdownBody .tableWrapper {
   overflow-x: auto;
   margin-bottom: 16px;
@@ -156,30 +210,29 @@
 
 .markdownBody table th,
 .markdownBody table td {
-  padding: 6px 13px;
-  border: 1px solid var(--border-color, #444);
+  padding: 8px 12px;
+  border: 1px solid var(--border-color, #dbe4f0);
 }
 
 .markdownBody table th {
   font-weight: 600;
-  background-color: var(--table-header-bg, #2d2d2d);
+  background-color: var(--table-header-bg, #f3f4f6);
 }
 
 .markdownBody table tr {
   background-color: transparent;
-  border-top: 1px solid var(--border-color, #444);
+  border-top: 1px solid var(--border-color, #dbe4f0);
 }
 
 .markdownBody table tr:nth-child(2n) {
-  background-color: var(--table-row-bg, #1a1a1a);
+  background-color: var(--table-row-bg, #f9fafb);
 }
 
-/* 图片 */
 .markdownBody img {
   max-width: 100%;
   box-sizing: content-box;
   background-color: transparent;
-  border-radius: 6px;
+  border-radius: 8px;
 }
 
 .markdownBody .markdownImage {
@@ -206,19 +259,17 @@
   padding: 0 0.25em;
   border-radius: 4px;
   background: rgba(148, 163, 184, 0.18);
-  color: var(--text-secondary, #a0a0a0);
+  color: var(--text-secondary, #6b7280);
   font-size: 0.85em;
 }
 
-/* 删除线 */
 .markdownBody del {
   text-decoration: line-through;
   opacity: 0.7;
 }
 
-/* 强调 */
 .markdownBody strong {
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .markdownBody em {

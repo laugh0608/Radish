@@ -233,7 +233,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
 
         var title = NormalizeRequired(createDto.Title, nameof(createDto.Title));
         var markdownContent = NormalizeRequired(createDto.MarkdownContent, nameof(createDto.MarkdownContent));
-        var slug = await EnsureUniqueSlugAsync(createDto.Slug, title, null);
+        var slug = await EnsureUniqueSlugForCreateAsync(createDto.Slug, title);
 
         await ValidateParentDocumentAsync(createDto.ParentId, null);
 
@@ -285,7 +285,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
 
         var title = NormalizeRequired(updateDto.Title, nameof(updateDto.Title));
         var markdownContent = NormalizeRequired(updateDto.MarkdownContent, nameof(updateDto.MarkdownContent));
-        var slug = await EnsureUniqueSlugAsync(updateDto.Slug, title, id);
+        var slug = await EnsureUniqueSlugForUpdateAsync(updateDto.Slug, title, id);
 
         await ValidateParentDocumentAsync(updateDto.ParentId, id);
 
@@ -548,7 +548,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             ? titleFromHeading
             : Path.GetFileNameWithoutExtension(importDto.File.FileName);
 
-        var slug = await EnsureUniqueSlugAsync(importDto.Slug, title, null);
+        var slug = await EnsureUniqueSlugForCreateAsync(importDto.Slug, title);
 
         await ValidateParentDocumentAsync(importDto.ParentId, null);
 
@@ -617,7 +617,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         await _wikiDocumentRevisionRepository.AddAsync(revision);
     }
 
-    private async Task<string> EnsureUniqueSlugAsync(string? requestedSlug, string titleSeed, long? excludeId)
+    private async Task<string> EnsureUniqueSlugForCreateAsync(string? requestedSlug, string titleSeed)
     {
         var baseSlug = BuildSlug(!string.IsNullOrWhiteSpace(requestedSlug) ? requestedSlug : titleSeed);
         if (string.IsNullOrWhiteSpace(baseSlug))
@@ -627,7 +627,26 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
 
         var slug = baseSlug;
         var index = 2;
-        while (await _wikiDocumentRepository.QueryExistsAsync(d => d.Slug == slug && !d.IsDeleted && (!excludeId.HasValue || d.Id != excludeId.Value)))
+        while (await _wikiDocumentRepository.QueryExistsAsync(d => d.Slug == slug && !d.IsDeleted))
+        {
+            slug = $"{baseSlug}-{index}";
+            index++;
+        }
+
+        return slug;
+    }
+
+    private async Task<string> EnsureUniqueSlugForUpdateAsync(string? requestedSlug, string titleSeed, long documentId)
+    {
+        var baseSlug = BuildSlug(!string.IsNullOrWhiteSpace(requestedSlug) ? requestedSlug : titleSeed);
+        if (string.IsNullOrWhiteSpace(baseSlug))
+        {
+            baseSlug = $"wiki-{Guid.NewGuid():N}"[..13];
+        }
+
+        var slug = baseSlug;
+        var index = 2;
+        while (await _wikiDocumentRepository.QueryExistsAsync(d => d.Slug == slug && !d.IsDeleted && d.Id != documentId))
         {
             slug = $"{baseSlug}-{index}";
             index++;

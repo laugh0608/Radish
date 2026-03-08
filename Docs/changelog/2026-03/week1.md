@@ -282,3 +282,20 @@
 - **DbMigrate 缺表检测补齐**：`Radish.DbMigrate` 的 `seed` 预检查已纳入 `WikiDocument` 与 `WikiDocumentRevision`，当 Wiki 表缺失时会自动触发 `init`，避免新库执行 seed 后遗漏 Wiki 表结构。
 - **控制器回归测试新增**：新增 `WikiControllerTest`，覆盖文档不存在、创建成功、发布失败、Markdown 导入成功、Markdown 导出成功等最小主链路断言。
 - **验证结果**：`dotnet build Radish.DbMigrate/Radish.DbMigrate.csproj -c Debug -m:1 /nr:false` 与 `dotnet build Radish.Api.Tests/Radish.Api.Tests.csproj -c Debug -m:1 /nr:false` 通过；`dotnet test` 仍受当前环境 `vstest socket` 权限限制中断，不作为代码失败判断依据。
+
+## 2026-03-08 (周日)
+
+### 文档 App 目录布局与交互收口
+
+- **窄窗口自适应修复**：`WikiApp` 已改为根据文档窗口自身宽度切换单栏 / 双栏布局，修复 WebOS 窗口较窄时目录面板被挤压、内容区异常留白的问题。
+- **目录树交互增强**：目录树已支持分级展开 / 收起；默认展开根层级，并在选中文档时自动展开祖先节点，提升长目录浏览可控性。
+- **侧栏结构收稳**：目录树与检索结果继续共用同一侧栏内容面板，标题行、提示区与滚动区样式已同步对齐，减少窗口态下的层级混乱。
+
+### 文档对齐更新
+
+- **方案文档同步**：`guide/document-system.md` 已补充文档 App 的窄窗口单栏策略、目录树折叠规则与新增验收项，当前说明与实现保持一致。
+
+### 验证状态
+
+- ✅ `npm run test --workspace=radish.client` 通过。
+- ✅ `npm run type-check --workspace=radish.client` 通过。

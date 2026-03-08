@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   buildWikiListUrl,
   collectDescendantIds,
+  flattenTreeRows,
   flattenTreeOptions,
   getSuggestedSortValue,
 } from '../src/apps/wiki/wikiApp.helpers.ts';
@@ -67,6 +68,18 @@ test('flattenTreeOptions 应保留层级标签', () => {
     { id: 3, label: '　└ 子节点 B' },
     { id: 4, label: '　　└ 孙节点' },
     { id: 5, label: '另一个根节点' },
+  ]);
+});
+
+test('flattenTreeRows 应输出稳定的目录展示顺序与深度', () => {
+  const rows = flattenTreeRows(mockTree);
+
+  assert.deepEqual(rows, [
+    { id: 1, title: '根节点', status: 1, depth: 0, childCount: 2 },
+    { id: 2, title: '子节点 A', status: 1, depth: 1, childCount: 0 },
+    { id: 3, title: '子节点 B', status: 1, depth: 1, childCount: 1 },
+    { id: 4, title: '孙节点', status: 1, depth: 2, childCount: 0 },
+    { id: 5, title: '另一个根节点', status: 1, depth: 0, childCount: 0 },
   ]);
 });
 
