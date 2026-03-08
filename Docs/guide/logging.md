@@ -132,6 +132,62 @@ Log/
 | `Database.EagerlyEmitFirstEvent` | 是否立即发送第一个事件 | true |
 | `Database.QueueLimit` | 队列限制 | 10000 |
 
+### `SqlAopLog` 配置
+
+`Serilog` 控制的是 SQL 日志的输出目标（控制台 / 文件 / 数据库），`SqlAopLog` 控制的是 **SqlSugar AOP 是否生成这条 SQL 日志**。
+
+在 `appsettings.Shared.json` 中，当前默认配置如下：
+
+```json
+{
+  "SqlAopLog": {
+    "Enabled": true,
+    "LogQuery": true,
+    "LogInsert": true,
+    "LogUpdate": true,
+    "LogDelete": true,
+    "OmitLargeText": true,
+    "LargeTextThreshold": 256,
+    "OmittedFields": [
+      "MarkdownContent",
+      "Content",
+      "Body",
+      "HtmlContent",
+      "RequestBody",
+      "ResponseBody",
+      "OldContent",
+      "NewContent",
+      "ContentSnapshot"
+    ],
+    "SkipTables": [
+      "WikiDocument",
+      "WikiDocumentRevision"
+    ],
+    "SkipUsers": []
+  }
+}
+```
+
+| 配置项 | 说明 | 默认值 |
+|-------|------|--------|
+| `Enabled` | 是否启用 SQL AOP 日志 | true |
+| `LogQuery` | 是否记录查询日志 | true |
+| `LogInsert` | 是否记录新增日志 | true |
+| `LogUpdate` | 是否记录更新日志 | true |
+| `LogDelete` | 是否记录删除日志 | true |
+| `OmitLargeText` | 是否省略大文本正文 | true |
+| `LargeTextThreshold` | 大文本省略阈值 | 256 |
+| `OmittedFields` | 强制脱敏的字段名列表 | 见上方配置 |
+| `SkipTables` | 直接跳过日志的表名列表 | `WikiDocument`、`WikiDocumentRevision` |
+| `SkipUsers` | 直接跳过日志的操作人列表 | 空 |
+
+常见用法：
+
+- 只关闭查询日志：将 `LogQuery` 设为 `false`
+- 屏蔽系统同步 SQL：在 `SkipUsers` 中加入 `System`
+- 屏蔽指定大表：在 `SkipTables` 中加入表名
+- 保留 SQL 结构但隐藏正文：保持 `OmitLargeText=true`
+
 **启用数据库日志**：
 
 在 `appsettings.Local.json` 中覆盖配置：
@@ -303,20 +359,30 @@ SELECT 'Error', COUNT(*) FROM ErrorLog_20251201;
 
 ### 配置
 
-SqlSugar AOP 在 `SqlSugarSetup` 中自动配置，将 SQL 执行日志输出到文件和数据库（可选）：
+SqlSugar AOP 在 `SqlSugarSetup` 中自动配置，先由 `SqlAopLog` 判断“这条 SQL 要不要记”，再交给 Serilog 决定输出到文件、控制台或数据库：
 
 ```csharp
 // Radish.Extension/AopExtension/SqlSugarAop.cs
 public static void OnLogExecuting(ISqlSugarClient sqlSugarScopeProvider, string user, string table, string operate,
     string sql, SugarParameter[] p, ConnectionConfig config)
 {
-    // 使用 LogContextTool 标记日志来源
+    var options = ResolveOptions();
+    if (!ShouldLog(options, user, table, operate))
+    {
+        return;
+    }
+
     using (LogContextTool.Create.SqlAopPushProperty(sqlSugarScopeProvider))
     {
-        Log.Information($"User:[{user}] Table:[{table}] Operate:[{operate}] ConnId:[{config.ConfigId}] SQL: {sql}");
+        Log.Information("...");
     }
 }
 ```
+
+**当前默认行为**：
+- `WikiDocument`、`WikiDocumentRevision` 默认加入 `SkipTables`，启动时固定文档同步不会再刷大量 SQL 日志
+- `MarkdownContent`、`Content`、`RequestBody` 等大文本字段默认只记录长度占位，不输出正文
+- 仍会保留普通字段和 SQL 结构，方便排查问题
 
 **日志输出位置**：
 - 文件：`Log/{ProjectName}/AopSql/AopSql.txt`
