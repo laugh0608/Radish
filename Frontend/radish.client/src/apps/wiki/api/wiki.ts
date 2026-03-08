@@ -8,6 +8,7 @@ import {
   type ApiResponse,
 } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
+import { buildWikiListUrl } from '../wikiApp.helpers';
 import type {
   CreateWikiDocumentRequest,
   ImportWikiMarkdownRequest,
@@ -25,35 +26,6 @@ configureApiClient({
   baseUrl: getApiBaseUrl(),
 });
 
-function buildListUrl(query: WikiListQuery = {}): string {
-  const params = new URLSearchParams();
-
-  params.set('pageIndex', String(query.pageIndex ?? 1));
-  params.set('pageSize', String(query.pageSize ?? 100));
-
-  if (query.keyword?.trim()) {
-    params.set('keyword', query.keyword.trim());
-  }
-
-  if (typeof query.status === 'number') {
-    params.set('status', String(query.status));
-  }
-
-  if (typeof query.parentId === 'number') {
-    params.set('parentId', String(query.parentId));
-  }
-
-  if (query.includeDeleted) {
-    params.set('includeDeleted', 'true');
-  }
-
-  if (query.deletedOnly) {
-    params.set('deletedOnly', 'true');
-  }
-
-  return `/api/v1/Wiki/GetList?${params.toString()}`;
-}
-
 async function ensureOk<T>(request: Promise<{ ok: boolean; data?: T; message?: string }>, fallbackMessage: string): Promise<T> {
   const response = await request;
   if (!response.ok || response.data === undefined) {
@@ -68,7 +40,7 @@ export async function getWikiTree(): Promise<WikiDocumentTreeNodeVo[]> {
 }
 
 export async function getWikiList(query: WikiListQuery = {}): Promise<WikiPageModel<WikiDocumentVo>> {
-  return await ensureOk(apiGet<WikiPageModel<WikiDocumentVo>>(buildListUrl(query), { withAuth: true }), '加载文档列表失败');
+  return await ensureOk(apiGet<WikiPageModel<WikiDocumentVo>>(buildWikiListUrl(query), { withAuth: true }), '加载文档列表失败');
 }
 
 export async function getWikiDocumentById(id: number, includeDeleted: boolean = false): Promise<WikiDocumentDetailVo> {

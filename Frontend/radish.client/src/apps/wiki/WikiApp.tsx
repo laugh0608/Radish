@@ -35,15 +35,17 @@ import type {
   WikiDocumentVo,
 } from './types/wiki';
 import { WikiDocumentStatus } from './types/wiki';
+import {
+  collectDescendantIds,
+  flattenTree,
+  flattenTreeOptions,
+  getSuggestedSortValue,
+  SORT_PRESET_VALUES,
+} from './wikiApp.helpers';
 import styles from './WikiApp.module.css';
 
 type EditorMode = 'create' | 'edit';
 type DeletionFilter = 'active' | 'deleted';
-
-type ParentOption = {
-  id: number;
-  label: string;
-};
 
 type EditorDraft = {
   title: string;
@@ -66,37 +68,6 @@ const EMPTY_DRAFT: EditorDraft = {
   coverAttachmentId: '',
   changeSummary: '',
 };
-
-
-const SORT_PRESET_VALUES = ['0', '10', '20', '30', '40', '50', '100'];
-
-function flattenTreeOptions(nodes: WikiDocumentTreeNodeVo[], depth: number = 0): ParentOption[] {
-  return nodes.flatMap((node) => [
-    {
-      id: node.voId,
-      label: `${depth > 0 ? `${'　'.repeat(depth)}└ ` : ''}${node.voTitle}`,
-    },
-    ...flattenTreeOptions(node.voChildren || [], depth + 1),
-  ]);
-}
-
-function collectDescendantIds(nodes: WikiDocumentTreeNodeVo[], targetId: number): Set<number> {
-  const result = new Set<number>();
-
-  const visit = (currentNodes: WikiDocumentTreeNodeVo[], collecting: boolean) => {
-    currentNodes.forEach((node) => {
-      const shouldCollect = collecting || node.voId === targetId;
-      if (collecting) {
-        result.add(node.voId);
-      }
-
-      visit(node.voChildren || [], shouldCollect);
-    });
-  };
-
-  visit(nodes, false);
-  return result;
-}
 
 function toStatusText(status: number): string {
   switch (status) {
@@ -150,10 +121,6 @@ function formatTime(value?: string | null): string {
   return date.toLocaleString('zh-CN', {
     hour12: false,
   });
-}
-
-function flattenTree(nodes: WikiDocumentTreeNodeVo[]): number[] {
-  return nodes.flatMap((node) => [node.voId, ...flattenTree(node.voChildren || [])]);
 }
 
 function pickInitialDocumentId(tree: WikiDocumentTreeNodeVo[], list: WikiDocumentVo[]): number | null {
@@ -239,6 +206,7 @@ export const WikiApp = () => {
   const [draft, setDraft] = useState<EditorDraft>(EMPTY_DRAFT);
   const [rollbackConfirmOpen, setRollbackConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [sortSuggestion, setSortSuggestion] = useState(EMPTY_DRAFT.sort);
 
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const initialLoadedRef = useRef(false);
@@ -423,11 +391,16 @@ export const WikiApp = () => {
   }, [isAdmin, loadRevisionDetail, selectedRevisionId]);
 
   const openCreateEditor = () => {
+    const parentId = selectedDocument && !selectedDocument.voIsDeleted ? String(selectedDocument.voId) : '';
+    const suggestedSort = String(getSuggestedSortValue(tree, normalizeOptionalNumber(parentId)));
+
     setEditorMode('create');
     setDraft({
       ...EMPTY_DRAFT,
-      parentId: selectedDocument && !selectedDocument.voIsDeleted ? String(selectedDocument.voId) : '',
+      parentId,
+      sort: suggestedSort,
     });
+    setSortSuggestion(suggestedSort);
     setEditorVisible(true);
   };
 
@@ -435,6 +408,8 @@ export const WikiApp = () => {
     if (!selectedDocument) {
       return;
     }
+
+    const suggestedSort = String(getSuggestedSortValue(tree, selectedDocument.voParentId, selectedDocument.voId));
 
     setEditorMode('edit');
     setDraft({
@@ -447,12 +422,26 @@ export const WikiApp = () => {
       coverAttachmentId: selectedDocument.voCoverAttachmentId != null ? String(selectedDocument.voCoverAttachmentId) : '',
       changeSummary: '',
     });
+    setSortSuggestion(suggestedSort);
     setEditorVisible(true);
   };
 
   const closeEditor = () => {
     setEditorVisible(false);
     setDraft(EMPTY_DRAFT);
+    setSortSuggestion(EMPTY_DRAFT.sort);
+  };
+
+  const handleParentChange = (nextParentId: string) => {
+    const currentDocumentId = editorMode === 'edit' ? selectedDocumentId ?? undefined : undefined;
+    const nextSuggestedSort = String(getSuggestedSortValue(tree, normalizeOptionalNumber(nextParentId), currentDocumentId));
+
+    setDraft((current) => ({
+      ...current,
+      parentId: nextParentId,
+      sort: !current.sort.trim() || current.sort === sortSuggestion ? nextSuggestedSort : current.sort,
+    }));
+    setSortSuggestion(nextSuggestedSort);
   };
 
   const refreshDocumentWorkspace = useCallback(async (documentId: number, preserveRevisionSelection: boolean = true) => {
@@ -953,7 +942,7 @@ export const WikiApp = () => {
                   <select
                     className={styles.select}
                     value={draft.parentId}
-                    onChange={(event) => setDraft((current) => ({ ...current, parentId: event.target.value }))}
+                    onChange={(event) => handleParentChange(event.target.value)}
                   >
                     <option value="">顶级文档</option>
                     {treeOptions.map((option) => (
@@ -989,6 +978,18 @@ export const WikiApp = () => {
                         {value}
                       </button>
                     ))}
+                  </div>
+                  <div className={styles.sortSuggestionRow}>
+                    <span className={styles.fieldHint}>建议排序：{sortSuggestion}（按当前父级同级文档自动推导）</span>
+                    {draft.sort !== sortSuggestion ? (
+                      <button
+                        type="button"
+                        className={styles.sortSuggestionButton}
+                        onClick={() => setDraft((current) => ({ ...current, sort: sortSuggestion }))}
+                      >
+                        使用建议值
+                      </button>
+                    ) : null}
                   </div>
                 </div>
                 <div>
