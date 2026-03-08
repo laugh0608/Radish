@@ -112,9 +112,9 @@
 ---
 
 ## 相关文档
-- [萝卜币系统](/guide/coin-system)
+- [萝卜币系统](/guide/radish-coin-system)
 - [用户认证系统](/guide/authentication)
-- [通知系统](/guide/notification-system)
+- [通知系统](/guide/notification-realtime)
 
 ---
 

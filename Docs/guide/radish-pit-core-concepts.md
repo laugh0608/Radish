@@ -186,7 +186,7 @@ netTransfer = totalTransferredIn - totalTransferredOut
 ## 相关文档
 - [萝卜坑应用总体设计](/guide/radish-pit-system)
 - [萝卜坑功能模块](/guide/radish-pit-game-mechanics)
-- [萝卜币系统](/guide/coin-system)
+- [萝卜币系统](/guide/radish-coin-system)
 
 ---
 

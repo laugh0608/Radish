@@ -345,7 +345,7 @@ error: could not compile `radish-lib`
 - [Rust 官方文档](https://www.rust-lang.org/learn)
 - [ImageSharp 文档](https://docs.sixlabors.com/articles/imagesharp/index.html)
 - [P/Invoke 指南](https://learn.microsoft.com/en-us/dotnet/standard/native-interop/pinvoke)
-- [Radish 文件上传设计文档](./file-upload-design.md)
+- [Radish 文件上传设计文档](../features/file-upload-design.md)
 
 ## 更新日志
 
