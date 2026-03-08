@@ -3,7 +3,6 @@
     const apiBaseUrl = mainElement?.dataset.apiBaseUrl || "http://localhost:5100";
     const apiHealthPath = mainElement?.dataset.apiHealthPath || "/health";
     const frontendBaseUrl = mainElement?.dataset.frontendBaseUrl || "http://localhost:3000";
-    const docsPath = mainElement?.dataset.docsPath || "/docs";
     const consolePath = mainElement?.dataset.consolePath || "/console";
 
     const originLabel = document.getElementById("current-origin");
@@ -14,7 +13,6 @@
     const statusEl = document.getElementById("health-status");
     const downstreamEl = document.getElementById("downstream-status");
     const frontendStatusEl = document.getElementById("frontend-status");
-    const docsStatusEl = document.getElementById("docs-status");
     const consoleStatusEl = document.getElementById("console-status");
 
     const isHttpUp = (response) => response.ok || (response.status >= 200 && response.status < 400);
@@ -87,28 +85,6 @@
             } catch {
                 frontendStatusEl.textContent = "前端应用未启动或无法访问";
                 frontendStatusEl.dataset.state = "fail";
-            }
-        })();
-    }
-
-    // 检查 Docs 文档站状态（通过 Gateway /docs，2xx/3xx 视为可用）
-    if (docsStatusEl) {
-        (async () => {
-            try {
-                const start = performance.now();
-                const docsHealthUrl = docsPath;
-                const response = await fetch(docsHealthUrl, { cache: "no-store" });
-                if (isHttpUp(response)) {
-                    const duration = Math.round(performance.now() - start);
-                    docsStatusEl.textContent = `Docs 文档站可用 · ${duration} ms`;
-                    docsStatusEl.dataset.state = "ok";
-                } else {
-                    docsStatusEl.textContent = `Docs 文档站响应异常 (${response.status})`;
-                    docsStatusEl.dataset.state = "fail";
-                }
-            } catch {
-                docsStatusEl.textContent = "Docs 文档站未启动或无法访问";
-                docsStatusEl.dataset.state = "fail";
             }
         })();
     }

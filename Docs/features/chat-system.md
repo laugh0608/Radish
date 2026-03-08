@@ -583,4 +583,4 @@ Hub 扩展：
 | `Radish.Model/ViewModels/AttachmentVo.cs` | 图片消息附件字段参考 |
 | `Frontend/radish.client/src/services/notificationHub.ts` | chatHub.ts 实现模板 |
 | `Frontend/radish.client/src/desktop/Shell.tsx` | Hub 连接生命周期管理 |
-| `Docs/radish.docs/docs/features/emoji-sticker-system.md` | Reaction Phase 2 集成 |
+| `Docs/features/emoji-sticker-system.md` | Reaction Phase 2 集成 |
