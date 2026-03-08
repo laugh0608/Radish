@@ -52,7 +52,19 @@ public class WikiDocumentBuiltInSyncTests
             var testContext = new WikiDocumentSyncTestContext();
             var service = testContext.CreateService(docsRoot);
 
-            await service.SyncBuiltInDocumentsAsync(TestContext.Current.CancellationToken);
+            var summary = await service.SyncBuiltInDocumentsAsync(TestContext.Current.CancellationToken);
+
+            summary.IsSkipped.ShouldBeFalse();
+            summary.MarkdownFileCount.ShouldBe(3);
+            summary.DescriptorCount.ShouldBe(5);
+            summary.GeneratedNodeCount.ShouldBe(2);
+            summary.SyncedCount.ShouldBe(5);
+            summary.CreatedCount.ShouldBe(5);
+            summary.UpdatedCount.ShouldBe(0);
+            summary.RestoredCount.ShouldBe(0);
+            summary.ParentAdjustedCount.ShouldBe(3);
+            summary.SoftDeletedCount.ShouldBe(0);
+            summary.SkippedCount.ShouldBe(0);
 
             testContext.Documents.Count.ShouldBe(5);
             testContext.Revisions.Count.ShouldBe(5);
@@ -125,7 +137,16 @@ public class WikiDocumentBuiltInSyncTests
             var testContext = new WikiDocumentSyncTestContext([builtInDocument]);
             var service = testContext.CreateService(docsRoot, showBuiltInDocs: false);
 
-            await service.SyncBuiltInDocumentsAsync(TestContext.Current.CancellationToken);
+            var summary = await service.SyncBuiltInDocumentsAsync(TestContext.Current.CancellationToken);
+
+            summary.IsSkipped.ShouldBeTrue();
+            summary.SkipReason.ShouldBe("Document.ShowBuiltInDocs=false");
+            summary.SyncedCount.ShouldBe(0);
+            summary.CreatedCount.ShouldBe(0);
+            summary.UpdatedCount.ShouldBe(0);
+            summary.RestoredCount.ShouldBe(0);
+            summary.ParentAdjustedCount.ShouldBe(0);
+            summary.SoftDeletedCount.ShouldBe(0);
 
             testContext.Documents.ShouldHaveSingleItem();
             testContext.Documents[0].Title.ShouldBe("已有固定文档");
@@ -215,7 +236,19 @@ public class WikiDocumentBuiltInSyncTests
                 [existingRevision]);
             var service = testContext.CreateService(docsRoot);
 
-            await service.SyncBuiltInDocumentsAsync(TestContext.Current.CancellationToken);
+            var summary = await service.SyncBuiltInDocumentsAsync(TestContext.Current.CancellationToken);
+
+            summary.IsSkipped.ShouldBeFalse();
+            summary.MarkdownFileCount.ShouldBe(1);
+            summary.DescriptorCount.ShouldBe(2);
+            summary.GeneratedNodeCount.ShouldBe(1);
+            summary.SyncedCount.ShouldBe(2);
+            summary.CreatedCount.ShouldBe(1);
+            summary.UpdatedCount.ShouldBe(1);
+            summary.RestoredCount.ShouldBe(1);
+            summary.ParentAdjustedCount.ShouldBe(1);
+            summary.SoftDeletedCount.ShouldBe(1);
+            summary.SkippedCount.ShouldBe(0);
 
             var guide = testContext.Documents.Single(d => d.Slug == "guide");
             var restored = testContext.Documents.Single(d => d.Id == existingDocument.Id);

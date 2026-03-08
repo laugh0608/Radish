@@ -25,6 +25,15 @@ public partial class WikiDocumentService
         public int Depth => string.IsNullOrWhiteSpace(PathKey) ? 0 : PathKey.Count(c => c == '/') + 1;
     }
 
+    private sealed class BuiltInUpsertResult
+    {
+        public WikiDocument? Document { get; init; }
+        public bool Created { get; init; }
+        public bool Updated { get; init; }
+        public bool Restored { get; init; }
+        public bool Skipped { get; init; }
+    }
+
     internal const string BuiltInSourceType = "BuiltIn";
     private static readonly Regex MarkdownLinkRegex = new(@"(?<prefix>!?\[[^\]]*\]\()(?<url>[^)]+)(?<suffix>\))", RegexOptions.Compiled);
     private static readonly HashSet<string> MarkdownExtensions = new(StringComparer.OrdinalIgnoreCase) { ".md", ".markdown" };
@@ -33,23 +42,34 @@ public partial class WikiDocumentService
         ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg", ".bmp", ".ico", ".pdf", ".txt", ".json", ".yml", ".yaml"
     };
 
-    public async Task SyncBuiltInDocumentsAsync(CancellationToken cancellationToken = default)
+    public async Task<WikiBuiltInSyncSummary> SyncBuiltInDocumentsAsync(CancellationToken cancellationToken = default)
     {
+        var summary = new WikiBuiltInSyncSummary();
+
         if (!ShouldIncludeBuiltInDocuments())
         {
-            return;
+            summary.IsSkipped = true;
+            summary.SkipReason = "Document.ShowBuiltInDocs=false";
+            return summary;
         }
 
         var docsRoot = ResolveBuiltInDocsRoot();
         if (!Directory.Exists(docsRoot))
         {
-            return;
+            summary.IsSkipped = true;
+            summary.SkipReason = $"固定文档目录不存在: {docsRoot}";
+            return summary;
         }
 
         var descriptors = await BuildBuiltInDocumentDescriptorsAsync(docsRoot, cancellationToken);
+        summary.MarkdownFileCount = descriptors.Count(d => !d.IsGenerated);
+        summary.DescriptorCount = descriptors.Count;
+        summary.GeneratedNodeCount = descriptors.Count(d => d.IsGenerated);
         if (descriptors.Count == 0)
         {
-            return;
+            summary.IsSkipped = true;
+            summary.SkipReason = "未扫描到可同步的固定 Markdown 文档";
+            return summary;
         }
 
         var activeSlugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -59,14 +79,30 @@ public partial class WikiDocumentService
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var document = await UpsertBuiltInDocumentAsync(descriptor);
-            if (document == null)
+            var upsertResult = await UpsertBuiltInDocumentAsync(descriptor);
+            if (upsertResult.Skipped || upsertResult.Document == null)
             {
+                summary.SkippedCount++;
                 continue;
             }
 
+            if (upsertResult.Created)
+            {
+                summary.CreatedCount++;
+            }
+
+            if (upsertResult.Updated)
+            {
+                summary.UpdatedCount++;
+            }
+
+            if (upsertResult.Restored)
+            {
+                summary.RestoredCount++;
+            }
+
             activeSlugs.Add(descriptor.Slug);
-            pathDocumentMap[descriptor.PathKey] = document;
+            pathDocumentMap[descriptor.PathKey] = upsertResult.Document;
         }
 
         foreach (var descriptor in descriptors.OrderBy(d => d.Depth).ThenBy(d => d.Sort).ThenBy(d => d.PathKey, StringComparer.OrdinalIgnoreCase))
@@ -87,14 +123,22 @@ public partial class WikiDocumentService
                 document.ModifyBy = "System";
                 document.ModifyTime = DateTime.Now;
                 await UpdateAsync(document);
+                summary.ParentAdjustedCount++;
             }
         }
 
         var builtInDocuments = await _wikiDocumentRepository.QueryAsync(d => d.SourceType == BuiltInSourceType);
         foreach (var document in builtInDocuments.Where(d => !activeSlugs.Contains(d.Slug)))
         {
-            await _wikiDocumentRepository.SoftDeleteByIdAsync(document.Id, "System");
+            var deleted = await _wikiDocumentRepository.SoftDeleteByIdAsync(document.Id, "System");
+            if (deleted)
+            {
+                summary.SoftDeletedCount++;
+            }
         }
+
+        summary.SyncedCount = pathDocumentMap.Count;
+        return summary;
     }
 
     private bool ShouldIncludeBuiltInDocuments() => _documentOptions.ShowBuiltInDocs;
@@ -228,9 +272,9 @@ public partial class WikiDocumentService
         return descriptors.Values.ToList();
     }
 
-    private async Task<WikiDocument?> UpsertBuiltInDocumentAsync(BuiltInDocumentDescriptor descriptor)
+    private async Task<BuiltInUpsertResult> UpsertBuiltInDocumentAsync(BuiltInDocumentDescriptor descriptor)
     {
-        await _wikiDocumentRepository.RestoreAsync(d => d.SourceType == BuiltInSourceType && d.Slug == descriptor.Slug);
+        var restoredCount = await _wikiDocumentRepository.RestoreAsync(d => d.SourceType == BuiltInSourceType && d.Slug == descriptor.Slug);
         var existing = await _wikiDocumentRepository.QueryFirstAsync(d => d.Slug == descriptor.Slug);
 
         if (existing == null)
@@ -260,12 +304,22 @@ public partial class WikiDocumentService
             var id = await AddAsync(document);
             document.Id = id;
             await EnsureBuiltInRevisionAsync(document);
-            return document;
+            return new BuiltInUpsertResult
+            {
+                Document = document,
+                Created = true,
+                Restored = restoredCount > 0
+            };
         }
 
         if (!IsBuiltInSourceType(existing.SourceType))
         {
-            return null;
+            return new BuiltInUpsertResult
+            {
+                Document = null,
+                Skipped = true,
+                Restored = restoredCount > 0
+            };
         }
 
         existing.Title = descriptor.Title;
@@ -283,7 +337,12 @@ public partial class WikiDocumentService
         existing.Version = 1;
         await UpdateAsync(existing);
         await EnsureBuiltInRevisionAsync(existing);
-        return existing;
+        return new BuiltInUpsertResult
+        {
+            Document = existing,
+            Updated = true,
+            Restored = restoredCount > 0
+        };
     }
 
     private async Task EnsureBuiltInRevisionAsync(WikiDocument document)

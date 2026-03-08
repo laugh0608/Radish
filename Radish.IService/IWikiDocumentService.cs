@@ -42,5 +42,5 @@ public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentV
 
     Task<(string fileName, string markdownContent)?> ExportMarkdownAsync(long id, bool includeUnpublished = false);
 
-    Task SyncBuiltInDocumentsAsync(CancellationToken cancellationToken = default);
+    Task<WikiBuiltInSyncSummary> SyncBuiltInDocumentsAsync(CancellationToken cancellationToken = default);
 }
