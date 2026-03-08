@@ -299,3 +299,14 @@
 
 - ✅ `npm run test --workspace=radish.client` 通过。
 - ✅ `npm run type-check --workspace=radish.client` 通过。
+
+## 2026-03-08 (周日)
+
+### SQL AOP 日志过滤与文档对齐
+
+- **共享配置落地**：新增 `SqlAopLog` 共享配置与 `SqlAopLogOptions` 强类型选项，支持按 `Query/Insert/Update/Delete` 维度控制 SQL AOP 日志输出。
+- **过滤能力补齐**：`SqlSugarAop` 新增 `SkipTables`、`SkipUsers` 过滤能力，可按表名或操作人直接跳过 SQL 日志记录。
+- **大文本脱敏收口**：对 `MarkdownContent`、`Content`、`RequestBody` 等字段统一输出 `<text len=... omitted>` 占位，避免文档正文和请求正文刷屏。
+- **默认噪音收敛**：共享配置默认跳过 `WikiDocument` 与 `WikiDocumentRevision` 两张表，固定文档同步阶段不再输出大量 SQL 日志。
+- **文档同步**：更新 `guide/logging.md`、`architecture/framework.md`、`architecture/specifications.md`，补齐 `SqlAopLog` 的配置说明与默认行为。
+- **验证结果**：`dotnet build Radish.Api/Radish.Api.csproj -c Debug` 通过，`dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --filter SqlSugarAopTests` 通过（5/5）。
