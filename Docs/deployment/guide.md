@@ -406,71 +406,39 @@ networks:
 
 > 建议记录证书轮换日期，并在运维手册中说明下一次到期时间，以避免证书过期导致 Auth 下线。
 
-## 可选：部署 Gateway 在线文档
+## 文档系统部署
 
-本节为可选配置，仅当你希望在 Gateway 下托管在线文档站点时才需要执行。
+固定文档已统一收口到仓库 `Docs/`，不再维护独立的 `radish.docs` 文档站，也不再建议通过 Gateway 额外挂载一个 `/docs` 站点。
 
-### 步骤 1：安装文档工程依赖
+### 当前推荐方案
 
-在仓库根目录执行：
+1. 固定文档直接存放在 `Docs/` 目录，按 `architecture/`、`guide/`、`frontend/`、`features/`、`deployment/`、`changelog/` 等分类维护。
+2. API 启动时自动扫描 `Docs/**/*.md`，同步为只读固定文档，并重写站内链接与资源路径。
+3. WebOS 中统一使用“文档”应用展示固定文档与在线文档；在线文档继续存数据库。
+4. 通过 `Document.ShowBuiltInDocs` 控制是否展示固定文档，便于其他站点复用时关闭项目内置文档。
 
-```bash
-npm install --prefix Docs/radish.docs
-```
-
-该命令会在 `radish.docs` 目录下安装 VitePress 等文档工程依赖。
-
-### 步骤 2：构建文档静态站点
-
-```bash
-npm run docs:build --prefix Docs/radish.docs
-```
-
-构建完成后，文档站点的静态文件会输出到：
-
-- `Docs/radish.docs/dist`
-
-该目录通常由独立 docs 服务或静态服务器托管；如需让 Gateway 托管静态文档，可将该目录挂载或复制到 `Radish.Gateway/DocsSite`，并在 Gateway 配置中设置对应的 `StaticFolder`。
-### 步骤 3：在 Gateway 中启用 Docs
-
-建议在 `Radish.Gateway/appsettings.Local.json` 中配置（`Local` 文件已被 Git 忽略，适合放环境差异与敏感信息）：
+### 相关配置
 
 ```json
-"Docs": {
-  "Enabled": true,
-  "RequestPath": "/docs",
-  "StaticFolder": "DocsSite"
+{
+  "Document": {
+    "ShowBuiltInDocs": true,
+    "BuiltInDocsPath": "Docs",
+    "StaticAssetsRequestPath": "/docs-assets"
+  }
 }
 ```
 
-说明：
+### Gateway 常见入口（开发环境）
 
-- 基础配置 `Radish.Gateway/appsettings.json` 中 `Docs.Enabled` 默认为 `false`，开源用户默认不会启用在线文档；
-- 当本地或生产环境需要文档站点时，通过 `appsettings.Local.json` 或环境变量覆盖即可开启；
-- `RequestPath` 与 `StaticFolder` 应与 `Program.cs` 中的中间件配置保持一致。
-
-### 步骤 4：通过 Gateway 访问在线文档
-
-启动 Gateway 后，可通过以下地址访问文档站点：
-
-- 本地默认：`https://localhost:5000/docs`
-- 生产环境：`{GatewayService:PublicUrl}/docs`
-
-> 提示：当 `Docs.Enabled = true` 但 `DocsSite` 目录不存在时，Gateway 会在日志中输出告警并回退到门户页，不会影响其他服务与路由。
-
-### 常见 Gateway 路由一览（开发环境）
-
-在默认本地开发配置下，Gateway 提供以下典型入口：
-
-- `/` → 前端 webOS（radish.client）
-- `/docs` → 在线文档站（radish.docs 构建产物或 dev 代理）
+- `/` → 前端 WebOS（radish.client）
 - `/api` → 后端 API（Radish.Api）
-- `/scalar` → Scalar API 文档 UI（转发到 Radish.Api 的 `/api/docs`）
+- `/scalar` → Scalar API 文档 UI（转发到 Radish.Api 的 `/scalar`，`/api/docs` 为旧兼容路径）
 - `/console` → 控制台前端（radish.console）
 
 生产环境中，这些路径通常通过反向代理映射到 `{GatewayService.PublicUrl}`，例如：
 
-- `https://radish.com/`、`https://radish.com/docs`、`https://radish.com/console` 等。
+- `https://radish.com/`、`https://radish.com/console` 等。
 
 ## 排查与清理
 - 若构建时提示 SDK 版本不符，执行 `dotnet --list-sdks` 确认版本或在容器内设置 `DOTNET_NOLOGO=1` 以减少输出。
@@ -488,7 +456,7 @@ npm run docs:build --prefix Docs/radish.docs
 - 目标机器内存约 **4–8GB**，希望在资源有限的前提下尽量简化镜像数量；
 - 采用 **两个基础镜像**：
   - `radish-backend`：承载所有 .NET 服务（Api / Gateway / Auth / DbMigrate 等）；
-  - `radish-frontend`：承载所有前端项目的构建与静态资源（radish.client / radish.console / radish.docs）。
+  - `radish-frontend`：承载所有前端项目的构建与静态资源（radish.client / radish.console）。
 - 在 Compose 层面仍然按照服务拆分多个容器：
   - 后端：`gateway`、`api`、`auth`（以及可选的 `db-migrate` 等 Job 容器）；
   - 前端：`client`（未来可扩展为 `console`、`docs` 独立容器）；
@@ -547,27 +515,23 @@ WORKDIR /app
 # 安装三个前端项目的依赖
 COPY Frontend/radish.client/package*.json Frontend/radish.client/
 COPY Frontend/radish.console/package*.json Frontend/radish.console/
-COPY Docs/radish.docs/package*.json Docs/radish.docs/
 
 RUN cd Frontend/radish.client && npm install
 RUN cd Frontend/radish.console && npm install
-RUN cd Docs/radish.docs && npm install
 
 # 复制源代码
 COPY radish.client radish.client
 COPY radish.console radish.console
-COPY radish.docs radish.docs
 
 # 统一构建所有前端项目
 # - radish.client: 未来可以是 SSR/SSG 构建（生成 server bundle + HTML 模板）
-# - radish.console / radish.docs: 通常构建为静态站点
+# - radish.console: 通常构建为静态站点
 RUN cd Frontend/radish.client && npm run build
 RUN cd Frontend/radish.console && npm run build
-RUN cd Docs/radish.docs && npm run build
 
 # 运行时使用 Node 作为前端服务容器入口
 # - WebOS (radish.client) 通过 Node 服务进行 SSR/SSG 渲染，返回带完整 HTML 的帖子列表/详情页
-# - console/docs 可通过同一个 Node 服务以静态方式挂载，或继续采用其他静态托管方案
+# - console 可按需独立托管；固定文档无需单独静态站点
 FROM node:20 AS final
 WORKDIR /app
 
@@ -702,7 +666,7 @@ volumes:
 
 - **当前阶段不要求在 Docker 中启动与测试**：
   - 后端推荐使用 `dotnet run` / `dotnet watch` 在宿主机运行 Api / Gateway / Auth；
-  - 前端推荐使用 `npm run dev --prefix Frontend/radish.client` 等命令运行 Vite/VitePress 开发服务；
+  - 前端推荐使用 `npm run dev --prefix Frontend/radish.client` 等命令运行 Vite 开发服务；
   - Docker 相关内容仅作为将来部署到服务器（测试/预生产/生产环境）时的设计参考。
 - **在真正落地容器部署前，建议遵循以下步骤**：
   1. 与运维/基础设施同学确认最终的目录结构与文件命名（例如是否采用 `Dockerfile.backend`、`Dockerfile.frontend` 与仓库根目录 `docker-compose.yml`）；

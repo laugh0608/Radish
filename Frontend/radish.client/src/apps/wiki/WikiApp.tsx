@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type MouseEvent, type ReactNode } from 'react';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { toast } from '@radish/ui/toast';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
@@ -12,6 +12,7 @@ import {
   createWikiDocument,
   downloadWikiMarkdown,
   getWikiDocumentById,
+  getWikiDocumentBySlug,
   getWikiList,
   getWikiRevisionDetail,
   getWikiRevisionList,
@@ -77,6 +78,23 @@ function toStatusClassName(status: number): string {
       return styles.statusArchived;
     default:
       return styles.statusDraft;
+  }
+}
+
+function toSourceText(sourceType?: string | null): string {
+  switch ((sourceType || '').trim().toLowerCase()) {
+    case 'manual':
+      return '在线文档';
+    case 'imported':
+      return 'Markdown 导入';
+    case 'custom':
+      return '在线文档';
+    case 'builtin':
+      return '固定文档';
+    case 'rollback':
+      return '回滚生成';
+    default:
+      return sourceType?.trim() || '未知来源';
   }
 }
 
@@ -185,6 +203,13 @@ export const WikiApp = () => {
   const initialLoadedRef = useRef(false);
   const activeDocumentIds = useMemo(() => new Set(flattenTree(tree)), [tree]);
 
+  const isBuiltInDocument = useMemo(
+    () => selectedDocument?.voSourceType?.trim().toLowerCase() === 'builtin',
+    [selectedDocument]
+  );
+
+  const canEditSelectedDocument = isAdmin && Boolean(selectedDocument) && !isBuiltInDocument;
+
   const refreshCollections = useCallback(async (preserveSelection: boolean = true) => {
     setLoadingTree(true);
     setLoadingList(true);
@@ -235,6 +260,22 @@ export const WikiApp = () => {
       toast.error(error instanceof Error ? error.message : '加载文档详情失败');
     } finally {
       setLoadingDetail(false);
+    }
+  }, []);
+
+  const loadDocumentBySlug = useCallback(async (slug: string) => {
+    const normalizedSlug = slug.trim();
+    if (!normalizedSlug) {
+      return;
+    }
+
+    try {
+      const detail = await getWikiDocumentBySlug(normalizedSlug);
+      setSelectedDocumentId(detail.voId);
+      setSelectedDocument(detail);
+    } catch (error) {
+      log.error('WikiApp', '按 Slug 加载文档失败:', error);
+      toast.error(error instanceof Error ? error.message : '加载文档失败');
     }
   }, []);
 
@@ -554,6 +595,23 @@ export const WikiApp = () => {
     setRollbackConfirmOpen(false);
   };
 
+  const handleMarkdownLinkClick = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target;
+    if (!(target instanceof Element)) {
+      return;
+    }
+
+    const anchor = target.closest('a');
+    const href = anchor?.getAttribute('href');
+    if (!href || !href.startsWith('/__documents__/')) {
+      return;
+    }
+
+    event.preventDefault();
+    const slug = decodeURIComponent(href.replace('/__documents__/', '').split('#')[0]);
+    void loadDocumentBySlug(slug);
+  }, [loadDocumentBySlug]);
+
   const handleRollback = async () => {
     if (!selectedDocumentId || !selectedRevisionId) {
       return;
@@ -601,8 +659,8 @@ export const WikiApp = () => {
         <div className={styles.sidebarHeader}>
           <div className={styles.sidebarTitleRow}>
             <div>
-              <h2 className={styles.sidebarTitle}>Wiki 文档</h2>
-              <p className={styles.sidebarHint}>Markdown 导入、浏览、编辑、导出一体化入口</p>
+              <h2 className={styles.sidebarTitle}>文档</h2>
+              <p className={styles.sidebarHint}>固定文档、在线文档与 Markdown 导入导出统一入口</p>
             </div>
           </div>
 
@@ -703,11 +761,11 @@ export const WikiApp = () => {
       <main className={styles.main}>
         <div className={styles.contentHeader}>
           <div className={styles.titleGroup}>
-            <h1 className={styles.title}>{editorVisible ? (editorMode === 'create' ? '新建文档' : '编辑文档') : selectedDocument?.voTitle || 'Wiki 文档中心'}</h1>
+            <h1 className={styles.title}>{editorVisible ? (editorMode === 'create' ? '新建文档' : '编辑文档') : selectedDocument?.voTitle || '文档'}</h1>
             <p className={styles.subtitle}>
               {editorVisible
                 ? '当前为 Markdown 编辑态，保存后即可进入浏览态。'
-                : selectedDocument?.voSummary || '选择左侧文档查看详情，或从这里开始创建与导入 Markdown 文档。'}
+                : selectedDocument?.voSummary || '选择左侧文档查看详情，或从这里开始创建在线文档与导入 Markdown。'}
             </p>
           </div>
 
@@ -717,7 +775,7 @@ export const WikiApp = () => {
                 导出 Markdown
               </button>
             ) : null}
-            {isAdmin && !editorVisible && selectedDocument ? (
+            {canEditSelectedDocument && !editorVisible && selectedDocument ? (
               <button type="button" className={styles.primaryButton} onClick={openEditEditor}>
                 编辑
               </button>
@@ -828,7 +886,10 @@ export const WikiApp = () => {
                   <span className={`${styles.statusChip} ${selectedStatusClass}`}>{selectedStatusText}</span>
                   <span className={styles.metaChip}>Slug：{selectedDocument.voSlug}</span>
                   <span className={styles.metaChip}>版本：v{selectedDocument.voVersion}</span>
-                  <span className={styles.metaChip}>来源：{selectedDocument.voSourceType}</span>
+                  <span className={styles.metaChip}>来源：{toSourceText(selectedDocument.voSourceType)}</span>
+                  {selectedDocument.voSourcePath ? (
+                    <span className={styles.metaChip}>来源路径：{selectedDocument.voSourcePath}</span>
+                  ) : null}
                   <span className={styles.metaChip}>创建：{formatTime(selectedDocument.voCreateTime)}</span>
                   <span className={styles.metaChip}>更新：{formatTime(selectedDocument.voModifyTime)}</span>
                   {selectedDocument.voPublishedAt ? (
@@ -836,7 +897,7 @@ export const WikiApp = () => {
                   ) : null}
                 </div>
 
-                {isAdmin ? (
+                {isAdmin && !isBuiltInDocument ? (
                   <div className={styles.toolbarRow} style={{ marginBottom: '16px' }}>
                     {selectedDocument.voStatus !== WikiDocumentStatus.Published ? (
                       <button type="button" className={styles.primaryButton} onClick={() => void handlePublish()} disabled={submitting}>
@@ -856,11 +917,11 @@ export const WikiApp = () => {
                 ) : null}
 
                 <div className={styles.documentLayout}>
-                  <div className={styles.markdownPanel}>
+                  <div className={styles.markdownPanel} onClick={handleMarkdownLinkClick}>
                     <MarkdownRenderer content={selectedDocument.voMarkdownContent} />
                   </div>
 
-                  {isAdmin ? (
+                  {isAdmin && !isBuiltInDocument ? (
                     <aside className={styles.historyPanel}>
                       <div className={styles.historyPanelHeader}>
                         <div>
@@ -909,7 +970,7 @@ export const WikiApp = () => {
                                   <div className={styles.revisionMeta}>{selectedRevision.voTitle}</div>
                                 </div>
                                 <div className={styles.revisionActions}>
-                                  <span className={styles.metaChip}>来源：{selectedRevision.voSourceType}</span>
+                                  <span className={styles.metaChip}>来源：{toSourceText(selectedRevision.voSourceType)}</span>
                                   {!selectedRevision.voIsCurrent ? (
                                     <button type="button" className={styles.dangerButton} onClick={openRollbackConfirm} disabled={submitting}>
                                       回滚到此版本
@@ -925,7 +986,9 @@ export const WikiApp = () => {
                               </div>
 
                               <div className={styles.revisionPreview}>
-                                <MarkdownRenderer content={selectedRevision.voMarkdownContent} />
+                                <div onClick={handleMarkdownLinkClick}>
+                                  <MarkdownRenderer content={selectedRevision.voMarkdownContent} />
+                                </div>
                               </div>
                             </>
                           ) : (
@@ -943,8 +1006,8 @@ export const WikiApp = () => {
           ) : (
             <div className={styles.emptyState}>
               <div>
-                <div>当前还没有可展示的 Wiki 文档。</div>
-                {isAdmin ? <div style={{ marginTop: '8px' }}>你可以先新建一篇文档，或导入一个 `.md` 文件。</div> : null}
+                <div>当前还没有可展示的文档。</div>
+                {isAdmin ? <div style={{ marginTop: '8px' }}>你可以先新建一篇在线文档，或导入一个 `.md` 文件。</div> : null}
               </div>
             </div>
           )}

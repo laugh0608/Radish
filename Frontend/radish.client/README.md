@@ -77,11 +77,11 @@ const isDebug = env.debug;
 
 ## 📚 文档
 
-完整文档请访问：[Docs/radish.docs/docs](../../Docs/radish.docs/docs/)
+完整文档请访问：[Docs/](../../Docs/)
 
-- [WebOS 快速开始指南](../../Docs/radish.docs/docs/frontend/webos-quick-start.md) - 详细的使用指南
-- [UI 组件库文档](../../Docs/radish.docs/docs/frontend/ui-library.md) - UI 组件使用文档
-- [前端设计文档](../../Docs/radish.docs/docs/frontend/design.md) - WebOS 架构设计
+- [WebOS 快速开始指南](../../Docs/frontend/webos-quick-start.md) - 详细的使用指南
+- [UI 组件库文档](../../Docs/frontend/ui-library.md) - UI 组件使用文档
+- [前端设计文档](../../Docs/frontend/design.md) - WebOS 架构设计
 - [开发规范](../CLAUDE.md) - 项目开发规范
 
 ## 🎨 技术栈
@@ -117,11 +117,10 @@ npm run lint             # 代码检查
 
 ## 📝 相关项目
 
-- [radish.docs](../../Docs/radish.docs/) - 项目文档
 - [Radish.Api](../Radish.Api/) - 后端 API 服务
 - [Radish.Auth](../Radish.Auth/) - OIDC 认证服务
 - [Radish.Gateway](../Radish.Gateway/) - API 网关
 
 ---
 
-更多信息请查看 [完整文档](../../Docs/radish.docs/docs/)
+更多信息请查看 [完整文档](../../Docs/)

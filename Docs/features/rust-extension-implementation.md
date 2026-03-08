@@ -67,7 +67,7 @@
 ### 5. 文档
 
 **创建的文件**：
-- `Docs/radish.docs/docs/guide/rust-extensions.md` - 完整使用指南
+- `Docs/guide/rust-extensions.md` - 完整使用指南
 
 **内容包括**：
 - 快速开始指南
@@ -240,7 +240,7 @@ Radish.Api.Tests/
 ### 新增文档
 
 ```
-Docs/radish.docs/docs/guide/
+Docs/guide/
 └── rust-extensions.md
 ```
 

@@ -130,30 +130,51 @@ public class WikiController : ControllerBase
     [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<bool>> Publish(long id)
     {
-        var result = await _wikiDocumentService.PublishAsync(id, Current.UserId, Current.UserName);
-        return result
-            ? MessageModel<bool>.Success("发布成功", true)
-            : MessageModel<bool>.Failed("文档不存在", false);
+        try
+        {
+            var result = await _wikiDocumentService.PublishAsync(id, Current.UserId, Current.UserName);
+            return result
+                ? MessageModel<bool>.Success("发布成功", true)
+                : MessageModel<bool>.Failed("文档不存在", false);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return MessageModel<bool>.Failed(ex.Message, false);
+        }
     }
 
     [HttpPost("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<bool>> Unpublish(long id)
     {
-        var result = await _wikiDocumentService.UnpublishAsync(id, Current.UserId, Current.UserName);
-        return result
-            ? MessageModel<bool>.Success("已转为草稿", true)
-            : MessageModel<bool>.Failed("文档不存在", false);
+        try
+        {
+            var result = await _wikiDocumentService.UnpublishAsync(id, Current.UserId, Current.UserName);
+            return result
+                ? MessageModel<bool>.Success("已转为草稿", true)
+                : MessageModel<bool>.Failed("文档不存在", false);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return MessageModel<bool>.Failed(ex.Message, false);
+        }
     }
 
     [HttpPost("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<bool>> Archive(long id)
     {
-        var result = await _wikiDocumentService.ArchiveAsync(id, Current.UserId, Current.UserName);
-        return result
-            ? MessageModel<bool>.Success("归档成功", true)
-            : MessageModel<bool>.Failed("文档不存在", false);
+        try
+        {
+            var result = await _wikiDocumentService.ArchiveAsync(id, Current.UserId, Current.UserName);
+            return result
+                ? MessageModel<bool>.Success("归档成功", true)
+                : MessageModel<bool>.Failed("文档不存在", false);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return MessageModel<bool>.Failed(ex.Message, false);
+        }
     }
 
     [HttpGet("{id:long}")]

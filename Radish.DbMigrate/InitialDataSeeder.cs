@@ -50,9 +50,9 @@ internal static partial class InitialDataSeeder
         }
     }
 
-    private static Task SeedWikiDocumentsAsync()
+    private static Task SeedWikiDocumentsAsync(ISqlSugarClient db)
     {
-        Console.WriteLine("[Radish.DbMigrate] 当前未预置默认 Wiki 文档种子，跳过。\n");
+        Console.WriteLine("[Radish.DbMigrate] 固定文档改为由 API 启动时自动同步，Seed 阶段跳过。\n");
         return Task.CompletedTask;
     }
 
@@ -76,7 +76,7 @@ internal static partial class InitialDataSeeder
             ("角色 API 权限", () => SeedPermissionsAsync(db)),
             ("论坛分类", () => SeedForumCategoriesAsync(db)),
             ("论坛标签", () => SeedForumTagsAsync(db)),
-            ("Wiki 文档", SeedWikiDocumentsAsync),
+            ("Wiki 文档", () => SeedWikiDocumentsAsync(db)),
             ("聊天室默认频道", () => SeedChatChannelsAsync(db)),
             ("等级配置", () => SeedLevelConfigsAsync(db, services)),
             ("商城分类", () => SeedShopCategoriesAsync(db)),

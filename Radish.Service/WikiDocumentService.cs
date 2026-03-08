@@ -2,6 +2,8 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
 using AutoMapper;
+using Microsoft.Extensions.Options;
+using Radish.Common.OptionTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -14,7 +16,7 @@ using SqlSugar;
 namespace Radish.Service;
 
 /// <summary>Wiki 文档服务</summary>
-public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IWikiDocumentService
+public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IWikiDocumentService
 {
     private static readonly Regex HeadingRegex = new(@"^#\s+(.+)$", RegexOptions.Multiline | RegexOptions.Compiled);
     private static readonly Regex InvalidSlugCharRegex = new(@"[^a-z0-9-]", RegexOptions.Compiled);
@@ -23,16 +25,19 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
     private readonly IBaseRepository<WikiDocument> _wikiDocumentRepository;
     private readonly IBaseRepository<WikiDocumentRevision> _wikiDocumentRevisionRepository;
     private readonly IMapper _mapper;
+    private readonly DocumentOptions _documentOptions;
 
     public WikiDocumentService(
         IMapper mapper,
         IBaseRepository<WikiDocument> wikiDocumentRepository,
-        IBaseRepository<WikiDocumentRevision> wikiDocumentRevisionRepository)
+        IBaseRepository<WikiDocumentRevision> wikiDocumentRevisionRepository,
+        IOptions<DocumentOptions> documentOptions)
         : base(mapper, wikiDocumentRepository)
     {
         _mapper = mapper;
         _wikiDocumentRepository = wikiDocumentRepository;
         _wikiDocumentRevisionRepository = wikiDocumentRevisionRepository;
+        _documentOptions = documentOptions.Value;
     }
 
     public async Task<PageModel<WikiDocumentVo>> GetListAsync(
@@ -55,6 +60,11 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
 
         var whereExpression = Expressionable.Create<WikiDocument>()
             .And(d => !d.IsDeleted);
+
+        if (!ShouldIncludeBuiltInDocuments())
+        {
+            whereExpression.And(d => d.SourceType != BuiltInSourceType);
+        }
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -104,6 +114,11 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
     {
         var whereExpression = Expressionable.Create<WikiDocument>()
             .And(d => !d.IsDeleted);
+
+        if (!ShouldIncludeBuiltInDocuments())
+        {
+            whereExpression.And(d => d.SourceType != BuiltInSourceType);
+        }
         if (!includeUnpublished)
         {
             whereExpression.And(d => d.Status == (int)WikiDocumentStatusEnum.Published);
@@ -148,7 +163,7 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
             return null;
         }
 
-        if (!includeUnpublished && document.Status != (int)WikiDocumentStatusEnum.Published)
+        if (!ShouldExposeDocument(document, includeUnpublished))
         {
             return null;
         }
@@ -170,7 +185,7 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
             return null;
         }
 
-        if (!includeUnpublished && document.Status != (int)WikiDocumentStatusEnum.Published)
+        if (!ShouldExposeDocument(document, includeUnpublished))
         {
             return null;
         }
@@ -208,7 +223,7 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
             ParentId = createDto.ParentId,
             Sort = createDto.Sort,
             Status = (int)WikiDocumentStatusEnum.Draft,
-            SourceType = "Manual",
+            SourceType = "Custom",
             SourcePath = null,
             Version = 1,
             TenantId = tenantId,
@@ -220,7 +235,7 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
         var id = await AddAsync(document);
         document.Id = id;
 
-        await AddRevisionAsync(document, null, "Manual", operatorId, operatorName);
+        await AddRevisionAsync(document, null, "Custom", operatorId, operatorName);
         return id;
     }
 
@@ -241,6 +256,8 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
         {
             return false;
         }
+
+        EnsureDocumentIsEditable(document);
 
         var title = NormalizeRequired(updateDto.Title, nameof(updateDto.Title));
         var markdownContent = NormalizeRequired(updateDto.MarkdownContent, nameof(updateDto.MarkdownContent));
@@ -302,6 +319,8 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
             return false;
         }
 
+        EnsureDocumentIsEditable(document);
+
         document.Status = (int)WikiDocumentStatusEnum.Published;
         document.PublishedAt ??= DateTime.Now;
         document.ModifyId = operatorId;
@@ -318,6 +337,8 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
             return false;
         }
 
+        EnsureDocumentIsEditable(document);
+
         document.Status = (int)WikiDocumentStatusEnum.Draft;
         document.ModifyId = operatorId;
         document.ModifyBy = ResolveOperatorName(operatorName);
@@ -332,6 +353,8 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
         {
             return false;
         }
+
+        EnsureDocumentIsEditable(document);
 
         document.Status = (int)WikiDocumentStatusEnum.Archived;
         document.ModifyId = operatorId;
@@ -403,6 +426,8 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
         {
             return false;
         }
+
+        EnsureDocumentIsEditable(document);
 
         var isSameContent =
             document.Title == revision.Title &&
@@ -507,7 +532,7 @@ public class WikiDocumentService : BaseService<WikiDocument, WikiDocumentVo>, IW
             return null;
         }
 
-        if (!includeUnpublished && document.Status != (int)WikiDocumentStatusEnum.Published)
+        if (!ShouldExposeDocument(document, includeUnpublished))
         {
             return null;
         }

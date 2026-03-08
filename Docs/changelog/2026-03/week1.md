@@ -245,13 +245,30 @@
 - **自动汇总生成**：seed 结束后根据实际执行步骤自动生成汇总，不再需要手写维护固定清单。
 - **占位步骤可见化**：`Wiki 文档`、`表情包默认数据` 当前虽未预置内容，但会在 seed 日志中明确输出“跳过”，避免误判为遗漏执行。
 
+### 帮助中心迁移试点启动
+
+- **默认 Wiki 种子落地**：`Radish.DbMigrate` 已补齐首批帮助中心种子，初始化后会生成“帮助中心 / 快速开始 / 配置说明 / 论坛使用指南”四篇默认文档。
+- **迁移来源标记**：首批试点文档统一标记为 `DocsMigrated`，并记录来源路径，便于后续区分“手动创建 / 文件导入 / 文档迁移”三类内容来源。
+- **种子覆盖策略**：重复执行 seed 时，仅会更新仍处于种子控制状态的 `DocsMigrated` 文档；若文档已有人为修改（`Version > 1`）则保留现状，避免覆盖编辑结果。
+
+### docs / wiki 入口命名收口
+
+- **桌面入口区分**：WebOS 应用注册表已将 `docs` 收口为“开发文档”，`wiki` 收口为“帮助中心”，避免用户混淆开发规范站与运行时帮助中心。
+- **前端口径对齐**：`WikiApp` 侧边栏、标题与空状态文案已统一为“帮助中心”语义，并将来源类型展示改为中文标签。
+- **来源路径可见化**：帮助文档详情页已展示迁移来源路径，便于后续人工校对 `radish.docs` 与 Wiki 内容映射关系。
+
+### Wiki 方案文档状态同步
+
+- **阶段状态更新**：`wiki-markdown-system.md` 已从“待进入实现”更新为“Wiki MVP 已落地，已进入 Phase 3 迁移试点”。
+- **迁移清单纠偏**：首批试点文档清单中的论坛文档路径已从旧路径修正为 `docs/features/forum-features.md`。
+
 ### 验证状态
 
 - ✅ `dotnet test Radish.Api.Tests --no-restore` 通过（135/135）。
 - ✅ `npm run build --workspace=radish.client` 通过。
 - ✅ `dotnet build Radish.DbMigrate/Radish.DbMigrate.csproj --no-restore` 通过。
 - **当前主线切换**：M12 当前功能主线已明确切换为 **P1 内容与文档体系重构**，优先推进 Markdown 导入/导出、Wiki/文档 App 承接与 `radish.docs` 迁移收口；身份专项尾项改为并行治理任务持续清理。
-- **方案文档落地**：新增 `guide/wiki-markdown-system.md`，统一说明 Wiki / Markdown 文档体系的产品边界、后端模型、API、前端 App 结构、`radish.docs` 迁移策略与分阶段实施计划，后续开发以该文档为主依据。
+- **方案文档落地**：新增 `guide/document-system.md`，统一说明 Wiki / Markdown 文档体系的产品边界、后端模型、API、前端 App 结构、`radish.docs` 迁移策略与分阶段实施计划，后续开发以该文档为主依据。
 
 ### Wiki / Markdown 文档体系首批落地
 

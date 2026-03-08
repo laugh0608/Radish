@@ -782,7 +782,7 @@ Radish WebOS 支持三种应用集成方式,选择标准如下:
 | 应用类型 | 判断标准 | 适用场景 | 示例 |
 |---------|---------|---------|------|
 | **内置应用 (Built-in)** | - 无需独立部署<br>- 无复杂路由<br>- 可共享认证状态 | - 简单功能模块<br>- 用户高频使用<br>- 需要与桌面深度集成 | Forum(论坛)<br>Chat(聊天)<br>Settings(设置) |
-| **嵌入应用 (Embedded)** | - 展示型内容<br>- 无需认证或简单认证<br>- 被动浏览为主 | - 文档站<br>- 帮助中心<br>- 静态内容展示 | Docs(文档站)<br>Help(帮助) |
+| **窗口应用 (Window)** | - 需要统一权限与状态<br>- 支持固定文档与在线文档混合展示<br>- 支持编辑/导入/导出 | - 文档<br>- 论坛<br>- 设置 | Document(文档)<br>Forum(论坛) |
 | **外部应用 (External)** | - 完整的 SPA<br>- 有 OIDC 认证流程<br>- 复杂路由系统<br>- 需要独立访问 | - 管理后台<br>- 复杂业务系统<br>- 需要独立部署的模块 | Console(管理控制台)<br>Shop(商城) |
 
 #### 10.4.2 为什么 Console 不能嵌入 WebOS?
@@ -893,14 +893,13 @@ if (应用需要 OIDC 认证 && 有复杂路由) {
   defaultSize: { width: 1200, height: 800 }
 }
 
-// ✅ 嵌入应用 - 文档站
+// ✅ 内置窗口应用 - 文档
 {
-  id: 'docs',
-  name: '文档中心',
+  id: 'document',
+  name: '文档',
   icon: 'mdi:book-open-page-variant',
-  component: () => null, // iframe 不需要组件
-  type: 'iframe',
-  url: 'http://localhost:4000/docs/',
+  component: WikiApp,
+  type: 'window',
   defaultSize: { width: 1200, height: 800 }
 }
 
@@ -926,7 +925,7 @@ if (应用需要 OIDC 认证 && 有复杂路由) {
     ↓
 ┌───┴────┬─────────┬─────────┐
 │        │         │         │
-Client  Console   Shop    Docs
+Client  Console   Shop    Document
 ```
 
 - 基础组件(Button, Input, Modal)放在 `@radish/ui`
@@ -935,7 +934,7 @@ Client  Console   Shop    Docs
 
 ### 10.5 WebOS 与 SEO 适配规划
 
-> 仅 WebOS（radish.client）需要对搜索引擎友好，用于公开帖子列表/详情；其他前端项目（radish.console、radish.docs）默认不做 SEO 要求。此处只记录前端视角的规划，真正启用时需要与部署文档的 Docker 方案配合。
+> 仅 WebOS（radish.client）需要对搜索引擎友好，用于公开帖子列表/详情；其他前端项目（radish.console 等）默认不做 SEO 要求。此处只记录前端视角的规划，真正启用时需要与部署文档的 Docker 方案配合。
 
 #### 10.5.1 URL 与路由规划
 

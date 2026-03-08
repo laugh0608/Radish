@@ -67,6 +67,10 @@ export async function getWikiDocumentById(id: number): Promise<WikiDocumentDetai
   return await ensureOk(apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetById/${id}`, { withAuth: true }), '加载文档详情失败');
 }
 
+export async function getWikiDocumentBySlug(slug: string): Promise<WikiDocumentDetailVo> {
+  return await ensureOk(apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetBySlug/${encodeURIComponent(slug)}`, { withAuth: true }), '加载文档详情失败');
+}
+
 export async function createWikiDocument(request: CreateWikiDocumentRequest): Promise<number> {
   return await ensureOk(apiPost<number>('/api/v1/Wiki/Create', request, { withAuth: true }), '创建文档失败');
 }

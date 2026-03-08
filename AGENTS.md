@@ -6,7 +6,7 @@
 - **技术栈**: ASP.NET Core 10 + SQLSugar ORM + PostgreSQL (本地默认 SQLite) / React 19 + Vite (Rolldown) + TypeScript (WebOS 桌面化 UI)
 - **前端**: npm workspaces 管理 `radish.client` (WebOS)、`radish.console` (管理后台)、`radish.ui` (共享组件库)
 - **协作分支**: `dev` (主开发分支)
-- **文档源**: `Docs/radish.docs/docs/` 为唯一真相源
+- **文档源**: `Docs/` 为唯一真相源
 - **语言规范**: 所有说明、讨论、文档使用中文，代码/技术标识/引用除外
 - **参考文档**: 详细规范参见 `CLAUDE.md`
 
@@ -42,7 +42,6 @@
 - `radish.client`: WebOS 桌面，面向用户
 - `radish.console`: 管理后台，面向管理员
 - `radish.ui`: 共享 UI 组件库（**无需构建**，直接引用源码）
-- `radish.docs`: VitePress 文档站
 - **依赖**: client 和 console 依赖 `@radish/ui`，通过 npm workspaces 热更新
 
 ## 环境与启动
@@ -482,7 +481,7 @@ appsettings.Shared.json → appsettings.json → appsettings.{Environment}.json
 **重点**:
 - `appsettings.Local.json` 用于本地开发敏感数据 (密码/密钥)，Git 忽略
 - 深度合并策略，数组需完整覆盖
-- 参见 [配置指南](Docs/radish.docs/docs/guide/configuration.md)
+- 参见 [配置指南](Docs/guide/configuration.md)
 
 ### 快速设置
 ```bash
@@ -545,7 +544,7 @@ SnowFlakeSingle.WorkId = builder.Configuration.GetSection("Snowflake").GetValue<
 
 ## 文档与参考
 
-**综合文档** (唯一真相源): `Docs/radish.docs/docs/`
+**综合文档** (唯一真相源): `Docs/`
 - `architecture/specifications.md` - 开发规范详细说明
 - `architecture/framework.md` - 架构设计与技术决策
 - `frontend/design.md` - 前端设计方案

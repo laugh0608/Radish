@@ -41,4 +41,6 @@ public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentV
     Task<long> ImportMarkdownAsync(WikiMarkdownImportDto importDto, long operatorId, string operatorName, long tenantId);
 
     Task<(string fileName, string markdownContent)?> ExportMarkdownAsync(long id, bool includeUnpublished = false);
+
+    Task SyncBuiltInDocumentsAsync(CancellationToken cancellationToken = default);
 }

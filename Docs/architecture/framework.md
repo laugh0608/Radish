@@ -47,19 +47,19 @@
 | ORM | [SQLSugar](https://github.com/donet5/SqlSugar) | Code First + Migration，仓储层集中管理上下文，支持读写分离配置 |
 | 数据库 | PostgreSQL 16 | 默认端口 5432，连接通过 `ConnectionStrings__Default` 注入 |
 | 前端 | React 19 + Vite + TypeScript | radish.client (WebOS)、radish.console (管理控制台)、radish.ui (@radish/ui 组件库)；使用 npm workspaces；建议 React Query + Zustand |
-| 前端构建 | Vite Rolldown，ESLint 9，Vitest | 各项目独立构建：radish.client、radish.console、radish.docs (VitePress) |
+| 前端构建 | Vite Rolldown，ESLint 9，Vitest | 各项目独立构建：radish.client、radish.console；固定文档统一存放于 `Docs/`，由 API 启动时同步到 WebOS 文档应用 |
 | 测试 | xUnit 3 + Shouldly + NSubstitute | `Radish.Api.Tests` 目录；后续可按层拆分 |
 | 日志 / 配置 | Serilog + `Microsoft.Extensions.Configuration` | 支持 JSON + 环境变量 + 用户密钥；生产日志输出到 Console + Seq/Elastic 预留 |
 | 容器 | Dockerfile（Radish.Api）+ Docker Compose | Compose 负责 PostgreSQL + API + 前端静态站点 |
 
 ### 本地启动脚本
 
-- `start.ps1`（Windows/PowerShell）与 `start.sh`（Linux/macOS）提供交互式菜单，统一启动/组合 API、Gateway、前端、文档站与控制台等服务。
+- `start.ps1`（Windows/PowerShell）与 `start.sh`（Linux/macOS）提供交互式菜单，统一启动/组合 API、Gateway、前端、控制台与认证服务。
 - 当前菜单大致包含两类选项：
-  - **单服务**：仅启动 `Radish.Api` / `Radish.Gateway` / `radish.client`（前端）/ `radish.docs`（文档 dev）/ `radish.console`（控制台）/ `Radish.Auth`，或执行 `Radish.Api.Tests`。
+  - **单服务**：仅启动 `Radish.Api` / `Radish.Gateway` / `radish.client`（前端）/ `radish.console`（控制台）/ `Radish.Auth`，或执行 `Radish.Api.Tests`。
   - **组合启动**：
-    - PowerShell (`start.ps1`): 仅保留 "Gateway + Auth + API" 与 "Start ALL"。
-    - Shell (`start.sh`): "Gateway + API"、"Gateway + frontend"、"Gateway + docs"、"Gateway + console"、"Gateway + Auth"、"Gateway + Auth + API"、"Start ALL"（编号 9-15）。
+    - PowerShell (`start.ps1`)：提供 “Gateway + Auth + API”“Frontend + Console”“Start ALL”。
+    - Shell (`start.sh`)：提供 “Gateway + Auth + API”“Frontend + Console”“Start ALL”。
 - 如需自定义构建配置，可在运行脚本前设置 `Configuration`（PowerShell 参数）或 `CONFIGURATION` 环境变量（Shell 脚本）。
 
 ### 分层视图
@@ -67,17 +67,15 @@
 ```
 浏览器访问 Gateway (https://localhost:5000)
         │
-    统一入口
-        ├─→ / (radish.client - WebOS 桌面)
-        ├─→ /docs (radish.docs - VitePress)
-        ├─→ /console (radish.console - 管理控制台)
-        ├─→ /api (Radish.Api - REST API)
-        └─→ /scalar (API 文档)
+        ├─→ /         (radish.client - WebOS 桌面与文档应用)
+        ├─→ /console  (radish.console - 管理控制台)
+        ├─→ /api      (Radish.Api - REST API)
+        └─→ /scalar   (API 文档)
 
 radish.client (WebOS)           radish.console (独立 SPA)
         │                              │
         ├─ 内置应用 (window)            ├─ OIDC 认证
-        ├─ 嵌入应用 (iframe)            ├─ 独立路由
+        ├─ 文档/论坛/设置               ├─ 独立路由
         └─ 外部应用 (external)          └─ 管理功能
               │
               └─ Console (新标签页打开)
@@ -119,7 +117,7 @@ PostgreSQL / SQLite
   - **Phase 0 职责**：承载 `/server` 欢迎页面（Razor Pages）、提供基础健康检查透传与文档入口链接，静态资源服务。服务总览与多服务健康状态表已迁移到 Console（`/console`）。
   - **依赖**：复用 `Radish.Common`（配置工具）和 `Radish.Extension`（日志扩展），保持与 `Radish.Api` 一致的配置加载和日志输出方式。
   - **监听端口**：`https://localhost:5000`（主要对外入口）和 `http://localhost:5001`（HTTP 仅用于重定向到 5000）。
-  - **健康检查**：自身暴露 `/health`、`/healthz`，下游 `Radish.Api` 健康通过 `/api/health` 统一对外；Console 通过 Gateway 路径 `/`、`/docs`、`/api/health`、`/console` 聚合展示多服务状态。
+  - **健康检查**：自身暴露 `/health`、`/healthz`，下游 `Radish.Api` 健康通过 `/api/health` 统一对外；Gateway 聚合首页、`/api/health`、`/console` 等关键入口状态。
   - **架构演进**：Phase 0 为简化门户，已实现 YARP 路由转发、统一入口规划等核心功能。详见 [Gateway 服务网关](/guide/gateway)。
 - 配置与服务访问：Program.cs 依次调用 `hostingContext.Configuration.ConfigureApplication()` → `builder.ConfigureApplication()` → `app.ConfigureApplication()` → `app.UseApplicationSetup()`，把 Configuration/HostEnvironment/RootServices 注入到 `Radish.Common.Core.App`；在非 DI 管道下可使用 `App.GetService*`、`App.GetOptions*` 手动解析服务或配置。常规字符串读取仍统一使用 `AppSettings.RadishApp("Section", ...)`，批量强类型配置通过 `ConfigurableOptions + AddAllOptionRegister` 自动绑定 `IConfigurableOptions`。
 - `Radish.Service`

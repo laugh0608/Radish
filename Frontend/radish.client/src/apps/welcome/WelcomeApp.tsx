@@ -43,7 +43,6 @@ export const WelcomeApp = () => {
   return (
     <div className={styles.container}>
       <div className={styles.wrapper}>
-        {/* 顶部欢迎区域 */}
         <div className={styles.hero}>
           <Icon icon="mdi:hand-wave" size={64} color="#667eea" />
           <h1 className={styles.title}>欢迎来到 Radish WebOS</h1>
@@ -52,7 +51,6 @@ export const WelcomeApp = () => {
           </p>
         </div>
 
-        {/* 标签栏 */}
         <div className={styles.tabs}>
           {tabs.map((tab) => (
             <button
@@ -66,25 +64,13 @@ export const WelcomeApp = () => {
           ))}
         </div>
 
-        {/* 内容区域 */}
         <div className={styles.content}>
           {renderTabContent()}
         </div>
 
-        {/* 底部信息 */}
         <div className={styles.footer}>
           <div className={styles.footerInfo}>
             <span className={styles.version}>Radish v0.1.0</span>
-            <span className={styles.separator}>•</span>
-            <a
-              href="http://localhost:3100/docs/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.footerLink}
-            >
-              <Icon icon="mdi:book-open-page-variant" size={16} />
-              文档中心
-            </a>
             <span className={styles.separator}>•</span>
             <a
               href="https://github.com/your-org/radish"

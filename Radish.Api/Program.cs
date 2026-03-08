@@ -14,6 +14,7 @@ using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
+using Microsoft.Extensions.FileProviders;
 using Radish.Common.TimeTool;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
@@ -467,6 +468,23 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = uploadsUrl
 });
 
+var documentOptions = app.Services.GetRequiredService<IOptions<DocumentOptions>>().Value;
+if (documentOptions.ShowBuiltInDocs)
+{
+    var builtInDocsRoot = Path.IsPathRooted(documentOptions.BuiltInDocsPath)
+        ? documentOptions.BuiltInDocsPath
+        : Path.Combine(Radish.Common.CoreTool.AppPathTool.GetSolutionRootOrBasePath(), documentOptions.BuiltInDocsPath);
+
+    if (Directory.Exists(builtInDocsRoot))
+    {
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(builtInDocsRoot),
+            RequestPath = documentOptions.StaticAssetsRequestPath
+        });
+    }
+}
+
 // Configure the HTTP request pipeline.
 // if (app.Environment.IsDevelopment())
 // {
@@ -728,6 +746,17 @@ if (shopConfig.GetValue<bool>("DailyStats:Enable", false))
         });
 
     Log.Information("[Hangfire] 已注册定时任务: shop-daily-stats (计划: {Schedule})", schedule);
+}
+
+try
+{
+    using var documentSyncScope = app.Services.CreateScope();
+    var wikiDocumentService = documentSyncScope.ServiceProvider.GetRequiredService<IWikiDocumentService>();
+    await wikiDocumentService.SyncBuiltInDocumentsAsync();
+}
+catch (Exception ex)
+{
+    Log.Error(ex, "固定文档启动同步失败");
 }
 
 // -------------- App 运行阶段 ---------------

@@ -80,7 +80,7 @@ const isAccessingViaGateway = (): boolean => {
  *    - 展示型应用,无需认证或简单认证
  *    - 通过 iframe 嵌入,但在 WebOS 窗口内显示
  *    - 无复杂路由,用户主要被动浏览
- *    - 示例: Docs(文档站), Help(帮助中心)
+ *    - 示例: 文档、论坛、聊天
  *
  * 3. 外部应用 (type: 'external')
  *    - 完整的独立 SPA,有自己的 OIDC 认证流程
@@ -96,7 +96,7 @@ const isAccessingViaGateway = (): boolean => {
  * - 部署灵活性: 公网 vs 内网
  * - 代码体积控制: 避免普通用户加载管理功能
  *
- * 详见: Docs/radish.docs/docs/FrontendDesign.md 第 10.4 节
+ * 详见: Docs/frontend/design.md 第 10.4 节
  */
 export const appRegistry: AppDefinition[] = [
   {
@@ -122,18 +122,6 @@ export const appRegistry: AppDefinition[] = [
     category: 'development',
   },
   {
-    id: 'docs',
-    name: '文档中心',
-    icon: 'mdi:book-open-page-variant',
-    description: 'Radish 项目文档',
-    component: () => null,
-    type: 'iframe',
-    url: isAccessingViaGateway() ? '/docs/' : 'http://localhost:4000/docs/',
-    defaultSize: { width: 1200, height: 800 },
-    requiredRoles: ['User'],
-    category: 'development',
-  },
-  {
     id: 'console',
     name: '控制台',
     icon: 'mdi:console',
@@ -145,10 +133,10 @@ export const appRegistry: AppDefinition[] = [
     category: 'system',
   },
   {
-    id: 'wiki',
-    name: '知识库',
+    id: 'document',
+    name: '文档',
     icon: 'mdi:notebook-edit-outline',
-    description: 'Wiki 与 Markdown 文档中心',
+    description: '固定文档、在线文档与 Markdown 导入导出',
     component: WikiApp,
     type: 'window',
     defaultSize: { width: 1280, height: 820 },

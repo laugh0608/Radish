@@ -1,6 +1,6 @@
 # 文档指南
 
-欢迎使用 **Radish 文档站**。本页作为文档入口概览，类似 VitePress 官方站点的 `Guide` 页面，你可以从这里跳转到各个专题文档。
+欢迎使用 **Radish 文档指南**。本页作为固定项目文档入口概览，同时对应 WebOS “文档”应用中的固定文档导航。
 
 ## 推荐阅读顺序
 
@@ -27,9 +27,8 @@
 
 ## 如何访问
 
-- 通过 Gateway 对外入口访问文档：
-  - `https://localhost:5000/docs` → 当前首页
-  - `https://localhost:5000/docs/guide` → 本文档
-- 本地开发时，radish.docs 运行在 `http://localhost:4000`，但推荐始终从 Gateway 入口访问，以模拟真实部署环境。
+- 固定项目文档统一位于仓库 `Docs/` 目录。
+- 启动 API 后，固定文档会自动同步到 WebOS 的“文档”应用中。
+- 本地开发时，推荐同时结合仓库中的 `Docs/` 文件直接查阅与维护。
 
 接下来，建议从上方列表中选择一个章节开始阅读，例如 [架构总览](/architecture/overview) 或 [开发规范](/architecture/specifications)。

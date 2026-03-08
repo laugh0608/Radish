@@ -400,7 +400,7 @@ cat Log/Radish.Api/AopSql/AopSql.txt | grep "$(date +%Y-%m-%d)"
       "/metrics",
       "/swagger",
       "/scalar",
-      "/api/docs"
+      "/api/docs" // 旧兼容路径，可按需移除
     ]
   }
 }

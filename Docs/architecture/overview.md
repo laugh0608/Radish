@@ -16,8 +16,7 @@
 ```text
 浏览器访问 Gateway (https://localhost:5000)
         │
-        ├─ /            → radish.client   (WebOS 桌面)
-        ├─ /docs        → radish.docs     (VitePress)
+        ├─ /            → radish.client   (WebOS 桌面与文档应用)
         ├─ /console     → radish.console  (管理控制台)
         ├─ /api         → Radish.Api      (REST API)
         ├─ /connect/*   → Radish.Auth     (OIDC 端点)
@@ -34,7 +33,7 @@
 - `radish.client`：普通用户前台（WebOS 桌面 + 内置应用）
 - `radish.console`：管理员控制台（独立 SPA，权限更高，建议独立部署/入口）
 - `radish.ui`：共享 UI 组件库（client/console 复用）
-- `radish.docs`：文档站（VitePress，文档“唯一真相源”）
+- `Docs/`：固定项目文档目录（唯一真相源，由 API 启动时同步到 WebOS 文档应用）
 
 ## 4. 后端分层（代码组织视角）
 

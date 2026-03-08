@@ -1,17 +1,22 @@
-# 文档已迁移
+# Docs 文档目录
 
-Radish 项目的完整文档已迁移至 `Docs/radish.docs/docs/` 目录（同时也是在线文档站的源文件）。
+Radish 项目的固定文档统一维护在 `Docs/` 目录。
 
-推荐直接访问：
+推荐入口：
 
-- [文档首页](./radish.docs/docs/index.md)
-- [开发规范](./radish.docs/docs/architecture/specifications.md)
-- [架构设计](./radish.docs/docs/architecture/framework.md)
-- [部署指南](./radish.docs/docs/deployment/guide.md)
-- [认证与权限](./radish.docs/docs/guide/authentication.md)
-- [前端设计](./radish.docs/docs/frontend/design.md)
-- [Gateway 服务网关](./radish.docs/docs/guide/gateway.md)
-- [开发计划](./radish.docs/docs/development-plan.md)
-- [开发日志](./radish.docs/docs/changelog/)
+- [文档首页](./index.md)
+- [开发规范](./architecture/specifications.md)
+- [架构设计](./architecture/framework.md)
+- [部署指南](./deployment/guide.md)
+- [认证与权限](./guide/authentication.md)
+- [前端设计](./frontend/design.md)
+- [服务网关](./guide/gateway.md)
+- [开发计划](./development-plan.md)
+- [开发日志](./changelog/)
+- [文档系统方案](./guide/document-system.md)
 
-> 提示：`Docs/radish.docs/docs` 目录中的 Markdown 文件既用于在线文档站点构建，也方便在 GitHub 上直接浏览。
+说明：
+
+- `Docs/` 是项目固定文档的唯一真相源
+- 固定文档会在 API 启动时自动同步到前端“文档”应用
+- 在线文档由用户或管理员在应用内新建，内容存储在数据库
