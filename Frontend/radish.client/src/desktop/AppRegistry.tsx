@@ -129,7 +129,7 @@ export const appRegistry: AppDefinition[] = [
     component: () => null,
     type: 'external',
     externalUrl: isAccessingViaGateway() ? '/console/' : 'http://localhost:3100',
-    requiredRoles: ['User'],
+    requiredRoles: ['Admin', 'System'],
     category: 'system',
   },
   {
@@ -243,6 +243,15 @@ export const getAppById = (id: string): AppDefinition | undefined => {
 /**
  * 根据用户角色过滤可见应用
  */
-export const getVisibleApps = (_userRoles: string[] = []): AppDefinition[] => {
-  return appRegistry;
+export const getVisibleApps = (userRoles: string[] = []): AppDefinition[] => {
+  const normalizedRoles = new Set(userRoles.map((role) => role.trim().toLowerCase()));
+  const isAdmin = normalizedRoles.has('admin') || normalizedRoles.has('system');
+
+  return appRegistry.filter((app) => {
+    if (app.id === 'console') {
+      return isAdmin;
+    }
+
+    return true;
+  });
 };

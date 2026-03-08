@@ -213,6 +213,7 @@ export const WikiApp = () => {
   const activeDocumentIds = useMemo(() => new Set(flattenTree(tree)), [tree]);
   const treeOptions = useMemo(() => flattenTreeOptions(tree), [tree]);
   const showingDeleted = isAdmin && deletionFilter === 'deleted';
+  const totalTreeDocuments = activeDocumentIds.size;
 
   const isBuiltInDocument = useMemo(
     () => selectedDocument?.voSourceType?.trim().toLowerCase() === 'builtin',
@@ -758,6 +759,17 @@ export const WikiApp = () => {
             </div>
           </div>
 
+          <div className={styles.sidebarSummaryRow}>
+            <div className={styles.sidebarSummaryCard}>
+              <span className={styles.sidebarSummaryLabel}>目录</span>
+              <strong className={styles.sidebarSummaryValue}>{totalTreeDocuments}</strong>
+            </div>
+            <div className={styles.sidebarSummaryCard}>
+              <span className={styles.sidebarSummaryLabel}>{showingDeleted ? '回收站' : '结果'}</span>
+              <strong className={styles.sidebarSummaryValue}>{documents.length}</strong>
+            </div>
+          </div>
+
           <div className={styles.toolbarRow}>
             <button type="button" className={styles.secondaryButton} onClick={() => void refreshCollections(true)} disabled={loadingTree || loadingList}>
               刷新
@@ -821,7 +833,10 @@ export const WikiApp = () => {
 
         <div className={styles.sidebarBody}>
           <section className={styles.treeSection}>
-            <h3 className={styles.sectionTitle}>目录树</h3>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>目录树</h3>
+              <span className={styles.sectionCount}>{totalTreeDocuments}</span>
+            </div>
             <div className={styles.treeScroll}>
               {loadingTree ? (
                 <div className={styles.loadingText}>正在加载目录…</div>
@@ -834,7 +849,10 @@ export const WikiApp = () => {
           </section>
 
           <section className={styles.listSection}>
-            <h3 className={styles.sectionTitle}>{showingDeleted ? '回收站' : '检索结果'}</h3>
+            <div className={styles.sectionHeader}>
+              <h3 className={styles.sectionTitle}>{showingDeleted ? '回收站' : '检索结果'}</h3>
+              <span className={styles.sectionCount}>{documents.length}</span>
+            </div>
             <div className={styles.listScroll}>
               {loadingList ? (
                 <div className={styles.loadingText}>正在加载列表…</div>

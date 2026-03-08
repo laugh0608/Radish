@@ -914,7 +914,7 @@ if (应用需要 OIDC 认证 && 有复杂路由) {
     window.location.origin.includes('localhost:5000')
     ? '/console/' // 通过 Gateway
     : 'http://localhost:3100', // 直接访问
-  requiredRoles: ['Admin']
+  requiredRoles: ['Admin', 'System']
 }
 ```
 

@@ -25,6 +25,7 @@ public class AutoMapperConfig
         cfg.AddProfile<ShopProfile>();
         cfg.AddProfile<ChatProfile>();
         cfg.AddProfile<UserFollowProfile>();
+        cfg.AddProfile<WikiProfile>();
         cfg.AddProfile<ContentModerationProfile>();
     }
 
