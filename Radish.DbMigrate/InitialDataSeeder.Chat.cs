@@ -31,11 +31,46 @@ internal static partial class InitialDataSeeder
 
         foreach (var channelMeta in defaultChannels)
         {
-            var exists = await chatDb.Queryable<Channel>()
-                .AnyAsync(c => c.TenantId == channelMeta.TenantId && c.Slug == channelMeta.Slug && !c.IsDeleted);
-            if (exists)
+            var existingChannel = await chatDb.Ado.SqlQuerySingleAsync<Channel>(
+                "SELECT * FROM Channel WHERE Id = @id LIMIT 1",
+                new SugarParameter("@id", channelMeta.Id));
+
+            if (existingChannel != null)
             {
-                Console.WriteLine($"[Radish.DbMigrate] 租户 {channelMeta.TenantId} 频道 slug={channelMeta.Slug} 已存在，跳过。");
+                await chatDb.Ado.ExecuteCommandAsync(
+                    @"UPDATE Channel
+SET TenantId = @tenantId,
+    Name = @name,
+    Slug = @slug,
+    Description = @description,
+    IconEmoji = @iconEmoji,
+    Type = @type,
+    IsEnabled = @isEnabled,
+    Sort = @sort,
+    IsDeleted = @isDeleted,
+    DeletedAt = @deletedAt,
+    DeletedBy = @deletedBy,
+    ModifyTime = @modifyTime,
+    ModifyBy = @modifyBy,
+    ModifyId = @modifyId
+WHERE Id = @id",
+                    new SugarParameter("@tenantId", channelMeta.TenantId),
+                    new SugarParameter("@name", channelMeta.Name),
+                    new SugarParameter("@slug", channelMeta.Slug),
+                    new SugarParameter("@description", channelMeta.Description),
+                    new SugarParameter("@iconEmoji", channelMeta.Icon),
+                    new SugarParameter("@type", (int)ChannelType.Public),
+                    new SugarParameter("@isEnabled", true),
+                    new SugarParameter("@sort", channelMeta.Sort),
+                    new SugarParameter("@isDeleted", false),
+                    new SugarParameter("@deletedAt", DBNull.Value),
+                    new SugarParameter("@deletedBy", DBNull.Value),
+                    new SugarParameter("@modifyTime", DateTime.Now),
+                    new SugarParameter("@modifyBy", "System"),
+                    new SugarParameter("@modifyId", 0),
+                    new SugarParameter("@id", channelMeta.Id));
+
+                Console.WriteLine($"[Radish.DbMigrate] 默认频道 Id={channelMeta.Id} 已存在，已纠正为 TenantId={channelMeta.TenantId}, Slug={channelMeta.Slug}。");
                 continue;
             }
 

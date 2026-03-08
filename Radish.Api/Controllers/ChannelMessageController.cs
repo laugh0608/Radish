@@ -22,17 +22,19 @@ public class ChannelMessageController : ControllerBase
 {
     private readonly IChatService _chatService;
     private readonly IHubContext<ChatHub> _chatHubContext;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public ChannelMessageController(
         IChatService chatService,
         IHubContext<ChatHub> chatHubContext,
-        IHttpContextUser httpContextUser)
+        ICurrentUserAccessor currentUserAccessor)
     {
         _chatService = chatService;
         _chatHubContext = chatHubContext;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>获取频道历史消息</summary>
     [HttpGet]
@@ -50,8 +52,8 @@ public class ChannelMessageController : ControllerBase
         }
 
         var messages = await _chatService.GetHistoryAsync(
-            _httpContextUser.TenantId,
-            _httpContextUser.UserId,
+            Current.TenantId,
+            Current.UserId,
             channelId,
             beforeMessageId,
             pageSize);
@@ -83,23 +85,23 @@ public class ChannelMessageController : ControllerBase
         try
         {
             var messageVo = await _chatService.SendMessageAsync(
-                _httpContextUser.TenantId,
-                _httpContextUser.UserId,
-                _httpContextUser.UserName,
+                Current.TenantId,
+                Current.UserId,
+                Current.UserName,
                 null,
                 request);
 
-            var channelGroup = ChatHub.BuildChannelGroup(_httpContextUser.TenantId, request.ChannelId);
+            var channelGroup = ChatHub.BuildChannelGroup(Current.TenantId, request.ChannelId);
             await _chatHubContext.Clients.Group(channelGroup).SendAsync("MessageReceived", messageVo);
 
-            var audienceUserIds = (await _chatService.GetChannelAudienceUserIdsAsync(_httpContextUser.TenantId, request.ChannelId))
-                .Where(userId => userId != _httpContextUser.UserId)
+            var audienceUserIds = (await _chatService.GetChannelAudienceUserIdsAsync(Current.TenantId, request.ChannelId))
+                .Where(userId => userId != Current.UserId)
                 .Distinct()
                 .ToList();
 
             foreach (var targetUserId in audienceUserIds)
             {
-                var unreadState = await _chatService.GetChannelUnreadStateAsync(_httpContextUser.TenantId, targetUserId, request.ChannelId);
+                var unreadState = await _chatService.GetChannelUnreadStateAsync(Current.TenantId, targetUserId, request.ChannelId);
                 await _chatHubContext.Clients.Group($"user:{targetUserId}")
                     .SendAsync("ChannelUnreadChanged", new
                     {
@@ -152,11 +154,11 @@ public class ChannelMessageController : ControllerBase
             };
         }
 
-        var canRecallOthers = User.IsInRole("System") || User.IsInRole("Admin");
+        var canRecallOthers = Current.IsSystemOrAdmin();
         var channelId = await _chatService.RecallMessageAsync(
-            _httpContextUser.TenantId,
-            _httpContextUser.UserId,
-            _httpContextUser.UserName,
+            Current.TenantId,
+            Current.UserId,
+            Current.UserName,
             id,
             canRecallOthers);
 
@@ -170,17 +172,17 @@ public class ChannelMessageController : ControllerBase
             };
         }
 
-        var channelGroup = ChatHub.BuildChannelGroup(_httpContextUser.TenantId, channelId.Value);
+        var channelGroup = ChatHub.BuildChannelGroup(Current.TenantId, channelId.Value);
         await _chatHubContext.Clients.Group(channelGroup)
             .SendAsync("MessageRecalled", new { channelId = channelId.Value, messageId = id });
 
-        var audienceUserIds = (await _chatService.GetChannelAudienceUserIdsAsync(_httpContextUser.TenantId, channelId.Value))
+        var audienceUserIds = (await _chatService.GetChannelAudienceUserIdsAsync(Current.TenantId, channelId.Value))
             .Distinct()
             .ToList();
 
         foreach (var targetUserId in audienceUserIds)
         {
-            var unreadState = await _chatService.GetChannelUnreadStateAsync(_httpContextUser.TenantId, targetUserId, channelId.Value);
+            var unreadState = await _chatService.GetChannelUnreadStateAsync(Current.TenantId, targetUserId, channelId.Value);
             await _chatHubContext.Clients.Group($"user:{targetUserId}")
                 .SendAsync("ChannelUnreadChanged", new
                 {

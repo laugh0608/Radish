@@ -1,3 +1,4 @@
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.FileProviders;
 using Radish.Common;
 using Radish.Common.CoreTool;
@@ -7,11 +8,65 @@ using Yarp.ReverseProxy;
 
 var builder = WebApplication.CreateBuilder(args);
 
+static string ResolveSharedConfigPath(string basePath, string contentRootPath)
+{
+    var candidates = new[]
+    {
+        Path.Combine(basePath, "appsettings.Shared.json"),
+        Path.Combine(contentRootPath, "appsettings.Shared.json")
+    };
+
+    foreach (var candidate in candidates)
+    {
+        if (File.Exists(candidate))
+        {
+            return candidate;
+        }
+    }
+
+    var currentDir = new DirectoryInfo(contentRootPath);
+    while (currentDir != null)
+    {
+        var candidate = Path.Combine(currentDir.FullName, "appsettings.Shared.json");
+        if (File.Exists(candidate))
+        {
+            return candidate;
+        }
+
+        currentDir = currentDir.Parent;
+    }
+
+    return Path.Combine(contentRootPath, "appsettings.Shared.json");
+}
+
+static void RemoveHttpSysDelegationRegistrations(IServiceCollection services)
+{
+    for (var index = services.Count - 1; index >= 0; index--)
+    {
+        var descriptor = services[index];
+        var serviceTypeName = descriptor.ServiceType.FullName ?? string.Empty;
+        var implementationTypeName = descriptor.ImplementationType?.FullName ?? string.Empty;
+        var implementationFactoryMethodName = descriptor.ImplementationFactory?.Method.Name ?? string.Empty;
+        var implementationFactoryReturnTypeName = descriptor.ImplementationFactory?.Method.ReturnType.FullName ?? string.Empty;
+
+        if (serviceTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal) ||
+            implementationTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal) ||
+            implementationFactoryMethodName.Contains("HttpSysDelegation", StringComparison.Ordinal) ||
+            implementationFactoryReturnTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal))
+        {
+            services.RemoveAt(index);
+        }
+    }
+}
+
 // ===== 配置管理 =====
 builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
 {
     hostingContext.Configuration.ConfigureApplication();
+    var basePath = AppContext.BaseDirectory;
+    var sharedConfigPath = ResolveSharedConfigPath(basePath, hostingContext.HostingEnvironment.ContentRootPath);
     config.Sources.Clear();
+    config.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: false);
     config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
     config.AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json",
         optional: true, reloadOnChange: false);
@@ -57,19 +112,12 @@ if (!string.IsNullOrEmpty(apiBaseUrl) && !string.IsNullOrEmpty(apiHealthPath))
         tags: ["downstream", "api"]);
 }
 
-// 通过 Gateway 路径添加 docs 与 console 健康检查（如果配置了网关地址）
+// 通过 Gateway 路径添加 console 健康检查（如果配置了网关地址）
 var gatewayPublicUrl = builder.Configuration["GatewayService:PublicUrl"];
 if (!string.IsNullOrEmpty(gatewayPublicUrl))
 {
     var gatewayBase = gatewayPublicUrl.TrimEnd('/');
-    var docsRequestPath = builder.Configuration["Docs:RequestPath"] ?? "/docs";
     var consoleRequestPath = "/console";
-
-    var docsHealthUrl = $"{gatewayBase}{docsRequestPath}";
-    healthChecksBuilder.AddUrlGroup(
-        new Uri(docsHealthUrl),
-        name: "docs-service",
-        tags: ["downstream", "docs"]);
 
     var consoleHealthUrl = $"{gatewayBase}{consoleRequestPath}";
     healthChecksBuilder.AddUrlGroup(
@@ -87,6 +135,11 @@ builder.Host.AddSerilogSetup();
 // ===== YARP 反向代理配置 =====
 builder.Services.AddReverseProxy()
     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
+if (!OperatingSystem.IsWindows())
+{
+    RemoveHttpSysDelegationRegistrations(builder.Services);
+}
 
 var app = builder.Build();
 
@@ -130,6 +183,11 @@ app.MapFallbackToPage("/Index");
 // ===== 启动日志 =====
 app.Lifetime.ApplicationStarted.Register(() =>
 {
+    if (!OperatingSystem.IsWindows())
+    {
+        Log.Information("当前运行环境非 Windows，Gateway 已跳过 YARP HttpSys delegation 注册");
+    }
+
     var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
 
     Log.Information("====================================");

@@ -8,6 +8,7 @@ using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
 
+using Radish.Common.HttpContextTool;
 namespace Radish.Api.Controllers;
 
 /// <summary>统计报表控制器</summary>
@@ -15,7 +16,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = "SystemOrAdmin")]
+[Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
 public class StatisticsController : ControllerBase
 {
     private readonly IBaseService<User, UserVo> _userService;

@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -20,21 +21,23 @@ public class ShopController : ControllerBase
     private readonly IOrderService _orderService;
     private readonly IUserBenefitService _userBenefitService;
     private readonly IUserInventoryService _userInventoryService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public ShopController(
         IProductService productService,
         IOrderService orderService,
         IUserBenefitService userBenefitService,
         IUserInventoryService userInventoryService,
-        IHttpContextAccessor httpContextAccessor)
+        ICurrentUserAccessor currentUserAccessor)
     {
         _productService = productService;
         _orderService = orderService;
         _userBenefitService = userBenefitService;
         _userInventoryService = userInventoryService;
-        _httpContextAccessor = httpContextAccessor;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     #region 商品分类
 
@@ -117,7 +120,7 @@ public class ShopController : ControllerBase
     /// <param name="quantity">购买数量</param>
     /// <returns>是否可购买</returns>
     [HttpGet("{productId:long}")]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<ProductBuyCheckResultVo>> CheckCanBuy(long productId, int quantity = 1)
     {
         var userId = GetCurrentUserId();
@@ -144,7 +147,7 @@ public class ShopController : ControllerBase
     /// <param name="dto">购买信息</param>
     /// <returns>购买结果</returns>
     [HttpPost]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<PurchaseResultDto>> Purchase([FromBody] CreateOrderDto dto)
     {
         var userId = GetCurrentUserId();
@@ -174,7 +177,7 @@ public class ShopController : ControllerBase
     /// <param name="pageSize">每页数量</param>
     /// <returns>订单列表</returns>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<PageModel<OrderListItemVo>>> GetMyOrders(
         OrderStatus? status = null,
         int pageIndex = 1,
@@ -196,7 +199,7 @@ public class ShopController : ControllerBase
     /// <param name="orderId">订单 ID</param>
     /// <returns>订单详情</returns>
     [HttpGet("{orderId:long}")]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<OrderVo>> GetOrder(long orderId)
     {
         var userId = GetCurrentUserId();
@@ -221,7 +224,7 @@ public class ShopController : ControllerBase
     /// <param name="reason">取消原因</param>
     /// <returns>是否成功</returns>
     [HttpPost("{orderId:long}")]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<bool>> CancelOrder(long orderId, string? reason = null)
     {
         var userId = GetCurrentUserId();
@@ -251,7 +254,7 @@ public class ShopController : ControllerBase
     /// <param name="includeExpired">是否包含已过期的</param>
     /// <returns>权益列表</returns>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<List<UserBenefitVo>>> GetMyBenefits(bool includeExpired = false)
     {
         var userId = GetCurrentUserId();
@@ -269,7 +272,7 @@ public class ShopController : ControllerBase
     /// </summary>
     /// <returns>激活的权益列表</returns>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<List<UserBenefitVo>>> GetMyActiveBenefits()
     {
         var userId = GetCurrentUserId();
@@ -288,7 +291,7 @@ public class ShopController : ControllerBase
     /// <param name="benefitId">权益 ID</param>
     /// <returns>是否成功</returns>
     [HttpPost("{benefitId:long}")]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<bool>> ActivateBenefit(long benefitId)
     {
         var userId = GetCurrentUserId();
@@ -314,7 +317,7 @@ public class ShopController : ControllerBase
     /// <param name="benefitId">权益 ID</param>
     /// <returns>是否成功</returns>
     [HttpPost("{benefitId:long}")]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<bool>> DeactivateBenefit(long benefitId)
     {
         var userId = GetCurrentUserId();
@@ -336,7 +339,7 @@ public class ShopController : ControllerBase
     /// </summary>
     /// <returns>背包物品列表</returns>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<List<UserInventoryVo>>> GetMyInventory()
     {
         var userId = GetCurrentUserId();
@@ -355,7 +358,7 @@ public class ShopController : ControllerBase
     /// <param name="dto">使用道具信息</param>
     /// <returns>使用结果</returns>
     [HttpPost]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<UseItemResultDto>> UseItem([FromBody] UseItemDto dto)
     {
         var userId = GetCurrentUserId();
@@ -380,7 +383,7 @@ public class ShopController : ControllerBase
     /// <param name="newNickname">新昵称</param>
     /// <returns>使用结果</returns>
     [HttpPost("{inventoryId:long}")]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<UseItemResultDto>> UseRenameCard(long inventoryId, [FromQuery] string newNickname)
     {
         var userId = GetCurrentUserId();
@@ -406,7 +409,7 @@ public class ShopController : ControllerBase
     /// 获取商品列表（管理后台）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<PageModel<ProductVo>>> AdminGetProducts(
         string? categoryId = null,
         ProductType? productType = null,
@@ -424,7 +427,7 @@ public class ShopController : ControllerBase
     /// 创建商品
     /// </summary>
     [HttpPost]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<long>> CreateProduct([FromBody] CreateProductDto dto)
     {
         var userId = GetCurrentUserId();
@@ -438,7 +441,7 @@ public class ShopController : ControllerBase
     /// 更新商品
     /// </summary>
     [HttpPut]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<bool>> UpdateProduct([FromBody] UpdateProductDto dto)
     {
         var userId = GetCurrentUserId();
@@ -452,7 +455,7 @@ public class ShopController : ControllerBase
     /// 上架商品
     /// </summary>
     [HttpPost("{productId:long}")]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<bool>> PutOnSale(long productId)
     {
         var result = await _productService.PutOnSaleAsync(productId);
@@ -463,7 +466,7 @@ public class ShopController : ControllerBase
     /// 下架商品
     /// </summary>
     [HttpPost("{productId:long}")]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<bool>> TakeOffSale(long productId)
     {
         var result = await _productService.TakeOffSaleAsync(productId);
@@ -474,7 +477,7 @@ public class ShopController : ControllerBase
     /// 获取订单列表（管理后台）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<PageModel<OrderVo>>> AdminGetOrders(
         long? userId = null,
         OrderStatus? status = null,
@@ -492,7 +495,7 @@ public class ShopController : ControllerBase
     /// 重新发放权益
     /// </summary>
     [HttpPost("{orderId:long}")]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<bool>> RetryGrantBenefit(long orderId)
     {
         try
@@ -511,27 +514,11 @@ public class ShopController : ControllerBase
     #region 私有方法
 
     /// <summary>获取当前用户 ID</summary>
-    private long GetCurrentUserId()
-    {
-        var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("sub")
-            ?? _httpContextAccessor.HttpContext?.User?.FindFirst("jti");
-
-        if (userIdClaim != null && long.TryParse(userIdClaim.Value, out var userId))
-        {
-            return userId;
-        }
-
-        return 0;
-    }
+    private long GetCurrentUserId() => Current.UserId;
 
     /// <summary>获取当前用户名</summary>
-    private string GetCurrentUserName()
-    {
-        var nameClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("name")
-            ?? _httpContextAccessor.HttpContext?.User?.FindFirst("preferred_username");
-
-        return nameClaim?.Value ?? "Unknown";
-    }
+    private string GetCurrentUserName() =>
+        string.IsNullOrWhiteSpace(Current.UserName) ? "Unknown" : Current.UserName;
 
     #endregion
 }

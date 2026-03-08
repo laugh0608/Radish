@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import type { PostDetail as PostDetailType, ReactionSummaryVo } from '@/api/forum';
+import type { UserFollowStatus } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
@@ -28,6 +29,9 @@ interface PostDetailProps {
   stickerMap?: MarkdownStickerMap;
   onToggleReaction?: (payload: ReactionTogglePayload) => Promise<void>;
   onRequireReactionLogin?: () => void;
+  followStatus?: UserFollowStatus | null;
+  followLoading?: boolean;
+  onToggleFollow?: (targetUserId: number, isFollowing: boolean) => Promise<void>;
 }
 
 export const PostDetail = ({
@@ -47,6 +51,9 @@ export const PostDetail = ({
   stickerMap,
   onToggleReaction,
   onRequireReactionLogin,
+  followStatus = null,
+  followLoading = false,
+  onToggleFollow,
 }: PostDetailProps) => {
   const parsedTags = post?.voTags
     ? post.voTags
@@ -56,7 +63,8 @@ export const PostDetail = ({
     : [];
   const tagList = post?.voTagNames && post.voTagNames.length > 0 ? post.voTagNames : parsedTags;
 
-  const isAuthor = post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
+  const isAuthor = !!post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
+  const showFollowAction = isAuthenticated && !!post && !isAuthor && post.voAuthorId > 0;
   if (loading) {
     return (
       <div className={styles.container}>
@@ -112,6 +120,23 @@ export const PostDetail = ({
           <span className={styles.commentCount}>
             💬 {post.voCommentCount || 0} 条评论
           </span>
+
+          {showFollowAction && (
+            <div className={styles.relationActions}>
+              <span className={styles.relationInfo}>
+                粉丝 {followStatus?.voFollowerCount ?? 0} · 关注 {followStatus?.voFollowingCount ?? 0}
+              </span>
+              <button
+                type="button"
+                className={`${styles.followButton} ${followStatus?.voIsFollowing ? styles.following : ''}`}
+                onClick={() => onToggleFollow?.(post.voAuthorId, !!followStatus?.voIsFollowing)}
+                disabled={followLoading}
+                title={followStatus?.voIsFollowing ? '取消关注' : '关注作者'}
+              >
+                {followLoading ? '处理中...' : followStatus?.voIsFollowing ? '已关注' : '关注'}
+              </button>
+            </div>
+          )}
 
           {onToggleReaction && (
             <ReactionBar

@@ -93,8 +93,8 @@ export const quickStartSteps: QuickStartCategory[] = [
     icon: 'mdi:help-circle',
     steps: [
       {
-        title: '查看文档中心',
-        description: '访问文档中心了解详细的使用说明和技术文档',
+        title: '打开文档应用',
+        description: '在文档应用中查看固定项目文档、教程、手册和在线文档内容',
         icon: 'mdi:book'
       },
       {

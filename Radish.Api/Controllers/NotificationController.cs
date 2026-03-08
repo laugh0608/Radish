@@ -26,15 +26,17 @@ namespace Radish.Api.Controllers;
 public class NotificationController : ControllerBase
 {
     private readonly INotificationService _notificationService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public NotificationController(
         INotificationService notificationService,
-        IHttpContextUser httpContextUser)
+        ICurrentUserAccessor currentUserAccessor)
     {
         _notificationService = notificationService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>
     /// 获取当前用户的通知列表（分页）
@@ -45,7 +47,7 @@ public class NotificationController : ControllerBase
     [ProducesResponseType(typeof(MessageModel<PageModel<UserNotificationVo>>), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetNotificationList([FromQuery] NotificationListQueryDto query)
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var (notifications, total) = await _notificationService.GetUserNotificationsAsync(userId, query);
 
@@ -74,7 +76,7 @@ public class NotificationController : ControllerBase
     [ProducesResponseType(typeof(MessageModel<UnreadCountDto>), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetUnreadCount()
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var unreadCountDto = await _notificationService.GetUnreadCountDetailAsync(userId);
 
@@ -106,7 +108,7 @@ public class NotificationController : ControllerBase
             };
         }
 
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var affectedRows = await _notificationService.MarkAsReadAsync(userId, dto.NotificationIds);
 
@@ -127,7 +129,7 @@ public class NotificationController : ControllerBase
     [ProducesResponseType(typeof(MessageModel<int>), StatusCodes.Status200OK)]
     public async Task<MessageModel> MarkAllAsRead()
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var affectedRows = await _notificationService.MarkAllAsReadAsync(userId);
 
@@ -150,7 +152,7 @@ public class NotificationController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
     public async Task<MessageModel> DeleteNotification(long notificationId)
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var success = await _notificationService.DeleteNotificationAsync(userId, notificationId);
 

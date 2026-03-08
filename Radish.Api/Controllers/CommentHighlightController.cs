@@ -3,6 +3,7 @@ using Hangfire;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common.CacheTool;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.IService.Base;
 using Radish.Model;
@@ -285,7 +286,7 @@ public class CommentHighlightController : ControllerBase
     /// <param name="statDate">统计日期（可选，默认昨天）</param>
     /// <returns>统计结果</returns>
     [HttpPost]
-    [Authorize(Roles = "Admin,System")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public Task<MessageModel> TriggerStatJob(DateTime? statDate = null)
     {

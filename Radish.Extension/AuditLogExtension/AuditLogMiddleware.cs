@@ -1,9 +1,9 @@
 using System.Diagnostics;
-using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Radish.Common.HttpContextTool;
 using Radish.Model.LogModels;
 using Radish.Model.ViewModels;
 using Radish.IService;
@@ -300,10 +300,8 @@ public class AuditLogMiddleware
     /// </summary>
     private long? GetUserId(HttpContext context)
     {
-        var userIdClaim = context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                          ?? context.User?.FindFirst("sub")?.Value;
-
-        return long.TryParse(userIdClaim, out var userId) ? userId : null;
+        var currentUser = context.RequestServices.GetRequiredService<ICurrentUserAccessor>().Current;
+        return currentUser.UserId > 0 ? currentUser.UserId : null;
     }
 
     /// <summary>
@@ -311,9 +309,13 @@ public class AuditLogMiddleware
     /// </summary>
     private string? GetUserName(HttpContext context)
     {
-        return context.User?.FindFirst(ClaimTypes.Name)?.Value
-               ?? context.User?.FindFirst("name")?.Value
-               ?? context.User?.FindFirst("preferred_username")?.Value;
+        var currentUser = context.RequestServices.GetRequiredService<ICurrentUserAccessor>().Current;
+        if (!string.IsNullOrWhiteSpace(currentUser.UserName))
+        {
+            return currentUser.UserName;
+        }
+
+        return UserClaimReader.GetUserName(context.User);
     }
 
     /// <summary>
@@ -321,10 +323,8 @@ public class AuditLogMiddleware
     /// </summary>
     private long? GetTenantId(HttpContext context)
     {
-        var tenantIdClaim = context.User?.FindFirst("tenant_id")?.Value
-                            ?? context.User?.FindFirst("TenantId")?.Value;
-
-        return long.TryParse(tenantIdClaim, out var tenantId) ? tenantId : null;
+        var currentUser = context.RequestServices.GetRequiredService<ICurrentUserAccessor>().Current;
+        return currentUser.TenantId >= 0 ? currentUser.TenantId : null;
     }
 
     /// <summary>

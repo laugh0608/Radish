@@ -30,15 +30,41 @@ public class BaseDbConfig
 
     public static (List<MutiDbOperate>, List<MutiDbOperate>) MutiInitConn()
     {
-        List<MutiDbOperate> listDatabase = AppSettingsTool.RadishApp<MutiDbOperate>("Databases")
-            .Where(i => i.Enabled).ToList();
-        var mainDbId = AppSettingsTool.RadishApp(new string[] { "MainDb" }).ToString();
-        var mainDbModel = listDatabase.Single(d => d.ConnId == mainDbId);
+        var configuredDatabases = AppSettingsTool.RadishApp<MutiDbOperate>("Databases") ?? new List<MutiDbOperate>();
+        if (configuredDatabases.Count == 0)
+        {
+            throw new InvalidOperationException("未读取到 Databases 配置，请确认已加载 appsettings.Shared.json 或本地覆盖配置。");
+        }
+
+        List<MutiDbOperate> listDatabase = configuredDatabases
+            .Where(i => i.Enabled)
+            .ToList();
+        if (listDatabase.Count == 0)
+        {
+            throw new InvalidOperationException("Databases 配置存在，但没有任何 Enabled=true 的数据库连接。");
+        }
+
+        var mainDbId = AppSettingsTool.RadishApp("MainDb");
+        if (string.IsNullOrWhiteSpace(mainDbId))
+        {
+            throw new InvalidOperationException("缺少 MainDb 配置，无法确定当前主库连接。");
+        }
+
+        var mainDbModel = listDatabase.SingleOrDefault(d => string.Equals(d.ConnId, mainDbId, StringComparison.OrdinalIgnoreCase));
+        if (mainDbModel == null)
+        {
+            throw new InvalidOperationException($"未在 Databases 中找到主库配置 MainDb={mainDbId}。");
+        }
+
         listDatabase.Remove(mainDbModel);
         listDatabase.Insert(0, mainDbModel);
 
-        foreach (var i in listDatabase) SpecialDbString(i);
-        return (listDatabase, mainDbModel.Slaves);
+        foreach (var i in listDatabase)
+        {
+            SpecialDbString(i);
+        }
+
+        return (listDatabase, mainDbModel.Slaves ?? new List<MutiDbOperate>());
     }
 
     /// <summary>

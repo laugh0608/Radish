@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -17,19 +18,21 @@ namespace Radish.Api.Controllers.v1;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [ApiVersion(1)]
-[Authorize(Policy = "Client")]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class LeaderboardController : ControllerBase
 {
     private readonly ILeaderboardService _leaderboardService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public LeaderboardController(
         ILeaderboardService leaderboardService,
-        IHttpContextAccessor httpContextAccessor)
+        ICurrentUserAccessor currentUserAccessor)
     {
         _leaderboardService = leaderboardService;
-        _httpContextAccessor = httpContextAccessor;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>
     /// 获取排行榜数据
@@ -90,30 +93,7 @@ public class LeaderboardController : ControllerBase
     /// <summary>
     /// 获取当前用户 ID
     /// </summary>
-    private long GetCurrentUserId()
-    {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext?.User?.Identity?.IsAuthenticated != true)
-        {
-            return 0;
-        }
-
-        // 尝试从 sub claim 获取（OIDC 标准）
-        var subClaim = httpContext.User.FindFirst("sub")?.Value;
-        if (!string.IsNullOrEmpty(subClaim) && long.TryParse(subClaim, out var userId))
-        {
-            return userId;
-        }
-
-        // 尝试从 jti claim 获取（兼容）
-        var jtiClaim = httpContext.User.FindFirst("jti")?.Value;
-        if (!string.IsNullOrEmpty(jtiClaim) && long.TryParse(jtiClaim, out userId))
-        {
-            return userId;
-        }
-
-        return 0;
-    }
+    private long GetCurrentUserId() => Current.UserId;
 
     #endregion
 }

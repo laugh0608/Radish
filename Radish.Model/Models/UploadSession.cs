@@ -7,8 +7,14 @@ namespace Radish.Model.Models;
 /// 分片上传会话
 /// </summary>
 [SugarTable("UploadSession")]
-public class UploadSession : RootEntityTKey<long>
+public class UploadSession : RootEntityTKey<long>, ITenantEntity
 {
+    /// <summary>
+    /// 租户ID
+    /// </summary>
+    [SugarColumn(IsNullable = false)]
+    public long TenantId { get; set; } = 0;
+
     /// <summary>
     /// 会话ID（GUID）
     /// </summary>

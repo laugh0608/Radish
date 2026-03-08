@@ -28,24 +28,26 @@ namespace Radish.Api.Controllers;
 public class AttachmentController : ControllerBase
 {
     private readonly IAttachmentService _attachmentService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
     private readonly IUploadRateLimitService _rateLimitService;
     private readonly UploadRateLimitOptions _rateLimitOptions;
     private readonly IFileAccessTokenService _fileAccessTokenService;
 
     public AttachmentController(
         IAttachmentService attachmentService,
-        IHttpContextUser httpContextUser,
+        ICurrentUserAccessor currentUserAccessor,
         IUploadRateLimitService rateLimitService,
         IOptions<UploadRateLimitOptions> rateLimitOptions,
         IFileAccessTokenService fileAccessTokenService)
     {
         _attachmentService = attachmentService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
         _rateLimitService = rateLimitService;
         _rateLimitOptions = rateLimitOptions.Value;
         _fileAccessTokenService = fileAccessTokenService;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     #region Upload
 
@@ -97,8 +99,8 @@ public class AttachmentController : ControllerBase
             };
         }
 
-        var userId = _httpContextUser.UserId;
-        var userName = _httpContextUser.UserName;
+        var userId = Current.UserId;
+        var userName = Current.UserName;
 
         // 限流检查
         if (_rateLimitOptions.Enable)
@@ -219,8 +221,8 @@ public class AttachmentController : ControllerBase
             };
         }
 
-        var userId = _httpContextUser.UserId;
-        var userName = _httpContextUser.UserName;
+        var userId = Current.UserId;
+        var userName = Current.UserName;
 
         // 限流检查
         if (_rateLimitOptions.Enable)
@@ -369,7 +371,7 @@ public class AttachmentController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetUploadStatistics()
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
         var statistics = await _rateLimitService.GetUploadStatisticsAsync(userId);
 
         return new MessageModel
@@ -401,7 +403,7 @@ public class AttachmentController : ControllerBase
         businessType = businessType?.Trim();
         keyword = keyword?.Trim();
 
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         // 基础条件：仅自己的、未删除
         Expression<Func<Attachment, bool>> where;
@@ -471,10 +473,10 @@ public class AttachmentController : ControllerBase
         long? userId = null;
         List<string>? roles = null;
 
-        if (_httpContextUser.UserId > 0)
+        if (Current.UserId > 0)
         {
-            userId = _httpContextUser.UserId;
-            roles = _httpContextUser.GetClaimValueByType("role");
+            userId = Current.UserId;
+            roles = Current.Roles.ToList();
         }
 
         var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(id, userId, roles);
@@ -509,7 +511,7 @@ public class AttachmentController : ControllerBase
     {
         try
         {
-            var userId = _httpContextUser.UserId;
+            var userId = Current.UserId;
             var baseUrl = $"{Request.Scheme}://{Request.Host}";
 
             var token = await _fileAccessTokenService.CreateTokenAsync(dto, userId, baseUrl);
@@ -546,7 +548,7 @@ public class AttachmentController : ControllerBase
     {
         try
         {
-            var userId = _httpContextUser.UserId;
+            var userId = Current.UserId;
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
             // 验证令牌
@@ -569,7 +571,7 @@ public class AttachmentController : ControllerBase
             if (userId > 0)
             {
                 downloadUserId = userId;
-                downloadRoles = _httpContextUser.GetClaimValueByType("role");
+                downloadRoles = Current.Roles.ToList();
             }
 
             var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(attachmentId.Value, downloadUserId, downloadRoles);
@@ -609,7 +611,7 @@ public class AttachmentController : ControllerBase
     {
         try
         {
-            var userId = _httpContextUser.UserId;
+            var userId = Current.UserId;
             await _fileAccessTokenService.RevokeTokenAsync(token, userId);
 
             return new MessageModel
@@ -643,7 +645,7 @@ public class AttachmentController : ControllerBase
     {
         try
         {
-            var userId = _httpContextUser.UserId;
+            var userId = Current.UserId;
             var tokens = await _fileAccessTokenService.GetAttachmentTokensAsync(attachmentId, userId);
 
             return new MessageModel
@@ -694,9 +696,8 @@ public class AttachmentController : ControllerBase
         }
 
         // 权限检查：只有上传者或管理员可以删除
-        var userId = _httpContextUser.UserId;
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var userId = Current.UserId;
+        var isAdmin = Current.IsSystemOrAdmin();
 
         if (attachment.VoUploaderId != userId && !isAdmin)
         {
@@ -748,9 +749,8 @@ public class AttachmentController : ControllerBase
             };
         }
 
-        var userId = _httpContextUser.UserId;
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var userId = Current.UserId;
+        var isAdmin = Current.IsSystemOrAdmin();
 
         // 权限检查：验证每个附件的权限
         foreach (var id in ids)
@@ -811,9 +811,8 @@ public class AttachmentController : ControllerBase
         }
 
         // 权限检查：只有上传者或管理员可以修改
-        var userId = _httpContextUser.UserId;
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var userId = Current.UserId;
+        var isAdmin = Current.IsSystemOrAdmin();
 
         if (attachment.VoUploaderId != userId && !isAdmin)
         {

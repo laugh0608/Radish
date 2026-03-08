@@ -2,17 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Security.Claims;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using OpenIddict.Abstractions;
 using Radish.Api.Controllers;
+using Radish.Common.HttpContextTool;
 using Radish.Model;
 using Radish.Model.ViewModels.Client;
 using Xunit;
@@ -24,23 +23,10 @@ public class ClientControllerTest
 {
     private static ClientController CreateController(Mock<IOpenIddictApplicationManager> managerMock)
     {
-        var httpContext = new DefaultHttpContext
-        {
-            User = new ClaimsPrincipal(new ClaimsIdentity(new[]
-            {
-                new Claim("sub", "20002"),
-                new Claim(ClaimTypes.Role, "System")
-            }, "TestAuth"))
-        };
-
+        var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
+        currentUserAccessorMock.SetupGet(x => x.Current).Returns(new CurrentUser { UserId = 20002 });
         var logger = NullLogger<ClientController>.Instance;
-        var controller = new ClientController(managerMock.Object, logger)
-        {
-            ControllerContext = new ControllerContext
-            {
-                HttpContext = httpContext
-            }
-        };
+        var controller = new ClientController(managerMock.Object, currentUserAccessorMock.Object, logger);
 
         return controller;
     }

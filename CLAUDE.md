@@ -143,14 +143,14 @@ await _repository.SoftDeleteAsync(u => u.IsEnabled == false, "System");
 
 ### 加载优先级
 ```
-appsettings.json → appsettings.{Environment}.json
+appsettings.Shared.json → appsettings.json → appsettings.{Environment}.json
 → appsettings.Local.json (不提交) → 环境变量
 ```
 
 **重点**:
 - `appsettings.Local.json` 用于本地开发敏感数据 (密码/密钥)，Git 忽略
 - 深度合并策略，数组需完整覆盖
-- 参见 [配置指南](Docs/radish.docs/docs/guide/configuration.md)
+- 参见 [配置指南](Docs/guide/configuration.md)
 
 ### 快速设置
 ```bash
@@ -169,9 +169,11 @@ var value = AppSettings.RadishApp("Section", "Key");  // 简单键值
 ```
 
 **关键配置**:
-- `Snowflake.WorkId/DatacenterId`: 每部署实例唯一 (0-30)
-- `Databases`: 至少 `ConnId=Main` 和 `ConnId=Log`
-- `Redis.Enable`: Redis (`true`) 或内存缓存 (`false`)
+- `Snowflake.WorkId`: 宿主差异配置（每部署实例唯一，0-30）
+- `Snowflake.DataCenterId`: 共享配置（`appsettings.Shared.json`）
+- `MainDb/Databases`: 共享配置（`appsettings.Shared.json`，至少包含 `ConnId=Main` 和 `ConnId=Log`）
+- `Redis.Enable/ConnectionString`: 共享配置（`appsettings.Shared.json`）
+- `Redis.InstanceName`: 宿主差异配置（各宿主 `appsettings.json`）
 
 ## 数据库 & SqlSugar
 
@@ -221,12 +223,12 @@ Log.Information("User {UserId} logged in", userId);  // 使用
 - SQL 日志: `Logs/{ProjectName}/AopSql/AopSql.txt` + 数据库
 - 审计日志: 数据库 `AuditLog_YYYYMMDD` 表
 
-详见 [日志系统文档](Docs/radish.docs/docs/guide/logging.md)
+详见 [日志系统文档](Docs/guide/logging.md)
 
 ## 缓存策略
 
 ```csharp
-builder.Services.AddCacheSetup();  // 根据 Redis.Enable 切换
+builder.Services.AddCacheSetup();  // 根据 Redis.Enable 切换（共享配置）
 
 // 使用
 await cache.SetAsync("key", value, TimeSpan.FromMinutes(10));
@@ -533,7 +535,7 @@ feat: 添加用户权限验证中间件
 
 ## 文档与参考
 
-**综合文档** (唯一真相源): `Docs/radish.docs/docs/`
+**综合文档** (唯一真相源): `Docs/`
 - `architecture/specifications.md` - 开发规范详细说明
 - `architecture/framework.md` - 架构设计与技术决策
 - `frontend/design.md` - 前端设计方案

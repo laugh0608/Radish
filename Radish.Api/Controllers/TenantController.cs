@@ -9,6 +9,7 @@ using Radish.Model.Tenants;
 using Radish.Model.ViewModels;
 using SqlSugar;
 
+using Radish.Common.HttpContextTool;
 namespace Radish.Api.Controllers;
 
 /// <summary>
@@ -18,7 +19,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = "RadishAuthPolicy")]
+[Authorize(Policy = AuthorizationPolicies.RadishAuthPolicy)]
 public class TenantController : ControllerBase
 {
     private readonly IBaseService<BusinessTable, BusinessTableVo> _businessTableService;

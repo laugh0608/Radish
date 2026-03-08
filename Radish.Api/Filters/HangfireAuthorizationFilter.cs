@@ -1,4 +1,6 @@
 using Hangfire.Dashboard;
+using Microsoft.Extensions.DependencyInjection;
+using Radish.Common.HttpContextTool;
 
 namespace Radish.Api.Filters;
 
@@ -27,7 +29,8 @@ public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
         }
 
         // 检查是否为管理员角色
-        return httpContext.User.IsInRole("Admin") || httpContext.User.IsInRole("System");
+        var currentUser = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().Current;
+        return currentUser.IsSystemOrAdmin();
     }
 }
 

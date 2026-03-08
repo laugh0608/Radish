@@ -24,6 +24,9 @@ public class AutoMapperConfig
         cfg.AddProfile<ExperienceProfile>();
         cfg.AddProfile<ShopProfile>();
         cfg.AddProfile<ChatProfile>();
+        cfg.AddProfile<UserFollowProfile>();
+        cfg.AddProfile<WikiProfile>();
+        cfg.AddProfile<ContentModerationProfile>();
     }
 
     #region 已弃用

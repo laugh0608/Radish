@@ -16,7 +16,7 @@ namespace Radish.Model;
 [SugarTable($@"{nameof(BalanceChangeLog)}_{{year}}{{month}}{{day}}")] // 标准格式：BalanceChangeLog_20260103
 [SugarIndex("idx_user_time", nameof(UserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_transaction", nameof(TransactionId), OrderByType.Asc)]
-public class BalanceChangeLog : RootEntityTKey<long>
+public class BalanceChangeLog : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认余额变动日志实例</summary>
     public BalanceChangeLog()

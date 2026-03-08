@@ -113,15 +113,18 @@ public class UserService : BaseService<User, UserVo>, IUserService
     /// 搜索用户（用于@提及功能）
     /// </summary>
     /// <param name="keyword">搜索关键词（匹配用户名）</param>
+    /// <param name="tenantId">当前租户 Id</param>
     /// <param name="limit">返回结果数量限制（默认10）</param>
     /// <returns>用户提及视图模型列表</returns>
-    public async Task<List<UserMentionVo>> SearchUsersForMentionAsync(string keyword, int limit = 10)
+    public async Task<List<UserMentionVo>> SearchUsersForMentionAsync(string keyword, long tenantId, int limit = 10)
     {
         // 参数验证
         if (string.IsNullOrWhiteSpace(keyword))
         {
             return new List<UserMentionVo>();
         }
+
+        var normalizedTenantId = tenantId > 0 ? tenantId : 0;
 
         // 限制最大查询数量
         if (limit <= 0) limit = 10;
@@ -132,7 +135,10 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
         // 使用分页查询，取第一页，按用户名排序
         var (data, _) = await base.QueryPageAsync(
-            whereExpression: u => u.UserName.Contains(keyword) && u.IsEnable && !u.IsDeleted,
+            whereExpression: u => u.UserName.Contains(keyword)
+                                  && u.TenantId == normalizedTenantId
+                                  && u.IsEnable
+                                  && !u.IsDeleted,
             pageIndex: 1,
             pageSize: fetchSize,
             orderByExpression: u => u.UserName,

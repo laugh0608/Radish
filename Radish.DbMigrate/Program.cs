@@ -18,13 +18,18 @@ using SqlSugar;
 
 var builder = Host.CreateApplicationBuilder(args);
 
-// 复用与 Radish.Api 相同的配置加载顺序（但 DbMigrate 运行在控制台，需显式指向输出目录的配置文件）
-var contentRoot = AppContext.BaseDirectory;
+// 复用与宿主一致的配置加载顺序：
+// appsettings.Shared.json -> 项目 appsettings.json -> 项目环境配置 -> 项目 Local -> 根目录 Local -> 环境变量
+var solutionRoot = AppPathTool.GetSolutionRootOrBasePath();
+var projectRoot = Path.Combine(solutionRoot, "Radish.DbMigrate");
 
 builder.Configuration.Sources.Clear();
-builder.Configuration.AddJsonFile(Path.Combine(contentRoot, "appsettings.json"), optional: true, reloadOnChange: false);
-builder.Configuration.AddJsonFile(Path.Combine(contentRoot, $"appsettings.{builder.Environment.EnvironmentName}.json"), optional: true, reloadOnChange: false);
-builder.Configuration.AddJsonFile(Path.Combine(contentRoot, "appsettings.Local.json"), optional: true, reloadOnChange: false);
+builder.Configuration.AddJsonFile(Path.Combine(solutionRoot, "appsettings.Shared.json"), optional: true, reloadOnChange: false);
+builder.Configuration.AddJsonFile(Path.Combine(projectRoot, "appsettings.json"), optional: true, reloadOnChange: false);
+builder.Configuration.AddJsonFile(Path.Combine(projectRoot, $"appsettings.{builder.Environment.EnvironmentName}.json"), optional: true, reloadOnChange: false);
+builder.Configuration.AddJsonFile(Path.Combine(projectRoot, "appsettings.Local.json"), optional: true, reloadOnChange: false);
+builder.Configuration.AddJsonFile(Path.Combine(solutionRoot, "appsettings.Local.json"), optional: true, reloadOnChange: false);
+builder.Configuration.AddEnvironmentVariables();
 
 // 先将配置绑定到全局 App/InternalApp（用于 ConfigurableOptions 等静态访问）
 InternalApp.ConfigureApplication(builder.Configuration);
@@ -83,7 +88,13 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
     foreach (var config in BaseDbConfig.AllConfigs)
     {
         var dbForConfig = (SqlSugarScope)db;
-        var conn = dbForConfig.GetConnectionScope(config.ConfigId.ToString());
+        var configId = config.ConfigId?.ToString();
+        if (string.IsNullOrWhiteSpace(configId))
+        {
+            throw new InvalidOperationException("DbMigrate 遇到缺少 ConfigId 的数据库连接配置，无法继续初始化表结构。");
+        }
+
+        var conn = dbForConfig.GetConnectionScope(configId);
 
         // 按约定扫描 Radish.Model 程序集中的实体类型：
         // - 带有 [SugarTable] 特性的实体；
@@ -102,7 +113,7 @@ static async Task RunInitAsync(IServiceProvider services, IConfiguration configu
             .Distinct();
 
         // 根据 [Tenant(configId)] 注解过滤实体
-        var configIdStr = config.ConfigId?.ToString() ?? string.Empty;
+        var configIdStr = configId;
         var entityTypesForConfig = allEntityTypes.Where(type =>
         {
             var tenantAttr = type.GetCustomAttributes(typeof(TenantAttribute), inherit: true)
@@ -147,8 +158,10 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
     var stickerGroupTableExists = db.DbMaintenance.IsAnyTable("StickerGroup", false);
     var stickerTableExists = db.DbMaintenance.IsAnyTable("Sticker", false);
     var reactionTableExists = db.DbMaintenance.IsAnyTable("Reaction", false);
+    var wikiDocumentTableExists = db.DbMaintenance.IsAnyTable("WikiDocument", false);
+    var wikiDocumentRevisionTableExists = db.DbMaintenance.IsAnyTable("WikiDocumentRevision", false);
 
-    if (!roleTableExists || !shopTableExists || !userTimePreferenceTableExists || !stickerGroupTableExists || !stickerTableExists || !reactionTableExists)
+    if (!roleTableExists || !shopTableExists || !userTimePreferenceTableExists || !stickerGroupTableExists || !stickerTableExists || !reactionTableExists || !wikiDocumentTableExists || !wikiDocumentRevisionTableExists)
     {
         var missingTables = new List<string>();
         if (!roleTableExists) missingTables.Add("Role");
@@ -157,6 +170,8 @@ static async Task RunSeedAsync(IServiceProvider services, IConfiguration configu
         if (!stickerGroupTableExists) missingTables.Add("StickerGroup");
         if (!stickerTableExists) missingTables.Add("Sticker");
         if (!reactionTableExists) missingTables.Add("Reaction");
+        if (!wikiDocumentTableExists) missingTables.Add("WikiDocument");
+        if (!wikiDocumentRevisionTableExists) missingTables.Add("WikiDocumentRevision");
 
         Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到表结构缺失 ({string.Join(", ", missingTables)})，自动执行 init...");
         await RunInitAsync(services, configuration, environment);

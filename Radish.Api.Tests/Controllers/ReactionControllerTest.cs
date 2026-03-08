@@ -159,12 +159,15 @@ public class ReactionControllerTest
 
     private static ReactionController CreateController(IReactionService reactionService)
     {
-        var httpContextUserMock = new Mock<IHttpContextUser>();
-        httpContextUserMock.SetupGet(x => x.UserId).Returns(10001);
-        httpContextUserMock.SetupGet(x => x.UserName).Returns("Admin");
-        httpContextUserMock.SetupGet(x => x.TenantId).Returns(0);
+        var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
+        currentUserAccessorMock.SetupGet(x => x.Current).Returns(new CurrentUser
+        {
+            UserId = 10001,
+            UserName = "Admin",
+            TenantId = 0
+        });
 
-        return new ReactionController(reactionService, httpContextUserMock.Object);
+        return new ReactionController(reactionService, currentUserAccessorMock.Object);
     }
 
     private static Mock<IReactionService> CreateReactionServiceMock()

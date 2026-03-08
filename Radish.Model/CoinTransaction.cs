@@ -12,7 +12,7 @@ namespace Radish.Model;
 [SugarIndex("idx_to_user_created", nameof(ToUserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_transaction_no", nameof(TransactionNo), OrderByType.Asc)]
 [SugarIndex("idx_created_at", nameof(CreateTime), OrderByType.Desc)]
-public class CoinTransaction : RootEntityTKey<long>
+public class CoinTransaction : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认交易记录实例</summary>
     public CoinTransaction()

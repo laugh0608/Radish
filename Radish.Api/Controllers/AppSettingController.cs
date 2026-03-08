@@ -11,6 +11,7 @@ using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
 
+using Radish.Common.HttpContextTool;
 namespace Radish.Api.Controllers;
 
 /// <summary>
@@ -24,7 +25,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(2)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = "RadishAuthPolicy")]
+[Authorize(Policy = AuthorizationPolicies.RadishAuthPolicy)]
 [Tags("系统管理")]
 public class AppSettingController : ControllerBase
 {

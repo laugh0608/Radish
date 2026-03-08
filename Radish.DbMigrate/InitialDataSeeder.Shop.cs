@@ -464,7 +464,26 @@ internal static partial class InitialDataSeeder
             if (!exists)
             {
                 Console.WriteLine($"[Radish.DbMigrate] 创建商品 Id={product.Id}, Name={product.Name}...");
-                await db.Insertable(product).ExecuteCommandAsync();
+                try
+                {
+                    await db.Insertable(product).ExecuteCommandAsync();
+                }
+                catch (Exception ex) when (IsUniqueConstraintViolation(ex, "ShopProduct.Id") || IsUniqueConstraintViolation(ex, "Product.Id"))
+                {
+                    product.ModifyTime = DateTime.Now;
+                    product.ModifyBy = "System";
+
+                    var updated = await db.Updateable(product)
+                        .IgnoreColumns(p => new { p.CreateTime, p.CreateBy, p.CreateId })
+                        .ExecuteCommandAsync();
+
+                    if (updated <= 0)
+                    {
+                        throw;
+                    }
+
+                    Console.WriteLine($"[Radish.DbMigrate] 检测到商品 Id={product.Id} 的旧记录，已自动纠正商品配置。");
+                }
             }
             else
             {

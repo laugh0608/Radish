@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Modal } from '@radish/ui/modal';
 import { Button } from '@radish/ui/button';
 import { Icon } from '@radish/ui/icon';
-import { getAllTags, type PostDetail } from '@/api/forum';
+import { getAllTags, type Category, type PostDetail } from '@/api/forum';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { uploadDocument, uploadImage } from '@/api/attachment';
@@ -13,8 +13,9 @@ import styles from './EditPostModal.module.css';
 interface EditPostModalProps {
   isOpen: boolean;
   post: PostDetail | null;
+  categories: Category[];
   onClose: () => void;
-  onSave: (postId: number, title: string, content: string, tagNames: string[]) => Promise<void>;
+  onSave: (postId: number, title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
 }
 
 const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;
@@ -37,7 +38,7 @@ const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: nu
   return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
 };
 
-export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalProps) => {
+export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: EditPostModalProps) => {
   const { t } = useTranslation();
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
   const roles = useUserStore(state => state.roles || []);
@@ -55,7 +56,9 @@ export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalPr
   const [allTagNames, setAllTagNames] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [categoryId, setCategoryId] = useState<number | null>(null);
   const [tagError, setTagError] = useState<string | null>(null);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // 当 post 改变时更新表单
@@ -71,8 +74,10 @@ export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalPr
             .filter(Boolean);
 
       setSelectedTags(initialTags);
+      setCategoryId(post.voCategoryId ?? null);
       setTagInput('');
       setTagError(null);
+      setCategoryError(null);
       setError(null);
     }
   }, [post]);
@@ -122,11 +127,13 @@ export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalPr
     setSelectedTags(prev => [...prev, tagName]);
     setTagInput('');
     setTagError(null);
+    setCategoryError(null);
   };
 
   const removeTag = (tagName: string) => {
     setSelectedTags(prev => prev.filter(tag => tag !== tagName));
     setTagError(null);
+    setCategoryError(null);
   };
 
   const matchedTags = tagInput.trim()
@@ -156,10 +163,16 @@ export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalPr
       return;
     }
 
+    if (!categoryId || categoryId <= 0) {
+      setCategoryError('请先选择分类');
+      return;
+    }
+
     setSaving(true);
     setError(null);
+    setCategoryError(null);
     try {
-      await onSave(post.voId, title.trim(), content.trim(), selectedTags);
+      await onSave(post.voId, title.trim(), content.trim(), categoryId, selectedTags);
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -172,6 +185,7 @@ export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalPr
   const handleClose = () => {
     if (!saving) {
       setError(null);
+      setCategoryError(null);
       onClose();
     }
   };
@@ -287,6 +301,32 @@ export const EditPostModal = ({ isOpen, post, onClose, onSave }: EditPostModalPr
             maxLength={100}
           />
           <span className={styles.titleCount}>{title.length}/100</span>
+        </div>
+
+        <div className={styles.categorySection}>
+          <div className={styles.categoryHeader}>
+            <span className={styles.categoryLabel}>帖子分类</span>
+            <span className={styles.categoryHint}>编辑时可调整帖子所属分类</span>
+          </div>
+          <select
+            value={categoryId ?? ''}
+            onChange={e => {
+              const value = e.target.value;
+              setCategoryId(value ? Number(value) : null);
+              setCategoryError(null);
+            }}
+            className={styles.categorySelect}
+            disabled={saving || categories.length === 0}
+          >
+            <option value="">请选择分类</option>
+            {categories.map(category => (
+              <option key={category.voId} value={category.voId}>
+                {category.voName}
+              </option>
+            ))}
+          </select>
+          {categoryError && <p className={styles.categoryError}>{categoryError}</p>}
+          {!categoryError && categories.length === 0 && <p className={styles.categoryError}>暂无可用分类</p>}
         </div>
 
         <div className={styles.tagSection}>

@@ -20,15 +20,17 @@ namespace Radish.Api.Controllers;
 public class ChunkedUploadController : ControllerBase
 {
     private readonly IChunkedUploadService _chunkedUploadService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public ChunkedUploadController(
         IChunkedUploadService chunkedUploadService,
-        IHttpContextUser httpContextUser)
+        ICurrentUserAccessor currentUserAccessor)
     {
         _chunkedUploadService = chunkedUploadService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>
     /// 创建上传会话
@@ -43,8 +45,8 @@ public class ChunkedUploadController : ControllerBase
     {
         try
         {
-            var userId = _httpContextUser.UserId;
-            var userName = _httpContextUser.UserName;
+            var userId = Current.UserId;
+            var userName = Current.UserName;
 
             var session = await _chunkedUploadService.CreateSessionAsync(dto, userId, userName);
 
@@ -96,7 +98,7 @@ public class ChunkedUploadController : ControllerBase
                 };
             }
 
-            var userId = _httpContextUser.UserId;
+            var userId = Current.UserId;
             var session = await _chunkedUploadService.UploadChunkAsync(sessionId, chunkIndex, chunkData, userId);
 
             return new MessageModel
@@ -131,8 +133,8 @@ public class ChunkedUploadController : ControllerBase
     {
         try
         {
-            var userId = _httpContextUser.UserId;
-            var userName = _httpContextUser.UserName;
+            var userId = Current.UserId;
+            var userName = Current.UserName;
 
             var attachment = await _chunkedUploadService.MergeChunksAsync(dto, userId, userName);
 
@@ -178,7 +180,7 @@ public class ChunkedUploadController : ControllerBase
     {
         try
         {
-            var userId = _httpContextUser.UserId;
+            var userId = Current.UserId;
             var session = await _chunkedUploadService.GetSessionAsync(sessionId, userId);
 
             if (session == null)
@@ -223,7 +225,7 @@ public class ChunkedUploadController : ControllerBase
     {
         try
         {
-            var userId = _httpContextUser.UserId;
+            var userId = Current.UserId;
             await _chunkedUploadService.CancelSessionAsync(sessionId, userId);
 
             return new MessageModel

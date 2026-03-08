@@ -4,6 +4,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+using Radish.Common.HttpContextTool;
 namespace Radish.Api.Controllers.v2;
 
 /// <summary>
@@ -17,8 +18,8 @@ namespace Radish.Api.Controllers.v2;
 [ApiVersion(2)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-// [Authorize(Policy = "RadishAuthPolicy")]
-[Authorize(Policy = "Client")]
+// [Authorize(Policy = AuthorizationPolicies.RadishAuthPolicy)]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 [Tags("性能测试")]
 public class RustTestController : ControllerBase
 {

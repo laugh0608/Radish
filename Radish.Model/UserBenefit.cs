@@ -15,7 +15,7 @@ namespace Radish.Model;
 [SugarIndex("idx_benefit_type", nameof(BenefitType), OrderByType.Asc)]
 [SugarIndex("idx_benefit_active", nameof(UserId), OrderByType.Asc, nameof(IsActive), OrderByType.Asc)]
 [SugarIndex("idx_benefit_expires", nameof(ExpiresAt), OrderByType.Asc)]
-public class UserBenefit : RootEntityTKey<long>, IHasUserId
+public class UserBenefit : RootEntityTKey<long>, IHasUserId, ITenantEntity
 {
     /// <summary>初始化默认用户权益实例</summary>
     public UserBenefit()

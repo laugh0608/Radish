@@ -10,6 +10,7 @@ using Radish.Model.ViewModels;
 using Radish.Repository.UnitOfWorks;
 using Radish.Shared.CustomEnum;
 
+using Radish.Common.HttpContextTool;
 namespace Radish.Api.Controllers;
 
 /// <summary>测试事务-订单交易接口控制器</summary>
@@ -17,7 +18,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = "RadishAuthPolicy")]
+[Authorize(Policy = AuthorizationPolicies.RadishAuthPolicy)]
 public class TransactionController : ControllerBase
 {
     private readonly IBaseService<Role, RoleVo> _roleService;

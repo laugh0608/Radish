@@ -27,21 +27,26 @@ namespace Radish.Api.Controllers;
 public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
+    private readonly IContentModerationService _contentModerationService;
     private readonly IBaseService<Attachment, AttachmentVo> _attachmentService;
     private readonly IBaseService<Comment, CommentVo> _commentService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public PostController(
         IPostService postService,
+        IContentModerationService contentModerationService,
         IBaseService<Attachment, AttachmentVo> attachmentService,
         IBaseService<Comment, CommentVo> commentService,
-        IHttpContextUser httpContextUser)
+        ICurrentUserAccessor currentUserAccessor)
     {
         _postService = postService;
+        _contentModerationService = contentModerationService;
         _attachmentService = attachmentService;
         _commentService = commentService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>
     /// 根据 ID 获取帖子详情
@@ -329,17 +334,27 @@ public class PostController : ControllerBase
             };
         }
 
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var allowCreateTag = roles.Contains("Admin") || roles.Contains("System");
+        var publishPermission = await _contentModerationService.GetPublishPermissionAsync(Current.UserId);
+        if (!publishPermission.VoCanPublish)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = publishPermission.VoDenyReason ?? "当前状态无法发布内容"
+            };
+        }
+
+        var allowCreateTag = Current.IsSystemOrAdmin();
 
         var post = new Post(new PostInitializationOptions(request.Title, request.Content)
         {
-            AuthorId = _httpContextUser.UserId,
-            AuthorName = _httpContextUser.UserName,
+            AuthorId = Current.UserId,
+            AuthorName = Current.UserName,
             CategoryId = request.CategoryId,
             ContentType = request.ContentType ?? "markdown",
             IsPublished = true,
-            TenantId = _httpContextUser.TenantId
+            TenantId = Current.TenantId
         });
 
         try
@@ -383,7 +398,7 @@ public class PostController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> Like(long postId, bool isLike = true)
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
         var result = await _postService.ToggleLikeAsync(userId, postId);
 
         return new MessageModel
@@ -502,11 +517,10 @@ public class PostController : ControllerBase
             };
         }
 
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var isAdmin = Current.IsSystemOrAdmin();
 
         // 权限验证：作者本人或管理员可编辑
-        if (post.VoAuthorId != _httpContextUser.UserId && !isAdmin)
+        if (post.VoAuthorId != Current.UserId && !isAdmin)
         {
             return new MessageModel
             {
@@ -516,7 +530,7 @@ public class PostController : ControllerBase
             };
         }
 
-        var allowCreateTag = roles.Contains("Admin") || roles.Contains("System");
+        var allowCreateTag = Current.IsSystemOrAdmin();
 
         try
         {
@@ -527,8 +541,8 @@ public class PostController : ControllerBase
                 categoryId: request.CategoryId,
                 tagNames: normalizedTagNames,
                 allowCreateTag: allowCreateTag,
-                operatorId: _httpContextUser.UserId,
-                operatorName: _httpContextUser.UserName,
+                operatorId: Current.UserId,
+                operatorName: Current.UserName,
                 isAdmin: isAdmin);
         }
         catch (InvalidOperationException ex)
@@ -623,9 +637,8 @@ public class PostController : ControllerBase
         }
 
         // 权限验证：只有作者本人或管理员可以删除
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
-        if (post.VoAuthorId != _httpContextUser.UserId && !isAdmin)
+        var isAdmin = Current.IsSystemOrAdmin();
+        if (post.VoAuthorId != Current.UserId && !isAdmin)
         {
             return new MessageModel
             {
@@ -641,8 +654,8 @@ public class PostController : ControllerBase
             {
                 IsDeleted = true,
                 ModifyTime = DateTime.Now,
-                ModifyBy = _httpContextUser.UserName,
-                ModifyId = _httpContextUser.UserId
+                ModifyBy = Current.UserName,
+                ModifyId = Current.UserId
             },
             p => p.Id == postId);
 

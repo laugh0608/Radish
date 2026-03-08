@@ -14,6 +14,7 @@ using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
+using Microsoft.Extensions.FileProviders;
 using Radish.Common.TimeTool;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
@@ -41,6 +42,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
 using Hangfire;
 using Hangfire.Storage.SQLite;
+using Radish.Common.DocumentTool;
 using Radish.Service.Jobs;
 using Radish.Api.Filters;
 using Radish.Api.Hubs;
@@ -53,6 +55,37 @@ using Radish.Service.Base;
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
 // -------------- 容器构建阶段 ---------------
+
+static string ResolveSharedConfigPath(string basePath, string contentRootPath)
+{
+    var candidates = new[]
+    {
+        Path.Combine(basePath, "appsettings.Shared.json"),
+        Path.Combine(contentRootPath, "appsettings.Shared.json")
+    };
+
+    foreach (var candidate in candidates)
+    {
+        if (File.Exists(candidate))
+        {
+            return candidate;
+        }
+    }
+
+    var currentDir = new DirectoryInfo(contentRootPath);
+    while (currentDir != null)
+    {
+        var candidate = Path.Combine(currentDir.FullName, "appsettings.Shared.json");
+        if (File.Exists(candidate))
+        {
+            return candidate;
+        }
+
+        currentDir = currentDir.Parent;
+    }
+
+    return Path.Combine(contentRootPath, "appsettings.Shared.json");
+}
 
 // 🔧 禁用 JWT 默认的 claim type 映射，保持 OIDC 标准 claims（sub, name, role 等）原样
 // 这样避免 "sub" 被映射为 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
@@ -72,8 +105,10 @@ builder.Host
 
         // 配置文件统一从输出目录（AppContext.BaseDirectory）读取，避免受工作目录影响
         var basePath = AppContext.BaseDirectory;
+        var sharedConfigPath = ResolveSharedConfigPath(basePath, hostingContext.HostingEnvironment.ContentRootPath);
 
         config.Sources.Clear();
+        config.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: false);
         config.AddJsonFile(Path.Combine(basePath, "appsettings.json"), optional: true, reloadOnChange: false);
         config.AddJsonFile(Path.Combine(basePath, $"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json"),
             optional: true, reloadOnChange: false);
@@ -287,8 +322,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             OnTokenValidated = context =>
             {
                 var path = context.HttpContext.Request.Path;
-                var userId = context.Principal?.FindFirst("sub")?.Value;
-                Log.Information("[JWT] OnTokenValidated - Path: {Path}, UserId: {UserId}", path, userId);
+                var currentUser = context.HttpContext.RequestServices.GetRequiredService<IClaimsPrincipalNormalizer>()
+                    .Normalize(context.Principal);
+                Log.Information("[JWT] OnTokenValidated - Path: {Path}, UserId: {UserId}", path, currentUser.UserId);
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>
@@ -325,43 +361,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorizationBuilder()
            // Client 授权方案，基于 scope 控制访问 radish-api
            // OpenIddict 默认会把多个 scope 以空格拼成一个字符串（例如："openid profile radish-api"），因此这里需要按空格拆分判断
-           .AddPolicy("Client", policy => policy.RequireAssertion(ctx =>
+           .AddPolicy(AuthorizationPolicies.Client, policy => policy.RequireAssertion(ctx =>
            {
                // 【调试】输出所有 claims，用于诊断授权失败问题
                var allClaims = ctx.User.Claims.Select(c => $"{c.Type}={c.Value}").ToArray();
                Log.Information("[Client Policy] 所有 Claims: {Claims}", string.Join(", ", allClaims));
 
-               var scopeClaims = ctx.User.FindAll("scope").ToList();
-               Log.Information("[Client Policy] 找到 {Count} 个 scope claims", scopeClaims.Count);
+               var scopes = UserClaimReader.GetScopes(ctx.User);
+               Log.Information("[Client Policy] 归一化后 scopes: {Scopes}", string.Join(", ", scopes));
 
-               foreach (var claim in scopeClaims)
+               if (UserClaimReader.HasScope(ctx.User, UserScopes.RadishApi))
                {
-                   Log.Information("[Client Policy] scope claim value: {Value}", claim.Value);
-
-                   if (string.IsNullOrWhiteSpace(claim.Value))
-                       continue;
-
-                   var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-                   foreach (var s in scopes)
-                   {
-                       Log.Information("[Client Policy] 检查 scope: {Scope}", s);
-                       if (string.Equals(s, "radish-api", StringComparison.Ordinal))
-                       {
-                           Log.Information("[Client Policy] ✓ 找到 radish-api scope，授权成功");
-                           return true;
-                       }
-                   }
+                   Log.Information("[Client Policy] ✓ 找到 {Scope} scope，授权成功", UserScopes.RadishApi);
+                   return true;
                }
 
-               Log.Warning("[Client Policy] ✗ 未找到 radish-api scope，授权失败");
+               Log.Warning("[Client Policy] ✗ 未找到 {Scope} scope，授权失败", UserScopes.RadishApi);
                return false;
            }).Build())
            // System 授权方案，RequireRole 方式
-           .AddPolicy("System", policy => policy.RequireRole("System").Build())
+           .AddPolicy(AuthorizationPolicies.System, policy => policy.RequireRole(UserRoles.System).Build())
            // SystemOrAdmin 授权方案，RequireRole 方式
-           .AddPolicy("SystemOrAdmin", policy => policy.RequireRole("System", "Admin").Build())
+           .AddPolicy(AuthorizationPolicies.SystemOrAdmin, policy => policy.RequireRole(UserRoles.System, UserRoles.Admin).Build())
            // 自定义授权策略
-           .AddPolicy("RadishAuthPolicy", policy => policy.Requirements.Add(new PermissionRequirement()));
+           .AddPolicy(AuthorizationPolicies.RadishAuthPolicy, policy => policy.Requirements.Add(new PermissionRequirement()));
 // 注册自定义授权策略中间件
 builder.Services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
 // 注册 PermissionRequirement 鉴权类
@@ -369,6 +392,8 @@ builder.Services.AddSingleton(new PermissionRequirement());
 // 注册 HttpContext 上下文服务
 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 // 注册 HttpContext 获取用户信息服务
+builder.Services.AddScoped<IClaimsPrincipalNormalizer, ClaimsPrincipalNormalizer>();
+builder.Services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 builder.Services.AddScoped<IHttpContextUser, HttpContextUser>();
 
 // 注册 Hangfire 服务
@@ -443,6 +468,23 @@ app.UseStaticFiles(new StaticFileOptions
     FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsFullPath),
     RequestPath = uploadsUrl
 });
+
+var documentOptions = app.Services.GetRequiredService<IOptions<DocumentOptions>>().Value;
+if (documentOptions.ShowBuiltInDocs)
+{
+    var builtInDocsRoot = Path.IsPathRooted(documentOptions.BuiltInDocsPath)
+        ? documentOptions.BuiltInDocsPath
+        : Path.Combine(Radish.Common.CoreTool.AppPathTool.GetSolutionRootOrBasePath(), documentOptions.BuiltInDocsPath);
+
+    if (Directory.Exists(builtInDocsRoot))
+    {
+        app.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new BuiltInDocumentStaticAssetFileProvider(new PhysicalFileProvider(builtInDocsRoot)),
+            RequestPath = documentOptions.StaticAssetsRequestPath
+        });
+    }
+}
 
 // Configure the HTTP request pipeline.
 // if (app.Environment.IsDevelopment())
@@ -705,6 +747,37 @@ if (shopConfig.GetValue<bool>("DailyStats:Enable", false))
         });
 
     Log.Information("[Hangfire] 已注册定时任务: shop-daily-stats (计划: {Schedule})", schedule);
+}
+
+try
+{
+    using var documentSyncScope = app.Services.CreateScope();
+    var wikiDocumentService = documentSyncScope.ServiceProvider.GetRequiredService<IWikiDocumentService>();
+    var builtInSyncSummary = await wikiDocumentService.SyncBuiltInDocumentsAsync();
+
+    if (builtInSyncSummary.IsSkipped)
+    {
+        Log.Information("固定文档启动同步已跳过: {Reason}", builtInSyncSummary.SkipReason ?? "未提供原因");
+    }
+    else
+    {
+        Log.Information(
+            "固定文档启动同步完成: Markdown {MarkdownFileCount}, 描述符 {DescriptorCount}, 生成目录 {GeneratedNodeCount}, 同步 {SyncedCount}, 新增 {CreatedCount}, 更新 {UpdatedCount}, 恢复 {RestoredCount}, 父子调整 {ParentAdjustedCount}, 软删除 {SoftDeletedCount}, 跳过 {SkippedCount}",
+            builtInSyncSummary.MarkdownFileCount,
+            builtInSyncSummary.DescriptorCount,
+            builtInSyncSummary.GeneratedNodeCount,
+            builtInSyncSummary.SyncedCount,
+            builtInSyncSummary.CreatedCount,
+            builtInSyncSummary.UpdatedCount,
+            builtInSyncSummary.RestoredCount,
+            builtInSyncSummary.ParentAdjustedCount,
+            builtInSyncSummary.SoftDeletedCount,
+            builtInSyncSummary.SkippedCount);
+    }
+}
+catch (Exception ex)
+{
+    Log.Error(ex, "固定文档启动同步失败");
 }
 
 // -------------- App 运行阶段 ---------------

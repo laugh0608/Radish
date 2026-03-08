@@ -1,25 +1,28 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 
 namespace Radish.Api.Hubs;
 
 /// <summary>聊天室 SignalR Hub</summary>
-[Authorize(Policy = "Client")]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class ChatHub : Hub
 {
     private readonly IChatService _chatService;
     private readonly IChatPresenceService _chatPresenceService;
+    private readonly IClaimsPrincipalNormalizer _claimsPrincipalNormalizer;
     private readonly ILogger<ChatHub> _logger;
 
     public ChatHub(
         IChatService chatService,
         IChatPresenceService chatPresenceService,
+        IClaimsPrincipalNormalizer claimsPrincipalNormalizer,
         ILogger<ChatHub> logger)
     {
         _chatService = chatService;
         _chatPresenceService = chatPresenceService;
+        _claimsPrincipalNormalizer = claimsPrincipalNormalizer;
         _logger = logger;
     }
 
@@ -140,12 +143,10 @@ public class ChatHub : Hub
 
     private long GetUserId()
     {
-        var userIdClaim = Context.User?.FindFirst("sub")?.Value
-            ?? Context.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        if (!string.IsNullOrWhiteSpace(userIdClaim) && long.TryParse(userIdClaim, out var userId) && userId > 0)
+        var currentUser = GetCurrentUser();
+        if (currentUser.UserId > 0)
         {
-            return userId;
+            return currentUser.UserId;
         }
 
         throw new HubException("无法获取用户 Id");
@@ -153,19 +154,37 @@ public class ChatHub : Hub
 
     private long GetTenantId()
     {
-        var tenantIdClaim = Context.User?.FindFirst("tenant_id")?.Value
-            ?? Context.User?.FindFirst("TenantId")?.Value;
-
-        return !string.IsNullOrWhiteSpace(tenantIdClaim) && long.TryParse(tenantIdClaim, out var tenantId)
-            ? tenantId
-            : 0;
+        return GetCurrentUser().TenantId;
     }
 
     private string GetUserName()
     {
-        var userName = Context.User?.FindFirst("name")?.Value
-            ?? Context.User?.FindFirst(ClaimTypes.Name)?.Value;
+        var currentUser = GetCurrentUser();
+        return string.IsNullOrWhiteSpace(currentUser.UserName) ? "Unknown" : currentUser.UserName;
+    }
 
-        return string.IsNullOrWhiteSpace(userName) ? "Unknown" : userName;
+    private CurrentUser GetCurrentUser()
+    {
+        return _claimsPrincipalNormalizer.Normalize(Context.User, GetAccessToken());
+    }
+
+    private string? GetAccessToken()
+    {
+        var httpContext = Context.GetHttpContext();
+        var accessToken = httpContext?.Request.Query["access_token"].ToString();
+        if (!string.IsNullOrWhiteSpace(accessToken))
+        {
+            return accessToken;
+        }
+
+        var authorization = httpContext?.Request.Headers.Authorization.ToString();
+        if (string.IsNullOrWhiteSpace(authorization))
+        {
+            return null;
+        }
+
+        return authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            ? authorization["Bearer ".Length..].Trim()
+            : authorization;
     }
 }

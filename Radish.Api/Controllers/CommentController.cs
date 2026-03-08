@@ -25,13 +25,20 @@ namespace Radish.Api.Controllers;
 public class CommentController : ControllerBase
 {
     private readonly ICommentService _commentService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly IContentModerationService _contentModerationService;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public CommentController(ICommentService commentService, IHttpContextUser httpContextUser)
+    public CommentController(
+        ICommentService commentService,
+        IContentModerationService contentModerationService,
+        ICurrentUserAccessor currentUserAccessor)
     {
         _commentService = commentService;
-        _httpContextUser = httpContextUser;
+        _contentModerationService = contentModerationService;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>
     /// 获取帖子的评论树（带点赞状态）
@@ -45,7 +52,7 @@ public class CommentController : ControllerBase
     public async Task<MessageModel> GetCommentTree(long postId, string sortBy = "newest")
     {
         // 获取当前用户ID（如果已登录）
-        long? userId = _httpContextUser.UserId > 0 ? _httpContextUser.UserId : null;
+        long? userId = Current.UserId > 0 ? Current.UserId : null;
 
         // 获取带点赞状态的评论树
         var comments = await _commentService.GetCommentTreeWithLikeStatusAsync(postId, userId, sortBy);
@@ -79,15 +86,26 @@ public class CommentController : ControllerBase
             };
         }
 
+        var publishPermission = await _contentModerationService.GetPublishPermissionAsync(Current.UserId);
+        if (!publishPermission.VoCanPublish)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = publishPermission.VoDenyReason ?? "当前状态无法发布内容"
+            };
+        }
+
         var comment = new Comment(new CommentInitializationOptions(request.Content)
         {
             PostId = request.PostId,
             ParentId = request.ParentId,
             ReplyToUserId = request.ReplyToUserId,
             ReplyToUserName = request.ReplyToUserName,
-            AuthorId = _httpContextUser.UserId,
-            AuthorName = _httpContextUser.UserName,
-            TenantId = _httpContextUser.TenantId
+            AuthorId = Current.UserId,
+            AuthorName = Current.UserName,
+            TenantId = Current.TenantId
         });
 
         var commentId = await _commentService.AddCommentAsync(comment);
@@ -112,7 +130,7 @@ public class CommentController : ControllerBase
     {
         try
         {
-            var result = await _commentService.ToggleLikeAsync(_httpContextUser.UserId, commentId);
+            var result = await _commentService.ToggleLikeAsync(Current.UserId, commentId);
             return new MessageModel
             {
                 IsSuccess = true,
@@ -141,7 +159,7 @@ public class CommentController : ControllerBase
     [ProducesResponseType(typeof(MessageModel<Dictionary<long, bool>>), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetLikeStatus([FromBody] List<long> commentIds)
     {
-        var likeStatus = await _commentService.GetUserLikeStatusAsync(_httpContextUser.UserId, commentIds);
+        var likeStatus = await _commentService.GetUserLikeStatusAsync(Current.UserId, commentIds);
         return new MessageModel
         {
             IsSuccess = true,
@@ -168,7 +186,7 @@ public class CommentController : ControllerBase
     public async Task<MessageModel> GetChildComments(long parentId, int pageIndex = 1, int pageSize = 10)
     {
         // 获取用户ID（如果已登录）
-        long? userId = _httpContextUser.UserId > 0 ? _httpContextUser.UserId : null;
+        long? userId = Current.UserId > 0 ? Current.UserId : null;
 
         var (comments, total) = await _commentService.GetChildCommentsPageAsync(parentId, pageIndex, pageSize, userId);
 
@@ -257,9 +275,8 @@ public class CommentController : ControllerBase
         }
 
         // 权限验证：只有作者本人或管理员可以删除
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
-        if (comment.VoAuthorId != _httpContextUser.UserId && !isAdmin)
+        var isAdmin = Current.IsSystemOrAdmin();
+        if (comment.VoAuthorId != Current.UserId && !isAdmin)
         {
             return new MessageModel
             {
@@ -275,8 +292,8 @@ public class CommentController : ControllerBase
             {
                 IsDeleted = true,
                 ModifyTime = DateTime.Now,
-                ModifyBy = _httpContextUser.UserName,
-                ModifyId = _httpContextUser.UserId
+                ModifyBy = Current.UserName,
+                ModifyId = Current.UserId
             },
             c => c.Id == commentId);
 
@@ -328,10 +345,9 @@ public class CommentController : ControllerBase
             };
         }
 
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var isAdmin = Current.IsSystemOrAdmin();
 
-        if (comment.VoAuthorId != _httpContextUser.UserId && !isAdmin)
+        if (comment.VoAuthorId != Current.UserId && !isAdmin)
         {
             return new MessageModel
             {
@@ -344,8 +360,8 @@ public class CommentController : ControllerBase
         var (success, message) = await _commentService.UpdateCommentAsync(
             request.CommentId,
             request.Content,
-            _httpContextUser.UserId,
-            _httpContextUser.UserName,
+            Current.UserId,
+            Current.UserName,
             isAdmin);
 
         if (!success)

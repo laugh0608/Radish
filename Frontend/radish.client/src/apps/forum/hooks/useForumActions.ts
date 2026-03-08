@@ -57,11 +57,11 @@ export interface ForumActionsHandlers {
 
   // 帖子操作
   handleSelectPost: (postId: number) => Promise<void>;
-  handlePublishPost: (title: string, content: string, tagNames: string[]) => Promise<void>;
+  handlePublishPost: (title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
   handleLikePost: (postId: number) => Promise<void>;
   handleEditPost: (postId: number) => void;
   handleViewPostHistory: (postId: number) => Promise<void>;
-  handleSaveEdit: (postId: number, title: string, content: string, tagNames: string[]) => Promise<void>;
+  handleSaveEdit: (postId: number, title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
   handleDeletePost: (postId: number) => void;
   confirmDeletePost: () => Promise<void>;
   cancelDeletePost: () => void;
@@ -241,10 +241,11 @@ export const useForumActions = (
   };
 
   // 发布帖子
-  const handlePublishPost = async (title: string, content: string, tagNames: string[]) => {
-    if (!selectedCategoryId) {
-      setError('请先选择分类');
-      return;
+  const handlePublishPost = async (title: string, content: string, categoryId: number, tagNames: string[]) => {
+    if (categoryId <= 0) {
+      const message = '请先选择分类';
+      setError(message);
+      throw new Error(message);
     }
 
     const normalizedTagNames = normalizeTagNames(tagNames);
@@ -266,7 +267,7 @@ export const useForumActions = (
         {
           title,
           content,
-          categoryId: selectedCategoryId,
+          categoryId,
           tagNames: normalizedTagNames
         },
         t
@@ -329,11 +330,21 @@ export const useForumActions = (
 
   // 编辑帖子
   const handleEditPost = (postId: number) => {
-    if (!selectedPost || selectedPost.voId !== postId) {
-      setError('请先选择要编辑的帖子');
+    if (selectedPost?.voId === postId) {
+      setError(null);
+      setIsEditModalOpen(true);
       return;
     }
-    setIsEditModalOpen(true);
+
+    setError(null);
+    void loadPostDetail(postId)
+      .then(() => {
+        setIsEditModalOpen(true);
+      })
+      .catch((err) => {
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message);
+      });
   };
 
   const handleViewPostHistory = async (postId: number) => {
@@ -343,10 +354,10 @@ export const useForumActions = (
   };
 
   // 保存编辑
-  const handleSaveEdit = async (postId: number, title: string, content: string, tagNames: string[]) => {
+  const handleSaveEdit = async (postId: number, title: string, content: string, categoryId: number, tagNames: string[]) => {
     setError(null);
     try {
-      await updatePost({ postId, title, content, tagNames }, t);
+      await updatePost({ postId, title, content, categoryId, tagNames }, t);
       await Promise.all([loadPostDetail(postId), loadPosts()]);
       setIsEditModalOpen(false);
     } catch (err) {
@@ -477,8 +488,6 @@ export const useForumActions = (
 
       setReplyTo(null);
       await loadComments(selectedPost.voId);
-
-      setComments(prev => mergeCommentIntoTree(prev, parentId, newComment));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -488,11 +497,6 @@ export const useForumActions = (
   // 回复评论
   const handleReplyComment = (commentId: number, authorName: string) => {
     setReplyTo({ commentId, authorName });
-    setTimeout(() => {
-      const commentForm = document.querySelector('textarea');
-      commentForm?.focus();
-      commentForm?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
   };
 
   const handleCancelReply = () => {

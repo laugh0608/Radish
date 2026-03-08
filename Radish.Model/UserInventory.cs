@@ -14,7 +14,7 @@ namespace Radish.Model;
 [SugarIndex("idx_inventory_user", nameof(UserId), OrderByType.Asc)]
 [SugarIndex("idx_inventory_type", nameof(ConsumableType), OrderByType.Asc)]
 [SugarIndex("idx_inventory_user_type", nameof(UserId), OrderByType.Asc, nameof(ConsumableType), OrderByType.Asc)]
-public class UserInventory : RootEntityTKey<long>, IHasUserId
+public class UserInventory : RootEntityTKey<long>, IHasUserId, ITenantEntity
 {
     /// <summary>初始化默认用户背包实例</summary>
     public UserInventory()

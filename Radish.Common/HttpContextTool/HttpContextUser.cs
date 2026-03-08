@@ -6,179 +6,81 @@ using Microsoft.Extensions.Logging;
 namespace Radish.Common.HttpContextTool;
 
 /// <summary>
-/// 从 HTTP 上下文中获取请求的用户信息
+/// <see cref="IHttpContextUser"/> 的兼容实现，内部统一复用 <see cref="CurrentUser"/>。
 /// </summary>
 public class HttpContextUser : IHttpContextUser
 {
     private readonly IHttpContextAccessor _accessor;
-    private readonly ILogger<HttpContextUser> _logger;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public HttpContextUser(IHttpContextAccessor accessor, ILogger<HttpContextUser> logger)
+        : this(accessor, logger, new CurrentUserAccessor(accessor, new ClaimsPrincipalNormalizer()))
+    {
+    }
+
+    public HttpContextUser(IHttpContextAccessor accessor, ILogger<HttpContextUser> logger, ICurrentUserAccessor currentUserAccessor)
     {
         _accessor = accessor;
-        _logger = logger;
+        _currentUserAccessor = currentUserAccessor;
     }
 
-    /// <summary>
-    /// 用户名
-    /// </summary>
-    public string UserName => GetName();
+    private CurrentUser Current => _currentUserAccessor.Current;
 
-    /// <summary>
-    /// 获取用户名
-    /// </summary>
-    /// <returns></returns>
-    private string GetName()
-    {
-        if (!IsAuthenticated() || _accessor.HttpContext == null)
-        {
-            return "";
-        }
+    public string UserName => Current.UserName;
 
-        // 优先从 OIDC 的 name Claim 获取
-        var nameFromOidc = GetClaimValueByType("name").FirstOrDefault();
-        if (!nameFromOidc.IsNullOrEmpty())
-        {
-            return nameFromOidc;
-        }
+    public long UserId => Current.UserId;
 
-        // 兼容 ClaimTypes.Name
-        var nameFromClaimTypes = GetClaimValueByType(ClaimTypes.Name).FirstOrDefault();
-        if (!nameFromClaimTypes.IsNullOrEmpty())
-        {
-            return nameFromClaimTypes;
-        }
+    public long TenantId => Current.TenantId;
 
-        // 最后再使用 Identity.Name
-        var identityName = _accessor.HttpContext.User.Identity?.Name;
-        if (identityName.IsNotEmptyOrNull())
-        {
-            return identityName;
-        }
+    public List<string> Roles => Current.Roles.ToList();
 
-        return "";
-    }
-
-    /// <summary>
-    /// 用户 Id
-    /// </summary>
-    public long UserId => GetUserIdFromClaims();
-
-    /// <summary>
-    /// 租户 Id
-    /// </summary>
-    public long TenantId => GetTenantIdFromClaims();
-
-    private long GetUserIdFromClaims()
-    {
-        // 优先使用 OIDC 标准的 sub
-        var sub = GetClaimValueByType("sub").FirstOrDefault();
-        if (!sub.IsNullOrEmpty() && sub.ObjToLong() > 0)
-        {
-            return sub.ObjToLong();
-        }
-
-        // 兼容映射后的 ClaimTypes.NameIdentifier
-        var nameId = GetClaimValueByType(ClaimTypes.NameIdentifier).FirstOrDefault();
-        if (!nameId.IsNullOrEmpty() && nameId.ObjToLong() > 0)
-        {
-            return nameId.ObjToLong();
-        }
-
-        // 兼容旧版 jti
-        var jti = GetClaimValueByType("jti").FirstOrDefault();
-        if (!jti.IsNullOrEmpty() && jti.ObjToLong() > 0)
-        {
-            return jti.ObjToLong();
-        }
-
-        // 再退一步，直接从原始 Token 中解析 sub/jti，避免中间件 Claim 映射影响
-        var subFromToken = GetUserInfoFromToken("sub").FirstOrDefault();
-        if (!subFromToken.IsNullOrEmpty() && subFromToken.ObjToLong() > 0)
-        {
-            return subFromToken.ObjToLong();
-        }
-
-        var jtiFromToken = GetUserInfoFromToken("jti").FirstOrDefault();
-        if (!jtiFromToken.IsNullOrEmpty() && jtiFromToken.ObjToLong() > 0)
-        {
-            return jtiFromToken.ObjToLong();
-        }
-
-        return 0;
-    }
-
-    private long GetTenantIdFromClaims()
-    {
-        // 优先使用 tenant_id，其次兼容旧版 TenantId
-        var tenantId = GetClaimValueByType("tenant_id").FirstOrDefault();
-        if (!tenantId.IsNullOrEmpty() && tenantId.ObjToLong() > 0)
-        {
-            return tenantId.ObjToLong();
-        }
-
-        var legacyTenantId = GetClaimValueByType("TenantId").FirstOrDefault();
-        if (!legacyTenantId.IsNullOrEmpty())
-        {
-            return legacyTenantId.ObjToLong();
-        }
-
-        return 0;
-    }
-
-    /// <summary>
-    /// 是否已获得认证
-    /// </summary>
-    /// <returns></returns>
     public bool IsAuthenticated()
     {
         return _accessor.HttpContext?.User?.Identity?.IsAuthenticated ?? false;
     }
 
-    /// <summary>
-    /// 获取 Token
-    /// </summary>
-    /// <returns></returns>
+    [Obsolete("禁止新增使用，请改用 ICurrentUserAccessor；仅兼容历史 Bearer Token 直取场景")]
     public string GetToken()
     {
-        var token = _accessor.HttpContext?.Request?.Headers["Authorization"].ObjToString().Replace("Bearer ", "");
-        if (!token.IsNullOrEmpty())
+        var authorization = _accessor.HttpContext?.Request?.Headers.Authorization.ToString();
+        if (string.IsNullOrWhiteSpace(authorization))
         {
-            return token;
+            return string.Empty;
         }
 
-        return token;
+        return authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+            ? authorization[7..]
+            : authorization;
     }
 
-    /// <summary>
-    /// 从 Token 中获取用户信息
-    /// </summary>
-    /// <param name="claimType"></param>
-    /// <returns></returns>
+    [Obsolete("禁止新增使用，请改用 CurrentUser / ICurrentUserAccessor")]
     public List<string> GetUserInfoFromToken(string claimType)
     {
         var jwtHandler = new JwtSecurityTokenHandler();
-        var token = "";
-
-        token = GetToken();
-        // token 校验
+        var token = GetToken();
         if (token.IsNotEmptyOrNull() && jwtHandler.CanReadToken(token))
         {
-            JwtSecurityToken jwtToken = jwtHandler.ReadJwtToken(token);
-
+            var jwtToken = jwtHandler.ReadJwtToken(token);
             return (from item in jwtToken.Claims
                 where item.Type == claimType
                 select item.Value).ToList();
         }
 
-        return new List<string>() { };
+        return new List<string>();
     }
 
+    [Obsolete("禁止新增使用，请改用 CurrentUser / ICurrentUserAccessor")]
     public IEnumerable<Claim> GetClaimsIdentity()
     {
-        if (_accessor.HttpContext == null) return ArraySegment<Claim>.Empty;
+        if (_accessor.HttpContext == null)
+        {
+            return ArraySegment<Claim>.Empty;
+        }
 
-        if (!IsAuthenticated()) return GetClaimsIdentity(GetToken());
+        if (!IsAuthenticated())
+        {
+            return GetClaimsFromToken(GetToken());
+        }
 
         var claims = _accessor.HttpContext.User.Claims.ToList();
         var headers = _accessor.HttpContext.Request.Headers;
@@ -190,24 +92,28 @@ public class HttpContextUser : IHttpContextUser
         return claims;
     }
 
-    public IEnumerable<Claim> GetClaimsIdentity(string token)
+    private IEnumerable<Claim> GetClaimsFromToken(string token)
     {
         var jwtHandler = new JwtSecurityTokenHandler();
-        // token 校验
         if (token.IsNotEmptyOrNull() && jwtHandler.CanReadToken(token))
         {
             var jwtToken = jwtHandler.ReadJwtToken(token);
-
             return jwtToken.Claims;
         }
 
         return new List<Claim>();
     }
 
+    [Obsolete("禁止新增使用，请改用 CurrentUser / ICurrentUserAccessor")]
     public List<string> GetClaimValueByType(string claimType)
     {
         return (from item in GetClaimsIdentity()
             where item.Type == claimType
             select item.Value).ToList();
+    }
+
+    public bool IsInRole(string role)
+    {
+        return Current.IsInRole(role);
     }
 }

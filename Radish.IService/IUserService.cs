@@ -30,7 +30,8 @@ public interface IUserService : IBaseService<User, UserVo>
     /// 搜索用户（用于@提及功能）
     /// </summary>
     /// <param name="keyword">搜索关键词（匹配用户名）</param>
+    /// <param name="tenantId">当前租户 Id</param>
     /// <param name="limit">返回结果数量限制（默认10）</param>
     /// <returns>用户提及视图模型列表</returns>
-    Task<List<UserMentionVo>> SearchUsersForMentionAsync(string keyword, int limit = 10);
+    Task<List<UserMentionVo>> SearchUsersForMentionAsync(string keyword, long tenantId, int limit = 10);
 }

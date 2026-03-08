@@ -11,7 +11,7 @@ namespace Radish.Model;
 /// - 通过 UserId 与 User 表一对一关联（唯一约束）
 /// </remarks>
 [SugarTable("UserBalance")]
-public class UserBalance : RootEntityTKey<long>, IHasUserId, IDeleteFilter
+public class UserBalance : RootEntityTKey<long>, IHasUserId, IDeleteFilter, ITenantEntity
 {
     /// <summary>初始化默认用户余额实例</summary>
     public UserBalance()

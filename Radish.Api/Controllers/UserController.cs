@@ -26,14 +26,14 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-//[Authorize(Policy = "RadishAuthPolicy")]
+//[Authorize(Policy = AuthorizationPolicies.RadishAuthPolicy)]
 [Tags("用户管理")]
 public class UserController : ControllerBase
 {
     private readonly IAttachmentService _attachmentService;
 
     private readonly IUserService _userService;
-    private readonly IHttpContextUser  _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
@@ -43,7 +43,7 @@ public class UserController : ControllerBase
 
     public UserController(
         IUserService userService,
-        IHttpContextUser httpContextUser,
+        ICurrentUserAccessor currentUserAccessor,
         IPostService postService,
         ICommentService commentService,
         IUserTimePreferenceService userTimePreferenceService,
@@ -52,7 +52,7 @@ public class UserController : ControllerBase
         IOptions<TimeOptions> timeOptions)
     {
         _userService = userService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
         _postService = postService;
         _commentService = commentService;
         _userTimePreferenceService = userTimePreferenceService;
@@ -60,6 +60,8 @@ public class UserController : ControllerBase
         _attachmentService = attachmentService;
         _timeOptions = timeOptions.Value;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>
     /// 获取全部用户列表
@@ -77,6 +79,7 @@ public class UserController : ControllerBase
     /// <response code="403">禁止访问，权限不足</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -149,6 +152,7 @@ public class UserController : ControllerBase
     /// <response code="404">用户不存在</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet("{id:long}")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -205,16 +209,16 @@ public class UserController : ControllerBase
     /// <response code="403">禁止访问，权限不足</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel> GetUserByHttpContext()
     {
-        var userId = _httpContextUser.UserId;
-        var userName = _httpContextUser.UserName;
-        var tenantId = _httpContextUser.TenantId;
+        var userId = Current.UserId;
+        var userName = Current.UserName;
+        var tenantId = Current.TenantId;
 
         // 获取用户头像
         var avatar = await _attachmentService.QueryFirstAsync(a =>
@@ -273,11 +277,11 @@ public class UserController : ControllerBase
     /// 获取当前登录用户的时间偏好
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyTimePreference()
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
         var systemDefaultTimeZoneId = TimeZoneResolver.NormalizeToDisplayId(_timeOptions.DefaultTimeZoneId);
         var displayFormat = string.IsNullOrWhiteSpace(_timeOptions.DisplayFormat)
             ? "yyyy-MM-dd HH:mm:ss"
@@ -310,7 +314,7 @@ public class UserController : ControllerBase
     /// 更新当前登录用户的时间偏好
     /// </summary>
     [HttpPost]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     public async Task<MessageModel> UpdateMyTimePreference([FromBody] UpdateMyTimePreferenceDto dto)
@@ -338,9 +342,9 @@ public class UserController : ControllerBase
             };
         }
 
-        var userId = _httpContextUser.UserId;
-        var tenantId = _httpContextUser.TenantId;
-        var operatorName = string.IsNullOrWhiteSpace(_httpContextUser.UserName) ? "System" : _httpContextUser.UserName;
+        var userId = Current.UserId;
+        var tenantId = Current.TenantId;
+        var operatorName = string.IsNullOrWhiteSpace(Current.UserName) ? "System" : Current.UserName;
         var systemDefaultTimeZoneId = TimeZoneResolver.NormalizeToDisplayId(_timeOptions.DefaultTimeZoneId);
         var normalizedTimeZoneId = isResolvableTimeZone
             ? TimeZoneResolver.NormalizeToDisplayId(requestedTimeZoneId, systemDefaultTimeZoneId)
@@ -417,16 +421,15 @@ public class UserController : ControllerBase
     /// <param name="limit">返回结果数量限制（默认10，最大50）</param>
     /// <returns>用户列表</returns>
     /// <remarks>
-    /// 根据关键词搜索用户名，返回匹配的用户列表供@提及功能使用。
-    /// 允许匿名访问。
+    /// 根据关键词搜索用户名，返回当前租户下匹配的用户列表供@提及功能使用。
     /// </remarks>
     /// <response code="200">搜索成功，返回用户列表</response>
     [HttpGet]
-    [AllowAnonymous]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> SearchForMention(string keyword, int limit = 10)
     {
-        var users = await _userService.SearchUsersForMentionAsync(keyword, limit);
+        var users = await _userService.SearchUsersForMentionAsync(keyword, Current.TenantId, limit);
 
         return new MessageModel
         {
@@ -441,11 +444,11 @@ public class UserController : ControllerBase
     /// 获取当前登录用户的个人资料（个人中心）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyProfile()
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
         var user = await _userService.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted);
         if (user == null)
         {
@@ -493,11 +496,11 @@ public class UserController : ControllerBase
     /// 更新当前登录用户的个人资料（个人中心）
     /// </summary>
     [HttpPost]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> UpdateMyProfile([FromBody] UpdateMyProfileDto dto)
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var normalizedUserName = string.IsNullOrWhiteSpace(dto.UserName) ? null : dto.UserName.Trim();
         var normalizedUserEmail = string.IsNullOrWhiteSpace(dto.UserEmail) ? null : dto.UserEmail.Trim();
@@ -658,13 +661,13 @@ public class UserController : ControllerBase
     /// </summary>
     /// <param name="dto">附件 ID（0 表示清空头像）</param>
     [HttpPost]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> SetMyAvatar([FromBody] SetMyAvatarDto dto)
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
         var now = DateTime.UtcNow;
-        var modifierName = _httpContextUser.UserName;
+        var modifierName = Current.UserName;
 
         // 如果 attachmentId == 0，表示清空头像
         if (dto.AttachmentId == 0)
@@ -702,8 +705,7 @@ public class UserController : ControllerBase
         }
 
         // 只有上传者或管理员可以绑定为头像
-        var roles = _httpContextUser.GetClaimValueByType("role");
-        var isAdmin = roles.Contains("Admin") || roles.Contains("System");
+        var isAdmin = Current.IsSystemOrAdmin();
         if (attachment.VoUploaderId != userId && !isAdmin)
         {
             return new MessageModel
@@ -753,12 +755,12 @@ public class UserController : ControllerBase
     /// 获取当前用户积分余额（占位，M6 将接入真实积分系统）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyPoints()
     {
         await Task.CompletedTask;
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var vo = new UserPointsVo
         {
@@ -779,12 +781,12 @@ public class UserController : ControllerBase
     /// 获取当前用户未读消息数量（占位，将来接入真实通知系统）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetUnreadMessageCount()
     {
         await Task.CompletedTask;
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
 
         var result = new VoUnreadMessageCount
         {
@@ -806,11 +808,11 @@ public class UserController : ControllerBase
     /// </summary>
     /// <param name="count">要推送的未读数量，默认为随机数</param>
     [HttpPost]
-    [Authorize(Policy = "Client")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> TestPushUnreadCount([FromQuery] int? count = null)
     {
-        var userId = _httpContextUser.UserId;
+        var userId = Current.UserId;
         var unreadCount = count ?? new Random().Next(1, 100);
 
         await _notificationPushService.PushUnreadCountAsync(userId, unreadCount);

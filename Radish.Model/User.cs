@@ -10,7 +10,7 @@ namespace Radish.Model;
 
 /// <summary>用户实体</summary>
 /// <remarks>对应仓储层生成的内存数据</remarks>
-public class User : RootEntityTKey<long>
+public class User : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认用户实例</summary>
     public User()

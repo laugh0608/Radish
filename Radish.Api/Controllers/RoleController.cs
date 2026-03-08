@@ -17,19 +17,21 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = "SystemOrAdmin")]
+[Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
 public class RoleController : ControllerBase
 {
     private readonly IBaseService<Role, RoleVo> _roleService;
     private readonly IMapper _mapper;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public RoleController(IMapper mapper, IBaseService<Role, RoleVo> roleService, IServiceScopeFactory scopeFactory, IHttpContextUser httpContextUser)
+    public RoleController(IMapper mapper, IBaseService<Role, RoleVo> roleService, IServiceScopeFactory scopeFactory, ICurrentUserAccessor currentUserAccessor)
     {
         _roleService = roleService;
         _mapper = mapper;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>获取全部角色，测试泛型基类和视图对象关系映射</summary>
     /// <returns>角色列表</returns>
@@ -250,8 +252,8 @@ public class RoleController : ControllerBase
                 {
                     IsDeleted = true,
                     ModifyTime = DateTime.Now,
-                    ModifyBy = _httpContextUser.UserName,
-                    ModifyId = _httpContextUser.UserId
+                    ModifyBy = Current.UserName,
+                    ModifyId = Current.UserId
                 },
                 r => r.Id == id);
 

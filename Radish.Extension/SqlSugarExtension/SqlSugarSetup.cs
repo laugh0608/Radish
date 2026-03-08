@@ -103,7 +103,7 @@ public static class SqlSugarSetup
     /// </remarks>
     private static string ResolveSqlAopUser()
     {
-        var userName = App.HttpContextUser?.UserName;
+        var userName = App.CurrentUser.UserName;
         if (!string.IsNullOrWhiteSpace(userName))
         {
             return userName;

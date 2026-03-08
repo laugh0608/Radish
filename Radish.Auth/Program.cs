@@ -21,10 +21,42 @@ using Microsoft.Extensions.Options;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
+using Radish.Common.HttpContextTool;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
 // -------------- 容器构建阶段 ---------------
+
+static string ResolveSharedConfigPath(string basePath, string contentRootPath)
+{
+    var candidates = new[]
+    {
+        Path.Combine(basePath, "appsettings.Shared.json"),
+        Path.Combine(contentRootPath, "appsettings.Shared.json")
+    };
+
+    foreach (var candidate in candidates)
+    {
+        if (File.Exists(candidate))
+        {
+            return candidate;
+        }
+    }
+
+    var currentDir = new DirectoryInfo(contentRootPath);
+    while (currentDir != null)
+    {
+        var candidate = Path.Combine(currentDir.FullName, "appsettings.Shared.json");
+        if (File.Exists(candidate))
+        {
+            return candidate;
+        }
+
+        currentDir = currentDir.Parent;
+    }
+
+    return Path.Combine(contentRootPath, "appsettings.Shared.json");
+}
 
 // 🔧 禁用 JWT 默认的 claim type 映射，保持 OIDC 标准 claims（sub, name, role 等）原样
 // 这样避免 "sub" 被映射为 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
@@ -43,7 +75,10 @@ builder.Host
     .ConfigureAppConfiguration((hostingContext, config) =>
     {
         hostingContext.Configuration.ConfigureApplication(); // 1. 绑定 InternalApp 扩展中的配置
+        var basePath = AppContext.BaseDirectory;
+        var sharedConfigPath = ResolveSharedConfigPath(basePath, hostingContext.HostingEnvironment.ContentRootPath);
         config.Sources.Clear();
+        config.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: true);
         config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
         config.AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json",
             optional: true, reloadOnChange: true);
@@ -268,7 +303,7 @@ builder.Services.AddOpenIddict()
                .AllowClientCredentialsFlow();
 
         // 注册允许的 Scopes
-        options.RegisterScopes("openid", "profile", "email", "offline_access", "radish-api");
+        options.RegisterScopes(UserScopes.OpenId, UserScopes.Profile, UserScopes.Email, UserScopes.OfflineAccess, UserScopes.RadishApi);
 
         // 从配置读取并设置令牌生命周期（分钟）
         var serverSection = builder.Configuration.GetSection("OpenIddict:Server");

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
@@ -59,6 +59,15 @@ export const CreateCommentForm = ({
   // 上传状态
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!replyTo || !textareaRef.current || !isAuthenticated || !hasPost) {
+      return;
+    }
+
+    textareaRef.current.focus();
+    textareaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [replyTo, isAuthenticated, hasPost]);
 
   const normalizeCode = (value: string): string => value.trim().toLowerCase();
 

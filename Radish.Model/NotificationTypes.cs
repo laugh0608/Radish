@@ -126,4 +126,7 @@ public static class BusinessType
 
     /// <summary>系统</summary>
     public const string System = "System";
+
+    /// <summary>Wiki 文档</summary>
+    public const string Wiki = "Wiki";
 }

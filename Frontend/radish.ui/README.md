@@ -413,9 +413,9 @@ const pagedResponse = await apiGet<PagedResponse<User>>(
 
 完整文档请查看：
 
-- **[UI 组件库概览](../../Docs/radish.docs/docs/frontend/ui-library.md)** - @radish/ui 的入口文档
-- **[前端组件文档](../../Docs/radish.docs/docs/frontend/components.md)** - 组件与用法说明
-- **[前端快速参考](../../Docs/radish.docs/docs/frontend/quick-reference.md)** - 常用 API 速查表
+- **[UI 组件库概览](../../Docs/frontend/ui-library.md)** - @radish/ui 的入口文档
+- **[前端组件文档](../../Docs/frontend/components.md)** - 组件与用法说明
+- **[前端快速参考](../../Docs/frontend/quick-reference.md)** - 常用 API 速查表
 - **[完整示例](../radish.console/src/examples/UIComponentsExample.tsx)** - 可运行的完整示例代码
 
 ## 开发
@@ -479,4 +479,4 @@ Ant Design 通过 npm 安装，所有代码都在 `node_modules` 中，构建后
 
 **版本**: 0.1.0
 **维护**: Radish Team
-**文档**: [frontend/ui-library.md](../../Docs/radish.docs/docs/frontend/ui-library.md)
+**文档**: [frontend/ui-library.md](../../Docs/frontend/ui-library.md)

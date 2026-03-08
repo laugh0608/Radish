@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
 import type { PostDetail, CommentNode } from '@/api/forum';
+import type { UserFollowStatus } from '@/api/userFollow';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import { useReactions } from '../hooks/useReactions';
@@ -31,6 +32,8 @@ interface PostDetailContentViewProps {
   currentUserId: number;
   commentSortBy: 'newest' | 'hottest' | null;
   replyTo: { commentId: number; authorName: string } | null;
+  followStatus: UserFollowStatus | null;
+  followLoading: boolean;
 
   onBack: () => void;
   onLike: (postId: number) => void;
@@ -51,6 +54,7 @@ interface PostDetailContentViewProps {
   onCreateComment: (content: string) => Promise<void>;
   onCancelReply: () => void;
   onReactionError?: (message: string) => void;
+  onToggleFollow: (targetUserId: number, isFollowing: boolean) => Promise<void>;
 }
 
 const collectCommentIds = (nodes: CommentNode[]): number[] => {
@@ -84,6 +88,8 @@ export const PostDetailContentView = ({
   currentUserId,
   commentSortBy,
   replyTo,
+  followStatus,
+  followLoading,
   onBack,
   onLike,
   onEdit,
@@ -99,6 +105,7 @@ export const PostDetailContentView = ({
   onCreateComment,
   onCancelReply,
   onReactionError,
+  onToggleFollow,
 }: PostDetailContentViewProps) => {
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -221,6 +228,9 @@ export const PostDetailContentView = ({
               stickerMap={stickerMap}
               onToggleReaction={(payload) => reactionsState.togglePostReaction(post.voId, payload)}
               onRequireReactionLogin={handleRequireReactionLogin}
+              followStatus={followStatus}
+              followLoading={followLoading}
+              onToggleFollow={onToggleFollow}
             />
           </Suspense>
 

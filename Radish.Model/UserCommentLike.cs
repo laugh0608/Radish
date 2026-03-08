@@ -6,8 +6,15 @@ namespace Radish.Model;
 
 /// <summary>用户评论点赞关系实体</summary>
 /// <remarks>记录用户对评论的点赞关系，支持查询点赞状态和点赞用户列表</remarks>
-public class UserCommentLike : RootEntityTKey<long>
+public class UserCommentLike : RootEntityTKey<long>, ITenantEntity
 {
+    /// <summary>
+    /// 租户ID
+    /// </summary>
+    /// <remarks>不可为空，默认公共租户 0</remarks>
+    [SugarColumn(ColumnDescription = "租户ID", IsNullable = false)]
+    public long TenantId { get; set; } = 0;
+
     /// <summary>
     /// 用户ID
     /// </summary>

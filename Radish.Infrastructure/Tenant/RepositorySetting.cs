@@ -15,22 +15,28 @@ public static class RepositorySetting
     /// </summary>
     public static void SetTenantEntityFilter(SqlSugarScopeProvider db)
     {
-        // 如果当前请求的用户 UserId 或 TenantId 小于等于 0，则默认返回表中的所有数据
-        if (App.HttpContextUser is not { UserId: > 0, TenantId: > 0 })
-        {
-            // TODO: 后续需要更细致的完善这部分数据的处理与隔离
-            return;
-        }
-
-        // 如果用户或租户 Id 存在，则对查询的数据根据 TenantId 进行过滤
+        var tenantId = App.CurrentUser.TenantId;
 
         // 多租户-单表（字段）
         // 也就是说所有人的数据都在一张表里，然后根据这张表里的 TenantId 字段来区分是哪个租户的数据
-        db.QueryFilter.AddTableFilter<ITenantEntity>(it =>
-            it.TenantId == App.HttpContextUser.TenantId || it.TenantId == 0);
+        // 规则：
+        // 1. tenantId > 0：可见“当前租户 + 公共租户(0)”数据
+        // 2. tenantId <= 0：仅可见公共租户(0)数据，避免越权读取其他租户
+        if (tenantId > 0)
+        {
+            db.QueryFilter.AddTableFilter<ITenantEntity>(it => it.TenantId == tenantId || it.TenantId == 0);
+        }
+        else
+        {
+            db.QueryFilter.AddTableFilter<ITenantEntity>(it => it.TenantId == 0);
+        }
 
         // 多租户-多表
-        db.SetTenantTable(App.HttpContextUser.TenantId.ToString());
+        // 仅在实际租户上下文时启用分表切换；tenantId<=0 走公共表
+        if (tenantId > 0)
+        {
+            db.SetTenantTable(tenantId.ToString());
+        }
     }
 
     private static readonly Lazy<IEnumerable<Type>> AllEntitys = new(() =>

@@ -11,8 +11,6 @@
   "scripts": {
     "dev:frontend": "npm run dev --workspace=radish.client",
     "dev:console": "npm run dev --workspace=radish.console",
-    "dev:docs": "npm run docs:dev --prefix Docs/radish.docs",
-    "build:docs": "npm run docs:build --prefix Docs/radish.docs",
     "dev:gateway": "dotnet run --project Radish.Gateway/Radish.Gateway.csproj",
     "dev:api": "dotnet run --project Radish.Api/Radish.Api.csproj",
     "type-check": "npm run type-check --workspace=@radish/ui && npm run type-check --workspace=radish.client && npm run type-check --workspace=radish.console",

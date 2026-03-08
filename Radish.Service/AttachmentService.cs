@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Radish.Common.CoreTool;
+using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
 using Radish.Infrastructure.FileStorage;
 using Radish.Infrastructure.ImageProcessing;
@@ -59,6 +60,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     {
         try
         {
+            var normalizedTenantId = NormalizeTenantId(App.CurrentUser.TenantId);
+
             // 1. 基础校验
             if (file == null || file.Length == 0)
             {
@@ -92,7 +95,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 {
                     // 检查是否已存在相同文件（去重）
                     var existingAttachment = await _attachmentRepository.QueryFirstAsync(
-                        a => a.FileHash == fileHash && !a.IsDeleted
+                        a => a.FileHash == fileHash && a.TenantId == normalizedTenantId && !a.IsDeleted
                     );
 
                     if (existingAttachment != null)
@@ -191,6 +194,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 UploaderName = uploaderName,
                 BusinessType = optionsDto.BusinessType,
                 BusinessId = businessId, // 头像文件关联到用户ID
+                TenantId = normalizedTenantId,
                 IsPublic = true,
                 DownloadCount = 0
             };
@@ -234,8 +238,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 {
                     IsDeleted = true,
                     ModifyTime = DateTime.Now,
-                    ModifyBy = "System", // TODO: 从当前用户上下文获取
-                    ModifyId = 0 // TODO: 从当前用户上下文获取
+                    ModifyBy = string.IsNullOrWhiteSpace(App.CurrentUser.UserName) ? "System" : App.CurrentUser.UserName,
+                    ModifyId = App.CurrentUser.UserId
                 },
                 a => a.Id == attachmentId);
 
@@ -285,8 +289,13 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     /// </summary>
     public async Task<List<AttachmentVo>> GetByBusinessAsync(string businessType, long businessId)
     {
+        var normalizedTenantId = NormalizeTenantId(App.CurrentUser.TenantId);
+
         var attachments = await _attachmentRepository.QueryAsync(
-            a => a.BusinessType == businessType && a.BusinessId == businessId && !a.IsDeleted
+            a => a.BusinessType == businessType
+                 && a.BusinessId == businessId
+                 && a.TenantId == normalizedTenantId
+                 && !a.IsDeleted
         );
 
         return Mapper.Map<List<AttachmentVo>>(attachments);
@@ -302,14 +311,23 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             return null;
         }
 
+        var normalizedTenantId = NormalizeTenantId(App.CurrentUser.TenantId);
+
         var attachment = await _attachmentRepository.QueryFirstAsync(
-            a => a.FileHash == fileHash && !a.IsDeleted
+            a => a.FileHash == fileHash
+                 && a.TenantId == normalizedTenantId
+                 && !a.IsDeleted
         );
 
         return attachment == null ? null : Mapper.Map<AttachmentVo>(attachment);
     }
 
     #endregion
+
+    private static long NormalizeTenantId(long tenantId)
+    {
+        return tenantId > 0 ? tenantId : 0;
+    }
 
     #region Update
 
@@ -376,7 +394,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 // - Admin/System 角色可下载
                 // - 其他用户无权下载
                 var isUploader = requestUserId.HasValue && attachment.UploaderId == requestUserId.Value;
-                var isAdmin = requestUserRoles != null && (requestUserRoles.Contains("Admin") || requestUserRoles.Contains("System"));
+                var isAdmin = UserRoleHelper.IsSystemOrAdmin(requestUserRoles);
 
                 if (!isUploader && !isAdmin)
                 {

@@ -1,11 +1,11 @@
-using System.Security.Claims;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
-using Radish.Model;
 
 namespace Radish.Extension.PermissionExtension;
 
@@ -49,7 +49,7 @@ public class PermissionRequirementHandler : AuthorizationHandler<PermissionRequi
 
         if (httpContext != null)
         {
-            var questUrl = httpContext.Request.Path.Value.ToLower();
+            var questUrl = httpContext.Request.Path.Value?.ToLower() ?? string.Empty;
 
             // 整体结构类似认证中间件 UseAuthentication 的逻辑，具体查看开源地址
             // https://github.com/dotnet/aspnetcore/blob/master/src/Security/Authentication/Core/src/AuthenticationMiddleware.cs
@@ -74,39 +74,15 @@ public class PermissionRequirementHandler : AuthorizationHandler<PermissionRequi
                 {
                     if (!isTestCurrent) httpContext.User = result.Principal;
 
-                    // 应该要先校验用户的信息，再校验菜单权限相关的
-                    User user = new();
-                    // 判断 token 是否过期，过期则重新登录
-                    var isExp = false;
-                    // jwt
-                    isExp = (httpContext.User.Claims.FirstOrDefault(s => s.Type == ClaimTypes.Expiration)
-                                ?.Value) != null &&
-                            DateTime.Parse(httpContext.User.Claims
-                                .FirstOrDefault(s => s.Type == ClaimTypes.Expiration)?.Value) >= DateTime.Now;
-
-                    if (!isExp)
-                    {
-                        context.Fail(new AuthorizationFailureReason(this, "授权已过期，请重新授权"));
-                        return;
-                    }
-
-                    // 获取当前用户的角色信息
-                    List<string> currentUserRoles = (from item in httpContext.User.Claims
-                        where item.Type == ClaimTypes.Role
-                        select item.Value).ToList();
-                    if (!currentUserRoles.Any())
-                    {
-                        currentUserRoles = (from item in httpContext.User.Claims
-                            where item.Type == "role"
-                            select item.Value).ToList();
-                    }
+                    var currentUser = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().Current;
+                    var currentUserRoles = currentUser.Roles;
 
                     // 超级管理员 默认拥有所有权限
-                    if (currentUserRoles.All(s => s != "System"))
+                    if (!currentUser.IsInRole(UserRoles.System))
                     {
                         var isMatchRole = false;
                         var permisssionRoles =
-                            requirement.PermissionItems.Where(w => currentUserRoles.Contains(w.Role));
+                            requirement.PermissionItems.Where(w => UserRoleHelper.ContainsRole(currentUserRoles, w.Role));
                         foreach (var item in permisssionRoles)
                         {
                             try

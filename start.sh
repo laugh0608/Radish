@@ -7,7 +7,6 @@ API_PROJECT="$ROOT_DIR/Radish.Api/Radish.Api.csproj"
 AUTH_PROJECT="$ROOT_DIR/Radish.Auth/Radish.Auth.csproj"
 CLIENT_DIR="$ROOT_DIR/Frontend/radish.client"
 CONSOLE_DIR="$ROOT_DIR/Frontend/radish.console"
-DOCS_DIR="$ROOT_DIR/Docs/radish.docs"
 DBMIGRATE_PROJECT="$ROOT_DIR/Radish.DbMigrate/Radish.DbMigrate.csproj"
 TEST_PROJECT="$ROOT_DIR/Radish.Api.Tests/Radish.Api.Tests.csproj"
 
@@ -33,17 +32,9 @@ invoke_step() {
   "$@"
 }
 
-# 记录后台服务 PID，脚本退出或中断时统一清理
 BG_PIDS=()
-
-add_bg_pid() {
-  BG_PIDS+=("$1")
-}
-
+add_bg_pid() { BG_PIDS+=("$1"); }
 cleanup() {
-  if declare -f leave_menu_mode >/dev/null 2>&1; then
-    leave_menu_mode
-  fi
   if ((${#BG_PIDS[@]} == 0)); then
     return
   fi
@@ -56,7 +47,6 @@ cleanup() {
     fi
   done
 }
-
 trap cleanup EXIT INT TERM
 
 print_banner() {
@@ -79,40 +69,33 @@ print_menu() {
   echo "  0. 退出"
   echo
   echo "[单服务]"
-  echo "  1. 启动 API           (Radish.Api           @ https://localhost:5000)"
-  echo "  2. 启动 Gateway       (Radish.Gateway       @ https://localhost:5001)"
-  echo "  3. 启动 Frontend      (Frontend/radish.client  @ https://localhost:3000)"
-  echo "  4. 启动 Docs          (Docs/radish.docs        @ http://localhost:4000/docs/)"
-  echo "  5. 启动 Console       (Frontend/radish.console @ https://localhost:3100)"
-  echo "  6. 启动 Auth          (Radish.Auth          @ http://localhost:5200)"
-  echo "  7. 运行 DbMigrate     (Radish.DbMigrate     @ init/seed)"
-  echo "  8. 运行单元测试       (Radish.Api.Tests)"
+  echo "  1. 启动 API           (Radish.Api              @ http://localhost:5100)"
+  echo "  2. 启动 Gateway       (Radish.Gateway          @ https://localhost:5000)"
+  echo "  3. 启动 Frontend      (Frontend/radish.client  @ http://localhost:3000)"
+  echo "  4. 启动 Console       (Frontend/radish.console @ http://localhost:3100)"
+  echo "  5. 启动 Auth          (Radish.Auth             @ http://localhost:5200)"
+  echo "  6. 运行 DbMigrate     (Radish.DbMigrate        @ init/seed)"
+  echo "  7. 运行单元测试       (Radish.Api.Tests)"
   echo
   echo "[组合启动]"
-  echo "  9. 启动 Gateway + Auth + API"
-  echo " 10. 启动 Frontend + Console + Docs"
+  echo "  8. 启动 Gateway + Auth + API"
+  echo "  9. 启动 Frontend + Console"
   echo
   echo "[全部启动]"
-  echo " 11. 一键启动全部服务 (Gateway + API + Auth + Frontend + Docs + Console)"
+  echo " 10. 一键启动全部服务 (Gateway + API + Auth + Frontend + Console)"
   echo
   echo "提示: 组合启动会将相关服务置于后台运行以便并行开发。"
   echo
 }
 
-# ---- 基础启动函数 ----
-
 build_all() {
-  (
-    cd "$ROOT_DIR"
-    invoke_step "dotnet build Radish.slnx ($CONFIGURATION)" dotnet build Radish.slnx -c "$CONFIGURATION"
-  )
+  ( cd "$ROOT_DIR" && invoke_step "dotnet build Radish.slnx ($CONFIGURATION)" dotnet build Radish.slnx -c "$CONFIGURATION" )
 }
 
 start_api() {
   (
     cd "$ROOT_DIR"
     export ASPNETCORE_URLS="http://localhost:5100"
-
     invoke_step "dotnet clean ($CONFIGURATION)" dotnet clean "$API_PROJECT" -c "$CONFIGURATION"
     invoke_step "dotnet restore" dotnet restore "$API_PROJECT"
     invoke_step "dotnet build ($CONFIGURATION)" dotnet build "$API_PROJECT" -c "$CONFIGURATION"
@@ -121,53 +104,18 @@ start_api() {
 }
 
 start_api_no_build() {
-  (
-    cd "$ROOT_DIR"
-    export ASPNETCORE_URLS="http://localhost:5100"
-    invoke_step "dotnet run API (no-build, http only)" dotnet run --no-build --project "$API_PROJECT" -c "$CONFIGURATION" --launch-profile http
-  )
+  ( cd "$ROOT_DIR" && export ASPNETCORE_URLS="http://localhost:5100" && invoke_step "dotnet run API (no-build, http only)" dotnet run --no-build --project "$API_PROJECT" -c "$CONFIGURATION" --launch-profile http )
 }
 
-start_gateway() {
-  (
-    cd "$ROOT_DIR"
-    dotnet run --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https
-  )
-}
-
-start_gateway_no_build() {
-  (
-    cd "$ROOT_DIR"
-    exec dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https
-  )
-}
-
-start_frontend() {
-  (
-    cd "$ROOT_DIR"
-    exec npm run dev --prefix "$CLIENT_DIR"
-  )
-}
-
-start_docs() {
-  (
-    cd "$ROOT_DIR"
-    exec npm run docs:dev --prefix "$DOCS_DIR"
-  )
-}
-
-start_console() {
-  (
-    cd "$ROOT_DIR"
-    exec npm run dev --prefix "$CONSOLE_DIR"
-  )
-}
+start_gateway() { ( cd "$ROOT_DIR" && dotnet run --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https ); }
+start_gateway_no_build() { ( cd "$ROOT_DIR" && exec dotnet run --no-build --project Radish.Gateway/Radish.Gateway.csproj --launch-profile https ); }
+start_frontend() { ( cd "$ROOT_DIR" && exec npm run dev --prefix "$CLIENT_DIR" ); }
+start_console() { ( cd "$ROOT_DIR" && exec npm run dev --prefix "$CONSOLE_DIR" ); }
 
 start_auth() {
   (
     cd "$ROOT_DIR"
     export ASPNETCORE_URLS="http://localhost:5200"
-
     invoke_step "dotnet clean ($CONFIGURATION)" dotnet clean "$AUTH_PROJECT" -c "$CONFIGURATION"
     invoke_step "dotnet restore" dotnet restore "$AUTH_PROJECT"
     invoke_step "dotnet build ($CONFIGURATION)" dotnet build "$AUTH_PROJECT" -c "$CONFIGURATION"
@@ -175,50 +123,27 @@ start_auth() {
   )
 }
 
-start_auth_no_build() {
-  (
-    cd "$ROOT_DIR"
-    export ASPNETCORE_URLS="http://localhost:5200"
-    exec dotnet run --no-build --project "$AUTH_PROJECT" -c "$CONFIGURATION" --launch-profile http
-  )
-}
+start_auth_no_build() { ( cd "$ROOT_DIR" && export ASPNETCORE_URLS="http://localhost:5200" && exec dotnet run --no-build --project "$AUTH_PROJECT" -c "$CONFIGURATION" --launch-profile http ); }
 
 start_dbmigrate() {
   (
     cd "$ROOT_DIR"
-    echo ""
+    echo
     echo "DbMigrate 命令说明："
     echo "  init - 仅初始化数据库表结构（Code First）"
     echo "  seed - 填充初始数据（如表不存在会自动执行 init）"
-    echo ""
+    echo
     read -rp "请选择 DbMigrate 子命令 [init/seed] (默认 seed, 输入 q 取消): " migrate_cmd
-    if [[ -z "${migrate_cmd:-}" ]]; then
-      migrate_cmd="seed"
-    fi
-    if [[ "$migrate_cmd" == "q" ]]; then
-      echo "已取消执行 DbMigrate。"
-      return
-    fi
+    if [[ -z "${migrate_cmd:-}" ]]; then migrate_cmd="seed"; fi
+    if [[ "$migrate_cmd" == "q" ]]; then echo "已取消执行 DbMigrate。"; return; fi
     case "$migrate_cmd" in
-      init | seed)
-        invoke_step "dotnet run DbMigrate ($migrate_cmd, $CONFIGURATION)" dotnet run --project "$DBMIGRATE_PROJECT" -c "$CONFIGURATION" -- "$migrate_cmd"
-        ;;
-      *)
-        echo "未知 DbMigrate 子命令: $migrate_cmd" >&2
-        exit 1
-        ;;
+      init|seed) invoke_step "dotnet run DbMigrate ($migrate_cmd, $CONFIGURATION)" dotnet run --project "$DBMIGRATE_PROJECT" -c "$CONFIGURATION" -- "$migrate_cmd" ;;
+      *) echo "未知 DbMigrate 子命令: $migrate_cmd" >&2; exit 1 ;;
     esac
   )
 }
 
-run_tests() {
-  (
-    cd "$ROOT_DIR"
-    invoke_step "dotnet test (Radish.Api.Tests)" dotnet test "$TEST_PROJECT" -c "$CONFIGURATION"
-  )
-}
-
-# ---- 组合启动函数 ----
+run_tests() { ( cd "$ROOT_DIR" && invoke_step "dotnet test (Radish.Api.Tests)" dotnet test "$TEST_PROJECT" -c "$CONFIGURATION" ); }
 
 start_gateway_auth_api() {
   echo "[组合] 启动 Gateway + Auth + API..."
@@ -233,7 +158,7 @@ start_gateway_auth_api() {
 }
 
 start_all() {
-  echo "[组合] 一键启动全部服务 (Gateway + API + Auth + Frontend + Docs + Console)..."
+  echo "[组合] 一键启动全部服务 (Gateway + API + Auth + Frontend + Console)..."
   build_all
   start_gateway_no_build &
   add_bg_pid $!
@@ -243,73 +168,36 @@ start_all() {
   echo "  - Auth 已在后台启动 (http://localhost:5200)."
   start_frontend &
   add_bg_pid $!
-  echo "  - Frontend 已在后台启动 (https://localhost:3000)."
-  start_docs &
-  add_bg_pid $!
-  echo "  - Docs 已在后台启动 (http://localhost:4000/docs/)."
+  echo "  - Frontend 已在后台启动 (http://localhost:3000)."
   start_console &
   add_bg_pid $!
-  echo "  - Console 已在后台启动 (http://localhost:3100/console/)."
+  echo "  - Console 已在后台启动 (http://localhost:3100)."
   start_api_no_build
 }
 
-start_frontend_console_docs() {
-  echo "[组合] 启动 Frontend + Console + Docs..."
+start_frontend_console() {
+  echo "[组合] 启动 Frontend + Console..."
   start_frontend &
   add_bg_pid $!
-  echo "  - Frontend 已在后台启动 (https://localhost:3000)."
-  start_console &
-  add_bg_pid $!
-  echo "  - Console 已在后台启动 (http://localhost:3100/console/)."
-  start_docs
+  echo "  - Frontend 已在后台启动 (http://localhost:3000)."
+  start_console
 }
-
-# ---- 主逻辑 ----
 
 print_banner
 print_menu
 read -rp "请输入选项编号: " choice
 
 case "$choice" in
-  0)
-    echo "已退出。"
-    exit 0
-    ;;
-  1)
-    start_api
-    ;;
-  2)
-    start_gateway
-    ;;
-  3)
-    start_frontend
-    ;;
-  4)
-    start_docs
-    ;;
-  5)
-    start_console
-    ;;
-  6)
-    start_auth
-    ;;
-  7)
-    start_dbmigrate
-    ;;
-  8)
-    run_tests
-    ;;
-  9)
-    start_gateway_auth_api
-    ;;
-  10)
-    start_frontend_console_docs
-    ;;
-  11)
-    start_all
-    ;;
-  *)
-    echo "Unknown option: $choice" >&2
-    exit 1
-    ;;
+  0) echo "已退出。"; exit 0 ;;
+  1) start_api ;;
+  2) start_gateway ;;
+  3) start_frontend ;;
+  4) start_console ;;
+  5) start_auth ;;
+  6) start_dbmigrate ;;
+  7) run_tests ;;
+  8) start_gateway_auth_api ;;
+  9) start_frontend_console ;;
+  10) start_all ;;
+  *) echo "Unknown option: $choice" >&2; exit 1 ;;
 esac

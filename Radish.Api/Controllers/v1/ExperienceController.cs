@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -14,19 +15,21 @@ namespace Radish.Api.Controllers.v1;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [ApiVersion(1)]
-[Authorize(Policy = "Client")]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class ExperienceController : ControllerBase
 {
     private readonly IExperienceService _experienceService;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public ExperienceController(
         IExperienceService experienceService,
-        IHttpContextAccessor httpContextAccessor)
+        ICurrentUserAccessor currentUserAccessor)
     {
         _experienceService = experienceService;
-        _httpContextAccessor = httpContextAccessor;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     #region 经验值查询
 
@@ -164,12 +167,10 @@ public class ExperienceController : ControllerBase
     /// <param name="request">调整请求</param>
     /// <returns>是否成功</returns>
     [HttpPost]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<bool>> AdminAdjustExperience([FromBody] AdminAdjustExpDto request)
     {
         var operatorId = GetCurrentUserId();
-        var operatorName = GetCurrentUserName();
-
         if (operatorId <= 0)
         {
             return MessageModel<bool>.Message(false, "未登录", false);
@@ -180,7 +181,7 @@ public class ExperienceController : ControllerBase
             request.DeltaExp,
             request.Reason ?? "管理员调整",
             operatorId,
-            operatorName ?? "Admin");
+            GetCurrentOperatorName());
 
         return result
             ? MessageModel<bool>.Success("调整成功", true)
@@ -196,12 +197,10 @@ public class ExperienceController : ControllerBase
     /// </remarks>
     /// <returns>更新后的等级配置列表</returns>
     [HttpPost]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<List<LevelConfigVo>>> RecalculateLevelConfigs()
     {
         var operatorId = GetCurrentUserId();
-        var operatorName = GetCurrentUserName();
-
         if (operatorId <= 0)
         {
             return MessageModel<List<LevelConfigVo>>.Message(false, "未登录", default!);
@@ -209,7 +208,7 @@ public class ExperienceController : ControllerBase
 
         try
         {
-            var result = await _experienceService.RecalculateLevelConfigsAsync(operatorId, operatorName ?? "Admin");
+            var result = await _experienceService.RecalculateLevelConfigsAsync(operatorId, GetCurrentOperatorName());
             return MessageModel<List<LevelConfigVo>>.Success($"成功重新计算 {result.Count} 个等级配置", result);
         }
         catch (Exception ex)
@@ -225,44 +224,19 @@ public class ExperienceController : ControllerBase
     /// <summary>
     /// 获取当前用户 ID
     /// </summary>
-    private long GetCurrentUserId()
-    {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext?.User?.Identity?.IsAuthenticated != true)
-        {
-            return 0;
-        }
-
-        // 尝试从 sub claim 获取（OIDC 标准）
-        var subClaim = httpContext.User.FindFirst("sub")?.Value;
-        if (!string.IsNullOrEmpty(subClaim) && long.TryParse(subClaim, out var userId))
-        {
-            return userId;
-        }
-
-        // 尝试从 jti claim 获取（兼容）
-        var jtiClaim = httpContext.User.FindFirst("jti")?.Value;
-        if (!string.IsNullOrEmpty(jtiClaim) && long.TryParse(jtiClaim, out userId))
-        {
-            return userId;
-        }
-
-        return 0;
-    }
+    private long GetCurrentUserId() => Current.UserId;
 
     /// <summary>
     /// 获取当前用户名
     /// </summary>
-    private string? GetCurrentUserName()
-    {
-        var httpContext = _httpContextAccessor.HttpContext;
-        if (httpContext?.User?.Identity?.IsAuthenticated != true)
-        {
-            return null;
-        }
+    private string? GetCurrentUserName() => string.IsNullOrWhiteSpace(Current.UserName)
+        ? null
+        : Current.UserName;
 
-        return httpContext.User.Identity.Name;
-    }
+    /// <summary>
+    /// 获取当前操作者名称
+    /// </summary>
+    private string GetCurrentOperatorName() => GetCurrentUserName() ?? UserRoles.Admin;
 
     #endregion
 }

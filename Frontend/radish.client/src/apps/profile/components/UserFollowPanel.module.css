@@ -1,0 +1,199 @@
+.container {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.summaryItem {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9fafb;
+}
+
+.summaryLabel {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.summaryValue {
+  color: #111827;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.feedStreamTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.feedStreamTab {
+  border: 1px solid #dbe2ea;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #475569;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.feedStreamTabActive {
+  border-color: #2563eb;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.loading,
+.empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: #6b7280;
+}
+
+.list {
+  display: grid;
+  gap: 12px;
+}
+
+.feedItem {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.feedItem:hover {
+  border-color: #93c5fd;
+  background: #f8fbff;
+}
+
+.feedTitle {
+  margin: 0 0 8px;
+  font-size: 16px;
+  color: #111827;
+}
+
+.feedMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.userItem {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.userMain {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.userNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.userName {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.userDisplay {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.mutualBadge {
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 999px;
+  font-size: 12px;
+  padding: 2px 8px;
+}
+
+.userMeta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.pagination {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.pageButton {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #374151;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pageButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.pageInfo {
+  color: #4b5563;
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .tabs {
+    flex-direction: column;
+  }
+
+  .feedStreamTabs {
+    flex-wrap: wrap;
+  }
+}

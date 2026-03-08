@@ -25,13 +25,15 @@ namespace Radish.Api.Controllers;
 public class TagController : ControllerBase
 {
     private readonly ITagService _tagService;
-    private readonly IHttpContextUser _httpContextUser;
+    private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public TagController(ITagService tagService, IHttpContextUser httpContextUser)
+    public TagController(ITagService tagService, ICurrentUserAccessor currentUserAccessor)
     {
         _tagService = tagService;
-        _httpContextUser = httpContextUser;
+        _currentUserAccessor = currentUserAccessor;
     }
+
+    private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>
     /// 获取所有标签
@@ -136,7 +138,7 @@ public class TagController : ControllerBase
     /// 获取标签分页（管理端）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetPage(
         int pageIndex = 1,
@@ -161,7 +163,7 @@ public class TagController : ControllerBase
     /// 创建标签（管理端）
     /// </summary>
     [HttpPost]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> Create([FromBody] CreateTagDto createDto)
     {
@@ -177,7 +179,7 @@ public class TagController : ControllerBase
 
         try
         {
-            var tagId = await _tagService.CreateTagAsync(createDto, _httpContextUser.UserId, _httpContextUser.UserName);
+            var tagId = await _tagService.CreateTagAsync(createDto, Current.UserId, Current.UserName);
 
             return new MessageModel
             {
@@ -202,7 +204,7 @@ public class TagController : ControllerBase
     /// 更新标签（管理端）
     /// </summary>
     [HttpPut("{id:long}")]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> Update(long id, [FromBody] CreateTagDto updateDto)
     {
@@ -228,7 +230,7 @@ public class TagController : ControllerBase
 
         try
         {
-            var updated = await _tagService.UpdateTagAsync(id, updateDto, _httpContextUser.UserId, _httpContextUser.UserName);
+            var updated = await _tagService.UpdateTagAsync(id, updateDto, Current.UserId, Current.UserName);
             if (!updated)
             {
                 return new MessageModel
@@ -262,7 +264,7 @@ public class TagController : ControllerBase
     /// 启用/禁用标签（管理端）
     /// </summary>
     [HttpPut("{id:long}/status")]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> ToggleStatus(long id, [FromQuery] bool enabled)
     {
@@ -276,7 +278,7 @@ public class TagController : ControllerBase
             };
         }
 
-        var updated = await _tagService.ToggleTagStatusAsync(id, enabled, _httpContextUser.UserId, _httpContextUser.UserName);
+        var updated = await _tagService.ToggleTagStatusAsync(id, enabled, Current.UserId, Current.UserName);
         if (!updated)
         {
             return new MessageModel
@@ -300,7 +302,7 @@ public class TagController : ControllerBase
     /// 更新标签排序（管理端）
     /// </summary>
     [HttpPut("{id:long}/sort")]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> UpdateSort(long id, [FromQuery] int sortOrder)
     {
@@ -324,7 +326,7 @@ public class TagController : ControllerBase
             };
         }
 
-        var updated = await _tagService.UpdateTagSortOrderAsync(id, sortOrder, _httpContextUser.UserId, _httpContextUser.UserName);
+        var updated = await _tagService.UpdateTagSortOrderAsync(id, sortOrder, Current.UserId, Current.UserName);
         if (!updated)
         {
             return new MessageModel
@@ -348,7 +350,7 @@ public class TagController : ControllerBase
     /// 删除标签（软删除，管理端）
     /// </summary>
     [HttpDelete("{id:long}")]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> Delete(long id)
     {
@@ -362,7 +364,7 @@ public class TagController : ControllerBase
             };
         }
 
-        var deleted = await _tagService.SoftDeleteTagAsync(id, _httpContextUser.UserId, _httpContextUser.UserName);
+        var deleted = await _tagService.SoftDeleteTagAsync(id, Current.UserId, Current.UserName);
         if (!deleted)
         {
             return new MessageModel
@@ -386,7 +388,7 @@ public class TagController : ControllerBase
     /// 恢复标签（管理端）
     /// </summary>
     [HttpPut("{id:long}/restore")]
-    [Authorize(Policy = "SystemOrAdmin")]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> Restore(long id)
     {
@@ -400,7 +402,7 @@ public class TagController : ControllerBase
             };
         }
 
-        var restored = await _tagService.RestoreTagAsync(id, _httpContextUser.UserId, _httpContextUser.UserName);
+        var restored = await _tagService.RestoreTagAsync(id, Current.UserId, Current.UserName);
         if (!restored)
         {
             return new MessageModel

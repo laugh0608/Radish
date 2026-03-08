@@ -20,6 +20,12 @@ public class HttpContextUserTests
         return context;
     }
 
+    private static string CreateJwtToken(IEnumerable<Claim> claims)
+    {
+        var token = new JwtSecurityToken(claims: claims);
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
     [Fact]
     public void Should_Read_Oidc_Style_Claims_Correctly()
     {
@@ -29,7 +35,7 @@ public class HttpContextUserTests
             new("sub", "20002"),
             new("name", "test-user"),
             new("tenant_id", "30000"),
-            new(ClaimTypes.Role, "System")
+            new("role", "System")
         };
 
         var httpContext = CreateHttpContextWithClaims(claims);
@@ -40,11 +46,14 @@ public class HttpContextUserTests
         var userId = httpContextUser.UserId;
         var userName = httpContextUser.UserName;
         var tenantId = httpContextUser.TenantId;
+        var roles = httpContextUser.Roles;
 
         // Assert
         Assert.Equal(20002, userId);
         Assert.Equal("test-user", userName);
         Assert.Equal(30000, tenantId);
+        Assert.Contains("System", roles);
+        Assert.True(httpContextUser.IsInRole("System"));
     }
 
     [Fact]
@@ -67,11 +76,14 @@ public class HttpContextUserTests
         var userId = httpContextUser.UserId;
         var userName = httpContextUser.UserName;
         var tenantId = httpContextUser.TenantId;
+        var roles = httpContextUser.Roles;
 
         // Assert
         Assert.Equal(123, userId);
         Assert.Equal("legacy-user", userName);
         Assert.Equal(456, tenantId);
+        Assert.Contains("Admin", roles);
+        Assert.True(httpContextUser.IsInRole("Admin"));
     }
 
     [Fact]
@@ -87,11 +99,43 @@ public class HttpContextUserTests
         var userId = httpContextUser.UserId;
         var userName = httpContextUser.UserName;
         var tenantId = httpContextUser.TenantId;
+        var roles = httpContextUser.Roles;
 
         // Assert
         Assert.False(isAuthenticated);
         Assert.Equal(0, userId);
         Assert.Equal(string.Empty, userName);
         Assert.Equal(0, tenantId);
+        Assert.Empty(roles);
+        Assert.False(httpContextUser.IsInRole("Admin"));
+    }
+
+    [Fact]
+    public void Should_Read_TenantId_From_Token_When_ClaimsPrincipal_Missing()
+    {
+        // Arrange: 无认证主体，仅携带 Authorization Bearer Token
+        var token = CreateJwtToken(new List<Claim>
+        {
+            new("sub", "20003"),
+            new("tenant_id", "30003"),
+            new("role", "Admin")
+        });
+
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Headers.Authorization = $"Bearer {token}";
+
+        var accessor = new HttpContextAccessor { HttpContext = httpContext };
+        var httpContextUser = new HttpContextUser(accessor, NullLogger<HttpContextUser>.Instance);
+
+        // Act
+        var userId = httpContextUser.UserId;
+        var tenantId = httpContextUser.TenantId;
+        var roles = httpContextUser.Roles;
+
+        // Assert
+        Assert.Equal(20003, userId);
+        Assert.Equal(30003, tenantId);
+        Assert.Contains("Admin", roles);
+        Assert.True(httpContextUser.IsInRole("admin"));
     }
 }

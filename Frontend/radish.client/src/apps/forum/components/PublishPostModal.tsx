@@ -3,7 +3,7 @@ import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
-import { getAllTags, getOidcLoginUrl } from '@/api/forum';
+import { getAllTags, getOidcLoginUrl, type Category } from '@/api/forum';
 import { useUserStore } from '@/stores/userStore';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -12,8 +12,10 @@ import styles from './PublishPostModal.module.css';
 interface PublishPostModalProps {
   isOpen: boolean;
   isAuthenticated: boolean;
+  categories: Category[];
+  selectedCategoryId: number | null;
   onClose: () => void;
-  onPublish: (title: string, content: string, tagNames: string[]) => void;
+  onPublish: (title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
 }
 
 const DRAFT_STORAGE_KEY = 'forum_post_draft';
@@ -40,6 +42,8 @@ const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: nu
 export const PublishPostModal = ({
   isOpen,
   isAuthenticated,
+  categories,
+  selectedCategoryId,
   onClose,
   onPublish
 }: PublishPostModalProps) => {
@@ -50,10 +54,12 @@ export const PublishPostModal = ({
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
   const [imageScalePercent, setImageScalePercent] = useState<number>(75);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [categoryId, setCategoryId] = useState<number | null>(selectedCategoryId);
   const [allTagNames, setAllTagNames] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagError, setTagError] = useState<string | null>(null);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
   const roles = useUserStore(state => state.roles || []);
   const isAdmin = roles.some(role => {
     const normalized = role.trim().toLowerCase();
@@ -69,31 +75,36 @@ export const PublishPostModal = ({
         const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
         if (savedDraft) {
           const draft = JSON.parse(savedDraft);
-          if (draft.title || draft.content || draft.tags?.length) {
+          if (draft.title || draft.content || draft.tags?.length || typeof draft.categoryId === 'number') {
             setTitle(draft.title || '');
             setContent(draft.content || '');
             setSelectedTags(Array.isArray(draft.tags) ? draft.tags : []);
+            setCategoryId(typeof draft.categoryId === 'number' ? draft.categoryId : selectedCategoryId);
+          } else {
+            setCategoryId(selectedCategoryId);
           }
+        } else {
+          setCategoryId(selectedCategoryId);
         }
       } catch (err) {
         log.error('Failed to load draft:', err);
       }
     }
-  }, [isOpen]);
+  }, [isOpen, selectedCategoryId]);
 
   // 自动保存草稿
   useEffect(() => {
-    if (isOpen && (title || content || selectedTags.length > 0)) {
+    if (isOpen && (title || content || selectedTags.length > 0 || categoryId != null)) {
       try {
         localStorage.setItem(
           DRAFT_STORAGE_KEY,
-          JSON.stringify({ title, content, tags: selectedTags, savedAt: Date.now() })
+          JSON.stringify({ title, content, tags: selectedTags, categoryId, savedAt: Date.now() })
         );
       } catch (err) {
         log.error('Failed to save draft:', err);
       }
     }
-  }, [title, content, selectedTags, isOpen]);
+  }, [title, content, selectedTags, categoryId, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -140,11 +151,13 @@ export const PublishPostModal = ({
     setSelectedTags(prev => [...prev, tagName]);
     setTagInput('');
     setTagError(null);
+    setCategoryError(null);
   };
 
   const removeTag = (tagName: string) => {
     setSelectedTags(prev => prev.filter(tag => tag !== tagName));
     setTagError(null);
+    setCategoryError(null);
   };
 
   const matchedTags = tagInput.trim()
@@ -171,15 +184,22 @@ export const PublishPostModal = ({
       return;
     }
 
+    if (!categoryId || categoryId <= 0) {
+      setCategoryError('请先选择分类');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await onPublish(title, content, selectedTags);
+      await onPublish(title, content, categoryId, selectedTags);
       // 发布成功后清空表单和草稿
       setTitle('');
       setContent('');
       setSelectedTags([]);
       setTagInput('');
+      setCategoryId(selectedCategoryId);
       setTagError(null);
+      setCategoryError(null);
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       onClose();
     } catch (err) {
@@ -241,7 +261,7 @@ export const PublishPostModal = ({
     <div className={styles.footer}>
       <button
         onClick={handleSubmit}
-        disabled={!title.trim() || !content.trim() || selectedTags.length < MIN_TAG_COUNT || isSubmitting}
+        disabled={!title.trim() || !content.trim() || !categoryId || selectedTags.length < MIN_TAG_COUNT || isSubmitting}
         className={styles.publishButton}
       >
         {isSubmitting ? '发布中...' : '发布帖子'}
@@ -318,6 +338,32 @@ export const PublishPostModal = ({
             maxLength={100}
           />
           <span className={styles.titleCount}>{title.length}/100</span>
+        </div>
+
+        <div className={styles.categorySection}>
+          <div className={styles.categoryHeader}>
+            <span className={styles.categoryLabel}>帖子分类</span>
+            <span className={styles.categoryHint}>发布前请选择一个分类</span>
+          </div>
+          <select
+            value={categoryId ?? ''}
+            onChange={(e) => {
+              const value = e.target.value;
+              setCategoryId(value ? Number(value) : null);
+              setCategoryError(null);
+            }}
+            className={styles.categorySelect}
+            disabled={isSubmitting || categories.length === 0}
+          >
+            <option value="">请选择分类</option>
+            {categories.map(category => (
+              <option key={category.voId} value={category.voId}>
+                {category.voName}
+              </option>
+            ))}
+          </select>
+          {categoryError && <p className={styles.categoryError}>{categoryError}</p>}
+          {!categoryError && categories.length === 0 && <p className={styles.categoryError}>暂无可用分类</p>}
         </div>
 
         <div className={styles.tagSection}>
