@@ -123,10 +123,28 @@
   margin-bottom: 4px;
 }
 
+.userNameButton,
+.typingUserButton {
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.userNameButton:disabled {
+  cursor: default;
+}
+
+.userNameButton:hover .userName,
+.typingUserButton:hover {
+  color: #2563eb;
+}
+
 .userName {
   font-size: 13px;
   color: #5b6471;
   font-weight: 600;
+  transition: color 0.2s ease;
 }
 
 .time {
@@ -193,6 +211,12 @@
   font-size: 12px;
   color: #5b6471;
   margin-bottom: 6px;
+}
+
+.typingUserButton {
+  font-size: inherit;
+  color: inherit;
+  transition: color 0.2s ease;
 }
 
 .inputRow {

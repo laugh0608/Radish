@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
+import { useWindowStore } from '@/stores/windowStore';
+import { useUserStore } from '@/stores/userStore';
 import {
   leaderboardApi,
   LeaderboardType,
@@ -13,6 +15,8 @@ import { ProductLeaderboardItem } from './components/ProductLeaderboardItem';
 import styles from './LeaderboardApp.module.css';
 
 export const LeaderboardApp = () => {
+  const { openApp } = useWindowStore();
+  const currentUserId = useUserStore((state) => state.userId);
   const [leaderboard, setLeaderboard] = useState<UnifiedLeaderboardItemData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +108,23 @@ export const LeaderboardApp = () => {
     return '';
   };
 
+  const handleOpenUserProfile = (item: UnifiedLeaderboardItemData) => {
+    if (!item.voUserId) {
+      return;
+    }
+
+    if (String(item.voUserId) === String(currentUserId ?? 0)) {
+      openApp('profile');
+      return;
+    }
+
+    openApp('profile', {
+      userId: item.voUserId,
+      userName: item.voUserName?.trim() || `用户 ${item.voUserId}`,
+      avatarUrl: item.voAvatarUrl?.trim() || null,
+    });
+  };
+
   const activeTypeConfig = leaderboardTypes.find((t) => t.voType === activeType);
   const isUserLeaderboard = activeTypeConfig?.voCategory === LeaderboardCategory.User;
 
@@ -169,6 +190,7 @@ export const LeaderboardApp = () => {
                   item={item}
                   getRankIcon={getRankIcon}
                   getRankClass={getRankClass}
+                  onUserClick={handleOpenUserProfile}
                 />
               ) : (
                 <ProductLeaderboardItem

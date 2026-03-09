@@ -5,9 +5,12 @@ interface UserLeaderboardItemProps {
   item: UnifiedLeaderboardItemData;
   getRankIcon: (rank: number) => string | null;
   getRankClass: (rank: number) => string;
+  onUserClick?: (item: UnifiedLeaderboardItemData) => void;
 }
 
-export const UserLeaderboardItem = ({ item, getRankIcon, getRankClass }: UserLeaderboardItemProps) => {
+export const UserLeaderboardItem = ({ item, getRankIcon, getRankClass, onUserClick }: UserLeaderboardItemProps) => {
+  const userName = item.voUserName?.trim() || (item.voUserId ? `用户 ${item.voUserId}` : '未知用户');
+
   return (
     <div
       className={`${styles.item} ${item.voIsCurrentUser ? styles.currentUser : ''} ${getRankClass(item.voRank)}`}
@@ -15,7 +18,15 @@ export const UserLeaderboardItem = ({ item, getRankIcon, getRankClass }: UserLea
       <div className={styles.rank}>{getRankIcon(item.voRank) || `#${item.voRank}`}</div>
 
       <div className={styles.userInfo}>
-        <div className={styles.userName}>{item.voUserName}</div>
+        <button
+          type="button"
+          className={styles.userNameButton}
+          onClick={() => onUserClick?.(item)}
+          disabled={!item.voUserId}
+          title={item.voUserId ? `查看 ${userName} 的主页` : '用户信息不可用'}
+        >
+          <span className={styles.userName}>{userName}</span>
+        </button>
         <div className={styles.level} style={{ color: item.voThemeColor || '#9E9E9E' }}>
           Lv.{item.voCurrentLevel} {item.voCurrentLevelName}
         </div>

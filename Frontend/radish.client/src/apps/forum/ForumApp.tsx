@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
 import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
@@ -44,10 +45,30 @@ const EditHistoryModal = lazy(() =>
 
 const SEARCH_PAGE_SIZE = 20;
 
+function parseForumWindowParams(appParams?: Record<string, unknown> | null): { postId?: number } {
+  if (!appParams) {
+    return {};
+  }
+
+  const rawPostId = appParams.postId;
+  const postId = typeof rawPostId === 'number'
+    ? rawPostId
+    : typeof rawPostId === 'string'
+      ? Number(rawPostId)
+      : 0;
+
+  if (!Number.isFinite(postId) || postId <= 0) {
+    return {};
+  }
+
+  return { postId };
+}
+
 export const ForumApp = () => {
   const { t } = useTranslation();
   const { isAuthenticated, userId } = useUserStore();
   const { openApp } = useWindowStore();
+  const currentWindow = useCurrentWindow();
   const loggedIn = isAuthenticated();
   const containerShellRef = useRef<HTMLDivElement>(null);
   const [showDetailFloatingTools, setShowDetailFloatingTools] = useState(true);
@@ -70,6 +91,28 @@ export const ForumApp = () => {
   const searchRequestIdRef = useRef(0);
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
+  const windowParams = parseForumWindowParams(currentWindow?.appParams);
+
+  useEffect(() => {
+    if (!windowParams.postId) {
+      return;
+    }
+
+    if (dataState.selectedPost?.voId === windowParams.postId) {
+      return;
+    }
+
+    setIsSearchView(false);
+    dataState.setSelectedTagName(null);
+    dataState.setSelectedCategoryId(null);
+    void actionsState.handleSelectPost(windowParams.postId);
+  }, [
+    actionsState.handleSelectPost,
+    dataState.selectedPost?.voId,
+    dataState.setSelectedCategoryId,
+    dataState.setSelectedTagName,
+    windowParams.postId,
+  ]);
 
   useEffect(() => {
     const element = containerShellRef.current;

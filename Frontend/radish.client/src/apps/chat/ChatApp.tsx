@@ -8,6 +8,7 @@ import {
 } from '@/api/chat';
 import { chatHub } from '@/services/chatHub';
 import { useChatStore } from '@/stores/chatStore';
+import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import type { ChannelMessageVo } from '@/types/chat';
@@ -41,6 +42,7 @@ function formatTime(time: string): string {
 }
 
 export const ChatApp = () => {
+  const { openApp } = useWindowStore();
   const {
     channels,
     activeChannelId,
@@ -216,6 +218,23 @@ export const ChatApp = () => {
     }
   }, []);
 
+  const handleOpenUserProfile = useCallback((targetUserId: number, targetUserName?: string | null, avatarUrl?: string | null) => {
+    if (!targetUserId) {
+      return;
+    }
+
+    if (String(targetUserId) === String(currentUserId ?? 0)) {
+      openApp('profile');
+      return;
+    }
+
+    openApp('profile', {
+      userId: targetUserId,
+      userName: targetUserName?.trim() || `用户 ${targetUserId}`,
+      avatarUrl: avatarUrl ?? null,
+    });
+  }, [currentUserId, openApp]);
+
   const handleScroll = useCallback(async () => {
     const scrollEl = messageScrollRef.current;
     if (!scrollEl || !activeChannelId) {
@@ -329,7 +348,15 @@ export const ChatApp = () => {
               return (
                 <div key={messageId} className={`${styles.messageRow} ${isMine ? styles.mine : ''}`}>
                   <div className={styles.metaLine}>
-                    <span className={styles.userName}>{message.voUserName || 'Unknown'}</span>
+                    <button
+                      type="button"
+                      className={styles.userNameButton}
+                      onClick={() => handleOpenUserProfile(messageUserId, message.voUserName, message.voUserAvatarUrl)}
+                      disabled={messageUserId <= 0}
+                      title={messageUserId > 0 ? `查看 ${(message.voUserName || `用户 ${messageUserId}`).trim()} 的主页` : '用户信息不可用'}
+                    >
+                      <span className={styles.userName}>{message.voUserName || 'Unknown'}</span>
+                    </button>
                     <span className={styles.time}>{formatTime(message.voCreateTime)}</span>
                     {isMine && !message.voIsRecalled && (
                       <button
@@ -363,7 +390,19 @@ export const ChatApp = () => {
         <footer className={styles.inputArea}>
           {typingUsers.length > 0 && (
             <div className={styles.typingHint}>
-              {typingUsers.map((user) => user.userName).join('、')} 正在输入...
+              {typingUsers.map((user, index) => (
+                <span key={`${user.userId}-${index}`}>
+                  {index > 0 ? '、' : null}
+                  <button
+                    type="button"
+                    className={styles.typingUserButton}
+                    onClick={() => handleOpenUserProfile(user.userId, user.userName)}
+                    title={`查看 ${user.userName} 的主页`}
+                  >
+                    {user.userName}
+                  </button>
+                </span>
+              ))} 正在输入...
             </div>
           )}
 
