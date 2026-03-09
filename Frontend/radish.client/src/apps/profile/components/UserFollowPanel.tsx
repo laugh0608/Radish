@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Icon } from '@radish/ui/icon';
+import { getApiBaseUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 import type { PostItem } from '@/types/forum';
 import {
@@ -26,10 +27,13 @@ interface UserFollowPanelProps {
 const PAGE_SIZE = 10;
 
 export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPanelProps) => {
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const [activeTab, setActiveTab] = useState<SocialTab>('feed');
   const [feedViewType, setFeedViewType] = useState<FeedViewType>('following');
   const [summary, setSummary] = useState<UserFollowSummary>({ voFollowerCount: 0, voFollowingCount: 0 });
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [avatarErrorUserIds, setAvatarErrorUserIds] = useState<Set<number>>(new Set());
   const [feedItems, setFeedItems] = useState<PostItem[]>([]);
   const [followerItems, setFollowerItems] = useState<UserFollowUser[]>([]);
   const [followingItems, setFollowingItems] = useState<UserFollowUser[]>([]);
@@ -98,6 +102,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
 
   const loadFeed = async (pageIndex: number, viewType: FeedViewType) => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       const data = viewType === 'following'
         ? await getMyFollowingFeed(pageIndex, PAGE_SIZE)
@@ -106,6 +111,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
       setFeedTotal(data.voTotal || 0);
     } catch (error) {
       log.error('UserFollowPanel', `加载关系链内容失败(${viewType}):`, error);
+      setErrorMessage(error instanceof Error ? error.message : '加载动态失败，请稍后重试');
       setFeedItems([]);
       setFeedTotal(0);
     } finally {
@@ -115,12 +121,14 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
 
   const loadFollowers = async (pageIndex: number) => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       const data = await getMyFollowers(pageIndex, PAGE_SIZE);
       setFollowerItems(data.voItems || []);
       setFollowerTotal(data.voTotal || 0);
     } catch (error) {
       log.error('UserFollowPanel', '加载粉丝列表失败:', error);
+      setErrorMessage(error instanceof Error ? error.message : '加载粉丝列表失败，请稍后重试');
       setFollowerItems([]);
       setFollowerTotal(0);
     } finally {
@@ -130,17 +138,90 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
 
   const loadFollowing = async (pageIndex: number) => {
     setLoading(true);
+    setErrorMessage(null);
     try {
       const data = await getMyFollowing(pageIndex, PAGE_SIZE);
       setFollowingItems(data.voItems || []);
       setFollowingTotal(data.voTotal || 0);
     } catch (error) {
       log.error('UserFollowPanel', '加载关注列表失败:', error);
+      setErrorMessage(error instanceof Error ? error.message : '加载关注列表失败，请稍后重试');
       setFollowingItems([]);
       setFollowingTotal(0);
     } finally {
       setLoading(false);
     }
+  };
+
+  const buildAvatarText = (name: string) => {
+    const source = name.trim();
+    if (!source) return '?';
+    return source.charAt(0).toUpperCase();
+  };
+
+  const buildAvatarStyle = (seed: string) => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i += 1) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    const hue = Math.abs(hash) % 360;
+    return {
+      backgroundColor: `hsl(${hue} 80% 92%)`,
+      color: `hsl(${hue} 45% 30%)`
+    };
+  };
+
+  const resolveAvatarUrl = (url: string | null | undefined) => {
+    if (!url) return null;
+    if (/^https?:\/\//i.test(url)) return url;
+    if (url.startsWith('/')) return `${apiBaseUrl}${url}`;
+    return `${apiBaseUrl}/${url}`;
+  };
+
+  const handleRetry = () => {
+    if (activeTab === 'feed') {
+      void loadFeed(feedPage, feedViewType);
+      return;
+    }
+
+    if (activeTab === 'followers') {
+      void loadFollowers(followerPage);
+      return;
+    }
+
+    void loadFollowing(followingPage);
+  };
+
+  const renderUserAvatar = (user: UserFollowUser) => {
+    const name = user.voDisplayName?.trim() || user.voUserName.trim() || '用户';
+    const avatarUrl = avatarErrorUserIds.has(user.voUserId) ? null : resolveAvatarUrl(user.voAvatarUrl);
+
+    return (
+      <span
+        className={styles.userAvatar}
+        style={avatarUrl ? undefined : buildAvatarStyle(name)}
+        title={name}
+      >
+        {avatarUrl ? (
+          <img
+            src={avatarUrl}
+            alt={name}
+            className={styles.userAvatarImage}
+            loading="lazy"
+            onError={() => {
+              setAvatarErrorUserIds((current) => {
+                const next = new Set(current);
+                next.add(user.voUserId);
+                return next;
+              });
+            }}
+          />
+        ) : (
+          buildAvatarText(name)
+        )}
+      </span>
+    );
   };
 
   const feedViewLabelMap: Record<FeedViewType, string> = {
@@ -197,6 +278,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
           <article key={user.voUserId} className={styles.userItem}>
             <div className={styles.userMain}>
               <div className={styles.userNameRow}>
+                {renderUserAvatar(user)}
                 <span className={styles.userName}>{user.voUserName}</span>
                 {user.voDisplayName ? <span className={styles.userDisplay}>({user.voDisplayName})</span> : null}
                 {user.voIsMutualFollow ? <span className={styles.mutualBadge}>互关</span> : null}
@@ -205,7 +287,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
                 关注时间：{formatDateTimeByTimeZone(user.voFollowTime, displayTimeZone)}
               </div>
             </div>
-            <Icon icon="mdi:account-circle-outline" size={26} />
+            <Icon icon="mdi:chevron-right" size={20} />
           </article>
         ))}
       </div>
@@ -215,6 +297,18 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
   const renderContent = () => {
     if (loading) {
       return <div className={styles.loading}>加载中...</div>;
+    }
+
+    if (errorMessage) {
+      return (
+        <div className={styles.errorState}>
+          <div className={styles.errorTitle}>加载失败</div>
+          <div className={styles.errorMessage}>{errorMessage}</div>
+          <button type="button" className={styles.retryButton} onClick={handleRetry}>
+            重试
+          </button>
+        </div>
+      );
     }
 
     if (activeTab === 'feed') {
