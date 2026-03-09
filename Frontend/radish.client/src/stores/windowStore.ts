@@ -7,7 +7,7 @@ interface WindowStore {
   openWindows: WindowState[];
 
   /** 打开应用 */
-  openApp: (appId: string) => void;
+  openApp: (appId: string, appParams?: Record<string, unknown>) => void;
 
   /** 关闭窗口 */
   closeWindow: (windowId: string) => void;
@@ -37,7 +37,7 @@ interface WindowStore {
 export const useWindowStore = create<WindowStore>((set, get) => ({
   openWindows: [],
 
-  openApp: (appId: string) => {
+  openApp: (appId: string, appParams?: Record<string, unknown>) => {
     const { openWindows } = get();
 
     // 获取应用定义
@@ -50,7 +50,8 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     }
 
     // 如果应用已打开，聚焦窗口
-    const existingWindow = openWindows.find(w => w.appId === appId);
+    const serializedParams = JSON.stringify(appParams ?? {});
+    const existingWindow = openWindows.find(w => w.appId === appId && JSON.stringify(w.appParams ?? {}) === serializedParams);
     if (existingWindow) {
       get().focusWindow(existingWindow.id);
       // 如果是最小化状态，恢复窗口
@@ -82,6 +83,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     const newWindow: WindowState = {
       id: `win-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       appId,
+      appParams,
       zIndex: maxZIndex + 1,
       isMinimized: false,
       isMaximized: false,

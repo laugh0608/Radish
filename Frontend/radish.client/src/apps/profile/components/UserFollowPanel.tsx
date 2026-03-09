@@ -22,11 +22,12 @@ type FeedViewType = 'following' | DistributionStreamType;
 interface UserFollowPanelProps {
   displayTimeZone: string;
   onPostClick?: (postId: number) => void;
+  onUserClick?: (userId: number, userName: string, avatarUrl?: string | null, displayName?: string | null) => void;
 }
 
 const PAGE_SIZE = 10;
 
-export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPanelProps) => {
+export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: UserFollowPanelProps) => {
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const [activeTab, setActiveTab] = useState<SocialTab>('feed');
   const [feedViewType, setFeedViewType] = useState<FeedViewType>('following');
@@ -275,7 +276,12 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
     return (
       <div className={styles.list}>
         {users.map(user => (
-          <article key={user.voUserId} className={styles.userItem}>
+          <article
+            key={user.voUserId}
+            className={styles.userItem}
+            onClick={() => onUserClick?.(user.voUserId, user.voUserName, user.voAvatarUrl, user.voDisplayName)}
+            style={{ cursor: onUserClick ? 'pointer' : 'default' }}
+          >
             <div className={styles.userMain}>
               <div className={styles.userNameRow}>
                 {renderUserAvatar(user)}

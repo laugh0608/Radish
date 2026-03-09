@@ -1,6 +1,7 @@
 import { Rnd } from 'react-rnd';
 import { useWindowStore } from '@/stores/windowStore';
 import { getAppById } from '@/desktop/AppRegistry';
+import { CurrentWindowProvider } from '@/desktop/CurrentWindowContext';
 import type { WindowState } from '@/desktop/types';
 import styles from './DesktopWindow.module.css';
 
@@ -103,7 +104,9 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
               sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-top-navigation"
             />
           ) : (
-            <AppComponent />
+            <CurrentWindowProvider value={window}>
+              <AppComponent />
+            </CurrentWindowProvider>
           )}
         </div>
       </div>
