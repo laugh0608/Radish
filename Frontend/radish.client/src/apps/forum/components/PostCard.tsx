@@ -6,13 +6,14 @@ interface PostCardProps {
   post: PostItem;
   displayTimeZone: string;
   onClick: () => void;
+  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   godComment?: {
     authorName: string;
     content?: string | null;
   } | null;
 }
 
-export const PostCard = ({ post, displayTimeZone, onClick, godComment }: PostCardProps) => {
+export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godComment }: PostCardProps) => {
   const allTags = post.voTags
     ? post.voTags
         .split(',')
@@ -139,8 +140,18 @@ export const PostCard = ({ post, displayTimeZone, onClick, godComment }: PostCar
         <aside className={styles.side}>
           <div className={styles.metaTopRow}>
             <div className={styles.authorBlock}>
-              {renderAvatar(authorName, post.voAuthorAvatarUrl, styles.avatar, authorName)}
-              <span className={styles.authorName}>{authorName}</span>
+              <button
+                type="button"
+                className={styles.authorLink}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl);
+                }}
+                title={`查看 ${authorName} 的主页`}
+              >
+                {renderAvatar(authorName, post.voAuthorAvatarUrl, styles.avatar, authorName)}
+                <span className={styles.authorName}>{authorName}</span>
+              </button>
             </div>
             <div className={styles.time}>{publishedTime}</div>
           </div>

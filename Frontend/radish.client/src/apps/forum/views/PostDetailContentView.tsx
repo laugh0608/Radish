@@ -55,6 +55,7 @@ interface PostDetailContentViewProps {
   onCancelReply: () => void;
   onReactionError?: (message: string) => void;
   onToggleFollow: (targetUserId: number, isFollowing: boolean) => Promise<void>;
+  onAuthorClick: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
 }
 
 const collectCommentIds = (nodes: CommentNode[]): number[] => {
@@ -106,6 +107,7 @@ export const PostDetailContentView = ({
   onCancelReply,
   onReactionError,
   onToggleFollow,
+  onAuthorClick,
 }: PostDetailContentViewProps) => {
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -231,6 +233,7 @@ export const PostDetailContentView = ({
               followStatus={followStatus}
               followLoading={followLoading}
               onToggleFollow={onToggleFollow}
+              onAuthorClick={onAuthorClick}
             />
           </Suspense>
 
@@ -260,6 +263,7 @@ export const PostDetailContentView = ({
               onToggleReaction={reactionsState.toggleCommentReaction}
               isReactionPending={(commentId) => reactionsState.isPending('Comment', commentId)}
               onRequireReactionLogin={handleRequireReactionLogin}
+              onAuthorClick={onAuthorClick}
             />
           </Suspense>
 

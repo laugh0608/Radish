@@ -42,6 +42,20 @@
   margin-right: 8px;
 }
 
+.authorLink {
+  margin-right: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.authorLink:hover {
+  text-decoration: underline;
+}
+
 .postBody {
   white-space: pre-wrap;
   line-height: 1.6;

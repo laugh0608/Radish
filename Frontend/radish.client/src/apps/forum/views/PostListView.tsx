@@ -23,6 +23,7 @@ interface PostListViewProps {
   onOpenSearch: (keyword: string) => void;
   onPageChange: (page: number) => void;
   onPostClick: (postId: number) => void;
+  onAuthorClick: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onPublishClick: () => void;
 }
 
@@ -42,6 +43,7 @@ export const PostListView = ({
   onOpenSearch,
   onPageChange,
   onPostClick,
+  onAuthorClick,
   onPublishClick
 }: PostListViewProps) => {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -182,6 +184,7 @@ export const PostListView = ({
                 post={post}
                 displayTimeZone={displayTimeZone}
                 onClick={() => onPostClick(post.voId)}
+                onAuthorClick={(userId, userName, avatarUrl) => onAuthorClick(userId, userName, avatarUrl)}
                 godComment={
                   godComment
                     ? {

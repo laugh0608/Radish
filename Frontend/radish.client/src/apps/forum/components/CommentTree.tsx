@@ -28,6 +28,7 @@ interface CommentTreeProps {
   onToggleReaction?: (commentId: number, payload: ReactionTogglePayload) => Promise<void>;
   isReactionPending?: (commentId: number) => boolean;
   onRequireReactionLogin?: () => void;
+  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
 }
 
 export const CommentTree = ({
@@ -52,6 +53,7 @@ export const CommentTree = ({
   onToggleReaction,
   isReactionPending,
   onRequireReactionLogin,
+  onAuthorClick,
 }: CommentTreeProps) => {
   // 找出所有神评（后端标记的）
   const godComments = useMemo(() => {
@@ -138,6 +140,7 @@ export const CommentTree = ({
             onToggleReaction={onToggleReaction}
             isReactionPending={isReactionPending}
             onRequireReactionLogin={onRequireReactionLogin}
+            onAuthorClick={onAuthorClick}
           />
         ))}
       </div>

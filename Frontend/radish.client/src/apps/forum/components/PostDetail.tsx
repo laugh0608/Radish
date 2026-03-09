@@ -32,6 +32,7 @@ interface PostDetailProps {
   followStatus?: UserFollowStatus | null;
   followLoading?: boolean;
   onToggleFollow?: (targetUserId: number, isFollowing: boolean) => Promise<void>;
+  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
 }
 
 export const PostDetail = ({
@@ -54,6 +55,7 @@ export const PostDetail = ({
   followStatus = null,
   followLoading = false,
   onToggleFollow,
+  onAuthorClick,
 }: PostDetailProps) => {
   const parsedTags = post?.voTags
     ? post.voTags
@@ -89,7 +91,15 @@ export const PostDetail = ({
       <div className={styles.postContent}>
         <h4 className={styles.postTitle}>{post.voTitle}</h4>
         <div className={styles.postMeta}>
-          {post.voAuthorName && <span>作者：{post.voAuthorName}</span>}
+          {post.voAuthorName && (
+            <button
+              type="button"
+              className={styles.authorLink}
+              onClick={() => onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl)}
+            >
+              作者：{post.voAuthorName}
+            </button>
+          )}
           {post.voCreateTime && <span> · {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}</span>}
           {post.voViewCount !== undefined && <span> · 浏览 {post.voViewCount}</span>}
         </div>

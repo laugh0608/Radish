@@ -29,6 +29,7 @@ interface CommentNodeProps {
   onToggleReaction?: (commentId: number, payload: ReactionTogglePayload) => Promise<void>;
   isReactionPending?: (commentId: number) => boolean;
   onRequireReactionLogin?: () => void;
+  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
 }
 
 /**
@@ -212,6 +213,7 @@ export const CommentNode = ({
   onToggleReaction,
   isReactionPending,
   onRequireReactionLogin,
+  onAuthorClick,
 }: CommentNodeProps) => {
   // 判断是否是作者本人
   const isAuthor = currentUserId > 0 && String(node.voAuthorId) === String(currentUserId);
@@ -468,7 +470,13 @@ export const CommentNode = ({
   return (
     <div className={styles.container} style={{ marginLeft: level * 16 }}>
       <div className={styles.header}>
-        <span className={styles.author}>{node.voAuthorName}</span>
+        <button
+          type="button"
+          className={styles.authorButton}
+          onClick={() => onAuthorClick?.(node.voAuthorId, node.voAuthorName)}
+        >
+          <span className={styles.author}>{node.voAuthorName}</span>
+        </button>
         {node.voCreateTime && (
           <span className={styles.time}> · {formatDateTimeByTimeZone(node.voCreateTime, displayTimeZone)}</span>
         )}

@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
+import { useWindowStore } from '@/stores/windowStore';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import {
   getPostList,
@@ -46,6 +47,7 @@ const SEARCH_PAGE_SIZE = 20;
 export const ForumApp = () => {
   const { t } = useTranslation();
   const { isAuthenticated, userId } = useUserStore();
+  const { openApp } = useWindowStore();
   const loggedIn = isAuthenticated();
   const containerShellRef = useRef<HTMLDivElement>(null);
   const [showDetailFloatingTools, setShowDetailFloatingTools] = useState(true);
@@ -344,6 +346,23 @@ export const ForumApp = () => {
     }
   };
 
+  const handleOpenUserProfile = (targetUserId: number, targetUserName?: string | null, avatarUrl?: string | null) => {
+    if (!targetUserId) {
+      return;
+    }
+
+    if (String(targetUserId) === String(userId ?? 0)) {
+      openApp('profile');
+      return;
+    }
+
+    openApp('profile', {
+      userId: targetUserId,
+      userName: targetUserName?.trim() || `用户 ${targetUserId}`,
+      avatarUrl: avatarUrl ?? null,
+    });
+  };
+
   const handleOpenPublish = () => {
     actionsState.setIsPublishModalOpen(true);
   };
@@ -463,6 +482,7 @@ export const ForumApp = () => {
                 onCancelReply={actionsState.handleCancelReply}
                 onReactionError={dataState.setError}
                 onToggleFollow={handleToggleFollow}
+                onAuthorClick={handleOpenUserProfile}
               />
             </Suspense>
           ) : (
@@ -512,6 +532,7 @@ export const ForumApp = () => {
                   }}
                   onPageChange={setSearchCurrentPage}
                   onPostClick={actionsState.handleSelectPost}
+                  onAuthorClick={handleOpenUserProfile}
                 />
               ) : (
                 <PostListView
@@ -529,6 +550,7 @@ export const ForumApp = () => {
                   onOpenSearch={handleOpenSearchView}
                   onPageChange={actionsState.handlePageChange}
                   onPostClick={actionsState.handleSelectPost}
+                  onAuthorClick={handleOpenUserProfile}
                   canPublish={loggedIn}
                   onPublishClick={handleOpenPublish}
                 />
