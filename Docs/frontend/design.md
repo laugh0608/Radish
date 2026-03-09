@@ -83,7 +83,7 @@ Frontend/radish.client/
 │   │   ├── chat/             # 聊天室应用
 │   │   ├── shop/             # 商城应用
 │   │   ├── admin/            # 后台管理应用
-│   │   ├── docs/             # 文档应用（iframe）
+│   │   ├── wiki/             # 文档应用（窗口）
 │   │   └── games/            # 游戏应用（示例）
 │   │
 │   ├── widgets/              # 桌面小部件

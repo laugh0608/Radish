@@ -61,6 +61,12 @@
   margin-bottom: 12px;
 }
 
+.feedStreamHint {
+  margin-bottom: 12px;
+  color: #64748b;
+  font-size: 12px;
+}
+
 .feedStreamTab {
   border: 1px solid #dbe2ea;
   border-radius: 999px;

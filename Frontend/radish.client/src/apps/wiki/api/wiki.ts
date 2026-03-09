@@ -172,6 +172,6 @@ export async function downloadWikiMarkdown(id: number): Promise<{ blob: Blob; fi
   }
 
   const blob = await response.blob();
-  const fileName = getFileNameFromDisposition(response.headers.get('content-disposition'), `wiki-${id}.md`);
+  const fileName = getFileNameFromDisposition(response.headers.get('content-disposition'), `document-${id}.md`);
   return { blob, fileName };
 }

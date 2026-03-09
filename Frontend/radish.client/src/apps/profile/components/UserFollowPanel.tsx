@@ -144,17 +144,24 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
   };
 
   const feedViewLabelMap: Record<FeedViewType, string> = {
-    following: '关注动态',
-    recommend: '推荐',
-    hot: '热门',
-    newest: '最新'
+    following: '关注中',
+    recommend: '推荐内容',
+    hot: '热门内容',
+    newest: '最新发布'
+  };
+
+  const feedViewDescriptionMap: Record<FeedViewType, string> = {
+    following: '只看你已关注用户的最近动态',
+    recommend: '根据互动热度推荐的内容',
+    hot: '当前讨论度较高的内容',
+    newest: '社区最新发布的内容'
   };
 
   const renderFeed = () => {
     if (feedItems.length === 0) {
       const emptyText = feedViewType === 'following'
         ? '你关注的人还没有新动态'
-        : `${feedViewLabelMap[feedViewType]}流暂时没有内容`;
+        : `${feedViewLabelMap[feedViewType]}暂时没有内容`;
       return <div className={styles.empty}>{emptyText}</div>;
     }
 
@@ -239,7 +246,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
           className={`${styles.tab} ${activeTab === 'feed' ? styles.active : ''}`}
           onClick={() => setActiveTab('feed')}
         >
-          关注动态
+          动态
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'followers' ? styles.active : ''}`}
@@ -256,20 +263,23 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick }: UserFollowPane
       </div>
 
       {activeTab === 'feed' && (
-        <div className={styles.feedStreamTabs}>
-          {(['following', 'recommend', 'hot', 'newest'] as FeedViewType[]).map(viewType => (
-            <button
-              key={viewType}
-              className={`${styles.feedStreamTab} ${feedViewType === viewType ? styles.feedStreamTabActive : ''}`}
-              onClick={() => {
-                setFeedViewType(viewType);
-                setFeedPage(1);
-              }}
-            >
-              {feedViewLabelMap[viewType]}
-            </button>
-          ))}
-        </div>
+        <>
+          <div className={styles.feedStreamTabs}>
+            {(['following', 'recommend', 'hot', 'newest'] as FeedViewType[]).map(viewType => (
+              <button
+                key={viewType}
+                className={`${styles.feedStreamTab} ${feedViewType === viewType ? styles.feedStreamTabActive : ''}`}
+                onClick={() => {
+                  setFeedViewType(viewType);
+                  setFeedPage(1);
+                }}
+              >
+                {feedViewLabelMap[viewType]}
+              </button>
+            ))}
+          </div>
+          <div className={styles.feedStreamHint}>{feedViewDescriptionMap[feedViewType]}</div>
+        </>
       )}
 
       {renderContent()}
