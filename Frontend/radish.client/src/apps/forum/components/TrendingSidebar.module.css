@@ -154,9 +154,29 @@
   -webkit-box-orient: vertical;
 }
 
+.authorButton {
+  width: fit-content;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.authorButton:hover {
+  color: #1d4ed8;
+  opacity: 0.9;
+}
+
 .hotPostMeta {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
+  margin-top: 8px;
   font-size: 12px;
   color: #6b7280;
 }
@@ -203,6 +223,10 @@
 .godCommentAuthor {
   font-weight: 500;
   color: #d97706;
+}
+
+.godCommentAuthor:hover {
+  color: #b45309;
 }
 
 .godCommentLikes {

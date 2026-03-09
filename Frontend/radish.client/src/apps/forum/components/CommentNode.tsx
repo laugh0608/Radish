@@ -474,6 +474,7 @@ export const CommentNode = ({
           type="button"
           className={styles.authorButton}
           onClick={() => onAuthorClick?.(node.voAuthorId, node.voAuthorName)}
+          title={`查看 ${node.voAuthorName} 的主页`}
         >
           <span className={styles.author}>{node.voAuthorName}</span>
         </button>
@@ -687,6 +688,7 @@ export const CommentNode = ({
                   onToggleReaction={onToggleReaction}
                   isReactionPending={isReactionPending}
                   onRequireReactionLogin={onRequireReactionLogin}
+                  onAuthorClick={onAuthorClick}
                 />
               ))}
             </div>

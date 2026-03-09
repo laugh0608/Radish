@@ -565,6 +565,7 @@ export const ForumApp = () => {
             hotPosts={dataState.hotPosts}
             godComments={dataState.trendingGodComments}
             onPostClick={actionsState.handleSelectPost}
+            onAuthorClick={handleOpenUserProfile}
             loading={dataState.loadingTrending}
             selectedPost={dataState.selectedPost}
             displayTimeZone={displayTimeZone}
