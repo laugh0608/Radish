@@ -376,6 +376,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50047L,
+                ApiModuleName = "Hangfire dashboard",
+                LinkUrl = "/hangfire(/.*)?",
+                ControllerName = "Hangfire",
+                ActionName = "Dashboard",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50050L,
                 ApiModuleName = "Admin get products",
                 LinkUrl = "/api/v1/Shop/AdminGetProducts",

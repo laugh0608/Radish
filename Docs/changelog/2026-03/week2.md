@@ -72,3 +72,9 @@
 - **仪表盘权限映射补齐**：`ConsolePermissions` 已补充 `StatisticsController.GetDashboardStats -> console.dashboard.view` 映射，避免 `dashboardView` 只停留在前端路由和默认角色权限全集中。
 - **种子数据闭环**：`DbMigrate` 已新增 `GetDashboardStats` 的 `ApiModule` 与默认角色授权种子，为非默认角色通过数据库授权获取仪表盘访问能力提供基础。
 - **页面边界细化**：`Dashboard` 页面已将“最近订单”和相关快捷入口按现有页面权限分别控制，避免仅有仪表盘权限时继续请求订单接口或暴露越权入口。
+
+### Console Hangfire 权限种子继续补齐
+
+- **Hangfire 资源映射补齐**：`ConsolePermissions` 已补充 `"/hangfire(/.*)?" -> console.hangfire.view` 映射，并与 `DbMigrate` 的 `ApiModule.LinkUrl` 保持一致，便于非默认角色从数据库授权派生 Console 权限快照。
+- **Dashboard 访问闭环**：`HangfireAuthorizationFilter` 已改为显式完成认证并按角色权限快照校验 `console.hangfire.view`，不再仅依赖 `System/Admin` 角色硬编码放行。
+- **边界保持最小改动**：前端菜单、搜索与路由守卫维持现状，本轮只补后端权限资源与访问校验闭环。
