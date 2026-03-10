@@ -66,3 +66,9 @@
 - **菜单 / 搜索 / 路由同源**：侧边菜单与全局搜索统一复用同一份路由权限元数据，避免“菜单隐藏了但搜索或直链还能进入”的权限裂缝。
 - **首页回退补齐**：当当前账号无 `Dashboard` 访问权限时，`/` 将自动回退到首个可访问页面，避免首页直接落入无权限页。
 - **边界补齐**：`Dashboard` 与 `Hangfire` 统一走权限守卫；`Profile` 与 `Settings` 明确为“登录即可访问”的路由边界。
+
+### Console Dashboard 权限种子继续补齐
+
+- **仪表盘权限映射补齐**：`ConsolePermissions` 已补充 `StatisticsController.GetDashboardStats -> console.dashboard.view` 映射，避免 `dashboardView` 只停留在前端路由和默认角色权限全集中。
+- **种子数据闭环**：`DbMigrate` 已新增 `GetDashboardStats` 的 `ApiModule` 与默认角色授权种子，为非默认角色通过数据库授权获取仪表盘访问能力提供基础。
+- **页面边界细化**：`Dashboard` 页面已将“最近订单”和相关快捷入口按现有页面权限分别控制，避免仅有仪表盘权限时继续请求订单接口或暴露越权入口。

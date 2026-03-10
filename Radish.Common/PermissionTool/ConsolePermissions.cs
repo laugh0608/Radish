@@ -97,6 +97,7 @@ public static class ConsolePermissions
             ["/api/v1/SystemConfig/CreateConfig"] = new[] { SystemConfigCreate },
             ["/api/v1/SystemConfig/UpdateConfig"] = new[] { SystemConfigEdit },
             ["/api/v1/SystemConfig/DeleteConfig"] = new[] { SystemConfigDelete },
+            ["/api/v1/Statistics/GetDashboardStats"] = new[] { DashboardView },
         };
 
     private static readonly string[] AdminDefaultPermissions =

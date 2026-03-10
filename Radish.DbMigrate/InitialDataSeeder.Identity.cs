@@ -367,6 +367,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50046L,
+                ApiModuleName = "Get dashboard stats",
+                LinkUrl = "/api/v1/Statistics/GetDashboardStats",
+                ControllerName = "Statistics",
+                ActionName = "GetDashboardStats",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50050L,
                 ApiModuleName = "Admin get products",
                 LinkUrl = "/api/v1/Shop/AdminGetProducts",
