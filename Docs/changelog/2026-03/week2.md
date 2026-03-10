@@ -90,3 +90,10 @@
 - **Products 辅助资源补齐**：`ConsolePermissions` 与 `DbMigrate` 已补充 `ShopController.GetCategories -> console.products.view`，覆盖商品列表筛选与表单分类加载所依赖的辅助接口，避免非默认角色仅拿到商品页主链路权限后仍因缺分类资源而出现能力断裂。
 - **Stickers 辅助资源补齐**：已补充 `StickerController.CheckGroupCode`、`CheckStickerCode`、`NormalizeCode` 的资源映射与默认角色种子，分别归属 `console.stickers.create/edit/batch-upload`，与分组创建、表情编辑、批量上传的真实前端调用保持一致。
 - **本轮继续保持最小改动**：仅补真实在用的辅助接口资源，不扩张到 Console 当前未实际调用的 `AdminGetProduct`、`GetCategory` 等链路，避免权限模型先于页面需求过度生长。
+
+
+### Console 权限治理文档口径统一
+
+- **专题文档补齐**：新增 `Console 权限治理 V1` 专项文档，集中维护当前已完成范围、待决策项、收口清单与退出条件，避免权限治理继续分散在规划、日志与零散讨论中。
+- **架构与模块文档对齐**：`console-system / core-concepts / architecture / modules / roadmap` 已同步更新为当前真实状态，明确 `RouteGuard + usePermission + VoPermissions + ApiModule.LinkUrl + DbMigrate` 的完整链路。
+- **规划与 README 收口**：`development-plan`、`planning/current` 与 `radish.console/README` 已移除明显过期的“Users / Roles 待实现”“自定义 fetch 封装”等旧描述，改为 Console 权限治理 V1 收口清单。

@@ -8,338 +8,116 @@
 
 #### 4.1.1 技术栈
 
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| React | 19.1.1 | UI 框架 |
-| TypeScript | 5.9.3 | 类型系统 |
-| Vite | 7.1.14 (rolldown-vite) | 构建工具 |
-| @radish/ui | * | UI 组件库 (基于 Ant Design) |
+| 技术 | 用途 |
+|------|------|
+| React 19 | UI 框架 |
+| TypeScript | 类型系统 |
+| React Router | 路由系统 |
+| Vite / Rolldown | 构建工具 |
+| `@radish/ui` | 统一 UI 组件与 HTTP 客户端能力 |
 
-#### 4.1.2 项目结构
+#### 4.1.2 当前目录关注点
 
-```
-Frontend/radish.console/
-├── src/
-│   ├── api/                    # API 客户端
-│   │   └── clients.ts          # OIDC 客户端 API
-│   ├── components/             # 通用组件
-│   │   └── AdminLayout/        # 后台布局组件
-│   ├── pages/                  # 页面组件
-│   │   ├── Dashboard/          # 仪表盘
-│   │   ├── Applications/       # 应用管理
-│   │   ├── Login/              # 登录页
-│   │   └── ...                 # 其他页面
-│   ├── hooks/                  # 自定义 Hooks
-│   ├── utils/                  # 工具函数
-│   ├── types/                  # TypeScript 类型定义
-│   │   └── oidc.ts             # OIDC 相关类型
-│   ├── App.tsx                 # 应用入口
-│   └── main.tsx                # 渲染入口
-├── public/                     # 静态资源
-├── package.json
-├── tsconfig.json
-└── vite.config.ts
+```text
+Frontend/radish.console/src/
+├── api/                # 后台 API 封装
+├── components/         # 共享布局与通用组件
+├── constants/          # Console 权限常量等
+├── hooks/              # usePermission、标题等 Hook
+├── pages/              # 业务页面
+├── router/             # 路由定义、权限元数据、RouteGuard
+├── services/           # token / 认证上下文能力
+└── utils/              # logger 等工具
 ```
 
-#### 4.1.3 路由设计
+#### 4.1.3 路由与权限元数据
 
-Console 采用 **客户端路由** (基于状态切换)：
+当前 Console 已切换到 **React Router + 路由元数据驱动**：
 
-```typescript
-// 当前实现：基于状态的路由
-type MenuItem = 'dashboard' | 'applications' | 'users' | 'roles' | 'hangfire';
+- 路由定义中声明页面访问权限
+- `RouteGuard` 统一处理页面访问边界
+- 菜单和全局搜索复用同一份路由元数据
+- 页面内部不再重复写页面级“无权限占位返回”
 
-const [currentMenu, setCurrentMenu] = useState<MenuItem>('dashboard');
+这解决了过去“菜单隐藏了，但搜索或直链还能进入”的裂缝。
 
-// 未来优化：使用 React Router
-// /console/                    -> Dashboard
-// /console/applications        -> Applications
-// /console/users               -> Users
-// /console/roles               -> Roles
-// /console/hangfire            -> Hangfire
+#### 4.1.4 页面内部权限职责
+
+页面内部当前只负责两类判断：
+
+1. **按钮/操作级可见性**
+   - 例如编辑、删除、重试、批量上传
+2. **无访问权限时停止请求**
+   - 避免仅由路由层兜底，但页面 effect 仍先发请求
+
+### 4.2 API 客户端与特殊上传场景
+
+#### 4.2.1 统一 API 客户端
+
+普通 API 调用统一使用 `@radish/http` / `@radish/ui` 提供的客户端，不再维护 Console 自定义 fetch 封装。
+
+统一收益包括：
+
+- token 注入一致
+- 响应解析一致
+- 错误处理口径一致
+- baseUrl 配置一致
+
+#### 4.2.2 特殊场景：上传进度
+
+像 `Sticker` 图片上传这类需要上传进度的场景，允许使用 `XMLHttpRequest`，但必须：
+
+- 从 `getApiClientConfig()` 获取 `baseUrl` 与 token
+- 只在上传等确有必要的场景使用
+- 不再额外复制一套普通 HTTP 客户端逻辑
+
+### 4.3 后端权限快照组装
+
+后端当前通过以下步骤组装 Console 权限：
+
+```text
+CurrentUser roles
+  ↓
+System/Admin 默认权限全集
+  ↓
+RoleModulePermission 查询角色资源
+  ↓
+ApiModule.LinkUrl
+  ↓
+ConsolePermissions.GetPermissionsByApiUrl(...)
+  ↓
+CurrentUserVo.VoPermissions
 ```
 
-#### 4.1.4 组件设计
+### 4.4 `DbMigrate` 在权限治理中的职责
 
-**布局组件** (`AdminLayout`)：
-```typescript
-interface AdminLayoutProps {
-  selectedKey?: string;          // 当前选中菜单
-  onMenuClick?: (key: string) => void;  // 菜单点击回调
-  user?: { name: string; avatar?: string };  // 用户信息
-  onUserMenuClick?: (key: string) => void;   // 用户菜单回调
-  children: ReactNode;           // 内容区域
-}
-```
+`DbMigrate` 当前承担两类工作：
 
-**页面组件规范**：
-```typescript
-// 页面组件目录结构
-pages/
-└── PageName/
-    ├── PageName.tsx            # 页面主组件
-    ├── PageName.css            # 页面样式
-    └── index.ts                # 导出入口
+1. 创建 Console 已依赖的 `ApiModule`
+2. 为默认角色补齐 `RoleModulePermission` 种子
 
-// 页面组件示例
-export const PageName = () => {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
+因此，新增一个 Console 能力时，至少要检查四处是否一致：
 
-  useEffect(() => {
-    void loadData();
-  }, []);
+- 路由/页面是否真实调用
+- 前端权限常量是否存在
+- `ConsolePermissions` 是否有 URL 映射
+- `DbMigrate` 是否有资源与默认授权种子
 
-  const loadData = async () => {
-    // 加载数据逻辑
-  };
+### 4.5 特殊入口
 
-  return (
-    <div className="page-name">
-      {/* 页面内容 */}
-    </div>
-  );
-};
-```
+#### 4.5.1 Hangfire
 
----
+`Hangfire` 不属于普通 React 页面资源，但它已经被纳入 Console 权限治理：
 
-### 4.2 认证集成
+- 资源映射：`/hangfire(/.*)?`
+- 权限键：`console.hangfire.view`
+- 校验方式：`HangfireAuthorizationFilter` 显式消费当前用户权限快照
 
-#### 4.2.1 OIDC 认证流程
-
-Console 使用 **Authorization Code Flow** 进行认证：
-
-```
-1. 用户访问 /console/
-   ↓
-2. 通过 `tokenService` 检查 `radish_console_access_token`
-   ↓ (无 token)
-3. 跳转到 Auth Server 登录页
-   GET /connect/authorize?
-     client_id=radish-console&
-     response_type=code&
-     redirect_uri=https://localhost:5000/console/callback&
-     scope=openid profile offline_access radish-api
-   ↓
-4. 用户输入用户名密码
-   ↓
-5. Auth Server 验证成功，重定向到回调页面
-   https://localhost:5000/console/callback?code=xxx
-   ↓
-6. Console 回调页面使用 code 换取 token
-   POST /connect/token
-   Body: grant_type=authorization_code&
-         client_id=radish-console&
-         code=xxx&
-         redirect_uri=https://localhost:5000/console/callback
-   ↓
-7. 通过 `tokenService` 保存 Console 专属 token 键
-   (`radish_console_access_token` / `radish_console_refresh_token`)
-   ↓
-8. 跳转到 Console 首页
-```
-
-#### 4.2.2 Token 管理
-
-```typescript
-import { tokenService } from '@/services/tokenService';
-
-// Token 存储
-tokenService.setTokenInfo({
-  access_token: token,
-  refresh_token: refreshToken,
-  expires_in: expiresIn,
-  token_type: 'Bearer',
-});
-
-// Token 读取
-const token = tokenService.getAccessToken();
-
-// API 请求携带 Token
-fetch(url, {
-  headers: {
-    'Authorization': `Bearer ${token}`
-  }
-});
-
-// Token 过期处理
-// 1. API 返回 401 -> 尝试使用 refresh_token 刷新
-// 2. 刷新失败 -> 清除 Console token，跳转 /console/login
-```
-
-> 调试说明：Console 默认采用“请求触发刷新”。如需观察周期性刷新日志，可在环境变量中设置 `VITE_TOKEN_AUTO_REFRESH_DEBUG=true`。
-
-#### 4.2.3 Single Sign-Out
-
-```typescript
-const handleLogout = () => {
-  // 1. 清除本地 Token
-  tokenService.clearTokens();
-
-  // 2. 重定向到 OIDC endsession endpoint
-  const logoutUrl = new URL(`${authServerBaseUrl}/connect/endsession`);
-  logoutUrl.searchParams.set('post_logout_redirect_uri', postLogoutRedirectUri);
-  logoutUrl.searchParams.set('client_id', 'radish-console');
-
-  window.location.href = logoutUrl.toString();
-};
-```
-
----
-
-### 4.3 API 设计
-
-#### 4.3.1 API 客户端封装
-
-```typescript
-// api/base.ts
-import { tokenService } from '@/services/tokenService';
-
-interface ApiResponse<T = any> {
-  ok: boolean;
-  message?: string;
-  data?: T;
-}
-
-async function request<T>(
-  url: string,
-  options?: RequestInit
-): Promise<ApiResponse<T>> {
-  const token = tokenService.getAccessToken();
-
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      ...options?.headers,
-    },
-  });
-
-  if (response.status === 401) {
-    // Token 过期，跳转登录
-    window.location.href = '/console/login';
-    throw new Error('Unauthorized');
-  }
-
-  const data = await response.json();
-  return data;
-}
-```
-
-#### 4.3.2 API 模块示例
-
-```typescript
-// api/clients.ts
-export const clientApi = {
-  // 获取客户端列表
-  getClients: (params: { page: number; pageSize: number }) =>
-    request<PagedResult<OidcClient>>('/api/v1/OidcClient/GetList', {
-      method: 'POST',
-      body: JSON.stringify(params),
-    }),
-
-  // 创建客户端
-  createClient: (data: CreateClientRequest) =>
-    request<{ clientId: string; clientSecret: string }>(
-      '/api/v1/OidcClient/Create',
-      {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }
-    ),
-
-  // 更新客户端
-  updateClient: (id: string, data: UpdateClientRequest) =>
-    request('/api/v1/OidcClient/Update', {
-      method: 'PUT',
-      body: JSON.stringify({ id, ...data }),
-    }),
-
-  // 删除客户端
-  deleteClient: (id: string) =>
-    request(`/api/v1/OidcClient/Delete/${id}`, {
-      method: 'DELETE',
-    }),
-
-  // 重置密钥
-  resetClientSecret: (id: string) =>
-    request<{ clientSecret: string }>(
-      `/api/v1/OidcClient/ResetSecret/${id}`,
-      {
-        method: 'POST',
-      }
-    ),
-};
-```
-
----
-
-### 4.4 状态管理
-
-#### 4.4.1 全局状态
-
-```typescript
-// 使用 Context + useReducer
-interface AppState {
-  user: User | null;
-  permissions: string[];
-  isLoading: boolean;
-}
-
-type AppAction =
-  | { type: 'SET_USER'; payload: User }
-  | { type: 'SET_PERMISSIONS'; payload: string[] }
-  | { type: 'SET_LOADING'; payload: boolean };
-
-const AppContext = createContext<{
-  state: AppState;
-  dispatch: Dispatch<AppAction>;
-} | null>(null);
-```
-
-#### 4.4.2 页面状态
-
-```typescript
-// 使用 useState 管理页面状态
-const [data, setData] = useState<T[]>([]);
-const [loading, setLoading] = useState(false);
-const [pagination, setPagination] = useState({ page: 1, pageSize: 10 });
-```
-
----
-
-### 4.5 样式方案
-
-#### 4.5.1 CSS Modules
-
-```typescript
-// 使用普通 CSS + className
-import './PageName.css';
-
-<div className="page-name">
-  <div className="page-header">...</div>
-</div>
-```
-
-#### 4.5.2 主题定制
-
-```css
-/* 基于 @radish/ui 的主题变量 */
-:root {
-  --primary-color: #1890ff;
-  --success-color: #52c41a;
-  --warning-color: #faad14;
-  --error-color: #f5222d;
-}
-```
+这类入口后续继续沿用“显式校验权限快照”的策略。
 
 ---
 
 ## 相关文档
 
-- [核心概念](/guide/console-core-concepts) - 权限模型和实体定义
-- [功能模块](/guide/console-modules) - 详细功能说明
-- [实施计划](/guide/console-roadmap) - 开发计划
-- [认证系统](/guide/authentication) - OIDC 认证详解
+- [Console 权限治理 V1](/guide/console-permission-governance)
+- [Console 核心概念](/guide/console-core-concepts)

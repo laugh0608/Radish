@@ -1,179 +1,81 @@
 # Radish Console - 后台管理系统
 
-## 📋 功能概述
+## 功能概述
 
-Radish Console 是 Radish 项目的后台管理控制台，提供以下功能：
+Radish Console 是 Radish 项目的管理员控制台，当前已落地并接入权限治理的模块包括：
 
-- **仪表盘** - 系统概览和快速导航
-- **应用管理** - OIDC 客户端应用的完整 CRUD 操作
-- **用户管理** - （待实现）
-- **角色管理** - （待实现）
+- `Dashboard` - 仪表盘与快捷入口
+- `Applications` - OIDC 客户端管理
+- `Users` - 用户列表与详情入口（仅保留已落地能力）
+- `Roles` - 角色管理
+- `Products` - 商品管理
+- `Orders` - 订单管理
+- `Tags` - 标签管理
+- `Stickers` - 表情包管理
+- `SystemConfig` - 系统配置
+- `Hangfire` - 定时任务后台入口
 
-## 🏗️ 架构设计
+## 当前状态
 
-### 目录结构
+当前 Console 不再处于“基础脚手架待实现”阶段，而是处于 **权限治理 V1 收口阶段**。
 
-```
+当前重点是：
+
+- 统一路由、菜单、搜索、按钮权限口径
+- 对齐前端权限常量、后端资源映射与 `DbMigrate` 种子
+- 清理未落地能力的伪入口
+- 为本阶段形成明确的收口清单
+
+## 目录结构
+
+```text
 Frontend/radish.console/
 ├── src/
-│   ├── components/         # Console 专用组件
-│   │   └── AdminLayout/    # 后台管理布局
-│   ├── pages/              # 页面组件
-│   │   ├── Dashboard/      # 仪表盘
-│   │   ├── Applications/   # 应用管理
-│   │   ├── Users/          # 用户管理（待实现）
-│   │   └── Roles/          # 角色管理（待实现）
 │   ├── api/                # API 客户端
-│   │   ├── client.ts       # 通用 API 工具
-│   │   └── clients.ts      # 客户端管理 API
+│   ├── components/         # Console 专用组件
+│   ├── constants/          # Console 权限常量等
+│   ├── hooks/              # usePermission 等 Hook
+│   ├── pages/              # 页面组件
+│   ├── router/             # 路由定义、权限元数据、RouteGuard
+│   ├── services/           # token / 认证相关服务
 │   ├── types/              # TypeScript 类型定义
-│   │   └── oidc.ts         # OIDC 相关类型
-│   ├── App.tsx             # 应用入口
-│   └── main.tsx            # 主文件
+│   └── utils/              # logger 等工具
+├── public/
+├── package.json
+└── vite.config.ts
 ```
 
-### 组件来源
+## 技术要点
 
-- **基础组件**: 从 `@radish/ui` 导入
-- **Ant Design 组件**: 通过 `@radish/ui` re-export 使用
-- **专用组件**: 在 `src/components` 中实现
+- **路由**：`React Router`
+- **权限消费**：`CurrentUserVo.VoPermissions` + `usePermission`
+- **路由守卫**：`RouteGuard`
+- **HTTP 客户端**：统一使用 `@radish/http` / `@radish/ui` 能力
+- **特殊上传**：仅在需要进度回调时使用 `XMLHttpRequest`，并从 `getApiClientConfig()` 获取配置
 
-## 🚀 开发指南
+## 开发约定
 
 ### 环境配置
 
-项目使用 Vite 环境变量进行配置管理。
+- `.env.development` - 开发环境配置
+- `.env.production` - 生产环境配置
+- `.env.local` - 本地覆盖配置（不提交）
+- `.env.local.example` - 本地配置示例
 
-#### 配置文件
-
-- `.env.development` - 开发环境配置（已提交）
-- `.env.production` - 生产环境配置（已提交）
-- `.env.local` - 本地覆盖配置（不提交，需手动创建）
-- `.env.local.example` - 本地配置示例（已提交）
-
-#### 可配置项
+### 启动方式
 
 ```bash
-# API 基础 URL
-VITE_API_BASE_URL=http://localhost:5200
-
-# Auth Server URL
-VITE_AUTH_SERVER_URL=http://localhost:5200
-
-# 是否启用调试模式
-VITE_DEBUG=true
-
-# 是否启用 Token 自动刷新调试定时器（仅调试建议开启）
-VITE_TOKEN_AUTO_REFRESH_DEBUG=false
-
-# 功能开关
-VITE_FEATURE_THEME_SWITCH=true
-VITE_FEATURE_GLOBAL_SEARCH=false
-```
-
-#### 本地开发配置
-
-如需自定义本地配置，复制 `.env.local.example` 为 `.env.local`：
-
-```bash
-cp .env.local.example .env.local
-# 然后编辑 .env.local 修改配置
-```
-
-**注意**：`.env.local` 不会提交到 Git，可以安全地存放个人配置。
-
-#### 在代码中使用
-
-```typescript
-// 方式 1: 直接使用
-const apiUrl = import.meta.env.VITE_API_BASE_URL;
-
-// 方式 2: 通过 env 工具（推荐）
-import { env } from '@/config/env';
-const apiUrl = env.apiBaseUrl;
-const isDebug = env.debug;
-```
-
-### 启动开发服务器
-
-```bash
-# 方式 1: 使用 npm workspace 命令（推荐）
 npm run dev --workspace=radish.console
-
-# 方式 2: 直接在 console 目录下
-cd Frontend/radish.console
-npm run dev
 ```
 
-访问地址: `http://localhost:3100/console/`
+### 注意事项
 
-### 通过 Gateway 访问
+- 普通 API 调用不要再自定义 fetch 封装
+- 未落地能力不要提前暴露按钮、权限常量或页面入口
+- 若页面新增真实后端依赖，需同步检查：前端权限常量、`ConsolePermissions`、`DbMigrate`
 
-```bash
-# 启动 Gateway（端口 5000）
-cd Radish.Gateway
-dotnet run
+## 相关文档
 
-# 通过 Gateway 访问 console
-# 浏览器访问: https://localhost:5000/console
-```
-
-## 📝 当前实现状态
-
-### ✅ 已完成
-
-1. **AdminLayout 后台布局**
-   - 侧边栏菜单
-   - 顶部用户信息
-   - 响应式折叠
-   - 用户下拉菜单
-
-2. **应用管理页面**
-   - 客户端列表展示
-   - 新增客户端
-   - 编辑客户端（部分）
-   - 删除客户端（带确认）
-   - 重置客户端密钥
-   - 分页和刷新
-
-3. **API 客户端工具**
-   - 统一的 fetch 封装
-   - 自动附加 Bearer Token
-   - 响应解析工具
-
-### ⏳ 待实现
-
-1. **OIDC 认证集成**
-   - 登录流程
-   - Token 管理
-   - 自动续期
-
-2. **用户管理模块**
-   - 用户列表
-   - 用户 CRUD
-   - 角色分配
-
-3. **角色管理模块**
-   - 角色列表
-   - 角色 CRUD
-   - 权限配置
-
-## 🔧 技术栈
-
-- **框架**: React 19 + TypeScript
-- **构建工具**: Vite (Rolldown)
-- **UI 组件**: Ant Design (通过 @radish/ui)
-- **状态管理**: React useState (未来可能引入 Zustand)
-- **HTTP 客户端**: Fetch API
-
-## 📚 相关文档
-
-- [CLAUDE.md](../CLAUDE.md) - 项目总体指南
-- [开发计划](../../Docs/development-plan.md) - 项目里程碑与迭代计划
-- [UI 组件库](../../Docs/frontend/ui-library.md) - @radish/ui 组件库说明
-
-## ⚠️ 注意事项
-
-1. **依赖管理**: 所有 npm 操作应在同一环境（Windows 或 WSL）下执行
-2. **API 端点**: 默认使用 `https://localhost:5000`（Gateway）作为 API 基础 URL
-3. **认证**: 当前使用 localStorage 存储 access_token（临时方案）
+- `Docs/guide/console-system.md`
+- `Docs/guide/console-permission-governance.md`
+- `Docs/planning/current.md`

@@ -1,0 +1,175 @@
+# Console 权限治理 V1
+
+> 最后更新：2026-03-10
+> 状态：进行中（已进入收口阶段）
+
+本文档用于统一 Console 权限治理的设计口径、当前完成范围、剩余清单与退出条件。
+
+## 1. 目标
+
+Console 权限治理 V1 只解决以下问题：
+
+- 页面、菜单、全局搜索、直链访问的权限口径统一
+- 前端可见性控制与后端资源授权形成最小闭环
+- 非默认角色可通过 `ApiModule + RoleModulePermission` 派生出稳定的 Console 权限快照
+- 未落地能力不再以按钮、入口、权限常量等形式继续暴露
+
+V1 **不追求**完整的后台 RBAC 平台，也不在本阶段展开权限配置 UI、权限树编辑器、批量授权面板等扩张项。
+
+## 2. 当前实现链路
+
+当前 Console 权限链路如下：
+
+```text
+ApiModule.LinkUrl + RoleModulePermission
+        ↓
+UserService 汇总角色资源
+        ↓
+ConsolePermissions.GetPermissionsByApiUrl(...)
+        ↓
+CurrentUserVo.VoPermissions
+        ↓
+Route Meta / RouteGuard / usePermission
+        ↓
+菜单、搜索、页面、按钮可见性控制
+```
+
+### 2.1 前端职责
+
+- `RouteGuard` 负责页面访问边界，阻止手输 URL 越权进入
+- 菜单与全局搜索复用同一份路由权限元数据
+- 页面内部只保留按钮级 / 操作级权限控制
+- 页面在无访问权限时停止首屏请求，避免“按钮隐藏但接口照打”
+
+### 2.2 后端职责
+
+- `ConsolePermissions` 负责 Console 权限键与资源 URL 的映射
+- `UserService` 负责把角色资源映射为 `VoPermissions`
+- `DbMigrate` 负责种子化 `ApiModule` 与默认角色授权，保证非默认角色也可通过数据库授权获得能力
+- `HangfireAuthorizationFilter` 等特殊入口负责消费权限快照，而不是硬编码角色放行
+
+## 3. 已完成范围
+
+截至 2026-03-10，以下事项已完成：
+
+### 3.1 路由与前端可见性
+
+- 路由入口统一接入 `RouteGuard`
+- 菜单 / 搜索 / 路由同源化
+- 页面内重复页面级权限判断已收口到路由层
+- 首页无 Dashboard 权限时自动回退到首个可访问页面
+
+### 3.2 已形成闭环的模块
+
+- `Dashboard`
+- `Applications`
+- `Users`
+- `Roles`
+- `Products`
+- `Orders`
+- `Tags`
+- `Stickers`
+- `SystemConfig`
+- `Hangfire`
+
+### 3.3 已完成的资源种子补齐
+
+近期几轮已完成的补齐点包括：
+
+1. 角色管理首批闭环
+2. 第二批页面闭环：`Users / Applications / SystemConfig`
+3. 第三批页面闭环：`Products / Orders / Tags / Stickers`
+4. 路由级守卫收口
+5. 页面内重复判断清理
+6. `Dashboard` 权限种子闭环
+7. `Hangfire` 权限种子闭环
+8. `Users` 误暴露权限入口收口
+9. `Products / Stickers` 辅助接口资源种子补齐
+
+## 4. 当前明确边界
+
+### 4.1 已下线的伪能力
+
+`Users` 页中以下能力已从前后端权限口径中移除：
+
+- 创建用户
+- 更新用户状态
+- 重置密码
+- 强制下线
+- 删除用户
+
+原因是这些能力当前没有稳定的后端落地点，继续暴露只会制造“看得见但不可用”的伪能力入口。
+
+### 4.2 当前仍不纳入 V1 的能力
+
+以下事项不纳入本阶段：
+
+- 权限配置 UI / 权限树编辑器
+- 共享上传能力的完整权限平台化
+- 审计日志查询、系统监控、日志检索等新模块扩张
+- 未在 Console 页面真实调用的后端接口资源补齐
+
+## 5. 待决策项
+
+### 5.1 `Attachment/UploadImage` 是否纳入权限模型
+
+当前 `Stickers` 与 `UserProfile` 均直接调用 `/api/v1/Attachment/UploadImage`，但该接口尚未进入 Console 资源映射与种子体系。
+
+这不是当前的阻断问题，因为后端仍按登录态鉴权；但它是 V1 收口阶段最值得优先决策的共享接口边界问题。
+
+待决策方向：
+
+- **方案 A：不纳入 V1**
+  - 保持共享上传接口为登录态能力
+  - V1 只维护 Console 专属业务资源映射
+- **方案 B：纳入 V1，但仅收口 Sticker 业务链路**
+  - 以 `console.stickers.create/edit/batch-upload` 归属上传能力
+  - 不额外新增“上传”独立权限键
+- **方案 C：建立独立上传权限键**
+  - 进入下一阶段，不建议在 V1 收口末期引入
+
+当前推荐：**优先采用方案 A 或 B，不建议在 V1 尾声引入新的权限族**。
+
+## 6. V1 收口清单
+
+### 6.1 已完成
+
+- [x] 路由、菜单、搜索权限同源化
+- [x] 页面级重复判断收口到 `RouteGuard`
+- [x] `Dashboard / Hangfire / Applications / Users / Roles / Products / Orders / Tags / Stickers / SystemConfig` 页面权限闭环
+- [x] `Dashboard` 资源映射与种子闭环
+- [x] `Hangfire` 资源映射与种子闭环
+- [x] `Products / Stickers` 真实在用辅助接口资源补齐
+- [x] `Users` 伪能力入口与无效权限常量清理
+
+### 6.2 进行中
+
+- [ ] 共享接口边界决策：`Attachment/UploadImage`
+- [ ] 文档、规划、README 口径统一
+- [ ] 形成权限覆盖矩阵（路由 / 前端常量 / 后端映射 / `DbMigrate`）
+
+### 6.3 本阶段不做
+
+- [ ] 新增权限配置后台
+- [ ] 新增完整审计日志模块
+- [ ] 新增监控报表、趋势图、资源监控页
+- [ ] 把所有登录态接口都一并纳入 Console 权限模型
+
+## 7. V1 退出条件
+
+满足以下条件即可认为 Console 权限治理 V1 收口完成：
+
+1. 已接入权限治理的 Console 页面全部具备稳定的页面访问边界
+2. 已真实调用的 Console 专属后端接口全部完成 `ConsolePermissions + DbMigrate` 对齐
+3. 共享接口边界至少完成一次明确决策并记录
+4. 不再继续出现“页面入口已显示，但接口未落地 / 未授权”的新增裂缝
+5. 规划文档与专题文档对“当前已完成 / 当前不做 / 下一步待决策”达成统一口径
+
+## 8. 下一步建议
+
+当本文档第 6 节只剩 1-2 个待办时，下一轮工作应优先从以下两项中二选一：
+
+1. **边界决策**：确认 `Attachment/UploadImage` 是否纳入 V1 权限模型
+2. **治理收尾工具**：补一份权限覆盖矩阵或扫描脚本，避免后续再靠人工逐页审计
+
+这两项完成后，Console 权限治理 V1 就应该从“持续扩张”切换到“冻结边界、只做回归维护”。

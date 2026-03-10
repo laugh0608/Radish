@@ -7,6 +7,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [文档首页](./index.md)
 - [开发路线图总览](./development-plan.md)
 - [当前进行中](./planning/current.md)
+- [Console 权限治理 V1](./guide/console-permission-governance.md)
 - [未来规划](./planning/backlog.md)
 - [已完成摘要](./planning/archive.md)
 
