@@ -145,8 +145,8 @@ Route Meta / RouteGuard / usePermission
 ### 6.2 进行中
 
 - [ ] 共享接口边界决策：`Attachment/UploadImage`
-- [ ] 文档、规划、README 口径统一
-- [ ] 形成权限覆盖矩阵（路由 / 前端常量 / 后端映射 / `DbMigrate`）
+- [x] 文档、规划、README 口径统一
+- [x] 形成权限覆盖矩阵（路由 / 前端常量 / 后端映射 / `DbMigrate`）
 
 ### 6.3 本阶段不做
 
@@ -165,7 +165,11 @@ Route Meta / RouteGuard / usePermission
 4. 不再继续出现“页面入口已显示，但接口未落地 / 未授权”的新增裂缝
 5. 规划文档与专题文档对“当前已完成 / 当前不做 / 下一步待决策”达成统一口径
 
-## 8. 下一步建议
+## 8. 参考文档
+
+- [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix)
+
+## 9. 下一步建议
 
 当本文档第 6 节只剩 1-2 个待办时，下一轮工作应优先从以下两项中二选一：
 

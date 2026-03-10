@@ -13,6 +13,7 @@ Console 管理后台系统文档较长，为便于阅读已拆分为多篇文档
 - [4. 技术架构](/guide/console-architecture) - React Router、RouteGuard、权限快照与 API 集成
 - [5. 实施计划](/guide/console-roadmap) - 当前阶段、收口策略与后续治理入口
 - [Console 权限治理 V1](/guide/console-permission-governance) - 当前最重要的治理专题文档
+- [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix) - 路由 / 前端权限 / 后端映射 / 种子的对照表
 
 ---
 

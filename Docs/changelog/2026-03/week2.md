@@ -97,3 +97,9 @@
 - **专题文档补齐**：新增 `Console 权限治理 V1` 专项文档，集中维护当前已完成范围、待决策项、收口清单与退出条件，避免权限治理继续分散在规划、日志与零散讨论中。
 - **架构与模块文档对齐**：`console-system / core-concepts / architecture / modules / roadmap` 已同步更新为当前真实状态，明确 `RouteGuard + usePermission + VoPermissions + ApiModule.LinkUrl + DbMigrate` 的完整链路。
 - **规划与 README 收口**：`development-plan`、`planning/current` 与 `radish.console/README` 已移除明显过期的“Users / Roles 待实现”“自定义 fetch 封装”等旧描述，改为 Console 权限治理 V1 收口清单。
+
+
+### Console 权限覆盖矩阵补齐
+
+- **覆盖矩阵落地**：新增 `Console 权限覆盖矩阵` 文档，统一核对路由元数据、前端权限常量、后端 `ConsolePermissions` 映射与 `DbMigrate` 种子，减少继续靠人工逐页巡检的成本。
+- **剩余缺口收敛**：矩阵确认当前 Console 专属资源基本已闭环，剩余主要待决策项已收敛为共享上传接口 `Attachment/UploadImage` 的边界问题。
