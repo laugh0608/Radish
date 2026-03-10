@@ -17,6 +17,8 @@ import {
   ShoppingOutlined,
   LeftOutlined,
 } from '@radish/ui';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import './UserDetail.css';
 
@@ -58,6 +60,7 @@ export const UserDetail = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   useDocumentTitle('用户详情');
+  const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
 
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState<UserDetailData | null>(null);
@@ -120,12 +123,16 @@ export const UserDetail = () => {
   };
 
   useEffect(() => {
-    if (userId) {
-      loadUserDetail();
-      loadCoinTransactions();
-      loadOrders();
+    if (userId && canViewUsers) {
+      void loadUserDetail();
+      void loadCoinTransactions();
+      void loadOrders();
     }
-  }, [userId]);
+  }, [userId, canViewUsers]);
+
+  if (!canViewUsers) {
+    return <div style={{ padding: '24px' }}>当前账号暂无用户详情访问权限。</div>;
+  }
 
   // 萝卜币流水表格列
   const coinColumns: TableColumnsType<CoinTransaction> = [

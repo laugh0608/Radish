@@ -238,6 +238,132 @@ internal static partial class InitialDataSeeder
                 ControllerName = "Role",
                 ActionName = "ToggleRoleStatus",
                 Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50020L,
+                ApiModuleName = "Get user list",
+                LinkUrl = "/api/v1/User/GetUserList",
+                ControllerName = "User",
+                ActionName = "GetUserList",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50021L,
+                ApiModuleName = "Get user by id",
+                LinkUrl = "/api/v1/User/GetUserById/\\d+",
+                ControllerName = "User",
+                ActionName = "GetUserById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50030L,
+                ApiModuleName = "Get clients",
+                LinkUrl = "/api/v1/Client/GetClients",
+                ControllerName = "Client",
+                ActionName = "GetClients",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50031L,
+                ApiModuleName = "Get client",
+                LinkUrl = "/api/v1/Client/GetClient/.+",
+                ControllerName = "Client",
+                ActionName = "GetClient",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50032L,
+                ApiModuleName = "Create client",
+                LinkUrl = "/api/v1/Client/CreateClient",
+                ControllerName = "Client",
+                ActionName = "CreateClient",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50033L,
+                ApiModuleName = "Update client",
+                LinkUrl = "/api/v1/Client/UpdateClient/.+",
+                ControllerName = "Client",
+                ActionName = "UpdateClient",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50034L,
+                ApiModuleName = "Delete client",
+                LinkUrl = "/api/v1/Client/DeleteClient/.+",
+                ControllerName = "Client",
+                ActionName = "DeleteClient",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50035L,
+                ApiModuleName = "Reset client secret",
+                LinkUrl = "/api/v1/Client/ResetClientSecret/.+",
+                ControllerName = "Client",
+                ActionName = "ResetClientSecret",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50040L,
+                ApiModuleName = "Get system configs",
+                LinkUrl = "/api/v1/SystemConfig/GetSystemConfigs",
+                ControllerName = "SystemConfig",
+                ActionName = "GetSystemConfigs",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50041L,
+                ApiModuleName = "Get system config categories",
+                LinkUrl = "/api/v1/SystemConfig/GetConfigCategories",
+                ControllerName = "SystemConfig",
+                ActionName = "GetConfigCategories",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50042L,
+                ApiModuleName = "Get system config by id",
+                LinkUrl = "/api/v1/SystemConfig/GetConfigById",
+                ControllerName = "SystemConfig",
+                ActionName = "GetConfigById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50043L,
+                ApiModuleName = "Create system config",
+                LinkUrl = "/api/v1/SystemConfig/CreateConfig",
+                ControllerName = "SystemConfig",
+                ActionName = "CreateConfig",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50044L,
+                ApiModuleName = "Update system config",
+                LinkUrl = "/api/v1/SystemConfig/UpdateConfig",
+                ControllerName = "SystemConfig",
+                ActionName = "UpdateConfig",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50045L,
+                ApiModuleName = "Delete system config",
+                LinkUrl = "/api/v1/SystemConfig/DeleteConfig",
+                ControllerName = "SystemConfig",
+                ActionName = "DeleteConfig",
+                Roles = new[] { 10000L, 10001L }
             }
         };
 

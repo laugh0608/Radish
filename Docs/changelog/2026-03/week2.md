@@ -34,3 +34,16 @@
 - ✅ `npm run type-check --workspace=radish.console` 通过。
 - ✅ `dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false --no-restore` 通过。
 - ✅ `dotnet build Radish.DbMigrate/Radish.DbMigrate.csproj -c Debug -m:1 /nr:false --no-restore` 通过。
+
+### Console 权限治理第二批继续收口
+
+- **Users 页面权限接入**：`用户管理` 与 `用户详情` 已接入页面可见性控制，列表页的查看详情、启用禁用、重置密码、强制下线、删除与新增入口均按权限开关显示。
+- **Applications 页面权限接入**：`应用管理` 已接入页面访问控制以及新增、编辑、删除、重置密钥按钮级权限控制。
+- **SystemConfig 页面权限接入**：`系统配置` 已接入页面访问、创建、编辑、删除权限控制，并避免无权限时继续请求配置列表。
+- **权限种子扩展**：`DbMigrate` 已补充 `UserController`、`ClientController`、`SystemConfigController` 的主链路 `ApiModule` / `RoleModulePermission` 种子，为第二批页面权限快照提供稳定来源。
+
+### 第二批收口验证
+
+- ✅ 第二批继续复用 `CurrentUserVo.VoPermissions` 与 Console 权限常量，不新增前端私有权限模型。
+- ✅ `Users / Applications / SystemConfig` 均已接入页面级可见性控制；无权限时不再继续触发首屏数据请求。
+- ✅ `DbMigrate` 权限种子已覆盖第二批页面依赖的主要后端接口，后续可通过补种让非默认角色获得相应页面能力。

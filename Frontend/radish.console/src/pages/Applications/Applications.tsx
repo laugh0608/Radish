@@ -21,6 +21,8 @@ import {
 } from '@radish/ui';
 import { clientApi } from '../../api/clients';
 import type { OidcClient, CreateClientRequest } from '../../types/oidc';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import './Applications.css';
 
 export const Applications = () => {
@@ -31,10 +33,19 @@ export const Applications = () => {
   const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
   const [currentClient, setCurrentClient] = useState<OidcClient | null>(null);
   const [form] = Form.useForm();
+  const canViewApplications = usePermission(CONSOLE_PERMISSIONS.applicationsView);
+  const canCreateApplication = usePermission(CONSOLE_PERMISSIONS.applicationsCreate);
+  const canEditApplication = usePermission(CONSOLE_PERMISSIONS.applicationsEdit);
+  const canDeleteApplication = usePermission(CONSOLE_PERMISSIONS.applicationsDelete);
+  const canResetApplicationSecret = usePermission(CONSOLE_PERMISSIONS.applicationsResetSecret);
 
   useEffect(() => {
+    if (!canViewApplications) {
+      return;
+    }
+
     void loadClients();
-  }, []);
+  }, [canViewApplications]);
 
   const loadClients = async () => {
     setLoading(true);
@@ -217,40 +228,54 @@ export const Applications = () => {
       width: 220,
       render: (_, record) => (
         <Space size="small">
-          <AntButton
-            type="link"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            编辑
-          </AntButton>
-          <AntButton
-            type="link"
-            size="small"
-            onClick={() => void handleResetSecret(record.id)}
-          >
-            重置密钥
-          </AntButton>
-          <Popconfirm
-            title="确定删除此客户端吗？"
-            onConfirm={() => void handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
+          {canEditApplication ? (
             <AntButton
               type="link"
               size="small"
-              danger
-              icon={<DeleteOutlined />}
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
             >
-              删除
+              编辑
             </AntButton>
-          </Popconfirm>
+          ) : null}
+          {canResetApplicationSecret ? (
+            <AntButton
+              type="link"
+              size="small"
+              onClick={() => void handleResetSecret(record.id)}
+            >
+              重置密钥
+            </AntButton>
+          ) : null}
+          {canDeleteApplication ? (
+            <Popconfirm
+              title="确定删除此客户端吗？"
+              onConfirm={() => void handleDelete(record.id)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <AntButton
+                type="link"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
+              >
+                删除
+              </AntButton>
+            </Popconfirm>
+          ) : null}
         </Space>
       ),
     },
   ];
+
+  if (!canViewApplications) {
+    return (
+      <div className="applications-page">
+        <p>当前账号暂无应用管理访问权限。</p>
+      </div>
+    );
+  }
 
   return (
     <div className="applications-page">
@@ -260,9 +285,11 @@ export const Applications = () => {
           <AntButton icon={<ReloadOutlined />} onClick={() => void loadClients()}>
             刷新
           </AntButton>
-          <AntButton type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-            新增应用
-          </AntButton>
+          {canCreateApplication ? (
+            <AntButton type="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              新增应用
+            </AntButton>
+          ) : null}
         </Space>
       </div>
 

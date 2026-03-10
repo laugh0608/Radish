@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -28,12 +28,11 @@ import {
 } from '@radish/ui';
 import {
   userManagementApi,
-  getUserStatusDisplay,
-  getUserStatusColor,
   UserStatus,
-  type UserListResponse,
   type UserListParams,
 } from '../../api/userManagement';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import type { UserListItem } from '../../types/user';
 import { log } from '../../utils/logger';
 import './UserList.css';
@@ -46,6 +45,13 @@ export const UserList = () => {
   const [total, setTotal] = useState(0);
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
+  const canCreateUser = usePermission(CONSOLE_PERMISSIONS.usersCreate);
+  const canEditUser = usePermission(CONSOLE_PERMISSIONS.usersEdit);
+  const canDeleteUserPermission = usePermission(CONSOLE_PERMISSIONS.usersDelete);
+  const canUpdateUserStatus = usePermission(CONSOLE_PERMISSIONS.usersStatus);
+  const canResetPassword = usePermission(CONSOLE_PERMISSIONS.usersResetPassword);
+  const canForceLogout = usePermission(CONSOLE_PERMISSIONS.usersForceLogout);
 
   // 筛选条件
   const [keyword, setKeyword] = useState<string>('');
@@ -222,68 +228,78 @@ export const UserList = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => navigate(`/users/${record.uuid}`)}
-          >
-            查看详情
-          </Button>
-
-          {record.voIsEnable ? (
+          {canEditUser ? (
             <Button
               variant="ghost"
               size="small"
-              icon={<LockOutlined />}
-              onClick={() => handleUpdateStatus(record.uuid, UserStatus.Disabled)}
+              icon={<EditOutlined />}
+              onClick={() => navigate(`/users/${record.uuid}`)}
             >
-              禁用
+              查看详情
             </Button>
-          ) : (
+          ) : null}
+
+          {canUpdateUserStatus ? (
+            record.voIsEnable ? (
+              <Button
+                variant="ghost"
+                size="small"
+                icon={<LockOutlined />}
+                onClick={() => handleUpdateStatus(record.uuid, UserStatus.Disabled)}
+              >
+                禁用
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="small"
+                icon={<UnlockOutlined />}
+                onClick={() => handleUpdateStatus(record.uuid, UserStatus.Normal)}
+              >
+                启用
+              </Button>
+            )
+          ) : null}
+
+          {canResetPassword ? (
             <Button
               variant="ghost"
               size="small"
-              icon={<UnlockOutlined />}
-              onClick={() => handleUpdateStatus(record.uuid, UserStatus.Normal)}
+              icon={<KeyOutlined />}
+              onClick={() => handleResetPassword(record)}
             >
-              启用
+              重置密码
             </Button>
-          )}
+          ) : null}
 
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<KeyOutlined />}
-            onClick={() => handleResetPassword(record)}
-          >
-            重置密码
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<LogoutOutlined />}
-            onClick={() => handleForceLogout(record.uuid)}
-          >
-            强制下线
-          </Button>
-
-          <Popconfirm
-            title="确定要删除这个用户吗？"
-            description="删除后无法恢复，请谨慎操作。"
-            onConfirm={() => handleDeleteUser(record.uuid)}
-            okText="确定"
-            cancelText="取消"
-          >
+          {canForceLogout ? (
             <Button
-              variant="danger"
+              variant="ghost"
               size="small"
-              icon={<DeleteOutlined />}
+              icon={<LogoutOutlined />}
+              onClick={() => handleForceLogout(record.uuid)}
             >
-              删除
+              强制下线
             </Button>
-          </Popconfirm>
+          ) : null}
+
+          {canDeleteUserPermission ? (
+            <Popconfirm
+              title="确定要删除这个用户吗？"
+              description="删除后无法恢复，请谨慎操作。"
+              onConfirm={() => handleDeleteUser(record.uuid)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button
+                variant="danger"
+                size="small"
+                icon={<DeleteOutlined />}
+              >
+                删除
+              </Button>
+            </Popconfirm>
+          ) : null}
         </Space>
       ),
     },
@@ -291,8 +307,20 @@ export const UserList = () => {
 
   // 初始化加载
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (!canViewUsers) {
+      return;
+    }
+
+    void loadUsers();
+  }, [canViewUsers]);
+
+  if (!canViewUsers) {
+    return (
+      <div className="user-list">
+        <p>当前账号暂无用户管理访问权限。</p>
+      </div>
+    );
+  }
 
   return (
     <div className="user-list">
@@ -347,16 +375,17 @@ export const UserList = () => {
             重置
           </Button>
 
-          <Button
-            variant="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              // TODO: 打开新增用户弹窗
-              message.info('新增用户功能待实现');
-            }}
-          >
-            新增用户
-          </Button>
+          {canCreateUser ? (
+            <Button
+              variant="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                message.info('新增用户功能待实现');
+              }}
+            >
+              新增用户
+            </Button>
+          ) : null}
         </Space>
       </div>
 
