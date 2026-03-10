@@ -85,3 +85,8 @@
 - **详情入口语义纠正**：列表中的“查看详情”现统一按 `console.users.view` 控制，不再误绑到不存在的 `console.users.edit` 能力。
 - **无效权限常量清理**：前后端 `ConsolePermissions` / `permissions.ts` 已同步移除未落地的用户操作权限定义，避免默认权限全集继续派生无效能力。
 
+### Console Products / Stickers 权限种子继续补齐
+
+- **Products 辅助资源补齐**：`ConsolePermissions` 与 `DbMigrate` 已补充 `ShopController.GetCategories -> console.products.view`，覆盖商品列表筛选与表单分类加载所依赖的辅助接口，避免非默认角色仅拿到商品页主链路权限后仍因缺分类资源而出现能力断裂。
+- **Stickers 辅助资源补齐**：已补充 `StickerController.CheckGroupCode`、`CheckStickerCode`、`NormalizeCode` 的资源映射与默认角色种子，分别归属 `console.stickers.create/edit/batch-upload`，与分组创建、表情编辑、批量上传的真实前端调用保持一致。
+- **本轮继续保持最小改动**：仅补真实在用的辅助接口资源，不扩张到 Console 当前未实际调用的 `AdminGetProduct`、`GetCategory` 等链路，避免权限模型先于页面需求过度生长。

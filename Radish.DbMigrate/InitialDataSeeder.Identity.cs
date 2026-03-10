@@ -385,6 +385,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50049L,
+                ApiModuleName = "Get product categories",
+                LinkUrl = "/api/v1/Shop/GetCategories",
+                ControllerName = "Shop",
+                ActionName = "GetCategories",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50050L,
                 ApiModuleName = "Admin get products",
                 LinkUrl = "/api/v1/Shop/AdminGetProducts",
@@ -606,6 +615,33 @@ internal static partial class InitialDataSeeder
                 LinkUrl = "/api/v1/Sticker/BatchUpdateSort",
                 ControllerName = "Sticker",
                 ActionName = "BatchUpdateSort",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50080L,
+                ApiModuleName = "Check sticker group code",
+                LinkUrl = "/api/v1/Sticker/CheckGroupCode",
+                ControllerName = "Sticker",
+                ActionName = "CheckGroupCode",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50081L,
+                ApiModuleName = "Check sticker code",
+                LinkUrl = "/api/v1/Sticker/CheckStickerCode",
+                ControllerName = "Sticker",
+                ActionName = "CheckStickerCode",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50082L,
+                ApiModuleName = "Normalize sticker code",
+                LinkUrl = "/api/v1/Sticker/NormalizeCode",
+                ControllerName = "Sticker",
+                ActionName = "NormalizeCode",
                 Roles = new[] { 10000L, 10001L }
             }
         };
