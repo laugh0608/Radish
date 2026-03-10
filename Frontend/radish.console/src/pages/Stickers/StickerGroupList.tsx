@@ -260,11 +260,6 @@ export const StickerGroupList = () => {
       ),
     },
   ];
-
-  if (!canViewStickers) {
-    return <div className="sticker-group-list-page"><p>当前账号暂无表情包管理访问权限。</p></div>;
-  }
-
   return (
     <div className="sticker-group-list-page">
       <div className="page-header">

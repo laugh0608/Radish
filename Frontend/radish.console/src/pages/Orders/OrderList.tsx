@@ -243,11 +243,6 @@ export const OrderList = () => {
   if (loading && orders.length === 0) {
     return <TableSkeleton rows={10} columns={6} showFilters={true} showActions={true} />;
   }
-
-  if (!canViewOrders) {
-    return <div className="order-list-page"><p>当前账号暂无订单管理访问权限。</p></div>;
-  }
-
   return (
     <div className="order-list-page">
       <div className="page-header">

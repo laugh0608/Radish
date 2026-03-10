@@ -273,11 +273,6 @@ export const StickerList = () => {
       </div>
     );
   }
-
-  if (!canViewStickers) {
-    return <div><p>当前账号暂无分组表情管理访问权限。</p></div>;
-  }
-
   return (
     <div>
       <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>

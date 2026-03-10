@@ -220,18 +220,6 @@ export const RoleList = () => {
       ),
     },
   ];
-
-  if (!canViewRoles) {
-    return (
-      <div className="role-list-page">
-        <div className="page-header">
-          <h2>角色管理</h2>
-        </div>
-        <p>当前账号暂无角色管理访问权限。</p>
-      </div>
-    );
-  }
-
   return (
     <div className="role-list-page">
       <div className="page-header">

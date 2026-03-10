@@ -313,15 +313,6 @@ export const UserList = () => {
 
     void loadUsers();
   }, [canViewUsers]);
-
-  if (!canViewUsers) {
-    return (
-      <div className="user-list">
-        <p>当前账号暂无用户管理访问权限。</p>
-      </div>
-    );
-  }
-
   return (
     <div className="user-list">
       {/* 筛选条件 */}

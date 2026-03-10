@@ -129,11 +129,6 @@ export const UserDetail = () => {
       void loadOrders();
     }
   }, [userId, canViewUsers]);
-
-  if (!canViewUsers) {
-    return <div style={{ padding: '24px' }}>当前账号暂无用户详情访问权限。</div>;
-  }
-
   // 萝卜币流水表格列
   const coinColumns: TableColumnsType<CoinTransaction> = [
     {

@@ -270,15 +270,6 @@ export const SystemConfigList = () => {
       ),
     },
   ];
-
-  if (!canViewSystemConfig) {
-    return (
-      <div className="system-config-list-page">
-        <p>当前账号暂无系统配置访问权限。</p>
-      </div>
-    );
-  }
-
   return (
     <div className="system-config-list-page">
       <div className="page-header">

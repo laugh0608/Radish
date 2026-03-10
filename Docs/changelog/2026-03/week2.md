@@ -48,6 +48,18 @@
 - ✅ `Users / Applications / SystemConfig` 均已接入页面级可见性控制；无权限时不再继续触发首屏数据请求。
 - ✅ `DbMigrate` 权限种子已覆盖第二批页面依赖的主要后端接口，后续可通过补种让非默认角色获得相应页面能力。
 
+### Console 权限治理第三批日志补齐
+
+- **商城与内容页权限闭环**：`Products / Orders / Tags / Stickers` 已接入页面级访问控制与按钮级权限控制，继续复用 `CurrentUserVo.VoPermissions` 与 Console 权限常量。
+- **首屏请求收口**：上述页面在无访问权限时已停止首屏数据请求，避免仅依赖按钮隐藏但仍触发后台接口访问。
+- **权限种子扩展**：后端权限常量与 `DbMigrate` 已补齐第三批页面依赖的主链路权限映射，为非默认角色按数据库授权访问提供基础。
+
+### Console 页面级判断继续收口
+
+- **页面级判断下沉完成**：`Applications / Users / Roles / Products / Orders / Tags / Stickers / SystemConfig` 等页面已移除重复的页面级无权限占位返回，统一交由路由入口 `RouteGuard` 处理。
+- **页面职责收敛**：页面内部仅保留按钮级 / 操作级权限控制，以及无权限时不触发首屏请求的保护逻辑，避免与路由守卫产生双重判断漂移。
+
+
 ### Console 路由级守卫继续收口
 
 - **路由入口统一鉴权**：`radish.console` 新增路由元数据与 `RouteGuard`，将页面访问控制从页面内部前移到路由入口，阻止用户手输 URL 进入无权限页面。

@@ -268,15 +268,6 @@ export const Applications = () => {
       ),
     },
   ];
-
-  if (!canViewApplications) {
-    return (
-      <div className="applications-page">
-        <p>当前账号暂无应用管理访问权限。</p>
-      </div>
-    );
-  }
-
   return (
     <div className="applications-page">
       <div className="page-header">

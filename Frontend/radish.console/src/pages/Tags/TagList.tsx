@@ -298,11 +298,6 @@ export const TagList = () => {
       ),
     },
   ];
-
-  if (!canViewTags) {
-    return <div className="tag-list-page"><p>当前账号暂无标签管理访问权限。</p></div>;
-  }
-
   return (
     <div className="tag-list-page">
       <div className="page-header">

@@ -318,11 +318,6 @@ export const ProductList = () => {
       ),
     },
   ];
-
-  if (!canViewProducts) {
-    return <div className="product-list-page"><p>当前账号暂无商品管理访问权限。</p></div>;
-  }
-
   // 如果正在加载且没有数据，显示骨架屏
   if (loading && products.length === 0) {
     return <TableSkeleton rows={10} columns={6} showFilters={true} showActions={true} />;
