@@ -364,6 +364,231 @@ internal static partial class InitialDataSeeder
                 ControllerName = "SystemConfig",
                 ActionName = "DeleteConfig",
                 Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50050L,
+                ApiModuleName = "Admin get products",
+                LinkUrl = "/api/v1/Shop/AdminGetProducts",
+                ControllerName = "Shop",
+                ActionName = "AdminGetProducts",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50051L,
+                ApiModuleName = "Create product",
+                LinkUrl = "/api/v1/Shop/CreateProduct",
+                ControllerName = "Shop",
+                ActionName = "CreateProduct",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50052L,
+                ApiModuleName = "Update product",
+                LinkUrl = "/api/v1/Shop/UpdateProduct",
+                ControllerName = "Shop",
+                ActionName = "UpdateProduct",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50053L,
+                ApiModuleName = "Delete product",
+                LinkUrl = "/api/v1/Shop/DeleteProduct/.+",
+                ControllerName = "Shop",
+                ActionName = "DeleteProduct",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50054L,
+                ApiModuleName = "Put product on sale",
+                LinkUrl = "/api/v1/Shop/PutOnSale/.+",
+                ControllerName = "Shop",
+                ActionName = "PutOnSale",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50055L,
+                ApiModuleName = "Take product off sale",
+                LinkUrl = "/api/v1/Shop/TakeOffSale/.+",
+                ControllerName = "Shop",
+                ActionName = "TakeOffSale",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50056L,
+                ApiModuleName = "Admin get orders",
+                LinkUrl = "/api/v1/Shop/AdminGetOrders",
+                ControllerName = "Shop",
+                ActionName = "AdminGetOrders",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50057L,
+                ApiModuleName = "Retry grant benefit",
+                LinkUrl = "/api/v1/Shop/RetryGrantBenefit/.+",
+                ControllerName = "Shop",
+                ActionName = "RetryGrantBenefit",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50060L,
+                ApiModuleName = "Get tag page",
+                LinkUrl = "/api/v1/Tag/GetPage",
+                ControllerName = "Tag",
+                ActionName = "GetPage",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50061L,
+                ApiModuleName = "Create tag",
+                LinkUrl = "/api/v1/Tag/Create",
+                ControllerName = "Tag",
+                ActionName = "Create",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50062L,
+                ApiModuleName = "Update tag",
+                LinkUrl = "/api/v1/Tag/Update/.+",
+                ControllerName = "Tag",
+                ActionName = "Update",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50063L,
+                ApiModuleName = "Delete tag",
+                LinkUrl = "/api/v1/Tag/Delete/.+",
+                ControllerName = "Tag",
+                ActionName = "Delete",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50064L,
+                ApiModuleName = "Restore tag",
+                LinkUrl = "/api/v1/Tag/Restore/.+",
+                ControllerName = "Tag",
+                ActionName = "Restore",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50065L,
+                ApiModuleName = "Toggle tag status",
+                LinkUrl = "/api/v1/Tag/ToggleStatus/.+",
+                ControllerName = "Tag",
+                ActionName = "ToggleStatus",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50066L,
+                ApiModuleName = "Update tag sort",
+                LinkUrl = "/api/v1/Tag/UpdateSort/.+",
+                ControllerName = "Tag",
+                ActionName = "UpdateSort",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50070L,
+                ApiModuleName = "Get admin sticker groups",
+                LinkUrl = "/api/v1/Sticker/GetAdminGroups",
+                ControllerName = "Sticker",
+                ActionName = "GetAdminGroups",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50071L,
+                ApiModuleName = "Create sticker group",
+                LinkUrl = "/api/v1/Sticker/CreateGroup",
+                ControllerName = "Sticker",
+                ActionName = "CreateGroup",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50072L,
+                ApiModuleName = "Update sticker group",
+                LinkUrl = "/api/v1/Sticker/UpdateGroup/.+",
+                ControllerName = "Sticker",
+                ActionName = "UpdateGroup",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50073L,
+                ApiModuleName = "Delete sticker group",
+                LinkUrl = "/api/v1/Sticker/DeleteGroup/.+",
+                ControllerName = "Sticker",
+                ActionName = "DeleteGroup",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50074L,
+                ApiModuleName = "Get group stickers",
+                LinkUrl = "/api/v1/Sticker/GetGroupStickers/.+",
+                ControllerName = "Sticker",
+                ActionName = "GetGroupStickers",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50075L,
+                ApiModuleName = "Add sticker",
+                LinkUrl = "/api/v1/Sticker/AddSticker",
+                ControllerName = "Sticker",
+                ActionName = "AddSticker",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50076L,
+                ApiModuleName = "Batch add stickers",
+                LinkUrl = "/api/v1/Sticker/BatchAddStickers",
+                ControllerName = "Sticker",
+                ActionName = "BatchAddStickers",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50077L,
+                ApiModuleName = "Update sticker",
+                LinkUrl = "/api/v1/Sticker/UpdateSticker/.+",
+                ControllerName = "Sticker",
+                ActionName = "UpdateSticker",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50078L,
+                ApiModuleName = "Delete sticker",
+                LinkUrl = "/api/v1/Sticker/DeleteSticker/.+",
+                ControllerName = "Sticker",
+                ActionName = "DeleteSticker",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50079L,
+                ApiModuleName = "Batch update sticker sort",
+                LinkUrl = "/api/v1/Sticker/BatchUpdateSort",
+                ControllerName = "Sticker",
+                ActionName = "BatchUpdateSort",
+                Roles = new[] { 10000L, 10001L }
             }
         };
 

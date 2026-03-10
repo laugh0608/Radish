@@ -26,6 +26,8 @@ import {
   type StickerGroupUpsertRequest,
   type StickerGroupVo,
 } from '@/api/stickerApi';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import { getAvatarUrl } from '@/config/env';
 import { ROUTES } from '@/router';
 import { log } from '@/utils/logger';
@@ -44,6 +46,11 @@ export const StickerGroupList = () => {
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingGroup, setEditingGroup] = useState<StickerGroupVo | undefined>(undefined);
+  const canViewStickers = usePermission(CONSOLE_PERMISSIONS.stickersView);
+  const canCreateSticker = usePermission(CONSOLE_PERMISSIONS.stickersCreate);
+  const canEditSticker = usePermission(CONSOLE_PERMISSIONS.stickersEdit);
+  const canDeleteStickerPermission = usePermission(CONSOLE_PERMISSIONS.stickersDelete);
+  const canToggleSticker = usePermission(CONSOLE_PERMISSIONS.stickersToggle);
 
   const loadGroups = async () => {
     try {
@@ -59,8 +66,12 @@ export const StickerGroupList = () => {
   };
 
   useEffect(() => {
+    if (!canViewStickers) {
+      return;
+    }
+
     void loadGroups();
-  }, []);
+  }, [canViewStickers]);
 
   const filteredGroups = useMemo(() => {
     const normalized = keyword.trim().toLowerCase();
@@ -194,53 +205,65 @@ export const StickerGroupList = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<AppstoreOutlined />}
-            onClick={() => {
-              navigate(`${ROUTES.STICKERS}/${record.voId}/items`);
-            }}
-          >
-            管理表情
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => openEdit(record)}
-          >
-            编辑
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="small"
-            onClick={() => {
-              void handleToggleStatus(record, !record.voIsEnabled);
-            }}
-          >
-            {record.voIsEnabled ? '禁用' : '启用'}
-          </Button>
-
-          <Popconfirm
-            title="确认删除分组"
-            description={`删除后将软删除该分组及组内表情，确认继续？`}
-            onConfirm={() => {
-              void handleDelete(record.voId);
-            }}
-            okText="确认"
-            cancelText="取消"
-          >
-            <Button variant="ghost" size="small" icon={<DeleteOutlined />}>
-              删除
+          {canViewStickers ? (
+            <Button
+              variant="ghost"
+              size="small"
+              icon={<AppstoreOutlined />}
+              onClick={() => {
+                navigate(`${ROUTES.STICKERS}/${record.voId}/items`);
+              }}
+            >
+              管理表情
             </Button>
-          </Popconfirm>
+          ) : null}
+
+          {canEditSticker ? (
+            <Button
+              variant="ghost"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => openEdit(record)}
+            >
+              编辑
+            </Button>
+          ) : null}
+
+          {canToggleSticker ? (
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={() => {
+                void handleToggleStatus(record, !record.voIsEnabled);
+              }}
+            >
+              {record.voIsEnabled ? '禁用' : '启用'}
+            </Button>
+          ) : null}
+
+          {canDeleteStickerPermission ? (
+            <Popconfirm
+              title="确认删除分组"
+              description={`删除后将软删除该分组及组内表情，确认继续？`}
+              onConfirm={() => {
+                void handleDelete(record.voId);
+              }}
+              okText="确认"
+              cancelText="取消"
+            >
+              <Button variant="ghost" size="small" icon={<DeleteOutlined />}>
+                删除
+              </Button>
+            </Popconfirm>
+          ) : null}
         </Space>
       ),
     },
   ];
+
+  if (!canViewStickers) {
+    return <div className="sticker-group-list-page"><p>当前账号暂无表情包管理访问权限。</p></div>;
+  }
 
   return (
     <div className="sticker-group-list-page">
@@ -255,9 +278,11 @@ export const StickerGroupList = () => {
           >
             刷新
           </Button>
-          <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate}>
-            新建分组
-          </Button>
+          {canCreateSticker ? (
+            <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate}>
+              新建分组
+            </Button>
+          ) : null}
         </Space>
       </div>
 

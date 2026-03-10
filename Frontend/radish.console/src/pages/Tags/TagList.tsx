@@ -28,6 +28,8 @@ import {
   updateTagSort,
   type TagVo,
 } from '@/api/tagApi';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import { TagForm } from './TagForm';
 import { log } from '@/utils/logger';
 import './TagList.css';
@@ -40,6 +42,13 @@ export const TagList = () => {
   const [total, setTotal] = useState(0);
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const canViewTags = usePermission(CONSOLE_PERMISSIONS.tagsView);
+  const canCreateTag = usePermission(CONSOLE_PERMISSIONS.tagsCreate);
+  const canEditTag = usePermission(CONSOLE_PERMISSIONS.tagsEdit);
+  const canDeleteTagPermission = usePermission(CONSOLE_PERMISSIONS.tagsDelete);
+  const canRestoreTag = usePermission(CONSOLE_PERMISSIONS.tagsRestore);
+  const canToggleTag = usePermission(CONSOLE_PERMISSIONS.tagsToggle);
+  const canSortTag = usePermission(CONSOLE_PERMISSIONS.tagsSort);
 
   const [keyword, setKeyword] = useState('');
   const [isEnabled, setIsEnabled] = useState<'all' | 'enabled' | 'disabled'>('all');
@@ -75,8 +84,12 @@ export const TagList = () => {
   };
 
   useEffect(() => {
+    if (!canViewTags) {
+      return;
+    }
+
     void loadTags(1, pageSize);
-  }, [keyword, isEnabled, isFixed, includeDeleted]);
+  }, [keyword, isEnabled, isFixed, includeDeleted, canViewTags, pageSize]);
 
   const handleCreate = () => {
     setFormMode('create');
@@ -199,6 +212,7 @@ export const TagList = () => {
       width: 140,
       render: (_, record) => (
         <Input
+          disabled={!canSortTag}
           defaultValue={String(record.voSortOrder)}
           onBlur={(event) => {
             void handleSortChange(record, event.target.value);
@@ -219,7 +233,7 @@ export const TagList = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          {record.voIsDeleted && (
+          {record.voIsDeleted && canRestoreTag && (
             <Button
               variant="ghost"
               size="small"
@@ -233,11 +247,13 @@ export const TagList = () => {
 
           {!record.voIsDeleted && (
             <>
-              <Button variant="ghost" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-                编辑
-              </Button>
+              {canEditTag ? (
+                <Button variant="ghost" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+                  编辑
+                </Button>
+              ) : null}
 
-              {record.voIsEnabled ? (
+              {canToggleTag ? (record.voIsEnabled ? (
                 <Button
                   variant="ghost"
                   size="small"
@@ -259,27 +275,33 @@ export const TagList = () => {
                 >
                   启用
                 </Button>
-              )}
+              )) : null}
 
-              <Popconfirm
-                title="确认删除"
-                description="确定要删除这个标签吗？"
-                onConfirm={() => {
-                  void handleDelete(record.voId);
-                }}
-                okText="确认"
-                cancelText="取消"
-              >
-                <Button variant="danger" size="small" icon={<DeleteOutlined />}>
-                  删除
-                </Button>
-              </Popconfirm>
+              {canDeleteTagPermission ? (
+                <Popconfirm
+                  title="确认删除"
+                  description="确定要删除这个标签吗？"
+                  onConfirm={() => {
+                    void handleDelete(record.voId);
+                  }}
+                  okText="确认"
+                  cancelText="取消"
+                >
+                  <Button variant="danger" size="small" icon={<DeleteOutlined />}>
+                    删除
+                  </Button>
+                </Popconfirm>
+              ) : null}
             </>
           )}
         </Space>
       ),
     },
   ];
+
+  if (!canViewTags) {
+    return <div className="tag-list-page"><p>当前账号暂无标签管理访问权限。</p></div>;
+  }
 
   return (
     <div className="tag-list-page">
@@ -291,9 +313,11 @@ export const TagList = () => {
           }}>
             刷新
           </Button>
-          <Button variant="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-            新增标签
-          </Button>
+          {canCreateTag ? (
+            <Button variant="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              新增标签
+            </Button>
+          ) : null}
         </Space>
       </div>
 
