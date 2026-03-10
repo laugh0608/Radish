@@ -1,4 +1,28 @@
 import { useUser } from '../contexts/UserContext';
+import type { UserInfo } from '../types/user';
+
+export function hasPermission(user: UserInfo | null | undefined, permission?: string): boolean {
+  if (!user || !permission) {
+    return false;
+  }
+
+  const roles = user.roles || [];
+  if (roles.includes('System') || roles.includes('Admin')) {
+    return true;
+  }
+
+  const permissions = user.permissions || [];
+  return permissions.includes(permission);
+}
+
+export function hasRole(user: UserInfo | null | undefined, roles: string | string[]): boolean {
+  if (!user || !user.roles) {
+    return false;
+  }
+
+  const requiredRoles = Array.isArray(roles) ? roles : [roles];
+  return requiredRoles.some((role) => user.roles?.includes(role));
+}
 
 /**
  * 权限验证 Hook
@@ -17,17 +41,7 @@ import { useUser } from '../contexts/UserContext';
 export function usePermission(permission: string): boolean {
   const { user } = useUser();
 
-  if (!user || !permission) {
-    return false;
-  }
-
-  const roles = user.roles || [];
-  if (roles.includes('System')) {
-    return true;
-  }
-
-  const permissions = user.permissions || [];
-  return permissions.includes(permission);
+  return hasPermission(user, permission);
 }
 
 /**
@@ -44,10 +58,5 @@ export function usePermission(permission: string): boolean {
 export function useRole(roles: string | string[]): boolean {
   const { user } = useUser();
 
-  if (!user || !user.roles) {
-    return false;
-  }
-
-  const requiredRoles = Array.isArray(roles) ? roles : [roles];
-  return requiredRoles.some(role => user.roles?.includes(role));
+  return hasRole(user, roles);
 }

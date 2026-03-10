@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useUser } from '../../contexts/UserContext';
 import {
@@ -7,7 +7,6 @@ import {
   Dropdown,
   Avatar,
   type MenuProps,
-  message,
 } from '@radish/ui';
 import {
   MenuFoldOutlined,
@@ -26,105 +25,50 @@ import {
   TagsOutlined,
 } from '@radish/ui';
 import { ROUTES } from '../../router';
-import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { getAuthServerBaseUrl, getPostLogoutRedirectUri, getAvatarUrl } from '@/config/env';
 import { tokenService } from '../../services/tokenService';
 import { AppBreadcrumb } from '../Breadcrumb';
 import { GlobalSearch, useGlobalSearchHotkey } from '../GlobalSearch';
-import { usePermission } from '@/hooks/usePermission';
+import { getActiveMenuKey, getSidebarRoutes } from '@/router/routeMeta';
 import './AdminLayout.css';
 
 const { Header, Sider, Content } = Layout;
 
+const menuIconMap: Record<string, ReactNode> = {
+  dashboard: <DashboardOutlined />,
+  applications: <AppstoreOutlined />,
+  products: <ShoppingOutlined />,
+  orders: <FileTextOutlined />,
+  users: <TeamOutlined />,
+  roles: <SafetyOutlined />,
+  tags: <TagsOutlined />,
+  stickers: <AppstoreOutlined />,
+  'system-config': <SettingOutlined />,
+  hangfire: <ClockCircleOutlined />,
+};
+
 export interface AdminLayoutProps {
-  /**
-   * 内容区域
-   */
   children: ReactNode;
 }
 
-/**
- * AdminLayout - Radish Console 后台管理布局
- */
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [searchVisible, setSearchVisible] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useUser();
-  const canViewApplications = usePermission(CONSOLE_PERMISSIONS.applicationsView);
-  const canViewProducts = usePermission(CONSOLE_PERMISSIONS.productsView);
-  const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
-  const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
-  const canViewRoles = usePermission(CONSOLE_PERMISSIONS.rolesView);
-  const canViewTags = usePermission(CONSOLE_PERMISSIONS.tagsView);
-  const canViewStickers = usePermission(CONSOLE_PERMISSIONS.stickersView);
-  const canViewSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigView);
-  const canViewHangfire = usePermission(CONSOLE_PERMISSIONS.hangfireView);
 
-  // 全局搜索快捷键
   useGlobalSearchHotkey(() => setSearchVisible(true));
 
-  // 根据当前路径获取选中的菜单 key
-  const getSelectedKey = (): string => {
-    const path = location.pathname;
-    if (path === '/' || path === '') return 'dashboard';
-    // 移除开头的 / 获取 key
-    return path.slice(1);
-  };
-
-  const menuItems = [
-    {
-      key: 'dashboard',
-      icon: <DashboardOutlined />,
-      label: '仪表盘',
-    },
-    canViewApplications ? {
-      key: 'applications',
-      icon: <AppstoreOutlined />,
-      label: '应用管理',
-    } : null,
-    canViewProducts ? {
-      key: 'products',
-      icon: <ShoppingOutlined />,
-      label: '商品管理',
-    } : null,
-    canViewOrders ? {
-      key: 'orders',
-      icon: <FileTextOutlined />,
-      label: '订单管理',
-    } : null,
-    canViewUsers ? {
-      key: 'users',
-      icon: <TeamOutlined />,
-      label: '用户管理',
-    } : null,
-    canViewRoles ? {
-      key: 'roles',
-      icon: <SafetyOutlined />,
-      label: '角色管理',
-    } : null,
-    canViewTags ? {
-      key: 'tags',
-      icon: <TagsOutlined />,
-      label: '标签管理',
-    } : null,
-    canViewStickers ? {
-      key: 'stickers',
-      icon: <AppstoreOutlined />,
-      label: '表情包管理',
-    } : null,
-    canViewSystemConfig ? {
-      key: 'system-config',
-      icon: <SettingOutlined />,
-      label: '系统配置',
-    } : null,
-    canViewHangfire ? {
-      key: 'hangfire',
-      icon: <ClockCircleOutlined />,
-      label: '定时任务',
-    } : null,
-  ].filter((item): item is NonNullable<MenuProps['items']>[number] => item !== null);
+  const sidebarRoutes = useMemo(() => getSidebarRoutes(user), [user]);
+  const menuItems = useMemo<NonNullable<MenuProps['items']>>(
+    () => sidebarRoutes.map((route) => ({
+      key: route.key,
+      icon: menuIconMap[route.key],
+      label: route.title,
+    })),
+    [sidebarRoutes]
+  );
 
   const userMenuItems: MenuProps['items'] = [
     {
@@ -153,30 +97,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   const handleMenuClick: MenuProps['onClick'] = ({ key }) => {
-    // 根据 key 导航到对应路由
-    const routeMap: Record<string, string> = {
-      dashboard: ROUTES.HOME,
-      applications: ROUTES.APPLICATIONS,
-      products: ROUTES.PRODUCTS,
-      orders: ROUTES.ORDERS,
-      users: ROUTES.USERS,
-      roles: ROUTES.ROLES,
-      tags: ROUTES.TAGS,
-      stickers: ROUTES.STICKERS,
-      'system-config': ROUTES.SYSTEM_CONFIG,
-      hangfire: ROUTES.HANGFIRE,
-    };
-    const path = routeMap[key];
+    const path = sidebarRoutes.find((route) => route.key === key)?.path;
     if (path) {
       navigate(path);
     }
   };
 
   const handleLogout = () => {
-    // 使用 TokenService 清理 Token
     tokenService.clearTokens();
 
-    // 使用 OIDC 标准的 endsession endpoint 实现 Single Sign-Out
     const postLogoutRedirectUri = getPostLogoutRedirectUri();
     const authServerBaseUrl = getAuthServerBaseUrl();
 
@@ -215,7 +144,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         <Menu
           theme="dark"
           mode="inline"
-          selectedKeys={[getSelectedKey()]}
+          selectedKeys={[getActiveMenuKey(location.pathname)]}
           items={menuItems}
           onClick={handleMenuClick}
         />
@@ -267,7 +196,6 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         </Content>
       </Layout>
 
-      {/* 全局搜索组件 */}
       <GlobalSearch visible={searchVisible} onClose={() => setSearchVisible(false)} />
     </Layout>
   );

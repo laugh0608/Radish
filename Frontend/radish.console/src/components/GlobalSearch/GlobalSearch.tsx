@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AntModal, AntInput } from '@radish/ui';
 import { SearchOutlined } from '@radish/ui';
-import { routeTitleMap } from '@/hooks/useDocumentTitle';
+import { useUser } from '@/contexts/UserContext';
+import { getSearchableRoutes } from '@/router/routeMeta';
 import './GlobalSearch.css';
 
 interface SearchResult {
@@ -13,38 +14,27 @@ interface SearchResult {
 }
 
 interface GlobalSearchProps {
-  /**
-   * 是否显示搜索框
-   */
   visible: boolean;
-  /**
-   * 关闭回调
-   */
   onClose: () => void;
 }
 
-/**
- * 全局搜索组件
- *
- * 支持搜索菜单项，快捷键 Ctrl+K 或 Cmd+K 打开
- */
 export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
   const [searchText, setSearchText] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const navigate = useNavigate();
+  const { user, loading } = useUser();
 
-  // 搜索菜单项
   const searchMenuItems = useCallback((keyword: string): SearchResult[] => {
-    if (!keyword.trim()) {
+    if (!keyword.trim() || loading) {
       return [];
     }
 
     const lowerKeyword = keyword.toLowerCase();
-    const menuItems: SearchResult[] = Object.entries(routeTitleMap).map(([path, title]) => ({
-      key: path,
-      title,
-      path,
-      description: `导航到 ${title}`,
+    const menuItems: SearchResult[] = getSearchableRoutes(user).map((route) => ({
+      key: route.key,
+      title: route.title,
+      path: route.path,
+      description: `导航到 ${route.title}`,
     }));
 
     return menuItems.filter(
@@ -52,28 +42,24 @@ export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
         item.title.toLowerCase().includes(lowerKeyword) ||
         item.path.toLowerCase().includes(lowerKeyword)
     );
-  }, []);
+  }, [loading, user]);
 
-  // 搜索文本变化时更新结果
   useEffect(() => {
-    const results = searchMenuItems(searchText);
-    setResults(results);
+    const nextResults = searchMenuItems(searchText);
+    setResults(nextResults);
   }, [searchText, searchMenuItems]);
 
-  // 选择搜索结果
   const handleSelectResult = (result: SearchResult) => {
     navigate(result.path);
     handleClose();
   };
 
-  // 关闭搜索框
   const handleClose = () => {
     setSearchText('');
     setResults([]);
     onClose();
   };
 
-  // 键盘事件处理
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       handleClose();
@@ -141,15 +127,9 @@ export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
   );
 }
 
-/**
- * 全局搜索快捷键 Hook
- *
- * 监听 Ctrl+K 或 Cmd+K 快捷键
- */
 export function useGlobalSearchHotkey(onOpen: () => void) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+K 或 Cmd+K
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         onOpen();
