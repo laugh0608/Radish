@@ -18,12 +18,6 @@ public static class ConsolePermissions
     public const string OrdersView = "console.orders.view";
     public const string OrdersRetry = "console.orders.retry";
     public const string UsersView = "console.users.view";
-    public const string UsersCreate = "console.users.create";
-    public const string UsersEdit = "console.users.edit";
-    public const string UsersDelete = "console.users.delete";
-    public const string UsersStatus = "console.users.status";
-    public const string UsersResetPassword = "console.users.reset-password";
-    public const string UsersForceLogout = "console.users.force-logout";
     public const string RolesView = "console.roles.view";
     public const string RolesCreate = "console.roles.create";
     public const string RolesEdit = "console.roles.edit";
@@ -117,12 +111,6 @@ public static class ConsolePermissions
         OrdersView,
         OrdersRetry,
         UsersView,
-        UsersCreate,
-        UsersEdit,
-        UsersDelete,
-        UsersStatus,
-        UsersResetPassword,
-        UsersForceLogout,
         RolesView,
         RolesCreate,
         RolesEdit,

@@ -10,21 +10,13 @@ import {
   Tag,
   Avatar,
   message,
-  Modal,
-  Popconfirm,
   type TableColumnsType,
 } from '@radish/ui';
 import {
-  PlusOutlined,
   EditOutlined,
-  DeleteOutlined,
   SearchOutlined,
   ReloadOutlined,
   UserOutlined,
-  LockOutlined,
-  UnlockOutlined,
-  KeyOutlined,
-  LogoutOutlined,
 } from '@radish/ui';
 import {
   userManagementApi,
@@ -46,12 +38,6 @@ export const UserList = () => {
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
-  const canCreateUser = usePermission(CONSOLE_PERMISSIONS.usersCreate);
-  const canEditUser = usePermission(CONSOLE_PERMISSIONS.usersEdit);
-  const canDeleteUserPermission = usePermission(CONSOLE_PERMISSIONS.usersDelete);
-  const canUpdateUserStatus = usePermission(CONSOLE_PERMISSIONS.usersStatus);
-  const canResetPassword = usePermission(CONSOLE_PERMISSIONS.usersResetPassword);
-  const canForceLogout = usePermission(CONSOLE_PERMISSIONS.usersForceLogout);
 
   // 筛选条件
   const [keyword, setKeyword] = useState<string>('');
@@ -101,80 +87,6 @@ export const UserList = () => {
     setPageIndex(1);
     // 重置后重新加载
     setTimeout(() => loadUsers(), 0);
-  };
-
-  // 更新用户状态
-  const handleUpdateStatus = async (uuid: number, newStatus: UserStatus) => {
-    try {
-      const response = await userManagementApi.updateUserStatus(uuid, newStatus);
-
-      if (response.ok) {
-        message.success('用户状态更新成功');
-        loadUsers();
-      } else {
-        message.error(response.message || '更新用户状态失败');
-      }
-    } catch (error) {
-      log.error('UserList', '更新用户状态失败', error);
-      message.error('更新用户状态失败');
-    }
-  };
-
-  // 删除用户
-  const handleDeleteUser = async (uuid: number) => {
-    try {
-      const response = await userManagementApi.deleteUser(uuid);
-
-      if (response.ok) {
-        message.success('用户删除成功');
-        loadUsers();
-      } else {
-        message.error(response.message || '删除用户失败');
-      }
-    } catch (error) {
-      log.error('UserList', '删除用户失败', error);
-      message.error('删除用户失败');
-    }
-  };
-
-  // 强制用户下线
-  const handleForceLogout = async (uuid: number) => {
-    try {
-      const response = await userManagementApi.forceLogout(uuid);
-
-      if (response.ok) {
-        message.success('用户已强制下线');
-      } else {
-        message.error(response.message || '强制下线失败');
-      }
-    } catch (error) {
-      log.error('UserList', '强制下线失败', error);
-      message.error('强制下线失败');
-    }
-  };
-
-  // 重置密码
-  const handleResetPassword = (user: UserListItem) => {
-    (Modal as any).confirm({
-      title: '重置密码',
-      content: `确定要重置用户 "${user.voUserName}" 的密码吗？新密码将通过邮件发送给用户。`,
-      onOk: async () => {
-        try {
-          // 生成临时密码
-          const tempPassword = Math.random().toString(36).slice(-8);
-          const response = await userManagementApi.resetPassword(user.uuid, tempPassword);
-
-          if (response.ok) {
-            message.success('密码重置成功，新密码已发送给用户');
-          } else {
-            message.error(response.message || '重置密码失败');
-          }
-        } catch (error) {
-          log.error('UserList', '重置密码失败', error);
-          message.error('重置密码失败');
-        }
-      },
-    });
   };
 
   // 表格列定义
@@ -228,7 +140,7 @@ export const UserList = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          {canEditUser ? (
+          {canViewUsers ? (
             <Button
               variant="ghost"
               size="small"
@@ -237,68 +149,6 @@ export const UserList = () => {
             >
               查看详情
             </Button>
-          ) : null}
-
-          {canUpdateUserStatus ? (
-            record.voIsEnable ? (
-              <Button
-                variant="ghost"
-                size="small"
-                icon={<LockOutlined />}
-                onClick={() => handleUpdateStatus(record.uuid, UserStatus.Disabled)}
-              >
-                禁用
-              </Button>
-            ) : (
-              <Button
-                variant="ghost"
-                size="small"
-                icon={<UnlockOutlined />}
-                onClick={() => handleUpdateStatus(record.uuid, UserStatus.Normal)}
-              >
-                启用
-              </Button>
-            )
-          ) : null}
-
-          {canResetPassword ? (
-            <Button
-              variant="ghost"
-              size="small"
-              icon={<KeyOutlined />}
-              onClick={() => handleResetPassword(record)}
-            >
-              重置密码
-            </Button>
-          ) : null}
-
-          {canForceLogout ? (
-            <Button
-              variant="ghost"
-              size="small"
-              icon={<LogoutOutlined />}
-              onClick={() => handleForceLogout(record.uuid)}
-            >
-              强制下线
-            </Button>
-          ) : null}
-
-          {canDeleteUserPermission ? (
-            <Popconfirm
-              title="确定要删除这个用户吗？"
-              description="删除后无法恢复，请谨慎操作。"
-              onConfirm={() => handleDeleteUser(record.uuid)}
-              okText="确定"
-              cancelText="取消"
-            >
-              <Button
-                variant="danger"
-                size="small"
-                icon={<DeleteOutlined />}
-              >
-                删除
-              </Button>
-            </Popconfirm>
           ) : null}
         </Space>
       ),
@@ -365,18 +215,6 @@ export const UserList = () => {
           >
             重置
           </Button>
-
-          {canCreateUser ? (
-            <Button
-              variant="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                message.info('新增用户功能待实现');
-              }}
-            >
-              新增用户
-            </Button>
-          ) : null}
         </Space>
       </div>
 

@@ -78,3 +78,10 @@
 - **Hangfire 资源映射补齐**：`ConsolePermissions` 已补充 `"/hangfire(/.*)?" -> console.hangfire.view` 映射，并与 `DbMigrate` 的 `ApiModule.LinkUrl` 保持一致，便于非默认角色从数据库授权派生 Console 权限快照。
 - **Dashboard 访问闭环**：`HangfireAuthorizationFilter` 已改为显式完成认证并按角色权限快照校验 `console.hangfire.view`，不再仅依赖 `System/Admin` 角色硬编码放行。
 - **边界保持最小改动**：前端菜单、搜索与路由守卫维持现状，本轮只补后端权限资源与访问校验闭环。
+
+### Console Users 误暴露权限入口收口
+
+- **未实现操作先下线**：`Users` 页已移除创建、状态切换、重置密码、强制下线、删除等占位按钮，避免 `Admin/System` 看到会直接打到不存在后端接口的伪能力入口。
+- **详情入口语义纠正**：列表中的“查看详情”现统一按 `console.users.view` 控制，不再误绑到不存在的 `console.users.edit` 能力。
+- **无效权限常量清理**：前后端 `ConsolePermissions` / `permissions.ts` 已同步移除未落地的用户操作权限定义，避免默认权限全集继续派生无效能力。
+
