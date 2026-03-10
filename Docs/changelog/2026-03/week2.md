@@ -103,3 +103,10 @@
 
 - **覆盖矩阵落地**：新增 `Console 权限覆盖矩阵` 文档，统一核对路由元数据、前端权限常量、后端 `ConsolePermissions` 映射与 `DbMigrate` 种子，减少继续靠人工逐页巡检的成本。
 - **剩余缺口收敛**：矩阵确认当前 Console 专属资源基本已闭环，剩余主要待决策项已收敛为共享上传接口 `Attachment/UploadImage` 的边界问题。
+
+### Attachment 上传边界按方案 B 收口
+
+- **共享接口边界已决策**：`Attachment/UploadImage` 不直接并入 `ConsolePermissions + DbMigrate` 的共享 URL 映射，避免影响 `Avatar` 与用户侧 `General` 上传。
+- **Sticker 链路最小落地**：后端已仅对 `Sticker` / `StickerCover` 的 `businessType` 增加权限收口，分别复用 `console.stickers.create/edit/batch-upload` 与 `console.stickers.create/edit`。
+- **文档与规划同步**：`README`、权限治理专题、覆盖矩阵、路线图、当前规划与 Sticker 设计文档已统一更新，V1 当前只剩工具化校验类尾项。
+- **回归验证通过**：`dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --filter AttachmentControllerTest` 与 `dotnet build Radish.slnx -c Debug` 已通过。

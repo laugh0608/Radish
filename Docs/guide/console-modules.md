@@ -159,7 +159,7 @@
 
 - ✅ 页面权限闭环完成
 - ✅ 批量上传辅助接口种子已补齐
-- ⚠️ `Attachment/UploadImage` 是否纳入权限模型仍待决策
+- ✅ `Attachment/UploadImage` 已按方案 B 完成最小收口：仅 `Sticker` / `StickerCover` 业务类型复用既有 Sticker 权限
 
 ## 3.10 SystemConfig
 

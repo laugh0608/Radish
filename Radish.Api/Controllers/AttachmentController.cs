@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -29,6 +30,7 @@ public class AttachmentController : ControllerBase
 {
     private readonly IAttachmentService _attachmentService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IUserService _userService;
     private readonly IUploadRateLimitService _rateLimitService;
     private readonly UploadRateLimitOptions _rateLimitOptions;
     private readonly IFileAccessTokenService _fileAccessTokenService;
@@ -36,18 +38,75 @@ public class AttachmentController : ControllerBase
     public AttachmentController(
         IAttachmentService attachmentService,
         ICurrentUserAccessor currentUserAccessor,
+        IUserService userService,
         IUploadRateLimitService rateLimitService,
         IOptions<UploadRateLimitOptions> rateLimitOptions,
         IFileAccessTokenService fileAccessTokenService)
     {
         _attachmentService = attachmentService;
         _currentUserAccessor = currentUserAccessor;
+        _userService = userService;
         _rateLimitService = rateLimitService;
         _rateLimitOptions = rateLimitOptions.Value;
         _fileAccessTokenService = fileAccessTokenService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
+
+    private static string NormalizeBusinessType(string? businessType)
+    {
+        return string.IsNullOrWhiteSpace(businessType)
+            ? "General"
+            : businessType.Trim();
+    }
+
+    private static string[] GetRequiredStickerUploadPermissions(string businessType)
+    {
+        if (businessType.Equals("Sticker", StringComparison.OrdinalIgnoreCase))
+        {
+            return
+            [
+                ConsolePermissions.StickersCreate,
+                ConsolePermissions.StickersEdit,
+                ConsolePermissions.StickersBatchUpload
+            ];
+        }
+
+        if (businessType.Equals("StickerCover", StringComparison.OrdinalIgnoreCase))
+        {
+            return
+            [
+                ConsolePermissions.StickersCreate,
+                ConsolePermissions.StickersEdit
+            ];
+        }
+
+        return Array.Empty<string>();
+    }
+
+    private async Task<bool> HasStickerUploadPermissionAsync(string businessType)
+    {
+        var requiredPermissions = GetRequiredStickerUploadPermissions(businessType);
+        if (requiredPermissions.Length <= 0)
+        {
+            return true;
+        }
+
+        if (Current.IsSystemOrAdmin())
+        {
+            return true;
+        }
+
+        if (Current.Roles.Count <= 0)
+        {
+            return false;
+        }
+
+        var permissionKeys = await _userService.GetPermissionKeysByRolesAsync(Current.Roles);
+
+        return requiredPermissions.Any(requiredPermission =>
+            permissionKeys.Contains(requiredPermission, StringComparer.OrdinalIgnoreCase));
+    }
 
     #region Upload
 
@@ -101,6 +160,17 @@ public class AttachmentController : ControllerBase
 
         var userId = Current.UserId;
         var userName = Current.UserName;
+        var normalizedBusinessType = NormalizeBusinessType(businessType);
+
+        if (!await HasStickerUploadPermissionAsync(normalizedBusinessType))
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "当前账号暂无该表情上传权限"
+            };
+        }
 
         // 限流检查
         if (_rateLimitOptions.Enable)
@@ -131,7 +201,7 @@ public class AttachmentController : ControllerBase
             var options = new FileUploadOptionsDto
             {
                 OriginalFileName = file.FileName,
-                BusinessType = businessType,
+                BusinessType = normalizedBusinessType,
                 GenerateThumbnail = generateThumbnail,
                 GenerateMultipleSizes = generateMultipleSizes,
                 AddWatermark = addWatermark,

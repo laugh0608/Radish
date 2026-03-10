@@ -31,12 +31,12 @@
 - [x] `Hangfire` 权限种子闭环
 - [x] `Users` 误暴露权限入口收口
 - [x] `Products / Stickers` 真实在用辅助接口资源种子补齐
+- [x] `Attachment/UploadImage` 共享接口边界已按方案 B 完成最小收口
 
 #### 进行中
 
 - [x] 文档、规划、README 统一口径
 - [x] 梳理权限覆盖矩阵（路由 / 前端常量 / 后端映射 / `DbMigrate`）
-- [ ] 共享接口边界决策：`Attachment/UploadImage`
 
 #### 明确不做
 

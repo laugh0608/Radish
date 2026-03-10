@@ -109,15 +109,15 @@ Route Meta / RouteGuard / usePermission
 - 审计日志查询、系统监控、日志检索等新模块扩张
 - 未在 Console 页面真实调用的后端接口资源补齐
 
-## 5. 待决策项
+## 5. 边界决策记录
 
-### 5.1 `Attachment/UploadImage` 是否纳入权限模型
+### 5.1 `Attachment/UploadImage` 已完成边界决策
 
-当前 `Stickers` 与 `UserProfile` 均直接调用 `/api/v1/Attachment/UploadImage`，但该接口尚未进入 Console 资源映射与种子体系。
+当前 `Stickers` 与 `UserProfile` 均直接调用 `/api/v1/Attachment/UploadImage`，但该接口不适合直接进入 Console 共享 URL 资源映射与种子体系。
 
-这不是当前的阻断问题，因为后端仍按登录态鉴权；但它是 V1 收口阶段最值得优先决策的共享接口边界问题。
+该问题已在 V1 收口阶段完成决策，并按最小改动落地到后端 `businessType` 级别授权边界。
 
-待决策方向：
+决策备选曾包括：
 
 - **方案 A：不纳入 V1**
   - 保持共享上传接口为登录态能力
@@ -129,6 +129,13 @@ Route Meta / RouteGuard / usePermission
   - 进入下一阶段，不建议在 V1 收口末期引入
 
 当前推荐：**优先采用方案 A 或 B，不建议在 V1 尾声引入新的权限族**。
+
+已确认并落地：**方案 B（最小实现）**
+
+- 仅对 `Attachment/UploadImage` 的 `Sticker` / `StickerCover` 业务类型做收口
+- 复用既有 `console.stickers.create/edit/batch-upload` 权限键
+- 不新增独立“上传”权限键
+- 不把共享上传 URL 直接并入通用 `ConsolePermissions + DbMigrate` 资源映射，避免影响 `Avatar` 与用户侧 `General` 上传
 
 ## 6. V1 收口清单
 
@@ -144,7 +151,7 @@ Route Meta / RouteGuard / usePermission
 
 ### 6.2 进行中
 
-- [ ] 共享接口边界决策：`Attachment/UploadImage`
+- [x] 共享接口边界决策：`Attachment/UploadImage`
 - [x] 文档、规划、README 口径统一
 - [x] 形成权限覆盖矩阵（路由 / 前端常量 / 后端映射 / `DbMigrate`）
 
@@ -163,7 +170,7 @@ Route Meta / RouteGuard / usePermission
 2. 已真实调用的 Console 专属后端接口全部完成 `ConsolePermissions + DbMigrate` 对齐
 3. 共享接口边界至少完成一次明确决策并记录
 4. 不再继续出现“页面入口已显示，但接口未落地 / 未授权”的新增裂缝
-5. 规划文档与专题文档对“当前已完成 / 当前不做 / 下一步待决策”达成统一口径
+5. 规划文档与专题文档对“当前已完成 / 当前不做 / 下一步收尾项”达成统一口径
 
 ## 8. 参考文档
 
@@ -173,7 +180,7 @@ Route Meta / RouteGuard / usePermission
 
 当本文档第 6 节只剩 1-2 个待办时，下一轮工作应优先从以下两项中二选一：
 
-1. **边界决策**：确认 `Attachment/UploadImage` 是否纳入 V1 权限模型
-2. **治理收尾工具**：补一份权限覆盖矩阵或扫描脚本，避免后续再靠人工逐页审计
+1. **治理收尾工具**：补一份权限覆盖矩阵扫描脚本，避免后续再靠人工逐页审计
+2. **冻结边界后的回归维护**：只在真实新增页面/接口时增量补矩阵与文档，不再继续扩张权限模型
 
 这两项完成后，Console 权限治理 V1 就应该从“持续扩张”切换到“冻结边界、只做回归维护”。

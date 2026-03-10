@@ -39,7 +39,7 @@
 | Roles | `/roles` | `console.roles.view` | `console.roles.create/edit/toggle/delete` | `Role/GetRoleList`、`GetRoleById`、`CreateRole`、`UpdateRole`、`DeleteRole`、`ToggleRoleStatus` | ✅ | 首批闭环模块 |
 | Tags | `/tags` | `console.tags.view` | `console.tags.create/edit/delete/restore/toggle/sort` | `Tag/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 页面与资源映射已一致 |
 | Stickers Groups | `/stickers` | `console.stickers.view` | `console.stickers.create/edit/delete/toggle` | `Sticker/GetAdminGroups`、`CreateGroup`、`UpdateGroup/.+`、`DeleteGroup/.+`、`CheckGroupCode` | ✅ | 分组启停复用 `UpdateGroup` |
-| Stickers Items | `/stickers/:groupId/items` | `console.stickers.view` | `console.stickers.create/edit/delete/sort/batch-upload` | `Sticker/GetGroupStickers/.+`、`AddSticker`、`UpdateSticker/.+`、`DeleteSticker/.+`、`BatchAddStickers`、`BatchUpdateSort`、`CheckStickerCode`、`NormalizeCode` | ✅ | 上传文件本身仍依赖共享接口，见第 4 节 |
+| Stickers Items | `/stickers/:groupId/items` | `console.stickers.view` | `console.stickers.create/edit/delete/sort/batch-upload` | `Sticker/GetGroupStickers/.+`、`AddSticker`、`UpdateSticker/.+`、`DeleteSticker/.+`、`BatchAddStickers`、`BatchUpdateSort`、`CheckStickerCode`、`NormalizeCode` | ✅ | 上传文件仍走共享接口，但已按 `businessType` 对 Sticker 链路收口，见第 4 节 |
 | SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`CreateConfig`、`UpdateConfig`、`DeleteConfig` | ✅ | 编辑详情链路已覆盖 |
 | Hangfire | `/hangfire` | `console.hangfire.view` | 无 | `/hangfire(/.*)?` | ✅ | 特殊入口，走 `HangfireAuthorizationFilter` |
 
@@ -55,38 +55,37 @@
 
 ## 4. 共享接口边界矩阵
 
-### 4.1 当前最重要待决策项：`Attachment/UploadImage`
+### 4.1 已落地边界项：`Attachment/UploadImage`
 
-| 接口 | 当前调用方 | 当前鉴权方式 | 是否已进入映射/种子 | 建议状态 |
+| 接口 | 当前调用方 | 当前鉴权方式 | 是否已进入映射/种子 | 当前状态 |
 | --- | --- | --- | --- | --- |
-| `/api/v1/Attachment/UploadImage` | `StickerForm`、`StickerGroupForm`、`StickerBatchUploadModal`、`UserProfile` | `[Authorize]` 登录态 | 否 | 待决策 |
+| `/api/v1/Attachment/UploadImage` | `StickerForm`、`StickerGroupForm`、`StickerBatchUploadModal`、`UserProfile` | `[Authorize]` 登录态；其中 `Sticker/StickerCover` 额外按 `businessType` 复用 `console.stickers.*` 权限校验 | 否 | 已按方案 B 最小落地 |
 
 ### 4.2 当前判断
 
 - 该接口属于“共享上传能力”，并非纯粹的 Console 专属业务资源
-- 它确实影响 Sticker 后台的完整操作链路，但也被 `UserProfile` 复用
-- 因此它不适合在没有明确边界决策时直接并入现有 `console.*` 权限模型
+- 它确实影响 Sticker 后台的完整操作链路，但也被 `UserProfile` 与用户侧上传复用
+- 因此它仍不适合直接并入现有 `ConsolePermissions + DbMigrate` 的共享 URL 映射
+- 当前已采用方案 B：只对 `Sticker` / `StickerCover` 业务类型做后端最小收口，其他业务类型继续维持登录态能力
 
-### 4.3 推荐处理顺序
+### 4.3 当前处理策略
 
-1. 先完成本表，确认其它 Console 专属资源已经稳定闭环
-2. 再单独决定 `Attachment/UploadImage` 采用以下哪种策略：
-   - **A**：保持共享登录态能力，不纳入 V1
-   - **B**：仅从 Sticker 业务角度纳入，复用 `console.stickers.create/edit/batch-upload`
-   - **C**：新建独立上传权限（不建议在 V1 尾声采用）
+1. 共享 URL 仍不进入 `ConsolePermissions + DbMigrate` 映射，避免误伤 `Avatar` 与 `General`
+2. `Sticker` 上传复用既有 `console.stickers.create/edit/batch-upload`
+3. `StickerCover` 复用既有 `console.stickers.create/edit`
+4. 若未来需要平台化上传权限，再作为下一阶段独立议题处理
 
 ## 5. 当前结论
 
 ### 5.1 已完成
 
 - 已接入权限治理的 Console 主页面，路由访问权限已全部具备来源
-- 页面真实调用的 Console 专属后台接口，除共享上传接口外，当前已基本完成 `ConsolePermissions + DbMigrate` 对齐
+- 页面真实调用的 Console 专属后台接口当前已基本完成 `ConsolePermissions + DbMigrate` 对齐
 - `Users` 未落地能力已从页面、前后端权限常量与文档口径中一并清理
 
 ### 5.2 当前剩余真实缺口
 
-1. **共享上传接口边界决策**：`Attachment/UploadImage`
-2. **工具化校验**：若后续仍担心回归，建议补一份轻量扫描脚本，自动对比：
+1. **工具化校验**：若后续仍担心回归，建议补一份轻量扫描脚本，自动对比：
    - `routeMeta.requiredPermission`
    - `CONSOLE_PERMISSIONS`
    - `ConsolePermissions.ApiPermissionMappings`

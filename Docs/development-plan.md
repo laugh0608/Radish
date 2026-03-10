@@ -25,7 +25,7 @@
 1. **Console 权限治理 V1 收口**
    - 文档、规划、README 口径统一
    - 已接入页面的资源映射与种子继续补齐
-   - 共享接口边界决策（当前聚焦 `Attachment/UploadImage`）
+   - 共享接口边界已按方案 B 最小收口（当前聚焦 `Attachment/UploadImage` 的 Sticker 链路）
    - 形成明确的退出条件与收口清单
 
 2. **身份治理尾项收尾**

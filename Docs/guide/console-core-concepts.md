@@ -105,18 +105,19 @@ RouteGuard / usePermission
 
 像 `Hangfire` 这类不走普通页面请求链路的入口，也要显式消费权限快照，而不是写死角色放行。
 
-### 2.4 当前关注的待决策点
+### 2.4 当前关注的边界点
 
 #### 2.4.1 共享上传接口边界
 
 `Attachment/UploadImage` 目前同时服务于 Sticker 与头像上传，它更像共享能力，而不是纯 Console 专属资源。
 
-当前要解决的问题不是“能不能用”，而是：
+当前已明确的处理原则是：
 
-- 是否需要把它纳入 Console 权限模型
-- 如果纳入，是复用现有 Sticker 权限，还是建立独立上传权限键
+- 共享 URL 本身不直接并入 `ConsolePermissions + DbMigrate`
+- 仅对 `Sticker` / `StickerCover` 的 `businessType` 做最小权限收口
+- 复用现有 Sticker 权限键，不新建独立上传权限族
 
-该问题已被提升为 Console 权限治理 V1 的主要待决策项。
+这样既能补齐 Sticker 后台真实链路的后端授权边界，也不会影响 `Avatar` 等其他登录态上传场景。
 
 ---
 

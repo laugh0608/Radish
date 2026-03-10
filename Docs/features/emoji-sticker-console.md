@@ -314,7 +314,7 @@ interface BatchAddStickersRequest {
 说明：
 
 - 上述三项属于 Console 已真实使用的辅助接口，因此已进入 `ConsolePermissions + DbMigrate` 的治理范围。
-- `Attachment/UploadImage` 仍属于共享上传能力边界问题，是否纳入 Console 权限模型单独在 `Console 权限治理 V1` 中决策，不在本设计文档里提前扩大权限模型。
+- `Attachment/UploadImage` 继续保持共享上传接口定位，但已按方案 B 做最小收口：仅 `Sticker` / `StickerCover` 业务类型在后端复用现有 `console.stickers.*` 权限校验，不扩张为独立上传权限模型。
 
 ## BatchAddStickers 接口约束
 

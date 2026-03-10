@@ -23,6 +23,7 @@ Radish Console 是 Radish 项目的管理员控制台，当前已落地并接入
 
 - 统一路由、菜单、搜索、按钮权限口径
 - 对齐前端权限常量、后端资源映射与 `DbMigrate` 种子
+- 共享上传接口边界已按方案 B 完成最小收口
 - 清理未落地能力的伪入口
 - 为本阶段形成明确的收口清单
 
@@ -78,4 +79,5 @@ npm run dev --workspace=radish.console
 
 - `Docs/guide/console-system.md`
 - `Docs/guide/console-permission-governance.md`
+- `Docs/guide/console-permission-coverage-matrix.md`
 - `Docs/planning/current.md`
