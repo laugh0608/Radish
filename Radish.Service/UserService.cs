@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Radish.Common;
 using Radish.Common.AttributeTool;
+using Radish.Common.PermissionTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -78,6 +79,51 @@ public class UserService : BaseService<User, UserVo>, IUserService
             },
             (rmp, m, r) => rmp.IsDeleted == false && m.IsDeleted == false && r.IsDeleted == false
         );
+    }
+
+    /// <summary>
+    /// 根据角色列表获取当前 Console 权限快照
+    /// </summary>
+    /// <param name="roleNames">角色名列表</param>
+    /// <returns>权限标识列表</returns>
+    public async Task<List<string>> GetPermissionKeysByRolesAsync(IReadOnlyCollection<string> roleNames)
+    {
+        if (roleNames.Count <= 0)
+        {
+            return new List<string>();
+        }
+
+        var normalizedRoles = roleNames
+            .Where(role => !string.IsNullOrWhiteSpace(role))
+            .Select(role => role.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (normalizedRoles.Length <= 0)
+        {
+            return new List<string>();
+        }
+
+        var permissionKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        permissionKeys.UnionWith(ConsolePermissions.GetDefaultPermissions(normalizedRoles));
+
+        var roleSet = new HashSet<string>(normalizedRoles, StringComparer.OrdinalIgnoreCase);
+        var roleModuleMaps = await RoleModuleMaps();
+
+        foreach (var item in roleModuleMaps)
+        {
+            var roleName = item.Role?.RoleName;
+            if (string.IsNullOrWhiteSpace(roleName) || !roleSet.Contains(roleName))
+            {
+                continue;
+            }
+
+            permissionKeys.UnionWith(ConsolePermissions.GetPermissionsByApiUrl(item.ApiModule?.LinkUrl));
+        }
+
+        return permissionKeys
+            .OrderBy(permission => permission, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     /// <summary>测试使用同事务</summary>

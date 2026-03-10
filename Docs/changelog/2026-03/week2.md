@@ -19,3 +19,18 @@
 - **主线切换**：M12 当前主线从“体验规范与国际化”调整为 **P1 权限治理能力**，优先推进角色-权限-资源映射、菜单 / 按钮级权限与前后端双重校验闭环。
 - **后置项明确**：`i18n`、主题切换与邮件通知系统已明确后置，不作为当前阶段优先任务，避免当前范围扩张过快。
 - **并行治理保留**：身份语义 Phase 4 协议输出收敛与 `DbMigrate` 解耦宿主继续作为并行工程治理尾项。
+
+## 2026-03-10 (周二)
+
+### Console 权限治理最小闭环落地
+
+- **当前用户权限快照补齐**：`UserController.GetUserByHttpContext` 已补充 `VoRoles` 与 `VoPermissions`，Console 不再依赖前端默认 `Admin` 回退拼装权限。
+- **权限快照收口**：新增 `ConsolePermissions` 常量与角色权限快照拼装逻辑，先以 Console 侧菜单 / 页面 / 按钮权限为最小收口面，并兼容从 `RoleModulePermission + ApiModule.LinkUrl` 推导角色管理权限。
+- **角色管理首个闭环**：`radish.console` 已将 `角色管理` 页面接入真实权限判断，覆盖页面访问、左侧菜单可见性以及新增 / 编辑 / 启用禁用 / 删除按钮控制。
+- **种子权限补齐**：`DbMigrate` 已为 `RoleController` 主链路补齐 `ApiModule` 与 `RoleModulePermission` 种子，后续重建 / 补种后可让角色管理页面权限从数据库映射稳定产出。
+
+### 验证结果
+
+- ✅ `npm run type-check --workspace=radish.console` 通过。
+- ✅ `dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false --no-restore` 通过。
+- ✅ `dotnet build Radish.DbMigrate/Radish.DbMigrate.csproj -c Debug -m:1 /nr:false --no-restore` 通过。

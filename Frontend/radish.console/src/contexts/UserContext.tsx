@@ -49,6 +49,8 @@ export function UserProvider({ children }: UserProviderProps) {
             voUserId: 0,
             voUserName: tokenUserName,
             voTenantId: 0,
+            roles: [],
+            permissions: [],
           } satisfies UserInfo);
         } else {
           setUser(null);
@@ -61,6 +63,8 @@ export function UserProvider({ children }: UserProviderProps) {
           voUserId: 0,
           voUserName: tokenUserName,
           voTenantId: 0,
+          roles: [],
+          permissions: [],
         } satisfies UserInfo);
       } else {
         setUser(null);

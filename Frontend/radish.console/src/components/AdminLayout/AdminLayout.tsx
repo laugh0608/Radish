@@ -26,10 +26,12 @@ import {
   TagsOutlined,
 } from '@radish/ui';
 import { ROUTES } from '../../router';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { getAuthServerBaseUrl, getPostLogoutRedirectUri, getAvatarUrl } from '@/config/env';
 import { tokenService } from '../../services/tokenService';
 import { AppBreadcrumb } from '../Breadcrumb';
 import { GlobalSearch, useGlobalSearchHotkey } from '../GlobalSearch';
+import { usePermission } from '@/hooks/usePermission';
 import './AdminLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -50,6 +52,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useUser();
+  const canViewApplications = usePermission(CONSOLE_PERMISSIONS.applicationsView);
+  const canViewProducts = usePermission(CONSOLE_PERMISSIONS.productsView);
+  const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
+  const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
+  const canViewRoles = usePermission(CONSOLE_PERMISSIONS.rolesView);
+  const canViewTags = usePermission(CONSOLE_PERMISSIONS.tagsView);
+  const canViewStickers = usePermission(CONSOLE_PERMISSIONS.stickersView);
+  const canViewSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigView);
+  const canViewHangfire = usePermission(CONSOLE_PERMISSIONS.hangfireView);
 
   // 全局搜索快捷键
   useGlobalSearchHotkey(() => setSearchVisible(true));
@@ -62,58 +73,58 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     return path.slice(1);
   };
 
-  const menuItems: MenuProps['items'] = [
+  const menuItems = [
     {
       key: 'dashboard',
       icon: <DashboardOutlined />,
       label: '仪表盘',
     },
-    {
+    canViewApplications ? {
       key: 'applications',
       icon: <AppstoreOutlined />,
       label: '应用管理',
-    },
-    {
+    } : null,
+    canViewProducts ? {
       key: 'products',
       icon: <ShoppingOutlined />,
       label: '商品管理',
-    },
-    {
+    } : null,
+    canViewOrders ? {
       key: 'orders',
       icon: <FileTextOutlined />,
       label: '订单管理',
-    },
-    {
+    } : null,
+    canViewUsers ? {
       key: 'users',
       icon: <TeamOutlined />,
       label: '用户管理',
-    },
-    {
+    } : null,
+    canViewRoles ? {
       key: 'roles',
       icon: <SafetyOutlined />,
       label: '角色管理',
-    },
-    {
+    } : null,
+    canViewTags ? {
       key: 'tags',
       icon: <TagsOutlined />,
       label: '标签管理',
-    },
-    {
+    } : null,
+    canViewStickers ? {
       key: 'stickers',
       icon: <AppstoreOutlined />,
       label: '表情包管理',
-    },
-    {
+    } : null,
+    canViewSystemConfig ? {
       key: 'system-config',
       icon: <SettingOutlined />,
       label: '系统配置',
-    },
-    {
+    } : null,
+    canViewHangfire ? {
       key: 'hangfire',
       icon: <ClockCircleOutlined />,
       label: '定时任务',
-    },
-  ];
+    } : null,
+  ].filter((item): item is NonNullable<MenuProps['items']>[number] => item !== null);
 
   const userMenuItems: MenuProps['items'] = [
     {

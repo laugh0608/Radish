@@ -171,47 +171,124 @@ internal static partial class InitialDataSeeder
     /// <summary>初始化角色-API 权限（示例：允许 System/Admin 访问用户基本信息接口）</summary>
     private static async Task SeedPermissionsAsync(ISqlSugarClient db)
     {
-        // 为 UserController.GetUserByHttpContext 建立 ApiModule 与 RoleModulePermission
-        // 便于通过 RadishAuthPolicy 或客户端权限检查进行验证。
+        // 为当前用户与角色管理主链路建立 ApiModule 与 RoleModulePermission
+        // 便于通过 RadishAuthPolicy 与 Console 权限快照进行验证。
 
-        const long userByHttpContextApiId = 50000;
-        const string linkUrl = "/api/v1/User/GetUserByHttpContext";
-
-        var apiExists = await db.Queryable<ApiModule>().AnyAsync(m => m.Id == userByHttpContextApiId);
-        if (!apiExists)
+        var apiModules = new[]
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建 ApiModule Id={userByHttpContextApiId}, LinkUrl={linkUrl}...");
-
-            var options = new ApiModuleInitializationOptions("Get current user by HttpContext", linkUrl)
+            new
             {
+                ApiModuleId = 50000L,
+                ApiModuleName = "Get current user by HttpContext",
+                LinkUrl = "/api/v1/User/GetUserByHttpContext",
                 ControllerName = "User",
                 ActionName = "GetUserByHttpContext",
-                IsEnabled = true,
-                IsDeleted = false,
-                IsMenu = false,
-                OrderSort = 0,
-            };
-
-            var module = new ApiModule(options)
+                Roles = new[] { 10000L, 10001L, 10002L }
+            },
+            new
             {
-                Id = userByHttpContextApiId,
-            };
+                ApiModuleId = 50010L,
+                ApiModuleName = "Get role list",
+                LinkUrl = "/api/v1/Role/GetRoleList",
+                ControllerName = "Role",
+                ActionName = "GetRoleList",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50011L,
+                ApiModuleName = "Get role by id",
+                LinkUrl = "/api/v1/Role/GetRoleById",
+                ControllerName = "Role",
+                ActionName = "GetRoleById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50012L,
+                ApiModuleName = "Create role",
+                LinkUrl = "/api/v1/Role/CreateRole",
+                ControllerName = "Role",
+                ActionName = "CreateRole",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50013L,
+                ApiModuleName = "Update role",
+                LinkUrl = "/api/v1/Role/UpdateRole",
+                ControllerName = "Role",
+                ActionName = "UpdateRole",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50014L,
+                ApiModuleName = "Delete role",
+                LinkUrl = "/api/v1/Role/DeleteRole",
+                ControllerName = "Role",
+                ActionName = "DeleteRole",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50015L,
+                ApiModuleName = "Toggle role status",
+                LinkUrl = "/api/v1/Role/ToggleRoleStatus",
+                ControllerName = "Role",
+                ActionName = "ToggleRoleStatus",
+                Roles = new[] { 10000L, 10001L }
+            }
+        };
 
-            await db.Insertable(module).ExecuteCommandAsync();
-        }
-        else
+        foreach (var item in apiModules)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={userByHttpContextApiId} 的 ApiModule，跳过创建。");
+            var apiExists = await db.Queryable<ApiModule>().AnyAsync(m => m.Id == item.ApiModuleId);
+            if (!apiExists)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 创建 ApiModule Id={item.ApiModuleId}, LinkUrl={item.LinkUrl}...");
+
+                var options = new ApiModuleInitializationOptions(item.ApiModuleName, item.LinkUrl)
+                {
+                    ControllerName = item.ControllerName,
+                    ActionName = item.ActionName,
+                    IsEnabled = true,
+                    IsDeleted = false,
+                    IsMenu = false,
+                    OrderSort = 0,
+                };
+
+                var module = new ApiModule(options)
+                {
+                    Id = item.ApiModuleId,
+                };
+
+                await db.Insertable(module).ExecuteCommandAsync();
+            }
+            else
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={item.ApiModuleId} 的 ApiModule，跳过创建。");
+            }
+
+            foreach (var roleId in item.Roles)
+            {
+                await EnsureRoleApiPermissionAsync(db, roleId, item.ApiModuleId, roleId switch
+                {
+                    10000L => "System",
+                    10001L => "Admin",
+                    10002L => "Test",
+                    _ => roleId.ToString()
+                });
+            }
         }
 
-        // System + Admin + Test 默认都可以访问该接口
         const long systemRoleId = 10000;
         const long adminRoleId = 10001;
         const long testRoleId = 10002;
 
-        await EnsureRoleApiPermissionAsync(db, systemRoleId, userByHttpContextApiId, "System");
-        await EnsureRoleApiPermissionAsync(db, adminRoleId, userByHttpContextApiId, "Admin");
-        await EnsureRoleApiPermissionAsync(db, testRoleId, userByHttpContextApiId, "Test");
+        await EnsureRoleApiPermissionAsync(db, systemRoleId, 50000, "System");
+        await EnsureRoleApiPermissionAsync(db, adminRoleId, 50000, "Admin");
+        await EnsureRoleApiPermissionAsync(db, testRoleId, 50000, "Test");
     }
 
     private static async Task EnsureRoleApiPermissionAsync(ISqlSugarClient db, long roleId, long apiModuleId,
@@ -230,13 +307,15 @@ internal static partial class InitialDataSeeder
             $"[Radish.DbMigrate] 创建角色 Id={roleId} ({roleName}) 对 ApiModule Id={apiModuleId} 的访问权限...");
 
         // 为种子权限使用固定、靠后的 Id 段，避免与历史数据的主键冲突
-        var permId = roleId switch
+        var roleOffset = roleId switch
         {
-            10000 => 60000, // System 对 GetUserByHttpContext
-            10001 => 60001, // Admin 对 GetUserByHttpContext
-            10002 => 60002, // Test 对 GetUserByHttpContext
-            _ => 0          // 其它角色走默认雪花/自增配置
+            10000 => 0L,
+            10001 => 1L,
+            10002 => 2L,
+            _ => 9L
         };
+
+        var permId = 60000L + ((apiModuleId - 50000L) * 10L) + roleOffset;
 
         var perm = new RoleModulePermission
         {

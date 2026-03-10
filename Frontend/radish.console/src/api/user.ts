@@ -30,6 +30,19 @@ function toRoles(value: unknown): string[] | undefined {
   return roles.length > 0 ? roles : undefined;
 }
 
+function toPermissions(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+
+  const permissions = value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  return permissions.length > 0 ? permissions : undefined;
+}
+
 /**
  * 用户 API
  */
@@ -52,13 +65,20 @@ export const userApi = {
         ?? backendData.roles
         ?? backendData.Roles
       );
+      const resolvedPermissions = toPermissions(
+        backendData.voPermissions
+        ?? backendData.VoPermissions
+        ?? backendData.permissions
+        ?? backendData.Permissions
+      );
       const mappedData: UserInfo = {
         voUserId: toNumber(backendData.voUserId ?? backendData.VoUserId),
         voUserName: backendData.voUserName || backendData.VoUserName || '',
         voTenantId: toNumber(backendData.voTenantId ?? backendData.VoTenantId),
         voAvatarUrl: backendData.voAvatarUrl || backendData.VoAvatarUrl,
         voAvatarThumbnailUrl: backendData.voAvatarThumbnailUrl || backendData.VoAvatarThumbnailUrl,
-        roles: resolvedRoles || ['Admin'], // 默认角色，实际应该从后端获取
+        roles: resolvedRoles,
+        permissions: resolvedPermissions,
       };
 
       return {

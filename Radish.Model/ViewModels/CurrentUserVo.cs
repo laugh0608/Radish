@@ -29,4 +29,14 @@ public class CurrentUserVo
     /// 头像缩略图URL
     /// </summary>
     public string? VoAvatarThumbnailUrl { get; set; }
+
+    /// <summary>
+    /// 当前用户角色列表
+    /// </summary>
+    public List<string> VoRoles { get; set; } = new();
+
+    /// <summary>
+    /// 当前用户权限列表
+    /// </summary>
+    public List<string> VoPermissions { get; set; } = new();
 }

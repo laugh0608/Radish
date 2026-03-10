@@ -17,22 +17,17 @@ import { useUser } from '../contexts/UserContext';
 export function usePermission(permission: string): boolean {
   const { user } = useUser();
 
-  if (!user) {
+  if (!user || !permission) {
     return false;
   }
 
-  // TODO: 实现真正的权限验证逻辑
-  // 当前简化实现：检查用户角色
-  // 未来需要从后端获取用户的权限列表进行验证
-
-  // 临时实现：System 和 Admin 角色拥有所有权限
   const roles = user.roles || [];
-  if (roles.includes('System') || roles.includes('Admin')) {
+  if (roles.includes('System')) {
     return true;
   }
 
-  // 其他角色暂时没有权限
-  return false;
+  const permissions = user.permissions || [];
+  return permissions.includes(permission);
 }
 
 /**

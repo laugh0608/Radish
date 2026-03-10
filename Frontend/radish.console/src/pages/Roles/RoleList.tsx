@@ -6,7 +6,6 @@ import {
   Space,
   Tag,
   message,
-  Modal,
   Popconfirm,
   type TableColumnsType,
 } from '@radish/ui';
@@ -19,6 +18,8 @@ import {
   CloseOutlined,
 } from '@radish/ui';
 import { getRoleList, deleteRole, toggleRoleStatus, type RoleVo } from '@/api/roleApi';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import { RoleForm } from './RoleForm';
 import { log } from '@/utils/logger';
 import './RoleList.css';
@@ -30,6 +31,11 @@ export const RoleList = () => {
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingRoleId, setEditingRoleId] = useState<number>();
+  const canViewRoles = usePermission(CONSOLE_PERMISSIONS.rolesView);
+  const canCreateRole = usePermission(CONSOLE_PERMISSIONS.rolesCreate);
+  const canEditRole = usePermission(CONSOLE_PERMISSIONS.rolesEdit);
+  const canToggleRole = usePermission(CONSOLE_PERMISSIONS.rolesToggle);
+  const canDeleteRole = usePermission(CONSOLE_PERMISSIONS.rolesDelete);
 
   // 加载角色列表
   const loadRoles = async () => {
@@ -46,8 +52,12 @@ export const RoleList = () => {
   };
 
   useEffect(() => {
-    loadRoles();
-  }, []);
+    if (!canViewRoles) {
+      return;
+    }
+
+    void loadRoles();
+  }, [canViewRoles]);
 
   // 新增角色
   const handleCreate = () => {
@@ -169,41 +179,58 @@ export const RoleList = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            编辑
-          </Button>
-          <Button
-            variant={record.voIsEnabled ? 'danger' : 'primary'}
-            size="small"
-            icon={record.voIsEnabled ? <CloseOutlined /> : <CheckOutlined />}
-            onClick={() => handleToggleStatus(record.voId, !record.voIsEnabled)}
-          >
-            {record.voIsEnabled ? '禁用' : '启用'}
-          </Button>
-          <Popconfirm
-            title="确认删除"
-            description="确定要删除这个角色吗？此操作不可恢复。"
-            onConfirm={() => handleDelete(record.voId)}
-            okText="确定"
-            cancelText="取消"
-          >
+          {canEditRole ? (
             <Button
-              variant="danger"
+              variant="ghost"
               size="small"
-              icon={<DeleteOutlined />}
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
             >
-              删除
+              编辑
             </Button>
-          </Popconfirm>
+          ) : null}
+          {canToggleRole ? (
+            <Button
+              variant={record.voIsEnabled ? 'danger' : 'primary'}
+              size="small"
+              icon={record.voIsEnabled ? <CloseOutlined /> : <CheckOutlined />}
+              onClick={() => handleToggleStatus(record.voId, !record.voIsEnabled)}
+            >
+              {record.voIsEnabled ? '禁用' : '启用'}
+            </Button>
+          ) : null}
+          {canDeleteRole ? (
+            <Popconfirm
+              title="确认删除"
+              description="确定要删除这个角色吗？此操作不可恢复。"
+              onConfirm={() => handleDelete(record.voId)}
+              okText="确定"
+              cancelText="取消"
+            >
+              <Button
+                variant="danger"
+                size="small"
+                icon={<DeleteOutlined />}
+              >
+                删除
+              </Button>
+            </Popconfirm>
+          ) : null}
         </Space>
       ),
     },
   ];
+
+  if (!canViewRoles) {
+    return (
+      <div className="role-list-page">
+        <div className="page-header">
+          <h2>角色管理</h2>
+        </div>
+        <p>当前账号暂无角色管理访问权限。</p>
+      </div>
+    );
+  }
 
   return (
     <div className="role-list-page">
@@ -216,13 +243,15 @@ export const RoleList = () => {
           >
             刷新
           </Button>
-          <Button
-            variant="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreate}
-          >
-            新增角色
-          </Button>
+          {canCreateRole ? (
+            <Button
+              variant="primary"
+              icon={<PlusOutlined />}
+              onClick={handleCreate}
+            >
+              新增角色
+            </Button>
+          ) : null}
         </Space>
       </div>
 

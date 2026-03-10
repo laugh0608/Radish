@@ -219,6 +219,13 @@ public class UserController : ControllerBase
         var userId = Current.UserId;
         var userName = Current.UserName;
         var tenantId = Current.TenantId;
+        var roles = Current.Roles
+            .Where(role => !string.IsNullOrWhiteSpace(role))
+            .Select(role => role.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(role => role, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var permissions = await _userService.GetPermissionKeysByRolesAsync(roles);
 
         // 获取用户头像
         var avatar = await _attachmentService.QueryFirstAsync(a =>
@@ -233,7 +240,9 @@ public class UserController : ControllerBase
             VoUserName = userName,
             VoTenantId = tenantId,
             VoAvatarUrl = avatar?.VoUrl,
-            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl
+            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl,
+            VoRoles = roles,
+            VoPermissions = permissions
         };
         return new MessageModel
         {

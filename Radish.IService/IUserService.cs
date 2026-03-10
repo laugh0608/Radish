@@ -21,6 +21,13 @@ public interface IUserService : IBaseService<User, UserVo>
     /// <returns>List RoleModulePermission</returns>
     Task<List<RoleModulePermission>> RoleModuleMaps();
 
+    /// <summary>
+    /// 根据角色列表获取当前 Console 权限快照
+    /// </summary>
+    /// <param name="roleNames">角色名列表</param>
+    /// <returns>权限标识列表</returns>
+    Task<List<string>> GetPermissionKeysByRolesAsync(IReadOnlyCollection<string> roleNames);
+
     /// <summary>测试使用同事务</summary>
     /// <remarks>仅为示例，无任何作用</remarks>
     /// <returns></returns>
