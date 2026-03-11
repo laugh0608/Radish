@@ -15,18 +15,6 @@ internal static class DbMigrateDoctor
         SqlSugarConst.ChatConfigId,
     };
 
-    private static readonly string[] SeedCoreTables =
-    {
-        "Role",
-        "ShopProductCategory",
-        "UserTimePreference",
-        "StickerGroup",
-        "Sticker",
-        "Reaction",
-        "WikiDocument",
-        "WikiDocumentRevision",
-    };
-
     public static void Run(IServiceProvider services, IConfiguration configuration, string environment)
     {
         Console.WriteLine($"[Radish.DbMigrate] [Doctor] Environment: {environment}");
@@ -106,38 +94,24 @@ internal static class DbMigrateDoctor
 
     private static void ProbeSeedTables(IServiceProvider services, string? mainDbConnId, List<string> warnings, List<string> errors)
     {
-        var db = services.GetRequiredService<ISqlSugarClient>();
-        var sqlSugarScope = db as SqlSugarScope;
-        var probeDb = db;
-
-        if (sqlSugarScope != null && !string.IsNullOrWhiteSpace(mainDbConnId))
-        {
-            probeDb = sqlSugarScope.GetConnectionScope(mainDbConnId.ToLowerInvariant());
-        }
-
-        var mainConfig = BaseDbConfig.AllConfigs.FirstOrDefault(config =>
-            string.Equals(config.ConfigId?.ToString(), mainDbConnId, StringComparison.OrdinalIgnoreCase));
-
-        if (mainConfig?.DbType == DbType.Sqlite && !SqliteFileExists(mainConfig.ConnectionString))
-        {
-            warnings.Add($"主库 SQLite 文件不存在：{DescribeResolvedSqliteTarget(mainConfig.ConnectionString)}");
-            warnings.Add("核心表状态未探测，因为数据库文件尚未创建。可先执行 init。");
-            return;
-        }
-
         try
         {
-            var missingTables = SeedCoreTables
-                .Where(tableName => !probeDb.DbMaintenance.IsAnyTable(tableName, false))
-                .ToList();
+            var inspectionResult = DbMigrateInspection.InspectSeedReadiness(services, mainDbConnId);
 
-            if (missingTables.Count == 0)
+            if (inspectionResult.DatabaseFileMissing)
+            {
+                warnings.Add($"主库 SQLite 文件不存在：{inspectionResult.DatabaseFilePath ?? "<unknown>"}");
+                warnings.Add("核心表状态未探测，因为数据库文件尚未创建。可先执行 init。");
+                return;
+            }
+
+            if (inspectionResult.MissingTables.Count == 0)
             {
                 Console.WriteLine("[Radish.DbMigrate] [Doctor] Seed 核心表检查：已齐全。");
                 return;
             }
 
-            warnings.Add($"Seed 核心表缺失：{string.Join(", ", missingTables)}");
+            warnings.Add($"Seed 核心表缺失：{string.Join(", ", inspectionResult.MissingTables)}");
         }
         catch (Exception exception)
         {
@@ -153,30 +127,6 @@ internal static class DbMigrateDoctor
         }
 
         return string.IsNullOrWhiteSpace(database.ConnectionString) ? "<empty>" : "<configured>";
-    }
-
-    private static bool SqliteFileExists(string? connectionString)
-    {
-        var filePath = ExtractSqliteFilePath(connectionString);
-        return !string.IsNullOrWhiteSpace(filePath) && File.Exists(filePath);
-    }
-
-    private static string DescribeResolvedSqliteTarget(string? connectionString)
-    {
-        return ExtractSqliteFilePath(connectionString) ?? "<unknown>";
-    }
-
-    private static string? ExtractSqliteFilePath(string? connectionString)
-    {
-        if (string.IsNullOrWhiteSpace(connectionString))
-        {
-            return null;
-        }
-
-        const string prefix = "DataSource=";
-        return connectionString.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-            ? connectionString[prefix.Length..]
-            : connectionString;
     }
 
     private static void PrintSection(string title, IEnumerable<string> items)
