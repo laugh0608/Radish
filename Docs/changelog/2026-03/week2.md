@@ -148,3 +148,10 @@
 
 - **命令补齐**：新增 `doctor` / `verify` 子命令，只读检查当前环境名、`MainDb`、已启用连接、关键 `ConnId` 完整性以及 `seed` 依赖核心表状态。
 - **边界保持克制**：`doctor` 不执行 `init`、不执行 `seed`，仅输出“可直接执行 / 建议先 init / 需要先补配置”的结论，避免在工程治理阶段引入额外副作用。
+
+### 聊天室 P1 回归问题收口
+
+- **长整型 ID 精度问题修复**：聊天室前端已改为保留服务端字符串 ID，仅在乐观发送阶段使用负数本地临时 ID，撤回、引用回复与历史分页不再因为 Snowflake 精度丢失而误报“消息不存在 / 引用消息不存在”。
+- **输入区布局修复**：聊天输入区已改成“左侧输入框 + 右侧固定按钮列”布局，`textarea` 不再挤压“图片 / 发送”按钮。
+- **文档与规划同步**：聊天前端、实时设计、路线图、总览、系统设计、总路线图、当前规划与 2026-03 月志已同步更新到“聊天室 P1 基本收口”的最新状态。
+- **验证结果**：聊天室问题已完成实际回归确认；`npm exec vite build --workspace=radish.client` 通过。完整 `npm run build --workspace=radish.client` 仍被既有无关类型错误阻塞：`Frontend/radish.client/src/apps/forum/components/PostDetail.tsx` 访问了不存在的 `voAuthorAvatarUrl` 字段。

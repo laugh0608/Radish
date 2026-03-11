@@ -2,7 +2,7 @@
 
 > Radish Chat App 的 ChatHub 事件流与同步策略
 >
-> **版本**: v26.3.3
+> **版本**: v26.3.4
 >
 > **最后更新**: 2026.03.11
 >
@@ -70,6 +70,11 @@
 5. 服务端同时推送 `MessageReceived` 给频道全部在线端
 6. 前端按 `messageId / clientRequestId` 合并消息，发送端自身不会因 REST + Hub 双通道出现重复
 7. 失败时原位标记 `status: 'failed'`，允许重试 / 撤销
+
+ID 约束（当前实现）：
+- 服务端 `long / long?` 字段在 Controller 与 SignalR 中统一按字符串传输，避免 JS `number` 精度丢失。
+- 前端仅将“乐观发送临时消息”保留为负数本地 ID；一旦拿到服务端返回，就按字符串主键参与比对、撤回和引用回复。
+- `MessageRecalled`、历史分页 `beforeMessageId`、`replyToId` 均按服务端字符串 ID 透传，避免出现“消息不存在或无权撤回”“引用消息不存在”的假失败。
 
 撤回链路：
 1. 客户端调用 `DELETE /api/v1/ChannelMessage/Recall/{id}`
