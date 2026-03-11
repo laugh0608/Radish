@@ -34,12 +34,15 @@ export async function searchUsersForMention(
   t: TFunction,
   limit: number = 10
 ): Promise<UserMentionOption[]> {
+  void t;
+
   if (!keyword.trim()) {
     return [];
   }
 
   const response = await apiGet<UserMentionOption[]>(
-    `/api/v1/User/SearchForMention?keyword=${encodeURIComponent(keyword)}&limit=${limit}`
+    `/api/v1/User/SearchForMention?keyword=${encodeURIComponent(keyword)}&limit=${limit}`,
+    { withAuth: true }
   );
 
   if (!response.ok || !response.data) {

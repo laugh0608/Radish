@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.RegularExpressions;
 using AutoMapper;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -18,6 +20,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IChatPresenceService _chatPresenceService;
+    private readonly INotificationService _notificationService;
 
     public ChatService(
         IMapper mapper,
@@ -26,7 +29,8 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         IBaseRepository<ChannelMember> memberRepository,
         IBaseRepository<Attachment> attachmentRepository,
         IBaseRepository<User> userRepository,
-        IChatPresenceService chatPresenceService)
+        IChatPresenceService chatPresenceService,
+        INotificationService notificationService)
         : base(mapper, baseRepository)
     {
         _channelRepository = baseRepository;
@@ -35,6 +39,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         _attachmentRepository = attachmentRepository;
         _userRepository = userRepository;
         _chatPresenceService = chatPresenceService;
+        _notificationService = notificationService;
     }
 
     public async Task<List<ChannelVo>> GetChannelListAsync(long tenantId, long userId)
@@ -212,6 +217,15 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         await _channelRepository.UpdateAsync(channel);
 
         await EnsureMemberAndUpdateReadStateAsync(channel.Id, userId, tenantId, normalizedUserName, messageId);
+        await SendMentionNotificationsAsync(
+            tenantId,
+            messageId,
+            request.ChannelId,
+            channel.Name,
+            userId,
+            normalizedUserName,
+            userAvatarUrl,
+            normalizedContent);
 
         var replyMap = new Dictionary<long, ChannelMessage>();
         if (replyToMessage != null)
@@ -489,6 +503,93 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
 
         var avatarMap = await GetUserAvatarMapAsync(new[] { userId });
         return avatarMap.TryGetValue(userId, out var avatarUrl) ? avatarUrl : null;
+    }
+
+    private async Task SendMentionNotificationsAsync(
+        long tenantId,
+        long messageId,
+        long channelId,
+        string channelName,
+        long senderUserId,
+        string senderUserName,
+        string? senderAvatarUrl,
+        string? content)
+    {
+        var mentionedUserIds = ParseMentionedUserIds(content)
+            .Where(userId => userId > 0 && userId != senderUserId)
+            .Distinct()
+            .ToList();
+
+        if (mentionedUserIds.Count == 0)
+        {
+            return;
+        }
+
+        var receivers = await _userRepository.QueryAsync(u =>
+            mentionedUserIds.Contains(u.Id)
+            && u.TenantId == tenantId
+            && u.IsEnable
+            && !u.IsDeleted);
+        var receiverUserIds = receivers
+            .Select(u => u.Id)
+            .Distinct()
+            .ToList();
+
+        if (receiverUserIds.Count == 0)
+        {
+            return;
+        }
+
+        var preview = BuildMentionPreview(content);
+        var notificationContent = string.IsNullOrWhiteSpace(preview)
+            ? $"{senderUserName} 在频道「{channelName}」中提到了你"
+            : $"{senderUserName} 在频道「{channelName}」中提到了你：{preview}";
+
+        await _notificationService.CreateNotificationAsync(new CreateNotificationDto
+        {
+            Type = NotificationType.Mentioned,
+            Title = "聊天室提及",
+            Content = notificationContent,
+            Priority = (int)NotificationPriority.High,
+            BusinessId = messageId,
+            TriggerId = senderUserId,
+            TriggerName = senderUserName,
+            TriggerAvatar = senderAvatarUrl,
+            ReceiverUserIds = receiverUserIds,
+            TenantId = tenantId,
+            ExtData = JsonSerializer.Serialize(new
+            {
+                channelId,
+                messageId
+            })
+        });
+    }
+
+    private static List<long> ParseMentionedUserIds(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return new List<long>();
+        }
+
+        return Regex.Matches(content, @"@\[[^\]]+\]\((\d+)\)")
+            .Select(match => long.TryParse(match.Groups[1].Value, out var userId) ? userId : 0)
+            .Where(userId => userId > 0)
+            .Distinct()
+            .ToList();
+    }
+
+    private static string BuildMentionPreview(string? content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+        {
+            return string.Empty;
+        }
+
+        var normalized = Regex.Replace(content, @"@\[(?<name>[^\]]+)\]\((\d+)\)", "@${name}");
+        normalized = Regex.Replace(normalized, @"\s+", " ").Trim();
+
+        return normalized.Length > 80 ? $"{normalized[..80]}..." : normalized;
     }
 
     private ChannelMessageVo MapMessageVo(

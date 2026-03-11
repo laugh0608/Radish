@@ -295,6 +295,24 @@
   border-color: #b8d7fb;
 }
 
+.mentionChip {
+  display: inline-flex;
+  align-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  padding: 1px 7px;
+  margin: 0 1px;
+  font-size: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.mentionChip:hover {
+  background: rgba(37, 99, 235, 0.18);
+}
+
 .recalled {
   display: inline-block;
   color: #9ca3af;
@@ -328,6 +346,12 @@
   font-size: inherit;
   color: inherit;
   transition: color 0.2s ease;
+}
+
+.uploadStatus {
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #1d4e89;
 }
 
 .replyPreview {
@@ -382,6 +406,10 @@
   align-items: end;
 }
 
+.inputWrap {
+  position: relative;
+}
+
 .input {
   width: 100%;
   min-height: 72px;
@@ -399,6 +427,97 @@
 .input:focus {
   border-color: #4f86c6;
   box-shadow: 0 0 0 3px rgba(79, 134, 198, 0.15);
+}
+
+.mentionDropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(100% + 8px);
+  border: 1px solid #dbe2ea;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.14);
+  overflow: hidden;
+  z-index: 3;
+}
+
+.mentionEmpty {
+  padding: 12px 14px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.mentionOption {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.mentionOption:hover,
+.mentionOptionActive {
+  background: #eef6ff;
+}
+
+.mentionAvatar,
+.mentionAvatarFallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.mentionAvatar {
+  object-fit: cover;
+  border: 1px solid #d9e2ec;
+}
+
+.mentionAvatarFallback {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mentionLabel {
+  min-width: 0;
+  font-size: 13px;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.actionColumn {
+  display: grid;
+  gap: 8px;
+}
+
+.hiddenFileInput {
+  display: none;
+}
+
+.imageButton {
+  border: 1px solid #c8d3df;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+}
+
+.imageButton:disabled {
+  cursor: not-allowed;
+  color: #9ca3af;
 }
 
 .sendButton {
@@ -442,7 +561,15 @@
     grid-template-columns: 1fr;
   }
 
+  .actionColumn {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .sendButton {
+    width: 100%;
+  }
+
+  .imageButton {
     width: 100%;
   }
 

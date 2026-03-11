@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from '@radish/ui/toast';
+import { uploadImage } from '@/api/attachment';
 import {
   getChannelHistory,
   getChannelList,
   recallChannelMessage,
   sendChannelMessage,
 } from '@/api/chat';
+import { searchUsersForMention, type UserMentionOption } from '@/api/user';
 import { getApiBaseUrl } from '@/config/env';
 import { chatHub } from '@/services/chatHub';
 import { useChatStore } from '@/stores/chatStore';
@@ -16,6 +19,13 @@ import type { ChannelMessageVo } from '@/types/chat';
 import styles from './ChatApp.module.css';
 
 const PAGE_SIZE = 50;
+const MENTION_PATTERN = /@\[(?<name>[^\]]+)\]\((?<id>\d+)\)/g;
+
+interface MentionContext {
+  start: number;
+  end: number;
+  keyword: string;
+}
 
 function toNumericId(value: number | string | null | undefined): number {
   if (typeof value === 'number') {
@@ -80,12 +90,20 @@ function buildAvatarStyle(seed: string) {
   };
 }
 
+function normalizeMentionText(content: string | null | undefined): string {
+  if (!content) {
+    return '';
+  }
+
+  return content.replace(MENTION_PATTERN, (_, name: string) => `@${name}`);
+}
+
 function getMessagePreviewText(message: ChannelMessageVo): string {
   if (message.voIsRecalled) {
     return '[已撤回]';
   }
 
-  const normalizedContent = message.voContent?.replace(/\s+/g, ' ').trim();
+  const normalizedContent = normalizeMentionText(message.voContent).replace(/\s+/g, ' ').trim();
   if (normalizedContent) {
     return normalizedContent.length > 72 ? `${normalizedContent.slice(0, 72)}...` : normalizedContent;
   }
@@ -110,7 +128,36 @@ function getConnectionHint(connectionState: string): string | null {
   }
 }
 
+function findMentionContext(text: string, cursor: number): MentionContext | null {
+  if (cursor <= 0) {
+    return null;
+  }
+
+  const beforeCaret = text.slice(0, cursor);
+  const atIndex = beforeCaret.lastIndexOf('@');
+  if (atIndex < 0) {
+    return null;
+  }
+
+  const prefixChar = atIndex > 0 ? beforeCaret[atIndex - 1] : ' ';
+  if (!/\s|[([{>]/.test(prefixChar)) {
+    return null;
+  }
+
+  const keyword = beforeCaret.slice(atIndex + 1);
+  if (!keyword || /[\s()[\]{}]/.test(keyword)) {
+    return null;
+  }
+
+  return {
+    start: atIndex,
+    end: cursor,
+    keyword,
+  };
+}
+
 export const ChatApp = () => {
+  const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const { openApp } = useWindowStore();
   const {
@@ -130,12 +177,20 @@ export const ChatApp = () => {
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [sending, setSending] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [messageInput, setMessageInput] = useState('');
   const [replyTarget, setReplyTarget] = useState<ChannelMessageVo | null>(null);
   const [hasMoreHistory, setHasMoreHistory] = useState<Record<number, boolean>>({});
   const [typingAt, setTypingAt] = useState(0);
+  const [mentionContext, setMentionContext] = useState<MentionContext | null>(null);
+  const [mentionOptions, setMentionOptions] = useState<UserMentionOption[]>([]);
+  const [mentionLoading, setMentionLoading] = useState(false);
+  const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
 
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
   const previousConnectionStateRef = useRef(connectionState);
 
   const currentUserIdValue = useMemo(() => toNumericId(currentUserId), [currentUserId]);
@@ -163,6 +218,11 @@ export const ChatApp = () => {
 
   const connectionHint = useMemo(() => getConnectionHint(connectionState), [connectionState]);
 
+  const isMentionOpen = useMemo(
+    () => !!mentionContext && (mentionLoading || mentionOptions.length > 0 || mentionContext.keyword.length > 0),
+    [mentionContext, mentionLoading, mentionOptions.length]
+  );
+
   const scrollToBottom = useCallback(() => {
     const scrollEl = messageScrollRef.current;
     if (!scrollEl) {
@@ -171,6 +231,30 @@ export const ChatApp = () => {
 
     scrollEl.scrollTop = scrollEl.scrollHeight;
   }, []);
+
+  const closeMentionDropdown = useCallback(() => {
+    setMentionContext(null);
+    setMentionOptions([]);
+    setMentionSelectedIndex(0);
+    setMentionLoading(false);
+  }, []);
+
+  const handleOpenUserProfile = useCallback((targetUserId: number, targetUserName?: string | null, avatarUrl?: string | null) => {
+    if (!targetUserId) {
+      return;
+    }
+
+    if (String(targetUserId) === String(currentUserIdValue)) {
+      openApp('profile');
+      return;
+    }
+
+    openApp('profile', {
+      userId: targetUserId,
+      userName: targetUserName?.trim() || `用户 ${targetUserId}`,
+      avatarUrl: avatarUrl ?? null,
+    });
+  }, [currentUserIdValue, openApp]);
 
   const renderAvatarButton = useCallback((
     targetUserId: number,
@@ -207,6 +291,82 @@ export const ChatApp = () => {
       </button>
     );
   }, [apiBaseUrl, openApp]);
+
+  const renderMessageContent = useCallback((content: string | null | undefined): ReactNode => {
+    if (!content) {
+      return null;
+    }
+
+    const nodes: ReactNode[] = [];
+    let lastIndex = 0;
+    let keyIndex = 0;
+
+    for (const match of content.matchAll(MENTION_PATTERN)) {
+      const matchIndex = match.index ?? 0;
+      const matchText = match[0];
+      const mentionName = match.groups?.name ?? match[1] ?? '用户';
+      const mentionUserId = toNumericId(match.groups?.id ?? match[2]);
+
+      if (matchIndex > lastIndex) {
+        nodes.push(content.slice(lastIndex, matchIndex));
+      }
+
+      nodes.push(
+        <button
+          key={`mention-${mentionUserId}-${keyIndex}`}
+          type="button"
+          className={styles.mentionChip}
+          onClick={() => handleOpenUserProfile(mentionUserId, mentionName)}
+        >
+          @{mentionName}
+        </button>
+      );
+
+      lastIndex = matchIndex + matchText.length;
+      keyIndex += 1;
+    }
+
+    if (lastIndex < content.length) {
+      nodes.push(content.slice(lastIndex));
+    }
+
+    return nodes;
+  }, [handleOpenUserProfile]);
+
+  const updateMentionContext = useCallback((text: string, cursor: number) => {
+    const context = findMentionContext(text, cursor);
+    if (!context) {
+      closeMentionDropdown();
+      return;
+    }
+
+    setMentionContext(context);
+  }, [closeMentionDropdown]);
+
+  const applyMentionSelection = useCallback((option: UserMentionOption) => {
+    if (!mentionContext) {
+      return;
+    }
+
+    const targetId = toNumericId(option.voId);
+    const targetName = option.voUserName?.trim() || `用户${targetId}`;
+    const mentionToken = `@[${targetName}](${targetId}) `;
+    const nextValue = `${messageInput.slice(0, mentionContext.start)}${mentionToken}${messageInput.slice(mentionContext.end)}`;
+    const nextCursor = mentionContext.start + mentionToken.length;
+
+    setMessageInput(nextValue);
+    closeMentionDropdown();
+
+    requestAnimationFrame(() => {
+      const textarea = textareaRef.current;
+      if (!textarea) {
+        return;
+      }
+
+      textarea.focus();
+      textarea.setSelectionRange(nextCursor, nextCursor);
+    });
+  }, [closeMentionDropdown, mentionContext, messageInput]);
 
   const loadChannels = useCallback(async () => {
     setLoadingChannels(true);
@@ -284,7 +444,7 @@ export const ChatApp = () => {
   }, [activeChannelId, activeMessages, hasMoreHistory, loadingHistory, prependChannelMessages]);
 
   const handleSendMessage = useCallback(async () => {
-    if (!activeChannelId || sending) {
+    if (!activeChannelId || sending || uploadingImage) {
       return;
     }
 
@@ -305,6 +465,7 @@ export const ChatApp = () => {
       addMessage(sent);
       setMessageInput('');
       setReplyTarget(null);
+      closeMentionDropdown();
 
       requestAnimationFrame(() => {
         scrollToBottom();
@@ -317,7 +478,59 @@ export const ChatApp = () => {
     } finally {
       setSending(false);
     }
-  }, [activeChannelId, addMessage, messageInput, replyTarget, scrollToBottom, sending]);
+  }, [activeChannelId, addMessage, closeMentionDropdown, messageInput, replyTarget, scrollToBottom, sending, uploadingImage]);
+
+  const handleImageSelected = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !activeChannelId || uploadingImage) {
+      return;
+    }
+
+    setUploadingImage(true);
+    setImageUploadProgress(0);
+
+    try {
+      const attachment = await uploadImage(
+        {
+          file,
+          businessType: 'Chat',
+          generateThumbnail: true,
+          onProgress: setImageUploadProgress,
+        },
+        t
+      );
+
+      const sent = await sendChannelMessage({
+        channelId: activeChannelId,
+        type: 2,
+        content: messageInput.trim() || undefined,
+        replyToId: replyTarget ? toNumericId(replyTarget.voId) : undefined,
+        attachmentId: toNumericId(attachment.voId),
+        imageUrl: attachment.voUrl,
+        imageThumbnailUrl: attachment.voThumbnailUrl || attachment.voUrl,
+      });
+
+      addMessage(sent);
+      setMessageInput('');
+      setReplyTarget(null);
+      closeMentionDropdown();
+      setImageUploadProgress(100);
+
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+
+      await chatHub.markChannelAsRead(activeChannelId);
+      toast.success('图片已发送');
+    } catch (error) {
+      log.error('ChatApp', '发送图片消息失败:', error);
+      toast.error(error instanceof Error ? error.message : '发送图片消息失败');
+    } finally {
+      setUploadingImage(false);
+      setTimeout(() => setImageUploadProgress(0), 400);
+      event.target.value = '';
+    }
+  }, [activeChannelId, addMessage, closeMentionDropdown, messageInput, replyTarget, scrollToBottom, t, uploadingImage]);
 
   const handleRecall = useCallback(async (messageId: number) => {
     if (!messageId) {
@@ -335,23 +548,6 @@ export const ChatApp = () => {
       toast.error(error instanceof Error ? error.message : '撤回消息失败');
     }
   }, [replyTarget]);
-
-  const handleOpenUserProfile = useCallback((targetUserId: number, targetUserName?: string | null, avatarUrl?: string | null) => {
-    if (!targetUserId) {
-      return;
-    }
-
-    if (String(targetUserId) === String(currentUserIdValue)) {
-      openApp('profile');
-      return;
-    }
-
-    openApp('profile', {
-      userId: targetUserId,
-      userName: targetUserName?.trim() || `用户 ${targetUserId}`,
-      avatarUrl: avatarUrl ?? null,
-    });
-  }, [currentUserIdValue, openApp]);
 
   const handleScroll = useCallback(async () => {
     const scrollEl = messageScrollRef.current;
@@ -383,13 +579,14 @@ export const ChatApp = () => {
     }
 
     setReplyTarget(null);
+    closeMentionDropdown();
     void chatHub.joinChannel(activeChannelId);
     void loadInitialHistory(activeChannelId);
 
     return () => {
       void chatHub.leaveChannel(activeChannelId);
     };
-  }, [activeChannelId, loadInitialHistory]);
+  }, [activeChannelId, closeMentionDropdown, loadInitialHistory]);
 
   useEffect(() => {
     if (!activeChannelId || activeMessages.length === 0) {
@@ -418,6 +615,42 @@ export const ChatApp = () => {
 
     previousConnectionStateRef.current = connectionState;
   }, [activeChannelId, connectionState, loadInitialHistory, setChannelMessages]);
+
+  useEffect(() => {
+    if (!mentionContext || !mentionContext.keyword.trim()) {
+      setMentionOptions([]);
+      setMentionSelectedIndex(0);
+      setMentionLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setMentionLoading(true);
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const options = await searchUsersForMention(mentionContext.keyword, t, 8);
+        if (!cancelled) {
+          setMentionOptions(options);
+          setMentionSelectedIndex(0);
+        }
+      } catch (error) {
+        log.error('ChatApp', '搜索提及用户失败:', error);
+        if (!cancelled) {
+          setMentionOptions([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setMentionLoading(false);
+        }
+      }
+    }, 180);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [mentionContext, t]);
 
   return (
     <div className={styles.chatApp}>
@@ -534,7 +767,7 @@ export const ChatApp = () => {
                             <div className={styles.quotedText}>{replyText}</div>
                           </div>
                         )}
-                        {message.voContent && <div className={styles.bubble}>{message.voContent}</div>}
+                        {message.voContent && <div className={styles.bubble}>{renderMessageContent(message.voContent)}</div>}
                         {message.voType === 2 && messageImageUrl && (
                           <img className={styles.imageMessage} src={messageImageUrl} alt="图片消息" loading="lazy" />
                         )}
@@ -591,44 +824,149 @@ export const ChatApp = () => {
             </div>
           )}
 
+          {uploadingImage && (
+            <div className={styles.uploadStatus}>
+              图片上传中... {Math.max(0, Math.min(100, imageUploadProgress))}%
+            </div>
+          )}
+
           <div className={styles.inputRow}>
-            <textarea
-              className={styles.input}
-              value={messageInput}
-              onChange={(event) => {
-                setMessageInput(event.target.value);
+            <div className={styles.inputWrap}>
+              <textarea
+                ref={textareaRef}
+                className={styles.input}
+                value={messageInput}
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setMessageInput(nextValue);
+                  updateMentionContext(nextValue, event.target.selectionStart);
 
-                const now = Date.now();
-                if (activeChannelId && now - typingAt >= 2000) {
-                  setTypingAt(now);
-                  void chatHub.startTyping(activeChannelId);
-                }
-              }}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape' && replyTarget) {
-                  event.preventDefault();
-                  setReplyTarget(null);
-                  return;
-                }
+                  const now = Date.now();
+                  if (activeChannelId && now - typingAt >= 2000) {
+                    setTypingAt(now);
+                    void chatHub.startTyping(activeChannelId);
+                  }
+                }}
+                onClick={(event) => {
+                  updateMentionContext(messageInput, event.currentTarget.selectionStart);
+                }}
+                onKeyUp={(event) => {
+                  updateMentionContext(messageInput, event.currentTarget.selectionStart);
+                }}
+                onKeyDown={(event) => {
+                  if (isMentionOpen) {
+                    if (event.key === 'ArrowDown') {
+                      event.preventDefault();
+                      setMentionSelectedIndex((prev) => (
+                        mentionOptions.length > 0 ? (prev + 1) % mentionOptions.length : 0
+                      ));
+                      return;
+                    }
 
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault();
+                    if (event.key === 'ArrowUp') {
+                      event.preventDefault();
+                      setMentionSelectedIndex((prev) => (
+                        mentionOptions.length > 0 ? (prev - 1 + mentionOptions.length) % mentionOptions.length : 0
+                      ));
+                      return;
+                    }
+
+                    if ((event.key === 'Enter' || event.key === 'Tab') && mentionOptions[mentionSelectedIndex]) {
+                      event.preventDefault();
+                      applyMentionSelection(mentionOptions[mentionSelectedIndex]);
+                      return;
+                    }
+
+                    if (event.key === 'Escape') {
+                      event.preventDefault();
+                      closeMentionDropdown();
+                      return;
+                    }
+                  }
+
+                  if (event.key === 'Escape' && replyTarget) {
+                    event.preventDefault();
+                    setReplyTarget(null);
+                    return;
+                  }
+
+                  if (event.key === 'Enter' && !event.shiftKey) {
+                    event.preventDefault();
+                    void handleSendMessage();
+                  }
+                }}
+                placeholder={activeChannelId ? '输入消息，支持 @提及，Enter 发送，Shift+Enter 换行，Esc 取消回复' : '请先选择频道'}
+                disabled={!activeChannelId || sending || uploadingImage}
+              />
+
+              {isMentionOpen && (
+                <div className={styles.mentionDropdown}>
+                  {mentionLoading ? (
+                    <div className={styles.mentionEmpty}>搜索中...</div>
+                  ) : mentionOptions.length === 0 ? (
+                    <div className={styles.mentionEmpty}>未找到匹配的用户</div>
+                  ) : (
+                    mentionOptions.map((option, index) => {
+                      const optionId = toNumericId(option.voId);
+                      const optionName = option.voUserName?.trim() || `用户 ${optionId}`;
+                      const optionAvatarUrl = resolveMediaUrl(apiBaseUrl, option.voAvatar);
+
+                      return (
+                        <button
+                          key={optionId}
+                          type="button"
+                          className={`${styles.mentionOption} ${index === mentionSelectedIndex ? styles.mentionOptionActive : ''}`}
+                          onMouseDown={(event) => {
+                            event.preventDefault();
+                            applyMentionSelection(option);
+                          }}
+                          onMouseEnter={() => setMentionSelectedIndex(index)}
+                        >
+                          {optionAvatarUrl ? (
+                            <img src={optionAvatarUrl} alt={optionName} className={styles.mentionAvatar} loading="lazy" />
+                          ) : (
+                            <span className={styles.mentionAvatarFallback} style={buildAvatarStyle(optionName)}>
+                              {buildAvatarText(optionName)}
+                            </span>
+                          )}
+                          <span className={styles.mentionLabel}>@{optionName}</span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className={styles.actionColumn}>
+              <input
+                ref={imageInputRef}
+                type="file"
+                accept="image/*"
+                className={styles.hiddenFileInput}
+                onChange={(event) => {
+                  void handleImageSelected(event);
+                }}
+              />
+              <button
+                className={styles.imageButton}
+                type="button"
+                disabled={!activeChannelId || sending || uploadingImage}
+                onClick={() => imageInputRef.current?.click()}
+              >
+                {uploadingImage ? '上传中...' : '图片'}
+              </button>
+              <button
+                className={styles.sendButton}
+                type="button"
+                disabled={!activeChannelId || sending || uploadingImage || !messageInput.trim()}
+                onClick={() => {
                   void handleSendMessage();
-                }
-              }}
-              placeholder={activeChannelId ? '输入消息，Enter 发送，Shift+Enter 换行，Esc 取消回复' : '请先选择频道'}
-              disabled={!activeChannelId || sending}
-            />
-            <button
-              className={styles.sendButton}
-              type="button"
-              disabled={!activeChannelId || sending || !messageInput.trim()}
-              onClick={() => {
-                void handleSendMessage();
-              }}
-            >
-              {sending ? '发送中...' : '发送'}
-            </button>
+                }}
+              >
+                {sending ? '发送中...' : '发送'}
+              </button>
+            </div>
           </div>
         </footer>
       </section>
