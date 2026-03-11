@@ -113,6 +113,12 @@
 
 ## 2026-03-11 (周三)
 
+### 规划优先级调整
+
+- **权限主线切换**：`Console` 权限治理 V1 已从“继续补工具 / 补边界”切换为 **P0：权限冻结后的短回归观察期**，后续只做回归维护，不再横向扩张权限模型。
+- **下一执行顺序确认**：规划已明确调整为 `P1 聊天室完善` → `P2 开源软件清单声明组件` → `P3 抽奖 / 投票 / 问答里先选一个做最小首版`。
+- **大项统一后置**：国风 UI、主题切换、i18n 与邮件通知系统统一归类为 `Later`，避免当前阶段再次引入影响面过广的大治理任务。
+
 ### Console 权限治理工具化校验落地
 
 - **扫描脚本补齐**：新增 `Scripts/check-console-permissions.mjs`，自动对比 `routeMeta.requiredPermission`、前端 `CONSOLE_PERMISSIONS`、页面内 `usePermission`、后端 `ConsolePermissions.ApiPermissionMappings` 与 `DbMigrate` 的 `ApiModule.LinkUrl`，减少继续靠人工逐页核对的成本。
