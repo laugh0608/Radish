@@ -110,3 +110,11 @@
 - **Sticker 链路最小落地**：后端已仅对 `Sticker` / `StickerCover` 的 `businessType` 增加权限收口，分别复用 `console.stickers.create/edit/batch-upload` 与 `console.stickers.create/edit`。
 - **文档与规划同步**：`README`、权限治理专题、覆盖矩阵、路线图、当前规划与 Sticker 设计文档已统一更新，V1 当前只剩工具化校验类尾项。
 - **回归验证通过**：`dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --filter AttachmentControllerTest` 与 `dotnet build Radish.slnx -c Debug` 已通过。
+
+## 2026-03-11 (周三)
+
+### Console 权限治理工具化校验落地
+
+- **扫描脚本补齐**：新增 `Scripts/check-console-permissions.mjs`，自动对比 `routeMeta.requiredPermission`、前端 `CONSOLE_PERMISSIONS`、页面内 `usePermission`、后端 `ConsolePermissions.ApiPermissionMappings` 与 `DbMigrate` 的 `ApiModule.LinkUrl`，减少继续靠人工逐页核对的成本。
+- **入口统一**：根目录新增 `npm run check:console-permissions`，`radish.console/README` 与权限治理专题、覆盖矩阵文档已同步补充使用方式。
+- **阶段口径更新**：`Console 权限治理 V1` 的下一步建议已从“补工具”切换为“冻结边界、只做回归维护”，避免在收口尾声继续横向扩张权限模型。

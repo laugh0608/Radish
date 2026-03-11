@@ -1,6 +1,6 @@
 # Console 权限覆盖矩阵
 
-> 最后更新：2026-03-10
+> 最后更新：2026-03-11
 > 适用范围：`radish.console` 当前已接入权限治理的页面与其真实依赖的后端资源
 
 本文档用于把 Console 权限治理涉及的四层对象放到同一张表里：
@@ -83,13 +83,23 @@
 - 页面真实调用的 Console 专属后台接口当前已基本完成 `ConsolePermissions + DbMigrate` 对齐
 - `Users` 未落地能力已从页面、前后端权限常量与文档口径中一并清理
 
-### 5.2 当前剩余真实缺口
+### 5.2 工具化校验已落地
 
-1. **工具化校验**：若后续仍担心回归，建议补一份轻量扫描脚本，自动对比：
-   - `routeMeta.requiredPermission`
-   - `CONSOLE_PERMISSIONS`
-   - `ConsolePermissions.ApiPermissionMappings`
-   - `InitialDataSeeder.Identity.cs` 中的 `ApiModule`
+当前已补充轻量扫描脚本：`npm run check:console-permissions`
+
+该脚本会自动对比：
+
+- `routeMeta.requiredPermission`
+- `CONSOLE_PERMISSIONS`
+- 页面内 `usePermission(CONSOLE_PERMISSIONS.xxx)`
+- `ConsolePermissions.ApiPermissionMappings`
+- `InitialDataSeeder.Identity.cs` 中的 `ApiModule.LinkUrl`
+
+建议在以下场景运行：
+
+- 新增 Console 页面或路由权限时
+- 新增按钮级权限或页面真实接口依赖时
+- 调整 `ConsolePermissions` 或 `DbMigrate` 种子时
 
 ### 5.3 暂不视为缺口的项
 
@@ -101,6 +111,7 @@
 
 建议把本文档作为 Console 权限治理 V1 的“覆盖核对表”：
 
+- 权限链路改动后先运行 `npm run check:console-permissions`
 - 新增一个页面时，先补路由行
 - 页面新增真实接口依赖时，补“真实后端资源”列
 - 只在接口真正被页面使用后，才推进 `ConsolePermissions` 与 `DbMigrate` 对齐

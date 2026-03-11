@@ -69,11 +69,18 @@ Frontend/radish.console/
 npm run dev --workspace=radish.console
 ```
 
+### 权限校验
+
+```bash
+npm run check:console-permissions
+```
+
 ### 注意事项
 
 - 普通 API 调用不要再自定义 fetch 封装
 - 未落地能力不要提前暴露按钮、权限常量或页面入口
 - 若页面新增真实后端依赖，需同步检查：前端权限常量、`ConsolePermissions`、`DbMigrate`
+- 权限链路改动后，先运行 `npm run check:console-permissions` 再提交
 
 ## 相关文档
 
