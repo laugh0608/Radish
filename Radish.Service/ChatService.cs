@@ -15,6 +15,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     private readonly IBaseRepository<Channel> _channelRepository;
     private readonly IBaseRepository<ChannelMessage> _messageRepository;
     private readonly IBaseRepository<ChannelMember> _memberRepository;
+    private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IChatPresenceService _chatPresenceService;
 
@@ -23,6 +24,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         IBaseRepository<Channel> baseRepository,
         IBaseRepository<ChannelMessage> messageRepository,
         IBaseRepository<ChannelMember> memberRepository,
+        IBaseRepository<Attachment> attachmentRepository,
         IBaseRepository<User> userRepository,
         IChatPresenceService chatPresenceService)
         : base(mapper, baseRepository)
@@ -30,6 +32,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         _channelRepository = baseRepository;
         _messageRepository = messageRepository;
         _memberRepository = memberRepository;
+        _attachmentRepository = attachmentRepository;
         _userRepository = userRepository;
         _chatPresenceService = chatPresenceService;
     }
@@ -130,9 +133,11 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         var replyMap = replyIds.Count > 0
             ? (await _messageRepository.QueryByIdsAsync(replyIds)).ToDictionary(m => m.Id, m => m)
             : new Dictionary<long, ChannelMessage>();
+        var avatarMap = await GetUserAvatarMapAsync(messages.Select(m => m.UserId)
+            .Concat(replyMap.Values.Select(m => m.UserId)));
 
         return messages
-            .Select(message => MapMessageVo(message, replyMap))
+            .Select(message => MapMessageVo(message, replyMap, avatarMap))
             .ToList();
     }
 
@@ -162,6 +167,11 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         if (request.Type == MessageType.Image && string.IsNullOrWhiteSpace(request.ImageUrl))
         {
             throw new ArgumentException("图片消息必须提供图片地址", nameof(request.ImageUrl));
+        }
+
+        if (string.IsNullOrWhiteSpace(userAvatarUrl))
+        {
+            userAvatarUrl = await GetUserAvatarUrlAsync(userId);
         }
 
         ChannelMessage? replyToMessage = null;
@@ -340,14 +350,14 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         }
 
         var users = await _userRepository.QueryAsync(u => onlineUserIds.Contains(u.Id) && !u.IsDeleted);
+        var avatarMap = await GetUserAvatarMapAsync(users.Select(u => u.Id));
         return users
             .OrderBy(u => u.UserName)
             .Select(u => new ChannelMemberVo
             {
                 VoUserId = u.Id,
                 VoUserName = u.UserName,
-                // User 实体当前不包含头像字段，先返回空值，后续可接入用户档案服务补齐。
-                VoUserAvatarUrl = null,
+                VoUserAvatarUrl = avatarMap.TryGetValue(u.Id, out var avatarUrl) ? avatarUrl : null,
                 VoIsOnline = true
             })
             .ToList();
@@ -363,7 +373,13 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             OrderByType.Desc);
 
         var message = messages.FirstOrDefault();
-        return message == null ? null : MapMessageVo(message, null);
+        if (message == null)
+        {
+            return null;
+        }
+
+        var avatarMap = await GetUserAvatarMapAsync(new[] { message.UserId });
+        return MapMessageVo(message, null, avatarMap);
     }
 
     private async Task<ChannelUnreadStateVo> GetUnreadStateInternalAsync(long channelId, long userId, long? lastReadMessageId)
@@ -434,12 +450,69 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         await _memberRepository.UpdateAsync(member);
     }
 
-    private ChannelMessageVo MapMessageVo(ChannelMessage message, Dictionary<long, ChannelMessage>? replyMap)
+    private async Task<Dictionary<long, string>> GetUserAvatarMapAsync(IEnumerable<long> userIds)
+    {
+        var targetUserIds = userIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (targetUserIds.Count == 0)
+        {
+            return new Dictionary<long, string>();
+        }
+
+        var attachments = await _attachmentRepository.QueryAsync(a =>
+            a.BusinessType == "Avatar"
+            && a.BusinessId.HasValue
+            && targetUserIds.Contains(a.BusinessId.Value)
+            && a.IsEnabled
+            && !a.IsDeleted);
+
+        return attachments
+            .Where(a => a.BusinessId.HasValue && !string.IsNullOrWhiteSpace(a.Url))
+            .GroupBy(a => a.BusinessId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderByDescending(a => a.Id)
+                    .Select(a => a.Url.Trim())
+                    .First());
+    }
+
+    private async Task<string?> GetUserAvatarUrlAsync(long userId)
+    {
+        if (userId <= 0)
+        {
+            return null;
+        }
+
+        var avatarMap = await GetUserAvatarMapAsync(new[] { userId });
+        return avatarMap.TryGetValue(userId, out var avatarUrl) ? avatarUrl : null;
+    }
+
+    private ChannelMessageVo MapMessageVo(
+        ChannelMessage message,
+        Dictionary<long, ChannelMessage>? replyMap,
+        Dictionary<long, string>? avatarMap = null)
     {
         var messageVo = Mapper.Map<ChannelMessageVo>(message);
+        if (string.IsNullOrWhiteSpace(messageVo.VoUserAvatarUrl)
+            && avatarMap != null
+            && avatarMap.TryGetValue(message.UserId, out var avatarUrl))
+        {
+            messageVo.VoUserAvatarUrl = avatarUrl;
+        }
+
         if (message.ReplyToId.HasValue && replyMap != null && replyMap.TryGetValue(message.ReplyToId.Value, out var replyMessage))
         {
             messageVo.VoReplyTo = Mapper.Map<ChannelMessageVo>(replyMessage);
+            if (string.IsNullOrWhiteSpace(messageVo.VoReplyTo.VoUserAvatarUrl)
+                && avatarMap != null
+                && avatarMap.TryGetValue(replyMessage.UserId, out var replyAvatarUrl))
+            {
+                messageVo.VoReplyTo.VoUserAvatarUrl = replyAvatarUrl;
+            }
         }
 
         messageVo.VoIsRecalled = message.IsDeleted;

@@ -6,6 +6,7 @@ import {
   recallChannelMessage,
   sendChannelMessage,
 } from '@/api/chat';
+import { getApiBaseUrl } from '@/config/env';
 import { chatHub } from '@/services/chatHub';
 import { useChatStore } from '@/stores/chatStore';
 import { useWindowStore } from '@/stores/windowStore';
@@ -41,13 +42,83 @@ function formatTime(time: string): string {
   });
 }
 
+function resolveMediaUrl(apiBaseUrl: string, url: string | null | undefined): string | null {
+  if (!url) {
+    return null;
+  }
+
+  if (/^https?:\/\//i.test(url)) {
+    return url;
+  }
+
+  if (url.startsWith('/')) {
+    return `${apiBaseUrl}${url}`;
+  }
+
+  return `${apiBaseUrl}/${url}`;
+}
+
+function buildAvatarText(name: string): string {
+  const source = name.trim();
+  if (!source) {
+    return '?';
+  }
+
+  return source.charAt(0).toUpperCase();
+}
+
+function buildAvatarStyle(seed: string) {
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = seed.charCodeAt(index) + ((hash << 5) - hash);
+  }
+
+  const hue = Math.abs(hash) % 360;
+  return {
+    backgroundColor: `hsl(${hue} 78% 92%)`,
+    color: `hsl(${hue} 42% 28%)`,
+  };
+}
+
+function getMessagePreviewText(message: ChannelMessageVo): string {
+  if (message.voIsRecalled) {
+    return '[已撤回]';
+  }
+
+  const normalizedContent = message.voContent?.replace(/\s+/g, ' ').trim();
+  if (normalizedContent) {
+    return normalizedContent.length > 72 ? `${normalizedContent.slice(0, 72)}...` : normalizedContent;
+  }
+
+  if (message.voType === 2) {
+    return '[图片消息]';
+  }
+
+  return '[消息]';
+}
+
+function getConnectionHint(connectionState: string): string | null {
+  switch (connectionState) {
+    case 'connecting':
+      return '正在连接实时通道...';
+    case 'reconnecting':
+      return '实时连接已断开，正在自动恢复并补拉最新消息...';
+    case 'disconnected':
+      return '实时连接未建立，消息可能不会即时刷新。';
+    default:
+      return null;
+  }
+}
+
 export const ChatApp = () => {
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const { openApp } = useWindowStore();
   const {
     channels,
     activeChannelId,
     messageMap,
     typingMap,
+    connectionState,
     setChannels,
     setActiveChannel,
     setChannelMessages,
@@ -60,10 +131,14 @@ export const ChatApp = () => {
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [sending, setSending] = useState(false);
   const [messageInput, setMessageInput] = useState('');
+  const [replyTarget, setReplyTarget] = useState<ChannelMessageVo | null>(null);
   const [hasMoreHistory, setHasMoreHistory] = useState<Record<number, boolean>>({});
   const [typingAt, setTypingAt] = useState(0);
 
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
+  const previousConnectionStateRef = useRef(connectionState);
+
+  const currentUserIdValue = useMemo(() => toNumericId(currentUserId), [currentUserId]);
 
   const activeChannel = useMemo(
     () => channels.find((channel) => toNumericId(channel.voId) === activeChannelId) || null,
@@ -83,8 +158,10 @@ export const ChatApp = () => {
       return [];
     }
 
-    return (typingMap[activeChannelId] || []).filter((user) => user.userId !== currentUserId);
-  }, [activeChannelId, typingMap, currentUserId]);
+    return (typingMap[activeChannelId] || []).filter((user) => user.userId !== currentUserIdValue);
+  }, [activeChannelId, typingMap, currentUserIdValue]);
+
+  const connectionHint = useMemo(() => getConnectionHint(connectionState), [connectionState]);
 
   const scrollToBottom = useCallback(() => {
     const scrollEl = messageScrollRef.current;
@@ -94,6 +171,42 @@ export const ChatApp = () => {
 
     scrollEl.scrollTop = scrollEl.scrollHeight;
   }, []);
+
+  const renderAvatarButton = useCallback((
+    targetUserId: number,
+    targetUserName: string | null | undefined,
+    avatarUrl: string | null | undefined,
+    titlePrefix: string
+  ) => {
+    const normalizedName = targetUserName?.trim() || `用户 ${targetUserId || '?'}`;
+    const resolvedAvatarUrl = resolveMediaUrl(apiBaseUrl, avatarUrl);
+
+    return (
+      <button
+        type="button"
+        className={styles.avatarButton}
+        onClick={() => {
+          if (targetUserId > 0) {
+            openApp('profile', {
+              userId: targetUserId,
+              userName: normalizedName,
+              avatarUrl: avatarUrl ?? null,
+            });
+          }
+        }}
+        disabled={targetUserId <= 0}
+        title={targetUserId > 0 ? `${titlePrefix}${normalizedName}` : '用户信息不可用'}
+      >
+        {resolvedAvatarUrl ? (
+          <img src={resolvedAvatarUrl} alt={normalizedName} className={styles.avatarImage} loading="lazy" />
+        ) : (
+          <span className={styles.avatarFallback} style={buildAvatarStyle(normalizedName)}>
+            {buildAvatarText(normalizedName)}
+          </span>
+        )}
+      </button>
+    );
+  }, [apiBaseUrl, openApp]);
 
   const loadChannels = useCallback(async () => {
     setLoadingChannels(true);
@@ -186,10 +299,12 @@ export const ChatApp = () => {
         channelId: activeChannelId,
         type: 1,
         content,
+        replyToId: replyTarget ? toNumericId(replyTarget.voId) : undefined,
       });
 
       addMessage(sent);
       setMessageInput('');
+      setReplyTarget(null);
 
       requestAnimationFrame(() => {
         scrollToBottom();
@@ -202,7 +317,7 @@ export const ChatApp = () => {
     } finally {
       setSending(false);
     }
-  }, [activeChannelId, addMessage, messageInput, scrollToBottom, sending]);
+  }, [activeChannelId, addMessage, messageInput, replyTarget, scrollToBottom, sending]);
 
   const handleRecall = useCallback(async (messageId: number) => {
     if (!messageId) {
@@ -211,19 +326,22 @@ export const ChatApp = () => {
 
     try {
       await recallChannelMessage(messageId);
+      if (replyTarget && toNumericId(replyTarget.voId) === messageId) {
+        setReplyTarget(null);
+      }
       toast.success('消息已撤回');
     } catch (error) {
       log.error('ChatApp', '撤回消息失败:', error);
       toast.error(error instanceof Error ? error.message : '撤回消息失败');
     }
-  }, []);
+  }, [replyTarget]);
 
   const handleOpenUserProfile = useCallback((targetUserId: number, targetUserName?: string | null, avatarUrl?: string | null) => {
     if (!targetUserId) {
       return;
     }
 
-    if (String(targetUserId) === String(currentUserId ?? 0)) {
+    if (String(targetUserId) === String(currentUserIdValue)) {
       openApp('profile');
       return;
     }
@@ -233,7 +351,7 @@ export const ChatApp = () => {
       userName: targetUserName?.trim() || `用户 ${targetUserId}`,
       avatarUrl: avatarUrl ?? null,
     });
-  }, [currentUserId, openApp]);
+  }, [currentUserIdValue, openApp]);
 
   const handleScroll = useCallback(async () => {
     const scrollEl = messageScrollRef.current;
@@ -264,6 +382,7 @@ export const ChatApp = () => {
       return;
     }
 
+    setReplyTarget(null);
     void chatHub.joinChannel(activeChannelId);
     void loadInitialHistory(activeChannelId);
 
@@ -289,6 +408,16 @@ export const ChatApp = () => {
       });
     }
   }, [activeChannelId, activeMessages, scrollToBottom]);
+
+  useEffect(() => {
+    const previousConnectionState = previousConnectionStateRef.current;
+    if (activeChannelId && previousConnectionState === 'reconnecting' && connectionState === 'connected') {
+      setChannelMessages(activeChannelId, []);
+      void loadInitialHistory(activeChannelId);
+    }
+
+    previousConnectionStateRef.current = connectionState;
+  }, [activeChannelId, connectionState, loadInitialHistory, setChannelMessages]);
 
   return (
     <div className={styles.chatApp}>
@@ -330,6 +459,9 @@ export const ChatApp = () => {
           {activeChannel?.voDescription && (
             <div className={styles.channelDescription}>{activeChannel.voDescription}</div>
           )}
+          {activeChannelId !== null && connectionHint && (
+            <div className={styles.connectionBanner}>{connectionHint}</div>
+          )}
         </header>
 
         <div className={styles.messageViewport} ref={messageScrollRef} onScroll={() => { void handleScroll(); }}>
@@ -343,43 +475,78 @@ export const ChatApp = () => {
             activeMessages.map((message: ChannelMessageVo) => {
               const messageId = toNumericId(message.voId);
               const messageUserId = toNumericId(message.voUserId);
-              const isMine = messageUserId > 0 && messageUserId === currentUserId;
+              const isMine = messageUserId > 0 && messageUserId === currentUserIdValue;
+              const replyText = message.voReplyTo ? getMessagePreviewText(message.voReplyTo) : null;
+              const messageImageUrl = resolveMediaUrl(apiBaseUrl, message.voImageUrl);
 
               return (
                 <div key={messageId} className={`${styles.messageRow} ${isMine ? styles.mine : ''}`}>
-                  <div className={styles.metaLine}>
-                    <button
-                      type="button"
-                      className={styles.userNameButton}
-                      onClick={() => handleOpenUserProfile(messageUserId, message.voUserName, message.voUserAvatarUrl)}
-                      disabled={messageUserId <= 0}
-                      title={messageUserId > 0 ? `查看 ${(message.voUserName || `用户 ${messageUserId}`).trim()} 的主页` : '用户信息不可用'}
-                    >
-                      <span className={styles.userName}>{message.voUserName || 'Unknown'}</span>
-                    </button>
-                    <span className={styles.time}>{formatTime(message.voCreateTime)}</span>
-                    {isMine && !message.voIsRecalled && (
+                  {!isMine && renderAvatarButton(
+                    messageUserId,
+                    message.voUserName,
+                    message.voUserAvatarUrl,
+                    '查看 '
+                  )}
+
+                  <div className={styles.messageBody}>
+                    <div className={styles.metaLine}>
                       <button
                         type="button"
-                        className={styles.recallButton}
-                        onClick={() => {
-                          void handleRecall(messageId);
-                        }}
+                        className={styles.userNameButton}
+                        onClick={() => handleOpenUserProfile(messageUserId, message.voUserName, message.voUserAvatarUrl)}
+                        disabled={messageUserId <= 0}
+                        title={messageUserId > 0 ? `查看 ${(message.voUserName || `用户 ${messageUserId}`).trim()} 的主页` : '用户信息不可用'}
                       >
-                        撤回
+                        <span className={styles.userName}>{message.voUserName || 'Unknown'}</span>
                       </button>
+                      <span className={styles.time}>{formatTime(message.voCreateTime)}</span>
+                      {!message.voIsRecalled && (
+                        <button
+                          type="button"
+                          className={styles.replyButton}
+                          onClick={() => setReplyTarget(message)}
+                        >
+                          回复
+                        </button>
+                      )}
+                      {isMine && !message.voIsRecalled && (
+                        <button
+                          type="button"
+                          className={styles.recallButton}
+                          onClick={() => {
+                            void handleRecall(messageId);
+                          }}
+                        >
+                          撤回
+                        </button>
+                      )}
+                    </div>
+
+                    {message.voIsRecalled ? (
+                      <div className={styles.recalled}>[已撤回]</div>
+                    ) : (
+                      <div className={styles.messageStack}>
+                        {message.voReplyTo && (
+                          <div className={styles.quotedMessage}>
+                            <div className={styles.quotedAuthor}>
+                              回复 {message.voReplyTo.voUserName || 'Unknown'}
+                            </div>
+                            <div className={styles.quotedText}>{replyText}</div>
+                          </div>
+                        )}
+                        {message.voContent && <div className={styles.bubble}>{message.voContent}</div>}
+                        {message.voType === 2 && messageImageUrl && (
+                          <img className={styles.imageMessage} src={messageImageUrl} alt="图片消息" loading="lazy" />
+                        )}
+                      </div>
                     )}
                   </div>
 
-                  {message.voIsRecalled ? (
-                    <div className={styles.recalled}>[已撤回]</div>
-                  ) : (
-                    <>
-                      {message.voContent && <div className={styles.bubble}>{message.voContent}</div>}
-                      {message.voType === 2 && message.voImageUrl && (
-                        <img className={styles.imageMessage} src={message.voImageUrl} alt="图片消息" />
-                      )}
-                    </>
+                  {isMine && renderAvatarButton(
+                    messageUserId,
+                    message.voUserName,
+                    message.voUserAvatarUrl,
+                    '查看 '
                   )}
                 </div>
               );
@@ -406,6 +573,24 @@ export const ChatApp = () => {
             </div>
           )}
 
+          {replyTarget && (
+            <div className={styles.replyPreview}>
+              <div className={styles.replyPreviewBody}>
+                <div className={styles.replyPreviewLabel}>
+                  回复 {replyTarget.voUserName || 'Unknown'}
+                </div>
+                <div className={styles.replyPreviewText}>{getMessagePreviewText(replyTarget)}</div>
+              </div>
+              <button
+                type="button"
+                className={styles.replyCancelButton}
+                onClick={() => setReplyTarget(null)}
+              >
+                取消
+              </button>
+            </div>
+          )}
+
           <div className={styles.inputRow}>
             <textarea
               className={styles.input}
@@ -420,12 +605,18 @@ export const ChatApp = () => {
                 }
               }}
               onKeyDown={(event) => {
+                if (event.key === 'Escape' && replyTarget) {
+                  event.preventDefault();
+                  setReplyTarget(null);
+                  return;
+                }
+
                 if (event.key === 'Enter' && !event.shiftKey) {
                   event.preventDefault();
                   void handleSendMessage();
                 }
               }}
-              placeholder={activeChannelId ? '输入消息，Enter 发送，Shift+Enter 换行' : '请先选择频道'}
+              placeholder={activeChannelId ? '输入消息，Enter 发送，Shift+Enter 换行，Esc 取消回复' : '请先选择频道'}
               disabled={!activeChannelId || sending}
             />
             <button
