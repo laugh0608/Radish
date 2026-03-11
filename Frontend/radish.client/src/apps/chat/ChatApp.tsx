@@ -16,7 +16,13 @@ import { useChatStore } from '@/stores/chatStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
-import type { ChannelMemberVo, ChannelMessageVo, SendChannelMessageRequest } from '@/types/chat';
+import type { ChannelMemberVo, ChannelMessageVo, EntityIdValue, SendChannelMessageRequest } from '@/types/chat';
+import {
+  areEntityIdsEqual,
+  isPersistedEntityId,
+  isTemporaryEntityId,
+  normalizeEntityId,
+} from '@/types/chat';
 import styles from './ChatApp.module.css';
 
 const PAGE_SIZE = 50;
@@ -37,7 +43,7 @@ interface ChannelDraft {
 
 type ChannelDraftMap = Record<string, ChannelDraft>;
 
-function toNumericId(value: number | string | null | undefined): number {
+function toNumericId(value: EntityIdValue | null | undefined): number {
   if (typeof value === 'number') {
     return Number.isFinite(value) ? value : 0;
   }
@@ -48,6 +54,10 @@ function toNumericId(value: number | string | null | undefined): number {
   }
 
   return 0;
+}
+
+function getEntityKey(value: EntityIdValue | null | undefined): string {
+  return normalizeEntityId(value) ?? '';
 }
 
 function formatTime(time: string): string {
@@ -166,8 +176,8 @@ function findMentionContext(text: string, cursor: number): MentionContext | null
   };
 }
 
-function getDraftStorageKey(userId: number, channelId: number): string {
-  return `${userId}:${channelId}`;
+function getDraftStorageKey(userId: number, channelId: EntityIdValue): string {
+  return `${userId}:${getEntityKey(channelId)}`;
 }
 
 function readDraftMap(): ChannelDraftMap {
@@ -201,8 +211,8 @@ function writeDraftMap(nextMap: ChannelDraftMap): void {
   window.localStorage.setItem(CHAT_DRAFT_STORAGE_KEY, JSON.stringify(nextMap));
 }
 
-function loadChannelDraft(userId: number, channelId: number): ChannelDraft | null {
-  if (userId <= 0 || channelId <= 0) {
+function loadChannelDraft(userId: number, channelId: EntityIdValue): ChannelDraft | null {
+  if (userId <= 0 || !isPersistedEntityId(channelId)) {
     return null;
   }
 
@@ -213,11 +223,11 @@ function loadChannelDraft(userId: number, channelId: number): ChannelDraft | nul
 
 function persistChannelDraft(
   userId: number,
-  channelId: number,
+  channelId: EntityIdValue,
   content: string,
   replyTarget: ChannelMessageVo | null
 ): void {
-  if (userId <= 0 || channelId <= 0) {
+  if (userId <= 0 || !isPersistedEntityId(channelId)) {
     return;
   }
 
@@ -238,30 +248,29 @@ function persistChannelDraft(
   writeDraftMap(draftMap);
 }
 
-function clearChannelDraft(userId: number, channelId: number): void {
+function clearChannelDraft(userId: number, channelId: EntityIdValue): void {
   persistChannelDraft(userId, channelId, '', null);
 }
 
-function buildClientRequestId(channelId: number): string {
-  return `chat-${channelId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+function buildClientRequestId(channelId: EntityIdValue): string {
+  return `chat-${getEntityKey(channelId)}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
 function getErrorMessage(error: unknown, fallbackMessage: string): string {
   return error instanceof Error ? error.message : fallbackMessage;
 }
 
-function getReplyTargetMessageId(message: ChannelMessageVo | null | undefined): number | null {
+function getReplyTargetMessageId(message: ChannelMessageVo | null | undefined): string | null {
   if (!message) {
     return null;
   }
 
-  const messageId = toNumericId(message.voId);
   const messageStatus = message.voLocalStatus ?? 'sent';
-  if (messageId <= 0 || messageStatus !== 'sent' || message.voIsRecalled) {
+  if (!isPersistedEntityId(message.voId) || messageStatus !== 'sent' || message.voIsRecalled) {
     return null;
   }
 
-  return messageId;
+  return message.voId;
 }
 
 export const ChatApp = () => {
@@ -293,7 +302,7 @@ export const ChatApp = () => {
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [messageInput, setMessageInput] = useState('');
   const [replyTarget, setReplyTarget] = useState<ChannelMessageVo | null>(null);
-  const [hasMoreHistory, setHasMoreHistory] = useState<Record<number, boolean>>({});
+  const [hasMoreHistory, setHasMoreHistory] = useState<Record<string, boolean>>({});
   const [typingAt, setTypingAt] = useState(0);
   const [mentionContext, setMentionContext] = useState<MentionContext | null>(null);
   const [mentionOptions, setMentionOptions] = useState<UserMentionOption[]>([]);
@@ -306,8 +315,8 @@ export const ChatApp = () => {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const previousConnectionStateRef = useRef(connectionState);
-  const previousChannelIdRef = useRef<number | null>(null);
-  const loadedDraftChannelRef = useRef<number | null>(null);
+  const previousChannelIdRef = useRef<EntityIdValue | null>(null);
+  const loadedDraftChannelRef = useRef<EntityIdValue | null>(null);
   const tempMessageIdRef = useRef(-1);
   const composerStateRef = useRef<{ messageInput: string; replyTarget: ChannelMessageVo | null }>({
     messageInput: '',
@@ -315,6 +324,7 @@ export const ChatApp = () => {
   });
 
   const currentUserIdValue = useMemo(() => toNumericId(currentUserId), [currentUserId]);
+  const currentUserIdKey = useMemo(() => getEntityKey(currentUserId), [currentUserId]);
   const currentUserNameValue = useMemo(
     () => currentUserName?.trim() || 'Unknown',
     [currentUserName]
@@ -325,7 +335,7 @@ export const ChatApp = () => {
   );
 
   const activeChannel = useMemo(
-    () => channels.find((channel) => toNumericId(channel.voId) === activeChannelId) || null,
+    () => channels.find((channel) => areEntityIdsEqual(channel.voId, activeChannelId)) || null,
     [channels, activeChannelId]
   );
 
@@ -334,7 +344,7 @@ export const ChatApp = () => {
       return [];
     }
 
-    return messageMap[activeChannelId] || [];
+    return messageMap[getEntityKey(activeChannelId)] || [];
   }, [activeChannelId, messageMap]);
 
   const typingUsers = useMemo(() => {
@@ -342,8 +352,8 @@ export const ChatApp = () => {
       return [];
     }
 
-    return (typingMap[activeChannelId] || []).filter((user) => user.userId !== currentUserIdValue);
-  }, [activeChannelId, typingMap, currentUserIdValue]);
+    return (typingMap[getEntityKey(activeChannelId)] || []).filter((user) => !areEntityIdsEqual(user.userId, currentUserId));
+  }, [activeChannelId, currentUserId, typingMap]);
 
   const connectionHint = useMemo(() => getConnectionHint(connectionState), [connectionState]);
 
@@ -368,39 +378,42 @@ export const ChatApp = () => {
     setMentionLoading(false);
   }, []);
 
-  const handleOpenUserProfile = useCallback((targetUserId: number, targetUserName?: string | null, avatarUrl?: string | null) => {
-    if (!targetUserId) {
+  const handleOpenUserProfile = useCallback((targetUserId: EntityIdValue, targetUserName?: string | null, avatarUrl?: string | null) => {
+    const targetUserIdKey = getEntityKey(targetUserId);
+    if (!targetUserIdKey) {
       return;
     }
 
-    if (String(targetUserId) === String(currentUserIdValue)) {
+    if (targetUserIdKey === currentUserIdKey) {
       openApp('profile');
       return;
     }
 
     openApp('profile', {
       userId: targetUserId,
-      userName: targetUserName?.trim() || `用户 ${targetUserId}`,
+      userName: targetUserName?.trim() || `用户 ${targetUserIdKey}`,
       avatarUrl: avatarUrl ?? null,
     });
-  }, [currentUserIdValue, openApp]);
+  }, [currentUserIdKey, openApp]);
 
   const renderAvatarButton = useCallback((
-    targetUserId: number,
+    targetUserId: EntityIdValue,
     targetUserName: string | null | undefined,
     avatarUrl: string | null | undefined,
     titlePrefix: string,
     className?: string
   ) => {
-    const normalizedName = targetUserName?.trim() || `用户 ${targetUserId || '?'}`;
+    const targetUserIdKey = getEntityKey(targetUserId);
+    const normalizedName = targetUserName?.trim() || `用户 ${targetUserIdKey || '?'}`;
     const resolvedAvatarUrl = resolveMediaUrl(apiBaseUrl, avatarUrl);
+    const canOpenProfile = !!targetUserIdKey && targetUserIdKey !== '0' && !targetUserIdKey.startsWith('-');
 
     return (
       <button
         type="button"
         className={`${styles.avatarButton} ${className ?? ''}`.trim()}
         onClick={() => {
-          if (targetUserId > 0) {
+          if (canOpenProfile) {
             openApp('profile', {
               userId: targetUserId,
               userName: normalizedName,
@@ -408,8 +421,8 @@ export const ChatApp = () => {
             });
           }
         }}
-        disabled={targetUserId <= 0}
-        title={targetUserId > 0 ? `${titlePrefix}${normalizedName}` : '用户信息不可用'}
+        disabled={!canOpenProfile}
+        title={canOpenProfile ? `${titlePrefix}${normalizedName}` : '用户信息不可用'}
       >
         {resolvedAvatarUrl ? (
           <img src={resolvedAvatarUrl} alt={normalizedName} className={styles.avatarImage} loading="lazy" />
@@ -446,7 +459,7 @@ export const ChatApp = () => {
         {buildAvatarText(normalizedName)}
       </span>
     );
-  }, [apiBaseUrl]);
+  }, [apiBaseUrl, openApp]);
 
   const renderMessageContent = useCallback((content: string | null | undefined): ReactNode => {
     if (!content) {
@@ -461,7 +474,7 @@ export const ChatApp = () => {
       const matchIndex = match.index ?? 0;
       const matchText = match[0];
       const mentionName = match.groups?.name ?? match[1] ?? '用户';
-      const mentionUserId = toNumericId(match.groups?.id ?? match[2]);
+      const mentionUserId = normalizeEntityId(match.groups?.id ?? match[2]) ?? '';
 
       if (matchIndex > lastIndex) {
         nodes.push(content.slice(lastIndex, matchIndex));
@@ -469,7 +482,7 @@ export const ChatApp = () => {
 
       nodes.push(
         <button
-          key={`mention-${mentionUserId}-${keyIndex}`}
+          key={`mention-${mentionUserId || keyIndex}-${keyIndex}`}
           type="button"
           className={styles.mentionChip}
           onClick={() => handleOpenUserProfile(mentionUserId, mentionName)}
@@ -504,7 +517,11 @@ export const ChatApp = () => {
       return;
     }
 
-    const targetId = toNumericId(option.voId);
+    const targetId = normalizeEntityId(option.voId);
+    if (!targetId) {
+      return;
+    }
+
     const targetName = option.voUserName?.trim() || `用户${targetId}`;
     const mentionToken = `@[${targetName}](${targetId}) `;
     const nextValue = `${messageInput.slice(0, mentionContext.start)}${mentionToken}${messageInput.slice(mentionContext.end)}`;
@@ -531,8 +548,8 @@ export const ChatApp = () => {
       setChannels(data);
 
       if (data.length > 0) {
-        const firstId = toNumericId(data[0].voId);
-        if (firstId > 0) {
+        const firstId = normalizeEntityId(data[0].voId);
+        if (firstId) {
           setActiveChannel(firstId);
         }
       }
@@ -544,7 +561,12 @@ export const ChatApp = () => {
     }
   }, [setChannels, setActiveChannel]);
 
-  const loadInitialHistory = useCallback(async (channelId: number) => {
+  const loadInitialHistory = useCallback(async (channelId: EntityIdValue) => {
+    const channelKey = getEntityKey(channelId);
+    if (!channelKey) {
+      return;
+    }
+
     setLoadingHistory(true);
 
     try {
@@ -552,7 +574,7 @@ export const ChatApp = () => {
       setChannelMessages(channelId, history);
       setHasMoreHistory((prev) => ({
         ...prev,
-        [channelId]: history.length >= PAGE_SIZE,
+        [channelKey]: history.length >= PAGE_SIZE,
       }));
 
       requestAnimationFrame(() => {
@@ -568,8 +590,8 @@ export const ChatApp = () => {
     }
   }, [scrollToBottom, setChannelMessages]);
 
-  const loadOnlineMembers = useCallback(async (channelId: number) => {
-    if (channelId <= 0) {
+  const loadOnlineMembers = useCallback(async (channelId: EntityIdValue) => {
+    if (!isPersistedEntityId(channelId)) {
       setOnlineMembers([]);
       return;
     }
@@ -587,16 +609,17 @@ export const ChatApp = () => {
   }, []);
 
   const loadMoreHistory = useCallback(async () => {
-    if (!activeChannelId || loadingHistory || !hasMoreHistory[activeChannelId]) {
+    const activeChannelKey = getEntityKey(activeChannelId);
+    if (!activeChannelId || !activeChannelKey || loadingHistory || !hasMoreHistory[activeChannelKey]) {
       return;
     }
 
     const oldestMessage = activeMessages[0];
-    const beforeMessageId = toNumericId(oldestMessage?.voId);
-    if (beforeMessageId <= 0) {
+    const beforeMessageId = oldestMessage?.voId;
+    if (!isPersistedEntityId(beforeMessageId)) {
       setHasMoreHistory((prev) => ({
         ...prev,
-        [activeChannelId]: false,
+        [activeChannelKey]: false,
       }));
       return;
     }
@@ -607,7 +630,7 @@ export const ChatApp = () => {
       prependChannelMessages(activeChannelId, older);
       setHasMoreHistory((prev) => ({
         ...prev,
-        [activeChannelId]: older.length >= PAGE_SIZE,
+        [activeChannelKey]: older.length >= PAGE_SIZE,
       }));
     } catch (error) {
       log.error('ChatApp', '加载更多历史消息失败:', error);
@@ -617,7 +640,7 @@ export const ChatApp = () => {
     }
   }, [activeChannelId, activeMessages, hasMoreHistory, loadingHistory, prependChannelMessages]);
 
-  const resetComposer = useCallback((channelId: number) => {
+  const resetComposer = useCallback((channelId: EntityIdValue) => {
     setMessageInput('');
     setReplyTarget(null);
     closeMentionDropdown();
@@ -633,23 +656,23 @@ export const ChatApp = () => {
   const createOptimisticMessage = useCallback((params: {
     tempMessageId: number;
     clientRequestId: string;
-    channelId: number;
+    channelId: EntityIdValue;
     type: 1 | 2 | 3;
     content?: string;
     replyTo: ChannelMessageVo | null;
-    attachmentId?: number;
+    attachmentId?: EntityIdValue;
     imageUrl?: string;
     imageThumbnailUrl?: string;
   }): ChannelMessageVo => ({
     voId: params.tempMessageId,
     voClientRequestId: params.clientRequestId,
     voChannelId: params.channelId,
-    voUserId: currentUserIdValue,
+    voUserId: currentUserIdKey || currentUserIdValue,
     voUserName: currentUserNameValue,
     voUserAvatarUrl: currentUserAvatarUrlValue,
     voType: params.type,
     voContent: params.content ?? null,
-    voReplyToId: params.replyTo ? toNumericId(params.replyTo.voId) : null,
+    voReplyToId: params.replyTo ? params.replyTo.voId : null,
     voReplyTo: params.replyTo,
     voAttachmentId: params.attachmentId ?? null,
     voImageUrl: params.imageUrl ?? null,
@@ -658,7 +681,7 @@ export const ChatApp = () => {
     voCreateTime: new Date().toISOString(),
     voLocalStatus: 'sending',
     voLocalError: null,
-  }), [currentUserAvatarUrlValue, currentUserIdValue, currentUserNameValue]);
+  }), [currentUserAvatarUrlValue, currentUserIdKey, currentUserIdValue, currentUserNameValue]);
 
   const sendOptimisticMessage = useCallback(async (
     optimisticMessage: ChannelMessageVo,
@@ -774,7 +797,7 @@ export const ChatApp = () => {
         type: 2,
         content: content || undefined,
         replyTo: replyTargetSnapshot,
-        attachmentId: toNumericId(attachment.voId),
+        attachmentId: attachment.voId,
         imageUrl: attachment.voUrl,
         imageThumbnailUrl: attachment.voThumbnailUrl || attachment.voUrl,
       });
@@ -789,7 +812,7 @@ export const ChatApp = () => {
           type: 2,
           content: content || undefined,
           replyToId: replyTargetId ?? undefined,
-          attachmentId: toNumericId(attachment.voId),
+          attachmentId: attachment.voId,
           imageUrl: attachment.voUrl,
           imageThumbnailUrl: attachment.voThumbnailUrl || attachment.voUrl,
         },
@@ -809,9 +832,9 @@ export const ChatApp = () => {
   }, [activeChannelId, createOptimisticMessage, createTempMessageId, messageInput, replyTarget, resetComposer, sendOptimisticMessage, t, uploadingImage]);
 
   const handleRetryMessage = useCallback((message: ChannelMessageVo) => {
-    const channelId = toNumericId(message.voChannelId);
-    const messageId = toNumericId(message.voId);
-    if (channelId <= 0 || messageId >= 0) {
+    const channelId = message.voChannelId;
+    const messageId = message.voId;
+    if (!isPersistedEntityId(channelId) || !isTemporaryEntityId(messageId)) {
       return;
     }
 
@@ -829,8 +852,8 @@ export const ChatApp = () => {
         channelId,
         type: message.voType,
         content: message.voContent?.trim() || undefined,
-        replyToId: toNumericId(message.voReplyToId) > 0 ? toNumericId(message.voReplyToId) : undefined,
-        attachmentId: toNumericId(message.voAttachmentId) > 0 ? toNumericId(message.voAttachmentId) : undefined,
+        replyToId: isPersistedEntityId(message.voReplyToId) ? message.voReplyToId : undefined,
+        attachmentId: isPersistedEntityId(message.voAttachmentId) ? message.voAttachmentId : undefined,
         imageUrl: message.voImageUrl || undefined,
         imageThumbnailUrl: message.voImageThumbnailUrl || message.voImageUrl || undefined,
       },
@@ -842,21 +865,21 @@ export const ChatApp = () => {
   }, [sendOptimisticMessage]);
 
   const handleDismissFailedMessage = useCallback((message: ChannelMessageVo) => {
-    const channelId = toNumericId(message.voChannelId);
-    const messageId = toNumericId(message.voId);
-    if (channelId <= 0 || messageId >= 0) {
+    const channelId = message.voChannelId;
+    const messageId = message.voId;
+    if (!isPersistedEntityId(channelId) || !isTemporaryEntityId(messageId)) {
       return;
     }
 
-    if (replyTarget && toNumericId(replyTarget.voId) === messageId) {
+    if (replyTarget && areEntityIdsEqual(replyTarget.voId, messageId)) {
       setReplyTarget(null);
     }
 
     removeMessage(channelId, messageId);
   }, [removeMessage, replyTarget]);
 
-  const handleRecall = useCallback(async (messageId: number) => {
-    if (!messageId) {
+  const handleRecall = useCallback(async (messageId: EntityIdValue) => {
+    if (!isPersistedEntityId(messageId)) {
       return;
     }
 
@@ -865,7 +888,7 @@ export const ChatApp = () => {
       if (activeChannelId) {
         recallMessage(activeChannelId, messageId);
       }
-      if (replyTarget && toNumericId(replyTarget.voId) === messageId) {
+      if (replyTarget && areEntityIdsEqual(replyTarget.voId, messageId)) {
         setReplyTarget(null);
       }
       toast.success('消息已撤回');
@@ -908,7 +931,7 @@ export const ChatApp = () => {
 
   useEffect(() => {
     const previousChannelId = previousChannelIdRef.current;
-    if (previousChannelId && previousChannelId !== activeChannelId) {
+    if (previousChannelId && !areEntityIdsEqual(previousChannelId, activeChannelId)) {
       persistChannelDraft(
         currentUserIdValue,
         previousChannelId,
@@ -944,7 +967,7 @@ export const ChatApp = () => {
   }, [activeChannelId, closeMentionDropdown, currentUserIdValue, loadInitialHistory, loadOnlineMembers]);
 
   useEffect(() => {
-    if (!activeChannelId || loadedDraftChannelRef.current !== activeChannelId) {
+    if (!activeChannelId || !areEntityIdsEqual(loadedDraftChannelRef.current, activeChannelId)) {
       return;
     }
 
@@ -994,7 +1017,7 @@ export const ChatApp = () => {
       return;
     }
 
-    const latestReplyTarget = activeMessages.find((message) => toNumericId(message.voId) === replyTargetId);
+    const latestReplyTarget = activeMessages.find((message) => areEntityIdsEqual(message.voId, replyTargetId));
     if (latestReplyTarget && latestReplyTarget !== replyTarget) {
       setReplyTarget(latestReplyTarget);
     }
@@ -1057,8 +1080,12 @@ export const ChatApp = () => {
           <div className={styles.sidebarEmpty}>暂无可用频道</div>
         ) : (
           channels.map((channel) => {
-            const channelId = toNumericId(channel.voId);
-            const isActive = activeChannelId === channelId;
+            const channelId = normalizeEntityId(channel.voId);
+            if (!channelId) {
+              return null;
+            }
+
+            const isActive = areEntityIdsEqual(activeChannelId, channelId);
 
             return (
               <button
@@ -1118,9 +1145,10 @@ export const ChatApp = () => {
               <div className={styles.placeholder}>还没有消息，发一条试试</div>
             ) : (
               activeMessages.map((message: ChannelMessageVo) => {
-                const messageId = toNumericId(message.voId);
-                const messageUserId = toNumericId(message.voUserId);
-                const isMine = messageUserId > 0 && messageUserId === currentUserIdValue;
+                const messageIdKey = getEntityKey(message.voId);
+                const messageUserIdKey = getEntityKey(message.voUserId);
+                const canOpenMessageUserProfile = !!messageUserIdKey && messageUserIdKey !== '0' && !messageUserIdKey.startsWith('-');
+                const isMine = !!messageUserIdKey && messageUserIdKey === currentUserIdKey;
                 const messageStatus = message.voLocalStatus ?? 'sent';
                 const isSendingMessage = messageStatus === 'sending';
                 const isFailedMessage = messageStatus === 'failed';
@@ -1128,9 +1156,9 @@ export const ChatApp = () => {
                 const messageImageUrl = resolveMediaUrl(apiBaseUrl, message.voImageUrl);
 
                 return (
-                  <div key={messageId} className={`${styles.messageRow} ${isMine ? styles.mine : ''}`}>
+                  <div key={messageIdKey || message.voClientRequestId || message.voCreateTime} className={`${styles.messageRow} ${isMine ? styles.mine : ''}`}>
                     {!isMine && renderAvatarButton(
-                      messageUserId,
+                      message.voUserId,
                       message.voUserName,
                       message.voUserAvatarUrl,
                       '查看 '
@@ -1141,9 +1169,9 @@ export const ChatApp = () => {
                         <button
                           type="button"
                           className={styles.userNameButton}
-                          onClick={() => handleOpenUserProfile(messageUserId, message.voUserName, message.voUserAvatarUrl)}
-                          disabled={messageUserId <= 0}
-                          title={messageUserId > 0 ? `查看 ${(message.voUserName || `用户 ${messageUserId}`).trim()} 的主页` : '用户信息不可用'}
+                          onClick={() => handleOpenUserProfile(message.voUserId, message.voUserName, message.voUserAvatarUrl)}
+                          disabled={!canOpenMessageUserProfile}
+                          title={canOpenMessageUserProfile ? `查看 ${(message.voUserName || `用户 ${messageUserIdKey}`).trim()} 的主页` : '用户信息不可用'}
                         >
                           <span className={styles.userName}>{message.voUserName || 'Unknown'}</span>
                         </button>
@@ -1157,12 +1185,12 @@ export const ChatApp = () => {
                             回复
                           </button>
                         )}
-                        {isMine && !message.voIsRecalled && messageStatus === 'sent' && messageId > 0 && (
+                        {isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId) && (
                           <button
                             type="button"
                             className={styles.recallButton}
                             onClick={() => {
-                              void handleRecall(messageId);
+                              void handleRecall(message.voId);
                             }}
                           >
                             撤回
@@ -1216,7 +1244,7 @@ export const ChatApp = () => {
                     </div>
 
                     {isMine && renderAvatarButton(
-                      messageUserId,
+                      message.voUserId,
                       message.voUserName,
                       message.voUserAvatarUrl,
                       '查看 '
@@ -1351,7 +1379,7 @@ export const ChatApp = () => {
                         <div className={styles.mentionEmpty}>未找到匹配的用户</div>
                       ) : (
                         mentionOptions.map((option, index) => {
-                          const optionId = toNumericId(option.voId);
+                          const optionId = normalizeEntityId(option.voId) ?? `mention-${index}`;
                           const optionName = option.voUserName?.trim() || `用户 ${optionId}`;
                           const optionAvatarUrl = resolveMediaUrl(apiBaseUrl, option.voAvatar);
 
@@ -1439,7 +1467,7 @@ export const ChatApp = () => {
                     <div className={styles.memberEmpty}>当前暂无在线成员</div>
                   ) : (
                     onlineMembers.map((member) => {
-                      const memberId = toNumericId(member.voUserId);
+                      const memberId = normalizeEntityId(member.voUserId) ?? member.voUserName ?? 'member';
                       const memberName = member.voUserName?.trim() || `用户 ${memberId}`;
 
                       return (
@@ -1447,7 +1475,7 @@ export const ChatApp = () => {
                           key={memberId}
                           type="button"
                           className={styles.memberItem}
-                          onClick={() => handleOpenUserProfile(memberId, member.voUserName, member.voUserAvatarUrl)}
+                          onClick={() => handleOpenUserProfile(member.voUserId, member.voUserName, member.voUserAvatarUrl)}
                         >
                           {renderAvatarVisual(member.voUserName, member.voUserAvatarUrl, styles.memberAvatar)}
                           <span className={styles.memberName}>{memberName}</span>
