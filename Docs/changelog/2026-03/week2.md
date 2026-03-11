@@ -124,3 +124,8 @@
 - **项目依赖解耦**：`Radish.DbMigrate` 已移除对 `Radish.Api` 的直接项目引用，改为显式依赖 `Radish.Extension`，避免迁移工具继续绑定具体宿主。
 - **Bootstrap 收口**：新增 `DbMigrateBootstrap`，统一承接配置加载顺序、选项注册、`SqlSugar` 注册与经验值计算器注册，`Program.cs` 收缩为薄入口。
 - **验证结果**：`dotnet build Radish.DbMigrate/Radish.DbMigrate.csproj -c Debug -m:1 /nr:false --no-restore` 通过，未引入新的构建错误。
+
+### DbMigrate 增加只读校验命令
+
+- **命令补齐**：新增 `doctor` / `verify` 子命令，只读检查当前环境名、`MainDb`、已启用连接、关键 `ConnId` 完整性以及 `seed` 依赖核心表状态。
+- **边界保持克制**：`doctor` 不执行 `init`、不执行 `seed`，仅输出“可直接执行 / 建议先 init / 需要先补配置”的结论，避免在工程治理阶段引入额外副作用。

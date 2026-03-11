@@ -13,6 +13,11 @@ internal static class DbMigrateRunner
 
         switch (mode)
         {
+            case "doctor":
+            case "verify":
+                DbMigrateDoctor.Run(services, configuration, environment);
+                break;
+
             case "init":
                 await RunInitAsync(services, configuration, environment);
                 break;
@@ -138,6 +143,8 @@ internal static class DbMigrateRunner
     private static void PrintHelp()
     {
         Console.WriteLine("Radish.DbMigrate 用法:");
+        Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor");
+        Console.WriteLine("      只读检查当前配置、连接定义与 seed 核心表状态。");
         Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init");
         Console.WriteLine("      初始化数据库并基于实体结构创建/更新表结构。");
         Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed");

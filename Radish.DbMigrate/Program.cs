@@ -5,6 +5,8 @@ using Radish.Common;
 using Radish.DbMigrate;
 
 // 简单的迁移/初始化控制台：
+// dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor
+//  - 只读检查当前配置、连接定义与 seed 核心表状态
 // dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 //  - 初始化数据库（按配置）并根据实体结构创建/更新表
 // dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
