@@ -2,11 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Radish.Common;
-using Radish.Common.CoreTool;
 using Radish.DbMigrate;
-using Radish.Extension;
-using Radish.Extension.SqlSugarExtension;
-using Radish.Extension.ExperienceExtension;
 using Radish.Common.DbTool;
 using SqlSugar;
 
@@ -16,36 +12,10 @@ using SqlSugar;
 // dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
 //  - 执行基础数据灌入（例如默认角色/管理员/租户等）
 
-var builder = Host.CreateApplicationBuilder(args);
-
-// 复用与宿主一致的配置加载顺序：
-// appsettings.Shared.json -> 项目 appsettings.json -> 项目环境配置 -> 项目 Local -> 根目录 Local -> 环境变量
-var solutionRoot = AppPathTool.GetSolutionRootOrBasePath();
-var projectRoot = Path.Combine(solutionRoot, "Radish.DbMigrate");
-
-builder.Configuration.Sources.Clear();
-builder.Configuration.AddJsonFile(Path.Combine(solutionRoot, "appsettings.Shared.json"), optional: true, reloadOnChange: false);
-builder.Configuration.AddJsonFile(Path.Combine(projectRoot, "appsettings.json"), optional: true, reloadOnChange: false);
-builder.Configuration.AddJsonFile(Path.Combine(projectRoot, $"appsettings.{builder.Environment.EnvironmentName}.json"), optional: true, reloadOnChange: false);
-builder.Configuration.AddJsonFile(Path.Combine(projectRoot, "appsettings.Local.json"), optional: true, reloadOnChange: false);
-builder.Configuration.AddJsonFile(Path.Combine(solutionRoot, "appsettings.Local.json"), optional: true, reloadOnChange: false);
-builder.Configuration.AddEnvironmentVariables();
-
-// 先将配置绑定到全局 App/InternalApp（用于 ConfigurableOptions 等静态访问）
-InternalApp.ConfigureApplication(builder.Configuration);
-
-// 注册 AppSettings 与 SqlSugar，与 API 尽量保持一致
-builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
-builder.Services.AddAllOptionRegister();
-builder.Services.AddSqlSugarSetup();
-// 注册经验值计算器（用于动态计算等级配置）
-builder.Services.AddExperienceCalculator(builder.Configuration);
-
-// 标记 InternalApp 已就绪，便于 SqlSugarAop 等读取配置
-builder.Services.ConfigureApplication();
+var builder = DbMigrateBootstrap.CreateBuilder(args);
 
 using var host = builder.Build();
-InternalApp.ConfigureApplication(host);
+Radish.Common.CoreTool.InternalApp.ConfigureApplication(host);
 
 var services = host.Services;
 var configuration = builder.Configuration;
