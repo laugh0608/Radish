@@ -94,27 +94,6 @@ export const ForumApp = () => {
   const windowParams = parseForumWindowParams(currentWindow?.appParams);
 
   useEffect(() => {
-    if (!windowParams.postId) {
-      return;
-    }
-
-    if (dataState.selectedPost?.voId === windowParams.postId) {
-      return;
-    }
-
-    setIsSearchView(false);
-    dataState.setSelectedTagName(null);
-    dataState.setSelectedCategoryId(null);
-    void actionsState.handleSelectPost(windowParams.postId);
-  }, [
-    actionsState.handleSelectPost,
-    dataState.selectedPost?.voId,
-    dataState.setSelectedCategoryId,
-    dataState.setSelectedTagName,
-    windowParams.postId,
-  ]);
-
-  useEffect(() => {
     const element = containerShellRef.current;
     if (!element) {
       return;
@@ -246,6 +225,27 @@ export const ForumApp = () => {
     loadPosts: dataState.loadPosts,
     resetCommentSort: dataState.resetCommentSort
   });
+
+  useEffect(() => {
+    if (!windowParams.postId) {
+      return;
+    }
+
+    if (dataState.selectedPost?.voId === windowParams.postId) {
+      return;
+    }
+
+    setIsSearchView(false);
+    dataState.setSelectedTagName(null);
+    dataState.setSelectedCategoryId(null);
+    void actionsState.handleSelectPost(windowParams.postId);
+  }, [
+    actionsState.handleSelectPost,
+    dataState.selectedPost?.voId,
+    dataState.setSelectedCategoryId,
+    dataState.setSelectedTagName,
+    windowParams.postId,
+  ]);
 
   useEffect(() => {
     if (!isSearchView) {

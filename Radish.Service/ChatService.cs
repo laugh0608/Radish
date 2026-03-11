@@ -245,7 +245,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             return null;
         }
 
-        var message = await _messageRepository.QueryByIdAsync(messageId);
+        var message = await _messageRepository.QueryFirstAsync(m => m.Id == messageId);
         if (message == null)
         {
             return null;

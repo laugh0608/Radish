@@ -250,6 +250,20 @@ function getErrorMessage(error: unknown, fallbackMessage: string): string {
   return error instanceof Error ? error.message : fallbackMessage;
 }
 
+function getReplyTargetMessageId(message: ChannelMessageVo | null | undefined): number | null {
+  if (!message) {
+    return null;
+  }
+
+  const messageId = toNumericId(message.voId);
+  const messageStatus = message.voLocalStatus ?? 'sent';
+  if (messageId <= 0 || messageStatus !== 'sent' || message.voIsRecalled) {
+    return null;
+  }
+
+  return messageId;
+}
+
 export const ChatApp = () => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
@@ -266,6 +280,7 @@ export const ChatApp = () => {
     prependChannelMessages,
     addMessage,
     removeMessage,
+    recallMessage,
   } = useChatStore();
   const currentUserId = useUserStore((state) => state.userId);
   const currentUserName = useUserStore((state) => state.userName);
@@ -698,7 +713,8 @@ export const ChatApp = () => {
       return;
     }
 
-    const replyTargetSnapshot = replyTarget;
+    const replyTargetId = getReplyTargetMessageId(replyTarget);
+    const replyTargetSnapshot = replyTargetId ? replyTarget : null;
     const tempMessageId = createTempMessageId();
     const clientRequestId = buildClientRequestId(activeChannelId);
     const optimisticMessage = createOptimisticMessage({
@@ -718,7 +734,7 @@ export const ChatApp = () => {
         channelId: activeChannelId,
         type: 1,
         content,
-        replyToId: replyTargetSnapshot ? toNumericId(replyTargetSnapshot.voId) : undefined,
+        replyToId: replyTargetId ?? undefined,
       },
       {
         failureFallbackMessage: '发送消息失败',
@@ -747,7 +763,8 @@ export const ChatApp = () => {
       );
 
       const content = messageInput.trim();
-      const replyTargetSnapshot = replyTarget;
+      const replyTargetId = getReplyTargetMessageId(replyTarget);
+      const replyTargetSnapshot = replyTargetId ? replyTarget : null;
       const tempMessageId = createTempMessageId();
       const clientRequestId = buildClientRequestId(activeChannelId);
       const optimisticMessage = createOptimisticMessage({
@@ -771,7 +788,7 @@ export const ChatApp = () => {
           channelId: activeChannelId,
           type: 2,
           content: content || undefined,
-          replyToId: replyTargetSnapshot ? toNumericId(replyTargetSnapshot.voId) : undefined,
+          replyToId: replyTargetId ?? undefined,
           attachmentId: toNumericId(attachment.voId),
           imageUrl: attachment.voUrl,
           imageThumbnailUrl: attachment.voThumbnailUrl || attachment.voUrl,
@@ -845,6 +862,9 @@ export const ChatApp = () => {
 
     try {
       await recallChannelMessage(messageId);
+      if (activeChannelId) {
+        recallMessage(activeChannelId, messageId);
+      }
       if (replyTarget && toNumericId(replyTarget.voId) === messageId) {
         setReplyTarget(null);
       }
@@ -853,7 +873,7 @@ export const ChatApp = () => {
       log.error('ChatApp', '撤回消息失败:', error);
       toast.error(error instanceof Error ? error.message : '撤回消息失败');
     }
-  }, [replyTarget]);
+  }, [activeChannelId, recallMessage, replyTarget]);
 
   const handleScroll = useCallback(async () => {
     const scrollEl = messageScrollRef.current;
@@ -968,8 +988,9 @@ export const ChatApp = () => {
       return;
     }
 
-    const replyTargetId = toNumericId(replyTarget.voId);
-    if (replyTargetId <= 0) {
+    const replyTargetId = getReplyTargetMessageId(replyTarget);
+    if (!replyTargetId) {
+      setReplyTarget(null);
       return;
     }
 
@@ -1087,7 +1108,8 @@ export const ChatApp = () => {
         </header>
 
         <div className={styles.contentArea}>
-          <div className={styles.messageViewport} ref={messageScrollRef} onScroll={() => { void handleScroll(); }}>
+          <div className={styles.messageColumn}>
+            <div className={styles.messageViewport} ref={messageScrollRef} onScroll={() => { void handleScroll(); }}>
             {activeChannelId === null ? (
               <div className={styles.placeholder}>请选择一个频道开始聊天</div>
             ) : activeMessages.length === 0 && loadingHistory ? (
@@ -1203,6 +1225,194 @@ export const ChatApp = () => {
                 );
               })
             )}
+            </div>
+
+            <footer className={styles.inputArea}>
+              {typingUsers.length > 0 && (
+                <div className={styles.typingHint}>
+                  {typingUsers.map((user, index) => (
+                    <span key={`${user.userId}-${index}`}>
+                      {index > 0 ? '、' : null}
+                      <button
+                        type="button"
+                        className={styles.typingUserButton}
+                        onClick={() => handleOpenUserProfile(user.userId, user.userName)}
+                        title={`查看 ${user.userName} 的主页`}
+                      >
+                        {user.userName}
+                      </button>
+                    </span>
+                  ))} 正在输入...
+                </div>
+              )}
+
+              {replyTarget && (
+                <div className={styles.replyPreview}>
+                  <div className={styles.replyPreviewBody}>
+                    <div className={styles.replyPreviewLabel}>
+                      回复 {replyTarget.voUserName || 'Unknown'}
+                    </div>
+                    <div className={styles.replyPreviewText}>{getMessagePreviewText(replyTarget)}</div>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.replyCancelButton}
+                    onClick={() => setReplyTarget(null)}
+                  >
+                    取消
+                  </button>
+                </div>
+              )}
+
+              {activeChannelId !== null && messageInput.trim() && (
+                <div className={styles.draftHint}>当前频道草稿已自动保存</div>
+              )}
+
+              {uploadingImage && (
+                <div className={styles.uploadStatus}>
+                  图片上传中... {Math.max(0, Math.min(100, imageUploadProgress))}%
+                </div>
+              )}
+
+              <div className={styles.inputRow}>
+                <div className={styles.inputWrap}>
+                  <textarea
+                    ref={textareaRef}
+                    className={styles.input}
+                    value={messageInput}
+                    onChange={(event) => {
+                      const nextValue = event.target.value;
+                      setMessageInput(nextValue);
+                      updateMentionContext(nextValue, event.target.selectionStart);
+
+                      const now = Date.now();
+                      if (activeChannelId && now - typingAt >= 2000) {
+                        setTypingAt(now);
+                        void chatHub.startTyping(activeChannelId);
+                      }
+                    }}
+                    onClick={(event) => {
+                      updateMentionContext(messageInput, event.currentTarget.selectionStart);
+                    }}
+                    onKeyUp={(event) => {
+                      updateMentionContext(messageInput, event.currentTarget.selectionStart);
+                    }}
+                    onKeyDown={(event) => {
+                      if (isMentionOpen) {
+                        if (event.key === 'ArrowDown') {
+                          event.preventDefault();
+                          setMentionSelectedIndex((prev) => (
+                            mentionOptions.length > 0 ? (prev + 1) % mentionOptions.length : 0
+                          ));
+                          return;
+                        }
+
+                        if (event.key === 'ArrowUp') {
+                          event.preventDefault();
+                          setMentionSelectedIndex((prev) => (
+                            mentionOptions.length > 0 ? (prev - 1 + mentionOptions.length) % mentionOptions.length : 0
+                          ));
+                          return;
+                        }
+
+                        if ((event.key === 'Enter' || event.key === 'Tab') && mentionOptions[mentionSelectedIndex]) {
+                          event.preventDefault();
+                          applyMentionSelection(mentionOptions[mentionSelectedIndex]);
+                          return;
+                        }
+
+                        if (event.key === 'Escape') {
+                          event.preventDefault();
+                          closeMentionDropdown();
+                          return;
+                        }
+                      }
+
+                      if (event.key === 'Escape' && replyTarget) {
+                        event.preventDefault();
+                        setReplyTarget(null);
+                        return;
+                      }
+
+                      if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        void handleSendMessage();
+                      }
+                    }}
+                    placeholder={activeChannelId ? '输入消息，支持 @提及，Enter 发送，Shift+Enter 换行，Esc 取消回复' : '请先选择频道'}
+                    disabled={!activeChannelId || uploadingImage}
+                  />
+
+                  {isMentionOpen && (
+                    <div className={styles.mentionDropdown}>
+                      {mentionLoading ? (
+                        <div className={styles.mentionEmpty}>搜索中...</div>
+                      ) : mentionOptions.length === 0 ? (
+                        <div className={styles.mentionEmpty}>未找到匹配的用户</div>
+                      ) : (
+                        mentionOptions.map((option, index) => {
+                          const optionId = toNumericId(option.voId);
+                          const optionName = option.voUserName?.trim() || `用户 ${optionId}`;
+                          const optionAvatarUrl = resolveMediaUrl(apiBaseUrl, option.voAvatar);
+
+                          return (
+                            <button
+                              key={optionId}
+                              type="button"
+                              className={`${styles.mentionOption} ${index === mentionSelectedIndex ? styles.mentionOptionActive : ''}`}
+                              onMouseDown={(event) => {
+                                event.preventDefault();
+                                applyMentionSelection(option);
+                              }}
+                              onMouseEnter={() => setMentionSelectedIndex(index)}
+                            >
+                              {optionAvatarUrl ? (
+                                <img src={optionAvatarUrl} alt={optionName} className={styles.mentionAvatar} loading="lazy" />
+                              ) : (
+                                <span className={styles.mentionAvatarFallback} style={buildAvatarStyle(optionName)}>
+                                  {buildAvatarText(optionName)}
+                                </span>
+                              )}
+                              <span className={styles.mentionLabel}>@{optionName}</span>
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className={styles.actionColumn}>
+                  <input
+                    ref={imageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className={styles.hiddenFileInput}
+                    onChange={(event) => {
+                      void handleImageSelected(event);
+                    }}
+                  />
+                  <button
+                    className={styles.imageButton}
+                    type="button"
+                    disabled={!activeChannelId || uploadingImage}
+                    onClick={() => imageInputRef.current?.click()}
+                  >
+                    {uploadingImage ? '上传中...' : '图片'}
+                  </button>
+                  <button
+                    className={styles.sendButton}
+                    type="button"
+                    disabled={!activeChannelId || uploadingImage || !messageInput.trim()}
+                    onClick={() => {
+                      void handleSendMessage();
+                    }}
+                  >
+                    发送
+                  </button>
+                </div>
+              </div>
+            </footer>
           </div>
 
           {activeChannelId !== null && (
@@ -1250,193 +1460,6 @@ export const ChatApp = () => {
             </aside>
           )}
         </div>
-
-        <footer className={styles.inputArea}>
-          {typingUsers.length > 0 && (
-            <div className={styles.typingHint}>
-              {typingUsers.map((user, index) => (
-                <span key={`${user.userId}-${index}`}>
-                  {index > 0 ? '、' : null}
-                  <button
-                    type="button"
-                    className={styles.typingUserButton}
-                    onClick={() => handleOpenUserProfile(user.userId, user.userName)}
-                    title={`查看 ${user.userName} 的主页`}
-                  >
-                    {user.userName}
-                  </button>
-                </span>
-              ))} 正在输入...
-            </div>
-          )}
-
-          {replyTarget && (
-            <div className={styles.replyPreview}>
-              <div className={styles.replyPreviewBody}>
-                <div className={styles.replyPreviewLabel}>
-                  回复 {replyTarget.voUserName || 'Unknown'}
-                </div>
-                <div className={styles.replyPreviewText}>{getMessagePreviewText(replyTarget)}</div>
-              </div>
-              <button
-                type="button"
-                className={styles.replyCancelButton}
-                onClick={() => setReplyTarget(null)}
-              >
-                取消
-              </button>
-            </div>
-          )}
-
-          {activeChannelId !== null && messageInput.trim() && (
-            <div className={styles.draftHint}>当前频道草稿已自动保存</div>
-          )}
-
-          {uploadingImage && (
-            <div className={styles.uploadStatus}>
-              图片上传中... {Math.max(0, Math.min(100, imageUploadProgress))}%
-            </div>
-          )}
-
-          <div className={styles.inputRow}>
-            <div className={styles.inputWrap}>
-              <textarea
-                ref={textareaRef}
-                className={styles.input}
-                value={messageInput}
-                onChange={(event) => {
-                  const nextValue = event.target.value;
-                  setMessageInput(nextValue);
-                  updateMentionContext(nextValue, event.target.selectionStart);
-
-                  const now = Date.now();
-                  if (activeChannelId && now - typingAt >= 2000) {
-                    setTypingAt(now);
-                    void chatHub.startTyping(activeChannelId);
-                  }
-                }}
-                onClick={(event) => {
-                  updateMentionContext(messageInput, event.currentTarget.selectionStart);
-                }}
-                onKeyUp={(event) => {
-                  updateMentionContext(messageInput, event.currentTarget.selectionStart);
-                }}
-                onKeyDown={(event) => {
-                  if (isMentionOpen) {
-                    if (event.key === 'ArrowDown') {
-                      event.preventDefault();
-                      setMentionSelectedIndex((prev) => (
-                        mentionOptions.length > 0 ? (prev + 1) % mentionOptions.length : 0
-                      ));
-                      return;
-                    }
-
-                    if (event.key === 'ArrowUp') {
-                      event.preventDefault();
-                      setMentionSelectedIndex((prev) => (
-                        mentionOptions.length > 0 ? (prev - 1 + mentionOptions.length) % mentionOptions.length : 0
-                      ));
-                      return;
-                    }
-
-                    if ((event.key === 'Enter' || event.key === 'Tab') && mentionOptions[mentionSelectedIndex]) {
-                      event.preventDefault();
-                      applyMentionSelection(mentionOptions[mentionSelectedIndex]);
-                      return;
-                    }
-
-                    if (event.key === 'Escape') {
-                      event.preventDefault();
-                      closeMentionDropdown();
-                      return;
-                    }
-                  }
-
-                  if (event.key === 'Escape' && replyTarget) {
-                    event.preventDefault();
-                    setReplyTarget(null);
-                    return;
-                  }
-
-                  if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    void handleSendMessage();
-                  }
-                }}
-                placeholder={activeChannelId ? '输入消息，支持 @提及，Enter 发送，Shift+Enter 换行，Esc 取消回复' : '请先选择频道'}
-                disabled={!activeChannelId || uploadingImage}
-              />
-
-              {isMentionOpen && (
-                <div className={styles.mentionDropdown}>
-                  {mentionLoading ? (
-                    <div className={styles.mentionEmpty}>搜索中...</div>
-                  ) : mentionOptions.length === 0 ? (
-                    <div className={styles.mentionEmpty}>未找到匹配的用户</div>
-                  ) : (
-                    mentionOptions.map((option, index) => {
-                      const optionId = toNumericId(option.voId);
-                      const optionName = option.voUserName?.trim() || `用户 ${optionId}`;
-                      const optionAvatarUrl = resolveMediaUrl(apiBaseUrl, option.voAvatar);
-
-                      return (
-                        <button
-                          key={optionId}
-                          type="button"
-                          className={`${styles.mentionOption} ${index === mentionSelectedIndex ? styles.mentionOptionActive : ''}`}
-                          onMouseDown={(event) => {
-                            event.preventDefault();
-                            applyMentionSelection(option);
-                          }}
-                          onMouseEnter={() => setMentionSelectedIndex(index)}
-                        >
-                          {optionAvatarUrl ? (
-                            <img src={optionAvatarUrl} alt={optionName} className={styles.mentionAvatar} loading="lazy" />
-                          ) : (
-                            <span className={styles.mentionAvatarFallback} style={buildAvatarStyle(optionName)}>
-                              {buildAvatarText(optionName)}
-                            </span>
-                          )}
-                          <span className={styles.mentionLabel}>@{optionName}</span>
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className={styles.actionColumn}>
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                className={styles.hiddenFileInput}
-                onChange={(event) => {
-                  void handleImageSelected(event);
-                }}
-              />
-              <button
-                className={styles.imageButton}
-                type="button"
-                disabled={!activeChannelId || uploadingImage}
-                onClick={() => imageInputRef.current?.click()}
-              >
-                {uploadingImage ? '上传中...' : '图片'}
-              </button>
-              <button
-                className={styles.sendButton}
-                type="button"
-                disabled={!activeChannelId || uploadingImage || !messageInput.trim()}
-                onClick={() => {
-                  void handleSendMessage();
-                }}
-              >
-                发送
-              </button>
-            </div>
-          </div>
-        </footer>
       </section>
     </div>
   );
