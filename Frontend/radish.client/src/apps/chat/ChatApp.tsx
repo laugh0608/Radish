@@ -16,7 +16,7 @@ import { useChatStore } from '@/stores/chatStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
-import type { ChannelMemberVo, ChannelMessageVo } from '@/types/chat';
+import type { ChannelMemberVo, ChannelMessageVo, SendChannelMessageRequest } from '@/types/chat';
 import styles from './ChatApp.module.css';
 
 const PAGE_SIZE = 50;
@@ -242,6 +242,14 @@ function clearChannelDraft(userId: number, channelId: number): void {
   persistChannelDraft(userId, channelId, '', null);
 }
 
+function buildClientRequestId(channelId: number): string {
+  return `chat-${channelId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function getErrorMessage(error: unknown, fallbackMessage: string): string {
+  return error instanceof Error ? error.message : fallbackMessage;
+}
+
 export const ChatApp = () => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
@@ -257,13 +265,15 @@ export const ChatApp = () => {
     setChannelMessages,
     prependChannelMessages,
     addMessage,
+    removeMessage,
   } = useChatStore();
   const currentUserId = useUserStore((state) => state.userId);
+  const currentUserName = useUserStore((state) => state.userName);
+  const currentUserAvatarUrl = useUserStore((state) => state.avatarUrl);
 
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [loadingMembers, setLoadingMembers] = useState(false);
-  const [sending, setSending] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [messageInput, setMessageInput] = useState('');
@@ -283,12 +293,21 @@ export const ChatApp = () => {
   const previousConnectionStateRef = useRef(connectionState);
   const previousChannelIdRef = useRef<number | null>(null);
   const loadedDraftChannelRef = useRef<number | null>(null);
+  const tempMessageIdRef = useRef(-1);
   const composerStateRef = useRef<{ messageInput: string; replyTarget: ChannelMessageVo | null }>({
     messageInput: '',
     replyTarget: null,
   });
 
   const currentUserIdValue = useMemo(() => toNumericId(currentUserId), [currentUserId]);
+  const currentUserNameValue = useMemo(
+    () => currentUserName?.trim() || 'Unknown',
+    [currentUserName]
+  );
+  const currentUserAvatarUrlValue = useMemo(
+    () => currentUserAvatarUrl?.trim() || null,
+    [currentUserAvatarUrl]
+  );
 
   const activeChannel = useMemo(
     () => channels.find((channel) => toNumericId(channel.voId) === activeChannelId) || null,
@@ -590,8 +609,87 @@ export const ChatApp = () => {
     clearChannelDraft(currentUserIdValue, channelId);
   }, [closeMentionDropdown, currentUserIdValue]);
 
-  const handleSendMessage = useCallback(async () => {
-    if (!activeChannelId || sending || uploadingImage) {
+  const createTempMessageId = useCallback(() => {
+    const nextId = tempMessageIdRef.current;
+    tempMessageIdRef.current -= 1;
+    return nextId;
+  }, []);
+
+  const createOptimisticMessage = useCallback((params: {
+    tempMessageId: number;
+    clientRequestId: string;
+    channelId: number;
+    type: 1 | 2 | 3;
+    content?: string;
+    replyTo: ChannelMessageVo | null;
+    attachmentId?: number;
+    imageUrl?: string;
+    imageThumbnailUrl?: string;
+  }): ChannelMessageVo => ({
+    voId: params.tempMessageId,
+    voClientRequestId: params.clientRequestId,
+    voChannelId: params.channelId,
+    voUserId: currentUserIdValue,
+    voUserName: currentUserNameValue,
+    voUserAvatarUrl: currentUserAvatarUrlValue,
+    voType: params.type,
+    voContent: params.content ?? null,
+    voReplyToId: params.replyTo ? toNumericId(params.replyTo.voId) : null,
+    voReplyTo: params.replyTo,
+    voAttachmentId: params.attachmentId ?? null,
+    voImageUrl: params.imageUrl ?? null,
+    voImageThumbnailUrl: params.imageThumbnailUrl ?? params.imageUrl ?? null,
+    voIsRecalled: false,
+    voCreateTime: new Date().toISOString(),
+    voLocalStatus: 'sending',
+    voLocalError: null,
+  }), [currentUserAvatarUrlValue, currentUserIdValue, currentUserNameValue]);
+
+  const sendOptimisticMessage = useCallback(async (
+    optimisticMessage: ChannelMessageVo,
+    request: SendChannelMessageRequest,
+    options?: {
+      successToastMessage?: string;
+      failureFallbackMessage?: string;
+    }
+  ) => {
+    addMessage(optimisticMessage);
+
+    requestAnimationFrame(() => {
+      scrollToBottom();
+    });
+
+    try {
+      const sent = await sendChannelMessage({
+        ...request,
+        clientRequestId: optimisticMessage.voClientRequestId || undefined,
+      });
+
+      addMessage({
+        ...sent,
+        voLocalStatus: 'sent',
+        voLocalError: null,
+      });
+
+      await chatHub.markChannelAsRead(request.channelId);
+
+      if (options?.successToastMessage) {
+        toast.success(options.successToastMessage);
+      }
+    } catch (error) {
+      const errorMessage = getErrorMessage(error, options?.failureFallbackMessage || '发送消息失败');
+      log.error('ChatApp', '发送消息失败:', error);
+      addMessage({
+        ...optimisticMessage,
+        voLocalStatus: 'failed',
+        voLocalError: errorMessage,
+      });
+      toast.error(errorMessage);
+    }
+  }, [addMessage, scrollToBottom]);
+
+  const handleSendMessage = useCallback(() => {
+    if (!activeChannelId || uploadingImage) {
       return;
     }
 
@@ -600,30 +698,33 @@ export const ChatApp = () => {
       return;
     }
 
-    setSending(true);
-    try {
-      const sent = await sendChannelMessage({
+    const replyTargetSnapshot = replyTarget;
+    const tempMessageId = createTempMessageId();
+    const clientRequestId = buildClientRequestId(activeChannelId);
+    const optimisticMessage = createOptimisticMessage({
+      tempMessageId,
+      clientRequestId,
+      channelId: activeChannelId,
+      type: 1,
+      content,
+      replyTo: replyTargetSnapshot,
+    });
+
+    resetComposer(activeChannelId);
+
+    void sendOptimisticMessage(
+      optimisticMessage,
+      {
         channelId: activeChannelId,
         type: 1,
         content,
-        replyToId: replyTarget ? toNumericId(replyTarget.voId) : undefined,
-      });
-
-      addMessage(sent);
-      resetComposer(activeChannelId);
-
-      requestAnimationFrame(() => {
-        scrollToBottom();
-      });
-
-      await chatHub.markChannelAsRead(activeChannelId);
-    } catch (error) {
-      log.error('ChatApp', '发送消息失败:', error);
-      toast.error(error instanceof Error ? error.message : '发送消息失败');
-    } finally {
-      setSending(false);
-    }
-  }, [activeChannelId, addMessage, messageInput, replyTarget, resetComposer, scrollToBottom, sending, uploadingImage]);
+        replyToId: replyTargetSnapshot ? toNumericId(replyTargetSnapshot.voId) : undefined,
+      },
+      {
+        failureFallbackMessage: '发送消息失败',
+      }
+    );
+  }, [activeChannelId, createOptimisticMessage, createTempMessageId, messageInput, replyTarget, resetComposer, sendOptimisticMessage, uploadingImage]);
 
   const handleImageSelected = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -645,35 +746,97 @@ export const ChatApp = () => {
         t
       );
 
-      const sent = await sendChannelMessage({
+      const content = messageInput.trim();
+      const replyTargetSnapshot = replyTarget;
+      const tempMessageId = createTempMessageId();
+      const clientRequestId = buildClientRequestId(activeChannelId);
+      const optimisticMessage = createOptimisticMessage({
+        tempMessageId,
+        clientRequestId,
         channelId: activeChannelId,
         type: 2,
-        content: messageInput.trim() || undefined,
-        replyToId: replyTarget ? toNumericId(replyTarget.voId) : undefined,
+        content: content || undefined,
+        replyTo: replyTargetSnapshot,
         attachmentId: toNumericId(attachment.voId),
         imageUrl: attachment.voUrl,
         imageThumbnailUrl: attachment.voThumbnailUrl || attachment.voUrl,
       });
 
-      addMessage(sent);
       resetComposer(activeChannelId);
       setImageUploadProgress(100);
 
-      requestAnimationFrame(() => {
-        scrollToBottom();
-      });
-
-      await chatHub.markChannelAsRead(activeChannelId);
-      toast.success('图片已发送');
+      void sendOptimisticMessage(
+        optimisticMessage,
+        {
+          channelId: activeChannelId,
+          type: 2,
+          content: content || undefined,
+          replyToId: replyTargetSnapshot ? toNumericId(replyTargetSnapshot.voId) : undefined,
+          attachmentId: toNumericId(attachment.voId),
+          imageUrl: attachment.voUrl,
+          imageThumbnailUrl: attachment.voThumbnailUrl || attachment.voUrl,
+        },
+        {
+          successToastMessage: '图片已发送',
+          failureFallbackMessage: '发送图片消息失败',
+        }
+      );
     } catch (error) {
       log.error('ChatApp', '发送图片消息失败:', error);
-      toast.error(error instanceof Error ? error.message : '发送图片消息失败');
+      toast.error(getErrorMessage(error, '发送图片消息失败'));
     } finally {
       setUploadingImage(false);
       setTimeout(() => setImageUploadProgress(0), 400);
       event.target.value = '';
     }
-  }, [activeChannelId, addMessage, messageInput, replyTarget, resetComposer, scrollToBottom, t, uploadingImage]);
+  }, [activeChannelId, createOptimisticMessage, createTempMessageId, messageInput, replyTarget, resetComposer, sendOptimisticMessage, t, uploadingImage]);
+
+  const handleRetryMessage = useCallback((message: ChannelMessageVo) => {
+    const channelId = toNumericId(message.voChannelId);
+    const messageId = toNumericId(message.voId);
+    if (channelId <= 0 || messageId >= 0) {
+      return;
+    }
+
+    const clientRequestId = buildClientRequestId(channelId);
+    const retryMessage: ChannelMessageVo = {
+      ...message,
+      voClientRequestId: clientRequestId,
+      voLocalStatus: 'sending',
+      voLocalError: null,
+    };
+
+    void sendOptimisticMessage(
+      retryMessage,
+      {
+        channelId,
+        type: message.voType,
+        content: message.voContent?.trim() || undefined,
+        replyToId: toNumericId(message.voReplyToId) > 0 ? toNumericId(message.voReplyToId) : undefined,
+        attachmentId: toNumericId(message.voAttachmentId) > 0 ? toNumericId(message.voAttachmentId) : undefined,
+        imageUrl: message.voImageUrl || undefined,
+        imageThumbnailUrl: message.voImageThumbnailUrl || message.voImageUrl || undefined,
+      },
+      {
+        successToastMessage: message.voType === 2 ? '图片已发送' : undefined,
+        failureFallbackMessage: message.voType === 2 ? '发送图片消息失败' : '发送消息失败',
+      }
+    );
+  }, [sendOptimisticMessage]);
+
+  const handleDismissFailedMessage = useCallback((message: ChannelMessageVo) => {
+    const channelId = toNumericId(message.voChannelId);
+    const messageId = toNumericId(message.voId);
+    if (channelId <= 0 || messageId >= 0) {
+      return;
+    }
+
+    if (replyTarget && toNumericId(replyTarget.voId) === messageId) {
+      setReplyTarget(null);
+    }
+
+    removeMessage(channelId, messageId);
+  }, [removeMessage, replyTarget]);
 
   const handleRecall = useCallback(async (messageId: number) => {
     if (!messageId) {
@@ -936,6 +1099,9 @@ export const ChatApp = () => {
                 const messageId = toNumericId(message.voId);
                 const messageUserId = toNumericId(message.voUserId);
                 const isMine = messageUserId > 0 && messageUserId === currentUserIdValue;
+                const messageStatus = message.voLocalStatus ?? 'sent';
+                const isSendingMessage = messageStatus === 'sending';
+                const isFailedMessage = messageStatus === 'failed';
                 const replyText = message.voReplyTo ? getMessagePreviewText(message.voReplyTo) : null;
                 const messageImageUrl = resolveMediaUrl(apiBaseUrl, message.voImageUrl);
 
@@ -960,7 +1126,7 @@ export const ChatApp = () => {
                           <span className={styles.userName}>{message.voUserName || 'Unknown'}</span>
                         </button>
                         <span className={styles.time}>{formatTime(message.voCreateTime)}</span>
-                        {!message.voIsRecalled && (
+                        {!message.voIsRecalled && messageStatus === 'sent' && (
                           <button
                             type="button"
                             className={styles.replyButton}
@@ -969,7 +1135,7 @@ export const ChatApp = () => {
                             回复
                           </button>
                         )}
-                        {isMine && !message.voIsRecalled && (
+                        {isMine && !message.voIsRecalled && messageStatus === 'sent' && messageId > 0 && (
                           <button
                             type="button"
                             className={styles.recallButton}
@@ -997,6 +1163,31 @@ export const ChatApp = () => {
                           {message.voContent && <div className={styles.bubble}>{renderMessageContent(message.voContent)}</div>}
                           {message.voType === 2 && messageImageUrl && (
                             <img className={styles.imageMessage} src={messageImageUrl} alt="图片消息" loading="lazy" />
+                          )}
+                          {isMine && !message.voIsRecalled && messageStatus !== 'sent' && (
+                            <div className={styles.deliveryState}>
+                              <span className={`${styles.deliveryStateText} ${isFailedMessage ? styles.deliveryStateTextFailed : ''}`}>
+                                {isSendingMessage ? '发送中...' : (message.voLocalError || '发送失败')}
+                              </span>
+                              {isFailedMessage && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className={styles.deliveryActionButton}
+                                    onClick={() => handleRetryMessage(message)}
+                                  >
+                                    重试
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={styles.deliveryActionButton}
+                                    onClick={() => handleDismissFailedMessage(message)}
+                                  >
+                                    撤销
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           )}
                         </div>
                       )}
@@ -1173,7 +1364,7 @@ export const ChatApp = () => {
                   }
                 }}
                 placeholder={activeChannelId ? '输入消息，支持 @提及，Enter 发送，Shift+Enter 换行，Esc 取消回复' : '请先选择频道'}
-                disabled={!activeChannelId || sending || uploadingImage}
+                disabled={!activeChannelId || uploadingImage}
               />
 
               {isMentionOpen && (
@@ -1228,7 +1419,7 @@ export const ChatApp = () => {
               <button
                 className={styles.imageButton}
                 type="button"
-                disabled={!activeChannelId || sending || uploadingImage}
+                disabled={!activeChannelId || uploadingImage}
                 onClick={() => imageInputRef.current?.click()}
               >
                 {uploadingImage ? '上传中...' : '图片'}
@@ -1236,12 +1427,12 @@ export const ChatApp = () => {
               <button
                 className={styles.sendButton}
                 type="button"
-                disabled={!activeChannelId || sending || uploadingImage || !messageInput.trim()}
+                disabled={!activeChannelId || uploadingImage || !messageInput.trim()}
                 onClick={() => {
                   void handleSendMessage();
                 }}
               >
-                {sending ? '发送中...' : '发送'}
+                发送
               </button>
             </div>
           </div>

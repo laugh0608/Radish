@@ -119,6 +119,19 @@
 - **下一执行顺序确认**：规划已明确调整为 `P1 聊天室完善` → `P2 开源软件清单声明组件` → `P3 抽奖 / 投票 / 问答里先选一个做最小首版`。
 - **大项统一后置**：国风 UI、主题切换、i18n 与邮件通知系统统一归类为 `Later`，避免当前阶段再次引入影响面过广的大治理任务。
 
+### 聊天室 P1 文档与范围同步
+
+- **路线图状态补记**：聊天室路线图已从 `2026-03-03` 旧快照更新到 `2026-03-11`，补记这几轮已经落地的 `引用回复`、`@mention`、图片消息、草稿恢复、成员面板、重连补拉与状态条、成员头像来源。
+- **P1 剩余缺口收敛**：当前已将聊天室 P1 的最后一个核心项明确收敛为 `乐观发送 + 失败重试`，优先保障“图片发送成功率和重试体验可接受”“常用交互流畅且状态一致”两个验收点。
+- **下一顺位保持不变**：聊天室 P1 收口后，下一主线仍为 `P2 开源软件清单声明组件`，避免在聊天室主链路尚未完全稳定前继续插入新功能。
+
+### 聊天室乐观发送与失败重试落地
+
+- **前端状态链路补齐**：`chatStore` 已支持 `sending / failed / sent` 三态消息，发送时先插入负数临时消息，失败后原位保留并展示 `重试 / 撤销` 操作。
+- **REST / Hub 关联键落地**：前后端发送契约新增 `clientRequestId`，用于将 REST 返回和 `MessageReceived` Hub 推送稳定映射到同一条临时消息，避免重连或竞态时出现重复气泡。
+- **图片重试保持克制**：图片消息发送失败后可直接复用已上传的 `attachmentId + imageUrl + imageThumbnailUrl` 重试，不重复上传附件。
+- **验证结果**：`npm run type-check --workspace=radish.client` 通过；`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false --no-restore` 通过。
+
 ### Console 权限治理工具化校验落地
 
 - **扫描脚本补齐**：新增 `Scripts/check-console-permissions.mjs`，自动对比 `routeMeta.requiredPermission`、前端 `CONSOLE_PERMISSIONS`、页面内 `usePermission`、后端 `ConsolePermissions.ApiPermissionMappings` 与 `DbMigrate` 的 `ApiModule.LinkUrl`，减少继续靠人工逐页核对的成本。

@@ -355,6 +355,36 @@
   background: #fff;
 }
 
+.deliveryState {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.deliveryStateText {
+  color: inherit;
+}
+
+.deliveryStateTextFailed {
+  color: #b42318;
+}
+
+.deliveryActionButton {
+  border: 0;
+  background: transparent;
+  color: #1d4e89;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+}
+
+.deliveryActionButton:hover {
+  color: #163b67;
+  text-decoration: underline;
+}
+
 .memberPanel {
   width: 240px;
   border-left: 1px solid #e7dcc6;

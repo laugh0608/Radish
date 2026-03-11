@@ -1,5 +1,8 @@
+export type ChatMessageStatus = 'sending' | 'sent' | 'failed';
+
 export interface ChannelMessageVo {
   voId: number;
+  voClientRequestId?: string | null;
   voChannelId: number;
   voUserId: number;
   voUserName: string;
@@ -13,6 +16,8 @@ export interface ChannelMessageVo {
   voImageThumbnailUrl?: string | null;
   voIsRecalled: boolean;
   voCreateTime: string;
+  voLocalStatus?: ChatMessageStatus;
+  voLocalError?: string | null;
 }
 
 export interface ChannelVo {
@@ -37,6 +42,7 @@ export interface ChannelMemberVo {
 }
 
 export interface SendChannelMessageRequest {
+  clientRequestId?: string;
   channelId: number;
   type?: 1 | 2 | 3;
   content?: string;

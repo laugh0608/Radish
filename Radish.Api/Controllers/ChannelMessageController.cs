@@ -90,6 +90,9 @@ public class ChannelMessageController : ControllerBase
                 Current.UserName,
                 null,
                 request);
+            messageVo.VoClientRequestId = string.IsNullOrWhiteSpace(request.ClientRequestId)
+                ? null
+                : request.ClientRequestId.Trim();
 
             var channelGroup = ChatHub.BuildChannelGroup(Current.TenantId, request.ChannelId);
             await _chatHubContext.Clients.Group(channelGroup).SendAsync("MessageReceived", messageVo);
