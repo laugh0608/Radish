@@ -63,7 +63,8 @@
 
 ### 工程治理
 
-- `DbMigrate` 解耦宿主
+- `DbMigrate` 解耦宿主已完成本轮收口（`Bootstrap` / `Runner` / `Doctor`）
+- `DbMigrate doctor` / `verify` 已可用于只读检查配置、连接定义与 Seed 前置状态
 - 持续减少“组合根直接绑宿主”的结构耦合
 
 ## 当前不做

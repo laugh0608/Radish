@@ -59,6 +59,8 @@ npm run dev --prefix Frontend/radish.client
 dotnet watch --project Radish.Api           # 热重载
 dotnet test Radish.Api.Tests                # 运行测试
 dotnet build Radish.slnx -c Debug           # 构建解决方案
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor  # 只读检查 DbMigrate 环境
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed    # 初始化结构与种子数据
 
 # 前端开发（必须在项目根目录运行）
 npm run dev --workspace=radish.client       # 前端开发服务器

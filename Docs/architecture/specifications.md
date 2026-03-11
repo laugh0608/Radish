@@ -457,10 +457,12 @@ git push origin v26.1.1.3003
    - 在仓库根目录执行：
 
      ```bash
+     dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor
      dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
      ```
 
      - 动作说明：
+       - `doctor` 只读检查当前配置、连接定义与 Seed 前置状态；
        - 根据当前配置创建数据库（如不存在）。
        - 扫描 `Radish.Model` 中标记了 `[SugarTable]` 的实体类型，执行 `CodeFirst.InitTables`：
          - 新表会被创建；
@@ -485,6 +487,7 @@ git push origin v26.1.1.3003
    - 若新增字段需要默认业务数据（例如为所有历史用户回填某个状态），建议：
      - 在迁移 SQL 中加入安全的 `UPDATE` 语句，或
      - 在 `Radish.DbMigrate` 中实现 `seed` 子命令，集中处理默认管理员、角色、租户、基础参数等数据初始化。
+   - 推荐执行顺序：先运行 `doctor` 做只读检查，再执行 `seed`；若 `doctor` 报告结构缺失，可先执行 `init`。
    - 数据初始化脚本同样应纳入版本管理，并在上线流程中显式执行。
 
 ---
