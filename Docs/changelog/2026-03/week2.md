@@ -155,3 +155,13 @@
 - **输入区布局修复**：聊天输入区已改成“左侧输入框 + 右侧固定按钮列”布局，`textarea` 不再挤压“图片 / 发送”按钮。
 - **文档与规划同步**：聊天前端、实时设计、路线图、总览、系统设计、总路线图、当前规划与 2026-03 月志已同步更新到“聊天室 P1 基本收口”的最新状态。
 - **验证结果**：聊天室问题已完成实际回归确认；`npm exec vite build --workspace=radish.client` 通过。完整 `npm run build --workspace=radish.client` 仍被既有无关类型错误阻塞：`Frontend/radish.client/src/apps/forum/components/PostDetail.tsx` 访问了不存在的 `voAuthorAvatarUrl` 字段。
+
+## 2026-03-12 (周四)
+
+### 开源软件清单声明组件最小首版落地
+
+- **欢迎 App 新增入口**：`radish.client` 的 `WelcomeApp` 已新增“开源软件”标签页，作为当前阶段的产品内说明入口，不单独增加新应用。
+- **静态清单首版完成**：首版以项目级核心依赖为范围，展示 `ASP.NET Core`、`React`、`TypeScript`、`Vite`、`Zustand`、`SignalR`、`PostgreSQL`、`Iconify` 等项目的用途、许可证与官方仓库链接。
+- **范围保持克制**：当前不引入构建时自动扫描，也不在本轮直接扩展为完整 `THIRD-PARTY-NOTICES` 生成流程，避免把中小体量补齐项升级为工程治理任务。
+- **文档口径同步**：`Docs/frontend/webos-quick-start.md` 已补充欢迎应用中的“开源软件说明入口”，规划文档已将 `P2` 更新为“最小首版已落地，后续如需继续推进则转为 `P2-ext` 扩展项”。
+- **验证结果**：用户本地已执行 `npm install` 并确认相关前端检查通过；当前改动已提交为 `feat(client): 在欢迎应用中添加开源软件说明`。
