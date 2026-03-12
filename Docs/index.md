@@ -52,6 +52,7 @@ features:
 - [服务网关](/guide/gateway)
 - [国际化指南](/architecture/i18n)
 - [文档系统方案](/guide/document-system)
+- [论坛投票 MVP 设计方案](/features/forum-poll-mvp)
 
 ## 完整入口
 
