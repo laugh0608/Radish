@@ -165,3 +165,12 @@
 - **范围保持克制**：当前不引入构建时自动扫描，也不在本轮直接扩展为完整 `THIRD-PARTY-NOTICES` 生成流程，避免把中小体量补齐项升级为工程治理任务。
 - **文档口径同步**：`Docs/frontend/webos-quick-start.md` 已补充欢迎应用中的“开源软件说明入口”，规划文档已将 `P2` 更新为“最小首版已落地，后续如需继续推进则转为 `P2-ext` 扩展项”。
 - **验证结果**：用户本地已执行 `npm install` 并确认相关前端检查通过；当前改动已提交为 `feat(client): 在欢迎应用中添加开源软件说明`。
+
+### 论坛投票 MVP 启动并完成后端前两步
+
+- **方向确认**：`P3` 已正式选择“论坛帖子附带投票”作为最小首版，不拆独立投票 App，继续复用论坛发帖、详情与权限链路。
+- **文档先行完成**：已补齐 `Docs/features/forum-poll-mvp.md`，明确 MVP 范围、接口切分、前后端边界与最小测试清单，作为当前实现口径。
+- **后端模型与契约打底完成**：新增 `PostPoll`、`PostPollOption`、`PostPollVote` 三个实体，以及 `CreatePollDto / PollOptionDto / VotePollDto / PostPollVo` 等 DTO / Vo，帖子视图模型也已补充最小投票摘要字段。
+- **发帖链路接入完成**：`PostService.PublishPostAsync` 已支持在发布帖子时一并创建投票，帖子详情和列表查询也已补充投票摘要 / 详情回传，便于后续前端直接接入。
+- **构建验证通过**：`dotnet build Radish.Api/Radish.Api.csproj -c Debug -m:1 /nr:false` 已通过；剩余 warning 为既有问题，未由本轮引入。
+- **下一步明确**：后续继续推进 `PollController`、投票提交 / 查询接口，以及欢迎 App 中论坛发帖与详情页的投票交互接入。
