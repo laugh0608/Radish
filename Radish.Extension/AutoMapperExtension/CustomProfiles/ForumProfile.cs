@@ -30,6 +30,20 @@ public class ForumProfile : Profile
         CreateMap<PostVo, Post>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore()); // 避免从 VO 覆盖租户 ID
 
+        // PostPoll -> PostPollVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostPoll, PostPollVo>()
+            .ForMember(dest => dest.VoPollId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.VoOptions, opt => opt.Ignore())
+            .ForMember(dest => dest.VoHasVoted, opt => opt.Ignore())
+            .ForMember(dest => dest.VoSelectedOptionId, opt => opt.Ignore());
+
+        // PostPollOption -> PostPollOptionVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostPollOption, PostPollOptionVo>()
+            .ForMember(dest => dest.VoOptionId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.VoVotePercent, opt => opt.Ignore());
+
         // Comment -> CommentVo (使用前缀识别 + 手动配置特殊字段)
         RecognizeDestinationPrefixes("Vo");
         CreateMap<Comment, CommentVo>()

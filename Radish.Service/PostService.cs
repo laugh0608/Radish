@@ -15,11 +15,17 @@ namespace Radish.Service;
 /// <summary>帖子服务实现</summary>
 public class PostService : BaseService<Post, PostVo>, IPostService
 {
+    private const int MinPollOptionCount = 2;
+    private const int MaxPollOptionCount = 6;
+
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<UserPostLike> _userPostLikeRepository;
     private readonly IBaseRepository<PostTag> _postTagRepository;
     private readonly IBaseRepository<Category> _categoryRepository;
     private readonly IBaseRepository<Tag> _tagRepository;
+    private readonly IBaseRepository<PostPoll> _postPollRepository;
+    private readonly IBaseRepository<PostPollOption> _postPollOptionRepository;
+    private readonly IBaseRepository<PostPollVote> _postPollVoteRepository;
     private readonly ITagService _tagService;
     private readonly ICoinRewardService _coinRewardService;
     private readonly INotificationService _notificationService;
@@ -35,6 +41,9 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         IBaseRepository<PostTag> postTagRepository,
         IBaseRepository<Category> categoryRepository,
         IBaseRepository<Tag> tagRepository,
+        IBaseRepository<PostPoll> postPollRepository,
+        IBaseRepository<PostPollOption> postPollOptionRepository,
+        IBaseRepository<PostPollVote> postPollVoteRepository,
         ITagService tagService,
         ICoinRewardService coinRewardService,
         INotificationService notificationService,
@@ -49,6 +58,9 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         _postTagRepository = postTagRepository;
         _categoryRepository = categoryRepository;
         _tagRepository = tagRepository;
+        _postPollRepository = postPollRepository;
+        _postPollOptionRepository = postPollOptionRepository;
+        _postPollVoteRepository = postPollVoteRepository;
         _tagService = tagService;
         _coinRewardService = coinRewardService;
         _notificationService = notificationService;
@@ -61,7 +73,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     /// <summary>
     /// 获取帖子详情（包含分类名称和标签）
     /// </summary>
-    public async Task<PostVo?> GetPostDetailAsync(long postId)
+    public async Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null)
     {
         var post = await _postRepository.QueryByIdAsync(postId);
         if (post == null || post.IsDeleted)
@@ -90,6 +102,15 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             postVo.VoTags = string.Join(", ", tags.Select(t => t.VoName));
         }
 
+        var pollVo = await BuildPostPollVoAsync(postId, viewerUserId);
+        if (pollVo != null)
+        {
+            postVo.VoHasPoll = true;
+            postVo.VoPollTotalVoteCount = pollVo.VoTotalVoteCount;
+            postVo.VoPollIsClosed = pollVo.VoIsClosed;
+            postVo.VoPoll = pollVo;
+        }
+
         return postVo;
     }
 
@@ -97,7 +118,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     /// 发布帖子
     /// </summary>
     [UseTran]
-    public async Task<long> PublishPostAsync(Post post, List<string>? tagNames = null, bool allowCreateTag = true)
+    public async Task<long> PublishPostAsync(Post post, CreatePollDto? poll = null, List<string>? tagNames = null, bool allowCreateTag = true)
     {
         var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "发布帖子时至少需要一个标签");
         var operatorName = string.IsNullOrWhiteSpace(post.AuthorName) ? "System" : post.AuthorName;
@@ -118,6 +139,12 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
         // 3. 处理标签
         await SyncPostTagsAsync(postId, post.AuthorId, operatorName, normalizedTagNames, allowCreateTag);
+
+        // 4. 处理附带投票
+        if (poll != null)
+        {
+            await CreatePostPollAsync(post, postId, poll, operatorName);
+        }
 
         // 4. 🎁 发放经验值奖励（异步处理）
         _ = Task.Run(async () =>
@@ -185,6 +212,138 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         });
 
         return postId;
+    }
+
+    private async Task<PostPollVo?> BuildPostPollVoAsync(long postId, long? viewerUserId)
+    {
+        var poll = await _postPollRepository.QueryFirstAsync(p => p.PostId == postId && !p.IsDeleted);
+        if (poll == null)
+        {
+            return null;
+        }
+
+        var pollVo = Mapper.Map<PostPollVo>(poll);
+        pollVo.VoPollId = poll.Id;
+        pollVo.VoIsClosed = IsPollClosed(poll);
+
+        var options = await _postPollOptionRepository.QueryAsync(o => o.PollId == poll.Id && !o.IsDeleted);
+        var orderedOptions = options
+            .OrderBy(o => o.SortOrder)
+            .ThenBy(o => o.Id)
+            .ToList();
+
+        var totalVoteCount = poll.TotalVoteCount > 0
+            ? poll.TotalVoteCount
+            : orderedOptions.Sum(option => option.VoteCount);
+
+        pollVo.VoTotalVoteCount = totalVoteCount;
+        pollVo.VoOptions = orderedOptions
+            .Select(option =>
+            {
+                var optionVo = Mapper.Map<PostPollOptionVo>(option);
+                optionVo.VoOptionId = option.Id;
+                optionVo.VoVotePercent = totalVoteCount <= 0
+                    ? 0
+                    : Math.Round(option.VoteCount * 100m / totalVoteCount, 2);
+                return optionVo;
+            })
+            .ToList();
+
+        if (viewerUserId.HasValue && viewerUserId.Value > 0)
+        {
+            var vote = await _postPollVoteRepository.QueryFirstAsync(v => v.PollId == poll.Id && v.UserId == viewerUserId.Value);
+            if (vote != null)
+            {
+                pollVo.VoHasVoted = true;
+                pollVo.VoSelectedOptionId = vote.OptionId;
+            }
+        }
+
+        return pollVo;
+    }
+
+    private async Task CreatePostPollAsync(Post post, long postId, CreatePollDto poll, string operatorName)
+    {
+        var question = poll.Question?.Trim();
+        if (string.IsNullOrWhiteSpace(question))
+        {
+            throw new ArgumentException("投票问题不能为空", nameof(poll));
+        }
+
+        if (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.Now)
+        {
+            throw new ArgumentException("投票截止时间必须晚于当前时间", nameof(poll));
+        }
+
+        var normalizedOptions = NormalizePollOptionsOrThrow(poll.Options);
+
+        var postPoll = new PostPoll
+        {
+            PostId = postId,
+            Question = question,
+            EndTime = poll.EndTime,
+            IsClosed = false,
+            TotalVoteCount = 0,
+            TenantId = post.TenantId,
+            CreateBy = operatorName,
+            CreateId = post.AuthorId
+        };
+
+        var pollId = await _postPollRepository.AddAsync(postPoll);
+
+        var optionEntities = normalizedOptions
+            .Select((option, index) => new PostPollOption
+            {
+                PollId = pollId,
+                OptionText = option.OptionText,
+                SortOrder = option.SortOrder ?? index + 1,
+                VoteCount = 0,
+                TenantId = post.TenantId,
+                CreateBy = operatorName,
+                CreateId = post.AuthorId
+            })
+            .ToList();
+
+        await _postPollOptionRepository.AddRangeAsync(optionEntities);
+    }
+
+    private static bool IsPollClosed(PostPoll poll)
+    {
+        return poll.IsClosed || (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.Now);
+    }
+
+    private static List<PollOptionDto> NormalizePollOptionsOrThrow(List<PollOptionDto>? options)
+    {
+        if (options == null)
+        {
+            throw new ArgumentException("投票选项不能为空", nameof(options));
+        }
+
+        var normalizedOptions = options
+            .Where(option => !string.IsNullOrWhiteSpace(option.OptionText))
+            .Select((option, index) => new PollOptionDto
+            {
+                OptionText = option.OptionText.Trim(),
+                SortOrder = option.SortOrder ?? index + 1
+            })
+            .ToList();
+
+        if (normalizedOptions.Count < MinPollOptionCount || normalizedOptions.Count > MaxPollOptionCount)
+        {
+            throw new ArgumentException($"投票选项数量必须在 {MinPollOptionCount} 到 {MaxPollOptionCount} 个之间", nameof(options));
+        }
+
+        var distinctCount = normalizedOptions
+            .Select(option => option.OptionText)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Count();
+
+        if (distinctCount != normalizedOptions.Count)
+        {
+            throw new ArgumentException("投票选项不能重复", nameof(options));
+        }
+
+        return normalizedOptions;
     }
 
     /// <summary>

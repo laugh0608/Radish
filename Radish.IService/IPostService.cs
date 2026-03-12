@@ -12,17 +12,19 @@ public interface IPostService : IBaseService<Post, PostVo>
     /// 获取帖子详情（包含分类名称和标签）
     /// </summary>
     /// <param name="postId">帖子 Id</param>
+    /// <param name="viewerUserId">查看者用户 Id（可空，用于补充用户态信息）</param>
     /// <returns>帖子详情</returns>
-    Task<PostVo?> GetPostDetailAsync(long postId);
+    Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null);
 
     /// <summary>
     /// 发布帖子
     /// </summary>
     /// <param name="post">帖子实体</param>
+    /// <param name="poll">附带投票（可空）</param>
     /// <param name="tagNames">标签名称列表</param>
     /// <param name="allowCreateTag">是否允许自动创建新标签（通常仅管理员可用）</param>
     /// <returns>帖子 Id</returns>
-    Task<long> PublishPostAsync(Post post, List<string>? tagNames = null, bool allowCreateTag = true);
+    Task<long> PublishPostAsync(Post post, CreatePollDto? poll = null, List<string>? tagNames = null, bool allowCreateTag = true);
 
     /// <summary>
     /// 更新帖子及标签

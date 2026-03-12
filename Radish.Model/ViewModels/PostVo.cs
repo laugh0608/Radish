@@ -134,4 +134,24 @@ public class PostVo
     /// 最新互动用户（按最新评论时间倒序，最多 3 个）
     /// </summary>
     public List<PostInteractorVo> VoLatestInteractors { get; set; } = new();
+
+    /// <summary>
+    /// 是否附带投票
+    /// </summary>
+    public bool VoHasPoll { get; set; }
+
+    /// <summary>
+    /// 投票总票数
+    /// </summary>
+    public int VoPollTotalVoteCount { get; set; }
+
+    /// <summary>
+    /// 投票是否关闭
+    /// </summary>
+    public bool VoPollIsClosed { get; set; }
+
+    /// <summary>
+    /// 投票详情（列表页通常为空，详情页可用）
+    /// </summary>
+    public PostPollVo? VoPoll { get; set; }
 }

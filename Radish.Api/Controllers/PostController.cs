@@ -62,7 +62,8 @@ public class PostController : ControllerBase
         // 增加浏览次数
         await _postService.IncrementViewCountAsync(id);
 
-        var post = await _postService.GetPostDetailAsync(id);
+        var viewerUserId = Current.UserId > 0 ? (long?)Current.UserId : null;
+        var post = await _postService.GetPostDetailAsync(id, viewerUserId);
         if (post == null)
         {
             return new MessageModel
@@ -178,7 +179,8 @@ public class PostController : ControllerBase
         // 构建分页模型
         if (data.Any())
         {
-            var detailTasks = data.Select(post => _postService.GetPostDetailAsync(post.VoId));
+            var viewerUserId = Current.UserId > 0 ? (long?)Current.UserId : null;
+            var detailTasks = data.Select(post => _postService.GetPostDetailAsync(post.VoId, viewerUserId));
             var detailResults = await Task.WhenAll(detailTasks);
             var detailMap = detailResults
                 .Where(detail => detail != null)
@@ -196,6 +198,10 @@ public class PostController : ControllerBase
                 {
                     post.VoCategoryName = detail.VoCategoryName;
                 }
+
+                post.VoHasPoll = detail.VoHasPoll;
+                post.VoPollTotalVoteCount = detail.VoPollTotalVoteCount;
+                post.VoPollIsClosed = detail.VoPollIsClosed;
             }
 
             await FillPostAvatarAndInteractorsAsync(data);
@@ -359,7 +365,7 @@ public class PostController : ControllerBase
 
         try
         {
-            var postId = await _postService.PublishPostAsync(post, normalizedTagNames, allowCreateTag);
+            var postId = await _postService.PublishPostAsync(post, request.Poll, normalizedTagNames, allowCreateTag);
             return new MessageModel
             {
                 IsSuccess = true,
