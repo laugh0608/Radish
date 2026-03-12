@@ -67,6 +67,8 @@ http://localhost:3000/?demo
   - 显示用户信息（取自 `useUserStore` 当前用户，默认 `test/Admin`）
   - WebOS 使用指南
   - 快速开始提示
+  - 社区规则查看
+  - 开源软件说明入口（项目级核心依赖与许可证信息）
 
 ---
 

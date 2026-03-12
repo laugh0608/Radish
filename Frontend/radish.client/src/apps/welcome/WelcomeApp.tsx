@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import { Icon } from '@radish/ui/icon';
-import { AboutTab, QuickStartTab, RulesTab } from './components';
+import { AboutTab, OpenSourceTab, QuickStartTab, RulesTab } from './components';
 import styles from './WelcomeApp.module.css';
 
-type TabType = 'about' | 'quickstart' | 'rules';
+type TabType = 'about' | 'quickstart' | 'rules' | 'open-source';
 
 interface Tab {
   id: TabType;
@@ -15,7 +15,8 @@ interface Tab {
 const tabs: Tab[] = [
   { id: 'about', label: '关于 Radish', icon: 'mdi:information' },
   { id: 'quickstart', label: '快速入门', icon: 'mdi:rocket-launch' },
-  { id: 'rules', label: '社区规则', icon: 'mdi:shield-check' }
+  { id: 'rules', label: '社区规则', icon: 'mdi:shield-check' },
+  { id: 'open-source', label: '开源软件', icon: 'mdi:open-source-initiative' }
 ];
 
 /**
@@ -35,6 +36,8 @@ export const WelcomeApp = () => {
         return <QuickStartTab />;
       case 'rules':
         return <RulesTab />;
+      case 'open-source':
+        return <OpenSourceTab />;
       default:
         return null;
     }
