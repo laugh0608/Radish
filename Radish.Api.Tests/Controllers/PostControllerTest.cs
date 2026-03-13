@@ -9,6 +9,7 @@ using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.IService.Base;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using SqlSugar;
 using Xunit;
@@ -78,10 +79,119 @@ public class PostControllerTest
         Assert.True(post.VoHasPoll);
         Assert.Equal(18, post.VoPollTotalVoteCount);
         Assert.False(post.VoPollIsClosed);
+        Assert.Null(post.VoPoll);
 
         postServiceMock.Verify(service => service.FillPostListMetadataAsync(It.IsAny<List<PostVo>>()), Times.Once);
         postServiceMock.Verify(service => service.GetPostDetailAsync(It.IsAny<long>(), It.IsAny<long?>()), Times.Never);
         attachmentServiceMock.Verify(service => service.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GetById_Should_Return_Full_Poll_Detail_When_PostExists()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        postServiceMock
+            .Setup(service => service.IncrementViewCountAsync(9527))
+            .Returns(Task.CompletedTask);
+        postServiceMock
+            .Setup(service => service.GetPostDetailAsync(9527, 10001))
+            .ReturnsAsync(new PostVo
+            {
+                VoId = 9527,
+                VoTitle = "详情投票帖",
+                VoHasPoll = true,
+                VoPollTotalVoteCount = 23,
+                VoPollIsClosed = false,
+                VoPoll = new PostPollVo
+                {
+                    VoPollId = 2001,
+                    VoPostId = 9527,
+                    VoQuestion = "今天喝什么？",
+                    VoTotalVoteCount = 23,
+                    VoOptions =
+                    [
+                        new PostPollOptionVo
+                        {
+                            VoOptionId = 3001,
+                            VoOptionText = "奶茶",
+                            VoVoteCount = 12,
+                            VoVotePercent = 52.17m
+                        }
+                    ]
+                }
+            });
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object);
+
+        var result = await controller.GetById(9527);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+
+        var post = Assert.IsType<PostVo>(result.ResponseData);
+        Assert.True(post.VoHasPoll);
+        Assert.NotNull(post.VoPoll);
+        Assert.Equal("今天喝什么？", post.VoPoll!.VoQuestion);
+        Assert.Single(post.VoPoll.VoOptions);
+    }
+
+    [Fact]
+    public async Task Publish_Should_Return_BadRequest_When_ServiceRejects_InvalidPoll()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        moderationServiceMock
+            .Setup(service => service.GetPublishPermissionAsync(10001))
+            .ReturnsAsync(new ContentModerationPermissionVo
+            {
+                VoUserId = 10001,
+                VoCanPublish = true
+            });
+        postServiceMock
+            .Setup(service => service.PublishPostAsync(
+                It.IsAny<Post>(),
+                It.Is<CreatePollDto?>(poll => poll != null && poll.Question == "重复选项"),
+                It.Is<List<string>>(tags => tags.Count == 1 && tags[0] == "投票"),
+                false))
+            .ThrowsAsync(new ArgumentException("投票选项不能重复", "poll"));
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object);
+
+        var result = await controller.Publish(new PublishPostDto
+        {
+            Title = "发帖带投票",
+            Content = "正文",
+            CategoryId = 1,
+            TagNames = ["投票"],
+            Poll = new CreatePollDto
+            {
+                Question = "重复选项",
+                Options =
+                [
+                    new PollOptionDto { OptionText = "奶茶" },
+                    new PollOptionDto { OptionText = "奶茶" }
+                ]
+            }
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Contains("投票选项不能重复", result.MessageInfo);
     }
 
     private static PostController CreateController(
