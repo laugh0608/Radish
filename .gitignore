@@ -298,3 +298,6 @@ DataBases/**
 .env
 .env.local
 .env.*.local
+
+# Local .NET CLI cache
+.dotnet/

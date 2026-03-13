@@ -94,6 +94,167 @@
   font-size: 12px;
 }
 
+.pollCard {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #dbe4ee;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f3f7fb 100%);
+}
+
+.pollHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pollTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pollBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pollQuestion {
+  margin: 0;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.pollMeta {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.pollState {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pollStateClosed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.pollOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.pollOption {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d7e0ea;
+  border-radius: 10px;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pollOption:hover:not(:disabled) {
+  border-color: #60a5fa;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+}
+
+.pollOption:disabled {
+  cursor: default;
+}
+
+.pollOptionSelected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.pollOptionVoted {
+  background: #eff6ff;
+}
+
+.pollOptionTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pollOptionText {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.pollOptionValue {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.pollProgressTrack {
+  margin-top: 10px;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #e5edf5;
+  overflow: hidden;
+}
+
+.pollProgressValue {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #60a5fa 0%, #34d399 100%);
+}
+
+.pollFooter {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pollHint {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.pollSubmitButton {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb 0%, #14b8a6 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pollSubmitButton:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+}
+
 /* 操作按钮区域 */
 .actions {
   display: flex;
@@ -289,4 +450,23 @@
   background-color: rgba(239, 68, 68, 0.1);
   border-color: #ef4444;
   color: #ef4444;
+}
+
+@media (max-width: 720px) {
+  .pollHeader,
+  .pollFooter,
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pollOptionTop {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .authorActions {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
 }

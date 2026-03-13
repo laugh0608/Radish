@@ -4,6 +4,7 @@ import { useUserStore } from '@/stores/userStore';
 import type { TFunction } from 'i18next';
 import {
   publishPost,
+  votePoll,
   createComment,
   likePost,
   toggleCommentLike,
@@ -16,6 +17,7 @@ import {
   getCommentEditHistory,
   type CommentNode,
   type PostDetail,
+  type CreatePollRequest,
   type PostEditHistory,
   type CommentEditHistory
 } from '@/api/forum';
@@ -57,7 +59,14 @@ export interface ForumActionsHandlers {
 
   // 帖子操作
   handleSelectPost: (postId: number) => Promise<void>;
-  handlePublishPost: (title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
+  handlePublishPost: (
+    title: string,
+    content: string,
+    categoryId: number,
+    tagNames: string[],
+    poll?: CreatePollRequest | null
+  ) => Promise<void>;
+  handleVotePoll: (optionId: number) => Promise<void>;
   handleLikePost: (postId: number) => Promise<void>;
   handleEditPost: (postId: number) => void;
   handleViewPostHistory: (postId: number) => Promise<void>;
@@ -241,7 +250,13 @@ export const useForumActions = (
   };
 
   // 发布帖子
-  const handlePublishPost = async (title: string, content: string, categoryId: number, tagNames: string[]) => {
+  const handlePublishPost = async (
+    title: string,
+    content: string,
+    categoryId: number,
+    tagNames: string[],
+    poll?: CreatePollRequest | null
+  ) => {
     if (categoryId <= 0) {
       const message = '请先选择分类';
       setError(message);
@@ -268,7 +283,8 @@ export const useForumActions = (
           title,
           content,
           categoryId,
-          tagNames: normalizedTagNames
+          tagNames: normalizedTagNames,
+          poll: poll ?? undefined
         },
         t
       );
@@ -276,6 +292,49 @@ export const useForumActions = (
       setCurrentPage(1);
       await loadPosts();
       await handleSelectPost(postId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      throw err;
+    }
+  };
+
+  const handleVotePoll = async (optionId: number) => {
+    if (!selectedPost?.voId) {
+      const message = '请先选择要投票的帖子';
+      setError(message);
+      throw new Error(message);
+    }
+
+    if (!isAuthenticated) {
+      const message = '请先登录后再投票';
+      setError(message);
+      throw new Error(message);
+    }
+
+    setError(null);
+    try {
+      const latestPoll = await votePoll(
+        {
+          postId: selectedPost.voId,
+          optionId
+        },
+        t
+      );
+
+      setSelectedPost((current) =>
+        current && current.voId === selectedPost.voId
+          ? {
+              ...current,
+              voHasPoll: true,
+              voPollTotalVoteCount: latestPoll.voTotalVoteCount,
+              voPollIsClosed: latestPoll.voIsClosed,
+              voPoll: latestPoll
+            }
+          : current
+      );
+
+      await loadPosts();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -679,6 +738,7 @@ export const useForumActions = (
     setIsEditModalOpen,
     handleSelectPost,
     handlePublishPost,
+    handleVotePoll,
     handleLikePost,
     handleEditPost,
     handleViewPostHistory,

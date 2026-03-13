@@ -23,6 +23,12 @@ import type {
   VoPagedResult,
   PageModel,
   PublishPostRequest,
+  CreatePollRequest,
+  CreatePollOptionRequest,
+  VotePollRequest,
+  PostPoll,
+  PostPollOption,
+  PollVoteResult,
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
@@ -55,6 +61,12 @@ export type {
   VoPagedResult,
   PageModel,
   PublishPostRequest,
+  CreatePollRequest,
+  CreatePollOptionRequest,
+  VotePollRequest,
+  PostPoll,
+  PostPollOption,
+  PollVoteResult,
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
@@ -168,6 +180,35 @@ export async function getPostById(postId: number, t: TFunction): Promise<PostDet
       throw new Error(response.message || '帖子不存在或已被删除');
     }
     throw new Error(response.message || '加载帖子详情失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 按帖子获取投票详情
+ */
+export async function getPollByPostId(postId: number, t: TFunction): Promise<PollVoteResult> {
+  const response = await apiGet<PollVoteResult>(
+    `/api/v1/Poll/GetByPostId?postId=${postId}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载投票详情失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 提交投票
+ */
+export async function votePoll(request: VotePollRequest, t: TFunction): Promise<PostPoll> {
+  const response = await apiPost<PostPoll>('/api/v1/Poll/Vote', request, { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '投票失败');
   }
 
   return response.data;

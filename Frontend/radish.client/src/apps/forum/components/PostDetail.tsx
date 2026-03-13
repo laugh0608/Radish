@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import type { PostDetail as PostDetailType, ReactionSummaryVo } from '@/api/forum';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
@@ -18,6 +18,7 @@ interface PostDetailProps {
   displayTimeZone: string;
   isLiked?: boolean;
   onLike?: (postId: number) => void;
+  onVotePoll?: (optionId: number) => Promise<void>;
   isAuthenticated?: boolean;
   currentUserId?: number;
   onEdit?: (postId: number) => void;
@@ -41,6 +42,7 @@ export const PostDetail = ({
   displayTimeZone,
   isLiked = false,
   onLike,
+  onVotePoll,
   isAuthenticated = false,
   currentUserId = 0,
   onEdit,
@@ -64,9 +66,16 @@ export const PostDetail = ({
         .filter(Boolean)
     : [];
   const tagList = post?.voTagNames && post.voTagNames.length > 0 ? post.voTagNames : parsedTags;
+  const [selectedOptionId, setSelectedOptionId] = useState<number | null>(post?.voPoll?.voSelectedOptionId ?? null);
+  const [isVoting, setIsVoting] = useState(false);
 
   const isAuthor = !!post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
   const showFollowAction = isAuthenticated && !!post && !isAuthor && post.voAuthorId > 0;
+
+  useEffect(() => {
+    setSelectedOptionId(post?.voPoll?.voSelectedOptionId ?? null);
+  }, [post?.voId, post?.voPoll?.voSelectedOptionId]);
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -84,6 +93,31 @@ export const PostDetail = ({
       </div>
     );
   }
+
+  const poll = post.voPoll;
+  const canSubmitPoll = !!poll && !poll.voIsClosed && !poll.voHasVoted && isAuthenticated;
+  const pollStatusText = !poll
+    ? ''
+    : poll.voIsClosed
+      ? '投票已结束'
+      : poll.voHasVoted
+        ? '你已投票，可查看实时结果'
+        : isAuthenticated
+          ? '选择一个选项后即可提交'
+          : '登录后可参与投票';
+
+  const handleVoteSubmit = async () => {
+    if (!canSubmitPoll || !selectedOptionId || !onVotePoll) {
+      return;
+    }
+
+    setIsVoting(true);
+    try {
+      await onVotePoll(selectedOptionId);
+    } finally {
+      setIsVoting(false);
+    }
+  };
 
   return (
     <div className={styles.container}>
@@ -114,6 +148,71 @@ export const PostDetail = ({
               </span>
             ))}
           </div>
+        )}
+
+        {poll && (
+          <section className={styles.pollCard}>
+            <div className={styles.pollHeader}>
+              <div>
+                <div className={styles.pollTitleRow}>
+                  <span className={styles.pollBadge}>投票</span>
+                  <h5 className={styles.pollQuestion}>{poll.voQuestion}</h5>
+                </div>
+                <p className={styles.pollMeta}>
+                  共 {poll.voTotalVoteCount} 票
+                  {poll.voEndTime ? ` · 截止于 ${formatDateTimeByTimeZone(poll.voEndTime, displayTimeZone)}` : ' · 长期有效'}
+                </p>
+              </div>
+              <span className={`${styles.pollState} ${poll.voIsClosed ? styles.pollStateClosed : ''}`}>
+                {poll.voIsClosed ? '已截止' : poll.voHasVoted ? '已投票' : '进行中'}
+              </span>
+            </div>
+
+            <div className={styles.pollOptions}>
+              {poll.voOptions.map((option) => {
+                const isSelected = selectedOptionId === option.voOptionId;
+                const isVotedOption = poll.voSelectedOptionId === option.voOptionId;
+                return (
+                  <button
+                    key={option.voOptionId}
+                    type="button"
+                    className={`${styles.pollOption} ${isSelected ? styles.pollOptionSelected : ''} ${isVotedOption ? styles.pollOptionVoted : ''}`}
+                    onClick={() => {
+                      if (canSubmitPoll) {
+                        setSelectedOptionId(option.voOptionId);
+                      }
+                    }}
+                    disabled={!canSubmitPoll}
+                  >
+                    <div className={styles.pollOptionTop}>
+                      <span className={styles.pollOptionText}>{option.voOptionText}</span>
+                      <span className={styles.pollOptionValue}>
+                        {option.voVoteCount} 票 · {option.voVotePercent.toFixed(2)}%
+                      </span>
+                    </div>
+                    <div className={styles.pollProgressTrack}>
+                      <span
+                        className={styles.pollProgressValue}
+                        style={{ width: `${Math.max(0, Math.min(option.voVotePercent, 100))}%` }}
+                      />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className={styles.pollFooter}>
+              <span className={styles.pollHint}>{pollStatusText}</span>
+              <button
+                type="button"
+                className={styles.pollSubmitButton}
+                onClick={handleVoteSubmit}
+                disabled={!canSubmitPoll || !selectedOptionId || isVoting}
+              >
+                {isVoting ? '提交中...' : '提交投票'}
+              </button>
+            </div>
+          </section>
         )}
 
         <div className={styles.actions}>

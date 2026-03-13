@@ -511,6 +511,7 @@ export const ForumApp = () => {
                   dataState.resetCommentSort();
                 }}
                 onLike={actionsState.handleLikePost}
+                onVotePoll={actionsState.handleVotePoll}
                 onEdit={actionsState.handleEditPost}
                 onViewPostHistory={actionsState.handleViewPostHistory}
                 onDelete={actionsState.handleDeletePost}

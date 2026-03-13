@@ -66,6 +66,65 @@ export interface PostInteractor {
 }
 
 /**
+ * 投票选项 Vo
+ */
+export interface PostPollOption {
+  voOptionId: number;
+  voOptionText: string;
+  voSortOrder: number;
+  voVoteCount: number;
+  voVotePercent: number;
+}
+
+/**
+ * 帖子投票 Vo
+ */
+export interface PostPoll {
+  voPollId: number;
+  voPostId: number;
+  voQuestion: string;
+  voEndTime?: string | null;
+  voIsClosed: boolean;
+  voTotalVoteCount: number;
+  voHasVoted: boolean;
+  voSelectedOptionId?: number | null;
+  voOptions: PostPollOption[];
+}
+
+/**
+ * 投票结果 Vo
+ */
+export interface PollVoteResult {
+  voPostId: number;
+  voPoll?: PostPoll | null;
+}
+
+/**
+ * 创建投票请求
+ */
+export interface CreatePollRequest {
+  question: string;
+  endTime?: string | null;
+  options: CreatePollOptionRequest[];
+}
+
+/**
+ * 创建投票选项请求
+ */
+export interface CreatePollOptionRequest {
+  optionText: string;
+  sortOrder?: number;
+}
+
+/**
+ * 提交投票请求
+ */
+export interface VotePollRequest {
+  postId: number;
+  optionId: number;
+}
+
+/**
  * 帖子列表项 Vo
  */
 export interface PostItem {
@@ -86,6 +145,9 @@ export interface PostItem {
   voIsTop?: boolean;
   voIsEssence?: boolean;
   voIsLocked?: boolean;
+  voHasPoll?: boolean;
+  voPollTotalVoteCount?: number;
+  voPollIsClosed?: boolean;
   voCreateTime?: string;
   voUpdateTime?: string;
 }
@@ -105,6 +167,7 @@ export interface PostDetail {
   voCategoryName?: string | null;
   voAuthorId: number;
   voAuthorName?: string | null;
+  voAuthorAvatarUrl?: string | null;
   voTags?: string;
   voTagNames?: string[];
   voViewCount?: number;
@@ -113,6 +176,10 @@ export interface PostDetail {
   voIsTop?: boolean;
   voIsEssence?: boolean;
   voIsLocked?: boolean;
+  voHasPoll?: boolean;
+  voPollTotalVoteCount?: number;
+  voPollIsClosed?: boolean;
+  voPoll?: PostPoll | null;
   voCreateTime?: string;
   voUpdateTime?: string;
 }
@@ -261,6 +328,7 @@ export interface PublishPostRequest {
   content: string;
   categoryId: number;
   tagNames: string[];
+  poll?: CreatePollRequest | null;
 }
 
 /**

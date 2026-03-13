@@ -125,6 +125,11 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
             {remainingTagCount > 0 && <span className={styles.moreTag}>+{remainingTagCount}</span>}
             {post.voIsEssence && <span className={styles.statusChip}>精华</span>}
             {post.voIsTop && <span className={styles.statusChip}>置顶</span>}
+            {post.voHasPoll && (
+              <span className={`${styles.statusChip} ${styles.pollChip}`}>
+                投票 {post.voPollTotalVoteCount ?? 0}
+              </span>
+            )}
           </div>
 
           {godCommentPreview ? (
@@ -169,6 +174,12 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
               <span className={styles.statLabel}>阅</span>
               <span className={styles.statValue}>{post.voViewCount || 0}</span>
             </div>
+            {post.voHasPoll && (
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>{post.voPollIsClosed ? '票' : '投'}</span>
+                <span className={styles.statValue}>{post.voPollTotalVoteCount || 0}</span>
+              </div>
+            )}
           </div>
 
           <div className={styles.interactionRow}>

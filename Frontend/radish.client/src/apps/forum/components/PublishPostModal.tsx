@@ -3,7 +3,7 @@ import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
-import { getAllTags, getOidcLoginUrl, type Category } from '@/api/forum';
+import { getAllTags, getOidcLoginUrl, type Category, type CreatePollRequest } from '@/api/forum';
 import { useUserStore } from '@/stores/userStore';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -15,13 +15,22 @@ interface PublishPostModalProps {
   categories: Category[];
   selectedCategoryId: number | null;
   onClose: () => void;
-  onPublish: (title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
+  onPublish: (
+    title: string,
+    content: string,
+    categoryId: number,
+    tagNames: string[],
+    poll?: CreatePollRequest | null
+  ) => Promise<void>;
 }
 
 const DRAFT_STORAGE_KEY = 'forum_post_draft';
 const MIN_TAG_COUNT = 1;
 const MAX_TAG_COUNT = 5;
+const MIN_POLL_OPTION_COUNT = 2;
+const MAX_POLL_OPTION_COUNT = 6;
 const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;
+const DEFAULT_POLL_OPTIONS = ['', ''];
 
 const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
@@ -60,6 +69,11 @@ export const PublishPostModal = ({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagError, setTagError] = useState<string | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [enablePoll, setEnablePoll] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState('');
+  const [pollEndTime, setPollEndTime] = useState('');
+  const [pollOptions, setPollOptions] = useState<string[]>([...DEFAULT_POLL_OPTIONS]);
+  const [pollError, setPollError] = useState<string | null>(null);
   const roles = useUserStore(state => state.roles || []);
   const isAdmin = roles.some(role => {
     const normalized = role.trim().toLowerCase();
@@ -80,6 +94,12 @@ export const PublishPostModal = ({
             setContent(draft.content || '');
             setSelectedTags(Array.isArray(draft.tags) ? draft.tags : []);
             setCategoryId(typeof draft.categoryId === 'number' ? draft.categoryId : selectedCategoryId);
+            setEnablePoll(Boolean(draft.poll?.enabled));
+            setPollQuestion(draft.poll?.question || '');
+            setPollEndTime(draft.poll?.endTime || '');
+            setPollOptions(Array.isArray(draft.poll?.options) && draft.poll.options.length >= MIN_POLL_OPTION_COUNT
+              ? draft.poll.options
+              : [...DEFAULT_POLL_OPTIONS]);
           } else {
             setCategoryId(selectedCategoryId);
           }
@@ -98,13 +118,25 @@ export const PublishPostModal = ({
       try {
         localStorage.setItem(
           DRAFT_STORAGE_KEY,
-          JSON.stringify({ title, content, tags: selectedTags, categoryId, savedAt: Date.now() })
+          JSON.stringify({
+            title,
+            content,
+            tags: selectedTags,
+            categoryId,
+            poll: {
+              enabled: enablePoll,
+              question: pollQuestion,
+              endTime: pollEndTime,
+              options: pollOptions
+            },
+            savedAt: Date.now()
+          })
         );
       } catch (err) {
         log.error('Failed to save draft:', err);
       }
     }
-  }, [title, content, selectedTags, categoryId, isOpen]);
+  }, [title, content, selectedTags, categoryId, enablePoll, pollQuestion, pollEndTime, pollOptions, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -189,9 +221,50 @@ export const PublishPostModal = ({
       return;
     }
 
+    let pollRequest: CreatePollRequest | null = null;
+    if (enablePoll) {
+      const normalizedQuestion = pollQuestion.trim();
+      if (!normalizedQuestion) {
+        setPollError('投票问题不能为空');
+        return;
+      }
+
+      const normalizedOptions = pollOptions
+        .map(option => option.trim())
+        .filter(Boolean);
+
+      if (normalizedOptions.length < MIN_POLL_OPTION_COUNT || normalizedOptions.length > MAX_POLL_OPTION_COUNT) {
+        setPollError(`投票选项数量必须在 ${MIN_POLL_OPTION_COUNT} 到 ${MAX_POLL_OPTION_COUNT} 个之间`);
+        return;
+      }
+
+      const uniqueOptions = new Set(normalizedOptions.map(option => option.toLowerCase()));
+      if (uniqueOptions.size !== normalizedOptions.length) {
+        setPollError('投票选项不能重复');
+        return;
+      }
+
+      if (pollEndTime) {
+        const endTime = new Date(pollEndTime);
+        if (Number.isNaN(endTime.getTime()) || endTime.getTime() <= Date.now()) {
+          setPollError('投票截止时间必须晚于当前时间');
+          return;
+        }
+      }
+
+      pollRequest = {
+        question: normalizedQuestion,
+        endTime: pollEndTime ? new Date(pollEndTime).toISOString() : null,
+        options: normalizedOptions.map((optionText, index) => ({
+          optionText,
+          sortOrder: index + 1
+        }))
+      };
+    }
+
     setIsSubmitting(true);
     try {
-      await onPublish(title, content, categoryId, selectedTags);
+      await onPublish(title, content, categoryId, selectedTags, pollRequest);
       // 发布成功后清空表单和草稿
       setTitle('');
       setContent('');
@@ -200,6 +273,11 @@ export const PublishPostModal = ({
       setCategoryId(selectedCategoryId);
       setTagError(null);
       setCategoryError(null);
+      setEnablePoll(false);
+      setPollQuestion('');
+      setPollEndTime('');
+      setPollOptions([...DEFAULT_POLL_OPTIONS]);
+      setPollError(null);
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       onClose();
     } catch (err) {
@@ -261,8 +339,8 @@ export const PublishPostModal = ({
     <div className={styles.footer}>
       <button
         onClick={handleSubmit}
-        disabled={!title.trim() || !content.trim() || !categoryId || selectedTags.length < MIN_TAG_COUNT || isSubmitting}
-        className={styles.publishButton}
+      disabled={!title.trim() || !content.trim() || !categoryId || selectedTags.length < MIN_TAG_COUNT || isSubmitting}
+      className={styles.publishButton}
       >
         {isSubmitting ? '发布中...' : '发布帖子'}
       </button>
@@ -271,6 +349,32 @@ export const PublishPostModal = ({
       </button>
     </div>
   );
+
+  const updatePollOption = (index: number, value: string) => {
+    setPollOptions((current) => current.map((item, itemIndex) => (itemIndex === index ? value : item)));
+    if (pollError) {
+      setPollError(null);
+    }
+  };
+
+  const addPollOption = () => {
+    if (pollOptions.length >= MAX_POLL_OPTION_COUNT) {
+      return;
+    }
+
+    setPollOptions((current) => [...current, '']);
+  };
+
+  const removePollOption = (index: number) => {
+    if (pollOptions.length <= MIN_POLL_OPTION_COUNT) {
+      return;
+    }
+
+    setPollOptions((current) => current.filter((_, itemIndex) => itemIndex !== index));
+    if (pollError) {
+      setPollError(null);
+    }
+  };
 
   const editorToolbarExtras = (
     <div className={styles.editorToggles}>
@@ -439,6 +543,94 @@ export const PublishPostModal = ({
           )}
 
           {tagError && <p className={styles.tagError}>{tagError}</p>}
+        </div>
+
+        <div className={styles.pollSection}>
+          <div className={styles.pollSectionHeader}>
+            <div>
+              <span className={styles.pollSectionLabel}>附带投票</span>
+              <p className={styles.pollSectionHint}>支持 2 到 6 个单选项，适合快速收集社区反馈</p>
+            </div>
+            <button
+              type="button"
+              className={`${styles.pollToggle} ${enablePoll ? styles.pollToggleActive : ''}`}
+              onClick={() => {
+                setEnablePoll((current) => !current);
+                setPollError(null);
+              }}
+            >
+              {enablePoll ? '已开启' : '开启'}
+            </button>
+          </div>
+
+          {enablePoll && (
+            <div className={styles.pollFields}>
+              <input
+                type="text"
+                placeholder="投票问题，例如：本周论坛最想先补什么？"
+                value={pollQuestion}
+                onChange={(event) => {
+                  setPollQuestion(event.target.value);
+                  if (pollError) {
+                    setPollError(null);
+                  }
+                }}
+                className={styles.pollQuestionInput}
+                maxLength={200}
+              />
+
+              <div className={styles.pollOptionsList}>
+                {pollOptions.map((option, index) => (
+                  <div key={`poll-option-${index}`} className={styles.pollOptionRow}>
+                    <span className={styles.pollOptionIndex}>{index + 1}</span>
+                    <input
+                      type="text"
+                      placeholder={`选项 ${index + 1}`}
+                      value={option}
+                      onChange={(event) => updatePollOption(index, event.target.value)}
+                      className={styles.pollOptionInput}
+                      maxLength={100}
+                    />
+                    <button
+                      type="button"
+                      className={styles.pollOptionRemove}
+                      onClick={() => removePollOption(index)}
+                      disabled={pollOptions.length <= MIN_POLL_OPTION_COUNT}
+                    >
+                      删除
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className={styles.pollControls}>
+                <button
+                  type="button"
+                  className={styles.pollAddButton}
+                  onClick={addPollOption}
+                  disabled={pollOptions.length >= MAX_POLL_OPTION_COUNT}
+                >
+                  添加选项
+                </button>
+                <label className={styles.pollEndTimeLabel}>
+                  <span>截止时间</span>
+                  <input
+                    type="datetime-local"
+                    value={pollEndTime}
+                    onChange={(event) => {
+                      setPollEndTime(event.target.value);
+                      if (pollError) {
+                        setPollError(null);
+                      }
+                    }}
+                    className={styles.pollEndTimeInput}
+                  />
+                </label>
+              </div>
+
+              {pollError && <p className={styles.pollError}>{pollError}</p>}
+            </div>
+          )}
         </div>
 
         <div className={styles.editorWrapper}>
