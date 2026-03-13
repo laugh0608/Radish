@@ -115,6 +115,102 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     }
 
     /// <summary>
+    /// 批量回填帖子列表所需的轻量元数据
+    /// </summary>
+    public async Task FillPostListMetadataAsync(List<PostVo> posts)
+    {
+        if (posts.Count == 0)
+        {
+            return;
+        }
+
+        var postIds = posts
+            .Select(post => post.VoId)
+            .Where(postId => postId > 0)
+            .Distinct()
+            .ToList();
+
+        if (postIds.Count == 0)
+        {
+            return;
+        }
+
+        var categoryIds = posts
+            .Where(post => post.VoCategoryId > 0)
+            .Select(post => post.VoCategoryId)
+            .Distinct()
+            .ToList();
+
+        Dictionary<long, string> categoryNameMap = new();
+        if (categoryIds.Count > 0)
+        {
+            categoryNameMap = (await _categoryRepository.QueryAsync(category =>
+                    categoryIds.Contains(category.Id) &&
+                    category.IsEnabled &&
+                    !category.IsDeleted))
+                .GroupBy(category => category.Id)
+                .ToDictionary(group => group.Key, group => group.First().Name);
+        }
+
+        var postTags = await _postTagRepository.QueryAsync(postTag => postIds.Contains(postTag.PostId));
+        var tagIds = postTags
+            .Select(postTag => postTag.TagId)
+            .Distinct()
+            .ToList();
+
+        Dictionary<long, string> tagNameMap = new();
+        if (tagIds.Count > 0)
+        {
+            tagNameMap = (await _tagRepository.QueryAsync(tag =>
+                    tagIds.Contains(tag.Id) &&
+                    tag.IsEnabled &&
+                    !tag.IsDeleted))
+                .GroupBy(tag => tag.Id)
+                .ToDictionary(group => group.Key, group => group.First().Name);
+        }
+
+        var tagTextMap = postTags
+            .GroupBy(postTag => postTag.PostId)
+            .ToDictionary(
+                group => group.Key,
+                group => string.Join(", ",
+                    group.Select(postTag => tagNameMap.GetValueOrDefault(postTag.TagId))
+                        .Where(tagName => !string.IsNullOrWhiteSpace(tagName))));
+
+        var pollMap = (await _postPollRepository.QueryAsync(poll =>
+                postIds.Contains(poll.PostId) &&
+                !poll.IsDeleted))
+            .GroupBy(poll => poll.PostId)
+            .ToDictionary(group => group.Key, group => group.First());
+
+        foreach (var post in posts)
+        {
+            if (string.IsNullOrWhiteSpace(post.VoCategoryName) &&
+                categoryNameMap.TryGetValue(post.VoCategoryId, out var categoryName))
+            {
+                post.VoCategoryName = categoryName;
+            }
+
+            if (tagTextMap.TryGetValue(post.VoId, out var tags))
+            {
+                post.VoTags = tags;
+            }
+
+            if (!pollMap.TryGetValue(post.VoId, out var poll))
+            {
+                post.VoHasPoll = false;
+                post.VoPollTotalVoteCount = 0;
+                post.VoPollIsClosed = false;
+                continue;
+            }
+
+            post.VoHasPoll = true;
+            post.VoPollTotalVoteCount = poll.TotalVoteCount;
+            post.VoPollIsClosed = IsPollClosed(poll);
+        }
+    }
+
+    /// <summary>
     /// 发布帖子
     /// </summary>
     [UseTran]

@@ -179,31 +179,7 @@ public class PostController : ControllerBase
         // 构建分页模型
         if (data.Any())
         {
-            var viewerUserId = Current.UserId > 0 ? (long?)Current.UserId : null;
-            var detailTasks = data.Select(post => _postService.GetPostDetailAsync(post.VoId, viewerUserId));
-            var detailResults = await Task.WhenAll(detailTasks);
-            var detailMap = detailResults
-                .Where(detail => detail != null)
-                .ToDictionary(detail => detail!.VoId, detail => detail!);
-
-            foreach (var post in data)
-            {
-                if (!detailMap.TryGetValue(post.VoId, out var detail))
-                {
-                    continue;
-                }
-
-                post.VoTags = detail.VoTags;
-                if (string.IsNullOrWhiteSpace(post.VoCategoryName))
-                {
-                    post.VoCategoryName = detail.VoCategoryName;
-                }
-
-                post.VoHasPoll = detail.VoHasPoll;
-                post.VoPollTotalVoteCount = detail.VoPollTotalVoteCount;
-                post.VoPollIsClosed = detail.VoPollIsClosed;
-            }
-
+            await _postService.FillPostListMetadataAsync(data);
             await FillPostAvatarAndInteractorsAsync(data);
         }
 

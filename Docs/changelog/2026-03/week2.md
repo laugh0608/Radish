@@ -186,6 +186,9 @@
 - **列表识别已补轻量入口**：帖子卡片已增加投票帖标识与票数摘要，维持列表页轻展示、详情页完整交互的结构。
 - **前端构建恢复通过**：`radish.client` 构建已通过，先前 `PostDetail.tsx` 缺少 `voAuthorAvatarUrl` 类型定义的问题已一并收口。
 
-### 已知后续优化点
+### 论坛列表投票摘要查询完成收口
 
-- **帖子列表投票摘要存在 `N+1` 风险**：当前列表仍通过逐条补详情回填投票摘要，已同步记入规划，待投票 MVP 验收后单独收口查询聚合。
+- **列表查询改为批量回填**：`PostController.GetList` 不再逐条调用 `GetPostDetailAsync`，改由 `PostService.FillPostListMetadataAsync` 按页批量补齐分类名、标签与投票轻量摘要。
+- **`N+1` 风险已消除**：帖子列表投票摘要不再沿用“逐条补详情”路径，列表接口重新回到“轻量摘要、详情完整”的设计边界。
+- **最小回归已补**：新增 `PostControllerTest`，覆盖列表接口使用批量回填且不再逐条查询帖子详情的行为。
+- **文档状态已同步**：`development-plan`、`planning/current` 与 `forum-poll-mvp` 已更新为“列表查询优化完成，下一步转入补测试与 MVP 验收”。

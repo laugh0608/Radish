@@ -17,6 +17,12 @@ public interface IPostService : IBaseService<Post, PostVo>
     Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null);
 
     /// <summary>
+    /// 批量回填帖子列表所需的轻量元数据
+    /// </summary>
+    /// <param name="posts">帖子列表</param>
+    Task FillPostListMetadataAsync(List<PostVo> posts);
+
+    /// <summary>
     /// 发布帖子
     /// </summary>
     /// <param name="post">帖子实体</param>
