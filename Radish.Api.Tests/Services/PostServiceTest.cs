@@ -83,7 +83,7 @@ public class PostServiceTest
                     PostId = 1001,
                     TotalVoteCount = 9,
                     IsClosed = false,
-                    EndTime = DateTime.Now.AddHours(2)
+                    EndTime = DateTime.UtcNow.AddHours(2)
                 }
             ]);
 
@@ -274,7 +274,7 @@ public class PostServiceTest
             new CreatePollDto
             {
                 Question = "  中午吃什么？  ",
-                EndTime = DateTime.Now.AddHours(4),
+                EndTime = DateTime.UtcNow.AddHours(4),
                 Options =
                 [
                     new PollOptionDto { OptionText = "  盖饭  " },
@@ -289,6 +289,133 @@ public class PostServiceTest
         postRepository.Verify(repository => repository.AddAsync(It.IsAny<Post>()), Times.Once);
         postTagRepository.Verify(repository => repository.AddAsync(It.IsAny<PostTag>()), Times.Exactly(2));
         tagRepository.Verify(repository => repository.UpdateAsync(It.IsAny<Tag>()), Times.Exactly(2));
+        postPollRepository.Verify(repository => repository.AddAsync(It.IsAny<PostPoll>()), Times.Once);
+        postPollOptionRepository.Verify(repository => repository.AddRangeAsync(It.IsAny<List<PostPollOption>>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_AcceptUtcEndTime_A_FewMinutesInFuture()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var userPostLikeRepository = new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict);
+        var postTagRepository = new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict);
+        var categoryRepository = new Mock<IBaseRepository<Category>>(MockBehavior.Strict);
+        var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
+        var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
+        var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
+        var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var tagService = new Mock<ITagService>(MockBehavior.Strict);
+        var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var dedupService = new Mock<INotificationDedupService>(MockBehavior.Strict);
+        var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
+        var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        var tags = new List<Tag>
+        {
+            new("投票")
+            {
+                Id = 501,
+                IsEnabled = true,
+                IsDeleted = false
+            }
+        };
+
+        var utcEndTime = DateTime.UtcNow.AddMinutes(3);
+
+        postRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<Post>()))
+            .ReturnsAsync(1002);
+        postRepository
+            .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
+            .ReturnsAsync(2);
+
+        postTagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostTag, bool>>?>()))
+            .ReturnsAsync(new List<PostTag>());
+        postTagRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<PostTag>()))
+            .ReturnsAsync(9103);
+
+        tagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Tag, bool>>?>()))
+            .ReturnsAsync((Expression<Func<Tag, bool>>? expression) =>
+            {
+                if (expression == null)
+                {
+                    return tags;
+                }
+
+                var predicate = expression.Compile();
+                return tags.Where(predicate).ToList();
+            });
+        tagRepository
+            .Setup(repository => repository.UpdateAsync(It.IsAny<Tag>()))
+            .ReturnsAsync(true);
+
+        postPollRepository
+            .Setup(repository => repository.AddAsync(It.Is<PostPoll>(poll =>
+                poll.PostId == 1002 &&
+                poll.EndTime == utcEndTime)))
+            .ReturnsAsync(2002);
+
+        postPollOptionRepository
+            .Setup(repository => repository.AddRangeAsync(It.IsAny<List<PostPollOption>>()))
+            .ReturnsAsync(2);
+
+        experienceService
+            .Setup(service => service.GrantExperienceAsync(
+                It.IsAny<long>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<long?>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync(true);
+
+        var service = new PostService(
+            mapper.Object,
+            postRepository.Object,
+            userPostLikeRepository.Object,
+            postTagRepository.Object,
+            categoryRepository.Object,
+            tagRepository.Object,
+            postPollRepository.Object,
+            postPollOptionRepository.Object,
+            postPollVoteRepository.Object,
+            tagService.Object,
+            coinRewardService.Object,
+            notificationService.Object,
+            dedupService.Object,
+            experienceService.Object,
+            postEditHistoryRepository.Object,
+            Options.Create(new ForumEditHistoryOptions()));
+
+        var post = new Post(new PostInitializationOptions("短时投票帖", "三分钟后截止")
+        {
+            AuthorId = 9527,
+            AuthorName = "Tester",
+            TenantId = 9,
+            IsPublished = true
+        });
+
+        var result = await service.PublishPostAsync(
+            post,
+            new CreatePollDto
+            {
+                Question = "三分钟后吃什么？",
+                EndTime = utcEndTime,
+                Options =
+                [
+                    new PollOptionDto { OptionText = "米饭" },
+                    new PollOptionDto { OptionText = "面" }
+                ]
+            },
+            ["投票"],
+            allowCreateTag: false);
+
+        Assert.Equal(1002, result);
         postPollRepository.Verify(repository => repository.AddAsync(It.IsAny<PostPoll>()), Times.Once);
         postPollOptionRepository.Verify(repository => repository.AddRangeAsync(It.IsAny<List<PostPollOption>>()), Times.Once);
     }

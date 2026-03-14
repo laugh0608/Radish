@@ -165,7 +165,7 @@ public class PostPollServiceTest
                 Id = 2001,
                 PostId = 1001,
                 Question = "问题",
-                EndTime = DateTime.Now.AddMinutes(-1)
+                EndTime = DateTime.UtcNow.AddMinutes(-1)
             });
 
         var service = CreateService(postService, postRepository, postPollRepository, postPollOptionRepository, postPollVoteRepository);
@@ -199,7 +199,7 @@ public class PostPollServiceTest
                 Id = 2001,
                 PostId = 1001,
                 Question = "问题",
-                EndTime = DateTime.Now.AddHours(1)
+                EndTime = DateTime.UtcNow.AddHours(1)
             });
         postPollOptionRepository
             .Setup(r => r.QueryFirstAsync(It.IsAny<System.Linq.Expressions.Expression<Func<PostPollOption, bool>>?>()))

@@ -112,7 +112,7 @@ public class PostPollService : IPostPollService
         }
 
         var operatorName = string.IsNullOrWhiteSpace(userName) ? $"User-{userId}" : userName.Trim();
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
 
         await _postPollVoteRepository.AddAsync(new PostPollVote
         {
@@ -150,6 +150,6 @@ public class PostPollService : IPostPollService
 
     private static bool IsPollClosed(PostPoll poll)
     {
-        return poll.IsClosed || (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.Now);
+        return poll.IsClosed || (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow);
     }
 }

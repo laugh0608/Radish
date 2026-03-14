@@ -366,7 +366,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             throw new ArgumentException("投票问题不能为空", nameof(poll));
         }
 
-        if (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.Now)
+        if (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow)
         {
             throw new ArgumentException("投票截止时间必须晚于当前时间", nameof(poll));
         }
@@ -405,7 +405,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
     private static bool IsPollClosed(PostPoll poll)
     {
-        return poll.IsClosed || (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.Now);
+        return poll.IsClosed || (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow);
     }
 
     private static List<PollOptionDto> NormalizePollOptionsOrThrow(List<PollOptionDto>? options)
