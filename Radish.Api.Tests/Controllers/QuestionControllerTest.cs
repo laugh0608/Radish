@@ -96,6 +96,38 @@ public class QuestionControllerTest
     }
 
     [Fact]
+    public async Task Answer_Should_Return_Forbidden_When_PublishPermissionIsDenied()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+
+        moderationServiceMock
+            .Setup(service => service.GetPublishPermissionAsync(10001))
+            .ReturnsAsync(new ContentModerationPermissionVo
+            {
+                VoUserId = 10001,
+                VoCanPublish = false,
+                VoDenyReason = "当前状态无法发布内容"
+            });
+
+        var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
+
+        var result = await controller.Answer(new CreateAnswerDto
+        {
+            PostId = 9527,
+            Content = "这条回答不会被提交"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(403, result.StatusCode);
+        Assert.Contains("当前状态无法发布内容", result.MessageInfo);
+
+        postServiceMock.Verify(
+            service => service.AddAnswerAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<long>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task Accept_Should_Return_UpdatedQuestionDetail_When_RequestIsValid()
     {
         var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);

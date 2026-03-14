@@ -5,6 +5,9 @@
 @ForumPoll_OptionId = 在这里填入可投票选项的 optionId
 @ForumPoll_ExpiredPostId = 在这里填入已截止投票帖子的 postId
 @ForumPoll_ExpiredOptionId = 在这里填入已截止投票帖子的 optionId
+@ForumQuestion_PostId = 在这里填入问答帖的 postId
+@ForumQuestion_AnswerId = 在这里填入待采纳回答的 answerId
+@ForumQuestion_AnsweredKeyword = 论坛问答 MVP 验收帖
 
 ### WeatherForecast
 GET {{Api_HostAddress}}/api/v2/WeatherForecast/Get
@@ -444,6 +447,76 @@ Authorization: Bearer {{Access_Token}}
 {
   "postId": {{ForumPoll_ExpiredPostId}},
   "optionId": {{ForumPoll_ExpiredOptionId}}
+}
+
+### 14.11 论坛问答 MVP 验收建议顺序：
+# 1. 先执行“发布问答帖”，从 responseData 复制帖子 ID 到 @ForumQuestion_PostId
+# 2. 再执行“获取问答帖列表”和“获取问答帖详情”，确认列表回轻量问答摘要、详情回完整 VoQuestion
+# 3. 执行“提交回答（成功路径）”，从返回的 VoAnswers 中复制 answerId 到 @ForumQuestion_AnswerId
+# 4. 执行“提问者采纳回答（成功路径）”
+# 5. 再执行“重复采纳（预期失败）”与“普通帖提交回答（预期失败）”
+
+### 14.12 发布问答帖（成功路径）
+POST {{Gateway_HostAddress}}/api/v1/Post/Publish
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "title": "论坛问答 MVP 验收帖",
+  "content": "用于串联论坛问答 MVP 验收：列表识别、详情展示、回答提交与提问者采纳。",
+  "categoryId": 1,
+  "tagNames": ["问答", "验收"],
+  "isQuestion": true
+}
+
+### 14.13 获取问答帖列表（确认回轻量问答摘要）
+GET {{Gateway_HostAddress}}/api/v1/Post/GetList?keyword={{ForumQuestion_AnsweredKeyword}}&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 14.14 获取问答帖详情（确认返回完整 VoQuestion）
+GET {{Gateway_HostAddress}}/api/v1/Post/GetById/{{ForumQuestion_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 14.15 提交回答（成功路径）
+POST {{Gateway_HostAddress}}/api/v1/Question/Answer
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumQuestion_PostId}},
+  "content": "先检查配置、连接串和日志输出，再定位具体异常。"
+}
+
+### 14.16 提问者采纳回答（成功路径）
+POST {{Gateway_HostAddress}}/api/v1/Question/Accept
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumQuestion_PostId}},
+  "answerId": {{ForumQuestion_AnswerId}}
+}
+
+### 14.17 重复采纳回答（预期失败：当前问题已采纳答案）
+POST {{Gateway_HostAddress}}/api/v1/Question/Accept
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumQuestion_PostId}},
+  "answerId": {{ForumQuestion_AnswerId}}
+}
+
+### 14.18 普通帖提交回答（预期失败：当前帖子不是问答帖）
+POST {{Gateway_HostAddress}}/api/v1/Question/Answer
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": 1,
+  "content": "普通帖不应允许走问答回答接口。"
 }
 
 ###############################################################################
