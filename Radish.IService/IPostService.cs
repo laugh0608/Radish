@@ -23,6 +23,27 @@ public interface IPostService : IBaseService<Post, PostVo>
     Task FillPostListMetadataAsync(List<PostVo> posts);
 
     /// <summary>
+    /// 为问答帖提交回答
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="content">回答内容</param>
+    /// <param name="authorId">回答者 Id</param>
+    /// <param name="authorName">回答者名称</param>
+    /// <param name="tenantId">租户 Id</param>
+    /// <returns>最新问答详情</returns>
+    Task<PostQuestionVo> AddAnswerAsync(long postId, string content, long authorId, string authorName, long tenantId);
+
+    /// <summary>
+    /// 采纳问答帖中的回答
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="answerId">回答 Id</param>
+    /// <param name="operatorId">操作者 Id</param>
+    /// <param name="operatorName">操作者名称</param>
+    /// <returns>最新问答详情</returns>
+    Task<PostQuestionVo> AcceptAnswerAsync(long postId, long answerId, long operatorId, string operatorName);
+
+    /// <summary>
     /// 发布帖子
     /// </summary>
     /// <param name="post">帖子实体</param>
