@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import type { TFunction } from 'i18next';
+import { toast } from '@radish/ui/toast';
 import {
   publishPost,
   votePoll,
@@ -395,10 +396,12 @@ export const useForumActions = (
       );
 
       applyQuestionState(latestQuestion);
+      toast.success('回答已发布');
       await loadPosts();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
+      toast.error(message || '提交回答失败');
       throw err;
     }
   };
@@ -427,10 +430,12 @@ export const useForumActions = (
       );
 
       applyQuestionState(latestQuestion);
+      toast.success('答案已采纳');
       await loadPosts();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
+      toast.error(message || '采纳回答失败');
       throw err;
     }
   };

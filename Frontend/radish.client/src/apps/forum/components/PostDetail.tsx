@@ -99,6 +99,25 @@ export const PostDetail = ({
   const isQuestionPost = !!post?.voIsQuestion;
   const canAnswerQuestion = isAuthenticated && !isSubmittingAnswer;
 
+  const buildAvatarText = (name: string) => {
+    const source = name.trim();
+    if (!source) return '?';
+    return source.charAt(0).toUpperCase();
+  };
+
+  const buildAvatarStyle = (seed: string) => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i += 1) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    const hue = Math.abs(hash) % 360;
+    return {
+      backgroundColor: `hsl(${hue} 80% 92%)`,
+      color: `hsl(${hue} 45% 30%)`
+    };
+  };
+
   useEffect(() => {
     setSelectedOptionId(post?.voPoll?.voSelectedOptionId ?? null);
   }, [post?.voId, post?.voPoll?.voSelectedOptionId]);
@@ -347,9 +366,34 @@ export const PostDetail = ({
                       key={answer.voAnswerId}
                       className={`${styles.answerItem} ${answer.voIsAccepted ? styles.answerItemAccepted : ''}`}
                     >
+                      {answer.voIsAccepted && (
+                        <div className={styles.answerAcceptedBanner}>最佳答案</div>
+                      )}
                       <div className={styles.answerMeta}>
                         <div className={styles.answerAuthorBlock}>
-                          <span className={styles.answerAuthor}>{answer.voAuthorName || '匿名用户'}</span>
+                          <button
+                            type="button"
+                            className={styles.answerAuthorButton}
+                            onClick={() => onAuthorClick?.(answer.voAuthorId, answer.voAuthorName, answer.voAuthorAvatarUrl)}
+                            title={`查看 ${answer.voAuthorName || '匿名用户'} 的主页`}
+                          >
+                            <span
+                              className={styles.answerAvatar}
+                              style={answer.voAuthorAvatarUrl?.trim() ? undefined : buildAvatarStyle(answer.voAuthorName || '匿名用户')}
+                            >
+                              {answer.voAuthorAvatarUrl?.trim() ? (
+                                <img
+                                  src={answer.voAuthorAvatarUrl}
+                                  alt={answer.voAuthorName || '匿名用户'}
+                                  className={styles.answerAvatarImage}
+                                  loading="lazy"
+                                />
+                              ) : (
+                                buildAvatarText(answer.voAuthorName || '匿名用户')
+                              )}
+                            </span>
+                            <span className={styles.answerAuthor}>{answer.voAuthorName || '匿名用户'}</span>
+                          </button>
                           <span className={styles.answerTime}>
                             {formatDateTimeByTimeZone(answer.voCreateTime, displayTimeZone, '未知时间')}
                           </span>
