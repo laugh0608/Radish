@@ -14,18 +14,6 @@ internal static class DbMigrateInspection
         public bool IsReadyForSeed => !DatabaseFileMissing && MissingTables.Count == 0;
     }
 
-    private static readonly string[] SeedCoreTables =
-    {
-        "Role",
-        "ShopProductCategory",
-        "UserTimePreference",
-        "StickerGroup",
-        "Sticker",
-        "Reaction",
-        "WikiDocument",
-        "WikiDocumentRevision",
-    };
-
     public static SeedInspectionResult InspectSeedReadiness(IServiceProvider services, string? mainDbConnId)
     {
         var db = services.GetRequiredService<ISqlSugarClient>();
@@ -49,7 +37,8 @@ internal static class DbMigrateInspection
             }
         }
 
-        var missingTables = SeedCoreTables
+        var requiredTables = DbMigrateEntityRegistry.GetTableNamesForConfig(mainDbConnId);
+        var missingTables = requiredTables
             .Where(tableName => !probeDb.DbMaintenance.IsAnyTable(tableName, false))
             .ToList();
 

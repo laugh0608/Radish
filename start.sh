@@ -130,14 +130,16 @@ start_dbmigrate() {
     cd "$ROOT_DIR"
     echo
     echo "DbMigrate 命令说明："
-    echo "  init - 仅初始化数据库表结构（Code First）"
-    echo "  seed - 填充初始数据（如表不存在会自动执行 init）"
+    echo "  apply  - 推荐，自动补齐表结构并填充初始数据"
+    echo "  doctor - 只读检查当前环境与主库业务表"
+    echo "  init   - 高级命令，仅初始化数据库表结构（Code First）"
+    echo "  seed   - 高级命令，填充初始数据（如表不存在会自动执行 init）"
     echo
-    read -rp "请选择 DbMigrate 子命令 [init/seed] (默认 seed, 输入 q 取消): " migrate_cmd
-    if [[ -z "${migrate_cmd:-}" ]]; then migrate_cmd="seed"; fi
+    read -rp "请选择 DbMigrate 子命令 [apply/doctor/init/seed] (默认 apply, 输入 q 取消): " migrate_cmd
+    if [[ -z "${migrate_cmd:-}" ]]; then migrate_cmd="apply"; fi
     if [[ "$migrate_cmd" == "q" ]]; then echo "已取消执行 DbMigrate。"; return; fi
     case "$migrate_cmd" in
-      init|seed) invoke_step "dotnet run DbMigrate ($migrate_cmd, $CONFIGURATION)" dotnet run --project "$DBMIGRATE_PROJECT" -c "$CONFIGURATION" -- "$migrate_cmd" ;;
+      apply|doctor|init|seed) invoke_step "dotnet run DbMigrate ($migrate_cmd, $CONFIGURATION)" dotnet run --project "$DBMIGRATE_PROJECT" -c "$CONFIGURATION" -- "$migrate_cmd" ;;
       *) echo "未知 DbMigrate 子命令: $migrate_cmd" >&2; exit 1 ;;
     esac
   )

@@ -159,13 +159,21 @@ function Start-DbMigrate {
     try {
         Write-Host ""
         Write-Host "DbMigrate commands:"
-        Write-Host "  init - Initialize database schema only"
-        Write-Host "  seed - Seed initial data (auto-runs init if needed)"
+        Write-Host "  apply  - Recommended. Initialize schema and seed data"
+        Write-Host "  doctor - Read-only environment and table check"
+        Write-Host "  init   - Advanced. Initialize database schema only"
+        Write-Host "  seed   - Advanced. Seed initial data (auto-runs init if needed)"
         Write-Host ""
-        $cmd = Read-Host "Select DbMigrate command [init/seed] (default: seed, q to cancel)"
-        if ([string]::IsNullOrWhiteSpace($cmd)) { $cmd = "seed" }
+        $cmd = Read-Host "Select DbMigrate command [apply/doctor/init/seed] (default: apply, q to cancel)"
+        if ([string]::IsNullOrWhiteSpace($cmd)) { $cmd = "apply" }
         if ($cmd -eq "q") { Write-Host "DbMigrate cancelled."; return }
-        $arg = switch ($cmd) { "init" { "init" } "seed" { "seed" } default { Write-Error ("Unknown DbMigrate command: " + $cmd); exit 1 } }
+        $arg = switch ($cmd) {
+            "apply" { "apply" }
+            "doctor" { "doctor" }
+            "init" { "init" }
+            "seed" { "seed" }
+            default { Write-Error ("Unknown DbMigrate command: " + $cmd); exit 1 }
+        }
         Invoke-Step "dotnet run DbMigrate ($cmd, $Configuration)" { dotnet run --project $dbMigrateProjectPath -c $Configuration -- $arg }
     }
     finally { Pop-Location }

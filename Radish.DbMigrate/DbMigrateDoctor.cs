@@ -107,11 +107,11 @@ internal static class DbMigrateDoctor
 
             if (inspectionResult.MissingTables.Count == 0)
             {
-                Console.WriteLine("[Radish.DbMigrate] [Doctor] Seed 核心表检查：已齐全。");
+                Console.WriteLine("[Radish.DbMigrate] [Doctor] 主库业务表检查：已齐全。");
                 return;
             }
 
-            warnings.Add($"Seed 核心表缺失：{string.Join(", ", inspectionResult.MissingTables)}");
+            warnings.Add($"主库业务表缺失：{string.Join(", ", inspectionResult.MissingTables)}");
         }
         catch (Exception exception)
         {

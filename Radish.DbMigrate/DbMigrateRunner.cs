@@ -10,10 +10,14 @@ internal static class DbMigrateRunner
 {
     public static async Task RunAsync(IServiceProvider services, IConfiguration configuration, string environment, string[] args)
     {
-        var mode = args.FirstOrDefault()?.ToLowerInvariant() ?? "help";
+        var mode = args.FirstOrDefault()?.ToLowerInvariant() ?? "apply";
 
         switch (mode)
         {
+            case "apply":
+                await RunApplyAsync(services, configuration, environment);
+                break;
+
             case "doctor":
             case "verify":
                 DbMigrateDoctor.Run(services, configuration, environment);
@@ -31,6 +35,12 @@ internal static class DbMigrateRunner
                 PrintHelp();
                 break;
         }
+    }
+
+    private static async Task RunApplyAsync(IServiceProvider services, IConfiguration configuration, string environment)
+    {
+        Console.WriteLine("[Radish.DbMigrate] 默认执行 apply：自动补齐表结构并填充初始数据。");
+        await RunSeedAsync(services, configuration, environment);
     }
 
     private static async Task RunInitAsync(IServiceProvider services, IConfiguration configuration, string environment)
@@ -58,36 +68,7 @@ internal static class DbMigrateRunner
 
             var conn = dbForConfig.GetConnectionScope(configId);
 
-            var modelAssembly = typeof(Radish.Model.Root.RootEntityTKey<>).Assembly;
-            var allEntityTypes = modelAssembly
-                .GetTypes()
-                .Where(t => t.IsClass && !t.IsAbstract && t.IsPublic)
-                .Where(t =>
-                    t.GetCustomAttributes(typeof(SugarTable), inherit: true).Any() ||
-                    (t.BaseType != null && t.BaseType.IsGenericType &&
-                     t.BaseType.GetGenericTypeDefinition() == typeof(Radish.Model.Root.RootEntityTKey<>))
-                )
-                .Concat(new[] { typeof(Radish.Model.UserRole) })
-                .Distinct();
-
-            var configIdStr = configId;
-            var entityTypesForConfig = allEntityTypes.Where(type =>
-            {
-                var tenantAttr = type.GetCustomAttributes(typeof(TenantAttribute), inherit: true)
-                    .Cast<TenantAttribute>()
-                    .FirstOrDefault();
-
-                if (tenantAttr != null && tenantAttr.configId != null)
-                {
-                    var tenantConfigId = tenantAttr.configId.ToString() ?? string.Empty;
-                    if (!string.IsNullOrEmpty(tenantConfigId))
-                    {
-                        return string.Equals(tenantConfigId, configIdStr, StringComparison.OrdinalIgnoreCase);
-                    }
-                }
-
-                return string.Equals(configIdStr, "Main", StringComparison.OrdinalIgnoreCase);
-            }).ToList();
+            var entityTypesForConfig = DbMigrateEntityRegistry.GetEntityTypesForConfig(configId);
 
             foreach (var type in entityTypesForConfig)
             {
@@ -136,11 +117,14 @@ internal static class DbMigrateRunner
     private static void PrintHelp()
     {
         Console.WriteLine("Radish.DbMigrate 用法:");
+        Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj");
+        Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply");
+        Console.WriteLine("      推荐入口。自动检查数据库、按需 init，并执行 seed。");
         Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor");
-        Console.WriteLine("      只读检查当前配置、连接定义与 seed 核心表状态。");
+        Console.WriteLine("      只读检查当前配置、连接定义与主库业务表状态。");
         Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init");
-        Console.WriteLine("      初始化数据库并基于实体结构创建/更新表结构。");
+        Console.WriteLine("      高级命令。仅初始化数据库并基于实体结构创建/更新表结构。");
         Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed");
-        Console.WriteLine("      执行数据初始化（例如默认角色/管理员/租户等）。");
+        Console.WriteLine("      高级命令。执行数据初始化（如缺表会自动先执行 init）。");
     }
 }
