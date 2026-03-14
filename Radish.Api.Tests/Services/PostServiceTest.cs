@@ -30,6 +30,7 @@ public class PostServiceTest
         var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
         var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
         var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var postQuestionRepository = new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict);
         var tagService = new Mock<ITagService>(MockBehavior.Strict);
         var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
         var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
@@ -86,6 +87,20 @@ public class PostServiceTest
                     EndTime = DateTime.UtcNow.AddHours(2)
                 }
             ]);
+        postQuestionRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostQuestion, bool>>?>()))
+            .ReturnsAsync(
+            [
+                new PostQuestion
+                {
+                    Id = 3001,
+                    PostId = 1001,
+                    IsSolved = true,
+                    AnswerCount = 2,
+                    AcceptedAnswerId = 4001,
+                    IsDeleted = false
+                }
+            ]);
 
         var service = new PostService(
             mapper.Object,
@@ -97,6 +112,7 @@ public class PostServiceTest
             postPollRepository.Object,
             postPollOptionRepository.Object,
             postPollVoteRepository.Object,
+            postQuestionRepository.Object,
             tagService.Object,
             coinRewardService.Object,
             notificationService.Object,
@@ -126,15 +142,133 @@ public class PostServiceTest
         Assert.True(posts[0].VoHasPoll);
         Assert.Equal(9, posts[0].VoPollTotalVoteCount);
         Assert.False(posts[0].VoPollIsClosed);
+        Assert.True(posts[0].VoIsQuestion);
+        Assert.True(posts[0].VoIsSolved);
+        Assert.Equal(2, posts[0].VoAnswerCount);
 
         Assert.False(posts[1].VoHasPoll);
         Assert.Equal(0, posts[1].VoPollTotalVoteCount);
         Assert.False(posts[1].VoPollIsClosed);
+        Assert.False(posts[1].VoIsQuestion);
+        Assert.False(posts[1].VoIsSolved);
+        Assert.Equal(0, posts[1].VoAnswerCount);
 
         postTagRepository.VerifyAll();
         categoryRepository.VerifyAll();
         tagRepository.VerifyAll();
         postPollRepository.VerifyAll();
+        postQuestionRepository.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetPostDetailAsync_Should_Return_MinimalQuestionSummary_When_PostIsQuestion()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var userPostLikeRepository = new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict);
+        var postTagRepository = new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict);
+        var categoryRepository = new Mock<IBaseRepository<Category>>(MockBehavior.Strict);
+        var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
+        var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
+        var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
+        var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var postQuestionRepository = new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict);
+        var tagService = new Mock<ITagService>(MockBehavior.Strict);
+        var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var dedupService = new Mock<INotificationDedupService>(MockBehavior.Strict);
+        var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
+        var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        var post = new Post(new PostInitializationOptions("问答详情帖", "这个问题怎么解？")
+        {
+            AuthorId = 9527,
+            AuthorName = "Tester",
+            TenantId = 9,
+            IsPublished = true
+        })
+        {
+            Id = 1004
+        };
+
+        var question = new PostQuestion
+        {
+            Id = 3002,
+            PostId = 1004,
+            IsSolved = false,
+            AnswerCount = 3,
+            AcceptedAnswerId = null,
+            IsDeleted = false
+        };
+
+        postRepository
+            .Setup(repository => repository.QueryByIdAsync(1004))
+            .ReturnsAsync(post);
+        postTagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostTag, bool>>?>()))
+            .ReturnsAsync(new List<PostTag>());
+        postPollRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<PostPoll, bool>>?>()))
+            .ReturnsAsync((PostPoll?)null);
+        postQuestionRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<PostQuestion, bool>>?>()))
+            .ReturnsAsync(question);
+        mapper
+            .Setup(m => m.Map<PostVo>(post))
+            .Returns(new PostVo
+            {
+                VoId = 1004,
+                VoTitle = "问答详情帖",
+                VoContent = "这个问题怎么解？",
+                VoAuthorId = 9527,
+                VoAuthorName = "Tester"
+            });
+        mapper
+            .Setup(m => m.Map<PostQuestionVo>(question))
+            .Returns(new PostQuestionVo
+            {
+                VoPostId = 1004,
+                VoIsSolved = false,
+                VoAcceptedAnswerId = null,
+                VoAnswerCount = 3
+            });
+
+        var service = new PostService(
+            mapper.Object,
+            postRepository.Object,
+            userPostLikeRepository.Object,
+            postTagRepository.Object,
+            categoryRepository.Object,
+            tagRepository.Object,
+            postPollRepository.Object,
+            postPollOptionRepository.Object,
+            postPollVoteRepository.Object,
+            postQuestionRepository.Object,
+            tagService.Object,
+            coinRewardService.Object,
+            notificationService.Object,
+            dedupService.Object,
+            experienceService.Object,
+            postEditHistoryRepository.Object,
+            Options.Create(new ForumEditHistoryOptions()));
+
+        var result = await service.GetPostDetailAsync(1004, viewerUserId: null);
+
+        Assert.NotNull(result);
+        Assert.True(result!.VoIsQuestion);
+        Assert.False(result.VoIsSolved);
+        Assert.Equal(3, result.VoAnswerCount);
+        Assert.NotNull(result.VoQuestion);
+        Assert.Equal(1004, result.VoQuestion!.VoPostId);
+        Assert.Equal(3, result.VoQuestion.VoAnswerCount);
+        Assert.Empty(result.VoQuestion.VoAnswers);
+        Assert.Null(result.VoPoll);
+
+        postRepository.VerifyAll();
+        postTagRepository.VerifyAll();
+        postPollRepository.VerifyAll();
+        postQuestionRepository.VerifyAll();
+        mapper.VerifyAll();
     }
 
     [Fact]
@@ -148,6 +282,7 @@ public class PostServiceTest
         var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
         var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
         var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var postQuestionRepository = new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict);
         var tagService = new Mock<ITagService>(MockBehavior.Strict);
         var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
         var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
@@ -252,6 +387,7 @@ public class PostServiceTest
             postPollRepository.Object,
             postPollOptionRepository.Object,
             postPollVoteRepository.Object,
+            postQuestionRepository.Object,
             tagService.Object,
             coinRewardService.Object,
             notificationService.Object,
@@ -281,6 +417,7 @@ public class PostServiceTest
                     new PollOptionDto { OptionText = "面条", SortOrder = 5 }
                 ]
             },
+            false,
             ["投票", "社区"],
             allowCreateTag: false);
 
@@ -304,6 +441,7 @@ public class PostServiceTest
         var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
         var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
         var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var postQuestionRepository = new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict);
         var tagService = new Mock<ITagService>(MockBehavior.Strict);
         var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
         var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
@@ -384,6 +522,7 @@ public class PostServiceTest
             postPollRepository.Object,
             postPollOptionRepository.Object,
             postPollVoteRepository.Object,
+            postQuestionRepository.Object,
             tagService.Object,
             coinRewardService.Object,
             notificationService.Object,
@@ -412,11 +551,132 @@ public class PostServiceTest
                     new PollOptionDto { OptionText = "面" }
                 ]
             },
+            false,
             ["投票"],
             allowCreateTag: false);
 
         Assert.Equal(1002, result);
         postPollRepository.Verify(repository => repository.AddAsync(It.IsAny<PostPoll>()), Times.Once);
         postPollOptionRepository.Verify(repository => repository.AddRangeAsync(It.IsAny<List<PostPollOption>>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_CreateQuestionMarker_When_IsQuestionIsTrue()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var userPostLikeRepository = new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict);
+        var postTagRepository = new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict);
+        var categoryRepository = new Mock<IBaseRepository<Category>>(MockBehavior.Strict);
+        var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
+        var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
+        var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
+        var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var postQuestionRepository = new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict);
+        var tagService = new Mock<ITagService>(MockBehavior.Strict);
+        var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var dedupService = new Mock<INotificationDedupService>(MockBehavior.Strict);
+        var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
+        var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        var tags = new List<Tag>
+        {
+            new("问答")
+            {
+                Id = 601,
+                IsEnabled = true,
+                IsDeleted = false
+            }
+        };
+
+        postRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<Post>()))
+            .ReturnsAsync(1003);
+        postRepository
+            .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
+            .ReturnsAsync(2);
+
+        postTagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostTag, bool>>?>()))
+            .ReturnsAsync(new List<PostTag>());
+        postTagRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<PostTag>()))
+            .ReturnsAsync(9201);
+
+        tagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Tag, bool>>?>()))
+            .ReturnsAsync((Expression<Func<Tag, bool>>? expression) =>
+            {
+                if (expression == null)
+                {
+                    return tags;
+                }
+
+                var predicate = expression.Compile();
+                return tags.Where(predicate).ToList();
+            });
+        tagRepository
+            .Setup(repository => repository.UpdateAsync(It.IsAny<Tag>()))
+            .ReturnsAsync(true);
+
+        postQuestionRepository
+            .Setup(repository => repository.AddAsync(It.Is<PostQuestion>(question =>
+                question.PostId == 1003 &&
+                !question.IsSolved &&
+                question.AcceptedAnswerId == null &&
+                question.AnswerCount == 0 &&
+                question.TenantId == 9 &&
+                question.CreateBy == "Tester" &&
+                question.CreateId == 9527)))
+            .ReturnsAsync(3001);
+
+        experienceService
+            .Setup(service => service.GrantExperienceAsync(
+                It.IsAny<long>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<long?>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync(true);
+
+        var service = new PostService(
+            mapper.Object,
+            postRepository.Object,
+            userPostLikeRepository.Object,
+            postTagRepository.Object,
+            categoryRepository.Object,
+            tagRepository.Object,
+            postPollRepository.Object,
+            postPollOptionRepository.Object,
+            postPollVoteRepository.Object,
+            postQuestionRepository.Object,
+            tagService.Object,
+            coinRewardService.Object,
+            notificationService.Object,
+            dedupService.Object,
+            experienceService.Object,
+            postEditHistoryRepository.Object,
+            Options.Create(new ForumEditHistoryOptions()));
+
+        var post = new Post(new PostInitializationOptions("问答帖", "这个问题怎么解？")
+        {
+            AuthorId = 9527,
+            AuthorName = "Tester",
+            TenantId = 9,
+            IsPublished = true
+        });
+
+        var result = await service.PublishPostAsync(
+            post,
+            null,
+            true,
+            ["问答"],
+            allowCreateTag: false);
+
+        Assert.Equal(1003, result);
+        postQuestionRepository.Verify(repository => repository.AddAsync(It.IsAny<PostQuestion>()), Times.Once);
+        postPollRepository.Verify(repository => repository.AddAsync(It.IsAny<PostPoll>()), Times.Never);
     }
 }

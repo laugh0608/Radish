@@ -25,10 +25,22 @@ public class ForumProfile : Profile
         RecognizeDestinationPrefixes("Vo");
         CreateMap<Post, PostVo>()
             .ForMember(dest => dest.VoCategoryName, opt => opt.Ignore()) // 需要在 Service 中手动填充
-            .ForMember(dest => dest.VoTags, opt => opt.Ignore());         // 需要在 Service 中手动填充
+            .ForMember(dest => dest.VoTags, opt => opt.Ignore())          // 需要在 Service 中手动填充
+            .ForMember(dest => dest.VoQuestion, opt => opt.Ignore());     // 需要在 Service 中手动填充
         RecognizePrefixes("Vo");
         CreateMap<PostVo, Post>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore()); // 避免从 VO 覆盖租户 ID
+
+        // PostQuestion -> PostQuestionVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostQuestion, PostQuestionVo>()
+            .ForMember(dest => dest.VoAnswers, opt => opt.Ignore());
+
+        // PostAnswer -> PostAnswerVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostAnswer, PostAnswerVo>()
+            .ForMember(dest => dest.VoAnswerId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.VoAuthorAvatarUrl, opt => opt.Ignore());
 
         // PostPoll -> PostPollVo
         RecognizeDestinationPrefixes("Vo");

@@ -26,6 +26,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     private readonly IBaseRepository<PostPoll> _postPollRepository;
     private readonly IBaseRepository<PostPollOption> _postPollOptionRepository;
     private readonly IBaseRepository<PostPollVote> _postPollVoteRepository;
+    private readonly IBaseRepository<PostQuestion> _postQuestionRepository;
     private readonly ITagService _tagService;
     private readonly ICoinRewardService _coinRewardService;
     private readonly INotificationService _notificationService;
@@ -44,6 +45,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         IBaseRepository<PostPoll> postPollRepository,
         IBaseRepository<PostPollOption> postPollOptionRepository,
         IBaseRepository<PostPollVote> postPollVoteRepository,
+        IBaseRepository<PostQuestion> postQuestionRepository,
         ITagService tagService,
         ICoinRewardService coinRewardService,
         INotificationService notificationService,
@@ -61,6 +63,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         _postPollRepository = postPollRepository;
         _postPollOptionRepository = postPollOptionRepository;
         _postPollVoteRepository = postPollVoteRepository;
+        _postQuestionRepository = postQuestionRepository;
         _tagService = tagService;
         _coinRewardService = coinRewardService;
         _notificationService = notificationService;
@@ -110,6 +113,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             postVo.VoPollIsClosed = pollVo.VoIsClosed;
             postVo.VoPoll = pollVo;
         }
+
+        await FillPostQuestionDetailAsync(postVo, postId);
 
         return postVo;
     }
@@ -183,6 +188,12 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             .GroupBy(poll => poll.PostId)
             .ToDictionary(group => group.Key, group => group.First());
 
+        var questionMap = (await _postQuestionRepository.QueryAsync(question =>
+                postIds.Contains(question.PostId) &&
+                !question.IsDeleted))
+            .GroupBy(question => question.PostId)
+            .ToDictionary(group => group.Key, group => group.First());
+
         foreach (var post in posts)
         {
             if (string.IsNullOrWhiteSpace(post.VoCategoryName) &&
@@ -201,12 +212,15 @@ public class PostService : BaseService<Post, PostVo>, IPostService
                 post.VoHasPoll = false;
                 post.VoPollTotalVoteCount = 0;
                 post.VoPollIsClosed = false;
-                continue;
+            }
+            else
+            {
+                post.VoHasPoll = true;
+                post.VoPollTotalVoteCount = poll.TotalVoteCount;
+                post.VoPollIsClosed = IsPollClosed(poll);
             }
 
-            post.VoHasPoll = true;
-            post.VoPollTotalVoteCount = poll.TotalVoteCount;
-            post.VoPollIsClosed = IsPollClosed(poll);
+            FillPostQuestionSummary(post, questionMap.GetValueOrDefault(post.VoId));
         }
     }
 
@@ -214,7 +228,12 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     /// 发布帖子
     /// </summary>
     [UseTran]
-    public async Task<long> PublishPostAsync(Post post, CreatePollDto? poll = null, List<string>? tagNames = null, bool allowCreateTag = true)
+    public async Task<long> PublishPostAsync(
+        Post post,
+        CreatePollDto? poll = null,
+        bool isQuestion = false,
+        List<string>? tagNames = null,
+        bool allowCreateTag = true)
     {
         var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "发布帖子时至少需要一个标签");
         var operatorName = string.IsNullOrWhiteSpace(post.AuthorName) ? "System" : post.AuthorName;
@@ -242,7 +261,13 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             await CreatePostPollAsync(post, postId, poll, operatorName);
         }
 
-        // 4. 🎁 发放经验值奖励（异步处理）
+        // 5. 处理问答帖标记
+        if (isQuestion)
+        {
+            await CreatePostQuestionAsync(post, postId, operatorName);
+        }
+
+        // 6. 🎁 发放经验值奖励（异步处理）
         _ = Task.Run(async () =>
         {
             try
@@ -401,6 +426,51 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             .ToList();
 
         await _postPollOptionRepository.AddRangeAsync(optionEntities);
+    }
+
+    private async Task CreatePostQuestionAsync(Post post, long postId, string operatorName)
+    {
+        await _postQuestionRepository.AddAsync(new PostQuestion
+        {
+            PostId = postId,
+            IsSolved = false,
+            AcceptedAnswerId = null,
+            AnswerCount = 0,
+            TenantId = post.TenantId,
+            CreateBy = operatorName,
+            CreateId = post.AuthorId
+        });
+    }
+
+    private async Task FillPostQuestionDetailAsync(PostVo postVo, long postId)
+    {
+        var question = await _postQuestionRepository.QueryFirstAsync(q => q.PostId == postId && !q.IsDeleted);
+        FillPostQuestionSummary(postVo, question);
+
+        if (question == null)
+        {
+            postVo.VoQuestion = null;
+            return;
+        }
+
+        var questionVo = Mapper.Map<PostQuestionVo>(question);
+        questionVo.VoAnswers = [];
+        postVo.VoQuestion = questionVo;
+    }
+
+    private static void FillPostQuestionSummary(PostVo postVo, PostQuestion? question)
+    {
+        if (question == null)
+        {
+            postVo.VoIsQuestion = false;
+            postVo.VoIsSolved = false;
+            postVo.VoAnswerCount = 0;
+            return;
+        }
+
+        postVo.VoIsQuestion = true;
+        postVo.VoIsSolved = question.IsSolved;
+        postVo.VoAnswerCount = question.AnswerCount;
     }
 
     private static bool IsPollClosed(PostPoll poll)

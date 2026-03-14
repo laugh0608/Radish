@@ -162,6 +162,7 @@ public class PostControllerTest
             .Setup(service => service.PublishPostAsync(
                 It.IsAny<Post>(),
                 It.Is<CreatePollDto?>(poll => poll != null && poll.Question == "重复选项"),
+                false,
                 It.Is<List<string>>(tags => tags.Count == 1 && tags[0] == "投票"),
                 false))
             .ThrowsAsync(new ArgumentException("投票选项不能重复", "poll"));

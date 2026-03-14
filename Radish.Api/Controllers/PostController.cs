@@ -341,7 +341,7 @@ public class PostController : ControllerBase
 
         try
         {
-            var postId = await _postService.PublishPostAsync(post, request.Poll, normalizedTagNames, allowCreateTag);
+            var postId = await _postService.PublishPostAsync(post, request.Poll, request.IsQuestion, normalizedTagNames, allowCreateTag);
             return new MessageModel
             {
                 IsSuccess = true,

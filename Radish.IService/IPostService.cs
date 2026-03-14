@@ -27,10 +27,16 @@ public interface IPostService : IBaseService<Post, PostVo>
     /// </summary>
     /// <param name="post">帖子实体</param>
     /// <param name="poll">附带投票（可空）</param>
+    /// <param name="isQuestion">是否作为问答帖发布</param>
     /// <param name="tagNames">标签名称列表</param>
     /// <param name="allowCreateTag">是否允许自动创建新标签（通常仅管理员可用）</param>
     /// <returns>帖子 Id</returns>
-    Task<long> PublishPostAsync(Post post, CreatePollDto? poll = null, List<string>? tagNames = null, bool allowCreateTag = true);
+    Task<long> PublishPostAsync(
+        Post post,
+        CreatePollDto? poll = null,
+        bool isQuestion = false,
+        List<string>? tagNames = null,
+        bool allowCreateTag = true);
 
     /// <summary>
     /// 更新帖子及标签
