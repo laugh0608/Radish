@@ -328,6 +328,7 @@ export interface PublishPostRequest {
   content: string;
   categoryId: number;
   tagNames: string[];
+  isQuestion?: boolean;
   poll?: CreatePollRequest | null;
 }
 

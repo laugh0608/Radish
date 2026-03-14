@@ -20,6 +20,7 @@ interface PublishPostModalProps {
     content: string,
     categoryId: number,
     tagNames: string[],
+    isQuestion?: boolean,
     poll?: CreatePollRequest | null
   ) => Promise<void>;
 }
@@ -70,6 +71,7 @@ export const PublishPostModal = ({
   const [tagError, setTagError] = useState<string | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [enablePoll, setEnablePoll] = useState(false);
+  const [isQuestionPost, setIsQuestionPost] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollEndTime, setPollEndTime] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>([...DEFAULT_POLL_OPTIONS]);
@@ -90,11 +92,13 @@ export const PublishPostModal = ({
         if (savedDraft) {
           const draft = JSON.parse(savedDraft);
           if (draft.title || draft.content || draft.tags?.length || typeof draft.categoryId === 'number') {
+            const draftIsQuestion = Boolean(draft.isQuestion);
             setTitle(draft.title || '');
             setContent(draft.content || '');
             setSelectedTags(Array.isArray(draft.tags) ? draft.tags : []);
             setCategoryId(typeof draft.categoryId === 'number' ? draft.categoryId : selectedCategoryId);
-            setEnablePoll(Boolean(draft.poll?.enabled));
+            setIsQuestionPost(draftIsQuestion);
+            setEnablePoll(Boolean(draft.poll?.enabled) && !draftIsQuestion);
             setPollQuestion(draft.poll?.question || '');
             setPollEndTime(draft.poll?.endTime || '');
             setPollOptions(Array.isArray(draft.poll?.options) && draft.poll.options.length >= MIN_POLL_OPTION_COUNT
@@ -123,6 +127,7 @@ export const PublishPostModal = ({
             content,
             tags: selectedTags,
             categoryId,
+            isQuestion: isQuestionPost,
             poll: {
               enabled: enablePoll,
               question: pollQuestion,
@@ -136,7 +141,7 @@ export const PublishPostModal = ({
         log.error('Failed to save draft:', err);
       }
     }
-  }, [title, content, selectedTags, categoryId, enablePoll, pollQuestion, pollEndTime, pollOptions, isOpen]);
+  }, [title, content, selectedTags, categoryId, isQuestionPost, enablePoll, pollQuestion, pollEndTime, pollOptions, isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -264,7 +269,7 @@ export const PublishPostModal = ({
 
     setIsSubmitting(true);
     try {
-      await onPublish(title, content, categoryId, selectedTags, pollRequest);
+      await onPublish(title, content, categoryId, selectedTags, isQuestionPost, pollRequest);
       // 发布成功后清空表单和草稿
       setTitle('');
       setContent('');
@@ -273,6 +278,7 @@ export const PublishPostModal = ({
       setCategoryId(selectedCategoryId);
       setTagError(null);
       setCategoryError(null);
+      setIsQuestionPost(false);
       setEnablePoll(false);
       setPollQuestion('');
       setPollEndTime('');
@@ -545,23 +551,64 @@ export const PublishPostModal = ({
           {tagError && <p className={styles.tagError}>{tagError}</p>}
         </div>
 
-        <div className={styles.pollSection}>
-          <div className={styles.pollSectionHeader}>
+        <div className={`${styles.optionSection} ${styles.questionSection}`}>
+          <div className={styles.optionSectionHeader}>
             <div>
-              <span className={styles.pollSectionLabel}>附带投票</span>
-              <p className={styles.pollSectionHint}>支持 2 到 6 个单选项，适合快速收集社区反馈</p>
+              <span className={styles.optionSectionLabel}>问答帖</span>
+              <p className={styles.optionSectionHint}>适合提问求助，发布后可继续提交回答并由提问者采纳</p>
             </div>
             <button
               type="button"
-              className={`${styles.pollToggle} ${enablePoll ? styles.pollToggleActive : ''}`}
+              className={`${styles.optionToggle} ${isQuestionPost ? styles.questionToggleActive : ''}`}
               onClick={() => {
-                setEnablePoll((current) => !current);
+                setIsQuestionPost((current) => {
+                  const next = !current;
+                  if (next) {
+                    setEnablePoll(false);
+                    setPollQuestion('');
+                    setPollEndTime('');
+                    setPollOptions([...DEFAULT_POLL_OPTIONS]);
+                    setPollError(null);
+                  }
+                  return next;
+                });
+              }}
+            >
+              {isQuestionPost ? '已开启' : '开启'}
+            </button>
+          </div>
+          {isQuestionPost && (
+            <p className={styles.optionNotice}>问答帖与附带投票暂时互斥，当前将以问答模式发布。</p>
+          )}
+        </div>
+
+        <div className={`${styles.optionSection} ${styles.pollSection}`}>
+          <div className={styles.optionSectionHeader}>
+            <div>
+              <span className={styles.optionSectionLabel}>附带投票</span>
+              <p className={styles.optionSectionHint}>支持 2 到 6 个单选项，适合快速收集社区反馈</p>
+            </div>
+            <button
+              type="button"
+              className={`${styles.optionToggle} ${enablePoll ? styles.pollToggleActive : ''}`}
+              onClick={() => {
+                setEnablePoll((current) => {
+                  const next = !current;
+                  if (next) {
+                    setIsQuestionPost(false);
+                  }
+                  return next;
+                });
                 setPollError(null);
               }}
             >
               {enablePoll ? '已开启' : '开启'}
             </button>
           </div>
+
+          {!enablePoll && isQuestionPost && (
+            <p className={styles.optionNotice}>已开启问答帖时，投票会保持关闭。</p>
+          )}
 
           {enablePoll && (
             <div className={styles.pollFields}>

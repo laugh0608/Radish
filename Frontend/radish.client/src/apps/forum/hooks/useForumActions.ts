@@ -64,6 +64,7 @@ export interface ForumActionsHandlers {
     content: string,
     categoryId: number,
     tagNames: string[],
+    isQuestion?: boolean,
     poll?: CreatePollRequest | null
   ) => Promise<void>;
   handleVotePoll: (optionId: number) => Promise<void>;
@@ -255,6 +256,7 @@ export const useForumActions = (
     content: string,
     categoryId: number,
     tagNames: string[],
+    isQuestion?: boolean,
     poll?: CreatePollRequest | null
   ) => {
     if (categoryId <= 0) {
@@ -284,6 +286,7 @@ export const useForumActions = (
           content,
           categoryId,
           tagNames: normalizedTagNames,
+          isQuestion: Boolean(isQuestion),
           poll: poll ?? undefined
         },
         t
