@@ -125,6 +125,17 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
             {remainingTagCount > 0 && <span className={styles.moreTag}>+{remainingTagCount}</span>}
             {post.voIsEssence && <span className={styles.statusChip}>精华</span>}
             {post.voIsTop && <span className={styles.statusChip}>置顶</span>}
+            {post.voIsQuestion && (
+              <>
+                <span className={`${styles.statusChip} ${styles.questionChip}`}>问答</span>
+                <span className={`${styles.statusChip} ${post.voIsSolved ? styles.solvedChip : styles.pendingChip}`}>
+                  {post.voIsSolved ? '已解决' : '待解决'}
+                </span>
+                <span className={`${styles.statusChip} ${styles.answerChip}`}>
+                  回答 {post.voAnswerCount ?? 0}
+                </span>
+              </>
+            )}
             {post.voHasPoll && (
               <span className={`${styles.statusChip} ${styles.pollChip}`}>
                 投票 {post.voPollTotalVoteCount ?? 0}

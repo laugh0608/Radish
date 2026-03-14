@@ -19,6 +19,8 @@ interface PostDetailProps {
   isLiked?: boolean;
   onLike?: (postId: number) => void;
   onVotePoll?: (optionId: number) => Promise<void>;
+  onAnswerQuestion?: (content: string) => Promise<void>;
+  onAcceptAnswer?: (answerId: number) => Promise<void>;
   isAuthenticated?: boolean;
   currentUserId?: number;
   onEdit?: (postId: number) => void;
@@ -43,6 +45,8 @@ export const PostDetail = ({
   isLiked = false,
   onLike,
   onVotePoll,
+  onAnswerQuestion,
+  onAcceptAnswer,
   isAuthenticated = false,
   currentUserId = 0,
   onEdit,
@@ -68,13 +72,23 @@ export const PostDetail = ({
   const tagList = post?.voTagNames && post.voTagNames.length > 0 ? post.voTagNames : parsedTags;
   const [selectedOptionId, setSelectedOptionId] = useState<number | null>(post?.voPoll?.voSelectedOptionId ?? null);
   const [isVoting, setIsVoting] = useState(false);
+  const [answerContent, setAnswerContent] = useState('');
+  const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
+  const [acceptingAnswerId, setAcceptingAnswerId] = useState<number | null>(null);
 
   const isAuthor = !!post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
   const showFollowAction = isAuthenticated && !!post && !isAuthor && post.voAuthorId > 0;
+  const question = post?.voQuestion;
+  const isQuestionPost = !!post?.voIsQuestion;
 
   useEffect(() => {
     setSelectedOptionId(post?.voPoll?.voSelectedOptionId ?? null);
   }, [post?.voId, post?.voPoll?.voSelectedOptionId]);
+
+  useEffect(() => {
+    setAnswerContent('');
+    setAcceptingAnswerId(null);
+  }, [post?.voId]);
 
   if (loading) {
     return (
@@ -119,11 +133,50 @@ export const PostDetail = ({
     }
   };
 
+  const handleAnswerSubmit = async () => {
+    const trimmedContent = answerContent.trim();
+    if (!trimmedContent || !onAnswerQuestion) {
+      return;
+    }
+
+    setIsSubmittingAnswer(true);
+    try {
+      await onAnswerQuestion(trimmedContent);
+      setAnswerContent('');
+    } finally {
+      setIsSubmittingAnswer(false);
+    }
+  };
+
+  const handleAcceptAnswer = async (answerId: number) => {
+    if (!onAcceptAnswer) {
+      return;
+    }
+
+    setAcceptingAnswerId(answerId);
+    try {
+      await onAcceptAnswer(answerId);
+    } finally {
+      setAcceptingAnswerId(null);
+    }
+  };
+
   return (
     <div className={styles.container}>
       <h3 className={styles.title}>帖子详情</h3>
       <div className={styles.postContent}>
         <h4 className={styles.postTitle}>{post.voTitle}</h4>
+        {isQuestionPost && (
+          <div className={styles.statusRow}>
+            <span className={`${styles.statusBadge} ${styles.questionBadge}`}>问答</span>
+            <span className={`${styles.statusBadge} ${post.voIsSolved ? styles.solvedBadge : styles.pendingBadge}`}>
+              {post.voIsSolved ? '已解决' : '待解决'}
+            </span>
+            <span className={`${styles.statusBadge} ${styles.answerBadge}`}>
+              回答 {post.voAnswerCount ?? question?.voAnswerCount ?? 0}
+            </span>
+          </div>
+        )}
         <div className={styles.postMeta}>
           {post.voAuthorName && (
             <button
@@ -211,6 +264,112 @@ export const PostDetail = ({
               >
                 {isVoting ? '提交中...' : '提交投票'}
               </button>
+            </div>
+          </section>
+        )}
+
+        {isQuestionPost && (
+          <section className={styles.questionCard}>
+            <div className={styles.questionHeader}>
+              <div>
+                <div className={styles.questionTitleRow}>
+                  <span className={styles.questionSectionBadge}>问答区</span>
+                  <h5 className={styles.questionTitle}>回答与采纳</h5>
+                </div>
+                <p className={styles.questionMeta}>
+                  {question?.voIsSolved ? '该问题已采纳答案' : '该问题尚未采纳答案'}
+                  {' · '}
+                  共 {question?.voAnswerCount ?? post.voAnswerCount ?? 0} 条回答
+                </p>
+              </div>
+              <span className={`${styles.questionState} ${question?.voIsSolved ? styles.questionStateSolved : styles.questionStatePending}`}>
+                {question?.voIsSolved ? '已解决' : '待解决'}
+              </span>
+            </div>
+
+            {question?.voAnswers && question.voAnswers.length > 0 ? (
+              <div className={styles.answerList}>
+                {question.voAnswers.map((answer) => {
+                  const canAccept =
+                    isAuthor &&
+                    !question.voIsSolved &&
+                    !answer.voIsAccepted &&
+                    answer.voAuthorId !== currentUserId;
+
+                  return (
+                    <article
+                      key={answer.voAnswerId}
+                      className={`${styles.answerItem} ${answer.voIsAccepted ? styles.answerItemAccepted : ''}`}
+                    >
+                      <div className={styles.answerMeta}>
+                        <div className={styles.answerAuthorBlock}>
+                          <span className={styles.answerAuthor}>{answer.voAuthorName || '匿名用户'}</span>
+                          <span className={styles.answerTime}>
+                            {formatDateTimeByTimeZone(answer.voCreateTime, displayTimeZone, '未知时间')}
+                          </span>
+                        </div>
+                        <div className={styles.answerActions}>
+                          {answer.voIsAccepted && (
+                            <span className={styles.acceptedBadge}>已采纳</span>
+                          )}
+                          {canAccept && (
+                            <button
+                              type="button"
+                              className={styles.acceptButton}
+                              onClick={() => {
+                                void handleAcceptAnswer(answer.voAnswerId);
+                              }}
+                              disabled={acceptingAnswerId === answer.voAnswerId}
+                            >
+                              {acceptingAnswerId === answer.voAnswerId ? '采纳中...' : '采纳答案'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <Suspense fallback={<div className={styles.answerBody}>回答渲染中...</div>}>
+                        <MarkdownRenderer
+                          content={answer.voContent}
+                          className={styles.answerBody}
+                          stickerMap={stickerMap}
+                        />
+                      </Suspense>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className={styles.questionEmpty}>还没有回答，欢迎先来补充。</p>
+            )}
+
+            <div className={styles.answerComposer}>
+              <label className={styles.answerLabel} htmlFor={`question-answer-${post.voId}`}>
+                发表回答
+              </label>
+              <textarea
+                id={`question-answer-${post.voId}`}
+                className={styles.answerTextarea}
+                value={answerContent}
+                onChange={(event) => setAnswerContent(event.target.value)}
+                placeholder={isAuthenticated ? '写下你的回答，支持 Markdown' : '登录后可提交回答'}
+                disabled={!isAuthenticated || isSubmittingAnswer}
+                rows={5}
+              />
+              <div className={styles.answerComposerFooter}>
+                <span className={styles.answerHint}>
+                  {isAuthenticated ? '提交后会立即出现在回答列表中' : '请先登录后再回答'}
+                </span>
+                <button
+                  type="button"
+                  className={styles.answerSubmitButton}
+                  onClick={() => {
+                    void handleAnswerSubmit();
+                  }}
+                  disabled={!isAuthenticated || !answerContent.trim() || isSubmittingAnswer}
+                >
+                  {isSubmittingAnswer ? '提交中...' : '提交回答'}
+                </button>
+              </div>
             </div>
           </section>
         )}

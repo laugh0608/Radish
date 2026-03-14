@@ -512,6 +512,8 @@ export const ForumApp = () => {
                 }}
                 onLike={actionsState.handleLikePost}
                 onVotePoll={actionsState.handleVotePoll}
+                onAnswerQuestion={actionsState.handleAnswerQuestion}
+                onAcceptAnswer={actionsState.handleAcceptAnswer}
                 onEdit={actionsState.handleEditPost}
                 onViewPostHistory={actionsState.handleViewPostHistory}
                 onDelete={actionsState.handleDeletePost}

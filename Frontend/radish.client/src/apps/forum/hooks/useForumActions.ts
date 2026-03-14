@@ -5,6 +5,8 @@ import type { TFunction } from 'i18next';
 import {
   publishPost,
   votePoll,
+  answerQuestion,
+  acceptQuestionAnswer,
   createComment,
   likePost,
   toggleCommentLike,
@@ -18,6 +20,7 @@ import {
   type CommentNode,
   type PostDetail,
   type CreatePollRequest,
+  type PostQuestion,
   type PostEditHistory,
   type CommentEditHistory
 } from '@/api/forum';
@@ -68,6 +71,8 @@ export interface ForumActionsHandlers {
     poll?: CreatePollRequest | null
   ) => Promise<void>;
   handleVotePoll: (optionId: number) => Promise<void>;
+  handleAnswerQuestion: (content: string) => Promise<void>;
+  handleAcceptAnswer: (answerId: number) => Promise<void>;
   handleLikePost: (postId: number) => Promise<void>;
   handleEditPost: (postId: number) => void;
   handleViewPostHistory: (postId: number) => Promise<void>;
@@ -211,6 +216,20 @@ export const useForumActions = (
     return normalized;
   };
 
+  const applyQuestionState = useCallback((question: PostQuestion) => {
+    setSelectedPost((current) =>
+      current && current.voId === question.voPostId
+        ? {
+            ...current,
+            voIsQuestion: true,
+            voIsSolved: question.voIsSolved,
+            voAnswerCount: question.voAnswerCount,
+            voQuestion: question
+          }
+        : current
+    );
+  }, [setSelectedPost]);
+
   const loadPostHistory = async (postId: number, pageIndex: number) => {
     setPostHistoryLoading(true);
     setPostHistoryError(null);
@@ -337,6 +356,77 @@ export const useForumActions = (
           : current
       );
 
+      await loadPosts();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      throw err;
+    }
+  };
+
+  const handleAnswerQuestion = async (content: string) => {
+    if (!selectedPost?.voId) {
+      const message = '请先选择要回答的帖子';
+      setError(message);
+      throw new Error(message);
+    }
+
+    if (!isAuthenticated) {
+      const message = '请先登录后再回答';
+      setError(message);
+      throw new Error(message);
+    }
+
+    const trimmedContent = content.trim();
+    if (!trimmedContent) {
+      const message = '回答内容不能为空';
+      setError(message);
+      throw new Error(message);
+    }
+
+    setError(null);
+    try {
+      const latestQuestion = await answerQuestion(
+        {
+          postId: selectedPost.voId,
+          content: trimmedContent
+        },
+        t
+      );
+
+      applyQuestionState(latestQuestion);
+      await loadPosts();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      throw err;
+    }
+  };
+
+  const handleAcceptAnswer = async (answerId: number) => {
+    if (!selectedPost?.voId) {
+      const message = '请先选择要采纳的帖子';
+      setError(message);
+      throw new Error(message);
+    }
+
+    if (!isAuthenticated) {
+      const message = '请先登录后再采纳';
+      setError(message);
+      throw new Error(message);
+    }
+
+    setError(null);
+    try {
+      const latestQuestion = await acceptQuestionAnswer(
+        {
+          postId: selectedPost.voId,
+          answerId
+        },
+        t
+      );
+
+      applyQuestionState(latestQuestion);
       await loadPosts();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -742,6 +832,8 @@ export const useForumActions = (
     handleSelectPost,
     handlePublishPost,
     handleVotePoll,
+    handleAnswerQuestion,
+    handleAcceptAnswer,
     handleLikePost,
     handleEditPost,
     handleViewPostHistory,

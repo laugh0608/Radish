@@ -38,6 +38,8 @@ interface PostDetailContentViewProps {
   onBack: () => void;
   onLike: (postId: number) => void;
   onVotePoll: (optionId: number) => Promise<void>;
+  onAnswerQuestion: (content: string) => Promise<void>;
+  onAcceptAnswer: (answerId: number) => Promise<void>;
   onEdit: (postId: number) => void;
   onViewPostHistory: (postId: number) => void;
   onDelete: (postId: number) => void;
@@ -95,6 +97,8 @@ export const PostDetailContentView = ({
   onBack,
   onLike,
   onVotePoll,
+  onAnswerQuestion,
+  onAcceptAnswer,
   onEdit,
   onViewPostHistory,
   onDelete,
@@ -222,6 +226,8 @@ export const PostDetailContentView = ({
               isLiked={isLiked}
               onLike={onLike}
               onVotePoll={onVotePoll}
+              onAnswerQuestion={onAnswerQuestion}
+              onAcceptAnswer={onAcceptAnswer}
               isAuthenticated={isAuthenticated}
               currentUserId={currentUserId}
               onEdit={onEdit}

@@ -100,6 +100,31 @@ export interface PollVoteResult {
 }
 
 /**
+ * 问答回答 Vo
+ */
+export interface PostAnswer {
+  voAnswerId: number;
+  voPostId: number;
+  voAuthorId: number;
+  voAuthorName: string;
+  voAuthorAvatarUrl?: string | null;
+  voContent: string;
+  voIsAccepted: boolean;
+  voCreateTime: string;
+}
+
+/**
+ * 帖子问答详情 Vo
+ */
+export interface PostQuestion {
+  voPostId: number;
+  voIsSolved: boolean;
+  voAcceptedAnswerId?: number | null;
+  voAnswerCount: number;
+  voAnswers: PostAnswer[];
+}
+
+/**
  * 创建投票请求
  */
 export interface CreatePollRequest {
@@ -125,6 +150,22 @@ export interface VotePollRequest {
 }
 
 /**
+ * 提交回答请求
+ */
+export interface CreateAnswerRequest {
+  postId: number;
+  content: string;
+}
+
+/**
+ * 采纳回答请求
+ */
+export interface AcceptAnswerRequest {
+  postId: number;
+  answerId: number;
+}
+
+/**
  * 帖子列表项 Vo
  */
 export interface PostItem {
@@ -145,6 +186,9 @@ export interface PostItem {
   voIsTop?: boolean;
   voIsEssence?: boolean;
   voIsLocked?: boolean;
+  voIsQuestion?: boolean;
+  voIsSolved?: boolean;
+  voAnswerCount?: number;
   voHasPoll?: boolean;
   voPollTotalVoteCount?: number;
   voPollIsClosed?: boolean;
@@ -176,6 +220,10 @@ export interface PostDetail {
   voIsTop?: boolean;
   voIsEssence?: boolean;
   voIsLocked?: boolean;
+  voIsQuestion?: boolean;
+  voIsSolved?: boolean;
+  voAnswerCount?: number;
+  voQuestion?: PostQuestion | null;
   voHasPoll?: boolean;
   voPollTotalVoteCount?: number;
   voPollIsClosed?: boolean;

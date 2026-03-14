@@ -26,9 +26,13 @@ import type {
   CreatePollRequest,
   CreatePollOptionRequest,
   VotePollRequest,
+  CreateAnswerRequest,
+  AcceptAnswerRequest,
   PostPoll,
   PostPollOption,
   PollVoteResult,
+  PostQuestion,
+  PostAnswer,
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
@@ -64,9 +68,13 @@ export type {
   CreatePollRequest,
   CreatePollOptionRequest,
   VotePollRequest,
+  CreateAnswerRequest,
+  AcceptAnswerRequest,
   PostPoll,
   PostPollOption,
   PollVoteResult,
+  PostQuestion,
+  PostAnswer,
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
@@ -209,6 +217,32 @@ export async function votePoll(request: VotePollRequest, t: TFunction): Promise<
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '投票失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 提交问答回答
+ */
+export async function answerQuestion(request: CreateAnswerRequest, t: TFunction): Promise<PostQuestion> {
+  const response = await apiPost<PostQuestion>('/api/v1/Question/Answer', request, { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '提交回答失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 采纳问答回答
+ */
+export async function acceptQuestionAnswer(request: AcceptAnswerRequest, t: TFunction): Promise<PostQuestion> {
+  const response = await apiPost<PostQuestion>('/api/v1/Question/Accept', request, { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '采纳回答失败');
   }
 
   return response.data;
