@@ -95,27 +95,17 @@ public class QuestionController : ControllerBase
                 ResponseData = question
             };
         }
+        catch (AggregateException ex) when (TryBuildAnswerErrorResponse(ex, out var response))
+        {
+            return response;
+        }
         catch (ArgumentException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            return BuildAnswerErrorResponse(ex);
         }
         catch (InvalidOperationException ex)
         {
-            var statusCode = ex.Message.Contains("不存在")
-                ? HttpStatusCodeEnum.NotFound
-                : HttpStatusCodeEnum.BadRequest;
-
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)statusCode,
-                MessageInfo = ex.Message
-            };
+            return BuildAnswerErrorResponse(ex);
         }
     }
 
@@ -167,29 +157,91 @@ public class QuestionController : ControllerBase
                 ResponseData = question
             };
         }
+        catch (AggregateException ex) when (TryBuildAcceptErrorResponse(ex, out var response))
+        {
+            return response;
+        }
         catch (ArgumentException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            return BuildAcceptErrorResponse(ex);
         }
         catch (InvalidOperationException ex)
         {
-            var statusCode = ex.Message.Contains("只有提问者")
-                ? HttpStatusCodeEnum.Forbidden
-                : ex.Message.Contains("不存在")
-                    ? HttpStatusCodeEnum.NotFound
-                    : HttpStatusCodeEnum.BadRequest;
-
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)statusCode,
-                MessageInfo = ex.Message
-            };
+            return BuildAcceptErrorResponse(ex);
         }
+    }
+
+    private static bool TryBuildAnswerErrorResponse(AggregateException exception, out MessageModel response)
+    {
+        var knownException = UnwrapKnownException(exception);
+        if (knownException is ArgumentException or InvalidOperationException)
+        {
+            response = BuildAnswerErrorResponse(knownException);
+            return true;
+        }
+
+        response = null!;
+        return false;
+    }
+
+    private static bool TryBuildAcceptErrorResponse(AggregateException exception, out MessageModel response)
+    {
+        var knownException = UnwrapKnownException(exception);
+        if (knownException is ArgumentException or InvalidOperationException)
+        {
+            response = BuildAcceptErrorResponse(knownException);
+            return true;
+        }
+
+        response = null!;
+        return false;
+    }
+
+    private static Exception UnwrapKnownException(AggregateException exception)
+    {
+        var flattened = exception.Flatten();
+        return flattened.InnerExceptions.Count == 1
+            ? flattened.InnerExceptions[0]
+            : flattened.GetBaseException();
+    }
+
+    private static MessageModel BuildAnswerErrorResponse(Exception exception)
+    {
+        var statusCode = exception switch
+        {
+            ArgumentException => HttpStatusCodeEnum.BadRequest,
+            InvalidOperationException invalidOperationException when invalidOperationException.Message.Contains("不存在") =>
+                HttpStatusCodeEnum.NotFound,
+            InvalidOperationException => HttpStatusCodeEnum.BadRequest,
+            _ => HttpStatusCodeEnum.BadRequest
+        };
+
+        return BuildErrorResponse(statusCode, exception.Message);
+    }
+
+    private static MessageModel BuildAcceptErrorResponse(Exception exception)
+    {
+        var statusCode = exception switch
+        {
+            ArgumentException => HttpStatusCodeEnum.BadRequest,
+            InvalidOperationException invalidOperationException when invalidOperationException.Message.Contains("只有提问者") =>
+                HttpStatusCodeEnum.Forbidden,
+            InvalidOperationException invalidOperationException when invalidOperationException.Message.Contains("不存在") =>
+                HttpStatusCodeEnum.NotFound,
+            InvalidOperationException => HttpStatusCodeEnum.BadRequest,
+            _ => HttpStatusCodeEnum.BadRequest
+        };
+
+        return BuildErrorResponse(statusCode, exception.Message);
+    }
+
+    private static MessageModel BuildErrorResponse(HttpStatusCodeEnum statusCode, string message)
+    {
+        return new MessageModel
+        {
+            IsSuccess = false,
+            StatusCode = (int)statusCode,
+            MessageInfo = message
+        };
     }
 }

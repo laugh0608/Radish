@@ -96,6 +96,36 @@ public class QuestionControllerTest
     }
 
     [Fact]
+    public async Task Answer_Should_Unwrap_AggregateException_To_NotFound_When_PostDoesNotExist()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+
+        moderationServiceMock
+            .Setup(service => service.GetPublishPermissionAsync(10001))
+            .ReturnsAsync(new ContentModerationPermissionVo
+            {
+                VoUserId = 10001,
+                VoCanPublish = true
+            });
+        postServiceMock
+            .Setup(service => service.AddAnswerAsync(9999, "帖子已经不存在", 10001, "Tester", 0))
+            .ThrowsAsync(new AggregateException(new InvalidOperationException("问答帖不存在")));
+
+        var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
+
+        var result = await controller.Answer(new CreateAnswerDto
+        {
+            PostId = 9999,
+            Content = "帖子已经不存在"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(404, result.StatusCode);
+        Assert.Contains("问答帖不存在", result.MessageInfo);
+    }
+
+    [Fact]
     public async Task Answer_Should_Return_Forbidden_When_PublishPermissionIsDenied()
     {
         var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
@@ -193,6 +223,29 @@ public class QuestionControllerTest
         Assert.False(result.IsSuccess);
         Assert.Equal(403, result.StatusCode);
         Assert.Contains("只有提问者可以采纳答案", result.MessageInfo);
+    }
+
+    [Fact]
+    public async Task Accept_Should_Unwrap_AggregateException_To_BadRequest_When_AcceptingOwnAnswer()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+
+        postServiceMock
+            .Setup(service => service.AcceptAnswerAsync(9527, 3001, 10001, "Tester"))
+            .ThrowsAsync(new AggregateException(new InvalidOperationException("不能采纳自己的回答")));
+
+        var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
+
+        var result = await controller.Accept(new AcceptAnswerDto
+        {
+            PostId = 9527,
+            AnswerId = 3001
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Contains("不能采纳自己的回答", result.MessageInfo);
     }
 
     private static QuestionController CreateController(

@@ -101,11 +101,6 @@
   color: #991b1b;
 }
 
-.answerChip {
-  background: rgba(15, 23, 42, 0.08);
-  color: #334155;
-}
-
 .tagChip {
   display: inline-flex;
   align-items: center;

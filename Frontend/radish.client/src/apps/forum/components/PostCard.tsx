@@ -131,15 +131,10 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
                 <span className={`${styles.statusChip} ${post.voIsSolved ? styles.solvedChip : styles.pendingChip}`}>
                   {post.voIsSolved ? '已解决' : '待解决'}
                 </span>
-                <span className={`${styles.statusChip} ${styles.answerChip}`}>
-                  回答 {post.voAnswerCount ?? 0}
-                </span>
               </>
             )}
             {post.voHasPoll && (
-              <span className={`${styles.statusChip} ${styles.pollChip}`}>
-                投票 {post.voPollTotalVoteCount ?? 0}
-              </span>
+              <span className={`${styles.statusChip} ${styles.pollChip}`}>投票</span>
             )}
           </div>
 
@@ -187,8 +182,14 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
             </div>
             {post.voHasPoll && (
               <div className={styles.statItem}>
-                <span className={styles.statLabel}>{post.voPollIsClosed ? '票' : '投'}</span>
+                <span className={styles.statLabel}>票</span>
                 <span className={styles.statValue}>{post.voPollTotalVoteCount || 0}</span>
+              </div>
+            )}
+            {post.voIsQuestion && (
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>答</span>
+                <span className={styles.statValue}>{post.voAnswerCount || 0}</span>
               </div>
             )}
           </div>
