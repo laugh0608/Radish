@@ -246,7 +246,7 @@ export const PostDetailContentView = ({
             />
           </Suspense>
 
-          <Suspense fallback={<p className={styles.loadingText}>加载评论中...</p>}>
+          <Suspense fallback={<p className={styles.loadingText}>加载讨论中...</p>}>
             <CommentTree
               comments={comments}
               loading={loadingComments}
@@ -278,7 +278,7 @@ export const PostDetailContentView = ({
 
           <div className={styles.commentCta}>
             <button className={styles.commentButton} onClick={handleOpenCommentSheet}>
-              发表评论
+              参与讨论
             </button>
           </div>
         </div>
@@ -301,11 +301,11 @@ export const PostDetailContentView = ({
       <BottomSheet
         isOpen={isCommentSheetOpen}
         onClose={handleCloseCommentSheet}
-        title="发表评论"
+        title="参与讨论"
         height="70%"
       >
         {isCommentSheetOpen && (
-          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>评论编辑器加载中...</div>}>
+          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>讨论编辑器加载中...</div>}>
             <CreateCommentForm
               isAuthenticated={isAuthenticated}
               hasPost={true}
@@ -313,6 +313,9 @@ export const PostDetailContentView = ({
               replyTo={replyTo}
               onCancelReply={onCancelReply}
               variant="sheet"
+              title="参与讨论"
+              submitText="发布讨论"
+              placeholder="写下你的讨论内容（输入 @ 可以提及用户）"
               stickerGroups={stickerGroups}
               onStickerSelect={(selection) => {
                 void handleStickerSelect(selection);

@@ -1,5 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PostDetail as PostDetailType, ReactionSummaryVo } from '@/api/forum';
+import { uploadDocument, uploadImage } from '@/api/attachment';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
@@ -11,6 +13,20 @@ import styles from './PostDetail.module.css';
 const MarkdownRenderer = lazy(() =>
   import('@radish/ui/markdown-renderer').then((module) => ({ default: module.MarkdownRenderer }))
 );
+
+const MarkdownEditor = lazy(() =>
+  import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
+);
+
+const appendImageMeta = (displayUrl: string, fullUrl?: string): string => {
+  const params = new URLSearchParams();
+  if (fullUrl) {
+    params.set('full', fullUrl);
+  }
+
+  const meta = params.toString();
+  return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
+};
 
 interface PostDetailProps {
   post: PostDetailType | null;
@@ -63,6 +79,7 @@ export const PostDetail = ({
   onToggleFollow,
   onAuthorClick,
 }: PostDetailProps) => {
+  const { t } = useTranslation();
   const parsedTags = post?.voTags
     ? post.voTags
         .split(',')
@@ -80,6 +97,7 @@ export const PostDetail = ({
   const showFollowAction = isAuthenticated && !!post && !isAuthor && post.voAuthorId > 0;
   const question = post?.voQuestion;
   const isQuestionPost = !!post?.voIsQuestion;
+  const canAnswerQuestion = isAuthenticated && !isSubmittingAnswer;
 
   useEffect(() => {
     setSelectedOptionId(post?.voPoll?.voSelectedOptionId ?? null);
@@ -146,6 +164,34 @@ export const PostDetail = ({
     } finally {
       setIsSubmittingAnswer(false);
     }
+  };
+
+  const handleAnswerImageUpload = async (file: File) => {
+    const result = await uploadImage({
+      file,
+      businessType: 'Comment',
+      generateThumbnail: true,
+      generateMultipleSizes: false,
+      removeExif: true
+    }, t);
+
+    const displayUrl = result.voThumbnailUrl || result.voUrl;
+    return {
+      url: appendImageMeta(displayUrl, result.voUrl),
+      thumbnailUrl: result.voThumbnailUrl
+    };
+  };
+
+  const handleAnswerDocumentUpload = async (file: File) => {
+    const result = await uploadDocument({
+      file,
+      businessType: 'Comment'
+    }, t);
+
+    return {
+      url: result.voUrl,
+      fileName: result.voOriginalName || file.name
+    };
   };
 
   const handleAcceptAnswer = async (answerId: number) => {
@@ -273,8 +319,8 @@ export const PostDetail = ({
             <div className={styles.questionHeader}>
               <div>
                 <div className={styles.questionTitleRow}>
-                  <span className={styles.questionSectionBadge}>问答区</span>
-                  <h5 className={styles.questionTitle}>回答与采纳</h5>
+                  <span className={styles.questionSectionBadge}>回答</span>
+                  <h5 className={styles.questionTitle}>解决方案</h5>
                 </div>
                 <p className={styles.questionMeta}>
                   {question?.voIsSolved ? '该问题已采纳答案' : '该问题尚未采纳答案'}
@@ -343,21 +389,32 @@ export const PostDetail = ({
             )}
 
             <div className={styles.answerComposer}>
-              <label className={styles.answerLabel} htmlFor={`question-answer-${post.voId}`}>
+              <label className={styles.answerLabel}>
                 发表回答
               </label>
-              <textarea
-                id={`question-answer-${post.voId}`}
-                className={styles.answerTextarea}
-                value={answerContent}
-                onChange={(event) => setAnswerContent(event.target.value)}
-                placeholder={isAuthenticated ? '写下你的回答，支持 Markdown' : '登录后可提交回答'}
-                disabled={!isAuthenticated || isSubmittingAnswer}
-                rows={5}
-              />
+              <Suspense fallback={<div className={styles.answerEditorLoading}>回答编辑器加载中...</div>}>
+                <MarkdownEditor
+                  value={answerContent}
+                  onChange={setAnswerContent}
+                  placeholder={isAuthenticated ? '写下你的回答，支持 Markdown' : '登录后可提交回答'}
+                  minHeight={180}
+                  disabled={!canAnswerQuestion}
+                  showToolbar={true}
+                  theme="light"
+                  className={styles.answerEditor}
+                  onImageUpload={handleAnswerImageUpload}
+                  onDocumentUpload={handleAnswerDocumentUpload}
+                  stickerGroups={stickerGroups}
+                  stickerMap={stickerMap}
+                />
+              </Suspense>
               <div className={styles.answerComposerFooter}>
                 <span className={styles.answerHint}>
-                  {isAuthenticated ? '提交后会立即出现在回答列表中' : '请先登录后再回答'}
+                  {question?.voIsSolved
+                    ? '问题已解决，仍可继续补充更多方案'
+                    : isAuthenticated
+                      ? '提交后会立即出现在回答列表中'
+                      : '请先登录后再回答'}
                 </span>
                 <button
                   type="button"
@@ -386,7 +443,7 @@ export const PostDetail = ({
             <span className={styles.likeCount}>{post.voLikeCount || 0}</span>
           </button>
           <span className={styles.commentCount}>
-            💬 {post.voCommentCount || 0} 条评论
+            💬 {post.voCommentCount || 0} 条讨论
           </span>
 
           {showFollowAction && (
