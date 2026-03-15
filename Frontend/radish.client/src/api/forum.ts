@@ -20,6 +20,9 @@ import type {
   CommentHighlight,
   PostEditHistory,
   CommentEditHistory,
+  ForumPostViewMode,
+  QuestionStatusFilter,
+  ForumPostSortBy,
   VoPagedResult,
   PageModel,
   PublishPostRequest,
@@ -62,6 +65,9 @@ export type {
   CommentHighlight,
   PostEditHistory,
   CommentEditHistory,
+  ForumPostViewMode,
+  QuestionStatusFilter,
+  ForumPostSortBy,
   VoPagedResult,
   PageModel,
   PublishPostRequest,
@@ -150,16 +156,20 @@ export async function getPostList(
   t: TFunction,
   pageIndex: number = 1,
   pageSize: number = 20,
-  sortBy: string = 'newest',
+  sortBy: ForumPostSortBy = 'newest',
   keyword: string = '',
   startTime?: string,
-  endTime?: string
+  endTime?: string,
+  postType: ForumPostViewMode = 'all',
+  questionStatus: QuestionStatusFilter = 'all'
 ): Promise<PageModel<PostItem>> {
   const params = new URLSearchParams();
   if (categoryId) params.set('categoryId', categoryId.toString());
   params.set('pageIndex', pageIndex.toString());
   params.set('pageSize', pageSize.toString());
   params.set('sortBy', sortBy);
+  params.set('postType', postType);
+  params.set('questionStatus', questionStatus);
   if (keyword.trim()) params.set('keyword', keyword.trim());
   if (startTime) params.set('startTime', startTime);
   if (endTime) params.set('endTime', endTime);
@@ -388,9 +398,10 @@ export async function getPostEditHistory(
   pageSize: number,
   t: TFunction
 ): Promise<VoPagedResult<PostEditHistory>> {
+  const hasToken = Boolean(tokenService.getAccessToken());
   const response = await apiGet<VoPagedResult<PostEditHistory>>(
     `/api/v1/Post/GetEditHistory?postId=${postId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
-    { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
+    { withAuth: hasToken, timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {
@@ -409,9 +420,10 @@ export async function getCommentEditHistory(
   pageSize: number,
   t: TFunction
 ): Promise<VoPagedResult<CommentEditHistory>> {
+  const hasToken = Boolean(tokenService.getAccessToken());
   const response = await apiGet<VoPagedResult<CommentEditHistory>>(
     `/api/v1/Comment/GetEditHistory?commentId=${commentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
-    { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
+    { withAuth: hasToken, timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {

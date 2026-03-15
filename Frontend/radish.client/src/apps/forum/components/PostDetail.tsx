@@ -98,6 +98,7 @@ export const PostDetail = ({
   const question = post?.voQuestion;
   const isQuestionPost = !!post?.voIsQuestion;
   const canAnswerQuestion = isAuthenticated && !isSubmittingAnswer;
+  const canViewQuestionHistory = isQuestionPost && !!onViewHistory;
 
   const buildAvatarText = (name: string) => {
     const source = name.trim();
@@ -347,9 +348,22 @@ export const PostDetail = ({
                   共 {question?.voAnswerCount ?? post.voAnswerCount ?? 0} 条回答
                 </p>
               </div>
-              <span className={`${styles.questionState} ${question?.voIsSolved ? styles.questionStateSolved : styles.questionStatePending}`}>
-                {question?.voIsSolved ? '已解决' : '待解决'}
-              </span>
+              <div className={styles.questionHeaderActions}>
+                <span className={`${styles.questionState} ${question?.voIsSolved ? styles.questionStateSolved : styles.questionStatePending}`}>
+                  {question?.voIsSolved ? '已解决' : '待解决'}
+                </span>
+                {canViewQuestionHistory && (
+                  <button
+                    type="button"
+                    onClick={() => onViewHistory?.(post.voId)}
+                    className={styles.historyButton}
+                    title="查看问题历史"
+                  >
+                    <Icon icon="mdi:history" size={18} />
+                    问题历史
+                  </button>
+                )}
+              </div>
             </div>
 
             {question?.voAnswers && question.voAnswers.length > 0 ? (
@@ -540,15 +554,17 @@ export const PostDetail = ({
                 <Icon icon="mdi:delete" size={18} />
                 删除
               </button>
-              <button
-                type="button"
-                onClick={() => onViewHistory?.(post.voId)}
-                className={styles.historyButton}
-                title="查看编辑历史"
-              >
-                <Icon icon="mdi:history" size={18} />
-                历史
-              </button>
+              {!isQuestionPost && (
+                <button
+                  type="button"
+                  onClick={() => onViewHistory?.(post.voId)}
+                  className={styles.historyButton}
+                  title="查看编辑历史"
+                >
+                  <Icon icon="mdi:history" size={18} />
+                  历史
+                </button>
+              )}
             </div>
           )}
         </div>

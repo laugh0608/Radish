@@ -144,6 +144,80 @@ public class PostControllerTest
     }
 
     [Fact]
+    public async Task GetList_Should_Use_Question_Query_When_PostTypeIsQuestion()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        var questionPosts = new List<PostVo>
+        {
+            new()
+            {
+                VoId = 9528,
+                VoTitle = "待解决问答帖",
+                VoIsQuestion = true,
+                VoIsSolved = false,
+                VoAnswerCount = 3,
+                VoAuthorId = 0,
+                VoCreateTime = DateTime.UtcNow
+            }
+        };
+
+        postServiceMock
+            .Setup(service => service.GetQuestionPostPageAsync(
+                null,
+                1,
+                20,
+                "pending",
+                null,
+                null,
+                null,
+                false))
+            .ReturnsAsync((questionPosts, 1));
+        postServiceMock
+            .Setup(service => service.FillPostListMetadataAsync(It.Is<List<PostVo>>(items => ReferenceEquals(items, questionPosts))))
+            .Returns(Task.CompletedTask);
+        commentServiceMock
+            .Setup(service => service.QueryAsync(It.IsAny<Expression<Func<Comment, bool>>>()))
+            .ReturnsAsync(new List<CommentVo>());
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object);
+
+        var result = await controller.GetList(postType: "question", questionStatus: "pending", sortBy: "pending");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+
+        var pageModel = Assert.IsType<PageModel<PostVo>>(result.ResponseData);
+        var post = Assert.Single(pageModel.Data);
+        Assert.True(post.VoIsQuestion);
+        Assert.False(post.VoIsSolved);
+        Assert.Equal(3, post.VoAnswerCount);
+
+        postServiceMock.Verify(service => service.GetQuestionPostPageAsync(
+            null,
+            1,
+            20,
+            "pending",
+            null,
+            null,
+            null,
+            false), Times.Once);
+        postServiceMock.Verify(service => service.QueryPageAsync(
+            It.IsAny<Expression<Func<Post, bool>>>(),
+            It.IsAny<int>(),
+            It.IsAny<int>(),
+            It.IsAny<Expression<Func<Post, object>>>(),
+            It.IsAny<OrderByType>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Publish_Should_Return_BadRequest_When_ServiceRejects_InvalidPoll()
     {
         var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);

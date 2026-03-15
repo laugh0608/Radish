@@ -17,6 +17,28 @@ public interface IPostService : IBaseService<Post, PostVo>
     Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null);
 
     /// <summary>
+    /// 分页获取问答帖子列表
+    /// </summary>
+    /// <param name="categoryId">分类 ID（可空）</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页大小</param>
+    /// <param name="sortBy">排序方式：newest / pending / answers</param>
+    /// <param name="keyword">搜索关键词（可空）</param>
+    /// <param name="startTime">筛选起始时间（可空）</param>
+    /// <param name="endTime">筛选结束时间（可空）</param>
+    /// <param name="isSolved">是否已解决（可空）</param>
+    /// <returns>分页帖子列表</returns>
+    Task<(List<PostVo> data, int totalCount)> GetQuestionPostPageAsync(
+        long? categoryId = null,
+        int pageIndex = 1,
+        int pageSize = 20,
+        string sortBy = "newest",
+        string? keyword = null,
+        DateTime? startTime = null,
+        DateTime? endTime = null,
+        bool? isSolved = null);
+
+    /// <summary>
     /// 批量回填帖子列表所需的轻量元数据
     /// </summary>
     /// <param name="posts">帖子列表</param>

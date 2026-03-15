@@ -19,6 +19,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     private const int MaxPollOptionCount = 6;
 
     private readonly IBaseRepository<Post> _postRepository;
+    private readonly IPostRepository? _postCustomRepository;
     private readonly IBaseRepository<UserPostLike> _userPostLikeRepository;
     private readonly IBaseRepository<PostTag> _postTagRepository;
     private readonly IBaseRepository<Category> _categoryRepository;
@@ -54,10 +55,12 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         INotificationDedupService dedupService,
         IExperienceService experienceService,
         IBaseRepository<PostEditHistory> postEditHistoryRepository,
-        IOptions<ForumEditHistoryOptions> editHistoryOptions)
+        IOptions<ForumEditHistoryOptions> editHistoryOptions,
+        IPostRepository? postCustomRepository = null)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
+        _postCustomRepository = postCustomRepository;
         _userPostLikeRepository = userPostLikeRepository;
         _postTagRepository = postTagRepository;
         _categoryRepository = categoryRepository;
@@ -121,6 +124,37 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         FillPostQuestionSummary(postVo, postVo.VoQuestion);
 
         return postVo;
+    }
+
+    /// <summary>
+    /// 分页获取问答帖子列表
+    /// </summary>
+    public async Task<(List<PostVo> data, int totalCount)> GetQuestionPostPageAsync(
+        long? categoryId = null,
+        int pageIndex = 1,
+        int pageSize = 20,
+        string sortBy = "newest",
+        string? keyword = null,
+        DateTime? startTime = null,
+        DateTime? endTime = null,
+        bool? isSolved = null)
+    {
+        if (_postCustomRepository == null)
+        {
+            throw new InvalidOperationException("帖子仓储未配置，无法查询问答帖子列表");
+        }
+
+        var (posts, totalCount) = await _postCustomRepository.QueryQuestionPostPageAsync(
+            categoryId,
+            keyword,
+            startTime,
+            endTime,
+            isSolved,
+            pageIndex,
+            pageSize,
+            sortBy);
+
+        return (Mapper.Map<List<PostVo>>(posts), totalCount);
     }
 
     /// <summary>

@@ -15,7 +15,10 @@ import {
   type PostItem,
   type PostDetail,
   type CommentNode,
-  type CommentHighlight
+  type CommentHighlight,
+  type ForumPostViewMode,
+  type QuestionStatusFilter,
+  type ForumPostSortBy
 } from '@/api/forum';
 
 function isAbortError(error: unknown): boolean {
@@ -45,8 +48,10 @@ export interface ForumDataState {
   totalPages: number;
 
   // 排序状态
-  sortBy: 'newest' | 'hottest' | 'essence';
+  sortBy: ForumPostSortBy;
   commentSortBy: 'newest' | 'hottest' | null;
+  postViewMode: ForumPostViewMode;
+  questionStatus: QuestionStatusFilter;
 
   // 搜索状态
   searchKeyword: string;
@@ -69,8 +74,10 @@ export interface ForumDataActions {
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: Dispatch<SetStateAction<CommentNode[]>>;
   setCurrentPage: (page: number) => void;
-  setSortBy: (sortBy: 'newest' | 'hottest' | 'essence') => void;
+  setSortBy: (sortBy: ForumPostSortBy) => void;
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
+  setPostViewMode: (mode: ForumPostViewMode) => void;
+  setQuestionStatus: (status: QuestionStatusFilter) => void;
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
   loadCategories: () => Promise<void>;
@@ -105,8 +112,10 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const [totalPages, setTotalPages] = useState(0);
 
   // 排序状态
-  const [sortBy, setSortBy] = useState<'newest' | 'hottest' | 'essence'>('newest');
+  const [sortBy, setSortBy] = useState<ForumPostSortBy>('newest');
   const [commentSortBy, setCommentSortBy] = useState<'newest' | 'hottest' | null>(null);
+  const [postViewMode, setPostViewMode] = useState<ForumPostViewMode>('all');
+  const [questionStatus, setQuestionStatus] = useState<QuestionStatusFilter>('all');
 
   // 搜索状态
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -182,7 +191,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     }
     const resolvedPageIndex = selectedTagName ? 1 : currentPage;
     const resolvedPageSize = selectedTagName ? 100 : pageSize;
-    const loadKey = `${selectedCategoryId ?? 'all'}|${resolvedPageIndex}|${resolvedPageSize}|${sortBy}|${searchKeyword.trim()}|${selectedTagName ?? ''}`;
+    const loadKey = `${selectedCategoryId ?? 'all'}|${resolvedPageIndex}|${resolvedPageSize}|${sortBy}|${postViewMode}|${questionStatus}|${searchKeyword.trim()}|${selectedTagName ?? ''}`;
     if (inFlightPostListRef.current.has(loadKey)) {
       return;
     }
@@ -196,7 +205,11 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
         resolvedPageIndex,
         resolvedPageSize,
         sortBy,
-        searchKeyword
+        searchKeyword,
+        undefined,
+        undefined,
+        postViewMode,
+        questionStatus
       );
       const filteredPosts = selectedTagName
         ? pageModel.data.filter(post => {
@@ -381,12 +394,23 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   // 当选择分类时重新加载帖子
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategoryId, selectedTagName]);
+  }, [selectedCategoryId, selectedTagName, postViewMode, questionStatus]);
+
+  useEffect(() => {
+    if (postViewMode === 'question' && (sortBy === 'hottest' || sortBy === 'essence')) {
+      setSortBy('newest');
+      return;
+    }
+
+    if (postViewMode === 'all' && (sortBy === 'pending' || sortBy === 'answers')) {
+      setSortBy('newest');
+    }
+  }, [postViewMode, sortBy]);
 
   // 当页码、排序或搜索变化时重新加载帖子
   useEffect(() => {
     void loadPosts();
-  }, [categoriesLoaded, selectedCategoryId, selectedTagName, currentPage, sortBy, searchKeyword]);
+  }, [categoriesLoaded, selectedCategoryId, selectedTagName, currentPage, sortBy, searchKeyword, postViewMode, questionStatus]);
 
   return {
     // 状态
@@ -406,6 +430,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     totalPages,
     sortBy,
     commentSortBy,
+    postViewMode,
+    questionStatus,
     searchKeyword,
     loadingCategories,
     loadingHotTags,
@@ -423,6 +449,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     setCurrentPage,
     setSortBy,
     setCommentSortBy,
+    setPostViewMode,
+    setQuestionStatus,
     setSearchKeyword,
     setError,
     loadCategories,

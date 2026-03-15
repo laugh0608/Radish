@@ -19,6 +19,12 @@ export interface PageModel<T> {
   data: T[];
 }
 
+export type ForumPostViewMode = 'all' | 'question';
+
+export type QuestionStatusFilter = 'all' | 'pending' | 'solved';
+
+export type ForumPostSortBy = 'newest' | 'hottest' | 'essence' | 'pending' | 'answers';
+
 /**
  * 分类 Vo
  */

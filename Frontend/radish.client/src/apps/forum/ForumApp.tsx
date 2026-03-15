@@ -591,8 +591,12 @@ export const ForumApp = () => {
                   currentPage={dataState.currentPage}
                   totalPages={dataState.totalPages}
                   sortBy={dataState.sortBy}
+                  postViewMode={dataState.postViewMode}
+                  questionStatus={dataState.questionStatus}
                   loadingPosts={dataState.loadingPosts}
                   onSortChange={actionsState.handleSortChange}
+                  onViewModeChange={dataState.setPostViewMode}
+                  onQuestionStatusChange={dataState.setQuestionStatus}
                   onOpenSearch={handleOpenSearchView}
                   onPageChange={actionsState.handlePageChange}
                   onPostClick={actionsState.handleSelectPost}
@@ -671,7 +675,7 @@ export const ForumApp = () => {
           <Suspense fallback={null}>
             <EditHistoryModal
               isOpen={actionsState.isPostHistoryOpen}
-              title="帖子编辑历史"
+              title={dataState.selectedPost?.voIsQuestion ? '问题编辑历史' : '帖子编辑历史'}
               loading={actionsState.postHistoryLoading}
               error={actionsState.postHistoryError}
               items={actionsState.postHistories}

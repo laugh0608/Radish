@@ -23,7 +23,8 @@ import {
   type CreatePollRequest,
   type PostQuestion,
   type PostEditHistory,
-  type CommentEditHistory
+  type CommentEditHistory,
+  type ForumPostSortBy
 } from '@/api/forum';
 
 export interface ForumActionsState {
@@ -100,7 +101,7 @@ export interface ForumActionsHandlers {
 
   // 排序和分页
   handlePageChange: (page: number) => void;
-  handleSortChange: (sortBy: 'newest' | 'hottest' | 'essence') => void;
+  handleSortChange: (sortBy: ForumPostSortBy) => void;
   handleCommentSortChange: (sortBy: 'newest' | 'hottest') => void;
   handleSearchChange: (keyword: string) => void;
 
@@ -122,7 +123,7 @@ interface UseForumActionsParams {
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: Dispatch<SetStateAction<CommentNode[]>>;
   setCurrentPage: (page: number) => void;
-  setSortBy: (sortBy: 'newest' | 'hottest' | 'essence') => void;
+  setSortBy: (sortBy: ForumPostSortBy) => void;
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
@@ -754,7 +755,7 @@ export const useForumActions = (
   };
 
   // 排序
-  const handleSortChange = (newSortBy: 'newest' | 'hottest' | 'essence') => {
+  const handleSortChange = (newSortBy: ForumPostSortBy) => {
     setSortBy(newSortBy);
     setCurrentPage(1);
   };
