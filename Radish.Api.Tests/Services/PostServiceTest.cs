@@ -13,6 +13,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service;
+using SqlSugar;
 using Xunit;
 
 namespace Radish.Api.Tests.Services;
@@ -788,6 +789,265 @@ public class PostServiceTest
         postAnswerRepository.Verify(
             repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<PostAnswer, bool>>?>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdatePostAsync_Should_Create_EditHistory_When_QuestionPostIsUpdated()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var userPostLikeRepository = new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict);
+        var postTagRepository = new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict);
+        var categoryRepository = new Mock<IBaseRepository<Category>>(MockBehavior.Strict);
+        var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
+        var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
+        var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
+        var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var postQuestionRepository = new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict);
+        var postAnswerRepository = new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict);
+        var tagService = new Mock<ITagService>(MockBehavior.Strict);
+        var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var dedupService = new Mock<INotificationDedupService>(MockBehavior.Strict);
+        var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
+        var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        var post = new Post(new PostInitializationOptions("原问题标题", "原问题内容")
+        {
+            AuthorId = 9527,
+            AuthorName = "Owner",
+            TenantId = 9,
+            CategoryId = 101,
+            IsPublished = true
+        })
+        {
+            Id = 2001,
+            EditCount = 0
+        };
+
+        var existingTag = new Tag("问答")
+        {
+            Id = 601,
+            IsEnabled = true,
+            IsDeleted = false
+        };
+
+        postRepository
+            .Setup(repository => repository.QueryByIdAsync(2001))
+            .ReturnsAsync(post);
+        postRepository
+            .Setup(repository => repository.UpdateAsync(It.Is<Post>(item =>
+                item.Id == 2001 &&
+                item.Title == "更新后的问题标题" &&
+                item.Content == "更新后的问题内容" &&
+                item.EditCount == 1 &&
+                item.ModifyBy == "Owner" &&
+                item.ModifyId == 9527)))
+            .ReturnsAsync(true);
+
+        postTagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostTag, bool>>?>()))
+            .ReturnsAsync(
+            [
+                new PostTag(2001, 601)
+            ]);
+
+        tagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Tag, bool>>?>()))
+            .ReturnsAsync((Expression<Func<Tag, bool>>? expression) =>
+            {
+                var tags = new List<Tag> { existingTag };
+                if (expression == null)
+                {
+                    return tags;
+                }
+
+                var predicate = expression.Compile();
+                return tags.Where(predicate).ToList();
+            });
+
+        postEditHistoryRepository
+            .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<PostEditHistory, bool>>?>()))
+            .ReturnsAsync(0);
+        postEditHistoryRepository
+            .Setup(repository => repository.AddAsync(It.Is<PostEditHistory>(history =>
+                history.PostId == 2001 &&
+                history.EditSequence == 1 &&
+                history.OldTitle == "原问题标题" &&
+                history.NewTitle == "更新后的问题标题" &&
+                history.OldContent == "原问题内容" &&
+                history.NewContent == "更新后的问题内容" &&
+                history.EditorId == 9527 &&
+                history.EditorName == "Owner" &&
+                history.TenantId == 9 &&
+                history.CreateBy == "Owner" &&
+                history.CreateId == 9527)))
+            .ReturnsAsync(7001);
+        postEditHistoryRepository
+            .Setup(repository => repository.QueryWithOrderAsync(
+                It.IsAny<Expression<Func<PostEditHistory, bool>>?>(),
+                It.IsAny<Expression<Func<PostEditHistory, object>>>(),
+                OrderByType.Desc,
+                0))
+            .ReturnsAsync(
+            [
+                new PostEditHistory
+                {
+                    Id = 7001,
+                    PostId = 2001,
+                    EditSequence = 1
+                }
+            ]);
+
+        var service = new PostService(
+            mapper.Object,
+            postRepository.Object,
+            userPostLikeRepository.Object,
+            postTagRepository.Object,
+            categoryRepository.Object,
+            tagRepository.Object,
+            postPollRepository.Object,
+            postPollOptionRepository.Object,
+            postPollVoteRepository.Object,
+            postQuestionRepository.Object,
+            postAnswerRepository.Object,
+            tagService.Object,
+            coinRewardService.Object,
+            notificationService.Object,
+            dedupService.Object,
+            experienceService.Object,
+            postEditHistoryRepository.Object,
+            Options.Create(new ForumEditHistoryOptions
+            {
+                Enable = true,
+                Post = new ForumPostEditHistoryOptions
+                {
+                    EnableHistory = true,
+                    HistorySaveEditCount = 10,
+                    MaxEditCount = 20,
+                    MaxHistoryRecords = 20
+                }
+            }));
+
+        await service.UpdatePostAsync(
+            2001,
+            "更新后的问题标题",
+            "更新后的问题内容",
+            null,
+            ["问答"],
+            allowCreateTag: false,
+            operatorId: 9527,
+            operatorName: "Owner");
+
+        postRepository.VerifyAll();
+        postTagRepository.VerifyAll();
+        tagRepository.VerifyAll();
+        postEditHistoryRepository.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetPostEditHistoryPageAsync_Should_Normalize_Paging_And_Map_Result()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var userPostLikeRepository = new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict);
+        var postTagRepository = new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict);
+        var categoryRepository = new Mock<IBaseRepository<Category>>(MockBehavior.Strict);
+        var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
+        var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
+        var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
+        var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var postQuestionRepository = new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict);
+        var postAnswerRepository = new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict);
+        var tagService = new Mock<ITagService>(MockBehavior.Strict);
+        var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var dedupService = new Mock<INotificationDedupService>(MockBehavior.Strict);
+        var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
+        var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        var histories = new List<PostEditHistory>
+        {
+            new()
+            {
+                Id = 8001,
+                PostId = 2001,
+                EditSequence = 2,
+                OldTitle = "旧标题",
+                NewTitle = "新标题",
+                OldContent = "旧内容",
+                NewContent = "新内容",
+                EditorId = 9527,
+                EditorName = "Owner"
+            }
+        };
+
+        var historyVos = new List<PostEditHistoryVo>
+        {
+            new()
+            {
+                VoId = 8001,
+                VoPostId = 2001,
+                VoEditSequence = 2,
+                VoOldTitle = "旧标题",
+                VoNewTitle = "新标题",
+                VoOldContent = "旧内容",
+                VoNewContent = "新内容",
+                VoEditorId = 9527,
+                VoEditorName = "Owner"
+            }
+        };
+
+        postEditHistoryRepository
+            .Setup(repository => repository.QueryPageAsync(
+                It.IsAny<Expression<Func<PostEditHistory, bool>>?>(),
+                1,
+                100,
+                It.IsAny<Expression<Func<PostEditHistory, object>>>(),
+                OrderByType.Desc,
+                It.IsAny<Expression<Func<PostEditHistory, object>>>(),
+                OrderByType.Desc))
+            .ReturnsAsync((histories, 1));
+        mapper
+            .Setup(m => m.Map<List<PostEditHistoryVo>>(histories))
+            .Returns(historyVos);
+
+        var service = new PostService(
+            mapper.Object,
+            postRepository.Object,
+            userPostLikeRepository.Object,
+            postTagRepository.Object,
+            categoryRepository.Object,
+            tagRepository.Object,
+            postPollRepository.Object,
+            postPollOptionRepository.Object,
+            postPollVoteRepository.Object,
+            postQuestionRepository.Object,
+            postAnswerRepository.Object,
+            tagService.Object,
+            coinRewardService.Object,
+            notificationService.Object,
+            dedupService.Object,
+            experienceService.Object,
+            postEditHistoryRepository.Object,
+            Options.Create(new ForumEditHistoryOptions()));
+
+        var (result, total) = await service.GetPostEditHistoryPageAsync(2001, 0, 200);
+
+        Assert.Single(result);
+        Assert.Equal(1, total);
+        Assert.Equal(8001, result[0].VoId);
+        Assert.Equal("新标题", result[0].VoNewTitle);
+
+        postEditHistoryRepository.Verify(repository => repository.QueryPageAsync(
+            It.IsAny<Expression<Func<PostEditHistory, bool>>?>(),
+            1,
+            100,
+            It.IsAny<Expression<Func<PostEditHistory, object>>>(),
+            OrderByType.Desc,
+            It.IsAny<Expression<Func<PostEditHistory, object>>>(),
+            OrderByType.Desc), Times.Once);
+        mapper.VerifyAll();
     }
 
     [Fact]

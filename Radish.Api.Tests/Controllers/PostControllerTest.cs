@@ -257,6 +257,92 @@ public class PostControllerTest
     }
 
     [Fact]
+    public async Task GetEditHistory_Should_Return_PagedHistories_When_PostExists()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        postServiceMock
+            .Setup(service => service.QueryFirstAsync(It.IsAny<Expression<Func<Post, bool>>>()))
+            .ReturnsAsync(new PostVo
+            {
+                VoId = 9527,
+                VoTitle = "问答帖"
+            });
+        postServiceMock
+            .Setup(service => service.GetPostEditHistoryPageAsync(9527, 1, 10))
+            .ReturnsAsync((
+                new List<PostEditHistoryVo>
+                {
+                    new()
+                    {
+                        VoId = 1,
+                        VoPostId = 9527,
+                        VoEditSequence = 1,
+                        VoOldTitle = "旧标题",
+                        VoNewTitle = "新标题",
+                        VoOldContent = "旧内容",
+                        VoNewContent = "新内容",
+                        VoEditorId = 10001,
+                        VoEditorName = "Tester",
+                        VoEditedAt = DateTime.UtcNow,
+                        VoCreateTime = DateTime.UtcNow
+                    }
+                },
+                1));
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object);
+
+        var result = await controller.GetEditHistory(9527, 1, 10);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+
+        var page = Assert.IsType<VoPagedResult<PostEditHistoryVo>>(result.ResponseData);
+        Assert.Single(page.VoItems);
+        Assert.Equal(1, page.VoTotal);
+        Assert.Equal(1, page.VoPageIndex);
+        Assert.Equal(10, page.VoPageSize);
+        Assert.Equal("旧标题", page.VoItems[0].VoOldTitle);
+        Assert.Equal("新内容", page.VoItems[0].VoNewContent);
+
+        postServiceMock.Verify(service => service.GetPostEditHistoryPageAsync(9527, 1, 10), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetEditHistory_Should_Return_NotFound_When_PostDoesNotExist()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        postServiceMock
+            .Setup(service => service.QueryFirstAsync(It.IsAny<Expression<Func<Post, bool>>>()))
+            .ReturnsAsync((PostVo?)null);
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object);
+
+        var result = await controller.GetEditHistory(9527, 1, 10);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(404, result.StatusCode);
+        Assert.Equal("帖子不存在", result.MessageInfo);
+
+        postServiceMock.Verify(service => service.GetPostEditHistoryPageAsync(It.IsAny<long>(), It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+    }
+
+    [Fact]
     public async Task Publish_Should_Return_BadRequest_When_ServiceRejects_InvalidPoll()
     {
         var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
