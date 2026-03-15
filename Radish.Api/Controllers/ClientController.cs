@@ -2,7 +2,9 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
+using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
 using Radish.Model;
 using Radish.Model.ViewModels.Client;
 using System.Security.Cryptography;
@@ -16,7 +18,7 @@ namespace Radish.Api.Controllers;
 [ApiController]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
-[Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class ClientController : ControllerBase
 {
     private readonly IOpenIddictApplicationManager _applicationManager;
@@ -37,6 +39,7 @@ public class ClientController : ControllerBase
     /// 获取客户端列表
     /// </summary>
     [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsView)]
     public async Task<MessageModel<PageModel<ClientVo>>> GetClients(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -106,6 +109,7 @@ public class ClientController : ControllerBase
     /// 获取客户端详情
     /// </summary>
     [HttpGet("{id}")]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsView, ConsolePermissions.ApplicationsEdit)]
     public async Task<MessageModel<ClientVo>> GetClient(string id)
     {
         try
@@ -130,6 +134,7 @@ public class ClientController : ControllerBase
     /// 创建客户端
     /// </summary>
     [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsCreate)]
     public async Task<MessageModel<ClientSecretVo>> CreateClient([FromBody] CreateClientDto dto)
     {
         try
@@ -239,6 +244,7 @@ public class ClientController : ControllerBase
     /// 更新客户端
     /// </summary>
     [HttpPut("{id}")]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsEdit)]
     public async Task<MessageModel<string>> UpdateClient(string id, [FromBody] UpdateClientDto dto)
     {
         try
@@ -351,6 +357,7 @@ public class ClientController : ControllerBase
     /// 删除客户端（软删除）
     /// </summary>
     [HttpDelete("{id}")]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsDelete)]
     public async Task<MessageModel<string>> DeleteClient(string id)
     {
         try
@@ -380,6 +387,7 @@ public class ClientController : ControllerBase
     /// 重置客户端密钥
     /// </summary>
     [HttpPost("{id}/reset-secret")]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsResetSecret)]
     public async Task<MessageModel<ClientSecretVo>> ResetClientSecret(string id)
     {
         try

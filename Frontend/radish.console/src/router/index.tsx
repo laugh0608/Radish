@@ -8,7 +8,7 @@ import { ProductList } from '../pages/Products';
 import { OrderList } from '../pages/Orders';
 import { UserList } from '../pages/Users';
 import { UserDetail } from '../pages/Users/UserDetail';
-import { RoleList } from '../pages/Roles';
+import { RoleList, RolePermissionPage } from '../pages/Roles';
 import { TagList } from '../pages/Tags';
 import { StickerGroupList, StickerList } from '../pages/Stickers';
 import { SystemConfigList } from '../pages/SystemConfig';
@@ -115,6 +115,10 @@ export const router = createBrowserRouter(
           element: withRouteGuard('roles', <RoleList />),
         },
         {
+          path: 'roles/:roleId/permissions',
+          element: withRouteGuard('role-permissions', <RolePermissionPage />),
+        },
+        {
           path: 'tags',
           element: withRouteGuard('tags', <TagList />),
         },
@@ -168,6 +172,7 @@ export const ROUTES = {
   USERS: '/users',
   USER_DETAIL: '/users/:userId',
   ROLES: '/roles',
+  ROLE_PERMISSIONS: '/roles/:roleId/permissions',
   TAGS: '/tags',
   STICKERS: '/stickers',
   STICKER_ITEMS: '/stickers/:groupId/items',

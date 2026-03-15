@@ -55,8 +55,8 @@ public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
             return false;
         }
 
-        var userService = httpContext.RequestServices.GetRequiredService<IUserService>();
-        var permissionKeys = userService
+        var consoleAuthorizationService = httpContext.RequestServices.GetRequiredService<IConsoleAuthorizationService>();
+        var permissionKeys = consoleAuthorizationService
             .GetPermissionKeysByRolesAsync(currentUser.Roles)
             .GetAwaiter()
             .GetResult();

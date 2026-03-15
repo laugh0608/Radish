@@ -19,15 +19,18 @@ public class UserService : BaseService<User, UserVo>, IUserService
     private readonly IBaseRepository<Role> _roleRepository;
     private readonly IBaseRepository<UserRole> _userRoleRepository;
     private readonly IDepartmentService _departmentService;
+    private readonly IConsoleAuthorizationService _consoleAuthorizationService;
 
     public UserService(IDepartmentService departmentService, IMapper mapper,
         IBaseRepository<User> baseRepository, IUserRepository userRepository, IBaseRepository<Role> roleRepository,
-        IBaseRepository<UserRole> userRoleRepository) : base(mapper, baseRepository)
+        IBaseRepository<UserRole> userRoleRepository,
+        IConsoleAuthorizationService consoleAuthorizationService) : base(mapper, baseRepository)
     {
         _departmentService = departmentService;
         _userRepository = userRepository;
         _roleRepository = roleRepository;
         _userRoleRepository = userRoleRepository;
+        _consoleAuthorizationService = consoleAuthorizationService;
     }
 
     /// <summary>
@@ -88,42 +91,7 @@ public class UserService : BaseService<User, UserVo>, IUserService
     /// <returns>权限标识列表</returns>
     public async Task<List<string>> GetPermissionKeysByRolesAsync(IReadOnlyCollection<string> roleNames)
     {
-        if (roleNames.Count <= 0)
-        {
-            return new List<string>();
-        }
-
-        var normalizedRoles = roleNames
-            .Where(role => !string.IsNullOrWhiteSpace(role))
-            .Select(role => role.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        if (normalizedRoles.Length <= 0)
-        {
-            return new List<string>();
-        }
-
-        var permissionKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        permissionKeys.UnionWith(ConsolePermissions.GetDefaultPermissions(normalizedRoles));
-
-        var roleSet = new HashSet<string>(normalizedRoles, StringComparer.OrdinalIgnoreCase);
-        var roleModuleMaps = await RoleModuleMaps();
-
-        foreach (var item in roleModuleMaps)
-        {
-            var roleName = item.Role?.RoleName;
-            if (string.IsNullOrWhiteSpace(roleName) || !roleSet.Contains(roleName))
-            {
-                continue;
-            }
-
-            permissionKeys.UnionWith(ConsolePermissions.GetPermissionsByApiUrl(item.ApiModule?.LinkUrl));
-        }
-
-        return permissionKeys
-            .OrderBy(permission => permission, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        return await _consoleAuthorizationService.GetPermissionKeysByRolesAsync(roleNames);
     }
 
     /// <summary>测试使用同事务</summary>

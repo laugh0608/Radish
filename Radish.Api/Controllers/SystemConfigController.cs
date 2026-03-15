@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
+using Radish.Common.PermissionTool;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared;
@@ -13,7 +15,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class SystemConfigController : ControllerBase
 {
     private readonly IConfiguration _configuration;
@@ -26,6 +28,7 @@ public class SystemConfigController : ControllerBase
     /// <summary>获取系统配置列表</summary>
     /// <returns>系统配置列表</returns>
     [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.SystemConfigView)]
     [ProducesResponseType(typeof(MessageModel<List<SystemConfigVo>>), StatusCodes.Status200OK)]
     public async Task<MessageModel<List<SystemConfigVo>>> GetSystemConfigs()
     {
@@ -176,6 +179,7 @@ public class SystemConfigController : ControllerBase
     /// <summary>获取配置分类列表</summary>
     /// <returns>配置分类列表</returns>
     [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.SystemConfigView)]
     [ProducesResponseType(typeof(MessageModel<List<string>>), StatusCodes.Status200OK)]
     public async Task<MessageModel<List<string>>> GetConfigCategories()
     {
@@ -205,6 +209,7 @@ public class SystemConfigController : ControllerBase
     /// <param name="id">配置ID</param>
     /// <returns>配置详情</returns>
     [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.SystemConfigView, ConsolePermissions.SystemConfigEdit)]
     [ProducesResponseType(typeof(MessageModel<SystemConfigVo>), StatusCodes.Status200OK)]
     public async Task<MessageModel<SystemConfigVo>> GetConfigById(int id)
     {
@@ -238,6 +243,7 @@ public class SystemConfigController : ControllerBase
     /// <param name="request">更新请求</param>
     /// <returns>更新结果</returns>
     [HttpPut]
+    [RequireConsolePermission(ConsolePermissions.SystemConfigEdit)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> UpdateConfig(int id, [FromBody] UpdateConfigRequest request)
     {
@@ -263,6 +269,7 @@ public class SystemConfigController : ControllerBase
     /// <param name="request">创建请求</param>
     /// <returns>创建结果</returns>
     [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.SystemConfigCreate)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> CreateConfig([FromBody] CreateConfigRequest request)
     {
@@ -287,6 +294,7 @@ public class SystemConfigController : ControllerBase
     /// <param name="id">配置ID</param>
     /// <returns>删除结果</returns>
     [HttpDelete]
+    [RequireConsolePermission(ConsolePermissions.SystemConfigDelete)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> DeleteConfig(int id)
     {

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Table,
@@ -16,6 +17,7 @@ import {
   ReloadOutlined,
   CheckOutlined,
   CloseOutlined,
+  SafetyOutlined,
 } from '@radish/ui';
 import { getRoleList, deleteRole, toggleRoleStatus, type RoleVo } from '@/api/roleApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
@@ -26,6 +28,7 @@ import './RoleList.css';
 
 export const RoleList = () => {
   useDocumentTitle('角色管理');
+  const navigate = useNavigate();
   const [roles, setRoles] = useState<RoleVo[]>([]);
   const [loading, setLoading] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
@@ -175,10 +178,20 @@ export const RoleList = () => {
     {
       title: '操作',
       key: 'action',
-      width: 280,
+      width: 380,
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
+          {canEditRole ? (
+            <Button
+              variant="ghost"
+              size="small"
+              icon={<SafetyOutlined />}
+              onClick={() => navigate(`/roles/${record.voId}/permissions`)}
+            >
+              权限配置
+            </Button>
+          ) : null}
           {canEditRole ? (
             <Button
               variant="ghost"

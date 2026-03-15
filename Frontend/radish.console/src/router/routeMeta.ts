@@ -71,6 +71,14 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     searchVisible: true,
   },
   {
+    key: 'role-permissions',
+    path: '/roles/:roleId/permissions',
+    title: '权限配置',
+    requiredPermission: CONSOLE_PERMISSIONS.rolesEdit,
+    searchVisible: false,
+    defaultEntry: false,
+  },
+  {
     key: 'tags',
     path: '/tags',
     title: '标签管理',

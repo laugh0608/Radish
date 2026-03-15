@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -47,7 +49,8 @@ public class StickerController : ControllerBase
 
     /// <summary>获取全部表情包分组（管理端，包含禁用分组）</summary>
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetAdminGroups()
     {
@@ -131,7 +134,8 @@ public class StickerController : ControllerBase
 
     /// <summary>创建分组（管理端）</summary>
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersCreate)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> CreateGroup([FromBody] CreateStickerGroupDto request)
     {
@@ -184,7 +188,8 @@ public class StickerController : ControllerBase
 
     /// <summary>更新分组（管理端）</summary>
     [HttpPut("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersEdit, ConsolePermissions.StickersToggle)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> UpdateGroup(long id, [FromBody] UpdateStickerGroupDto request)
     {
@@ -230,7 +235,8 @@ public class StickerController : ControllerBase
 
     /// <summary>软删除分组（管理端）</summary>
     [HttpDelete("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersDelete)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> DeleteGroup(long id)
     {
@@ -266,7 +272,8 @@ public class StickerController : ControllerBase
 
     /// <summary>新增单个表情（管理端）</summary>
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersCreate)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> AddSticker([FromBody] CreateStickerDto request)
     {
@@ -314,7 +321,8 @@ public class StickerController : ControllerBase
 
     /// <summary>批量新增表情（管理端）</summary>
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersBatchUpload)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> BatchAddStickers([FromBody] BatchAddStickersDto request)
     {
@@ -387,7 +395,8 @@ public class StickerController : ControllerBase
 
     /// <summary>批量更新表情排序（管理端）</summary>
     [HttpPut]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersSort)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> BatchUpdateSort([FromBody] BatchUpdateStickerSortDto request)
     {
@@ -418,7 +427,8 @@ public class StickerController : ControllerBase
 
     /// <summary>更新单个表情（管理端）</summary>
     [HttpPut("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersEdit)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> UpdateSticker(long id, [FromBody] UpdateStickerDto request)
     {
@@ -464,7 +474,8 @@ public class StickerController : ControllerBase
 
     /// <summary>软删除单个表情（管理端）</summary>
     [HttpDelete("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersDelete)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> DeleteSticker(long id)
     {
@@ -500,7 +511,8 @@ public class StickerController : ControllerBase
 
     /// <summary>分组编码唯一性预检（管理端）</summary>
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersCreate, ConsolePermissions.StickersEdit)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> CheckGroupCode([FromQuery] string code)
     {
@@ -535,7 +547,8 @@ public class StickerController : ControllerBase
 
     /// <summary>组内表情编码唯一性预检（管理端）</summary>
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersCreate, ConsolePermissions.StickersEdit)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> CheckStickerCode([FromQuery] long groupId, [FromQuery] string code)
     {
@@ -593,7 +606,8 @@ public class StickerController : ControllerBase
 
     /// <summary>文件名编码清洗预览（管理端）</summary>
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersBatchUpload)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public MessageModel NormalizeCode([FromQuery] string filename)
     {
@@ -609,7 +623,8 @@ public class StickerController : ControllerBase
 
     /// <summary>获取分组内表情（管理端）</summary>
     [HttpGet("{groupId:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetGroupStickers(long groupId)
     {

@@ -2,8 +2,10 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
+using Radish.Common.PermissionTool;
 using Radish.Common.TimeTool;
 using Radish.IService;
 using Radish.Model;
@@ -79,7 +81,8 @@ public class UserController : ControllerBase
     /// <response code="403">禁止访问，权限不足</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.UsersView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -193,7 +196,8 @@ public class UserController : ControllerBase
     /// <response code="404">用户不存在</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.UsersView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]

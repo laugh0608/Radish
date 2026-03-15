@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.IService.Base;
 using Radish.Model;
@@ -16,7 +18,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class StatisticsController : ControllerBase
 {
     private readonly IBaseService<User, UserVo> _userService;
@@ -36,6 +38,7 @@ public class StatisticsController : ControllerBase
     /// <summary>获取仪表盘统计数据</summary>
     /// <returns>仪表盘统计数据</returns>
     [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.DashboardView)]
     [ProducesResponseType(typeof(MessageModel<DashboardStatsVo>), StatusCodes.Status200OK)]
     public async Task<MessageModel<DashboardStatsVo>> GetDashboardStats()
     {
@@ -73,6 +76,7 @@ public class StatisticsController : ControllerBase
     /// <param name="days">天数，默认30天</param>
     /// <returns>订单趋势数据</returns>
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel<List<OrderTrendItemVo>>), StatusCodes.Status200OK)]
     public async Task<MessageModel<List<OrderTrendItemVo>>> GetOrderTrend(int days = 30)
     {
@@ -110,6 +114,7 @@ public class StatisticsController : ControllerBase
     /// <param name="limit">返回数量，默认10</param>
     /// <returns>商品销售排行</returns>
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel<List<ProductSalesRankingVo>>), StatusCodes.Status200OK)]
     public async Task<MessageModel<List<ProductSalesRankingVo>>> GetProductSalesRanking(int limit = 10)
     {
@@ -137,6 +142,7 @@ public class StatisticsController : ControllerBase
     /// <summary>获取用户等级分布</summary>
     /// <returns>用户等级分布</returns>
     [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     [ProducesResponseType(typeof(MessageModel<List<UserLevelDistributionVo>>), StatusCodes.Status200OK)]
     public async Task<MessageModel<List<UserLevelDistributionVo>>> GetUserLevelDistribution()
     {

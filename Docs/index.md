@@ -48,6 +48,7 @@ features:
 ## 常用专题
 
 - [认证与权限](/guide/authentication)
+- [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
 - [配置管理](/guide/configuration)
 - [服务网关](/guide/gateway)
 - [国际化指南](/architecture/i18n)

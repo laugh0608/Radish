@@ -9,6 +9,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [当前进行中](./planning/current.md)
 - [Console 权限治理 V1](./guide/console-permission-governance.md)
 - [Console 权限覆盖矩阵](./guide/console-permission-coverage-matrix.md)
+- [Console 权限 / 菜单 / 按钮管理一期设计方案](./guide/console-authorization-phase1.md)
 - [未来规划](./planning/backlog.md)
 - [已完成摘要](./planning/archive.md)
 

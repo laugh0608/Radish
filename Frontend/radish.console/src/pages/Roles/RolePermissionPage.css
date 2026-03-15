@@ -1,0 +1,226 @@
+.role-permission-page {
+  padding: 24px;
+}
+
+.role-permission-page__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.role-permission-page__heading h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.role-permission-page__heading p {
+  margin: 4px 0 0;
+  color: #666;
+}
+
+.role-permission-page__summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.role-permission-card {
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  background: #fff;
+  padding: 20px;
+}
+
+.role-permission-card--metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.role-permission-card--metrics div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #fffdf5 0%, #f7f9ff 100%);
+  padding: 16px;
+}
+
+.role-permission-card--metrics span {
+  color: #666;
+  font-size: 13px;
+}
+
+.role-permission-card--metrics strong {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f1f1f;
+}
+
+.role-permission-page__content {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+  gap: 16px;
+}
+
+.role-permission-panel {
+  border: 1px solid #f0f0f0;
+  border-radius: 12px;
+  background: #fff;
+  padding: 20px;
+}
+
+.role-permission-panel__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.role-permission-panel__header h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.role-permission-panel__header p {
+  margin: 4px 0 0;
+  color: #666;
+}
+
+.role-permission-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-permission-node {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-permission-node__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.role-permission-node__title {
+  font-weight: 500;
+}
+
+.role-permission-node__apis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.role-permission-node__apis code {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: #fff7e6;
+  color: #ad6800;
+  font-size: 12px;
+}
+
+.role-permission-node__children {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-permission-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.role-permission-preview__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.role-permission-preview__section h4 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.role-permission-preview__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.role-permission-preview__apis {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-permission-preview__api-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+.role-permission-preview__api-item div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.role-permission-preview__api-item span {
+  color: #666;
+  font-size: 12px;
+}
+
+.role-permission-preview__api-item code {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: #f6ffed;
+  color: #237804;
+  overflow-wrap: anywhere;
+}
+
+.role-permission-preview__empty {
+  color: #8c8c8c;
+  font-size: 13px;
+}
+
+@media (max-width: 1200px) {
+  .role-permission-page__summary,
+  .role-permission-page__content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .role-permission-page {
+    padding: 16px;
+  }
+
+  .role-permission-page__header,
+  .role-permission-node__row,
+  .role-permission-preview__api-item div {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .role-permission-card--metrics {
+    grid-template-columns: 1fr;
+  }
+}

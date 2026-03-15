@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -409,7 +411,8 @@ public class ShopController : ControllerBase
     /// 获取商品列表（管理后台）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.ProductsView)]
     public async Task<MessageModel<PageModel<ProductVo>>> AdminGetProducts(
         string? categoryId = null,
         ProductType? productType = null,
@@ -427,7 +430,8 @@ public class ShopController : ControllerBase
     /// 创建商品
     /// </summary>
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.ProductsCreate)]
     public async Task<MessageModel<long>> CreateProduct([FromBody] CreateProductDto dto)
     {
         var userId = GetCurrentUserId();
@@ -441,7 +445,8 @@ public class ShopController : ControllerBase
     /// 更新商品
     /// </summary>
     [HttpPut]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.ProductsEdit)]
     public async Task<MessageModel<bool>> UpdateProduct([FromBody] UpdateProductDto dto)
     {
         var userId = GetCurrentUserId();
@@ -455,7 +460,8 @@ public class ShopController : ControllerBase
     /// 上架商品
     /// </summary>
     [HttpPost("{productId:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.ProductsToggleSale)]
     public async Task<MessageModel<bool>> PutOnSale(long productId)
     {
         var result = await _productService.PutOnSaleAsync(productId);
@@ -466,7 +472,8 @@ public class ShopController : ControllerBase
     /// 下架商品
     /// </summary>
     [HttpPost("{productId:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.ProductsToggleSale)]
     public async Task<MessageModel<bool>> TakeOffSale(long productId)
     {
         var result = await _productService.TakeOffSaleAsync(productId);
@@ -477,7 +484,8 @@ public class ShopController : ControllerBase
     /// 获取订单列表（管理后台）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.OrdersView)]
     public async Task<MessageModel<PageModel<OrderVo>>> AdminGetOrders(
         long? userId = null,
         OrderStatus? status = null,
@@ -495,7 +503,8 @@ public class ShopController : ControllerBase
     /// 重新发放权益
     /// </summary>
     [HttpPost("{orderId:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.OrdersRetry)]
     public async Task<MessageModel<bool>> RetryGrantBenefit(long orderId)
     {
         try
