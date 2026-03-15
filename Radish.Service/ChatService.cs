@@ -216,6 +216,11 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         channel.ModifyId = userId;
         await _channelRepository.UpdateAsync(channel);
 
+        if (request.AttachmentId.HasValue && request.AttachmentId.Value > 0)
+        {
+            await TryBindMessageAttachmentAsync(request.AttachmentId.Value, messageId, userId, normalizedUserName);
+        }
+
         await EnsureMemberAndUpdateReadStateAsync(channel.Id, userId, tenantId, normalizedUserName, messageId);
         await SendMentionNotificationsAsync(
             tenantId,
@@ -234,6 +239,29 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         }
 
         return MapMessageVo(message, replyMap);
+    }
+
+    private async Task TryBindMessageAttachmentAsync(long attachmentId, long messageId, long userId, string userName)
+    {
+        try
+        {
+            var attachment = await _attachmentRepository.QueryFirstAsync(a => a.Id == attachmentId && !a.IsDeleted);
+            if (attachment == null || attachment.UploaderId != userId)
+            {
+                return;
+            }
+
+            attachment.BusinessType = "Chat";
+            attachment.BusinessId = messageId;
+            attachment.ModifyTime = DateTime.Now;
+            attachment.ModifyBy = userName;
+            attachment.ModifyId = userId;
+            await _attachmentRepository.UpdateAsync(attachment);
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[ChatService] 绑定消息附件失败：AttachmentId={AttachmentId}, MessageId={MessageId}", attachmentId, messageId);
+        }
     }
 
     public async Task<long?> RecallMessageAsync(long tenantId, long userId, string userName, long messageId, bool canRecallOthers)

@@ -36,6 +36,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     private readonly IExperienceService _experienceService;
     private readonly IBaseRepository<PostEditHistory> _postEditHistoryRepository;
     private readonly ForumEditHistoryOptions _editHistoryOptions;
+    private readonly IBaseRepository<Attachment>? _attachmentRepository;
 
     public PostService(
         IMapper mapper,
@@ -56,7 +57,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         IExperienceService experienceService,
         IBaseRepository<PostEditHistory> postEditHistoryRepository,
         IOptions<ForumEditHistoryOptions> editHistoryOptions,
-        IPostRepository? postCustomRepository = null)
+        IPostRepository? postCustomRepository = null,
+        IBaseRepository<Attachment>? attachmentRepository = null)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
@@ -77,6 +79,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         _experienceService = experienceService;
         _postEditHistoryRepository = postEditHistoryRepository;
         _editHistoryOptions = editHistoryOptions.Value;
+        _attachmentRepository = attachmentRepository;
     }
 
     /// <summary>
@@ -287,7 +290,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         }
 
         var safeAuthorName = string.IsNullOrWhiteSpace(authorName) ? "System" : authorName;
-        await _postAnswerRepository.AddAsync(new PostAnswer
+        var answerId = await _postAnswerRepository.AddAsync(new PostAnswer
         {
             PostId = postId,
             AuthorId = authorId,
@@ -304,6 +307,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         question.ModifyBy = safeAuthorName;
         question.ModifyId = authorId;
         await _postQuestionRepository.UpdateAsync(question);
+
+        await BindReferencedAttachmentsAsync(trimmedContent, BusinessType.Comment, answerId, authorId, safeAuthorName, tenantId);
 
         return await BuildPostQuestionVoAsync(postId)
             ?? throw new InvalidOperationException("问答详情不存在");
@@ -393,6 +398,8 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
         // 1. 插入帖子
         var postId = await AddAsync(post);
+
+        await BindReferencedAttachmentsAsync(post.Content, BusinessType.Post, postId, post.AuthorId, operatorName, post.TenantId);
 
         // 2. 更新分类的帖子数量
         if (post.CategoryId > 0)
@@ -794,11 +801,49 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         post.ModifyId = operatorId;
 
         await _postRepository.UpdateAsync(post);
+        await BindReferencedAttachmentsAsync(trimmedContent, BusinessType.Post, postId, operatorId, safeOperatorName, post.TenantId);
         await SyncPostTagsAsync(postId, operatorId, safeOperatorName, normalizedTagNames, allowCreateTag);
 
         if (historyEnabled)
         {
             await TrimPostHistoryAsync(postId, Math.Max(1, postOptions.MaxHistoryRecords));
+        }
+    }
+
+    private async Task BindReferencedAttachmentsAsync(
+        string? content,
+        string businessType,
+        long businessId,
+        long operatorId,
+        string operatorName,
+        long tenantId)
+    {
+        if (_attachmentRepository == null || businessId <= 0 || operatorId <= 0)
+        {
+            return;
+        }
+
+        var referencedUrls = AttachmentReferenceHelper.ExtractUploadUrls(content);
+        if (referencedUrls.Count == 0)
+        {
+            return;
+        }
+
+        var normalizedTenantId = tenantId > 0 ? tenantId : 0;
+        var attachments = await _attachmentRepository.QueryAsync(a =>
+            !a.IsDeleted &&
+            !a.BusinessId.HasValue &&
+            a.TenantId == normalizedTenantId &&
+            a.UploaderId == operatorId);
+
+        foreach (var attachment in attachments.Where(a => AttachmentReferenceHelper.IsAttachmentReferenced(a, referencedUrls)))
+        {
+            attachment.BusinessType = businessType;
+            attachment.BusinessId = businessId;
+            attachment.ModifyTime = DateTime.Now;
+            attachment.ModifyBy = operatorName;
+            attachment.ModifyId = operatorId;
+            await _attachmentRepository.UpdateAsync(attachment);
         }
     }
 

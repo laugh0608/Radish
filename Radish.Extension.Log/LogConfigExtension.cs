@@ -58,6 +58,7 @@ public static class LogConfigExtension
                       Path.Combine(LogContextTool.BaseLogs, projectName, @"Log.txt"),
                       rollingInterval: RollingInterval.Day,
                       outputTemplate: LogContextTool.FileMessageTemplate,
+                      shared: true,
                       retainedFileCountLimit: options.File.RetainedFileCountLimit)));
         }
 
@@ -70,6 +71,7 @@ public static class LogConfigExtension
                       Path.Combine(LogContextTool.BaseLogs, projectName, LogContextTool.AopSql, @"AopSql.txt"),
                       rollingInterval: RollingInterval.Day,
                       outputTemplate: LogContextTool.FileMessageTemplate,
+                      shared: true,
                       retainedFileCountLimit: options.File.RetainedFileCountLimit)));
         }
 
