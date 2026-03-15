@@ -263,3 +263,9 @@
 - **问题历史回归已补齐**：新增 `PostControllerTest` 与 `PostServiceTest` 定向用例，覆盖 `GetEditHistory`、问答帖编辑写入历史与历史分页查询，收口“入口已接通但缺少自动化兜底”的残余风险。
 - **本地 `dotnet` 构建阻塞已绕开**：仓库已补充根级 `NuGet.Config` 与 `Scripts/dotnet-local.ps1`，用于规避沙箱环境下用户级 NuGet 配置、`DOTNET_CLI_HOME` 与 `AppData` 目录无权限、NuGet 审计告警直接阻断本地 `build / test / restore`，并默认采用更稳妥的单进程 / 禁并发调用参数。
 - **AutoMapper 告警已收口**：项目内 `AutoMapper` 依赖已从 `15.1.0` 升级到修复版，准备消除 `NU1903` 的高危漏洞告警。
+
+### P4-ext 最终收口与 HttpTest 规范化
+
+- **P4-ext 首轮已正式完成**：问答视图、列表排序、回答区排序切换、轻筛选、问题历史入口、关键后端回归与手工回归当前均已收口，不再继续在本轮扩张为完整问答平台。
+- **规划口径已对齐**：`current / development-plan / backlog / forum-qa-mvp` 已统一更新为“P4-ext 首轮最小闭环已完成，当前暂不提前展开下一阶段任务”。
+- **HttpTest 目录已完成规范化**：论坛、附件、限流长脚本已按主题拆分，新增统一 `README`，并清理过期测试指南、阶段性报告与不再符合当前协作规范的旧入口说明。
