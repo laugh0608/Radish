@@ -7,6 +7,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Serilog;
 using SqlSugar;
 
 namespace Radish.Service;
