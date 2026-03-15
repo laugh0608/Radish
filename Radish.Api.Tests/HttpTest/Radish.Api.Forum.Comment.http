@@ -1,0 +1,97 @@
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Gateway_HostAddress = https://localhost:5000
+
+@ForumComment_PostId = 1999694582291365888
+@ForumComment_RootId = 1
+@ForumComment_ReplyId = 2
+@ForumComment_ReplyUserId = 20000
+@ForumComment_ReplyUserName = system
+
+### 获取帖子评论树
+GET {{Gateway_HostAddress}}/api/v1/Comment/GetCommentTree?postId={{ForumComment_PostId}}
+Accept: application/json
+
+### 发表根评论
+POST {{Gateway_HostAddress}}/api/v1/Comment/Create
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumComment_PostId}},
+  "content": "这是一条测试评论",
+  "parentId": null,
+  "replyToUserId": null,
+  "replyToUserName": null
+}
+
+### 发表回复评论
+POST {{Gateway_HostAddress}}/api/v1/Comment/Create
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": 1,
+  "content": "我来回复你的评论",
+  "parentId": {{ForumComment_RootId}},
+  "replyToUserId": {{ForumComment_ReplyUserId}},
+  "replyToUserName": "{{ForumComment_ReplyUserName}}"
+}
+
+### 发表多级嵌套回复
+POST {{Gateway_HostAddress}}/api/v1/Comment/Create
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": 1,
+  "content": "这是第三层的回复",
+  "parentId": {{ForumComment_ReplyId}},
+  "replyToUserId": {{ForumComment_ReplyUserId}},
+  "replyToUserName": "{{ForumComment_ReplyUserName}}"
+}
+
+### 更新评论
+PUT {{Gateway_HostAddress}}/api/v1/Comment/Update
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "commentId": {{ForumComment_RootId}},
+  "content": "这是修改后的评论内容"
+}
+
+### 超时评论更新（预期失败）
+PUT {{Gateway_HostAddress}}/api/v1/Comment/Update
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "commentId": {{ForumComment_PostId}},
+  "content": "尝试修改超过 5 分钟的评论"
+}
+
+### 空内容评论更新（预期失败）
+PUT {{Gateway_HostAddress}}/api/v1/Comment/Update
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "commentId": {{ForumComment_RootId}},
+  "content": ""
+}
+
+### 获取评论编辑历史
+GET {{Gateway_HostAddress}}/api/v1/Comment/GetEditHistory?commentId={{ForumComment_RootId}}&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 发表空内容评论（预期 400）
+POST {{Gateway_HostAddress}}/api/v1/Comment/Create
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": 1,
+  "content": "",
+  "parentId": null
+}

@@ -683,14 +683,14 @@ function Main {
 
     if (-not $apiHealth.Success) {
         Write-Error "API 服务不可用: $ApiUrl"
-        Write-Warning "请确保 Radish.Api 正在运行: dotnet run --project Radish.Api"
+        Write-Warning "请先按仓库当前约定启动 Radish.Api，再重新执行本脚本。"
         exit 1
     }
     Write-Success "API 服务可用"
 
     if (-not $authHealth.Success) {
         Write-Error "Auth 服务不可用: $AuthUrl"
-        Write-Warning "请确保 Radish.Auth 正在运行: dotnet run --project Radish.Auth"
+        Write-Warning "请先按仓库当前约定启动 Radish.Auth，再重新执行本脚本。"
         exit 1
     }
     Write-Success "Auth 服务可用"

@@ -1,0 +1,120 @@
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Gateway_HostAddress = https://localhost:5000
+
+@TargetUserId = 20002
+@ReportTargetPostId = 1
+@ReviewReportId = 1
+
+### 关注用户
+POST {{Gateway_HostAddress}}/api/v1/UserFollow/Follow
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "targetUserId": {{TargetUserId}}
+}
+
+### 获取关注状态
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetFollowStatus?targetUserId={{TargetUserId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的粉丝列表
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyFollowers?pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的关注列表
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyFollowing?pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的关系链动态流
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyFollowingFeed?pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的分发流（推荐）
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyDistributionFeed?streamType=recommend&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的分发流（热门）
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyDistributionFeed?streamType=hot&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的分发流（最新）
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyDistributionFeed?streamType=newest&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的分发流（非法 streamType，预期 400）
+GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetMyDistributionFeed?streamType=timeline&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 取消关注用户
+POST {{Gateway_HostAddress}}/api/v1/UserFollow/Unfollow
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "targetUserId": {{TargetUserId}}
+}
+
+### 提交帖子举报
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/Report
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "targetType": "Post",
+  "targetContentId": {{ReportTargetPostId}},
+  "reasonType": "Spam",
+  "reasonDetail": "疑似广告灌水"
+}
+
+### 获取我的治理状态
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetMyModerationStatus
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的发布权限
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetMyPublishPermission
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：获取举报审核队列
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetReviewQueue?status=0&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：审核举报并禁言 24 小时
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/Review
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "reportId": {{ReviewReportId}},
+  "isApproved": true,
+  "actionType": 1,
+  "durationHours": 24,
+  "reviewRemark": "违规灌水，禁言 24 小时"
+}
+
+### 管理端：手动封禁用户
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/ApplyUserAction
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "targetUserId": {{TargetUserId}},
+  "actionType": 2,
+  "reason": "多次发布违规内容"
+}
+
+### 管理端：获取治理动作记录
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetActionLogs?pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}

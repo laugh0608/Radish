@@ -1,0 +1,56 @@
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Api_HostAddress = http://localhost:5100
+
+@AttachmentId = 1
+@BusinessType = Post
+@BusinessId = 70001
+
+### 根据 ID 获取附件信息
+GET {{Api_HostAddress}}/api/v1/Attachment/GetById/{{AttachmentId}}
+Accept: application/json
+
+### 根据业务类型和业务 ID 获取附件列表
+GET {{Api_HostAddress}}/api/v1/Attachment/GetByBusiness?businessType={{BusinessType}}&businessId={{BusinessId}}
+Accept: application/json
+
+### 获取指定 Post 的所有附件
+GET {{Api_HostAddress}}/api/v1/Attachment/GetByBusiness?businessType=Post&businessId=70001
+Accept: application/json
+
+### 获取指定 Comment 的所有附件
+GET {{Api_HostAddress}}/api/v1/Attachment/GetByBusiness?businessType=Comment&businessId=90001
+Accept: application/json
+
+### 下载指定附件
+GET {{Api_HostAddress}}/api/v1/Attachment/Download/{{AttachmentId}}
+
+### 直接访问上传文件
+GET {{Api_HostAddress}}/uploads/General/2025/12/1234567890.jpg
+
+### 访问缩略图
+GET {{Api_HostAddress}}/uploads/General/2025/12/1234567890_thumb.jpg
+
+### 更新附件业务关联
+PUT {{Api_HostAddress}}/api/v1/Attachment/UpdateBusinessAssociation/{{AttachmentId}}?businessType=Post&businessId=70001
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+### 更新附件到 Comment
+PUT {{Api_HostAddress}}/api/v1/Attachment/UpdateBusinessAssociation/{{AttachmentId}}?businessType=Comment&businessId=90001
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+### 删除单个附件
+DELETE {{Api_HostAddress}}/api/v1/Attachment/Delete/{{AttachmentId}}
+Authorization: Bearer {{Access_Token}}
+
+### 批量删除附件
+POST {{Api_HostAddress}}/api/v1/Attachment/DeleteBatch
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+[1, 2, 3, 4, 5]
+
+### 删除指定 ID 的附件
+DELETE {{Api_HostAddress}}/api/v1/Attachment/Delete/1234567890
+Authorization: Bearer {{Access_Token}}

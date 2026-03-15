@@ -1,63 +1,35 @@
 # 测试文件说明
 
-本目录包含用于附件上传 API 测试的示例文件。
+本目录存放附件相关 HTTP 脚本和自动化脚本需要的测试素材。
 
-## 已创建的文件
+## 已包含的最小素材
 
-| 文件名 | 类型 | 大小 | 用途 |
-|--------|------|------|------|
-| `test-image.jpg` | JPG 图片 | 70B | 基础图片上传测试 |
-| `test-image.png` | PNG 图片 | 70B | PNG 格式测试 |
-| `avatar.jpg` | JPG 图片 | 70B | 头像上传测试 |
-| `test-document.md` | Markdown | 325B | Markdown 文档测试 |
+| 文件名 | 用途 |
+|--------|------|
+| `test-image.jpg` | 基础图片上传 |
+| `test-image.png` | PNG / 格式校验 |
+| `avatar.jpg` | 头像上传 |
+| `fake-image.jpg` | 伪装图片校验 |
+| `fake-document.pdf` | 伪装文档校验 |
+| `test-document.md` | Markdown 文档上传 |
 
-## 添加更多测试文件
+## 常见补充素材
 
-如果需要更真实的测试场景，建议添加以下文件：
+根据你要回归的脚本，可自行补充这些文件：
 
-### 图片文件
-```bash
-# 从网络下载测试图片
-wget https://via.placeholder.com/800x600.jpg -O test-image-large.jpg
-wget https://via.placeholder.com/400x400.png -O test-image-medium.png
+| 文件名 | 对应脚本 |
+|--------|----------|
+| `test-document.pdf` | `Radish.Api.Attachment.Upload.http` |
+| `test-spreadsheet.xlsx` | `Radish.Api.Attachment.Upload.http` |
+| `test-image.webp` | `Radish.Api.Attachment.Upload.http` |
+| `large-file.jpg` | `Radish.Api.Attachment.Guardrail.http` |
+| `large-test-image.jpg` | `Radish.Api.Attachment.Guardrail.http` |
+| `chunk_0.bin` / `chunk_1.bin` | `Radish.Api.Attachment.Chunk.http` |
+| `large_chunk_11mb.bin` | `Radish.Api.Attachment.Chunk.http` |
+| `test.exe` | `Radish.Api.Attachment.Guardrail.http` |
 
-# 或者使用 ImageMagick 生成
-convert -size 800x600 gradient:blue-white test-image-large.jpg
-convert -size 400x400 gradient:red-yellow test-image-medium.png
-```
+## 使用提醒
 
-### 文档文件
-```bash
-# 创建测试 PDF（需要 pandoc）
-echo "# Test PDF\n\nThis is a test document." | pandoc -o test-document.pdf
-
-# 或者从现有文档复制
-cp /path/to/your/document.pdf test-document.pdf
-cp /path/to/your/spreadsheet.xlsx test-spreadsheet.xlsx
-```
-
-### 大文件测试
-```bash
-# 创建超过 100MB 的文件用于测试大小限制
-dd if=/dev/zero of=large-file.jpg bs=1M count=101
-```
-
-## 注意事项
-
-1. **当前文件**：现有的测试文件都是最小化的示例（1x1 像素图片），适合快速功能测试
-2. **真实测试**：如需测试图片处理（缩略图、EXIF 移除）功能，建议使用真实的照片
-3. **文件大小**：默认限制为 100MB，可在 `appsettings.json` 中修改 `FileStorage.MaxFileSize`
-4. **支持格式**：
-   - 图片：.jpg, .jpeg, .png, .gif, .bmp, .webp, .svg
-   - 文档：.pdf, .doc, .docx, .xls, .xlsx, .ppt, .pptx, .txt, .md
-
-## 快速测试
-
-使用现有文件即可进行基础功能测试：
-
-1. 打开 `Radish.Api.Attachment.http`
-2. 确保 API 服务已启动
-3. 获取有效的 Access Token
-4. 运行上传请求（会自动使用本目录中的文件）
-
-参考：`../AttachmentApiTestGuide.md`
+- 现有图片大多是最小化占位文件，适合快速验证接口链路，不适合验证真实缩略图、水印、EXIF 处理效果。
+- 需要认证的请求，先从上级目录的 `Radish.Api.AuthFlow.http` 获取 `access_token`。
+- 目录入口与脚本分组见上级目录的 `README.md`。

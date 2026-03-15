@@ -1,0 +1,103 @@
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Gateway_HostAddress = https://localhost:5000
+
+@ForumPoll_PostId = 在这里填入带投票帖子的 postId
+@ForumPoll_OptionId = 在这里填入可投票选项的 optionId
+@ForumPoll_ExpiredPostId = 在这里填入已截止投票帖子的 postId
+@ForumPoll_ExpiredOptionId = 在这里填入已截止投票帖子的 optionId
+
+### 发布带投票帖子
+POST {{Gateway_HostAddress}}/api/v1/Post/Publish
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "title": "论坛投票 MVP 验收帖",
+  "content": "用于串联论坛投票 MVP 验收：列表识别、详情展示、投票提交与失败语义。",
+  "categoryId": 1,
+  "tagNames": ["投票", "验收"],
+  "poll": {
+    "question": "今天午饭更想吃什么？",
+    "endTime": "2030-03-13T18:00:00+08:00",
+    "options": [
+      {
+        "optionText": "盖饭"
+      },
+      {
+        "optionText": "面条"
+      },
+      {
+        "optionText": "轻食",
+        "sortOrder": 5
+      }
+    ]
+  }
+}
+
+### 发布带重复投票选项的帖子（预期 400）
+POST {{Gateway_HostAddress}}/api/v1/Post/Publish
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "title": "论坛投票非法参数验收帖",
+  "content": "用于验证发布阶段的投票参数校验。",
+  "categoryId": 1,
+  "tagNames": ["投票"],
+  "poll": {
+    "question": "重复选项是否会被拦截？",
+    "options": [
+      {
+        "optionText": "奶茶"
+      },
+      {
+        "optionText": "奶茶"
+      }
+    ]
+  }
+}
+
+### 获取带投票帖子的列表
+GET {{Gateway_HostAddress}}/api/v1/Post/GetList?keyword=论坛投票%20MVP%20验收帖&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取带投票帖子详情
+GET {{Gateway_HostAddress}}/api/v1/Post/GetById/{{ForumPoll_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 按帖子获取投票详情
+GET {{Gateway_HostAddress}}/api/v1/Poll/GetByPostId?postId={{ForumPoll_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 提交投票
+POST {{Gateway_HostAddress}}/api/v1/Poll/Vote
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumPoll_PostId}},
+  "optionId": {{ForumPoll_OptionId}}
+}
+
+### 重复提交投票（预期失败）
+POST {{Gateway_HostAddress}}/api/v1/Poll/Vote
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumPoll_PostId}},
+  "optionId": {{ForumPoll_OptionId}}
+}
+
+### 截止后提交投票（预期失败）
+POST {{Gateway_HostAddress}}/api/v1/Poll/Vote
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumPoll_ExpiredPostId}},
+  "optionId": {{ForumPoll_ExpiredOptionId}}
+}

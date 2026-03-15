@@ -1,0 +1,23 @@
+@Gateway_HostAddress = https://localhost:5000
+@Api_HostAddress = http://localhost:5100
+
+### 通过 Gateway 访问 API
+GET {{Gateway_HostAddress}}/api/health
+Accept: application/json
+
+### 验证 X-Forwarded-For 头
+GET {{Gateway_HostAddress}}/api/health
+Accept: application/json
+X-Forwarded-For: 192.168.1.100
+
+### 验证 X-Real-IP 头
+GET {{Gateway_HostAddress}}/api/health
+Accept: application/json
+X-Real-IP: 192.168.1.100
+
+### 限流日志回归入口
+# 先触发任意限流策略，再检查 Log/Radish.Api/Log.txt 或 Log/Radish.Auth/Log.txt。
+
+### 性能与边界提示
+# 1. 性能压测建议用 ab / wrk / hey。
+# 2. 时间窗口、令牌补充、滑动窗口等边界回归，统一通过脚本或压测工具执行。

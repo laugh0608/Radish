@@ -1,0 +1,27 @@
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Api_HostAddress = http://localhost:5100
+
+### 获取登录用户租户业务数据（字段隔离）
+GET {{Api_HostAddress}}/api/v1/Tenant/BusinessTable
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取登录用户租户业务数据（表隔离）
+GET {{Api_HostAddress}}/api/v1/Tenant/MultiBusinessTable
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取登录用户租户业务数据（库隔离）
+GET {{Api_HostAddress}}/api/v1/Tenant/SubLibBusinessTable
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 使用缓存获取租户列表
+GET {{Api_HostAddress}}/api/v1/Tenant/GetTenantWithCache
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 添加测试租户
+GET {{Api_HostAddress}}/api/v1/Tenant/AddTest
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
