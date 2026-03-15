@@ -35,7 +35,7 @@
 
 ### 1.3 当前方案
 
-最终选择了 **External（外部应用）** 方式：点击图标后跳转到独立的 Console 页面。
+最终选择了 **External（外部应用）** 方式：点击图标后跳转到独立的 Console 页面，并通过独立的 `radish-console` OIDC 客户端完成认证。
 
 ---
 
@@ -260,7 +260,7 @@ useEffect(() => {
 
 ## 4. 最终决策
 
-### 4.1 推荐方案：保持 External + 体验优化
+### 4.1 推荐方案：保持 External + 独立 OIDC 客户端
 
 **核心理由**：
 
@@ -279,6 +279,10 @@ useEffect(() => {
    - 各自独立开发、部署、扩展
    - 降低耦合度，提高可维护性
 
+4. **授权链路更可控**
+   - `radish-console` 现在有独立的 `redirect_uri` / `post_logout_redirect_uri`
+   - Auth 侧可单独配置授权确认策略，便于测试期和收口期切换
+
 ### 4.2 方案对比总结
 
 | 维度 | External 方式 | Iframe/Window 方式 |
@@ -295,9 +299,30 @@ useEffect(() => {
 
 ---
 
-## 5. 实施方案
+## 5. 当前联调结果
 
-### 5.1 短期优化（1-2 周）
+### 5.1 OIDC 口径
+
+- Console 当前不是 `radish-client` 内部复用认证的子应用，而是独立 OIDC 客户端 `radish-console`
+- 默认回调地址为 `https://localhost:5000/console/callback`
+- 开发环境直连 Console 时使用 `http://localhost:3100/console/callback`
+
+### 5.2 授权确认页策略
+
+Auth 已支持通过 `AuthorizationConsent` 配置控制是否显示授权确认页。
+
+当前测试配置下：
+
+- `radish-console` 显示确认页，便于联调确认授权信息与 Scope 展示
+- `radish-scalar` 显示确认页，便于调试 OAuth 授权链路
+- `radish-client` 跳过确认页，维持主站登录体验
+- 第三方应用默认显示确认页
+
+后续如果要收口为“官方应用统一免确认、第三方应用确认”，只需要调整配置，不需要改动授权控制器流程。
+
+## 6. 实施方案
+
+### 6.1 短期优化（1-2 周）
 
 **目标**：优化 External 方式的用户体验
 
@@ -399,7 +424,7 @@ export const getVisibleApps = (userRoles: string[] = []): AppDefinition[] => {
 
 ---
 
-### 5.2 中期方案：混合模式（2-3 个月）
+### 6.2 中期方案：混合模式（2-3 个月）
 
 **目标**：将部分高频功能内置到 WebOS
 
@@ -453,7 +478,7 @@ const AppMonitorApp = () => {
 
 ---
 
-### 5.3 长期方案：微前端架构（6-12 个月）
+### 6.3 长期方案：微前端架构（6-12 个月）
 
 **目标**：实现 Console 既可独立访问，也可嵌入 WebOS
 
@@ -561,7 +586,7 @@ export const useConsoleRouter = () => {
 
 ---
 
-## 6. 未来可选的增强
+## 7. 未来可选的增强
 
 **如果未来确实需要更紧密的集成，可以考虑**：
 
@@ -604,7 +629,7 @@ export const useConsoleRouter = () => {
 
 ---
 
-## 7. 决策总结
+## 8. 决策总结
 
 ### 7.1 核心结论
 
@@ -640,7 +665,7 @@ export const useConsoleRouter = () => {
 
 ---
 
-## 8. 行动计划
+## 9. 行动计划
 
 ### 8.1 本周任务
 
@@ -663,7 +688,7 @@ export const useConsoleRouter = () => {
 
 ---
 
-## 9. 参考资料
+## 10. 参考资料
 
 - [Console 系统设计方案](/guide/console-system)
 - [前端设计文档](/frontend/design)
@@ -674,4 +699,4 @@ export const useConsoleRouter = () => {
 
 > 本文档记录了 Console 集成方案的完整决策过程，供未来参考和回顾。
 > 
-> 最后更新：2026-01-16
+> 最后更新：2026-03-15
