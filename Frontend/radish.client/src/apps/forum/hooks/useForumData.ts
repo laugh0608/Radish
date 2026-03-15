@@ -18,7 +18,8 @@ import {
   type CommentHighlight,
   type ForumPostViewMode,
   type QuestionStatusFilter,
-  type ForumPostSortBy
+  type ForumPostSortBy,
+  type QuestionAnswerSort
 } from '@/api/forum';
 
 function isAbortError(error: unknown): boolean {
@@ -52,6 +53,7 @@ export interface ForumDataState {
   commentSortBy: 'newest' | 'hottest' | null;
   postViewMode: ForumPostViewMode;
   questionStatus: QuestionStatusFilter;
+  questionAnswerSort: QuestionAnswerSort;
 
   // 搜索状态
   searchKeyword: string;
@@ -78,6 +80,7 @@ export interface ForumDataActions {
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
   setPostViewMode: (mode: ForumPostViewMode) => void;
   setQuestionStatus: (status: QuestionStatusFilter) => void;
+  setQuestionAnswerSort: (sortBy: QuestionAnswerSort) => void;
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
   loadCategories: () => Promise<void>;
@@ -85,7 +88,7 @@ export interface ForumDataActions {
   loadHotTags: () => Promise<void>;
   loadPosts: () => Promise<void>;
   loadTrendingContent: () => Promise<void>;
-  loadPostDetail: (postId: number) => Promise<void>;
+  loadPostDetail: (postId: number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
   loadComments: (postId: number) => Promise<void>;
   resetCommentSort: () => void;
 }
@@ -116,6 +119,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const [commentSortBy, setCommentSortBy] = useState<'newest' | 'hottest' | null>(null);
   const [postViewMode, setPostViewMode] = useState<ForumPostViewMode>('all');
   const [questionStatus, setQuestionStatus] = useState<QuestionStatusFilter>('all');
+  const [questionAnswerSort, setQuestionAnswerSort] = useState<QuestionAnswerSort>('default');
 
   // 搜索状态
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -346,11 +350,11 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   };
 
   // 加载帖子详情
-  const loadPostDetail = async (postId: number) => {
+  const loadPostDetail = async (postId: number, answerSortOverride?: QuestionAnswerSort) => {
     setLoadingPostDetail(true);
     setError(null);
     try {
-      const data = await getPostById(postId, t);
+      const data = await getPostById(postId, t, answerSortOverride ?? questionAnswerSort);
       setSelectedPost(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -432,6 +436,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     commentSortBy,
     postViewMode,
     questionStatus,
+    questionAnswerSort,
     searchKeyword,
     loadingCategories,
     loadingHotTags,
@@ -451,6 +456,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     setCommentSortBy,
     setPostViewMode,
     setQuestionStatus,
+    setQuestionAnswerSort,
     setSearchKeyword,
     setError,
     loadCategories,

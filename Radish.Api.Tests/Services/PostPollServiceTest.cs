@@ -79,7 +79,7 @@ public class PostPollServiceTest
                 entity.ModifyId == 9527)))
             .ReturnsAsync(true);
         postService
-            .Setup(s => s.GetPostDetailAsync(1001, 9527))
+            .Setup(s => s.GetPostDetailAsync(1001, 9527, "default"))
             .ReturnsAsync(new PostVo
             {
                 VoId = 1001,

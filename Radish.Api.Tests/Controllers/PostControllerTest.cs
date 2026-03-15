@@ -82,7 +82,7 @@ public class PostControllerTest
         Assert.Null(post.VoPoll);
 
         postServiceMock.Verify(service => service.FillPostListMetadataAsync(It.IsAny<List<PostVo>>()), Times.Once);
-        postServiceMock.Verify(service => service.GetPostDetailAsync(It.IsAny<long>(), It.IsAny<long?>()), Times.Never);
+        postServiceMock.Verify(service => service.GetPostDetailAsync(It.IsAny<long>(), It.IsAny<long?>(), It.IsAny<string>()), Times.Never);
         attachmentServiceMock.Verify(service => service.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>>()), Times.Never);
     }
 
@@ -98,7 +98,7 @@ public class PostControllerTest
             .Setup(service => service.IncrementViewCountAsync(9527))
             .Returns(Task.CompletedTask);
         postServiceMock
-            .Setup(service => service.GetPostDetailAsync(9527, 10001))
+            .Setup(service => service.GetPostDetailAsync(9527, 10001, "default"))
             .ReturnsAsync(new PostVo
             {
                 VoId = 9527,
@@ -141,6 +141,45 @@ public class PostControllerTest
         Assert.NotNull(post.VoPoll);
         Assert.Equal("今天喝什么？", post.VoPoll!.VoQuestion);
         Assert.Single(post.VoPoll.VoOptions);
+        postServiceMock.Verify(service => service.GetPostDetailAsync(9527, 10001, "default"), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetById_Should_Pass_AnswerSort_When_RequestContains_AnswerSort()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        postServiceMock
+            .Setup(service => service.IncrementViewCountAsync(9529))
+            .Returns(Task.CompletedTask);
+        postServiceMock
+            .Setup(service => service.GetPostDetailAsync(9529, 10001, "latest"))
+            .ReturnsAsync(new PostVo
+            {
+                VoId = 9529,
+                VoTitle = "问答详情排序",
+                VoIsQuestion = true,
+                VoQuestion = new PostQuestionVo
+                {
+                    VoPostId = 9529,
+                    VoAnswerCount = 2
+                }
+            });
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object);
+
+        var result = await controller.GetById(9529, "latest");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        postServiceMock.Verify(service => service.GetPostDetailAsync(9529, 10001, "latest"), Times.Once);
     }
 
     [Fact]

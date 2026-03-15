@@ -344,6 +344,37 @@
   color: #64748b;
 }
 
+.answerSortButtons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.answerSortButton {
+  padding: 5px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.answerSortButton:hover {
+  border-color: #93c5fd;
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.answerSortButtonActive {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 700;
+}
+
 .questionState {
   display: inline-flex;
   align-items: center;

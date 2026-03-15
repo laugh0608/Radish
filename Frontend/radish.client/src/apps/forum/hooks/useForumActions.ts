@@ -24,7 +24,8 @@ import {
   type PostQuestion,
   type PostEditHistory,
   type CommentEditHistory,
-  type ForumPostSortBy
+  type ForumPostSortBy,
+  type QuestionAnswerSort
 } from '@/api/forum';
 
 export interface ForumActionsState {
@@ -75,6 +76,7 @@ export interface ForumActionsHandlers {
   handleVotePoll: (optionId: number) => Promise<void>;
   handleAnswerQuestion: (content: string) => Promise<void>;
   handleAcceptAnswer: (answerId: number) => Promise<void>;
+  handleQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
   handleLikePost: (postId: number) => Promise<void>;
   handleEditPost: (postId: number) => void;
   handleViewPostHistory: (postId: number) => Promise<void>;
@@ -125,9 +127,10 @@ interface UseForumActionsParams {
   setCurrentPage: (page: number) => void;
   setSortBy: (sortBy: ForumPostSortBy) => void;
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
+  setQuestionAnswerSort: (sortBy: QuestionAnswerSort) => void;
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
-  loadPostDetail: (postId: number) => Promise<void>;
+  loadPostDetail: (postId: number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
   loadComments: (postId: number) => Promise<void>;
   loadPosts: () => Promise<void>;
   resetCommentSort: () => void;
@@ -148,6 +151,7 @@ export const useForumActions = (
     setCurrentPage,
     setSortBy,
     setCommentSortBy,
+    setQuestionAnswerSort,
     setSearchKeyword,
     setError,
     loadPostDetail,
@@ -267,8 +271,18 @@ export const useForumActions = (
   // 选择帖子
   const handleSelectPost = async (postId: number) => {
     resetCommentSort();
-    await loadPostDetail(postId);
+    setQuestionAnswerSort('default');
+    await loadPostDetail(postId, 'default');
     await loadComments(postId);
+  };
+
+  const handleQuestionAnswerSortChange = async (sortBy: QuestionAnswerSort) => {
+    if (!selectedPost?.voId) {
+      return;
+    }
+
+    setQuestionAnswerSort(sortBy);
+    await loadPostDetail(selectedPost.voId, sortBy);
   };
 
   // 发布帖子
@@ -840,6 +854,7 @@ export const useForumActions = (
     handleVotePoll,
     handleAnswerQuestion,
     handleAcceptAnswer,
+    handleQuestionAnswerSortChange,
     handleLikePost,
     handleEditPost,
     handleViewPostHistory,

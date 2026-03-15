@@ -13,8 +13,9 @@ public interface IPostService : IBaseService<Post, PostVo>
     /// </summary>
     /// <param name="postId">帖子 Id</param>
     /// <param name="viewerUserId">查看者用户 Id（可空，用于补充用户态信息）</param>
+    /// <param name="answerSort">问答回答排序：default / latest</param>
     /// <returns>帖子详情</returns>
-    Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null);
+    Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null, string answerSort = "default");
 
     /// <summary>
     /// 分页获取问答帖子列表

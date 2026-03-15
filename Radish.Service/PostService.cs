@@ -82,7 +82,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     /// <summary>
     /// 获取帖子详情（包含分类名称和标签）
     /// </summary>
-    public async Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null)
+    public async Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null, string answerSort = "default")
     {
         var post = await _postRepository.QueryByIdAsync(postId);
         if (post == null || post.IsDeleted)
@@ -120,7 +120,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             postVo.VoPoll = pollVo;
         }
 
-        postVo.VoQuestion = await BuildPostQuestionVoAsync(postId);
+        postVo.VoQuestion = await BuildPostQuestionVoAsync(postId, answerSort);
         FillPostQuestionSummary(postVo, postVo.VoQuestion);
 
         return postVo;
@@ -595,7 +595,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         });
     }
 
-    private async Task<PostQuestionVo?> BuildPostQuestionVoAsync(long postId)
+    private async Task<PostQuestionVo?> BuildPostQuestionVoAsync(long postId, string answerSort = "default")
     {
         var question = await _postQuestionRepository.QueryFirstAsync(q => q.PostId == postId && !q.IsDeleted);
         if (question == null)
@@ -605,9 +605,19 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 
         var questionVo = Mapper.Map<PostQuestionVo>(question);
         var answers = await _postAnswerRepository.QueryAsync(answer => answer.PostId == postId && !answer.IsDeleted);
-        questionVo.VoAnswers = answers
-            .OrderByDescending(answer => answer.IsAccepted)
-            .ThenBy(answer => answer.CreateTime)
+        var normalizedAnswerSort = answerSort?.Trim().ToLowerInvariant() ?? "default";
+        var orderedAnswers = normalizedAnswerSort switch
+        {
+            "latest" => answers
+                .OrderByDescending(answer => answer.CreateTime)
+                .ThenByDescending(answer => answer.Id),
+            _ => answers
+                .OrderByDescending(answer => answer.IsAccepted)
+                .ThenBy(answer => answer.CreateTime)
+                .ThenBy(answer => answer.Id)
+        };
+
+        questionVo.VoAnswers = orderedAnswers
             .Select(answer => Mapper.Map<PostAnswerVo>(answer))
             .ToList();
 

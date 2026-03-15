@@ -25,6 +25,8 @@ export type QuestionStatusFilter = 'all' | 'pending' | 'solved';
 
 export type ForumPostSortBy = 'newest' | 'hottest' | 'essence' | 'pending' | 'answers';
 
+export type QuestionAnswerSort = 'default' | 'latest';
+
 /**
  * 分类 Vo
  */

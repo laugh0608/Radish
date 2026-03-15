@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
-import type { PostDetail, CommentNode } from '@/api/forum';
+import type { PostDetail, CommentNode, QuestionAnswerSort } from '@/api/forum';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -31,6 +31,7 @@ interface PostDetailContentViewProps {
   showFloatingTools?: boolean;
   currentUserId: number;
   commentSortBy: 'newest' | 'hottest' | null;
+  questionAnswerSort: QuestionAnswerSort;
   replyTo: { commentId: number; authorName: string } | null;
   followStatus: UserFollowStatus | null;
   followLoading: boolean;
@@ -40,6 +41,7 @@ interface PostDetailContentViewProps {
   onVotePoll: (optionId: number) => Promise<void>;
   onAnswerQuestion: (content: string) => Promise<void>;
   onAcceptAnswer: (answerId: number) => Promise<void>;
+  onQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
   onEdit: (postId: number) => void;
   onViewPostHistory: (postId: number) => void;
   onDelete: (postId: number) => void;
@@ -91,6 +93,7 @@ export const PostDetailContentView = ({
   showFloatingTools = true,
   currentUserId,
   commentSortBy,
+  questionAnswerSort,
   replyTo,
   followStatus,
   followLoading,
@@ -99,6 +102,7 @@ export const PostDetailContentView = ({
   onVotePoll,
   onAnswerQuestion,
   onAcceptAnswer,
+  onQuestionAnswerSortChange,
   onEdit,
   onViewPostHistory,
   onDelete,
@@ -228,6 +232,8 @@ export const PostDetailContentView = ({
               onVotePoll={onVotePoll}
               onAnswerQuestion={onAnswerQuestion}
               onAcceptAnswer={onAcceptAnswer}
+              answerSort={questionAnswerSort}
+              onAnswerSortChange={onQuestionAnswerSortChange}
               isAuthenticated={isAuthenticated}
               currentUserId={currentUserId}
               onEdit={onEdit}

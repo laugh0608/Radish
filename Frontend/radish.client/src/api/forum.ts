@@ -23,6 +23,7 @@ import type {
   ForumPostViewMode,
   QuestionStatusFilter,
   ForumPostSortBy,
+  QuestionAnswerSort,
   VoPagedResult,
   PageModel,
   PublishPostRequest,
@@ -68,6 +69,7 @@ export type {
   ForumPostViewMode,
   QuestionStatusFilter,
   ForumPostSortBy,
+  QuestionAnswerSort,
   VoPagedResult,
   PageModel,
   PublishPostRequest,
@@ -189,8 +191,15 @@ export async function getPostList(
 /**
  * 获取帖子详情
  */
-export async function getPostById(postId: number, t: TFunction): Promise<PostDetail> {
-  const response = await apiGet<PostDetail>(`/api/v1/Post/GetById/${postId}`, { timeout: FORUM_READ_TIMEOUT_MS });
+export async function getPostById(
+  postId: number,
+  t: TFunction,
+  answerSort: QuestionAnswerSort = 'default'
+): Promise<PostDetail> {
+  const response = await apiGet<PostDetail>(
+    `/api/v1/Post/GetById/${postId}?answerSort=${answerSort}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
 
   if (!response.ok || !response.data) {
     // 针对帖子不存在的情况给出友好提示

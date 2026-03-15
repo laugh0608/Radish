@@ -52,18 +52,19 @@ public class PostController : ControllerBase
     /// 根据 ID 获取帖子详情
     /// </summary>
     /// <param name="id">帖子 ID</param>
+    /// <param name="answerSort">问答回答排序：default（默认）/ latest（最新回答）</param>
     /// <returns>帖子详情（包含分类名称和标签）</returns>
     [HttpGet("{id:long}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
-    public async Task<MessageModel> GetById(long id)
+    public async Task<MessageModel> GetById(long id, string answerSort = "default")
     {
         // 增加浏览次数
         await _postService.IncrementViewCountAsync(id);
 
         var viewerUserId = Current.UserId > 0 ? (long?)Current.UserId : null;
-        var post = await _postService.GetPostDetailAsync(id, viewerUserId);
+        var post = await _postService.GetPostDetailAsync(id, viewerUserId, answerSort);
         if (post == null)
         {
             return new MessageModel

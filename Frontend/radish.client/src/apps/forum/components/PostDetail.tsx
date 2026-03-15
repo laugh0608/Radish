@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { PostDetail as PostDetailType, ReactionSummaryVo } from '@/api/forum';
+import type { PostDetail as PostDetailType, QuestionAnswerSort, ReactionSummaryVo } from '@/api/forum';
 import { uploadDocument, uploadImage } from '@/api/attachment';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
@@ -37,6 +37,8 @@ interface PostDetailProps {
   onVotePoll?: (optionId: number) => Promise<void>;
   onAnswerQuestion?: (content: string) => Promise<void>;
   onAcceptAnswer?: (answerId: number) => Promise<void>;
+  answerSort?: QuestionAnswerSort;
+  onAnswerSortChange?: (sortBy: QuestionAnswerSort) => Promise<void>;
   isAuthenticated?: boolean;
   currentUserId?: number;
   onEdit?: (postId: number) => void;
@@ -63,6 +65,8 @@ export const PostDetail = ({
   onVotePoll,
   onAnswerQuestion,
   onAcceptAnswer,
+  answerSort = 'default',
+  onAnswerSortChange,
   isAuthenticated = false,
   currentUserId = 0,
   onEdit,
@@ -99,6 +103,24 @@ export const PostDetail = ({
   const isQuestionPost = !!post?.voIsQuestion;
   const canAnswerQuestion = isAuthenticated && !isSubmittingAnswer;
   const canViewQuestionHistory = isQuestionPost && !!onViewHistory;
+  const displayedAnswers = !question?.voAnswers
+    ? []
+    : [...question.voAnswers].sort((left, right) => {
+        if (answerSort === 'latest') {
+          return new Date(right.voCreateTime).getTime() - new Date(left.voCreateTime).getTime();
+        }
+
+        if (left.voIsAccepted !== right.voIsAccepted) {
+          return left.voIsAccepted ? -1 : 1;
+        }
+
+        const timeDiff = new Date(left.voCreateTime).getTime() - new Date(right.voCreateTime).getTime();
+        if (timeDiff !== 0) {
+          return timeDiff;
+        }
+
+        return left.voAnswerId - right.voAnswerId;
+      });
 
   const buildAvatarText = (name: string) => {
     const source = name.trim();
@@ -347,6 +369,26 @@ export const PostDetail = ({
                   {' · '}
                   共 {question?.voAnswerCount ?? post.voAnswerCount ?? 0} 条回答
                 </p>
+                <div className={styles.answerSortButtons}>
+                  <button
+                    type="button"
+                    className={`${styles.answerSortButton} ${answerSort === 'default' ? styles.answerSortButtonActive : ''}`}
+                    onClick={() => {
+                      void onAnswerSortChange?.('default');
+                    }}
+                  >
+                    默认排序
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.answerSortButton} ${answerSort === 'latest' ? styles.answerSortButtonActive : ''}`}
+                    onClick={() => {
+                      void onAnswerSortChange?.('latest');
+                    }}
+                  >
+                    最新回答
+                  </button>
+                </div>
               </div>
               <div className={styles.questionHeaderActions}>
                 <span className={`${styles.questionState} ${question?.voIsSolved ? styles.questionStateSolved : styles.questionStatePending}`}>
@@ -366,12 +408,12 @@ export const PostDetail = ({
               </div>
             </div>
 
-            {question?.voAnswers && question.voAnswers.length > 0 ? (
+            {displayedAnswers.length > 0 ? (
               <div className={styles.answerList}>
-                {question.voAnswers.map((answer) => {
+                {displayedAnswers.map((answer) => {
                   const canAccept =
                     isAuthor &&
-                    !question.voIsSolved &&
+                    !question?.voIsSolved &&
                     !answer.voIsAccepted &&
                     answer.voAuthorId !== currentUserId;
 
