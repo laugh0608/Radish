@@ -68,7 +68,7 @@ http://localhost:3000/?demo
   - WebOS 使用指南
   - 快速开始提示
   - 社区规则查看
-  - 开源软件说明入口（项目级核心依赖与许可证信息）
+  - 开源软件说明入口（当前按后端、数据、前端、实时能力分组展示首批关键依赖与许可证口径）
 
 ---
 
@@ -189,6 +189,13 @@ useUserStore.getState().setUser({
 - **@radish/ui/Icon（基于 @iconify/react + 本地 Iconify JSON 集合）** - 图标系统
 - **CSS Modules** - 样式隔离
 - **Vite (Rolldown)** - 构建工具
+
+### 开源软件页说明
+
+- 欢迎应用中的“开源软件”页当前采用静态清单方式维护。
+- 当前首批展示 18 项关键依赖，主要用于欢迎页说明与合规入口提示。
+- 像 AutoMapper、Hangfire 这类存在额外授权口径差异的项目，会在页面中补充说明。
+- 本页不等同于最终发行版的完整 `THIRD-PARTY-NOTICES`，后续可继续扩展。
 
 ---
 
