@@ -62,7 +62,7 @@ function Show-Menu {
     Write-Host "  3. Start Frontend      (Frontend/radish.client  @ http://localhost:3000)"
     Write-Host "  4. Start Console       (Frontend/radish.console @ http://localhost:3100)"
     Write-Host "  5. Start Auth          (Radish.Auth             @ http://localhost:5200)"
-    Write-Host "  6. Run DbMigrate       (Radish.DbMigrate        @ init/seed)"
+    Write-Host "  6. Run DbMigrate       (Radish.DbMigrate        @ apply/doctor)"
     Write-Host "  7. Run unit tests      (Radish.Api.Tests)"
     Write-Host
     Write-Host "[Combinations]"

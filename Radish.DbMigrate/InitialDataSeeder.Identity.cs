@@ -1,4 +1,7 @@
+using System;
+using System.IO;
 using Radish.Common;
+using Radish.Common.CoreTool;
 using Radish.Common.HelpTool;
 using Radish.Common.TenantTool;
 using Radish.Model;
@@ -1121,5 +1124,124 @@ internal static partial class InitialDataSeeder
                 ? $"[Radish.DbMigrate] 已将 test 用户租户纠正为 {publicTenantId}。"
                 : $"[Radish.DbMigrate] 已存在 Id={testUserId} 的 test 用户，且租户已是 {publicTenantId}，跳过。");
         }
+
+        await SeedDefaultUserAvatarsAsync(db, publicTenantId);
+    }
+
+    private static async Task SeedDefaultUserAvatarsAsync(ISqlSugarClient db, long publicTenantId)
+    {
+        var defaultAvatarsPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Uploads", "DefaultAvatars");
+        if (!Directory.Exists(defaultAvatarsPath))
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 默认头像目录不存在，跳过：{defaultAvatarsPath}");
+            return;
+        }
+
+        var avatarSeeds = new[]
+        {
+            new { AttachmentId = 72000L, UserId = 20000L, UserName = "system", FileName = "radish.png" },
+            new { AttachmentId = 72001L, UserId = 20001L, UserName = "admin", FileName = "touxiang1.jpg" },
+            new { AttachmentId = 72002L, UserId = 20002L, UserName = "test", FileName = "touxiang2.jpg" }
+        };
+
+        foreach (var seed in avatarSeeds)
+        {
+            var existingAvatar = await db.Queryable<Attachment>()
+                .FirstAsync(a => !a.IsDeleted &&
+                                 a.BusinessType == "Avatar" &&
+                                 a.BusinessId == seed.UserId);
+            if (existingAvatar != null)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 用户 {seed.UserName} 已存在头像，保留现状。");
+                continue;
+            }
+
+            var filePath = Path.Combine(defaultAvatarsPath, seed.FileName);
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 默认头像文件不存在，跳过用户 {seed.UserName}：{filePath}");
+                continue;
+            }
+
+            var fileInfo = new FileInfo(filePath);
+            var relativePath = Path.Combine("DefaultAvatars", seed.FileName).Replace('\\', '/');
+            var url = $"/uploads/{relativePath}";
+
+            var existingAttachment = await db.Queryable<Attachment>()
+                .FirstAsync(a => a.Id == seed.AttachmentId);
+
+            if (existingAttachment != null)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 默认头像附件 Id={seed.AttachmentId} 已存在，补齐用户 {seed.UserName} 的头像关联。");
+                await db.Updateable<Attachment>()
+                    .SetColumns(a => new Attachment
+                    {
+                        OriginalName = seed.FileName,
+                        StoredName = $"default-avatar-{seed.UserName}",
+                        Extension = Path.GetExtension(seed.FileName),
+                        FileSize = fileInfo.Length,
+                        MimeType = GetImageMimeType(seed.FileName),
+                        StorageType = "Local",
+                        StoragePath = relativePath,
+                        ThumbnailPath = relativePath,
+                        Url = url,
+                        UploaderId = seed.UserId,
+                        UploaderName = seed.UserName,
+                        BusinessType = "Avatar",
+                        BusinessId = seed.UserId,
+                        IsPublic = true,
+                        IsEnabled = true,
+                        IsDeleted = false,
+                        TenantId = publicTenantId,
+                        ModifyBy = "System",
+                        ModifyId = 0,
+                        ModifyTime = DateTime.Now
+                    })
+                    .Where(a => a.Id == seed.AttachmentId)
+                    .ExecuteCommandAsync();
+
+                continue;
+            }
+
+            Console.WriteLine($"[Radish.DbMigrate] 为用户 {seed.UserName} 补充默认头像：{seed.FileName}");
+
+            await db.Insertable(new Attachment
+            {
+                Id = seed.AttachmentId,
+                OriginalName = seed.FileName,
+                StoredName = $"default-avatar-{seed.UserName}",
+                Extension = Path.GetExtension(seed.FileName),
+                FileSize = fileInfo.Length,
+                MimeType = GetImageMimeType(seed.FileName),
+                StorageType = "Local",
+                StoragePath = relativePath,
+                ThumbnailPath = relativePath,
+                Url = url,
+                UploaderId = seed.UserId,
+                UploaderName = seed.UserName,
+                BusinessType = "Avatar",
+                BusinessId = seed.UserId,
+                IsPublic = true,
+                IsEnabled = true,
+                IsDeleted = false,
+                TenantId = publicTenantId,
+                CreateBy = "System",
+                CreateId = 0
+            }).ExecuteCommandAsync();
+        }
+    }
+
+    private static string GetImageMimeType(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".png" => "image/png",
+            ".jpg" => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream"
+        };
     }
 }

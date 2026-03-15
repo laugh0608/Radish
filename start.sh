@@ -74,7 +74,7 @@ print_menu() {
   echo "  3. 启动 Frontend      (Frontend/radish.client  @ http://localhost:3000)"
   echo "  4. 启动 Console       (Frontend/radish.console @ http://localhost:3100)"
   echo "  5. 启动 Auth          (Radish.Auth             @ http://localhost:5200)"
-  echo "  6. 运行 DbMigrate     (Radish.DbMigrate        @ init/seed)"
+  echo "  6. 运行 DbMigrate     (Radish.DbMigrate        @ apply/doctor)"
   echo "  7. 运行单元测试       (Radish.Api.Tests)"
   echo
   echo "[组合启动]"

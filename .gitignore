@@ -293,6 +293,8 @@ DataBases/**
 !DataBases/README.md
 !DataBases/Uploads/DefaultAvatars/.gitkeep
 !DataBases/Uploads/DefaultAvatars/*
+!DataBases/Uploads/DefaultShopImage/.gitkeep
+!DataBases/Uploads/DefaultShopImage/*
 
 # Environment files
 .env
