@@ -1,3 +1,4 @@
+import type { SyntheticEvent } from 'react';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
 import styles from './ShopHome.module.css';
 
@@ -19,6 +20,9 @@ export const ShopHome = ({
   onViewAllProducts
 }: ShopHomeProps) => {
   // const { t } = useTranslation(); // 暂时不使用
+  const handleCategoryImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+    event.currentTarget.style.display = 'none';
+  };
 
   if (loading) {
     return (
@@ -61,7 +65,7 @@ export const ShopHome = ({
             >
               <div className={styles.categoryIcon}>
                 {category.voIcon ? (
-                  <img src={category.voIcon} alt={category.voName} />
+                  <img src={category.voIcon} alt={category.voName} onError={handleCategoryImageError} />
                 ) : (
                   <span className={styles.defaultIcon}>📦</span>
                 )}

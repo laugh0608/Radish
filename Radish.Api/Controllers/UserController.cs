@@ -110,6 +110,8 @@ public class UserController : ControllerBase
         var userVos = result.data;
         var totalCount = result.totalCount;
 
+        await FillUserAvatarUrlsAsync(userVos);
+
         var responseResult = new VoPagedResult<UserVo>
         {
             VoItems = userVos,
@@ -125,6 +127,45 @@ public class UserController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = responseResult
         };
+    }
+
+    private async Task FillUserAvatarUrlsAsync(List<UserVo> users)
+    {
+        if (users.Count == 0)
+        {
+            return;
+        }
+
+        var userIds = users
+            .Select(user => user.Uuid)
+            .Distinct()
+            .ToList();
+
+        var avatarAttachments = await _attachmentService.QueryAsync(attachment =>
+            attachment.BusinessType == "Avatar" &&
+            !attachment.IsDeleted &&
+            attachment.BusinessId != null &&
+            userIds.Contains(attachment.BusinessId.Value));
+
+        var avatarMap = avatarAttachments
+            .Where(attachment => attachment.VoBusinessId.HasValue)
+            .GroupBy(attachment => attachment.VoBusinessId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderByDescending(attachment => attachment.VoCreateTime)
+                    .First());
+
+        foreach (var user in users)
+        {
+            if (!avatarMap.TryGetValue(user.Uuid, out var avatar))
+            {
+                continue;
+            }
+
+            user.VoAvatarUrl = avatar.VoUrl;
+            user.VoAvatarThumbnailUrl = avatar.VoThumbnailUrl;
+        }
     }
 
     /// <summary>

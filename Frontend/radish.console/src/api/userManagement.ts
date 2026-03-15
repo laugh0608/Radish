@@ -2,6 +2,22 @@ import { apiGet } from '@radish/http';
 import type { ParsedApiResponse } from '@radish/http';
 import type { UserListItem } from '../types/user';
 
+function mapUserListItem(raw: any): UserListItem {
+  return {
+    uuid: raw.uuid ?? raw.Uuid ?? 0,
+    voLoginName: raw.voLoginName ?? raw.VoLoginName ?? '',
+    voUserName: raw.voUserName ?? raw.VoUserName ?? '',
+    voUserEmail: raw.voUserEmail ?? raw.VoUserEmail ?? '',
+    voAvatarUrl: raw.voAvatarUrl ?? raw.VoAvatarUrl,
+    voAvatarThumbnailUrl: raw.voAvatarThumbnailUrl ?? raw.VoAvatarThumbnailUrl,
+    voIsEnable: raw.voIsEnable ?? raw.VoIsEnable ?? false,
+    voCreateTime: raw.voCreateTime ?? raw.VoCreateTime ?? '',
+    voUpdateTime: raw.voUpdateTime ?? raw.VoUpdateTime,
+    voIsDeleted: raw.voIsDeleted ?? raw.VoIsDeleted ?? false,
+    voTenantId: raw.voTenantId ?? raw.VoTenantId ?? 0,
+  };
+}
+
 /**
  * 用户状态枚举
  */
@@ -77,7 +93,7 @@ export const userManagementApi = {
     if (response.ok && response.data) {
       const backendData = response.data;
       const mappedData: UserListResponse = {
-        items: backendData.voItems || backendData.VoItems || [],
+        items: (backendData.voItems || backendData.VoItems || []).map((item: any) => mapUserListItem(item)),
         total: backendData.voTotal || backendData.VoTotal || 0,
         pageIndex: backendData.voPageIndex || backendData.VoPageIndex || 1,
         pageSize: backendData.voPageSize || backendData.VoPageSize || 20,
@@ -96,7 +112,15 @@ export const userManagementApi = {
    * 获取用户详情
    */
   async getUserById(id: number): Promise<ParsedApiResponse<UserListItem>> {
-    return apiGet<UserListItem>(`/api/v1/User/GetUserById/${id}`, { withAuth: true });
+    const response = await apiGet<any>(`/api/v1/User/GetUserById/${id}`, { withAuth: true });
+    if (response.ok && response.data) {
+      return {
+        ...response,
+        data: mapUserListItem(response.data),
+      };
+    }
+
+    return response as ParsedApiResponse<UserListItem>;
   },
 
   /**

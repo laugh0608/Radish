@@ -13,6 +13,7 @@ internal static partial class InitialDataSeeder
     /// <summary>初始化商城分类数据</summary>
     private static async Task SeedShopCategoriesAsync(ISqlSugarClient db)
     {
+        var defaultShopImages = GetDefaultShopImageUrls();
         var categories = new[]
         {
             new ProductCategory
@@ -77,17 +78,37 @@ internal static partial class InitialDataSeeder
             }
         };
 
+        ApplyDefaultImagesToCategories(categories, defaultShopImages);
+
         foreach (var category in categories)
         {
-            var exists = await db.Queryable<ProductCategory>().AnyAsync(c => c.Id == category.Id);
-            if (!exists)
+            var existingCategory = await db.Queryable<ProductCategory>().FirstAsync(c => c.Id == category.Id);
+            if (existingCategory == null)
             {
                 Console.WriteLine($"[Radish.DbMigrate] 创建商品分类 Id={category.Id}, Name={category.Name}...");
                 await db.Insertable(category).ExecuteCommandAsync();
             }
             else
             {
-                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={category.Id} 的商品分类，跳过创建。");
+                if (ShouldBackfillCategoryIcon(existingCategory.Icon) && !string.IsNullOrWhiteSpace(category.Icon))
+                {
+                    var updated = await db.Updateable<ProductCategory>()
+                        .SetColumns(c => new ProductCategory
+                        {
+                            Icon = category.Icon,
+                            ModifyTime = DateTime.Now
+                        })
+                        .Where(c => c.Id == category.Id)
+                        .ExecuteCommandAsync();
+
+                    Console.WriteLine(updated > 0
+                        ? $"[Radish.DbMigrate] 已为商品分类 Id={category.Id} 补齐默认图片。"
+                        : $"[Radish.DbMigrate] 商品分类 Id={category.Id} 已存在，但未能补齐默认图片。");
+                }
+                else
+                {
+                    Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={category.Id} 的商品分类，且图片已存在，跳过。");
+                }
             }
         }
     }
@@ -552,5 +573,35 @@ internal static partial class InitialDataSeeder
             product.Icon = imageUrl;
             product.CoverImage = imageUrl;
         }
+    }
+
+    private static void ApplyDefaultImagesToCategories(ProductCategory[] categories, string[] defaultShopImages)
+    {
+        if (defaultShopImages.Length == 0)
+        {
+            return;
+        }
+
+        for (var i = 0; i < categories.Length; i++)
+        {
+            categories[i].Icon = defaultShopImages[i % defaultShopImages.Length];
+        }
+    }
+
+    private static bool ShouldBackfillCategoryIcon(string? icon)
+    {
+        if (string.IsNullOrWhiteSpace(icon))
+        {
+            return true;
+        }
+
+        if (icon.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase) ||
+            icon.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            icon.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return icon is "badge" or "frame" or "title" or "signature" or "sparkles" or "palette";
     }
 }

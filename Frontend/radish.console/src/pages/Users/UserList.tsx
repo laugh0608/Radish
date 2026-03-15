@@ -26,6 +26,7 @@ import {
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import type { UserListItem } from '../../types/user';
+import { getAvatarUrl } from '@/config/env';
 import { log } from '../../utils/logger';
 import './UserList.css';
 
@@ -99,6 +100,7 @@ export const UserList = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Avatar
             size="small"
+            src={getAvatarUrl(record.voAvatarThumbnailUrl || record.voAvatarUrl)}
             icon={<UserOutlined />}
           />
           <div>

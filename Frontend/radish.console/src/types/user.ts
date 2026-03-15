@@ -19,6 +19,8 @@ export interface UserListItem {
   voLoginName: string;
   voUserName: string;
   voUserEmail: string;
+  voAvatarUrl?: string;
+  voAvatarThumbnailUrl?: string;
   voIsEnable: boolean;
   voCreateTime: string;
   voUpdateTime?: string;
