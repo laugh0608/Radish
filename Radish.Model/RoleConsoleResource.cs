@@ -19,6 +19,7 @@ public class RoleConsoleResource : RootEntityTKey<long>, IDeleteFilter
     public bool IsDeleted { get; set; }
 
     /// <summary>软删除时间</summary>
+    [SugarColumn(IsNullable = true)]
     public DateTime? DeletedAt { get; set; }
 
     /// <summary>软删除操作者</summary>

@@ -82,6 +82,7 @@ export const Dock = () => {
     voTenantId: number;
     voAvatarUrl?: string;
     voAvatarThumbnailUrl?: string;
+    voPermissions?: string[];
   }
 
   interface ApiFetchOptions extends RequestInit {
@@ -140,6 +141,7 @@ export const Dock = () => {
         userName: json.responseData.voUserName,
         tenantId: json.responseData.voTenantId,
         roles: tokenService.getRolesFromAccessToken(token),
+        permissions: Array.isArray(json.responseData.voPermissions) ? json.responseData.voPermissions : [],
         avatarUrl: json.responseData.voAvatarUrl,
         avatarThumbnailUrl: json.responseData.voAvatarThumbnailUrl
       });

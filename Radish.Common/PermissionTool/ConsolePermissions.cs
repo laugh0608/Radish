@@ -4,6 +4,7 @@ namespace Radish.Common.PermissionTool;
 
 public static class ConsolePermissions
 {
+    public const string Access = "console.access";
     public const string DashboardView = "console.dashboard.view";
     public const string ApplicationsView = "console.applications.view";
     public const string ApplicationsCreate = "console.applications.create";
@@ -101,6 +102,7 @@ public static class ConsolePermissions
 
     private static readonly string[] AdminDefaultPermissions =
     {
+        Access,
         DashboardView,
         ApplicationsView,
         ApplicationsCreate,

@@ -16,7 +16,8 @@ const defaultUser: UserInfo = {
   userId: 0,
   userName: '',
   tenantId: 0,
-  roles: []
+  roles: [],
+  permissions: []
 };
 
 export const useUserStore = create<UserStore>((set, get) => ({
@@ -28,6 +29,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
       userName: user.userName,
       tenantId: user.tenantId,
       roles: user.roles || [],
+      permissions: user.permissions || [],
       avatarUrl: user.avatarUrl,
       avatarThumbnailUrl: user.avatarThumbnailUrl
     });

@@ -1,4 +1,5 @@
 export const CONSOLE_PERMISSIONS = {
+  consoleAccess: 'console.access',
   dashboardView: 'console.dashboard.view',
   applicationsView: 'console.applications.view',
   applicationsCreate: 'console.applications.create',

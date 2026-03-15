@@ -1,3 +1,4 @@
+using System.Data;
 using Radish.Common.PermissionTool;
 using Radish.Model;
 using SqlSugar;
@@ -24,6 +25,7 @@ internal static partial class InitialDataSeeder
 
     private static readonly ConsoleResourceSeed[] ConsoleResourceSeeds =
     [
+        new(60990, 0, ConsolePermissions.Access, "Console 访问", "Entry", "console-access", null, 1, false, false, "控制 WebOS Console 入口与 Console SPA 访问"),
         new(61000, 0, ConsolePermissions.DashboardView, "仪表盘", "Page", "dashboard", "/", 10, true, true, "Dashboard 页面"),
         new(61010, 0, ConsolePermissions.ApplicationsView, "应用管理", "Page", "applications", "/applications", 20, true, true, "应用管理页面"),
         new(61011, 61010, ConsolePermissions.ApplicationsCreate, "新增应用", "Button", "applications", null, 21, false, false),
@@ -127,6 +129,7 @@ internal static partial class InitialDataSeeder
 
     private static async Task SeedConsoleAuthorizationAsync(ISqlSugarClient db)
     {
+        await EnsureConsoleAuthorizationTablesAsync(db);
         db.CodeFirst.InitTables<ConsoleResource, RoleConsoleResource, ConsoleResourceApiModule>();
         Console.WriteLine("[Radish.DbMigrate] 已同步 Console 授权相关表结构。");
 
@@ -153,6 +156,8 @@ internal static partial class InitialDataSeeder
                     Description = spec.Description,
                     IsEnabled = true,
                     IsDeleted = false,
+                    DeletedAt = null,
+                    DeletedBy = null,
                     CreateBy = "System",
                     CreateId = 0,
                     ModifyBy = "System",
@@ -218,11 +223,13 @@ internal static partial class InitialDataSeeder
             {
                 await db.Insertable(new ConsoleResourceApiModule
                 {
-                    Id = 620000 + spec.ResourceId + apiModule.Id,
+                    Id = BuildConsoleResourceApiModuleSeedId(spec.ResourceId, apiModule.Id),
                     ConsoleResourceId = persistedResource.Id,
                     ApiModuleId = apiModule.Id,
                     RelationType = spec.RelationType,
                     IsDeleted = false,
+                    DeletedAt = null,
+                    DeletedBy = null,
                     CreateBy = "System",
                     CreateId = 0,
                     ModifyBy = "System",
@@ -265,6 +272,8 @@ internal static partial class InitialDataSeeder
                         RoleId = roleId,
                         ConsoleResourceId = resource.Id,
                         IsDeleted = false,
+                        DeletedAt = null,
+                        DeletedBy = null,
                         CreateBy = "System",
                         CreateId = 0,
                         ModifyBy = "System",
@@ -289,4 +298,96 @@ internal static partial class InitialDataSeeder
             }
         }
     }
+
+    private static async Task EnsureConsoleAuthorizationTablesAsync(ISqlSugarClient db)
+    {
+        if (db.CurrentConnectionConfig.DbType != SqlSugar.DbType.Sqlite)
+        {
+            return;
+        }
+
+        await EnsureNullableSoftDeleteColumnsAsync<ConsoleResource>(db);
+        await EnsureNullableSoftDeleteColumnsAsync<RoleConsoleResource>(db);
+        await EnsureNullableSoftDeleteColumnsAsync<ConsoleResourceApiModule>(db);
+    }
+
+    private static async Task EnsureNullableSoftDeleteColumnsAsync<TEntity>(ISqlSugarClient db)
+        where TEntity : class, new()
+    {
+        var entityInfo = db.EntityMaintenance.GetEntityInfo<TEntity>();
+        var tableName = entityInfo.DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        {
+            return;
+        }
+
+        var columnInfo = GetSqliteTableColumns(db, tableName);
+        if (columnInfo.Count == 0)
+        {
+            return;
+        }
+
+        var deletedAtNeedsFix = columnInfo.TryGetValue("DeletedAt", out var deletedAt) && deletedAt.IsNotNull;
+        var deletedByNeedsFix = columnInfo.TryGetValue("DeletedBy", out var deletedBy) && deletedBy.IsNotNull;
+
+        if (!deletedAtNeedsFix && !deletedByNeedsFix)
+        {
+            return;
+        }
+
+        var backupTableName = $"{tableName}__legacy_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
+        Console.WriteLine($"[Radish.DbMigrate] 检测到 SQLite 旧表结构：{tableName} 的软删除列仍为 NOT NULL，开始自动重建。");
+
+        await db.Ado.ExecuteCommandAsync($"ALTER TABLE {QuoteIdentifier(tableName)} RENAME TO {QuoteIdentifier(backupTableName)}");
+        db.CodeFirst.InitTables<TEntity>();
+
+        var backupColumns = GetSqliteTableColumns(db, backupTableName);
+        var newColumns = GetSqliteTableColumns(db, tableName);
+        var commonColumns = newColumns.Keys
+            .Where(column => backupColumns.ContainsKey(column))
+            .ToList();
+
+        if (commonColumns.Count > 0)
+        {
+            var columnList = string.Join(", ", commonColumns.Select(QuoteIdentifier));
+            await db.Ado.ExecuteCommandAsync(
+                $"INSERT INTO {QuoteIdentifier(tableName)} ({columnList}) SELECT {columnList} FROM {QuoteIdentifier(backupTableName)}");
+        }
+
+        await db.Ado.ExecuteCommandAsync($"DROP TABLE {QuoteIdentifier(backupTableName)}");
+        Console.WriteLine($"[Radish.DbMigrate] 已完成 {tableName} 表结构修复。");
+    }
+
+    private static Dictionary<string, SqliteColumnInfo> GetSqliteTableColumns(ISqlSugarClient db, string tableName)
+    {
+        var result = new Dictionary<string, SqliteColumnInfo>(StringComparer.OrdinalIgnoreCase);
+        var schemaTable = db.Ado.GetDataTable($"PRAGMA table_info({QuoteIdentifier(tableName)})");
+
+        foreach (DataRow row in schemaTable.Rows)
+        {
+            var columnName = row["name"]?.ToString();
+            if (string.IsNullOrWhiteSpace(columnName))
+            {
+                continue;
+            }
+
+            var notNullValue = row["notnull"]?.ToString();
+            result[columnName] = new SqliteColumnInfo(string.Equals(notNullValue, "1", StringComparison.Ordinal));
+        }
+
+        return result;
+    }
+
+    private static long BuildConsoleResourceApiModuleSeedId(long resourceId, long apiModuleId)
+    {
+        // 高位保留种子前缀，避免 ResourceId + ApiModuleId 的求和模式发生主键碰撞。
+        return 6200000000L + (resourceId * 1000L) + (apiModuleId - 50000L);
+    }
+
+    private static string QuoteIdentifier(string identifier)
+    {
+        return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+    }
+
+    private sealed record SqliteColumnInfo(bool IsNotNull);
 }

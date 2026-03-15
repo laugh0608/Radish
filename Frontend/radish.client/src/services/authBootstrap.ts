@@ -15,6 +15,8 @@ export interface CurrentUser {
   voAvatarThumbnailUrl?: string;
   voRoleNames?: string[];
   voRoles?: string[];
+  voPermissions?: string[];
+  permissions?: string[];
 }
 
 export interface AuthBootstrapOptions {
@@ -51,6 +53,12 @@ function setUserFromCurrentUser(user: CurrentUser, token?: string | null) {
     userName: user.voUserName,
     tenantId: typeof user.voTenantId === 'string' ? parseInt(user.voTenantId, 10) : user.voTenantId,
     roles: resolveUserRoles(user, token),
+    permissions: [
+      ...(Array.isArray(user.voPermissions) ? user.voPermissions : []),
+      ...(Array.isArray(user.permissions) ? user.permissions : []),
+    ]
+      .map((permission) => permission.trim())
+      .filter(Boolean),
     avatarUrl: user.voAvatarUrl,
     avatarThumbnailUrl: user.voAvatarThumbnailUrl
   });

@@ -7,26 +7,27 @@
 ## 当前里程碑
 
 - **里程碑**：`M12 社区功能冲刺`
-- **当前主线**：`Console-ext 一期方案设计（权限 / 菜单 / 按钮管理）`
-- **当前阶段**：`截至 2026-03-15，Console 权限治理 V1 已完成收口，当前进入 Console-ext 一期设计准备`
+- **当前主线**：`Console-ext 一期实现与联调（权限 / 菜单 / 按钮管理）`
+- **当前阶段**：`截至 2026-03-15，Console 权限治理 V1 已完成收口，Console-ext 一期已落地并进入联调补边界阶段`
 - **复核日期**：`2026-03-15`
 
-## 当前主线：Console-ext 一期方案设计
+## 当前主线：Console-ext 一期实现与联调
 
 ### 本阶段目标
 
-- 基于现有 `ConsolePermissions + ApiModule + VoPermissions` 链路，形成“权限 / 菜单 / 按钮管理”一期可落地设计
-- 明确菜单、页面、按钮、接口四者的统一关系
-- 收敛第一阶段范围，避免直接膨胀为完整权限树编辑器或通用 IAM 平台
-- 为后续实现准备专题设计文档、实施拆分与验收标准
+- 基于现有 `ConsolePermissions + ApiModule + VoPermissions` 链路，完成“权限 / 菜单 / 按钮管理”一期最小闭环
+- 打通角色授权页、资源目录、资源到接口映射与真实接口校验
+- 补齐 `console.access`，让 Console 应用入口不再只对 `Admin/System` 硬编码可见
+- 收口联调清单与回归边界，避免第一阶段继续膨胀为完整 IAM 平台
 
 ### 当前输出
 
-- [x] 明确一期采用“角色授权面板 + 资源目录 + 资源到接口映射”的落地方式
-- [x] 明确菜单不作为独立权限体系，而是页面资源的展示结果
-- [x] 明确按钮权限继续复用既有 `console.*` 权限键
-- [x] 明确接口权限由后端维护映射，不在授权页直接暴露 URL 勾选
-- [x] 已补专题设计文档：[Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
+- [x] 已完成一期专题设计文档：[Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
+- [x] 已落地 `ConsoleResource + RoleConsoleResource + ConsoleResourceApiModule` 数据模型与种子
+- [x] 已落地角色授权读取 / 保存接口与角色权限配置页
+- [x] 已将当前已纳管 Console 管理接口接入动态权限过滤
+- [x] 已补 `console.access`，用于控制 WebOS Console 入口与 Console SPA 访问
+- [ ] 待完成一期联调验证与环境构建问题排查（.NET SDK workload resolver / Vite spawn EPERM）
 
 ### 当前不做
 
@@ -80,7 +81,7 @@
 
 #### 下一执行顺序
 
-- `Console-ext` 一期：权限配置后台与授权界面（角色授权 / 菜单与按钮授权）
+- `Console-ext` 一期：角色授权联调、种子验证与回归补边界
 - `P2-ext`：开源软件清单扩展（完整清单 / 自动生成）
 - `P3-ext`：论坛投票扩展（更完整测试、筛选 / 排序扩展）
 - `P4-ext`：论坛问答扩展（问答视图、排序与历史能力）
@@ -168,7 +169,7 @@
 
 ### `Console-ext`：权限配置后台与授权界面
 
-- 当前状态：已进入一期方案设计，待进入实现
+- 当前状态：一期已实现，当前转入联调与回归补边界
 - 当前专题： [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
 - 一期范围：优先补角色授权面板，以及菜单 / 页面 / 按钮授权配置
 - 当前边界：先不承诺完整权限树编辑器或大而全 RBAC 平台

@@ -108,7 +108,7 @@ export const UserInfoCard = ({
   savingTimeZone = false,
   onTimeZoneChange
 }: UserInfoCardProps) => {
-  const { setUser, tenantId, roles } = useUserStore();
+  const { setUser, tenantId, roles, permissions } = useUserStore();
 
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
   const [coinBalance, setCoinBalance] = useState<CoinBalanceInfo | null>(null);
@@ -175,6 +175,7 @@ export const UserInfoCard = ({
             userName: profile.voUserName,
             tenantId: tenantId,
             roles: roles || ['User'],
+            permissions: permissions || [],
             avatarUrl: profile.voAvatarUrl || undefined,
             avatarThumbnailUrl: profile.voAvatarThumbnailUrl || undefined
           });

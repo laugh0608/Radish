@@ -11,10 +11,10 @@ import styles from './Desktop.module.css';
  */
 export const Desktop = () => {
   const { openApp } = useWindowStore();
-  const { roles } = useUserStore();
+  const { roles, permissions } = useUserStore();
 
   // 根据用户角色过滤可见应用
-  const visibleApps = getVisibleApps(roles);
+  const visibleApps = getVisibleApps(roles, permissions);
 
   return (
     <div className={styles.desktop}>
