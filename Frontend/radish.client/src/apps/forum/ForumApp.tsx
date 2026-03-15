@@ -219,6 +219,7 @@ export const ForumApp = () => {
     setSortBy: dataState.setSortBy,
     setCommentSortBy: dataState.setCommentSortBy,
     setQuestionAnswerSort: dataState.setQuestionAnswerSort,
+    setQuestionAnswerFilter: dataState.setQuestionAnswerFilter,
     setSearchKeyword: dataState.setSearchKeyword,
     setError: dataState.setError,
     loadPostDetail: dataState.loadPostDetail,
@@ -504,6 +505,7 @@ export const ForumApp = () => {
                 currentUserId={userId ?? 0}
                 commentSortBy={dataState.commentSortBy}
                 questionAnswerSort={dataState.questionAnswerSort}
+                questionAnswerFilter={dataState.questionAnswerFilter}
                 replyTo={actionsState.replyTo}
                 followStatus={followStatus}
                 followLoading={followLoading}
@@ -517,6 +519,7 @@ export const ForumApp = () => {
                 onAnswerQuestion={actionsState.handleAnswerQuestion}
                 onAcceptAnswer={actionsState.handleAcceptAnswer}
                 onQuestionAnswerSortChange={actionsState.handleQuestionAnswerSortChange}
+                onQuestionAnswerFilterChange={actionsState.handleQuestionAnswerFilterChange}
                 onEdit={actionsState.handleEditPost}
                 onViewPostHistory={actionsState.handleViewPostHistory}
                 onDelete={actionsState.handleDeletePost}

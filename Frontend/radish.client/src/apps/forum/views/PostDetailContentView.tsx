@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
-import type { PostDetail, CommentNode, QuestionAnswerSort } from '@/api/forum';
+import type { PostDetail, CommentNode, QuestionAnswerSort, QuestionAnswerFilter } from '@/api/forum';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -32,6 +32,7 @@ interface PostDetailContentViewProps {
   currentUserId: number;
   commentSortBy: 'newest' | 'hottest' | null;
   questionAnswerSort: QuestionAnswerSort;
+  questionAnswerFilter: QuestionAnswerFilter;
   replyTo: { commentId: number; authorName: string } | null;
   followStatus: UserFollowStatus | null;
   followLoading: boolean;
@@ -42,6 +43,7 @@ interface PostDetailContentViewProps {
   onAnswerQuestion: (content: string) => Promise<void>;
   onAcceptAnswer: (answerId: number) => Promise<void>;
   onQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
+  onQuestionAnswerFilterChange: (filterBy: QuestionAnswerFilter) => void;
   onEdit: (postId: number) => void;
   onViewPostHistory: (postId: number) => void;
   onDelete: (postId: number) => void;
@@ -94,6 +96,7 @@ export const PostDetailContentView = ({
   currentUserId,
   commentSortBy,
   questionAnswerSort,
+  questionAnswerFilter,
   replyTo,
   followStatus,
   followLoading,
@@ -103,6 +106,7 @@ export const PostDetailContentView = ({
   onAnswerQuestion,
   onAcceptAnswer,
   onQuestionAnswerSortChange,
+  onQuestionAnswerFilterChange,
   onEdit,
   onViewPostHistory,
   onDelete,
@@ -233,7 +237,9 @@ export const PostDetailContentView = ({
               onAnswerQuestion={onAnswerQuestion}
               onAcceptAnswer={onAcceptAnswer}
               answerSort={questionAnswerSort}
+              answerFilter={questionAnswerFilter}
               onAnswerSortChange={onQuestionAnswerSortChange}
+              onAnswerFilterChange={onQuestionAnswerFilterChange}
               isAuthenticated={isAuthenticated}
               currentUserId={currentUserId}
               onEdit={onEdit}

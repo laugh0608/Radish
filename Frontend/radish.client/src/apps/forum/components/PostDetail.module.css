@@ -344,11 +344,30 @@
   color: #64748b;
 }
 
+.answerToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-top: 10px;
+}
+
+.answerToolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.answerToolbarLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
 .answerSortButtons {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 10px;
 }
 
 .answerSortButton {

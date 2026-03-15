@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { PostDetail as PostDetailType, QuestionAnswerSort, ReactionSummaryVo } from '@/api/forum';
+import type { PostDetail as PostDetailType, QuestionAnswerFilter, QuestionAnswerSort, ReactionSummaryVo } from '@/api/forum';
 import { uploadDocument, uploadImage } from '@/api/attachment';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
@@ -38,7 +38,9 @@ interface PostDetailProps {
   onAnswerQuestion?: (content: string) => Promise<void>;
   onAcceptAnswer?: (answerId: number) => Promise<void>;
   answerSort?: QuestionAnswerSort;
+  answerFilter?: QuestionAnswerFilter;
   onAnswerSortChange?: (sortBy: QuestionAnswerSort) => Promise<void>;
+  onAnswerFilterChange?: (filterBy: QuestionAnswerFilter) => void;
   isAuthenticated?: boolean;
   currentUserId?: number;
   onEdit?: (postId: number) => void;
@@ -66,7 +68,9 @@ export const PostDetail = ({
   onAnswerQuestion,
   onAcceptAnswer,
   answerSort = 'default',
+  answerFilter = 'all',
   onAnswerSortChange,
+  onAnswerFilterChange,
   isAuthenticated = false,
   currentUserId = 0,
   onEdit,
@@ -103,7 +107,7 @@ export const PostDetail = ({
   const isQuestionPost = !!post?.voIsQuestion;
   const canAnswerQuestion = isAuthenticated && !isSubmittingAnswer;
   const canViewQuestionHistory = isQuestionPost && !!onViewHistory;
-  const displayedAnswers = !question?.voAnswers
+  const sortedAnswers = !question?.voAnswers
     ? []
     : [...question.voAnswers].sort((left, right) => {
         if (answerSort === 'latest') {
@@ -121,6 +125,12 @@ export const PostDetail = ({
 
         return left.voAnswerId - right.voAnswerId;
       });
+  const displayedAnswers = answerFilter === 'accepted'
+    ? sortedAnswers.filter(answer => answer.voIsAccepted)
+    : sortedAnswers;
+  const questionEmptyText = question?.voAnswerCount
+    ? '当前筛选下还没有已采纳答案。'
+    : '还没有回答，欢迎先来补充。';
 
   const buildAvatarText = (name: string) => {
     const source = name.trim();
@@ -369,25 +379,49 @@ export const PostDetail = ({
                   {' · '}
                   共 {question?.voAnswerCount ?? post.voAnswerCount ?? 0} 条回答
                 </p>
-                <div className={styles.answerSortButtons}>
-                  <button
-                    type="button"
-                    className={`${styles.answerSortButton} ${answerSort === 'default' ? styles.answerSortButtonActive : ''}`}
-                    onClick={() => {
-                      void onAnswerSortChange?.('default');
-                    }}
-                  >
-                    默认排序
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.answerSortButton} ${answerSort === 'latest' ? styles.answerSortButtonActive : ''}`}
-                    onClick={() => {
-                      void onAnswerSortChange?.('latest');
-                    }}
-                  >
-                    最新回答
-                  </button>
+                <div className={styles.answerToolbar}>
+                  <div className={styles.answerToolbarGroup}>
+                    <span className={styles.answerToolbarLabel}>排序</span>
+                    <div className={styles.answerSortButtons}>
+                      <button
+                        type="button"
+                        className={`${styles.answerSortButton} ${answerSort === 'default' ? styles.answerSortButtonActive : ''}`}
+                        onClick={() => {
+                          void onAnswerSortChange?.('default');
+                        }}
+                      >
+                        默认排序
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.answerSortButton} ${answerSort === 'latest' ? styles.answerSortButtonActive : ''}`}
+                        onClick={() => {
+                          void onAnswerSortChange?.('latest');
+                        }}
+                      >
+                        最新回答
+                      </button>
+                    </div>
+                  </div>
+                  <div className={styles.answerToolbarGroup}>
+                    <span className={styles.answerToolbarLabel}>筛选</span>
+                    <div className={styles.answerSortButtons}>
+                      <button
+                        type="button"
+                        className={`${styles.answerSortButton} ${answerFilter === 'all' ? styles.answerSortButtonActive : ''}`}
+                        onClick={() => onAnswerFilterChange?.('all')}
+                      >
+                        全部回答
+                      </button>
+                      <button
+                        type="button"
+                        className={`${styles.answerSortButton} ${answerFilter === 'accepted' ? styles.answerSortButtonActive : ''}`}
+                        onClick={() => onAnswerFilterChange?.('accepted')}
+                      >
+                        只看已采纳
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className={styles.questionHeaderActions}>
@@ -485,7 +519,7 @@ export const PostDetail = ({
                 })}
               </div>
             ) : (
-              <p className={styles.questionEmpty}>还没有回答，欢迎先来补充。</p>
+              <p className={styles.questionEmpty}>{questionEmptyText}</p>
             )}
 
             <div className={styles.answerComposer}>

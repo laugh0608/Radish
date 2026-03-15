@@ -19,7 +19,8 @@ import {
   type ForumPostViewMode,
   type QuestionStatusFilter,
   type ForumPostSortBy,
-  type QuestionAnswerSort
+  type QuestionAnswerSort,
+  type QuestionAnswerFilter
 } from '@/api/forum';
 
 function isAbortError(error: unknown): boolean {
@@ -54,6 +55,7 @@ export interface ForumDataState {
   postViewMode: ForumPostViewMode;
   questionStatus: QuestionStatusFilter;
   questionAnswerSort: QuestionAnswerSort;
+  questionAnswerFilter: QuestionAnswerFilter;
 
   // 搜索状态
   searchKeyword: string;
@@ -81,6 +83,7 @@ export interface ForumDataActions {
   setPostViewMode: (mode: ForumPostViewMode) => void;
   setQuestionStatus: (status: QuestionStatusFilter) => void;
   setQuestionAnswerSort: (sortBy: QuestionAnswerSort) => void;
+  setQuestionAnswerFilter: (filterBy: QuestionAnswerFilter) => void;
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
   loadCategories: () => Promise<void>;
@@ -120,6 +123,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const [postViewMode, setPostViewMode] = useState<ForumPostViewMode>('all');
   const [questionStatus, setQuestionStatus] = useState<QuestionStatusFilter>('all');
   const [questionAnswerSort, setQuestionAnswerSort] = useState<QuestionAnswerSort>('default');
+  const [questionAnswerFilter, setQuestionAnswerFilter] = useState<QuestionAnswerFilter>('all');
 
   // 搜索状态
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -437,6 +441,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     postViewMode,
     questionStatus,
     questionAnswerSort,
+    questionAnswerFilter,
     searchKeyword,
     loadingCategories,
     loadingHotTags,
@@ -457,6 +462,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     setPostViewMode,
     setQuestionStatus,
     setQuestionAnswerSort,
+    setQuestionAnswerFilter,
     setSearchKeyword,
     setError,
     loadCategories,

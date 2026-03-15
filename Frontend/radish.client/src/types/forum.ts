@@ -27,6 +27,8 @@ export type ForumPostSortBy = 'newest' | 'hottest' | 'essence' | 'pending' | 'an
 
 export type QuestionAnswerSort = 'default' | 'latest';
 
+export type QuestionAnswerFilter = 'all' | 'accepted';
+
 /**
  * 分类 Vo
  */

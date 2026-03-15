@@ -25,7 +25,8 @@ import {
   type PostEditHistory,
   type CommentEditHistory,
   type ForumPostSortBy,
-  type QuestionAnswerSort
+  type QuestionAnswerSort,
+  type QuestionAnswerFilter
 } from '@/api/forum';
 
 export interface ForumActionsState {
@@ -77,6 +78,7 @@ export interface ForumActionsHandlers {
   handleAnswerQuestion: (content: string) => Promise<void>;
   handleAcceptAnswer: (answerId: number) => Promise<void>;
   handleQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
+  handleQuestionAnswerFilterChange: (filterBy: QuestionAnswerFilter) => void;
   handleLikePost: (postId: number) => Promise<void>;
   handleEditPost: (postId: number) => void;
   handleViewPostHistory: (postId: number) => Promise<void>;
@@ -128,6 +130,7 @@ interface UseForumActionsParams {
   setSortBy: (sortBy: ForumPostSortBy) => void;
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
   setQuestionAnswerSort: (sortBy: QuestionAnswerSort) => void;
+  setQuestionAnswerFilter: (filterBy: QuestionAnswerFilter) => void;
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
   loadPostDetail: (postId: number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
@@ -152,6 +155,7 @@ export const useForumActions = (
     setSortBy,
     setCommentSortBy,
     setQuestionAnswerSort,
+    setQuestionAnswerFilter,
     setSearchKeyword,
     setError,
     loadPostDetail,
@@ -272,6 +276,7 @@ export const useForumActions = (
   const handleSelectPost = async (postId: number) => {
     resetCommentSort();
     setQuestionAnswerSort('default');
+    setQuestionAnswerFilter('all');
     await loadPostDetail(postId, 'default');
     await loadComments(postId);
   };
@@ -283,6 +288,10 @@ export const useForumActions = (
 
     setQuestionAnswerSort(sortBy);
     await loadPostDetail(selectedPost.voId, sortBy);
+  };
+
+  const handleQuestionAnswerFilterChange = (filterBy: QuestionAnswerFilter) => {
+    setQuestionAnswerFilter(filterBy);
   };
 
   // 发布帖子
@@ -855,6 +864,7 @@ export const useForumActions = (
     handleAnswerQuestion,
     handleAcceptAnswer,
     handleQuestionAnswerSortChange,
+    handleQuestionAnswerFilterChange,
     handleLikePost,
     handleEditPost,
     handleViewPostHistory,
