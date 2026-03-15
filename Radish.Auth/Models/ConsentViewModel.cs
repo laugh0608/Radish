@@ -16,6 +16,21 @@ public class ConsentViewModel
     public string ClientName { get; set; } = string.Empty;
 
     /// <summary>
+    /// 客户端描述。
+    /// </summary>
+    public string? ClientDescription { get; set; }
+
+    /// <summary>
+    /// 客户端 Logo。
+    /// </summary>
+    public string? ClientLogo { get; set; }
+
+    /// <summary>
+    /// 开发者名称。
+    /// </summary>
+    public string? DeveloperName { get; set; }
+
+    /// <summary>
     /// 请求的 scope 原始字符串，空格分隔，便于调试查看。
     /// </summary>
     public string Scope { get; set; } = string.Empty;
@@ -34,6 +49,11 @@ public class ConsentViewModel
     /// 授权完成后的回调地址（redirect_uri）。
     /// </summary>
     public string RedirectUri { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 回调地址的展示域名。
+    /// </summary>
+    public string? RedirectHost { get; set; }
 
     /// <summary>
     /// 授权请求状态（state），用于防 CSRF。

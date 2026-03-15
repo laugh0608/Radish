@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Hosting;
 using OpenIddict.Abstractions;
 using Radish.Common.HttpContextTool;
+using System.Text.Json;
 
 namespace Radish.Auth.OpenIddict;
 
@@ -9,11 +10,14 @@ namespace Radish.Auth.OpenIddict;
 /// - radish-client：前端 Web 客户端（授权码 + PKCE + refresh_token）
 /// - radish-console：后台管理控制台（授权码 + refresh_token）
 /// - radish-scalar：API 文档和调试工具（授权码）
-/// - radish-shop：商城应用（授权码 + refresh_token，占位）
 /// - radish-api Scope：资源服务器标识
 /// </summary>
 public class OpenIddictSeedHostedService : IHostedService
 {
+    private const string OfficialDeveloperName = "Radish 官方";
+    private const string ActiveStatus = "Active";
+    private const string InternalAppType = "Internal";
+
     private readonly IOpenIddictApplicationManager _applicationManager;
     private readonly IOpenIddictScopeManager _scopeManager;
 
@@ -85,8 +89,7 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
 
             // 扩展属性：客户端展示信息
-            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 社区平台前端应用");
-            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
+            ApplyOfficialMetadata(descriptor, "Radish 官方 Web 客户端，承载社区主站与 WebOS 入口。");
 
             //descriptor.Requirements.Add(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
 
@@ -117,15 +120,15 @@ public class OpenIddictSeedHostedService : IHostedService
             Console.WriteLine($"[OpenIddictSeed] 更新后 PostLogoutRedirectUris 数量: {descriptor.PostLogoutRedirectUris.Count}");
 
             // 确保扩展属性存在
-            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 社区平台前端应用");
-            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
+            ApplyOfficialMetadata(descriptor, "Radish 官方 Web 客户端，承载社区主站与 WebOS 入口。");
 
             await _applicationManager.UpdateAsync(existingClient, descriptor, cancellationToken);
             Console.WriteLine("[OpenIddictSeed] radish-client 客户端更新完成");
         }
 
         // 初始化 Scalar 文档客户端：radish-scalar（用于 /scalar OAuth 调试）
-        if (await _applicationManager.FindByClientIdAsync("radish-scalar", cancellationToken) is null)
+        var existingScalar = await _applicationManager.FindByClientIdAsync("radish-scalar", cancellationToken);
+        if (existingScalar is null)
         {
             var descriptor = new OpenIddictApplicationDescriptor
             {
@@ -147,10 +150,28 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
 
             // 扩展属性：客户端展示信息
-            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish API 文档和调试工具");
-            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
+            ApplyOfficialMetadata(descriptor, "Radish 官方 API 文档与调试入口。");
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
+        }
+        else
+        {
+            var descriptor = new OpenIddictApplicationDescriptor();
+            await _applicationManager.PopulateAsync(descriptor, existingScalar, cancellationToken);
+
+            descriptor.RedirectUris.Clear();
+            descriptor.RedirectUris.Add(new Uri("https://localhost:5000/scalar/oauth2-callback"));
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.EndSession);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OpenId);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.Profile);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
+            ApplyOfficialMetadata(descriptor, "Radish 官方 API 文档与调试入口。");
+
+            await _applicationManager.UpdateAsync(existingScalar, descriptor, cancellationToken);
         }
 
         // 初始化后台管理控制台客户端：radish-console
@@ -177,8 +198,7 @@ public class OpenIddictSeedHostedService : IHostedService
             EnsureConsolePermissions(descriptor);
 
             // 扩展属性：客户端展示信息
-            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 后台管理控制台");
-            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
+            ApplyOfficialMetadata(descriptor, "Radish 官方管理控制台，面向后台运营与系统管理。");
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
         }
@@ -203,76 +223,17 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3100/console/"));
 
             // 确保扩展属性存在
-            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 后台管理控制台");
-            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
+            ApplyOfficialMetadata(descriptor, "Radish 官方管理控制台，面向后台运营与系统管理。");
             EnsureConsolePermissions(descriptor);
 
             await _applicationManager.UpdateAsync(existingConsole, descriptor, cancellationToken);
         }
 
-        // 初始化商城客户端：radish-shop（占位，未来实现）
         var existingShop = await _applicationManager.FindByClientIdAsync("radish-shop", cancellationToken);
-        if (existingShop is null)
+        if (existingShop is not null)
         {
-            var descriptor = new OpenIddictApplicationDescriptor
-            {
-                ClientId = "radish-shop",
-                DisplayName = "Radish Shop",
-                ConsentType = OpenIddictConstants.ConsentTypes.Implicit // SSO: 无需显式授权
-            };
-
-            // 通过 Gateway 访问（生产环境）
-            descriptor.RedirectUris.Add(new Uri("https://localhost:5000/shop/callback"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/shop"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/shop/"));
-
-            // 直接访问 shop 开发服务器（开发环境，预留端口 3003）
-            descriptor.RedirectUris.Add(new Uri("http://localhost:3003/callback"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3003"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3003/"));
-
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.EndSession);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.RefreshToken);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OpenId);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.Profile);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OfflineAccess);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
-
-            // 扩展属性：客户端展示信息
-            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 商城应用（占位，未来实现）");
-            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
-
-            await _applicationManager.CreateAsync(descriptor, cancellationToken);
-        }
-        else
-        {
-            // 如果客户端已存在，更新配置（确保包含所有访问方式的 URL）
-            var descriptor = new OpenIddictApplicationDescriptor();
-            await _applicationManager.PopulateAsync(descriptor, existingShop, cancellationToken);
-
-            descriptor.RedirectUris.Clear();
-            // 通过 Gateway 访问（生产环境）
-            descriptor.RedirectUris.Add(new Uri("https://localhost:5000/shop/callback"));
-            // 直接访问 shop 开发服务器（开发环境，预留端口 3003）
-            descriptor.RedirectUris.Add(new Uri("http://localhost:3003/callback"));
-
-            descriptor.PostLogoutRedirectUris.Clear();
-            // 通过 Gateway 访问（生产环境）
-            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/shop"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("https://localhost:5000/shop/"));
-            // 直接访问 shop 开发服务器（开发环境，预留端口 3003）
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3003"));
-            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3003/"));
-
-            // 确保扩展属性存在
-            descriptor.Properties["description"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish 商城应用（占位，未来实现）");
-            descriptor.Properties["developerName"] = System.Text.Json.JsonSerializer.SerializeToElement("Radish Team");
-
-            await _applicationManager.UpdateAsync(existingShop, descriptor, cancellationToken);
+            await _applicationManager.DeleteAsync(existingShop, cancellationToken);
+            Console.WriteLine("[OpenIddictSeed] 已移除遗留的 radish-shop 客户端种子。");
         }
     }
 
@@ -288,6 +249,17 @@ public class OpenIddictSeedHostedService : IHostedService
         descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.Profile);
         descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OfflineAccess);
         descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
+    }
+
+    private static void ApplyOfficialMetadata(OpenIddictApplicationDescriptor descriptor, string description)
+    {
+        descriptor.Properties["description"] = JsonSerializer.SerializeToElement(description);
+        descriptor.Properties["developerName"] = JsonSerializer.SerializeToElement(OfficialDeveloperName);
+        descriptor.Properties["status"] = JsonSerializer.SerializeToElement(ActiveStatus);
+        descriptor.Properties["appType"] = JsonSerializer.SerializeToElement(InternalAppType);
+        descriptor.Properties["IsDeleted"] = JsonSerializer.SerializeToElement("false");
+        descriptor.Properties.Remove("DeletedAt");
+        descriptor.Properties.Remove("DeletedBy");
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;

@@ -21,9 +21,29 @@ public class ClientVo
     public string? DisplayName { get; set; }
 
     /// <summary>
+    /// 应用描述
+    /// </summary>
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// 开发者名称
+    /// </summary>
+    public string? DeveloperName { get; set; }
+
+    /// <summary>
+    /// 开发者邮箱
+    /// </summary>
+    public string? DeveloperEmail { get; set; }
+
+    /// <summary>
     /// 客户端类型
     /// </summary>
     public string? Type { get; set; }
+
+    /// <summary>
+    /// 应用状态
+    /// </summary>
+    public string? Status { get; set; }
 
     /// <summary>
     /// 授权类型（逗号分隔）

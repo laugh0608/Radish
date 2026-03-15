@@ -40,6 +40,7 @@ public class TenantIsolationRegressionTests
         var roleRepository = new Mock<IBaseRepository<Role>>();
         var userRoleRepository = new Mock<IBaseRepository<UserRole>>();
         var departmentService = new Mock<IDepartmentService>();
+        var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
 
         Expression<Func<User, bool>>? capturedWhere = null;
         baseRepository
@@ -80,7 +81,8 @@ public class TenantIsolationRegressionTests
             baseRepository.Object,
             userRepository.Object,
             roleRepository.Object,
-            userRoleRepository.Object);
+            userRoleRepository.Object,
+            consoleAuthorizationService.Object);
 
         // Act
         await service.SearchUsersForMentionAsync("ali", tenantId: 0, limit: 10);

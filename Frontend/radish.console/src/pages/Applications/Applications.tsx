@@ -164,6 +164,9 @@ export const Applications = () => {
       } else if (modalMode === 'edit' && currentClient) {
         const data = {
           displayName: values.displayName,
+          description: values.description,
+          developerName: values.developerName,
+          developerEmail: values.developerEmail,
           redirectUris: values.redirectUris?.split('\n').filter((s: string) => s.trim()) || [],
           postLogoutRedirectUris: values.postLogoutRedirectUris?.split('\n').filter((s: string) => s.trim()) || [],
         };
@@ -207,7 +210,7 @@ export const Applications = () => {
       width: 100,
       render: (type: string) => (
         <Tag color={type === 'Internal' ? 'blue' : 'green'}>
-          {type === 'Internal' ? '内部' : '第三方'}
+          {type === 'Internal' ? '官方' : '第三方'}
         </Tag>
       ),
     },
@@ -217,8 +220,8 @@ export const Applications = () => {
       key: 'status',
       width: 80,
       render: (status: string) => (
-        <Tag color={status === 'Active' ? 'success' : 'default'}>
-          {status === 'Active' ? '启用' : '禁用'}
+        <Tag color={status !== 'Disabled' ? 'success' : 'default'}>
+          {status !== 'Disabled' ? '启用' : '禁用'}
         </Tag>
       ),
     },
