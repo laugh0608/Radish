@@ -6,6 +6,7 @@ import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { Modal } from '@radish/ui/modal';
 import { useTranslation } from 'react-i18next';
 import { uploadDocument, uploadImage } from '@/api/attachment';
+import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import {
@@ -152,6 +153,24 @@ function normalizeOptionalNumber(value: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function parseWikiWindowParams(appParams?: Record<string, unknown> | null): { documentId?: number; slug?: string } {
+  if (!appParams) {
+    return {};
+  }
+
+  const rawDocumentId = typeof appParams.documentId === 'number'
+    ? appParams.documentId
+    : typeof appParams.documentId === 'string'
+      ? Number(appParams.documentId)
+      : 0;
+  const slug = typeof appParams.slug === 'string' ? appParams.slug.trim() : '';
+
+  return {
+    documentId: Number.isFinite(rawDocumentId) && rawDocumentId > 0 ? rawDocumentId : undefined,
+    slug: slug || undefined,
+  };
+}
+
 function buildCreateRequest(draft: EditorDraft): CreateWikiDocumentRequest {
   return {
     title: draft.title.trim(),
@@ -206,7 +225,12 @@ function findAncestorIds(nodes: WikiDocumentTreeNodeVo[], targetId: number, trai
 
 export const WikiApp = () => {
   const { t } = useTranslation();
+  const currentWindow = useCurrentWindow();
   const roles = useUserStore((state) => state.roles || []);
+  const windowParams = useMemo(() => parseWikiWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
+  const initialWindowRouteRef = useRef<{ documentId?: number; slug?: string } | null>(
+    windowParams.documentId || windowParams.slug ? windowParams : null
+  );
   const isAdmin = useMemo(
     () => roles.some((role) => ['admin', 'system'].includes(role.trim().toLowerCase())),
     [roles]
@@ -426,6 +450,24 @@ export const WikiApp = () => {
     void loadDocumentDetail(selectedDocumentId);
     void loadRevisionList(selectedDocumentId, false);
   }, [loadDocumentDetail, loadRevisionList, selectedDocumentId]);
+
+  useEffect(() => {
+    const initialWindowRoute = initialWindowRouteRef.current;
+    if (!initialWindowRoute) {
+      return;
+    }
+
+    initialWindowRouteRef.current = null;
+
+    if (initialWindowRoute.documentId) {
+      setSelectedDocumentId(initialWindowRoute.documentId);
+      return;
+    }
+
+    if (initialWindowRoute.slug) {
+      void loadDocumentBySlug(initialWindowRoute.slug);
+    }
+  }, [loadDocumentBySlug]);
 
   useEffect(() => {
     selectedDocumentIdRef.current = selectedDocumentId;

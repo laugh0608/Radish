@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
 import { UserInfoCard } from './components/UserInfoCard';
+import type { LongId, UserBrowseHistoryItem } from '@/api/user';
 import { getMyTimePreference, getTimeSettings, updateMyTimePreference } from '@/api/time';
 import { getApiBaseUrl } from '@/config/env';
 import {
@@ -26,6 +27,9 @@ const UserAttachmentList = lazy(() =>
 );
 const UserFollowPanel = lazy(() =>
   import('./components/UserFollowPanel').then((module) => ({ default: module.UserFollowPanel }))
+);
+const UserBrowseHistoryList = lazy(() =>
+  import('./components/UserBrowseHistoryList').then((module) => ({ default: module.UserBrowseHistoryList }))
 );
 
 interface UserStats {
@@ -75,6 +79,16 @@ function buildAvatarText(name: string): string {
   return source.charAt(0).toUpperCase();
 }
 
+function normalizePositiveId(value: LongId | null | undefined): number | null {
+  const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function getRouteTailSegment(routePath: string): string {
+  const normalizedPath = routePath.split('?')[0]?.split('#')[0] || '';
+  return normalizedPath.split('/').pop() || '';
+}
+
 function buildAvatarStyle(seed: string) {
   let hash = 0;
   for (let index = 0; index < seed.length; index += 1) {
@@ -96,7 +110,7 @@ export const ProfileApp = () => {
   const viewingUserId = params.userId && params.userId > 0 ? params.userId : userId;
   const viewingUserName = params.userName?.trim() || userName || `用户 ${viewingUserId}`;
   const isOwnProfile = viewingUserId === userId;
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'attachments' | 'social'>('posts');
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'browse-history' | 'attachments' | 'social'>('posts');
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [systemTimeZone, setSystemTimeZone] = useState(DEFAULT_TIME_ZONE);
@@ -108,7 +122,7 @@ export const ProfileApp = () => {
   const externalAvatarUrl = useMemo(() => resolveAvatarUrl(apiBaseUrl, params.avatarUrl), [apiBaseUrl, params.avatarUrl]);
 
   useEffect(() => {
-    if (!isOwnProfile && (activeTab === 'attachments' || activeTab === 'social')) {
+    if (!isOwnProfile && (activeTab === 'browse-history' || activeTab === 'attachments' || activeTab === 'social')) {
       setActiveTab('posts');
     }
   }, [activeTab, isOwnProfile]);
@@ -121,6 +135,62 @@ export const ProfileApp = () => {
   const handleCommentClick = (postId: number, commentId: number) => {
     openApp('forum');
     log.debug('ProfileApp', `打开帖子 ${postId} 的评论 ${commentId}`);
+  };
+
+  const handleBrowseHistoryClick = (item: UserBrowseHistoryItem) => {
+    const routePath = item.voRoutePath?.trim() || '';
+    const targetId = normalizePositiveId(item.voTargetId);
+
+    if (routePath.startsWith('/forum/post/')) {
+      const postId = normalizePositiveId(getRouteTailSegment(routePath));
+      if (postId) {
+        openApp('forum', { postId });
+        return;
+      }
+    }
+
+    if (routePath.startsWith('/shop/product/')) {
+      const productId = normalizePositiveId(getRouteTailSegment(routePath));
+      if (productId) {
+        openApp('shop', { productId });
+        return;
+      }
+    }
+
+    if (routePath.startsWith('/wiki/doc/')) {
+      const routeTarget = decodeURIComponent(getRouteTailSegment(routePath));
+      const documentId = normalizePositiveId(routeTarget);
+      if (documentId) {
+        openApp('document', { documentId });
+        return;
+      }
+
+      if (routeTarget) {
+        openApp('document', { slug: routeTarget });
+        return;
+      }
+    }
+
+    if (item.voTargetType === 'Post' && targetId) {
+      openApp('forum', { postId: targetId });
+      return;
+    }
+
+    if (item.voTargetType === 'Product' && targetId) {
+      openApp('shop', { productId: targetId });
+      return;
+    }
+
+    if (item.voTargetType === 'Wiki') {
+      if (item.voTargetSlug?.trim()) {
+        openApp('document', { slug: item.voTargetSlug.trim() });
+        return;
+      }
+
+      if (targetId) {
+        openApp('document', { documentId: targetId });
+      }
+    }
   };
 
   const handleUserClick = (targetUserId: number, targetUserName: string, avatarUrl?: string | null, displayName?: string | null) => {
@@ -319,6 +389,12 @@ export const ProfileApp = () => {
           {isOwnProfile ? (
             <>
               <button
+                className={`${styles.tab} ${activeTab === 'browse-history' ? styles.active : ''}`}
+                onClick={() => setActiveTab('browse-history')}
+              >
+                浏览记录
+              </button>
+              <button
                 className={`${styles.tab} ${activeTab === 'attachments' ? styles.active : ''}`}
                 onClick={() => setActiveTab('attachments')}
               >
@@ -350,6 +426,12 @@ export const ProfileApp = () => {
                 apiBaseUrl={apiBaseUrl}
                 onCommentClick={handleCommentClick}
                 displayTimeZone={displayTimeZone}
+              />
+            )}
+            {isOwnProfile && activeTab === 'browse-history' && (
+              <UserBrowseHistoryList
+                displayTimeZone={displayTimeZone}
+                onItemClick={handleBrowseHistoryClick}
               />
             )}
             {isOwnProfile && activeTab === 'attachments' && (

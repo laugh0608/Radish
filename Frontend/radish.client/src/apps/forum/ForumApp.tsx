@@ -92,6 +92,7 @@ export const ForumApp = () => {
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
   const windowParams = parseForumWindowParams(currentWindow?.appParams);
+  const initialWindowPostIdRef = useRef<number | null>(windowParams.postId ?? null);
 
   useEffect(() => {
     const element = containerShellRef.current;
@@ -229,24 +230,21 @@ export const ForumApp = () => {
   });
 
   useEffect(() => {
-    if (!windowParams.postId) {
+    const initialWindowPostId = initialWindowPostIdRef.current;
+    if (!initialWindowPostId) {
       return;
     }
 
-    if (dataState.selectedPost?.voId === windowParams.postId) {
-      return;
-    }
+    initialWindowPostIdRef.current = null;
 
     setIsSearchView(false);
     dataState.setSelectedTagName(null);
     dataState.setSelectedCategoryId(null);
-    void actionsState.handleSelectPost(windowParams.postId);
+    void actionsState.handleSelectPost(initialWindowPostId);
   }, [
     actionsState.handleSelectPost,
-    dataState.selectedPost?.voId,
     dataState.setSelectedCategoryId,
     dataState.setSelectedTagName,
-    windowParams.postId,
   ]);
 
   useEffect(() => {
