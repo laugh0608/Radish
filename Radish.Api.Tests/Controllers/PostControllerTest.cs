@@ -361,6 +361,7 @@ public class PostControllerTest
             .Setup(service => service.PublishPostAsync(
                 It.IsAny<Post>(),
                 It.Is<CreatePollDto?>(poll => poll != null && poll.Question == "重复选项"),
+                It.IsAny<CreateLotteryDto?>(),
                 false,
                 It.Is<List<string>>(tags => tags.Count == 1 && tags[0] == "投票"),
                 false))
@@ -407,12 +408,17 @@ public class PostControllerTest
             UserName = "Tester",
             TenantId = 0
         });
+        var browseHistoryServiceMock = new Mock<IUserBrowseHistoryService>();
+        browseHistoryServiceMock
+            .Setup(service => service.RecordAsync(It.IsAny<RecordBrowseHistoryDto>()))
+            .Returns(Task.CompletedTask);
 
         return new PostController(
             postService,
             moderationService,
             attachmentService,
             commentService,
+            browseHistoryServiceMock.Object,
             currentUserAccessorMock.Object);
     }
 }

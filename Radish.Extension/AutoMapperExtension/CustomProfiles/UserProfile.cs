@@ -86,5 +86,9 @@ public class UserProfile : Profile
         // UserTimePreference -> UserTimePreferenceVo（用户时区偏好）
         RecognizeDestinationPrefixes("Vo");
         CreateMap<UserTimePreference, UserTimePreferenceVo>();
+
+        // UserBrowseHistory -> UserBrowseHistoryVo（个人中心浏览记录）
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<UserBrowseHistory, UserBrowseHistoryVo>();
     }
 }

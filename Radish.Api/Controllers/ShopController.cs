@@ -23,6 +23,7 @@ public class ShopController : ControllerBase
     private readonly IOrderService _orderService;
     private readonly IUserBenefitService _userBenefitService;
     private readonly IUserInventoryService _userInventoryService;
+    private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public ShopController(
@@ -30,12 +31,14 @@ public class ShopController : ControllerBase
         IOrderService orderService,
         IUserBenefitService userBenefitService,
         IUserInventoryService userInventoryService,
+        IUserBrowseHistoryService userBrowseHistoryService,
         ICurrentUserAccessor currentUserAccessor)
     {
         _productService = productService;
         _orderService = orderService;
         _userBenefitService = userBenefitService;
         _userInventoryService = userInventoryService;
+        _userBrowseHistoryService = userBrowseHistoryService;
         _currentUserAccessor = currentUserAccessor;
     }
 
@@ -112,6 +115,23 @@ public class ShopController : ControllerBase
         {
             return MessageModel<ProductVo>.Message(false, "商品不存在", default!);
         }
+
+        if (Current.UserId > 0)
+        {
+            await _userBrowseHistoryService.RecordAsync(new RecordBrowseHistoryDto
+            {
+                UserId = Current.UserId,
+                TenantId = Current.TenantId,
+                TargetType = "Product",
+                TargetId = result.VoId,
+                Title = result.VoName,
+                Summary = result.VoDescription,
+                CoverImage = string.IsNullOrWhiteSpace(result.VoCoverImage) ? result.VoIcon : result.VoCoverImage,
+                RoutePath = $"/shop/product/{result.VoId}",
+                OperatorName = Current.UserName
+            });
+        }
+
         return MessageModel<ProductVo>.Success("查询成功", result);
     }
 

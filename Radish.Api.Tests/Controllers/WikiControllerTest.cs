@@ -236,8 +236,12 @@ public class WikiControllerTest
             TenantId = 0,
             Roles = isAdmin ? [UserRoles.Admin] : []
         });
+        var browseHistoryServiceMock = new Mock<IUserBrowseHistoryService>();
+        browseHistoryServiceMock
+            .Setup(service => service.RecordAsync(It.IsAny<RecordBrowseHistoryDto>()))
+            .Returns(Task.CompletedTask);
 
-        return new WikiController(wikiDocumentService, currentUserAccessorMock.Object);
+        return new WikiController(wikiDocumentService, browseHistoryServiceMock.Object, currentUserAccessorMock.Object);
     }
 
     private static Mock<IWikiDocumentService> CreateServiceMock()

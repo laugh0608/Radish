@@ -174,4 +174,24 @@ public class PostVo
     /// 投票详情（列表页通常为空，详情页可用）
     /// </summary>
     public PostPollVo? VoPoll { get; set; }
+
+    /// <summary>
+    /// 是否附带抽奖
+    /// </summary>
+    public bool VoHasLottery { get; set; }
+
+    /// <summary>
+    /// 抽奖参与人数
+    /// </summary>
+    public int VoLotteryParticipantCount { get; set; }
+
+    /// <summary>
+    /// 抽奖是否已开奖
+    /// </summary>
+    public bool VoLotteryIsDrawn { get; set; }
+
+    /// <summary>
+    /// 抽奖详情（列表页通常为空，详情页可用）
+    /// </summary>
+    public PostLotteryVo? VoLottery { get; set; }
 }

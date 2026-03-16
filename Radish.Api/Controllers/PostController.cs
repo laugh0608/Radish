@@ -30,6 +30,7 @@ public class PostController : ControllerBase
     private readonly IContentModerationService _contentModerationService;
     private readonly IBaseService<Attachment, AttachmentVo> _attachmentService;
     private readonly IBaseService<Comment, CommentVo> _commentService;
+    private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public PostController(
@@ -37,12 +38,14 @@ public class PostController : ControllerBase
         IContentModerationService contentModerationService,
         IBaseService<Attachment, AttachmentVo> attachmentService,
         IBaseService<Comment, CommentVo> commentService,
+        IUserBrowseHistoryService userBrowseHistoryService,
         ICurrentUserAccessor currentUserAccessor)
     {
         _postService = postService;
         _contentModerationService = contentModerationService;
         _attachmentService = attachmentService;
         _commentService = commentService;
+        _userBrowseHistoryService = userBrowseHistoryService;
         _currentUserAccessor = currentUserAccessor;
     }
 
@@ -73,6 +76,22 @@ public class PostController : ControllerBase
                 StatusCode = (int)HttpStatusCodeEnum.NotFound,
                 MessageInfo = "帖子不存在"
             };
+        }
+
+        if (Current.UserId > 0)
+        {
+            await _userBrowseHistoryService.RecordAsync(new RecordBrowseHistoryDto
+            {
+                UserId = Current.UserId,
+                TenantId = Current.TenantId,
+                TargetType = "Post",
+                TargetId = post.VoId,
+                Title = post.VoTitle,
+                Summary = post.VoSummary,
+                CoverImage = post.VoCoverImage,
+                RoutePath = $"/forum/post/{post.VoId}",
+                OperatorName = Current.UserName
+            });
         }
 
         return new MessageModel
@@ -378,7 +397,7 @@ public class PostController : ControllerBase
 
         try
         {
-            var postId = await _postService.PublishPostAsync(post, request.Poll, request.IsQuestion, normalizedTagNames, allowCreateTag);
+            var postId = await _postService.PublishPostAsync(post, request.Poll, request.Lottery, request.IsQuestion, normalizedTagNames, allowCreateTag);
             return new MessageModel
             {
                 IsSuccess = true,

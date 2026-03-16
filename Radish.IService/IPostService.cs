@@ -78,6 +78,7 @@ public interface IPostService : IBaseService<Post, PostVo>
     Task<long> PublishPostAsync(
         Post post,
         CreatePollDto? poll = null,
+        CreateLotteryDto? lottery = null,
         bool isQuestion = false,
         List<string>? tagNames = null,
         bool allowCreateTag = true);

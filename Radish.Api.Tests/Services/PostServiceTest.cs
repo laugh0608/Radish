@@ -1198,6 +1198,7 @@ public class PostServiceTest
                     new PollOptionDto { OptionText = "面条", SortOrder = 5 }
                 ]
             },
+            null,
             false,
             ["投票", "社区"],
             allowCreateTag: false);
@@ -1334,6 +1335,7 @@ public class PostServiceTest
                     new PollOptionDto { OptionText = "面" }
                 ]
             },
+            null,
             false,
             ["投票"],
             allowCreateTag: false);
@@ -1456,6 +1458,7 @@ public class PostServiceTest
         var result = await service.PublishPostAsync(
             post,
             null,
+            null,
             true,
             ["问答"],
             allowCreateTag: false);
@@ -1463,5 +1466,188 @@ public class PostServiceTest
         Assert.Equal(1003, result);
         postQuestionRepository.Verify(repository => repository.AddAsync(It.IsAny<PostQuestion>()), Times.Once);
         postPollRepository.Verify(repository => repository.AddAsync(It.IsAny<PostPoll>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_CreateLottery_When_LotteryIsValid()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var userPostLikeRepository = new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict);
+        var postTagRepository = new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict);
+        var categoryRepository = new Mock<IBaseRepository<Category>>(MockBehavior.Strict);
+        var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
+        var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
+        var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
+        var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var postQuestionRepository = new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict);
+        var postAnswerRepository = new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict);
+        var postLotteryRepository = new Mock<IBaseRepository<PostLottery>>(MockBehavior.Strict);
+        var tagService = new Mock<ITagService>(MockBehavior.Strict);
+        var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var dedupService = new Mock<INotificationDedupService>(MockBehavior.Strict);
+        var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
+        var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        var tags = new List<Tag>
+        {
+            new("抽奖")
+            {
+                Id = 701,
+                IsEnabled = true,
+                IsDeleted = false,
+                PostCount = 0
+            }
+        };
+
+        postRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<Post>()))
+            .ReturnsAsync(1004);
+        postRepository
+            .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
+            .ReturnsAsync(2);
+
+        postTagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostTag, bool>>?>()))
+            .ReturnsAsync(new List<PostTag>());
+        postTagRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<PostTag>()))
+            .ReturnsAsync(9301);
+
+        tagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Tag, bool>>?>()))
+            .ReturnsAsync((Expression<Func<Tag, bool>>? expression) =>
+            {
+                if (expression == null)
+                {
+                    return tags;
+                }
+
+                var predicate = expression.Compile();
+                return tags.Where(predicate).ToList();
+            });
+        tagRepository
+            .Setup(repository => repository.UpdateAsync(It.IsAny<Tag>()))
+            .ReturnsAsync(true);
+
+        postLotteryRepository
+            .Setup(repository => repository.AddAsync(It.Is<PostLottery>(lottery =>
+                lottery.PostId == 1004 &&
+                lottery.PrizeName == "萝卜周边" &&
+                lottery.PrizeDescription == "抽一个小礼包" &&
+                lottery.WinnerCount == 2 &&
+                lottery.ParticipantCount == 0 &&
+                !lottery.IsDrawn &&
+                lottery.TenantId == 9 &&
+                lottery.CreateBy == "Tester" &&
+                lottery.CreateId == 9527 &&
+                lottery.DrawTime.HasValue)))
+            .ReturnsAsync(4001);
+
+        experienceService
+            .Setup(service => service.GrantExperienceAsync(
+                It.IsAny<long>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string?>(),
+                It.IsAny<long?>(),
+                It.IsAny<string?>()))
+            .ReturnsAsync(true);
+
+        var service = new PostService(
+            mapper.Object,
+            postRepository.Object,
+            userPostLikeRepository.Object,
+            postTagRepository.Object,
+            categoryRepository.Object,
+            tagRepository.Object,
+            postPollRepository.Object,
+            postPollOptionRepository.Object,
+            postPollVoteRepository.Object,
+            postQuestionRepository.Object,
+            postAnswerRepository.Object,
+            tagService.Object,
+            coinRewardService.Object,
+            notificationService.Object,
+            dedupService.Object,
+            experienceService.Object,
+            postEditHistoryRepository.Object,
+            Options.Create(new ForumEditHistoryOptions()),
+            postLotteryRepository: postLotteryRepository.Object);
+
+        var post = new Post(new PostInitializationOptions("抽奖帖", "评论参与抽奖")
+        {
+            AuthorId = 9527,
+            AuthorName = "Tester",
+            TenantId = 9,
+            IsPublished = true
+        });
+
+        var result = await service.PublishPostAsync(
+            post,
+            null,
+            new CreateLotteryDto
+            {
+                PrizeName = "  萝卜周边  ",
+                PrizeDescription = "  抽一个小礼包  ",
+                WinnerCount = 2,
+                DrawTime = DateTime.UtcNow.AddHours(2)
+            },
+            false,
+            ["抽奖"],
+            allowCreateTag: false);
+
+        Assert.Equal(1004, result);
+        postLotteryRepository.Verify(repository => repository.AddAsync(It.IsAny<PostLottery>()), Times.Once);
+        postPollRepository.Verify(repository => repository.AddAsync(It.IsAny<PostPoll>()), Times.Never);
+        postQuestionRepository.Verify(repository => repository.AddAsync(It.IsAny<PostQuestion>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_Reject_When_LotteryAndQuestionAreBothEnabled()
+    {
+        var service = new PostService(
+            new Mock<IMapper>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Post>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Category>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<Tag>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict).Object,
+            new Mock<ITagService>(MockBehavior.Strict).Object,
+            new Mock<ICoinRewardService>(MockBehavior.Strict).Object,
+            new Mock<INotificationService>(MockBehavior.Strict).Object,
+            new Mock<INotificationDedupService>(MockBehavior.Strict).Object,
+            new Mock<IExperienceService>(MockBehavior.Strict).Object,
+            new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict).Object,
+            Options.Create(new ForumEditHistoryOptions()));
+
+        var post = new Post(new PostInitializationOptions("冲突功能帖", "正文"))
+        {
+            AuthorId = 9527,
+            AuthorName = "Tester",
+            TenantId = 9,
+            IsPublished = true
+        };
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.PublishPostAsync(
+            post,
+            null,
+            new CreateLotteryDto
+            {
+                PrizeName = "萝卜周边",
+                WinnerCount = 1,
+                DrawTime = DateTime.UtcNow.AddHours(1)
+            },
+            true,
+            ["抽奖"],
+            allowCreateTag: false));
+
+        Assert.Equal("问答帖、投票和抽奖暂时互斥", exception.Message);
     }
 }

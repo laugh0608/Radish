@@ -20,11 +20,16 @@ namespace Radish.Api.Controllers;
 public class WikiController : ControllerBase
 {
     private readonly IWikiDocumentService _wikiDocumentService;
+    private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public WikiController(IWikiDocumentService wikiDocumentService, ICurrentUserAccessor currentUserAccessor)
+    public WikiController(
+        IWikiDocumentService wikiDocumentService,
+        IUserBrowseHistoryService userBrowseHistoryService,
+        ICurrentUserAccessor currentUserAccessor)
     {
         _wikiDocumentService = wikiDocumentService;
+        _userBrowseHistoryService = userBrowseHistoryService;
         _currentUserAccessor = currentUserAccessor;
     }
 
@@ -73,6 +78,22 @@ public class WikiController : ControllerBase
             return MessageModel<WikiDocumentDetailVo>.Failed("文档不存在或无权访问", default!);
         }
 
+        if (Current.UserId > 0)
+        {
+            await _userBrowseHistoryService.RecordAsync(new RecordBrowseHistoryDto
+            {
+                UserId = Current.UserId,
+                TenantId = Current.TenantId,
+                TargetType = "Wiki",
+                TargetId = result.VoId,
+                TargetSlug = result.VoSlug,
+                Title = result.VoTitle,
+                Summary = result.VoSummary,
+                RoutePath = $"/wiki/doc/{result.VoId}",
+                OperatorName = Current.UserName
+            });
+        }
+
         return MessageModel<WikiDocumentDetailVo>.Success("查询成功", result);
     }
 
@@ -84,6 +105,22 @@ public class WikiController : ControllerBase
         if (result == null)
         {
             return MessageModel<WikiDocumentDetailVo>.Failed("文档不存在或无权访问", default!);
+        }
+
+        if (Current.UserId > 0)
+        {
+            await _userBrowseHistoryService.RecordAsync(new RecordBrowseHistoryDto
+            {
+                UserId = Current.UserId,
+                TenantId = Current.TenantId,
+                TargetType = "Wiki",
+                TargetId = result.VoId,
+                TargetSlug = result.VoSlug,
+                Title = result.VoTitle,
+                Summary = result.VoSummary,
+                RoutePath = $"/wiki/doc/{result.VoSlug}",
+                OperatorName = Current.UserName
+            });
         }
 
         return MessageModel<WikiDocumentDetailVo>.Success("查询成功", result);

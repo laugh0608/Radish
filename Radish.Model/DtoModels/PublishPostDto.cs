@@ -36,6 +36,9 @@ public class PublishPostDto
     /// <summary>附带投票（可空）</summary>
     public CreatePollDto? Poll { get; set; }
 
+    /// <summary>附带抽奖（可空）</summary>
+    public CreateLotteryDto? Lottery { get; set; }
+
     /// <summary>
     /// 向后兼容旧字段 tags
     /// </summary>

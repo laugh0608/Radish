@@ -39,6 +39,7 @@ public class UserController : ControllerBase
 
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
+    private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly IUserTimePreferenceService _userTimePreferenceService;
     private readonly INotificationPushService _notificationPushService;
     private readonly TimeOptions _timeOptions;
@@ -48,6 +49,7 @@ public class UserController : ControllerBase
         ICurrentUserAccessor currentUserAccessor,
         IPostService postService,
         ICommentService commentService,
+        IUserBrowseHistoryService userBrowseHistoryService,
         IUserTimePreferenceService userTimePreferenceService,
         IAttachmentService attachmentService,
         INotificationPushService notificationPushService,
@@ -57,6 +59,7 @@ public class UserController : ControllerBase
         _currentUserAccessor = currentUserAccessor;
         _postService = postService;
         _commentService = commentService;
+        _userBrowseHistoryService = userBrowseHistoryService;
         _userTimePreferenceService = userTimePreferenceService;
         _notificationPushService = notificationPushService;
         _attachmentService = attachmentService;
@@ -543,6 +546,33 @@ public class UserController : ControllerBase
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = profile
+        };
+    }
+
+    /// <summary>
+    /// 获取当前登录用户的浏览记录（个人中心）
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetMyBrowseHistory(int pageIndex = 1, int pageSize = 20)
+    {
+        var safePageIndex = pageIndex < 1 ? 1 : pageIndex;
+        var safePageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 100);
+        var (items, total) = await _userBrowseHistoryService.GetMyPageAsync(Current.UserId, safePageIndex, safePageSize);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = new VoPagedResult<UserBrowseHistoryVo>
+            {
+                VoItems = items,
+                VoTotal = total,
+                VoPageIndex = safePageIndex,
+                VoPageSize = safePageSize
+            }
         };
     }
 

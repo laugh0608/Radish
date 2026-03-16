@@ -29,6 +29,9 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     private readonly IBaseRepository<PostPollVote> _postPollVoteRepository;
     private readonly IBaseRepository<PostQuestion> _postQuestionRepository;
     private readonly IBaseRepository<PostAnswer> _postAnswerRepository;
+    private readonly IBaseRepository<PostLottery>? _postLotteryRepository;
+    private readonly IBaseRepository<PostLotteryWinner>? _postLotteryWinnerRepository;
+    private readonly IBaseRepository<Comment>? _commentRepository;
     private readonly ITagService _tagService;
     private readonly ICoinRewardService _coinRewardService;
     private readonly INotificationService _notificationService;
@@ -58,7 +61,10 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         IBaseRepository<PostEditHistory> postEditHistoryRepository,
         IOptions<ForumEditHistoryOptions> editHistoryOptions,
         IPostRepository? postCustomRepository = null,
-        IBaseRepository<Attachment>? attachmentRepository = null)
+        IBaseRepository<Attachment>? attachmentRepository = null,
+        IBaseRepository<PostLottery>? postLotteryRepository = null,
+        IBaseRepository<PostLotteryWinner>? postLotteryWinnerRepository = null,
+        IBaseRepository<Comment>? commentRepository = null)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
@@ -72,6 +78,9 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         _postPollVoteRepository = postPollVoteRepository;
         _postQuestionRepository = postQuestionRepository;
         _postAnswerRepository = postAnswerRepository;
+        _postLotteryRepository = postLotteryRepository;
+        _postLotteryWinnerRepository = postLotteryWinnerRepository;
+        _commentRepository = commentRepository;
         _tagService = tagService;
         _coinRewardService = coinRewardService;
         _notificationService = notificationService;
@@ -121,6 +130,15 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             postVo.VoPollTotalVoteCount = pollVo.VoTotalVoteCount;
             postVo.VoPollIsClosed = pollVo.VoIsClosed;
             postVo.VoPoll = pollVo;
+        }
+
+        var lotteryVo = await BuildPostLotteryVoAsync(postId, post.AuthorId);
+        if (lotteryVo != null)
+        {
+            postVo.VoHasLottery = true;
+            postVo.VoLotteryParticipantCount = lotteryVo.VoParticipantCount;
+            postVo.VoLotteryIsDrawn = lotteryVo.VoIsDrawn;
+            postVo.VoLottery = lotteryVo;
         }
 
         postVo.VoQuestion = await BuildPostQuestionVoAsync(postId, answerSort);
@@ -235,6 +253,22 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             .GroupBy(question => question.PostId)
             .ToDictionary(group => group.Key, group => group.First());
 
+        Dictionary<long, PostLottery> lotteryMap = new();
+        if (_postLotteryRepository != null)
+        {
+            lotteryMap = (await _postLotteryRepository.QueryAsync(lottery =>
+                    postIds.Contains(lottery.PostId) &&
+                    !lottery.IsDeleted))
+                .GroupBy(lottery => lottery.PostId)
+                .ToDictionary(group => group.Key, group => group.First());
+        }
+
+        var postAuthorMap = posts
+            .Where(post => post.VoAuthorId > 0)
+            .GroupBy(post => post.VoId)
+            .ToDictionary(group => group.Key, group => group.First().VoAuthorId);
+        var lotteryParticipantCountMap = await BuildLotteryParticipantCountMapAsync(postAuthorMap, lotteryMap);
+
         foreach (var post in posts)
         {
             if (string.IsNullOrWhiteSpace(post.VoCategoryName) &&
@@ -259,6 +293,19 @@ public class PostService : BaseService<Post, PostVo>, IPostService
                 post.VoHasPoll = true;
                 post.VoPollTotalVoteCount = poll.TotalVoteCount;
                 post.VoPollIsClosed = IsPollClosed(poll);
+            }
+
+            if (!lotteryMap.TryGetValue(post.VoId, out var lottery))
+            {
+                post.VoHasLottery = false;
+                post.VoLotteryParticipantCount = 0;
+                post.VoLotteryIsDrawn = false;
+            }
+            else
+            {
+                post.VoHasLottery = true;
+                post.VoLotteryParticipantCount = lotteryParticipantCountMap.GetValueOrDefault(post.VoId, lottery.ParticipantCount);
+                post.VoLotteryIsDrawn = lottery.IsDrawn;
             }
 
             FillPostQuestionSummary(post, questionMap.GetValueOrDefault(post.VoId));
@@ -389,10 +436,17 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     public async Task<long> PublishPostAsync(
         Post post,
         CreatePollDto? poll = null,
+        CreateLotteryDto? lottery = null,
         bool isQuestion = false,
         List<string>? tagNames = null,
         bool allowCreateTag = true)
     {
+        var featureCount = (poll != null ? 1 : 0) + (lottery != null ? 1 : 0) + (isQuestion ? 1 : 0);
+        if (featureCount > 1)
+        {
+            throw new ArgumentException("问答帖、投票和抽奖暂时互斥");
+        }
+
         var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "发布帖子时至少需要一个标签");
         var operatorName = string.IsNullOrWhiteSpace(post.AuthorName) ? "System" : post.AuthorName;
 
@@ -427,7 +481,13 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             await CreatePostQuestionAsync(post, postId, operatorName);
         }
 
-        // 6. 🎁 发放经验值奖励（异步处理）
+        // 6. 处理附带抽奖
+        if (lottery != null)
+        {
+            await CreatePostLotteryAsync(post, postId, lottery, operatorName);
+        }
+
+        // 7. 🎁 发放经验值奖励（异步处理）
         _ = Task.Run(async () =>
         {
             try
@@ -543,6 +603,55 @@ public class PostService : BaseService<Post, PostVo>, IPostService
         return pollVo;
     }
 
+    private async Task<PostLotteryVo?> BuildPostLotteryVoAsync(long postId, long postAuthorId)
+    {
+        if (_postLotteryRepository == null)
+        {
+            return null;
+        }
+
+        var lottery = await _postLotteryRepository.QueryFirstAsync(item => item.PostId == postId && !item.IsDeleted);
+        if (lottery == null)
+        {
+            return null;
+        }
+
+        var lotteryVo = Mapper.Map<PostLotteryVo>(lottery);
+        lotteryVo.VoLotteryId = lottery.Id;
+
+        if (_commentRepository != null)
+        {
+            var participantComments = await GetTopLevelLotteryCommentsAsync(
+                postId,
+                postAuthorId,
+                lottery.IsDrawn ? lottery.DrawnAt : null);
+            lotteryVo.VoParticipantCount = participantComments
+                .Select(comment => comment.AuthorId)
+                .Distinct()
+                .Count();
+        }
+        else
+        {
+            lotteryVo.VoParticipantCount = lottery.ParticipantCount;
+        }
+
+        if (_postLotteryWinnerRepository == null)
+        {
+            return lotteryVo;
+        }
+
+        var winners = await _postLotteryWinnerRepository.QueryAsync(winner =>
+            winner.LotteryId == lottery.Id &&
+            !winner.IsDeleted);
+
+        lotteryVo.VoWinners = Mapper.Map<List<PostLotteryWinnerVo>>(winners
+            .OrderBy(winner => winner.CreateTime)
+            .ThenBy(winner => winner.Id)
+            .ToList());
+
+        return lotteryVo;
+    }
+
     private async Task CreatePostPollAsync(Post post, long postId, CreatePollDto poll, string operatorName)
     {
         var question = poll.Question?.Trim();
@@ -597,6 +706,55 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             AcceptedAnswerId = null,
             AnswerCount = 0,
             TenantId = post.TenantId,
+            CreateBy = operatorName,
+            CreateId = post.AuthorId
+        });
+    }
+
+    private async Task CreatePostLotteryAsync(Post post, long postId, CreateLotteryDto lottery, string operatorName)
+    {
+        if (_postLotteryRepository == null)
+        {
+            throw new InvalidOperationException("抽奖仓储未配置");
+        }
+
+        var prizeName = lottery.PrizeName?.Trim();
+        if (string.IsNullOrWhiteSpace(prizeName))
+        {
+            throw new ArgumentException("奖品名称不能为空", nameof(lottery));
+        }
+
+        if (prizeName.Length > 100)
+        {
+            throw new ArgumentException("奖品名称长度不能超过100个字符", nameof(lottery));
+        }
+
+        var prizeDescription = string.IsNullOrWhiteSpace(lottery.PrizeDescription)
+            ? null
+            : lottery.PrizeDescription.Trim();
+        if (prizeDescription != null && prizeDescription.Length > 500)
+        {
+            throw new ArgumentException("奖品说明长度不能超过500个字符", nameof(lottery));
+        }
+
+        var drawTime = lottery.DrawTime;
+        if (drawTime.HasValue && drawTime.Value <= DateTime.UtcNow)
+        {
+            throw new ArgumentException("抽奖可开奖时间必须晚于当前时间", nameof(lottery));
+        }
+
+        var winnerCount = Math.Clamp(lottery.WinnerCount, 1, 20);
+        await _postLotteryRepository.AddAsync(new PostLottery
+        {
+            PostId = postId,
+            PrizeName = prizeName,
+            PrizeDescription = prizeDescription,
+            DrawTime = drawTime,
+            WinnerCount = winnerCount,
+            ParticipantCount = 0,
+            IsDrawn = false,
+            TenantId = post.TenantId,
+            CreateTime = DateTime.Now,
             CreateBy = operatorName,
             CreateId = post.AuthorId
         });
@@ -664,6 +822,68 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     private static bool IsPollClosed(PostPoll poll)
     {
         return poll.IsClosed || (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow);
+    }
+
+    private async Task<Dictionary<long, int>> BuildLotteryParticipantCountMapAsync(
+        Dictionary<long, long> postAuthorMap,
+        Dictionary<long, PostLottery> lotteryMap)
+    {
+        if (_commentRepository == null || postAuthorMap.Count == 0 || lotteryMap.Count == 0)
+        {
+            return new Dictionary<long, int>();
+        }
+
+        var postIds = lotteryMap.Keys.ToList();
+        var comments = await _commentRepository.QueryAsync(comment =>
+            postIds.Contains(comment.PostId) &&
+            comment.ParentId == null &&
+            comment.AuthorId > 0 &&
+            comment.IsEnabled &&
+            !comment.IsDeleted);
+
+        var participantCountMap = new Dictionary<long, int>();
+        foreach (var postId in postIds)
+        {
+            if (!postAuthorMap.TryGetValue(postId, out var postAuthorId))
+            {
+                participantCountMap[postId] = lotteryMap.GetValueOrDefault(postId)?.ParticipantCount ?? 0;
+                continue;
+            }
+
+            var lottery = lotteryMap.GetValueOrDefault(postId);
+            var cutoffTime = lottery?.IsDrawn == true ? lottery.DrawnAt : null;
+            var filteredComments = comments.Where(comment =>
+                comment.PostId == postId &&
+                comment.AuthorId != postAuthorId &&
+                (!cutoffTime.HasValue || comment.CreateTime <= cutoffTime.Value));
+
+            participantCountMap[postId] = filteredComments
+                .Select(comment => comment.AuthorId)
+                .Distinct()
+                .Count();
+        }
+
+        return participantCountMap;
+    }
+
+    private async Task<List<Comment>> GetTopLevelLotteryCommentsAsync(long postId, long postAuthorId, DateTime? cutoffTimeUtc = null)
+    {
+        if (_commentRepository == null)
+        {
+            return [];
+        }
+
+        var hasCutoff = cutoffTimeUtc.HasValue;
+        var cutoffValue = cutoffTimeUtc ?? DateTime.MaxValue;
+
+        return await _commentRepository.QueryAsync(comment =>
+            comment.PostId == postId &&
+            comment.ParentId == null &&
+            comment.AuthorId > 0 &&
+            comment.AuthorId != postAuthorId &&
+            comment.IsEnabled &&
+            !comment.IsDeleted &&
+            (!hasCutoff || comment.CreateTime <= cutoffValue));
     }
 
     private static List<PollOptionDto> NormalizePollOptionsOrThrow(List<PollOptionDto>? options)
