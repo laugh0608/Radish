@@ -427,8 +427,8 @@ export const NotificationApp = () => {
  * 将 API 返回的通知类型映射到 Store 的类型
  * 注意：这是类型枚举映射，不是字段名映射
  */
-function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention' | 'like' | 'follow' {
-  const typeMap: Record<string, 'system' | 'reply' | 'mention' | 'like' | 'follow'> = {
+function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention' | 'like' | 'follow' | 'lottery' {
+  const typeMap: Record<string, 'system' | 'reply' | 'mention' | 'like' | 'follow' | 'lottery'> = {
     'System': 'system',
     'CommentReply': 'reply',
     'CommentReplied': 'reply',
@@ -437,7 +437,8 @@ function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention
     'PostLiked': 'like',
     'CommentLiked': 'like',
     'Follow': 'follow',
-    'Followed': 'follow'
+    'Followed': 'follow',
+    'LotteryWon': 'lottery'
   };
   return typeMap[type] || 'system';
 }
