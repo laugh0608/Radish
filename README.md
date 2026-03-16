@@ -6,6 +6,19 @@
 
 Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，前端使用 React 19（Vite + TypeScript），采用桌面化 UI 设计理念。
 
+## 当前状态
+
+- **当前主线**：`M12 收口与后续规划校准`
+- **最新结论（2026-03-16）**：
+  - `P5 论坛抽奖 MVP + 个人中心浏览记录优化` 已完成本轮收口，当前状态为“可演示、可联调、可回归、可转维护”
+  - 下一阶段不会直接沿用旧版 `M13` 定义开工，而是以“验证基线与回归资产工程化”为入口重整当前验证能力
+- **当前验证基线**：
+  - 后端：`dotnet build/test`
+  - 前端：`npm run type-check`、`npm run test --workspace=radish.client`
+  - 联调与回归：`Radish.Api.Tests/HttpTest`
+  - 专题扫描：`npm run check:console-permissions`
+  - 数据/配置只读自检：`Radish.DbMigrate doctor`、`verify`
+
 ## 技术栈
 
 - **后端**：ASP.NET Core 10、SQLSugar、FluentValidation、Serilog
@@ -82,6 +95,21 @@ npm run lint --workspace=@radish/ui         # 代码检查
 # pwsh ./setup-workspace-links.ps1
 ```
 
+在当前仓库环境中，若本机 `dotnet` 受用户目录、NuGet 审计或并发还原影响，优先使用根目录脚本包装命令：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Scripts\dotnet-local.ps1 build Radish.slnx -c Debug
+powershell -ExecutionPolicy Bypass -File Scripts\dotnet-local.ps1 test Radish.Api.Tests
+```
+
+当前更推荐的“最小验证顺序”是：
+
+```bash
+npm run type-check
+npm run test --workspace=radish.client
+npm run check:console-permissions
+```
+
 ## 项目结构
 
 ```
@@ -116,6 +144,7 @@ Radish/
 - 📗 [**架构设计**](Docs/architecture/framework.md) - 技术选型、分层架构、数据持久化
 - 📙 [**开发计划**](Docs/development-plan.md) - 里程碑与迭代计划
 - 📕 [**开发日志**](Docs/changelog/) - 按月份/周记录的开发历程
+- ✅ [**验证基线**](Docs/guide/validation-baseline.md) - 当前统一验证入口、分层使用建议与边界说明
 
 ### 专项文档
 - 🔐 [**认证与权限**](Docs/guide/authentication.md) - OIDC 认证流程与权限体系

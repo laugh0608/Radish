@@ -18,6 +18,9 @@
     "type-check:ui": "npm run type-check --workspace=@radish/ui",
     "type-check:client": "npm run type-check --workspace=radish.client",
     "type-check:console": "npm run type-check --workspace=radish.console",
+    "validate:baseline": "node Scripts/validate-baseline.mjs",
+    "validate:baseline:quick": "node Scripts/validate-baseline.mjs --quick",
+    "validate:baseline:host": "node Scripts/validate-baseline.mjs --with-host-checks",
     "install:all": "npm install"
   }
 }

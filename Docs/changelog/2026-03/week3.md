@@ -25,3 +25,10 @@
 
 - **P5 当前结论**：论坛抽奖 MVP 与个人中心浏览记录优化已达到“可演示、可联调、可回归、可转维护”的收口标准。
 - **下一步策略调整**：不直接沿用旧版 `M13` 口径启动新阶段，而是先完成规划文档、基础说明与后续路线的重审对齐。
+
+### M13 首轮验证入口补齐
+
+- **统一验证入口已补齐**：根目录新增 `npm run validate:baseline`、`validate:baseline:quick`、`validate:baseline:host`，用于串联当前已有的前端类型检查、`radish.client` 最小测试、Console 权限扫描、后端构建 / 测试与宿主只读自检。
+- **验证边界已文档化**：新增 `validation-baseline.md`，明确“日常提交前 / 合并前 / 宿主配置相关改动后”的分层验证建议，并保留 `HttpTest` 为专题回归层。
+- **前端最小测试兼容性已收口**：`radish.client` 的 `node --test` 已改为 `--test-isolation=none`，避免受限环境下因子进程隔离导致 `spawn EPERM`。
+- **最小验证结果**：`npm run validate:baseline:quick` 已通过。

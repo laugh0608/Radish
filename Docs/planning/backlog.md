@@ -118,11 +118,28 @@
 - 优先整合 `dotnet build/test`、前端 `type-check`、`radish.client` 现有 `node --test`、`HttpTest`、权限扫描脚本与身份语义扫描规则
 - 先形成“可重复执行、与当前代码相符”的本地/仓库级校验入口，再决定是否接入 CI
 
+**启动清单（当前已具备的真实资产）**
+- 后端构建 / 测试：`Scripts/dotnet-local.ps1 build|test` 与常规 `dotnet build/test`
+- 前端校验：根目录 `npm run type-check`、`npm run test --workspace=radish.client`
+- 专题扫描：`npm run check:console-permissions`
+- 联调资产：`Radish.Api.Tests/HttpTest/*.http` 与其目录 `README`
+- 宿主只读自检：`Radish.DbMigrate doctor`、`Radish.DbMigrate verify`
+
+**阶段边界**
+- 当前先整合“已有资产”，不把阶段默认扩张为完整 CI、全量 E2E、Playwright 或统一流水线平台建设
+- `HttpTest` 与最小人工验收继续保留，但要明确与构建 / 类型检查 / 脚本扫描的分层关系
+- 身份语义防回归规则优先沉淀为仓库脚本入口，再决定是否上升到流水线
+
 **预期输出**
 - 后端、前端、专题脚本与扫描规则形成统一的验证清单
 - 身份语义 Phase 5 防回归规则落地为仓库脚本或可复用校验入口
 - 关键主链路的 `HttpTest` / 最小人工验收与构建校验有清晰分层，不再依赖口口相传
 - 是否接入 CI 作为阶段尾声的可选决策，而不是默认前提
+
+**当前落地（首轮）**
+- 根目录统一入口已补齐：`npm run validate:baseline`
+- 已区分 `quick / full / host` 三层验证方式
+- `HttpTest` 仍保留为专题回归层，不并入默认自动化入口
 
 ### M14：宿主运行与最小可观测性基线
 

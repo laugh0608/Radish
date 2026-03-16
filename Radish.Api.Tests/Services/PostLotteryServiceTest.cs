@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -23,6 +24,8 @@ public class PostLotteryServiceTest
         var lotteryRepository = new Mock<IBaseRepository<PostLottery>>(MockBehavior.Strict);
         var winnerRepository = new Mock<IBaseRepository<PostLotteryWinner>>(MockBehavior.Strict);
         var commentRepository = new Mock<IBaseRepository<Comment>>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<PostLotteryService>>();
 
         var post = new Post(new PostInitializationOptions("抽奖帖", "正文"))
         {
@@ -144,13 +147,23 @@ public class PostLotteryServiceTest
                     ]
                 }
             });
+        notificationService
+            .Setup(service => service.CreateNotificationAsync(It.Is<Model.DtoModels.CreateNotificationDto>(dto =>
+                dto.Type == NotificationType.LotteryWon &&
+                dto.BusinessId == 1001 &&
+                dto.ReceiverUserIds.Count == 2 &&
+                dto.ReceiverUserIds.Contains(1101) &&
+                dto.ReceiverUserIds.Contains(1102))))
+            .ReturnsAsync(1);
 
         var service = new PostLotteryService(
             postService.Object,
             postRepository.Object,
             lotteryRepository.Object,
             winnerRepository.Object,
-            commentRepository.Object);
+            commentRepository.Object,
+            notificationService.Object,
+            logger.Object);
 
         var result = await service.DrawAsync(1001, 9527, "Author");
 
@@ -161,6 +174,7 @@ public class PostLotteryServiceTest
         winnerRepository.VerifyAll();
         lotteryRepository.VerifyAll();
         postService.VerifyAll();
+        notificationService.VerifyAll();
     }
 
     [Fact]
@@ -171,6 +185,8 @@ public class PostLotteryServiceTest
         var lotteryRepository = new Mock<IBaseRepository<PostLottery>>(MockBehavior.Strict);
         var winnerRepository = new Mock<IBaseRepository<PostLotteryWinner>>(MockBehavior.Strict);
         var commentRepository = new Mock<IBaseRepository<Comment>>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var logger = new Mock<ILogger<PostLotteryService>>();
 
         postRepository
             .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
@@ -198,7 +214,9 @@ public class PostLotteryServiceTest
             postRepository.Object,
             lotteryRepository.Object,
             winnerRepository.Object,
-            commentRepository.Object);
+            commentRepository.Object,
+            notificationService.Object,
+            logger.Object);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DrawAsync(1001, 9527, "Author"));
 
