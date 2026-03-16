@@ -208,7 +208,7 @@ export async function getPostById(
 ): Promise<PostDetail> {
   const response = await apiGet<PostDetail>(
     `/api/v1/Post/GetById/${postId}?answerSort=${answerSort}`,
-    { timeout: FORUM_READ_TIMEOUT_MS }
+    { timeout: FORUM_READ_TIMEOUT_MS, withAuth: true }
   );
 
   if (!response.ok || !response.data) {

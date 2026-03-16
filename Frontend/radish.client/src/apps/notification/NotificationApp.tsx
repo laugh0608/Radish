@@ -18,7 +18,7 @@ import styles from './NotificationApp.module.css';
  * 注意：SignalR 连接由 Shell 统一管理，此组件只负责读取状态和调用方法
  */
 export const NotificationApp = () => {
-  const { openApp } = useWindowStore();
+  const { openApp, openOrReuseApp } = useWindowStore();
   const currentUserId = useUserStore((state) => state.userId);
   const { unreadCount, recentNotifications } = useNotificationStore();
 
@@ -274,12 +274,12 @@ export const NotificationApp = () => {
     const businessType = notification.businessType?.trim();
 
     if (businessType === 'Post' && notification.businessId) {
-      openApp('forum', { postId: notification.businessId });
+      openOrReuseApp('forum', { postId: notification.businessId });
       return;
     }
 
     if (businessType === 'Comment') {
-      openApp('forum');
+      openOrReuseApp('forum');
       return;
     }
 
@@ -308,12 +308,12 @@ export const NotificationApp = () => {
     }
 
     if (notification.type === 'reply' || notification.type === 'mention' || notification.type === 'like') {
-      openApp('forum');
+      openOrReuseApp('forum');
       return;
     }
 
     toast.info('该通知暂不支持直接跳转');
-  }, [currentUserId, handleMarkAsRead, openApp]);
+  }, [currentUserId, handleMarkAsRead, openApp, openOrReuseApp]);
 
   // 标记全部已读
   const handleMarkAllAsRead = useCallback(async () => {

@@ -162,6 +162,7 @@ public class NotificationService : INotificationService
             NotificationType.SystemAnnouncement => "system",
             NotificationType.AccountSecurity => "system",
             NotificationType.LevelUp => "system",
+            NotificationType.LotteryWon => "system",
             NotificationType.GodComment => "system",
             NotificationType.Sofa => "system",
             NotificationType.CoinBalanceChanged => "system",

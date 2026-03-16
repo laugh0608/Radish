@@ -3,6 +3,8 @@ using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
 
 namespace Radish.Service;
 
@@ -14,19 +16,25 @@ public class PostLotteryService : IPostLotteryService
     private readonly IBaseRepository<PostLottery> _postLotteryRepository;
     private readonly IBaseRepository<PostLotteryWinner> _postLotteryWinnerRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
+    private readonly INotificationService _notificationService;
+    private readonly ILogger<PostLotteryService> _logger;
 
     public PostLotteryService(
         IPostService postService,
         IBaseRepository<Post> postRepository,
         IBaseRepository<PostLottery> postLotteryRepository,
         IBaseRepository<PostLotteryWinner> postLotteryWinnerRepository,
-        IBaseRepository<Comment> commentRepository)
+        IBaseRepository<Comment> commentRepository,
+        INotificationService notificationService,
+        ILogger<PostLotteryService> logger)
     {
         _postService = postService;
         _postRepository = postRepository;
         _postLotteryRepository = postLotteryRepository;
         _postLotteryWinnerRepository = postLotteryWinnerRepository;
         _commentRepository = commentRepository;
+        _notificationService = notificationService;
+        _logger = logger;
     }
 
     /// <summary>按帖子获取抽奖详情</summary>
@@ -147,6 +155,17 @@ public class PostLotteryService : IPostLotteryService
         lottery.ModifyId = userId;
         await _postLotteryRepository.UpdateAsync(lottery);
 
+        try
+        {
+            await NotifyWinnersAsync(post, lottery, winners, safeOperatorName, userId, actualWinnerCount);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "[PostLotteryService] 开奖成功，但发送中奖通知失败：PostId={PostId}, LotteryId={LotteryId}",
+                postId, lottery.Id);
+        }
+
         var result = await GetByPostIdAsync(postId, userId);
         if (result.VoLottery == null)
         {
@@ -166,5 +185,54 @@ public class PostLotteryService : IPostLotteryService
             comment.CreateTime <= cutoffTimeUtc &&
             comment.IsEnabled &&
             !comment.IsDeleted);
+    }
+
+    private async Task NotifyWinnersAsync(
+        Post post,
+        PostLottery lottery,
+        IReadOnlyCollection<PostLotteryWinner> winners,
+        string operatorName,
+        long operatorUserId,
+        int actualWinnerCount)
+    {
+        var receiverUserIds = winners
+            .Select(winner => winner.UserId)
+            .Where(userId => userId > 0)
+            .Distinct()
+            .ToList();
+
+        if (receiverUserIds.Count == 0)
+        {
+            return;
+        }
+
+        var normalizedPostTitle = string.IsNullOrWhiteSpace(post.Title)
+            ? $"帖子 {post.Id}"
+            : post.Title.Trim();
+        var normalizedPrizeName = string.IsNullOrWhiteSpace(lottery.PrizeName)
+            ? "抽奖奖品"
+            : lottery.PrizeName.Trim();
+
+        await _notificationService.CreateNotificationAsync(new Model.DtoModels.CreateNotificationDto
+        {
+            Type = NotificationType.LotteryWon,
+            Title = "抽奖开奖结果",
+            Content = $"你在帖子《{normalizedPostTitle}》的抽奖“{normalizedPrizeName}”中中奖啦。",
+            Priority = (int)NotificationPriority.High,
+            BusinessType = BusinessType.Post,
+            BusinessId = post.Id,
+            TriggerId = operatorUserId,
+            TriggerName = operatorName,
+            TriggerAvatar = null,
+            ReceiverUserIds = receiverUserIds,
+            TenantId = lottery.TenantId,
+            ExtData = JsonSerializer.Serialize(new
+            {
+                postId = post.Id,
+                lotteryId = lottery.Id,
+                prizeName = normalizedPrizeName,
+                winnerCount = actualWinnerCount
+            })
+        });
     }
 }

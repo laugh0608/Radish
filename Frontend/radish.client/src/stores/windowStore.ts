@@ -9,6 +9,9 @@ interface WindowStore {
   /** 打开应用 */
   openApp: (appId: string, appParams?: Record<string, unknown>) => void;
 
+  /** 复用已打开的应用窗口并更新参数，不存在则新开 */
+  openOrReuseApp: (appId: string, appParams?: Record<string, unknown>) => void;
+
   /** 关闭窗口 */
   closeWindow: (windowId: string) => void;
 
@@ -20,6 +23,9 @@ interface WindowStore {
 
   /** 聚焦窗口 */
   focusWindow: (windowId: string) => void;
+
+  /** 更新窗口运行参数 */
+  updateWindowAppParams: (windowId: string, appParams?: Record<string, unknown>) => void;
 
   /** 更新窗口位置 */
   updateWindowPosition: (windowId: string, position: { x: number; y: number }) => void;
@@ -100,6 +106,30 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     set({ openWindows: [...openWindows, newWindow] });
   },
 
+  openOrReuseApp: (appId: string, appParams?: Record<string, unknown>) => {
+    const { openWindows } = get();
+    const existingWindow = openWindows
+      .filter(window => window.appId === appId)
+      .sort((left, right) => right.zIndex - left.zIndex)[0];
+
+    const nextAppParams = {
+      ...(appParams ?? {}),
+      __navigationKey: Date.now()
+    };
+
+    if (!existingWindow) {
+      get().openApp(appId, nextAppParams);
+      return;
+    }
+
+    get().updateWindowAppParams(existingWindow.id, nextAppParams);
+    get().focusWindow(existingWindow.id);
+
+    if (existingWindow.isMinimized) {
+      get().restoreWindow(existingWindow.id);
+    }
+  },
+
   closeWindow: (windowId: string) => {
     set(state => ({
       openWindows: state.openWindows.filter(w => w.id !== windowId)
@@ -140,6 +170,14 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     set(state => ({
       openWindows: state.openWindows.map(w =>
         w.id === windowId ? { ...w, zIndex: maxZIndex + 1 } : w
+      )
+    }));
+  },
+
+  updateWindowAppParams: (windowId: string, appParams?: Record<string, unknown>) => {
+    set(state => ({
+      openWindows: state.openWindows.map(w =>
+        w.id === windowId ? { ...w, appParams } : w
       )
     }));
   },

@@ -45,7 +45,7 @@ const EditHistoryModal = lazy(() =>
 
 const SEARCH_PAGE_SIZE = 20;
 
-function parseForumWindowParams(appParams?: Record<string, unknown> | null): { postId?: number } {
+function parseForumWindowParams(appParams?: Record<string, unknown> | null): { postId?: number; navigationKey?: string } {
   if (!appParams) {
     return {};
   }
@@ -61,7 +61,10 @@ function parseForumWindowParams(appParams?: Record<string, unknown> | null): { p
     return {};
   }
 
-  return { postId };
+  const rawNavigationKey = appParams.__navigationKey;
+  const navigationKey = rawNavigationKey == null ? undefined : String(rawNavigationKey);
+
+  return { postId, navigationKey };
 }
 
 export const ForumApp = () => {
@@ -92,7 +95,7 @@ export const ForumApp = () => {
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
   const windowParams = parseForumWindowParams(currentWindow?.appParams);
-  const initialWindowPostIdRef = useRef<number | null>(windowParams.postId ?? null);
+  const handledWindowRouteRef = useRef<string | null>(null);
 
   useEffect(() => {
     const element = containerShellRef.current;
@@ -230,19 +233,25 @@ export const ForumApp = () => {
   });
 
   useEffect(() => {
-    const initialWindowPostId = initialWindowPostIdRef.current;
-    if (!initialWindowPostId) {
+    if (!windowParams.postId) {
       return;
     }
 
-    initialWindowPostIdRef.current = null;
+    const routeSignature = `${windowParams.postId}:${windowParams.navigationKey ?? 'initial'}`;
+    if (handledWindowRouteRef.current === routeSignature) {
+      return;
+    }
+
+    handledWindowRouteRef.current = routeSignature;
 
     setIsSearchView(false);
     dataState.setSelectedTagName(null);
     dataState.setSelectedCategoryId(null);
-    void actionsState.handleSelectPost(initialWindowPostId);
+    void actionsState.handleSelectPost(windowParams.postId);
   }, [
     actionsState.handleSelectPost,
+    windowParams.navigationKey,
+    windowParams.postId,
     dataState.setSelectedCategoryId,
     dataState.setSelectedTagName,
   ]);

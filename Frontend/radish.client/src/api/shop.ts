@@ -131,7 +131,7 @@ export async function getProducts(
  * 获取商品详情
  */
 export async function getProduct(productId: number, t: TFunction): Promise<ParsedApiResponse<Product>> {
-  return await apiGet<Product>(`/api/v1/Shop/GetProduct/${productId}`);
+  return await apiGet<Product>(`/api/v1/Shop/GetProduct/${productId}`, { withAuth: true });
 }
 
 /**
