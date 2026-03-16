@@ -28,8 +28,13 @@
 - `Radish.Api.Community.http`
 - `Radish.Api.Forum.Core.http`
 - `Radish.Api.Forum.Comment.http`
+- `Radish.Api.Forum.Lottery.http`
 - `Radish.Api.Forum.Poll.http`
 - `Radish.Api.Forum.Question.http`
+
+### 用户与个人中心
+
+- `Radish.Api.User.Profile.http`
 
 ### 附件
 
