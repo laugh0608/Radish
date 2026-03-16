@@ -3,7 +3,13 @@ import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
-import { getAllTags, getOidcLoginUrl, type Category, type CreatePollRequest } from '@/api/forum';
+import {
+  getAllTags,
+  getOidcLoginUrl,
+  type Category,
+  type CreateLotteryRequest,
+  type CreatePollRequest
+} from '@/api/forum';
 import { useUserStore } from '@/stores/userStore';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -21,7 +27,8 @@ interface PublishPostModalProps {
     categoryId: number,
     tagNames: string[],
     isQuestion?: boolean,
-    poll?: CreatePollRequest | null
+    poll?: CreatePollRequest | null,
+    lottery?: CreateLotteryRequest | null
   ) => Promise<void>;
 }
 
@@ -30,6 +37,8 @@ const MIN_TAG_COUNT = 1;
 const MAX_TAG_COUNT = 5;
 const MIN_POLL_OPTION_COUNT = 2;
 const MAX_POLL_OPTION_COUNT = 6;
+const MIN_LOTTERY_WINNER_COUNT = 1;
+const MAX_LOTTERY_WINNER_COUNT = 20;
 const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;
 const DEFAULT_POLL_OPTIONS = ['', ''];
 
@@ -76,6 +85,12 @@ export const PublishPostModal = ({
   const [pollEndTime, setPollEndTime] = useState('');
   const [pollOptions, setPollOptions] = useState<string[]>([...DEFAULT_POLL_OPTIONS]);
   const [pollError, setPollError] = useState<string | null>(null);
+  const [enableLottery, setEnableLottery] = useState(false);
+  const [lotteryPrizeName, setLotteryPrizeName] = useState('');
+  const [lotteryPrizeDescription, setLotteryPrizeDescription] = useState('');
+  const [lotteryDrawTime, setLotteryDrawTime] = useState('');
+  const [lotteryWinnerCount, setLotteryWinnerCount] = useState('1');
+  const [lotteryError, setLotteryError] = useState<string | null>(null);
   const roles = useUserStore(state => state.roles || []);
   const isAdmin = roles.some(role => {
     const normalized = role.trim().toLowerCase();
@@ -98,12 +113,18 @@ export const PublishPostModal = ({
             setSelectedTags(Array.isArray(draft.tags) ? draft.tags : []);
             setCategoryId(typeof draft.categoryId === 'number' ? draft.categoryId : selectedCategoryId);
             setIsQuestionPost(draftIsQuestion);
-            setEnablePoll(Boolean(draft.poll?.enabled) && !draftIsQuestion);
+            const draftLotteryEnabled = Boolean(draft.lottery?.enabled) && !draftIsQuestion;
+            setEnableLottery(draftLotteryEnabled);
+            setEnablePoll(Boolean(draft.poll?.enabled) && !draftIsQuestion && !draftLotteryEnabled);
             setPollQuestion(draft.poll?.question || '');
             setPollEndTime(draft.poll?.endTime || '');
             setPollOptions(Array.isArray(draft.poll?.options) && draft.poll.options.length >= MIN_POLL_OPTION_COUNT
               ? draft.poll.options
               : [...DEFAULT_POLL_OPTIONS]);
+            setLotteryPrizeName(draft.lottery?.prizeName || '');
+            setLotteryPrizeDescription(draft.lottery?.prizeDescription || '');
+            setLotteryDrawTime(draft.lottery?.drawTime || '');
+            setLotteryWinnerCount(draft.lottery?.winnerCount || '1');
           } else {
             setCategoryId(selectedCategoryId);
           }
@@ -134,6 +155,13 @@ export const PublishPostModal = ({
               endTime: pollEndTime,
               options: pollOptions
             },
+            lottery: {
+              enabled: enableLottery,
+              prizeName: lotteryPrizeName,
+              prizeDescription: lotteryPrizeDescription,
+              drawTime: lotteryDrawTime,
+              winnerCount: lotteryWinnerCount
+            },
             savedAt: Date.now()
           })
         );
@@ -141,7 +169,23 @@ export const PublishPostModal = ({
         log.error('Failed to save draft:', err);
       }
     }
-  }, [title, content, selectedTags, categoryId, isQuestionPost, enablePoll, pollQuestion, pollEndTime, pollOptions, isOpen]);
+  }, [
+    title,
+    content,
+    selectedTags,
+    categoryId,
+    isQuestionPost,
+    enablePoll,
+    pollQuestion,
+    pollEndTime,
+    pollOptions,
+    enableLottery,
+    lotteryPrizeName,
+    lotteryPrizeDescription,
+    lotteryDrawTime,
+    lotteryWinnerCount,
+    isOpen
+  ]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -227,6 +271,7 @@ export const PublishPostModal = ({
     }
 
     let pollRequest: CreatePollRequest | null = null;
+    let lotteryRequest: CreateLotteryRequest | null = null;
     if (enablePoll) {
       const normalizedQuestion = pollQuestion.trim();
       if (!normalizedQuestion) {
@@ -267,9 +312,52 @@ export const PublishPostModal = ({
       };
     }
 
+    if (enableLottery) {
+      const normalizedPrizeName = lotteryPrizeName.trim();
+      const normalizedPrizeDescription = lotteryPrizeDescription.trim();
+      const parsedWinnerCount = Number.parseInt(lotteryWinnerCount, 10);
+
+      if (!normalizedPrizeName) {
+        setLotteryError('奖品名称不能为空');
+        return;
+      }
+
+      if (!normalizedPrizeDescription) {
+        setLotteryError('奖品说明不能为空');
+        return;
+      }
+
+      if (!lotteryDrawTime) {
+        setLotteryError('开奖时间不能为空');
+        return;
+      }
+
+      const drawTime = new Date(lotteryDrawTime);
+      if (Number.isNaN(drawTime.getTime()) || drawTime.getTime() <= Date.now()) {
+        setLotteryError('开奖时间必须晚于当前时间');
+        return;
+      }
+
+      if (
+        !Number.isInteger(parsedWinnerCount) ||
+        parsedWinnerCount < MIN_LOTTERY_WINNER_COUNT ||
+        parsedWinnerCount > MAX_LOTTERY_WINNER_COUNT
+      ) {
+        setLotteryError(`中奖人数必须在 ${MIN_LOTTERY_WINNER_COUNT} 到 ${MAX_LOTTERY_WINNER_COUNT} 之间`);
+        return;
+      }
+
+      lotteryRequest = {
+        prizeName: normalizedPrizeName,
+        prizeDescription: normalizedPrizeDescription,
+        drawTime: drawTime.toISOString(),
+        winnerCount: parsedWinnerCount
+      };
+    }
+
     setIsSubmitting(true);
     try {
-      await onPublish(title, content, categoryId, selectedTags, isQuestionPost, pollRequest);
+      await onPublish(title, content, categoryId, selectedTags, isQuestionPost, pollRequest, lotteryRequest);
       // 发布成功后清空表单和草稿
       setTitle('');
       setContent('');
@@ -284,6 +372,12 @@ export const PublishPostModal = ({
       setPollEndTime('');
       setPollOptions([...DEFAULT_POLL_OPTIONS]);
       setPollError(null);
+      setEnableLottery(false);
+      setLotteryPrizeName('');
+      setLotteryPrizeDescription('');
+      setLotteryDrawTime('');
+      setLotteryWinnerCount('1');
+      setLotteryError(null);
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       onClose();
     } catch (err) {
@@ -569,6 +663,12 @@ export const PublishPostModal = ({
                     setPollEndTime('');
                     setPollOptions([...DEFAULT_POLL_OPTIONS]);
                     setPollError(null);
+                    setEnableLottery(false);
+                    setLotteryPrizeName('');
+                    setLotteryPrizeDescription('');
+                    setLotteryDrawTime('');
+                    setLotteryWinnerCount('1');
+                    setLotteryError(null);
                   }
                   return next;
                 });
@@ -578,7 +678,7 @@ export const PublishPostModal = ({
             </button>
           </div>
           {isQuestionPost && (
-            <p className={styles.optionNotice}>问答帖与附带投票暂时互斥，当前将以问答模式发布。</p>
+            <p className={styles.optionNotice}>问答帖与附带投票、附带抽奖暂时互斥，当前将以问答模式发布。</p>
           )}
         </div>
 
@@ -596,6 +696,12 @@ export const PublishPostModal = ({
                   const next = !current;
                   if (next) {
                     setIsQuestionPost(false);
+                    setEnableLottery(false);
+                    setLotteryPrizeName('');
+                    setLotteryPrizeDescription('');
+                    setLotteryDrawTime('');
+                    setLotteryWinnerCount('1');
+                    setLotteryError(null);
                   }
                   return next;
                 });
@@ -676,6 +782,115 @@ export const PublishPostModal = ({
               </div>
 
               {pollError && <p className={styles.pollError}>{pollError}</p>}
+            </div>
+          )}
+        </div>
+
+        <div className={`${styles.optionSection} ${styles.lotterySection}`}>
+          <div className={styles.optionSectionHeader}>
+            <div>
+              <span className={styles.optionSectionLabel}>附带抽奖</span>
+              <p className={styles.optionSectionHint}>父评论参与，按用户去重，发帖者在开奖时间后手动开奖</p>
+            </div>
+            <button
+              type="button"
+              className={`${styles.optionToggle} ${enableLottery ? styles.lotteryToggleActive : ''}`}
+              onClick={() => {
+                setEnableLottery((current) => {
+                  const next = !current;
+                  if (next) {
+                    setIsQuestionPost(false);
+                    setEnablePoll(false);
+                    setPollQuestion('');
+                    setPollEndTime('');
+                    setPollOptions([...DEFAULT_POLL_OPTIONS]);
+                    setPollError(null);
+                  }
+                  return next;
+                });
+                setLotteryError(null);
+              }}
+            >
+              {enableLottery ? '已开启' : '开启'}
+            </button>
+          </div>
+
+          {!enableLottery && isQuestionPost && (
+            <p className={styles.optionNotice}>已开启问答帖时，抽奖会保持关闭。</p>
+          )}
+
+          {!enableLottery && enablePoll && (
+            <p className={styles.optionNotice}>已开启附带投票时，抽奖会保持关闭。</p>
+          )}
+
+          {enableLottery && (
+            <div className={styles.lotteryFields}>
+              <input
+                type="text"
+                placeholder="奖品名称，例如：论坛头像挂件一份"
+                value={lotteryPrizeName}
+                onChange={(event) => {
+                  setLotteryPrizeName(event.target.value);
+                  if (lotteryError) {
+                    setLotteryError(null);
+                  }
+                }}
+                className={styles.lotteryInput}
+                maxLength={100}
+              />
+
+              <textarea
+                placeholder="奖品说明，例如：抽中后私信联系领取方式"
+                value={lotteryPrizeDescription}
+                onChange={(event) => {
+                  setLotteryPrizeDescription(event.target.value);
+                  if (lotteryError) {
+                    setLotteryError(null);
+                  }
+                }}
+                className={styles.lotteryTextarea}
+                maxLength={500}
+                rows={3}
+              />
+
+              <div className={styles.lotteryControls}>
+                <label className={styles.lotteryFieldLabel}>
+                  <span>开奖时间</span>
+                  <input
+                    type="datetime-local"
+                    value={lotteryDrawTime}
+                    onChange={(event) => {
+                      setLotteryDrawTime(event.target.value);
+                      if (lotteryError) {
+                        setLotteryError(null);
+                      }
+                    }}
+                    className={styles.lotteryInput}
+                  />
+                </label>
+                <label className={styles.lotteryFieldLabel}>
+                  <span>中奖人数</span>
+                  <input
+                    type="number"
+                    min={MIN_LOTTERY_WINNER_COUNT}
+                    max={MAX_LOTTERY_WINNER_COUNT}
+                    value={lotteryWinnerCount}
+                    onChange={(event) => {
+                      setLotteryWinnerCount(event.target.value);
+                      if (lotteryError) {
+                        setLotteryError(null);
+                      }
+                    }}
+                    className={styles.lotteryInput}
+                  />
+                </label>
+              </div>
+
+              <p className={styles.lotteryHint}>
+                发布一条顶级评论即可参与抽奖，回复他人评论不计入参与资格，发帖者本人不进入中奖池。
+              </p>
+
+              {lotteryError && <p className={styles.lotteryError}>{lotteryError}</p>}
             </div>
           )}
         </div>

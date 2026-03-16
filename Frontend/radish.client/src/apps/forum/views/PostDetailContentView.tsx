@@ -40,6 +40,7 @@ interface PostDetailContentViewProps {
   onBack: () => void;
   onLike: (postId: number) => void;
   onVotePoll: (optionId: number) => Promise<void>;
+  onDrawLottery: () => Promise<void>;
   onAnswerQuestion: (content: string) => Promise<void>;
   onAcceptAnswer: (answerId: number) => Promise<void>;
   onQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
@@ -103,6 +104,7 @@ export const PostDetailContentView = ({
   onBack,
   onLike,
   onVotePoll,
+  onDrawLottery,
   onAnswerQuestion,
   onAcceptAnswer,
   onQuestionAnswerSortChange,
@@ -234,6 +236,7 @@ export const PostDetailContentView = ({
               isLiked={isLiked}
               onLike={onLike}
               onVotePoll={onVotePoll}
+              onDrawLottery={onDrawLottery}
               onAnswerQuestion={onAnswerQuestion}
               onAcceptAnswer={onAcceptAnswer}
               answerSort={questionAnswerSort}

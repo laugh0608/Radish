@@ -136,6 +136,14 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
             {post.voHasPoll && (
               <span className={`${styles.statusChip} ${styles.pollChip}`}>投票</span>
             )}
+            {post.voHasLottery && (
+              <>
+                <span className={`${styles.statusChip} ${styles.lotteryChip}`}>抽奖</span>
+                {post.voLotteryIsDrawn && (
+                  <span className={`${styles.statusChip} ${styles.lotteryDoneChip}`}>已开奖</span>
+                )}
+              </>
+            )}
           </div>
 
           {godCommentPreview ? (
@@ -190,6 +198,12 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
               <div className={styles.statItem}>
                 <span className={styles.statLabel}>答</span>
                 <span className={styles.statValue}>{post.voAnswerCount || 0}</span>
+              </div>
+            )}
+            {post.voHasLottery && (
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>抽</span>
+                <span className={styles.statValue}>{post.voLotteryParticipantCount || 0}</span>
               </div>
             )}
           </div>

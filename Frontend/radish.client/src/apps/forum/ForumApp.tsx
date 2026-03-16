@@ -516,6 +516,7 @@ export const ForumApp = () => {
                 }}
                 onLike={actionsState.handleLikePost}
                 onVotePoll={actionsState.handleVotePoll}
+                onDrawLottery={actionsState.handleDrawLottery}
                 onAnswerQuestion={actionsState.handleAnswerQuestion}
                 onAcceptAnswer={actionsState.handleAcceptAnswer}
                 onQuestionAnswerSortChange={actionsState.handleQuestionAnswerSortChange}

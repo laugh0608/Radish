@@ -102,6 +102,43 @@ export interface PostPoll {
 }
 
 /**
+ * 抽奖中奖人 Vo
+ */
+export interface PostLotteryWinner {
+  voId: number;
+  voLotteryId: number;
+  voUserId: number;
+  voUserName: string;
+  voCommentId?: number | null;
+  voCommentContentSnapshot?: string | null;
+  voDrawnAt: string;
+}
+
+/**
+ * 帖子抽奖 Vo
+ */
+export interface PostLottery {
+  voLotteryId: number;
+  voPostId: number;
+  voPrizeName: string;
+  voPrizeDescription?: string | null;
+  voDrawTime?: string | null;
+  voDrawnAt?: string | null;
+  voWinnerCount: number;
+  voParticipantCount: number;
+  voIsDrawn: boolean;
+  voWinners: PostLotteryWinner[];
+}
+
+/**
+ * 抽奖结果 Vo
+ */
+export interface LotteryResult {
+  voPostId: number;
+  voLottery?: PostLottery | null;
+}
+
+/**
  * 投票结果 Vo
  */
 export interface PollVoteResult {
@@ -141,6 +178,16 @@ export interface CreatePollRequest {
   question: string;
   endTime?: string | null;
   options: CreatePollOptionRequest[];
+}
+
+/**
+ * 创建抽奖请求
+ */
+export interface CreateLotteryRequest {
+  prizeName: string;
+  prizeDescription?: string | null;
+  drawTime?: string | null;
+  winnerCount: number;
 }
 
 /**
@@ -202,6 +249,9 @@ export interface PostItem {
   voHasPoll?: boolean;
   voPollTotalVoteCount?: number;
   voPollIsClosed?: boolean;
+  voHasLottery?: boolean;
+  voLotteryParticipantCount?: number;
+  voLotteryIsDrawn?: boolean;
   voCreateTime?: string;
   voUpdateTime?: string;
 }
@@ -238,6 +288,10 @@ export interface PostDetail {
   voPollTotalVoteCount?: number;
   voPollIsClosed?: boolean;
   voPoll?: PostPoll | null;
+  voHasLottery?: boolean;
+  voLotteryParticipantCount?: number;
+  voLotteryIsDrawn?: boolean;
+  voLottery?: PostLottery | null;
   voCreateTime?: string;
   voUpdateTime?: string;
 }
@@ -388,6 +442,7 @@ export interface PublishPostRequest {
   tagNames: string[];
   isQuestion?: boolean;
   poll?: CreatePollRequest | null;
+  lottery?: CreateLotteryRequest | null;
 }
 
 /**

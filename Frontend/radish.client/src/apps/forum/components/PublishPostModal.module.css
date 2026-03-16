@@ -183,6 +183,11 @@
   background: linear-gradient(180deg, #f8fbff 0%, #f3f7fb 100%);
 }
 
+.lotterySection {
+  background: linear-gradient(180deg, #fefaf2 0%, #fff5e6 100%);
+  border-color: #f3d4a4;
+}
+
 .optionSectionHeader {
   display: flex;
   align-items: center;
@@ -231,6 +236,12 @@
   border-color: #1d4ed8;
 }
 
+.lotteryToggleActive {
+  background: #c2410c;
+  color: #ffffff;
+  border-color: #c2410c;
+}
+
 .optionNotice {
   margin: 0;
   font-size: 12px;
@@ -238,6 +249,12 @@
 }
 
 .pollFields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lotteryFields {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -255,11 +272,33 @@
   outline: none;
 }
 
+.lotteryInput,
+.lotteryTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 13px;
+  outline: none;
+}
+
+.lotteryTextarea {
+  resize: vertical;
+  min-height: 88px;
+}
+
 .pollQuestionInput:focus,
 .pollOptionInput:focus,
 .pollEndTimeInput:focus {
   border-color: #60a5fa;
   box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+}
+
+.lotteryInput:focus,
+.lotteryTextarea:focus {
+  border-color: #fb923c;
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.15);
 }
 
 .pollOptionsList {
@@ -315,6 +354,21 @@
   flex-wrap: wrap;
 }
 
+.lotteryControls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lotteryFieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 220px;
+  font-size: 12px;
+  color: #475569;
+}
+
 .pollEndTimeLabel {
   display: flex;
   align-items: center;
@@ -329,6 +383,18 @@
 }
 
 .pollError {
+  margin: 0;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.lotteryHint {
+  margin: 0;
+  font-size: 12px;
+  color: #9a3412;
+}
+
+.lotteryError {
   margin: 0;
   font-size: 12px;
   color: #dc2626;
@@ -482,6 +548,7 @@
   .optionSectionHeader,
   .pollOptionRow,
   .pollControls,
+  .lotteryControls,
   .footer {
     flex-direction: column;
     align-items: stretch;

@@ -35,6 +35,7 @@ interface PostDetailProps {
   isLiked?: boolean;
   onLike?: (postId: number) => void;
   onVotePoll?: (optionId: number) => Promise<void>;
+  onDrawLottery?: () => Promise<void>;
   onAnswerQuestion?: (content: string) => Promise<void>;
   onAcceptAnswer?: (answerId: number) => Promise<void>;
   answerSort?: QuestionAnswerSort;
@@ -65,6 +66,7 @@ export const PostDetail = ({
   isLiked = false,
   onLike,
   onVotePoll,
+  onDrawLottery,
   onAnswerQuestion,
   onAcceptAnswer,
   answerSort = 'default',
@@ -100,13 +102,35 @@ export const PostDetail = ({
   const [answerContent, setAnswerContent] = useState('');
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [acceptingAnswerId, setAcceptingAnswerId] = useState<number | null>(null);
+  const [isDrawingLottery, setIsDrawingLottery] = useState(false);
 
   const isAuthor = !!post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
   const showFollowAction = isAuthenticated && !!post && !isAuthor && post.voAuthorId > 0;
   const question = post?.voQuestion;
+  const lottery = post?.voLottery;
   const isQuestionPost = !!post?.voIsQuestion;
+  const isLotteryPost = !!post?.voHasLottery && !!lottery;
   const canAnswerQuestion = isAuthenticated && !isSubmittingAnswer;
   const canViewQuestionHistory = isQuestionPost && !!onViewHistory;
+  const drawTimeValue = lottery?.voDrawTime ? new Date(lottery.voDrawTime) : null;
+  const isDrawTimeReached = !drawTimeValue || Number.isNaN(drawTimeValue.getTime()) || drawTimeValue.getTime() <= Date.now();
+  const canDrawLottery = Boolean(
+    isLotteryPost &&
+    isAuthenticated &&
+    isAuthor &&
+    !lottery?.voIsDrawn &&
+    isDrawTimeReached &&
+    onDrawLottery
+  );
+  const lotteryStatusText = !lottery
+    ? ''
+    : lottery.voIsDrawn
+      ? '已开奖'
+      : isAuthor
+        ? isDrawTimeReached
+          ? '可立即开奖'
+          : '等待开奖时间'
+        : '等待发帖者开奖';
   const sortedAnswers = !question?.voAnswers
     ? []
     : [...question.voAnswers].sort((left, right) => {
@@ -200,6 +224,19 @@ export const PostDetail = ({
       await onVotePoll(selectedOptionId);
     } finally {
       setIsVoting(false);
+    }
+  };
+
+  const handleDrawLottery = async () => {
+    if (!canDrawLottery || !onDrawLottery) {
+      return;
+    }
+
+    setIsDrawingLottery(true);
+    try {
+      await onDrawLottery();
+    } finally {
+      setIsDrawingLottery(false);
     }
   };
 
@@ -363,6 +400,99 @@ export const PostDetail = ({
                 {isVoting ? '提交中...' : '提交投票'}
               </button>
             </div>
+          </section>
+        )}
+
+        {lottery && (
+          <section className={styles.lotteryCard}>
+            <div className={styles.lotteryHeader}>
+              <div>
+                <div className={styles.lotteryTitleRow}>
+                  <span className={styles.lotteryBadge}>抽奖</span>
+                  <h5 className={styles.lotteryTitle}>{lottery.voPrizeName}</h5>
+                </div>
+                <p className={styles.lotteryMeta}>
+                  参与 {lottery.voParticipantCount} 人
+                  {' · '}
+                  中奖 {lottery.voWinnerCount} 人
+                  {lottery.voDrawTime
+                    ? ` · 开奖时间 ${formatDateTimeByTimeZone(lottery.voDrawTime, displayTimeZone)}`
+                    : ' · 未设置开奖时间'}
+                </p>
+              </div>
+              <span className={`${styles.lotteryState} ${lottery.voIsDrawn ? styles.lotteryStateDrawn : ''}`}>
+                {lotteryStatusText}
+              </span>
+            </div>
+
+            {lottery.voPrizeDescription && (
+              <p className={styles.lotteryDescription}>{lottery.voPrizeDescription}</p>
+            )}
+
+            <div className={styles.lotteryRules}>
+              <span className={styles.lotteryRule}>发布一条顶级评论即可参与</span>
+              <span className={styles.lotteryRule}>回复他人评论不计入资格</span>
+              <span className={styles.lotteryRule}>同一用户按 1 个资格去重</span>
+              <span className={styles.lotteryRule}>发帖者本人不进入中奖池</span>
+            </div>
+
+            <div className={styles.lotteryFooter}>
+              <span className={styles.lotteryHint}>
+                {lottery.voIsDrawn
+                  ? lottery.voDrawnAt
+                    ? `已于 ${formatDateTimeByTimeZone(lottery.voDrawnAt, displayTimeZone)} 开奖`
+                    : '已完成开奖'
+                  : isAuthor
+                    ? isDrawTimeReached
+                      ? '开奖后会固化中奖名单，不会重复随机。'
+                      : '未到开奖时间前不可开奖。'
+                    : '中奖名单会在发帖者开奖后展示。'}
+              </span>
+              {canDrawLottery && (
+                <button
+                  type="button"
+                  className={styles.lotteryDrawButton}
+                  onClick={() => {
+                    void handleDrawLottery();
+                  }}
+                  disabled={isDrawingLottery}
+                >
+                  {isDrawingLottery ? '开奖中...' : '立即开奖'}
+                </button>
+              )}
+            </div>
+
+            {lottery.voWinners.length > 0 ? (
+              <div className={styles.lotteryWinnerSection}>
+                <div className={styles.lotteryWinnerHeader}>
+                  <span className={styles.lotteryWinnerTitle}>中奖名单</span>
+                  <span className={styles.lotteryWinnerCount}>共 {lottery.voWinners.length} 人</span>
+                </div>
+                <div className={styles.lotteryWinnerList}>
+                  {lottery.voWinners.map((winner, index) => (
+                    <article key={winner.voId} className={styles.lotteryWinnerItem}>
+                      <div className={styles.lotteryWinnerMeta}>
+                        <span className={styles.lotteryWinnerRank}>#{index + 1}</span>
+                        <button
+                          type="button"
+                          className={styles.lotteryWinnerName}
+                          onClick={() => onAuthorClick?.(winner.voUserId, winner.voUserName, null)}
+                        >
+                          {winner.voUserName}
+                        </button>
+                      </div>
+                      {winner.voCommentContentSnapshot && (
+                        <p className={styles.lotteryWinnerComment}>{winner.voCommentContentSnapshot}</p>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <p className={styles.lotteryEmpty}>
+                {lottery.voIsDrawn ? '本次开奖暂无中奖名单。' : '开奖后将在这里展示中奖名单。'}
+              </p>
+            )}
           </section>
         )}
 

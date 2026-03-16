@@ -29,6 +29,7 @@ import type {
   PageModel,
   PublishPostRequest,
   CreatePollRequest,
+  CreateLotteryRequest,
   CreatePollOptionRequest,
   VotePollRequest,
   CreateAnswerRequest,
@@ -36,6 +37,9 @@ import type {
   PostPoll,
   PostPollOption,
   PollVoteResult,
+  PostLottery,
+  PostLotteryWinner,
+  LotteryResult,
   PostQuestion,
   PostAnswer,
   CreateCommentRequest,
@@ -76,6 +80,7 @@ export type {
   PageModel,
   PublishPostRequest,
   CreatePollRequest,
+  CreateLotteryRequest,
   CreatePollOptionRequest,
   VotePollRequest,
   CreateAnswerRequest,
@@ -83,6 +88,9 @@ export type {
   PostPoll,
   PostPollOption,
   PollVoteResult,
+  PostLottery,
+  PostLotteryWinner,
+  LotteryResult,
   PostQuestion,
   PostAnswer,
   CreateCommentRequest,
@@ -225,6 +233,39 @@ export async function getPollByPostId(postId: number, t: TFunction): Promise<Pol
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载投票详情失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 按帖子获取抽奖详情
+ */
+export async function getLotteryByPostId(postId: number, t: TFunction): Promise<LotteryResult> {
+  const response = await apiGet<LotteryResult>(
+    `/api/v1/Lottery/GetByPostId?postId=${postId}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载抽奖详情失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 手动开奖
+ */
+export async function drawLottery(postId: number, t: TFunction): Promise<PostLottery> {
+  const response = await apiPost<PostLottery>(
+    '/api/v1/Lottery/Draw',
+    { postId },
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '开奖失败');
   }
 
   return response.data;

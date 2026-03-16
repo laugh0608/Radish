@@ -6,6 +6,8 @@ import { toast } from '@radish/ui/toast';
 import {
   publishPost,
   votePoll,
+  drawLottery,
+  getLotteryByPostId,
   answerQuestion,
   acceptQuestionAnswer,
   createComment,
@@ -21,7 +23,9 @@ import {
   type CommentNode,
   type PostDetail,
   type CreatePollRequest,
+  type CreateLotteryRequest,
   type PostQuestion,
+  type PostLottery,
   type PostEditHistory,
   type CommentEditHistory,
   type ForumPostSortBy,
@@ -72,8 +76,10 @@ export interface ForumActionsHandlers {
     categoryId: number,
     tagNames: string[],
     isQuestion?: boolean,
-    poll?: CreatePollRequest | null
+    poll?: CreatePollRequest | null,
+    lottery?: CreateLotteryRequest | null
   ) => Promise<void>;
+  handleDrawLottery: () => Promise<void>;
   handleVotePoll: (optionId: number) => Promise<void>;
   handleAnswerQuestion: (content: string) => Promise<void>;
   handleAcceptAnswer: (answerId: number) => Promise<void>;
@@ -301,7 +307,8 @@ export const useForumActions = (
     categoryId: number,
     tagNames: string[],
     isQuestion?: boolean,
-    poll?: CreatePollRequest | null
+    poll?: CreatePollRequest | null,
+    lottery?: CreateLotteryRequest | null
   ) => {
     if (categoryId <= 0) {
       const message = '请先选择分类';
@@ -331,7 +338,8 @@ export const useForumActions = (
           categoryId,
           tagNames: normalizedTagNames,
           isQuestion: Boolean(isQuestion),
-          poll: poll ?? undefined
+          poll: poll ?? undefined,
+          lottery: lottery ?? undefined
         },
         t
       );
@@ -342,6 +350,47 @@ export const useForumActions = (
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
+      throw err;
+    }
+  };
+
+  const applyLotteryState = useCallback((lottery: PostLottery) => {
+    setSelectedPost((current) =>
+      current && current.voId === lottery.voPostId
+        ? {
+            ...current,
+            voHasLottery: true,
+            voLotteryParticipantCount: lottery.voParticipantCount,
+            voLotteryIsDrawn: lottery.voIsDrawn,
+            voLottery: lottery
+          }
+        : current
+    );
+  }, [setSelectedPost]);
+
+  const handleDrawLottery = async () => {
+    if (!selectedPost?.voId) {
+      const message = '请先选择要开奖的帖子';
+      setError(message);
+      throw new Error(message);
+    }
+
+    if (!isAuthenticated) {
+      const message = '请先登录后再开奖';
+      setError(message);
+      throw new Error(message);
+    }
+
+    setError(null);
+    try {
+      const latestLottery = await drawLottery(selectedPost.voId, t);
+      applyLotteryState(latestLottery);
+      toast.success('开奖完成');
+      await loadPosts();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      toast.error(message || '开奖失败');
       throw err;
     }
   };
@@ -669,6 +718,16 @@ export const useForumActions = (
 
       setReplyTo(null);
       await loadComments(selectedPost.voId);
+      if (selectedPost.voHasLottery && parentId == null) {
+        try {
+          const latestLottery = await getLotteryByPostId(selectedPost.voId, t);
+          if (latestLottery.voLottery) {
+            applyLotteryState(latestLottery.voLottery);
+          }
+        } catch {
+          // 评论已提交成功，抽奖摘要刷新失败时避免误报整次评论失败
+        }
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -860,6 +919,7 @@ export const useForumActions = (
     setIsEditModalOpen,
     handleSelectPost,
     handlePublishPost,
+    handleDrawLottery,
     handleVotePoll,
     handleAnswerQuestion,
     handleAcceptAnswer,
