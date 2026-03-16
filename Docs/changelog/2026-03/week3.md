@@ -31,4 +31,6 @@
 - **统一验证入口已补齐**：根目录新增 `npm run validate:baseline`、`validate:baseline:quick`、`validate:baseline:host`，用于串联当前已有的前端类型检查、`radish.client` 最小测试、Console 权限扫描、后端构建 / 测试与宿主只读自检。
 - **验证边界已文档化**：新增 `validation-baseline.md`，明确“日常提交前 / 合并前 / 宿主配置相关改动后”的分层验证建议，并保留 `HttpTest` 为专题回归层。
 - **前端最小测试兼容性已收口**：`radish.client` 的 `node --test` 已改为 `--test-isolation=none`，避免受限环境下因子进程隔离导致 `spawn EPERM`。
-- **最小验证结果**：`npm run validate:baseline:quick` 已通过。
+- **验证链已补齐到 full**：`npm run validate:baseline:quick` 与 `npm run validate:baseline` 均已通过；`full` 已覆盖前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 195 个测试。
+- **回归测试已补边界**：`PostLotteryServiceTest` 已补齐 `INotificationService` 依赖与最小通知断言，避免开奖通知接入后测试构造函数失配。
+- **相关提交**：`df37475`。
