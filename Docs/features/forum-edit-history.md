@@ -165,7 +165,8 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 
 ### 联调文件
 
-- `Radish.Api.Tests/HttpTest/Radish.Api.Forum.http`
+- `Radish.Api.Tests/HttpTest/Radish.Api.Forum.Core.http`
+- `Radish.Api.Tests/HttpTest/Radish.Api.Forum.Comment.http`
 
 ---
 
@@ -174,4 +175,3 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 - 首期不支持“回滚历史版本”。
 - 目前无独立后台可视化配置页，配置依赖 `appsettings`。
 - 历史内容为完整快照，内容较大时应关注存储增长。
-

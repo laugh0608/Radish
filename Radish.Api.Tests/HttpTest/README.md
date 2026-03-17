@@ -14,6 +14,7 @@
 - 构建与测试请继续使用仓库统一脚本：
   - `powershell -ExecutionPolicy Bypass -File Scripts\dotnet-local.ps1 build ...`
   - `powershell -ExecutionPolicy Bypass -File Scripts\dotnet-local.ps1 test ...`
+- 如果你不确定“改了这个模块该跑哪份专题回归”，优先查看 [专题回归索引](/guide/regression-index)。
 
 ## 目录分组
 
