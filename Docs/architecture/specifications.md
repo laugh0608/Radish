@@ -135,6 +135,7 @@ export async function uploadChunk(
 - 拆分为更小的模块/类/组件
 - 提取自定义 Hooks（前端）或抽离 Service/Utility（后端/前端）
 - 分离业务逻辑与展示逻辑，按功能拆分目录
+- 对于必须保留同一服务类型的大型后端实现，可使用“**目录 + partial class**”按职责拆分，例如 `Radish.Service/Posts/PostService*.cs`；禁止继续把实现堆回单个超大文件
 
 ## 项目版本号规范
 
@@ -928,6 +929,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 4. **命名规范**：
    - 接口：`IPostService : IBaseService<Post, PostVo>`
    - 实现：`PostService : BaseService<Post, PostVo>, IPostService`
+   - 若实现规模较大，可保留同名 `PostService`，但按职责拆到子目录和 `partial class` 文件中，避免单文件失控
 
 ---
 

@@ -65,3 +65,8 @@
 - **论坛列表已补“投票”视图**：欢迎 App 论坛列表新增 `all / question / poll` 三态视图，当前可直接筛出投票帖，不再只能混在普通帖列表里识别。
 - **列表契约已沿用现有入口扩展**：`Post/GetList` 新增 `postType=poll`，未额外开新接口，继续复用帖子列表分页、排序与关键词查询链路。
 - **专题回归入口已同步**：`forum-poll-mvp.md` 已补本次变更回归记录，`Radish.Api.Forum.Poll.http` 新增“投票视图列表”请求，便于后续按专题串联联调。
+
+### PostService 结构治理收口
+
+- **帖子服务已按职责拆分目录**：原单体 `PostService.cs` 已重组到 `Radish.Service/Posts/`，按 `Query / Publish / Edit / Interaction` 四类 partial 文件拆分，避免继续维持 1500+ 行超大文件。
+- **设计文档已同步约束**：`specifications.md` 与 `framework.md` 已补“目录 + partial class” 的服务拆分约定，明确这类拆分是治理大文件的允许路径，而不是继续堆积单文件。
