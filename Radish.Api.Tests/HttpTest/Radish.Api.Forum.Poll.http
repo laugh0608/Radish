@@ -62,6 +62,11 @@ GET {{Gateway_HostAddress}}/api/v1/Post/GetList?keyword=论坛投票%20MVP%20验
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
 
+### 获取投票视图帖子列表
+GET {{Gateway_HostAddress}}/api/v1/Post/GetList?postType=poll&keyword=论坛投票%20MVP%20验收帖&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
 ### 获取带投票帖子详情
 GET {{Gateway_HostAddress}}/api/v1/Post/GetById/{{ForumPoll_PostId}}
 Accept: application/json

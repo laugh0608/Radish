@@ -109,11 +109,11 @@ public class PostController : ControllerBase
     /// <param name="categoryId">分类 ID（可选）</param>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页数量（默认 20）</param>
-    /// <param name="sortBy">排序方式：全部帖子支持 newest（最新，默认）、hottest（最热）、essence（精华）；问答视图支持 newest、pending（待解决优先）、answers（回答数）</param>
+    /// <param name="sortBy">排序方式：全部 / 投票帖子支持 newest（最新，默认）、hottest（最热）、essence（精华）；问答视图支持 newest、pending（待解决优先）、answers（回答数）</param>
     /// <param name="keyword">搜索关键词（搜索标题和内容）</param>
     /// <param name="startTime">筛选起始时间（可选，基于帖子创建时间）</param>
     /// <param name="endTime">筛选结束时间（可选，基于帖子创建时间）</param>
-    /// <param name="postType">帖子视图：all（默认）/ question（问答）</param>
+    /// <param name="postType">帖子视图：all（默认）/ question（问答）/ poll（投票）</param>
     /// <param name="questionStatus">问答状态：all（默认）/ pending / solved</param>
     /// <returns>分页帖子列表</returns>
     [HttpGet]
@@ -143,6 +143,7 @@ public class PostController : ControllerBase
         postType = postType?.Trim().ToLowerInvariant() ?? "all";
         questionStatus = questionStatus?.Trim().ToLowerInvariant() ?? "all";
         var isQuestionView = postType == "question";
+        var isPollView = postType == "poll";
         bool? isSolvedFilter = questionStatus switch
         {
             "pending" => false,
@@ -171,6 +172,24 @@ public class PostController : ControllerBase
                 startTime,
                 endTime,
                 isSolvedFilter);
+        }
+        else if (isPollView)
+        {
+            var normalizedPollSort = sortBy switch
+            {
+                "hottest" => "hottest",
+                "essence" => "essence",
+                _ => "newest"
+            };
+
+            (data, totalCount) = await _postService.GetPollPostPageAsync(
+                categoryId,
+                pageIndex,
+                pageSize,
+                normalizedPollSort,
+                keyword,
+                startTime,
+                endTime);
         }
         else
         {

@@ -179,6 +179,64 @@ public class PostService : BaseService<Post, PostVo>, IPostService
     }
 
     /// <summary>
+    /// 分页获取投票帖子列表
+    /// </summary>
+    public async Task<(List<PostVo> data, int totalCount)> GetPollPostPageAsync(
+        long? categoryId = null,
+        int pageIndex = 1,
+        int pageSize = 20,
+        string sortBy = "newest",
+        string? keyword = null,
+        DateTime? startTime = null,
+        DateTime? endTime = null)
+    {
+        var pollPostIds = (await _postPollRepository.QueryAsync(poll => !poll.IsDeleted))
+            .Select(poll => poll.PostId)
+            .Distinct()
+            .ToList();
+
+        if (pollPostIds.Count == 0)
+        {
+            return (new List<PostVo>(), 0);
+        }
+
+        var normalizedKeyword = keyword ?? string.Empty;
+        var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
+        var hasCategory = categoryId.HasValue;
+        var categoryValue = categoryId ?? 0;
+        var hasStartTime = startTime.HasValue;
+        var hasEndTime = endTime.HasValue;
+        var startTimeValue = startTime ?? DateTime.MinValue;
+        var endTimeValue = endTime ?? DateTime.MaxValue;
+
+        Expression<Func<Post, bool>> baseCondition = post =>
+            pollPostIds.Contains(post.Id) &&
+            post.IsPublished &&
+            !post.IsDeleted &&
+            (!hasCategory || post.CategoryId == categoryValue) &&
+            (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&
+            (!hasStartTime || post.CreateTime >= startTimeValue) &&
+            (!hasEndTime || post.CreateTime <= endTimeValue);
+
+        return sortBy switch
+        {
+            "hottest" => await QueryPollPostsByHottestAsync(baseCondition, pageIndex, pageSize),
+            "essence" => await QueryPageAsync(
+                baseCondition,
+                pageIndex,
+                pageSize,
+                post => new { post.IsTop, post.IsEssence, post.CreateTime },
+                SqlSugar.OrderByType.Desc),
+            _ => await QueryPageAsync(
+                baseCondition,
+                pageIndex,
+                pageSize,
+                post => new { post.IsTop, post.CreateTime },
+                SqlSugar.OrderByType.Desc)
+        };
+    }
+
+    /// <summary>
     /// 批量回填帖子列表所需的轻量元数据
     /// </summary>
     public async Task FillPostListMetadataAsync(List<PostVo> posts)
@@ -650,6 +708,24 @@ public class PostService : BaseService<Post, PostVo>, IPostService
             .ToList());
 
         return lotteryVo;
+    }
+
+    private async Task<(List<PostVo> data, int totalCount)> QueryPollPostsByHottestAsync(
+        Expression<Func<Post, bool>> baseCondition,
+        int pageIndex,
+        int pageSize)
+    {
+        var allPosts = await QueryAsync(baseCondition);
+        var totalCount = allPosts.Count;
+
+        var data = allPosts
+            .OrderByDescending(post => post.VoIsTop)
+            .ThenByDescending(post => post.VoViewCount + post.VoLikeCount * 2 + post.VoCommentCount * 3)
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return (data, totalCount);
     }
 
     private async Task CreatePostPollAsync(Post post, long postId, CreatePollDto poll, string operatorName)

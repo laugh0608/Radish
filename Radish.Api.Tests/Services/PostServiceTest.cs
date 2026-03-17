@@ -438,6 +438,65 @@ public class PostServiceTest
     }
 
     [Fact]
+    public async Task GetPollPostPageAsync_Should_Return_Empty_When_NoPollPostsExist()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var userPostLikeRepository = new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict);
+        var postTagRepository = new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict);
+        var categoryRepository = new Mock<IBaseRepository<Category>>(MockBehavior.Strict);
+        var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
+        var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
+        var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
+        var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var postQuestionRepository = new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict);
+        var postAnswerRepository = new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict);
+        var tagService = new Mock<ITagService>(MockBehavior.Strict);
+        var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var dedupService = new Mock<INotificationDedupService>(MockBehavior.Strict);
+        var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
+        var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        postPollRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostPoll, bool>>?>()))
+            .ReturnsAsync(new List<PostPoll>());
+
+        var service = new PostService(
+            mapper.Object,
+            postRepository.Object,
+            userPostLikeRepository.Object,
+            postTagRepository.Object,
+            categoryRepository.Object,
+            tagRepository.Object,
+            postPollRepository.Object,
+            postPollOptionRepository.Object,
+            postPollVoteRepository.Object,
+            postQuestionRepository.Object,
+            postAnswerRepository.Object,
+            tagService.Object,
+            coinRewardService.Object,
+            notificationService.Object,
+            dedupService.Object,
+            experienceService.Object,
+            postEditHistoryRepository.Object,
+            Options.Create(new ForumEditHistoryOptions()));
+
+        var (data, totalCount) = await service.GetPollPostPageAsync(sortBy: "newest");
+
+        Assert.Empty(data);
+        Assert.Equal(0, totalCount);
+
+        postPollRepository.VerifyAll();
+        postRepository.Verify(repository => repository.QueryPageAsync(
+            It.IsAny<Expression<Func<Post, bool>>>(),
+            It.IsAny<int>(),
+            It.IsAny<int>(),
+            It.IsAny<Expression<Func<Post, object>>>(),
+            It.IsAny<OrderByType>()), Times.Never);
+    }
+
+    [Fact]
     public async Task AddAnswerAsync_Should_CreateAnswer_And_UpdateQuestionCount()
     {
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);

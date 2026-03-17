@@ -19,7 +19,7 @@ export interface PageModel<T> {
   data: T[];
 }
 
-export type ForumPostViewMode = 'all' | 'question';
+export type ForumPostViewMode = 'all' | 'question' | 'poll';
 
 export type QuestionStatusFilter = 'all' | 'pending' | 'solved';
 

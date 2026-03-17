@@ -118,6 +118,12 @@ export const PostListView = ({
             >
               问答
             </button>
+            <button
+              className={`${styles.sortButton} ${postViewMode === 'poll' ? styles.sortActive : ''}`}
+              onClick={() => onViewModeChange('poll')}
+            >
+              投票
+            </button>
           </div>
           {postViewMode === 'question' && (
             <div className={styles.filterButtons}>
@@ -164,12 +170,14 @@ export const PostListView = ({
                 </button>
               </>
             ) : (
-              <button
-                className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.sortActive : ''}`}
-                onClick={() => onSortChange('hottest')}
-              >
-                最热
-              </button>
+              <>
+                <button
+                  className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.sortActive : ''}`}
+                  onClick={() => onSortChange('hottest')}
+                >
+                  最热
+                </button>
+              </>
             )}
           </div>
         </div>

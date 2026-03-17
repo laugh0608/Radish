@@ -410,7 +410,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       return;
     }
 
-    if (postViewMode === 'all' && (sortBy === 'pending' || sortBy === 'answers')) {
+    if (postViewMode !== 'question' && (sortBy === 'pending' || sortBy === 'answers')) {
       setSortBy('newest');
     }
   }, [postViewMode, sortBy]);
