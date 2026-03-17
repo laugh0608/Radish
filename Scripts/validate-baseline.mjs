@@ -40,7 +40,7 @@ function runStep(title, command, commandArgs) {
   console.log(`> ${command} ${commandArgs.join(' ')}`);
 
   const needsCmdWrapper =
-    process.platform === 'win32' && (command === 'npm' || command === 'powershell' || command === 'pwsh');
+    process.platform === 'win32' && command === 'npm';
   const spawnCommand = needsCmdWrapper ? 'cmd.exe' : command;
   const spawnArgs =
     needsCmdWrapper
@@ -148,13 +148,8 @@ if (!isQuick && withHostChecks) {
       args: [
         '-ExecutionPolicy',
         'Bypass',
-        '-File',
-        'Scripts/dotnet-local.ps1',
-        'run',
-        '--project',
-        'Radish.DbMigrate/Radish.DbMigrate.csproj',
-        '--',
-        'doctor',
+        '-Command',
+        '& ./Scripts/dotnet-local.ps1 run --no-build --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor',
       ],
     },
     {
@@ -163,13 +158,8 @@ if (!isQuick && withHostChecks) {
       args: [
         '-ExecutionPolicy',
         'Bypass',
-        '-File',
-        'Scripts/dotnet-local.ps1',
-        'run',
-        '--project',
-        'Radish.DbMigrate/Radish.DbMigrate.csproj',
-        '--',
-        'verify',
+        '-Command',
+        '& ./Scripts/dotnet-local.ps1 run --no-build --project Radish.DbMigrate/Radish.DbMigrate.csproj -- verify',
       ],
     }
   );

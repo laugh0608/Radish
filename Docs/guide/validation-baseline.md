@@ -32,7 +32,7 @@ npm run validate:baseline:host
   - 身份语义防回归扫描
 - `validate:baseline:host`
   - 等同于 `validate:baseline`
-  - 额外追加 `DbMigrate doctor` / `verify` 只读自检
+  - 额外追加 `DbMigrate doctor` / `verify` 只读自检（复用前序构建产物，不重复 build）
 
 ## 分层使用建议
 
