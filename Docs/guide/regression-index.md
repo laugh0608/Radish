@@ -17,6 +17,7 @@
    - 需要账号、Token、运行中宿主的，优先看本页对应 `HttpTest`
    - 需要人工观察 UI、窗口跳转、深链或实时行为的，再补专题文档中的最小人工验收顺序
    - 当前已统一模板的样板专题见：[人工验收模板](/guide/manual-acceptance-template)
+   - 若本轮是首轮收口或补丁复验，建议再补一条 [回归结论记录模板](/guide/regression-result-template) 对应的结果记录
 
 ## 按改动主题选择回归
 
