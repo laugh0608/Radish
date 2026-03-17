@@ -22,12 +22,14 @@ npm run validate:baseline:host
   - 运行前端 `type-check`
   - 运行 `radish.client` 现有 `node --test`（当前以 `--test-isolation=none` 兼容受限环境）
   - 运行 `Console` 权限链路扫描
+  - 运行身份语义防回归扫描
   - 运行后端 `build`
   - 运行后端 `test`
 - `validate:baseline:quick`
   - 只运行前端 `type-check`
   - `radish.client` 最小测试
   - `Console` 权限链路扫描
+  - 身份语义防回归扫描
 - `validate:baseline:host`
   - 等同于 `validate:baseline`
   - 额外追加 `DbMigrate doctor` / `verify` 只读自检
@@ -90,6 +92,7 @@ npm run validate:baseline:host
 - 前端类型错误：优先看对应 workspace 的 `tsc` 输出
 - `radish.client` 最小测试失败：优先看 `Frontend/radish.client/tests/`
 - 权限扫描失败：优先看 `Scripts/check-console-permissions.mjs` 输出中的四层对齐差异
+- 身份语义扫描失败：优先看 `Scripts/check-identity-claims.mjs` 输出中的命中位置，确认是否回退到原始 Claim 解析或直接字符串判断
 - 后端构建 / 测试失败：优先看 `Scripts/dotnet-local.ps1` 包装后的 `dotnet` 输出
 - `doctor` / `verify` 失败：优先核对当前环境配置、`MainDb` / `Databases` 与关键 `ConnId`
 

@@ -290,6 +290,6 @@
 
 ### 11.4 下一步建议
 
-1. 在进入 M13 后，把 `rg` 扫描规则沉淀为仓库脚本，并视项目阶段纳入本地校验或 CI/CD。
+1. `M13` 首轮已落地 `npm run check:identity-claims`，并接入根目录 `validate:baseline` / `validate:baseline:quick`；后续再视项目阶段决定是否继续上升到 CI/CD。
 2. 在确认无外部依赖后，评估移除 `IHttpContextUser` 兼容层。
 3. 清理遗留注释、示例与文档中的旧 JWT/Claim 口径，避免回归。

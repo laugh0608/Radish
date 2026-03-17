@@ -34,3 +34,12 @@
 - **验证链已补齐到 full**：`npm run validate:baseline:quick` 与 `npm run validate:baseline` 均已通过；`full` 已覆盖前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 195 个测试。
 - **回归测试已补边界**：`PostLotteryServiceTest` 已补齐 `INotificationService` 依赖与最小通知断言，避免开奖通知接入后测试构造函数失配。
 - **相关提交**：`df37475`。
+
+## 2026-03-17 (周二)
+
+### M13 身份语义防回归扫描落地
+
+- **身份扫描脚本已新增**：根目录新增 `npm run check:identity-claims`，用于扫描运行时代码中回退到原始 Claim 读取、`ClaimTypes` 直接依赖、`ClaimsPrincipal/User.IsInRole(...)` 判断与协议 Claim 字符串散点写法。
+- **统一验证入口已接入**：`validate:baseline` 与 `validate:baseline:quick` 已纳入身份语义防回归扫描，不再只覆盖类型检查、最小测试与 Console 权限扫描。
+- **误报边界已工程化收口**：协议边界、`Program.cs` 配置入口与 `HttpContextTool` 标准化/兼容层已按白名单排除，避免把允许保留的兼容代码误判为新增回归。
+- **验证说明已同步**：`validation-baseline.md` 与身份迁移文档已更新，当前 `M13` 的第一条工程化收口项从“计划中”切换为“已落地可执行”。

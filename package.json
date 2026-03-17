@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "check:console-permissions": "node Scripts/check-console-permissions.mjs",
+    "check:identity-claims": "node Scripts/check-identity-claims.mjs",
     "dev:frontend": "npm run dev --workspace=radish.client",
     "dev:console": "npm run dev --workspace=radish.console",
     "dev:gateway": "dotnet run --project Radish.Gateway/Radish.Gateway.csproj",

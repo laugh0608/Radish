@@ -102,6 +102,11 @@ const steps = [
     command: npmCommand,
     args: ['run', 'check:console-permissions'],
   },
+  {
+    title: '身份语义防回归扫描',
+    command: npmCommand,
+    args: ['run', 'check:identity-claims'],
+  },
 ];
 
 if (!isQuick) {
