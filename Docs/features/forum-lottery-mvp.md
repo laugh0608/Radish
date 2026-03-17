@@ -583,7 +583,30 @@ public CreateLotteryDto? Lottery { get; set; }
 - `Radish.Api.Tests/HttpTest/Radish.Api.Forum.Lottery.http` 已补论坛抽奖验收段，串联“发帖附带抽奖 -> 发布父评论参与 -> 参与人数回显 -> 手动开奖 -> 中奖名单展示”。
 - `Radish.Api.Tests/HttpTest/Radish.Api.User.Profile.http` 已补浏览记录验收段，覆盖帖子 / 商品 / Wiki 详情访问后的浏览记录写入与分页读取。
 
-## 最小人工验收顺序（2026-03-16 补齐）
+## 人工验收模板（样板）
+
+> 结构遵循：[人工验收模板](/guide/manual-acceptance-template)
+
+### 适用改动范围
+
+- 抽奖模型、发帖附带抽奖、参与资格统计改动后
+- 手动开奖、中奖名单展示、中奖通知改动后
+- 浏览记录写入、个人主页浏览记录回看与深链跳转改动后
+
+### 前置条件
+
+- 已启动 `Radish.Api`、`Radish.Auth`、`Radish.Gateway`
+- 已通过 `Radish.Api.AuthFlow.http` 获取 `access_token`
+- 已准备两个账号：一个发帖者账号，一个普通参与者账号
+- 已准备一个存在的商品 ID 与 Wiki 文档 ID / slug，用于浏览记录写入验证
+
+### 联调资产
+
+- `Radish.Api.Tests/HttpTest/Radish.Api.Forum.Lottery.http`
+- `Radish.Api.Tests/HttpTest/Radish.Api.User.Profile.http`
+- [专题回归索引](/guide/regression-index)
+
+### 最小人工验收顺序（2026-03-16 补齐）
 
 1. 先使用 `Radish.Api.AuthFlow.http` 获取 `access_token`，必要时准备第二个账号的 token 用于验证“非发帖者不能开奖”。
 2. 执行 `Radish.Api.Forum.Lottery.http`，先发布带抽奖帖子，再通过列表与详情确认抽奖摘要 / 明细已回传。
@@ -591,6 +614,28 @@ public CreateLotteryDto? Lottery { get; set; }
 4. 在开奖时间前尝试一次 `Lottery/Draw`，确认返回“不允许开奖”的失败语义；到开奖时间后由发帖者执行开奖并再次刷新详情。
 5. 执行 `Radish.Api.User.Profile.http`，依次访问帖子、商品与 Wiki 详情，再查询 `User/GetMyBrowseHistory`，确认三类对象均已进入浏览记录。
 6. 打开欢迎 App 的论坛详情、个人主页浏览记录页签与深链跳转，确认浏览记录点击后可正常打开帖子 / 商品 / Wiki 对应窗口。
+
+### 预期结果
+
+- 发帖附带抽奖、父评论参与、开奖前限制、手动开奖、中奖名单展示主链路可完成。
+- 回复评论不会误计入参与资格，同一用户重复父评论不会重复计数。
+- 浏览记录可覆盖帖子、商品、Wiki 三类对象，并能从个人主页正常深链跳转。
+
+### 可跳过项
+
+- 未涉及浏览记录时，可先只执行抽奖主链 1-4 步，但需要在备注中明确本次未覆盖个人主页回看。
+- 未涉及开奖或通知时，可只执行发帖、参与资格统计与详情展示，跳过开奖后置步骤。
+
+### 结论记录格式
+
+```md
+- 验收日期：2026-03-17
+- 验收人：<name>
+- 验收范围：论坛抽奖 MVP + 浏览记录
+- 执行入口：Radish.Api.Forum.Lottery.http + Radish.Api.User.Profile.http + 欢迎 App
+- 结果：通过 / 阻塞
+- 备注：<如有异常，记录帖子 ID、开奖时间、参与用户、浏览对象与现象>
+```
 
 ---
 
