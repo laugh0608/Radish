@@ -11,6 +11,7 @@ const routeMetaPath = join(repoRoot, 'Frontend/radish.console/src/router/routeMe
 const consoleSourceRoot = join(repoRoot, 'Frontend/radish.console/src');
 const backendPermissionsPath = join(repoRoot, 'Radish.Common/PermissionTool/ConsolePermissions.cs');
 const identitySeederPath = join(repoRoot, 'Radish.DbMigrate/InitialDataSeeder.Identity.cs');
+const entryOnlyPermissions = new Set(['console.access']);
 
 function readText(filePath) {
   return readFileSync(filePath, 'utf8');
@@ -146,21 +147,33 @@ function parseSeedUrls(fileContent) {
   return unique([...fileContent.matchAll(/LinkUrl\s*=\s*"([^"]+)"/g)].map((match) => match[1]));
 }
 
-function parseUsePermissionReferences(filePaths, frontendPermissions) {
+function parsePermissionReferences(filePaths, frontendPermissions) {
   const references = [];
-  const pattern = /usePermission\(\s*CONSOLE_PERMISSIONS\.([A-Za-z0-9]+)\s*\)/g;
+  const patterns = [
+    {
+      kind: 'usePermission',
+      pattern: /usePermission\(\s*CONSOLE_PERMISSIONS\.([A-Za-z0-9]+)\s*\)/g,
+    },
+    {
+      kind: 'hasPermission',
+      pattern: /hasPermission\(\s*[^,]+,\s*CONSOLE_PERMISSIONS\.([A-Za-z0-9]+)\s*\)/g,
+    },
+  ];
 
   for (const filePath of filePaths) {
     const relativePath = relative(repoRoot, filePath);
     const content = readText(filePath);
 
-    for (const match of content.matchAll(pattern)) {
-      const permissionKey = match[1];
-      references.push({
-        filePath: relativePath,
-        permissionKey,
-        permissionValue: frontendPermissions.get(permissionKey),
-      });
+    for (const { kind, pattern } of patterns) {
+      for (const match of content.matchAll(pattern)) {
+        const permissionKey = match[1];
+        references.push({
+          filePath: relativePath,
+          permissionKey,
+          permissionValue: frontendPermissions.get(permissionKey),
+          kind,
+        });
+      }
     }
   }
 
@@ -183,7 +196,7 @@ try {
   const backendPermissions = parseBackendPermissions(readText(backendPermissionsPath));
   const routes = parseRouteMeta(readText(routeMetaPath), frontendPermissions);
   const sourceFiles = getAllSourceFiles(consoleSourceRoot);
-  const usePermissionReferences = parseUsePermissionReferences(sourceFiles, frontendPermissions);
+  const permissionReferences = parsePermissionReferences(sourceFiles, frontendPermissions);
   const mappings = parseApiPermissionMappings(readText(backendPermissionsPath), backendPermissions);
   const seedUrls = parseSeedUrls(readText(identitySeederPath));
 
@@ -192,7 +205,7 @@ try {
   const routePermissionValues = unique(routes.filter((route) => !route.authOnly && route.permissionValue).map((route) => route.permissionValue));
   const referencedPermissionValues = unique([
     ...routePermissionValues,
-    ...usePermissionReferences.map((reference) => reference.permissionValue).filter(Boolean),
+    ...permissionReferences.map((reference) => reference.permissionValue).filter(Boolean),
   ]);
   const mappingPermissionValues = unique(mappings.flatMap((mapping) => mapping.permissionValues));
   const mappingUrls = unique(mappings.map((mapping) => mapping.url));
@@ -204,7 +217,12 @@ try {
   const frontendOnlyPermissions = sortStrings(difference(frontendPermissionValues, backendPermissionValues));
   const backendOnlyPermissions = sortStrings(difference(backendPermissionValues, frontendPermissionValues));
   const missingSeedUrls = sortStrings(difference(mappingUrls, seedUrls));
-  const referencedButNotMappedPermissions = sortStrings(difference(referencedPermissionValues, mappingPermissionValues));
+  const referencedButNotMappedPermissions = sortStrings(
+    difference(
+      referencedPermissionValues.filter((permission) => !entryOnlyPermissions.has(permission)),
+      mappingPermissionValues
+    )
+  );
   const mappedButNotFrontendPermissions = sortStrings(difference(mappingPermissionValues, frontendPermissionValues));
   const unusedFrontendPermissions = sortStrings(difference(frontendPermissionValues, referencedPermissionValues));
 
@@ -216,9 +234,12 @@ try {
     .filter((route) => route.permissionKey && !route.permissionValue)
     .map((route) => `${route.path} 引用了未知前端权限键 CONSOLE_PERMISSIONS.${route.permissionKey}`);
 
-  const usePermissionUnknownKeys = usePermissionReferences
+  const permissionReferenceUnknownKeys = permissionReferences
     .filter((reference) => !reference.permissionValue)
-    .map((reference) => `${reference.filePath} 引用了未知前端权限键 CONSOLE_PERMISSIONS.${reference.permissionKey}`);
+    .map(
+      (reference) =>
+        `${reference.filePath} 通过 ${reference.kind} 引用了未知前端权限键 CONSOLE_PERMISSIONS.${reference.permissionKey}`
+    );
 
   const unresolvedMappingPermissions = mappings.flatMap((mapping) =>
     mapping.unresolvedNames.map((name) => `${mapping.url} 引用了未知后端权限常量 ${name}`)
@@ -234,7 +255,7 @@ try {
 
   errors.push(...routesMissingPermission);
   errors.push(...routesWithUnknownPermission);
-  errors.push(...usePermissionUnknownKeys);
+  errors.push(...permissionReferenceUnknownKeys);
   errors.push(...unresolvedMappingPermissions);
 
   if (mappedButNotFrontendPermissions.length > 0) {
@@ -250,16 +271,19 @@ try {
   }
 
   if (unusedFrontendPermissions.length > 0) {
-    warnings.push(`前端权限常量当前未被 routeMeta 或 usePermission 引用：${unusedFrontendPermissions.join('、')}`);
+    warnings.push(`前端权限常量当前未被 routeMeta、usePermission 或 hasPermission 入口守卫引用：${unusedFrontendPermissions.join('、')}`);
   }
 
   console.log('[Console 权限扫描]');
   console.log(`- 路由元数据：${routes.length} 条（authOnly ${authOnlyPaths.length} 条）`);
   console.log(`- 前端权限常量：${frontendPermissionValues.length} 项`);
   console.log(`- 后端权限常量：${backendPermissionValues.length} 项`);
-  console.log(`- 页面 usePermission 引用：${usePermissionReferences.length} 处，去重后 ${unique(usePermissionReferences.map((reference) => reference.permissionValue).filter(Boolean)).length} 项`);
+  console.log(
+    `- 前端权限引用：${permissionReferences.length} 处，去重后 ${unique(permissionReferences.map((reference) => reference.permissionValue).filter(Boolean)).length} 项`
+  );
   console.log(`- 后端资源映射：${mappingUrls.length} 条 URL，${mappingPermissionValues.length} 项权限值`);
   console.log(`- DbMigrate 种子 LinkUrl：${seedUrls.length} 条`);
+  console.log(`- 入口权限豁免：${entryOnlyPermissions.size} 项`);
 
   printSection('authOnly 路由', sortStrings(authOnlyPaths));
   printSection('警告', warnings);

@@ -25,6 +25,7 @@
 - 当前页面未真实调用的候选接口
 - 尚未落地的伪能力
 - 未来可能存在但当前未接入的后台模块
+- 只负责“进入 Console”的入口权限（如 `console.access`），这类权限不强制要求 `ConsolePermissions.ApiPermissionMappings`
 
 ## 2. 路由与页面覆盖矩阵
 
@@ -92,8 +93,13 @@
 - `routeMeta.requiredPermission`
 - `CONSOLE_PERMISSIONS`
 - 页面内 `usePermission(CONSOLE_PERMISSIONS.xxx)`
+- 入口守卫中的 `hasPermission(user, CONSOLE_PERMISSIONS.xxx)`
 - `ConsolePermissions.ApiPermissionMappings`
 - `InitialDataSeeder.Identity.cs` 中的 `ApiModule.LinkUrl`
+
+说明：
+
+- `console.access` 属于入口权限，只要求在前端入口守卫 / WebOS 入口可见性处被消费，不要求映射到具体后端 API 资源
 
 建议在以下场景运行：
 
