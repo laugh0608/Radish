@@ -7,9 +7,11 @@ import { getSignalrHubUrl } from '@/config/env';
 import type {
   ChannelMessageVo,
   ChannelUnreadChangedPayload,
+  EntityIdValue,
   MessageRecalledPayload,
   UserTypingPayload,
 } from '@/types/chat';
+import { isPersistedEntityId, normalizeEntityId } from '@/types/chat';
 
 function getHubUrl(): string {
   return `${getSignalrHubUrl()}/hub/chat`;
@@ -23,7 +25,7 @@ class ChatHubService {
 
   private async joinActiveChannelIfNeeded(): Promise<void> {
     const activeChannelId = useChatStore.getState().activeChannelId;
-    if (!activeChannelId || activeChannelId <= 0) {
+    if (!isPersistedEntityId(activeChannelId)) {
       return;
     }
 
@@ -127,7 +129,11 @@ class ChatHubService {
     useChatStore.getState().setConnectionState('disconnected');
   }
 
-  async joinChannel(channelId: number): Promise<void> {
+  async joinChannel(channelId: EntityIdValue): Promise<void> {
+    if (!isPersistedEntityId(channelId)) {
+      return;
+    }
+
     if (this.connection?.state !== signalR.HubConnectionState.Connected) {
       return;
     }
@@ -139,7 +145,11 @@ class ChatHubService {
     }
   }
 
-  async leaveChannel(channelId: number): Promise<void> {
+  async leaveChannel(channelId: EntityIdValue): Promise<void> {
+    if (!isPersistedEntityId(channelId)) {
+      return;
+    }
+
     if (this.connection?.state !== signalR.HubConnectionState.Connected) {
       return;
     }
@@ -151,7 +161,11 @@ class ChatHubService {
     }
   }
 
-  async startTyping(channelId: number): Promise<void> {
+  async startTyping(channelId: EntityIdValue): Promise<void> {
+    if (!isPersistedEntityId(channelId)) {
+      return;
+    }
+
     if (this.connection?.state !== signalR.HubConnectionState.Connected) {
       return;
     }
@@ -163,7 +177,11 @@ class ChatHubService {
     }
   }
 
-  async markChannelAsRead(channelId: number): Promise<void> {
+  async markChannelAsRead(channelId: EntityIdValue): Promise<void> {
+    if (!isPersistedEntityId(channelId)) {
+      return;
+    }
+
     if (this.connection?.state !== signalR.HubConnectionState.Connected) {
       return;
     }
@@ -208,7 +226,9 @@ class ChatHubService {
     this.connection.on('UserTyping', (payload: UserTypingPayload) => {
       useChatStore.getState().setTypingUser(payload.channelId, payload.userId, payload.userName);
 
-      const timerKey = `${payload.channelId}:${payload.userId}`;
+      const channelKey = normalizeEntityId(payload.channelId) ?? 'unknown-channel';
+      const userKey = normalizeEntityId(payload.userId) ?? 'unknown-user';
+      const timerKey = `${channelKey}:${userKey}`;
       const oldTimer = this.typingTimers.get(timerKey);
       if (oldTimer) {
         window.clearTimeout(oldTimer);

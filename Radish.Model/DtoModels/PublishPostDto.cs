@@ -30,6 +30,15 @@ public class PublishPostDto
     /// <summary>标签名称列表</summary>
     public List<string>? TagNames { get; set; }
 
+    /// <summary>是否作为问答帖发布</summary>
+    public bool IsQuestion { get; set; }
+
+    /// <summary>附带投票（可空）</summary>
+    public CreatePollDto? Poll { get; set; }
+
+    /// <summary>附带抽奖（可空）</summary>
+    public CreateLotteryDto? Lottery { get; set; }
+
     /// <summary>
     /// 向后兼容旧字段 tags
     /// </summary>

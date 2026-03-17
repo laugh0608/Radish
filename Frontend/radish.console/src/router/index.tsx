@@ -1,12 +1,14 @@
+import type { ReactNode } from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
+import { RouteGuard } from '../components/PermissionGuard';
 import { Dashboard } from '../pages/Dashboard';
 import { Applications } from '../pages/Applications';
 import { ProductList } from '../pages/Products';
 import { OrderList } from '../pages/Orders';
 import { UserList } from '../pages/Users';
 import { UserDetail } from '../pages/Users/UserDetail';
-import { RoleList } from '../pages/Roles';
+import { RoleList, RolePermissionPage } from '../pages/Roles';
 import { TagList } from '../pages/Tags';
 import { StickerGroupList, StickerList } from '../pages/Stickers';
 import { SystemConfigList } from '../pages/SystemConfig';
@@ -18,12 +20,14 @@ import { ThemeTest } from '../pages/ThemeTest';
 import { NotFound } from '../components/NotFound';
 import { getApiBaseUrl } from '../config/env';
 import { tokenService } from '../services/tokenService';
+import { consoleRouteMetaMap } from './routeMeta';
+import { useUser } from '../contexts/UserContext';
+import { hasPermission } from '../hooks/usePermission';
+import { CONSOLE_PERMISSIONS } from '../constants/permissions';
 
-/**
- * 需要认证的布局包装器
- */
 function AuthenticatedLayout() {
   const token = tokenService.getAccessToken();
+  const { user, loading } = useUser();
 
   if (!token) {
     return <Navigate to="/login?auto=1" replace />;
@@ -34,6 +38,25 @@ function AuthenticatedLayout() {
     return <Navigate to="/login?auto=1" replace />;
   }
 
+  if (loading) {
+    return <div style={{ padding: '24px' }}>正在校验 Console 访问权限...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login?auto=1" replace />;
+  }
+
+  if (!hasPermission(user, CONSOLE_PERMISSIONS.consoleAccess)) {
+    return (
+      <div style={{ padding: '48px 24px', maxWidth: '720px', margin: '0 auto' }}>
+        <h2 style={{ marginBottom: '12px' }}>当前账号未开通 Console 访问权限</h2>
+        <p style={{ margin: 0, color: '#666' }}>
+          请联系管理员为当前角色授予 `console.access`，再按需分配具体的页面与按钮权限。
+        </p>
+      </div>
+    );
+  }
+
   return (
     <AdminLayout>
       <Outlet />
@@ -41,29 +64,16 @@ function AuthenticatedLayout() {
   );
 }
 
-/**
- * 占位页面组件
- */
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div>
-      <h2>{title}</h2>
-      <p>{title}功能待实现</p>
-    </div>
-  );
-}
-
-/**
- * Hangfire 嵌入页面
- */
 function HangfirePage() {
   return (
-    <div style={{
-      height: 'calc(100vh - 200px)', // 减去 header 和 padding 的高度
-      display: 'flex',
-      flexDirection: 'column',
-      overflow: 'hidden' // 防止外层滚动
-    }}>
+    <div
+      style={{
+        height: 'calc(100vh - 200px)',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+      }}
+    >
       <h2 style={{ margin: '0 0 16px 0', flexShrink: 0 }}>定时任务管理</h2>
       <iframe
         src={`${getApiBaseUrl()}/hangfire`}
@@ -72,7 +82,7 @@ function HangfirePage() {
           border: '1px solid #d9d9d9',
           borderRadius: '4px',
           width: '100%',
-          height: '100%'
+          height: '100%',
         }}
         title="Hangfire Dashboard"
       />
@@ -80,10 +90,11 @@ function HangfirePage() {
   );
 }
 
-/**
- * 路由配置
- * 注意：由于 Vite 配置了 base: '/console/'，所以路由路径不需要包含 /console 前缀
- */
+function withRouteGuard(routeKey: string, element: ReactNode) {
+  const route = consoleRouteMetaMap[routeKey];
+  return <RouteGuard route={route}>{element}</RouteGuard>;
+}
+
 export const router = createBrowserRouter(
   [
     {
@@ -100,63 +111,67 @@ export const router = createBrowserRouter(
       children: [
         {
           index: true,
-          element: <Dashboard />,
+          element: withRouteGuard('dashboard', <Dashboard />),
         },
         {
           path: 'applications',
-          element: <Applications />,
+          element: withRouteGuard('applications', <Applications />),
         },
         {
           path: 'products',
-          element: <ProductList />,
+          element: withRouteGuard('products', <ProductList />),
         },
         {
           path: 'orders',
-          element: <OrderList />,
+          element: withRouteGuard('orders', <OrderList />),
         },
         {
           path: 'users',
-          element: <UserList />,
+          element: withRouteGuard('users', <UserList />),
         },
         {
           path: 'users/:userId',
-          element: <UserDetail />,
+          element: withRouteGuard('user-detail', <UserDetail />),
         },
         {
           path: 'roles',
-          element: <RoleList />,
+          element: withRouteGuard('roles', <RoleList />),
+        },
+        {
+          path: 'roles/:roleId/permissions',
+          element: withRouteGuard('role-permissions', <RolePermissionPage />),
         },
         {
           path: 'tags',
-          element: <TagList />,
+          element: withRouteGuard('tags', <TagList />),
         },
         {
           path: 'stickers',
-          element: <StickerGroupList />,
+          element: withRouteGuard('stickers', <StickerGroupList />),
         },
         {
           path: 'stickers/:groupId/items',
-          element: <StickerList />,
+          element: withRouteGuard('sticker-items', <StickerList />),
         },
         {
           path: 'system-config',
-          element: <SystemConfigList />,
+          element: withRouteGuard('system-config', <SystemConfigList />),
         },
         {
           path: 'profile',
-          element: <UserProfile />,
+          element: withRouteGuard('profile', <UserProfile />),
         },
         {
           path: 'settings',
-          element: <Settings />,
+          element: withRouteGuard('settings', <Settings />),
         },
         {
           path: 'hangfire',
-          element: <HangfirePage />,
+          element: withRouteGuard('hangfire', <HangfirePage />),
         },
         {
           path: 'theme-test',
-          element: <ThemeTest />,
+          element: withRouteGuard('theme-test', <ThemeTest />),
         },
       ],
     },
@@ -170,9 +185,6 @@ export const router = createBrowserRouter(
   }
 );
 
-/**
- * 路由路径常量，方便其他组件引用
- */
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
@@ -183,6 +195,7 @@ export const ROUTES = {
   USERS: '/users',
   USER_DETAIL: '/users/:userId',
   ROLES: '/roles',
+  ROLE_PERMISSIONS: '/roles/:roleId/permissions',
   TAGS: '/tags',
   STICKERS: '/stickers',
   STICKER_ITEMS: '/stickers/:groupId/items',

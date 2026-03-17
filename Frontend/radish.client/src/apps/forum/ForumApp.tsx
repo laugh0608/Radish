@@ -1,6 +1,8 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
 import { useUserStore } from '@/stores/userStore';
+import { useWindowStore } from '@/stores/windowStore';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import {
   getPostList,
@@ -43,9 +45,33 @@ const EditHistoryModal = lazy(() =>
 
 const SEARCH_PAGE_SIZE = 20;
 
+function parseForumWindowParams(appParams?: Record<string, unknown> | null): { postId?: number; navigationKey?: string } {
+  if (!appParams) {
+    return {};
+  }
+
+  const rawPostId = appParams.postId;
+  const postId = typeof rawPostId === 'number'
+    ? rawPostId
+    : typeof rawPostId === 'string'
+      ? Number(rawPostId)
+      : 0;
+
+  if (!Number.isFinite(postId) || postId <= 0) {
+    return {};
+  }
+
+  const rawNavigationKey = appParams.__navigationKey;
+  const navigationKey = rawNavigationKey == null ? undefined : String(rawNavigationKey);
+
+  return { postId, navigationKey };
+}
+
 export const ForumApp = () => {
   const { t } = useTranslation();
   const { isAuthenticated, userId } = useUserStore();
+  const { openApp } = useWindowStore();
+  const currentWindow = useCurrentWindow();
   const loggedIn = isAuthenticated();
   const containerShellRef = useRef<HTMLDivElement>(null);
   const [showDetailFloatingTools, setShowDetailFloatingTools] = useState(true);
@@ -68,6 +94,8 @@ export const ForumApp = () => {
   const searchRequestIdRef = useRef(0);
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
+  const windowParams = parseForumWindowParams(currentWindow?.appParams);
+  const handledWindowRouteRef = useRef<string | null>(null);
 
   useEffect(() => {
     const element = containerShellRef.current;
@@ -194,6 +222,8 @@ export const ForumApp = () => {
     setCurrentPage: dataState.setCurrentPage,
     setSortBy: dataState.setSortBy,
     setCommentSortBy: dataState.setCommentSortBy,
+    setQuestionAnswerSort: dataState.setQuestionAnswerSort,
+    setQuestionAnswerFilter: dataState.setQuestionAnswerFilter,
     setSearchKeyword: dataState.setSearchKeyword,
     setError: dataState.setError,
     loadPostDetail: dataState.loadPostDetail,
@@ -201,6 +231,30 @@ export const ForumApp = () => {
     loadPosts: dataState.loadPosts,
     resetCommentSort: dataState.resetCommentSort
   });
+
+  useEffect(() => {
+    if (!windowParams.postId) {
+      return;
+    }
+
+    const routeSignature = `${windowParams.postId}:${windowParams.navigationKey ?? 'initial'}`;
+    if (handledWindowRouteRef.current === routeSignature) {
+      return;
+    }
+
+    handledWindowRouteRef.current = routeSignature;
+
+    setIsSearchView(false);
+    dataState.setSelectedTagName(null);
+    dataState.setSelectedCategoryId(null);
+    void actionsState.handleSelectPost(windowParams.postId);
+  }, [
+    actionsState.handleSelectPost,
+    windowParams.navigationKey,
+    windowParams.postId,
+    dataState.setSelectedCategoryId,
+    dataState.setSelectedTagName,
+  ]);
 
   useEffect(() => {
     if (!isSearchView) {
@@ -344,6 +398,23 @@ export const ForumApp = () => {
     }
   };
 
+  const handleOpenUserProfile = (targetUserId: number, targetUserName?: string | null, avatarUrl?: string | null) => {
+    if (!targetUserId) {
+      return;
+    }
+
+    if (String(targetUserId) === String(userId ?? 0)) {
+      openApp('profile');
+      return;
+    }
+
+    openApp('profile', {
+      userId: targetUserId,
+      userName: targetUserName?.trim() || `用户 ${targetUserId}`,
+      avatarUrl: avatarUrl ?? null,
+    });
+  };
+
   const handleOpenPublish = () => {
     actionsState.setIsPublishModalOpen(true);
   };
@@ -440,6 +511,8 @@ export const ForumApp = () => {
                 showFloatingTools={showDetailFloatingTools}
                 currentUserId={userId ?? 0}
                 commentSortBy={dataState.commentSortBy}
+                questionAnswerSort={dataState.questionAnswerSort}
+                questionAnswerFilter={dataState.questionAnswerFilter}
                 replyTo={actionsState.replyTo}
                 followStatus={followStatus}
                 followLoading={followLoading}
@@ -449,6 +522,12 @@ export const ForumApp = () => {
                   dataState.resetCommentSort();
                 }}
                 onLike={actionsState.handleLikePost}
+                onVotePoll={actionsState.handleVotePoll}
+                onDrawLottery={actionsState.handleDrawLottery}
+                onAnswerQuestion={actionsState.handleAnswerQuestion}
+                onAcceptAnswer={actionsState.handleAcceptAnswer}
+                onQuestionAnswerSortChange={actionsState.handleQuestionAnswerSortChange}
+                onQuestionAnswerFilterChange={actionsState.handleQuestionAnswerFilterChange}
                 onEdit={actionsState.handleEditPost}
                 onViewPostHistory={actionsState.handleViewPostHistory}
                 onDelete={actionsState.handleDeletePost}
@@ -463,6 +542,7 @@ export const ForumApp = () => {
                 onCancelReply={actionsState.handleCancelReply}
                 onReactionError={dataState.setError}
                 onToggleFollow={handleToggleFollow}
+                onAuthorClick={handleOpenUserProfile}
               />
             </Suspense>
           ) : (
@@ -512,6 +592,7 @@ export const ForumApp = () => {
                   }}
                   onPageChange={setSearchCurrentPage}
                   onPostClick={actionsState.handleSelectPost}
+                  onAuthorClick={handleOpenUserProfile}
                 />
               ) : (
                 <PostListView
@@ -524,11 +605,16 @@ export const ForumApp = () => {
                   currentPage={dataState.currentPage}
                   totalPages={dataState.totalPages}
                   sortBy={dataState.sortBy}
+                  postViewMode={dataState.postViewMode}
+                  questionStatus={dataState.questionStatus}
                   loadingPosts={dataState.loadingPosts}
                   onSortChange={actionsState.handleSortChange}
+                  onViewModeChange={dataState.setPostViewMode}
+                  onQuestionStatusChange={dataState.setQuestionStatus}
                   onOpenSearch={handleOpenSearchView}
                   onPageChange={actionsState.handlePageChange}
                   onPostClick={actionsState.handleSelectPost}
+                  onAuthorClick={handleOpenUserProfile}
                   canPublish={loggedIn}
                   onPublishClick={handleOpenPublish}
                 />
@@ -543,6 +629,7 @@ export const ForumApp = () => {
             hotPosts={dataState.hotPosts}
             godComments={dataState.trendingGodComments}
             onPostClick={actionsState.handleSelectPost}
+            onAuthorClick={handleOpenUserProfile}
             loading={dataState.loadingTrending}
             selectedPost={dataState.selectedPost}
             displayTimeZone={displayTimeZone}
@@ -602,7 +689,7 @@ export const ForumApp = () => {
           <Suspense fallback={null}>
             <EditHistoryModal
               isOpen={actionsState.isPostHistoryOpen}
-              title="帖子编辑历史"
+              title={dataState.selectedPost?.voIsQuestion ? '问题编辑历史' : '帖子编辑历史'}
               loading={actionsState.postHistoryLoading}
               error={actionsState.postHistoryError}
               items={actionsState.postHistories}

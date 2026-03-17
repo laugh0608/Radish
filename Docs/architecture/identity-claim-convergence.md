@@ -261,6 +261,19 @@ rg -n --glob '*.cs' \
 
 只要出现新增命中，就视为架构回归。
 
+当前仓库已补统一入口：
+
+```bash
+npm run check:identity-claims
+```
+
+并已纳入：
+
+```bash
+npm run validate:baseline
+npm run validate:baseline:quick
+```
+
 ## 11. 当前实施状态（2026-03-07）
 
 当前专项已进入“兼容层冻结”阶段，运行时主路径基本完成收敛：

@@ -2,8 +2,10 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
+using Radish.Common.PermissionTool;
 using Radish.Common.TimeTool;
 using Radish.IService;
 using Radish.Model;
@@ -37,6 +39,7 @@ public class UserController : ControllerBase
 
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
+    private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly IUserTimePreferenceService _userTimePreferenceService;
     private readonly INotificationPushService _notificationPushService;
     private readonly TimeOptions _timeOptions;
@@ -46,6 +49,7 @@ public class UserController : ControllerBase
         ICurrentUserAccessor currentUserAccessor,
         IPostService postService,
         ICommentService commentService,
+        IUserBrowseHistoryService userBrowseHistoryService,
         IUserTimePreferenceService userTimePreferenceService,
         IAttachmentService attachmentService,
         INotificationPushService notificationPushService,
@@ -55,6 +59,7 @@ public class UserController : ControllerBase
         _currentUserAccessor = currentUserAccessor;
         _postService = postService;
         _commentService = commentService;
+        _userBrowseHistoryService = userBrowseHistoryService;
         _userTimePreferenceService = userTimePreferenceService;
         _notificationPushService = notificationPushService;
         _attachmentService = attachmentService;
@@ -79,7 +84,8 @@ public class UserController : ControllerBase
     /// <response code="403">禁止访问，权限不足</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.UsersView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -110,6 +116,8 @@ public class UserController : ControllerBase
         var userVos = result.data;
         var totalCount = result.totalCount;
 
+        await FillUserAvatarUrlsAsync(userVos);
+
         var responseResult = new VoPagedResult<UserVo>
         {
             VoItems = userVos,
@@ -125,6 +133,45 @@ public class UserController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = responseResult
         };
+    }
+
+    private async Task FillUserAvatarUrlsAsync(List<UserVo> users)
+    {
+        if (users.Count == 0)
+        {
+            return;
+        }
+
+        var userIds = users
+            .Select(user => user.Uuid)
+            .Distinct()
+            .ToList();
+
+        var avatarAttachments = await _attachmentService.QueryAsync(attachment =>
+            attachment.BusinessType == "Avatar" &&
+            !attachment.IsDeleted &&
+            attachment.BusinessId != null &&
+            userIds.Contains(attachment.BusinessId.Value));
+
+        var avatarMap = avatarAttachments
+            .Where(attachment => attachment.VoBusinessId.HasValue)
+            .GroupBy(attachment => attachment.VoBusinessId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderByDescending(attachment => attachment.VoCreateTime)
+                    .First());
+
+        foreach (var user in users)
+        {
+            if (!avatarMap.TryGetValue(user.Uuid, out var avatar))
+            {
+                continue;
+            }
+
+            user.VoAvatarUrl = avatar.VoUrl;
+            user.VoAvatarThumbnailUrl = avatar.VoThumbnailUrl;
+        }
     }
 
     /// <summary>
@@ -152,7 +199,8 @@ public class UserController : ControllerBase
     /// <response code="404">用户不存在</response>
     /// <response code="500">服务器内部错误</response>
     [HttpGet("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.UsersView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
@@ -219,6 +267,13 @@ public class UserController : ControllerBase
         var userId = Current.UserId;
         var userName = Current.UserName;
         var tenantId = Current.TenantId;
+        var roles = Current.Roles
+            .Where(role => !string.IsNullOrWhiteSpace(role))
+            .Select(role => role.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(role => role, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        var permissions = await _userService.GetPermissionKeysByRolesAsync(roles);
 
         // 获取用户头像
         var avatar = await _attachmentService.QueryFirstAsync(a =>
@@ -233,7 +288,9 @@ public class UserController : ControllerBase
             VoUserName = userName,
             VoTenantId = tenantId,
             VoAvatarUrl = avatar?.VoUrl,
-            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl
+            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl,
+            VoRoles = roles,
+            VoPermissions = permissions
         };
         return new MessageModel
         {
@@ -489,6 +546,33 @@ public class UserController : ControllerBase
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = profile
+        };
+    }
+
+    /// <summary>
+    /// 获取当前登录用户的浏览记录（个人中心）
+    /// </summary>
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetMyBrowseHistory(int pageIndex = 1, int pageSize = 20)
+    {
+        var safePageIndex = pageIndex < 1 ? 1 : pageIndex;
+        var safePageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 100);
+        var (items, total) = await _userBrowseHistoryService.GetMyPageAsync(Current.UserId, safePageIndex, safePageSize);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = new VoPagedResult<UserBrowseHistoryVo>
+            {
+                VoItems = items,
+                VoTotal = total,
+                VoPageIndex = safePageIndex,
+                VoPageSize = safePageSize
+            }
         };
     }
 

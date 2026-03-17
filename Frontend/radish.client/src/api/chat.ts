@@ -4,8 +4,10 @@ import type {
   ChannelMemberVo,
   ChannelMessageVo,
   ChannelVo,
+  EntityIdValue,
   SendChannelMessageRequest,
 } from '@/types/chat';
+import { normalizeEntityId } from '@/types/chat';
 
 configureApiClient({
   baseUrl: getApiBaseUrl(),
@@ -26,12 +28,22 @@ export async function getChannelList(): Promise<ChannelVo[]> {
   return response.data;
 }
 
-export async function getChannelHistory(channelId: number, beforeMessageId?: number, pageSize: number = 50): Promise<ChannelMessageVo[]> {
+export async function getChannelHistory(
+  channelId: EntityIdValue,
+  beforeMessageId?: EntityIdValue,
+  pageSize: number = 50
+): Promise<ChannelMessageVo[]> {
+  const normalizedChannelId = normalizeEntityId(channelId);
+  if (!normalizedChannelId) {
+    throw new Error('频道 Id 无效');
+  }
+
   const params = new URLSearchParams();
-  params.set('channelId', String(channelId));
+  params.set('channelId', normalizedChannelId);
   params.set('pageSize', String(pageSize));
-  if (typeof beforeMessageId === 'number' && Number.isFinite(beforeMessageId) && beforeMessageId > 0) {
-    params.set('beforeMessageId', String(beforeMessageId));
+  const normalizedBeforeMessageId = normalizeEntityId(beforeMessageId);
+  if (normalizedBeforeMessageId && normalizedBeforeMessageId !== '0' && !normalizedBeforeMessageId.startsWith('-')) {
+    params.set('beforeMessageId', normalizedBeforeMessageId);
   }
 
   const response = await apiGet<ChannelMessageVo[]>(`/api/v1/ChannelMessage/GetHistory?${params.toString()}`, {
@@ -56,8 +68,13 @@ export async function sendChannelMessage(request: SendChannelMessageRequest): Pr
   return response.data;
 }
 
-export async function recallChannelMessage(messageId: number): Promise<boolean> {
-  const response = await apiDelete<boolean>(`/api/v1/ChannelMessage/Recall/${messageId}`, { withAuth: true });
+export async function recallChannelMessage(messageId: EntityIdValue): Promise<boolean> {
+  const normalizedMessageId = normalizeEntityId(messageId);
+  if (!normalizedMessageId) {
+    throw new Error('消息 Id 无效');
+  }
+
+  const response = await apiDelete<boolean>(`/api/v1/ChannelMessage/Recall/${normalizedMessageId}`, { withAuth: true });
 
   if (!response.ok) {
     throw new Error(response.message || '撤回消息失败');
@@ -66,8 +83,13 @@ export async function recallChannelMessage(messageId: number): Promise<boolean> 
   return response.data ?? true;
 }
 
-export async function getChannelOnlineMembers(channelId: number): Promise<ChannelMemberVo[]> {
-  const response = await apiGet<ChannelMemberVo[]>(`/api/v1/Channel/GetOnlineMembers/${channelId}`, {
+export async function getChannelOnlineMembers(channelId: EntityIdValue): Promise<ChannelMemberVo[]> {
+  const normalizedChannelId = normalizeEntityId(channelId);
+  if (!normalizedChannelId) {
+    throw new Error('频道 Id 无效');
+  }
+
+  const response = await apiGet<ChannelMemberVo[]>(`/api/v1/Channel/GetOnlineMembers/${normalizedChannelId}`, {
     withAuth: true,
     timeout: CHAT_READ_TIMEOUT_MS,
   });

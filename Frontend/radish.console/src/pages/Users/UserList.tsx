@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -10,31 +10,23 @@ import {
   Tag,
   Avatar,
   message,
-  Modal,
-  Popconfirm,
   type TableColumnsType,
 } from '@radish/ui';
 import {
-  PlusOutlined,
   EditOutlined,
-  DeleteOutlined,
   SearchOutlined,
   ReloadOutlined,
   UserOutlined,
-  LockOutlined,
-  UnlockOutlined,
-  KeyOutlined,
-  LogoutOutlined,
 } from '@radish/ui';
 import {
   userManagementApi,
-  getUserStatusDisplay,
-  getUserStatusColor,
   UserStatus,
-  type UserListResponse,
   type UserListParams,
 } from '../../api/userManagement';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import type { UserListItem } from '../../types/user';
+import { getAvatarUrl } from '@/config/env';
 import { log } from '../../utils/logger';
 import './UserList.css';
 
@@ -46,6 +38,7 @@ export const UserList = () => {
   const [total, setTotal] = useState(0);
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
 
   // 筛选条件
   const [keyword, setKeyword] = useState<string>('');
@@ -97,80 +90,6 @@ export const UserList = () => {
     setTimeout(() => loadUsers(), 0);
   };
 
-  // 更新用户状态
-  const handleUpdateStatus = async (uuid: number, newStatus: UserStatus) => {
-    try {
-      const response = await userManagementApi.updateUserStatus(uuid, newStatus);
-
-      if (response.ok) {
-        message.success('用户状态更新成功');
-        loadUsers();
-      } else {
-        message.error(response.message || '更新用户状态失败');
-      }
-    } catch (error) {
-      log.error('UserList', '更新用户状态失败', error);
-      message.error('更新用户状态失败');
-    }
-  };
-
-  // 删除用户
-  const handleDeleteUser = async (uuid: number) => {
-    try {
-      const response = await userManagementApi.deleteUser(uuid);
-
-      if (response.ok) {
-        message.success('用户删除成功');
-        loadUsers();
-      } else {
-        message.error(response.message || '删除用户失败');
-      }
-    } catch (error) {
-      log.error('UserList', '删除用户失败', error);
-      message.error('删除用户失败');
-    }
-  };
-
-  // 强制用户下线
-  const handleForceLogout = async (uuid: number) => {
-    try {
-      const response = await userManagementApi.forceLogout(uuid);
-
-      if (response.ok) {
-        message.success('用户已强制下线');
-      } else {
-        message.error(response.message || '强制下线失败');
-      }
-    } catch (error) {
-      log.error('UserList', '强制下线失败', error);
-      message.error('强制下线失败');
-    }
-  };
-
-  // 重置密码
-  const handleResetPassword = (user: UserListItem) => {
-    (Modal as any).confirm({
-      title: '重置密码',
-      content: `确定要重置用户 "${user.voUserName}" 的密码吗？新密码将通过邮件发送给用户。`,
-      onOk: async () => {
-        try {
-          // 生成临时密码
-          const tempPassword = Math.random().toString(36).slice(-8);
-          const response = await userManagementApi.resetPassword(user.uuid, tempPassword);
-
-          if (response.ok) {
-            message.success('密码重置成功，新密码已发送给用户');
-          } else {
-            message.error(response.message || '重置密码失败');
-          }
-        } catch (error) {
-          log.error('UserList', '重置密码失败', error);
-          message.error('重置密码失败');
-        }
-      },
-    });
-  };
-
   // 表格列定义
   const columns: TableColumnsType<UserListItem> = [
     {
@@ -181,6 +100,7 @@ export const UserList = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Avatar
             size="small"
+            src={getAvatarUrl(record.voAvatarThumbnailUrl || record.voAvatarUrl)}
             icon={<UserOutlined />}
           />
           <div>
@@ -222,68 +142,16 @@ export const UserList = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => navigate(`/users/${record.uuid}`)}
-          >
-            查看详情
-          </Button>
-
-          {record.voIsEnable ? (
+          {canViewUsers ? (
             <Button
               variant="ghost"
               size="small"
-              icon={<LockOutlined />}
-              onClick={() => handleUpdateStatus(record.uuid, UserStatus.Disabled)}
+              icon={<EditOutlined />}
+              onClick={() => navigate(`/users/${record.uuid}`)}
             >
-              禁用
+              查看详情
             </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="small"
-              icon={<UnlockOutlined />}
-              onClick={() => handleUpdateStatus(record.uuid, UserStatus.Normal)}
-            >
-              启用
-            </Button>
-          )}
-
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<KeyOutlined />}
-            onClick={() => handleResetPassword(record)}
-          >
-            重置密码
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<LogoutOutlined />}
-            onClick={() => handleForceLogout(record.uuid)}
-          >
-            强制下线
-          </Button>
-
-          <Popconfirm
-            title="确定要删除这个用户吗？"
-            description="删除后无法恢复，请谨慎操作。"
-            onConfirm={() => handleDeleteUser(record.uuid)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button
-              variant="danger"
-              size="small"
-              icon={<DeleteOutlined />}
-            >
-              删除
-            </Button>
-          </Popconfirm>
+          ) : null}
         </Space>
       ),
     },
@@ -291,9 +159,12 @@ export const UserList = () => {
 
   // 初始化加载
   useEffect(() => {
-    loadUsers();
-  }, []);
+    if (!canViewUsers) {
+      return;
+    }
 
+    void loadUsers();
+  }, [canViewUsers]);
   return (
     <div className="user-list">
       {/* 筛选条件 */}
@@ -345,17 +216,6 @@ export const UserList = () => {
             onClick={handleReset}
           >
             重置
-          </Button>
-
-          <Button
-            variant="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              // TODO: 打开新增用户弹窗
-              message.info('新增用户功能待实现');
-            }}
-          >
-            新增用户
           </Button>
         </Space>
       </div>

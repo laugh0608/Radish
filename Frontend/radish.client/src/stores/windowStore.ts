@@ -7,7 +7,10 @@ interface WindowStore {
   openWindows: WindowState[];
 
   /** 打开应用 */
-  openApp: (appId: string) => void;
+  openApp: (appId: string, appParams?: Record<string, unknown>) => void;
+
+  /** 复用已打开的应用窗口并更新参数，不存在则新开 */
+  openOrReuseApp: (appId: string, appParams?: Record<string, unknown>) => void;
 
   /** 关闭窗口 */
   closeWindow: (windowId: string) => void;
@@ -20,6 +23,9 @@ interface WindowStore {
 
   /** 聚焦窗口 */
   focusWindow: (windowId: string) => void;
+
+  /** 更新窗口运行参数 */
+  updateWindowAppParams: (windowId: string, appParams?: Record<string, unknown>) => void;
 
   /** 更新窗口位置 */
   updateWindowPosition: (windowId: string, position: { x: number; y: number }) => void;
@@ -37,7 +43,7 @@ interface WindowStore {
 export const useWindowStore = create<WindowStore>((set, get) => ({
   openWindows: [],
 
-  openApp: (appId: string) => {
+  openApp: (appId: string, appParams?: Record<string, unknown>) => {
     const { openWindows } = get();
 
     // 获取应用定义
@@ -50,7 +56,8 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     }
 
     // 如果应用已打开，聚焦窗口
-    const existingWindow = openWindows.find(w => w.appId === appId);
+    const serializedParams = JSON.stringify(appParams ?? {});
+    const existingWindow = openWindows.find(w => w.appId === appId && JSON.stringify(w.appParams ?? {}) === serializedParams);
     if (existingWindow) {
       get().focusWindow(existingWindow.id);
       // 如果是最小化状态，恢复窗口
@@ -82,6 +89,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     const newWindow: WindowState = {
       id: `win-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       appId,
+      appParams,
       zIndex: maxZIndex + 1,
       isMinimized: false,
       isMaximized: false,
@@ -96,6 +104,30 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     };
 
     set({ openWindows: [...openWindows, newWindow] });
+  },
+
+  openOrReuseApp: (appId: string, appParams?: Record<string, unknown>) => {
+    const { openWindows } = get();
+    const existingWindow = openWindows
+      .filter(window => window.appId === appId)
+      .sort((left, right) => right.zIndex - left.zIndex)[0];
+
+    const nextAppParams = {
+      ...(appParams ?? {}),
+      __navigationKey: Date.now()
+    };
+
+    if (!existingWindow) {
+      get().openApp(appId, nextAppParams);
+      return;
+    }
+
+    get().updateWindowAppParams(existingWindow.id, nextAppParams);
+    get().focusWindow(existingWindow.id);
+
+    if (existingWindow.isMinimized) {
+      get().restoreWindow(existingWindow.id);
+    }
   },
 
   closeWindow: (windowId: string) => {
@@ -138,6 +170,14 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     set(state => ({
       openWindows: state.openWindows.map(w =>
         w.id === windowId ? { ...w, zIndex: maxZIndex + 1 } : w
+      )
+    }));
+  },
+
+  updateWindowAppParams: (windowId: string, appParams?: Record<string, unknown>) => {
+    set(state => ({
+      openWindows: state.openWindows.map(w =>
+        w.id === windowId ? { ...w, appParams } : w
       )
     }));
   },

@@ -2,9 +2,9 @@
 
 > Radish Chat App 的 ChatHub 事件流与同步策略
 >
-> **版本**: v26.3.1
+> **版本**: v26.3.4
 >
-> **最后更新**: 2026.03.03
+> **最后更新**: 2026.03.11
 >
 > **关联文档**：
 > [聊天室 App 文档总览](./chat-app-index.md) ·
@@ -28,7 +28,8 @@
 3. 连接成功后自动尝试加入当前激活频道
 4. 断线自动重连（指数退避）
 5. 重连成功后自动尝试重新加入当前激活频道
-6. 登出时调用 `chatHub.stop()` 并重置 `chatStore`
+6. 若重连前存在当前激活频道，恢复后清空本地缓存并补拉最新 50 条消息
+7. 登出时调用 `chatHub.stop()` 并重置 `chatStore`
 
 建议参数：
 - `serverTimeoutInMilliseconds = 60000`
@@ -61,13 +62,19 @@
 
 ## REST 与 Hub 协同
 
-发送链路（P0 基本流程）：
-1. 客户端调用 `POST /api/v1/ChannelMessage/Send`
-2. 服务端落库成功，返回 `ChannelMessageVo`
-3. 客户端收到 REST 响应后 `chatStore.addMessage` 插入消息
-4. 服务端同时推送 `MessageReceived` 给频道全部在线端
-5. 发送端收到回推时 `addMessage` 按 `messageId` 去重，自动忽略
-6. **P1 乐观更新**：发送时先插入临时消息（`status: 'sending'`，使用负数临时 ID），REST 成功后以真实 `messageId` 替换；失败时标记 `status: 'failed'`
+发送链路（当前实现）：
+1. 客户端生成负数临时消息，并为本次发送生成 `clientRequestId`
+2. 客户端立即插入 `status: 'sending'` 的本地消息
+3. 客户端调用 `POST /api/v1/ChannelMessage/Send`，请求体携带 `clientRequestId`
+4. 服务端落库成功，返回带 `clientRequestId` 的 `ChannelMessageVo`
+5. 服务端同时推送 `MessageReceived` 给频道全部在线端
+6. 前端按 `messageId / clientRequestId` 合并消息，发送端自身不会因 REST + Hub 双通道出现重复
+7. 失败时原位标记 `status: 'failed'`，允许重试 / 撤销
+
+ID 约束（当前实现）：
+- 服务端 `long / long?` 字段在 Controller 与 SignalR 中统一按字符串传输，避免 JS `number` 精度丢失。
+- 前端仅将“乐观发送临时消息”保留为负数本地 ID；一旦拿到服务端返回，就按字符串主键参与比对、撤回和引用回复。
+- `MessageRecalled`、历史分页 `beforeMessageId`、`replyToId` 均按服务端字符串 ID 透传，避免出现“消息不存在或无权撤回”“引用消息不存在”的假失败。
 
 撤回链路：
 1. 客户端调用 `DELETE /api/v1/ChannelMessage/Recall/{id}`
@@ -98,12 +105,12 @@
 
 1. Hub 断线
 - 展示"重连中"状态条。
-- 当前实现：重连成功后仅重新 `JoinChannel`，不自动清空缓存与回拉历史。
-- P1 优化方向：重连后补拉最新 50 条，或引入 `afterMessageId` 增量补全。
+- 当前实现：重连成功后重新 `JoinChannel`，并清空当前频道缓存后补拉最新 50 条历史。
+- 后续若需要更精细补全，可再扩展 `afterMessageId` 增量同步。
 
 2. REST 成功但 Hub 事件丢失
-- P0 阶段：发送端以 REST 返回值为准直接插入消息，不依赖 Hub 回推自身确认。
-- P1 阶段（乐观更新）：本地先渲染 `status: 'sending'` 临时消息。REST 成功后替换为真实消息。超时 5 秒未收到回推且 REST 也无响应时标记 `status: 'failed'`。
+- 当前实现：发送端以 REST 返回值完成临时消息替换，不依赖 Hub 回推自身确认。
+- Hub 若同时到达，则依赖 `messageId / clientRequestId` 合并；若 Hub 丢失也不会影响发送端最终状态。
 
 3. 历史分页失败
 - 保留已加载消息，不清空 UI。

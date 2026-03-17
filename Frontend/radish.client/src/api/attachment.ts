@@ -164,7 +164,7 @@ export interface ImageUploadOptions {
    * 业务类型
    * @default "General"
    */
-  businessType?: 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document' | 'Wiki';
+  businessType?: 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document' | 'Wiki' | 'Chat';
 
   /**
    * 业务 ID（可选，稍后可通过 UpdateBusinessAssociation 更新）
@@ -220,7 +220,7 @@ export interface DocumentUploadOptions {
    * 业务类型
    * @default "Document"
    */
-  businessType?: 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document' | 'Wiki';
+  businessType?: 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document' | 'Wiki' | 'Chat';
 
   /**
    * 业务 ID（可选）

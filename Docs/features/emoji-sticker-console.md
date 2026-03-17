@@ -292,6 +292,30 @@ interface BatchAddStickersRequest {
 
 ---
 
+
+## 与 Console 权限治理对齐（2026-03）
+
+当前表情包后台已纳入 Console 权限治理 V1，口径如下：
+
+- 页面访问：`console.stickers.view`
+- 分组创建 / 单个表情新增：`console.stickers.create`
+- 分组编辑 / 表情编辑：`console.stickers.edit`
+- 分组启停：复用 `console.stickers.toggle`
+- 删除：`console.stickers.delete`
+- 排序：`console.stickers.sort`
+- 批量上传：`console.stickers.batch-upload`
+
+本轮已补齐并纳入资源映射与默认角色种子的辅助接口：
+
+- `GET /api/v1/Sticker/CheckGroupCode`
+- `GET /api/v1/Sticker/CheckStickerCode`
+- `GET /api/v1/Sticker/NormalizeCode`
+
+说明：
+
+- 上述三项属于 Console 已真实使用的辅助接口，因此已进入 `ConsolePermissions + DbMigrate` 的治理范围。
+- `Attachment/UploadImage` 继续保持共享上传接口定位，但已按方案 B 做最小收口：仅 `Sticker` / `StickerCover` 业务类型在后端复用现有 `console.stickers.*` 权限校验，不扩张为独立上传权限模型。
+
 ## BatchAddStickers 接口约束
 
 | 约束项 | 限制值 | 说明 |

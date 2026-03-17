@@ -369,6 +369,9 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             return false;
         }
 
+        document.IsDeleted = false;
+        document.DeletedAt = null;
+        document.DeletedBy = null;
         document.ModifyId = operatorId;
         document.ModifyBy = ResolveOperatorName(operatorName);
         document.ModifyTime = DateTime.Now;

@@ -2,9 +2,9 @@
 
 > Radish Chat App 前端架构基线（WebOS 应用层）
 >
-> **版本**: v26.3.1
+> **版本**: v26.3.3
 >
-> **最后更新**: 2026.03.03
+> **最后更新**: 2026.03.11
 >
 > **关联文档**：
 > [聊天室 App 文档总览](./chat-app-index.md) ·
@@ -20,7 +20,7 @@
 设计目标：
 - 与现有 `notificationHub` 并行运行，互不干扰。
 - 页面与数据解耦，支持后续私聊、Reaction、搜索渐进扩展。
-- 首版优先保证 P0 可演示闭环，不做过度抽象。
+- 当前以 P1 体验收口为主，不做脱离主链路的大型重构。
 
 ---
 
@@ -59,20 +59,20 @@ Frontend/radish.client/src/types/
 └── chat.ts
 ```
 
-> 注：当前为 P0 实现形态（入口集中编排）。`components/*` 与 `hooks/*` 拆分为 P1 重构目标。
+> 注：当前仍为“单入口集中编排”实现形态。`components/*` 与 `hooks/*` 拆分仍是后续可选重构，不再视为 P1 前置条件。
 
 ---
 
 ## 分层边界
 
-1. 视图层 `apps/chat/ChatApp.tsx`（P0 现状）
-- 当前由单入口承载渲染与交互编排；P1 再拆分 `components/*`。
+1. 视图层 `apps/chat/ChatApp.tsx`（当前现状）
+- 当前由单入口承载渲染与交互编排，已覆盖频道切换、引用回复、图片上传、成员面板、草稿恢复、重连状态条与乐观发送。
 
 2. 应用层 `ChatApp.tsx`
 - 负责频道切换、分页触发、输入上报、滚动已读与 Hub 生命周期联动。
 
 3. 状态层 `stores/chatStore.ts`
-- 维护频道列表、未读数、消息 Map、当前激活频道。
+- 维护频道列表、未读数、消息 Map、当前激活频道，以及本地发送状态替换逻辑。
 
 4. 基础设施层 `api/* + services/chatHub.ts`
 - REST 负责持久化操作。
@@ -89,8 +89,8 @@ Frontend/radish.client/src/types/
 - `connectionState: 'disconnected' | 'connecting' | 'connected' | 'reconnecting'`
 
 内存管理现状：
-- 当前 P0 未引入全局 LRU 裁剪，`messageMap` 由会话内状态自然增长。
-- P1 再引入“非活跃频道裁剪 + 全局上限”策略。
+- 当前未引入全局 LRU 裁剪，`messageMap` 由会话内状态自然增长。
+- 后续若消息量持续增长，再引入“非活跃频道裁剪 + 全局上限”策略。
 
 核心动作（当前实现）：
 - `setChannels`
@@ -98,7 +98,8 @@ Frontend/radish.client/src/types/
 - `setConnectionState`
 - `setChannelMessages`
 - `prependChannelMessages`
-- `addMessage`（按 `messageId` 去重，已存在则忽略；P1 起兼容替换 `status: 'sending'` 临时消息）
+- `addMessage`（按 `messageId / clientRequestId` 合并，兼容替换 `status: 'sending'` 临时消息）
+- `removeMessage`（撤销失败临时消息）
 - `recallMessage`
 - `updateUnread`（对象载荷：`{ channelId, unreadCount, hasMention }`）
 - `reset`
@@ -112,12 +113,12 @@ Frontend/radish.client/src/types/
 - 选择默认频道并拉取最新历史。
 - 调用 `chatHub.start()` 建立连接。
 
-2. 发送消息（P0 基本流程）
-- 前端调用 REST `/ChannelMessage/Send`。
-- REST 成功返回 `ChannelMessageVo` 后，前端调用 `chatStore.addMessage` 插入。
-- 服务端同时通过 ChatHub 广播 `MessageReceived`，其他在线端收到后同样 `addMessage`。
-- 发送端自身也会收到 Hub 回推，`addMessage` 按 `messageId` 去重自动忽略。
-- **P1 升级为乐观更新**：发送时先插入临时消息（`status: 'sending'`），REST 成功后替换为服务端真实消息；失败时标记 `status: 'failed'` 允许重试。
+2. 发送消息（当前流程）
+- 前端先生成负数临时消息与 `clientRequestId`，立即插入本地列表。
+- 前端调用 REST `/ChannelMessage/Send`，请求体携带 `clientRequestId`。
+- REST 成功返回 `ChannelMessageVo` 后，前端按 `clientRequestId` 将临时消息替换为真实消息。
+- 服务端同时通过 ChatHub 广播 `MessageReceived`，发送端和其他在线端统一按 `messageId / clientRequestId` 合并，避免重复气泡。
+- 失败时保留原位消息并标记 `status: 'failed'`，支持重试 / 撤销；图片消息重试复用已上传附件信息。
 
 3. 撤回消息
 - 前端调用 REST `/ChannelMessage/Recall/{id}`。
@@ -130,6 +131,7 @@ Frontend/radish.client/src/types/
 
 - Shell 登录后启动 `chatHub`，登出时统一停止并清空状态。
 - `chatHub` 连接成功与重连成功后会自动尝试加入当前激活频道。
+- 当前频道在重连恢复后会清空本地缓存并重新拉取最新 50 条，优先保证状态一致。
 - Dock 未读气泡由 `chatStore.channels` 聚合计算，不额外轮询。
 - 窗口最小化/恢复不重建连接，避免短时频繁重连。
 

@@ -1,4 +1,7 @@
+using System;
+using System.IO;
 using Radish.Common;
+using Radish.Common.CoreTool;
 using Radish.Common.HelpTool;
 using Radish.Common.TenantTool;
 using Radish.Model;
@@ -171,47 +174,529 @@ internal static partial class InitialDataSeeder
     /// <summary>初始化角色-API 权限（示例：允许 System/Admin 访问用户基本信息接口）</summary>
     private static async Task SeedPermissionsAsync(ISqlSugarClient db)
     {
-        // 为 UserController.GetUserByHttpContext 建立 ApiModule 与 RoleModulePermission
-        // 便于通过 RadishAuthPolicy 或客户端权限检查进行验证。
+        // 为当前用户与角色管理主链路建立 ApiModule 与 RoleModulePermission
+        // 便于通过 RadishAuthPolicy 与 Console 权限快照进行验证。
 
-        const long userByHttpContextApiId = 50000;
-        const string linkUrl = "/api/v1/User/GetUserByHttpContext";
-
-        var apiExists = await db.Queryable<ApiModule>().AnyAsync(m => m.Id == userByHttpContextApiId);
-        if (!apiExists)
+        var apiModules = new[]
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建 ApiModule Id={userByHttpContextApiId}, LinkUrl={linkUrl}...");
-
-            var options = new ApiModuleInitializationOptions("Get current user by HttpContext", linkUrl)
+            new
             {
+                ApiModuleId = 50000L,
+                ApiModuleName = "Get current user by HttpContext",
+                LinkUrl = "/api/v1/User/GetUserByHttpContext",
                 ControllerName = "User",
                 ActionName = "GetUserByHttpContext",
-                IsEnabled = true,
-                IsDeleted = false,
-                IsMenu = false,
-                OrderSort = 0,
-            };
-
-            var module = new ApiModule(options)
+                Roles = new[] { 10000L, 10001L, 10002L }
+            },
+            new
             {
-                Id = userByHttpContextApiId,
-            };
+                ApiModuleId = 50010L,
+                ApiModuleName = "Get role list",
+                LinkUrl = "/api/v1/Role/GetRoleList",
+                ControllerName = "Role",
+                ActionName = "GetRoleList",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50011L,
+                ApiModuleName = "Get role by id",
+                LinkUrl = "/api/v1/Role/GetRoleById",
+                ControllerName = "Role",
+                ActionName = "GetRoleById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50012L,
+                ApiModuleName = "Create role",
+                LinkUrl = "/api/v1/Role/CreateRole",
+                ControllerName = "Role",
+                ActionName = "CreateRole",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50013L,
+                ApiModuleName = "Update role",
+                LinkUrl = "/api/v1/Role/UpdateRole",
+                ControllerName = "Role",
+                ActionName = "UpdateRole",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50014L,
+                ApiModuleName = "Delete role",
+                LinkUrl = "/api/v1/Role/DeleteRole",
+                ControllerName = "Role",
+                ActionName = "DeleteRole",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50015L,
+                ApiModuleName = "Toggle role status",
+                LinkUrl = "/api/v1/Role/ToggleRoleStatus",
+                ControllerName = "Role",
+                ActionName = "ToggleRoleStatus",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50020L,
+                ApiModuleName = "Get user list",
+                LinkUrl = "/api/v1/User/GetUserList",
+                ControllerName = "User",
+                ActionName = "GetUserList",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50021L,
+                ApiModuleName = "Get user by id",
+                LinkUrl = "/api/v1/User/GetUserById/\\d+",
+                ControllerName = "User",
+                ActionName = "GetUserById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50030L,
+                ApiModuleName = "Get clients",
+                LinkUrl = "/api/v1/Client/GetClients",
+                ControllerName = "Client",
+                ActionName = "GetClients",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50031L,
+                ApiModuleName = "Get client",
+                LinkUrl = "/api/v1/Client/GetClient/.+",
+                ControllerName = "Client",
+                ActionName = "GetClient",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50032L,
+                ApiModuleName = "Create client",
+                LinkUrl = "/api/v1/Client/CreateClient",
+                ControllerName = "Client",
+                ActionName = "CreateClient",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50033L,
+                ApiModuleName = "Update client",
+                LinkUrl = "/api/v1/Client/UpdateClient/.+",
+                ControllerName = "Client",
+                ActionName = "UpdateClient",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50034L,
+                ApiModuleName = "Delete client",
+                LinkUrl = "/api/v1/Client/DeleteClient/.+",
+                ControllerName = "Client",
+                ActionName = "DeleteClient",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50035L,
+                ApiModuleName = "Reset client secret",
+                LinkUrl = "/api/v1/Client/ResetClientSecret/.+",
+                ControllerName = "Client",
+                ActionName = "ResetClientSecret",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50040L,
+                ApiModuleName = "Get system configs",
+                LinkUrl = "/api/v1/SystemConfig/GetSystemConfigs",
+                ControllerName = "SystemConfig",
+                ActionName = "GetSystemConfigs",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50041L,
+                ApiModuleName = "Get system config categories",
+                LinkUrl = "/api/v1/SystemConfig/GetConfigCategories",
+                ControllerName = "SystemConfig",
+                ActionName = "GetConfigCategories",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50042L,
+                ApiModuleName = "Get system config by id",
+                LinkUrl = "/api/v1/SystemConfig/GetConfigById",
+                ControllerName = "SystemConfig",
+                ActionName = "GetConfigById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50043L,
+                ApiModuleName = "Create system config",
+                LinkUrl = "/api/v1/SystemConfig/CreateConfig",
+                ControllerName = "SystemConfig",
+                ActionName = "CreateConfig",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50044L,
+                ApiModuleName = "Update system config",
+                LinkUrl = "/api/v1/SystemConfig/UpdateConfig",
+                ControllerName = "SystemConfig",
+                ActionName = "UpdateConfig",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50045L,
+                ApiModuleName = "Delete system config",
+                LinkUrl = "/api/v1/SystemConfig/DeleteConfig",
+                ControllerName = "SystemConfig",
+                ActionName = "DeleteConfig",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50046L,
+                ApiModuleName = "Get dashboard stats",
+                LinkUrl = "/api/v1/Statistics/GetDashboardStats",
+                ControllerName = "Statistics",
+                ActionName = "GetDashboardStats",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50047L,
+                ApiModuleName = "Hangfire dashboard",
+                LinkUrl = "/hangfire(/.*)?",
+                ControllerName = "Hangfire",
+                ActionName = "Dashboard",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50049L,
+                ApiModuleName = "Get product categories",
+                LinkUrl = "/api/v1/Shop/GetCategories",
+                ControllerName = "Shop",
+                ActionName = "GetCategories",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50050L,
+                ApiModuleName = "Admin get products",
+                LinkUrl = "/api/v1/Shop/AdminGetProducts",
+                ControllerName = "Shop",
+                ActionName = "AdminGetProducts",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50051L,
+                ApiModuleName = "Create product",
+                LinkUrl = "/api/v1/Shop/CreateProduct",
+                ControllerName = "Shop",
+                ActionName = "CreateProduct",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50052L,
+                ApiModuleName = "Update product",
+                LinkUrl = "/api/v1/Shop/UpdateProduct",
+                ControllerName = "Shop",
+                ActionName = "UpdateProduct",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50053L,
+                ApiModuleName = "Delete product",
+                LinkUrl = "/api/v1/Shop/DeleteProduct/.+",
+                ControllerName = "Shop",
+                ActionName = "DeleteProduct",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50054L,
+                ApiModuleName = "Put product on sale",
+                LinkUrl = "/api/v1/Shop/PutOnSale/.+",
+                ControllerName = "Shop",
+                ActionName = "PutOnSale",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50055L,
+                ApiModuleName = "Take product off sale",
+                LinkUrl = "/api/v1/Shop/TakeOffSale/.+",
+                ControllerName = "Shop",
+                ActionName = "TakeOffSale",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50056L,
+                ApiModuleName = "Admin get orders",
+                LinkUrl = "/api/v1/Shop/AdminGetOrders",
+                ControllerName = "Shop",
+                ActionName = "AdminGetOrders",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50057L,
+                ApiModuleName = "Retry grant benefit",
+                LinkUrl = "/api/v1/Shop/RetryGrantBenefit/.+",
+                ControllerName = "Shop",
+                ActionName = "RetryGrantBenefit",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50060L,
+                ApiModuleName = "Get tag page",
+                LinkUrl = "/api/v1/Tag/GetPage",
+                ControllerName = "Tag",
+                ActionName = "GetPage",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50061L,
+                ApiModuleName = "Create tag",
+                LinkUrl = "/api/v1/Tag/Create",
+                ControllerName = "Tag",
+                ActionName = "Create",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50062L,
+                ApiModuleName = "Update tag",
+                LinkUrl = "/api/v1/Tag/Update/.+",
+                ControllerName = "Tag",
+                ActionName = "Update",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50063L,
+                ApiModuleName = "Delete tag",
+                LinkUrl = "/api/v1/Tag/Delete/.+",
+                ControllerName = "Tag",
+                ActionName = "Delete",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50064L,
+                ApiModuleName = "Restore tag",
+                LinkUrl = "/api/v1/Tag/Restore/.+",
+                ControllerName = "Tag",
+                ActionName = "Restore",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50065L,
+                ApiModuleName = "Toggle tag status",
+                LinkUrl = "/api/v1/Tag/ToggleStatus/.+",
+                ControllerName = "Tag",
+                ActionName = "ToggleStatus",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50066L,
+                ApiModuleName = "Update tag sort",
+                LinkUrl = "/api/v1/Tag/UpdateSort/.+",
+                ControllerName = "Tag",
+                ActionName = "UpdateSort",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50070L,
+                ApiModuleName = "Get admin sticker groups",
+                LinkUrl = "/api/v1/Sticker/GetAdminGroups",
+                ControllerName = "Sticker",
+                ActionName = "GetAdminGroups",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50071L,
+                ApiModuleName = "Create sticker group",
+                LinkUrl = "/api/v1/Sticker/CreateGroup",
+                ControllerName = "Sticker",
+                ActionName = "CreateGroup",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50072L,
+                ApiModuleName = "Update sticker group",
+                LinkUrl = "/api/v1/Sticker/UpdateGroup/.+",
+                ControllerName = "Sticker",
+                ActionName = "UpdateGroup",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50073L,
+                ApiModuleName = "Delete sticker group",
+                LinkUrl = "/api/v1/Sticker/DeleteGroup/.+",
+                ControllerName = "Sticker",
+                ActionName = "DeleteGroup",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50074L,
+                ApiModuleName = "Get group stickers",
+                LinkUrl = "/api/v1/Sticker/GetGroupStickers/.+",
+                ControllerName = "Sticker",
+                ActionName = "GetGroupStickers",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50075L,
+                ApiModuleName = "Add sticker",
+                LinkUrl = "/api/v1/Sticker/AddSticker",
+                ControllerName = "Sticker",
+                ActionName = "AddSticker",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50076L,
+                ApiModuleName = "Batch add stickers",
+                LinkUrl = "/api/v1/Sticker/BatchAddStickers",
+                ControllerName = "Sticker",
+                ActionName = "BatchAddStickers",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50077L,
+                ApiModuleName = "Update sticker",
+                LinkUrl = "/api/v1/Sticker/UpdateSticker/.+",
+                ControllerName = "Sticker",
+                ActionName = "UpdateSticker",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50078L,
+                ApiModuleName = "Delete sticker",
+                LinkUrl = "/api/v1/Sticker/DeleteSticker/.+",
+                ControllerName = "Sticker",
+                ActionName = "DeleteSticker",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50079L,
+                ApiModuleName = "Batch update sticker sort",
+                LinkUrl = "/api/v1/Sticker/BatchUpdateSort",
+                ControllerName = "Sticker",
+                ActionName = "BatchUpdateSort",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50080L,
+                ApiModuleName = "Check sticker group code",
+                LinkUrl = "/api/v1/Sticker/CheckGroupCode",
+                ControllerName = "Sticker",
+                ActionName = "CheckGroupCode",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50081L,
+                ApiModuleName = "Check sticker code",
+                LinkUrl = "/api/v1/Sticker/CheckStickerCode",
+                ControllerName = "Sticker",
+                ActionName = "CheckStickerCode",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50082L,
+                ApiModuleName = "Normalize sticker code",
+                LinkUrl = "/api/v1/Sticker/NormalizeCode",
+                ControllerName = "Sticker",
+                ActionName = "NormalizeCode",
+                Roles = new[] { 10000L, 10001L }
+            }
+        };
 
-            await db.Insertable(module).ExecuteCommandAsync();
-        }
-        else
+        foreach (var item in apiModules)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={userByHttpContextApiId} 的 ApiModule，跳过创建。");
+            var apiExists = await db.Queryable<ApiModule>().AnyAsync(m => m.Id == item.ApiModuleId);
+            if (!apiExists)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 创建 ApiModule Id={item.ApiModuleId}, LinkUrl={item.LinkUrl}...");
+
+                var options = new ApiModuleInitializationOptions(item.ApiModuleName, item.LinkUrl)
+                {
+                    ControllerName = item.ControllerName,
+                    ActionName = item.ActionName,
+                    IsEnabled = true,
+                    IsDeleted = false,
+                    IsMenu = false,
+                    OrderSort = 0,
+                };
+
+                var module = new ApiModule(options)
+                {
+                    Id = item.ApiModuleId,
+                };
+
+                await db.Insertable(module).ExecuteCommandAsync();
+            }
+            else
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={item.ApiModuleId} 的 ApiModule，跳过创建。");
+            }
+
+            foreach (var roleId in item.Roles)
+            {
+                await EnsureRoleApiPermissionAsync(db, roleId, item.ApiModuleId, roleId switch
+                {
+                    10000L => "System",
+                    10001L => "Admin",
+                    10002L => "Test",
+                    _ => roleId.ToString()
+                });
+            }
         }
 
-        // System + Admin + Test 默认都可以访问该接口
         const long systemRoleId = 10000;
         const long adminRoleId = 10001;
         const long testRoleId = 10002;
 
-        await EnsureRoleApiPermissionAsync(db, systemRoleId, userByHttpContextApiId, "System");
-        await EnsureRoleApiPermissionAsync(db, adminRoleId, userByHttpContextApiId, "Admin");
-        await EnsureRoleApiPermissionAsync(db, testRoleId, userByHttpContextApiId, "Test");
+        await EnsureRoleApiPermissionAsync(db, systemRoleId, 50000, "System");
+        await EnsureRoleApiPermissionAsync(db, adminRoleId, 50000, "Admin");
+        await EnsureRoleApiPermissionAsync(db, testRoleId, 50000, "Test");
     }
 
     private static async Task EnsureRoleApiPermissionAsync(ISqlSugarClient db, long roleId, long apiModuleId,
@@ -230,13 +715,15 @@ internal static partial class InitialDataSeeder
             $"[Radish.DbMigrate] 创建角色 Id={roleId} ({roleName}) 对 ApiModule Id={apiModuleId} 的访问权限...");
 
         // 为种子权限使用固定、靠后的 Id 段，避免与历史数据的主键冲突
-        var permId = roleId switch
+        var roleOffset = roleId switch
         {
-            10000 => 60000, // System 对 GetUserByHttpContext
-            10001 => 60001, // Admin 对 GetUserByHttpContext
-            10002 => 60002, // Test 对 GetUserByHttpContext
-            _ => 0          // 其它角色走默认雪花/自增配置
+            10000 => 0L,
+            10001 => 1L,
+            10002 => 2L,
+            _ => 9L
         };
+
+        var permId = 60000L + ((apiModuleId - 50000L) * 10L) + roleOffset;
 
         var perm = new RoleModulePermission
         {
@@ -637,5 +1124,124 @@ internal static partial class InitialDataSeeder
                 ? $"[Radish.DbMigrate] 已将 test 用户租户纠正为 {publicTenantId}。"
                 : $"[Radish.DbMigrate] 已存在 Id={testUserId} 的 test 用户，且租户已是 {publicTenantId}，跳过。");
         }
+
+        await SeedDefaultUserAvatarsAsync(db, publicTenantId);
+    }
+
+    private static async Task SeedDefaultUserAvatarsAsync(ISqlSugarClient db, long publicTenantId)
+    {
+        var defaultAvatarsPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Uploads", "DefaultAvatars");
+        if (!Directory.Exists(defaultAvatarsPath))
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 默认头像目录不存在，跳过：{defaultAvatarsPath}");
+            return;
+        }
+
+        var avatarSeeds = new[]
+        {
+            new { AttachmentId = 72000L, UserId = 20000L, UserName = "system", FileName = "radish.png" },
+            new { AttachmentId = 72001L, UserId = 20001L, UserName = "admin", FileName = "touxiang1.jpg" },
+            new { AttachmentId = 72002L, UserId = 20002L, UserName = "test", FileName = "touxiang2.jpg" }
+        };
+
+        foreach (var seed in avatarSeeds)
+        {
+            var existingAvatar = await db.Queryable<Attachment>()
+                .FirstAsync(a => !a.IsDeleted &&
+                                 a.BusinessType == "Avatar" &&
+                                 a.BusinessId == seed.UserId);
+            if (existingAvatar != null)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 用户 {seed.UserName} 已存在头像，保留现状。");
+                continue;
+            }
+
+            var filePath = Path.Combine(defaultAvatarsPath, seed.FileName);
+            if (!File.Exists(filePath))
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 默认头像文件不存在，跳过用户 {seed.UserName}：{filePath}");
+                continue;
+            }
+
+            var fileInfo = new FileInfo(filePath);
+            var relativePath = Path.Combine("DefaultAvatars", seed.FileName).Replace('\\', '/');
+            var url = $"/uploads/{relativePath}";
+
+            var existingAttachment = await db.Queryable<Attachment>()
+                .FirstAsync(a => a.Id == seed.AttachmentId);
+
+            if (existingAttachment != null)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] 默认头像附件 Id={seed.AttachmentId} 已存在，补齐用户 {seed.UserName} 的头像关联。");
+                await db.Updateable<Attachment>()
+                    .SetColumns(a => new Attachment
+                    {
+                        OriginalName = seed.FileName,
+                        StoredName = $"default-avatar-{seed.UserName}",
+                        Extension = Path.GetExtension(seed.FileName),
+                        FileSize = fileInfo.Length,
+                        MimeType = GetImageMimeType(seed.FileName),
+                        StorageType = "Local",
+                        StoragePath = relativePath,
+                        ThumbnailPath = relativePath,
+                        Url = url,
+                        UploaderId = seed.UserId,
+                        UploaderName = seed.UserName,
+                        BusinessType = "Avatar",
+                        BusinessId = seed.UserId,
+                        IsPublic = true,
+                        IsEnabled = true,
+                        IsDeleted = false,
+                        TenantId = publicTenantId,
+                        ModifyBy = "System",
+                        ModifyId = 0,
+                        ModifyTime = DateTime.Now
+                    })
+                    .Where(a => a.Id == seed.AttachmentId)
+                    .ExecuteCommandAsync();
+
+                continue;
+            }
+
+            Console.WriteLine($"[Radish.DbMigrate] 为用户 {seed.UserName} 补充默认头像：{seed.FileName}");
+
+            await db.Insertable(new Attachment
+            {
+                Id = seed.AttachmentId,
+                OriginalName = seed.FileName,
+                StoredName = $"default-avatar-{seed.UserName}",
+                Extension = Path.GetExtension(seed.FileName),
+                FileSize = fileInfo.Length,
+                MimeType = GetImageMimeType(seed.FileName),
+                StorageType = "Local",
+                StoragePath = relativePath,
+                ThumbnailPath = relativePath,
+                Url = url,
+                UploaderId = seed.UserId,
+                UploaderName = seed.UserName,
+                BusinessType = "Avatar",
+                BusinessId = seed.UserId,
+                IsPublic = true,
+                IsEnabled = true,
+                IsDeleted = false,
+                TenantId = publicTenantId,
+                CreateBy = "System",
+                CreateId = 0
+            }).ExecuteCommandAsync();
+        }
+    }
+
+    private static string GetImageMimeType(string fileName)
+    {
+        var extension = Path.GetExtension(fileName).ToLowerInvariant();
+        return extension switch
+        {
+            ".png" => "image/png",
+            ".jpg" => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream"
+        };
     }
 }

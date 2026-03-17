@@ -74,6 +74,7 @@ internal static partial class InitialDataSeeder
             ("用户时区偏好", () => SeedUserTimePreferencesAsync(db)),
             ("用户角色", () => SeedUserRolesAsync(db)),
             ("角色 API 权限", () => SeedPermissionsAsync(db)),
+            ("Console 授权资源", () => SeedConsoleAuthorizationAsync(db)),
             ("论坛分类", () => SeedForumCategoriesAsync(db)),
             ("论坛标签", () => SeedForumTagsAsync(db)),
             ("Wiki 文档", () => SeedWikiDocumentsAsync(db)),

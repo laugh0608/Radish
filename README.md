@@ -6,13 +6,26 @@
 
 Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，前端使用 React 19（Vite + TypeScript），采用桌面化 UI 设计理念。
 
+## 当前状态
+
+- **当前主线**：`M12 收口与后续规划校准`
+- **最新结论（2026-03-16）**：
+  - `P5 论坛抽奖 MVP + 个人中心浏览记录优化` 已完成本轮收口，当前状态为“可演示、可联调、可回归、可转维护”
+  - 下一阶段不会直接沿用旧版 `M13` 定义开工，而是以“验证基线与回归资产工程化”为入口重整当前验证能力
+- **当前验证基线**：
+  - 后端：`dotnet build/test`
+  - 前端：`npm run type-check`、`npm run test --workspace=radish.client`
+  - 联调与回归：`Radish.Api.Tests/HttpTest`
+  - 专题扫描：`npm run check:console-permissions`
+  - 数据/配置只读自检：`Radish.DbMigrate doctor`、`verify`
+
 ## 技术栈
 
 - **后端**：ASP.NET Core 10、SQLSugar、FluentValidation、Serilog
 - **数据库**：PostgreSQL 16（本地开发可用 SQLite）
 - **前端**：React 19、Vite (Rolldown)、TypeScript
-- **测试**：xUnit + Shouldly（后端）、Vitest + Testing Library（前端）
-- **容器化**：Docker / Docker Compose
+- **测试**：xUnit + Shouldly（后端）、`node --test` + TypeScript 类型检查 + `HttpTest`（前端 / 联调资产）
+- **容器化**：`Radish.Api/Dockerfile` 已落地，Compose 与多宿主镜像仍处于文档化整理阶段
 
 ## 快速开始
 
@@ -34,8 +47,8 @@ dotnet restore
 dotnet run --project Radish.Api/Radish.Api.csproj
 
 # 方式 3：手动启动前端
-npm install --prefix Frontend/radish.client
-npm run dev --prefix Frontend/radish.client
+npm install
+npm run dev --workspace=radish.client
 ```
 
 启动后常见入口：
@@ -59,12 +72,15 @@ npm run dev --prefix Frontend/radish.client
 dotnet watch --project Radish.Api           # 热重载
 dotnet test Radish.Api.Tests                # 运行测试
 dotnet build Radish.slnx -c Debug           # 构建解决方案
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor  # 只读检查 DbMigrate 环境
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed    # 初始化结构与种子数据
 
 # 前端开发（必须在项目根目录运行）
 npm run dev --workspace=radish.client       # 前端开发服务器
 npm run dev --workspace=radish.console      # 控制台开发服务器
-npm run build --prefix Frontend/radish.client        # 生产构建
-npm run lint --prefix Frontend/radish.client         # 代码检查
+npm run build --workspace=radish.client     # 生产构建
+npm run lint --workspace=radish.client      # 代码检查
+npm run test --workspace=radish.client      # 当前前端测试脚本
 
 # 或使用快捷脚本
 npm run dev:frontend                        # 启动 radish.client
@@ -77,6 +93,21 @@ npm run lint --workspace=@radish/ui         # 代码检查
 # Windows 用户注意：
 # 如果需要在子项目目录中直接运行 npm 命令，请先以管理员身份运行：
 # pwsh ./setup-workspace-links.ps1
+```
+
+在当前仓库环境中，若本机 `dotnet` 受用户目录、NuGet 审计或并发还原影响，优先使用根目录脚本包装命令：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File Scripts\dotnet-local.ps1 build Radish.slnx -c Debug
+powershell -ExecutionPolicy Bypass -File Scripts\dotnet-local.ps1 test Radish.Api.Tests
+```
+
+当前更推荐的“最小验证顺序”是：
+
+```bash
+npm run type-check
+npm run test --workspace=radish.client
+npm run check:console-permissions
 ```
 
 ## 项目结构
@@ -113,6 +144,7 @@ Radish/
 - 📗 [**架构设计**](Docs/architecture/framework.md) - 技术选型、分层架构、数据持久化
 - 📙 [**开发计划**](Docs/development-plan.md) - 里程碑与迭代计划
 - 📕 [**开发日志**](Docs/changelog/) - 按月份/周记录的开发历程
+- ✅ [**验证基线**](Docs/guide/validation-baseline.md) - 当前统一验证入口、分层使用建议与边界说明
 
 ### 专项文档
 - 🔐 [**认证与权限**](Docs/guide/authentication.md) - OIDC 认证流程与权限体系
@@ -270,7 +302,7 @@ git push origin v26.2.1-release
 请确保：
 1. 代码遵循项目 [开发规范](Docs/architecture/specifications.md)
 2. 单元测试通过（`dotnet test`）
-3. 提交前运行 `npm run lint --prefix Frontend/radish.client`
+3. 提交前至少运行与改动匹配的 `npm run type-check`、`npm run lint` 或专题 `HttpTest`
 4. 在 [开发日志](Docs/changelog/) 中记录重大变更
 
 ## 许可

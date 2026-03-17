@@ -1,4 +1,8 @@
+using System;
+using System.IO;
+using System.Linq;
 using Radish.Model;
+using Radish.Common.CoreTool;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
 
@@ -9,6 +13,7 @@ internal static partial class InitialDataSeeder
     /// <summary>初始化商城分类数据</summary>
     private static async Task SeedShopCategoriesAsync(ISqlSugarClient db)
     {
+        var defaultShopImages = GetDefaultShopImageUrls();
         var categories = new[]
         {
             new ProductCategory
@@ -73,17 +78,37 @@ internal static partial class InitialDataSeeder
             }
         };
 
+        ApplyDefaultImagesToCategories(categories, defaultShopImages);
+
         foreach (var category in categories)
         {
-            var exists = await db.Queryable<ProductCategory>().AnyAsync(c => c.Id == category.Id);
-            if (!exists)
+            var existingCategory = await db.Queryable<ProductCategory>().FirstAsync(c => c.Id == category.Id);
+            if (existingCategory == null)
             {
                 Console.WriteLine($"[Radish.DbMigrate] 创建商品分类 Id={category.Id}, Name={category.Name}...");
                 await db.Insertable(category).ExecuteCommandAsync();
             }
             else
             {
-                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={category.Id} 的商品分类，跳过创建。");
+                if (ShouldBackfillCategoryIcon(existingCategory.Icon) && !string.IsNullOrWhiteSpace(category.Icon))
+                {
+                    var updated = await db.Updateable<ProductCategory>()
+                        .SetColumns(c => new ProductCategory
+                        {
+                            Icon = category.Icon,
+                            ModifyTime = DateTime.Now
+                        })
+                        .Where(c => c.Id == category.Id)
+                        .ExecuteCommandAsync();
+
+                    Console.WriteLine(updated > 0
+                        ? $"[Radish.DbMigrate] 已为商品分类 Id={category.Id} 补齐默认图片。"
+                        : $"[Radish.DbMigrate] 商品分类 Id={category.Id} 已存在，但未能补齐默认图片。");
+                }
+                else
+                {
+                    Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={category.Id} 的商品分类，且图片已存在，跳过。");
+                }
             }
         }
     }
@@ -91,6 +116,8 @@ internal static partial class InitialDataSeeder
     /// <summary>初始化商城商品数据</summary>
     private static async Task SeedShopProductsAsync(ISqlSugarClient db)
     {
+        var defaultShopImages = GetDefaultShopImageUrls();
+
         // 商品 ID 从 100000 开始
         var products = new[]
         {
@@ -458,10 +485,12 @@ internal static partial class InitialDataSeeder
             }
         };
 
+        ApplyDefaultImagesToProducts(products, defaultShopImages);
+
         foreach (var product in products)
         {
-            var exists = await db.Queryable<Product>().AnyAsync(p => p.Id == product.Id);
-            if (!exists)
+            var existingProduct = await db.Queryable<Product>().FirstAsync(p => p.Id == product.Id);
+            if (existingProduct == null)
             {
                 Console.WriteLine($"[Radish.DbMigrate] 创建商品 Id={product.Id}, Name={product.Name}...");
                 try
@@ -487,8 +516,92 @@ internal static partial class InitialDataSeeder
             }
             else
             {
-                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={product.Id} 的商品，跳过创建。");
+                if (string.IsNullOrWhiteSpace(existingProduct.Icon) || string.IsNullOrWhiteSpace(existingProduct.CoverImage))
+                {
+                    product.ModifyTime = DateTime.Now;
+                    product.ModifyBy = "System";
+
+                    var updated = await db.Updateable<Product>()
+                        .SetColumns(p => new Product
+                        {
+                            Icon = string.IsNullOrWhiteSpace(existingProduct.Icon) ? product.Icon : existingProduct.Icon,
+                            CoverImage = string.IsNullOrWhiteSpace(existingProduct.CoverImage) ? product.CoverImage : existingProduct.CoverImage,
+                            ModifyTime = DateTime.Now,
+                            ModifyBy = "System"
+                        })
+                        .Where(p => p.Id == product.Id)
+                        .ExecuteCommandAsync();
+
+                    Console.WriteLine(updated > 0
+                        ? $"[Radish.DbMigrate] 已为商品 Id={product.Id} 补齐默认图片。"
+                        : $"[Radish.DbMigrate] 商品 Id={product.Id} 已存在，但未能补齐默认图片。");
+                }
+                else
+                {
+                    Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={product.Id} 的商品，且图片已存在，跳过。");
+                }
             }
         }
+    }
+
+    private static string[] GetDefaultShopImageUrls()
+    {
+        var imageDirectory = Path.Combine(AppPathTool.GetDataBasesPath(), "Uploads", "DefaultShopImage");
+        if (!Directory.Exists(imageDirectory))
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 默认商品图片目录不存在，跳过图片补齐：{imageDirectory}");
+            return Array.Empty<string>();
+        }
+
+        return Directory.GetFiles(imageDirectory)
+            .Where(path => !string.Equals(Path.GetFileName(path), ".gitkeep", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .Select(path => $"/uploads/DefaultShopImage/{Path.GetFileName(path)}")
+            .ToArray();
+    }
+
+    private static void ApplyDefaultImagesToProducts(Product[] products, string[] defaultShopImages)
+    {
+        if (defaultShopImages.Length == 0)
+        {
+            return;
+        }
+
+        foreach (var product in products)
+        {
+            var imageUrl = defaultShopImages[(int)(product.Id % defaultShopImages.Length)];
+            product.Icon = imageUrl;
+            product.CoverImage = imageUrl;
+        }
+    }
+
+    private static void ApplyDefaultImagesToCategories(ProductCategory[] categories, string[] defaultShopImages)
+    {
+        if (defaultShopImages.Length == 0)
+        {
+            return;
+        }
+
+        for (var i = 0; i < categories.Length; i++)
+        {
+            categories[i].Icon = defaultShopImages[i % defaultShopImages.Length];
+        }
+    }
+
+    private static bool ShouldBackfillCategoryIcon(string? icon)
+    {
+        if (string.IsNullOrWhiteSpace(icon))
+        {
+            return true;
+        }
+
+        if (icon.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase) ||
+            icon.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            icon.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return icon is "badge" or "frame" or "title" or "signature" or "sparkles" or "palette";
     }
 }

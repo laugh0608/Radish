@@ -29,6 +29,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private readonly CommentHighlightOptions _highlightOptions;
     private readonly IBaseRepository<CommentEditHistory> _commentEditHistoryRepository;
     private readonly ForumEditHistoryOptions _editHistoryOptions;
+    private readonly IBaseRepository<Attachment>? _attachmentRepository;
 
     public CommentService(
         IMapper mapper,
@@ -43,7 +44,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         IExperienceService experienceService,
         IOptions<CommentHighlightOptions> highlightOptions,
         IBaseRepository<CommentEditHistory> commentEditHistoryRepository,
-        IOptions<ForumEditHistoryOptions> editHistoryOptions)
+        IOptions<ForumEditHistoryOptions> editHistoryOptions,
+        IBaseRepository<Attachment>? attachmentRepository = null)
         : base(mapper, baseRepository)
     {
         _commentRepository = baseRepository;
@@ -58,6 +60,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         _highlightOptions = highlightOptions.Value;
         _commentEditHistoryRepository = commentEditHistoryRepository;
         _editHistoryOptions = editHistoryOptions.Value;
+        _attachmentRepository = attachmentRepository;
     }
 
     /// <summary>
@@ -122,6 +125,9 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
         // 2. 插入评论
         var commentId = await AddAsync(comment);
+
+        var safeAuthorName = string.IsNullOrWhiteSpace(comment.AuthorName) ? "System" : comment.AuthorName;
+        await BindReferencedAttachmentsAsync(comment.Content, BusinessType.Comment, commentId, comment.AuthorId, safeAuthorName, comment.TenantId);
 
         // 3. 更新帖子的评论数
         await _postService.UpdateCommentCountAsync(comment.PostId, 1);
@@ -809,6 +815,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         comment.ModifyBy = safeUserName;
         comment.ModifyId = userId;
         await _commentRepository.UpdateAsync(comment);
+        await BindReferencedAttachmentsAsync(trimmedContent, BusinessType.Comment, commentId, userId, safeUserName, comment.TenantId);
 
         if (historyEnabled)
         {
@@ -855,6 +862,43 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 #pragma warning disable CS0618
         await _commentEditHistoryRepository.DeleteByIdsAsync(removeIds);
 #pragma warning restore CS0618
+    }
+
+    private async Task BindReferencedAttachmentsAsync(
+        string? content,
+        string businessType,
+        long businessId,
+        long operatorId,
+        string operatorName,
+        long tenantId)
+    {
+        if (_attachmentRepository == null || businessId <= 0 || operatorId <= 0)
+        {
+            return;
+        }
+
+        var referencedUrls = AttachmentReferenceHelper.ExtractUploadUrls(content);
+        if (referencedUrls.Count == 0)
+        {
+            return;
+        }
+
+        var normalizedTenantId = tenantId > 0 ? tenantId : 0;
+        var attachments = await _attachmentRepository.QueryAsync(a =>
+            !a.IsDeleted &&
+            !a.BusinessId.HasValue &&
+            a.TenantId == normalizedTenantId &&
+            a.UploaderId == operatorId);
+
+        foreach (var attachment in attachments.Where(a => AttachmentReferenceHelper.IsAttachmentReferenced(a, referencedUrls)))
+        {
+            attachment.BusinessType = businessType;
+            attachment.BusinessId = businessId;
+            attachment.ModifyTime = DateTime.Now;
+            attachment.ModifyBy = operatorName;
+            attachment.ModifyId = operatorId;
+            await _attachmentRepository.UpdateAsync(attachment);
+        }
     }
 
     /// <summary>

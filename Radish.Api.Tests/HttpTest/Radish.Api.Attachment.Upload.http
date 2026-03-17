@@ -1,0 +1,298 @@
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Api_HostAddress = http://localhost:5100
+
+### 上传图片（基础）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-image.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传图片（业务类型 Post）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="post-image.png"
+Content-Type: image/png
+
+< ./test-files/test-image.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Post
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传头像图片
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="avatar.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/avatar.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Avatar
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传图片（不生成缩略图）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="no-thumbnail.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+false
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+false
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传图片（测试文件去重）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="duplicate-test.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传图片（生成多尺寸）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="multi-size-test.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Post
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateMultipleSizes"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传图片（添加文字水印）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="watermark-test.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Post
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="addWatermark"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="watermarkText"
+
+Radish © 2025
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传 WebP 图片
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-webp.webp"
+Content-Type: image/webp
+
+< ./test-files/test-image.webp
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Post
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 获取当前用户附件列表
+GET {{Api_HostAddress}}/api/v1/Attachment/GetMyAttachments?pageIndex=1&pageSize=10
+Authorization: Bearer {{Access_Token}}
+
+### 获取当前用户附件列表（按业务类型过滤）
+GET {{Api_HostAddress}}/api/v1/Attachment/GetMyAttachments?pageIndex=1&pageSize=10&businessType=Avatar
+Authorization: Bearer {{Access_Token}}
+
+### 获取当前用户附件列表（按关键字过滤）
+GET {{Api_HostAddress}}/api/v1/Attachment/GetMyAttachments?pageIndex=1&pageSize=10&keyword=avatar
+Authorization: Bearer {{Access_Token}}
+
+### 上传图片（完整功能组合）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="full-feature-test.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Post
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateThumbnail"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="generateMultipleSizes"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="addWatermark"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="watermarkText"
+
+Radish © 2025
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="removeExif"
+
+true
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传 PDF 文档
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadDocument
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-document.pdf"
+Content-Type: application/pdf
+
+< ./test-files/test-document.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Document
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传 Markdown 文档
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadDocument
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-document.md"
+Content-Type: text/markdown
+
+< ./test-files/test-document.md
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Document
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传 Excel 文档
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadDocument
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-spreadsheet.xlsx"
+Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+
+< ./test-files/test-spreadsheet.xlsx
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Document
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

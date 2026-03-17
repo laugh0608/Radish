@@ -81,6 +81,36 @@
   flex-shrink: 0;
 }
 
+.pollChip {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.lotteryChip {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.lotteryDoneChip {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.questionChip {
+  background: #e0f2fe;
+  color: #0f4c81;
+}
+
+.solvedChip {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pendingChip {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
 .tagChip {
   display: inline-flex;
   align-items: center;
@@ -172,6 +202,23 @@
   gap: 8px;
   min-width: 0;
   flex: 1;
+}
+
+.authorLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.authorLink:hover .authorName {
+  color: #2563eb;
 }
 
 .avatar {

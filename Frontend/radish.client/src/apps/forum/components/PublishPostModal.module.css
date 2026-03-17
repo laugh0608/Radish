@@ -165,6 +165,241 @@
   color: #dc2626;
 }
 
+.optionSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid #d8e1ec;
+}
+
+.questionSection {
+  background: linear-gradient(180deg, #fff9f1 0%, #fff4e6 100%);
+  border-color: #f5d7a8;
+}
+
+.pollSection {
+  background: linear-gradient(180deg, #f8fbff 0%, #f3f7fb 100%);
+}
+
+.lotterySection {
+  background: linear-gradient(180deg, #fefaf2 0%, #fff5e6 100%);
+  border-color: #f3d4a4;
+}
+
+.optionSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.optionSectionLabel {
+  display: inline-flex;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.optionSectionHint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.optionToggle {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+}
+
+.questionSection .optionToggle {
+  border-color: #f7c98b;
+  color: #b45309;
+}
+
+.questionToggleActive {
+  background: #ea580c;
+  color: #ffffff;
+  border-color: #ea580c;
+}
+
+.pollToggleActive {
+  background: #1d4ed8;
+  color: #ffffff;
+  border-color: #1d4ed8;
+}
+
+.lotteryToggleActive {
+  background: #c2410c;
+  color: #ffffff;
+  border-color: #c2410c;
+}
+
+.optionNotice {
+  margin: 0;
+  font-size: 12px;
+  color: #7c2d12;
+}
+
+.pollFields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lotteryFields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pollQuestionInput,
+.pollOptionInput,
+.pollEndTimeInput {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 13px;
+  outline: none;
+}
+
+.lotteryInput,
+.lotteryTextarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 13px;
+  outline: none;
+}
+
+.lotteryTextarea {
+  resize: vertical;
+  min-height: 88px;
+}
+
+.pollQuestionInput:focus,
+.pollOptionInput:focus,
+.pollEndTimeInput:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+}
+
+.lotteryInput:focus,
+.lotteryTextarea:focus {
+  border-color: #fb923c;
+  box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.15);
+}
+
+.pollOptionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pollOptionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pollOptionIndex {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.pollOptionRemove,
+.pollAddButton {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.pollOptionRemove:disabled,
+.pollAddButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pollControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lotteryControls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lotteryFieldLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1 1 220px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.pollEndTimeLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.pollEndTimeInput {
+  min-width: 220px;
+}
+
+.pollError {
+  margin: 0;
+  font-size: 12px;
+  color: #dc2626;
+}
+
+.lotteryHint {
+  margin: 0;
+  font-size: 12px;
+  color: #9a3412;
+}
+
+.lotteryError {
+  margin: 0;
+  font-size: 12px;
+  color: #dc2626;
+}
+
 .watermarkInput {
   padding: 8px 12px;
   font-size: 14px;
@@ -307,6 +542,21 @@
   background-color: #e2e8f0;
   border-color: #94a3b8;
   color: #0f172a;
+}
+
+@media (max-width: 720px) {
+  .optionSectionHeader,
+  .pollOptionRow,
+  .pollControls,
+  .lotteryControls,
+  .footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .pollEndTimeInput {
+    min-width: 0;
+  }
 }
 
 /* 未登录提示 */

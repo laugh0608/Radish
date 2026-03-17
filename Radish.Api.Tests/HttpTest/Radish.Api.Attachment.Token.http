@@ -1,0 +1,101 @@
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Api_HostAddress = http://localhost:5100
+
+@PrivateAttachmentId = <私有附件的ID>
+@AccessToken = <从创建令牌响应中复制 token>
+@TokenToRevoke = <要撤销的 token>
+@TargetUserId = 20001
+
+### 为附件创建临时访问令牌
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 24,
+  "maxAccessCount": 10,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+### 使用令牌下载文件
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token={{AccessToken}}
+
+### 创建限制访问次数的令牌
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 1,
+  "maxAccessCount": 1,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+### 创建限制用户的令牌
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 24,
+  "maxAccessCount": 0,
+  "authorizedUserId": {{TargetUserId}},
+  "authorizedIp": null
+}
+
+### 创建限制 IP 的令牌
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 24,
+  "maxAccessCount": 0,
+  "authorizedUserId": null,
+  "authorizedIp": "192.168.1.100"
+}
+
+### 撤销访问令牌
+POST {{Api_HostAddress}}/api/v1/Attachment/RevokeAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+"{{TokenToRevoke}}"
+
+### 获取附件的所有令牌
+GET {{Api_HostAddress}}/api/v1/Attachment/GetAttachmentTokens?attachmentId={{PrivateAttachmentId}}
+Authorization: Bearer {{Access_Token}}
+
+### 测试过期令牌
+POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "attachmentId": {{PrivateAttachmentId}},
+  "validHours": 0.0003,
+  "maxAccessCount": 0,
+  "authorizedUserId": null,
+  "authorizedIp": null
+}
+
+### 访问过期令牌（预期 403）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<过期的token>
+
+### 测试访问次数限制：第 1 次
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<token>
+
+### 测试访问次数限制：第 2 次
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<token>
+
+### 测试访问次数限制：第 3 次（预期 403）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<token>
+
+### 使用无效令牌（预期 403）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=invalid-token-12345

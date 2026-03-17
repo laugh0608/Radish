@@ -135,6 +135,7 @@ export async function uploadChunk(
 - 拆分为更小的模块/类/组件
 - 提取自定义 Hooks（前端）或抽离 Service/Utility（后端/前端）
 - 分离业务逻辑与展示逻辑，按功能拆分目录
+- 对于必须保留同一服务类型的大型后端实现，可使用“**目录 + partial class**”按职责拆分，例如 `Radish.Service/Posts/PostService*.cs`；禁止继续把实现堆回单个超大文件
 
 ## 项目版本号规范
 
@@ -383,7 +384,7 @@ git push origin v26.1.1.3003
 - Program 在调用 `builder.Services.AddSqlSugarSetup()` 后会立即读取 `Snowflake` 段并设置 `SnowFlakeSingle.WorkId/DatacenterId`，因此只要在环境配置中写好差异值即可，无需在扩展或仓储层重复配置；若服务器时间曾被回拨，务必同步调整新的 WorkId。
 - `BaseRepository` 通过 `IUnitOfWorkManage` 获取 `SqlSugarScope` 单例，内部根据泛型实体的 `[Tenant(configId)]` 特性切换连接；未标注特性的实体沿用 `MainDb`，标注了 `configId="Log"` 等值（大小写不敏感）的实体会自动访问对应库。需要写入日志库或其他独立库的模型务必显式添加 `TenantAttribute`，以免错写入主库；若实体启用了 `[MultiTenant(TenantTypeEnum.DataBases)]`，`BaseRepository` 会通过 `TenantUtil.GetConnectionConfig()` 在运行期动态添加租户库配置。
 - 使用 SQLite 时 `ConnectionString` 只需传数据库文件名，运行期会自动拼接 `Environment.CurrentDirectory`；对于 MySQL/SQLServer 等外部数据库，可通过 `dbCountPsw1_*.txt` 本地文件或环境变量隐藏真实连接串，`BaseDbConfig.SpecialDbString` 会优先读取文件值。
-- SQL 日志统一通过 `SqlSugarAop.OnLogExecuting` 写入 Serilog，`LogContextTool` 会在上下文中打上 `LogSource=AopSql` 标签；SqlSugar 的缓存实现委托给 `Radish.Common.CacheTool.SqlSugarCache`，保持与 Redis/内存缓存一致的策略。Serilog 输出由 `SerilogSetup + LogConfigExtension` 统一配置，普通日志与 SQL 日志会分别落入 `Log/Log.txt` 与 `Log/AopSql/AopSql.txt`，并启用 `WriteTo.Async()` 防止阻塞请求线程。
+- SQL 日志统一通过 `SqlSugarAop.OnLogExecuting` 写入 Serilog，`LogContextTool` 会在上下文中打上 `LogSource=AopSql` 标签；SqlSugar 的缓存实现委托给 `Radish.Common.CacheTool.SqlSugarCache`，保持与 Redis/内存缓存一致的策略。Serilog 输出由 `SerilogSetup + LogConfigExtension` 统一配置，普通日志与 SQL 日志会分别落入 `Log/Log.txt` 与 `Log/AopSql/AopSql.txt`，并启用 `WriteTo.Async()` 防止阻塞请求线程。SQL AOP 过滤与大文本脱敏统一使用共享配置 `SqlAopLog`，默认允许按 `Query/Insert/Update/Delete` 维度开关、按 `SkipTables/SkipUsers` 跳过记录，并对 `MarkdownContent` 等大字段只输出长度占位。
 
 ### 多租户隔离模式示例
 
@@ -457,10 +458,12 @@ git push origin v26.1.1.3003
    - 在仓库根目录执行：
 
      ```bash
+     dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor
      dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
      ```
 
      - 动作说明：
+       - `doctor` 只读检查当前配置、连接定义与 Seed 前置状态；
        - 根据当前配置创建数据库（如不存在）。
        - 扫描 `Radish.Model` 中标记了 `[SugarTable]` 的实体类型，执行 `CodeFirst.InitTables`：
          - 新表会被创建；
@@ -485,6 +488,7 @@ git push origin v26.1.1.3003
    - 若新增字段需要默认业务数据（例如为所有历史用户回填某个状态），建议：
      - 在迁移 SQL 中加入安全的 `UPDATE` 语句，或
      - 在 `Radish.DbMigrate` 中实现 `seed` 子命令，集中处理默认管理员、角色、租户、基础参数等数据初始化。
+   - 推荐执行顺序：先运行 `doctor` 做只读检查，再执行 `seed`；若 `doctor` 报告结构缺失，可先执行 `init`。
    - 数据初始化脚本同样应纳入版本管理，并在上线流程中显式执行。
 
 ---
@@ -925,6 +929,7 @@ public class PostService : BaseService<Post, PostVo>, IPostService
 4. **命名规范**：
    - 接口：`IPostService : IBaseService<Post, PostVo>`
    - 实现：`PostService : BaseService<Post, PostVo>, IPostService`
+   - 若实现规模较大，可保留同名 `PostService`，但按职责拆到子目录和 `partial class` 文件中，避免单文件失控
 
 ---
 

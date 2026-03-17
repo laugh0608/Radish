@@ -6,13 +6,14 @@ interface PostCardProps {
   post: PostItem;
   displayTimeZone: string;
   onClick: () => void;
+  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   godComment?: {
     authorName: string;
     content?: string | null;
   } | null;
 }
 
-export const PostCard = ({ post, displayTimeZone, onClick, godComment }: PostCardProps) => {
+export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godComment }: PostCardProps) => {
   const allTags = post.voTags
     ? post.voTags
         .split(',')
@@ -124,6 +125,25 @@ export const PostCard = ({ post, displayTimeZone, onClick, godComment }: PostCar
             {remainingTagCount > 0 && <span className={styles.moreTag}>+{remainingTagCount}</span>}
             {post.voIsEssence && <span className={styles.statusChip}>精华</span>}
             {post.voIsTop && <span className={styles.statusChip}>置顶</span>}
+            {post.voIsQuestion && (
+              <>
+                <span className={`${styles.statusChip} ${styles.questionChip}`}>问答</span>
+                <span className={`${styles.statusChip} ${post.voIsSolved ? styles.solvedChip : styles.pendingChip}`}>
+                  {post.voIsSolved ? '已解决' : '待解决'}
+                </span>
+              </>
+            )}
+            {post.voHasPoll && (
+              <span className={`${styles.statusChip} ${styles.pollChip}`}>投票</span>
+            )}
+            {post.voHasLottery && (
+              <>
+                <span className={`${styles.statusChip} ${styles.lotteryChip}`}>抽奖</span>
+                {post.voLotteryIsDrawn && (
+                  <span className={`${styles.statusChip} ${styles.lotteryDoneChip}`}>已开奖</span>
+                )}
+              </>
+            )}
           </div>
 
           {godCommentPreview ? (
@@ -139,8 +159,18 @@ export const PostCard = ({ post, displayTimeZone, onClick, godComment }: PostCar
         <aside className={styles.side}>
           <div className={styles.metaTopRow}>
             <div className={styles.authorBlock}>
-              {renderAvatar(authorName, post.voAuthorAvatarUrl, styles.avatar, authorName)}
-              <span className={styles.authorName}>{authorName}</span>
+              <button
+                type="button"
+                className={styles.authorLink}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl);
+                }}
+                title={`查看 ${authorName} 的主页`}
+              >
+                {renderAvatar(authorName, post.voAuthorAvatarUrl, styles.avatar, authorName)}
+                <span className={styles.authorName}>{authorName}</span>
+              </button>
             </div>
             <div className={styles.time}>{publishedTime}</div>
           </div>
@@ -158,6 +188,24 @@ export const PostCard = ({ post, displayTimeZone, onClick, godComment }: PostCar
               <span className={styles.statLabel}>阅</span>
               <span className={styles.statValue}>{post.voViewCount || 0}</span>
             </div>
+            {post.voHasPoll && (
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>票</span>
+                <span className={styles.statValue}>{post.voPollTotalVoteCount || 0}</span>
+              </div>
+            )}
+            {post.voIsQuestion && (
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>答</span>
+                <span className={styles.statValue}>{post.voAnswerCount || 0}</span>
+              </div>
+            )}
+            {post.voHasLottery && (
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>抽</span>
+                <span className={styles.statValue}>{post.voLotteryParticipantCount || 0}</span>
+              </div>
+            )}
           </div>
 
           <div className={styles.interactionRow}>

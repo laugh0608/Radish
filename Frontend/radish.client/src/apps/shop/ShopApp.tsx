@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
+import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
 import { ShopHome } from './pages/ShopHome';
 import { ProductList } from './pages/ProductList';
 import { ProductDetail } from './pages/ProductDetail';
@@ -22,15 +23,43 @@ export interface ShopAppState {
   searchKeyword?: string;
 }
 
+function parseShopWindowParams(appParams?: Record<string, unknown> | null): { productId?: number } {
+  if (!appParams) {
+    return {};
+  }
+
+  const rawProductId = typeof appParams.productId === 'number'
+    ? appParams.productId
+    : typeof appParams.productId === 'string'
+      ? Number(appParams.productId)
+      : 0;
+
+  if (!Number.isFinite(rawProductId) || rawProductId <= 0) {
+    return {};
+  }
+
+  return { productId: rawProductId };
+}
+
 export const ShopApp = () => {
   const { t } = useTranslation();
   const { isAuthenticated } = useUserStore();
+  const currentWindow = useCurrentWindow();
   const loggedIn = isAuthenticated();
+  const initialWindowProductId = useMemo(
+    () => parseShopWindowParams(currentWindow?.appParams).productId,
+    [currentWindow?.appParams]
+  );
 
   // 应用状态
-  const [appState, setAppState] = useState<ShopAppState>({
-    currentView: 'home'
-  });
+  const [appState, setAppState] = useState<ShopAppState>(() => initialWindowProductId
+    ? {
+        currentView: 'product-detail',
+        selectedProductId: initialWindowProductId
+      }
+    : {
+        currentView: 'home'
+      });
 
   // 数据管理
   const dataState = useShopData(t);

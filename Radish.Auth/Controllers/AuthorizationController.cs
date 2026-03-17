@@ -1,9 +1,11 @@
 using System.Collections.Immutable;
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using Radish.Auth.Models;
@@ -18,10 +20,14 @@ namespace Radish.Auth.Controllers;
 public class AuthorizationController : Controller
 {
     private readonly IOpenIddictApplicationManager _applicationManager;
+    private readonly AuthorizationConsentOptions _consentOptions;
 
-    public AuthorizationController(IOpenIddictApplicationManager applicationManager)
+    public AuthorizationController(
+        IOpenIddictApplicationManager applicationManager,
+        IOptions<AuthorizationConsentOptions> consentOptions)
     {
         _applicationManager = applicationManager;
+        _consentOptions = consentOptions.Value;
     }
 
     [HttpGet("~/connect/authorize")]
@@ -66,16 +72,12 @@ public class AuthorizationController : Controller
         var application = await _applicationManager.FindByClientIdAsync(request.ClientId, HttpContext.RequestAborted)
                          ?? throw new InvalidOperationException($"未知的客户端：{request.ClientId}。");
 
-        var consentType = await _applicationManager.GetConsentTypeAsync(application, HttpContext.RequestAborted);
-
         var clientId = request.ClientId;
         var clientName = await _applicationManager.GetDisplayNameAsync(application, HttpContext.RequestAborted)
                           ?? clientId;
+        var applicationProperties = await _applicationManager.GetPropertiesAsync(application, HttpContext.RequestAborted);
 
-        // 约定：radish-client 和 radish-console 视为一方应用，默认跳过授权确认；
-        // 其他使用 Explicit 的客户端（如第三方应用）需要显式授权。
-        var isFirstPartyClient = string.Equals(clientId, "radish-client", StringComparison.OrdinalIgnoreCase) ||
-                                  string.Equals(clientId, "radish-console", StringComparison.OrdinalIgnoreCase);
+        var requiresConsent = RequiresConsent(clientId, applicationProperties);
 
         string? userDecision = null;
         if (string.Equals(Request.Method, "POST", StringComparison.OrdinalIgnoreCase) &&
@@ -84,45 +86,47 @@ public class AuthorizationController : Controller
             userDecision = Request.Form["decision"];
         }
 
-        if (!isFirstPartyClient &&
-            string.Equals(consentType, OpenIddictConstants.ConsentTypes.Explicit, StringComparison.Ordinal) &&
+        if (requiresConsent &&
             string.IsNullOrEmpty(userDecision))
         {
-            // 第一次到达 /connect/authorize，且为需要显式授权的第三方客户端：展示授权确认页
+            // 第一次到达 /connect/authorize，且当前客户端按配置需要展示确认页
             var requestedScopes = request.GetScopes().ToArray();
 
             var vm = new ConsentViewModel
             {
                 ClientId = clientId,
                 ClientName = clientName,
+                ClientDescription = GetPropertyValue(applicationProperties, "description"),
+                ClientLogo = GetPropertyValue(applicationProperties, "logo"),
+                DeveloperName = GetPropertyValue(applicationProperties, "developerName"),
                 Scope = string.Join(" ", requestedScopes),
                 Scopes = requestedScopes,
                 // 将本次授权请求中必需的 OIDC 参数保存到视图模型，方便在同意页通过 form 再次提交
                 ResponseType = request.ResponseType ?? string.Empty,
                 RedirectUri = request.RedirectUri ?? string.Empty,
+                RedirectHost = GetRedirectHost(request.RedirectUri),
                 State = request.State ?? string.Empty
             };
 
             return View("Consent", vm);
         }
 
-        if (!isFirstPartyClient &&
-            string.Equals(consentType, OpenIddictConstants.ConsentTypes.Explicit, StringComparison.Ordinal) &&
+        if (requiresConsent &&
             string.Equals(userDecision, "deny", StringComparison.Ordinal))
         {
             // 用户拒绝授权：向客户端返回 access_denied
-            var properties = new AuthenticationProperties(new Dictionary<string, string?>
+            var denyProperties = new AuthenticationProperties(new Dictionary<string, string?>
             {
                 [OpenIddictServerAspNetCoreConstants.Properties.Error] = OpenIddictConstants.Errors.AccessDenied,
                 [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "The user denied the authorization request."
             });
 
-            return Forbid(properties, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            return Forbid(denyProperties, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
         // 走到这里，要么是：
-        // - 一方客户端（radish-client）；
-        // - 显式授权客户端且用户已点击“同意”；
+        // - 无需确认的客户端；
+        // - 需要确认且用户已点击“同意”；
         // - 或其他 ConsentType（implicit/informed）。
 
         // 基于当前登录用户构造授权主体
@@ -249,6 +253,51 @@ public class AuthorizationController : Controller
 
         // 默认：其他所有 claims 只包含在 access_token 中
         yield return OpenIddictConstants.Destinations.AccessToken;
+    }
+
+    private static string? GetPropertyValue(ImmutableDictionary<string, JsonElement> properties, string key)
+    {
+        if (!properties.TryGetValue(key, out var value))
+        {
+            return null;
+        }
+
+        return value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : value.ToString();
+    }
+
+    private static string? GetRedirectHost(string? redirectUri)
+    {
+        return Uri.TryCreate(redirectUri, UriKind.Absolute, out var uri)
+            ? uri.Host
+            : redirectUri;
+    }
+
+    private bool RequiresConsent(string clientId, ImmutableDictionary<string, JsonElement> properties)
+    {
+        if (ContainsClientId(_consentOptions.ConsentBypassClientIds, clientId))
+        {
+            return false;
+        }
+
+        if (ContainsClientId(_consentOptions.ConsentRequiredClientIds, clientId))
+        {
+            return true;
+        }
+
+        var appType = GetPropertyValue(properties, "appType");
+        var isInternalClient = string.Equals(appType, "Internal", StringComparison.OrdinalIgnoreCase) ||
+                               clientId.StartsWith("radish-", StringComparison.OrdinalIgnoreCase);
+
+        return isInternalClient
+            ? _consentOptions.RequireConsentForInternalClients
+            : true;
+    }
+
+    private static bool ContainsClientId(IEnumerable<string>? clientIds, string clientId)
+    {
+        return clientIds?.Any(item => string.Equals(item, clientId, StringComparison.OrdinalIgnoreCase)) == true;
     }
 
     /// <summary>

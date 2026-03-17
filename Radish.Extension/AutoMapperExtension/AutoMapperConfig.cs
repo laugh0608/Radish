@@ -27,6 +27,7 @@ public class AutoMapperConfig
         cfg.AddProfile<UserFollowProfile>();
         cfg.AddProfile<WikiProfile>();
         cfg.AddProfile<ContentModerationProfile>();
+        cfg.AddProfile<ConsoleAuthorizationProfile>();
     }
 
     #region 已弃用

@@ -43,6 +43,8 @@ export interface WindowState {
   id: string;
   /** 应用 ID */
   appId: string;
+  /** 应用运行参数 */
+  appParams?: Record<string, unknown>;
   /** z-index 层级 */
   zIndex: number;
   /** 是否最小化 */
@@ -71,6 +73,8 @@ export interface UserInfo {
   tenantId: number;
   /** 用户角色 */
   roles?: string[];
+  /** 用户权限 */
+  permissions?: string[];
   /** 用户头像 URL */
   avatarUrl?: string;
   /** 用户头像缩略图 URL */

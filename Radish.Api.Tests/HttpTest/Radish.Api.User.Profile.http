@@ -1,0 +1,52 @@
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Gateway_HostAddress = https://localhost:5000
+
+@BrowseHistory_PostId = 在这里填入一个存在的 postId
+@BrowseHistory_ProductId = 在这里填入一个存在的 productId
+@BrowseHistory_WikiId = 在这里填入一个存在的 wiki documentId
+@BrowseHistory_WikiSlug = 可选：在这里填入一个存在的 wiki slug
+
+### 获取个人资料
+GET {{Gateway_HostAddress}}/api/v1/User/GetMyProfile
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 访问帖子详情（预期写入 Post 浏览记录）
+GET {{Gateway_HostAddress}}/api/v1/Post/GetById/{{BrowseHistory_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 访问商品详情（预期写入 Product 浏览记录）
+GET {{Gateway_HostAddress}}/api/v1/Shop/GetProduct/{{BrowseHistory_ProductId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 访问 Wiki 详情（按文档 ID，预期写入 Wiki 浏览记录）
+GET {{Gateway_HostAddress}}/api/v1/Wiki/GetById/{{BrowseHistory_WikiId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 访问 Wiki 详情（按 slug，可选）
+GET {{Gateway_HostAddress}}/api/v1/Wiki/GetBySlug/{{BrowseHistory_WikiSlug}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的浏览记录第一页
+GET {{Gateway_HostAddress}}/api/v1/User/GetMyBrowseHistory?pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 再次访问帖子详情（预期同一对象 viewCount 增加，而不是新增重复对象）
+GET {{Gateway_HostAddress}}/api/v1/Post/GetById/{{BrowseHistory_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 再次获取我的浏览记录，核对 viewCount / routePath / 最近浏览时间
+GET {{Gateway_HostAddress}}/api/v1/User/GetMyBrowseHistory?pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的浏览记录第二页（可选，验证分页）
+GET {{Gateway_HostAddress}}/api/v1/User/GetMyBrowseHistory?pageIndex=2&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}

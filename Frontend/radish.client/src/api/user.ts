@@ -22,6 +22,29 @@ export interface UserMentionOption {
   voAvatar?: string | null;
 }
 
+export interface VoPagedResult<T> {
+  voItems: T[];
+  voTotal: number;
+  voPageIndex: number;
+  voPageSize: number;
+}
+
+export type LongId = number | string;
+
+export interface UserBrowseHistoryItem {
+  voId: LongId;
+  voTargetType: 'Post' | 'Product' | 'Wiki' | string;
+  voTargetTypeDisplay: string;
+  voTargetId: LongId;
+  voTargetSlug?: string | null;
+  voTitle: string;
+  voSummary?: string | null;
+  voCoverImage?: string | null;
+  voRoutePath?: string | null;
+  voViewCount: number;
+  voLastViewTime: string;
+}
+
 /**
  * 搜索用户（用于@提及功能）
  * @param keyword 搜索关键词
@@ -34,12 +57,15 @@ export async function searchUsersForMention(
   t: TFunction,
   limit: number = 10
 ): Promise<UserMentionOption[]> {
+  void t;
+
   if (!keyword.trim()) {
     return [];
   }
 
   const response = await apiGet<UserMentionOption[]>(
-    `/api/v1/User/SearchForMention?keyword=${encodeURIComponent(keyword)}&limit=${limit}`
+    `/api/v1/User/SearchForMention?keyword=${encodeURIComponent(keyword)}&limit=${limit}`,
+    { withAuth: true }
   );
 
   if (!response.ok || !response.data) {
@@ -47,5 +73,21 @@ export async function searchUsersForMention(
   }
 
   // 直接返回后端数据，不做字段映射
+  return response.data;
+}
+
+export async function getMyBrowseHistory(
+  pageIndex: number = 1,
+  pageSize: number = 10
+): Promise<VoPagedResult<UserBrowseHistoryItem>> {
+  const response = await apiGet<VoPagedResult<UserBrowseHistoryItem>>(
+    `/api/v1/User/GetMyBrowseHistory?pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载浏览记录失败');
+  }
+
   return response.data;
 }

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Radish.Common;
 using Radish.Common.AttributeTool;
+using Radish.Common.PermissionTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -18,15 +19,18 @@ public class UserService : BaseService<User, UserVo>, IUserService
     private readonly IBaseRepository<Role> _roleRepository;
     private readonly IBaseRepository<UserRole> _userRoleRepository;
     private readonly IDepartmentService _departmentService;
+    private readonly IConsoleAuthorizationService _consoleAuthorizationService;
 
     public UserService(IDepartmentService departmentService, IMapper mapper,
         IBaseRepository<User> baseRepository, IUserRepository userRepository, IBaseRepository<Role> roleRepository,
-        IBaseRepository<UserRole> userRoleRepository) : base(mapper, baseRepository)
+        IBaseRepository<UserRole> userRoleRepository,
+        IConsoleAuthorizationService consoleAuthorizationService) : base(mapper, baseRepository)
     {
         _departmentService = departmentService;
         _userRepository = userRepository;
         _roleRepository = roleRepository;
         _userRoleRepository = userRoleRepository;
+        _consoleAuthorizationService = consoleAuthorizationService;
     }
 
     /// <summary>
@@ -78,6 +82,16 @@ public class UserService : BaseService<User, UserVo>, IUserService
             },
             (rmp, m, r) => rmp.IsDeleted == false && m.IsDeleted == false && r.IsDeleted == false
         );
+    }
+
+    /// <summary>
+    /// 根据角色列表获取当前 Console 权限快照
+    /// </summary>
+    /// <param name="roleNames">角色名列表</param>
+    /// <returns>权限标识列表</returns>
+    public async Task<List<string>> GetPermissionKeysByRolesAsync(IReadOnlyCollection<string> roleNames)
+    {
+        return await _consoleAuthorizationService.GetPermissionKeysByRolesAsync(roleNames);
     }
 
     /// <summary>测试使用同事务</summary>

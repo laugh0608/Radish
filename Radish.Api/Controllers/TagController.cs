@@ -2,6 +2,8 @@ using Asp.Versioning;
 using Radish.Common.HttpContextTool;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -138,7 +140,8 @@ public class TagController : ControllerBase
     /// 获取标签分页（管理端）
     /// </summary>
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.TagsView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetPage(
         int pageIndex = 1,
@@ -163,7 +166,8 @@ public class TagController : ControllerBase
     /// 创建标签（管理端）
     /// </summary>
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.TagsCreate)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> Create([FromBody] CreateTagDto createDto)
     {
@@ -204,7 +208,8 @@ public class TagController : ControllerBase
     /// 更新标签（管理端）
     /// </summary>
     [HttpPut("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.TagsEdit)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> Update(long id, [FromBody] CreateTagDto updateDto)
     {
@@ -264,7 +269,8 @@ public class TagController : ControllerBase
     /// 启用/禁用标签（管理端）
     /// </summary>
     [HttpPut("{id:long}/status")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.TagsToggle)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> ToggleStatus(long id, [FromQuery] bool enabled)
     {
@@ -302,7 +308,8 @@ public class TagController : ControllerBase
     /// 更新标签排序（管理端）
     /// </summary>
     [HttpPut("{id:long}/sort")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.TagsSort)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> UpdateSort(long id, [FromQuery] int sortOrder)
     {
@@ -350,7 +357,8 @@ public class TagController : ControllerBase
     /// 删除标签（软删除，管理端）
     /// </summary>
     [HttpDelete("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.TagsDelete)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> Delete(long id)
     {
@@ -388,7 +396,8 @@ public class TagController : ControllerBase
     /// 恢复标签（管理端）
     /// </summary>
     [HttpPut("{id:long}/restore")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.TagsRestore)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> Restore(long id)
     {

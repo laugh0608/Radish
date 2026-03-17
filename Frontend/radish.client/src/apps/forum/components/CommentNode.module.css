@@ -21,6 +21,17 @@
   font-weight: 500;
 }
 
+.authorButton {
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.authorButton:hover .author {
+  text-decoration: underline;
+}
+
 .time {
   color: #9ca3af;
 }

@@ -1,8 +1,11 @@
 import { lazy, Suspense, useState, useEffect, useMemo } from 'react';
+import { Icon } from '@radish/ui/icon';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
+import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
 import { UserInfoCard } from './components/UserInfoCard';
+import type { LongId, UserBrowseHistoryItem } from '@/api/user';
 import { getMyTimePreference, getTimeSettings, updateMyTimePreference } from '@/api/time';
 import { getApiBaseUrl } from '@/config/env';
 import {
@@ -25,6 +28,9 @@ const UserAttachmentList = lazy(() =>
 const UserFollowPanel = lazy(() =>
   import('./components/UserFollowPanel').then((module) => ({ default: module.UserFollowPanel }))
 );
+const UserBrowseHistoryList = lazy(() =>
+  import('./components/UserBrowseHistoryList').then((module) => ({ default: module.UserBrowseHistoryList }))
+);
 
 interface UserStats {
   voPostCount: number;
@@ -34,10 +40,77 @@ interface UserStats {
   voCommentLikeCount: number;
 }
 
+interface ProfileWindowParams {
+  userId?: number;
+  userName?: string;
+  avatarUrl?: string | null;
+  displayName?: string | null;
+}
+
+function parseProfileWindowParams(input: Record<string, unknown> | undefined): ProfileWindowParams {
+  if (!input) {
+    return {};
+  }
+
+  const rawUserId = typeof input.userId === 'number'
+    ? input.userId
+    : typeof input.userId === 'string'
+      ? Number(input.userId)
+      : undefined;
+
+  return {
+    userId: rawUserId && Number.isFinite(rawUserId) ? rawUserId : undefined,
+    userName: typeof input.userName === 'string' ? input.userName : undefined,
+    avatarUrl: typeof input.avatarUrl === 'string' ? input.avatarUrl : null,
+    displayName: typeof input.displayName === 'string' ? input.displayName : null,
+  };
+}
+
+function resolveAvatarUrl(apiBaseUrl: string, url: string | null | undefined): string | null {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  if (url.startsWith('/')) return `${apiBaseUrl}${url}`;
+  return `${apiBaseUrl}/${url}`;
+}
+
+function buildAvatarText(name: string): string {
+  const source = name.trim();
+  if (!source) return '?';
+  return source.charAt(0).toUpperCase();
+}
+
+function normalizePositiveId(value: LongId | null | undefined): number | null {
+  const parsed = typeof value === 'number' ? value : typeof value === 'string' ? Number(value) : Number.NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function getRouteTailSegment(routePath: string): string {
+  const normalizedPath = routePath.split('?')[0]?.split('#')[0] || '';
+  return normalizedPath.split('/').pop() || '';
+}
+
+function buildAvatarStyle(seed: string) {
+  let hash = 0;
+  for (let index = 0; index < seed.length; index += 1) {
+    hash = seed.charCodeAt(index) + ((hash << 5) - hash);
+  }
+
+  const hue = Math.abs(hash) % 360;
+  return {
+    backgroundColor: `hsl(${hue} 80% 92%)`,
+    color: `hsl(${hue} 45% 30%)`
+  };
+}
+
 export const ProfileApp = () => {
   const { userId, userName, isAuthenticated } = useUserStore();
   const { openApp } = useWindowStore();
-  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'attachments' | 'social'>('posts');
+  const currentWindow = useCurrentWindow();
+  const params = useMemo(() => parseProfileWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
+  const viewingUserId = params.userId && params.userId > 0 ? params.userId : userId;
+  const viewingUserName = params.userName?.trim() || userName || `用户 ${viewingUserId}`;
+  const isOwnProfile = viewingUserId === userId;
+  const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'browse-history' | 'attachments' | 'social'>('posts');
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const [systemTimeZone, setSystemTimeZone] = useState(DEFAULT_TIME_ZONE);
@@ -46,6 +119,13 @@ export const ProfileApp = () => {
   const [savingTimeZone, setSavingTimeZone] = useState(false);
 
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
+  const externalAvatarUrl = useMemo(() => resolveAvatarUrl(apiBaseUrl, params.avatarUrl), [apiBaseUrl, params.avatarUrl]);
+
+  useEffect(() => {
+    if (!isOwnProfile && (activeTab === 'browse-history' || activeTab === 'attachments' || activeTab === 'social')) {
+      setActiveTab('posts');
+    }
+  }, [activeTab, isOwnProfile]);
 
   const handlePostClick = (postId: number) => {
     openApp('forum');
@@ -57,19 +137,89 @@ export const ProfileApp = () => {
     log.debug('ProfileApp', `打开帖子 ${postId} 的评论 ${commentId}`);
   };
 
+  const handleBrowseHistoryClick = (item: UserBrowseHistoryItem) => {
+    const routePath = item.voRoutePath?.trim() || '';
+    const targetId = normalizePositiveId(item.voTargetId);
+
+    if (routePath.startsWith('/forum/post/')) {
+      const postId = normalizePositiveId(getRouteTailSegment(routePath));
+      if (postId) {
+        openApp('forum', { postId });
+        return;
+      }
+    }
+
+    if (routePath.startsWith('/shop/product/')) {
+      const productId = normalizePositiveId(getRouteTailSegment(routePath));
+      if (productId) {
+        openApp('shop', { productId });
+        return;
+      }
+    }
+
+    if (routePath.startsWith('/wiki/doc/')) {
+      const routeTarget = decodeURIComponent(getRouteTailSegment(routePath));
+      const documentId = normalizePositiveId(routeTarget);
+      if (documentId) {
+        openApp('document', { documentId });
+        return;
+      }
+
+      if (routeTarget) {
+        openApp('document', { slug: routeTarget });
+        return;
+      }
+    }
+
+    if (item.voTargetType === 'Post' && targetId) {
+      openApp('forum', { postId: targetId });
+      return;
+    }
+
+    if (item.voTargetType === 'Product' && targetId) {
+      openApp('shop', { productId: targetId });
+      return;
+    }
+
+    if (item.voTargetType === 'Wiki') {
+      if (item.voTargetSlug?.trim()) {
+        openApp('document', { slug: item.voTargetSlug.trim() });
+        return;
+      }
+
+      if (targetId) {
+        openApp('document', { documentId: targetId });
+      }
+    }
+  };
+
+  const handleUserClick = (targetUserId: number, targetUserName: string, avatarUrl?: string | null, displayName?: string | null) => {
+    if (targetUserId === userId) {
+      openApp('profile');
+      return;
+    }
+
+    openApp('profile', {
+      userId: targetUserId,
+      userName: targetUserName,
+      avatarUrl: avatarUrl ?? null,
+      displayName: displayName ?? null,
+    });
+  };
+
   useEffect(() => {
-    if (isAuthenticated() && userId > 0) {
+    if (isAuthenticated() && viewingUserId > 0) {
       void loadStats();
       void loadTimeSettings();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [viewingUserId, userId]);
 
   const loadStats = async () => {
     setLoadingStats(true);
     try {
       const response = await fetch(
-        `${apiBaseUrl}/api/v1/User/GetUserStats?userId=${userId}`
+        `${apiBaseUrl}/api/v1/User/GetUserStats?userId=${viewingUserId}`
       );
       const json = await response.json();
       if (json.isSuccess && json.responseData) {
@@ -169,55 +319,102 @@ export const ProfileApp = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>个人主页</h1>
+        <h1 className={styles.title}>{isOwnProfile ? '个人主页' : `${viewingUserName} 的主页`}</h1>
       </div>
 
       <div className={styles.content}>
-        <UserInfoCard
-          userId={userId}
-          userName={userName}
-          stats={stats || undefined}
-          loading={loadingStats}
-          apiBaseUrl={apiBaseUrl}
-          displayTimeZone={displayTimeZone}
-          systemTimeZone={systemTimeZone}
-          displayTimeFormat={displayTimeFormat}
-          savingTimeZone={savingTimeZone}
-          onTimeZoneChange={handleTimeZoneChange}
-        />
+        {isOwnProfile ? (
+          <UserInfoCard
+            userId={viewingUserId}
+            userName={viewingUserName}
+            stats={stats || undefined}
+            loading={loadingStats}
+            apiBaseUrl={apiBaseUrl}
+            displayTimeZone={displayTimeZone}
+            systemTimeZone={systemTimeZone}
+            displayTimeFormat={displayTimeFormat}
+            savingTimeZone={savingTimeZone}
+            onTimeZoneChange={handleTimeZoneChange}
+          />
+        ) : (
+          <section className={styles.externalProfileCard}>
+            <div className={styles.externalProfileHeader}>
+              <div
+                className={styles.externalAvatar}
+                style={externalAvatarUrl ? undefined : buildAvatarStyle(viewingUserName)}
+                title={params.displayName?.trim() || viewingUserName}
+              >
+                {externalAvatarUrl ? (
+                  <img src={externalAvatarUrl} alt={viewingUserName} className={styles.externalAvatarImage} loading="lazy" />
+                ) : (
+                  buildAvatarText(viewingUserName)
+                )}
+              </div>
+              <div className={styles.externalInfo}>
+                <h2 className={styles.externalName}>{viewingUserName}</h2>
+                {params.displayName?.trim() ? <div className={styles.externalSubtle}>显示名：{params.displayName.trim()}</div> : null}
+                <div className={styles.externalSubtle}>当前查看的是用户主页，只提供公开内容浏览。</div>
+              </div>
+            </div>
+            <div className={styles.externalStats}>
+              <div className={styles.externalStatItem}>
+                <Icon icon="mdi:file-document-outline" size={18} />
+                <span>帖子 {loadingStats ? '--' : stats?.voPostCount ?? 0}</span>
+              </div>
+              <div className={styles.externalStatItem}>
+                <Icon icon="mdi:comment-text-outline" size={18} />
+                <span>评论 {loadingStats ? '--' : stats?.voCommentCount ?? 0}</span>
+              </div>
+              <div className={styles.externalStatItem}>
+                <Icon icon="mdi:heart-outline" size={18} />
+                <span>获赞 {loadingStats ? '--' : stats?.voTotalLikeCount ?? 0}</span>
+              </div>
+            </div>
+          </section>
+        )}
 
         <div className={styles.tabs}>
           <button
             className={`${styles.tab} ${activeTab === 'posts' ? styles.active : ''}`}
             onClick={() => setActiveTab('posts')}
           >
-            我的帖子
+            {isOwnProfile ? '我的帖子' : 'TA 的帖子'}
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'comments' ? styles.active : ''}`}
             onClick={() => setActiveTab('comments')}
           >
-            我的评论
+            {isOwnProfile ? '我的评论' : 'TA 的评论'}
           </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'attachments' ? styles.active : ''}`}
-            onClick={() => setActiveTab('attachments')}
-          >
-            我的附件
-          </button>
-          <button
-            className={`${styles.tab} ${activeTab === 'social' ? styles.active : ''}`}
-            onClick={() => setActiveTab('social')}
-          >
-            关系链
-          </button>
+          {isOwnProfile ? (
+            <>
+              <button
+                className={`${styles.tab} ${activeTab === 'browse-history' ? styles.active : ''}`}
+                onClick={() => setActiveTab('browse-history')}
+              >
+                浏览记录
+              </button>
+              <button
+                className={`${styles.tab} ${activeTab === 'attachments' ? styles.active : ''}`}
+                onClick={() => setActiveTab('attachments')}
+              >
+                我的附件
+              </button>
+              <button
+                className={`${styles.tab} ${activeTab === 'social' ? styles.active : ''}`}
+                onClick={() => setActiveTab('social')}
+              >
+                关系链
+              </button>
+            </>
+          ) : null}
         </div>
 
         <div className={styles.tabContent}>
           <Suspense fallback={<div className={styles.notLoggedIn}>加载中...</div>}>
             {activeTab === 'posts' && (
               <UserPostList
-                userId={userId}
+                userId={viewingUserId}
                 apiBaseUrl={apiBaseUrl}
                 onPostClick={handlePostClick}
                 displayTimeZone={displayTimeZone}
@@ -225,19 +422,26 @@ export const ProfileApp = () => {
             )}
             {activeTab === 'comments' && (
               <UserCommentList
-                userId={userId}
+                userId={viewingUserId}
                 apiBaseUrl={apiBaseUrl}
                 onCommentClick={handleCommentClick}
                 displayTimeZone={displayTimeZone}
               />
             )}
-            {activeTab === 'attachments' && (
+            {isOwnProfile && activeTab === 'browse-history' && (
+              <UserBrowseHistoryList
+                displayTimeZone={displayTimeZone}
+                onItemClick={handleBrowseHistoryClick}
+              />
+            )}
+            {isOwnProfile && activeTab === 'attachments' && (
               <UserAttachmentList apiBaseUrl={apiBaseUrl} displayTimeZone={displayTimeZone} />
             )}
-            {activeTab === 'social' && (
+            {isOwnProfile && activeTab === 'social' && (
               <UserFollowPanel
                 displayTimeZone={displayTimeZone}
                 onPostClick={handlePostClick}
+                onUserClick={handleUserClick}
               />
             )}
           </Suspense>

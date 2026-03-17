@@ -28,6 +28,7 @@ interface CommentTreeProps {
   onToggleReaction?: (commentId: number, payload: ReactionTogglePayload) => Promise<void>;
   isReactionPending?: (commentId: number) => boolean;
   onRequireReactionLogin?: () => void;
+  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
 }
 
 export const CommentTree = ({
@@ -52,6 +53,7 @@ export const CommentTree = ({
   onToggleReaction,
   isReactionPending,
   onRequireReactionLogin,
+  onAuthorClick,
 }: CommentTreeProps) => {
   // 找出所有神评（后端标记的）
   const godComments = useMemo(() => {
@@ -88,7 +90,7 @@ export const CommentTree = ({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h4 className={styles.title}>评论</h4>
+        <h4 className={styles.title}>讨论区</h4>
         {hasPost && comments.length > 0 && (
           <div className={styles.sortButtons}>
             <button
@@ -108,12 +110,12 @@ export const CommentTree = ({
           </div>
         )}
       </div>
-      {loading && <p className={styles.loadingText}>加载评论中...</p>}
+      {loading && <p className={styles.loadingText}>加载讨论中...</p>}
       {!loading && comments.length === 0 && hasPost && (
-        <p className={styles.emptyText}>还没有评论，快来抢沙发吧！</p>
+        <p className={styles.emptyText}>还没有讨论，来补充你的看法吧！</p>
       )}
       {!loading && comments.length === 0 && !hasPost && (
-        <p className={styles.emptyText}>请先选择一个帖子查看评论</p>
+        <p className={styles.emptyText}>请先选择一个帖子查看讨论</p>
       )}
       <div className={styles.list}>
         {displayComments.map(comment => (
@@ -138,6 +140,7 @@ export const CommentTree = ({
             onToggleReaction={onToggleReaction}
             isReactionPending={isReactionPending}
             onRequireReactionLogin={onRequireReactionLogin}
+            onAuthorClick={onAuthorClick}
           />
         ))}
       </div>

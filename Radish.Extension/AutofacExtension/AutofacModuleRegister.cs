@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Autofac;
 using Autofac.Extras.DynamicProxy;
 using Radish.Extension.AopExtension;
@@ -16,6 +17,11 @@ namespace Radish.Extension.AutofacExtension;
 
 public class AutofacModuleRegister: Autofac.Module
 {
+    private static bool ShouldRegisterAssemblyType(Type type)
+    {
+        return !type.IsDefined(typeof(CompilerGeneratedAttribute), inherit: false);
+    }
+
     protected override void Load(ContainerBuilder builder)
     {
         var basePath = AppContext.BaseDirectory;
@@ -38,6 +44,8 @@ public class AutofacModuleRegister: Autofac.Module
         // 获取 Service.dll 程序集服务，并注册
         var assemblesServices = Assembly.LoadFrom(serviceDllFile);
         builder.RegisterAssemblyTypes(assemblesServices)
+            .PublicOnly()
+            .Where(ShouldRegisterAssemblyType)
             .AsImplementedInterfaces() // 接口
             .InstancePerDependency() // 瞬态
             .PropertiesAutowired() // 属性
@@ -47,6 +55,8 @@ public class AutofacModuleRegister: Autofac.Module
         // 获取 Repository.dll 程序集服务，并注册
         var assemblesRepository = Assembly.LoadFrom(repositoryDllFile);
         builder.RegisterAssemblyTypes(assemblesRepository)
+            .PublicOnly()
+            .Where(ShouldRegisterAssemblyType)
             .AsImplementedInterfaces()
             .PropertiesAutowired()
             .InstancePerDependency();

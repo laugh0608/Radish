@@ -5,6 +5,10 @@ namespace Radish.Model.DtoModels;
 /// <summary>发送频道消息 DTO</summary>
 public class SendChannelMessageDto
 {
+    /// <summary>客户端请求 Id，用于前端乐观消息关联</summary>
+    [StringLength(100, ErrorMessage = "clientRequestId 长度不能超过 100")]
+    public string? ClientRequestId { get; set; }
+
     /// <summary>频道 Id</summary>
     [Required(ErrorMessage = "channelId 不能为空")]
     public long ChannelId { get; set; }

@@ -134,4 +134,64 @@ public class PostVo
     /// 最新互动用户（按最新评论时间倒序，最多 3 个）
     /// </summary>
     public List<PostInteractorVo> VoLatestInteractors { get; set; } = new();
+
+    /// <summary>
+    /// 是否问答帖
+    /// </summary>
+    public bool VoIsQuestion { get; set; }
+
+    /// <summary>
+    /// 是否已解决
+    /// </summary>
+    public bool VoIsSolved { get; set; }
+
+    /// <summary>
+    /// 回答数
+    /// </summary>
+    public int VoAnswerCount { get; set; }
+
+    /// <summary>
+    /// 问答详情（列表页通常为空，详情页可用）
+    /// </summary>
+    public PostQuestionVo? VoQuestion { get; set; }
+
+    /// <summary>
+    /// 是否附带投票
+    /// </summary>
+    public bool VoHasPoll { get; set; }
+
+    /// <summary>
+    /// 投票总票数
+    /// </summary>
+    public int VoPollTotalVoteCount { get; set; }
+
+    /// <summary>
+    /// 投票是否关闭
+    /// </summary>
+    public bool VoPollIsClosed { get; set; }
+
+    /// <summary>
+    /// 投票详情（列表页通常为空，详情页可用）
+    /// </summary>
+    public PostPollVo? VoPoll { get; set; }
+
+    /// <summary>
+    /// 是否附带抽奖
+    /// </summary>
+    public bool VoHasLottery { get; set; }
+
+    /// <summary>
+    /// 抽奖参与人数
+    /// </summary>
+    public int VoLotteryParticipantCount { get; set; }
+
+    /// <summary>
+    /// 抽奖是否已开奖
+    /// </summary>
+    public bool VoLotteryIsDrawn { get; set; }
+
+    /// <summary>
+    /// 抽奖详情（列表页通常为空，详情页可用）
+    /// </summary>
+    public PostLotteryVo? VoLottery { get; set; }
 }

@@ -183,10 +183,28 @@
   gap: 4px;
 }
 
+.userNameButton {
+  width: fit-content;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+}
+
+.userNameButton:disabled {
+  cursor: default;
+}
+
+.userNameButton:hover .userName {
+  color: #4f46e5;
+}
+
 .userName {
   font-size: 18px;
   font-weight: 600;
   color: #1a1a1a;
+  transition: color 0.2s ease;
 }
 
 .level {

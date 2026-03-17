@@ -15,16 +15,16 @@
 
 | 应用 | ClientId | 类型 | 说明 |
 |------|----------|------|------|
-| WebOS 前端 | `radish-client` | Internal | 桌面系统 + 所有子应用（论坛/聊天/商城/后台管理） |
+| WebOS 前端 | `radish-client` | Internal | 社区主站与 WebOS 入口 |
 | API 文档 | `radish-scalar` | Internal | Scalar API 文档 |
 | 后台控制台 | `radish-console` | Internal | 管理控制台 |
-| 商城应用 | `radish-shop` | Internal | 商城应用（占位，未来实现） |
 | 第三方应用 | `{custom}` | ThirdParty | 动态注册 |
 
 **说明**：
-- `radish-client` 是一个 WebOS 超级应用，包含所有子应用
-- 后台管理不需要独立的 OIDC 客户端，它是 `radish-client` 内的一个子应用
-- 通过前端应用注册表（AppRegistry）+ 权限控制决定用户可见的子应用
+- `radish-client` 负责社区主站与 WebOS 入口
+- `radish-console` 当前作为独立 OIDC 客户端接入，用于管理后台的独立登录、回调和登出链路
+- `radish-scalar` 作为独立 OIDC 客户端承接 API 文档调试授权
+- `radish-shop` 遗留内置客户端种子已移除，商城能力不再单独占用官方 OIDC 客户端
 
 ## 2. 系统架构
 
@@ -63,6 +63,7 @@
 - 通过 DbSeed 预置
 - 默认启用，无需审核
 - 可访问所有 Scope
+- 是否展示授权确认页由 `Radish.Auth:AuthorizationConsent` 配置控制
 
 ### 3.2 第三方应用（ThirdParty）
 
@@ -70,6 +71,22 @@
 - 需要审核后才能使用
 - 限制可访问的 Scope
 - 需要遵守开放平台协议
+- 默认需要经过授权确认页后才会继续授权流程
+
+### 3.3 授权确认策略
+
+当前授权确认策略已改为配置驱动，由 `Radish.Auth/appsettings.json` 中的 `AuthorizationConsent` 节点控制：
+
+- `RequireConsentForInternalClients`：控制官方内部应用是否默认显示确认页
+- `ConsentRequiredClientIds`：强制显示确认页的客户端白名单
+- `ConsentBypassClientIds`：强制跳过确认页的客户端白名单
+
+当前测试配置下：
+
+- `radish-client` 默认跳过确认页
+- `radish-console` 显示确认页
+- `radish-scalar` 显示确认页
+- 第三方应用默认显示确认页
 
 ## 4. 数据模型
 
@@ -157,7 +174,7 @@ Authorization: Bearer {admin_token}
       "lastUsedAt": "2025-11-24T10:00:00Z"
     }
   ],
-  "total": 4,
+  "total": 3,
   "page": 1,
   "pageSize": 20
 }
@@ -370,7 +387,7 @@ Authorization: Bearer {admin_token}
 
 - [x] OpenIddict 配置
 - [ ] 客户端数据库存储
-- [ ] DbSeed 预置内部应用
+- [x] DbSeed 预置官方内部应用（`radish-client` / `radish-console` / `radish-scalar`）
 - [ ] 客户端管理 API
 - [ ] Scalar OAuth 集成
 

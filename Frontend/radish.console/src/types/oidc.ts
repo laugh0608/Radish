@@ -41,6 +41,9 @@ export interface CreateClientRequest {
 export interface UpdateClientRequest {
   id: string;
   displayName?: string;
+  description?: string;
+  developerName?: string;
+  developerEmail?: string;
   redirectUris?: string[];
   postLogoutRedirectUris?: string[];
   grantTypes?: string[];

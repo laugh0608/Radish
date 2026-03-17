@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
-import type { PostDetail, CommentNode } from '@/api/forum';
+import type { PostDetail, CommentNode, QuestionAnswerSort, QuestionAnswerFilter } from '@/api/forum';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -31,12 +31,20 @@ interface PostDetailContentViewProps {
   showFloatingTools?: boolean;
   currentUserId: number;
   commentSortBy: 'newest' | 'hottest' | null;
+  questionAnswerSort: QuestionAnswerSort;
+  questionAnswerFilter: QuestionAnswerFilter;
   replyTo: { commentId: number; authorName: string } | null;
   followStatus: UserFollowStatus | null;
   followLoading: boolean;
 
   onBack: () => void;
   onLike: (postId: number) => void;
+  onVotePoll: (optionId: number) => Promise<void>;
+  onDrawLottery: () => Promise<void>;
+  onAnswerQuestion: (content: string) => Promise<void>;
+  onAcceptAnswer: (answerId: number) => Promise<void>;
+  onQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
+  onQuestionAnswerFilterChange: (filterBy: QuestionAnswerFilter) => void;
   onEdit: (postId: number) => void;
   onViewPostHistory: (postId: number) => void;
   onDelete: (postId: number) => void;
@@ -55,6 +63,7 @@ interface PostDetailContentViewProps {
   onCancelReply: () => void;
   onReactionError?: (message: string) => void;
   onToggleFollow: (targetUserId: number, isFollowing: boolean) => Promise<void>;
+  onAuthorClick: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
 }
 
 const collectCommentIds = (nodes: CommentNode[]): number[] => {
@@ -87,11 +96,19 @@ export const PostDetailContentView = ({
   showFloatingTools = true,
   currentUserId,
   commentSortBy,
+  questionAnswerSort,
+  questionAnswerFilter,
   replyTo,
   followStatus,
   followLoading,
   onBack,
   onLike,
+  onVotePoll,
+  onDrawLottery,
+  onAnswerQuestion,
+  onAcceptAnswer,
+  onQuestionAnswerSortChange,
+  onQuestionAnswerFilterChange,
   onEdit,
   onViewPostHistory,
   onDelete,
@@ -106,6 +123,7 @@ export const PostDetailContentView = ({
   onCancelReply,
   onReactionError,
   onToggleFollow,
+  onAuthorClick,
 }: PostDetailContentViewProps) => {
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -217,6 +235,14 @@ export const PostDetailContentView = ({
               displayTimeZone={displayTimeZone}
               isLiked={isLiked}
               onLike={onLike}
+              onVotePoll={onVotePoll}
+              onDrawLottery={onDrawLottery}
+              onAnswerQuestion={onAnswerQuestion}
+              onAcceptAnswer={onAcceptAnswer}
+              answerSort={questionAnswerSort}
+              answerFilter={questionAnswerFilter}
+              onAnswerSortChange={onQuestionAnswerSortChange}
+              onAnswerFilterChange={onQuestionAnswerFilterChange}
               isAuthenticated={isAuthenticated}
               currentUserId={currentUserId}
               onEdit={onEdit}
@@ -231,10 +257,11 @@ export const PostDetailContentView = ({
               followStatus={followStatus}
               followLoading={followLoading}
               onToggleFollow={onToggleFollow}
+              onAuthorClick={onAuthorClick}
             />
           </Suspense>
 
-          <Suspense fallback={<p className={styles.loadingText}>加载评论中...</p>}>
+          <Suspense fallback={<p className={styles.loadingText}>加载讨论中...</p>}>
             <CommentTree
               comments={comments}
               loading={loadingComments}
@@ -260,12 +287,13 @@ export const PostDetailContentView = ({
               onToggleReaction={reactionsState.toggleCommentReaction}
               isReactionPending={(commentId) => reactionsState.isPending('Comment', commentId)}
               onRequireReactionLogin={handleRequireReactionLogin}
+              onAuthorClick={onAuthorClick}
             />
           </Suspense>
 
           <div className={styles.commentCta}>
             <button className={styles.commentButton} onClick={handleOpenCommentSheet}>
-              发表评论
+              参与讨论
             </button>
           </div>
         </div>
@@ -288,11 +316,11 @@ export const PostDetailContentView = ({
       <BottomSheet
         isOpen={isCommentSheetOpen}
         onClose={handleCloseCommentSheet}
-        title="发表评论"
+        title="参与讨论"
         height="70%"
       >
         {isCommentSheetOpen && (
-          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>评论编辑器加载中...</div>}>
+          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>讨论编辑器加载中...</div>}>
             <CreateCommentForm
               isAuthenticated={isAuthenticated}
               hasPost={true}
@@ -300,6 +328,9 @@ export const PostDetailContentView = ({
               replyTo={replyTo}
               onCancelReply={onCancelReply}
               variant="sheet"
+              title="参与讨论"
+              submitText="发布讨论"
+              placeholder="写下你的讨论内容（输入 @ 可以提及用户）"
               stickerGroups={stickerGroups}
               onStickerSelect={(selection) => {
                 void handleStickerSelect(selection);

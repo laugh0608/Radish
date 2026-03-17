@@ -1,0 +1,191 @@
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Gateway_HostAddress = https://localhost:5000
+
+@ForumCategory_Id = 80001
+@ForumTag_Id = 1
+@ForumTag_AdminId = 90103
+@ForumTag_UpdateId = 90104
+@ForumPost_Id = 1
+
+### 获取全部顶级分类
+GET {{Gateway_HostAddress}}/api/v1/Category/GetTopCategories
+Accept: application/json
+
+### 获取子分类
+GET {{Gateway_HostAddress}}/api/v1/Category/GetChildCategories?parentId={{ForumCategory_Id}}
+Accept: application/json
+
+### 获取分类详情
+GET {{Gateway_HostAddress}}/api/v1/Category/GetById/{{ForumCategory_Id}}
+Accept: application/json
+
+### 创建分类
+POST {{Gateway_HostAddress}}/api/v1/Category/Create
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "name": "测试分类",
+  "slug": "test-category",
+  "description": "这是一个测试分类",
+  "icon": "test",
+  "sortOrder": 100,
+  "isEnabled": true,
+  "isDeleted": false,
+  "parentId": null
+}
+
+### 获取全部标签
+GET {{Gateway_HostAddress}}/api/v1/Tag/GetAll
+Accept: application/json
+
+### 获取热门标签
+GET {{Gateway_HostAddress}}/api/v1/Tag/GetHotTags?topCount=10
+Accept: application/json
+
+### 获取标签详情
+GET {{Gateway_HostAddress}}/api/v1/Tag/GetById/{{ForumTag_Id}}
+Accept: application/json
+
+### 获取固定标签列表
+GET {{Gateway_HostAddress}}/api/v1/Tag/GetFixedTags
+Accept: application/json
+
+### 管理端分页查询标签
+GET {{Gateway_HostAddress}}/api/v1/Tag/GetPage?pageIndex=1&pageSize=10&isFixed=true
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端创建标签
+POST {{Gateway_HostAddress}}/api/v1/Tag/Create
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "name": "测试固定标签",
+  "slug": "test-fixed-tag",
+  "description": "测试用固定标签",
+  "color": "#1677FF",
+  "sortOrder": 99,
+  "isEnabled": true,
+  "isFixed": true
+}
+
+### 管理端更新标签
+PUT {{Gateway_HostAddress}}/api/v1/Tag/Update/{{ForumTag_UpdateId}}
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "name": "公告",
+  "slug": "notice",
+  "description": "社区公告与通知",
+  "color": "#F5222D",
+  "sortOrder": 5,
+  "isEnabled": true,
+  "isFixed": true
+}
+
+### 管理端切换标签状态
+PUT {{Gateway_HostAddress}}/api/v1/Tag/ToggleStatus/{{ForumTag_AdminId}}/status?enabled=true
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{}
+
+### 管理端更新标签排序
+PUT {{Gateway_HostAddress}}/api/v1/Tag/UpdateSort/{{ForumTag_AdminId}}/sort?sortOrder=4
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{}
+
+### 管理端软删除标签
+DELETE {{Gateway_HostAddress}}/api/v1/Tag/Delete/{{ForumTag_AdminId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端恢复标签
+PUT {{Gateway_HostAddress}}/api/v1/Tag/Restore/{{ForumTag_AdminId}}/restore
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{}
+
+### 获取帖子列表
+GET {{Gateway_HostAddress}}/api/v1/Post/GetList?pageIndex=1&pageSize=10
+Accept: application/json
+
+### 获取分类帖子列表
+GET {{Gateway_HostAddress}}/api/v1/Post/GetList?categoryId={{ForumCategory_Id}}&pageIndex=1&pageSize=10
+Accept: application/json
+
+### 获取帖子详情
+GET {{Gateway_HostAddress}}/api/v1/Post/GetById/{{ForumPost_Id}}
+Accept: application/json
+
+### 发布帖子
+POST {{Gateway_HostAddress}}/api/v1/Post/Publish
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "title": "我的第一篇测试帖子",
+  "content": "这是帖子的内容，可以包含 Markdown。",
+  "categoryId": 1,
+  "tagNames": ["C#", ".NET", "测试"],
+  "isPublished": true
+}
+
+### 发布帖子（最小化数据）
+POST {{Gateway_HostAddress}}/api/v1/Post/Publish
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "title": "简单测试帖子",
+  "content": "简单的内容",
+  "categoryId": 1,
+  "isPublished": true
+}
+
+### 更新帖子
+PUT {{Gateway_HostAddress}}/api/v1/Post/Update
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumPost_Id}},
+  "title": "更新后的标题",
+  "content": "更新后的内容",
+  "categoryId": 1
+}
+
+### 获取帖子编辑历史
+GET {{Gateway_HostAddress}}/api/v1/Post/GetEditHistory?postId={{ForumPost_Id}}&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 查询不存在的分类
+GET {{Gateway_HostAddress}}/api/v1/Category/GetById/999999
+Accept: application/json
+
+### 查询不存在的帖子
+GET {{Gateway_HostAddress}}/api/v1/Post/GetById/999999
+Accept: application/json
+
+### 查询不存在的标签
+GET {{Gateway_HostAddress}}/api/v1/Tag/GetById/999999
+Accept: application/json
+
+### 发布空内容帖子（预期 400）
+POST {{Gateway_HostAddress}}/api/v1/Post/Publish
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "title": "",
+  "content": "",
+  "categoryId": 1,
+  "isPublished": true
+}

@@ -1,0 +1,173 @@
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Api_HostAddress = http://localhost:5100
+
+@AttachmentId = 1
+
+### 上传空文件（预期 400）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传不支持的文件类型（预期 400）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test.exe"
+Content-Type: application/octet-stream
+
+< ./test-files/test.exe
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 未认证上传（预期 401）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-image.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 删除不存在的附件（预期 404）
+DELETE {{Api_HostAddress}}/api/v1/Attachment/Delete/999999999
+Authorization: Bearer {{Access_Token}}
+
+### 下载不存在的附件（预期 404）
+GET {{Api_HostAddress}}/api/v1/Attachment/Download/999999999
+
+### 普通用户删除别人的附件（预期 403）
+DELETE {{Api_HostAddress}}/api/v1/Attachment/Delete/{{AttachmentId}}
+Authorization: Bearer <普通用户的Token>
+
+### 上传超大文件（预期 400）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="large-file.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/large-file.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传伪装图片（预期 400）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="fake-image.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/fake-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传伪装 PDF（预期 400）
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadDocument
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="fake-document.pdf"
+Content-Type: application/pdf
+
+< ./test-files/fake-document.pdf
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Document
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 上传真实 PNG 但声称 JPG
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="real-png-as-jpg.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.png
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+General
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 获取当前用户上传统计
+GET {{Api_HostAddress}}/api/v1/Attachment/GetUploadStatistics
+Authorization: Bearer {{Access_Token}}
+
+### 并发上传限制回归入口
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-concurrent-1.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Test
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 每分钟上传限流回归入口
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="test-rate-limit.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Test
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+### 日上传大小限制回归入口
+POST {{Api_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="file"; filename="large-file.jpg"
+Content-Type: image/jpeg
+
+< ./test-files/large-test-image.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="businessType"
+
+Test
+------WebKitFormBoundary7MA4YWxkTrZu0gW--

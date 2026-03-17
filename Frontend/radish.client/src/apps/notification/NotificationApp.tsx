@@ -4,6 +4,8 @@ import { NotificationList } from '@radish/ui/notification-list';
 import type { NotificationItemData } from '@radish/ui/notification';
 import { notificationApi, type UserNotificationVo } from '@/api/notification';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
+import { useWindowStore } from '@/stores/windowStore';
+import { useUserStore } from '@/stores/userStore';
 import { tokenService } from '@/services/tokenService';
 import { toast } from '@radish/ui/toast';
 import styles from './NotificationApp.module.css';
@@ -16,6 +18,8 @@ import styles from './NotificationApp.module.css';
  * 注意：SignalR 连接由 Shell 统一管理，此组件只负责读取状态和调用方法
  */
 export const NotificationApp = () => {
+  const { openApp, openOrReuseApp } = useWindowStore();
+  const currentUserId = useUserStore((state) => state.userId);
   const { unreadCount, recentNotifications } = useNotificationStore();
 
   interface NotificationListItem extends NotificationItemData {
@@ -267,13 +271,49 @@ export const NotificationApp = () => {
       void handleMarkAsRead(notification.id);
     }
 
-    // TODO: 根据 businessType 跳转到对应页面
-    if (notification.businessType === 'Post' && notification.businessId) {
-      toast.info(`跳转到帖子 ${notification.businessId}`);
-    } else if (notification.businessType === 'Comment' && notification.businessId) {
-      toast.info(`跳转到评论 ${notification.businessId}`);
+    const businessType = notification.businessType?.trim();
+
+    if (businessType === 'Post' && notification.businessId) {
+      openOrReuseApp('forum', { postId: notification.businessId });
+      return;
     }
-  }, [handleMarkAsRead]);
+
+    if (businessType === 'Comment') {
+      openOrReuseApp('forum');
+      return;
+    }
+
+    if (businessType === 'User' || notification.type === 'follow') {
+      const targetUserId = notification.type === 'follow'
+        ? (notification.triggerId ?? notification.businessId ?? 0)
+        : (notification.businessId ?? notification.triggerId ?? 0);
+
+      if (targetUserId > 0) {
+        if (String(targetUserId) === String(currentUserId ?? 0)) {
+          openApp('profile');
+        } else {
+          openApp('profile', {
+            userId: targetUserId,
+            userName: notification.triggerName?.trim() || `用户 ${targetUserId}`,
+            avatarUrl: notification.triggerAvatar ?? null,
+          });
+        }
+        return;
+      }
+    }
+
+    if (businessType === 'Order') {
+      openApp('shop');
+      return;
+    }
+
+    if (notification.type === 'reply' || notification.type === 'mention' || notification.type === 'like') {
+      openOrReuseApp('forum');
+      return;
+    }
+
+    toast.info('该通知暂不支持直接跳转');
+  }, [currentUserId, handleMarkAsRead, openApp, openOrReuseApp]);
 
   // 标记全部已读
   const handleMarkAllAsRead = useCallback(async () => {
@@ -387,8 +427,8 @@ export const NotificationApp = () => {
  * 将 API 返回的通知类型映射到 Store 的类型
  * 注意：这是类型枚举映射，不是字段名映射
  */
-function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention' | 'like' | 'follow' {
-  const typeMap: Record<string, 'system' | 'reply' | 'mention' | 'like' | 'follow'> = {
+function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention' | 'like' | 'follow' | 'lottery' {
+  const typeMap: Record<string, 'system' | 'reply' | 'mention' | 'like' | 'follow' | 'lottery'> = {
     'System': 'system',
     'CommentReply': 'reply',
     'CommentReplied': 'reply',
@@ -397,7 +437,8 @@ function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention
     'PostLiked': 'like',
     'CommentLiked': 'like',
     'Follow': 'follow',
-    'Followed': 'follow'
+    'Followed': 'follow',
+    'LotteryWon': 'lottery'
   };
   return typeMap[type] || 'system';
 }

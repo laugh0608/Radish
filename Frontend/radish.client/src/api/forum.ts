@@ -20,9 +20,28 @@ import type {
   CommentHighlight,
   PostEditHistory,
   CommentEditHistory,
+  ForumPostViewMode,
+  QuestionStatusFilter,
+  ForumPostSortBy,
+  QuestionAnswerSort,
+  QuestionAnswerFilter,
   VoPagedResult,
   PageModel,
   PublishPostRequest,
+  CreatePollRequest,
+  CreateLotteryRequest,
+  CreatePollOptionRequest,
+  VotePollRequest,
+  CreateAnswerRequest,
+  AcceptAnswerRequest,
+  PostPoll,
+  PostPollOption,
+  PollVoteResult,
+  PostLottery,
+  PostLotteryWinner,
+  LotteryResult,
+  PostQuestion,
+  PostAnswer,
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
@@ -52,9 +71,28 @@ export type {
   CommentHighlight,
   PostEditHistory,
   CommentEditHistory,
+  ForumPostViewMode,
+  QuestionStatusFilter,
+  ForumPostSortBy,
+  QuestionAnswerSort,
+  QuestionAnswerFilter,
   VoPagedResult,
   PageModel,
   PublishPostRequest,
+  CreatePollRequest,
+  CreateLotteryRequest,
+  CreatePollOptionRequest,
+  VotePollRequest,
+  CreateAnswerRequest,
+  AcceptAnswerRequest,
+  PostPoll,
+  PostPollOption,
+  PollVoteResult,
+  PostLottery,
+  PostLotteryWinner,
+  LotteryResult,
+  PostQuestion,
+  PostAnswer,
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
@@ -130,16 +168,20 @@ export async function getPostList(
   t: TFunction,
   pageIndex: number = 1,
   pageSize: number = 20,
-  sortBy: string = 'newest',
+  sortBy: ForumPostSortBy = 'newest',
   keyword: string = '',
   startTime?: string,
-  endTime?: string
+  endTime?: string,
+  postType: ForumPostViewMode = 'all',
+  questionStatus: QuestionStatusFilter = 'all'
 ): Promise<PageModel<PostItem>> {
   const params = new URLSearchParams();
   if (categoryId) params.set('categoryId', categoryId.toString());
   params.set('pageIndex', pageIndex.toString());
   params.set('pageSize', pageSize.toString());
   params.set('sortBy', sortBy);
+  params.set('postType', postType);
+  params.set('questionStatus', questionStatus);
   if (keyword.trim()) params.set('keyword', keyword.trim());
   if (startTime) params.set('startTime', startTime);
   if (endTime) params.set('endTime', endTime);
@@ -159,8 +201,15 @@ export async function getPostList(
 /**
  * 获取帖子详情
  */
-export async function getPostById(postId: number, t: TFunction): Promise<PostDetail> {
-  const response = await apiGet<PostDetail>(`/api/v1/Post/GetById/${postId}`, { timeout: FORUM_READ_TIMEOUT_MS });
+export async function getPostById(
+  postId: number,
+  t: TFunction,
+  answerSort: QuestionAnswerSort = 'default'
+): Promise<PostDetail> {
+  const response = await apiGet<PostDetail>(
+    `/api/v1/Post/GetById/${postId}?answerSort=${answerSort}`,
+    { timeout: FORUM_READ_TIMEOUT_MS, withAuth: true }
+  );
 
   if (!response.ok || !response.data) {
     // 针对帖子不存在的情况给出友好提示
@@ -168,6 +217,94 @@ export async function getPostById(postId: number, t: TFunction): Promise<PostDet
       throw new Error(response.message || '帖子不存在或已被删除');
     }
     throw new Error(response.message || '加载帖子详情失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 按帖子获取投票详情
+ */
+export async function getPollByPostId(postId: number, t: TFunction): Promise<PollVoteResult> {
+  const response = await apiGet<PollVoteResult>(
+    `/api/v1/Poll/GetByPostId?postId=${postId}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载投票详情失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 按帖子获取抽奖详情
+ */
+export async function getLotteryByPostId(postId: number, t: TFunction): Promise<LotteryResult> {
+  const response = await apiGet<LotteryResult>(
+    `/api/v1/Lottery/GetByPostId?postId=${postId}`,
+    { timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载抽奖详情失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 手动开奖
+ */
+export async function drawLottery(postId: number, t: TFunction): Promise<PostLottery> {
+  const response = await apiPost<PostLottery>(
+    '/api/v1/Lottery/Draw',
+    { postId },
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '开奖失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 提交投票
+ */
+export async function votePoll(request: VotePollRequest, t: TFunction): Promise<PostPoll> {
+  const response = await apiPost<PostPoll>('/api/v1/Poll/Vote', request, { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '投票失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 提交问答回答
+ */
+export async function answerQuestion(request: CreateAnswerRequest, t: TFunction): Promise<PostQuestion> {
+  const response = await apiPost<PostQuestion>('/api/v1/Question/Answer', request, { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '提交回答失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 采纳问答回答
+ */
+export async function acceptQuestionAnswer(request: AcceptAnswerRequest, t: TFunction): Promise<PostQuestion> {
+  const response = await apiPost<PostQuestion>('/api/v1/Question/Accept', request, { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '采纳回答失败');
   }
 
   return response.data;
@@ -313,9 +450,10 @@ export async function getPostEditHistory(
   pageSize: number,
   t: TFunction
 ): Promise<VoPagedResult<PostEditHistory>> {
+  const hasToken = Boolean(tokenService.getAccessToken());
   const response = await apiGet<VoPagedResult<PostEditHistory>>(
     `/api/v1/Post/GetEditHistory?postId=${postId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
-    { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
+    { withAuth: hasToken, timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {
@@ -334,9 +472,10 @@ export async function getCommentEditHistory(
   pageSize: number,
   t: TFunction
 ): Promise<VoPagedResult<CommentEditHistory>> {
+  const hasToken = Boolean(tokenService.getAccessToken());
   const response = await apiGet<VoPagedResult<CommentEditHistory>>(
     `/api/v1/Comment/GetEditHistory?commentId=${commentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
-    { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
+    { withAuth: hasToken, timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {

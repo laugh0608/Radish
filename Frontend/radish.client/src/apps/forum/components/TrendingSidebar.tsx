@@ -8,6 +8,7 @@ interface TrendingSidebarProps {
   hotPosts: PostItem[];
   godComments: CommentNode[];
   onPostClick: (postId: number) => void;
+  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   loading?: boolean;
   selectedPost?: PostDetail | null;
   displayTimeZone: string;
@@ -17,6 +18,7 @@ export const TrendingSidebar = ({
   hotPosts,
   godComments,
   onPostClick,
+  onAuthorClick,
   loading = false,
   selectedPost = null,
   displayTimeZone
@@ -28,7 +30,11 @@ export const TrendingSidebar = ({
   if (selectedPost) {
     return (
       <aside className={styles.sidebar}>
-        <PostInfoCard post={selectedPost} displayTimeZone={displayTimeZone} />
+        <PostInfoCard
+          post={selectedPost}
+          displayTimeZone={displayTimeZone}
+          onAuthorClick={onAuthorClick}
+        />
 
         <section className={styles.detailToolsSection}>
           <h3 className={styles.sectionTitle}>快捷操作</h3>
@@ -104,6 +110,17 @@ export const TrendingSidebar = ({
                 </div>
                 <div className={styles.hotPostContent}>
                   <h4 className={styles.hotPostTitle}>{post.voTitle}</h4>
+                  <button
+                    type="button"
+                    className={styles.authorButton}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl);
+                    }}
+                    title={`查看 ${post.voAuthorName?.trim() || `用户 ${post.voAuthorId}`} 的主页`}
+                  >
+                    {post.voAuthorName?.trim() || `用户 ${post.voAuthorId}`}
+                  </button>
                   <div className={styles.hotPostMeta}>
                     <span className={styles.hotPostLikes}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
@@ -145,7 +162,17 @@ export const TrendingSidebar = ({
                 onClick={() => comment.voPostId && onPostClick(comment.voPostId)}
               >
                 <div className={styles.godCommentHeader}>
-                  <span className={styles.godCommentAuthor}>{comment.voAuthorName}</span>
+                  <button
+                    type="button"
+                    className={`${styles.authorButton} ${styles.godCommentAuthor}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onAuthorClick?.(comment.voAuthorId, comment.voAuthorName);
+                    }}
+                    title={`查看 ${comment.voAuthorName} 的主页`}
+                  >
+                    {comment.voAuthorName}
+                  </button>
                   <span className={styles.godCommentLikes}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>

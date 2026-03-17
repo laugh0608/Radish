@@ -1,0 +1,113 @@
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+@Second_Access_Token = 可选：在这里粘贴第二个账号的 access_token，用于验证“非发帖者不能开奖”
+@Gateway_HostAddress = https://localhost:5000
+
+@Lottery_DrawTime = 在这里填一个晚于当前时间的 RFC3339 时间，例如 2026-03-16T23:59:00+08:00
+@ForumLottery_PostId = 在这里填入带抽奖帖子的 postId
+@ForumLottery_RootCommentId = 在这里填入参与抽奖的父评论 commentId
+
+### 发布带抽奖帖子
+POST {{Gateway_HostAddress}}/api/v1/Post/Publish
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "title": "论坛抽奖 MVP 验收帖",
+  "content": "用于串联论坛抽奖 MVP 验收：列表识别、父评论参与、开奖与中奖名单回显。",
+  "categoryId": 1,
+  "tagNames": ["抽奖", "验收"],
+  "lottery": {
+    "prizeName": "Radish 周边礼包",
+    "prizeDescription": "包含贴纸、徽章与纪念卡各一份。",
+    "drawTime": "{{Lottery_DrawTime}}",
+    "winnerCount": 2
+  }
+}
+
+### 获取带抽奖帖子的列表
+GET {{Gateway_HostAddress}}/api/v1/Post/GetList?keyword=论坛抽奖%20MVP%20验收帖&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取带抽奖帖子详情
+GET {{Gateway_HostAddress}}/api/v1/Post/GetById/{{ForumLottery_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 按帖子获取抽奖详情（开奖前）
+GET {{Gateway_HostAddress}}/api/v1/Lottery/GetByPostId?postId={{ForumLottery_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 发布父评论参与抽奖
+POST {{Gateway_HostAddress}}/api/v1/Comment/Create
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumLottery_PostId}},
+  "content": "这是参与抽奖的父评论，用于验证按用户去重统计参与人数。",
+  "parentId": null,
+  "replyToUserId": null,
+  "replyToUserName": null
+}
+
+### 对父评论发布回复（预期：不增加参与资格）
+POST {{Gateway_HostAddress}}/api/v1/Comment/Create
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumLottery_PostId}},
+  "content": "这是对父评论的回复，按规则不应计入抽奖资格。",
+  "parentId": {{ForumLottery_RootCommentId}},
+  "replyToUserId": null,
+  "replyToUserName": null
+}
+
+### 获取评论树，核对父评论 / 回复层级
+GET {{Gateway_HostAddress}}/api/v1/Comment/GetCommentTree?postId={{ForumLottery_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 再次获取抽奖详情（预期：父评论计入，回复不计入）
+GET {{Gateway_HostAddress}}/api/v1/Lottery/GetByPostId?postId={{ForumLottery_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 未到开奖时间时尝试开奖（预期失败）
+POST {{Gateway_HostAddress}}/api/v1/Lottery/Draw
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumLottery_PostId}}
+}
+
+### 非发帖者尝试开奖（可选，预期失败）
+POST {{Gateway_HostAddress}}/api/v1/Lottery/Draw
+Content-Type: application/json
+Authorization: Bearer {{Second_Access_Token}}
+
+{
+  "postId": {{ForumLottery_PostId}}
+}
+
+### 到开奖时间后由发帖者手动开奖
+POST {{Gateway_HostAddress}}/api/v1/Lottery/Draw
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumLottery_PostId}}
+}
+
+### 开奖后再次获取抽奖详情
+GET {{Gateway_HostAddress}}/api/v1/Lottery/GetByPostId?postId={{ForumLottery_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 开奖后再次获取帖子详情，确认中奖名单与抽奖状态回显
+GET {{Gateway_HostAddress}}/api/v1/Post/GetById/{{ForumLottery_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}

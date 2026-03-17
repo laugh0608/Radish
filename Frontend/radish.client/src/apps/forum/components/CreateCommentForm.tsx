@@ -19,6 +19,9 @@ interface CreateCommentFormProps {
   variant?: 'inline' | 'sheet';
   stickerGroups?: StickerPickerGroup[];
   onStickerSelect?: (selection: StickerPickerSelection) => void;
+  title?: string;
+  submitText?: string;
+  placeholder?: string;
 }
 
 const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
@@ -43,6 +46,9 @@ export const CreateCommentForm = ({
   variant = 'inline',
   stickerGroups = [],
   onStickerSelect,
+  title = '发表评论',
+  submitText = '发表评论',
+  placeholder = '评论内容（输入 @ 可以提及用户）',
 }: CreateCommentFormProps) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
@@ -313,7 +319,7 @@ export const CreateCommentForm = ({
 
   return (
     <div className={containerClassName}>
-      <h5 className={titleClassName}>发表评论</h5>
+      <h5 className={titleClassName}>{title}</h5>
 
       {!isAuthenticated && (
         <div className={styles.loginPrompt}>
@@ -341,7 +347,7 @@ export const CreateCommentForm = ({
       <div className={styles.textareaWrapper}>
         <textarea
           ref={textareaRef}
-          placeholder="评论内容（输入 @ 可以提及用户）"
+          placeholder={placeholder}
           value={content}
           onChange={handleTextChange}
           rows={3}
@@ -431,7 +437,7 @@ export const CreateCommentForm = ({
         disabled={!isAuthenticated || !hasPost || disabled || !content.trim() || uploading}
         className={submitClassName}
       >
-        发表评论
+        {submitText}
       </button>
     </div>
   );

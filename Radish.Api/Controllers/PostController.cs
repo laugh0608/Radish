@@ -30,6 +30,7 @@ public class PostController : ControllerBase
     private readonly IContentModerationService _contentModerationService;
     private readonly IBaseService<Attachment, AttachmentVo> _attachmentService;
     private readonly IBaseService<Comment, CommentVo> _commentService;
+    private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public PostController(
@@ -37,12 +38,14 @@ public class PostController : ControllerBase
         IContentModerationService contentModerationService,
         IBaseService<Attachment, AttachmentVo> attachmentService,
         IBaseService<Comment, CommentVo> commentService,
+        IUserBrowseHistoryService userBrowseHistoryService,
         ICurrentUserAccessor currentUserAccessor)
     {
         _postService = postService;
         _contentModerationService = contentModerationService;
         _attachmentService = attachmentService;
         _commentService = commentService;
+        _userBrowseHistoryService = userBrowseHistoryService;
         _currentUserAccessor = currentUserAccessor;
     }
 
@@ -52,17 +55,19 @@ public class PostController : ControllerBase
     /// 根据 ID 获取帖子详情
     /// </summary>
     /// <param name="id">帖子 ID</param>
+    /// <param name="answerSort">问答回答排序：default（默认）/ latest（最新回答）</param>
     /// <returns>帖子详情（包含分类名称和标签）</returns>
     [HttpGet("{id:long}")]
     [AllowAnonymous]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
-    public async Task<MessageModel> GetById(long id)
+    public async Task<MessageModel> GetById(long id, string answerSort = "default")
     {
         // 增加浏览次数
         await _postService.IncrementViewCountAsync(id);
 
-        var post = await _postService.GetPostDetailAsync(id);
+        var viewerUserId = Current.UserId > 0 ? (long?)Current.UserId : null;
+        var post = await _postService.GetPostDetailAsync(id, viewerUserId, answerSort);
         if (post == null)
         {
             return new MessageModel
@@ -71,6 +76,22 @@ public class PostController : ControllerBase
                 StatusCode = (int)HttpStatusCodeEnum.NotFound,
                 MessageInfo = "帖子不存在"
             };
+        }
+
+        if (Current.UserId > 0)
+        {
+            await _userBrowseHistoryService.RecordAsync(new RecordBrowseHistoryDto
+            {
+                UserId = Current.UserId,
+                TenantId = Current.TenantId,
+                TargetType = "Post",
+                TargetId = post.VoId,
+                Title = post.VoTitle,
+                Summary = post.VoSummary,
+                CoverImage = post.VoCoverImage,
+                RoutePath = $"/forum/post/{post.VoId}",
+                OperatorName = Current.UserName
+            });
         }
 
         return new MessageModel
@@ -88,10 +109,12 @@ public class PostController : ControllerBase
     /// <param name="categoryId">分类 ID（可选）</param>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页数量（默认 20）</param>
-    /// <param name="sortBy">排序方式：newest（最新，默认）、hottest（最热）、essence（精华）</param>
+    /// <param name="sortBy">排序方式：全部 / 投票帖子支持 newest（最新，默认）、hottest（最热）、essence（精华）；问答视图支持 newest、pending（待解决优先）、answers（回答数）</param>
     /// <param name="keyword">搜索关键词（搜索标题和内容）</param>
     /// <param name="startTime">筛选起始时间（可选，基于帖子创建时间）</param>
     /// <param name="endTime">筛选结束时间（可选，基于帖子创建时间）</param>
+    /// <param name="postType">帖子视图：all（默认）/ question（问答）/ poll（投票）</param>
+    /// <param name="questionStatus">问答状态：all（默认）/ pending / solved</param>
     /// <returns>分页帖子列表</returns>
     [HttpGet]
     [AllowAnonymous]
@@ -103,7 +126,9 @@ public class PostController : ControllerBase
         string sortBy = "newest",
         string? keyword = null,
         DateTime? startTime = null,
-        DateTime? endTime = null)
+        DateTime? endTime = null,
+        string postType = "all",
+        string questionStatus = "all")
     {
         // 参数校验
         if (pageIndex < 1) pageIndex = 1;
@@ -115,89 +140,121 @@ public class PostController : ControllerBase
             (startTime, endTime) = (endTime, startTime);
         }
 
-        // 构建基础查询条件
-        var normalizedKeyword = keyword ?? string.Empty;
-        var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
-        var hasCategory = categoryId.HasValue;
-        var categoryValue = categoryId ?? 0;
-        var hasStartTime = startTime.HasValue;
-        var hasEndTime = endTime.HasValue;
-        var startTimeValue = startTime ?? DateTime.MinValue;
-        var endTimeValue = endTime ?? DateTime.MaxValue;
-
-        Expression<Func<Post, bool>> baseCondition = post =>
-            post.IsPublished &&
-            !post.IsDeleted &&
-            (!hasCategory || post.CategoryId == categoryValue) &&
-            (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&
-            (!hasStartTime || post.CreateTime >= startTimeValue) &&
-            (!hasEndTime || post.CreateTime <= endTimeValue);
+        postType = postType?.Trim().ToLowerInvariant() ?? "all";
+        questionStatus = questionStatus?.Trim().ToLowerInvariant() ?? "all";
+        var isQuestionView = postType == "question";
+        var isPollView = postType == "poll";
+        bool? isSolvedFilter = questionStatus switch
+        {
+            "pending" => false,
+            "solved" => true,
+            _ => null
+        };
 
         List<PostVo> data;
         int totalCount;
 
-        // 根据排序方式执行不同的查询逻辑
-        switch (sortBy)
+        if (isQuestionView)
         {
-            case "hottest":
-                // 按热度排序：置顶在前，然后按热度值排序（综合浏览、点赞、评论）
-                // 热度计算公式：ViewCount + LikeCount*2 + CommentCount*3
-                var allPosts = await _postService.QueryAsync(baseCondition);
-                totalCount = allPosts.Count;
+            var normalizedQuestionSort = sortBy switch
+            {
+                "pending" => "pending",
+                "answers" => "answers",
+                _ => "newest"
+            };
 
-                data = allPosts
-                    .OrderByDescending(p => p.VoIsTop)
-                    .ThenByDescending(p => p.VoViewCount + p.VoLikeCount * 2 + p.VoCommentCount * 3)
-                    .Skip((pageIndex - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
-                break;
+            (data, totalCount) = await _postService.GetQuestionPostPageAsync(
+                categoryId,
+                pageIndex,
+                pageSize,
+                normalizedQuestionSort,
+                keyword,
+                startTime,
+                endTime,
+                isSolvedFilter);
+        }
+        else if (isPollView)
+        {
+            var normalizedPollSort = sortBy switch
+            {
+                "hottest" => "hottest",
+                "essence" => "essence",
+                _ => "newest"
+            };
 
-            case "essence":
-                // 按精华排序：置顶在前，然后精华在前，最后按创建时间倒序
-                (data, totalCount) = await _postService.QueryPageAsync(
-                    baseCondition,
-                    pageIndex,
-                    pageSize,
-                    p => new { p.IsTop, p.IsEssence, p.CreateTime },
-                    SqlSugar.OrderByType.Desc);
-                break;
+            (data, totalCount) = await _postService.GetPollPostPageAsync(
+                categoryId,
+                pageIndex,
+                pageSize,
+                normalizedPollSort,
+                keyword,
+                startTime,
+                endTime);
+        }
+        else
+        {
+            // 构建基础查询条件
+            var normalizedKeyword = keyword ?? string.Empty;
+            var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
+            var hasCategory = categoryId.HasValue;
+            var categoryValue = categoryId ?? 0;
+            var hasStartTime = startTime.HasValue;
+            var hasEndTime = endTime.HasValue;
+            var startTimeValue = startTime ?? DateTime.MinValue;
+            var endTimeValue = endTime ?? DateTime.MaxValue;
 
-            case "newest":
-            default:
-                // 按最新排序：置顶在前，然后按创建时间倒序
-                (data, totalCount) = await _postService.QueryPageAsync(
-                    baseCondition,
-                    pageIndex,
-                    pageSize,
-                    p => new { p.IsTop, p.CreateTime },
-                    SqlSugar.OrderByType.Desc);
-                break;
+            Expression<Func<Post, bool>> baseCondition = post =>
+                post.IsPublished &&
+                !post.IsDeleted &&
+                (!hasCategory || post.CategoryId == categoryValue) &&
+                (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&
+                (!hasStartTime || post.CreateTime >= startTimeValue) &&
+                (!hasEndTime || post.CreateTime <= endTimeValue);
+
+            // 根据排序方式执行不同的查询逻辑
+            switch (sortBy)
+            {
+                case "hottest":
+                    // 按热度排序：置顶在前，然后按热度值排序（综合浏览、点赞、评论）
+                    // 热度计算公式：ViewCount + LikeCount*2 + CommentCount*3
+                    var allPosts = await _postService.QueryAsync(baseCondition);
+                    totalCount = allPosts.Count;
+
+                    data = allPosts
+                        .OrderByDescending(p => p.VoIsTop)
+                        .ThenByDescending(p => p.VoViewCount + p.VoLikeCount * 2 + p.VoCommentCount * 3)
+                        .Skip((pageIndex - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToList();
+                    break;
+
+                case "essence":
+                    // 按精华排序：置顶在前，然后精华在前，最后按创建时间倒序
+                    (data, totalCount) = await _postService.QueryPageAsync(
+                        baseCondition,
+                        pageIndex,
+                        pageSize,
+                        p => new { p.IsTop, p.IsEssence, p.CreateTime },
+                        SqlSugar.OrderByType.Desc);
+                    break;
+
+                case "newest":
+                default:
+                    // 按最新排序：置顶在前，然后按创建时间倒序
+                    (data, totalCount) = await _postService.QueryPageAsync(
+                        baseCondition,
+                        pageIndex,
+                        pageSize,
+                        p => new { p.IsTop, p.CreateTime },
+                        SqlSugar.OrderByType.Desc);
+                    break;
+            }
         }
 
         // 构建分页模型
         if (data.Any())
         {
-            var detailTasks = data.Select(post => _postService.GetPostDetailAsync(post.VoId));
-            var detailResults = await Task.WhenAll(detailTasks);
-            var detailMap = detailResults
-                .Where(detail => detail != null)
-                .ToDictionary(detail => detail!.VoId, detail => detail!);
-
-            foreach (var post in data)
-            {
-                if (!detailMap.TryGetValue(post.VoId, out var detail))
-                {
-                    continue;
-                }
-
-                post.VoTags = detail.VoTags;
-                if (string.IsNullOrWhiteSpace(post.VoCategoryName))
-                {
-                    post.VoCategoryName = detail.VoCategoryName;
-                }
-            }
-
+            await _postService.FillPostListMetadataAsync(data);
             await FillPostAvatarAndInteractorsAsync(data);
         }
 
@@ -359,7 +416,7 @@ public class PostController : ControllerBase
 
         try
         {
-            var postId = await _postService.PublishPostAsync(post, normalizedTagNames, allowCreateTag);
+            var postId = await _postService.PublishPostAsync(post, request.Poll, request.Lottery, request.IsQuestion, normalizedTagNames, allowCreateTag);
             return new MessageModel
             {
                 IsSuccess = true,

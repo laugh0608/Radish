@@ -1,0 +1,37 @@
+@Gateway_HostAddress = https://localhost:5000
+@Api_HostAddress = http://localhost:5100
+@Auth_HostAddress = http://localhost:5200
+@Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
+
+### 全局限流：基线请求
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+### 全局限流：触发后检查 429 响应
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+### 登录限流：单次登录请求
+POST {{Auth_HostAddress}}/Account/Login
+Content-Type: application/x-www-form-urlencoded
+
+username=testuser&password=wrongpassword&__RequestVerificationToken=test
+
+### 登录限流：触发后检查响应
+POST {{Auth_HostAddress}}/Account/Login
+Content-Type: application/x-www-form-urlencoded
+
+username=testuser&password=wrongpassword
+
+### 敏感操作限流：示例端点
+DELETE {{Api_HostAddress}}/api/v1/Client/test-client-id
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 并发限流：基线检查
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+### 说明
+# 1. 快速连续请求与并发压测优先使用 test-rate-limit.ps1 / test-rate-limit.sh。
+# 2. 本文件只保留手工回归入口，不再内嵌大段命令示例。

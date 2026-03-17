@@ -23,6 +23,8 @@ public class UserVo
     public long VoDepartmentId { get; set; } = 0;
     public string VoDepartmentName { get; set; } = string.Empty;
     public long VoTenantId { get; set; } = 0;
+    public string? VoAvatarUrl { get; set; }
+    public string? VoAvatarThumbnailUrl { get; set; }
     public List<long> VoRoleIds { get; set; } = new List<long>();
     public List<string> VoRoleNames { get; set; } = new List<string>();
     public List<long> VoDepartmentIds { get; set; } = new List<long>();

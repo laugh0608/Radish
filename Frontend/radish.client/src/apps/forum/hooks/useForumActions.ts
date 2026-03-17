@@ -2,8 +2,14 @@ import { useState, useCallback } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { useUserStore } from '@/stores/userStore';
 import type { TFunction } from 'i18next';
+import { toast } from '@radish/ui/toast';
 import {
   publishPost,
+  votePoll,
+  drawLottery,
+  getLotteryByPostId,
+  answerQuestion,
+  acceptQuestionAnswer,
   createComment,
   likePost,
   toggleCommentLike,
@@ -16,8 +22,15 @@ import {
   getCommentEditHistory,
   type CommentNode,
   type PostDetail,
+  type CreatePollRequest,
+  type CreateLotteryRequest,
+  type PostQuestion,
+  type PostLottery,
   type PostEditHistory,
-  type CommentEditHistory
+  type CommentEditHistory,
+  type ForumPostSortBy,
+  type QuestionAnswerSort,
+  type QuestionAnswerFilter
 } from '@/api/forum';
 
 export interface ForumActionsState {
@@ -57,7 +70,21 @@ export interface ForumActionsHandlers {
 
   // 帖子操作
   handleSelectPost: (postId: number) => Promise<void>;
-  handlePublishPost: (title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
+  handlePublishPost: (
+    title: string,
+    content: string,
+    categoryId: number,
+    tagNames: string[],
+    isQuestion?: boolean,
+    poll?: CreatePollRequest | null,
+    lottery?: CreateLotteryRequest | null
+  ) => Promise<void>;
+  handleDrawLottery: () => Promise<void>;
+  handleVotePoll: (optionId: number) => Promise<void>;
+  handleAnswerQuestion: (content: string) => Promise<void>;
+  handleAcceptAnswer: (answerId: number) => Promise<void>;
+  handleQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
+  handleQuestionAnswerFilterChange: (filterBy: QuestionAnswerFilter) => void;
   handleLikePost: (postId: number) => Promise<void>;
   handleEditPost: (postId: number) => void;
   handleViewPostHistory: (postId: number) => Promise<void>;
@@ -84,7 +111,7 @@ export interface ForumActionsHandlers {
 
   // 排序和分页
   handlePageChange: (page: number) => void;
-  handleSortChange: (sortBy: 'newest' | 'hottest' | 'essence') => void;
+  handleSortChange: (sortBy: ForumPostSortBy) => void;
   handleCommentSortChange: (sortBy: 'newest' | 'hottest') => void;
   handleSearchChange: (keyword: string) => void;
 
@@ -106,11 +133,13 @@ interface UseForumActionsParams {
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: Dispatch<SetStateAction<CommentNode[]>>;
   setCurrentPage: (page: number) => void;
-  setSortBy: (sortBy: 'newest' | 'hottest' | 'essence') => void;
+  setSortBy: (sortBy: ForumPostSortBy) => void;
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
+  setQuestionAnswerSort: (sortBy: QuestionAnswerSort) => void;
+  setQuestionAnswerFilter: (filterBy: QuestionAnswerFilter) => void;
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
-  loadPostDetail: (postId: number) => Promise<void>;
+  loadPostDetail: (postId: number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
   loadComments: (postId: number) => Promise<void>;
   loadPosts: () => Promise<void>;
   resetCommentSort: () => void;
@@ -131,6 +160,8 @@ export const useForumActions = (
     setCurrentPage,
     setSortBy,
     setCommentSortBy,
+    setQuestionAnswerSort,
+    setQuestionAnswerFilter,
     setSearchKeyword,
     setError,
     loadPostDetail,
@@ -201,6 +232,20 @@ export const useForumActions = (
     return normalized;
   };
 
+  const applyQuestionState = useCallback((question: PostQuestion) => {
+    setSelectedPost((current) =>
+      current && current.voId === question.voPostId
+        ? {
+            ...current,
+            voIsQuestion: true,
+            voIsSolved: question.voIsSolved,
+            voAnswerCount: question.voAnswerCount,
+            voQuestion: question
+          }
+        : current
+    );
+  }, [setSelectedPost]);
+
   const loadPostHistory = async (postId: number, pageIndex: number) => {
     setPostHistoryLoading(true);
     setPostHistoryError(null);
@@ -236,12 +281,35 @@ export const useForumActions = (
   // 选择帖子
   const handleSelectPost = async (postId: number) => {
     resetCommentSort();
-    await loadPostDetail(postId);
+    setQuestionAnswerSort('default');
+    setQuestionAnswerFilter('all');
+    await loadPostDetail(postId, 'default');
     await loadComments(postId);
   };
 
+  const handleQuestionAnswerSortChange = async (sortBy: QuestionAnswerSort) => {
+    if (!selectedPost?.voId) {
+      return;
+    }
+
+    setQuestionAnswerSort(sortBy);
+    await loadPostDetail(selectedPost.voId, sortBy);
+  };
+
+  const handleQuestionAnswerFilterChange = (filterBy: QuestionAnswerFilter) => {
+    setQuestionAnswerFilter(filterBy);
+  };
+
   // 发布帖子
-  const handlePublishPost = async (title: string, content: string, categoryId: number, tagNames: string[]) => {
+  const handlePublishPost = async (
+    title: string,
+    content: string,
+    categoryId: number,
+    tagNames: string[],
+    isQuestion?: boolean,
+    poll?: CreatePollRequest | null,
+    lottery?: CreateLotteryRequest | null
+  ) => {
     if (categoryId <= 0) {
       const message = '请先选择分类';
       setError(message);
@@ -268,7 +336,10 @@ export const useForumActions = (
           title,
           content,
           categoryId,
-          tagNames: normalizedTagNames
+          tagNames: normalizedTagNames,
+          isQuestion: Boolean(isQuestion),
+          poll: poll ?? undefined,
+          lottery: lottery ?? undefined
         },
         t
       );
@@ -279,6 +350,165 @@ export const useForumActions = (
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
+      throw err;
+    }
+  };
+
+  const applyLotteryState = useCallback((lottery: PostLottery) => {
+    setSelectedPost((current) =>
+      current && current.voId === lottery.voPostId
+        ? {
+            ...current,
+            voHasLottery: true,
+            voLotteryParticipantCount: lottery.voParticipantCount,
+            voLotteryIsDrawn: lottery.voIsDrawn,
+            voLottery: lottery
+          }
+        : current
+    );
+  }, [setSelectedPost]);
+
+  const handleDrawLottery = async () => {
+    if (!selectedPost?.voId) {
+      const message = '请先选择要开奖的帖子';
+      setError(message);
+      throw new Error(message);
+    }
+
+    if (!isAuthenticated) {
+      const message = '请先登录后再开奖';
+      setError(message);
+      throw new Error(message);
+    }
+
+    setError(null);
+    try {
+      const latestLottery = await drawLottery(selectedPost.voId, t);
+      applyLotteryState(latestLottery);
+      toast.success('开奖完成');
+      await loadPosts();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      toast.error(message || '开奖失败');
+      throw err;
+    }
+  };
+
+  const handleVotePoll = async (optionId: number) => {
+    if (!selectedPost?.voId) {
+      const message = '请先选择要投票的帖子';
+      setError(message);
+      throw new Error(message);
+    }
+
+    if (!isAuthenticated) {
+      const message = '请先登录后再投票';
+      setError(message);
+      throw new Error(message);
+    }
+
+    setError(null);
+    try {
+      const latestPoll = await votePoll(
+        {
+          postId: selectedPost.voId,
+          optionId
+        },
+        t
+      );
+
+      setSelectedPost((current) =>
+        current && current.voId === selectedPost.voId
+          ? {
+              ...current,
+              voHasPoll: true,
+              voPollTotalVoteCount: latestPoll.voTotalVoteCount,
+              voPollIsClosed: latestPoll.voIsClosed,
+              voPoll: latestPoll
+            }
+          : current
+      );
+
+      await loadPosts();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      throw err;
+    }
+  };
+
+  const handleAnswerQuestion = async (content: string) => {
+    if (!selectedPost?.voId) {
+      const message = '请先选择要回答的帖子';
+      setError(message);
+      throw new Error(message);
+    }
+
+    if (!isAuthenticated) {
+      const message = '请先登录后再回答';
+      setError(message);
+      throw new Error(message);
+    }
+
+    const trimmedContent = content.trim();
+    if (!trimmedContent) {
+      const message = '回答内容不能为空';
+      setError(message);
+      throw new Error(message);
+    }
+
+    setError(null);
+    try {
+      const latestQuestion = await answerQuestion(
+        {
+          postId: selectedPost.voId,
+          content: trimmedContent
+        },
+        t
+      );
+
+      applyQuestionState(latestQuestion);
+      toast.success('回答已发布');
+      await loadPosts();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      toast.error(message || '提交回答失败');
+      throw err;
+    }
+  };
+
+  const handleAcceptAnswer = async (answerId: number) => {
+    if (!selectedPost?.voId) {
+      const message = '请先选择要采纳的帖子';
+      setError(message);
+      throw new Error(message);
+    }
+
+    if (!isAuthenticated) {
+      const message = '请先登录后再采纳';
+      setError(message);
+      throw new Error(message);
+    }
+
+    setError(null);
+    try {
+      const latestQuestion = await acceptQuestionAnswer(
+        {
+          postId: selectedPost.voId,
+          answerId
+        },
+        t
+      );
+
+      applyQuestionState(latestQuestion);
+      toast.success('答案已采纳');
+      await loadPosts();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      toast.error(message || '采纳回答失败');
       throw err;
     }
   };
@@ -488,6 +718,16 @@ export const useForumActions = (
 
       setReplyTo(null);
       await loadComments(selectedPost.voId);
+      if (selectedPost.voHasLottery && parentId == null) {
+        try {
+          const latestLottery = await getLotteryByPostId(selectedPost.voId, t);
+          if (latestLottery.voLottery) {
+            applyLotteryState(latestLottery.voLottery);
+          }
+        } catch {
+          // 评论已提交成功，抽奖摘要刷新失败时避免误报整次评论失败
+        }
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -597,7 +837,7 @@ export const useForumActions = (
   };
 
   // 排序
-  const handleSortChange = (newSortBy: 'newest' | 'hottest' | 'essence') => {
+  const handleSortChange = (newSortBy: ForumPostSortBy) => {
     setSortBy(newSortBy);
     setCurrentPage(1);
   };
@@ -679,6 +919,12 @@ export const useForumActions = (
     setIsEditModalOpen,
     handleSelectPost,
     handlePublishPost,
+    handleDrawLottery,
+    handleVotePoll,
+    handleAnswerQuestion,
+    handleAcceptAnswer,
+    handleQuestionAnswerSortChange,
+    handleQuestionAnswerFilterChange,
     handleLikePost,
     handleEditPost,
     handleViewPostHistory,

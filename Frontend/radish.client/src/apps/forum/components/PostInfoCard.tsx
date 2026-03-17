@@ -5,9 +5,10 @@ import styles from './PostInfoCard.module.css';
 interface PostInfoCardProps {
   post: PostDetail;
   displayTimeZone: string;
+  onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
 }
 
-export const PostInfoCard = ({ post, displayTimeZone }: PostInfoCardProps) => {
+export const PostInfoCard = ({ post, displayTimeZone, onAuthorClick }: PostInfoCardProps) => {
   return (
     <div className={styles.card}>
       <h3 className={styles.title}>帖子信息</h3>
@@ -22,7 +23,18 @@ export const PostInfoCard = ({ post, displayTimeZone }: PostInfoCardProps) => {
             </svg>
             发布者
           </span>
-          <span className={styles.value}>{post.voAuthorName || '匿名'}</span>
+          {post.voAuthorId > 0 ? (
+            <button
+              type="button"
+              className={`${styles.value} ${styles.authorButton}`}
+              onClick={() => onAuthorClick?.(post.voAuthorId, post.voAuthorName)}
+              title={`查看 ${post.voAuthorName || `用户 ${post.voAuthorId}`} 的主页`}
+            >
+              {post.voAuthorName || '匿名'}
+            </button>
+          ) : (
+            <span className={styles.value}>{post.voAuthorName || '匿名'}</span>
+          )}
         </div>
 
         {/* 发布时间 */}

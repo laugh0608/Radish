@@ -25,6 +25,8 @@ import {
   deleteConfig,
   type SystemConfigVo,
 } from '@/api/systemConfigApi';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import { SystemConfigForm } from './SystemConfigForm';
 import { log } from '@/utils/logger';
 import './SystemConfigList.css';
@@ -38,6 +40,10 @@ export const SystemConfigList = () => {
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingConfigId, setEditingConfigId] = useState<number>();
+  const canViewSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigView);
+  const canCreateSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigCreate);
+  const canEditSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigEdit);
+  const canDeleteSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigDelete);
 
   // 筛选条件
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -69,9 +75,13 @@ export const SystemConfigList = () => {
   };
 
   useEffect(() => {
-    loadConfigs();
-    loadCategories();
-  }, []);
+    if (!canViewSystemConfig) {
+      return;
+    }
+
+    void loadConfigs();
+    void loadCategories();
+  }, [canViewSystemConfig]);
 
   // 筛选配置
   useEffect(() => {
@@ -235,29 +245,31 @@ export const SystemConfigList = () => {
             size="small"
             icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
+            disabled={!canEditSystemConfig}
           >
             编辑
           </Button>
-          <Popconfirm
-            title="确认删除"
-            description="确定要删除这个配置吗？此操作不可恢复。"
-            onConfirm={() => handleDelete(record.voId)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button
-              variant="danger"
-              size="small"
-              icon={<DeleteOutlined />}
+          {canDeleteSystemConfig ? (
+            <Popconfirm
+              title="确认删除"
+              description="确定要删除这个配置吗？此操作不可恢复。"
+              onConfirm={() => handleDelete(record.voId)}
+              okText="确定"
+              cancelText="取消"
             >
-              删除
-            </Button>
-          </Popconfirm>
+              <Button
+                variant="danger"
+                size="small"
+                icon={<DeleteOutlined />}
+              >
+                删除
+              </Button>
+            </Popconfirm>
+          ) : null}
         </Space>
       ),
     },
   ];
-
   return (
     <div className="system-config-list-page">
       <div className="page-header">
@@ -269,13 +281,15 @@ export const SystemConfigList = () => {
           >
             刷新
           </Button>
-          <Button
-            variant="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreate}
-          >
-            新增配置
-          </Button>
+          {canCreateSystemConfig ? (
+            <Button
+              variant="primary"
+              icon={<PlusOutlined />}
+              onClick={handleCreate}
+            >
+              新增配置
+            </Button>
+          ) : null}
         </Space>
       </div>
 

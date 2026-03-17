@@ -27,6 +27,8 @@ import {
   takeOffSale,
   deleteProduct,
 } from '../../api/shopApi';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import type { Product, ProductCategory } from '../../api/types';
 import { ProductType } from '../../api/types';
 import { ProductForm } from './ProductForm';
@@ -55,6 +57,11 @@ export const ProductList = () => {
   const [total, setTotal] = useState(0);
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const canViewProducts = usePermission(CONSOLE_PERMISSIONS.productsView);
+  const canCreateProduct = usePermission(CONSOLE_PERMISSIONS.productsCreate);
+  const canEditProduct = usePermission(CONSOLE_PERMISSIONS.productsEdit);
+  const canDeleteProductPermission = usePermission(CONSOLE_PERMISSIONS.productsDelete);
+  const canToggleProductSale = usePermission(CONSOLE_PERMISSIONS.productsToggleSale);
 
   // 表单状态
   const [formVisible, setFormVisible] = useState(false);
@@ -101,13 +108,21 @@ export const ProductList = () => {
 
   // 初始化
   useEffect(() => {
-    loadCategories();
-  }, []);
+    if (!canViewProducts) {
+      return;
+    }
+
+    void loadCategories();
+  }, [canViewProducts]);
 
   // 加载商品列表
   useEffect(() => {
-    loadProducts();
-  }, [pageIndex, pageSize, categoryId, productType, isOnSale]);
+    if (!canViewProducts) {
+      return;
+    }
+
+    void loadProducts();
+  }, [pageIndex, pageSize, categoryId, productType, isOnSale, canViewProducts]);
 
   // 搜索
   const handleSearch = () => {
@@ -267,37 +282,42 @@ export const ProductList = () => {
       fixed: 'right',
       render: (_: unknown, record: Product) => (
         <Space size="small">
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setEditingProduct(record);
-              setFormVisible(true);
-            }}
-          >
-            编辑
-          </Button>
-          <Button
-            variant="ghost"
-            size="small"
-            onClick={() => handleToggleSale(record)}
-          >
-            {record.voIsOnSale ? '下架' : '上架'}
-          </Button>
-          <Button
-            variant="danger"
-            size="small"
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-          >
-            删除
-          </Button>
+          {canEditProduct ? (
+            <Button
+              variant="ghost"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => {
+                setEditingProduct(record);
+                setFormVisible(true);
+              }}
+            >
+              编辑
+            </Button>
+          ) : null}
+          {canToggleProductSale ? (
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={() => handleToggleSale(record)}
+            >
+              {record.voIsOnSale ? '下架' : '上架'}
+            </Button>
+          ) : null}
+          {canDeleteProductPermission ? (
+            <Button
+              variant="danger"
+              size="small"
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record)}
+            >
+              删除
+            </Button>
+          ) : null}
         </Space>
       ),
     },
   ];
-
   // 如果正在加载且没有数据，显示骨架屏
   if (loading && products.length === 0) {
     return <TableSkeleton rows={10} columns={6} showFilters={true} showActions={true} />;
@@ -307,16 +327,18 @@ export const ProductList = () => {
     <div className="product-list-page">
       <div className="page-header">
         <h2>商品管理</h2>
-        <Button
-          variant="primary"
-          icon={<PlusOutlined />}
-          onClick={() => {
-            setEditingProduct(undefined);
-            setFormVisible(true);
-          }}
-        >
-          新建商品
-        </Button>
+        {canCreateProduct ? (
+          <Button
+            variant="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditingProduct(undefined);
+              setFormVisible(true);
+            }}
+          >
+            新建商品
+          </Button>
+        ) : null}
       </div>
 
       <div className="filter-bar">

@@ -25,6 +25,8 @@ import {
   getGroupStickers,
   type StickerVo,
 } from '@/api/stickerApi';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import { ROUTES } from '@/router';
 import { log } from '@/utils/logger';
 import { StickerForm } from './StickerForm';
@@ -49,6 +51,12 @@ export const StickerList = () => {
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingSticker, setEditingSticker] = useState<StickerVo | undefined>(undefined);
   const [batchModalVisible, setBatchModalVisible] = useState(false);
+  const canViewStickers = usePermission(CONSOLE_PERMISSIONS.stickersView);
+  const canCreateSticker = usePermission(CONSOLE_PERMISSIONS.stickersCreate);
+  const canEditSticker = usePermission(CONSOLE_PERMISSIONS.stickersEdit);
+  const canDeleteStickerPermission = usePermission(CONSOLE_PERMISSIONS.stickersDelete);
+  const canSortSticker = usePermission(CONSOLE_PERMISSIONS.stickersSort);
+  const canBatchUploadSticker = usePermission(CONSOLE_PERMISSIONS.stickersBatchUpload);
 
   const loadStickers = async () => {
     if (!isValidGroupId) {
@@ -69,8 +77,12 @@ export const StickerList = () => {
   };
 
   useEffect(() => {
+    if (!canViewStickers) {
+      return;
+    }
+
     void loadStickers();
-  }, [normalizedGroupId, isValidGroupId]);
+  }, [normalizedGroupId, isValidGroupId, canViewStickers]);
 
   const filteredStickers = useMemo(() => {
     const normalized = keyword.trim().toLowerCase();
@@ -197,6 +209,7 @@ export const StickerList = () => {
       width: 120,
       render: (_, record) => (
         <InputNumber
+          disabled={!canSortSticker}
           min={0}
           value={sortDrafts[record.voId] ?? record.voSort}
           onChange={(value) => handleSortChange(record.voId, value)}
@@ -211,32 +224,36 @@ export const StickerList = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small">
-          <Button
-            variant="ghost"
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setFormMode('edit');
-              setEditingSticker(record);
-              setFormVisible(true);
-            }}
-          >
-            编辑
-          </Button>
-
-          <Popconfirm
-            title="确认删除表情"
-            description="删除后将软删除该表情，确认继续？"
-            onConfirm={() => {
-              void handleDelete(record.voId);
-            }}
-            okText="确认"
-            cancelText="取消"
-          >
-            <Button variant="ghost" size="small" icon={<DeleteOutlined />}>
-              删除
+          {canEditSticker ? (
+            <Button
+              variant="ghost"
+              size="small"
+              icon={<EditOutlined />}
+              onClick={() => {
+                setFormMode('edit');
+                setEditingSticker(record);
+                setFormVisible(true);
+              }}
+            >
+              编辑
             </Button>
-          </Popconfirm>
+          ) : null}
+
+          {canDeleteStickerPermission ? (
+            <Popconfirm
+              title="确认删除表情"
+              description="删除后将软删除该表情，确认继续？"
+              onConfirm={() => {
+                void handleDelete(record.voId);
+              }}
+              okText="确认"
+              cancelText="取消"
+            >
+              <Button variant="ghost" size="small" icon={<DeleteOutlined />}>
+                删除
+              </Button>
+            </Popconfirm>
+          ) : null}
         </Space>
       ),
     },
@@ -256,7 +273,6 @@ export const StickerList = () => {
       </div>
     );
   }
-
   return (
     <div>
       <div className="page-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -277,32 +293,38 @@ export const StickerList = () => {
           >
             刷新
           </Button>
-          <Button
-            disabled={savingSort}
-            onClick={() => {
-              void handleSaveSort();
-            }}
-          >
-            保存排序
-          </Button>
-          <Button
-            variant="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setFormMode('create');
-              setEditingSticker(undefined);
-              setFormVisible(true);
-            }}
-          >
-            新增表情
-          </Button>
-          <Button
-            onClick={() => {
-              setBatchModalVisible(true);
-            }}
-          >
-            批量上传
-          </Button>
+          {canSortSticker ? (
+            <Button
+              disabled={savingSort}
+              onClick={() => {
+                void handleSaveSort();
+              }}
+            >
+              保存排序
+            </Button>
+          ) : null}
+          {canCreateSticker ? (
+            <Button
+              variant="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                setFormMode('create');
+                setEditingSticker(undefined);
+                setFormVisible(true);
+              }}
+            >
+              新增表情
+            </Button>
+          ) : null}
+          {canBatchUploadSticker ? (
+            <Button
+              onClick={() => {
+                setBatchModalVisible(true);
+              }}
+            >
+              批量上传
+            </Button>
+          ) : null}
         </Space>
       </div>
 

@@ -21,12 +21,20 @@ import {
 import { adminGetOrders, getOrderStatusColor } from '@/api/shopApi';
 import { getDashboardStats, type DashboardStatsVo } from '@/api/statisticsApi';
 import type { Order } from '@/api/types';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import './Dashboard.css';
 
 export const Dashboard = () => {
   useDocumentTitle('仪表盘');
   const navigate = useNavigate();
+  const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
+  const canViewProducts = usePermission(CONSOLE_PERMISSIONS.productsView);
+  const canCreateProduct = usePermission(CONSOLE_PERMISSIONS.productsCreate);
+  const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
+  const canViewApplications = usePermission(CONSOLE_PERMISSIONS.applicationsView);
+
   const [stats, setStats] = useState<DashboardStatsVo>({
     voTotalUsers: 0,
     voTotalOrders: 0,
@@ -37,7 +45,6 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
 
-  // 加载统计数据
   const loadStats = async () => {
     try {
       setStatsLoading(true);
@@ -46,7 +53,6 @@ export const Dashboard = () => {
     } catch (error) {
       log.error('Dashboard', '加载统计数据失败:', error);
       message.error('加载统计数据失败');
-      // 使用模拟数据作为降级方案
       setStats({
         voTotalUsers: 1234,
         voTotalOrders: 567,
@@ -58,7 +64,6 @@ export const Dashboard = () => {
     }
   };
 
-  // 加载最近订单
   const loadRecentOrders = async () => {
     try {
       setLoading(true);
@@ -76,11 +81,19 @@ export const Dashboard = () => {
   };
 
   useEffect(() => {
-    loadStats();
-    loadRecentOrders();
+    void loadStats();
   }, []);
 
-  // 订单表格列定义
+  useEffect(() => {
+    if (!canViewOrders) {
+      setRecentOrders([]);
+      setLoading(false);
+      return;
+    }
+
+    void loadRecentOrders();
+  }, [canViewOrders]);
+
   const orderColumns: TableColumnsType<Order> = [
     {
       title: '订单号',
@@ -134,11 +147,12 @@ export const Dashboard = () => {
     },
   ];
 
+  const hasQuickActions = canCreateProduct || canViewOrders || canViewUsers || canViewApplications;
+
   return (
     <div className="dashboard-page">
       <h2 style={{ marginBottom: '24px' }}>仪表盘</h2>
 
-      {/* 关键指标卡片 */}
       <div className="dashboard-stats">
         <Card loading={statsLoading}>
           <Statistic
@@ -175,63 +189,80 @@ export const Dashboard = () => {
         </Card>
       </div>
 
-      {/* 快速操作 */}
-      <Card
-        title="快速操作"
-        style={{ marginTop: '24px' }}
-      >
-        <Space wrap>
-          <Button
-            variant="primary"
-            icon={<PlusOutlined />}
-            onClick={() => navigate('/products')}
-          >
-            新建商品
-          </Button>
-          <Button
-            icon={<FileTextOutlined />}
-            onClick={() => navigate('/orders')}
-          >
-            查看订单
-          </Button>
-          <Button
-            icon={<TeamOutlined />}
-            onClick={() => navigate('/users')}
-          >
-            用户管理
-          </Button>
-          <Button
-            icon={<AppstoreOutlined />}
-            onClick={() => navigate('/applications')}
-          >
-            应用管理
-          </Button>
-        </Space>
+      <Card title="快速操作" style={{ marginTop: '24px' }}>
+        {hasQuickActions ? (
+          <Space wrap>
+            {canCreateProduct ? (
+              <Button
+                variant="primary"
+                icon={<PlusOutlined />}
+                onClick={() => navigate('/products')}
+              >
+                新建商品
+              </Button>
+            ) : null}
+            {canViewOrders ? (
+              <Button
+                icon={<FileTextOutlined />}
+                onClick={() => navigate('/orders')}
+              >
+                查看订单
+              </Button>
+            ) : null}
+            {canViewUsers ? (
+              <Button
+                icon={<TeamOutlined />}
+                onClick={() => navigate('/users')}
+              >
+                用户管理
+              </Button>
+            ) : null}
+            {canViewApplications ? (
+              <Button
+                icon={<AppstoreOutlined />}
+                onClick={() => navigate('/applications')}
+              >
+                应用管理
+              </Button>
+            ) : null}
+            {!canCreateProduct && canViewProducts ? (
+              <Button
+                icon={<ShoppingOutlined />}
+                onClick={() => navigate('/products')}
+              >
+                商品管理
+              </Button>
+            ) : null}
+          </Space>
+        ) : (
+          <div style={{ color: '#8c8c8c' }}>当前账号暂无可用快捷操作。</div>
+        )}
       </Card>
 
-      {/* 最近订单 */}
-      <Card
-        title="最近订单"
-        extra={
-          <Button
-            variant="ghost"
+      {canViewOrders ? (
+        <Card
+          title="最近订单"
+          extra={
+            <Button
+              variant="ghost"
+              size="small"
+              onClick={() => navigate('/orders')}
+            >
+              查看全部
+            </Button>
+          }
+          style={{ marginTop: '24px' }}
+        >
+          <Table
+            columns={orderColumns}
+            dataSource={recentOrders}
+            rowKey="voId"
+            loading={loading}
+            pagination={false}
             size="small"
-            onClick={() => navigate('/orders')}
-          >
-            查看全部
-          </Button>
-        }
-        style={{ marginTop: '24px' }}
-      >
-        <Table
-          columns={orderColumns}
-          dataSource={recentOrders}
-          rowKey="voId"
-          loading={loading}
-          pagination={false}
-          size="small"
-        />
-      </Card>
+          />
+        </Card>
+      ) : null}
     </div>
   );
 };

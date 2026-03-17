@@ -25,10 +25,47 @@ public class ForumProfile : Profile
         RecognizeDestinationPrefixes("Vo");
         CreateMap<Post, PostVo>()
             .ForMember(dest => dest.VoCategoryName, opt => opt.Ignore()) // 需要在 Service 中手动填充
-            .ForMember(dest => dest.VoTags, opt => opt.Ignore());         // 需要在 Service 中手动填充
+            .ForMember(dest => dest.VoTags, opt => opt.Ignore())          // 需要在 Service 中手动填充
+            .ForMember(dest => dest.VoQuestion, opt => opt.Ignore())      // 需要在 Service 中手动填充
+            .ForMember(dest => dest.VoLottery, opt => opt.Ignore());      // 需要在 Service 中手动填充
         RecognizePrefixes("Vo");
         CreateMap<PostVo, Post>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore()); // 避免从 VO 覆盖租户 ID
+
+        // PostQuestion -> PostQuestionVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostQuestion, PostQuestionVo>()
+            .ForMember(dest => dest.VoAnswers, opt => opt.Ignore());
+
+        // PostAnswer -> PostAnswerVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostAnswer, PostAnswerVo>()
+            .ForMember(dest => dest.VoAnswerId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.VoAuthorAvatarUrl, opt => opt.Ignore());
+
+        // PostPoll -> PostPollVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostPoll, PostPollVo>()
+            .ForMember(dest => dest.VoPollId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.VoOptions, opt => opt.Ignore())
+            .ForMember(dest => dest.VoHasVoted, opt => opt.Ignore())
+            .ForMember(dest => dest.VoSelectedOptionId, opt => opt.Ignore());
+
+        // PostPollOption -> PostPollOptionVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostPollOption, PostPollOptionVo>()
+            .ForMember(dest => dest.VoOptionId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.VoVotePercent, opt => opt.Ignore());
+
+        // PostLottery -> PostLotteryVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostLottery, PostLotteryVo>()
+            .ForMember(dest => dest.VoLotteryId, opt => opt.MapFrom(src => src.Id))
+            .ForMember(dest => dest.VoWinners, opt => opt.Ignore());
+
+        // PostLotteryWinner -> PostLotteryWinnerVo
+        RecognizeDestinationPrefixes("Vo");
+        CreateMap<PostLotteryWinner, PostLotteryWinnerVo>();
 
         // Comment -> CommentVo (使用前缀识别 + 手动配置特殊字段)
         RecognizeDestinationPrefixes("Vo");

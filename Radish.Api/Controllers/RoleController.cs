@@ -2,7 +2,9 @@ using Asp.Versioning;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.IService.Base;
 using Radish.Model;
@@ -17,7 +19,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
-[Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class RoleController : ControllerBase
 {
     private readonly IBaseService<Role, RoleVo> _roleService;
@@ -36,6 +38,7 @@ public class RoleController : ControllerBase
     /// <summary>获取全部角色，测试泛型基类和视图对象关系映射</summary>
     /// <returns>角色列表</returns>
     [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.RolesView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetRoleList()
     {
@@ -53,6 +56,7 @@ public class RoleController : ControllerBase
     /// <param name="id">角色ID</param>
     /// <returns>角色详情</returns>
     [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.RolesView, ConsolePermissions.RolesEdit)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetRoleById(long id)
     {
@@ -90,6 +94,7 @@ public class RoleController : ControllerBase
     /// <param name="roleVo">角色信息</param>
     /// <returns>创建结果</returns>
     [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.RolesCreate)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> CreateRole([FromBody] RoleVo roleVo)
     {
@@ -145,6 +150,7 @@ public class RoleController : ControllerBase
     /// <param name="roleVo">角色信息</param>
     /// <returns>更新结果</returns>
     [HttpPut]
+    [RequireConsolePermission(ConsolePermissions.RolesEdit)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> UpdateRole(long id, [FromBody] RoleVo roleVo)
     {
@@ -220,6 +226,7 @@ public class RoleController : ControllerBase
     /// <param name="id">角色ID</param>
     /// <returns>删除结果</returns>
     [HttpDelete]
+    [RequireConsolePermission(ConsolePermissions.RolesDelete)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> DeleteRole(long id)
     {
@@ -280,6 +287,7 @@ public class RoleController : ControllerBase
     /// <param name="enabled">是否启用</param>
     /// <returns>操作结果</returns>
     [HttpPut]
+    [RequireConsolePermission(ConsolePermissions.RolesToggle)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> ToggleRoleStatus(long id, [FromQuery] bool enabled)
     {

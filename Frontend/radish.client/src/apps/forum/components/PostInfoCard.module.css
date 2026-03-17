@@ -46,3 +46,16 @@
   padding-left: 20px;
   word-break: break-word;
 }
+
+.authorButton {
+  width: fit-content;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.2s ease;
+}
+
+.authorButton:hover {
+  color: #2563eb;
+}

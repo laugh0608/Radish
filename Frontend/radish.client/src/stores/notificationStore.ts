@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 /** 通知类型 */
-export type NotificationType = 'system' | 'reply' | 'mention' | 'like' | 'follow';
+export type NotificationType = 'system' | 'reply' | 'mention' | 'like' | 'follow' | 'lottery';
 
 /**
  * 通知项（Store 内部使用，与后端 VO 字段对应）

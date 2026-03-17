@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Category, PostItem, CommentHighlight } from '@/api/forum';
+import type {
+  Category,
+  PostItem,
+  CommentHighlight,
+  ForumPostViewMode,
+  QuestionStatusFilter,
+  ForumPostSortBy
+} from '@/api/forum';
 import { Icon } from '@radish/ui/icon';
 import { PostCard } from '../components/PostCard';
 import styles from './PostListView.module.css';
@@ -14,15 +21,20 @@ interface PostListViewProps {
   displayTimeZone: string;
   currentPage: number;
   totalPages: number;
-  sortBy: 'newest' | 'hottest' | 'essence';
+  sortBy: ForumPostSortBy;
+  postViewMode: ForumPostViewMode;
+  questionStatus: QuestionStatusFilter;
   loadingPosts: boolean;
   canPublish: boolean;
 
   // 事件处理
-  onSortChange: (sortBy: 'newest' | 'hottest' | 'essence') => void;
+  onSortChange: (sortBy: ForumPostSortBy) => void;
+  onViewModeChange: (mode: ForumPostViewMode) => void;
+  onQuestionStatusChange: (status: QuestionStatusFilter) => void;
   onOpenSearch: (keyword: string) => void;
   onPageChange: (page: number) => void;
   onPostClick: (postId: number) => void;
+  onAuthorClick: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
   onPublishClick: () => void;
 }
 
@@ -36,12 +48,17 @@ export const PostListView = ({
   currentPage,
   totalPages,
   sortBy,
+  postViewMode,
+  questionStatus,
   loadingPosts,
   canPublish,
   onSortChange,
+  onViewModeChange,
+  onQuestionStatusChange,
   onOpenSearch,
   onPageChange,
   onPostClick,
+  onAuthorClick,
   onPublishClick
 }: PostListViewProps) => {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
@@ -88,6 +105,48 @@ export const PostListView = ({
               ? `#${selectedTagName}`
               : categories.find(c => c.voId === selectedCategoryId)?.voName || '全部帖子'}
           </h2>
+          <div className={styles.viewButtons}>
+            <button
+              className={`${styles.sortButton} ${postViewMode === 'all' ? styles.sortActive : ''}`}
+              onClick={() => onViewModeChange('all')}
+            >
+              全部
+            </button>
+            <button
+              className={`${styles.sortButton} ${postViewMode === 'question' ? styles.sortActive : ''}`}
+              onClick={() => onViewModeChange('question')}
+            >
+              问答
+            </button>
+            <button
+              className={`${styles.sortButton} ${postViewMode === 'poll' ? styles.sortActive : ''}`}
+              onClick={() => onViewModeChange('poll')}
+            >
+              投票
+            </button>
+          </div>
+          {postViewMode === 'question' && (
+            <div className={styles.filterButtons}>
+              <button
+                className={`${styles.sortButton} ${questionStatus === 'all' ? styles.sortActive : ''}`}
+                onClick={() => onQuestionStatusChange('all')}
+              >
+                全部状态
+              </button>
+              <button
+                className={`${styles.sortButton} ${questionStatus === 'pending' ? styles.sortActive : ''}`}
+                onClick={() => onQuestionStatusChange('pending')}
+              >
+                待解决
+              </button>
+              <button
+                className={`${styles.sortButton} ${questionStatus === 'solved' ? styles.sortActive : ''}`}
+                onClick={() => onQuestionStatusChange('solved')}
+              >
+                已解决
+              </button>
+            </div>
+          )}
           <div className={styles.sortButtons}>
             <button
               className={`${styles.sortButton} ${sortBy === 'newest' ? styles.sortActive : ''}`}
@@ -95,12 +154,31 @@ export const PostListView = ({
             >
               最新
             </button>
-            <button
-              className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.sortActive : ''}`}
-              onClick={() => onSortChange('hottest')}
-            >
-              最热
-            </button>
+            {postViewMode === 'question' ? (
+              <>
+                <button
+                  className={`${styles.sortButton} ${sortBy === 'pending' ? styles.sortActive : ''}`}
+                  onClick={() => onSortChange('pending')}
+                >
+                  待解决优先
+                </button>
+                <button
+                  className={`${styles.sortButton} ${sortBy === 'answers' ? styles.sortActive : ''}`}
+                  onClick={() => onSortChange('answers')}
+                >
+                  回答数
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.sortActive : ''}`}
+                  onClick={() => onSortChange('hottest')}
+                >
+                  最热
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -182,6 +260,7 @@ export const PostListView = ({
                 post={post}
                 displayTimeZone={displayTimeZone}
                 onClick={() => onPostClick(post.voId)}
+                onAuthorClick={(userId, userName, avatarUrl) => onAuthorClick(userId, userName, avatarUrl)}
                 godComment={
                   godComment
                     ? {

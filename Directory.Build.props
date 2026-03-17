@@ -1,6 +1,7 @@
 <Project>
   <PropertyGroup>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <RestoreConfigFile Condition="'$(RestoreConfigFile)' == '' and Exists('$(MSBuildThisFileDirectory)NuGet.Config')">$(MSBuildThisFileDirectory)NuGet.Config</RestoreConfigFile>
 
     <!-- 项目版本号 (日历版本: vYY.M.RELEASE) -->
     <Version>26.1.1</Version>

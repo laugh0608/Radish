@@ -1,0 +1,24 @@
+@Api_HostAddress = http://localhost:5100
+
+### 黑名单：配置后验证 403
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+### 白名单：配置后验证放行
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+### 自动封禁：触发限流后验证 403
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+### 禁用限流端点：验证不受限流影响
+GET {{Api_HostAddress}}/health
+Accept: application/json
+
+### 配置提示
+# 在 appsettings.Local.json 中按需切换：
+# - RateLimit.Blacklist
+# - RateLimit.Whitelist
+# - RateLimit.Blacklist.AutoBlockAfterRejections
+# - [DisableRateLimiting] 标注的端点

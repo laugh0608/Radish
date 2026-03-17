@@ -1,6 +1,9 @@
 using Hangfire.Dashboard;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
+using Radish.IService;
 
 namespace Radish.Api.Filters;
 
@@ -8,7 +11,7 @@ namespace Radish.Api.Filters;
 /// Hangfire Dashboard 授权过滤器
 /// </summary>
 /// <remarks>
-/// 仅允许本地访问或已认证的管理员访问 Hangfire Dashboard
+/// 仅允许本地访问或已认证且具备 Hangfire 访问权限的用户访问 Dashboard
 /// </remarks>
 public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
 {
@@ -16,21 +19,49 @@ public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
     {
         var httpContext = context.GetHttpContext();
 
-        // 允许本地访问
         if (httpContext.Request.IsLocal())
         {
             return true;
         }
 
-        // 检查是否已认证
-        if (!httpContext.User.Identity?.IsAuthenticated ?? false)
+        var schemes = httpContext.RequestServices.GetRequiredService<IAuthenticationSchemeProvider>();
+        var defaultAuthenticate = schemes.GetDefaultAuthenticateSchemeAsync().GetAwaiter().GetResult();
+        if (defaultAuthenticate == null)
         {
             return false;
         }
 
-        // 检查是否为管理员角色
+        var authenticateResult = httpContext.AuthenticateAsync(defaultAuthenticate.Name).GetAwaiter().GetResult();
+        if (authenticateResult?.Principal == null)
+        {
+            return false;
+        }
+
+        httpContext.User = authenticateResult.Principal;
+
         var currentUser = httpContext.RequestServices.GetRequiredService<ICurrentUserAccessor>().Current;
-        return currentUser.IsSystemOrAdmin();
+        if (!currentUser.IsAuthenticated)
+        {
+            return false;
+        }
+
+        if (currentUser.IsSystemOrAdmin())
+        {
+            return true;
+        }
+
+        if (currentUser.Roles.Count <= 0)
+        {
+            return false;
+        }
+
+        var consoleAuthorizationService = httpContext.RequestServices.GetRequiredService<IConsoleAuthorizationService>();
+        var permissionKeys = consoleAuthorizationService
+            .GetPermissionKeysByRolesAsync(currentUser.Roles)
+            .GetAwaiter()
+            .GetResult();
+
+        return permissionKeys.Contains(ConsolePermissions.HangfireView, StringComparer.OrdinalIgnoreCase);
     }
 }
 
@@ -52,7 +83,6 @@ public static class HttpRequestExtensions
                 : System.Net.IPAddress.IsLoopback(connection.RemoteIpAddress);
         }
 
-        // 如果没有远程 IP，可能是本地请求
         return true;
     }
 }

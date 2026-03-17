@@ -22,7 +22,7 @@
   - 可用性：健康检查 `/health`, `/ready`; SQLSugar 迁移幂等；容器探针。
   - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点。
   - 国际化：后端资源文件（zh-Hans 基线）+ `MessageModel` 三件套，前端 i18n（React i18next），详见 [国际化指南](/architecture/i18n)。
-  - 质量：后端 xUnit + Shouldly + NSubstitute，前端 Vitest + RTL，关键链路具备 E2E 冒烟。
+  - 质量：后端以 xUnit + Shouldly + Moq 为当前基线；前端当前以 `type-check`、`node --test`、`HttpTest` 与最小人工验收为主，Vitest / RTL / Playwright 仍属于后续增强方向。
   - 配置：`appsettings.{Env}.json` + 环境变量 + `.env`；禁止把密钥写入仓库。
 
 - **里程碑**：参阅 [开发路线图](/development-plan)
@@ -46,11 +46,11 @@
 | Web Host | ASP.NET Core WebApplication | Program.cs 中最小宿主，按需要拆 Controller/Minimal API |
 | ORM | [SQLSugar](https://github.com/donet5/SqlSugar) | Code First + Migration，仓储层集中管理上下文，支持读写分离配置 |
 | 数据库 | PostgreSQL 16 | 默认端口 5432，连接通过 `ConnectionStrings__Default` 注入 |
-| 前端 | React 19 + Vite + TypeScript | radish.client (WebOS)、radish.console (管理控制台)、radish.ui (@radish/ui 组件库)；使用 npm workspaces；建议 React Query + Zustand |
-| 前端构建 | Vite Rolldown，ESLint 9，Vitest | 各项目独立构建：radish.client、radish.console；固定文档统一存放于 `Docs/`，由 API 启动时同步到 WebOS 文档应用 |
-| 测试 | xUnit 3 + Shouldly + NSubstitute | `Radish.Api.Tests` 目录；后续可按层拆分 |
+| 前端 | React 19 + Vite + TypeScript | radish.client (WebOS)、radish.console (管理控制台)、radish.ui (@radish/ui 组件库)；使用 npm workspaces；当前以 Zustand 与共享 API 客户端为主要前端基线 |
+| 前端构建 | Vite Rolldown，ESLint 9，TypeScript | 各项目独立构建：radish.client、radish.console；固定文档统一存放于 `Docs/`，由 API 启动时同步到 WebOS 文档应用 |
+| 测试 | xUnit 3 + Shouldly + Moq，辅以 `HttpTest` | `Radish.Api.Tests` 目录承载后端测试与专题 `.http` 资产；前端当前仅有最小 `node --test` 与 `type-check` 基线 |
 | 日志 / 配置 | Serilog + `Microsoft.Extensions.Configuration` | 支持 JSON + 环境变量 + 用户密钥；生产日志输出到 Console + Seq/Elastic 预留 |
-| 容器 | Dockerfile（Radish.Api）+ Docker Compose | Compose 负责 PostgreSQL + API + 前端静态站点 |
+| 容器 | `Radish.Api/Dockerfile` 已落地 | Compose、多宿主镜像与完整交付链仍以文档方案为主，尚未形成仓库级统一资产 |
 
 ### 本地启动脚本
 
@@ -108,7 +108,7 @@ PostgreSQL / SQLite
   - 仅保留轻量 Controller/Endpoint，所有核心逻辑委派给 Service 层。
   - 配置加载：`ConfigureAppConfiguration` 会先清空默认源，再依次加载 `appsettings.Shared.json`、`appsettings.json`、`appsettings.{Environment}.json` 与 `appsettings.Local.json`，保证共享默认值先落地、宿主差异后覆盖，本地敏感值最后生效。
   - 雪花 ID：`Program` 在注册 SqlSugar 之后从 `Snowflake` 节读取 `WorkId`、`DataCenterId` 并写入 `SnowFlakeSingle`；当前约定 `WorkId` 保留宿主差异配置，`DataCenterId` 放在 `appsettings.Shared.json` 统一维护。多实例部署必须保证 `WorkId` 唯一，禁止把生产与本地设置为同一个编号。
-  - 日志：宿主调用 `builder.Host.AddSerilogSetup()`，由 `Radish.Extension.Log` 统一配置输出目标。Serilog 默认读取 appsettings，写入控制台与 `Log/` 目录（普通日志 -> `Log.txt`，SqlSugar AOP 日志 -> `AopSql/AopSql.txt`），内部基于 `LogContextTool.LogSource` 区分日志类型并通过 `WriteTo.Async()` 异步落盘，避免阻塞请求线程；业务代码默认直接使用 `Serilog.Log` 静态方法输出日志，仅在依赖外部框架时才注入 `ILogger<T>`。
+  - 日志：宿主调用 `builder.Host.AddSerilogSetup()`，由 `Radish.Extension.Log` 统一配置输出目标。Serilog 默认读取 appsettings，写入控制台与 `Log/` 目录（普通日志 -> `Log.txt`，SqlSugar AOP 日志 -> `AopSql/AopSql.txt`），内部基于 `LogContextTool.LogSource` 区分日志类型并通过 `WriteTo.Async()` 异步落盘，避免阻塞请求线程；SQL AOP 生成策略由共享配置 `SqlAopLog` 控制，可按操作类型、表名、操作人和大文本字段做过滤或脱敏，当前默认跳过 `WikiDocument` 与 `WikiDocumentRevision` 两张文档同步表；业务代码默认直接使用 `Serilog.Log` 静态方法输出日志，仅在依赖外部框架时才注入 `ILogger<T>`。
   - API 文档：开发环境把 Scalar UI 映射到 `/scalar`（`/api/docs` 重定向到 `/scalar`），并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Api/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
   - API 版本控制：采用 **URL 路径版本控制**（`/api/v{version}/[controller]/[action]`），基于 `Asp.Versioning.Mvc` (8.1.0) 实现；Controller 通过 `[ApiVersion("x.0")]` 特性声明版本，未指定版本时默认使用 v1.0。v1 包含核心稳定接口（Login、User），v2 包含新功能与实验接口（AppSetting、RustTest）；OpenAPI 文档通过 `IApiVersionDescriptionProvider` 自动发现所有版本，为每个版本生成独立文档（`/openapi/v1.json`、`/openapi/v2.json`），Scalar UI 提供版本下拉菜单，切换时文档自动过滤只显示对应版本的接口。详细规范见 [开发规范](./specifications.md) 的"API 版本控制规范"章节。
   - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为"联调开关"。
@@ -124,6 +124,7 @@ PostgreSQL / SQLite
   - 应用服务（`*AppService`）封装用例流程、权限校验、事务控制、DTO 转换。
   - 依赖 `Radish.Core` 接口与 `Radish.Repository` 实现，通过 `IUnitOfWork` 控制 SQLSugar 上下文。
   - 对外仅返回 DTO/Vo，禁止把 `Radish.Model` 中的实体直接暴露给 Controller；实体需在此层通过 AutoMapper（一律在 `Radish.Extension/AutoMapperSetup` 注册）转换为视图模型。
+  - 当单个服务承担同一聚合下的多段复杂逻辑时，可在服务目录下继续按聚合建子目录，并使用 `partial class` 按职责拆分实现文件；例如论坛帖子服务可落在 `Radish.Service/Posts/PostService*.cs`，分别承载查询、发布、编辑、互动逻辑。
 - `Radish.Core`
   - 聚合根（Post、Comment、Category、UserProfile、PointLedger、ShopItem 等）、值对象、领域事件。
   - 定义仓储接口与领域服务，例如 `IPostRepository`, `IPointPolicyService`。
@@ -209,11 +210,11 @@ graph LR
 - Vite 配置 HTTPS、代理 API、环境变量区分（`.env.development` / `.env.production`），并在 `radish.client` 中启用 React 19 + Rolldown。
 - 目录建议：`app/`（入口、providers、路由）、`features/*`（按业务拆包）、`widgets/*`（桌面组件）、`shared/*`（api/ui/config），保持与未来 RN 工程一致，方便共享包。
 - 认证：封装 API 客户端自动附带 Token，失效触发刷新；敏感数据依赖 HTTPS 传输加密，后端负责安全存储与校验。
-- 状态管理：TanStack Query 管理异步数据与缓存，Zustand 管理 Dock/窗口/主题等客户端状态，表单由 React Hook Form + Zod 验证。
-- UI 与可访问性：Tailwind/UnoCSS + 自研组件 + Framer Motion 动效，兼顾键盘/触屏；所有文案走 i18n。
+- 状态管理：当前以 Zustand 与共享 API 客户端为主，围绕窗口系统、通知、用户态等客户端状态组织；是否统一引入 TanStack Query / React Hook Form / Zod，留待后续阶段再评估。
+- UI 与可访问性：当前以前端源码样式模块与 `@radish/ui` 自研组件为主；主题系统、全局动效体系与更完整的可访问性治理仍留作后续增强。
 - 组件库：计划自研一套基础组件（Button/Input/Select/Checkbox/Radio/Switch/Transfer/Form 等），或在 antd、Arco 等库上做白标二次封装，封装层统一输出 API、主题 Token、交互规范与 Storybook 文档，供桌面/移动/RN 共享。推荐参考 [Uiverse Galaxy](https://github.com/uiverse-io/galaxy)（3500+ 社区驱动的开源 UI 组件，支持 CSS/Tailwind，MIT 许可）寻找设计灵感和参考实现。
 - 桌面化交互规范：桌面 Shell + Dock + 窗口系统为核心体验，移动端自动切换至 Tab/Stack 结构；未来 React Native/Expo 应重用相同的 Design Token 与组件语义。
-- 测试：组件级 Vitest + React Testing Library，端到端走 Playwright（桌面/移动视口），RN 规划阶段可使用 Detox。
+- 测试：当前前端以 `type-check`、最小 `node --test`、专题 `HttpTest` 与人工验收为主；组件级 Vitest / React Testing Library 与 Playwright 暂未成为仓库统一基线。
 
 ## DevOps 与运维基线
 
@@ -221,14 +222,14 @@ graph LR
    - `appsettings.json` 仅放默认值，环境差异通过 `appsettings.{Env}.json` + 环境变量。
    - 本地秘密写入 `dotnet user-secrets` 或 `.env.local`（被 .gitignore 忽略）。
 2. **日志与监控**：
-   - Serilog 写入 Console + File；在容器中输出 JSON 便于收集。
-   - 预留 OpenTelemetry Exporter 与 Prometheus 指标。
+   - Serilog 写入 Console + File；API / Gateway 已具备健康检查入口，当前以“日志 + 健康检查 + `DbMigrate doctor/verify`”作为最小自检基线。
+   - OpenTelemetry Exporter、Prometheus 指标与更完整的 Tracing 仍处于后续规划阶段，尚未作为当前仓库既成能力。
 3. **部署流水线**：
-   - Dockerfile 使用多阶段构建（Restore → Build → Publish）。
-   - Compose 负责 PostgreSQL + API + 反向代理（如 Caddy/Nginx），可扩展加上前端静态站点。
-   - 生产部署建议挂载 `appsettings.Production.json` 与证书目录，使用 `ConnectionStrings__Default` 环境变量。
+   - 当前仓库已存在 `Radish.Api/Dockerfile` 多阶段构建资产（Restore → Build → Publish）。
+   - Compose、`Gateway/Auth` 镜像与完整交付编排仍以文档方案和后续规划为主，尚未形成仓库级统一标准。
+   - 生产部署建议挂载 `appsettings.Production.json` 与证书目录，使用 `ConnectionStrings__Default` 环境变量；是否形成最小可交付模板，留待后续阶段统一落地。
 4. **质量门禁**：
-   - PR 必须附带 `dotnet test` 与 `npm run build` 结果；若变更数据库需提供迁移脚本与回滚建议。
+   - PR 应附带与改动相匹配的构建 / 测试 / `type-check` / `HttpTest` 结果；若变更数据库需提供迁移脚本与回滚建议。
    - 关键模块需要 Code Review + Pair Walkthrough。
 
 ## API Gateway 规划（已完成 Phase 0）

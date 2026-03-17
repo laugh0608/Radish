@@ -32,6 +32,7 @@ interface ForumSearchViewProps {
   onApplyCustomRange: () => void;
   onPageChange: (page: number) => void;
   onPostClick: (postId: number) => void;
+  onAuthorClick: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
 }
 
 export const ForumSearchView = ({
@@ -60,7 +61,8 @@ export const ForumSearchView = ({
   onCustomEndDateChange,
   onApplyCustomRange,
   onPageChange,
-  onPostClick
+  onPostClick,
+  onAuthorClick
 }: ForumSearchViewProps) => {
   const keywordInputRef = useRef<HTMLInputElement>(null);
   const sortButtonsRef = useRef<HTMLDivElement>(null);
@@ -266,6 +268,7 @@ export const ForumSearchView = ({
                 post={post}
                 displayTimeZone={displayTimeZone}
                 onClick={() => onPostClick(post.voId)}
+                onAuthorClick={(userId, userName, avatarUrl) => onAuthorClick(userId, userName, avatarUrl)}
                 godComment={
                   godComment
                     ? {

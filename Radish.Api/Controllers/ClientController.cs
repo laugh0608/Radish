@@ -2,7 +2,9 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
+using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
 using Radish.Model;
 using Radish.Model.ViewModels.Client;
 using System.Security.Cryptography;
@@ -16,7 +18,7 @@ namespace Radish.Api.Controllers;
 [ApiController]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
-[Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+[Authorize(Policy = AuthorizationPolicies.Client)]
 public class ClientController : ControllerBase
 {
     private readonly IOpenIddictApplicationManager _applicationManager;
@@ -37,6 +39,7 @@ public class ClientController : ControllerBase
     /// 获取客户端列表
     /// </summary>
     [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsView)]
     public async Task<MessageModel<PageModel<ClientVo>>> GetClients(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
@@ -106,6 +109,7 @@ public class ClientController : ControllerBase
     /// 获取客户端详情
     /// </summary>
     [HttpGet("{id}")]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsView, ConsolePermissions.ApplicationsEdit)]
     public async Task<MessageModel<ClientVo>> GetClient(string id)
     {
         try
@@ -130,6 +134,7 @@ public class ClientController : ControllerBase
     /// 创建客户端
     /// </summary>
     [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsCreate)]
     public async Task<MessageModel<ClientSecretVo>> CreateClient([FromBody] CreateClientDto dto)
     {
         try
@@ -213,6 +218,14 @@ public class ClientController : ControllerBase
                 descriptor.Requirements.Add(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
             }
 
+            SetApplicationMetadata(
+                descriptor,
+                dto.Description,
+                dto.DeveloperName,
+                dto.DeveloperEmail,
+                status: "Active",
+                appType: "ThirdParty");
+
             // 设置创建信息
             SetCreatedInfo(descriptor);
 
@@ -239,6 +252,7 @@ public class ClientController : ControllerBase
     /// 更新客户端
     /// </summary>
     [HttpPut("{id}")]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsEdit)]
     public async Task<MessageModel<string>> UpdateClient(string id, [FromBody] UpdateClientDto dto)
     {
         try
@@ -257,6 +271,21 @@ public class ClientController : ControllerBase
             if (dto.DisplayName != null)
             {
                 descriptor.DisplayName = dto.DisplayName;
+            }
+
+            if (dto.Description != null)
+            {
+                descriptor.Properties["description"] = JsonSerializer.SerializeToElement(dto.Description);
+            }
+
+            if (dto.DeveloperName != null)
+            {
+                descriptor.Properties["developerName"] = JsonSerializer.SerializeToElement(dto.DeveloperName);
+            }
+
+            if (dto.DeveloperEmail != null)
+            {
+                descriptor.Properties["developerEmail"] = JsonSerializer.SerializeToElement(dto.DeveloperEmail);
             }
 
             if (dto.ConsentType != null)
@@ -351,6 +380,7 @@ public class ClientController : ControllerBase
     /// 删除客户端（软删除）
     /// </summary>
     [HttpDelete("{id}")]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsDelete)]
     public async Task<MessageModel<string>> DeleteClient(string id)
     {
         try
@@ -380,6 +410,7 @@ public class ClientController : ControllerBase
     /// 重置客户端密钥
     /// </summary>
     [HttpPost("{id}/reset-secret")]
+    [RequireConsolePermission(ConsolePermissions.ApplicationsResetSecret)]
     public async Task<MessageModel<ClientSecretVo>> ResetClientSecret(string id)
     {
         try
@@ -428,8 +459,9 @@ public class ClientController : ControllerBase
         var id = await _applicationManager.GetIdAsync(app);
         var clientId = await _applicationManager.GetClientIdAsync(app);
         var displayName = await _applicationManager.GetDisplayNameAsync(app);
-        var clientType = await _applicationManager.GetClientTypeAsync(app);
+        _ = await _applicationManager.GetClientTypeAsync(app);
         var consentType = await _applicationManager.GetConsentTypeAsync(app);
+        var properties = await _applicationManager.GetPropertiesAsync(app);
 
         // 获取权限
         var permissions = await _applicationManager.GetPermissionsAsync(app);
@@ -459,12 +491,23 @@ public class ClientController : ControllerBase
         var requirements = await _applicationManager.GetRequirementsAsync(app);
         var requirePkce = requirements.Contains(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
 
+        var description = GetPropertyValue(properties, "description");
+        var developerName = GetPropertyValue(properties, "developerName");
+        var developerEmail = GetPropertyValue(properties, "developerEmail");
+        var status = GetPropertyValue(properties, "status") ?? "Active";
+        var appType = GetPropertyValue(properties, "appType")
+                      ?? GetDefaultAppType(clientId);
+
         return new ClientVo
         {
             Id = id ?? "",
             ClientId = clientId ?? "",
             DisplayName = displayName,
-            Type = clientType,
+            Description = description,
+            DeveloperName = developerName,
+            DeveloperEmail = developerEmail,
+            Type = appType,
+            Status = status,
             GrantTypes = string.Join(", ", grantTypes),
             RedirectUris = string.Join(", ", redirectUris.Select(u => u.ToString())),
             PostLogoutRedirectUris = string.Join(", ", postLogoutRedirectUris.Select(u => u.ToString())),
@@ -523,6 +566,7 @@ public class ClientController : ControllerBase
         var userId = _currentUserAccessor.Current.UserId.ToString();
         descriptor.Properties["CreatedAt"] = JsonSerializer.SerializeToElement(DateTime.UtcNow.ToString("O"));
         descriptor.Properties["CreatedBy"] = JsonSerializer.SerializeToElement(userId);
+        descriptor.Properties["IsDeleted"] = JsonSerializer.SerializeToElement("false");
     }
 
     /// <summary>
@@ -533,6 +577,41 @@ public class ClientController : ControllerBase
         var userId = _currentUserAccessor.Current.UserId.ToString();
         descriptor.Properties["UpdatedAt"] = JsonSerializer.SerializeToElement(DateTime.UtcNow.ToString("O"));
         descriptor.Properties["UpdatedBy"] = JsonSerializer.SerializeToElement(userId);
+    }
+
+    private static void SetApplicationMetadata(
+        OpenIddictApplicationDescriptor descriptor,
+        string? description,
+        string? developerName,
+        string? developerEmail,
+        string status,
+        string appType)
+    {
+        descriptor.Properties["description"] = JsonSerializer.SerializeToElement(description ?? string.Empty);
+        descriptor.Properties["developerName"] = JsonSerializer.SerializeToElement(developerName ?? string.Empty);
+        descriptor.Properties["developerEmail"] = JsonSerializer.SerializeToElement(developerEmail ?? string.Empty);
+        descriptor.Properties["status"] = JsonSerializer.SerializeToElement(status);
+        descriptor.Properties["appType"] = JsonSerializer.SerializeToElement(appType);
+    }
+
+    private static string? GetPropertyValue(System.Collections.Immutable.ImmutableDictionary<string, JsonElement> properties, string key)
+    {
+        if (!properties.TryGetValue(key, out var value))
+        {
+            return null;
+        }
+
+        return value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : value.ToString();
+    }
+
+    private static string GetDefaultAppType(string? clientId)
+    {
+        return !string.IsNullOrWhiteSpace(clientId) &&
+               clientId.StartsWith("radish-", StringComparison.OrdinalIgnoreCase)
+            ? "Internal"
+            : "ThirdParty";
     }
 
     #endregion

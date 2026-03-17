@@ -53,7 +53,7 @@
 - 个人主页关系链页签已区分“关注动态”与“推荐 / 热门 / 最新”分发入口。
 
 **参考资产**：
-- `Radish.Api.Tests/HttpTest/Radish.Api.Forum.http`
+- `Radish.Api.Tests/HttpTest/Radish.Api.Community.http`
 - `Frontend/radish.client/src/apps/profile/components/UserFollowPanel.tsx`
 
 #### 3. 内容治理闭环
@@ -66,7 +66,7 @@
 - 发帖与评论入口已接入发布权限拦截。
 
 **参考资产**：
-- `Radish.Api.Tests/HttpTest/Radish.Api.Forum.http`
+- `Radish.Api.Tests/HttpTest/Radish.Api.Community.http`
 - `Radish.Api/Controllers/ContentModerationController.cs`
 
 #### 4. 分发能力

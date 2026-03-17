@@ -22,6 +22,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
 using Radish.Common.HttpContextTool;
+using Radish.Auth.Models;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
@@ -157,6 +158,7 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 
 // 配置强类型 Options
 builder.Services.AddAllOptionRegister();
+builder.Services.Configure<AuthorizationConsentOptions>(builder.Configuration.GetSection("AuthorizationConsent"));
 
 // 配置 ForwardedHeaders，让 Auth Server 能识别通过 Gateway 转发的原始请求信息
 builder.Services.Configure<ForwardedHeadersOptions>(options =>

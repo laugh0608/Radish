@@ -25,6 +25,8 @@ import {
   getOrderStatusColor,
   getProductTypeDisplay,
 } from '../../api/shopApi';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { usePermission } from '@/hooks/usePermission';
 import type { Order, OrderStatus } from '../../api/types';
 import { OrderDetail } from './OrderDetail';
 import { log } from '../../utils/logger';
@@ -37,6 +39,8 @@ export const OrderList = () => {
   const [total, setTotal] = useState(0);
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(20);
+  const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
+  const canRetryOrder = usePermission(CONSOLE_PERMISSIONS.ordersRetry);
 
   // 详情弹窗状态
   const [detailVisible, setDetailVisible] = useState(false);
@@ -77,8 +81,12 @@ export const OrderList = () => {
 
   // 初始化和筛选条件变化时加载
   useEffect(() => {
-    loadOrders();
-  }, [pageIndex, pageSize, userId, status, productId]);
+    if (!canViewOrders) {
+      return;
+    }
+
+    void loadOrders();
+  }, [pageIndex, pageSize, userId, status, productId, canViewOrders]);
 
   // 搜索
   const handleSearch = () => {
@@ -216,7 +224,7 @@ export const OrderList = () => {
           >
             详情
           </Button>
-          {record.voStatus === 'Failed' && ( // Failed
+          {canRetryOrder && record.voStatus === 'Failed' && (
             <Button
               variant="ghost"
               size="small"
@@ -235,7 +243,6 @@ export const OrderList = () => {
   if (loading && orders.length === 0) {
     return <TableSkeleton rows={10} columns={6} showFilters={true} showActions={true} />;
   }
-
   return (
     <div className="order-list-page">
       <div className="page-header">

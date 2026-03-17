@@ -96,18 +96,28 @@ volumes:
 
 ### 快速开始：一键初始化（推荐）
 
-对于全新环境或本地开发，推荐直接使用 `seed` 命令，它会自动完成表结构初始化和数据填充：
+对于全新环境或本地开发，推荐直接使用默认命令（或显式传入 `apply`），它会自动完成表结构初始化和数据填充：
+
+在执行前，建议先用 `doctor` 做一次只读自检：
+
+```bash
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor
+```
+
+`doctor` / `verify` 只会检查当前环境名、`MainDb`、已启用连接、关键 `ConnId` 与主库业务表状态，不会执行 `init` 或 `seed`。
 
 ```bash
 # 通过启动脚本（推荐）
 pwsh ./start.ps1  # 或 ./start.sh
-# 选择 7 (DbMigrate)，直接按回车选择默认的 seed（两端脚本均保留此单项）
+# 选择 7 (DbMigrate)，直接按回车选择默认的 apply
 
 # 或直接运行
-dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj
+# 或
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply
 ```
 
-**seed 命令会自动：**
+**apply 命令会自动：**
 1. 检查数据库表结构是否存在
 2. 如果表不存在，自动执行 `init` 创建表结构
 3. 填充初始数据（角色、租户、部门、用户等）
@@ -124,10 +134,12 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
 2. 在仓库根目录执行：
 
    ```bash
+   dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor
    dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
    ```
 
    - 该命令会：
+     - 先只读检查当前配置与连接状态；
      - 根据当前配置创建数据库（若不存在）；
      - 扫描 `Radish.Model` 中的实体类型并执行 SqlSugar Code First（`InitTables`），自动创建/补全表结构。
 3. 使用数据库客户端确认结构是否符合预期（表/字段/索引）。
@@ -168,13 +180,16 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
 ```bash
 # 通过启动脚本（推荐）
 pwsh ./start.ps1  # 或 ./start.sh
-# 选择 7 (DbMigrate)，直接按回车选择默认的 seed（两端脚本均保留此单项）
+# 选择 7 (DbMigrate)，直接按回车选择默认的 apply
 
 # 或直接运行
-dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply
 ```
 
-**智能初始化**：`seed` 命令会自动检测数据库表结构，如果表不存在会先执行 `init` 创建表结构，然后再填充数据。因此对于全新环境，您只需运行 `seed` 即可完成所有初始化工作。
+**智能初始化**：`apply` 命令会自动检测数据库表结构，如果表不存在会先执行 `init` 创建表结构，然后再填充数据。因此对于全新环境，您只需运行 `apply` 即可完成所有初始化工作。
+
+**推荐顺序**：`doctor` → `apply`（全新环境）或 `doctor` → `init` → `seed`（需要先单独校验结构时）。
 
 实现位于 `Radish.DbMigrate/InitialDataSeeder.cs`，并按模块拆分为 `SeedRolesAsync`、`SeedTenantsAsync`、`SeedDepartmentsAsync`、`SeedUsersAsync` 等方法，支持后续按业务扩展更多种子数据。
 

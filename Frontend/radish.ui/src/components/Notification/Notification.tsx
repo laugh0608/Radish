@@ -85,6 +85,9 @@ export const Notification = ({
         return '🔒';
       case 'follow':
         return '👤';
+      case 'LotteryWon':
+      case 'lottery':
+        return '🎁';
       default:
         return 'ℹ️';
     }
@@ -93,6 +96,7 @@ export const Notification = ({
   const getTypeColor = (type: string) => {
     if (type.endsWith('Liked') || type === 'like') return 'like';
     if (type.includes('Comment') || type.includes('Replied') || type === 'reply') return 'comment';
+    if (type === 'LotteryWon' || type === 'lottery') return 'lottery';
     if (type.includes('God') || type.includes('Sofa')) return 'achievement';
     if (type.includes('System') || type.includes('Security') || type === 'system') return 'system';
     return 'default';

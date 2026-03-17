@@ -41,6 +41,10 @@ public static class NotificationType
     /// <remarks>优先级：高（3）</remarks>
     public const string LevelUp = "LevelUp";
 
+    /// <summary>抽奖中奖</summary>
+    /// <remarks>优先级：高（3）</remarks>
+    public const string LotteryWon = "LotteryWon";
+
     #endregion
 
     #region 积分类通知（P2 后续实现）

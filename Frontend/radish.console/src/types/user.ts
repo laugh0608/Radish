@@ -6,6 +6,7 @@ export interface UserInfo {
   voUserName: string;
   voTenantId: number;
   roles?: string[];
+  permissions?: string[];
   voAvatarUrl?: string;
   voAvatarThumbnailUrl?: string;
 }
@@ -18,6 +19,8 @@ export interface UserListItem {
   voLoginName: string;
   voUserName: string;
   voUserEmail: string;
+  voAvatarUrl?: string;
+  voAvatarThumbnailUrl?: string;
   voIsEnable: boolean;
   voCreateTime: string;
   voUpdateTime?: string;

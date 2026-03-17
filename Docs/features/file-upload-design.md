@@ -168,8 +168,14 @@
 ## 本地测试
 
 - HTTP 测试用例：
-  - `Radish.Api.Tests/HttpTest/Radish.Api.Attachment.http`
-  - `Radish.Api.Tests/HttpTest/Radish.Api.RateLimit.http`
+  - `Radish.Api.Tests/HttpTest/Radish.Api.Attachment.Upload.http`
+  - `Radish.Api.Tests/HttpTest/Radish.Api.Attachment.Manage.http`
+  - `Radish.Api.Tests/HttpTest/Radish.Api.Attachment.Guardrail.http`
+  - `Radish.Api.Tests/HttpTest/Radish.Api.Attachment.Chunk.http`
+  - `Radish.Api.Tests/HttpTest/Radish.Api.Attachment.Token.http`
+  - `Radish.Api.Tests/HttpTest/Radish.Api.RateLimit.Core.http`
+  - `Radish.Api.Tests/HttpTest/Radish.Api.RateLimit.Policy.http`
+  - `Radish.Api.Tests/HttpTest/Radish.Api.RateLimit.Edge.http`
   - `Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http`
 
 - 启动服务：

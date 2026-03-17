@@ -5,6 +5,8 @@ public class ChannelMessageVo
 {
     public long VoId { get; set; }
 
+    public string? VoClientRequestId { get; set; }
+
     public long VoChannelId { get; set; }
 
     public long VoUserId { get; set; }

@@ -1,6 +1,22 @@
-import { apiGet, apiPost, apiPut, apiDelete } from '@radish/http';
+import { apiGet } from '@radish/http';
 import type { ParsedApiResponse } from '@radish/http';
 import type { UserListItem } from '../types/user';
+
+function mapUserListItem(raw: any): UserListItem {
+  return {
+    uuid: raw.uuid ?? raw.Uuid ?? 0,
+    voLoginName: raw.voLoginName ?? raw.VoLoginName ?? '',
+    voUserName: raw.voUserName ?? raw.VoUserName ?? '',
+    voUserEmail: raw.voUserEmail ?? raw.VoUserEmail ?? '',
+    voAvatarUrl: raw.voAvatarUrl ?? raw.VoAvatarUrl,
+    voAvatarThumbnailUrl: raw.voAvatarThumbnailUrl ?? raw.VoAvatarThumbnailUrl,
+    voIsEnable: raw.voIsEnable ?? raw.VoIsEnable ?? false,
+    voCreateTime: raw.voCreateTime ?? raw.VoCreateTime ?? '',
+    voUpdateTime: raw.voUpdateTime ?? raw.VoUpdateTime,
+    voIsDeleted: raw.voIsDeleted ?? raw.VoIsDeleted ?? false,
+    voTenantId: raw.voTenantId ?? raw.VoTenantId ?? 0,
+  };
+}
 
 /**
  * 用户状态枚举
@@ -30,25 +46,6 @@ export interface UserListResponse {
   total: number;
   pageIndex: number;
   pageSize: number;
-}
-
-/**
- * 用户创建/更新参数
- */
-export interface UserCreateParams {
-  userName: string;
-  email?: string;
-  password?: string;
-  roles?: string[];
-  status?: UserStatus;
-}
-
-export interface UserUpdateParams {
-  id: number;
-  userName?: string;
-  email?: string;
-  roles?: string[];
-  status?: UserStatus;
 }
 
 /**
@@ -96,7 +93,7 @@ export const userManagementApi = {
     if (response.ok && response.data) {
       const backendData = response.data;
       const mappedData: UserListResponse = {
-        items: backendData.voItems || backendData.VoItems || [],
+        items: (backendData.voItems || backendData.VoItems || []).map((item: any) => mapUserListItem(item)),
         total: backendData.voTotal || backendData.VoTotal || 0,
         pageIndex: backendData.voPageIndex || backendData.VoPageIndex || 1,
         pageSize: backendData.voPageSize || backendData.VoPageSize || 20,
@@ -115,56 +112,15 @@ export const userManagementApi = {
    * 获取用户详情
    */
   async getUserById(id: number): Promise<ParsedApiResponse<UserListItem>> {
-    return apiGet<UserListItem>(`/api/v1/User/GetUserById/${id}`, { withAuth: true });
-  },
+    const response = await apiGet<any>(`/api/v1/User/GetUserById/${id}`, { withAuth: true });
+    if (response.ok && response.data) {
+      return {
+        ...response,
+        data: mapUserListItem(response.data),
+      };
+    }
 
-  /**
-   * 创建用户
-   */
-  async createUser(params: UserCreateParams): Promise<ParsedApiResponse<UserListItem>> {
-    return apiPost<UserListItem>('/api/v1/User/Create', params, { withAuth: true });
-  },
-
-  /**
-   * 更新用户
-   */
-  async updateUser(params: UserUpdateParams): Promise<ParsedApiResponse<UserListItem>> {
-    return apiPut<UserListItem>(`/api/v1/User/Update/${params.id}`, params, { withAuth: true });
-  },
-
-  /**
-   * 删除用户
-   */
-  async deleteUser(id: number): Promise<ParsedApiResponse<void>> {
-    return apiDelete<void>(`/api/v1/User/Delete/${id}`, { withAuth: true });
-  },
-
-  /**
-   * 更新用户状态
-   */
-  async updateUserStatus(id: number, status: UserStatus): Promise<ParsedApiResponse<void>> {
-    return apiPut<void>(`/api/v1/User/UpdateStatus/${id}`, { status }, { withAuth: true });
-  },
-
-  /**
-   * 重置用户密码
-   */
-  async resetPassword(id: number, newPassword: string): Promise<ParsedApiResponse<void>> {
-    return apiPost<void>(`/api/v1/User/ResetPassword/${id}`, { newPassword }, { withAuth: true });
-  },
-
-  /**
-   * 分配角色
-   */
-  async assignRoles(id: number, roles: string[]): Promise<ParsedApiResponse<void>> {
-    return apiPost<void>(`/api/v1/User/AssignRoles/${id}`, { roles }, { withAuth: true });
-  },
-
-  /**
-   * 强制用户下线
-   */
-  async forceLogout(id: number): Promise<ParsedApiResponse<void>> {
-    return apiPost<void>(`/api/v1/User/ForceLogout/${id}`, {}, { withAuth: true });
+    return response as ParsedApiResponse<UserListItem>;
   },
 
   /**

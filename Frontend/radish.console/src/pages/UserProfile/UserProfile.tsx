@@ -48,7 +48,7 @@ export const UserProfile = () => {
         voAvatarUrl: user.voAvatarUrl,
         voCreateTime: '2024-01-01T00:00:00Z',
         voLastLoginTime: new Date().toISOString(),
-        voRoles: user.roles || ['Admin'],
+        voRoles: user.roles || [],
       };
       setProfileData(mockProfileData);
       form.setFieldsValue({

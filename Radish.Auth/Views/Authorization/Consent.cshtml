@@ -1,9 +1,45 @@
 @model Radish.Auth.Models.ConsentViewModel
+@using System
 @using System.Globalization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<Radish.Auth.Resources.Errors> Localizer
+
 @{
     ViewData["Title"] = Localizer["auth.consent.title"];
+    var isZh = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
+    var appInfoTitle = isZh ? "应用信息" : "Application";
+    var appInfoHint = isZh ? "下面是这次授权请求会使用到的应用信息。" : "Here is the application information used by this authorization request.";
+    var accountTitle = isZh ? "当前授权身份" : "Signed in as";
+    var permissionTitle = isZh ? "本次将授予以下权限" : "Permissions requested";
+    var permissionHint = isZh ? "只会授予当前请求需要的最小权限，你也可以现在取消。" : "Only the minimum required permissions will be granted for this request.";
+    var clientIdLabel = isZh ? "Client ID" : "Client ID";
+    var developerLabel = isZh ? "开发方" : "Developer";
+    var redirectLabel = isZh ? "回调来源" : "Redirect host";
+    var defaultDescription = isZh ? "该应用将使用你的 Radish 账号完成受保护操作。" : "This app will use your Radish account to complete protected actions.";
+    var loginIdentity = string.IsNullOrWhiteSpace(User?.Identity?.Name) ? (isZh ? "当前登录账户" : "Current account") : User!.Identity!.Name!;
+    var clientInitial = string.IsNullOrWhiteSpace(Model.ClientName) ? "R" : Model.ClientName.Trim()[..1].ToUpperInvariant();
+
+    (string Title, string Description) DescribeScope(string scope)
+    {
+        return scope switch
+        {
+            "openid" => isZh
+                ? ("访问你的基础身份标识", "用于确认当前登录用户身份，并建立安全的登录会话。")
+                : ("Access your identity", "Used to confirm who you are and establish a secure sign-in session."),
+            "profile" => isZh
+                ? ("读取你的基础资料", "用于获取昵称、头像等公开资料，完善应用内的身份展示。")
+                : ("Read your basic profile", "Used to read your public profile information such as display name and avatar."),
+            "offline_access" => isZh
+                ? ("保持持续登录", "用于在你离开页面后续签登录状态，减少重复登录。")
+                : ("Maintain your session", "Used to renew your session later without requiring a new sign-in every time."),
+            "radish-api" => isZh
+                ? ("访问 Radish API", "用于调用 Radish 官方接口，完成当前应用的业务请求。")
+                : ("Access Radish API", "Used to call Radish APIs required by this application."),
+            _ => isZh
+                ? ($"请求额外权限：{scope}", "这是该应用声明的附加访问范围，请在确认前检查是否符合预期。")
+                : ($"Additional scope: {scope}", "This is an extra scope declared by the application. Review it before continuing.")
+        };
+    }
 }
 <!DOCTYPE html>
 <html lang="@(CultureInfo.CurrentUICulture.Name)">
@@ -12,147 +48,459 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
     <style>
+        :root {
+            color-scheme: light;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-        .description {
-            color: #666;
-            margin-bottom: 20px;
-        }
-        .client-info {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-        }
-        .client-info strong {
-            color: #333;
-        }
-        .scopes-section {
-            margin-bottom: 25px;
-        }
-        .scopes-section p {
-            font-weight: 500;
-            color: #333;
-            margin-bottom: 10px;
-        }
-        .scopes-section ul {
-            list-style: none;
-            padding: 0;
-        }
-        .scopes-section li {
-            padding: 8px 12px;
-            margin: 5px 0;
-            background: #e7f2ff;
-            border-left: 3px solid #4285f4;
-            border-radius: 3px;
-            color: #333;
-        }
-        .button-group {
+            margin: 0;
+            min-height: 100vh;
             display: flex;
-            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            background:
+                radial-gradient(circle at top, rgba(244, 114, 182, 0.16), transparent 38%),
+                linear-gradient(180deg, #fff8fb 0%, #f8fafc 48%, #fdfdfd 100%);
+            padding: 24px;
         }
-        button {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: background-color 0.2s;
+
+        .auth-shell {
+            width: 100%;
+            max-width: 1080px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 32px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
         }
-        button[value="accept"] {
-            background: #34a853;
-            color: white;
+
+        .auth-layout {
+            display: grid;
+            grid-template-columns: minmax(300px, 0.95fr) minmax(420px, 1.05fr);
         }
-        button[value="accept"]:hover {
-            background: #2d9149;
+
+        .hero-panel {
+            position: relative;
+            padding: 48px;
+            color: #fff7fb;
+            background: linear-gradient(150deg, #f472b6 0%, #fb7185 56%, #fb923c 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 22px;
         }
-        button[value="deny"] {
-            background: #ea4335;
-            color: white;
+
+        .hero-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(circle at 18% 22%, rgba(255,255,255,0.24), transparent 34%),
+                linear-gradient(135deg, rgba(255,255,255,0.1), transparent 62%);
+            pointer-events: none;
         }
-        button[value="deny"]:hover {
-            background: #d33426;
+
+        .hero-badge {
+            position: relative;
+            z-index: 1;
+            width: 82px;
+            height: 82px;
+            border-radius: 24px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.24);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
+            overflow: hidden;
         }
+
+        .hero-badge img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .hero-badge span {
+            font-size: 2rem;
+            font-weight: 700;
+            color: rgba(255,255,255,0.92);
+        }
+
+        .hero-eyebrow {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            width: fit-content;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.14);
+            border: 1px solid rgba(255,255,255,0.2);
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .hero-title {
+            position: relative;
+            z-index: 1;
+            margin: 0;
+            font-size: 2.3rem;
+            line-height: 1.08;
+            color: #ffffff;
+        }
+
+        .hero-description {
+            position: relative;
+            z-index: 1;
+            margin: 0;
+            color: rgba(255,255,255,0.86);
+            font-size: 1rem;
+            line-height: 1.75;
+        }
+
+        .hero-metadata {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            gap: 14px;
+            margin-top: 6px;
+        }
+
+        .hero-meta-item {
+            padding: 14px 16px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+
+        .hero-meta-label {
+            margin-bottom: 6px;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.72);
+        }
+
+        .hero-meta-value {
+            margin: 0;
+            font-size: 1rem;
+            line-height: 1.55;
+            color: #ffffff;
+            word-break: break-word;
+        }
+
+        .content-panel {
+            padding: 40px 40px 36px;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+        }
+
         .lang-switcher {
             display: flex;
             justify-content: flex-end;
             gap: 10px;
-            margin-bottom: 20px;
         }
+
         .lang-button {
             padding: 6px 12px;
             background: transparent;
-            color: #4285f4;
-            border: 1px solid #4285f4;
-            border-radius: 4px;
+            color: #0f172a;
+            border: 1px solid #94a3b8;
+            border-radius: 999px;
             cursor: pointer;
             font-size: 12px;
             transition: all 0.2s;
         }
-        .lang-button:hover {
-            background: #4285f4;
-            color: white;
-        }
+
+        .lang-button:hover,
         .lang-button.active {
-            background: #4285f4;
-            color: white;
+            background: #0f172a;
+            color: #fff;
+            border-color: #0f172a;
+        }
+
+        .content-header {
+            margin-top: 26px;
+            margin-bottom: 22px;
+        }
+
+        .content-header h1 {
+            margin: 0 0 10px;
+            font-size: 2rem;
+            color: #0f172a;
+            line-height: 1.18;
+        }
+
+        .content-header p {
+            margin: 0;
+            color: #475569;
+            line-height: 1.8;
+        }
+
+        .summary-card,
+        .permission-card {
+            border-radius: 24px;
+            border: 1px solid #e2e8f0;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            padding: 22px 24px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+        }
+
+        .summary-card {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+
+        .summary-avatar {
+            width: 54px;
+            height: 54px;
+            border-radius: 18px;
+            background: linear-gradient(135deg, #f472b6, #fb7185);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .summary-copy strong,
+        .permission-card strong {
+            display: block;
+            color: #0f172a;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .summary-copy p,
+        .permission-card p {
+            margin: 0;
+            color: #64748b;
+            line-height: 1.7;
+        }
+
+        .permission-card {
+            margin-bottom: 24px;
+        }
+
+        .scope-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0 0;
+            display: grid;
+            gap: 14px;
+        }
+
+        .scope-item {
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            padding: 16px 18px;
+            border-radius: 18px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+        }
+
+        .scope-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: #fff1f6;
+            color: #db2777;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .scope-title {
+            margin: 0 0 6px;
+            color: #0f172a;
+            font-size: 0.98rem;
+        }
+
+        .scope-description {
+            margin: 0;
+            color: #64748b;
+            line-height: 1.7;
+        }
+
+        .scope-code {
+            margin-top: 8px;
+            display: inline-flex;
+            align-items: center;
+            padding: 5px 10px;
+            border-radius: 999px;
+            background: #f8fafc;
+            color: #475569;
+            font-size: 0.78rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        .button-group {
+            display: grid;
+            gap: 12px;
+        }
+
+        .action-button {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 999px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .action-button.primary {
+            border: none;
+            background: linear-gradient(135deg, #111827, #0f172a);
+            color: #ffffff;
+            box-shadow: 0 14px 26px rgba(15, 23, 42, 0.18);
+        }
+
+        .action-button.primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 18px 30px rgba(15, 23, 42, 0.22);
+        }
+
+        .action-button.secondary {
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #0f172a;
+        }
+
+        .action-button.secondary:hover {
+            background: #f8fafc;
+        }
+
+        @@media (max-width: 920px) {
+            .auth-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-panel,
+            .content-panel {
+                padding: 32px 24px;
+            }
+
+            .content-header h1 {
+                font-size: 1.72rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="lang-switcher">
-            <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh") ? "active" : "")" onclick="switchLanguage('zh-CN')">中文</button>
-            <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "active" : "")" onclick="switchLanguage('en-US')">English</button>
+    <div class="auth-shell">
+        <div class="auth-layout">
+            <aside class="hero-panel">
+                <div class="hero-badge">
+                    @if (!string.IsNullOrWhiteSpace(Model.ClientLogo))
+                    {
+                        <img src="@Model.ClientLogo" alt="@Model.ClientName" />
+                    }
+                    else
+                    {
+                        <span>@clientInitial</span>
+                    }
+                </div>
+
+                <div class="hero-eyebrow">
+                    <span>Radish Auth</span>
+                </div>
+
+                <h2 class="hero-title">@Model.ClientName</h2>
+                <p class="hero-description">@(string.IsNullOrWhiteSpace(Model.ClientDescription) ? defaultDescription : Model.ClientDescription)</p>
+
+                <div class="hero-metadata">
+                    <div class="hero-meta-item">
+                        <div class="hero-meta-label">@clientIdLabel</div>
+                        <p class="hero-meta-value">@Model.ClientId</p>
+                    </div>
+
+                    <div class="hero-meta-item">
+                        <div class="hero-meta-label">@developerLabel</div>
+                        <p class="hero-meta-value">@(string.IsNullOrWhiteSpace(Model.DeveloperName) ? "Radish" : Model.DeveloperName)</p>
+                    </div>
+
+                    <div class="hero-meta-item">
+                        <div class="hero-meta-label">@redirectLabel</div>
+                        <p class="hero-meta-value">@(string.IsNullOrWhiteSpace(Model.RedirectHost) ? Model.RedirectUri : Model.RedirectHost)</p>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="content-panel">
+                <div class="lang-switcher">
+                    <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('zh-CN')">中文</button>
+                    <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('en-US')">English</button>
+                </div>
+
+                <div class="content-header">
+                    <h1>@Localizer["auth.consent.heading"]</h1>
+                    <p>@string.Format(Localizer["auth.consent.description"], Model.ClientName)</p>
+                </div>
+
+                <section class="summary-card">
+                    <div class="summary-avatar">@loginIdentity.Trim()[..1].ToUpperInvariant()</div>
+                    <div class="summary-copy">
+                        <strong>@accountTitle</strong>
+                        <p>@loginIdentity</p>
+                    </div>
+                </section>
+
+                <section class="permission-card">
+                    <strong>@permissionTitle</strong>
+                    <p>@permissionHint</p>
+
+                    <ul class="scope-list">
+                        @foreach (var scope in Model.Scopes)
+                        {
+                            var scopeInfo = DescribeScope(scope);
+                            <li class="scope-item">
+                                <div class="scope-icon">•</div>
+                                <div>
+                                    <h3 class="scope-title">@scopeInfo.Title</h3>
+                                    <p class="scope-description">@scopeInfo.Description</p>
+                                    <span class="scope-code">@scope</span>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                </section>
+
+                <section class="permission-card" style="margin-bottom: 24px;">
+                    <strong>@appInfoTitle</strong>
+                    <p>@appInfoHint</p>
+                </section>
+
+                <form method="post">
+                    <input type="hidden" name="client_id" value="@Model.ClientId" />
+                    <input type="hidden" name="redirect_uri" value="@Model.RedirectUri" />
+                    <input type="hidden" name="response_type" value="@Model.ResponseType" />
+                    <input type="hidden" name="scope" value="@Model.Scope" />
+                    <input type="hidden" name="state" value="@Model.State" />
+
+                    <div class="button-group">
+                        <button class="action-button primary" type="submit" name="decision" value="accept">@Localizer["auth.consent.allow"]</button>
+                        <button class="action-button secondary" type="submit" name="decision" value="deny">@Localizer["auth.consent.deny"]</button>
+                    </div>
+                </form>
+            </main>
         </div>
-
-        <h1>@Localizer["auth.consent.heading"]</h1>
-        <p class="description">@string.Format(Localizer["auth.consent.description"], Model.ClientName)</p>
-
-        <div class="client-info">
-            <strong>@Localizer["auth.consent.client"]</strong> @Model.ClientName
-        </div>
-
-        <div class="scopes-section">
-            <p>@Localizer["auth.consent.scopes"]</p>
-            <ul>
-                @foreach (var scope in Model.Scopes)
-                {
-                    <li>@scope</li>
-                }
-            </ul>
-        </div>
-
-        <form method="post">
-            @* 通过隐藏字段将 OIDC 必要参数一并提交，避免二次 POST 时缺少 client_id 等参数 *@
-            <input type="hidden" name="client_id" value="@Model.ClientId" />
-            <input type="hidden" name="redirect_uri" value="@Model.RedirectUri" />
-            <input type="hidden" name="response_type" value="@Model.ResponseType" />
-            <input type="hidden" name="scope" value="@Model.Scope" />
-            <input type="hidden" name="state" value="@Model.State" />
-
-            <div class="button-group">
-                <button type="submit" name="decision" value="accept">@Localizer["auth.consent.allow"]</button>
-                <button type="submit" name="decision" value="deny">@Localizer["auth.consent.deny"]</button>
-            </div>
-        </form>
     </div>
 
     <script>
