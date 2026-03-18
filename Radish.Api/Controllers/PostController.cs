@@ -109,7 +109,7 @@ public class PostController : ControllerBase
     /// <param name="categoryId">分类 ID（可选）</param>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页数量（默认 20）</param>
-    /// <param name="sortBy">排序方式：全部帖子支持 newest（最新，默认）、hottest（最热）、essence（精华）；投票帖子支持 newest、votes（票数优先）；问答视图支持 newest、pending（待解决优先）、answers（回答数）</param>
+    /// <param name="sortBy">排序方式：全部帖子支持 newest（最新，默认）、hottest（最热）、essence（精华）；投票帖子支持 newest、votes（票数优先）、deadline（即将截止）；问答视图支持 newest、pending（待解决优先）、answers（回答数）</param>
     /// <param name="keyword">搜索关键词（搜索标题和内容）</param>
     /// <param name="startTime">筛选起始时间（可选，基于帖子创建时间）</param>
     /// <param name="endTime">筛选结束时间（可选，基于帖子创建时间）</param>
@@ -186,6 +186,7 @@ public class PostController : ControllerBase
         {
             var normalizedPollSort = sortBy switch
             {
+                "deadline" => "deadline",
                 "votes" => "votes",
                 "hottest" => "hottest",
                 "essence" => "essence",

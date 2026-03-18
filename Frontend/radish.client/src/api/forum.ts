@@ -162,7 +162,7 @@ export async function getTopCategories(t: TFunction): Promise<Category[]> {
  * @param categoryId 可选的分类 ID，不传则获取所有帖子
  * @param pageIndex 页码（从 1 开始）
  * @param pageSize 每页数量（默认 20）
- * @param sortBy 排序方式：newest（最新）、hottest（最热）、essence（精华）、pending（待解决优先）、answers（回答数）、votes（票数优先）
+ * @param sortBy 排序方式：newest（最新）、hottest（最热）、essence（精华）、pending（待解决优先）、answers（回答数）、votes（票数优先）、deadline（即将截止）
  * @param keyword 搜索关键词（搜索标题和内容）
  */
 export async function getPostList(

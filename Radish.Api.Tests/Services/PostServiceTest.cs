@@ -783,6 +783,163 @@ public class PostServiceTest
     }
 
     [Fact]
+    public async Task GetPollPostPageAsync_Should_Order_By_Deadline_When_SortByDeadline()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var userPostLikeRepository = new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict);
+        var postTagRepository = new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict);
+        var categoryRepository = new Mock<IBaseRepository<Category>>(MockBehavior.Strict);
+        var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
+        var postPollRepository = new Mock<IBaseRepository<PostPoll>>(MockBehavior.Strict);
+        var postPollOptionRepository = new Mock<IBaseRepository<PostPollOption>>(MockBehavior.Strict);
+        var postPollVoteRepository = new Mock<IBaseRepository<PostPollVote>>(MockBehavior.Strict);
+        var postQuestionRepository = new Mock<IBaseRepository<PostQuestion>>(MockBehavior.Strict);
+        var postAnswerRepository = new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict);
+        var tagService = new Mock<ITagService>(MockBehavior.Strict);
+        var coinRewardService = new Mock<ICoinRewardService>(MockBehavior.Strict);
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var dedupService = new Mock<INotificationDedupService>(MockBehavior.Strict);
+        var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
+        var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
+        var now = DateTime.UtcNow;
+        var polls = new List<PostPoll>
+        {
+            new()
+            {
+                Id = 4001,
+                PostId = 1201,
+                TotalVoteCount = 3,
+                IsClosed = false,
+                EndTime = now.AddMinutes(30),
+                IsDeleted = false
+            },
+            new()
+            {
+                Id = 4002,
+                PostId = 1202,
+                TotalVoteCount = 20,
+                IsClosed = false,
+                EndTime = now.AddHours(3),
+                IsDeleted = false
+            },
+            new()
+            {
+                Id = 4003,
+                PostId = 1203,
+                TotalVoteCount = 8,
+                IsClosed = false,
+                EndTime = null,
+                IsDeleted = false
+            },
+            new()
+            {
+                Id = 4004,
+                PostId = 1204,
+                TotalVoteCount = 18,
+                IsClosed = true,
+                EndTime = now.AddMinutes(-5),
+                IsDeleted = false
+            }
+        };
+
+        var posts = new List<Post>
+        {
+            new(new PostInitializationOptions("最先截止", "正文"))
+            {
+                Id = 1201,
+                IsPublished = true,
+                IsDeleted = false,
+                IsTop = false,
+                CreateTime = now.AddMinutes(-20)
+            },
+            new(new PostInitializationOptions("较晚截止", "正文"))
+            {
+                Id = 1202,
+                IsPublished = true,
+                IsDeleted = false,
+                IsTop = false,
+                CreateTime = now.AddMinutes(-10)
+            },
+            new(new PostInitializationOptions("长期有效", "正文"))
+            {
+                Id = 1203,
+                IsPublished = true,
+                IsDeleted = false,
+                IsTop = false,
+                CreateTime = now.AddMinutes(-5)
+            },
+            new(new PostInitializationOptions("已经截止", "正文"))
+            {
+                Id = 1204,
+                IsPublished = true,
+                IsDeleted = false,
+                IsTop = false,
+                CreateTime = now.AddMinutes(-1)
+            }
+        };
+
+        postPollRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostPoll, bool>>?>()))
+            .ReturnsAsync((Expression<Func<PostPoll, bool>>? expression) =>
+            {
+                var predicate = expression?.Compile() ?? (_ => true);
+                return polls.Where(predicate).ToList();
+            });
+        postRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
+            .ReturnsAsync((Expression<Func<Post, bool>>? expression) =>
+            {
+                var predicate = expression?.Compile() ?? (_ => true);
+                return posts.Where(predicate).ToList();
+            });
+        mapper
+            .Setup(m => m.Map<List<PostVo>>(It.IsAny<List<Post>>()))
+            .Returns((List<Post> source) => source.Select(post => new PostVo
+            {
+                VoId = post.Id,
+                VoTitle = post.Title,
+                VoIsTop = post.IsTop,
+                VoCreateTime = post.CreateTime
+            }).ToList());
+
+        var service = new PostService(
+            mapper.Object,
+            postRepository.Object,
+            userPostLikeRepository.Object,
+            postTagRepository.Object,
+            categoryRepository.Object,
+            tagRepository.Object,
+            postPollRepository.Object,
+            postPollOptionRepository.Object,
+            postPollVoteRepository.Object,
+            postQuestionRepository.Object,
+            postAnswerRepository.Object,
+            tagService.Object,
+            coinRewardService.Object,
+            notificationService.Object,
+            dedupService.Object,
+            experienceService.Object,
+            postEditHistoryRepository.Object,
+            Options.Create(new ForumEditHistoryOptions()));
+
+        var (data, totalCount) = await service.GetPollPostPageAsync(sortBy: "deadline");
+
+        Assert.Equal(4, totalCount);
+        Assert.Equal([1201L, 1202L, 1203L, 1204L], data.Select(post => post.VoId).ToArray());
+
+        postPollRepository.Verify(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostPoll, bool>>?>()), Times.Once);
+        postRepository.Verify(repository => repository.QueryAsync(It.IsAny<Expression<Func<Post, bool>>?>()), Times.Once);
+        postRepository.Verify(repository => repository.QueryPageAsync(
+            It.IsAny<Expression<Func<Post, bool>>>(),
+            It.IsAny<int>(),
+            It.IsAny<int>(),
+            It.IsAny<Expression<Func<Post, object>>>(),
+            It.IsAny<OrderByType>()), Times.Never);
+    }
+
+    [Fact]
     public async Task AddAnswerAsync_Should_CreateAnswer_And_UpdateQuestionCount()
     {
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);

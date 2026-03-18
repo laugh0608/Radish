@@ -85,3 +85,10 @@
 - **投票视图已补票数排序**：欢迎 App 论坛列表在 `poll` 视图下新增“票数”排序，当前投票视图只保留 `最新 / 票数` 两个最小排序入口。
 - **列表契约继续沿用现有入口扩展**：`Post/GetList` 新增 `sortBy=votes`，排序口径为“置顶优先 -> 票数降序 -> 创建时间倒序”，不额外新增投票专用排序接口。
 - **最小自动化回归已通过**：`npm run type-check --workspace=radish.client` 已通过，`dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PostControllerTest|FullyQualifiedName~PostServiceTest"` 26 个测试通过；专题文档也已补本次变更回归记录。
+
+### P3-ext 第四个最小切片落地
+
+- **投票视图已补即将截止排序**：欢迎 App 论坛列表在 `poll` 视图下新增“即将截止”排序，当前投票视图已具备 `最新 / 票数 / 即将截止` 三个最小排序入口。
+- **列表契约继续沿用现有入口扩展**：`Post/GetList` 新增 `sortBy=deadline`，排序口径为“置顶优先 -> 进行中且有截止时间的按截止时间升序 -> 长期有效 -> 已截止”，不额外新增投票专用排序接口。
+- **最小自动化回归已通过**：`npm run type-check --workspace=radish.client` 已通过，`dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PostControllerTest|FullyQualifiedName~PostServiceTest"` 28 个测试通过；专题文档也已补本次变更回归记录。
+- **SQLite 联调兼容性已修复**：真实联调中点击投票“进行中”筛选会触发 SQLite `near \"(\": syntax error`，原因是 `Nullable<DateTime>` 的 `HasValue/Value` 在当前查询翻译下生成了不兼容 SQL；现已改为 `null` 比较写法并完成代码修复。

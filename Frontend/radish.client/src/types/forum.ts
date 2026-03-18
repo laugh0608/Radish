@@ -25,7 +25,7 @@ export type QuestionStatusFilter = 'all' | 'pending' | 'solved';
 
 export type PollStatusFilter = 'all' | 'active' | 'closed';
 
-export type ForumPostSortBy = 'newest' | 'hottest' | 'essence' | 'pending' | 'answers' | 'votes';
+export type ForumPostSortBy = 'newest' | 'hottest' | 'essence' | 'pending' | 'answers' | 'votes' | 'deadline';
 
 export type QuestionAnswerSort = 'default' | 'latest';
 

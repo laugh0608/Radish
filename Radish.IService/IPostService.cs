@@ -45,7 +45,7 @@ public interface IPostService : IBaseService<Post, PostVo>
     /// <param name="categoryId">分类 ID（可空）</param>
     /// <param name="pageIndex">页码（从 1 开始）</param>
     /// <param name="pageSize">每页大小</param>
-    /// <param name="sortBy">排序方式：newest / hottest / essence / votes</param>
+    /// <param name="sortBy">排序方式：newest / hottest / essence / votes / deadline</param>
     /// <param name="keyword">搜索关键词（可空）</param>
     /// <param name="startTime">筛选起始时间（可空）</param>
     /// <param name="endTime">筛选结束时间（可空）</param>

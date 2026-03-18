@@ -204,6 +204,12 @@ export const PostListView = ({
                 >
                   票数
                 </button>
+                <button
+                  className={`${styles.sortButton} ${sortBy === 'deadline' ? styles.sortActive : ''}`}
+                  onClick={() => onSortChange('deadline')}
+                >
+                  即将截止
+                </button>
               </>
             ) : (
               <>
