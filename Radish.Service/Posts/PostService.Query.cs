@@ -115,7 +115,8 @@ public partial class PostService
             _ => poll => !poll.IsDeleted
         };
 
-        var pollPostIds = (await _postPollRepository.QueryAsync(pollCondition))
+        var polls = await _postPollRepository.QueryAsync(pollCondition);
+        var pollPostIds = polls
             .Select(poll => poll.PostId)
             .Distinct()
             .ToList();
@@ -145,6 +146,7 @@ public partial class PostService
 
         return sortBy switch
         {
+            "votes" => await QueryPollPostsByVotesAsync(baseCondition, polls, pageIndex, pageSize),
             "hottest" => await QueryPollPostsByHottestAsync(baseCondition, pageIndex, pageSize),
             "essence" => await QueryPageAsync(
                 baseCondition,
@@ -403,6 +405,29 @@ public partial class PostService
         var data = allPosts
             .OrderByDescending(post => post.VoIsTop)
             .ThenByDescending(post => post.VoViewCount + post.VoLikeCount * 2 + post.VoCommentCount * 3)
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return (data, totalCount);
+    }
+
+    private async Task<(List<PostVo> data, int totalCount)> QueryPollPostsByVotesAsync(
+        Expression<Func<Post, bool>> baseCondition,
+        List<PostPoll> polls,
+        int pageIndex,
+        int pageSize)
+    {
+        var allPosts = await QueryAsync(baseCondition);
+        var totalCount = allPosts.Count;
+        var pollVoteCountMap = polls
+            .GroupBy(poll => poll.PostId)
+            .ToDictionary(group => group.Key, group => group.First().TotalVoteCount);
+
+        var data = allPosts
+            .OrderByDescending(post => post.VoIsTop)
+            .ThenByDescending(post => pollVoteCountMap.GetValueOrDefault(post.VoId))
+            .ThenByDescending(post => post.VoCreateTime)
             .Skip((pageIndex - 1) * pageSize)
             .Take(pageSize)
             .ToList();

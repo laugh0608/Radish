@@ -196,6 +196,15 @@ export const PostListView = ({
                   回答数
                 </button>
               </>
+            ) : postViewMode === 'poll' ? (
+              <>
+                <button
+                  className={`${styles.sortButton} ${sortBy === 'votes' ? styles.sortActive : ''}`}
+                  onClick={() => onSortChange('votes')}
+                >
+                  票数
+                </button>
+              </>
             ) : (
               <>
                 <button

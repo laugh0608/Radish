@@ -404,6 +404,72 @@ public class PostControllerTest
     }
 
     [Fact]
+    public async Task GetList_Should_Pass_Votes_Sort_When_PostTypeIsPoll()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        var pollPosts = new List<PostVo>
+        {
+            new()
+            {
+                VoId = 9532,
+                VoTitle = "高票投票帖",
+                VoHasPoll = true,
+                VoPollTotalVoteCount = 88,
+                VoAuthorId = 0,
+                VoCreateTime = DateTime.UtcNow
+            }
+        };
+
+        postServiceMock
+            .Setup(service => service.GetPollPostPageAsync(
+                null,
+                1,
+                20,
+                "votes",
+                null,
+                null,
+                null,
+                null))
+            .ReturnsAsync((pollPosts, 1));
+        postServiceMock
+            .Setup(service => service.FillPostListMetadataAsync(It.Is<List<PostVo>>(items => ReferenceEquals(items, pollPosts))))
+            .Returns(Task.CompletedTask);
+        commentServiceMock
+            .Setup(service => service.QueryAsync(It.IsAny<Expression<Func<Comment, bool>>>()))
+            .ReturnsAsync(new List<CommentVo>());
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object);
+
+        var result = await controller.GetList(postType: "poll", sortBy: "votes");
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+
+        var pageModel = Assert.IsType<PageModel<PostVo>>(result.ResponseData);
+        var post = Assert.Single(pageModel.Data);
+        Assert.True(post.VoHasPoll);
+        Assert.Equal(88, post.VoPollTotalVoteCount);
+
+        postServiceMock.Verify(service => service.GetPollPostPageAsync(
+            null,
+            1,
+            20,
+            "votes",
+            null,
+            null,
+            null,
+            null), Times.Once);
+    }
+
+    [Fact]
     public async Task GetEditHistory_Should_Return_PagedHistories_When_PostExists()
     {
         var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);

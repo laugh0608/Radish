@@ -410,12 +410,17 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   }, [selectedCategoryId, selectedTagName, postViewMode, questionStatus, pollStatus]);
 
   useEffect(() => {
-    if (postViewMode === 'question' && (sortBy === 'hottest' || sortBy === 'essence')) {
+    if (postViewMode === 'question' && (sortBy === 'hottest' || sortBy === 'essence' || sortBy === 'votes')) {
       setSortBy('newest');
       return;
     }
 
-    if (postViewMode !== 'question' && (sortBy === 'pending' || sortBy === 'answers')) {
+    if (postViewMode === 'poll' && (sortBy === 'hottest' || sortBy === 'essence' || sortBy === 'pending' || sortBy === 'answers')) {
+      setSortBy('newest');
+      return;
+    }
+
+    if (postViewMode === 'all' && (sortBy === 'pending' || sortBy === 'answers' || sortBy === 'votes')) {
       setSortBy('newest');
     }
   }, [postViewMode, sortBy]);
