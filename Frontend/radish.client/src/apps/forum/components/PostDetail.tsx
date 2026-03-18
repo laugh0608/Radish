@@ -35,6 +35,7 @@ interface PostDetailProps {
   isLiked?: boolean;
   onLike?: (postId: number) => void;
   onVotePoll?: (optionId: number) => Promise<void>;
+  onClosePoll?: () => Promise<void>;
   onDrawLottery?: () => Promise<void>;
   onAnswerQuestion?: (content: string) => Promise<void>;
   onAcceptAnswer?: (answerId: number) => Promise<void>;
@@ -66,6 +67,7 @@ export const PostDetail = ({
   isLiked = false,
   onLike,
   onVotePoll,
+  onClosePoll,
   onDrawLottery,
   onAnswerQuestion,
   onAcceptAnswer,
@@ -103,6 +105,7 @@ export const PostDetail = ({
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [acceptingAnswerId, setAcceptingAnswerId] = useState<number | null>(null);
   const [isDrawingLottery, setIsDrawingLottery] = useState(false);
+  const [isClosingPoll, setIsClosingPoll] = useState(false);
 
   const isAuthor = !!post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
   const showFollowAction = isAuthenticated && !!post && !isAuthor && post.voAuthorId > 0;
@@ -204,6 +207,7 @@ export const PostDetail = ({
 
   const poll = post.voPoll;
   const canSubmitPoll = !!poll && !poll.voIsClosed && !poll.voHasVoted && isAuthenticated;
+  const canClosePoll = !!poll && !poll.voIsClosed && isAuthor && !!onClosePoll;
   const pollStatusText = !poll
     ? ''
     : poll.voIsClosed
@@ -224,6 +228,19 @@ export const PostDetail = ({
       await onVotePoll(selectedOptionId);
     } finally {
       setIsVoting(false);
+    }
+  };
+
+  const handleClosePoll = async () => {
+    if (!canClosePoll || !onClosePoll) {
+      return;
+    }
+
+    setIsClosingPoll(true);
+    try {
+      await onClosePoll();
+    } finally {
+      setIsClosingPoll(false);
     }
   };
 
@@ -391,14 +408,28 @@ export const PostDetail = ({
 
             <div className={styles.pollFooter}>
               <span className={styles.pollHint}>{pollStatusText}</span>
-              <button
-                type="button"
-                className={styles.pollSubmitButton}
-                onClick={handleVoteSubmit}
-                disabled={!canSubmitPoll || !selectedOptionId || isVoting}
-              >
-                {isVoting ? '提交中...' : '提交投票'}
-              </button>
+              <div className={styles.pollActionButtons}>
+                {canClosePoll && (
+                  <button
+                    type="button"
+                    className={styles.pollCloseButton}
+                    onClick={() => {
+                      void handleClosePoll();
+                    }}
+                    disabled={isClosingPoll}
+                  >
+                    {isClosingPoll ? '结束中...' : '结束投票'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={styles.pollSubmitButton}
+                  onClick={handleVoteSubmit}
+                  disabled={!canSubmitPoll || !selectedOptionId || isVoting}
+                >
+                  {isVoting ? '提交中...' : '提交投票'}
+                </button>
+              </div>
             </div>
           </section>
         )}

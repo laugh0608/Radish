@@ -477,6 +477,12 @@
   color: #64748b;
 }
 
+.pollActionButtons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .pollSubmitButton {
   padding: 8px 14px;
   border: none;
@@ -491,6 +497,28 @@
 .pollSubmitButton:disabled {
   background: #cbd5e1;
   cursor: not-allowed;
+}
+
+.pollCloseButton {
+  padding: 8px 14px;
+  border: 1px solid #f59e0b;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #b45309;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pollCloseButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.pollCloseButton:hover:not(:disabled) {
+  background: #ffedd5;
+  border-color: #ea580c;
+  color: #9a3412;
 }
 
 .questionCard {

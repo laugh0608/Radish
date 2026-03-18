@@ -33,6 +33,7 @@ import type {
   CreateLotteryRequest,
   CreatePollOptionRequest,
   VotePollRequest,
+  ClosePollRequest,
   CreateAnswerRequest,
   AcceptAnswerRequest,
   PostPoll,
@@ -85,6 +86,7 @@ export type {
   CreateLotteryRequest,
   CreatePollOptionRequest,
   VotePollRequest,
+  ClosePollRequest,
   CreateAnswerRequest,
   AcceptAnswerRequest,
   PostPoll,
@@ -283,6 +285,19 @@ export async function votePoll(request: VotePollRequest, t: TFunction): Promise<
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '投票失败');
+  }
+
+  return response.data;
+}
+
+/**
+ * 手动结束投票
+ */
+export async function closePoll(request: ClosePollRequest, t: TFunction): Promise<PostPoll> {
+  const response = await apiPost<PostPoll>('/api/v1/Poll/Close', request, { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '结束投票失败');
   }
 
   return response.data;

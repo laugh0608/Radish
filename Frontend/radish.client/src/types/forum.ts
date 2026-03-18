@@ -209,6 +209,13 @@ export interface VotePollRequest {
 }
 
 /**
+ * 结束投票请求
+ */
+export interface ClosePollRequest {
+  postId: number;
+}
+
+/**
  * 提交回答请求
  */
 export interface CreateAnswerRequest {

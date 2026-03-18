@@ -6,6 +6,7 @@ import { toast } from '@radish/ui/toast';
 import {
   publishPost,
   votePoll,
+  closePoll,
   drawLottery,
   getLotteryByPostId,
   answerQuestion,
@@ -81,6 +82,7 @@ export interface ForumActionsHandlers {
   ) => Promise<void>;
   handleDrawLottery: () => Promise<void>;
   handleVotePoll: (optionId: number) => Promise<void>;
+  handleClosePoll: () => Promise<void>;
   handleAnswerQuestion: (content: string) => Promise<void>;
   handleAcceptAnswer: (answerId: number) => Promise<void>;
   handleQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
@@ -368,6 +370,24 @@ export const useForumActions = (
     );
   }, [setSelectedPost]);
 
+  const applyPollState = useCallback((poll: PostDetail['voPoll']) => {
+    if (!poll) {
+      return;
+    }
+
+    setSelectedPost((current) =>
+      current && current.voId === poll.voPostId
+        ? {
+            ...current,
+            voHasPoll: true,
+            voPollTotalVoteCount: poll.voTotalVoteCount,
+            voPollIsClosed: poll.voIsClosed,
+            voPoll: poll
+          }
+        : current
+    );
+  }, [setSelectedPost]);
+
   const handleDrawLottery = async () => {
     if (!selectedPost?.voId) {
       const message = '请先选择要开奖的帖子';
@@ -418,22 +438,44 @@ export const useForumActions = (
         t
       );
 
-      setSelectedPost((current) =>
-        current && current.voId === selectedPost.voId
-          ? {
-              ...current,
-              voHasPoll: true,
-              voPollTotalVoteCount: latestPoll.voTotalVoteCount,
-              voPollIsClosed: latestPoll.voIsClosed,
-              voPoll: latestPoll
-            }
-          : current
-      );
-
+      applyPollState(latestPoll);
       await loadPosts();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
+      throw err;
+    }
+  };
+
+  const handleClosePoll = async () => {
+    if (!selectedPost?.voId) {
+      const message = '请先选择要结束投票的帖子';
+      setError(message);
+      throw new Error(message);
+    }
+
+    if (!isAuthenticated) {
+      const message = '请先登录后再结束投票';
+      setError(message);
+      throw new Error(message);
+    }
+
+    setError(null);
+    try {
+      const latestPoll = await closePoll(
+        {
+          postId: selectedPost.voId
+        },
+        t
+      );
+
+      applyPollState(latestPoll);
+      toast.success('投票已结束');
+      await loadPosts();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      toast.error(message || '结束投票失败');
       throw err;
     }
   };
@@ -921,6 +963,7 @@ export const useForumActions = (
     handlePublishPost,
     handleDrawLottery,
     handleVotePoll,
+    handleClosePoll,
     handleAnswerQuestion,
     handleAcceptAnswer,
     handleQuestionAnswerSortChange,

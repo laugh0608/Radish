@@ -92,3 +92,11 @@
 - **列表契约继续沿用现有入口扩展**：`Post/GetList` 新增 `sortBy=deadline`，排序口径为“置顶优先 -> 进行中且有截止时间的按截止时间升序 -> 长期有效 -> 已截止”，不额外新增投票专用排序接口。
 - **最小自动化回归已通过**：`npm run type-check --workspace=radish.client` 已通过，`dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PostControllerTest|FullyQualifiedName~PostServiceTest"` 28 个测试通过；专题文档也已补本次变更回归记录。
 - **SQLite 联调兼容性已修复**：真实联调中点击投票“进行中”筛选会触发 SQLite `near \"(\": syntax error`，原因是 `Nullable<DateTime>` 的 `HasValue/Value` 在当前查询翻译下生成了不兼容 SQL；现已改为 `null` 比较写法并完成代码修复。
+- **真实联调结论已回写**：你已完成一轮真实联调，确认 `全部状态 / 进行中 / 已截止` 与 `最新 / 票数 / 即将截止` 组合切换正常，且 SQLite 下“进行中”筛选不再抛异常。
+
+### P3-ext 第五个最小切片落地
+
+- **投票详情已补关闭管理**：欢迎 App 论坛帖子详情页新增“结束投票”按钮，仅发帖者可手动关闭进行中的投票。
+- **关闭契约继续沿用论坛投票控制器**：新增 `Poll/Close` 接口，关闭后立即切换为“已截止”，不额外引入重新开启、管理员代关或通知联动。
+- **专题回归入口已同步**：`Radish.Api.Forum.Poll.http` 已补“结束投票”请求，专题文档的最小人工验收顺序也已补入作者关闭动作。
+- **最小自动化回归已通过**：`npm run type-check --workspace=radish.client` 已通过，投票服务与投票控制器共 10 个测试已通过；默认输出目录因运行中的 `Radish.Api` / `Radish.Auth` 被占用，实际在临时输出目录完成编译与测试验证。

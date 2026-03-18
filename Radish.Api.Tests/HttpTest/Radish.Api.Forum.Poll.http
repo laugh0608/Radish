@@ -97,6 +97,20 @@ Authorization: Bearer {{Access_Token}}
   "optionId": {{ForumPoll_OptionId}}
 }
 
+### 发帖者结束投票（预期成功）
+POST {{Gateway_HostAddress}}/api/v1/Poll/Close
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "postId": {{ForumPoll_PostId}}
+}
+
+### 结束投票后重新获取投票详情
+GET {{Gateway_HostAddress}}/api/v1/Poll/GetByPostId?postId={{ForumPoll_PostId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
 ### 截止后提交投票（预期失败）
 POST {{Gateway_HostAddress}}/api/v1/Poll/Vote
 Content-Type: application/json
