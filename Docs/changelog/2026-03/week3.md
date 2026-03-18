@@ -100,3 +100,9 @@
 - **关闭契约继续沿用论坛投票控制器**：新增 `Poll/Close` 接口，关闭后立即切换为“已截止”，不额外引入重新开启、管理员代关或通知联动。
 - **专题回归入口已同步**：`Radish.Api.Forum.Poll.http` 已补“结束投票”请求，专题文档的最小人工验收顺序也已补入作者关闭动作。
 - **最小自动化回归已通过**：`npm run type-check --workspace=radish.client` 已通过，投票服务与投票控制器共 10 个测试已通过；默认输出目录因运行中的 `Radish.Api` / `Radish.Auth` 被占用，实际在临时输出目录完成编译与测试验证。
+
+### P3-ext 投票回归资产收口
+
+- **HttpTest 执行入口已补齐**：`Radish.Api.Forum.Poll.http` 已补 `pollStatus`、`sortBy` 与关闭后回查入口，并在文件尾部注明推荐执行顺序，便于串联真实联调。
+- **论坛投票回归口径已统一**：`regression-index.md` 与 `forum-poll-mvp.md` 已统一到“投票视图 / 状态筛选 / 票数排序 / 即将截止排序 / 结束投票”的最小专题回归集。
+- **Windows 锁文件说明已补文档**：`validation-baseline.md` 已补充本机运行宿主时默认输出目录被占用的注意事项，明确“停宿主优先、隔离输出兜底、自动化与联调分开”的处理方式。

@@ -104,3 +104,13 @@ npm run validate:baseline:host
 - 当前不默认承诺 `HttpTest` 已自动化
 - 当前不默认承诺前端具备完整 Vitest / RTL / Playwright 基线
 - 当前只是在已有资产之上补“统一入口”和“分层说明”
+
+## Windows 本机宿主占用说明
+
+在 Windows 本机联调时，如果 `Radish.Api`、`Radish.Auth`、`JetBrains.Debugger.Worker` 等进程仍在占用默认 `bin\Debug` 输出目录，`dotnet build` 或 `dotnet test` 可能因为 DLL 被锁而失败。
+
+处理顺序建议如下：
+
+1. 优先停止本机运行中的宿主或调试进程，再执行默认的构建与测试验证。
+2. 如果这轮只是做必要的编译 / 测试确认，且暂时不方便停宿主，可改用隔离输出目录完成验证，避免覆盖正在运行的宿主产物。
+3. 自动化验证与真实联调尽量拆开执行，不要长时间共用同一个默认输出目录反复覆盖。
