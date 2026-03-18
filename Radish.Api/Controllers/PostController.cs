@@ -115,6 +115,7 @@ public class PostController : ControllerBase
     /// <param name="endTime">筛选结束时间（可选，基于帖子创建时间）</param>
     /// <param name="postType">帖子视图：all（默认）/ question（问答）/ poll（投票）</param>
     /// <param name="questionStatus">问答状态：all（默认）/ pending / solved</param>
+    /// <param name="pollStatus">投票状态：all（默认）/ active / closed</param>
     /// <returns>分页帖子列表</returns>
     [HttpGet]
     [AllowAnonymous]
@@ -128,7 +129,8 @@ public class PostController : ControllerBase
         DateTime? startTime = null,
         DateTime? endTime = null,
         string postType = "all",
-        string questionStatus = "all")
+        string questionStatus = "all",
+        string pollStatus = "all")
     {
         // 参数校验
         if (pageIndex < 1) pageIndex = 1;
@@ -142,12 +144,19 @@ public class PostController : ControllerBase
 
         postType = postType?.Trim().ToLowerInvariant() ?? "all";
         questionStatus = questionStatus?.Trim().ToLowerInvariant() ?? "all";
+        pollStatus = pollStatus?.Trim().ToLowerInvariant() ?? "all";
         var isQuestionView = postType == "question";
         var isPollView = postType == "poll";
         bool? isSolvedFilter = questionStatus switch
         {
             "pending" => false,
             "solved" => true,
+            _ => null
+        };
+        bool? isPollClosedFilter = pollStatus switch
+        {
+            "active" => false,
+            "closed" => true,
             _ => null
         };
 
@@ -189,7 +198,8 @@ public class PostController : ControllerBase
                 normalizedPollSort,
                 keyword,
                 startTime,
-                endTime);
+                endTime,
+                isPollClosedFilter);
         }
         else
         {

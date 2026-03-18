@@ -5,6 +5,7 @@ import type {
   CommentHighlight,
   ForumPostViewMode,
   QuestionStatusFilter,
+  PollStatusFilter,
   ForumPostSortBy
 } from '@/api/forum';
 import { Icon } from '@radish/ui/icon';
@@ -24,6 +25,7 @@ interface PostListViewProps {
   sortBy: ForumPostSortBy;
   postViewMode: ForumPostViewMode;
   questionStatus: QuestionStatusFilter;
+  pollStatus: PollStatusFilter;
   loadingPosts: boolean;
   canPublish: boolean;
 
@@ -31,6 +33,7 @@ interface PostListViewProps {
   onSortChange: (sortBy: ForumPostSortBy) => void;
   onViewModeChange: (mode: ForumPostViewMode) => void;
   onQuestionStatusChange: (status: QuestionStatusFilter) => void;
+  onPollStatusChange: (status: PollStatusFilter) => void;
   onOpenSearch: (keyword: string) => void;
   onPageChange: (page: number) => void;
   onPostClick: (postId: number) => void;
@@ -50,11 +53,13 @@ export const PostListView = ({
   sortBy,
   postViewMode,
   questionStatus,
+  pollStatus,
   loadingPosts,
   canPublish,
   onSortChange,
   onViewModeChange,
   onQuestionStatusChange,
+  onPollStatusChange,
   onOpenSearch,
   onPageChange,
   onPostClick,
@@ -144,6 +149,28 @@ export const PostListView = ({
                 onClick={() => onQuestionStatusChange('solved')}
               >
                 已解决
+              </button>
+            </div>
+          )}
+          {postViewMode === 'poll' && (
+            <div className={styles.filterButtons}>
+              <button
+                className={`${styles.sortButton} ${pollStatus === 'all' ? styles.sortActive : ''}`}
+                onClick={() => onPollStatusChange('all')}
+              >
+                全部状态
+              </button>
+              <button
+                className={`${styles.sortButton} ${pollStatus === 'active' ? styles.sortActive : ''}`}
+                onClick={() => onPollStatusChange('active')}
+              >
+                进行中
+              </button>
+              <button
+                className={`${styles.sortButton} ${pollStatus === 'closed' ? styles.sortActive : ''}`}
+                onClick={() => onPollStatusChange('closed')}
+              >
+                已截止
               </button>
             </div>
           )}

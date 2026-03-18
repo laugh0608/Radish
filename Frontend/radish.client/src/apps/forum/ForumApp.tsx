@@ -607,10 +607,12 @@ export const ForumApp = () => {
                   sortBy={dataState.sortBy}
                   postViewMode={dataState.postViewMode}
                   questionStatus={dataState.questionStatus}
+                  pollStatus={dataState.pollStatus}
                   loadingPosts={dataState.loadingPosts}
                   onSortChange={actionsState.handleSortChange}
                   onViewModeChange={dataState.setPostViewMode}
                   onQuestionStatusChange={dataState.setQuestionStatus}
+                  onPollStatusChange={dataState.setPollStatus}
                   onOpenSearch={handleOpenSearchView}
                   onPageChange={actionsState.handlePageChange}
                   onPostClick={actionsState.handleSelectPost}

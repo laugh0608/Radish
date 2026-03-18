@@ -70,3 +70,12 @@
 
 - **帖子服务已按职责拆分目录**：原单体 `PostService.cs` 已重组到 `Radish.Service/Posts/`，按 `Query / Publish / Edit / Interaction` 四类 partial 文件拆分，避免继续维持 1500+ 行超大文件。
 - **设计文档已同步约束**：`specifications.md` 与 `framework.md` 已补“目录 + partial class” 的服务拆分约定，明确这类拆分是治理大文件的允许路径，而不是继续堆积单文件。
+
+## 2026-03-18 (周三)
+
+### P3-ext 第二个最小切片落地
+
+- **投票视图已补状态筛选**：欢迎 App 论坛列表在 `poll` 视图下新增 `全部状态 / 进行中 / 已截止` 三态筛选，不再只能混看全部投票帖。
+- **列表契约继续沿用现有入口扩展**：`Post/GetList` 新增 `pollStatus=all / active / closed`，继续复用帖子列表分页、关键词与排序链路，不额外新增投票状态专用接口。
+- **关闭态口径已统一**：后端当前统一按“手动关闭或截止时间已到”判定 `closed`，避免前端只能按 `IsClosed` 单字段做不完整判断。
+- **最小自动化回归已通过**：`npm run type-check --workspace=radish.client` 已通过，`dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PostControllerTest|FullyQualifiedName~PostServiceTest"` 24 个测试通过；专题文档也已补本次变更回归记录。

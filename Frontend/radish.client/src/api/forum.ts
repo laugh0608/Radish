@@ -22,6 +22,7 @@ import type {
   CommentEditHistory,
   ForumPostViewMode,
   QuestionStatusFilter,
+  PollStatusFilter,
   ForumPostSortBy,
   QuestionAnswerSort,
   QuestionAnswerFilter,
@@ -73,6 +74,7 @@ export type {
   CommentEditHistory,
   ForumPostViewMode,
   QuestionStatusFilter,
+  PollStatusFilter,
   ForumPostSortBy,
   QuestionAnswerSort,
   QuestionAnswerFilter,
@@ -173,7 +175,8 @@ export async function getPostList(
   startTime?: string,
   endTime?: string,
   postType: ForumPostViewMode = 'all',
-  questionStatus: QuestionStatusFilter = 'all'
+  questionStatus: QuestionStatusFilter = 'all',
+  pollStatus: PollStatusFilter = 'all'
 ): Promise<PageModel<PostItem>> {
   const params = new URLSearchParams();
   if (categoryId) params.set('categoryId', categoryId.toString());
@@ -182,6 +185,7 @@ export async function getPostList(
   params.set('sortBy', sortBy);
   params.set('postType', postType);
   params.set('questionStatus', questionStatus);
+  params.set('pollStatus', pollStatus);
   if (keyword.trim()) params.set('keyword', keyword.trim());
   if (startTime) params.set('startTime', startTime);
   if (endTime) params.set('endTime', endTime);

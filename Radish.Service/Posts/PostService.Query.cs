@@ -101,9 +101,21 @@ public partial class PostService
         string sortBy = "newest",
         string? keyword = null,
         DateTime? startTime = null,
-        DateTime? endTime = null)
+        DateTime? endTime = null,
+        bool? isClosed = null)
     {
-        var pollPostIds = (await _postPollRepository.QueryAsync(poll => !poll.IsDeleted))
+        var utcNow = DateTime.UtcNow;
+        Expression<Func<PostPoll, bool>> pollCondition = isClosed switch
+        {
+            true => poll => !poll.IsDeleted &&
+                            (poll.IsClosed || (poll.EndTime.HasValue && poll.EndTime.Value <= utcNow)),
+            false => poll => !poll.IsDeleted &&
+                             !poll.IsClosed &&
+                             (!poll.EndTime.HasValue || poll.EndTime.Value > utcNow),
+            _ => poll => !poll.IsDeleted
+        };
+
+        var pollPostIds = (await _postPollRepository.QueryAsync(pollCondition))
             .Select(poll => poll.PostId)
             .Distinct()
             .ToList();

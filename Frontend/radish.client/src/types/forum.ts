@@ -23,6 +23,8 @@ export type ForumPostViewMode = 'all' | 'question' | 'poll';
 
 export type QuestionStatusFilter = 'all' | 'pending' | 'solved';
 
+export type PollStatusFilter = 'all' | 'active' | 'closed';
+
 export type ForumPostSortBy = 'newest' | 'hottest' | 'essence' | 'pending' | 'answers';
 
 export type QuestionAnswerSort = 'default' | 'latest';
