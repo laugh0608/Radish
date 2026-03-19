@@ -34,6 +34,10 @@ const resources = {
             'oidc.missingAccessToken': 'Token response does not contain access_token.',
             'oidc.tokenRequestFailed': 'Token request failed: {{status}} {{statusText}}',
 
+            'theme.default': 'Default',
+            'theme.guofeng': 'Guofeng',
+            'theme.switch': 'Switch theme',
+
             'lang.zh': '中文',
             'lang.en': 'EN'
         }
@@ -68,6 +72,10 @@ const resources = {
             'oidc.errorDetailPrefix': '错误详情：',
             'oidc.missingAccessToken': 'Token 响应中缺少 access_token。',
             'oidc.tokenRequestFailed': 'Token 请求失败: {{status}} {{statusText}}',
+
+            'theme.default': '默认',
+            'theme.guofeng': '国风',
+            'theme.switch': '切换主题',
 
             'lang.zh': '中文',
             'lang.en': 'EN'

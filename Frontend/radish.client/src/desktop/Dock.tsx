@@ -1,14 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { useNotificationStore } from '@/stores/notificationStore';
-import { notificationHub } from '@/services/notificationHub';
 import { redirectToLogin, logout, hasAccessToken } from '@/services/auth';
 import { getAppById } from './AppRegistry';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
-import { CoinBalance } from './components/CoinBalance';
-import { ExperienceDisplay } from './components/ExperienceDisplay';
+import { useTheme } from '@/theme/useTheme';
 import i18n from '@/i18n';
 import type { ApiResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
@@ -26,9 +25,11 @@ import styles from './Dock.module.css';
  * - 实时未读数推送（SignalR）+ 降级轮询
  */
 export const Dock = () => {
+  const { t } = useTranslation();
   const { openWindows, openApp, restoreWindow } = useWindowStore();
   const { userName, userId, avatarUrl, avatarThumbnailUrl, isAuthenticated, clearUser, setUser } = useUserStore();
   const { unreadCount: storeUnreadCount, connectionState } = useNotificationStore();
+  const { currentTheme, cycleTheme } = useTheme();
   const [time, setTime] = useState(new Date());
   const [isExpanded, setIsExpanded] = useState(false); // 默认为灵动岛状态
   const [pollingUnreadCount, setPollingUnreadCount] = useState(0); // 轮询降级时的未读数
@@ -328,6 +329,15 @@ export const Dock = () => {
               <div className={styles.time}>
                 {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
               </div>
+              <button
+                type="button"
+                className={styles.themeButton}
+                onClick={cycleTheme}
+                title={`${t('theme.switch')}（${currentTheme.label}）`}
+              >
+                <Icon icon="mdi:palette-swatch-outline" size={18} />
+                <span className={styles.themeLabel}>{currentTheme.label}</span>
+              </button>
               <button
                 type="button"
                 className={`${styles.authButton} ${loggedIn ? styles.loggedIn : styles.loggedOut}`}
