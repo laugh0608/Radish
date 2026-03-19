@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>人民币色系 · 配色展示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: #f2ede4;
+            background-image: radial-gradient(circle at 20% 30%, rgba(255, 240, 220, 0.3) 0%, transparent 30%),
+                              radial-gradient(circle at 90% 70%, rgba(200, 180, 150, 0.2) 0%, transparent 40%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        .card {
+            max-width: 1100px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(3px);
+            border-radius: 3rem 3rem 2rem 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15), 0 6px 12px rgba(0, 0, 0, 0.1), inset 0 1px 4px rgba(255, 255, 255, 0.8);
+            padding: 2rem 2rem 3rem 2rem;
+            border: 1px solid rgba(255, 250, 240, 0.6);
+        }
+
+        h1 {
+            font-weight: 500;
+            font-size: 2.4rem;
+            letter-spacing: 2px;
+            color: #4a3f33;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #dacbb8;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        h1 span {
+            background: #b24057;
+            color: white;
+            font-size: 1rem;
+            font-weight: 400;
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            background: linear-gradient(145deg, #9f7a5a, #b08b6b);
+            box-shadow: inset 0 1px 3px #ead3b7;
+            letter-spacing: 0.5px;
+        }
+
+        .note-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2.2rem;
+        }
+
+        .note-row {
+            background: rgba(250, 245, 235, 0.6);
+            border-radius: 40px;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03), inset 0 0 0 1px #ffffffcc;
+        }
+
+        .note-header {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1.2rem;
+        }
+
+        .note-header h2 {
+            font-size: 1.8rem;
+            font-weight: 450;
+            color: #2b2b2b;
+            background: #fffefc;
+            padding: 0.2rem 1.4rem 0.2rem 1.8rem;
+            border-radius: 60px;
+            box-shadow: 0 2px 4px #e2d5c4, inset 0 0 0 1px white;
+            display: inline-block;
+            border: 1px solid #e1cfb5;
+        }
+
+        .denom-100 .note-header h2 { background: #fcefe8; color: #912b48; }
+        .denom-50  .note-header h2 { background: #dff4ed; color: #175a46; }
+        .denom-20  .note-header h2 { background: #f6e5da; color: #754c3c; }
+        .denom-10  .note-header h2 { background: #e2ecf7; color: #1e3b54; }
+        .denom-5   .note-header h2 { background: #efe3f0; color: #4e3363; }
+        .denom-1   .note-header h2 { background: #f0f1e3; color: #4f6149; }
+
+        .swatch-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem 0.3rem;
+            align-items: center;
+            margin-top: 0.4rem;
+        }
+
+        .swatch-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 85px;
+            min-width: 70px;
+            transition: all 0.1s ease;
+        }
+
+        .color-box {
+            width: 100%;
+            height: 90px;
+            border-radius: 24px 24px 16px 16px;
+            box-shadow: 0 8px 12px -6px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.7) inset, 0 0 0 2px rgba(255,245,225,0.4);
+            margin-bottom: 8px;
+            transition: transform 0.15s;
+        }
+
+        .swatch-item:hover .color-box {
+            transform: scale(1.02);
+            box-shadow: 0 10px 16px -6px rgba(0,0,0,0.4), 0 0 0 2px #fff8e7 inset;
+        }
+
+        .hex-code {
+            font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #352e26;
+            background: #f1e8dd;
+            padding: 0.2rem 0.5rem;
+            border-radius: 40px;
+            border: 1px solid #dacbbc;
+            letter-spacing: 0.3px;
+            box-shadow: inset 0 1px 3px #fdf7ed;
+        }
+
+        .note-footer {
+            margin-top: 1rem;
+            border-top: 1px dashed #cbbca5;
+            padding-top: 0.7rem;
+            font-size: 0.85rem;
+            color: #7f6e5a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .note-footer span {
+            background: #ebe1d2;
+            padding: 0.2rem 1rem;
+            border-radius: 50px;
+        }
+
+        .meta-note {
+            margin-top: 2rem;
+            text-align: right;
+            font-size: 0.9rem;
+            color: #af9f8b;
+            font-style: italic;
+            border-top: 1px dashed #dac9b4;
+            padding-top: 1rem;
+        }
+
+        .meta-note i {
+            background: #f4ede2;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+        }
+
+        @media (max-width: 650px) {
+            .card { padding: 1.5rem; }
+            .note-row { padding: 1.2rem 1rem; }
+            .swatch-item { width: 70px; }
+            .color-box { height: 75px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>
+            🪙 人民币·纸币色系
+            <span>按面额</span>
+        </h1>
+
+        <div class="note-grid">
+
+            <!-- 100元 -->
+            <div class="note-row denom-100">
+                <div class="note-header">
+                    <h2>💯 100元</h2>
+                </div>
+                <div class="swatch-strip">
+                    <div class="swatch-item"><div class="color-box" style="background: #b24057;"></div><span class="hex-code">#b24057</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #cd5076;"></div><span class="hex-code">#cd5076</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #bf6074;"></div><span class="hex-code">#bf6074</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #da738a;"></div><span class="hex-code">#da738a</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #cc7888;"></div><span class="hex-code">#cc7888</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #cd94b2;"></div><span class="hex-code">#cd94b2</span></div>
+                </div>
+                <div class="note-footer">
+                    <span>粉紫 · 暖梅</span>
+                    <span>6色</span>
+                </div>
+            </div>
+
+            <!-- 50元 -->
+            <div class="note-row denom-50">
+                <div class="note-header">
+                    <h2>💚 50元</h2>
+                </div>
+                <div class="swatch-strip">
+                    <div class="swatch-item"><div class="color-box" style="background: #1b3c31;"></div><span class="hex-code">#1b3c31</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #437371;"></div><span class="hex-code">#437371</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #4f9c83;"></div><span class="hex-code">#4f9c83</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #73bea0;"></div><span class="hex-code">#73bea0</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #98c0c9;"></div><span class="hex-code">#98c0c9</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #c4f8e7;"></div><span class="hex-code">#c4f8e7</span></div>
+                </div>
+                <div class="note-footer">
+                    <span>墨绿 · 水碧</span>
+                    <span>6色</span>
+                </div>
+            </div>
+
+            <!-- 20元 -->
+            <div class="note-row denom-20">
+                <div class="note-header">
+                    <h2>🧡 20元</h2>
+                </div>
+                <div class="swatch-strip">
+                    <div class="swatch-item"><div class="color-box" style="background: #824d3e;"></div><span class="hex-code">#824d3e</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #8f584f;"></div><span class="hex-code">#8f584f</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #886349;"></div><span class="hex-code">#886349</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #b5826d;"></div><span class="hex-code">#b5826d</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #e9be9e;"></div><span class="hex-code">#e9be9e</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #f3e7e9;"></div><span class="hex-code">#f3e7e9</span></div>
+                </div>
+                <div class="note-footer">
+                    <span>赭石 · 肉桂</span>
+                    <span>6色</span>
+                </div>
+            </div>
+
+            <!-- 10元 -->
+            <div class="note-row denom-10">
+                <div class="note-header">
+                    <h2>💙 10元</h2>
+                </div>
+                <div class="swatch-strip">
+                    <div class="swatch-item"><div class="color-box" style="background: #1f2d38;"></div><span class="hex-code">#1f2d38</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #414d61;"></div><span class="hex-code">#414d61</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #435c74;"></div><span class="hex-code">#435c74</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #c3d8e9;"></div><span class="hex-code">#c3d8e9</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #d4e1f1;"></div><span class="hex-code">#d4e1f1</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #c1d2e2;"></div><span class="hex-code">#c1d2e2</span></div>
+                </div>
+                <div class="note-footer">
+                    <span>钢蓝 · 雾蓝</span>
+                    <span>6色</span>
+                </div>
+            </div>
+
+            <!-- 5元 -->
+            <div class="note-row denom-5">
+                <div class="note-header">
+                    <h2>💜 5元</h2>
+                </div>
+                <div class="swatch-strip">
+                    <div class="swatch-item"><div class="color-box" style="background: #3f3157;"></div><span class="hex-code">#3f3157</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #604771;"></div><span class="hex-code">#604771</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #846992;"></div><span class="hex-code">#846992</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #995a70;"></div><span class="hex-code">#995a70</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #d5bfc2;"></div><span class="hex-code">#d5bfc2</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #e7d5be;"></div><span class="hex-code">#e7d5be</span></div>
+                </div>
+                <div class="note-footer">
+                    <span>紫罗兰 · 藕粉</span>
+                    <span>6色</span>
+                </div>
+            </div>
+
+            <!-- 1元 -->
+            <div class="note-row denom-1">
+                <div class="note-header">
+                    <h2>🤎 1元</h2>
+                </div>
+                <div class="swatch-strip">
+                    <div class="swatch-item"><div class="color-box" style="background: #6e736d;"></div><span class="hex-code">#6e736d</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #5d6c57;"></div><span class="hex-code">#5d6c57</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #78a496;"></div><span class="hex-code">#78a496</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #89916b;"></div><span class="hex-code">#89916b</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #cfe0d0;"></div><span class="hex-code">#cfe0d0</span></div>
+                    <div class="swatch-item"><div class="color-box" style="background: #e5e1c8;"></div><span class="hex-code">#e5e1c8</span></div>
+                </div>
+                <div class="note-footer">
+                    <span>苔绿 · 亚麻</span>
+                    <span>6色</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="meta-note">
+            <i>🎨 共36色 · 依第五套人民币纸币主色调延展</i>
+        </div>
+    </div>
+</body>
+</html>

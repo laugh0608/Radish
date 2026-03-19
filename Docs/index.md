@@ -53,6 +53,8 @@ features:
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
 - [配置管理](/guide/configuration)
 - [服务网关](/guide/gateway)
+- [视觉主题规范](/frontend/visual-theme-spec)
+- [视觉颜色参考](/frontend/visual-color-reference)
 - [国际化指南](/architecture/i18n)
 - [文档系统方案](/guide/document-system)
 - [论坛投票 MVP 设计方案](/features/forum-poll-mvp)
