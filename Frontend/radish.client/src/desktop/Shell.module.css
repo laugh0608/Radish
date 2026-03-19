@@ -27,7 +27,19 @@
   opacity: 0.8;
 }
 
-.shell > * {
-  position: relative;
+.desktopLayer,
+.windowLayer,
+.dockLayer {
+  position: absolute;
+  inset: 0;
+}
+
+.desktopLayer,
+.windowLayer {
   z-index: 1;
+}
+
+.dockLayer {
+  z-index: 3;
+  pointer-events: none;
 }

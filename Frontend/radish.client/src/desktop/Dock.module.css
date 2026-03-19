@@ -1,20 +1,25 @@
 .dockContainer {
-  position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 6px);
+  position: absolute;
+  top: 24px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10000;
   pointer-events: none;
+  width: max-content;
+  max-width: calc(100% - 48px);
 }
 
 .dock {
+  display: inline-flex;
   pointer-events: auto;
   color: var(--theme-dock-text);
   background: var(--theme-dock-bg);
   backdrop-filter: blur(22px) saturate(130%);
   -webkit-backdrop-filter: blur(22px) saturate(130%);
   border: 1px solid var(--theme-dock-border);
-  box-shadow: var(--theme-shadow-soft);
+  box-shadow:
+    var(--theme-shadow-soft),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28);
   transition:
     transform var(--theme-transition-standard),
     background var(--theme-transition-standard),
@@ -30,12 +35,14 @@
 
 .dock.collapsed {
   border-radius: var(--theme-radius-pill);
-  padding: 4px 12px;
+  min-height: 36px;
+  padding: 6px 14px;
   background: var(--theme-dock-bg-compact);
+  border-color: var(--theme-border-strong);
 }
 
 .dock.collapsed:hover {
-  transform: translateY(1px);
+  transform: translateY(1px) scale(1.01);
 }
 
 .expandedContent {

@@ -599,6 +599,35 @@ export const tokens = {
 };
 ```
 
+### 8.1.1 当前主题实现落点
+
+截至 `2026-03-19`，`radish.client` 的首轮主题实现已经从概念层进入代码落地，当前结构为：
+
+```text
+Frontend/radish.client/src/theme/
+  theme.ts
+  theme-tokens.css
+  ThemeProvider.tsx
+  useTheme.ts
+
+Frontend/radish.client/src/stores/
+  themeStore.ts
+```
+
+当前已接入的桌面壳层范围：
+
+- `Shell`
+- `Dock`
+- `Desktop`
+- `DesktopWindow`
+
+当前约束：
+
+- 新增 UI 改造优先复用主题 Token，不再继续增加硬编码颜色；
+- 主题切换必须由根级主题状态驱动，不在单页面各自维护；
+- 桌面层、窗口层与 Dock 层必须单独控制定位与层级，避免视觉改造破坏基础交互布局；
+- 页面级适配按“论坛 -> 聊天室 -> 商城 -> 文档 -> 通知中心 -> 个人中心”的高频顺序推进。
+
 ### 8.2 基础组件
 
 | 组件 | 说明 | 用途 |

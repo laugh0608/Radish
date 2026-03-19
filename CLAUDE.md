@@ -251,6 +251,17 @@ var result = await cache.GetAsync<MyType>("key");
   - **嵌入** (`type: 'iframe'`): Docs
   - **外部** (`type: 'external'`): Console (独立 OIDC 认证)
 
+### 前端视觉 / UI 规范
+- **唯一参考**: 视觉口径以 `Docs/frontend/visual-theme-spec.md`、`Docs/frontend/visual-color-reference.md` 为准
+- **首版主题范围**: `radish.client` 必须支持 `default / guofeng` 主题切换，优先完成主题 token、桌面壳层与核心页面适配
+- **风格方向**: 采用“淡雅新中式”，不是厚重国潮风；视觉应克制、留白充分、阅读优先
+- **纹样规则**: 云纹 / 山纹 / 水纹仅用于边缘、底角、分区收边和弱装饰，不得大面积铺满主内容背景
+- **配色规则**: 人民币色系仅作为母板参考，必须先映射为语义 token，再用于界面，不允许直接把原始参考色整页硬铺
+- **主题实现**: 优先使用 CSS 变量或等价 token 体系承接颜色、边框、阴影、文字和状态色，禁止在页面中持续新增硬编码颜色
+- **桌面布局**: WebOS 壳层需优先保证 Dock、桌面图标、窗口容器的定位稳定，不能因视觉改造破坏基础交互布局
+- **适配策略**: 先统一壳层和高频页面，再逐步覆盖业务细节；首版允许细节持续完善，但主线页面不能出现明显视觉断裂
+- **一致性要求**: `radish.client`、文档站和后续主题扩展必须共用同一套颜色角色命名与风格描述，避免多套口径并存
+
 ### React 规范
 1. 函数组件 (`const` 定义)
 2. 避免 `var`，默认 `const`，需重新赋值用 `let`
@@ -553,6 +564,8 @@ feat: 添加用户权限验证中间件
 - `architecture/specifications.md` - 开发规范详细说明
 - `architecture/framework.md` - 架构设计与技术决策
 - `frontend/design.md` - 前端设计方案
+- `frontend/visual-theme-spec.md` - 视觉主题规范
+- `frontend/visual-color-reference.md` - 颜色角色与取值参考
 - `guide/` - 配置/认证/日志/网关指南
 - `development-plan.md` - 里程碑与周计划
 - `changelog/` - 日常/周进度记录

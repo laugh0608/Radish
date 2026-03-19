@@ -82,9 +82,15 @@ export const Shell = () => {
 
   return (
     <div className={styles.shell}>
-      <Desktop />
-      <WindowManager />
-      <Dock />
+      <div className={styles.desktopLayer}>
+        <Desktop />
+      </div>
+      <div className={styles.windowLayer}>
+        <WindowManager />
+      </div>
+      <div className={styles.dockLayer}>
+        <Dock />
+      </div>
       <ToastContainer />
 
       {/* 升级动画弹窗 */}

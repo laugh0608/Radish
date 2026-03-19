@@ -113,3 +113,29 @@
 - **执行原则已写入规划页**：`current.md`、`development-plan.md` 与 `backlog.md` 已统一到“先主线、后细节；先闭环、后打磨；不留坑、不留技术债”的阶段原则。
 - **社区增强统一后置**：`P3-ext`、`P4-ext`、`P5-ext`、`Console-ext Phase 2+` 等增强项统一后置到首个 dev 版本之后再评估，避免继续稀释当前主线推进速度。
 - **后续口径说明**：以上为 `2026-03-18` 当天的阶段判断记录；自 `2026-03-19` 起，首版范围已进一步重定义为“[首版 dev 边界](/planning/dev-first-scope)”，后续以 `development-plan.md`、`planning/current.md` 与 `planning/backlog.md` 的最新口径为准。
+
+## 2026-03-19 (周四)
+
+### 首版 dev 边界与视觉口径对齐
+
+- **首版范围文档已冻结**：新增并完善 `dev-first-scope.md`、`dev-first-status-matrix.md`，明确首版 `dev` 以“所有纳入范围的核心功能主线至少完成 70%”为边界，不再以单条社区子线收口替代整体判断。
+- **国风体验主线已纳入首版**：已明确把国风视觉基线、`radish.client` 主题切换和 `radish.client` i18n 纳入首版范围，不再后置到首版之后再讨论。
+- **视觉规范已完成文档化**：新增 `visual-theme-spec.md`、`visual-color-reference.md` 与颜色参考演示页，并把参考纹样素材收纳到 `Docs/images/theme-reference/`，作为后续主题落地唯一口径。
+
+### `radish.client` 主题基础设施启动
+
+- **主题 Token 与切换骨架已落地**：`radish.client` 已新增 `default / guofeng` 两套主题定义、根级 CSS Token、主题持久化与切换骨架，桌面端当前不再停留在“未接主题系统”的状态。
+- **桌面壳层首批已接入主题**：Shell、Dock、桌面图标容器与桌面窗口已完成首批样式 token 化，国风视觉基线已从纯文档阶段进入代码落地阶段。
+- **主题切换入口已可见**：Dock 已补最小可见的主题切换入口，为后续高频业务页适配提供基础开关与验证路径。
+
+### 首轮回归问题已收口
+
+- **Dock 定位回归已修复**：主题首批落地后，Dock 曾出现“不可见 / 偏到左下 / 落到底部中间”等定位问题；现已重构为 `Shell` 内的独立层级容器，顶部居中定位恢复稳定。
+- **桌面图标布局回归已修复**：桌面图标容器已从不稳定的换列表现调整为固定两列网格，恢复原先主桌面布局口径。
+- **视觉规范已同步协作约束**：`CLAUDE.md` 与 `AGENTS.md` 已补前端视觉 / UI 规范，明确“视觉改造不得破坏 Dock、桌面图标、窗口容器等基础交互布局”。
+
+### 当日验证结果
+
+- **前端类型检查通过**：`npm run type-check --workspace=radish.client` 已通过。
+- **前端构建验证通过**：`npm run build --workspace=radish.client` 已通过；沙盒环境下仍会遇到 `vite` 的 `spawn EPERM`，系统环境构建验证结果正常。
+- **当前阶段结论更新**：国风视觉基线已从“待启动”切换为“已完成规范冻结并进入首轮落地”，`radish.client` 主题切换当前为“桌面壳层骨架已落地、核心业务页仍待接入”，`radish.client` i18n 仍待补齐。
