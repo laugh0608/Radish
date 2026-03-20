@@ -3,14 +3,14 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(180deg, #f6f7fb 0%, #f8fafc 45%, #eef2f7 100%);
+  background: linear-gradient(180deg, var(--theme-bg-app) 0%, color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%) 45%, var(--theme-bg-muted) 100%);
   min-height: 0;
 }
 
 .header {
   padding: 24px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(180deg, var(--theme-bg-surface) 0%, color-mix(in srgb, var(--theme-bg-surface) 84%, var(--theme-bg-muted) 16%) 100%);
+  border-bottom: 1px solid var(--theme-border-soft);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -27,7 +27,7 @@
   position: relative;
   font-size: 24px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--theme-text-primary);
   margin: 0;
 }
 
@@ -50,15 +50,15 @@
 
 .count {
   font-size: 13px;
-  color: #475569;
+  color: var(--theme-text-secondary);
   padding: 4px 10px;
   border-radius: 999px;
-  background: #f1f5f9;
+  background: var(--theme-bg-muted);
 }
 
 .markAllBtn {
   padding: 8px 14px;
-  background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
+  background: linear-gradient(135deg, var(--theme-brand-primary) 0%, var(--theme-accent-jade) 100%);
   color: white;
   border: none;
   border-radius: 10px;
@@ -89,24 +89,24 @@
 .filterTab {
   padding: 6px 12px;
   border-radius: 999px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 1px solid var(--theme-border-soft);
+  background: var(--theme-bg-surface);
   font-size: 12px;
-  color: #475569;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .filterTab:hover {
-  border-color: #cbd5f5;
-  color: #1f2937;
+  border-color: var(--theme-border-strong);
+  color: var(--theme-text-primary);
 }
 
 .filterActive {
-  border-color: #60a5fa;
-  color: #0f172a;
-  background: linear-gradient(135deg, #e0f2fe 0%, #dcfce7 100%);
-  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.12);
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-text-primary);
+  background: linear-gradient(135deg, var(--theme-brand-soft) 0%, color-mix(in srgb, var(--theme-accent-jade) 18%, var(--theme-bg-surface) 82%) 100%);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .content {

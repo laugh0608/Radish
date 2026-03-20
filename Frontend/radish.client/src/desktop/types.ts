@@ -8,10 +8,14 @@ export interface AppDefinition {
   id: string;
   /** 应用名称 */
   name: string;
+  /** 应用名称翻译键 */
+  nameKey?: string;
   /** 应用图标（Iconify 图标名或 emoji） */
   icon: string;
   /** 应用描述 */
   description?: string;
+  /** 应用描述翻译键 */
+  descriptionKey?: string;
   /** 应用组件 */
   component: ComponentType;
   /**

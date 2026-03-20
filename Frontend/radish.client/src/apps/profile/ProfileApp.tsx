@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
@@ -103,6 +104,7 @@ function buildAvatarStyle(seed: string) {
 }
 
 export const ProfileApp = () => {
+  const { t } = useTranslation();
   const { userId, userName, isAuthenticated } = useUserStore();
   const { openApp } = useWindowStore();
   const currentWindow = useCurrentWindow();
@@ -310,7 +312,7 @@ export const ProfileApp = () => {
     return (
       <div className={styles.container}>
         <div className={styles.notLoggedIn}>
-          <p>请先登录查看个人主页</p>
+          <p>{t('profile.loginRequired')}</p>
         </div>
       </div>
     );
@@ -319,7 +321,9 @@ export const ProfileApp = () => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h1 className={styles.title}>{isOwnProfile ? '个人主页' : `${viewingUserName} 的主页`}</h1>
+        <h1 className={styles.title}>
+          {isOwnProfile ? t('profile.title.self') : t('profile.title.other', { userName: viewingUserName })}
+        </h1>
       </div>
 
       <div className={styles.content}>
@@ -352,22 +356,26 @@ export const ProfileApp = () => {
               </div>
               <div className={styles.externalInfo}>
                 <h2 className={styles.externalName}>{viewingUserName}</h2>
-                {params.displayName?.trim() ? <div className={styles.externalSubtle}>显示名：{params.displayName.trim()}</div> : null}
-                <div className={styles.externalSubtle}>当前查看的是用户主页，只提供公开内容浏览。</div>
+                {params.displayName?.trim() ? (
+                  <div className={styles.externalSubtle}>
+                    {t('profile.displayName', { name: params.displayName.trim() })}
+                  </div>
+                ) : null}
+                <div className={styles.externalSubtle}>{t('profile.publicViewHint')}</div>
               </div>
             </div>
             <div className={styles.externalStats}>
               <div className={styles.externalStatItem}>
                 <Icon icon="mdi:file-document-outline" size={18} />
-                <span>帖子 {loadingStats ? '--' : stats?.voPostCount ?? 0}</span>
+                <span>{t('profile.stats.postsLabel')} {loadingStats ? '--' : stats?.voPostCount ?? 0}</span>
               </div>
               <div className={styles.externalStatItem}>
                 <Icon icon="mdi:comment-text-outline" size={18} />
-                <span>评论 {loadingStats ? '--' : stats?.voCommentCount ?? 0}</span>
+                <span>{t('profile.stats.commentsLabel')} {loadingStats ? '--' : stats?.voCommentCount ?? 0}</span>
               </div>
               <div className={styles.externalStatItem}>
                 <Icon icon="mdi:heart-outline" size={18} />
-                <span>获赞 {loadingStats ? '--' : stats?.voTotalLikeCount ?? 0}</span>
+                <span>{t('profile.stats.likesLabel')} {loadingStats ? '--' : stats?.voTotalLikeCount ?? 0}</span>
               </div>
             </div>
           </section>
@@ -378,13 +386,13 @@ export const ProfileApp = () => {
             className={`${styles.tab} ${activeTab === 'posts' ? styles.active : ''}`}
             onClick={() => setActiveTab('posts')}
           >
-            {isOwnProfile ? '我的帖子' : 'TA 的帖子'}
+            {isOwnProfile ? t('profile.tab.myPosts') : t('profile.tab.userPosts')}
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'comments' ? styles.active : ''}`}
             onClick={() => setActiveTab('comments')}
           >
-            {isOwnProfile ? '我的评论' : 'TA 的评论'}
+            {isOwnProfile ? t('profile.tab.myComments') : t('profile.tab.userComments')}
           </button>
           {isOwnProfile ? (
             <>
@@ -392,26 +400,26 @@ export const ProfileApp = () => {
                 className={`${styles.tab} ${activeTab === 'browse-history' ? styles.active : ''}`}
                 onClick={() => setActiveTab('browse-history')}
               >
-                浏览记录
+                {t('profile.tab.browseHistory')}
               </button>
               <button
                 className={`${styles.tab} ${activeTab === 'attachments' ? styles.active : ''}`}
                 onClick={() => setActiveTab('attachments')}
               >
-                我的附件
+                {t('profile.tab.attachments')}
               </button>
               <button
                 className={`${styles.tab} ${activeTab === 'social' ? styles.active : ''}`}
                 onClick={() => setActiveTab('social')}
               >
-                关系链
+                {t('profile.tab.social')}
               </button>
             </>
           ) : null}
         </div>
 
         <div className={styles.tabContent}>
-          <Suspense fallback={<div className={styles.notLoggedIn}>加载中...</div>}>
+          <Suspense fallback={<div className={styles.notLoggedIn}>{t('common.loading')}</div>}>
             {activeTab === 'posts' && (
               <UserPostList
                 userId={viewingUserId}

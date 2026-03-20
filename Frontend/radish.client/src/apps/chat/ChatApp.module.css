@@ -5,27 +5,28 @@
   min-height: 520px;
   min-width: 0;
   overflow: hidden;
-  background: linear-gradient(145deg, #f8f4ea 0%, #fffaf1 45%, #f4f9ff 100%);
-  color: #1f2937;
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%) 0%, var(--theme-bg-surface) 45%, color-mix(in srgb, var(--theme-bg-muted) 78%, white 22%) 100%);
+  color: var(--theme-text-primary);
 }
 
 .sidebar {
-  border-right: 1px solid #e7dcc6;
+  border-right: 1px solid var(--theme-border-soft);
   padding: 12px;
   min-height: 0;
   overflow-y: auto;
-  background: linear-gradient(180deg, #fef8ea 0%, #f8f3e5 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%) 0%, var(--theme-bg-muted) 100%);
 }
 
 .sidebarHeader {
   font-size: 15px;
   font-weight: 700;
   margin-bottom: 10px;
-  color: #7a4d18;
+  color: var(--theme-accent-earth);
 }
 
 .sidebarEmpty {
-  color: #8b7f6a;
+  color: var(--theme-text-muted);
   font-size: 13px;
   padding: 8px 4px;
 }
@@ -46,18 +47,18 @@
 }
 
 .channelItem:hover {
-  background: #fff3da;
-  border-color: #e8cf95;
+  background: var(--theme-bg-surface);
+  border-color: var(--theme-border-strong);
 }
 
 .channelItemActive {
-  background: #ffe9ba;
-  border-color: #d79f3f;
+  background: var(--theme-brand-soft);
+  border-color: var(--theme-brand-primary);
 }
 
 .channelName {
   font-size: 14px;
-  color: #2f2a20;
+  color: var(--theme-text-primary);
 }
 
 .unreadBadge {
@@ -83,9 +84,9 @@
 }
 
 .mainHeader {
-  border-bottom: 1px solid #e7dcc6;
+  border-bottom: 1px solid var(--theme-border-soft);
   padding: 12px 16px;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--theme-bg-overlay);
   backdrop-filter: blur(4px);
 }
 
@@ -99,31 +100,31 @@
 .channelTitle {
   font-size: 16px;
   font-weight: 700;
-  color: #1d4e89;
+  color: var(--theme-accent-ink);
 }
 
 .channelDescription {
   margin-top: 4px;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
 }
 
 .connectionBanner {
   margin-top: 10px;
   padding: 8px 10px;
   border-radius: 10px;
-  background: #fff6e8;
-  border: 1px solid #f1d0a1;
-  color: #9a4d06;
+  background: color-mix(in srgb, var(--theme-brand-soft) 35%, var(--theme-bg-surface) 65%);
+  border: 1px solid var(--theme-border-strong);
+  color: var(--theme-accent-earth);
   font-size: 12px;
 }
 
 .memberToggleButton {
-  border: 1px solid #d9e2ec;
+  border: 1px solid var(--theme-border-soft);
   border-radius: 10px;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.9);
-  color: #374151;
+  background: var(--theme-bg-surface-muted);
+  color: var(--theme-text-primary);
   cursor: pointer;
   font-size: 13px;
   font-weight: 700;
@@ -154,7 +155,7 @@
 }
 
 .placeholder {
-  color: #6b7280;
+  color: var(--theme-text-secondary);
   font-size: 14px;
   padding: 16px;
   text-align: center;
@@ -407,8 +408,8 @@
 
 .memberPanel {
   width: 240px;
-  border-left: 1px solid #e7dcc6;
-  background: linear-gradient(180deg, rgba(255, 250, 241, 0.96) 0%, rgba(248, 243, 229, 0.98) 100%);
+  border-left: 1px solid var(--theme-border-soft);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%) 0%, var(--theme-bg-muted) 100%);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -426,7 +427,7 @@
   justify-content: space-between;
   gap: 8px;
   padding: 12px 10px;
-  border-bottom: 1px solid #eadfc8;
+  border-bottom: 1px solid var(--theme-border-soft);
 }
 
 .memberPanelTitle {
@@ -435,7 +436,7 @@
   gap: 6px;
   font-size: 13px;
   font-weight: 700;
-  color: #7a4d18;
+  color: var(--theme-accent-earth);
 }
 
 .memberCount {
@@ -443,8 +444,8 @@
   height: 20px;
   padding: 0 6px;
   border-radius: 999px;
-  background: #f4e1b2;
-  color: #7a4d18;
+  background: var(--theme-brand-soft);
+  color: var(--theme-accent-earth);
   font-size: 11px;
   display: inline-flex;
   align-items: center;
@@ -506,9 +507,9 @@
 }
 
 .inputArea {
-  border-top: 1px solid #e7dcc6;
+  border-top: 1px solid var(--theme-border-soft);
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--theme-bg-surface-muted);
   min-width: 0;
 }
 

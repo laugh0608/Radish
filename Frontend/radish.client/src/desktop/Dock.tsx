@@ -5,6 +5,7 @@ import { useUserStore } from '@/stores/userStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { redirectToLogin, logout, hasAccessToken } from '@/services/auth';
 import { getAppById } from './AppRegistry';
+import type { AppDefinition } from './types';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
 import { useTheme } from '@/theme/useTheme';
@@ -33,6 +34,9 @@ export const Dock = () => {
   const [time, setTime] = useState(new Date());
   const [isExpanded, setIsExpanded] = useState(false); // 默认为灵动岛状态
   const [pollingUnreadCount, setPollingUnreadCount] = useState(0); // 轮询降级时的未读数
+  const currentLanguage = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'zh';
+  const timeLocale = currentLanguage === 'en' ? 'en-US' : 'zh-CN';
+  const currentLanguageLabel = currentLanguage === 'en' ? t('lang.en') : t('lang.zh');
 
   const loggedIn = isAuthenticated();
 
@@ -117,8 +121,12 @@ export const Dock = () => {
     logout();
   };
   const notifyLoginRequired = () => {
-    toast.info('需要登录才能访问，请点击登录按钮');
+    toast.info(t('dock.loginRequired'));
   };
+  const toggleLanguage = () => {
+    void i18n.changeLanguage(currentLanguage === 'zh' ? 'en' : 'zh');
+  };
+  const getAppLabel = (app: AppDefinition) => app.nameKey ? t(app.nameKey) : app.name;
 
   const hydrateCurrentUser = async () => {
     if (typeof window === 'undefined') return;
@@ -237,7 +245,7 @@ export const Dock = () => {
                 className={styles.avatar}
                 onClick={() => loggedIn && openApp('profile')}
                 style={{ cursor: loggedIn ? 'pointer' : 'default' }}
-                title={loggedIn ? '打开个人主页' : undefined}
+                        title={loggedIn ? t('dock.openProfile') : undefined}
               >
                 {loggedIn ? (
                   <>
@@ -260,7 +268,7 @@ export const Dock = () => {
                   className={styles.userInfo}
                   onClick={() => openApp('profile')}
                   style={{ cursor: 'pointer' }}
-                  title="打开个人主页"
+                  title={t('dock.openProfile')}
                 >
                   <div className={styles.userName}>{userName}</div>
                   <div className={styles.userId}>ID: {userId}</div>
@@ -301,7 +309,7 @@ export const Dock = () => {
                             openApp(app!.id);
                           }
                         }}
-                        title={app!.name}
+                        title={getAppLabel(app!)}
                       >
                         <div style={{ position: 'relative' }}>
                           {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
@@ -327,8 +335,17 @@ export const Dock = () => {
             <div className={styles.divider} />
             <div className={styles.rightSection}>
               <div className={styles.time}>
-                {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+                {time.toLocaleTimeString(timeLocale, { hour: '2-digit', minute: '2-digit' })}
               </div>
+              <button
+                type="button"
+                className={styles.languageButton}
+                onClick={toggleLanguage}
+                title={t('lang.switch')}
+              >
+                <Icon icon="mdi:translate" size={18} />
+                <span className={styles.languageLabel}>{currentLanguageLabel}</span>
+              </button>
               <button
                 type="button"
                 className={styles.themeButton}
@@ -342,7 +359,7 @@ export const Dock = () => {
                 type="button"
                 className={`${styles.authButton} ${loggedIn ? styles.loggedIn : styles.loggedOut}`}
                 onClick={loggedIn ? handleLogoutClick : redirectToLogin}
-                title={loggedIn ? '退出登录' : '登录'}
+                title={loggedIn ? t('auth.logout') : t('auth.login')}
               >
                 <Icon icon={loggedIn ? 'mdi:logout' : 'mdi:login'} size={28} />
               </button>
@@ -385,7 +402,7 @@ export const Dock = () => {
                       openApp(app!.id);
                     }
                   }}
-                  title={app!.name}
+                  title={getAppLabel(app!)}
                 >
                   {app!.icon.startsWith('mdi:') || app!.icon.startsWith('ic:') ? (
                     <Icon icon={app!.icon} size={14} />
@@ -409,7 +426,7 @@ export const Dock = () => {
 
             {/* 时间 */}
             <div className={styles.miniTime}>
-              {time.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
+              {time.toLocaleTimeString(timeLocale, { hour: '2-digit', minute: '2-digit' })}
             </div>
           </div>
         )}

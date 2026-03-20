@@ -2,14 +2,14 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #f5f5f5;
+  background: var(--theme-bg-app);
 }
 
 .header {
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  background: var(--theme-bg-surface);
+  border-bottom: 1px solid var(--theme-border-soft);
   padding: 0 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .headerContent {
@@ -24,14 +24,14 @@
 .title {
   font-size: 20px;
   font-weight: 600;
-  color: #1890ff;
+  color: var(--theme-brand-primary);
   margin: 0;
   cursor: pointer;
   transition: color 0.2s;
 }
 
 .title:hover {
-  color: #40a9ff;
+  color: color-mix(in srgb, var(--theme-brand-primary) 78%, white 22%);
 }
 
 .nav {
@@ -43,7 +43,7 @@
   padding: 8px 16px;
   border: none;
   background: transparent;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 14px;
   border-radius: 6px;
   cursor: pointer;
@@ -51,13 +51,13 @@
 }
 
 .navButton:hover {
-  background: #f0f0f0;
-  color: #1890ff;
+  background: var(--theme-bg-muted);
+  color: var(--theme-brand-primary);
 }
 
 .navButton.active {
-  background: #e6f7ff;
-  color: #1890ff;
+  background: var(--theme-brand-soft);
+  color: var(--theme-brand-primary);
   font-weight: 500;
 }
 
@@ -75,7 +75,7 @@
   position: fixed;
   top: 80px;
   right: 24px;
-  background: #ff4d4f;
+  background: var(--theme-state-danger);
   color: white;
   padding: 12px 16px;
   border-radius: 6px;

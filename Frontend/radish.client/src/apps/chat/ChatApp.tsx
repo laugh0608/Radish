@@ -16,6 +16,7 @@ import { useChatStore } from '@/stores/chatStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
+import i18n from '@/i18n';
 import type { ChannelMemberVo, ChannelMessageVo, EntityIdValue, SendChannelMessageRequest } from '@/types/chat';
 import {
   areEntityIdsEqual,
@@ -120,7 +121,7 @@ function normalizeMentionText(content: string | null | undefined): string {
 
 function getMessagePreviewText(message: ChannelMessageVo): string {
   if (message.voIsRecalled) {
-    return '[已撤回]';
+    return i18n.t('chat.recalled');
   }
 
   const normalizedContent = normalizeMentionText(message.voContent).replace(/\s+/g, ' ').trim();
@@ -129,7 +130,7 @@ function getMessagePreviewText(message: ChannelMessageVo): string {
   }
 
   if (message.voType === 2) {
-    return '[图片消息]';
+    return i18n.t('chat.imageMessage');
   }
 
   return '[消息]';
@@ -400,7 +401,6 @@ export const ChatApp = () => {
     targetUserId: EntityIdValue,
     targetUserName: string | null | undefined,
     avatarUrl: string | null | undefined,
-    titlePrefix: string,
     className?: string
   ) => {
     const targetUserIdKey = getEntityKey(targetUserId);
@@ -422,7 +422,7 @@ export const ChatApp = () => {
           }
         }}
         disabled={!canOpenProfile}
-        title={canOpenProfile ? `${titlePrefix}${normalizedName}` : '用户信息不可用'}
+        title={canOpenProfile ? t('chat.viewProfile', { name: normalizedName }) : t('chat.userUnavailable')}
       >
         {resolvedAvatarUrl ? (
           <img src={resolvedAvatarUrl} alt={normalizedName} className={styles.avatarImage} loading="lazy" />
@@ -433,7 +433,7 @@ export const ChatApp = () => {
         )}
       </button>
     );
-  }, [apiBaseUrl, openApp]);
+  }, [apiBaseUrl, openApp, t]);
 
   const renderAvatarVisual = useCallback((
     targetUserName: string | null | undefined,
@@ -715,7 +715,7 @@ export const ChatApp = () => {
         toast.success(options.successToastMessage);
       }
     } catch (error) {
-      const errorMessage = getErrorMessage(error, options?.failureFallbackMessage || '发送消息失败');
+      const errorMessage = getErrorMessage(error, options?.failureFallbackMessage || t('chat.sendFailed'));
       log.error('ChatApp', '发送消息失败:', error);
       addMessage({
         ...optimisticMessage,
@@ -760,10 +760,10 @@ export const ChatApp = () => {
         replyToId: replyTargetId ?? undefined,
       },
       {
-        failureFallbackMessage: '发送消息失败',
+        failureFallbackMessage: t('chat.sendFailed'),
       }
     );
-  }, [activeChannelId, createOptimisticMessage, createTempMessageId, messageInput, replyTarget, resetComposer, sendOptimisticMessage, uploadingImage]);
+  }, [activeChannelId, createOptimisticMessage, createTempMessageId, messageInput, replyTarget, resetComposer, sendOptimisticMessage, t, uploadingImage]);
 
   const handleImageSelected = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -817,13 +817,13 @@ export const ChatApp = () => {
           imageThumbnailUrl: attachment.voThumbnailUrl || attachment.voUrl,
         },
         {
-          successToastMessage: '图片已发送',
-          failureFallbackMessage: '发送图片消息失败',
+          successToastMessage: t('chat.imageSent'),
+          failureFallbackMessage: t('chat.imageSendFailed'),
         }
       );
     } catch (error) {
       log.error('ChatApp', '发送图片消息失败:', error);
-      toast.error(getErrorMessage(error, '发送图片消息失败'));
+      toast.error(getErrorMessage(error, t('chat.imageSendFailed')));
     } finally {
       setUploadingImage(false);
       setTimeout(() => setImageUploadProgress(0), 400);
@@ -858,11 +858,11 @@ export const ChatApp = () => {
         imageThumbnailUrl: message.voImageThumbnailUrl || message.voImageUrl || undefined,
       },
       {
-        successToastMessage: message.voType === 2 ? '图片已发送' : undefined,
-        failureFallbackMessage: message.voType === 2 ? '发送图片消息失败' : '发送消息失败',
+        successToastMessage: message.voType === 2 ? t('chat.imageSent') : undefined,
+        failureFallbackMessage: message.voType === 2 ? t('chat.imageSendFailed') : t('chat.sendFailed'),
       }
     );
-  }, [sendOptimisticMessage]);
+  }, [sendOptimisticMessage, t]);
 
   const handleDismissFailedMessage = useCallback((message: ChannelMessageVo) => {
     const channelId = message.voChannelId;
@@ -891,12 +891,12 @@ export const ChatApp = () => {
       if (replyTarget && areEntityIdsEqual(replyTarget.voId, messageId)) {
         setReplyTarget(null);
       }
-      toast.success('消息已撤回');
+      toast.success(t('chat.messageRecalled'));
     } catch (error) {
       log.error('ChatApp', '撤回消息失败:', error);
-      toast.error(error instanceof Error ? error.message : '撤回消息失败');
+      toast.error(error instanceof Error ? error.message : t('chat.recallFailed'));
     }
-  }, [activeChannelId, recallMessage, replyTarget]);
+  }, [activeChannelId, recallMessage, replyTarget, t]);
 
   const handleScroll = useCallback(async () => {
     const scrollEl = messageScrollRef.current;
@@ -1073,11 +1073,11 @@ export const ChatApp = () => {
   return (
     <div className={styles.chatApp}>
       <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>聊天室</div>
+        <div className={styles.sidebarHeader}>{t('desktop.apps.chat.name')}</div>
         {loadingChannels ? (
-          <div className={styles.sidebarEmpty}>频道加载中...</div>
+          <div className={styles.sidebarEmpty}>{t('chat.loadingChannels')}</div>
         ) : channels.length === 0 ? (
-          <div className={styles.sidebarEmpty}>暂无可用频道</div>
+          <div className={styles.sidebarEmpty}>{t('chat.noChannels')}</div>
         ) : (
           channels.map((channel) => {
             const channelId = normalizeEntityId(channel.voId);
@@ -1111,7 +1111,7 @@ export const ChatApp = () => {
           <div className={styles.headerMain}>
             <div>
               <div className={styles.channelTitle}>
-                {activeChannel ? `${activeChannel.voIconEmoji || '#'} ${activeChannel.voName}` : '请选择频道'}
+                {activeChannel ? `${activeChannel.voIconEmoji || '#'} ${activeChannel.voName}` : t('chat.selectChannel')}
               </div>
               {activeChannel?.voDescription && (
                 <div className={styles.channelDescription}>{activeChannel.voDescription}</div>
@@ -1124,7 +1124,7 @@ export const ChatApp = () => {
                 className={styles.memberToggleButton}
                 onClick={() => setMemberPanelCollapsed((current) => !current)}
               >
-                {memberPanelCollapsed ? '展开成员' : '收起成员'}
+                {memberPanelCollapsed ? t('chat.expandMembers') : t('chat.collapseMembers')}
               </button>
             )}
           </div>
@@ -1138,11 +1138,11 @@ export const ChatApp = () => {
           <div className={styles.messageColumn}>
             <div className={styles.messageViewport} ref={messageScrollRef} onScroll={() => { void handleScroll(); }}>
             {activeChannelId === null ? (
-              <div className={styles.placeholder}>请选择一个频道开始聊天</div>
+              <div className={styles.placeholder}>{t('chat.inputSelectChannel')}</div>
             ) : activeMessages.length === 0 && loadingHistory ? (
-              <div className={styles.placeholder}>正在加载历史消息...</div>
+              <div className={styles.placeholder}>{t('chat.loadingHistory')}</div>
             ) : activeMessages.length === 0 ? (
-              <div className={styles.placeholder}>还没有消息，发一条试试</div>
+              <div className={styles.placeholder}>{t('chat.noMessages')}</div>
             ) : (
               activeMessages.map((message: ChannelMessageVo) => {
                 const messageIdKey = getEntityKey(message.voId);
@@ -1160,8 +1160,7 @@ export const ChatApp = () => {
                     {!isMine && renderAvatarButton(
                       message.voUserId,
                       message.voUserName,
-                      message.voUserAvatarUrl,
-                      '查看 '
+                      message.voUserAvatarUrl
                     )}
 
                     <div className={styles.messageBody}>
@@ -1171,7 +1170,9 @@ export const ChatApp = () => {
                           className={styles.userNameButton}
                           onClick={() => handleOpenUserProfile(message.voUserId, message.voUserName, message.voUserAvatarUrl)}
                           disabled={!canOpenMessageUserProfile}
-                          title={canOpenMessageUserProfile ? `查看 ${(message.voUserName || `用户 ${messageUserIdKey}`).trim()} 的主页` : '用户信息不可用'}
+                          title={canOpenMessageUserProfile
+                            ? t('chat.viewProfile', { name: (message.voUserName || `用户 ${messageUserIdKey}`).trim() })
+                            : t('chat.userUnavailable')}
                         >
                           <span className={styles.userName}>{message.voUserName || 'Unknown'}</span>
                         </button>
@@ -1182,7 +1183,7 @@ export const ChatApp = () => {
                             className={styles.replyButton}
                             onClick={() => setReplyTarget(message)}
                           >
-                            回复
+                            {t('chat.reply')}
                           </button>
                         )}
                         {isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId) && (
@@ -1193,31 +1194,31 @@ export const ChatApp = () => {
                               void handleRecall(message.voId);
                             }}
                           >
-                            撤回
+                            {t('chat.recall')}
                           </button>
                         )}
                       </div>
 
                       {message.voIsRecalled ? (
-                        <div className={styles.recalled}>[已撤回]</div>
+                        <div className={styles.recalled}>{t('chat.recalled')}</div>
                       ) : (
                         <div className={styles.messageStack}>
                           {message.voReplyTo && (
                             <div className={styles.quotedMessage}>
                               <div className={styles.quotedAuthor}>
-                                回复 {message.voReplyTo.voUserName || 'Unknown'}
+                                {t('chat.replyTo', { name: message.voReplyTo.voUserName || 'Unknown' })}
                               </div>
                               <div className={styles.quotedText}>{replyText}</div>
                             </div>
                           )}
                           {message.voContent && <div className={styles.bubble}>{renderMessageContent(message.voContent)}</div>}
                           {message.voType === 2 && messageImageUrl && (
-                            <img className={styles.imageMessage} src={messageImageUrl} alt="图片消息" loading="lazy" />
+                            <img className={styles.imageMessage} src={messageImageUrl} alt={t('chat.imageMessage')} loading="lazy" />
                           )}
                           {isMine && !message.voIsRecalled && messageStatus !== 'sent' && (
                             <div className={styles.deliveryState}>
                               <span className={`${styles.deliveryStateText} ${isFailedMessage ? styles.deliveryStateTextFailed : ''}`}>
-                                {isSendingMessage ? '发送中...' : (message.voLocalError || '发送失败')}
+                                {isSendingMessage ? t('chat.sending') : (message.voLocalError || t('chat.sendFailed'))}
                               </span>
                               {isFailedMessage && (
                                 <>
@@ -1226,14 +1227,14 @@ export const ChatApp = () => {
                                     className={styles.deliveryActionButton}
                                     onClick={() => handleRetryMessage(message)}
                                   >
-                                    重试
+                                    {t('chat.retry')}
                                   </button>
                                   <button
                                     type="button"
                                     className={styles.deliveryActionButton}
                                     onClick={() => handleDismissFailedMessage(message)}
                                   >
-                                    撤销
+                                    {t('chat.dismiss')}
                                   </button>
                                 </>
                               )}
@@ -1246,8 +1247,7 @@ export const ChatApp = () => {
                     {isMine && renderAvatarButton(
                       message.voUserId,
                       message.voUserName,
-                      message.voUserAvatarUrl,
-                      '查看 '
+                      message.voUserAvatarUrl
                     )}
                   </div>
                 );
@@ -1265,12 +1265,12 @@ export const ChatApp = () => {
                         type="button"
                         className={styles.typingUserButton}
                         onClick={() => handleOpenUserProfile(user.userId, user.userName)}
-                        title={`查看 ${user.userName} 的主页`}
+                        title={t('chat.viewProfile', { name: user.userName })}
                       >
                         {user.userName}
                       </button>
                     </span>
-                  ))} 正在输入...
+                  ))} {t('chat.typing')}
                 </div>
               )}
 
@@ -1278,7 +1278,7 @@ export const ChatApp = () => {
                 <div className={styles.replyPreview}>
                   <div className={styles.replyPreviewBody}>
                     <div className={styles.replyPreviewLabel}>
-                      回复 {replyTarget.voUserName || 'Unknown'}
+                      {t('chat.replyTo', { name: replyTarget.voUserName || 'Unknown' })}
                     </div>
                     <div className={styles.replyPreviewText}>{getMessagePreviewText(replyTarget)}</div>
                   </div>
@@ -1287,18 +1287,18 @@ export const ChatApp = () => {
                     className={styles.replyCancelButton}
                     onClick={() => setReplyTarget(null)}
                   >
-                    取消
+                    {t('chat.replyCancel')}
                   </button>
                 </div>
               )}
 
               {activeChannelId !== null && messageInput.trim() && (
-                <div className={styles.draftHint}>当前频道草稿已自动保存</div>
+                <div className={styles.draftHint}>{t('chat.draftSaved')}</div>
               )}
 
               {uploadingImage && (
                 <div className={styles.uploadStatus}>
-                  图片上传中... {Math.max(0, Math.min(100, imageUploadProgress))}%
+                  {t('chat.imageUploading', { progress: Math.max(0, Math.min(100, imageUploadProgress)) })}
                 </div>
               )}
 
@@ -1367,16 +1367,16 @@ export const ChatApp = () => {
                         void handleSendMessage();
                       }
                     }}
-                    placeholder={activeChannelId ? '输入消息，支持 @提及，Enter 发送，Shift+Enter 换行，Esc 取消回复' : '请先选择频道'}
+                    placeholder={activeChannelId ? t('chat.inputPlaceholder') : t('chat.inputSelectChannel')}
                     disabled={!activeChannelId || uploadingImage}
                   />
 
                   {isMentionOpen && (
                     <div className={styles.mentionDropdown}>
                       {mentionLoading ? (
-                        <div className={styles.mentionEmpty}>搜索中...</div>
+                        <div className={styles.mentionEmpty}>{t('chat.mentionSearching')}</div>
                       ) : mentionOptions.length === 0 ? (
-                        <div className={styles.mentionEmpty}>未找到匹配的用户</div>
+                        <div className={styles.mentionEmpty}>{t('chat.mentionNotFound')}</div>
                       ) : (
                         mentionOptions.map((option, index) => {
                           const optionId = normalizeEntityId(option.voId) ?? `mention-${index}`;
@@ -1426,7 +1426,7 @@ export const ChatApp = () => {
                     disabled={!activeChannelId || uploadingImage}
                     onClick={() => imageInputRef.current?.click()}
                   >
-                    {uploadingImage ? '上传中...' : '图片'}
+                    {uploadingImage ? t('chat.uploading') : t('chat.image')}
                   </button>
                   <button
                     className={styles.sendButton}
@@ -1436,7 +1436,7 @@ export const ChatApp = () => {
                       void handleSendMessage();
                     }}
                   >
-                    发送
+                    {t('chat.send')}
                   </button>
                 </div>
               </div>
@@ -1447,7 +1447,7 @@ export const ChatApp = () => {
             <aside className={`${styles.memberPanel} ${memberPanelCollapsed ? styles.memberPanelCollapsed : ''}`}>
               <div className={styles.memberPanelHeader}>
                 <div className={styles.memberPanelTitle}>
-                  成员
+                  {t('chat.members')}
                   {!memberPanelCollapsed && <span className={styles.memberCount}>{onlineMembers.length}</span>}
                 </div>
                 <button
@@ -1462,9 +1462,9 @@ export const ChatApp = () => {
               {!memberPanelCollapsed && (
                 <div className={styles.memberPanelBody}>
                   {loadingMembers ? (
-                    <div className={styles.memberEmpty}>正在加载在线成员...</div>
+                    <div className={styles.memberEmpty}>{t('chat.loadingMembers')}</div>
                   ) : onlineMembers.length === 0 ? (
-                    <div className={styles.memberEmpty}>当前暂无在线成员</div>
+                    <div className={styles.memberEmpty}>{t('chat.noMembers')}</div>
                   ) : (
                     onlineMembers.map((member) => {
                       const memberId = normalizeEntityId(member.voUserId) ?? member.voUserName ?? 'member';

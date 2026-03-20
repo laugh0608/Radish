@@ -197,6 +197,7 @@
   font-family: var(--theme-font-serif);
 }
 
+.languageButton,
 .themeButton,
 .authButton {
   position: relative;
@@ -218,15 +219,22 @@
   padding: 0 12px;
 }
 
+.languageButton svg,
 .themeButton svg,
 .authButton svg {
   flex-shrink: 0;
 }
 
+.languageButton:hover,
 .themeButton:hover,
 .authButton:hover {
   background: var(--theme-dock-item-hover-bg);
   transform: translateY(-1px);
+}
+
+.languageButton {
+  gap: 8px;
+  color: var(--theme-accent-ink);
 }
 
 .themeButton {
@@ -238,6 +246,7 @@
   border-color: rgba(178, 64, 87, 0.28);
 }
 
+.languageLabel,
 .themeLabel {
   font-size: 12px;
   font-weight: 600;
@@ -390,10 +399,12 @@
     min-width: 42px;
   }
 
+  .languageLabel,
   .themeLabel {
     display: none;
   }
 
+  .languageButton,
   .themeButton,
   .authButton {
     width: 40px;
