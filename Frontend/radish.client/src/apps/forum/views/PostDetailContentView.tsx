@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
 import type { PostDetail, CommentNode, QuestionAnswerSort, QuestionAnswerFilter } from '@/api/forum';
@@ -127,6 +128,7 @@ export const PostDetailContentView = ({
   onToggleFollow,
   onAuthorClick,
 }: PostDetailContentViewProps) => {
+  const { t } = useTranslation();
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
@@ -213,7 +215,7 @@ export const PostDetailContentView = ({
   };
 
   const handleRequireReactionLogin = () => {
-    onReactionError?.('请先登录后再回应');
+    onReactionError?.(t('forum.loginRequiredToReact'));
   };
 
   return (
@@ -221,7 +223,7 @@ export const PostDetailContentView = ({
       <div className={styles.detailToolbar}>
         <button className={styles.backButton} onClick={onBack}>
           <Icon icon="mdi:arrow-left" size={20} />
-          返回列表
+          {t('forum.backToList')}
         </button>
       </div>
 
@@ -230,7 +232,7 @@ export const PostDetailContentView = ({
           className={`${styles.detailContent} ${showFloatingTools ? styles.withFloatingTools : ''}`}
           ref={contentRef}
         >
-          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>帖子内容加载中...</div>}>
+          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>{t('forum.loadingPostContent')}</div>}>
             <PostDetailComponent
               post={post}
               loading={loadingPostDetail}
@@ -264,7 +266,7 @@ export const PostDetailContentView = ({
             />
           </Suspense>
 
-          <Suspense fallback={<p className={styles.loadingText}>加载讨论中...</p>}>
+          <Suspense fallback={<p className={styles.loadingText}>{t('forum.loadingDiscussion')}</p>}>
             <CommentTree
               comments={comments}
               loading={loadingComments}
@@ -296,20 +298,20 @@ export const PostDetailContentView = ({
 
           <div className={styles.commentCta}>
             <button className={styles.commentButton} onClick={handleOpenCommentSheet}>
-              参与讨论
+              {t('forum.joinDiscussion')}
             </button>
           </div>
         </div>
 
         {showFloatingTools && (
           <div className={styles.floatingTools}>
-            <button className={styles.toolButton} onClick={handleScrollTop} title="滚动到顶部">
+            <button className={styles.toolButton} onClick={handleScrollTop} title={t('forum.scrollTop')}>
               <Icon icon="mdi:chevron-up" size={20} className={styles.toolIcon} />
             </button>
-            <button className={styles.toolButton} onClick={handleScrollBottom} title="滚动到底部">
+            <button className={styles.toolButton} onClick={handleScrollBottom} title={t('forum.scrollBottom')}>
               <Icon icon="mdi:chevron-down" size={20} className={styles.toolIcon} />
             </button>
-            <button className={styles.toolButton} onClick={handleOpenCommentSheet} title="快速评论">
+            <button className={styles.toolButton} onClick={handleOpenCommentSheet} title={t('forum.quickComment')}>
               <Icon icon="mdi:comment-outline" size={18} className={styles.toolIcon} />
             </button>
           </div>
@@ -319,11 +321,11 @@ export const PostDetailContentView = ({
       <BottomSheet
         isOpen={isCommentSheetOpen}
         onClose={handleCloseCommentSheet}
-        title="参与讨论"
+        title={t('forum.joinDiscussion')}
         height="70%"
       >
         {isCommentSheetOpen && (
-          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>讨论编辑器加载中...</div>}>
+          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>{t('forum.loadingDiscussionEditor')}</div>}>
             <CreateCommentForm
               isAuthenticated={isAuthenticated}
               hasPost={true}
@@ -331,9 +333,9 @@ export const PostDetailContentView = ({
               replyTo={replyTo}
               onCancelReply={onCancelReply}
               variant="sheet"
-              title="参与讨论"
-              submitText="发布讨论"
-              placeholder="写下你的讨论内容（输入 @ 可以提及用户）"
+              title={t('forum.joinDiscussion')}
+              submitText={t('forum.submitDiscussion')}
+              placeholder={t('forum.discussionPlaceholder')}
               stickerGroups={stickerGroups}
               onStickerSelect={(selection) => {
                 void handleStickerSelect(selection);

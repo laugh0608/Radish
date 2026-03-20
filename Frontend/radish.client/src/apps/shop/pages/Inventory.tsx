@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { UserBenefit, UserInventoryItem } from '@/types/shop';
 import styles from './Inventory.module.css';
 
@@ -49,6 +50,7 @@ export const Inventory = ({
   onUseItem,
   onBack
 }: InventoryProps) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('benefits');
   const [selectedItem, setSelectedItem] = useState<UserInventoryItem | null>(null);
   const [useQuantity, setUseQuantity] = useState(1);
@@ -90,7 +92,7 @@ export const Inventory = ({
       <div className={styles.container}>
         <div className={styles.loading}>
           <div className={styles.spinner}></div>
-          <p>加载中...</p>
+          <p>{t('shop.loading')}</p>
         </div>
       </div>
     );
@@ -100,9 +102,9 @@ export const Inventory = ({
     <div className={styles.container}>
       <div className={styles.header}>
         <button className={styles.backButton} onClick={onBack}>
-          ← 返回
+          ← {t('shop.back')}
         </button>
-        <h1 className={styles.title}>我的背包</h1>
+        <h1 className={styles.title}>{t('shop.inventory.title')}</h1>
       </div>
 
       <div className={styles.tabs}>
@@ -110,13 +112,13 @@ export const Inventory = ({
           className={`${styles.tab} ${activeTab === 'benefits' ? styles.active : ''}`}
           onClick={() => setActiveTab('benefits')}
         >
-          权益 ({benefits.length})
+          {t('shop.inventory.tabBenefits', { count: benefits.length })}
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'consumables' ? styles.active : ''}`}
           onClick={() => setActiveTab('consumables')}
         >
-          道具 ({inventory.length})
+          {t('shop.inventory.tabItems', { count: inventory.length })}
         </button>
       </div>
 
@@ -126,8 +128,8 @@ export const Inventory = ({
             {benefits.length === 0 ? (
               <div className={styles.empty}>
                 <div className={styles.emptyIcon}>🎁</div>
-                <p>暂无权益</p>
-                <p className={styles.emptyHint}>去商城购买权益商品吧</p>
+                <p>{t('shop.inventory.emptyBenefits')}</p>
+                <p className={styles.emptyHint}>{t('shop.inventory.emptyBenefitsHint')}</p>
               </div>
             ) : (
               benefits.map((benefit) => (
@@ -148,17 +150,21 @@ export const Inventory = ({
                         {benefit.voBenefitName || benefit.voBenefitTypeDisplay}
                       </span>
                       <span className={`${styles.benefitStatus} ${benefit.voIsActive ? styles.active : ''}`}>
-                        {benefit.voIsExpired ? '已过期' : benefit.voIsActive ? '已激活' : '未激活'}
+                        {benefit.voIsExpired
+                          ? t('shop.inventory.status.expired')
+                          : benefit.voIsActive
+                            ? t('shop.inventory.status.active')
+                            : t('shop.inventory.status.inactive')}
                       </span>
                     </div>
                     <div className={styles.benefitType}>{benefit.voBenefitTypeDisplay ?? ''}</div>
                     <div className={styles.benefitMeta}>
-                      <span>来源：{benefit.voSourceTypeDisplay ?? ''}</span>
-                      <span>有效期：{benefit.voDurationDisplay ?? ''}</span>
+                      <span>{t('shop.inventory.source', { value: benefit.voSourceTypeDisplay ?? '' })}</span>
+                      <span>{t('shop.inventory.duration', { value: benefit.voDurationDisplay ?? '' })}</span>
                     </div>
                     {benefit.voExpiresAt && !benefit.voIsExpired && (
                       <div className={styles.benefitExpiry}>
-                        到期时间：{formatTime(benefit.voExpiresAt)}
+                        {t('shop.inventory.expireAt', { value: formatTime(benefit.voExpiresAt) })}
                       </div>
                     )}
                   </div>
@@ -169,14 +175,14 @@ export const Inventory = ({
                           className={styles.deactivateButton}
                           onClick={() => onDeactivateBenefit(benefit.voId)}
                         >
-                          取消激活
+                          {t('shop.inventory.deactivate')}
                         </button>
                       ) : (
                         <button
                           className={styles.activateButton}
                           onClick={() => onActivateBenefit(benefit.voId)}
                         >
-                          激活
+                          {t('shop.inventory.activate')}
                         </button>
                       )
                     )}
@@ -190,8 +196,8 @@ export const Inventory = ({
             {inventory.length === 0 ? (
               <div className={styles.empty}>
                 <div className={styles.emptyIcon}>📦</div>
-                <p>暂无道具</p>
-                <p className={styles.emptyHint}>去商城购买道具吧</p>
+                <p>{t('shop.inventory.emptyItems')}</p>
+                <p className={styles.emptyHint}>{t('shop.inventory.emptyItemsHint')}</p>
               </div>
             ) : (
               inventory.map((item) => (
@@ -209,7 +215,7 @@ export const Inventory = ({
                     </div>
                     <div className={styles.consumableType}>{item.voConsumableTypeDisplay ?? ''}</div>
                     <div className={styles.consumableQuantity}>
-                      数量：<span className={styles.quantity}>{item.voQuantity}</span>
+                      {t('shop.inventory.quantity')}<span className={styles.quantity}>{item.voQuantity}</span>
                     </div>
                   </div>
                   <div className={styles.consumableActions}>
@@ -218,7 +224,7 @@ export const Inventory = ({
                       onClick={() => handleUseItemClick(item)}
                       disabled={item.voQuantity <= 0}
                     >
-                      使用
+                      {t('shop.inventory.use')}
                     </button>
                   </div>
                 </div>
@@ -232,7 +238,7 @@ export const Inventory = ({
         <div className={styles.modalOverlay} onClick={handleCloseModal}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
-              <h3>使用道具</h3>
+              <h3>{t('shop.inventory.useTitle')}</h3>
               <button className={styles.modalClose} onClick={handleCloseModal}>
                 ✕
               </button>
@@ -251,12 +257,12 @@ export const Inventory = ({
                     {selectedItem.voItemName || selectedItem.voConsumableTypeDisplay}
                   </div>
                   <div className={styles.modalItemQuantity}>
-                    可用数量：{selectedItem.voQuantity}
+                    {t('shop.inventory.availableQuantity', { count: selectedItem.voQuantity })}
                   </div>
                 </div>
               </div>
               <div className={styles.quantitySelector}>
-                <label>使用数量：</label>
+                <label>{t('shop.inventory.useQuantity')}</label>
                 <div className={styles.quantityControls}>
                   <button
                     onClick={() => setUseQuantity(Math.max(1, useQuantity - 1))}
@@ -276,10 +282,10 @@ export const Inventory = ({
             </div>
             <div className={styles.modalFooter}>
               <button className={styles.cancelButton} onClick={handleCloseModal}>
-                取消
+                {t('common.cancel')}
               </button>
               <button className={styles.confirmButton} onClick={handleConfirmUse}>
-                确认使用
+                {t('shop.inventory.confirmUse')}
               </button>
             </div>
           </div>

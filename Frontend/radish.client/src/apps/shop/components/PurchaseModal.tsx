@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Product } from '@/types/shop';
 import { getProductTypeDisplay } from '@/api/shop';
 import styles from './PurchaseModal.module.css';
@@ -18,7 +19,7 @@ export const PurchaseModal = ({
   onClose,
   onConfirm
 }: PurchaseModalProps) => {
-  // const { t } = useTranslation(); // 暂时不使用
+  const { t } = useTranslation();
   const [quantity, setQuantity] = useState(1);
 
   if (!isOpen || !product) {
@@ -41,7 +42,7 @@ export const PurchaseModal = ({
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.header}>
-          <h2 className={styles.title}>确认购买</h2>
+          <h2 className={styles.title}>{t('shop.purchase.title')}</h2>
           <button className={styles.closeButton} onClick={onClose}>
             ✕
           </button>
@@ -67,23 +68,23 @@ export const PurchaseModal = ({
               <h3 className={styles.productName}>{product.voName}</h3>
               <div className={styles.productPrice}>
                 <span className={styles.currentPrice}>
-                  {product.voPrice.toLocaleString()} 胡萝卜
+                  {product.voPrice.toLocaleString()} {t('shop.currency.carrot')}
                 </span>
                 {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
                   <span className={styles.originalPrice}>
-                    原价 {product.voOriginalPrice.toLocaleString()}
+                    {t('shop.originalPrice', { price: product.voOriginalPrice.toLocaleString() })}
                   </span>
                 )}
               </div>
               <div className={styles.productMeta}>
-                有效期：{product.voDurationDisplay ?? ''}
+                {t('shop.purchase.duration', { value: product.voDurationDisplay ?? '' })}
               </div>
             </div>
           </div>
 
           {/* 数量选择 */}
           <div className={styles.quantitySection}>
-            <label className={styles.quantityLabel}>购买数量：</label>
+            <label className={styles.quantityLabel}>{t('shop.purchase.quantity')}</label>
             <div className={styles.quantityControls}>
               <button
                 className={styles.quantityButton}
@@ -110,7 +111,7 @@ export const PurchaseModal = ({
             </div>
             {(product.voLimitPerUser ?? 0) > 0 && (
               <div className={styles.limitHint}>
-                每人限购 {product.voLimitPerUser} 件
+                {t('shop.purchase.limitHint', { count: product.voLimitPerUser })}
               </div>
             )}
           </div>
@@ -118,29 +119,29 @@ export const PurchaseModal = ({
           {/* 价格汇总 */}
           <div className={styles.priceSection}>
             <div className={styles.priceRow}>
-              <span>单价：</span>
-              <span>{product.voPrice.toLocaleString()} 胡萝卜</span>
+              <span>{t('shop.purchase.unitPrice')}</span>
+              <span>{product.voPrice.toLocaleString()} {t('shop.currency.carrot')}</span>
             </div>
             <div className={styles.priceRow}>
-              <span>数量：</span>
-              <span>{quantity} 件</span>
+              <span>{t('shop.purchase.quantityLabel')}</span>
+              <span>{t('shop.productCount', { count: quantity })}</span>
             </div>
             <div className={`${styles.priceRow} ${styles.totalRow}`}>
-              <span>总计：</span>
+              <span>{t('shop.purchase.total')}</span>
               <span className={styles.totalPrice}>
-                {totalPrice.toLocaleString()} 胡萝卜
+                {totalPrice.toLocaleString()} {t('shop.currency.carrot')}
               </span>
             </div>
           </div>
 
           {/* 购买须知 */}
           <div className={styles.noticeSection}>
-            <h4 className={styles.noticeTitle}>购买须知：</h4>
+            <h4 className={styles.noticeTitle}>{t('shop.purchase.noticeTitle')}</h4>
             <ul className={styles.noticeList}>
-              <li>购买后将立即从您的胡萝卜余额中扣除相应金额</li>
-              <li>权益类商品将自动发放到您的背包</li>
-              <li>消耗品道具可在背包中查看和使用</li>
-              <li>请确认商品信息无误后再进行购买</li>
+              <li>{t('shop.purchase.notice.balance')}</li>
+              <li>{t('shop.purchase.notice.benefit')}</li>
+              <li>{t('shop.purchase.notice.item')}</li>
+              <li>{t('shop.purchase.notice.confirm')}</li>
             </ul>
           </div>
         </div>
@@ -151,7 +152,7 @@ export const PurchaseModal = ({
             onClick={onClose}
             disabled={loading}
           >
-            取消
+            {t('common.cancel')}
           </button>
           <button
             className={styles.confirmButton}
@@ -161,10 +162,10 @@ export const PurchaseModal = ({
             {loading ? (
               <>
                 <span className={styles.loadingSpinner}></span>
-                购买中...
+                {t('shop.purchase.processing')}
               </>
             ) : (
-              `确认购买 (${totalPrice.toLocaleString()} 胡萝卜)`
+              t('shop.purchase.confirmButton', { price: totalPrice.toLocaleString() })
             )}
           </button>
         </div>

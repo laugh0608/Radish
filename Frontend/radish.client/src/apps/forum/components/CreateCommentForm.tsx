@@ -46,9 +46,9 @@ export const CreateCommentForm = ({
   variant = 'inline',
   stickerGroups = [],
   onStickerSelect,
-  title = '发表评论',
-  submitText = '发表评论',
-  placeholder = '评论内容（输入 @ 可以提及用户）',
+  title,
+  submitText,
+  placeholder,
 }: CreateCommentFormProps) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
@@ -65,6 +65,9 @@ export const CreateCommentForm = ({
   // 上传状态
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const resolvedTitle = title ?? t('forum.comment.title');
+  const resolvedSubmitText = submitText ?? t('forum.comment.title');
+  const resolvedPlaceholder = placeholder ?? t('forum.discussionPlaceholder');
 
   useEffect(() => {
     if (!replyTo || !textareaRef.current || !isAuthenticated || !hasPost) {
@@ -165,7 +168,7 @@ export const CreateCommentForm = ({
         avatar: user.voAvatar
       }));
     } catch (error) {
-      log.error('搜索用户失败:', error);
+      log.error(t('forum.comment.searchUsersFailed'), error);
       return [];
     }
   }, [t]);
@@ -234,9 +237,9 @@ export const CreateCommentForm = ({
       const imageMarkdown = `![${file.name}](${markdownUrl})`;
       insertTextAtCursor(imageMarkdown);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '图片上传失败';
+      const errorMessage = error instanceof Error ? error.message : t('forum.comment.imageUploadFailed');
       setUploadError(errorMessage);
-      log.error('图片上传失败:', error);
+      log.error(t('forum.comment.imageUploadFailed'), error);
     } finally {
       setUploading(false);
       // 清空 input 以允许重复上传同一文件
@@ -264,9 +267,9 @@ export const CreateCommentForm = ({
       const linkMarkdown = `[${result.voOriginalName || file.name}](${result.voUrl})`;
       insertTextAtCursor(linkMarkdown);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '文档上传失败';
+      const errorMessage = error instanceof Error ? error.message : t('forum.comment.documentUploadFailed');
       setUploadError(errorMessage);
-      log.error('文档上传失败:', error);
+      log.error(t('forum.comment.documentUploadFailed'), error);
     } finally {
       setUploading(false);
       // 清空 input 以允许重复上传同一文件
@@ -319,13 +322,13 @@ export const CreateCommentForm = ({
 
   return (
     <div className={containerClassName}>
-      <h5 className={titleClassName}>{title}</h5>
+      <h5 className={titleClassName}>{resolvedTitle}</h5>
 
       {!isAuthenticated && (
         <div className={styles.loginPrompt}>
-          当前未登录，无法发表评论。
+          {t('forum.comment.loginPrompt')}
           <button type="button" onClick={handleLoginClick} className={styles.loginButton}>
-            去登录
+            {t('forum.comment.loginButton')}
           </button>
         </div>
       )}
@@ -334,10 +337,11 @@ export const CreateCommentForm = ({
       {replyTo && (
         <div className={styles.replyHint}>
           <span className={styles.replyText}>
-            正在回复 <span className={styles.replyTarget}>@{replyTo.authorName}</span>
+            {t('forum.comment.replyingPrefix')}
+            <span className={styles.replyTarget}>@{replyTo.authorName}</span>
           </span>
           {onCancelReply && (
-            <button type="button" onClick={onCancelReply} className={styles.cancelReplyButton} title="取消回复">
+            <button type="button" onClick={onCancelReply} className={styles.cancelReplyButton} title={t('forum.comment.cancelReply')}>
               <Icon icon="mdi:close" size={16} />
             </button>
           )}
@@ -347,7 +351,7 @@ export const CreateCommentForm = ({
       <div className={styles.textareaWrapper}>
         <textarea
           ref={textareaRef}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           value={content}
           onChange={handleTextChange}
           rows={3}
@@ -400,7 +404,7 @@ export const CreateCommentForm = ({
           onSelect={handlePickerSelect}
           disabled={!isAuthenticated || !hasPost || disabled || uploading}
           className={styles.stickerPicker}
-          triggerTitle="插入表情包"
+          triggerTitle={t('forum.comment.insertSticker')}
         />
 
         {/* 上传按钮 */}
@@ -409,10 +413,10 @@ export const CreateCommentForm = ({
           onClick={handleImageButtonClick}
           disabled={!isAuthenticated || !hasPost || disabled || uploading}
           className={styles.toolbarButton}
-          title="上传图片"
+          title={t('forum.comment.uploadImage')}
         >
           <Icon icon={uploading ? "mdi:loading" : "mdi:image-outline"} size={18} />
-          <span>图片</span>
+          <span>{t('forum.comment.uploadImage')}</span>
         </button>
 
         <button
@@ -420,14 +424,14 @@ export const CreateCommentForm = ({
           onClick={handleDocumentButtonClick}
           disabled={!isAuthenticated || !hasPost || disabled || uploading}
           className={styles.toolbarButton}
-          title="上传文档"
+          title={t('forum.comment.uploadDocument')}
         >
           <Icon icon={uploading ? "mdi:loading" : "mdi:file-document-outline"} size={18} />
-          <span>文档</span>
+          <span>{t('forum.comment.uploadDocument')}</span>
         </button>
 
         {uploading && (
-          <span className={styles.uploadingHint}>上传中...</span>
+          <span className={styles.uploadingHint}>{t('forum.comment.uploading')}</span>
         )}
       </div>
 
@@ -437,7 +441,7 @@ export const CreateCommentForm = ({
         disabled={!isAuthenticated || !hasPost || disabled || !content.trim() || uploading}
         className={submitClassName}
       >
-        {submitText}
+        {resolvedSubmitText}
       </button>
     </div>
   );

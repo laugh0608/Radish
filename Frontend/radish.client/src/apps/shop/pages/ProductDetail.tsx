@@ -1,4 +1,5 @@
 import type { Product } from '@/types/shop';
+import { useTranslation } from 'react-i18next';
 import { getProductTypeDisplay, StockType } from '@/api/shop';
 import styles from './ProductDetail.module.css';
 
@@ -22,7 +23,7 @@ export const ProductDetail = ({
   onBack,
   onPurchase
 }: ProductDetailProps) => {
-  // const { t } = useTranslation(); // 暂时不使用
+  const { t } = useTranslation();
   const blockedReason = canBuy?.reason?.trim() ?? '';
 
   if (loading) {
@@ -30,7 +31,7 @@ export const ProductDetail = ({
       <div className={styles.container}>
         <div className={styles.loading}>
           <div className={styles.spinner}></div>
-          <p>加载中...</p>
+          <p>{t('shop.loading')}</p>
         </div>
       </div>
     );
@@ -40,10 +41,10 @@ export const ProductDetail = ({
     return (
       <div className={styles.container}>
         <div className={styles.error}>
-          <h2>商品不存在</h2>
-          <p>您访问的商品可能已下架或不存在</p>
+          <h2>{t('shop.notFound.productTitle')}</h2>
+          <p>{t('shop.notFound.productDescription')}</p>
           <button className={styles.backButton} onClick={onBack}>
-            返回商品列表
+            {t('shop.backToProducts')}
           </button>
         </div>
       </div>
@@ -52,19 +53,19 @@ export const ProductDetail = ({
 
   const handlePurchase = () => {
     if (!isAuthenticated) {
-      alert('请先登录');
+      alert(t('shop.loginRequired'));
       return;
     }
     onPurchase(product.voId);
   };
 
   const getPurchaseButtonText = () => {
-    if (!isAuthenticated) return '请先登录';
-    if (checkingCanBuy) return '检查中...';
-    if (!product.voInStock) return '缺货';
-    if (!product.voIsOnSale) return '已下架';
-    if (canBuy && !canBuy.canBuy) return blockedReason || '暂不可购买';
-    return '立即购买';
+    if (!isAuthenticated) return t('shop.loginRequired');
+    if (checkingCanBuy) return t('shop.checkingAvailability');
+    if (!product.voInStock) return t('shop.outOfStock');
+    if (!product.voIsOnSale) return t('shop.unavailable');
+    if (canBuy && !canBuy.canBuy) return blockedReason || t('shop.unavailable');
+    return t('shop.buyNow');
   };
 
   const isPurchaseDisabled = () => {
@@ -80,7 +81,7 @@ export const ProductDetail = ({
       {/* 顶部导航 */}
       <div className={styles.header}>
         <button className={styles.backButton} onClick={onBack}>
-          ← 返回
+          ← {t('shop.back')}
         </button>
       </div>
 
@@ -108,7 +109,7 @@ export const ProductDetail = ({
 
               {!product.voInStock && (
                 <div className={styles.outOfStockOverlay}>
-                  <span>缺货</span>
+                  <span>{t('shop.outOfStock')}</span>
                 </div>
               )}
             </div>
@@ -124,34 +125,34 @@ export const ProductDetail = ({
 
             <div className={styles.priceSection}>
               <div className={styles.currentPrice}>
-                {product.voPrice.toLocaleString()} 胡萝卜
+                {product.voPrice.toLocaleString()} {t('shop.currency.carrot')}
               </div>
               {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
                 <div className={styles.originalPrice}>
-                  原价 {product.voOriginalPrice.toLocaleString()} 胡萝卜
+                  {t('shop.originalPrice', { price: product.voOriginalPrice.toLocaleString() })}
                 </div>
               )}
             </div>
 
             <div className={styles.metaInfo}>
               <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>已售:</span>
-                <span className={styles.metaValue}>{product.voSoldCount ?? 0} 件</span>
+                <span className={styles.metaLabel}>{t('shop.meta.sold')}</span>
+                <span className={styles.metaValue}>{t('shop.productCount', { count: product.voSoldCount ?? 0 })}</span>
               </div>
               <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>库存:</span>
+                <span className={styles.metaLabel}>{t('shop.meta.stock')}</span>
                 <span className={styles.metaValue}>
-                  {product.voStockType === StockType.Unlimited ? '无限' : `${product.voStock ?? 0} 件`}
+                  {product.voStockType === StockType.Unlimited ? t('shop.stock.unlimited') : t('shop.productCount', { count: product.voStock ?? 0 })}
                 </span>
               </div>
               <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>限购:</span>
+                <span className={styles.metaLabel}>{t('shop.meta.limit')}</span>
                 <span className={styles.metaValue}>
-                  {(product.voLimitPerUser ?? 0) > 0 ? `每人限购 ${product.voLimitPerUser} 件` : '无限制'}
+                  {(product.voLimitPerUser ?? 0) > 0 ? t('shop.limit.perUser', { count: product.voLimitPerUser }) : t('shop.limit.unlimited')}
                 </span>
               </div>
               <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>有效期:</span>
+                <span className={styles.metaLabel}>{t('shop.meta.duration')}</span>
                 <span className={styles.metaValue}>{product.voDurationDisplay ?? ''}</span>
               </div>
             </div>
@@ -177,7 +178,7 @@ export const ProductDetail = ({
 
         {/* 商品详情 */}
         <div className={styles.detailSection}>
-          <h2 className={styles.sectionTitle}>商品详情</h2>
+          <h2 className={styles.sectionTitle}>{t('shop.section.detail')}</h2>
 
           <div className={styles.detailContent}>
             {product.voDescription ? (
@@ -187,13 +188,13 @@ export const ProductDetail = ({
                 ))}
               </div>
             ) : (
-              <p className={styles.noDescription}>暂无详细描述</p>
+              <p className={styles.noDescription}>{t('shop.noDescription')}</p>
             )}
 
             {/* 权益/消耗品特殊信息 */}
             {product.voBenefitValue && (
               <div className={styles.benefitInfo}>
-                <h3>权益详情</h3>
+                <h3>{t('shop.section.benefit')}</h3>
                 <div className={styles.benefitValue}>
                   {product.voBenefitValue}
                 </div>
@@ -204,15 +205,15 @@ export const ProductDetail = ({
 
         {/* 购买须知 */}
         <div className={styles.noticeSection}>
-          <h2 className={styles.sectionTitle}>购买须知</h2>
+          <h2 className={styles.sectionTitle}>{t('shop.section.notice')}</h2>
 
           <div className={styles.noticeContent}>
             <ul>
-              <li>购买前请确认您的胡萝卜余额充足</li>
-              <li>权益类商品购买后将自动发放到您的背包</li>
-              <li>消耗品道具可在背包中查看和使用</li>
-              <li>部分商品有使用期限，请及时使用</li>
-              <li>如有问题请联系客服处理</li>
+              <li>{t('shop.notice.balance')}</li>
+              <li>{t('shop.notice.benefit')}</li>
+              <li>{t('shop.notice.item')}</li>
+              <li>{t('shop.notice.expire')}</li>
+              <li>{t('shop.notice.support')}</li>
             </ul>
           </div>
         </div>
