@@ -114,13 +114,13 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
     }
 
     if (selectedTags.length >= MAX_TAG_COUNT) {
-      setTagError(`最多可添加 ${MAX_TAG_COUNT} 个标签`);
+      setTagError(t('forum.editPost.tagMaxError', { max: MAX_TAG_COUNT }));
       return;
     }
 
     const exists = allTagNames.some(name => name.toLowerCase() === tagName.toLowerCase());
     if (!exists && !isAdmin) {
-      setTagError('标签不存在，暂时仅管理员可创建新标签');
+      setTagError(t('forum.editPost.tagCreateRestricted'));
       return;
     }
 
@@ -149,22 +149,22 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
     if (!post) return;
 
     if (!title.trim() || !content.trim()) {
-      setError('标题和内容不能为空');
+      setError(t('forum.editPost.requiredFields'));
       return;
     }
 
     if (selectedTags.length < MIN_TAG_COUNT) {
-      setTagError(`请至少添加 ${MIN_TAG_COUNT} 个标签`);
+      setTagError(t('forum.editPost.tagMinError', { min: MIN_TAG_COUNT }));
       return;
     }
 
     if (selectedTags.length > MAX_TAG_COUNT) {
-      setTagError(`最多可添加 ${MAX_TAG_COUNT} 个标签`);
+      setTagError(t('forum.editPost.tagMaxError', { max: MAX_TAG_COUNT }));
       return;
     }
 
     if (!categoryId || categoryId <= 0) {
-      setCategoryError('请先选择分类');
+      setCategoryError(t('forum.editPost.categoryRequired'));
       return;
     }
 
@@ -238,7 +238,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
         aria-pressed={addWatermark}
       >
         <Icon icon="mdi:watermark" size={16} />
-        <span>水印</span>
+        <span>{t('forum.editPost.watermark')}</span>
       </button>
       <button
         type="button"
@@ -247,10 +247,10 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
         aria-pressed={generateMultipleSizes}
       >
         <Icon icon="mdi:aspect-ratio" size={16} />
-        <span>多尺寸</span>
+        <span>{t('forum.editPost.multiSize')}</span>
       </button>
       <label className={styles.editorScaleLabel}>
-        <span>缩放</span>
+        <span>{t('forum.editPost.scale')}</span>
         <select
           value={imageScalePercent}
           onChange={(e) => setImageScalePercent(Number(e.target.value))}
@@ -268,23 +268,23 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      title="编辑帖子"
+      title={t('forum.editPost.title')}
       size="large"
       footer={
         <div className={styles.footer}>
           <Button variant="secondary" onClick={handleClose} disabled={saving}>
-            取消
+            {t('common.cancel')}
           </Button>
           <Button variant="primary" onClick={handleSave} disabled={saving}>
-            {saving ? '保存中...' : '保存'}
+            {saving ? t('forum.editPost.saving') : t('common.save')}
           </Button>
         </div>
       }
     >
       <div className={styles.container}>
         <div className={styles.lead}>
-          <h3 className={styles.leadTitle}>编辑帖子</h3>
-          <p className={styles.leadHint}>支持完整 Markdown 编辑、图片上传与文档附件</p>
+          <h3 className={styles.leadTitle}>{t('forum.editPost.title')}</h3>
+          <p className={styles.leadHint}>{t('forum.editPost.leadHint')}</p>
         </div>
 
         {error && <div className={styles.error}>{error}</div>}
@@ -297,7 +297,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
             onChange={e => setTitle(e.target.value)}
             className={styles.titleInput}
             disabled={saving}
-            placeholder="请输入帖子标题"
+            placeholder={t('forum.editPost.titlePlaceholder')}
             maxLength={100}
           />
           <span className={styles.titleCount}>{title.length}/100</span>
@@ -305,8 +305,8 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
 
         <div className={styles.categorySection}>
           <div className={styles.categoryHeader}>
-            <span className={styles.categoryLabel}>帖子分类</span>
-            <span className={styles.categoryHint}>编辑时可调整帖子所属分类</span>
+            <span className={styles.categoryLabel}>{t('forum.editPost.categoryLabel')}</span>
+            <span className={styles.categoryHint}>{t('forum.editPost.categoryHint')}</span>
           </div>
           <select
             value={categoryId ?? ''}
@@ -318,7 +318,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
             className={styles.categorySelect}
             disabled={saving || categories.length === 0}
           >
-            <option value="">请选择分类</option>
+            <option value="">{t('forum.editPost.categoryPlaceholder')}</option>
             {categories.map(category => (
               <option key={category.voId} value={category.voId}>
                 {category.voName}
@@ -326,18 +326,20 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
             ))}
           </select>
           {categoryError && <p className={styles.categoryError}>{categoryError}</p>}
-          {!categoryError && categories.length === 0 && <p className={styles.categoryError}>暂无可用分类</p>}
+          {!categoryError && categories.length === 0 && (
+            <p className={styles.categoryError}>{t('forum.editPost.categoryEmpty')}</p>
+          )}
         </div>
 
         <div className={styles.tagSection}>
           <div className={styles.tagHeader}>
-            <span className={styles.tagLabel}>帖子标签</span>
-            <span className={styles.tagHint}>至少 {MIN_TAG_COUNT} 个，最多 {MAX_TAG_COUNT} 个</span>
+            <span className={styles.tagLabel}>{t('forum.editPost.tagLabel')}</span>
+            <span className={styles.tagHint}>{t('forum.editPost.tagHint', { min: MIN_TAG_COUNT, max: MAX_TAG_COUNT })}</span>
           </div>
           <div className={styles.tagInputRow}>
             <input
               type="text"
-              placeholder="输入标签名后按回车"
+              placeholder={t('forum.editPost.tagPlaceholder')}
               value={tagInput}
               onChange={e => {
                 setTagInput(e.target.value);
@@ -361,7 +363,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
               onClick={() => addTag(tagInput)}
               disabled={!tagInput.trim() || saving}
             >
-              添加
+              {t('forum.editPost.tagAdd')}
             </button>
           </div>
 
@@ -383,7 +385,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
 
           {tagInput.trim() && matchedTags.length === 0 && (
             <p className={styles.tagTip}>
-              {isAdmin ? '未匹配现有标签，发布时将创建新标签。' : '未匹配现有标签，暂时仅管理员可创建。'}
+              {isAdmin ? t('forum.editPost.tagCreateHintAdmin') : t('forum.editPost.tagCreateHintMember')}
             </p>
           )}
 
@@ -395,7 +397,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
                   type="button"
                   className={styles.selectedTag}
                   onClick={() => removeTag(tag)}
-                  title="点击移除"
+                  title={t('forum.editPost.tagRemove')}
                   disabled={saving}
                 >
                   #{tag} ×
@@ -408,11 +410,11 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
         </div>
 
         <div className={styles.editorWrapper}>
-          <Suspense fallback={<div className={styles.editorLoading}>编辑器加载中...</div>}>
+          <Suspense fallback={<div className={styles.editorLoading}>{t('forum.editPost.editorLoading')}</div>}>
             <MarkdownEditor
               value={content}
               onChange={setContent}
-              placeholder="帖子内容（支持 Markdown）"
+              placeholder={t('forum.editPost.contentPlaceholder')}
               onImageUpload={handleImageUpload}
               onDocumentUpload={handleDocumentUpload}
               stickerGroups={stickerGroups}
@@ -431,10 +433,10 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
 
         {addWatermark && (
           <div className={styles.watermarkRow}>
-            <span className={styles.watermarkLabel}>水印文字</span>
+            <span className={styles.watermarkLabel}>{t('forum.editPost.watermarkLabel')}</span>
             <input
               type="text"
-              placeholder="输入水印文字"
+              placeholder={t('forum.editPost.watermarkPlaceholder')}
               value={watermarkText}
               onChange={(e) => setWatermarkText(e.target.value)}
               className={styles.watermarkInput}

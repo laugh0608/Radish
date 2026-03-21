@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { Category } from '@/api/forum';
 import styles from './CategoryList.module.css';
 
@@ -14,11 +15,13 @@ export const CategoryList = ({
   onSelectCategory,
   loading = false
 }: CategoryListProps) => {
+  const { t } = useTranslation();
+
   return (
     <div className={styles.container}>
-      <h3 className={styles.title}>分类</h3>
-      {loading && <p className={styles.loadingText}>加载分类中...</p>}
-      {!loading && categories.length === 0 && <p className={styles.emptyText}>暂无分类</p>}
+      <h3 className={styles.title}>{t('forum.category.title')}</h3>
+      {loading && <p className={styles.loadingText}>{t('forum.category.loading')}</p>}
+      {!loading && categories.length === 0 && <p className={styles.emptyText}>{t('forum.category.empty')}</p>}
       <ul className={styles.list}>
         {categories.map(category => (
           <li key={category.voId}>
