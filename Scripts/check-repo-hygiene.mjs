@@ -225,7 +225,7 @@ function validateFile(filePath) {
   }
 
   if (content.includes('\uFFFD')) {
-    issues.push('包含 Unicode 替换字符（�），疑似已有乱码。');
+    issues.push('包含 Unicode 替换字符（U+FFFD），疑似已有乱码。');
   }
 
   if (isDocumentationFile(filePath) && hasSuspiciousMojibake(content)) {
