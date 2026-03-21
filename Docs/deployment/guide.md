@@ -3,6 +3,57 @@
 ## 目标
 本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile` 构建镜像、配置环境变量，并提供一个 PostgreSQL + API 的 Compose 示例，确保与 .NET 10 SDK 及现有目录结构保持一致。
 
+## 仓库发版与合并流程
+
+当前仓库已启用 `master` 分支保护，默认约束如下：
+
+- 禁止直接 push 到 `master`
+- 禁止 force push
+- 禁止删除 `master`
+- `master` 只允许通过 Pull Request 合并
+- 合并前需通过仓库检查：
+  - `Repo Hygiene`
+  - `Frontend Lint`
+  - `Baseline Quick`
+- 合并前需至少完成 1 次审批，并解决全部 review 对话
+- 管理员当前仅允许“通过 Pull Request 绕过”，不开放直接 push
+
+### 推荐分支路径
+
+- 日常开发：在 `dev` 或功能分支完成开发与自检
+- 准备发版：从 `dev` 向 `master` 发起 Pull Request
+- 合并发布：PR 检查通过后，以 `squash` 或 `rebase` 方式合并到 `master`
+- 发布记录：合并完成后创建 Git tag，并在 GitHub Release 中补发布说明
+
+### 最小发版顺序
+
+1. 在 `dev` 完成代码、文档与必要验证
+2. 本地至少执行：
+
+   ```bash
+   npm run validate:baseline:quick
+   ```
+
+3. 发起 `dev -> master` 的 PR
+4. 等待 GitHub Actions 中的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 全部通过
+5. 完成审批与会话收束后合并到 `master`
+6. 合并后创建版本标签，例如：
+
+   ```bash
+   git checkout master
+   git pull origin master
+   git tag -a v26.3.1-release -m "Release v26.3.1"
+   git push origin v26.3.1-release
+   ```
+
+7. 在 GitHub Release 中补齐本次发布说明、已知风险与回滚信息
+
+### 现阶段说明
+
+- 当前团队仅 1 人开发，因此规则允许管理员以 PR 方式完成自审 / 自合并
+- 这不改变 `master` 禁止直接 push 的原则
+- 后续若团队扩展，可再把审批数从 `1` 提升到 `2`，或补充 `CODEOWNERS`
+
 ## 先决条件
 - Docker Engine ≥ 24，能够拉取 `mcr.microsoft.com/dotnet/*` 官方镜像。
 - .NET SDK 10.0.0+，用于调试或本地 `dotnet publish`。
