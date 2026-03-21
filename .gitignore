@@ -202,7 +202,6 @@ ClientBin/
 !Certs/dev-auth-cert.pfx
 *.publishsettings
 node_modules/
-package-lock.json
 orleans.codegen.cs
 .codex-logs/
 .dotnet-home/
