@@ -40,7 +40,7 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl, displayTimeZone =
         setTotalPages(result.pageCount);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '加载交易记录失败');
+      setError(err instanceof Error ? err.message : t('profile.transactions.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -71,7 +71,7 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl, displayTimeZone =
   if (loading && transactions.length === 0) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>加载中...</div>
+        <div className={styles.loading}>{t('common.loading')}</div>
       </div>
     );
   }
@@ -86,41 +86,39 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl, displayTimeZone =
 
   return (
     <div className={styles.container}>
-      {/* 筛选器 */}
       <div className={styles.filters}>
         <div className={styles.filterGroup}>
-          <label>交易类型：</label>
+          <label>{t('profile.transactions.filter.type')}</label>
           <select
             value={filterType || ''}
             onChange={(e) => handleFilterTypeChange(e.target.value || null)}
           >
-            <option value="">全部</option>
-            <option value="SYSTEM_GRANT">系统赠送</option>
-            <option value="LIKE_REWARD">点赞奖励</option>
-            <option value="COMMENT_REWARD">评论奖励</option>
-            <option value="HIGHLIGHT_REWARD">神评/沙发奖励</option>
-            <option value="TRANSFER">转账</option>
-            <option value="ADMIN_ADJUST">管理员调整</option>
+            <option value="">{t('common.all')}</option>
+            <option value="SYSTEM_GRANT">{t('profile.transactions.type.systemGrant')}</option>
+            <option value="LIKE_REWARD">{t('profile.transactions.type.likeReward')}</option>
+            <option value="COMMENT_REWARD">{t('profile.transactions.type.commentReward')}</option>
+            <option value="HIGHLIGHT_REWARD">{t('profile.transactions.type.highlightReward')}</option>
+            <option value="TRANSFER">{t('profile.transactions.type.transfer')}</option>
+            <option value="ADMIN_ADJUST">{t('profile.transactions.type.adminAdjust')}</option>
           </select>
         </div>
 
         <div className={styles.filterGroup}>
-          <label>交易状态：</label>
+          <label>{t('profile.transactions.filter.status')}</label>
           <select
             value={filterStatus || ''}
             onChange={(e) => handleFilterStatusChange(e.target.value || null)}
           >
-            <option value="">全部</option>
-            <option value="SUCCESS">成功</option>
-            <option value="PENDING">待处理</option>
-            <option value="FAILED">失败</option>
+            <option value="">{t('common.all')}</option>
+            <option value="SUCCESS">{t('profile.transactions.status.success')}</option>
+            <option value="PENDING">{t('profile.transactions.status.pending')}</option>
+            <option value="FAILED">{t('profile.transactions.status.failed')}</option>
           </select>
         </div>
       </div>
 
-      {/* 交易列表 */}
       {transactions.length === 0 ? (
-        <div className={styles.empty}>暂无交易记录</div>
+        <div className={styles.empty}>{t('profile.transactions.empty')}</div>
       ) : (
         <div className={styles.list}>
           {transactions.map((tx) => (
@@ -138,23 +136,23 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl, displayTimeZone =
                 <div className={styles.info}>
                   <div className={styles.participants}>
                     <span className={styles.from}>
-                      从: {tx.voFromUserName || '系统'}
+                      {t('profile.transactions.from', { name: tx.voFromUserName || t('profile.transactions.systemUser') })}
                     </span>
                     <span className={styles.arrow}>→</span>
                     <span className={styles.to}>
-                      到: {tx.voToUserName || '系统'}
+                      {t('profile.transactions.to', { name: tx.voToUserName || t('profile.transactions.systemUser') })}
                     </span>
                   </div>
 
                   {tx.voRemark && (
                     <div className={styles.remark}>
-                      备注: {tx.voRemark}
+                      {t('profile.transactions.remark', { value: tx.voRemark })}
                     </div>
                   )}
 
                   <div className={styles.meta}>
                     <span className={styles.transactionNo}>
-                      流水号: {tx.voTransactionNo}
+                      {t('profile.transactions.transactionNo', { value: tx.voTransactionNo })}
                     </span>
                     <span className={styles.time}>
                       {formatDateTimeByTimeZone(tx.voCreateTime, displayTimeZone)}
@@ -164,11 +162,11 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl, displayTimeZone =
 
                 <div className={styles.amounts}>
                   <div className={styles.amount}>
-                    {tx.voAmountDisplay} 白萝卜
+                    {t('profile.transactions.amountWhiteRadish', { amount: tx.voAmountDisplay })}
                   </div>
                   {tx.voFee > 0 && (
                     <div className={styles.fee}>
-                      手续费: {tx.voFeeDisplay}
+                      {t('profile.transactions.fee', { amount: tx.voFeeDisplay })}
                     </div>
                   )}
                 </div>
@@ -178,7 +176,6 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl, displayTimeZone =
         </div>
       )}
 
-      {/* 分页 */}
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <button
@@ -186,17 +183,17 @@ export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl, displayTimeZone =
             disabled={pageIndex === 1}
             className={styles.pageButton}
           >
-            上一页
+            {t('common.previousPage')}
           </button>
           <span className={styles.pageInfo}>
-            第 {pageIndex} / {totalPages} 页 (共 {totalCount} 条)
+            {t('profile.transactions.pageInfo', { current: pageIndex, total: totalPages, count: totalCount })}
           </span>
           <button
             onClick={handleNextPage}
             disabled={pageIndex === totalPages}
             className={styles.pageButton}
           >
-            下一页
+            {t('common.nextPage')}
           </button>
         </div>
       )}

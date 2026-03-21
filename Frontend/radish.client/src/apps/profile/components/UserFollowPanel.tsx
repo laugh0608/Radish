@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getApiBaseUrl } from '@/config/env';
 import { log } from '@/utils/logger';
@@ -28,6 +29,7 @@ interface UserFollowPanelProps {
 const PAGE_SIZE = 10;
 
 export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: UserFollowPanelProps) => {
+  const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const [activeTab, setActiveTab] = useState<SocialTab>('feed');
   const [feedViewType, setFeedViewType] = useState<FeedViewType>('following');
@@ -112,7 +114,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
       setFeedTotal(data.voTotal || 0);
     } catch (error) {
       log.error('UserFollowPanel', `加载关系链内容失败(${viewType}):`, error);
-      setErrorMessage(error instanceof Error ? error.message : '加载动态失败，请稍后重试');
+      setErrorMessage(error instanceof Error ? error.message : t('profile.social.loadFeedFailed'));
       setFeedItems([]);
       setFeedTotal(0);
     } finally {
@@ -129,7 +131,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
       setFollowerTotal(data.voTotal || 0);
     } catch (error) {
       log.error('UserFollowPanel', '加载粉丝列表失败:', error);
-      setErrorMessage(error instanceof Error ? error.message : '加载粉丝列表失败，请稍后重试');
+      setErrorMessage(error instanceof Error ? error.message : t('profile.social.loadFollowersFailed'));
       setFollowerItems([]);
       setFollowerTotal(0);
     } finally {
@@ -146,7 +148,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
       setFollowingTotal(data.voTotal || 0);
     } catch (error) {
       log.error('UserFollowPanel', '加载关注列表失败:', error);
-      setErrorMessage(error instanceof Error ? error.message : '加载关注列表失败，请稍后重试');
+      setErrorMessage(error instanceof Error ? error.message : t('profile.social.loadFollowingFailed'));
       setFollowingItems([]);
       setFollowingTotal(0);
     } finally {
@@ -195,7 +197,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
   };
 
   const renderUserAvatar = (user: UserFollowUser) => {
-    const name = user.voDisplayName?.trim() || user.voUserName.trim() || '用户';
+    const name = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
     const avatarUrl = avatarErrorUserIds.has(user.voUserId) ? null : resolveAvatarUrl(user.voAvatarUrl);
 
     return (
@@ -226,24 +228,24 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
   };
 
   const feedViewLabelMap: Record<FeedViewType, string> = {
-    following: '关注中',
-    recommend: '推荐内容',
-    hot: '热门内容',
-    newest: '最新发布'
+    following: t('profile.social.feedType.following'),
+    recommend: t('profile.social.feedType.recommend'),
+    hot: t('profile.social.feedType.hot'),
+    newest: t('profile.social.feedType.newest')
   };
 
   const feedViewDescriptionMap: Record<FeedViewType, string> = {
-    following: '只看你已关注用户的最近动态',
-    recommend: '根据互动热度推荐的内容',
-    hot: '当前讨论度较高的内容',
-    newest: '社区最新发布的内容'
+    following: t('profile.social.feedHint.following'),
+    recommend: t('profile.social.feedHint.recommend'),
+    hot: t('profile.social.feedHint.hot'),
+    newest: t('profile.social.feedHint.newest')
   };
 
   const renderFeed = () => {
     if (feedItems.length === 0) {
       const emptyText = feedViewType === 'following'
-        ? '你关注的人还没有新动态'
-        : `${feedViewLabelMap[feedViewType]}暂时没有内容`;
+        ? t('profile.social.feedEmpty.following')
+        : t('profile.social.feedEmpty.generic', { label: feedViewLabelMap[feedViewType] });
       return <div className={styles.empty}>{emptyText}</div>;
     }
 
@@ -257,7 +259,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
           >
             <h3 className={styles.feedTitle}>{item.voTitle}</h3>
             <div className={styles.feedMeta}>
-              <span>作者：{item.voAuthorName || '未知用户'}</span>
+              <span>{t('profile.social.author', { name: item.voAuthorName || t('common.unknownUser') })}</span>
               <span>{formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}</span>
               <span>💬 {item.voCommentCount || 0}</span>
               <span>❤️ {item.voLikeCount || 0}</span>
@@ -287,10 +289,10 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
                 {renderUserAvatar(user)}
                 <span className={styles.userName}>{user.voUserName}</span>
                 {user.voDisplayName ? <span className={styles.userDisplay}>({user.voDisplayName})</span> : null}
-                {user.voIsMutualFollow ? <span className={styles.mutualBadge}>互关</span> : null}
+                {user.voIsMutualFollow ? <span className={styles.mutualBadge}>{t('profile.social.mutualFollow')}</span> : null}
               </div>
               <div className={styles.userMeta}>
-                关注时间：{formatDateTimeByTimeZone(user.voFollowTime, displayTimeZone)}
+                {t('profile.social.followTime', { time: formatDateTimeByTimeZone(user.voFollowTime, displayTimeZone) })}
               </div>
             </div>
             <Icon icon="mdi:chevron-right" size={20} />
@@ -302,16 +304,16 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
 
   const renderContent = () => {
     if (loading) {
-      return <div className={styles.loading}>加载中...</div>;
+      return <div className={styles.loading}>{t('common.loading')}</div>;
     }
 
     if (errorMessage) {
       return (
         <div className={styles.errorState}>
-          <div className={styles.errorTitle}>加载失败</div>
+          <div className={styles.errorTitle}>{t('profile.social.loadFailedTitle')}</div>
           <div className={styles.errorMessage}>{errorMessage}</div>
           <button type="button" className={styles.retryButton} onClick={handleRetry}>
-            重试
+            {t('common.retry')}
           </button>
         </div>
       );
@@ -322,21 +324,21 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
     }
 
     if (activeTab === 'followers') {
-      return renderUserList(followerItems, '暂时还没有粉丝');
+      return renderUserList(followerItems, t('profile.social.emptyFollowers'));
     }
 
-    return renderUserList(followingItems, '你还没有关注任何人');
+    return renderUserList(followingItems, t('profile.social.emptyFollowing'));
   };
 
   return (
     <div className={styles.container}>
       <div className={styles.summary}>
         <div className={styles.summaryItem}>
-          <span className={styles.summaryLabel}>粉丝</span>
+          <span className={styles.summaryLabel}>{t('profile.social.summary.followers')}</span>
           <span className={styles.summaryValue}>{summary.voFollowerCount}</span>
         </div>
         <div className={styles.summaryItem}>
-          <span className={styles.summaryLabel}>关注</span>
+          <span className={styles.summaryLabel}>{t('profile.social.summary.following')}</span>
           <span className={styles.summaryValue}>{summary.voFollowingCount}</span>
         </div>
       </div>
@@ -346,19 +348,19 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
           className={`${styles.tab} ${activeTab === 'feed' ? styles.active : ''}`}
           onClick={() => setActiveTab('feed')}
         >
-          动态
+          {t('profile.social.tab.feed')}
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'followers' ? styles.active : ''}`}
           onClick={() => setActiveTab('followers')}
         >
-          我的粉丝
+          {t('profile.social.tab.followers')}
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'following' ? styles.active : ''}`}
           onClick={() => setActiveTab('following')}
         >
-          我的关注
+          {t('profile.social.tab.following')}
         </button>
       </div>
 
@@ -391,15 +393,15 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
             disabled={currentPage <= 1}
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
           >
-            上一页
+            {t('common.previousPage')}
           </button>
-          <span className={styles.pageInfo}>{currentPage} / {totalPages}</span>
+          <span className={styles.pageInfo}>{t('common.pageInfo', { current: currentPage, total: totalPages })}</span>
           <button
             className={styles.pageButton}
             disabled={currentPage >= totalPages}
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
           >
-            下一页
+            {t('common.nextPage')}
           </button>
         </div>
       )}

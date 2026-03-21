@@ -234,7 +234,7 @@ export const ShopApp = () => {
         );
 
       default:
-        return <div>页面不存在</div>;
+        return <div>{t('shop.pageNotFound')}</div>;
     }
   };
 
@@ -244,7 +244,7 @@ export const ShopApp = () => {
       <div className={styles.header}>
         <div className={styles.headerContent}>
           <h1 className={styles.title} onClick={navigate.toHome}>
-            🛒 萝卜商城
+            🛒 {t('shop.title')}
           </h1>
 
           {loggedIn && (
@@ -253,25 +253,25 @@ export const ShopApp = () => {
                 className={`${styles.navButton} ${appState.currentView === 'home' ? styles.active : ''}`}
                 onClick={navigate.toHome}
               >
-                首页
+                {t('shop.nav.home')}
               </button>
               <button
                 className={`${styles.navButton} ${appState.currentView === 'products' ? styles.active : ''}`}
                 onClick={() => navigate.toProducts()}
               >
-                商品
+                {t('shop.nav.products')}
               </button>
               <button
                 className={`${styles.navButton} ${appState.currentView === 'orders' ? styles.active : ''}`}
                 onClick={navigate.toOrders}
               >
-                订单
+                {t('shop.nav.orders')}
               </button>
               <button
                 className={`${styles.navButton} ${appState.currentView === 'inventory' ? styles.active : ''}`}
                 onClick={navigate.toInventory}
               >
-                背包
+                {t('shop.nav.inventory')}
               </button>
             </div>
           )}

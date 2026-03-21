@@ -1,4 +1,5 @@
 import { Icon } from '@radish/ui/icon';
+import { useTranslation } from 'react-i18next';
 import type { AppDefinition } from '@/desktop/types';
 import styles from './AppIcon.module.css';
 
@@ -13,6 +14,12 @@ export interface AppIconProps {
  * 桌面应用图标组件
  */
 export const AppIcon = ({ app, onDoubleClick }: AppIconProps) => {
+  const { t } = useTranslation();
+  const appName = app.nameKey ? t(app.nameKey) : app.name;
+  const appDescription = app.descriptionKey
+    ? t(app.descriptionKey)
+    : (app.description || app.name);
+
   // 根据应用类型添加不同的样式
   const getIconClass = () => {
     const classes = [styles.icon];
@@ -28,7 +35,7 @@ export const AppIcon = ({ app, onDoubleClick }: AppIconProps) => {
     <div
       className={getIconClass()}
       onDoubleClick={onDoubleClick}
-      title={app.description || app.name}
+      title={appDescription}
     >
       <div className={styles.iconImage}>
         {app.icon.startsWith('mdi:') || app.icon.startsWith('ic:') ? (
@@ -49,7 +56,7 @@ export const AppIcon = ({ app, onDoubleClick }: AppIconProps) => {
           </div>
         )}
       </div>
-      <span className={styles.iconName}>{app.name}</span>
+      <span className={styles.iconName}>{appName}</span>
     </div>
   );
 };

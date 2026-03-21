@@ -307,6 +307,16 @@ var result = await cache.GetAsync<MyType>("key");
   - **嵌入** (`type: 'iframe'`): Docs
   - **外部** (`type: 'external'`): Console (独立 OIDC 认证)
 
+### 前端视觉 / UI 规范
+- **唯一参考**: 视觉和主题口径统一以 `Docs/frontend/visual-theme-spec.md`、`Docs/frontend/visual-color-reference.md` 为准
+- **首版范围**: `radish.client` 需要纳入 `default / guofeng` 主题切换与国风视觉基线，不得只做单一皮肤
+- **风格方向**: 采用淡雅新中式，不做厚重国潮，不做过度装饰，不牺牲内容可读性
+- **纹样使用**: 云纹 / 山纹 / 水纹仅作边缘、角标、分区收边和弱背景修饰，禁止整屏铺纹样
+- **配色实现**: 先定义语义化 token，再落到页面；禁止随意硬编码新颜色，禁止直接把参考色板原样大面积铺设
+- **布局底线**: 视觉改造不得破坏 Dock、桌面图标、窗口容器、滚动区域等基础交互布局
+- **实施顺序**: 优先主题 token、壳层容器和高频页面，再逐步修补业务页细节；首版允许 70% 完成度，但不能阻塞主线
+- **一致性要求**: 文档、设计说明、代码变量命名和实际视觉效果必须保持同一套术语和角色映射
+
 ### React 规范
 1. 函数组件 (`const` 定义)
 2. 避免 `var`，默认 `const`，需重新赋值用 `let`
@@ -569,6 +579,8 @@ SnowFlakeSingle.WorkId = builder.Configuration.GetSection("Snowflake").GetValue<
 - `architecture/specifications.md` - 开发规范详细说明
 - `architecture/framework.md` - 架构设计与技术决策
 - `frontend/design.md` - 前端设计方案
+- `frontend/visual-theme-spec.md` - 视觉主题规范
+- `frontend/visual-color-reference.md` - 颜色角色与取值参考
 - `guide/` - 配置/认证/日志/网关指南
 - `development-plan.md` - 里程碑与周计划
 - `changelog/` - 日常/周进度记录

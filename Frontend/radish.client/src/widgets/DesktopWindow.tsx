@@ -1,4 +1,5 @@
 import { Rnd } from 'react-rnd';
+import { useTranslation } from 'react-i18next';
 import { useWindowStore } from '@/stores/windowStore';
 import { getAppById } from '@/desktop/AppRegistry';
 import { CurrentWindowProvider } from '@/desktop/CurrentWindowContext';
@@ -16,6 +17,7 @@ export interface DesktopWindowProps {
  * 支持拖拽和调整大小
  */
 export const DesktopWindow = ({ window }: DesktopWindowProps) => {
+  const { t } = useTranslation();
   const { closeWindow, minimizeWindow, focusWindow, updateWindowPosition, updateWindowSize, maximizeWindow, unmaximizeWindow } = useWindowStore();
   const app = getAppById(window.appId);
 
@@ -24,6 +26,7 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
   }
 
   const AppComponent = app.component;
+  const appName = app.nameKey ? t(app.nameKey) : app.name;
 
   // 动态计算 iframe URL（支持字符串或函数）
   const iframeUrl = app.type === 'iframe' && app.url
@@ -56,12 +59,12 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
       <div className={`${styles.window} ${window.isMaximized ? styles.windowMaximized : ''}`}>
         {/* 窗口标题栏 */}
         <div className={`${styles.titleBar} window-drag-handle`}>
-          <span className={styles.title}>{app.name}</span>
+          <span className={styles.title}>{appName}</span>
           <div className={styles.controls}>
             <button
               className={`${styles.controlBtn} ${styles.minimizeBtn}`}
               onClick={() => minimizeWindow(window.id)}
-              title="最小化"
+              title={t('desktop.window.minimize')}
             />
             <button
               className={`${styles.controlBtn} ${styles.maximizeBtn}`}
@@ -84,12 +87,12 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
                   y: 0
                 });
               }}
-              title={window.isMaximized ? '还原' : '最大化'}
+              title={window.isMaximized ? t('desktop.window.restore') : t('desktop.window.maximize')}
             />
             <button
               className={`${styles.controlBtn} ${styles.closeBtn}`}
               onClick={() => closeWindow(window.id)}
-              title="关闭"
+              title={t('desktop.window.close')}
             />
           </div>
         </div>
@@ -100,7 +103,7 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
             <iframe
               src={iframeUrl}
               className={styles.iframe}
-              title={app.name}
+              title={appName}
               sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-top-navigation"
             />
           ) : (

@@ -1,0 +1,107 @@
+:root {
+  --theme-font-sans: "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", sans-serif;
+  --theme-font-serif: "STSong", "Songti SC", "Noto Serif SC", serif;
+  --theme-radius-shell: 28px;
+  --theme-radius-panel: 20px;
+  --theme-radius-control: 12px;
+  --theme-radius-pill: 999px;
+  --theme-transition-standard: 220ms cubic-bezier(0.22, 1, 0.36, 1);
+
+  --theme-bg-app: #f4efe6;
+  --theme-bg-surface: #fbf7f0;
+  --theme-bg-surface-muted: rgba(255, 251, 244, 0.76);
+  --theme-bg-muted: #efe7db;
+  --theme-bg-strong: rgba(98, 69, 47, 0.12);
+  --theme-bg-overlay: rgba(251, 247, 240, 0.82);
+  --theme-text-primary: #2f2a25;
+  --theme-text-secondary: #6a5c4f;
+  --theme-text-muted: #8d7b6c;
+  --theme-border-soft: rgba(136, 99, 73, 0.18);
+  --theme-border-strong: rgba(136, 99, 73, 0.32);
+  --theme-brand-primary: #b24057;
+  --theme-brand-soft: rgba(178, 64, 87, 0.14);
+  --theme-accent-jade: #4f9c83;
+  --theme-accent-ink: #435c74;
+  --theme-accent-earth: #886349;
+  --theme-state-success: #4f9c83;
+  --theme-state-danger: #c3564d;
+  --theme-state-info: #435c74;
+  --theme-shadow-soft: 0 16px 40px rgba(91, 66, 44, 0.12);
+  --theme-shadow-strong: 0 28px 60px rgba(91, 66, 44, 0.18);
+  --theme-pattern-line: rgba(122, 92, 64, 0.18);
+  --theme-pattern-edge: rgba(122, 92, 64, 0.24);
+  --theme-shell-background:
+    radial-gradient(circle at 18% 14%, rgba(178, 64, 87, 0.12), transparent 28%),
+    radial-gradient(circle at 84% 16%, rgba(79, 156, 131, 0.12), transparent 24%),
+    radial-gradient(circle at 50% 100%, rgba(136, 99, 73, 0.12), transparent 26%),
+    linear-gradient(180deg, #f8f3ea 0%, #efe6da 52%, #e8dcc9 100%);
+  --theme-shell-overlay:
+    radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.45), transparent 24%),
+    radial-gradient(circle at 76% 20%, rgba(255, 255, 255, 0.22), transparent 22%);
+  --theme-shell-frame-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  --theme-dock-bg: rgba(251, 247, 240, 0.78);
+  --theme-dock-bg-compact: rgba(246, 239, 228, 0.88);
+  --theme-dock-border: rgba(136, 99, 73, 0.22);
+  --theme-dock-text: #2f2a25;
+  --theme-dock-divider: rgba(136, 99, 73, 0.18);
+  --theme-dock-item-bg: rgba(255, 255, 255, 0.42);
+  --theme-dock-item-hover-bg: rgba(255, 255, 255, 0.68);
+  --theme-dock-item-active-bg: rgba(178, 64, 87, 0.16);
+  --theme-dock-item-border: rgba(136, 99, 73, 0.16);
+  --theme-window-bg: rgba(251, 247, 240, 0.94);
+  --theme-window-title-bg: linear-gradient(180deg, rgba(255, 251, 245, 0.96) 0%, rgba(239, 231, 219, 0.98) 100%);
+  --theme-window-title-border: rgba(136, 99, 73, 0.18);
+  --theme-scrollbar-track: rgba(136, 99, 73, 0.08);
+  --theme-scrollbar-thumb: rgba(136, 99, 73, 0.24);
+  --theme-scrollbar-thumb-hover: rgba(136, 99, 73, 0.34);
+}
+
+:root[data-theme='default'] {
+  --theme-bg-app: #edf1f2;
+  --theme-bg-surface: #fbfcfc;
+  --theme-bg-surface-muted: rgba(255, 255, 255, 0.78);
+  --theme-bg-muted: #e1e7e8;
+  --theme-bg-strong: rgba(67, 92, 116, 0.1);
+  --theme-bg-overlay: rgba(247, 250, 250, 0.84);
+  --theme-text-primary: #23313b;
+  --theme-text-secondary: #5d6b75;
+  --theme-text-muted: #7d8a92;
+  --theme-border-soft: rgba(84, 108, 122, 0.16);
+  --theme-border-strong: rgba(84, 108, 122, 0.28);
+  --theme-brand-primary: #587786;
+  --theme-brand-soft: rgba(88, 119, 134, 0.14);
+  --theme-accent-jade: #5d8d7d;
+  --theme-accent-ink: #435c74;
+  --theme-accent-earth: #8b725d;
+  --theme-state-success: #4f8e77;
+  --theme-state-danger: #bb5b54;
+  --theme-state-info: #4d6a80;
+  --theme-shadow-soft: 0 16px 40px rgba(51, 72, 84, 0.12);
+  --theme-shadow-strong: 0 28px 60px rgba(51, 72, 84, 0.16);
+  --theme-pattern-line: rgba(84, 108, 122, 0.12);
+  --theme-pattern-edge: rgba(84, 108, 122, 0.18);
+  --theme-shell-background:
+    radial-gradient(circle at 16% 14%, rgba(88, 119, 134, 0.12), transparent 30%),
+    radial-gradient(circle at 84% 18%, rgba(93, 141, 125, 0.12), transparent 24%),
+    radial-gradient(circle at 54% 100%, rgba(67, 92, 116, 0.1), transparent 24%),
+    linear-gradient(180deg, #f7fbfb 0%, #edf2f3 52%, #dbe4e7 100%);
+  --theme-shell-overlay:
+    radial-gradient(circle at 24% 26%, rgba(255, 255, 255, 0.5), transparent 25%),
+    radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.24), transparent 20%);
+  --theme-shell-frame-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+  --theme-dock-bg: rgba(248, 251, 251, 0.78);
+  --theme-dock-bg-compact: rgba(239, 245, 246, 0.9);
+  --theme-dock-border: rgba(84, 108, 122, 0.2);
+  --theme-dock-text: #23313b;
+  --theme-dock-divider: rgba(84, 108, 122, 0.16);
+  --theme-dock-item-bg: rgba(255, 255, 255, 0.48);
+  --theme-dock-item-hover-bg: rgba(255, 255, 255, 0.72);
+  --theme-dock-item-active-bg: rgba(88, 119, 134, 0.16);
+  --theme-dock-item-border: rgba(84, 108, 122, 0.14);
+  --theme-window-bg: rgba(251, 252, 252, 0.94);
+  --theme-window-title-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(232, 239, 240, 0.98) 100%);
+  --theme-window-title-border: rgba(84, 108, 122, 0.16);
+  --theme-scrollbar-track: rgba(84, 108, 122, 0.08);
+  --theme-scrollbar-thumb: rgba(84, 108, 122, 0.24);
+  --theme-scrollbar-thumb-hover: rgba(84, 108, 122, 0.34);
+}

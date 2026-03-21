@@ -70,3 +70,135 @@
 
 - **帖子服务已按职责拆分目录**：原单体 `PostService.cs` 已重组到 `Radish.Service/Posts/`，按 `Query / Publish / Edit / Interaction` 四类 partial 文件拆分，避免继续维持 1500+ 行超大文件。
 - **设计文档已同步约束**：`specifications.md` 与 `framework.md` 已补“目录 + partial class” 的服务拆分约定，明确这类拆分是治理大文件的允许路径，而不是继续堆积单文件。
+
+## 2026-03-18 (周三)
+
+### P3-ext 第二个最小切片落地
+
+- **投票视图已补状态筛选**：欢迎 App 论坛列表在 `poll` 视图下新增 `全部状态 / 进行中 / 已截止` 三态筛选，不再只能混看全部投票帖。
+- **列表契约继续沿用现有入口扩展**：`Post/GetList` 新增 `pollStatus=all / active / closed`，继续复用帖子列表分页、关键词与排序链路，不额外新增投票状态专用接口。
+- **关闭态口径已统一**：后端当前统一按“手动关闭或截止时间已到”判定 `closed`，避免前端只能按 `IsClosed` 单字段做不完整判断。
+- **最小自动化回归已通过**：`npm run type-check --workspace=radish.client` 已通过，`dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PostControllerTest|FullyQualifiedName~PostServiceTest"` 24 个测试通过；专题文档也已补本次变更回归记录。
+
+### P3-ext 第三个最小切片落地
+
+- **投票视图已补票数排序**：欢迎 App 论坛列表在 `poll` 视图下新增“票数”排序，当前投票视图只保留 `最新 / 票数` 两个最小排序入口。
+- **列表契约继续沿用现有入口扩展**：`Post/GetList` 新增 `sortBy=votes`，排序口径为“置顶优先 -> 票数降序 -> 创建时间倒序”，不额外新增投票专用排序接口。
+- **最小自动化回归已通过**：`npm run type-check --workspace=radish.client` 已通过，`dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PostControllerTest|FullyQualifiedName~PostServiceTest"` 26 个测试通过；专题文档也已补本次变更回归记录。
+
+### P3-ext 第四个最小切片落地
+
+- **投票视图已补即将截止排序**：欢迎 App 论坛列表在 `poll` 视图下新增“即将截止”排序，当前投票视图已具备 `最新 / 票数 / 即将截止` 三个最小排序入口。
+- **列表契约继续沿用现有入口扩展**：`Post/GetList` 新增 `sortBy=deadline`，排序口径为“置顶优先 -> 进行中且有截止时间的按截止时间升序 -> 长期有效 -> 已截止”，不额外新增投票专用排序接口。
+- **最小自动化回归已通过**：`npm run type-check --workspace=radish.client` 已通过，`dotnet test Radish.Api.Tests --filter "FullyQualifiedName~PostControllerTest|FullyQualifiedName~PostServiceTest"` 28 个测试通过；专题文档也已补本次变更回归记录。
+- **SQLite 联调兼容性已修复**：真实联调中点击投票“进行中”筛选会触发 SQLite `near \"(\": syntax error`，原因是 `Nullable<DateTime>` 的 `HasValue/Value` 在当前查询翻译下生成了不兼容 SQL；现已改为 `null` 比较写法并完成代码修复。
+- **真实联调结论已回写**：你已完成一轮真实联调，确认 `全部状态 / 进行中 / 已截止` 与 `最新 / 票数 / 即将截止` 组合切换正常，且 SQLite 下“进行中”筛选不再抛异常。
+
+### P3-ext 第五个最小切片落地
+
+- **投票详情已补关闭管理**：欢迎 App 论坛帖子详情页新增“结束投票”按钮，仅发帖者可手动关闭进行中的投票。
+- **关闭契约继续沿用论坛投票控制器**：新增 `Poll/Close` 接口，关闭后立即切换为“已截止”，不额外引入重新开启、管理员代关或通知联动。
+- **专题回归入口已同步**：`Radish.Api.Forum.Poll.http` 已补“结束投票”请求，专题文档的最小人工验收顺序也已补入作者关闭动作。
+- **最小自动化回归已通过**：`npm run type-check --workspace=radish.client` 已通过，投票服务与投票控制器共 10 个测试已通过；默认输出目录因运行中的 `Radish.Api` / `Radish.Auth` 被占用，实际在临时输出目录完成编译与测试验证。
+
+### P3-ext 投票回归资产收口
+
+- **HttpTest 执行入口已补齐**：`Radish.Api.Forum.Poll.http` 已补 `pollStatus`、`sortBy` 与关闭后回查入口，并在文件尾部注明推荐执行顺序，便于串联真实联调。
+- **论坛投票回归口径已统一**：`regression-index.md` 与 `forum-poll-mvp.md` 已统一到“投票视图 / 状态筛选 / 票数排序 / 即将截止排序 / 结束投票”的最小专题回归集。
+- **Windows 锁文件说明已补文档**：`validation-baseline.md` 已补充本机运行宿主时默认输出目录被占用的注意事项，明确“停宿主优先、隔离输出兜底、自动化与联调分开”的处理方式。
+
+### 阶段策略重新对齐
+
+- **按 2026-03-18 当日口径，当前主线已切换**：项目策略当时明确切换为“社区主功能收官与 dev 首版准备”，不再把社区非阻塞小切片增强作为当前主线。
+- **执行原则已写入规划页**：`current.md`、`development-plan.md` 与 `backlog.md` 已统一到“先主线、后细节；先闭环、后打磨；不留坑、不留技术债”的阶段原则。
+- **社区增强统一后置**：`P3-ext`、`P4-ext`、`P5-ext`、`Console-ext Phase 2+` 等增强项统一后置到首个 dev 版本之后再评估，避免继续稀释当前主线推进速度。
+- **后续口径说明**：以上为 `2026-03-18` 当天的阶段判断记录；自 `2026-03-19` 起，首版范围已进一步重定义为“[首版 dev 边界](/planning/dev-first-scope)”，后续以 `development-plan.md`、`planning/current.md` 与 `planning/backlog.md` 的最新口径为准。
+
+## 2026-03-19 (周四)
+
+### 首版 dev 边界与视觉口径对齐
+
+- **首版范围文档已冻结**：新增并完善 `dev-first-scope.md`、`dev-first-status-matrix.md`，明确首版 `dev` 以“所有纳入范围的核心功能主线至少完成 70%”为边界，不再以单条社区子线收口替代整体判断。
+- **国风体验主线已纳入首版**：已明确把国风视觉基线、`radish.client` 主题切换和 `radish.client` i18n 纳入首版范围，不再后置到首版之后再讨论。
+- **视觉规范已完成文档化**：新增 `visual-theme-spec.md`、`visual-color-reference.md` 与颜色参考演示页，并把参考纹样素材收纳到 `Docs/images/theme-reference/`，作为后续主题落地唯一口径。
+
+### `radish.client` 主题基础设施启动
+
+- **主题 Token 与切换骨架已落地**：`radish.client` 已新增 `default / guofeng` 两套主题定义、根级 CSS Token、主题持久化与切换骨架，桌面端当前不再停留在“未接主题系统”的状态。
+- **桌面壳层首批已接入主题**：Shell、Dock、桌面图标容器与桌面窗口已完成首批样式 token 化，国风视觉基线已从纯文档阶段进入代码落地阶段。
+- **主题切换入口已可见**：Dock 已补最小可见的主题切换入口，为后续高频业务页适配提供基础开关与验证路径。
+
+### 首轮回归问题已收口
+
+- **Dock 定位回归已修复**：主题首批落地后，Dock 曾出现“不可见 / 偏到左下 / 落到底部中间”等定位问题；现已重构为 `Shell` 内的独立层级容器，顶部居中定位恢复稳定。
+- **桌面图标布局回归已修复**：桌面图标容器已从不稳定的换列表现调整为固定两列网格，恢复原先主桌面布局口径。
+- **视觉规范已同步协作约束**：`CLAUDE.md` 与 `AGENTS.md` 已补前端视觉 / UI 规范，明确“视觉改造不得破坏 Dock、桌面图标、窗口容器等基础交互布局”。
+
+### 当日验证结果
+
+- **前端类型检查通过**：`npm run type-check --workspace=radish.client` 已通过。
+- **前端构建验证通过**：`npm run build --workspace=radish.client` 已通过；沙盒环境下仍会遇到 `vite` 的 `spawn EPERM`，系统环境构建验证结果正常。
+- **当前阶段结论更新**：国风视觉基线已从“待启动”切换为“已完成规范冻结并进入首轮落地”，`radish.client` 主题切换当前为“桌面壳层骨架已落地、核心业务页仍待接入”，`radish.client` i18n 仍待补齐。
+
+## 2026-03-20 (周五)
+
+### `radish.client` i18n 首轮主链路继续扩展
+
+- **桌面壳层与应用入口已补语言切换链路**：桌面层语言切换入口保持可见，应用注册、桌面图标与窗口标题已统一改为翻译键，不再继续散落壳层级硬编码文案。
+- **商城主链路已完成首轮资源化**：商城首页、商品列表 / 详情、订单列表 / 详情、背包、购买弹窗与购买动作提示已完成中英文资源接入，当前商城主链不再停留在“顶层入口可切语言、进入页面仍大量中文硬编码”的状态。
+- **论坛高频讨论链路已完成首轮资源化**：帖子列表、帖子详情讨论区、评论树、评论表单、评论卡片与帖子卡片等高频组件已切到翻译键，论坛讨论主链的中英文切换可用性明显提升。
+- **相关提交**：`d933142`、`0a8adbf`。
+
+### 当前体验主线判断更新
+
+- **`radish.client` i18n 已从“待启动”切换为“首轮覆盖进行中”**：当前已完成桌面壳层、商城主链路与论坛高频讨论链路的首轮覆盖，但聊天与其余业务页仍待继续补齐。
+- **主题与 i18n 的协同边界更清晰**：当前优先把核心页面文案与语言切换主链打通，再继续处理聊天、剩余论坛细节页以及深层组件的主题 token 与硬编码样式清理。
+
+### 当日验证结果
+
+- **前端类型检查通过**：`npm run type-check --workspace=radish.client` 已通过。
+- **前端构建验证通过**：`npm run build --workspace=radish.client` 已通过；沙盒环境下仍会遇到 `vite` 的 `spawn EPERM`，系统环境构建验证结果正常。
+- **既有构建 warning 仍存在但未扩大**：`MarkdownRenderer.tsx` 同时被动态与静态引入导致 chunk 不会继续拆分，此为既存 warning，不是本轮新增回归。
+
+### 文档与规划口径同步
+
+- **规划页已对齐今天状态**：`development-plan.md`、`planning/current.md`、`dev-first-scope.md` 与 `dev-first-status-matrix.md` 已把 `radish.client` i18n 从“待启动”更新为“首轮覆盖进行中”。
+- **设计口径已同步当前落点**：`frontend/design.md` 与 `frontend/visual-theme-spec.md` 已补桌面壳层、商城主链路与论坛高频讨论链路的当前覆盖范围，并明确剩余聊天与其他业务页是下一步重点。
+
+## 2026-03-21 (周六)
+
+### `radish.client` i18n 第二轮个人中心补齐
+
+- **个人中心高频剩余模块已补齐首轮资源化**：头像上传弹窗、我的附件列表、钱包卡片、交易记录列表已完成中英文翻译键接入，不再保留明显中文硬编码。
+- **共享通用词条已补边界**：`i18n.ts` 已新增 `common.all`、头像上传错误提示、附件业务类型、钱包字段、交易状态与分页提示等中英文资源。
+- **聊天 / 通知 / 个人中心首轮覆盖口径已闭合**：继前一日桌面壳层、商城、论坛主链之后，当前已把聊天高频消息链路、通知中心主列表与个人中心高频模块统一纳入首轮 i18n 覆盖面。
+- **相关提交**：`21433cda`、`5f241bf`。
+
+### 个人中心主题 token 收口
+
+- **高频模块样式已切回统一主题变量**：头像上传、附件列表、钱包与交易记录的高频颜色、边框、背景与交互态已从零散硬编码收口到现有 `--theme-*` token。
+- **本轮保持布局克制**：只替换配色与状态表达，不重做个人中心现有布局结构，避免在体验主线收口阶段引入新的交互回归。
+
+### 自动化验证与文档对齐
+
+- **前端类型检查通过**：`npm run type-check --workspace=radish.client` 与 `npm run type-check --workspace=@radish/ui` 已通过。
+- **设计与规划文档已同步**：`frontend/design.md`、`frontend/visual-theme-spec.md`、`development-plan.md`、`planning/current.md` 与 `planning/dev-first-status-matrix.md` 已更新到 `2026-03-21` 口径，明确当前 i18n 与主题首轮覆盖已推进到聊天、通知中心与个人中心高频模块。
+- **当前剩余重点已收束**：下一步从“继续补聊天 / 通知 / 个人中心高频模块”切换为“优先补文档应用主链，再清理论坛 / 通知 / 个人中心残余边缘页与深层硬编码样式”。
+
+### 文档应用主链主题与 i18n 收口
+
+- **文档应用主链已完成首轮收口**：`WikiApp` 已补齐主阅读链路的主题变量与翻译键接入，文档头部、目录区、详情阅读与基础状态文案不再停留在“桌面可切语言、进入文档仍明显单语”的状态。
+- **自动化验证继续通过**：本轮 `npm run type-check --workspace=radish.client` 与 `npm run build --workspace=radish.client` 已继续通过，既有 `MarkdownRenderer` chunk warning 未扩大。
+- **相关提交**：`750dd81d`。
+
+### 论坛边缘页与深层样式继续收口
+
+- **论坛边缘页已补齐主题与 i18n**：分类列表、帖子编辑弹窗、编辑历史弹窗、帖子详情边缘区等页面与交互文案已完成当前批次资源化和主题变量替换。
+- **论坛深层样式已继续切回主题 token**：评论树、评论表单与帖子卡片中的高频背景、边框、状态色和交互色已进一步从硬编码收口到 `--theme-*` 变量。
+- **宿主层残余回退文案已补边界**：论坛宿主层打开他人资料时的兜底用户名，以及个人中心宿主层窗口参数缺省时的兜底用户名，现已统一改用 `common.userFallback`，避免继续散落硬编码 `用户 {id}`。
+- **相关提交**：`2477d5e1`、`5a86e07d`、`93f03c9d`。
+
+### 本轮状态判断更新
+
+- **当前体验主线口径已前移**：文档应用主链已从“下一步优先项”切换为“本轮已完成收口”，论坛边缘页与深层样式也已继续推进。
+- **下一步建议已收束**：后续优先补通知中心 / 个人中心残余边缘页与少量失败兜底文案，再组织一轮语言切换与主题切换烟雾验证。

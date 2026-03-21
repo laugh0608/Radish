@@ -9,12 +9,19 @@
     "Frontend/radish.ui"
   ],
   "scripts": {
+    "check:repo-hygiene": "git ls-files -z | node Scripts/check-repo-hygiene.mjs --stdin-z",
+    "check:repo-hygiene:staged": "git diff --cached --name-only --diff-filter=ACMR -z | node Scripts/check-repo-hygiene.mjs --stdin-z",
+    "check:commit-message": "node Scripts/validate-commit-message.mjs",
     "check:console-permissions": "node Scripts/check-console-permissions.mjs",
     "check:identity-claims": "node Scripts/check-identity-claims.mjs",
     "dev:frontend": "npm run dev --workspace=radish.client",
     "dev:console": "npm run dev --workspace=radish.console",
     "dev:gateway": "dotnet run --project Radish.Gateway/Radish.Gateway.csproj",
     "dev:api": "dotnet run --project Radish.Api/Radish.Api.csproj",
+    "lint:changed": "git diff --name-only --diff-filter=ACMR -z | node Scripts/lint-frontend-changed.mjs --stdin-z",
+    "lint:staged": "git diff --cached --name-only --diff-filter=ACMR -z | node Scripts/lint-frontend-changed.mjs --stdin-z",
+    "lint": "npm run lint --workspace=@radish/ui && npm run lint --workspace=radish.client && npm run lint --workspace=radish.console",
+    "setup:hooks": "git config core.hooksPath .githooks",
     "type-check": "npm run type-check --workspace=@radish/ui && npm run type-check --workspace=radish.client && npm run type-check --workspace=radish.console",
     "type-check:ui": "npm run type-check --workspace=@radish/ui",
     "type-check:client": "npm run type-check --workspace=radish.client",
@@ -22,6 +29,7 @@
     "validate:baseline": "node Scripts/validate-baseline.mjs",
     "validate:baseline:quick": "node Scripts/validate-baseline.mjs --quick",
     "validate:baseline:host": "node Scripts/validate-baseline.mjs --with-host-checks",
+    "validate:ci": "npm run lint:changed && npm run validate:baseline:quick",
     "install:all": "npm install"
   }
 }

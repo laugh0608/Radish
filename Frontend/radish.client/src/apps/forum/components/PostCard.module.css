@@ -1,18 +1,19 @@
 .card {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  background-color: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 16px;
   padding: 14px 16px;
   cursor: pointer;
   transition: all 0.2s ease;
   margin-bottom: 12px;
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .card:hover {
-  background-color: #f9fafb;
-  border-color: #d1d5db;
+  background-color: color-mix(in srgb, var(--theme-brand-soft) 16%, var(--theme-bg-surface) 84%);
+  border-color: var(--theme-border-strong);
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--theme-shadow-strong);
 }
 
 .layout {
@@ -37,7 +38,7 @@
 .title {
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   margin: 0;
   line-height: 1.45;
   overflow: hidden;
@@ -61,8 +62,8 @@
   align-items: center;
   padding: 2px 9px;
   border-radius: 999px;
-  background: rgba(45, 108, 223, 0.12);
-  color: #1e40af;
+  background: var(--theme-brand-soft);
+  color: var(--theme-brand-primary);
   font-size: 11px;
   font-weight: 600;
   line-height: 1.4;
@@ -74,41 +75,41 @@
   align-items: center;
   padding: 2px 7px;
   border-radius: 999px;
-  background: #fef3c7;
-  color: #92400e;
+  background: color-mix(in srgb, var(--theme-accent-earth) 16%, var(--theme-bg-surface) 84%);
+  color: var(--theme-accent-earth);
   font-size: 11px;
   font-weight: 600;
   flex-shrink: 0;
 }
 
 .pollChip {
-  background: #dcfce7;
-  color: #166534;
+  background: color-mix(in srgb, var(--theme-state-success) 16%, var(--theme-bg-surface) 84%);
+  color: var(--theme-state-success);
 }
 
 .lotteryChip {
-  background: #ffedd5;
-  color: #c2410c;
+  background: color-mix(in srgb, var(--theme-accent-earth) 14%, var(--theme-bg-surface) 86%);
+  color: var(--theme-accent-earth);
 }
 
 .lotteryDoneChip {
-  background: #e2e8f0;
-  color: #475569;
+  background: color-mix(in srgb, var(--theme-bg-muted) 78%, var(--theme-bg-surface) 22%);
+  color: var(--theme-text-secondary);
 }
 
 .questionChip {
-  background: #e0f2fe;
-  color: #0f4c81;
+  background: color-mix(in srgb, var(--theme-state-info) 14%, var(--theme-bg-surface) 86%);
+  color: var(--theme-state-info);
 }
 
 .solvedChip {
-  background: #dcfce7;
-  color: #166534;
+  background: color-mix(in srgb, var(--theme-state-success) 16%, var(--theme-bg-surface) 84%);
+  color: var(--theme-state-success);
 }
 
 .pendingChip {
-  background: #fee2e2;
-  color: #991b1b;
+  background: color-mix(in srgb, var(--theme-state-danger) 14%, var(--theme-bg-surface) 86%);
+  color: var(--theme-state-danger);
 }
 
 .tagChip {
@@ -116,8 +117,8 @@
   align-items: center;
   padding: 2px 8px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.06);
-  color: #475569;
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, var(--theme-bg-surface) 24%);
+  color: var(--theme-text-secondary);
   font-size: 11px;
   line-height: 1.4;
   white-space: nowrap;
@@ -126,7 +127,7 @@
 
 .emptyTag {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -138,8 +139,8 @@
   align-items: center;
   padding: 2px 6px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.05);
-  color: #64748b;
+  background: color-mix(in srgb, var(--theme-bg-muted) 74%, var(--theme-bg-surface) 26%);
+  color: var(--theme-text-secondary);
   font-size: 10px;
   font-weight: 600;
   flex-shrink: 0;
@@ -152,8 +153,12 @@
   min-width: 0;
   padding: 4px 8px;
   border-radius: 8px;
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.09), rgba(245, 158, 11, 0.05));
-  border: 1px solid rgba(245, 158, 11, 0.18);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-accent-earth) 12%, var(--theme-bg-surface) 88%),
+    color-mix(in srgb, var(--theme-brand-soft) 18%, var(--theme-bg-surface) 82%)
+  );
+  border: 1px solid color-mix(in srgb, var(--theme-accent-earth) 18%, transparent);
 }
 
 .godCommentBadge {
@@ -161,8 +166,8 @@
   align-items: center;
   padding: 1px 6px;
   border-radius: 999px;
-  background: rgba(245, 158, 11, 0.18);
-  color: #b45309;
+  background: color-mix(in srgb, var(--theme-accent-earth) 18%, var(--theme-bg-surface) 82%);
+  color: var(--theme-accent-earth);
   font-size: 10px;
   font-weight: 700;
   line-height: 1.2;
@@ -172,7 +177,7 @@
 .godCommentText {
   min-width: 0;
   font-size: 11px;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
   line-height: 1.35;
   white-space: nowrap;
   overflow: hidden;
@@ -182,7 +187,7 @@
 .side {
   width: 216px;
   min-width: 190px;
-  border-left: 1px solid #e5e7eb;
+  border-left: 1px solid var(--theme-border-soft);
   padding-left: 12px;
   display: flex;
   flex-direction: column;
@@ -218,7 +223,7 @@
 }
 
 .authorLink:hover .authorName {
-  color: #2563eb;
+  color: var(--theme-brand-primary);
 }
 
 .avatar {
@@ -230,7 +235,7 @@
   justify-content: center;
   font-size: 12px;
   font-weight: 700;
-  border: 1px solid rgba(59, 130, 246, 0.2);
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -246,7 +251,7 @@
 .authorName {
   font-size: 12px;
   font-weight: 600;
-  color: #334155;
+  color: var(--theme-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -265,19 +270,19 @@
   gap: 4px;
   padding: 3px 7px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.05);
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, var(--theme-bg-surface) 24%);
 }
 
 .statLabel {
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
   line-height: 1;
 }
 
 .statValue {
   font-size: 12px;
   font-weight: 700;
-  color: #334155;
+  color: var(--theme-text-primary);
   line-height: 1;
 }
 
@@ -290,7 +295,7 @@
 
 .interactionLabel {
   font-size: 11px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   flex-shrink: 0;
 }
 
@@ -315,24 +320,24 @@
   justify-content: center;
   font-size: 10px;
   font-weight: 700;
-  border: 1px solid rgba(148, 163, 184, 0.35);
+  border: 1px solid color-mix(in srgb, var(--theme-border-strong) 82%, transparent);
   overflow: hidden;
 }
 
 .moreCount {
   font-size: 10px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   font-weight: 600;
 }
 
 .noInteraction {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--theme-text-muted);
 }
 
 .time {
   font-size: 11px;
-  color: #64748b;
+  color: var(--theme-text-secondary);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -354,7 +359,7 @@
     width: 100%;
     min-width: 0;
     border-left: none;
-    border-top: 1px dashed #e5e7eb;
+    border-top: 1px dashed var(--theme-border-soft);
     padding-left: 0;
     padding-top: 10px;
   }

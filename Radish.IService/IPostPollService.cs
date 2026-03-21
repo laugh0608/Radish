@@ -22,4 +22,13 @@ public interface IPostPollService
     /// <param name="request">投票请求</param>
     /// <returns>最新投票详情</returns>
     Task<PostPollVo> VoteAsync(long userId, string userName, VotePollDto request);
+
+    /// <summary>
+    /// 手动结束投票
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="userId">当前用户 Id</param>
+    /// <param name="userName">当前用户名</param>
+    /// <returns>最新投票详情</returns>
+    Task<PostPollVo> CloseAsync(long postId, long userId, string userName);
 }

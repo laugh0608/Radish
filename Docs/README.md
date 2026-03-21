@@ -6,6 +6,8 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 
 - [文档首页](./index.md)
 - [开发路线图总览](./development-plan.md)
+- [首版 dev 边界](./planning/dev-first-scope.md)
+- [首版 dev 功能矩阵状态表](./planning/dev-first-status-matrix.md)
 - [当前进行中](./planning/current.md)
 - [Console 权限治理 V1](./guide/console-permission-governance.md)
 - [Console 权限覆盖矩阵](./guide/console-permission-coverage-matrix.md)
@@ -24,6 +26,8 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 ## 前端与交互
 
 - [前端设计](./frontend/design.md)
+- [视觉主题规范](./frontend/visual-theme-spec.md)
+- [视觉颜色参考](./frontend/visual-color-reference.md)
 - [文档系统方案](./guide/document-system.md)
 - [论坛投票 MVP 设计方案](./features/forum-poll-mvp.md)
 - [论坛问答 MVP 设计方案](./features/forum-qa-mvp.md)

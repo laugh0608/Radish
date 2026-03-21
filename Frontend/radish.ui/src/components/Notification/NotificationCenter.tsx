@@ -1,7 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
-import { Notification, type NotificationItemData } from './Notification';
+import { Notification, type NotificationItemData, type NotificationTextOverrides } from './Notification';
 import { NotificationBadge } from './NotificationBadge';
 import styles from './NotificationCenter.module.css';
+
+export interface NotificationCenterTextOverrides extends NotificationTextOverrides {
+  triggerTitle?: string;
+  panelTitle?: string;
+  markAllRead?: string;
+  loading?: string;
+  emptyTitle?: string;
+  viewMore?: string;
+}
 
 export interface NotificationCenterProps {
   /** 未读数量 */
@@ -20,6 +29,10 @@ export interface NotificationCenterProps {
   onDelete?: (id: number) => void;
   /** 查看更多回调 */
   onViewMore?: () => void;
+  /** 文案覆盖 */
+  labels?: NotificationCenterTextOverrides;
+  /** 相对时间格式化 */
+  formatRelativeTime?: (createdAt: string) => string;
 }
 
 /**
@@ -35,7 +48,9 @@ export const NotificationCenter = ({
   onMarkAsRead,
   onMarkAllAsRead,
   onDelete,
-  onViewMore
+  onViewMore,
+  labels,
+  formatRelativeTime
 }: NotificationCenterProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -71,7 +86,7 @@ export const NotificationCenter = ({
       <button
         className={`${styles.trigger} ${isOpen ? styles.active : ''}`}
         onClick={togglePanel}
-        title="通知中心"
+        title={labels?.triggerTitle ?? '通知中心'}
       >
         🔔
         <NotificationBadge count={unreadCount} size="small" />
@@ -83,7 +98,7 @@ export const NotificationCenter = ({
           {/* 面板头部 */}
           <div className={styles.header}>
             <h3 className={styles.title}>
-              通知中心
+              {labels?.panelTitle ?? '通知中心'}
               {unreadCount > 0 && (
                 <span className={styles.badge}>
                   <NotificationBadge count={unreadCount} />
@@ -92,7 +107,7 @@ export const NotificationCenter = ({
             </h3>
             {unreadCount > 0 && (
               <button className={styles.markAllBtn} onClick={onMarkAllAsRead}>
-                全部已读
+                {labels?.markAllRead ?? '全部已读'}
               </button>
             )}
           </div>
@@ -100,7 +115,7 @@ export const NotificationCenter = ({
           {/* 通知列表 */}
           <div className={styles.list}>
             {loading ? (
-              <div className={styles.loading}>加载中...</div>
+              <div className={styles.loading}>{labels?.loading ?? '加载中...'}</div>
             ) : notifications.length > 0 ? (
               notifications.map((notification) => (
                 <Notification
@@ -110,12 +125,14 @@ export const NotificationCenter = ({
                   onMarkAsRead={onMarkAsRead}
                   onDelete={onDelete}
                   showActions={true}
+                  labels={labels}
+                  formatRelativeTime={formatRelativeTime}
                 />
               ))
             ) : (
               <div className={styles.empty}>
                 <div className={styles.emptyIcon}>🔔</div>
-                <div className={styles.emptyText}>暂无通知</div>
+                <div className={styles.emptyText}>{labels?.emptyTitle ?? '暂无通知'}</div>
               </div>
             )}
           </div>
@@ -124,7 +141,7 @@ export const NotificationCenter = ({
           {notifications.length > 0 && (
             <div className={styles.footer}>
               <button className={styles.viewMoreBtn} onClick={onViewMore}>
-                查看全部通知
+                {labels?.viewMore ?? '查看全部通知'}
               </button>
             </div>
           )}

@@ -29,9 +29,11 @@
 - `Radish.Api.Community.http`
 - `Radish.Api.Forum.Core.http`
 - `Radish.Api.Forum.Comment.http`
-- `Radish.Api.Forum.Lottery.http`
 - `Radish.Api.Forum.Poll.http`
+- 覆盖发帖附带投票、投票视图、状态筛选、票数排序、即将截止排序、提交投票、重复投票拦截、结束投票与截止态拦截。
+- 欢迎 App 的列表 / 详情交互仍需结合专题文档中的最小人工验收顺序一起确认。
 - `Radish.Api.Forum.Question.http`
+- `Radish.Api.Forum.Lottery.http`
 
 ### 用户与个人中心
 

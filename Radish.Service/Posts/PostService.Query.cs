@@ -101,9 +101,22 @@ public partial class PostService
         string sortBy = "newest",
         string? keyword = null,
         DateTime? startTime = null,
-        DateTime? endTime = null)
+        DateTime? endTime = null,
+        bool? isClosed = null)
     {
-        var pollPostIds = (await _postPollRepository.QueryAsync(poll => !poll.IsDeleted))
+        var utcNow = DateTime.UtcNow;
+        Expression<Func<PostPoll, bool>> pollCondition = isClosed switch
+        {
+            true => poll => !poll.IsDeleted &&
+                            (poll.IsClosed || (poll.EndTime != null && poll.EndTime <= utcNow)),
+            false => poll => !poll.IsDeleted &&
+                             !poll.IsClosed &&
+                             (poll.EndTime == null || poll.EndTime > utcNow),
+            _ => poll => !poll.IsDeleted
+        };
+
+        var polls = await _postPollRepository.QueryAsync(pollCondition);
+        var pollPostIds = polls
             .Select(poll => poll.PostId)
             .Distinct()
             .ToList();
@@ -133,6 +146,8 @@ public partial class PostService
 
         return sortBy switch
         {
+            "deadline" => await QueryPollPostsByDeadlineAsync(baseCondition, polls, pageIndex, pageSize),
+            "votes" => await QueryPollPostsByVotesAsync(baseCondition, polls, pageIndex, pageSize),
             "hottest" => await QueryPollPostsByHottestAsync(baseCondition, pageIndex, pageSize),
             "essence" => await QueryPageAsync(
                 baseCondition,
@@ -398,6 +413,53 @@ public partial class PostService
         return (data, totalCount);
     }
 
+    private async Task<(List<PostVo> data, int totalCount)> QueryPollPostsByVotesAsync(
+        Expression<Func<Post, bool>> baseCondition,
+        List<PostPoll> polls,
+        int pageIndex,
+        int pageSize)
+    {
+        var allPosts = await QueryAsync(baseCondition);
+        var totalCount = allPosts.Count;
+        var pollVoteCountMap = polls
+            .GroupBy(poll => poll.PostId)
+            .ToDictionary(group => group.Key, group => group.First().TotalVoteCount);
+
+        var data = allPosts
+            .OrderByDescending(post => post.VoIsTop)
+            .ThenByDescending(post => pollVoteCountMap.GetValueOrDefault(post.VoId))
+            .ThenByDescending(post => post.VoCreateTime)
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return (data, totalCount);
+    }
+
+    private async Task<(List<PostVo> data, int totalCount)> QueryPollPostsByDeadlineAsync(
+        Expression<Func<Post, bool>> baseCondition,
+        List<PostPoll> polls,
+        int pageIndex,
+        int pageSize)
+    {
+        var allPosts = await QueryAsync(baseCondition);
+        var totalCount = allPosts.Count;
+        var pollMap = polls
+            .GroupBy(poll => poll.PostId)
+            .ToDictionary(group => group.Key, group => group.First());
+
+        var data = allPosts
+            .OrderByDescending(post => post.VoIsTop)
+            .ThenBy(post => GetPollDeadlineGroup(pollMap.GetValueOrDefault(post.VoId)))
+            .ThenBy(post => GetPollDeadlineTicksKey(pollMap.GetValueOrDefault(post.VoId)))
+            .ThenByDescending(post => post.VoCreateTime)
+            .Skip((pageIndex - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return (data, totalCount);
+    }
+
     private async Task<PostQuestionVo?> BuildPostQuestionVoAsync(long postId, string answerSort = "default")
     {
         var question = await _postQuestionRepository.QueryFirstAsync(q => q.PostId == postId && !q.IsDeleted);
@@ -460,6 +522,58 @@ public partial class PostService
     private static bool IsPollClosed(PostPoll poll)
     {
         return poll.IsClosed || (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow);
+    }
+
+    private static int GetPollDeadlineGroup(PostPoll? poll)
+    {
+        if (poll == null)
+        {
+            return 4;
+        }
+
+        var isClosed = IsPollClosed(poll);
+        if (!isClosed && poll.EndTime.HasValue)
+        {
+            return 0;
+        }
+
+        if (!isClosed)
+        {
+            return 1;
+        }
+
+        if (poll.EndTime.HasValue)
+        {
+            return 2;
+        }
+
+        return 3;
+    }
+
+    private static long GetPollDeadlineTicksKey(PostPoll? poll)
+    {
+        if (poll == null)
+        {
+            return long.MaxValue;
+        }
+
+        var isClosed = IsPollClosed(poll);
+        if (!isClosed && poll.EndTime.HasValue)
+        {
+            return poll.EndTime.Value.Ticks;
+        }
+
+        if (!isClosed)
+        {
+            return long.MaxValue;
+        }
+
+        if (poll.EndTime.HasValue)
+        {
+            return -poll.EndTime.Value.Ticks;
+        }
+
+        return long.MaxValue;
     }
 
     private async Task<Dictionary<long, int>> BuildLotteryParticipantCountMapAsync(

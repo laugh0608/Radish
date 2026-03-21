@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import type { Order } from '@/types/shop';
 import { getOrderStatusColor, OrderStatus } from '@/api/shop';
@@ -18,6 +19,7 @@ export const OrderDetail = ({
   onBack,
   onCancelOrder
 }: OrderDetailProps) => {
+  const { t } = useTranslation();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
@@ -27,7 +29,7 @@ export const OrderDetail = ({
       <div className={styles.container}>
         <div className={styles.loading}>
           <div className={styles.spinner}></div>
-          <p>加载中...</p>
+          <p>{t('shop.loading')}</p>
         </div>
       </div>
     );
@@ -37,10 +39,10 @@ export const OrderDetail = ({
     return (
       <div className={styles.container}>
         <div className={styles.error}>
-          <h2>订单不存在</h2>
-          <p>您访问的订单可能已被删除或不存在</p>
+          <h2>{t('shop.notFound.orderTitle')}</h2>
+          <p>{t('shop.notFound.orderDescription')}</p>
           <button className={styles.backButton} onClick={onBack}>
-            返回订单列表
+            {t('shop.backToOrders')}
           </button>
         </div>
       </div>
@@ -90,9 +92,9 @@ export const OrderDetail = ({
       {/* 顶部导航 */}
       <div className={styles.header}>
         <button className={styles.backButton} onClick={onBack}>
-          ← 返回
+          ← {t('shop.back')}
         </button>
-        <h1 className={styles.title}>订单详情</h1>
+        <h1 className={styles.title}>{t('shop.orderDetail.title')}</h1>
       </div>
 
       <div className={styles.content}>
@@ -104,12 +106,12 @@ export const OrderDetail = ({
           >
             {order.voStatusDisplay ?? ''}
           </div>
-          <div className={styles.orderNo}>订单号：{order.voOrderNo}</div>
+          <div className={styles.orderNo}>{t('shop.orders.orderNo', { orderNo: order.voOrderNo })}</div>
         </div>
 
         {/* 商品信息 */}
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>商品信息</h2>
+          <h2 className={styles.sectionTitle}>{t('shop.orderDetail.productInfo')}</h2>
           <div className={styles.productInfo}>
             <div className={styles.productImage}>
               {order.voProductIcon ? (
@@ -125,24 +127,24 @@ export const OrderDetail = ({
               <h3 className={styles.productName}>{order.voProductName}</h3>
               <div className={styles.productMeta}>
                 <div className={styles.metaItem}>
-                  <span className={styles.metaLabel}>单价：</span>
+                  <span className={styles.metaLabel}>{t('shop.orderDetail.unitPrice')}</span>
                   <span className={styles.metaValue}>
-                    {order.voUnitPrice.toLocaleString()} 胡萝卜
+                    {order.voUnitPrice.toLocaleString()} {t('shop.currency.carrot')}
                   </span>
                 </div>
                 <div className={styles.metaItem}>
-                  <span className={styles.metaLabel}>数量：</span>
-                  <span className={styles.metaValue}>{order.voQuantity} 件</span>
+                  <span className={styles.metaLabel}>{t('shop.orderDetail.quantity')}</span>
+                  <span className={styles.metaValue}>{t('shop.productCount', { count: order.voQuantity })}</span>
                 </div>
                 <div className={styles.metaItem}>
-                  <span className={styles.metaLabel}>总价：</span>
+                  <span className={styles.metaLabel}>{t('shop.orderDetail.totalPrice')}</span>
                   <span className={styles.metaValue}>
-                    {order.voTotalPrice.toLocaleString()} 胡萝卜
+                    {order.voTotalPrice.toLocaleString()} {t('shop.currency.carrot')}
                   </span>
                 </div>
                 {order.voDurationDisplay && (
                   <div className={styles.metaItem}>
-                    <span className={styles.metaLabel}>有效期：</span>
+                    <span className={styles.metaLabel}>{t('shop.orderDetail.duration')}</span>
                     <span className={styles.metaValue}>{order.voDurationDisplay}</span>
                   </div>
                 )}
@@ -153,21 +155,21 @@ export const OrderDetail = ({
 
         {/* 订单时间轴 */}
         <div className={styles.section}>
-          <h2 className={styles.sectionTitle}>订单跟踪</h2>
+          <h2 className={styles.sectionTitle}>{t('shop.orderDetail.statusTrack')}</h2>
           <div className={styles.timeline}>
             <div className={styles.timelineItem}>
               <div className={styles.timelineDot}></div>
               <div className={styles.timelineContent}>
-                <div className={styles.timelineTitle}>创建订单</div>
+                <div className={styles.timelineTitle}>{t('shop.orderDetail.create')}</div>
                 <div className={styles.timelineTime}>{formatTime(order.voCreateTime)}</div>
               </div>
             </div>
 
             {order.voPaidTime && (
               <div className={styles.timelineItem}>
-                <div className={styles.timelineDot}></div>
-                <div className={styles.timelineContent}>
-                  <div className={styles.timelineTitle}>支付完成</div>
+              <div className={styles.timelineDot}></div>
+              <div className={styles.timelineContent}>
+                  <div className={styles.timelineTitle}>{t('shop.orderDetail.paid')}</div>
                   <div className={styles.timelineTime}>{formatTime(order.voPaidTime)}</div>
                 </div>
               </div>
@@ -175,9 +177,9 @@ export const OrderDetail = ({
 
             {order.voCompletedTime && (
               <div className={styles.timelineItem}>
-                <div className={styles.timelineDot}></div>
-                <div className={styles.timelineContent}>
-                  <div className={styles.timelineTitle}>订单完成</div>
+              <div className={styles.timelineDot}></div>
+              <div className={styles.timelineContent}>
+                  <div className={styles.timelineTitle}>{t('shop.orderDetail.completed')}</div>
                   <div className={styles.timelineTime}>{formatTime(order.voCompletedTime)}</div>
                 </div>
               </div>
@@ -185,13 +187,13 @@ export const OrderDetail = ({
 
             {order.voCancelledTime && (
               <div className={styles.timelineItem}>
-                <div className={`${styles.timelineDot} ${styles.cancelled}`}></div>
-                <div className={styles.timelineContent}>
-                  <div className={styles.timelineTitle}>订单取消</div>
+              <div className={`${styles.timelineDot} ${styles.cancelled}`}></div>
+              <div className={styles.timelineContent}>
+                  <div className={styles.timelineTitle}>{t('shop.orderDetail.cancelled')}</div>
                   <div className={styles.timelineTime}>{formatTime(order.voCancelledTime)}</div>
                   {order.voCancelReason && (
                     <div className={styles.timelineReason}>
-                      取消原因：{order.voCancelReason}
+                      {t('shop.orderDetail.cancelReason', { reason: order.voCancelReason })}
                     </div>
                   )}
                 </div>
@@ -200,11 +202,11 @@ export const OrderDetail = ({
 
             {order.voStatus === OrderStatus.Failed && order.voFailReason && (
               <div className={styles.timelineItem}>
-                <div className={`${styles.timelineDot} ${styles.failed}`}></div>
-                <div className={styles.timelineContent}>
-                  <div className={styles.timelineTitle}>发放失败</div>
+              <div className={`${styles.timelineDot} ${styles.failed}`}></div>
+              <div className={styles.timelineContent}>
+                  <div className={styles.timelineTitle}>{t('shop.orderDetail.failed')}</div>
                   <div className={styles.timelineReason}>
-                    失败原因：{order.voFailReason}
+                    {t('shop.orderDetail.failReason', { reason: order.voFailReason })}
                   </div>
                 </div>
               </div>
@@ -215,10 +217,10 @@ export const OrderDetail = ({
         {/* 权益到期时间 */}
         {order.voBenefitExpiresAt && (
           <div className={styles.section}>
-            <h2 className={styles.sectionTitle}>权益信息</h2>
+            <h2 className={styles.sectionTitle}>{t('shop.orderDetail.benefitInfo')}</h2>
             <div className={styles.benefitInfo}>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>权益到期时间：</span>
+                <span className={styles.infoLabel}>{t('shop.orderDetail.expireAt')}</span>
                 <span className={styles.infoValue}>{formatTime(order.voBenefitExpiresAt)}</span>
               </div>
             </div>
@@ -232,7 +234,7 @@ export const OrderDetail = ({
               className={styles.cancelOrderButton}
               onClick={handleCancelClick}
             >
-              取消订单
+              {t('shop.orderDetail.cancelOrder')}
             </button>
           </div>
         )}
@@ -243,19 +245,19 @@ export const OrderDetail = ({
         <div className={styles.dialogOverlay} onClick={handleCloseCancelDialog}>
           <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
             <div className={styles.dialogHeader}>
-              <h3>取消订单</h3>
+              <h3>{t('shop.orderDetail.cancelDialogTitle')}</h3>
               <button className={styles.dialogClose} onClick={handleCloseCancelDialog}>
                 ✕
               </button>
             </div>
             <div className={styles.dialogContent}>
-              <p>确定要取消这个订单吗？</p>
+              <p>{t('shop.orderDetail.cancelDialogConfirm')}</p>
               <div className={styles.reasonInput}>
-                <label>取消原因（可选）：</label>
+                <label>{t('shop.orderDetail.cancelDialogReason')}</label>
                 <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="请输入取消原因..."
+                  placeholder={t('shop.orderDetail.cancelDialogPlaceholder')}
                   rows={3}
                   maxLength={200}
                 />
@@ -267,14 +269,14 @@ export const OrderDetail = ({
                 onClick={handleCloseCancelDialog}
                 disabled={cancelling}
               >
-                返回
+                {t('shop.back')}
               </button>
               <button
                 className={styles.dialogConfirmButton}
                 onClick={handleConfirmCancel}
                 disabled={cancelling}
               >
-                {cancelling ? '取消中...' : '确认取消'}
+                {cancelling ? t('shop.orderDetail.cancelling') : t('shop.orderDetail.confirmCancel')}
               </button>
             </div>
           </div>

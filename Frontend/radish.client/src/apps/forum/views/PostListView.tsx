@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type {
   Category,
   PostItem,
   CommentHighlight,
   ForumPostViewMode,
   QuestionStatusFilter,
+  PollStatusFilter,
   ForumPostSortBy
 } from '@/api/forum';
 import { Icon } from '@radish/ui/icon';
@@ -24,6 +26,7 @@ interface PostListViewProps {
   sortBy: ForumPostSortBy;
   postViewMode: ForumPostViewMode;
   questionStatus: QuestionStatusFilter;
+  pollStatus: PollStatusFilter;
   loadingPosts: boolean;
   canPublish: boolean;
 
@@ -31,6 +34,7 @@ interface PostListViewProps {
   onSortChange: (sortBy: ForumPostSortBy) => void;
   onViewModeChange: (mode: ForumPostViewMode) => void;
   onQuestionStatusChange: (status: QuestionStatusFilter) => void;
+  onPollStatusChange: (status: PollStatusFilter) => void;
   onOpenSearch: (keyword: string) => void;
   onPageChange: (page: number) => void;
   onPostClick: (postId: number) => void;
@@ -50,17 +54,20 @@ export const PostListView = ({
   sortBy,
   postViewMode,
   questionStatus,
+  pollStatus,
   loadingPosts,
   canPublish,
   onSortChange,
   onViewModeChange,
   onQuestionStatusChange,
+  onPollStatusChange,
   onOpenSearch,
   onPageChange,
   onPostClick,
   onAuthorClick,
   onPublishClick
 }: PostListViewProps) => {
+  const { t } = useTranslation();
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [searchDraftKeyword, setSearchDraftKeyword] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -103,26 +110,26 @@ export const PostListView = ({
           <h2 className={styles.toolbarTitle}>
             {selectedTagName
               ? `#${selectedTagName}`
-              : categories.find(c => c.voId === selectedCategoryId)?.voName || '全部帖子'}
+              : categories.find(c => c.voId === selectedCategoryId)?.voName || t('forum.allPosts')}
           </h2>
           <div className={styles.viewButtons}>
             <button
               className={`${styles.sortButton} ${postViewMode === 'all' ? styles.sortActive : ''}`}
               onClick={() => onViewModeChange('all')}
             >
-              全部
+              {t('forum.viewMode.all')}
             </button>
             <button
               className={`${styles.sortButton} ${postViewMode === 'question' ? styles.sortActive : ''}`}
               onClick={() => onViewModeChange('question')}
             >
-              问答
+              {t('forum.viewMode.question')}
             </button>
             <button
               className={`${styles.sortButton} ${postViewMode === 'poll' ? styles.sortActive : ''}`}
               onClick={() => onViewModeChange('poll')}
             >
-              投票
+              {t('forum.viewMode.poll')}
             </button>
           </div>
           {postViewMode === 'question' && (
@@ -131,19 +138,41 @@ export const PostListView = ({
                 className={`${styles.sortButton} ${questionStatus === 'all' ? styles.sortActive : ''}`}
                 onClick={() => onQuestionStatusChange('all')}
               >
-                全部状态
+                {t('forum.filter.allStatus')}
               </button>
               <button
                 className={`${styles.sortButton} ${questionStatus === 'pending' ? styles.sortActive : ''}`}
                 onClick={() => onQuestionStatusChange('pending')}
               >
-                待解决
+                {t('forum.filter.pending')}
               </button>
               <button
                 className={`${styles.sortButton} ${questionStatus === 'solved' ? styles.sortActive : ''}`}
                 onClick={() => onQuestionStatusChange('solved')}
               >
-                已解决
+                {t('forum.filter.solved')}
+              </button>
+            </div>
+          )}
+          {postViewMode === 'poll' && (
+            <div className={styles.filterButtons}>
+              <button
+                className={`${styles.sortButton} ${pollStatus === 'all' ? styles.sortActive : ''}`}
+                onClick={() => onPollStatusChange('all')}
+              >
+                {t('forum.filter.allStatus')}
+              </button>
+              <button
+                className={`${styles.sortButton} ${pollStatus === 'active' ? styles.sortActive : ''}`}
+                onClick={() => onPollStatusChange('active')}
+              >
+                {t('forum.filter.active')}
+              </button>
+              <button
+                className={`${styles.sortButton} ${pollStatus === 'closed' ? styles.sortActive : ''}`}
+                onClick={() => onPollStatusChange('closed')}
+              >
+                {t('forum.filter.closed')}
               </button>
             </div>
           )}
@@ -152,7 +181,7 @@ export const PostListView = ({
               className={`${styles.sortButton} ${sortBy === 'newest' ? styles.sortActive : ''}`}
               onClick={() => onSortChange('newest')}
             >
-              最新
+              {t('forum.sort.newest')}
             </button>
             {postViewMode === 'question' ? (
               <>
@@ -160,13 +189,28 @@ export const PostListView = ({
                   className={`${styles.sortButton} ${sortBy === 'pending' ? styles.sortActive : ''}`}
                   onClick={() => onSortChange('pending')}
                 >
-                  待解决优先
+                  {t('forum.sort.pendingFirst')}
                 </button>
                 <button
                   className={`${styles.sortButton} ${sortBy === 'answers' ? styles.sortActive : ''}`}
                   onClick={() => onSortChange('answers')}
                 >
-                  回答数
+                  {t('forum.sort.answers')}
+                </button>
+              </>
+            ) : postViewMode === 'poll' ? (
+              <>
+                <button
+                  className={`${styles.sortButton} ${sortBy === 'votes' ? styles.sortActive : ''}`}
+                  onClick={() => onSortChange('votes')}
+                >
+                  {t('forum.sort.votes')}
+                </button>
+                <button
+                  className={`${styles.sortButton} ${sortBy === 'deadline' ? styles.sortActive : ''}`}
+                  onClick={() => onSortChange('deadline')}
+                >
+                  {t('forum.sort.deadline')}
                 </button>
               </>
             ) : (
@@ -175,7 +219,7 @@ export const PostListView = ({
                   className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.sortActive : ''}`}
                   onClick={() => onSortChange('hottest')}
                 >
-                  最热
+                  {t('forum.sort.hottest')}
                 </button>
               </>
             )}
@@ -189,7 +233,7 @@ export const PostListView = ({
                 ref={searchInputRef}
                 type="text"
                 className={styles.searchInput}
-                placeholder="输入关键词后搜索"
+                placeholder={t('forum.searchInputPlaceholder')}
                 value={searchDraftKeyword}
                 onChange={(event) => setSearchDraftKeyword(event.target.value)}
                 onKeyDown={(event) => {
@@ -206,15 +250,15 @@ export const PostListView = ({
                 type="button"
                 className={styles.searchActionButton}
                 onClick={submitSearch}
-                aria-label="执行搜索"
+                aria-label={t('forum.searchSubmit')}
               >
-                搜索
+                {t('forum.searchSubmit')}
               </button>
               <button
                 type="button"
                 className={styles.searchCollapseButton}
                 onClick={() => setIsSearchExpanded(false)}
-                aria-label="收起搜索"
+                aria-label={t('forum.searchCollapse')}
               >
                 ×
               </button>
@@ -224,12 +268,12 @@ export const PostListView = ({
               type="button"
               className={styles.searchCapsuleCollapsed}
               onClick={() => setIsSearchExpanded(true)}
-              aria-label="展开搜索"
+              aria-label={t('forum.searchExpand')}
             >
               <span className={styles.searchIcon} aria-hidden="true">
                 <Icon icon="mdi:magnify" size={14} />
               </span>
-              <span className={styles.searchPlaceholder}>搜索帖子</span>
+              <span className={styles.searchPlaceholder}>{t('forum.searchPosts')}</span>
             </button>
           )}
 
@@ -238,9 +282,9 @@ export const PostListView = ({
             className={styles.publishButton}
             onClick={onPublishClick}
             disabled={!canPublish}
-            title={!canPublish ? '请先登录后再发帖' : '发布新帖'}
+            title={!canPublish ? t('forum.loginRequiredToPublish') : t('forum.publishNewPost')}
           >
-            发帖
+            {t('forum.publishPost')}
           </button>
         </div>
       </div>
@@ -248,9 +292,9 @@ export const PostListView = ({
       {/* 帖子瀑布流 */}
       <div className={styles.postsFeed}>
         {loadingPosts ? (
-          <p className={styles.loadingText}>加载中...</p>
+          <p className={styles.loadingText}>{t('forum.loadingPosts')}</p>
         ) : posts.length === 0 ? (
-          <p className={styles.emptyText}>暂无帖子</p>
+          <p className={styles.emptyText}>{t('forum.emptyPosts')}</p>
         ) : (
           posts.map((post) => {
             const godComment = postGodComments.get(post.voId);

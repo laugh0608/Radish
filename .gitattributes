@@ -13,6 +13,7 @@
 
 # Shell scripts should keep LF
 *.sh    text eol=lf
+.githooks/* text eol=lf
 
 # Common binaries (never perform EOL conversion)
 *.png   binary

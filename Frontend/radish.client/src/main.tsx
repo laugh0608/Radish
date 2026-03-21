@@ -2,6 +2,9 @@ import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { configureApiClient } from '@radish/http';
 import { tokenService } from '@/services/tokenService';
+import { ThemeProvider } from '@/theme/ThemeProvider';
+import { initializeTheme } from '@/theme/theme';
+import './theme/theme-tokens.css';
 import './index.css';
 import './i18n';
 import 'highlight.js/styles/github-dark.css';
@@ -17,14 +20,18 @@ const isDemo = params.has('demo');
 
 const Page = isOidcCallback || isDemo ? App : Shell;
 
+initializeTheme();
+
 configureApiClient({
   getToken: () => tokenService.getAccessToken(),
 });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center' }}>应用加载中...</div>}>
-      <Page />
-    </Suspense>
+    <ThemeProvider>
+      <Suspense fallback={<div className="appLoading">应用加载中...</div>}>
+        <Page />
+      </Suspense>
+    </ThemeProvider>
   </StrictMode>
 );

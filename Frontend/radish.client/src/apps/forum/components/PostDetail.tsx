@@ -35,6 +35,7 @@ interface PostDetailProps {
   isLiked?: boolean;
   onLike?: (postId: number) => void;
   onVotePoll?: (optionId: number) => Promise<void>;
+  onClosePoll?: () => Promise<void>;
   onDrawLottery?: () => Promise<void>;
   onAnswerQuestion?: (content: string) => Promise<void>;
   onAcceptAnswer?: (answerId: number) => Promise<void>;
@@ -66,6 +67,7 @@ export const PostDetail = ({
   isLiked = false,
   onLike,
   onVotePoll,
+  onClosePoll,
   onDrawLottery,
   onAnswerQuestion,
   onAcceptAnswer,
@@ -90,6 +92,8 @@ export const PostDetail = ({
   onAuthorClick,
 }: PostDetailProps) => {
   const { t } = useTranslation();
+  const anonymousUserLabel = t('forum.postCard.anonymousUser');
+  const unknownTimeLabel = t('forum.postCard.unknownTime');
   const parsedTags = post?.voTags
     ? post.voTags
         .split(',')
@@ -103,6 +107,7 @@ export const PostDetail = ({
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
   const [acceptingAnswerId, setAcceptingAnswerId] = useState<number | null>(null);
   const [isDrawingLottery, setIsDrawingLottery] = useState(false);
+  const [isClosingPoll, setIsClosingPoll] = useState(false);
 
   const isAuthor = !!post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
   const showFollowAction = isAuthenticated && !!post && !isAuthor && post.voAuthorId > 0;
@@ -112,6 +117,7 @@ export const PostDetail = ({
   const isLotteryPost = !!post?.voHasLottery && !!lottery;
   const canAnswerQuestion = isAuthenticated && !isSubmittingAnswer;
   const canViewQuestionHistory = isQuestionPost && !!onViewHistory;
+  const totalAnswerCount = question?.voAnswerCount ?? post?.voAnswerCount ?? 0;
   const drawTimeValue = lottery?.voDrawTime ? new Date(lottery.voDrawTime) : null;
   const isDrawTimeReached = !drawTimeValue || Number.isNaN(drawTimeValue.getTime()) || drawTimeValue.getTime() <= Date.now();
   const canDrawLottery = Boolean(
@@ -125,12 +131,12 @@ export const PostDetail = ({
   const lotteryStatusText = !lottery
     ? ''
     : lottery.voIsDrawn
-      ? '已开奖'
+      ? t('forum.postDetail.lottery.status.drawn')
       : isAuthor
         ? isDrawTimeReached
-          ? '可立即开奖'
-          : '等待开奖时间'
-        : '等待发帖者开奖';
+          ? t('forum.postDetail.lottery.status.canDraw')
+          : t('forum.postDetail.lottery.status.waitTime')
+        : t('forum.postDetail.lottery.status.waitAuthor');
   const sortedAnswers = !question?.voAnswers
     ? []
     : [...question.voAnswers].sort((left, right) => {
@@ -153,8 +159,14 @@ export const PostDetail = ({
     ? sortedAnswers.filter(answer => answer.voIsAccepted)
     : sortedAnswers;
   const questionEmptyText = question?.voAnswerCount
-    ? '当前筛选下还没有已采纳答案。'
-    : '还没有回答，欢迎先来补充。';
+    ? t('forum.postDetail.question.emptyAccepted')
+    : t('forum.postDetail.question.emptyAll');
+  const lotteryRules = [
+    t('forum.postDetail.lottery.rule.comment'),
+    t('forum.postDetail.lottery.rule.reply'),
+    t('forum.postDetail.lottery.rule.unique'),
+    t('forum.postDetail.lottery.rule.author'),
+  ];
 
   const buildAvatarText = (name: string) => {
     const source = name.trim();
@@ -187,8 +199,8 @@ export const PostDetail = ({
   if (loading) {
     return (
       <div className={styles.container}>
-        <h3 className={styles.title}>帖子详情</h3>
-        <p className={styles.loadingText}>加载帖子详情中...</p>
+        <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>
+        <p className={styles.loadingText}>{t('forum.postDetail.loading')}</p>
       </div>
     );
   }
@@ -196,23 +208,24 @@ export const PostDetail = ({
   if (!post) {
     return (
       <div className={styles.container}>
-        <h3 className={styles.title}>帖子详情</h3>
-        <p className={styles.emptyText}>请选择一个帖子查看详情</p>
+        <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>
+        <p className={styles.emptyText}>{t('forum.postDetail.empty')}</p>
       </div>
     );
   }
 
   const poll = post.voPoll;
   const canSubmitPoll = !!poll && !poll.voIsClosed && !poll.voHasVoted && isAuthenticated;
+  const canClosePoll = !!poll && !poll.voIsClosed && isAuthor && !!onClosePoll;
   const pollStatusText = !poll
     ? ''
     : poll.voIsClosed
-      ? '投票已结束'
+      ? t('forum.postDetail.poll.status.closed')
       : poll.voHasVoted
-        ? '你已投票，可查看实时结果'
+        ? t('forum.postDetail.poll.status.voted')
         : isAuthenticated
-          ? '选择一个选项后即可提交'
-          : '登录后可参与投票';
+          ? t('forum.postDetail.poll.status.ready')
+          : t('forum.postDetail.poll.status.loginRequired');
 
   const handleVoteSubmit = async () => {
     if (!canSubmitPoll || !selectedOptionId || !onVotePoll) {
@@ -224,6 +237,19 @@ export const PostDetail = ({
       await onVotePoll(selectedOptionId);
     } finally {
       setIsVoting(false);
+    }
+  };
+
+  const handleClosePoll = async () => {
+    if (!canClosePoll || !onClosePoll) {
+      return;
+    }
+
+    setIsClosingPoll(true);
+    try {
+      await onClosePoll();
+    } finally {
+      setIsClosingPoll(false);
     }
   };
 
@@ -298,17 +324,17 @@ export const PostDetail = ({
 
   return (
     <div className={styles.container}>
-      <h3 className={styles.title}>帖子详情</h3>
+      <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>
       <div className={styles.postContent}>
         <h4 className={styles.postTitle}>{post.voTitle}</h4>
         {isQuestionPost && (
           <div className={styles.statusRow}>
-            <span className={`${styles.statusBadge} ${styles.questionBadge}`}>问答</span>
+            <span className={`${styles.statusBadge} ${styles.questionBadge}`}>{t('forum.postDetail.questionBadge')}</span>
             <span className={`${styles.statusBadge} ${post.voIsSolved ? styles.solvedBadge : styles.pendingBadge}`}>
-              {post.voIsSolved ? '已解决' : '待解决'}
+              {post.voIsSolved ? t('forum.postDetail.statusSolved') : t('forum.postDetail.statusPending')}
             </span>
             <span className={`${styles.statusBadge} ${styles.answerBadge}`}>
-              回答 {post.voAnswerCount ?? question?.voAnswerCount ?? 0}
+              {t('forum.postDetail.answerCount', { count: totalAnswerCount })}
             </span>
           </div>
         )}
@@ -319,13 +345,13 @@ export const PostDetail = ({
               className={styles.authorLink}
               onClick={() => onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl)}
             >
-              作者：{post.voAuthorName}
+              {t('forum.postDetail.author', { name: post.voAuthorName })}
             </button>
           )}
           {post.voCreateTime && <span> · {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}</span>}
-          {post.voViewCount !== undefined && <span> · 浏览 {post.voViewCount}</span>}
+          {post.voViewCount !== undefined && <span> · {t('forum.postDetail.views', { count: post.voViewCount })}</span>}
         </div>
-        <Suspense fallback={<div className={styles.postBody}>正文渲染中...</div>}>
+        <Suspense fallback={<div className={styles.postBody}>{t('forum.postDetail.rendering')}</div>}>
           <MarkdownRenderer content={post.voContent} className={styles.postBody} stickerMap={stickerMap} />
         </Suspense>
         {tagList.length > 0 && (
@@ -343,16 +369,22 @@ export const PostDetail = ({
             <div className={styles.pollHeader}>
               <div>
                 <div className={styles.pollTitleRow}>
-                  <span className={styles.pollBadge}>投票</span>
+                  <span className={styles.pollBadge}>{t('forum.postDetail.poll.badge')}</span>
                   <h5 className={styles.pollQuestion}>{poll.voQuestion}</h5>
                 </div>
                 <p className={styles.pollMeta}>
-                  共 {poll.voTotalVoteCount} 票
-                  {poll.voEndTime ? ` · 截止于 ${formatDateTimeByTimeZone(poll.voEndTime, displayTimeZone)}` : ' · 长期有效'}
+                  {t('forum.postDetail.poll.meta', { count: poll.voTotalVoteCount })}
+                  {poll.voEndTime
+                    ? ` · ${t('forum.postDetail.poll.endsAt', { time: formatDateTimeByTimeZone(poll.voEndTime, displayTimeZone) })}`
+                    : ` · ${t('forum.postDetail.poll.noDeadline')}`}
                 </p>
               </div>
               <span className={`${styles.pollState} ${poll.voIsClosed ? styles.pollStateClosed : ''}`}>
-                {poll.voIsClosed ? '已截止' : poll.voHasVoted ? '已投票' : '进行中'}
+                {poll.voIsClosed
+                  ? t('forum.postDetail.poll.state.closed')
+                  : poll.voHasVoted
+                    ? t('forum.postDetail.poll.state.voted')
+                    : t('forum.postDetail.poll.state.active')}
               </span>
             </div>
 
@@ -375,7 +407,10 @@ export const PostDetail = ({
                     <div className={styles.pollOptionTop}>
                       <span className={styles.pollOptionText}>{option.voOptionText}</span>
                       <span className={styles.pollOptionValue}>
-                        {option.voVoteCount} 票 · {option.voVotePercent.toFixed(2)}%
+                        {t('forum.postDetail.poll.optionValue', {
+                          count: option.voVoteCount,
+                          percent: option.voVotePercent.toFixed(2)
+                        })}
                       </span>
                     </div>
                     <div className={styles.pollProgressTrack}>
@@ -391,14 +426,28 @@ export const PostDetail = ({
 
             <div className={styles.pollFooter}>
               <span className={styles.pollHint}>{pollStatusText}</span>
-              <button
-                type="button"
-                className={styles.pollSubmitButton}
-                onClick={handleVoteSubmit}
-                disabled={!canSubmitPoll || !selectedOptionId || isVoting}
-              >
-                {isVoting ? '提交中...' : '提交投票'}
-              </button>
+              <div className={styles.pollActionButtons}>
+                {canClosePoll && (
+                  <button
+                    type="button"
+                    className={styles.pollCloseButton}
+                    onClick={() => {
+                      void handleClosePoll();
+                    }}
+                    disabled={isClosingPoll}
+                  >
+                    {isClosingPoll ? t('forum.postDetail.poll.closeLoading') : t('forum.postDetail.poll.close')}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={styles.pollSubmitButton}
+                  onClick={handleVoteSubmit}
+                  disabled={!canSubmitPoll || !selectedOptionId || isVoting}
+                >
+                  {isVoting ? t('forum.postDetail.poll.submitLoading') : t('forum.postDetail.poll.submit')}
+                </button>
+              </div>
             </div>
           </section>
         )}
@@ -408,16 +457,16 @@ export const PostDetail = ({
             <div className={styles.lotteryHeader}>
               <div>
                 <div className={styles.lotteryTitleRow}>
-                  <span className={styles.lotteryBadge}>抽奖</span>
+                  <span className={styles.lotteryBadge}>{t('forum.postDetail.lottery.badge')}</span>
                   <h5 className={styles.lotteryTitle}>{lottery.voPrizeName}</h5>
                 </div>
                 <p className={styles.lotteryMeta}>
-                  参与 {lottery.voParticipantCount} 人
+                  {t('forum.postDetail.lottery.participants', { count: lottery.voParticipantCount })}
                   {' · '}
-                  中奖 {lottery.voWinnerCount} 人
+                  {t('forum.postDetail.lottery.winners', { count: lottery.voWinnerCount })}
                   {lottery.voDrawTime
-                    ? ` · 开奖时间 ${formatDateTimeByTimeZone(lottery.voDrawTime, displayTimeZone)}`
-                    : ' · 未设置开奖时间'}
+                    ? ` · ${t('forum.postDetail.lottery.drawTime', { time: formatDateTimeByTimeZone(lottery.voDrawTime, displayTimeZone) })}`
+                    : ` · ${t('forum.postDetail.lottery.drawTimeUnset')}`}
                 </p>
               </div>
               <span className={`${styles.lotteryState} ${lottery.voIsDrawn ? styles.lotteryStateDrawn : ''}`}>
@@ -430,23 +479,22 @@ export const PostDetail = ({
             )}
 
             <div className={styles.lotteryRules}>
-              <span className={styles.lotteryRule}>发布一条顶级评论即可参与</span>
-              <span className={styles.lotteryRule}>回复他人评论不计入资格</span>
-              <span className={styles.lotteryRule}>同一用户按 1 个资格去重</span>
-              <span className={styles.lotteryRule}>发帖者本人不进入中奖池</span>
+              {lotteryRules.map(rule => (
+                <span key={rule} className={styles.lotteryRule}>{rule}</span>
+              ))}
             </div>
 
             <div className={styles.lotteryFooter}>
               <span className={styles.lotteryHint}>
                 {lottery.voIsDrawn
                   ? lottery.voDrawnAt
-                    ? `已于 ${formatDateTimeByTimeZone(lottery.voDrawnAt, displayTimeZone)} 开奖`
-                    : '已完成开奖'
+                    ? t('forum.postDetail.lottery.hint.drawnAt', { time: formatDateTimeByTimeZone(lottery.voDrawnAt, displayTimeZone) })
+                    : t('forum.postDetail.lottery.hint.drawnDone')
                   : isAuthor
                     ? isDrawTimeReached
-                      ? '开奖后会固化中奖名单，不会重复随机。'
-                      : '未到开奖时间前不可开奖。'
-                    : '中奖名单会在发帖者开奖后展示。'}
+                      ? t('forum.postDetail.lottery.hint.authorReady')
+                      : t('forum.postDetail.lottery.hint.authorWaiting')
+                    : t('forum.postDetail.lottery.hint.visitor')}
               </span>
               {canDrawLottery && (
                 <button
@@ -457,7 +505,7 @@ export const PostDetail = ({
                   }}
                   disabled={isDrawingLottery}
                 >
-                  {isDrawingLottery ? '开奖中...' : '立即开奖'}
+                  {isDrawingLottery ? t('forum.postDetail.lottery.drawLoading') : t('forum.postDetail.lottery.drawNow')}
                 </button>
               )}
             </div>
@@ -465,8 +513,8 @@ export const PostDetail = ({
             {lottery.voWinners.length > 0 ? (
               <div className={styles.lotteryWinnerSection}>
                 <div className={styles.lotteryWinnerHeader}>
-                  <span className={styles.lotteryWinnerTitle}>中奖名单</span>
-                  <span className={styles.lotteryWinnerCount}>共 {lottery.voWinners.length} 人</span>
+                  <span className={styles.lotteryWinnerTitle}>{t('forum.postDetail.lottery.winnerTitle')}</span>
+                  <span className={styles.lotteryWinnerCount}>{t('forum.postDetail.lottery.winnerCount', { count: lottery.voWinners.length })}</span>
                 </div>
                 <div className={styles.lotteryWinnerList}>
                   {lottery.voWinners.map((winner, index) => (
@@ -490,7 +538,7 @@ export const PostDetail = ({
               </div>
             ) : (
               <p className={styles.lotteryEmpty}>
-                {lottery.voIsDrawn ? '本次开奖暂无中奖名单。' : '开奖后将在这里展示中奖名单。'}
+                {lottery.voIsDrawn ? t('forum.postDetail.lottery.emptyDrawn') : t('forum.postDetail.lottery.emptyPending')}
               </p>
             )}
           </section>
@@ -501,17 +549,19 @@ export const PostDetail = ({
             <div className={styles.questionHeader}>
               <div>
                 <div className={styles.questionTitleRow}>
-                  <span className={styles.questionSectionBadge}>回答</span>
-                  <h5 className={styles.questionTitle}>解决方案</h5>
+                  <span className={styles.questionSectionBadge}>{t('forum.postDetail.question.badge')}</span>
+                  <h5 className={styles.questionTitle}>{t('forum.postDetail.question.title')}</h5>
                 </div>
                 <p className={styles.questionMeta}>
-                  {question?.voIsSolved ? '该问题已采纳答案' : '该问题尚未采纳答案'}
+                  {question?.voIsSolved
+                    ? t('forum.postDetail.question.meta.solved')
+                    : t('forum.postDetail.question.meta.pending')}
                   {' · '}
-                  共 {question?.voAnswerCount ?? post.voAnswerCount ?? 0} 条回答
+                  {t('forum.postDetail.question.totalAnswers', { count: totalAnswerCount })}
                 </p>
                 <div className={styles.answerToolbar}>
                   <div className={styles.answerToolbarGroup}>
-                    <span className={styles.answerToolbarLabel}>排序</span>
+                    <span className={styles.answerToolbarLabel}>{t('forum.postDetail.question.sort')}</span>
                     <div className={styles.answerSortButtons}>
                       <button
                         type="button"
@@ -520,7 +570,7 @@ export const PostDetail = ({
                           void onAnswerSortChange?.('default');
                         }}
                       >
-                        默认排序
+                        {t('forum.postDetail.question.sortDefault')}
                       </button>
                       <button
                         type="button"
@@ -529,26 +579,26 @@ export const PostDetail = ({
                           void onAnswerSortChange?.('latest');
                         }}
                       >
-                        最新回答
+                        {t('forum.postDetail.question.sortLatest')}
                       </button>
                     </div>
                   </div>
                   <div className={styles.answerToolbarGroup}>
-                    <span className={styles.answerToolbarLabel}>筛选</span>
+                    <span className={styles.answerToolbarLabel}>{t('forum.postDetail.question.filter')}</span>
                     <div className={styles.answerSortButtons}>
                       <button
                         type="button"
                         className={`${styles.answerSortButton} ${answerFilter === 'all' ? styles.answerSortButtonActive : ''}`}
                         onClick={() => onAnswerFilterChange?.('all')}
                       >
-                        全部回答
+                        {t('forum.postDetail.question.filterAll')}
                       </button>
                       <button
                         type="button"
                         className={`${styles.answerSortButton} ${answerFilter === 'accepted' ? styles.answerSortButtonActive : ''}`}
                         onClick={() => onAnswerFilterChange?.('accepted')}
                       >
-                        只看已采纳
+                        {t('forum.postDetail.question.filterAccepted')}
                       </button>
                     </div>
                   </div>
@@ -556,17 +606,17 @@ export const PostDetail = ({
               </div>
               <div className={styles.questionHeaderActions}>
                 <span className={`${styles.questionState} ${question?.voIsSolved ? styles.questionStateSolved : styles.questionStatePending}`}>
-                  {question?.voIsSolved ? '已解决' : '待解决'}
+                  {question?.voIsSolved ? t('forum.postDetail.statusSolved') : t('forum.postDetail.statusPending')}
                 </span>
                 {canViewQuestionHistory && (
                   <button
                     type="button"
                     onClick={() => onViewHistory?.(post.voId)}
                     className={styles.historyButton}
-                    title="查看问题历史"
+                    title={t('forum.postDetail.question.history')}
                   >
                     <Icon icon="mdi:history" size={18} />
-                    问题历史
+                    {t('forum.postDetail.question.history')}
                   </button>
                 )}
               </div>
@@ -575,6 +625,7 @@ export const PostDetail = ({
             {displayedAnswers.length > 0 ? (
               <div className={styles.answerList}>
                 {displayedAnswers.map((answer) => {
+                  const answerAuthorName = answer.voAuthorName || anonymousUserLabel;
                   const canAccept =
                     isAuthor &&
                     !question?.voIsSolved &&
@@ -587,7 +638,7 @@ export const PostDetail = ({
                       className={`${styles.answerItem} ${answer.voIsAccepted ? styles.answerItemAccepted : ''}`}
                     >
                       {answer.voIsAccepted && (
-                        <div className={styles.answerAcceptedBanner}>最佳答案</div>
+                        <div className={styles.answerAcceptedBanner}>{t('forum.postDetail.question.bestAnswer')}</div>
                       )}
                       <div className={styles.answerMeta}>
                         <div className={styles.answerAuthorBlock}>
@@ -595,32 +646,32 @@ export const PostDetail = ({
                             type="button"
                             className={styles.answerAuthorButton}
                             onClick={() => onAuthorClick?.(answer.voAuthorId, answer.voAuthorName, answer.voAuthorAvatarUrl)}
-                            title={`查看 ${answer.voAuthorName || '匿名用户'} 的主页`}
+                            title={t('forum.postDetail.answerProfileTitle', { name: answerAuthorName })}
                           >
                             <span
                               className={styles.answerAvatar}
-                              style={answer.voAuthorAvatarUrl?.trim() ? undefined : buildAvatarStyle(answer.voAuthorName || '匿名用户')}
+                              style={answer.voAuthorAvatarUrl?.trim() ? undefined : buildAvatarStyle(answerAuthorName)}
                             >
                               {answer.voAuthorAvatarUrl?.trim() ? (
                                 <img
                                   src={answer.voAuthorAvatarUrl}
-                                  alt={answer.voAuthorName || '匿名用户'}
+                                  alt={answerAuthorName}
                                   className={styles.answerAvatarImage}
                                   loading="lazy"
                                 />
                               ) : (
-                                buildAvatarText(answer.voAuthorName || '匿名用户')
+                                buildAvatarText(answerAuthorName)
                               )}
                             </span>
-                            <span className={styles.answerAuthor}>{answer.voAuthorName || '匿名用户'}</span>
+                            <span className={styles.answerAuthor}>{answerAuthorName}</span>
                           </button>
                           <span className={styles.answerTime}>
-                            {formatDateTimeByTimeZone(answer.voCreateTime, displayTimeZone, '未知时间')}
+                            {formatDateTimeByTimeZone(answer.voCreateTime, displayTimeZone, unknownTimeLabel)}
                           </span>
                         </div>
                         <div className={styles.answerActions}>
                           {answer.voIsAccepted && (
-                            <span className={styles.acceptedBadge}>已采纳</span>
+                            <span className={styles.acceptedBadge}>{t('forum.postDetail.question.accepted')}</span>
                           )}
                           {canAccept && (
                             <button
@@ -631,13 +682,15 @@ export const PostDetail = ({
                               }}
                               disabled={acceptingAnswerId === answer.voAnswerId}
                             >
-                              {acceptingAnswerId === answer.voAnswerId ? '采纳中...' : '采纳答案'}
+                              {acceptingAnswerId === answer.voAnswerId
+                                ? t('forum.postDetail.question.acceptLoading')
+                                : t('forum.postDetail.question.accept')}
                             </button>
                           )}
                         </div>
                       </div>
 
-                      <Suspense fallback={<div className={styles.answerBody}>回答渲染中...</div>}>
+                      <Suspense fallback={<div className={styles.answerBody}>{t('forum.postDetail.question.renderingAnswer')}</div>}>
                         <MarkdownRenderer
                           content={answer.voContent}
                           className={styles.answerBody}
@@ -654,13 +707,15 @@ export const PostDetail = ({
 
             <div className={styles.answerComposer}>
               <label className={styles.answerLabel}>
-                发表回答
+                {t('forum.postDetail.question.composeLabel')}
               </label>
-              <Suspense fallback={<div className={styles.answerEditorLoading}>回答编辑器加载中...</div>}>
+              <Suspense fallback={<div className={styles.answerEditorLoading}>{t('forum.postDetail.question.editorLoading')}</div>}>
                 <MarkdownEditor
                   value={answerContent}
                   onChange={setAnswerContent}
-                  placeholder={isAuthenticated ? '写下你的回答，支持 Markdown' : '登录后可提交回答'}
+                  placeholder={isAuthenticated
+                    ? t('forum.postDetail.question.placeholderLoggedIn')
+                    : t('forum.postDetail.question.placeholderLoggedOut')}
                   minHeight={180}
                   disabled={!canAnswerQuestion}
                   showToolbar={true}
@@ -675,10 +730,10 @@ export const PostDetail = ({
               <div className={styles.answerComposerFooter}>
                 <span className={styles.answerHint}>
                   {question?.voIsSolved
-                    ? '问题已解决，仍可继续补充更多方案'
+                    ? t('forum.postDetail.question.hintSolved')
                     : isAuthenticated
-                      ? '提交后会立即出现在回答列表中'
-                      : '请先登录后再回答'}
+                      ? t('forum.postDetail.question.hintLoggedIn')
+                      : t('forum.postDetail.question.hintLoggedOut')}
                 </span>
                 <button
                   type="button"
@@ -688,7 +743,7 @@ export const PostDetail = ({
                   }}
                   disabled={!isAuthenticated || !answerContent.trim() || isSubmittingAnswer}
                 >
-                  {isSubmittingAnswer ? '提交中...' : '提交回答'}
+                  {isSubmittingAnswer ? t('forum.postDetail.question.submitLoading') : t('forum.postDetail.question.submit')}
                 </button>
               </div>
             </div>
@@ -701,28 +756,41 @@ export const PostDetail = ({
             onClick={() => onLike?.(post.voId)}
             className={`${styles.likeButton} ${isLiked ? styles.liked : ''}`}
             disabled={!isAuthenticated}
-            title={!isAuthenticated ? '请先登录' : isLiked ? '取消点赞' : '点赞'}
+            title={!isAuthenticated
+              ? t('forum.postDetail.like.login')
+              : isLiked
+                ? t('forum.postDetail.like.unlike')
+                : t('forum.postDetail.like.like')}
           >
             <span className={styles.likeIcon}>{isLiked ? '❤️' : '🤍'}</span>
             <span className={styles.likeCount}>{post.voLikeCount || 0}</span>
           </button>
           <span className={styles.commentCount}>
-            💬 {post.voCommentCount || 0} 条讨论
+            💬 {t('forum.postDetail.commentCount', { count: post.voCommentCount || 0 })}
           </span>
 
           {showFollowAction && (
             <div className={styles.relationActions}>
               <span className={styles.relationInfo}>
-                粉丝 {followStatus?.voFollowerCount ?? 0} · 关注 {followStatus?.voFollowingCount ?? 0}
+                {t('forum.postDetail.followStats', {
+                  followers: followStatus?.voFollowerCount ?? 0,
+                  following: followStatus?.voFollowingCount ?? 0
+                })}
               </span>
               <button
                 type="button"
                 className={`${styles.followButton} ${followStatus?.voIsFollowing ? styles.following : ''}`}
                 onClick={() => onToggleFollow?.(post.voAuthorId, !!followStatus?.voIsFollowing)}
                 disabled={followLoading}
-                title={followStatus?.voIsFollowing ? '取消关注' : '关注作者'}
+                title={followStatus?.voIsFollowing
+                  ? t('forum.postDetail.follow.unfollowTitle')
+                  : t('forum.postDetail.follow.followTitle')}
               >
-                {followLoading ? '处理中...' : followStatus?.voIsFollowing ? '已关注' : '关注'}
+                {followLoading
+                  ? t('forum.postDetail.follow.loading')
+                  : followStatus?.voIsFollowing
+                    ? t('forum.postDetail.follow.following')
+                    : t('forum.postDetail.follow.follow')}
               </button>
             </div>
           )}
@@ -746,29 +814,29 @@ export const PostDetail = ({
                 type="button"
                 onClick={() => onEdit?.(post.voId)}
                 className={styles.editButton}
-                title="编辑帖子"
+                title={t('forum.postDetail.action.editTitle')}
               >
                 <Icon icon="mdi:pencil" size={18} />
-                编辑
+                {t('forum.postDetail.action.edit')}
               </button>
               <button
                 type="button"
                 onClick={() => onDelete?.(post.voId)}
                 className={styles.deleteButton}
-                title="删除帖子"
+                title={t('forum.postDetail.action.deleteTitle')}
               >
                 <Icon icon="mdi:delete" size={18} />
-                删除
+                {t('forum.postDetail.action.delete')}
               </button>
               {!isQuestionPost && (
                 <button
                   type="button"
                   onClick={() => onViewHistory?.(post.voId)}
                   className={styles.historyButton}
-                  title="查看编辑历史"
+                  title={t('forum.postDetail.action.historyTitle')}
                 >
                   <Icon icon="mdi:history" size={18} />
-                  历史
+                  {t('forum.postDetail.action.history')}
                 </button>
               )}
             </div>

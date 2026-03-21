@@ -1,8 +1,8 @@
 .container {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .loading,
@@ -10,11 +10,11 @@
 .error {
   text-align: center;
   padding: 40px 20px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .error {
-  color: #d14343;
+  color: var(--theme-state-danger);
 }
 
 .list {
@@ -25,14 +25,15 @@
 
 .item {
   padding: 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   transition: all 0.2s ease;
+  background: var(--theme-bg-surface);
 }
 
 .item:hover {
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  border-color: var(--theme-border-strong);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .fileRow {
@@ -42,7 +43,7 @@
 }
 
 .icon {
-  color: #667eea;
+  color: var(--theme-brand-primary);
   display: flex;
   align-items: center;
 }
@@ -52,7 +53,7 @@
   height: 44px;
   object-fit: cover;
   border-radius: 8px;
-  border: 1px solid #eee;
+  border: 1px solid var(--theme-border-soft);
 }
 
 .fileInfo {
@@ -63,7 +64,7 @@
 .fileName {
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--theme-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -75,7 +76,7 @@
   flex-wrap: wrap;
   gap: 10px;
   font-size: 13px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .metaItem {
@@ -92,27 +93,27 @@
 .actionButton {
   padding: 6px 10px;
   border-radius: 6px;
-  border: 1px solid #e0e0e0;
-  background: white;
-  color: #333;
+  border: 1px solid var(--theme-border-soft);
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s ease;
 }
 
 .actionButton:hover {
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--theme-border-strong);
+  color: var(--theme-brand-primary);
 }
 
 .dangerButton {
-  border-color: #f0d0d0;
-  color: #d14343;
+  border-color: color-mix(in srgb, var(--theme-state-danger) 22%, var(--theme-border-soft) 78%);
+  color: var(--theme-state-danger);
 }
 
 .dangerButton:hover {
-  border-color: #d14343;
-  color: #d14343;
+  border-color: var(--theme-state-danger);
+  color: var(--theme-state-danger);
 }
 
 .toolbar {
@@ -124,14 +125,14 @@
 
 .toolbarRight {
   margin-left: auto;
-  color: #999;
+  color: var(--theme-text-muted);
   font-size: 13px;
 }
 
 .link {
   padding: 6px 12px;
   border-radius: 6px;
-  background: #667eea;
+  background: var(--theme-brand-primary);
   color: white;
   text-decoration: none;
   font-size: 14px;
@@ -139,12 +140,12 @@
 }
 
 .link:hover {
-  background: #5568d3;
+  background: color-mix(in srgb, var(--theme-brand-primary) 84%, black 16%);
   transform: translateY(-1px);
 }
 
 .disabledLink {
-  color: #bbb;
+  color: var(--theme-text-muted);
   font-size: 14px;
 }
 
@@ -155,12 +156,12 @@
   gap: 16px;
   margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--theme-border-soft);
 }
 
 .pageButton {
   padding: 8px 16px;
-  background: #667eea;
+  background: var(--theme-brand-primary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -170,16 +171,16 @@
 }
 
 .pageButton:hover:not(:disabled) {
-  background: #5568d3;
+  background: color-mix(in srgb, var(--theme-brand-primary) 84%, black 16%);
   transform: translateY(-1px);
 }
 
 .pageButton:disabled {
-  background: #ccc;
+  background: color-mix(in srgb, var(--theme-text-muted) 72%, var(--theme-bg-muted) 28%);
   cursor: not-allowed;
 }
 
 .pageInfo {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }

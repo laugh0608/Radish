@@ -2,6 +2,44 @@
   width: 100vw;
   height: 100vh;
   position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--theme-shell-background);
   overflow: hidden;
+}
+
+.shell::before,
+.shell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.shell::before {
+  background: var(--theme-shell-overlay);
+  opacity: 0.95;
+}
+
+.shell::after {
+  inset: 18px;
+  border-radius: var(--theme-radius-shell);
+  border: 1px solid var(--theme-pattern-edge);
+  box-shadow: var(--theme-shell-frame-shadow);
+  opacity: 0.8;
+}
+
+.desktopLayer,
+.windowLayer,
+.dockLayer {
+  position: absolute;
+  inset: 0;
+}
+
+.desktopLayer,
+.windowLayer {
+  z-index: 1;
+}
+
+.dockLayer {
+  z-index: 3;
+  pointer-events: none;
 }

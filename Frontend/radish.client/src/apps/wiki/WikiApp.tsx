@@ -4,6 +4,7 @@ import { toast } from '@radish/ui/toast';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { Modal } from '@radish/ui/modal';
+import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { uploadDocument, uploadImage } from '@/api/attachment';
 import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
@@ -72,14 +73,14 @@ const EMPTY_DRAFT: EditorDraft = {
   changeSummary: '',
 };
 
-function toStatusText(status: number): string {
+function toStatusText(t: TFunction, status: number): string {
   switch (status) {
     case WikiDocumentStatus.Published:
-      return '已发布';
+      return t('wiki.status.published');
     case WikiDocumentStatus.Archived:
-      return '已归档';
+      return t('wiki.status.archived');
     default:
-      return '草稿';
+      return t('wiki.status.draft');
   }
 }
 
@@ -94,24 +95,28 @@ function toStatusClassName(status: number): string {
   }
 }
 
-function toSourceText(sourceType?: string | null): string {
+function toSourceText(t: TFunction, sourceType?: string | null): string {
   switch ((sourceType || '').trim().toLowerCase()) {
     case 'manual':
-      return '在线文档';
+      return t('wiki.source.manual');
     case 'imported':
-      return 'Markdown 导入';
+      return t('wiki.source.imported');
     case 'custom':
-      return '在线文档';
+      return t('wiki.source.custom');
     case 'builtin':
-      return '固定文档';
+      return t('wiki.source.builtin');
     case 'rollback':
-      return '回滚生成';
+      return t('wiki.source.rollback');
     default:
-      return sourceType?.trim() || '未知来源';
+      return sourceType?.trim() || t('wiki.source.unknown');
   }
 }
 
-function formatTime(value?: string | null): string {
+function resolveDateLocale(language?: string): string {
+  return language?.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US';
+}
+
+function formatTime(value: string | null | undefined, language?: string): string {
   if (!value) {
     return '--';
   }
@@ -121,7 +126,7 @@ function formatTime(value?: string | null): string {
     return value;
   }
 
-  return date.toLocaleString('zh-CN', {
+  return date.toLocaleString(resolveDateLocale(language), {
     hour12: false,
   });
 }
@@ -190,12 +195,12 @@ function buildUpdateRequest(draft: EditorDraft): UpdateWikiDocumentRequest {
   };
 }
 
-function describeRevisionSummary(revision: WikiDocumentRevisionItemVo): string {
+function describeRevisionSummary(t: TFunction, revision: WikiDocumentRevisionItemVo): string {
   if (revision.voChangeSummary?.trim()) {
     return revision.voChangeSummary;
   }
 
-  return revision.voIsCurrent ? '当前版本快照' : '未填写修改说明';
+  return revision.voIsCurrent ? t('wiki.revision.currentSnapshot') : t('wiki.revision.noChangeSummary');
 }
 
 function collectExpandableNodeIds(nodes: WikiDocumentTreeNodeVo[]): number[] {
@@ -224,7 +229,7 @@ function findAncestorIds(nodes: WikiDocumentTreeNodeVo[], targetId: number, trai
 }
 
 export const WikiApp = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const currentWindow = useCurrentWindow();
   const roles = useUserStore((state) => state.roles || []);
   const windowParams = useMemo(() => parseWikiWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
@@ -331,12 +336,12 @@ export const WikiApp = () => {
     } catch (error) {
       log.error('WikiApp', '加载 Wiki 列表失败:', error);
       setTotalResultsCount(0);
-      toast.error(error instanceof Error ? error.message : '加载 Wiki 列表失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.loadListFailed'));
     } finally {
       setLoadingTree(false);
       setLoadingList(false);
     }
-  }, [isAdmin, keyword, showingDeleted, statusFilter]);
+  }, [isAdmin, keyword, showingDeleted, statusFilter, t]);
 
   const loadDocumentDetail = useCallback(async (documentId: number) => {
     setLoadingDetail(true);
@@ -347,11 +352,11 @@ export const WikiApp = () => {
     } catch (error) {
       log.error('WikiApp', '加载文档详情失败:', error);
       setSelectedDocument(null);
-      toast.error(error instanceof Error ? error.message : '加载文档详情失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.loadDetailFailed'));
     } finally {
       setLoadingDetail(false);
     }
-  }, [showingDeleted]);
+  }, [showingDeleted, t]);
 
   const loadDocumentBySlug = useCallback(async (slug: string) => {
     const normalizedSlug = slug.trim();
@@ -365,9 +370,9 @@ export const WikiApp = () => {
       setSelectedDocument(detail);
     } catch (error) {
       log.error('WikiApp', '按 Slug 加载文档失败:', error);
-      toast.error(error instanceof Error ? error.message : '加载文档失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.loadDocumentFailed'));
     }
-  }, []);
+  }, [t]);
 
   const loadRevisionList = useCallback(async (documentId: number, preserveSelection: boolean = true) => {
     if (!isAdmin) {
@@ -403,11 +408,11 @@ export const WikiApp = () => {
       setRevisionList([]);
       setSelectedRevisionId(null);
       setSelectedRevision(null);
-      toast.error(error instanceof Error ? error.message : '加载版本历史失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.loadRevisionListFailed'));
     } finally {
       setLoadingRevisionList(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, t]);
 
   const loadRevisionDetail = useCallback(async (revisionId: number) => {
     if (!isAdmin) {
@@ -423,11 +428,11 @@ export const WikiApp = () => {
     } catch (error) {
       log.error('WikiApp', '加载版本详情失败:', error);
       setSelectedRevision(null);
-      toast.error(error instanceof Error ? error.message : '加载版本详情失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.loadRevisionDetailFailed'));
     } finally {
       setLoadingRevisionDetail(false);
     }
-  }, [isAdmin]);
+  }, [isAdmin, t]);
 
   useEffect(() => {
     if (initialLoadedRef.current) {
@@ -640,7 +645,7 @@ export const WikiApp = () => {
 
   const handleSave = async () => {
     if (!draft.title.trim() || !draft.markdownContent.trim()) {
-      toast.error('标题和 Markdown 内容不能为空');
+      toast.error(t('wiki.toast.requiredFields'));
       return;
     }
 
@@ -649,7 +654,7 @@ export const WikiApp = () => {
     try {
       if (editorMode === 'create') {
         const createdId = await createWikiDocument(buildCreateRequest(draft));
-        toast.success('文档已创建');
+        toast.success(t('wiki.toast.created'));
         closeEditor();
         await refreshCollections(true);
         setSelectedDocumentId(createdId);
@@ -657,17 +662,17 @@ export const WikiApp = () => {
       }
 
       if (!selectedDocumentId) {
-        toast.error('未选中文档');
+        toast.error(t('wiki.toast.noSelection'));
         return;
       }
 
       await updateWikiDocument(selectedDocumentId, buildUpdateRequest(draft));
-      toast.success('文档已更新');
+      toast.success(t('wiki.toast.updated'));
       closeEditor();
       await refreshDocumentWorkspace(selectedDocumentId, false);
     } catch (error) {
       log.error('WikiApp', '保存文档失败:', error);
-      toast.error(error instanceof Error ? error.message : '保存文档失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.saveFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -681,11 +686,11 @@ export const WikiApp = () => {
     setSubmitting(true);
     try {
       await publishWikiDocument(selectedDocumentId);
-      toast.success('文档已发布');
+      toast.success(t('wiki.toast.published'));
       await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
       log.error('WikiApp', '发布文档失败:', error);
-      toast.error(error instanceof Error ? error.message : '发布文档失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.publishFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -699,11 +704,11 @@ export const WikiApp = () => {
     setSubmitting(true);
     try {
       await unpublishWikiDocument(selectedDocumentId);
-      toast.success('文档已转为草稿');
+      toast.success(t('wiki.toast.unpublished'));
       await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
       log.error('WikiApp', '撤下文档失败:', error);
-      toast.error(error instanceof Error ? error.message : '撤下文档失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.unpublishFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -717,11 +722,11 @@ export const WikiApp = () => {
     setSubmitting(true);
     try {
       await archiveWikiDocument(selectedDocumentId);
-      toast.success('文档已归档');
+      toast.success(t('wiki.toast.archived'));
       await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
       log.error('WikiApp', '归档文档失败:', error);
-      toast.error(error instanceof Error ? error.message : '归档文档失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.archiveFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -747,12 +752,12 @@ export const WikiApp = () => {
     setSubmitting(true);
     try {
       await deleteWikiDocument(selectedDocumentId);
-      toast.success('文档已删除');
+      toast.success(t('wiki.toast.deleted'));
       setDeleteConfirmOpen(false);
       await refreshCollections(true);
     } catch (error) {
       log.error('WikiApp', '删除文档失败:', error);
-      toast.error(error instanceof Error ? error.message : '删除文档失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.deleteFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -767,7 +772,7 @@ export const WikiApp = () => {
     try {
       const restoredDocumentId = selectedDocumentId;
       await restoreWikiDocument(restoredDocumentId);
-      toast.success('文档已恢复');
+      toast.success(t('wiki.toast.restored'));
 
       if (showingDeleted) {
         setDeletionFilter('active');
@@ -778,7 +783,7 @@ export const WikiApp = () => {
       }
     } catch (error) {
       log.error('WikiApp', '恢复文档失败:', error);
-      toast.error(error instanceof Error ? error.message : '恢复文档失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.restoreFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -799,10 +804,10 @@ export const WikiApp = () => {
       link.click();
       link.remove();
       URL.revokeObjectURL(downloadUrl);
-      toast.success('Markdown 已导出');
+      toast.success(t('wiki.toast.exported'));
     } catch (error) {
       log.error('WikiApp', '导出 Markdown 失败:', error);
-      toast.error(error instanceof Error ? error.message : '导出 Markdown 失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.exportFailed'));
     }
   };
 
@@ -825,12 +830,12 @@ export const WikiApp = () => {
         publishAfterImport: false,
       });
 
-      toast.success('Markdown 已导入为草稿');
+      toast.success(t('wiki.toast.imported'));
       await refreshCollections(true);
       setSelectedDocumentId(importedId);
     } catch (error) {
       log.error('WikiApp', '导入 Markdown 失败:', error);
-      toast.error(error instanceof Error ? error.message : '导入 Markdown 失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.importFailed'));
     } finally {
       setSubmitting(false);
       event.target.value = '';
@@ -907,18 +912,18 @@ export const WikiApp = () => {
 
     try {
       await rollbackWikiRevision(selectedRevisionId);
-      toast.success(`已回滚到 v${selectedRevision?.voVersion ?? ''}，并生成新版本`);
+      toast.success(t('wiki.toast.rolledBack', { version: selectedRevision?.voVersion ?? '' }));
       setRollbackConfirmOpen(false);
       await refreshDocumentWorkspace(selectedDocumentId, false);
     } catch (error) {
       log.error('WikiApp', '回滚文档版本失败:', error);
-      toast.error(error instanceof Error ? error.message : '回滚文档版本失败');
+      toast.error(error instanceof Error ? error.message : t('wiki.toast.rollbackFailed'));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const selectedStatusText = selectedDocument ? toStatusText(selectedDocument.voStatus) : '未选择';
+  const selectedStatusText = selectedDocument ? toStatusText(t, selectedDocument.voStatus) : t('wiki.status.unselected');
   const selectedStatusClass = selectedDocument ? toStatusClassName(selectedDocument.voStatus) : styles.statusDraft;
 
   const toggleTreeNode = (nodeId: number) => {
@@ -954,7 +959,9 @@ export const WikiApp = () => {
                 type="button"
                 className={styles.treeToggleButton}
                 onClick={() => toggleTreeNode(node.voId)}
-                aria-label={isExpanded ? `收起 ${node.voTitle}` : `展开 ${node.voTitle}`}
+                aria-label={isExpanded
+                  ? t('wiki.tree.collapseNode', { title: node.voTitle })
+                  : t('wiki.tree.expandNode', { title: node.voTitle })}
                 aria-expanded={isExpanded}
               >
                 <span className={`${styles.treeToggleIcon} ${isExpanded ? styles.treeToggleIconExpanded : ''}`}>▶</span>
@@ -976,7 +983,7 @@ export const WikiApp = () => {
               <span className={styles.treeNodeDepth} />
               <span className={styles.treeNodeTitle}>{node.voTitle}</span>
               {isExpandable ? <span className={styles.treeNodeMeta}>{children.length}</span> : null}
-              <span className={`${styles.statusChip} ${toStatusClassName(node.voStatus)}`}>{toStatusText(node.voStatus)}</span>
+              <span className={`${styles.statusChip} ${toStatusClassName(node.voStatus)}`}>{toStatusText(t, node.voStatus)}</span>
             </button>
           </div>
 
@@ -992,34 +999,36 @@ export const WikiApp = () => {
         <div className={styles.sidebarHeader}>
           <div className={styles.sidebarTitleRow}>
             <div>
-              <h2 className={styles.sidebarTitle}>文档</h2>
-              <p className={styles.sidebarHint}>固定文档、在线文档与 Markdown 导入导出统一入口</p>
+              <h2 className={styles.sidebarTitle}>{t('wiki.sidebar.title')}</h2>
+              <p className={styles.sidebarHint}>{t('wiki.sidebar.hint')}</p>
             </div>
           </div>
 
           <div className={styles.sidebarUtilityRow}>
             <div className={styles.sidebarStatsRow}>
               <span className={styles.sidebarStatBadge}>
-                <span className={styles.sidebarStatLabel}>目录</span>
+                <span className={styles.sidebarStatLabel}>{t('wiki.sidebar.stats.directory')}</span>
                 <strong className={styles.sidebarStatValue}>{totalTreeDocuments}</strong>
               </span>
               <span className={styles.sidebarStatBadge}>
-                <span className={styles.sidebarStatLabel}>{showingDeleted ? '回收站总数' : '结果总数'}</span>
+                <span className={styles.sidebarStatLabel}>
+                  {showingDeleted ? t('wiki.sidebar.stats.recycleBinTotal') : t('wiki.sidebar.stats.resultsTotal')}
+                </span>
                 <strong className={styles.sidebarStatValue}>{totalResultsText}</strong>
               </span>
             </div>
 
             <div className={styles.toolbarRow}>
               <button type="button" className={styles.secondaryButton} onClick={() => void refreshCollections(true)} disabled={loadingTree || loadingList}>
-                刷新
+                {t('wiki.actions.refresh')}
               </button>
               {isAdmin ? (
                 <>
                   <button type="button" className={styles.primaryButton} onClick={openCreateEditor}>
-                    新建
+                    {t('wiki.actions.create')}
                   </button>
                   <button type="button" className={styles.ghostButton} onClick={triggerImport} disabled={submitting}>
-                    导入
+                    {t('wiki.actions.import')}
                   </button>
                 </>
               ) : null}
@@ -1030,7 +1039,7 @@ export const WikiApp = () => {
             <input
               className={styles.searchInput}
               value={keyword}
-              placeholder="搜索标题 / Slug / 摘要"
+              placeholder={t('wiki.sidebar.searchPlaceholder')}
               onChange={(event) => setKeyword(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === 'Enter') {
@@ -1039,7 +1048,7 @@ export const WikiApp = () => {
               }}
             />
             <button type="button" className={styles.primaryButton} onClick={() => void handleSearch()}>
-              搜索
+              {t('wiki.actions.search')}
             </button>
           </div>
 
@@ -1051,10 +1060,10 @@ export const WikiApp = () => {
                   value={statusFilter}
                   onChange={(event) => setStatusFilter(event.target.value)}
                 >
-                  <option value="">全部状态</option>
-                  <option value={String(WikiDocumentStatus.Draft)}>草稿</option>
-                  <option value={String(WikiDocumentStatus.Published)}>已发布</option>
-                  <option value={String(WikiDocumentStatus.Archived)}>已归档</option>
+                  <option value="">{t('wiki.filter.allStatuses')}</option>
+                  <option value={String(WikiDocumentStatus.Draft)}>{t('wiki.status.draft')}</option>
+                  <option value={String(WikiDocumentStatus.Published)}>{t('wiki.status.published')}</option>
+                  <option value={String(WikiDocumentStatus.Archived)}>{t('wiki.status.archived')}</option>
                 </select>
               </div>
               <div className={styles.statusRow}>
@@ -1063,8 +1072,8 @@ export const WikiApp = () => {
                   value={deletionFilter}
                   onChange={(event) => setDeletionFilter(event.target.value as DeletionFilter)}
                 >
-                  <option value="active">正常文档</option>
-                  <option value="deleted">回收站</option>
+                  <option value="active">{t('wiki.filter.activeOnly')}</option>
+                  <option value="deleted">{t('wiki.filter.deletedOnly')}</option>
                 </select>
               </div>
             </div>
@@ -1078,46 +1087,52 @@ export const WikiApp = () => {
               className={sidebarView === 'tree' ? styles.sidebarTabActive : styles.sidebarTab}
               onClick={() => setSidebarView('tree')}
             >
-              目录树
+              {t('wiki.sidebar.tab.tree')}
             </button>
             <button
               type="button"
               className={sidebarView === 'results' ? styles.sidebarTabActive : styles.sidebarTab}
               onClick={() => setSidebarView('results')}
             >
-              {showingDeleted ? '回收站结果' : '检索结果'}
+              {showingDeleted ? t('wiki.sidebar.tab.deletedResults') : t('wiki.sidebar.tab.results')}
             </button>
           </div>
 
           <section className={styles.sidebarPanel}>
             <div className={styles.sectionHeader}>
-              <h3 className={styles.sectionTitle}>{sidebarView === 'tree' ? '目录树' : showingDeleted ? '回收站结果' : '检索结果'}</h3>
+              <h3 className={styles.sectionTitle}>
+                {sidebarView === 'tree'
+                  ? t('wiki.sidebar.tab.tree')
+                  : showingDeleted
+                    ? t('wiki.sidebar.tab.deletedResults')
+                    : t('wiki.sidebar.tab.results')}
+              </h3>
               <span className={styles.sectionCount}>{sidebarView === 'tree' ? totalTreeDocuments : totalResultsCount}</span>
             </div>
             <div className={styles.sectionHint}>
               {sidebarView === 'results'
                 ? totalResultsCount > currentListCount
-                  ? `当前页显示 ${currentListCount} 条，共 ${totalResultsCount} 条`
+                  ? t('wiki.sidebar.sectionHint.pageStats', { current: currentListCount, total: totalResultsCount })
                   : hasActiveFilters
-                    ? `当前命中 ${totalResultsCount} 条`
-                    : `当前列表共 ${totalResultsCount} 条`
-                : '按目录层级浏览全部文档'}
+                    ? t('wiki.sidebar.sectionHint.filtered', { total: totalResultsCount })
+                    : t('wiki.sidebar.sectionHint.list', { total: totalResultsCount })
+                : t('wiki.sidebar.sectionHint.tree')}
             </div>
 
             {sidebarView === 'tree' ? (
               <div className={styles.treeScroll}>
                 {loadingTree ? (
-                  <div className={styles.loadingText}>正在加载目录…</div>
+                  <div className={styles.loadingText}>{t('wiki.loading.tree')}</div>
                 ) : tree.length > 0 ? (
                   renderTreeNodes(tree)
                 ) : (
-                  <div className={styles.mutedText}>暂时还没有目录数据</div>
+                  <div className={styles.mutedText}>{t('wiki.empty.tree')}</div>
                 )}
               </div>
             ) : (
               <div className={styles.listScroll}>
                 {loadingList ? (
-                  <div className={styles.loadingText}>正在加载列表…</div>
+                  <div className={styles.loadingText}>{t('wiki.loading.list')}</div>
                 ) : documents.length > 0 ? (
                   documents.map((document) => (
                     <button
@@ -1128,7 +1143,9 @@ export const WikiApp = () => {
                     >
                       <div className={styles.listItemHeader}>
                         <span className={styles.listItemTitle}>{document.voTitle}</span>
-                        <span className={`${styles.statusChip} ${document.voIsDeleted ? styles.statusDeleted : toStatusClassName(document.voStatus)}`}>{document.voIsDeleted ? '已删除' : toStatusText(document.voStatus)}</span>
+                        <span className={`${styles.statusChip} ${document.voIsDeleted ? styles.statusDeleted : toStatusClassName(document.voStatus)}`}>
+                          {document.voIsDeleted ? t('wiki.status.deleted') : toStatusText(t, document.voStatus)}
+                        </span>
                       </div>
                       {document.voSummary ? (
                         <div className={styles.listItemSummary}>{document.voSummary}</div>
@@ -1137,7 +1154,7 @@ export const WikiApp = () => {
                     </button>
                   ))
                 ) : (
-                  <div className={styles.mutedText}>{showingDeleted ? '回收站里暂时没有文档' : '没有匹配的文档'}</div>
+                  <div className={styles.mutedText}>{showingDeleted ? t('wiki.empty.deletedResults') : t('wiki.empty.results')}</div>
                 )}
               </div>
             )}
@@ -1148,43 +1165,47 @@ export const WikiApp = () => {
       <main className={styles.main}>
         <div className={styles.contentHeader}>
           <div className={styles.titleGroup}>
-            <h1 className={styles.title}>{editorVisible ? (editorMode === 'create' ? '新建文档' : '编辑文档') : selectedDocument?.voTitle || '文档'}</h1>
+            <h1 className={styles.title}>
+              {editorVisible
+                ? (editorMode === 'create' ? t('wiki.content.createTitle') : t('wiki.content.editTitle'))
+                : selectedDocument?.voTitle || t('wiki.content.defaultTitle')}
+            </h1>
             <p className={styles.subtitle}>
               {editorVisible
-                ? '当前为 Markdown 编辑态，保存后即可进入浏览态。'
+                ? t('wiki.content.editingHint')
                 : selectedDocument?.voIsDeleted
-                  ? '当前文档位于回收站，可执行恢复操作。'
-                  : selectedDocument?.voSummary || '选择左侧文档查看详情，或从这里开始创建在线文档与导入 Markdown。'}
+                  ? t('wiki.content.deletedHint')
+                  : selectedDocument?.voSummary || t('wiki.content.defaultHint')}
             </p>
           </div>
 
           <div className={styles.actionGroup}>
             {!editorVisible && selectedDocument && !selectedDocument.voIsDeleted ? (
               <button type="button" className={styles.secondaryButton} onClick={() => void handleExport()}>
-                导出 Markdown
+                {t('wiki.actions.export')}
               </button>
             ) : null}
             {canEditSelectedDocument && !editorVisible && selectedDocument ? (
               <>
                 <button type="button" className={styles.secondaryButton} onClick={openHistoryModal} disabled={submitting}>
-                  版本历史
+                  {t('wiki.actions.history')}
                 </button>
                 <button type="button" className={styles.primaryButton} onClick={openEditEditor}>
-                  编辑
+                  {t('wiki.actions.edit')}
                 </button>
                 <button type="button" className={styles.dangerButton} onClick={openDeleteConfirm} disabled={submitting}>
-                  删除
+                  {t('wiki.actions.delete')}
                 </button>
               </>
             ) : null}
             {canRestoreSelectedDocument && !editorVisible && selectedDocument ? (
               <button type="button" className={styles.primaryButton} onClick={() => void handleRestore()} disabled={submitting}>
-                恢复
+                {t('wiki.actions.restore')}
               </button>
             ) : null}
             {editorVisible ? (
               <button type="button" className={styles.ghostButton} onClick={closeEditor}>
-                取消编辑
+                {t('wiki.actions.cancelEdit')}
               </button>
             ) : null}
           </div>
@@ -1195,12 +1216,12 @@ export const WikiApp = () => {
             <div className={styles.editorPanel}>
               <div className={styles.formGrid}>
                 <div>
-                  <label className={styles.formLabel}>标题</label>
+                  <label className={styles.formLabel}>{t('wiki.form.title')}</label>
                   <input
                     className={styles.input}
                     value={draft.title}
                     onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
-                    placeholder="例如：新手入门"
+                    placeholder={t('wiki.form.titlePlaceholder')}
                   />
                 </div>
                 <div>
@@ -1209,26 +1230,26 @@ export const WikiApp = () => {
                     className={styles.input}
                     value={draft.slug}
                     onChange={(event) => setDraft((current) => ({ ...current, slug: event.target.value }))}
-                    placeholder="例如：getting-started"
+                    placeholder={t('wiki.form.slugPlaceholder')}
                   />
                 </div>
                 <div className={styles.formSpanFull}>
-                  <label className={styles.formLabel}>摘要</label>
+                  <label className={styles.formLabel}>{t('wiki.form.summary')}</label>
                   <textarea
                     className={styles.textarea}
                     value={draft.summary}
                     onChange={(event) => setDraft((current) => ({ ...current, summary: event.target.value }))}
-                    placeholder="可选，用于列表摘要展示"
+                    placeholder={t('wiki.form.summaryPlaceholder')}
                   />
                 </div>
                 <div>
-                  <label className={styles.formLabel}>父文档</label>
+                  <label className={styles.formLabel}>{t('wiki.form.parent')}</label>
                   <select
                     className={styles.select}
                     value={draft.parentId}
                     onChange={(event) => handleParentChange(event.target.value)}
                   >
-                    <option value="">顶级文档</option>
+                    <option value="">{t('wiki.form.parentRoot')}</option>
                     {treeOptions.map((option) => (
                       <option
                         key={option.id}
@@ -1236,13 +1257,13 @@ export const WikiApp = () => {
                         disabled={editorMode === 'edit' && invalidParentIds.has(option.id)}
                       >
                         {option.label}
-                        {editorMode === 'edit' && invalidParentIds.has(option.id) ? '（不可选）' : ''}
+                        {editorMode === 'edit' && invalidParentIds.has(option.id) ? t('wiki.form.parentDisabledSuffix') : ''}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className={styles.formLabel}>排序</label>
+                  <label className={styles.formLabel}>{t('wiki.form.sort')}</label>
                   <input
                     className={styles.numberInput}
                     value={draft.sort}
@@ -1264,35 +1285,35 @@ export const WikiApp = () => {
                     ))}
                   </div>
                   <div className={styles.sortSuggestionRow}>
-                    <span className={styles.fieldHint}>建议排序：{sortSuggestion}（按当前父级同级文档自动推导）</span>
+                    <span className={styles.fieldHint}>{t('wiki.form.sortSuggestion', { value: sortSuggestion })}</span>
                     {draft.sort !== sortSuggestion ? (
                       <button
                         type="button"
                         className={styles.sortSuggestionButton}
                         onClick={() => setDraft((current) => ({ ...current, sort: sortSuggestion }))}
                       >
-                        使用建议值
+                        {t('wiki.form.useSuggestedSort')}
                       </button>
                     ) : null}
                   </div>
                 </div>
                 <div>
-                  <label className={styles.formLabel}>封面附件 ID</label>
+                  <label className={styles.formLabel}>{t('wiki.form.coverAttachmentId')}</label>
                   <input
                     className={styles.numberInput}
                     value={draft.coverAttachmentId}
                     onChange={(event) => setDraft((current) => ({ ...current, coverAttachmentId: event.target.value }))}
-                    placeholder="可选"
+                    placeholder={t('wiki.form.optionalPlaceholder')}
                   />
                 </div>
                 {editorMode === 'edit' ? (
                   <div>
-                    <label className={styles.formLabel}>修改说明</label>
+                    <label className={styles.formLabel}>{t('wiki.form.changeSummary')}</label>
                     <input
                       className={styles.input}
                       value={draft.changeSummary}
                       onChange={(event) => setDraft((current) => ({ ...current, changeSummary: event.target.value }))}
-                      placeholder="例如：补充导入说明"
+                      placeholder={t('wiki.form.changeSummaryPlaceholder')}
                     />
                   </div>
                 ) : null}
@@ -1302,57 +1323,64 @@ export const WikiApp = () => {
                 value={draft.markdownContent}
                 onChange={(value) => setDraft((current) => ({ ...current, markdownContent: value }))}
                 minHeight={360}
-                placeholder="输入 Markdown 内容，支持图片和文档上传"
+                placeholder={t('wiki.form.markdownPlaceholder')}
                 onImageUpload={handleImageUpload}
                 onDocumentUpload={handleDocumentUpload}
               />
 
               <div className={styles.editorActions}>
                 <button type="button" className={styles.ghostButton} onClick={closeEditor} disabled={submitting}>
-                  取消
+                  {t('common.cancel')}
                 </button>
                 <button type="button" className={styles.primaryButton} onClick={() => void handleSave()} disabled={submitting}>
-                  {submitting ? '保存中…' : editorMode === 'create' ? '创建文档' : '保存修改'}
+                  {submitting ? t('wiki.actions.saving') : editorMode === 'create' ? t('wiki.actions.createDocument') : t('wiki.actions.saveChanges')}
                 </button>
               </div>
             </div>
           ) : selectedDocumentId ? (
             loadingDetail ? (
-              <div className={styles.emptyState}>正在加载文档详情…</div>
+              <div className={styles.emptyState}>{t('wiki.loading.detail')}</div>
             ) : selectedDocument ? (
               <>
                 <div className={styles.metaBar}>
-                  <span className={`${styles.statusChip} ${selectedDocument.voIsDeleted ? styles.statusDeleted : selectedStatusClass}`}>{selectedDocument.voIsDeleted ? '已删除' : selectedStatusText}</span>
-                  <span className={styles.metaChip}>Slug：{selectedDocument.voSlug}</span>
-                  <span className={styles.metaChip}>版本：v{selectedDocument.voVersion}</span>
-                  <span className={styles.metaChip}>来源：{toSourceText(selectedDocument.voSourceType)}</span>
+                  <span className={`${styles.statusChip} ${selectedDocument.voIsDeleted ? styles.statusDeleted : selectedStatusClass}`}>
+                    {selectedDocument.voIsDeleted ? t('wiki.status.deleted') : selectedStatusText}
+                  </span>
+                  <span className={styles.metaChip}>{t('wiki.meta.slug', { value: selectedDocument.voSlug })}</span>
+                  <span className={styles.metaChip}>{t('wiki.meta.version', { value: selectedDocument.voVersion })}</span>
+                  <span className={styles.metaChip}>{t('wiki.meta.source', { value: toSourceText(t, selectedDocument.voSourceType) })}</span>
                   {selectedDocument.voSourcePath ? (
-                    <span className={styles.metaChip}>来源路径：{selectedDocument.voSourcePath}</span>
+                    <span className={styles.metaChip}>{t('wiki.meta.sourcePath', { value: selectedDocument.voSourcePath })}</span>
                   ) : null}
-                  <span className={styles.metaChip}>创建：{formatTime(selectedDocument.voCreateTime)}</span>
-                  <span className={styles.metaChip}>更新：{formatTime(selectedDocument.voModifyTime)}</span>
+                  <span className={styles.metaChip}>{t('wiki.meta.created', { value: formatTime(selectedDocument.voCreateTime, i18n.resolvedLanguage) })}</span>
+                  <span className={styles.metaChip}>{t('wiki.meta.updated', { value: formatTime(selectedDocument.voModifyTime, i18n.resolvedLanguage) })}</span>
                   {selectedDocument.voIsDeleted ? (
-                    <span className={styles.metaChip}>删除：{formatTime(selectedDocument.voDeletedAt)} · {selectedDocument.voDeletedBy || '未知'}</span>
+                    <span className={styles.metaChip}>
+                      {t('wiki.meta.deleted', {
+                        time: formatTime(selectedDocument.voDeletedAt, i18n.resolvedLanguage),
+                        user: selectedDocument.voDeletedBy || t('common.unknownUser'),
+                      })}
+                    </span>
                   ) : null}
                   {selectedDocument.voPublishedAt ? (
-                    <span className={styles.metaChip}>发布：{formatTime(selectedDocument.voPublishedAt)}</span>
+                    <span className={styles.metaChip}>{t('wiki.meta.published', { value: formatTime(selectedDocument.voPublishedAt, i18n.resolvedLanguage) })}</span>
                   ) : null}
                 </div>
 
                 {isAdmin && !isBuiltInDocument && !selectedDocument.voIsDeleted ? (
-                  <div className={styles.toolbarRow} style={{ marginBottom: '16px' }}>
+                  <div className={`${styles.toolbarRow} ${styles.toolbarRowSpaced}`}>
                     {selectedDocument.voStatus !== WikiDocumentStatus.Published ? (
                       <button type="button" className={styles.primaryButton} onClick={() => void handlePublish()} disabled={submitting}>
-                        发布
+                        {t('wiki.actions.publish')}
                       </button>
                     ) : (
                       <button type="button" className={styles.secondaryButton} onClick={() => void handleUnpublish()} disabled={submitting}>
-                        转为草稿
+                        {t('wiki.actions.unpublish')}
                       </button>
                     )}
                     {selectedDocument.voStatus !== WikiDocumentStatus.Archived ? (
                       <button type="button" className={styles.dangerButton} onClick={() => void handleArchive()} disabled={submitting}>
-                        归档
+                        {t('wiki.actions.archive')}
                       </button>
                     ) : null}
                   </div>
@@ -1365,20 +1393,20 @@ export const WikiApp = () => {
                 </div>
               </>
             ) : (
-              <div className={styles.emptyState}>未能加载到文档详情，请重新选择左侧文档。</div>
+              <div className={styles.emptyState}>{t('wiki.empty.detail')}</div>
             )
           ) : (
             <div className={styles.emptyState}>
               <div>
-                <div>当前还没有可展示的文档。</div>
-                {isAdmin && !showingDeleted ? <div style={{ marginTop: '8px' }}>你可以先新建一篇在线文档，或导入一个 `.md` 文件。</div> : null}
+                <div>{t('wiki.empty.main')}</div>
+                {isAdmin && !showingDeleted ? <div className={styles.emptyHintSpacing}>{t('wiki.empty.adminHint')}</div> : null}
               </div>
             </div>
           )}
 
           {!editorVisible && selectedDocumentId && !activeDocumentIds.has(selectedDocumentId) ? (
-            <div className={styles.errorText} style={{ marginTop: '12px' }}>
-              当前文档未出现在目录树中，可能是筛选结果或父子关系尚未整理。
+            <div className={`${styles.errorText} ${styles.errorTextSpacing}`}>
+              {t('wiki.empty.orphanWarning')}
             </div>
           ) : null}
         </div>
@@ -1396,19 +1424,19 @@ export const WikiApp = () => {
       <Modal
         isOpen={historyModalOpen}
         onClose={closeHistoryModal}
-        title={selectedDocument ? `版本历史 · ${selectedDocument.voTitle}` : '版本历史'}
+        title={selectedDocument ? t('wiki.history.titleWithName', { title: selectedDocument.voTitle }) : t('wiki.history.title')}
         size="large"
       >
         <div className={styles.historyModalContent}>
           <div className={styles.historyModalSummary}>
-            <span className={styles.historyCount}>{revisionList.length} 条</span>
-            <span className={styles.historyHint}>按需查看历史快照、版本详情与回滚操作，默认阅读态不再占用正文宽度。</span>
+            <span className={styles.historyCount}>{t('wiki.history.count', { count: revisionList.length })}</span>
+            <span className={styles.historyHint}>{t('wiki.history.summaryHint')}</span>
           </div>
 
           <div className={styles.historyBody}>
             <div className={styles.historyList}>
               {loadingRevisionList ? (
-                <div className={styles.loadingText}>正在加载版本历史…</div>
+                <div className={styles.loadingText}>{t('wiki.loading.revisionList')}</div>
               ) : revisionList.length > 0 ? (
                 revisionList.map((revision) => (
                   <button
@@ -1420,43 +1448,48 @@ export const WikiApp = () => {
                     <div className={styles.revisionItemHeader}>
                       <span className={styles.revisionTitle}>v{revision.voVersion}</span>
                       {revision.voIsCurrent ? (
-                        <span className={`${styles.statusChip} ${styles.statusPublished}`}>当前</span>
+                        <span className={`${styles.statusChip} ${styles.statusPublished}`}>{t('wiki.status.current')}</span>
                       ) : null}
                     </div>
                     <div className={styles.revisionMeta}>{revision.voTitle}</div>
-                    <div className={styles.revisionMeta}>{formatTime(revision.voCreateTime)} · {revision.voCreateBy}</div>
-                    <div className={styles.revisionSummary}>{describeRevisionSummary(revision)}</div>
+                    <div className={styles.revisionMeta}>
+                      {t('wiki.history.revisionMeta', {
+                        time: formatTime(revision.voCreateTime, i18n.resolvedLanguage),
+                        author: revision.voCreateBy,
+                      })}
+                    </div>
+                    <div className={styles.revisionSummary}>{describeRevisionSummary(t, revision)}</div>
                   </button>
                 ))
               ) : (
-                <div className={styles.mutedText}>当前文档还没有版本记录</div>
+                <div className={styles.mutedText}>{t('wiki.empty.revisionList')}</div>
               )}
             </div>
 
             <div className={styles.revisionDetail}>
               {loadingRevisionDetail ? (
-                <div className={styles.loadingText}>正在加载版本详情…</div>
+                <div className={styles.loadingText}>{t('wiki.loading.revisionDetail')}</div>
               ) : selectedRevision ? (
                 <>
                   <div className={styles.revisionDetailHeader}>
                     <div>
-                      <div className={styles.revisionDetailTitle}>版本 v{selectedRevision.voVersion}</div>
+                      <div className={styles.revisionDetailTitle}>{t('wiki.history.revisionTitle', { version: selectedRevision.voVersion })}</div>
                       <div className={styles.revisionMeta}>{selectedRevision.voTitle}</div>
                     </div>
                     <div className={styles.revisionActions}>
-                      <span className={styles.metaChip}>来源：{toSourceText(selectedRevision.voSourceType)}</span>
+                      <span className={styles.metaChip}>{t('wiki.meta.source', { value: toSourceText(t, selectedRevision.voSourceType) })}</span>
                       {!selectedRevision.voIsCurrent ? (
                         <button type="button" className={styles.dangerButton} onClick={openRollbackConfirm} disabled={submitting}>
-                          回滚到此版本
+                          {t('wiki.actions.rollbackToVersion')}
                         </button>
                       ) : null}
                     </div>
                   </div>
 
                   <div className={styles.revisionMetaBar}>
-                    <span className={styles.metaChip}>创建：{formatTime(selectedRevision.voCreateTime)}</span>
-                    <span className={styles.metaChip}>作者：{selectedRevision.voCreateBy}</span>
-                    <span className={styles.metaChip}>说明：{selectedRevision.voChangeSummary || '未填写修改说明'}</span>
+                    <span className={styles.metaChip}>{t('wiki.meta.created', { value: formatTime(selectedRevision.voCreateTime, i18n.resolvedLanguage) })}</span>
+                    <span className={styles.metaChip}>{t('wiki.meta.author', { value: selectedRevision.voCreateBy })}</span>
+                    <span className={styles.metaChip}>{t('wiki.meta.description', { value: selectedRevision.voChangeSummary || t('wiki.revision.noChangeSummary') })}</span>
                   </div>
 
                   <div className={styles.revisionPreview}>
@@ -1466,7 +1499,7 @@ export const WikiApp = () => {
                   </div>
                 </>
               ) : (
-                <div className={styles.mutedText}>请选择左侧版本查看详情</div>
+                <div className={styles.mutedText}>{t('wiki.empty.selectRevision')}</div>
               )}
             </div>
           </div>
@@ -1475,9 +1508,9 @@ export const WikiApp = () => {
 
       <ConfirmDialog
         isOpen={deleteConfirmOpen}
-        title="确认删除文档"
-        message={selectedDocument ? `确定删除《${selectedDocument.voTitle}》吗？删除后可在回收站中恢复。` : '确定删除当前文档吗？'}
-        confirmText="确认删除"
+        title={t('wiki.confirm.deleteTitle')}
+        message={selectedDocument ? t('wiki.confirm.deleteMessageWithTitle', { title: selectedDocument.voTitle }) : t('wiki.confirm.deleteMessage')}
+        confirmText={t('wiki.confirm.deleteConfirm')}
         danger
         onCancel={closeDeleteConfirm}
         onConfirm={() => void handleDelete()}
@@ -1485,9 +1518,9 @@ export const WikiApp = () => {
 
       <ConfirmDialog
         isOpen={rollbackConfirmOpen}
-        title="确认回滚版本"
-        message={selectedRevision ? `确定将当前文档内容回滚到 v${selectedRevision.voVersion} 吗？系统会保留当前内容，并生成一个新的回滚版本。` : '确定执行版本回滚吗？'}
-        confirmText="确认回滚"
+        title={t('wiki.confirm.rollbackTitle')}
+        message={selectedRevision ? t('wiki.confirm.rollbackMessageWithVersion', { version: selectedRevision.voVersion }) : t('wiki.confirm.rollbackMessage')}
+        confirmText={t('wiki.confirm.rollbackConfirm')}
         danger
         onCancel={closeRollbackConfirm}
         onConfirm={() => void handleRollback()}

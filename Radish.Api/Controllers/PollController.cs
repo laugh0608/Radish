@@ -123,9 +123,76 @@ public class PollController : ControllerBase
             return new MessageModel
             {
                 IsSuccess = false,
-                StatusCode = ex.Message == "帖子不存在"
-                    ? (int)HttpStatusCodeEnum.NotFound
-                    : (int)HttpStatusCodeEnum.BadRequest,
+                StatusCode = ex.Message switch
+                {
+                    "帖子不存在" => (int)HttpStatusCodeEnum.NotFound,
+                    "只有发帖者可以结束投票" => (int)HttpStatusCodeEnum.Forbidden,
+                    _ => (int)HttpStatusCodeEnum.BadRequest
+                },
+                MessageInfo = ex.Message
+            };
+        }
+    }
+
+    /// <summary>
+    /// 手动结束投票
+    /// </summary>
+    [HttpPost]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> Close([FromBody] ClosePollDto request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "请求参数验证失败"
+            };
+        }
+
+        if (Current.UserId <= 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Unauthorized,
+                MessageInfo = "请先登录后再结束投票"
+            };
+        }
+
+        try
+        {
+            var result = await _postPollService.CloseAsync(request.PostId, Current.UserId, Current.UserName);
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "结束投票成功",
+                ResponseData = result
+            };
+        }
+        catch (ArgumentException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = ex.Message
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = ex.Message switch
+                {
+                    "帖子不存在" => (int)HttpStatusCodeEnum.NotFound,
+                    "只有发帖者可以结束投票" => (int)HttpStatusCodeEnum.Forbidden,
+                    _ => (int)HttpStatusCodeEnum.BadRequest
+                },
                 MessageInfo = ex.Message
             };
         }

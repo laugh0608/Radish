@@ -1,4 +1,5 @@
 import type { SyntheticEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
 import styles from './ShopHome.module.css';
 
@@ -19,7 +20,7 @@ export const ShopHome = ({
   onProductClick,
   onViewAllProducts
 }: ShopHomeProps) => {
-  // const { t } = useTranslation(); // 暂时不使用
+  const { t } = useTranslation();
   const handleCategoryImageError = (event: SyntheticEvent<HTMLImageElement>) => {
     event.currentTarget.style.display = 'none';
   };
@@ -29,7 +30,7 @@ export const ShopHome = ({
       <div className={styles.container}>
         <div className={styles.loading}>
           <div className={styles.spinner}></div>
-          <p>加载中...</p>
+          <p>{t('shop.loading')}</p>
         </div>
       </div>
     );
@@ -40,19 +41,17 @@ export const ShopHome = ({
       {/* 欢迎横幅 */}
       <div className={styles.banner}>
         <div className={styles.bannerContent}>
-          <h1 className={styles.bannerTitle}>🛒 欢迎来到萝卜商城</h1>
-          <p className={styles.bannerSubtitle}>
-            使用胡萝卜购买各种权益道具，让你的萝卜园体验更加精彩！
-          </p>
+          <h1 className={styles.bannerTitle}>🛒 {t('shop.welcomeTitle')}</h1>
+          <p className={styles.bannerSubtitle}>{t('shop.welcomeSubtitle')}</p>
         </div>
       </div>
 
       {/* 商品分类 */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>商品分类</h2>
+          <h2 className={styles.sectionTitle}>{t('shop.categoryTitle')}</h2>
           <button className={styles.viewAllButton} onClick={onViewAllProducts}>
-            查看全部 →
+            {t('shop.viewAll')} →
           </button>
         </div>
 
@@ -73,10 +72,10 @@ export const ShopHome = ({
               <div className={styles.categoryInfo}>
                 <h3 className={styles.categoryName}>{category.voName}</h3>
                 <p className={styles.categoryDescription}>
-                  {category.voDescription || '精选商品'}
+                  {category.voDescription || t('shop.categoryFallbackDescription')}
                 </p>
                 <span className={styles.categoryCount}>
-                  {category.voProductCount ?? 0} 件商品
+                  {t('shop.productCount', { count: category.voProductCount ?? 0 })}
                 </span>
               </div>
             </div>
@@ -87,9 +86,9 @@ export const ShopHome = ({
       {/* 推荐商品 */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>推荐商品</h2>
+          <h2 className={styles.sectionTitle}>{t('shop.featuredProducts')}</h2>
           <button className={styles.viewAllButton} onClick={onViewAllProducts}>
-            查看更多 →
+            {t('shop.viewMore')} →
           </button>
         </div>
 
@@ -113,13 +112,13 @@ export const ShopHome = ({
 
                 {product.voHasDiscount && (
                   <div className={styles.discountBadge}>
-                    特价
+                    {t('shop.discount')}
                   </div>
                 )}
 
                 {!product.voInStock && (
                   <div className={styles.outOfStockOverlay}>
-                    <span>缺货</span>
+                    <span>{t('shop.outOfStock')}</span>
                   </div>
                 )}
               </div>
@@ -129,7 +128,7 @@ export const ShopHome = ({
 
                 <div className={styles.productPrice}>
                   <span className={styles.currentPrice}>
-                    {product.voPrice.toLocaleString()} 胡萝卜
+                    {product.voPrice.toLocaleString()} {t('shop.currency.carrot')}
                   </span>
                   {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
                     <span className={styles.originalPrice}>
@@ -140,7 +139,7 @@ export const ShopHome = ({
 
                 <div className={styles.productMeta}>
                   <span className={styles.soldCount}>
-                    已售 {product.voSoldCount ?? 0}
+                    {t('shop.soldCount', { count: product.voSoldCount ?? 0 })}
                   </span>
                   <span className={styles.duration}>
                     {product.voDurationDisplay ?? ''}
@@ -154,7 +153,7 @@ export const ShopHome = ({
         {featuredProducts.length === 0 && (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>🛍️</div>
-            <p>暂无推荐商品</p>
+            <p>{t('shop.featuredEmpty')}</p>
           </div>
         )}
       </section>
@@ -162,32 +161,32 @@ export const ShopHome = ({
       {/* 购物指南 */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>购物指南</h2>
+          <h2 className={styles.sectionTitle}>{t('shop.guideTitle')}</h2>
         </div>
 
         <div className={styles.guideGrid}>
           <div className={styles.guideCard}>
             <div className={styles.guideIcon}>💰</div>
-            <h3>获取胡萝卜</h3>
-            <p>通过发帖、评论、点赞等活动获得胡萝卜奖励</p>
+            <h3>{t('shop.guide.earn.title')}</h3>
+            <p>{t('shop.guide.earn.description')}</p>
           </div>
 
           <div className={styles.guideCard}>
             <div className={styles.guideIcon}>🎁</div>
-            <h3>购买权益</h3>
-            <p>使用胡萝卜购买徽章、头像框、称号等装饰权益</p>
+            <h3>{t('shop.guide.benefit.title')}</h3>
+            <p>{t('shop.guide.benefit.description')}</p>
           </div>
 
           <div className={styles.guideCard}>
             <div className={styles.guideIcon}>🎮</div>
-            <h3>使用道具</h3>
-            <p>购买改名卡、经验卡等消耗品道具提升体验</p>
+            <h3>{t('shop.guide.item.title')}</h3>
+            <p>{t('shop.guide.item.description')}</p>
           </div>
 
           <div className={styles.guideCard}>
             <div className={styles.guideIcon}>📦</div>
-            <h3>管理背包</h3>
-            <p>在背包中查看已购买的权益和道具，激活使用</p>
+            <h3>{t('shop.guide.inventory.title')}</h3>
+            <p>{t('shop.guide.inventory.description')}</p>
           </div>
         </div>
       </section>

@@ -1,6 +1,9 @@
-import { formatDistanceToNow } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
 import styles from './Notification.module.css';
+
+export interface NotificationTextOverrides {
+  markAsRead?: string;
+  delete?: string;
+}
 
 /**
  * 通知项数据（纯 UI 接口，不依赖后端命名约定）
@@ -44,6 +47,10 @@ export interface NotificationProps {
   onDelete?: (id: number) => void;
   /** 是否显示操作按钮 */
   showActions?: boolean;
+  /** 操作文案 */
+  labels?: NotificationTextOverrides;
+  /** 相对时间格式化 */
+  formatRelativeTime?: (createdAt: string) => string;
 }
 
 /**
@@ -56,7 +63,9 @@ export const Notification = ({
   onClick,
   onMarkAsRead,
   onDelete,
-  showActions = true
+  showActions = true,
+  labels,
+  formatRelativeTime
 }: NotificationProps) => {
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -116,10 +125,7 @@ export const Notification = ({
     onDelete?.(notification.id);
   };
 
-  const timeAgo = formatDistanceToNow(new Date(notification.createdAt), {
-    addSuffix: true,
-    locale: zhCN
-  });
+  const timeAgo = formatRelativeTime?.(notification.createdAt) ?? notification.createdAt;
 
   return (
     <div
@@ -161,7 +167,7 @@ export const Notification = ({
             <button
               className={styles.actionBtn}
               onClick={handleMarkAsRead}
-              title="标记已读"
+              title={labels?.markAsRead ?? '标记已读'}
             >
               ✓
             </button>
@@ -169,7 +175,7 @@ export const Notification = ({
           <button
             className={styles.actionBtn}
             onClick={handleDelete}
-            title="删除"
+            title={labels?.delete ?? '删除'}
           >
             ✕
           </button>

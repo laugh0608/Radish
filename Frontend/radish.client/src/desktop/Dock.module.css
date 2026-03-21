@@ -1,53 +1,56 @@
-/* Dock 容器 - 固定在顶部中间 */
 .dockContainer {
-  position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 6px);
+  position: absolute;
+  top: 24px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10000;
   pointer-events: none;
+  width: max-content;
+  max-width: calc(100% - 48px);
 }
 
-/* Dock 主体 */
 .dock {
+  display: inline-flex;
   pointer-events: auto;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--theme-dock-text);
+  background: var(--theme-dock-bg);
+  backdrop-filter: blur(22px) saturate(130%);
+  -webkit-backdrop-filter: blur(22px) saturate(130%);
+  border: 1px solid var(--theme-dock-border);
   box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    var(--theme-shadow-soft),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  transition:
+    transform var(--theme-transition-standard),
+    background var(--theme-transition-standard),
+    box-shadow var(--theme-transition-standard),
+    border-color var(--theme-transition-standard);
   cursor: pointer;
 }
 
-/* 展开状态 */
 .dock.expanded {
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 8px 16px;
 }
 
-/* 缩小状态（灵动岛） */
 .dock.collapsed {
-  border-radius: 50px;
-  padding: 4px 12px;
-  background: rgba(0, 0, 0, 0.75);
+  border-radius: var(--theme-radius-pill);
+  min-height: 36px;
+  padding: 6px 14px;
+  background: var(--theme-dock-bg-compact);
+  border-color: var(--theme-border-strong);
 }
 
 .dock.collapsed:hover {
-  background: rgba(0, 0, 0, 0.85);
+  transform: translateY(1px) scale(1.01);
 }
 
-/* 展开内容 */
 .expandedContent {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: white;
 }
 
-/* 用户区域 */
 .userSection {
   display: flex;
   align-items: center;
@@ -61,50 +64,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
-  color: white;
-  transition: all 0.2s ease;
-  overflow: hidden; /* 确保头像不会溢出 */
+  background: var(--theme-dock-item-bg);
+  border: 1px solid var(--theme-dock-item-border);
+  border-radius: var(--theme-radius-control);
+  color: var(--theme-dock-text);
+  transition:
+    transform var(--theme-transition-standard),
+    background var(--theme-transition-standard),
+    border-color var(--theme-transition-standard);
+  overflow: hidden;
 }
 
 .avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: var(--theme-radius-control);
 }
 
 .avatar:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--theme-dock-item-hover-bg);
   transform: translateY(-2px);
-}
-
-.badge {
-  position: absolute;
-  top: -4px;
-  right: -4px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  background: #ff3b30;
-  color: white;
-  font-size: 11px;
-  font-weight: 600;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid rgba(0, 0, 0, 0.6);
-  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.5);
 }
 
 .userInfo {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  transition: all 0.2s ease;
+  transition: transform var(--theme-transition-standard);
 }
 
 .userInfo:hover {
@@ -114,24 +101,22 @@
 .userName {
   font-size: 14px;
   font-weight: 600;
-  color: white;
+  color: var(--theme-text-primary);
   line-height: 1.2;
 }
 
 .userId {
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--theme-text-muted);
   line-height: 1.2;
 }
 
-/* 分隔线 */
 .divider {
   width: 1px;
   height: 32px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--theme-dock-divider);
 }
 
-/* 应用区域 */
 .appsSection {
   display: flex;
   align-items: center;
@@ -145,12 +130,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
+  background: var(--theme-dock-item-bg);
+  border: 1px solid var(--theme-dock-item-border);
+  border-radius: var(--theme-radius-control);
   cursor: pointer;
-  transition: all 0.2s ease;
-  color: white;
+  transition:
+    transform var(--theme-transition-standard),
+    background var(--theme-transition-standard),
+    box-shadow var(--theme-transition-standard),
+    border-color var(--theme-transition-standard),
+    opacity var(--theme-transition-standard);
+  color: var(--theme-dock-text);
+  padding: 0;
 }
 
 .appIcon svg {
@@ -158,17 +149,22 @@
 }
 
 .appIcon:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--theme-dock-item-hover-bg);
   transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 24px rgba(66, 52, 41, 0.16);
 }
 
 .appIcon.active {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--theme-dock-item-active-bg);
+  border-color: var(--theme-border-strong);
 }
 
 .appIcon.minimized {
-  opacity: 0.5;
+  opacity: 0.55;
+}
+
+.appIcon.pinned {
+  border-style: dashed;
 }
 
 .emoji {
@@ -180,12 +176,11 @@
   bottom: -6px;
   width: 4px;
   height: 4px;
-  background: #00d4ff;
+  background: var(--theme-accent-ink);
   border-radius: 50%;
-  box-shadow: 0 0 8px rgba(0, 212, 255, 0.8);
+  box-shadow: 0 0 10px rgba(67, 92, 116, 0.4);
 }
 
-/* 右侧区域 */
 .rightSection {
   display: flex;
   align-items: center;
@@ -195,98 +190,89 @@
 .time {
   font-size: 14px;
   font-weight: 500;
-  color: white;
+  color: var(--theme-text-secondary);
   font-variant-numeric: tabular-nums;
   min-width: 48px;
   text-align: center;
+  font-family: var(--theme-font-serif);
 }
 
+.languageButton,
+.themeButton,
 .authButton {
   position: relative;
-  width: 40px;
+  min-height: 40px;
   height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
+  background: var(--theme-dock-item-bg);
+  border: 1px solid var(--theme-dock-item-border);
+  border-radius: var(--theme-radius-control);
   cursor: pointer;
-  transition: all 0.2s ease;
-  color: white;
+  transition:
+    transform var(--theme-transition-standard),
+    background var(--theme-transition-standard),
+    border-color var(--theme-transition-standard),
+    box-shadow var(--theme-transition-standard);
+  color: var(--theme-dock-text);
+  padding: 0 12px;
 }
 
+.languageButton svg,
+.themeButton svg,
 .authButton svg {
   flex-shrink: 0;
 }
 
+.languageButton:hover,
+.themeButton:hover,
 .authButton:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
+  background: var(--theme-dock-item-hover-bg);
+  transform: translateY(-1px);
 }
 
-/* 已登录状态 - 绿色主题 */
+.languageButton {
+  gap: 8px;
+  color: var(--theme-accent-ink);
+}
+
+.themeButton {
+  gap: 8px;
+  color: var(--theme-brand-primary);
+}
+
+.themeButton:hover {
+  border-color: rgba(178, 64, 87, 0.28);
+}
+
+.languageLabel,
+.themeLabel {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
 .authButton.loggedIn {
-  background: rgba(48, 209, 88, 0.2);
-  border-color: rgba(48, 209, 88, 0.4);
-  color: #30d158;
+  background: rgba(79, 156, 131, 0.12);
+  border-color: rgba(79, 156, 131, 0.28);
+  color: var(--theme-state-success);
 }
 
 .authButton.loggedIn:hover {
-  background: rgba(48, 209, 88, 0.3);
-  border-color: rgba(48, 209, 88, 0.6);
+  background: rgba(79, 156, 131, 0.18);
+  border-color: rgba(79, 156, 131, 0.36);
 }
 
-/* 未登录状态 - 蓝色主题 */
 .authButton.loggedOut {
-  background: rgba(10, 132, 255, 0.15);
-  border-color: rgba(10, 132, 255, 0.3);
-  color: #0a84ff;
+  background: rgba(67, 92, 116, 0.1);
+  border-color: rgba(67, 92, 116, 0.22);
+  color: var(--theme-state-info);
 }
 
 .authButton.loggedOut:hover {
-  background: rgba(10, 132, 255, 0.25);
-  border-color: rgba(10, 132, 255, 0.5);
-}
-
-/* 在线状态指示器 */
-.onlineIndicator {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  width: 10px;
-  height: 10px;
-  background: #30d158;
-  border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 8px rgba(48, 209, 88, 0.8);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-/* 通知按钮（展开状态） */
-.notificationButton {
-  position: relative;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  color: white;
-  font-size: 28px; /* emoji 大小 */
-}
-
-.notificationButton svg {
-  flex-shrink: 0;
-}
-
-.notificationButton:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.1);
+  background: rgba(67, 92, 116, 0.16);
+  border-color: rgba(67, 92, 116, 0.3);
 }
 
 .notificationBadge {
@@ -296,7 +282,7 @@
   min-width: 16px;
   height: 16px;
   padding: 0 4px;
-  background: #ff3b30;
+  background: var(--theme-state-danger);
   color: white;
   font-size: 9px;
   font-weight: 600;
@@ -304,16 +290,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid rgba(0, 0, 0, 0.6);
-  box-shadow: 0 2px 8px rgba(255, 59, 48, 0.5);
+  border: 2px solid var(--theme-bg-surface);
+  box-shadow: 0 4px 10px rgba(195, 86, 77, 0.26);
 }
 
-/* 缩小内容（灵动岛） */
 .collapsedContent {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: white;
 }
 
 .miniAvatar {
@@ -323,7 +307,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--theme-dock-text);
 }
 
 .statusDot {
@@ -332,31 +316,12 @@
   right: 0;
   width: 8px;
   height: 8px;
-  background: #30d158;
+  background: var(--theme-state-success);
   border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.8);
-  box-shadow: 0 0 8px rgba(48, 209, 88, 0.8);
-  z-index: 1; /* 确保在头像上方 */
+  border: 2px solid var(--theme-bg-surface);
+  box-shadow: 0 0 8px rgba(79, 156, 131, 0.36);
+  z-index: 1;
   animation: pulse 2s ease-in-out infinite;
-}
-
-.miniBadge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  min-width: 14px;
-  height: 14px;
-  padding: 0 4px;
-  background: #ff3b30;
-  color: white;
-  font-size: 9px;
-  font-weight: 600;
-  border-radius: 7px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid rgba(0, 0, 0, 0.6);
-  box-shadow: 0 2px 6px rgba(255, 59, 48, 0.5);
 }
 
 .miniAppIcon {
@@ -366,7 +331,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--theme-dock-text);
 }
 
 .miniEmoji {
@@ -379,90 +344,43 @@
   right: 0;
   width: 8px;
   height: 8px;
-  background: #00d4ff;
+  background: var(--theme-accent-ink);
   border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 8px rgba(0, 212, 255, 0.8);
+  border: 2px solid var(--theme-bg-surface);
+  box-shadow: 0 0 8px rgba(67, 92, 116, 0.34);
   animation: pulse 2s ease-in-out infinite;
 }
 
 .moreIndicator {
   font-size: 11px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--theme-text-muted);
   padding: 0 4px;
 }
 
 .miniTime {
   font-size: 11px;
   font-weight: 500;
-  color: white;
+  color: var(--theme-text-secondary);
   font-variant-numeric: tabular-nums;
   margin-left: 2px;
+  font-family: var(--theme-font-serif);
 }
 
-/* 通知按钮（灵动岛） */
-.miniNotificationButton {
-  position: relative;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: white;
-  transition: all 0.2s ease;
-  flex-shrink: 0; /* 防止被压缩 */
-  font-size: 16px; /* emoji 大小 */
-}
-
-.miniNotificationButton svg {
-  flex-shrink: 0;
-  z-index: 1; /* 确保图标在徽章下方 */
-}
-
-.miniNotificationButton:hover {
-  transform: scale(1.2);
-}
-
-/* 通知中心未读提示红点（灵动岛状态） */
 .miniNotificationDot {
   position: absolute;
   top: 0;
   right: 0;
   width: 6px;
   height: 6px;
-  background: #ff3b30;
+  background: var(--theme-state-danger);
   border-radius: 50%;
-  border: 1.5px solid rgba(0, 0, 0, 0.6);
-  box-shadow: 0 0 6px rgba(255, 59, 48, 0.8);
+  border: 1.5px solid var(--theme-bg-surface);
+  box-shadow: 0 0 6px rgba(195, 86, 77, 0.45);
   z-index: 2;
   animation: pulse 2s ease-in-out infinite;
 }
 
-.miniNotificationBadge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  min-width: 14px;
-  height: 14px;
-  padding: 0 4px;
-  background: #ff3b30;
-  color: white;
-  font-size: 9px;
-  font-weight: 600;
-  border-radius: 7px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid rgba(0, 0, 0, 0.6);
-  box-shadow: 0 2px 6px rgba(255, 59, 48, 0.5);
-  z-index: 2; /* 确保徽章在图标上方 */
-}
-
-/* 响应式调整 */
 @media (max-width: 768px) {
   .dock.expanded {
     padding: 10px 16px;
@@ -481,17 +399,30 @@
     min-width: 42px;
   }
 
+  .languageLabel,
+  .themeLabel {
+    display: none;
+  }
+
+  .languageButton,
+  .themeButton,
+  .authButton {
+    width: 40px;
+    min-width: 40px;
+    padding: 0;
+  }
+
   .appIcon {
     width: 44px;
     height: 44px;
   }
 }
 
-/* 动画 */
 @keyframes pulse {
   0%, 100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.6;
   }

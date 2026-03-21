@@ -379,7 +379,7 @@ export const ForumApp = () => {
 
   const handleToggleFollow = async (targetUserId: number, isFollowing: boolean) => {
     if (!loggedIn) {
-      dataState.setError('请先登录后再关注');
+      dataState.setError(t('forum.loginRequiredToFollow'));
       return;
     }
 
@@ -410,7 +410,7 @@ export const ForumApp = () => {
 
     openApp('profile', {
       userId: targetUserId,
-      userName: targetUserName?.trim() || `用户 ${targetUserId}`,
+      userName: targetUserName?.trim() || t('common.userFallback', { id: targetUserId }),
       avatarUrl: avatarUrl ?? null,
     });
   };
@@ -469,9 +469,9 @@ export const ForumApp = () => {
                   : ''
               }`}
               onClick={handleShowAllPosts}
-              title="查看全部帖子"
+              title={t('forum.viewAllPosts')}
             >
-              全部帖子
+              {t('forum.allPosts')}
             </button>
           </div>
 
@@ -499,7 +499,7 @@ export const ForumApp = () => {
         {/* 中间栏：帖子瀑布流或帖子详情 */}
         <div className={styles.middleColumn}>
           {dataState.selectedPost ? (
-            <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center' }}>详情加载中...</div>}>
+            <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center' }}>{t('forum.detailLoading')}</div>}>
               <PostDetailContentView
                 post={dataState.selectedPost}
                 comments={dataState.comments}
@@ -523,6 +523,7 @@ export const ForumApp = () => {
                 }}
                 onLike={actionsState.handleLikePost}
                 onVotePoll={actionsState.handleVotePoll}
+                onClosePoll={actionsState.handleClosePoll}
                 onDrawLottery={actionsState.handleDrawLottery}
                 onAnswerQuestion={actionsState.handleAnswerQuestion}
                 onAcceptAnswer={actionsState.handleAcceptAnswer}
@@ -607,10 +608,12 @@ export const ForumApp = () => {
                   sortBy={dataState.sortBy}
                   postViewMode={dataState.postViewMode}
                   questionStatus={dataState.questionStatus}
+                  pollStatus={dataState.pollStatus}
                   loadingPosts={dataState.loadingPosts}
                   onSortChange={actionsState.handleSortChange}
                   onViewModeChange={dataState.setPostViewMode}
                   onQuestionStatusChange={dataState.setQuestionStatus}
+                  onPollStatusChange={dataState.setPollStatus}
                   onOpenSearch={handleOpenSearchView}
                   onPageChange={actionsState.handlePageChange}
                   onPostClick={actionsState.handleSelectPost}
@@ -664,10 +667,10 @@ export const ForumApp = () => {
         {/* 删除帖子确认对话框 */}
         <ConfirmDialog
           isOpen={actionsState.isDeleteDialogOpen}
-          title="确认删除"
-          message="确定要删除这篇帖子吗？删除后无法恢复。"
-          confirmText="删除"
-          cancelText="取消"
+          title={t('forum.confirmDeleteTitle')}
+          message={t('forum.confirmDeletePostMessage')}
+          confirmText={t('common.delete')}
+          cancelText={t('common.cancel')}
           danger={true}
           onConfirm={actionsState.confirmDeletePost}
           onCancel={actionsState.cancelDeletePost}
@@ -676,10 +679,10 @@ export const ForumApp = () => {
         {/* 删除评论确认对话框 */}
         <ConfirmDialog
           isOpen={actionsState.isDeleteCommentDialogOpen}
-          title="确认删除"
-          message="确定要删除这条评论吗？删除后无法恢复。"
-          confirmText="删除"
-          cancelText="取消"
+          title={t('forum.confirmDeleteTitle')}
+          message={t('forum.confirmDeleteCommentMessage')}
+          confirmText={t('common.delete')}
+          cancelText={t('common.cancel')}
           danger={true}
           onConfirm={actionsState.confirmDeleteComment}
           onCancel={actionsState.cancelDeleteComment}
@@ -689,7 +692,7 @@ export const ForumApp = () => {
           <Suspense fallback={null}>
             <EditHistoryModal
               isOpen={actionsState.isPostHistoryOpen}
-              title={dataState.selectedPost?.voIsQuestion ? '问题编辑历史' : '帖子编辑历史'}
+              title={dataState.selectedPost?.voIsQuestion ? t('forum.questionHistoryTitle') : t('forum.postHistoryTitle')}
               loading={actionsState.postHistoryLoading}
               error={actionsState.postHistoryError}
               items={actionsState.postHistories}
@@ -715,7 +718,7 @@ export const ForumApp = () => {
           <Suspense fallback={null}>
             <EditHistoryModal
               isOpen={actionsState.isCommentHistoryOpen}
-              title="评论编辑历史"
+              title={t('forum.commentHistoryTitle')}
               loading={actionsState.commentHistoryLoading}
               error={actionsState.commentHistoryError}
               items={actionsState.commentHistories}
@@ -736,7 +739,7 @@ export const ForumApp = () => {
         )}
 
         {/* 错误提示 */}
-        {dataState.error && <p className={styles.errorText}>错误：{dataState.error}</p>}
+        {dataState.error && <p className={styles.errorText}>{t('common.errorPrefix')}{dataState.error}</p>}
       </div>
     </div>
   );

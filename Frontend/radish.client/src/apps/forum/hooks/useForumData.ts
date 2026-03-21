@@ -18,6 +18,7 @@ import {
   type CommentHighlight,
   type ForumPostViewMode,
   type QuestionStatusFilter,
+  type PollStatusFilter,
   type ForumPostSortBy,
   type QuestionAnswerSort,
   type QuestionAnswerFilter
@@ -54,6 +55,7 @@ export interface ForumDataState {
   commentSortBy: 'newest' | 'hottest' | null;
   postViewMode: ForumPostViewMode;
   questionStatus: QuestionStatusFilter;
+  pollStatus: PollStatusFilter;
   questionAnswerSort: QuestionAnswerSort;
   questionAnswerFilter: QuestionAnswerFilter;
 
@@ -82,6 +84,7 @@ export interface ForumDataActions {
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
   setPostViewMode: (mode: ForumPostViewMode) => void;
   setQuestionStatus: (status: QuestionStatusFilter) => void;
+  setPollStatus: (status: PollStatusFilter) => void;
   setQuestionAnswerSort: (sortBy: QuestionAnswerSort) => void;
   setQuestionAnswerFilter: (filterBy: QuestionAnswerFilter) => void;
   setSearchKeyword: (keyword: string) => void;
@@ -122,6 +125,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const [commentSortBy, setCommentSortBy] = useState<'newest' | 'hottest' | null>(null);
   const [postViewMode, setPostViewMode] = useState<ForumPostViewMode>('all');
   const [questionStatus, setQuestionStatus] = useState<QuestionStatusFilter>('all');
+  const [pollStatus, setPollStatus] = useState<PollStatusFilter>('all');
   const [questionAnswerSort, setQuestionAnswerSort] = useState<QuestionAnswerSort>('default');
   const [questionAnswerFilter, setQuestionAnswerFilter] = useState<QuestionAnswerFilter>('all');
 
@@ -199,7 +203,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     }
     const resolvedPageIndex = selectedTagName ? 1 : currentPage;
     const resolvedPageSize = selectedTagName ? 100 : pageSize;
-    const loadKey = `${selectedCategoryId ?? 'all'}|${resolvedPageIndex}|${resolvedPageSize}|${sortBy}|${postViewMode}|${questionStatus}|${searchKeyword.trim()}|${selectedTagName ?? ''}`;
+    const loadKey = `${selectedCategoryId ?? 'all'}|${resolvedPageIndex}|${resolvedPageSize}|${sortBy}|${postViewMode}|${questionStatus}|${pollStatus}|${searchKeyword.trim()}|${selectedTagName ?? ''}`;
     if (inFlightPostListRef.current.has(loadKey)) {
       return;
     }
@@ -217,7 +221,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
         undefined,
         undefined,
         postViewMode,
-        questionStatus
+        questionStatus,
+        pollStatus
       );
       const filteredPosts = selectedTagName
         ? pageModel.data.filter(post => {
@@ -402,15 +407,20 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   // 当选择分类时重新加载帖子
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategoryId, selectedTagName, postViewMode, questionStatus]);
+  }, [selectedCategoryId, selectedTagName, postViewMode, questionStatus, pollStatus]);
 
   useEffect(() => {
-    if (postViewMode === 'question' && (sortBy === 'hottest' || sortBy === 'essence')) {
+    if (postViewMode === 'question' && (sortBy === 'hottest' || sortBy === 'essence' || sortBy === 'votes' || sortBy === 'deadline')) {
       setSortBy('newest');
       return;
     }
 
-    if (postViewMode !== 'question' && (sortBy === 'pending' || sortBy === 'answers')) {
+    if (postViewMode === 'poll' && (sortBy === 'hottest' || sortBy === 'essence' || sortBy === 'pending' || sortBy === 'answers')) {
+      setSortBy('newest');
+      return;
+    }
+
+    if (postViewMode === 'all' && (sortBy === 'pending' || sortBy === 'answers' || sortBy === 'votes' || sortBy === 'deadline')) {
       setSortBy('newest');
     }
   }, [postViewMode, sortBy]);
@@ -418,7 +428,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   // 当页码、排序或搜索变化时重新加载帖子
   useEffect(() => {
     void loadPosts();
-  }, [categoriesLoaded, selectedCategoryId, selectedTagName, currentPage, sortBy, searchKeyword, postViewMode, questionStatus]);
+  }, [categoriesLoaded, selectedCategoryId, selectedTagName, currentPage, sortBy, searchKeyword, postViewMode, questionStatus, pollStatus]);
 
   return {
     // 状态
@@ -440,6 +450,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     commentSortBy,
     postViewMode,
     questionStatus,
+    pollStatus,
     questionAnswerSort,
     questionAnswerFilter,
     searchKeyword,
@@ -461,6 +472,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     setCommentSortBy,
     setPostViewMode,
     setQuestionStatus,
+    setPollStatus,
     setQuestionAnswerSort,
     setQuestionAnswerFilter,
     setSearchKeyword,

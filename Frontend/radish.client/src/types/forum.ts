@@ -23,7 +23,9 @@ export type ForumPostViewMode = 'all' | 'question' | 'poll';
 
 export type QuestionStatusFilter = 'all' | 'pending' | 'solved';
 
-export type ForumPostSortBy = 'newest' | 'hottest' | 'essence' | 'pending' | 'answers';
+export type PollStatusFilter = 'all' | 'active' | 'closed';
+
+export type ForumPostSortBy = 'newest' | 'hottest' | 'essence' | 'pending' | 'answers' | 'votes' | 'deadline';
 
 export type QuestionAnswerSort = 'default' | 'latest';
 
@@ -204,6 +206,13 @@ export interface CreatePollOptionRequest {
 export interface VotePollRequest {
   postId: number;
   optionId: number;
+}
+
+/**
+ * 结束投票请求
+ */
+export interface ClosePollRequest {
+  postId: number;
 }
 
 /**

@@ -5,11 +5,12 @@
   right: 0;
   bottom: 0;
   padding: 2rem;
-  padding-top: 80px; /* 为顶部 Dock 留出空间，避免桌面图标被遮挡 */
-  display: flex;
-  flex-direction: column; /* 纵向排列 */
-  flex-wrap: wrap; /* 允许换列 */
-  align-content: flex-start; /* 列靠左对齐 */
+  padding-top: 80px;
+  display: grid;
+  grid-template-columns: repeat(2, 70px);
+  grid-auto-rows: 80px;
+  align-content: start;
+  justify-content: start;
   gap: 1rem;
   overflow: auto;
 }
@@ -19,21 +20,26 @@
   height: 80px;
 }
 
-/* 自定义滚动条 */
+@media (max-width: 900px) {
+  .desktop {
+    grid-template-columns: 70px;
+  }
+}
+
 .desktop::-webkit-scrollbar {
   width: 8px;
 }
 
 .desktop::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--theme-scrollbar-track);
   border-radius: 4px;
 }
 
 .desktop::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--theme-scrollbar-thumb);
   border-radius: 4px;
 }
 
 .desktop::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--theme-scrollbar-thumb-hover);
 }

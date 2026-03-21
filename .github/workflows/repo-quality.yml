@@ -1,0 +1,125 @@
+name: Repo Quality
+
+on:
+  pull_request:
+    branches:
+      - master
+      - dev
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: repo-quality-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repo-hygiene:
+    name: Repo Hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Collect changed files
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            if [[ -n "${{ github.event.pull_request.head.sha }}" && -n "${{ github.event.pull_request.base.sha }}" ]]; then
+              git diff-tree --no-commit-id --name-only --diff-filter=ACMR -z -r "${{ github.event.pull_request.head.sha }}" > changed-files.txt
+            else
+              git ls-files -z > changed-files.txt
+            fi
+          else
+            base_sha="${{ github.event.before }}"
+            head_sha="${{ github.sha }}"
+
+            if [[ -z "$base_sha" || "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
+              git ls-files -z > changed-files.txt
+            else
+              git diff --name-only --diff-filter=ACMR -z "$base_sha" "$head_sha" > changed-files.txt
+            fi
+          fi
+
+      - name: Check repository hygiene
+        shell: bash
+        run: node Scripts/check-repo-hygiene.mjs --stdin-z < changed-files.txt
+
+  frontend-lint:
+    name: Frontend Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Collect changed files
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            if [[ -n "${{ github.event.pull_request.head.sha }}" && -n "${{ github.event.pull_request.base.sha }}" ]]; then
+              git diff-tree --no-commit-id --name-only --diff-filter=ACMR -z -r "${{ github.event.pull_request.head.sha }}" > changed-files.txt
+            else
+              git ls-files -z > changed-files.txt
+            fi
+          else
+            base_sha="${{ github.event.before }}"
+            head_sha="${{ github.sha }}"
+
+            if [[ -z "$base_sha" || "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
+              git ls-files -z > changed-files.txt
+            else
+              git diff --name-only --diff-filter=ACMR -z "$base_sha" "$head_sha" > changed-files.txt
+            fi
+          fi
+
+      - name: Run frontend lint
+        shell: bash
+        run: node Scripts/lint-frontend-changed.mjs --stdin-z < changed-files.txt
+
+  baseline-quick:
+    name: Baseline Quick
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run quick baseline validation
+        run: npm run validate:baseline:quick

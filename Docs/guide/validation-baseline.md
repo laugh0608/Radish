@@ -11,6 +11,9 @@
 根目录现提供以下命令：
 
 ```bash
+npm run setup:hooks
+npm run check:repo-hygiene
+npm run lint:changed
 npm run validate:baseline
 npm run validate:baseline:quick
 npm run validate:baseline:host
@@ -18,6 +21,15 @@ npm run validate:baseline:host
 
 对应关系：
 
+- `setup:hooks`
+  - 将 Git `core.hooksPath` 指向仓库内的 `.githooks`
+  - 启用 `pre-commit` 与 `commit-msg` 本地拦截
+- `check:repo-hygiene`
+  - 全量检查仓库已跟踪文本文件的 UTF-8 / BOM / 换行符 / 末尾换行 / 尾随空格
+  - 适合治理历史文本问题时使用
+- `lint:changed`
+  - 只对当前变更中的前端脚本文件执行 `eslint`
+  - 适合与 GitHub Actions 的 `Frontend Lint` 对齐
 - `validate:baseline`
   - 运行前端 `type-check`
   - 运行 `radish.client` 现有 `node --test`（当前以 `--test-isolation=none` 兼容受限环境）
@@ -41,6 +53,7 @@ npm run validate:baseline:host
 优先运行：
 
 ```bash
+npm run setup:hooks
 npm run validate:baseline:quick
 ```
 
@@ -48,6 +61,14 @@ npm run validate:baseline:quick
 
 - 前端页面、共享组件、Console 权限链路调整
 - 纯文档之外、但又不需要完整后端回归的日常提交前检查
+
+补充说明：
+
+- `setup:hooks` 只需首次执行一次；之后提交时会自动运行：
+  - staged 文件的文本卫生检查
+  - staged 变更中的前端脚本 lint
+  - Conventional Commits 提交标题校验
+- 如果提交被 hooks 拦截，优先先修正本次变更，不要绕过 hooks 强行提交
 
 ### 2. 合并前 / 跨层改动后
 
@@ -62,6 +83,19 @@ npm run validate:baseline
 - 涉及后端 Service / Repository / API 契约
 - 涉及前后端联动字段、权限或路由
 - 需要给出最小“本地可构建、可测试”结论时
+
+如果准备发起到 `master` 的 PR，再补一轮：
+
+```bash
+npm run lint:changed
+npm run check:repo-hygiene
+```
+
+说明：
+
+- `master` 当前受规则保护，只允许通过 PR 合并
+- GitHub Actions 中的 `Repo Hygiene` 与 `Frontend Lint` 当前仅检查“本次变更文件”，用于先拦新增问题，避免被历史债务拖死
+- `check:repo-hygiene` 本地全量扫描仍建议按需人工执行，适合做历史清理批次时使用
 
 ### 3. 宿主或配置相关改动后
 
@@ -100,7 +134,17 @@ npm run validate:baseline:host
 
 ## 边界说明
 
-- 当前不默认承诺 CI 已接入
+- 当前已接入最小 CI 门禁，但仍以“变更文件优先”为主
 - 当前不默认承诺 `HttpTest` 已自动化
 - 当前不默认承诺前端具备完整 Vitest / RTL / Playwright 基线
 - 当前只是在已有资产之上补“统一入口”和“分层说明”
+
+## Windows 本机宿主占用说明
+
+在 Windows 本机联调时，如果 `Radish.Api`、`Radish.Auth`、`JetBrains.Debugger.Worker` 等进程仍在占用默认 `bin\Debug` 输出目录，`dotnet build` 或 `dotnet test` 可能因为 DLL 被锁而失败。
+
+处理顺序建议如下：
+
+1. 优先停止本机运行中的宿主或调试进程，再执行默认的构建与测试验证。
+2. 如果这轮只是做必要的编译 / 测试确认，且暂时不方便停宿主，可改用隔离输出目录完成验证，避免覆盖正在运行的宿主产物。
+3. 自动化验证与真实联调尽量拆开执行，不要长时间共用同一个默认输出目录反复覆盖。

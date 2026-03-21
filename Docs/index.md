@@ -41,6 +41,8 @@ features:
 ## 当前协作
 
 - [开发路线图总览](/development-plan) - 当前里程碑、主线与里程碑表
+- [首版 dev 边界](/planning/dev-first-scope) - 首版 dev 的范围、完成标准与明确后置项
+- [首版 dev 功能矩阵状态表](/planning/dev-first-status-matrix) - 首版范围内每条主线当前处于什么状态
 - [当前进行中](/planning/current) - 现在真正要做的事
 - [未来规划](/planning/backlog) - 后续候选节点与进入条件
 - [开发日志总索引](/changelog/) - 年度 / 月度 / 周志入口
@@ -51,6 +53,8 @@ features:
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](/guide/console-authorization-phase1)
 - [配置管理](/guide/configuration)
 - [服务网关](/guide/gateway)
+- [视觉主题规范](/frontend/visual-theme-spec)
+- [视觉颜色参考](/frontend/visual-color-reference)
 - [国际化指南](/architecture/i18n)
 - [文档系统方案](/guide/document-system)
 - [论坛投票 MVP 设计方案](/features/forum-poll-mvp)

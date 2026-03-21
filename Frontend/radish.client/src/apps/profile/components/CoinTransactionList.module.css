@@ -1,8 +1,8 @@
 .container {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .loading,
@@ -10,11 +10,11 @@
 .empty {
   text-align: center;
   padding: 40px 20px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .error {
-  color: #d14343;
+  color: var(--theme-state-danger);
 }
 
 /* 筛选器 */
@@ -23,7 +23,7 @@
   gap: 16px;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--theme-border-soft);
   flex-wrap: wrap;
 }
 
@@ -35,28 +35,28 @@
 
 .filterGroup label {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
   white-space: nowrap;
 }
 
 .filterGroup select {
   padding: 6px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--theme-border-soft);
   border-radius: 6px;
   font-size: 14px;
-  background: white;
+  background: var(--theme-bg-surface);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .filterGroup select:hover {
-  border-color: #667eea;
+  border-color: var(--theme-border-strong);
 }
 
 .filterGroup select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--theme-brand-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-brand-primary) 16%, transparent 84%);
 }
 
 /* 交易列表 */
@@ -67,15 +67,15 @@
 }
 
 .transaction {
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   overflow: hidden;
   transition: all 0.2s ease;
 }
 
 .transaction:hover {
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  border-color: var(--theme-border-strong);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .transactionHeader {
@@ -83,8 +83,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e0e0e0;
+  background: var(--theme-bg-muted);
+  border-bottom: 1px solid var(--theme-border-soft);
 }
 
 /* 交易类型标签 */
@@ -96,33 +96,33 @@
 }
 
 .type.SYSTEM_GRANT {
-  background: #e3f2fd;
-  color: #1976d2;
+  background: color-mix(in srgb, var(--theme-accent-ink) 14%, white 86%);
+  color: var(--theme-accent-ink);
 }
 
 .type.LIKE_REWARD {
-  background: #fff3e0;
-  color: #f57c00;
+  background: color-mix(in srgb, var(--theme-accent-earth) 14%, white 86%);
+  color: var(--theme-accent-earth);
 }
 
 .type.COMMENT_REWARD {
-  background: #f3e5f5;
-  color: #7b1fa2;
+  background: color-mix(in srgb, var(--theme-brand-primary) 12%, white 88%);
+  color: var(--theme-brand-primary);
 }
 
 .type.HIGHLIGHT_REWARD {
-  background: #fff9c4;
-  color: #f57f17;
+  background: color-mix(in srgb, var(--theme-accent-earth) 18%, white 82%);
+  color: var(--theme-accent-earth);
 }
 
 .type.TRANSFER {
-  background: #e8f5e9;
-  color: #388e3c;
+  background: color-mix(in srgb, var(--theme-state-success) 14%, white 86%);
+  color: var(--theme-state-success);
 }
 
 .type.ADMIN_ADJUST {
-  background: #fce4ec;
-  color: #c2185b;
+  background: color-mix(in srgb, var(--theme-state-danger) 12%, white 88%);
+  color: var(--theme-state-danger);
 }
 
 /* 交易状态标签 */
@@ -134,18 +134,18 @@
 }
 
 .status.SUCCESS {
-  background: #e8f5e9;
-  color: #2e7d32;
+  background: color-mix(in srgb, var(--theme-state-success) 14%, white 86%);
+  color: var(--theme-state-success);
 }
 
 .status.PENDING {
-  background: #fff3e0;
-  color: #f57c00;
+  background: color-mix(in srgb, var(--theme-accent-earth) 14%, white 86%);
+  color: var(--theme-accent-earth);
 }
 
 .status.FAILED {
-  background: #ffebee;
-  color: #c62828;
+  background: color-mix(in srgb, var(--theme-state-danger) 12%, white 88%);
+  color: var(--theme-state-danger);
 }
 
 /* 交易详情 */
@@ -173,21 +173,21 @@
 
 .from,
 .to {
-  color: #333;
+  color: var(--theme-text-primary);
   font-weight: 500;
 }
 
 .arrow {
-  color: #999;
+  color: var(--theme-text-muted);
   font-size: 16px;
 }
 
 .remark {
   font-size: 13px;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-style: italic;
   padding: 6px 12px;
-  background: #f5f5f5;
+  background: var(--theme-bg-muted);
   border-radius: 6px;
 }
 
@@ -195,19 +195,19 @@
   display: flex;
   gap: 16px;
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
   flex-wrap: wrap;
 }
 
 .transactionNo {
   font-family: monospace;
   padding: 2px 6px;
-  background: #f0f0f0;
+  background: var(--theme-bg-muted);
   border-radius: 4px;
 }
 
 .time {
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 /* 金额显示 */
@@ -223,12 +223,12 @@
 .amount {
   font-size: 18px;
   font-weight: 700;
-  color: #667eea;
+  color: var(--theme-brand-primary);
 }
 
 .fee {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 /* 分页 */
@@ -239,12 +239,12 @@
   gap: 16px;
   margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--theme-border-soft);
 }
 
 .pageButton {
   padding: 8px 16px;
-  background: #667eea;
+  background: var(--theme-brand-primary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -254,18 +254,18 @@
 }
 
 .pageButton:hover:not(:disabled) {
-  background: #5568d3;
+  background: color-mix(in srgb, var(--theme-brand-primary) 84%, black 16%);
   transform: translateY(-1px);
 }
 
 .pageButton:disabled {
-  background: #ccc;
+  background: color-mix(in srgb, var(--theme-text-muted) 72%, var(--theme-bg-muted) 28%);
   cursor: not-allowed;
 }
 
 .pageInfo {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 /* 响应式 */

@@ -148,8 +148,64 @@ public class PostPollService : IPostPollService
         return result.VoPoll;
     }
 
+    /// <summary>
+    /// 手动结束投票
+    /// </summary>
+    [UseTran]
+    public async Task<PostPollVo> CloseAsync(long postId, long userId, string userName)
+    {
+        if (userId <= 0)
+        {
+            throw new InvalidOperationException("请先登录后再结束投票");
+        }
+
+        if (postId <= 0)
+        {
+            throw new ArgumentException("帖子ID必须大于0", nameof(postId));
+        }
+
+        var post = await _postRepository.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted);
+        if (post == null)
+        {
+            throw new InvalidOperationException("帖子不存在");
+        }
+
+        var poll = await _postPollRepository.QueryFirstAsync(p => p.PostId == postId && !p.IsDeleted);
+        if (poll == null)
+        {
+            throw new InvalidOperationException("当前帖子未配置投票");
+        }
+
+        if (post.AuthorId != userId)
+        {
+            throw new InvalidOperationException("只有发帖者可以结束投票");
+        }
+
+        if (IsPollClosed(poll))
+        {
+            throw new InvalidOperationException("投票已截止");
+        }
+
+        var operatorName = string.IsNullOrWhiteSpace(userName) ? $"User-{userId}" : userName.Trim();
+        var now = DateTime.UtcNow;
+
+        poll.IsClosed = true;
+        poll.ModifyTime = now;
+        poll.ModifyBy = operatorName;
+        poll.ModifyId = userId;
+        await _postPollRepository.UpdateAsync(poll);
+
+        var result = await GetByPostIdAsync(postId, userId);
+        if (result.VoPoll == null)
+        {
+            throw new InvalidOperationException("投票结果刷新失败");
+        }
+
+        return result.VoPoll;
+    }
+
     private static bool IsPollClosed(PostPoll poll)
     {
-        return poll.IsClosed || (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow);
+        return poll.IsClosed || (poll.EndTime != null && poll.EndTime <= DateTime.UtcNow);
     }
 }

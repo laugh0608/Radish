@@ -8,18 +8,18 @@
 
 .loading,
 .empty {
-  color: #6b7280;
+  color: var(--theme-text-secondary);
   font-size: 14px;
   text-align: center;
   padding: 12px;
 }
 
 .error {
-  color: #ef4444;
+  color: var(--theme-state-danger);
   font-size: 14px;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.25);
-  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-state-danger) 10%, var(--theme-bg-surface) 90%);
+  border: 1px solid color-mix(in srgb, var(--theme-state-danger) 26%, transparent);
+  border-radius: var(--theme-radius-control);
   padding: 10px 12px;
 }
 
@@ -30,10 +30,11 @@
 }
 
 .item {
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 14px;
   padding: 12px;
-  background: #fff;
+  background: var(--theme-bg-surface);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .itemHeader {
@@ -48,12 +49,12 @@
 .seq {
   font-size: 13px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-text-primary);
 }
 
 .meta {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
 }
 
 .titleRow,
@@ -74,16 +75,16 @@
 
 .label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
   margin-bottom: 4px;
 }
 
 .titleText {
   font-size: 13px;
-  color: #111827;
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  color: var(--theme-text-primary);
+  background: color-mix(in srgb, var(--theme-bg-app) 56%, var(--theme-bg-surface) 44%);
+  border: 1px solid var(--theme-border-soft);
+  border-radius: var(--theme-radius-control);
   padding: 8px;
 }
 
@@ -93,10 +94,10 @@
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-  color: #111827;
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  color: var(--theme-text-primary);
+  background: color-mix(in srgb, var(--theme-bg-app) 56%, var(--theme-bg-surface) 44%);
+  border: 1px solid var(--theme-border-soft);
+  border-radius: var(--theme-radius-control);
   padding: 8px;
   max-height: 220px;
   overflow: auto;
@@ -110,7 +111,7 @@
 }
 
 .summary {
-  color: #6b7280;
+  color: var(--theme-text-secondary);
   font-size: 12px;
 }
 
@@ -122,7 +123,7 @@
 
 .pageInfo {
   font-size: 12px;
-  color: #4b5563;
+  color: var(--theme-text-secondary);
 }
 
 @media (max-width: 768px) {
@@ -131,4 +132,3 @@
     grid-template-columns: 1fr;
   }
 }
-

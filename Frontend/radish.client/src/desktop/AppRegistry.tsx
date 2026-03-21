@@ -1,4 +1,5 @@
 import { lazy, Suspense, type ComponentType } from 'react';
+import i18n from '@/i18n';
 import type { AppDefinition } from './types';
 
 const CONSOLE_ACCESS_PERMISSION = 'console.access';
@@ -8,7 +9,7 @@ const createLazyWindowApp = (loader: () => Promise<{ default: ComponentType }>):
 
   return function LazyWindowApp() {
     return (
-      <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center' }}>应用加载中...</div>}>
+      <Suspense fallback={<div style={{ padding: '1rem', textAlign: 'center' }}>{i18n.t('desktop.appLoading')}</div>}>
         <LazyComponent />
       </Suspense>
     );
@@ -104,8 +105,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'welcome',
     name: '欢迎',
+    nameKey: 'desktop.apps.welcome.name',
     icon: 'mdi:hand-wave',
     description: 'Radish WebOS 欢迎页面',
+    descriptionKey: 'desktop.apps.welcome.description',
     component: WelcomeApp,
     type: 'window',
     defaultSize: { width: 900, height: 700 },
@@ -115,8 +118,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'showcase',
     name: '组件库',
+    nameKey: 'desktop.apps.showcase.name',
     icon: 'mdi:view-grid-plus',
     description: '@radish/ui 组件库预览',
+    descriptionKey: 'desktop.apps.showcase.description',
     component: ShowcaseApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
@@ -126,8 +131,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'console',
     name: '控制台',
+    nameKey: 'desktop.apps.console.name',
     icon: 'mdi:console',
     description: 'Radish 管理控制台',
+    descriptionKey: 'desktop.apps.console.description',
     component: () => null,
     type: 'external',
     externalUrl: isAccessingViaGateway() ? '/console/' : 'http://localhost:3100',
@@ -136,8 +143,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'document',
     name: '文档',
+    nameKey: 'desktop.apps.document.name',
     icon: 'mdi:notebook-edit-outline',
     description: '固定文档、在线文档与 Markdown 导入导出',
+    descriptionKey: 'desktop.apps.document.description',
     component: WikiApp,
     type: 'window',
     defaultSize: { width: 1280, height: 820 },
@@ -147,8 +156,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'forum',
     name: '论坛',
+    nameKey: 'desktop.apps.forum.name',
     icon: 'mdi:forum',
     description: '社区讨论与内容分享',
+    descriptionKey: 'desktop.apps.forum.description',
     component: ForumApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
@@ -158,8 +169,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'chat',
     name: '聊天室',
+    nameKey: 'desktop.apps.chat.name',
     icon: 'mdi:message-text',
     description: '频道制实时聊天',
+    descriptionKey: 'desktop.apps.chat.description',
     component: ChatApp,
     type: 'window',
     defaultSize: { width: 1100, height: 750 },
@@ -169,8 +182,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'profile',
     name: '个人主页',
+    nameKey: 'desktop.apps.profile.name',
     icon: 'mdi:account',
     description: '查看个人信息、帖子和评论',
+    descriptionKey: 'desktop.apps.profile.description',
     component: ProfileApp,
     type: 'window',
     defaultSize: { width: 1000, height: 700 },
@@ -180,8 +195,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'radish-pit',
     name: '萝卜坑',
+    nameKey: 'desktop.apps.radishPit.name',
     icon: 'mdi:wallet',
     description: '萝卜管理中心 - 转移、记录、统计、安全',
+    descriptionKey: 'desktop.apps.radishPit.description',
     component: RadishPitApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
@@ -191,8 +208,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'notification',
     name: '通知中心',
+    nameKey: 'desktop.apps.notification.name',
     icon: 'mdi:bell',
     description: '查看和管理系统通知',
+    descriptionKey: 'desktop.apps.notification.description',
     component: NotificationApp,
     type: 'window',
     defaultSize: { width: 800, height: 700 },
@@ -202,8 +221,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'leaderboard',
     name: '排行榜',
+    nameKey: 'desktop.apps.leaderboard.name',
     icon: 'mdi:trophy',
     description: '经验值排行榜',
+    descriptionKey: 'desktop.apps.leaderboard.description',
     component: LeaderboardApp,
     type: 'window',
     defaultSize: { width: 900, height: 700 },
@@ -213,8 +234,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'experience-detail',
     name: '等级',
+    nameKey: 'desktop.apps.experienceDetail.name',
     icon: 'mdi:star-circle',
     description: '等级与经验值详情',
+    descriptionKey: 'desktop.apps.experienceDetail.description',
     component: ExperienceDetailApp,
     type: 'window',
     defaultSize: { width: 1000, height: 800 },
@@ -224,8 +247,10 @@ export const appRegistry: AppDefinition[] = [
   {
     id: 'shop',
     name: '萝卜商城',
+    nameKey: 'desktop.apps.shop.name',
     icon: 'mdi:shopping',
     description: '使用胡萝卜购买权益和道具',
+    descriptionKey: 'desktop.apps.shop.description',
     component: ShopApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },

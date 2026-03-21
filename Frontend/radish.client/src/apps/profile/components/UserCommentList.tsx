@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { Icon } from '@radish/ui/icon';
@@ -20,6 +21,7 @@ interface UserCommentListProps {
 }
 
 export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onCommentClick }: UserCommentListProps) => {
+  const { t } = useTranslation();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -49,11 +51,11 @@ export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onComment
   };
 
   if (loading) {
-    return <div className={styles.loading}>加载中...</div>;
+    return <div className={styles.loading}>{t('common.loading')}</div>;
   }
 
   if (comments.length === 0) {
-    return <div className={styles.empty}>还没有发表过评论</div>;
+    return <div className={styles.empty}>{t('profile.comments.empty')}</div>;
   }
 
   return (
@@ -87,17 +89,17 @@ export const UserCommentList = ({ userId, apiBaseUrl, displayTimeZone, onComment
             disabled={page === 1}
             className={styles.pageButton}
           >
-            上一页
+            {t('common.previousPage')}
           </button>
           <span className={styles.pageInfo}>
-            {page} / {totalPages}
+            {t('common.pageInfo', { current: page, total: totalPages })}
           </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
             className={styles.pageButton}
           >
-            下一页
+            {t('common.nextPage')}
           </button>
         </div>
       )}

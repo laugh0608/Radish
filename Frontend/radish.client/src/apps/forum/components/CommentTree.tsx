@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import type { CommentNode as CommentNodeType, ReactionSummaryVo } from '@/api/forum';
 import type { ReactionTogglePayload } from '@radish/ui/reaction-bar';
@@ -55,6 +56,7 @@ export const CommentTree = ({
   onRequireReactionLogin,
   onAuthorClick,
 }: CommentTreeProps) => {
+  const { t } = useTranslation();
   // 找出所有神评（后端标记的）
   const godComments = useMemo(() => {
     return comments.filter(c => c.voIsGodComment);
@@ -90,7 +92,7 @@ export const CommentTree = ({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h4 className={styles.title}>讨论区</h4>
+        <h4 className={styles.title}>{t('forum.commentTree.title')}</h4>
         {hasPost && comments.length > 0 && (
           <div className={styles.sortButtons}>
             <button
@@ -98,24 +100,24 @@ export const CommentTree = ({
               className={`${styles.sortButton} ${sortBy === 'newest' ? styles.active : ''}`}
               onClick={() => onSortChange?.('newest')}
             >
-              最新
+              {t('forum.sort.newest')}
             </button>
             <button
               type="button"
               className={`${styles.sortButton} ${sortBy === 'hottest' ? styles.active : ''}`}
               onClick={() => onSortChange?.('hottest')}
             >
-              最热
+              {t('forum.sort.hottest')}
             </button>
           </div>
         )}
       </div>
-      {loading && <p className={styles.loadingText}>加载讨论中...</p>}
+      {loading && <p className={styles.loadingText}>{t('forum.loadingDiscussion')}</p>}
       {!loading && comments.length === 0 && hasPost && (
-        <p className={styles.emptyText}>还没有讨论，来补充你的看法吧！</p>
+        <p className={styles.emptyText}>{t('forum.commentTree.empty')}</p>
       )}
       {!loading && comments.length === 0 && !hasPost && (
-        <p className={styles.emptyText}>请先选择一个帖子查看讨论</p>
+        <p className={styles.emptyText}>{t('forum.commentTree.selectPost')}</p>
       )}
       <div className={styles.list}>
         {displayComments.map(comment => (

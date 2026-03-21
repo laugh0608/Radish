@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ProductCategory, ProductListItem } from '@/types/shop';
 import { getProductTypeDisplay } from '@/api/shop';
 import styles from './ProductList.module.css';
@@ -32,7 +33,7 @@ export const ProductList = ({
   onPageChange,
   onBack
 }: ProductListProps) => {
-  // const { t } = useTranslation(); // 暂时不使用
+  const { t } = useTranslation();
   const [searchInput, setSearchInput] = useState(searchKeyword || '');
 
   // 处理搜索
@@ -54,9 +55,9 @@ export const ProductList = ({
 
   // 获取当前分类名称
   const getCurrentCategoryName = () => {
-    if (!selectedCategoryId) return '全部商品';
+    if (!selectedCategoryId) return t('shop.allProducts');
     const category = categories.find(c => String(c.voId) === selectedCategoryId);
-    return category?.voName || '未知分类';
+    return category?.voName || t('shop.unknownCategory');
   };
 
   return (
@@ -64,7 +65,7 @@ export const ProductList = ({
       {/* 顶部导航 */}
       <div className={styles.header}>
         <button className={styles.backButton} onClick={onBack}>
-          ← 返回
+          ← {t('shop.back')}
         </button>
         <h1 className={styles.title}>{getCurrentCategoryName()}</h1>
       </div>
@@ -74,7 +75,7 @@ export const ProductList = ({
         <div className={styles.searchBox}>
           <input
             type="text"
-            placeholder="搜索商品..."
+            placeholder={t('shop.searchPlaceholder')}
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyPress={handleSearchKeyPress}
@@ -95,7 +96,7 @@ export const ProductList = ({
             className={`${styles.categoryTab} ${!selectedCategoryId ? styles.active : ''}`}
             onClick={() => onCategoryChange(undefined)}
           >
-            全部
+            {t('shop.filter.all')}
           </button>
           {categories.map((category) => (
             <button
@@ -112,7 +113,7 @@ export const ProductList = ({
       {/* 搜索结果提示 */}
       {searchKeyword && (
         <div className={styles.searchResult}>
-          搜索 "{searchKeyword}" 的结果，共找到 {products.length} 件商品
+          {t('shop.searchResult', { keyword: searchKeyword, count: products.length })}
         </div>
       )}
 
@@ -121,7 +122,7 @@ export const ProductList = ({
         {loading ? (
           <div className={styles.loading}>
             <div className={styles.spinner}></div>
-            <p>加载中...</p>
+            <p>{t('shop.loading')}</p>
           </div>
         ) : products.length > 0 ? (
           <>
@@ -145,13 +146,13 @@ export const ProductList = ({
 
                     {product.voHasDiscount && (
                       <div className={styles.discountBadge}>
-                        特价
+                        {t('shop.discount')}
                       </div>
                     )}
 
                     {!product.voInStock && (
                       <div className={styles.outOfStockOverlay}>
-                        <span>缺货</span>
+                        <span>{t('shop.outOfStock')}</span>
                       </div>
                     )}
                   </div>
@@ -165,7 +166,7 @@ export const ProductList = ({
 
                     <div className={styles.productPrice}>
                       <span className={styles.currentPrice}>
-                        {product.voPrice.toLocaleString()} 胡萝卜
+                        {product.voPrice.toLocaleString()} {t('shop.currency.carrot')}
                       </span>
                       {product.voOriginalPrice && product.voOriginalPrice > product.voPrice && (
                         <span className={styles.originalPrice}>
@@ -176,7 +177,7 @@ export const ProductList = ({
 
                     <div className={styles.productMeta}>
                       <span className={styles.soldCount}>
-                        已售 {product.voSoldCount ?? 0}
+                        {t('shop.soldCount', { count: product.voSoldCount ?? 0 })}
                       </span>
                       <span className={styles.duration}>
                         {product.voDurationDisplay ?? ''}
@@ -195,7 +196,7 @@ export const ProductList = ({
                   disabled={currentPage <= 1}
                   onClick={() => onPageChange(currentPage - 1)}
                 >
-                  上一页
+                  {t('shop.orders.prevPage')}
                 </button>
 
                 <div className={styles.pageNumbers}>
@@ -228,7 +229,7 @@ export const ProductList = ({
                   disabled={currentPage >= totalPages}
                   onClick={() => onPageChange(currentPage + 1)}
                 >
-                  下一页
+                  {t('shop.orders.nextPage')}
                 </button>
               </div>
             )}
@@ -236,18 +237,18 @@ export const ProductList = ({
         ) : (
           <div className={styles.emptyState}>
             <div className={styles.emptyIcon}>🛍️</div>
-            <h3>暂无商品</h3>
+            <h3>{t('shop.emptyProducts')}</h3>
             <p>
               {searchKeyword
-                ? `没有找到包含 "${searchKeyword}" 的商品`
+                ? t('shop.emptyProductsSearch', { keyword: searchKeyword })
                 : selectedCategoryId
-                ? '该分类下暂无商品'
-                : '暂无商品上架'
+                ? t('shop.emptyProductsCategory')
+                : t('shop.emptyProductsGeneral')
               }
             </p>
             {searchKeyword && (
               <button className={styles.clearSearchButton} onClick={clearSearch}>
-                清除搜索条件
+                {t('shop.clearSearch')}
               </button>
             )}
           </div>

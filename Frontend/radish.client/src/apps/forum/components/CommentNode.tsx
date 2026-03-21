@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import type { CommentNode as CommentNodeType, ReactionSummaryVo } from '@/api/forum';
@@ -215,6 +216,7 @@ export const CommentNode = ({
   onRequireReactionLogin,
   onAuthorClick,
 }: CommentNodeProps) => {
+  const { t } = useTranslation();
   // 判断是否是作者本人
   const isAuthor = currentUserId > 0 && String(node.voAuthorId) === String(currentUserId);
 
@@ -309,12 +311,12 @@ export const CommentNode = ({
         setCurrentPage(1);
       })
       .catch(error => {
-        log.error('预加载子评论失败:', error);
+        log.error(t('forum.comment.preloadChildrenFailed'), error);
       })
       .finally(() => {
         setIsLoadingMore(false);
       });
-  }, [hasChildren, isLoadingMore, level, loadedChildren.length, node.voId, onLoadMoreChildren, pageSize]);
+  }, [hasChildren, isLoadingMore, level, loadedChildren.length, node.voId, onLoadMoreChildren, pageSize, t]);
 
   // 处理点赞
   const handleLike = async () => {
@@ -327,7 +329,7 @@ export const CommentNode = ({
       setIsLiked(result.isLiked);
       setLikeCount(result.likeCount);
     } catch (error) {
-      log.error('点赞失败:', error);
+      log.error(t('forum.comment.likeFailed'), error);
       // 发生错误时保持原状态
     } finally {
       setIsLiking(false);
@@ -358,8 +360,8 @@ export const CommentNode = ({
       setEditError(null);
       setIsEditing(false);
     } catch (error) {
-      log.error('编辑评论失败:', error);
-      const message = error instanceof Error ? error.message : '编辑失败，请稍后重试';
+      log.error(t('forum.comment.editFailed'), error);
+      const message = error instanceof Error ? error.message : t('forum.comment.editFailedRetry');
       setEditError(message);
     } finally {
       setIsSubmitting(false);
@@ -385,7 +387,7 @@ export const CommentNode = ({
           setLoadedChildren(normalized);
           setCurrentPage(1);
         } catch (error) {
-          log.error('加载子评论失败:', error);
+          log.error(t('forum.comment.loadMoreChildrenFailed'), error);
         } finally {
           setIsLoadingMore(false);
         }
@@ -409,7 +411,7 @@ export const CommentNode = ({
       setLoadedChildren([...loadedChildren, ...normalized]);
       setCurrentPage(nextPage);
     } catch (error) {
-      log.error('加载更多子评论失败:', error);
+      log.error(t('forum.comment.loadMoreChildrenFailed'), error);
     } finally {
       setIsLoadingMore(false);
     }
@@ -474,7 +476,7 @@ export const CommentNode = ({
           type="button"
           className={styles.authorButton}
           onClick={() => onAuthorClick?.(node.voAuthorId, node.voAuthorName)}
-          title={`查看 ${node.voAuthorName} 的主页`}
+          title={t('forum.comment.authorProfileTitle', { name: node.voAuthorName })}
         >
           <span className={styles.author}>{node.voAuthorName}</span>
         </button>
@@ -483,11 +485,11 @@ export const CommentNode = ({
         )}
         {/* 神评标识（仅父评论） */}
         {level === 0 && isGodComment && (
-          <span className={styles.godCommentBadge}>神评</span>
+          <span className={styles.godCommentBadge}>{t('forum.comment.godComment')}</span>
         )}
         {/* 沙发标识（仅子评论） */}
         {level === 1 && node.voIsSofa && (
-          <span className={styles.sofaBadge}>沙发</span>
+          <span className={styles.sofaBadge}>{t('forum.comment.sofa')}</span>
         )}
         {isAuthor && (
           <div className={styles.authorActions}>
@@ -496,7 +498,7 @@ export const CommentNode = ({
                 type="button"
                 onClick={handleEdit}
                 className={styles.editButton}
-                title="编辑评论"
+                title={t('forum.comment.edit')}
                 disabled={isEditing}
               >
                 <Icon icon="mdi:pencil" size={14} />
@@ -507,7 +509,7 @@ export const CommentNode = ({
                 type="button"
                 onClick={() => onViewHistory(node.voId)}
                 className={styles.historyButton}
-                title="查看编辑历史"
+                title={t('forum.comment.viewHistory')}
                 disabled={isEditing}
               >
                 <Icon icon="mdi:history" size={14} />
@@ -518,7 +520,7 @@ export const CommentNode = ({
                 type="button"
                 onClick={() => onDelete(node.voId)}
                 className={styles.deleteButton}
-                title="删除评论"
+                title={t('forum.comment.delete')}
               >
                 <Icon icon="mdi:delete" size={14} />
               </button>
@@ -539,7 +541,7 @@ export const CommentNode = ({
               }
             }}
             className={styles.editTextarea}
-            placeholder="编辑评论内容..."
+            placeholder={t('forum.comment.editPlaceholder')}
             disabled={isSubmitting}
             autoFocus
           />
@@ -550,7 +552,7 @@ export const CommentNode = ({
               className={styles.saveButton}
               disabled={isSubmitting || !editContent.trim()}
             >
-              {isSubmitting ? '保存中...' : '保存'}
+              {isSubmitting ? t('forum.comment.saving') : t('forum.comment.save')}
             </button>
             <button
               type="button"
@@ -558,7 +560,7 @@ export const CommentNode = ({
               className={styles.cancelButton}
               disabled={isSubmitting}
             >
-              取消
+              {t('forum.comment.cancel')}
             </button>
           </div>
           {editError && <div className={styles.editError}>{editError}</div>}
@@ -567,7 +569,8 @@ export const CommentNode = ({
         <div className={styles.contentWrapper}>
           {replyToUserName && (
             <div className={styles.replyMeta}>
-              回复 <span className={styles.replyTarget}>@{replyToUserName}</span>
+              {t('forum.comment.replyPrefix')}
+              <span className={styles.replyTarget}>@{replyToUserName}</span>
             </div>
           )}
           {commentHtml && (
@@ -588,7 +591,7 @@ export const CommentNode = ({
                     setLightboxIndex(idx);
                     setLightboxOpen(true);
                   }}
-                  title="点击查看原图"
+                  title={t('forum.comment.viewOriginalImage')}
                 >
                   <img src={img.displaySrc} alt={img.alt} className={styles.imageThumb} />
                 </button>
@@ -620,7 +623,7 @@ export const CommentNode = ({
             onClick={handleLike}
             disabled={isLiking}
             className={`${styles.actionButton} ${styles.likeButton} ${isLiked ? styles.liked : ''}`}
-            title={isLiked ? '取消点赞' : '点赞'}
+            title={isLiked ? t('forum.comment.unlike') : t('forum.comment.like')}
           >
             <Icon icon={isLiked ? 'mdi:heart' : 'mdi:heart-outline'} size={16} />
             {likeCount > 0 && <span className={styles.count}>{likeCount}</span>}
@@ -633,10 +636,10 @@ export const CommentNode = ({
             type="button"
             onClick={handleReply}
             className={`${styles.actionButton} ${styles.replyButton}`}
-            title="回复"
+            title={t('forum.comment.reply')}
           >
             <Icon icon="mdi:reply" size={16} />
-            <span>回复</span>
+            <span>{t('forum.comment.reply')}</span>
           </button>
         )}
       </div>
@@ -652,14 +655,14 @@ export const CommentNode = ({
                 className={`${styles.childSortButton} ${childSortBy === 'newest' ? styles.active : ''}`}
                 onClick={() => handleChildSortChange('newest')}
               >
-                最新
+                {t('forum.sort.newest')}
               </button>
               <button
                 type="button"
                 className={`${styles.childSortButton} ${childSortBy === 'hottest' ? styles.active : ''}`}
                 onClick={() => handleChildSortChange('hottest')}
               >
-                最热
+                {t('forum.sort.hottest')}
               </button>
             </div>
           )}
@@ -705,7 +708,7 @@ export const CommentNode = ({
                   className={styles.expandButton}
                 >
                   <Icon icon="mdi:chevron-down" size={16} />
-                  {isLoadingMore ? '加载中...' : `展开 ${totalChildren - 1} 条回复`}
+                  {isLoadingMore ? t('forum.loadingPosts') : t('forum.comment.expandReplies', { count: totalChildren - 1 })}
                 </button>
               ) : (
                 <>
@@ -718,7 +721,7 @@ export const CommentNode = ({
                       className={styles.expandButton}
                     >
                       <Icon icon="mdi:chevron-down" size={16} />
-                      {isLoadingMore ? '加载中...' : `加载更多 (${loadedCount}/${totalChildren})`}
+                      {isLoadingMore ? t('forum.loadingPosts') : t('forum.comment.loadMoreReplies', { loaded: loadedCount, total: totalChildren })}
                     </button>
                   )}
 
@@ -729,7 +732,7 @@ export const CommentNode = ({
                     className={styles.collapseButton}
                   >
                     <Icon icon="mdi:chevron-up" size={16} />
-                    收起回复
+                    {t('forum.comment.collapseReplies')}
                   </button>
                 </>
               )}

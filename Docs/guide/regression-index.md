@@ -28,7 +28,7 @@
 | 社区关系链 / 内容治理 / 分发流 | 关注、举报、审核、分发流、个人主页关系链改动后 | `Radish.Api.Community.http` | [社区主线验收清单](/features/community-m12-p0-acceptance)、[论坛应用功能说明](/features/forum-features) | 当前 `Community` 脚本承接原 `Forum.http` 中的关系链与治理段 |
 | 论坛核心主链 / 分类标签 / 帖子编辑历史 | 分类、标签、发帖、帖子列表 / 详情、帖子编辑历史改动后 | `Radish.Api.Forum.Core.http` | [论坛应用功能说明](/features/forum-features)、[论坛编辑历史（专题）](/features/forum-edit-history) | 论坛主链基础能力统一看 `Forum.Core` |
 | 论坛评论 / 回复 / 评论编辑历史 | 评论树、回复、评论编辑、评论历史改动后 | `Radish.Api.Forum.Comment.http` | [论坛编辑历史（专题）](/features/forum-edit-history) | 评论链路与帖子主链已拆分，避免混在同一文件里 |
-| 论坛投票 | 投票模型、发帖附带投票、投票提交 / 截止 / 展示改动后 | `Radish.Api.Forum.Poll.http` | [论坛投票 MVP 设计方案](/features/forum-poll-mvp) | 需要补列表摘要、详情展示与重复投票拦截时优先跑 |
+| 论坛投票 | 投票模型、发帖附带投票、状态筛选、票数 / 截止排序、投票提交、结束投票改动后 | `Radish.Api.Forum.Poll.http` | [论坛投票 MVP 设计方案](/features/forum-poll-mvp) | 当前脚本已覆盖投票视图、状态筛选、票数 / 截止排序、重复投票拦截与结束投票；涉及欢迎 App 交互时再补专题文档中的人工验收 |
 | 论坛问答 | 问答帖发布、回答提交、采纳、问答视图 / 排序改动后 | `Radish.Api.Forum.Question.http` | [论坛问答 MVP 设计方案](/features/forum-qa-mvp) | `P4-ext` 首轮回归继续复用该脚本 |
 | 论坛抽奖 / 浏览记录 | 抽奖参与、开奖、中奖通知、浏览记录写入 / 回看改动后 | `Radish.Api.Forum.Lottery.http`、`Radish.Api.User.Profile.http` | [论坛抽奖 MVP 设计方案](/features/forum-lottery-mvp) | 当前最完整的“脚本 + 最小人工验收顺序”样例 |
 | 聊天室 REST 主链 | 频道列表、历史分页、发送、撤回、在线成员、未读同步改动后 | `Radish.Api.Chat.http` | [聊天室 App 文档总览](/features/chat-app-index)、[聊天室 App 实施路线图](/features/chat-app-roadmap) | 实时事件仍需结合运行中的 ChatHub 做人工观察 |

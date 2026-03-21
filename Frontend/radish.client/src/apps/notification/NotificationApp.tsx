@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatDistanceToNow } from 'date-fns';
+import { enUS, zhCN } from 'date-fns/locale';
 import { log } from '@/utils/logger';
 import { NotificationList } from '@radish/ui/notification-list';
 import type { NotificationItemData } from '@radish/ui/notification';
@@ -18,6 +21,7 @@ import styles from './NotificationApp.module.css';
  * 注意：SignalR 连接由 Shell 统一管理，此组件只负责读取状态和调用方法
  */
 export const NotificationApp = () => {
+  const { t, i18n } = useTranslation();
   const { openApp, openOrReuseApp } = useWindowStore();
   const currentUserId = useUserStore((state) => state.userId);
   const { unreadCount, recentNotifications } = useNotificationStore();
@@ -33,6 +37,23 @@ export const NotificationApp = () => {
   const [hasMore, setHasMore] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'mention' | 'comment' | 'like'>('all');
   const pageSize = 20;
+  const notificationListLabels = useMemo(() => ({
+    loading: t('notification.shared.loading'),
+    loadingMore: t('notification.shared.loadingMore'),
+    loadMore: t('notification.shared.loadMore'),
+    loadedAll: t('notification.shared.loadedAll'),
+    emptyTitle: t('notification.shared.emptyTitle'),
+    emptyHint: t('notification.shared.emptyHint'),
+    markAsRead: t('notification.shared.markAsRead'),
+    delete: t('notification.shared.delete'),
+  }), [t]);
+  const formatRelativeTime = useCallback((createdAt: string) => {
+    const locale = i18n.language.startsWith('en') ? enUS : zhCN;
+    return formatDistanceToNow(new Date(createdAt), {
+      addSuffix: true,
+      locale,
+    });
+  }, [i18n.language]);
 
   const mapApiNotificationToStore = (n: UserNotificationVo): NotificationItem => {
     const notification = n.voNotification;
@@ -176,7 +197,7 @@ export const NotificationApp = () => {
         }
       } catch (error) {
         log.error('加载通知列表失败:', error);
-        toast.error('加载通知列表失败');
+        toast.error(t('notification.loadFailed'));
         setHasMore(false);
       } finally {
         setLoading(false);
@@ -184,7 +205,7 @@ export const NotificationApp = () => {
     };
 
     void loadNotifications();
-  }, []);
+  }, [t]);
 
   const handleLoadMore = useCallback(async () => {
     if (loadingMore || loading || !hasMore) return;
@@ -219,11 +240,11 @@ export const NotificationApp = () => {
       }
     } catch (error) {
       log.error('加载更多通知失败:', error);
-      toast.error('加载更多通知失败');
+      toast.error(t('notification.loadMoreFailed'));
     } finally {
       setLoadingMore(false);
     }
-  }, [hasMore, loading, loadingMore, pageIndex, pageSize]);
+  }, [hasMore, loading, loadingMore, pageIndex, pageSize, t]);
 
   const filteredNotifications = useMemo(() => {
     switch (activeFilter) {
@@ -255,12 +276,12 @@ export const NotificationApp = () => {
       setNotifications(prev => prev.map(n => (n.id === id ? { ...n, isRead: true } : n)));
       await syncUnreadCountFromServer();
 
-      toast.success('已标记为已读');
+      toast.success(t('notification.markReadSuccess'));
     } catch (error) {
       log.error('标记已读失败:', error);
-      toast.error('标记已读失败');
+      toast.error(t('notification.markReadFailed'));
     }
-  }, [resolveBackendNotificationId, syncUnreadCountFromServer]);
+  }, [resolveBackendNotificationId, syncUnreadCountFromServer, t]);
 
   // 点击通知
   const handleNotificationClick = useCallback((notification: NotificationItemData) => {
@@ -294,7 +315,7 @@ export const NotificationApp = () => {
         } else {
           openApp('profile', {
             userId: targetUserId,
-            userName: notification.triggerName?.trim() || `用户 ${targetUserId}`,
+            userName: notification.triggerName?.trim() || t('common.userFallback', { id: targetUserId }),
             avatarUrl: notification.triggerAvatar ?? null,
           });
         }
@@ -312,8 +333,8 @@ export const NotificationApp = () => {
       return;
     }
 
-    toast.info('该通知暂不支持直接跳转');
-  }, [currentUserId, handleMarkAsRead, openApp, openOrReuseApp]);
+    toast.info(t('notification.unsupportedNavigation'));
+  }, [currentUserId, handleMarkAsRead, openApp, openOrReuseApp, t]);
 
   // 标记全部已读
   const handleMarkAllAsRead = useCallback(async () => {
@@ -328,12 +349,12 @@ export const NotificationApp = () => {
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       await syncUnreadCountFromServer();
 
-      toast.success('已标记全部为已读');
+      toast.success(t('notification.markAllReadSuccess'));
     } catch (error) {
       log.error('标记全部已读失败:', error);
-      toast.error('标记全部已读失败');
+      toast.error(t('notification.markAllReadFailed'));
     }
-  }, [syncUnreadCountFromServer]);
+  }, [syncUnreadCountFromServer, t]);
 
   // 删除通知
   const handleDelete = useCallback(async (id: number) => {
@@ -346,25 +367,25 @@ export const NotificationApp = () => {
       store.removeNotification(backendNotificationId);
       setNotifications(prev => prev.filter(n => (n.notificationId ?? n.id) !== backendNotificationId));
 
-      toast.success('通知已删除');
+      toast.success(t('notification.deleteSuccess'));
     } catch (error) {
       log.error('删除通知失败:', error);
-      toast.error('删除通知失败');
+      toast.error(t('notification.deleteFailed'));
     }
-  }, [resolveBackendNotificationId]);
+  }, [resolveBackendNotificationId, t]);
 
   return (
     <div className={styles.notificationApp}>
       <div className={styles.header}>
         <div className={styles.headerTop}>
-          <h1 className={styles.title}>通知中心</h1>
+          <h1 className={styles.title}>{t('notification.title')}</h1>
           <div className={styles.actions}>
             <span className={styles.count}>
-              {unreadCount > 0 ? `${unreadCount} 条未读` : '全部已读'}
+              {unreadCount > 0 ? t('notification.unreadCount', { count: unreadCount }) : t('notification.allRead')}
             </span>
             {unreadCount > 0 && (
               <button className={styles.markAllBtn} onClick={handleMarkAllAsRead}>
-                全部已读
+                {t('notification.markAllRead')}
               </button>
             )}
           </div>
@@ -375,35 +396,35 @@ export const NotificationApp = () => {
             className={`${styles.filterTab} ${activeFilter === 'all' ? styles.filterActive : ''}`}
             onClick={() => setActiveFilter('all')}
           >
-            全部
+            {t('notification.filter.all')}
           </button>
           <button
             type="button"
             className={`${styles.filterTab} ${activeFilter === 'unread' ? styles.filterActive : ''}`}
             onClick={() => setActiveFilter('unread')}
           >
-            未读
+            {t('notification.filter.unread')}
           </button>
           <button
             type="button"
             className={`${styles.filterTab} ${activeFilter === 'mention' ? styles.filterActive : ''}`}
             onClick={() => setActiveFilter('mention')}
           >
-            @我
+            {t('notification.filter.mention')}
           </button>
           <button
             type="button"
             className={`${styles.filterTab} ${activeFilter === 'comment' ? styles.filterActive : ''}`}
             onClick={() => setActiveFilter('comment')}
           >
-            评论
+            {t('notification.filter.comment')}
           </button>
           <button
             type="button"
             className={`${styles.filterTab} ${activeFilter === 'like' ? styles.filterActive : ''}`}
             onClick={() => setActiveFilter('like')}
           >
-            点赞
+            {t('notification.filter.like')}
           </button>
         </div>
       </div>
@@ -417,6 +438,8 @@ export const NotificationApp = () => {
           onNotificationClick={handleNotificationClick}
           onMarkAsRead={handleMarkAsRead}
           onDelete={handleDelete}
+          labels={notificationListLabels}
+          formatRelativeTime={formatRelativeTime}
         />
       </div>
     </div>

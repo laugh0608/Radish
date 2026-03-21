@@ -1,4 +1,5 @@
 import type { PostItem } from '@/api/forum';
+import { useTranslation } from 'react-i18next';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import styles from './PostCard.module.css';
 
@@ -14,6 +15,7 @@ interface PostCardProps {
 }
 
 export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godComment }: PostCardProps) => {
+  const { t } = useTranslation();
   const allTags = post.voTags
     ? post.voTags
         .split(',')
@@ -23,8 +25,8 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
   const tagList = allTags.slice(0, 2);
   const remainingTagCount = Math.max(allTags.length - tagList.length, 0);
 
-  const authorName = post.voAuthorName?.trim() || '未知用户';
-  const categoryName = post.voCategoryName?.trim() || '未分类';
+  const authorName = post.voAuthorName?.trim() || t('forum.postCard.unknownUser');
+  const categoryName = post.voCategoryName?.trim() || t('forum.postCard.uncategorized');
 
   const buildAvatarText = (name: string) => {
     const source = name.trim();
@@ -72,13 +74,13 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
 
   const fallbackInteractors =
     interactorItems.length === 0 && (post.voCommentCount ?? 0) > 0
-      ? [{ id: -1, name: '评', avatarUrl: null }]
+      ? [{ id: -1, name: t('forum.postCard.stat.comment'), avatarUrl: null }]
       : interactorItems;
   const displayedInteractorsCount = fallbackInteractors.length > 0 ? fallbackInteractors.length : 0;
   const remainingInteractions = Math.max((post.voCommentCount ?? 0) - displayedInteractorsCount, 0);
-  const publishedTime = formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone, '未知时间');
+  const publishedTime = formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone, t('forum.postCard.unknownTime'));
   const godCommentPreview = godComment?.content?.trim() ?? '';
-  const godCommentAuthor = godComment?.authorName?.trim() || '匿名用户';
+  const godCommentAuthor = godComment?.authorName?.trim() || t('forum.postCard.anonymousUser');
 
   const renderAvatar = (
     name: string,
@@ -120,27 +122,27 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
                 </span>
               ))
             ) : (
-              <span className={styles.emptyTag}>暂无标签</span>
+              <span className={styles.emptyTag}>{t('forum.postCard.noTags')}</span>
             )}
             {remainingTagCount > 0 && <span className={styles.moreTag}>+{remainingTagCount}</span>}
-            {post.voIsEssence && <span className={styles.statusChip}>精华</span>}
-            {post.voIsTop && <span className={styles.statusChip}>置顶</span>}
+            {post.voIsEssence && <span className={styles.statusChip}>{t('forum.postCard.essence')}</span>}
+            {post.voIsTop && <span className={styles.statusChip}>{t('forum.postCard.top')}</span>}
             {post.voIsQuestion && (
               <>
-                <span className={`${styles.statusChip} ${styles.questionChip}`}>问答</span>
+                <span className={`${styles.statusChip} ${styles.questionChip}`}>{t('forum.postCard.question')}</span>
                 <span className={`${styles.statusChip} ${post.voIsSolved ? styles.solvedChip : styles.pendingChip}`}>
-                  {post.voIsSolved ? '已解决' : '待解决'}
+                  {post.voIsSolved ? t('forum.filter.solved') : t('forum.filter.pending')}
                 </span>
               </>
             )}
             {post.voHasPoll && (
-              <span className={`${styles.statusChip} ${styles.pollChip}`}>投票</span>
+              <span className={`${styles.statusChip} ${styles.pollChip}`}>{t('forum.postCard.poll')}</span>
             )}
             {post.voHasLottery && (
               <>
-                <span className={`${styles.statusChip} ${styles.lotteryChip}`}>抽奖</span>
+                <span className={`${styles.statusChip} ${styles.lotteryChip}`}>{t('forum.postCard.lottery')}</span>
                 {post.voLotteryIsDrawn && (
-                  <span className={`${styles.statusChip} ${styles.lotteryDoneChip}`}>已开奖</span>
+                  <span className={`${styles.statusChip} ${styles.lotteryDoneChip}`}>{t('forum.postCard.lotteryDrawn')}</span>
                 )}
               </>
             )}
@@ -148,7 +150,7 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
 
           {godCommentPreview ? (
             <div className={styles.godCommentCompact} title={`${godCommentAuthor}：${godCommentPreview}`}>
-              <span className={styles.godCommentBadge}>神评</span>
+              <span className={styles.godCommentBadge}>{t('forum.comment.godComment')}</span>
               <span className={styles.godCommentText}>
                 {godCommentAuthor}：{godCommentPreview}
               </span>
@@ -166,7 +168,7 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
                   event.stopPropagation();
                   onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl);
                 }}
-                title={`查看 ${authorName} 的主页`}
+                title={t('forum.comment.authorProfileTitle', { name: authorName })}
               >
                 {renderAvatar(authorName, post.voAuthorAvatarUrl, styles.avatar, authorName)}
                 <span className={styles.authorName}>{authorName}</span>
@@ -177,39 +179,39 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
 
           <div className={styles.statsRow}>
             <div className={styles.statItem}>
-              <span className={styles.statLabel}>赞</span>
+              <span className={styles.statLabel}>{t('forum.postCard.stat.like')}</span>
               <span className={styles.statValue}>{post.voLikeCount || 0}</span>
             </div>
             <div className={styles.statItem}>
-              <span className={styles.statLabel}>评</span>
+              <span className={styles.statLabel}>{t('forum.postCard.stat.comment')}</span>
               <span className={styles.statValue}>{post.voCommentCount || 0}</span>
             </div>
             <div className={styles.statItem}>
-              <span className={styles.statLabel}>阅</span>
+              <span className={styles.statLabel}>{t('forum.postCard.stat.view')}</span>
               <span className={styles.statValue}>{post.voViewCount || 0}</span>
             </div>
             {post.voHasPoll && (
               <div className={styles.statItem}>
-                <span className={styles.statLabel}>票</span>
+                <span className={styles.statLabel}>{t('forum.postCard.stat.vote')}</span>
                 <span className={styles.statValue}>{post.voPollTotalVoteCount || 0}</span>
               </div>
             )}
             {post.voIsQuestion && (
               <div className={styles.statItem}>
-                <span className={styles.statLabel}>答</span>
+                <span className={styles.statLabel}>{t('forum.postCard.stat.answer')}</span>
                 <span className={styles.statValue}>{post.voAnswerCount || 0}</span>
               </div>
             )}
             {post.voHasLottery && (
               <div className={styles.statItem}>
-                <span className={styles.statLabel}>抽</span>
+                <span className={styles.statLabel}>{t('forum.postCard.stat.lottery')}</span>
                 <span className={styles.statValue}>{post.voLotteryParticipantCount || 0}</span>
               </div>
             )}
           </div>
 
           <div className={styles.interactionRow}>
-            <span className={styles.interactionLabel}>互动</span>
+            <span className={styles.interactionLabel}>{t('forum.postCard.interaction')}</span>
             <div className={styles.avatarGroup}>
               {fallbackInteractors.length > 0 ? (
                 fallbackInteractors.map((item, index) => (
@@ -218,12 +220,12 @@ export const PostCard = ({ post, displayTimeZone, onClick, onAuthorClick, godCom
                       item.name,
                       item.avatarUrl,
                       styles.miniAvatar,
-                      item.name === '评' ? '最近有评论互动' : item.name
+                      item.name === t('forum.postCard.stat.comment') ? t('forum.postCard.recentCommentInteraction') : item.name
                     )}
                   </span>
                 ))
               ) : (
-                <span className={styles.noInteraction}>暂无</span>
+                <span className={styles.noInteraction}>{t('forum.postCard.noInteraction')}</span>
               )}
               {remainingInteractions > 0 && (
                 <span className={styles.moreCount}>+{remainingInteractions}</span>

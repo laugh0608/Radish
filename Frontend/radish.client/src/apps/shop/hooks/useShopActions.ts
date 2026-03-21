@@ -54,7 +54,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   // 处理购买点击
   const handlePurchaseClick = useCallback(async (productId: number) => {
     if (!isAuthenticated) {
-      setError('请先登录');
+      setError(t('shop.loginRequired'));
       return;
     }
 
@@ -77,7 +77,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
   // 确认购买
   const handleConfirmPurchase = useCallback(async (productId: number, quantity: number = 1) => {
     if (!isAuthenticated) {
-      setError('请先登录');
+      setError(t('shop.loginRequired'));
       return;
     }
 
@@ -92,22 +92,24 @@ export const useShopActions = (props: UseShopActionsProps) => {
         setError(null);
         setIsPurchaseModalOpen(false);
 
-        // 显示成功消息
-        const successMessage = `购买成功！${result.data.deductedCoins ? `消费 ${result.data.deductedCoins} 胡萝卜，` : ''}剩余余额 ${result.data.remainingBalance || 0} 胡萝卜`;
-
-        // 这里可以显示成功 Toast
-        log.debug(successMessage);
+        log.debug(
+          t('shop.purchase.success'),
+          t('shop.purchase.successDetail', {
+            deducted: result.data.deductedCoins ?? 0,
+            remaining: result.data.remainingBalance ?? 0
+          })
+        );
 
         // 刷新相关数据
         if (appState.currentView === 'product-detail') {
           await checkCanBuy(productId);
         }
       } else {
-        throw new Error(result.data?.errorMessage || result.message || '购买失败');
+        throw new Error(result.data?.errorMessage || result.message || t('shop.error.purchaseFailed'));
       }
     } catch (error) {
-      log.error('购买失败:', error);
-      setError(error instanceof Error ? error.message : '购买失败');
+      log.error(t('shop.error.purchaseFailed'), error);
+      setError(error instanceof Error ? error.message : t('shop.error.purchaseFailed'));
     } finally {
       setPurchasing(false);
     }
@@ -122,11 +124,11 @@ export const useShopActions = (props: UseShopActionsProps) => {
         // 刷新订单详情
         await loadOrderDetail(orderId);
       } else {
-        throw new Error(result.message || '取消订单失败');
+        throw new Error(result.message || t('shop.error.cancelOrderFailed'));
       }
     } catch (error) {
-      log.error('取消订单失败:', error);
-      setError(error instanceof Error ? error.message : '取消订单失败');
+      log.error(t('shop.error.cancelOrderFailed'), error);
+      setError(error instanceof Error ? error.message : t('shop.error.cancelOrderFailed'));
     }
   }, [t, loadOrderDetail, setError]);
 
@@ -139,11 +141,11 @@ export const useShopActions = (props: UseShopActionsProps) => {
         // 刷新背包数据
         await loadInventory();
       } else {
-        throw new Error(result.message || '激活权益失败');
+        throw new Error(result.message || t('shop.error.activateBenefitFailed'));
       }
     } catch (error) {
-      log.error('激活权益失败:', error);
-      setError(error instanceof Error ? error.message : '激活权益失败');
+      log.error(t('shop.error.activateBenefitFailed'), error);
+      setError(error instanceof Error ? error.message : t('shop.error.activateBenefitFailed'));
     }
   }, [t, loadInventory, setError]);
 
@@ -156,11 +158,11 @@ export const useShopActions = (props: UseShopActionsProps) => {
         // 刷新背包数据
         await loadInventory();
       } else {
-        throw new Error(result.message || '取消激活权益失败');
+        throw new Error(result.message || t('shop.error.deactivateBenefitFailed'));
       }
     } catch (error) {
-      log.error('取消激活权益失败:', error);
-      setError(error instanceof Error ? error.message : '取消激活权益失败');
+      log.error(t('shop.error.deactivateBenefitFailed'), error);
+      setError(error instanceof Error ? error.message : t('shop.error.deactivateBenefitFailed'));
     }
   }, [t, loadInventory, setError]);
 
@@ -176,19 +178,18 @@ export const useShopActions = (props: UseShopActionsProps) => {
       if (result.ok && result.data?.success) {
         setError(null);
 
-        // 显示使用效果
         if (result.data.effectDescription) {
-          log.debug('使用效果:', result.data.effectDescription);
+          log.debug(t('shop.inventory.useEffect'), result.data.effectDescription);
         }
 
         // 刷新背包数据
         await loadInventory();
       } else {
-        throw new Error(result.data?.errorMessage || result.message || '使用道具失败');
+        throw new Error(result.data?.errorMessage || result.message || t('shop.error.useItemFailed'));
       }
     } catch (error) {
-      log.error('使用道具失败:', error);
-      setError(error instanceof Error ? error.message : '使用道具失败');
+      log.error(t('shop.error.useItemFailed'), error);
+      setError(error instanceof Error ? error.message : t('shop.error.useItemFailed'));
     }
   }, [t, loadInventory, setError]);
 
@@ -199,19 +200,18 @@ export const useShopActions = (props: UseShopActionsProps) => {
       if (result.ok && result.data?.success) {
         setError(null);
 
-        // 显示使用效果
         if (result.data.effectDescription) {
-          log.debug('改名成功:', result.data.effectDescription);
+          log.debug(t('shop.inventory.renameSuccess'), result.data.effectDescription);
         }
 
         // 刷新背包数据
         await loadInventory();
       } else {
-        throw new Error(result.data?.errorMessage || result.message || '使用改名卡失败');
+        throw new Error(result.data?.errorMessage || result.message || t('shop.error.useRenameCardFailed'));
       }
     } catch (error) {
-      log.error('使用改名卡失败:', error);
-      setError(error instanceof Error ? error.message : '使用改名卡失败');
+      log.error(t('shop.error.useRenameCardFailed'), error);
+      setError(error instanceof Error ? error.message : t('shop.error.useRenameCardFailed'));
     }
   }, [t, loadInventory, setError]);
 
