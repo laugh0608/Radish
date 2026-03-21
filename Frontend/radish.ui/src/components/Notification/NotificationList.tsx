@@ -1,6 +1,15 @@
 import { useRef, type UIEvent } from 'react';
-import { Notification, type NotificationItemData } from './Notification';
+import { Notification, type NotificationItemData, type NotificationTextOverrides } from './Notification';
 import styles from './NotificationList.module.css';
+
+export interface NotificationListTextOverrides extends NotificationTextOverrides {
+  loading?: string;
+  loadingMore?: string;
+  loadMore?: string;
+  loadedAll?: string;
+  emptyTitle?: string;
+  emptyHint?: string;
+}
 
 export interface NotificationListProps {
   /** 通知列表 */
@@ -21,6 +30,10 @@ export interface NotificationListProps {
   onMarkAsRead?: (id: number) => void;
   /** 删除通知回调 */
   onDelete?: (id: number) => void;
+  /** 文案覆盖 */
+  labels?: NotificationListTextOverrides;
+  /** 相对时间格式化 */
+  formatRelativeTime?: (createdAt: string) => string;
 }
 
 /**
@@ -37,7 +50,9 @@ export const NotificationList = ({
   endOffset = 200,
   onNotificationClick,
   onMarkAsRead,
-  onDelete
+  onDelete,
+  labels,
+  formatRelativeTime
 }: NotificationListProps) => {
   const lastTriggerHeightRef = useRef(0);
 
@@ -57,7 +72,7 @@ export const NotificationList = ({
       {loading ? (
         <div className={styles.loading}>
           <div className={styles.loadingSpinner}></div>
-          <div>加载中...</div>
+          <div>{labels?.loading ?? '加载中...'}</div>
         </div>
       ) : notifications.length > 0 ? (
         <div className={styles.list} onScroll={handleScroll}>
@@ -69,22 +84,24 @@ export const NotificationList = ({
               onMarkAsRead={onMarkAsRead}
               onDelete={onDelete}
               showActions={true}
+              labels={labels}
+              formatRelativeTime={formatRelativeTime}
             />
           ))}
           {(hasMore || loadingMore) && (
             <div className={styles.loadMore}>
-              {loadingMore ? '加载更多中...' : '上拉加载更多'}
+              {loadingMore ? (labels?.loadingMore ?? '加载更多中...') : (labels?.loadMore ?? '上拉加载更多')}
             </div>
           )}
           {!hasMore && !loadingMore && notifications.length > 0 && (
-            <div className={styles.endText}>已全部加载</div>
+            <div className={styles.endText}>{labels?.loadedAll ?? '已全部加载'}</div>
           )}
         </div>
       ) : (
         <div className={styles.empty}>
           <div className={styles.emptyIcon}>🔔</div>
-          <div className={styles.emptyText}>暂无通知</div>
-          <div className={styles.emptyHint}>当有新通知时，会显示在这里</div>
+          <div className={styles.emptyText}>{labels?.emptyTitle ?? '暂无通知'}</div>
+          <div className={styles.emptyHint}>{labels?.emptyHint ?? '当有新通知时，会显示在这里'}</div>
         </div>
       )}
     </div>

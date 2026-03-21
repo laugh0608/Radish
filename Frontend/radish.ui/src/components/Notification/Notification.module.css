@@ -1,18 +1,18 @@
 .notification {
-  --accent: #94a3b8;
-  --accent-weak: #e2e8f0;
+  --accent: var(--theme-text-muted, #94a3b8);
+  --accent-weak: var(--theme-bg-muted, #e2e8f0);
   position: relative;
   display: flex;
   align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
-  background: #ffffff;
+  background: var(--theme-bg-surface, #ffffff);
   border-radius: 10px;
-  border: 1px solid #edf1f6;
+  border: 1px solid var(--theme-border-soft, #edf1f6);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   overflow: hidden;
-  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--theme-shadow-soft, 0 6px 14px rgba(15, 23, 42, 0.06));
   width: 100%;
   box-sizing: border-box;
   max-width: 100%;
@@ -21,17 +21,17 @@
 
 .notification:hover {
   transform: translateY(-1px);
-  border-color: #dbe3ef;
-  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
+  border-color: var(--theme-border-strong, #dbe3ef);
+  box-shadow: var(--theme-shadow-strong, 0 10px 20px rgba(15, 23, 42, 0.1));
 }
 
 .notification.unread {
-  background: #f6faff;
-  border-color: #cfe1ff;
+  background: color-mix(in srgb, var(--theme-brand-soft, #f6faff) 56%, var(--theme-bg-surface, #ffffff) 44%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary, #cfe1ff) 28%, var(--theme-border-soft, #cfe1ff) 72%);
 }
 
 .notification.unread:hover {
-  border-color: #b9d4ff;
+  border-color: color-mix(in srgb, var(--theme-brand-primary, #b9d4ff) 36%, var(--theme-border-strong, #b9d4ff) 64%);
 }
 
 /* 未读指示器 */
@@ -48,33 +48,33 @@
 
 /* 类型颜色 */
 .notification.like {
-  --accent: #f97316;
-  --accent-weak: #ffedd5;
+  --accent: var(--theme-accent-earth, #f97316);
+  --accent-weak: color-mix(in srgb, var(--theme-accent-earth, #f97316) 14%, var(--theme-bg-surface, #ffedd5) 86%);
 }
 
 .notification.comment {
-  --accent: #0ea5e9;
-  --accent-weak: #e0f2fe;
+  --accent: var(--theme-accent-ink, #0ea5e9);
+  --accent-weak: color-mix(in srgb, var(--theme-accent-ink, #0ea5e9) 14%, var(--theme-bg-surface, #e0f2fe) 86%);
 }
 
 .notification.achievement {
-  --accent: #f59e0b;
-  --accent-weak: #fef3c7;
+  --accent: var(--theme-brand-primary, #f59e0b);
+  --accent-weak: color-mix(in srgb, var(--theme-brand-primary, #f59e0b) 14%, var(--theme-bg-surface, #fef3c7) 86%);
 }
 
 .notification.system {
-  --accent: #10b981;
-  --accent-weak: #dcfce7;
+  --accent: var(--theme-state-success, #10b981);
+  --accent-weak: color-mix(in srgb, var(--theme-state-success, #10b981) 14%, var(--theme-bg-surface, #dcfce7) 86%);
 }
 
 .notification.lottery {
-  --accent: #d97706;
-  --accent-weak: #fef3c7;
+  --accent: var(--theme-accent-earth, #d97706);
+  --accent-weak: color-mix(in srgb, var(--theme-accent-earth, #d97706) 14%, var(--theme-bg-surface, #fef3c7) 86%);
 }
 
 .notification.default {
-  --accent: #94a3b8;
-  --accent-weak: #e2e8f0;
+  --accent: var(--theme-text-muted, #94a3b8);
+  --accent-weak: var(--theme-bg-muted, #e2e8f0);
 }
 
 .notification::before {
@@ -84,7 +84,7 @@
   top: 0;
   bottom: 0;
   width: 4px;
-  background: linear-gradient(180deg, var(--accent) 0%, #111827 160%);
+  background: linear-gradient(180deg, var(--accent) 0%, var(--theme-text-primary, #111827) 160%);
 }
 
 /* 头像/图标 */
@@ -98,7 +98,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(15, 23, 42, 0.05);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft, rgba(15, 23, 42, 0.05)) 72%, transparent 28%);
 }
 
 .avatar img {
@@ -129,19 +129,19 @@
 .title {
   font-size: 13px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--theme-text-primary, #0f172a);
   letter-spacing: 0.2px;
 }
 
 .time {
   font-size: 10px;
-  color: #94a3b8;
+  color: var(--theme-text-muted, #94a3b8);
   white-space: nowrap;
 }
 
 .message {
   font-size: 12px;
-  color: #475569;
+  color: var(--theme-text-secondary, #475569);
   line-height: 1.4;
   word-break: break-word;
 }
@@ -175,19 +175,19 @@
   border-radius: 6px;
   cursor: pointer;
   font-size: 14px;
-  color: #64748b;
+  color: var(--theme-text-secondary, #64748b);
   transition: all 0.2s ease;
 }
 
 .actionBtn:hover {
-  background: #eef2ff;
-  color: #1f2937;
+  background: color-mix(in srgb, var(--theme-brand-soft, #eef2ff) 72%, white 28%);
+  color: var(--theme-text-primary, #1f2937);
 }
 
 /* 已读状态 */
 .notification.read .title,
 .notification.read .message {
-  color: #94a3b8;
+  color: var(--theme-text-muted, #94a3b8);
 }
 
 /* 响应式 */

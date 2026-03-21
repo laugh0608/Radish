@@ -1,15 +1,15 @@
 .container {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .loading,
 .empty {
   text-align: center;
   padding: 40px 20px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .list {
@@ -20,20 +20,21 @@
 
 .commentItem {
   padding: 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   transition: all 0.2s ease;
+  background: var(--theme-bg-surface);
 }
 
 .commentItem:hover {
-  border-color: #667eea;
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  border-color: var(--theme-border-strong);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .content {
   margin: 0 0 12px 0;
   font-size: 14px;
-  color: #333;
+  color: var(--theme-text-primary);
   line-height: 1.6;
 }
 
@@ -42,7 +43,7 @@
   align-items: center;
   gap: 16px;
   font-size: 14px;
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .metaItem {
@@ -62,12 +63,12 @@
   gap: 16px;
   margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--theme-border-soft);
 }
 
 .pageButton {
   padding: 8px 16px;
-  background: #667eea;
+  background: var(--theme-brand-primary);
   color: white;
   border: none;
   border-radius: 6px;
@@ -77,16 +78,16 @@
 }
 
 .pageButton:hover:not(:disabled) {
-  background: #5568d3;
+  background: color-mix(in srgb, var(--theme-brand-primary) 84%, black 16%);
   transform: translateY(-1px);
 }
 
 .pageButton:disabled {
-  background: #ccc;
+  background: color-mix(in srgb, var(--theme-text-muted) 72%, var(--theme-bg-muted) 28%);
   cursor: not-allowed;
 }
 
 .pageInfo {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }

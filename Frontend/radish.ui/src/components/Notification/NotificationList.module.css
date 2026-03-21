@@ -27,7 +27,7 @@
   text-align: center;
   padding: 8px 0 4px;
   font-size: 12px;
-  color: var(--radish-text-secondary, #94a3b8);
+  color: var(--theme-text-secondary, #94a3b8);
 }
 
 .endText {
@@ -35,7 +35,7 @@
   text-align: center;
   padding: 6px 0 2px;
   font-size: 12px;
-  color: var(--radish-text-tertiary, #cbd5f5);
+  color: var(--theme-text-muted, #cbd5f5);
 }
 
 .loading {
@@ -45,15 +45,15 @@
   justify-content: center;
   height: 100%;
   gap: 12px;
-  color: var(--radish-text-secondary, #666666);
+  color: var(--theme-text-secondary, #666666);
   font-size: 14px;
 }
 
 .loadingSpinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--radish-border, #e0e0e0);
-  border-top-color: var(--radish-primary, #1890ff);
+  border: 3px solid var(--theme-border-soft, #e0e0e0);
+  border-top-color: var(--theme-brand-primary, #1890ff);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -72,7 +72,7 @@
   height: 100%;
   gap: 10px;
   padding: 40px 20px;
-  color: var(--radish-text-secondary, #64748b);
+  color: var(--theme-text-secondary, #64748b);
 }
 
 .emptyIcon {
@@ -83,12 +83,12 @@
 .emptyText {
   font-size: 16px;
   font-weight: 500;
-  color: var(--radish-text-secondary, #475569);
+  color: var(--theme-text-primary, #475569);
 }
 
 .emptyHint {
   font-size: 13px;
-  color: var(--radish-text-tertiary, #94a3b8);
+  color: var(--theme-text-muted, #94a3b8);
 }
 
 @media (max-width: 900px) {

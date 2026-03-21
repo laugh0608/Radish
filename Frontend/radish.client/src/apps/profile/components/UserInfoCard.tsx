@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { apiGet, configureApiClient } from '@radish/http';
 import type { ApiResponse } from '@radish/http';
@@ -79,7 +80,10 @@ function resolveUrl(apiBaseUrl: string, url: string | null | undefined): string 
   return `${apiBaseUrl}/${url}`;
 }
 
-function formatCoinAmount(amount: number | string | null | undefined): string {
+function formatCoinAmount(
+  amount: number | string | null | undefined,
+  translate: (key: string) => string
+): string {
   const parsed = typeof amount === 'string' ? Number(amount) : amount;
   const value = Number.isFinite(parsed) ? (parsed as number) : 0;
   const negative = value < 0;
@@ -89,8 +93,8 @@ function formatCoinAmount(amount: number | string | null | undefined): string {
   const carrot = abs % 1000;
 
   const parts: string[] = [];
-  if (whiteRadish > 0) parts.push(`${whiteRadish} 白萝卜`);
-  if (carrot > 0 || parts.length === 0) parts.push(`${carrot} 胡萝卜`);
+  if (whiteRadish > 0) parts.push(`${whiteRadish} ${translate('profile.coin.whiteRadish')}`);
+  if (carrot > 0 || parts.length === 0) parts.push(`${carrot} ${translate('profile.coin.carrot')}`);
 
   const result = parts.join(' ');
   return negative ? `-${result}` : result;
@@ -108,6 +112,7 @@ export const UserInfoCard = ({
   savingTimeZone = false,
   onTimeZoneChange
 }: UserInfoCardProps) => {
+  const { t } = useTranslation();
   const { setUser, tenantId, roles, permissions } = useUserStore();
 
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
@@ -289,7 +294,7 @@ export const UserInfoCard = ({
     try {
       await onTimeZoneChange(selectedTimeZone);
     } catch (error) {
-      const message = error instanceof Error ? error.message : '保存时区失败，请稍后重试';
+      const message = error instanceof Error ? error.message : t('profile.info.timeZoneSaveFailed');
       setTimeZoneError(message);
     }
   };
@@ -310,7 +315,7 @@ export const UserInfoCard = ({
               <Icon icon="mdi:account-circle" size={80} />
             )}
           </div>
-          <div className={styles.avatarHint}>点击更换头像</div>
+          <div className={styles.avatarHint}>{t('profile.info.changeAvatar')}</div>
         </div>
         <div className={styles.info}>
           <h2 className={styles.userName}>{profile?.voUserName || userName}</h2>
@@ -318,11 +323,11 @@ export const UserInfoCard = ({
           <div className={styles.profileMeta}>
             <div className={styles.metaItem}>
               <Icon icon="mdi:email" size={16} />
-              <span>{profile?.voUserEmail || '未设置邮箱'}</span>
+              <span>{profile?.voUserEmail || t('profile.info.emailUnset')}</span>
             </div>
             <div className={styles.metaItem}>
               <Icon icon="mdi:wallet" size={16} />
-              <span>{formatCoinAmount(coinBalance?.voBalance)}</span>
+              <span>{formatCoinAmount(coinBalance?.voBalance, (key) => t(key))}</span>
             </div>
             {profile?.voRealName && (
               <div className={styles.metaItem}>
@@ -346,10 +351,10 @@ export const UserInfoCard = ({
         </div>
         <div className={styles.headerActions}>
           <Button variant="secondary" size="small" onClick={handleOpenEdit}>
-            编辑资料
+            {t('profile.info.editProfile')}
           </Button>
           <div className={styles.timeZonePanel}>
-            <div className={styles.timeZoneTitle}>时间显示时区</div>
+            <div className={styles.timeZoneTitle}>{t('profile.info.timeZoneTitle')}</div>
             <Select
               options={presetTimeZoneOptions}
               value={customTimeZone}
@@ -360,19 +365,19 @@ export const UserInfoCard = ({
             />
             {timeZoneError && <div className={styles.timeZoneError}>{timeZoneError}</div>}
             <Button size="small" onClick={() => void handleApplyTimeZone()} disabled={savingTimeZone}>
-              {savingTimeZone ? '保存中...' : '保存时区'}
+              {savingTimeZone ? t('profile.info.timeZoneSaving') : t('profile.info.timeZoneSave')}
             </Button>
             <div className={styles.timeZoneHint}>
-              <div>系统默认时区（只读）：{systemTimeZone}</div>
-              <div>当前展示时区：{displayTimeZone}</div>
-              <div>展示格式：{displayTimeFormat}</div>
+              <div>{t('profile.info.systemTimeZone', { value: systemTimeZone })}</div>
+              <div>{t('profile.info.displayTimeZone', { value: displayTimeZone })}</div>
+              <div>{t('profile.info.displayFormat', { value: displayTimeFormat })}</div>
             </div>
           </div>
         </div>
       </div>
 
       {(loading || loadingProfile) && (
-        <div className={styles.loading}>加载中...</div>
+        <div className={styles.loading}>{t('common.loading')}</div>
       )}
 
       {!loading && !loadingProfile && stats && (
@@ -380,17 +385,17 @@ export const UserInfoCard = ({
           <div className={styles.statItem}>
             <Icon icon="mdi:file-document" size={24} />
             <div className={styles.statValue}>{stats.voPostCount}</div>
-            <div className={styles.statLabel}>帖子</div>
+            <div className={styles.statLabel}>{t('profile.stats.postsLabel')}</div>
           </div>
           <div className={styles.statItem}>
             <Icon icon="mdi:comment" size={24} />
             <div className={styles.statValue}>{stats.voCommentCount}</div>
-            <div className={styles.statLabel}>评论</div>
+            <div className={styles.statLabel}>{t('profile.stats.commentsLabel')}</div>
           </div>
           <div className={styles.statItem}>
             <Icon icon="mdi:heart" size={24} />
             <div className={styles.statValue}>{stats.voTotalLikeCount}</div>
-            <div className={styles.statLabel}>获赞</div>
+            <div className={styles.statLabel}>{t('profile.stats.likesLabel')}</div>
           </div>
         </div>
       )}
@@ -401,14 +406,14 @@ export const UserInfoCard = ({
           setIsEditOpen(false);
           setSaveError(null);
         }}
-        title="编辑个人资料"
+        title={t('profile.info.editDialogTitle')}
       >
         <div className={styles.editForm}>
-          <Input label="昵称" value={editUserName} onChange={(e) => setEditUserName(e.target.value)} fullWidth />
-          <Input label="邮箱" value={editUserEmail} onChange={(e) => setEditUserEmail(e.target.value)} fullWidth />
-          <Input label="真实姓名" value={editRealName} onChange={(e) => setEditRealName(e.target.value)} fullWidth />
-          <Input label="年龄" value={editAge} onChange={(e) => setEditAge(e.target.value)} fullWidth />
-          <Input label="地址" value={editAddress} onChange={(e) => setEditAddress(e.target.value)} fullWidth />
+          <Input label={t('profile.info.form.userName')} value={editUserName} onChange={(e) => setEditUserName(e.target.value)} fullWidth />
+          <Input label={t('profile.info.form.email')} value={editUserEmail} onChange={(e) => setEditUserEmail(e.target.value)} fullWidth />
+          <Input label={t('profile.info.form.realName')} value={editRealName} onChange={(e) => setEditRealName(e.target.value)} fullWidth />
+          <Input label={t('profile.info.form.age')} value={editAge} onChange={(e) => setEditAge(e.target.value)} fullWidth />
+          <Input label={t('profile.info.form.address')} value={editAddress} onChange={(e) => setEditAddress(e.target.value)} fullWidth />
 
           {saveError && <div className={styles.saveError}>{saveError}</div>}
 
@@ -420,17 +425,17 @@ export const UserInfoCard = ({
                 setSaveError(null);
               }}
             >
-              取消
+              {t('common.cancel')}
             </Button>
-            <Button onClick={() => setConfirmOpen(true)}>保存</Button>
+            <Button onClick={() => setConfirmOpen(true)}>{t('common.save')}</Button>
           </div>
         </div>
       </Modal>
 
       <ConfirmDialog
         isOpen={confirmOpen}
-        title="确认保存"
-        message="确定要保存个人资料修改吗？"
+        title={t('profile.info.confirmSaveTitle')}
+        message={t('profile.info.confirmSaveMessage')}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={handleSave}
       />

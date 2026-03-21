@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatDistanceToNow } from 'date-fns';
+import { enUS, zhCN } from 'date-fns/locale';
 import { log } from '@/utils/logger';
 import { NotificationList } from '@radish/ui/notification-list';
 import type { NotificationItemData } from '@radish/ui/notification';
@@ -19,7 +21,7 @@ import styles from './NotificationApp.module.css';
  * 注意：SignalR 连接由 Shell 统一管理，此组件只负责读取状态和调用方法
  */
 export const NotificationApp = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { openApp, openOrReuseApp } = useWindowStore();
   const currentUserId = useUserStore((state) => state.userId);
   const { unreadCount, recentNotifications } = useNotificationStore();
@@ -35,6 +37,23 @@ export const NotificationApp = () => {
   const [hasMore, setHasMore] = useState(true);
   const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'mention' | 'comment' | 'like'>('all');
   const pageSize = 20;
+  const notificationListLabels = useMemo(() => ({
+    loading: t('notification.shared.loading'),
+    loadingMore: t('notification.shared.loadingMore'),
+    loadMore: t('notification.shared.loadMore'),
+    loadedAll: t('notification.shared.loadedAll'),
+    emptyTitle: t('notification.shared.emptyTitle'),
+    emptyHint: t('notification.shared.emptyHint'),
+    markAsRead: t('notification.shared.markAsRead'),
+    delete: t('notification.shared.delete'),
+  }), [t]);
+  const formatRelativeTime = useCallback((createdAt: string) => {
+    const locale = i18n.language.startsWith('en') ? enUS : zhCN;
+    return formatDistanceToNow(new Date(createdAt), {
+      addSuffix: true,
+      locale,
+    });
+  }, [i18n.language]);
 
   const mapApiNotificationToStore = (n: UserNotificationVo): NotificationItem => {
     const notification = n.voNotification;
@@ -296,7 +315,7 @@ export const NotificationApp = () => {
         } else {
           openApp('profile', {
             userId: targetUserId,
-            userName: notification.triggerName?.trim() || `用户 ${targetUserId}`,
+            userName: notification.triggerName?.trim() || t('common.userFallback', { id: targetUserId }),
             avatarUrl: notification.triggerAvatar ?? null,
           });
         }
@@ -419,6 +438,8 @@ export const NotificationApp = () => {
           onNotificationClick={handleNotificationClick}
           onMarkAsRead={handleMarkAsRead}
           onDelete={handleDelete}
+          labels={notificationListLabels}
+          formatRelativeTime={formatRelativeTime}
         />
       </div>
     </div>

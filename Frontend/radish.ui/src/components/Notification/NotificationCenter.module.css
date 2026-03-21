@@ -20,11 +20,11 @@
 }
 
 .trigger:hover {
-  background: rgba(0, 0, 0, 0.05);
+  background: color-mix(in srgb, var(--theme-brand-soft, rgba(0, 0, 0, 0.05)) 42%, transparent 58%);
 }
 
 .trigger.active {
-  background: rgba(0, 0, 0, 0.1);
+  background: color-mix(in srgb, var(--theme-brand-soft, rgba(0, 0, 0, 0.1)) 64%, transparent 36%);
 }
 
 .trigger .badge {
@@ -40,9 +40,9 @@
   right: 0;
   width: 400px;
   max-height: 600px;
-  background: white;
+  background: var(--theme-bg-surface, white);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--theme-shadow-strong, 0 8px 24px rgba(0, 0, 0, 0.15));
   display: flex;
   flex-direction: column;
   z-index: 1000;
@@ -66,7 +66,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--theme-border-soft, #f0f0f0);
 }
 
 .title {
@@ -76,7 +76,7 @@
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #333;
+  color: var(--theme-text-primary, #333);
 }
 
 .badge {
@@ -87,18 +87,18 @@
 .markAllBtn {
   padding: 4px 12px;
   background: transparent;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--theme-border-soft, #d9d9d9);
   border-radius: 4px;
   font-size: 12px;
-  color: #666;
+  color: var(--theme-text-secondary, #666);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .markAllBtn:hover {
-  background: #f5f5f5;
-  border-color: #1890ff;
-  color: #1890ff;
+  background: var(--theme-bg-muted, #f5f5f5);
+  border-color: var(--theme-brand-primary, #1890ff);
+  color: var(--theme-brand-primary, #1890ff);
 }
 
 /* 通知列表 */
@@ -109,7 +109,7 @@
 }
 
 .list > * {
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--theme-border-soft, #f0f0f0);
 }
 
 .list > *:last-child {
@@ -126,12 +126,12 @@
 }
 
 .list::-webkit-scrollbar-thumb {
-  background: #d9d9d9;
+  background: var(--theme-scrollbar-thumb, #d9d9d9);
   border-radius: 3px;
 }
 
 .list::-webkit-scrollbar-thumb:hover {
-  background: #bfbfbf;
+  background: var(--theme-scrollbar-thumb-hover, #bfbfbf);
 }
 
 /* 加载状态 */
@@ -140,7 +140,7 @@
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  color: #999;
+  color: var(--theme-text-muted, #999);
   font-size: 14px;
 }
 
@@ -161,7 +161,7 @@
 
 .emptyText {
   font-size: 14px;
-  color: #999;
+  color: var(--theme-text-muted, #999);
 }
 
 /* 面板底部 */
@@ -170,7 +170,7 @@
   align-items: center;
   justify-content: center;
   padding: 12px 20px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--theme-border-soft, #f0f0f0);
 }
 
 .viewMoreBtn {
@@ -179,13 +179,13 @@
   border: none;
   border-radius: 4px;
   font-size: 13px;
-  color: #1890ff;
+  color: var(--theme-brand-primary, #1890ff);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .viewMoreBtn:hover {
-  background: #f0f7ff;
+  background: color-mix(in srgb, var(--theme-brand-soft, #f0f7ff) 72%, white 28%);
 }
 
 /* 响应式 */

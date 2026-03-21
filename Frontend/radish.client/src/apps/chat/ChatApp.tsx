@@ -133,17 +133,17 @@ function getMessagePreviewText(message: ChannelMessageVo): string {
     return i18n.t('chat.imageMessage');
   }
 
-  return '[消息]';
+  return i18n.t('chat.genericMessage');
 }
 
 function getConnectionHint(connectionState: string): string | null {
   switch (connectionState) {
     case 'connecting':
-      return '正在连接实时通道...';
+      return i18n.t('chat.connection.connecting');
     case 'reconnecting':
-      return '实时连接已断开，正在自动恢复并补拉最新消息...';
+      return i18n.t('chat.connection.reconnecting');
     case 'disconnected':
-      return '实时连接未建立，消息可能不会即时刷新。';
+      return i18n.t('chat.connection.disconnected');
     default:
       return null;
   }
@@ -261,6 +261,13 @@ function getErrorMessage(error: unknown, fallbackMessage: string): string {
   return error instanceof Error ? error.message : fallbackMessage;
 }
 
+function getFallbackUserName(userId?: EntityIdValue | null): string {
+  const normalizedId = normalizeEntityId(userId);
+  return normalizedId
+    ? i18n.t('common.userFallback', { id: normalizedId })
+    : i18n.t('common.unknownUser');
+}
+
 function getReplyTargetMessageId(message: ChannelMessageVo | null | undefined): string | null {
   if (!message) {
     return null;
@@ -327,7 +334,7 @@ export const ChatApp = () => {
   const currentUserIdValue = useMemo(() => toNumericId(currentUserId), [currentUserId]);
   const currentUserIdKey = useMemo(() => getEntityKey(currentUserId), [currentUserId]);
   const currentUserNameValue = useMemo(
-    () => currentUserName?.trim() || 'Unknown',
+    () => currentUserName?.trim() || i18n.t('common.unknownUser'),
     [currentUserName]
   );
   const currentUserAvatarUrlValue = useMemo(
@@ -392,7 +399,7 @@ export const ChatApp = () => {
 
     openApp('profile', {
       userId: targetUserId,
-      userName: targetUserName?.trim() || `用户 ${targetUserIdKey}`,
+      userName: targetUserName?.trim() || getFallbackUserName(targetUserIdKey),
       avatarUrl: avatarUrl ?? null,
     });
   }, [currentUserIdKey, openApp]);
@@ -404,7 +411,7 @@ export const ChatApp = () => {
     className?: string
   ) => {
     const targetUserIdKey = getEntityKey(targetUserId);
-    const normalizedName = targetUserName?.trim() || `用户 ${targetUserIdKey || '?'}`;
+    const normalizedName = targetUserName?.trim() || getFallbackUserName(targetUserIdKey);
     const resolvedAvatarUrl = resolveMediaUrl(apiBaseUrl, avatarUrl);
     const canOpenProfile = !!targetUserIdKey && targetUserIdKey !== '0' && !targetUserIdKey.startsWith('-');
 
@@ -440,7 +447,7 @@ export const ChatApp = () => {
     avatarUrl: string | null | undefined,
     className?: string
   ) => {
-    const normalizedName = targetUserName?.trim() || '用户';
+    const normalizedName = targetUserName?.trim() || i18n.t('common.unknownUser');
     const resolvedAvatarUrl = resolveMediaUrl(apiBaseUrl, avatarUrl);
 
     if (resolvedAvatarUrl) {
@@ -473,7 +480,7 @@ export const ChatApp = () => {
     for (const match of content.matchAll(MENTION_PATTERN)) {
       const matchIndex = match.index ?? 0;
       const matchText = match[0];
-      const mentionName = match.groups?.name ?? match[1] ?? '用户';
+      const mentionName = match.groups?.name ?? match[1] ?? i18n.t('common.unknownUser');
       const mentionUserId = normalizeEntityId(match.groups?.id ?? match[2]) ?? '';
 
       if (matchIndex > lastIndex) {
@@ -522,7 +529,7 @@ export const ChatApp = () => {
       return;
     }
 
-    const targetName = option.voUserName?.trim() || `用户${targetId}`;
+    const targetName = option.voUserName?.trim() || getFallbackUserName(targetId);
     const mentionToken = `@[${targetName}](${targetId}) `;
     const nextValue = `${messageInput.slice(0, mentionContext.start)}${mentionToken}${messageInput.slice(mentionContext.end)}`;
     const nextCursor = mentionContext.start + mentionToken.length;
@@ -555,11 +562,11 @@ export const ChatApp = () => {
       }
     } catch (error) {
       log.error('ChatApp', '加载频道列表失败:', error);
-      toast.error('加载频道列表失败');
+      toast.error(t('chat.loadChannelsFailed'));
     } finally {
       setLoadingChannels(false);
     }
-  }, [setChannels, setActiveChannel]);
+  }, [setChannels, setActiveChannel, t]);
 
   const loadInitialHistory = useCallback(async (channelId: EntityIdValue) => {
     const channelKey = getEntityKey(channelId);
@@ -584,11 +591,11 @@ export const ChatApp = () => {
       await chatHub.markChannelAsRead(channelId);
     } catch (error) {
       log.error('ChatApp', '加载历史消息失败:', error);
-      toast.error('加载历史消息失败');
+      toast.error(t('chat.loadHistoryFailed'));
     } finally {
       setLoadingHistory(false);
     }
-  }, [scrollToBottom, setChannelMessages]);
+  }, [scrollToBottom, setChannelMessages, t]);
 
   const loadOnlineMembers = useCallback(async (channelId: EntityIdValue) => {
     if (!isPersistedEntityId(channelId)) {
@@ -634,11 +641,11 @@ export const ChatApp = () => {
       }));
     } catch (error) {
       log.error('ChatApp', '加载更多历史消息失败:', error);
-      toast.error('加载更多历史消息失败');
+      toast.error(t('chat.loadMoreHistoryFailed'));
     } finally {
       setLoadingHistory(false);
     }
-  }, [activeChannelId, activeMessages, hasMoreHistory, loadingHistory, prependChannelMessages]);
+  }, [activeChannelId, activeMessages, hasMoreHistory, loadingHistory, prependChannelMessages, t]);
 
   const resetComposer = useCallback((channelId: EntityIdValue) => {
     setMessageInput('');
@@ -1171,10 +1178,10 @@ export const ChatApp = () => {
                           onClick={() => handleOpenUserProfile(message.voUserId, message.voUserName, message.voUserAvatarUrl)}
                           disabled={!canOpenMessageUserProfile}
                           title={canOpenMessageUserProfile
-                            ? t('chat.viewProfile', { name: (message.voUserName || `用户 ${messageUserIdKey}`).trim() })
+                            ? t('chat.viewProfile', { name: (message.voUserName || getFallbackUserName(messageUserIdKey)).trim() })
                             : t('chat.userUnavailable')}
                         >
-                          <span className={styles.userName}>{message.voUserName || 'Unknown'}</span>
+                          <span className={styles.userName}>{message.voUserName || t('common.unknownUser')}</span>
                         </button>
                         <span className={styles.time}>{formatTime(message.voCreateTime)}</span>
                         {!message.voIsRecalled && messageStatus === 'sent' && (
@@ -1206,7 +1213,7 @@ export const ChatApp = () => {
                           {message.voReplyTo && (
                             <div className={styles.quotedMessage}>
                               <div className={styles.quotedAuthor}>
-                                {t('chat.replyTo', { name: message.voReplyTo.voUserName || 'Unknown' })}
+                                {t('chat.replyTo', { name: message.voReplyTo.voUserName || t('common.unknownUser') })}
                               </div>
                               <div className={styles.quotedText}>{replyText}</div>
                             </div>
@@ -1278,7 +1285,7 @@ export const ChatApp = () => {
                 <div className={styles.replyPreview}>
                   <div className={styles.replyPreviewBody}>
                     <div className={styles.replyPreviewLabel}>
-                      {t('chat.replyTo', { name: replyTarget.voUserName || 'Unknown' })}
+                      {t('chat.replyTo', { name: replyTarget.voUserName || t('common.unknownUser') })}
                     </div>
                     <div className={styles.replyPreviewText}>{getMessagePreviewText(replyTarget)}</div>
                   </div>
@@ -1380,7 +1387,7 @@ export const ChatApp = () => {
                       ) : (
                         mentionOptions.map((option, index) => {
                           const optionId = normalizeEntityId(option.voId) ?? `mention-${index}`;
-                          const optionName = option.voUserName?.trim() || `用户 ${optionId}`;
+                          const optionName = option.voUserName?.trim() || getFallbackUserName(optionId);
                           const optionAvatarUrl = resolveMediaUrl(apiBaseUrl, option.voAvatar);
 
                           return (
@@ -1468,7 +1475,7 @@ export const ChatApp = () => {
                   ) : (
                     onlineMembers.map((member) => {
                       const memberId = normalizeEntityId(member.voUserId) ?? member.voUserName ?? 'member';
-                      const memberName = member.voUserName?.trim() || `用户 ${memberId}`;
+                      const memberName = member.voUserName?.trim() || getFallbackUserName(memberId);
 
                       return (
                         <button

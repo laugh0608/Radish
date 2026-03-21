@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getApiBaseUrl } from '@/config/env';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
@@ -46,6 +47,7 @@ export const UserBrowseHistoryList = ({
   displayTimeZone,
   onItemClick
 }: UserBrowseHistoryListProps) => {
+  const { t } = useTranslation();
   const [items, setItems] = useState<UserBrowseHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -71,11 +73,11 @@ export const UserBrowseHistoryList = ({
   }, [page]);
 
   if (loading) {
-    return <div className={styles.loading}>加载中...</div>;
+    return <div className={styles.loading}>{t('profile.browse.loading')}</div>;
   }
 
   if (items.length === 0) {
-    return <div className={styles.empty}>最近还没有浏览记录</div>;
+    return <div className={styles.empty}>{t('profile.browse.empty')}</div>;
   }
 
   return (
@@ -112,12 +114,12 @@ export const UserBrowseHistoryList = ({
 
                 <h3 className={styles.title}>{item.voTitle}</h3>
                 <p className={styles.summary}>
-                  {item.voSummary?.trim() || '暂无摘要'}
+                  {item.voSummary?.trim() || t('profile.browse.noSummary')}
                 </p>
 
                 <div className={styles.footer}>
-                  <span className={styles.metaItem}>浏览 {item.voViewCount} 次</span>
-                  <span className={styles.routeText}>{item.voRoutePath || '站内详情页'}</span>
+                  <span className={styles.metaItem}>{t('profile.browse.viewCount', { count: item.voViewCount })}</span>
+                  <span className={styles.routeText}>{item.voRoutePath || t('profile.browse.internalRoute')}</span>
                 </div>
               </div>
             </article>
@@ -133,10 +135,10 @@ export const UserBrowseHistoryList = ({
             disabled={page === 1}
             className={styles.pageButton}
           >
-            上一页
+            {t('common.previousPage')}
           </button>
           <span className={styles.pageInfo}>
-            {page} / {totalPages}
+            {t('common.pageInfo', { current: page, total: totalPages })}
           </span>
           <button
             type="button"
@@ -144,7 +146,7 @@ export const UserBrowseHistoryList = ({
             disabled={page === totalPages}
             className={styles.pageButton}
           >
-            下一页
+            {t('common.nextPage')}
           </button>
         </div>
       )}
