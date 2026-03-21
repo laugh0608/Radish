@@ -202,3 +202,17 @@
 
 - **当前体验主线口径已前移**：文档应用主链已从“下一步优先项”切换为“本轮已完成收口”，论坛边缘页与深层样式也已继续推进。
 - **下一步建议已收束**：后续优先补通知中心 / 个人中心残余边缘页与少量失败兜底文案，再组织一轮语言切换与主题切换烟雾验证。
+
+### 桌面壳层 / 通知中心 / 个人中心烟雾验证收口
+
+- **首轮语言与主题烟雾验证已完成**：桌面壳层、通知中心与个人中心已完成一轮中英文切换与 `default / guofeng` 切换的静态烟雾复核，当前体验主线口径从“继续补齐”切换为“待联调复核”。
+- **桌面余额 / 经验值尾项已补齐**：Dock 中的余额与经验值状态文案、失败态与提示文案已补入翻译键，不再在语言切换后残留明显中文硬编码。
+- **残余主题色已继续收口**：Dock 少量交互阴影 / 状态色与个人中心尾部按钮、上传态样式已进一步切回主题语义 Token 或规范颜色写法，减少国风 / 默认主题之间的割裂感。
+- **大小写导入兼容性已修复**：`CurrentWindowContext` 已拆出独立值文件，避免在区分大小写的构建环境中继续引用 `currentWindowContext.ts` 触发路径不一致问题。
+
+### 本轮验证与口径同步
+
+- **基线快速验证通过**：`node Scripts/validate-baseline.mjs --quick` 已通过。
+- **前端类型检查通过**：`npm run type-check --workspace=radish.client` 已通过。
+- **前端构建验证通过**：`npm run build --workspace=radish.client` 已在系统环境构建通过；沙盒环境下仍存在既有 `spawn EPERM` 限制，不属于本轮代码回归。
+- **规划与设计文档已同步**：`development-plan.md`、`planning/current.md`、`planning/dev-first-status-matrix.md`、`frontend/design.md` 与 `frontend/visual-theme-spec.md` 已统一更新为“主题 / i18n 主链首轮完成，当前转入待联调复核”的口径。

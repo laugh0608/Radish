@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { WindowState } from '@/desktop/types';
-import { CurrentWindowContext } from './currentWindowContext';
+import { CurrentWindowContext } from './CurrentWindowContextValue';
 
 interface CurrentWindowProviderProps {
   value: WindowState;

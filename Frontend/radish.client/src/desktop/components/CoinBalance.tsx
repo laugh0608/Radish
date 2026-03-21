@@ -31,7 +31,7 @@ export const CoinBalance = () => {
         setBalance(result);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '获取余额失败');
+      setError(err instanceof Error ? err.message : t('desktop.coinBalance.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -62,7 +62,7 @@ export const CoinBalance = () => {
 
   if (error || !balance) {
     return (
-      <div className={styles.coinBalance} title={error || '余额加载失败'}>
+      <div className={styles.coinBalance} title={error || t('desktop.coinBalance.loadFailed')}>
         <span className={styles.icon}>🥕</span>
         <span className={styles.error}>--</span>
       </div>
@@ -77,7 +77,14 @@ export const CoinBalance = () => {
     <div
       className={styles.coinBalance}
       onClick={handleToggleMode}
-      title={balance ? `点击切换显示模式\n胡萝卜: ${(balance.voBalance || 0).toLocaleString()}\n白萝卜: ${balance.voBalanceDisplay || '0 白萝卜'}` : '加载中...'}
+      title={
+        balance
+          ? t('desktop.coinBalance.toggleTitle', {
+              carrot: (balance.voBalance || 0).toLocaleString(),
+              radish: balance.voBalanceDisplay || t('profile.wallet.whiteRadishAmount', { amount: 0 }),
+            })
+          : t('desktop.coinBalance.loading')
+      }
     >
       <span className={styles.icon}>
         {displayMode === 'carrot' ? '🥕' : '🌿'}
@@ -86,13 +93,13 @@ export const CoinBalance = () => {
         {balance ? (
           displayMode === 'carrot'
             ? (balance.voBalance || 0).toLocaleString()
-            : (balance.voBalanceDisplay || '0 白萝卜')
+            : (balance.voBalanceDisplay || t('profile.wallet.whiteRadishAmount', { amount: 0 }))
         ) : (
-          loading ? '...' : (error ? '错误' : '0')
+          loading ? '...' : (error ? t('desktop.coinBalance.error') : '0')
         )}
       </span>
       <span className={styles.unit}>
-        {displayMode === 'carrot' ? '胡萝卜' : '白萝卜'}
+        {displayMode === 'carrot' ? t('profile.wallet.carrotUnit') : t('profile.coin.whiteRadish')}
       </span>
     </div>
   );

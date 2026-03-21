@@ -51,7 +51,7 @@
 
 .tab.active {
   background: var(--theme-brand-primary);
-  color: #ffffff;
+  color: white;
   border-color: var(--theme-brand-primary);
 }
 

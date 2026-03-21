@@ -47,24 +47,6 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
   const [followerTotal, setFollowerTotal] = useState(0);
   const [followingTotal, setFollowingTotal] = useState(0);
 
-  useEffect(() => {
-    void loadSummary();
-  }, [loadSummary]);
-
-  useEffect(() => {
-    if (activeTab === 'feed') {
-      void loadFeed(feedPage, feedViewType);
-      return;
-    }
-
-    if (activeTab === 'followers') {
-      void loadFollowers(followerPage);
-      return;
-    }
-
-    void loadFollowing(followingPage);
-  }, [activeTab, feedPage, feedViewType, followerPage, followingPage, loadFeed, loadFollowers, loadFollowing]);
-
   const totalPages = useMemo(() => {
     const total = activeTab === 'feed'
       ? feedTotal
@@ -155,6 +137,24 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
       setLoading(false);
     }
   }, [t]);
+
+  useEffect(() => {
+    void loadSummary();
+  }, [loadSummary]);
+
+  useEffect(() => {
+    if (activeTab === 'feed') {
+      void loadFeed(feedPage, feedViewType);
+      return;
+    }
+
+    if (activeTab === 'followers') {
+      void loadFollowers(followerPage);
+      return;
+    }
+
+    void loadFollowing(followingPage);
+  }, [activeTab, feedPage, feedViewType, followerPage, followingPage, loadFeed, loadFollowers, loadFollowing]);
 
   const buildAvatarText = (name: string) => {
     const source = name.trim();
