@@ -13,7 +13,7 @@
   margin: 0;
   font-size: 15px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-text-primary);
 }
 
 .sortButtons {
@@ -23,32 +23,32 @@
 
 .sortButton {
   padding: 4px 12px;
-  background: transparent;
-  border: 1px solid #d1d5db;
-  color: #6b7280;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-soft);
+  color: var(--theme-text-secondary);
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: var(--theme-radius-control);
   transition: all 0.2s;
   font-size: 13px;
 }
 
 .sortButton:hover {
-  background-color: #eff6ff;
-  border-color: #2d6cdf;
-  color: #2d6cdf;
+  background-color: color-mix(in srgb, var(--theme-brand-soft) 54%, var(--theme-bg-surface) 46%);
+  border-color: var(--theme-border-strong);
+  color: var(--theme-brand-primary);
 }
 
 .sortButton.active {
-  background-color: #2d6cdf;
-  border-color: #2d6cdf;
-  color: #fff;
+  background-color: var(--theme-brand-primary);
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-bg-surface);
   font-weight: 500;
 }
 
 .loadingText,
 .emptyText {
   font-size: 14px;
-  color: #9ca3af;
+  color: var(--theme-text-muted);
 }
 
 .list {
