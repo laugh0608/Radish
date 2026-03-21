@@ -36,7 +36,10 @@ export const Dock = () => {
   const [pollingUnreadCount, setPollingUnreadCount] = useState(0); // 轮询降级时的未读数
   const currentLanguage = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'zh';
   const timeLocale = currentLanguage === 'en' ? 'en-US' : 'zh-CN';
-  const currentLanguageLabel = currentLanguage === 'en' ? t('lang.en') : t('lang.zh');
+  const languageIcon = currentLanguage === 'en' ? 'mdi:format-letter-case' : 'mdi:translate-variant';
+  const languageBadge = currentLanguage === 'en' ? 'EN' : 'ZH';
+  const themeIcon = currentTheme.id === 'default' ? 'mdi:view-dashboard-outline' : 'mdi:landscape';
+  const themeBadge = currentTheme.id === 'default' ? '简' : '风';
 
   const loggedIn = isAuthenticated();
 
@@ -301,27 +304,36 @@ export const Dock = () => {
                 type="button"
                 className={styles.languageButton}
                 onClick={toggleLanguage}
-                title={t('lang.switch')}
+                title={`${t('lang.switch')}（${languageBadge}）`}
+                aria-label={t('lang.switch')}
+                data-state={currentLanguage}
               >
-                <Icon icon="mdi:translate" size={18} />
-                <span className={styles.languageLabel}>{currentLanguageLabel}</span>
+                <span className={styles.controlIconWrap}>
+                  <Icon icon={languageIcon} size={20} />
+                  <span className={`${styles.controlBadge} ${styles.languageBadge}`}>{languageBadge}</span>
+                </span>
               </button>
               <button
                 type="button"
                 className={styles.themeButton}
                 onClick={cycleTheme}
                 title={`${t('theme.switch')}（${currentTheme.label}）`}
+                aria-label={t('theme.switch')}
+                data-state={currentTheme.id}
               >
-                <Icon icon="mdi:palette-swatch-outline" size={18} />
-                <span className={styles.themeLabel}>{currentTheme.label}</span>
+                <span className={styles.controlIconWrap}>
+                  <Icon icon={themeIcon} size={20} />
+                  <span className={`${styles.controlBadge} ${styles.themeBadge}`}>{themeBadge}</span>
+                </span>
               </button>
               <button
                 type="button"
                 className={`${styles.authButton} ${loggedIn ? styles.loggedIn : styles.loggedOut}`}
                 onClick={loggedIn ? handleLogoutClick : redirectToLogin}
                 title={loggedIn ? t('auth.logout') : t('auth.login')}
+                aria-label={loggedIn ? t('auth.logout') : t('auth.login')}
               >
-                <Icon icon={loggedIn ? 'mdi:logout' : 'mdi:login'} size={28} />
+                <Icon icon={loggedIn ? 'mdi:logout' : 'mdi:login'} size={20} />
               </button>
             </div>
           </div>

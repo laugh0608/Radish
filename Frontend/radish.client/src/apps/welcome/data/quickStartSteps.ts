@@ -1,5 +1,5 @@
 /**
- * 快速入门指南数据
+ * 欢迎页快速上手指南数据
  */
 
 export interface QuickStartStep {
@@ -16,96 +16,96 @@ export interface QuickStartCategory {
 
 export const quickStartSteps: QuickStartCategory[] = [
   {
-    category: '基础操作',
-    icon: 'mdi:mouse',
+    category: '桌面基础操作',
+    icon: 'mdi:monitor-cellphone',
     steps: [
       {
         title: '双击桌面图标打开应用',
-        description: '在桌面上找到您想要使用的应用图标，双击即可打开',
-        icon: 'mdi:cursor-default-click'
+        description: '桌面图标是最直接的入口。双击后会打开独立窗口，适合同时浏览多个应用内容。',
+        icon: 'mdi:cursor-default-click-outline'
       },
       {
-        title: '拖拽窗口标题栏移动窗口',
-        description: '点击窗口顶部的标题栏并拖动，可以自由移动窗口位置',
-        icon: 'mdi:drag'
+        title: '使用顶部 Dock 管理运行中的窗口',
+        description: 'Dock 会显示已打开应用、通知中心和账户入口。点击图标可以恢复、切换或再次聚焦窗口。',
+        icon: 'mdi:dock-top'
       },
       {
-        title: '点击红色按钮关闭窗口',
-        description: '窗口左上角的红色圆点按钮用于关闭窗口',
-        icon: 'mdi:close-circle'
+        title: '窗口支持最小化、还原和关闭',
+        description: '窗口标题栏提供基础控制；需要临时收起内容时优先使用最小化，而不是直接关闭。',
+        icon: 'mdi:window-restore'
       },
       {
-        title: '顶部 Dock 显示运行中的应用',
-        description: '屏幕顶部中间的 Dock 栏会显示所有正在运行的应用，点击可以切换或恢复窗口',
-        icon: 'mdi:dock-bottom'
+        title: '主题与语言切换会即时生效',
+        description: 'Dock 右侧提供主题和语言状态按钮，切换后会同步影响桌面壳层与已适配页面。',
+        icon: 'mdi:translate-variant'
       }
     ]
   },
   {
-    category: '论坛使用',
-    icon: 'mdi:forum',
+    category: '常用应用入口',
+    icon: 'mdi:apps-box',
     steps: [
       {
-        title: '浏览分类和帖子',
-        description: '在论坛首页可以看到所有分类，点击分类查看该分类下的帖子列表',
-        icon: 'mdi:view-list'
+        title: '论坛负责主要互动内容',
+        description: '论坛应用承接发帖、评论、问答、投票等主要社区互动，是当前最值得优先体验的内容区。',
+        icon: 'mdi:forum-outline'
       },
       {
-        title: '发布新帖子',
-        description: '点击"发帖"按钮，填写标题和内容，支持 Markdown 格式和图片上传',
-        icon: 'mdi:pencil'
+        title: '文档应用提供说明与知识入口',
+        description: '如果想了解规则、说明、Wiki 页面或固定内容，优先从文档应用进入。',
+        icon: 'mdi:book-open-outline'
       },
       {
-        title: '评论和点赞',
-        description: '在帖子详情页可以发表评论，也可以为喜欢的帖子和评论点赞',
-        icon: 'mdi:heart'
+        title: '通知中心查看动态提醒',
+        description: '通知中心聚合系统提醒和互动消息，适合快速回看最近发生的变化。',
+        icon: 'mdi:bell-outline'
       },
       {
-        title: '查看个人主页',
-        description: '点击用户头像可以查看个人主页，包括发布的帖子、评论等信息',
-        icon: 'mdi:account'
+        title: '个人主页与排行榜用于回看状态',
+        description: '个人主页可查看个人内容与行为记录，排行榜与等级页可快速了解当前成长状态。',
+        icon: 'mdi:account-badge-outline'
       }
     ]
   },
   {
-    category: '进阶功能',
-    icon: 'mdi:star',
+    category: '进阶体验路径',
+    icon: 'mdi:route',
     steps: [
       {
-        title: '访问管理控制台',
-        description: '管理员用户可以访问控制台，进行用户管理、内容审核等操作',
-        icon: 'mdi:console'
+        title: '萝卜坑集中承载业务功能',
+        description: '萝卜坑已经覆盖账户总览、交易记录、安全设置和统计视图，是当前复杂业务体验的核心窗口。',
+        icon: 'mdi:wallet-outline'
       },
       {
-        title: '查看 API 文档',
-        description: '开发者可以查看完整的 API 文档，了解接口使用方法',
-        icon: 'mdi:book-open-page-variant'
+        title: '组件库适合查看前端能力样例',
+        description: '组件库应用用于预览共享 UI 组件和交互状态，适合前端联调时快速核对视觉与行为。',
+        icon: 'mdi:view-grid-plus-outline'
       },
       {
-        title: '自定义设置',
-        description: '在设置中可以修改个人信息、偏好设置等（规划中）',
-        icon: 'mdi:cog'
+        title: '控制台与文档链路是外围能力入口',
+        description: '具备权限时可以继续进入控制台、认证和 API 文档等外围能力，帮助你了解整套系统的完整边界。',
+        icon: 'mdi:application-cog-outline'
       }
     ]
   },
   {
-    category: '获取帮助',
-    icon: 'mdi:help-circle',
+    category: '遇到问题时',
+    icon: 'mdi:lifebuoy',
     steps: [
       {
-        title: '打开文档应用',
-        description: '在文档应用中查看固定项目文档、教程、手册和在线文档内容',
-        icon: 'mdi:book'
+        title: '优先以桌面中可见入口为准',
+        description: '欢迎页只做概览说明，功能是否可用、内容是否接入，以桌面应用当前实际状态为准。',
+        icon: 'mdi:map-marker-path'
       },
       {
-        title: '加入社区讨论',
-        description: '在论坛中提问或参与讨论，与其他用户交流经验',
-        icon: 'mdi:account-group'
+        title: '规范类信息优先查看 Docs',
+        description: '涉及配置、流程、视觉规范和开发口径时，请优先参考 Docs 和文档应用中的最新内容。',
+        icon: 'mdi:file-document-outline'
       },
       {
-        title: '提交问题反馈',
-        description: '发现问题或有建议？欢迎在 GitHub 上提交 Issue',
-        icon: 'mdi:bug'
+        title: '发现文案过时或体验异常及时反馈',
+        description: '如果发现欢迎页内容、桌面交互或主题适配有偏差，请在联调阶段尽早提出，便于统一收口。',
+        icon: 'mdi:message-alert-outline'
       }
     ]
   }

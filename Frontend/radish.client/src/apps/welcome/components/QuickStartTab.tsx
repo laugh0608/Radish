@@ -11,7 +11,9 @@ export const QuickStartTab = () => {
       {quickStartSteps.map((category, categoryIndex) => (
         <section key={categoryIndex} className={styles.category}>
           <div className={styles.categoryHeader}>
-            <Icon icon={category.icon} size={28} color="#667eea" />
+            <div className={styles.categoryIcon}>
+              <Icon icon={category.icon} size={22} className={styles.icon} />
+            </div>
             <h2>{category.category}</h2>
           </div>
           <div className={styles.stepsList}>
@@ -19,7 +21,7 @@ export const QuickStartTab = () => {
               <div key={stepIndex} className={styles.stepCard}>
                 <div className={styles.stepNumber}>{stepIndex + 1}</div>
                 <div className={styles.stepIcon}>
-                  <Icon icon={step.icon} size={24} color="#667eea" />
+                  <Icon icon={step.icon} size={20} className={styles.icon} />
                 </div>
                 <div className={styles.stepContent}>
                   <h3 className={styles.stepTitle}>{step.title}</h3>

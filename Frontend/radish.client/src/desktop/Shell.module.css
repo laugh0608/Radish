@@ -39,6 +39,15 @@
   z-index: 1;
 }
 
+.windowLayer {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.windowLayer > * {
+  pointer-events: auto;
+}
+
 .dockLayer {
   z-index: 3;
   pointer-events: none;

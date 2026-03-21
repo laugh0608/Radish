@@ -31,13 +31,14 @@
   --theme-pattern-line: rgba(122, 92, 64, 0.18);
   --theme-pattern-edge: rgba(122, 92, 64, 0.24);
   --theme-shell-background:
-    radial-gradient(circle at 18% 14%, rgba(178, 64, 87, 0.12), transparent 28%),
-    radial-gradient(circle at 84% 16%, rgba(79, 156, 131, 0.12), transparent 24%),
-    radial-gradient(circle at 50% 100%, rgba(136, 99, 73, 0.12), transparent 26%),
-    linear-gradient(180deg, #f8f3ea 0%, #efe6da 52%, #e8dcc9 100%);
+    radial-gradient(circle at 18% 14%, rgba(178, 64, 87, 0.08), transparent 30%),
+    radial-gradient(circle at 84% 16%, rgba(79, 156, 131, 0.08), transparent 26%),
+    radial-gradient(circle at 52% 100%, rgba(136, 99, 73, 0.08), transparent 26%),
+    linear-gradient(180deg, #f6f1e8 0%, #efe7db 55%, #e5dac8 100%);
   --theme-shell-overlay:
-    radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.45), transparent 24%),
-    radial-gradient(circle at 76% 20%, rgba(255, 255, 255, 0.22), transparent 22%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.08) 100%),
+    radial-gradient(circle at 24% 22%, rgba(255, 255, 255, 0.34), transparent 24%),
+    radial-gradient(circle at 76% 18%, rgba(255, 255, 255, 0.18), transparent 22%);
   --theme-shell-frame-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
   --theme-dock-bg: rgba(251, 247, 240, 0.78);
   --theme-dock-bg-compact: rgba(246, 239, 228, 0.88);
@@ -81,13 +82,14 @@
   --theme-pattern-line: rgba(84, 108, 122, 0.12);
   --theme-pattern-edge: rgba(84, 108, 122, 0.18);
   --theme-shell-background:
-    radial-gradient(circle at 16% 14%, rgba(88, 119, 134, 0.12), transparent 30%),
-    radial-gradient(circle at 84% 18%, rgba(93, 141, 125, 0.12), transparent 24%),
-    radial-gradient(circle at 54% 100%, rgba(67, 92, 116, 0.1), transparent 24%),
-    linear-gradient(180deg, #f7fbfb 0%, #edf2f3 52%, #dbe4e7 100%);
+    radial-gradient(circle at 16% 14%, rgba(88, 119, 134, 0.08), transparent 30%),
+    radial-gradient(circle at 84% 18%, rgba(93, 141, 125, 0.08), transparent 24%),
+    radial-gradient(circle at 54% 100%, rgba(67, 92, 116, 0.08), transparent 24%),
+    linear-gradient(180deg, #f6fafb 0%, #edf2f3 56%, #d8e2e5 100%);
   --theme-shell-overlay:
-    radial-gradient(circle at 24% 26%, rgba(255, 255, 255, 0.5), transparent 25%),
-    radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.24), transparent 20%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.08) 100%),
+    radial-gradient(circle at 24% 26%, rgba(255, 255, 255, 0.38), transparent 25%),
+    radial-gradient(circle at 78% 18%, rgba(255, 255, 255, 0.18), transparent 20%);
   --theme-shell-frame-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
   --theme-dock-bg: rgba(248, 251, 251, 0.78);
   --theme-dock-bg-compact: rgba(239, 245, 246, 0.9);

@@ -35,16 +35,20 @@ export const RulesTab = () => {
   return (
     <div className={styles.container}>
       <div className={styles.notice}>
-        <Icon icon="mdi:information" size={20} color="#667eea" />
+        <div className={styles.noticeIcon}>
+          <Icon icon="mdi:information-outline" size={18} className={styles.icon} />
+        </div>
         <p>
-          请仔细阅读并遵守以下社区规则，共同维护良好的社区环境。违规行为将受到相应处理。
+          这不是冗长的公告墙，而是当前阶段最需要遵守的一组社区约定。它们的目标是减少噪音、保护边界，并帮助讨论回到问题本身。
         </p>
       </div>
 
       {communityRules.map((category, categoryIndex) => (
         <section key={categoryIndex} className={styles.category}>
           <div className={styles.categoryHeader}>
-            <Icon icon={category.icon} size={28} color="#667eea" />
+            <div className={styles.categoryIcon}>
+              <Icon icon={category.icon} size={22} className={styles.icon} />
+            </div>
             <h2>{category.category}</h2>
           </div>
           <div className={styles.rulesList}>

@@ -13,10 +13,10 @@ interface Tab {
 }
 
 const tabs: Tab[] = [
-  { id: 'about', label: '关于 Radish', icon: 'mdi:information' },
-  { id: 'quickstart', label: '快速入门', icon: 'mdi:rocket-launch' },
-  { id: 'rules', label: '社区规则', icon: 'mdi:shield-check' },
-  { id: 'open-source', label: '开源软件', icon: 'mdi:open-source-initiative' }
+  { id: 'about', label: '平台概览', icon: 'mdi:compass-outline' },
+  { id: 'quickstart', label: '上手路径', icon: 'mdi:rocket-launch-outline' },
+  { id: 'rules', label: '社区约定', icon: 'mdi:shield-half-full' },
+  { id: 'open-source', label: '开源说明', icon: 'mdi:open-source-initiative' }
 ];
 
 /**
@@ -27,6 +27,22 @@ const tabs: Tab[] = [
 export const WelcomeApp = () => {
   const { userName } = useUserStore();
   const [activeTab, setActiveTab] = useState<TabType>('about');
+  const displayName = userName?.trim() || '朋友';
+
+  const heroHighlights = [
+    {
+      label: '桌面入口',
+      value: '论坛、文档、通知、萝卜坑'
+    },
+    {
+      label: '当前主线',
+      value: '主题与 i18n 联调优化'
+    },
+    {
+      label: '体验建议',
+      value: '先看概览，再逐步打开应用'
+    }
+  ];
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -46,46 +62,67 @@ export const WelcomeApp = () => {
   return (
     <div className={styles.container}>
       <div className={styles.wrapper}>
-        <div className={styles.hero}>
-          <Icon icon="mdi:hand-wave" size={64} color="#667eea" />
-          <h1 className={styles.title}>欢迎来到 Radish WebOS</h1>
-          <p className={styles.subtitle}>
-            你好，<strong>{userName}</strong>！欢迎使用 Radish 社区平台
-          </p>
-        </div>
+        <section className={styles.hero}>
+          <div className={styles.heroIconWrap}>
+            <Icon icon="mdi:hand-wave" size={40} className={styles.heroIcon} />
+          </div>
+          <div className={styles.heroContent}>
+            <span className={styles.eyebrow}>Radish WebOS</span>
+            <h1 className={styles.title}>欢迎来到你的桌面工作台</h1>
+            <p className={styles.subtitle}>
+              你好，<strong>{displayName}</strong>。这里汇集论坛、文档、通知、个人主页与萝卜坑等主要入口，
+              当前重点正在围绕主题一致性、双语切换与桌面交互体验持续优化。
+            </p>
+          </div>
 
-        <div className={styles.tabs}>
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <Icon icon={tab.icon} size={20} />
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
+          <div className={styles.heroStats}>
+            {heroHighlights.map((item) => (
+              <div key={item.label} className={styles.heroStatCard}>
+                <span className={styles.heroStatLabel}>{item.label}</span>
+                <strong className={styles.heroStatValue}>{item.value}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
 
-        <div className={styles.content}>
-          {renderTabContent()}
-        </div>
+        <section className={styles.tabsSection}>
+          <div className={styles.tabs}>
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                className={`${styles.tab} ${activeTab === tab.id ? styles.tabActive : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                <Icon icon={tab.icon} size={18} className={styles.tabIcon} />
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+        </section>
 
-        <div className={styles.footer}>
-          <div className={styles.footerInfo}>
-            <span className={styles.version}>Radish v0.1.0</span>
-            <span className={styles.separator}>•</span>
-            <a
-              href="https://github.com/your-org/radish"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={styles.footerLink}
-            >
-              <Icon icon="mdi:github" size={16} />
-              GitHub
-            </a>
+        <div className={styles.contentShell}>
+          <div className={styles.contentHeader}>
+            <div>
+              <h2 className={styles.contentTitle}>{tabs.find((tab) => tab.id === activeTab)?.label}</h2>
+              <p className={styles.contentHint}>
+                本页内容会跟随桌面应用联调持续更新，具体体验以当前桌面中可见的应用与入口为准。
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.content}>
+            {renderTabContent()}
           </div>
         </div>
+
+        <footer className={styles.footer}>
+          <div className={styles.footerInfo}>
+            <span className={styles.footerBadge}>联调阶段</span>
+            <p className={styles.footerText}>
+              欢迎页侧重说明当前能力边界、常用入口和基础规则，不再作为版本公告页。
+            </p>
+          </div>
+        </footer>
       </div>
     </div>
   );

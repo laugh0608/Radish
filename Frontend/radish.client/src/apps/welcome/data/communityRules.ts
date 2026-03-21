@@ -1,5 +1,5 @@
 /**
- * 社区规则数据
+ * 欢迎页社区约定数据
  */
 
 export interface Rule {
@@ -16,117 +16,86 @@ export interface RuleCategory {
 
 export const communityRules: RuleCategory[] = [
   {
-    category: '基本准则',
-    icon: 'mdi:shield-check',
+    category: '内容发布',
+    icon: 'mdi:file-document-edit-outline',
     rules: [
       {
-        title: '尊重他人，文明交流',
-        description: '保持礼貌和尊重，不进行人身攻击、侮辱、歧视等行为',
+        title: '标题清楚，内容对题',
+        description: '发帖、提问和文档内容应尽量说明背景、问题和目标，避免只留下模糊标题或无上下文内容。',
+        severity: 'medium'
+      },
+      {
+        title: '禁止违法、侵权与恶意广告',
+        description: '涉及违法违规、侵犯他人权益、批量引流、诈骗或恶意推广的内容会被优先处理。',
         severity: 'high'
       },
       {
-        title: '禁止发布违法违规内容',
-        description: '不得发布违反法律法规的内容，包括但不限于暴力、色情、赌博、毒品等',
-        severity: 'high'
-      },
-      {
-        title: '保护个人隐私',
-        description: '不得未经许可公开他人的个人信息，包括真实姓名、联系方式、地址等',
-        severity: 'high'
-      },
-      {
-        title: '禁止恶意灌水和广告',
-        description: '不得发布无意义的灌水内容或未经许可的商业广告',
+        title: '引用资料时保留必要来源',
+        description: '转载、节选或引用他人资料时请说明出处，避免把外部内容伪装成原创成果。',
         severity: 'medium'
       }
     ]
   },
   {
-    category: '论坛规则',
-    icon: 'mdi:forum',
+    category: '互动边界',
+    icon: 'mdi:account-group-outline',
     rules: [
       {
-        title: '发帖规范',
-        description: '标题应简洁明了，内容应充实有价值，选择合适的分类',
-        severity: 'medium'
-      },
-      {
-        title: '评论规范',
-        description: '评论应与主题相关，理性讨论，避免无意义的争吵',
-        severity: 'medium'
-      },
-      {
-        title: '点赞和举报机制',
-        description: '合理使用点赞功能，发现违规内容请及时举报',
-        severity: 'low'
-      },
-      {
-        title: '禁止刷赞刷评论',
-        description: '不得通过机器或人工方式恶意刷赞、刷评论',
+        title: '先讨论问题，再评价个人',
+        description: '鼓励观点碰撞，但不要把讨论变成人身攻击、嘲讽、贴标签或故意挑衅。',
         severity: 'high'
+      },
+      {
+        title: '不同意见请给出依据',
+        description: '如果你不同意某个方案，优先补充事实、例子或替代做法，而不是只做情绪化否定。',
+        severity: 'medium'
+      },
+      {
+        title: '善用点赞、回复与举报',
+        description: '鼓励通过正常互动表达反馈；发现明显违规内容时，优先使用举报而不是继续扩大争吵。',
+        severity: 'low'
       }
     ]
   },
   {
-    category: '账号管理',
-    icon: 'mdi:account-cog',
+    category: '账号与数据安全',
+    icon: 'mdi:shield-account-outline',
     rules: [
       {
-        title: '账号安全建议',
-        description: '使用强密码，定期更换密码，不要与他人共享账号',
-        severity: 'medium'
-      },
-      {
-        title: '多账号使用规则',
-        description: '允许拥有多个账号，但不得用于恶意行为（如刷赞、自问自答等）',
-        severity: 'medium'
-      },
-      {
-        title: '违规处理流程',
-        description: '违规行为将根据严重程度进行警告、禁言、封号等处理',
+        title: '不要共享账号与敏感信息',
+        description: '请妥善保护密码、令牌和个人资料，不要在公开内容里泄露他人的联系方式或隐私信息。',
         severity: 'high'
+      },
+      {
+        title: '禁止刷赞、刷评论和恶意养号',
+        description: '不得通过批量账号、脚本或组织化操作影响内容排序、互动数据和奖励判断。',
+        severity: 'high'
+      },
+      {
+        title: '联调阶段更要注意边界',
+        description: '当前仍处在持续联调阶段，请避免使用非常规方式压测、探测或绕过既有权限边界。',
+        severity: 'medium'
       }
     ]
   },
   {
-    category: '萝卜币规则',
-    icon: 'mdi:currency-usd',
+    category: '反馈与协作',
+    icon: 'mdi:message-draw',
     rules: [
       {
-        title: '获取方式',
-        description: '通过发帖、评论、点赞等正常社区行为获得萝卜币奖励（规划中）',
+        title: '反馈问题尽量带上下文',
+        description: '描述问题时建议附上页面、入口、复现步骤和预期结果，便于快速定位。',
         severity: 'low'
       },
       {
-        title: '使用规则',
-        description: '萝卜币可用于打赏、兑换特权等功能（规划中）',
+        title: '欢迎指出文案与体验不一致',
+        description: '欢迎页、Docs 和实际功能如果出现偏差，请直接指出，我们会优先统一口径。',
         severity: 'low'
       },
       {
-        title: '禁止交易',
-        description: '严禁私下买卖萝卜币或进行任何形式的现金交易',
-        severity: 'high'
-      }
-    ]
-  },
-  {
-    category: '重要公告',
-    icon: 'mdi:bullhorn',
-    rules: [
-      {
-        title: '系统维护通知',
-        description: '系统维护期间可能无法访问，请关注公告了解维护时间',
-        severity: 'low'
-      },
-      {
-        title: '功能更新说明',
-        description: '新功能上线或重大更新时会发布公告，请及时查看',
-        severity: 'low'
-      },
-      {
-        title: '社区活动',
-        description: '定期举办社区活动，欢迎积极参与',
-        severity: 'low'
+        title: '阶段性能力以当前实现为准',
+        description: '欢迎页不会承诺尚未落地的功能，联调阶段如有变化，请以当前桌面里实际可见能力为准。',
+        severity: 'medium'
       }
     ]
   }

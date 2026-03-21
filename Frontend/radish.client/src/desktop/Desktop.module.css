@@ -6,23 +6,24 @@
   bottom: 0;
   padding: 2rem;
   padding-top: 80px;
-  display: grid;
-  grid-template-columns: repeat(2, 70px);
-  grid-auto-rows: 80px;
-  align-content: start;
-  justify-content: start;
-  gap: 1rem;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  justify-content: flex-start;
+  gap: 1rem 1.1rem;
+  overflow: hidden;
 }
 
 .desktop > * {
-  width: 70px;
-  height: 80px;
+  width: 84px;
+  height: 100px;
+  flex: 0 0 100px;
 }
 
 @media (max-width: 900px) {
   .desktop {
-    grid-template-columns: 70px;
+    gap: 0.85rem 0.95rem;
   }
 }
 

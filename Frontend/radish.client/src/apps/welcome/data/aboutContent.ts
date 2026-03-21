@@ -1,5 +1,5 @@
 /**
- * 关于 Radish 社区的内容数据
+ * 关于 Radish 当前阶段的内容数据
  */
 
 export interface AboutSection {
@@ -12,7 +12,7 @@ export interface Feature {
   name: string;
   description: string;
   icon: string;
-  status?: 'available' | 'planned';
+  status?: 'available' | 'iterating';
 }
 
 export interface TechHighlight {
@@ -23,64 +23,78 @@ export interface TechHighlight {
 
 export const aboutContent = {
   vision: {
-    title: '社区愿景',
-    content: 'Radish 是一个现代化的社区平台，致力于为用户提供优质的交流和分享空间。我们相信开放、包容和创新的力量，通过技术连接每一个热爱分享的人。',
-    icon: 'mdi:lightbulb-on'
+    title: '产品定位',
+    content:
+      'Radish 正在构建一个以 WebOS 桌面为入口的社区工作台，把论坛、文档、通知、个人主页和萝卜坑等核心能力集中到同一套窗口化体验中，减少多页面来回切换的割裂感。',
+    icon: 'mdi:compass-outline'
   } as AboutSection,
 
   mission: {
-    title: '我们的使命',
-    content: '打造一个充满活力的社区生态，让每个人都能自由表达、学习成长、结识志同道合的朋友。我们追求卓越的用户体验，坚持开源精神，让技术服务于人。',
-    icon: 'mdi:target'
+    title: '当前阶段',
+    content:
+      '当前主线已经进入主题与 i18n 的手工联调和体验优化阶段。重点是统一视觉 token、梳理双语口径、修复桌面交互细节，并让高频应用之间形成更顺手的跳转闭环。',
+    icon: 'mdi:progress-wrench'
   } as AboutSection,
 
   features: [
     {
-      name: '论坛',
-      description: '深度讨论与内容分享，支持 Markdown 编辑、图片上传、代码高亮等功能',
-      icon: 'mdi:forum',
+      name: '论坛讨论',
+      description: '帖子、评论、问答、投票和编辑记录等内容链路已经接入，是当前最完整的互动主场景。',
+      icon: 'mdi:forum-outline',
       status: 'available'
     },
     {
-      name: '聊天室',
-      description: '实时交流互动，支持文字、表情、图片等多种消息类型',
-      icon: 'mdi:chat',
-      status: 'planned'
+      name: '文档与 Wiki',
+      description: '文档应用承接固定说明、Wiki 页面和 Markdown 内容查看，是当前说明入口与知识沉淀中心。',
+      icon: 'mdi:book-open-page-variant-outline',
+      status: 'available'
     },
     {
-      name: '萝卜币系统',
-      description: '社区激励机制，通过发帖、评论、点赞等行为获得萝卜币奖励',
-      icon: 'mdi:currency-usd',
-      status: 'planned'
+      name: '通知与个人主页',
+      description: '通知中心、个人主页和排行榜已具备联动基础，用于查看提醒、个人内容和成长状态。',
+      icon: 'mdi:account-star-outline',
+      status: 'available'
     },
     {
-      name: '管理控制台',
-      description: '强大的后台管理系统，支持用户管理、内容审核、数据统计等功能',
-      icon: 'mdi:console',
+      name: '萝卜坑',
+      description: '萝卜坑已提供账户总览、转移、记录、安全与统计等页面，是当前最复杂的桌面业务应用之一。',
+      icon: 'mdi:wallet-outline',
+      status: 'iterating'
+    },
+    {
+      name: '主题与双语',
+      description: '桌面壳层已具备 default / guofeng 主题切换与 zh / en 双语基线，正在持续打磨页面适配质量。',
+      icon: 'mdi:palette-swatch-outline',
+      status: 'iterating'
+    },
+    {
+      name: '外围链路',
+      description: '控制台、认证、网关与 API 文档等能力已经连通，后续会继续提升桌面内外入口的一致性。',
+      icon: 'mdi:transit-connection-variant',
       status: 'available'
     }
   ] as Feature[],
 
   techStack: [
     {
-      name: '现代化技术栈',
-      description: 'React 19 + ASP.NET Core 10 + PostgreSQL',
-      icon: 'mdi:code-tags'
+      name: '桌面化交互壳层',
+      description: '窗口管理、Dock、桌面图标和应用注册构成 WebOS 体验基线。',
+      icon: 'mdi:monitor-dashboard'
     },
     {
-      name: '桌面化 UI 体验',
-      description: '类似操作系统的 WebOS 界面，窗口化应用管理',
-      icon: 'mdi:monitor'
+      name: '现代后端主链路',
+      description: 'ASP.NET Core 10、SQLSugar、PostgreSQL / SQLite 与网关认证链路共同支撑服务侧能力。',
+      icon: 'mdi:server-outline'
     },
     {
-      name: '多租户架构',
-      description: '支持多租户隔离，灵活的权限控制和数据隔离',
-      icon: 'mdi:office-building'
+      name: '前端工程与状态',
+      description: 'React 19、Vite、TypeScript、Zustand 与 SignalR 组成当前前端工作流与实时能力基础。',
+      icon: 'mdi:source-branch'
     },
     {
-      name: '开源可自部署',
-      description: '完全开源，支持私有化部署，数据完全掌控',
-      icon: 'mdi:open-source-initiative'
+      name: '主题与内容一致性',
+      description: '统一 token、视觉角色命名和文案口径，是当前联调阶段的重点工程。',
+      icon: 'mdi:format-color-fill'
     }
   ] as TechHighlight[]
 };

@@ -43,7 +43,7 @@ export const OpenSourceTab = () => {
       <section className={styles.heroCard}>
         <div className={styles.heroHeader}>
           <div className={styles.heroIcon}>
-            <Icon icon="mdi:open-source-initiative" size={30} color="#0f766e" />
+            <Icon icon="mdi:open-source-initiative" size={24} className={styles.icon} />
           </div>
           <div className={styles.heroContent}>
             <h2>{openSourceOverview.title}</h2>
@@ -86,7 +86,7 @@ export const OpenSourceTab = () => {
           <div>
             <h3>首批开源项目清单</h3>
             <p>
-              当前优先展示 Radish 主链路中最关键的一批依赖，并按职责分组说明其用途、覆盖模块和许可证口径。
+              当前优先展示 Radish 主链路中最关键的一批依赖，并按职责分组说明用途、覆盖模块和许可证口径。
             </p>
           </div>
         </div>
@@ -97,7 +97,7 @@ export const OpenSourceTab = () => {
               <div className={styles.groupHeader}>
                 <div className={styles.groupTitleWrap}>
                   <div className={styles.groupIcon}>
-                    <Icon icon={group.icon} size={22} color="#0f766e" />
+                    <Icon icon={group.icon} size={18} className={styles.icon} />
                   </div>
                   <div>
                     <h4>{group.label}</h4>
@@ -175,7 +175,9 @@ export const OpenSourceTab = () => {
 
       <section className={styles.noticeCard}>
         <div className={styles.noticeHeader}>
-          <Icon icon="mdi:information-outline" size={20} color="#0f766e" />
+          <div className={styles.noticeIcon}>
+            <Icon icon="mdi:information-outline" size={16} className={styles.icon} />
+          </div>
           <h3>展示边界说明</h3>
         </div>
         <div className={styles.noticeList}>
