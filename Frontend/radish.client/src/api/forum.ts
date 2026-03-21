@@ -110,6 +110,7 @@ export type {
  * 获取所有标签
  */
 export async function getAllTags(t: TFunction): Promise<Tag[]> {
+  void t;
   const response = await apiGet<Tag[]>('/api/v1/Tag/GetAll', { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
@@ -123,6 +124,7 @@ export async function getAllTags(t: TFunction): Promise<Tag[]> {
  * 获取固定标签
  */
 export async function getFixedTags(t: TFunction): Promise<Tag[]> {
+  void t;
   const response = await apiGet<Tag[]>('/api/v1/Tag/GetFixedTags', { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
@@ -137,6 +139,7 @@ export async function getFixedTags(t: TFunction): Promise<Tag[]> {
  * @param topCount 返回数量（默认 20）
  */
 export async function getHotTags(t: TFunction, topCount: number = 20): Promise<Tag[]> {
+  void t;
   const response = await apiGet<Tag[]>(`/api/v1/Tag/GetHotTags?topCount=${topCount}`, { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
@@ -150,6 +153,7 @@ export async function getHotTags(t: TFunction, topCount: number = 20): Promise<T
  * 获取顶级分类列表
  */
 export async function getTopCategories(t: TFunction): Promise<Category[]> {
+  void t;
   const response = await apiGet<Category[]>('/api/v1/Category/GetTopCategories', { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
@@ -180,6 +184,7 @@ export async function getPostList(
   questionStatus: QuestionStatusFilter = 'all',
   pollStatus: PollStatusFilter = 'all'
 ): Promise<PageModel<PostItem>> {
+  void t;
   const params = new URLSearchParams();
   if (categoryId) params.set('categoryId', categoryId.toString());
   params.set('pageIndex', pageIndex.toString());
@@ -212,6 +217,7 @@ export async function getPostById(
   t: TFunction,
   answerSort: QuestionAnswerSort = 'default'
 ): Promise<PostDetail> {
+  void t;
   const response = await apiGet<PostDetail>(
     `/api/v1/Post/GetById/${postId}?answerSort=${answerSort}`,
     { timeout: FORUM_READ_TIMEOUT_MS, withAuth: true }
@@ -232,6 +238,7 @@ export async function getPostById(
  * 按帖子获取投票详情
  */
 export async function getPollByPostId(postId: number, t: TFunction): Promise<PollVoteResult> {
+  void t;
   const response = await apiGet<PollVoteResult>(
     `/api/v1/Poll/GetByPostId?postId=${postId}`,
     { timeout: FORUM_READ_TIMEOUT_MS }
@@ -248,6 +255,7 @@ export async function getPollByPostId(postId: number, t: TFunction): Promise<Pol
  * 按帖子获取抽奖详情
  */
 export async function getLotteryByPostId(postId: number, t: TFunction): Promise<LotteryResult> {
+  void t;
   const response = await apiGet<LotteryResult>(
     `/api/v1/Lottery/GetByPostId?postId=${postId}`,
     { timeout: FORUM_READ_TIMEOUT_MS }
@@ -264,6 +272,7 @@ export async function getLotteryByPostId(postId: number, t: TFunction): Promise<
  * 手动开奖
  */
 export async function drawLottery(postId: number, t: TFunction): Promise<PostLottery> {
+  void t;
   const response = await apiPost<PostLottery>(
     '/api/v1/Lottery/Draw',
     { postId },
@@ -281,6 +290,7 @@ export async function drawLottery(postId: number, t: TFunction): Promise<PostLot
  * 提交投票
  */
 export async function votePoll(request: VotePollRequest, t: TFunction): Promise<PostPoll> {
+  void t;
   const response = await apiPost<PostPoll>('/api/v1/Poll/Vote', request, { withAuth: true });
 
   if (!response.ok || !response.data) {
@@ -294,6 +304,7 @@ export async function votePoll(request: VotePollRequest, t: TFunction): Promise<
  * 手动结束投票
  */
 export async function closePoll(request: ClosePollRequest, t: TFunction): Promise<PostPoll> {
+  void t;
   const response = await apiPost<PostPoll>('/api/v1/Poll/Close', request, { withAuth: true });
 
   if (!response.ok || !response.data) {
@@ -307,6 +318,7 @@ export async function closePoll(request: ClosePollRequest, t: TFunction): Promis
  * 提交问答回答
  */
 export async function answerQuestion(request: CreateAnswerRequest, t: TFunction): Promise<PostQuestion> {
+  void t;
   const response = await apiPost<PostQuestion>('/api/v1/Question/Answer', request, { withAuth: true });
 
   if (!response.ok || !response.data) {
@@ -320,6 +332,7 @@ export async function answerQuestion(request: CreateAnswerRequest, t: TFunction)
  * 采纳问答回答
  */
 export async function acceptQuestionAnswer(request: AcceptAnswerRequest, t: TFunction): Promise<PostQuestion> {
+  void t;
   const response = await apiPost<PostQuestion>('/api/v1/Question/Accept', request, { withAuth: true });
 
   if (!response.ok || !response.data) {
@@ -333,6 +346,7 @@ export async function acceptQuestionAnswer(request: AcceptAnswerRequest, t: TFun
  * 获取帖子的评论树（自动包含当前用户的点赞状态）
  */
 export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest' | 'default', t: TFunction): Promise<CommentNode[]> {
+  void t;
   // 如果用户已登录，自动发送token以获取点赞状态
   const hasToken = Boolean(tokenService.getAccessToken());
 
@@ -353,6 +367,7 @@ export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest
  * @returns 新帖子的 ID
  */
 export async function publishPost(request: PublishPostRequest, t: TFunction): Promise<number> {
+  void t;
   const response = await apiPost<number>('/api/v1/Post/Publish', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
@@ -367,6 +382,7 @@ export async function publishPost(request: PublishPostRequest, t: TFunction): Pr
  * @returns 新评论的 ID
  */
 export async function createComment(request: CreateCommentRequest, t: TFunction): Promise<number> {
+  void t;
   const response = await apiPost<number>('/api/v1/Comment/Create', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
@@ -382,6 +398,7 @@ export async function createComment(request: CreateCommentRequest, t: TFunction)
  * @returns 点赞操作结果（新的点赞状态和点赞总数）
  */
 export async function likePost(postId: number, t: TFunction): Promise<PostLikeResult> {
+  void t;
   const response = await apiPost<PostLikeResult>(
     `/api/v1/Post/Like?postId=${postId}`,
     undefined,
@@ -401,6 +418,7 @@ export async function likePost(postId: number, t: TFunction): Promise<PostLikeRe
  * @returns 点赞操作结果（新的点赞状态和点赞总数）
  */
 export async function toggleCommentLike(commentId: number, t: TFunction): Promise<CommentLikeResult> {
+  void t;
   const response = await apiPost<CommentLikeResult>(
     `/api/v1/Comment/ToggleLike?commentId=${commentId}`,
     undefined,
@@ -419,6 +437,7 @@ export async function toggleCommentLike(commentId: number, t: TFunction): Promis
  * @param request 编辑请求
  */
 export async function updatePost(request: UpdatePostRequest, t: TFunction): Promise<void> {
+  void t;
   const response = await apiPut<null>('/api/v1/Post/Update', request, { withAuth: true });
 
   if (!response.ok) {
@@ -431,6 +450,7 @@ export async function updatePost(request: UpdatePostRequest, t: TFunction): Prom
  * @param postId 帖子 ID
  */
 export async function deletePost(postId: number, t: TFunction): Promise<void> {
+  void t;
   const response = await apiDelete<null>(`/api/v1/Post/Delete?postId=${postId}`, { withAuth: true });
 
   if (!response.ok) {
@@ -446,6 +466,7 @@ export async function updateComment(
   request: { commentId: number; content: string },
   t: TFunction
 ): Promise<void> {
+  void t;
   const response = await apiPut<null>(
     '/api/v1/Comment/Update',
     {
@@ -469,6 +490,7 @@ export async function getPostEditHistory(
   pageSize: number,
   t: TFunction
 ): Promise<VoPagedResult<PostEditHistory>> {
+  void t;
   const hasToken = Boolean(tokenService.getAccessToken());
   const response = await apiGet<VoPagedResult<PostEditHistory>>(
     `/api/v1/Post/GetEditHistory?postId=${postId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
@@ -491,6 +513,7 @@ export async function getCommentEditHistory(
   pageSize: number,
   t: TFunction
 ): Promise<VoPagedResult<CommentEditHistory>> {
+  void t;
   const hasToken = Boolean(tokenService.getAccessToken());
   const response = await apiGet<VoPagedResult<CommentEditHistory>>(
     `/api/v1/Comment/GetEditHistory?commentId=${commentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
@@ -509,6 +532,7 @@ export async function getCommentEditHistory(
  * @param commentId 评论 ID
  */
 export async function deleteComment(commentId: number, t: TFunction): Promise<void> {
+  void t;
   const response = await apiDelete<null>(`/api/v1/Comment/Delete?commentId=${commentId}`, { withAuth: true });
 
   if (!response.ok) {
@@ -530,6 +554,7 @@ export async function getChildComments(
   pageSize: number,
   t: TFunction
 ): Promise<{ voItems: CommentNode[]; voTotal: number; voPageIndex: number; voPageSize: number }> {
+  void t;
   const response = await apiGet<{
     voItems: CommentNode[];
     voTotal: number;
@@ -557,6 +582,7 @@ export async function getCurrentGodComments(
   postId: number,
   t: TFunction
 ): Promise<CommentHighlight[]> {
+  void t;
   const response = await apiGet<CommentHighlight[]>(
     `/api/v1/CommentHighlight/GetCurrentGodComments?postId=${postId}`,
     { timeout: FORUM_READ_TIMEOUT_MS }
@@ -578,6 +604,7 @@ export async function getCurrentGodCommentsBatch(
   postIds: number[],
   t: TFunction
 ): Promise<Record<number, CommentHighlight>> {
+  void t;
   if (!postIds.length) {
     return {};
   }
@@ -617,6 +644,7 @@ export async function getCurrentSofas(
   parentCommentId: number,
   t: TFunction
 ): Promise<CommentHighlight[]> {
+  void t;
   const response = await apiGet<CommentHighlight[]>(
     `/api/v1/CommentHighlight/GetCurrentSofas?parentCommentId=${parentCommentId}`,
     { timeout: FORUM_READ_TIMEOUT_MS }

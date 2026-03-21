@@ -60,6 +60,7 @@ export interface CoinTransaction {
  * @returns 用户余额信息
  */
 export async function getBalance(t?: TFunction): Promise<UserBalance> {
+  void t;
   const response = await apiGet<UserBalance>('/api/v1/Coin/GetBalance', { withAuth: true });
 
   if (!response.ok || !response.data) {
@@ -85,6 +86,7 @@ export async function getTransactions(
   status: string | null = null,
   t?: TFunction
 ): Promise<PagedResponse<CoinTransaction>> {
+  void t;
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
     pageSize: pageSize.toString()
@@ -117,6 +119,7 @@ export async function getTransactions(
  * @returns 交易详情
  */
 export async function getTransactionByNo(transactionNo: string, t?: TFunction): Promise<CoinTransaction> {
+  void t;
   const response = await apiGet<CoinTransaction>(
     `/api/v1/Coin/GetTransactionByNo?transactionNo=${encodeURIComponent(transactionNo)}`,
     { withAuth: true }
@@ -220,6 +223,7 @@ export interface TransferResponse {
  * @returns 交易流水号
  */
 export async function transfer(request: TransferRequest, t?: TFunction): Promise<TransferResponse> {
+  void t;
   const response = await apiPost<TransferResponse>(
     '/api/v1/Coin/Transfer',
     request,
@@ -266,6 +270,7 @@ export interface CoinStatistics {
  * @returns 统计数据
  */
 export async function getStatistics(timeRange: 'month' | 'quarter' | 'year' = 'month', t?: TFunction): Promise<CoinStatistics> {
+  void t;
   const response = await apiGet<CoinStatistics>(
     `/api/v1/Coin/GetStatistics?timeRange=${timeRange}`,
     { withAuth: true }

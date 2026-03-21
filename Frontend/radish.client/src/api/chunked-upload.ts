@@ -233,7 +233,7 @@ export async function uploadChunk(
           } else {
             reject(new Error(json.messageInfo || '上传分片失败'));
           }
-        } catch (error) {
+        } catch {
           reject(new Error('解析响应失败'));
         }
       } else {

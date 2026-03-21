@@ -154,8 +154,6 @@ export const useForumActions = (
     t,
     isAuthenticated,
     userId,
-    selectedCategoryId,
-    selectedTagName,
     selectedPost,
     setSelectedPost,
     setComments,

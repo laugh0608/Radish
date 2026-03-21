@@ -4,7 +4,7 @@ import { Icon } from '@radish/ui/icon';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
-import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
+import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import { UserInfoCard } from './components/UserInfoCard';
 import type { LongId, UserBrowseHistoryItem } from '@/api/user';
 import { getMyTimePreference, getTimeSettings, updateMyTimePreference } from '@/api/time';

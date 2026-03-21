@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
+import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';

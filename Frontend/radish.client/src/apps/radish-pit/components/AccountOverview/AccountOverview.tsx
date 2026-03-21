@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useCoinBalance, useAccountStats } from '../../hooks';
-import { formatCoinAmount, formatDateTime } from '../../utils';
 import { BalanceCard } from './BalanceCard';
 import { StatsCard } from './StatsCard';
 import { RecentTransactions } from './RecentTransactions';

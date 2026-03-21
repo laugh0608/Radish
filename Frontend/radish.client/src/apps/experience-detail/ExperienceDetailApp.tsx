@@ -79,7 +79,7 @@ export const ExperienceDetailApp = () => {
       const dateKey = `${txDate.getMonth() + 1}/${txDate.getDate()}`;
 
       // 只统计最近 N 天的数据
-      if (stats.hasOwnProperty(dateKey)) {
+      if (Object.prototype.hasOwnProperty.call(stats, dateKey)) {
         stats[dateKey] += tx.voExpAmount;
       }
     });

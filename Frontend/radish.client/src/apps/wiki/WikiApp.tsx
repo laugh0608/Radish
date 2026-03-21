@@ -7,7 +7,7 @@ import { Modal } from '@radish/ui/modal';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { uploadDocument, uploadImage } from '@/api/attachment';
-import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
+import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import {

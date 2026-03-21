@@ -21,7 +21,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 /**
  * 分类统计组件 - 使用饼图展示分类占比
  */
-export const CategoryBreakdown = ({ data, loading, error, displayMode }: CategoryBreakdownProps) => {
+export const CategoryBreakdown = ({ data, loading, error }: CategoryBreakdownProps) => {
   // 准备图表数据（直接使用 vo 前缀字段）
   const chartData = data?.voCategoryStats.map((item) => ({
     name: item.voCategory,

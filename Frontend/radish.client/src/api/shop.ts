@@ -86,6 +86,7 @@ export type StockTypeValue = typeof StockType[keyof typeof StockType];
  * 获取商品分类列表
  */
 export async function getCategories(t: TFunction): Promise<ParsedApiResponse<ProductCategory[]>> {
+  void t;
   return await apiGet<ProductCategory[]>('/api/v1/Shop/GetCategories');
 }
 
@@ -93,6 +94,7 @@ export async function getCategories(t: TFunction): Promise<ParsedApiResponse<Pro
  * 获取分类详情
  */
 export async function getCategory(categoryId: string, t: TFunction): Promise<ParsedApiResponse<ProductCategory>> {
+  void t;
   return await apiGet<ProductCategory>(`/api/v1/Shop/GetCategory/${encodeURIComponent(categoryId)}`);
 }
 
@@ -107,6 +109,7 @@ export async function getProducts(
   pageIndex: number = 1,
   pageSize: number = 20
 ): Promise<ParsedApiResponse<PagedResponse<ProductListItem>>> {
+  void t;
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
     pageSize: pageSize.toString()
@@ -131,6 +134,7 @@ export async function getProducts(
  * 获取商品详情
  */
 export async function getProduct(productId: number, t: TFunction): Promise<ParsedApiResponse<Product>> {
+  void t;
   return await apiGet<Product>(`/api/v1/Shop/GetProduct/${productId}`, { withAuth: true });
 }
 
@@ -138,6 +142,7 @@ export async function getProduct(productId: number, t: TFunction): Promise<Parse
  * 检查是否可以购买商品
  */
 export async function checkCanBuy(productId: number, quantity: number = 1, t: TFunction) {
+  void t;
   return await apiGet<{ canBuy: boolean; reason: string }>(
     `/api/v1/Shop/CheckCanBuy/${productId}?quantity=${quantity}`,
     { withAuth: true }
@@ -148,6 +153,7 @@ export async function checkCanBuy(productId: number, quantity: number = 1, t: TF
  * 购买商品
  */
 export async function purchaseProduct(request: CreateOrderRequest, t: TFunction) {
+  void t;
   return await apiPost<PurchaseResult>('/api/v1/Shop/Purchase', request, { withAuth: true });
 }
 
@@ -160,6 +166,7 @@ export async function getMyOrders(
   pageIndex: number = 1,
   pageSize: number = 20
 ): Promise<ParsedApiResponse<PagedResponse<OrderListItem>>> {
+  void t;
   const params = new URLSearchParams({
     pageIndex: pageIndex.toString(),
     pageSize: pageSize.toString()
@@ -179,6 +186,7 @@ export async function getMyOrders(
  * 获取订单详情
  */
 export async function getOrder(orderId: number, t: TFunction): Promise<ParsedApiResponse<Order>> {
+  void t;
   return await apiGet<Order>(`/api/v1/Shop/GetOrder/${orderId}`, { withAuth: true });
 }
 
@@ -186,6 +194,7 @@ export async function getOrder(orderId: number, t: TFunction): Promise<ParsedApi
  * 取消订单
  */
 export async function cancelOrder(orderId: number, t: TFunction, reason?: string) {
+  void t;
   const body = reason ? { reason } : undefined;
   return await apiPost<boolean>(`/api/v1/Shop/CancelOrder/${orderId}`, body, { withAuth: true });
 }
@@ -194,6 +203,7 @@ export async function cancelOrder(orderId: number, t: TFunction, reason?: string
  * 获取我的权益列表
  */
 export async function getMyBenefits(includeExpired: boolean = false, t: TFunction): Promise<ParsedApiResponse<UserBenefit[]>> {
+  void t;
   return await apiGet<UserBenefit[]>(
     `/api/v1/Shop/GetMyBenefits?includeExpired=${includeExpired}`,
     { withAuth: true }
@@ -204,6 +214,7 @@ export async function getMyBenefits(includeExpired: boolean = false, t: TFunctio
  * 获取我的激活权益
  */
 export async function getMyActiveBenefits(t: TFunction): Promise<ParsedApiResponse<UserBenefit[]>> {
+  void t;
   return await apiGet<UserBenefit[]>('/api/v1/Shop/GetMyActiveBenefits', { withAuth: true });
 }
 
@@ -211,6 +222,7 @@ export async function getMyActiveBenefits(t: TFunction): Promise<ParsedApiRespon
  * 激活权益
  */
 export async function activateBenefit(benefitId: number, t: TFunction) {
+  void t;
   return await apiPost<boolean>(`/api/v1/Shop/ActivateBenefit/${benefitId}`, undefined, { withAuth: true });
 }
 
@@ -218,6 +230,7 @@ export async function activateBenefit(benefitId: number, t: TFunction) {
  * 取消激活权益
  */
 export async function deactivateBenefit(benefitId: number, t: TFunction) {
+  void t;
   return await apiPost<boolean>(`/api/v1/Shop/DeactivateBenefit/${benefitId}`, undefined, { withAuth: true });
 }
 
@@ -225,6 +238,7 @@ export async function deactivateBenefit(benefitId: number, t: TFunction) {
  * 获取我的背包
  */
 export async function getMyInventory(t: TFunction): Promise<ParsedApiResponse<UserInventoryItem[]>> {
+  void t;
   return await apiGet<UserInventoryItem[]>('/api/v1/Shop/GetMyInventory', { withAuth: true });
 }
 
@@ -232,6 +246,7 @@ export async function getMyInventory(t: TFunction): Promise<ParsedApiResponse<Us
  * 使用道具
  */
 export async function useItem(request: UseItemRequest, t: TFunction) {
+  void t;
   return await apiPost<UseItemResult>('/api/v1/Shop/UseItem', request, { withAuth: true });
 }
 
@@ -239,6 +254,7 @@ export async function useItem(request: UseItemRequest, t: TFunction) {
  * 使用改名卡
  */
 export async function useRenameCard(inventoryId: number, newNickname: string, t: TFunction) {
+  void t;
   return await apiPost<UseItemResult>(
     `/api/v1/Shop/UseRenameCard/${inventoryId}?newNickname=${encodeURIComponent(newNickname)}`,
     undefined,

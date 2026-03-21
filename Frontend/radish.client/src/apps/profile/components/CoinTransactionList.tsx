@@ -12,7 +12,7 @@ interface CoinTransactionListProps {
 /**
  * 萝卜币交易记录列表组件
  */
-export const CoinTransactionList = ({ apiBaseUrl: _apiBaseUrl, displayTimeZone = 'Asia/Shanghai' }: CoinTransactionListProps) => {
+export const CoinTransactionList = ({ displayTimeZone = 'Asia/Shanghai' }: CoinTransactionListProps) => {
   const { t } = useTranslation();
   const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
   const [loading, setLoading] = useState(true);

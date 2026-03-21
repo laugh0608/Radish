@@ -75,6 +75,7 @@ export interface PaymentPasswordVerifyResult {
  * @returns 支付密码状态（如果未设置则返回null）
  */
 export async function getPaymentPasswordStatus(t?: TFunction) {
+  void t;
   const response = await apiGet<PaymentPasswordStatus | null>(
     '/api/v1/PaymentPassword/GetStatus',
     { withAuth: true }
@@ -94,6 +95,7 @@ export async function getPaymentPasswordStatus(t?: TFunction) {
  * @returns 是否成功
  */
 export async function setPaymentPassword(request: SetPaymentPasswordRequest, t?: TFunction) {
+  void t;
   const response = await apiPost<boolean>(
     '/api/v1/PaymentPassword/SetPassword',
     request,
@@ -114,6 +116,7 @@ export async function setPaymentPassword(request: SetPaymentPasswordRequest, t?:
  * @returns 是否成功
  */
 export async function changePaymentPassword(request: ChangePaymentPasswordRequest, t?: TFunction) {
+  void t;
   const response = await apiPost<boolean>(
     '/api/v1/PaymentPassword/ChangePassword',
     request,
@@ -134,6 +137,7 @@ export async function changePaymentPassword(request: ChangePaymentPasswordReques
  * @returns 验证结果
  */
 export async function verifyPaymentPassword(request: VerifyPaymentPasswordRequest, t?: TFunction) {
+  void t;
   const response = await apiPost<PaymentPasswordVerifyResult>(
     '/api/v1/PaymentPassword/VerifyPassword',
     request,
@@ -154,6 +158,7 @@ export async function verifyPaymentPassword(request: VerifyPaymentPasswordReques
  * @returns 密码强度信息
  */
 export async function checkPasswordStrength(password: string, t?: TFunction) {
+  void t;
   const response = await apiPost<PasswordStrength>(
     '/api/v1/PaymentPassword/CheckStrength',
     JSON.stringify(password),
@@ -178,6 +183,7 @@ export async function checkPasswordStrength(password: string, t?: TFunction) {
  * @returns 安全建议列表
  */
 export async function getSecuritySuggestions(t?: TFunction) {
+  void t;
   const response = await apiGet<string[]>(
     '/api/v1/PaymentPassword/GetSecuritySuggestions',
     { withAuth: true }

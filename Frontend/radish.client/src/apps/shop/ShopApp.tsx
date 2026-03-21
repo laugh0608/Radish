@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
-import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
+import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import { ShopHome } from './pages/ShopHome';
 import { ProductList } from './pages/ProductList';
 import { ProductDetail } from './pages/ProductDetail';

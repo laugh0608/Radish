@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { log } from '@/utils/logger';
 import { useCoinBalance, useTransfer } from '../../hooks';
-import { validateTransferAmount } from '../../utils';
 import { TransferForm } from './TransferForm';
 import { TransferConfirm } from './TransferConfirm';
 import { TransferResult } from './TransferResult';

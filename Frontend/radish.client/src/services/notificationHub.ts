@@ -10,53 +10,6 @@ function getHubUrl(): string {
   return `${getSignalrHubUrl()}/hub/notification`;
 }
 
-function getAccessToken(): string | null {
-  return tokenService.getAccessToken();
-}
-
-/**
- * 验证 JWT token 是否有效（未过期）
- * @param token JWT token
- * @returns true 表示有效，false 表示无效或过期
- */
-function isTokenValid(token: string): boolean {
-  try {
-    // JWT 格式: header.payload.signature
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      log.warn('[NotificationHub] Token 格式无效');
-      return false;
-    }
-
-    // 解码 payload (Base64URL)
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    
-    // 检查过期时间 (exp 字段，Unix 时间戳，单位：秒)
-    if (!payload.exp) {
-      log.warn('[NotificationHub] Token 缺少过期时间');
-      return false;
-    }
-
-    const now = Math.floor(Date.now() / 1000); // 当前时间（秒）
-    const expiresAt = payload.exp;
-
-    if (now >= expiresAt) {
-      log.warn('[NotificationHub] Token 已过期', {
-        expiresAt: new Date(expiresAt * 1000).toISOString(),
-        now: new Date(now * 1000).toISOString()
-      });
-      // 清理过期 token
-      tokenService.clearTokens();
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    log.error('[NotificationHub] Token 验证失败:', error);
-    return false;
-  }
-}
-
 /** SignalR Hub 连接管理器 */
 class NotificationHubService {
   private connection: signalR.HubConnection | null = null;

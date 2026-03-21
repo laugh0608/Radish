@@ -21,7 +21,7 @@ interface AuthStore {
   setAuthenticated: (value: boolean) => void;
 }
 
-export const useAuthStore = create<AuthStore>((set, get) => ({
+export const useAuthStore = create<AuthStore>((set) => ({
   isAuthenticated: false,
   isCheckingAuth: false,
 

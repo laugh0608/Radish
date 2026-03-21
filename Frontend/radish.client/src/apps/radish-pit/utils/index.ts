@@ -179,13 +179,13 @@ export const replaceSensitiveWords = (text: string): string => {
  * @param func 要防抖的函数
  * @param delay 延迟时间（毫秒）
  */
-export const debounce = <T extends (...args: any[]) => any>(
-  func: T,
+export const debounce = <TArgs extends unknown[], TResult>(
+  func: (...args: TArgs) => TResult,
   delay: number
-): ((...args: Parameters<T>) => void) => {
+): ((...args: TArgs) => void) => {
   let timeoutId: ReturnType<typeof setTimeout>;
 
-  return (...args: Parameters<T>) => {
+  return (...args: TArgs) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
   };
@@ -196,13 +196,13 @@ export const debounce = <T extends (...args: any[]) => any>(
  * @param func 要节流的函数
  * @param delay 延迟时间（毫秒）
  */
-export const throttle = <T extends (...args: any[]) => any>(
-  func: T,
+export const throttle = <TArgs extends unknown[], TResult>(
+  func: (...args: TArgs) => TResult,
   delay: number
-): ((...args: Parameters<T>) => void) => {
+): ((...args: TArgs) => void) => {
   let lastCall = 0;
 
-  return (...args: Parameters<T>) => {
+  return (...args: TArgs) => {
     const now = Date.now();
     if (now - lastCall >= delay) {
       lastCall = now;
