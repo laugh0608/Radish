@@ -410,7 +410,7 @@ export const ForumApp = () => {
 
     openApp('profile', {
       userId: targetUserId,
-      userName: targetUserName?.trim() || `用户 ${targetUserId}`,
+      userName: targetUserName?.trim() || t('common.userFallback', { id: targetUserId }),
       avatarUrl: avatarUrl ?? null,
     });
   };

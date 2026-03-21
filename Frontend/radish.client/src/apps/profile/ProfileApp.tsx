@@ -110,7 +110,7 @@ export const ProfileApp = () => {
   const currentWindow = useCurrentWindow();
   const params = useMemo(() => parseProfileWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
   const viewingUserId = params.userId && params.userId > 0 ? params.userId : userId;
-  const viewingUserName = params.userName?.trim() || userName || `用户 ${viewingUserId}`;
+  const viewingUserName = params.userName?.trim() || userName || t('common.userFallback', { id: viewingUserId });
   const isOwnProfile = viewingUserId === userId;
   const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'browse-history' | 'attachments' | 'social'>('posts');
   const [stats, setStats] = useState<UserStats | null>(null);
