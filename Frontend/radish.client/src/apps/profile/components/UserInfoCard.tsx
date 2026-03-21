@@ -152,6 +152,10 @@ export const UserInfoCard = ({
     setTimeZoneError(null);
   }, [displayTimeZone]);
 
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [profile?.voAvatarThumbnailUrl, profile?.voAvatarUrl]);
+
   const loadProfile = async () => {
     setLoadingProfile(true);
     try {
@@ -219,6 +223,8 @@ export const UserInfoCard = ({
 
     return resolved || undefined;
   }, [apiBaseUrl, profile?.voAvatarThumbnailUrl, profile?.voAvatarUrl]);
+
+  const avatarImageSrc = avatarLoadError ? undefined : avatarSrc;
 
   const handleOpenEdit = () => {
     if (profile) {
@@ -304,10 +310,10 @@ export const UserInfoCard = ({
       <div className={styles.header}>
         <div className={styles.avatarSection} onClick={handleAvatarClick}>
           <div className={styles.avatar}>
-            {avatarSrc ? (
+            {avatarImageSrc ? (
               <img
                 className={styles.avatarImg}
-                src={avatarSrc}
+                src={avatarImageSrc}
                 alt={userName}
                 onError={handleAvatarError}
               />

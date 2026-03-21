@@ -122,6 +122,12 @@
   color: var(--theme-text-secondary);
 }
 
+.feedMetric {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .userItem {
   border: 1px solid var(--theme-border-soft);
   border-radius: 10px;

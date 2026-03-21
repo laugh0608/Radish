@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getApiBaseUrl } from '@/config/env';
@@ -49,7 +49,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
 
   useEffect(() => {
     void loadSummary();
-  }, []);
+  }, [loadSummary]);
 
   useEffect(() => {
     if (activeTab === 'feed') {
@@ -63,7 +63,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
     }
 
     void loadFollowing(followingPage);
-  }, [activeTab, feedPage, feedViewType, followerPage, followingPage]);
+  }, [activeTab, feedPage, feedViewType, followerPage, followingPage, loadFeed, loadFollowers, loadFollowing]);
 
   const totalPages = useMemo(() => {
     const total = activeTab === 'feed'
@@ -94,16 +94,16 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
     setFollowingPage(page);
   };
 
-  const loadSummary = async () => {
+  const loadSummary = useCallback(async () => {
     try {
       const data = await getMyFollowSummary();
       setSummary(data);
     } catch (error) {
       log.error('UserFollowPanel', '加载关系链汇总失败:', error);
     }
-  };
+  }, []);
 
-  const loadFeed = async (pageIndex: number, viewType: FeedViewType) => {
+  const loadFeed = useCallback(async (pageIndex: number, viewType: FeedViewType) => {
     setLoading(true);
     setErrorMessage(null);
     try {
@@ -120,9 +120,9 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
-  const loadFollowers = async (pageIndex: number) => {
+  const loadFollowers = useCallback(async (pageIndex: number) => {
     setLoading(true);
     setErrorMessage(null);
     try {
@@ -137,9 +137,9 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
-  const loadFollowing = async (pageIndex: number) => {
+  const loadFollowing = useCallback(async (pageIndex: number) => {
     setLoading(true);
     setErrorMessage(null);
     try {
@@ -154,7 +154,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   const buildAvatarText = (name: string) => {
     const source = name.trim();
@@ -241,6 +241,14 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
     newest: t('profile.social.feedHint.newest')
   };
 
+  const buildFeedMetricLabel = (type: 'comment' | 'like', count: number) => {
+    if (type === 'comment') {
+      return t('profile.social.commentCount', { count });
+    }
+
+    return t('profile.social.likeCount', { count });
+  };
+
   const renderFeed = () => {
     if (feedItems.length === 0) {
       const emptyText = feedViewType === 'following'
@@ -261,8 +269,14 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
             <div className={styles.feedMeta}>
               <span>{t('profile.social.author', { name: item.voAuthorName || t('common.unknownUser') })}</span>
               <span>{formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}</span>
-              <span>💬 {item.voCommentCount || 0}</span>
-              <span>❤️ {item.voLikeCount || 0}</span>
+              <span className={styles.feedMetric}>
+                <Icon icon="mdi:comment-text-outline" size={14} />
+                <span>{buildFeedMetricLabel('comment', item.voCommentCount || 0)}</span>
+              </span>
+              <span className={styles.feedMetric}>
+                <Icon icon="mdi:heart-outline" size={14} />
+                <span>{buildFeedMetricLabel('like', item.voLikeCount || 0)}</span>
+              </span>
             </div>
           </article>
         ))}
