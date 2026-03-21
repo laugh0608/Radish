@@ -113,7 +113,7 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
       const json = (await response.json()) as ApiResponse<PageModel<Attachment>>;
 
       if (!response.ok) {
-        setError(json.messageInfo || `请求失败: HTTP ${response.status}`);
+        setError(json.messageInfo || t('profile.attachments.requestFailed', { status: response.status }));
         setAttachments([]);
         setTotalPages(1);
         return;
@@ -123,7 +123,7 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
         setAttachments(json.responseData.data || []);
         setTotalPages(json.responseData.pageCount || 1);
       } else {
-        setError(json.messageInfo || '加载附件失败');
+        setError(json.messageInfo || t('profile.attachments.loadFailed'));
         setAttachments([]);
         setTotalPages(1);
       }
@@ -138,14 +138,14 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
 
   const businessOptions = useMemo(
     () => [
-      { value: 'All', label: '全部' },
-      { value: 'General', label: 'General' },
-      { value: 'Post', label: 'Post' },
-      { value: 'Comment', label: 'Comment' },
-      { value: 'Avatar', label: 'Avatar' },
-      { value: 'Document', label: 'Document' }
+      { value: 'All', label: t('common.all') },
+      { value: 'General', label: t('profile.attachments.business.general') },
+      { value: 'Post', label: t('profile.attachments.business.post') },
+      { value: 'Comment', label: t('profile.attachments.business.comment') },
+      { value: 'Avatar', label: t('profile.attachments.business.avatar') },
+      { value: 'Document', label: t('profile.attachments.business.document') }
     ],
-    []
+    [t]
   );
 
   const openDeleteConfirm = (id: string | number) => {
@@ -180,11 +180,11 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
   };
 
   if (loading) {
-    return <div className={styles.loading}>加载中...</div>;
+    return <div className={styles.loading}>{t('common.loading')}</div>;
   }
 
   if (error) {
-    return <div className={styles.error}>加载失败：{error}</div>;
+    return <div className={styles.error}>{t('profile.attachments.loadFailedWithDetail', { error })}</div>;
   }
 
   return (
@@ -199,7 +199,7 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
           }}
         />
         <Input
-          placeholder="按文件名搜索"
+          placeholder={t('profile.attachments.searchPlaceholder')}
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
         />
@@ -210,13 +210,13 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
             void loadAttachments();
           }}
         >
-          搜索
+          {t('profile.attachments.search')}
         </button>
-        <div className={styles.toolbarRight}>{attachments.length} 条</div>
+        <div className={styles.toolbarRight}>{t('profile.attachments.count', { count: attachments.length })}</div>
       </div>
 
       {attachments.length === 0 ? (
-        <div className={styles.empty}>没有匹配的附件</div>
+        <div className={styles.empty}>{t('profile.attachments.empty')}</div>
       ) : (
         <div className={styles.list}>
           {attachments.map(att => {
@@ -245,7 +245,7 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
                     </div>
                     <div className={styles.meta}>
                       <span className={styles.metaItem}>{att.voFileSizeFormatted || `${att.voFileSize} B`}</span>
-                      <span className={styles.metaItem}>{att.voBusinessType || 'General'}</span>
+                      <span className={styles.metaItem}>{att.voBusinessType || t('profile.attachments.business.general')}</span>
                       <span className={styles.metaItem}>
                         {att.voCreateTime ? formatDateTimeByTimeZone(att.voCreateTime, displayTimeZone) : ''}
                       </span>
@@ -256,20 +256,20 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
                     {href ? (
                       <>
                         <a className={styles.link} href={href} target="_blank" rel="noreferrer">
-                          下载
+                          {t('profile.attachments.download')}
                         </a>
                         <button className={styles.actionButton} onClick={() => void handleCopyLink(href)}>
-                          复制链接
+                          {t('profile.attachments.copyLink')}
                         </button>
                       </>
                     ) : (
-                      <span className={styles.disabledLink}>无链接</span>
+                      <span className={styles.disabledLink}>{t('profile.attachments.noLink')}</span>
                     )}
                     <button
                       className={`${styles.actionButton} ${styles.dangerButton}`}
                       onClick={() => openDeleteConfirm(att.voId)}
                     >
-                      删除
+                      {t('common.delete')}
                     </button>
                   </div>
                 </div>
@@ -286,25 +286,25 @@ export const UserAttachmentList = ({ apiBaseUrl, displayTimeZone }: UserAttachme
             disabled={page === 1}
             className={styles.pageButton}
           >
-            上一页
+            {t('common.previousPage')}
           </button>
           <span className={styles.pageInfo}>
-            {page} / {totalPages}
+            {t('common.pageInfo', { current: page, total: totalPages })}
           </span>
           <button
             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
             className={styles.pageButton}
           >
-            下一页
+            {t('common.nextPage')}
           </button>
         </div>
       )}
 
       <ConfirmDialog
         isOpen={confirmDeleteOpen}
-        title="确认删除"
-        message="确定要删除该附件吗？"
+        title={t('profile.attachments.confirmDeleteTitle')}
+        message={t('profile.attachments.confirmDeleteMessage')}
         danger
         onCancel={() => {
           setConfirmDeleteOpen(false);

@@ -30,15 +30,13 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // 验证文件类型
     if (!file.type.startsWith('image/')) {
-      setError('请选择图片文件');
+      setError(t('profile.avatar.selectImageFile'));
       return;
     }
 
-    // 验证文件大小（限制 5MB）
     if (file.size > 5 * 1024 * 1024) {
-      setError('图片大小不能超过 5MB');
+      setError(t('profile.avatar.fileTooLarge'));
       return;
     }
 
@@ -52,7 +50,6 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
       setUploading(true);
       setError(null);
 
-      // 将 Blob 转换为 File
       const croppedFile = new File([croppedBlob], 'avatar.jpg', {
         type: 'image/jpeg',
         lastModified: Date.now(),
@@ -60,7 +57,6 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
 
       log.debug('AvatarUploadModal', '开始上传裁切后的头像');
 
-      // 上传图片 - 修复：传递正确的参数格式
       const uploadResult = await uploadImage(
         {
           file: croppedFile,
@@ -74,7 +70,6 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
       );
       log.debug('AvatarUploadModal', '图片上传成功:', uploadResult);
 
-      // 设置头像
       const attachmentId = uploadResult.voId;
       const token = tokenService.getAccessToken();
       const res = await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
@@ -91,14 +86,14 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
       log.debug('AvatarUploadModal', 'SetMyAvatar 响应:', json);
 
       if (!res.ok || !json.isSuccess) {
-        throw new Error(json.message || '设置头像失败');
+        throw new Error(json.message || t('profile.avatar.setAvatarFailed'));
       }
 
       log.debug('AvatarUploadModal', '头像设置成功');
       onSuccess();
     } catch (error) {
       log.error('AvatarUploadModal', '上传头像失败:', error);
-      setError(error instanceof Error ? error.message : '上传失败，请重试');
+      setError(error instanceof Error ? error.message : t('profile.avatar.uploadFailed'));
       setShowCropper(false);
     } finally {
       setUploading(false);
@@ -130,14 +125,14 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
       log.debug('AvatarUploadModal', '移除头像响应:', json);
 
       if (!res.ok || !json.isSuccess) {
-        throw new Error(json.message || '移除头像失败');
+        throw new Error(json.message || t('profile.avatar.removeAvatarFailed'));
       }
 
       log.debug('AvatarUploadModal', '头像移除成功');
       onSuccess();
     } catch (error) {
       log.error('AvatarUploadModal', '移除头像失败:', error);
-      setError(error instanceof Error ? error.message : '移除失败，请重试');
+      setError(error instanceof Error ? error.message : t('profile.avatar.removeFailed'));
     } finally {
       setUploading(false);
     }
@@ -153,7 +148,7 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="更换头像">
+    <Modal isOpen={isOpen} onClose={handleClose} title={t('profile.avatar.title')}>
       <div className={styles.container}>
         {!showCropper ? (
           <div className={styles.uploadSection}>
@@ -168,8 +163,8 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
               />
               <label htmlFor="avatar-upload" className={styles.uploadLabel}>
                 <div className={styles.uploadIcon}>📷</div>
-                <div className={styles.uploadText}>点击选择图片</div>
-                <div className={styles.uploadHint}>支持 JPG、PNG 格式，最大 5MB</div>
+                <div className={styles.uploadText}>{t('profile.avatar.selectImage')}</div>
+                <div className={styles.uploadHint}>{t('profile.avatar.uploadHint')}</div>
               </label>
             </div>
 
@@ -181,7 +176,7 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
                 className={styles.removeButton}
                 disabled={uploading}
               >
-                {uploading ? '处理中...' : '移除头像'}
+                {uploading ? t('profile.avatar.processing') : t('profile.avatar.removeAvatar')}
               </button>
             </div>
           </div>
@@ -197,7 +192,7 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
             )}
             {uploading && (
               <div className={styles.uploadingOverlay}>
-                <div className={styles.uploadingText}>上传中...</div>
+                <div className={styles.uploadingText}>{t('profile.avatar.uploading')}</div>
               </div>
             )}
           </div>

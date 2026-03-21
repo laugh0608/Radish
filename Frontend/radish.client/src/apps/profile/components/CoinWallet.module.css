@@ -8,25 +8,25 @@
 .error {
   text-align: center;
   padding: 40px 20px;
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .loading {
-  color: #999;
+  color: var(--theme-text-muted);
 }
 
 .error {
-  color: #d14343;
+  color: var(--theme-state-danger);
 }
 
 /* 余额卡片 */
 .balanceCard {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .cardHeader {
@@ -35,14 +35,14 @@
   align-items: center;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 2px solid #f0f0f0;
+  border-bottom: 2px solid var(--theme-border-soft);
 }
 
 .cardTitle {
   margin: 0;
   font-size: 20px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--theme-text-primary);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -55,7 +55,7 @@
 .refreshButton {
   padding: 6px 12px;
   background: transparent;
-  border: 1px solid #ddd;
+  border: 1px solid var(--theme-border-soft);
   border-radius: 6px;
   cursor: pointer;
   font-size: 16px;
@@ -63,8 +63,8 @@
 }
 
 .refreshButton:hover {
-  background: #f5f5f5;
-  border-color: #667eea;
+  background: var(--theme-bg-muted);
+  border-color: var(--theme-border-strong);
   transform: rotate(90deg);
 }
 
@@ -80,7 +80,7 @@
   flex: 1;
   min-width: 200px;
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--theme-brand-primary) 0%, var(--theme-accent-ink) 100%);
   border-radius: 12px;
   color: white;
 }
@@ -128,36 +128,36 @@
   flex-direction: column;
   align-items: center;
   padding: 16px;
-  background: #f5f5f5;
+  background: var(--theme-bg-muted);
   border-radius: 8px;
   transition: all 0.2s ease;
 }
 
 .statItem:hover {
-  background: #ebebeb;
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, white 24%);
   transform: translateY(-2px);
 }
 
 .statValue {
   font-size: 20px;
   font-weight: 700;
-  color: #667eea;
+  color: var(--theme-brand-primary);
   margin-bottom: 4px;
 }
 
 .statLabel {
   font-size: 13px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 /* 兑换提示 */
 .conversionTip {
   padding: 12px 16px;
-  background: #fff9e6;
-  border-left: 4px solid #ffc107;
+  background: color-mix(in srgb, var(--theme-accent-earth) 12%, var(--theme-bg-surface) 88%);
+  border-left: 4px solid var(--theme-accent-earth);
   border-radius: 4px;
   font-size: 14px;
-  color: #856404;
+  color: var(--theme-accent-earth);
 }
 
 /* 交易记录部分 */
@@ -171,7 +171,7 @@
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--theme-text-primary);
   padding-left: 4px;
 }
 

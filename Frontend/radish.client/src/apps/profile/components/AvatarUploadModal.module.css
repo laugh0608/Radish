@@ -11,17 +11,17 @@
 
 .uploadArea {
   position: relative;
-  border: 2px dashed #d1d5db;
+  border: 2px dashed var(--theme-border-soft);
   border-radius: 12px;
   padding: 40px;
   text-align: center;
   transition: all 0.3s ease;
-  background: #f9fafb;
+  background: var(--theme-bg-muted);
 }
 
 .uploadArea:hover {
-  border-color: #667eea;
-  background: #f3f4f6;
+  border-color: var(--theme-border-strong);
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, white 24%);
 }
 
 .fileInput {
@@ -44,20 +44,20 @@
 .uploadText {
   font-size: 16px;
   font-weight: 500;
-  color: #374151;
+  color: var(--theme-text-primary);
 }
 
 .uploadHint {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
 }
 
 .error {
   padding: 12px;
-  background: #fee2e2;
-  border: 1px solid #fecaca;
+  background: color-mix(in srgb, var(--theme-state-danger) 10%, var(--theme-bg-surface) 90%);
+  border: 1px solid color-mix(in srgb, var(--theme-state-danger) 24%, var(--theme-border-soft) 76%);
   border-radius: 8px;
-  color: #dc2626;
+  color: var(--theme-state-danger);
   font-size: 14px;
   text-align: center;
 }
@@ -66,13 +66,13 @@
   display: flex;
   justify-content: center;
   padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--theme-border-soft);
 }
 
 .removeButton {
   padding: 10px 24px;
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -82,7 +82,7 @@
 }
 
 .removeButton:hover:not(:disabled) {
-  background: #e5e7eb;
+  background: color-mix(in srgb, var(--theme-bg-muted) 74%, white 26%);
 }
 
 .removeButton:disabled {
@@ -101,7 +101,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: color-mix(in srgb, var(--theme-text-primary) 68%, transparent 32%);
   display: flex;
   align-items: center;
   justify-content: center;
