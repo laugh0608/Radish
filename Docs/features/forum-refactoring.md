@@ -3,6 +3,8 @@
 **重构日期**: 2025-12-14
 **重构目标**: 拆分组件、优化样式、提取 API 调用
 
+> 说明：本页主要记录 `2025-12-14` 的首次拆分重构背景。截止 `2026-03-22`，论坛发帖入口已演进为 `PublishPostModal` 创作器工作区，评论入口仍由 `CreateCommentForm` 承担；涉及当前 UI 事实时，请以 [论坛应用功能说明](./forum-features.md) 和前端设计文档为准。
+
 ---
 
 ## 1. 重构成果
@@ -31,7 +33,7 @@
 3. `PostDetail.tsx` + `PostDetail.module.css` - 帖子详情
 4. `CommentTree.tsx` + `CommentTree.module.css` - 评论树
 5. `CommentNode.tsx` + `CommentNode.module.css` - 评论节点
-6. `PublishPostForm.tsx` + `PublishPostForm.module.css` - 发帖表单
+6. `PublishPostModal.tsx` + `PublishPostModal.module.css` - 发帖创作器弹层
 7. `CreateCommentForm.tsx` + `CreateCommentForm.module.css` - 评论表单
 
 **其他**:
@@ -82,8 +84,8 @@ src/
         ├── CommentTree.module.css
         ├── CommentNode.tsx         # 评论节点组件
         ├── CommentNode.module.css
-        ├── PublishPostForm.tsx     # 发帖表单组件
-        ├── PublishPostForm.module.css
+        ├── PublishPostModal.tsx    # 发帖创作器弹层
+        ├── PublishPostModal.module.css
         ├── CreateCommentForm.tsx   # 评论表单组件
         └── CreateCommentForm.module.css
 ```

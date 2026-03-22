@@ -242,3 +242,18 @@
 
 - **右键菜单 (ContextMenu) 接入**：为桌面外壳集成了 `@radish/ui/context-menu`，提供“刷新桌面”、“切换国风主题”与“关于系统”快捷入口；针对国风主题，为菜单悬浮项独家定制了红色“朱文印章”样式的微标（代替传统的 Check 勾选符）。
 - **窗口最大化逻辑重构**：修复了浏览器缩放时最大化窗口控件丢失（被遮挡）的问题。将原本基于固定屏幕像素 (`viewportWidth`) 的尺寸赋值，改写为 CSS 级别的 `100%` 相对尺寸拦截，确保应用窗口死死贴合桌面的安全边界。
+
+### 论坛发帖创作器重构
+
+- **发帖入口已重构为创作器工作区**：论坛发帖弹层不再继续沿用传统“大表单弹窗”，当前已切换为正文优先的创作器布局，支持 `Markdown / 富文本` 双模式输入、右侧帖子设置区、全屏创作与本地草稿自动保存。
+- **编辑策略已明确**：富文本仅提供输入体验，最终保存格式继续统一为 Markdown，避免同一帖子模型并存两套内容存储口径。
+- **编辑器基础设施已同步补齐**：`BottomSheet` 已扩展 `className/bodyClassName/footerClassName/overlayClassName` 与自定义高度支持；`MarkdownEditor` 已补 `defaultMode` 并继续压缩工具栏、分栏比例与正文字号。
+- **自动化验证通过**：`npx tsc -b Frontend/radish.client`、`npm run type-check --workspace=@radish/ui` 与 `npm run build --workspace=radish.client` 已在系统环境验证通过。
+- **相关提交**：`a21a86c`、`ca79525`。
+
+### 评论编辑器与评论弹层体验收口
+
+- **评论编辑器已重排为轻量讨论面板**：`CreateCommentForm` 当前采用“薄状态条 + 正文主区 + 薄操作栏”的卡片结构，支持 `@提及`、贴图、图片、附件与预览切换，不再保留旧版“空大白框 + 重按钮”布局。
+- **评论弹层外框已单独定制**：`PostDetailContentView` 现为评论 `BottomSheet` 提供专用外壳，已压缩顶部 `handle / header / body` 留白，弱化双层白框感，并修复底部操作栏在部分窗口高度下被遮挡的问题。
+- **高度链已完成当前批次收口**：评论弹层当前改为 `60%` 高度，`sheet` 模式正文区与底部动作区已通过 `flex + min-height: 0 + safe-area` 约束保持稳定可见。
+- **自动化验证通过**：`npx tsc -b Frontend/radish.client` 与 `npm run build --workspace=radish.client` 已在系统环境验证通过。

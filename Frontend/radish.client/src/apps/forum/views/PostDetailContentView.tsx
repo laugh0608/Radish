@@ -322,26 +322,31 @@ export const PostDetailContentView = ({
         isOpen={isCommentSheetOpen}
         onClose={handleCloseCommentSheet}
         title={t('forum.joinDiscussion')}
-        height="70%"
+        height="60%"
+        className={styles.commentSheet}
+        bodyClassName={styles.commentSheetBody}
+        overlayClassName={styles.commentSheetOverlay}
       >
         {isCommentSheetOpen && (
-          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>{t('forum.loadingDiscussionEditor')}</div>}>
-            <CreateCommentForm
-              isAuthenticated={isAuthenticated}
-              hasPost={true}
-              onSubmit={handleCreateComment}
-              replyTo={replyTo}
-              onCancelReply={onCancelReply}
-              variant="sheet"
-              title={t('forum.joinDiscussion')}
-              submitText={t('forum.submitDiscussion')}
-              placeholder={t('forum.discussionPlaceholder')}
-              stickerGroups={stickerGroups}
-              onStickerSelect={(selection) => {
-                void handleStickerSelect(selection);
-              }}
-            />
-          </Suspense>
+          <div className={styles.commentSheetContent}>
+            <Suspense fallback={<div className={styles.commentSheetLoading}>{t('forum.loadingDiscussionEditor')}</div>}>
+              <CreateCommentForm
+                isAuthenticated={isAuthenticated}
+                hasPost={true}
+                onSubmit={handleCreateComment}
+                replyTo={replyTo}
+                onCancelReply={onCancelReply}
+                variant="sheet"
+                title={t('forum.joinDiscussion')}
+                submitText={t('forum.submitDiscussion')}
+                placeholder={t('forum.discussionPlaceholder')}
+                stickerGroups={stickerGroups}
+                onStickerSelect={(selection) => {
+                  void handleStickerSelect(selection);
+                }}
+              />
+            </Suspense>
+          </div>
         )}
       </BottomSheet>
     </div>
