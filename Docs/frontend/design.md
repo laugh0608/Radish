@@ -1,6 +1,6 @@
 # 前端设计文档
 
-> Radish 采用 **超级应用（Super App）/ WebOS** 架构，提供类似操作系统的桌面体验。用户登录后看到桌面，双击应用图标即可打开论坛、聊天室、商城、后台管理等不同应用。本文档描述整体架构、技术栈和实现方案。
+> Radish 采用 **超级应用（Super App）/ WebOS** 架构，提供类似操作系统的桌面体验。用户进入 `radish.client` 后即可看到桌面，公开内容可匿名浏览，登录后再解锁聊天室、个人中心等私有能力。本文档描述整体架构、技术栈和实现方案。
 
 ## 1. 设计理念
 
@@ -11,22 +11,22 @@
 ```
 用户访问 radish.client
         ↓
-    统一登录 (OIDC)
+桌面系统（Desktop Shell）
         ↓
-   桌面系统（Desktop Shell）
+根据显示规则呈现应用图标
         ↓
-根据角色显示应用图标
+匿名可直接打开公开应用
         ↓
-双击图标 → 打开应用
+登录后解锁聊天 / 个人能力
         ↓
-[论坛] [聊天室] [商城] → 窗口模式
-[后台管理] [文档] → 全屏/iframe 模式
+[论坛] [文档] [商城] → 窗口模式
+[控制台] → 外部应用
 ```
 
 ### 1.2 设计目标
 
 1. **统一入口**：所有功能通过桌面访问，无需记忆多个 URL
-2. **权限控制**：根据用户角色动态显示可用应用
+2. **权限控制**：公开应用匿名可访问，私有能力按登录态与权限分层控制
 3. **沉浸体验**：桌面化交互（状态栏、Dock、窗口系统）
 4. **无缝切换**：应用间切换无需重新登录
 5. **扩展性强**：新增功能只需注册新应用
@@ -121,7 +121,7 @@ export interface AppDefinition {
   type: 'window' | 'fullscreen' | 'iframe';
   defaultSize?: { width: number; height: number };
   url?: string; // for iframe
-  requiredRoles: string[]; // 权限控制
+  requiredRoles?: string[]; // 访问控制，可选
   category?: string; // 分类
 }
 
@@ -135,7 +135,6 @@ export const appRegistry: AppDefinition[] = [
     component: ForumApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
-    requiredRoles: ['User'],
     category: 'content'
   },
   {
@@ -155,77 +154,80 @@ export const appRegistry: AppDefinition[] = [
     icon: '🛒',
     description: '积分商城',
     component: ShopApp,
-    type: 'fullscreen', // 全屏体验更好
-    requiredRoles: ['User'],
+    type: 'window',
     category: 'commerce'
   },
 
   // === 管理应用 ===
   {
-    id: 'admin',
-    name: '后台管理',
-    icon: '⚙️',
+    id: 'console',
+    name: '控制台',
+    icon: 'mdi:console',
     description: '系统管理控制台',
-    component: AdminApp,
-    type: 'fullscreen',
-    requiredRoles: ['Admin', 'System'],
-    category: 'admin'
+    component: () => null,
+    type: 'external',
+    externalUrl: '/console/',
+    category: 'system'
   },
 
-  // === 工具应用 ===
+  // === 文档应用 ===
   {
-    id: 'docs',
-    name: 'API 文档',
-    icon: '📄',
-    description: 'Scalar API 文档',
-    type: 'iframe',
-    url: 'https://localhost:5000/scalar',
-    defaultSize: { width: 1400, height: 900 },
-    requiredRoles: ['Developer', 'Admin'],
-    category: 'tools'
-  },
-
-  // === 第三方应用（示例） ===
-  {
-    id: 'game-example',
-    name: '小游戏',
-    icon: '🎮',
-    component: GameApp,
+    id: 'document',
+    name: '文档',
+    icon: 'mdi:notebook-edit-outline',
+    description: '固定文档与在线文档统一入口',
+    component: WikiApp,
     type: 'window',
-    defaultSize: { width: 600, height: 600 },
-    requiredRoles: ['User'],
-    category: 'entertainment'
+    defaultSize: { width: 1280, height: 820 },
+    category: 'content'
   }
 ];
 ```
 
 ### 3.2 权限控制
 
-桌面根据用户角色过滤可见应用：
+当前桌面采用“图标可见性”和“打开权限”分离的策略：
+
+- 常规应用图标默认在桌面可见，避免匿名用户误以为平台只剩下少数入口；
+- `console` 仍按管理员角色或 `console.access` 权限隐藏；
+- 真正需要登录才能打开的应用当前只保留：
+  - `chat`
+  - `profile`
+  - `radish-pit`
+  - `notification`
+  - `experience-detail`
+- 其余桌面应用默认允许匿名打开公开内容，例如：
+  - `welcome`
+  - `showcase`
+  - `document`
+  - `forum`
+  - `leaderboard`
+  - `shop`
+
+对应的访问矩阵如下：
+
+| 应用 | 桌面图标 | 未登录打开 | 已登录打开 |
+|------|----------|------------|------------|
+| 欢迎 / 组件库 / 文档 / 论坛 / 排行榜 / 商城 | 可见 | 可打开公开内容 | 可打开 |
+| 聊天室 / 个人主页 / 萝卜坑 / 通知中心 / 等级 | 可见 | 拦截并提示登录 | 可打开 |
+| 控制台 | 仅管理员或具备 `console.access` 权限时可见 | 不可见 | 命中权限后可打开 |
+
+实现上不再简单按“角色过滤所有图标”，而是分别处理桌面展示与实际访问：
 
 ```typescript
-// desktop/Desktop.tsx
-const Desktop = () => {
-  const { user } = useAuth();
+import { canAccessApp, getVisibleAppsForUser } from './appAccess';
 
-  // 过滤用户有权限的应用
-  const visibleApps = appRegistry.filter(app =>
-    app.requiredRoles.some(role => user.roles?.includes(role))
-  );
+const visibleApps = getVisibleAppsForUser(appRegistry, {
+  isAuthenticated,
+  userRoles,
+  userPermissions
+});
 
-  return (
-    <div className="desktop-grid">
-      {visibleApps.map(app => (
-        <AppIcon
-          key={app.id}
-          app={app}
-          onDoubleClick={() => openApp(app.id)}
-          onContextMenu={(e) => showContextMenu(e, app.id)}
-        />
-      ))}
-    </div>
-  );
-};
+const canOpen = canAccessApp(app, {
+  isAuthenticated,
+  userRoles,
+  userPermissions
+});
 ```
 
 ## 4. 窗口系统
@@ -234,9 +236,9 @@ const Desktop = () => {
 
 | 类型 | 说明 | 适用场景 |
 |------|------|---------|
-| `window` | 可拖拽、调整大小的窗口 | 论坛、聊天室等小应用 |
-| `fullscreen` | 全屏显示，隐藏桌面 | 商城、后台管理等复杂应用 |
-| `iframe` | 嵌入外部网页 | API 文档、第三方工具 |
+| `window` | 可拖拽、调整大小的窗口 | 文档、论坛、聊天室、商城 |
+| `fullscreen` | 全屏显示，隐藏桌面 | 预留给未来特别复杂的沉浸式应用 |
+| `iframe` | 嵌入外部网页 | 展示型第三方工具 |
 
 ### 4.2 窗口管理器
 
@@ -438,10 +440,11 @@ const Shell = () => {
 ```typescript
 // desktop/MobileShell.tsx
 const MobileShell = () => {
-  const { user } = useAuth();
-  const visibleApps = appRegistry.filter(app =>
-    app.requiredRoles.some(role => user.roles?.includes(role))
-  );
+  const visibleApps = getVisibleAppsForUser(appRegistry, {
+    isAuthenticated,
+    userRoles,
+    userPermissions
+  });
 
   return (
     <div className="mobile-shell">
@@ -982,8 +985,7 @@ if (应用需要 OIDC 认证 && 有复杂路由) {
   externalUrl: typeof window !== 'undefined' &&
     window.location.origin.includes('localhost:5000')
     ? '/console/' // 通过 Gateway
-    : 'http://localhost:3100', // 直接访问
-  requiredRoles: ['Admin', 'System']
+    : 'http://localhost:3100' // 直接访问
 }
 ```
 

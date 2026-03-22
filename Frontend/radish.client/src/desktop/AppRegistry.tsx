@@ -111,7 +111,6 @@ export const appRegistry: AppDefinition[] = [
     component: WelcomeApp,
     type: 'window',
     defaultSize: { width: 900, height: 700 },
-    requiredRoles: ['User'],
     category: 'system',
   },
   {
@@ -124,7 +123,6 @@ export const appRegistry: AppDefinition[] = [
     component: ShowcaseApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
-    requiredRoles: ['User'],
     category: 'development',
   },
   {
@@ -161,7 +159,6 @@ export const appRegistry: AppDefinition[] = [
     component: ForumApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
-    requiredRoles: ['User'],
     category: 'content',
   },
   {
@@ -226,7 +223,6 @@ export const appRegistry: AppDefinition[] = [
     component: LeaderboardApp,
     type: 'window',
     defaultSize: { width: 900, height: 700 },
-    requiredRoles: ['User'],
     category: 'user',
   },
   {
@@ -252,7 +248,6 @@ export const appRegistry: AppDefinition[] = [
     component: ShopApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
-    requiredRoles: ['User'],
     category: 'user',
   },
 ];
@@ -265,7 +260,7 @@ export const getAppById = (id: string): AppDefinition | undefined => {
 };
 
 /**
- * 根据用户角色过滤可见应用
+ * 根据桌面显示规则过滤可见应用
  */
 export const getVisibleApps = (
   isAuthenticated: boolean = false,

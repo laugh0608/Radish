@@ -197,6 +197,12 @@ API 启动时执行固定文档同步：
 - 将图片等资源重写为 `StaticAssetsRequestPath` 可访问路径；
 - 固定文档视为只读内容，编辑请求应被拒绝。
 
+同时，`DbMigrate apply/seed` 也需要保证 Wiki 表结构在本地 SQLite 环境中可自愈：
+
+- 旧库若仅存在 `WikiDocument` 表、但缺少 `Visibility`、`AllowedRoles`、`AllowedPermissions` 等新增列，不能再被误判为“结构已齐全”；
+- 当前 `DbMigrate doctor / verify` 已会显式报告 Wiki 缺列；
+- 当前 `DbMigrate apply / seed` 在探测到缺列时会自动触发 `init`，并在 Seed 阶段再次对 `WikiDocument / WikiDocumentRevision` 执行 `CodeFirst.InitTables`，用于补齐缺失表或列。
+
 ### 5.3 配置项
 
 统一配置节为 `Document`：
@@ -233,6 +239,7 @@ API 启动时执行固定文档同步：
 - 支持 Markdown 导入 / 导出；
 - 支持版本历史与回滚；
 - 支持 `公开可看 / 登录可看 / 指定权限可看` 三层可见性；
+- 三层可见性当前落在 `WikiDocument.Visibility`、`WikiDocument.AllowedRoles`、`WikiDocument.AllowedPermissions` 字段；
 - 在线新建与 Markdown 导入默认创建为“登录可看”，管理员可后续调整为公开或受限；
 - 当前对固定文档保持只读，对在线文档开放管理；
 - 当前已具备回收站视图，后续继续完善目录治理与更友好的排序操作。
@@ -375,6 +382,7 @@ MVP 阶段采用稳妥分层：
 5. 前端统一收口为“文档”应用；
 6. 落地 Markdown 导入导出、版本历史与回滚；
 7. 收紧固定文档静态资源暴露边界。
+8. 补齐 Wiki 三层可见性字段，并让 `DbMigrate` 能检测并自动修复 SQLite 旧库缺列。
 
 ### 11.2 当前优先级
 

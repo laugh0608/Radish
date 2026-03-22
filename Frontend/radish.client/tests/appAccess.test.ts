@@ -3,10 +3,18 @@ import test from 'node:test';
 import type { AppDefinition } from '../src/desktop/types.ts';
 import { canAccessApp, getVisibleAppsForUser, shouldShowAppOnDesktop } from '../src/desktop/appAccess.ts';
 
-const userApp: AppDefinition = {
+const publicApp: AppDefinition = {
   id: 'document',
   name: '文档',
   icon: 'mdi:notebook-edit-outline',
+  component: () => null,
+  type: 'window',
+};
+
+const loginRequiredApp: AppDefinition = {
+  id: 'chat',
+  name: '聊天室',
+  icon: 'mdi:message-text',
   component: () => null,
   type: 'window',
   requiredRoles: ['User'],
@@ -22,7 +30,7 @@ const consoleApp: AppDefinition = {
 };
 
 test('canAccessApp 在未登录时应拦截需要 User 角色的应用', () => {
-  assert.equal(canAccessApp(userApp, {
+  assert.equal(canAccessApp(loginRequiredApp, {
     isAuthenticated: false,
     userRoles: [],
     userPermissions: [],
@@ -30,15 +38,23 @@ test('canAccessApp 在未登录时应拦截需要 User 角色的应用', () => {
 });
 
 test('canAccessApp 在已登录时应允许打开需要 User 角色的应用', () => {
-  assert.equal(canAccessApp(userApp, {
+  assert.equal(canAccessApp(loginRequiredApp, {
     isAuthenticated: true,
     userRoles: [],
     userPermissions: [],
   }), true);
 });
 
+test('canAccessApp 在未登录时应允许打开公开应用', () => {
+  assert.equal(canAccessApp(publicApp, {
+    isAuthenticated: false,
+    userRoles: [],
+    userPermissions: [],
+  }), true);
+});
+
 test('shouldShowAppOnDesktop 在未登录时仍应显示常规应用图标', () => {
-  assert.equal(shouldShowAppOnDesktop(userApp, {
+  assert.equal(shouldShowAppOnDesktop(publicApp, {
     isAuthenticated: false,
     userRoles: [],
     userPermissions: [],
@@ -46,26 +62,26 @@ test('shouldShowAppOnDesktop 在未登录时仍应显示常规应用图标', () 
 });
 
 test('getVisibleAppsForUser 应保留常规桌面应用，仅按权限隐藏控制台', () => {
-  const apps = [userApp, consoleApp];
+  const apps = [publicApp, loginRequiredApp, consoleApp];
 
   const anonymousVisible = getVisibleAppsForUser(apps, {
     isAuthenticated: false,
     userRoles: [],
     userPermissions: [],
   });
-  assert.deepEqual(anonymousVisible.map((app) => app.id), ['document']);
+  assert.deepEqual(anonymousVisible.map((app) => app.id), ['document', 'chat']);
 
   const authenticatedVisible = getVisibleAppsForUser(apps, {
     isAuthenticated: true,
     userRoles: ['User'],
     userPermissions: [],
   });
-  assert.deepEqual(authenticatedVisible.map((app) => app.id), ['document']);
+  assert.deepEqual(authenticatedVisible.map((app) => app.id), ['document', 'chat']);
 
   const consoleVisible = getVisibleAppsForUser(apps, {
     isAuthenticated: true,
     userRoles: ['User'],
     userPermissions: ['console.access'],
   });
-  assert.deepEqual(consoleVisible.map((app) => app.id), ['document', 'console']);
+  assert.deepEqual(consoleVisible.map((app) => app.id), ['document', 'chat', 'console']);
 });

@@ -15,7 +15,7 @@ export const Desktop = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { roles, permissions } = useUserStore();
 
-  // 根据用户角色过滤可见应用
+  // 根据桌面显示规则过滤可见应用
   const visibleApps = getVisibleApps(isAuthenticated, roles, permissions);
 
   return (
