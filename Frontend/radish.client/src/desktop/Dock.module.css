@@ -7,6 +7,15 @@
   pointer-events: none;
   width: max-content;
   max-width: calc(100% - 48px);
+  transition: top var(--theme-transition-standard);
+}
+
+.dockContainerExpanded {
+  top: 14px;
+}
+
+.dockContainerCollapsed {
+  top: 6px;
 }
 
 .dock {

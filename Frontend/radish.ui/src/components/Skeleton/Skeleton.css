@@ -21,15 +21,16 @@
 }
 
 .table-skeleton-table {
-  background: #fff;
-  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-bg-surface, #fbfcfc) 90%, white 10%);
+  border-radius: var(--theme-radius-control, 12px);
   overflow: hidden;
+  border: 1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16));
 }
 
 .table-skeleton-row {
   display: flex;
   padding: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16));
   gap: 16px;
 }
 
@@ -44,9 +45,9 @@
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    #f0f0f0 25%,
-    #e0e0e0 50%,
-    #f0f0f0 75%
+    color-mix(in srgb, var(--theme-bg-muted, #e1e7e8) 72%, white 28%) 25%,
+    color-mix(in srgb, var(--theme-bg-surface, #fbfcfc) 82%, white 18%) 50%,
+    color-mix(in srgb, var(--theme-bg-muted, #e1e7e8) 72%, white 28%) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;

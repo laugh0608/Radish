@@ -1,9 +1,13 @@
 /* 基础面板样式 */
 .panel {
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  color: rgba(255, 255, 255, 0.95); /* 默认使用浅色文字 */
+  border-radius: var(--theme-radius-panel, 20px);
+  box-shadow: var(--theme-shadow-soft, 0 16px 40px rgba(51, 72, 84, 0.12));
+  transition:
+    transform var(--theme-transition-standard, 220ms ease),
+    box-shadow var(--theme-transition-standard, 220ms ease),
+    background var(--theme-transition-standard, 220ms ease),
+    border-color var(--theme-transition-standard, 220ms ease);
+  color: var(--theme-text-primary, #23313b);
 }
 
 /* 模糊强度 */
@@ -24,25 +28,36 @@
 
 /* 背景透明度 */
 .panel.light {
-  background: rgba(255, 255, 255, 0.15);
-  color: rgba(255, 255, 255, 0.95); /* 浅色背景使用白色文字 */
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-bg-surface, #fbfcfc) 86%, white 14%) 0%,
+      color-mix(in srgb, var(--theme-bg-surface-muted, rgba(255, 255, 255, 0.78)) 90%, transparent 10%) 100%
+    );
+  color: var(--theme-text-primary, #23313b);
 }
 
 .panel.dark {
-  background: rgba(0, 0, 0, 0.3);
-  color: rgba(255, 255, 255, 0.95); /* 深色背景也使用白色文字 */
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-accent-ink, #435c74) 36%, transparent 64%) 0%,
+      color-mix(in srgb, var(--theme-accent-ink, #435c74) 48%, black 52%) 100%
+    );
+  color: rgba(255, 255, 255, 0.94);
 }
 
 /* 边框 */
 .bordered {
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16));
 }
 
 .bordered.dark {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid color-mix(in srgb, white 18%, transparent 82%);
 }
 
 /* 悬停效果 */
 .panel:hover {
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  box-shadow: var(--theme-shadow-strong, 0 28px 60px rgba(51, 72, 84, 0.16));
 }

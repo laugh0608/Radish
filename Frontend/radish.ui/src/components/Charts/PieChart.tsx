@@ -93,17 +93,17 @@ export const PieChart = ({
           </Pie>
           <Tooltip
             contentStyle={{
-              backgroundColor: '#ffffff',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              color: '#1f2937',
-              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+              backgroundColor: 'var(--theme-bg-surface, #fbfcfc)',
+              border: '1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16))',
+              borderRadius: '12px',
+              color: 'var(--theme-text-primary, #23313b)',
+              boxShadow: 'var(--theme-shadow-soft, 0 16px 40px rgba(51, 72, 84, 0.12))'
             }}
           />
           {showLegend && (
             <Legend
               wrapperStyle={{
-                color: '#1f2937',
+                color: 'var(--theme-text-primary, #23313b)',
                 fontSize: '12px'
               }}
             />

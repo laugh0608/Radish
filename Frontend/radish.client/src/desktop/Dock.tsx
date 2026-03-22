@@ -193,7 +193,7 @@ export const Dock = () => {
   };
 
   return (
-    <div className={styles.dockContainer}>
+    <div className={`${styles.dockContainer} ${isExpanded ? styles.dockContainerExpanded : styles.dockContainerCollapsed}`}>
       <div
         className={`${styles.dock} ${isExpanded ? styles.expanded : styles.collapsed}`}
         onMouseEnter={handleMouseEnter}

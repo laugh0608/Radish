@@ -4,7 +4,8 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: color-mix(in srgb, var(--theme-accent-ink, #435c74) 22%, transparent 78%);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -22,9 +23,15 @@
 }
 
 .radish-modal {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-bg-surface, #fbfcfc) 92%, white 8%) 0%,
+      color-mix(in srgb, var(--theme-bg-surface-muted, rgba(255, 255, 255, 0.78)) 96%, transparent 4%) 100%
+    );
+  border-radius: var(--theme-radius-panel, 20px);
+  box-shadow: var(--theme-shadow-strong, 0 28px 60px rgba(51, 72, 84, 0.16));
+  border: 1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16));
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -62,14 +69,14 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16));
 }
 
 .radish-modal-title {
   margin: 0;
   font-size: 20px;
   font-weight: 600;
-  color: #333;
+  color: var(--theme-text-primary, #23313b);
 }
 
 .radish-modal-close {
@@ -77,7 +84,7 @@
   border: none;
   font-size: 32px;
   line-height: 1;
-  color: #666;
+  color: var(--theme-text-secondary, #5d6b75);
   cursor: pointer;
   padding: 0;
   width: 32px;
@@ -85,13 +92,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  border-radius: var(--theme-radius-control, 12px);
+  transition:
+    background var(--theme-transition-standard, 220ms ease),
+    color var(--theme-transition-standard, 220ms ease);
 }
 
 .radish-modal-close:hover {
-  background-color: #f5f5f5;
-  color: #333;
+  background-color: color-mix(in srgb, var(--theme-bg-muted, #e1e7e8) 72%, white 28%);
+  color: var(--theme-text-primary, #23313b);
 }
 
 .radish-modal-body {
@@ -102,7 +111,7 @@
 
 .radish-modal-footer {
   padding: 16px 24px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16));
   display: flex;
   gap: 12px;
   justify-content: flex-end;
