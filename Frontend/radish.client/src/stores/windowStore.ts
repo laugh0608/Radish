@@ -39,7 +39,7 @@ interface WindowStore {
   updateWindowSize: (windowId: string, size: { width: number; height: number }) => void;
 
   /** 最大化窗口 */
-  maximizeWindow: (windowId: string, payload: { width: number; height: number; x: number; y: number }) => void;
+  maximizeWindow: (windowId: string) => void;
 
   /** 退出最大化 */
   unmaximizeWindow: (windowId: string) => void;
@@ -220,7 +220,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     }));
   },
 
-  maximizeWindow: (windowId: string, payload: { width: number; height: number; x: number; y: number }) => {
+  maximizeWindow: (windowId: string) => {
     const { openWindows } = get();
     const maxZIndex = Math.max(0, ...openWindows.map(w => w.zIndex));
 
@@ -233,8 +233,6 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
               isMaximized: true,
               prevPosition: w.position,
               prevSize: w.size,
-              position: { x: payload.x, y: payload.y },
-              size: { width: payload.width, height: payload.height },
               zIndex: maxZIndex + 1
             }
           : w
