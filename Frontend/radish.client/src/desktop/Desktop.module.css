@@ -11,14 +11,14 @@
   flex-wrap: wrap;
   align-content: flex-start;
   justify-content: flex-start;
-  gap: 1rem 1.1rem;
+  gap: 1.8rem 1.5rem;
   overflow: hidden;
 }
 
 .desktop > * {
-  width: 84px;
-  height: 100px;
-  flex: 0 0 100px;
+  width: 96px;
+  height: 110px;
+  flex: 0 0 110px;
 }
 
 @media (max-width: 900px) {

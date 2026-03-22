@@ -30,10 +30,11 @@
     var(--theme-shadow-soft),
     inset 0 0 0 1px color-mix(in srgb, white 28%, transparent 72%);
   transition:
-    transform var(--theme-transition-standard),
-    background var(--theme-transition-standard),
-    box-shadow var(--theme-transition-standard),
-    border-color var(--theme-transition-standard);
+    transform 500ms cubic-bezier(0.33, 1, 0.68, 1),
+    background 500ms cubic-bezier(0.33, 1, 0.68, 1),
+    box-shadow 500ms cubic-bezier(0.33, 1, 0.68, 1),
+    border-color 500ms cubic-bezier(0.33, 1, 0.68, 1),
+    border-radius 500ms cubic-bezier(0.33, 1, 0.68, 1);
   cursor: pointer;
 }
 
@@ -496,4 +497,44 @@
   50% {
     opacity: 0.6;
   }
+}
+
+.dock.expanded {
+  position: relative;
+  /* Make sure we leave room for the scroll ends if we use pseudo-elements */
+}
+
+.dock.expanded::before,
+.dock.expanded::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  width: 6px;
+  background: linear-gradient(90deg, var(--theme-accent-earth) 0%, color-mix(in srgb, var(--theme-accent-earth) 60%, black 40%) 100%);
+  border-radius: 3px;
+  box-shadow: 1px 2px 6px rgba(0,0,0,0.2), inset 1px 0 2px rgba(255,255,255,0.3);
+  z-index: -1;
+  transition: all 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+  opacity: 1;
+}
+
+.dock.expanded::before {
+  left: -8px;
+}
+
+.dock.expanded::after {
+  right: -8px;
+}
+
+/* Hide scroll ends when collapsed */
+.dock.collapsed::before,
+.dock.collapsed::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  bottom: 50%;
+  width: 0px;
+  opacity: 0;
+  transition: all 0.3s ease;
 }

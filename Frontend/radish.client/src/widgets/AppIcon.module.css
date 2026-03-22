@@ -23,9 +23,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 54px;
-  height: 54px;
-  border-radius: 18px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
   background:
     linear-gradient(
       180deg,
@@ -35,7 +35,7 @@
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 80%, white 20%);
   box-shadow:
     0 10px 22px color-mix(in srgb, var(--theme-accent-earth) 12%, transparent 88%),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-brand-primary) 15%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.7);
   transition:
     transform var(--theme-transition-standard),
     background var(--theme-transition-standard),
@@ -53,7 +53,7 @@
     );
   box-shadow:
     0 14px 24px color-mix(in srgb, var(--theme-accent-earth) 16%, transparent 84%),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-brand-primary) 35%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .iconImage svg {
@@ -66,8 +66,13 @@
 
 .iconName {
   min-height: 1.8rem;
-  font-size: 0.62rem;
-  font-weight: 600;
+  font-size: 0.72rem;
+  font-family: var(--theme-font-serif);
+  letter-spacing: 0.05em;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: all var(--theme-transition-standard);
+  font-weight: 500;
   color: var(--theme-text-primary);
   text-align: center;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
@@ -143,4 +148,9 @@
 
 .iframeBadge svg {
   color: white;
+}
+
+.icon:hover .iconName {
+  background: color-mix(in srgb, var(--theme-brand-primary) 8%, transparent);
+  color: var(--theme-brand-primary);
 }
