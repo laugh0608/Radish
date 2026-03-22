@@ -17,6 +17,7 @@ export interface MarkdownEditorProps {
   placeholder?: string;
   minHeight?: number;
   maxHeight?: number;
+  defaultMode?: 'edit' | 'preview' | 'split';
   disabled?: boolean;
   showToolbar?: boolean;
   theme?: 'dark' | 'light';
@@ -48,6 +49,7 @@ export const MarkdownEditor = ({
   placeholder = '输入内容，支持 Markdown...',
   minHeight = 150,
   maxHeight,
+  defaultMode,
   disabled = false,
   showToolbar = true,
   theme = 'dark',
@@ -59,7 +61,9 @@ export const MarkdownEditor = ({
   stickerMap,
   onStickerSelect,
 }: MarkdownEditorProps) => {
-  const [mode, setMode] = useState<'edit' | 'preview' | 'split'>(typeof window !== 'undefined' && window.innerWidth > 768 ? 'split' : 'edit');
+  const [mode, setMode] = useState<'edit' | 'preview' | 'split'>(
+    defaultMode ?? (typeof window !== 'undefined' && window.innerWidth > 768 ? 'split' : 'edit')
+  );
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -406,7 +410,7 @@ export const MarkdownEditor = ({
     onChange(e.target.value);
   };
 
-  const containerStyle: React.CSSProperties = {
+  const rootStyle: React.CSSProperties = {
     minHeight: `${minHeight}px`,
     ...(maxHeight ? { maxHeight: `${maxHeight}px` } : {})
   };
@@ -414,7 +418,7 @@ export const MarkdownEditor = ({
   const themeClassName = theme === 'light' ? styles.themeLight : '';
 
   return (
-    <div className={`${styles.container} ${themeClassName} ${className}`}>
+    <div className={`${styles.container} ${themeClassName} ${className}`} style={rootStyle}>
       {/* 隐藏的文件输入 */}
       <input
         ref={fileInputRef}
@@ -621,7 +625,7 @@ export const MarkdownEditor = ({
       )}
 
       {/* 编辑/预览区域 */}
-      <div className={`${styles.content} ${mode === 'split' ? styles.contentSplit : ''}`} style={containerStyle}>
+      <div className={`${styles.content} ${mode === 'split' ? styles.contentSplit : ''}`}>
         {(mode === 'edit' || mode === 'split') && (
           <div className={`${styles.editPane} ${mode === 'split' ? styles.paneSplit : ''}`}>
             <textarea

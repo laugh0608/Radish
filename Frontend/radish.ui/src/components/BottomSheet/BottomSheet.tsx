@@ -7,9 +7,13 @@ export interface BottomSheetProps {
   title?: string;
   children: ReactNode;
   footer?: ReactNode;
-  height?: '60%' | '70%' | '80%' | '90%';
+  height?: string;
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
+  className?: string;
+  bodyClassName?: string;
+  footerClassName?: string;
+  overlayClassName?: string;
 }
 
 export const BottomSheet = ({
@@ -20,7 +24,11 @@ export const BottomSheet = ({
   footer,
   height = '70%',
   closeOnOverlayClick = true,
-  closeOnEscape = true
+  closeOnEscape = true,
+  className = '',
+  bodyClassName = '',
+  footerClassName = '',
+  overlayClassName = ''
 }: BottomSheetProps) => {
   useEffect(() => {
     if (!isOpen || !closeOnEscape) return;
@@ -56,8 +64,8 @@ export const BottomSheet = ({
   };
 
   return (
-    <div className="radish-bottom-sheet-overlay" onClick={handleOverlayClick}>
-      <div className="radish-bottom-sheet" style={{ height }}>
+    <div className={`radish-bottom-sheet-overlay ${overlayClassName}`.trim()} onClick={handleOverlayClick}>
+      <div className={`radish-bottom-sheet ${className}`.trim()} style={{ height }}>
         <div className="radish-bottom-sheet-handle" aria-hidden="true" />
         {title && (
           <div className="radish-bottom-sheet-header">
@@ -71,8 +79,8 @@ export const BottomSheet = ({
             </button>
           </div>
         )}
-        <div className="radish-bottom-sheet-body">{children}</div>
-        {footer && <div className="radish-bottom-sheet-footer">{footer}</div>}
+        <div className={`radish-bottom-sheet-body ${bodyClassName}`.trim()}>{children}</div>
+        {footer && <div className={`radish-bottom-sheet-footer ${footerClassName}`.trim()}>{footer}</div>}
       </div>
     </div>
   );
