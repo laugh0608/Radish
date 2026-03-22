@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using Radish.Model;
 using SqlSugar;
 
 namespace Radish.DbMigrate;
@@ -52,6 +53,9 @@ internal static partial class InitialDataSeeder
 
     private static Task SeedWikiDocumentsAsync(ISqlSugarClient db)
     {
+        db.CodeFirst.InitTables<WikiDocument>();
+        db.CodeFirst.InitTables<WikiDocumentRevision>();
+        Console.WriteLine("[Radish.DbMigrate] 已同步 WikiDocument / WikiDocumentRevision 表结构（自动补齐缺失表/列）。");
         Console.WriteLine("[Radish.DbMigrate] 固定文档改为由 API 启动时自动同步，Seed 阶段跳过。\n");
         return Task.CompletedTask;
     }

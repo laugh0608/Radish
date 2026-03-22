@@ -38,9 +38,17 @@ export function canAccessApp(app: AppDefinition, context: AppAccessContext = {})
   return isAuthenticated && requiredRoles.includes('user');
 }
 
+export function shouldShowAppOnDesktop(app: AppDefinition, context: AppAccessContext = {}): boolean {
+  if (app.id === 'console') {
+    return canAccessApp(app, context);
+  }
+
+  return true;
+}
+
 export function getVisibleAppsForUser(
   apps: AppDefinition[],
   context: AppAccessContext = {}
 ): AppDefinition[] {
-  return apps.filter((app) => canAccessApp(app, context));
+  return apps.filter((app) => shouldShowAppOnDesktop(app, context));
 }

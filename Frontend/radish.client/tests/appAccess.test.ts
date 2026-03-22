@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { AppDefinition } from '../src/desktop/types.ts';
-import { canAccessApp, getVisibleAppsForUser } from '../src/desktop/appAccess.ts';
+import { canAccessApp, getVisibleAppsForUser, shouldShowAppOnDesktop } from '../src/desktop/appAccess.ts';
 
 const userApp: AppDefinition = {
   id: 'document',
@@ -37,7 +37,15 @@ test('canAccessApp 在已登录时应允许打开需要 User 角色的应用', (
   }), true);
 });
 
-test('getVisibleAppsForUser 应按登录态和控制台权限过滤应用', () => {
+test('shouldShowAppOnDesktop 在未登录时仍应显示常规应用图标', () => {
+  assert.equal(shouldShowAppOnDesktop(userApp, {
+    isAuthenticated: false,
+    userRoles: [],
+    userPermissions: [],
+  }), true);
+});
+
+test('getVisibleAppsForUser 应保留常规桌面应用，仅按权限隐藏控制台', () => {
   const apps = [userApp, consoleApp];
 
   const anonymousVisible = getVisibleAppsForUser(apps, {
@@ -45,7 +53,7 @@ test('getVisibleAppsForUser 应按登录态和控制台权限过滤应用', () =
     userRoles: [],
     userPermissions: [],
   });
-  assert.deepEqual(anonymousVisible.map((app) => app.id), []);
+  assert.deepEqual(anonymousVisible.map((app) => app.id), ['document']);
 
   const authenticatedVisible = getVisibleAppsForUser(apps, {
     isAuthenticated: true,

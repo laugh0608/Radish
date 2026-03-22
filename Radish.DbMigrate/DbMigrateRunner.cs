@@ -90,11 +90,15 @@ internal static class DbMigrateRunner
         Console.WriteLine("[Radish.DbMigrate] 检查数据库表结构...");
         var inspectionResult = DbMigrateInspection.InspectSeedReadiness(services, mainDbConnId);
 
-        if (inspectionResult.DatabaseFileMissing || inspectionResult.MissingTables.Count > 0)
+        if (inspectionResult.DatabaseFileMissing || inspectionResult.MissingTables.Count > 0 || inspectionResult.MissingColumns.Count > 0)
         {
             if (inspectionResult.DatabaseFileMissing)
             {
                 Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到主库文件缺失 ({inspectionResult.DatabaseFilePath ?? "<unknown>"})，自动执行 init...");
+            }
+            else if (inspectionResult.MissingColumns.Count > 0)
+            {
+                Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到表结构缺列 ({string.Join(", ", inspectionResult.MissingColumns)})，自动执行 init...");
             }
             else
             {

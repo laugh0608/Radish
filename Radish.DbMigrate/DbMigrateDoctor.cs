@@ -105,13 +105,21 @@ internal static class DbMigrateDoctor
                 return;
             }
 
-            if (inspectionResult.MissingTables.Count == 0)
+            if (inspectionResult.MissingTables.Count == 0 && inspectionResult.MissingColumns.Count == 0)
             {
                 Console.WriteLine("[Radish.DbMigrate] [Doctor] 主库业务表检查：已齐全。");
                 return;
             }
 
-            warnings.Add($"主库业务表缺失：{string.Join(", ", inspectionResult.MissingTables)}");
+            if (inspectionResult.MissingTables.Count > 0)
+            {
+                warnings.Add($"主库业务表缺失：{string.Join(", ", inspectionResult.MissingTables)}");
+            }
+
+            if (inspectionResult.MissingColumns.Count > 0)
+            {
+                warnings.Add($"主库业务表缺列：{string.Join(", ", inspectionResult.MissingColumns)}");
+            }
         }
         catch (Exception exception)
         {
