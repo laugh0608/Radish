@@ -91,6 +91,8 @@ export async function apiFetch(
       (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
     }
   }
+  const hasAuthorizationHeader = typeof (finalHeaders as Record<string, string>).Authorization === 'string' &&
+    (finalHeaders as Record<string, string>).Authorization.trim().length > 0;
 
   // 构建请求配置
   const fetchOptions: RequestInit = {
@@ -118,7 +120,7 @@ export async function apiFetch(
     currentConfig.onResponse?.(response);
 
     // 检查是否需要刷新 token
-    if (withAuth && shouldRefreshToken(response) && !(options as any)._isRetry) {
+    if (withAuth && hasAuthorizationHeader && shouldRefreshToken(response) && !(options as any)._isRetry) {
       try {
         // 刷新 token
         const newToken = await tryRefreshToken();

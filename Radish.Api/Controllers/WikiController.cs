@@ -36,7 +36,7 @@ public class WikiController : ControllerBase
     private CurrentUser Current => _currentUserAccessor.Current;
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [AllowAnonymous]
     public async Task<MessageModel<PageModel<WikiDocumentVo>>> GetList(
         int pageIndex = 1,
         int pageSize = 20,
@@ -55,24 +55,34 @@ public class WikiController : ControllerBase
             parentId,
             includeUnpublished: isAdmin,
             includeDeleted: isAdmin && includeDeleted,
-            deletedOnly: isAdmin && deletedOnly);
+            deletedOnly: isAdmin && deletedOnly,
+            isAuthenticated: Current.IsAuthenticated,
+            roleNames: Current.Roles);
 
         return MessageModel<PageModel<WikiDocumentVo>>.Success("查询成功", result);
     }
 
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [AllowAnonymous]
     public async Task<MessageModel<List<WikiDocumentTreeNodeVo>>> GetTree()
     {
-        var result = await _wikiDocumentService.GetTreeAsync(Current.IsSystemOrAdmin());
+        var result = await _wikiDocumentService.GetTreeAsync(
+            Current.IsSystemOrAdmin(),
+            Current.IsAuthenticated,
+            Current.Roles);
         return MessageModel<List<WikiDocumentTreeNodeVo>>.Success("查询成功", result);
     }
 
     [HttpGet("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [AllowAnonymous]
     public async Task<MessageModel<WikiDocumentDetailVo>> GetById(long id, bool includeDeleted = false)
     {
-        var result = await _wikiDocumentService.GetDetailAsync(id, Current.IsSystemOrAdmin(), Current.IsSystemOrAdmin() && includeDeleted);
+        var result = await _wikiDocumentService.GetDetailAsync(
+            id,
+            Current.IsSystemOrAdmin(),
+            Current.IsSystemOrAdmin() && includeDeleted,
+            Current.IsAuthenticated,
+            Current.Roles);
         if (result == null)
         {
             return MessageModel<WikiDocumentDetailVo>.Failed("文档不存在或无权访问", default!);
@@ -98,10 +108,15 @@ public class WikiController : ControllerBase
     }
 
     [HttpGet("{slug}")]
-    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [AllowAnonymous]
     public async Task<MessageModel<WikiDocumentDetailVo>> GetBySlug(string slug)
     {
-        var result = await _wikiDocumentService.GetBySlugAsync(slug, Current.IsSystemOrAdmin());
+        var result = await _wikiDocumentService.GetBySlugAsync(
+            slug,
+            Current.IsSystemOrAdmin(),
+            includeDeleted: false,
+            isAuthenticated: Current.IsAuthenticated,
+            roleNames: Current.Roles);
         if (result == null)
         {
             return MessageModel<WikiDocumentDetailVo>.Failed("文档不存在或无权访问", default!);

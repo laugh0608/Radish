@@ -1,8 +1,7 @@
 import { lazy, Suspense, type ComponentType } from 'react';
 import i18n from '@/i18n';
 import type { AppDefinition } from './types';
-
-const CONSOLE_ACCESS_PERMISSION = 'console.access';
+import { getVisibleAppsForUser } from './appAccess';
 
 const createLazyWindowApp = (loader: () => Promise<{ default: ComponentType }>): ComponentType => {
   const LazyComponent = lazy(loader);
@@ -150,7 +149,6 @@ export const appRegistry: AppDefinition[] = [
     component: WikiApp,
     type: 'window',
     defaultSize: { width: 1280, height: 820 },
-    requiredRoles: ['User'],
     category: 'content',
   },
   {
@@ -269,18 +267,14 @@ export const getAppById = (id: string): AppDefinition | undefined => {
 /**
  * 根据用户角色过滤可见应用
  */
-export const getVisibleApps = (userRoles: string[] = [], userPermissions: string[] = []): AppDefinition[] => {
-  const normalizedRoles = new Set(userRoles.map((role) => role.trim().toLowerCase()));
-  const normalizedPermissions = new Set(userPermissions.map((permission) => permission.trim().toLowerCase()));
-  const hasConsoleAccess = normalizedRoles.has('admin') ||
-    normalizedRoles.has('system') ||
-    normalizedPermissions.has(CONSOLE_ACCESS_PERMISSION);
-
-  return appRegistry.filter((app) => {
-    if (app.id === 'console') {
-      return hasConsoleAccess;
-    }
-
-    return true;
+export const getVisibleApps = (
+  isAuthenticated: boolean = false,
+  userRoles: string[] = [],
+  userPermissions: string[] = []
+): AppDefinition[] => {
+  return getVisibleAppsForUser(appRegistry, {
+    isAuthenticated,
+    userRoles,
+    userPermissions,
   });
 };

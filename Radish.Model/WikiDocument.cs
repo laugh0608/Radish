@@ -39,6 +39,15 @@ public class WikiDocument : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(IsNullable = false)]
     public int Status { get; set; } = (int)WikiDocumentStatusEnum.Draft;
 
+    [SugarColumn(IsNullable = false)]
+    public int Visibility { get; set; } = (int)WikiDocumentVisibilityEnum.Authenticated;
+
+    [SugarColumn(Length = 1000, IsNullable = true)]
+    public string? AllowedRoles { get; set; }
+
+    [SugarColumn(Length = 2000, IsNullable = true)]
+    public string? AllowedPermissions { get; set; }
+
     [SugarColumn(Length = 30, IsNullable = false)]
     public string SourceType { get; set; } = "Manual";
 

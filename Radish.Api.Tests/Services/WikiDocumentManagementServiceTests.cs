@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -9,6 +10,7 @@ using Moq;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
+using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Service;
@@ -125,10 +127,15 @@ public class WikiDocumentManagementServiceTests
     {
         var mapper = new Mock<IMapper>();
         var revisionRepository = new Mock<IBaseRepository<WikiDocumentRevision>>();
+        var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
+        consoleAuthorizationService
+            .Setup(service => service.GetPermissionKeysByRolesAsync(It.IsAny<IReadOnlyCollection<string>>()))
+            .ReturnsAsync([]);
         return new WikiDocumentService(
             mapper.Object,
             wikiDocumentRepository.Object,
             revisionRepository.Object,
+            consoleAuthorizationService.Object,
             Options.Create(new DocumentOptions()));
     }
 }

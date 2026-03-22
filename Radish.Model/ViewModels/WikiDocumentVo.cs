@@ -11,6 +11,9 @@ public class WikiDocumentVo
     public long? VoParentId { get; set; }
     public int VoSort { get; set; }
     public int VoStatus { get; set; }
+    public int VoVisibility { get; set; }
+    public List<string> VoAllowedRoles { get; set; } = new();
+    public List<string> VoAllowedPermissions { get; set; } = new();
     public string VoSourceType { get; set; } = string.Empty;
     public string? VoSourcePath { get; set; }
     public int VoVersion { get; set; }
@@ -34,6 +37,9 @@ public class WikiDocumentDetailVo
     public long? VoParentId { get; set; }
     public int VoSort { get; set; }
     public int VoStatus { get; set; }
+    public int VoVisibility { get; set; }
+    public List<string> VoAllowedRoles { get; set; } = new();
+    public List<string> VoAllowedPermissions { get; set; } = new();
     public string VoSourceType { get; set; } = string.Empty;
     public string? VoSourcePath { get; set; }
     public int VoVersion { get; set; }
@@ -54,6 +60,7 @@ public class WikiDocumentTreeNodeVo
     public long? VoParentId { get; set; }
     public int VoSort { get; set; }
     public int VoStatus { get; set; }
+    public int VoVisibility { get; set; }
     public List<WikiDocumentTreeNodeVo> VoChildren { get; set; } = new();
 }
 

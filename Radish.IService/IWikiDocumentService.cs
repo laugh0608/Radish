@@ -16,13 +16,28 @@ public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentV
         long? parentId = null,
         bool includeUnpublished = false,
         bool includeDeleted = false,
-        bool deletedOnly = false);
+        bool deletedOnly = false,
+        bool isAuthenticated = false,
+        IReadOnlyCollection<string>? roleNames = null);
 
-    Task<List<WikiDocumentTreeNodeVo>> GetTreeAsync(bool includeUnpublished = false);
+    Task<List<WikiDocumentTreeNodeVo>> GetTreeAsync(
+        bool includeUnpublished = false,
+        bool isAuthenticated = false,
+        IReadOnlyCollection<string>? roleNames = null);
 
-    Task<WikiDocumentDetailVo?> GetDetailAsync(long id, bool includeUnpublished = false, bool includeDeleted = false);
+    Task<WikiDocumentDetailVo?> GetDetailAsync(
+        long id,
+        bool includeUnpublished = false,
+        bool includeDeleted = false,
+        bool isAuthenticated = false,
+        IReadOnlyCollection<string>? roleNames = null);
 
-    Task<WikiDocumentDetailVo?> GetBySlugAsync(string slug, bool includeUnpublished = false, bool includeDeleted = false);
+    Task<WikiDocumentDetailVo?> GetBySlugAsync(
+        string slug,
+        bool includeUnpublished = false,
+        bool includeDeleted = false,
+        bool isAuthenticated = false,
+        IReadOnlyCollection<string>? roleNames = null);
 
     Task<long> CreateDocumentAsync(CreateWikiDocumentDto createDto, long operatorId, string operatorName, long tenantId);
 

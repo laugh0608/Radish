@@ -25,6 +25,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
 
     private readonly IWikiDocumentRepository _wikiDocumentRepository;
     private readonly IBaseRepository<WikiDocumentRevision> _wikiDocumentRevisionRepository;
+    private readonly IConsoleAuthorizationService _consoleAuthorizationService;
     private readonly IMapper _mapper;
     private readonly DocumentOptions _documentOptions;
 
@@ -32,12 +33,14 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         IMapper mapper,
         IWikiDocumentRepository wikiDocumentRepository,
         IBaseRepository<WikiDocumentRevision> wikiDocumentRevisionRepository,
+        IConsoleAuthorizationService consoleAuthorizationService,
         IOptions<DocumentOptions> documentOptions)
         : base(mapper, wikiDocumentRepository)
     {
         _mapper = mapper;
         _wikiDocumentRepository = wikiDocumentRepository;
         _wikiDocumentRevisionRepository = wikiDocumentRevisionRepository;
+        _consoleAuthorizationService = consoleAuthorizationService;
         _documentOptions = documentOptions.Value;
     }
 
@@ -49,7 +52,9 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         long? parentId = null,
         bool includeUnpublished = false,
         bool includeDeleted = false,
-        bool deletedOnly = false)
+        bool deletedOnly = false,
+        bool isAuthenticated = false,
+        IReadOnlyCollection<string>? roleNames = null)
     {
         if (pageIndex < 1)
         {
@@ -73,6 +78,8 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         {
             whereExpression.And(d => d.SourceType != BuiltInSourceType);
         }
+
+        whereExpression.And(await BuildAccessExpressionAsync(isAuthenticated, roleNames));
 
         if (!string.IsNullOrWhiteSpace(keyword))
         {
@@ -139,10 +146,14 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         };
     }
 
-    public async Task<List<WikiDocumentTreeNodeVo>> GetTreeAsync(bool includeUnpublished = false)
+    public async Task<List<WikiDocumentTreeNodeVo>> GetTreeAsync(
+        bool includeUnpublished = false,
+        bool isAuthenticated = false,
+        IReadOnlyCollection<string>? roleNames = null)
     {
         var whereExpression = Expressionable.Create<WikiDocument>()
-            .And(d => !d.IsDeleted);
+            .And(d => !d.IsDeleted)
+            .And(await BuildAccessExpressionAsync(isAuthenticated, roleNames));
 
         if (!ShouldIncludeBuiltInDocuments())
         {
@@ -163,6 +174,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
                 VoParentId = document.VoParentId,
                 VoSort = document.VoSort,
                 VoStatus = document.VoStatus,
+                VoVisibility = document.VoVisibility,
                 VoChildren = new List<WikiDocumentTreeNodeVo>()
             })
             .ToList();
@@ -184,7 +196,12 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         return roots;
     }
 
-    public async Task<WikiDocumentDetailVo?> GetDetailAsync(long id, bool includeUnpublished = false, bool includeDeleted = false)
+    public async Task<WikiDocumentDetailVo?> GetDetailAsync(
+        long id,
+        bool includeUnpublished = false,
+        bool includeDeleted = false,
+        bool isAuthenticated = false,
+        IReadOnlyCollection<string>? roleNames = null)
     {
         var document = includeDeleted
             ? await _wikiDocumentRepository.QueryByIdIncludingDeletedAsync(id)
@@ -194,7 +211,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             return null;
         }
 
-        if (!ShouldExposeDocument(document, includeUnpublished, includeDeleted))
+        if (!await ShouldExposeDocumentAsync(document, includeUnpublished, includeDeleted, isAuthenticated, roleNames))
         {
             return null;
         }
@@ -202,7 +219,12 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         return _mapper.Map<WikiDocumentDetailVo>(document);
     }
 
-    public async Task<WikiDocumentDetailVo?> GetBySlugAsync(string slug, bool includeUnpublished = false, bool includeDeleted = false)
+    public async Task<WikiDocumentDetailVo?> GetBySlugAsync(
+        string slug,
+        bool includeUnpublished = false,
+        bool includeDeleted = false,
+        bool isAuthenticated = false,
+        IReadOnlyCollection<string>? roleNames = null)
     {
         if (string.IsNullOrWhiteSpace(slug))
         {
@@ -216,7 +238,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             return null;
         }
 
-        if (!ShouldExposeDocument(document, includeUnpublished, includeDeleted))
+        if (!await ShouldExposeDocumentAsync(document, includeUnpublished, includeDeleted, isAuthenticated, roleNames))
         {
             return null;
         }
@@ -234,6 +256,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         var title = NormalizeRequired(createDto.Title, nameof(createDto.Title));
         var markdownContent = NormalizeRequired(createDto.MarkdownContent, nameof(createDto.MarkdownContent));
         var slug = await EnsureUniqueSlugForCreateAsync(createDto.Slug, title);
+        ValidateAccessPolicy(createDto.Visibility, createDto.AllowedRoles, createDto.AllowedPermissions);
 
         await ValidateParentDocumentAsync(createDto.ParentId, null);
 
@@ -247,6 +270,9 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             ParentId = createDto.ParentId,
             Sort = createDto.Sort,
             Status = (int)WikiDocumentStatusEnum.Draft,
+            Visibility = NormalizeVisibility(createDto.Visibility),
+            AllowedRoles = SerializeAccessList(createDto.AllowedRoles),
+            AllowedPermissions = SerializeAccessList(createDto.AllowedPermissions),
             SourceType = "Custom",
             SourcePath = null,
             Version = 1,
@@ -286,6 +312,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         var title = NormalizeRequired(updateDto.Title, nameof(updateDto.Title));
         var markdownContent = NormalizeRequired(updateDto.MarkdownContent, nameof(updateDto.MarkdownContent));
         var slug = await EnsureUniqueSlugForUpdateAsync(updateDto.Slug, title, id);
+        ValidateAccessPolicy(updateDto.Visibility, updateDto.AllowedRoles, updateDto.AllowedPermissions);
 
         await ValidateParentDocumentAsync(updateDto.ParentId, id);
 
@@ -296,7 +323,10 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             document.MarkdownContent != markdownContent ||
             document.ParentId != updateDto.ParentId ||
             document.Sort != updateDto.Sort ||
-            document.CoverAttachmentId != updateDto.CoverAttachmentId;
+            document.CoverAttachmentId != updateDto.CoverAttachmentId ||
+            NormalizeVisibility(document.Visibility) != NormalizeVisibility(updateDto.Visibility) ||
+            document.AllowedRoles != SerializeAccessList(updateDto.AllowedRoles) ||
+            document.AllowedPermissions != SerializeAccessList(updateDto.AllowedPermissions);
 
         document.Title = title;
         document.Slug = slug;
@@ -305,6 +335,9 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         document.ParentId = updateDto.ParentId;
         document.Sort = updateDto.Sort;
         document.CoverAttachmentId = updateDto.CoverAttachmentId;
+        document.Visibility = NormalizeVisibility(updateDto.Visibility);
+        document.AllowedRoles = SerializeAccessList(updateDto.AllowedRoles);
+        document.AllowedPermissions = SerializeAccessList(updateDto.AllowedPermissions);
         document.ModifyId = operatorId;
         document.ModifyBy = ResolveOperatorName(operatorName);
         document.ModifyTime = DateTime.Now;
@@ -552,6 +585,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             : Path.GetFileNameWithoutExtension(importDto.File.FileName);
 
         var slug = await EnsureUniqueSlugForCreateAsync(importDto.Slug, title);
+        ValidateAccessPolicy(importDto.Visibility, importDto.AllowedRoles, importDto.AllowedPermissions);
 
         await ValidateParentDocumentAsync(importDto.ParentId, null);
 
@@ -568,6 +602,9 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             ParentId = importDto.ParentId,
             Sort = importDto.Sort,
             Status = status,
+            Visibility = NormalizeVisibility(importDto.Visibility),
+            AllowedRoles = SerializeAccessList(importDto.AllowedRoles),
+            AllowedPermissions = SerializeAccessList(importDto.AllowedPermissions),
             SourceType = "Imported",
             SourcePath = importDto.File.FileName,
             Version = 1,
@@ -592,7 +629,12 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             return null;
         }
 
-        if (!ShouldExposeDocument(document, includeUnpublished, includeDeleted: false))
+        if (!ShouldIncludeBuiltInDocuments() && IsBuiltInSourceType(document.SourceType))
+        {
+            return null;
+        }
+
+        if (!includeUnpublished && document.Status != (int)WikiDocumentStatusEnum.Published)
         {
             return null;
         }
@@ -687,9 +729,118 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 
+    private static int NormalizeVisibility(int visibility)
+    {
+        return visibility is >= (int)WikiDocumentVisibilityEnum.Public and <= (int)WikiDocumentVisibilityEnum.Restricted
+            ? visibility
+            : (int)WikiDocumentVisibilityEnum.Authenticated;
+    }
+
+    private static string? SerializeAccessList(IEnumerable<string>? values)
+    {
+        if (values == null)
+        {
+            return null;
+        }
+
+        var normalized = values
+            .Select(value => value?.Trim().ToLowerInvariant())
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return normalized.Count == 0
+            ? null
+            : $"|{string.Join("|", normalized)}|";
+    }
+
+    private static IReadOnlyCollection<string> ParseAccessList(string? rawValue)
+    {
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return [];
+        }
+
+        return rawValue
+            .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private async Task<Expression<Func<WikiDocument, bool>>> BuildAccessExpressionAsync(
+        bool isAuthenticated,
+        IReadOnlyCollection<string>? roleNames)
+    {
+        var normalizedRoles = (roleNames ?? [])
+            .Select(role => role.Trim().ToLowerInvariant())
+            .Where(role => !string.IsNullOrWhiteSpace(role))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var normalizedPermissions = isAuthenticated && normalizedRoles.Length > 0
+            ? (await _consoleAuthorizationService.GetPermissionKeysByRolesAsync(normalizedRoles))
+                .Select(permission => permission.Trim().ToLowerInvariant())
+                .Where(permission => !string.IsNullOrWhiteSpace(permission))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray()
+            : [];
+
+        var accessExpression = Expressionable.Create<WikiDocument>()
+            .And(document => document.Visibility == (int)WikiDocumentVisibilityEnum.Public);
+
+        if (isAuthenticated)
+        {
+            accessExpression.Or(document =>
+                document.Visibility == (int)WikiDocumentVisibilityEnum.Authenticated ||
+                document.Visibility <= 0);
+        }
+
+        foreach (var role in normalizedRoles)
+        {
+            var marker = $"|{role}|";
+            accessExpression.Or(document =>
+                document.Visibility == (int)WikiDocumentVisibilityEnum.Restricted &&
+                document.AllowedRoles != null &&
+                document.AllowedRoles.Contains(marker));
+        }
+
+        foreach (var permission in normalizedPermissions)
+        {
+            var marker = $"|{permission}|";
+            accessExpression.Or(document =>
+                document.Visibility == (int)WikiDocumentVisibilityEnum.Restricted &&
+                document.AllowedPermissions != null &&
+                document.AllowedPermissions.Contains(marker));
+        }
+
+        return accessExpression.ToExpression();
+    }
+
     private static string ResolveOperatorName(string? operatorName)
     {
         return string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName.Trim();
+    }
+
+    private static void ValidateAccessPolicy(
+        int visibility,
+        IEnumerable<string>? allowedRoles,
+        IEnumerable<string>? allowedPermissions)
+    {
+        if (NormalizeVisibility(visibility) != (int)WikiDocumentVisibilityEnum.Restricted)
+        {
+            return;
+        }
+
+        var hasAllowedRoles = (allowedRoles ?? [])
+            .Any(role => !string.IsNullOrWhiteSpace(role));
+        var hasAllowedPermissions = (allowedPermissions ?? [])
+            .Any(permission => !string.IsNullOrWhiteSpace(permission));
+
+        if (!hasAllowedRoles && !hasAllowedPermissions)
+        {
+            throw new InvalidOperationException("受限文档至少需要配置一个角色或权限");
+        }
     }
 
     private async Task ValidateParentDocumentAsync(long? parentId, long? currentDocumentId)

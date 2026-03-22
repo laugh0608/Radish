@@ -7,6 +7,9 @@ export interface WikiDocumentVo {
   voParentId?: number | null;
   voSort: number;
   voStatus: number;
+  voVisibility: number;
+  voAllowedRoles: string[];
+  voAllowedPermissions: string[];
   voSourceType: string;
   voSourcePath?: string | null;
   voVersion: number;
@@ -46,6 +49,7 @@ export interface WikiDocumentTreeNodeVo {
   voParentId?: number | null;
   voSort: number;
   voStatus: number;
+  voVisibility: number;
   voChildren: WikiDocumentTreeNodeVo[];
 }
 
@@ -75,6 +79,9 @@ export interface CreateWikiDocumentRequest {
   parentId?: number | null;
   sort?: number;
   coverAttachmentId?: number | null;
+  visibility?: number;
+  allowedRoles?: string[];
+  allowedPermissions?: string[];
 }
 
 export interface UpdateWikiDocumentRequest extends CreateWikiDocumentRequest {
@@ -88,6 +95,9 @@ export interface ImportWikiMarkdownRequest {
   parentId?: number | null;
   sort?: number;
   publishAfterImport?: boolean;
+  visibility?: number;
+  allowedRoles?: string[];
+  allowedPermissions?: string[];
 }
 
 export const WikiDocumentStatus = {
@@ -97,3 +107,11 @@ export const WikiDocumentStatus = {
 } as const;
 
 export type WikiDocumentStatusValue = typeof WikiDocumentStatus[keyof typeof WikiDocumentStatus];
+
+export const WikiDocumentVisibility = {
+  Public: 1,
+  Authenticated: 2,
+  Restricted: 3,
+} as const;
+
+export type WikiDocumentVisibilityValue = typeof WikiDocumentVisibility[keyof typeof WikiDocumentVisibility];

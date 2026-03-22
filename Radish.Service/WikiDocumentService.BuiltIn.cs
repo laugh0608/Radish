@@ -139,7 +139,12 @@ public partial class WikiDocumentService
 
     private bool ShouldIncludeBuiltInDocuments() => _documentOptions.ShowBuiltInDocs;
 
-    private bool ShouldExposeDocument(WikiDocument document, bool includeUnpublished, bool includeDeleted = false)
+    private async Task<bool> ShouldExposeDocumentAsync(
+        WikiDocument document,
+        bool includeUnpublished,
+        bool includeDeleted = false,
+        bool isAuthenticated = false,
+        IReadOnlyCollection<string>? roleNames = null)
     {
         if (document.IsDeleted && !includeDeleted)
         {
@@ -151,7 +156,47 @@ public partial class WikiDocumentService
             return false;
         }
 
-        return includeUnpublished || document.Status == (int)WikiDocumentStatusEnum.Published;
+        if (!includeUnpublished && document.Status != (int)WikiDocumentStatusEnum.Published)
+        {
+            return false;
+        }
+
+        var normalizedVisibility = NormalizeVisibility(document.Visibility);
+        if (normalizedVisibility == (int)WikiDocumentVisibilityEnum.Public)
+        {
+            return true;
+        }
+
+        if (normalizedVisibility == (int)WikiDocumentVisibilityEnum.Authenticated)
+        {
+            return isAuthenticated;
+        }
+
+        if (!isAuthenticated)
+        {
+            return false;
+        }
+
+        var normalizedRoles = (roleNames ?? [])
+            .Select(role => role.Trim().ToLowerInvariant())
+            .Where(role => !string.IsNullOrWhiteSpace(role))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        var allowedRoles = ParseAccessList(document.AllowedRoles);
+        if (allowedRoles.Intersect(normalizedRoles, StringComparer.OrdinalIgnoreCase).Any())
+        {
+            return true;
+        }
+
+        if (normalizedRoles.Length == 0)
+        {
+            return false;
+        }
+
+        var permissionKeys = await _consoleAuthorizationService.GetPermissionKeysByRolesAsync(normalizedRoles);
+        var allowedPermissions = ParseAccessList(document.AllowedPermissions);
+        return allowedPermissions.Intersect(permissionKeys, StringComparer.OrdinalIgnoreCase).Any();
     }
 
     private static bool IsBuiltInSourceType(string? sourceType)
@@ -284,6 +329,7 @@ public partial class WikiDocumentService
                 ParentId = null,
                 Sort = descriptor.Sort,
                 Status = (int)WikiDocumentStatusEnum.Published,
+                Visibility = (int)WikiDocumentVisibilityEnum.Public,
                 SourceType = BuiltInSourceType,
                 SourcePath = descriptor.SourcePath,
                 Version = 1,
@@ -322,6 +368,9 @@ public partial class WikiDocumentService
         existing.Summary = descriptor.Summary;
         existing.MarkdownContent = descriptor.MarkdownContent;
         existing.Status = (int)WikiDocumentStatusEnum.Published;
+        existing.Visibility = (int)WikiDocumentVisibilityEnum.Public;
+        existing.AllowedRoles = null;
+        existing.AllowedPermissions = null;
         existing.SourcePath = descriptor.SourcePath;
         existing.PublishedAt ??= DateTime.Now;
         existing.ModifyId = 0;
