@@ -224,7 +224,7 @@
 .toolbarTitle {
   font-size: 20px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   margin: 0;
 }
 
@@ -237,23 +237,23 @@
   padding: 6px 14px;
   font-size: 13px;
   background-color: transparent;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--theme-border-strong);
   border-radius: 6px;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .sortButton:hover {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
-  color: #1f2937;
+  background-color: var(--theme-bg-hover);
+  border-color: var(--theme-text-placeholder);
+  color: var(--theme-text-primary);
 }
 
 .sortButton.sortActive {
-  background-color: #2d6cdf;
-  border-color: #2d6cdf;
+  background-color: var(--theme-brand-primary);
+  border-color: var(--theme-brand-primary);
   color: #fff;
   font-weight: 600;
 }
@@ -294,21 +294,21 @@
   width: 100%;
   padding: 8px 36px 8px 14px;
   font-size: 14px;
-  background-color: #f9fafb;
-  border: 1px solid #d1d5db;
+  background-color: var(--theme-bg-component);
+  border: 1px solid var(--theme-border-strong);
   border-radius: 8px;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   outline: none;
   transition: all 0.2s ease;
 }
 
 .searchInput::placeholder {
-  color: #9ca3af;
+  color: var(--theme-text-placeholder);
 }
 
 .searchInput:focus {
-  border-color: #2d6cdf;
-  background-color: #ffffff;
+  border-color: var(--theme-brand-primary);
+  background-color: var(--theme-bg-surface);
   box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
 }
 
@@ -320,10 +320,10 @@
   width: 20px;
   height: 20px;
   padding: 0;
-  background-color: #d1d5db;
+  background-color: var(--theme-border-strong);
   border: none;
   border-radius: 50%;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
   font-size: 14px;
   line-height: 1;
   cursor: pointer;
@@ -334,8 +334,8 @@
 }
 
 .clearButton:hover {
-  background-color: #9ca3af;
-  color: #1f2937;
+  background-color: var(--theme-text-placeholder);
+  color: var(--theme-text-primary);
 }
 
 .postsFeed {
@@ -350,7 +350,7 @@
   text-align: center;
   padding: 40px 20px;
   font-size: 14px;
-  color: #9ca3af;
+  color: var(--theme-text-placeholder);
 }
 
 .pagination {
@@ -368,18 +368,18 @@
   min-width: 36px;
   height: 36px;
   padding: 0 10px;
-  background-color: #f9fafb;
-  border: 1px solid #d1d5db;
+  background-color: var(--theme-bg-component);
+  border: 1px solid var(--theme-border-strong);
   border-radius: 6px;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .paginationButton:hover:not(:disabled) {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
+  background-color: var(--theme-bg-hover);
+  border-color: var(--theme-text-placeholder);
 }
 
 .paginationButton:disabled {
@@ -388,13 +388,13 @@
 }
 
 .paginationButton.paginationActive {
-  background-color: #2d6cdf;
-  border-color: #2d6cdf;
+  background-color: var(--theme-brand-primary);
+  border-color: var(--theme-brand-primary);
   font-weight: 600;
 }
 
 .paginationEllipsis {
-  color: #9ca3af;
+  color: var(--theme-text-placeholder);
   padding: 0 4px;
   user-select: none;
 }
@@ -442,17 +442,17 @@
   gap: 8px;
   padding: 8px 16px;
   background-color: transparent;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--theme-border-strong);
   border-radius: 6px;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .backButton:hover {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
+  background-color: var(--theme-bg-hover);
+  border-color: var(--theme-text-placeholder);
   transform: translateX(-2px);
 }
 

@@ -224,7 +224,7 @@ export const ExperienceDetailApp = () => {
           <div className={styles.overview}>
             <div className={styles.statCard}>
               <div className={styles.statLabel}>当前等级</div>
-              <div className={styles.statValue} style={{ color: experience.voThemeColor || '#3b82f6' }}>
+              <div className={styles.statValue} style={{ color: experience.voThemeColor || 'var(--theme-brand-primary)' }}>
                 Lv.{experience.voCurrentLevel} {experience.voCurrentLevelName}
               </div>
             </div>

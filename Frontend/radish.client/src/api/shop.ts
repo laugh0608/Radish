@@ -328,18 +328,18 @@ export function getOrderStatusDisplay(status: string): string {
 export function getOrderStatusColor(status: string): string {
   switch (status) {
     case OrderStatus.Pending:
-      return '#faad14'; // 橙色
+      return 'var(--theme-state-warning)'; // 橙色
     case OrderStatus.Paid:
-      return '#1890ff'; // 蓝色
+      return 'var(--theme-state-info)'; // 蓝色
     case OrderStatus.Completed:
-      return '#52c41a'; // 绿色
+      return 'var(--theme-state-success)'; // 绿色
     case OrderStatus.Cancelled:
-      return '#8c8c8c'; // 灰色
+      return 'var(--theme-text-secondary)'; // 灰色
     case OrderStatus.Refunded:
       return '#722ed1'; // 紫色
     case OrderStatus.Failed:
       return '#f5222d'; // 红色
     default:
-      return '#8c8c8c';
+      return 'var(--theme-text-secondary)';
   }
 }

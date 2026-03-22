@@ -13,7 +13,7 @@
   align-items: center;
   padding: 16px 20px;
   border-bottom: 1px solid #e5e7eb;
-  background-color: #ffffff;
+  background-color: var(--theme-bg-surface);
 }
 
 .backButton {
@@ -22,17 +22,17 @@
   gap: 8px;
   padding: 8px 16px;
   background-color: transparent;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--theme-border-strong);
   border-radius: 6px;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .backButton:hover {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
+  background-color: var(--theme-bg-hover);
+  border-color: var(--theme-border-stronger);
   transform: translateX(-2px);
 }
 
@@ -66,9 +66,9 @@
 .commentCta {
   margin-top: 8px;
   padding: 14px;
-  background: #f8fafc;
+  background: var(--theme-bg-component);
   border-radius: 14px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border-soft);
   display: flex;
   justify-content: center;
 }
@@ -80,7 +80,7 @@
   background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
   border: none;
   border-radius: 999px;
-  color: #0f172a;
+  color: var(--theme-text-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 10px 20px rgba(52, 211, 153, 0.22);
@@ -98,8 +98,8 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid #e2e8f0;
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, transparent);
+  border: 1px solid var(--theme-border-soft);
   padding: 10px;
   border-radius: 16px;
   box-shadow: 0 12px 22px rgba(15, 23, 42, 0.12);
@@ -112,8 +112,8 @@
   height: 38px;
   border-radius: 12px;
   border: none;
-  background: #f1f5f9;
-  color: #1f2937;
+  background: var(--theme-bg-hover);
+  color: var(--theme-text-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -139,8 +139,8 @@
 }
 
 .toolButton:hover {
-  background: #e2e8f0;
-  color: #0f172a;
+  background: var(--theme-border-soft);
+  color: var(--theme-text-primary);
   transform: translateY(-1px);
 }
 

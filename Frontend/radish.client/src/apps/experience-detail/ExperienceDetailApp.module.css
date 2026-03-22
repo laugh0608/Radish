@@ -7,7 +7,7 @@
 .header {
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 2px solid var(--theme-border-soft);
 }
 
 .title {
@@ -17,7 +17,7 @@
   margin: 0;
   font-size: 22px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--theme-text-primary);
 }
 
 .loading,
@@ -28,7 +28,7 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: #999;
+  color: var(--theme-text-placeholder);
 }
 
 .spinner {
@@ -45,14 +45,14 @@
 }
 
 .error {
-  color: #d14343;
+  color: var(--theme-state-danger);
 }
 
 .retryButton {
   margin-top: 16px;
   padding: 8px 24px;
-  background: #667eea;
-  color: white;
+  background: var(--theme-brand-primary);
+  color: #ffffff;
   border: none;
   border-radius: 6px;
   cursor: pointer;
@@ -61,12 +61,12 @@
 }
 
 .retryButton:hover {
-  background: #5568d3;
+  background: var(--theme-brand-hover);
 }
 
 /* 经验值概览 */
 .experienceBarSection {
-  background: white;
+  background: var(--theme-bg-surface);
   padding: 16px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -88,7 +88,7 @@
 .expBarLabel {
   font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
   margin-bottom: 2px;
 }
 
@@ -100,7 +100,7 @@
 }
 
 .statCard {
-  background: white;
+  background: var(--theme-bg-surface);
   padding: 10px 8px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -109,14 +109,14 @@
 
 .statLabel {
   font-size: 12px;
-  color: #666;
+  color: var(--theme-text-secondary);
   margin-bottom: 4px;
 }
 
 .statValue {
   font-size: 16px;
   font-weight: 700;
-  color: #667eea;
+  color: var(--theme-brand-primary);
 }
 
 /* 图表区域 */
@@ -128,7 +128,7 @@
 }
 
 .chartSection {
-  background: white;
+  background: var(--theme-bg-surface);
   padding: 16px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -149,7 +149,7 @@
 .chartTitle {
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--theme-text-primary);
   margin: 0;
 }
 
@@ -160,29 +160,29 @@
 
 .controlButton {
   padding: 4px 12px;
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-strong);
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
-  color: #666;
+  color: var(--theme-text-secondary);
   transition: all 0.2s;
 }
 
 .controlButton:hover {
-  border-color: #667eea;
-  color: #667eea;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .controlButton.active {
-  background: #667eea;
-  border-color: #667eea;
-  color: white;
+  background: var(--theme-brand-primary);
+  border-color: var(--theme-brand-primary);
+  color: #ffffff;
 }
 
 /* 交易明细 */
 .transactionSection {
-  background: white;
+  background: var(--theme-bg-surface);
   padding: 16px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -191,7 +191,7 @@
 .sectionTitle {
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--theme-text-primary);
   margin: 0 0 12px 0;
 }
 
@@ -209,16 +209,16 @@
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfcff 100%);
+  background: linear-gradient(180deg, var(--theme-bg-surface) 0%, var(--theme-bg-component) 100%);
   border-radius: 12px;
-  border: 1px solid #eef0f6;
+  border: 1px solid var(--theme-border-soft);
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 
 .transactionItem:hover {
   transform: translateY(-1px);
-  border-color: #dbe2f0;
+  border-color: var(--theme-border-strong);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
@@ -230,15 +230,15 @@
   bottom: 0;
   width: 4px;
   border-radius: 12px 0 0 12px;
-  background: #e5e7eb;
+  background: var(--theme-border-soft);
 }
 
 .positive::before {
-  background: linear-gradient(180deg, #34d399 0%, #22c55e 100%);
+  background: linear-gradient(180deg, var(--theme-state-success) 0%, color-mix(in srgb, var(--theme-state-success) 80%, var(--theme-accent-ink) 20%) 100%);
 }
 
 .negative::before {
-  background: linear-gradient(180deg, #f97316 0%, #ef4444 100%);
+  background: linear-gradient(180deg, var(--theme-state-warning) 0%, var(--theme-state-danger) 100%);
 }
 
 .txBadge {
@@ -248,8 +248,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #1f2937;
-  background: #eef2ff;
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-hover);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -257,13 +257,13 @@
 }
 
 .txBadgePositive {
-  color: #16a34a;
-  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: var(--theme-state-success);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-state-success) 15%, transparent) 0%, color-mix(in srgb, var(--theme-state-success) 25%, transparent) 100%);
 }
 
 .txBadgeNegative {
-  color: #dc2626;
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  color: var(--theme-state-danger);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-state-danger) 15%, transparent) 0%, color-mix(in srgb, var(--theme-state-danger) 25%, transparent) 100%);
 }
 
 .txInfo {
@@ -283,7 +283,7 @@
 .txType {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--theme-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -294,8 +294,8 @@
   padding: 2px 8px;
   font-size: 11px;
   font-weight: 700;
-  color: #7c2d12;
-  background: #ffedd5;
+  color: var(--theme-state-warning);
+  background: color-mix(in srgb, var(--theme-state-warning) 15%, transparent);
   border-radius: 999px;
   letter-spacing: 0.2px;
 }
@@ -309,17 +309,17 @@
 
 .txTime {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-placeholder);
 }
 
 .txLevelChange {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--theme-text-placeholder);
 }
 
 .txRemark {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
   margin-top: 2px;
 }
 
@@ -334,21 +334,21 @@
 .txAmount {
   font-size: 20px;
   font-weight: 800;
-  color: #111827;
+  color: var(--theme-text-primary);
   letter-spacing: 0.3px;
 }
 
 .positive .txAmount {
-  color: #16a34a;
+  color: var(--theme-state-success);
 }
 
 .negative .txAmount {
-  color: #dc2626;
+  color: var(--theme-state-danger);
 }
 
 .txBalance {
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--theme-text-placeholder);
 }
 
 /* 分页 */
@@ -358,7 +358,7 @@
   align-items: center;
   gap: 12px;
   padding-top: 16px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--theme-border-soft);
 }
 
 .pageButton {
@@ -366,19 +366,19 @@
   align-items: center;
   gap: 4px;
   padding: 6px 12px;
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-strong);
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
-  color: #666;
+  color: var(--theme-text-secondary);
   transition: all 0.2s;
 }
 
 .pageButton:hover:not(:disabled) {
-  background: #f5f5f5;
-  border-color: #667eea;
-  color: #667eea;
+  background: var(--theme-bg-component);
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .pageButton:disabled {
@@ -388,7 +388,7 @@
 
 .pageInfo {
   font-size: 13px;
-  color: #666;
+  color: var(--theme-text-secondary);
   min-width: 100px;
   text-align: center;
 }

@@ -12,24 +12,24 @@
 
 .backButton {
   background: none;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--theme-border-strong);
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 14px;
   transition: all 0.2s;
 }
 
 .backButton:hover {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .title {
   font-size: 24px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0;
 }
 
@@ -39,14 +39,14 @@
   align-items: center;
   justify-content: center;
   height: 300px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #1890ff;
+  border: 3px solid var(--theme-border-soft);
+  border-top: 3px solid var(--theme-brand-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -65,19 +65,19 @@
 }
 
 .orderCard {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--theme-border-soft);
 }
 
 .orderCard:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #1890ff;
+  border-color: var(--theme-brand-primary);
 }
 
 .orderHeader {
@@ -86,12 +86,12 @@
   align-items: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--theme-border-soft);
 }
 
 .orderNo {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .orderStatus {
@@ -129,7 +129,7 @@
 .productName {
   font-size: 16px;
   font-weight: 500;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0 0 8px 0;
 }
 
@@ -137,12 +137,12 @@
   display: flex;
   gap: 16px;
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .orderTime {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-placeholder);
   text-align: right;
 }
 
@@ -155,19 +155,19 @@
 }
 
 .pageButton {
-  background: white;
-  border: 1px solid #d9d9d9;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-strong);
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 14px;
   transition: all 0.2s;
 }
 
 .pageButton:hover:not(:disabled) {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .pageButton:disabled {
@@ -177,13 +177,13 @@
 
 .pageInfo {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .emptyState {
   text-align: center;
   padding: 80px 24px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .emptyIcon {
@@ -193,7 +193,7 @@
 
 .emptyState h3 {
   font-size: 20px;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0 0 12px 0;
 }
 

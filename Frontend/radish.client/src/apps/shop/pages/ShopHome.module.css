@@ -10,14 +10,14 @@
   align-items: center;
   justify-content: center;
   height: 400px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #1890ff;
+  border: 3px solid var(--theme-border-soft);
+  border-top: 3px solid var(--theme-brand-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -30,11 +30,11 @@
 
 /* 欢迎横幅 */
 .banner {
-  background: linear-gradient(135deg, #1890ff 0%, #40a9ff 100%);
+  background: linear-gradient(135deg, var(--theme-brand-primary) 0%, var(--theme-brand-hover) 100%);
   border-radius: 12px;
   padding: 48px 32px;
   margin-bottom: 32px;
-  color: white;
+  color: #ffffff;
   text-align: center;
 }
 
@@ -71,14 +71,14 @@
 .sectionTitle {
   font-size: 24px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0;
 }
 
 .viewAllButton {
   background: none;
   border: none;
-  color: #1890ff;
+  color: var(--theme-brand-primary);
   font-size: 14px;
   cursor: pointer;
   padding: 8px 0;
@@ -86,7 +86,7 @@
 }
 
 .viewAllButton:hover {
-  color: #40a9ff;
+  color: var(--theme-brand-hover);
 }
 
 /* 分类网格 */
@@ -97,19 +97,19 @@
 }
 
 .categoryCard {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--theme-border-soft);
 }
 
 .categoryCard:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  border-color: #1890ff;
+  border-color: var(--theme-brand-primary);
 }
 
 .categoryIcon {
@@ -119,7 +119,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f0f8ff;
+  background: color-mix(in srgb, var(--theme-brand-primary) 5%, var(--theme-bg-surface));
   border-radius: 8px;
 }
 
@@ -140,21 +140,21 @@
 .categoryName {
   font-size: 18px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0 0 8px 0;
 }
 
 .categoryDescription {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
   margin: 0 0 12px 0;
   line-height: 1.4;
 }
 
 .categoryCount {
   font-size: 12px;
-  color: #1890ff;
-  background: #e6f7ff;
+  color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-primary) 10%, var(--theme-bg-surface));
   padding: 4px 8px;
   border-radius: 4px;
   display: inline-block;
@@ -168,25 +168,25 @@
 }
 
 .productCard {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--theme-border-soft);
 }
 
 .productCard:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  border-color: #1890ff;
+  border-color: var(--theme-brand-primary);
 }
 
 .productImage {
   position: relative;
   height: 160px;
-  background: #fafafa;
+  background: var(--theme-bg-component);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -201,15 +201,15 @@
 
 .defaultProductImage {
   font-size: 48px;
-  color: #d9d9d9;
+  color: var(--theme-border-strong);
 }
 
 .discountBadge {
   position: absolute;
   top: 8px;
   left: 8px;
-  background: #ff4d4f;
-  color: white;
+  background: var(--theme-state-danger);
+  color: #ffffff;
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 4px;
@@ -226,7 +226,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #ffffff;
   font-weight: 500;
 }
 
@@ -237,7 +237,7 @@
 .productName {
   font-size: 16px;
   font-weight: 500;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0 0 12px 0;
   line-height: 1.4;
   display: -webkit-box;
@@ -256,12 +256,12 @@
 .currentPrice {
   font-size: 16px;
   font-weight: 600;
-  color: #ff4d4f;
+  color: var(--theme-state-danger);
 }
 
 .originalPrice {
   font-size: 14px;
-  color: #999;
+  color: var(--theme-text-placeholder);
   text-decoration: line-through;
 }
 
@@ -270,16 +270,16 @@
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .soldCount {
-  color: #999;
+  color: var(--theme-text-placeholder);
 }
 
 .duration {
-  color: #1890ff;
-  background: #e6f7ff;
+  color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-primary) 10%, var(--theme-bg-surface));
   padding: 2px 6px;
   border-radius: 3px;
 }
@@ -288,7 +288,7 @@
 .emptyState {
   text-align: center;
   padding: 48px 24px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .emptyIcon {
@@ -304,12 +304,12 @@
 }
 
 .guideCard {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
   padding: 24px;
   text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--theme-border-soft);
 }
 
 .guideIcon {
@@ -320,13 +320,13 @@
 .guideCard h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0 0 8px 0;
 }
 
 .guideCard p {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
   margin: 0;
   line-height: 1.5;
 }

@@ -27,7 +27,7 @@ export const UserLeaderboardItem = ({ item, getRankIcon, getRankClass, onUserCli
         >
           <span className={styles.userName}>{userName}</span>
         </button>
-        <div className={styles.level} style={{ color: item.voThemeColor || '#9E9E9E' }}>
+        <div className={styles.level} style={{ color: item.voThemeColor || 'var(--theme-text-placeholder)' }}>
           Lv.{item.voCurrentLevel} {item.voCurrentLevelName}
         </div>
       </div>
