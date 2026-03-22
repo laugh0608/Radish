@@ -25,7 +25,9 @@
 
 .postTitle {
   margin: 0 0 8px 0;
-  font-size: 20px;
+  font-size: 24px;
+  font-family: var(--theme-font-serif);
+  line-height: 1.4;
   font-weight: 600;
   color: var(--theme-text-primary);
   text-align: left;
