@@ -190,6 +190,7 @@ export const appRegistry: AppDefinition[] = [
 
 - 常规应用图标默认在桌面可见，避免匿名用户误以为平台只剩下少数入口；
 - `console` 仍按管理员角色或 `console.access` 权限隐藏；
+- 桌面提供全局右键菜单（ContextMenu），支持匿名和登录用户进行刷新、切换国风主题、查看关于等快捷操作；
 - 真正需要登录才能打开的应用当前只保留：
   - `chat`
   - `profile`
