@@ -527,10 +527,7 @@ export const PublishPostModal = ({
   return (
     <BottomSheet isOpen={isOpen} onClose={onClose} title="发布新帖" height="70%" footer={footer}>
       <div className={styles.container}>
-        <div className={styles.lead}>
-          <h3 className={styles.leadTitle}>写下你的新发现</h3>
-          <p className={styles.leadHint}>清晰的标题与排版会获得更多互动</p>
-        </div>
+        
 
         <div className={styles.titleRow}>
           <input
@@ -544,7 +541,41 @@ export const PublishPostModal = ({
           <span className={styles.titleCount}>{title.length}/100</span>
         </div>
 
-        <div className={styles.categorySection}>
+<div className={styles.editorWrapper}>
+          <Suspense fallback={<div className={styles.editorLoading}>编辑器加载中...</div>}>
+            <MarkdownEditor
+              value={content}
+              onChange={setContent}
+              placeholder="帖子内容（支持 Markdown）"
+              onImageUpload={handleImageUpload}
+              onDocumentUpload={handleDocumentUpload}
+              stickerGroups={stickerGroups}
+              stickerMap={stickerMap}
+              onStickerSelect={(selection) => {
+                void handleStickerSelect(selection);
+              }}
+              minHeight={320}
+              className={styles.editor}
+              theme="light"
+              toolbarExtras={editorToolbarExtras}
+            />
+          </Suspense>
+        </div>
+
+        {addWatermark && (
+          <div className={styles.watermarkRow}>
+            <span className={styles.watermarkLabel}>水印文字</span>
+            <input
+              type="text"
+              placeholder="输入水印文字"
+              value={watermarkText}
+              onChange={(e) => setWatermarkText(e.target.value)}
+              className={styles.watermarkInput}
+            />
+          </div>
+        )}
+
+<div className={styles.categorySection}>
           <div className={styles.categoryHeader}>
             <span className={styles.categoryLabel}>帖子分类</span>
             <span className={styles.categoryHint}>发布前请选择一个分类</span>
@@ -895,39 +926,9 @@ export const PublishPostModal = ({
           )}
         </div>
 
-        <div className={styles.editorWrapper}>
-          <Suspense fallback={<div className={styles.editorLoading}>编辑器加载中...</div>}>
-            <MarkdownEditor
-              value={content}
-              onChange={setContent}
-              placeholder="帖子内容（支持 Markdown）"
-              onImageUpload={handleImageUpload}
-              onDocumentUpload={handleDocumentUpload}
-              stickerGroups={stickerGroups}
-              stickerMap={stickerMap}
-              onStickerSelect={(selection) => {
-                void handleStickerSelect(selection);
-              }}
-              minHeight={320}
-              className={styles.editor}
-              theme="light"
-              toolbarExtras={editorToolbarExtras}
-            />
-          </Suspense>
-        </div>
+        
 
-        {addWatermark && (
-          <div className={styles.watermarkRow}>
-            <span className={styles.watermarkLabel}>水印文字</span>
-            <input
-              type="text"
-              placeholder="输入水印文字"
-              value={watermarkText}
-              onChange={(e) => setWatermarkText(e.target.value)}
-              className={styles.watermarkInput}
-            />
-          </div>
-        )}
+        
       </div>
     </BottomSheet>
   );

@@ -139,20 +139,12 @@ export const PublishPostForm = ({
 
   return (
     <div className={styles.container}>
-      <h4 className={styles.title}>发帖</h4>
-
       {!isAuthenticated && (
         <div className={styles.loginPrompt}>
           当前未登录，无法发帖。
           <button type="button" onClick={handleLoginClick} className={styles.loginButton}>
             去登录
           </button>
-        </div>
-      )}
-
-      {isAuthenticated && (
-        <div className={styles.userInfo}>
-          当前用户：{userName || '已登录用户'}
         </div>
       )}
 
@@ -165,45 +157,60 @@ export const PublishPostForm = ({
         disabled={!isAuthenticated || disabled}
       />
 
-      {/* 图片上传选项 */}
       {isAuthenticated && (
-        <div className={styles.uploadOptions}>
-          <label className={styles.optionLabel}>
-            <input
-              type="checkbox"
-              checked={addWatermark}
-              onChange={e => setAddWatermark(e.target.checked)}
-              disabled={disabled}
-            />
-            <span>为上传的图片添加水印</span>
-          </label>
-          {addWatermark && (
-            <input
-              type="text"
-              placeholder="水印文本"
-              value={watermarkText}
-              onChange={e => setWatermarkText(e.target.value)}
-              className={styles.watermarkInput}
-              disabled={disabled}
-            />
-          )}
-          <label className={styles.optionLabel}>
-            <input
-              type="checkbox"
-              checked={generateMultipleSizes}
-              onChange={e => setGenerateMultipleSizes(e.target.checked)}
-              disabled={disabled}
-            />
-            <span>生成多尺寸图片（Small/Medium/Large）</span>
-          </label>
-        </div>
+        <details className={styles.advancedOptions}>
+          <summary>图片处理选项</summary>
+          <div className={styles.uploadOptions}>
+            <label className={styles.optionLabel}>
+              <input
+                type="checkbox"
+                checked={addWatermark}
+                onChange={e => setAddWatermark(e.target.checked)}
+                disabled={disabled}
+              />
+              <span>添加水印</span>
+            </label>
+            {addWatermark && (
+              <input
+                type="text"
+                placeholder="水印文本"
+                value={watermarkText}
+                onChange={e => setWatermarkText(e.target.value)}
+                className={styles.watermarkInput}
+                disabled={disabled}
+              />
+            )}
+            <label className={styles.optionLabel}>
+              <input
+                type="checkbox"
+                checked={generateMultipleSizes}
+                onChange={e => setGenerateMultipleSizes(e.target.checked)}
+                disabled={disabled}
+              />
+              <span>生成多尺寸图片</span>
+            </label>
+            <label className={styles.optionLabel}>
+              <span>插入比例</span>
+              <select
+                className={styles.imageScaleSelect}
+                value={imageScalePercent}
+                onChange={e => setImageScalePercent(Number(e.target.value))}
+                disabled={disabled}
+              >
+                {IMAGE_SCALE_OPTIONS.map(scale => (
+                  <option key={scale} value={scale}>{scale}%</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </details>
       )}
 
       <MarkdownEditor
         value={content}
         onChange={setContent}
         placeholder="帖子内容（支持 Markdown）"
-        minHeight={200}
+        minHeight={300}
         disabled={!isAuthenticated || disabled}
         showToolbar={true}
         onImageUpload={handleImageUpload}
@@ -215,21 +222,7 @@ export const PublishPostForm = ({
         }}
       />
 
-      {isAuthenticated && (
-        <div className={styles.imageScaleRow}>
-          <span className={styles.imageScaleLabel}>正文图片缩放</span>
-          <select
-            className={styles.imageScaleSelect}
-            value={imageScalePercent}
-            onChange={e => setImageScalePercent(Number(e.target.value))}
-            disabled={disabled}
-          >
-            {IMAGE_SCALE_OPTIONS.map(scale => (
-              <option key={scale} value={scale}>{scale}%</option>
-            ))}
-          </select>
-        </div>
-      )}
+
 
       <button
         type="button"
