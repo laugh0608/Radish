@@ -23,8 +23,8 @@
 }
 
 .loginPrompt {
-  margin-bottom: 12px;
-  padding: 8px 12px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
   background-color: color-mix(in srgb, var(--theme-state-danger) 10%, var(--theme-bg-surface) 90%);
   color: var(--theme-state-danger);
   border: 1px solid color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
@@ -53,8 +53,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
-  padding: 8px 12px;
+  margin-bottom: 6px;
+  padding: 6px 10px;
   background-color: color-mix(in srgb, var(--theme-brand-soft) 42%, var(--theme-bg-surface) 58%);
   border-left: 3px solid var(--theme-brand-primary);
   border-radius: var(--theme-radius-control);
@@ -93,8 +93,8 @@
 
 .textarea {
   width: 100%;
-  margin-bottom: 8px;
-  padding: 8px 12px;
+  margin-bottom: 6px;
+  padding: 6px 10px;
   background-color: var(--theme-bg-surface);
   border: 1px solid var(--theme-border-soft);
   border-radius: 14px;
@@ -123,7 +123,7 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .stickerPicker {
@@ -165,8 +165,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 8px;
-  padding: 8px 12px;
+  margin-bottom: 6px;
+  padding: 6px 10px;
   background: color-mix(in srgb, var(--theme-state-danger) 10%, var(--theme-bg-surface) 90%);
   border: 1px solid color-mix(in srgb, var(--theme-state-danger) 20%, transparent);
   border-radius: var(--theme-radius-control);
@@ -214,4 +214,35 @@
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+
+.toolbarDivider {
+  width: 1px;
+  height: 20px;
+  background-color: var(--theme-border-soft);
+  margin: 0 4px;
+}
+.previewContainer {
+  width: 100%;
+  min-height: 80px;
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  background-color: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 14px;
+  color: var(--theme-text-primary);
+  font-size: 14px;
+  overflow-y: auto;
+  max-height: 300px;
+}
+.previewEmpty {
+  color: var(--theme-text-muted);
+  text-align: center;
+  padding: 20px;
+}
+.active {
+  background-color: var(--theme-brand-soft) !important;
+  color: var(--theme-brand-primary) !important;
+  border-color: var(--theme-brand-primary) !important;
 }

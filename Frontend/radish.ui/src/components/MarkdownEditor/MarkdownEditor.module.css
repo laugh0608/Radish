@@ -358,3 +358,40 @@
 .dismissError:hover {
   background-color: rgba(239, 68, 68, 0.2);
 }
+
+/* Split mode styles */
+.contentSplit {
+  display: flex;
+  flex-direction: row;
+}
+
+.paneSplit {
+  flex: 1;
+  width: 50%;
+  border-right: 1px solid var(--theme-border-soft, #475569);
+  position: relative;
+  overflow-y: auto;
+  min-height: inherit;
+}
+
+.paneSplit:last-child {
+  border-right: none;
+}
+
+.editPane {
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.previewPane {
+  height: 100%;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.paneSplit .previewPane {
+  padding: 12px 16px;
+}
+

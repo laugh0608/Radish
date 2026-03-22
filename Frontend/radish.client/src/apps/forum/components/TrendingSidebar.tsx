@@ -97,7 +97,7 @@ export const TrendingSidebar = ({
           <p className={styles.emptyText}>暂无热门帖子</p>
         ) : (
           <ul className={styles.list}>
-            {hotPosts.map((post, index) => (
+            {hotPosts.slice(0, 6).map((post, index) => (
               <li
                 key={post.voId}
                 className={styles.hotPostItem}

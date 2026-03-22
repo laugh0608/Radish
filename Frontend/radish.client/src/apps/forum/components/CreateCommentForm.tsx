@@ -6,6 +6,7 @@ import { StickerPicker, type StickerPickerGroup, type StickerPickerSelection } f
 import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { UserMention, type UserMentionOption as UiUserMentionOption } from '@radish/ui/user-mention';
+import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import styles from './CreateCommentForm.module.css';
 
@@ -64,6 +65,7 @@ export const CreateCommentForm = ({
 
   // 上传状态
   const [uploading, setUploading] = useState(false);
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [uploadError, setUploadError] = useState<string | null>(null);
   const resolvedTitle = title ?? t('forum.comment.title');
   const resolvedSubmitText = submitText ?? t('forum.comment.title');
@@ -349,6 +351,12 @@ export const CreateCommentForm = ({
       )}
 
       <div className={styles.textareaWrapper}>
+        {mode === 'preview' ? (
+          <div className={styles.previewContainer}>
+            {content ? <MarkdownRenderer content={content} /> : <div className={styles.previewEmpty}>没有任何内容</div>}
+          </div>
+        ) : (
+        <>
         <textarea
           ref={textareaRef}
           placeholder={resolvedPlaceholder}
@@ -368,6 +376,8 @@ export const CreateCommentForm = ({
             position={mentionPosition}
           />
         )}
+        </>
+        )}
       </div>
 
       {/* 上传错误提示 */}
@@ -380,6 +390,16 @@ export const CreateCommentForm = ({
 
       {/* 工具栏 */}
       <div className={styles.toolbar}>
+        <button
+          type="button"
+          className={`${styles.toolbarButton} ${mode === 'preview' ? styles.active : ''}`}
+          onClick={() => setMode(mode === 'edit' ? 'preview' : 'edit')}
+          title={mode === 'edit' ? "预览" : "继续编辑"}
+        >
+          <Icon icon={mode === 'edit' ? "mdi:eye" : "mdi:pencil"} size={18} />
+          <span>{mode === 'edit' ? "预览" : "编辑"}</span>
+        </button>
+        <div className={styles.toolbarDivider} />
         {/* 隐藏的文件输入框 */}
         <input
           ref={imageInputRef}

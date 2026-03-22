@@ -59,7 +59,7 @@ export const MarkdownEditor = ({
   stickerMap,
   onStickerSelect,
 }: MarkdownEditorProps) => {
-  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
+  const [mode, setMode] = useState<'edit' | 'preview' | 'split'>(typeof window !== 'undefined' && window.innerWidth > 768 ? 'split' : 'edit');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -608,14 +608,22 @@ export const MarkdownEditor = ({
             >
               <Icon icon="mdi:eye" size={18} />
             </button>
+            <button
+              type="button"
+              className={`${styles.toolbarButton} ${mode === 'split' ? styles.active : ''}`}
+              onClick={() => setMode('split')}
+              title="分屏编辑"
+            >
+              <Icon icon="mdi:format-columns" size={18} />
+            </button>
           </div>
         </div>
       )}
 
       {/* 编辑/预览区域 */}
-      <div className={styles.content} style={containerStyle}>
-        {mode === 'edit' ? (
-          <>
+      <div className={`${styles.content} ${mode === 'split' ? styles.contentSplit : ''}`} style={containerStyle}>
+        {(mode === 'edit' || mode === 'split') && (
+          <div className={`${styles.editPane} ${mode === 'split' ? styles.paneSplit : ''}`}>
             <textarea
               ref={textareaRef}
               className={styles.textarea}
@@ -647,9 +655,10 @@ export const MarkdownEditor = ({
                 </button>
               </div>
             )}
-          </>
-        ) : (
-          <div className={styles.preview}>
+          </div>
+        )}
+        {(mode === 'preview' || mode === 'split') && (
+          <div className={`${styles.previewPane} ${mode === 'split' ? styles.paneSplit : ''}`}>
             {value ? (
               <Suspense fallback={<p className={styles.previewEmpty}>预览加载中...</p>}>
                 <MarkdownRenderer content={value} stickerMap={mergedStickerMap} />

@@ -90,10 +90,11 @@
 .external .iconImage {
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-state-info) 16%, var(--theme-bg-surface) 84%),
-    color-mix(in srgb, var(--theme-accent-ink) 14%, var(--theme-bg-surface) 86%)
+    color-mix(in srgb, var(--theme-bg-surface) 95%, transparent),
+    color-mix(in srgb, var(--theme-state-info) 10%, var(--theme-bg-muted) 90%)
   );
-  border-color: color-mix(in srgb, var(--theme-state-info) 36%, transparent 64%);
+  border-color: color-mix(in srgb, var(--theme-state-info) 24%, var(--theme-border-soft) 76%);
+  border-style: dashed;
 }
 
 .external:hover .iconImage {
@@ -113,21 +114,21 @@
 /* 外部应用角标 */
 .externalBadge {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  width: 20px;
-  height: 20px;
+  top: -2px;
+  right: -2px;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--theme-state-info) 78%, black 22%);
+  background: var(--theme-bg-surface);
   border-radius: 50%;
-  border: 2px solid color-mix(in srgb, var(--theme-bg-surface) 86%, transparent 14%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--theme-border-soft);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
 .externalBadge svg {
-  color: white;
+  color: var(--theme-state-info);
 }
 
 /* iframe 应用角标 */

@@ -1,5 +1,5 @@
 .container {
-  margin-top: 16px;
+  margin-top: 12px;
   border-top: 1px solid #e5e7eb;
   padding-top: 12px;
 }
@@ -12,8 +12,8 @@
 }
 
 .loginPrompt {
-  margin-bottom: 12px;
-  padding: 8px 12px;
+  margin-bottom: 8px;
+  padding: 6px 10px;
   background-color: #fef2f2;
   color: #dc2626;
   border-radius: 6px;
@@ -39,13 +39,13 @@
 .userInfo {
   font-size: 12px;
   color: #6b7280;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .input {
   width: 100%;
-  margin-bottom: 8px;
-  padding: 8px 12px;
+  margin-bottom: 6px;
+  padding: 6px 10px;
   background-color: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 6px;
@@ -67,7 +67,7 @@
 }
 
 .uploadOptions {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   padding: 12px;
   background-color: #f9fafb;
   border: 1px solid #e5e7eb;
@@ -149,8 +149,8 @@
 
 .textarea {
   width: 100%;
-  margin-bottom: 8px;
-  padding: 8px 12px;
+  margin-bottom: 6px;
+  padding: 6px 10px;
   background-color: #ffffff;
   border: 1px solid #d1d5db;
   border-radius: 6px;
