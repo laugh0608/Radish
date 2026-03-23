@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
 import { Icon } from '@radish/ui/icon';
 import { AboutTab, OpenSourceTab, QuickStartTab, RulesTab } from './components';
@@ -8,15 +9,15 @@ type TabType = 'about' | 'quickstart' | 'rules' | 'open-source';
 
 interface Tab {
   id: TabType;
-  label: string;
+  labelKey: string;
   icon: string;
 }
 
 const tabs: Tab[] = [
-  { id: 'about', label: '平台概览', icon: 'mdi:compass-outline' },
-  { id: 'quickstart', label: '上手路径', icon: 'mdi:rocket-launch-outline' },
-  { id: 'rules', label: '社区约定', icon: 'mdi:shield-half-full' },
-  { id: 'open-source', label: '开源说明', icon: 'mdi:open-source-initiative' }
+  { id: 'about', labelKey: 'welcome.tabs.about', icon: 'mdi:compass-outline' },
+  { id: 'quickstart', labelKey: 'welcome.tabs.quickstart', icon: 'mdi:rocket-launch-outline' },
+  { id: 'rules', labelKey: 'welcome.tabs.rules', icon: 'mdi:shield-half-full' },
+  { id: 'open-source', labelKey: 'welcome.tabs.openSource', icon: 'mdi:open-source-initiative' }
 ];
 
 /**
@@ -25,22 +26,23 @@ const tabs: Tab[] = [
  * 展示 Radish 社区简介、快速入门指南和社区规则
  */
 export const WelcomeApp = () => {
+  const { t } = useTranslation();
   const { userName } = useUserStore();
   const [activeTab, setActiveTab] = useState<TabType>('about');
-  const displayName = userName?.trim() || '朋友';
+  const displayName = userName?.trim() || t('welcome.common.friendFallback');
 
   const heroHighlights = [
     {
-      label: '桌面入口',
-      value: '论坛、文档、通知、萝卜坑'
+      label: t('welcome.hero.highlights.entry.label'),
+      value: t('welcome.hero.highlights.entry.value')
     },
     {
-      label: '当前主线',
-      value: '主题与 i18n 联调优化'
+      label: t('welcome.hero.highlights.focus.label'),
+      value: t('welcome.hero.highlights.focus.value')
     },
     {
-      label: '体验建议',
-      value: '先看概览，再逐步打开应用'
+      label: t('welcome.hero.highlights.suggestion.label'),
+      value: t('welcome.hero.highlights.suggestion.value')
     }
   ];
 
@@ -68,10 +70,13 @@ export const WelcomeApp = () => {
           </div>
           <div className={styles.heroContent}>
             <span className={styles.eyebrow}>Radish WebOS</span>
-            <h1 className={styles.title}>欢迎来到你的桌面工作台</h1>
+            <h1 className={styles.title}>{t('welcome.hero.title')}</h1>
             <p className={styles.subtitle}>
-              你好，<strong>{displayName}</strong>。这里汇集论坛、文档、通知、个人主页与萝卜坑等主要入口，
-              当前重点正在围绕主题一致性、双语切换与桌面交互体验持续优化。
+              <Trans
+                i18nKey="welcome.hero.subtitle"
+                values={{ name: displayName }}
+                components={{ strong: <strong /> }}
+              />
             </p>
           </div>
 
@@ -94,7 +99,7 @@ export const WelcomeApp = () => {
                 onClick={() => setActiveTab(tab.id)}
               >
                 <Icon icon={tab.icon} size={18} className={styles.tabIcon} />
-                <span>{tab.label}</span>
+                <span>{t(tab.labelKey)}</span>
               </button>
             ))}
           </div>
@@ -103,10 +108,8 @@ export const WelcomeApp = () => {
         <div className={styles.contentShell}>
           <div className={styles.contentHeader}>
             <div>
-              <h2 className={styles.contentTitle}>{tabs.find((tab) => tab.id === activeTab)?.label}</h2>
-              <p className={styles.contentHint}>
-                本页内容会跟随桌面应用联调持续更新，具体体验以当前桌面中可见的应用与入口为准。
-              </p>
+              <h2 className={styles.contentTitle}>{t(tabs.find((tab) => tab.id === activeTab)?.labelKey ?? 'welcome.tabs.about')}</h2>
+              <p className={styles.contentHint}>{t('welcome.content.hint')}</p>
             </div>
           </div>
 
@@ -117,10 +120,8 @@ export const WelcomeApp = () => {
 
         <footer className={styles.footer}>
           <div className={styles.footerInfo}>
-            <span className={styles.footerBadge}>联调阶段</span>
-            <p className={styles.footerText}>
-              欢迎页侧重说明当前能力边界、常用入口和基础规则，不再作为版本公告页。
-            </p>
+            <span className={styles.footerBadge}>{t('welcome.footer.badge')}</span>
+            <p className={styles.footerText}>{t('welcome.footer.text')}</p>
           </div>
         </footer>
       </div>

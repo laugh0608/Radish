@@ -1,6 +1,10 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
+import { welcomeEn } from './locales/welcome.en';
+import { welcomeOpenSourceEn } from './locales/welcome-open-source.en';
+import { welcomeOpenSourceZh } from './locales/welcome-open-source.zh';
+import { welcomeZh } from './locales/welcome.zh';
 
 const resources = {
     en: {
@@ -91,6 +95,8 @@ const resources = {
             'desktop.apps.experienceDetail.description': 'Level and experience details',
             'desktop.apps.shop.name': 'Shop',
             'desktop.apps.shop.description': 'Buy benefits and items with carrots',
+            ...welcomeEn,
+            ...welcomeOpenSourceEn,
 
             'dock.loginRequired': 'Login is required to access this app.',
             'desktop.accessDenied': 'You do not have access to this app.',
@@ -928,6 +934,8 @@ const resources = {
             'desktop.apps.experienceDetail.description': '等级与经验值详情',
             'desktop.apps.shop.name': '萝卜商城',
             'desktop.apps.shop.description': '使用胡萝卜购买权益和道具',
+            ...welcomeZh,
+            ...welcomeOpenSourceZh,
 
             'dock.loginRequired': '需要登录才能访问，请先登录。',
             'desktop.accessDenied': '当前账号无权访问该应用。',

@@ -2,8 +2,8 @@ export type OpenSourceGroupId = 'backend' | 'data' | 'frontend' | 'realtime';
 
 export interface OpenSourceGroup {
   id: OpenSourceGroupId;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   icon: string;
 }
 
@@ -11,55 +11,55 @@ export interface OpenSourceProject {
   id: string;
   name: string;
   groupId: OpenSourceGroupId;
-  purpose: string;
-  scope: string;
+  purposeKey: string;
+  scopeKey: string;
   license: string;
+  licenseKey?: string;
   repository: string;
   website?: string;
-  note?: string;
-  licenseNote?: string;
-  usedIn: string[];
+  noteKey?: string;
+  licenseNoteKey?: string;
+  usedInKeys: string[];
   isCore: boolean;
 }
 
 export const openSourceOverview = {
-  title: '开源依赖与许可证说明',
-  summary:
-    'Radish 基于多项优秀的开源项目构建。本页聚焦当前主链路中的关键依赖，用于帮助用户快速了解项目的技术构成、主要用途与许可证口径。',
-  scope: '首批关键依赖（不覆盖全部传递依赖与纯开发工具）',
-  source: '基于当前仓库实际使用情况人工校对并静态维护',
-  maintenance: '联调阶段按需补充并定期复核',
-  nextStep: '后续可结合发布流程扩展为更完整的第三方通知、许可证与归属说明清单',
-  boundaryNotes: [
-    '本页是欢迎应用中的说明入口，重点帮助你理解 Radish 当前主链路依赖了哪些核心开源项目。',
-    '许可证、商用授权与附加条款请始终以对应项目官方仓库、官网和版本发布说明为准。',
-    '像 AutoMapper、Hangfire 这类存在版本差异或额外授权口径的项目，会在条目中继续补充说明。'
+  titleKey: 'welcome.openSource.overview.title',
+  summaryKey: 'welcome.openSource.overview.summary',
+  scopeKey: 'welcome.openSource.overview.scope',
+  sourceKey: 'welcome.openSource.overview.source',
+  maintenanceKey: 'welcome.openSource.overview.maintenance',
+  nextStepKey: 'welcome.openSource.overview.nextStep',
+  boundaryNoteKeys: [
+    'welcome.openSource.boundary.note1',
+    'welcome.openSource.boundary.note2',
+    'welcome.openSource.boundary.note3'
   ]
 };
 
 export const openSourceGroups: OpenSourceGroup[] = [
   {
     id: 'backend',
-    label: '后端宿主与基础设施',
-    description: '承载 API、网关、认证、任务调度以及横切能力。',
+    labelKey: 'welcome.openSource.group.backend.label',
+    descriptionKey: 'welcome.openSource.group.backend.description',
     icon: 'mdi:server-outline'
   },
   {
     id: 'data',
-    label: '数据访问与存储',
-    description: '覆盖 ORM、身份存储、数据库与缓存等基础设施。',
+    labelKey: 'welcome.openSource.group.data.label',
+    descriptionKey: 'welcome.openSource.group.data.description',
     icon: 'mdi:database-outline'
   },
   {
     id: 'frontend',
-    label: '前端应用与工程化',
-    description: '支撑 WebOS、Console 和共享前端工程的交互体验。',
+    labelKey: 'welcome.openSource.group.frontend.label',
+    descriptionKey: 'welcome.openSource.group.frontend.description',
     icon: 'mdi:monitor-dashboard'
   },
   {
     id: 'realtime',
-    label: '实时通信能力',
-    description: '负责通知、聊天室等长连接和推送相关能力。',
+    labelKey: 'welcome.openSource.group.realtime.label',
+    descriptionKey: 'welcome.openSource.group.realtime.description',
     icon: 'mdi:lightning-bolt-outline'
   }
 ];
@@ -69,208 +69,227 @@ export const openSourceProjects: OpenSourceProject[] = [
     id: 'aspnet-core',
     name: 'ASP.NET Core',
     groupId: 'backend',
-    purpose: '承载 API、网关与认证服务的主要后端框架。',
-    scope: '作为 Radish.Api、Radish.Gateway、Radish.Auth 的宿主基础。',
+    purposeKey: 'welcome.openSource.projects.aspnetCore.purpose',
+    scopeKey: 'welcome.openSource.projects.aspnetCore.scope',
     license: 'MIT',
     repository: 'https://github.com/dotnet/aspnetcore',
-    usedIn: ['API', 'Gateway', 'Auth'],
+    usedInKeys: ['welcome.openSource.usedIn.api', 'welcome.openSource.usedIn.gateway', 'welcome.openSource.usedIn.auth'],
     isCore: true
   },
   {
     id: 'openiddict',
     name: 'OpenIddict',
     groupId: 'backend',
-    purpose: '提供 OIDC / OAuth2 服务端能力，支撑单点登录和授权流程。',
-    scope: '用于认证服务中的授权端点、客户端注册和令牌发放。',
+    purposeKey: 'welcome.openSource.projects.openiddict.purpose',
+    scopeKey: 'welcome.openSource.projects.openiddict.scope',
     license: 'Apache-2.0',
     repository: 'https://github.com/openiddict/openiddict-core',
-    usedIn: ['Auth', 'Client OIDC', 'Console OIDC'],
+    usedInKeys: [
+      'welcome.openSource.usedIn.auth',
+      'welcome.openSource.usedIn.clientOidc',
+      'welcome.openSource.usedIn.consoleOidc'
+    ],
     isCore: true
   },
   {
     id: 'yarp',
     name: 'YARP',
     groupId: 'backend',
-    purpose: '承担门户网关和反向代理能力。',
-    scope: '用于 Gateway 对内部服务与前端入口的统一转发。',
+    purposeKey: 'welcome.openSource.projects.yarp.purpose',
+    scopeKey: 'welcome.openSource.projects.yarp.scope',
     license: 'MIT',
     repository: 'https://github.com/dotnet/yarp',
-    usedIn: ['Gateway'],
+    usedInKeys: ['welcome.openSource.usedIn.gateway'],
     isCore: true
   },
   {
     id: 'hangfire',
     name: 'Hangfire',
     groupId: 'backend',
-    purpose: '负责后台作业、定时任务与管理面板。',
-    scope: '用于访问令牌清理、评论高亮统计、商城定时任务等后台任务。',
+    purposeKey: 'welcome.openSource.projects.hangfire.purpose',
+    scopeKey: 'welcome.openSource.projects.hangfire.scope',
     license: 'LGPL-3.0-or-later',
     repository: 'https://github.com/HangfireIO/Hangfire',
-    usedIn: ['API', '定时任务', 'Dashboard'],
+    usedInKeys: [
+      'welcome.openSource.usedIn.api',
+      'welcome.openSource.usedIn.scheduledTask',
+      'welcome.openSource.usedIn.dashboard'
+    ],
     isCore: true,
-    licenseNote: '当前仓库使用 Hangfire.AspNetCore 1.8.x；若涉及二次分发或商用合规，请以官方授权说明为准。'
+    licenseNoteKey: 'welcome.openSource.projects.hangfire.licenseNote'
   },
   {
     id: 'serilog',
     name: 'Serilog',
     groupId: 'backend',
-    purpose: '提供结构化日志能力，统一后端日志记录方式。',
-    scope: '用于宿主日志、SQL AOP 日志与审计链路的基础输出。',
+    purposeKey: 'welcome.openSource.projects.serilog.purpose',
+    scopeKey: 'welcome.openSource.projects.serilog.scope',
     license: 'Apache-2.0',
     repository: 'https://github.com/serilog/serilog',
-    usedIn: ['API', 'Gateway', 'Auth'],
+    usedInKeys: ['welcome.openSource.usedIn.api', 'welcome.openSource.usedIn.gateway', 'welcome.openSource.usedIn.auth'],
     isCore: true
   },
   {
     id: 'autofac',
     name: 'Autofac',
     groupId: 'backend',
-    purpose: '提供依赖注入容器与模块化注册能力。',
-    scope: '用于扩展宿主装配、分层服务注册与部分拦截能力。',
+    purposeKey: 'welcome.openSource.projects.autofac.purpose',
+    scopeKey: 'welcome.openSource.projects.autofac.scope',
     license: 'MIT',
     repository: 'https://github.com/autofac/Autofac',
-    usedIn: ['API', 'Gateway', 'Auth'],
+    usedInKeys: ['welcome.openSource.usedIn.api', 'welcome.openSource.usedIn.gateway', 'welcome.openSource.usedIn.auth'],
     isCore: false
   },
   {
     id: 'automapper',
     name: 'AutoMapper',
     groupId: 'backend',
-    purpose: '承担实体、DTO 与 Vo 之间的映射转换。',
-    scope: '用于 Service / Controller 输出模型映射与 Profile 配置。',
-    license: '商业授权 / 非宽松许可证',
+    purposeKey: 'welcome.openSource.projects.automapper.purpose',
+    scopeKey: 'welcome.openSource.projects.automapper.scope',
+    license: '',
+    licenseKey: 'welcome.openSource.license.commercialRestricted',
     repository: 'https://github.com/LuckyPennySoftware/AutoMapper',
     website: 'https://automapper.io/',
-    usedIn: ['API', 'Auth', 'Extension'],
+    usedInKeys: ['welcome.openSource.usedIn.api', 'welcome.openSource.usedIn.auth', 'welcome.openSource.usedIn.extension'],
     isCore: false,
-    note: '当前仓库使用 AutoMapper 15.x，并已在配置中预留 LicenseKey 读取入口。',
-    licenseNote: '许可证模式已不同于早期 MIT 版本，具体授权条款请以官方站点与所用版本说明为准。'
+    noteKey: 'welcome.openSource.projects.automapper.note',
+    licenseNoteKey: 'welcome.openSource.projects.automapper.licenseNote'
   },
   {
     id: 'sqlsugar',
     name: 'SqlSugar',
     groupId: 'data',
-    purpose: '作为主要业务 ORM，承担大部分实体查询、分页和多租户能力。',
-    scope: '用于 Repository、基础 CRUD、审计和多租户场景。',
+    purposeKey: 'welcome.openSource.projects.sqlsugar.purpose',
+    scopeKey: 'welcome.openSource.projects.sqlsugar.scope',
     license: 'MIT',
     repository: 'https://github.com/DotNetNext/SqlSugar',
-    usedIn: ['API', 'Auth', 'Repository'],
+    usedInKeys: ['welcome.openSource.usedIn.api', 'welcome.openSource.usedIn.auth', 'welcome.openSource.usedIn.repository'],
     isCore: true
   },
   {
     id: 'entity-framework-core',
     name: 'Entity Framework Core',
     groupId: 'data',
-    purpose: '承载 OpenIddict 相关实体与认证数据存储。',
-    scope: '当前主要用于 Auth 中 OpenIddict 的专属 DbContext。',
+    purposeKey: 'welcome.openSource.projects.efcore.purpose',
+    scopeKey: 'welcome.openSource.projects.efcore.scope',
     license: 'MIT',
     repository: 'https://github.com/dotnet/efcore',
-    usedIn: ['Auth', 'OpenIddict 存储'],
+    usedInKeys: ['welcome.openSource.usedIn.auth', 'welcome.openSource.usedIn.openiddictStorage'],
     isCore: false
   },
   {
     id: 'stackexchange-redis',
     name: 'StackExchange.Redis',
     groupId: 'data',
-    purpose: '提供 Redis 连接能力，支撑缓存和分布式场景。',
-    scope: '在启用 Redis 时为缓存层提供客户端支持。',
+    purposeKey: 'welcome.openSource.projects.redis.purpose',
+    scopeKey: 'welcome.openSource.projects.redis.scope',
     license: 'MIT',
     repository: 'https://github.com/StackExchange/StackExchange.Redis',
-    usedIn: ['API', 'Gateway', 'Auth', '缓存'],
+    usedInKeys: [
+      'welcome.openSource.usedIn.api',
+      'welcome.openSource.usedIn.gateway',
+      'welcome.openSource.usedIn.auth',
+      'welcome.openSource.usedIn.cache'
+    ],
     isCore: false
   },
   {
     id: 'postgresql',
     name: 'PostgreSQL',
     groupId: 'data',
-    purpose: '作为主要关系型数据库方案，面向生产环境部署。',
-    scope: '用于业务库、日志库及多环境正式部署方案。',
+    purposeKey: 'welcome.openSource.projects.postgresql.purpose',
+    scopeKey: 'welcome.openSource.projects.postgresql.scope',
     license: 'PostgreSQL License',
     repository: 'https://github.com/postgres/postgres',
     website: 'https://www.postgresql.org/',
-    usedIn: ['生产数据库', '业务数据'],
+    usedInKeys: ['welcome.openSource.usedIn.productionDatabase', 'welcome.openSource.usedIn.businessData'],
     isCore: true
   },
   {
     id: 'sqlite',
     name: 'SQLite',
     groupId: 'data',
-    purpose: '作为默认本地开发数据库与轻量部署选项。',
-    scope: '用于默认开发环境的业务数据库、日志库和 OpenIddict 数据库。',
+    purposeKey: 'welcome.openSource.projects.sqlite.purpose',
+    scopeKey: 'welcome.openSource.projects.sqlite.scope',
     license: 'Public Domain',
     repository: 'https://github.com/sqlite/sqlite',
     website: 'https://www.sqlite.org/',
-    usedIn: ['本地开发', '默认数据库'],
+    usedInKeys: ['welcome.openSource.usedIn.localDevelopment', 'welcome.openSource.usedIn.defaultDatabase'],
     isCore: false,
-    licenseNote: 'SQLite 官方声明其核心代码处于 Public Domain，具体说明请以 sqlite.org 官方文本为准。'
+    licenseNoteKey: 'welcome.openSource.projects.sqlite.licenseNote'
   },
   {
     id: 'react',
     name: 'React',
     groupId: 'frontend',
-    purpose: '承载 WebOS 桌面、欢迎应用与 Console 的主要 UI 框架。',
-    scope: '用于 radish.client、radish.console 与共享组件的视图层。',
+    purposeKey: 'welcome.openSource.projects.react.purpose',
+    scopeKey: 'welcome.openSource.projects.react.scope',
     license: 'MIT',
     repository: 'https://github.com/facebook/react',
-    usedIn: ['Client', 'Console', 'UI'],
+    usedInKeys: ['welcome.openSource.usedIn.client', 'welcome.openSource.usedIn.console', 'welcome.openSource.usedIn.ui'],
     isCore: true
   },
   {
     id: 'typescript',
     name: 'TypeScript',
     groupId: 'frontend',
-    purpose: '提供类型系统、接口约束与更稳健的前端工程体验。',
-    scope: '用于前端项目、共享组件库与类型定义。',
+    purposeKey: 'welcome.openSource.projects.typescript.purpose',
+    scopeKey: 'welcome.openSource.projects.typescript.scope',
     license: 'Apache-2.0',
     repository: 'https://github.com/microsoft/TypeScript',
-    usedIn: ['Client', 'Console', 'UI'],
+    usedInKeys: ['welcome.openSource.usedIn.client', 'welcome.openSource.usedIn.console', 'welcome.openSource.usedIn.ui'],
     isCore: true
   },
   {
     id: 'vite-rolldown',
     name: 'Vite (Rolldown)',
     groupId: 'frontend',
-    purpose: '承担前端开发服务器、构建与打包流程。',
-    scope: '当前 client / console 均通过 rolldown-vite 适配使用 Vite 工作流。',
+    purposeKey: 'welcome.openSource.projects.viteRolldown.purpose',
+    scopeKey: 'welcome.openSource.projects.viteRolldown.scope',
     license: 'MIT',
     repository: 'https://github.com/vitejs/vite',
-    usedIn: ['Client', 'Console'],
+    usedInKeys: ['welcome.openSource.usedIn.client', 'welcome.openSource.usedIn.console'],
     isCore: true,
-    note: '仓库中通过 npm alias 固定到 rolldown-vite 版本。'
+    noteKey: 'welcome.openSource.projects.viteRolldown.note'
   },
   {
     id: 'zustand',
     name: 'Zustand',
     groupId: 'frontend',
-    purpose: '管理 WebOS 窗口、用户、通知与聊天等全局状态。',
-    scope: '当前主要用于 radish.client 侧的状态组织。',
+    purposeKey: 'welcome.openSource.projects.zustand.purpose',
+    scopeKey: 'welcome.openSource.projects.zustand.scope',
     license: 'MIT',
     repository: 'https://github.com/pmndrs/zustand',
-    usedIn: ['Client', '状态管理'],
+    usedInKeys: ['welcome.openSource.usedIn.client', 'welcome.openSource.usedIn.stateManagement'],
     isCore: true
   },
   {
     id: 'react-router-dom',
     name: 'React Router DOM',
     groupId: 'frontend',
-    purpose: '提供 Console 应用的前端路由能力。',
-    scope: '用于管理后台页面导航、回调页和受保护路由。',
+    purposeKey: 'welcome.openSource.projects.reactRouter.purpose',
+    scopeKey: 'welcome.openSource.projects.reactRouter.scope',
     license: 'MIT',
     repository: 'https://github.com/remix-run/react-router',
     website: 'https://reactrouter.com/',
-    usedIn: ['Console'],
+    usedInKeys: ['welcome.openSource.usedIn.console'],
     isCore: true
   },
   {
     id: 'signalr',
     name: 'SignalR',
     groupId: 'realtime',
-    purpose: '提供通知、聊天室等实时通信能力。',
-    scope: '前端通过 @microsoft/signalr 客户端接入后端 Hub。',
+    purposeKey: 'welcome.openSource.projects.signalr.purpose',
+    scopeKey: 'welcome.openSource.projects.signalr.scope',
     license: 'MIT',
     repository: 'https://github.com/dotnet/aspnetcore',
-    usedIn: ['API', 'Client', '聊天室', '通知'],
+    usedInKeys: [
+      'welcome.openSource.usedIn.api',
+      'welcome.openSource.usedIn.client',
+      'welcome.openSource.usedIn.chat',
+      'welcome.openSource.usedIn.notification'
+    ],
     isCore: true,
-    note: 'SignalR 服务端能力来自 ASP.NET Core，前端使用独立的官方客户端包。'
+    noteKey: 'welcome.openSource.projects.signalr.note'
   }
 ];

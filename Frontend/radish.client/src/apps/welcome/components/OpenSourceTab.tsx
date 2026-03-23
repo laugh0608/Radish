@@ -1,4 +1,5 @@
 import { Icon } from '@radish/ui/icon';
+import { useTranslation } from 'react-i18next';
 import {
   openSourceGroups,
   openSourceOverview,
@@ -11,33 +12,38 @@ const groupedProjects = openSourceGroups.map((group) => ({
   projects: openSourceProjects.filter((project) => project.groupId === group.id)
 }));
 
-const summaryCards = [
-  {
-    label: '收录项目',
-    value: `${openSourceProjects.length} 项`,
-    tip: '首批关键依赖'
-  },
-  {
-    label: '核心链路',
-    value: `${openSourceProjects.filter((project) => project.isCore).length} 项`,
-    tip: '优先展示主路径依赖'
-  },
-  {
-    label: '展示分组',
-    value: `${groupedProjects.length} 组`,
-    tip: '后端、数据、前端、实时能力'
-  },
-  {
-    label: '涉及模块',
-    value: `${new Set(openSourceProjects.flatMap((project) => project.usedIn)).size} 类`,
-    tip: '覆盖 API / Gateway / Auth / Client / Console 等场景'
-  }
-];
-
 /**
  * 开源软件声明标签页
  */
 export const OpenSourceTab = () => {
+  const { t } = useTranslation();
+  const summaryCards = [
+    {
+      label: t('welcome.openSource.summary.projectCount.label'),
+      value: t('welcome.openSource.summary.projectCount.value', { count: openSourceProjects.length }),
+      tip: t('welcome.openSource.summary.projectCount.tip')
+    },
+    {
+      label: t('welcome.openSource.summary.coreCount.label'),
+      value: t('welcome.openSource.summary.coreCount.value', {
+        count: openSourceProjects.filter((project) => project.isCore).length
+      }),
+      tip: t('welcome.openSource.summary.coreCount.tip')
+    },
+    {
+      label: t('welcome.openSource.summary.groupCount.label'),
+      value: t('welcome.openSource.summary.groupCount.value', { count: groupedProjects.length }),
+      tip: t('welcome.openSource.summary.groupCount.tip')
+    },
+    {
+      label: t('welcome.openSource.summary.moduleCount.label'),
+      value: t('welcome.openSource.summary.moduleCount.value', {
+        count: new Set(openSourceProjects.flatMap((project) => project.usedInKeys)).size
+      }),
+      tip: t('welcome.openSource.summary.moduleCount.tip')
+    }
+  ];
+
   return (
     <div className={styles.container}>
       <section className={styles.heroCard}>
@@ -46,27 +52,27 @@ export const OpenSourceTab = () => {
             <Icon icon="mdi:open-source-initiative" size={24} className={styles.icon} />
           </div>
           <div className={styles.heroContent}>
-            <h2>{openSourceOverview.title}</h2>
-            <p>{openSourceOverview.summary}</p>
+            <h2>{t(openSourceOverview.titleKey)}</h2>
+            <p>{t(openSourceOverview.summaryKey)}</p>
           </div>
         </div>
 
         <div className={styles.metaGrid}>
           <div className={styles.metaCard}>
-            <span className={styles.metaLabel}>当前范围</span>
-            <p className={styles.metaValue}>{openSourceOverview.scope}</p>
+            <span className={styles.metaLabel}>{t('welcome.openSource.meta.scope')}</span>
+            <p className={styles.metaValue}>{t(openSourceOverview.scopeKey)}</p>
           </div>
           <div className={styles.metaCard}>
-            <span className={styles.metaLabel}>清单来源</span>
-            <p className={styles.metaValue}>{openSourceOverview.source}</p>
+            <span className={styles.metaLabel}>{t('welcome.openSource.meta.source')}</span>
+            <p className={styles.metaValue}>{t(openSourceOverview.sourceKey)}</p>
           </div>
           <div className={styles.metaCard}>
-            <span className={styles.metaLabel}>维护方式</span>
-            <p className={styles.metaValue}>{openSourceOverview.maintenance}</p>
+            <span className={styles.metaLabel}>{t('welcome.openSource.meta.maintenance')}</span>
+            <p className={styles.metaValue}>{t(openSourceOverview.maintenanceKey)}</p>
           </div>
           <div className={styles.metaCard}>
-            <span className={styles.metaLabel}>后续演进</span>
-            <p className={styles.metaValue}>{openSourceOverview.nextStep}</p>
+            <span className={styles.metaLabel}>{t('welcome.openSource.meta.nextStep')}</span>
+            <p className={styles.metaValue}>{t(openSourceOverview.nextStepKey)}</p>
           </div>
         </div>
 
@@ -84,10 +90,8 @@ export const OpenSourceTab = () => {
       <section className={styles.catalogSection}>
         <div className={styles.sectionHeader}>
           <div>
-            <h3>首批开源项目清单</h3>
-            <p>
-              当前优先展示 Radish 主链路中最关键的一批依赖，并按职责分组说明用途、覆盖模块和许可证口径。
-            </p>
+            <h3>{t('welcome.openSource.section.catalog.title')}</h3>
+            <p>{t('welcome.openSource.section.catalog.description')}</p>
           </div>
         </div>
 
@@ -100,11 +104,11 @@ export const OpenSourceTab = () => {
                     <Icon icon={group.icon} size={18} className={styles.icon} />
                   </div>
                   <div>
-                    <h4>{group.label}</h4>
-                    <p>{group.description}</p>
+                    <h4>{t(group.labelKey)}</h4>
+                    <p>{t(group.descriptionKey)}</p>
                   </div>
                 </div>
-                <span className={styles.groupCount}>{group.projects.length} 项</span>
+                <span className={styles.groupCount}>{t('welcome.openSource.common.itemCount', { count: group.projects.length })}</span>
               </div>
 
               <div className={styles.projectGrid}>
@@ -113,33 +117,35 @@ export const OpenSourceTab = () => {
                     <div className={styles.projectHeader}>
                       <div>
                         <h5 className={styles.projectName}>{project.name}</h5>
-                        <p className={styles.projectScope}>{project.scope}</p>
+                        <p className={styles.projectScope}>{t(project.scopeKey)}</p>
                       </div>
                       <div className={styles.badgeList}>
                         {project.isCore && (
-                          <span className={`${styles.badge} ${styles.coreBadge}`}>核心链路</span>
+                          <span className={`${styles.badge} ${styles.coreBadge}`}>{t('welcome.openSource.badge.core')}</span>
                         )}
-                        <span className={`${styles.badge} ${styles.licenseBadge}`}>{project.license}</span>
+                        <span className={`${styles.badge} ${styles.licenseBadge}`}>
+                          {project.licenseKey ? t(project.licenseKey) : project.license}
+                        </span>
                       </div>
                     </div>
 
-                    <p className={styles.projectPurpose}>{project.purpose}</p>
+                    <p className={styles.projectPurpose}>{t(project.purposeKey)}</p>
 
                     <div className={styles.usageSection}>
-                      <span className={styles.usageLabel}>项目内使用</span>
+                      <span className={styles.usageLabel}>{t('welcome.openSource.usage.label')}</span>
                       <div className={styles.usageList}>
-                        {project.usedIn.map((usage) => (
-                          <span key={usage} className={styles.usageChip}>
-                            {usage}
+                        {project.usedInKeys.map((usageKey) => (
+                          <span key={usageKey} className={styles.usageChip}>
+                            {t(usageKey)}
                           </span>
                         ))}
                       </div>
                     </div>
 
-                    {(project.note || project.licenseNote) && (
+                    {(project.noteKey || project.licenseNoteKey) && (
                       <div className={styles.noteBlock}>
-                        {project.note && <p>{project.note}</p>}
-                        {project.licenseNote && <p>{project.licenseNote}</p>}
+                        {project.noteKey && <p>{t(project.noteKey)}</p>}
+                        {project.licenseNoteKey && <p>{t(project.licenseNoteKey)}</p>}
                       </div>
                     )}
 
@@ -151,7 +157,7 @@ export const OpenSourceTab = () => {
                         rel="noopener noreferrer"
                       >
                         <Icon icon="mdi:source-repository" size={16} />
-                        官方仓库
+                        {t('welcome.openSource.links.repository')}
                       </a>
                       {project.website && (
                         <a
@@ -161,7 +167,7 @@ export const OpenSourceTab = () => {
                           rel="noopener noreferrer"
                         >
                           <Icon icon="mdi:web" size={16} />
-                          官方网站
+                          {t('welcome.openSource.links.website')}
                         </a>
                       )}
                     </div>
@@ -178,11 +184,11 @@ export const OpenSourceTab = () => {
           <div className={styles.noticeIcon}>
             <Icon icon="mdi:information-outline" size={16} className={styles.icon} />
           </div>
-          <h3>展示边界说明</h3>
+          <h3>{t('welcome.openSource.notice.title')}</h3>
         </div>
         <div className={styles.noticeList}>
-          {openSourceOverview.boundaryNotes.map((note) => (
-            <p key={note}>{note}</p>
+          {openSourceOverview.boundaryNoteKeys.map((noteKey) => (
+            <p key={noteKey}>{t(noteKey)}</p>
           ))}
         </div>
       </section>
