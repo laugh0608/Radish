@@ -11,6 +11,7 @@
 
 .toast {
   --toast-accent: var(--theme-state-info, #4d6a80);
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -24,6 +25,7 @@
   animation: slideIn 0.3s ease-out;
   border: 1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16));
   border-left: 4px solid var(--toast-accent);
+  overflow: hidden;
 }
 
 .toast.fadeOut {
@@ -81,6 +83,27 @@
   word-break: break-word;
 }
 
+.progressTrack {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  background: color-mix(in srgb, var(--toast-accent) 16%, transparent);
+  pointer-events: none;
+}
+
+.progressBar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--toast-accent);
+  transform-origin: left center;
+  animation-name: shrink;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
 @keyframes slideIn {
   from {
     transform: translateX(120%);
@@ -100,6 +123,15 @@
   to {
     transform: translateX(120%);
     opacity: 0;
+  }
+}
+
+@keyframes shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
   }
 }
 

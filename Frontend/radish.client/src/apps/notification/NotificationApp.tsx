@@ -262,7 +262,10 @@ export const NotificationApp = () => {
   }, [activeFilter, notifications]);
 
   // 标记已读
-  const handleMarkAsRead = useCallback(async (id: number) => {
+  const handleMarkAsRead = useCallback(async (
+    id: number,
+    options?: { silent?: boolean }
+  ) => {
     try {
       const backendNotificationId = resolveBackendNotificationId(id);
 
@@ -276,10 +279,14 @@ export const NotificationApp = () => {
       setNotifications(prev => prev.map(n => (n.id === id ? { ...n, isRead: true } : n)));
       await syncUnreadCountFromServer();
 
-      toast.success(t('notification.markReadSuccess'));
+      if (!options?.silent) {
+        toast.success(t('notification.markReadSuccess'));
+      }
     } catch (error) {
       log.error('标记已读失败:', error);
-      toast.error(t('notification.markReadFailed'));
+      if (!options?.silent) {
+        toast.error(t('notification.markReadFailed'));
+      }
     }
   }, [resolveBackendNotificationId, syncUnreadCountFromServer, t]);
 
@@ -289,7 +296,7 @@ export const NotificationApp = () => {
 
     // 如果未读，标记为已读
     if (!notification.isRead) {
-      void handleMarkAsRead(notification.id);
+      void handleMarkAsRead(notification.id, { silent: true });
     }
 
     const businessType = notification.businessType?.trim();
@@ -366,13 +373,14 @@ export const NotificationApp = () => {
       const store = useNotificationStore.getState();
       store.removeNotification(backendNotificationId);
       setNotifications(prev => prev.filter(n => (n.notificationId ?? n.id) !== backendNotificationId));
+      await syncUnreadCountFromServer();
 
       toast.success(t('notification.deleteSuccess'));
     } catch (error) {
       log.error('删除通知失败:', error);
       toast.error(t('notification.deleteFailed'));
     }
-  }, [resolveBackendNotificationId, t]);
+  }, [resolveBackendNotificationId, syncUnreadCountFromServer, t]);
 
   return (
     <div className={styles.notificationApp}>

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import styles from './Toast.module.css';
 
+const EXIT_ANIMATION_DURATION = 300;
+
 export interface ToastProps {
   /** 通知内容 */
   message: React.ReactNode;
@@ -27,24 +29,31 @@ export const Toast = ({
   onClose,
   icon
 }: ToastProps) => {
-  const [visible, setVisible] = useState(true);
+  const [isClosing, setIsClosing] = useState(false);
 
   useEffect(() => {
-    if (duration > 0) {
-      const timer = setTimeout(() => {
-        setVisible(false);
-        setTimeout(() => {
-          onClose?.();
-        }, 300); // 等待动画结束
-      }, duration);
-
-      return () => clearTimeout(timer);
+    if (duration <= 0) {
+      return undefined;
     }
-  }, [duration, onClose]);
 
-  if (!visible) {
-    return null;
-  }
+    const timer = window.setTimeout(() => {
+      setIsClosing(true);
+    }, duration);
+
+    return () => window.clearTimeout(timer);
+  }, [duration]);
+
+  useEffect(() => {
+    if (!isClosing) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      onClose?.();
+    }, EXIT_ANIMATION_DURATION);
+
+    return () => window.clearTimeout(timer);
+  }, [isClosing, onClose]);
 
   const getDefaultIcon = () => {
     switch (type) {
@@ -60,11 +69,22 @@ export const Toast = ({
   };
 
   return (
-    <div className={`${styles.toast} ${styles[type]} ${!visible ? styles.fadeOut : ''}`}>
+    <div
+      className={`${styles.toast} ${styles[type]} ${isClosing ? styles.fadeOut : ''}`}
+      role="status"
+    >
       <span className={styles.icon}>
         {icon || getDefaultIcon()}
       </span>
       <span className={styles.message}>{message}</span>
+      {duration > 0 && (
+        <span className={styles.progressTrack} aria-hidden="true">
+          <span
+            className={styles.progressBar}
+            style={{ animationDuration: `${duration}ms` }}
+          />
+        </span>
+      )}
     </div>
   );
 };

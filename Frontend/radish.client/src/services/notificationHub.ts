@@ -1,13 +1,84 @@
 import * as signalR from '@microsoft/signalr';
+import { createElement } from 'react';
+import { toast } from '@radish/ui/toast';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
 import { useAuthStore } from '@/stores/authStore';
 import { tokenService } from './tokenService';
 import { log } from '@/utils/logger';
 import { getSignalrHubUrl } from '@/config/env';
 
+const NOTIFICATION_TOAST_DURATION = 5000;
+
 function getHubUrl(): string {
   // 使用统一的 SignalR Hub URL 配置
   return `${getSignalrHubUrl()}/hub/notification`;
+}
+
+function getNotificationToastType(type: NotificationItem['type']): 'success' | 'error' | 'info' | 'warning' {
+  switch (type) {
+    case 'like':
+    case 'follow':
+      return 'success';
+    case 'lottery':
+      return 'warning';
+    case 'reply':
+    case 'mention':
+      return 'info';
+    default:
+      return 'info';
+  }
+}
+
+function getNotificationToastIcon(type: NotificationItem['type']): string {
+  switch (type) {
+    case 'like':
+      return '👍';
+    case 'reply':
+      return '💬';
+    case 'mention':
+      return '@';
+    case 'follow':
+      return '👤';
+    case 'lottery':
+      return '🎁';
+    default:
+      return '📢';
+  }
+}
+
+function showNotificationToast(notification: NotificationItem): void {
+  const title = notification.title?.trim();
+  const content = notification.content?.trim();
+
+  if (!title && !content) {
+    return;
+  }
+
+  const message = createElement(
+    'div',
+    { style: { display: 'grid', gap: '4px' } },
+    title
+      ? createElement(
+          'span',
+          { style: { fontSize: '14px', fontWeight: 600, lineHeight: 1.4 } },
+          title
+        )
+      : null,
+    content && content !== title
+      ? createElement(
+          'span',
+          { style: { fontSize: '13px', lineHeight: 1.5, opacity: 0.82 } },
+          content
+        )
+      : null
+  );
+
+  toast.custom({
+    message,
+    type: getNotificationToastType(notification.type),
+    icon: getNotificationToastIcon(notification.type),
+    duration: NOTIFICATION_TOAST_DURATION
+  });
 }
 
 /** SignalR Hub 连接管理器 */
@@ -181,6 +252,7 @@ class NotificationHubService {
     this.connection.on('NewNotification', (notification: NotificationItem) => {
       log.debug('[NotificationHub] 新通知:', notification);
       useNotificationStore.getState().addNotification(notification);
+      showNotificationToast(notification);
     });
 
     this.connection.on('NotificationRead', (data: { notificationIds: number[] }) => {

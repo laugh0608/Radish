@@ -4,6 +4,8 @@
 
 `@radish/ui` 是 Radish 项目的统一前端 UI 组件库，为所有前端应用（radish.client、radish.console 等）提供一致的组件和工具函数。
 
+> 当前页面只维护高频入口与当前实现口径，不再尝试把所有导出逐项枚举为“完整清单”；更细粒度导出以 `Frontend/radish.ui/src/components/index.ts` 与 `package.json` 为准。
+
 ### 核心目标
 
 - 🎨 **统一设计**：保持所有应用的视觉风格一致
@@ -26,6 +28,8 @@ Frontend/radish.ui/
 │   │   ├── Button/
 │   │   ├── Input/
 │   │   ├── Modal/
+│   │   ├── Toast/
+│   │   ├── Notification/
 │   │   ├── DataTable/       # 数据表格
 │   │   └── index.ts
 │   ├── hooks/               # React Hooks
@@ -58,7 +62,7 @@ npm install
 
 ```typescript
 // 导入组件
-import { Button, Input, Modal, DataTable, MarkdownEditor } from '@radish/ui';
+import { Button, Input, Modal, DataTable, Toast, MarkdownEditor } from '@radish/ui';
 
 // 导入 Ant Design 组件（已封装）
 import { AntButton, Table, Form, message } from '@radish/ui';
@@ -140,6 +144,8 @@ function MyComponent() {
 - **ContextMenu** - 右键菜单组件
 - **ConfirmDialog** - 确认对话框组件
 - **UserMention** - 用户提及组件（@用户名）
+- **BottomSheet** - 底部抽屉 / 弹层容器
+- **Skeleton** - 骨架屏组件
 
 #### 内容编辑
 - **MarkdownEditor** - Markdown 富文本编辑器
@@ -156,6 +162,23 @@ function MyComponent() {
 #### 数据展示
 - **DataTable** - 数据表格组件（支持分页、loading、empty 状态）
 - **GlassPanel** - 毛玻璃面板组件
+- **ExperienceBar** - 经验值进度条组件
+- **LevelUpModal** - 升级弹窗组件
+- **ReactionBar** - 反应条组件
+
+#### 反馈与通知
+- **Toast** - 轻量临时提示
+  - 支持 `success / error / info / warning / custom`
+  - 支持 `duration` 自动关闭，`duration = 0` 时保持常驻
+  - 当前已支持底部剩余时间进度条，跟随自动关闭时长同步缩减
+- **Notification / NotificationList / NotificationCenter / NotificationBadge** - 持久化通知组件族
+  - 用于通知列表、未读状态、通知中心聚合展示
+  - 与 `radish.client` 通知应用和实时通知链路配套使用
+
+#### 媒体与上传
+- **FileUpload / ChunkedFileUpload** - 文件上传与分片上传组件
+- **ImageLightbox / ImageCropper** - 图片预览与裁剪组件
+- **StickerPicker** - 表情包选择器
 
 #### Ant Design 组件封装
 `@radish/ui` 重新导出了常用的 Ant Design 组件，确保版本一致：
