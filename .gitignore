@@ -204,6 +204,7 @@ ClientBin/
 node_modules/
 orleans.codegen.cs
 .codex-logs/
+.codex-build/
 .dotnet-home/
 .dotnet-cli/
 .nuget/
