@@ -167,7 +167,7 @@ export const TrendingSidebar = ({
                     className={`${styles.authorButton} ${styles.godCommentAuthor}`}
                     onClick={(event) => {
                       event.stopPropagation();
-                      onAuthorClick?.(comment.voAuthorId, comment.voAuthorName);
+                      onAuthorClick?.(comment.voAuthorId, comment.voAuthorName, comment.voAuthorAvatarUrl);
                     }}
                     title={`查看 ${comment.voAuthorName} 的主页`}
                   >

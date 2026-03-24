@@ -27,6 +27,13 @@
   - `GET /api/v1/Category/GetChildCategories`
   - `GET /api/v1/Category/GetById/{id}`
   - `POST /api/v1/Category/Create`
+- **分类管理端接口已补齐**
+  - `GET /api/v1/Category/GetPage`
+  - `PUT /api/v1/Category/Update/{id}`
+  - `PUT /api/v1/Category/ToggleStatus/{id}/status`
+  - `PUT /api/v1/Category/UpdateSort/{id}/sort`
+  - `DELETE /api/v1/Category/Delete/{id}`
+  - `PUT /api/v1/Category/Restore/{id}/restore`
 - **标签接口已具备**
   - `GET /api/v1/Tag/GetAll`
   - `GET /api/v1/Tag/GetFixedTags`
@@ -74,6 +81,9 @@
 - 管理后台已提供“标签管理”页面（`/tags`），支持分页查询、新增、编辑、启停、排序、软删除与恢复。
 - 前端 API 调用已统一迁移到 `@radish/http`（`radish.client` + `radish.console`），不再由 `@radish/ui` 承担 HTTP 客户端职责。
 - `DbMigrate` 在标签种子前会自动同步 `Tag` 表结构，兼容旧 SQLite 库缺失 `SortOrder` 列的场景。
+- **Console 已明确拆分“分类管理”与“标签管理”**
+  - `radish.console` 当前分别提供 `/categories` 与 `/tags` 两个独立页面。
+  - 两者权限键、资源种子与 API 映射也已拆开维护，不再混用为同一后台概念。
 
 ---
 
@@ -84,6 +94,8 @@
 - **分类 UI 已完成并已接后端**
   - 分类列表、分类高亮、按分类筛帖已可用。
   - 已调用 `GET /api/v1/Category/GetTopCategories` 与 `GET /api/v1/Post/GetList?categoryId=...`。
+- **Console 分类管理页已完成首版**
+  - 支持分页查询、新增、编辑、启停、排序、软删除与恢复。
 - **帖子编辑已支持标签变更**
   - 编辑帖子弹窗可修改标签，并通过 `tagNames` 提交后端更新。
 
@@ -97,8 +109,8 @@
 
 ## 3. 统一结论
 
-- 后端：**分类 + 标签核心能力已具备**（模型、接口、发布写入链路都有）。
-- 前端：**分类已完成，标签仍缺核心交互与展示闭环**。
+- 后端：**分类 + 标签核心能力已具备**，且管理端已拆分为两套独立后台能力。
+- 前端：**用户端分类已完成，管理端分类 / 标签也都已具备首版管理入口**；标签的用户侧浏览 / 原生筛选仍有后续空间。
 
 ---
 

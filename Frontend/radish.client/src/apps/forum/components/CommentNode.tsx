@@ -152,6 +152,28 @@ const extractCommentImages = (content: string): CommentImageItem[] => {
   return images;
 };
 
+const buildAvatarText = (name: string): string => {
+  const source = name.trim();
+  if (!source) {
+    return '?';
+  }
+
+  return source.charAt(0).toUpperCase();
+};
+
+const buildAvatarStyle = (seed: string) => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const hue = Math.abs(hash) % 360;
+  return {
+    backgroundColor: `hsl(${hue} 80% 92%)`,
+    color: `hsl(${hue} 45% 30%)`
+  };
+};
+
 const renderCommentHtml = (content: string, stickerMap?: MarkdownStickerMap): string => {
   const regex = /!\[([^\]]*)\]\(([^)]+)\)/g;
   let html = '';
@@ -246,6 +268,7 @@ export const CommentNode = ({
   const commentImages = useMemo(() => extractCommentImages(node.voContent), [node.voContent]);
   const commentHtml = useMemo(() => renderCommentHtml(node.voContent, stickerMap), [node.voContent, stickerMap]);
   const replyToUserName = useMemo(() => node.voReplyToUserName?.trim() || '', [node.voReplyToUserName]);
+  const authorAvatarUrl = useMemo(() => node.voAuthorAvatarUrl?.trim() || '', [node.voAuthorAvatarUrl]);
 
   // 初始化已加载的子评论（默认时间升序）
   const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(() => {
@@ -475,9 +498,25 @@ export const CommentNode = ({
         <button
           type="button"
           className={styles.authorButton}
-          onClick={() => onAuthorClick?.(node.voAuthorId, node.voAuthorName)}
+          onClick={() => onAuthorClick?.(node.voAuthorId, node.voAuthorName, node.voAuthorAvatarUrl)}
           title={t('forum.comment.authorProfileTitle', { name: node.voAuthorName })}
         >
+          <span
+            className={styles.authorAvatar}
+            style={authorAvatarUrl ? undefined : buildAvatarStyle(node.voAuthorName)}
+            aria-hidden="true"
+          >
+            {authorAvatarUrl ? (
+              <img
+                className={styles.authorAvatarImage}
+                src={authorAvatarUrl}
+                alt={node.voAuthorName}
+                loading="lazy"
+              />
+            ) : (
+              buildAvatarText(node.voAuthorName)
+            )}
+          </span>
           <span className={styles.author}>{node.voAuthorName}</span>
         </button>
         {node.voCreateTime && (

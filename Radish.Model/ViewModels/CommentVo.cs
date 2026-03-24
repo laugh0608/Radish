@@ -56,6 +56,11 @@ public class CommentVo
     public string VoAuthorName { get; set; } = string.Empty;
 
     /// <summary>
+    /// 作者头像
+    /// </summary>
+    public string? VoAuthorAvatarUrl { get; set; }
+
+    /// <summary>
     /// 点赞次数
     /// </summary>
     public int VoLikeCount { get; set; }

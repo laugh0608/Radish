@@ -646,6 +646,159 @@ internal static partial class InitialDataSeeder
                 ControllerName = "Sticker",
                 ActionName = "NormalizeCode",
                 Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50100L,
+                ApiModuleName = "Get category page",
+                LinkUrl = "/api/v1/Category/GetPage",
+                ControllerName = "Category",
+                ActionName = "GetPage",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50101L,
+                ApiModuleName = "Create category",
+                LinkUrl = "/api/v1/Category/Create",
+                ControllerName = "Category",
+                ActionName = "Create",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50102L,
+                ApiModuleName = "Update category",
+                LinkUrl = "/api/v1/Category/Update/.+",
+                ControllerName = "Category",
+                ActionName = "Update",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50103L,
+                ApiModuleName = "Delete category",
+                LinkUrl = "/api/v1/Category/Delete/.+",
+                ControllerName = "Category",
+                ActionName = "Delete",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50104L,
+                ApiModuleName = "Restore category",
+                LinkUrl = "/api/v1/Category/Restore/.+",
+                ControllerName = "Category",
+                ActionName = "Restore",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50105L,
+                ApiModuleName = "Toggle category status",
+                LinkUrl = "/api/v1/Category/ToggleStatus/.+",
+                ControllerName = "Category",
+                ActionName = "ToggleStatus",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50106L,
+                ApiModuleName = "Update category sort",
+                LinkUrl = "/api/v1/Category/UpdateSort/.+",
+                ControllerName = "Category",
+                ActionName = "UpdateSort",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50110L,
+                ApiModuleName = "Get moderation review queue",
+                LinkUrl = "/api/v1/ContentModeration/GetReviewQueue",
+                ControllerName = "ContentModeration",
+                ActionName = "GetReviewQueue",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50111L,
+                ApiModuleName = "Review moderation report",
+                LinkUrl = "/api/v1/ContentModeration/Review",
+                ControllerName = "ContentModeration",
+                ActionName = "Review",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50112L,
+                ApiModuleName = "Apply moderation action",
+                LinkUrl = "/api/v1/ContentModeration/ApplyUserAction",
+                ControllerName = "ContentModeration",
+                ActionName = "ApplyUserAction",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50113L,
+                ApiModuleName = "Get moderation action logs",
+                LinkUrl = "/api/v1/ContentModeration/GetActionLogs",
+                ControllerName = "ContentModeration",
+                ActionName = "GetActionLogs",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50120L,
+                ApiModuleName = "Get coin balance by user id",
+                LinkUrl = "/api/v1/Coin/GetBalanceByUserId",
+                ControllerName = "Coin",
+                ActionName = "GetBalanceByUserId",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50121L,
+                ApiModuleName = "Admin adjust coin balance",
+                LinkUrl = "/api/v1/Coin/AdminAdjustBalance",
+                ControllerName = "Coin",
+                ActionName = "AdminAdjustBalance",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50130L,
+                ApiModuleName = "Get user experience",
+                LinkUrl = "/api/v1/Experience/GetUserExperience/.+",
+                ControllerName = "Experience",
+                ActionName = "GetUserExperience",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50131L,
+                ApiModuleName = "Get level configs",
+                LinkUrl = "/api/v1/Experience/GetLevelConfigs",
+                ControllerName = "Experience",
+                ActionName = "GetLevelConfigs",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50132L,
+                ApiModuleName = "Admin adjust experience",
+                LinkUrl = "/api/v1/Experience/AdminAdjustExperience",
+                ControllerName = "Experience",
+                ActionName = "AdminAdjustExperience",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50133L,
+                ApiModuleName = "Recalculate level configs",
+                LinkUrl = "/api/v1/Experience/RecalculateLevelConfigs",
+                ControllerName = "Experience",
+                ActionName = "RecalculateLevelConfigs",
+                Roles = new[] { 10000L, 10001L }
             }
         };
 

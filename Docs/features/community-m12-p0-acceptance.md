@@ -64,10 +64,13 @@
 - 管理端可手动执行治理动作。
 - 管理端可查询治理记录。
 - 发帖与评论入口已接入发布权限拦截。
+- 首版治理后台已集成在 `radish.console` 的 `/moderation` 页面。
+- 当前首版治理对象范围为 `Post / Comment`，商品与聊天室消息不作为本轮通过前提。
 
 **参考资产**：
 - `Radish.Api.Tests/HttpTest/Radish.Api.Community.http`
 - `Radish.Api/Controllers/ContentModerationController.cs`
+- `Frontend/radish.console/src/pages/Moderation/ModerationPage.tsx`
 
 #### 4. 分发能力
 
@@ -103,7 +106,7 @@
 
 #### 治理增强
 
-- 完整审核台前端
+- 商品 / 聊天室消息举报纳管
 - 敏感词
 - 自动治理策略
 - 批量治理能力

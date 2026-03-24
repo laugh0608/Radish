@@ -687,6 +687,7 @@ export const useForumActions = (
 
       const userStore = useUserStore.getState();
       const authorName = userStore.userName || '我';
+      const authorAvatarUrl = userStore.avatarThumbnailUrl || userStore.avatarUrl || null;
       const now = new Date().toISOString();
       const parentId = replyTo?.commentId ?? null;
 
@@ -740,6 +741,7 @@ export const useForumActions = (
         voContent: content.trim(),
         voAuthorId: userId,
         voAuthorName: authorName,
+        voAuthorAvatarUrl: authorAvatarUrl,
         voParentId: parentId,
         voRootId: parentId,
         voReplyToUserId: null,

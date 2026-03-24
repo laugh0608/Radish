@@ -6,12 +6,14 @@ import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import { UserInfoCard } from './components/UserInfoCard';
-import type { LongId, UserBrowseHistoryItem } from '@/api/user';
+import { getPublicProfile, type LongId, type PublicUserProfile, type UserBrowseHistoryItem } from '@/api/user';
+import { followUser, getFollowStatus, unfollowUser, type UserFollowStatus } from '@/api/userFollow';
 import { getMyTimePreference, getTimeSettings, updateMyTimePreference } from '@/api/time';
 import { getApiBaseUrl } from '@/config/env';
 import {
   DEFAULT_TIME_FORMAT,
   DEFAULT_TIME_ZONE,
+  formatDateTimeByTimeZone,
   getBrowserTimeZoneId,
   resolveTimeZoneId,
 } from '@/utils/dateTime';
@@ -110,8 +112,8 @@ export const ProfileApp = () => {
   const currentWindow = useCurrentWindow();
   const params = useMemo(() => parseProfileWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
   const viewingUserId = params.userId && params.userId > 0 ? params.userId : userId;
-  const viewingUserName = params.userName?.trim() || userName || t('common.userFallback', { id: viewingUserId });
   const isOwnProfile = viewingUserId === userId;
+  const loggedIn = isAuthenticated();
   const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'browse-history' | 'attachments' | 'social'>('posts');
   const [stats, setStats] = useState<UserStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
@@ -119,15 +121,73 @@ export const ProfileApp = () => {
   const [displayTimeZone, setDisplayTimeZone] = useState(DEFAULT_TIME_ZONE);
   const [displayTimeFormat, setDisplayTimeFormat] = useState(DEFAULT_TIME_FORMAT);
   const [savingTimeZone, setSavingTimeZone] = useState(false);
+  const [publicProfile, setPublicProfile] = useState<PublicUserProfile | null>(null);
+  const [loadingPublicProfile, setLoadingPublicProfile] = useState(false);
+  const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
+  const [followLoading, setFollowLoading] = useState(false);
 
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
-  const externalAvatarUrl = useMemo(() => resolveAvatarUrl(apiBaseUrl, params.avatarUrl), [apiBaseUrl, params.avatarUrl]);
+  const viewingUserName = publicProfile?.voUserName?.trim() || params.userName?.trim() || userName || t('common.userFallback', { id: viewingUserId });
+  const viewingDisplayName = publicProfile?.voDisplayName?.trim() || params.displayName?.trim() || null;
+  const externalAvatarUrl = useMemo(
+    () => resolveAvatarUrl(
+      apiBaseUrl,
+      publicProfile?.voAvatarThumbnailUrl || publicProfile?.voAvatarUrl || params.avatarUrl
+    ),
+    [apiBaseUrl, params.avatarUrl, publicProfile?.voAvatarThumbnailUrl, publicProfile?.voAvatarUrl]
+  );
 
   useEffect(() => {
     if (!isOwnProfile && (activeTab === 'browse-history' || activeTab === 'attachments' || activeTab === 'social')) {
       setActiveTab('posts');
     }
   }, [activeTab, isOwnProfile]);
+
+  useEffect(() => {
+    if (isOwnProfile || !loggedIn || viewingUserId <= 0) {
+      setPublicProfile(null);
+      setFollowStatus(null);
+      setLoadingPublicProfile(false);
+      setFollowLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const loadExternalProfile = async () => {
+      setLoadingPublicProfile(true);
+
+      const [profileResult, followStatusResult] = await Promise.allSettled([
+        getPublicProfile(viewingUserId),
+        getFollowStatus(viewingUserId),
+      ]);
+
+      if (cancelled) {
+        return;
+      }
+
+      if (profileResult.status === 'fulfilled') {
+        setPublicProfile(profileResult.value);
+      } else {
+        setPublicProfile(null);
+        log.error('ProfileApp', '加载公开资料失败：', profileResult.reason);
+      }
+
+      if (followStatusResult.status === 'fulfilled') {
+        setFollowStatus(followStatusResult.value);
+      } else {
+        setFollowStatus(null);
+        log.error('ProfileApp', '加载关注状态失败：', followStatusResult.reason);
+      }
+
+      setLoadingPublicProfile(false);
+    };
+
+    void loadExternalProfile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwnProfile, loggedIn, viewingUserId]);
 
   const handlePostClick = (postId: number) => {
     openApp('forum');
@@ -210,12 +270,12 @@ export const ProfileApp = () => {
   };
 
   useEffect(() => {
-    if (isAuthenticated() && viewingUserId > 0) {
+    if (loggedIn && viewingUserId > 0) {
       void loadStats();
       void loadTimeSettings();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewingUserId, userId]);
+  }, [loggedIn, viewingUserId, userId]);
 
   const loadStats = async () => {
     setLoadingStats(true);
@@ -308,7 +368,25 @@ export const ProfileApp = () => {
     }
   };
 
-  if (!isAuthenticated()) {
+  const handleToggleFollow = async () => {
+    if (!loggedIn || isOwnProfile || viewingUserId <= 0 || followLoading) {
+      return;
+    }
+
+    setFollowLoading(true);
+    try {
+      const nextStatus = followStatus?.voIsFollowing
+        ? await unfollowUser(viewingUserId)
+        : await followUser(viewingUserId);
+      setFollowStatus(nextStatus);
+    } catch (error) {
+      log.error('ProfileApp', '切换关注状态失败：', error);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  if (!loggedIn) {
     return (
       <div className={styles.container}>
         <div className={styles.notLoggedIn}>
@@ -346,7 +424,7 @@ export const ProfileApp = () => {
               <div
                 className={styles.externalAvatar}
                 style={externalAvatarUrl ? undefined : buildAvatarStyle(viewingUserName)}
-                title={params.displayName?.trim() || viewingUserName}
+                title={viewingDisplayName || viewingUserName}
               >
                 {externalAvatarUrl ? (
                   <img src={externalAvatarUrl} alt={viewingUserName} className={styles.externalAvatarImage} loading="lazy" />
@@ -355,13 +433,41 @@ export const ProfileApp = () => {
                 )}
               </div>
               <div className={styles.externalInfo}>
-                <h2 className={styles.externalName}>{viewingUserName}</h2>
-                {params.displayName?.trim() ? (
+                <div className={styles.externalNameRow}>
+                  <h2 className={styles.externalName}>{viewingUserName}</h2>
+                  <button
+                    type="button"
+                    className={`${styles.followButton} ${followStatus?.voIsFollowing ? styles.followingButton : ''}`}
+                    onClick={() => {
+                      void handleToggleFollow();
+                    }}
+                    disabled={loadingPublicProfile || followLoading}
+                    title={followStatus?.voIsFollowing
+                      ? t('forum.postDetail.follow.unfollowTitle')
+                      : t('forum.postDetail.follow.followTitle')}
+                  >
+                    {followLoading
+                      ? t('forum.postDetail.follow.loading')
+                      : followStatus?.voIsFollowing
+                        ? t('forum.postDetail.follow.following')
+                        : t('forum.postDetail.follow.follow')}
+                  </button>
+                </div>
+                {viewingDisplayName ? (
                   <div className={styles.externalSubtle}>
-                    {t('profile.displayName', { name: params.displayName.trim() })}
+                    {t('profile.displayName', { name: viewingDisplayName })}
                   </div>
                 ) : null}
-                <div className={styles.externalSubtle}>{t('profile.publicViewHint')}</div>
+                {publicProfile?.voCreateTime ? (
+                  <div className={styles.externalSubtle}>
+                    {t('profile.publicSince', {
+                      time: formatDateTimeByTimeZone(publicProfile.voCreateTime, displayTimeZone)
+                    })}
+                  </div>
+                ) : null}
+                <div className={styles.externalSubtle}>
+                  {loadingPublicProfile ? t('profile.publicLoading') : t('profile.publicViewHint')}
+                </div>
               </div>
             </div>
             <div className={styles.externalStats}>
@@ -376,6 +482,14 @@ export const ProfileApp = () => {
               <div className={styles.externalStatItem}>
                 <Icon icon="mdi:heart-outline" size={18} />
                 <span>{t('profile.stats.likesLabel')} {loadingStats ? '--' : stats?.voTotalLikeCount ?? 0}</span>
+              </div>
+              <div className={styles.externalStatItem}>
+                <Icon icon="mdi:account-heart-outline" size={18} />
+                <span>{t('profile.social.summary.followers')} {loadingPublicProfile ? '--' : followStatus?.voFollowerCount ?? 0}</span>
+              </div>
+              <div className={styles.externalStatItem}>
+                <Icon icon="mdi:account-arrow-right-outline" size={18} />
+                <span>{t('profile.social.summary.following')} {loadingPublicProfile ? '--' : followStatus?.voFollowingCount ?? 0}</span>
               </div>
             </div>
           </section>

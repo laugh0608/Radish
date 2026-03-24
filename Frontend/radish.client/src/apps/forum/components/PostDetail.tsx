@@ -120,6 +120,7 @@ export const PostDetail = ({
   const totalAnswerCount = question?.voAnswerCount ?? post?.voAnswerCount ?? 0;
   const drawTimeValue = lottery?.voDrawTime ? new Date(lottery.voDrawTime) : null;
   const isDrawTimeReached = !drawTimeValue || Number.isNaN(drawTimeValue.getTime()) || drawTimeValue.getTime() <= Date.now();
+  const authorAvatarUrl = post?.voAuthorAvatarUrl?.trim() || '';
   const canDrawLottery = Boolean(
     isLotteryPost &&
     isAuthenticated &&
@@ -345,7 +346,23 @@ export const PostDetail = ({
               className={styles.authorLink}
               onClick={() => onAuthorClick?.(post.voAuthorId, post.voAuthorName, post.voAuthorAvatarUrl)}
             >
-              {t('forum.postDetail.author', { name: post.voAuthorName })}
+              <span
+                className={styles.authorAvatar}
+                style={authorAvatarUrl ? undefined : buildAvatarStyle(post.voAuthorName)}
+                aria-hidden="true"
+              >
+                {authorAvatarUrl ? (
+                  <img
+                    className={styles.authorAvatarImage}
+                    src={authorAvatarUrl}
+                    alt={post.voAuthorName}
+                    loading="lazy"
+                  />
+                ) : (
+                  buildAvatarText(post.voAuthorName)
+                )}
+              </span>
+              <span>{t('forum.postDetail.author', { name: post.voAuthorName })}</span>
             </button>
           )}
           {post.voCreateTime && <span> · {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}</span>}

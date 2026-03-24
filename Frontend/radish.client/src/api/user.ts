@@ -45,6 +45,15 @@ export interface UserBrowseHistoryItem {
   voLastViewTime: string;
 }
 
+export interface PublicUserProfile {
+  voUserId: number;
+  voUserName: string;
+  voDisplayName?: string | null;
+  voCreateTime: string;
+  voAvatarUrl?: string | null;
+  voAvatarThumbnailUrl?: string | null;
+}
+
 /**
  * 搜索用户（用于@提及功能）
  * @param keyword 搜索关键词
@@ -87,6 +96,18 @@ export async function getMyBrowseHistory(
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '加载浏览记录失败');
+  }
+
+  return response.data;
+}
+
+export async function getPublicProfile(userId: number): Promise<PublicUserProfile> {
+  const response = await apiGet<PublicUserProfile>(
+    `/api/v1/User/GetPublicProfile?userId=${userId}`
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载公开资料失败');
   }
 
   return response.data;

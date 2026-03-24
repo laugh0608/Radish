@@ -79,6 +79,14 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     defaultEntry: false,
   },
   {
+    key: 'categories',
+    path: '/categories',
+    title: '分类管理',
+    requiredPermission: CONSOLE_PERMISSIONS.categoriesView,
+    sidebarVisible: true,
+    searchVisible: true,
+  },
+  {
     key: 'tags',
     path: '/tags',
     title: '标签管理',
@@ -91,6 +99,30 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     path: '/stickers',
     title: '表情包管理',
     requiredPermission: CONSOLE_PERMISSIONS.stickersView,
+    sidebarVisible: true,
+    searchVisible: true,
+  },
+  {
+    key: 'moderation',
+    path: '/moderation',
+    title: '内容治理',
+    requiredPermission: CONSOLE_PERMISSIONS.moderationView,
+    sidebarVisible: true,
+    searchVisible: true,
+  },
+  {
+    key: 'coins',
+    path: '/coins',
+    title: '胡萝卜管理',
+    requiredPermission: CONSOLE_PERMISSIONS.coinsView,
+    sidebarVisible: true,
+    searchVisible: true,
+  },
+  {
+    key: 'experience',
+    path: '/experience',
+    title: '经验等级',
+    requiredPermission: CONSOLE_PERMISSIONS.experienceView,
     sidebarVisible: true,
     searchVisible: true,
   },
@@ -160,6 +192,26 @@ export function canAccessConsoleRoute(route: ConsoleRouteMeta, user: UserInfo | 
   }
 
   return hasPermission(user, route.requiredPermission);
+}
+
+export function hasConsoleOperationalPermission(user: UserInfo | null | undefined): boolean {
+  return consoleRouteMeta.some((route) => Boolean(route.requiredPermission) && canAccessConsoleRoute(route, user));
+}
+
+export function canEnterConsole(user: UserInfo | null | undefined): boolean {
+  if (!user) {
+    return false;
+  }
+
+  const normalizedRoles = (user.roles || [])
+    .map((role) => role.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (normalizedRoles.includes('admin') || normalizedRoles.includes('system')) {
+    return true;
+  }
+
+  return hasPermission(user, CONSOLE_PERMISSIONS.consoleAccess) && hasConsoleOperationalPermission(user);
 }
 
 export function getSidebarRoutes(user: UserInfo | null | undefined): ConsoleRouteMeta[] {

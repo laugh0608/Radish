@@ -550,6 +550,60 @@ public class UserController : ControllerBase
     }
 
     /// <summary>
+    /// 获取指定用户的公开资料
+    /// </summary>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetPublicProfile(long userId)
+    {
+        if (userId <= 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "用户 ID 无效"
+            };
+        }
+
+        var user = await _userService.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted && u.IsEnable);
+        if (user == null)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "用户不存在"
+            };
+        }
+
+        var avatar = await _attachmentService.QueryFirstAsync(a =>
+            !a.IsDeleted &&
+            a.BusinessType == "Avatar" &&
+            a.BusinessId == userId);
+
+        var profile = new UserPublicProfileVo
+        {
+            VoUserId = user.Uuid,
+            VoUserName = user.VoUserName,
+            VoDisplayName = string.IsNullOrWhiteSpace(user.VoUserRealName) ? null : user.VoUserRealName,
+            VoCreateTime = user.VoCreateTime,
+            VoAvatarUrl = avatar?.VoUrl,
+            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl
+        };
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = profile
+        };
+    }
+
+    /// <summary>
     /// 获取当前登录用户的浏览记录（个人中心）
     /// </summary>
     [HttpGet]

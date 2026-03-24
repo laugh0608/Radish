@@ -110,6 +110,16 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.externalNameRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .externalName {
@@ -122,6 +132,38 @@
 .externalSubtle {
   color: var(--theme-text-secondary);
   font-size: 13px;
+}
+
+.followButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-soft) 62%, var(--theme-bg-surface) 38%);
+  color: var(--theme-brand-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease, background-color 0.2s ease;
+}
+
+.followButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(0.98);
+}
+
+.followButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.followingButton {
+  background: color-mix(in srgb, var(--theme-bg-muted) 80%, var(--theme-bg-surface) 20%);
+  border-color: var(--theme-border-soft);
+  color: var(--theme-text-secondary);
 }
 
 .externalStats {

@@ -46,3 +46,30 @@
 - ✅ 通知中心真实首版 Smoke 已完成并通过。
 - ✅ 欢迎 App 长文案 i18n 已完成并通过类型检查 / 构建验证。
 - ✅ 认证 / OIDC / Gateway 基础入口真实首版 Smoke 已完成并通过。
+
+## 2026-03-24 (周二)
+
+### Console 入口权限与后台模块补边界
+
+- **`console.access` 已从“单独可见”收口为“入口标记 + 真实后台能力联动”**：普通角色现在必须同时具备 `console.access` 和至少一个真实 Console 业务权限才会看到并允许进入 Console；后端权限快照也会自动补齐或剔除入口权限，避免脏授权。
+- **分类与标签后台已明确拆分**：`radish.console` 当前分别提供 `/categories` 与 `/tags` 两个独立管理页面，分类管理已支持分页、新增、编辑、启停、排序、软删除与恢复，权限键、资源映射与种子也已与标签彻底拆开。
+- **内容治理 / 胡萝卜 / 经验等级后台首版已纳入 Console**：当前已补 `Moderation`、`Coins`、`Experience` 三组页面、权限常量、路由与后端资源映射；治理后台明确采用“集成在 Console，不拆独立 App”的方案。
+- **内容治理首版范围已冻结**：当前审核台只接入 `Post / Comment` 举报审核链路，商品、聊天室消息等举报对象仍后置到后续阶段，不作为这一轮首版边界。
+
+### 社区资料与论坛详情展示修复
+
+- **公开个人主页已改为真实拉取公开资料**：查看其他用户主页时，前端不再只依赖窗口参数，而是通过公开资料接口拉取头像、昵称、加入时间等信息，并恢复关注 / 取消关注入口。
+- **论坛帖子详情与评论头像已补齐**：帖子详情作者区已显示头像，评论 Vo 与前端评论节点也已增加作者头像显示，身份识别和讨论区信息密度已对齐。
+- **经验查询边界已补一层收口**：`GetMyExperience` 现仅允许查询自己，Console 需要查看其他用户经验时改走 `GetUserExperience/{userId}`。
+
+### 文档同步
+
+- **Console 文档已更新当前入口判定与覆盖矩阵**：`console-system`、`console-permission-governance`、`console-permission-coverage-matrix` 已同步 `console.access` 新语义，以及分类 / 治理 / 胡萝卜 / 经验等级后台范围。
+- **论坛与规划文档已同步当前实现口径**：论坛功能、分类标签专题、M12-P0 验收清单、路线图与当前进行中页面已补齐“公开主页头像 / 关注按钮”“帖子与评论头像”“治理后台集成到 Console”“分类标签后台拆分”等说明。
+
+### 本轮验证
+
+- ✅ `npx tsc -b Frontend/radish.console` 通过。
+- ✅ `npx tsc -b Frontend/radish.client` 通过。
+- ⚠️ `npm run build --workspace=radish.console` 已通过 `tsc -b`，但 `vite build` 在当前沙盒环境下因 `spawn EPERM` 中断。
+- ⚠️ `dotnet build` 已通过首用目录权限问题，但在当前沙盒内仍出现无编译错误的 MSBuild 异常退出，暂未拿到可用于判定代码错误的有效失败信息。

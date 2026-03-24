@@ -1,6 +1,6 @@
 # Console 权限覆盖矩阵
 
-> 最后更新：2026-03-11
+> 最后更新：2026-03-24
 > 适用范围：`radish.console` 当前已接入权限治理的页面与其真实依赖的后端资源
 
 本文档用于把 Console 权限治理涉及的四层对象放到同一张表里：
@@ -27,6 +27,13 @@
 - 未来可能存在但当前未接入的后台模块
 - 只负责“进入 Console”的入口权限（如 `console.access`），这类权限不强制要求 `ConsolePermissions.ApiPermissionMappings`
 
+### 1.3 Console 入口判定补充
+
+- `console.access` 当前只作为入口标记，不再单独放行 Console
+- `Admin / System` 直接允许进入
+- 其他角色必须同时满足 `console.access + 至少一个真实 Console 业务权限`
+- 该联动由前端入口守卫和后端权限快照共同保证
+
 ## 2. 路由与页面覆盖矩阵
 
 | 模块/页面 | 路由 | 路由访问权限 | 页面内操作权限 | 真实后端资源 | 种子状态 | 备注 |
@@ -38,9 +45,13 @@
 | Users | `/users` | `console.users.view` | 无额外操作权限 | `User/GetUserList`、`GetUserById/\\d+` | ✅ | 未落地操作已收口，不再保留伪权限 |
 | User Detail | `/users/:userId` | `console.users.view` | 无额外操作权限 | 当前页面仍以 mock 为主，无新增真实资源依赖 | ✅ | 路由边界已稳定，后续若接真接口需重新补矩阵 |
 | Roles | `/roles` | `console.roles.view` | `console.roles.create/edit/toggle/delete` | `Role/GetRoleList`、`GetRoleById`、`CreateRole`、`UpdateRole`、`DeleteRole`、`ToggleRoleStatus` | ✅ | 首批闭环模块 |
+| Categories | `/categories` | `console.categories.view` | `console.categories.create/edit/delete/restore/toggle/sort` | `Category/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 分类与标签已拆分为独立后台模块 |
 | Tags | `/tags` | `console.tags.view` | `console.tags.create/edit/delete/restore/toggle/sort` | `Tag/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 页面与资源映射已一致 |
 | Stickers Groups | `/stickers` | `console.stickers.view` | `console.stickers.create/edit/delete/toggle` | `Sticker/GetAdminGroups`、`CreateGroup`、`UpdateGroup/.+`、`DeleteGroup/.+`、`CheckGroupCode` | ✅ | 分组启停复用 `UpdateGroup` |
 | Stickers Items | `/stickers/:groupId/items` | `console.stickers.view` | `console.stickers.create/edit/delete/sort/batch-upload` | `Sticker/GetGroupStickers/.+`、`AddSticker`、`UpdateSticker/.+`、`DeleteSticker/.+`、`BatchAddStickers`、`BatchUpdateSort`、`CheckStickerCode`、`NormalizeCode` | ✅ | 上传文件仍走共享接口，但已按 `businessType` 对 Sticker 链路收口，见第 4 节 |
+| Moderation | `/moderation` | `console.moderation.view` | `console.moderation.review` | `ContentModeration/GetReviewQueue`、`Review`、`ApplyUserAction`、`GetActionLogs` | ✅ | 当前首版只纳管 `Post / Comment` 举报审核链路 |
+| Coins | `/coins` | `console.coins.view` | `console.coins.adjust` | `Coin/GetBalanceByUserId`、`AdminAdjustBalance` | ✅ | 仅管理端查询指定用户余额与调账能力 |
+| Experience | `/experience` | `console.experience.view` | `console.experience.adjust/recalculate` | `Experience/GetUserExperience/.+`、`GetLevelConfigs`、`AdminAdjustExperience`、`RecalculateLevelConfigs` | ✅ | `GetLevelConfigs` 为公开接口，Console 复用该数据源展示等级曲线 |
 | SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`CreateConfig`、`UpdateConfig`、`DeleteConfig` | ✅ | 编辑详情链路已覆盖 |
 | Hangfire | `/hangfire` | `console.hangfire.view` | 无 | `/hangfire(/.*)?` | ✅ | 特殊入口，走 `HangfireAuthorizationFilter` |
 
@@ -100,6 +111,7 @@
 说明：
 
 - `console.access` 属于入口权限，只要求在前端入口守卫 / WebOS 入口可见性处被消费，不要求映射到具体后端 API 资源
+- 当前额外规则：`console.access` 必须与至少一个真实 Console 业务权限联动才生效
 
 建议在以下场景运行：
 
