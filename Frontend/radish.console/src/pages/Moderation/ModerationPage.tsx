@@ -303,7 +303,7 @@ export const ModerationPage = () => {
       </section>
 
       <div className="admin-feature-banner">
-        当前第一版仅接入帖子与评论举报审核链路，商品、聊天室消息等举报目标尚未进入这一期 Console。
+        当前治理链路已统一接入帖子、评论、聊天室消息和商品举报，审核通过后可继续联动禁言或封禁动作。
       </div>
 
       <section className="admin-feature-card">

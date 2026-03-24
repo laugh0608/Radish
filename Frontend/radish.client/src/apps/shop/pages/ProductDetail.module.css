@@ -5,6 +5,10 @@
 }
 
 .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
@@ -22,6 +26,22 @@
 .backButton:hover {
   border-color: var(--theme-brand-primary);
   color: var(--theme-brand-primary);
+}
+
+.reportButton {
+  background: color-mix(in srgb, var(--theme-accent-earth) 10%, var(--theme-bg-surface));
+  border: 1px solid color-mix(in srgb, var(--theme-accent-earth) 34%, transparent);
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--theme-accent-earth);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.reportButton:hover {
+  background: color-mix(in srgb, var(--theme-accent-earth) 16%, var(--theme-bg-surface));
+  border-color: color-mix(in srgb, var(--theme-accent-earth) 46%, transparent);
 }
 
 .loading {
@@ -393,6 +413,8 @@
 
 @media (max-height: 860px) and (min-width: 769px) {
   .header {
+    align-items: stretch;
+    flex-direction: column;
     margin-bottom: 12px;
   }
 

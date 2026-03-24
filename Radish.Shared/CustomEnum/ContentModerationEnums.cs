@@ -5,7 +5,9 @@ public enum ContentReportTargetTypeEnum
 {
     Unknown = 0,
     Post = 1,
-    Comment = 2
+    Comment = 2,
+    ChatMessage = 3,
+    Product = 4
 }
 
 /// <summary>举报处理状态</summary>

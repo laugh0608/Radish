@@ -290,6 +290,11 @@
   color: var(--theme-brand-primary);
 }
 
+.reportButton:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--theme-accent-earth) 14%, var(--theme-bg-surface) 86%);
+  color: var(--theme-accent-earth);
+}
+
 .count {
   font-size: 12px;
   font-weight: 500;

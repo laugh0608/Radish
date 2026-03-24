@@ -23,6 +23,8 @@ import {
   FileTextOutlined,
   SearchOutlined,
   TagsOutlined,
+  TrophyOutlined,
+  WalletOutlined,
 } from '@radish/ui';
 import { ROUTES } from '../../router';
 import { getAuthServerBaseUrl, getPostLogoutRedirectUri, getAvatarUrl } from '@/config/env';
@@ -41,8 +43,12 @@ const menuIconMap: Record<string, ReactNode> = {
   orders: <FileTextOutlined />,
   users: <TeamOutlined />,
   roles: <SafetyOutlined />,
+  categories: <AppstoreOutlined />,
   tags: <TagsOutlined />,
   stickers: <AppstoreOutlined />,
+  moderation: <SafetyOutlined />,
+  coins: <WalletOutlined />,
+  experience: <TrophyOutlined />,
   'system-config': <SettingOutlined />,
   hangfire: <ClockCircleOutlined />,
 };

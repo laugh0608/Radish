@@ -850,15 +850,34 @@ internal static partial class InitialDataSeeder
         await EnsureRoleApiPermissionAsync(db, systemRoleId, 50000, "System");
         await EnsureRoleApiPermissionAsync(db, adminRoleId, 50000, "Admin");
         await EnsureRoleApiPermissionAsync(db, testRoleId, 50000, "Test");
+        await RestrictTestRoleApiPermissionsAsync(db);
     }
 
     private static async Task EnsureRoleApiPermissionAsync(ISqlSugarClient db, long roleId, long apiModuleId,
         string roleName)
     {
-        var exists = await db.Queryable<RoleModulePermission>()
-            .AnyAsync(p => p.RoleId == roleId && p.ApiModuleId == apiModuleId);
-        if (exists)
+        var existing = await db.Queryable<RoleModulePermission>()
+            .FirstAsync(p => p.RoleId == roleId && p.ApiModuleId == apiModuleId);
+        if (existing != null)
         {
+            if (existing.IsDeleted)
+            {
+                await db.Updateable<RoleModulePermission>()
+                    .SetColumns(p => new RoleModulePermission
+                    {
+                        IsDeleted = false,
+                        ModifyBy = "System",
+                        ModifyId = 0,
+                        ModifyTime = DateTime.UtcNow
+                    })
+                    .Where(p => p.Id == existing.Id)
+                    .ExecuteCommandAsync();
+
+                Console.WriteLine(
+                    $"[Radish.DbMigrate] 已恢复角色 Id={roleId} 与 ApiModule Id={apiModuleId} 的权限记录。");
+                return;
+            }
+
             Console.WriteLine(
                 $"[Radish.DbMigrate] 已存在角色 Id={roleId} 与 ApiModule Id={apiModuleId} 的权限记录，跳过创建。");
             return;
@@ -888,6 +907,36 @@ internal static partial class InitialDataSeeder
         };
 
         await db.Insertable(perm).ExecuteCommandAsync();
+    }
+
+    private static async Task RestrictTestRoleApiPermissionsAsync(ISqlSugarClient db)
+    {
+        const long testRoleId = 10002L;
+        const long allowedApiModuleId = 50000L;
+
+        var redundantPermissions = await db.Queryable<RoleModulePermission>()
+            .Where(permission =>
+                permission.RoleId == testRoleId &&
+                permission.ApiModuleId != allowedApiModuleId &&
+                !permission.IsDeleted)
+            .ToListAsync();
+
+        if (redundantPermissions.Count == 0)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var permission in redundantPermissions)
+        {
+            permission.IsDeleted = true;
+            permission.ModifyBy = "System";
+            permission.ModifyId = 0;
+            permission.ModifyTime = now;
+        }
+
+        await db.Updateable(redundantPermissions).ExecuteCommandAsync();
+        Console.WriteLine($"[Radish.DbMigrate] 已回收 Test 角色的多余 API 权限，共 {redundantPermissions.Count} 条。");
     }
 
     /// <summary>初始化角色相关数据</summary>

@@ -1071,6 +1071,25 @@
   background: color-mix(in srgb, var(--theme-bg-muted) 84%, var(--theme-bg-surface) 16%);
 }
 
+.reportButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent-earth) 32%, transparent);
+  border-radius: var(--theme-radius-control);
+  background: color-mix(in srgb, var(--theme-accent-earth) 10%, var(--theme-bg-surface) 90%);
+  color: var(--theme-accent-earth);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reportButton:hover {
+  background: color-mix(in srgb, var(--theme-accent-earth) 16%, var(--theme-bg-surface) 84%);
+  border-color: color-mix(in srgb, var(--theme-accent-earth) 44%, transparent);
+}
+
 .authorActions {
   display: flex;
   align-items: center;

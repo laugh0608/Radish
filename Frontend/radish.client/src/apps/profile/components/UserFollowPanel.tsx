@@ -15,6 +15,7 @@ import {
   type UserFollowUser
 } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './UserFollowPanel.module.css';
 
 type SocialTab = 'feed' | 'followers' | 'following';
@@ -175,13 +176,6 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
     };
   };
 
-  const resolveAvatarUrl = (url: string | null | undefined) => {
-    if (!url) return null;
-    if (/^https?:\/\//i.test(url)) return url;
-    if (url.startsWith('/')) return `${apiBaseUrl}${url}`;
-    return `${apiBaseUrl}/${url}`;
-  };
-
   const handleRetry = () => {
     if (activeTab === 'feed') {
       void loadFeed(feedPage, feedViewType);
@@ -198,7 +192,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
 
   const renderUserAvatar = (user: UserFollowUser) => {
     const name = user.voDisplayName?.trim() || user.voUserName.trim() || t('common.unknownUser');
-    const avatarUrl = avatarErrorUserIds.has(user.voUserId) ? null : resolveAvatarUrl(user.voAvatarUrl);
+    const avatarUrl = avatarErrorUserIds.has(user.voUserId) ? null : resolveMediaUrl(user.voAvatarUrl, apiBaseUrl);
 
     return (
       <span

@@ -17,6 +17,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
     private readonly IBaseRepository<UserModerationAction> _moderationActionRepository;
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
+    private readonly IBaseRepository<ChannelMessage> _channelMessageRepository;
+    private readonly IBaseRepository<Product> _productRepository;
     private readonly IBaseRepository<User> _userRepository;
 
     public ContentModerationService(
@@ -25,6 +27,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         IBaseRepository<UserModerationAction> moderationActionRepository,
         IBaseRepository<Post> postRepository,
         IBaseRepository<Comment> commentRepository,
+        IBaseRepository<ChannelMessage> channelMessageRepository,
+        IBaseRepository<Product> productRepository,
         IBaseRepository<User> userRepository)
         : base(mapper, baseRepository)
     {
@@ -32,6 +36,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         _moderationActionRepository = moderationActionRepository;
         _postRepository = postRepository;
         _commentRepository = commentRepository;
+        _channelMessageRepository = channelMessageRepository;
+        _productRepository = productRepository;
         _userRepository = userRepository;
     }
 
@@ -49,12 +55,12 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
 
         var targetType = ParseTargetType(dto.TargetType);
         var (targetUserId, targetUserName) = await ResolveReportTargetAsync(targetType, dto.TargetContentId);
-        if (targetUserId <= 0)
+        if (targetUserId < 0)
         {
             throw new InvalidOperationException("举报目标用户不存在");
         }
 
-        if (targetUserId == reporterUserId)
+        if (targetUserId > 0 && targetUserId == reporterUserId)
         {
             throw new ArgumentException("不能举报自己的内容");
         }
@@ -159,6 +165,13 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         if (report.Status != (int)ContentReportStatusEnum.Pending)
         {
             throw new InvalidOperationException("该举报单已处理，请勿重复审核");
+        }
+
+        if (dto.IsApproved &&
+            actionType is ModerationActionTypeEnum.Mute or ModerationActionTypeEnum.Ban &&
+            report.TargetUserId <= 0)
+        {
+            throw new InvalidOperationException("当前目标不支持联动用户治理动作");
         }
 
         var normalizedReviewerName = string.IsNullOrWhiteSpace(reviewerUserName) ? $"User-{reviewerUserId}" : reviewerUserName.Trim();
@@ -516,6 +529,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         {
             ContentReportTargetTypeEnum.Post => await ResolvePostTargetAsync(targetContentId),
             ContentReportTargetTypeEnum.Comment => await ResolveCommentTargetAsync(targetContentId),
+            ContentReportTargetTypeEnum.ChatMessage => await ResolveChatMessageTargetAsync(targetContentId),
+            ContentReportTargetTypeEnum.Product => await ResolveProductTargetAsync(targetContentId),
             _ => throw new ArgumentException("不支持的举报目标类型")
         };
     }
@@ -542,6 +557,29 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         return (comment.AuthorId, comment.AuthorName);
     }
 
+    private async Task<(long targetUserId, string? targetUserName)> ResolveChatMessageTargetAsync(long messageId)
+    {
+        var message = await _channelMessageRepository.QueryFirstAsync(m => m.Id == messageId && !m.IsDeleted);
+        if (message == null)
+        {
+            throw new InvalidOperationException("目标聊天室消息不存在");
+        }
+
+        return (message.UserId, message.UserName);
+    }
+
+    private async Task<(long targetUserId, string? targetUserName)> ResolveProductTargetAsync(long productId)
+    {
+        var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+        if (product == null)
+        {
+            throw new InvalidOperationException("目标商品不存在");
+        }
+
+        var targetUserId = product.CreateId < 0 ? -1 : product.CreateId;
+        return (targetUserId, product.CreateBy);
+    }
+
     private static ContentReportTargetTypeEnum ParseTargetType(string? targetType)
     {
         if (string.IsNullOrWhiteSpace(targetType))
@@ -553,7 +591,9 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         {
             "post" => ContentReportTargetTypeEnum.Post,
             "comment" => ContentReportTargetTypeEnum.Comment,
-            _ => throw new ArgumentException("举报目标类型仅支持 Post 或 Comment")
+            "chatmessage" => ContentReportTargetTypeEnum.ChatMessage,
+            "product" => ContentReportTargetTypeEnum.Product,
+            _ => throw new ArgumentException("举报目标类型仅支持 Post、Comment、ChatMessage 或 Product")
         };
     }
 
@@ -613,6 +653,8 @@ public class ContentModerationService : BaseService<ContentReport, ContentReport
         {
             (int)ContentReportTargetTypeEnum.Post => "Post",
             (int)ContentReportTargetTypeEnum.Comment => "Comment",
+            (int)ContentReportTargetTypeEnum.ChatMessage => "ChatMessage",
+            (int)ContentReportTargetTypeEnum.Product => "Product",
             _ => "Unknown"
         };
     }

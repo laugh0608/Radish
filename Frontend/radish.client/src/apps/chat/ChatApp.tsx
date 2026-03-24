@@ -2,6 +2,7 @@ import { type ChangeEvent, type ReactNode, useCallback, useEffect, useMemo, useR
 import { useTranslation } from 'react-i18next';
 import { toast } from '@radish/ui/toast';
 import { uploadImage } from '@/api/attachment';
+import type { ContentReportTargetType } from '@/api/contentModeration';
 import {
   getChannelHistory,
   getChannelList,
@@ -16,6 +17,7 @@ import { useChatStore } from '@/stores/chatStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
+import { ContentReportModal } from '@/components/ContentReportModal';
 import i18n from '@/i18n';
 import type { ChannelMemberVo, ChannelMessageVo, EntityIdValue, SendChannelMessageRequest } from '@/types/chat';
 import {
@@ -318,6 +320,7 @@ export const ChatApp = () => {
   const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
   const [onlineMembers, setOnlineMembers] = useState<ChannelMemberVo[]>([]);
   const [memberPanelCollapsed, setMemberPanelCollapsed] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
 
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -646,6 +649,19 @@ export const ChatApp = () => {
       setLoadingHistory(false);
     }
   }, [activeChannelId, activeMessages, hasMoreHistory, loadingHistory, prependChannelMessages, t]);
+
+  const handleOpenReport = useCallback((targetType: ContentReportTargetType, targetId: number) => {
+    if (currentUserIdValue <= 0) {
+      toast.error(t('report.loginRequired'));
+      return;
+    }
+
+    if (targetId <= 0) {
+      return;
+    }
+
+    setReportTarget({ targetType, targetId });
+  }, [currentUserIdValue, t]);
 
   const resetComposer = useCallback((channelId: EntityIdValue) => {
     setMessageInput('');
@@ -1161,101 +1177,112 @@ export const ChatApp = () => {
                 const isFailedMessage = messageStatus === 'failed';
                 const replyText = message.voReplyTo ? getMessagePreviewText(message.voReplyTo) : null;
                 const messageImageUrl = resolveMediaUrl(apiBaseUrl, message.voImageUrl);
+                const canReportMessage = !isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId);
 
                 return (
                   <div key={messageIdKey || message.voClientRequestId || message.voCreateTime} className={`${styles.messageRow} ${isMine ? styles.mine : ''}`}>
-                    {!isMine && renderAvatarButton(
-                      message.voUserId,
-                      message.voUserName,
-                      message.voUserAvatarUrl
-                    )}
+                    <div className={styles.messageMain}>
+                      {renderAvatarButton(
+                        message.voUserId,
+                        message.voUserName,
+                        message.voUserAvatarUrl
+                      )}
 
-                    <div className={styles.messageBody}>
-                      <div className={styles.metaLine}>
-                        <button
-                          type="button"
-                          className={styles.userNameButton}
-                          onClick={() => handleOpenUserProfile(message.voUserId, message.voUserName, message.voUserAvatarUrl)}
-                          disabled={!canOpenMessageUserProfile}
-                          title={canOpenMessageUserProfile
-                            ? t('chat.viewProfile', { name: (message.voUserName || getFallbackUserName(messageUserIdKey)).trim() })
-                            : t('chat.userUnavailable')}
-                        >
-                          <span className={styles.userName}>{message.voUserName || t('common.unknownUser')}</span>
-                        </button>
-                        <span className={styles.time}>{formatTime(message.voCreateTime)}</span>
-                        {!message.voIsRecalled && messageStatus === 'sent' && (
+                      <div className={styles.messageContent}>
+                        <div className={styles.metaLine}>
                           <button
                             type="button"
-                            className={styles.replyButton}
-                            onClick={() => setReplyTarget(message)}
+                            className={styles.userNameButton}
+                            onClick={() => handleOpenUserProfile(message.voUserId, message.voUserName, message.voUserAvatarUrl)}
+                            disabled={!canOpenMessageUserProfile}
+                            title={canOpenMessageUserProfile
+                              ? t('chat.viewProfile', { name: (message.voUserName || getFallbackUserName(messageUserIdKey)).trim() })
+                              : t('chat.userUnavailable')}
                           >
-                            {t('chat.reply')}
+                            <span className={styles.userName}>{message.voUserName || t('common.unknownUser')}</span>
                           </button>
-                        )}
-                        {isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId) && (
-                          <button
-                            type="button"
-                            className={styles.recallButton}
-                            onClick={() => {
-                              void handleRecall(message.voId);
-                            }}
-                          >
-                            {t('chat.recall')}
-                          </button>
-                        )}
-                      </div>
-
-                      {message.voIsRecalled ? (
-                        <div className={styles.recalled}>{t('chat.recalled')}</div>
-                      ) : (
-                        <div className={styles.messageStack}>
-                          {message.voReplyTo && (
-                            <div className={styles.quotedMessage}>
-                              <div className={styles.quotedAuthor}>
-                                {t('chat.replyTo', { name: message.voReplyTo.voUserName || t('common.unknownUser') })}
-                              </div>
-                              <div className={styles.quotedText}>{replyText}</div>
-                            </div>
+                          <span className={styles.time}>{formatTime(message.voCreateTime)}</span>
+                          {!message.voIsRecalled && messageStatus === 'sent' && (
+                            <button
+                              type="button"
+                              className={styles.replyButton}
+                              onClick={() => setReplyTarget(message)}
+                            >
+                              {t('chat.reply')}
+                            </button>
                           )}
-                          {message.voContent && <div className={styles.bubble}>{renderMessageContent(message.voContent)}</div>}
-                          {message.voType === 2 && messageImageUrl && (
-                            <img className={styles.imageMessage} src={messageImageUrl} alt={t('chat.imageMessage')} loading="lazy" />
+                          {isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId) && (
+                            <button
+                              type="button"
+                              className={styles.recallButton}
+                              onClick={() => {
+                                void handleRecall(message.voId);
+                              }}
+                            >
+                              {t('chat.recall')}
+                            </button>
                           )}
-                          {isMine && !message.voIsRecalled && messageStatus !== 'sent' && (
-                            <div className={styles.deliveryState}>
-                              <span className={`${styles.deliveryStateText} ${isFailedMessage ? styles.deliveryStateTextFailed : ''}`}>
-                                {isSendingMessage ? t('chat.sending') : (message.voLocalError || t('chat.sendFailed'))}
-                              </span>
-                              {isFailedMessage && (
-                                <>
-                                  <button
-                                    type="button"
-                                    className={styles.deliveryActionButton}
-                                    onClick={() => handleRetryMessage(message)}
-                                  >
-                                    {t('chat.retry')}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className={styles.deliveryActionButton}
-                                    onClick={() => handleDismissFailedMessage(message)}
-                                  >
-                                    {t('chat.dismiss')}
-                                  </button>
-                                </>
-                              )}
-                            </div>
+                          {canReportMessage && (
+                            <button
+                              type="button"
+                              className={styles.reportButton}
+                              onClick={() => {
+                                const messageId = toNumericId(message.voId);
+                                if (messageId > 0) {
+                                  handleOpenReport('ChatMessage', messageId);
+                                }
+                              }}
+                            >
+                              {t('report.action')}
+                            </button>
                           )}
                         </div>
-                      )}
-                    </div>
 
-                    {isMine && renderAvatarButton(
-                      message.voUserId,
-                      message.voUserName,
-                      message.voUserAvatarUrl
-                    )}
+                        {message.voIsRecalled ? (
+                          <div className={styles.recalled}>{t('chat.recalled')}</div>
+                        ) : (
+                          <div className={styles.messageStack}>
+                            {message.voReplyTo && (
+                              <div className={styles.quotedMessage}>
+                                <div className={styles.quotedAuthor}>
+                                  {t('chat.replyTo', { name: message.voReplyTo.voUserName || t('common.unknownUser') })}
+                                </div>
+                                <div className={styles.quotedText}>{replyText}</div>
+                              </div>
+                            )}
+                            {message.voContent && <div className={styles.bubble}>{renderMessageContent(message.voContent)}</div>}
+                            {message.voType === 2 && messageImageUrl && (
+                              <img className={styles.imageMessage} src={messageImageUrl} alt={t('chat.imageMessage')} loading="lazy" />
+                            )}
+                            {isMine && !message.voIsRecalled && messageStatus !== 'sent' && (
+                              <div className={styles.deliveryState}>
+                                <span className={`${styles.deliveryStateText} ${isFailedMessage ? styles.deliveryStateTextFailed : ''}`}>
+                                  {isSendingMessage ? t('chat.sending') : (message.voLocalError || t('chat.sendFailed'))}
+                                </span>
+                                {isFailedMessage && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className={styles.deliveryActionButton}
+                                      onClick={() => handleRetryMessage(message)}
+                                    >
+                                      {t('chat.retry')}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={styles.deliveryActionButton}
+                                      onClick={() => handleDismissFailedMessage(message)}
+                                    >
+                                      {t('chat.dismiss')}
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 );
               })
@@ -1496,6 +1523,15 @@ export const ChatApp = () => {
           )}
         </div>
       </section>
+
+      {reportTarget && (
+        <ContentReportModal
+          isOpen={!!reportTarget}
+          targetType={reportTarget.targetType}
+          targetId={reportTarget.targetId}
+          onClose={() => setReportTarget(null)}
+        />
+      )}
     </div>
   );
 };

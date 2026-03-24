@@ -733,9 +733,9 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 group =>
                 {
                     var attachment = group.First();
-                    return !string.IsNullOrWhiteSpace(attachment.ThumbnailPath)
-                        ? attachment.ThumbnailPath!
-                        : attachment.Url;
+                    return !string.IsNullOrWhiteSpace(attachment.Url)
+                        ? attachment.Url
+                        : attachment.ThumbnailPath;
                 });
 
         ApplyAuthorAvatarUrls(comments, avatarMap);
@@ -757,11 +757,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
     }
 
-    private static void ApplyAuthorAvatarUrls(IEnumerable<CommentVo> comments, IReadOnlyDictionary<long, string> avatarMap)
+    private static void ApplyAuthorAvatarUrls(IEnumerable<CommentVo> comments, IReadOnlyDictionary<long, string?> avatarMap)
     {
         foreach (var comment in comments)
         {
-            if (avatarMap.TryGetValue(comment.VoAuthorId, out var avatarUrl))
+            if (avatarMap.TryGetValue(comment.VoAuthorId, out var avatarUrl) &&
+                !string.IsNullOrWhiteSpace(avatarUrl))
             {
                 comment.VoAuthorAvatarUrl = avatarUrl;
             }

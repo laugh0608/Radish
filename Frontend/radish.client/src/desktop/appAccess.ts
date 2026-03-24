@@ -1,6 +1,23 @@
 import type { AppDefinition } from './types';
 
 const CONSOLE_ACCESS_PERMISSION = 'console.access';
+const CONSOLE_ENTRY_PERMISSIONS = new Set([
+  'console.dashboard.view',
+  'console.applications.view',
+  'console.products.view',
+  'console.orders.view',
+  'console.users.view',
+  'console.roles.view',
+  'console.roles.edit',
+  'console.categories.view',
+  'console.tags.view',
+  'console.stickers.view',
+  'console.moderation.view',
+  'console.coins.view',
+  'console.experience.view',
+  'console.system-config.view',
+  'console.hangfire.view',
+]);
 
 type AppAccessContext = {
   isAuthenticated?: boolean;
@@ -14,7 +31,7 @@ function normalizeValues(values: string[] = []): Set<string> {
 
 function hasConsoleOperationalPermission(permissions: Set<string>): boolean {
   for (const permission of permissions) {
-    if (permission.startsWith('console.') && permission !== CONSOLE_ACCESS_PERMISSION) {
+    if (CONSOLE_ENTRY_PERMISSIONS.has(permission)) {
       return true;
     }
   }

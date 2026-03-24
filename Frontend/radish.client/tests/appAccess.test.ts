@@ -92,3 +92,15 @@ test('getVisibleAppsForUser 应保留常规桌面应用，仅按权限隐藏控�
   });
   assert.deepEqual(consoleVisible.map((app) => app.id), ['document', 'chat', 'console']);
 });
+
+test('getVisibleAppsForUser 不应因非入口型 Console 权限而显示控制台', () => {
+  const apps = [publicApp, loginRequiredApp, consoleApp];
+
+  const visibleApps = getVisibleAppsForUser(apps, {
+    isAuthenticated: true,
+    userRoles: ['User'],
+    userPermissions: ['console.access', 'console.tags.create'],
+  });
+
+  assert.deepEqual(visibleApps.map((app) => app.id), ['document', 'chat']);
+});

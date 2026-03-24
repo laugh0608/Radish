@@ -31,7 +31,7 @@
 
 - `console.access` 当前只作为入口标记，不再单独放行 Console
 - `Admin / System` 直接允许进入
-- 其他角色必须同时满足 `console.access + 至少一个真实 Console 业务权限`
+- 其他角色必须同时满足 `console.access + 至少一个真实 Console 页面访问权限`
 - 该联动由前端入口守卫和后端权限快照共同保证
 
 ## 2. 路由与页面覆盖矩阵
@@ -49,7 +49,7 @@
 | Tags | `/tags` | `console.tags.view` | `console.tags.create/edit/delete/restore/toggle/sort` | `Tag/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 页面与资源映射已一致 |
 | Stickers Groups | `/stickers` | `console.stickers.view` | `console.stickers.create/edit/delete/toggle` | `Sticker/GetAdminGroups`、`CreateGroup`、`UpdateGroup/.+`、`DeleteGroup/.+`、`CheckGroupCode` | ✅ | 分组启停复用 `UpdateGroup` |
 | Stickers Items | `/stickers/:groupId/items` | `console.stickers.view` | `console.stickers.create/edit/delete/sort/batch-upload` | `Sticker/GetGroupStickers/.+`、`AddSticker`、`UpdateSticker/.+`、`DeleteSticker/.+`、`BatchAddStickers`、`BatchUpdateSort`、`CheckStickerCode`、`NormalizeCode` | ✅ | 上传文件仍走共享接口，但已按 `businessType` 对 Sticker 链路收口，见第 4 节 |
-| Moderation | `/moderation` | `console.moderation.view` | `console.moderation.review` | `ContentModeration/GetReviewQueue`、`Review`、`ApplyUserAction`、`GetActionLogs` | ✅ | 当前首版只纳管 `Post / Comment` 举报审核链路 |
+| Moderation | `/moderation` | `console.moderation.view` | `console.moderation.review` | `ContentModeration/GetReviewQueue`、`Review`、`ApplyUserAction`、`GetActionLogs` | ✅ | 当前已纳管 `Post / Comment / ChatMessage / Product` 举报审核链路 |
 | Coins | `/coins` | `console.coins.view` | `console.coins.adjust` | `Coin/GetBalanceByUserId`、`AdminAdjustBalance` | ✅ | 仅管理端查询指定用户余额与调账能力 |
 | Experience | `/experience` | `console.experience.view` | `console.experience.adjust/recalculate` | `Experience/GetUserExperience/.+`、`GetLevelConfigs`、`AdminAdjustExperience`、`RecalculateLevelConfigs` | ✅ | `GetLevelConfigs` 为公开接口，Console 复用该数据源展示等级曲线 |
 | SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`CreateConfig`、`UpdateConfig`、`DeleteConfig` | ✅ | 编辑详情链路已覆盖 |
@@ -94,6 +94,7 @@
 - 已接入权限治理的 Console 主页面，路由访问权限已全部具备来源
 - 页面真实调用的 Console 专属后台接口当前已基本完成 `ConsolePermissions + DbMigrate` 对齐
 - `Users` 未落地能力已从页面、前后端权限常量与文档口径中一并清理
+- 默认 `Test` 角色已被收口为普通用户基线，不再保留任何 Console 资源授权，也不再保留标签管理等后台 API 权限
 
 ### 5.2 工具化校验已落地
 
@@ -111,7 +112,7 @@
 说明：
 
 - `console.access` 属于入口权限，只要求在前端入口守卫 / WebOS 入口可见性处被消费，不要求映射到具体后端 API 资源
-- 当前额外规则：`console.access` 必须与至少一个真实 Console 业务权限联动才生效
+- 当前额外规则：`console.access` 必须与至少一个真实 Console 页面访问权限联动才生效
 
 建议在以下场景运行：
 

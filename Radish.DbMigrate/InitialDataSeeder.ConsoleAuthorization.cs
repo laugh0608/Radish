@@ -328,6 +328,35 @@ internal static partial class InitialDataSeeder
                     .ExecuteCommandAsync();
             }
         }
+
+        await RevokeTestRoleConsoleAccessAsync(db);
+    }
+
+    private static async Task RevokeTestRoleConsoleAccessAsync(ISqlSugarClient db)
+    {
+        const long testRoleId = 10002L;
+        var assignments = await db.Queryable<RoleConsoleResource>()
+            .Where(item => item.RoleId == testRoleId && !item.IsDeleted)
+            .ToListAsync();
+
+        if (assignments.Count == 0)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var assignment in assignments)
+        {
+            assignment.IsDeleted = true;
+            assignment.DeletedAt = now;
+            assignment.DeletedBy = "System";
+            assignment.ModifyBy = "System";
+            assignment.ModifyId = 0;
+            assignment.ModifyTime = now;
+        }
+
+        await db.Updateable(assignments).ExecuteCommandAsync();
+        Console.WriteLine($"[Radish.DbMigrate] 已回收 Test 角色的 Console 资源授权，共 {assignments.Count} 条。");
     }
 
     private static async Task EnsureConsoleAuthorizationTablesAsync(ISqlSugarClient db)

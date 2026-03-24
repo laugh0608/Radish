@@ -25,6 +25,10 @@ public static class NotificationType
     /// <remarks>优先级：高（3）</remarks>
     public const string Mentioned = "Mentioned";
 
+    /// <summary>新增粉丝</summary>
+    /// <remarks>优先级：普通（2）</remarks>
+    public const string Followed = "Followed";
+
     #endregion
 
     #region 成就类通知（P2 后续实现）

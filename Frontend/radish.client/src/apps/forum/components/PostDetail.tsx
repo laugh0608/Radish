@@ -4,6 +4,7 @@ import type { PostDetail as PostDetailType, QuestionAnswerFilter, QuestionAnswer
 import { uploadDocument, uploadImage } from '@/api/attachment';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
+import { resolveMediaUrl } from '@/utils/media';
 import { Icon } from '@radish/ui/icon';
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
@@ -58,6 +59,7 @@ interface PostDetailProps {
   followLoading?: boolean;
   onToggleFollow?: (targetUserId: number, isFollowing: boolean) => Promise<void>;
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onReport?: (postId: number) => void;
 }
 
 export const PostDetail = ({
@@ -90,6 +92,7 @@ export const PostDetail = ({
   followLoading = false,
   onToggleFollow,
   onAuthorClick,
+  onReport,
 }: PostDetailProps) => {
   const { t } = useTranslation();
   const anonymousUserLabel = t('forum.postCard.anonymousUser');
@@ -120,7 +123,7 @@ export const PostDetail = ({
   const totalAnswerCount = question?.voAnswerCount ?? post?.voAnswerCount ?? 0;
   const drawTimeValue = lottery?.voDrawTime ? new Date(lottery.voDrawTime) : null;
   const isDrawTimeReached = !drawTimeValue || Number.isNaN(drawTimeValue.getTime()) || drawTimeValue.getTime() <= Date.now();
-  const authorAvatarUrl = post?.voAuthorAvatarUrl?.trim() || '';
+  const authorAvatarUrl = resolveMediaUrl(post?.voAuthorAvatarUrl);
   const canDrawLottery = Boolean(
     isLotteryPost &&
     isAuthenticated &&
@@ -643,6 +646,7 @@ export const PostDetail = ({
               <div className={styles.answerList}>
                 {displayedAnswers.map((answer) => {
                   const answerAuthorName = answer.voAuthorName || anonymousUserLabel;
+                  const answerAvatarUrl = resolveMediaUrl(answer.voAuthorAvatarUrl);
                   const canAccept =
                     isAuthor &&
                     !question?.voIsSolved &&
@@ -669,9 +673,9 @@ export const PostDetail = ({
                               className={styles.answerAvatar}
                               style={answer.voAuthorAvatarUrl?.trim() ? undefined : buildAvatarStyle(answerAuthorName)}
                             >
-                              {answer.voAuthorAvatarUrl?.trim() ? (
+                              {answerAvatarUrl ? (
                                 <img
-                                  src={answer.voAuthorAvatarUrl}
+                                  src={answerAvatarUrl}
                                   alt={answerAuthorName}
                                   className={styles.answerAvatarImage}
                                   loading="lazy"
@@ -785,6 +789,18 @@ export const PostDetail = ({
           <span className={styles.commentCount}>
             💬 {t('forum.postDetail.commentCount', { count: post.voCommentCount || 0 })}
           </span>
+
+          {!!onReport && !isAuthor && (
+            <button
+              type="button"
+              onClick={() => onReport(post.voId)}
+              className={styles.reportButton}
+              title={t('report.action')}
+            >
+              <Icon icon="mdi:flag-outline" size={18} />
+              {t('report.action')}
+            </button>
+          )}
 
           {showFollowAction && (
             <div className={styles.relationActions}>
