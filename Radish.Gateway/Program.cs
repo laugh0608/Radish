@@ -155,6 +155,9 @@ if (!OperatingSystem.IsWindows())
 
 var app = builder.Build();
 
+var enableHttpsRedirection = app.Configuration.GetValue<bool?>("GatewayRuntime:EnableHttpsRedirection") ??
+    app.Environment.IsDevelopment();
+
 // 绑定 InternalApp 扩展中的服务
 app.ConfigureApplication();
 
@@ -171,7 +174,11 @@ else
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (enableHttpsRedirection)
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseStaticFiles();
 
 // 启用 WebSocket 支持（用于 Vite HMR）
@@ -214,6 +221,7 @@ app.Lifetime.ApplicationStarted.Register(() =>
     Log.Information("====================================");
     Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
     Log.Information("监听地址: {Urls}", urls);
+    Log.Information("HTTPS 重定向: {HttpsRedirection}", enableHttpsRedirection ? "启用" : "禁用");
     Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
     if (!string.IsNullOrEmpty(apiBaseUrl))
     {

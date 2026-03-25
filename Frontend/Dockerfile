@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-ARG VITE_API_BASE_URL=http://localhost:5000
-ARG VITE_AUTH_BASE_URL=http://localhost:5000
-ARG VITE_SIGNALR_HUB_URL=http://localhost:5000
-ARG VITE_AUTH_SERVER_URL=http://localhost:5000
+ARG VITE_API_BASE_URL=https://localhost:5000
+ARG VITE_AUTH_BASE_URL=https://localhost:5000
+ARG VITE_SIGNALR_HUB_URL=https://localhost:5000
+ARG VITE_AUTH_SERVER_URL=https://localhost:5000
 WORKDIR /src
 
 RUN apt-get update \

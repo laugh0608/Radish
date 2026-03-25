@@ -1,0 +1,24 @@
+services:
+  frontend:
+    build:
+      args:
+        VITE_API_BASE_URL: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+        VITE_AUTH_BASE_URL: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+        VITE_SIGNALR_HUB_URL: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+        VITE_AUTH_SERVER_URL: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+
+  auth:
+    environment:
+      Cors__AllowedOrigins__0: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+      OpenIddict__Server__Issuer: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+      OpenIddict__Server__AllowInsecureHttp: "false"
+
+  gateway:
+    environment:
+      ASPNETCORE_URLS: http://+:5000
+      GatewayRuntime__EnableHttpsRedirection: "false"
+      GatewayService__PublicUrl: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+      Cors__AllowedOrigins__0: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+      FrontendService__BaseUrl: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+    ports:
+      - "5000:5000"

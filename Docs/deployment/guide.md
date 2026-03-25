@@ -1,7 +1,7 @@
 # 部署与容器指南
 
 ## 目标
-本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `Deploy/docker-compose.yml` 组织 `gateway / api / auth / frontend` 四个容器。当前最小链默认基于 SQLite + 内存缓存，用于首版 `dev` 的构建与交付验证；生产环境可在此基础上继续覆盖 PostgreSQL、Redis 与正式证书。
+本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `Deploy/docker-compose.yml` 及其环境覆盖文件组织 `gateway / api / auth / frontend` 四个容器。当前最小链默认基于 SQLite + 内存缓存，用于首版 `dev` 的构建与交付验证；生产环境可在此基础上继续覆盖 PostgreSQL、Redis 与正式证书。
 
 ## 仓库发版与合并流程
 
@@ -72,6 +72,8 @@
   - `Frontend/scripts/serve-static.mjs`
 - 最小编排：
   - `Deploy/docker-compose.yml`
+  - `Deploy/docker-compose.dev.yml`
+  - `Deploy/docker-compose.prod.yml`
 
 ## 构建服务镜像
 当前仓库已提供首版最小镜像链，对应四个构建入口：
@@ -111,7 +113,20 @@ docker build \
 若生产环境不使用 `https://localhost:5000` 作为公开入口，请在构建前端镜像时把上述 `VITE_*` 构建参数改为真实域名。
 
 ## 运行容器
-当前最小链默认以 `Gateway` 作为唯一对外入口：
+当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在拆为“基础文件 + 环境覆盖文件”两层：
+
+- `Deploy/docker-compose.yml`：共享基础编排，只保留所有环境都一致的服务结构与下游地址
+- `Deploy/docker-compose.dev.yml`：本地联调覆盖，默认让 `Gateway` 在容器内监听 HTTPS，并启用 `UseHttpsRedirection()`
+- `Deploy/docker-compose.prod.yml`：生产反代覆盖，默认让 `Gateway` 在容器内监听 HTTP，并关闭 `UseHttpsRedirection()`
+
+### 开发 / 本地联调
+
+```bash
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.dev.yml build
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.dev.yml up -d
+```
+
+本地联调口径如下：
 
 - `gateway`：对外监听 `https://localhost:5000`
 - `api`：容器内监听 `5100`
@@ -119,6 +134,19 @@ docker build \
 - `frontend`：容器内监听 `80`，由 `Gateway` 反向代理 `/` 与 `/console/`
 
 本地 Compose 联调时，`Gateway` 镜像会内置 `Certs/dev-gateway-cert.pfx` 作为开发证书，使 `https://localhost:5000` 可以直接完成 TLS 握手；若浏览器提示证书不受信任，请先在宿主机信任该开发证书。
+
+### 生产 / 外部反向代理
+
+```bash
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d
+```
+
+生产覆盖默认约定如下：
+
+- `GatewayService__PublicUrl` 通过 `RADISH_PUBLIC_URL` 指向真实外部域名
+- `Gateway` 容器内部监听 `http://+:5000`
+- `GatewayRuntime__EnableHttpsRedirection=false`
+- TLS 由外部 Nginx / Traefik / Caddy 终止，再转发到容器内 HTTP 端口
 
 **文件上传目录挂载（生产环境建议）**：
 - 本地存储模式下，上传文件存放在 `DataBases/Uploads/`
@@ -139,11 +167,14 @@ docker run -d --name radish-api \
 将实际数据库凭据、安全密钥与证书路径等以环境变量或挂载文件方式注入。日志可通过 `docker logs -f <container>` 追踪；若需热重载，请继续使用宿主机 `dotnet watch` / `npm run dev`。
 
 ## Docker Compose 示例
-仓库根目录已提供真实可用的 `Deploy/docker-compose.yml`，可直接使用：
+仓库根目录已提供真实可用的基础编排与环境覆盖文件，推荐按环境组合使用：
 
 ```bash
-docker compose -f Deploy/docker-compose.yml build
-docker compose -f Deploy/docker-compose.yml up -d
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.dev.yml config
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.dev.yml up -d
+
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d
 ```
 
 当前 Compose 口径如下：
@@ -152,7 +183,9 @@ docker compose -f Deploy/docker-compose.yml up -d
 - `DataBases/` 与 `Logs/` 会挂载到宿主机，便于保留 SQLite、上传文件与运行日志。
 - `Frontend` 镜像会把 `radish.client` 与 `radish.console` 一起构建并托管。
 - `Gateway` 会通过环境变量把 `/` 与 `/console/` 反代到前端容器，并把 `/api`、`/connect`、`/Account` 等路径转发给对应后端服务。
+- `GatewayRuntime__EnableHttpsRedirection` 当前已作为运行时开关显式暴露，可与 `ASPNETCORE_URLS` 一起切换容器内部的 HTTP / HTTPS 监听模式。
 - 本地 Compose 联调默认保持项目既有口径：`Gateway` 作为唯一对外 HTTPS 入口，访问地址为 `https://localhost:5000`。
+- 生产覆盖默认收口为“外层 HTTPS、内层 HTTP”，避免与外部反向代理重复做 TLS 终止。
 
 如果后续需要切换到 PostgreSQL / Redis，只需在 Compose 中继续补相应服务，并通过环境变量覆盖共享配置。
 
@@ -456,7 +489,7 @@ networks:
 ### 注意事项
 
 - **开发环境**：Gateway 应用对外使用 HTTPS 端口（`https://localhost:5000`，`http://localhost:5001` 仅用于重定向）
-- **本地 Docker / Compose 联调**：`Deploy/docker-compose.yml` 当前直接让 Gateway 在容器内终止 TLS，并只对宿主机暴露 `https://localhost:5000`
+- **本地 Docker / Compose 联调**：`Deploy/docker-compose.yml + Deploy/docker-compose.dev.yml` 当前直接让 Gateway 在容器内终止 TLS，并只对宿主机暴露 `https://localhost:5000`
 - **生产环境**：应用使用 HTTP 端口，TLS 由反向代理处理
 - **内网可信场景**：反代到 HTTP 端口是安全的
 - **零信任架构**：如需端到端加密，可配置反代到 HTTPS，但需要额外证书管理

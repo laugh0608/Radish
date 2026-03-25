@@ -104,3 +104,9 @@
 - **Compose 联调入口已统一回项目主口径**：`Deploy/docker-compose.yml` 不再把 Gateway 临时降为 `http://localhost:5000`，当前已统一为 `https://localhost:5000` 作为本地最小容器链的唯一对外入口。
 - **Gateway 镜像已补开发证书**：`Radish.Gateway/Dockerfile` 当前会把 `Certs/` 带入镜像，并使用新增的 `dev-gateway-cert.pfx` 为容器内 `5000` 端口提供 TLS，避免浏览器直接访问时再出现 `ERR_SSL_PROTOCOL_ERROR`。
 - **反代场景已补 Forwarded Headers 支持**：`Radish.Gateway` 当前已显式启用 `X-Forwarded-For / Proto / Host` 识别，后续无论是本地 Compose 直连 HTTPS，还是生产环境在 Nginx / Caddy 后由外层终止 TLS，都能保持请求 Scheme 与重定向行为一致。
+
+### Gateway 容器内 HTTP / HTTPS 模式切换
+
+- **Gateway HTTPS 重定向已改为显式配置开关**：`Radish.Gateway` 当前新增 `GatewayRuntime:EnableHttpsRedirection` 运行时配置，dev / prod 不再需要靠手改代码切换 `UseHttpsRedirection()`。
+- **Compose 已拆为基础文件 + 环境覆盖文件**：`Deploy/docker-compose.yml` 当前只保留共享结构，新增 `Deploy/docker-compose.dev.yml` 与 `Deploy/docker-compose.prod.yml` 分别承载“本地内部 HTTPS”与“生产内部 HTTP”两种默认口径。
+- **开发与生产默认口径已分离**：本地联调默认使用 `docker-compose.dev.yml`，保持 `https://localhost:5000` 唯一对外入口；生产默认使用 `docker-compose.prod.yml`，保持“外层反代 HTTPS、Gateway 容器内 HTTP”的更常规部署方式。

@@ -34,7 +34,7 @@
 | 体验主线 | i18n（`radish.client`） | 待联调复核 | 桌面壳层语言切换入口、应用注册、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天、通知中心、个人中心高频模块已完成首轮接入；本轮欢迎 App 长文案与开源说明也已完成资源化并通过一轮构建验证，但整体仍需在更大范围首版联调中继续复核 | 在更大范围首版联调中继续观察宿主层与边缘页面语言切换表现，并补记录，同时维护残余边角文案 |
 | 工程门槛 | 验证基线 | 待联调复核 | 统一入口 `validate:baseline` 已存在且已通过过一轮 full 验证，但首版前仍需继续作为稳定门槛维护 | 继续补齐变更记录与首版总回归执行记录 |
 | 工程门槛 | 首次 CI/CD | 待联调复核 | GitHub Actions 已接通 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`，并在 `master` PR 上完成一轮真实通过；当前最小门禁已存在，但仍需继续观察稳定性并沉淀首版交付口径 | 保持 `master` PR 质量门禁稳定，补充首版发布记录与后续镜像链衔接说明 |
-| 工程门槛 | Docker 镜像构建链 | 待联调复核 | 已补 `Radish.Api / Radish.Auth / Radish.Gateway / Frontend` 的 Dockerfile、前端静态托管脚本与 `Deploy/docker-compose.yml`，并完成一轮镜像 build 级验证；当前缺的是运行态 Smoke 与交付口径复核，而不再是资产缺失 | 执行一轮 Compose 运行态 Smoke，确认 Gateway 反代、前端静态路由、Auth 证书与 SQLite 卷挂载口径 |
+| 工程门槛 | Docker 镜像构建链 | 待联调复核 | 已补 `Radish.Api / Radish.Auth / Radish.Gateway / Frontend` 的 Dockerfile、前端静态托管脚本，以及 `Deploy/docker-compose.yml / docker-compose.dev.yml / docker-compose.prod.yml`，并完成一轮镜像 build 级验证；当前缺的是运行态 Smoke 与交付口径复核，而不再是资产缺失 | 执行一轮 Compose 运行态 Smoke，确认 Gateway 反代、前端静态路由、Auth 证书与 SQLite 卷挂载口径 |
 
 ## 2. 明确不纳入首版
 
