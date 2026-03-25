@@ -98,3 +98,9 @@
 
 - **状态矩阵已同步更新**：`Docker 镜像构建链` 当前已从“待补齐”转为“待联调复核”，因为资产和 build 级验证都已存在，下一步不再是补文件，而是做运行态 Smoke 与交付口径确认。
 - **部署文档已改为真实资产口径**：`deployment/guide.md` 当前已同步四个 Dockerfile、前端静态托管脚本与最小 Compose，不再继续沿用“只有 API 镜像 + PostgreSQL 示例”的旧描述。
+
+### Gateway 本地 Docker HTTPS 口径收口
+
+- **Compose 联调入口已统一回项目主口径**：`Deploy/docker-compose.yml` 不再把 Gateway 临时降为 `http://localhost:5000`，当前已统一为 `https://localhost:5000` 作为本地最小容器链的唯一对外入口。
+- **Gateway 镜像已补开发证书**：`Radish.Gateway/Dockerfile` 当前会把 `Certs/` 带入镜像，并使用新增的 `dev-gateway-cert.pfx` 为容器内 `5000` 端口提供 TLS，避免浏览器直接访问时再出现 `ERR_SSL_PROTOCOL_ERROR`。
+- **反代场景已补 Forwarded Headers 支持**：`Radish.Gateway` 当前已显式启用 `X-Forwarded-For / Proto / Host` 识别，后续无论是本地 Compose 直连 HTTPS，还是生产环境在 Nginx / Caddy 后由外层终止 TLS，都能保持请求 Scheme 与重定向行为一致。

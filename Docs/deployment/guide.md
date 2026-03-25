@@ -101,22 +101,24 @@ docker build \
 
 docker build \
   -f Frontend/Dockerfile \
-  --build-arg VITE_API_BASE_URL=http://localhost:5000 \
-  --build-arg VITE_AUTH_BASE_URL=http://localhost:5000 \
-  --build-arg VITE_SIGNALR_HUB_URL=http://localhost:5000 \
-  --build-arg VITE_AUTH_SERVER_URL=http://localhost:5000 \
+  --build-arg VITE_API_BASE_URL=https://localhost:5000 \
+  --build-arg VITE_AUTH_BASE_URL=https://localhost:5000 \
+  --build-arg VITE_SIGNALR_HUB_URL=https://localhost:5000 \
+  --build-arg VITE_AUTH_SERVER_URL=https://localhost:5000 \
   -t radish/frontend:local .
 ```
 
-若生产环境不使用 `http://localhost:5000` 作为公开入口，请在构建前端镜像时把上述 `VITE_*` 构建参数改为真实域名。
+若生产环境不使用 `https://localhost:5000` 作为公开入口，请在构建前端镜像时把上述 `VITE_*` 构建参数改为真实域名。
 
 ## 运行容器
 当前最小链默认以 `Gateway` 作为唯一对外入口：
 
-- `gateway`：对外监听 `http://localhost:5000`
+- `gateway`：对外监听 `https://localhost:5000`
 - `api`：容器内监听 `5100`
 - `auth`：容器内监听 `5200`
 - `frontend`：容器内监听 `80`，由 `Gateway` 反向代理 `/` 与 `/console/`
+
+本地 Compose 联调时，`Gateway` 镜像会内置 `Certs/dev-gateway-cert.pfx` 作为开发证书，使 `https://localhost:5000` 可以直接完成 TLS 握手；若浏览器提示证书不受信任，请先在宿主机信任该开发证书。
 
 **文件上传目录挂载（生产环境建议）**：
 - 本地存储模式下，上传文件存放在 `DataBases/Uploads/`
@@ -150,6 +152,7 @@ docker compose -f Deploy/docker-compose.yml up -d
 - `DataBases/` 与 `Logs/` 会挂载到宿主机，便于保留 SQLite、上传文件与运行日志。
 - `Frontend` 镜像会把 `radish.client` 与 `radish.console` 一起构建并托管。
 - `Gateway` 会通过环境变量把 `/` 与 `/console/` 反代到前端容器，并把 `/api`、`/connect`、`/Account` 等路径转发给对应后端服务。
+- 本地 Compose 联调默认保持项目既有口径：`Gateway` 作为唯一对外 HTTPS 入口，访问地址为 `https://localhost:5000`。
 
 如果后续需要切换到 PostgreSQL / Redis，只需在 Compose 中继续补相应服务，并通过环境变量覆盖共享配置。
 
@@ -453,6 +456,7 @@ networks:
 ### 注意事项
 
 - **开发环境**：Gateway 应用对外使用 HTTPS 端口（`https://localhost:5000`，`http://localhost:5001` 仅用于重定向）
+- **本地 Docker / Compose 联调**：`Deploy/docker-compose.yml` 当前直接让 Gateway 在容器内终止 TLS，并只对宿主机暴露 `https://localhost:5000`
 - **生产环境**：应用使用 HTTP 端口，TLS 由反向代理处理
 - **内网可信场景**：反代到 HTTP 端口是安全的
 - **零信任架构**：如需端到端加密，可配置反代到 HTTPS，但需要额外证书管理

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.HttpOverrides;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Extension.Log;
@@ -71,6 +72,7 @@ builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
     config.AddJsonFile($"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json",
         optional: true, reloadOnChange: false);
     config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
+    config.AddEnvironmentVariables();
 });
 
 // 绑定 InternalApp 扩展中的环境变量
@@ -95,6 +97,16 @@ builder.Services.AddCors(options =>
     });
 });
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                               ForwardedHeaders.XForwardedProto |
+                               ForwardedHeaders.XForwardedHost;
+
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 // ===== 健康检查配置 =====
 var downstreamSection = builder.Configuration.GetSection("DownstreamServices:ApiService");
 var apiBaseUrl = downstreamSection["BaseUrl"];
@@ -112,14 +124,14 @@ if (!string.IsNullOrEmpty(apiBaseUrl) && !string.IsNullOrEmpty(apiHealthPath))
         tags: ["downstream", "api"]);
 }
 
-// 通过 Gateway 路径添加 console 健康检查（如果配置了网关地址）
-var gatewayPublicUrl = builder.Configuration["GatewayService:PublicUrl"];
-if (!string.IsNullOrEmpty(gatewayPublicUrl))
+// 直接通过 console 下游服务地址添加健康检查，避免本地自签 HTTPS 导致回环检查证书失败
+var consoleBaseUrl = builder.Configuration["ReverseProxy:Clusters:console-cluster:Destinations:console:Address"];
+if (!string.IsNullOrEmpty(consoleBaseUrl))
 {
-    var gatewayBase = gatewayPublicUrl.TrimEnd('/');
+    var consoleBase = consoleBaseUrl.TrimEnd('/');
     var consoleRequestPath = "/console";
 
-    var consoleHealthUrl = $"{gatewayBase}{consoleRequestPath}";
+    var consoleHealthUrl = $"{consoleBase}{consoleRequestPath}";
     healthChecksBuilder.AddUrlGroup(
         new Uri(consoleHealthUrl),
         name: "console-service",
@@ -147,6 +159,8 @@ var app = builder.Build();
 app.ConfigureApplication();
 
 // ===== 中间件配置 =====
+app.UseForwardedHeaders();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();

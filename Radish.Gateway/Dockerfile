@@ -9,5 +9,6 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 EXPOSE 5000
 COPY --from=build /app/publish .
+COPY --from=build /src/Certs ./certs
 RUN mkdir -p /app/Logs
 ENTRYPOINT ["dotnet", "Radish.Gateway.dll"]
