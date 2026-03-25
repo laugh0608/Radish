@@ -19,6 +19,10 @@
 **/node_modules
 **/npm-debug.log
 **/obj
+DataBases
+Logs
+Frontend/**/dist
+Frontend/**/.vite
 **/secrets.dev.yaml
 **/values.dev.yaml
 LICENSE

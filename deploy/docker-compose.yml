@@ -1,0 +1,72 @@
+services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: Frontend/Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:5000
+        VITE_AUTH_BASE_URL: http://localhost:5000
+        VITE_SIGNALR_HUB_URL: http://localhost:5000
+        VITE_AUTH_SERVER_URL: http://localhost:5000
+    expose:
+      - "80"
+
+  api:
+    build:
+      context: ..
+      dockerfile: Radish.Api/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5100
+    volumes:
+      - ../DataBases:/app/DataBases
+      - ../Logs:/app/Logs
+    expose:
+      - "5100"
+
+  auth:
+    build:
+      context: ..
+      dockerfile: Radish.Auth/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5200
+      Cors__AllowedOrigins__0: http://localhost:5000
+      OpenIddict__Server__Issuer: http://localhost:5000
+      OpenIddict__Server__AllowInsecureHttp: "true"
+      OpenIddict__Encryption__SigningCertificatePath: /app/certs/dev-auth-cert.pfx
+      OpenIddict__Encryption__EncryptionCertificatePath: /app/certs/dev-auth-cert.pfx
+    volumes:
+      - ../DataBases:/app/DataBases
+      - ../Logs:/app/Logs
+    expose:
+      - "5200"
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: Radish.Gateway/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:5000
+      GatewayService__PublicUrl: http://localhost:5000
+      Cors__AllowedOrigins__0: http://localhost:5000
+      DownstreamServices__ApiService__BaseUrl: http://api:5100
+      DownstreamServices__AuthService__BaseUrl: http://auth:5200
+      FrontendService__BaseUrl: http://frontend
+      ReverseProxy__Clusters__api-cluster__Destinations__api__Address: http://api:5100
+      ReverseProxy__Clusters__auth-cluster__Destinations__auth__Address: http://auth:5200
+      ReverseProxy__Clusters__frontend-cluster__Destinations__frontend__Address: http://frontend
+      ReverseProxy__Clusters__console-cluster__Destinations__console__Address: http://frontend
+    depends_on:
+      - frontend
+      - api
+      - auth
+    ports:
+      - "5000:5000"

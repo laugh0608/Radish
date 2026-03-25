@@ -78,3 +78,23 @@
 - ✅ `npx tsc -b Frontend/radish.client` 通过。
 - ⚠️ `npm run build --workspace=radish.console` 已通过 `tsc -b`，但 `vite build` 在当前沙盒环境下因 `spawn EPERM` 中断。
 - ⚠️ `dotnet build` 已通过首用目录权限问题，但在当前沙盒内仍出现无编译错误的 MSBuild 异常退出，暂未拿到可用于判定代码错误的有效失败信息。
+
+## 2026-03-25 (周三)
+
+### 首版最小 Docker 资产补齐
+
+- **已补齐四个首版镜像入口**：当前仓库已新增 `Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile`、`Frontend/Dockerfile`，并对 `Radish.Api/Dockerfile` 做了可构建性收口，首版最小镜像链不再停留在“只有 API Dockerfile”的状态。
+- **前端容器已收口为“单镜像双前端”最小方案**：`Frontend/Dockerfile` 当前会在构建阶段安装 Node 24，统一构建 `radish.client` 与 `radish.console`，最终由 `Frontend/scripts/serve-static.mjs` 同时托管 `/` 与 `/console/`，避免首版阶段再额外引入 Nginx / SSR / 多前端容器复杂度。
+- **最小 Compose 已落地**：仓库新增 `deploy/docker-compose.yml`，当前已能统一编排 `gateway / api / auth / frontend` 四个服务，并以 SQLite + 内存缓存作为首版最小交付口径。
+
+### Docker 构建验证
+
+- **Compose 配置展开已通过**：`docker compose -f deploy/docker-compose.yml config` 可正常输出最终编排结果，说明服务、端口、卷挂载与环境变量结构当前无明显语法问题。
+- **前端镜像构建已通过**：`docker compose -f deploy/docker-compose.yml build frontend` 已完成，`radish.client` 与 `radish.console` 的生产构建均在镜像内成功产出。
+- **后端三镜像构建已通过**：`docker compose -f deploy/docker-compose.yml build api auth gateway` 已完成，`Auth / Gateway / Api` 当前均能成功发布为镜像。
+- **API 发布冲突已顺手收口**：首次构建时，`Radish.Api` 因项目引用 `Radish.Auth` 而在 `dotnet publish` 阶段触发重复 `appsettings.json` 的 `NETSDK1152`；当前已在 Dockerfile 中显式收口，构建可继续通过。
+
+### 规划口径同步
+
+- **状态矩阵已同步更新**：`Docker 镜像构建链` 当前已从“待补齐”转为“待联调复核”，因为资产和 build 级验证都已存在，下一步不再是补文件，而是做运行态 Smoke 与交付口径确认。
+- **部署文档已改为真实资产口径**：`deployment/guide.md` 当前已同步四个 Dockerfile、前端静态托管脚本与最小 Compose，不再继续沿用“只有 API 镜像 + PostgreSQL 示例”的旧描述。

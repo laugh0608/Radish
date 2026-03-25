@@ -1,7 +1,7 @@
 # 部署与容器指南
 
 ## 目标
-本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile` 构建镜像、配置环境变量，并提供一个 PostgreSQL + API 的 Compose 示例，确保与 .NET 10 SDK 及现有目录结构保持一致。
+本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `deploy/docker-compose.yml` 组织 `gateway / api / auth / frontend` 四个容器。当前最小链默认基于 SQLite + 内存缓存，用于首版 `dev` 的构建与交付验证；生产环境可在此基础上继续覆盖 PostgreSQL、Redis 与正式证书。
 
 ## 仓库发版与合并流程
 
@@ -57,89 +57,101 @@
 ## 先决条件
 - Docker Engine ≥ 24，能够拉取 `mcr.microsoft.com/dotnet/*` 官方镜像。
 - .NET SDK 10.0.0+，用于调试或本地 `dotnet publish`。
-- Node.js 20+：可选，用于本地构建前端；镜像会在 `with-node` 阶段安装 Node 响应 webpack/Vite 资源打包需求。
-- PostgreSQL 15+：本地或托管实例，需提供 `ConnectionStrings__Default`。
+- Node.js 24+：可选，用于宿主机本地构建前端；前端镜像会在构建阶段自行安装 Node 24。
+- PostgreSQL / Redis：当前最小 Compose **不是必需项**。默认链路直接复用仓库共享配置中的 SQLite + 内存缓存，以便先完成首版镜像构建与交付验证；生产环境再按需覆盖。
 - **Auth 证书**：准备好 OIDC 签名/加密证书（`.pfx` 文件），并在部署环境中通过环境变量覆盖 `OpenIddict__Encryption__*` 配置；默认的 `Certs/dev-auth-cert.pfx` 仅用于本地联调，生产必须替换。
 
+## 当前仓库资产
+
+- 后端镜像：
+  - `Radish.Api/Dockerfile`
+  - `Radish.Auth/Dockerfile`
+  - `Radish.Gateway/Dockerfile`
+- 前端镜像：
+  - `Frontend/Dockerfile`
+  - `Frontend/scripts/serve-static.mjs`
+- 最小编排：
+  - `deploy/docker-compose.yml`
+
 ## 构建服务镜像
-`Radish.Api/Dockerfile` 采用多阶段构建：`with-node` 准备 Node 环境，`build/publish` 负责编译，`final` 提供轻量运行时。常用构建命令如下：
+当前仓库已提供首版最小镜像链，对应四个构建入口：
+
+- `Radish.Api/Dockerfile`：发布 API，并把仓库 `Docs/` 一并带入镜像，确保固定文档能力在容器内可用。
+- `Radish.Auth/Dockerfile`：发布 OIDC 服务，并把仓库 `Certs/` 带入镜像，便于本地 / 内部开发版使用默认开发证书。
+- `Radish.Gateway/Dockerfile`：发布网关服务，作为默认对外入口。
+- `Frontend/Dockerfile`：在构建阶段安装 Node 24、构建 `radish.client` 与 `radish.console`，最终由内置静态服务器同时托管 `/` 与 `/console/`。
+
+常用单镜像构建命令如下：
 
 ```bash
 docker build \
   -f Radish.Api/Dockerfile \
   --build-arg BUILD_CONFIGURATION=Release \
-  -t radish/server:local .
+  -t radish/api:local .
+
+docker build \
+  -f Radish.Auth/Dockerfile \
+  --build-arg BUILD_CONFIGURATION=Release \
+  -t radish/auth:local .
+
+docker build \
+  -f Radish.Gateway/Dockerfile \
+  --build-arg BUILD_CONFIGURATION=Release \
+  -t radish/gateway:local .
+
+docker build \
+  -f Frontend/Dockerfile \
+  --build-arg VITE_API_BASE_URL=http://localhost:5000 \
+  --build-arg VITE_AUTH_BASE_URL=http://localhost:5000 \
+  --build-arg VITE_SIGNALR_HUB_URL=http://localhost:5000 \
+  --build-arg VITE_AUTH_SERVER_URL=http://localhost:5000 \
+  -t radish/frontend:local .
 ```
 
-如需在构建阶段打包前端，可在 `Radish.Api` 项目文件中引用打包产物，或在 Dockerfile 的 `build` 阶段追加 `npm install && npm run build --prefix Frontend/radish.client`。
+若生产环境不使用 `http://localhost:5000` 作为公开入口，请在构建前端镜像时把上述 `VITE_*` 构建参数改为真实域名。
 
 ## 运行容器
-镜像默认监听 8080/8081（HTTP/HTTPS）。启动容器示例：
+当前最小链默认以 `Gateway` 作为唯一对外入口：
+
+- `gateway`：对外监听 `http://localhost:5000`
+- `api`：容器内监听 `5100`
+- `auth`：容器内监听 `5200`
+- `frontend`：容器内监听 `80`，由 `Gateway` 反向代理 `/` 与 `/console/`
 
 **文件上传目录挂载（生产环境建议）**：
 - 本地存储模式下，上传文件存放在 `DataBases/Uploads/`
 - 建议挂载到宿主机持久化目录，避免容器重启丢失文件
 
-示例（挂载上传目录）：
-```bash
-docker run -d --name radish-api \
-  -p 8080:8080 -p 8081:8081 \
-  -v /data/radish/uploads:/app/DataBases/Uploads \
-  -e ASPNETCORE_ENVIRONMENT=Production \
-  -e ConnectionStrings__Default="Host=db;Port=5432;Database=radish;Username=radish;Password=radish" \
-  -e ASPNETCORE_URLS="http://+:8080" \
-  radish/server:local
-```
+如需分别单独运行镜像，可参考：
 
 ```bash
 docker run -d --name radish-api \
-  -p 8080:8080 -p 8081:8081 \
+  -p 5100:5100 \
+  -v /data/radish/db:/app/DataBases \
+  -v /data/radish/logs:/app/Logs \
   -e ASPNETCORE_ENVIRONMENT=Production \
-  -e ConnectionStrings__Default="Host=db;Port=5432;Database=radish;Username=radish;Password=radish" \
-  -e ASPNETCORE_URLS="http://+:8080" \
-  radish/server:local
+  -e ASPNETCORE_URLS="http://+:5100" \
+  radish/api:local
 ```
 
-将实际数据库凭据、安全密钥等以环境变量或 `appsettings.Production.json` 挂载方式注入。日志可通过 `docker logs -f radish-api` 追踪；若需热重载，请改用 `dotnet watch` 在宿主机运行。
+将实际数据库凭据、安全密钥与证书路径等以环境变量或挂载文件方式注入。日志可通过 `docker logs -f <container>` 追踪；若需热重载，请继续使用宿主机 `dotnet watch` / `npm run dev`。
 
 ## Docker Compose 示例
-建议在 `deploy/docker-compose.yml` 中集中定义依赖服务，可参考：
+仓库根目录已提供真实可用的 `deploy/docker-compose.yml`，可直接使用：
 
-```yaml
-services:
-  api:
-    build:
-      context: ..
-      dockerfile: Radish.Api/Dockerfile
-      args:
-        BUILD_CONFIGURATION: Release
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Default: Host=db;Port=5432;Database=radish;Username=radish;Password=radish
-      ASPNETCORE_URLS: http://+:8080
-    ports:
-      - "8080:8080"
-    depends_on:
-      db:
-        condition: service_healthy
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: radish
-      POSTGRES_PASSWORD: radish
-      POSTGRES_DB: radish
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U radish"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - db-data:/var/lib/postgresql/data
-volumes:
-  db-data:
+```bash
+docker compose -f deploy/docker-compose.yml build
+docker compose -f deploy/docker-compose.yml up -d
 ```
 
-使用 `docker compose -f deploy/docker-compose.yml up --build` 可一键启动依赖。若后续引入前端容器，可在同一文件内新增 `client` 服务并通过 Nginx/Caddy 统一暴露。
+当前 Compose 口径如下：
+
+- 默认使用仓库共享配置中的 SQLite 与内存缓存，不强依赖 PostgreSQL / Redis。
+- `DataBases/` 与 `Logs/` 会挂载到宿主机，便于保留 SQLite、上传文件与运行日志。
+- `Frontend` 镜像会把 `radish.client` 与 `radish.console` 一起构建并托管。
+- `Gateway` 会通过环境变量把 `/` 与 `/console/` 反代到前端容器，并把 `/api`、`/connect`、`/Account` 等路径转发给对应后端服务。
+
+如果后续需要切换到 PostgreSQL / Redis，只需在 Compose 中继续补相应服务，并通过环境变量覆盖共享配置。
 
 ## 数据库初始化与迁移（Radish.DbMigrate）
 
@@ -515,7 +527,7 @@ networks:
 
 > 本节用于记录未来在服务器上采用“两个镜像、多容器”的部署思路，目前 **仅作为设计文档，不在开发阶段使用 Docker 进行启动与测试**。
 >
-> 当前开发阶段建议仍使用 `dotnet run` / `dotnet watch` / `npm run dev` 等方式在宿主机直接运行各项目。
+> 当前仓库已经有一套真实可构建的最小镜像链，本节保留的是“进一步压缩镜像数量”的后续设计，不代表当前首版 `dev` 已经切换到该方案。
 
 ### 设计目标与前提
 
@@ -730,10 +742,10 @@ volumes:
 
 ### 当前开发阶段的约定与落地建议
 
-- **当前阶段不要求在 Docker 中启动与测试**：
-  - 后端推荐使用 `dotnet run` / `dotnet watch` 在宿主机运行 Api / Gateway / Auth；
-  - 前端推荐使用 `npm run dev --prefix Frontend/radish.client` 等命令运行 Vite 开发服务；
-  - Docker 相关内容仅作为将来部署到服务器（测试/预生产/生产环境）时的设计参考。
+- **当前阶段默认仍优先宿主机运行与调试**：
+  - 后端推荐继续使用 `dotnet run` / `dotnet watch` 在宿主机运行 Api / Gateway / Auth；
+  - 前端推荐继续使用 `npm run dev --prefix Frontend/radish.client` 等命令运行 Vite 开发服务；
+  - Docker 相关内容当前已不再只是草案，而是首版 `dev` 的最小构建 / 交付验证资产；但运行态联调与日常开发默认仍以宿主机方式为主。
 - **在真正落地容器部署前，建议遵循以下步骤**：
   1. 与运维/基础设施同学确认最终的目录结构与文件命名（例如是否采用 `Dockerfile.backend`、`Dockerfile.frontend` 与仓库根目录 `docker-compose.yml`）；
   2. 根据实际数据库/Redis/域名/TLS 方案，补全 Compose 中的环境变量与端口映射；
