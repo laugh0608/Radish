@@ -475,7 +475,7 @@ git push origin v26.1.1.3003
    - 在一套“迁移基线库”（例如测试环境数据库）上，同样执行 `DbMigrate init` 让结构跟随最新实体。
    - 使用数据库自带工具或对比工具，生成**从旧版本到新版本**的结构差异 SQL：
      - 只包含必要的 `CREATE TABLE` / `ALTER TABLE` / `CREATE INDEX` 等 DDL；
-     - 拆分为按版本管理的文件，例如：`deploy/sql/2025XXXX_add_user_profile_fields.sql`。
+     - 拆分为按版本管理的文件，例如：`Deploy/sql/2025XXXX_add_user_profile_fields.sql`。
    - 将迁移 SQL 文件提交到仓库，作为版本的一部分，方便后续审查与回滚。
 
 5. **上线前执行迁移 SQL**

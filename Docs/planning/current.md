@@ -8,7 +8,7 @@
 
 - **里程碑**：`M12 社区功能冲刺`
 - **当前主线**：`首版 dev 边界冻结与全局主线补齐`
-- **当前阶段**：`截至 2026-03-25，社区相关主功能已基本完成首轮闭环，但这不等于整体产品已经达到首版 dev 条件。当前已按“所有纳入首版范围的核心功能主线至少完成 70%”重新定义首版 dev 边界：先补齐未完成或待复核的全局主线，再并行推进国风视觉基线 / 主题切换与 radish.client i18n，并继续把最小 CI 门禁与 Docker 镜像构建链补成首版工程门槛。当前 master PR 已接通首轮仓库质量检查，radish.client i18n 已完成桌面壳层、应用注册、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天、通知中心、个人中心高频模块的首轮覆盖；通知中心 / 个人中心与桌面壳层残余主题与语言烟雾验证也已完成。通知中心现已完成一轮真实首版 Smoke：新通知 Toast 预览、Dock 未读角标、通知列表、点击跳转并静默已读、删除后角标同步与多端同步均已通过，当前从“待联调复核”转入“等待总回归确认”。本轮欢迎 App 也已完成长文案与开源说明资源化，当前语言切换不再只覆盖壳层与短标签，而是进入欢迎页主体内容。最新一轮又补齐了 Console 与社区主链的多项边界：`console.access` 已收口为“入口标记 + 真实后台能力联动”，分类与标签已拆分为独立管理模块，内容治理 / 胡萝卜 / 经验等级后台首版已纳入 Console，论坛公开个人主页与帖子详情 / 评论头像展示也已对齐当前实现。在此基础上，国风视觉基线已在桌面端深度落地（包括衬线大字、云水掩膜、立体画框、水滴动画及基于玉牌隐喻的高密网格应用体系），桌面右键菜单及主题切换也已上线。最新一轮又补齐了首版最小 Docker 资产：`Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile、前端静态托管脚本与 `deploy/docker-compose.yml` 已落地，并完成一轮镜像 build 级验证，当前“Docker 镜像构建链”已从“待补齐”转入“待联调复核”。详见：[首版 dev 边界](/planning/dev-first-scope)。`
+- **当前阶段**：`截至 2026-03-25，社区相关主功能已基本完成首轮闭环，但这不等于整体产品已经达到首版 dev 条件。当前已按“所有纳入首版范围的核心功能主线至少完成 70%”重新定义首版 dev 边界：先补齐未完成或待复核的全局主线，再并行推进国风视觉基线 / 主题切换与 radish.client i18n，并继续把最小 CI 门禁与 Docker 镜像构建链补成首版工程门槛。当前 master PR 已接通首轮仓库质量检查，radish.client i18n 已完成桌面壳层、应用注册、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天、通知中心、个人中心高频模块的首轮覆盖；通知中心 / 个人中心与桌面壳层残余主题与语言烟雾验证也已完成。通知中心现已完成一轮真实首版 Smoke：新通知 Toast 预览、Dock 未读角标、通知列表、点击跳转并静默已读、删除后角标同步与多端同步均已通过，当前从“待联调复核”转入“等待总回归确认”。本轮欢迎 App 也已完成长文案与开源说明资源化，当前语言切换不再只覆盖壳层与短标签，而是进入欢迎页主体内容。最新一轮又补齐了 Console 与社区主链的多项边界：`console.access` 已收口为“入口标记 + 真实后台能力联动”，分类与标签已拆分为独立管理模块，内容治理 / 胡萝卜 / 经验等级后台首版已纳入 Console，论坛公开个人主页与帖子详情 / 评论头像展示也已对齐当前实现。在此基础上，国风视觉基线已在桌面端深度落地（包括衬线大字、云水掩膜、立体画框、水滴动画及基于玉牌隐喻的高密网格应用体系），桌面右键菜单及主题切换也已上线。最新一轮又补齐了首版最小 Docker 资产：`Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile、前端静态托管脚本与 `Deploy/docker-compose.yml` 已落地，并完成一轮镜像 build 级验证，当前“Docker 镜像构建链”已从“待补齐”转入“待联调复核”。详见：[首版 dev 边界](/planning/dev-first-scope)。`
 - **复核日期**：`2026-03-25`
 
 ## 当前主线：首版 dev 边界冻结与全局主线补齐
@@ -54,7 +54,7 @@
 - [x] 已完成一轮 `full` 验证：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 共 195 个测试通过
 - [x] 已补 `M15` 首轮最小 CI 门禁：`Repo Hygiene` / `Frontend Lint` / `Baseline Quick` 已接入 GitHub Actions，并已在 `master` PR 上完成一轮真实通过
 - [x] 已补 `master` 分支保护与 ruleset 资产，当前仓库已切换为“禁止直接 push、仅允许 PR 合并”的最小发布入口
-- [x] 已补首版最小 Docker 资产：`Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile、前端静态托管脚本与 `deploy/docker-compose.yml` 已落地
+- [x] 已补首版最小 Docker 资产：`Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile、前端静态托管脚本与 `Deploy/docker-compose.yml` 已落地
 - [x] 已完成一轮 Docker build 级验证：前端镜像与 `api / auth / gateway` 三个后端镜像均可构建，`Radish.Api` 发布阶段的重复 `appsettings.json` 冲突也已收口
 
 ### 下一步拆分

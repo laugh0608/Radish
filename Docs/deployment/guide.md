@@ -1,7 +1,7 @@
 # 部署与容器指南
 
 ## 目标
-本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `deploy/docker-compose.yml` 组织 `gateway / api / auth / frontend` 四个容器。当前最小链默认基于 SQLite + 内存缓存，用于首版 `dev` 的构建与交付验证；生产环境可在此基础上继续覆盖 PostgreSQL、Redis 与正式证书。
+本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `Deploy/docker-compose.yml` 组织 `gateway / api / auth / frontend` 四个容器。当前最小链默认基于 SQLite + 内存缓存，用于首版 `dev` 的构建与交付验证；生产环境可在此基础上继续覆盖 PostgreSQL、Redis 与正式证书。
 
 ## 仓库发版与合并流程
 
@@ -71,7 +71,7 @@
   - `Frontend/Dockerfile`
   - `Frontend/scripts/serve-static.mjs`
 - 最小编排：
-  - `deploy/docker-compose.yml`
+  - `Deploy/docker-compose.yml`
 
 ## 构建服务镜像
 当前仓库已提供首版最小镜像链，对应四个构建入口：
@@ -137,11 +137,11 @@ docker run -d --name radish-api \
 将实际数据库凭据、安全密钥与证书路径等以环境变量或挂载文件方式注入。日志可通过 `docker logs -f <container>` 追踪；若需热重载，请继续使用宿主机 `dotnet watch` / `npm run dev`。
 
 ## Docker Compose 示例
-仓库根目录已提供真实可用的 `deploy/docker-compose.yml`，可直接使用：
+仓库根目录已提供真实可用的 `Deploy/docker-compose.yml`，可直接使用：
 
 ```bash
-docker compose -f deploy/docker-compose.yml build
-docker compose -f deploy/docker-compose.yml up -d
+docker compose -f Deploy/docker-compose.yml build
+docker compose -f Deploy/docker-compose.yml up -d
 ```
 
 当前 Compose 口径如下：
@@ -210,7 +210,7 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply
 ### 生成迁移 SQL 并应用到生产
 
 1. 在一套用于对比的测试库上执行 `DbMigrate init`，让其结构同步到最新代码。
-2. 使用数据库工具导出“从当前生产版本 → 新版本”的结构差异 SQL，并保存到仓库（建议放在 `deploy/sql` 目录按日期/版本命名）。
+2. 使用数据库工具导出“从当前生产版本 → 新版本”的结构差异 SQL，并保存到仓库（建议放在 `Deploy/sql` 目录按日期/版本命名）。
 3. 在发布新版本前，由 DBA 或 CI/CD 流水线在生产数据库上执行本次版本对应的迁移 SQL：
    - 顺序执行所有未执行过的脚本；
    - 执行完成后再滚动升级/重启 API 与 Gateway。
