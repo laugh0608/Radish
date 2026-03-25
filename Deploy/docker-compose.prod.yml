@@ -2,23 +2,30 @@ services:
   frontend:
     build:
       args:
-        VITE_API_BASE_URL: ${RADISH_PUBLIC_URL:-https://radish.example.com}
-        VITE_AUTH_BASE_URL: ${RADISH_PUBLIC_URL:-https://radish.example.com}
-        VITE_SIGNALR_HUB_URL: ${RADISH_PUBLIC_URL:-https://radish.example.com}
-        VITE_AUTH_SERVER_URL: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+        VITE_API_BASE_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+        VITE_AUTH_BASE_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+        VITE_SIGNALR_HUB_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+        VITE_AUTH_SERVER_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
 
   auth:
     environment:
-      Cors__AllowedOrigins__0: ${RADISH_PUBLIC_URL:-https://radish.example.com}
-      OpenIddict__Server__Issuer: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+      Cors__AllowedOrigins__0: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      OpenIddict__Server__Issuer: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
       OpenIddict__Server__AllowInsecureHttp: "false"
+      OpenIddict__Encryption__UseDevelopmentKeys: "false"
+      OpenIddict__Encryption__SigningCertificatePath: "${RADISH_AUTH_SIGNING_CERT_PATH:-/app/certs/auth-signing.pfx}"
+      OpenIddict__Encryption__SigningCertificatePassword: "${RADISH_AUTH_SIGNING_CERT_PASSWORD:?RADISH_AUTH_SIGNING_CERT_PASSWORD is required}"
+      OpenIddict__Encryption__EncryptionCertificatePath: "${RADISH_AUTH_ENCRYPTION_CERT_PATH:-/app/certs/auth-encryption.pfx}"
+      OpenIddict__Encryption__EncryptionCertificatePassword: "${RADISH_AUTH_ENCRYPTION_CERT_PASSWORD:?RADISH_AUTH_ENCRYPTION_CERT_PASSWORD is required}"
+    volumes:
+      - ${RADISH_AUTH_CERTS_DIR:-/etc/radish/certs}:/app/certs:ro
 
   gateway:
     environment:
       ASPNETCORE_URLS: http://+:5000
       GatewayRuntime__EnableHttpsRedirection: "false"
-      GatewayService__PublicUrl: ${RADISH_PUBLIC_URL:-https://radish.example.com}
-      Cors__AllowedOrigins__0: ${RADISH_PUBLIC_URL:-https://radish.example.com}
-      FrontendService__BaseUrl: ${RADISH_PUBLIC_URL:-https://radish.example.com}
+      GatewayService__PublicUrl: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      Cors__AllowedOrigins__0: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      FrontendService__BaseUrl: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
     ports:
       - "5000:5000"

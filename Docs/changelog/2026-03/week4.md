@@ -110,3 +110,10 @@
 - **Gateway HTTPS 重定向已改为显式配置开关**：`Radish.Gateway` 当前新增 `GatewayRuntime:EnableHttpsRedirection` 运行时配置，dev / prod 不再需要靠手改代码切换 `UseHttpsRedirection()`。
 - **Compose 已拆为基础文件 + 环境覆盖文件**：`Deploy/docker-compose.yml` 当前只保留共享结构，新增 `Deploy/docker-compose.dev.yml` 与 `Deploy/docker-compose.prod.yml` 分别承载“本地内部 HTTPS”与“生产内部 HTTP”两种默认口径。
 - **开发与生产默认口径已分离**：本地联调默认使用 `docker-compose.dev.yml`，保持 `https://localhost:5000` 唯一对外入口；生产默认使用 `docker-compose.prod.yml`，保持“外层反代 HTTPS、Gateway 容器内 HTTP”的更常规部署方式。
+
+### Docker 生产交付口径收尾
+
+- **已补生产反代配置文件**：`Deploy/nginx.prod.conf` 当前已作为随仓库交付的 Nginx 样例落地，默认采用“宿主机 Nginx 终止 HTTPS，再回源 `127.0.0.1:5000`”的口径，并显式保留 `Host`、`X-Forwarded-For`、`X-Forwarded-Proto` 与 `X-Forwarded-Host`。
+- **已补生产环境变量样例**：`Deploy/.env.prod.example` 当前已覆盖 `RADISH_PUBLIC_URL`、Auth 证书挂载目录、签名 / 加密证书路径与密码，`Deploy/docker-compose.prod.yml` 也已同步接入这些变量，不再继续回落到开发证书。
+- **部署文档已完成 dev / prod 启动方式收口**：`Docs/deployment/guide.md` 当前已明确 `base + dev` 与 `base + prod` 的适用场景、启动命令、`--env-file` 用法，以及当前 `Deploy/` 下真实存在的 Nginx / Compose 交付文件，减少交付口径继续漂移。
+- **Compose 静态展开已覆盖 dev / prod 两套组合**：`docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.dev.yml config` 与 `docker compose --env-file Deploy/.env.prod.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config` 当前都可正常展开，说明这轮新增变量和覆盖关系没有引入明显语法问题。
