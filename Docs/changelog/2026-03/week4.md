@@ -111,6 +111,13 @@
 - **Compose 已拆为基础文件 + 环境覆盖文件**：`Deploy/docker-compose.yml` 当前只保留共享结构，新增 `Deploy/docker-compose.dev.yml` 与 `Deploy/docker-compose.prod.yml` 分别承载“本地内部 HTTPS”与“生产内部 HTTP”两种默认口径。
 - **开发与生产默认口径已分离**：本地联调默认使用 `docker-compose.dev.yml`，保持 `https://localhost:5000` 唯一对外入口；生产默认使用 `docker-compose.prod.yml`，保持“外层反代 HTTPS、Gateway 容器内 HTTP”的更常规部署方式。
 
+### OIDC 官方客户端回调地址收口
+
+- **官方客户端回调地址不再写死 `https://localhost:5000`**：`OpenIddictSeedHostedService` 当前已改为根据 `OpenIddict:Server:Issuer` 动态生成 `radish-client / radish-console / radish-scalar` 的 Gateway 回调地址。
+- **生产域名现在会自动进入客户端种子**：当 `Deploy/docker-compose.prod.yml` 通过 `RADISH_PUBLIC_URL` 覆盖 `OpenIddict__Server__Issuer` 后，Auth 启动时会同步把对应域名写入 RedirectUris / PostLogoutRedirectUris。
+- **`prod` 口径下不再支持用 `http://localhost:5000` 直接测登录**：官方客户端回调当前会跟随公开域名注册，生产联调必须使用与 `RADISH_PUBLIC_URL` 一致的 HTTPS 域名，否则会被 OpenIddict 按 `redirect_uri` 不匹配拒绝。
+- **开发直连回调仍然保留**：`http://localhost:3000` 与 `http://localhost:3100` 的前端开发服务器回调当前仍保留，用于宿主机 Vite 开发联调。
+
 ### Docker 生产交付口径收尾
 
 - **已补生产反代配置文件**：`Deploy/nginx.prod.conf` 当前已作为随仓库交付的 Nginx 样例落地，默认采用“宿主机 Nginx 终止 HTTPS，再回源 `127.0.0.1:5000`”的口径，并显式保留 `Host`、`X-Forwarded-For`、`X-Forwarded-Proto` 与 `X-Forwarded-Host`。

@@ -8,7 +8,7 @@
 
 - **里程碑**：`M12 社区功能冲刺`
 - **当前主线**：`首版 dev 边界冻结与全局主线补齐`
-- **当前阶段**：`截至 2026-03-25，社区相关主功能已基本完成首轮闭环，但这不等于整体产品已经达到首版 dev 条件。当前已按“所有纳入首版范围的核心功能主线至少完成 70%”重新定义首版 dev 边界：先补齐未完成或待复核的全局主线，再并行推进国风视觉基线 / 主题切换与 radish.client i18n，并继续把最小 CI 门禁与 Docker 镜像构建链补成首版工程门槛。当前 master PR 已接通首轮仓库质量检查，radish.client i18n 已完成桌面壳层、应用注册、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天、通知中心、个人中心高频模块的首轮覆盖；通知中心 / 个人中心与桌面壳层残余主题与语言烟雾验证也已完成。通知中心现已完成一轮真实首版 Smoke：新通知 Toast 预览、Dock 未读角标、通知列表、点击跳转并静默已读、删除后角标同步与多端同步均已通过，当前从“待联调复核”转入“等待总回归确认”。本轮欢迎 App 也已完成长文案与开源说明资源化，当前语言切换不再只覆盖壳层与短标签，而是进入欢迎页主体内容。最新一轮又补齐了 Console 与社区主链的多项边界：`console.access` 已收口为“入口标记 + 真实后台能力联动”，分类与标签已拆分为独立管理模块，内容治理 / 胡萝卜 / 经验等级后台首版已纳入 Console，论坛公开个人主页与帖子详情 / 评论头像展示也已对齐当前实现。在此基础上，国风视觉基线已在桌面端深度落地（包括衬线大字、云水掩膜、立体画框、水滴动画及基于玉牌隐喻的高密网格应用体系），桌面右键菜单及主题切换也已上线。最新一轮又补齐了首版最小 Docker 资产：`Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile、前端静态托管脚本，以及 `Deploy/docker-compose.yml / docker-compose.dev.yml / docker-compose.prod.yml` 已落地，并完成一轮镜像 build 级验证，当前“Docker 镜像构建链”已从“待补齐”转入“待联调复核”。详见：[首版 dev 边界](/planning/dev-first-scope)。`
+- **当前阶段**：`截至 2026-03-25，社区相关主功能已基本完成首轮闭环，但这不等于整体产品已经达到首版 dev 条件。当前已按“所有纳入首版范围的核心功能主线至少完成 70%”重新定义首版 dev 边界：先补齐未完成或待复核的全局主线，再并行推进国风视觉基线 / 主题切换与 radish.client i18n，并继续把最小 CI 门禁与 Docker 镜像构建链补成首版工程门槛。当前 master PR 已接通首轮仓库质量检查，radish.client i18n 已完成桌面壳层、应用注册、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天、通知中心、个人中心高频模块的首轮覆盖；通知中心 / 个人中心与桌面壳层残余主题与语言烟雾验证也已完成。通知中心现已完成一轮真实首版 Smoke：新通知 Toast 预览、Dock 未读角标、通知列表、点击跳转并静默已读、删除后角标同步与多端同步均已通过，当前从“待联调复核”转入“等待总回归确认”。本轮欢迎 App 也已完成长文案与开源说明资源化，当前语言切换不再只覆盖壳层与短标签，而是进入欢迎页主体内容。最新一轮又补齐了 Console 与社区主链的多项边界：`console.access` 已收口为“入口标记 + 真实后台能力联动”，分类与标签已拆分为独立管理模块，内容治理 / 胡萝卜 / 经验等级后台首版已纳入 Console，论坛公开个人主页与帖子详情 / 评论头像展示也已对齐当前实现。在此基础上，国风视觉基线已在桌面端深度落地（包括衬线大字、云水掩膜、立体画框、水滴动画及基于玉牌隐喻的高密网格应用体系），桌面右键菜单及主题切换也已上线。最新一轮又补齐了首版最小 Docker 资产与交付口径：`Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile、前端静态托管脚本，以及 `Deploy/docker-compose.yml / docker-compose.dev.yml / docker-compose.prod.yml` 已落地，并已完成一轮镜像 build 级验证、Compose dev 运行态 Smoke、Gateway 容器内 HTTP / HTTPS 模式切换，以及 `RADISH_PUBLIC_URL -> OpenIddict__Server__Issuer -> 官方 OIDC 客户端回调地址` 的配置链收口，当前“Docker 镜像构建链”已可视为完成最小交付收口并转入总回归前维护。详见：[首版 dev 边界](/planning/dev-first-scope)。`
 - **复核日期**：`2026-03-25`
 
 ## 当前主线：首版 dev 边界冻结与全局主线补齐
@@ -26,7 +26,7 @@
 - 冻结首版 `dev` 边界，把“哪些功能必须做完主线、哪些可以后置”写清楚，不再靠会话口径反复漂移
 - 按 [首版 dev 边界](/planning/dev-first-scope) 逐项盘点全局核心功能主线，确认哪些已完成、哪些仍待补齐、哪些仍待联调复核
 - 把国风视觉基线 / 主题切换 / `radish.client` i18n 纳入首版范围，并按核心页面先落地的策略推进
-- 把首版 `dev` 的工程门槛落地：验证基线可重复、最小 CI 门禁稳定可用、Docker 镜像构建链首次跑通
+- 把首版 `dev` 的工程门槛落地：验证基线可重复、最小 CI 门禁稳定可用、Docker 镜像构建链与最小交付口径跑通
 
 ### 当前输出
 
@@ -56,13 +56,14 @@
 - [x] 已补 `master` 分支保护与 ruleset 资产，当前仓库已切换为“禁止直接 push、仅允许 PR 合并”的最小发布入口
 - [x] 已补首版最小 Docker 资产：`Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile、前端静态托管脚本，以及 `Deploy/docker-compose.yml / docker-compose.dev.yml / docker-compose.prod.yml` 已落地
 - [x] 已完成一轮 Docker build 级验证：前端镜像与 `api / auth / gateway` 三个后端镜像均可构建，`Radish.Api` 发布阶段的重复 `appsettings.json` 冲突也已收口
+- [x] 已完成一轮 Docker 运行态 Smoke 与交付口径收口：Compose 已拆分 `dev / prod` 默认口径，`Gateway` 已支持容器内 HTTP / HTTPS 模式切换与 Forwarded Headers，`base + dev` 已完成 `/`、`/console/`、`/health` 运行态验证，`base + prod` 的 `RADISH_PUBLIC_URL -> OpenIddict__Server__Issuer -> 官方客户端回调地址` 配置链与反代口径也已对齐
 
 ### 下一步拆分
 
 - 第 1 步：按 [首版 dev 功能矩阵状态表](/planning/dev-first-status-matrix) 逐项推进“待补齐 / 待联调复核”的功能线
 - 第 2 步：优先补齐仍未完成的全局业务主线，而不是继续扩写社区局部增强
 - 第 3 步：继续推进 `radish.client` 的国风视觉基线 / 主题切换 / i18n 首轮落地；通知中心已完成真实 Smoke，个人中心 / 桌面壳层的首轮语言切换与主题切换烟雾验证也已完成，欢迎 App 已完成主题、口径与长文案资源化，后续转入更大范围首版联调复核与残余深层样式维护
-- 第 4 步：在已有最小 CI 门禁基础上，继续对已补齐的首版镜像资产做 Compose 运行态 Smoke 与交付口径收口
+- 第 4 步：把已收口的 Docker / Deploy 方案纳入更大范围首版总回归，重点观察真实外部反代域名、Auth 证书与 OIDC 回调链路
 - 第 5 步：在主线功能、体验主线与工程门槛满足后，再决定首版 dev 之后的增强优先级
 
 ### 当前结论
@@ -72,7 +73,7 @@
 - 通知中心已于 `2026-03-23` 完成一轮真实首版 Smoke，当前从“待联调复核”转入“等待总回归确认”
 - 欢迎 App 已于 `2026-03-23` 完成长文案与开源说明资源化，当前语言切换已覆盖欢迎页主体内容
 - 从 `2026-03-19` 起，国风视觉基线 / 主题切换 / `radish.client` i18n 明确纳入首版范围
-- Docker 镜像构建链已于 `2026-03-25` 完成首轮资产补齐与 build 级验证，当前从“待补齐”转入“待联调复核”
+- Docker 镜像构建链已于 `2026-03-25` 完成最小交付收口：build 级验证、Compose dev 运行态 Smoke、Gateway 容器内 HTTP / HTTPS 模式切换，以及 `RADISH_PUBLIC_URL` 驱动的官方 OIDC 回调地址链路均已完成，当前转入总回归前维护
 - 首版 `dev` 是否达标，以 [首版 dev 边界](/planning/dev-first-scope) 为准，而不再以单一专题收口状态替代整体判断
 
 ### 当前不做

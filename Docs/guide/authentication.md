@@ -113,16 +113,22 @@ grant_type=refresh_token
 
 所有客户端需在 Auth Server 中注册。通过 DbSeed 初始化：
 
+> 当前官方客户端（`radish-client / radish-console / radish-scalar`）的 Gateway 回调地址会跟随 `OpenIddict:Server:Issuer` 动态生成。
+> 本地默认会落到 `https://localhost:5000/...`，生产环境则必须把 `Issuer` 覆盖为真实外部 HTTPS 域名。
+> 下文中的 `BuildPublicBaseUri(...)` 表示“读取 `Issuer`、补齐尾部 `/`、并在缺失时回落到 `https://localhost:5000/`”的当前种子逻辑。
+
 ### 4.1 Scalar API 文档
 
 ```csharp
+var publicBaseUri = BuildPublicBaseUri(configuration["OpenIddict:Server:Issuer"]);
+
 new OpenIddictApplicationDescriptor
 {
     ClientId = "radish-scalar",
     DisplayName = "Radish API Documentation",
     ConsentType = ConsentTypes.Explicit, // 显示授权确认页（用于测试）
     RedirectUris = {
-        new Uri("https://localhost:5000/scalar/oauth2-callback")
+        new Uri(publicBaseUri, "scalar/oauth2-callback")
     },
     Permissions =
     {
@@ -147,23 +153,28 @@ new OpenIddictApplicationDescriptor
 ### 4.2 前端 Web 客户端
 
 ```csharp
+var publicBaseUri = BuildPublicBaseUri(configuration["OpenIddict:Server:Issuer"]);
+
 new OpenIddictApplicationDescriptor
 {
     ClientId = "radish-client",
     DisplayName = "Radish Web Client",
-    ConsentType = ConsentTypes.Explicit, // 显示授权确认页
+    ConsentType = ConsentTypes.Implicit, // 官方 Web 客户端默认走 SSO
     RedirectUris = {
-        new Uri("http://localhost:3000/callback"),
-        new Uri("http://localhost:3000/silent-renew")
+        new Uri(publicBaseUri, "oidc/callback"),
+        new Uri("http://localhost:3000/oidc/callback")
     },
     PostLogoutRedirectUris = {
-        new Uri("http://localhost:3000")
+        publicBaseUri,
+        new Uri(publicBaseUri, string.Empty),
+        new Uri("http://localhost:3000"),
+        new Uri("http://localhost:3000/")
     },
     Permissions =
     {
         Permissions.Endpoints.Authorization,
         Permissions.Endpoints.Token,
-        Permissions.Endpoints.Logout,
+        Permissions.Endpoints.EndSession,
         Permissions.GrantTypes.AuthorizationCode,
         Permissions.GrantTypes.RefreshToken,
         Permissions.ResponseTypes.Code,
@@ -171,10 +182,6 @@ new OpenIddictApplicationDescriptor
         Permissions.Scopes.Profile,
         Permissions.Scopes.OfflineAccess, // 启用 refresh_token
         Permissions.Prefixes.Scope + "radish-api"
-    },
-    Requirements =
-    {
-        Requirements.Features.ProofKeyForCodeExchange // 强制 PKCE
     }
 }
 ```
@@ -393,15 +400,14 @@ builder.Services.AddAuthorizationBuilder()
 import { UserManagerSettings } from 'oidc-client-ts';
 
 export const oidcConfig: UserManagerSettings = {
-  authority: 'https://localhost:7100',
+  authority: 'https://localhost:5000',
   client_id: 'radish-client',
-  redirect_uri: 'http://localhost:3000/callback',
+  redirect_uri: 'http://localhost:3000/oidc/callback',
   post_logout_redirect_uri: 'http://localhost:3000',
-  silent_redirect_uri: 'http://localhost:3000/silent-renew',
   scope: 'openid profile radish-api offline_access',
   response_type: 'code',
-  automaticSilentRenew: true,
-  // PKCE 默认启用（生产环境请使用真实 HTTPS 域名）
+  automaticSilentRenew: false,
+  // 若要启用 silent renew，需先在 Auth 客户端种子中补注册对应回调地址
 };
 ```
 
@@ -1218,13 +1224,15 @@ options.AddPreferredSecuritySchemes("oauth2")
 Scalar 使用的客户端配置（在 Auth 项目的 `OpenIddictSeedHostedService` 中初始化）：
 
 ```csharp
+var publicBaseUri = BuildPublicBaseUri(configuration["OpenIddict:Server:Issuer"]);
+
 new OpenIddictApplicationDescriptor
 {
     ClientId = "radish-scalar",
     DisplayName = "Radish API Documentation",
     ConsentType = ConsentTypes.Explicit,
     RedirectUris = {
-        new Uri("https://localhost:5000/scalar/oauth2-callback")
+        new Uri(publicBaseUri, "scalar/oauth2-callback")
     },
     Permissions =
     {

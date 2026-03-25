@@ -162,6 +162,8 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 生产覆盖默认约定如下：
 
 - `GatewayService__PublicUrl`、前端构建期 `VITE_*`、Auth 的 `Issuer / CORS` 都通过 `RADISH_PUBLIC_URL` 对齐真实外部域名
+- `Auth` 中官方 OIDC 客户端（`radish-client / radish-console / radish-scalar`）的 Gateway 回调地址也会跟随 `OpenIddict__Server__Issuer` 对齐，因此 `RADISH_PUBLIC_URL` 必须与真实外部 HTTPS 域名保持一致
+- `prod` 口径下不要直接用 `http://localhost:5000` 做登录验证；若访问协议、域名或端口与 `RADISH_PUBLIC_URL` 不一致，OpenIddict 会因 `redirect_uri` 不匹配而拒绝请求
 - `Gateway` 容器内部监听 `http://+:5000`
 - `GatewayRuntime__EnableHttpsRedirection=false`
 - `Auth` 通过 `RADISH_AUTH_CERTS_DIR` 把宿主机证书目录挂载到容器 `/app/certs`，并通过 `RADISH_AUTH_*` 变量覆盖生产证书路径与密码
