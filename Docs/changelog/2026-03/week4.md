@@ -124,3 +124,33 @@
 - **已补生产环境变量样例**：`Deploy/.env.prod.example` 当前已覆盖 `RADISH_PUBLIC_URL`、Auth 证书挂载目录、签名 / 加密证书路径与密码，`Deploy/docker-compose.prod.yml` 也已同步接入这些变量，不再继续回落到开发证书。
 - **部署文档已完成 dev / prod 启动方式收口**：`Docs/deployment/guide.md` 当前已明确 `base + dev` 与 `base + prod` 的适用场景、启动命令、`--env-file` 用法，以及当前 `Deploy/` 下真实存在的 Nginx / Compose 交付文件，减少交付口径继续漂移。
 - **Compose 静态展开已覆盖 dev / prod 两套组合**：`docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.dev.yml config` 与 `docker compose --env-file Deploy/.env.prod.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config` 当前都可正常展开，说明这轮新增变量和覆盖关系没有引入明显语法问题。
+
+## 2026-03-26 (周四)
+
+### 首版待复核主线真实 Smoke 结果
+
+- **用户已完成一轮更大范围首版 Smoke**：本轮覆盖 WebOS 桌面与应用容器、论坛基础、社区 `P0`、`Console V1`，以及 `radish.client` 的国风视觉基线 / 主题切换 / `i18n`。
+- **验收反馈已明确通过**：用户于 `2026-03-26` 直接确认“全部都没啥问题，可以收口了”。
+- **规划口径已同步收口**：以上功能线当前从“待联调复核”转入“等待总回归确认”，后续以回归维护和总回归记录整理为主，不继续扩张新切片。
+
+### 文档口径同步
+
+- **状态矩阵已更新**：`dev-first-status-matrix.md` 当前已把 `WebOS`、论坛基础、社区 `P0`、`Console V1`、国风视觉基线、主题切换与 `i18n` 统一改为“已完成”。
+- **当前规划页已收束重点**：`planning/current.md` 与 `development-plan.md` 当前已把首版剩余重点进一步收束到验证基线、最小 `CI` 门禁稳定性与总回归记录整理。
+- **首版总回归检查单已补齐**：当前已新增 `guide/dev-first-regression-checklist.md`，把自动化门槛、可直接复用的 Smoke 记录、发布前检查项与统一记录格式收束到一个入口。
+- **首版总回归记录已补齐**：当前已新增 `guide/dev-first-regression-record.md`，把本轮真实 Smoke 与后续自动化验证结果统一沉淀成一份阶段记录。
+- **本周周志已补本轮结论**：避免“用户已确认通过，但规划页仍停在待复核”的口径漂移继续存在。
+
+### 本轮验证
+
+- ✅ WebOS 桌面与应用容器首版烟雾联调已完成并通过。
+- ✅ 论坛基础与社区 `P0` 首版烟雾联调已完成并通过。
+- ✅ `Console V1` 首版烟雾联调已完成并通过。
+- ✅ `radish.client` 国风视觉基线 / 主题切换 / `i18n` 首版烟雾联调已完成并通过。
+
+### 首版验证基线复跑结果
+
+- **`npm run validate:baseline` 已于 `2026-03-26` 复跑并通过**：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、身份语义扫描、后端构建与 `Radish.Api.Tests` 当前均已通过。
+- **中途暴露的测试阻塞已完成收口**：`PostControllerTest` 的两个 `GetById` 用例曾因严格 `Mock` 未补 `CommentService.QueryAsync` 调用而失败；当前已补测试桩并完成定向复验。
+- **`npm run validate:baseline:host` 已继续通过**：`DbMigrate doctor / verify` 只读自检当前均已通过，验证基线已完成本轮收口。
+- **当前工程结论已同步收口**：业务 / 体验主线 Smoke 与验证基线均已完成本轮收口，首版剩余重点进一步收束到最小 `CI` 门禁稳定性与最终发布判断。
