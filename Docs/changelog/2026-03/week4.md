@@ -159,9 +159,15 @@
 
 - **最新一次 `master` PR 已完成三项质量门禁并成功合并**：`Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 当前均已全绿，`fix(test): 收口首版回归与验证基线` 已以 `37fe89c` 合入 `master`。
 - **`dev` 已同步 `master` 合并结果**：当前已补一条回灌提交 `cbd0f8a`，用于把 `master` 的 squash / merge 结果同步回 `dev`，避免后续 PR 继续重复出现同一批冲突。
-- **规划口径已继续收束**：`首次 CI/CD` 当前已从“待联调复核”转入“已完成”，首版剩余重点改为总回归记录维护、内部开发版判断，以及上线前外部反代域名 / Auth 证书 / OIDC 回调链路复核。
+- **规划口径已继续更新**：`首次 CI/CD` 当前已从“待联调复核”转入“已完成”，首版 `dev` 已明确为“可发内部开发版”；真实外部反代域名 / Auth 证书 / OIDC 回调链路复核已后置到 `CI/CD` 完善且具备 Docker 镜像推送能力后再正式执行。
 
 ### 首版内部开发版判断
 
 - **当前判断已正式收口为“可发内部开发版”**：基于业务 / 体验主线已完成本轮 Smoke、`validate:baseline` 与 `validate:baseline:host` 已通过、最小 `CI` 门禁已完成真实合并闭环，以及当前无已知阻塞主线的 `P0 / P1` 问题，首版 `dev` 当前已具备内部开发版发布条件。
-- **后续重点已切到上线前交付复核**：真实外部反代域名、Auth 证书与 OIDC 回调链路仍需在上线前补联调记录，但这不再阻塞当前内部开发版判断。
+- **下一阶段主线已明确为 `CI/CD` 与 Docker 镜像推送链路**：真实外部反代域名、Auth 证书与 OIDC 回调链路当前暂不阻塞内部开发版判断；待具备真实部署条件后，再正式补联调记录。
+
+### GHCR 后端镜像工作流资产
+
+- **已补 `Docker Images` workflow**：当前已新增 `.github/workflows/docker-images.yml`，覆盖 `PR -> build only`、`push dev -> backend push`、`push v* -> backend release push` 三类触发，后端镜像默认目标为 `GHCR`。
+- **前端运行时配置注入已补齐**：`Frontend/scripts/serve-static.mjs` 当前会在容器启动时生成 `/runtime-config.js`，`radish.client / radish.console` 已优先读取运行时配置，`frontend` 统一镜像推送不再受“公开地址写死在构建产物里”限制。
+- **下一步只剩真实 GHCR 产物验证与前端纳管**：先验证 `dev` / `v*` 的后端镜像真实产物，再把 `frontend` 纳入 `Docker Images` workflow 的推送规则。

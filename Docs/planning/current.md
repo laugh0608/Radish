@@ -8,7 +8,7 @@
 
 - **里程碑**：`M12 社区功能冲刺`
 - **当前主线**：`首版 dev 边界冻结与全局主线补齐`
-- **当前阶段**：`截至 2026-03-26，社区相关主功能与首版范围内的大部分业务 / 体验主线已完成首轮闭环，但这仍不等于整体产品已经完全达到首版 dev 条件。当前已按“所有纳入首版范围的核心功能主线至少完成 70%”重新定义首版 dev 边界：先补齐未完成或待复核的全局主线，再并行推进国风视觉基线 / 主题切换与 radish.client i18n，并把最小 CI 门禁与 Docker 镜像构建链补成首版工程门槛。当前 master PR 已完成 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 一轮真实通过并成功合并到 `master`，`dev` 也已同步 `master` 合并结果。radish.client i18n 已完成桌面壳层、应用注册、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天、通知中心、个人中心高频模块的首轮覆盖；通知中心 / 个人中心与桌面壳层残余主题与语言烟雾验证也已完成。通知中心已于 `2026-03-23` 完成一轮真实首版 Smoke，认证 / OIDC / Gateway 基础入口也已于同日完成真实首版 Smoke，当前均已转入等待总回归确认。本轮欢迎 App 已完成长文案与开源说明资源化，当前语言切换不再只覆盖壳层与短标签，而是进入欢迎页主体内容；Console 与社区主链的多项边界也已完成收口。首版最小 Docker 资产与交付口径已于 `2026-03-25` 完成本轮收口。最新于 `2026-03-26`，WebOS 桌面与应用容器、论坛基础、社区 P0、Console V1，以及 `radish.client` 国风视觉基线 / 主题切换 / i18n 又完成了一轮首版烟雾联调，用户确认“全部都没啥问题，可以收口了”。在此基础上，当前结论已进一步收束为：首版 `dev` 当前可发内部开发版，后续重点转入内部开发版后观察，以及真实外部反代域名 / Auth 证书 / OIDC 回调链路的上线前复核。详见：[首版 dev 边界](/planning/dev-first-scope)。`
+- **当前阶段**：`截至 2026-03-26，社区相关主功能与首版范围内的大部分业务 / 体验主线已完成首轮闭环，但这仍不等于整体产品已经完全达到首版 dev 条件。当前已按“所有纳入首版范围的核心功能主线至少完成 70%”重新定义首版 dev 边界：先补齐未完成或待复核的全局主线，再并行推进国风视觉基线 / 主题切换与 radish.client i18n，并把最小 CI 门禁与 Docker 镜像构建链补成首版工程门槛。当前 master PR 已完成 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 一轮真实通过并成功合并到 `master`，`dev` 也已同步 `master` 合并结果。radish.client i18n 已完成桌面壳层、应用注册、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天、通知中心、个人中心高频模块的首轮覆盖；通知中心 / 个人中心与桌面壳层残余主题与语言烟雾验证也已完成。通知中心已于 `2026-03-23` 完成一轮真实首版 Smoke，认证 / OIDC / Gateway 基础入口也已于同日完成真实首版 Smoke，当前均已转入等待总回归确认。本轮欢迎 App 已完成长文案与开源说明资源化，当前语言切换不再只覆盖壳层与短标签，而是进入欢迎页主体内容；Console 与社区主链的多项边界也已完成收口。首版最小 Docker 资产与交付口径已于 `2026-03-25` 完成本轮收口。最新于 `2026-03-26`，WebOS 桌面与应用容器、论坛基础、社区 P0、Console V1，以及 `radish.client` 国风视觉基线 / 主题切换 / i18n 又完成了一轮首版烟雾联调，用户确认“全部都没啥问题，可以收口了”。在此基础上，当前结论已进一步收束为：首版 `dev` 当前可发内部开发版；真实外部反代域名 / Auth 证书 / OIDC 回调链路复核已明确后置到 `CI/CD` 完善且具备 Docker 镜像推送能力后再正式执行；当前下一阶段主线转为完善 `CI/CD` 与 Docker 镜像推送链路。详见：[首版 dev 边界](/planning/dev-first-scope)。`
 - **复核日期**：`2026-03-26`
 
 ## 当前主线：首版 dev 边界冻结与全局主线补齐
@@ -53,6 +53,8 @@
 - [x] 已补 `M13` 首轮统一验证入口：`validate:baseline` / `quick` / `host`、验证基线说明页与最小脚本化收口
 - [x] 已完成一轮 `full` 验证：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 共 195 个测试通过
 - [x] 已补 `M15` 首轮最小 CI 门禁：`Repo Hygiene` / `Frontend Lint` / `Baseline Quick` 已接入 GitHub Actions，并已在最新一次 `master` PR 上完成真实通过与合并闭环
+- [x] 已补 `GHCR` 后端镜像 workflow 资产：`.github/workflows/docker-images.yml` 当前已覆盖 `PR -> build only`、`push dev -> backend push`、`push v* -> backend release push` 三类触发；`frontend` 当前仍只保留 CI build 校验，但运行时配置注入能力已补齐
+- [x] 已补前端运行时配置注入：`Frontend/scripts/serve-static.mjs` 当前会在容器启动时生成 `/runtime-config.js`，`radish.client / radish.console` 已优先读取运行时配置，`Deploy/docker-compose.dev.yml / docker-compose.prod.yml` 也已补齐 `frontend` 运行时环境变量入口
 - [x] 已补 `master` 分支保护与 ruleset 资产，当前仓库已切换为“禁止直接 push、仅允许 PR 合并”的最小发布入口
 - [x] 已补首版最小 Docker 资产：`Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile、前端静态托管脚本，以及 `Deploy/docker-compose.yml / docker-compose.dev.yml / docker-compose.prod.yml` 已落地
 - [x] 已完成一轮 Docker build 级验证：前端镜像与 `api / auth / gateway` 三个后端镜像均可构建，`Radish.Api` 发布阶段的重复 `appsettings.json` 冲突也已收口
@@ -67,8 +69,10 @@
 - 第 1 步：维持当前“可发内部开发版”的总回归口径，避免后续文档与实际状态再次漂移
 - 第 2 步：继续维护 `radish.client` 的残余深层样式与边角文案，但不再把这些尾项视为新的待启动主线
 - 第 3 步：如近期再发生跨层改动，优先重跑 `npm run validate:baseline`；涉及宿主 / 配置时再补 `npm run validate:baseline:host`
-- 第 4 步：若进入上线前交付复核，把已收口的 Docker / Deploy 方案纳入更大范围首版总回归，重点补真实外部反代域名、Auth 证书与 OIDC 回调链路记录
-- 第 5 步：在主线功能、体验主线与工程门槛满足后，再决定首版 dev 之后的增强优先级
+- 第 4 步：先在 `dev` 分支与 `v*` 标签上验证 `GHCR` 后端镜像 workflow 的首次真实产物，确认包权限、可见性与 tag 规则
+- 第 5 步：在后端镜像验证稳定后，把 `frontend` 纳入统一镜像推送规则
+- 第 6 步：待具备真实 `RADISH_PUBLIC_URL`、Auth 证书与镜像推送 / 部署条件后，再执行上线前交付复核清单并补联调记录
+- 第 7 步：在主线功能、体验主线与工程门槛满足后，再决定首版 dev 之后的增强优先级
 
 ### 当前结论
 
@@ -79,7 +83,7 @@
 - 从 `2026-03-19` 起，国风视觉基线 / 主题切换 / `radish.client` i18n 明确纳入首版范围
 - Docker 镜像构建链已于 `2026-03-25` 完成最小交付收口：build 级验证、Compose dev 运行态 Smoke、Gateway 容器内 HTTP / HTTPS 模式切换，以及 `RADISH_PUBLIC_URL` 驱动的官方 OIDC 回调地址链路均已完成，当前转入总回归前维护
 - WebOS 桌面与应用容器、论坛基础、社区 P0、Console V1，以及 `radish.client` 国风视觉基线 / 主题切换 / i18n 已于 `2026-03-26` 完成一轮首版烟雾联调，当前转入等待总回归确认
-- 当前首版剩余重点已从“验证基线收口”进一步收束到内部开发版后观察与上线前交付复核
+- 当前首版剩余重点已从“验证基线收口”进一步收束到内部开发版后观察，以及 `GHCR` 后端镜像首次真实产物验证；前端运行时配置注入已完成，真实外部交付复核已后置到条件具备后再执行
 - 首版总回归与发布前检查单：见 [首版 dev 总回归与发布前检查单](/guide/dev-first-regression-checklist)
 - 首版总回归记录：见 [首版 dev 总回归记录](/guide/dev-first-regression-record)
 - 上线前交付复核入口：见 [部署与容器指南](/deployment/guide)

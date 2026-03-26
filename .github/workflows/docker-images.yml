@@ -1,0 +1,171 @@
+name: Docker Images
+
+on:
+  pull_request:
+    branches:
+      - master
+      - dev
+  push:
+    branches:
+      - dev
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      push_backend:
+        description: Push backend images to GHCR when current ref is dev or a v* tag
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: docker-images-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  prepare:
+    name: Prepare Image Vars
+    runs-on: ubuntu-latest
+    outputs:
+      image_namespace: ${{ steps.vars.outputs.image_namespace }}
+      should_push_backend: ${{ steps.vars.outputs.should_push_backend }}
+      publish_track: ${{ steps.vars.outputs.publish_track }}
+      short_sha: ${{ steps.vars.outputs.short_sha }}
+    steps:
+      - name: Compute image namespace and publish mode
+        id: vars
+        shell: bash
+        env:
+          DISPATCH_PUSH_BACKEND: ${{ github.event.inputs.push_backend || 'false' }}
+        run: |
+          owner_lc="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          image_namespace="${REGISTRY}/${owner_lc}"
+          short_sha="${GITHUB_SHA::7}"
+          should_push_backend=false
+          publish_track=ci
+
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == "refs/heads/dev" ]]; then
+            should_push_backend=true
+            publish_track=dev
+          elif [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
+            should_push_backend=true
+            publish_track=release
+          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${DISPATCH_PUSH_BACKEND}" == "true" ]]; then
+            if [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
+              should_push_backend=true
+              publish_track=dev
+            elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+              should_push_backend=true
+              publish_track=release
+            fi
+          fi
+
+          {
+            echo "image_namespace=${image_namespace}"
+            echo "should_push_backend=${should_push_backend}"
+            echo "publish_track=${publish_track}"
+            echo "short_sha=${short_sha}"
+          } >> "$GITHUB_OUTPUT"
+
+  backend-images:
+    name: Backend Image (${{ matrix.image_name }})
+    runs-on: ubuntu-latest
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image_name: radish-api
+            dockerfile: Radish.Api/Dockerfile
+          - image_name: radish-auth
+            dockerfile: Radish.Auth/Dockerfile
+          - image_name: radish-gateway
+            dockerfile: Radish.Gateway/Dockerfile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        if: needs.prepare.outputs.should_push_backend == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve image tags
+        id: tags
+        shell: bash
+        env:
+          IMAGE_NAMESPACE: ${{ needs.prepare.outputs.image_namespace }}
+          IMAGE_NAME: ${{ matrix.image_name }}
+          PUBLISH_TRACK: ${{ needs.prepare.outputs.publish_track }}
+          SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          image="${IMAGE_NAMESPACE}/${IMAGE_NAME}"
+
+          case "${PUBLISH_TRACK}" in
+            dev)
+              tags="${image}:dev-latest
+${image}:dev-${SHORT_SHA}"
+              ;;
+            release)
+              tags="${image}:${REF_NAME}
+${image}:latest"
+              ;;
+            *)
+              tags="${image}:ci-${SHORT_SHA}"
+              ;;
+          esac
+
+          {
+            echo "tags<<EOF"
+            echo "${tags}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and maybe push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: ${{ needs.prepare.outputs.should_push_backend == 'true' }}
+          platforms: linux/amd64
+          tags: ${{ steps.tags.outputs.tags }}
+          build-args: |
+            BUILD_CONFIGURATION=Release
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
+
+  frontend-image-build:
+    name: Frontend Image Build
+    runs-on: ubuntu-latest
+    needs: prepare
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build frontend image for verification only
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Frontend/Dockerfile
+          push: false
+          platforms: linux/amd64
+          tags: radish/frontend-ci:${{ needs.prepare.outputs.short_sha }}

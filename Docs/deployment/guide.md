@@ -46,7 +46,12 @@
    git push origin v26.3.1-release
    ```
 
-7. 在 GitHub Release 中补齐本次发布说明、已知风险与回滚信息
+7. 等待 `Docker Images` 工作流完成本次后端镜像产出；若当前标签以 `v*` 命名，`GHCR` 会同步产出：
+   - `ghcr.io/<owner>/radish-api:<tag>` / `latest`
+   - `ghcr.io/<owner>/radish-auth:<tag>` / `latest`
+   - `ghcr.io/<owner>/radish-gateway:<tag>` / `latest`
+
+8. 在 GitHub Release 中补齐本次发布说明、已知风险与回滚信息
 
 ### 现阶段说明
 
@@ -77,6 +82,37 @@
 - 生产交付样例：
   - `Deploy/nginx.prod.conf`
   - `Deploy/.env.prod.example`
+- CI / 镜像工作流：
+  - `.github/workflows/repo-quality.yml`
+  - `.github/workflows/docker-images.yml`
+
+## GHCR 后端镜像工作流
+
+当前仓库已补 `Docker Images` 工作流，默认采用 `GHCR` 作为后端镜像仓库，口径如下：
+
+- `pull_request -> master / dev`：构建 `api / auth / gateway / frontend` 四个镜像入口，仅做 build 校验，不推送镜像
+- `push -> dev`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway` 推送到 `GHCR`
+- `push -> v*`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway` 以版本标签 + `latest` 推送到 `GHCR`
+- `workflow_dispatch`：可手动补跑；仅当当前 ref 为 `dev` 或 `v*` tag，且显式启用 `push_backend` 时，才会推送后端镜像
+
+当前后端镜像命名约定如下：
+
+- `ghcr.io/<owner>/radish-api`
+- `ghcr.io/<owner>/radish-auth`
+- `ghcr.io/<owner>/radish-gateway`
+
+当前 tag 规则如下：
+
+- `dev` 分支：`dev-latest`、`dev-<shortsha>`
+- `v*` 标签：`<tag>`、`latest`
+
+当前前端镜像仍只保留 CI build 校验，暂未纳入统一 GHCR 推送；但当前限制已不再是“公开域名写死在构建产物里”，因为：
+
+- `Frontend/scripts/serve-static.mjs` 已支持在容器启动时生成 `/runtime-config.js`
+- `radish.client` 与 `radish.console` 当前都会优先读取运行时注入的公开地址与功能开关，再回退到构建期 `VITE_*`
+- `Deploy/docker-compose.dev.yml / docker-compose.prod.yml` 也已为 `frontend` 容器补齐运行时环境变量入口
+
+因此当前 `frontend` 已具备“同一个镜像按运行时环境复用”的能力；后续若要把它也纳入统一 GHCR 推送，重点不再是补运行时配置，而是先完成 `GHCR` 后端镜像首次真实产物验证，再把 `frontend` 纳入 `Docker Images` workflow 的推送规则
 
 ## 构建服务镜像
 当前仓库已提供首版最小镜像链，对应四个构建入口：
@@ -113,7 +149,13 @@ docker build \
   -t radish/frontend:local .
 ```
 
-若生产环境不使用 `https://localhost:5000` 作为公开入口，请在构建前端镜像时把上述 `VITE_*` 构建参数改为真实域名。
+若生产环境不使用 `https://localhost:5000` 作为公开入口，可以在构建期传入真实 `VITE_*`；但当前前端也已支持运行时覆盖：
+
+- 静态服务会在容器启动时生成 `/runtime-config.js`
+- 运行时默认优先读取 `RADISH_PUBLIC_URL`
+- 如需细分，也可通过 `VITE_API_BASE_URL`、`VITE_AUTH_BASE_URL`、`VITE_SIGNALR_HUB_URL`、`VITE_AUTH_SERVER_URL` 单独覆盖
+
+> 说明：当前 `frontend` 镜像虽尚未纳入统一 GHCR 推送链路，但已经支持运行时配置注入；后续切换为“预构建镜像 + 部署时注入公开地址”不再需要重新设计前端接线。
 
 ## 运行容器
 当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在拆为“基础文件 + 环境覆盖文件”两层：
@@ -397,7 +439,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 ## 上线前交付复核清单
 
-> 适用于：首版 `dev` 已达到“可发内部开发版”，准备进一步做真实外部域名部署、对外可访问环境联调或上线前最后一轮交付复核。
+> 适用于：首版 `dev` 已达到“可发内部开发版”，且已具备真实外部 HTTPS 域名、Auth 证书，以及 Docker 镜像可构建 / 可推送 / 可部署条件，准备进一步做真实外部域名部署、对外可访问环境联调或上线前最后一轮交付复核。
 
 ### 目标
 
@@ -411,6 +453,9 @@ HTTP (5000/5100) → ASP.NET Core 应用
 - `npm run validate:baseline` 已通过
 - 如本轮触达宿主 / 配置 / `DbMigrate` / 部署链，`npm run validate:baseline:host` 已通过
 - 当前没有阻塞主线的已知 `P0 / P1` 问题
+- 已具备真实外部 HTTPS 域名，可为 `Deploy/.env.prod` 提供真实 `RADISH_PUBLIC_URL`
+- 已具备可挂载到 Auth 容器的正式证书或等效生产证书资产
+- 已具备 Docker 镜像可构建、可推送、可拉取、可部署的最小条件
 
 ### 建议执行顺序
 
@@ -478,6 +523,8 @@ HTTP (5000/5100) → ASP.NET Core 应用
 ### 当前说明
 
 - 本清单属于“上线前交付复核”，不阻塞当前“可发内部开发版”的判断
+- 当前阶段若尚不具备真实 `RADISH_PUBLIC_URL`、Auth 证书或 Docker 镜像推送 / 部署条件，可先暂缓本清单；这表示“当前不阻塞”，不表示“真实外部联调已完成”
+- 当前下一阶段主线应先补齐 `CI/CD` 与 Docker 镜像推送链路；待条件具备后，再按本清单正式执行并补记录
 - 若后续只是常规功能迭代，仍优先使用 `validate:baseline` 与 `master` PR 质量门禁，不需要每次都执行本清单
 
 ## 文档系统部署
