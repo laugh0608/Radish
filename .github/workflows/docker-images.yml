@@ -117,12 +117,14 @@ jobs:
 
           case "${PUBLISH_TRACK}" in
             dev)
-              tags="${image}:dev-latest
-${image}:dev-${SHORT_SHA}"
+              printf -v tags '%s\n%s' \
+                "${image}:dev-latest" \
+                "${image}:dev-${SHORT_SHA}"
               ;;
             release)
-              tags="${image}:${REF_NAME}
-${image}:latest"
+              printf -v tags '%s\n%s' \
+                "${image}:${REF_NAME}" \
+                "${image}:latest"
               ;;
             *)
               tags="${image}:ci-${SHORT_SHA}"
