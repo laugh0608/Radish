@@ -1,9 +1,11 @@
 using AutoMapper;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
 using SqlSugar;
@@ -15,7 +17,10 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
 {
     private readonly IBaseRepository<UserFollow> _userFollowRepository;
     private readonly IBaseRepository<User> _userRepository;
+    private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IPostService _postService;
+    private readonly INotificationService _notificationService;
+    private readonly ILogger<UserFollowService> _logger;
     private readonly FeedDistributionOptions _feedDistributionOptions;
 
     public UserFollowService(
@@ -23,12 +28,18 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         IBaseRepository<UserFollow> baseRepository,
         IBaseRepository<User> userRepository,
         IPostService postService,
+        IBaseRepository<Attachment> attachmentRepository,
+        INotificationService notificationService,
+        ILogger<UserFollowService> logger,
         IOptions<FeedDistributionOptions> feedDistributionOptions)
         : base(mapper, baseRepository)
     {
         _userFollowRepository = baseRepository;
         _userRepository = userRepository;
+        _attachmentRepository = attachmentRepository;
         _postService = postService;
+        _notificationService = notificationService;
+        _logger = logger;
         _feedDistributionOptions = feedDistributionOptions.Value;
     }
 
@@ -76,7 +87,13 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
                 existing.TenantId = normalizedTenantId;
             }
 
-            return await _userFollowRepository.UpdateAsync(existing);
+            var restored = await _userFollowRepository.UpdateAsync(existing);
+            if (restored)
+            {
+                await TrySendFollowNotificationAsync(followerUserId, targetUser, normalizedTenantId);
+            }
+
+            return restored;
         }
 
         await _userFollowRepository.AddAsync(new UserFollow
@@ -89,6 +106,8 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
             CreateBy = normalizedOperator,
             CreateId = followerUserId
         });
+
+        await TrySendFollowNotificationAsync(followerUserId, targetUser, normalizedTenantId);
 
         return true;
     }
@@ -175,6 +194,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         var userIds = relations.Select(r => r.FollowerUserId).Distinct().ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id) && u.IsEnable && !u.IsDeleted);
         var userMap = users.ToDictionary(u => u.Id, u => u);
+        var avatarMap = await LoadAvatarUrlMapAsync(userIds);
 
         var myFollowingIds = await _userFollowRepository.QueryDistinctAsync(
             f => f.FollowingUserId,
@@ -183,7 +203,11 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
 
         var items = relations
             .Where(r => userMap.ContainsKey(r.FollowerUserId))
-            .Select(r => MapFollowUserVo(userMap[r.FollowerUserId], r.FollowTime, myFollowingSet.Contains(r.FollowerUserId)))
+            .Select(r => MapFollowUserVo(
+                userMap[r.FollowerUserId],
+                avatarMap.GetValueOrDefault(r.FollowerUserId),
+                r.FollowTime,
+                myFollowingSet.Contains(r.FollowerUserId)))
             .ToList();
 
         return new VoPagedResult<UserFollowUserVo>
@@ -215,6 +239,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         var userIds = relations.Select(r => r.FollowingUserId).Distinct().ToList();
         var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id) && u.IsEnable && !u.IsDeleted);
         var userMap = users.ToDictionary(u => u.Id, u => u);
+        var avatarMap = await LoadAvatarUrlMapAsync(userIds);
 
         var followedBackIds = await _userFollowRepository.QueryDistinctAsync(
             f => f.FollowerUserId,
@@ -223,7 +248,11 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
 
         var items = relations
             .Where(r => userMap.ContainsKey(r.FollowingUserId))
-            .Select(r => MapFollowUserVo(userMap[r.FollowingUserId], r.FollowTime, followedBackSet.Contains(r.FollowingUserId)))
+            .Select(r => MapFollowUserVo(
+                userMap[r.FollowingUserId],
+                avatarMap.GetValueOrDefault(r.FollowingUserId),
+                r.FollowTime,
+                followedBackSet.Contains(r.FollowingUserId)))
             .ToList();
 
         return new VoPagedResult<UserFollowUserVo>
@@ -345,14 +374,84 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         };
     }
 
-    private static UserFollowUserVo MapFollowUserVo(User user, DateTime followTime, bool isMutualFollow)
+    private async Task<Dictionary<long, string>> LoadAvatarUrlMapAsync(IReadOnlyCollection<long> userIds)
+    {
+        if (userIds.Count == 0)
+        {
+            return new Dictionary<long, string>();
+        }
+
+        var attachments = await _attachmentRepository.QueryAsync(attachment =>
+            attachment.BusinessType == "Avatar" &&
+            attachment.BusinessId.HasValue &&
+            userIds.Contains(attachment.BusinessId.Value) &&
+            attachment.IsEnabled &&
+            !attachment.IsDeleted);
+
+        return attachments
+            .Where(attachment => attachment.BusinessId.HasValue)
+            .OrderByDescending(attachment => attachment.CreateTime)
+            .GroupBy(attachment => attachment.BusinessId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group =>
+                {
+                    var attachment = group.First();
+                    return !string.IsNullOrWhiteSpace(attachment.Url)
+                        ? attachment.Url!
+                        : attachment.ThumbnailPath ?? string.Empty;
+                });
+    }
+
+    private async Task TrySendFollowNotificationAsync(long followerUserId, User targetUser, long tenantId)
+    {
+        if (followerUserId <= 0 || targetUser.Id <= 0 || followerUserId == targetUser.Id)
+        {
+            return;
+        }
+
+        try
+        {
+            var follower = await _userRepository.QueryFirstAsync(u => u.Id == followerUserId && u.IsEnable && !u.IsDeleted);
+            var followerName = follower?.UserName?.Trim();
+            if (string.IsNullOrWhiteSpace(followerName))
+            {
+                followerName = $"User-{followerUserId}";
+            }
+
+            var avatarMap = await LoadAvatarUrlMapAsync(new[] { followerUserId });
+            await _notificationService.CreateNotificationAsync(new CreateNotificationDto
+            {
+                Type = NotificationType.Followed,
+                Title = "新增粉丝",
+                Content = $"{followerName} 关注了你",
+                Priority = (int)NotificationPriority.Normal,
+                BusinessType = BusinessType.User,
+                BusinessId = targetUser.Id,
+                TriggerId = followerUserId,
+                TriggerName = followerName,
+                TriggerAvatar = avatarMap.GetValueOrDefault(followerUserId),
+                ReceiverUserIds = new List<long> { targetUser.Id },
+                TenantId = tenantId
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex,
+                "[UserFollowService] 发送关注通知失败，FollowerUserId={FollowerUserId}, TargetUserId={TargetUserId}",
+                followerUserId,
+                targetUser.Id);
+        }
+    }
+
+    private static UserFollowUserVo MapFollowUserVo(User user, string? avatarUrl, DateTime followTime, bool isMutualFollow)
     {
         return new UserFollowUserVo
         {
             VoUserId = user.Id,
             VoUserName = user.UserName,
             VoDisplayName = string.IsNullOrWhiteSpace(user.UserRealName) ? null : user.UserRealName,
-            VoAvatarUrl = null,
+            VoAvatarUrl = string.IsNullOrWhiteSpace(avatarUrl) ? null : avatarUrl,
             VoIsMutualFollow = isMutualFollow,
             VoFollowTime = followTime
         };

@@ -12,24 +12,24 @@
 
 .backButton {
   background: none;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--theme-border-strong);
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 14px;
   transition: all 0.2s;
 }
 
 .backButton:hover {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .title {
   font-size: 24px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0;
 }
 
@@ -39,14 +39,14 @@
   align-items: center;
   justify-content: center;
   height: 300px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #1890ff;
+  border: 3px solid var(--theme-border-soft);
+  border-top: 3px solid var(--theme-brand-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -60,12 +60,12 @@
 .error {
   text-align: center;
   padding: 80px 24px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .error h2 {
   font-size: 20px;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0 0 12px 0;
 }
 
@@ -85,7 +85,7 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
@@ -93,18 +93,18 @@
 .statusBadge {
   padding: 8px 16px;
   border-radius: 6px;
-  color: white;
+  color: #ffffff;
   font-weight: 500;
   font-size: 14px;
 }
 
 .orderNo {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .section {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 8px;
   padding: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -113,10 +113,10 @@
 .sectionTitle {
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0 0 16px 0;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--theme-border-soft);
 }
 
 .productInfo {
@@ -129,7 +129,7 @@
   height: 80px;
   border-radius: 8px;
   overflow: hidden;
-  background: #f5f5f5;
+  background: var(--theme-bg-component);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -152,7 +152,7 @@
 
 .productType {
   font-size: 12px;
-  color: #1890ff;
+  color: var(--theme-brand-primary);
   background: rgba(24, 144, 255, 0.1);
   padding: 2px 8px;
   border-radius: 4px;
@@ -163,7 +163,7 @@
 .productName {
   font-size: 18px;
   font-weight: 500;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0 0 12px 0;
 }
 
@@ -180,11 +180,11 @@
 }
 
 .metaLabel {
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .metaValue {
-  color: #262626;
+  color: var(--theme-text-primary);
   font-weight: 500;
 }
 
@@ -200,7 +200,7 @@
   top: 8px;
   bottom: 8px;
   width: 2px;
-  background: #e8e8e8;
+  background: var(--theme-border-soft);
 }
 
 .timelineItem {
@@ -219,19 +219,19 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #52c41a;
+  background: var(--theme-state-success);
   border: 2px solid white;
-  box-shadow: 0 0 0 2px #52c41a;
+  box-shadow: 0 0 0 2px var(--theme-state-success);
 }
 
 .timelineDot.cancelled {
-  background: #8c8c8c;
-  box-shadow: 0 0 0 2px #8c8c8c;
+  background: var(--theme-text-secondary);
+  box-shadow: 0 0 0 2px var(--theme-text-secondary);
 }
 
 .timelineDot.failed {
-  background: #f5222d;
-  box-shadow: 0 0 0 2px #f5222d;
+  background: var(--theme-state-danger);
+  box-shadow: 0 0 0 2px var(--theme-state-danger);
 }
 
 .timelineContent {
@@ -241,21 +241,21 @@
 .timelineTitle {
   font-size: 14px;
   font-weight: 500;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin-bottom: 4px;
 }
 
 .timelineTime {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-placeholder);
 }
 
 .timelineReason {
   font-size: 12px;
-  color: #666;
+  color: var(--theme-text-secondary);
   margin-top: 4px;
   padding: 8px;
-  background: #f5f5f5;
+  background: var(--theme-bg-component);
   border-radius: 4px;
 }
 
@@ -272,11 +272,11 @@
 }
 
 .infoLabel {
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .infoValue {
-  color: #262626;
+  color: var(--theme-text-primary);
   font-weight: 500;
 }
 
@@ -284,15 +284,15 @@
   display: flex;
   justify-content: flex-end;
   padding: 20px;
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .cancelOrderButton {
-  background: #fff;
-  border: 1px solid #ff4d4f;
-  color: #ff4d4f;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-state-danger);
+  color: var(--theme-state-danger);
   padding: 10px 24px;
   border-radius: 6px;
   cursor: pointer;
@@ -301,8 +301,8 @@
 }
 
 .cancelOrderButton:hover {
-  background: #ff4d4f;
-  color: white;
+  background: var(--theme-state-danger);
+  color: #ffffff;
 }
 
 .dialogOverlay {
@@ -319,7 +319,7 @@
 }
 
 .dialog {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
   width: 90%;
   max-width: 400px;
@@ -332,28 +332,28 @@
   justify-content: space-between;
   align-items: center;
   padding: 16px 20px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--theme-border-soft);
 }
 
 .dialogHeader h3 {
   margin: 0;
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
 }
 
 .dialogClose {
   background: none;
   border: none;
   font-size: 18px;
-  color: #999;
+  color: var(--theme-text-placeholder);
   cursor: pointer;
   padding: 4px;
   line-height: 1;
 }
 
 .dialogClose:hover {
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .dialogContent {
@@ -363,7 +363,7 @@
 .dialogContent p {
   margin: 0 0 16px 0;
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .reasonInput {
@@ -374,13 +374,13 @@
 
 .reasonInput label {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .reasonInput textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--theme-border-strong);
   border-radius: 6px;
   font-size: 14px;
   resize: vertical;
@@ -389,7 +389,7 @@
 
 .reasonInput textarea:focus {
   outline: none;
-  border-color: #1890ff;
+  border-color: var(--theme-brand-primary);
   box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
 }
 
@@ -398,13 +398,13 @@
   justify-content: flex-end;
   gap: 12px;
   padding: 16px 20px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--theme-border-soft);
 }
 
 .dialogCancelButton {
-  background: white;
-  border: 1px solid #d9d9d9;
-  color: #666;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-strong);
+  color: var(--theme-text-secondary);
   padding: 8px 20px;
   border-radius: 6px;
   cursor: pointer;
@@ -413,8 +413,8 @@
 }
 
 .dialogCancelButton:hover:not(:disabled) {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .dialogCancelButton:disabled {
@@ -423,9 +423,9 @@
 }
 
 .dialogConfirmButton {
-  background: #ff4d4f;
+  background: var(--theme-state-danger);
   border: none;
-  color: white;
+  color: #ffffff;
   padding: 8px 20px;
   border-radius: 6px;
   cursor: pointer;
@@ -434,7 +434,7 @@
 }
 
 .dialogConfirmButton:hover:not(:disabled) {
-  background: #ff7875;
+  background: color-mix(in srgb, var(--theme-state-danger) 80%, white 20%);
 }
 
 .dialogConfirmButton:disabled {

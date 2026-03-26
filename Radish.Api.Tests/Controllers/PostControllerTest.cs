@@ -124,6 +124,9 @@ public class PostControllerTest
                     ]
                 }
             });
+        commentServiceMock
+            .Setup(service => service.QueryAsync(It.IsAny<Expression<Func<Comment, bool>>>()))
+            .ReturnsAsync(new List<CommentVo>());
 
         var controller = CreateController(
             postServiceMock.Object,
@@ -168,6 +171,9 @@ public class PostControllerTest
                     VoAnswerCount = 2
                 }
             });
+        commentServiceMock
+            .Setup(service => service.QueryAsync(It.IsAny<Expression<Func<Comment, bool>>>()))
+            .ReturnsAsync(new List<CommentVo>());
 
         var controller = CreateController(
             postServiceMock.Object,

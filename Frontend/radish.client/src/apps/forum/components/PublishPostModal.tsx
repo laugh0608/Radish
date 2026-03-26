@@ -1,8 +1,8 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
-import { log } from '@/utils/logger';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
+import { log } from '@/utils/logger';
 import {
   getAllTags,
   getOidcLoginUrl,
@@ -10,9 +10,10 @@ import {
   type CreateLotteryRequest,
   type CreatePollRequest
 } from '@/api/forum';
+import { uploadDocument, uploadImage } from '@/api/attachment';
 import { useUserStore } from '@/stores/userStore';
-import { uploadImage, uploadDocument } from '@/api/attachment';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
+import { RichTextMarkdownEditor } from './RichTextMarkdownEditor';
 import styles from './PublishPostModal.module.css';
 
 interface PublishPostModalProps {
@@ -54,6 +55,7 @@ const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: nu
   if (scalePercent && Number.isFinite(scalePercent)) {
     params.set('scale', String(Math.min(Math.max(scalePercent, 10), 100)));
   }
+
   const meta = params.toString();
   return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
 };
@@ -68,6 +70,11 @@ export const PublishPostModal = ({
 }: PublishPostModalProps) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [composerMode, setComposerMode] = useState<'markdown' | 'rich'>('markdown');
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(
+    () => (typeof window === 'undefined' ? true : window.innerWidth >= 1200)
+  );
   const [addWatermark, setAddWatermark] = useState(false);
   const [watermarkText, setWatermarkText] = useState('Radish');
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
@@ -91,89 +98,97 @@ export const PublishPostModal = ({
   const [lotteryDrawTime, setLotteryDrawTime] = useState('');
   const [lotteryWinnerCount, setLotteryWinnerCount] = useState('1');
   const [lotteryError, setLotteryError] = useState<string | null>(null);
-  const roles = useUserStore(state => state.roles || []);
-  const isAdmin = roles.some(role => {
+
+  const roles = useUserStore((state) => state.roles || []);
+  const isAdmin = roles.some((role) => {
     const normalized = role.trim().toLowerCase();
     return normalized === 'admin' || normalized === 'system';
   });
   const { t } = useTranslation();
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
 
-  // 组件打开时恢复草稿
   useEffect(() => {
-    if (isOpen) {
-      try {
-        const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-        if (savedDraft) {
-          const draft = JSON.parse(savedDraft);
-          if (draft.title || draft.content || draft.tags?.length || typeof draft.categoryId === 'number') {
-            const draftIsQuestion = Boolean(draft.isQuestion);
-            setTitle(draft.title || '');
-            setContent(draft.content || '');
-            setSelectedTags(Array.isArray(draft.tags) ? draft.tags : []);
-            setCategoryId(typeof draft.categoryId === 'number' ? draft.categoryId : selectedCategoryId);
-            setIsQuestionPost(draftIsQuestion);
-            const draftLotteryEnabled = Boolean(draft.lottery?.enabled) && !draftIsQuestion;
-            setEnableLottery(draftLotteryEnabled);
-            setEnablePoll(Boolean(draft.poll?.enabled) && !draftIsQuestion && !draftLotteryEnabled);
-            setPollQuestion(draft.poll?.question || '');
-            setPollEndTime(draft.poll?.endTime || '');
-            setPollOptions(Array.isArray(draft.poll?.options) && draft.poll.options.length >= MIN_POLL_OPTION_COUNT
-              ? draft.poll.options
-              : [...DEFAULT_POLL_OPTIONS]);
-            setLotteryPrizeName(draft.lottery?.prizeName || '');
-            setLotteryPrizeDescription(draft.lottery?.prizeDescription || '');
-            setLotteryDrawTime(draft.lottery?.drawTime || '');
-            setLotteryWinnerCount(draft.lottery?.winnerCount || '1');
-          } else {
-            setCategoryId(selectedCategoryId);
-          }
-        } else {
-          setCategoryId(selectedCategoryId);
-        }
-      } catch (err) {
-        log.error('Failed to load draft:', err);
+    if (!isOpen) {
+      return;
+    }
+
+    try {
+      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!savedDraft) {
+        setCategoryId(selectedCategoryId);
+        return;
       }
+
+      const draft = JSON.parse(savedDraft);
+      if (draft.title || draft.content || draft.tags?.length || typeof draft.categoryId === 'number') {
+        const draftIsQuestion = Boolean(draft.isQuestion);
+        setTitle(draft.title || '');
+        setContent(draft.content || '');
+        setSelectedTags(Array.isArray(draft.tags) ? draft.tags : []);
+        setCategoryId(typeof draft.categoryId === 'number' ? draft.categoryId : selectedCategoryId);
+        setComposerMode(draft.composerMode === 'rich' ? 'rich' : 'markdown');
+        setIsQuestionPost(draftIsQuestion);
+        const draftLotteryEnabled = Boolean(draft.lottery?.enabled) && !draftIsQuestion;
+        setEnableLottery(draftLotteryEnabled);
+        setEnablePoll(Boolean(draft.poll?.enabled) && !draftIsQuestion && !draftLotteryEnabled);
+        setPollQuestion(draft.poll?.question || '');
+        setPollEndTime(draft.poll?.endTime || '');
+        setPollOptions(
+          Array.isArray(draft.poll?.options) && draft.poll.options.length >= MIN_POLL_OPTION_COUNT
+            ? draft.poll.options
+            : [...DEFAULT_POLL_OPTIONS]
+        );
+        setLotteryPrizeName(draft.lottery?.prizeName || '');
+        setLotteryPrizeDescription(draft.lottery?.prizeDescription || '');
+        setLotteryDrawTime(draft.lottery?.drawTime || '');
+        setLotteryWinnerCount(draft.lottery?.winnerCount || '1');
+      }
+    } catch (error) {
+      log.error('Failed to load draft:', error);
     }
   }, [isOpen, selectedCategoryId]);
 
-  // 自动保存草稿
   useEffect(() => {
-    if (isOpen && (title || content || selectedTags.length > 0 || categoryId != null)) {
-      try {
-        localStorage.setItem(
-          DRAFT_STORAGE_KEY,
-          JSON.stringify({
-            title,
-            content,
-            tags: selectedTags,
-            categoryId,
-            isQuestion: isQuestionPost,
-            poll: {
-              enabled: enablePoll,
-              question: pollQuestion,
-              endTime: pollEndTime,
-              options: pollOptions
-            },
-            lottery: {
-              enabled: enableLottery,
-              prizeName: lotteryPrizeName,
-              prizeDescription: lotteryPrizeDescription,
-              drawTime: lotteryDrawTime,
-              winnerCount: lotteryWinnerCount
-            },
-            savedAt: Date.now()
-          })
-        );
-      } catch (err) {
-        log.error('Failed to save draft:', err);
-      }
+    if (!isOpen || (!title && !content && selectedTags.length === 0 && categoryId == null)) {
+      return;
+    }
+
+    try {
+      localStorage.setItem(
+        DRAFT_STORAGE_KEY,
+        JSON.stringify({
+          title,
+          content,
+          tags: selectedTags,
+          categoryId,
+          composerMode,
+          isQuestion: isQuestionPost,
+          poll: {
+            enabled: enablePoll,
+            question: pollQuestion,
+            endTime: pollEndTime,
+            options: pollOptions
+          },
+          lottery: {
+            enabled: enableLottery,
+            prizeName: lotteryPrizeName,
+            prizeDescription: lotteryPrizeDescription,
+            drawTime: lotteryDrawTime,
+            winnerCount: lotteryWinnerCount
+          },
+          savedAt: Date.now()
+        })
+      );
+    } catch (error) {
+      log.error('Failed to save draft:', error);
     }
   }, [
+    isOpen,
     title,
     content,
     selectedTags,
     categoryId,
+    composerMode,
     isQuestionPost,
     enablePoll,
     pollQuestion,
@@ -183,8 +198,7 @@ export const PublishPostModal = ({
     lotteryPrizeName,
     lotteryPrizeDescription,
     lotteryDrawTime,
-    lotteryWinnerCount,
-    isOpen
+    lotteryWinnerCount
   ]);
 
   useEffect(() => {
@@ -195,9 +209,9 @@ export const PublishPostModal = ({
     const loadTags = async () => {
       try {
         const tags = await getAllTags(t);
-        setAllTagNames(tags.map(tag => tag.voName));
-      } catch (err) {
-        log.warn('加载标签列表失败:', err);
+        setAllTagNames(tags.map((tag) => tag.voName));
+      } catch (error) {
+        log.warn('加载标签列表失败:', error);
         setAllTagNames([]);
       }
     };
@@ -213,7 +227,7 @@ export const PublishPostModal = ({
       return;
     }
 
-    if (selectedTags.some(tag => tag.toLowerCase() === tagName.toLowerCase())) {
+    if (selectedTags.some((tag) => tag.toLowerCase() === tagName.toLowerCase())) {
       setTagInput('');
       return;
     }
@@ -223,32 +237,92 @@ export const PublishPostModal = ({
       return;
     }
 
-    const exists = allTagNames.some(name => name.toLowerCase() === tagName.toLowerCase());
+    const exists = allTagNames.some((name) => name.toLowerCase() === tagName.toLowerCase());
     if (!exists && !isAdmin) {
       setTagError('标签不存在，暂时仅管理员可创建新标签');
       return;
     }
 
-    setSelectedTags(prev => [...prev, tagName]);
+    setSelectedTags((prev) => [...prev, tagName]);
     setTagInput('');
     setTagError(null);
-    setCategoryError(null);
   };
 
   const removeTag = (tagName: string) => {
-    setSelectedTags(prev => prev.filter(tag => tag !== tagName));
+    setSelectedTags((prev) => prev.filter((tag) => tag !== tagName));
     setTagError(null);
-    setCategoryError(null);
   };
 
   const matchedTags = tagInput.trim()
     ? allTagNames
-        .filter(name =>
-          name.toLowerCase().includes(tagInput.trim().toLowerCase()) &&
-          !selectedTags.some(selected => selected.toLowerCase() === name.toLowerCase())
+        .filter(
+          (name) =>
+            name.toLowerCase().includes(tagInput.trim().toLowerCase()) &&
+            !selectedTags.some((selected) => selected.toLowerCase() === name.toLowerCase())
         )
         .slice(0, 8)
     : [];
+
+  const handleQuestionMode = (next: boolean) => {
+    setIsQuestionPost(next);
+    if (next) {
+      setEnablePoll(false);
+      setPollQuestion('');
+      setPollEndTime('');
+      setPollOptions([...DEFAULT_POLL_OPTIONS]);
+      setPollError(null);
+      setEnableLottery(false);
+      setLotteryPrizeName('');
+      setLotteryPrizeDescription('');
+      setLotteryDrawTime('');
+      setLotteryWinnerCount('1');
+      setLotteryError(null);
+    }
+  };
+
+  const handleTogglePoll = () => {
+    setEnablePoll((current) => {
+      const next = !current;
+      if (next) {
+        setIsQuestionPost(false);
+        setEnableLottery(false);
+        setLotteryPrizeName('');
+        setLotteryPrizeDescription('');
+        setLotteryDrawTime('');
+        setLotteryWinnerCount('1');
+        setLotteryError(null);
+      } else {
+        setPollQuestion('');
+        setPollEndTime('');
+        setPollOptions([...DEFAULT_POLL_OPTIONS]);
+      }
+
+      return next;
+    });
+    setPollError(null);
+  };
+
+  const handleToggleLottery = () => {
+    setEnableLottery((current) => {
+      const next = !current;
+      if (next) {
+        setIsQuestionPost(false);
+        setEnablePoll(false);
+        setPollQuestion('');
+        setPollEndTime('');
+        setPollOptions([...DEFAULT_POLL_OPTIONS]);
+        setPollError(null);
+      } else {
+        setLotteryPrizeName('');
+        setLotteryPrizeDescription('');
+        setLotteryDrawTime('');
+        setLotteryWinnerCount('1');
+      }
+
+      return next;
+    });
+    setLotteryError(null);
+  };
 
   const handleSubmit = async () => {
     if (!title.trim() || !content.trim()) {
@@ -272,6 +346,7 @@ export const PublishPostModal = ({
 
     let pollRequest: CreatePollRequest | null = null;
     let lotteryRequest: CreateLotteryRequest | null = null;
+
     if (enablePoll) {
       const normalizedQuestion = pollQuestion.trim();
       if (!normalizedQuestion) {
@@ -279,16 +354,13 @@ export const PublishPostModal = ({
         return;
       }
 
-      const normalizedOptions = pollOptions
-        .map(option => option.trim())
-        .filter(Boolean);
-
+      const normalizedOptions = pollOptions.map((option) => option.trim()).filter(Boolean);
       if (normalizedOptions.length < MIN_POLL_OPTION_COUNT || normalizedOptions.length > MAX_POLL_OPTION_COUNT) {
         setPollError(`投票选项数量必须在 ${MIN_POLL_OPTION_COUNT} 到 ${MAX_POLL_OPTION_COUNT} 个之间`);
         return;
       }
 
-      const uniqueOptions = new Set(normalizedOptions.map(option => option.toLowerCase()));
+      const uniqueOptions = new Set(normalizedOptions.map((option) => option.toLowerCase()));
       if (uniqueOptions.size !== normalizedOptions.length) {
         setPollError('投票选项不能重复');
         return;
@@ -357,8 +429,7 @@ export const PublishPostModal = ({
 
     setIsSubmitting(true);
     try {
-      await onPublish(title, content, categoryId, selectedTags, isQuestionPost, pollRequest, lotteryRequest);
-      // 发布成功后清空表单和草稿
+      await onPublish(title.trim(), content.trim(), categoryId, selectedTags, isQuestionPost, pollRequest, lotteryRequest);
       setTitle('');
       setContent('');
       setSelectedTags([]);
@@ -366,6 +437,7 @@ export const PublishPostModal = ({
       setCategoryId(selectedCategoryId);
       setTagError(null);
       setCategoryError(null);
+      setComposerMode('markdown');
       setIsQuestionPost(false);
       setEnablePoll(false);
       setPollQuestion('');
@@ -380,8 +452,8 @@ export const PublishPostModal = ({
       setLotteryError(null);
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       onClose();
-    } catch (err) {
-      log.error('发布失败:', err);
+    } catch (error) {
+      log.error('发布失败:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -394,10 +466,9 @@ export const PublishPostModal = ({
     }
   };
 
-  // 处理图片上传
   const handleImageUpload = async (file: File) => {
-    try {
-      const result = await uploadImage({
+    const result = await uploadImage(
+      {
         file,
         businessType: 'Post',
         generateThumbnail: true,
@@ -405,50 +476,30 @@ export const PublishPostModal = ({
         addWatermark,
         watermarkText,
         removeExif: true
-      }, t);
+      },
+      t
+    );
 
-      return {
-        url: appendImageMeta(result.voUrl, result.voUrl, imageScalePercent),
-        thumbnailUrl: result.voThumbnailUrl
-      };
-    } catch (error) {
-      log.error('图片上传失败:', error);
-      throw error;
-    }
+    return {
+      url: appendImageMeta(result.voUrl, result.voUrl, imageScalePercent),
+      thumbnailUrl: result.voThumbnailUrl
+    };
   };
 
-  // 处理文档上传
   const handleDocumentUpload = async (file: File) => {
-    try {
-      const result = await uploadDocument({
+    const result = await uploadDocument(
+      {
         file,
         businessType: 'Post'
-      }, t);
+      },
+      t
+    );
 
-      return {
-        url: result.voUrl,
-        fileName: result.voOriginalName || file.name
-      };
-    } catch (error) {
-      log.error('文档上传失败:', error);
-      throw error;
-    }
+    return {
+      url: result.voUrl,
+      fileName: result.voOriginalName || file.name
+    };
   };
-
-  const footer = (
-    <div className={styles.footer}>
-      <button
-        onClick={handleSubmit}
-      disabled={!title.trim() || !content.trim() || !categoryId || selectedTags.length < MIN_TAG_COUNT || isSubmitting}
-      className={styles.publishButton}
-      >
-        {isSubmitting ? '发布中...' : '发布帖子'}
-      </button>
-      <button onClick={onClose} className={styles.cancelButton}>
-        取消
-      </button>
-    </div>
-  );
 
   const updatePollOption = (index: number, value: string) => {
     setPollOptions((current) => current.map((item, itemIndex) => (itemIndex === index ? value : item)));
@@ -476,6 +527,21 @@ export const PublishPostModal = ({
     }
   };
 
+  const selectedCategoryName = categories.find((category) => category.voId === categoryId)?.voName ?? '未选分类';
+  const activeFeatureLabel = isQuestionPost ? '问答' : enablePoll ? '投票' : enableLottery ? '抽奖' : '普通帖';
+  const completionCount = [
+    Boolean(title.trim()),
+    Boolean(content.trim()),
+    Boolean(categoryId),
+    selectedTags.length >= MIN_TAG_COUNT
+  ].filter(Boolean).length;
+  const canPublish =
+    Boolean(title.trim()) &&
+    Boolean(content.trim()) &&
+    Boolean(categoryId) &&
+    selectedTags.length >= MIN_TAG_COUNT &&
+    !isSubmitting;
+
   const editorToolbarExtras = (
     <div className={styles.editorToggles}>
       <button
@@ -500,23 +566,57 @@ export const PublishPostModal = ({
         <span>缩放</span>
         <select
           value={imageScalePercent}
-          onChange={(e) => setImageScalePercent(Number(e.target.value))}
+          onChange={(event) => setImageScalePercent(Number(event.target.value))}
           className={styles.editorScaleSelect}
         >
-          {IMAGE_SCALE_OPTIONS.map(scale => (
-            <option key={scale} value={scale}>{scale}%</option>
+          {IMAGE_SCALE_OPTIONS.map((scale) => (
+            <option key={scale} value={scale}>
+              {scale}%
+            </option>
           ))}
         </select>
       </label>
     </div>
   );
 
+  const footer = (
+    <div className={styles.footer}>
+      <div className={styles.footerMeta}>
+        <span className={styles.footerStatus}>
+          {composerMode === 'rich' ? '富文本写作' : 'Markdown 写作'}
+          {' · '}
+          {selectedCategoryName}
+          {' · '}
+          {selectedTags.length}/{MAX_TAG_COUNT} 标签
+          {' · '}
+          {activeFeatureLabel}
+          {' · 草稿自动保存在本地'}
+        </span>
+      </div>
+      <div className={styles.footerActions}>
+        <button type="button" className={styles.cancelButton} onClick={onClose}>
+          取消
+        </button>
+        <button type="button" className={styles.publishButton} onClick={handleSubmit} disabled={!canPublish}>
+          {isSubmitting ? '发布中...' : '发布帖子'}
+        </button>
+      </div>
+    </div>
+  );
+
   if (!isAuthenticated) {
     return (
-      <BottomSheet isOpen={isOpen} onClose={onClose} title="发布新帖" height="70%">
+      <BottomSheet
+        isOpen={isOpen}
+        onClose={onClose}
+        height="62%"
+        className={styles.sheet}
+        bodyClassName={styles.sheetBody}
+        footerClassName={styles.sheetFooter}
+      >
         <div className={styles.loginPrompt}>
           <p>请先登录后再发帖</p>
-          <button onClick={handleLoginClick} className={styles.loginButton}>
+          <button type="button" onClick={handleLoginClick} className={styles.loginButton}>
             前往登录
           </button>
         </div>
@@ -525,408 +625,439 @@ export const PublishPostModal = ({
   }
 
   return (
-    <BottomSheet isOpen={isOpen} onClose={onClose} title="发布新帖" height="70%" footer={footer}>
-      <div className={styles.container}>
-        <div className={styles.lead}>
-          <h3 className={styles.leadTitle}>写下你的新发现</h3>
-          <p className={styles.leadHint}>清晰的标题与排版会获得更多互动</p>
-        </div>
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      height={isFullscreen ? '96%' : '76%'}
+      className={`${styles.sheet} ${isFullscreen ? styles.sheetFullscreen : ''}`.trim()}
+      bodyClassName={styles.sheetBody}
+      footer={footer}
+      footerClassName={styles.sheetFooter}
+    >
+      <div className={styles.composer}>
+        <header className={styles.composerHeader}>
+          <div className={styles.composerPrimary}>
+            <div className={styles.modeSwitcher}>
+              <button
+                type="button"
+                className={`${styles.modeButton} ${composerMode === 'markdown' ? styles.modeButtonActive : ''}`}
+                onClick={() => setComposerMode('markdown')}
+              >
+                Markdown
+              </button>
+              <button
+                type="button"
+                className={`${styles.modeButton} ${composerMode === 'rich' ? styles.modeButtonActive : ''}`}
+                onClick={() => setComposerMode('rich')}
+              >
+                富文本
+              </button>
+            </div>
+            <div className={styles.composerMeta}>
+              <span className={styles.summaryPill}>{selectedCategoryName}</span>
+              <span className={styles.summaryPill}>{selectedTags.length} 个标签</span>
+              <span className={styles.summaryPill}>{activeFeatureLabel}</span>
+              <span className={styles.summaryPill}>{completionCount}/4 就绪</span>
+            </div>
+          </div>
 
-        <div className={styles.titleRow}>
+          <div className={styles.headerActions}>
+            <button
+              type="button"
+              className={styles.headerActionButton}
+              onClick={() => setIsSettingsOpen((current) => !current)}
+            >
+              <Icon icon="mdi:tune-vertical-variant" size={18} />
+              <span>{isSettingsOpen ? '收起设置' : '帖子设置'}</span>
+            </button>
+            <button type="button" className={styles.headerActionButton} onClick={() => setIsFullscreen((current) => !current)}>
+              <Icon icon={isFullscreen ? 'mdi:fullscreen-exit' : 'mdi:fullscreen'} size={18} />
+              <span>{isFullscreen ? '退出全屏' : '全屏创作'}</span>
+            </button>
+            <button type="button" className={styles.headerIconButton} onClick={onClose} aria-label="关闭创作器">
+              <Icon icon="mdi:close" size={20} />
+            </button>
+          </div>
+        </header>
+
+        <div className={styles.titleBar}>
           <input
             type="text"
-            placeholder="帖子标题"
+            placeholder="输入标题"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(event) => setTitle(event.target.value)}
             className={styles.titleInput}
             maxLength={100}
           />
-          <span className={styles.titleCount}>{title.length}/100</span>
+          <div className={styles.titleMeta}>
+            <span className={styles.titleHint}>
+              {composerMode === 'rich'
+                ? '富文本输入，保存为 Markdown'
+                : '默认编辑模式，可在工具栏切换预览或分栏'}
+            </span>
+            <span className={styles.titleCount}>{title.length}/100</span>
+          </div>
         </div>
 
-        <div className={styles.categorySection}>
-          <div className={styles.categoryHeader}>
-            <span className={styles.categoryLabel}>帖子分类</span>
-            <span className={styles.categoryHint}>发布前请选择一个分类</span>
-          </div>
-          <select
-            value={categoryId ?? ''}
-            onChange={(e) => {
-              const value = e.target.value;
-              setCategoryId(value ? Number(value) : null);
-              setCategoryError(null);
-            }}
-            className={styles.categorySelect}
-            disabled={isSubmitting || categories.length === 0}
-          >
-            <option value="">请选择分类</option>
-            {categories.map(category => (
-              <option key={category.voId} value={category.voId}>
-                {category.voName}
-              </option>
-            ))}
-          </select>
-          {categoryError && <p className={styles.categoryError}>{categoryError}</p>}
-          {!categoryError && categories.length === 0 && <p className={styles.categoryError}>暂无可用分类</p>}
-        </div>
-
-        <div className={styles.tagSection}>
-          <div className={styles.tagHeader}>
-            <span className={styles.tagLabel}>帖子标签</span>
-            <span className={styles.tagHint}>至少 {MIN_TAG_COUNT} 个，最多 {MAX_TAG_COUNT} 个</span>
-          </div>
-          <div className={styles.tagInputRow}>
-            <input
-              type="text"
-              placeholder="输入标签名后按回车"
-              value={tagInput}
-              onChange={e => {
-                setTagInput(e.target.value);
-                if (tagError) {
-                  setTagError(null);
-                }
-              }}
-              onKeyDown={e => {
-                if (e.key === 'Enter' || e.key === ',') {
-                  e.preventDefault();
-                  addTag(tagInput);
-                }
-              }}
-              className={styles.tagInput}
-              maxLength={50}
-            />
-            <button
-              type="button"
-              className={styles.addTagButton}
-              onClick={() => addTag(tagInput)}
-              disabled={!tagInput.trim()}
-            >
-              添加
-            </button>
-          </div>
-
-          {matchedTags.length > 0 && (
-            <div className={styles.suggestionWrap}>
-              {matchedTags.map(tag => (
-                <button
-                  key={tag}
-                  type="button"
-                  className={styles.suggestionTag}
-                  onClick={() => addTag(tag)}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {tagInput.trim() && matchedTags.length === 0 && (
-            <p className={styles.tagTip}>
-              {isAdmin ? '未匹配现有标签，发布时将创建新标签。' : '未匹配现有标签，暂时仅管理员可创建。'}
-            </p>
-          )}
-
-          {selectedTags.length > 0 && (
-            <div className={styles.selectedTagWrap}>
-              {selectedTags.map(tag => (
-                <button
-                  key={tag}
-                  type="button"
-                  className={styles.selectedTag}
-                  onClick={() => removeTag(tag)}
-                  title="点击移除"
-                >
-                  #{tag} ×
-                </button>
-              ))}
-            </div>
-          )}
-
-          {tagError && <p className={styles.tagError}>{tagError}</p>}
-        </div>
-
-        <div className={`${styles.optionSection} ${styles.questionSection}`}>
-          <div className={styles.optionSectionHeader}>
-            <div>
-              <span className={styles.optionSectionLabel}>问答帖</span>
-              <p className={styles.optionSectionHint}>适合提问求助，发布后可继续提交回答并由提问者采纳</p>
-            </div>
-            <button
-              type="button"
-              className={`${styles.optionToggle} ${isQuestionPost ? styles.questionToggleActive : ''}`}
-              onClick={() => {
-                setIsQuestionPost((current) => {
-                  const next = !current;
-                  if (next) {
-                    setEnablePoll(false);
-                    setPollQuestion('');
-                    setPollEndTime('');
-                    setPollOptions([...DEFAULT_POLL_OPTIONS]);
-                    setPollError(null);
-                    setEnableLottery(false);
-                    setLotteryPrizeName('');
-                    setLotteryPrizeDescription('');
-                    setLotteryDrawTime('');
-                    setLotteryWinnerCount('1');
-                    setLotteryError(null);
-                  }
-                  return next;
-                });
-              }}
-            >
-              {isQuestionPost ? '已开启' : '开启'}
-            </button>
-          </div>
-          {isQuestionPost && (
-            <p className={styles.optionNotice}>问答帖与附带投票、附带抽奖暂时互斥，当前将以问答模式发布。</p>
-          )}
-        </div>
-
-        <div className={`${styles.optionSection} ${styles.pollSection}`}>
-          <div className={styles.optionSectionHeader}>
-            <div>
-              <span className={styles.optionSectionLabel}>附带投票</span>
-              <p className={styles.optionSectionHint}>支持 2 到 6 个单选项，适合快速收集社区反馈</p>
-            </div>
-            <button
-              type="button"
-              className={`${styles.optionToggle} ${enablePoll ? styles.pollToggleActive : ''}`}
-              onClick={() => {
-                setEnablePoll((current) => {
-                  const next = !current;
-                  if (next) {
-                    setIsQuestionPost(false);
-                    setEnableLottery(false);
-                    setLotteryPrizeName('');
-                    setLotteryPrizeDescription('');
-                    setLotteryDrawTime('');
-                    setLotteryWinnerCount('1');
-                    setLotteryError(null);
-                  }
-                  return next;
-                });
-                setPollError(null);
-              }}
-            >
-              {enablePoll ? '已开启' : '开启'}
-            </button>
-          </div>
-
-          {!enablePoll && isQuestionPost && (
-            <p className={styles.optionNotice}>已开启问答帖时，投票会保持关闭。</p>
-          )}
-
-          {enablePoll && (
-            <div className={styles.pollFields}>
-              <input
-                type="text"
-                placeholder="投票问题，例如：本周论坛最想先补什么？"
-                value={pollQuestion}
-                onChange={(event) => {
-                  setPollQuestion(event.target.value);
-                  if (pollError) {
-                    setPollError(null);
-                  }
-                }}
-                className={styles.pollQuestionInput}
-                maxLength={200}
+        <div className={`${styles.workspace} ${composerMode === 'rich' ? styles.workspaceRich : ''}`}>
+          <div className={`${styles.editorFrame} ${composerMode === 'rich' ? styles.editorFrameRich : ''}`}>
+            {composerMode === 'markdown' ? (
+              <Suspense fallback={<div className={styles.editorLoading}>编辑器加载中...</div>}>
+                <MarkdownEditor
+                  value={content}
+                  onChange={setContent}
+                  placeholder="开始写正文，支持 Markdown。右侧预览、左侧编辑、分屏切换都在工具栏末尾。"
+                  onImageUpload={handleImageUpload}
+                  onDocumentUpload={handleDocumentUpload}
+                  stickerGroups={stickerGroups}
+                  stickerMap={stickerMap}
+                  onStickerSelect={(selection) => {
+                    void handleStickerSelect(selection);
+                  }}
+                  minHeight={0}
+                  defaultMode="edit"
+                  className={styles.markdownEditor}
+                  theme="light"
+                  toolbarExtras={editorToolbarExtras}
+                />
+              </Suspense>
+            ) : (
+              <RichTextMarkdownEditor
+                value={content}
+                onChange={setContent}
+                placeholder="直接输入正文，使用上方工具栏完成标题、强调、引用、列表、链接和图片等排版。"
+                minHeight={0}
+                onImageUpload={handleImageUpload}
+                onDocumentUpload={handleDocumentUpload}
+                toolbarExtras={editorToolbarExtras}
+                className={styles.richTextEditor}
               />
+            )}
 
-              <div className={styles.pollOptionsList}>
-                {pollOptions.map((option, index) => (
-                  <div key={`poll-option-${index}`} className={styles.pollOptionRow}>
-                    <span className={styles.pollOptionIndex}>{index + 1}</span>
+            {addWatermark && (
+              <div className={styles.watermarkRow}>
+                <span className={styles.watermarkLabel}>水印文字</span>
+                <input
+                  type="text"
+                  placeholder="输入水印文字"
+                  value={watermarkText}
+                  onChange={(event) => setWatermarkText(event.target.value)}
+                  className={styles.watermarkInput}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <aside className={`${styles.settingsDrawer} ${isSettingsOpen ? styles.settingsDrawerOpen : ''}`}>
+          <div className={styles.settingsPanelContent}>
+            <div className={styles.settingsHeader}>
+              <div>
+                <p className={styles.settingsEyebrow}>帖子设置</p>
+                <h3 className={styles.settingsTitle}>分类、标签与附加功能</h3>
+              </div>
+              <button type="button" className={styles.settingsClose} onClick={() => setIsSettingsOpen(false)} aria-label="关闭设置">
+                <Icon icon="mdi:close" size={18} />
+              </button>
+            </div>
+
+            <div className={styles.settingsSummary}>
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryCardLabel}>分类</span>
+                <strong className={styles.summaryCardValue}>{selectedCategoryName}</strong>
+              </div>
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryCardLabel}>标签</span>
+                <strong className={styles.summaryCardValue}>{selectedTags.length}/{MAX_TAG_COUNT}</strong>
+              </div>
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryCardLabel}>帖子类型</span>
+                <strong className={styles.summaryCardValue}>{activeFeatureLabel}</strong>
+              </div>
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryCardLabel}>发布准备</span>
+                <strong className={styles.summaryCardValue}>{completionCount}/4</strong>
+              </div>
+            </div>
+
+            <section className={styles.settingsSection}>
+              <div className={styles.sectionHeading}>
+                <span className={styles.sectionTitle}>帖子分类</span>
+                <span className={styles.sectionHint}>发帖前必须选择</span>
+              </div>
+              <select
+                value={categoryId ?? ''}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setCategoryId(value ? Number(value) : null);
+                  setCategoryError(null);
+                }}
+                className={styles.control}
+                disabled={isSubmitting || categories.length === 0}
+              >
+                <option value="">请选择分类</option>
+                {categories.map((category) => (
+                  <option key={category.voId} value={category.voId}>
+                    {category.voName}
+                  </option>
+                ))}
+              </select>
+              {categoryError && <p className={styles.errorText}>{categoryError}</p>}
+              {!categoryError && categories.length === 0 && <p className={styles.errorText}>暂无可用分类</p>}
+            </section>
+
+            <section className={styles.settingsSection}>
+              <div className={styles.sectionHeading}>
+                <span className={styles.sectionTitle}>帖子标签</span>
+                <span className={styles.sectionHint}>至少 {MIN_TAG_COUNT} 个，最多 {MAX_TAG_COUNT} 个</span>
+              </div>
+              <div className={styles.inlineControlRow}>
+                <input
+                  type="text"
+                  placeholder="输入标签名后按回车"
+                  value={tagInput}
+                  onChange={(event) => {
+                    setTagInput(event.target.value);
+                    if (tagError) {
+                      setTagError(null);
+                    }
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ',') {
+                      event.preventDefault();
+                      addTag(tagInput);
+                    }
+                  }}
+                  className={styles.control}
+                  maxLength={50}
+                />
+                <button
+                  type="button"
+                  className={styles.inlineActionButton}
+                  onClick={() => addTag(tagInput)}
+                  disabled={!tagInput.trim()}
+                >
+                  添加
+                </button>
+              </div>
+
+              {selectedTags.length > 0 && (
+                <div className={styles.tagList}>
+                  {selectedTags.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      className={styles.selectedTag}
+                      onClick={() => removeTag(tag)}
+                      title="点击移除"
+                    >
+                      #{tag} ×
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {matchedTags.length > 0 && (
+                <div className={styles.tagList}>
+                  {matchedTags.map((tag) => (
+                    <button key={tag} type="button" className={styles.suggestedTag} onClick={() => addTag(tag)}>
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {tagInput.trim() && matchedTags.length === 0 && (
+                <p className={styles.helperText}>
+                  {isAdmin ? '未匹配现有标签，发布时将创建新标签。' : '未匹配现有标签，暂时仅管理员可创建。'}
+                </p>
+              )}
+              {tagError && <p className={styles.errorText}>{tagError}</p>}
+            </section>
+
+            <section className={styles.settingsSection}>
+              <div className={styles.sectionHeading}>
+                <span className={styles.sectionTitle}>帖子类型</span>
+                <span className={styles.sectionHint}>问答与其他扩展互斥</span>
+              </div>
+              <div className={styles.segmentedControl}>
+                <button
+                  type="button"
+                  className={`${styles.segmentedButton} ${!isQuestionPost ? styles.segmentedButtonActive : ''}`}
+                  onClick={() => handleQuestionMode(false)}
+                >
+                  普通帖子
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.segmentedButton} ${isQuestionPost ? styles.segmentedButtonActive : ''}`}
+                  onClick={() => handleQuestionMode(!isQuestionPost)}
+                >
+                  问答帖
+                </button>
+              </div>
+              {isQuestionPost && <p className={styles.helperText}>问答帖开启后，投票和抽奖会自动关闭。</p>}
+            </section>
+
+            <section className={styles.settingsSection}>
+              <div className={styles.sectionHeading}>
+                <span className={styles.sectionTitle}>扩展功能</span>
+                <span className={styles.sectionHint}>按需启用即可</span>
+              </div>
+
+              <div className={`${styles.featureCard} ${enablePoll ? styles.featureCardActive : ''}`}>
+                <div className={styles.featureCardHeader}>
+                  <div>
+                    <strong className={styles.featureTitle}>附带投票</strong>
+                    <p className={styles.featureDescription}>适合收集反馈，保存时仍会作为帖子的一部分提交。</p>
+                  </div>
+                  <button type="button" className={styles.featureToggle} onClick={handleTogglePoll}>
+                    {enablePoll ? '关闭' : '开启'}
+                  </button>
+                </div>
+                {enablePoll && (
+                  <div className={styles.featureFields}>
                     <input
                       type="text"
-                      placeholder={`选项 ${index + 1}`}
-                      value={option}
-                      onChange={(event) => updatePollOption(index, event.target.value)}
-                      className={styles.pollOptionInput}
+                      placeholder="投票问题，例如：本周论坛最想先补什么？"
+                      value={pollQuestion}
+                      onChange={(event) => {
+                        setPollQuestion(event.target.value);
+                        setPollError(null);
+                      }}
+                      className={styles.control}
+                      maxLength={200}
+                    />
+
+                    <div className={styles.fieldStack}>
+                      {pollOptions.map((option, index) => (
+                        <div key={`poll-option-${index}`} className={styles.pollOptionRow}>
+                          <span className={styles.pollOptionIndex}>{index + 1}</span>
+                          <input
+                            type="text"
+                            placeholder={`选项 ${index + 1}`}
+                            value={option}
+                            onChange={(event) => updatePollOption(index, event.target.value)}
+                            className={styles.control}
+                            maxLength={100}
+                          />
+                          <button
+                            type="button"
+                            className={styles.inlineGhostButton}
+                            onClick={() => removePollOption(index)}
+                            disabled={pollOptions.length <= MIN_POLL_OPTION_COUNT}
+                          >
+                            删除
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className={styles.inlineMetaRow}>
+                      <button
+                        type="button"
+                        className={styles.inlineGhostButton}
+                        onClick={addPollOption}
+                        disabled={pollOptions.length >= MAX_POLL_OPTION_COUNT}
+                      >
+                        添加选项
+                      </button>
+                      <label className={styles.fieldLabel}>
+                        <span>截止时间</span>
+                        <input
+                          type="datetime-local"
+                          value={pollEndTime}
+                          onChange={(event) => {
+                            setPollEndTime(event.target.value);
+                            setPollError(null);
+                          }}
+                          className={styles.control}
+                        />
+                      </label>
+                    </div>
+
+                    {pollError && <p className={styles.errorText}>{pollError}</p>}
+                  </div>
+                )}
+              </div>
+
+              <div className={`${styles.featureCard} ${enableLottery ? styles.featureCardWarm : ''}`}>
+                <div className={styles.featureCardHeader}>
+                  <div>
+                    <strong className={styles.featureTitle}>附带抽奖</strong>
+                    <p className={styles.featureDescription}>适合活动帖，评论参与，开奖信息会跟随帖子展示。</p>
+                  </div>
+                  <button type="button" className={styles.featureToggle} onClick={handleToggleLottery}>
+                    {enableLottery ? '关闭' : '开启'}
+                  </button>
+                </div>
+                {enableLottery && (
+                  <div className={styles.featureFields}>
+                    <input
+                      type="text"
+                      placeholder="奖品名称，例如：论坛头像挂件一份"
+                      value={lotteryPrizeName}
+                      onChange={(event) => {
+                        setLotteryPrizeName(event.target.value);
+                        setLotteryError(null);
+                      }}
+                      className={styles.control}
                       maxLength={100}
                     />
-                    <button
-                      type="button"
-                      className={styles.pollOptionRemove}
-                      onClick={() => removePollOption(index)}
-                      disabled={pollOptions.length <= MIN_POLL_OPTION_COUNT}
-                    >
-                      删除
-                    </button>
+                    <textarea
+                      placeholder="奖品说明，例如：抽中后私信联系领取方式"
+                      value={lotteryPrizeDescription}
+                      onChange={(event) => {
+                        setLotteryPrizeDescription(event.target.value);
+                        setLotteryError(null);
+                      }}
+                      className={`${styles.control} ${styles.multilineControl}`}
+                      maxLength={500}
+                      rows={3}
+                    />
+                    <div className={styles.inlineMetaRow}>
+                      <label className={styles.fieldLabel}>
+                        <span>开奖时间</span>
+                        <input
+                          type="datetime-local"
+                          value={lotteryDrawTime}
+                          onChange={(event) => {
+                            setLotteryDrawTime(event.target.value);
+                            setLotteryError(null);
+                          }}
+                          className={styles.control}
+                        />
+                      </label>
+                      <label className={styles.fieldLabel}>
+                        <span>中奖人数</span>
+                        <input
+                          type="number"
+                          min={MIN_LOTTERY_WINNER_COUNT}
+                          max={MAX_LOTTERY_WINNER_COUNT}
+                          value={lotteryWinnerCount}
+                          onChange={(event) => {
+                            setLotteryWinnerCount(event.target.value);
+                            setLotteryError(null);
+                          }}
+                          className={styles.control}
+                        />
+                      </label>
+                    </div>
+                    <p className={styles.helperText}>发布一条顶级评论即可参与抽奖，发帖者本人不进入中奖池。</p>
+                    {lotteryError && <p className={styles.errorText}>{lotteryError}</p>}
                   </div>
-                ))}
+                )}
               </div>
-
-              <div className={styles.pollControls}>
-                <button
-                  type="button"
-                  className={styles.pollAddButton}
-                  onClick={addPollOption}
-                  disabled={pollOptions.length >= MAX_POLL_OPTION_COUNT}
-                >
-                  添加选项
-                </button>
-                <label className={styles.pollEndTimeLabel}>
-                  <span>截止时间</span>
-                  <input
-                    type="datetime-local"
-                    value={pollEndTime}
-                    onChange={(event) => {
-                      setPollEndTime(event.target.value);
-                      if (pollError) {
-                        setPollError(null);
-                      }
-                    }}
-                    className={styles.pollEndTimeInput}
-                  />
-                </label>
-              </div>
-
-              {pollError && <p className={styles.pollError}>{pollError}</p>}
-            </div>
-          )}
-        </div>
-
-        <div className={`${styles.optionSection} ${styles.lotterySection}`}>
-          <div className={styles.optionSectionHeader}>
-            <div>
-              <span className={styles.optionSectionLabel}>附带抽奖</span>
-              <p className={styles.optionSectionHint}>父评论参与，按用户去重，发帖者在开奖时间后手动开奖</p>
-            </div>
-            <button
-              type="button"
-              className={`${styles.optionToggle} ${enableLottery ? styles.lotteryToggleActive : ''}`}
-              onClick={() => {
-                setEnableLottery((current) => {
-                  const next = !current;
-                  if (next) {
-                    setIsQuestionPost(false);
-                    setEnablePoll(false);
-                    setPollQuestion('');
-                    setPollEndTime('');
-                    setPollOptions([...DEFAULT_POLL_OPTIONS]);
-                    setPollError(null);
-                  }
-                  return next;
-                });
-                setLotteryError(null);
-              }}
-            >
-              {enableLottery ? '已开启' : '开启'}
-            </button>
+            </section>
           </div>
-
-          {!enableLottery && isQuestionPost && (
-            <p className={styles.optionNotice}>已开启问答帖时，抽奖会保持关闭。</p>
-          )}
-
-          {!enableLottery && enablePoll && (
-            <p className={styles.optionNotice}>已开启附带投票时，抽奖会保持关闭。</p>
-          )}
-
-          {enableLottery && (
-            <div className={styles.lotteryFields}>
-              <input
-                type="text"
-                placeholder="奖品名称，例如：论坛头像挂件一份"
-                value={lotteryPrizeName}
-                onChange={(event) => {
-                  setLotteryPrizeName(event.target.value);
-                  if (lotteryError) {
-                    setLotteryError(null);
-                  }
-                }}
-                className={styles.lotteryInput}
-                maxLength={100}
-              />
-
-              <textarea
-                placeholder="奖品说明，例如：抽中后私信联系领取方式"
-                value={lotteryPrizeDescription}
-                onChange={(event) => {
-                  setLotteryPrizeDescription(event.target.value);
-                  if (lotteryError) {
-                    setLotteryError(null);
-                  }
-                }}
-                className={styles.lotteryTextarea}
-                maxLength={500}
-                rows={3}
-              />
-
-              <div className={styles.lotteryControls}>
-                <label className={styles.lotteryFieldLabel}>
-                  <span>开奖时间</span>
-                  <input
-                    type="datetime-local"
-                    value={lotteryDrawTime}
-                    onChange={(event) => {
-                      setLotteryDrawTime(event.target.value);
-                      if (lotteryError) {
-                        setLotteryError(null);
-                      }
-                    }}
-                    className={styles.lotteryInput}
-                  />
-                </label>
-                <label className={styles.lotteryFieldLabel}>
-                  <span>中奖人数</span>
-                  <input
-                    type="number"
-                    min={MIN_LOTTERY_WINNER_COUNT}
-                    max={MAX_LOTTERY_WINNER_COUNT}
-                    value={lotteryWinnerCount}
-                    onChange={(event) => {
-                      setLotteryWinnerCount(event.target.value);
-                      if (lotteryError) {
-                        setLotteryError(null);
-                      }
-                    }}
-                    className={styles.lotteryInput}
-                  />
-                </label>
-              </div>
-
-              <p className={styles.lotteryHint}>
-                发布一条顶级评论即可参与抽奖，回复他人评论不计入参与资格，发帖者本人不进入中奖池。
-              </p>
-
-              {lotteryError && <p className={styles.lotteryError}>{lotteryError}</p>}
-            </div>
-          )}
-        </div>
-
-        <div className={styles.editorWrapper}>
-          <Suspense fallback={<div className={styles.editorLoading}>编辑器加载中...</div>}>
-            <MarkdownEditor
-              value={content}
-              onChange={setContent}
-              placeholder="帖子内容（支持 Markdown）"
-              onImageUpload={handleImageUpload}
-              onDocumentUpload={handleDocumentUpload}
-              stickerGroups={stickerGroups}
-              stickerMap={stickerMap}
-              onStickerSelect={(selection) => {
-                void handleStickerSelect(selection);
-              }}
-              minHeight={320}
-              className={styles.editor}
-              theme="light"
-              toolbarExtras={editorToolbarExtras}
-            />
-          </Suspense>
-        </div>
-
-        {addWatermark && (
-          <div className={styles.watermarkRow}>
-            <span className={styles.watermarkLabel}>水印文字</span>
-            <input
-              type="text"
-              placeholder="输入水印文字"
-              value={watermarkText}
-              onChange={(e) => setWatermarkText(e.target.value)}
-              className={styles.watermarkInput}
-            />
-          </div>
+        </aside>
+        {isSettingsOpen && (
+          <button
+            type="button"
+            className={styles.settingsBackdrop}
+            onClick={() => setIsSettingsOpen(false)}
+            aria-label="关闭设置面板"
+          />
         )}
       </div>
     </BottomSheet>

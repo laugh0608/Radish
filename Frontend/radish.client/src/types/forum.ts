@@ -46,7 +46,9 @@ export interface Category {
   voOrderSort?: number;
   voPostCount?: number;
   voIsEnabled?: boolean;
+  voIsDeleted?: boolean;
   voCreateTime?: string;
+  voModifyTime?: string | null;
   voCreateBy?: string | null;
 }
 
@@ -314,6 +316,7 @@ export interface CommentNode {
   voContent: string;
   voAuthorId: number;
   voAuthorName: string;
+  voAuthorAvatarUrl?: string | null;
   voParentId?: number | null;
   voRootId?: number | null;
   voReplyToUserId?: number | null;

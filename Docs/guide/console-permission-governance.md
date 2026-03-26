@@ -1,7 +1,7 @@
 # Console 权限治理 V1
 
-> 最后更新：2026-03-11
-> 状态：进行中（已进入收口阶段）
+> 最后更新：2026-03-24
+> 状态：进行中（持续补边界，进入回归阶段）
 
 本文档用于统一 Console 权限治理的设计口径、当前完成范围、剩余清单与退出条件。
 
@@ -48,9 +48,22 @@ Route Meta / RouteGuard / usePermission
 - `DbMigrate` 负责种子化 `ApiModule` 与默认角色授权，保证非默认角色也可通过数据库授权获得能力
 - `HangfireAuthorizationFilter` 等特殊入口负责消费权限快照，而不是硬编码角色放行
 
+### 2.3 `console.access` 当前语义
+
+`console.access` 当前不再等同于“只要拥有就能看见 Console”。实际规则如下：
+
+- `Admin / System` 角色仍直接具备 Console 可见性
+- 其他角色必须同时满足：
+  - 拥有 `console.access`
+  - 至少拥有一个真实的 Console 页面访问权限（即路由元数据中的 `requiredPermission`）
+- 后端权限快照会自动补齐 / 剔除 `console.access`
+  - 若角色已拥有任一真实 Console 页面访问权限，则自动补上 `console.access`
+  - 若角色只剩 `console.access`、没有任何真实页面访问权限，则自动移除该入口权限
+- 角色授权保存时，若勾选了任一非入口 Console 资源，也会自动补上入口资源，避免产生脏授权
+
 ## 3. 已完成范围
 
-截至 2026-03-10，以下事项已完成：
+截至 2026-03-24，以下事项已完成：
 
 ### 3.1 路由与前端可见性
 
@@ -65,10 +78,14 @@ Route Meta / RouteGuard / usePermission
 - `Applications`
 - `Users`
 - `Roles`
+- `Categories`
 - `Products`
 - `Orders`
 - `Tags`
 - `Stickers`
+- `Moderation`
+- `Coins`
+- `Experience`
 - `SystemConfig`
 - `Hangfire`
 
@@ -85,6 +102,8 @@ Route Meta / RouteGuard / usePermission
 7. `Hangfire` 权限种子闭环
 8. `Users` 误暴露权限入口收口
 9. `Products / Stickers` 辅助接口资源种子补齐
+10. `Categories / Moderation / Coins / Experience` 首版资源映射与种子补齐
+11. `console.access` 从“单独放行”收口为“入口标记 + 真实页面权限联动”
 
 ## 4. 当前明确边界
 
@@ -108,6 +127,31 @@ Route Meta / RouteGuard / usePermission
 - 共享上传能力的完整权限平台化
 - 审计日志查询、系统监控、日志检索等新模块扩张
 - 未在 Console 页面真实调用的后端接口资源补齐
+
+### 4.3 内容治理边界
+
+内容治理当前已明确采用“**集成在 Console 中，不单独拆独立治理 App**”的方案。
+
+当前首版只覆盖：
+
+- 举报提交
+- 审核队列
+- 审核联动禁言 / 封禁
+- 治理动作日志
+- `Post / Comment / ChatMessage / Product` 四类目标
+
+当前暂不覆盖：
+
+- 批量治理、敏感词、自动化策略
+
+### 4.4 默认测试角色边界
+
+为避免“普通用户误见 Console”与“普通用户继承后台权限”两类脏授权，默认 `Test` 角色当前额外执行以下收口：
+
+- 回收全部 `RoleConsoleResource`
+- 回收除 `/api/v1/User/GetUserByHttpContext` 之外的默认 `RoleModulePermission`
+- 不再允许通过种子数据默认获得 `Tags`、`Moderation`、`Coins`、`Experience` 等后台能力
+- 若旧开发库仍残留历史 `RoleConsoleResource / RoleModulePermission`，需重新执行种子或手工清理后再验证入口可见性
 
 ## 5. 边界决策记录
 
@@ -144,10 +188,12 @@ Route Meta / RouteGuard / usePermission
 - [x] 路由、菜单、搜索权限同源化
 - [x] 页面级重复判断收口到 `RouteGuard`
 - [x] `Dashboard / Hangfire / Applications / Users / Roles / Products / Orders / Tags / Stickers / SystemConfig` 页面权限闭环
+- [x] `Categories / Moderation / Coins / Experience` 页面权限闭环
 - [x] `Dashboard` 资源映射与种子闭环
 - [x] `Hangfire` 资源映射与种子闭环
 - [x] `Products / Stickers` 真实在用辅助接口资源补齐
 - [x] `Users` 伪能力入口与无效权限常量清理
+- [x] `console.access` 入口权限与真实页面权限联动收口
 
 ### 6.2 进行中
 
@@ -172,6 +218,7 @@ Route Meta / RouteGuard / usePermission
 3. 共享接口边界至少完成一次明确决策并记录
 4. 不再继续出现“页面入口已显示，但接口未落地 / 未授权”的新增裂缝
 5. 规划文档与专题文档对“当前已完成 / 当前不做 / 下一步收尾项”达成统一口径
+6. Console 入口权限不再出现“测试用户仅因拥有 `console.access` 就看见 Console”的脏授权裂缝
 
 ## 8. 参考文档
 
@@ -183,6 +230,7 @@ Route Meta / RouteGuard / usePermission
 
 1. 权限链路变更后先运行 `npm run check:console-permissions`
 2. 只在真实新增页面/接口时增量补矩阵与文档
-3. 不再继续横向扩张新的权限族或共享接口映射
+3. 内容治理保持集成在 Console，后续只对真实新增的治理对象增量补矩阵与文档
+4. 不再继续横向扩张新的权限族或共享接口映射
 
 扫描脚本落地后，Console 权限治理 V1 应进入“冻结边界、只做回归维护”的阶段。

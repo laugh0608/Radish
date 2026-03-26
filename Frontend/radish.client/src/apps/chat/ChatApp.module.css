@@ -186,32 +186,47 @@
 
 .messageRow {
   display: flex;
-  gap: 12px;
-  align-items: flex-start;
+  justify-content: flex-start;
   margin-bottom: 16px;
 }
 
 .mine {
+  justify-content: flex-end;
+}
+
+.messageMain {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.mine .messageMain {
   flex-direction: row-reverse;
 }
 
-.messageBody {
+.messageContent {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   min-width: 0;
-  max-width: min(760px, calc(100% - 52px));
+  max-width: min(720px, calc(100% - 48px));
 }
 
-.mine .messageBody {
+.mine .messageContent {
   align-items: flex-end;
 }
 
 .metaLine {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 6px;
+  row-gap: 4px;
   flex-wrap: wrap;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .avatarButton {
@@ -282,7 +297,8 @@
 }
 
 .replyButton,
-.recallButton {
+.recallButton,
+.reportButton {
   border: 0;
   background: transparent;
   font-size: 12px;
@@ -308,15 +324,31 @@
   text-decoration: underline;
 }
 
+.reportButton {
+  color: var(--theme-accent-earth);
+}
+
+.reportButton:hover {
+  color: color-mix(in srgb, var(--theme-accent-earth) 82%, black 18%);
+  text-decoration: underline;
+}
+
 .messageStack {
   display: flex;
   flex-direction: column;
   gap: 6px;
   align-items: flex-start;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .mine .messageStack {
   align-items: flex-end;
+}
+
+.mine .metaLine {
+  justify-content: flex-end;
+  text-align: right;
 }
 
 .quotedMessage {
@@ -381,6 +413,7 @@
 
 .recalled {
   display: inline-block;
+  max-width: 100%;
   color: var(--theme-text-muted);
   font-size: 13px;
   font-style: italic;
@@ -611,11 +644,19 @@
 }
 
 .inputRow {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 96px;
-  gap: 10px;
-  align-items: stretch;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 1px solid var(--chat-avatar-border);
+  border-radius: 12px;
+  background: var(--chat-avatar-surface);
+  padding: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.inputRow:focus-within {
+  border-color: var(--chat-input-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--chat-input-focus) 18%, transparent 82%);
 }
 
 .inputWrap {
@@ -626,24 +667,25 @@
 
 .input {
   width: 100%;
-  min-height: 72px;
+  min-height: 56px;
   max-height: 180px;
-  resize: vertical;
+  resize: none;
   box-sizing: border-box;
-  border: 1px solid var(--chat-avatar-border);
-  border-radius: 10px;
-  padding: 10px 12px;
+  border: none;
+  padding: 4px 8px;
   font-size: 14px;
   font-family: inherit;
   outline: none;
-  background: var(--chat-avatar-surface);
+  background: transparent;
   color: var(--theme-text-primary);
 }
 
 .input:focus {
-  border-color: var(--chat-input-focus);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--chat-input-focus) 18%, transparent 82%);
+  border: none;
+  box-shadow: none;
 }
+
+
 
 .mentionDropdown {
   position: absolute;
@@ -712,12 +754,12 @@
 }
 
 .actionColumn {
-  display: grid;
-  grid-template-rows: repeat(2, minmax(0, 1fr));
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
   gap: 8px;
-  width: 96px;
-  min-width: 0;
-  align-self: stretch;
+  padding: 0 4px;
 }
 
 .hiddenFileInput {
@@ -725,15 +767,20 @@
 }
 
 .imageButton {
-  border: 1px solid var(--chat-avatar-border);
-  border-radius: 10px;
-  padding: 10px 16px;
-  width: 100%;
-  font-size: 14px;
-  font-weight: 700;
-  background: var(--chat-avatar-surface);
-  color: var(--theme-text-primary);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  background: color-mix(in srgb, var(--theme-bg-muted) 40%, transparent);
+  color: var(--theme-text-secondary);
   cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.imageButton:hover {
+  background: color-mix(in srgb, var(--theme-bg-muted) 80%, transparent);
+  color: var(--theme-text-primary);
 }
 
 .imageButton:disabled {
@@ -743,14 +790,19 @@
 
 .sendButton {
   border: 0;
-  border-radius: 10px;
-  padding: 10px 16px;
-  width: 100%;
-  font-size: 14px;
-  font-weight: 700;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
   background: linear-gradient(135deg, var(--theme-brand-primary) 0%, var(--theme-accent-ink) 100%);
   color: #fff;
   cursor: pointer;
+  transition: filter 0.2s, transform 0.2s;
+}
+
+.sendButton:hover:not(:disabled) {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
 }
 
 .sendButton:disabled {
@@ -761,10 +813,6 @@
 @media (max-width: 860px) {
   .chatApp {
     grid-template-columns: 220px minmax(0, 1fr);
-  }
-
-  .messageBody {
-    max-width: calc(100% - 48px);
   }
 
   .memberToggleButton {

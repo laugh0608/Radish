@@ -1,7 +1,58 @@
 # 部署与容器指南
 
 ## 目标
-本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile` 构建镜像、配置环境变量，并提供一个 PostgreSQL + API 的 Compose 示例，确保与 .NET 10 SDK 及现有目录结构保持一致。
+本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `Deploy/docker-compose.yml` 及其环境覆盖文件组织 `gateway / api / auth / frontend` 四个容器。当前最小链默认基于 SQLite + 内存缓存，用于首版 `dev` 的构建与交付验证；生产环境可在此基础上继续覆盖 PostgreSQL、Redis 与正式证书。
+
+## 仓库发版与合并流程
+
+当前仓库已启用 `master` 分支保护，默认约束如下：
+
+- 禁止直接 push 到 `master`
+- 禁止 force push
+- 禁止删除 `master`
+- `master` 只允许通过 Pull Request 合并
+- 合并前需通过仓库检查：
+  - `Repo Hygiene`
+  - `Frontend Lint`
+  - `Baseline Quick`
+- 合并前需至少完成 1 次审批，并解决全部 review 对话
+- 管理员当前仅允许“通过 Pull Request 绕过”，不开放直接 push
+
+### 推荐分支路径
+
+- 日常开发：在 `dev` 或功能分支完成开发与自检
+- 准备发版：从 `dev` 向 `master` 发起 Pull Request
+- 合并发布：PR 检查通过后，以 `squash` 或 `rebase` 方式合并到 `master`
+- 发布记录：合并完成后创建 Git tag，并在 GitHub Release 中补发布说明
+
+### 最小发版顺序
+
+1. 在 `dev` 完成代码、文档与必要验证
+2. 本地至少执行：
+
+   ```bash
+   npm run validate:baseline:quick
+   ```
+
+3. 发起 `dev -> master` 的 PR
+4. 等待 GitHub Actions 中的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 全部通过
+5. 完成审批与会话收束后合并到 `master`
+6. 合并后创建版本标签，例如：
+
+   ```bash
+   git checkout master
+   git pull origin master
+   git tag -a v26.3.1-release -m "Release v26.3.1"
+   git push origin v26.3.1-release
+   ```
+
+7. 在 GitHub Release 中补齐本次发布说明、已知风险与回滚信息
+
+### 现阶段说明
+
+- 当前团队仅 1 人开发，因此规则允许管理员以 PR 方式完成自审 / 自合并
+- 这不改变 `master` 禁止直接 push 的原则
+- 后续若团队扩展，可再把审批数从 `1` 提升到 `2`，或补充 `CODEOWNERS`
 
 ## 仓库发版与合并流程
 
@@ -57,89 +108,158 @@
 ## 先决条件
 - Docker Engine ≥ 24，能够拉取 `mcr.microsoft.com/dotnet/*` 官方镜像。
 - .NET SDK 10.0.0+，用于调试或本地 `dotnet publish`。
-- Node.js 20+：可选，用于本地构建前端；镜像会在 `with-node` 阶段安装 Node 响应 webpack/Vite 资源打包需求。
-- PostgreSQL 15+：本地或托管实例，需提供 `ConnectionStrings__Default`。
+- Node.js 24+：可选，用于宿主机本地构建前端；前端镜像会在构建阶段自行安装 Node 24。
+- PostgreSQL / Redis：当前最小 Compose **不是必需项**。默认链路直接复用仓库共享配置中的 SQLite + 内存缓存，以便先完成首版镜像构建与交付验证；生产环境再按需覆盖。
 - **Auth 证书**：准备好 OIDC 签名/加密证书（`.pfx` 文件），并在部署环境中通过环境变量覆盖 `OpenIddict__Encryption__*` 配置；默认的 `Certs/dev-auth-cert.pfx` 仅用于本地联调，生产必须替换。
 
+## 当前仓库资产
+
+- 后端镜像：
+  - `Radish.Api/Dockerfile`
+  - `Radish.Auth/Dockerfile`
+  - `Radish.Gateway/Dockerfile`
+- 前端镜像：
+  - `Frontend/Dockerfile`
+  - `Frontend/scripts/serve-static.mjs`
+- 最小编排：
+  - `Deploy/docker-compose.yml`
+  - `Deploy/docker-compose.dev.yml`
+  - `Deploy/docker-compose.prod.yml`
+- 生产交付样例：
+  - `Deploy/nginx.prod.conf`
+  - `Deploy/.env.prod.example`
+
 ## 构建服务镜像
-`Radish.Api/Dockerfile` 采用多阶段构建：`with-node` 准备 Node 环境，`build/publish` 负责编译，`final` 提供轻量运行时。常用构建命令如下：
+当前仓库已提供首版最小镜像链，对应四个构建入口：
+
+- `Radish.Api/Dockerfile`：发布 API，并把仓库 `Docs/` 一并带入镜像，确保固定文档能力在容器内可用。
+- `Radish.Auth/Dockerfile`：发布 OIDC 服务，并把仓库 `Certs/` 带入镜像，便于本地 / 内部开发版使用默认开发证书。
+- `Radish.Gateway/Dockerfile`：发布网关服务，作为默认对外入口。
+- `Frontend/Dockerfile`：在构建阶段安装 Node 24、构建 `radish.client` 与 `radish.console`，最终由内置静态服务器同时托管 `/` 与 `/console/`。
+
+常用单镜像构建命令如下：
 
 ```bash
 docker build \
   -f Radish.Api/Dockerfile \
   --build-arg BUILD_CONFIGURATION=Release \
-  -t radish/server:local .
+  -t radish/api:local .
+
+docker build \
+  -f Radish.Auth/Dockerfile \
+  --build-arg BUILD_CONFIGURATION=Release \
+  -t radish/auth:local .
+
+docker build \
+  -f Radish.Gateway/Dockerfile \
+  --build-arg BUILD_CONFIGURATION=Release \
+  -t radish/gateway:local .
+
+docker build \
+  -f Frontend/Dockerfile \
+  --build-arg VITE_API_BASE_URL=https://localhost:5000 \
+  --build-arg VITE_AUTH_BASE_URL=https://localhost:5000 \
+  --build-arg VITE_SIGNALR_HUB_URL=https://localhost:5000 \
+  --build-arg VITE_AUTH_SERVER_URL=https://localhost:5000 \
+  -t radish/frontend:local .
 ```
 
-如需在构建阶段打包前端，可在 `Radish.Api` 项目文件中引用打包产物，或在 Dockerfile 的 `build` 阶段追加 `npm install && npm run build --prefix Frontend/radish.client`。
+若生产环境不使用 `https://localhost:5000` 作为公开入口，请在构建前端镜像时把上述 `VITE_*` 构建参数改为真实域名。
 
 ## 运行容器
-镜像默认监听 8080/8081（HTTP/HTTPS）。启动容器示例：
+当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在拆为“基础文件 + 环境覆盖文件”两层：
+
+- `Deploy/docker-compose.yml`：共享基础编排，只保留所有环境都一致的服务结构与下游地址
+- `Deploy/docker-compose.dev.yml`：本地联调覆盖，默认让 `Gateway` 在容器内监听 HTTPS，并启用 `UseHttpsRedirection()`
+- `Deploy/docker-compose.prod.yml`：生产反代覆盖，默认让 `Gateway` 在容器内监听 HTTP，并关闭 `UseHttpsRedirection()`
+
+推荐直接按以下两种组合使用：
+
+- `base + dev`：`Deploy/docker-compose.yml + Deploy/docker-compose.dev.yml`，适用于本地联调、最小运行态 Smoke、浏览器直连 Gateway 的场景
+- `base + prod`：`Deploy/docker-compose.yml + Deploy/docker-compose.prod.yml`，适用于服务器部署、外层 Nginx 终止 HTTPS、Gateway 容器内仅监听 HTTP 的场景
+
+### `base + dev`：开发 / 本地联调
+
+```bash
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.dev.yml build
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.dev.yml up -d
+```
+
+本地联调口径如下：
+
+- `gateway`：对外监听 `https://localhost:5000`
+- `api`：容器内监听 `5100`
+- `auth`：容器内监听 `5200`
+- `frontend`：容器内监听 `80`，由 `Gateway` 反向代理 `/` 与 `/console/`
+
+本地 Compose 联调时，`Gateway` 镜像会内置 `Certs/dev-gateway-cert.pfx` 作为开发证书，使 `https://localhost:5000` 可以直接完成 TLS 握手；若浏览器提示证书不受信任，请先在宿主机信任该开发证书。
+
+### `base + prod`：生产 / 外部反向代理
+
+先复制 `Deploy/.env.prod.example` 为 `Deploy/.env.prod`，并替换至少以下真实值：
+
+- `RADISH_PUBLIC_URL`
+- `RADISH_AUTH_CERTS_DIR`
+- `RADISH_AUTH_SIGNING_CERT_PATH`
+- `RADISH_AUTH_SIGNING_CERT_PASSWORD`
+- `RADISH_AUTH_ENCRYPTION_CERT_PATH`
+- `RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`
+
+```bash
+docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml build
+docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d
+```
+
+生产覆盖默认约定如下：
+
+- `GatewayService__PublicUrl`、前端构建期 `VITE_*`、Auth 的 `Issuer / CORS` 都通过 `RADISH_PUBLIC_URL` 对齐真实外部域名
+- `Auth` 中官方 OIDC 客户端（`radish-client / radish-console / radish-scalar`）的 Gateway 回调地址也会跟随 `OpenIddict__Server__Issuer` 对齐，因此 `RADISH_PUBLIC_URL` 必须与真实外部 HTTPS 域名保持一致
+- `prod` 口径下不要直接用 `http://localhost:5000` 做登录验证；若访问协议、域名或端口与 `RADISH_PUBLIC_URL` 不一致，OpenIddict 会因 `redirect_uri` 不匹配而拒绝请求
+- `Gateway` 容器内部监听 `http://+:5000`
+- `GatewayRuntime__EnableHttpsRedirection=false`
+- `Auth` 通过 `RADISH_AUTH_CERTS_DIR` 把宿主机证书目录挂载到容器 `/app/certs`，并通过 `RADISH_AUTH_*` 变量覆盖生产证书路径与密码
+- TLS 由外部 Nginx / Traefik / Caddy 终止，再转发到容器内 HTTP 端口；仓库已提供可直接落地的 `Deploy/nginx.prod.conf`
 
 **文件上传目录挂载（生产环境建议）**：
 - 本地存储模式下，上传文件存放在 `DataBases/Uploads/`
 - 建议挂载到宿主机持久化目录，避免容器重启丢失文件
 
-示例（挂载上传目录）：
-```bash
-docker run -d --name radish-api \
-  -p 8080:8080 -p 8081:8081 \
-  -v /data/radish/uploads:/app/DataBases/Uploads \
-  -e ASPNETCORE_ENVIRONMENT=Production \
-  -e ConnectionStrings__Default="Host=db;Port=5432;Database=radish;Username=radish;Password=radish" \
-  -e ASPNETCORE_URLS="http://+:8080" \
-  radish/server:local
-```
+如需分别单独运行镜像，可参考：
 
 ```bash
 docker run -d --name radish-api \
-  -p 8080:8080 -p 8081:8081 \
+  -p 5100:5100 \
+  -v /data/radish/db:/app/DataBases \
+  -v /data/radish/logs:/app/Logs \
   -e ASPNETCORE_ENVIRONMENT=Production \
-  -e ConnectionStrings__Default="Host=db;Port=5432;Database=radish;Username=radish;Password=radish" \
-  -e ASPNETCORE_URLS="http://+:8080" \
-  radish/server:local
+  -e ASPNETCORE_URLS="http://+:5100" \
+  radish/api:local
 ```
 
-将实际数据库凭据、安全密钥等以环境变量或 `appsettings.Production.json` 挂载方式注入。日志可通过 `docker logs -f radish-api` 追踪；若需热重载，请改用 `dotnet watch` 在宿主机运行。
+将实际数据库凭据、安全密钥与证书路径等以环境变量或挂载文件方式注入。日志可通过 `docker logs -f <container>` 追踪；若需热重载，请继续使用宿主机 `dotnet watch` / `npm run dev`。
 
 ## Docker Compose 示例
-建议在 `deploy/docker-compose.yml` 中集中定义依赖服务，可参考：
+仓库根目录已提供真实可用的基础编排与环境覆盖文件，推荐按环境组合使用：
 
-```yaml
-services:
-  api:
-    build:
-      context: ..
-      dockerfile: Radish.Api/Dockerfile
-      args:
-        BUILD_CONFIGURATION: Release
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__Default: Host=db;Port=5432;Database=radish;Username=radish;Password=radish
-      ASPNETCORE_URLS: http://+:8080
-    ports:
-      - "8080:8080"
-    depends_on:
-      db:
-        condition: service_healthy
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: radish
-      POSTGRES_PASSWORD: radish
-      POSTGRES_DB: radish
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U radish"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - db-data:/var/lib/postgresql/data
-volumes:
-  db-data:
+```bash
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.dev.yml config
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.dev.yml up -d
+
+docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config
+docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d
 ```
 
-使用 `docker compose -f deploy/docker-compose.yml up --build` 可一键启动依赖。若后续引入前端容器，可在同一文件内新增 `client` 服务并通过 Nginx/Caddy 统一暴露。
+当前 Compose 口径如下：
+
+- 默认使用仓库共享配置中的 SQLite 与内存缓存，不强依赖 PostgreSQL / Redis。
+- `DataBases/` 与 `Logs/` 会挂载到宿主机，便于保留 SQLite、上传文件与运行日志。
+- `Frontend` 镜像会把 `radish.client` 与 `radish.console` 一起构建并托管。
+- `Gateway` 会通过环境变量把 `/` 与 `/console/` 反代到前端容器，并把 `/api`、`/connect`、`/Account` 等路径转发给对应后端服务。
+- `GatewayRuntime__EnableHttpsRedirection` 当前已作为运行时开关显式暴露，可与 `ASPNETCORE_URLS` 一起切换容器内部的 HTTP / HTTPS 监听模式。
+- 本地 Compose 联调默认保持项目既有口径：`Gateway` 作为唯一对外 HTTPS 入口，访问地址为 `https://localhost:5000`。
+- 生产覆盖默认收口为“外层 HTTPS、内层 HTTP”，避免与外部反向代理重复做 TLS 终止。
+
+如果后续需要切换到 PostgreSQL / Redis，只需在 Compose 中继续补相应服务，并通过环境变量覆盖共享配置。
 
 ## 数据库初始化与迁移（Radish.DbMigrate）
 
@@ -198,7 +318,7 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply
 ### 生成迁移 SQL 并应用到生产
 
 1. 在一套用于对比的测试库上执行 `DbMigrate init`，让其结构同步到最新代码。
-2. 使用数据库工具导出“从当前生产版本 → 新版本”的结构差异 SQL，并保存到仓库（建议放在 `deploy/sql` 目录按日期/版本命名）。
+2. 使用数据库工具导出“从当前生产版本 → 新版本”的结构差异 SQL，并保存到仓库（建议放在 `Deploy/sql` 目录按日期/版本命名）。
 3. 在发布新版本前，由 DBA 或 CI/CD 流水线在生产数据库上执行本次版本对应的迁移 SQL：
    - 顺序执行所有未执行过的脚本；
    - 执行完成后再滚动升级/重启 API 与 Gateway。
@@ -275,173 +395,30 @@ HTTP (5000/5100) → ASP.NET Core 应用
 2. **性能更好** - 避免双重 TLS 握手和加密/解密开销，内网通信不需要加密（可信网络）
 3. **配置更简单** - 后端应用不需要配置证书，Kestrel 只监听 HTTP
 
-#### Nginx 配置示例
+#### 当前仓库交付文件
 
-```nginx
-# Gateway 服务
-server {
-    listen 443 ssl http2;
-    server_name radish.com;
+- `Deploy/nginx.prod.conf`：当前仓库随代码交付的生产反向代理样例，默认采用“宿主机 Nginx 终止 HTTPS，再回源 `127.0.0.1:5000`”的口径。
+- `Deploy/.env.prod.example`：当前 `base + prod` 组合的最小变量样例，至少覆盖 `RADISH_PUBLIC_URL`、Auth 证书挂载目录，以及签名 / 加密证书路径与密码。
+- `Radish.Gateway/Program.cs`：当前已经显式启用 `X-Forwarded-For / X-Forwarded-Proto / X-Forwarded-Host` 识别，能够正确处理反代后的 Scheme、Host 与重定向。
 
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
+#### Nginx 落地步骤
 
-    location / {
-        proxy_pass http://localhost:5000;  # 反代到 HTTP 端口
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;  # 告诉后端原始请求是 HTTPS
-    }
-}
+1. 复制 `Deploy/nginx.prod.conf` 到服务器的 Nginx 主配置或站点配置位置。
+2. 把 `server_name` 改成真实域名，把 `ssl_certificate` / `ssl_certificate_key` 改成正式证书路径。
+3. 保持 `proxy_pass http://127.0.0.1:5000;`，即可覆盖 `/`、`/console/`、`/api`、`/connect`、`/Account`、`/health` 等当前 Gateway 入口。
+4. 若 Nginx 不是宿主机部署，而是作为同一 Docker 网络内的单独容器运行，请把 upstream 从 `127.0.0.1:5000` 改为 `gateway:5000`。
+5. 校验并重载 Nginx：
 
-# API 服务
-server {
-    listen 443 ssl http2;
-    server_name api.radish.com;
-
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
-
-    location / {
-        proxy_pass http://localhost:5100;  # 反代到 HTTP 端口
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
-    }
-}
-```
-
-#### ASP.NET Core 配置
-
-在 `Program.cs` 中添加转发头中间件，让应用知道它在反向代理后面：
-
-```csharp
-using Microsoft.AspNetCore.HttpOverrides;
-
-// 配置转发头中间件
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-});
-```
-
-#### 生产环境配置示例
-
-Gateway 和 API 项目的 `appsettings.Production.json`：
-
-```json
-{
-  "Kestrel": {
-    "Endpoints": {
-      "Http": {
-        "Url": "http://0.0.0.0:5000"  // 只监听 HTTP
-      }
-    }
-  }
-}
-```
-
-### Docker Compose 完整示例（含反向代理）
-
-```yaml
-services:
-  nginx:
-    image: nginx:alpine
-    ports:
-      - "443:443"
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./certs:/etc/nginx/certs:ro
-    depends_on:
-      - gateway
-      - api
-      - auth
-
-  gateway:
-    build:
-      context: ..
-      dockerfile: Radish.Gateway/Dockerfile
-    environment:
-      ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:5000
-      GatewayService__PublicUrl: https://radish.com
-      DownstreamServices__ApiService__BaseUrl: http://api:5100
-      DownstreamServices__AuthService__BaseUrl: http://auth:5200
-    expose:
-      - "5000"
-    networks:
-      - radish-network
-
-  api:
-    build:
-      context: ..
-      dockerfile: Radish.Api/Dockerfile
-    environment:
-      ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:5100
-      ConnectionStrings__Default: Host=db;Port=5432;Database=radish;Username=radish;Password=${DB_PASSWORD}
-    expose:
-      - "5100"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - radish-network
-
-  auth:
-    build:
-      context: ..
-      dockerfile: Radish.Auth/Dockerfile
-    environment:
-      ASPNETCORE_ENVIRONMENT: Production
-      ASPNETCORE_URLS: http://+:5200
-      OpenIddict__Server__Issuer: https://radish.com
-      OpenIddict__Encryption__UseDevelopmentKeys: "false"
-      OpenIddict__Encryption__SigningCertificatePath: /app/certs/auth-signing.pfx
-      OpenIddict__Encryption__SigningCertificatePassword: ${AUTH_CERT_PASSWORD}
-      OpenIddict__Encryption__EncryptionCertificatePath: /app/certs/auth-encryption.pfx
-      OpenIddict__Encryption__EncryptionCertificatePassword: ${AUTH_CERT_PASSWORD}
-    volumes:
-      - ./certs:/app/certs:ro
-    expose:
-      - "5200"
-    depends_on:
-      db:
-        condition: service_healthy
-    networks:
-      - radish-network
-
-  db:
-    image: postgres:16
-    environment:
-      POSTGRES_USER: radish
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: radish
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U radish"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    networks:
-      - radish-network
-
-volumes:
-  db-data:
-
-networks:
-  radish-network:
-    driver: bridge
-```
+   ```bash
+   nginx -t
+   systemctl reload nginx
+   ```
 
 ### 注意事项
 
-- **开发环境**：Gateway 应用对外使用 HTTPS 端口（`https://localhost:5000`，`http://localhost:5001` 仅用于重定向）
-- **生产环境**：应用使用 HTTP 端口，TLS 由反向代理处理
+- **`base + dev`**：`Deploy/docker-compose.yml + Deploy/docker-compose.dev.yml` 当前直接让 Gateway 在容器内终止 TLS，并只对宿主机暴露 `https://localhost:5000`
+- **`base + prod`**：`Deploy/docker-compose.yml + Deploy/docker-compose.prod.yml` 当前默认要求通过 `--env-file Deploy/.env.prod` 注入真实域名与 Auth 证书变量，再由外层 Nginx 终止 HTTPS
+- **生产环境**：Gateway / Api / Auth 当前仍默认走 HTTP 容器内通信，TLS 只在反向代理层终止
 - **内网可信场景**：反代到 HTTP 端口是安全的
 - **零信任架构**：如需端到端加密，可配置反代到 HTTPS，但需要额外证书管理
 
@@ -449,19 +426,16 @@ networks:
 
 1. **准备新证书**：参考《[鉴权与授权指南](/guide/authentication)》的“证书生成示例”生成新 `.pfx`（签名/加密可拆分）。
 2. **上传/挂载**：将新证书放到宿主机（如 `/etc/radish/certs/auth-signing-2025Q1.pfx`），并映射到容器的 `/app/certs`。
-3. **更新环境变量**：
+3. **更新部署变量**：修改 `Deploy/.env.prod` 中的 `RADISH_AUTH_SIGNING_CERT_PATH / RADISH_AUTH_SIGNING_CERT_PASSWORD / RADISH_AUTH_ENCRYPTION_CERT_PATH / RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`；若证书目录也变化，同时更新 `RADISH_AUTH_CERTS_DIR`。
    ```bash
-   export AUTH_CERT_VERSION=2025Q1
-   export AUTH_CERT_PASSWORD=<new-password>
-   docker compose up -d auth \
-     -e OpenIddict__Encryption__SigningCertificatePath=/app/certs/auth-signing-${AUTH_CERT_VERSION}.pfx \
-     -e OpenIddict__Encryption__SigningCertificatePassword=${AUTH_CERT_PASSWORD} \
-     -e OpenIddict__Encryption__EncryptionCertificatePath=/app/certs/auth-encryption-${AUTH_CERT_VERSION}.pfx \
-     -e OpenIddict__Encryption__EncryptionCertificatePassword=${AUTH_CERT_PASSWORD}
+   docker compose --env-file Deploy/.env.prod \
+     -f Deploy/docker-compose.yml \
+     -f Deploy/docker-compose.prod.yml \
+     up -d auth
    ```
-   Kubernetes 集群可在 Helm values 中覆盖 `env`，并执行 `helm upgrade`。
+   Kubernetes 集群可在 Helm values 中覆盖对应 `env`，并执行 `helm upgrade`。
 4. **分批重启**：
-   - Compose：`docker compose up -d auth`
+   - Compose：`docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d auth`
    - Kubernetes：`kubectl rollout restart deploy/radish-auth`
 5. **验证**：
    ```bash
@@ -515,7 +489,7 @@ networks:
 
 > 本节用于记录未来在服务器上采用“两个镜像、多容器”的部署思路，目前 **仅作为设计文档，不在开发阶段使用 Docker 进行启动与测试**。
 >
-> 当前开发阶段建议仍使用 `dotnet run` / `dotnet watch` / `npm run dev` 等方式在宿主机直接运行各项目。
+> 当前仓库已经有一套真实可构建的最小镜像链，本节保留的是“进一步压缩镜像数量”的后续设计，不代表当前首版 `dev` 已经切换到该方案。
 
 ### 设计目标与前提
 
@@ -730,10 +704,10 @@ volumes:
 
 ### 当前开发阶段的约定与落地建议
 
-- **当前阶段不要求在 Docker 中启动与测试**：
-  - 后端推荐使用 `dotnet run` / `dotnet watch` 在宿主机运行 Api / Gateway / Auth；
-  - 前端推荐使用 `npm run dev --prefix Frontend/radish.client` 等命令运行 Vite 开发服务；
-  - Docker 相关内容仅作为将来部署到服务器（测试/预生产/生产环境）时的设计参考。
+- **当前阶段默认仍优先宿主机运行与调试**：
+  - 后端推荐继续使用 `dotnet run` / `dotnet watch` 在宿主机运行 Api / Gateway / Auth；
+  - 前端推荐继续使用 `npm run dev --prefix Frontend/radish.client` 等命令运行 Vite 开发服务；
+  - Docker 相关内容当前已不再只是草案，而是首版 `dev` 的最小构建 / 交付验证资产；但运行态联调与日常开发默认仍以宿主机方式为主。
 - **在真正落地容器部署前，建议遵循以下步骤**：
   1. 与运维/基础设施同学确认最终的目录结构与文件命名（例如是否采用 `Dockerfile.backend`、`Dockerfile.frontend` 与仓库根目录 `docker-compose.yml`）；
   2. 根据实际数据库/Redis/域名/TLS 方案，补全 Compose 中的环境变量与端口映射；

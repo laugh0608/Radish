@@ -1,6 +1,6 @@
 # 前端设计文档
 
-> Radish 采用 **超级应用（Super App）/ WebOS** 架构，提供类似操作系统的桌面体验。用户登录后看到桌面，双击应用图标即可打开论坛、聊天室、商城、后台管理等不同应用。本文档描述整体架构、技术栈和实现方案。
+> Radish 采用 **超级应用（Super App）/ WebOS** 架构，提供类似操作系统的桌面体验。用户进入 `radish.client` 后即可看到桌面，公开内容可匿名浏览，登录后再解锁聊天室、个人中心等私有能力。本文档描述整体架构、技术栈和实现方案。
 
 ## 1. 设计理念
 
@@ -11,22 +11,22 @@
 ```
 用户访问 radish.client
         ↓
-    统一登录 (OIDC)
+桌面系统（Desktop Shell）
         ↓
-   桌面系统（Desktop Shell）
+根据显示规则呈现应用图标
         ↓
-根据角色显示应用图标
+匿名可直接打开公开应用
         ↓
-双击图标 → 打开应用
+登录后解锁聊天 / 个人能力
         ↓
-[论坛] [聊天室] [商城] → 窗口模式
-[后台管理] [文档] → 全屏/iframe 模式
+[论坛] [文档] [商城] → 窗口模式
+[控制台] → 外部应用
 ```
 
 ### 1.2 设计目标
 
 1. **统一入口**：所有功能通过桌面访问，无需记忆多个 URL
-2. **权限控制**：根据用户角色动态显示可用应用
+2. **权限控制**：公开应用匿名可访问，私有能力按登录态与权限分层控制
 3. **沉浸体验**：桌面化交互（状态栏、Dock、窗口系统）
 4. **无缝切换**：应用间切换无需重新登录
 5. **扩展性强**：新增功能只需注册新应用
@@ -121,7 +121,7 @@ export interface AppDefinition {
   type: 'window' | 'fullscreen' | 'iframe';
   defaultSize?: { width: number; height: number };
   url?: string; // for iframe
-  requiredRoles: string[]; // 权限控制
+  requiredRoles?: string[]; // 访问控制，可选
   category?: string; // 分类
 }
 
@@ -135,7 +135,6 @@ export const appRegistry: AppDefinition[] = [
     component: ForumApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
-    requiredRoles: ['User'],
     category: 'content'
   },
   {
@@ -155,77 +154,81 @@ export const appRegistry: AppDefinition[] = [
     icon: '🛒',
     description: '积分商城',
     component: ShopApp,
-    type: 'fullscreen', // 全屏体验更好
-    requiredRoles: ['User'],
+    type: 'window',
     category: 'commerce'
   },
 
   // === 管理应用 ===
   {
-    id: 'admin',
-    name: '后台管理',
-    icon: '⚙️',
+    id: 'console',
+    name: '控制台',
+    icon: 'mdi:console',
     description: '系统管理控制台',
-    component: AdminApp,
-    type: 'fullscreen',
-    requiredRoles: ['Admin', 'System'],
-    category: 'admin'
+    component: () => null,
+    type: 'external',
+    externalUrl: '/console/',
+    category: 'system'
   },
 
-  // === 工具应用 ===
+  // === 文档应用 ===
   {
-    id: 'docs',
-    name: 'API 文档',
-    icon: '📄',
-    description: 'Scalar API 文档',
-    type: 'iframe',
-    url: 'https://localhost:5000/scalar',
-    defaultSize: { width: 1400, height: 900 },
-    requiredRoles: ['Developer', 'Admin'],
-    category: 'tools'
-  },
-
-  // === 第三方应用（示例） ===
-  {
-    id: 'game-example',
-    name: '小游戏',
-    icon: '🎮',
-    component: GameApp,
+    id: 'document',
+    name: '文档',
+    icon: 'mdi:notebook-edit-outline',
+    description: '固定文档与在线文档统一入口',
+    component: WikiApp,
     type: 'window',
-    defaultSize: { width: 600, height: 600 },
-    requiredRoles: ['User'],
-    category: 'entertainment'
+    defaultSize: { width: 1280, height: 820 },
+    category: 'content'
   }
 ];
 ```
 
 ### 3.2 权限控制
 
-桌面根据用户角色过滤可见应用：
+当前桌面采用“图标可见性”和“打开权限”分离的策略：
+
+- 常规应用图标默认在桌面可见，避免匿名用户误以为平台只剩下少数入口；
+- `console` 当前仅在管理员角色，或同时具备 `console.access + 至少一个真实 Console 页面访问权限` 时可见；
+- 桌面提供全局右键菜单（ContextMenu），支持匿名和登录用户进行刷新、切换国风主题、查看关于等快捷操作；
+- 真正需要登录才能打开的应用当前只保留：
+  - `chat`
+  - `profile`
+  - `radish-pit`
+  - `notification`
+  - `experience-detail`
+- 其余桌面应用默认允许匿名打开公开内容，例如：
+  - `welcome`
+  - `showcase`
+  - `document`
+  - `forum`
+  - `leaderboard`
+  - `shop`
+
+对应的访问矩阵如下：
+
+| 应用 | 桌面图标 | 未登录打开 | 已登录打开 |
+|------|----------|------------|------------|
+| 欢迎 / 组件库 / 文档 / 论坛 / 排行榜 / 商城 | 可见 | 可打开公开内容 | 可打开 |
+| 聊天室 / 个人主页 / 萝卜坑 / 通知中心 / 等级 | 可见 | 拦截并提示登录 | 可打开 |
+| 控制台 | 仅管理员或具备 `console.access + 至少一个真实 Console 页面访问权限` 时可见 | 不可见 | 命中权限后可打开 |
+
+实现上不再简单按“角色过滤所有图标”，而是分别处理桌面展示与实际访问：
 
 ```typescript
-// desktop/Desktop.tsx
-const Desktop = () => {
-  const { user } = useAuth();
+import { canAccessApp, getVisibleAppsForUser } from './appAccess';
 
-  // 过滤用户有权限的应用
-  const visibleApps = appRegistry.filter(app =>
-    app.requiredRoles.some(role => user.roles?.includes(role))
-  );
+const visibleApps = getVisibleAppsForUser(appRegistry, {
+  isAuthenticated,
+  userRoles,
+  userPermissions
+});
 
-  return (
-    <div className="desktop-grid">
-      {visibleApps.map(app => (
-        <AppIcon
-          key={app.id}
-          app={app}
-          onDoubleClick={() => openApp(app.id)}
-          onContextMenu={(e) => showContextMenu(e, app.id)}
-        />
-      ))}
-    </div>
-  );
-};
+const canOpen = canAccessApp(app, {
+  isAuthenticated,
+  userRoles,
+  userPermissions
+});
 ```
 
 ## 4. 窗口系统
@@ -234,9 +237,9 @@ const Desktop = () => {
 
 | 类型 | 说明 | 适用场景 |
 |------|------|---------|
-| `window` | 可拖拽、调整大小的窗口 | 论坛、聊天室等小应用 |
-| `fullscreen` | 全屏显示，隐藏桌面 | 商城、后台管理等复杂应用 |
-| `iframe` | 嵌入外部网页 | API 文档、第三方工具 |
+| `window` | 可拖拽、调整大小的窗口 | 文档、论坛、聊天室、商城 |
+| `fullscreen` | 全屏显示，隐藏桌面 | 预留给未来特别复杂的沉浸式应用 |
+| `iframe` | 嵌入外部网页 | 展示型第三方工具 |
 
 ### 4.2 窗口管理器
 
@@ -438,10 +441,11 @@ const Shell = () => {
 ```typescript
 // desktop/MobileShell.tsx
 const MobileShell = () => {
-  const { user } = useAuth();
-  const visibleApps = appRegistry.filter(app =>
-    app.requiredRoles.some(role => user.roles?.includes(role))
-  );
+  const visibleApps = getVisibleAppsForUser(appRegistry, {
+    isAuthenticated,
+    userRoles,
+    userPermissions
+  });
 
   return (
     <div className="mobile-shell">
@@ -601,7 +605,7 @@ export const tokens = {
 
 ### 8.1.1 当前主题实现落点
 
-截至 `2026-03-21`，`radish.client` 的首轮主题实现已经从概念层进入代码落地，当前结构为：
+截至 `2026-03-22`，`radish.client` 的首轮主题实现已经从概念层进入代码落地，当前结构为：
 
 ```text
 Frontend/radish.client/src/theme/
@@ -620,6 +624,7 @@ Frontend/radish.client/src/stores/
 - `Dock`
 - `Desktop`
 - `DesktopWindow`
+- `WelcomeApp`（当前已完成主题 token 接入与内容口径重写）
 
 当前已完成首轮文案资源化的高频范围：
 
@@ -631,6 +636,11 @@ Frontend/radish.client/src/stores/
 - 个人中心高频模块：资料核心信息、浏览记录、关系链、帖子 / 评论列表、头像上传、附件列表、钱包与交易记录
 - 文档应用主链：应用头部、文档目录、详情阅读与基础状态文案
 
+当前已完成一轮体验重排的高频编辑链路：
+
+- 论坛发帖入口已从传统表单弹窗重构为“创作器工作区”，支持 `Markdown / 富文本` 双模式输入、右侧帖子设置区、全屏创作与“富文本输入体验 + Markdown 统一存储”的编辑策略
+- 论坛评论入口已重构为轻量讨论面板：评论编辑器采用紧凑卡片式结构，支持 `@提及`、贴图、图片、附件与预览切换；评论弹层外框也已单独收口，避免继续复用过厚的通用白板样式
+
 当前约束：
 
 - 新增 UI 改造优先复用主题 Token，不再继续增加硬编码颜色；
@@ -638,24 +648,35 @@ Frontend/radish.client/src/stores/
 - 桌面层、窗口层与 Dock 层必须单独控制定位与层级，避免视觉改造破坏基础交互布局；
 - 页面级适配按“论坛 -> 聊天室 -> 商城 -> 通知中心 -> 个人中心 -> 文档”的高频顺序推进。
 
+当前验证结论：
+
+- 通知中心、个人中心与桌面壳层已完成首轮语言切换与主题切换烟雾验证；
+- `validate:baseline --quick` 已通过；
+- `npm run build --workspace=radish.client` 已在系统环境构建通过；
+- 桌面余额 / 经验值状态文案、Dock 少量交互色与个人中心尾部样式已完成当前批次收口。
+- 最新一轮手工联调已确认：`Shell` 的窗口层点击拦截已修复，Dock 顶部定位与状态按钮可读性已重新对齐，桌面图标已回到轻量图标 + 文案的列式排布，避免固定网格造成滚动列表感。
+- 欢迎页当前已完成主题适配、旧口径清理与主内容重写，但长文案仍为中文，后续应继续纳入 `i18n` 范围。
+
 ### 8.1.2 当前 i18n 实现落点
 
-截至 `2026-03-21`，`radish.client` 的 `i18n` 已从“仅有基础设施”进入“高频主链路首轮接入”阶段：
+截至 `2026-03-22`，`radish.client` 的 `i18n` 已从“仅有基础设施”进入“高频主链路首轮接入”阶段：
 
 - 桌面层已提供可见的语言切换入口，并把应用注册、桌面图标与窗口标题统一收敛到翻译键；
 - 商城已完成首页、商品、订单、背包、购买弹窗与购买动作提示的首轮资源化；
 - 论坛已完成帖子列表、帖子详情讨论区、评论树、评论表单、评论卡片与帖子卡片的首轮资源化；
+- 论坛发帖创作器与评论编辑器的高频模式切换、上传动作与讨论区主操作文案已继续保持在统一翻译键口径内；
 - 聊天室已完成高频消息链路、重连 / 断线状态提示与成员区核心文案的首轮资源化；
 - 通知中心已完成列表、空状态、加载态、已读 / 删除动作与共享通知组件的首轮资源化；
 - 个人中心已完成资料核心信息、浏览记录、关系链、帖子 / 评论列表、头像上传、附件列表、钱包与交易记录的首轮资源化；
-- 当前自动化验证已确认：`npm run type-check --workspace=radish.client` 通过，`npm run build --workspace=radish.client` 在系统环境构建通过。
+- 当前自动化验证已确认：`npm run type-check --workspace=radish.client` 通过，`validate:baseline --quick` 通过，`npm run build --workspace=radish.client` 在系统环境构建通过。
 
-当前仍待继续补齐的范围：
+当前后续关注范围：
 
-- 通知中心、个人中心中仍未资源化的边缘弹窗、少量错误兜底与次级操作；
-- 论坛宿主层之外的少量残余回退文案与深层交互边角；
-- 主题切换与语言切换的一轮集中烟雾验证；
-- 与主题联动的残余深层样式 token 清理，避免继续出现“文案已国际化但样式仍绑定单语长度或硬编码颜色”的问题。
+- 当前首轮主题 / i18n 主链已基本闭合，但仍需在更大范围首版联调中继续观察宿主层边缘页、失败兜底与次级操作；
+- 论坛宿主层之外的少量残余回退文案与深层交互边角仍需在联调时顺手清理；
+- 与主题联动的残余深层样式 token 仍需继续收口，避免出现“文案已国际化但样式仍绑定单语长度或硬编码颜色”的问题；
+- 欢迎页已完成主题与主体长文案的双语资源化，后续重点转为观察语言切换下的排版稳定性与少量边角文案；
+- 当前阶段口径已从“继续补高频主链”转为“待联调复核”。
 
 ### 8.2 基础组件
 
@@ -971,8 +992,7 @@ if (应用需要 OIDC 认证 && 有复杂路由) {
   externalUrl: typeof window !== 'undefined' &&
     window.location.origin.includes('localhost:5000')
     ? '/console/' // 通过 Gateway
-    : 'http://localhost:3100', // 直接访问
-  requiredRoles: ['Admin', 'System']
+    : 'http://localhost:3100' // 直接访问
 }
 ```
 

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.Model.DtoModels;
 
@@ -25,6 +26,13 @@ public class CreateWikiDocumentDto
     public int Sort { get; set; } = 0;
 
     public long? CoverAttachmentId { get; set; }
+
+    [Range((int)WikiDocumentVisibilityEnum.Public, (int)WikiDocumentVisibilityEnum.Restricted, ErrorMessage = "文档可见性无效")]
+    public int Visibility { get; set; } = (int)WikiDocumentVisibilityEnum.Authenticated;
+
+    public List<string>? AllowedRoles { get; set; }
+
+    public List<string>? AllowedPermissions { get; set; }
 }
 
 /// <summary>更新 Wiki 文档 DTO</summary>
@@ -52,6 +60,13 @@ public class UpdateWikiDocumentDto
 
     [StringLength(300, ErrorMessage = "修改说明不能超过300个字符")]
     public string? ChangeSummary { get; set; }
+
+    [Range((int)WikiDocumentVisibilityEnum.Public, (int)WikiDocumentVisibilityEnum.Restricted, ErrorMessage = "文档可见性无效")]
+    public int Visibility { get; set; } = (int)WikiDocumentVisibilityEnum.Authenticated;
+
+    public List<string>? AllowedRoles { get; set; }
+
+    public List<string>? AllowedPermissions { get; set; }
 }
 
 /// <summary>导入 Markdown DTO</summary>
@@ -72,4 +87,11 @@ public class WikiMarkdownImportDto
     public int Sort { get; set; } = 0;
 
     public bool PublishAfterImport { get; set; } = false;
+
+    [Range((int)WikiDocumentVisibilityEnum.Public, (int)WikiDocumentVisibilityEnum.Restricted, ErrorMessage = "文档可见性无效")]
+    public int Visibility { get; set; } = (int)WikiDocumentVisibilityEnum.Authenticated;
+
+    public List<string>? AllowedRoles { get; set; }
+
+    public List<string>? AllowedPermissions { get; set; }
 }

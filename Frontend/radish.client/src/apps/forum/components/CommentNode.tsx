@@ -4,6 +4,7 @@ import { log } from '@/utils/logger';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import type { CommentNode as CommentNodeType, ReactionSummaryVo } from '@/api/forum';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
+import { resolveMediaUrl } from '@/utils/media';
 import { Icon } from '@radish/ui/icon';
 import { ImageLightbox } from '@radish/ui/image-lightbox';
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
@@ -31,6 +32,7 @@ interface CommentNodeProps {
   isReactionPending?: (commentId: number) => boolean;
   onRequireReactionLogin?: () => void;
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onReport?: (commentId: number) => void;
 }
 
 /**
@@ -152,6 +154,28 @@ const extractCommentImages = (content: string): CommentImageItem[] => {
   return images;
 };
 
+const buildAvatarText = (name: string): string => {
+  const source = name.trim();
+  if (!source) {
+    return '?';
+  }
+
+  return source.charAt(0).toUpperCase();
+};
+
+const buildAvatarStyle = (seed: string) => {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const hue = Math.abs(hash) % 360;
+  return {
+    backgroundColor: `hsl(${hue} 80% 92%)`,
+    color: `hsl(${hue} 45% 30%)`
+  };
+};
+
 const renderCommentHtml = (content: string, stickerMap?: MarkdownStickerMap): string => {
   const regex = /!\[([^\]]*)\]\(([^)]+)\)/g;
   let html = '';
@@ -215,6 +239,7 @@ export const CommentNode = ({
   isReactionPending,
   onRequireReactionLogin,
   onAuthorClick,
+  onReport,
 }: CommentNodeProps) => {
   const { t } = useTranslation();
   // 判断是否是作者本人
@@ -246,6 +271,7 @@ export const CommentNode = ({
   const commentImages = useMemo(() => extractCommentImages(node.voContent), [node.voContent]);
   const commentHtml = useMemo(() => renderCommentHtml(node.voContent, stickerMap), [node.voContent, stickerMap]);
   const replyToUserName = useMemo(() => node.voReplyToUserName?.trim() || '', [node.voReplyToUserName]);
+  const authorAvatarUrl = useMemo(() => resolveMediaUrl(node.voAuthorAvatarUrl), [node.voAuthorAvatarUrl]);
 
   // 初始化已加载的子评论（默认时间升序）
   const [loadedChildren, setLoadedChildren] = useState<CommentNodeType[]>(() => {
@@ -475,9 +501,25 @@ export const CommentNode = ({
         <button
           type="button"
           className={styles.authorButton}
-          onClick={() => onAuthorClick?.(node.voAuthorId, node.voAuthorName)}
+          onClick={() => onAuthorClick?.(node.voAuthorId, node.voAuthorName, node.voAuthorAvatarUrl)}
           title={t('forum.comment.authorProfileTitle', { name: node.voAuthorName })}
         >
+          <span
+            className={styles.authorAvatar}
+            style={authorAvatarUrl ? undefined : buildAvatarStyle(node.voAuthorName)}
+            aria-hidden="true"
+          >
+            {authorAvatarUrl ? (
+              <img
+                className={styles.authorAvatarImage}
+                src={authorAvatarUrl}
+                alt={node.voAuthorName}
+                loading="lazy"
+              />
+            ) : (
+              buildAvatarText(node.voAuthorName)
+            )}
+          </span>
           <span className={styles.author}>{node.voAuthorName}</span>
         </button>
         {node.voCreateTime && (
@@ -642,6 +684,18 @@ export const CommentNode = ({
             <span>{t('forum.comment.reply')}</span>
           </button>
         )}
+
+        {!!onReport && !isAuthor && (
+          <button
+            type="button"
+            onClick={() => onReport(node.voId)}
+            className={`${styles.actionButton} ${styles.reportButton}`}
+            title={t('report.action')}
+          >
+            <Icon icon="mdi:flag-outline" size={16} />
+            <span>{t('report.action')}</span>
+          </button>
+        )}
       </div>
 
       {/* 子评论区域（仅顶级评论显示，限制2级结构） */}
@@ -692,6 +746,7 @@ export const CommentNode = ({
                   isReactionPending={isReactionPending}
                   onRequireReactionLogin={onRequireReactionLogin}
                   onAuthorClick={onAuthorClick}
+                  onReport={onReport}
                 />
               ))}
             </div>

@@ -1,0 +1,227 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 14px;
+  background: var(--theme-bg-surface);
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--theme-border-soft);
+  background: color-mix(in srgb, var(--theme-bg-muted) 70%, var(--theme-bg-surface) 30%);
+  flex-wrap: wrap;
+}
+
+.toolbarGroup {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.toolbarButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.toolbarButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: var(--theme-border-strong);
+  background: color-mix(in srgb, var(--theme-bg-hover) 82%, var(--theme-bg-surface) 18%);
+  color: var(--theme-text-primary);
+}
+
+.toolbarButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbarSpacer {
+  flex: 1;
+}
+
+.toolbarExtras {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.editorShell {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.editor {
+  flex: 1;
+  min-height: inherit;
+  padding: 14px 16px;
+  color: var(--theme-text-primary);
+  font-size: 14px;
+  line-height: 1.65;
+  outline: none;
+  overflow-y: auto;
+}
+
+.editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--theme-text-placeholder);
+}
+
+.editor h1,
+.editor h2,
+.editor h3,
+.editor h4 {
+  margin: 0 0 10px;
+  font-family: var(--theme-font-serif);
+  color: var(--theme-text-primary);
+}
+
+.editor p,
+.editor ul,
+.editor ol,
+.editor blockquote,
+.editor pre {
+  margin: 0 0 12px;
+}
+
+.editor ul,
+.editor ol {
+  padding-left: 20px;
+}
+
+.editor blockquote {
+  padding-left: 12px;
+  border-left: 3px solid color-mix(in srgb, var(--theme-brand-primary) 30%, transparent);
+  color: var(--theme-text-secondary);
+}
+
+.editor code {
+  padding: 0.15em 0.4em;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 52%, var(--theme-bg-surface) 48%);
+  color: var(--theme-brand-primary);
+  font-family: Consolas, 'Courier New', monospace;
+}
+
+.editor pre {
+  padding: 12px 14px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 70%, var(--theme-bg-surface) 30%);
+  overflow-x: auto;
+}
+
+.editor pre code {
+  padding: 0;
+  background: transparent;
+  color: var(--theme-text-primary);
+}
+
+.editor img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+}
+
+.editor a {
+  color: var(--theme-link-primary);
+  text-decoration: none;
+}
+
+.editor a:hover {
+  color: var(--theme-link-hover);
+}
+
+.overlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-accent-ink) 88%, black 12%);
+  color: var(--theme-bg-surface);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.spinIcon {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 12px 12px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--theme-state-danger) 36%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--theme-state-danger) 12%, var(--theme-bg-surface) 88%);
+  color: var(--theme-state-danger);
+  font-size: 11px;
+}
+
+.error span {
+  flex: 1;
+}
+
+.errorDismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .toolbar {
+    align-items: stretch;
+  }
+
+  .toolbarExtras {
+    width: 100%;
+  }
+
+  .editor {
+    padding: 16px;
+  }
+}

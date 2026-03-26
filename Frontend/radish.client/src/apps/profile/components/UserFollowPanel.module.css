@@ -51,7 +51,7 @@
 
 .tab.active {
   background: var(--theme-brand-primary);
-  color: #ffffff;
+  color: white;
   border-color: var(--theme-brand-primary);
 }
 
@@ -120,6 +120,12 @@
   gap: 10px;
   font-size: 12px;
   color: var(--theme-text-secondary);
+}
+
+.feedMetric {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .userItem {

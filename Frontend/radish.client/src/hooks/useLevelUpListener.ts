@@ -3,6 +3,11 @@ import { log } from '@/utils/logger';
 import { notificationHub } from '@/services/notificationHub';
 import type { LevelUpData } from '@radish/ui/level-up-modal';
 
+type LevelUpEventPayload = Partial<LevelUpData> & {
+  coinReward?: number;
+  items?: string[];
+};
+
 /**
  * 升级事件监听 Hook
  *
@@ -14,7 +19,7 @@ export const useLevelUpListener = () => {
 
   useEffect(() => {
     // 监听升级事件
-    const handleLevelUp = (data: any) => {
+    const handleLevelUp = (data: LevelUpEventPayload) => {
       log.debug('收到升级事件:', data);
 
       // 转换为 LevelUpData 格式

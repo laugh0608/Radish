@@ -112,6 +112,8 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
             }
         }
 
+        NormalizeEntryPermission(permissionKeys);
+
         return permissionKeys
             .OrderBy(static item => item, StringComparer.OrdinalIgnoreCase)
             .ToList();
@@ -359,6 +361,14 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
             .Where(resourceMap.ContainsKey)
             .ToHashSet();
 
+        var accessResource = resources.FirstOrDefault(resource =>
+            string.Equals(resource.ResourceKey, ConsolePermissions.Access, StringComparison.OrdinalIgnoreCase));
+        if (accessResource != null && normalized.Any(resourceId =>
+                !string.Equals(resourceMap[resourceId].ResourceKey, ConsolePermissions.Access, StringComparison.OrdinalIgnoreCase)))
+        {
+            normalized.Add(accessResource.Id);
+        }
+
         foreach (var resourceId in normalized.ToList())
         {
             var currentId = resourceMap[resourceId].ParentId;
@@ -403,5 +413,17 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
     {
         // 避免依赖运行时雪花 ID，确保重复保存时主键稳定可预测。
         return 930000000000L + (roleId * 1000) + resourceId + index;
+    }
+
+    private static void NormalizeEntryPermission(HashSet<string> permissionKeys)
+    {
+        var hasOperationalPermission = permissionKeys.Any(ConsolePermissions.IsConsoleOperationalPermission);
+        if (hasOperationalPermission)
+        {
+            permissionKeys.Add(ConsolePermissions.Access);
+            return;
+        }
+
+        permissionKeys.Remove(ConsolePermissions.Access);
     }
 }

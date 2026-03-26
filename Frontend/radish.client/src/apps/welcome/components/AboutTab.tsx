@@ -1,4 +1,5 @@
 import { Icon } from '@radish/ui/icon';
+import { useTranslation } from 'react-i18next';
 import { aboutContent } from '../data/aboutContent';
 import styles from './AboutTab.module.css';
 
@@ -6,63 +7,74 @@ import styles from './AboutTab.module.css';
  * 关于 Radish 标签页
  */
 export const AboutTab = () => {
+  const { t } = useTranslation();
+
   return (
     <div className={styles.container}>
-      {/* 社区愿景 */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <Icon icon={aboutContent.vision.icon} size={28} color="#667eea" />
-          <h2>{aboutContent.vision.title}</h2>
+          <div className={styles.sectionIcon}>
+            <Icon icon={aboutContent.vision.icon} size={22} className={styles.icon} />
+          </div>
+          <h2>{t(aboutContent.vision.titleKey)}</h2>
         </div>
-        <p className={styles.sectionContent}>{aboutContent.vision.content}</p>
+        <p className={styles.sectionContent}>{t(aboutContent.vision.contentKey)}</p>
       </section>
 
-      {/* 我们的使命 */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <Icon icon={aboutContent.mission.icon} size={28} color="#667eea" />
-          <h2>{aboutContent.mission.title}</h2>
+          <div className={styles.sectionIcon}>
+            <Icon icon={aboutContent.mission.icon} size={22} className={styles.icon} />
+          </div>
+          <h2>{t(aboutContent.mission.titleKey)}</h2>
         </div>
-        <p className={styles.sectionContent}>{aboutContent.mission.content}</p>
+        <p className={styles.sectionContent}>{t(aboutContent.mission.contentKey)}</p>
       </section>
 
-      {/* 核心功能 */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <Icon icon="mdi:star" size={28} color="#667eea" />
-          <h2>核心功能</h2>
+          <div className={styles.sectionIcon}>
+            <Icon icon="mdi:star-four-points-circle-outline" size={22} className={styles.icon} />
+          </div>
+          <h2>{t('welcome.about.features.title')}</h2>
         </div>
         <div className={styles.featureGrid}>
-          {aboutContent.features.map((feature, index) => (
-            <div key={index} className={styles.featureCard}>
+          {aboutContent.features.map((feature) => (
+            <div key={feature.nameKey} className={styles.featureCard}>
               <div className={styles.featureIcon}>
-                <Icon icon={feature.icon} size={32} color="#667eea" />
+                <Icon icon={feature.icon} size={22} className={styles.icon} />
               </div>
               <h3 className={styles.featureName}>
-                {feature.name}
-                {feature.status === 'planned' && (
-                  <span className={styles.plannedBadge}>规划中</span>
+                {t(feature.nameKey)}
+                {feature.status === 'iterating' && (
+                  <span className={styles.iteratingBadge}>{t('welcome.about.status.iterating')}</span>
+                )}
+                {feature.status === 'available' && (
+                  <span className={styles.availableBadge}>{t('welcome.about.status.available')}</span>
                 )}
               </h3>
-              <p className={styles.featureDescription}>{feature.description}</p>
+              <p className={styles.featureDescription}>{t(feature.descriptionKey)}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* 技术亮点 */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
-          <Icon icon="mdi:code-braces" size={28} color="#667eea" />
-          <h2>技术亮点</h2>
+          <div className={styles.sectionIcon}>
+            <Icon icon="mdi:code-braces-box" size={22} className={styles.icon} />
+          </div>
+          <h2>{t('welcome.about.tech.title')}</h2>
         </div>
         <div className={styles.techGrid}>
-          {aboutContent.techStack.map((tech, index) => (
-            <div key={index} className={styles.techCard}>
-              <Icon icon={tech.icon} size={24} color="#667eea" />
+          {aboutContent.techStack.map((tech) => (
+            <div key={tech.nameKey} className={styles.techCard}>
+              <div className={styles.techIcon}>
+                <Icon icon={tech.icon} size={18} className={styles.icon} />
+              </div>
               <div className={styles.techInfo}>
-                <h4>{tech.name}</h4>
-                <p>{tech.description}</p>
+                <h4>{t(tech.nameKey)}</h4>
+                <p>{t(tech.descriptionKey)}</p>
               </div>
             </div>
           ))}

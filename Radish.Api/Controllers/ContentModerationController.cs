@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -105,11 +107,12 @@ public class ContentModerationController : ControllerBase
 
     /// <summary>获取审核队列（管理端）</summary>
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [RequireConsolePermission(ConsolePermissions.ModerationView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetReviewQueue(int? status = 0, int pageIndex = 1, int pageSize = 20)
     {
-        var result = await _contentModerationService.GetReportQueueAsync(status, pageIndex, pageSize);
+        var normalizedStatus = status.HasValue && status.Value < 0 ? null : status;
+        var result = await _contentModerationService.GetReportQueueAsync(normalizedStatus, pageIndex, pageSize);
         return new MessageModel
         {
             IsSuccess = true,
@@ -121,7 +124,7 @@ public class ContentModerationController : ControllerBase
 
     /// <summary>审核举报（管理端）</summary>
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [RequireConsolePermission(ConsolePermissions.ModerationReview)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
@@ -160,7 +163,7 @@ public class ContentModerationController : ControllerBase
 
     /// <summary>执行用户治理动作（管理端）</summary>
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [RequireConsolePermission(ConsolePermissions.ModerationReview)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
@@ -199,7 +202,7 @@ public class ContentModerationController : ControllerBase
 
     /// <summary>获取治理动作记录（管理端）</summary>
     [HttpGet]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [RequireConsolePermission(ConsolePermissions.ModerationView)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetActionLogs(int pageIndex = 1, int pageSize = 20, long? targetUserId = null)
     {

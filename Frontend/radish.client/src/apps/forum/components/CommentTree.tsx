@@ -30,6 +30,7 @@ interface CommentTreeProps {
   isReactionPending?: (commentId: number) => boolean;
   onRequireReactionLogin?: () => void;
   onAuthorClick?: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onReportComment?: (commentId: number) => void;
 }
 
 export const CommentTree = ({
@@ -55,6 +56,7 @@ export const CommentTree = ({
   isReactionPending,
   onRequireReactionLogin,
   onAuthorClick,
+  onReportComment,
 }: CommentTreeProps) => {
   const { t } = useTranslation();
   // 找出所有神评（后端标记的）
@@ -143,6 +145,7 @@ export const CommentTree = ({
             isReactionPending={isReactionPending}
             onRequireReactionLogin={onRequireReactionLogin}
             onAuthorClick={onAuthorClick}
+            onReport={onReportComment}
           />
         ))}
       </div>

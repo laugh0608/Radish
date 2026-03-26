@@ -2,7 +2,7 @@
   flex-shrink: 0;
   padding: 14px 20px 12px;
   border-bottom: 1px solid #e5e7eb;
-  background: #ffffff;
+  background: var(--theme-bg-surface);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -17,8 +17,8 @@
 
 .backButton {
   flex-shrink: 0;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-bg-surface);
   color: #374151;
   border-radius: 8px;
   padding: 6px 10px;
@@ -34,7 +34,7 @@
   margin: 0;
   font-size: 18px;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -65,7 +65,7 @@
 }
 
 .summaryItem {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--theme-border-strong);
   background: rgba(148, 163, 184, 0.12);
   color: #475569;
   border-radius: 999px;
@@ -76,7 +76,7 @@
 }
 
 .summaryItem:hover {
-  border-color: #2d6cdf;
+  border-color: var(--theme-brand-primary);
   color: #1d4ed8;
 }
 
@@ -96,18 +96,18 @@
 .searchInput {
   width: 100%;
   min-width: 0;
-  border: 1px solid #d1d5db;
-  background: #f9fafb;
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-bg-component);
   border-radius: 10px;
   padding: 8px 12px;
   font-size: 14px;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   outline: none;
 }
 
 .searchInput:focus {
-  background: #ffffff;
-  border-color: #2d6cdf;
+  background: var(--theme-bg-surface);
+  border-color: var(--theme-brand-primary);
   box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
 }
 
@@ -133,9 +133,9 @@
 
 .sortButton,
 .timeButton {
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #6b7280;
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-secondary);
   border-radius: 999px;
   padding: 6px 10px;
   font-size: 12px;
@@ -145,7 +145,7 @@
 
 .sortButton.active,
 .timeButton.active {
-  border-color: #2d6cdf;
+  border-color: var(--theme-brand-primary);
   background: rgba(45, 108, 223, 0.08);
   color: #1d4ed8;
   font-weight: 600;
@@ -159,23 +159,23 @@
 }
 
 .dateInput {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--theme-border-strong);
   border-radius: 8px;
   padding: 6px 10px;
   font-size: 12px;
   color: #374151;
-  background: #ffffff;
+  background: var(--theme-bg-surface);
 }
 
 .dateSeparator {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
 }
 
 .applyButton {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--theme-bg-surface);
   color: #334155;
   padding: 6px 10px;
   font-size: 12px;
@@ -218,17 +218,17 @@
   gap: 8px;
   padding: 20px;
   border-top: 1px solid #e5e7eb;
-  background-color: #ffffff;
+  background-color: var(--theme-bg-surface);
 }
 
 .paginationButton {
   min-width: 36px;
   height: 36px;
   padding: 0 10px;
-  background-color: #f9fafb;
-  border: 1px solid #d1d5db;
+  background-color: var(--theme-bg-component);
+  border: 1px solid var(--theme-border-strong);
   border-radius: 6px;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   font-size: 14px;
   cursor: pointer;
 }
@@ -239,8 +239,8 @@
 }
 
 .paginationActive {
-  background-color: #2d6cdf;
-  border-color: #2d6cdf;
+  background-color: var(--theme-brand-primary);
+  border-color: var(--theme-brand-primary);
   color: #ffffff;
   font-weight: 600;
 }

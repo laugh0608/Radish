@@ -1,316 +1,435 @@
-/* 展示页面容器 */
 .showcase {
   min-height: 100%;
-  background: #ffffff;
-  padding: 2rem;
+  padding: 28px;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--theme-brand-soft) 78%, transparent 22%), transparent 34%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--theme-accent-jade) 12%, transparent 88%), transparent 28%),
+    linear-gradient(180deg, transparent 0%, color-mix(in srgb, var(--theme-bg-surface) 58%, transparent 42%) 100%);
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1280px;
   margin: 0 auto;
-  padding-bottom: 2rem;
+  padding-bottom: 32px;
 }
 
-/* 标题 */
-.title {
-  font-size: 3rem;
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 24px;
+}
+
+.heroMain,
+.heroPanel {
+  padding: 24px 26px;
+}
+
+.heroMain {
+  border-radius: var(--theme-radius-panel);
+  border: 1px solid var(--theme-border-soft);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%) 0%,
+      color-mix(in srgb, var(--theme-bg-surface-muted) 92%, transparent 8%) 100%
+    );
+  box-shadow: var(--theme-shadow-soft);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: var(--theme-radius-pill);
+  background: color-mix(in srgb, var(--theme-brand-soft) 82%, white 18%);
+  color: var(--theme-brand-primary);
+  font-size: 12px;
   font-weight: 700;
-  color: #1f2937;
-  margin: 0 0 0.5rem 0;
-  text-align: center;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title {
+  margin: 14px 0 10px;
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  line-height: 1.06;
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-serif);
 }
 
 .subtitle {
-  font-size: 1.125rem;
-  color: #6b7280;
-  margin: 0 0 2rem 0;
-  text-align: center;
+  max-width: 760px;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--theme-text-secondary);
 }
 
-/* 导航栏 */
+.heroBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: var(--theme-radius-pill);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%);
+  border: 1px solid var(--theme-border-soft);
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.heroPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.heroPanelTitle {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--theme-text-primary);
+}
+
+.heroPanelText {
+  margin: 0;
+  line-height: 1.8;
+  color: var(--theme-text-secondary);
+}
+
+.heroPanelMeta {
+  display: grid;
+  gap: 10px;
+}
+
+.metaItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: var(--theme-radius-control);
+  background: color-mix(in srgb, var(--theme-bg-surface) 78%, white 22%);
+  border: 1px solid var(--theme-border-soft);
+}
+
+.metaLabel {
+  font-size: 13px;
+  color: var(--theme-text-muted);
+}
+
+.metaValue {
+  color: var(--theme-text-primary);
+  font-size: 14px;
+}
+
 .navBar {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 0.5rem;
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding: 12px;
+  border-radius: calc(var(--theme-radius-panel) + 2px);
+  background: color-mix(in srgb, var(--theme-bg-surface) 82%, white 18%);
+  border: 1px solid var(--theme-border-soft);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .navItem {
-  padding: 0.5rem 1rem;
+  padding: 10px 16px;
   background: transparent;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  color: #6b7280;
-  font-size: 0.875rem;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: var(--theme-radius-control);
+  color: var(--theme-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    transform var(--theme-transition-standard),
+    background var(--theme-transition-standard),
+    border-color var(--theme-transition-standard),
+    color var(--theme-transition-standard),
+    box-shadow var(--theme-transition-standard);
 }
 
 .navItem:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
-  color: #1f2937;
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--theme-bg-muted) 72%, white 28%);
+  border-color: var(--theme-border-strong);
+  color: var(--theme-text-primary);
 }
 
 .navItem.active {
-  background: #2d6cdf;
-  border-color: #2d6cdf;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--theme-brand-primary) 90%, white 10%) 0%,
+      color-mix(in srgb, var(--theme-brand-primary) 76%, black 24%) 100%
+    );
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 34%, transparent 66%);
   color: white;
-  font-weight: 600;
+  box-shadow: var(--theme-shadow-soft);
 }
 
-/* 区块 */
 .section {
-  margin-bottom: 3rem;
+  margin-bottom: 28px;
+}
+
+.sectionHeading {
+  margin-bottom: 14px;
 }
 
 .sectionTitle {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 0.5rem 0;
+  margin: 0 0 8px;
+  font-size: 1.85rem;
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-serif);
 }
 
 .description {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.8;
+}
+
+.overviewGrid,
+.splitGrid,
+.panelGrid,
+.skeletonDemo,
+.chartGrid,
+.contextMenuDemo {
+  display: grid;
+  gap: 18px;
+}
+
+.overviewGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.overviewCard {
+  padding: 20px;
+}
+
+.overviewLabel {
+  display: inline-flex;
+  margin-bottom: 10px;
+  color: var(--theme-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.overviewValue {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--theme-text-primary);
+  font-size: 1.3rem;
+  font-family: var(--theme-font-serif);
+}
+
+.overviewText {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.7;
+}
+
+.notePanel,
+.demoPanel,
+.chartCard,
+.demoCard {
+  padding: 20px;
+}
+
+.noteTitle,
+.blockTitle {
+  margin: 0 0 12px;
+  color: var(--theme-text-primary);
   font-size: 1rem;
-  color: #6b7280;
-  margin: 0 0 1rem 0;
 }
 
-/* 演示面板 */
-.demoPanel {
-  padding: 2rem;
+.noteList {
+  display: grid;
+  gap: 10px;
 }
 
-/* Icon 网格 */
+.noteItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--theme-text-secondary);
+  line-height: 1.7;
+}
+
+.noteDot {
+  width: 8px;
+  height: 8px;
+  margin-top: 10px;
+  border-radius: 50%;
+  background: var(--theme-brand-primary);
+  flex-shrink: 0;
+}
+
 .iconGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 14px;
 }
 
 .iconItem {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  border-radius: 8px;
-  transition: background 0.2s ease;
+  gap: 10px;
+  padding: 16px 12px;
+  border-radius: var(--theme-radius-control);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%);
+  border: 1px solid var(--theme-border-soft);
+  color: var(--theme-text-secondary);
+  transition:
+    transform var(--theme-transition-standard),
+    background var(--theme-transition-standard),
+    border-color var(--theme-transition-standard);
 }
 
 .iconItem:hover {
-  background: #f3f4f6;
+  transform: translateY(-2px);
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, white 24%);
+  border-color: var(--theme-border-strong);
 }
 
 .iconItem span {
-  font-size: 0.875rem;
-  color: #6b7280;
-}
-
-/* Button 组 */
-.buttonGroup {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.buttonGroup h3 {
-  font-size: 1rem;
+  font-size: 13px;
   font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 0.75rem 0;
 }
 
-.buttonRow {
+.splitGrid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+
+.buttonGroup {
+  display: grid;
+  gap: 20px;
+}
+
+.buttonRow,
+.modalActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 12px;
 }
 
-/* Panel 网格 */
 .panelGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-}
-
-.demoCard {
-  padding: 1.5rem;
-}
-
-.demoCard h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 0.5rem 0;
+  grid-template-columns: 1fr;
 }
 
 .demoCard p {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin: 0.25rem 0;
-}
-
-/* 卡片示例 */
-.cardExample {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.cardHeader {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.cardHeader h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
   margin: 0;
+  color: var(--theme-text-secondary);
+  line-height: 1.7;
 }
 
-.cardHeader p {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin: 0.25rem 0 0 0;
-}
-
-.cardContent {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.notification {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.notification:hover {
-  background: #f3f4f6;
-  border-color: #d1d5db;
-}
-
-.notification span {
-  font-size: 0.875rem;
-  color: #1f2937;
-}
-
-.time {
-  margin-left: auto;
-  color: #9ca3af !important;
-  font-size: 0.75rem !important;
-}
-
-.cardFooter {
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
-}
-
-/* ContextMenu 演示 */
 .contextMenuDemo {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
-}
-
-.contextMenuDemo h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 1rem 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .contextMenuTarget {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 3rem 2rem;
-  background: #f9fafb;
-  border: 2px dashed #d1d5db;
-  border-radius: 12px;
-  color: #6b7280;
-  font-size: 0.875rem;
+  min-height: 180px;
+  padding: 20px;
+  border-radius: var(--theme-radius-panel);
+  border: 1px dashed var(--theme-border-strong);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%) 0%,
+      color-mix(in srgb, var(--theme-brand-soft) 32%, var(--theme-bg-surface) 68%) 100%
+    );
+  color: var(--theme-text-secondary);
+  font-weight: 600;
   cursor: context-menu;
-  transition: all 0.2s ease;
+  text-align: center;
 }
 
-.contextMenuTarget:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
-}
-
-/* 表单组 */
 .formGroup {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  max-width: 400px;
+  gap: 18px;
 }
 
-/* 经验条演示 */
+.modalBody {
+  display: grid;
+  gap: 14px;
+  color: var(--theme-text-secondary);
+  line-height: 1.7;
+}
+
 .expBarDemo {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  display: grid;
+  gap: 24px;
 }
 
-.expBarDemo h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 0.75rem 0;
-}
-
-/* 骨架屏演示 */
 .skeletonDemo {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.skeletonDemo h3 {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 1rem 0;
-}
-
-/* 图表网格 */
 .chartGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .chartCard {
-  padding: 1.5rem;
+  min-height: 360px;
 }
 
-.chartCard h3 {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 1rem 0;
-}
-
-@media (max-width: 900px) {
-  .chartGrid {
+@media (max-width: 1120px) {
+  .hero,
+  .overviewGrid,
+  .splitGrid,
+  .skeletonDemo,
+  .chartGrid,
+  .contextMenuDemo {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .showcase {
+    padding: 18px;
+  }
+
+  .heroMain,
+  .heroPanel,
+  .notePanel,
+  .demoPanel,
+  .chartCard,
+  .demoCard {
+    padding: 18px;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .navBar {
+    padding: 10px;
+  }
+
+  .navItem {
+    flex: 1 1 calc(50% - 10px);
+    justify-content: center;
+  }
+
+  .iconGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

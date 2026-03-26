@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { ExperienceBar } from '@radish/ui/experience-bar';
 import { experienceApi, type ExperienceData } from '@/api/experience';
@@ -11,6 +12,7 @@ import styles from './ExperienceDisplay.module.css';
  * 显示用户的等级和经验值进度条
  */
 export const ExperienceDisplay = () => {
+  const { t } = useTranslation();
   const { isAuthenticated } = useUserStore();
   const [experience, setExperience] = useState<ExperienceData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,7 +30,7 @@ export const ExperienceDisplay = () => {
       const result = await experienceApi.getMyExperience();
       setExperience(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '获取经验值失败');
+      setError(err instanceof Error ? err.message : t('desktop.experience.loadFailed'));
       log.error('获取经验值失败:', err);
     } finally {
       setLoading(false);
@@ -52,15 +54,15 @@ export const ExperienceDisplay = () => {
   if (loading && !experience) {
     return (
       <div className={styles.experienceDisplay}>
-        <span className={styles.loading}>加载中...</span>
+        <span className={styles.loading}>{t('desktop.experience.loading')}</span>
       </div>
     );
   }
 
   if (error || !experience) {
     return (
-      <div className={styles.experienceDisplay} title={error || '经验值加载失败'}>
-        <span className={styles.error}>经验值加载失败</span>
+      <div className={styles.experienceDisplay} title={error || t('desktop.experience.loadFailed')}>
+        <span className={styles.error}>{t('desktop.experience.loadFailed')}</span>
       </div>
     );
   }

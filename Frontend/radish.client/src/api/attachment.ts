@@ -4,7 +4,7 @@ import { log } from '@/utils/logger';
  * 附件上传相关的 API 调用
  */
 
-import { configureApiClient, getApiClientConfig, apiFetch, parseApiResponseWithI18n, type ApiResponse } from '@radish/http';
+import { configureApiClient, apiFetch, parseApiResponseWithI18n, type ApiResponse } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
@@ -297,7 +297,7 @@ export async function uploadImage(
             } else {
               resolve(parsed.data);
             }
-          } catch (error) {
+          } catch {
             reject(new Error('解析响应失败'));
           }
         } else {
@@ -383,7 +383,7 @@ export async function uploadDocument(
             } else {
               resolve(parsed.data);
             }
-          } catch (error) {
+          } catch {
             reject(new Error('解析响应失败'));
           }
         } else {

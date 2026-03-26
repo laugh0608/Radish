@@ -47,8 +47,8 @@
 }
 
 .sortButton.sortActive {
-  background-color: #2d6cdf;
-  border-color: #2d6cdf;
+  background-color: var(--theme-brand-primary);
+  border-color: var(--theme-brand-primary);
   color: #fff;
   font-weight: 600;
 }
@@ -77,7 +77,7 @@
 }
 
 .searchInput:focus {
-  border-color: #2d6cdf;
+  border-color: var(--theme-brand-primary);
   background-color: #27272a;
   box-shadow: 0 0 0 3px rgba(45, 108, 223, 0.1);
 }
@@ -146,7 +146,7 @@
 
 .postButton.active {
   background-color: #1e3a5f;
-  border-color: #2d6cdf;
+  border-color: var(--theme-brand-primary);
   box-shadow: 0 0 0 2px rgba(45, 108, 223, 0.2);
 }
 
@@ -218,8 +218,8 @@
 }
 
 .paginationButton.paginationActive {
-  background-color: #2d6cdf;
-  border-color: #2d6cdf;
+  background-color: var(--theme-brand-primary);
+  border-color: var(--theme-brand-primary);
   font-weight: 600;
 }
 

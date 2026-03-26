@@ -12,24 +12,24 @@
 
 .backButton {
   background: none;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--theme-border-strong);
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 14px;
   transition: all 0.2s;
 }
 
 .backButton:hover {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .title {
   font-size: 24px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0;
 }
 
@@ -39,14 +39,14 @@
   align-items: center;
   justify-content: center;
   height: 300px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #1890ff;
+  border: 3px solid var(--theme-border-soft);
+  border-top: 3px solid var(--theme-brand-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -62,7 +62,7 @@
   gap: 8px;
   margin-bottom: 24px;
   padding: 4px;
-  background: #f5f5f5;
+  background: var(--theme-bg-component);
   border-radius: 8px;
 }
 
@@ -75,17 +75,17 @@
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  color: #666;
+  color: var(--theme-text-secondary);
   transition: all 0.2s;
 }
 
 .tab:hover {
-  color: #1890ff;
+  color: var(--theme-brand-primary);
 }
 
 .tab.active {
-  background: white;
-  color: #1890ff;
+  background: var(--theme-bg-surface);
+  color: var(--theme-brand-primary);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
@@ -96,7 +96,7 @@
 .empty {
   text-align: center;
   padding: 80px 24px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .emptyIcon {
@@ -107,12 +107,12 @@
 .empty p {
   margin: 0 0 8px 0;
   font-size: 16px;
-  color: #262626;
+  color: var(--theme-text-primary);
 }
 
 .emptyHint {
   font-size: 14px !important;
-  color: #999 !important;
+  color: var(--theme-text-placeholder) !important;
 }
 
 .benefitList,
@@ -128,22 +128,22 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--theme-border-soft);
   transition: all 0.2s;
 }
 
 .benefitCard:hover,
 .consumableCard:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #e8e8e8;
+  border-color: var(--theme-border-soft);
 }
 
 .benefitCard.expired {
   opacity: 0.6;
-  background: #fafafa;
+  background: var(--theme-bg-component);
 }
 
 .benefitIcon,
@@ -151,7 +151,7 @@
   width: 64px;
   height: 64px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--theme-brand-primary) 0%, var(--theme-accent-ink) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -188,26 +188,26 @@
 .consumableName {
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
 }
 
 .benefitStatus {
   font-size: 12px;
   padding: 2px 8px;
   border-radius: 4px;
-  background: #f5f5f5;
-  color: #999;
+  background: var(--theme-bg-component);
+  color: var(--theme-text-placeholder);
 }
 
 .benefitStatus.active {
   background: rgba(82, 196, 26, 0.1);
-  color: #52c41a;
+  color: var(--theme-state-success);
 }
 
 .benefitType,
 .consumableType {
   font-size: 12px;
-  color: #1890ff;
+  color: var(--theme-brand-primary);
   margin-bottom: 8px;
 }
 
@@ -215,23 +215,23 @@
   display: flex;
   gap: 16px;
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-placeholder);
   margin-bottom: 4px;
 }
 
 .benefitExpiry {
   font-size: 12px;
-  color: #faad14;
+  color: var(--theme-state-warning);
 }
 
 .consumableQuantity {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .quantity {
   font-weight: 600;
-  color: #1890ff;
+  color: var(--theme-brand-primary);
 }
 
 .benefitActions,
@@ -241,9 +241,9 @@
 
 .activateButton,
 .useButton {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--theme-brand-primary) 0%, var(--theme-accent-ink) 100%);
   border: none;
-  color: white;
+  color: #ffffff;
   padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
@@ -264,9 +264,9 @@
 }
 
 .deactivateButton {
-  background: white;
-  border: 1px solid #d9d9d9;
-  color: #666;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-strong);
+  color: var(--theme-text-secondary);
   padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
@@ -275,8 +275,8 @@
 }
 
 .deactivateButton:hover {
-  border-color: #ff4d4f;
-  color: #ff4d4f;
+  border-color: var(--theme-state-danger);
+  color: var(--theme-state-danger);
 }
 
 .modalOverlay {
@@ -293,7 +293,7 @@
 }
 
 .modal {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 16px;
   width: 90%;
   max-width: 400px;
@@ -306,28 +306,28 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px 24px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--theme-border-soft);
 }
 
 .modalHeader h3 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
 }
 
 .modalClose {
   background: none;
   border: none;
   font-size: 20px;
-  color: #999;
+  color: var(--theme-text-placeholder);
   cursor: pointer;
   padding: 4px;
   line-height: 1;
 }
 
 .modalClose:hover {
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .modalContent {
@@ -339,7 +339,7 @@
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: #f9f9f9;
+  background: var(--theme-bg-component);
   border-radius: 12px;
   margin-bottom: 20px;
 }
@@ -348,7 +348,7 @@
   width: 48px;
   height: 48px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--theme-brand-primary) 0%, var(--theme-accent-ink) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -373,13 +373,13 @@
 .modalItemName {
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin-bottom: 4px;
 }
 
 .modalItemQuantity {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .quantitySelector {
@@ -390,7 +390,7 @@
 
 .quantitySelector label {
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .quantityControls {
@@ -402,12 +402,12 @@
 .quantityControls button {
   width: 32px;
   height: 32px;
-  border: 1px solid #d9d9d9;
-  background: white;
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-bg-surface);
   border-radius: 6px;
   cursor: pointer;
   font-size: 18px;
-  color: #666;
+  color: var(--theme-text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -415,8 +415,8 @@
 }
 
 .quantityControls button:hover:not(:disabled) {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .quantityControls button:disabled {
@@ -427,7 +427,7 @@
 .quantityControls span {
   font-size: 18px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
   min-width: 32px;
   text-align: center;
 }
@@ -437,13 +437,13 @@
   justify-content: flex-end;
   gap: 12px;
   padding: 20px 24px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--theme-border-soft);
 }
 
 .cancelButton {
-  background: white;
-  border: 1px solid #d9d9d9;
-  color: #666;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-strong);
+  color: var(--theme-text-secondary);
   padding: 10px 24px;
   border-radius: 6px;
   cursor: pointer;
@@ -452,14 +452,14 @@
 }
 
 .cancelButton:hover {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .confirmButton {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--theme-brand-primary) 0%, var(--theme-accent-ink) 100%);
   border: none;
-  color: white;
+  color: #ffffff;
   padding: 10px 24px;
   border-radius: 6px;
   cursor: pointer;

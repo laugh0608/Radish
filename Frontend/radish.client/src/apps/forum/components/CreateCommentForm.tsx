@@ -6,6 +6,7 @@ import { StickerPicker, type StickerPickerGroup, type StickerPickerSelection } f
 import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { UserMention, type UserMentionOption as UiUserMentionOption } from '@radish/ui/user-mention';
+import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import styles from './CreateCommentForm.module.css';
 
@@ -64,10 +65,12 @@ export const CreateCommentForm = ({
 
   // 上传状态
   const [uploading, setUploading] = useState(false);
+  const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [uploadError, setUploadError] = useState<string | null>(null);
   const resolvedTitle = title ?? t('forum.comment.title');
-  const resolvedSubmitText = submitText ?? t('forum.comment.title');
+  const resolvedSubmitText = submitText ?? t('forum.submitDiscussion');
   const resolvedPlaceholder = placeholder ?? t('forum.discussionPlaceholder');
+  const isEditorDisabled = !isAuthenticated || !hasPost || disabled || uploading;
 
   useEffect(() => {
     if (!replyTo || !textareaRef.current || !isAuthenticated || !hasPost) {
@@ -80,7 +83,7 @@ export const CreateCommentForm = ({
 
   const normalizeCode = (value: string): string => value.trim().toLowerCase();
 
-  const escapeMarkdownAlt = (value: string): string => value.replace(/[\[\]]/g, '').trim();
+  const escapeMarkdownAlt = (value: string): string => value.replace(/[\][]/g, '').trim();
 
   const buildStickerMarkdownUrl = (
     groupCode: string,
@@ -317,13 +320,10 @@ export const CreateCommentForm = ({
   };
 
   const containerClassName = `${styles.container} ${variant === 'sheet' ? styles.containerSheet : ''}`;
-  const titleClassName = `${styles.title} ${variant === 'sheet' ? styles.titleSheet : ''}`;
   const submitClassName = `${styles.submitButton} ${variant === 'sheet' ? styles.submitButtonSheet : ''}`;
 
   return (
     <div className={containerClassName}>
-      <h5 className={titleClassName}>{resolvedTitle}</h5>
-
       {!isAuthenticated && (
         <div className={styles.loginPrompt}>
           {t('forum.comment.loginPrompt')}
@@ -333,116 +333,154 @@ export const CreateCommentForm = ({
         </div>
       )}
 
-      {/* 回复提示 */}
-      {replyTo && (
-        <div className={styles.replyHint}>
-          <span className={styles.replyText}>
-            {t('forum.comment.replyingPrefix')}
-            <span className={styles.replyTarget}>@{replyTo.authorName}</span>
-          </span>
-          {onCancelReply && (
-            <button type="button" onClick={onCancelReply} className={styles.cancelReplyButton} title={t('forum.comment.cancelReply')}>
-              <Icon icon="mdi:close" size={16} />
-            </button>
+      {variant === 'inline' && <h3 className={styles.title}>{resolvedTitle}</h3>}
+
+      <div className={styles.editorContainer}>
+        <div className={styles.editorTopBar}>
+          <div className={styles.editorMeta}>
+            {replyTo ? (
+              <div className={styles.replyMeta}>
+                <span className={styles.replyText}>
+                  回复给 <span className={styles.replyTarget}>@{replyTo.authorName}</span>
+                </span>
+                {onCancelReply && (
+                  <button
+                    type="button"
+                    onClick={onCancelReply}
+                    className={styles.cancelReplyButton}
+                    title={t('forum.comment.cancelReply')}
+                  >
+                    <Icon icon="mdi:close" size={14} />
+                  </button>
+                )}
+              </div>
+            ) : (
+              <span className={styles.editorHint}>支持 Markdown、@ 提及、图片和附件</span>
+            )}
+          </div>
+
+          <div className={styles.editorStatus}>
+            <span className={styles.modeBadge}>{mode === 'preview' ? '预览' : '编辑'}</span>
+            <span className={styles.lengthHint}>{content.length} 字</span>
+          </div>
+        </div>
+
+        {replyTo && (
+          <div className={styles.replyDivider} />
+        )}
+
+        {uploadError && (
+          <div className={styles.uploadError}>
+            <Icon icon="mdi:alert-circle" size={16} />
+            <span>{uploadError}</span>
+          </div>
+        )}
+
+        <div className={styles.textareaWrapper}>
+          {mode === 'preview' ? (
+            <div className={styles.previewContainer}>
+              {content ? <MarkdownRenderer content={content} /> : <div className={styles.previewEmpty}>没有任何内容</div>}
+            </div>
+          ) : (
+            <>
+              <textarea
+                ref={textareaRef}
+                placeholder={resolvedPlaceholder}
+                value={content}
+                onChange={handleTextChange}
+                rows={5}
+                className={styles.textarea}
+                disabled={isEditorDisabled}
+              />
+              {showMention && (
+                <UserMention
+                  keyword={mentionKeyword}
+                  onSearch={handleSearchUsers}
+                  onSelect={handleSelectUser}
+                  onClose={() => setShowMention(false)}
+                  position={mentionPosition}
+                />
+              )}
+            </>
           )}
         </div>
-      )}
 
-      <div className={styles.textareaWrapper}>
-        <textarea
-          ref={textareaRef}
-          placeholder={resolvedPlaceholder}
-          value={content}
-          onChange={handleTextChange}
-          rows={3}
-          className={styles.textarea}
-          disabled={!isAuthenticated || !hasPost || disabled || uploading}
-        />
-
-        {showMention && (
-          <UserMention
-            keyword={mentionKeyword}
-            onSearch={handleSearchUsers}
-            onSelect={handleSelectUser}
-            onClose={() => setShowMention(false)}
-            position={mentionPosition}
+        <div className={styles.actionBar}>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            style={{ display: 'none' }}
           />
-        )}
-      </div>
+          <input
+            ref={documentInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
+            onChange={handleDocumentUpload}
+            style={{ display: 'none' }}
+          />
 
-      {/* 上传错误提示 */}
-      {uploadError && (
-        <div className={styles.uploadError}>
-          <Icon icon="mdi:alert-circle" size={16} />
-          <span>{uploadError}</span>
+          <div className={styles.toolbarLeft}>
+            <StickerPicker
+              groups={stickerGroups}
+              mode="insert"
+              theme="light"
+              panelPlacement="left"
+              onSelect={handlePickerSelect}
+              disabled={isEditorDisabled}
+              className={styles.stickerPicker}
+              triggerTitle={t('forum.comment.insertSticker')}
+            />
+
+            <button
+              type="button"
+              onClick={handleImageButtonClick}
+              disabled={isEditorDisabled}
+              className={styles.toolbarButtonIcon}
+              title={t('forum.comment.uploadImage')}
+            >
+              <Icon icon={uploading ? 'mdi:loading' : 'mdi:image-outline'} size={18} />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleDocumentButtonClick}
+              disabled={isEditorDisabled}
+              className={styles.toolbarButtonIcon}
+              title={t('forum.comment.uploadDocument')}
+            >
+              <Icon icon="mdi:file-document-outline" size={18} />
+            </button>
+          </div>
+
+          <div className={styles.toolbarRight}>
+            <button
+              type="button"
+              className={`${styles.modeToggleButton} ${mode === 'preview' ? styles.activeIcon : ''}`}
+              onClick={() => setMode(mode === 'edit' ? 'preview' : 'edit')}
+              title={mode === 'edit' ? '预览' : '继续编辑'}
+              aria-pressed={mode === 'preview'}
+            >
+              <Icon icon={mode === 'edit' ? 'mdi:eye-outline' : 'mdi:pencil-outline'} size={18} />
+              <span>{mode === 'edit' ? '预览' : '编辑'}</span>
+            </button>
+
+            {uploading && (
+              <span className={styles.uploadingHint}>{t('forum.comment.uploading')}</span>
+            )}
+
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!isAuthenticated || !hasPost || disabled || !content.trim() || uploading}
+              className={submitClassName}
+            >
+              {resolvedSubmitText}
+            </button>
+          </div>
         </div>
-      )}
-
-      {/* 工具栏 */}
-      <div className={styles.toolbar}>
-        {/* 隐藏的文件输入框 */}
-        <input
-          ref={imageInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          style={{ display: 'none' }}
-        />
-        <input
-          ref={documentInputRef}
-          type="file"
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
-          onChange={handleDocumentUpload}
-          style={{ display: 'none' }}
-        />
-
-        <StickerPicker
-          groups={stickerGroups}
-          mode="insert"
-          theme="light"
-          panelPlacement="left"
-          onSelect={handlePickerSelect}
-          disabled={!isAuthenticated || !hasPost || disabled || uploading}
-          className={styles.stickerPicker}
-          triggerTitle={t('forum.comment.insertSticker')}
-        />
-
-        {/* 上传按钮 */}
-        <button
-          type="button"
-          onClick={handleImageButtonClick}
-          disabled={!isAuthenticated || !hasPost || disabled || uploading}
-          className={styles.toolbarButton}
-          title={t('forum.comment.uploadImage')}
-        >
-          <Icon icon={uploading ? "mdi:loading" : "mdi:image-outline"} size={18} />
-          <span>{t('forum.comment.uploadImage')}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={handleDocumentButtonClick}
-          disabled={!isAuthenticated || !hasPost || disabled || uploading}
-          className={styles.toolbarButton}
-          title={t('forum.comment.uploadDocument')}
-        >
-          <Icon icon={uploading ? "mdi:loading" : "mdi:file-document-outline"} size={18} />
-          <span>{t('forum.comment.uploadDocument')}</span>
-        </button>
-
-        {uploading && (
-          <span className={styles.uploadingHint}>{t('forum.comment.uploading')}</span>
-        )}
       </div>
-
-      <button
-        type="button"
-        onClick={handleSubmit}
-        disabled={!isAuthenticated || !hasPost || disabled || !content.trim() || uploading}
-        className={submitClassName}
-      >
-        {resolvedSubmitText}
-      </button>
     </div>
   );
 };

@@ -79,7 +79,7 @@ export const ExperienceDetailApp = () => {
       const dateKey = `${txDate.getMonth() + 1}/${txDate.getDate()}`;
 
       // 只统计最近 N 天的数据
-      if (stats.hasOwnProperty(dateKey)) {
+      if (Object.prototype.hasOwnProperty.call(stats, dateKey)) {
         stats[dateKey] += tx.voExpAmount;
       }
     });
@@ -224,7 +224,7 @@ export const ExperienceDetailApp = () => {
           <div className={styles.overview}>
             <div className={styles.statCard}>
               <div className={styles.statLabel}>当前等级</div>
-              <div className={styles.statValue} style={{ color: experience.voThemeColor || '#3b82f6' }}>
+              <div className={styles.statValue} style={{ color: experience.voThemeColor || 'var(--theme-brand-primary)' }}>
                 Lv.{experience.voCurrentLevel} {experience.voCurrentLevelName}
               </div>
             </div>

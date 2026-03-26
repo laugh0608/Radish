@@ -27,7 +27,7 @@ public class WikiControllerTest
     {
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.GetDetailAsync(1001, false, false))
+            .Setup(s => s.GetDetailAsync(1001, false, false, true, It.IsAny<IReadOnlyCollection<string>>()))
             .ReturnsAsync((WikiDocumentDetailVo?)null);
 
         var controller = CreateController(serviceMock.Object);
@@ -225,14 +225,14 @@ public class WikiControllerTest
         Assert.True(result.ResponseData);
     }
 
-    private static WikiController CreateController(IWikiDocumentService wikiDocumentService, bool isAdmin = false)
+    private static WikiController CreateController(IWikiDocumentService wikiDocumentService, bool isAdmin = false, bool isAuthenticated = true)
     {
         var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
         currentUserAccessorMock.SetupGet(x => x.Current).Returns(new CurrentUser
         {
-            IsAuthenticated = true,
-            UserId = 10001,
-            UserName = "Tester",
+            IsAuthenticated = isAuthenticated,
+            UserId = isAuthenticated ? 10001 : 0,
+            UserName = isAuthenticated ? "Tester" : string.Empty,
             TenantId = 0,
             Roles = isAdmin ? [UserRoles.Admin] : []
         });

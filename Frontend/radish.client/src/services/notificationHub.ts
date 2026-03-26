@@ -1,60 +1,84 @@
 import * as signalR from '@microsoft/signalr';
+import { createElement } from 'react';
+import { toast } from '@radish/ui/toast';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
 import { useAuthStore } from '@/stores/authStore';
 import { tokenService } from './tokenService';
 import { log } from '@/utils/logger';
 import { getSignalrHubUrl } from '@/config/env';
 
+const NOTIFICATION_TOAST_DURATION = 5000;
+
 function getHubUrl(): string {
   // 使用统一的 SignalR Hub URL 配置
   return `${getSignalrHubUrl()}/hub/notification`;
 }
 
-function getAccessToken(): string | null {
-  return tokenService.getAccessToken();
+function getNotificationToastType(type: NotificationItem['type']): 'success' | 'error' | 'info' | 'warning' {
+  switch (type) {
+    case 'like':
+    case 'follow':
+      return 'success';
+    case 'lottery':
+      return 'warning';
+    case 'reply':
+    case 'mention':
+      return 'info';
+    default:
+      return 'info';
+  }
 }
 
-/**
- * 验证 JWT token 是否有效（未过期）
- * @param token JWT token
- * @returns true 表示有效，false 表示无效或过期
- */
-function isTokenValid(token: string): boolean {
-  try {
-    // JWT 格式: header.payload.signature
-    const parts = token.split('.');
-    if (parts.length !== 3) {
-      log.warn('[NotificationHub] Token 格式无效');
-      return false;
-    }
-
-    // 解码 payload (Base64URL)
-    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
-    
-    // 检查过期时间 (exp 字段，Unix 时间戳，单位：秒)
-    if (!payload.exp) {
-      log.warn('[NotificationHub] Token 缺少过期时间');
-      return false;
-    }
-
-    const now = Math.floor(Date.now() / 1000); // 当前时间（秒）
-    const expiresAt = payload.exp;
-
-    if (now >= expiresAt) {
-      log.warn('[NotificationHub] Token 已过期', {
-        expiresAt: new Date(expiresAt * 1000).toISOString(),
-        now: new Date(now * 1000).toISOString()
-      });
-      // 清理过期 token
-      tokenService.clearTokens();
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    log.error('[NotificationHub] Token 验证失败:', error);
-    return false;
+function getNotificationToastIcon(type: NotificationItem['type']): string {
+  switch (type) {
+    case 'like':
+      return '👍';
+    case 'reply':
+      return '💬';
+    case 'mention':
+      return '@';
+    case 'follow':
+      return '👤';
+    case 'lottery':
+      return '🎁';
+    default:
+      return '📢';
   }
+}
+
+function showNotificationToast(notification: NotificationItem): void {
+  const title = notification.title?.trim();
+  const content = notification.content?.trim();
+
+  if (!title && !content) {
+    return;
+  }
+
+  const message = createElement(
+    'div',
+    { style: { display: 'grid', gap: '4px' } },
+    title
+      ? createElement(
+          'span',
+          { style: { fontSize: '14px', fontWeight: 600, lineHeight: 1.4 } },
+          title
+        )
+      : null,
+    content && content !== title
+      ? createElement(
+          'span',
+          { style: { fontSize: '13px', lineHeight: 1.5, opacity: 0.82 } },
+          content
+        )
+      : null
+  );
+
+  toast.custom({
+    message,
+    type: getNotificationToastType(notification.type),
+    icon: getNotificationToastIcon(notification.type),
+    duration: NOTIFICATION_TOAST_DURATION
+  });
 }
 
 /** SignalR Hub 连接管理器 */
@@ -228,6 +252,7 @@ class NotificationHubService {
     this.connection.on('NewNotification', (notification: NotificationItem) => {
       log.debug('[NotificationHub] 新通知:', notification);
       useNotificationStore.getState().addNotification(notification);
+      showNotificationToast(notification);
     });
 
     this.connection.on('NotificationRead', (data: { notificationIds: number[] }) => {

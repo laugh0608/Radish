@@ -13,30 +13,30 @@
 
 .backButton {
   background: none;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--theme-border-strong);
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 14px;
   transition: all 0.2s;
 }
 
 .backButton:hover {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .title {
   font-size: 22px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0;
 }
 
 /* 筛选栏 */
 .filterBar {
-  background: white;
+  background: var(--theme-bg-surface);
   padding: 16px;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
@@ -54,7 +54,7 @@
 .searchInput {
   flex: 1;
   padding: 8px 12px;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--theme-border-strong);
   border-radius: 6px;
   font-size: 14px;
   outline: none;
@@ -62,13 +62,13 @@
 }
 
 .searchInput:focus {
-  border-color: #1890ff;
+  border-color: var(--theme-brand-primary);
 }
 
 .searchButton {
-  background: #1890ff;
+  background: var(--theme-brand-primary);
   border: none;
-  color: white;
+  color: #ffffff;
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
@@ -77,13 +77,13 @@
 }
 
 .searchButton:hover {
-  background: #40a9ff;
+  background: var(--theme-brand-hover);
 }
 
 .clearButton {
-  background: #f5f5f5;
+  background: var(--theme-bg-component);
   border: none;
-  color: #666;
+  color: var(--theme-text-secondary);
   padding: 8px;
   border-radius: 6px;
   cursor: pointer;
@@ -92,7 +92,7 @@
 }
 
 .clearButton:hover {
-  background: #e6e6e6;
+  background: var(--theme-bg-hover);
 }
 
 .categoryTabs {
@@ -103,30 +103,30 @@
 
 .categoryTab {
   background: none;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--theme-border-strong);
   padding: 7px 14px;
   border-radius: 20px;
   cursor: pointer;
   font-size: 13px;
-  color: #666;
+  color: var(--theme-text-secondary);
   transition: all 0.2s;
   white-space: nowrap;
 }
 
 .categoryTab:hover {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .categoryTab.active {
-  background: #1890ff;
-  border-color: #1890ff;
-  color: white;
+  background: var(--theme-brand-primary);
+  border-color: var(--theme-brand-primary);
+  color: #ffffff;
 }
 
 .searchResult {
-  background: #e6f7ff;
-  color: #1890ff;
+  background: color-mix(in srgb, var(--theme-brand-primary) 10%, var(--theme-bg-surface));
+  color: var(--theme-brand-primary);
   padding: 10px 14px;
   border-radius: 6px;
   margin-bottom: 12px;
@@ -146,14 +146,14 @@
   align-items: center;
   justify-content: center;
   height: 300px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #1890ff;
+  border: 3px solid var(--theme-border-soft);
+  border-top: 3px solid var(--theme-brand-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -173,25 +173,25 @@
 }
 
 .productCard {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--theme-border-soft);
 }
 
 .productCard:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  border-color: #1890ff;
+  border-color: var(--theme-brand-primary);
 }
 
 .productImage {
   position: relative;
   height: 160px;
-  background: #fafafa;
+  background: var(--theme-bg-component);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -206,15 +206,15 @@
 
 .defaultProductImage {
   font-size: 48px;
-  color: #d9d9d9;
+  color: var(--theme-border-strong);
 }
 
 .discountBadge {
   position: absolute;
   top: 8px;
   left: 8px;
-  background: #ff4d4f;
-  color: white;
+  background: var(--theme-state-danger);
+  color: #ffffff;
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 4px;
@@ -231,7 +231,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: #ffffff;
   font-weight: 500;
 }
 
@@ -241,8 +241,8 @@
 
 .productType {
   font-size: 12px;
-  color: #1890ff;
-  background: #e6f7ff;
+  color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-primary) 10%, var(--theme-bg-surface));
   padding: 2px 6px;
   border-radius: 3px;
   display: inline-block;
@@ -252,7 +252,7 @@
 .productName {
   font-size: 16px;
   font-weight: 500;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0 0 12px 0;
   line-height: 1.4;
   display: -webkit-box;
@@ -271,12 +271,12 @@
 .currentPrice {
   font-size: 16px;
   font-weight: 600;
-  color: #ff4d4f;
+  color: var(--theme-state-danger);
 }
 
 .originalPrice {
   font-size: 14px;
-  color: #999;
+  color: var(--theme-text-placeholder);
   text-decoration: line-through;
 }
 
@@ -285,16 +285,16 @@
   justify-content: space-between;
   align-items: center;
   font-size: 12px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .soldCount {
-  color: #999;
+  color: var(--theme-text-placeholder);
 }
 
 .duration {
-  color: #1890ff;
-  background: #e6f7ff;
+  color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-primary) 10%, var(--theme-bg-surface));
   padding: 2px 6px;
   border-radius: 3px;
 }
@@ -309,19 +309,19 @@
 }
 
 .pageButton {
-  background: white;
-  border: 1px solid #d9d9d9;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-strong);
   padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 14px;
   transition: all 0.2s;
 }
 
 .pageButton:hover:not(:disabled) {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .pageButton:disabled {
@@ -335,12 +335,12 @@
 }
 
 .pageNumber {
-  background: white;
-  border: 1px solid #d9d9d9;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-strong);
   padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 14px;
   transition: all 0.2s;
   min-width: 40px;
@@ -348,21 +348,21 @@
 }
 
 .pageNumber:hover {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .pageNumber.active {
-  background: #1890ff;
-  border-color: #1890ff;
-  color: white;
+  background: var(--theme-brand-primary);
+  border-color: var(--theme-brand-primary);
+  color: #ffffff;
 }
 
 /* 空状态 */
 .emptyState {
   text-align: center;
   padding: 80px 24px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .emptyIcon {
@@ -372,7 +372,7 @@
 
 .emptyState h3 {
   font-size: 20px;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0 0 12px 0;
 }
 
@@ -383,9 +383,9 @@
 }
 
 .clearSearchButton {
-  background: #1890ff;
+  background: var(--theme-brand-primary);
   border: none;
-  color: white;
+  color: #ffffff;
   padding: 10px 20px;
   border-radius: 6px;
   cursor: pointer;
@@ -394,7 +394,7 @@
 }
 
 .clearSearchButton:hover {
-  background: #40a9ff;
+  background: var(--theme-brand-hover);
 }
 
 /* 响应式设计 */

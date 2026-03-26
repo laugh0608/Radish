@@ -1,6 +1,7 @@
 import type { Product } from '@/types/shop';
 import { useTranslation } from 'react-i18next';
 import { getProductTypeDisplay, StockType } from '@/api/shop';
+import { resolveMediaUrl } from '@/utils/media';
 import styles from './ProductDetail.module.css';
 
 interface ProductDetailProps {
@@ -12,6 +13,7 @@ interface ProductDetailProps {
   isAuthenticated: boolean;
   onBack: () => void;
   onPurchase: (productId: number) => void;
+  onReport?: (productId: number) => void;
 }
 
 export const ProductDetail = ({
@@ -21,7 +23,8 @@ export const ProductDetail = ({
   checkingCanBuy,
   isAuthenticated,
   onBack,
-  onPurchase
+  onPurchase,
+  onReport,
 }: ProductDetailProps) => {
   const { t } = useTranslation();
   const blockedReason = canBuy?.reason?.trim() ?? '';
@@ -76,6 +79,9 @@ export const ProductDetail = ({
            (canBuy !== null && !canBuy.canBuy);
   };
 
+  const coverImageUrl = resolveMediaUrl(product?.voCoverImage);
+  const iconImageUrl = resolveMediaUrl(product?.voIcon);
+
   return (
     <div className={styles.container}>
       {/* 顶部导航 */}
@@ -83,6 +89,11 @@ export const ProductDetail = ({
         <button className={styles.backButton} onClick={onBack}>
           ← {t('shop.back')}
         </button>
+        {!!product && !!onReport && (
+          <button className={styles.reportButton} onClick={() => onReport(product.voId)}>
+            {t('report.action')}
+          </button>
+        )}
       </div>
 
       <div className={styles.content}>
@@ -91,10 +102,10 @@ export const ProductDetail = ({
           {/* 商品图片 */}
           <div className={styles.imageSection}>
             <div className={styles.mainImage}>
-              {product.voCoverImage ? (
-                <img src={product.voCoverImage} alt={product.voName} />
-              ) : product.voIcon ? (
-                <img src={product.voIcon} alt={product.voName} />
+              {coverImageUrl ? (
+                <img src={coverImageUrl} alt={product.voName} />
+              ) : iconImageUrl ? (
+                <img src={iconImageUrl} alt={product.voName} />
               ) : (
                 <div className={styles.defaultImage}>
                   <span>🎁</span>

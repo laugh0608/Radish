@@ -1,11 +1,59 @@
 # 通知系统前端集成指南
 
-> **文档版本**：v1.1
+> **文档版本**：v1.2
 > **创建日期**：2026-01-06
-> **最后更新**：2026-01-07
+> **最后更新**：2026-03-23
 > **关联文档**：[通知系统总体规划](/guide/notification-realtime)
 
 本文档提供通知系统前端集成的完整指南，包括 SignalR 连接管理、状态管理、组件实现和最佳实践。
+
+> 注意：本文以下大段代码片段为早期设计 / 方案草稿，当前仓库的真实实现已经前移到新的目录结构。
+>
+> 当前请优先以这些文件为准：
+>
+> - `Frontend/radish.client/src/services/notificationHub.ts`
+> - `Frontend/radish.client/src/stores/notificationStore.ts`
+> - `Frontend/radish.client/src/apps/notification/NotificationApp.tsx`
+> - `Frontend/radish.ui/src/components/Notification/`
+>
+> 当前前端通知主线已具备：
+>
+> - Shell 层统一建立 SignalR 连接
+> - Dock / Store 未读数同步
+> - 通知应用内的列表、已读、全部已读、删除、基础跳转
+> - 共享 `Toast` 的自动消失与剩余时间进度条
+>
+> 当前首版联调仍应重点关注：
+>
+> - 新通知接收后 Dock 未读数与通知应用列表是否一致
+> - 从通知列表点击进入业务页时，已读状态与跳转链路是否同时成立
+> - 删除未读通知后，通知应用、Dock 角标与服务端未读数是否一致
+> - 多端同时在线时，`NotificationRead / AllNotificationsRead` 的同步是否稳定
+
+## 0. 当前最小人工验收顺序（首版 Smoke）
+
+适用范围：通知中心、Dock 未读角标、实时推送、临时 Toast 预览。
+
+前置条件：
+
+- 用户 A 已登录 `radish.client`，且 Shell 中 `NotificationHub` 已连接成功。
+- 如需验证多端同步，准备第二个同账号会话 A2。
+- 用户 B 或后台触发入口可向用户 A 产生一条真实通知。
+
+推荐执行顺序：
+
+1. 触发一条新通知，确认桌面右上角出现实时 Toast 预览，Dock 未读角标同步增加。
+2. 打开通知中心，确认新通知出现在列表顶部，标题、内容、时间和通知类型样式正确。
+3. 点击该通知，确认会静默标记已读并跳转到对应业务页；返回通知中心后，该条通知状态应已更新，Dock 角标同步减少。
+4. 再触发一条新通知后直接在通知中心执行删除，确认列表项消失，Dock 角标与服务端未读数保持一致。
+5. 在第二个同账号会话 A2 中把通知标记已读或全部已读，确认当前会话能收到 `NotificationRead / AllNotificationsRead` 同步。
+
+当前建议记录项：
+
+- 是否成功收到实时 Toast 预览
+- 未读角标、通知列表、服务端未读数是否三方一致
+- 跳转是否落到预期业务页
+- 多端同步是否存在明显延迟或丢事件
 
 ## 1. 依赖安装
 
@@ -1395,8 +1443,8 @@ export const Shell = () => {
 
 ---
 
-**文档版本**：v1.1
-**状态**：P0 已实现，P1-P3 待实施
+**文档版本**：v1.2
+**状态**：当前实现可用，文中代码片段以历史方案参考为主
 **关联文档**：
 - [通知系统总体规划](/guide/notification-realtime)
 - [通知系统实现细节](/guide/notification-implementation)

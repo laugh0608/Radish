@@ -7,7 +7,8 @@ import { Modal } from '@radish/ui/modal';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { uploadDocument, uploadImage } from '@/api/attachment';
-import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
+import { useCurrentWindow } from '@/desktop/useCurrentWindow';
+import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import {
@@ -37,7 +38,7 @@ import type {
   WikiDocumentTreeNodeVo,
   WikiDocumentVo,
 } from './types/wiki';
-import { WikiDocumentStatus } from './types/wiki';
+import { WikiDocumentStatus, WikiDocumentVisibility } from './types/wiki';
 import {
   collectDescendantIds,
   flattenTree,
@@ -60,6 +61,9 @@ type EditorDraft = {
   sort: string;
   coverAttachmentId: string;
   changeSummary: string;
+  visibility: string;
+  allowedRoles: string;
+  allowedPermissions: string;
 };
 
 const EMPTY_DRAFT: EditorDraft = {
@@ -71,6 +75,9 @@ const EMPTY_DRAFT: EditorDraft = {
   sort: '0',
   coverAttachmentId: '',
   changeSummary: '',
+  visibility: String(WikiDocumentVisibility.Authenticated),
+  allowedRoles: '',
+  allowedPermissions: '',
 };
 
 function toStatusText(t: TFunction, status: number): string {
@@ -92,6 +99,17 @@ function toStatusClassName(status: number): string {
       return styles.statusArchived;
     default:
       return styles.statusDraft;
+  }
+}
+
+function toVisibilityText(t: TFunction, visibility?: number): string {
+  switch (visibility) {
+    case WikiDocumentVisibility.Public:
+      return t('wiki.visibility.public');
+    case WikiDocumentVisibility.Restricted:
+      return t('wiki.visibility.restricted');
+    default:
+      return t('wiki.visibility.authenticated');
   }
 }
 
@@ -158,6 +176,13 @@ function normalizeOptionalNumber(value: string): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function normalizeAccessList(value: string): string[] {
+  return value
+    .split(/[\n,，]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function parseWikiWindowParams(appParams?: Record<string, unknown> | null): { documentId?: number; slug?: string } {
   if (!appParams) {
     return {};
@@ -185,6 +210,9 @@ function buildCreateRequest(draft: EditorDraft): CreateWikiDocumentRequest {
     parentId: normalizeOptionalNumber(draft.parentId),
     sort: normalizeOptionalNumber(draft.sort) ?? 0,
     coverAttachmentId: normalizeOptionalNumber(draft.coverAttachmentId),
+    visibility: normalizeOptionalNumber(draft.visibility) ?? WikiDocumentVisibility.Authenticated,
+    allowedRoles: normalizeAccessList(draft.allowedRoles),
+    allowedPermissions: normalizeAccessList(draft.allowedPermissions),
   };
 }
 
@@ -231,6 +259,7 @@ function findAncestorIds(nodes: WikiDocumentTreeNodeVo[], targetId: number, trai
 export const WikiApp = () => {
   const { t, i18n } = useTranslation();
   const currentWindow = useCurrentWindow();
+  const loggedIn = useAuthStore((state) => state.isAuthenticated);
   const roles = useUserStore((state) => state.roles || []);
   const windowParams = useMemo(() => parseWikiWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
   const initialWindowRouteRef = useRef<{ documentId?: number; slug?: string } | null>(
@@ -596,6 +625,9 @@ export const WikiApp = () => {
       sort: String(selectedDocument.voSort ?? 0),
       coverAttachmentId: selectedDocument.voCoverAttachmentId != null ? String(selectedDocument.voCoverAttachmentId) : '',
       changeSummary: '',
+      visibility: String(selectedDocument.voVisibility ?? WikiDocumentVisibility.Authenticated),
+      allowedRoles: (selectedDocument.voAllowedRoles || []).join(', '),
+      allowedPermissions: (selectedDocument.voAllowedPermissions || []).join(', '),
     });
     setSortSuggestion(suggestedSort);
     setEditorVisible(true);
@@ -646,6 +678,15 @@ export const WikiApp = () => {
   const handleSave = async () => {
     if (!draft.title.trim() || !draft.markdownContent.trim()) {
       toast.error(t('wiki.toast.requiredFields'));
+      return;
+    }
+
+    if (
+      (normalizeOptionalNumber(draft.visibility) ?? WikiDocumentVisibility.Authenticated) === WikiDocumentVisibility.Restricted &&
+      normalizeAccessList(draft.allowedRoles).length === 0 &&
+      normalizeAccessList(draft.allowedPermissions).length === 0
+    ) {
+      toast.error(t('wiki.toast.restrictedAccessRequired'));
       return;
     }
 
@@ -1019,7 +1060,12 @@ export const WikiApp = () => {
             </div>
 
             <div className={styles.toolbarRow}>
-              <button type="button" className={styles.secondaryButton} onClick={() => void refreshCollections(true)} disabled={loadingTree || loadingList}>
+              <button
+                type="button"
+                className={styles.secondaryButton}
+                onClick={() => void refreshCollections(true)}
+                disabled={loadingTree || loadingList}
+              >
                 {t('wiki.actions.refresh')}
               </button>
               {isAdmin ? (
@@ -1126,7 +1172,7 @@ export const WikiApp = () => {
                 ) : tree.length > 0 ? (
                   renderTreeNodes(tree)
                 ) : (
-                  <div className={styles.mutedText}>{t('wiki.empty.tree')}</div>
+                  <div className={styles.mutedText}>{loggedIn ? t('wiki.empty.tree') : t('wiki.empty.publicTree')}</div>
                 )}
               </div>
             ) : (
@@ -1150,11 +1196,19 @@ export const WikiApp = () => {
                       {document.voSummary ? (
                         <div className={styles.listItemSummary}>{document.voSummary}</div>
                       ) : null}
-                      <div className={styles.listItemMeta}>{document.voSlug} · v{document.voVersion}</div>
+                      <div className={styles.listItemMeta}>
+                        {document.voSlug} · v{document.voVersion} · {toVisibilityText(t, document.voVisibility)}
+                      </div>
                     </button>
                   ))
                 ) : (
-                  <div className={styles.mutedText}>{showingDeleted ? t('wiki.empty.deletedResults') : t('wiki.empty.results')}</div>
+                  <div className={styles.mutedText}>
+                    {showingDeleted
+                      ? t('wiki.empty.deletedResults')
+                      : loggedIn
+                        ? t('wiki.empty.results')
+                        : t('wiki.empty.publicResults')}
+                  </div>
                 )}
               </div>
             )}
@@ -1306,6 +1360,40 @@ export const WikiApp = () => {
                     placeholder={t('wiki.form.optionalPlaceholder')}
                   />
                 </div>
+                <div>
+                  <label className={styles.formLabel}>{t('wiki.form.visibility')}</label>
+                  <select
+                    className={styles.select}
+                    value={draft.visibility}
+                    onChange={(event) => setDraft((current) => ({ ...current, visibility: event.target.value }))}
+                  >
+                    <option value={String(WikiDocumentVisibility.Public)}>{t('wiki.visibility.public')}</option>
+                    <option value={String(WikiDocumentVisibility.Authenticated)}>{t('wiki.visibility.authenticated')}</option>
+                    <option value={String(WikiDocumentVisibility.Restricted)}>{t('wiki.visibility.restricted')}</option>
+                  </select>
+                </div>
+                {draft.visibility === String(WikiDocumentVisibility.Restricted) ? (
+                  <>
+                    <div className={styles.formSpanFull}>
+                      <label className={styles.formLabel}>{t('wiki.form.allowedRoles')}</label>
+                      <textarea
+                        className={styles.textarea}
+                        value={draft.allowedRoles}
+                        onChange={(event) => setDraft((current) => ({ ...current, allowedRoles: event.target.value }))}
+                        placeholder={t('wiki.form.allowedRolesPlaceholder')}
+                      />
+                    </div>
+                    <div className={styles.formSpanFull}>
+                      <label className={styles.formLabel}>{t('wiki.form.allowedPermissions')}</label>
+                      <textarea
+                        className={styles.textarea}
+                        value={draft.allowedPermissions}
+                        onChange={(event) => setDraft((current) => ({ ...current, allowedPermissions: event.target.value }))}
+                        placeholder={t('wiki.form.allowedPermissionsPlaceholder')}
+                      />
+                    </div>
+                  </>
+                ) : null}
                 {editorMode === 'edit' ? (
                   <div>
                     <label className={styles.formLabel}>{t('wiki.form.changeSummary')}</label>
@@ -1348,7 +1436,14 @@ export const WikiApp = () => {
                   </span>
                   <span className={styles.metaChip}>{t('wiki.meta.slug', { value: selectedDocument.voSlug })}</span>
                   <span className={styles.metaChip}>{t('wiki.meta.version', { value: selectedDocument.voVersion })}</span>
+                  <span className={styles.metaChip}>{t('wiki.meta.visibility', { value: toVisibilityText(t, selectedDocument.voVisibility) })}</span>
                   <span className={styles.metaChip}>{t('wiki.meta.source', { value: toSourceText(t, selectedDocument.voSourceType) })}</span>
+                  {selectedDocument.voAllowedRoles?.length ? (
+                    <span className={styles.metaChip}>{t('wiki.meta.allowedRoles', { value: selectedDocument.voAllowedRoles.join(', ') })}</span>
+                  ) : null}
+                  {selectedDocument.voAllowedPermissions?.length ? (
+                    <span className={styles.metaChip}>{t('wiki.meta.allowedPermissions', { value: selectedDocument.voAllowedPermissions.join(', ') })}</span>
+                  ) : null}
                   {selectedDocument.voSourcePath ? (
                     <span className={styles.metaChip}>{t('wiki.meta.sourcePath', { value: selectedDocument.voSourcePath })}</span>
                   ) : null}
@@ -1399,6 +1494,7 @@ export const WikiApp = () => {
             <div className={styles.emptyState}>
               <div>
                 <div>{t('wiki.empty.main')}</div>
+                {!loggedIn ? <div className={styles.emptyHintSpacing}>{t('wiki.empty.publicHint')}</div> : null}
                 {isAdmin && !showingDeleted ? <div className={styles.emptyHintSpacing}>{t('wiki.empty.adminHint')}</div> : null}
               </div>
             </div>

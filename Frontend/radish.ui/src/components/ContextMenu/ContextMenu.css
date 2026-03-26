@@ -76,3 +76,41 @@
   padding-left: 0;
   background-color: rgba(0, 0, 0, 0.02);
 }
+
+.radish-context-menu {
+  border-left: 2px solid var(--theme-brand-primary, #b24057) !important;
+  box-shadow: var(--theme-shadow-soft, 0 10px 30px rgba(0,0,0,0.1)) !important;
+  border-radius: 8px !important;
+  padding: 6px 0 !important;
+}
+
+.radish-context-menu-item {
+  position: relative;
+  font-family: var(--theme-font-serif, "STSong", serif) !important;
+  font-size: 14px !important;
+  padding: 8px 36px 8px 16px !important;
+}
+
+.radish-context-menu-item:hover {
+  background: color-mix(in srgb, var(--theme-brand-primary, #b24057) 8%, transparent) !important;
+  color: var(--theme-brand-primary, #b24057) !important;
+}
+
+.radish-context-menu-item:not(.disabled):hover::after {
+  content: '印';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: white;
+  background: var(--theme-brand-primary, #b24057);
+  font-size: 10px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  font-family: "STSong", "Songti SC", serif;
+  box-shadow: 1px 1px 3px rgba(178, 64, 87, 0.4);
+}

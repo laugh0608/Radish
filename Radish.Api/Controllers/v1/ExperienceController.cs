@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -39,17 +41,42 @@ public class ExperienceController : ControllerBase
     /// <param name="userId">用户 ID（可选，不传则返回当前登录用户）</param>
     /// <returns>用户经验值信息</returns>
     [HttpGet]
-    [HttpGet("{userId:long}")]
     public async Task<MessageModel<UserExperienceVo>> GetMyExperience(long? userId = null)
     {
-        // 如果没有传userId，则获取当前登录用户的ID
-        var targetUserId = userId ?? GetCurrentUserId();
+        var currentUserId = GetCurrentUserId();
+        var targetUserId = userId ?? currentUserId;
         if (targetUserId <= 0)
         {
             return MessageModel<UserExperienceVo>.Message(false, "未登录", default!);
         }
 
+        if (userId.HasValue && userId.Value != currentUserId)
+        {
+            return MessageModel<UserExperienceVo>.Message(false, "无权查看其他用户经验信息", default!);
+        }
+
         var result = await _experienceService.GetUserExperienceAsync(targetUserId);
+        if (result == null)
+        {
+            return MessageModel<UserExperienceVo>.Message(false, "用户经验值信息不存在", default!);
+        }
+
+        return MessageModel<UserExperienceVo>.Success("查询成功", result);
+    }
+
+    /// <summary>
+    /// 管理端按用户查询经验值信息
+    /// </summary>
+    [HttpGet("{userId:long}")]
+    [RequireConsolePermission(ConsolePermissions.ExperienceView)]
+    public async Task<MessageModel<UserExperienceVo>> GetUserExperience(long userId)
+    {
+        if (userId <= 0)
+        {
+            return MessageModel<UserExperienceVo>.Message(false, "用户ID无效", default!);
+        }
+
+        var result = await _experienceService.GetUserExperienceAsync(userId);
         if (result == null)
         {
             return MessageModel<UserExperienceVo>.Message(false, "用户经验值信息不存在", default!);
@@ -167,7 +194,7 @@ public class ExperienceController : ControllerBase
     /// <param name="request">调整请求</param>
     /// <returns>是否成功</returns>
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [RequireConsolePermission(ConsolePermissions.ExperienceAdjust)]
     public async Task<MessageModel<bool>> AdminAdjustExperience([FromBody] AdminAdjustExpDto request)
     {
         var operatorId = GetCurrentUserId();
@@ -197,7 +224,7 @@ public class ExperienceController : ControllerBase
     /// </remarks>
     /// <returns>更新后的等级配置列表</returns>
     [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
+    [RequireConsolePermission(ConsolePermissions.ExperienceRecalculate)]
     public async Task<MessageModel<List<LevelConfigVo>>> RecalculateLevelConfigs()
     {
         var operatorId = GetCurrentUserId();

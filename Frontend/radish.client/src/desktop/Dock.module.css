@@ -1,12 +1,21 @@
 .dockContainer {
   position: absolute;
-  top: 24px;
+  top: 14px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10000;
   pointer-events: none;
   width: max-content;
   max-width: calc(100% - 48px);
+  transition: top var(--theme-transition-standard);
+}
+
+.dockContainerExpanded {
+  top: 14px;
+}
+
+.dockContainerCollapsed {
+  top: 6px;
 }
 
 .dock {
@@ -19,18 +28,19 @@
   border: 1px solid var(--theme-dock-border);
   box-shadow:
     var(--theme-shadow-soft),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+    inset 0 0 0 1px color-mix(in srgb, white 28%, transparent 72%);
   transition:
-    transform var(--theme-transition-standard),
-    background var(--theme-transition-standard),
-    box-shadow var(--theme-transition-standard),
-    border-color var(--theme-transition-standard);
+    transform 500ms cubic-bezier(0.33, 1, 0.68, 1),
+    background 500ms cubic-bezier(0.33, 1, 0.68, 1),
+    box-shadow 500ms cubic-bezier(0.33, 1, 0.68, 1),
+    border-color 500ms cubic-bezier(0.33, 1, 0.68, 1),
+    border-radius 500ms cubic-bezier(0.33, 1, 0.68, 1);
   cursor: pointer;
 }
 
 .dock.expanded {
   border-radius: 18px;
-  padding: 8px 16px;
+  padding: 7px 14px;
 }
 
 .dock.collapsed {
@@ -48,13 +58,13 @@
 .expandedContent {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .userSection {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .avatar {
@@ -151,7 +161,7 @@
 .appIcon:hover {
   background: var(--theme-dock-item-hover-bg);
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(66, 52, 41, 0.16);
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--theme-accent-earth) 16%, transparent 84%);
 }
 
 .appIcon.active {
@@ -178,13 +188,13 @@
   height: 4px;
   background: var(--theme-accent-ink);
   border-radius: 50%;
-  box-shadow: 0 0 10px rgba(67, 92, 116, 0.4);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--theme-accent-ink) 40%, transparent 60%);
 }
 
 .rightSection {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .time {
@@ -201,7 +211,8 @@
 .themeButton,
 .authButton {
   position: relative;
-  min-height: 40px;
+  width: 40px;
+  min-width: 40px;
   height: 40px;
   display: flex;
   align-items: center;
@@ -216,7 +227,8 @@
     border-color var(--theme-transition-standard),
     box-shadow var(--theme-transition-standard);
   color: var(--theme-dock-text);
-  padding: 0 12px;
+  padding: 0;
+  overflow: visible;
 }
 
 .languageButton svg,
@@ -225,54 +237,118 @@
   flex-shrink: 0;
 }
 
+.controlIconWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.controlBadge {
+  position: absolute;
+  right: -9px;
+  bottom: -7px;
+  min-width: 18px;
+  height: 16px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  border: 1px solid color-mix(in srgb, white 52%, transparent 48%);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-accent-earth) 16%, transparent 84%);
+}
+
 .languageButton:hover,
 .themeButton:hover,
 .authButton:hover {
   background: var(--theme-dock-item-hover-bg);
-  transform: translateY(-1px);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--theme-accent-earth) 16%, transparent 84%);
 }
 
 .languageButton {
-  gap: 8px;
   color: var(--theme-accent-ink);
 }
 
+.languageButton[data-state='zh'] {
+  background: color-mix(in srgb, var(--theme-accent-ink) 10%, white 90%);
+  border-color: color-mix(in srgb, var(--theme-accent-ink) 28%, transparent 72%);
+}
+
+.languageButton[data-state='en'] {
+  background: color-mix(in srgb, var(--theme-state-info) 12%, white 88%);
+  border-color: color-mix(in srgb, var(--theme-state-info) 30%, transparent 70%);
+}
+
+.languageBadge {
+  color: white;
+}
+
+.languageButton[data-state='zh'] .languageBadge {
+  background: color-mix(in srgb, var(--theme-brand-primary) 78%, black 22%);
+}
+
+.languageButton[data-state='en'] .languageBadge {
+  background: color-mix(in srgb, var(--theme-state-info) 78%, black 22%);
+}
+
 .themeButton {
-  gap: 8px;
   color: var(--theme-brand-primary);
 }
 
-.themeButton:hover {
-  border-color: rgba(178, 64, 87, 0.28);
+.themeButton[data-state='default'] {
+  background: color-mix(in srgb, var(--theme-accent-ink) 10%, white 90%);
+  border-color: color-mix(in srgb, var(--theme-accent-ink) 24%, transparent 76%);
+  color: var(--theme-accent-ink);
 }
 
-.languageLabel,
-.themeLabel {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+.themeButton[data-state='guofeng'] {
+  background: color-mix(in srgb, var(--theme-brand-primary) 10%, white 90%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 28%, transparent 72%);
+  color: var(--theme-brand-primary);
+}
+
+.themeBadge {
+  color: white;
+}
+
+.themeButton[data-state='default'] .themeBadge {
+  background: color-mix(in srgb, var(--theme-accent-ink) 76%, black 24%);
+}
+
+.themeButton[data-state='guofeng'] .themeBadge {
+  background: color-mix(in srgb, var(--theme-brand-primary) 78%, black 22%);
+}
+
+.themeButton:hover {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 28%, transparent 72%);
 }
 
 .authButton.loggedIn {
-  background: rgba(79, 156, 131, 0.12);
-  border-color: rgba(79, 156, 131, 0.28);
+  background: color-mix(in srgb, var(--theme-state-success) 12%, transparent 88%);
+  border-color: color-mix(in srgb, var(--theme-state-success) 28%, transparent 72%);
   color: var(--theme-state-success);
 }
 
 .authButton.loggedIn:hover {
-  background: rgba(79, 156, 131, 0.18);
-  border-color: rgba(79, 156, 131, 0.36);
+  background: color-mix(in srgb, var(--theme-state-success) 18%, transparent 82%);
+  border-color: color-mix(in srgb, var(--theme-state-success) 36%, transparent 64%);
 }
 
 .authButton.loggedOut {
-  background: rgba(67, 92, 116, 0.1);
-  border-color: rgba(67, 92, 116, 0.22);
+  background: color-mix(in srgb, var(--theme-accent-ink) 10%, transparent 90%);
+  border-color: color-mix(in srgb, var(--theme-accent-ink) 22%, transparent 78%);
   color: var(--theme-state-info);
 }
 
 .authButton.loggedOut:hover {
-  background: rgba(67, 92, 116, 0.16);
-  border-color: rgba(67, 92, 116, 0.3);
+  background: color-mix(in srgb, var(--theme-accent-ink) 16%, transparent 84%);
+  border-color: color-mix(in srgb, var(--theme-accent-ink) 30%, transparent 70%);
 }
 
 .notificationBadge {
@@ -291,7 +367,7 @@
   align-items: center;
   justify-content: center;
   border: 2px solid var(--theme-bg-surface);
-  box-shadow: 0 4px 10px rgba(195, 86, 77, 0.26);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--theme-state-danger) 26%, transparent 74%);
 }
 
 .collapsedContent {
@@ -319,7 +395,7 @@
   background: var(--theme-state-success);
   border-radius: 50%;
   border: 2px solid var(--theme-bg-surface);
-  box-shadow: 0 0 8px rgba(79, 156, 131, 0.36);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--theme-state-success) 36%, transparent 64%);
   z-index: 1;
   animation: pulse 2s ease-in-out infinite;
 }
@@ -347,7 +423,7 @@
   background: var(--theme-accent-ink);
   border-radius: 50%;
   border: 2px solid var(--theme-bg-surface);
-  box-shadow: 0 0 8px rgba(67, 92, 116, 0.34);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--theme-accent-ink) 34%, transparent 66%);
   animation: pulse 2s ease-in-out infinite;
 }
 
@@ -376,18 +452,18 @@
   background: var(--theme-state-danger);
   border-radius: 50%;
   border: 1.5px solid var(--theme-bg-surface);
-  box-shadow: 0 0 6px rgba(195, 86, 77, 0.45);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--theme-state-danger) 45%, transparent 55%);
   z-index: 2;
   animation: pulse 2s ease-in-out infinite;
 }
 
 @media (max-width: 768px) {
   .dock.expanded {
-    padding: 10px 16px;
+    padding: 8px 14px;
   }
 
   .expandedContent {
-    gap: 12px;
+    gap: 10px;
   }
 
   .userInfo {
@@ -397,11 +473,6 @@
   .time {
     font-size: 13px;
     min-width: 42px;
-  }
-
-  .languageLabel,
-  .themeLabel {
-    display: none;
   }
 
   .languageButton,
@@ -427,3 +498,13 @@
     opacity: 0.6;
   }
 }
+
+
+
+
+
+
+
+
+
+

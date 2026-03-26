@@ -45,6 +45,13 @@ internal static partial class InitialDataSeeder
         new(61052, 61050, ConsolePermissions.RolesEdit, "编辑角色", "Button", "roles", null, 62, false, false),
         new(61053, 61050, ConsolePermissions.RolesToggle, "启停角色", "Button", "roles", null, 63, false, false),
         new(61054, 61050, ConsolePermissions.RolesDelete, "删除角色", "Button", "roles", null, 64, false, false),
+        new(61100, 0, ConsolePermissions.CategoriesView, "分类管理", "Page", "categories", "/categories", 65, true, true, "论坛分类管理页面"),
+        new(61101, 61100, ConsolePermissions.CategoriesCreate, "新增分类", "Button", "categories", null, 66, false, false),
+        new(61102, 61100, ConsolePermissions.CategoriesEdit, "编辑分类", "Button", "categories", null, 67, false, false),
+        new(61103, 61100, ConsolePermissions.CategoriesDelete, "删除分类", "Button", "categories", null, 68, false, false),
+        new(61104, 61100, ConsolePermissions.CategoriesRestore, "恢复分类", "Button", "categories", null, 69, false, false),
+        new(61105, 61100, ConsolePermissions.CategoriesToggle, "启停分类", "Button", "categories", null, 70, false, false),
+        new(61106, 61100, ConsolePermissions.CategoriesSort, "分类排序", "Button", "categories", null, 71, false, false),
         new(61060, 0, ConsolePermissions.TagsView, "标签管理", "Page", "tags", "/tags", 70, true, true, "标签管理页面"),
         new(61061, 61060, ConsolePermissions.TagsCreate, "新增标签", "Button", "tags", null, 71, false, false),
         new(61062, 61060, ConsolePermissions.TagsEdit, "编辑标签", "Button", "tags", null, 72, false, false),
@@ -59,6 +66,13 @@ internal static partial class InitialDataSeeder
         new(61074, 61070, ConsolePermissions.StickersToggle, "启停表情包", "Button", "stickers", null, 84, false, false),
         new(61075, 61070, ConsolePermissions.StickersSort, "表情包排序", "Button", "stickers", null, 85, false, false),
         new(61076, 61070, ConsolePermissions.StickersBatchUpload, "批量上传表情包", "Button", "stickers", null, 86, false, false),
+        new(61110, 0, ConsolePermissions.ModerationView, "内容治理", "Page", "moderation", "/moderation", 82, true, true, "举报审核与治理动作页面"),
+        new(61111, 61110, ConsolePermissions.ModerationReview, "审核治理", "Button", "moderation", null, 83, false, false),
+        new(61120, 0, ConsolePermissions.CoinsView, "胡萝卜管理", "Page", "coins", "/coins", 84, true, true, "用户胡萝卜查询与调账页面"),
+        new(61121, 61120, ConsolePermissions.CoinsAdjust, "调整胡萝卜", "Button", "coins", null, 85, false, false),
+        new(61130, 0, ConsolePermissions.ExperienceView, "经验等级", "Page", "experience", "/experience", 86, true, true, "用户经验与等级配置页面"),
+        new(61131, 61130, ConsolePermissions.ExperienceAdjust, "调整经验", "Button", "experience", null, 87, false, false),
+        new(61132, 61130, ConsolePermissions.ExperienceRecalculate, "重算等级配置", "Button", "experience", null, 88, false, false),
         new(61080, 0, ConsolePermissions.SystemConfigView, "系统配置", "Page", "system-config", "/system-config", 90, true, true, "系统配置页面"),
         new(61081, 61080, ConsolePermissions.SystemConfigCreate, "新增配置", "Button", "system-config", null, 91, false, false),
         new(61082, 61080, ConsolePermissions.SystemConfigEdit, "编辑配置", "Button", "system-config", null, 92, false, false),
@@ -94,6 +108,13 @@ internal static partial class InitialDataSeeder
         new(61052, "/api/v1/Role/UpdateRole", "Action"),
         new(61053, "/api/v1/Role/ToggleRoleStatus", "Action"),
         new(61054, "/api/v1/Role/DeleteRole", "Action"),
+        new(61100, "/api/v1/Category/GetPage", "View"),
+        new(61101, "/api/v1/Category/Create", "Action"),
+        new(61102, "/api/v1/Category/Update/.+", "Action"),
+        new(61103, "/api/v1/Category/Delete/.+", "Action"),
+        new(61104, "/api/v1/Category/Restore/.+", "Action"),
+        new(61105, "/api/v1/Category/ToggleStatus/.+", "Action"),
+        new(61106, "/api/v1/Category/UpdateSort/.+", "Action"),
         new(61060, "/api/v1/Tag/GetPage", "View"),
         new(61061, "/api/v1/Tag/Create", "Action"),
         new(61062, "/api/v1/Tag/Update/.+", "Action"),
@@ -117,6 +138,16 @@ internal static partial class InitialDataSeeder
         new(61072, "/api/v1/Sticker/CheckGroupCode", "Action"),
         new(61071, "/api/v1/Sticker/CheckStickerCode", "Action"),
         new(61072, "/api/v1/Sticker/CheckStickerCode", "Action"),
+        new(61110, "/api/v1/ContentModeration/GetReviewQueue", "View"),
+        new(61110, "/api/v1/ContentModeration/GetActionLogs", "View"),
+        new(61111, "/api/v1/ContentModeration/Review", "Action"),
+        new(61111, "/api/v1/ContentModeration/ApplyUserAction", "Action"),
+        new(61120, "/api/v1/Coin/GetBalanceByUserId", "View"),
+        new(61121, "/api/v1/Coin/AdminAdjustBalance", "Action"),
+        new(61130, "/api/v1/Experience/GetUserExperience/.+", "View"),
+        new(61130, "/api/v1/Experience/GetLevelConfigs", "View"),
+        new(61131, "/api/v1/Experience/AdminAdjustExperience", "Action"),
+        new(61132, "/api/v1/Experience/RecalculateLevelConfigs", "Action"),
         new(61080, "/api/v1/SystemConfig/GetSystemConfigs", "View"),
         new(61080, "/api/v1/SystemConfig/GetConfigCategories", "View"),
         new(61080, "/api/v1/SystemConfig/GetConfigById", "View"),
@@ -297,6 +328,35 @@ internal static partial class InitialDataSeeder
                     .ExecuteCommandAsync();
             }
         }
+
+        await RevokeTestRoleConsoleAccessAsync(db);
+    }
+
+    private static async Task RevokeTestRoleConsoleAccessAsync(ISqlSugarClient db)
+    {
+        const long testRoleId = 10002L;
+        var assignments = await db.Queryable<RoleConsoleResource>()
+            .Where(item => item.RoleId == testRoleId && !item.IsDeleted)
+            .ToListAsync();
+
+        if (assignments.Count == 0)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var assignment in assignments)
+        {
+            assignment.IsDeleted = true;
+            assignment.DeletedAt = now;
+            assignment.DeletedBy = "System";
+            assignment.ModifyBy = "System";
+            assignment.ModifyId = 0;
+            assignment.ModifyTime = now;
+        }
+
+        await db.Updateable(assignments).ExecuteCommandAsync();
+        Console.WriteLine($"[Radish.DbMigrate] 已回收 Test 角色的 Console 资源授权，共 {assignments.Count} 条。");
     }
 
     private static async Task EnsureConsoleAuthorizationTablesAsync(ISqlSugarClient db)

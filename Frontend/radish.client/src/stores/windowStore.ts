@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import type { WindowState } from '@/desktop/types';
 import { getAppById } from '@/desktop/AppRegistry';
+import { canAccessApp } from '@/desktop/appAccess';
+import { useAuthStore } from './authStore';
+import { useUserStore } from './userStore';
+import { toast } from '@radish/ui/toast';
+import i18n from '@/i18n';
 
 interface WindowStore {
   /** 打开的窗口列表 */
@@ -34,7 +39,7 @@ interface WindowStore {
   updateWindowSize: (windowId: string, size: { width: number; height: number }) => void;
 
   /** 最大化窗口 */
-  maximizeWindow: (windowId: string, payload: { width: number; height: number; x: number; y: number }) => void;
+  maximizeWindow: (windowId: string) => void;
 
   /** 退出最大化 */
   unmaximizeWindow: (windowId: string) => void;
@@ -48,9 +53,26 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
 
     // 获取应用定义
     const app = getAppById(appId);
+    if (!app) {
+      return;
+    }
+
+    const authState = useAuthStore.getState();
+    const userState = useUserStore.getState();
+    const isAuthenticated = authState.isAuthenticated || userState.isAuthenticated();
+
+    if (!canAccessApp(app, {
+      isAuthenticated,
+      userRoles: userState.roles,
+      userPermissions: userState.permissions,
+    })) {
+      const needsLogin = !isAuthenticated && (app.requiredRoles || []).some((role) => role.trim().toLowerCase() === 'user');
+      toast.info(i18n.t(needsLogin ? 'dock.loginRequired' : 'desktop.accessDenied'));
+      return;
+    }
 
     // 如果是外部链接类型，直接在新标签页打开
-    if (app?.type === 'external' && app.externalUrl) {
+    if (app.type === 'external' && app.externalUrl) {
       window.open(app.externalUrl, '_blank');
       return;
     }
@@ -72,8 +94,8 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     const viewportHeight = window.innerHeight;
 
     // 获取应用定义以获取默认尺寸
-    const defaultWidth = app?.defaultSize?.width || 800;
-    const defaultHeight = app?.defaultSize?.height || 600;
+    const defaultWidth = app.defaultSize?.width || 800;
+    const defaultHeight = app.defaultSize?.height || 600;
 
     // 根据视口大小计算窗口尺寸
     // 窗口最大不超过视口的 80% 宽度和 85% 高度（留空间给状态栏和 Dock）
@@ -198,7 +220,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
     }));
   },
 
-  maximizeWindow: (windowId: string, payload: { width: number; height: number; x: number; y: number }) => {
+  maximizeWindow: (windowId: string) => {
     const { openWindows } = get();
     const maxZIndex = Math.max(0, ...openWindows.map(w => w.zIndex));
 
@@ -211,8 +233,6 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
               isMaximized: true,
               prevPosition: w.position,
               prevSize: w.size,
-              position: { x: payload.x, y: payload.y },
-              size: { width: payload.width, height: payload.height },
               zIndex: maxZIndex + 1
             }
           : w

@@ -2,23 +2,23 @@
   display: flex;
   align-items: center;
   padding: 4px 8px;
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--theme-dock-item-bg) 88%, white 12%);
   border-radius: 8px;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
 
 .experienceDisplay:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--theme-dock-item-hover-bg) 82%, white 18%);
 }
 
 .loading,
 .error {
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--theme-text-muted);
   padding: 4px 8px;
 }
 
 .error {
-  color: rgba(239, 68, 68, 0.8);
+  color: var(--theme-state-danger);
 }

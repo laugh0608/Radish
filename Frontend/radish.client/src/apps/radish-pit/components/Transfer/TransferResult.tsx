@@ -12,7 +12,7 @@ interface TransferResultProps {
 /**
  * 转账结果组件
  */
-export const TransferResult = ({ result, displayMode, onStartNew }: TransferResultProps) => {
+export const TransferResult = ({ result, onStartNew }: TransferResultProps) => {
   const handleCopyTransactionNo = async () => {
     if (!result.transactionNo) return;
 

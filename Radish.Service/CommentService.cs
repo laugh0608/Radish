@@ -91,9 +91,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         // 按时间排序
-        return rootComments.OrderByDescending(c => c.VoIsTop)
-                          .ThenBy(c => c.VoCreateTime)
-                          .ToList();
+        rootComments = rootComments.OrderByDescending(c => c.VoIsTop)
+            .ThenBy(c => c.VoCreateTime)
+            .ToList();
+
+        await FillAuthorAvatarUrlsAsync(rootComments);
+        return rootComments;
     }
 
     /// <summary>
@@ -664,6 +667,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             await FillHighlightStatusAsync(postId, rootComments);
         }
 
+        await FillAuthorAvatarUrlsAsync(rootComments);
         return rootComments;
     }
 
@@ -695,6 +699,77 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             if (comment.VoChildren?.Any() == true)
             {
                 FillLikeStatus(comment.VoChildren, likeStatus);
+            }
+        }
+    }
+
+    private async Task FillAuthorAvatarUrlsAsync(List<CommentVo> comments)
+    {
+        if (_attachmentRepository == null || comments.Count <= 0)
+        {
+            return;
+        }
+
+        var authorIds = new HashSet<long>();
+        CollectAuthorIds(comments, authorIds);
+        if (authorIds.Count <= 0)
+        {
+            return;
+        }
+
+        var avatarAttachments = await _attachmentRepository.QueryAsync(attachment =>
+            attachment.BusinessType == "Avatar" &&
+            attachment.BusinessId.HasValue &&
+            authorIds.Contains(attachment.BusinessId.Value) &&
+            attachment.IsEnabled &&
+            !attachment.IsDeleted);
+
+        var avatarMap = avatarAttachments
+            .Where(attachment => attachment.BusinessId.HasValue)
+            .OrderByDescending(attachment => attachment.CreateTime)
+            .GroupBy(attachment => attachment.BusinessId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group =>
+                {
+                    var attachment = group.First();
+                    return !string.IsNullOrWhiteSpace(attachment.Url)
+                        ? attachment.Url
+                        : attachment.ThumbnailPath;
+                });
+
+        ApplyAuthorAvatarUrls(comments, avatarMap);
+    }
+
+    private static void CollectAuthorIds(IEnumerable<CommentVo> comments, ISet<long> authorIds)
+    {
+        foreach (var comment in comments)
+        {
+            if (comment.VoAuthorId > 0)
+            {
+                authorIds.Add(comment.VoAuthorId);
+            }
+
+            if (comment.VoChildren?.Any() == true)
+            {
+                CollectAuthorIds(comment.VoChildren, authorIds);
+            }
+        }
+    }
+
+    private static void ApplyAuthorAvatarUrls(IEnumerable<CommentVo> comments, IReadOnlyDictionary<long, string?> avatarMap)
+    {
+        foreach (var comment in comments)
+        {
+            if (avatarMap.TryGetValue(comment.VoAuthorId, out var avatarUrl) &&
+                !string.IsNullOrWhiteSpace(avatarUrl))
+            {
+                comment.VoAuthorAvatarUrl = avatarUrl;
+            }
+
+            if (comment.VoChildren?.Any() == true)
+            {
+                ApplyAuthorAvatarUrls(comment.VoChildren, avatarMap);
             }
         }
     }
@@ -734,6 +809,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             }
         }
 
+        await FillAuthorAvatarUrlsAsync(commentVos);
         return (commentVos, total);
     }
 

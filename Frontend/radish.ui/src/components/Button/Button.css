@@ -1,73 +1,114 @@
 .radish-button {
-  border: none;
-  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid transparent;
+  border-radius: var(--theme-radius-control, 12px);
   cursor: pointer;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  font-weight: 600;
+  font-family: var(--theme-font-sans, "Microsoft YaHei UI", sans-serif);
+  transition:
+    transform var(--theme-transition-standard, 220ms ease),
+    background var(--theme-transition-standard, 220ms ease),
+    border-color var(--theme-transition-standard, 220ms ease),
+    box-shadow var(--theme-transition-standard, 220ms ease),
+    color var(--theme-transition-standard, 220ms ease);
+  box-shadow: var(--theme-shadow-soft, 0 12px 28px rgba(51, 72, 84, 0.12));
 }
 
 .radish-button:disabled {
-  opacity: 0.5;
+  opacity: 0.48;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+.radish-button:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.radish-button:not(:disabled):active {
+  transform: translateY(0);
 }
 
 /* Variants */
 .radish-button--primary {
-  background-color: #4CAF50;
-  color: white;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--theme-brand-primary, #587786) 90%, white 10%) 0%,
+      color-mix(in srgb, var(--theme-brand-primary, #587786) 74%, black 26%) 100%
+    );
+  border-color: color-mix(in srgb, var(--theme-brand-primary, #587786) 34%, transparent 66%);
+  color: #fff;
 }
 
 .radish-button--primary:hover:not(:disabled) {
-  background-color: #45a049;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--theme-brand-primary, #587786) 82%, white 18%) 0%,
+      color-mix(in srgb, var(--theme-brand-primary, #587786) 68%, black 32%) 100%
+    );
+  box-shadow: var(--theme-shadow-strong, 0 18px 40px rgba(51, 72, 84, 0.18));
 }
 
 .radish-button--secondary {
-  background-color: #f0f0f0;
-  color: #333;
+  background: color-mix(in srgb, var(--theme-bg-surface, #fbfcfc) 88%, white 12%);
+  border-color: var(--theme-border-soft, rgba(84, 108, 122, 0.18));
+  color: var(--theme-text-primary, #23313b);
 }
 
 .radish-button--secondary:hover:not(:disabled) {
-  background-color: #e0e0e0;
+  background: color-mix(in srgb, var(--theme-bg-muted, #e1e7e8) 74%, white 26%);
+  border-color: var(--theme-border-strong, rgba(84, 108, 122, 0.3));
 }
 
 .radish-button--danger {
-  background-color: #f44336;
-  color: white;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--theme-state-danger, #bb5b54) 86%, white 14%) 0%,
+      color-mix(in srgb, var(--theme-state-danger, #bb5b54) 70%, black 30%) 100%
+    );
+  border-color: color-mix(in srgb, var(--theme-state-danger, #bb5b54) 32%, transparent 68%);
+  color: #fff;
 }
 
 .radish-button--danger:hover:not(:disabled) {
-  background-color: #da190b;
+  box-shadow: var(--theme-shadow-strong, 0 18px 40px rgba(51, 72, 84, 0.18));
 }
 
 .radish-button--ghost {
   background-color: transparent;
-  color: #667eea;
-  border: 1px solid #667eea;
+  color: var(--theme-brand-primary, #587786);
+  border-color: color-mix(in srgb, var(--theme-brand-primary, #587786) 40%, transparent 60%);
+  box-shadow: none;
 }
 
 .radish-button--ghost:hover:not(:disabled) {
-  background-color: rgba(102, 126, 234, 0.1);
+  background-color: color-mix(in srgb, var(--theme-brand-soft, rgba(88, 119, 134, 0.14)) 76%, white 24%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary, #587786) 58%, transparent 42%);
 }
 
 /* Icon */
 .radish-button__icon {
   display: inline-flex;
   align-items: center;
-  margin-right: 8px;
 }
 
 /* Sizes */
 .radish-button--small {
-  padding: 6px 12px;
-  font-size: 14px;
+  padding: 7px 12px;
+  font-size: 13px;
 }
 
 .radish-button--medium {
-  padding: 10px 20px;
-  font-size: 16px;
+  padding: 10px 16px;
+  font-size: 14px;
 }
 
 .radish-button--large {
-  padding: 14px 28px;
-  font-size: 18px;
+  padding: 13px 22px;
+  font-size: 15px;
 }

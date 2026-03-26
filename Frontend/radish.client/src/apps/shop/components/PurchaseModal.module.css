@@ -13,7 +13,7 @@
 }
 
 .modal {
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   max-width: 500px;
@@ -29,13 +29,13 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--theme-border-soft);
 }
 
 .title {
   font-size: 18px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0;
 }
 
@@ -43,7 +43,7 @@
   background: none;
   border: none;
   font-size: 18px;
-  color: #999;
+  color: var(--theme-text-placeholder);
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -51,8 +51,8 @@
 }
 
 .closeButton:hover {
-  background: #f5f5f5;
-  color: #666;
+  background: var(--theme-bg-component);
+  color: var(--theme-text-secondary);
 }
 
 .content {
@@ -69,14 +69,14 @@
   display: flex;
   gap: 16px;
   padding: 16px;
-  background: #fafafa;
+  background: var(--theme-bg-component);
   border-radius: 8px;
 }
 
 .productImage {
   width: 80px;
   height: 80px;
-  background: white;
+  background: var(--theme-bg-surface);
   border-radius: 6px;
   display: flex;
   align-items: center;
@@ -93,7 +93,7 @@
 
 .defaultImage {
   font-size: 32px;
-  color: #d9d9d9;
+  color: var(--theme-border-strong);
 }
 
 .productDetails {
@@ -105,8 +105,8 @@
 
 .productType {
   font-size: 12px;
-  color: #1890ff;
-  background: #e6f7ff;
+  color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-primary) 10%, var(--theme-bg-surface));
   padding: 2px 6px;
   border-radius: 3px;
   display: inline-block;
@@ -116,7 +116,7 @@
 .productName {
   font-size: 16px;
   font-weight: 500;
-  color: #262626;
+  color: var(--theme-text-primary);
   margin: 0;
   line-height: 1.4;
 }
@@ -130,18 +130,18 @@
 .currentPrice {
   font-size: 16px;
   font-weight: 600;
-  color: #ff4d4f;
+  color: var(--theme-state-danger);
 }
 
 .originalPrice {
   font-size: 14px;
-  color: #999;
+  color: var(--theme-text-placeholder);
   text-decoration: line-through;
 }
 
 .productMeta {
   font-size: 12px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 /* 数量选择 */
@@ -154,7 +154,7 @@
 .quantityLabel {
   font-size: 14px;
   font-weight: 500;
-  color: #262626;
+  color: var(--theme-text-primary);
 }
 
 .quantityControls {
@@ -164,15 +164,15 @@
 }
 
 .quantityButton {
-  background: #f5f5f5;
-  border: 1px solid #d9d9d9;
+  background: var(--theme-bg-component);
+  border: 1px solid var(--theme-border-strong);
   width: 32px;
   height: 32px;
   border-radius: 4px;
   cursor: pointer;
   font-size: 16px;
   font-weight: 500;
-  color: #666;
+  color: var(--theme-text-secondary);
   transition: all 0.2s;
   display: flex;
   align-items: center;
@@ -180,8 +180,8 @@
 }
 
 .quantityButton:hover:not(:disabled) {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .quantityButton:disabled {
@@ -193,7 +193,7 @@
   width: 60px;
   height: 32px;
   text-align: center;
-  border: 1px solid #d9d9d9;
+  border: 1px solid var(--theme-border-strong);
   border-radius: 4px;
   font-size: 14px;
   outline: none;
@@ -201,17 +201,17 @@
 }
 
 .quantityInput:focus {
-  border-color: #1890ff;
+  border-color: var(--theme-brand-primary);
 }
 
 .limitHint {
   font-size: 12px;
-  color: #999;
+  color: var(--theme-text-placeholder);
 }
 
 /* 价格汇总 */
 .priceSection {
-  background: #f9f9f9;
+  background: var(--theme-bg-component);
   padding: 16px;
   border-radius: 8px;
   display: flex;
@@ -224,34 +224,34 @@
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
-  color: #666;
+  color: var(--theme-text-secondary);
 }
 
 .totalRow {
   padding-top: 8px;
-  border-top: 1px solid #e8e8e8;
+  border-top: 1px solid var(--theme-border-soft);
   font-size: 16px;
   font-weight: 600;
-  color: #262626;
+  color: var(--theme-text-primary);
 }
 
 .totalPrice {
-  color: #ff4d4f;
+  color: var(--theme-state-danger);
   font-size: 18px;
 }
 
 /* 购买须知 */
 .noticeSection {
-  background: #fff7e6;
+  background: color-mix(in srgb, var(--theme-state-warning) 10%, var(--theme-bg-surface));
   padding: 16px;
   border-radius: 8px;
-  border: 1px solid #ffd591;
+  border: 1px solid var(--theme-state-warning);
 }
 
 .noticeTitle {
   font-size: 14px;
   font-weight: 500;
-  color: #d46b08;
+  color: var(--theme-state-warning);
   margin: 0 0 8px 0;
 }
 
@@ -262,7 +262,7 @@
 
 .noticeList li {
   font-size: 12px;
-  color: #d46b08;
+  color: var(--theme-state-warning);
   line-height: 1.5;
   margin-bottom: 4px;
 }
@@ -276,14 +276,14 @@
   display: flex;
   gap: 12px;
   padding: 20px 24px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid var(--theme-border-soft);
 }
 
 .cancelButton {
   flex: 1;
-  background: white;
-  border: 1px solid #d9d9d9;
-  color: #666;
+  background: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-strong);
+  color: var(--theme-text-secondary);
   padding: 12px 24px;
   border-radius: 6px;
   font-size: 14px;
@@ -292,8 +292,8 @@
 }
 
 .cancelButton:hover:not(:disabled) {
-  border-color: #1890ff;
-  color: #1890ff;
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
 }
 
 .cancelButton:disabled {
@@ -303,9 +303,9 @@
 
 .confirmButton {
   flex: 2;
-  background: #1890ff;
+  background: var(--theme-brand-primary);
   border: none;
-  color: white;
+  color: #ffffff;
   padding: 12px 24px;
   border-radius: 6px;
   font-size: 14px;
@@ -319,7 +319,7 @@
 }
 
 .confirmButton:hover:not(:disabled) {
-  background: #40a9ff;
+  background: var(--theme-brand-hover);
 }
 
 .confirmButton:disabled {

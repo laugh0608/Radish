@@ -1,15 +1,17 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
+import { useCurrentWindow } from '@/desktop/useCurrentWindow';
 import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
+import { ContentReportModal } from '@/components/ContentReportModal';
 import {
   getPostList,
   getCurrentGodCommentsBatch,
   type PostItem,
   type CommentHighlight
 } from '@/api/forum';
+import type { ContentReportTargetType } from '@/api/contentModeration';
 import {
   followUser,
   getFollowStatus,
@@ -91,6 +93,7 @@ export const ForumApp = () => {
   const [searchPosts, setSearchPosts] = useState<PostItem[]>([]);
   const [searchPostGodComments, setSearchPostGodComments] = useState<Map<number, CommentHighlight>>(new Map());
   const [loadingSearchPosts, setLoadingSearchPosts] = useState(false);
+  const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
   const searchRequestIdRef = useRef(0);
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
@@ -415,6 +418,20 @@ export const ForumApp = () => {
     });
   };
 
+  const handleOpenReport = (targetType: ContentReportTargetType, targetId: number) => {
+    if (!loggedIn) {
+      dataState.setError(t('report.loginRequired'));
+      return;
+    }
+
+    if (targetId <= 0) {
+      return;
+    }
+
+    dataState.setError(null);
+    setReportTarget({ targetType, targetId });
+  };
+
   const handleOpenPublish = () => {
     actionsState.setIsPublishModalOpen(true);
   };
@@ -544,6 +561,8 @@ export const ForumApp = () => {
                 onReactionError={dataState.setError}
                 onToggleFollow={handleToggleFollow}
                 onAuthorClick={handleOpenUserProfile}
+                onReportPost={(postId) => handleOpenReport('Post', postId)}
+                onReportComment={(commentId) => handleOpenReport('Comment', commentId)}
               />
             </Suspense>
           ) : (
@@ -736,6 +755,15 @@ export const ForumApp = () => {
               }}
             />
           </Suspense>
+        )}
+
+        {reportTarget && (
+          <ContentReportModal
+            isOpen={!!reportTarget}
+            targetType={reportTarget.targetType}
+            targetId={reportTarget.targetId}
+            onClose={() => setReportTarget(null)}
+          />
         )}
 
         {/* 错误提示 */}

@@ -1,0 +1,1 @@
+export { CoinAdminPage } from './CoinAdminPage';

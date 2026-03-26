@@ -1,0 +1,26 @@
+services:
+  frontend:
+    build:
+      args:
+        VITE_API_BASE_URL: https://localhost:5000
+        VITE_AUTH_BASE_URL: https://localhost:5000
+        VITE_SIGNALR_HUB_URL: https://localhost:5000
+        VITE_AUTH_SERVER_URL: https://localhost:5000
+
+  auth:
+    environment:
+      Cors__AllowedOrigins__0: https://localhost:5000
+      OpenIddict__Server__Issuer: https://localhost:5000
+      OpenIddict__Server__AllowInsecureHttp: "true"
+
+  gateway:
+    environment:
+      ASPNETCORE_URLS: https://+:5000
+      Kestrel__Certificates__Default__Path: /app/certs/dev-gateway-cert.pfx
+      Kestrel__Certificates__Default__Password: RadishDevCert123!
+      GatewayRuntime__EnableHttpsRedirection: "true"
+      GatewayService__PublicUrl: https://localhost:5000
+      Cors__AllowedOrigins__0: https://localhost:5000
+      FrontendService__BaseUrl: https://localhost:5000
+    ports:
+      - "5000:5000"

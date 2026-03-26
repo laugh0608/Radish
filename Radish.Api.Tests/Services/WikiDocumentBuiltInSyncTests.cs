@@ -12,6 +12,7 @@ using Moq;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
+using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Service;
@@ -78,6 +79,7 @@ public class WikiDocumentBuiltInSyncTests
 
             guide.Title.ShouldBe("开发指南");
             guide.SourceType.ShouldBe("BuiltIn");
+            guide.Visibility.ShouldBe((int)Radish.Shared.CustomEnum.WikiDocumentVisibilityEnum.Public);
             guide.SourcePath.ShouldBe("Docs/guide/");
             guide.MarkdownContent.ShouldContain("/__documents__/guide-configuration");
             guide.MarkdownContent.ShouldContain("/__documents__/guide-getting-started");
@@ -258,6 +260,7 @@ public class WikiDocumentBuiltInSyncTests
 
             restored.IsDeleted.ShouldBeFalse();
             restored.Title.ShouldBe("快速开始");
+            restored.Visibility.ShouldBe((int)Radish.Shared.CustomEnum.WikiDocumentVisibilityEnum.Public);
             restored.SourcePath.ShouldBe("Docs/guide/getting-started.md");
             restored.ParentId.ShouldBe(guide.Id);
             restored.Version.ShouldBe(1);
@@ -342,10 +345,15 @@ public class WikiDocumentBuiltInSyncTests
         public WikiDocumentService CreateService(string docsRoot, bool showBuiltInDocs = true)
         {
             var mapper = CreateMapperMock();
+            var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
+            consoleAuthorizationService
+                .Setup(service => service.GetPermissionKeysByRolesAsync(It.IsAny<IReadOnlyCollection<string>>()))
+                .ReturnsAsync([]);
             return new WikiDocumentService(
                 mapper.Object,
                 DocumentRepository.Object,
                 RevisionRepository.Object,
+                consoleAuthorizationService.Object,
                 Options.Create(new DocumentOptions
                 {
                     ShowBuiltInDocs = showBuiltInDocs,
@@ -368,6 +376,7 @@ public class WikiDocumentBuiltInSyncTests
                     VoParentId = document.ParentId,
                     VoSort = document.Sort,
                     VoStatus = document.Status,
+                    VoVisibility = document.Visibility,
                     VoVersion = document.Version,
                     VoSourceType = document.SourceType,
                     VoSourcePath = document.SourcePath,
@@ -387,6 +396,7 @@ public class WikiDocumentBuiltInSyncTests
                     VoParentId = document.ParentId,
                     VoSort = document.Sort,
                     VoStatus = document.Status,
+                    VoVisibility = document.Visibility,
                     VoVersion = document.Version,
                     VoSourceType = document.SourceType,
                     VoSourcePath = document.SourcePath,

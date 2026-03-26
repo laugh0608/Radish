@@ -6,19 +6,19 @@
   min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  background-color: #ffffff;
+  background-color: transparent;
 }
 
 .loadingText,
 .emptyText {
   font-size: 14px;
-  color: #9ca3af;
+  color: var(--theme-text-placeholder);
   text-align: center;
   padding: 20px;
 }
 
 .section {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .section:last-child {
@@ -26,13 +26,15 @@
 }
 
 .sectionTitle {
+  position: relative;
+  padding-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 0 0 16px 0;
   font-size: 16px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-text-primary);
 }
 
 .detailToolsSection {
@@ -51,10 +53,10 @@
   gap: 8px;
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--theme-border-soft);
   border-radius: 10px;
-  background: #f8fafc;
-  color: #1f2937;
+  background: var(--theme-bg-component);
+  color: var(--theme-text-primary);
   font-size: 13px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -62,18 +64,18 @@
 
 .detailToolButton svg {
   flex-shrink: 0;
-  color: #64748b;
+  color: var(--theme-text-secondary);
 }
 
 .detailToolButton:hover {
-  background: #eef2ff;
-  border-color: #c7d2fe;
-  color: #1e293b;
+  background: var(--theme-bg-hover);
+  border-color: var(--theme-border-strong);
+  color: var(--theme-text-primary);
 }
 
 .sectionTitle svg {
   flex-shrink: 0;
-  stroke: #2d6cdf;
+  stroke: var(--theme-brand-primary);
 }
 
 .sectionTitle svg[fill] {
@@ -90,19 +92,19 @@
 /* 热门帖子样式 */
 .hotPostItem {
   display: flex;
-  gap: 12px;
-  padding: 12px;
-  margin-bottom: 8px;
-  background-color: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  gap: 10px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  background-color: var(--theme-bg-component);
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .hotPostItem:hover {
-  background-color: #f3f4f6;
-  border-color: #d1d5db;
+  background-color: var(--theme-bg-hover);
+  border-color: var(--theme-border-strong);
   transform: translateX(2px);
 }
 
@@ -114,11 +116,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   background: linear-gradient(135deg, #ef4444, #dc2626);
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   color: #fff;
 }
@@ -127,13 +129,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  background-color: #e5e7eb;
+  width: 20px;
+  height: 20px;
+  background-color: var(--theme-bg-hover);
   border-radius: 4px;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
 }
 
 .hotPostContent {
@@ -142,15 +144,15 @@
 }
 
 .hotPostTitle {
-  margin: 0 0 6px 0;
-  font-size: 14px;
+  margin: 0 0 4px 0;
+  font-size: 13px;
   font-weight: 500;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
 }
 
@@ -159,7 +161,7 @@
   padding: 0;
   border: none;
   background: transparent;
-  color: #2563eb;
+  color: var(--theme-link-primary);
   font-size: 12px;
   line-height: 1.4;
   cursor: pointer;
@@ -167,7 +169,7 @@
 }
 
 .authorButton:hover {
-  color: #1d4ed8;
+  color: var(--theme-link-hover);
   opacity: 0.9;
 }
 
@@ -175,17 +177,17 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 12px;
-  margin-top: 8px;
-  font-size: 12px;
-  color: #6b7280;
+  gap: 8px;
+  margin-top: 0;
+  font-size: 11px;
+  color: var(--theme-text-secondary);
 }
 
 .hotPostLikes,
 .hotPostViews {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .hotPostLikes svg {
@@ -193,7 +195,7 @@
 }
 
 .hotPostViews svg {
-  stroke: #6b7280;
+  stroke: var(--theme-text-secondary);
 }
 
 /* 神评样式 */
@@ -244,7 +246,7 @@
   margin: 0 0 6px 0;
   font-size: 13px;
   line-height: 1.6;
-  color: #374151;
+  color: var(--theme-text-primary);
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -254,5 +256,20 @@
 
 .godCommentTime {
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--theme-text-placeholder);
+}
+
+.sectionTitle::after {
+  content: '';
+  position: absolute;
+  left: 0; bottom: 0; width: 40px; height: 6px;
+  pointer-events: none;
+  background-color: var(--theme-brand-primary);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='6' viewBox='0 0 20 6'%3E%3Cpath d='M0 6 Q5 0, 10 6 T20 6' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E");
+  -webkit-mask-repeat: repeat-x;
+  -webkit-mask-position: bottom;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='6' viewBox='0 0 20 6'%3E%3Cpath d='M0 6 Q5 0, 10 6 T20 6' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E");
+  mask-repeat: repeat-x;
+  mask-position: bottom;
+  opacity: 0.8;
 }

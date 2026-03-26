@@ -263,7 +263,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     setLoadingTrending(true);
     try {
       // 获取热门帖子
-      const hotPostsModel = await getPostList(null, t, 1, 10, 'hottest');
+      const hotPostsModel = await getPostList(null, t, 1, 6, 'hottest');
       setHotPosts(hotPostsModel.data);
 
       // 获取全局热门神评

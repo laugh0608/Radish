@@ -1,11 +1,36 @@
 @model Radish.Auth.ViewModels.Account.RegisterViewModel
+@using System
 @using System.Globalization
-@using Microsoft.Extensions.Localization
-@inject IStringLocalizer<Radish.Auth.Resources.Errors> Localizer
+@inject Microsoft.Extensions.Localization.IStringLocalizer<Radish.Auth.Resources.Errors> Localizer
 
 @{
-    ViewData["Title"] = "注册新账号";
+    var isZh = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
     var client = Model.Client;
+    ViewData["Title"] = isZh ? "创建新账号" : "Create a new account";
+
+    var heroTitle = isZh ? "新用户注册" : "New account";
+    var heading = isZh ? "创建新账号" : "Create your account";
+    var description = isZh ? "加入 Radish 社区，完成注册后即可继续当前流程。" : "Join Radish and continue the current flow as soon as your account is created.";
+    var rewardTitle = isZh ? "新用户福利" : "New user bonus";
+    var rewardDescription = isZh ? "注册即送 50 胡萝卜，完成账号创建后自动到账。" : "Receive 50 carrots automatically after your account is created.";
+    var serviceDescription = string.IsNullOrWhiteSpace(client.Description) ? (isZh ? "Radish 统一身份认证服务" : "Radish unified identity service") : client.Description;
+    var clientName = string.IsNullOrWhiteSpace(client.DisplayName) ? (isZh ? "Radish 社区" : "Radish Community") : client.DisplayName;
+    var developerLabel = isZh ? "开发者" : "Developer";
+    var usernameLabel = isZh ? "用户名" : "Username";
+    var usernamePlaceholder = isZh ? "3-50 个字符，支持字母、数字、下划线、中文" : "3-50 characters, letters, numbers, underscores, or Chinese";
+    var passwordLabel = isZh ? "密码" : "Password";
+    var passwordPlaceholder = isZh ? "至少 6 个字符" : "At least 6 characters";
+    var confirmPasswordLabel = isZh ? "确认密码" : "Confirm password";
+    var confirmPasswordPlaceholder = isZh ? "再次输入密码" : "Enter the password again";
+    var emailLabel = isZh ? "电子邮箱" : "Email";
+    var optionalLabel = isZh ? "可选" : "Optional";
+    var emailPlaceholder = isZh ? "用于找回密码和接收通知" : "Used for password recovery and notifications";
+    var submitText = isZh ? "立即注册" : "Create account";
+    var loginPrompt = isZh ? "已有账号？" : "Already have an account?";
+    var loginAction = isZh ? "立即登录" : "Sign in";
+    var showPasswordText = isZh ? "显示" : "Show";
+    var hidePasswordText = isZh ? "隐藏" : "Hide";
+    var logoAlt = isZh ? "客户端图标" : "Client logo";
 }
 
 <!DOCTYPE html>
@@ -17,204 +42,343 @@
     <style>
         :root {
             color-scheme: light;
+            --paper-base: #fbfaf6;
+            --paper-panel: rgba(255, 253, 249, 0.95);
+            --paper-soft: #f4f6ef;
+            --line-soft: rgba(148, 163, 184, 0.22);
+            --line-strong: rgba(148, 163, 184, 0.34);
+            --ink-strong: #172033;
+            --ink-base: #475569;
+            --accent-primary: #2c7a63;
+            --accent-secondary: #4f9a76;
+            --accent-soft: rgba(232, 245, 236, 0.86);
+            --success-bg: #e6f6ee;
+            --success-border: #9fd4b8;
+            --error-bg: #fdeeed;
+            --error-border: #efc4be;
+            --reward-bg: linear-gradient(135deg, #fbf1cc 0%, #fff8e5 100%);
+            --reward-border: #edd89a;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
             margin: 0;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: radial-gradient(circle at top, #f0fdf4, #f8fafc);
-            padding: 24px;
+            padding: clamp(16px, 3vw, 32px);
+            background:
+                radial-gradient(circle at top, rgba(91, 163, 130, 0.16), transparent 32%),
+                linear-gradient(180deg, #f7faf6 0%, #f8fafc 46%, #fcfcfb 100%);
+            color: var(--ink-strong);
+        }
+
+        .display-serif {
+            font-family: Georgia, 'Times New Roman', 'Songti SC', 'STSong', serif;
+            letter-spacing: 0.02em;
         }
 
         .auth-shell {
             width: 100%;
-            max-width: 960px;
-            background: rgba(255,255,255,0.85);
-            border-radius: 32px;
-            box-shadow: 0 20px 45px rgba(15, 23, 42, 0.12);
+            max-width: 1080px;
+            background: var(--paper-panel);
+            border-radius: 24px;
+            border: 1px solid rgba(226, 232, 240, 0.72);
+            box-shadow: 0 26px 60px rgba(15, 23, 42, 0.12);
             overflow: hidden;
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(10px);
         }
 
         .auth-layout {
             display: grid;
-            grid-template-columns: minmax(280px, 1fr) minmax(380px, 1fr);
-            gap: 0;
+            grid-template-columns: minmax(280px, 0.9fr) minmax(460px, 1.1fr);
         }
 
         .client-panel {
-            background: linear-gradient(135deg, #34d399, #10b981);
-            padding: 48px;
-            color: #f0fdf4;
+            position: relative;
+            padding: 36px 32px;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            position: relative;
+            justify-content: space-between;
+            gap: 24px;
+            color: #f7fffb;
+            background:
+                linear-gradient(160deg, #60a88a 0%, #3b8b73 54%, #2d6c5a 100%);
         }
 
-        .client-panel::after {
+        .client-panel::before {
             content: '';
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.2), transparent 45%);
+            background:
+                radial-gradient(circle at 16% 18%, rgba(255,255,255,0.2), transparent 28%),
+                linear-gradient(180deg, rgba(255,255,255,0.08), transparent 40%);
             pointer-events: none;
         }
 
+        .client-header,
+        .client-meta-list {
+            position: relative;
+            z-index: 1;
+        }
+
         .client-logo {
-            width: 72px;
-            height: 72px;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.2);
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.22);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 24px;
-            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+            margin-bottom: 18px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
         }
 
         .client-logo img {
-            width: 64px;
-            height: 64px;
-            border-radius: 16px;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
         }
 
         .client-logo-placeholder {
-            font-size: 28px;
-            font-weight: 600;
-            color: rgba(255,255,255,0.9);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: rgba(255,255,255,0.94);
         }
 
         .client-title {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            padding: 6px 12px;
+            border-radius: 999px;
+            margin: 0 0 14px;
+            background: rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.18);
+            color: rgba(255,255,255,0.88);
+            font-size: 0.76rem;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
-            letter-spacing: 0.15em;
-            font-size: 0.85rem;
-            color: rgba(255,255,255,0.8);
-            margin-bottom: 12px;
         }
 
         .client-name {
-            font-size: 2rem;
-            margin: 0 0 16px;
-            line-height: 1.2;
+            margin: 0 0 10px;
+            font-size: 1.82rem;
+            line-height: 1.18;
+            color: #ffffff;
         }
 
-        .client-id, .client-desc, .client-developer {
-            margin: 8px 0;
-            font-size: 0.95rem;
-            color: rgba(255,255,255,0.85);
+        .client-summary {
+            margin: 0;
+            color: rgba(255,255,255,0.86);
+            font-size: 0.96rem;
+            line-height: 1.8;
         }
 
-        .client-id strong,
-        .client-desc strong,
-        .client-developer strong {
-            display: block;
-            font-size: 0.8rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.7);
-        }
-
-        .form-panel {
-            padding: 48px;
-            background: #fff;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .lang-switcher {
-            display: flex;
-            justify-content: flex-end;
+        .client-meta-list {
+            display: grid;
             gap: 10px;
         }
 
+        .client-meta-item {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.14);
+        }
+
+        .client-meta-label {
+            display: block;
+            color: rgba(255,255,255,0.72);
+            font-size: 0.72rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .client-meta-value {
+            margin-top: 4px;
+            color: #ffffff;
+            font-size: 0.95rem;
+            line-height: 1.55;
+            word-break: break-word;
+        }
+
+        .form-panel {
+            padding: 34px 36px;
+            display: flex;
+            flex-direction: column;
+            background: linear-gradient(180deg, #fffefe 0%, #fffdf9 100%);
+        }
+
+        .panel-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .heading-group h1 {
+            margin: 0 0 8px;
+            font-size: 1.86rem;
+            line-height: 1.12;
+            color: var(--ink-strong);
+        }
+
+        .description {
+            margin: 0;
+            color: var(--ink-base);
+            line-height: 1.72;
+            max-width: 40ch;
+        }
+
+        .lang-switcher {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px;
+            border-radius: 999px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
         .lang-button {
-            padding: 6px 12px;
+            padding: 7px 12px;
             background: transparent;
-            color: #0f172a;
-            border: 1px solid #94a3b8;
+            color: #475569;
+            border: none;
             border-radius: 999px;
             cursor: pointer;
             font-size: 12px;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
 
         .lang-button:hover,
         .lang-button.active {
-            background: #0f172a;
+            background: #172033;
             color: #fff;
-            border-color: #0f172a;
         }
 
-        h1 {
-            color: #0f172a;
-            margin-bottom: 0.5rem;
-        }
-
-        .description {
-            color: #475569;
-            margin-bottom: 1.5rem;
+        .notice {
+            padding: 12px 14px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            font-size: 0.92rem;
+            line-height: 1.6;
         }
 
         .success {
-            color: #047857;
-            background: #d1fae5;
-            border: 1px solid #6ee7b7;
-            padding: 12px;
-            border-radius: 12px;
-            margin-bottom: 18px;
+            color: #0f5132;
+            background: var(--success-bg);
+            border: 1px solid var(--success-border);
         }
 
         .error {
-            color: #b3261e;
-            background: #fdecea;
-            border: 1px solid #f8c9c4;
-            padding: 12px;
+            color: #94251a;
+            background: var(--error-bg);
+            border: 1px solid var(--error-border);
+        }
+
+        .reward-banner {
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            border-radius: 16px;
+            background: var(--reward-bg);
+            border: 1px solid var(--reward-border);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .reward-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
             border-radius: 12px;
-            margin-bottom: 18px;
+            background: rgba(255,255,255,0.5);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .reward-copy strong {
+            display: block;
+            color: #8b5e16;
+            font-size: 0.92rem;
+            margin-bottom: 4px;
+        }
+
+        .reward-copy p {
+            margin: 0;
+            color: #7c5815;
+            font-size: 0.84rem;
+            line-height: 1.55;
+        }
+
+        form {
+            display: grid;
+            gap: 12px;
+        }
+
+        .form-row {
+            display: grid;
+            gap: 12px;
+        }
+
+        .form-row.double {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         .form-group {
-            margin-bottom: 18px;
+            display: grid;
+            gap: 6px;
         }
 
         label {
-            display: block;
-            margin-bottom: 6px;
-            color: #1e293b;
+            color: var(--ink-strong);
             font-weight: 600;
+            font-size: 0.92rem;
         }
 
         label .optional {
-            font-weight: 400;
+            margin-left: 4px;
             color: #64748b;
-            font-size: 0.85em;
+            font-size: 0.82rem;
+            font-weight: 400;
         }
 
         input[type="text"],
         input[type="email"],
         input[type="password"] {
             width: 100%;
-            padding: 12px 14px;
-            border: 1px solid #cbd5f5;
+            min-height: 46px;
+            padding: 11px 13px;
+            border: 1px solid #d8dee8;
             border-radius: 12px;
             font-size: 15px;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            color: var(--ink-strong);
+            background: #ffffff;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
 
         input[type="text"]:focus,
         input[type="email"]:focus,
         input[type="password"]:focus {
             outline: none;
-            border-color: #10b981;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+            border-color: rgba(44, 122, 99, 0.82);
+            box-shadow: 0 0 0 3px rgba(44, 122, 99, 0.16);
+            background: #fffefe;
         }
 
-        /* 隐藏浏览器自带的密码显示/隐藏按钮 */
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear {
             display: none;
@@ -228,136 +392,119 @@
         }
 
         .password-field {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 8px;
             align-items: center;
-            gap: 10px;
-        }
-
-        .password-field input {
-            flex: 1;
         }
 
         .toggle-password {
-            padding: 8px 14px;
-            border-radius: 999px;
-            border: 1px solid #cbd5f5;
-            background: #f8fafc;
+            min-height: 46px;
+            padding: 0 16px;
+            border-radius: 12px;
+            border: 1px solid #d8dee8;
+            background: #fbfcfd;
             cursor: pointer;
             font-size: 13px;
             color: #475569;
             transition: all 0.2s ease;
+            white-space: nowrap;
         }
 
         .toggle-password:hover {
-            background: #d1fae5;
-            border-color: #10b981;
-            color: #047857;
+            background: var(--accent-soft);
+            border-color: rgba(44, 122, 99, 0.36);
+            color: var(--accent-primary);
         }
 
         .toggle-password:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 0 0 3px rgba(44, 122, 99, 0.16);
         }
 
         .button-group {
-            margin-top: 24px;
+            margin-top: 4px;
         }
 
         button[type="submit"] {
             width: 100%;
-            padding: 14px;
+            min-height: 48px;
+            padding: 12px 16px;
             border: none;
-            border-radius: 999px;
-            font-size: 16px;
+            border-radius: 14px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            background: linear-gradient(135deg, #10b981, #059669);
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
             color: #fff;
-            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.25);
-            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 14px 28px rgba(44, 122, 99, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
 
         button[type="submit"]:hover {
             transform: translateY(-1px);
-            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.3);
+            box-shadow: 0 18px 30px rgba(44, 122, 99, 0.24);
         }
 
         .login-link {
-            margin-top: 20px;
+            margin-top: 14px;
             text-align: center;
             color: #64748b;
-            font-size: 14px;
+            font-size: 0.9rem;
         }
 
         .login-link a {
-            color: #10b981;
+            color: var(--accent-primary);
             text-decoration: none;
             font-weight: 600;
-            transition: color 0.2s;
         }
 
         .login-link a:hover {
-            color: #059669;
             text-decoration: underline;
         }
 
-        .reward-badge {
-            background: linear-gradient(135deg, #fef3c7, #fde68a);
-            border: 1px solid #fcd34d;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .reward-badge .icon {
-            font-size: 24px;
-        }
-
-        .reward-badge .text {
-            flex: 1;
-        }
-
-        .reward-badge .text strong {
-            color: #92400e;
-            display: block;
-            font-size: 14px;
-        }
-
-        .reward-badge .text small {
-            color: #78350f;
-            font-size: 12px;
-        }
-
-        @@media (max-width: 900px) {
-            body {
-                padding: 16px;
-            }
-
+        @@media (max-width: 920px) {
             .auth-layout {
                 grid-template-columns: 1fr;
             }
 
             .client-panel,
             .form-panel {
-                padding: 32px;
+                padding: 28px 24px;
             }
 
-            .client-panel {
-                min-height: 280px;
+            .panel-head {
+                flex-direction: column-reverse;
+                align-items: stretch;
+            }
+
+            .lang-switcher {
+                align-self: flex-start;
             }
         }
 
-        @@media (max-width: 600px) {
-            .client-panel,
-            .form-panel {
-                padding: 24px;
+        @@media (max-width: 720px) {
+            .form-row.double {
+                grid-template-columns: 1fr;
             }
 
-            .client-name {
-                font-size: 1.6rem;
+            .password-field {
+                grid-template-columns: 1fr;
+            }
+
+            .toggle-password {
+                width: 100%;
+            }
+        }
+
+        @@media (max-width: 640px) {
+            body {
+                align-items: flex-start;
+            }
+
+            .client-name,
+            .heading-group h1 {
+                font-size: 1.58rem;
             }
         }
     </style>
@@ -366,59 +513,68 @@
     <div class="auth-shell">
         <div class="auth-layout">
             <section class="client-panel">
-                <div class="client-logo">
-                    @if (!string.IsNullOrWhiteSpace(client.Logo))
+                <div class="client-header">
+                    <div class="client-logo">
+                        @if (!string.IsNullOrWhiteSpace(client.Logo))
+                        {
+                            <img src="@client.Logo" alt="@logoAlt" />
+                        }
+                        else
+                        {
+                            <div class="client-logo-placeholder">@(string.IsNullOrEmpty(clientName) ? "R" : clientName[0])</div>
+                        }
+                    </div>
+
+                    <p class="client-title">@heroTitle</p>
+                    <h2 class="client-name display-serif">@clientName</h2>
+                    <p class="client-summary">@serviceDescription</p>
+                </div>
+
+                <div class="client-meta-list">
+                    <div class="client-meta-item">
+                        <span class="client-meta-label">Client ID</span>
+                        <div class="client-meta-value">@(string.IsNullOrWhiteSpace(client.ClientId) ? "-" : client.ClientId)</div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(client.DeveloperName))
                     {
-                        <img src="@client.Logo" alt="Client Logo" />
-                    }
-                    else
-                    {
-                        <div class="client-logo-placeholder">@(string.IsNullOrEmpty(client.DisplayName) ? "R" : client.DisplayName.First())</div>
+                        <div class="client-meta-item">
+                            <span class="client-meta-label">@developerLabel</span>
+                            <div class="client-meta-value">@client.DeveloperName</div>
+                        </div>
                     }
                 </div>
-                <p class="client-title">新用户注册</p>
-                <h2 class="client-name">@(string.IsNullOrWhiteSpace(client.DisplayName) ? "Radish 社区" : client.DisplayName)</h2>
-                <p class="client-id">
-                    <strong>Client ID</strong>
-                    @(string.IsNullOrWhiteSpace(client.ClientId) ? "-" : client.ClientId)
-                </p>
-                <p class="client-desc">
-                    <strong>服务说明</strong>
-                    @(string.IsNullOrWhiteSpace(client.Description) ? "Radish 统一身份认证服务" : client.Description)
-                </p>
-                @if (!string.IsNullOrWhiteSpace(client.DeveloperName))
-                {
-                    <p class="client-developer">
-                        <strong>开发者：@client.DeveloperName</strong>
-                    </p>
-                }
             </section>
 
             <section class="form-panel">
-                <div class="lang-switcher">
-                    <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh") ? "active" : "")" onclick="switchLanguage('zh')">中文</button>
-                    <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en") ? "active" : "")" onclick="switchLanguage('en')">English</button>
+                <div class="panel-head">
+                    <div class="heading-group">
+                        <h1 class="display-serif">@heading</h1>
+                        <p class="description">@description</p>
+                    </div>
+
+                    <div class="lang-switcher">
+                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('zh-CN')">中文</button>
+                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('en-US')">English</button>
+                    </div>
                 </div>
 
-                <h1>创建新账号</h1>
-                <p class="description">加入 Radish 社区，开启你的创作之旅</p>
-
-                <div class="reward-badge">
-                    <div class="icon">🎁</div>
-                    <div class="text">
-                        <strong>新用户福利</strong>
-                        <small>注册即送 50 胡萝卜，立即开始你的社区之旅！</small>
+                <div class="reward-banner">
+                    <div class="reward-icon">🎁</div>
+                    <div class="reward-copy">
+                        <strong>@rewardTitle</strong>
+                        <p>@rewardDescription</p>
                     </div>
                 </div>
 
                 @if (!string.IsNullOrEmpty(Model.SuccessMessage))
                 {
-                    <div class="success">@Model.SuccessMessage</div>
+                    <div class="notice success">@Model.SuccessMessage</div>
                 }
 
                 @if (!string.IsNullOrEmpty(Model.ErrorMessage))
                 {
-                    <div class="error">@Model.ErrorMessage</div>
+                    <div class="notice error">@Model.ErrorMessage</div>
                 }
 
                 <form asp-controller="Account" asp-action="Register" method="post">
@@ -426,51 +582,53 @@
                     <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
 
                     <div class="form-group">
-                        <label>用户名</label>
-                        <input type="text" name="username" asp-for="Username" placeholder="3-50 个字符，支持字母、数字、下划线、中文" required />
+                        <label>@usernameLabel</label>
+                        <input type="text" name="username" asp-for="Username" placeholder="@usernamePlaceholder" autocomplete="username" required />
                     </div>
 
-                    <div class="form-group">
-                        <label>密码</label>
-                        <div class="password-field">
-                            <input id="passwordInput" type="password" name="password" asp-for="Password" placeholder="至少 6 个字符" required />
-                            <button type="button"
-                                    id="togglePassword"
-                                    class="toggle-password"
-                                    data-show="显示"
-                                    data-hide="隐藏"
-                                    aria-pressed="false">
-                                显示
-                            </button>
+                    <div class="form-row double">
+                        <div class="form-group">
+                            <label>@passwordLabel</label>
+                            <div class="password-field">
+                                <input id="passwordInput" type="password" name="password" asp-for="Password" placeholder="@passwordPlaceholder" autocomplete="new-password" required />
+                                <button type="button"
+                                        id="togglePassword"
+                                        class="toggle-password"
+                                        data-show="@showPasswordText"
+                                        data-hide="@hidePasswordText"
+                                        aria-pressed="false">
+                                    @showPasswordText
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>@confirmPasswordLabel</label>
+                            <div class="password-field">
+                                <input id="confirmPasswordInput" type="password" name="confirmPassword" asp-for="ConfirmPassword" placeholder="@confirmPasswordPlaceholder" autocomplete="new-password" required />
+                                <button type="button"
+                                        id="toggleConfirmPassword"
+                                        class="toggle-password"
+                                        data-show="@showPasswordText"
+                                        data-hide="@hidePasswordText"
+                                        aria-pressed="false">
+                                    @showPasswordText
+                                </button>
+                            </div>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label>确认密码</label>
-                        <div class="password-field">
-                            <input id="confirmPasswordInput" type="password" name="confirmPassword" asp-for="ConfirmPassword" placeholder="再次输入密码" required />
-                            <button type="button"
-                                    id="toggleConfirmPassword"
-                                    class="toggle-password"
-                                    data-show="显示"
-                                    data-hide="隐藏"
-                                    aria-pressed="false">
-                                显示
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>电子邮箱 <span class="optional">(可选)</span></label>
-                        <input type="email" name="email" asp-for="Email" placeholder="用于找回密码和接收通知" />
+                        <label>@emailLabel <span class="optional">(@optionalLabel)</span></label>
+                        <input type="email" name="email" asp-for="Email" placeholder="@emailPlaceholder" autocomplete="email" />
                     </div>
 
                     <div class="button-group">
-                        <button type="submit">立即注册</button>
+                        <button type="submit">@submitText</button>
                     </div>
 
                     <div class="login-link">
-                        已有账号？<a href="@Url.Action("Login", "Account", new { returnUrl = Model.ReturnUrl })">立即登录</a>
+                        @loginPrompt <a href="@Url.Action("Login", "Account", new { returnUrl = Model.ReturnUrl })">@loginAction</a>
                     </div>
                 </form>
             </section>
@@ -486,7 +644,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Toggle password visibility
             function setupPasswordToggle(inputId, buttonId) {
                 const passwordInput = document.getElementById(inputId);
                 const toggleButton = document.getElementById(buttonId);

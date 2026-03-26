@@ -66,6 +66,8 @@ interface PostDetailContentViewProps {
   onReactionError?: (message: string) => void;
   onToggleFollow: (targetUserId: number, isFollowing: boolean) => Promise<void>;
   onAuthorClick: (userId: number, userName?: string | null, avatarUrl?: string | null) => void;
+  onReportPost: (postId: number) => void;
+  onReportComment: (commentId: number) => void;
 }
 
 const collectCommentIds = (nodes: CommentNode[]): number[] => {
@@ -127,6 +129,8 @@ export const PostDetailContentView = ({
   onReactionError,
   onToggleFollow,
   onAuthorClick,
+  onReportPost,
+  onReportComment,
 }: PostDetailContentViewProps) => {
   const { t } = useTranslation();
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
@@ -263,6 +267,7 @@ export const PostDetailContentView = ({
               followLoading={followLoading}
               onToggleFollow={onToggleFollow}
               onAuthorClick={onAuthorClick}
+              onReport={onReportPost}
             />
           </Suspense>
 
@@ -293,6 +298,7 @@ export const PostDetailContentView = ({
               isReactionPending={(commentId) => reactionsState.isPending('Comment', commentId)}
               onRequireReactionLogin={handleRequireReactionLogin}
               onAuthorClick={onAuthorClick}
+              onReportComment={onReportComment}
             />
           </Suspense>
 
@@ -322,26 +328,31 @@ export const PostDetailContentView = ({
         isOpen={isCommentSheetOpen}
         onClose={handleCloseCommentSheet}
         title={t('forum.joinDiscussion')}
-        height="70%"
+        height="60%"
+        className={styles.commentSheet}
+        bodyClassName={styles.commentSheetBody}
+        overlayClassName={styles.commentSheetOverlay}
       >
         {isCommentSheetOpen && (
-          <Suspense fallback={<div style={{ padding: '0.75rem 0' }}>{t('forum.loadingDiscussionEditor')}</div>}>
-            <CreateCommentForm
-              isAuthenticated={isAuthenticated}
-              hasPost={true}
-              onSubmit={handleCreateComment}
-              replyTo={replyTo}
-              onCancelReply={onCancelReply}
-              variant="sheet"
-              title={t('forum.joinDiscussion')}
-              submitText={t('forum.submitDiscussion')}
-              placeholder={t('forum.discussionPlaceholder')}
-              stickerGroups={stickerGroups}
-              onStickerSelect={(selection) => {
-                void handleStickerSelect(selection);
-              }}
-            />
-          </Suspense>
+          <div className={styles.commentSheetContent}>
+            <Suspense fallback={<div className={styles.commentSheetLoading}>{t('forum.loadingDiscussionEditor')}</div>}>
+              <CreateCommentForm
+                isAuthenticated={isAuthenticated}
+                hasPost={true}
+                onSubmit={handleCreateComment}
+                replyTo={replyTo}
+                onCancelReply={onCancelReply}
+                variant="sheet"
+                title={t('forum.joinDiscussion')}
+                submitText={t('forum.submitDiscussion')}
+                placeholder={t('forum.discussionPlaceholder')}
+                stickerGroups={stickerGroups}
+                onStickerSelect={(selection) => {
+                  void handleStickerSelect(selection);
+                }}
+              />
+            </Suspense>
+          </div>
         )}
       </BottomSheet>
     </div>

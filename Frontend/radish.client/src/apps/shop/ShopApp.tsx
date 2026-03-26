@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
-import { useCurrentWindow } from '@/desktop/CurrentWindowContext';
+import { useCurrentWindow } from '@/desktop/useCurrentWindow';
+import { ContentReportModal } from '@/components/ContentReportModal';
 import { ShopHome } from './pages/ShopHome';
 import { ProductList } from './pages/ProductList';
 import { ProductDetail } from './pages/ProductDetail';
@@ -46,6 +47,7 @@ export const ShopApp = () => {
   const { isAuthenticated } = useUserStore();
   const currentWindow = useCurrentWindow();
   const loggedIn = isAuthenticated();
+  const [reportProductId, setReportProductId] = useState<number | null>(null);
   const initialWindowProductId = useMemo(
     () => parseShopWindowParams(currentWindow?.appParams).productId,
     [currentWindow?.appParams]
@@ -109,6 +111,16 @@ export const ShopApp = () => {
           setAppState({ currentView: 'home' });
       }
     }
+  };
+
+  const handleOpenProductReport = (productId: number) => {
+    if (!loggedIn) {
+      dataState.setError(t('report.loginRequired'));
+      return;
+    }
+
+    dataState.setError(null);
+    setReportProductId(productId);
   };
 
   // 监听视图变化，加载对应数据
@@ -193,6 +205,7 @@ export const ShopApp = () => {
             isAuthenticated={loggedIn}
             onBack={navigate.back}
             onPurchase={actionsState.handlePurchaseClick}
+            onReport={handleOpenProductReport}
           />
         );
 
@@ -291,6 +304,15 @@ export const ShopApp = () => {
         onClose={actionsState.handleClosePurchaseModal}
         onConfirm={actionsState.handleConfirmPurchase}
       />
+
+      {reportProductId !== null && (
+        <ContentReportModal
+          isOpen={reportProductId !== null}
+          targetType="Product"
+          targetId={reportProductId}
+          onClose={() => setReportProductId(null)}
+        />
+      )}
 
       {/* 错误提示 */}
       {dataState.error && (

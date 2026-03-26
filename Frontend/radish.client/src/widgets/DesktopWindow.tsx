@@ -35,8 +35,8 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
 
   return (
     <Rnd
-      size={window.size}
-      position={window.position}
+      size={window.isMaximized ? { width: "100%", height: "100%" } : window.size}
+      position={window.isMaximized ? { x: 0, y: 0 } : window.position}
       minWidth={400}
       minHeight={300}
       bounds={window.isMaximized ? undefined : "parent"}
@@ -74,18 +74,8 @@ export const DesktopWindow = ({ window }: DesktopWindowProps) => {
                   return;
                 }
 
-                // 使用 globalThis.window 获取浏览器窗口尺寸，避免与 props 的 window 冲突
-                const browserWindow = globalThis.window;
-                const viewportWidth = browserWindow.innerWidth || 0;
-                const viewportHeight = browserWindow.innerHeight || 0;
-
-                // 最大化时完全填满屏幕，Dock 栏会浮动在窗口之上
-                maximizeWindow(window.id, {
-                  width: viewportWidth,
-                  height: viewportHeight,
-                  x: 0,
-                  y: 0
-                });
+                // 委托给 Rnd 和 CSS 100% 处理响应式最大化
+                maximizeWindow(window.id);
               }}
               title={window.isMaximized ? t('desktop.window.restore') : t('desktop.window.maximize')}
             />

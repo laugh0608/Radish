@@ -60,28 +60,29 @@ export const BarChart = ({
     >
       <ResponsiveContainer width="100%" height="100%">
         <RechartsBarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-          {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.1)" />}
+          {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--theme-border-soft, rgba(84, 108, 122, 0.16))" />}
           <XAxis
             dataKey={xAxisKey}
-            stroke="rgba(255, 255, 255, 0.5)"
+            stroke="var(--theme-text-secondary, #5d6b75)"
             style={{ fontSize: '12px' }}
           />
           <YAxis
-            stroke="rgba(255, 255, 255, 0.5)"
+            stroke="var(--theme-text-secondary, #5d6b75)"
             style={{ fontSize: '12px' }}
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '8px',
-              color: '#fff'
+              backgroundColor: 'var(--theme-bg-surface, #fbfcfc)',
+              border: '1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16))',
+              borderRadius: '12px',
+              color: 'var(--theme-text-primary, #23313b)',
+              boxShadow: 'var(--theme-shadow-soft, 0 16px 40px rgba(51, 72, 84, 0.12))'
             }}
           />
           {showLegend && (
             <Legend
               wrapperStyle={{
-                color: 'rgba(255, 255, 255, 0.7)',
+                color: 'var(--theme-text-primary, #23313b)',
                 fontSize: '12px'
               }}
             />

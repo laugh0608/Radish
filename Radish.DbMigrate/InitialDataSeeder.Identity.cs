@@ -646,6 +646,159 @@ internal static partial class InitialDataSeeder
                 ControllerName = "Sticker",
                 ActionName = "NormalizeCode",
                 Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50100L,
+                ApiModuleName = "Get category page",
+                LinkUrl = "/api/v1/Category/GetPage",
+                ControllerName = "Category",
+                ActionName = "GetPage",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50101L,
+                ApiModuleName = "Create category",
+                LinkUrl = "/api/v1/Category/Create",
+                ControllerName = "Category",
+                ActionName = "Create",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50102L,
+                ApiModuleName = "Update category",
+                LinkUrl = "/api/v1/Category/Update/.+",
+                ControllerName = "Category",
+                ActionName = "Update",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50103L,
+                ApiModuleName = "Delete category",
+                LinkUrl = "/api/v1/Category/Delete/.+",
+                ControllerName = "Category",
+                ActionName = "Delete",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50104L,
+                ApiModuleName = "Restore category",
+                LinkUrl = "/api/v1/Category/Restore/.+",
+                ControllerName = "Category",
+                ActionName = "Restore",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50105L,
+                ApiModuleName = "Toggle category status",
+                LinkUrl = "/api/v1/Category/ToggleStatus/.+",
+                ControllerName = "Category",
+                ActionName = "ToggleStatus",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50106L,
+                ApiModuleName = "Update category sort",
+                LinkUrl = "/api/v1/Category/UpdateSort/.+",
+                ControllerName = "Category",
+                ActionName = "UpdateSort",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50110L,
+                ApiModuleName = "Get moderation review queue",
+                LinkUrl = "/api/v1/ContentModeration/GetReviewQueue",
+                ControllerName = "ContentModeration",
+                ActionName = "GetReviewQueue",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50111L,
+                ApiModuleName = "Review moderation report",
+                LinkUrl = "/api/v1/ContentModeration/Review",
+                ControllerName = "ContentModeration",
+                ActionName = "Review",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50112L,
+                ApiModuleName = "Apply moderation action",
+                LinkUrl = "/api/v1/ContentModeration/ApplyUserAction",
+                ControllerName = "ContentModeration",
+                ActionName = "ApplyUserAction",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50113L,
+                ApiModuleName = "Get moderation action logs",
+                LinkUrl = "/api/v1/ContentModeration/GetActionLogs",
+                ControllerName = "ContentModeration",
+                ActionName = "GetActionLogs",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50120L,
+                ApiModuleName = "Get coin balance by user id",
+                LinkUrl = "/api/v1/Coin/GetBalanceByUserId",
+                ControllerName = "Coin",
+                ActionName = "GetBalanceByUserId",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50121L,
+                ApiModuleName = "Admin adjust coin balance",
+                LinkUrl = "/api/v1/Coin/AdminAdjustBalance",
+                ControllerName = "Coin",
+                ActionName = "AdminAdjustBalance",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50130L,
+                ApiModuleName = "Get user experience",
+                LinkUrl = "/api/v1/Experience/GetUserExperience/.+",
+                ControllerName = "Experience",
+                ActionName = "GetUserExperience",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50131L,
+                ApiModuleName = "Get level configs",
+                LinkUrl = "/api/v1/Experience/GetLevelConfigs",
+                ControllerName = "Experience",
+                ActionName = "GetLevelConfigs",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50132L,
+                ApiModuleName = "Admin adjust experience",
+                LinkUrl = "/api/v1/Experience/AdminAdjustExperience",
+                ControllerName = "Experience",
+                ActionName = "AdminAdjustExperience",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50133L,
+                ApiModuleName = "Recalculate level configs",
+                LinkUrl = "/api/v1/Experience/RecalculateLevelConfigs",
+                ControllerName = "Experience",
+                ActionName = "RecalculateLevelConfigs",
+                Roles = new[] { 10000L, 10001L }
             }
         };
 
@@ -697,15 +850,34 @@ internal static partial class InitialDataSeeder
         await EnsureRoleApiPermissionAsync(db, systemRoleId, 50000, "System");
         await EnsureRoleApiPermissionAsync(db, adminRoleId, 50000, "Admin");
         await EnsureRoleApiPermissionAsync(db, testRoleId, 50000, "Test");
+        await RestrictTestRoleApiPermissionsAsync(db);
     }
 
     private static async Task EnsureRoleApiPermissionAsync(ISqlSugarClient db, long roleId, long apiModuleId,
         string roleName)
     {
-        var exists = await db.Queryable<RoleModulePermission>()
-            .AnyAsync(p => p.RoleId == roleId && p.ApiModuleId == apiModuleId);
-        if (exists)
+        var existing = await db.Queryable<RoleModulePermission>()
+            .FirstAsync(p => p.RoleId == roleId && p.ApiModuleId == apiModuleId);
+        if (existing != null)
         {
+            if (existing.IsDeleted)
+            {
+                await db.Updateable<RoleModulePermission>()
+                    .SetColumns(p => new RoleModulePermission
+                    {
+                        IsDeleted = false,
+                        ModifyBy = "System",
+                        ModifyId = 0,
+                        ModifyTime = DateTime.UtcNow
+                    })
+                    .Where(p => p.Id == existing.Id)
+                    .ExecuteCommandAsync();
+
+                Console.WriteLine(
+                    $"[Radish.DbMigrate] 已恢复角色 Id={roleId} 与 ApiModule Id={apiModuleId} 的权限记录。");
+                return;
+            }
+
             Console.WriteLine(
                 $"[Radish.DbMigrate] 已存在角色 Id={roleId} 与 ApiModule Id={apiModuleId} 的权限记录，跳过创建。");
             return;
@@ -735,6 +907,36 @@ internal static partial class InitialDataSeeder
         };
 
         await db.Insertable(perm).ExecuteCommandAsync();
+    }
+
+    private static async Task RestrictTestRoleApiPermissionsAsync(ISqlSugarClient db)
+    {
+        const long testRoleId = 10002L;
+        const long allowedApiModuleId = 50000L;
+
+        var redundantPermissions = await db.Queryable<RoleModulePermission>()
+            .Where(permission =>
+                permission.RoleId == testRoleId &&
+                permission.ApiModuleId != allowedApiModuleId &&
+                !permission.IsDeleted)
+            .ToListAsync();
+
+        if (redundantPermissions.Count == 0)
+        {
+            return;
+        }
+
+        var now = DateTime.UtcNow;
+        foreach (var permission in redundantPermissions)
+        {
+            permission.IsDeleted = true;
+            permission.ModifyBy = "System";
+            permission.ModifyId = 0;
+            permission.ModifyTime = now;
+        }
+
+        await db.Updateable(redundantPermissions).ExecuteCommandAsync();
+        Console.WriteLine($"[Radish.DbMigrate] 已回收 Test 角色的多余 API 权限，共 {redundantPermissions.Count} 条。");
     }
 
     /// <summary>初始化角色相关数据</summary>

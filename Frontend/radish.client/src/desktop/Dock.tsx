@@ -28,7 +28,7 @@ import styles from './Dock.module.css';
 export const Dock = () => {
   const { t } = useTranslation();
   const { openWindows, openApp, restoreWindow } = useWindowStore();
-  const { userName, userId, avatarUrl, avatarThumbnailUrl, isAuthenticated, clearUser, setUser } = useUserStore();
+  const { userName, userId, avatarUrl, avatarThumbnailUrl, isAuthenticated, clearUser } = useUserStore();
   const { unreadCount: storeUnreadCount, connectionState } = useNotificationStore();
   const { currentTheme, cycleTheme } = useTheme();
   const [time, setTime] = useState(new Date());
@@ -36,7 +36,10 @@ export const Dock = () => {
   const [pollingUnreadCount, setPollingUnreadCount] = useState(0); // 轮询降级时的未读数
   const currentLanguage = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'zh';
   const timeLocale = currentLanguage === 'en' ? 'en-US' : 'zh-CN';
-  const currentLanguageLabel = currentLanguage === 'en' ? t('lang.en') : t('lang.zh');
+  const languageIcon = currentLanguage === 'en' ? 'mdi:format-letter-case' : 'mdi:translate-variant';
+  const languageBadge = currentLanguage === 'en' ? 'EN' : 'ZH';
+  const themeIcon = currentTheme.id === 'default' ? 'mdi:view-dashboard-outline' : 'mdi:landscape';
+  const themeBadge = currentTheme.id === 'default' ? '简' : '风';
 
   const loggedIn = isAuthenticated();
 
@@ -81,15 +84,6 @@ export const Dock = () => {
     return [...notificationItem, ...otherApps];
   }, [openWindows]);
 
-  interface CurrentUser {
-    voUserId: number;
-    voUserName: string;
-    voTenantId: number;
-    voAvatarUrl?: string;
-    voAvatarThumbnailUrl?: string;
-    voPermissions?: string[];
-  }
-
   interface ApiFetchOptions extends RequestInit {
     withAuth?: boolean;
   }
@@ -127,37 +121,6 @@ export const Dock = () => {
     void i18n.changeLanguage(currentLanguage === 'zh' ? 'en' : 'zh');
   };
   const getAppLabel = (app: AppDefinition) => app.nameKey ? t(app.nameKey) : app.name;
-
-  const hydrateCurrentUser = async () => {
-    if (typeof window === 'undefined') return;
-    const token = tokenService.getAccessToken();
-    if (!token) {
-      return;
-    }
-
-    const requestUrl = `${apiBaseUrl}/api/v1/User/GetUserByHttpContext`;
-
-    try {
-      const response = await apiFetch(requestUrl, { withAuth: true });
-      const json = await response.json() as ApiResponse<CurrentUser>;
-
-      if (!json.isSuccess || !json.responseData) {
-        throw new Error(json.messageInfo || '获取当前用户失败');
-      }
-
-      setUser({
-        userId: json.responseData.voUserId,
-        userName: json.responseData.voUserName,
-        tenantId: json.responseData.voTenantId,
-        roles: tokenService.getRolesFromAccessToken(token),
-        permissions: Array.isArray(json.responseData.voPermissions) ? json.responseData.voPermissions : [],
-        avatarUrl: json.responseData.voAvatarUrl,
-        avatarThumbnailUrl: json.responseData.voAvatarThumbnailUrl
-      });
-    } catch {
-      clearUser();
-    }
-  };
 
   // 获取未读通知数量（降级轮询时使用）
   const fetchUnreadNotificationCount = async () => {
@@ -230,7 +193,7 @@ export const Dock = () => {
   };
 
   return (
-    <div className={styles.dockContainer}>
+    <div className={`${styles.dockContainer} ${isExpanded ? styles.dockContainerExpanded : styles.dockContainerCollapsed}`}>
       <div
         className={`${styles.dock} ${isExpanded ? styles.expanded : styles.collapsed}`}
         onMouseEnter={handleMouseEnter}
@@ -341,27 +304,36 @@ export const Dock = () => {
                 type="button"
                 className={styles.languageButton}
                 onClick={toggleLanguage}
-                title={t('lang.switch')}
+                title={`${t('lang.switch')}（${languageBadge}）`}
+                aria-label={t('lang.switch')}
+                data-state={currentLanguage}
               >
-                <Icon icon="mdi:translate" size={18} />
-                <span className={styles.languageLabel}>{currentLanguageLabel}</span>
+                <span className={styles.controlIconWrap}>
+                  <Icon icon={languageIcon} size={20} />
+                  <span className={`${styles.controlBadge} ${styles.languageBadge}`}>{languageBadge}</span>
+                </span>
               </button>
               <button
                 type="button"
                 className={styles.themeButton}
                 onClick={cycleTheme}
                 title={`${t('theme.switch')}（${currentTheme.label}）`}
+                aria-label={t('theme.switch')}
+                data-state={currentTheme.id}
               >
-                <Icon icon="mdi:palette-swatch-outline" size={18} />
-                <span className={styles.themeLabel}>{currentTheme.label}</span>
+                <span className={styles.controlIconWrap}>
+                  <Icon icon={themeIcon} size={20} />
+                  <span className={`${styles.controlBadge} ${styles.themeBadge}`}>{themeBadge}</span>
+                </span>
               </button>
               <button
                 type="button"
                 className={`${styles.authButton} ${loggedIn ? styles.loggedIn : styles.loggedOut}`}
                 onClick={loggedIn ? handleLogoutClick : redirectToLogin}
                 title={loggedIn ? t('auth.logout') : t('auth.login')}
+                aria-label={loggedIn ? t('auth.logout') : t('auth.login')}
               >
-                <Icon icon={loggedIn ? 'mdi:logout' : 'mdi:login'} size={28} />
+                <Icon icon={loggedIn ? 'mdi:logout' : 'mdi:login'} size={20} />
               </button>
             </div>
           </div>

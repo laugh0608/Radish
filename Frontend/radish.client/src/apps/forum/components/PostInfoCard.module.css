@@ -1,6 +1,6 @@
 .card {
-  background-color: #ffffff;
-  border: 1px solid #e5e7eb;
+  background-color: var(--theme-bg-surface);
+  border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 16px;
@@ -10,7 +10,7 @@
   margin: 0 0 16px 0;
   font-size: 14px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   padding-bottom: 12px;
   border-bottom: 1px solid #e5e7eb;
 }
@@ -32,17 +32,17 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
 }
 
 .label svg {
   flex-shrink: 0;
-  color: #9ca3af;
+  color: var(--theme-text-placeholder);
 }
 
 .value {
   font-size: 13px;
-  color: #1f2937;
+  color: var(--theme-text-primary);
   padding-left: 20px;
   word-break: break-word;
 }

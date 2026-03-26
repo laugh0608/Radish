@@ -1,8 +1,7 @@
 import { lazy, Suspense, type ComponentType } from 'react';
 import i18n from '@/i18n';
 import type { AppDefinition } from './types';
-
-const CONSOLE_ACCESS_PERMISSION = 'console.access';
+import { getVisibleAppsForUser } from './appAccess';
 
 const createLazyWindowApp = (loader: () => Promise<{ default: ComponentType }>): ComponentType => {
   const LazyComponent = lazy(loader);
@@ -112,7 +111,6 @@ export const appRegistry: AppDefinition[] = [
     component: WelcomeApp,
     type: 'window',
     defaultSize: { width: 900, height: 700 },
-    requiredRoles: ['User'],
     category: 'system',
   },
   {
@@ -125,7 +123,6 @@ export const appRegistry: AppDefinition[] = [
     component: ShowcaseApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
-    requiredRoles: ['User'],
     category: 'development',
   },
   {
@@ -150,7 +147,6 @@ export const appRegistry: AppDefinition[] = [
     component: WikiApp,
     type: 'window',
     defaultSize: { width: 1280, height: 820 },
-    requiredRoles: ['User'],
     category: 'content',
   },
   {
@@ -163,7 +159,6 @@ export const appRegistry: AppDefinition[] = [
     component: ForumApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
-    requiredRoles: ['User'],
     category: 'content',
   },
   {
@@ -228,7 +223,6 @@ export const appRegistry: AppDefinition[] = [
     component: LeaderboardApp,
     type: 'window',
     defaultSize: { width: 900, height: 700 },
-    requiredRoles: ['User'],
     category: 'user',
   },
   {
@@ -254,7 +248,6 @@ export const appRegistry: AppDefinition[] = [
     component: ShopApp,
     type: 'window',
     defaultSize: { width: 1200, height: 800 },
-    requiredRoles: ['User'],
     category: 'user',
   },
 ];
@@ -267,20 +260,16 @@ export const getAppById = (id: string): AppDefinition | undefined => {
 };
 
 /**
- * 根据用户角色过滤可见应用
+ * 根据桌面显示规则过滤可见应用
  */
-export const getVisibleApps = (userRoles: string[] = [], userPermissions: string[] = []): AppDefinition[] => {
-  const normalizedRoles = new Set(userRoles.map((role) => role.trim().toLowerCase()));
-  const normalizedPermissions = new Set(userPermissions.map((permission) => permission.trim().toLowerCase()));
-  const hasConsoleAccess = normalizedRoles.has('admin') ||
-    normalizedRoles.has('system') ||
-    normalizedPermissions.has(CONSOLE_ACCESS_PERMISSION);
-
-  return appRegistry.filter((app) => {
-    if (app.id === 'console') {
-      return hasConsoleAccess;
-    }
-
-    return true;
+export const getVisibleApps = (
+  isAuthenticated: boolean = false,
+  userRoles: string[] = [],
+  userPermissions: string[] = []
+): AppDefinition[] => {
+  return getVisibleAppsForUser(appRegistry, {
+    isAuthenticated,
+    userRoles,
+    userPermissions,
   });
 };

@@ -307,7 +307,7 @@ git push origin v26.2.1-release
 
 ## 许可
 
-[待定]
+DaBaiLuoBo(laugh0608) 保留所有代码权力，详见 LICENSE 文件。
 
 ## 相关链接
 

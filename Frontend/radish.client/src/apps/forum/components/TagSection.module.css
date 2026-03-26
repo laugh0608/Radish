@@ -15,7 +15,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--theme-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -23,7 +23,7 @@
 .clearButton {
   border: none;
   background: transparent;
-  color: #2d6cdf;
+  color: var(--theme-brand-primary);
   font-size: 12px;
   cursor: pointer;
   padding: 0;
@@ -39,7 +39,7 @@
   margin: 0;
   font-size: 12px;
   font-weight: 600;
-  color: #9ca3af;
+  color: var(--theme-text-placeholder);
 }
 
 .tagWrap {
@@ -51,24 +51,24 @@
 .tagButton {
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  color: #4b5563;
+  border: 1px solid var(--theme-border-soft);
+  background: var(--theme-bg-component);
+  color: var(--theme-text-primary);
   font-size: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .tagButton:hover {
-  border-color: #cbd5e1;
-  background: #f1f5f9;
-  color: #1f2937;
+  border-color: var(--theme-border-strong);
+  background: var(--theme-bg-hover);
+  color: var(--theme-text-primary);
 }
 
 .tagButton.active {
-  border-color: #2d6cdf;
-  background: rgba(45, 108, 223, 0.12);
-  color: #1e40af;
+  border-color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-primary) 12%, transparent);
+  color: var(--theme-brand-hover);
   font-weight: 600;
 }
 
@@ -76,5 +76,5 @@
 .emptyText {
   margin: 0;
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--theme-text-placeholder);
 }

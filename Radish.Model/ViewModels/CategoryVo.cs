@@ -61,9 +61,19 @@ public class CategoryVo
     public bool VoIsEnabled { get; set; }
 
     /// <summary>
+    /// 是否已删除
+    /// </summary>
+    public bool VoIsDeleted { get; set; }
+
+    /// <summary>
     /// 创建时间
     /// </summary>
     public DateTime VoCreateTime { get; set; }
+
+    /// <summary>
+    /// 修改时间
+    /// </summary>
+    public DateTime? VoModifyTime { get; set; }
 
     /// <summary>
     /// 创建者名称

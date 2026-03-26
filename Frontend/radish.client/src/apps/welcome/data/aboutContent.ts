@@ -1,86 +1,98 @@
 /**
- * 关于 Radish 社区的内容数据
+ * 关于 Radish 当前阶段的内容数据
  */
 
 export interface AboutSection {
-  title: string;
-  content: string;
+  titleKey: string;
+  contentKey: string;
   icon: string;
 }
 
 export interface Feature {
-  name: string;
-  description: string;
+  nameKey: string;
+  descriptionKey: string;
   icon: string;
-  status?: 'available' | 'planned';
+  status?: 'available' | 'iterating';
 }
 
 export interface TechHighlight {
-  name: string;
-  description: string;
+  nameKey: string;
+  descriptionKey: string;
   icon: string;
 }
 
 export const aboutContent = {
   vision: {
-    title: '社区愿景',
-    content: 'Radish 是一个现代化的社区平台，致力于为用户提供优质的交流和分享空间。我们相信开放、包容和创新的力量，通过技术连接每一个热爱分享的人。',
-    icon: 'mdi:lightbulb-on'
+    titleKey: 'welcome.about.vision.title',
+    contentKey: 'welcome.about.vision.content',
+    icon: 'mdi:compass-outline'
   } as AboutSection,
 
   mission: {
-    title: '我们的使命',
-    content: '打造一个充满活力的社区生态，让每个人都能自由表达、学习成长、结识志同道合的朋友。我们追求卓越的用户体验，坚持开源精神，让技术服务于人。',
-    icon: 'mdi:target'
+    titleKey: 'welcome.about.mission.title',
+    contentKey: 'welcome.about.mission.content',
+    icon: 'mdi:progress-wrench'
   } as AboutSection,
 
   features: [
     {
-      name: '论坛',
-      description: '深度讨论与内容分享，支持 Markdown 编辑、图片上传、代码高亮等功能',
-      icon: 'mdi:forum',
+      nameKey: 'welcome.about.features.forum.name',
+      descriptionKey: 'welcome.about.features.forum.description',
+      icon: 'mdi:forum-outline',
       status: 'available'
     },
     {
-      name: '聊天室',
-      description: '实时交流互动，支持文字、表情、图片等多种消息类型',
-      icon: 'mdi:chat',
-      status: 'planned'
+      nameKey: 'welcome.about.features.docs.name',
+      descriptionKey: 'welcome.about.features.docs.description',
+      icon: 'mdi:book-open-page-variant-outline',
+      status: 'available'
     },
     {
-      name: '萝卜币系统',
-      description: '社区激励机制，通过发帖、评论、点赞等行为获得萝卜币奖励',
-      icon: 'mdi:currency-usd',
-      status: 'planned'
+      nameKey: 'welcome.about.features.notificationProfile.name',
+      descriptionKey: 'welcome.about.features.notificationProfile.description',
+      icon: 'mdi:account-star-outline',
+      status: 'available'
     },
     {
-      name: '管理控制台',
-      description: '强大的后台管理系统，支持用户管理、内容审核、数据统计等功能',
-      icon: 'mdi:console',
+      nameKey: 'welcome.about.features.radishPit.name',
+      descriptionKey: 'welcome.about.features.radishPit.description',
+      icon: 'mdi:wallet-outline',
+      status: 'iterating'
+    },
+    {
+      nameKey: 'welcome.about.features.themeI18n.name',
+      descriptionKey: 'welcome.about.features.themeI18n.description',
+      icon: 'mdi:palette-swatch-outline',
+      status: 'iterating'
+    },
+    {
+      nameKey: 'welcome.about.features.platformEntry.name',
+      descriptionKey: 'welcome.about.features.platformEntry.description',
+      icon: 'mdi:transit-connection-variant',
       status: 'available'
     }
   ] as Feature[],
 
   techStack: [
     {
-      name: '现代化技术栈',
-      description: 'React 19 + ASP.NET Core 10 + PostgreSQL',
-      icon: 'mdi:code-tags'
+      nameKey: 'welcome.about.tech.desktop.name',
+      descriptionKey: 'welcome.about.tech.desktop.description',
+      icon: 'mdi:monitor-dashboard'
     },
     {
-      name: '桌面化 UI 体验',
-      description: '类似操作系统的 WebOS 界面，窗口化应用管理',
-      icon: 'mdi:monitor'
+      nameKey: 'welcome.about.tech.backend.name',
+      descriptionKey: 'welcome.about.tech.backend.description',
+      icon: 'mdi:server-outline'
     },
     {
-      name: '多租户架构',
-      description: '支持多租户隔离，灵活的权限控制和数据隔离',
-      icon: 'mdi:office-building'
+      nameKey: 'welcome.about.tech.frontend.name',
+      descriptionKey: 'welcome.about.tech.frontend.description',
+      icon: 'mdi:source-branch'
     },
     {
-      name: '开源可自部署',
-      description: '完全开源，支持私有化部署，数据完全掌控',
-      icon: 'mdi:open-source-initiative'
+      nameKey: 'welcome.about.tech.consistency.name',
+      descriptionKey: 'welcome.about.tech.consistency.description',
+      icon: 'mdi:format-color-fill'
     }
   ] as TechHighlight[]
 };

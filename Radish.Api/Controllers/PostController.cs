@@ -78,6 +78,8 @@ public class PostController : ControllerBase
             };
         }
 
+        await FillPostAvatarAndInteractorsAsync(new List<PostVo> { post });
+
         if (Current.UserId > 0)
         {
             await _userBrowseHistoryService.RecordAsync(new RecordBrowseHistoryDto
@@ -316,6 +318,7 @@ public class PostController : ControllerBase
 
         var userIds = posts
             .Select(post => post.VoAuthorId)
+            .Concat(posts.SelectMany(post => post.VoQuestion?.VoAnswers ?? new List<PostAnswerVo>()).Select(answer => answer.VoAuthorId))
             .Concat(comments.Select(comment => comment.VoAuthorId))
             .Where(userId => userId > 0)
             .Distinct()
@@ -343,6 +346,17 @@ public class PostController : ControllerBase
             if (avatarUrlMap.TryGetValue(post.VoAuthorId, out var authorAvatarUrl))
             {
                 post.VoAuthorAvatarUrl = authorAvatarUrl;
+            }
+
+            if (post.VoQuestion?.VoAnswers?.Count > 0)
+            {
+                foreach (var answer in post.VoQuestion.VoAnswers.Where(answer => answer.VoAuthorId > 0))
+                {
+                    if (avatarUrlMap.TryGetValue(answer.VoAuthorId, out var answerAvatarUrl))
+                    {
+                        answer.VoAuthorAvatarUrl = answerAvatarUrl;
+                    }
+                }
             }
 
             if (!commentsByPost.TryGetValue(post.VoId, out var postComments))

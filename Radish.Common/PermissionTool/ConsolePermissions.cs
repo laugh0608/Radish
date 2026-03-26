@@ -24,6 +24,13 @@ public static class ConsolePermissions
     public const string RolesEdit = "console.roles.edit";
     public const string RolesToggle = "console.roles.toggle";
     public const string RolesDelete = "console.roles.delete";
+    public const string CategoriesView = "console.categories.view";
+    public const string CategoriesCreate = "console.categories.create";
+    public const string CategoriesEdit = "console.categories.edit";
+    public const string CategoriesDelete = "console.categories.delete";
+    public const string CategoriesRestore = "console.categories.restore";
+    public const string CategoriesToggle = "console.categories.toggle";
+    public const string CategoriesSort = "console.categories.sort";
     public const string TagsView = "console.tags.view";
     public const string TagsCreate = "console.tags.create";
     public const string TagsEdit = "console.tags.edit";
@@ -38,6 +45,13 @@ public static class ConsolePermissions
     public const string StickersToggle = "console.stickers.toggle";
     public const string StickersSort = "console.stickers.sort";
     public const string StickersBatchUpload = "console.stickers.batch-upload";
+    public const string ModerationView = "console.moderation.view";
+    public const string ModerationReview = "console.moderation.review";
+    public const string CoinsView = "console.coins.view";
+    public const string CoinsAdjust = "console.coins.adjust";
+    public const string ExperienceView = "console.experience.view";
+    public const string ExperienceAdjust = "console.experience.adjust";
+    public const string ExperienceRecalculate = "console.experience.recalculate";
     public const string SystemConfigView = "console.system-config.view";
     public const string SystemConfigCreate = "console.system-config.create";
     public const string SystemConfigEdit = "console.system-config.edit";
@@ -53,6 +67,13 @@ public static class ConsolePermissions
             ["/api/v1/Role/UpdateRole"] = new[] { RolesEdit },
             ["/api/v1/Role/DeleteRole"] = new[] { RolesDelete },
             ["/api/v1/Role/ToggleRoleStatus"] = new[] { RolesToggle },
+            ["/api/v1/Category/GetPage"] = new[] { CategoriesView },
+            ["/api/v1/Category/Create"] = new[] { CategoriesCreate },
+            ["/api/v1/Category/Update/.+"] = new[] { CategoriesEdit },
+            ["/api/v1/Category/Delete/.+"] = new[] { CategoriesDelete },
+            ["/api/v1/Category/Restore/.+"] = new[] { CategoriesRestore },
+            ["/api/v1/Category/ToggleStatus/.+"] = new[] { CategoriesToggle },
+            ["/api/v1/Category/UpdateSort/.+"] = new[] { CategoriesSort },
             ["/api/v1/User/GetUserList"] = new[] { UsersView },
             ["/api/v1/User/GetUserById/\\d+"] = new[] { UsersView },
             ["/api/v1/Client/GetClients"] = new[] { ApplicationsView },
@@ -90,6 +111,16 @@ public static class ConsolePermissions
             ["/api/v1/Sticker/UpdateSticker/.+"] = new[] { StickersEdit },
             ["/api/v1/Sticker/DeleteSticker/.+"] = new[] { StickersDelete },
             ["/api/v1/Sticker/BatchUpdateSort"] = new[] { StickersSort },
+            ["/api/v1/ContentModeration/GetReviewQueue"] = new[] { ModerationView },
+            ["/api/v1/ContentModeration/Review"] = new[] { ModerationReview },
+            ["/api/v1/ContentModeration/ApplyUserAction"] = new[] { ModerationReview },
+            ["/api/v1/ContentModeration/GetActionLogs"] = new[] { ModerationView },
+            ["/api/v1/Coin/GetBalanceByUserId"] = new[] { CoinsView },
+            ["/api/v1/Coin/AdminAdjustBalance"] = new[] { CoinsAdjust },
+            ["/api/v1/Experience/GetUserExperience/.+"] = new[] { ExperienceView },
+            ["/api/v1/Experience/GetLevelConfigs"] = new[] { ExperienceView },
+            ["/api/v1/Experience/AdminAdjustExperience"] = new[] { ExperienceAdjust },
+            ["/api/v1/Experience/RecalculateLevelConfigs"] = new[] { ExperienceRecalculate },
             ["/api/v1/SystemConfig/GetSystemConfigs"] = new[] { SystemConfigView },
             ["/api/v1/SystemConfig/GetConfigCategories"] = new[] { SystemConfigView },
             ["/api/v1/SystemConfig/GetConfigById"] = new[] { SystemConfigView, SystemConfigEdit },
@@ -122,6 +153,13 @@ public static class ConsolePermissions
         RolesEdit,
         RolesToggle,
         RolesDelete,
+        CategoriesView,
+        CategoriesCreate,
+        CategoriesEdit,
+        CategoriesDelete,
+        CategoriesRestore,
+        CategoriesToggle,
+        CategoriesSort,
         TagsView,
         TagsCreate,
         TagsEdit,
@@ -136,6 +174,13 @@ public static class ConsolePermissions
         StickersToggle,
         StickersSort,
         StickersBatchUpload,
+        ModerationView,
+        ModerationReview,
+        CoinsView,
+        CoinsAdjust,
+        ExperienceView,
+        ExperienceAdjust,
+        ExperienceRecalculate,
         SystemConfigView,
         SystemConfigCreate,
         SystemConfigEdit,
@@ -169,5 +214,12 @@ public static class ConsolePermissions
         return ApiPermissionMappings.TryGetValue(apiUrl.Trim(), out var permissions)
             ? permissions
             : Array.Empty<string>();
+    }
+
+    public static bool IsConsoleOperationalPermission(string? permissionKey)
+    {
+        return !string.IsNullOrWhiteSpace(permissionKey) &&
+               permissionKey.StartsWith("console.", StringComparison.OrdinalIgnoreCase) &&
+               !string.Equals(permissionKey, Access, StringComparison.OrdinalIgnoreCase);
     }
 }

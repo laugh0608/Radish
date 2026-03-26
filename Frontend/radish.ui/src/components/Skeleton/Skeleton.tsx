@@ -100,10 +100,10 @@ export function CardSkeleton({ count = 3 }: { count?: number }) {
         <div
           key={index}
           style={{
-            background: '#fff',
-            borderRadius: '8px',
+            background: 'var(--theme-bg-surface, #fbfcfc)',
+            borderRadius: 'var(--theme-radius-control, 12px)',
             padding: '16px',
-            border: '1px solid #f0f0f0',
+            border: '1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16))',
           }}
         >
           <div className="skeleton-shimmer skeleton-box" style={{ height: '24px', marginBottom: '12px' }} />

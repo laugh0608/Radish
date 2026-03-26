@@ -9,8 +9,12 @@ import { OrderList } from '../pages/Orders';
 import { UserList } from '../pages/Users';
 import { UserDetail } from '../pages/Users/UserDetail';
 import { RoleList, RolePermissionPage } from '../pages/Roles';
+import { CategoryList } from '../pages/Categories';
 import { TagList } from '../pages/Tags';
 import { StickerGroupList, StickerList } from '../pages/Stickers';
+import { ModerationPage } from '../pages/Moderation';
+import { CoinAdminPage } from '../pages/Coins';
+import { ExperienceAdminPage } from '../pages/Experience';
 import { SystemConfigList } from '../pages/SystemConfig';
 import { UserProfile } from '../pages/UserProfile';
 import { Settings } from '../pages/Settings';
@@ -20,10 +24,8 @@ import { ThemeTest } from '../pages/ThemeTest';
 import { NotFound } from '../components/NotFound';
 import { getApiBaseUrl } from '../config/env';
 import { tokenService } from '../services/tokenService';
-import { consoleRouteMetaMap } from './routeMeta';
+import { canEnterConsole, consoleRouteMetaMap } from './routeMeta';
 import { useUser } from '../contexts/UserContext';
-import { hasPermission } from '../hooks/usePermission';
-import { CONSOLE_PERMISSIONS } from '../constants/permissions';
 
 function AuthenticatedLayout() {
   const token = tokenService.getAccessToken();
@@ -46,12 +48,12 @@ function AuthenticatedLayout() {
     return <Navigate to="/login?auto=1" replace />;
   }
 
-  if (!hasPermission(user, CONSOLE_PERMISSIONS.consoleAccess)) {
+  if (!canEnterConsole(user)) {
     return (
       <div style={{ padding: '48px 24px', maxWidth: '720px', margin: '0 auto' }}>
         <h2 style={{ marginBottom: '12px' }}>当前账号未开通 Console 访问权限</h2>
         <p style={{ margin: 0, color: '#666' }}>
-          请联系管理员为当前角色授予 `console.access`，再按需分配具体的页面与按钮权限。
+          请联系管理员为当前角色分配至少一个 Console 页面权限；入口权限会随授权自动收口。
         </p>
       </div>
     );
@@ -142,12 +144,28 @@ export const router = createBrowserRouter(
           element: withRouteGuard('role-permissions', <RolePermissionPage />),
         },
         {
+          path: 'categories',
+          element: withRouteGuard('categories', <CategoryList />),
+        },
+        {
           path: 'tags',
           element: withRouteGuard('tags', <TagList />),
         },
         {
           path: 'stickers',
           element: withRouteGuard('stickers', <StickerGroupList />),
+        },
+        {
+          path: 'moderation',
+          element: withRouteGuard('moderation', <ModerationPage />),
+        },
+        {
+          path: 'coins',
+          element: withRouteGuard('coins', <CoinAdminPage />),
+        },
+        {
+          path: 'experience',
+          element: withRouteGuard('experience', <ExperienceAdminPage />),
         },
         {
           path: 'stickers/:groupId/items',
@@ -196,8 +214,12 @@ export const ROUTES = {
   USER_DETAIL: '/users/:userId',
   ROLES: '/roles',
   ROLE_PERMISSIONS: '/roles/:roleId/permissions',
+  CATEGORIES: '/categories',
   TAGS: '/tags',
   STICKERS: '/stickers',
+  MODERATION: '/moderation',
+  COINS: '/coins',
+  EXPERIENCE: '/experience',
   STICKER_ITEMS: '/stickers/:groupId/items',
   SYSTEM_CONFIG: '/system-config',
   PROFILE: '/profile',
