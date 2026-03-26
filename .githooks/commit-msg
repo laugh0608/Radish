@@ -1,0 +1,11 @@
+#!/bin/sh
+
+repo_root="$(git rev-parse --show-toplevel)"
+
+if [ -z "$repo_root" ]; then
+  echo "[commit-msg] 无法定位仓库根目录。"
+  exit 1
+fi
+
+cd "$repo_root" || exit 1
+node Scripts/validate-commit-message.mjs "$1"
