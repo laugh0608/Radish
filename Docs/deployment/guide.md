@@ -54,57 +54,6 @@
 - 这不改变 `master` 禁止直接 push 的原则
 - 后续若团队扩展，可再把审批数从 `1` 提升到 `2`，或补充 `CODEOWNERS`
 
-## 仓库发版与合并流程
-
-当前仓库已启用 `master` 分支保护，默认约束如下：
-
-- 禁止直接 push 到 `master`
-- 禁止 force push
-- 禁止删除 `master`
-- `master` 只允许通过 Pull Request 合并
-- 合并前需通过仓库检查：
-  - `Repo Hygiene`
-  - `Frontend Lint`
-  - `Baseline Quick`
-- 合并前需至少完成 1 次审批，并解决全部 review 对话
-- 管理员当前仅允许“通过 Pull Request 绕过”，不开放直接 push
-
-### 推荐分支路径
-
-- 日常开发：在 `dev` 或功能分支完成开发与自检
-- 准备发版：从 `dev` 向 `master` 发起 Pull Request
-- 合并发布：PR 检查通过后，以 `squash` 或 `rebase` 方式合并到 `master`
-- 发布记录：合并完成后创建 Git tag，并在 GitHub Release 中补发布说明
-
-### 最小发版顺序
-
-1. 在 `dev` 完成代码、文档与必要验证
-2. 本地至少执行：
-
-   ```bash
-   npm run validate:baseline:quick
-   ```
-
-3. 发起 `dev -> master` 的 PR
-4. 等待 GitHub Actions 中的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 全部通过
-5. 完成审批与会话收束后合并到 `master`
-6. 合并后创建版本标签，例如：
-
-   ```bash
-   git checkout master
-   git pull origin master
-   git tag -a v26.3.1-release -m "Release v26.3.1"
-   git push origin v26.3.1-release
-   ```
-
-7. 在 GitHub Release 中补齐本次发布说明、已知风险与回滚信息
-
-### 现阶段说明
-
-- 当前团队仅 1 人开发，因此规则允许管理员以 PR 方式完成自审 / 自合并
-- 这不改变 `master` 禁止直接 push 的原则
-- 后续若团队扩展，可再把审批数从 `1` 提升到 `2`，或补充 `CODEOWNERS`
-
 ## 先决条件
 - Docker Engine ≥ 24，能够拉取 `mcr.microsoft.com/dotnet/*` 官方镜像。
 - .NET SDK 10.0.0+，用于调试或本地 `dotnet publish`。
@@ -445,6 +394,91 @@ HTTP (5000/5100) → ASP.NET Core 应用
 6. **清理旧证书**：确保所有客户端已换取新 Token 后，删除旧 `.pfx` 并吊销旧密码。
 
 > 建议记录证书轮换日期，并在运维手册中说明下一次到期时间，以避免证书过期导致 Auth 下线。
+
+## 上线前交付复核清单
+
+> 适用于：首版 `dev` 已达到“可发内部开发版”，准备进一步做真实外部域名部署、对外可访问环境联调或上线前最后一轮交付复核。
+
+### 目标
+
+- 把“容器能启动”进一步提升为“真实外部访问口径可用”
+- 确认公开域名、外层反代、Auth 证书、OIDC 回调地址与容器内配置完全一致
+- 为后续 Git tag / Release / 对外环境部署留一份可复用的事实记录
+
+### 进入条件
+
+- 最新一次 `master` PR 已完成 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`
+- `npm run validate:baseline` 已通过
+- 如本轮触达宿主 / 配置 / `DbMigrate` / 部署链，`npm run validate:baseline:host` 已通过
+- 当前没有阻塞主线的已知 `P0 / P1` 问题
+
+### 建议执行顺序
+
+1. **先确认生产变量与证书路径**
+   - `Deploy/.env.prod` 中的 `RADISH_PUBLIC_URL` 必须与真实外部 HTTPS 域名完全一致
+   - `RADISH_AUTH_CERTS_DIR`
+   - `RADISH_AUTH_SIGNING_CERT_PATH`
+   - `RADISH_AUTH_SIGNING_CERT_PASSWORD`
+   - `RADISH_AUTH_ENCRYPTION_CERT_PATH`
+   - `RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`
+   - 确认证书文件在宿主机真实存在，且容器内挂载后路径与变量值一致
+
+2. **先做静态展开，不直接启动**
+   - 在仓库根目录执行：
+     ```bash
+     docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config
+     ```
+   - 确认 `gateway / api / auth / frontend` 四个服务都已展开
+   - 确认 `RADISH_PUBLIC_URL`、证书挂载目录、`GatewayRuntime__EnableHttpsRedirection=false` 等关键变量都已落到最终配置
+
+3. **再校验外层反代**
+   - Nginx / Traefik / Caddy 的公开域名需与 `RADISH_PUBLIC_URL` 保持一致
+   - 外层反代必须保留：
+     - `Host`
+     - `X-Forwarded-For`
+     - `X-Forwarded-Proto`
+     - `X-Forwarded-Host`
+   - 若使用 Nginx，可基于 `Deploy/nginx.prod.conf` 修改 `server_name` 与证书路径后再上线
+
+4. **启动 `base + prod` 组合并做最小运行态检查**
+   - 推荐命令：
+     ```bash
+     docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d
+     ```
+   - 启动后至少确认：
+     - `/health` 可访问
+     - `/` 可打开 WebOS
+     - `/console/` 可打开 Console
+     - Auth / Gateway / Api 容器日志中没有证书加载失败、Issuer 不匹配或重定向异常
+
+5. **做真实外部域名链路验证**
+   - 使用与 `RADISH_PUBLIC_URL` 完全一致的域名访问，不要混用 `localhost`
+   - 验证：
+     - `radish-client` 登录、回调、登出
+     - `radish-console` 登录、回调、登出
+     - `radish-scalar` 登录、回调、登出
+     - 业务接口经 Gateway 转发后仍可正常返回
+   - 若出现 `redirect_uri` 不匹配，优先检查：
+     - 外部访问域名是否与 `RADISH_PUBLIC_URL` 一致
+     - `OpenIddict__Server__Issuer` 是否已跟随 `RADISH_PUBLIC_URL`
+     - 外层反代是否正确传递 `X-Forwarded-Proto` 与 `Host`
+
+### 最小记录模板
+
+- 记录日期：YYYY-MM-DD
+- 记录范围：上线前交付复核
+- 外部域名：<domain>
+- Compose 组合：`base + prod`
+- 证书来源：<path or secret name>
+- 静态展开：通过 / 阻塞
+- 最小运行态：通过 / 阻塞
+- OIDC 回调链路：通过 / 阻塞
+- 结论：可进入更大范围部署 / 仍需修复
+
+### 当前说明
+
+- 本清单属于“上线前交付复核”，不阻塞当前“可发内部开发版”的判断
+- 若后续只是常规功能迭代，仍优先使用 `validate:baseline` 与 `master` PR 质量门禁，不需要每次都执行本清单
 
 ## 文档系统部署
 

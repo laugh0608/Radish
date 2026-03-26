@@ -136,7 +136,7 @@
 ### 文档口径同步
 
 - **状态矩阵已更新**：`dev-first-status-matrix.md` 当前已把 `WebOS`、论坛基础、社区 `P0`、`Console V1`、国风视觉基线、主题切换与 `i18n` 统一改为“已完成”。
-- **当前规划页已收束重点**：`planning/current.md` 与 `development-plan.md` 当前已把首版剩余重点进一步收束到验证基线、最小 `CI` 门禁稳定性与总回归记录整理。
+- **当前规划页已收束重点**：`planning/current.md` 与 `development-plan.md` 当前已把首版剩余重点进一步收束到总回归记录维护、内部开发版判断与上线前交付复核。
 - **首版总回归检查单已补齐**：当前已新增 `guide/dev-first-regression-checklist.md`，把自动化门槛、可直接复用的 Smoke 记录、发布前检查项与统一记录格式收束到一个入口。
 - **首版总回归记录已补齐**：当前已新增 `guide/dev-first-regression-record.md`，把本轮真实 Smoke 与后续自动化验证结果统一沉淀成一份阶段记录。
 - **本周周志已补本轮结论**：避免“用户已确认通过，但规划页仍停在待复核”的口径漂移继续存在。
@@ -153,4 +153,15 @@
 - **`npm run validate:baseline` 已于 `2026-03-26` 复跑并通过**：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、身份语义扫描、后端构建与 `Radish.Api.Tests` 当前均已通过。
 - **中途暴露的测试阻塞已完成收口**：`PostControllerTest` 的两个 `GetById` 用例曾因严格 `Mock` 未补 `CommentService.QueryAsync` 调用而失败；当前已补测试桩并完成定向复验。
 - **`npm run validate:baseline:host` 已继续通过**：`DbMigrate doctor / verify` 只读自检当前均已通过，验证基线已完成本轮收口。
-- **当前工程结论已同步收口**：业务 / 体验主线 Smoke 与验证基线均已完成本轮收口，首版剩余重点进一步收束到最小 `CI` 门禁稳定性与最终发布判断。
+- **当前工程结论已同步收口**：业务 / 体验主线 Smoke 与验证基线均已完成本轮收口，首版剩余重点进一步收束到总回归记录维护、内部开发版判断与上线前交付复核。
+
+### 最小 CI 门禁真实合并闭环
+
+- **最新一次 `master` PR 已完成三项质量门禁并成功合并**：`Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 当前均已全绿，`fix(test): 收口首版回归与验证基线` 已以 `37fe89c` 合入 `master`。
+- **`dev` 已同步 `master` 合并结果**：当前已补一条回灌提交 `cbd0f8a`，用于把 `master` 的 squash / merge 结果同步回 `dev`，避免后续 PR 继续重复出现同一批冲突。
+- **规划口径已继续收束**：`首次 CI/CD` 当前已从“待联调复核”转入“已完成”，首版剩余重点改为总回归记录维护、内部开发版判断，以及上线前外部反代域名 / Auth 证书 / OIDC 回调链路复核。
+
+### 首版内部开发版判断
+
+- **当前判断已正式收口为“可发内部开发版”**：基于业务 / 体验主线已完成本轮 Smoke、`validate:baseline` 与 `validate:baseline:host` 已通过、最小 `CI` 门禁已完成真实合并闭环，以及当前无已知阻塞主线的 `P0 / P1` 问题，首版 `dev` 当前已具备内部开发版发布条件。
+- **后续重点已切到上线前交付复核**：真实外部反代域名、Auth 证书与 OIDC 回调链路仍需在上线前补联调记录，但这不再阻塞当前内部开发版判断。
