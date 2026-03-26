@@ -1,8 +1,4 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-ARG VITE_API_BASE_URL=https://localhost:5000
-ARG VITE_AUTH_BASE_URL=https://localhost:5000
-ARG VITE_SIGNALR_HUB_URL=https://localhost:5000
-ARG VITE_AUTH_SERVER_URL=https://localhost:5000
 WORKDIR /src
 
 RUN apt-get update \
@@ -21,11 +17,6 @@ COPY Frontend/radish.ui/package.json Frontend/radish.ui/package.json
 RUN npm ci
 
 COPY Frontend ./Frontend
-
-ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
-ENV VITE_AUTH_BASE_URL=${VITE_AUTH_BASE_URL}
-ENV VITE_SIGNALR_HUB_URL=${VITE_SIGNALR_HUB_URL}
-ENV VITE_AUTH_SERVER_URL=${VITE_AUTH_SERVER_URL}
 
 RUN npm run build --workspace=radish.client
 RUN npm run build --workspace=radish.console

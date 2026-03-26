@@ -142,20 +142,16 @@ docker build \
 
 docker build \
   -f Frontend/Dockerfile \
-  --build-arg VITE_API_BASE_URL=https://localhost:5000 \
-  --build-arg VITE_AUTH_BASE_URL=https://localhost:5000 \
-  --build-arg VITE_SIGNALR_HUB_URL=https://localhost:5000 \
-  --build-arg VITE_AUTH_SERVER_URL=https://localhost:5000 \
   -t radish/frontend:local .
 ```
 
-若生产环境不使用 `https://localhost:5000` 作为公开入口，可以在构建期传入真实 `VITE_*`；但当前前端也已支持运行时覆盖：
+当前前端镜像不再依赖构建期 `VITE_*` 参数；运行时会通过容器环境变量生成配置：
 
 - 静态服务会在容器启动时生成 `/runtime-config.js`
 - 运行时默认优先读取 `RADISH_PUBLIC_URL`
 - 如需细分，也可通过 `VITE_API_BASE_URL`、`VITE_AUTH_BASE_URL`、`VITE_SIGNALR_HUB_URL`、`VITE_AUTH_SERVER_URL` 单独覆盖
 
-> 说明：当前 `frontend` 镜像虽尚未纳入统一 GHCR 推送链路，但已经支持运行时配置注入；后续切换为“预构建镜像 + 部署时注入公开地址”不再需要重新设计前端接线。
+> 说明：当前 `frontend` 镜像虽尚未纳入统一 GHCR 推送链路，但已经完全切到运行时配置注入；后续切换为“预构建镜像 + 部署时注入公开地址”不再需要额外改 Dockerfile。
 
 ## 运行容器
 当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在拆为“基础文件 + 环境覆盖文件”两层：
