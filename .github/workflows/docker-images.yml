@@ -17,6 +17,11 @@ on:
         required: false
         type: boolean
         default: false
+      push_frontend:
+        description: Push frontend image to GHCR when current ref is dev or a v* tag
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -36,6 +41,7 @@ jobs:
     outputs:
       image_namespace: ${{ steps.vars.outputs.image_namespace }}
       should_push_backend: ${{ steps.vars.outputs.should_push_backend }}
+      should_push_frontend: ${{ steps.vars.outputs.should_push_frontend }}
       publish_track: ${{ steps.vars.outputs.publish_track }}
       short_sha: ${{ steps.vars.outputs.short_sha }}
     steps:
@@ -44,32 +50,55 @@ jobs:
         shell: bash
         env:
           DISPATCH_PUSH_BACKEND: ${{ github.event.inputs.push_backend || 'false' }}
+          DISPATCH_PUSH_FRONTEND: ${{ github.event.inputs.push_frontend || 'false' }}
         run: |
           owner_lc="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
           image_namespace="${REGISTRY}/${owner_lc}"
           short_sha="${GITHUB_SHA::7}"
           should_push_backend=false
+          should_push_frontend=false
           publish_track=ci
 
           if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == "refs/heads/dev" ]]; then
             should_push_backend=true
+            should_push_frontend=true
             publish_track=dev
           elif [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
             should_push_backend=true
+            should_push_frontend=true
             publish_track=release
-          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${DISPATCH_PUSH_BACKEND}" == "true" ]]; then
+          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
             if [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
-              should_push_backend=true
-              publish_track=dev
+              if [[ "${DISPATCH_PUSH_BACKEND}" == "true" ]]; then
+                should_push_backend=true
+              fi
+
+              if [[ "${DISPATCH_PUSH_FRONTEND}" == "true" ]]; then
+                should_push_frontend=true
+              fi
+
+              if [[ "${should_push_backend}" == "true" || "${should_push_frontend}" == "true" ]]; then
+                publish_track=dev
+              fi
             elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-              should_push_backend=true
-              publish_track=release
+              if [[ "${DISPATCH_PUSH_BACKEND}" == "true" ]]; then
+                should_push_backend=true
+              fi
+
+              if [[ "${DISPATCH_PUSH_FRONTEND}" == "true" ]]; then
+                should_push_frontend=true
+              fi
+
+              if [[ "${should_push_backend}" == "true" || "${should_push_frontend}" == "true" ]]; then
+                publish_track=release
+              fi
             fi
           fi
 
           {
             echo "image_namespace=${image_namespace}"
             echo "should_push_backend=${should_push_backend}"
+            echo "should_push_frontend=${should_push_frontend}"
             echo "publish_track=${publish_track}"
             echo "short_sha=${short_sha}"
           } >> "$GITHUB_OUTPUT"
@@ -152,8 +181,8 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.ref.name=${{ github.ref_name }}
 
-  frontend-image-build:
-    name: Frontend Image Build
+  frontend-image:
+    name: Frontend Image
     runs-on: ubuntu-latest
     needs: prepare
     steps:
@@ -163,11 +192,57 @@ jobs:
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build frontend image for verification only
+      - name: Login to GHCR
+        if: needs.prepare.outputs.should_push_frontend == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve image tags
+        id: tags
+        shell: bash
+        env:
+          IMAGE_NAMESPACE: ${{ needs.prepare.outputs.image_namespace }}
+          IMAGE_NAME: radish-frontend
+          PUBLISH_TRACK: ${{ needs.prepare.outputs.publish_track }}
+          SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          image="${IMAGE_NAMESPACE}/${IMAGE_NAME}"
+
+          case "${PUBLISH_TRACK}" in
+            dev)
+              printf -v tags '%s\n%s' \
+                "${image}:dev-latest" \
+                "${image}:dev-${SHORT_SHA}"
+              ;;
+            release)
+              printf -v tags '%s\n%s' \
+                "${image}:${REF_NAME}" \
+                "${image}:latest"
+              ;;
+            *)
+              tags="${image}:ci-${SHORT_SHA}"
+              ;;
+          esac
+
+          {
+            echo "tags<<EOF"
+            echo "${tags}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Build and maybe push frontend image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Frontend/Dockerfile
-          push: false
+          push: ${{ needs.prepare.outputs.should_push_frontend == 'true' }}
           platforms: linux/amd64
-          tags: radish/frontend-ci:${{ needs.prepare.outputs.short_sha }}
+          tags: ${{ steps.tags.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}

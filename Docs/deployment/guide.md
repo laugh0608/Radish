@@ -46,10 +46,11 @@
    git push origin v26.3.1-release
    ```
 
-7. 等待 `Docker Images` 工作流完成本次后端镜像产出；若当前标签以 `v*` 命名，`GHCR` 会同步产出：
+7. 等待 `Docker Images` 工作流完成本次镜像产出；若当前标签以 `v*` 命名，`GHCR` 会同步产出：
    - `ghcr.io/<owner>/radish-api:<tag>` / `latest`
    - `ghcr.io/<owner>/radish-auth:<tag>` / `latest`
    - `ghcr.io/<owner>/radish-gateway:<tag>` / `latest`
+   - `ghcr.io/<owner>/radish-frontend:<tag>` / `latest`
 
 8. 在 GitHub Release 中补齐本次发布说明、已知风险与回滚信息
 
@@ -86,33 +87,34 @@
   - `.github/workflows/repo-quality.yml`
   - `.github/workflows/docker-images.yml`
 
-## GHCR 后端镜像工作流
+## GHCR 镜像工作流
 
-当前仓库已补 `Docker Images` 工作流，默认采用 `GHCR` 作为后端镜像仓库，口径如下：
+当前仓库已补 `Docker Images` 工作流，默认采用 `GHCR` 作为统一镜像仓库，口径如下：
 
 - `pull_request -> master / dev`：构建 `api / auth / gateway / frontend` 四个镜像入口，仅做 build 校验，不推送镜像
-- `push -> dev`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway` 推送到 `GHCR`
-- `push -> v*`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway` 以版本标签 + `latest` 推送到 `GHCR`
-- `workflow_dispatch`：可手动补跑；仅当当前 ref 为 `dev` 或 `v*` tag，且显式启用 `push_backend` 时，才会推送后端镜像
+- `push -> dev`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 推送到 `GHCR`
+- `push -> v*`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以版本标签 + `latest` 推送到 `GHCR`
+- `workflow_dispatch`：可手动补跑；仅当当前 ref 为 `dev` 或 `v*` tag，且显式启用 `push_backend`、`push_frontend` 对应开关时，才会推送对应镜像
 
-当前后端镜像命名约定如下：
+当前镜像命名约定如下：
 
 - `ghcr.io/<owner>/radish-api`
 - `ghcr.io/<owner>/radish-auth`
 - `ghcr.io/<owner>/radish-gateway`
+- `ghcr.io/<owner>/radish-frontend`
 
 当前 tag 规则如下：
 
 - `dev` 分支：`dev-latest`、`dev-<shortsha>`
 - `v*` 标签：`<tag>`、`latest`
 
-当前前端镜像仍只保留 CI build 校验，暂未纳入统一 GHCR 推送；但当前限制已不再是“公开域名写死在构建产物里”，因为：
+当前 `frontend` 已接入统一 GHCR 推送规则；之所以可以直接纳入，是因为：
 
 - `Frontend/scripts/serve-static.mjs` 已支持在容器启动时生成 `/runtime-config.js`
 - `radish.client` 与 `radish.console` 当前都会优先读取运行时注入的公开地址与功能开关，再回退到构建期 `VITE_*`
 - `Deploy/docker-compose.dev.yml / docker-compose.prod.yml` 也已为 `frontend` 容器补齐运行时环境变量入口
 
-因此当前 `frontend` 已具备“同一个镜像按运行时环境复用”的能力；后续若要把它也纳入统一 GHCR 推送，重点不再是补运行时配置，而是先完成 `GHCR` 后端镜像首次真实产物验证，再把 `frontend` 纳入 `Docker Images` workflow 的推送规则
+因此当前 `frontend` 已具备“同一个镜像按运行时环境复用”的能力；当前工作流已补齐统一推送规则，后续只需等待 `frontend` 首次真实 GHCR 产物验证并确认包权限、可见性与 tag 规则即可
 
 ## 构建服务镜像
 当前仓库已提供首版最小镜像链，对应四个构建入口：
@@ -151,7 +153,7 @@ docker build \
 - 运行时默认优先读取 `RADISH_PUBLIC_URL`
 - 如需细分，也可通过 `VITE_API_BASE_URL`、`VITE_AUTH_BASE_URL`、`VITE_SIGNALR_HUB_URL`、`VITE_AUTH_SERVER_URL` 单独覆盖
 
-> 说明：当前 `frontend` 镜像虽尚未纳入统一 GHCR 推送链路，但已经完全切到运行时配置注入；后续切换为“预构建镜像 + 部署时注入公开地址”不再需要额外改 Dockerfile。
+> 说明：当前 `frontend` 镜像已纳入统一 GHCR 推送链路，并且已经完全切到运行时配置注入；继续沿用“预构建镜像 + 部署时注入公开地址”时不再需要额外改 Dockerfile。
 
 ## 运行容器
 当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在拆为“基础文件 + 环境覆盖文件”两层：

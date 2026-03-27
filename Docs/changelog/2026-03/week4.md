@@ -171,3 +171,21 @@
 - **已补 `Docker Images` workflow**：当前已新增 `.github/workflows/docker-images.yml`，覆盖 `PR -> build only`、`push dev -> backend push`、`push v* -> backend release push` 三类触发，后端镜像默认目标为 `GHCR`。
 - **前端运行时配置注入已补齐**：`Frontend/scripts/serve-static.mjs` 当前会在容器启动时生成 `/runtime-config.js`，`radish.client / radish.console` 已优先读取运行时配置，`frontend` 统一镜像推送不再受“公开地址写死在构建产物里”限制。
 - **下一步只剩真实 GHCR 产物验证与前端纳管**：先验证 `dev` / `v*` 的后端镜像真实产物，再把 `frontend` 纳入 `Docker Images` workflow 的推送规则。
+
+## 2026-03-27 (周五)
+
+### Frontend 纳入统一 GHCR 推送
+
+- **`frontend` 已接入 `Docker Images` workflow 的统一推送规则**：当前 `push -> dev` 与 `push -> v*` 会在构建 `Frontend/Dockerfile` 后同步推送 `ghcr.io/<owner>/radish-frontend`，tag 规则与后端保持一致：`dev-latest` / `dev-<shortsha>`、`<tag>` / `latest`。
+- **手动补跑入口已补 `push_frontend` 开关**：`workflow_dispatch` 现在不再只能手动推送后端镜像；当当前 ref 为 `dev` 或 `v*` tag 时，可按需单独补跑 `frontend` 推送。
+- **后端 GHCR 真实产物验证结论已固化为前置事实**：当前已确认 `radish-api / radish-auth / radish-gateway` 可通过 `docker pull` 获取，因此本轮工作不再继续补后端 workflow 结构，而是转向前端镜像统一推送的接入与验证。
+
+### 文档口径同步
+
+- **部署与规划文档已同步更新**：`deployment/guide.md`、`planning/current.md`、`planning/dev-first-status-matrix.md` 与 `development-plan.md` 当前已统一改为“后端 GHCR 已验证、`frontend` 已纳入统一推送规则、前端真实产物待首次 workflow 实跑确认”的口径。
+- **当前下一步已重新收束**：首版 `dev` 的剩余工程事项不再是“把前端纳入统一推送”，而是“验证 `frontend` GHCR 首次真实产物，并在条件具备后执行上线前交付复核”。
+
+### 本轮验证
+
+- ✅ `Docker Images` workflow 与相关文档已完成静态复查。
+- ⏳ `frontend` GHCR 首次真实产物待 GitHub Actions 实跑确认。
