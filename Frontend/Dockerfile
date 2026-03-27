@@ -1,12 +1,5 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM node:24-bookworm-slim AS build
 WORKDIR /src
-
-RUN apt-get update \
-    && apt-get install -y curl ca-certificates gnupg \
-    && curl -fsSL https://deb.nodesource.com/setup_24.x | bash - \
-    && apt-get install -y nodejs \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
 COPY Frontend/radish.client/package.json Frontend/radish.client/package.json
@@ -21,11 +14,13 @@ COPY Frontend ./Frontend
 RUN npm run build --workspace=radish.client
 RUN npm run build --workspace=radish.console
 
-FROM build AS final
+FROM node:24-bookworm-slim AS final
 WORKDIR /app
-RUN mkdir -p /app/client /app/console \
-    && cp -r /src/Frontend/radish.client/dist/. /app/client \
-    && cp -r /src/Frontend/radish.console/dist/. /app/console \
-    && cp /src/Frontend/scripts/serve-static.mjs /app/serve-static.mjs
+ENV NODE_ENV=production
+
+COPY --from=build /src/Frontend/radish.client/dist ./client
+COPY --from=build /src/Frontend/radish.console/dist ./console
+COPY --from=build /src/Frontend/scripts/serve-static.mjs ./serve-static.mjs
+
 EXPOSE 80
 CMD ["node", "/app/serve-static.mjs"]
