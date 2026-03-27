@@ -91,11 +91,11 @@
 - 最小 `CI` 门禁已完成真实合并闭环，但后续新增跨层改动仍需继续依赖 `master` PR 门禁作为默认质量入口
 - 当前 `dotnet build/test` 仍存在较多警告，但本轮未表现为阻塞项；是否继续清理，后续按优先级单列，不并入当前首版门槛判断
 - 本轮未重新组织新的业务侧总串联 Smoke，仍以 `2026-03-23 ~ 2026-03-26` 已沉淀记录为准
-- 当前已补 `GHCR` 后端镜像 workflow 资产，但尚未在真实 `dev` 推送或 `v*` 标签上沉淀首次产物记录；`frontend` 侧的运行时配置注入已完成，当前只差后续把它纳入统一镜像推送规则
+- 当前已完成 `GHCR` 前后端镜像 workflow 真实产物验证：`radish-api / radish-auth / radish-gateway / radish-frontend` 当前均已可通过 `docker pull` 获取；`frontend` 侧的运行时配置注入已完成，`Frontend/Dockerfile` 也已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`
 - 真实外部反代域名、Auth 证书与 OIDC 回调链路当前仍未在生产口径下补联调记录；该项已明确后置到 `CI/CD` 完善且具备 Docker 镜像推送能力后再正式执行，不阻塞当前内部开发版判断
 
 ### 下一动作
 
 1. 维持当前 `master` PR 质量门禁与 `validate:baseline` 作为内部开发版默认回归入口。
 2. 如近期再发生跨层改动，优先重新执行 `npm run validate:baseline`；涉及宿主 / 配置时再补 `npm run validate:baseline:host`。
-3. 先在 `dev` 分支或 `v*` 标签上验证 `GHCR` 后端镜像 workflow 的首次真实产物；验证稳定后，再把 `frontend` 纳入统一镜像推送规则。待具备真实外部域名、Auth 证书与镜像推送条件后，再补记真实外部反代域名、Auth 证书与 OIDC 回调链路的联调结果。
+3. 维持当前统一镜像推送与轻量前端镜像口径；如后续再改 Dockerfile / workflow / Compose，优先复核镜像可拉取性与前端镜像体积。待具备真实外部域名、Auth 证书与镜像推送条件后，再补记真实外部反代域名、Auth 证书与 OIDC 回调链路的联调结果。

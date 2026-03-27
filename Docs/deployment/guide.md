@@ -63,7 +63,7 @@
 ## 先决条件
 - Docker Engine ≥ 24，能够拉取 `mcr.microsoft.com/dotnet/*` 官方镜像。
 - .NET SDK 10.0.0+，用于调试或本地 `dotnet publish`。
-- Node.js 24+：可选，用于宿主机本地构建前端；前端镜像会在构建阶段自行安装 Node 24。
+- Node.js 24+：可选，用于宿主机本地构建前端；`Frontend/Dockerfile` 当前直接基于 Node 24 多阶段镜像完成构建与运行时封装。
 - PostgreSQL / Redis：当前最小 Compose **不是必需项**。默认链路直接复用仓库共享配置中的 SQLite + 内存缓存，以便先完成首版镜像构建与交付验证；生产环境再按需覆盖。
 - **Auth 证书**：准备好 OIDC 签名/加密证书（`.pfx` 文件），并在部署环境中通过环境变量覆盖 `OpenIddict__Encryption__*` 配置；默认的 `Certs/dev-auth-cert.pfx` 仅用于本地联调，生产必须替换。
 
@@ -114,7 +114,7 @@
 - `radish.client` 与 `radish.console` 当前都会优先读取运行时注入的公开地址与功能开关，再回退到构建期 `VITE_*`
 - `Deploy/docker-compose.dev.yml / docker-compose.prod.yml` 也已为 `frontend` 容器补齐运行时环境变量入口
 
-因此当前 `frontend` 已具备“同一个镜像按运行时环境复用”的能力；当前工作流已补齐统一推送规则，后续只需等待 `frontend` 首次真实 GHCR 产物验证并确认包权限、可见性与 tag 规则即可
+因此当前 `frontend` 已具备“同一个镜像按运行时环境复用”的能力；当前工作流已补齐统一推送规则，且 `frontend` GHCR 首次真实产物已可通过 `docker pull` 获取，当前剩余重点转为上线前外部交付复核。
 
 ## 构建服务镜像
 当前仓库已提供首版最小镜像链，对应四个构建入口：
@@ -122,7 +122,7 @@
 - `Radish.Api/Dockerfile`：发布 API，并把仓库 `Docs/` 一并带入镜像，确保固定文档能力在容器内可用。
 - `Radish.Auth/Dockerfile`：发布 OIDC 服务，并把仓库 `Certs/` 带入镜像，便于本地 / 内部开发版使用默认开发证书。
 - `Radish.Gateway/Dockerfile`：发布网关服务，作为默认对外入口。
-- `Frontend/Dockerfile`：在构建阶段安装 Node 24、构建 `radish.client` 与 `radish.console`，最终由内置静态服务器同时托管 `/` 与 `/console/`。
+- `Frontend/Dockerfile`：当前采用 `Node 24` 多阶段镜像，先构建 `radish.client` 与 `radish.console`，最终镜像只保留静态产物与内置静态服务器，统一托管 `/` 与 `/console/`。
 
 常用单镜像构建命令如下：
 
@@ -153,7 +153,7 @@ docker build \
 - 运行时默认优先读取 `RADISH_PUBLIC_URL`
 - 如需细分，也可通过 `VITE_API_BASE_URL`、`VITE_AUTH_BASE_URL`、`VITE_SIGNALR_HUB_URL`、`VITE_AUTH_SERVER_URL` 单独覆盖
 
-> 说明：当前 `frontend` 镜像已纳入统一 GHCR 推送链路，并且已经完全切到运行时配置注入；继续沿用“预构建镜像 + 部署时注入公开地址”时不再需要额外改 Dockerfile。
+> 说明：当前 `frontend` 镜像已纳入统一 GHCR 推送链路，并且已经完全切到运行时配置注入；同时 `Frontend/Dockerfile` 已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`，继续沿用“预构建镜像 + 部署时注入公开地址”时不再需要额外改 Dockerfile。
 
 ## 运行容器
 当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在拆为“基础文件 + 环境覆盖文件”两层：

@@ -180,12 +180,19 @@
 - **手动补跑入口已补 `push_frontend` 开关**：`workflow_dispatch` 现在不再只能手动推送后端镜像；当当前 ref 为 `dev` 或 `v*` tag 时，可按需单独补跑 `frontend` 推送。
 - **后端 GHCR 真实产物验证结论已固化为前置事实**：当前已确认 `radish-api / radish-auth / radish-gateway` 可通过 `docker pull` 获取，因此本轮工作不再继续补后端 workflow 结构，而是转向前端镜像统一推送的接入与验证。
 
+### Frontend GHCR 与镜像体积收口
+
+- **`frontend` GHCR 首次真实产物已完成验证**：当前已确认 `ghcr.io/<owner>/radish-frontend` 可通过 `docker pull` 获取，包权限、可见性与 tag 规则已完成一轮真实验证。
+- **前端镜像已从“构建机镜像”收口为轻量运行时镜像**：`Frontend/Dockerfile` 当前已改为纯 `Node 24` 多阶段构建，最终镜像只保留静态产物与 `serve-static.mjs`，不再把 `.NET SDK`、源码与 `node_modules` 一并带入最终层。
+- **本地构建体积已明显下降**：用户已确认本地重新构建后的前端镜像体积约为 `300MB`，不再维持此前约 `2.2GB` 的过重状态。
+
 ### 文档口径同步
 
-- **部署与规划文档已同步更新**：`deployment/guide.md`、`planning/current.md`、`planning/dev-first-status-matrix.md` 与 `development-plan.md` 当前已统一改为“后端 GHCR 已验证、`frontend` 已纳入统一推送规则、前端真实产物待首次 workflow 实跑确认”的口径。
-- **当前下一步已重新收束**：首版 `dev` 的剩余工程事项不再是“把前端纳入统一推送”，而是“验证 `frontend` GHCR 首次真实产物，并在条件具备后执行上线前交付复核”。
+- **部署与规划文档已同步更新**：`deployment/guide.md`、`planning/current.md`、`planning/dev-first-status-matrix.md`、`development-plan.md` 与 `guide/dev-first-regression-record.md` 当前已统一改为“前后端 GHCR 已验证、前端镜像体积已收口、剩余事项转为上线前交付复核”的口径。
+- **当前下一步已重新收束**：首版 `dev` 的剩余工程事项不再是“验证前端 GHCR 首次真实产物”，而是“冻结统一镜像推送口径，并在条件具备后执行上线前交付复核”。
 
 ### 本轮验证
 
 - ✅ `Docker Images` workflow 与相关文档已完成静态复查。
-- ⏳ `frontend` GHCR 首次真实产物待 GitHub Actions 实跑确认。
+- ✅ `frontend` GHCR 首次真实产物已完成 `docker pull` 验证。
+- ✅ 前端镜像本地构建体积已收口到约 `300MB`。
