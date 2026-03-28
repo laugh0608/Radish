@@ -71,7 +71,7 @@
    git push origin v26.3.1-release
    ```
 
-7. 等待 `Docker Images` 工作流完成本次镜像产出；若当前标签以 `v*` 命名，`GHCR` 会同步产出：
+7. 等待 `Docker Images` 工作流完成本次镜像产出；若当前标签为 `v*-release`，`GHCR` 会同步产出：
    - `ghcr.io/<owner>/radish-api:<tag>` / `latest`
    - `ghcr.io/<owner>/radish-auth:<tag>` / `latest`
    - `ghcr.io/<owner>/radish-gateway:<tag>` / `latest`
@@ -123,10 +123,11 @@
 
 当前仓库已补 `Docker Images` 工作流，默认采用 `GHCR` 作为统一镜像仓库，口径如下：
 
-- `pull_request -> master / dev`：构建 `api / auth / gateway / frontend` 四个镜像入口，仅做 build 校验，不推送镜像
-- `push -> dev`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 推送到 `GHCR`
-- `push -> v*`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以版本标签 + `latest` 推送到 `GHCR`
-- `workflow_dispatch`：可手动补跑；仅当当前 ref 为 `dev` 或 `v*` tag，且显式启用 `push_backend`、`push_frontend` 对应开关时，才会推送对应镜像
+- `Repo Quality`：仅在 `pull_request -> master / dev` 与 `workflow_dispatch` 触发，不再因普通 `dev` push 消耗资源
+- `push -> v*-dev`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `dev-latest` 推送到 `GHCR`
+- `push -> v*-test`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `test-latest` 推送到 `GHCR`
+- `push -> v*-release`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `latest` 推送到 `GHCR`
+- `workflow_dispatch`：可手动补跑；仅当当前 ref 为 `v*-dev`、`v*-test` 或 `v*-release` tag，且显式启用 `push_backend`、`push_frontend` 对应开关时，才会推送对应镜像
 
 当前镜像命名约定如下：
 
@@ -137,10 +138,11 @@
 
 当前 tag 规则如下：
 
-- `dev` 分支：`dev-latest`、`dev-<shortsha>`
-- `v*` 标签：`<tag>`、`latest`
+- `v*-dev`：`<tag>`、`dev-latest`
+- `v*-test`：`<tag>`、`test-latest`
+- `v*-release`：`<tag>`、`latest`
 
-其中 `latest` 只是 release 工作流附带产物；生产部署建议固定使用明确的发布 tag，而不是依赖漂移的 `latest`。
+其中 `dev-latest`、`test-latest`、`latest` 都只是对应轨道的浮动别名；测试与生产部署都建议固定使用明确的版本 tag，而不是依赖漂移别名。
 
 当前 `frontend` 已接入统一 GHCR 推送规则；之所以可以直接纳入，是因为：
 
@@ -305,7 +307,7 @@ docker run -d --name radish-api \
   -v /data/radish/logs:/app/Logs \
   -e ASPNETCORE_ENVIRONMENT=Production \
   -e ASPNETCORE_URLS="http://+:5100" \
-  ghcr.io/your-org/radish-api:release-tag
+  ghcr.io/your-org/radish-api:v26.3.1-release
 ```
 
 将实际数据库凭据、安全密钥与证书路径等以环境变量或挂载文件方式注入。日志可通过 `docker logs -f <container>` 追踪；若需热重载，请继续使用宿主机 `dotnet watch` / `npm run dev`。

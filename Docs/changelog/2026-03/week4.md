@@ -223,6 +223,13 @@
 - **镜像变量入口已补齐**：`Deploy/.env.test.example` 与 `Deploy/.env.prod.example` 当前已补 `RADISH_FRONTEND_IMAGE / RADISH_API_IMAGE / RADISH_AUTH_IMAGE / RADISH_GATEWAY_IMAGE`，测试环境默认面向 `dev-*` 镜像，生产环境明确要求固定 release tag。
 - **根目录入口文档已同步**：`README.md`、`deployment/guide.md`、`guide/gateway.md`、`guide/configuration.md` 以及规划页当前都已统一为“开发运行直跑、`local` 做本地容器验证、`test / prod` 拉取远程镜像”的口径。
 
+### GitHub Actions 触发口径收口
+
+- **`Repo Quality` 已停止响应普通 `dev` push**：当前仅保留 `pull_request -> master / dev` 与手动触发，避免日常同步 `dev` 时重复消耗 Actions 资源。
+- **`Docker Images` 已改为只响应规范 tag**：当前仅在 `push v*-dev / v*-test / v*-release` 或手动补跑对应 tag 时推送 `GHCR` 镜像，不再沿用“`push dev` 自动推送”的旧口径。
+- **镜像浮动别名已按轨道拆分**：开发轨道产出 `<tag> + dev-latest`，测试轨道产出 `<tag> + test-latest`，正式发布轨道产出 `<tag> + latest`。
+- **版本规范与部署样例已同步**：`Docs/architecture/specifications.md`、`README.md`、`Deploy/.env.test.example`、`Deploy/.env.prod.example` 与部署指南当前都已统一到 `-dev / -test / -release` 三条镜像轨道。
+
 ### 本轮验证
 
 - ✅ `docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml config` 通过。

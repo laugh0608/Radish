@@ -1,24 +1,20 @@
 name: Docker Images
 
 on:
-  pull_request:
-    branches:
-      - master
-      - dev
   push:
-    branches:
-      - dev
     tags:
-      - 'v*'
+      - 'v*-dev'
+      - 'v*-test'
+      - 'v*-release'
   workflow_dispatch:
     inputs:
       push_backend:
-        description: Push backend images to GHCR when current ref is dev or a v* tag
+        description: Push backend images to GHCR when current ref is a v*-dev / v*-test / v*-release tag
         required: false
         type: boolean
         default: false
       push_frontend:
-        description: Push frontend image to GHCR when current ref is dev or a v* tag
+        description: Push frontend image to GHCR when current ref is a v*-dev / v*-test / v*-release tag
         required: false
         type: boolean
         default: false
@@ -43,7 +39,6 @@ jobs:
       should_push_backend: ${{ steps.vars.outputs.should_push_backend }}
       should_push_frontend: ${{ steps.vars.outputs.should_push_frontend }}
       publish_track: ${{ steps.vars.outputs.publish_track }}
-      short_sha: ${{ steps.vars.outputs.short_sha }}
     steps:
       - name: Compute image namespace and publish mode
         id: vars
@@ -54,44 +49,32 @@ jobs:
         run: |
           owner_lc="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
           image_namespace="${REGISTRY}/${owner_lc}"
-          short_sha="${GITHUB_SHA::7}"
           should_push_backend=false
           should_push_frontend=false
-          publish_track=ci
+          publish_track=invalid
 
-          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == "refs/heads/dev" ]]; then
+          case "${GITHUB_REF_NAME}" in
+            v*-dev)
+              publish_track=dev
+              ;;
+            v*-test)
+              publish_track=test
+              ;;
+            v*-release)
+              publish_track=release
+              ;;
+          esac
+
+          if [[ "${GITHUB_EVENT_NAME}" == "push" && "${publish_track}" != "invalid" ]]; then
             should_push_backend=true
             should_push_frontend=true
-            publish_track=dev
-          elif [[ "${GITHUB_EVENT_NAME}" == "push" && "${GITHUB_REF}" == refs/tags/v* ]]; then
-            should_push_backend=true
-            should_push_frontend=true
-            publish_track=release
-          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-            if [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
-              if [[ "${DISPATCH_PUSH_BACKEND}" == "true" ]]; then
-                should_push_backend=true
-              fi
+          elif [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" && "${publish_track}" != "invalid" ]]; then
+            if [[ "${DISPATCH_PUSH_BACKEND}" == "true" ]]; then
+              should_push_backend=true
+            fi
 
-              if [[ "${DISPATCH_PUSH_FRONTEND}" == "true" ]]; then
-                should_push_frontend=true
-              fi
-
-              if [[ "${should_push_backend}" == "true" || "${should_push_frontend}" == "true" ]]; then
-                publish_track=dev
-              fi
-            elif [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-              if [[ "${DISPATCH_PUSH_BACKEND}" == "true" ]]; then
-                should_push_backend=true
-              fi
-
-              if [[ "${DISPATCH_PUSH_FRONTEND}" == "true" ]]; then
-                should_push_frontend=true
-              fi
-
-              if [[ "${should_push_backend}" == "true" || "${should_push_frontend}" == "true" ]]; then
-                publish_track=release
-              fi
+            if [[ "${DISPATCH_PUSH_FRONTEND}" == "true" ]]; then
+              should_push_frontend=true
             fi
           fi
 
@@ -100,13 +83,13 @@ jobs:
             echo "should_push_backend=${should_push_backend}"
             echo "should_push_frontend=${should_push_frontend}"
             echo "publish_track=${publish_track}"
-            echo "short_sha=${short_sha}"
           } >> "$GITHUB_OUTPUT"
 
   backend-images:
     name: Backend Image (${{ matrix.image_name }})
     runs-on: ubuntu-latest
     needs: prepare
+    if: needs.prepare.outputs.should_push_backend == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -125,7 +108,6 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
-        if: needs.prepare.outputs.should_push_backend == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -139,7 +121,6 @@ jobs:
           IMAGE_NAMESPACE: ${{ needs.prepare.outputs.image_namespace }}
           IMAGE_NAME: ${{ matrix.image_name }}
           PUBLISH_TRACK: ${{ needs.prepare.outputs.publish_track }}
-          SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
           REF_NAME: ${{ github.ref_name }}
         run: |
           image="${IMAGE_NAMESPACE}/${IMAGE_NAME}"
@@ -147,8 +128,13 @@ jobs:
           case "${PUBLISH_TRACK}" in
             dev)
               printf -v tags '%s\n%s' \
-                "${image}:dev-latest" \
-                "${image}:dev-${SHORT_SHA}"
+                "${image}:${REF_NAME}" \
+                "${image}:dev-latest"
+              ;;
+            test)
+              printf -v tags '%s\n%s' \
+                "${image}:${REF_NAME}" \
+                "${image}:test-latest"
               ;;
             release)
               printf -v tags '%s\n%s' \
@@ -156,7 +142,8 @@ jobs:
                 "${image}:latest"
               ;;
             *)
-              tags="${image}:ci-${SHORT_SHA}"
+              echo "Unsupported publish track: ${PUBLISH_TRACK}" >&2
+              exit 1
               ;;
           esac
 
@@ -171,7 +158,7 @@ jobs:
         with:
           context: .
           file: ${{ matrix.dockerfile }}
-          push: ${{ needs.prepare.outputs.should_push_backend == 'true' }}
+          push: true
           platforms: linux/amd64
           tags: ${{ steps.tags.outputs.tags }}
           build-args: |
@@ -185,6 +172,7 @@ jobs:
     name: Frontend Image
     runs-on: ubuntu-latest
     needs: prepare
+    if: needs.prepare.outputs.should_push_frontend == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -193,7 +181,6 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
-        if: needs.prepare.outputs.should_push_frontend == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -207,7 +194,6 @@ jobs:
           IMAGE_NAMESPACE: ${{ needs.prepare.outputs.image_namespace }}
           IMAGE_NAME: radish-frontend
           PUBLISH_TRACK: ${{ needs.prepare.outputs.publish_track }}
-          SHORT_SHA: ${{ needs.prepare.outputs.short_sha }}
           REF_NAME: ${{ github.ref_name }}
         run: |
           image="${IMAGE_NAMESPACE}/${IMAGE_NAME}"
@@ -215,8 +201,13 @@ jobs:
           case "${PUBLISH_TRACK}" in
             dev)
               printf -v tags '%s\n%s' \
-                "${image}:dev-latest" \
-                "${image}:dev-${SHORT_SHA}"
+                "${image}:${REF_NAME}" \
+                "${image}:dev-latest"
+              ;;
+            test)
+              printf -v tags '%s\n%s' \
+                "${image}:${REF_NAME}" \
+                "${image}:test-latest"
               ;;
             release)
               printf -v tags '%s\n%s' \
@@ -224,7 +215,8 @@ jobs:
                 "${image}:latest"
               ;;
             *)
-              tags="${image}:ci-${SHORT_SHA}"
+              echo "Unsupported publish track: ${PUBLISH_TRACK}" >&2
+              exit 1
               ;;
           esac
 
@@ -239,7 +231,7 @@ jobs:
         with:
           context: .
           file: Frontend/Dockerfile
-          push: ${{ needs.prepare.outputs.should_push_frontend == 'true' }}
+          push: true
           platforms: linux/amd64
           tags: ${{ steps.tags.outputs.tags }}
           labels: |

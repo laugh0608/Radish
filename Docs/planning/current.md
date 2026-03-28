@@ -53,7 +53,7 @@
 - [x] 已补 `M13` 首轮统一验证入口：`validate:baseline` / `quick` / `host`、验证基线说明页与最小脚本化收口
 - [x] 已完成一轮 `full` 验证：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 共 195 个测试通过
 - [x] 已补 `M15` 首轮最小 CI 门禁：`Repo Hygiene` / `Frontend Lint` / `Baseline Quick` 已接入 GitHub Actions，并已在最新一次 `master` PR 上完成真实通过与合并闭环
-- [x] 已补 `GHCR` 镜像 workflow 资产：`.github/workflows/docker-images.yml` 当前已覆盖 `PR -> build only`、`push dev -> unified push`、`push v* -> unified release push` 三类触发；`frontend` 已接入统一 GHCR 推送规则
+- [x] 已补 `GHCR` 镜像 workflow 资产：`.github/workflows/docker-images.yml` 当前已收口为 `push v*-dev / v*-test / v*-release` 与手动补跑规范 tag 时推送；`frontend` 已接入统一 GHCR 推送规则，普通 `dev` push 不再触发镜像发布
 - [x] 已确认 `GHCR` 后端镜像真实产物可用：当前已可通过 `docker pull` 获取 `radish-api / radish-auth / radish-gateway` 镜像，后端包权限、可见性与 tag 规则已完成一轮真实验证
 - [x] 已确认 `GHCR` 前端镜像真实产物可用：当前已可通过 `docker pull` 获取 `radish-frontend` 镜像，前端包权限、可见性与 tag 规则已完成一轮真实验证
 - [x] 已补前端运行时配置注入：`Frontend/scripts/serve-static.mjs` 当前会在请求 `/runtime-config.js` 时动态返回运行时配置脚本，`radish.client / radish.console` 已优先读取运行时配置，`Deploy/docker-compose.local.yml / docker-compose.test.yml / docker-compose.prod.yml` 也已补齐 `frontend` 运行时环境变量入口

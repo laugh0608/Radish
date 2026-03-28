@@ -226,7 +226,7 @@ graph LR
    - OpenTelemetry Exporter、Prometheus 指标与更完整的 Tracing 仍处于后续规划阶段，尚未作为当前仓库既成能力。
 3. **部署流水线**：
    - 当前仓库已具备 `Radish.Api`、`Radish.Auth`、`Radish.Gateway` 与 `Frontend` 四个 Dockerfile，多阶段构建资产已形成最小镜像链。
-   - `Deploy/docker-compose.yml` 及其 `local / test / prod` 覆盖文件已形成仓库级最小编排；开发运行已明确独立于 Compose；`Docker Images` workflow 也已覆盖 `PR -> build only`、`push dev -> unified push`、`push v* -> unified release push` 三类触发。
+   - `Deploy/docker-compose.yml` 及其 `local / test / prod` 覆盖文件已形成仓库级最小编排；开发运行已明确独立于 Compose；`Docker Images` workflow 当前已收口为仅响应 `v*-dev / v*-test / v*-release` tag 与手动补跑规范 tag，普通 `dev` push 不再触发镜像发布。
    - 当前部署口径已明确分层：开发运行继续使用本地默认开发证书；测试部署由 Gateway 容器内直接提供 HTTPS，并自动生成 / 复用测试 TLS 与 Auth OIDC 证书；生产部署由外部反代终止 HTTPS，容器内部保持 HTTP，Auth OIDC 证书通过持久化挂载目录自动生成或预置后复用。
 4. **质量门禁**：
    - PR 应附带与改动相匹配的构建 / 测试 / `type-check` / `HttpTest` 结果；若变更数据库需提供迁移脚本与回滚建议。

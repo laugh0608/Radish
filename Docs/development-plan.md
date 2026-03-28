@@ -117,9 +117,9 @@
    - 当前结论为：`M13` 不再只是规划名词，已具备第一版真实入口；接下来优先服务于首个 dev 版本的总回归与最小发布准备，而不是先扩张为更重的工程平台
 
 13. **M15 首轮最小 CI 门禁已完成真实落地**
-   - GitHub Actions 已新增 `Repo Quality` 工作流，当前已覆盖 `pull_request -> master / dev`、`push -> dev` 与手动触发
+   - GitHub Actions 已新增 `Repo Quality` 工作流，当前已覆盖 `pull_request -> master / dev` 与手动触发；普通 `dev` push 不再触发该工作流
    - 当前已接通 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 三个最小质量门禁，并已在真实 PR 中成功通过
-   - 当前已补 `Docker Images` 工作流：`PR -> build only`、`push dev -> unified push`、`push v* -> unified release push` 当前已具备仓库资产；`radish-api / radish-auth / radish-gateway / radish-frontend` 已纳入统一 GHCR 口径
+   - 当前已补 `Docker Images` 工作流：仅在 `push v*-dev / v*-test / v*-release` 与手动补跑规范 tag 时推送镜像，`radish-api / radish-auth / radish-gateway / radish-frontend` 已纳入统一 GHCR 口径
    - `frontend` 侧的运行时配置注入已完成：静态服务当前会在请求 `/runtime-config.js` 时动态返回运行时配置脚本，`radish.client / radish.console` 已优先读取运行时配置，不再要求只能依赖构建期 `VITE_*`
    - `frontend` GHCR 首次真实产物已完成验证，当前已可通过 `docker pull` 获取；`Frontend/Dockerfile` 也已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`
    - 最新于 `2026-03-28`，`Deploy/docker-compose.local.yml / docker-compose.test.yml / docker-compose.prod.yml` 三套口径已继续收口：`local` 仅用于本地容器构建 / 启动验证，`test / prod` 统一使用远程镜像部署，`README` 与部署文档已同步到同一口径

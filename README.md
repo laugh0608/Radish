@@ -287,12 +287,13 @@ git push origin v26.2.1-release
 
 | 后缀 | 说明 | 示例 |
 |------|------|------|
-| `-dev` | 开发版本 | `v26.1.1-dev` |
-| `-beta` | 公测版本 | `v26.2.1-beta` |
-| `-rc` | 发布候选 | `v26.3.1-rc` |
+| `-dev` | 开发镜像 / 开发轨道版本 | `v26.1.1-dev` |
+| `-test` | 测试部署 / 客户试用版本 | `v26.2.1-test` |
 | `-release` | 正式发布 | `v26.3.1-release` |
 
 热更新格式：`vYY.M.RELEASE.DDXX`（如 `v26.2.1.1203` = 12日第3次更新）
+
+当前 GitHub Actions 的镜像发布只响应带环境后缀的 tag：`v*-dev`、`v*-test`、`v*-release`。普通 `dev` 分支 push 不再触发镜像构建发布。
 
 详细规范参见 [版本号规范](Docs/architecture/specifications.md#项目版本号规范)。
 
