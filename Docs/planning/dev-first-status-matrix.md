@@ -9,7 +9,7 @@
 > - `待补齐`：仍存在首版范围内尚未完成的主线缺口，不能直接判定为已完成。
 > - `不纳入首版`：明确后置，不参与首版 dev 是否达标的判断。
 >
-> 复核日期：`2026-03-26`
+> 复核日期：`2026-03-27`
 
 ## 1. 首版范围内
 
@@ -33,8 +33,8 @@
 | 体验主线 | 主题切换（`radish.client`） | 已完成 | `default / guofeng` 主题切换、持久化与桌面 Shell / Dock / 桌面图标 / 窗口容器骨架已落地，并于 `2026-03-26` 完成一轮首版烟雾联调，当前无明显样式断层或切换阻塞问题 | 等待总回归，仅做回归维护 |
 | 体验主线 | i18n（`radish.client`） | 已完成 | 桌面壳层语言切换入口、应用注册、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天、通知中心、个人中心高频模块已完成首轮接入，并于 `2026-03-26` 完成一轮首版语言切换烟雾复核，用户确认无明显残余硬编码问题 | 等待总回归，仅做回归维护 |
 | 工程门槛 | 验证基线 | 已完成 | `npm run validate:baseline` 与 `npm run validate:baseline:host` 已于 `2026-03-26` 完成复跑：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、身份语义扫描、后端 build/test，以及 `DbMigrate doctor / verify` 当前均已通过 | 等待总回归，仅做回归维护 |
-| 工程门槛 | 首次 CI/CD | 待联调复核 | GitHub Actions 已接通 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`，并在 `master` PR 上完成一轮真实通过；当前最小门禁已存在，但仍需继续观察稳定性并沉淀首版交付口径 | 保持 `master` PR 质量门禁稳定，补充首版发布记录与后续镜像链衔接说明 |
-| 工程门槛 | Docker 镜像构建链 | 已完成 | 已补 `Radish.Api / Radish.Auth / Radish.Gateway / Frontend` 的 Dockerfile、前端静态托管脚本，以及 `Deploy/docker-compose.yml / docker-compose.dev.yml / docker-compose.prod.yml`；并已完成一轮镜像 build 级验证、`base + dev` 运行态 Smoke、Gateway 容器内 HTTP / HTTPS 模式切换，以及 `RADISH_PUBLIC_URL -> OpenIddict__Server__Issuer -> 官方客户端回调地址` 的交付口径收口 | 等待总回归，仅在真实外部反代域名环境补上线前联调记录 |
+| 工程门槛 | 首次 CI/CD | 已完成 | GitHub Actions 已接通 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`，最新一次用于合并的 `master` PR 已完成三项检查并成功合并，`dev` 也已同步 `master` 合并结果，首次门禁已形成真实闭环 | 等待总回归，仅继续维护 `master` PR 质量门禁与首版发布口径 |
+| 工程门槛 | Docker 镜像构建链 | 已完成 | 已补 `Radish.Api / Radish.Auth / Radish.Gateway / Frontend` 的 Dockerfile、前端静态托管脚本，以及 `Deploy/docker-compose.yml / docker-compose.local.yml / docker-compose.test.yml / docker-compose.prod.yml`；并已完成一轮镜像 build 级验证、开发运行与 Compose 部署口径拆分、`base + local` 运行态验证、Gateway 容器内 HTTP / HTTPS 模式切换，以及 `RADISH_PUBLIC_URL -> OpenIddict__Server__Issuer -> 官方客户端回调地址` 的交付口径收口；当前已完成 `GHCR` 前后端镜像真实产物验证，`Frontend/Dockerfile` 也已收口为轻量多阶段运行时镜像，本地验证体积约 `300MB` | 当前不阻塞内部开发版；后续在条件具备后补上线前联调记录 |
 
 ## 2. 明确不纳入首版
 
@@ -51,16 +51,17 @@
 
 ## 3. 当前结论
 
-按当前矩阵，首版 `dev` 还没有完全进入“可发内部开发版”状态，当前主要剩余两类收尾项：
+按当前矩阵，首版 `dev` 的业务、体验与最小工程门槛已完成本轮收口，当前判断可明确写为：`可发内部开发版`。剩余事项已收束为下一阶段建设与后续维护两类：
 
-1. **工程门槛仍需继续稳定**
-   - 首次 CI/CD
-2. **已完成项需要等待总回归统一确认**
-   - 认证、WebOS、论坛基础、社区 P0、Console、国风视觉 / 主题切换 / i18n、通知中心、投票、问答、抽奖、聊天、商城、文档、萝卜坑、经验等级与 Docker 交付链虽然已完成，但仍需在首版视角下一次性串联确认
+1. **上线前交付复核已明确后置到下一阶段条件具备后执行**
+   - 当前已完成 `GHCR` 前后端镜像 workflow 真实产物验证，且前端镜像体积已完成收口；待补的是具备真实外部反代域名、Auth 证书与镜像推送 / 部署条件后的 OIDC 相关记录
+2. **内部开发版后继续维持默认回归门槛**
+   - 后续新增跨层改动仍需继续依赖 `master` PR 质量门禁与 `validate:baseline`
 
 ## 4. 建议执行顺序
 
-1. 继续观察 `master` PR 的最小 `CI` 门禁稳定性，并补充最新总回归记录引用。
-2. 把 `2026-03-23`、`2026-03-25`、`2026-03-26` 已通过的 Smoke 与 `2026-03-26` 已通过的 `full + host` 验证结果统一沉淀到 [首版 dev 总回归记录](/guide/dev-first-regression-record)。
-3. 如近期再发生跨层改动，优先重跑 `npm run validate:baseline`；涉及宿主 / 配置时再补 `npm run validate:baseline:host`。
-4. 在最小 CI 门禁继续稳定后，统一评估首版 `dev` 是否进入“可发内部开发版”状态。
+1. 维持当前总回归记录、发布前检查单与状态矩阵口径一致，避免“已可发内部开发版”与规划页结论再次漂移。
+2. 如近期再发生跨层改动，优先重跑 `npm run validate:baseline`；涉及宿主 / 配置时再补 `npm run validate:baseline:host`。
+3. 冻结当前统一镜像推送与轻量前端镜像口径，避免文档与真实产物再次漂移。
+4. 待具备真实外部域名、Auth 证书与镜像推送 / 部署条件后，再补上线前交付复核记录。
+5. 在内部开发版稳定后，再决定是否启动首版之后的增强项。

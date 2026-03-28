@@ -25,7 +25,7 @@ Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NE
 - **数据库**：PostgreSQL 16（本地开发可用 SQLite）
 - **前端**：React 19、Vite (Rolldown)、TypeScript
 - **测试**：xUnit + Shouldly（后端）、`node --test` + TypeScript 类型检查 + `HttpTest`（前端 / 联调资产）
-- **容器化**：`Radish.Api/Dockerfile` 已落地，Compose 与多宿主镜像仍处于文档化整理阶段
+- **容器化**：已提供 `Radish.Api / Radish.Auth / Radish.Gateway / Frontend` 四个 Dockerfile，以及 `Deploy/docker-compose.local.yml / Deploy/docker-compose.test.yml / Deploy/docker-compose.prod.yml` 三套容器编排口径
 
 ## 快速开始
 
@@ -151,6 +151,7 @@ Radish/
 - 🎨 [**前端设计**](Docs/frontend/design.md) - WebOS 桌面范式与应用集成方式
 - 🚪 [**Gateway 服务网关**](Docs/guide/gateway.md) - 统一服务入口与路由转发
 - 🚀 [**部署指南**](Docs/deployment/guide.md) - 容器化、CI/CD、生产部署
+- 当前部署口径：开发运行使用 IDE / `dotnet run` / `npm run dev`；本地容器验证使用 `Deploy/docker-compose.local.yml`；测试与生产分别使用 `Deploy/docker-compose.test.yml` / `Deploy/docker-compose.prod.yml` 并拉取远程镜像
 - 🧩 [**文件上传设计**](Docs/features/file-upload-design.md) - 文件上传与图片处理方案
 - 🦀 [**Rust 扩展**](Docs/guide/rust-extensions.md) - radish-lib 使用指南
 
@@ -286,12 +287,13 @@ git push origin v26.2.1-release
 
 | 后缀 | 说明 | 示例 |
 |------|------|------|
-| `-dev` | 开发版本 | `v26.1.1-dev` |
-| `-beta` | 公测版本 | `v26.2.1-beta` |
-| `-rc` | 发布候选 | `v26.3.1-rc` |
+| `-dev` | 开发镜像 / 开发轨道版本 | `v26.1.1-dev` |
+| `-test` | 测试部署 / 客户试用版本 | `v26.2.1-test` |
 | `-release` | 正式发布 | `v26.3.1-release` |
 
 热更新格式：`vYY.M.RELEASE.DDXX`（如 `v26.2.1.1203` = 12日第3次更新）
+
+当前 GitHub Actions 的镜像发布只响应带环境后缀的 tag：`v*-dev`、`v*-test`、`v*-release`。普通 `dev` 分支 push 不再触发镜像构建发布。
 
 详细规范参见 [版本号规范](Docs/architecture/specifications.md#项目版本号规范)。
 

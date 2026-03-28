@@ -17,7 +17,7 @@
   - 管理后台（同 React 工程内实现管理视图）：分类、内容、用户、积分与商城配置。
 
 - **非功能性要求**
-  - 安全：所有外部流量通过 Gateway 强制 HTTPS（TLS 提供传输加密）；前端不做自定义“二次加密”（不做 RSA 前端加密）。结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。开发阶段 Radish.Api 保留 HTTPS 端口便于直接调试，但在完成 Gateway/OIDC 接入并进入生产环境前，应关闭或限制直接暴露的 API HTTPS 端口，仅通过 Gateway/反向代理对外提供服务。
+  - 安全：所有外部访问统一收口到 Gateway 公共入口并以 HTTPS 对外暴露；测试部署可由 Gateway 容器直接提供 TLS，生产部署则由外部 `Nginx / Traefik / Caddy` 终止 TLS。前端不做自定义“二次加密”（不做 RSA 前端加密）。结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。开发阶段 Radish.Api 保留 HTTPS 端口便于直接调试，但在完成 Gateway/OIDC 接入并进入生产环境前，应关闭或限制直接暴露的 API HTTPS 端口，仅通过 Gateway/反向代理对外提供服务。
   - 性能：关键查询 P95 ≤ 200ms；SQLSugar Profile + PostgreSQL EXPLAIN 校验索引；读多写少场景可使用内存缓存。
   - 可用性：健康检查 `/health`, `/ready`; SQLSugar 迁移幂等；容器探针。
   - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点。
@@ -50,7 +50,7 @@
 | 前端构建 | Vite Rolldown，ESLint 9，TypeScript | 各项目独立构建：radish.client、radish.console；固定文档统一存放于 `Docs/`，由 API 启动时同步到 WebOS 文档应用 |
 | 测试 | xUnit 3 + Shouldly + Moq，辅以 `HttpTest` | `Radish.Api.Tests` 目录承载后端测试与专题 `.http` 资产；前端当前仅有最小 `node --test` 与 `type-check` 基线 |
 | 日志 / 配置 | Serilog + `Microsoft.Extensions.Configuration` | 支持 JSON + 环境变量 + 用户密钥；生产日志输出到 Console + Seq/Elastic 预留 |
-| 容器 | `Radish.Api/Dockerfile` 已落地 | Compose、多宿主镜像与完整交付链仍以文档方案为主，尚未形成仓库级统一资产 |
+| 容器 | `Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile 已落地 | 仓库已提供四个镜像入口、`Deploy/docker-compose*.yml` 最小编排与 `Docker Images` workflow；当前 `radish-api / radish-auth / radish-gateway / radish-frontend` 已统一纳入 `GHCR` 推送口径，`Frontend/Dockerfile` 也已收口为轻量 Node 多阶段镜像，本地验证体积约 `300MB`，剩余事项收束到上线前交付复核 |
 
 ### 本地启动脚本
 
@@ -225,9 +225,9 @@ graph LR
    - Serilog 写入 Console + File；API / Gateway 已具备健康检查入口，当前以“日志 + 健康检查 + `DbMigrate doctor/verify`”作为最小自检基线。
    - OpenTelemetry Exporter、Prometheus 指标与更完整的 Tracing 仍处于后续规划阶段，尚未作为当前仓库既成能力。
 3. **部署流水线**：
-   - 当前仓库已存在 `Radish.Api/Dockerfile` 多阶段构建资产（Restore → Build → Publish）。
-   - Compose、`Gateway/Auth` 镜像与完整交付编排仍以文档方案和后续规划为主，尚未形成仓库级统一标准。
-   - 生产部署建议挂载 `appsettings.Production.json` 与证书目录，使用 `ConnectionStrings__Default` 环境变量；是否形成最小可交付模板，留待后续阶段统一落地。
+   - 当前仓库已具备 `Radish.Api`、`Radish.Auth`、`Radish.Gateway` 与 `Frontend` 四个 Dockerfile，多阶段构建资产已形成最小镜像链。
+   - `Deploy/docker-compose.yml` 及其 `local / test / prod` 覆盖文件已形成仓库级最小编排；开发运行已明确独立于 Compose；`Docker Images` workflow 当前已收口为仅响应 `v*-dev / v*-test / v*-release` tag 与手动补跑规范 tag，普通 `dev` push 不再触发镜像发布。
+   - 当前部署口径已明确分层：开发运行继续使用本地默认开发证书；测试部署由 Gateway 容器内直接提供 HTTPS，并自动生成 / 复用测试 TLS 与 Auth OIDC 证书；生产部署由外部反代终止 HTTPS，容器内部保持 HTTP，Auth OIDC 证书通过持久化挂载目录自动生成或预置后复用。
 4. **质量门禁**：
    - PR 应附带与改动相匹配的构建 / 测试 / `type-check` / `HttpTest` 结果；若变更数据库需提供迁移脚本与回滚建议。
    - 关键模块需要 Code Review + Pair Walkthrough。

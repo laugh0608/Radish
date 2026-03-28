@@ -65,13 +65,21 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
             !r.IsDeleted &&
             r.IsEnabled);
 
-        var roleIds = roles.Select(role => role.Id).Distinct().ToList();
-        if (roleIds.Count <= 0)
+        var consolePermissionRoleIds = roles
+            .Where(role => !ShouldSkipConsolePermissionAggregation(role.RoleName))
+            .Select(role => role.Id)
+            .Distinct()
+            .ToList();
+
+        if (consolePermissionRoleIds.Count <= 0)
         {
+            NormalizeEntryPermission(permissionKeys);
             return permissionKeys.OrderBy(static item => item, StringComparer.OrdinalIgnoreCase).ToList();
         }
 
-        var explicitResources = await _roleConsoleResourceRepository.QueryAsync(link => roleIds.Contains(link.RoleId));
+        var explicitResources = await _roleConsoleResourceRepository.QueryAsync(link =>
+            consolePermissionRoleIds.Contains(link.RoleId) &&
+            !link.IsDeleted);
         if (explicitResources.Count > 0)
         {
             var resourceIds = explicitResources
@@ -81,6 +89,7 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
 
             var resources = await _consoleResourceRepository.QueryAsync(resource =>
                 resourceIds.Contains(resource.Id) &&
+                !resource.IsDeleted &&
                 resource.IsEnabled);
 
             foreach (var resourceKey in resources
@@ -91,7 +100,9 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
             }
         }
 
-        var legacyMappings = await _roleModulePermissionRepository.QueryAsync(link => roleIds.Contains(link.RoleId));
+        var legacyMappings = await _roleModulePermissionRepository.QueryAsync(link =>
+            consolePermissionRoleIds.Contains(link.RoleId) &&
+            !link.IsDeleted);
         if (legacyMappings.Count > 0)
         {
             var apiModuleIds = legacyMappings
@@ -245,7 +256,7 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
 
     private async Task<List<ConsoleResource>> GetOrderedResourcesAsync()
     {
-        var resources = await _consoleResourceRepository.QueryAsync(resource => resource.IsEnabled);
+        var resources = await _consoleResourceRepository.QueryAsync(resource => !resource.IsDeleted && resource.IsEnabled);
         return resources
             .OrderBy(static resource => resource.OrderSort)
             .ThenBy(static resource => resource.Id)
@@ -254,7 +265,9 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
 
     private async Task<List<long>> GetGrantedResourceIdsAsync(Role role, IReadOnlyCollection<ConsoleResource> allResources)
     {
-        var explicitLinks = await _roleConsoleResourceRepository.QueryAsync(link => link.RoleId == role.Id);
+        var explicitLinks = await _roleConsoleResourceRepository.QueryAsync(link =>
+            link.RoleId == role.Id &&
+            !link.IsDeleted);
         var grantedResourceIds = explicitLinks
             .Select(link => link.ConsoleResourceId)
             .Distinct()
@@ -271,7 +284,9 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
 
     private async Task<DateTime?> GetLatestGrantTimeAsync(long roleId)
     {
-        var links = await _roleConsoleResourceRepository.QueryAsync(link => link.RoleId == roleId);
+        var links = await _roleConsoleResourceRepository.QueryAsync(link =>
+            link.RoleId == roleId &&
+            !link.IsDeleted);
         if (links.Count <= 0)
         {
             return null;
@@ -309,14 +324,16 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
         }
 
         var mappings = await _consoleResourceApiModuleRepository.QueryAsync(mapping =>
-            resourceIds.Contains(mapping.ConsoleResourceId));
+            resourceIds.Contains(mapping.ConsoleResourceId) &&
+            !mapping.IsDeleted);
         if (mappings.Count <= 0)
         {
             return new Dictionary<long, List<ResourceApiBindingVo>>();
         }
 
         var resources = await _consoleResourceRepository.QueryAsync(resource =>
-            resourceIds.Contains(resource.Id));
+            resourceIds.Contains(resource.Id) &&
+            !resource.IsDeleted);
         var resourceMap = resources.ToDictionary(resource => resource.Id);
 
         var apiModuleIds = mappings
@@ -425,5 +442,10 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
         }
 
         permissionKeys.Remove(ConsolePermissions.Access);
+    }
+
+    private static bool ShouldSkipConsolePermissionAggregation(string? roleName)
+    {
+        return string.Equals(roleName?.Trim(), "Test", StringComparison.OrdinalIgnoreCase);
     }
 }

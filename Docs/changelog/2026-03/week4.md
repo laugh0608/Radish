@@ -136,7 +136,7 @@
 ### 文档口径同步
 
 - **状态矩阵已更新**：`dev-first-status-matrix.md` 当前已把 `WebOS`、论坛基础、社区 `P0`、`Console V1`、国风视觉基线、主题切换与 `i18n` 统一改为“已完成”。
-- **当前规划页已收束重点**：`planning/current.md` 与 `development-plan.md` 当前已把首版剩余重点进一步收束到验证基线、最小 `CI` 门禁稳定性与总回归记录整理。
+- **当前规划页已收束重点**：`planning/current.md` 与 `development-plan.md` 当前已把首版剩余重点进一步收束到总回归记录维护、内部开发版判断与上线前交付复核。
 - **首版总回归检查单已补齐**：当前已新增 `guide/dev-first-regression-checklist.md`，把自动化门槛、可直接复用的 Smoke 记录、发布前检查项与统一记录格式收束到一个入口。
 - **首版总回归记录已补齐**：当前已新增 `guide/dev-first-regression-record.md`，把本轮真实 Smoke 与后续自动化验证结果统一沉淀成一份阶段记录。
 - **本周周志已补本轮结论**：避免“用户已确认通过，但规划页仍停在待复核”的口径漂移继续存在。
@@ -153,4 +153,93 @@
 - **`npm run validate:baseline` 已于 `2026-03-26` 复跑并通过**：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、身份语义扫描、后端构建与 `Radish.Api.Tests` 当前均已通过。
 - **中途暴露的测试阻塞已完成收口**：`PostControllerTest` 的两个 `GetById` 用例曾因严格 `Mock` 未补 `CommentService.QueryAsync` 调用而失败；当前已补测试桩并完成定向复验。
 - **`npm run validate:baseline:host` 已继续通过**：`DbMigrate doctor / verify` 只读自检当前均已通过，验证基线已完成本轮收口。
-- **当前工程结论已同步收口**：业务 / 体验主线 Smoke 与验证基线均已完成本轮收口，首版剩余重点进一步收束到最小 `CI` 门禁稳定性与最终发布判断。
+- **当前工程结论已同步收口**：业务 / 体验主线 Smoke 与验证基线均已完成本轮收口，首版剩余重点进一步收束到总回归记录维护、内部开发版判断与上线前交付复核。
+
+### 最小 CI 门禁真实合并闭环
+
+- **最新一次 `master` PR 已完成三项质量门禁并成功合并**：`Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 当前均已全绿，`fix(test): 收口首版回归与验证基线` 已以 `37fe89c` 合入 `master`。
+- **`dev` 已同步 `master` 合并结果**：当前已补一条回灌提交 `cbd0f8a`，用于把 `master` 的 squash / merge 结果同步回 `dev`，避免后续 PR 继续重复出现同一批冲突。
+- **规划口径已继续更新**：`首次 CI/CD` 当前已从“待联调复核”转入“已完成”，首版 `dev` 已明确为“可发内部开发版”；真实外部反代域名 / Auth 证书 / OIDC 回调链路复核已后置到 `CI/CD` 完善且具备 Docker 镜像推送能力后再正式执行。
+
+### 首版内部开发版判断
+
+- **当前判断已正式收口为“可发内部开发版”**：基于业务 / 体验主线已完成本轮 Smoke、`validate:baseline` 与 `validate:baseline:host` 已通过、最小 `CI` 门禁已完成真实合并闭环，以及当前无已知阻塞主线的 `P0 / P1` 问题，首版 `dev` 当前已具备内部开发版发布条件。
+- **下一阶段主线已明确为 `CI/CD` 与 Docker 镜像推送链路**：真实外部反代域名、Auth 证书与 OIDC 回调链路当前暂不阻塞内部开发版判断；待具备真实部署条件后，再正式补联调记录。
+
+### GHCR 后端镜像工作流资产
+
+- **已补 `Docker Images` workflow**：当前已新增 `.github/workflows/docker-images.yml`，覆盖 `PR -> build only`、`push dev -> backend push`、`push v* -> backend release push` 三类触发，后端镜像默认目标为 `GHCR`。
+- **前端运行时配置注入已补齐**：`Frontend/scripts/serve-static.mjs` 当前会在请求 `/runtime-config.js` 时动态返回运行时配置脚本，`radish.client / radish.console` 已优先读取运行时配置，`frontend` 统一镜像推送不再受“公开地址写死在构建产物里”限制。
+- **下一步只剩真实 GHCR 产物验证与前端纳管**：先验证 `dev` / `v*` 的后端镜像真实产物，再把 `frontend` 纳入 `Docker Images` workflow 的推送规则。
+
+## 2026-03-27 (周五)
+
+### Frontend 纳入统一 GHCR 推送
+
+- **`frontend` 已接入 `Docker Images` workflow 的统一推送规则**：当前 `push -> dev` 与 `push -> v*` 会在构建 `Frontend/Dockerfile` 后同步推送 `ghcr.io/<owner>/radish-frontend`，tag 规则与后端保持一致：`dev-latest` / `dev-<shortsha>`、`<tag>` / `latest`。
+- **手动补跑入口已补 `push_frontend` 开关**：`workflow_dispatch` 现在不再只能手动推送后端镜像；当当前 ref 为 `dev` 或 `v*` tag 时，可按需单独补跑 `frontend` 推送。
+- **后端 GHCR 真实产物验证结论已固化为前置事实**：当前已确认 `radish-api / radish-auth / radish-gateway` 可通过 `docker pull` 获取，因此本轮工作不再继续补后端 workflow 结构，而是转向前端镜像统一推送的接入与验证。
+
+### Frontend GHCR 与镜像体积收口
+
+- **`frontend` GHCR 首次真实产物已完成验证**：当前已确认 `ghcr.io/<owner>/radish-frontend` 可通过 `docker pull` 获取，包权限、可见性与 tag 规则已完成一轮真实验证。
+- **前端镜像已从“构建机镜像”收口为轻量运行时镜像**：`Frontend/Dockerfile` 当前已改为纯 `Node 24` 多阶段构建，最终镜像只保留静态产物与 `serve-static.mjs`，不再把 `.NET SDK`、源码与 `node_modules` 一并带入最终层。
+- **本地构建体积已明显下降**：用户已确认本地重新构建后的前端镜像体积约为 `300MB`，不再维持此前约 `2.2GB` 的过重状态。
+
+### 文档口径同步
+
+- **部署与规划文档已同步更新**：`deployment/guide.md`、`planning/current.md`、`planning/dev-first-status-matrix.md`、`development-plan.md` 与 `guide/dev-first-regression-record.md` 当前已统一改为“前后端 GHCR 已验证、前端镜像体积已收口、剩余事项转为上线前交付复核”的口径。
+- **当前下一步已重新收束**：首版 `dev` 的剩余工程事项不再是“验证前端 GHCR 首次真实产物”，而是“冻结统一镜像推送口径，并在条件具备后执行上线前交付复核”。
+
+### 本轮验证
+
+- ✅ `Docker Images` workflow 与相关文档已完成静态复查。
+- ✅ `frontend` GHCR 首次真实产物已完成 `docker pull` 验证。
+- ✅ 前端镜像本地构建体积已收口到约 `300MB`。
+
+## 2026-03-28 (周六)
+
+### 测试 / 生产部署口径统一
+
+- **部署形态已正式拆为三类**：开发运行继续默认使用 IDE / 宿主机直跑；测试部署采用“Gateway 容器内 HTTPS”；生产部署采用“外部 Nginx 终止 HTTPS、容器内部 HTTP”。
+- **测试部署已新增独立 Compose 覆盖**：仓库当前已新增 `Deploy/docker-compose.test.yml` 与 `Deploy/.env.test.example`，用于 `https://IP:port` 或测试域名直连的最小容器部署。
+- **测试环境浏览器证书告警已作为已知约束固化**：测试部署的 Gateway TLS 证书采用自签名自动生成方案，浏览器默认不信任属于预期行为，不再继续把这类告警误判为部署异常。
+
+### Gateway TLS 与 Auth OIDC 证书自动生成
+
+- **Gateway 测试 TLS 证书现支持自动生成并复用**：`Gateway` 容器启动前会在挂载目录中检查目标 `pfx`，缺失时按 `RADISH_PUBLIC_URL` 的 host 生成带 SAN 的自签名证书；若已存在则直接复用。
+- **Auth OIDC signing / encryption 证书现支持自动生成并复用**：`Auth` 容器启动前会在挂载目录中检查 signing / encryption `pfx`，缺失时自动生成，已存在时保持复用，不会因重启导致 key 漂移。
+- **生产部署默认允许首次自动生成 OIDC 证书**：`Deploy/docker-compose.prod.yml` 当前已允许 `Auth` 在首次启动时把 OIDC 证书写入 `RADISH_AUTH_CERTS_DIR`；后续多实例部署时必须改为共享同一组证书。
+
+### 文档与资产同步
+
+- **Docker 镜像已补容器启动脚本**：`Radish.Auth/Dockerfile` 与 `Radish.Gateway/Dockerfile` 当前都会带入 `Scripts/docker` 下的证书初始化脚本。
+- **部署指南已改为开发 / 测试 / 生产三套口径**：`deployment/guide.md` 与 `guide/authentication.md` 当前已同步 Gateway TLS 证书、Auth OIDC 证书与持久化复用策略。
+
+### 部署编排与入口文档继续收口
+
+- **本地容器编排已改名为 `local`**：原 `Deploy/docker-compose.dev.yml` 当前已正式改为 `Deploy/docker-compose.local.yml`，只承载“本地构建镜像并启动验证”的职责，不再与日常开发运行混淆。
+- **测试 / 生产部署已完全切到远程镜像口径**：`Deploy/docker-compose.yml` 当前只保留共享结构与 `image:` 引用；`Deploy/docker-compose.test.yml` 与 `Deploy/docker-compose.prod.yml` 默认走 `config + pull + up`，部署机不再承担现场 `build` 职责。
+- **镜像变量入口已补齐**：`Deploy/.env.test.example` 与 `Deploy/.env.prod.example` 当前已补 `RADISH_FRONTEND_IMAGE / RADISH_API_IMAGE / RADISH_AUTH_IMAGE / RADISH_GATEWAY_IMAGE`，测试环境默认面向 `dev-*` 镜像，生产环境明确要求固定 release tag。
+- **根目录入口文档已同步**：`README.md`、`deployment/guide.md`、`guide/gateway.md`、`guide/configuration.md` 以及规划页当前都已统一为“开发运行直跑、`local` 做本地容器验证、`test / prod` 拉取远程镜像”的口径。
+
+### GitHub Actions 触发口径收口
+
+- **`Repo Quality` 已停止响应普通 `dev` push**：当前仅保留 `pull_request -> master / dev` 与手动触发，避免日常同步 `dev` 时重复消耗 Actions 资源。
+- **`Docker Images` 已改为只响应规范 tag**：当前仅在 `push v*-dev / v*-test / v*-release` 或手动补跑对应 tag 时推送 `GHCR` 镜像，不再沿用“`push dev` 自动推送”的旧口径。
+- **镜像浮动别名已按轨道拆分**：开发轨道产出 `<tag> + dev-latest`，测试轨道产出 `<tag> + test-latest`，正式发布轨道产出 `<tag> + latest`。
+- **版本规范与部署样例已同步**：`Docs/architecture/specifications.md`、`README.md`、`Deploy/.env.test.example`、`Deploy/.env.prod.example` 与部署指南当前都已统一到 `-dev / -test / -release` 三条镜像轨道。
+
+### Tag 驱动测试部署验收通过
+
+- **`v26.3.1-test` 已完成从构建到部署的整链验证**：当前已确认测试 tag 可以成功触发 `Docker Images` workflow，并产出 `radish-api / radish-auth / radish-gateway / radish-frontend` 四个测试轨道镜像。
+- **测试环境已确认使用远程镜像启动**：`Deploy/docker-compose.yml + Deploy/docker-compose.test.yml` 当前已可从 `GHCR` 拉取 `v26.3.1-test` 远程镜像并完成 `base + test` 启动，不再停留在仅本地镜像验证阶段。
+- **用户已完成一轮真实测试部署 Smoke**：登录、回调、权限与核心页面当前均已通过，`base + test` 测试部署链路已完成本轮收口。
+- **当前下一步已继续收束**：后续重点不再是验证测试部署是否可用，而是组织 `dev -> master` 发布 PR、产出 `v*-release` 镜像，并执行生产口径首轮 Smoke。
+
+### 本轮验证
+
+- ✅ `docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml config` 通过。
+- ✅ `docker compose --env-file Deploy/.env.test.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml config` 通过。
+- ✅ `docker compose --env-file Deploy/.env.prod.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config` 通过。
+- ✅ `v26.3.1-test` 已完成 tag 驱动镜像构建、远程镜像拉取与 `base + test` 真实部署 Smoke。

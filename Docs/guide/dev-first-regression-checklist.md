@@ -56,6 +56,8 @@
 - `Frontend Lint`
 - `Baseline Quick`
 
+截至 `2026-03-26`，最新一次用于合并的 `master` PR 已完成以上三项检查并成功合并，可作为“首次 `CI/CD` 已完成真实闭环”的当前依据。
+
 若以上门槛不稳定，当前不应继续下“可发内部开发版”的结论。
 
 ### 第 2 步：先复用本轮已通过的真实 Smoke
@@ -95,12 +97,12 @@
 - `Deploy/`
 - `Radish.Api / Auth / Gateway / Frontend` Dockerfile
 - 证书、`RADISH_PUBLIC_URL`、`OpenIddict__Server__Issuer`
-- `docker-compose.dev.yml / docker-compose.prod.yml`
+- `docker-compose.local.yml / docker-compose.test.yml / docker-compose.prod.yml`
 
 建议检查：
 
 - `docker compose ... config` 是否仍可展开
-- `base + dev` 是否仍可完成最小运行态 Smoke
+- `base + local` 是否仍可完成最小运行态验证
 - 若改到生产口径，是否仍满足公开域名、证书和回调地址一致性
 
 参考文档： [部署指南](/deployment/guide)
@@ -126,25 +128,39 @@
 
 ## 4. 首版发布前最小检查单
 
+### 当前判断（2026-03-26）
+
+- 结论：`可发内部开发版`
+- 判断依据：
+  - `validate:baseline` 与 `validate:baseline:host` 已通过
+  - 最新一次 `master` PR 的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 已全绿并成功合并
+  - 首版范围内的业务、体验与最小工程门槛已在状态矩阵中收口为 `已完成`
+  - 当前无已知阻塞主线的 `P0 / P1` 问题
+- 不纳入本结论的后续项：
+  - 真实外部反代域名、Auth 证书与 OIDC 回调链路联调记录
+  - 更大范围上线前交付复核
+
 ### A. 工程门槛
 
-- [ ] `npm run validate:baseline` 通过
-- [ ] 如涉及宿主 / 配置 / `DbMigrate` / 部署链，`npm run validate:baseline:host` 通过
-- [ ] 最近一次 `master` PR 的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 正常
-- [ ] 当前没有已知阻塞主线的 `P0 / P1` 问题
+- [x] `npm run validate:baseline` 通过
+- [x] 如涉及宿主 / 配置 / `DbMigrate` / 部署链，`npm run validate:baseline:host` 通过
+- [x] 最近一次 `master` PR 的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 正常
+- [x] 当前没有已知阻塞主线的 `P0 / P1` 问题
 
 ### B. 当前已收口主线
 
-- [ ] 认证 / OIDC / Gateway 基础入口有有效通过记录
-- [ ] WebOS 桌面与应用容器有有效通过记录
-- [ ] 论坛基础有有效通过记录
-- [ ] 社区 `P0` 有有效通过记录
-- [ ] `Console V1` 有有效通过记录
-- [ ] `radish.client` 国风视觉基线 / 主题切换 / `i18n` 有有效通过记录
-- [ ] 通知中心有有效通过记录
-- [ ] Docker 镜像构建链与最小交付口径有有效通过记录
+- [x] 认证 / OIDC / Gateway 基础入口有有效通过记录
+- [x] WebOS 桌面与应用容器有有效通过记录
+- [x] 论坛基础有有效通过记录
+- [x] 社区 `P0` 有有效通过记录
+- [x] `Console V1` 有有效通过记录
+- [x] `radish.client` 国风视觉基线 / 主题切换 / `i18n` 有有效通过记录
+- [x] 通知中心有有效通过记录
+- [x] Docker 镜像构建链与最小交付口径有有效通过记录
 
 ### C. 本轮如有触达则补验
+
+> 当前内部开发版判断未新增这些专题改动，继续复用既有通过记录，不额外作为本轮阻塞项。
 
 - [ ] 聊天室 `P1`
 - [ ] 商城
@@ -156,10 +172,10 @@
 
 ### D. 记录与结论
 
-- [ ] 已补总回归记录
-- [ ] 已更新周志或阶段汇总
-- [ ] 已更新规划页 / 状态矩阵
-- [ ] 当前结论可明确写成：`可发内部开发版` / `继续观察` / `仍有阻塞`
+- [x] 已补总回归记录
+- [x] 已更新周志或阶段汇总
+- [x] 已更新规划页 / 状态矩阵
+- [x] 当前结论可明确写成：`可发内部开发版` / `继续观察` / `仍有阻塞`
 
 ## 5. 推荐记录格式
 
@@ -206,5 +222,7 @@
 2. `验证基线` 与最小 `CI` 门禁稳定，没有反复波动。
 3. 当前没有阻塞主链路的已知 `P0 / P1` 问题。
 4. 总回归记录、周志与规划页口径一致，不再依赖会话口头结论。
+
+截至 `2026-03-26`，以上条件当前均已满足，因此本轮判断已更新为：`可发内部开发版`。
 
 若以上任一项不满足，本页的结论应保持为“继续观察”或“仍有阻塞”，而不是提前下发布判断。

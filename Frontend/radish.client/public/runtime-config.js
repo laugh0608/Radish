@@ -1,0 +1,1 @@
+window.__RADISH_RUNTIME_CONFIG__ = window.__RADISH_RUNTIME_CONFIG__ || {};

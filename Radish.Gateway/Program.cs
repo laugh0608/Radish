@@ -83,7 +83,7 @@ builder.Services.AddRazorPages();
 
 // ===== CORS 配置 =====
 var corsSection = builder.Configuration.GetSection("Cors");
-var allowedOrigins = corsSection.GetSection("AllowedOrigins").Get<string[]>() ?? [];
+var allowedOrigins = CorsOriginResolver.ResolveAllowedOrigins(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
@@ -125,7 +125,7 @@ if (!string.IsNullOrEmpty(apiBaseUrl) && !string.IsNullOrEmpty(apiHealthPath))
 }
 
 // 直接通过 console 下游服务地址添加健康检查，避免本地自签 HTTPS 导致回环检查证书失败
-var consoleBaseUrl = builder.Configuration["ReverseProxy:Clusters:console-cluster:Destinations:console:Address"];
+var consoleBaseUrl = builder.Configuration["ReverseProxy:Clusters:consoleCluster:Destinations:console:Address"];
 if (!string.IsNullOrEmpty(consoleBaseUrl))
 {
     var consoleBase = consoleBaseUrl.TrimEnd('/');

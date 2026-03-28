@@ -1,3 +1,25 @@
+type RuntimeConfig = NonNullable<Window['__RADISH_RUNTIME_CONFIG__']>;
+
+const defaultPublicUrl = 'https://localhost:5000';
+
+function getRuntimeConfig(): RuntimeConfig {
+  if (typeof window === 'undefined' || !window.__RADISH_RUNTIME_CONFIG__) {
+    return {};
+  }
+
+  return window.__RADISH_RUNTIME_CONFIG__;
+}
+
+function readRuntimeString(value: string | undefined, fallback: string): string {
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : fallback;
+}
+
+function readRuntimeBoolean(value: boolean | undefined, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+const runtimeConfig = getRuntimeConfig();
+
 /**
  * 环境配置
  */
@@ -15,22 +37,31 @@ export const env = {
   /**
    * API 基础 URL（统一走 Gateway）
    */
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000',
+  apiBaseUrl: readRuntimeString(
+    runtimeConfig.apiBaseUrl,
+    import.meta.env.VITE_API_BASE_URL || defaultPublicUrl,
+  ).replace(/\/$/, ''),
 
   /**
    * Auth Server URL（统一走 Gateway）
    */
-  authServerUrl: import.meta.env.VITE_AUTH_SERVER_URL || 'https://localhost:5000',
+  authServerUrl: readRuntimeString(
+    runtimeConfig.authServerUrl,
+    import.meta.env.VITE_AUTH_SERVER_URL || defaultPublicUrl,
+  ).replace(/\/$/, ''),
 
   /**
    * 是否启用调试模式
    */
-  debug: import.meta.env.VITE_DEBUG === 'true',
+  debug: readRuntimeBoolean(runtimeConfig.debug, import.meta.env.VITE_DEBUG === 'true'),
 
   /**
    * 是否启用 Token 自动刷新调试定时器
    */
-  tokenAutoRefreshDebug: import.meta.env.VITE_TOKEN_AUTO_REFRESH_DEBUG === 'true',
+  tokenAutoRefreshDebug: readRuntimeBoolean(
+    runtimeConfig.tokenAutoRefreshDebug,
+    import.meta.env.VITE_TOKEN_AUTO_REFRESH_DEBUG === 'true',
+  ),
 
   /**
    * 功能开关
@@ -39,12 +70,18 @@ export const env = {
     /**
      * 主题切换
      */
-    themeSwitch: import.meta.env.VITE_FEATURE_THEME_SWITCH === 'true',
+    themeSwitch: readRuntimeBoolean(
+      runtimeConfig.features?.themeSwitch,
+      import.meta.env.VITE_FEATURE_THEME_SWITCH === 'true',
+    ),
 
     /**
      * 全局搜索
      */
-    globalSearch: import.meta.env.VITE_FEATURE_GLOBAL_SEARCH === 'true',
+    globalSearch: readRuntimeBoolean(
+      runtimeConfig.features?.globalSearch,
+      import.meta.env.VITE_FEATURE_GLOBAL_SEARCH === 'true',
+    ),
   },
 } as const;
 

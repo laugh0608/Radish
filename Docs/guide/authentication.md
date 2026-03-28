@@ -333,13 +333,8 @@ Radish.Api 作为资源服务器验证 Token（当前本地开发配置已经与
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        // Authority 指向 Auth Server 地址（本地开发）
+        // 开发运行：Authority 指向 Auth Server 地址
         options.Authority = "http://localhost:5200";
-        // 生产环境部署到网关后，可切换为网关暴露的 https 地址
-        // options.Authority = "https://your-gateway-domain";
-
-        // 本地开发阶段先关闭 Audience 校验，等待后续统一约定
-        // options.Audience = "radish-api";
         options.RequireHttpsMetadata = false;
 
         options.TokenValidationParameters = new TokenValidationParameters
@@ -380,6 +375,13 @@ builder.Services.AddAuthorizationBuilder()
     // 动态权限策略
     .AddPolicy("RadishAuthPolicy", policy => policy.Requirements.Add(new PermissionRequirement()));
 ```
+
+补充说明：
+
+- **开发运行**：`Radish.Api` 继续通过 `Authority = http://localhost:5200` 回拉 OIDC metadata / JWKS。
+- **测试部署 / 生产部署**：`Radish.Api` 不再依赖容器内 `localhost:5200`、`127.0.0.1` 或外部域名回拉 metadata / JWKS，而是直接复用 `Radish.Auth` 的 signing `.pfx` 做本地 JWT 验签。
+- **部署态 Issuer**：由 `RADISH_PUBLIC_URL` 或 `OpenIddict:Server:Issuer` 推导，`ValidIssuers` 会同时接受带 `/` 与不带 `/` 的形式。
+- **部署态挂载要求**：`Radish.Api` 必须只读挂载同一份 Auth signing 证书，并通过 `OpenIddict__Encryption__SigningCertificatePath / SigningCertificatePassword` 获取它；若未来扩为多实例 `Auth`，这份证书必须改为共享挂载目录、共享卷或外部密钥服务。
 
 ## 6. 前端集成
 
@@ -966,16 +968,38 @@ var hasPermission = PermissionItems
 
 Auth 启动时会在 `Program.cs` 中调用 `LoadOpenIddictCertificate`，相对路径会基于 `builder.Environment.ContentRootPath` 解析成绝对路径，因此在生产环境只需确保证书被挂载到容器内并设置正确的 `OpenIddict__Encryption__*` 环境变量即可。
 
+#### 自动生成与复用策略
+
+当前仓库已补容器启动入口脚本，支持在测试部署与生产部署中“缺失时自动生成、存在时直接复用”：
+
+- `RADISH_AUTH_CERT_AUTO_GENERATE=true` 时，若 `SigningCertificatePath` / `EncryptionCertificatePath` 指向的 `.pfx` 不存在，容器会在启动前自动生成
+- 证书文件会写入挂载目录，因此重启容器时不会重复生成
+- 若证书文件已存在，启动脚本只做复用，不会覆盖现有证书
+- 测试部署与生产部署下，`Radish.Api` 也会只读复用同一份 signing 证书做本地 JWT 验签
+- 若后续扩为多实例 `Auth`，所有实例必须共享同一组 OIDC 证书，不能各自独立生成
+
+推荐环境口径如下：
+
+- 开发运行：继续使用仓库内置开发证书或开发密钥
+- 测试部署：自动生成测试用 signing / encryption `.pfx`
+- 生产部署：自动生成或预置正式 OIDC 证书，但必须持久化到共享挂载目录
+
 #### 部署与覆盖配置
 
 1. **放置证书**：将 `auth-signing.pfx`、`auth-encryption.pfx` 拷贝到宿主机安全目录（例如 `/etc/radish/certs/`），以 `600` 权限挂载到容器（`/app/certs`）。
 2. **覆盖配置**：在 `appsettings.Production.json` 或环境变量中设置：
    ```
+   RADISH_AUTH_CERT_AUTO_GENERATE=true
    OpenIddict__Encryption__UseDevelopmentKeys=false
    OpenIddict__Encryption__SigningCertificatePath=/app/certs/auth-signing.pfx
    OpenIddict__Encryption__SigningCertificatePassword=<生产密码>
    OpenIddict__Encryption__EncryptionCertificatePath=/app/certs/auth-encryption.pfx
    OpenIddict__Encryption__EncryptionCertificatePassword=<生产密码>
+   ```
+   同时为 `Radish.Api` 提供同一份 signing 证书的只读挂载，并设置：
+   ```
+   OpenIddict__Encryption__SigningCertificatePath=/app/certs/auth-signing.pfx
+   OpenIddict__Encryption__SigningCertificatePassword=<生产密码>
    ```
 3. **滚动重启 Auth**：逐台/逐 Pod 重启 Auth 服务，发布后访问 `/.well-known/openid-configuration` 与 `/.well-known/jwks`，确认 `kid` 已切换至新证书；旧 Token 应该立即验签失败。
 
@@ -998,6 +1022,7 @@ Auth 启动时会在 `Program.cs` 中调用 `LoadOpenIddictCertificate`，相对
 6. **清理旧证书**：确认所有客户端已获取新 Token 后，删除旧 `.pfx` 文件并吊销旧密码，避免被继续使用。
 
 - **注意**：`dev-auth-cert.pfx` 只能用于本地开发，生产环境一定要替换证书与密码，并限制证书文件的访问权限。
+- **补充**：若生产环境启用 `RADISH_AUTH_CERT_AUTO_GENERATE=true`，必须保证 `/app/certs` 对应的挂载目录可持久化；否则容器重建后会生成新的 OIDC 密钥，旧 Token 会立即失效。
 
 ## 12. 调试与排障
 
@@ -1035,7 +1060,7 @@ curl https://localhost:7100/connect/userinfo \
 | `invalid_redirect_uri` | RedirectUri 不匹配 | 确保回调地址与客户端注册的 URI 完全一致（包括协议、端口、路径、末尾 `/`） |
 | `invalid_scope` | 请求的 scope 未在 Auth Server 注册，或客户端未声明相应权限 | 在 `Radish.Auth/Program.cs` 中通过 `options.RegisterScopes("openid", "profile", "offline_access", "radish-api")` 注册 scope，并在客户端的 `Permissions` 中添加对应 `Permissions.Prefixes.Scope + "radish-api"` 等配置 |
 | `invalid_grant` | 授权码已使用、过期或与当前客户端/redirect_uri 不匹配 | 授权码只能使用一次，确保 `client_id` 与 `redirect_uri` 与原授权请求一致，避免重复使用旧 code |
-| Token 验证失败 | Issuer/Audience 或签名配置不匹配；使用了旧 JWT Token 调用 OIDC 资源 | 检查资源服务器的 `Authority`/`TokenValidationParameters` 配置，确保指向 `Radish.Auth`；通过 `.oidc.http` 或前端 OIDC 流程重新获取 Access Token，避免混用旧 JWT 与 OIDC Token |
+| Token 验证失败 | Issuer、签名证书或部署模式配置不匹配；使用了旧 JWT Token 调用 OIDC 资源 | 开发运行检查 `Authority=http://localhost:5200`；测试/生产部署检查 `RADISH_PUBLIC_URL`、`OpenIddict__Server__Issuer`、`OpenIddict__Encryption__SigningCertificatePath / SigningCertificatePassword` 与 API 只读挂载是否一致；通过 `.oidc.http` 或前端 OIDC 流程重新获取 Access Token，避免混用旧 JWT 与 OIDC Token |
 | 调用需要 `Client` 策略的 API 返回 403 | Access Token 中缺少 `scope=radish-api`；或使用的是不带 scope 的旧登录方式 | 调用 `/connect/authorize` + `/connect/token` 时明确申请 `scope=radish-api`，并使用通过 Gateway/OIDC 获取的 Token 访问需要 `Client` 策略的接口 |
 | `/connect/userinfo` 中 `tenant_id` 为空 | 使用了未写入 `tenant_id` 的旧 Token，或 Auth 登录流程未正确设置租户 | 确保通过最新的 Auth 登录入口（`/Account/Login` 或前端 OIDC 流程）获取 Token，并确认登录用户绑定了有效的 TenantId |
 
@@ -1047,7 +1072,7 @@ curl https://localhost:7100/connect/userinfo \
 
 1. **保留数据模型**：User/Role/UserRole 等实体无需更改
 2. **更新 Claims 来源**：从 `JwtTokenGenerate` 迁移到 OpenIddict Claims Principal
-3. **调整 Token 验证**：从硬编码密钥改为 Authority 发现
+3. **调整 Token 验证**：开发运行使用 Authority 发现；测试 / 生产部署改为复用 Auth signing 证书做本地 JWT 验签
 4. **更新前端**：从手动存储 Token 改为 OIDC 库管理
 
 ### 13.2 旧版登录接口（临时兼容）

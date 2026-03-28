@@ -1,3 +1,25 @@
+type RuntimeConfig = NonNullable<Window['__RADISH_RUNTIME_CONFIG__']>;
+
+const defaultPublicUrl = 'https://localhost:5000';
+
+function getRuntimeConfig(): RuntimeConfig {
+  if (typeof window === 'undefined' || !window.__RADISH_RUNTIME_CONFIG__) {
+    return {};
+  }
+
+  return window.__RADISH_RUNTIME_CONFIG__;
+}
+
+function readRuntimeString(value: string | undefined, fallback: string): string {
+  return typeof value === 'string' && value.trim() !== '' ? value.trim() : fallback;
+}
+
+function readRuntimeBoolean(value: boolean | undefined, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+const runtimeConfig = getRuntimeConfig();
+
 /**
  * 环境配置
  */
@@ -15,27 +37,36 @@ export const env = {
   /**
    * API 基础 URL
    */
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000',
+  apiBaseUrl: readRuntimeString(
+    runtimeConfig.apiBaseUrl,
+    import.meta.env.VITE_API_BASE_URL || defaultPublicUrl,
+  ),
 
   /**
    * 认证服务器 URL
    */
-  authBaseUrl: import.meta.env.VITE_AUTH_BASE_URL || 'https://localhost:5000',
+  authBaseUrl: readRuntimeString(
+    runtimeConfig.authBaseUrl,
+    import.meta.env.VITE_AUTH_BASE_URL || defaultPublicUrl,
+  ),
 
   /**
    * SignalR Hub URL
    */
-  signalrHubUrl: import.meta.env.VITE_SIGNALR_HUB_URL || 'https://localhost:5000',
+  signalrHubUrl: readRuntimeString(
+    runtimeConfig.signalrHubUrl,
+    import.meta.env.VITE_SIGNALR_HUB_URL || defaultPublicUrl,
+  ),
 
   /**
    * 是否启用 Mock 数据
    */
-  enableMock: import.meta.env.VITE_ENABLE_MOCK === 'true',
+  enableMock: readRuntimeBoolean(runtimeConfig.enableMock, import.meta.env.VITE_ENABLE_MOCK === 'true'),
 
   /**
    * 是否启用调试模式
    */
-  debug: import.meta.env.VITE_DEBUG === 'true',
+  debug: readRuntimeBoolean(runtimeConfig.debug, import.meta.env.VITE_DEBUG === 'true'),
 
   /**
    * 功能开关
@@ -44,12 +75,18 @@ export const env = {
     /**
      * 暗色模式
      */
-    darkMode: import.meta.env.VITE_FEATURE_DARK_MODE === 'true',
+    darkMode: readRuntimeBoolean(
+      runtimeConfig.features?.darkMode,
+      import.meta.env.VITE_FEATURE_DARK_MODE === 'true',
+    ),
 
     /**
      * 国际化
      */
-    i18n: import.meta.env.VITE_FEATURE_I18N === 'true',
+    i18n: readRuntimeBoolean(
+      runtimeConfig.features?.i18n,
+      import.meta.env.VITE_FEATURE_I18N === 'true',
+    ),
   },
 
 } as const;
