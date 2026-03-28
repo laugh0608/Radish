@@ -151,6 +151,8 @@ Route Meta / RouteGuard / usePermission
 - 回收全部 `RoleConsoleResource`
 - 回收除 `/api/v1/User/GetUserByHttpContext` 之外的默认 `RoleModulePermission`
 - 不再允许通过种子数据默认获得 `Tags`、`Moderation`、`Coins`、`Experience` 等后台能力
+- 当前用户权限快照会忽略 `Test` 角色残留的 Console 授权记录，避免旧库脏数据继续把后台权限带回前端
+- 登录签发角色 Claim 时会过滤已软删 / 已禁用角色，避免历史解绑角色继续混入新 Token
 - 若旧开发库仍残留历史 `RoleConsoleResource / RoleModulePermission`，需重新执行种子或手工清理后再验证入口可见性
 
 ## 5. 边界决策记录

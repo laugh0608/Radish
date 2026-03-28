@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type MouseEvent, type ReactNode } from 'react';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
+import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { toast } from '@radish/ui/toast';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
@@ -51,6 +52,7 @@ import styles from './WikiApp.module.css';
 type EditorMode = 'create' | 'edit';
 type DeletionFilter = 'active' | 'deleted';
 type SidebarView = 'tree' | 'results';
+type SidebarRenderMode = 'default' | 'overlay';
 
 type EditorDraft = {
   title: string;
@@ -296,6 +298,8 @@ export const WikiApp = () => {
   const [sidebarView, setSidebarView] = useState<SidebarView>('tree');
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<number>>(new Set());
   const [isCompactLayout, setIsCompactLayout] = useState(false);
+  const [isReadingLayout, setIsReadingLayout] = useState(false);
+  const [isSidebarSheetOpen, setIsSidebarSheetOpen] = useState(false);
   const [sortSuggestion, setSortSuggestion] = useState(EMPTY_DRAFT.sort);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -320,6 +324,7 @@ export const WikiApp = () => {
   const isDeletedDocument = Boolean(selectedDocument?.voIsDeleted);
   const canEditSelectedDocument = isAdmin && Boolean(selectedDocument) && !isBuiltInDocument && !isDeletedDocument;
   const canRestoreSelectedDocument = isAdmin && Boolean(selectedDocument) && !isBuiltInDocument && isDeletedDocument;
+  const shouldUseSidebarOverlay = isReadingLayout && (editorVisible || Boolean(selectedDocumentId) || loadingDetail);
   const invalidParentIds = useMemo(() => {
     if (!selectedDocumentId) {
       return new Set<number>();
@@ -545,11 +550,12 @@ export const WikiApp = () => {
       return;
     }
 
-    const updateLayout = (width: number) => {
+    const updateLayout = (width: number, height: number) => {
       setIsCompactLayout(width < 1080);
+      setIsReadingLayout(height < 760);
     };
 
-    updateLayout(container.clientWidth);
+    updateLayout(container.clientWidth, container.clientHeight);
 
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0];
@@ -557,12 +563,18 @@ export const WikiApp = () => {
         return;
       }
 
-      updateLayout(entry.contentRect.width);
+      updateLayout(entry.contentRect.width, entry.contentRect.height);
     });
 
     observer.observe(container);
     return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    if (!shouldUseSidebarOverlay && isSidebarSheetOpen) {
+      setIsSidebarSheetOpen(false);
+    }
+  }, [isSidebarSheetOpen, shouldUseSidebarOverlay]);
 
   useEffect(() => {
     setExpandedNodeIds((current) => {
@@ -598,6 +610,7 @@ export const WikiApp = () => {
     const parentId = selectedDocument && !selectedDocument.voIsDeleted ? String(selectedDocument.voId) : '';
     const suggestedSort = String(getSuggestedSortValue(tree, normalizeOptionalNumber(parentId)));
 
+    setIsSidebarSheetOpen(false);
     setEditorMode('create');
     setDraft({
       ...EMPTY_DRAFT,
@@ -615,6 +628,7 @@ export const WikiApp = () => {
 
     const suggestedSort = String(getSuggestedSortValue(tree, selectedDocument.voParentId, selectedDocument.voId));
 
+    setIsSidebarSheetOpen(false);
     setEditorMode('edit');
     setDraft({
       title: selectedDocument.voTitle,
@@ -638,6 +652,13 @@ export const WikiApp = () => {
     setDraft(EMPTY_DRAFT);
     setSortSuggestion(EMPTY_DRAFT.sort);
   };
+
+  const handleSelectDocument = useCallback((documentId: number) => {
+    setSelectedDocumentId(documentId);
+    if (shouldUseSidebarOverlay) {
+      setIsSidebarSheetOpen(false);
+    }
+  }, [shouldUseSidebarOverlay]);
 
   const openHistoryModal = () => {
     if (!selectedDocumentId || !canEditSelectedDocument) {
@@ -1015,7 +1036,7 @@ export const WikiApp = () => {
               type="button"
               className={`${styles.treeNode} ${selectedDocumentId === node.voId ? styles.treeNodeActive : ''}`}
               onClick={() => {
-                setSelectedDocumentId(node.voId);
+                handleSelectDocument(node.voId);
                 if (isExpandable) {
                   setExpandedNodeIds((current) => new Set(current).add(node.voId));
                 }
@@ -1034,18 +1055,94 @@ export const WikiApp = () => {
     });
   };
 
-  return (
-    <div ref={containerRef} className={`${styles.container} ${isCompactLayout ? styles.containerCompact : ''}`}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <div className={styles.sidebarTitleRow}>
-            <div>
-              <h2 className={styles.sidebarTitle}>{t('wiki.sidebar.title')}</h2>
-              <p className={styles.sidebarHint}>{t('wiki.sidebar.hint')}</p>
-            </div>
-          </div>
+  const renderSidebarPanel = (view: SidebarView, compact: boolean = false) => (
+    <section className={`${styles.sidebarPanel} ${compact ? styles.sidebarPanelCompact : ''}`}>
+      <div className={styles.sectionHeader}>
+        <h3 className={styles.sectionTitle}>
+          {view === 'tree'
+            ? t('wiki.sidebar.tab.tree')
+            : showingDeleted
+              ? t('wiki.sidebar.tab.deletedResults')
+              : t('wiki.sidebar.tab.results')}
+        </h3>
+        <span className={styles.sectionCount}>{view === 'tree' ? totalTreeDocuments : totalResultsCount}</span>
+      </div>
+      <div className={styles.sectionHint}>
+        {view === 'results'
+          ? totalResultsCount > currentListCount
+            ? t('wiki.sidebar.sectionHint.pageStats', { current: currentListCount, total: totalResultsCount })
+            : hasActiveFilters
+              ? t('wiki.sidebar.sectionHint.filtered', { total: totalResultsCount })
+              : t('wiki.sidebar.sectionHint.list', { total: totalResultsCount })
+          : t('wiki.sidebar.sectionHint.tree')}
+      </div>
 
-          <div className={styles.sidebarUtilityRow}>
+      {view === 'tree' ? (
+        <div className={styles.treeScroll}>
+          {loadingTree ? (
+            <div className={styles.loadingText}>{t('wiki.loading.tree')}</div>
+          ) : tree.length > 0 ? (
+            renderTreeNodes(tree)
+          ) : (
+            <div className={styles.mutedText}>{loggedIn ? t('wiki.empty.tree') : t('wiki.empty.publicTree')}</div>
+          )}
+        </div>
+      ) : (
+        <div className={styles.listScroll}>
+          {loadingList ? (
+            <div className={styles.loadingText}>{t('wiki.loading.list')}</div>
+          ) : documents.length > 0 ? (
+            documents.map((document) => (
+              <button
+                key={document.voId}
+                type="button"
+                className={`${styles.listItem} ${selectedDocumentId === document.voId ? styles.listItemActive : ''}`}
+                onClick={() => handleSelectDocument(document.voId)}
+              >
+                <div className={styles.listItemHeader}>
+                  <span className={styles.listItemTitle}>{document.voTitle}</span>
+                  <span className={`${styles.statusChip} ${document.voIsDeleted ? styles.statusDeleted : toStatusClassName(document.voStatus)}`}>
+                    {document.voIsDeleted ? t('wiki.status.deleted') : toStatusText(t, document.voStatus)}
+                  </span>
+                </div>
+                {document.voSummary ? (
+                  <div className={styles.listItemSummary}>{document.voSummary}</div>
+                ) : null}
+                <div className={styles.listItemMeta}>
+                  {document.voSlug} · v{document.voVersion} · {toVisibilityText(t, document.voVisibility)}
+                </div>
+              </button>
+            ))
+          ) : (
+            <div className={styles.mutedText}>
+              {showingDeleted
+                ? t('wiki.empty.deletedResults')
+                : loggedIn
+                  ? t('wiki.empty.results')
+                  : t('wiki.empty.publicResults')}
+            </div>
+          )}
+        </div>
+      )}
+    </section>
+  );
+
+  const renderSidebar = (renderMode: SidebarRenderMode = 'default') => {
+    const isOverlayMode = renderMode === 'overlay';
+
+    return (
+      <>
+        <div className={`${styles.sidebarHeader} ${isOverlayMode ? styles.sidebarHeaderOverlay : ''}`}>
+          {!isOverlayMode ? (
+            <div className={styles.sidebarTitleRow}>
+              <div>
+                <h2 className={styles.sidebarTitle}>{t('wiki.sidebar.title')}</h2>
+                <p className={styles.sidebarHint}>{t('wiki.sidebar.hint')}</p>
+              </div>
+            </div>
+          ) : null}
+
+          <div className={`${styles.sidebarUtilityRow} ${isOverlayMode ? styles.sidebarUtilityRowOverlay : ''}`}>
             <div className={styles.sidebarStatsRow}>
               <span className={styles.sidebarStatBadge}>
                 <span className={styles.sidebarStatLabel}>{t('wiki.sidebar.stats.directory')}</span>
@@ -1081,142 +1178,94 @@ export const WikiApp = () => {
             </div>
           </div>
 
-          <div className={styles.searchRow}>
-            <input
-              className={styles.searchInput}
-              value={keyword}
-              placeholder={t('wiki.sidebar.searchPlaceholder')}
-              onChange={(event) => setKeyword(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  void handleSearch();
-                }
-              }}
-            />
-            <button type="button" className={styles.primaryButton} onClick={() => void handleSearch()}>
-              {t('wiki.actions.search')}
-            </button>
-          </div>
-
-          {isAdmin ? (
-            <div className={styles.statusStack}>
-              <div className={styles.statusRow}>
-                <select
-                  className={styles.select}
-                  value={statusFilter}
-                  onChange={(event) => setStatusFilter(event.target.value)}
-                >
-                  <option value="">{t('wiki.filter.allStatuses')}</option>
-                  <option value={String(WikiDocumentStatus.Draft)}>{t('wiki.status.draft')}</option>
-                  <option value={String(WikiDocumentStatus.Published)}>{t('wiki.status.published')}</option>
-                  <option value={String(WikiDocumentStatus.Archived)}>{t('wiki.status.archived')}</option>
-                </select>
-              </div>
-              <div className={styles.statusRow}>
-                <select
-                  className={styles.select}
-                  value={deletionFilter}
-                  onChange={(event) => setDeletionFilter(event.target.value as DeletionFilter)}
-                >
-                  <option value="active">{t('wiki.filter.activeOnly')}</option>
-                  <option value="deleted">{t('wiki.filter.deletedOnly')}</option>
-                </select>
-              </div>
+          <div className={styles.sidebarFilters}>
+            <div className={styles.searchRow}>
+              <input
+                className={styles.searchInput}
+                value={keyword}
+                placeholder={t('wiki.sidebar.searchPlaceholder')}
+                onChange={(event) => setKeyword(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    void handleSearch();
+                  }
+                }}
+              />
+              <button type="button" className={styles.primaryButton} onClick={() => void handleSearch()}>
+                {t('wiki.actions.search')}
+              </button>
             </div>
-          ) : null}
+
+            {isAdmin ? (
+              <div className={styles.statusStack}>
+                <div className={styles.statusRow}>
+                  <select
+                    className={styles.select}
+                    value={statusFilter}
+                    onChange={(event) => setStatusFilter(event.target.value)}
+                  >
+                    <option value="">{t('wiki.filter.allStatuses')}</option>
+                    <option value={String(WikiDocumentStatus.Draft)}>{t('wiki.status.draft')}</option>
+                    <option value={String(WikiDocumentStatus.Published)}>{t('wiki.status.published')}</option>
+                    <option value={String(WikiDocumentStatus.Archived)}>{t('wiki.status.archived')}</option>
+                  </select>
+                </div>
+                <div className={styles.statusRow}>
+                  <select
+                    className={styles.select}
+                    value={deletionFilter}
+                    onChange={(event) => setDeletionFilter(event.target.value as DeletionFilter)}
+                  >
+                    <option value="active">{t('wiki.filter.activeOnly')}</option>
+                    <option value="deleted">{t('wiki.filter.deletedOnly')}</option>
+                  </select>
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
 
-        <div className={styles.sidebarBody}>
-          <div className={styles.sidebarTabs}>
-            <button
-              type="button"
-              className={sidebarView === 'tree' ? styles.sidebarTabActive : styles.sidebarTab}
-              onClick={() => setSidebarView('tree')}
-            >
-              {t('wiki.sidebar.tab.tree')}
-            </button>
-            <button
-              type="button"
-              className={sidebarView === 'results' ? styles.sidebarTabActive : styles.sidebarTab}
-              onClick={() => setSidebarView('results')}
-            >
-              {showingDeleted ? t('wiki.sidebar.tab.deletedResults') : t('wiki.sidebar.tab.results')}
-            </button>
-          </div>
-
-          <section className={styles.sidebarPanel}>
-            <div className={styles.sectionHeader}>
-              <h3 className={styles.sectionTitle}>
-                {sidebarView === 'tree'
-                  ? t('wiki.sidebar.tab.tree')
-                  : showingDeleted
-                    ? t('wiki.sidebar.tab.deletedResults')
-                    : t('wiki.sidebar.tab.results')}
-              </h3>
-              <span className={styles.sectionCount}>{sidebarView === 'tree' ? totalTreeDocuments : totalResultsCount}</span>
+        <div className={`${styles.sidebarBody} ${isOverlayMode ? styles.sidebarBodyOverlay : ''}`}>
+          {isOverlayMode ? (
+            <div className={styles.sidebarSplit}>
+              {renderSidebarPanel('tree', true)}
+              {renderSidebarPanel('results', true)}
             </div>
-            <div className={styles.sectionHint}>
-              {sidebarView === 'results'
-                ? totalResultsCount > currentListCount
-                  ? t('wiki.sidebar.sectionHint.pageStats', { current: currentListCount, total: totalResultsCount })
-                  : hasActiveFilters
-                    ? t('wiki.sidebar.sectionHint.filtered', { total: totalResultsCount })
-                    : t('wiki.sidebar.sectionHint.list', { total: totalResultsCount })
-                : t('wiki.sidebar.sectionHint.tree')}
-            </div>
+          ) : (
+            <>
+              <div className={styles.sidebarTabs}>
+                <button
+                  type="button"
+                  className={sidebarView === 'tree' ? styles.sidebarTabActive : styles.sidebarTab}
+                  onClick={() => setSidebarView('tree')}
+                >
+                  {t('wiki.sidebar.tab.tree')}
+                </button>
+                <button
+                  type="button"
+                  className={sidebarView === 'results' ? styles.sidebarTabActive : styles.sidebarTab}
+                  onClick={() => setSidebarView('results')}
+                >
+                  {showingDeleted ? t('wiki.sidebar.tab.deletedResults') : t('wiki.sidebar.tab.results')}
+                </button>
+              </div>
 
-            {sidebarView === 'tree' ? (
-              <div className={styles.treeScroll}>
-                {loadingTree ? (
-                  <div className={styles.loadingText}>{t('wiki.loading.tree')}</div>
-                ) : tree.length > 0 ? (
-                  renderTreeNodes(tree)
-                ) : (
-                  <div className={styles.mutedText}>{loggedIn ? t('wiki.empty.tree') : t('wiki.empty.publicTree')}</div>
-                )}
-              </div>
-            ) : (
-              <div className={styles.listScroll}>
-                {loadingList ? (
-                  <div className={styles.loadingText}>{t('wiki.loading.list')}</div>
-                ) : documents.length > 0 ? (
-                  documents.map((document) => (
-                    <button
-                      key={document.voId}
-                      type="button"
-                      className={`${styles.listItem} ${selectedDocumentId === document.voId ? styles.listItemActive : ''}`}
-                      onClick={() => setSelectedDocumentId(document.voId)}
-                    >
-                      <div className={styles.listItemHeader}>
-                        <span className={styles.listItemTitle}>{document.voTitle}</span>
-                        <span className={`${styles.statusChip} ${document.voIsDeleted ? styles.statusDeleted : toStatusClassName(document.voStatus)}`}>
-                          {document.voIsDeleted ? t('wiki.status.deleted') : toStatusText(t, document.voStatus)}
-                        </span>
-                      </div>
-                      {document.voSummary ? (
-                        <div className={styles.listItemSummary}>{document.voSummary}</div>
-                      ) : null}
-                      <div className={styles.listItemMeta}>
-                        {document.voSlug} · v{document.voVersion} · {toVisibilityText(t, document.voVisibility)}
-                      </div>
-                    </button>
-                  ))
-                ) : (
-                  <div className={styles.mutedText}>
-                    {showingDeleted
-                      ? t('wiki.empty.deletedResults')
-                      : loggedIn
-                        ? t('wiki.empty.results')
-                        : t('wiki.empty.publicResults')}
-                  </div>
-                )}
-              </div>
-            )}
-          </section>
+              {renderSidebarPanel(sidebarView)}
+            </>
+          )}
         </div>
-      </aside>
+      </>
+    );
+  };
 
-      <main className={styles.main}>
+  return (
+    <div
+      ref={containerRef}
+      className={`${styles.container} ${isCompactLayout ? styles.containerCompact : ''} ${shouldUseSidebarOverlay ? styles.containerReading : ''}`}
+    >
+      {!shouldUseSidebarOverlay ? <aside className={styles.sidebar}>{renderSidebar()}</aside> : null}
+
+      <main className={`${styles.main} ${shouldUseSidebarOverlay ? styles.mainReading : ''}`}>
         <div className={styles.contentHeader}>
           <div className={styles.titleGroup}>
             <h1 className={styles.title}>
@@ -1410,7 +1459,7 @@ export const WikiApp = () => {
               <MarkdownEditor
                 value={draft.markdownContent}
                 onChange={(value) => setDraft((current) => ({ ...current, markdownContent: value }))}
-                minHeight={360}
+                minHeight={shouldUseSidebarOverlay ? 280 : 360}
                 placeholder={t('wiki.form.markdownPlaceholder')}
                 onImageUpload={handleImageUpload}
                 onDocumentUpload={handleDocumentUpload}
@@ -1506,7 +1555,31 @@ export const WikiApp = () => {
             </div>
           ) : null}
         </div>
+
+        {shouldUseSidebarOverlay && !isSidebarSheetOpen ? (
+          <button
+            type="button"
+            className={styles.sidebarOverlayTrigger}
+            onClick={() => setIsSidebarSheetOpen(true)}
+          >
+            {t('wiki.actions.directory')}
+          </button>
+        ) : null}
       </main>
+
+      {shouldUseSidebarOverlay ? (
+        <BottomSheet
+          isOpen={isSidebarSheetOpen}
+          onClose={() => setIsSidebarSheetOpen(false)}
+          title={t('wiki.actions.directory')}
+          height="86%"
+          bodyClassName={styles.sidebarSheetBody}
+        >
+          <div className={styles.sidebarSheet}>
+            {renderSidebar('overlay')}
+          </div>
+        </BottomSheet>
+      ) : null}
 
       <input
         ref={importInputRef}

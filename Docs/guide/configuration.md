@@ -298,6 +298,14 @@ services:
 
 部署态下，`Api / Auth / Gateway` 三个宿主都会优先根据 `RADISH_PUBLIC_URL` 推导统一的 CORS 允许来源；只有未提供该变量时，才回退到各自 `appsettings.json` 中的开发默认值。
 
+补充说明：
+
+- 开发运行下，`Radish.Api` 继续通过 `Authority=http://localhost:5200` 做 OIDC 元数据发现。
+- 测试部署与生产部署下，`Radish.Api` 需要额外读取与 `Radish.Auth` 共享的 signing 证书路径和密码：
+  - `OpenIddict__Encryption__SigningCertificatePath`
+  - `OpenIddict__Encryption__SigningCertificatePassword`
+- 该证书应与 `Auth` 使用的 signing `.pfx` 保持同源，并以只读方式挂载给 `Api`，用于本地 JWT 验签。
+
 详细配置说明请参考 `Radish.Gateway/README.md`
 
 **重要**：

@@ -17,6 +17,10 @@
   grid-template-columns: 1fr;
 }
 
+.containerReading {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .containerCompact .sidebar {
   min-height: 420px;
 }
@@ -66,6 +70,10 @@
   );
 }
 
+.sidebarHeaderOverlay {
+  padding: 12px 14px 10px;
+}
+
 .sidebarTitleRow {
   display: flex;
   align-items: center;
@@ -95,6 +103,10 @@
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 8px;
+}
+
+.sidebarUtilityRowOverlay {
+  margin-bottom: 0;
 }
 
 .sidebarStatsRow {
@@ -142,6 +154,11 @@
   grid-template-columns: 1fr 84px;
   gap: 6px;
   margin-top: 6px;
+}
+
+.sidebarFilters {
+  display: grid;
+  gap: 8px;
 }
 
 .statusRow {
@@ -256,6 +273,11 @@
   background: color-mix(in srgb, var(--theme-bg-muted) 42%, var(--theme-bg-app) 58%);
 }
 
+.sidebarBodyOverlay {
+  grid-template-rows: minmax(0, 1fr);
+  padding: 12px;
+}
+
 .sidebarTabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -304,6 +326,39 @@
   background: var(--theme-bg-surface);
   box-shadow: var(--theme-shadow-soft);
   overflow: hidden;
+}
+
+.sidebarPanelCompact {
+  padding: 8px;
+  border-radius: 16px;
+}
+
+.sidebarPanelCompact .sectionHeader {
+  margin-bottom: 6px;
+  padding: 7px 9px;
+}
+
+.sidebarPanelCompact .sectionCount {
+  min-width: 40px;
+  padding: 5px 10px;
+  font-size: 13px;
+}
+
+.sidebarPanelCompact .sectionHint {
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+}
+
+.sidebarSplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: 12px;
+  height: 100%;
+  min-height: 0;
+}
+
+.sidebarSplit > * {
+  min-height: 0;
 }
 
 .sectionHeader {
@@ -536,6 +591,7 @@
 }
 
 .main {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -597,6 +653,39 @@
     color-mix(in srgb, var(--theme-bg-app) 70%, var(--theme-bg-surface) 30%) 0%,
     color-mix(in srgb, var(--theme-bg-muted) 42%, var(--theme-bg-app) 58%) 100%
   );
+}
+
+.mainReading .contentHeader {
+  gap: 10px;
+  padding: 14px 16px 10px;
+}
+
+.mainReading .title {
+  font-size: 22px;
+}
+
+.mainReading .subtitle {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.mainReading .contentBody {
+  padding: 14px 16px 72px;
+}
+
+.mainReading .metaBar {
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.mainReading .toolbarRowSpaced {
+  margin-bottom: 12px;
+}
+
+.mainReading .markdownPanel,
+.mainReading .editorPanel {
+  padding: 16px;
 }
 
 .metaBar {
@@ -990,6 +1079,10 @@
     padding-left: 14px;
     padding-right: 14px;
   }
+
+  .sidebarSplit {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (min-width: 1400px) {
@@ -1059,6 +1152,72 @@
   padding: 4px 10px;
   font-size: 12px;
   cursor: pointer;
+}
+
+.sidebarOverlayTrigger {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-bg-surface) 80%, white 20%),
+    color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%)
+  );
+  color: var(--theme-brand-primary);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, var(--theme-brand-primary) 16%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 32%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.sidebarOverlayTrigger:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 18px 32px color-mix(in srgb, var(--theme-brand-primary) 20%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 38%, transparent);
+}
+
+.sidebarSheetBody {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.sidebarSheet {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background:
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--theme-brand-primary) 12%, transparent), transparent 28%),
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 72%, var(--theme-bg-surface) 28%), var(--theme-bg-app));
+}
+
+.sidebarHeaderOverlay .searchRow {
+  margin-top: 0;
+  grid-template-columns: minmax(0, 1fr) 92px;
+}
+
+.sidebarHeaderOverlay .statusStack {
+  margin-top: 0;
+  gap: 6px;
+}
+
+.sidebarHeaderOverlay .statusRow {
+  margin-top: 0;
 }
 
 .toolbarRowSpaced {

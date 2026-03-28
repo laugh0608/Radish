@@ -44,14 +44,17 @@ public class UserService : BaseService<User, UserVo>, IUserService
         string roleName = "";
         var user =
             (await base.QueryAsync(a => a.LoginName == loginName && a.LoginPassword == loginPwd)).FirstOrDefault();
-        var roleList = await _roleRepository.QueryAsync(a => a.IsDeleted == false);
+        var roleList = await _roleRepository.QueryAsync(a => a.IsDeleted == false && a.IsEnabled);
         if (user != null)
         {
-            var userRoles = await _userRoleRepository.QueryAsync(ur => ur.UserId == user.Uuid);
+            var userRoles = await _userRoleRepository.QueryAsync(ur => ur.UserId == user.Uuid && ur.IsDeleted == false);
             if (userRoles.Count > 0)
             {
                 var arr = userRoles.Select(ur => ur.RoleId.ObjToString()).ToList();
-                var roles = roleList.Where(d => arr.Contains(d.Id.ObjToString()));
+                var roles = roleList
+                    .Where(d => arr.Contains(d.Id.ObjToString()))
+                    .DistinctBy(d => d.Id)
+                    .OrderBy(d => d.RoleName, StringComparer.OrdinalIgnoreCase);
 
                 roleName = string.Join(',', roles.Select(r => r.RoleName).ToArray());
             }
