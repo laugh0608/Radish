@@ -72,6 +72,7 @@ function parseForumWindowParams(appParams?: Record<string, unknown> | null): { p
 export const ForumApp = () => {
   const { t } = useTranslation();
   const { isAuthenticated, userId } = useUserStore();
+  const roles = useUserStore((state) => state.roles || []);
   const { openApp } = useWindowStore();
   const currentWindow = useCurrentWindow();
   const loggedIn = isAuthenticated();
@@ -99,6 +100,10 @@ export const ForumApp = () => {
   const [followLoading, setFollowLoading] = useState(false);
   const windowParams = parseForumWindowParams(currentWindow?.appParams);
   const handledWindowRouteRef = useRef<string | null>(null);
+  const canTogglePostTop = roles.some((role) => {
+    const normalized = role.trim().toLowerCase();
+    return normalized === 'admin' || normalized === 'system';
+  });
 
   useEffect(() => {
     const element = containerShellRef.current;
@@ -546,6 +551,8 @@ export const ForumApp = () => {
                 onAcceptAnswer={actionsState.handleAcceptAnswer}
                 onQuestionAnswerSortChange={actionsState.handleQuestionAnswerSortChange}
                 onQuestionAnswerFilterChange={actionsState.handleQuestionAnswerFilterChange}
+                canToggleTop={canTogglePostTop}
+                onToggleTop={actionsState.handleTogglePostTop}
                 onEdit={actionsState.handleEditPost}
                 onViewPostHistory={actionsState.handleViewPostHistory}
                 onDelete={actionsState.handleDeletePost}

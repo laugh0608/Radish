@@ -494,6 +494,60 @@ public class PostController : ControllerBase
     }
 
     /// <summary>
+    /// 设置帖子置顶状态
+    /// </summary>
+    /// <param name="request">置顶请求</param>
+    /// <returns>更新后的帖子详情</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> SetTop([FromBody] SetPostTopDto request)
+    {
+        if (request.PostId <= 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "帖子ID必须大于0"
+            };
+        }
+
+        if (!Current.IsSystemOrAdmin())
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "无权置顶帖子"
+            };
+        }
+
+        try
+        {
+            var post = await _postService.SetTopAsync(request.PostId, request.IsTop, Current.UserId, Current.UserName);
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = request.IsTop ? "置顶成功" : "取消置顶成功",
+                ResponseData = post
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = ex.Message
+            };
+        }
+    }
+
+    /// <summary>
     /// 获取指定用户的帖子列表
     /// </summary>
     /// <param name="userId">用户 ID</param>

@@ -67,8 +67,8 @@
    ```bash
    git checkout master
    git pull origin master
-   git tag -a v26.3.1-release -m "Release v26.3.1"
-   git push origin v26.3.1-release
+   git tag -a v26.3.2-release -m "Release v26.3.2"
+   git push origin v26.3.2-release
    ```
 
 7. 等待 `Docker Images` 工作流完成本次镜像产出；若当前标签为 `v*-release`，`GHCR` 会同步产出：

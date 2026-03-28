@@ -31,6 +31,7 @@ interface PostDetailContentViewProps {
   isAuthenticated: boolean;
   showFloatingTools?: boolean;
   currentUserId: number;
+  canToggleTop: boolean;
   commentSortBy: 'newest' | 'hottest' | null;
   questionAnswerSort: QuestionAnswerSort;
   questionAnswerFilter: QuestionAnswerFilter;
@@ -47,6 +48,7 @@ interface PostDetailContentViewProps {
   onAcceptAnswer: (answerId: number) => Promise<void>;
   onQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
   onQuestionAnswerFilterChange: (filterBy: QuestionAnswerFilter) => void;
+  onToggleTop: (isTop: boolean) => Promise<void>;
   onEdit: (postId: number) => void;
   onViewPostHistory: (postId: number) => void;
   onDelete: (postId: number) => void;
@@ -99,6 +101,7 @@ export const PostDetailContentView = ({
   isAuthenticated,
   showFloatingTools = true,
   currentUserId,
+  canToggleTop,
   commentSortBy,
   questionAnswerSort,
   questionAnswerFilter,
@@ -114,6 +117,7 @@ export const PostDetailContentView = ({
   onAcceptAnswer,
   onQuestionAnswerSortChange,
   onQuestionAnswerFilterChange,
+  onToggleTop,
   onEdit,
   onViewPostHistory,
   onDelete,
@@ -254,6 +258,8 @@ export const PostDetailContentView = ({
               onAnswerFilterChange={onQuestionAnswerFilterChange}
               isAuthenticated={isAuthenticated}
               currentUserId={currentUserId}
+              canToggleTop={canToggleTop}
+              onToggleTop={onToggleTop}
               onEdit={onEdit}
               onViewHistory={onViewPostHistory}
               onDelete={onDelete}

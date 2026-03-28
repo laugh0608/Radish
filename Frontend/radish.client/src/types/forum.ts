@@ -469,6 +469,14 @@ export interface UpdatePostRequest {
 }
 
 /**
+ * 设置帖子置顶状态请求
+ */
+export interface SetPostTopRequest {
+  postId: number;
+  isTop: boolean;
+}
+
+/**
  * 创建评论请求
  */
 export interface CreateCommentRequest {

@@ -47,6 +47,7 @@ import type {
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
+  SetPostTopRequest,
   UpdatePostRequest,
   ReactionSummaryVo,
   ToggleReactionRequest,
@@ -100,6 +101,7 @@ export type {
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
+  SetPostTopRequest,
   UpdatePostRequest,
   ReactionSummaryVo,
   ToggleReactionRequest,
@@ -442,6 +444,19 @@ export async function updatePost(request: UpdatePostRequest, t: TFunction): Prom
 
   if (!response.ok) {
     throw new Error(response.message || '编辑帖子失败');
+  }
+}
+
+/**
+ * 设置帖子置顶状态
+ * @param request 置顶请求
+ */
+export async function setPostTop(request: SetPostTopRequest, t: TFunction): Promise<void> {
+  void t;
+  const response = await apiPost<null>('/api/v1/Post/SetTop', request, { withAuth: true });
+
+  if (!response.ok) {
+    throw new Error(response.message || '设置帖子置顶状态失败');
   }
 }
 

@@ -157,6 +157,16 @@ public interface IPostService : IBaseService<Post, PostVo>
     Task<PostLikeResultDto> ToggleLikeAsync(long userId, long postId);
 
     /// <summary>
+    /// 设置帖子置顶状态
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="isTop">是否置顶</param>
+    /// <param name="operatorId">操作者 Id</param>
+    /// <param name="operatorName">操作者名称</param>
+    /// <returns>更新后的帖子详情</returns>
+    Task<PostVo> SetTopAsync(long postId, bool isTop, long operatorId, string operatorName);
+
+    /// <summary>
     /// 分页获取帖子编辑历史
     /// </summary>
     /// <param name="postId">帖子 Id</param>

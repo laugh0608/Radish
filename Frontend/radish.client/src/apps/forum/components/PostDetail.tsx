@@ -46,6 +46,8 @@ interface PostDetailProps {
   onAnswerFilterChange?: (filterBy: QuestionAnswerFilter) => void;
   isAuthenticated?: boolean;
   currentUserId?: number;
+  canToggleTop?: boolean;
+  onToggleTop?: (isTop: boolean) => Promise<void>;
   onEdit?: (postId: number) => void;
   onDelete?: (postId: number) => void;
   onViewHistory?: (postId: number) => void;
@@ -79,6 +81,8 @@ export const PostDetail = ({
   onAnswerFilterChange,
   isAuthenticated = false,
   currentUserId = 0,
+  canToggleTop = false,
+  onToggleTop,
   onEdit,
   onDelete,
   onViewHistory,
@@ -111,6 +115,7 @@ export const PostDetail = ({
   const [acceptingAnswerId, setAcceptingAnswerId] = useState<number | null>(null);
   const [isDrawingLottery, setIsDrawingLottery] = useState(false);
   const [isClosingPoll, setIsClosingPoll] = useState(false);
+  const [isTogglingTop, setIsTogglingTop] = useState(false);
 
   const isAuthor = !!post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
   const showFollowAction = isAuthenticated && !!post && !isAuthor && post.voAuthorId > 0;
@@ -199,6 +204,10 @@ export const PostDetail = ({
     setAnswerContent('');
     setAcceptingAnswerId(null);
   }, [post?.voId]);
+
+  useEffect(() => {
+    setIsTogglingTop(false);
+  }, [post?.voId, post?.voIsTop]);
 
   if (loading) {
     return (
@@ -323,6 +332,19 @@ export const PostDetail = ({
       await onAcceptAnswer(answerId);
     } finally {
       setAcceptingAnswerId(null);
+    }
+  };
+
+  const handleToggleTop = async () => {
+    if (!onToggleTop || !post) {
+      return;
+    }
+
+    setIsTogglingTop(true);
+    try {
+      await onToggleTop(!post.voIsTop);
+    } finally {
+      setIsTogglingTop(false);
     }
   };
 
@@ -841,36 +863,59 @@ export const PostDetail = ({
             />
           )}
 
-          {isAuthor && (
+          {(canToggleTop || isAuthor) && (
             <div className={styles.authorActions}>
-              <button
-                type="button"
-                onClick={() => onEdit?.(post.voId)}
-                className={styles.editButton}
-                title={t('forum.postDetail.action.editTitle')}
-              >
-                <Icon icon="mdi:pencil" size={18} />
-                {t('forum.postDetail.action.edit')}
-              </button>
-              <button
-                type="button"
-                onClick={() => onDelete?.(post.voId)}
-                className={styles.deleteButton}
-                title={t('forum.postDetail.action.deleteTitle')}
-              >
-                <Icon icon="mdi:delete" size={18} />
-                {t('forum.postDetail.action.delete')}
-              </button>
-              {!isQuestionPost && (
+              {canToggleTop && (
                 <button
                   type="button"
-                  onClick={() => onViewHistory?.(post.voId)}
+                  onClick={() => {
+                    void handleToggleTop();
+                  }}
                   className={styles.historyButton}
-                  title={t('forum.postDetail.action.historyTitle')}
+                  title={post.voIsTop ? t('forum.postDetail.action.untopTitle') : t('forum.postDetail.action.topTitle')}
+                  disabled={isTogglingTop}
                 >
-                  <Icon icon="mdi:history" size={18} />
-                  {t('forum.postDetail.action.history')}
+                  <Icon icon={post.voIsTop ? 'mdi:pin-off-outline' : 'mdi:pin-outline'} size={18} />
+                  {isTogglingTop
+                    ? t('forum.postDetail.action.topping')
+                    : post.voIsTop
+                      ? t('forum.postDetail.action.untop')
+                      : t('forum.postDetail.action.top')}
                 </button>
+              )}
+
+              {isAuthor && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onEdit?.(post.voId)}
+                    className={styles.editButton}
+                    title={t('forum.postDetail.action.editTitle')}
+                  >
+                    <Icon icon="mdi:pencil" size={18} />
+                    {t('forum.postDetail.action.edit')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete?.(post.voId)}
+                    className={styles.deleteButton}
+                    title={t('forum.postDetail.action.deleteTitle')}
+                  >
+                    <Icon icon="mdi:delete" size={18} />
+                    {t('forum.postDetail.action.delete')}
+                  </button>
+                  {!isQuestionPost && (
+                    <button
+                      type="button"
+                      onClick={() => onViewHistory?.(post.voId)}
+                      className={styles.historyButton}
+                      title={t('forum.postDetail.action.historyTitle')}
+                    >
+                      <Icon icon="mdi:history" size={18} />
+                      {t('forum.postDetail.action.history')}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           )}

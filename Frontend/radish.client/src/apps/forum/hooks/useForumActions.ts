@@ -15,6 +15,7 @@ import {
   likePost,
   toggleCommentLike,
   updatePost,
+  setPostTop,
   updateComment,
   deletePost,
   deleteComment,
@@ -91,6 +92,7 @@ export interface ForumActionsHandlers {
   handleEditPost: (postId: number) => void;
   handleViewPostHistory: (postId: number) => Promise<void>;
   handleSaveEdit: (postId: number, title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
+  handleTogglePostTop: (isTop: boolean) => Promise<void>;
   handleDeletePost: (postId: number) => void;
   confirmDeletePost: () => Promise<void>;
   cancelDeletePost: () => void;
@@ -636,6 +638,32 @@ export const useForumActions = (
     }
   };
 
+  const handleTogglePostTop = async (isTop: boolean) => {
+    if (!selectedPost?.voId) {
+      const message = '请先选择要操作的帖子';
+      setError(message);
+      throw new Error(message);
+    }
+
+    setError(null);
+    try {
+      await setPostTop(
+        {
+          postId: selectedPost.voId,
+          isTop
+        },
+        t
+      );
+      toast.success(isTop ? '帖子已置顶' : '帖子已取消置顶');
+      await Promise.all([loadPostDetail(selectedPost.voId), loadPosts()]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      toast.error(message || '设置帖子置顶状态失败');
+      throw err;
+    }
+  };
+
   // 删除帖子
   const handleDeletePost = (postId: number) => {
     setPostToDelete(postId);
@@ -972,6 +1000,7 @@ export const useForumActions = (
     handleEditPost,
     handleViewPostHistory,
     handleSaveEdit,
+    handleTogglePostTop,
     handleDeletePost,
     confirmDeletePost,
     cancelDeletePost,

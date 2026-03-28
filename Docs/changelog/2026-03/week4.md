@@ -237,12 +237,20 @@
 - **用户已完成一轮真实测试部署 Smoke**：登录、回调、权限与核心页面当前均已通过，`base + test` 测试部署链路已完成本轮收口。
 - **当前下一步已继续收束**：后续重点不再是验证测试部署是否可用，而是组织 `dev -> master` 发布 PR、产出 `v*-release` 镜像，并执行生产口径首轮 Smoke。
 
+### `v26.3.2-test / v26.3.2-release` 阶段验收通过
+
+- **最新测试轨道已完成更新验收**：`v26.3.2-test` 当前已完成 tag 驱动镜像构建、`GHCR` 拉取与 `base + test` 真实部署验收，登录 / 回调 / 权限 / 核心页面以及 `DbMigrate` 初始化链路当前均已通过。
+- **正式发布轨道已完成真实部署与发布验收**：`v26.3.2-release` 当前已完成 release 镜像产出、`GHCR` 拉取与 `base + prod` 生产口径部署验收，发布与部署验收均已通过。
+- **`radish-dbmigrate` 已补齐首次真实拉取与初始化验证**：本轮不再停留在“等待下一次规范 tag 验证”的状态，容器化初始化、`dbmigrate -> api/auth -> gateway` 启动顺序，以及 `local / test / prod` 三套口径当前都已形成真实交付事实。
+- **当前阶段结论已更新**：首版 `dev`、测试部署与正式发布链路均已完成本轮收口，下一阶段主线切换到论坛 / 聊天等社区体验与运营能力优化。
+
 ### DbMigrate 容器化初始化补齐
 
 - **已补 `Radish.DbMigrate` 独立镜像入口**：当前仓库已新增 `Radish.DbMigrate/Dockerfile`，用于容器部署时执行 `apply` 一次性初始化任务，不再要求宿主机必须安装 `dotnet`。
 - **三套容器口径已统一接入初始化步骤**：`Deploy/docker-compose.yml` 当前已收口为 `dbmigrate -> api/auth -> gateway` 的启动顺序，`local / test / prod` 都会先初始化共享业务库，再启动登录链路相关宿主。
 - **`radish-dbmigrate` 已纳入 GHCR 发布链**：`Docker Images` workflow 当前会与 `radish-api / radish-auth / radish-gateway / radish-frontend` 一起产出 `radish-dbmigrate` 镜像，测试与生产样例变量也已同步补齐。
 - **当前问题口径已修正**：生产环境之前出现的 `SQLite Error 1: 'no such table: User'`，根因已明确为容器部署未先初始化共享业务库；后续同类场景将由 `dbmigrate apply` 自动兜底。
+- **首次真实部署验证已补齐**：最新 `v26.3.2-test / v26.3.2-release` 验收中，`radish-dbmigrate` 已完成真实拉取、初始化与启动顺序验证，不再仅停留在静态配置或 workflow 资产层面。
 
 ### 发布态细节收口
 
@@ -250,9 +258,18 @@
 - **容器 / 发布态日志目录识别已修复**：`LogContextTool` 当前改为优先使用宿主入口程序集名识别项目目录名，本地开发仍保留 `.csproj` 扫描兜底，避免发布目录或 Docker 容器继续把日志落到 `Logs/Unknown/`。
 - **示意环境文件默认镜像地址已收口**：`Deploy/.env.test.example` 当前默认指向 `ghcr.io/laugh0608/...:test-latest`，`Deploy/.env.prod.example` 默认指向 `ghcr.io/laugh0608/...:latest`，同时继续保留“正式环境优先固定版本 tag”的文档口径。
 
+### 社区体验优化首批收口
+
+- **论坛置顶最小闭环已接通**：当前复用既有 `Post.IsTop` 字段，不新增表结构；管理员可在论坛帖子详情区执行置顶 / 取消置顶，列表页继续沿用既有“置顶优先，再按当前排序规则”的口径。
+- **聊天室图片已改为“先入草稿、点击发送再统一发出”**：用户选择图片后，当前不会立即发消息，而是先作为待发送附件显示在输入区；此时仍可继续输入文字、移除待发图片，并在点击发送时与文字一并发出，也支持纯图片发送。
+- **聊天室待发图片已纳入频道草稿恢复**：当前按频道持久化 `content + replyTarget + pendingImage`，切换频道后会自动恢复；若上传完成时用户已切到其他频道，图片也会回写到原频道草稿，降低误发风险。
+- **论坛发帖分类摘要不同步问题已修复**：发帖弹窗当前已统一维护 `categoryId + categoryName` 的快照状态，顶部“帖子设置”摘要不再依赖分类列表二次查找，初选、切换、清空与恢复草稿时都能即时同步显示。
+- **最小回归已补齐**：本轮已新增帖子置顶控制器测试，管理员置顶成功与非管理员 `403` 当前均有自动化兜底；`radish.client` 也已完成类型检查与生产构建，确认论坛 / 聊天前端改动可通过当前构建链路。
+- **相关设计文档已同步**：论坛功能说明、分类 / 标签专题，以及聊天室 App 总览 / UI 模块 / 路线图当前都已对齐到本轮实现，避免设计口径继续停留在旧交互。
+
 ### 本轮验证
 
 - ✅ `docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml config` 通过。
 - ✅ `docker compose --env-file Deploy/.env.test.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml config` 通过。
 - ✅ `docker compose --env-file Deploy/.env.prod.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config` 通过。
-- ✅ `v26.3.1-test` 已完成 tag 驱动镜像构建、远程镜像拉取与 `base + test` 真实部署 Smoke。
+- ✅ `v26.3.2-test / v26.3.2-release` 已完成 tag 驱动镜像构建、远程镜像拉取，以及 `base + test` / `base + prod` 真实部署验收。

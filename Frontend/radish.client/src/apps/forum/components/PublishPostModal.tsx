@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
@@ -33,6 +33,34 @@ interface PublishPostModalProps {
   ) => Promise<void>;
 }
 
+interface CategorySelectionSnapshot {
+  id: number;
+  name: string;
+}
+
+interface PublishPostDraft {
+  title?: string;
+  content?: string;
+  tags?: string[];
+  categoryId?: number | null;
+  categoryName?: string | null;
+  composerMode?: 'markdown' | 'rich';
+  isQuestion?: boolean;
+  poll?: {
+    enabled?: boolean;
+    question?: string;
+    endTime?: string;
+    options?: string[];
+  };
+  lottery?: {
+    enabled?: boolean;
+    prizeName?: string;
+    prizeDescription?: string;
+    drawTime?: string;
+    winnerCount?: string;
+  };
+}
+
 const DRAFT_STORAGE_KEY = 'forum_post_draft';
 const MIN_TAG_COUNT = 1;
 const MAX_TAG_COUNT = 5;
@@ -46,6 +74,25 @@ const DEFAULT_POLL_OPTIONS = ['', ''];
 const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
 );
+
+const findCategorySnapshot = (
+  categories: Category[],
+  targetCategoryId: number | null | undefined
+): CategorySelectionSnapshot | null => {
+  if (!targetCategoryId || targetCategoryId <= 0) {
+    return null;
+  }
+
+  const category = categories.find((item) => item.voId === targetCategoryId);
+  if (!category) {
+    return null;
+  }
+
+  return {
+    id: category.voId,
+    name: category.voName
+  };
+};
 
 const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
   const params = new URLSearchParams();
@@ -81,6 +128,9 @@ export const PublishPostModal = ({
   const [imageScalePercent, setImageScalePercent] = useState<number>(75);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categoryId, setCategoryId] = useState<number | null>(selectedCategoryId);
+  const [selectedCategorySnapshot, setSelectedCategorySnapshot] = useState<CategorySelectionSnapshot | null>(
+    () => findCategorySnapshot(categories, selectedCategoryId)
+  );
   const [allTagNames, setAllTagNames] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -107,6 +157,11 @@ export const PublishPostModal = ({
   const { t } = useTranslation();
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
 
+  const applyCategorySelection = useCallback((nextCategoryId: number | null, snapshot?: CategorySelectionSnapshot | null) => {
+    setCategoryId(nextCategoryId);
+    setSelectedCategorySnapshot(snapshot ?? findCategorySnapshot(categories, nextCategoryId));
+  }, [categories]);
+
   useEffect(() => {
     if (!isOpen) {
       return;
@@ -115,17 +170,26 @@ export const PublishPostModal = ({
     try {
       const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
       if (!savedDraft) {
-        setCategoryId(selectedCategoryId);
+        applyCategorySelection(selectedCategoryId);
         return;
       }
 
-      const draft = JSON.parse(savedDraft);
+      const draft = JSON.parse(savedDraft) as PublishPostDraft;
       if (draft.title || draft.content || draft.tags?.length || typeof draft.categoryId === 'number') {
         const draftIsQuestion = Boolean(draft.isQuestion);
+        const draftCategoryId = typeof draft.categoryId === 'number' ? draft.categoryId : selectedCategoryId;
+        const draftCategorySnapshot = findCategorySnapshot(categories, draftCategoryId) ?? (
+          draftCategoryId && draft.categoryName
+            ? {
+                id: draftCategoryId,
+                name: draft.categoryName
+              }
+            : null
+        );
         setTitle(draft.title || '');
         setContent(draft.content || '');
         setSelectedTags(Array.isArray(draft.tags) ? draft.tags : []);
-        setCategoryId(typeof draft.categoryId === 'number' ? draft.categoryId : selectedCategoryId);
+        applyCategorySelection(draftCategoryId, draftCategorySnapshot);
         setComposerMode(draft.composerMode === 'rich' ? 'rich' : 'markdown');
         setIsQuestionPost(draftIsQuestion);
         const draftLotteryEnabled = Boolean(draft.lottery?.enabled) && !draftIsQuestion;
@@ -146,7 +210,18 @@ export const PublishPostModal = ({
     } catch (error) {
       log.error('Failed to load draft:', error);
     }
-  }, [isOpen, selectedCategoryId]);
+  }, [applyCategorySelection, categories, isOpen, selectedCategoryId]);
+
+  useEffect(() => {
+    if (!isOpen || !categoryId) {
+      return;
+    }
+
+    const matchedSnapshot = findCategorySnapshot(categories, categoryId);
+    if (matchedSnapshot && matchedSnapshot.name !== selectedCategorySnapshot?.name) {
+      setSelectedCategorySnapshot(matchedSnapshot);
+    }
+  }, [categories, categoryId, isOpen, selectedCategorySnapshot]);
 
   useEffect(() => {
     if (!isOpen || (!title && !content && selectedTags.length === 0 && categoryId == null)) {
@@ -161,6 +236,7 @@ export const PublishPostModal = ({
           content,
           tags: selectedTags,
           categoryId,
+          categoryName: selectedCategorySnapshot?.name ?? null,
           composerMode,
           isQuestion: isQuestionPost,
           poll: {
@@ -188,6 +264,7 @@ export const PublishPostModal = ({
     content,
     selectedTags,
     categoryId,
+    selectedCategorySnapshot,
     composerMode,
     isQuestionPost,
     enablePoll,
@@ -434,7 +511,7 @@ export const PublishPostModal = ({
       setContent('');
       setSelectedTags([]);
       setTagInput('');
-      setCategoryId(selectedCategoryId);
+      applyCategorySelection(selectedCategoryId);
       setTagError(null);
       setCategoryError(null);
       setComposerMode('markdown');
@@ -527,7 +604,7 @@ export const PublishPostModal = ({
     }
   };
 
-  const selectedCategoryName = categories.find((category) => category.voId === categoryId)?.voName ?? '未选分类';
+  const selectedCategoryName = selectedCategorySnapshot?.name ?? '未选分类';
   const activeFeatureLabel = isQuestionPost ? '问答' : enablePoll ? '投票' : enableLottery ? '抽奖' : '普通帖';
   const completionCount = [
     Boolean(title.trim()),
@@ -789,7 +866,7 @@ export const PublishPostModal = ({
                 value={categoryId ?? ''}
                 onChange={(event) => {
                   const value = event.target.value;
-                  setCategoryId(value ? Number(value) : null);
+                  applyCategorySelection(value ? Number(value) : null);
                   setCategoryError(null);
                 }}
                 className={styles.control}
