@@ -241,7 +241,7 @@ docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml u
 
 ### `base + test`：测试部署 / 客户试用
 
-先复制 `Deploy/.env.test.example` 为 `Deploy/.env.test`，并替换至少以下真实值：
+先复制 `Deploy/.env.test.example` 为 `Deploy/.env.test`。当前样例默认指向 `ghcr.io/laugh0608/...:test-latest`，用于快速体验测试轨道；若要锁定具体测试版本，仍建议把镜像 tag 改成明确的 `v*-test`。并替换至少以下真实值：
 
 - `RADISH_FRONTEND_IMAGE`
 - `RADISH_DBMIGRATE_IMAGE`
@@ -268,13 +268,14 @@ docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deplo
 - `Api / Auth / Gateway` 三个宿主都会优先基于 `RADISH_PUBLIC_URL` 自动收口到同一个 CORS 允许来源
 - `Gateway` TLS 证书会在首次启动时按 `RADISH_PUBLIC_URL` 的 host 自动生成，并持久化到测试证书卷
 - `Auth` 的 OIDC signing / encryption 证书会在首次启动时自动生成，并持久化到测试证书卷
+- `AuthUi__ShowTestAccountHint=true`，登录页会保留测试账号提示，便于测试部署与客户试用时快速联调
 - `Api` 会把同一份 Auth signing 证书以只读方式挂载到容器内，并直接做本地 JWT 验签，不依赖再通过 `127.0.0.1` 或外部域名回拉 OIDC metadata / JWKS
 - 证书只会在“目标文件缺失”时生成；若证书已存在，则直接复用，不会因为重启漂移
 - 若使用 `https://IP:port` + 自签名证书，浏览器出现证书告警属于预期行为，不代表 Gateway / OIDC 链路异常
 
 ### `base + prod`：生产 / 外部反向代理
 
-先复制 `Deploy/.env.prod.example` 为 `Deploy/.env.prod`，并替换至少以下真实值：
+先复制 `Deploy/.env.prod.example` 为 `Deploy/.env.prod`。当前样例默认指向 `ghcr.io/laugh0608/...:latest`，用于和正式发布轨道保持一致；如果要做可追溯发布，仍建议把镜像 tag 固定到明确的 `v*-release`。并替换至少以下真实值：
 
 - `RADISH_FRONTEND_IMAGE`
 - `RADISH_DBMIGRATE_IMAGE`
@@ -304,6 +305,7 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 - `prod` 口径下不要直接用 `http://localhost:5000` 做登录验证；若访问协议、域名或端口与 `RADISH_PUBLIC_URL` 不一致，OpenIddict 会因 `redirect_uri` 不匹配而拒绝请求
 - `Gateway` 容器内部监听 `http://+:5000`
 - `GatewayRuntime__EnableHttpsRedirection=false`
+- `AuthUi__ShowTestAccountHint=false`，正式登录页默认不再暴露测试账号提示
 - `Auth` 通过 `RADISH_AUTH_CERTS_DIR` 把宿主机证书目录挂载到容器 `/app/certs`，并通过 `RADISH_AUTH_*` 变量覆盖生产证书路径与密码
 - `Api` 会从同一个挂载目录只读复用 Auth signing 证书，并直接做本地 JWT 验签，避免再依赖外部反代域名或容器内 loopback 去获取 OIDC 元数据
 - 若 `RADISH_AUTH_CERT_AUTO_GENERATE=true` 且目标证书文件不存在，`Auth` 会在首次启动时自动生成 OIDC 证书并写入挂载目录；后续启动直接复用同一组证书
@@ -323,10 +325,10 @@ docker run -d --name radish-api \
   -v /data/radish/logs:/app/Logs \
   -e ASPNETCORE_ENVIRONMENT=Production \
   -e ASPNETCORE_URLS="http://+:5100" \
-  ghcr.io/your-org/radish-api:v26.3.1-release
+  ghcr.io/laugh0608/radish-api:latest
 ```
 
-将实际数据库凭据、安全密钥与证书路径等以环境变量或挂载文件方式注入。日志可通过 `docker logs -f <container>` 追踪；若需热重载，请继续使用宿主机 `dotnet watch` / `npm run dev`。
+将实际数据库凭据、安全密钥与证书路径等以环境变量或挂载文件方式注入。上面的镜像地址仅用于对齐当前 `.env.prod.example` 默认值；正式发布仍建议固定到明确的 `v*-release` tag。日志可通过 `docker logs -f <container>` 追踪；若需热重载，请继续使用宿主机 `dotnet watch` / `npm run dev`。
 
 ## Docker Compose 示例
 仓库根目录已提供真实可用的基础编排与环境覆盖文件，推荐按环境组合使用：

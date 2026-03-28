@@ -306,6 +306,7 @@ services:
 - 测试部署与生产部署下，`Radish.Api` 需要额外读取与 `Radish.Auth` 共享的 signing 证书路径和密码：
   - `OpenIddict__Encryption__SigningCertificatePath`
   - `OpenIddict__Encryption__SigningCertificatePassword`
+- `Radish.Auth` 登录页中的测试账号提示由 `AuthUi__ShowTestAccountHint` 控制；测试部署建议为 `true`，生产部署建议为 `false`
 - 该证书应与 `Auth` 使用的 signing `.pfx` 保持同源，并以只读方式挂载给 `Api`，用于本地 JWT 验签。
 
 详细配置说明请参考 `Radish.Gateway/README.md`

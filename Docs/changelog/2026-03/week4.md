@@ -244,6 +244,12 @@
 - **`radish-dbmigrate` 已纳入 GHCR 发布链**：`Docker Images` workflow 当前会与 `radish-api / radish-auth / radish-gateway / radish-frontend` 一起产出 `radish-dbmigrate` 镜像，测试与生产样例变量也已同步补齐。
 - **当前问题口径已修正**：生产环境之前出现的 `SQLite Error 1: 'no such table: User'`，根因已明确为容器部署未先初始化共享业务库；后续同类场景将由 `dbmigrate apply` 自动兜底。
 
+### 发布态细节收口
+
+- **登录页测试账号提示已改为显式配置**：`Radish.Auth` 当前新增 `AuthUi:ShowTestAccountHint`，开发默认保留提示；`Deploy/docker-compose.test.yml` 显式注入 `true`，`Deploy/docker-compose.prod.yml` 显式注入 `false`，不再依赖域名形态或环境名隐式推断。
+- **容器 / 发布态日志目录识别已修复**：`LogContextTool` 当前改为优先使用宿主入口程序集名识别项目目录名，本地开发仍保留 `.csproj` 扫描兜底，避免发布目录或 Docker 容器继续把日志落到 `Logs/Unknown/`。
+- **示意环境文件默认镜像地址已收口**：`Deploy/.env.test.example` 当前默认指向 `ghcr.io/laugh0608/...:test-latest`，`Deploy/.env.prod.example` 默认指向 `ghcr.io/laugh0608/...:latest`，同时继续保留“正式环境优先固定版本 tag”的文档口径。
+
 ### 本轮验证
 
 - ✅ `docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml config` 通过。

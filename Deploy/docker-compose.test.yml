@@ -19,6 +19,7 @@ services:
       OpenIddict__Encryption__EncryptionCertificatePassword: "${RADISH_AUTH_ENCRYPTION_CERT_PASSWORD:?RADISH_AUTH_ENCRYPTION_CERT_PASSWORD is required}"
       RADISH_AUTH_CERT_AUTO_GENERATE: "${RADISH_AUTH_CERT_AUTO_GENERATE:-true}"
       RADISH_AUTH_CERT_VALID_DAYS: "${RADISH_AUTH_CERT_VALID_DAYS:-365}"
+      AuthUi__ShowTestAccountHint: "true"
     volumes:
       - radish-test-auth-certs:/app/certs
 

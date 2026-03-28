@@ -251,6 +251,7 @@ await applicationManager.CreateAsync(descriptor);
 - 客户端 ID（ClientId）
 - 客户端描述（description）
 - 开发者名称（developerName）
+- 测试账号提示是否展示由 `AuthUi:ShowTestAccountHint` 控制；开发 / 测试建议为 `true`，生产建议为 `false`
 
 如果无法解析 `client_id` 或客户端不存在，将显示"未知的客户端"。
 
