@@ -1,4 +1,12 @@
 services:
+  dbmigrate:
+    image: ${RADISH_DBMIGRATE_IMAGE:-radish/dbmigrate:local}
+    environment:
+      DOTNET_ENVIRONMENT: Production
+    volumes:
+      - ../DataBases:/app/DataBases
+      - ../Logs:/app/Logs
+
   frontend:
     image: ${RADISH_FRONTEND_IMAGE:-radish/frontend:local}
     expose:
@@ -12,6 +20,9 @@ services:
     volumes:
       - ../DataBases:/app/DataBases
       - ../Logs:/app/Logs
+    depends_on:
+      dbmigrate:
+        condition: service_completed_successfully
     expose:
       - "5100"
 
@@ -23,6 +34,9 @@ services:
     volumes:
       - ../DataBases:/app/DataBases
       - ../Logs:/app/Logs
+    depends_on:
+      dbmigrate:
+        condition: service_completed_successfully
     expose:
       - "5200"
 
