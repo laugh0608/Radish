@@ -25,7 +25,7 @@ Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NE
 - **数据库**：PostgreSQL 16（本地开发可用 SQLite）
 - **前端**：React 19、Vite (Rolldown)、TypeScript
 - **测试**：xUnit + Shouldly（后端）、`node --test` + TypeScript 类型检查 + `HttpTest`（前端 / 联调资产）
-- **容器化**：已提供 `Radish.Api / Radish.Auth / Radish.Gateway / Frontend` 四个 Dockerfile，以及 `Deploy/docker-compose.local.yml / Deploy/docker-compose.test.yml / Deploy/docker-compose.prod.yml` 三套容器编排口径
+- **容器化**：已提供 `Radish.DbMigrate / Radish.Api / Radish.Auth / Radish.Gateway / Frontend` 五个 Dockerfile，以及 `Deploy/docker-compose.local.yml / Deploy/docker-compose.test.yml / Deploy/docker-compose.prod.yml` 三套容器编排口径
 
 ## 快速开始
 
@@ -151,7 +151,7 @@ Radish/
 - 🎨 [**前端设计**](Docs/frontend/design.md) - WebOS 桌面范式与应用集成方式
 - 🚪 [**Gateway 服务网关**](Docs/guide/gateway.md) - 统一服务入口与路由转发
 - 🚀 [**部署指南**](Docs/deployment/guide.md) - 容器化、CI/CD、生产部署
-- 当前部署口径：开发运行使用 IDE / `dotnet run` / `npm run dev`；本地容器验证使用 `Deploy/docker-compose.local.yml`；测试与生产分别使用 `Deploy/docker-compose.test.yml` / `Deploy/docker-compose.prod.yml` 并拉取远程镜像
+- 当前部署口径：开发运行使用 IDE / `dotnet run` / `npm run dev`；本地容器验证使用 `Deploy/docker-compose.local.yml`；测试与生产分别使用 `Deploy/docker-compose.test.yml` / `Deploy/docker-compose.prod.yml` 并拉取远程镜像；所有容器编排都会先执行 `dbmigrate apply` 初始化共享业务库
 - 🧩 [**文件上传设计**](Docs/features/file-upload-design.md) - 文件上传与图片处理方案
 - 🦀 [**Rust 扩展**](Docs/guide/rust-extensions.md) - radish-lib 使用指南
 

@@ -72,6 +72,7 @@
    ```
 
 7. 等待 `Docker Images` 工作流完成本次镜像产出；若当前标签为 `v*-release`，`GHCR` 会同步产出：
+   - `ghcr.io/<owner>/radish-dbmigrate:<tag>` / `latest`
    - `ghcr.io/<owner>/radish-api:<tag>` / `latest`
    - `ghcr.io/<owner>/radish-auth:<tag>` / `latest`
    - `ghcr.io/<owner>/radish-gateway:<tag>` / `latest`
@@ -96,6 +97,7 @@
 ## 当前仓库资产
 
 - 后端镜像：
+  - `Radish.DbMigrate/Dockerfile`
   - `Radish.Api/Dockerfile`
   - `Radish.Auth/Dockerfile`
   - `Radish.Gateway/Dockerfile`
@@ -124,17 +126,20 @@
 当前仓库已补 `Docker Images` 工作流，默认采用 `GHCR` 作为统一镜像仓库，口径如下：
 
 - `Repo Quality`：仅在 `pull_request -> master / dev` 与 `workflow_dispatch` 触发，不再因普通 `dev` push 消耗资源
-- `push -> v*-dev`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `dev-latest` 推送到 `GHCR`
-- `push -> v*-test`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `test-latest` 推送到 `GHCR`
-- `push -> v*-release`：构建四个镜像入口，并把 `radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `latest` 推送到 `GHCR`
+- `push -> v*-dev`：构建五个镜像入口，并把 `radish-dbmigrate`、`radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `dev-latest` 推送到 `GHCR`
+- `push -> v*-test`：构建五个镜像入口，并把 `radish-dbmigrate`、`radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `test-latest` 推送到 `GHCR`
+- `push -> v*-release`：构建五个镜像入口，并把 `radish-dbmigrate`、`radish-api`、`radish-auth`、`radish-gateway`、`radish-frontend` 以 `<tag>` + `latest` 推送到 `GHCR`
 - `workflow_dispatch`：可手动补跑；仅当当前 ref 为 `v*-dev`、`v*-test` 或 `v*-release` tag，且显式启用 `push_backend`、`push_frontend` 对应开关时，才会推送对应镜像
 
 当前镜像命名约定如下：
 
+- `ghcr.io/<owner>/radish-dbmigrate`
 - `ghcr.io/<owner>/radish-api`
 - `ghcr.io/<owner>/radish-auth`
 - `ghcr.io/<owner>/radish-gateway`
 - `ghcr.io/<owner>/radish-frontend`
+
+截至 `2026-03-28`，`radish-api / radish-auth / radish-gateway / radish-frontend` 已完成一轮真实 `docker pull` 验证；`radish-dbmigrate` 已接入 workflow 与部署编排，待下一次规范 tag 完成首次真实拉取验证。
 
 当前 tag 规则如下：
 
@@ -157,6 +162,7 @@
 
 当前仓库已提供首版最小镜像链，对应四个构建入口：
 
+- `Radish.DbMigrate/Dockerfile`：发布数据库初始化入口，默认用于容器部署时的 `apply` 一次性任务，负责按需 `init + seed` 共享业务库。
 - `Radish.Api/Dockerfile`：发布 API，并把仓库 `Docs/` 一并带入镜像，确保固定文档能力在容器内可用。
 - `Radish.Auth/Dockerfile`：发布 OIDC 服务，并把仓库 `Certs/` 带入镜像，便于本地 / 内部开发版使用默认开发证书。
 - `Radish.Gateway/Dockerfile`：发布网关服务，作为默认对外入口。
@@ -165,6 +171,11 @@
 常用单镜像构建命令如下：
 
 ```bash
+docker build \
+  -f Radish.DbMigrate/Dockerfile \
+  --build-arg BUILD_CONFIGURATION=Release \
+  -t radish/dbmigrate:local .
+
 docker build \
   -f Radish.Api/Dockerfile \
   --build-arg BUILD_CONFIGURATION=Release \
@@ -196,7 +207,7 @@ docker build \
 ## 运行容器
 当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在拆为“基础文件 + 环境覆盖文件”两层：
 
-- `Deploy/docker-compose.yml`：共享基础编排，只保留所有环境都一致的服务结构、镜像引用与下游地址
+- `Deploy/docker-compose.yml`：共享基础编排，只保留所有环境都一致的服务结构、镜像引用、`dbmigrate -> api/auth -> gateway` 启动顺序与下游地址
 - `Deploy/docker-compose.local.yml`：本地容器验证覆盖，补充本地 `build` 入口，并让 `Gateway` 在容器内监听 HTTPS
 - `Deploy/docker-compose.test.yml`：测试部署覆盖，默认让 `Gateway` 在容器内监听 HTTPS，并自动生成 / 复用测试 TLS 证书与 Auth OIDC 证书
 - `Deploy/docker-compose.prod.yml`：生产反代覆盖，默认让 `Gateway` 在容器内监听 HTTP，并关闭 `UseHttpsRedirection()`
@@ -220,6 +231,7 @@ docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml u
 
 本地容器验证口径如下：
 
+- `dbmigrate`：先执行一次 `apply`，自动补齐共享业务库表结构与基础数据
 - `gateway`：对外监听 `https://localhost:5000`
 - `api`：容器内监听 `5100`
 - `auth`：容器内监听 `5200`
@@ -232,6 +244,7 @@ docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml u
 先复制 `Deploy/.env.test.example` 为 `Deploy/.env.test`，并替换至少以下真实值：
 
 - `RADISH_FRONTEND_IMAGE`
+- `RADISH_DBMIGRATE_IMAGE`
 - `RADISH_API_IMAGE`
 - `RADISH_AUTH_IMAGE`
 - `RADISH_GATEWAY_IMAGE`
@@ -249,6 +262,7 @@ docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deplo
 
 测试覆盖默认约定如下：
 
+- `dbmigrate` 会在 `api / auth / gateway` 启动前先执行一次 `apply`，自动初始化 / 补齐共享业务库表结构与基础数据；重复执行保持幂等
 - `Gateway` 容器内部监听 `https://+:5000`
 - `RADISH_PUBLIC_URL` 需要直接写成测试入口，例如 `https://10.10.10.20:5000`
 - `Api / Auth / Gateway` 三个宿主都会优先基于 `RADISH_PUBLIC_URL` 自动收口到同一个 CORS 允许来源
@@ -263,6 +277,7 @@ docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deplo
 先复制 `Deploy/.env.prod.example` 为 `Deploy/.env.prod`，并替换至少以下真实值：
 
 - `RADISH_FRONTEND_IMAGE`
+- `RADISH_DBMIGRATE_IMAGE`
 - `RADISH_API_IMAGE`
 - `RADISH_AUTH_IMAGE`
 - `RADISH_GATEWAY_IMAGE`
@@ -281,6 +296,7 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 
 生产覆盖默认约定如下：
 
+- `dbmigrate` 会在 `api / auth / gateway` 启动前先执行一次 `apply`，自动初始化 / 补齐共享业务库表结构与基础数据；若使用 SQLite，宿主机挂载目录中会生成或复用 `Radish.db` 等数据库文件
 - `RADISH_*_IMAGE` 应指向 `GHCR` 中已经构建完成的发布镜像，生产建议固定到明确版本 tag，而不是 `latest`
 - `GatewayService__PublicUrl`、前端运行时公开地址回退值，以及 Auth 的 `Issuer / CORS` 都通过 `RADISH_PUBLIC_URL` 对齐真实外部域名
 - `Api / Auth / Gateway` 三个宿主的部署态 CORS 允许来源都会优先从 `RADISH_PUBLIC_URL` 推导，启动日志应保持一致
@@ -332,6 +348,7 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 当前 Compose 口径如下：
 
 - 默认使用仓库共享配置中的 SQLite 与内存缓存，不强依赖 PostgreSQL / Redis。
+- 当前三套容器编排都会先执行 `dbmigrate apply`，再启动 `api / auth / gateway`，避免首次部署时因为共享业务库缺表而直接在登录链路报错；首次远程镜像 + 空库部署的真实 Smoke 待下一次规范 tag 补齐。
 - `DataBases/` 与 `Logs/` 会挂载到宿主机，便于保留 SQLite、上传文件与运行日志。
 - `Frontend` 运行的是预构建镜像；该镜像在 `CI` 中统一构建，并同时托管 `radish.client` 与 `radish.console`。
 - `Gateway` 会通过环境变量把 `/` 与 `/console/` 反代到前端容器，并把 `/api`、`/connect`、`/Account` 等路径转发给对应后端服务。

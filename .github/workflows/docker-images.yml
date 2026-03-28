@@ -94,6 +94,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - image_name: radish-dbmigrate
+            dockerfile: Radish.DbMigrate/Dockerfile
           - image_name: radish-api
             dockerfile: Radish.Api/Dockerfile
           - image_name: radish-auth

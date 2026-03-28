@@ -119,12 +119,12 @@
 13. **M15 首轮最小 CI 门禁已完成真实落地**
    - GitHub Actions 已新增 `Repo Quality` 工作流，当前已覆盖 `pull_request -> master / dev` 与手动触发；普通 `dev` push 不再触发该工作流
    - 当前已接通 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 三个最小质量门禁，并已在真实 PR 中成功通过
-   - 当前已补 `Docker Images` 工作流：仅在 `push v*-dev / v*-test / v*-release` 与手动补跑规范 tag 时推送镜像，`radish-api / radish-auth / radish-gateway / radish-frontend` 已纳入统一 GHCR 口径
+   - 当前已补 `Docker Images` 工作流：仅在 `push v*-dev / v*-test / v*-release` 与手动补跑规范 tag 时推送镜像，`radish-dbmigrate / radish-api / radish-auth / radish-gateway / radish-frontend` 已纳入统一 GHCR 口径；其中 `radish-dbmigrate` 的首次真实拉取验证待下一次规范 tag 补齐
    - `frontend` 侧的运行时配置注入已完成：静态服务当前会在请求 `/runtime-config.js` 时动态返回运行时配置脚本，`radish.client / radish.console` 已优先读取运行时配置，不再要求只能依赖构建期 `VITE_*`
    - `frontend` GHCR 首次真实产物已完成验证，当前已可通过 `docker pull` 获取；`Frontend/Dockerfile` 也已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`
-   - 最新于 `2026-03-28`，`Deploy/docker-compose.local.yml / docker-compose.test.yml / docker-compose.prod.yml` 三套口径已继续收口：`local` 仅用于本地容器构建 / 启动验证，`test / prod` 统一使用远程镜像部署，`README` 与部署文档已同步到同一口径
+   - 最新于 `2026-03-28`，`Deploy/docker-compose.local.yml / docker-compose.test.yml / docker-compose.prod.yml` 三套口径已继续收口：`local` 仅用于本地容器构建 / 启动验证，`test / prod` 统一使用远程镜像部署；当前三套容器编排都已纳入 `dbmigrate -> api/auth -> gateway` 的启动顺序，并已完成一轮 `docker compose config` 级静态校验，避免首次部署缺表导致登录链路直接失败
    - `master` 分支保护与 ruleset 资产已落地，当前已切换为“禁止直接 push、仅允许 PR 合并”的发布入口
-   - 最新于 `2026-03-28`，`v26.3.1-test` 已完成从 tag 驱动构建、GHCR 拉取到 `base + test` 真实部署的整链验证，登录 / 回调 / 权限 / 核心页面当前均已通过
+   - 最新于 `2026-03-28`，既有 `v26.3.1-test` 已完成从 tag 驱动构建、GHCR 拉取到 `base + test` 真实部署的整链验证，登录 / 回调 / 权限 / 核心页面当前均已通过；本轮新增 `dbmigrate` 容器后，下一次规范 tag 仍需补一次“空库首次部署”真实 Smoke
    - 当前结论为：首次 CI/CD 已完成真实合并闭环，并已支撑首版 `dev` 进入“可发内部开发版且测试部署已验证可用”状态；后续重点转为组织 `dev -> master` 发布 PR、产出 `v*-release` 镜像，并执行生产口径首轮 Smoke
 
 14. **`radish.client` i18n 首轮高频覆盖已推进**
@@ -179,7 +179,7 @@
 - 按 [首版 dev 边界](/planning/dev-first-scope) 收束剩余工程门槛并组织总回归
 - `radish.client` 国风视觉基线已完成规范冻结与桌面壳层首批落地，`i18n` 也已完成桌面壳层、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天 / 通知中心 / 个人中心高频模块的首轮覆盖；通知中心 / 个人中心与桌面壳层首轮烟雾验证已完成，其中通知中心已进一步完成真实首版 Smoke，本轮又补了桌面壳层手工联调、欢迎 App 主题 / 内容收口与长文案资源化，以及论坛发帖创作器 / 评论讨论面板的体验重排，并已于 `2026-03-26` 完成一轮首版烟雾联调，当前转入等待总回归确认，仅保留残余深层主题维护
 - `M13` 首轮验证入口回归观察与补漏
-- `M15` 最小 CI 已完成首轮真实闭环，当前已完成 `GHCR` 前后端镜像真实产物验证，并完成前端镜像体积收口；真实外部交付复核后置到条件具备后执行
+- `M15` 最小 CI 已完成首轮真实闭环，当前已完成 `radish-api / radish-auth / radish-gateway / radish-frontend` 的 `GHCR` 真实产物验证，并完成前端镜像体积收口；`radish-dbmigrate` 已纳入统一发布链，待下一次规范 tag 补齐首次真实拉取与部署验证；真实外部交付复核后置到条件具备后执行
 - 工程治理尾项：身份协议输出收敛、`DbMigrate` 回归维护
 
 ### 后续候选子阶段

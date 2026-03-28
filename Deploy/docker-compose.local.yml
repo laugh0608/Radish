@@ -1,4 +1,11 @@
 services:
+  dbmigrate:
+    build:
+      context: ..
+      dockerfile: Radish.DbMigrate/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
+
   frontend:
     build:
       context: ..

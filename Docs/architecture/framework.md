@@ -50,7 +50,7 @@
 | 前端构建 | Vite Rolldown，ESLint 9，TypeScript | 各项目独立构建：radish.client、radish.console；固定文档统一存放于 `Docs/`，由 API 启动时同步到 WebOS 文档应用 |
 | 测试 | xUnit 3 + Shouldly + Moq，辅以 `HttpTest` | `Radish.Api.Tests` 目录承载后端测试与专题 `.http` 资产；前端当前仅有最小 `node --test` 与 `type-check` 基线 |
 | 日志 / 配置 | Serilog + `Microsoft.Extensions.Configuration` | 支持 JSON + 环境变量 + 用户密钥；生产日志输出到 Console + Seq/Elastic 预留 |
-| 容器 | `Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile 已落地 | 仓库已提供四个镜像入口、`Deploy/docker-compose*.yml` 最小编排与 `Docker Images` workflow；当前 `radish-api / radish-auth / radish-gateway / radish-frontend` 已统一纳入 `GHCR` 推送口径，`Frontend/Dockerfile` 也已收口为轻量 Node 多阶段镜像，本地验证体积约 `300MB`，剩余事项收束到上线前交付复核 |
+| 容器 | `Radish.DbMigrate / Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile 已落地 | 仓库已提供五个镜像入口、`Deploy/docker-compose*.yml` 最小编排与 `Docker Images` workflow；当前 `radish-dbmigrate / radish-api / radish-auth / radish-gateway / radish-frontend` 已统一纳入 `GHCR` 推送口径，其中 `radish-api / radish-auth / radish-gateway / radish-frontend` 已完成一轮真实 `docker pull` 验证，`radish-dbmigrate` 待下一次规范 tag 补齐首次真实拉取验证；`Frontend/Dockerfile` 也已收口为轻量 Node 多阶段镜像，本地验证体积约 `300MB`，剩余事项收束到上线前交付复核 |
 
 ### 本地启动脚本
 
@@ -225,7 +225,7 @@ graph LR
    - Serilog 写入 Console + File；API / Gateway 已具备健康检查入口，当前以“日志 + 健康检查 + `DbMigrate doctor/verify`”作为最小自检基线。
    - OpenTelemetry Exporter、Prometheus 指标与更完整的 Tracing 仍处于后续规划阶段，尚未作为当前仓库既成能力。
 3. **部署流水线**：
-   - 当前仓库已具备 `Radish.Api`、`Radish.Auth`、`Radish.Gateway` 与 `Frontend` 四个 Dockerfile，多阶段构建资产已形成最小镜像链。
+   - 当前仓库已具备 `Radish.DbMigrate`、`Radish.Api`、`Radish.Auth`、`Radish.Gateway` 与 `Frontend` 五个 Dockerfile，多阶段构建资产已形成最小镜像链。
    - `Deploy/docker-compose.yml` 及其 `local / test / prod` 覆盖文件已形成仓库级最小编排；开发运行已明确独立于 Compose；`Docker Images` workflow 当前已收口为仅响应 `v*-dev / v*-test / v*-release` tag 与手动补跑规范 tag，普通 `dev` push 不再触发镜像发布。
    - 当前部署口径已明确分层：开发运行继续使用本地默认开发证书；测试部署由 Gateway 容器内直接提供 HTTPS，并自动生成 / 复用测试 TLS 与 Auth OIDC 证书；生产部署由外部反代终止 HTTPS，容器内部保持 HTTP，Auth OIDC 证书通过持久化挂载目录自动生成或预置后复用。
 4. **质量门禁**：

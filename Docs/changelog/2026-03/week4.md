@@ -237,6 +237,13 @@
 - **用户已完成一轮真实测试部署 Smoke**：登录、回调、权限与核心页面当前均已通过，`base + test` 测试部署链路已完成本轮收口。
 - **当前下一步已继续收束**：后续重点不再是验证测试部署是否可用，而是组织 `dev -> master` 发布 PR、产出 `v*-release` 镜像，并执行生产口径首轮 Smoke。
 
+### DbMigrate 容器化初始化补齐
+
+- **已补 `Radish.DbMigrate` 独立镜像入口**：当前仓库已新增 `Radish.DbMigrate/Dockerfile`，用于容器部署时执行 `apply` 一次性初始化任务，不再要求宿主机必须安装 `dotnet`。
+- **三套容器口径已统一接入初始化步骤**：`Deploy/docker-compose.yml` 当前已收口为 `dbmigrate -> api/auth -> gateway` 的启动顺序，`local / test / prod` 都会先初始化共享业务库，再启动登录链路相关宿主。
+- **`radish-dbmigrate` 已纳入 GHCR 发布链**：`Docker Images` workflow 当前会与 `radish-api / radish-auth / radish-gateway / radish-frontend` 一起产出 `radish-dbmigrate` 镜像，测试与生产样例变量也已同步补齐。
+- **当前问题口径已修正**：生产环境之前出现的 `SQLite Error 1: 'no such table: User'`，根因已明确为容器部署未先初始化共享业务库；后续同类场景将由 `dbmigrate apply` 自动兜底。
+
 ### 本轮验证
 
 - ✅ `docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml config` 通过。

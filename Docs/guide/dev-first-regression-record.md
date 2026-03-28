@@ -109,7 +109,7 @@
 - 最小 `CI` 门禁已完成真实合并闭环，但后续新增跨层改动仍需继续依赖 `master` PR 门禁作为默认质量入口
 - 当前 `dotnet build/test` 仍存在较多警告，但本轮未表现为阻塞项；是否继续清理，后续按优先级单列，不并入当前首版门槛判断
 - 本轮未重新组织新的业务侧总串联 Smoke，仍以 `2026-03-23 ~ 2026-03-26` 已沉淀记录为准
-- 当前已完成 `GHCR` 前后端镜像 workflow 真实产物验证：`radish-api / radish-auth / radish-gateway / radish-frontend` 当前均已可通过 `docker pull` 获取；`frontend` 侧的运行时配置注入已完成，`Frontend/Dockerfile` 也已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`
+- 当前已完成 `GHCR` 前后端镜像 workflow 真实产物验证：`radish-api / radish-auth / radish-gateway / radish-frontend` 当前均已可通过 `docker pull` 获取；`radish-dbmigrate` 已纳入统一 GHCR 推送口径，待下一次规范 tag 完成首次真实拉取验证；`frontend` 侧的运行时配置注入已完成，`Frontend/Dockerfile` 也已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`
 - 真实外部反代域名、Auth 证书与 OIDC 回调链路当前仍未在生产口径下补联调记录；该项已明确后置到 `v*-release` 产出后执行的生产口径首轮 Smoke，不阻塞当前内部开发版与测试部署判断
 
 ### 下一动作
