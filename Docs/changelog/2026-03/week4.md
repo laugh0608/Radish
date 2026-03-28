@@ -230,8 +230,16 @@
 - **镜像浮动别名已按轨道拆分**：开发轨道产出 `<tag> + dev-latest`，测试轨道产出 `<tag> + test-latest`，正式发布轨道产出 `<tag> + latest`。
 - **版本规范与部署样例已同步**：`Docs/architecture/specifications.md`、`README.md`、`Deploy/.env.test.example`、`Deploy/.env.prod.example` 与部署指南当前都已统一到 `-dev / -test / -release` 三条镜像轨道。
 
+### Tag 驱动测试部署验收通过
+
+- **`v26.3.1-test` 已完成从构建到部署的整链验证**：当前已确认测试 tag 可以成功触发 `Docker Images` workflow，并产出 `radish-api / radish-auth / radish-gateway / radish-frontend` 四个测试轨道镜像。
+- **测试环境已确认使用远程镜像启动**：`Deploy/docker-compose.yml + Deploy/docker-compose.test.yml` 当前已可从 `GHCR` 拉取 `v26.3.1-test` 远程镜像并完成 `base + test` 启动，不再停留在仅本地镜像验证阶段。
+- **用户已完成一轮真实测试部署 Smoke**：登录、回调、权限与核心页面当前均已通过，`base + test` 测试部署链路已完成本轮收口。
+- **当前下一步已继续收束**：后续重点不再是验证测试部署是否可用，而是组织 `dev -> master` 发布 PR、产出 `v*-release` 镜像，并执行生产口径首轮 Smoke。
+
 ### 本轮验证
 
 - ✅ `docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml config` 通过。
 - ✅ `docker compose --env-file Deploy/.env.test.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml config` 通过。
 - ✅ `docker compose --env-file Deploy/.env.prod.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config` 通过。
+- ✅ `v26.3.1-test` 已完成 tag 驱动镜像构建、远程镜像拉取与 `base + test` 真实部署 Smoke。
