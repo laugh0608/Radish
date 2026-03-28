@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Radish.Common;
 using Radish.Common.AttributeTool;
 using Radish.Common.PermissionTool;
@@ -62,7 +62,7 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
         return roleName;
     }
-    
+
     /// <summary>
     /// 获取所有的 角色-API 关系
     /// </summary>
@@ -70,7 +70,7 @@ public class UserService : BaseService<User, UserVo>, IUserService
     public async Task<List<RoleModulePermission>> RoleModuleMaps()
     {
         // return await _userRepository.RoleModuleMaps();
-        
+
         return await QueryMuchAsync<RoleModulePermission, ApiModule, Role, RoleModulePermission>(
             (rmp, m, r) => new object[]
             {
