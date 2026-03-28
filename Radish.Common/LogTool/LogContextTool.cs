@@ -11,7 +11,7 @@ public class LogContextTool: IDisposable
     public static readonly string BaseLogs = GetSolutionLogDirectory();
 
     /// <summary>
-    /// 当前项目名称（从运行目录自动识别）
+    /// 当前项目名称（优先从宿主入口程序集识别）
     /// </summary>
     public static readonly string ProjectName = GetProjectName();
 
@@ -114,17 +114,23 @@ public class LogContextTool: IDisposable
     }
 
     /// <summary>
-    /// 获取当前项目名称（从运行目录解析）
+    /// 获取当前项目名称
+    /// 优先使用宿主入口程序集名，兼容发布目录 / Docker 容器；
+    /// 若不可用，再回退到本地开发场景常见的项目文件扫描逻辑。
     /// 例如：Radish.Api, Radish.Gateway, Radish.Auth
     /// </summary>
     private static string GetProjectName()
     {
         try
         {
+            var entryAssemblyName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name;
+            if (!string.IsNullOrWhiteSpace(entryAssemblyName))
+            {
+                return Path.GetFileNameWithoutExtension(entryAssemblyName.Trim());
+            }
+
             // AppContext.BaseDirectory 通常是：/path/to/Radish.Api/bin/Debug/net10.0/
             var baseDir = new DirectoryInfo(AppContext.BaseDirectory);
-
-            // 向上查找，寻找包含 .csproj 文件的目录
             var currentDir = baseDir;
             for (int i = 0; i < 5 && currentDir != null; i++)
             {
@@ -137,9 +143,9 @@ public class LogContextTool: IDisposable
                 currentDir = currentDir.Parent;
             }
 
-            // 如果找不到 .csproj，使用包含 bin 目录的父目录名称
+            // 最后再回退到包含 bin 目录的父目录名称
             var binParent = baseDir.Parent?.Parent?.Parent;
-            if (binParent != null)
+            if (!string.IsNullOrWhiteSpace(binParent?.Name))
             {
                 return binParent.Name;
             }
