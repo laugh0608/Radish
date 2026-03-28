@@ -229,6 +229,7 @@ docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deplo
 
 - `Gateway` 容器内部监听 `https://+:5000`
 - `RADISH_PUBLIC_URL` 需要直接写成测试入口，例如 `https://10.10.10.20:5000`
+- `Api / Auth / Gateway` 三个宿主都会优先基于 `RADISH_PUBLIC_URL` 自动收口到同一个 CORS 允许来源
 - `Gateway` TLS 证书会在首次启动时按 `RADISH_PUBLIC_URL` 的 host 自动生成，并持久化到测试证书卷
 - `Auth` 的 OIDC signing / encryption 证书会在首次启动时自动生成，并持久化到测试证书卷
 - 证书只会在“目标文件缺失”时生成；若证书已存在，则直接复用，不会因为重启漂移
@@ -253,6 +254,7 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 生产覆盖默认约定如下：
 
 - `GatewayService__PublicUrl`、前端运行时公开地址回退值，以及 Auth 的 `Issuer / CORS` 都通过 `RADISH_PUBLIC_URL` 对齐真实外部域名
+- `Api / Auth / Gateway` 三个宿主的部署态 CORS 允许来源都会优先从 `RADISH_PUBLIC_URL` 推导，启动日志应保持一致
 - `Auth` 中官方 OIDC 客户端（`radish-client / radish-console / radish-scalar`）的 Gateway 回调地址也会跟随 `OpenIddict__Server__Issuer` 对齐，因此 `RADISH_PUBLIC_URL` 必须与真实外部 HTTPS 域名保持一致
 - `prod` 口径下不要直接用 `http://localhost:5000` 做登录验证；若访问协议、域名或端口与 `RADISH_PUBLIC_URL` 不一致，OpenIddict 会因 `redirect_uri` 不匹配而拒绝请求
 - `Gateway` 容器内部监听 `http://+:5000`
@@ -260,6 +262,7 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 - `Auth` 通过 `RADISH_AUTH_CERTS_DIR` 把宿主机证书目录挂载到容器 `/app/certs`，并通过 `RADISH_AUTH_*` 变量覆盖生产证书路径与密码
 - 若 `RADISH_AUTH_CERT_AUTO_GENERATE=true` 且目标证书文件不存在，`Auth` 会在首次启动时自动生成 OIDC 证书并写入挂载目录；后续启动直接复用同一组证书
 - TLS 由外部 Nginx / Traefik / Caddy 终止，再转发到容器内 HTTP 端口；仓库已提供可直接落地的 `Deploy/nginx.prod.conf`
+- 不要再额外覆盖 `Cors__AllowedOrigins__0` 之类的单索引数组项；部署态统一以 `RADISH_PUBLIC_URL` 为准，避免旧 `localhost` 端口残留
 
 **文件上传目录挂载（生产环境建议）**：
 - 本地存储模式下，上传文件存放在 `DataBases/Uploads/`

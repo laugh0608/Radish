@@ -9,18 +9,22 @@ services:
 
   auth:
     environment:
-      Cors__AllowedOrigins__0: https://localhost:5000
+      RADISH_PUBLIC_URL: https://localhost:5000
       OpenIddict__Server__Issuer: https://localhost:5000
       OpenIddict__Server__AllowInsecureHttp: "true"
 
+  api:
+    environment:
+      RADISH_PUBLIC_URL: https://localhost:5000
+
   gateway:
     environment:
+      RADISH_PUBLIC_URL: https://localhost:5000
       ASPNETCORE_URLS: https://+:5000
       Kestrel__Certificates__Default__Path: /app/certs/dev-gateway-cert.pfx
       Kestrel__Certificates__Default__Password: RadishDevCert123!
       GatewayRuntime__EnableHttpsRedirection: "true"
       GatewayService__PublicUrl: https://localhost:5000
-      Cors__AllowedOrigins__0: https://localhost:5000
       FrontendService__BaseUrl: https://localhost:5000
     ports:
       - "5000:5000"

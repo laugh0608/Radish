@@ -364,7 +364,11 @@ if (!string.IsNullOrEmpty(apiBaseUrl) && !string.IsNullOrEmpty(apiHealthPath))
 
 ### 3. CORS 配置
 
-Gateway 统一处理 CORS，下游服务无需配置 CORS。
+Gateway 是默认公开入口，但 `Api / Auth / Gateway` 三个宿主都会注册同源的 CORS 策略。
+
+- 开发运行：继续读取各自 `appsettings.json` 里的 `Cors:AllowedOrigins`
+- 测试部署 / 生产部署：优先从 `RADISH_PUBLIC_URL` 推导单一公开入口 origin，并让三宿主保持一致
+- 不建议再用 `Cors__AllowedOrigins__0` 这类单索引环境变量覆盖部署态 CORS，否则默认数组项可能残留旧端口
 
 **配置**：
 
@@ -386,6 +390,8 @@ Gateway 统一处理 CORS，下游服务无需配置 CORS。
 - 允许所有方法（GET、POST、PUT、DELETE 等）
 - 允许所有请求头
 - 允许携带凭据（Credentials）
+
+部署态下，`Gateway / Auth / Api` 的启动日志里，`CORS 允许来源` 应收敛成同一个公开入口，例如 `https://10.10.10.20:5000` 或 `https://radish.example.com`。
 
 ### 4. 日志记录
 

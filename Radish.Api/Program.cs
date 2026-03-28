@@ -113,6 +113,7 @@ builder.Host
         config.AddJsonFile(Path.Combine(basePath, $"appsettings.{hostingContext.HostingEnvironment.EnvironmentName}.json"),
             optional: true, reloadOnChange: false);
         config.AddJsonFile(Path.Combine(basePath, "appsettings.Local.json"), optional: true, reloadOnChange: false);
+        config.AddEnvironmentVariables();
         // config.AddConfigurationApollo("appsettings.apollo.json");
     });
 // 2. 绑定 InternalApp 扩展中的环境变量
@@ -121,7 +122,7 @@ builder.ConfigureApplication();
 builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
 // 注册跨域规则
 const string corsPolicyName = "FrontendCors";
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+var allowedOrigins = CorsOriginResolver.ResolveAllowedOrigins(builder.Configuration);
 var configuredTimeOptions = builder.Configuration.GetSection("Time").Get<TimeOptions>() ?? new TimeOptions();
 var appDefaultTimeZone = TimeZoneResolver.ResolveOrUtc(configuredTimeOptions.DefaultTimeZoneId);
 builder.Services.AddCors(options =>

@@ -9,7 +9,7 @@ services:
 
   auth:
     environment:
-      Cors__AllowedOrigins__0: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
       OpenIddict__Server__Issuer: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
       OpenIddict__Server__AllowInsecureHttp: "false"
       OpenIddict__Encryption__UseDevelopmentKeys: "false"
@@ -22,6 +22,10 @@ services:
     volumes:
       - radish-test-auth-certs:/app/certs
 
+  api:
+    environment:
+      RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+
   gateway:
     environment:
       RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
@@ -30,7 +34,6 @@ services:
       Kestrel__Certificates__Default__Password: "${RADISH_GATEWAY_CERT_PASSWORD:?RADISH_GATEWAY_CERT_PASSWORD is required}"
       GatewayRuntime__EnableHttpsRedirection: "true"
       GatewayService__PublicUrl: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
-      Cors__AllowedOrigins__0: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
       FrontendService__BaseUrl: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
       RADISH_GATEWAY_CERT_AUTO_GENERATE: "${RADISH_GATEWAY_CERT_AUTO_GENERATE:-true}"
       RADISH_GATEWAY_CERT_VALID_DAYS: "${RADISH_GATEWAY_CERT_VALID_DAYS:-365}"

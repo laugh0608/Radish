@@ -121,7 +121,7 @@ builder.Services.AddCacheSetup();
 builder.Services.AddRateLimitSetup();
 
 // CORS
-var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
+var corsOrigins = CorsOriginResolver.ResolveAllowedOrigins(builder.Configuration);
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>

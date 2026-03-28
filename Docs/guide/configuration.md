@@ -289,12 +289,14 @@ services:
   radish-gateway:
     image: radish-gateway:latest
     environment:
+      - RADISH_PUBLIC_URL=https://your-domain.com
       - GatewayService__PublicUrl=https://your-domain.com
-      - Cors__AllowedOrigins__0=https://your-domain.com
       - DownstreamServices__ApiService__BaseUrl=http://radish-api:5100
       - DownstreamServices__AuthService__BaseUrl=http://radish-auth:5200
       - FrontendService__BaseUrl=https://your-domain.com
 ```
+
+部署态下，`Api / Auth / Gateway` 三个宿主都会优先根据 `RADISH_PUBLIC_URL` 推导统一的 CORS 允许来源；只有未提供该变量时，才回退到各自 `appsettings.json` 中的开发默认值。
 
 详细配置说明请参考 `Radish.Gateway/README.md`
 
@@ -663,7 +665,6 @@ Gateway 在生产部署中推荐直接使用 `Deploy/.env.prod.example` 与 `Dep
 ```bash
 RADISH_PUBLIC_URL=https://radish.com
 GatewayService__PublicUrl=https://radish.com
-Cors__AllowedOrigins__0=https://radish.com
 FrontendService__BaseUrl=https://radish.com
 DownstreamServices__ApiService__BaseUrl=http://api:5100
 DownstreamServices__AuthService__BaseUrl=http://auth:5200
@@ -673,6 +674,7 @@ GatewayRuntime__EnableHttpsRedirection=false
 **注意事项**：
 - 生产环境 `DownstreamServices.ApiService.BaseUrl` 使用内网地址（如 Docker 容器名 `http://api:5100`）
 - 公开地址（`GatewayService__PublicUrl` / `RADISH_PUBLIC_URL`）使用真实外部域名
+- 不要再通过 `Cors__AllowedOrigins__0` 之类的单索引环境变量去覆盖部署态 CORS；.NET 会按索引合并数组，容易把旧的 `localhost` 端口残留进最终白名单
 - 外部 `Nginx` 反向代理会将公网 HTTPS 请求转发到容器内 HTTP 端口
 - 如果是测试部署，则改用 `Deploy/.env.test.example` 与 `Deploy/docker-compose.test.yml`，此时 Gateway 容器内直接提供 HTTPS
 - 详细的反向代理配置请参考 [部署指南](/deployment/guide)

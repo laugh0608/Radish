@@ -83,7 +83,7 @@ builder.Services.AddRazorPages();
 
 // ===== CORS 配置 =====
 var corsSection = builder.Configuration.GetSection("Cors");
-var allowedOrigins = corsSection.GetSection("AllowedOrigins").Get<string[]>() ?? [];
+var allowedOrigins = CorsOriginResolver.ResolveAllowedOrigins(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
