@@ -1,5 +1,8 @@
 services:
   frontend:
+    build:
+      context: ..
+      dockerfile: Frontend/Dockerfile
     environment:
       RADISH_PUBLIC_URL: https://localhost:5000
       VITE_API_BASE_URL: https://localhost:5000
@@ -8,12 +11,26 @@ services:
       VITE_AUTH_SERVER_URL: https://localhost:5000
 
   auth:
+    build:
+      context: ..
+      dockerfile: Radish.Auth/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
     environment:
       RADISH_PUBLIC_URL: https://localhost:5000
       OpenIddict__Server__Issuer: https://localhost:5000
       OpenIddict__Server__AllowInsecureHttp: "true"
+      OpenIddict__Encryption__SigningCertificatePath: /app/certs/dev-auth-cert.pfx
+      OpenIddict__Encryption__SigningCertificatePassword: RadishDevCert123!
+      OpenIddict__Encryption__EncryptionCertificatePath: /app/certs/dev-auth-cert.pfx
+      OpenIddict__Encryption__EncryptionCertificatePassword: RadishDevCert123!
 
   api:
+    build:
+      context: ..
+      dockerfile: Radish.Api/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
     environment:
       RADISH_PUBLIC_URL: https://localhost:5000
       OpenIddict__Encryption__SigningCertificatePath: /app/certs/dev-auth-cert.pfx
@@ -22,6 +39,11 @@ services:
       - ../Certs:/app/certs:ro
 
   gateway:
+    build:
+      context: ..
+      dockerfile: Radish.Gateway/Dockerfile
+      args:
+        BUILD_CONFIGURATION: Release
     environment:
       RADISH_PUBLIC_URL: https://localhost:5000
       ASPNETCORE_URLS: https://+:5000

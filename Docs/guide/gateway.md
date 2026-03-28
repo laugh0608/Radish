@@ -600,21 +600,33 @@ curl https://localhost:5000/health | jq
 - 镜像会复制 `Scripts/docker/gateway-entrypoint.sh`
 - 最终入口不是直接 `dotnet Radish.Gateway.dll`，而是先执行入口脚本，再按环境决定是否生成 / 复用测试 TLS 证书
 
-常用构建命令仍然是：
+只有在本地容器验证或手动验证镜像入口时，才需要显式构建本地镜像，例如：
 
 ```bash
-docker build -t radish-gateway:latest -f Radish.Gateway/Dockerfile .
+docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml build gateway
 ```
 
-但对测试部署与生产部署，不再推荐单独 `docker run` Gateway 容器，而是直接使用仓库现成编排：
+测试部署与生产部署默认应直接拉取 `GHCR` 中已构建好的镜像，不再推荐在部署机单独 `docker build` 或 `docker run` Gateway 容器，而是直接使用仓库现成编排：
 
 ```bash
 # 测试部署
 docker compose --env-file Deploy/.env.test \
   -f Deploy/docker-compose.yml \
+  -f Deploy/docker-compose.test.yml config
+docker compose --env-file Deploy/.env.test \
+  -f Deploy/docker-compose.yml \
+  -f Deploy/docker-compose.test.yml pull
+docker compose --env-file Deploy/.env.test \
+  -f Deploy/docker-compose.yml \
   -f Deploy/docker-compose.test.yml up -d
 
 # 生产部署
+docker compose --env-file Deploy/.env.prod \
+  -f Deploy/docker-compose.yml \
+  -f Deploy/docker-compose.prod.yml config
+docker compose --env-file Deploy/.env.prod \
+  -f Deploy/docker-compose.yml \
+  -f Deploy/docker-compose.prod.yml pull
 docker compose --env-file Deploy/.env.prod \
   -f Deploy/docker-compose.yml \
   -f Deploy/docker-compose.prod.yml up -d

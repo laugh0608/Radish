@@ -1,17 +1,11 @@
 services:
   frontend:
-    build:
-      context: ..
-      dockerfile: Frontend/Dockerfile
+    image: ${RADISH_FRONTEND_IMAGE:-radish/frontend:local}
     expose:
       - "80"
 
   api:
-    build:
-      context: ..
-      dockerfile: Radish.Api/Dockerfile
-      args:
-        BUILD_CONFIGURATION: Release
+    image: ${RADISH_API_IMAGE:-radish/api:local}
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5100
@@ -22,16 +16,10 @@ services:
       - "5100"
 
   auth:
-    build:
-      context: ..
-      dockerfile: Radish.Auth/Dockerfile
-      args:
-        BUILD_CONFIGURATION: Release
+    image: ${RADISH_AUTH_IMAGE:-radish/auth:local}
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5200
-      OpenIddict__Encryption__SigningCertificatePath: /app/certs/dev-auth-cert.pfx
-      OpenIddict__Encryption__EncryptionCertificatePath: /app/certs/dev-auth-cert.pfx
     volumes:
       - ../DataBases:/app/DataBases
       - ../Logs:/app/Logs
@@ -39,11 +27,7 @@ services:
       - "5200"
 
   gateway:
-    build:
-      context: ..
-      dockerfile: Radish.Gateway/Dockerfile
-      args:
-        BUILD_CONFIGURATION: Release
+    image: ${RADISH_GATEWAY_IMAGE:-radish/gateway:local}
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       DownstreamServices__ApiService__BaseUrl: http://api:5100
