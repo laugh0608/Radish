@@ -16,6 +16,10 @@ services:
   api:
     environment:
       RADISH_PUBLIC_URL: https://localhost:5000
+      OpenIddict__Encryption__SigningCertificatePath: /app/certs/dev-auth-cert.pfx
+      OpenIddict__Encryption__SigningCertificatePassword: RadishDevCert123!
+    volumes:
+      - ../Certs:/app/certs:ro
 
   gateway:
     environment:

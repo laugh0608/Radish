@@ -25,6 +25,10 @@ services:
   api:
     environment:
       RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      OpenIddict__Encryption__SigningCertificatePath: "${RADISH_AUTH_SIGNING_CERT_PATH:-/app/certs/auth-signing.pfx}"
+      OpenIddict__Encryption__SigningCertificatePassword: "${RADISH_AUTH_SIGNING_CERT_PASSWORD:?RADISH_AUTH_SIGNING_CERT_PASSWORD is required}"
+    volumes:
+      - ${RADISH_AUTH_CERTS_DIR:-/etc/radish/certs}:/app/certs:ro
 
   gateway:
     environment:

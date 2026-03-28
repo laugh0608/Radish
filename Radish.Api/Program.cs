@@ -42,6 +42,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Options;
 using Hangfire;
 using Hangfire.Storage.SQLite;
+using System.Security.Cryptography.X509Certificates;
 using Radish.Common.DocumentTool;
 using Radish.Service.Jobs;
 using Radish.Api.Filters;
@@ -85,6 +86,83 @@ static string ResolveSharedConfigPath(string basePath, string contentRootPath)
     }
 
     return Path.Combine(contentRootPath, "appsettings.Shared.json");
+}
+
+static string? ResolveJwtIssuer(IConfiguration configuration)
+{
+    var issuer = configuration["OpenIddict:Server:Issuer"];
+    if (string.IsNullOrWhiteSpace(issuer))
+    {
+        issuer = configuration["RADISH_PUBLIC_URL"];
+    }
+
+    if (string.IsNullOrWhiteSpace(issuer))
+    {
+        issuer = configuration["GatewayService:PublicUrl"];
+    }
+
+    if (string.IsNullOrWhiteSpace(issuer) || !Uri.TryCreate(issuer, UriKind.Absolute, out var uri))
+    {
+        return null;
+    }
+
+    return uri.GetLeftPart(UriPartial.Authority).TrimEnd('/');
+}
+
+static string[] BuildValidIssuers(string issuer)
+{
+    var normalizedIssuer = issuer.Trim().TrimEnd('/');
+    return [normalizedIssuer, $"{normalizedIssuer}/"];
+}
+
+static string ResolveCertificatePath(string configuredPath, string basePath, string contentRootPath)
+{
+    if (Path.IsPathRooted(configuredPath))
+    {
+        return Path.GetFullPath(configuredPath);
+    }
+
+    var baseDirectoryCandidate = Path.GetFullPath(Path.Combine(basePath, configuredPath));
+    if (File.Exists(baseDirectoryCandidate))
+    {
+        return baseDirectoryCandidate;
+    }
+
+    return Path.GetFullPath(Path.Combine(contentRootPath, configuredPath));
+}
+
+static X509Certificate2 LoadJwtSigningCertificate(
+    IConfiguration configuration,
+    string basePath,
+    string contentRootPath,
+    bool waitForCertificate)
+{
+    var configuredPath = configuration["OpenIddict:Encryption:SigningCertificatePath"];
+    var configuredPassword = configuration["OpenIddict:Encryption:SigningCertificatePassword"];
+
+    if (string.IsNullOrWhiteSpace(configuredPath) || string.IsNullOrWhiteSpace(configuredPassword))
+    {
+        throw new InvalidOperationException(
+            "JWT 签名证书配置缺失，请检查 OpenIddict:Encryption:SigningCertificatePath / SigningCertificatePassword。");
+    }
+
+    var resolvedPath = ResolveCertificatePath(configuredPath, basePath, contentRootPath);
+
+    if (waitForCertificate)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(20);
+        while (!File.Exists(resolvedPath) && DateTime.UtcNow < deadline)
+        {
+            Thread.Sleep(500);
+        }
+    }
+
+    if (!File.Exists(resolvedPath))
+    {
+        throw new InvalidOperationException($"JWT 签名证书文件不存在: {resolvedPath}");
+    }
+
+    return new X509Certificate2(resolvedPath, configuredPassword);
 }
 
 // 🔧 禁用 JWT 默认的 claim type 映射，保持 OIDC 标准 claims（sub, name, role 等）原样
@@ -290,14 +368,43 @@ builder.Services.AddOpenIddict()
                .UseDbContext<Radish.Auth.OpenIddict.AuthOpenIddictDbContext>();
     });
 
+var jwtIssuer = ResolveJwtIssuer(builder.Configuration);
+var deploymentJwtValidationEnabled = !string.IsNullOrWhiteSpace(builder.Configuration["RADISH_PUBLIC_URL"]);
+var jwtValidationMode = "authority";
+var jwtValidationTarget = "http://localhost:5200";
+X509Certificate2? jwtSigningCertificate = null;
+
+if (deploymentJwtValidationEnabled)
+{
+    if (string.IsNullOrWhiteSpace(jwtIssuer))
+    {
+        throw new InvalidOperationException("部署态 JWT 验签缺少 Issuer，请检查 RADISH_PUBLIC_URL 或 OpenIddict:Server:Issuer。");
+    }
+
+    jwtSigningCertificate = LoadJwtSigningCertificate(
+        builder.Configuration,
+        AppContext.BaseDirectory,
+        builder.Environment.ContentRootPath,
+        waitForCertificate: true);
+    jwtValidationMode = "local-certificate";
+    jwtValidationTarget = $"{jwtIssuer} | {jwtSigningCertificate.Subject}";
+}
+
 // 注册 JWT 认证服务（使用 Radish.Auth 作为 OIDC 授权服务器）
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        // Authority 指向 Gateway 对外暴露的认证服务器地址
-        options.Authority = "http://localhost:5200";
-        //options.Audience = "radish-api";
-        options.RequireHttpsMetadata = false;
+        if (jwtSigningCertificate != null && !string.IsNullOrWhiteSpace(jwtIssuer))
+        {
+            options.RequireHttpsMetadata = false;
+        }
+        else
+        {
+            // IDE 本地开发时回退到旧的 Authority 模式；部署态统一改为共享签名证书本地验签。
+            options.Authority = "http://localhost:5200";
+            //options.Audience = "radish-api";
+            options.RequireHttpsMetadata = false;
+        }
 
         // SignalR (WebSocket) 在浏览器端无法稳定携带 Authorization Header，
         // 会把 token 放在 query string 的 access_token 上；这里需要显式取出来。
@@ -355,7 +462,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             // 指定 NameClaimType 为 OIDC 标准的 "sub"（用于用户标识）
             NameClaimType = "sub",
             // 指定 role claim 类型为 OIDC 标准的 "role"
-            RoleClaimType = "role"
+            RoleClaimType = "role",
+            ValidIssuers = !string.IsNullOrWhiteSpace(jwtIssuer) ? BuildValidIssuers(jwtIssuer) : null,
+            IssuerSigningKey = jwtSigningCertificate != null ? new X509SecurityKey(jwtSigningCertificate) : null
         };
     });
 // 注册 JWT 授权方案，核心是通过解析请求头中的 JWT Token，然后匹配策略中的 key 和字段值
@@ -445,6 +554,8 @@ builder.Host.AddSerilogSetup();
 // -------------- App 初始化阶段 ---------------
 var app = builder.Build();
 // -------------- App 初始化阶段 ---------------
+
+Log.Information("[JWT] 验签模式: {Mode}, 目标: {Target}", jwtValidationMode, jwtValidationTarget);
 
 // 3. 绑定 InternalApp 扩展中的服务
 app.ConfigureApplication();

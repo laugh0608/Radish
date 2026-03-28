@@ -232,6 +232,7 @@ docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deplo
 - `Api / Auth / Gateway` 三个宿主都会优先基于 `RADISH_PUBLIC_URL` 自动收口到同一个 CORS 允许来源
 - `Gateway` TLS 证书会在首次启动时按 `RADISH_PUBLIC_URL` 的 host 自动生成，并持久化到测试证书卷
 - `Auth` 的 OIDC signing / encryption 证书会在首次启动时自动生成，并持久化到测试证书卷
+- `Api` 会把同一份 Auth signing 证书以只读方式挂载到容器内，并直接做本地 JWT 验签，不依赖再通过 `127.0.0.1` 或外部域名回拉 OIDC metadata / JWKS
 - 证书只会在“目标文件缺失”时生成；若证书已存在，则直接复用，不会因为重启漂移
 - 若使用 `https://IP:port` + 自签名证书，浏览器出现证书告警属于预期行为，不代表 Gateway / OIDC 链路异常
 
@@ -260,6 +261,7 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 - `Gateway` 容器内部监听 `http://+:5000`
 - `GatewayRuntime__EnableHttpsRedirection=false`
 - `Auth` 通过 `RADISH_AUTH_CERTS_DIR` 把宿主机证书目录挂载到容器 `/app/certs`，并通过 `RADISH_AUTH_*` 变量覆盖生产证书路径与密码
+- `Api` 会从同一个挂载目录只读复用 Auth signing 证书，并直接做本地 JWT 验签，避免再依赖外部反代域名或容器内 loopback 去获取 OIDC 元数据
 - 若 `RADISH_AUTH_CERT_AUTO_GENERATE=true` 且目标证书文件不存在，`Auth` 会在首次启动时自动生成 OIDC 证书并写入挂载目录；后续启动直接复用同一组证书
 - TLS 由外部 Nginx / Traefik / Caddy 终止，再转发到容器内 HTTP 端口；仓库已提供可直接落地的 `Deploy/nginx.prod.conf`
 - 不要再额外覆盖 `Cors__AllowedOrigins__0` 之类的单索引数组项；部署态统一以 `RADISH_PUBLIC_URL` 为准，避免旧 `localhost` 端口残留
