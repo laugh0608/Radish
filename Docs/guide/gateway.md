@@ -160,11 +160,11 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
         "ClusterId": "docs-cluster",
       },
       "api-route": {
-        "ClusterId": "api-cluster",
+        "ClusterId": "apiCluster",
         "Match": { "Path": "/api/{**catch-all}" }
       },
       "console-route": {
-        "ClusterId": "console-cluster",
+        "ClusterId": "consoleCluster",
         "Match": { "Path": "/console/{**catch-all}" },
         "Transforms": [
           { "PathRemovePrefix": "/console" },
@@ -172,7 +172,7 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
         ]
       },
       "auth-account-route": {
-        "ClusterId": "auth-cluster",
+        "ClusterId": "authCluster",
         "Match": { "Path": "/Account/{**catch-all}" },
         "Transforms": [
           { "RequestHeader": "X-Forwarded-Host", "Set": "{host}" },
@@ -181,7 +181,7 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
         ]
       },
       "frontend-root": {
-        "ClusterId": "frontend-cluster",
+        "ClusterId": "frontendCluster",
         "Match": { "Path": "/{**catch-all}" },
         "Order": 1000,
         "Transforms": [
@@ -195,22 +195,22 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
           "docs": { "Address": "http://localhost:4000" }
         }
       },
-      "api-cluster": {
+      "apiCluster": {
         "Destinations": {
           "api": { "Address": "http://localhost:5100" }
         }
       },
-      "auth-cluster": {
+      "authCluster": {
         "Destinations": {
           "auth": { "Address": "http://localhost:5200" }
         }
       },
-      "frontend-cluster": {
+      "frontendCluster": {
         "Destinations": {
           "frontend": { "Address": "http://localhost:3000" }
         }
       },
-      "console-cluster": {
+      "consoleCluster": {
         "Destinations": {
           "console": { "Address": "http://localhost:3100" }
         }
@@ -727,7 +727,7 @@ curl http://localhost:5200/health
 ```json
 {
   "console-route": {
-    "ClusterId": "console-cluster",
+    "ClusterId": "consoleCluster",
     "Match": { "Path": "/console/{**catch-all}" },
     "Transforms": [
       { "PathRemovePrefix": "/console" },

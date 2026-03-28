@@ -24,6 +24,7 @@ services:
 
   gateway:
     environment:
+      RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
       ASPNETCORE_URLS: http://+:5000
       GatewayRuntime__EnableHttpsRedirection: "false"
       GatewayService__PublicUrl: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"

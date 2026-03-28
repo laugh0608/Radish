@@ -48,10 +48,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Production
       DownstreamServices__ApiService__BaseUrl: http://api:5100
       DownstreamServices__AuthService__BaseUrl: http://auth:5200
-      ReverseProxy__Clusters__api-cluster__Destinations__api__Address: http://api:5100
-      ReverseProxy__Clusters__auth-cluster__Destinations__auth__Address: http://auth:5200
-      ReverseProxy__Clusters__frontend-cluster__Destinations__frontend__Address: http://frontend
-      ReverseProxy__Clusters__console-cluster__Destinations__console__Address: http://frontend
+      ReverseProxy__Clusters__apiCluster__Destinations__api__Address: http://api:5100
+      ReverseProxy__Clusters__authCluster__Destinations__auth__Address: http://auth:5200
+      ReverseProxy__Clusters__frontendCluster__Destinations__frontend__Address: http://frontend
+      ReverseProxy__Clusters__consoleCluster__Destinations__console__Address: http://frontend
     depends_on:
       - frontend
       - api

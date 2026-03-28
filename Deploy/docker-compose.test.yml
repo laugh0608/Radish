@@ -24,6 +24,7 @@ services:
 
   gateway:
     environment:
+      RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
       ASPNETCORE_URLS: https://+:5000
       Kestrel__Certificates__Default__Path: /app/certs/gateway-test-cert.pfx
       Kestrel__Certificates__Default__Password: "${RADISH_GATEWAY_CERT_PASSWORD:?RADISH_GATEWAY_CERT_PASSWORD is required}"
