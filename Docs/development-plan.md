@@ -120,7 +120,7 @@
    - GitHub Actions 已新增 `Repo Quality` 工作流，当前已覆盖 `pull_request -> master / dev`、`push -> dev` 与手动触发
    - 当前已接通 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 三个最小质量门禁，并已在真实 PR 中成功通过
    - 当前已补 `Docker Images` 工作流：`PR -> build only`、`push dev -> unified push`、`push v* -> unified release push` 当前已具备仓库资产；`radish-api / radish-auth / radish-gateway / radish-frontend` 已纳入统一 GHCR 口径
-   - `frontend` 侧的运行时配置注入已完成：静态服务会在容器启动时生成 `/runtime-config.js`，`radish.client / radish.console` 已优先读取运行时配置，不再要求只能依赖构建期 `VITE_*`
+   - `frontend` 侧的运行时配置注入已完成：静态服务当前会在请求 `/runtime-config.js` 时动态返回运行时配置脚本，`radish.client / radish.console` 已优先读取运行时配置，不再要求只能依赖构建期 `VITE_*`
    - `frontend` GHCR 首次真实产物已完成验证，当前已可通过 `docker pull` 获取；`Frontend/Dockerfile` 也已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`
    - `master` 分支保护与 ruleset 资产已落地，当前已切换为“禁止直接 push、仅允许 PR 合并”的发布入口
    - 当前结论为：首次 CI/CD 已完成真实合并闭环，并已支撑首版 `dev` 进入“可发内部开发版”状态；前后端 `GHCR` 镜像真实产物已完成验证，后续重点转为冻结统一镜像推送口径并在条件具备后执行上线前交付复核

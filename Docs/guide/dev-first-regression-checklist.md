@@ -97,7 +97,7 @@
 - `Deploy/`
 - `Radish.Api / Auth / Gateway / Frontend` Dockerfile
 - 证书、`RADISH_PUBLIC_URL`、`OpenIddict__Server__Issuer`
-- `docker-compose.dev.yml / docker-compose.prod.yml`
+- `docker-compose.dev.yml / docker-compose.test.yml / docker-compose.prod.yml`
 
 建议检查：
 

@@ -13,21 +13,31 @@ services:
       OpenIddict__Server__Issuer: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
       OpenIddict__Server__AllowInsecureHttp: "false"
       OpenIddict__Encryption__UseDevelopmentKeys: "false"
-      OpenIddict__Encryption__SigningCertificatePath: "${RADISH_AUTH_SIGNING_CERT_PATH:-/app/certs/auth-signing.pfx}"
+      OpenIddict__Encryption__SigningCertificatePath: /app/certs/auth-signing.pfx
       OpenIddict__Encryption__SigningCertificatePassword: "${RADISH_AUTH_SIGNING_CERT_PASSWORD:?RADISH_AUTH_SIGNING_CERT_PASSWORD is required}"
-      OpenIddict__Encryption__EncryptionCertificatePath: "${RADISH_AUTH_ENCRYPTION_CERT_PATH:-/app/certs/auth-encryption.pfx}"
+      OpenIddict__Encryption__EncryptionCertificatePath: /app/certs/auth-encryption.pfx
       OpenIddict__Encryption__EncryptionCertificatePassword: "${RADISH_AUTH_ENCRYPTION_CERT_PASSWORD:?RADISH_AUTH_ENCRYPTION_CERT_PASSWORD is required}"
       RADISH_AUTH_CERT_AUTO_GENERATE: "${RADISH_AUTH_CERT_AUTO_GENERATE:-true}"
-      RADISH_AUTH_CERT_VALID_DAYS: "${RADISH_AUTH_CERT_VALID_DAYS:-730}"
+      RADISH_AUTH_CERT_VALID_DAYS: "${RADISH_AUTH_CERT_VALID_DAYS:-365}"
     volumes:
-      - ${RADISH_AUTH_CERTS_DIR:-/etc/radish/certs}:/app/certs
+      - radish-test-auth-certs:/app/certs
 
   gateway:
     environment:
-      ASPNETCORE_URLS: http://+:5000
-      GatewayRuntime__EnableHttpsRedirection: "false"
+      ASPNETCORE_URLS: https://+:5000
+      Kestrel__Certificates__Default__Path: /app/certs/gateway-test-cert.pfx
+      Kestrel__Certificates__Default__Password: "${RADISH_GATEWAY_CERT_PASSWORD:?RADISH_GATEWAY_CERT_PASSWORD is required}"
+      GatewayRuntime__EnableHttpsRedirection: "true"
       GatewayService__PublicUrl: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
       Cors__AllowedOrigins__0: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
       FrontendService__BaseUrl: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
+      RADISH_GATEWAY_CERT_AUTO_GENERATE: "${RADISH_GATEWAY_CERT_AUTO_GENERATE:-true}"
+      RADISH_GATEWAY_CERT_VALID_DAYS: "${RADISH_GATEWAY_CERT_VALID_DAYS:-365}"
+    volumes:
+      - radish-test-gateway-certs:/app/certs
     ports:
-      - "5000:5000"
+      - "${RADISH_GATEWAY_HTTPS_PORT:-5000}:5000"
+
+volumes:
+  radish-test-auth-certs:
+  radish-test-gateway-certs:

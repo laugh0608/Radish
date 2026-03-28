@@ -169,7 +169,7 @@
 ### GHCR 后端镜像工作流资产
 
 - **已补 `Docker Images` workflow**：当前已新增 `.github/workflows/docker-images.yml`，覆盖 `PR -> build only`、`push dev -> backend push`、`push v* -> backend release push` 三类触发，后端镜像默认目标为 `GHCR`。
-- **前端运行时配置注入已补齐**：`Frontend/scripts/serve-static.mjs` 当前会在容器启动时生成 `/runtime-config.js`，`radish.client / radish.console` 已优先读取运行时配置，`frontend` 统一镜像推送不再受“公开地址写死在构建产物里”限制。
+- **前端运行时配置注入已补齐**：`Frontend/scripts/serve-static.mjs` 当前会在请求 `/runtime-config.js` 时动态返回运行时配置脚本，`radish.client / radish.console` 已优先读取运行时配置，`frontend` 统一镜像推送不再受“公开地址写死在构建产物里”限制。
 - **下一步只剩真实 GHCR 产物验证与前端纳管**：先验证 `dev` / `v*` 的后端镜像真实产物，再把 `frontend` 纳入 `Docker Images` workflow 的推送规则。
 
 ## 2026-03-27 (周五)
@@ -196,3 +196,22 @@
 - ✅ `Docker Images` workflow 与相关文档已完成静态复查。
 - ✅ `frontend` GHCR 首次真实产物已完成 `docker pull` 验证。
 - ✅ 前端镜像本地构建体积已收口到约 `300MB`。
+
+## 2026-03-28 (周六)
+
+### 测试 / 生产部署口径统一
+
+- **部署形态已正式拆为三类**：开发运行继续默认使用 IDE / 宿主机直跑；测试部署采用“Gateway 容器内 HTTPS”；生产部署采用“外部 Nginx 终止 HTTPS、容器内部 HTTP”。
+- **测试部署已新增独立 Compose 覆盖**：仓库当前已新增 `Deploy/docker-compose.test.yml` 与 `Deploy/.env.test.example`，用于 `https://IP:port` 或测试域名直连的最小容器部署。
+- **测试环境浏览器证书告警已作为已知约束固化**：测试部署的 Gateway TLS 证书采用自签名自动生成方案，浏览器默认不信任属于预期行为，不再继续把这类告警误判为部署异常。
+
+### Gateway TLS 与 Auth OIDC 证书自动生成
+
+- **Gateway 测试 TLS 证书现支持自动生成并复用**：`Gateway` 容器启动前会在挂载目录中检查目标 `pfx`，缺失时按 `RADISH_PUBLIC_URL` 的 host 生成带 SAN 的自签名证书；若已存在则直接复用。
+- **Auth OIDC signing / encryption 证书现支持自动生成并复用**：`Auth` 容器启动前会在挂载目录中检查 signing / encryption `pfx`，缺失时自动生成，已存在时保持复用，不会因重启导致 key 漂移。
+- **生产部署默认允许首次自动生成 OIDC 证书**：`Deploy/docker-compose.prod.yml` 当前已允许 `Auth` 在首次启动时把 OIDC 证书写入 `RADISH_AUTH_CERTS_DIR`；后续多实例部署时必须改为共享同一组证书。
+
+### 文档与资产同步
+
+- **Docker 镜像已补容器启动脚本**：`Radish.Auth/Dockerfile` 与 `Radish.Gateway/Dockerfile` 当前都会带入 `Scripts/docker` 下的证书初始化脚本。
+- **部署指南已改为开发 / 测试 / 生产三套口径**：`deployment/guide.md` 与 `guide/authentication.md` 当前已同步 Gateway TLS 证书、Auth OIDC 证书与持久化复用策略。

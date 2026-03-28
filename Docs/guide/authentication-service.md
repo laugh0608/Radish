@@ -4,43 +4,36 @@
 
 Radish 项目采用 OIDC (OpenID Connect) 标准进行身份认证，前端通过统一的认证服务 (`auth.ts`) 管理登录、登出和 Token 验证逻辑。本指南介绍如何使用认证服务，以及如何在前端应用中集成认证功能。
 
+当前统一访问口径如下：
+
+- 开发运行：前端开发服务器通过 `VITE_*` 指向 `https://localhost:5000`
+- 测试部署：前端优先读取 `/runtime-config.js`，默认回落到 `RADISH_PUBLIC_URL=https://IP:port`
+- 生产部署：前端优先读取 `/runtime-config.js`，默认回落到 `RADISH_PUBLIC_URL=https://radish.example.com`
+- 除本地联调外，不再推荐前端直连 `http://localhost:5200` 或单独暴露 `https://auth.xxx` / `https://api.xxx` 两套公网入口
+
 ## 认证架构
 
 ### 认证流程
 
-```
-┌─────────────┐      ┌──────────────┐      ┌─────────────┐
-│             │      │              │      │             │
-│  前端应用   │─────▶│  Auth 服务   │─────▶│  API 服务   │
-│  (Client)   │      │  (OIDC)      │      │  (Backend)  │
-│             │◀─────│              │◀─────│             │
-└─────────────┘      └──────────────┘      └─────────────┘
-     │                     │                      │
-     │  1. 跳转登录        │                      │
-     │────────────────────▶│                      │
-     │                     │                      │
-     │  2. 用户认证        │                      │
-     │                     │                      │
-     │  3. 返回 code       │                      │
-     │◀────────────────────│                      │
-     │                     │                      │
-     │  4. 交换 token      │                      │
-     │────────────────────▶│                      │
-     │                     │                      │
-     │  5. 返回 token      │                      │
-     │◀────────────────────│                      │
-     │                     │                      │
-     │  6. 携带 token 请求 │                      │
-     │────────────────────────────────────────────▶│
-     │                     │                      │
-     │  7. 验证 token 并返回数据                  │
-     │◀────────────────────────────────────────────│
+```text
+前端应用 (Client / Console)
+    ↓  统一访问公开入口
+Radish.Gateway
+    ├─ /Account/**、/connect/** → Radish.Auth (OIDC)
+    └─ /api/**、/hubs/**        → Radish.Api
+
+典型流程：
+1. 前端跳转 `${getAuthBaseUrl()}/connect/authorize`
+2. Gateway 转发到 Auth 完成登录
+3. Auth 回调 `${window.location.origin}/oidc/callback`
+4. 前端向 `${getAuthBaseUrl()}/connect/token` 交换 token
+5. 前端后续通过 `${getApiBaseUrl()}` 访问 API / SignalR
 ```
 
 ### 核心组件
 
 - **Radish.Auth**: OIDC 认证服务器 (基于 OpenIddict)
-- **Radish.Gateway**: API 网关，验证 JWT Token
+- **Radish.Gateway**: 统一公网入口，透传 `/Account`、`/connect`、`/api`、`/hubs`
 - **Frontend/radish.client/src/services/auth.ts**: 前端认证服务
 - **@radish/http**: HTTP 客户端，自动添加 Token
 
@@ -253,6 +246,7 @@ export async function getUserProfile() {
 
 ```typescript
 import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
+import { getApiBaseUrl } from '@/config/env';
 import { hasAccessToken } from '@/services/auth';
 import { tokenService } from '@/services/tokenService';
 
@@ -267,10 +261,11 @@ export async function connectToNotificationHub() {
 
   // 获取 Token
   const token = tokenService.getAccessToken();
+  const apiBaseUrl = getApiBaseUrl();
 
   // 创建连接
   connection = new HubConnectionBuilder()
-    .withUrl('https://localhost:5000/hubs/notification', {
+    .withUrl(`${apiBaseUrl}/hubs/notification`, {
       accessTokenFactory: () => token || '',
     })
     .withAutomaticReconnect()
@@ -380,11 +375,12 @@ export async function validateToken(): Promise<boolean> {
 
 ```typescript
 import { configureApiClient } from '@radish/http';
+import { getApiBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
 import { redirectToLogin } from '@/services/auth';
 
 configureApiClient({
-  baseUrl: 'https://localhost:5000',
+  baseUrl: getApiBaseUrl(),
   onError: (error) => {
     // 检查是否是 401 错误
     if (error.message.includes('401')) {
@@ -423,6 +419,7 @@ window.addEventListener('storage', (event) => {
 // src/routes/OidcCallback.tsx
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { getAuthBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
 
 export const OidcCallback: React.FC = () => {
@@ -447,7 +444,9 @@ export const OidcCallback: React.FC = () => {
 
   const exchangeCodeForToken = async (code: string) => {
     try {
-      const response = await fetch('https://localhost:5200/connect/token', {
+      const authServerBaseUrl = getAuthBaseUrl();
+
+      const response = await fetch(`${authServerBaseUrl}/connect/token`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -500,30 +499,73 @@ export const App: React.FC = () => {
 
 ## 环境配置
 
+### 运行时优先级
+
+部署态前端认证地址优先级如下：
+
+1. `/runtime-config.js`
+2. `VITE_AUTH_BASE_URL` / `VITE_API_BASE_URL`
+3. 默认回退值 `https://localhost:5000`
+
+因此，测试部署与生产部署通常不需要把前端写死到独立的 Auth/API 域名；大多数情况下，统一使用 Gateway 公开入口即可。
+
 ### 环境变量
 
 ```env
 # .env.development
-VITE_AUTH_BASE_URL=http://localhost:5200
+VITE_AUTH_BASE_URL=https://localhost:5000
 VITE_API_BASE_URL=https://localhost:5000
 
-# .env.production
-VITE_AUTH_BASE_URL=https://auth.radish.com
-VITE_API_BASE_URL=https://api.radish.com
+# Deploy/.env.test
+RADISH_PUBLIC_URL=https://10.10.10.20:5000
+# 可选：若不填，frontend 容器会回退到 RADISH_PUBLIC_URL
+# VITE_AUTH_BASE_URL=https://10.10.10.20:5000
+# VITE_API_BASE_URL=https://10.10.10.20:5000
+
+# Deploy/.env.prod
+RADISH_PUBLIC_URL=https://radish.example.com
+# 可选：若不填，frontend 容器会回退到 RADISH_PUBLIC_URL
+# VITE_AUTH_BASE_URL=https://radish.example.com
+# VITE_API_BASE_URL=https://radish.example.com
 ```
 
 ### 配置读取
 
 ```typescript
 // src/config/env.ts
+const defaultPublicUrl = 'https://localhost:5000';
+
 export function getAuthBaseUrl(): string {
-  return import.meta.env.VITE_AUTH_BASE_URL || 'http://localhost:5200';
+  const authBaseUrl =
+    window.__RADISH_RUNTIME_CONFIG__?.authBaseUrl ||
+    import.meta.env.VITE_AUTH_BASE_URL ||
+    defaultPublicUrl;
+
+  if (window.location.port === '5000') {
+    return window.location.origin;
+  }
+
+  return authBaseUrl.replace(/\/$/, '');
 }
 
 export function getApiBaseUrl(): string {
-  return import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
+  const apiBaseUrl =
+    window.__RADISH_RUNTIME_CONFIG__?.apiBaseUrl ||
+    import.meta.env.VITE_API_BASE_URL ||
+    defaultPublicUrl;
+
+  if (window.location.port === '5000') {
+    return window.location.origin;
+  }
+
+  return apiBaseUrl.replace(/\/$/, '');
 }
 ```
+
+补充约束：
+
+- 当前推荐让 `VITE_AUTH_BASE_URL` 与 `VITE_API_BASE_URL` 在部署态都指向同一个 Gateway 公开入口。
+- 如果未来确实拆成独立 `auth.example.com` / `api.example.com`，必须同时复核 Gateway 转发、OIDC Issuer、客户端回调地址与 CORS，不能只改前端环境变量。
 
 ## 常见问题
 
@@ -574,14 +616,15 @@ A: HTTP 客户端自动处理：
 
 ## 安全建议
 
-### 1. HTTPS Only
+### 1. HTTPS 入口约束
 
-生产环境必须使用 HTTPS：
-```typescript
-if (import.meta.env.PROD && window.location.protocol !== 'https:') {
-  window.location.href = window.location.href.replace('http:', 'https:');
-}
-```
+生产环境必须通过外部 HTTPS 入口访问 Gateway，例如 `https://radish.example.com`。
+
+补充说明：
+
+- 测试部署也建议直接使用 `https://IP:port`，即使浏览器对自签名证书弹出告警也是预期行为。
+- 不要在前端代码里硬编码把 `http:` 替换成 `https:`；协议、域名与端口应由 `RADISH_PUBLIC_URL` 和运行时配置统一决定。
+- 如果生产环境仍以 `http://` 访问公开入口，通常意味着外部反代或域名配置有误，而不是前端认证逻辑问题。
 
 ### 2. Token 不要暴露
 

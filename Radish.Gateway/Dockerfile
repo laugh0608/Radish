@@ -8,7 +8,12 @@ RUN dotnet publish "./Radish.Gateway/Radish.Gateway.csproj" -c $BUILD_CONFIGURAT
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 EXPOSE 5000
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends openssl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/publish .
 COPY --from=build /src/Certs ./certs
-RUN mkdir -p /app/Logs
-ENTRYPOINT ["dotnet", "Radish.Gateway.dll"]
+COPY --from=build /src/Scripts/docker ./scripts
+RUN chmod +x /app/scripts/*.sh \
+    && mkdir -p /app/Logs
+ENTRYPOINT ["/app/scripts/gateway-entrypoint.sh"]

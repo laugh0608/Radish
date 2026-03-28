@@ -1,81 +1,79 @@
 # Radish.Gateway 配置说明
 
-## 开发环境
+## 开发运行
 
-直接运行即可，使用 `appsettings.json` 中的默认配置：
+Gateway 开发运行默认直接使用 `appsettings.json` 与本地开发证书：
 
 ```bash
 dotnet run --project Radish.Gateway
 ```
 
-## 生产环境部署
+常见本地入口：
 
-Gateway 配置不包含敏感信息，建议通过**环境变量**覆盖配置，无需创建 `appsettings.Local.json`。
+- `https://localhost:5000`
+- `http://localhost:5001`（仅本地 `https` Profile 的辅助重定向端口）
 
-### 必须配置的环境变量
+## 测试部署
+
+测试部署使用仓库现成编排：
 
 ```bash
-# Gateway 公开访问域名
-GatewayService__PublicUrl=https://your-domain.com
-
-# 前端 CORS 域名
-Cors__AllowedOrigins__0=https://your-frontend-domain.com
+docker compose --env-file Deploy/.env.test \
+  -f Deploy/docker-compose.yml \
+  -f Deploy/docker-compose.test.yml up -d
 ```
 
-### 可选配置的环境变量
+测试部署口径：
 
-如果使用 Docker/Kubernetes，内部服务地址可能需要修改：
+- Gateway 容器内直接监听 `https://+:5000`
+- `RADISH_PUBLIC_URL` 通常是 `https://IP:port` 或测试域名
+- 若 `RADISH_GATEWAY_CERT_AUTO_GENERATE=true` 且目标 `.pfx` 不存在，入口脚本会自动生成并复用测试 TLS 证书
+- 浏览器对自签名证书的告警属于预期行为
+
+## 生产部署
+
+生产部署同样使用仓库现成编排：
 
 ```bash
-# 下游服务地址（容器名或服务名）
+docker compose --env-file Deploy/.env.prod \
+  -f Deploy/docker-compose.yml \
+  -f Deploy/docker-compose.prod.yml up -d
+```
+
+生产部署口径：
+
+- 外部 `Nginx / Traefik / Caddy` 提供 HTTPS
+- Gateway 容器内部仅监听 `http://+:5000`
+- `GatewayRuntime__EnableHttpsRedirection=false`
+- `RADISH_PUBLIC_URL` 必须与真实外部域名一致
+
+## 关键变量
+
+常见变量如下：
+
+```bash
+RADISH_PUBLIC_URL=https://radish.example.com
+GatewayService__PublicUrl=https://radish.example.com
+Cors__AllowedOrigins__0=https://radish.example.com
+FrontendService__BaseUrl=https://radish.example.com
 DownstreamServices__ApiService__BaseUrl=http://radish-api:5100
 DownstreamServices__AuthService__BaseUrl=http://radish-auth:5200
-
-# 前端服务地址
-FrontendService__BaseUrl=https://your-frontend-domain.com
-
-# YARP 反向代理集群地址
-ReverseProxy__Clusters__api-cluster__Destinations__api__Address=http://radish-api:5100
-ReverseProxy__Clusters__auth-cluster__Destinations__auth__Address=http://radish-auth:5200
-ReverseProxy__Clusters__docs-cluster__Destinations__docs__Address=http://radish-docs:3100
 ```
 
-### Docker Compose 示例
+测试部署额外需要：
 
-```yaml
-services:
-  radish-gateway:
-    image: radish-gateway:latest
-    ports:
-      - "5000:5000"
-      - "5001:5001"
-    environment:
-      - GatewayService__PublicUrl=https://radish.example.com
-      - Cors__AllowedOrigins__0=https://app.example.com
-      - DownstreamServices__ApiService__BaseUrl=http://radish-api:5100
-      - DownstreamServices__AuthService__BaseUrl=http://radish-auth:5200
-      - FrontendService__BaseUrl=https://app.example.com
-```
-
-### Kubernetes ConfigMap 示例
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: gateway-config
-data:
-  GatewayService__PublicUrl: "https://radish.example.com"
-  Cors__AllowedOrigins__0: "https://app.example.com"
-  DownstreamServices__ApiService__BaseUrl: "http://radish-api:5100"
-  DownstreamServices__AuthService__BaseUrl: "http://radish-auth:5200"
+```bash
+Kestrel__Certificates__Default__Path=/app/certs/gateway-test-cert.pfx
+Kestrel__Certificates__Default__Password=ChangeMeGateway123!
+RADISH_GATEWAY_CERT_AUTO_GENERATE=true
 ```
 
 ## 为什么不需要 appsettings.Local.json？
 
 Gateway 配置特点：
-- ✅ **无敏感信息**：没有数据库密码、API 密钥等
-- ✅ **内部服务**：下游服务不对外公开，地址在容器化部署时相对固定
-- ✅ **环境变量友好**：现代部署工具（Docker、K8s）都支持环境变量注入
 
-因此，**推荐使用环境变量覆盖配置**，无需维护额外的配置文件。
+- 无数据库密码、API 密钥等敏感信息
+- 下游服务地址在容器部署时通常可以通过环境变量或 Compose 统一注入
+- 测试/生产部署都已经通过 `Deploy/` 下的 env-file 和 Compose override 收口
+
+因此，Gateway 一般不需要再维护单独的 `appsettings.Local.json`。

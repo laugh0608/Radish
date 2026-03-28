@@ -56,12 +56,12 @@
 - [x] 已补 `GHCR` 镜像 workflow 资产：`.github/workflows/docker-images.yml` 当前已覆盖 `PR -> build only`、`push dev -> unified push`、`push v* -> unified release push` 三类触发；`frontend` 已接入统一 GHCR 推送规则
 - [x] 已确认 `GHCR` 后端镜像真实产物可用：当前已可通过 `docker pull` 获取 `radish-api / radish-auth / radish-gateway` 镜像，后端包权限、可见性与 tag 规则已完成一轮真实验证
 - [x] 已确认 `GHCR` 前端镜像真实产物可用：当前已可通过 `docker pull` 获取 `radish-frontend` 镜像，前端包权限、可见性与 tag 规则已完成一轮真实验证
-- [x] 已补前端运行时配置注入：`Frontend/scripts/serve-static.mjs` 当前会在容器启动时生成 `/runtime-config.js`，`radish.client / radish.console` 已优先读取运行时配置，`Deploy/docker-compose.dev.yml / docker-compose.prod.yml` 也已补齐 `frontend` 运行时环境变量入口
+- [x] 已补前端运行时配置注入：`Frontend/scripts/serve-static.mjs` 当前会在请求 `/runtime-config.js` 时动态返回运行时配置脚本，`radish.client / radish.console` 已优先读取运行时配置，`Deploy/docker-compose.dev.yml / docker-compose.test.yml / docker-compose.prod.yml` 也已补齐 `frontend` 运行时环境变量入口
 - [x] 已收口前端镜像体积：`Frontend/Dockerfile` 当前已切为 Node 24 轻量多阶段镜像，最终镜像仅保留静态产物与运行时脚本，本地构建验证体积约 `300MB`
 - [x] 已补 `master` 分支保护与 ruleset 资产，当前仓库已切换为“禁止直接 push、仅允许 PR 合并”的最小发布入口
-- [x] 已补首版最小 Docker 资产：`Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile、前端静态托管脚本，以及 `Deploy/docker-compose.yml / docker-compose.dev.yml / docker-compose.prod.yml` 已落地
+- [x] 已补首版最小 Docker 资产：`Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile、前端静态托管脚本，以及 `Deploy/docker-compose.yml / docker-compose.dev.yml / docker-compose.test.yml / docker-compose.prod.yml` 已落地
 - [x] 已完成一轮 Docker build 级验证：前端镜像与 `api / auth / gateway` 三个后端镜像均可构建，`Radish.Api` 发布阶段的重复 `appsettings.json` 冲突也已收口
-- [x] 已完成一轮 Docker 运行态 Smoke 与交付口径收口：Compose 已拆分 `dev / prod` 默认口径，`Gateway` 已支持容器内 HTTP / HTTPS 模式切换与 Forwarded Headers，`base + dev` 已完成 `/`、`/console/`、`/health` 运行态验证，`base + prod` 的 `RADISH_PUBLIC_URL -> OpenIddict__Server__Issuer -> 官方客户端回调地址` 配置链与反代口径也已对齐
+- [x] 已完成一轮 Docker 运行态 Smoke 与交付口径收口：Compose 当前已拆分 `dev / test / prod` 三套默认口径，`Gateway` 已支持容器内 HTTP / HTTPS 模式切换与 Forwarded Headers；`base + dev` 已完成本地联调 Smoke，`base + test` 已收口“容器内 HTTPS + 自动生成测试 TLS / OIDC 证书”口径，`base + prod` 的 `RADISH_PUBLIC_URL -> OpenIddict__Server__Issuer -> 官方客户端回调地址` 配置链与反代口径也已对齐
 - [x] 已完成 `2026-03-26` 首版烟雾联调：WebOS 桌面与应用容器、论坛基础、社区 P0、Console V1，以及 `radish.client` 国风视觉基线 / 主题切换 / i18n 当前均已按首版视角复核通过，用户确认“全部都没啥问题，可以收口了”
 - [x] 已补首版 `dev` 总回归记录：新增 [首版 dev 总回归记录](/guide/dev-first-regression-record)，统一沉淀 `2026-03-23 ~ 2026-03-26` 的 Smoke 结论与当前工程判断
 - [x] 已复跑 `npm run validate:baseline`：前端类型检查、`radish.client` 最小测试、Console 权限扫描、身份语义扫描、后端构建与 `Radish.Api.Tests` 当前均已通过
@@ -84,7 +84,7 @@
 - 通知中心已于 `2026-03-23` 完成一轮真实首版 Smoke，当前从“待联调复核”转入“等待总回归确认”
 - 欢迎 App 已于 `2026-03-23` 完成长文案与开源说明资源化，当前语言切换已覆盖欢迎页主体内容
 - 从 `2026-03-19` 起，国风视觉基线 / 主题切换 / `radish.client` i18n 明确纳入首版范围
-- Docker 镜像构建链已于 `2026-03-25` 完成最小交付收口：build 级验证、Compose dev 运行态 Smoke、Gateway 容器内 HTTP / HTTPS 模式切换，以及 `RADISH_PUBLIC_URL` 驱动的官方 OIDC 回调地址链路均已完成，当前转入总回归前维护
+- Docker 镜像构建链已于 `2026-03-25` 完成最小交付收口：build 级验证、`dev / test / prod` 三套 Compose 口径、Gateway 容器内 HTTP / HTTPS 模式切换，以及 `RADISH_PUBLIC_URL` 驱动的官方 OIDC 回调地址链路均已完成，当前转入总回归前维护
 - WebOS 桌面与应用容器、论坛基础、社区 P0、Console V1，以及 `radish.client` 国风视觉基线 / 主题切换 / i18n 已于 `2026-03-26` 完成一轮首版烟雾联调，当前转入等待总回归确认
 - `GHCR` 后端镜像首次真实产物验证已完成，当前已确认 `docker pull` 可用
 - `GHCR` 前端镜像首次真实产物验证已完成，当前已确认 `docker pull` 可用

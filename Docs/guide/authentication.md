@@ -966,11 +966,27 @@ var hasPermission = PermissionItems
 
 Auth 启动时会在 `Program.cs` 中调用 `LoadOpenIddictCertificate`，相对路径会基于 `builder.Environment.ContentRootPath` 解析成绝对路径，因此在生产环境只需确保证书被挂载到容器内并设置正确的 `OpenIddict__Encryption__*` 环境变量即可。
 
+#### 自动生成与复用策略
+
+当前仓库已补容器启动入口脚本，支持在测试部署与生产部署中“缺失时自动生成、存在时直接复用”：
+
+- `RADISH_AUTH_CERT_AUTO_GENERATE=true` 时，若 `SigningCertificatePath` / `EncryptionCertificatePath` 指向的 `.pfx` 不存在，容器会在启动前自动生成
+- 证书文件会写入挂载目录，因此重启容器时不会重复生成
+- 若证书文件已存在，启动脚本只做复用，不会覆盖现有证书
+- 若后续扩为多实例 `Auth`，所有实例必须共享同一组 OIDC 证书，不能各自独立生成
+
+推荐环境口径如下：
+
+- 开发运行：继续使用仓库内置开发证书或开发密钥
+- 测试部署：自动生成测试用 signing / encryption `.pfx`
+- 生产部署：自动生成或预置正式 OIDC 证书，但必须持久化到共享挂载目录
+
 #### 部署与覆盖配置
 
 1. **放置证书**：将 `auth-signing.pfx`、`auth-encryption.pfx` 拷贝到宿主机安全目录（例如 `/etc/radish/certs/`），以 `600` 权限挂载到容器（`/app/certs`）。
 2. **覆盖配置**：在 `appsettings.Production.json` 或环境变量中设置：
    ```
+   RADISH_AUTH_CERT_AUTO_GENERATE=true
    OpenIddict__Encryption__UseDevelopmentKeys=false
    OpenIddict__Encryption__SigningCertificatePath=/app/certs/auth-signing.pfx
    OpenIddict__Encryption__SigningCertificatePassword=<生产密码>
@@ -998,6 +1014,7 @@ Auth 启动时会在 `Program.cs` 中调用 `LoadOpenIddictCertificate`，相对
 6. **清理旧证书**：确认所有客户端已获取新 Token 后，删除旧 `.pfx` 文件并吊销旧密码，避免被继续使用。
 
 - **注意**：`dev-auth-cert.pfx` 只能用于本地开发，生产环境一定要替换证书与密码，并限制证书文件的访问权限。
+- **补充**：若生产环境启用 `RADISH_AUTH_CERT_AUTO_GENERATE=true`，必须保证 `/app/certs` 对应的挂载目录可持久化；否则容器重建后会生成新的 OIDC 密钥，旧 Token 会立即失效。
 
 ## 12. 调试与排障
 

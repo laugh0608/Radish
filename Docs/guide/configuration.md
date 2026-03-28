@@ -2,7 +2,7 @@
 
 ## 概述
 
-Radish 项目采用多层配置管理策略，以实现开发环境与生产环境的配置隔离，确保敏感数据不会被提交到 Git 仓库。
+Radish 项目采用多层配置管理策略，以实现开发、测试、生产环境的配置隔离，确保敏感数据不会被提交到 Git 仓库。
 
 ## 配置文件结构
 
@@ -281,7 +281,7 @@ touch Radish.Api/appsettings.Local.json
 
 **Radish.Gateway（使用环境变量）**
 
-Gateway 不需要 `appsettings.Local.json`，生产环境通过环境变量覆盖配置：
+Gateway 不需要 `appsettings.Local.json`。开发运行可直接使用默认配置；测试部署与生产部署优先通过 `Deploy/.env.test`、`Deploy/.env.prod` 及对应的 Compose 覆盖文件注入环境变量：
 
 ```bash
 # Docker Compose 示例
@@ -290,9 +290,10 @@ services:
     image: radish-gateway:latest
     environment:
       - GatewayService__PublicUrl=https://your-domain.com
-      - Cors__AllowedOrigins__0=https://your-frontend-domain.com
+      - Cors__AllowedOrigins__0=https://your-domain.com
       - DownstreamServices__ApiService__BaseUrl=http://radish-api:5100
       - DownstreamServices__AuthService__BaseUrl=http://radish-auth:5200
+      - FrontendService__BaseUrl=https://your-domain.com
 ```
 
 详细配置说明请参考 `Radish.Gateway/README.md`
@@ -657,35 +658,23 @@ Gateway 门户页面需要配置服务的公开访问地址，用于页面展示
 
 #### 生产环境配置
 
-参考 `appsettings.Production.example.json`：
+Gateway 在生产部署中推荐直接使用 `Deploy/.env.prod.example` 与 `Deploy/docker-compose.prod.yml`，而不是额外维护单独的 Gateway 生产示例 JSON。典型变量如下：
 
-```json
-{
-  "GatewayService": {
-    "PublicUrl": "https://radish.com"
-  },
-  "DownstreamServices": {
-    "ApiService": {
-      "BaseUrl": "http://api:5100",           // 内网地址，反代到 HTTP 端口
-      "HealthCheckPath": "/health"
-    }
-  },
-  "FrontendService": {
-    "BaseUrl": "https://app.radish.com"
-  },
-  "Cors": {
-    "AllowedOrigins": [
-      "https://app.radish.com",
-      "https://www.radish.com"
-    ]
-  }
-}
+```bash
+RADISH_PUBLIC_URL=https://radish.com
+GatewayService__PublicUrl=https://radish.com
+Cors__AllowedOrigins__0=https://radish.com
+FrontendService__BaseUrl=https://radish.com
+DownstreamServices__ApiService__BaseUrl=http://api:5100
+DownstreamServices__AuthService__BaseUrl=http://auth:5200
+GatewayRuntime__EnableHttpsRedirection=false
 ```
 
 **注意事项**：
 - 生产环境 `DownstreamServices.ApiService.BaseUrl` 使用内网地址（如 Docker 容器名 `http://api:5100`）
-- 公开地址（`PublicUrl`）使用域名，配合反向代理使用
-- Nginx 反向代理会将公网 HTTPS 请求转发到内网 HTTP 端口
+- 公开地址（`GatewayService__PublicUrl` / `RADISH_PUBLIC_URL`）使用真实外部域名
+- 外部 `Nginx` 反向代理会将公网 HTTPS 请求转发到容器内 HTTP 端口
+- 如果是测试部署，则改用 `Deploy/.env.test.example` 与 `Deploy/docker-compose.test.yml`，此时 Gateway 容器内直接提供 HTTPS
 - 详细的反向代理配置请参考 [部署指南](/deployment/guide)
 
 ## 配置示例
@@ -933,7 +922,7 @@ services:
       - Redis__Enable=true
       - Redis__ConnectionString=${REDIS_URL}
     env_file:
-      - .env.production  # 敏感数据从文件加载（不提交到 Git）
+      - Deploy/.env.prod  # 部署态敏感数据从 env-file 加载（不提交到 Git）
 ```
 
 ### Q4: 团队成员如何快速配置？
