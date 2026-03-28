@@ -215,3 +215,16 @@
 
 - **Docker 镜像已补容器启动脚本**：`Radish.Auth/Dockerfile` 与 `Radish.Gateway/Dockerfile` 当前都会带入 `Scripts/docker` 下的证书初始化脚本。
 - **部署指南已改为开发 / 测试 / 生产三套口径**：`deployment/guide.md` 与 `guide/authentication.md` 当前已同步 Gateway TLS 证书、Auth OIDC 证书与持久化复用策略。
+
+### 部署编排与入口文档继续收口
+
+- **本地容器编排已改名为 `local`**：原 `Deploy/docker-compose.dev.yml` 当前已正式改为 `Deploy/docker-compose.local.yml`，只承载“本地构建镜像并启动验证”的职责，不再与日常开发运行混淆。
+- **测试 / 生产部署已完全切到远程镜像口径**：`Deploy/docker-compose.yml` 当前只保留共享结构与 `image:` 引用；`Deploy/docker-compose.test.yml` 与 `Deploy/docker-compose.prod.yml` 默认走 `config + pull + up`，部署机不再承担现场 `build` 职责。
+- **镜像变量入口已补齐**：`Deploy/.env.test.example` 与 `Deploy/.env.prod.example` 当前已补 `RADISH_FRONTEND_IMAGE / RADISH_API_IMAGE / RADISH_AUTH_IMAGE / RADISH_GATEWAY_IMAGE`，测试环境默认面向 `dev-*` 镜像，生产环境明确要求固定 release tag。
+- **根目录入口文档已同步**：`README.md`、`deployment/guide.md`、`guide/gateway.md`、`guide/configuration.md` 以及规划页当前都已统一为“开发运行直跑、`local` 做本地容器验证、`test / prod` 拉取远程镜像”的口径。
+
+### 本轮验证
+
+- ✅ `docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml config` 通过。
+- ✅ `docker compose --env-file Deploy/.env.test.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml config` 通过。
+- ✅ `docker compose --env-file Deploy/.env.prod.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config` 通过。

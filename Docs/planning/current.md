@@ -8,8 +8,8 @@
 
 - **里程碑**：`M12 社区功能冲刺`
 - **当前主线**：`首版 dev 边界冻结与全局主线补齐`
-- **当前阶段**：`截至 2026-03-27，社区相关主功能与首版范围内的大部分业务 / 体验主线已完成首轮闭环，但这仍不等于整体产品已经完全达到首版 dev 条件。当前已按“所有纳入首版范围的核心功能主线至少完成 70%”重新定义首版 dev 边界：先补齐未完成或待复核的全局主线，再并行推进国风视觉基线 / 主题切换与 radish.client i18n，并把最小 CI 门禁与 Docker 镜像构建链补成首版工程门槛。当前 master PR 已完成 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 一轮真实通过并成功合并到 `master`，`dev` 也已同步 `master` 合并结果。radish.client i18n 已完成桌面壳层、应用注册、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天、通知中心、个人中心高频模块的首轮覆盖；通知中心 / 个人中心与桌面壳层残余主题与语言烟雾验证也已完成。通知中心已于 `2026-03-23` 完成一轮真实首版 Smoke，认证 / OIDC / Gateway 基础入口也已于同日完成真实首版 Smoke，当前均已转入等待总回归确认。本轮欢迎 App 已完成长文案与开源说明资源化，当前语言切换不再只覆盖壳层与短标签，而是进入欢迎页主体内容；Console 与社区主链的多项边界也已完成收口。首版最小 Docker 资产与交付口径已于 `2026-03-25` 完成本轮收口，WebOS 桌面与应用容器、论坛基础、社区 P0、Console V1，以及 `radish.client` 国风视觉基线 / 主题切换 / i18n 也已于 `2026-03-26` 完成一轮首版烟雾联调并确认可收口。当前已确认 `GHCR` 后端与前端镜像真实产物均可被 `docker pull` 获取，且 `Frontend/Dockerfile` 已收口为轻量多阶段运行时镜像，本地验证体积约 `300MB`；在此基础上，当前结论进一步收束为：首版 `dev` 当前可发内部开发版，下一阶段主线转为冻结统一镜像推送口径，并在条件具备后执行上线前交付复核。详见：[首版 dev 边界](/planning/dev-first-scope)。`
-- **复核日期**：`2026-03-27`
+- **当前阶段**：`截至 2026-03-28，社区相关主功能与首版范围内的大部分业务 / 体验主线已完成首轮闭环，但这仍不等于整体产品已经完全达到首版 dev 条件。当前已按“所有纳入首版范围的核心功能主线至少完成 70%”重新定义首版 dev 边界：先补齐未完成或待复核的全局主线，再并行推进国风视觉基线 / 主题切换与 radish.client i18n，并把最小 CI 门禁与 Docker 镜像构建链补成首版工程门槛。当前 master PR 已完成 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 一轮真实通过并成功合并到 `master`，`dev` 也已同步 `master` 合并结果。radish.client i18n 已完成桌面壳层、应用注册、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天、通知中心、个人中心高频模块的首轮覆盖；通知中心 / 个人中心与桌面壳层残余主题与语言烟雾验证也已完成。通知中心已于 `2026-03-23` 完成一轮真实首版 Smoke，认证 / OIDC / Gateway 基础入口也已于同日完成真实首版 Smoke，当前均已转入等待总回归确认。本轮欢迎 App 已完成长文案与开源说明资源化，当前语言切换不再只覆盖壳层与短标签，而是进入欢迎页主体内容；Console 与社区主链的多项边界也已完成收口。首版最小 Docker 资产与交付口径已于 `2026-03-25` 完成本轮收口，WebOS 桌面与应用容器、论坛基础、社区 P0、Console V1，以及 `radish.client` 国风视觉基线 / 主题切换 / i18n 也已于 `2026-03-26` 完成一轮首版烟雾联调并确认可收口。当前已确认 `GHCR` 后端与前端镜像真实产物均可被 `docker pull` 获取，且 `Frontend/Dockerfile` 已收口为轻量多阶段运行时镜像，本地验证体积约 `300MB`；最新于 `2026-03-28`，部署编排与入口文档又完成一轮收口：开发运行继续独立于 Compose，本地容器验证统一改为 `Deploy/docker-compose.local.yml`，测试 / 生产部署统一改为拉取远程镜像，部署机不再承担现场构建职责。在此基础上，当前结论进一步收束为：首版 `dev` 当前可发内部开发版，下一阶段主线转为冻结统一镜像推送口径，并在条件具备后执行上线前交付复核。详见：[首版 dev 边界](/planning/dev-first-scope)。`
+- **复核日期**：`2026-03-28`
 
 ## 当前主线：首版 dev 边界冻结与全局主线补齐
 
@@ -62,6 +62,7 @@
 - [x] 已补首版最小 Docker 资产：`Radish.Api / Radish.Auth / Radish.Gateway / Frontend` Dockerfile、前端静态托管脚本，以及 `Deploy/docker-compose.yml / docker-compose.local.yml / docker-compose.test.yml / docker-compose.prod.yml` 已落地
 - [x] 已完成一轮 Docker build 级验证：前端镜像与 `api / auth / gateway` 三个后端镜像均可构建，`Radish.Api` 发布阶段的重复 `appsettings.json` 冲突也已收口
 - [x] 已完成一轮 Docker 运行态验证与交付口径收口：开发运行已明确独立于 Compose；Compose 当前已拆分 `local / test / prod` 三套默认口径，`Gateway` 已支持容器内 HTTP / HTTPS 模式切换与 Forwarded Headers；`base + local` 已完成本地容器验证，`base + test` 已收口“容器内 HTTPS + 自动生成测试 TLS / OIDC 证书”口径，`base + prod` 的 `RADISH_PUBLIC_URL -> OpenIddict__Server__Issuer -> 官方客户端回调地址` 配置链与反代口径也已对齐
+- [x] 已将部署编排角色继续收口：`local` 当前仅用于本地容器构建 / 启动验证，`test / prod` 当前统一改为 `config + pull + up` 的远程镜像部署；根目录 `README` 与部署文档已同步到同一口径
 - [x] 已完成 `2026-03-26` 首版烟雾联调：WebOS 桌面与应用容器、论坛基础、社区 P0、Console V1，以及 `radish.client` 国风视觉基线 / 主题切换 / i18n 当前均已按首版视角复核通过，用户确认“全部都没啥问题，可以收口了”
 - [x] 已补首版 `dev` 总回归记录：新增 [首版 dev 总回归记录](/guide/dev-first-regression-record)，统一沉淀 `2026-03-23 ~ 2026-03-26` 的 Smoke 结论与当前工程判断
 - [x] 已复跑 `npm run validate:baseline`：前端类型检查、`radish.client` 最小测试、Console 权限扫描、身份语义扫描、后端构建与 `Radish.Api.Tests` 当前均已通过
@@ -72,7 +73,7 @@
 - 第 1 步：维持当前“可发内部开发版”的总回归口径，避免后续文档与实际状态再次漂移
 - 第 2 步：继续维护 `radish.client` 的残余深层样式与边角文案，但不再把这些尾项视为新的待启动主线
 - 第 3 步：如近期再发生跨层改动，优先重跑 `npm run validate:baseline`；涉及宿主 / 配置时再补 `npm run validate:baseline:host`
-- 第 4 步：冻结当前统一镜像推送与轻量前端镜像口径，避免后续文档与真实产物再次漂移
+- 第 4 步：冻结当前统一镜像推送与 `local / test / prod` 部署口径，避免后续文档与真实产物再次漂移
 - 第 5 步：如近期再调整 Dockerfile / workflow / Compose，优先复核前端镜像体积与 `GHCR` 产物可拉取性
 - 第 6 步：待具备真实 `RADISH_PUBLIC_URL`、Auth 证书与镜像推送 / 部署条件后，再执行上线前交付复核清单并补联调记录
 - 第 7 步：在主线功能、体验主线与工程门槛满足后，再决定首版 dev 之后的增强优先级
