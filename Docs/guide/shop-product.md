@@ -6,6 +6,8 @@
 
 ### 3.1.1 商品实体（Product）
 
+> **2026-03 对齐说明**：商品图片字段已经从“直接存 URL”收口为“存附件 Id，URL 运行时派生”。下方模型请以当前代码口径理解：`IconAttachmentId` / `CoverAttachmentId` 为真值，`voIcon` / `voCoverImage` 为展示字段。
+
 ```csharp
 /// <summary>
 /// 商品实体
@@ -22,28 +24,22 @@ public class Product : RootEntityTKey<long>, ITenantEntity
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// 商品副标题
-    /// </summary>
-    [SugarColumn(Length = 200, IsNullable = true)]
-    public string? Subtitle { get; set; }
-
-    /// <summary>
     /// 商品描述（支持 Markdown）
     /// </summary>
-    [SugarColumn(ColumnDataType = "text", IsNullable = true)]
+    [SugarColumn(Length = 2000, IsNullable = true)]
     public string? Description { get; set; }
 
     /// <summary>
-    /// 商品主图 URL
+    /// 商品图标附件 Id
     /// </summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? ImageUrl { get; set; }
+    [SugarColumn(IsNullable = true)]
+    public long? IconAttachmentId { get; set; }
 
     /// <summary>
-    /// 商品图片列表（JSON 数组）
+    /// 商品封面附件 Id
     /// </summary>
-    [SugarColumn(ColumnDataType = "text", IsNullable = true)]
-    public string? Images { get; set; }
+    [SugarColumn(IsNullable = true)]
+    public long? CoverAttachmentId { get; set; }
 
     /// <summary>
     /// 商品分类 ID
@@ -242,6 +238,8 @@ public class Product : RootEntityTKey<long>, ITenantEntity
 
 ### 3.1.2 商品分类实体（ProductCategory）
 
+> **2026-03 对齐说明**：分类图标同样已经改为附件 Id 模型，`IconAttachmentId` 为持久化真值，`voIcon` 为运行时展示字段。
+
 ```csharp
 /// <summary>
 /// 商品分类实体
@@ -256,10 +254,10 @@ public class ProductCategory : RootEntityTKey<string>
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// 分类图标（MDI 图标名或 URL）
+    /// 分类图标附件 Id
     /// </summary>
-    [SugarColumn(Length = 100, IsNullable = true)]
-    public string? Icon { get; set; }
+    [SugarColumn(IsNullable = true)]
+    public long? IconAttachmentId { get; set; }
 
     /// <summary>
     /// 分类描述

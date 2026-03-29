@@ -407,10 +407,15 @@ services:
 **说明**：
 - `Type`：存储后端类型（`Local`/`MinIO`/`OSS`）
 - `Local.BasePath`：本地文件存储根目录（相对于仓库根目录）
-- `Local.BaseUrl`：对外访问 URL 前缀
+- `Local.BaseUrl`：底层静态文件暴露前缀，不再作为附件业务真值
 - `ImageProcessing.GenerateMultipleSizes`：是否生成多尺寸图片
 - `Watermark`：水印配置（默认关闭）
 - `Deduplication`：文件去重配置（默认启用）
+
+补充口径：
+
+- 当前附件业务统一以 `attachmentId` 为真值，对外展示统一推荐 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail`。
+- 因此 `Local.BaseUrl=/uploads` 主要影响底层文件暴露与静态存储路径，不应被前端正文或业务表当作长期引用地址写回数据库。
 
 ### 2.2 Hangfire 定时任务配置
 

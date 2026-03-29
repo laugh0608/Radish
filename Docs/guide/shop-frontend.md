@@ -227,7 +227,7 @@ export const ProductDetail = () => {
 
   return (
     <div className="product-detail">
-      <ProductImage src={product.imageUrl} />
+      <ProductImage src={resolveMediaUrl(product.voCoverImage || product.voIcon)} />
       <ProductInfo product={product}>
         <QuantitySelector value={quantity} onChange={setQuantity} max={10} />
         <PurchaseButton
@@ -313,7 +313,7 @@ export const OrderItem = ({ order }: { order: Order }) => {
         time={order.createTime}
       />
       <OrderItemProduct
-        image={order.productImage}
+        image={resolveMediaUrl(order.voProductIcon)}
         name={order.productName}
         quantity={order.quantity}
         price={order.paidAmount}
@@ -525,7 +525,7 @@ interface ProductCardProps {
 export const ProductCard = ({ product, onClick, showActions = true }: ProductCardProps) => {
   return (
     <div className="product-card" onClick={onClick}>
-      <ProductImage src={product.imageUrl} />
+      <ProductImage src={resolveMediaUrl(product.voCoverImage || product.voIcon)} />
       {product.isHot && <Badge text="热销" color="red" />}
       {product.isNew && <Badge text="新品" color="blue" />}
       <ProductName>{product.name}</ProductName>
@@ -615,7 +615,7 @@ export const CategoryNav = ({ categories }: { categories: Category[] }) => {
       {categories.map((category) => (
         <CategoryItem
           key={category.id}
-          icon={category.icon}
+          icon={resolveMediaUrl(category.voIcon)}
           name={category.name}
           onClick={() => navigate(`/products?category=${category.id}`)}
         />
@@ -1305,7 +1305,7 @@ request.interceptors.response.use(
 ```tsx
 <article className="product-card">
   <figure>
-    <img src={product.imageUrl} alt={product.name} />
+    <img src={resolveMediaUrl(product.voCoverImage || product.voIcon)} alt={product.name} />
   </figure>
   <h3>{product.name}</h3>
   <p>{product.subtitle}</p>

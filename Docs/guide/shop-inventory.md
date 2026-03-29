@@ -6,6 +6,8 @@
 
 ### 5.1.1 用户权益/背包实体（UserInventory）
 
+> **2026-03 对齐说明**：背包道具图标同样已经收口为“附件快照 Id + 运行时 URL 派生”。实体层以 `ItemIconAttachmentId` 为真值，列表 / 详情展示时再解析 `ItemIcon`。
+
 ```csharp
 /// <summary>
 /// 用户权益/背包实体
@@ -46,10 +48,10 @@ public class UserInventory : RootEntityTKey<long>, ITenantEntity
     public string ItemName { get; set; } = string.Empty;
 
     /// <summary>
-    /// 物品图标
+    /// 物品图标附件快照 Id
     /// </summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? ItemIcon { get; set; }
+    [SugarColumn(IsNullable = true)]
+    public long? ItemIconAttachmentId { get; set; }
 
     /// <summary>
     /// 物品描述
@@ -351,7 +353,7 @@ private async Task<long> GrantBenefitAsync(Order order)
         ItemType = InventoryItemType.Benefit,
         BenefitType = benefitType,
         ItemName = order.ProductName,
-        ItemIcon = order.ProductImage,
+        ItemIconAttachmentId = order.ProductIconAttachmentId,
         EffectParams = order.EffectParams,
         Quantity = 1,
         Status = InventoryStatus.Active,
@@ -428,7 +430,7 @@ private async Task<long> GrantConsumableAsync(Order order)
         ItemType = InventoryItemType.Consumable,
         ConsumableType = consumableType,
         ItemName = order.ProductName,
-        ItemIcon = order.ProductImage,
+        ItemIconAttachmentId = order.ProductIconAttachmentId,
         EffectParams = order.EffectParams,
         Quantity = order.Quantity,
         Status = InventoryStatus.Active,
@@ -884,4 +886,3 @@ public async Task<int> CalculateCoinWithBoostAsync(long userId, int baseCoins)
 ---
 
 > 下一篇：[6. 后端设计](/guide/shop-backend)
-

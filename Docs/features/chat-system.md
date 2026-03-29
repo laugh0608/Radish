@@ -170,14 +170,6 @@ public class ChannelMessage : RootEntityTKey<long>, IDeleteFilter
     /// <summary>图片附件 ID（Type=Image 时有值）</summary>
     public long? AttachmentId { get; set; }
 
-    /// <summary>图片 URL（冗余，避免联查 Attachment 表）</summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? ImageUrl { get; set; }
-
-    /// <summary>图片缩略图 URL</summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? ImageThumbnailUrl { get; set; }
-
     public DateTime CreateTime { get; set; }
 
     // Phase 2：消息置顶
@@ -274,8 +266,9 @@ public class ChannelMessageVo
     public string? VoContent { get; set; }
     public long? VoReplyToId { get; set; }
     public ChannelMessageVo? VoReplyTo { get; set; }  // 引用消息快照（仅含基本字段）
-    public string? VoImageUrl { get; set; }
-    public string? VoImageThumbnailUrl { get; set; }
+    public long? VoAttachmentId { get; set; }
+    public string? VoImageUrl { get; set; }           // 运行时由 attachmentId 派生
+    public string? VoImageThumbnailUrl { get; set; }  // 运行时由 attachmentId 派生
     public bool VoIsRecalled { get; set; }            // IsDeleted=true 时为 true，内容置空
     public DateTime VoCreateTime { get; set; }
     public bool VoIsPinned { get; set; }              // Phase 2：消息是否被置顶
@@ -458,10 +451,14 @@ interface SendMessageRequest {
   content?: string;        // 文字内容（Type=Text 必填；Type=Image 为可选说明）
   replyToId?: number;      // 引用消息 ID
   attachmentId?: number;   // Type=Image 时必填
-  imageUrl?: string;       // 上传后的图片 URL（与 attachmentId 二选一提交）
-  imageThumbnailUrl?: string;
 }
 ```
+
+当前口径说明：
+
+- `ChannelMessage` 实体只持久化 `AttachmentId`，不再冗余保存 `ImageUrl` / `ImageThumbnailUrl`。
+- 前端发送图片消息时只向服务端提交 `attachmentId`。
+- `VoImageUrl` / `VoImageThumbnailUrl` 只是服务端基于 `attachmentId` 与当前资源解析规则返回的展示字段。
 
 ### GetHistory 分页策略
 

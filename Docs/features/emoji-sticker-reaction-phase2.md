@@ -4,7 +4,7 @@
 >
 > **版本**: v26.3.0
 >
-> **最后更新**: 2026.03.01
+> **最后更新**: 2026.03.29
 >
 > **关联文档**：
 > [表情包与 Reaction 系统设计](./emoji-sticker-system.md) ·
@@ -57,7 +57,7 @@ public class ReactionSummaryVo
     public string VoEmojiValue { get; set; } = string.Empty;     // 😀 / radish_girl/happy
     public int VoCount { get; set; }                             // 聚合计数
     public bool VoIsReacted { get; set; }                        // 当前登录用户是否已回应
-    public string? VoThumbnailUrl { get; set; }                  // sticker 缩略图
+    public string? VoThumbnailUrl { get; set; }                  // sticker 缩略图（运行时由 StickerAttachmentId 派生）
 }
 ```
 
@@ -65,6 +65,7 @@ public class ReactionSummaryVo
 
 - `VoCount <= 0` 的项不返回给前端
 - `VoThumbnailUrl` 仅在 `VoEmojiType=sticker` 时有意义
+- `VoThumbnailUrl` 属于运行时展示字段，不是 `Reaction` 实体的持久化真值；服务端应基于 `StickerAttachmentId` 派生当前环境可访问的缩略图地址
 
 ---
 
@@ -323,4 +324,3 @@ public class ReactionSummaryVo
 
 - `W11-QA-1`：回归清单执行（桌面/移动/无障碍）
 - `W11-DOC-1`：同步更新 `development-plan` 与 `2026-03` 周志
-

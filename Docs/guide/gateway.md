@@ -43,7 +43,7 @@ Radish.Gateway (http://gateway:5000，容器内仅提供 HTTP)
 
 统一路由：
     ├─→ /api/** (业务 API → Radish.Api :5100)
-    ├─→ /uploads/** (上传文件 → Radish.Api :5100)
+    ├─→ /uploads/** (底层静态文件 / 存储层兼容路径 → Radish.Api :5100)
     ├─→ /scalar/** (API 文档 → Radish.Api :5100)
     ├─→ /openapi/** (OpenAPI 规范 → Radish.Api :5100)
     ├─→ /hangfire/** (定时任务面板 → Radish.Api :5100)
@@ -141,7 +141,7 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 | 路径模式 | 目标服务 | 说明 | 特殊配置 |
 |---------|---------|------|---------|
 | `/api/**` | Radish.Api (:5100) | 业务 API 接口 | - |
-| `/uploads/**` | Radish.Api (:5100) | 上传文件静态资源 | - |
+| `/uploads/**` | Radish.Api (:5100) | 底层静态文件暴露 / 兼容路径 | - |
 | `/scalar/**` | Radish.Api (:5100) | Scalar API 文档 | - |
 | `/openapi/**` | Radish.Api (:5100) | OpenAPI 规范 | - |
 | `/hangfire/**` | Radish.Api (:5100) | Hangfire 定时任务面板 | - |
@@ -149,6 +149,12 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 | `/Account/**` | Radish.Auth (:5200) | OIDC 登录页面 | X-Forwarded-* 头 |
 | `/connect/**` | Radish.Auth (:5200) | OIDC 协议端点 | X-Forwarded-* 头 |
 | `/**` | radish.client (:3000) | 前端应用（最低优先级） | WebSocket, Order: 1000 |
+
+补充说明：
+
+- 附件业务公开访问口径已经切换到 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail`。
+- 如果 Gateway 是系统唯一对外入口，那么反向代理层应显式把 `/_assets/attachments/**` 转发到 `Radish.Api`，否则前端通过 Gateway 访问媒体资源时会落到前端兜底路由。
+- `/uploads/**` 可以继续保留为底层静态目录或兼容路径，但不再是业务正文、商品、贴图、聊天图片等场景的推荐公开引用口径。
 
 #### 完整配置示例
 

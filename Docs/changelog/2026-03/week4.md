@@ -273,3 +273,12 @@
 - ✅ `docker compose --env-file Deploy/.env.test.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml config` 通过。
 - ✅ `docker compose --env-file Deploy/.env.prod.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config` 通过。
 - ✅ `v26.3.2-test / v26.3.2-release` 已完成 tag 驱动镜像构建、远程镜像拉取，以及 `base + test` / `base + prod` 真实部署验收。
+
+## 2026-03-29 (周日)
+
+### 附件协议与部署文档收口
+
+- **附件业务真值已从“URL”彻底收口为“附件标识”**：贴图、Reaction、聊天图片、商品图标 / 封面、订单商品图标快照，以及论坛 / 评论 / Wiki 正文中的图片与文档引用，当前统一围绕 `attachmentId` 与 `attachment://{id}` 协议建模。
+- **运行时资源访问口径已统一**：公开媒体地址当前统一收口为 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail`，`AttachmentVo.voUrl` / `voThumbnailUrl`、`StickerVo.voImageUrl` / `voThumbnailUrl`、`ChannelMessageVo.voImageUrl` / `voImageThumbnailUrl` 等均明确为运行时派生字段，不再被设计文档描述为数据库真值。
+- **换域名时的运维边界已明确**：部署文档、配置文档与 Gateway 文档当前已统一说明，更换域名时应调整 `RADISH_PUBLIC_URL`、反向代理与 OIDC 配置，而不再需要手工更新附件类数据库字段。
+- **商城 / 论坛 / 聊天 / 贴图相关文档已同步对齐**：前后端设计、功能设计与上传设计文档已补齐商品图标附件快照、背包图标附件快照、正文附件协议，以及 Gateway 对 `/_assets/attachments/**` 的公开访问要求。

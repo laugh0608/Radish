@@ -974,7 +974,8 @@ var products = await _productRepository.Context
         Id = p.Id,
         Name = p.Name,
         Price = p.Price,
-        ImageUrl = p.ImageUrl
+        IconAttachmentId = p.IconAttachmentId,
+        CoverAttachmentId = p.CoverAttachmentId
     })
     .ToPageListAsync(pageIndex, pageSize);
 ```

@@ -50,6 +50,8 @@
 | Console 管理后台列表行 | `40×40px` | `thumbnailUrl`（缩略图） | 静止图 |
 | Console BatchUploadConfirmTable | `48×48px` | 上传完成后的原图预览 | hover 时播放动图 |
 
+> 说明：本表中的 `imageUrl` / `thumbnailUrl` 都指 `StickerVo` 的运行时展示字段，真实业务真值仍然是 `AttachmentId`。
+
 ### 1.3 正文内嵌 Sticker 的排版行为
 
 ```css
@@ -95,7 +97,7 @@ Popover 定位：触发按钮的上方或下方（根据视口空间自动决定
 ### 2.2 Tab 栏
 
 - 第一个 Tab：Unicode Emoji（图标用 `mdi:emoticon-happy-outline`）
-- 后续 Tab：各表情包分组，展示分组 `CoverImageUrl`（24×24px，圆形裁剪）
+- 后续 Tab：各表情包分组，展示分组 `voCoverImageUrl`（由 `CoverAttachmentId` 运行时派生，24×24px，圆形裁剪）
 - 分组过多时 Tab 栏水平滚动（隐藏滚动条，支持鼠标横向滚动）
 - 当前激活 Tab 下方显示 `2px` 主题色底线
 

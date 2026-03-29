@@ -48,7 +48,7 @@
 
 - Console 本阶段无需直接实现 `ReactionBar`，但需确保 Sticker 元数据可稳定支撑 Reaction 场景：
   - `IsEnabled` 状态准确
-  - `ThumbnailUrl` 可用
+  - `VoThumbnailUrl` 可稳定解析
   - `Code` 稳定且不可复用
 - 若后续接入 Console 侧 Reaction 运营页，接口契约以 [Reaction Phase 2 设计冻结稿](./emoji-sticker-reaction-phase2.md) 为准
 
@@ -105,7 +105,7 @@ Frontend/radish.console/src/pages/Stickers/
 | 标识符（Code） | 文本 | 必填，`[a-z0-9_]`，1–100 字符，全局唯一 | 编辑时只读（不可修改） |
 | 类型（GroupType） | 单选 | 必填 | Official / Premium |
 | 描述（Description） | 文本域 | 可选，最长 500 字符 | |
-| 封面图（CoverImageUrl） | 图片上传 | 可选，≤ 2MB，PNG/WebP/JPG | 上传后展示预览，显示于 StickerPicker Tab |
+| 封面图（CoverAttachmentId） | 图片上传 | 可选，≤ 2MB，PNG/WebP/JPG | 上传后回填附件 ID，并通过 `voCoverImageUrl` 预览，显示于 StickerPicker Tab |
 | 是否启用（IsEnabled） | 开关 | 默认开启 | |
 
 ### Code 字段行为
@@ -123,7 +123,7 @@ Frontend/radish.console/src/pages/Stickers/
   accept=".png,.webp,.jpg,.jpeg"
   maxSize={2 * 1024 * 1024}
   uploadUrl="/api/v1/Attachment/UploadImage"
-  onSuccess={(attachment) => form.setValue('coverImageUrl', attachment.url)}
+  onSuccess={(attachment) => form.setValue('coverAttachmentId', attachment.attachmentId)}
   withAuth
 />
 ```
@@ -241,7 +241,7 @@ interface BatchAddStickersRequest {
 
 后端处理逻辑：
 1. 校验每个 Code 在组内的唯一性（批量校验，返回哪些 Code 冲突）
-2. 从 Attachment 获取 `ImageUrl`，调用 `ImageProcessorService` 生成缩略图（GIF 取第一帧）
+2. 根据 `AttachmentId` 读取原始文件，生成或校验缩略图（GIF 取第一帧）
 3. 设置 `IsAnimated`（根据文件扩展名或 `Attachment.ContentType`）
 4. 批量 `INSERT` Sticker 记录
 5. 失效 Redis 缓存 `sticker:groups:{tenantId}`
