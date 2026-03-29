@@ -43,7 +43,7 @@ public class AttachmentProfile : Profile
     }
 }
 
-internal sealed class AttachmentVoUrlResolver : IValueResolver<Attachment, AttachmentVo, string>
+public sealed class AttachmentVoUrlResolver : IValueResolver<Attachment, AttachmentVo, string>
 {
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
@@ -58,7 +58,7 @@ internal sealed class AttachmentVoUrlResolver : IValueResolver<Attachment, Attac
     }
 }
 
-internal sealed class AttachmentVoThumbnailUrlResolver : IValueResolver<Attachment, AttachmentVo, string?>
+public sealed class AttachmentVoThumbnailUrlResolver : IValueResolver<Attachment, AttachmentVo, string?>
 {
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 

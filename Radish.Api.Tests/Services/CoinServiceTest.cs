@@ -33,16 +33,20 @@ namespace Radish.Api.Tests.Services;
 public class CoinServiceTest
 {
     private readonly Mock<IMapper> _mapperMock;
-    private readonly Mock<IBaseRepository<UserBalance>> _userBalanceRepositoryMock;
+    private readonly Mock<IUserBalanceRepository> _userBalanceRepositoryMock;
     private readonly Mock<IBaseRepository<CoinTransaction>> _coinTransactionRepositoryMock;
     private readonly Mock<IBaseRepository<BalanceChangeLog>> _balanceChangeLogRepositoryMock;
 
     public CoinServiceTest()
     {
         _mapperMock = new Mock<IMapper>();
-        _userBalanceRepositoryMock = new Mock<IBaseRepository<UserBalance>>();
+        _userBalanceRepositoryMock = new Mock<IUserBalanceRepository>();
         _coinTransactionRepositoryMock = new Mock<IBaseRepository<CoinTransaction>>();
         _balanceChangeLogRepositoryMock = new Mock<IBaseRepository<BalanceChangeLog>>();
+
+        _userBalanceRepositoryMock
+            .Setup(r => r.QueryByUserIdIncludingDeletedAsync(It.IsAny<long>()))
+            .ReturnsAsync((UserBalance?)null);
     }
 
     #region 余额查询测试

@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using Radish.Common;
+using Radish.Common.CoreTool;
 using Radish.Common.OptionTool;
 using SqlSugar;
 using System.Security.Cryptography;
@@ -20,17 +20,16 @@ public class LocalFileStorage : IFileStorage
 {
     private readonly FileStorageOptions _options;
     private readonly string _rootPath;
-    private readonly IWebHostEnvironment _environment;
 
-    public LocalFileStorage(IOptions<FileStorageOptions> options, IWebHostEnvironment environment)
+    public LocalFileStorage(IOptions<FileStorageOptions> options)
     {
         _options = options.Value;
-        _environment = environment;
 
-        // 将相对路径转换为绝对路径
+        // 统一相对于解决方案根目录解析，避免启动目录变化导致附件根路径漂移。
+        var solutionRoot = AppPathTool.GetSolutionRootOrBasePath();
         _rootPath = Path.IsPathRooted(_options.Local.BasePath)
-            ? _options.Local.BasePath
-            : Path.Combine(_environment.ContentRootPath, _options.Local.BasePath);
+            ? Path.GetFullPath(_options.Local.BasePath)
+            : Path.GetFullPath(Path.Combine(solutionRoot, _options.Local.BasePath));
 
         // 确保根目录存在
         if (!Directory.Exists(_rootPath))

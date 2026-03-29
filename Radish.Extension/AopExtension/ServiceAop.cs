@@ -15,15 +15,7 @@ public class ServiceAop : IInterceptor
     /// <param name="invocation"></param>
     public void Intercept(IInvocation invocation)
     {
-        string json;
-        try
-        {
-            json = JsonConvert.SerializeObject(invocation.Arguments);
-        }
-        catch (Exception ex)
-        {
-            json = "无法序列化，可能是 lambda 表达式等原因造成，按照框架优化代码" + ex.ToString();
-        }
+        var json = LogPayloadSerializer.Serialize(invocation.Arguments);
 
         DateTime startTime = DateTime.Now;
         AopLogInfoTool apiLogAopInfo = new AopLogInfoTool
@@ -32,7 +24,7 @@ public class ServiceAop : IInterceptor
             OpUserName = "",
             RequestMethodName = invocation.Method.Name,
             RequestParamsName = string.Join(", ", invocation.Arguments.Select(a => (a ?? "").ToString()).ToArray()),
-            ResponseJsonData = json
+            RequestParamsData = json
         };
 
         try
@@ -64,21 +56,11 @@ public class ServiceAop : IInterceptor
             // 同步
             else
             {
-                string jsonResult;
-                try
-                {
-                    jsonResult = JsonConvert.SerializeObject(invocation.ReturnValue);
-                }
-                catch (Exception ex)
-                {
-                    jsonResult = "无法序列化，可能是 lambda 表达式等原因造成，按照框架优化代码" + ex.ToString();
-                }
-
                 DateTime endTime = DateTime.Now;
                 string responseTime = (endTime - startTime).Milliseconds.ToString();
                 apiLogAopInfo.ResponseTime = endTime.ToString("yyyy-MM-dd hh:mm:ss fff");
                 apiLogAopInfo.ResponseIntervalTime = responseTime + "ms";
-                apiLogAopInfo.ResponseJsonData = jsonResult;
+                apiLogAopInfo.ResponseJsonData = LogPayloadSerializer.Serialize(invocation.ReturnValue);
                 Console.WriteLine(JsonConvert.SerializeObject(apiLogAopInfo));
             }
         }
@@ -96,7 +78,7 @@ public class ServiceAop : IInterceptor
         string responseTime = (endTime - startTime).Milliseconds.ToString();
         apiLogAopInfo.ResponseTime = endTime.ToString("yyyy-MM-dd hh:mm:ss fff");
         apiLogAopInfo.ResponseIntervalTime = responseTime + "ms";
-        apiLogAopInfo.ResponseJsonData = JsonConvert.SerializeObject(o);
+        apiLogAopInfo.ResponseJsonData = LogPayloadSerializer.Serialize(o);
 
         await Task.CompletedTask;
         // await Task.Run(() => { Console.WriteLine("执行成功-->" + JsonConvert.SerializeObject(apiLogAopInfo)); });

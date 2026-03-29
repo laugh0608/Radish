@@ -34,6 +34,7 @@ export const Dock = () => {
   const [time, setTime] = useState(new Date());
   const [isExpanded, setIsExpanded] = useState(false); // 默认为灵动岛状态
   const [pollingUnreadCount, setPollingUnreadCount] = useState(0); // 轮询降级时的未读数
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
   const currentLanguage = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'zh';
   const timeLocale = currentLanguage === 'en' ? 'en-US' : 'zh-CN';
   const languageIcon = currentLanguage === 'en' ? 'mdi:format-letter-case' : 'mdi:translate-variant';
@@ -57,7 +58,37 @@ export const Dock = () => {
     return `${apiBaseUrl}/${url}`;
   };
 
+  const buildAvatarText = (name: string): string => {
+    const source = name.trim();
+    if (!source) return '?';
+    return source.charAt(0).toUpperCase();
+  };
+
+  const buildAvatarStyle = (seed: string) => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i += 1) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+
+    const hue = Math.abs(hash) % 360;
+    return {
+      backgroundColor: `hsl(${hue} 80% 92%)`,
+      color: `hsl(${hue} 45% 30%)`
+    };
+  };
+
   const avatarSrc = resolveAvatarUrl(avatarThumbnailUrl || avatarUrl);
+  const avatarImageSrc = avatarLoadError ? undefined : avatarSrc;
+  const avatarSeed = userName?.trim() || 'User';
+  const avatarFallbackText = buildAvatarText(avatarSeed);
+  const avatarContainerStyle = {
+    cursor: loggedIn ? 'pointer' : 'default',
+    ...(loggedIn && !avatarImageSrc ? buildAvatarStyle(avatarSeed) : {})
+  };
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [avatarSrc]);
 
   // 显示在 Dock 中的应用（通知中心常驻 + 运行中的其他应用）
   const dockApps = useMemo(() => {
@@ -207,18 +238,19 @@ export const Dock = () => {
               <div
                 className={styles.avatar}
                 onClick={() => loggedIn && openApp('profile')}
-                style={{ cursor: loggedIn ? 'pointer' : 'default' }}
-                        title={loggedIn ? t('dock.openProfile') : undefined}
+                style={avatarContainerStyle}
+                title={loggedIn ? t('dock.openProfile') : undefined}
               >
                 {loggedIn ? (
                   <>
-                    {avatarSrc ? (
+                    {avatarImageSrc ? (
                       <img
-                        src={avatarSrc}
+                        src={avatarImageSrc}
                         alt={userName}
+                        onError={() => setAvatarLoadError(true)}
                       />
                     ) : (
-                      <Icon icon="mdi:account-circle" size={40} />
+                      <span className={styles.avatarFallback}>{avatarFallbackText}</span>
                     )}
                     <div className={styles.statusDot} />
                   </>

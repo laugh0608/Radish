@@ -33,8 +33,7 @@ public static class AutoMapperSetup
             // 先尝试从容器解析 Profile/Converter 中声明的依赖，缺失时再回退到 Activator
             expression.ConstructServicesUsing(type =>
             {
-                var resolved = provider.GetService(type);
-                return resolved ?? Activator.CreateInstance(type)!;
+                return ActivatorUtilities.GetServiceOrCreateInstance(provider, type);
             });
 
             // 传入 ILoggerFactory 以启用 AutoMapper 内部诊断日志
@@ -47,7 +46,8 @@ public static class AutoMapperSetup
         services.AddSingleton<IMapper>(sp =>
         {
             var mapperConfiguration = sp.GetRequiredService<MapperConfiguration>();
-            return mapperConfiguration.CreateMapper(sp.GetService);
+            return mapperConfiguration.CreateMapper(type =>
+                ActivatorUtilities.GetServiceOrCreateInstance(sp, type));
         });
     }
 }

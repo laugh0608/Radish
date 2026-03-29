@@ -570,8 +570,8 @@ app.UseStaticFiles();
 var uploadsPath = builder.Configuration.GetSection("FileStorage:Local:BasePath").Value ?? "DataBases/Uploads";
 var uploadsUrl = builder.Configuration.GetSection("FileStorage:Local:BaseUrl").Value ?? "/uploads";
 var uploadsFullPath = Path.IsPathRooted(uploadsPath)
-    ? uploadsPath
-    : Path.Combine(app.Environment.ContentRootPath, uploadsPath);
+    ? Path.GetFullPath(uploadsPath)
+    : Path.GetFullPath(Path.Combine(Radish.Common.CoreTool.AppPathTool.GetSolutionRootOrBasePath(), uploadsPath));
 
 // 确保 uploads 目录存在
 Directory.CreateDirectory(uploadsFullPath);
