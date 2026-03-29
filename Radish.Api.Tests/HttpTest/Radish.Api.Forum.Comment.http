@@ -7,7 +7,15 @@
 @ForumComment_ReplyUserId = 20000
 @ForumComment_ReplyUserName = system
 
-### 获取帖子评论树
+### 获取根评论分页（主链路）
+GET {{Gateway_HostAddress}}/api/v1/Comment/GetRootComments?postId={{ForumComment_PostId}}&pageIndex=1&pageSize=20&sortBy=default
+Accept: application/json
+
+### 获取子评论分页（懒加载）
+GET {{Gateway_HostAddress}}/api/v1/Comment/GetChildComments?parentId={{ForumComment_RootId}}&pageIndex=1&pageSize=10
+Accept: application/json
+
+### 兼容入口：获取整棵评论树（仅用于观察旧调用）
 GET {{Gateway_HostAddress}}/api/v1/Comment/GetCommentTree?postId={{ForumComment_PostId}}
 Accept: application/json
 

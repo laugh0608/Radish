@@ -8,6 +8,7 @@ using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -41,16 +42,24 @@ public class CommentController : ControllerBase
     private CurrentUser Current => _currentUserAccessor.Current;
 
     /// <summary>
-    /// 获取帖子的评论树（带点赞状态）
+    /// 获取帖子的评论树（兼容入口，带点赞状态）
     /// </summary>
     /// <param name="postId">帖子 ID</param>
     /// <param name="sortBy">排序方式：newest=最新，hottest=最热（默认：newest）</param>
     /// <returns>评论树（树形结构，包含当前用户的点赞状态）</returns>
+    /// <remarks>
+    /// 该接口仅用于兼容旧调用方。
+    /// 论坛主链当前已改用 GetRootComments + GetChildComments 的分页模式。
+    /// </remarks>
     [HttpGet]
     [AllowAnonymous]
+    [ApiExplorerSettings(IgnoreApi = true)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetCommentTree(long postId, string sortBy = "newest")
     {
+        Response.Headers.Append("X-Radish-Deprecated", "GetCommentTree is compatibility-only; use GetRootComments instead.");
+        Log.Information("[CommentController] legacy GetCommentTree invoked for PostId={PostId}, SortBy={SortBy}", postId, sortBy);
+
         // 获取当前用户ID（如果已登录）
         long? userId = Current.UserId > 0 ? Current.UserId : null;
 

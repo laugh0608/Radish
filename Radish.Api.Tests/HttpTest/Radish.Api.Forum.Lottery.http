@@ -65,7 +65,17 @@ Authorization: Bearer {{Access_Token}}
   "replyToUserName": null
 }
 
-### 获取评论树，核对父评论 / 回复层级
+### 获取根评论分页，核对父评论层级
+GET {{Gateway_HostAddress}}/api/v1/Comment/GetRootComments?postId={{ForumLottery_PostId}}&pageIndex=1&pageSize=20&sortBy=default
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取子评论分页，核对回复层级
+GET {{Gateway_HostAddress}}/api/v1/Comment/GetChildComments?parentId={{ForumLottery_RootCommentId}}&pageIndex=1&pageSize=10
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 兼容入口：获取整棵评论树（仅用于观察旧调用）
 GET {{Gateway_HostAddress}}/api/v1/Comment/GetCommentTree?postId={{ForumLottery_PostId}}
 Accept: application/json
 Authorization: Bearer {{Access_Token}}

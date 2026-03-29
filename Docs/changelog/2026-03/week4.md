@@ -309,6 +309,7 @@
 - **子评论懒加载口径已对齐启用状态**：`GetChildCommentsPageAsync` 当前已补 `IsEnabled` 过滤，被禁用的子评论不会再通过懒加载接口重新暴露给前端。
 - **帖子列表最近互动人已完成服务 / 仓储下沉**：`FillPostAvatarAndInteractorsAsync` 当前已不再在 `PostController` 内部整页物化全部评论，而是通过评论仓储按页批量查询“每帖最近互动作者 Top N”，再统一回填头像与互动人信息。
 - **评论详情已切到“根评论分页 + 子评论懒加载”正式契约**：论坛前端主链当前改走 `GET /api/v1/Comment/GetRootComments` 分页获取根评论，子评论继续使用 `GetChildComments` 懒加载，帖子详情不再整帖拉评论后再内存组树。
+- **旧评论树入口已降级为兼容观察态**：仓库内主链、`HttpTest` 与功能文档当前都已切到新分页口径；`GetCommentTree` 仍保留对外兼容，但已从 API 展示面隐藏，并在命中时补轻量日志与响应头标记，便于后续确认是否还能正式删除。
 
 ### 本轮验证
 

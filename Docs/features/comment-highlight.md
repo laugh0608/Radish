@@ -371,11 +371,12 @@ export async function getCurrentSofas(
 
 ```typescript
 async function loadComments(postId: number) {
-  // 并行加载评论树和神评列表
-  const [commentsData, godCommentsData] = await Promise.all([
-    getCommentTree(postId, sortParam, t),
+  // 并行加载根评论首页和神评列表
+  const [commentsPage, godCommentsData] = await Promise.all([
+    getRootCommentsPage(postId, 1, COMMENT_PAGE_SIZE, sortParam, t),
     getCurrentGodComments(postId, t).catch(() => [])
   ]);
+  const commentsData = commentsPage.voItems ?? [];
 
   // 将神评标识合并到评论节点中
   const commentsWithGodHighlight = commentsData.map(comment => {

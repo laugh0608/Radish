@@ -345,26 +345,6 @@ export async function acceptQuestionAnswer(request: AcceptAnswerRequest, t: TFun
 }
 
 /**
- * 获取帖子的评论树（自动包含当前用户的点赞状态）
- */
-export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest' | 'default', t: TFunction): Promise<CommentNode[]> {
-  void t;
-  // 如果用户已登录，自动发送token以获取点赞状态
-  const hasToken = Boolean(tokenService.getAccessToken());
-
-  const response = await apiGet<CommentNode[]>(
-    `/api/v1/Comment/GetCommentTree?postId=${postId}&sortBy=${sortBy}`,
-    { withAuth: !!hasToken, timeout: FORUM_READ_TIMEOUT_MS }
-  );
-
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载评论失败');
-  }
-
-  return response.data;
-}
-
-/**
  * 分页获取帖子的根评论（自动包含当前用户的点赞状态）
  */
 export async function getRootCommentsPage(

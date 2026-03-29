@@ -193,8 +193,11 @@
 | 获取帖子列表 | `GET /api/v1/Post/GetList?categoryId={id}` | ✅ |
 | 获取帖子详情 | `GET /api/v1/Post/GetById/{id}` | ✅ |
 | 发布帖子 | `POST /api/v1/Post/Publish` | ✅ |
-| 获取评论树 | `GET /api/v1/Comment/GetCommentTree?postId={id}` | ✅ |
+| 获取根评论分页 | `GET /api/v1/Comment/GetRootComments?postId={id}&pageIndex=1&pageSize=20&sortBy=default` | ✅ |
+| 获取子评论分页 | `GET /api/v1/Comment/GetChildComments?parentId={id}&pageIndex=1&pageSize=10` | ✅ |
 | 创建评论 | `POST /api/v1/Comment/Create` | ✅ |
+
+> `GetCommentTree` 当前仅保留兼容入口，论坛主链已经切换到“根评论分页 + 子评论懒加载”。
 
 > 分类/标签接口与前后端落地差距请统一参考：[论坛帖子分类与标签（专题）](./forum-category-tag.md)
 
