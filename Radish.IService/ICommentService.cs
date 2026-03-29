@@ -69,6 +69,22 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null, string sortBy = "newest");
 
     /// <summary>
+    /// 分页获取根评论（带点赞状态）
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="pageIndex">页码（从1开始）</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <param name="userId">用户 Id（可选，用于填充点赞状态）</param>
+    /// <param name="sortBy">排序方式：default / newest / hottest</param>
+    /// <returns>根评论列表和总数</returns>
+    Task<(List<CommentVo> comments, int total)> GetRootCommentsPageAsync(
+        long postId,
+        int pageIndex,
+        int pageSize,
+        long? userId = null,
+        string sortBy = "default");
+
+    /// <summary>
     /// 分页获取子评论
     /// </summary>
     /// <param name="parentId">父评论 Id</param>

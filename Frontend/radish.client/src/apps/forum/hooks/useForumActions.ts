@@ -131,11 +131,13 @@ interface UseForumActionsParams {
   isAuthenticated: boolean;
   userId: number;
   commentSortBy: 'newest' | 'hottest' | null;
+  loadedCommentPages: number;
   selectedCategoryId: number | null;
   selectedTagName: string | null;
   selectedPost: PostDetail | null;
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: Dispatch<SetStateAction<CommentNode[]>>;
+  setCommentTotal: Dispatch<SetStateAction<number>>;
   setCurrentPage: (page: number) => void;
   setSortBy: (sortBy: ForumPostSortBy) => void;
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
@@ -144,7 +146,7 @@ interface UseForumActionsParams {
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
   loadPostDetail: (postId: number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
-  loadComments: (postId: number) => Promise<void>;
+  loadComments: (postId: number, pageCount?: number) => Promise<void>;
   loadPosts: () => Promise<void>;
   resetCommentSort: () => void;
 }
@@ -156,9 +158,11 @@ export const useForumActions = (
     t,
     isAuthenticated,
     userId,
+    loadedCommentPages,
     selectedPost,
     setSelectedPost,
     setComments,
+    setCommentTotal,
     setCurrentPage,
     setSortBy,
     setCommentSortBy,
@@ -172,6 +176,8 @@ export const useForumActions = (
     resetCommentSort,
     commentSortBy
   } = params;
+
+  const getLoadedCommentPageCount = () => Math.max(loadedCommentPages, 1);
 
   // Modal 状态
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
@@ -286,7 +292,7 @@ export const useForumActions = (
     setQuestionAnswerSort('default');
     setQuestionAnswerFilter('all');
     await loadPostDetail(postId, 'default');
-    await loadComments(postId);
+    await loadComments(postId, 1);
   };
 
   const handleQuestionAnswerSortChange = async (sortBy: QuestionAnswerSort) => {
@@ -787,7 +793,11 @@ export const useForumActions = (
       setComments(prev => mergeCommentIntoTree(prev, parentId, newComment));
 
       setReplyTo(null);
-      await loadComments(selectedPost.voId);
+      if (parentId == null && commentSortBy === null) {
+        setCommentTotal(prev => prev + 1);
+      } else {
+        await loadComments(selectedPost.voId, getLoadedCommentPageCount());
+      }
       if (selectedPost.voHasLottery && parentId == null) {
         try {
           const latestLottery = await getLotteryByPostId(selectedPost.voId, t);
@@ -844,7 +854,7 @@ export const useForumActions = (
     setError(null);
     try {
       await updateComment({ commentId, content: newContent }, t);
-      await loadComments(selectedPost.voId);
+      await loadComments(selectedPost.voId, getLoadedCommentPageCount());
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -872,7 +882,7 @@ export const useForumActions = (
       await deleteComment(commentToDelete, t);
       setIsDeleteCommentDialogOpen(false);
       setCommentToDelete(null);
-      await loadComments(selectedPost.voId);
+      await loadComments(selectedPost.voId, getLoadedCommentPageCount());
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -916,7 +926,7 @@ export const useForumActions = (
   const handleCommentSortChange = (newSortBy: 'newest' | 'hottest') => {
     setCommentSortBy(newSortBy);
     if (selectedPost) {
-      void loadComments(selectedPost.voId);
+      void loadComments(selectedPost.voId, 1);
     }
   };
 

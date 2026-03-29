@@ -8,7 +8,7 @@ import {
   getFixedTags,
   getPostList,
   getPostById,
-  getCommentTree,
+  getRootCommentsPage,
   getCurrentGodCommentsBatch,
   type Category,
   type Tag,
@@ -31,6 +31,35 @@ function isAbortError(error: unknown): boolean {
   return error instanceof Error && error.name === 'AbortError';
 }
 
+function sortRootComments(
+  comments: CommentNode[],
+  sortBy: 'newest' | 'hottest' | 'default'
+): CommentNode[] {
+  return [...comments].sort((left, right) => {
+    const topDiff = Number(right.voIsTop ?? false) - Number(left.voIsTop ?? false);
+    if (topDiff !== 0) {
+      return topDiff;
+    }
+
+    const leftTime = new Date(left.voCreateTime || 0).getTime();
+    const rightTime = new Date(right.voCreateTime || 0).getTime();
+
+    if (sortBy === 'hottest') {
+      const likeDiff = (right.voLikeCount || 0) - (left.voLikeCount || 0);
+      if (likeDiff !== 0) {
+        return likeDiff;
+      }
+      return rightTime - leftTime;
+    }
+
+    if (sortBy === 'newest') {
+      return rightTime - leftTime;
+    }
+
+    return leftTime - rightTime;
+  });
+}
+
 export interface ForumDataState {
   // 数据状态
   categories: Category[];
@@ -41,6 +70,9 @@ export interface ForumDataState {
   posts: PostItem[];
   selectedPost: PostDetail | null;
   comments: CommentNode[];
+  commentTotal: number;
+  commentPageSize: number;
+  loadedCommentPages: number;
   hotPosts: PostItem[];
   trendingGodComments: CommentNode[];
   postGodComments: Map<number, CommentHighlight>;
@@ -68,6 +100,7 @@ export interface ForumDataState {
   loadingPosts: boolean;
   loadingPostDetail: boolean;
   loadingComments: boolean;
+  loadingMoreComments: boolean;
   loadingTrending: boolean;
 
   // 错误状态
@@ -79,6 +112,7 @@ export interface ForumDataActions {
   setSelectedTagName: (tagName: string | null) => void;
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: Dispatch<SetStateAction<CommentNode[]>>;
+  setCommentTotal: Dispatch<SetStateAction<number>>;
   setCurrentPage: (page: number) => void;
   setSortBy: (sortBy: ForumPostSortBy) => void;
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
@@ -95,7 +129,8 @@ export interface ForumDataActions {
   loadPosts: () => Promise<void>;
   loadTrendingContent: () => Promise<void>;
   loadPostDetail: (postId: number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
-  loadComments: (postId: number) => Promise<void>;
+  loadComments: (postId: number, pageCount?: number) => Promise<void>;
+  loadMoreComments: (postId: number) => Promise<void>;
   resetCommentSort: () => void;
 }
 
@@ -109,6 +144,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [selectedPost, setSelectedPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
+  const [commentTotal, setCommentTotal] = useState(0);
+  const [loadedCommentPages, setLoadedCommentPages] = useState(0);
 
   // 热门内容
   const [hotPosts, setHotPosts] = useState<PostItem[]>([]);
@@ -138,8 +175,10 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [loadingPostDetail, setLoadingPostDetail] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [loadingMoreComments, setLoadingMoreComments] = useState(false);
   const [loadingTrending, setLoadingTrending] = useState(false);
   const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  const commentPageSize = 20;
 
   // 错误状态
   const [error, setError] = useState<string | null>(null);
@@ -370,24 +409,80 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       setError(message);
       setSelectedPost(null);
       setComments([]);
+      setCommentTotal(0);
+      setLoadedCommentPages(0);
     } finally {
       setLoadingPostDetail(false);
     }
   };
 
   // 加载评论列表
-  const loadComments = async (postId: number) => {
+  const loadComments = async (postId: number, pageCount = 1) => {
     setLoadingComments(true);
     setError(null);
     try {
       const sortParam = commentSortBy || 'default';
-      const commentsData = await getCommentTree(postId, sortParam, t);
-      setComments(commentsData);
+      const resolvedPageCount = Math.max(1, pageCount);
+      const firstPage = await getRootCommentsPage(postId, 1, commentPageSize, sortParam, t);
+      const total = firstPage.voTotal ?? 0;
+      const totalPages = total > 0 ? Math.ceil(total / commentPageSize) : 0;
+      const targetPageCount = totalPages > 0
+        ? Math.min(resolvedPageCount, totalPages)
+        : 1;
+
+      const aggregatedComments: CommentNode[] = [...(firstPage.voItems ?? [])];
+      for (let pageIndex = 2; pageIndex <= targetPageCount; pageIndex += 1) {
+        const pageData = await getRootCommentsPage(postId, pageIndex, commentPageSize, sortParam, t);
+        aggregatedComments.push(...(pageData.voItems ?? []));
+      }
+
+      const deduplicatedComments = aggregatedComments.filter((comment, index, source) =>
+        source.findIndex(item => item.voId === comment.voId) === index
+      );
+
+      setComments(sortRootComments(deduplicatedComments, sortParam));
+      setCommentTotal(total);
+      setLoadedCommentPages(totalPages > 0 ? targetPageCount : 0);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      setComments([]);
+      setCommentTotal(0);
+      setLoadedCommentPages(0);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  const loadMoreComments = async (postId: number) => {
+    if (loadingComments || loadingMoreComments) {
+      return;
+    }
+
+    const nextPage = loadedCommentPages + 1;
+    if (commentTotal > 0 && comments.length >= commentTotal) {
+      return;
+    }
+
+    setLoadingMoreComments(true);
+    setError(null);
+    try {
+      const sortParam = commentSortBy || 'default';
+      const pageData = await getRootCommentsPage(postId, nextPage, commentPageSize, sortParam, t);
+      const nextItems = pageData.voItems ?? [];
+
+      setComments(prev => {
+        const existingIds = new Set(prev.map(item => item.voId));
+        const appendedItems = nextItems.filter(item => !existingIds.has(item.voId));
+        return sortRootComments([...prev, ...appendedItems], sortParam);
+      });
+      setCommentTotal(prev => pageData.voTotal ?? prev);
+      setLoadedCommentPages(prev => nextItems.length > 0 ? Math.max(prev, nextPage) : prev);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
     } finally {
-      setLoadingComments(false);
+      setLoadingMoreComments(false);
     }
   };
 
@@ -440,6 +535,9 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     posts,
     selectedPost,
     comments,
+    commentTotal,
+    commentPageSize,
+    loadedCommentPages,
     hotPosts,
     trendingGodComments,
     postGodComments,
@@ -459,6 +557,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     loadingPosts,
     loadingPostDetail,
     loadingComments,
+    loadingMoreComments,
     loadingTrending,
     error,
 
@@ -467,6 +566,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     setSelectedTagName,
     setSelectedPost,
     setComments,
+    setCommentTotal,
     setCurrentPage,
     setSortBy,
     setCommentSortBy,
@@ -484,6 +584,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     loadTrendingContent,
     loadPostDetail,
     loadComments,
+    loadMoreComments,
     resetCommentSort
   };
 };

@@ -768,6 +768,10 @@ public class PostControllerTest
         IBaseService<Comment, CommentVo> commentService,
         CurrentUser? currentUser = null)
     {
+        Mock.Get(postService)
+            .Setup(service => service.FillPostAvatarAndInteractorsAsync(It.IsAny<List<PostVo>>()))
+            .Returns(Task.CompletedTask);
+
         var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
         currentUserAccessorMock.SetupGet(accessor => accessor.Current).Returns(currentUser ?? new CurrentUser
         {

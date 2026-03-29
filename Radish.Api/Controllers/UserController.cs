@@ -477,15 +477,15 @@ public class UserController : ControllerBase
         var commentCount = await _commentService.QueryCountAsync(
             c => c.AuthorId == userId && !c.IsDeleted);
 
-        // 统计帖子获赞数
-        var posts = await _postService.QueryAsync(
+        // 统计帖子获赞数（数据库聚合，避免全量物化）
+        var postLikeCount = await _postService.QuerySumAsync(
+            p => p.LikeCount,
             p => p.AuthorId == userId && p.IsPublished && !p.IsDeleted);
-        var postLikeCount = posts.Sum(p => p.VoLikeCount);
 
-        // 统计评论获赞数
-        var comments = await _commentService.QueryAsync(
+        // 统计评论获赞数（数据库聚合，避免全量物化）
+        var commentLikeCount = await _commentService.QuerySumAsync(
+            c => c.LikeCount,
             c => c.AuthorId == userId && !c.IsDeleted);
-        var commentLikeCount = comments.Sum(c => c.VoLikeCount);
 
         var stats = new UserStatsVo
         {

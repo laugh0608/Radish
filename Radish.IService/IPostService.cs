@@ -68,6 +68,12 @@ public interface IPostService : IBaseService<Post, PostVo>
     Task FillPostListMetadataAsync(List<PostVo> posts);
 
     /// <summary>
+    /// 批量回填帖子作者头像、问答回答头像与最近互动人
+    /// </summary>
+    /// <param name="posts">帖子列表</param>
+    Task FillPostAvatarAndInteractorsAsync(List<PostVo> posts);
+
+    /// <summary>
     /// 为问答帖提交回答
     /// </summary>
     /// <param name="postId">帖子 Id</param>

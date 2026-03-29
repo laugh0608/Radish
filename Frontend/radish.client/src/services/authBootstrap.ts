@@ -27,6 +27,14 @@ export interface AuthBootstrapOptions {
 }
 
 const inFlightAuthHydrations = new Map<string, Promise<CurrentUser>>();
+const CURRENT_USER_CACHE_KEY = 'cached_user_info';
+
+interface CurrentUserCacheEntry {
+  version: 2;
+  scope: string;
+  cachedAt: number;
+  user: CurrentUser;
+}
 
 class CurrentUserRequestError extends Error {
   readonly status?: number;
@@ -36,6 +44,98 @@ class CurrentUserRequestError extends Error {
     this.name = 'CurrentUserRequestError';
     this.status = status;
   }
+}
+
+function parseIdentityNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return Math.trunc(value);
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+}
+
+function isCurrentUserLike(value: unknown): value is CurrentUser {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as Partial<CurrentUser>;
+  return parseIdentityNumber(candidate.voUserId) > 0
+    && typeof candidate.voUserName === 'string'
+    && candidate.voUserName.trim().length > 0;
+}
+
+function isCurrentUserCacheEntry(value: unknown): value is CurrentUserCacheEntry {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as Partial<CurrentUserCacheEntry>;
+  return candidate.version === 2
+    && typeof candidate.scope === 'string'
+    && isCurrentUserLike(candidate.user);
+}
+
+function matchesTokenIdentity(user: CurrentUser, token?: string | null): boolean {
+  const identity = tokenService.getUserIdentityFromAccessToken(token);
+  if (!identity) {
+    return false;
+  }
+
+  return parseIdentityNumber(user.voUserId) === identity.userId
+    && parseIdentityNumber(user.voTenantId) === identity.tenantId;
+}
+
+function consumeCachedCurrentUser(token: string): CurrentUser | null {
+  const cachedUserInfo = window.localStorage.getItem(CURRENT_USER_CACHE_KEY);
+  if (!cachedUserInfo) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(cachedUserInfo) as unknown;
+    if (!isCurrentUserCacheEntry(parsed)) {
+      return null;
+    }
+
+    const currentScope = tokenService.getCurrentUserCacheScope(token);
+    if (!currentScope || parsed.scope !== currentScope) {
+      return null;
+    }
+
+    if (!matchesTokenIdentity(parsed.user, token)) {
+      return null;
+    }
+
+    return parsed.user;
+  } catch (error) {
+    log.error('AuthBootstrap', '缓存用户信息解析失败:', error);
+    return null;
+  } finally {
+    window.localStorage.removeItem(CURRENT_USER_CACHE_KEY);
+  }
+}
+
+function cacheCurrentUser(token: string, user: CurrentUser) {
+  const scope = tokenService.getCurrentUserCacheScope(token);
+  if (!scope) {
+    window.localStorage.removeItem(CURRENT_USER_CACHE_KEY);
+    return;
+  }
+
+  const cacheEntry: CurrentUserCacheEntry = {
+    version: 2,
+    scope,
+    cachedAt: Date.now(),
+    user,
+  };
+
+  window.localStorage.setItem(CURRENT_USER_CACHE_KEY, JSON.stringify(cacheEntry));
 }
 
 function resolveUserRoles(user: CurrentUser, token?: string | null): string[] {
@@ -100,7 +200,9 @@ function buildCurrentUserFromToken(token?: string | null): CurrentUser | null {
   }
 
   const currentStoreUser = useUserStore.getState();
-  const sameUser = currentStoreUser.userId > 0 && currentStoreUser.userId === identity.userId;
+  const sameUser = currentStoreUser.userId > 0
+    && currentStoreUser.userId === identity.userId
+    && currentStoreUser.tenantId === identity.tenantId;
 
   return {
     voUserId: identity.userId,
@@ -160,27 +262,18 @@ async function hydrateAuthUserCore(
   const userStore = useUserStore.getState();
 
   if (useCache) {
-    const cachedUserInfo = window.localStorage.getItem('cached_user_info');
-    if (cachedUserInfo) {
-      try {
-        const userData = JSON.parse(cachedUserInfo) as CurrentUser;
-        if (userData.voUserId && userData.voUserName) {
-          setUserFromCurrentUser(userData, token);
-          authStore.setAuthenticated(true);
-          log.info('AuthBootstrap', '✅ 使用缓存用户信息完成初始化');
-          return userData;
-        }
-      } catch (error) {
-        log.error('AuthBootstrap', '缓存用户信息解析失败:', error);
-      } finally {
-        window.localStorage.removeItem('cached_user_info');
-      }
+    const cachedUser = consumeCachedCurrentUser(token);
+    if (cachedUser) {
+      setUserFromCurrentUser(cachedUser, token);
+      authStore.setAuthenticated(true);
+      log.info('AuthBootstrap', '✅ 使用绑定当前令牌的缓存用户信息完成初始化');
+      return cachedUser;
     }
   }
 
   try {
     const userData = await fetchCurrentUser(apiBaseUrl, token);
-    window.localStorage.setItem('cached_user_info', JSON.stringify(userData));
+    cacheCurrentUser(token, userData);
     setUserFromCurrentUser(userData, token);
     authStore.setAuthenticated(true);
     log.info('AuthBootstrap', '✅ 用户信息初始化完成');
@@ -195,7 +288,7 @@ async function hydrateAuthUserCore(
     }
 
     const currentStoreUser = buildCurrentUserFromStore();
-    if (currentStoreUser) {
+    if (currentStoreUser && matchesTokenIdentity(currentStoreUser, token)) {
       authStore.setAuthenticated(true);
       log.warn('AuthBootstrap', '用户信息初始化失败，保留现有登录态:', err.message);
       return currentStoreUser;

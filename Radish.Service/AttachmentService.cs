@@ -443,7 +443,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         {
             // 1. 查询附件信息
             var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId);
-            if (attachment == null || attachment.IsDeleted)
+            if (attachment == null || attachment.IsDeleted || !attachment.IsEnabled)
             {
                 return (null, null);
             }

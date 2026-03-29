@@ -30,7 +30,9 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
     private readonly IBaseRepository<PostLottery>? _postLotteryRepository;
     private readonly IBaseRepository<PostLotteryWinner>? _postLotteryWinnerRepository;
     private readonly IBaseRepository<Comment>? _commentRepository;
+    private readonly ICommentRepository? _commentCustomRepository;
     private readonly ITagService _tagService;
+    private readonly IAttachmentService? _attachmentService;
     private readonly ICoinRewardService _coinRewardService;
     private readonly INotificationService _notificationService;
     private readonly INotificationDedupService _dedupService;
@@ -58,7 +60,9 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         IExperienceService experienceService,
         IBaseRepository<PostEditHistory> postEditHistoryRepository,
         IOptions<ForumEditHistoryOptions> editHistoryOptions,
+        IAttachmentService? attachmentService = null,
         IPostRepository? postCustomRepository = null,
+        ICommentRepository? commentCustomRepository = null,
         IBaseRepository<Attachment>? attachmentRepository = null,
         IBaseRepository<PostLottery>? postLotteryRepository = null,
         IBaseRepository<PostLotteryWinner>? postLotteryWinnerRepository = null,
@@ -79,7 +83,9 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         _postLotteryRepository = postLotteryRepository;
         _postLotteryWinnerRepository = postLotteryWinnerRepository;
         _commentRepository = commentRepository;
+        _commentCustomRepository = commentCustomRepository;
         _tagService = tagService;
+        _attachmentService = attachmentService;
         _coinRewardService = coinRewardService;
         _notificationService = notificationService;
         _dedupService = dedupService;

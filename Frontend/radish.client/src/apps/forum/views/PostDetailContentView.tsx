@@ -24,8 +24,11 @@ const CreateCommentForm = lazy(() =>
 interface PostDetailContentViewProps {
   post: PostDetail;
   comments: CommentNode[];
+  commentTotal: number;
+  commentPageSize: number;
   loadingPostDetail: boolean;
   loadingComments: boolean;
+  loadingMoreComments: boolean;
   displayTimeZone: string;
   isLiked: boolean;
   isAuthenticated: boolean;
@@ -63,6 +66,7 @@ interface PostDetailContentViewProps {
     pageIndex: number,
     pageSize: number
   ) => Promise<CommentNode[]>;
+  onLoadMoreComments: (postId: number) => Promise<void>;
   onCreateComment: (content: string) => Promise<void>;
   onCancelReply: () => void;
   onReactionError?: (message: string) => void;
@@ -94,8 +98,11 @@ const collectCommentIds = (nodes: CommentNode[]): number[] => {
 export const PostDetailContentView = ({
   post,
   comments,
+  commentTotal,
+  commentPageSize,
   loadingPostDetail,
   loadingComments,
+  loadingMoreComments,
   displayTimeZone,
   isLiked,
   isAuthenticated,
@@ -128,6 +135,7 @@ export const PostDetailContentView = ({
   onLikeComment,
   onReplyComment,
   onLoadMoreChildren,
+  onLoadMoreComments,
   onCreateComment,
   onCancelReply,
   onReactionError,
@@ -281,10 +289,14 @@ export const PostDetailContentView = ({
             <CommentTree
               comments={comments}
               loading={loadingComments}
+              loadingMoreRootComments={loadingMoreComments}
               hasPost={true}
               displayTimeZone={displayTimeZone}
               currentUserId={currentUserId}
               pageSize={5}
+              rootCommentTotal={commentTotal}
+              loadedRootCommentCount={comments.length}
+              rootCommentPageSize={commentPageSize}
               sortBy={commentSortBy}
               onSortChange={onCommentSortChange}
               onDeleteComment={onDeleteComment}
@@ -296,6 +308,7 @@ export const PostDetailContentView = ({
                 setIsCommentSheetOpen(true);
               }}
               onLoadMoreChildren={handleLoadMoreChildren}
+              onLoadMoreRootComments={() => onLoadMoreComments(post.voId)}
               stickerMap={stickerMap}
               reactionMap={reactionsState.commentItemsMap}
               isAuthenticated={isAuthenticated}

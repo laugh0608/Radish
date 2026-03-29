@@ -365,6 +365,31 @@ export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest
 }
 
 /**
+ * 分页获取帖子的根评论（自动包含当前用户的点赞状态）
+ */
+export async function getRootCommentsPage(
+  postId: number,
+  pageIndex: number,
+  pageSize: number,
+  sortBy: 'newest' | 'hottest' | 'default',
+  t: TFunction
+): Promise<VoPagedResult<CommentNode>> {
+  void t;
+  const hasToken = Boolean(tokenService.getAccessToken());
+
+  const response = await apiGet<VoPagedResult<CommentNode>>(
+    `/api/v1/Comment/GetRootComments?postId=${postId}&pageIndex=${pageIndex}&pageSize=${pageSize}&sortBy=${sortBy}`,
+    { withAuth: !!hasToken, timeout: FORUM_READ_TIMEOUT_MS }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '加载评论失败');
+  }
+
+  return response.data;
+}
+
+/**
  * 发布新帖子
  * @returns 新帖子的 ID
  */

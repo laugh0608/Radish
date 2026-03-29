@@ -298,6 +298,86 @@ public partial class PostService
         }
     }
 
+    /// <summary>
+    /// 批量回填帖子作者头像、问答回答头像与最近互动人
+    /// </summary>
+    public async Task FillPostAvatarAndInteractorsAsync(List<PostVo> posts)
+    {
+        if (posts.Count == 0)
+        {
+            return;
+        }
+
+        var postAuthorMap = posts
+            .Where(post => post.VoId > 0)
+            .GroupBy(post => post.VoId)
+            .ToDictionary(group => group.Key, group => group.First().VoAuthorId);
+
+        var recentComments = _commentCustomRepository == null || postAuthorMap.Count == 0
+            ? []
+            : await _commentCustomRepository.QueryLatestInteractorCommentsByPostIdsAsync(postAuthorMap, 3);
+
+        var commentsByPost = recentComments
+            .Where(comment => comment.AuthorId > 0)
+            .GroupBy(comment => comment.PostId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .OrderByDescending(comment => comment.CreateTime)
+                    .ThenByDescending(comment => comment.Id)
+                    .ToList());
+
+        var userIds = posts
+            .Select(post => post.VoAuthorId)
+            .Concat(posts.SelectMany(post => post.VoQuestion?.VoAnswers ?? []).Select(answer => answer.VoAuthorId))
+            .Concat(recentComments.Select(comment => comment.AuthorId))
+            .Where(userId => userId > 0)
+            .Distinct()
+            .ToList();
+
+        Dictionary<long, string> avatarUrlMap = new();
+        if (_attachmentService != null && userIds.Count > 0)
+        {
+            avatarUrlMap = (await _attachmentService.GetLatestAvatarAssetMapAsync(userIds))
+                .Where(entry => !string.IsNullOrWhiteSpace(entry.Value.Url))
+                .ToDictionary(entry => entry.Key, entry => entry.Value.Url);
+        }
+
+        foreach (var post in posts)
+        {
+            if (avatarUrlMap.TryGetValue(post.VoAuthorId, out var authorAvatarUrl))
+            {
+                post.VoAuthorAvatarUrl = authorAvatarUrl;
+            }
+
+            if (post.VoQuestion?.VoAnswers?.Count > 0)
+            {
+                foreach (var answer in post.VoQuestion.VoAnswers.Where(answer => answer.VoAuthorId > 0))
+                {
+                    if (avatarUrlMap.TryGetValue(answer.VoAuthorId, out var answerAvatarUrl))
+                    {
+                        answer.VoAuthorAvatarUrl = answerAvatarUrl;
+                    }
+                }
+            }
+
+            if (!commentsByPost.TryGetValue(post.VoId, out var postComments))
+            {
+                post.VoLatestInteractors = [];
+                continue;
+            }
+
+            post.VoLatestInteractors = postComments
+                .Select(comment => new PostInteractorVo
+                {
+                    VoUserId = comment.AuthorId,
+                    VoUserName = comment.AuthorName,
+                    VoAvatarUrl = avatarUrlMap.GetValueOrDefault(comment.AuthorId)
+                })
+                .ToList();
+        }
+    }
+
     private async Task<PostPollVo?> BuildPostPollVoAsync(long postId, long? viewerUserId)
     {
         var poll = await _postPollRepository.QueryFirstAsync(p => p.PostId == postId && !p.IsDeleted);
@@ -400,17 +480,17 @@ public partial class PostService
         int pageIndex,
         int pageSize)
     {
-        var allPosts = await QueryAsync(baseCondition);
-        var totalCount = allPosts.Count;
-
-        var data = allPosts
-            .OrderByDescending(post => post.VoIsTop)
-            .ThenByDescending(post => post.VoViewCount + post.VoLikeCount * 2 + post.VoCommentCount * 3)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        return (data, totalCount);
+        return await QueryPageAsync(
+            baseCondition,
+            pageIndex,
+            pageSize,
+            post => new
+            {
+                post.IsTop,
+                HotScore = post.ViewCount + post.LikeCount * 2 + post.CommentCount * 3,
+                post.CreateTime
+            },
+            SqlSugar.OrderByType.Desc);
     }
 
     private async Task<(List<PostVo> data, int totalCount)> QueryPollPostsByVotesAsync(

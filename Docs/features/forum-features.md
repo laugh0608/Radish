@@ -1044,6 +1044,11 @@ const handleSubmit = () => {
 
 **目标**: 实现 Reddit/小红书风格的评论回复UI，支持懒加载子评论，提升大量评论场景下的性能和用户体验。
 
+**2026.03 治理补充**:
+- 评论详情主链当前已正式切到“根评论分页 + 子评论懒加载”契约：根评论通过 `GET /api/v1/Comment/GetRootComments` 分页获取，子评论继续走 `GET /api/v1/Comment/GetChildComments` 按需加载。
+- 前端帖子详情不再调用整帖 `GetCommentTree` 结果来一次性渲染整棵评论树，而是先渲染当前已加载的根评论页，再通过“加载更多”继续追加根评论。
+- `GetCommentTree` 当前保留兼容入口，但论坛主链已不再依赖它承载高频详情访问。
+
 **架构改进**:
 
 #### 7.1 Repository 层二级排序支持（关键改进）

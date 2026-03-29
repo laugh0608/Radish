@@ -222,11 +222,13 @@ export const ForumApp = () => {
     isAuthenticated: loggedIn,
     userId: userId ?? 0,
     commentSortBy: dataState.commentSortBy,
+    loadedCommentPages: dataState.loadedCommentPages,
     selectedCategoryId: dataState.selectedCategoryId,
     selectedTagName: dataState.selectedTagName,
     selectedPost: dataState.selectedPost,
     setSelectedPost: dataState.setSelectedPost,
     setComments: dataState.setComments,
+    setCommentTotal: dataState.setCommentTotal,
     setCurrentPage: dataState.setCurrentPage,
     setSortBy: dataState.setSortBy,
     setCommentSortBy: dataState.setCommentSortBy,
@@ -525,8 +527,11 @@ export const ForumApp = () => {
               <PostDetailContentView
                 post={dataState.selectedPost}
                 comments={dataState.comments}
+                commentTotal={dataState.commentTotal}
+                commentPageSize={dataState.commentPageSize}
                 loadingPostDetail={dataState.loadingPostDetail}
                 loadingComments={dataState.loadingComments}
+                loadingMoreComments={dataState.loadingMoreComments}
                 displayTimeZone={displayTimeZone}
                 isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
                 isAuthenticated={loggedIn}
@@ -563,6 +568,7 @@ export const ForumApp = () => {
                 onLikeComment={actionsState.handleCommentLike}
                 onReplyComment={actionsState.handleReplyComment}
                 onLoadMoreChildren={actionsState.handleLoadMoreChildren}
+                onLoadMoreComments={dataState.loadMoreComments}
                 onCreateComment={actionsState.handleCreateComment}
                 onCancelReply={actionsState.handleCancelReply}
                 onReactionError={dataState.setError}

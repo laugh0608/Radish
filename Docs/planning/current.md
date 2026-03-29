@@ -82,6 +82,8 @@
 - [x] 已统一禁用附件的公开访问判定：`/_assets/attachments/*` 与附件访问令牌下载当前都已在服务层统一校验 `IsEnabled && !IsDeleted`，避免 disabled 附件继续对外可访问
 - [x] 已将个人中心 `GetUserStats` 收口为数据库聚合：帖子 / 评论数继续保持原返回结构，点赞统计已改走 `QuerySumAsync`，避免全量物化帖子与评论
 - [x] 已完成论坛热点首批数据库化收口：全部帖子与投票帖子视图下的 `hottest` 排序当前已改为数据库排序分页；子评论懒加载也已补 `IsEnabled` 过滤，避免 disabled 子评论重新暴露
+- [x] 已完成帖子列表最近互动人查询下沉：`FillPostAvatarAndInteractorsAsync` 当前已从 `PostController` 私有全量评论查询迁到服务 / 仓储侧批量读模型，按页帖子只查“每帖最近互动作者 Top N”，不再整页物化全部评论
+- [x] 已完成评论详情主链路分页化：论坛帖子详情当前已改为“根评论分页 + 子评论懒加载”正式契约，前端主链改走 `GetRootComments`，替换整帖评论全量拉取后再组树的实现
 
 ### 下一步拆分
 
@@ -91,8 +93,8 @@
 - 第 4 步：维持当前统一镜像推送与 `local / test / prod` 部署口径冻结状态，避免后续文档与真实产物再次漂移
 - 第 5 步：维持当前 `local / test / prod`、`DbMigrate -> Api/Auth -> Gateway` 与 `AuthUi__ShowTestAccountHint` 的发布口径冻结状态，避免文档与部署事实再次漂移
 - 第 6 步：继续对本轮登录态、附件访问、个人中心统计与论坛最热排序修复补边界回归，重点覆盖切账号 / 切租户、disabled 附件、匿名访问和高频初始化场景
-- 第 7 步：启动“帖子列表最近互动人专项查询”治理，把 `FillPostAvatarAndInteractorsAsync` 从 controller 侧整页帖子全量评论物化，收口为服务 / 仓储侧的按页批量查询
-- 第 8 步：启动“评论树分页化”治理，把 `GetCommentTreeAsync / GetCommentTreeWithLikeStatusAsync` 收口为“根评论分页 + 子评论懒加载”的正式契约，替换当前整帖全量拉评论再组树的实现
+- 第 7 步：继续补论坛评论分页链路的边界回归，重点覆盖默认排序、连续“加载更多”、评论发布后局部更新，以及匿名 / 登录态切换下的点赞状态一致性
+- 第 8 步：评估并逐步收缩旧的整帖评论树兼容入口，避免新旧评论读取契约长期并存造成后续维护漂移
 
 ### 当前结论
 

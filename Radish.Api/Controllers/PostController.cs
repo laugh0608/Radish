@@ -28,25 +28,23 @@ public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
     private readonly IContentModerationService _contentModerationService;
-    private readonly IAttachmentService _attachmentService;
-    private readonly IBaseService<Comment, CommentVo> _commentService;
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public PostController(
         IPostService postService,
         IContentModerationService contentModerationService,
-        IAttachmentService attachmentService,
-        IBaseService<Comment, CommentVo> commentService,
+        IAttachmentService? attachmentService,
+        IBaseService<Comment, CommentVo>? commentService,
         IUserBrowseHistoryService userBrowseHistoryService,
         ICurrentUserAccessor currentUserAccessor)
     {
         _postService = postService;
         _contentModerationService = contentModerationService;
-        _attachmentService = attachmentService;
-        _commentService = commentService;
         _userBrowseHistoryService = userBrowseHistoryService;
         _currentUserAccessor = currentUserAccessor;
+        _ = attachmentService;
+        _ = commentService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -78,7 +76,7 @@ public class PostController : ControllerBase
             };
         }
 
-        await FillPostAvatarAndInteractorsAsync(new List<PostVo> { post });
+        await _postService.FillPostAvatarAndInteractorsAsync(new List<PostVo> { post });
 
         if (Current.UserId > 0)
         {
@@ -231,15 +229,17 @@ public class PostController : ControllerBase
                 case "hottest":
                     // 按热度排序：置顶在前，然后按热度值排序（综合浏览、点赞、评论）
                     // 热度计算公式：ViewCount + LikeCount*2 + CommentCount*3
-                    var allPosts = await _postService.QueryAsync(baseCondition);
-                    totalCount = allPosts.Count;
-
-                    data = allPosts
-                        .OrderByDescending(p => p.VoIsTop)
-                        .ThenByDescending(p => p.VoViewCount + p.VoLikeCount * 2 + p.VoCommentCount * 3)
-                        .Skip((pageIndex - 1) * pageSize)
-                        .Take(pageSize)
-                        .ToList();
+                    (data, totalCount) = await _postService.QueryPageAsync(
+                        baseCondition,
+                        pageIndex,
+                        pageSize,
+                        p => new
+                        {
+                            p.IsTop,
+                            HotScore = p.ViewCount + p.LikeCount * 2 + p.CommentCount * 3,
+                            p.CreateTime
+                        },
+                        SqlSugar.OrderByType.Desc);
                     break;
 
                 case "essence":
@@ -269,7 +269,7 @@ public class PostController : ControllerBase
         if (data.Any())
         {
             await _postService.FillPostListMetadataAsync(data);
-            await FillPostAvatarAndInteractorsAsync(data);
+            await _postService.FillPostAvatarAndInteractorsAsync(data);
         }
 
         var pageModel = new PageModel<PostVo>
@@ -288,88 +288,6 @@ public class PostController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = pageModel
         };
-    }
-
-    private async Task FillPostAvatarAndInteractorsAsync(List<PostVo> posts)
-    {
-        if (posts.Count == 0)
-        {
-            return;
-        }
-
-        var postIds = posts
-            .Select(post => post.VoId)
-            .Distinct()
-            .ToList();
-
-        var comments = await _commentService.QueryAsync(comment =>
-            postIds.Contains(comment.PostId) &&
-            comment.IsEnabled &&
-            !comment.IsDeleted);
-
-        var commentsByPost = comments
-            .Where(comment => comment.VoAuthorId > 0)
-            .GroupBy(comment => comment.VoPostId)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .OrderByDescending(comment => comment.VoCreateTime)
-                    .ToList());
-
-        var userIds = posts
-            .Select(post => post.VoAuthorId)
-            .Concat(posts.SelectMany(post => post.VoQuestion?.VoAnswers ?? new List<PostAnswerVo>()).Select(answer => answer.VoAuthorId))
-            .Concat(comments.Select(comment => comment.VoAuthorId))
-            .Where(userId => userId > 0)
-            .Distinct()
-            .ToList();
-
-        var avatarUrlMap = new Dictionary<long, string>();
-        if (userIds.Count > 0)
-        {
-            avatarUrlMap = (await _attachmentService.GetLatestAvatarAssetMapAsync(userIds))
-                .Where(entry => !string.IsNullOrWhiteSpace(entry.Value.Url))
-                .ToDictionary(entry => entry.Key, entry => entry.Value.Url);
-        }
-
-        foreach (var post in posts)
-        {
-            if (avatarUrlMap.TryGetValue(post.VoAuthorId, out var authorAvatarUrl))
-            {
-                post.VoAuthorAvatarUrl = authorAvatarUrl;
-            }
-
-            if (post.VoQuestion?.VoAnswers?.Count > 0)
-            {
-                foreach (var answer in post.VoQuestion.VoAnswers.Where(answer => answer.VoAuthorId > 0))
-                {
-                    if (avatarUrlMap.TryGetValue(answer.VoAuthorId, out var answerAvatarUrl))
-                    {
-                        answer.VoAuthorAvatarUrl = answerAvatarUrl;
-                    }
-                }
-            }
-
-            if (!commentsByPost.TryGetValue(post.VoId, out var postComments))
-            {
-                post.VoLatestInteractors = new List<PostInteractorVo>();
-                continue;
-            }
-
-            post.VoLatestInteractors = postComments
-                .Where(comment => comment.VoAuthorId > 0 && comment.VoAuthorId != post.VoAuthorId)
-                .GroupBy(comment => comment.VoAuthorId)
-                .Select(group => group.OrderByDescending(comment => comment.VoCreateTime).First())
-                .OrderByDescending(comment => comment.VoCreateTime)
-                .Take(3)
-                .Select(comment => new PostInteractorVo
-                {
-                    VoUserId = comment.VoAuthorId,
-                    VoUserName = comment.VoAuthorName,
-                    VoAvatarUrl = avatarUrlMap.GetValueOrDefault(comment.VoAuthorId)
-                })
-                .ToList();
-        }
     }
 
     /// <summary>

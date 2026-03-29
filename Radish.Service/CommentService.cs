@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using AutoMapper;
 using Microsoft.Extensions.Options;
 using Radish.Common.CacheTool;
@@ -559,6 +560,92 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     }
 
     /// <summary>
+    /// 分页获取根评论（带点赞状态和排序）
+    /// </summary>
+    public async Task<(List<CommentVo> comments, int total)> GetRootCommentsPageAsync(
+        long postId,
+        int pageIndex,
+        int pageSize,
+        long? userId = null,
+        string sortBy = "default")
+    {
+        if (pageIndex < 1)
+        {
+            pageIndex = 1;
+        }
+
+        if (pageSize < 1)
+        {
+            pageSize = 20;
+        }
+
+        var normalizedSortBy = sortBy?.Trim().ToLowerInvariant() ?? "default";
+        var rootCondition = (Expression<Func<Comment, bool>>)(comment =>
+            comment.PostId == postId &&
+            comment.ParentId == null &&
+            comment.IsEnabled &&
+            !comment.IsDeleted);
+
+        (List<Comment> rootComments, int total) = normalizedSortBy switch
+        {
+            "newest" => await _commentRepository.QueryPageAsync(
+                rootCondition,
+                pageIndex,
+                pageSize,
+                comment => comment.IsTop,
+                OrderByType.Desc,
+                comment => comment.CreateTime,
+                OrderByType.Desc),
+            "hottest" => await _commentRepository.QueryPageAsync(
+                rootCondition,
+                pageIndex,
+                pageSize,
+                comment => comment.IsTop,
+                OrderByType.Desc,
+                comment => new
+                {
+                    comment.LikeCount,
+                    comment.CreateTime
+                },
+                OrderByType.Desc),
+            _ => await _commentRepository.QueryPageAsync(
+                rootCondition,
+                pageIndex,
+                pageSize,
+                comment => comment.IsTop,
+                OrderByType.Desc,
+                comment => comment.CreateTime,
+                OrderByType.Asc)
+        };
+
+        var commentVos = base.Mapper.Map<List<CommentVo>>(rootComments);
+        for (var index = 0; index < commentVos.Count; index++)
+        {
+            commentVos[index].VoChildren = [];
+            commentVos[index].VoChildrenTotal = rootComments[index].ReplyCount;
+        }
+
+        if (userId.HasValue && commentVos.Any())
+        {
+            var commentIds = commentVos.Select(comment => comment.VoId).ToList();
+            var likeStatus = await GetUserLikeStatusAsync(userId.Value, commentIds);
+
+            foreach (var comment in commentVos)
+            {
+                comment.VoIsLiked = likeStatus.GetValueOrDefault(comment.VoId, false);
+            }
+        }
+
+        if (commentVos.Any())
+        {
+            await FillHighlightStatusAsync(postId, commentVos);
+        }
+
+        await FillAuthorAvatarUrlsAsync(commentVos);
+        return (commentVos, total);
+    }
+
+    /// <summary>
     /// 获取帖子的评论树（带点赞状态和排序）
     /// </summary>
     public async Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null, string sortBy = "newest")
@@ -782,7 +869,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     {
         // 使用Repository的二级排序方法查询子评论
         var (comments, total) = await _commentRepository.QueryPageAsync(
-            whereExpression: c => c.ParentId == parentId && !c.IsDeleted,
+            whereExpression: c => c.ParentId == parentId && !c.IsDeleted && c.IsEnabled,
             pageIndex: pageIndex,
             pageSize: pageSize,
             orderByExpression: c => c.LikeCount,

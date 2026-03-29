@@ -67,6 +67,51 @@ public class CommentController : ControllerBase
     }
 
     /// <summary>
+    /// 分页获取帖子的根评论（带点赞状态）
+    /// </summary>
+    /// <param name="postId">帖子 ID</param>
+    /// <param name="pageIndex">页码（从 1 开始）</param>
+    /// <param name="pageSize">每页数量（默认 20）</param>
+    /// <param name="sortBy">排序方式：default / newest / hottest</param>
+    /// <returns>根评论分页结果</returns>
+    [HttpGet]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> GetRootComments(
+        long postId,
+        int pageIndex = 1,
+        int pageSize = 20,
+        string sortBy = "default")
+    {
+        if (pageIndex < 1)
+        {
+            pageIndex = 1;
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            pageSize = 20;
+        }
+
+        long? userId = Current.UserId > 0 ? Current.UserId : null;
+        var (comments, total) = await _commentService.GetRootCommentsPageAsync(postId, pageIndex, pageSize, userId, sortBy);
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = new VoPagedResult<CommentVo>
+            {
+                VoItems = comments,
+                VoTotal = total,
+                VoPageIndex = pageIndex,
+                VoPageSize = pageSize
+            }
+        };
+    }
+
+    /// <summary>
     /// 发表评论
     /// </summary>
     /// <param name="request">评论信息</param>

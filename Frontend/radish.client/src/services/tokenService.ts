@@ -33,6 +33,7 @@ class TokenService {
   private readonly REFRESH_TOKEN_KEY = 'radish_client_refresh_token';
   private readonly TOKEN_EXPIRES_KEY = 'radish_client_token_expires_at';
   private readonly TOKEN_REFRESH_AT_KEY = 'radish_client_token_refresh_at';
+  private readonly CURRENT_USER_CACHE_KEY = 'cached_user_info';
   private readonly LEGACY_TOKEN_KEY = 'access_token';
   private readonly LEGACY_REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly LEGACY_TOKEN_EXPIRES_KEY = 'token_expires_at';
@@ -184,6 +185,20 @@ class TokenService {
     };
   }
 
+  getCurrentUserCacheScope(token?: string | null): string | null {
+    const targetToken = token ?? this.getAccessToken();
+    if (!targetToken) {
+      return null;
+    }
+
+    const identity = this.getUserIdentityFromAccessToken(targetToken);
+    if (!identity) {
+      return null;
+    }
+
+    return `v2:${identity.userId}:${identity.tenantId}:${this.createTokenFingerprint(targetToken)}`;
+  }
+
   setTokenInfo(tokenInfo: TokenInfo): void {
     localStorage.setItem(this.TOKEN_KEY, tokenInfo.access_token);
 
@@ -224,7 +239,7 @@ class TokenService {
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.TOKEN_EXPIRES_KEY);
     localStorage.removeItem(this.TOKEN_REFRESH_AT_KEY);
-    localStorage.removeItem('cached_user_info');
+    localStorage.removeItem(this.CURRENT_USER_CACHE_KEY);
     this.refreshPromise = null;
     this.stopAutoRefresh(); // 清除 Token 时停止自动刷新
     log.debug('TokenService', 'Token 信息已清除');
@@ -327,6 +342,16 @@ class TokenService {
     } catch {
       return null;
     }
+  }
+
+  private createTokenFingerprint(token: string): string {
+    let hash = 2166136261;
+    for (let index = 0; index < token.length; index += 1) {
+      hash ^= token.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+
+    return `${token.length}:${(hash >>> 0).toString(16)}`;
   }
 
   private getExpiresInFromJwt(token: string): number {
