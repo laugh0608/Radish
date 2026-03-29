@@ -165,9 +165,6 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 {
   "ReverseProxy": {
     "Routes": {
-      "docs-route": {
-        "ClusterId": "docs-cluster",
-      },
       "api-route": {
         "ClusterId": "apiCluster",
         "Match": { "Path": "/api/{**catch-all}" }
@@ -199,11 +196,6 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
       }
     },
     "Clusters": {
-      "docs-cluster": {
-        "Destinations": {
-          "docs": { "Address": "http://localhost:4000" }
-        }
-      },
       "apiCluster": {
         "Destinations": {
           "api": { "Address": "http://localhost:5100" }
@@ -228,6 +220,11 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
   }
 }
 ```
+
+说明：
+
+- 当前主线不再维护独立的 Docs 前端项目或旧的 Docs 下游服务。
+- 固定项目文档统一收口到仓库 `Docs/`，由 `Radish.Api` 启动后同步到 WebOS“文档”应用；Gateway 当前仅保留 `/scalar` 等面向 API 文档与服务入口的代理能力。
 
 #### 路由特性说明
 

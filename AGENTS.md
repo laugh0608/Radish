@@ -10,12 +10,15 @@
 - 编写任何代码之前，必须先说明方案并等待批准。
 - 如果需求不明确，必须先提出问题并澄清后再动手。
 - 修改项目规则、架构、接口或文档口径时，优先保证与 `Docs/` 中的现状一致。
+- 涉及当前阶段、优先级或范围判断时，优先查看 `Docs/planning/current.md`。
+- 涉及本地验证、CI 对齐或回归入口时，优先查看 `Docs/guide/validation-baseline.md`。
 
 ## 快速认知
 - 技术栈：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite） / React 19 + Vite（Rolldown） + TypeScript
-- 前端结构：npm workspaces 管理 `radish.client`、`radish.console`、`radish.ui`
+- 前端结构：npm workspaces 管理 `radish.http`、`radish.client`、`radish.console`、`radish.ui`
 - 桌面形态：`radish.client` 为 WebOS 桌面化 UI
 - 共享组件：`radish.ui` 为源码直连的共享 UI 组件库，无需单独构建
+- HTTP 客户端：`radish.http` 为统一 API 客户端 workspace
 - 协作分支：`dev`
 - 文档源：`Docs/` 为项目文档唯一真相源
 
@@ -46,12 +49,14 @@
 
 ### 后端项目
 - 宿主：`Radish.Api`、`Radish.Gateway`、`Radish.Auth`
+- 初始化与只读自检：`Radish.DbMigrate`
 - 业务分层：`Service` / `Repository` / `Core` / `Model`
 - 基础设施：`Common`、`Extension`、`IService`、`IRepository`、`Shared`
 - 测试：`Radish.Api.Tests`
 - Rust 扩展：`Lib/radish.lib`
 
 ### 前端项目
+- `Frontend/radish.http`：统一 HTTP 客户端与相关类型封装
 - `Frontend/radish.client`：WebOS 桌面，面向用户
 - `Frontend/radish.console`：管理后台
 - `Frontend/radish.ui`：共享组件库，供 client 和 console 直接引用源码
@@ -73,6 +78,12 @@ dotnet test Radish.Api.Tests
 npm run build --workspace=radish.client
 npm run build --workspace=radish.console
 npm run type-check --workspace=@radish/ui
+npm run type-check --workspace=@radish/http
+
+# 当前优先的统一验证入口
+npm run validate:baseline:quick
+npm run validate:baseline
+npm run validate:baseline:host
 ```
 
 ### 供用户手动执行的启动命令
@@ -94,7 +105,7 @@ npm run dev --workspace=radish.console
 - Gateway：`https://localhost:5000`
 - Frontend：`http://localhost:3000`
 - Console：`http://localhost:3100`
-- Docs：`http://localhost:4000`
+- 文档：固定项目文档统一收口到仓库 `Docs/`，由 WebOS“文档”应用承载，不再维护独立 Docs 站点
 - Scalar：Gateway `https://localhost:5000/scalar`，API 直连 `http://localhost:5100/scalar`
 
 ## 配置与数据库
@@ -210,7 +221,7 @@ Log.Information("User {UserId} logged in", userId);
 - 不得破坏 Dock、桌面图标、窗口容器、滚动区域等基础交互布局
 
 ### API 客户端规范
-- 统一使用 `@radish/ui` 提供的 API 客户端
+- 统一使用 `@radish/http` 提供的 API 客户端
 - 禁止自定义 fetch / axios 封装
 - 特殊场景如上传进度，可使用 `XMLHttpRequest`，但必须通过 `getApiClientConfig()` 取得统一配置
 
@@ -231,6 +242,7 @@ Log.Information("User {UserId} logged in", userId);
 
 ### 前端
 - 通用组件放 `@radish/ui`
+- API 调用与统一客户端能力优先复用 `@radish/http`
 - WebOS 组件放 `Frontend/radish.client/src/`
 
 ## Rust 原生扩展
@@ -285,7 +297,9 @@ feat(ui): 优化桌面主题与组件展示
   - `Docs/frontend/visual-theme-spec.md`
   - `Docs/frontend/visual-color-reference.md`
   - `Docs/guide/`
+  - `Docs/guide/validation-baseline.md`
   - `Docs/development-plan.md`
+  - `Docs/planning/current.md`
   - `Docs/changelog/`
   - `Docs/deployment/guide.md`
 - 更新日志使用 Asia/Shanghai（UTC+8）

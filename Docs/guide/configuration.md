@@ -343,7 +343,7 @@ services:
 **重要说明 - API 和 Auth 项目共享业务数据库**：
 - **Radish.Api** 和 **Radish.Auth** 项目使用**相同的业务数据库**（`Radish.db` 和 `Radish.Log.db`）
 - 这两个数据库存储用户、角色、权限、租户等业务数据，需要被两个项目共同访问
-- **OpenIddict 使用独立的数据库**（`RadishAuth.OpenIddict.db`），由 EF Core 管理，存储 OIDC 认证相关数据（客户端、授权码、令牌等）
+- **OpenIddict 使用独立的数据库**（`Radish.OpenIddict.db`），由 EF Core 管理，存储 OIDC 认证相关数据（客户端、授权码、令牌等）
 - **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
 - `MainDb` 与 `Databases` 默认配置位于根目录 `appsettings.Shared.json`
 
