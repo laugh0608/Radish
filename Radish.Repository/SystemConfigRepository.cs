@@ -1,4 +1,6 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Unicode;
 using Radish.Common.CoreTool;
 using Radish.IRepository;
 using Radish.Model;
@@ -15,6 +17,7 @@ public class SystemConfigRepository : ISystemConfigRepository
     private readonly SemaphoreSlim _syncRoot = new(1, 1);
     private readonly JsonSerializerOptions _jsonSerializerOptions = new(JsonSerializerDefaults.Web)
     {
+        Encoder = JavaScriptEncoder.Create(UnicodeRanges.All),
         WriteIndented = true
     };
 

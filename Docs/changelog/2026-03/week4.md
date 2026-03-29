@@ -289,12 +289,14 @@
 - **标签确认交互已收口**：标签现在只有进入“已选标签”列表后才算生效；单纯在输入框里输入文本不会被误判为已选择。当前支持回车 / 点击添加，且与现有标签精确匹配时失焦会自动补入。
 - **欢迎 App 已切到游客安全模式**：未登录用户当前也可直接打开欢迎应用；若拿不到用户名，会回退为游客态展示，并提供游客 badge、说明与登录 CTA，而不再因为依赖用户名而阻塞打开。
 - **站点 favicon 配置链路已接通**：SystemConfig 当前已改为本地 JSON 持久化，并新增 `Site.Branding.FaviconUrl`。Console 可直接上传 `.ico`、预览并恢复默认；`radish.client / radish.console` 则通过公开站点设置接口同步标签页图标。
+- **SystemConfig 本地 JSON 可读性已收口**：`DataBases/SystemConfigs/system-configs.json` 当前改为中文直写落盘，保留必要 JSON 转义，便于本地排障与人工审阅；该文件继续按 `DataBases/` 运行时目录处理，不纳入 Git。
 - **默认站点图标种子已固定**：默认回退图标当前统一为 `/uploads/DefaultIco/bailuobo.ico`，对应种子文件为 `DataBases/Uploads/DefaultIco/bailuobo.ico`。
 
 ### 相关文档同步
 
 - **论坛专题已补当前发帖规则**：`forum-features.md` 与 `forum-category-tag.md` 当前已同步记录发帖缺失项提示、标签确认规则与创作器提示口径。
 - **WebOS / Console 文档已补游客态与 favicon 事实**：`frontend/design.md`、`frontend/webos-quick-start.md` 与 `guide/console-modules.md` 当前已对齐欢迎 App 游客安全打开、SystemConfig 持久化、公开站点设置接口与默认图标种子。
+- **系统配置持久化规范已补长期约束**：`architecture/specifications.md` 当前已明确 `DataBases/SystemConfigs/system-configs.json` 的职责、中文直写策略，以及 `DataBases/` 运行时文件不纳入 Git 的规则。
 - **规划页已回写本轮进度**：`planning/current.md` 与 `development-plan.md` 当前已补回“发帖引导 / 游客态 / 站点图标配置已完成并验证”的阶段结论，避免规划口径继续停在上一批社区优化。
 
 ### 本轮验证

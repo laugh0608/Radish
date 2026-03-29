@@ -370,6 +370,9 @@ git push origin v26.1.1.3003
 - 这是因为 Auth 项目需要访问用户、角色、权限、租户等业务数据来验证身份和权限
 - **OpenIddict 数据库**（`Radish.OpenIddict.db`）是独立的，仅由 Auth 项目使用，存储 OIDC 认证相关数据
 - **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
+- `DataBases/SystemConfigs/system-configs.json` 用于 `SystemConfig` 模块的本地 JSON 持久化，属于运行时数据文件，不是源码或数据库种子文件
+- 面向人工审阅的本地 JSON 持久化文件应优先保持 UTF-8 可读文本落盘；中文默认直写，仅保留 JSON 语法必需或序列化器仍要求保留的转义
+- `DataBases/` 目录下的运行时生成文件默认不纳入 Git；除仓库已显式放行的种子静态资源外，不得把本地状态文件作为源码资产提交
 
 - `Program.cs` 需要在 `builder.Build()` 前调用 `builder.Services.AddSqlSugarSetup()`。该扩展定义于 `Radish.Extension.SqlSugarExtension`，内部依赖 `Radish.Infrastructure.Tenant.RepositorySetting`、`TenantUtil` 等组件，使用 `SqlSugarScope` 单例注入并绑定所有连接配置。
 - `appsettings.json` 约定结构如下（**API 和 Auth 项目必须保持一致**）：
