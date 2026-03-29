@@ -1,7 +1,8 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
+import { toast } from '@radish/ui/toast';
 import {
   buildAttachmentAssetUrl,
   type MarkdownDocumentUploadResult,
@@ -66,6 +67,14 @@ interface PublishPostDraft {
   };
 }
 
+type PublishBlockingIssueCode = 'title' | 'content' | 'category' | 'tag' | 'tag-input-pending';
+
+interface PublishBlockingIssue {
+  code: PublishBlockingIssueCode;
+  label: string;
+  message: string;
+}
+
 const DRAFT_STORAGE_KEY = 'forum_post_draft';
 const MIN_TAG_COUNT = 1;
 const MAX_TAG_COUNT = 5;
@@ -107,6 +116,9 @@ export const PublishPostModal = ({
   onClose,
   onPublish
 }: PublishPostModalProps) => {
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const categorySelectRef = useRef<HTMLSelectElement>(null);
+  const tagInputRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [composerMode, setComposerMode] = useState<'markdown' | 'rich'>('markdown');
@@ -128,6 +140,7 @@ export const PublishPostModal = ({
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [tagError, setTagError] = useState<string | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [showBlockingIssues, setShowBlockingIssues] = useState(false);
   const [enablePoll, setEnablePoll] = useState(false);
   const [isQuestionPost, setIsQuestionPost] = useState(false);
   const [pollQuestion, setPollQuestion] = useState('');
@@ -156,6 +169,9 @@ export const PublishPostModal = ({
 
   useEffect(() => {
     if (!isOpen) {
+      setShowBlockingIssues(false);
+      setTagError(null);
+      setCategoryError(null);
       return;
     }
 
@@ -288,7 +304,16 @@ export const PublishPostModal = ({
     void loadTags();
   }, [isOpen, t]);
 
-  const normalizeTagName = (name: string) => name.trim();
+  const normalizeTagName = useCallback((name: string) => name.trim(), []);
+
+  const resolveExactMatchedTag = useCallback((rawTagName: string) => {
+    const tagName = normalizeTagName(rawTagName);
+    if (!tagName) {
+      return null;
+    }
+
+    return allTagNames.find((name) => name.toLowerCase() === tagName.toLowerCase()) ?? null;
+  }, [allTagNames, normalizeTagName]);
 
   const addTag = (rawTagName: string) => {
     const tagName = normalizeTagName(rawTagName);
@@ -317,6 +342,28 @@ export const PublishPostModal = ({
     setTagError(null);
   };
 
+  const tryAutoCommitExactMatchedTag = useCallback((rawTagName: string) => {
+    const exactMatchedTag = resolveExactMatchedTag(rawTagName);
+    if (!exactMatchedTag) {
+      return null;
+    }
+
+    if (selectedTags.some((tag) => tag.toLowerCase() === exactMatchedTag.toLowerCase())) {
+      setTagInput('');
+      return null;
+    }
+
+    if (selectedTags.length >= MAX_TAG_COUNT) {
+      return null;
+    }
+
+    const nextSelectedTags = [...selectedTags, exactMatchedTag];
+    setSelectedTags(nextSelectedTags);
+    setTagInput('');
+    setTagError(null);
+    return nextSelectedTags;
+  }, [resolveExactMatchedTag, selectedTags]);
+
   const removeTag = (tagName: string) => {
     setSelectedTags((prev) => prev.filter((tag) => tag !== tagName));
     setTagError(null);
@@ -331,6 +378,64 @@ export const PublishPostModal = ({
         )
         .slice(0, 8)
     : [];
+
+  const getPublishBlockingIssues = useCallback((
+    nextSelectedTags: string[] = selectedTags,
+    nextTagInput: string = tagInput
+  ): PublishBlockingIssue[] => {
+    const issues: PublishBlockingIssue[] = [];
+    const normalizedPendingTagInput = normalizeTagName(nextTagInput);
+
+    if (!title.trim()) {
+      issues.push({
+        code: 'title',
+        label: '标题',
+        message: '请先输入帖子标题'
+      });
+    }
+
+    if (!content.trim()) {
+      issues.push({
+        code: 'content',
+        label: '正文',
+        message: '请先补充帖子正文'
+      });
+    }
+
+    if (!categoryId || categoryId <= 0) {
+      issues.push({
+        code: 'category',
+        label: '分类',
+        message: '请先选择帖子分类'
+      });
+    }
+
+    if (normalizedPendingTagInput) {
+      issues.push({
+        code: 'tag-input-pending',
+        label: '标签未确认',
+        message: `你已输入标签“${normalizedPendingTagInput}”，但还没有按回车或点击“添加”加入下方列表`
+      });
+    }
+
+    if (nextSelectedTags.length < MIN_TAG_COUNT && !normalizedPendingTagInput) {
+      issues.push({
+        code: 'tag',
+        label: '标签',
+        message: `请至少添加 ${MIN_TAG_COUNT} 个标签`
+      });
+    }
+
+    if (nextSelectedTags.length > MAX_TAG_COUNT) {
+      issues.push({
+        code: 'tag',
+        label: '标签过多',
+        message: `最多可添加 ${MAX_TAG_COUNT} 个标签`
+      });
+    }
+
+    return issues;
+  }, [categoryId, content, normalizeTagName, selectedTags, tagInput, title]);
 
   const handleQuestionMode = (next: boolean) => {
     setIsQuestionPost(next);
@@ -393,26 +498,56 @@ export const PublishPostModal = ({
     setLotteryError(null);
   };
 
-  const handleSubmit = async () => {
-    if (!title.trim() || !content.trim()) {
+  const focusFirstBlockingIssue = useCallback((issues: PublishBlockingIssue[]) => {
+    const firstIssue = issues[0];
+    if (!firstIssue) {
       return;
     }
 
-    if (selectedTags.length < MIN_TAG_COUNT) {
-      setTagError(`请至少添加 ${MIN_TAG_COUNT} 个标签`);
+    if (firstIssue.code === 'title') {
+      titleInputRef.current?.focus();
       return;
     }
 
-    if (selectedTags.length > MAX_TAG_COUNT) {
-      setTagError(`最多可添加 ${MAX_TAG_COUNT} 个标签`);
+    if (firstIssue.code === 'category') {
+      window.requestAnimationFrame(() => {
+        categorySelectRef.current?.focus();
+      });
       return;
     }
 
-    if (!categoryId || categoryId <= 0) {
-      setCategoryError('请先选择分类');
+    if (firstIssue.code === 'tag' || firstIssue.code === 'tag-input-pending') {
+      window.requestAnimationFrame(() => {
+        tagInputRef.current?.focus();
+      });
+    }
+  }, []);
+
+  const showBlockedPublishFeedback = useCallback((issues: PublishBlockingIssue[]) => {
+    if (issues.length === 0) {
       return;
     }
 
+    setShowBlockingIssues(true);
+    setIsSettingsOpen(true);
+
+    const categoryIssue = issues.find((issue) => issue.code === 'category');
+    const tagIssue = issues.find((issue) => issue.code === 'tag' || issue.code === 'tag-input-pending');
+
+    setCategoryError(categoryIssue?.message ?? null);
+    setTagError(tagIssue?.message ?? null);
+
+    const pendingTagIssue = issues.find((issue) => issue.code === 'tag-input-pending');
+    if (pendingTagIssue) {
+      toast.info(pendingTagIssue.message);
+    } else {
+      toast.info(`发布前还缺：${issues.map((issue) => issue.label).join('、')}`);
+    }
+
+    focusFirstBlockingIssue(issues);
+  }, [focusFirstBlockingIssue]);
+
+  const handleSubmit = async (resolvedSelectedTags: string[]) => {
     let pollRequest: CreatePollRequest | null = null;
     let lotteryRequest: CreateLotteryRequest | null = null;
 
@@ -498,7 +633,7 @@ export const PublishPostModal = ({
 
     setIsSubmitting(true);
     try {
-      await onPublish(title.trim(), content.trim(), categoryId, selectedTags, isQuestionPost, pollRequest, lotteryRequest);
+      await onPublish(title.trim(), content.trim(), categoryId!, resolvedSelectedTags, isQuestionPost, pollRequest, lotteryRequest);
       setTitle('');
       setContent('');
       setSelectedTags([]);
@@ -506,6 +641,7 @@ export const PublishPostModal = ({
       applyCategorySelection(selectedCategoryId);
       setTagError(null);
       setCategoryError(null);
+      setShowBlockingIssues(false);
       setComposerMode('markdown');
       setIsQuestionPost(false);
       setEnablePoll(false);
@@ -526,6 +662,37 @@ export const PublishPostModal = ({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handlePublishAttempt = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
+    let resolvedSelectedTags = selectedTags;
+    let pendingTagInput = tagInput;
+    const exactMatchedPendingTag = resolveExactMatchedTag(tagInput);
+    const autoCommittedTags = tryAutoCommitExactMatchedTag(tagInput);
+    if (autoCommittedTags) {
+      resolvedSelectedTags = autoCommittedTags;
+      pendingTagInput = '';
+    } else if (
+      exactMatchedPendingTag &&
+      selectedTags.some((tag) => tag.toLowerCase() === exactMatchedPendingTag.toLowerCase())
+    ) {
+      pendingTagInput = '';
+    }
+
+    const blockingIssues = getPublishBlockingIssues(resolvedSelectedTags, pendingTagInput);
+    if (blockingIssues.length > 0) {
+      showBlockedPublishFeedback(blockingIssues);
+      return;
+    }
+
+    setShowBlockingIssues(false);
+    setTagError(null);
+    setCategoryError(null);
+    await handleSubmit(resolvedSelectedTags);
   };
 
   const handleLoginClick = () => {
@@ -600,18 +767,15 @@ export const PublishPostModal = ({
 
   const selectedCategoryName = selectedCategorySnapshot?.name ?? '未选分类';
   const activeFeatureLabel = isQuestionPost ? '问答' : enablePoll ? '投票' : enableLottery ? '抽奖' : '普通帖';
+  const blockingIssues = getPublishBlockingIssues();
   const completionCount = [
     Boolean(title.trim()),
     Boolean(content.trim()),
     Boolean(categoryId),
     selectedTags.length >= MIN_TAG_COUNT
   ].filter(Boolean).length;
-  const canPublish =
-    Boolean(title.trim()) &&
-    Boolean(content.trim()) &&
-    Boolean(categoryId) &&
-    selectedTags.length >= MIN_TAG_COUNT &&
-    !isSubmitting;
+  const isPublishBlocked = blockingIssues.length > 0;
+  const canPublish = !isPublishBlocked && !isSubmitting;
 
   const editorToolbarExtras = (
     <div className={styles.editorToggles}>
@@ -668,7 +832,15 @@ export const PublishPostModal = ({
         <button type="button" className={styles.cancelButton} onClick={onClose}>
           取消
         </button>
-        <button type="button" className={styles.publishButton} onClick={handleSubmit} disabled={!canPublish}>
+        <button
+          type="button"
+          className={`${styles.publishButton} ${!canPublish && !isSubmitting ? styles.publishButtonDisabled : ''}`}
+          onClick={() => {
+            void handlePublishAttempt();
+          }}
+          disabled={isSubmitting}
+          aria-disabled={!canPublish}
+        >
           {isSubmitting ? '发布中...' : '发布帖子'}
         </button>
       </div>
@@ -753,11 +925,13 @@ export const PublishPostModal = ({
 
         <div className={styles.titleBar}>
           <input
+            ref={titleInputRef}
             type="text"
             placeholder="输入标题"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            className={styles.titleInput}
+            className={`${styles.titleInput} ${showBlockingIssues && blockingIssues.some((issue) => issue.code === 'title') ? styles.titleInputError : ''}`}
+            aria-invalid={showBlockingIssues && blockingIssues.some((issue) => issue.code === 'title')}
             maxLength={100}
           />
           <div className={styles.titleMeta}>
@@ -769,6 +943,16 @@ export const PublishPostModal = ({
             <span className={styles.titleCount}>{title.length}/100</span>
           </div>
         </div>
+        {showBlockingIssues && blockingIssues.length > 0 && (
+          <div className={styles.validationBanner}>
+            <strong className={styles.validationTitle}>发布前还需要补全这些内容</strong>
+            <ul className={styles.validationList}>
+              {blockingIssues.map((issue) => (
+                <li key={`${issue.code}-${issue.label}`}>{issue.message}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className={`${styles.workspace} ${composerMode === 'rich' ? styles.workspaceRich : ''}`}>
           <div className={`${styles.editorFrame} ${composerMode === 'rich' ? styles.editorFrameRich : ''}`}>
@@ -857,14 +1041,16 @@ export const PublishPostModal = ({
                 <span className={styles.sectionHint}>发帖前必须选择</span>
               </div>
               <select
+                ref={categorySelectRef}
                 value={categoryId ?? ''}
                 onChange={(event) => {
                   const value = event.target.value;
                   applyCategorySelection(value ? Number(value) : null);
                   setCategoryError(null);
                 }}
-                className={styles.control}
+                className={`${styles.control} ${showBlockingIssues && blockingIssues.some((issue) => issue.code === 'category') ? styles.controlAttention : ''}`}
                 disabled={isSubmitting || categories.length === 0}
+                aria-invalid={showBlockingIssues && blockingIssues.some((issue) => issue.code === 'category')}
               >
                 <option value="">请选择分类</option>
                 {categories.map((category) => (
@@ -884,8 +1070,9 @@ export const PublishPostModal = ({
               </div>
               <div className={styles.inlineControlRow}>
                 <input
+                  ref={tagInputRef}
                   type="text"
-                  placeholder="输入标签名后按回车"
+                  placeholder="输入标签名后按回车或点击添加"
                   value={tagInput}
                   onChange={(event) => {
                     setTagInput(event.target.value);
@@ -899,8 +1086,12 @@ export const PublishPostModal = ({
                       addTag(tagInput);
                     }
                   }}
-                  className={styles.control}
+                  onBlur={() => {
+                    void tryAutoCommitExactMatchedTag(tagInput);
+                  }}
+                  className={`${styles.control} ${showBlockingIssues && blockingIssues.some((issue) => issue.code === 'tag' || issue.code === 'tag-input-pending') ? styles.controlAttention : ''}`}
                   maxLength={50}
+                  aria-invalid={showBlockingIssues && blockingIssues.some((issue) => issue.code === 'tag' || issue.code === 'tag-input-pending')}
                 />
                 <button
                   type="button"
@@ -911,6 +1102,9 @@ export const PublishPostModal = ({
                   添加
                 </button>
               </div>
+              <p className={`${styles.helperText} ${tagInput.trim() ? styles.helperTextStrong : ''}`}>
+                输入后需要按回车、逗号或点击“添加”，进入下方标签列表后才算已选择。
+              </p>
 
               {selectedTags.length > 0 && (
                 <div className={styles.tagList}>

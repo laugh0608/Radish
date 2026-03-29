@@ -300,6 +300,8 @@ DataBases/**
 !DataBases/Uploads/DefaultAvatars/*
 !DataBases/Uploads/DefaultShopImage/.gitkeep
 !DataBases/Uploads/DefaultShopImage/*
+!DataBases/Uploads/DefaultIco/.gitkeep
+!DataBases/Uploads/DefaultIco/*
 
 # Environment files
 .env

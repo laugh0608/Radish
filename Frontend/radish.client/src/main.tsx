@@ -2,6 +2,8 @@ import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { configureApiClient } from '@radish/http';
 import { tokenService } from '@/services/tokenService';
+import { getApiBaseUrl } from '@/config/env';
+import { applySiteBranding } from '@/services/siteBranding';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { initializeTheme } from '@/theme/theme';
 import './theme/theme-tokens.css';
@@ -21,6 +23,7 @@ const isDemo = params.has('demo');
 const Page = isOidcCallback || isDemo ? App : Shell;
 
 initializeTheme();
+void applySiteBranding(getApiBaseUrl());
 
 configureApiClient({
   getToken: () => tokenService.getAccessToken(),

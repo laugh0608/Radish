@@ -314,6 +314,7 @@ public class LocalFileStorage : IFileStorage
             [".gif"] = new[] { new byte[] { 0x47, 0x49, 0x46, 0x38 } }, // GIF8
             [".bmp"] = new[] { new byte[] { 0x42, 0x4D } }, // BM
             [".webp"] = new[] { new byte[] { 0x52, 0x49, 0x46, 0x46 } }, // RIFF (需要进一步检查 WEBP)
+            [".ico"] = new[] { new byte[] { 0x00, 0x00, 0x01, 0x00 } }, // ICO
 
             // 文档格式
             [".pdf"] = new[] { new byte[] { 0x25, 0x50, 0x44, 0x46 } }, // %PDF
@@ -465,6 +466,7 @@ public class LocalFileStorage : IFileStorage
             ".bmp" => "image/bmp",
             ".webp" => "image/webp",
             ".svg" => "image/svg+xml",
+            ".ico" => "image/x-icon",
 
             // Documents
             ".pdf" => "application/pdf",

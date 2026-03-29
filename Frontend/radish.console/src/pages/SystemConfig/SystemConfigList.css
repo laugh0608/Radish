@@ -24,6 +24,108 @@
   border: 1px solid #d9d9d9;
 }
 
+.branding-card {
+  margin-bottom: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #fffdf6 0%, #ffffff 48%, #f8fafc 100%);
+  border: 1px solid #e8e1d3;
+  border-radius: 14px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
+}
+
+.branding-card__main {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 16px;
+}
+
+.branding-card__preview {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.branding-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.branding-card__empty {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.branding-card__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.branding-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.branding-card__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.branding-card__description {
+  margin: 0 0 10px;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.branding-card__value {
+  display: inline-flex;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.favicon-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.favicon-cell__image {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.favicon-cell__value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .filter-bar .ant-space {
   width: 100%;
 }
@@ -37,6 +139,15 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+  }
+
+  .branding-card {
+    padding: 16px;
+  }
+
+  .branding-card__main {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .filter-bar .ant-space {

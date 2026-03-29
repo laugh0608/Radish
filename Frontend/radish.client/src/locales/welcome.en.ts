@@ -7,6 +7,9 @@ export const welcomeEn = {
   'welcome.hero.title': 'Welcome to your desktop workspace',
   'welcome.hero.subtitle':
     'Hello, <strong>{{name}}</strong>. This workspace brings together core entry points such as Forum, Docs, Notifications, Profile, and Radish Pit, while the current focus remains on theme consistency, bilingual switching, and desktop interaction polish.',
+  'welcome.hero.guestBadge': 'Guest Mode',
+  'welcome.hero.guestHint': 'You can browse the welcome page without signing in. Sign in when you want to publish, chat, or access personal features.',
+  'welcome.hero.loginAction': 'Sign In',
   'welcome.hero.highlights.entry.label': 'Desktop entry points',
   'welcome.hero.highlights.entry.value': 'Forum, Docs, Notifications, Radish Pit',
   'welcome.hero.highlights.focus.label': 'Current focus',

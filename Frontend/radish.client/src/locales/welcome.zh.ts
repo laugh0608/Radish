@@ -7,6 +7,9 @@ export const welcomeZh = {
   'welcome.hero.title': '欢迎来到你的桌面工作台',
   'welcome.hero.subtitle':
     '你好，<strong>{{name}}</strong>。这里汇集论坛、文档、通知、个人主页与萝卜坑等主要入口，当前重点正在围绕主题一致性、双语切换与桌面交互体验持续优化。',
+  'welcome.hero.guestBadge': '游客模式',
+  'welcome.hero.guestHint': '未登录也可以先浏览欢迎页；如果要发帖、聊天或查看个人能力，再登录即可。',
+  'welcome.hero.loginAction': '去登录',
   'welcome.hero.highlights.entry.label': '桌面入口',
   'welcome.hero.highlights.entry.value': '论坛、文档、通知、萝卜坑',
   'welcome.hero.highlights.focus.label': '当前主线',

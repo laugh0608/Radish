@@ -146,7 +146,7 @@ public class AttachmentController : ControllerBase
         }
 
         // 验证是否为图片
-        var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg" };
+        var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg", ".ico" };
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!imageExtensions.Contains(extension))
         {
@@ -154,7 +154,7 @@ public class AttachmentController : ControllerBase
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "仅支持图片格式（jpg/jpeg/png/gif/bmp/webp/svg）"
+                MessageInfo = "仅支持图片格式（jpg/jpeg/png/gif/bmp/webp/svg/ico）"
             };
         }
 

@@ -108,15 +108,19 @@ export function uploadAttachmentImage(
 
       resolve({
         attachmentId,
-        url: buildAttachmentAssetUrl(attachmentId, 'original'),
+        url: toStringOrUndefined(
+          responseData.voUrl
+          ?? responseData.VoUrl
+          ?? responseData.url
+          ?? responseData.Url
+        ) ?? buildAttachmentAssetUrl(attachmentId, 'original'),
         thumbnailUrl: toStringOrUndefined(
           responseData.voThumbnailUrl
           ?? responseData.VoThumbnailUrl
           ?? responseData.thumbnailUrl
           ?? responseData.ThumbnailUrl
         )
-          ? buildAttachmentAssetUrl(attachmentId, 'thumbnail')
-          : undefined,
+          ?? undefined,
       });
     };
 
