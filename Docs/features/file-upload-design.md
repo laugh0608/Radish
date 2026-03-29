@@ -34,8 +34,9 @@
 
 - 默认所有管理型接口需要登录（`Authorization: Bearer <access_token>`）。
 - `GET /api/v1/Attachment/DownloadByToken` 允许匿名访问，但必须携带有效 `token`。
-- `GET /_assets/attachments/{id}` 与 `GET /_assets/attachments/{id}/thumbnail` 会根据附件公开性与当前用户权限决定是否允许访问。
+- `GET /_assets/attachments/{id}` 与 `GET /_assets/attachments/{id}/thumbnail` 会根据附件启用状态、公开性与当前用户权限决定是否允许访问；`IsEnabled = false` 或 `IsDeleted = true` 的附件必须统一阻断。
 - 临时访问令牌的创建 / 撤销 / 列表当前按“附件上传者”做权限判断（管理员判定仍待补充）。
+- `GET /api/v1/Attachment/DownloadByToken` 也必须复用同一条附件访问判定链，不能因为携带了临时令牌就绕过 disabled 附件的阻断。
 
 获取 `access_token`：参考 `Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http`。
 

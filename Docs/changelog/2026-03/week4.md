@@ -299,8 +299,20 @@
 - **系统配置持久化规范已补长期约束**：`architecture/specifications.md` 当前已明确 `DataBases/SystemConfigs/system-configs.json` 的职责、中文直写策略，以及 `DataBases/` 运行时文件不纳入 Git 的规则。
 - **规划页已回写本轮进度**：`planning/current.md` 与 `development-plan.md` 当前已补回“发帖引导 / 游客态 / 站点图标配置已完成并验证”的阶段结论，避免规划口径继续停在上一批社区优化。
 
+### 社区技术债治理补充
+
+- **登录态初始化已继续收口**：前一批已补稳 OIDC 回调链与登录态初始化，本轮又把 `cached_user_info` 收口为“与当前 access token 身份强绑定的一次性 bootstrap 缓存”，切换账号、租户或 token 会话时不再复用上一位用户资料。
+- **当前用户回退链路已补身份一致性约束**：`fetchCurrentUser` 失败时，前端当前只会在 store 用户与当前 token 身份一致时保留现有登录态；否则清掉旧态并回退到 token 基础身份，避免前端出现“上一位用户资料 + 当前 token”的串号错态。
+- **禁用附件已从公开访问链统一阻断**：`/_assets/attachments/{id}`、缩略图路由与临时访问令牌下载当前都会在服务层统一校验 `IsEnabled && !IsDeleted`，后台仍可查询和治理 disabled 记录，但禁用附件不会再继续对外提供资源流。
+- **个人中心统计已改为数据库聚合**：`GetUserStats` 当前不再全量拉帖子和评论到内存里求和，而是直接走 `QueryCountAsync / QuerySumAsync` 聚合，减少个人中心高频初始化请求的物化量。
+- **论坛热点链路已完成首批数据库下推**：全部帖子与投票帖子视图下的 `hottest` 排序当前都改为数据库表达式排序后再分页，不再“先查全量、再内存排序、最后截页”。
+- **子评论懒加载口径已对齐启用状态**：`GetChildCommentsPageAsync` 当前已补 `IsEnabled` 过滤，被禁用的子评论不会再通过懒加载接口重新暴露给前端。
+- **下一轮治理边界已明确**：后续优先拆成两个专项继续推进，一是把帖子列表最近互动人查询从 controller 侧全量评论物化下沉到服务 / 仓储层，二是把评论树收口为“根评论分页 + 子评论懒加载”的正式契约，替换当前整帖全量拉评论再组树的实现。
+
 ### 本轮验证
 
 - ✅ `npm run build --workspace=radish.client` 通过。
 - ✅ `npm run build --workspace=radish.console` 通过。
 - ✅ `dotnet build Radish.slnx -c Debug` 通过（保留仓库既有 warning，无新增编译错误）。
+- ✅ `dotnet test Radish.Api.Tests` 通过（`221` 条测试全部通过）。
+- ✅ `npm run build --workspace=radish.client` 已针对本轮社区技术债治理再次复跑通过。

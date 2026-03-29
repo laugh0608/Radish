@@ -262,9 +262,9 @@ ORDER BY IsTop DESC, (ViewCount + LikeCount*2 + CommentCount*3) DESC
 - 评论数: 3倍（深度互动）
 
 **实现方式**:
-- 先查询所有帖子
-- 在内存中计算热度并排序
-- 再进行分页截取
+- 直接在数据库按热度表达式排序
+- 排序结果由数据库完成分页截取
+- 全部帖子与投票帖子视图下的 `hottest` 口径保持一致
 
 **说明**: 评论互动的价值 > 点赞认可 > 被动浏览
 
@@ -1147,7 +1147,7 @@ public async Task<(List<CommentVo> comments, int total)> GetChildCommentsPageAsy
 {
     // 使用 Repository 的二级排序方法查询子评论
     var (comments, total) = await _commentRepository.QueryPageAsync(
-        whereExpression: c => c.ParentId == parentId && !c.IsDeleted,
+        whereExpression: c => c.ParentId == parentId && !c.IsDeleted && c.IsEnabled,
         pageIndex: pageIndex,
         pageSize: pageSize,
         orderByExpression: c => c.LikeCount,      // 主排序：点赞数

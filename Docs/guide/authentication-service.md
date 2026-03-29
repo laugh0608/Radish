@@ -111,7 +111,7 @@ const handleLogout = () => {
    - `radish_client_refresh_token`
    - `radish_client_token_expires_at`
    - `radish_client_token_refresh_at`
-   - `cached_user_info`
+   - `cached_user_info`（与当前 access token 身份强绑定的一次性当前用户引导缓存）
 2. 构建 OIDC 登出 URL (`/connect/endsession`)
 3. 设置参数:
    - `post_logout_redirect_uri`: {origin}
@@ -342,6 +342,7 @@ tokenService.clearTokens();
 - localStorage 在同源下全局共享，不同前端应用必须使用命名空间键隔离
 - 不要在 URL 参数中传递 Token
 - 不要在 console.log 中输出 Token
+- `cached_user_info` 只用于登录态 bootstrap 阶段的短暂用户资料复用，缓存内容必须与当前 access token 的 `userId + tenantId + token 会话` 绑定，并在消费后立即清除；不能把它当作跨账号、跨租户的长期资料缓存
 
 ### 2. Token 验证
 
