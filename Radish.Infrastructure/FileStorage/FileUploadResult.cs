@@ -26,11 +26,6 @@ public class FileUploadResult
     public string StoragePath { get; set; } = string.Empty;
 
     /// <summary>
-    /// 访问 URL
-    /// </summary>
-    public string Url { get; set; } = string.Empty;
-
-    /// <summary>
     /// 缩略图路径
     /// </summary>
     public string? ThumbnailPath { get; set; }
@@ -48,14 +43,13 @@ public class FileUploadResult
     /// <summary>
     /// 创建成功结果
     /// </summary>
-    public static FileUploadResult Ok(string storedName, string storagePath, string url, long fileSize, string? fileHash = null)
+    public static FileUploadResult Ok(string storedName, string storagePath, long fileSize, string? fileHash = null)
     {
         return new FileUploadResult
         {
             Success = true,
             StoredName = storedName,
             StoragePath = storagePath,
-            Url = url,
             FileSize = fileSize,
             FileHash = fileHash
         };

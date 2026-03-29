@@ -22,14 +22,6 @@ public class Sticker : RootEntityTKey<long>, IDeleteFilter
     [SugarColumn(Length = 200, IsNullable = false)]
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>原图 URL（GIF 时为动图）</summary>
-    [SugarColumn(Length = 500, IsNullable = false)]
-    public string ImageUrl { get; set; } = string.Empty;
-
-    /// <summary>缩略图 URL（可空）</summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? ThumbnailUrl { get; set; }
-
     /// <summary>是否为动图</summary>
     [SugarColumn(IsNullable = false)]
     public bool IsAnimated { get; set; } = false;
@@ -38,7 +30,7 @@ public class Sticker : RootEntityTKey<long>, IDeleteFilter
     [SugarColumn(IsNullable = false)]
     public bool AllowInline { get; set; } = true;
 
-    /// <summary>关联附件 Id</summary>
+    /// <summary>原图附件 Id</summary>
     [SugarColumn(IsNullable = true)]
     public long? AttachmentId { get; set; }
 

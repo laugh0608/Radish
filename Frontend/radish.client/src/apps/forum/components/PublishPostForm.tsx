@@ -2,6 +2,11 @@ import { useState, useEffect } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
+import {
+  buildAttachmentAssetUrl,
+  type MarkdownDocumentUploadResult,
+  type MarkdownImageUploadResult,
+} from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -16,18 +21,6 @@ interface PublishPostFormProps {
 
 const DRAFT_STORAGE_KEY = 'forum_post_draft';
 const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;
-
-const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
-  const params = new URLSearchParams();
-  if (fullUrl) {
-    params.set('full', fullUrl);
-  }
-  if (scalePercent && Number.isFinite(scalePercent)) {
-    params.set('scale', String(Math.min(Math.max(scalePercent, 10), 100)));
-  }
-  const meta = params.toString();
-  return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
-};
 
 export const PublishPostForm = ({
   isAuthenticated,
@@ -97,7 +90,7 @@ export const PublishPostForm = ({
   };
 
   // 处理图片上传
-  const handleImageUpload = async (file: File) => {
+  const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
     try {
       const result = await uploadImage({
         file,
@@ -110,8 +103,10 @@ export const PublishPostForm = ({
       }, t);
 
       return {
-        url: appendImageMeta(result.voUrl, result.voUrl, imageScalePercent),
-        thumbnailUrl: result.voThumbnailUrl
+        attachmentId: result.voId,
+        displayVariant: 'original',
+        previewUrl: buildAttachmentAssetUrl(result.voId, 'original'),
+        scalePercent: imageScalePercent,
       };
     } catch (error) {
       log.error('图片上传失败:', error);
@@ -120,7 +115,7 @@ export const PublishPostForm = ({
   };
 
   // 处理文档上传
-  const handleDocumentUpload = async (file: File) => {
+  const handleDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
     try {
       const result = await uploadDocument({
         file,
@@ -128,7 +123,7 @@ export const PublishPostForm = ({
       }, t);
 
       return {
-        url: result.voUrl,
+        attachmentId: result.voId,
         fileName: result.voOriginalName || file.name
       };
     } catch (error) {

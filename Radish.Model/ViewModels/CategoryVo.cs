@@ -26,12 +26,22 @@ public class CategoryVo
     public string? VoDescription { get; set; }
 
     /// <summary>
-    /// 分类图标
+    /// 分类图标附件 Id
+    /// </summary>
+    public long? VoIconAttachmentId { get; set; }
+
+    /// <summary>
+    /// 分类图标 URL
     /// </summary>
     public string? VoIcon { get; set; }
 
     /// <summary>
-    /// 分类封面图
+    /// 分类封面附件 Id
+    /// </summary>
+    public long? VoCoverAttachmentId { get; set; }
+
+    /// <summary>
+    /// 分类封面图 URL
     /// </summary>
     public string? VoCoverImage { get; set; }
 

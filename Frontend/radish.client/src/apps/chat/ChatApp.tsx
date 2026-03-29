@@ -1,6 +1,7 @@
 import { type ChangeEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@radish/ui/toast';
+import { buildAttachmentAssetUrl } from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
 import type { ContentReportTargetType } from '@/api/contentModeration';
 import {
@@ -97,6 +98,22 @@ function resolveMediaUrl(apiBaseUrl: string, url: string | null | undefined): st
   }
 
   return `${apiBaseUrl}/${url}`;
+}
+
+function resolveAttachmentAssetUrl(
+  attachmentId: EntityIdValue | null | undefined,
+  variant: 'original' | 'thumbnail' = 'original'
+): string | null {
+  const normalizedAttachmentId = normalizeEntityId(attachmentId);
+  if (!normalizedAttachmentId || normalizedAttachmentId === '0' || normalizedAttachmentId.startsWith('-')) {
+    return null;
+  }
+
+  try {
+    return buildAttachmentAssetUrl(normalizedAttachmentId, variant);
+  } catch {
+    return null;
+  }
 }
 
 function buildAvatarText(name: string): string {
@@ -700,7 +717,13 @@ export const ChatApp = () => {
     attachmentId?: EntityIdValue;
     imageUrl?: string;
     imageThumbnailUrl?: string;
-  }): ChannelMessageVo => ({
+  }): ChannelMessageVo => {
+    const fallbackImageUrl = params.imageUrl ?? resolveAttachmentAssetUrl(params.attachmentId, 'original');
+    const fallbackThumbnailUrl = params.imageThumbnailUrl
+      ?? resolveAttachmentAssetUrl(params.attachmentId, 'thumbnail')
+      ?? fallbackImageUrl;
+
+    return {
     voId: params.tempMessageId,
     voClientRequestId: params.clientRequestId,
     voChannelId: params.channelId,
@@ -712,13 +735,14 @@ export const ChatApp = () => {
     voReplyToId: params.replyTo ? params.replyTo.voId : null,
     voReplyTo: params.replyTo,
     voAttachmentId: params.attachmentId ?? null,
-    voImageUrl: params.imageUrl ?? null,
-    voImageThumbnailUrl: params.imageThumbnailUrl ?? params.imageUrl ?? null,
+    voImageUrl: fallbackImageUrl ?? null,
+    voImageThumbnailUrl: fallbackThumbnailUrl ?? null,
     voIsRecalled: false,
     voCreateTime: new Date().toISOString(),
     voLocalStatus: 'sending',
     voLocalError: null,
-  }), [currentUserAvatarUrlValue, currentUserIdKey, currentUserIdValue, currentUserNameValue]);
+    };
+  }, [currentUserAvatarUrlValue, currentUserIdKey, currentUserIdValue, currentUserNameValue]);
 
   const sendOptimisticMessage = useCallback(async (
     optimisticMessage: ChannelMessageVo,
@@ -800,8 +824,6 @@ export const ChatApp = () => {
         content: content || undefined,
         replyToId: replyTargetId ?? undefined,
         attachmentId: pendingImageSnapshot?.attachmentId,
-        imageUrl: pendingImageSnapshot?.imageUrl,
-        imageThumbnailUrl: pendingImageSnapshot?.imageThumbnailUrl || pendingImageSnapshot?.imageUrl,
       },
       {
         successToastMessage: pendingImageSnapshot ? t('chat.imageSent') : undefined,
@@ -846,8 +868,13 @@ export const ChatApp = () => {
 
       const nextPendingImage: PendingImageDraft = {
         attachmentId: attachment.voId,
-        imageUrl: attachment.voUrl,
-        imageThumbnailUrl: attachment.voThumbnailUrl || attachment.voUrl,
+        imageUrl: resolveAttachmentAssetUrl(attachment.voId, 'original') || attachment.voUrl,
+        imageThumbnailUrl: (
+          resolveAttachmentAssetUrl(attachment.voId, 'thumbnail')
+          || resolveAttachmentAssetUrl(attachment.voId, 'original')
+          || attachment.voThumbnailUrl
+          || attachment.voUrl
+        ),
         fileName: attachment.voOriginalName || file.name,
       };
 
@@ -901,8 +928,6 @@ export const ChatApp = () => {
         content: message.voContent?.trim() || undefined,
         replyToId: isPersistedEntityId(message.voReplyToId) ? message.voReplyToId : undefined,
         attachmentId: isPersistedEntityId(message.voAttachmentId) ? message.voAttachmentId : undefined,
-        imageUrl: message.voImageUrl || undefined,
-        imageThumbnailUrl: message.voImageThumbnailUrl || message.voImageUrl || undefined,
       },
       {
         successToastMessage: message.voType === 2 ? t('chat.imageSent') : undefined,

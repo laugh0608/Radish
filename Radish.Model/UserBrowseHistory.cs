@@ -34,9 +34,9 @@ public class UserBrowseHistory : RootEntityTKey<long>, ITenantEntity, IDeleteFil
     [SugarColumn(Length = 500, IsNullable = true)]
     public string? Summary { get; set; }
 
-    /// <summary>封面快照</summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? CoverImage { get; set; }
+    /// <summary>封面附件快照 Id</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? CoverAttachmentId { get; set; }
 
     /// <summary>前端跳转路径快照</summary>
     [SugarColumn(Length = 500, IsNullable = true)]

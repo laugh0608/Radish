@@ -5,6 +5,7 @@ export interface StickerGroupVo {
   voCode: string;
   voName: string;
   voDescription?: string | null;
+  voCoverAttachmentId?: string | null;
   voCoverImageUrl?: string | null;
   voGroupType: number;
   voIsEnabled: boolean;
@@ -36,7 +37,7 @@ export interface StickerGroupUpsertRequest {
   name: string;
   code?: string;
   description?: string;
-  coverImageUrl?: string;
+  coverAttachmentId?: string | null;
   groupType: number;
   isEnabled: boolean;
   sort: number;
@@ -46,22 +47,18 @@ export interface CreateStickerRequest {
   groupId: string;
   code: string;
   name: string;
-  imageUrl?: string;
-  thumbnailUrl?: string;
   isAnimated: boolean;
   allowInline: boolean;
-  attachmentId?: string;
+  attachmentId?: string | null;
   isEnabled: boolean;
   sort: number;
 }
 
 export interface UpdateStickerRequest {
   name: string;
-  imageUrl?: string;
-  thumbnailUrl?: string;
   isAnimated: boolean;
   allowInline: boolean;
-  attachmentId?: string;
+  attachmentId?: string | null;
   isEnabled: boolean;
   sort: number;
 }

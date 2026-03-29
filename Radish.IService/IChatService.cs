@@ -18,7 +18,7 @@ public interface IChatService : IBaseService<Channel, ChannelVo>
     Task<List<ChannelMessageVo>> GetHistoryAsync(long tenantId, long userId, long channelId, long? beforeMessageId, int pageSize = 50);
 
     /// <summary>发送消息</summary>
-    Task<ChannelMessageVo> SendMessageAsync(long tenantId, long userId, string userName, string? userAvatarUrl, SendChannelMessageDto request);
+    Task<ChannelMessageVo> SendMessageAsync(long tenantId, long userId, string userName, SendChannelMessageDto request);
 
     /// <summary>撤回消息，成功返回所属频道 Id</summary>
     Task<long?> RecallMessageAsync(long tenantId, long userId, string userName, long messageId, bool canRecallOthers);

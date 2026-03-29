@@ -8,12 +8,12 @@ internal static partial class AttachmentReferenceHelper
     [GeneratedRegex(@"!\[[^\]]*\]\((?<url>[^)\s]+)\)|\[[^\]]+\]\((?<url>[^)\s]+)\)", RegexOptions.IgnoreCase)]
     private static partial Regex MarkdownLinkRegex();
 
-    public static HashSet<string> ExtractUploadUrls(string? content)
+    public static HashSet<long> ExtractAttachmentIds(string? content)
     {
-        var urls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var attachmentIds = new HashSet<long>();
         if (string.IsNullOrWhiteSpace(content))
         {
-            return urls;
+            return attachmentIds;
         }
 
         foreach (Match match in MarkdownLinkRegex().Matches(content))
@@ -24,7 +24,7 @@ internal static partial class AttachmentReferenceHelper
             }
 
             var rawUrl = match.Groups["url"].Value;
-            AddNormalizedUrl(urls, rawUrl);
+            AddAttachmentId(attachmentIds, rawUrl);
 
             var fragmentIndex = rawUrl.IndexOf('#');
             if (fragmentIndex < 0 || fragmentIndex >= rawUrl.Length - 1)
@@ -55,36 +55,33 @@ internal static partial class AttachmentReferenceHelper
                 }
 
                 var value = Uri.UnescapeDataString(pair[(separatorIndex + 1)..]);
-                AddNormalizedUrl(urls, value);
+                AddAttachmentId(attachmentIds, value);
             }
         }
 
-        return urls;
+        return attachmentIds;
     }
 
-    public static IEnumerable<string> GetAttachmentUrls(Attachment attachment)
+    public static IEnumerable<long> GetAttachmentIds(Attachment attachment)
     {
-        var urls = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        AddNormalizedUrl(urls, attachment.Url);
-        AddNormalizedUrl(urls, attachment.ThumbnailPath is null ? null : $"/uploads/{attachment.ThumbnailPath}");
-        return urls;
+        return attachment.Id > 0 ? new[] { attachment.Id } : Array.Empty<long>();
     }
 
-    public static bool IsAttachmentReferenced(Attachment attachment, IReadOnlySet<string> referencedUrls)
+    public static bool IsAttachmentReferenced(Attachment attachment, IReadOnlySet<long> referencedAttachmentIds)
     {
-        return GetAttachmentUrls(attachment).Any(referencedUrls.Contains);
+        return attachment.Id > 0 && referencedAttachmentIds.Contains(attachment.Id);
     }
 
-    private static void AddNormalizedUrl(ISet<string> urls, string? rawUrl)
+    private static void AddAttachmentId(ISet<long> attachmentIds, string? rawUrl)
     {
-        var normalized = NormalizeUploadUrl(rawUrl);
-        if (!string.IsNullOrWhiteSpace(normalized))
+        var attachmentId = ParseAttachmentId(rawUrl);
+        if (attachmentId.HasValue && attachmentId.Value > 0)
         {
-            urls.Add(normalized);
+            attachmentIds.Add(attachmentId.Value);
         }
     }
 
-    private static string? NormalizeUploadUrl(string? rawUrl)
+    private static long? ParseAttachmentId(string? rawUrl)
     {
         if (string.IsNullOrWhiteSpace(rawUrl))
         {
@@ -104,18 +101,12 @@ internal static partial class AttachmentReferenceHelper
             value = value[..queryIndex];
         }
 
-        if (Uri.TryCreate(value, UriKind.Absolute, out var absoluteUri))
+        if (!value.StartsWith("attachment://", StringComparison.OrdinalIgnoreCase))
         {
-            value = absoluteUri.AbsolutePath;
+            return null;
         }
 
-        if (value.StartsWith("uploads/", StringComparison.OrdinalIgnoreCase))
-        {
-            value = $"/{value}";
-        }
-
-        return value.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase)
-            ? value
-            : null;
+        var idSegment = value["attachment://".Length..].Trim('/');
+        return long.TryParse(idSegment, out var attachmentId) ? attachmentId : null;
     }
 }

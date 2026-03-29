@@ -127,7 +127,7 @@ public class ShopController : ControllerBase
                 TargetId = result.VoId,
                 Title = result.VoName,
                 Summary = result.VoDescription,
-                CoverImage = string.IsNullOrWhiteSpace(result.VoCoverImage) ? result.VoIcon : result.VoCoverImage,
+                CoverAttachmentId = result.VoCoverAttachmentId ?? result.VoIconAttachmentId,
                 RoutePath = $"/shop/product/{result.VoId}",
                 OperatorName = Current.UserName
             });

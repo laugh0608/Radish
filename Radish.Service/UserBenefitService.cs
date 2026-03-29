@@ -18,15 +18,18 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
 {
     private readonly IBaseRepository<UserBenefit> _userBenefitRepository;
     private readonly IBaseRepository<UserInventory> _userInventoryRepository;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public UserBenefitService(
         IMapper mapper,
         IBaseRepository<UserBenefit> userBenefitRepository,
-        IBaseRepository<UserInventory> userInventoryRepository)
+        IBaseRepository<UserInventory> userInventoryRepository,
+        IAttachmentUrlResolver attachmentUrlResolver)
         : base(mapper, userBenefitRepository)
     {
         _userBenefitRepository = userBenefitRepository;
         _userInventoryRepository = userInventoryRepository;
+        _attachmentUrlResolver = attachmentUrlResolver;
     }
 
     #region 权益查询
@@ -44,7 +47,9 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             }
 
             var benefits = await _userBenefitRepository.QueryAsync(where);
-            return Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
+            var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
+            FillBenefitUrls(benefitVos);
+            return benefitVos;
         }
         catch (Exception ex)
         {
@@ -66,7 +71,9 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             }
 
             var benefits = await _userBenefitRepository.QueryAsync(where);
-            return Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
+            var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
+            FillBenefitUrls(benefitVos);
+            return benefitVos;
         }
         catch (Exception ex)
         {
@@ -82,7 +89,9 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         {
             var benefits = await _userBenefitRepository.QueryAsync(
                 b => b.UserId == userId && b.IsActive && !b.IsExpired && !b.IsDeleted);
-            return Mapper.Map<List<UserBenefitVo>>(benefits);
+            var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits);
+            FillBenefitUrls(benefitVos);
+            return benefitVos;
         }
         catch (Exception ex)
         {
@@ -159,7 +168,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             BenefitType = product.BenefitType!.Value,
             BenefitValue = product.BenefitValue ?? string.Empty,
             BenefitName = product.Name,
-            BenefitIcon = product.Icon,
+            BenefitIconAttachmentId = product.IconAttachmentId,
             SourceOrderId = orderId,
             SourceProductId = product.Id,
             SourceType = "Purchase",
@@ -204,6 +213,9 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         {
             // 增加数量
             existingItem.Quantity += 1;
+            existingItem.ItemName = product.Name;
+            existingItem.ItemIconAttachmentId = product.IconAttachmentId;
+            existingItem.SourceProductId = product.Id;
             existingItem.ModifyTime = DateTime.Now;
             await _userInventoryRepository.UpdateAsync(existingItem);
 
@@ -221,7 +233,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 ConsumableType = product.ConsumableType!.Value,
                 ItemValue = product.BenefitValue,
                 ItemName = product.Name,
-                ItemIcon = product.Icon,
+                ItemIconAttachmentId = product.IconAttachmentId,
                 Quantity = 1,
                 SourceProductId = product.Id,
                 CreateTime = DateTime.Now,
@@ -244,7 +256,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         BenefitType benefitType,
         string benefitValue,
         string? benefitName = null,
-        string? benefitIcon = null,
+        long? benefitIconAttachmentId = null,
         DurationType durationType = DurationType.Permanent,
         int? durationDays = null)
     {
@@ -256,7 +268,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 BenefitType = benefitType,
                 BenefitValue = benefitValue,
                 BenefitName = benefitName,
-                BenefitIcon = benefitIcon,
+                BenefitIconAttachmentId = benefitIconAttachmentId,
                 SourceType = "System",
                 DurationType = durationType,
                 EffectiveAt = DateTime.Now,
@@ -415,4 +427,22 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     }
 
     #endregion
+
+    private void FillBenefitUrls(List<UserBenefitVo> benefits)
+    {
+        foreach (var benefit in benefits)
+        {
+            benefit.VoBenefitIcon = ResolveAttachmentUrl(benefit.VoBenefitIconAttachmentId);
+        }
+    }
+
+    private string? ResolveAttachmentUrl(long? attachmentId)
+    {
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
+        {
+            return null;
+        }
+
+        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
+    }
 }

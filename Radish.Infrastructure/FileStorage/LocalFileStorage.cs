@@ -118,9 +118,6 @@ public class LocalFileStorage : IFileStorage
                 await stream.CopyToAsync(fileStream);
             }
 
-            // 生成访问 URL
-            var url = GetFileUrl(relativePath);
-
             // 生成缩略图路径（如果需要）
             string? thumbnailPath = null;
             if (options.GenerateThumbnail && IsImageFile(extension))
@@ -132,7 +129,6 @@ public class LocalFileStorage : IFileStorage
             var result = FileUploadResult.Ok(
                 storedName: storedName,
                 storagePath: relativePath,
-                url: url,
                 fileSize: stream.Length,
                 fileHash: fileHash
             );
@@ -213,20 +209,6 @@ public class LocalFileStorage : IFileStorage
         {
             return null;
         }
-    }
-
-    #endregion
-
-    #region GetFileUrl
-
-    /// <summary>
-    /// 获取文件访问 URL
-    /// </summary>
-    public string GetFileUrl(string filePath)
-    {
-        // 将 Windows 路径分隔符替换为 URL 分隔符
-        var urlPath = filePath.Replace('\\', '/');
-        return $"{_options.Local.BaseUrl}/{urlPath}";
     }
 
     #endregion

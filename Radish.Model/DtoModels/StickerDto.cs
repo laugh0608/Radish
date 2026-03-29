@@ -18,8 +18,7 @@ public class CreateStickerGroupDto
     [StringLength(500, ErrorMessage = "描述不能超过500个字符")]
     public string? Description { get; set; }
 
-    [StringLength(500, ErrorMessage = "封面图地址不能超过500个字符")]
-    public string? CoverImageUrl { get; set; }
+    public long? CoverAttachmentId { get; set; }
 
     public StickerGroupType GroupType { get; set; } = StickerGroupType.Official;
 
@@ -39,8 +38,7 @@ public class UpdateStickerGroupDto
     [StringLength(500, ErrorMessage = "描述不能超过500个字符")]
     public string? Description { get; set; }
 
-    [StringLength(500, ErrorMessage = "封面图地址不能超过500个字符")]
-    public string? CoverImageUrl { get; set; }
+    public long? CoverAttachmentId { get; set; }
 
     public StickerGroupType GroupType { get; set; } = StickerGroupType.Official;
 
@@ -65,12 +63,6 @@ public class CreateStickerDto
     [StringLength(200, ErrorMessage = "表情名称不能超过200个字符")]
     public string Name { get; set; } = string.Empty;
 
-    [StringLength(500, ErrorMessage = "图片地址不能超过500个字符")]
-    public string? ImageUrl { get; set; }
-
-    [StringLength(500, ErrorMessage = "缩略图地址不能超过500个字符")]
-    public string? ThumbnailUrl { get; set; }
-
     public bool IsAnimated { get; set; }
 
     public bool AllowInline { get; set; } = true;
@@ -89,12 +81,6 @@ public class UpdateStickerDto
     [Required(ErrorMessage = "表情名称不能为空")]
     [StringLength(200, ErrorMessage = "表情名称不能超过200个字符")]
     public string Name { get; set; } = string.Empty;
-
-    [StringLength(500, ErrorMessage = "图片地址不能超过500个字符")]
-    public string? ImageUrl { get; set; }
-
-    [StringLength(500, ErrorMessage = "缩略图地址不能超过500个字符")]
-    public string? ThumbnailUrl { get; set; }
 
     public bool IsAnimated { get; set; }
 

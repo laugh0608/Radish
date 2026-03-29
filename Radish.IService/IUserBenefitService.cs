@@ -51,7 +51,7 @@ public interface IUserBenefitService : IBaseService<UserBenefit, UserBenefitVo>
     /// <param name="benefitType">权益类型</param>
     /// <param name="benefitValue">权益值</param>
     /// <param name="benefitName">权益名称</param>
-    /// <param name="benefitIcon">权益图标</param>
+    /// <param name="benefitIconAttachmentId">权益图标附件 Id</param>
     /// <param name="durationType">有效期类型</param>
     /// <param name="durationDays">有效期天数</param>
     /// <returns>用户权益 ID</returns>
@@ -60,7 +60,7 @@ public interface IUserBenefitService : IBaseService<UserBenefit, UserBenefitVo>
         BenefitType benefitType,
         string benefitValue,
         string? benefitName = null,
-        string? benefitIcon = null,
+        long? benefitIconAttachmentId = null,
         DurationType durationType = DurationType.Permanent,
         int? durationDays = null);
 

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Moq;
 using Radish.IRepository.Base;
+using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Service;
@@ -18,6 +19,7 @@ public class UserBrowseHistoryServiceTest
     {
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var repository = new Mock<IBaseRepository<UserBrowseHistory>>(MockBehavior.Strict);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
 
         repository
             .Setup(repo => repo.QueryFirstAsync(It.IsAny<Expression<Func<UserBrowseHistory, bool>>?>()))
@@ -32,15 +34,14 @@ public class UserBrowseHistoryServiceTest
                 history.Title.Length == 200 &&
                 history.Summary != null &&
                 history.Summary.Length == 500 &&
-                history.CoverImage != null &&
-                history.CoverImage.Length == 500 &&
+                history.CoverAttachmentId == 987654321 &&
                 history.RoutePath != null &&
                 history.RoutePath.Length == 500 &&
                 history.ViewCount == 1 &&
                 history.CreateBy == "Tester")))
             .ReturnsAsync(1);
 
-        var service = new UserBrowseHistoryService(mapper.Object, repository.Object);
+        var service = new UserBrowseHistoryService(mapper.Object, repository.Object, attachmentUrlResolver.Object);
 
         await service.RecordAsync(new RecordBrowseHistoryDto
         {
@@ -51,7 +52,7 @@ public class UserBrowseHistoryServiceTest
             TargetSlug = new string('s', 220),
             Title = new string('t', 220),
             Summary = new string('m', 520),
-            CoverImage = new string('c', 520),
+            CoverAttachmentId = 987654321,
             RoutePath = new string('r', 520),
             OperatorName = "Tester"
         });
@@ -65,6 +66,7 @@ public class UserBrowseHistoryServiceTest
     {
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var repository = new Mock<IBaseRepository<UserBrowseHistory>>(MockBehavior.Strict);
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
 
         var existing = new UserBrowseHistory
         {
@@ -75,7 +77,7 @@ public class UserBrowseHistoryServiceTest
             TargetSlug = "wiki-old",
             Title = "旧标题",
             Summary = "旧摘要",
-            CoverImage = "旧封面",
+            CoverAttachmentId = 123,
             RoutePath = "/wiki/doc/old",
             ViewCount = 2,
             LastViewTime = DateTime.UtcNow.AddDays(-1)
@@ -89,13 +91,14 @@ public class UserBrowseHistoryServiceTest
                 history.Id == 1 &&
                 history.Title == "新标题" &&
                 history.TargetSlug == "wiki-new" &&
+                history.CoverAttachmentId == 456 &&
                 history.RoutePath == "/wiki/doc/wiki-new" &&
                 history.ViewCount == 3 &&
                 history.ModifyBy == "Tester" &&
                 history.ModifyId == 1001)))
             .ReturnsAsync(true);
 
-        var service = new UserBrowseHistoryService(mapper.Object, repository.Object);
+        var service = new UserBrowseHistoryService(mapper.Object, repository.Object, attachmentUrlResolver.Object);
 
         await service.RecordAsync(new RecordBrowseHistoryDto
         {
@@ -106,7 +109,7 @@ public class UserBrowseHistoryServiceTest
             TargetSlug = "wiki-new",
             Title = "新标题",
             Summary = "新摘要",
-            CoverImage = "新封面",
+            CoverAttachmentId = 456,
             RoutePath = "/wiki/doc/wiki-new",
             OperatorName = "Tester"
         });

@@ -40,13 +40,6 @@ public interface IFileStorage
     Task<Stream?> DownloadAsync(string filePath);
 
     /// <summary>
-    /// 获取文件访问 URL
-    /// </summary>
-    /// <param name="filePath">文件路径（相对路径）</param>
-    /// <returns>访问 URL</returns>
-    string GetFileUrl(string filePath);
-
-    /// <summary>
     /// 检查文件是否存在
     /// </summary>
     /// <param name="filePath">文件路径（相对路径）</param>

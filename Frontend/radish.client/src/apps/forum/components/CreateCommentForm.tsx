@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { buildAttachmentMarkdownUrl } from '@radish/ui';
 import { StickerPicker, type StickerPickerGroup, type StickerPickerSelection } from '@radish/ui/sticker-picker';
 import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
@@ -24,18 +25,6 @@ interface CreateCommentFormProps {
   submitText?: string;
   placeholder?: string;
 }
-
-const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
-  const params = new URLSearchParams();
-  if (fullUrl) {
-    params.set('full', fullUrl);
-  }
-  if (scalePercent && Number.isFinite(scalePercent)) {
-    params.set('scale', String(Math.min(Math.max(scalePercent, 10), 100)));
-  }
-  const meta = params.toString();
-  return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
-};
 
 export const CreateCommentForm = ({
   isAuthenticated,
@@ -87,24 +76,11 @@ export const CreateCommentForm = ({
 
   const buildStickerMarkdownUrl = (
     groupCode: string,
-    stickerCode: string,
-    imageUrl?: string,
-    thumbnailUrl?: string
+    stickerCode: string
   ): string => {
     const normalizedGroupCode = normalizeCode(groupCode);
     const normalizedStickerCode = normalizeCode(stickerCode);
-    const params = new URLSearchParams();
-
-    if (imageUrl) {
-      params.set('image', imageUrl);
-    }
-    if (thumbnailUrl) {
-      params.set('thumbnail', thumbnailUrl);
-    }
-
-    const meta = params.toString();
-    const base = `sticker://${normalizedGroupCode}/${normalizedStickerCode}`;
-    return meta ? `${base}#radish:${meta}` : base;
+    return `sticker://${normalizedGroupCode}/${normalizedStickerCode}`;
   };
 
   const handleSubmit = () => {
@@ -235,8 +211,9 @@ export const CreateCommentForm = ({
       }, t);
 
       // 评论区默认插入缩略图，点开查看原图
-      const displayUrl = result.voThumbnailUrl || result.voUrl;
-      const markdownUrl = appendImageMeta(displayUrl, result.voUrl);
+      const markdownUrl = buildAttachmentMarkdownUrl(result.voId, {
+        displayVariant: result.voThumbnailUrl ? 'thumbnail' : 'original',
+      });
       const imageMarkdown = `![${file.name}](${markdownUrl})`;
       insertTextAtCursor(imageMarkdown);
     } catch (error) {
@@ -267,7 +244,8 @@ export const CreateCommentForm = ({
       }, t);
 
       // 插入 Markdown 链接语法
-      const linkMarkdown = `[${result.voOriginalName || file.name}](${result.voUrl})`;
+      const documentMarkdownUrl = buildAttachmentMarkdownUrl(result.voId);
+      const linkMarkdown = `[${result.voOriginalName || file.name}](${documentMarkdownUrl})`;
       insertTextAtCursor(linkMarkdown);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t('forum.comment.documentUploadFailed');
@@ -309,12 +287,7 @@ export const CreateCommentForm = ({
     }
 
     const altText = escapeMarkdownAlt(selection.stickerName || stickerCode) || stickerCode;
-    const stickerUrl = buildStickerMarkdownUrl(
-      groupCode,
-      stickerCode,
-      selection.imageUrl,
-      selection.thumbnailUrl
-    );
+    const stickerUrl = buildStickerMarkdownUrl(groupCode, stickerCode);
     insertTextAtCursor(`![${altText}](${stickerUrl})`);
     onStickerSelect?.(selection);
   };

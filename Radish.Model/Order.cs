@@ -65,9 +65,9 @@ public class Order : RootEntityTKey<long>, IHasUserId, ITenantEntity
     [SugarColumn(Length = 200, IsNullable = false, ColumnDescription = "商品名称")]
     public string ProductName { get; set; } = string.Empty;
 
-    /// <summary>商品图标（快照）</summary>
-    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "商品图标")]
-    public string? ProductIcon { get; set; }
+    /// <summary>商品图标附件快照 Id</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "商品图标附件ID")]
+    public long? ProductIconAttachmentId { get; set; }
 
     /// <summary>商品类型（快照）</summary>
     [SugarColumn(IsNullable = false, ColumnDescription = "商品类型")]

@@ -100,14 +100,17 @@ public class ForumProfile : Profile
         RecognizeDestinationPrefixes("Vo");
         CreateMap<StickerGroup, StickerGroupVo>()
             .ForMember(dest => dest.VoStickers, opt => opt.Ignore())
-            .ForMember(dest => dest.VoStickerCount, opt => opt.Ignore());
+            .ForMember(dest => dest.VoStickerCount, opt => opt.Ignore())
+            .ForMember(dest => dest.VoCoverImageUrl, opt => opt.Ignore());
         RecognizePrefixes("Vo");
         CreateMap<StickerGroupVo, StickerGroup>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore());
 
         // Sticker -> StickerVo
         RecognizeDestinationPrefixes("Vo");
-        CreateMap<Sticker, StickerVo>();
+        CreateMap<Sticker, StickerVo>()
+            .ForMember(dest => dest.VoImageUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.VoThumbnailUrl, opt => opt.Ignore());
         RecognizePrefixes("Vo");
         CreateMap<StickerVo, Sticker>();
 

@@ -114,7 +114,7 @@ export const StickerGroupList = () => {
       const request: StickerGroupUpsertRequest = {
         name: group.voName,
         description: group.voDescription || undefined,
-        coverImageUrl: group.voCoverImageUrl || undefined,
+        coverAttachmentId: group.voCoverAttachmentId || null,
         groupType: group.voGroupType,
         isEnabled: enabled,
         sort: group.voSort,

@@ -2,3 +2,16 @@
 export { formatDate, formatFileSize } from './format';
 export { isEmail, isPhone, isUrl, isIdCard, getPasswordStrength } from './validation';
 export { truncate, capitalize, camelToKebab, kebabToCamel, randomString } from './string';
+export {
+  buildAttachmentAssetUrl,
+  buildAttachmentMarkdownUrl,
+  normalizeAttachmentId,
+  parseAttachmentMarkdownUrl,
+  resolveConfiguredMediaUrl,
+} from './attachmentMarkdown';
+export type {
+  AttachmentMarkdownVariant,
+  MarkdownDocumentUploadResult,
+  MarkdownImageUploadResult,
+  ParsedAttachmentMarkdownUrl,
+} from './attachmentMarkdown';

@@ -18,6 +18,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     private readonly IBaseRepository<UserInventory> _inventoryRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly ICoinService _coinService;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly IExperienceService? _experienceService;
 
     public UserInventoryService(
@@ -25,12 +26,14 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         IBaseRepository<UserInventory> inventoryRepository,
         IBaseRepository<User> userRepository,
         ICoinService coinService,
+        IAttachmentUrlResolver attachmentUrlResolver,
         IExperienceService? experienceService = null)
         : base(mapper, inventoryRepository)
     {
         _inventoryRepository = inventoryRepository;
         _userRepository = userRepository;
         _coinService = coinService;
+        _attachmentUrlResolver = attachmentUrlResolver;
         _experienceService = experienceService;
     }
 
@@ -42,7 +45,9 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         try
         {
             var items = await _inventoryRepository.QueryAsync(i => i.UserId == userId && i.Quantity > 0);
-            return Mapper.Map<List<UserInventoryVo>>(items.OrderByDescending(i => i.CreateTime).ToList());
+            var itemVos = Mapper.Map<List<UserInventoryVo>>(items.OrderByDescending(i => i.CreateTime).ToList());
+            FillInventoryUrls(itemVos);
+            return itemVos;
         }
         catch (Exception ex)
         {
@@ -58,7 +63,9 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         {
             var items = await _inventoryRepository.QueryAsync(
                 i => i.UserId == userId && i.ConsumableType == consumableType && i.Quantity > 0);
-            return Mapper.Map<List<UserInventoryVo>>(items.OrderByDescending(i => i.CreateTime).ToList());
+            var itemVos = Mapper.Map<List<UserInventoryVo>>(items.OrderByDescending(i => i.CreateTime).ToList());
+            FillInventoryUrls(itemVos);
+            return itemVos;
         }
         catch (Exception ex)
         {
@@ -492,7 +499,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         ConsumableType consumableType,
         string? itemValue,
         string? itemName,
-        string? itemIcon,
+        long? itemIconAttachmentId,
         int quantity = 1,
         long? sourceProductId = null)
     {
@@ -525,7 +532,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
                     ConsumableType = consumableType,
                     ItemValue = itemValue,
                     ItemName = itemName,
-                    ItemIcon = itemIcon,
+                    ItemIconAttachmentId = itemIconAttachmentId,
                     Quantity = quantity,
                     SourceProductId = sourceProductId,
                     CreateTime = DateTime.Now,
@@ -549,4 +556,22 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     }
 
     #endregion
+
+    private void FillInventoryUrls(List<UserInventoryVo> items)
+    {
+        foreach (var item in items)
+        {
+            item.ItemIcon = ResolveAttachmentUrl(item.ItemIconAttachmentId);
+        }
+    }
+
+    private string? ResolveAttachmentUrl(long? attachmentId)
+    {
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
+        {
+            return null;
+        }
+
+        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
+    }
 }

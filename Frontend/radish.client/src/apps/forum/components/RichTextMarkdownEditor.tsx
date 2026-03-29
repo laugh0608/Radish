@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type ClipboardEvent } from 'react';
 import { Icon } from '@radish/ui/icon';
+import {
+  buildAttachmentAssetUrl,
+  buildAttachmentMarkdownUrl,
+  parseAttachmentMarkdownUrl,
+  resolveConfiguredMediaUrl,
+  type MarkdownDocumentUploadResult,
+  type MarkdownImageUploadResult,
+} from '@radish/ui';
 import styles from './RichTextMarkdownEditor.module.css';
 
 interface RichTextMarkdownEditorProps {
@@ -10,8 +18,8 @@ interface RichTextMarkdownEditorProps {
   disabled?: boolean;
   toolbarExtras?: ReactNode;
   className?: string;
-  onImageUpload?: (file: File) => Promise<{ url: string; thumbnailUrl?: string }>;
-  onDocumentUpload?: (file: File) => Promise<{ url: string; fileName: string }>;
+  onImageUpload?: (file: File) => Promise<MarkdownImageUploadResult>;
+  onDocumentUpload?: (file: File) => Promise<MarkdownDocumentUploadResult>;
 }
 
 const escapeHtml = (value: string) =>
@@ -22,10 +30,47 @@ const escapeHtml = (value: string) =>
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
 
+const decodeHtmlAttribute = (value: string) =>
+  value
+    .replaceAll('&quot;', '"')
+    .replaceAll('&#39;', "'")
+    .replaceAll('&lt;', '<')
+    .replaceAll('&gt;', '>')
+    .replaceAll('&amp;', '&');
+
+const buildRichImageHtml = (markdownSrc: string, altText: string): string => {
+  const attachmentMeta = parseAttachmentMarkdownUrl(markdownSrc);
+  const escapedAltText = escapeHtml(altText);
+  if (!attachmentMeta) {
+    return `<img src="${escapeHtml(resolveConfiguredMediaUrl(markdownSrc))}" alt="${escapedAltText}" />`;
+  }
+
+  const previewSrc = buildAttachmentAssetUrl(attachmentMeta.attachmentId, attachmentMeta.displayVariant);
+  const scaleStyle = attachmentMeta.scalePercent
+    ? ` style="width:${attachmentMeta.scalePercent}%;max-width:100%;"`
+    : '';
+
+  return `<img src="${escapeHtml(previewSrc)}" data-markdown-src="${escapeHtml(markdownSrc)}" alt="${escapedAltText}"${scaleStyle} />`;
+};
+
+const buildRichLinkHtml = (markdownHref: string, text: string): string => {
+  const attachmentMeta = parseAttachmentMarkdownUrl(markdownHref);
+  const resolvedHref = attachmentMeta
+    ? buildAttachmentAssetUrl(attachmentMeta.attachmentId, 'original')
+    : resolveConfiguredMediaUrl(markdownHref);
+  const escapedText = escapeHtml(text.trim() || markdownHref);
+
+  return `<a href="${escapeHtml(resolvedHref)}" data-markdown-href="${escapeHtml(markdownHref)}" target="_blank" rel="noreferrer">${escapedText}</a>`;
+};
+
 const inlineMarkdownToHtml = (value: string) => {
   let html = escapeHtml(value);
-  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />');
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+  html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt: string, src: string) =>
+    buildRichImageHtml(decodeHtmlAttribute(src), decodeHtmlAttribute(alt))
+  );
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text: string, href: string) =>
+    buildRichLinkHtml(decodeHtmlAttribute(href), decodeHtmlAttribute(text))
+  );
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   html = html.replace(/~~([^~]+)~~/g, '<s>$1</s>');
@@ -200,11 +245,11 @@ const serializeNode = (node: Node, orderedIndex = 1): string => {
     case 'li':
       return serializeChildren(node);
     case 'a': {
-      const href = node.getAttribute('href') ?? '';
+      const href = node.getAttribute('data-markdown-href') ?? node.getAttribute('href') ?? '';
       return `[${serializeChildren(node).trim() || href}](${href})`;
     }
     case 'img': {
-      const src = node.getAttribute('src') ?? '';
+      const src = node.getAttribute('data-markdown-src') ?? node.getAttribute('src') ?? '';
       const alt = node.getAttribute('alt') ?? '图片';
       return `![${alt}](${src})`;
     }
@@ -311,7 +356,11 @@ export const RichTextMarkdownEditor = ({
     setUploadError(null);
     try {
       const result = await onImageUpload(file);
-      insertHtml(`<p><img src="${result.url}" alt="${escapeHtml(file.name)}" /></p>`);
+      const markdownSrc = buildAttachmentMarkdownUrl(result.attachmentId, {
+        displayVariant: result.displayVariant,
+        scalePercent: result.scalePercent,
+      });
+      insertHtml(`<p>${buildRichImageHtml(markdownSrc, file.name)}</p>`);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : '图片上传失败');
     } finally {
@@ -328,9 +377,8 @@ export const RichTextMarkdownEditor = ({
     setUploadError(null);
     try {
       const result = await onDocumentUpload(file);
-      insertHtml(
-        `<p><a href="${result.url}" target="_blank" rel="noreferrer">${escapeHtml(result.fileName || file.name)}</a></p>`
-      );
+      const markdownHref = buildAttachmentMarkdownUrl(result.attachmentId);
+      insertHtml(`<p>${buildRichLinkHtml(markdownHref, result.fileName || file.name)}</p>`);
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : '文档上传失败');
     } finally {

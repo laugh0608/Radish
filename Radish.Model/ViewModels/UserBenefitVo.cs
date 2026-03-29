@@ -33,7 +33,10 @@ public class UserBenefitVo
     /// <summary>权益名称</summary>
     public string? VoBenefitName { get; set; }
 
-    /// <summary>权益图标</summary>
+    /// <summary>权益图标附件快照 Id</summary>
+    public long? VoBenefitIconAttachmentId { get; set; }
+
+    /// <summary>权益图标 URL</summary>
     public string? VoBenefitIcon { get; set; }
 
     /// <summary>来源类型</summary>
@@ -119,7 +122,10 @@ public class UserInventoryVo
     /// <summary>道具名称</summary>
     public string? ItemName { get; set; }
 
-    /// <summary>道具图标</summary>
+    /// <summary>道具图标附件快照 Id</summary>
+    public long? ItemIconAttachmentId { get; set; }
+
+    /// <summary>道具图标 URL</summary>
     public string? ItemIcon { get; set; }
 
     /// <summary>数量</summary>

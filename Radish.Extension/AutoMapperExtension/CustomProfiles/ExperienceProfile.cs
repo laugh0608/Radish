@@ -61,6 +61,8 @@ public class ExperienceProfile : Profile
         // LevelConfig -> LevelConfigVo (使用前缀识别 + 手动配置特殊字段)
         RecognizeDestinationPrefixes("Vo");
         CreateMap<LevelConfig, LevelConfigVo>()
+            .ForMember(dest => dest.VoIconUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.VoBadgeUrl, opt => opt.Ignore())
             .ForMember(dest => dest.VoPrivileges, opt => opt.MapFrom(src => ParsePrivileges(src.Privileges)));
 
         // LevelConfigVo -> LevelConfig (使用前缀识别 + 手动配置特殊字段)

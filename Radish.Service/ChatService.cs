@@ -22,6 +22,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     private readonly IBaseRepository<User> _userRepository;
     private readonly IChatPresenceService _chatPresenceService;
     private readonly INotificationService _notificationService;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public ChatService(
         IMapper mapper,
@@ -31,7 +32,8 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         IBaseRepository<Attachment> attachmentRepository,
         IBaseRepository<User> userRepository,
         IChatPresenceService chatPresenceService,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IAttachmentUrlResolver attachmentUrlResolver)
         : base(mapper, baseRepository)
     {
         _channelRepository = baseRepository;
@@ -41,6 +43,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         _userRepository = userRepository;
         _chatPresenceService = chatPresenceService;
         _notificationService = notificationService;
+        _attachmentUrlResolver = attachmentUrlResolver;
     }
 
     public async Task<List<ChannelVo>> GetChannelListAsync(long tenantId, long userId)
@@ -139,7 +142,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         var replyMap = replyIds.Count > 0
             ? (await _messageRepository.QueryByIdsAsync(replyIds)).ToDictionary(m => m.Id, m => m)
             : new Dictionary<long, ChannelMessage>();
-        var avatarMap = await GetUserAvatarMapAsync(messages.Select(m => m.UserId)
+        var avatarMap = await GetUserAvatarAttachmentMapAsync(messages.Select(m => m.UserId)
             .Concat(replyMap.Values.Select(m => m.UserId)));
 
         return messages
@@ -147,7 +150,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             .ToList();
     }
 
-    public async Task<ChannelMessageVo> SendMessageAsync(long tenantId, long userId, string userName, string? userAvatarUrl, SendChannelMessageDto request)
+    public async Task<ChannelMessageVo> SendMessageAsync(long tenantId, long userId, string userName, SendChannelMessageDto request)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -170,15 +173,13 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             throw new ArgumentException("文本消息内容不能为空", nameof(request.Content));
         }
 
-        if (request.Type == MessageType.Image && string.IsNullOrWhiteSpace(request.ImageUrl))
+        if (request.Type == MessageType.Image && (!request.AttachmentId.HasValue || request.AttachmentId.Value <= 0))
         {
-            throw new ArgumentException("图片消息必须提供图片地址", nameof(request.ImageUrl));
+            throw new ArgumentException("图片消息必须提供附件 ID", nameof(request.AttachmentId));
         }
 
-        if (string.IsNullOrWhiteSpace(userAvatarUrl))
-        {
-            userAvatarUrl = await GetUserAvatarUrlAsync(userId);
-        }
+        var userAvatarAttachmentId = await GetCurrentUserAvatarAttachmentIdAsync(userId);
+        var senderAvatarUrl = ResolveAttachmentUrl(userAvatarAttachmentId);
 
         ChannelMessage? replyToMessage = null;
         if (request.ReplyToId.HasValue && request.ReplyToId.Value > 0)
@@ -195,13 +196,11 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             ChannelId = request.ChannelId,
             UserId = userId,
             UserName = normalizedUserName,
-            UserAvatarUrl = userAvatarUrl,
+            UserAvatarAttachmentIdSnapshot = userAvatarAttachmentId,
             Type = request.Type,
             Content = normalizedContent,
             ReplyToId = request.ReplyToId,
             AttachmentId = request.AttachmentId,
-            ImageUrl = request.ImageUrl?.Trim(),
-            ImageThumbnailUrl = request.ImageThumbnailUrl?.Trim(),
             TenantId = tenantId,
             CreateTime = DateTime.Now,
             IsDeleted = false
@@ -230,7 +229,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             channel.Name,
             userId,
             normalizedUserName,
-            userAvatarUrl,
+            senderAvatarUrl,
             normalizedContent);
 
         var replyMap = new Dictionary<long, ChannelMessage>();
@@ -393,15 +392,23 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         }
 
         var users = await _userRepository.QueryAsync(u => onlineUserIds.Contains(u.Id) && !u.IsDeleted);
-        var avatarMap = await GetUserAvatarMapAsync(users.Select(u => u.Id));
+        var avatarAttachmentMap = await GetUserAvatarAttachmentMapAsync(users.Select(u => u.Id));
         return users
             .OrderBy(u => u.UserName)
-            .Select(u => new ChannelMemberVo
+            .Select(u =>
             {
-                VoUserId = u.Id,
-                VoUserName = u.UserName,
-                VoUserAvatarUrl = avatarMap.TryGetValue(u.Id, out var avatarUrl) ? avatarUrl : null,
-                VoIsOnline = true
+                var hasAvatarAttachment = avatarAttachmentMap.TryGetValue(u.Id, out var avatarAttachmentId);
+
+                return new ChannelMemberVo
+                {
+                    VoUserId = u.Id,
+                    VoUserName = u.UserName,
+                    VoUserAvatarAttachmentId = hasAvatarAttachment ? avatarAttachmentId : null,
+                    VoUserAvatarUrl = hasAvatarAttachment
+                        ? ResolveAttachmentUrl(avatarAttachmentId)
+                        : null,
+                    VoIsOnline = true
+                };
             })
             .ToList();
     }
@@ -421,7 +428,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             return null;
         }
 
-        var avatarMap = await GetUserAvatarMapAsync(new[] { message.UserId });
+        var avatarMap = await GetUserAvatarAttachmentMapAsync(new[] { message.UserId });
         return MapMessageVo(message, null, avatarMap);
     }
 
@@ -493,7 +500,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         await _memberRepository.UpdateAsync(member);
     }
 
-    private async Task<Dictionary<long, string>> GetUserAvatarMapAsync(IEnumerable<long> userIds)
+    private async Task<Dictionary<long, long>> GetUserAvatarAttachmentMapAsync(IEnumerable<long> userIds)
     {
         var targetUserIds = userIds
             .Where(id => id > 0)
@@ -502,7 +509,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
 
         if (targetUserIds.Count == 0)
         {
-            return new Dictionary<long, string>();
+            return new Dictionary<long, long>();
         }
 
         var attachments = await _attachmentRepository.QueryAsync(a =>
@@ -513,25 +520,25 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             && !a.IsDeleted);
 
         return attachments
-            .Where(a => a.BusinessId.HasValue && !string.IsNullOrWhiteSpace(a.Url))
+            .Where(a => a.BusinessId.HasValue)
             .GroupBy(a => a.BusinessId!.Value)
             .ToDictionary(
                 group => group.Key,
                 group => group
                     .OrderByDescending(a => a.Id)
-                    .Select(a => a.Url.Trim())
+                    .Select(a => a.Id)
                     .First());
     }
 
-    private async Task<string?> GetUserAvatarUrlAsync(long userId)
+    private async Task<long?> GetCurrentUserAvatarAttachmentIdAsync(long userId)
     {
         if (userId <= 0)
         {
             return null;
         }
 
-        var avatarMap = await GetUserAvatarMapAsync(new[] { userId });
-        return avatarMap.TryGetValue(userId, out var avatarUrl) ? avatarUrl : null;
+        var avatarMap = await GetUserAvatarAttachmentMapAsync(new[] { userId });
+        return avatarMap.TryGetValue(userId, out var avatarAttachmentId) ? avatarAttachmentId : null;
     }
 
     private async Task SendMentionNotificationsAsync(
@@ -624,34 +631,63 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     private ChannelMessageVo MapMessageVo(
         ChannelMessage message,
         Dictionary<long, ChannelMessage>? replyMap,
-        Dictionary<long, string>? avatarMap = null)
+        Dictionary<long, long>? avatarMap = null)
     {
         var messageVo = Mapper.Map<ChannelMessageVo>(message);
+        messageVo.VoUserAvatarAttachmentId = message.UserAvatarAttachmentIdSnapshot;
+        messageVo.VoUserAvatarUrl = ResolveAttachmentUrl(message.UserAvatarAttachmentIdSnapshot);
+        messageVo.VoImageUrl = ResolveAttachmentUrl(message.AttachmentId);
+        messageVo.VoImageThumbnailUrl = ResolveAttachmentUrl(message.AttachmentId, AttachmentUrlVariant.Thumbnail);
+
         if (string.IsNullOrWhiteSpace(messageVo.VoUserAvatarUrl)
             && avatarMap != null
-            && avatarMap.TryGetValue(message.UserId, out var avatarUrl))
+            && avatarMap.TryGetValue(message.UserId, out var avatarAttachmentId))
         {
-            messageVo.VoUserAvatarUrl = avatarUrl;
+            messageVo.VoUserAvatarAttachmentId = avatarAttachmentId;
+            messageVo.VoUserAvatarUrl = ResolveAttachmentUrl(avatarAttachmentId);
         }
 
         if (message.ReplyToId.HasValue && replyMap != null && replyMap.TryGetValue(message.ReplyToId.Value, out var replyMessage))
         {
             messageVo.VoReplyTo = Mapper.Map<ChannelMessageVo>(replyMessage);
+            messageVo.VoReplyTo.VoUserAvatarAttachmentId = replyMessage.UserAvatarAttachmentIdSnapshot;
+            messageVo.VoReplyTo.VoUserAvatarUrl = ResolveAttachmentUrl(replyMessage.UserAvatarAttachmentIdSnapshot);
+            messageVo.VoReplyTo.VoImageUrl = ResolveAttachmentUrl(replyMessage.AttachmentId);
+            messageVo.VoReplyTo.VoImageThumbnailUrl = ResolveAttachmentUrl(replyMessage.AttachmentId, AttachmentUrlVariant.Thumbnail);
+
             if (string.IsNullOrWhiteSpace(messageVo.VoReplyTo.VoUserAvatarUrl)
                 && avatarMap != null
-                && avatarMap.TryGetValue(replyMessage.UserId, out var replyAvatarUrl))
+                && avatarMap.TryGetValue(replyMessage.UserId, out var replyAvatarAttachmentId))
             {
-                messageVo.VoReplyTo.VoUserAvatarUrl = replyAvatarUrl;
+                messageVo.VoReplyTo.VoUserAvatarAttachmentId = replyAvatarAttachmentId;
+                messageVo.VoReplyTo.VoUserAvatarUrl = ResolveAttachmentUrl(replyAvatarAttachmentId);
             }
         }
 
         messageVo.VoIsRecalled = message.IsDeleted;
+        if (message.IsDeleted)
+        {
+            messageVo.VoContent = null;
+            messageVo.VoImageUrl = null;
+            messageVo.VoImageThumbnailUrl = null;
+        }
+
         if (messageVo.VoReplyTo != null)
         {
             messageVo.VoReplyTo.VoIsRecalled = messageVo.VoReplyTo.VoIsRecalled || messageVo.VoReplyTo.VoContent == null;
         }
 
         return messageVo;
+    }
+
+    private string? ResolveAttachmentUrl(long? attachmentId, AttachmentUrlVariant variant = AttachmentUrlVariant.Original)
+    {
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
+        {
+            return null;
+        }
+
+        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value, variant);
     }
 
 }

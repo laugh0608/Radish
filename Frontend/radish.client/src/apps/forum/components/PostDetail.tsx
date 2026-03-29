@@ -6,6 +6,11 @@ import type { UserFollowStatus } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { Icon } from '@radish/ui/icon';
+import {
+  buildAttachmentAssetUrl,
+  type MarkdownDocumentUploadResult,
+  type MarkdownImageUploadResult,
+} from '@radish/ui';
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
@@ -18,16 +23,6 @@ const MarkdownRenderer = lazy(() =>
 const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
 );
-
-const appendImageMeta = (displayUrl: string, fullUrl?: string): string => {
-  const params = new URLSearchParams();
-  if (fullUrl) {
-    params.set('full', fullUrl);
-  }
-
-  const meta = params.toString();
-  return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
-};
 
 interface PostDetailProps {
   post: PostDetailType | null;
@@ -294,7 +289,7 @@ export const PostDetail = ({
     }
   };
 
-  const handleAnswerImageUpload = async (file: File) => {
+  const handleAnswerImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
     const result = await uploadImage({
       file,
       businessType: 'Comment',
@@ -303,21 +298,21 @@ export const PostDetail = ({
       removeExif: true
     }, t);
 
-    const displayUrl = result.voThumbnailUrl || result.voUrl;
     return {
-      url: appendImageMeta(displayUrl, result.voUrl),
-      thumbnailUrl: result.voThumbnailUrl
+      attachmentId: result.voId,
+      displayVariant: result.voThumbnailUrl ? 'thumbnail' : 'original',
+      previewUrl: buildAttachmentAssetUrl(result.voId, result.voThumbnailUrl ? 'thumbnail' : 'original'),
     };
   };
 
-  const handleAnswerDocumentUpload = async (file: File) => {
+  const handleAnswerDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
     const result = await uploadDocument({
       file,
       businessType: 'Comment'
     }, t);
 
     return {
-      url: result.voUrl,
+      attachmentId: result.voId,
       fileName: result.voOriginalName || file.name
     };
   };

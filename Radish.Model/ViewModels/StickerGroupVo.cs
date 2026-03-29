@@ -7,6 +7,7 @@ public class StickerGroupVo
     public string VoCode { get; set; } = string.Empty;
     public string VoName { get; set; } = string.Empty;
     public string? VoDescription { get; set; }
+    public long? VoCoverAttachmentId { get; set; }
     public string? VoCoverImageUrl { get; set; }
     public StickerGroupType VoGroupType { get; set; }
     public bool VoIsEnabled { get; set; }

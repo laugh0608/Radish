@@ -90,7 +90,7 @@ public class PostController : ControllerBase
                 TargetId = post.VoId,
                 Title = post.VoTitle,
                 Summary = post.VoSummary,
-                CoverImage = post.VoCoverImage,
+                CoverAttachmentId = post.VoCoverAttachmentId,
                 RoutePath = $"/forum/post/{post.VoId}",
                 OperatorName = Current.UserName
             });

@@ -19,6 +19,7 @@ public class LeaderboardService : ILeaderboardService
     private readonly IBaseRepository<User> _userRepository;
     private readonly IBaseRepository<LevelConfig> _levelConfigRepository;
     private readonly ILeaderboardRepository _leaderboardRepository;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly IMapper _mapper;
 
     /// <summary>排行榜类型配置</summary>
@@ -113,7 +114,8 @@ public class LeaderboardService : ILeaderboardService
         IBaseRepository<Product> productRepository,
         IBaseRepository<User> userRepository,
         IBaseRepository<LevelConfig> levelConfigRepository,
-        ILeaderboardRepository leaderboardRepository)
+        ILeaderboardRepository leaderboardRepository,
+        IAttachmentUrlResolver attachmentUrlResolver)
     {
         _mapper = mapper;
         _userExpRepository = userExpRepository;
@@ -122,6 +124,7 @@ public class LeaderboardService : ILeaderboardService
         _userRepository = userRepository;
         _levelConfigRepository = levelConfigRepository;
         _leaderboardRepository = leaderboardRepository;
+        _attachmentUrlResolver = attachmentUrlResolver;
     }
 
     /// <inheritdoc />
@@ -517,7 +520,7 @@ public class LeaderboardService : ILeaderboardService
                 VoRank = rank,
                 VoProductId = product.Id,
                 VoProductName = product.Name,
-                VoProductIcon = product.Icon,
+                VoProductIcon = ResolveAttachmentUrl(product.IconAttachmentId),
                 VoProductPrice = product.Price,
                 VoPrimaryValue = product.SoldCount,
                 VoPrimaryLabel = "销量",
@@ -682,6 +685,16 @@ public class LeaderboardService : ILeaderboardService
             PageCount = pageCount,
             Data = data
         };
+    }
+
+    private string? ResolveAttachmentUrl(long? attachmentId)
+    {
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
+        {
+            return null;
+        }
+
+        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
     }
 
     #endregion

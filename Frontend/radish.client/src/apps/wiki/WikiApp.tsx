@@ -5,6 +5,11 @@ import { toast } from '@radish/ui/toast';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { Modal } from '@radish/ui/modal';
+import {
+  buildAttachmentAssetUrl,
+  type MarkdownDocumentUploadResult,
+  type MarkdownImageUploadResult,
+} from '@radish/ui';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { uploadDocument, uploadImage } from '@/api/attachment';
@@ -904,7 +909,7 @@ export const WikiApp = () => {
     }
   };
 
-  const handleImageUpload = async (file: File) => {
+  const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
     const attachment = await uploadImage(
       {
         file,
@@ -916,12 +921,13 @@ export const WikiApp = () => {
     );
 
     return {
-      url: attachment.voUrl,
-      thumbnailUrl: attachment.voThumbnailUrl,
+      attachmentId: attachment.voId,
+      displayVariant: 'original',
+      previewUrl: buildAttachmentAssetUrl(attachment.voId, 'original'),
     };
   };
 
-  const handleDocumentUpload = async (file: File) => {
+  const handleDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
     const attachment = await uploadDocument(
       {
         file,
@@ -931,7 +937,7 @@ export const WikiApp = () => {
     );
 
     return {
-      url: attachment.voUrl,
+      attachmentId: attachment.voId,
       fileName: attachment.voOriginalName || file.name,
     };
   };

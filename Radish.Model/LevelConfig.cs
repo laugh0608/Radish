@@ -26,8 +26,8 @@ public class LevelConfig : RootEntityTKey<int>
         ExpRequired = 0;
         ExpCumulative = 0;
         ThemeColor = string.Empty;
-        IconUrl = string.Empty;
-        BadgeUrl = string.Empty;
+        IconAttachmentId = null;
+        BadgeAttachmentId = null;
         Description = string.Empty;
         Privileges = string.Empty;
         IsEnabled = true;
@@ -68,15 +68,13 @@ public class LevelConfig : RootEntityTKey<int>
     [SugarColumn(Length = 20, IsNullable = true, ColumnDescription = "主题色")]
     public string? ThemeColor { get; set; } = string.Empty;
 
-    /// <summary>等级图标 URL</summary>
-    /// <remarks>可空，最大 500 字符</remarks>
-    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "等级图标URL")]
-    public string? IconUrl { get; set; } = string.Empty;
+    /// <summary>等级图标附件 Id</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "等级图标附件ID")]
+    public long? IconAttachmentId { get; set; }
 
-    /// <summary>等级徽章 URL</summary>
-    /// <remarks>可空，最大 500 字符</remarks>
-    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "等级徽章URL")]
-    public string? BadgeUrl { get; set; } = string.Empty;
+    /// <summary>等级徽章附件 Id</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "等级徽章附件ID")]
+    public long? BadgeAttachmentId { get; set; }
 
     #endregion
 

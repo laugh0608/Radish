@@ -24,6 +24,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IFileStorage _fileStorage;
     private readonly IImageProcessor _imageProcessor;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly FileStorageOptions _fileStorageOptions;
     private readonly string _tempPath;
 
@@ -32,12 +33,14 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         IBaseRepository<Attachment> baseRepository,
         IFileStorage fileStorage,
         IImageProcessor imageProcessor,
+        IAttachmentUrlResolver attachmentUrlResolver,
         IOptions<FileStorageOptions> fileStorageOptions)
         : base(mapper, baseRepository)
     {
         _attachmentRepository = baseRepository;
         _fileStorage = fileStorage;
         _imageProcessor = imageProcessor;
+        _attachmentUrlResolver = attachmentUrlResolver;
         _fileStorageOptions = fileStorageOptions.Value;
         _tempPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Temp");
 
@@ -188,7 +191,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 SmallPath = multipleSizes?.GetValueOrDefault("small"),
                 MediumPath = multipleSizes?.GetValueOrDefault("medium"),
                 LargePath = multipleSizes?.GetValueOrDefault("large"),
-                Url = uploadResult.Url,
                 FileHash = fileHash,
                 UploaderId = uploaderId,
                 UploaderName = uploaderName,
@@ -375,7 +377,11 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     /// <summary>
     /// 获取附件下载流
     /// </summary>
-    public async Task<(Stream? stream, AttachmentVo? attachment)> GetDownloadStreamAsync(long attachmentId, long? requestUserId = null, List<string>? requestUserRoles = null)
+    public async Task<(Stream? stream, AttachmentVo? attachment)> GetDownloadStreamAsync(
+        long attachmentId,
+        long? requestUserId = null,
+        List<string>? requestUserRoles = null,
+        AttachmentUrlVariant variant = AttachmentUrlVariant.Original)
     {
         try
         {
@@ -404,10 +410,11 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             }
 
             // 3. 获取文件流
-            var stream = await _fileStorage.DownloadAsync(attachment.StoragePath);
+            var filePath = ResolveAttachmentPath(attachment, variant);
+            var stream = await _fileStorage.DownloadAsync(filePath);
             if (stream == null)
             {
-                Log.Warning("文件流获取失败：{StoragePath}", attachment.StoragePath);
+                Log.Warning("文件流获取失败：{StoragePath}", filePath);
                 return (null, null);
             }
 
@@ -415,6 +422,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             _ = Task.Run(async () => await IncrementDownloadCountAsync(attachmentId));
 
             var attachmentVo = Mapper.Map<AttachmentVo>(attachment);
+            attachmentVo.VoUrl = _attachmentUrlResolver.ResolveAttachmentUrl(attachment.Id);
+            attachmentVo.VoThumbnailUrl = _attachmentUrlResolver.ResolveAttachmentUrl(attachment.Id, AttachmentUrlVariant.Thumbnail);
             return (stream, attachmentVo);
         }
         catch (Exception ex)
@@ -435,6 +444,17 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     {
         var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
         return imageExtensions.Contains(extension.ToLowerInvariant());
+    }
+
+    private static string ResolveAttachmentPath(Attachment attachment, AttachmentUrlVariant variant)
+    {
+        if (variant == AttachmentUrlVariant.Thumbnail &&
+            !string.IsNullOrWhiteSpace(attachment.ThumbnailPath))
+        {
+            return attachment.ThumbnailPath;
+        }
+
+        return attachment.StoragePath;
     }
 
     /// <summary>

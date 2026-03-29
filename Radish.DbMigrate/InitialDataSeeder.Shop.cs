@@ -1,8 +1,5 @@
 using System;
-using System.IO;
-using System.Linq;
 using Radish.Model;
-using Radish.Common.CoreTool;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
 
@@ -13,14 +10,12 @@ internal static partial class InitialDataSeeder
     /// <summary>初始化商城分类数据</summary>
     private static async Task SeedShopCategoriesAsync(ISqlSugarClient db)
     {
-        var defaultShopImages = GetDefaultShopImageUrls();
         var categories = new[]
         {
             new ProductCategory
             {
                 Id = "badge",
                 Name = "徽章收藏",
-                Icon = "badge",
                 Description = "专属徽章，展示你的独特身份",
                 SortOrder = 0,
                 IsEnabled = true,
@@ -30,7 +25,6 @@ internal static partial class InitialDataSeeder
             {
                 Id = "frame",
                 Name = "头像框",
-                Icon = "frame",
                 Description = "精美头像框，装点个人形象",
                 SortOrder = 1,
                 IsEnabled = true,
@@ -40,7 +34,6 @@ internal static partial class InitialDataSeeder
             {
                 Id = "title",
                 Name = "称号",
-                Icon = "title",
                 Description = "独特称号，彰显个性",
                 SortOrder = 2,
                 IsEnabled = true,
@@ -50,7 +43,6 @@ internal static partial class InitialDataSeeder
             {
                 Id = "signature",
                 Name = "签名档",
-                Icon = "signature",
                 Description = "个性签名，留下你的专属印记",
                 SortOrder = 3,
                 IsEnabled = true,
@@ -60,7 +52,6 @@ internal static partial class InitialDataSeeder
             {
                 Id = "effect",
                 Name = "特效装扮",
-                Icon = "sparkles",
                 Description = "点赞特效、用户名特效等",
                 SortOrder = 4,
                 IsEnabled = true,
@@ -70,15 +61,12 @@ internal static partial class InitialDataSeeder
             {
                 Id = "theme",
                 Name = "主题皮肤",
-                Icon = "palette",
                 Description = "个性化界面主题",
                 SortOrder = 5,
                 IsEnabled = true,
                 CreateTime = DateTime.Now
             }
         };
-
-        ApplyDefaultImagesToCategories(categories, defaultShopImages);
 
         foreach (var category in categories)
         {
@@ -90,25 +78,7 @@ internal static partial class InitialDataSeeder
             }
             else
             {
-                if (ShouldBackfillCategoryIcon(existingCategory.Icon) && !string.IsNullOrWhiteSpace(category.Icon))
-                {
-                    var updated = await db.Updateable<ProductCategory>()
-                        .SetColumns(c => new ProductCategory
-                        {
-                            Icon = category.Icon,
-                            ModifyTime = DateTime.Now
-                        })
-                        .Where(c => c.Id == category.Id)
-                        .ExecuteCommandAsync();
-
-                    Console.WriteLine(updated > 0
-                        ? $"[Radish.DbMigrate] 已为商品分类 Id={category.Id} 补齐默认图片。"
-                        : $"[Radish.DbMigrate] 商品分类 Id={category.Id} 已存在，但未能补齐默认图片。");
-                }
-                else
-                {
-                    Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={category.Id} 的商品分类，且图片已存在，跳过。");
-                }
+                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={category.Id} 的商品分类，跳过。");
             }
         }
     }
@@ -116,8 +86,6 @@ internal static partial class InitialDataSeeder
     /// <summary>初始化商城商品数据</summary>
     private static async Task SeedShopProductsAsync(ISqlSugarClient db)
     {
-        var defaultShopImages = GetDefaultShopImageUrls();
-
         // 商品 ID 从 100000 开始
         var products = new[]
         {
@@ -127,7 +95,6 @@ internal static partial class InitialDataSeeder
                 Id = 100001,
                 Name = "元老徽章",
                 Description = "社区元老专属徽章，见证社区成长",
-                Icon = "badge-veteran",
                 CategoryId = "badge",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Badge,
@@ -148,7 +115,6 @@ internal static partial class InitialDataSeeder
                 Id = 100002,
                 Name = "萝卜爱好者",
                 Description = "热爱萝卜的小伙伴专属徽章",
-                Icon = "badge-carrot-lover",
                 CategoryId = "badge",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Badge,
@@ -167,7 +133,6 @@ internal static partial class InitialDataSeeder
                 Id = 100003,
                 Name = "夜猫子",
                 Description = "深夜活跃用户专属徽章",
-                Icon = "badge-night-owl",
                 CategoryId = "badge",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Badge,
@@ -188,7 +153,6 @@ internal static partial class InitialDataSeeder
                 Id = 100011,
                 Name = "星光头像框",
                 Description = "闪烁的星光环绕，璀璨夺目",
-                Icon = "frame-star",
                 CategoryId = "frame",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.AvatarFrame,
@@ -208,7 +172,6 @@ internal static partial class InitialDataSeeder
                 Id = 100012,
                 Name = "萝卜花环",
                 Description = "可爱的萝卜花环头像框",
-                Icon = "frame-carrot-wreath",
                 CategoryId = "frame",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.AvatarFrame,
@@ -228,7 +191,6 @@ internal static partial class InitialDataSeeder
                 Id = 100013,
                 Name = "极简线条框",
                 Description = "简约而不简单的线条设计",
-                Icon = "frame-minimal",
                 CategoryId = "frame",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.AvatarFrame,
@@ -249,7 +211,6 @@ internal static partial class InitialDataSeeder
                 Id = 100021,
                 Name = "萝卜达人",
                 Description = "专属称号「萝卜达人」，显示在用户名旁",
-                Icon = "title-expert",
                 CategoryId = "title",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Title,
@@ -270,7 +231,6 @@ internal static partial class InitialDataSeeder
                 Id = 100022,
                 Name = "用爱发电",
                 Description = "专属称号「用爱发电」，致敬每一位贡献者",
-                Icon = "title-love-power",
                 CategoryId = "title",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Title,
@@ -289,7 +249,6 @@ internal static partial class InitialDataSeeder
                 Id = 100023,
                 Name = "快乐水源",
                 Description = "专属称号「快乐水源」，传递快乐的人",
-                Icon = "title-joy",
                 CategoryId = "title",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Title,
@@ -310,7 +269,6 @@ internal static partial class InitialDataSeeder
                 Id = 100031,
                 Name = "来自萝卜星球",
                 Description = "评论签名「来自萝卜星球」",
-                Icon = "signature-planet",
                 CategoryId = "signature",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Signature,
@@ -329,7 +287,6 @@ internal static partial class InitialDataSeeder
                 Id = 100032,
                 Name = "深夜食堂",
                 Description = "评论签名「来自深夜食堂」",
-                Icon = "signature-midnight",
                 CategoryId = "signature",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Signature,
@@ -348,7 +305,6 @@ internal static partial class InitialDataSeeder
                 Id = 100033,
                 Name = "代码世界",
                 Description = "评论签名「来自代码世界」",
-                Icon = "signature-code",
                 CategoryId = "signature",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Signature,
@@ -369,7 +325,6 @@ internal static partial class InitialDataSeeder
                 Id = 100041,
                 Name = "彩虹用户名",
                 Description = "用户名显示为彩虹渐变色",
-                Icon = "effect-rainbow",
                 CategoryId = "effect",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.NameColor,
@@ -389,7 +344,6 @@ internal static partial class InitialDataSeeder
                 Id = 100042,
                 Name = "金色用户名",
                 Description = "用户名显示为尊贵金色",
-                Icon = "effect-gold",
                 CategoryId = "effect",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.NameColor,
@@ -409,7 +363,6 @@ internal static partial class InitialDataSeeder
                 Id = 100043,
                 Name = "爱心点赞特效",
                 Description = "点赞时显示爱心飘散动画",
-                Icon = "effect-heart-like",
                 CategoryId = "effect",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.LikeEffect,
@@ -431,7 +384,6 @@ internal static partial class InitialDataSeeder
                 Id = 100051,
                 Name = "暗夜主题",
                 Description = "深邃的暗夜配色主题",
-                Icon = "theme-dark",
                 CategoryId = "theme",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Theme,
@@ -450,7 +402,6 @@ internal static partial class InitialDataSeeder
                 Id = 100052,
                 Name = "樱花主题",
                 Description = "浪漫的樱花粉配色主题",
-                Icon = "theme-sakura",
                 CategoryId = "theme",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Theme,
@@ -471,7 +422,6 @@ internal static partial class InitialDataSeeder
                 Id = 100061,
                 Name = "改名卡",
                 Description = "使用后可修改一次用户名",
-                Icon = "card-rename",
                 CategoryId = "effect",
                 ProductType = ProductType.Consumable,
                 ConsumableType = ConsumableType.RenameCard,
@@ -484,8 +434,6 @@ internal static partial class InitialDataSeeder
                 CreateBy = "System"
             }
         };
-
-        ApplyDefaultImagesToProducts(products, defaultShopImages);
 
         foreach (var product in products)
         {
@@ -516,92 +464,8 @@ internal static partial class InitialDataSeeder
             }
             else
             {
-                if (string.IsNullOrWhiteSpace(existingProduct.Icon) || string.IsNullOrWhiteSpace(existingProduct.CoverImage))
-                {
-                    product.ModifyTime = DateTime.Now;
-                    product.ModifyBy = "System";
-
-                    var updated = await db.Updateable<Product>()
-                        .SetColumns(p => new Product
-                        {
-                            Icon = string.IsNullOrWhiteSpace(existingProduct.Icon) ? product.Icon : existingProduct.Icon,
-                            CoverImage = string.IsNullOrWhiteSpace(existingProduct.CoverImage) ? product.CoverImage : existingProduct.CoverImage,
-                            ModifyTime = DateTime.Now,
-                            ModifyBy = "System"
-                        })
-                        .Where(p => p.Id == product.Id)
-                        .ExecuteCommandAsync();
-
-                    Console.WriteLine(updated > 0
-                        ? $"[Radish.DbMigrate] 已为商品 Id={product.Id} 补齐默认图片。"
-                        : $"[Radish.DbMigrate] 商品 Id={product.Id} 已存在，但未能补齐默认图片。");
-                }
-                else
-                {
-                    Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={product.Id} 的商品，且图片已存在，跳过。");
-                }
+                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={product.Id} 的商品，跳过。");
             }
         }
-    }
-
-    private static string[] GetDefaultShopImageUrls()
-    {
-        var imageDirectory = Path.Combine(AppPathTool.GetDataBasesPath(), "Uploads", "DefaultShopImage");
-        if (!Directory.Exists(imageDirectory))
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 默认商品图片目录不存在，跳过图片补齐：{imageDirectory}");
-            return Array.Empty<string>();
-        }
-
-        return Directory.GetFiles(imageDirectory)
-            .Where(path => !string.Equals(Path.GetFileName(path), ".gitkeep", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
-            .Select(path => $"/uploads/DefaultShopImage/{Path.GetFileName(path)}")
-            .ToArray();
-    }
-
-    private static void ApplyDefaultImagesToProducts(Product[] products, string[] defaultShopImages)
-    {
-        if (defaultShopImages.Length == 0)
-        {
-            return;
-        }
-
-        foreach (var product in products)
-        {
-            var imageUrl = defaultShopImages[(int)(product.Id % defaultShopImages.Length)];
-            product.Icon = imageUrl;
-            product.CoverImage = imageUrl;
-        }
-    }
-
-    private static void ApplyDefaultImagesToCategories(ProductCategory[] categories, string[] defaultShopImages)
-    {
-        if (defaultShopImages.Length == 0)
-        {
-            return;
-        }
-
-        for (var i = 0; i < categories.Length; i++)
-        {
-            categories[i].Icon = defaultShopImages[i % defaultShopImages.Length];
-        }
-    }
-
-    private static bool ShouldBackfillCategoryIcon(string? icon)
-    {
-        if (string.IsNullOrWhiteSpace(icon))
-        {
-            return true;
-        }
-
-        if (icon.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase) ||
-            icon.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-            icon.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        return icon is "badge" or "frame" or "title" or "signature" or "sparkles" or "palette";
     }
 }

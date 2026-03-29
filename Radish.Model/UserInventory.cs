@@ -63,9 +63,9 @@ public class UserInventory : RootEntityTKey<long>, IHasUserId, ITenantEntity
     [SugarColumn(Length = 200, IsNullable = true, ColumnDescription = "道具名称")]
     public string? ItemName { get; set; }
 
-    /// <summary>道具图标</summary>
-    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "道具图标")]
-    public string? ItemIcon { get; set; }
+    /// <summary>道具图标附件快照 Id</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "道具图标附件ID")]
+    public long? ItemIconAttachmentId { get; set; }
 
     /// <summary>数量</summary>
     [SugarColumn(IsNullable = false, ColumnDescription = "数量")]

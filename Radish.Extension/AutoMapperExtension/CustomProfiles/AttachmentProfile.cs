@@ -1,4 +1,5 @@
 using AutoMapper;
+using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 
@@ -13,10 +14,8 @@ public class AttachmentProfile : Profile
         RecognizeDestinationPrefixes("Vo");
         CreateMap<Attachment, AttachmentVo>()
             .ForMember(dest => dest.VoFileSizeFormatted, opt => opt.MapFrom(src => FormatFileSize(src.FileSize)))
-            .ForMember(dest => dest.VoThumbnailUrl, opt => opt.MapFrom(src =>
-                string.IsNullOrWhiteSpace(src.ThumbnailPath)
-                    ? null
-                    : $"/uploads/{src.ThumbnailPath}"));
+            .ForMember(dest => dest.VoUrl, opt => opt.MapFrom<AttachmentVoUrlResolver>())
+            .ForMember(dest => dest.VoThumbnailUrl, opt => opt.MapFrom<AttachmentVoThumbnailUrlResolver>());
 
         // AttachmentVo -> Attachment (使用前缀识别)
         RecognizePrefixes("Vo");
@@ -41,5 +40,35 @@ public class AttachmentProfile : Profile
         }
 
         return $"{len:0.##} {sizes[order]}";
+    }
+}
+
+internal sealed class AttachmentVoUrlResolver : IValueResolver<Attachment, AttachmentVo, string>
+{
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+
+    public AttachmentVoUrlResolver(IAttachmentUrlResolver attachmentUrlResolver)
+    {
+        _attachmentUrlResolver = attachmentUrlResolver;
+    }
+
+    public string Resolve(Attachment source, AttachmentVo destination, string destMember, ResolutionContext context)
+    {
+        return _attachmentUrlResolver.ResolveAttachmentUrl(source.Id);
+    }
+}
+
+internal sealed class AttachmentVoThumbnailUrlResolver : IValueResolver<Attachment, AttachmentVo, string?>
+{
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+
+    public AttachmentVoThumbnailUrlResolver(IAttachmentUrlResolver attachmentUrlResolver)
+    {
+        _attachmentUrlResolver = attachmentUrlResolver;
+    }
+
+    public string? Resolve(Attachment source, AttachmentVo destination, string? destMember, ResolutionContext context)
+    {
+        return _attachmentUrlResolver.ResolveAttachmentUrl(source.Id, AttachmentUrlVariant.Thumbnail);
     }
 }

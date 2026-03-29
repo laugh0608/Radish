@@ -24,7 +24,10 @@ public class OrderVo
     /// <summary>商品名称</summary>
     public string VoProductName { get; set; } = string.Empty;
 
-    /// <summary>商品图标</summary>
+    /// <summary>商品图标附件快照 Id</summary>
+    public long? VoProductIconAttachmentId { get; set; }
+
+    /// <summary>商品图标 URL</summary>
     public string? VoProductIcon { get; set; }
 
     /// <summary>商品类型</summary>
@@ -106,7 +109,10 @@ public class OrderListItemVo
     /// <summary>商品名称</summary>
     public string VoProductName { get; set; } = string.Empty;
 
-    /// <summary>商品图标</summary>
+    /// <summary>商品图标附件快照 Id</summary>
+    public long? VoProductIconAttachmentId { get; set; }
+
+    /// <summary>商品图标 URL</summary>
     public string? VoProductIcon { get; set; }
 
     /// <summary>购买数量</summary>

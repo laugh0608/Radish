@@ -12,12 +12,12 @@ import {
   message,
   type TableColumnsType,
 } from '@radish/ui';
-import { getApiClientConfig } from '@radish/http';
 import {
   batchAddStickersWithDetails,
   normalizeStickerCode,
   type BatchAddStickerItemRequest,
 } from '@/api/stickerApi';
+import { uploadAttachmentImage } from '@/api/attachmentApi';
 import { log } from '@/utils/logger';
 import './StickerBatchUploadModal.css';
 
@@ -42,15 +42,11 @@ interface BatchUploadRow {
   uploadProgress: number;
   uploadError?: string;
   attachmentId?: string;
-  imageUrl?: string;
-  thumbnailUrl?: string;
   serverMessage?: string;
 }
 
 interface UploadAttachmentResult {
   attachmentId: string;
-  imageUrl?: string;
-  thumbnailUrl?: string;
 }
 
 const MAX_BATCH_COUNT = 50;
@@ -70,126 +66,8 @@ function getFallbackName(fileName: string): string {
   return withoutExt || fileName;
 }
 
-function toStringOrUndefined(value: unknown): string | undefined {
-  if (typeof value === 'string' && value.trim()) {
-    return value;
-  }
-
-  return undefined;
-}
-
-function toIdString(value: unknown): string | undefined {
-  if (typeof value === 'string' && /^[1-9]\d*$/.test(value.trim())) {
-    return value.trim();
-  }
-
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-    return String(Math.trunc(value));
-  }
-
-  return undefined;
-}
-
-function buildApiUrl(path: string): string {
-  const config = getApiClientConfig();
-  const normalizedBaseUrl = (config.baseUrl || '').trim().replace(/\/$/, '');
-  if (!normalizedBaseUrl) {
-    throw new Error('API baseUrl 未配置');
-  }
-
-  return `${normalizedBaseUrl}${path}`;
-}
-
 function uploadImageWithProgress(file: RcFile, onProgress: (percent: number) => void): Promise<UploadAttachmentResult> {
-  return new Promise((resolve, reject) => {
-    let uploadUrl = '';
-    try {
-      uploadUrl = buildApiUrl('/api/v1/Attachment/UploadImage');
-    } catch (error) {
-      reject(error instanceof Error ? error : new Error('上传地址构建失败'));
-      return;
-    }
-
-    const config = getApiClientConfig();
-    const token = config.getToken?.();
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', uploadUrl, true);
-
-    if (token) {
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    }
-
-    xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable) {
-        return;
-      }
-
-      const percent = Math.round((event.loaded / event.total) * 100);
-      onProgress(Math.min(100, Math.max(0, percent)));
-    };
-
-    xhr.onerror = () => {
-      reject(new Error('上传失败，请检查网络连接'));
-    };
-
-    xhr.onload = () => {
-      if (xhr.status < 200 || xhr.status >= 300) {
-        reject(new Error(`上传失败（HTTP ${xhr.status}）`));
-        return;
-      }
-
-      let payload: Record<string, unknown> | null = null;
-      try {
-        payload = JSON.parse(xhr.responseText) as Record<string, unknown>;
-      } catch {
-        reject(new Error('上传响应解析失败'));
-        return;
-      }
-
-      const isSuccess = Boolean(payload.isSuccess ?? payload.IsSuccess);
-      const messageText = toStringOrUndefined(payload.messageInfo ?? payload.MessageInfo) || '上传失败';
-      if (!isSuccess) {
-        reject(new Error(messageText));
-        return;
-      }
-
-      const responseData = (payload.responseData ?? payload.ResponseData) as Record<string, unknown> | undefined;
-      if (!responseData) {
-        reject(new Error('上传成功但未返回附件信息'));
-        return;
-      }
-
-      const attachmentId = toIdString(
-        responseData.voId
-        ?? responseData.VoId
-        ?? responseData.id
-        ?? responseData.Id
-      );
-
-      if (!attachmentId) {
-        reject(new Error('上传成功但未获取到附件 ID'));
-        return;
-      }
-
-      resolve({
-        attachmentId,
-        imageUrl: toStringOrUndefined(responseData.voUrl ?? responseData.VoUrl ?? responseData.url ?? responseData.Url),
-        thumbnailUrl: toStringOrUndefined(
-          responseData.voThumbnailUrl
-          ?? responseData.VoThumbnailUrl
-          ?? responseData.thumbnailUrl
-          ?? responseData.ThumbnailUrl
-        ),
-      });
-    };
-
-    const formData = new FormData();
-    formData.append('file', file as File);
-    formData.append('businessType', 'Sticker');
-    formData.append('generateThumbnail', 'true');
-    formData.append('removeExif', 'true');
-    xhr.send(formData);
-  });
+  return uploadAttachmentImage(file as File, { businessType: 'Sticker' }, onProgress);
 }
 
 export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess }: StickerBatchUploadModalProps) => {
@@ -321,8 +199,6 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
             uploadStatus: 'uploaded',
             uploadProgress: 100,
             attachmentId: uploadResult.attachmentId,
-            imageUrl: uploadResult.imageUrl,
-            thumbnailUrl: uploadResult.thumbnailUrl,
             uploadError: undefined,
           }));
           successCount += 1;

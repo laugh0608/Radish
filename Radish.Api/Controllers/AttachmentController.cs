@@ -528,6 +528,74 @@ public class AttachmentController : ControllerBase
 
     #region Download
 
+    [HttpGet("/_assets/attachments/{id:long}")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Open(long id)
+    {
+        long? userId = null;
+        List<string>? roles = null;
+
+        if (Current.UserId > 0)
+        {
+            userId = Current.UserId;
+            roles = Current.Roles.ToList();
+        }
+
+        var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(
+            id,
+            userId,
+            roles,
+            AttachmentUrlVariant.Original);
+
+        if (stream == null || attachment == null)
+        {
+            return NotFound(new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "文件不存在或无权访问"
+            });
+        }
+
+        return File(stream, attachment.VoMimeType);
+    }
+
+    [HttpGet("/_assets/attachments/{id:long}/thumbnail")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> OpenThumbnail(long id)
+    {
+        long? userId = null;
+        List<string>? roles = null;
+
+        if (Current.UserId > 0)
+        {
+            userId = Current.UserId;
+            roles = Current.Roles.ToList();
+        }
+
+        var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(
+            id,
+            userId,
+            roles,
+            AttachmentUrlVariant.Thumbnail);
+
+        if (stream == null || attachment == null)
+        {
+            return NotFound(new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "文件不存在或无权访问"
+            });
+        }
+
+        return File(stream, attachment.VoMimeType);
+    }
+
     /// <summary>
     /// 下载附件
     /// </summary>
@@ -549,7 +617,11 @@ public class AttachmentController : ControllerBase
             roles = Current.Roles.ToList();
         }
 
-        var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(id, userId, roles);
+        var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(
+            id,
+            userId,
+            roles,
+            AttachmentUrlVariant.Original);
 
         if (stream == null || attachment == null)
         {
@@ -644,7 +716,11 @@ public class AttachmentController : ControllerBase
                 downloadRoles = Current.Roles.ToList();
             }
 
-            var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(attachmentId.Value, downloadUserId, downloadRoles);
+            var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(
+                attachmentId.Value,
+                downloadUserId,
+                downloadRoles,
+                AttachmentUrlVariant.Original);
             if (stream == null || attachment == null)
             {
                 return NotFound(new MessageModel

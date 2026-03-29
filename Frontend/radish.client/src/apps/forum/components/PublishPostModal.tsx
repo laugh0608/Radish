@@ -2,6 +2,11 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
+import {
+  buildAttachmentAssetUrl,
+  type MarkdownDocumentUploadResult,
+  type MarkdownImageUploadResult,
+} from '@radish/ui';
 import { log } from '@/utils/logger';
 import {
   getAllTags,
@@ -92,19 +97,6 @@ const findCategorySnapshot = (
     id: category.voId,
     name: category.voName
   };
-};
-
-const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
-  const params = new URLSearchParams();
-  if (fullUrl) {
-    params.set('full', fullUrl);
-  }
-  if (scalePercent && Number.isFinite(scalePercent)) {
-    params.set('scale', String(Math.min(Math.max(scalePercent, 10), 100)));
-  }
-
-  const meta = params.toString();
-  return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
 };
 
 export const PublishPostModal = ({
@@ -543,7 +535,7 @@ export const PublishPostModal = ({
     }
   };
 
-  const handleImageUpload = async (file: File) => {
+  const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
     const result = await uploadImage(
       {
         file,
@@ -558,12 +550,14 @@ export const PublishPostModal = ({
     );
 
     return {
-      url: appendImageMeta(result.voUrl, result.voUrl, imageScalePercent),
-      thumbnailUrl: result.voThumbnailUrl
+      attachmentId: result.voId,
+      displayVariant: 'original',
+      previewUrl: buildAttachmentAssetUrl(result.voId, 'original'),
+      scalePercent: imageScalePercent,
     };
   };
 
-  const handleDocumentUpload = async (file: File) => {
+  const handleDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
     const result = await uploadDocument(
       {
         file,
@@ -573,7 +567,7 @@ export const PublishPostModal = ({
     );
 
     return {
-      url: result.voUrl,
+      attachmentId: result.voId,
       fileName: result.voOriginalName || file.name
     };
   };

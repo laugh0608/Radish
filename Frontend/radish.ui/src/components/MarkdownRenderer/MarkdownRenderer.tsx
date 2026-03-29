@@ -12,6 +12,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { ImageLightbox } from '../ImageLightbox/ImageLightbox';
+import { buildAttachmentAssetUrl, parseAttachmentMarkdownUrl, resolveConfiguredMediaUrl } from '../../utils';
 import styles from './MarkdownRenderer.module.css';
 
 export interface MarkdownStickerItem {
@@ -101,10 +102,20 @@ const parseStickerUri = (src: string): ParsedStickerUri | null => {
 };
 
 const parseImageMeta = (src: string): ParsedImageMeta => {
+  const attachmentMeta = parseAttachmentMarkdownUrl(src);
+  if (attachmentMeta) {
+    return {
+      displaySrc: buildAttachmentAssetUrl(attachmentMeta.attachmentId, attachmentMeta.displayVariant),
+      fullSrc: buildAttachmentAssetUrl(attachmentMeta.attachmentId, 'original'),
+      scalePercent: attachmentMeta.scalePercent,
+    };
+  }
+
   const [baseSrc, hash] = src.split('#');
+  const normalizedBaseSrc = resolveConfiguredMediaUrl(baseSrc || src);
   const fallback = {
-    displaySrc: baseSrc || src,
-    fullSrc: baseSrc || src,
+    displaySrc: normalizedBaseSrc,
+    fullSrc: normalizedBaseSrc,
   };
 
   if (!hash || !hash.startsWith('radish:')) {
@@ -120,10 +131,19 @@ const parseImageMeta = (src: string): ParsedImageMeta => {
   const safeScale = Number.isFinite(scaleNum) && scaleNum! > 0 ? Math.min(Math.max(scaleNum!, 10), 100) : undefined;
 
   return {
-    displaySrc: baseSrc || src,
-    fullSrc: fullRaw || baseSrc || src,
+    displaySrc: normalizedBaseSrc,
+    fullSrc: resolveConfiguredMediaUrl(fullRaw || baseSrc || src),
     scalePercent: safeScale,
   };
+};
+
+const resolveLinkHref = (href: string): string => {
+  const attachmentMeta = parseAttachmentMarkdownUrl(href);
+  if (attachmentMeta) {
+    return buildAttachmentAssetUrl(attachmentMeta.attachmentId, 'original');
+  }
+
+  return resolveConfiguredMediaUrl(href);
 };
 
 /**
@@ -177,19 +197,23 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             // 自定义链接行为：在新标签页打开外部链接
             a: ({ node, ...props }) => {
               const href = props.href || '';
+              const attachmentMeta = parseAttachmentMarkdownUrl(href);
+              const resolvedHref = resolveLinkHref(href);
               const isExternal = href.startsWith('http://') || href.startsWith('https://');
+              const openInNewTab = isExternal || Boolean(attachmentMeta);
 
-              if (isExternal) {
+              if (openInNewTab) {
                 return (
                   <a
                     {...props}
+                    href={resolvedHref}
                     target="_blank"
                     rel="noopener noreferrer"
                   />
                 );
               }
 
-              return <a {...props} />;
+              return <a {...props} href={resolvedHref} />;
             },
             img: ({ node, ...props }) => {
               const rawSrc = props.src || '';
@@ -211,10 +235,10 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                 }
 
                 return (
-                  <img
-                    alt={stickerAlt}
-                    src={stickerSrc}
-                    title={stickerAlt}
+                    <img
+                      alt={stickerAlt}
+                      src={resolveConfiguredMediaUrl(stickerSrc)}
+                      title={stickerAlt}
                     loading="lazy"
                     draggable={false}
                     className={styles.stickerInline}

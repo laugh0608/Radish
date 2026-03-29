@@ -5,7 +5,9 @@ export interface CategoryVo {
   voName: string;
   voSlug: string;
   voDescription?: string | null;
+  voIconAttachmentId?: string | null;
   voIcon?: string | null;
+  voCoverAttachmentId?: string | null;
   voCoverImage?: string | null;
   voParentId?: number | null;
   voLevel: number;
@@ -30,8 +32,8 @@ export interface CategoryUpsertRequest {
   name: string;
   slug?: string;
   description?: string;
-  icon?: string;
-  coverImage?: string;
+  iconAttachmentId?: string | null;
+  coverAttachmentId?: string | null;
   parentId?: number | null;
   orderSort: number;
   isEnabled: boolean;

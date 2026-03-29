@@ -41,8 +41,8 @@ public class Category : RootEntityTKey<long>
         Name = string.Empty;
         Slug = string.Empty;
         Description = string.Empty;
-        Icon = string.Empty;
-        CoverImage = string.Empty;
+        IconAttachmentId = null;
+        CoverAttachmentId = null;
         ParentId = null;
         Level = 0;
         OrderSort = 0;
@@ -74,15 +74,8 @@ public class Category : RootEntityTKey<long>
             Description = options.Description.Trim();
         }
 
-        if (!string.IsNullOrWhiteSpace(options.Icon))
-        {
-            Icon = options.Icon.Trim();
-        }
-
-        if (!string.IsNullOrWhiteSpace(options.CoverImage))
-        {
-            CoverImage = options.CoverImage.Trim();
-        }
+        IconAttachmentId = options.IconAttachmentId;
+        CoverAttachmentId = options.CoverAttachmentId;
 
         if (options.OrderSort.HasValue)
         {
@@ -159,15 +152,13 @@ public class Category : RootEntityTKey<long>
     [SugarColumn(Length = 1000, IsNullable = true)]
     public string Description { get; set; } = string.Empty;
 
-    /// <summary>分类图标</summary>
-    /// <remarks>可空，最大 200 字符，可存储图标类名或图标 URL</remarks>
-    [SugarColumn(Length = 200, IsNullable = true)]
-    public string Icon { get; set; } = string.Empty;
+    /// <summary>分类图标附件 Id</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? IconAttachmentId { get; set; }
 
-    /// <summary>分类封面图</summary>
-    /// <remarks>可空，最大 500 字符</remarks>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string CoverImage { get; set; } = string.Empty;
+    /// <summary>分类封面附件 Id</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? CoverAttachmentId { get; set; }
 
     #endregion
 
@@ -269,11 +260,11 @@ public sealed class CategoryInitializationOptions
     /// <summary>分类描述</summary>
     public string? Description { get; set; }
 
-    /// <summary>分类图标</summary>
-    public string? Icon { get; set; }
+    /// <summary>分类图标附件 Id</summary>
+    public long? IconAttachmentId { get; set; }
 
-    /// <summary>分类封面图</summary>
-    public string? CoverImage { get; set; }
+    /// <summary>分类封面附件 Id</summary>
+    public long? CoverAttachmentId { get; set; }
 
     /// <summary>父分类 Id</summary>
     public long? ParentId { get; set; }
