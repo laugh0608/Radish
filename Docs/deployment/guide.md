@@ -60,7 +60,8 @@
 ### 资源访问路径要求
 
 - 业务侧统一推荐通过 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail` 暴露媒体资源。
-- 如果系统通过 Gateway 或外层反代统一对外，就必须确保该路径被转发到 `Radish.Api`。
+- `Radish.Gateway` 当前已内建 `/_assets/attachments/** -> Radish.Api` 转发。
+- 如果系统通过外层反代统一对外，仍需确保该路径被放行到 Gateway，而不是被静态站点或默认首页兜底吞掉。
 - `/uploads/**` 只应理解为底层静态文件暴露或兼容路径，不应继续被当作业务长期引用口径。
 
 ## 仓库发版与合并流程
@@ -350,7 +351,7 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 **文件上传目录挂载（生产环境建议）**：
 - 本地存储模式下，上传文件存放在 `DataBases/Uploads/`
 - 建议挂载到宿主机持久化目录，避免容器重启丢失文件
-- 同时应确保公开入口可以访问 `/_assets/attachments/**`，而不是只暴露底层 `/uploads/**`
+- Gateway 当前默认已经转发 `/_assets/attachments/**`；如果前面还有 `Nginx / Traefik / Caddy`，也要同步放行该路径，而不是只暴露底层 `/uploads/**`
 
 如需分别单独运行镜像，可参考：
 
