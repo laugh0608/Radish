@@ -54,11 +54,15 @@ docker compose --env-file Deploy/.env.prod \
 ```bash
 RADISH_PUBLIC_URL=https://radish.example.com
 GatewayService__PublicUrl=https://radish.example.com
-Cors__AllowedOrigins__0=https://radish.example.com
 FrontendService__BaseUrl=https://radish.example.com
 DownstreamServices__ApiService__BaseUrl=http://radish-api:5100
 DownstreamServices__AuthService__BaseUrl=http://radish-auth:5200
 ```
+
+补充说明：
+
+- 部署态下，`Api / Auth / Gateway` 三个宿主的 CORS 会优先根据 `RADISH_PUBLIC_URL` 自动收口到单一公开入口。
+- 不建议再通过 `Cors__AllowedOrigins__0` 之类的单索引环境变量覆盖部署态 CORS，否则容易把旧 `localhost` 或旧域名残留进最终白名单。
 
 测试部署额外需要：
 
