@@ -780,10 +780,13 @@ public class PostControllerTest
             .Setup(service => service.RecordAsync(It.IsAny<RecordBrowseHistoryDto>()))
             .Returns(Task.CompletedTask);
 
+        var attachmentServiceAdapter = attachmentService as IAttachmentService
+            ?? new Mock<IAttachmentService>(MockBehavior.Strict).Object;
+
         return new PostController(
             postService,
             moderationService,
-            attachmentService,
+            attachmentServiceAdapter,
             commentService,
             browseHistoryServiceMock.Object,
             currentUserAccessorMock.Object);

@@ -26,6 +26,18 @@ export interface AuthBootstrapOptions {
   useCache?: boolean;
 }
 
+const inFlightAuthHydrations = new Map<string, Promise<CurrentUser>>();
+
+class CurrentUserRequestError extends Error {
+  readonly status?: number;
+
+  constructor(message: string, status?: number) {
+    super(message);
+    this.name = 'CurrentUserRequestError';
+    this.status = status;
+  }
+}
+
 function resolveUserRoles(user: CurrentUser, token?: string | null): string[] {
   const tokenRoles = tokenService.getRolesFromAccessToken(token);
   if (tokenRoles.length > 0) {
@@ -64,6 +76,54 @@ function setUserFromCurrentUser(user: CurrentUser, token?: string | null) {
   });
 }
 
+function buildCurrentUserFromStore(): CurrentUser | null {
+  const userStore = useUserStore.getState();
+  if (!userStore.isAuthenticated()) {
+    return null;
+  }
+
+  return {
+    voUserId: userStore.userId,
+    voUserName: userStore.userName,
+    voTenantId: userStore.tenantId,
+    voAvatarUrl: userStore.avatarUrl,
+    voAvatarThumbnailUrl: userStore.avatarThumbnailUrl,
+    voRoles: [...(userStore.roles || [])],
+    voPermissions: [...(userStore.permissions || [])],
+  };
+}
+
+function buildCurrentUserFromToken(token?: string | null): CurrentUser | null {
+  const identity = tokenService.getUserIdentityFromAccessToken(token);
+  if (!identity) {
+    return null;
+  }
+
+  const currentStoreUser = useUserStore.getState();
+  const sameUser = currentStoreUser.userId > 0 && currentStoreUser.userId === identity.userId;
+
+  return {
+    voUserId: identity.userId,
+    voUserName: identity.userName,
+    voTenantId: identity.tenantId,
+    voAvatarUrl: sameUser ? currentStoreUser.avatarUrl : undefined,
+    voAvatarThumbnailUrl: sameUser ? currentStoreUser.avatarThumbnailUrl : undefined,
+    voRoles: identity.roles.length > 0 ? identity.roles : [...(sameUser ? currentStoreUser.roles || [] : [])],
+    voPermissions: [...(sameUser ? currentStoreUser.permissions || [] : [])],
+  };
+}
+
+function seedAuthFromToken(token?: string | null): CurrentUser | null {
+  const tokenUser = buildCurrentUserFromToken(token);
+  if (!tokenUser) {
+    return null;
+  }
+
+  setUserFromCurrentUser(tokenUser, token);
+  useAuthStore.getState().setAuthenticated(true);
+  return tokenUser;
+}
+
 async function fetchCurrentUser(apiBaseUrl: string, token: string): Promise<CurrentUser> {
   const requestUrl = `${apiBaseUrl}/api/v1/User/GetUserByHttpContext`;
   const response = await fetch(requestUrl, {
@@ -75,32 +135,29 @@ async function fetchCurrentUser(apiBaseUrl: string, token: string): Promise<Curr
   });
 
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status} ${response.statusText}`);
+    throw new CurrentUserRequestError(`HTTP ${response.status} ${response.statusText}`, response.status);
   }
 
   const json = (await response.json()) as ApiResponse<CurrentUser>;
   const parsed = parseApiResponse(json);
   if (!parsed.ok || !parsed.data) {
-    throw new Error(parsed.message || '用户信息解析失败');
+    throw new CurrentUserRequestError(parsed.message || '用户信息解析失败', response.status);
   }
 
   return parsed.data;
 }
 
-export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<CurrentUser | null> {
-  if (typeof window === 'undefined') {
-    return null;
-  }
+function buildHydrationKey(apiBaseUrl: string, token: string): string {
+  return `${apiBaseUrl}|${token}`;
+}
 
-  const { apiBaseUrl, onUserLoaded, onUserLoadFailed, useCache = true } = options;
+async function hydrateAuthUserCore(
+  apiBaseUrl: string,
+  token: string,
+  useCache: boolean,
+): Promise<CurrentUser> {
   const authStore = useAuthStore.getState();
   const userStore = useUserStore.getState();
-
-  const token = await tokenService.getValidAccessToken();
-  if (!token) {
-    authStore.setAuthenticated(false);
-    return null;
-  }
 
   if (useCache) {
     const cachedUserInfo = window.localStorage.getItem('cached_user_info');
@@ -110,8 +167,6 @@ export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<Cu
         if (userData.voUserId && userData.voUserName) {
           setUserFromCurrentUser(userData, token);
           authStore.setAuthenticated(true);
-          window.localStorage.removeItem('cached_user_info');
-          onUserLoaded?.(userData);
           log.info('AuthBootstrap', '✅ 使用缓存用户信息完成初始化');
           return userData;
         }
@@ -125,17 +180,78 @@ export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<Cu
 
   try {
     const userData = await fetchCurrentUser(apiBaseUrl, token);
+    window.localStorage.setItem('cached_user_info', JSON.stringify(userData));
     setUserFromCurrentUser(userData, token);
     authStore.setAuthenticated(true);
-    onUserLoaded?.(userData);
     log.info('AuthBootstrap', '✅ 用户信息初始化完成');
     return userData;
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
+    if (error instanceof CurrentUserRequestError && (error.status === 401 || error.status === 403)) {
+      userStore.clearUser();
+      authStore.setAuthenticated(false);
+      log.warn('AuthBootstrap', '用户信息初始化失败，访问令牌已失效:', err.message);
+      throw err;
+    }
+
+    const currentStoreUser = buildCurrentUserFromStore();
+    if (currentStoreUser) {
+      authStore.setAuthenticated(true);
+      log.warn('AuthBootstrap', '用户信息初始化失败，保留现有登录态:', err.message);
+      return currentStoreUser;
+    }
+
+    const tokenUser = seedAuthFromToken(token);
+    if (tokenUser) {
+      log.warn('AuthBootstrap', '用户信息初始化失败，已回退到 Token 基础登录态:', err.message);
+      return tokenUser;
+    }
+
     userStore.clearUser();
     authStore.setAuthenticated(false);
+    log.warn('AuthBootstrap', '用户信息初始化失败且无法回退基础登录态:', err.message);
+    throw err;
+  }
+}
+
+export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<CurrentUser | null> {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const { apiBaseUrl, onUserLoaded, onUserLoadFailed, useCache = true } = options;
+  const authStore = useAuthStore.getState();
+
+  const token = await tokenService.getValidAccessToken();
+  if (!token) {
+    authStore.setAuthenticated(false);
+    return null;
+  }
+
+  seedAuthFromToken(token);
+
+  const hydrationKey = buildHydrationKey(apiBaseUrl, token);
+  let hydrationPromise = inFlightAuthHydrations.get(hydrationKey);
+
+  if (!hydrationPromise) {
+    hydrationPromise = hydrateAuthUserCore(apiBaseUrl, token, useCache).finally(() => {
+      const currentPromise = inFlightAuthHydrations.get(hydrationKey);
+      if (currentPromise === hydrationPromise) {
+        inFlightAuthHydrations.delete(hydrationKey);
+      }
+    });
+    inFlightAuthHydrations.set(hydrationKey, hydrationPromise);
+  } else {
+    log.debug('AuthBootstrap', '复用进行中的用户信息初始化请求');
+  }
+
+  try {
+    const userData = await hydrationPromise;
+    onUserLoaded?.(userData);
+    return userData;
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
     onUserLoadFailed?.(err);
-    log.warn('AuthBootstrap', '用户信息初始化失败:', err.message);
     return null;
   }
 }
@@ -158,6 +274,7 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
     onTokenRefreshed: (accessToken, refreshToken) => {
       if (typeof window === 'undefined') return;
       tokenService.setTokenInfoFromJwt(accessToken, refreshToken);
+      seedAuthFromToken(accessToken);
       log.info('AuthBootstrap', '✅ Token 自动刷新成功');
       authStore.setAuthenticated(true);
     },
@@ -171,7 +288,10 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
 
   const existingToken = tokenService.getAccessToken();
   if (existingToken) {
-    authStore.setAuthenticated(true);
+    const seededUser = seedAuthFromToken(existingToken);
+    if (!seededUser) {
+      authStore.setAuthenticated(true);
+    }
   }
 
   const handleTokenExpired = () => {

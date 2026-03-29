@@ -324,6 +324,62 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         return attachment == null ? null : Mapper.Map<AttachmentVo>(attachment);
     }
 
+    public async Task<AttachmentAssetDto?> GetAttachmentAssetAsync(long attachmentId)
+    {
+        if (attachmentId <= 0)
+        {
+            return null;
+        }
+
+        var attachment = await _attachmentRepository.QueryFirstAsync(a => a.Id == attachmentId && !a.IsDeleted);
+        return attachment == null ? null : MapToAssetDto(attachment);
+    }
+
+    public async Task<AttachmentAssetDto?> GetLatestAvatarAssetAsync(long userId)
+    {
+        if (userId <= 0)
+        {
+            return null;
+        }
+
+        var avatarMap = await GetLatestAvatarAssetMapAsync(new[] { userId });
+        return avatarMap.GetValueOrDefault(userId);
+    }
+
+    public async Task<Dictionary<long, AttachmentAssetDto>> GetLatestAvatarAssetMapAsync(IReadOnlyCollection<long> userIds)
+    {
+        if (userIds.Count == 0)
+        {
+            return new Dictionary<long, AttachmentAssetDto>();
+        }
+
+        var normalizedUserIds = userIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (normalizedUserIds.Count == 0)
+        {
+            return new Dictionary<long, AttachmentAssetDto>();
+        }
+
+        var attachments = await _attachmentRepository.QueryAsync(attachment =>
+            attachment.BusinessType == "Avatar" &&
+            attachment.BusinessId.HasValue &&
+            normalizedUserIds.Contains(attachment.BusinessId.Value) &&
+            attachment.IsEnabled &&
+            !attachment.IsDeleted);
+
+        return attachments
+            .Where(attachment => attachment.BusinessId.HasValue)
+            .OrderByDescending(attachment => attachment.CreateTime)
+            .ThenByDescending(attachment => attachment.Id)
+            .GroupBy(attachment => attachment.BusinessId!.Value)
+            .ToDictionary(
+                group => group.Key,
+                group => MapToAssetDto(group.First()));
+    }
+
     #endregion
 
     private static long NormalizeTenantId(long tenantId)
@@ -377,7 +433,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     /// <summary>
     /// 获取附件下载流
     /// </summary>
-    public async Task<(Stream? stream, AttachmentVo? attachment)> GetDownloadStreamAsync(
+    public async Task<(Stream? stream, AttachmentAssetDto? attachment)> GetDownloadStreamAsync(
         long attachmentId,
         long? requestUserId = null,
         List<string>? requestUserRoles = null,
@@ -421,10 +477,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             // 4. 增加下载次数（异步，不影响下载）
             _ = Task.Run(async () => await IncrementDownloadCountAsync(attachmentId));
 
-            var attachmentVo = Mapper.Map<AttachmentVo>(attachment);
-            attachmentVo.VoUrl = _attachmentUrlResolver.ResolveAttachmentUrl(attachment.Id);
-            attachmentVo.VoThumbnailUrl = _attachmentUrlResolver.ResolveAttachmentUrl(attachment.Id, AttachmentUrlVariant.Thumbnail);
-            return (stream, attachmentVo);
+            return (stream, MapToAssetDto(attachment));
         }
         catch (Exception ex)
         {
@@ -455,6 +508,22 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         }
 
         return attachment.StoragePath;
+    }
+
+    private AttachmentAssetDto MapToAssetDto(Attachment attachment)
+    {
+        return new AttachmentAssetDto
+        {
+            AttachmentId = attachment.Id,
+            OriginalName = attachment.OriginalName,
+            MimeType = attachment.MimeType,
+            UploaderId = attachment.UploaderId,
+            BusinessType = attachment.BusinessType,
+            BusinessId = attachment.BusinessId,
+            Url = _attachmentUrlResolver.ResolveAttachmentUrl(attachment.Id),
+            ThumbnailUrl = _attachmentUrlResolver.ResolveAttachmentUrl(attachment.Id, AttachmentUrlVariant.Thumbnail),
+            CreateTime = attachment.CreateTime
+        };
     }
 
     /// <summary>

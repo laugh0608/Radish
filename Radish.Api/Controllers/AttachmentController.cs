@@ -559,7 +559,7 @@ public class AttachmentController : ControllerBase
             });
         }
 
-        return File(stream, attachment.VoMimeType);
+        return File(stream, attachment.MimeType);
     }
 
     [HttpGet("/_assets/attachments/{id:long}/thumbnail")]
@@ -593,7 +593,7 @@ public class AttachmentController : ControllerBase
             });
         }
 
-        return File(stream, attachment.VoMimeType);
+        return File(stream, attachment.MimeType);
     }
 
     /// <summary>
@@ -633,7 +633,7 @@ public class AttachmentController : ControllerBase
             });
         }
 
-        return File(stream, attachment.VoMimeType, attachment.VoOriginalName);
+        return File(stream, attachment.MimeType, attachment.OriginalName);
     }
 
     #endregion
@@ -731,7 +731,7 @@ public class AttachmentController : ControllerBase
                 });
             }
 
-            return File(stream, attachment.VoMimeType, attachment.VoOriginalName);
+            return File(stream, attachment.MimeType, attachment.OriginalName);
         }
         catch (Exception ex)
         {
@@ -830,7 +830,7 @@ public class AttachmentController : ControllerBase
     public async Task<MessageModel> Delete(long id)
     {
         // 检查附件是否存在
-        var attachment = await _attachmentService.QueryByIdAsync(id);
+        var attachment = await _attachmentService.GetAttachmentAssetAsync(id);
         if (attachment == null)
         {
             return new MessageModel
@@ -845,7 +845,7 @@ public class AttachmentController : ControllerBase
         var userId = Current.UserId;
         var isAdmin = Current.IsSystemOrAdmin();
 
-        if (attachment.VoUploaderId != userId && !isAdmin)
+        if (attachment.UploaderId != userId && !isAdmin)
         {
             return new MessageModel
             {
@@ -901,8 +901,8 @@ public class AttachmentController : ControllerBase
         // 权限检查：验证每个附件的权限
         foreach (var id in ids)
         {
-            var attachment = await _attachmentService.QueryByIdAsync(id);
-            if (attachment != null && attachment.VoUploaderId != userId && !isAdmin)
+            var attachment = await _attachmentService.GetAttachmentAssetAsync(id);
+            if (attachment != null && attachment.UploaderId != userId && !isAdmin)
             {
                 return new MessageModel
                 {
@@ -945,7 +945,7 @@ public class AttachmentController : ControllerBase
         [FromQuery] long businessId)
     {
         // 检查附件是否存在
-        var attachment = await _attachmentService.QueryByIdAsync(id);
+        var attachment = await _attachmentService.GetAttachmentAssetAsync(id);
         if (attachment == null)
         {
             return new MessageModel
@@ -960,7 +960,7 @@ public class AttachmentController : ControllerBase
         var userId = Current.UserId;
         var isAdmin = Current.IsSystemOrAdmin();
 
-        if (attachment.VoUploaderId != userId && !isAdmin)
+        if (attachment.UploaderId != userId && !isAdmin)
         {
             return new MessageModel
             {

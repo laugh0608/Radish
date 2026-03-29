@@ -47,3 +47,15 @@ export {
   getTokenRefreshConfig,
   TokenRefreshErrorType,
 } from './token-refresh';
+
+export {
+  redeemOidcAuthorizationCode,
+  OidcCallbackError,
+} from './oidc-callback';
+
+export type {
+  OidcTokenResponse,
+  OidcTokenRequestFailureDetails,
+  RedeemOidcAuthorizationCodeOptions,
+  OidcCallbackErrorCode,
+} from './oidc-callback';

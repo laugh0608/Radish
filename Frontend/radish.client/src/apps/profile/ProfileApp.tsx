@@ -17,6 +17,7 @@ import {
   getBrowserTimeZoneId,
   resolveTimeZoneId,
 } from '@/utils/dateTime';
+import { reuseInFlightRequest } from './requestDedup';
 import styles from './ProfileApp.module.css';
 
 const UserPostList = lazy(() =>
@@ -48,6 +49,16 @@ interface ProfileWindowParams {
   userName?: string;
   avatarUrl?: string | null;
   displayName?: string | null;
+}
+
+interface ProfileTimeState {
+  systemTimeZone: string;
+  displayTimeZone: string;
+  displayTimeFormat: string;
+}
+
+function buildProfileRequestKey(scope: string, ...parts: Array<string | number>): string {
+  return [scope, ...parts].join('|');
 }
 
 function parseProfileWindowParams(input: Record<string, unknown> | undefined): ProfileWindowParams {
@@ -105,6 +116,75 @@ function buildAvatarStyle(seed: string) {
   };
 }
 
+async function fetchProfileStats(apiBaseUrl: string, viewingUserId: number): Promise<UserStats | null> {
+  const response = await fetch(`${apiBaseUrl}/api/v1/User/GetUserStats?userId=${viewingUserId}`);
+  const json = await response.json() as { isSuccess?: boolean; responseData?: UserStats | null };
+
+  if (json.isSuccess && json.responseData) {
+    return json.responseData;
+  }
+
+  return null;
+}
+
+async function fetchProfileTimeState(): Promise<ProfileTimeState> {
+  let fallbackSystemTimeZone = DEFAULT_TIME_ZONE;
+  let fallbackDisplayTimeFormat = DEFAULT_TIME_FORMAT;
+
+  try {
+    const settings = await getTimeSettings();
+    fallbackSystemTimeZone = resolveTimeZoneId(settings.voDefaultTimeZoneId, DEFAULT_TIME_ZONE);
+    fallbackDisplayTimeFormat = settings.voDisplayFormat?.trim() || DEFAULT_TIME_FORMAT;
+  } catch (error) {
+    log.warn('ProfileApp', '加载系统时间配置失败，已回退默认配置');
+    log.error('ProfileApp', '加载系统时间配置失败：', error);
+  }
+
+  try {
+    const preference = await getMyTimePreference();
+    const resolvedSystemTimeZone = resolveTimeZoneId(
+      preference.voSystemDefaultTimeZoneId,
+      fallbackSystemTimeZone
+    );
+    const resolvedDisplayTimeFormat = preference.voDisplayFormat?.trim() || fallbackDisplayTimeFormat;
+    const browserTimeZone = getBrowserTimeZoneId(resolvedSystemTimeZone);
+    const initialDisplayTimeZone = preference.voIsCustomized
+      ? resolveTimeZoneId(preference.voTimeZoneId, browserTimeZone)
+      : browserTimeZone;
+
+    let resolvedDisplayTimeZone = initialDisplayTimeZone;
+    if (!preference.voIsCustomized) {
+      try {
+        const updatedPreference = await updateMyTimePreference(initialDisplayTimeZone);
+        resolvedDisplayTimeZone = resolveTimeZoneId(
+          updatedPreference.voTimeZoneId,
+          initialDisplayTimeZone
+        );
+      } catch (error) {
+        log.warn('ProfileApp', '初始化用户时区偏好失败，已使用浏览器时区展示');
+        log.error('ProfileApp', '初始化用户时区偏好失败：', error);
+      }
+    }
+
+    return {
+      systemTimeZone: resolvedSystemTimeZone,
+      displayTimeZone: resolvedDisplayTimeZone,
+      displayTimeFormat: resolvedDisplayTimeFormat,
+    };
+  } catch (error) {
+    const browserTimeZone = getBrowserTimeZoneId(fallbackSystemTimeZone);
+
+    log.warn('ProfileApp', '加载用户时区偏好失败，已回退浏览器时区');
+    log.error('ProfileApp', '加载用户时区偏好失败：', error);
+
+    return {
+      systemTimeZone: fallbackSystemTimeZone,
+      displayTimeZone: browserTimeZone,
+      displayTimeFormat: fallbackDisplayTimeFormat,
+    };
+  }
+}
+
 export const ProfileApp = () => {
   const { t } = useTranslation();
   const { userId, userName, isAuthenticated } = useUserStore();
@@ -157,8 +237,14 @@ export const ProfileApp = () => {
       setLoadingPublicProfile(true);
 
       const [profileResult, followStatusResult] = await Promise.allSettled([
-        getPublicProfile(viewingUserId),
-        getFollowStatus(viewingUserId),
+        reuseInFlightRequest(
+          buildProfileRequestKey('public-profile', apiBaseUrl, viewingUserId),
+          () => getPublicProfile(viewingUserId)
+        ),
+        reuseInFlightRequest(
+          buildProfileRequestKey('follow-status', apiBaseUrl, viewingUserId),
+          () => getFollowStatus(viewingUserId)
+        ),
       ]);
 
       if (cancelled) {
@@ -187,7 +273,7 @@ export const ProfileApp = () => {
     return () => {
       cancelled = true;
     };
-  }, [isOwnProfile, loggedIn, viewingUserId]);
+  }, [apiBaseUrl, isOwnProfile, loggedIn, viewingUserId]);
 
   const handlePostClick = (postId: number) => {
     openApp('forum');
@@ -270,83 +356,55 @@ export const ProfileApp = () => {
   };
 
   useEffect(() => {
-    if (loggedIn && viewingUserId > 0) {
-      void loadStats();
-      void loadTimeSettings();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loggedIn, viewingUserId, userId]);
-
-  const loadStats = async () => {
-    setLoadingStats(true);
-    try {
-      const response = await fetch(
-        `${apiBaseUrl}/api/v1/User/GetUserStats?userId=${viewingUserId}`
-      );
-      const json = await response.json();
-      if (json.isSuccess && json.responseData) {
-        setStats(json.responseData);
-      }
-    } catch (error) {
-      log.error('加载统计信息失败:', error);
-    } finally {
+    if (!loggedIn || viewingUserId <= 0) {
+      setStats(null);
       setLoadingStats(false);
-    }
-  };
-
-  const loadTimeSettings = async () => {
-    let fallbackSystemTimeZone = DEFAULT_TIME_ZONE;
-    let fallbackDisplayTimeFormat = DEFAULT_TIME_FORMAT;
-
-    try {
-      const settings = await getTimeSettings();
-      fallbackSystemTimeZone = resolveTimeZoneId(settings.voDefaultTimeZoneId, DEFAULT_TIME_ZONE);
-      fallbackDisplayTimeFormat = settings.voDisplayFormat?.trim() || DEFAULT_TIME_FORMAT;
-    } catch (error) {
-      log.warn('ProfileApp', '加载系统时间配置失败，已回退默认配置');
-      log.error('ProfileApp', '加载系统时间配置失败：', error);
+      return;
     }
 
-    try {
-      const preference = await getMyTimePreference();
-      const resolvedSystemTimeZone = resolveTimeZoneId(
-        preference.voSystemDefaultTimeZoneId,
-        fallbackSystemTimeZone
-      );
-      const resolvedDisplayTimeFormat = preference.voDisplayFormat?.trim() || fallbackDisplayTimeFormat;
-      const browserTimeZone = getBrowserTimeZoneId(resolvedSystemTimeZone);
-      const initialDisplayTimeZone = preference.voIsCustomized
-        ? resolveTimeZoneId(preference.voTimeZoneId, browserTimeZone)
-        : browserTimeZone;
+    let cancelled = false;
+    const loadProfileContext = async () => {
+      setLoadingStats(true);
 
-      setSystemTimeZone(resolvedSystemTimeZone);
-      setDisplayTimeFormat(resolvedDisplayTimeFormat);
-      setDisplayTimeZone(initialDisplayTimeZone);
+      const [statsResult, timeStateResult] = await Promise.allSettled([
+        reuseInFlightRequest(
+          buildProfileRequestKey('profile-stats', apiBaseUrl, viewingUserId),
+          () => fetchProfileStats(apiBaseUrl, viewingUserId)
+        ),
+        reuseInFlightRequest(
+          buildProfileRequestKey('profile-time-state', apiBaseUrl, userId),
+          () => fetchProfileTimeState()
+        )
+      ]);
 
-      if (!preference.voIsCustomized) {
-        try {
-          const updatedPreference = await updateMyTimePreference(initialDisplayTimeZone);
-          const updatedDisplayTimeZone = resolveTimeZoneId(
-            updatedPreference.voTimeZoneId,
-            initialDisplayTimeZone
-          );
-          setDisplayTimeZone(updatedDisplayTimeZone);
-        } catch (error) {
-          log.warn('ProfileApp', '初始化用户时区偏好失败，已使用浏览器时区展示');
-          log.error('ProfileApp', '初始化用户时区偏好失败：', error);
-        }
+      if (cancelled) {
+        return;
       }
-    } catch (error) {
-      const browserTimeZone = getBrowserTimeZoneId(fallbackSystemTimeZone);
 
-      setSystemTimeZone(fallbackSystemTimeZone);
-      setDisplayTimeFormat(fallbackDisplayTimeFormat);
-      setDisplayTimeZone(browserTimeZone);
+      if (statsResult.status === 'fulfilled') {
+        setStats(statsResult.value);
+      } else {
+        setStats(null);
+        log.error('ProfileApp', '加载统计信息失败：', statsResult.reason);
+      }
 
-      log.warn('ProfileApp', '加载用户时区偏好失败，已回退浏览器时区');
-      log.error('ProfileApp', '加载用户时区偏好失败：', error);
-    }
-  };
+      if (timeStateResult.status === 'fulfilled') {
+        setSystemTimeZone(timeStateResult.value.systemTimeZone);
+        setDisplayTimeZone(timeStateResult.value.displayTimeZone);
+        setDisplayTimeFormat(timeStateResult.value.displayTimeFormat);
+      } else {
+        log.error('ProfileApp', '加载时间配置失败：', timeStateResult.reason);
+      }
+
+      setLoadingStats(false);
+    };
+
+    void loadProfileContext();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiBaseUrl, loggedIn, viewingUserId, userId]);
 
   const handleTimeZoneChange = async (timeZoneId: string) => {
     const resolvedTimeZone = resolveTimeZoneId(timeZoneId, systemTimeZone);

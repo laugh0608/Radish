@@ -16,6 +16,13 @@ public interface IUserService : IBaseService<User, UserVo>
     Task<string> GetUserRoleNameStrAsync(string loginName, string loginPwd);
 
     /// <summary>
+    /// 根据用户 ID 获取角色名称列表
+    /// </summary>
+    /// <param name="userId">用户 ID</param>
+    /// <returns>角色名称列表</returns>
+    Task<List<string>> GetUserRoleNamesAsync(long userId);
+
+    /// <summary>
     /// 获取所有的 角色-API 关系
     /// </summary>
     /// <returns>List RoleModulePermission</returns>

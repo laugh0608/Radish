@@ -1,21 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import i18n from './i18n';
-import { parseApiResponse, type ApiResponse } from '@radish/http';
+import { OidcCallbackError, redeemOidcAuthorizationCode } from '@radish/http';
 import { redirectToLogin, logout } from '@/services/auth';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from './stores/userStore';
 import { LevelUpModal } from '@radish/ui/level-up-modal';
 import { useLevelUpListener } from '@/hooks/useLevelUpListener';
-import { log } from '@/utils/logger';
 import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
 import { bootstrapAuth, type CurrentUser } from '@/services/authBootstrap';
 import { tokenService } from '@/services/tokenService';
 import './App.css';
-
-interface OidcCallbackProps {
-    apiBaseUrl: string;
-}
 
 function App() {
     const { t } = useTranslation();
@@ -53,6 +48,10 @@ function App() {
     }, [isBrowser, isOidcCallback]);
 
     useEffect(() => {
+        if (isOidcCallback) {
+            return;
+        }
+
         const cleanupAuth = bootstrapAuth({
             apiBaseUrl,
             onUserLoaded: (userData) => {
@@ -70,13 +69,13 @@ function App() {
             cleanupAuth();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [apiBaseUrl]);
+    }, [apiBaseUrl, isOidcCallback]);
 
     // 注意：WebSocket 连接由 Shell.tsx 统一管理，此处不再启动
 
     // OIDC 回调页面：单独渲染回调组件
     if (isOidcCallback) {
-        return <OidcCallback apiBaseUrl={apiBaseUrl} />;
+        return <OidcCallback />;
     }
 
     return (
@@ -147,52 +146,19 @@ function App() {
 
 }
 
-interface ApiFetchOptions extends RequestInit {
-    withAuth?: boolean;
-}
-
-function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
-    const { withAuth, headers, ...rest } = options;
-
-    const finalHeaders: HeadersInit = {
-        Accept: 'application/json',
-        'Accept-Language': i18n.language || 'zh',
-        ...headers,
-    };
-
-    if (withAuth && typeof window !== 'undefined') {
-        const token = tokenService.getAccessToken();
-        if (token) {
-            (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
-        }
-    }
-
-    return fetch(input, {
-        ...rest,
-        headers: finalHeaders,
-    });
-}
-
-function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
+function OidcCallback() {
     const { t } = useTranslation();
     const [error, setError] = useState<string>();
     const [message, setMessage] = useState<string>(t('oidc.completingLogin'));
-    // 使用 useRef 而不是 useState，因为 React StrictMode 会卸载并重新挂载组件
-    // useState 会被重置，但 useRef 在整个页面生命周期内保持值
-    const hasExecutedRef = useRef(false);
 
     useEffect(() => {
         if (typeof window === 'undefined') {
             return;
         }
 
-        // 防止 React StrictMode 导致的重复执行（授权码只能使用一次）
-        if (hasExecutedRef.current) {
-            return;
-        }
+        let cancelled = false;
 
         const url = new URL(window.location.href);
-        const code = url.searchParams.get('code');
 
         // 🌍 从 URL 读取语言参数并同步到前端（用户可能在登录页切换了语言）
         const cultureParam = url.searchParams.get('culture') || url.searchParams.get('ui-culture');
@@ -200,47 +166,27 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
             void i18n.changeLanguage(cultureParam);
         }
 
-        if (!code) {
-            setError(t('oidc.missingCode'));
-            setMessage(t('oidc.loginFailed'));
-            return;
-        }
-
-        // 标记为已执行，防止重复请求
-        hasExecutedRef.current = true;
-
         const redirectUri = `${window.location.origin}/oidc/callback`;
         const authServerBaseUrl = getAuthBaseUrl();
 
-        const fetchToken = async () => {
-            const body = new URLSearchParams();
-            body.set('grant_type', 'authorization_code');
-            body.set('client_id', 'radish-client');
-            body.set('code', code);
-            body.set('redirect_uri', redirectUri);
-
+        const completeLogin = async () => {
             try {
-                const response = await fetch(`${authServerBaseUrl}/connect/token`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body
+                const tokenSet = await redeemOidcAuthorizationCode({
+                    clientId: 'radish-client',
+                    authServerBaseUrl,
+                    redirectUri,
+                    missingCodeMessage: t('oidc.missingCode'),
+                    staleCallbackMessage: t('oidc.staleCallback'),
+                    missingAccessTokenMessage: t('oidc.missingAccessToken'),
+                    buildTokenRequestFailedMessage: ({ status, statusText, error, errorDescription }) => {
+                        const baseMessage = t('oidc.tokenRequestFailed', { status, statusText });
+                        const detailMessage = errorDescription || error;
+                        return detailMessage ? `${baseMessage} (${detailMessage})` : baseMessage;
+                    }
                 });
 
-                if (!response.ok) {
-                    throw new Error(t('oidc.tokenRequestFailed', { status: response.status, statusText: response.statusText }));
-                }
-
-                const tokenSet = await response.json() as {
-                    access_token?: string;
-                    refresh_token?: string;
-                    expires_in?: number;
-                    token_type?: string;
-                };
-
-                if (!tokenSet.access_token) {
-                    throw new Error(t('oidc.missingAccessToken'));
+                if (cancelled) {
+                    return;
                 }
 
                 if (tokenSet.expires_in) {
@@ -254,61 +200,35 @@ function OidcCallback({ apiBaseUrl }: OidcCallbackProps) {
                     tokenService.setTokenInfoFromJwt(tokenSet.access_token, tokenSet.refresh_token);
                 }
 
-                // 立即获取用户信息并缓存，避免主页面加载时的竞态条件
-                log.info('OidcCallback', '========== 回调页面开始预加载用户信息 ==========');
-                try {
-                    const userResponse = await apiFetch(
-                        `${apiBaseUrl}/api/v1/User/GetUserByHttpContext`,
-                        { withAuth: true }
-                    );
-                    log.info('OidcCallback', '用户信息请求响应状态:', userResponse.status);
-
-                    const userJson = await userResponse.json() as ApiResponse<CurrentUser>;
-                    log.debug('OidcCallback', '用户信息响应数据:', userJson);
-
-                    const userParsed = parseApiResponse(userJson);
-
-                    if (userParsed.ok && userParsed.data) {
-                        // 验证数据有效性
-                        if (!userParsed.data.voUserId || !userParsed.data.voUserName) {
-                            log.error('OidcCallback', '❌ 用户数据无效，userId 或 userName 为空');
-                            log.error('OidcCallback', '无效数据:', userParsed.data);
-                        } else {
-                            // 缓存用户信息到 localStorage，主页面可以优先使用
-                            const cacheData = JSON.stringify(userParsed.data);
-                            window.localStorage.setItem('cached_user_info', cacheData);
-                            log.info('OidcCallback', '✅ 用户信息已缓存到 localStorage');
-                            log.info('OidcCallback', '缓存数据详情:', {
-                                userId: userParsed.data.voUserId,
-                                userName: userParsed.data.voUserName,
-                                tenantId: userParsed.data.voTenantId,
-                                hasAvatar: !!userParsed.data.voAvatarUrl,
-                                cacheLength: cacheData.length
-                            });
-                        }
-                    } else {
-                        log.warn('OidcCallback', '❌ 用户信息解析失败:', userParsed.message);
-                    }
-                } catch (err) {
-                    // 忽略错误，主页面会重新获取
-                    log.error('OidcCallback', '❌ 预加载用户信息失败:', err);
+                if (cancelled) {
+                    return;
                 }
-
-                log.info('OidcCallback', '========== 即将跳转到主页面 ==========');
                 setMessage(t('oidc.loginSucceeded'));
 
-                // 使用 replace 避免在浏览器历史中留下带 code 的 URL
-                // 登录成功后跳转回 WebOS Shell（根路径）
                 window.location.replace('/');
             } catch (err) {
+                if (cancelled) {
+                    return;
+                }
+
+                if (err instanceof OidcCallbackError && err.code === 'stale_callback') {
+                    setError(t('oidc.staleCallback'));
+                    setMessage(t('oidc.loginFailed'));
+                    return;
+                }
+
                 const msg = err instanceof Error ? err.message : String(err);
                 setError(msg);
                 setMessage(t('oidc.loginFailed'));
             }
         };
 
-        void fetchToken();
-    }, [apiBaseUrl, t]);
+        void completeLogin();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [t]);
 
     return (
         <div>

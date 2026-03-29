@@ -14,6 +14,13 @@ interface TokenInfo {
   token_type: string;
 }
 
+export interface AccessTokenIdentity {
+  userId: number;
+  userName: string;
+  tenantId: number;
+  roles: string[];
+}
+
 type JwtPayload = Record<string, unknown> & {
   exp?: number;
 };
@@ -119,6 +126,62 @@ class TokenService {
     });
 
     return uniqueRoles;
+  }
+
+  getUserIdentityFromAccessToken(token?: string | null): AccessTokenIdentity | null {
+    const targetToken = token ?? this.getAccessToken();
+    if (!targetToken) {
+      return null;
+    }
+
+    const payload = this.parseJwt(targetToken);
+    if (!payload) {
+      return null;
+    }
+
+    const parseNumericClaim = (value: unknown): number | null => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return Math.trunc(value);
+      }
+
+      if (typeof value === 'string') {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+
+      return null;
+    };
+
+    const parseStringClaim = (value: unknown): string | null => {
+      if (typeof value !== 'string') {
+        return null;
+      }
+
+      const normalized = value.trim();
+      return normalized ? normalized : null;
+    };
+
+    const userId = parseNumericClaim(
+      payload.sub ?? payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
+    );
+
+    if (!userId || userId <= 0) {
+      return null;
+    }
+
+    const userName = parseStringClaim(payload.preferred_username)
+      ?? parseStringClaim(payload.name)
+      ?? parseStringClaim(payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'])
+      ?? String(userId);
+
+    const tenantId = parseNumericClaim(payload.tenant_id ?? payload.TenantId) ?? 0;
+
+    return {
+      userId,
+      userName,
+      tenantId,
+      roles: this.getRolesFromAccessToken(targetToken),
+    };
   }
 
   setTokenInfo(tokenInfo: TokenInfo): void {

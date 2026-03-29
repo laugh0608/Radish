@@ -28,7 +28,7 @@ public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
     private readonly IContentModerationService _contentModerationService;
-    private readonly IBaseService<Attachment, AttachmentVo> _attachmentService;
+    private readonly IAttachmentService _attachmentService;
     private readonly IBaseService<Comment, CommentVo> _commentService;
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
@@ -36,7 +36,7 @@ public class PostController : ControllerBase
     public PostController(
         IPostService postService,
         IContentModerationService contentModerationService,
-        IBaseService<Attachment, AttachmentVo> attachmentService,
+        IAttachmentService attachmentService,
         IBaseService<Comment, CommentVo> commentService,
         IUserBrowseHistoryService userBrowseHistoryService,
         ICurrentUserAccessor currentUserAccessor)
@@ -327,18 +327,9 @@ public class PostController : ControllerBase
         var avatarUrlMap = new Dictionary<long, string>();
         if (userIds.Count > 0)
         {
-            var avatarAttachments = await _attachmentService.QueryAsync(attachment =>
-                attachment.BusinessType == "Avatar" &&
-                attachment.BusinessId.HasValue &&
-                userIds.Contains(attachment.BusinessId.Value) &&
-                attachment.IsEnabled &&
-                !attachment.IsDeleted);
-
-            avatarUrlMap = avatarAttachments
-                .Where(attachment => attachment.VoBusinessId.HasValue && !string.IsNullOrWhiteSpace(attachment.VoUrl))
-                .OrderByDescending(attachment => attachment.VoCreateTime)
-                .GroupBy(attachment => attachment.VoBusinessId!.Value)
-                .ToDictionary(group => group.Key, group => group.First().VoUrl);
+            avatarUrlMap = (await _attachmentService.GetLatestAvatarAssetMapAsync(userIds))
+                .Where(entry => !string.IsNullOrWhiteSpace(entry.Value.Url))
+                .ToDictionary(entry => entry.Key, entry => entry.Value.Url);
         }
 
         foreach (var post in posts)
