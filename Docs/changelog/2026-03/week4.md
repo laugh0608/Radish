@@ -282,3 +282,23 @@
 - **运行时资源访问口径已统一**：公开媒体地址当前统一收口为 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail`，`AttachmentVo.voUrl` / `voThumbnailUrl`、`StickerVo.voImageUrl` / `voThumbnailUrl`、`ChannelMessageVo.voImageUrl` / `voImageThumbnailUrl` 等均明确为运行时派生字段，不再被设计文档描述为数据库真值。
 - **换域名时的运维边界已明确**：部署文档、配置文档与 Gateway 文档当前已统一说明，更换域名时应调整 `RADISH_PUBLIC_URL`、反向代理与 OIDC 配置，而不再需要手工更新附件类数据库字段。
 - **商城 / 论坛 / 聊天 / 贴图相关文档已同步对齐**：前后端设计、功能设计与上传设计文档已补齐商品图标附件快照、背包图标附件快照、正文附件协议，以及 Gateway 对 `/_assets/attachments/**` 的公开访问要求。
+
+### 社区体验优化第二批收口
+
+- **发帖按钮缺失项提示已补齐**：论坛发帖创作器在标题、正文、分类、标签或未确认标签输入缺失时，当前不会只停留在纯 `disabled` 吞点击，而是会展开设置区、提示缺失项，并聚焦到首个阻塞字段。
+- **标签确认交互已收口**：标签现在只有进入“已选标签”列表后才算生效；单纯在输入框里输入文本不会被误判为已选择。当前支持回车 / 点击添加，且与现有标签精确匹配时失焦会自动补入。
+- **欢迎 App 已切到游客安全模式**：未登录用户当前也可直接打开欢迎应用；若拿不到用户名，会回退为游客态展示，并提供游客 badge、说明与登录 CTA，而不再因为依赖用户名而阻塞打开。
+- **站点 favicon 配置链路已接通**：SystemConfig 当前已改为本地 JSON 持久化，并新增 `Site.Branding.FaviconUrl`。Console 可直接上传 `.ico`、预览并恢复默认；`radish.client / radish.console` 则通过公开站点设置接口同步标签页图标。
+- **默认站点图标种子已固定**：默认回退图标当前统一为 `/uploads/DefaultIco/bailuobo.ico`，对应种子文件为 `DataBases/Uploads/DefaultIco/bailuobo.ico`。
+
+### 相关文档同步
+
+- **论坛专题已补当前发帖规则**：`forum-features.md` 与 `forum-category-tag.md` 当前已同步记录发帖缺失项提示、标签确认规则与创作器提示口径。
+- **WebOS / Console 文档已补游客态与 favicon 事实**：`frontend/design.md`、`frontend/webos-quick-start.md` 与 `guide/console-modules.md` 当前已对齐欢迎 App 游客安全打开、SystemConfig 持久化、公开站点设置接口与默认图标种子。
+- **规划页已回写本轮进度**：`planning/current.md` 与 `development-plan.md` 当前已补回“发帖引导 / 游客态 / 站点图标配置已完成并验证”的阶段结论，避免规划口径继续停在上一批社区优化。
+
+### 本轮验证
+
+- ✅ `npm run build --workspace=radish.client` 通过。
+- ✅ `npm run build --workspace=radish.console` 通过。
+- ✅ `dotnet build Radish.slnx -c Debug` 通过（保留仓库既有 warning，无新增编译错误）。

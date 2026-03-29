@@ -655,7 +655,7 @@ Frontend/radish.client/src/stores/
 - `Dock`
 - `Desktop`
 - `DesktopWindow`
-- `WelcomeApp`（当前已完成主题 token 接入与内容口径重写）
+- `WelcomeApp`（当前已完成主题 token 接入、内容口径重写与游客安全打开）
 
 当前已完成首轮文案资源化的高频范围：
 
@@ -687,7 +687,7 @@ Frontend/radish.client/src/stores/
 - `npm run build --workspace=radish.client` 已在系统环境构建通过；
 - 桌面余额 / 经验值状态文案、Dock 少量交互色与个人中心尾部样式已完成当前批次收口。
 - 最新一轮手工联调已确认：`Shell` 的窗口层点击拦截已修复，Dock 顶部定位与状态按钮可读性已重新对齐，桌面图标已回到轻量图标 + 文案的列式排布，避免固定网格造成滚动列表感。
-- 欢迎页当前已完成主题适配、旧口径清理与主内容重写，但长文案仍为中文，后续应继续纳入 `i18n` 范围。
+- 欢迎页当前已完成主题适配、长文案双语资源化与游客安全模式；未登录时也可直接打开，并展示游客 badge、说明与登录 CTA，不再依赖先拿到用户名。
 
 ### 8.1.2 当前 i18n 实现落点
 
