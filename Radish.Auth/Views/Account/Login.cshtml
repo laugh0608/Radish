@@ -16,6 +16,7 @@
     var registerPrompt = isZh ? "没有账号？" : "Need an account?";
     var registerAction = isZh ? "立即注册" : "Create one";
     var testAccountHint = isZh ? "可直接用于本地联调和授权链路验证。" : "Use this demo account for local sign-in and consent testing.";
+    var loginSubmittingText = isZh ? "登录中..." : "Signing in...";
     var showTestAccount = Configuration.GetValue<bool?>("AuthUi:ShowTestAccountHint") ?? true;
 }
 
@@ -574,7 +575,7 @@
                     </div>
                 }
 
-                <form asp-controller="Account" asp-action="Login" method="post">
+                <form id="loginForm" asp-controller="Account" asp-action="Login" method="post">
                     @Html.AntiForgeryToken()
                     <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
 
@@ -599,7 +600,9 @@
                     </div>
 
                     <div class="button-group">
-                        <button type="submit">@Localizer["auth.login.submit"]</button>
+                        <button id="loginSubmitButton" type="submit" data-submitting="@loginSubmittingText">
+                            @Localizer["auth.login.submit"]
+                        </button>
                     </div>
 
                     <div class="register-link">
@@ -621,16 +624,33 @@
         document.addEventListener('DOMContentLoaded', () => {
             const passwordInput = document.getElementById('passwordInput');
             const toggleButton = document.getElementById('togglePassword');
-            if (!passwordInput || !toggleButton) {
-                return;
+            const loginForm = document.getElementById('loginForm');
+            const submitButton = document.getElementById('loginSubmitButton');
+
+            if (passwordInput && toggleButton) {
+                toggleButton.addEventListener('click', () => {
+                    const shouldShow = passwordInput.type === 'password';
+                    passwordInput.type = shouldShow ? 'text' : 'password';
+                    toggleButton.textContent = shouldShow ? toggleButton.dataset.hide : toggleButton.dataset.show;
+                    toggleButton.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
+                });
             }
 
-            toggleButton.addEventListener('click', () => {
-                const shouldShow = passwordInput.type === 'password';
-                passwordInput.type = shouldShow ? 'text' : 'password';
-                toggleButton.textContent = shouldShow ? toggleButton.dataset.hide : toggleButton.dataset.show;
-                toggleButton.setAttribute('aria-pressed', shouldShow ? 'true' : 'false');
-            });
+            if (loginForm && submitButton) {
+                let isSubmitting = false;
+
+                loginForm.addEventListener('submit', (event) => {
+                    if (isSubmitting) {
+                        event.preventDefault();
+                        return;
+                    }
+
+                    isSubmitting = true;
+                    submitButton.disabled = true;
+                    submitButton.setAttribute('aria-disabled', 'true');
+                    submitButton.textContent = submitButton.dataset.submitting || submitButton.textContent;
+                });
+            }
         });
     </script>
 </body>

@@ -1,8 +1,9 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SqlSugar;
 using Radish.Common;
 using Radish.Common.DbTool;
+using Radish.Model;
+using SqlSugar;
 
 namespace Radish.DbMigrate;
 
@@ -48,6 +49,7 @@ internal static class DbMigrateRunner
         Console.WriteLine($"[Radish.DbMigrate] Environment: {environment}");
 
         var db = services.GetRequiredService<ISqlSugarClient>();
+        var mainDbConnId = AppSettingsTool.RadishApp("MainDb");
 
         Console.WriteLine("[Radish.DbMigrate] 创建数据库（如不存在）...");
         foreach (var _ in BaseDbConfig.AllConfigs)
@@ -76,6 +78,8 @@ internal static class DbMigrateRunner
                 conn.CodeFirst.InitTables(type);
             }
         }
+
+        EnsureSupplementalIndexes(db, mainDbConnId);
 
         Console.WriteLine("[Radish.DbMigrate] Init 完成。");
     }
@@ -113,9 +117,46 @@ internal static class DbMigrateRunner
             Console.WriteLine("[Radish.DbMigrate] ✓ 数据库表结构已存在");
         }
 
+        EnsureSupplementalIndexes(db, mainDbConnId);
+
         Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
         Console.WriteLine("[Radish.DbMigrate] 表情包种子策略：当前不预置默认分组/表情，仅确保表结构可用。");
         await InitialDataSeeder.SeedAsync(db, services);
+    }
+
+    private static void EnsureSupplementalIndexes(ISqlSugarClient db, string? mainDbConnId)
+    {
+        if (db is not SqlSugarScope dbScope)
+        {
+            return;
+        }
+
+        var normalizedMainDbConnId = (string.IsNullOrWhiteSpace(mainDbConnId) ? "Main" : mainDbConnId)
+            .ToLowerInvariant();
+        var mainDb = dbScope.GetConnectionScope(normalizedMainDbConnId);
+        EnsureUserLoginIndex(mainDb);
+    }
+
+    private static void EnsureUserLoginIndex(ISqlSugarClient db)
+    {
+        const string indexName = "idx_user_login_active";
+
+        var entityInfo = db.EntityMaintenance.GetEntityInfo<User>();
+        var tableName = entityInfo.DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(tableName, false) || db.DbMaintenance.IsAnyIndex(indexName))
+        {
+            return;
+        }
+
+        var created = db.DbMaintenance.CreateIndex(
+            tableName,
+            [nameof(User.TenantId), nameof(User.LoginName), nameof(User.IsDeleted), nameof(User.IsEnable)],
+            indexName,
+            false);
+
+        Console.WriteLine(created
+            ? $"[Radish.DbMigrate] 已补齐索引 {indexName}。"
+            : $"[Radish.DbMigrate] 索引 {indexName} 创建未生效，请检查数据库状态。");
     }
 
     private static void PrintHelp()

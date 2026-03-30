@@ -75,20 +75,16 @@ public class AccountController : Controller
 
         Log.Information("[Account/Login] 开始处理登录请求，用户名: {UserName}", username);
 
-        // 1. 查询用户（使用 Service 层）
+        // 1. 查询用户（单用户精确查询，避免列表物化）
         var userQueryStopwatch = Stopwatch.StartNew();
-        var users = await _userService.QueryAsync(u =>
-            u.LoginName == username &&
-            u.IsDeleted == false &&
-            u.IsEnable);
+        var user = await _userService.GetEnabledUserByLoginNameAsync(username);
         Log.Information(
             "[Account/Login] 用户查询完成，用户名: {UserName}, 结果数: {UserCount}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
             username,
-            users.Count,
+            user == null ? 0 : 1,
             userQueryStopwatch.ElapsedMilliseconds,
             totalStopwatch.ElapsedMilliseconds);
 
-        var user = users.FirstOrDefault();
         if (user is null)
         {
             Log.Warning(

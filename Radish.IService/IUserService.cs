@@ -8,6 +8,13 @@ namespace Radish.IService;
 public interface IUserService : IBaseService<User, UserVo>
 {
     /// <summary>
+    /// 根据登录名获取可登录用户
+    /// </summary>
+    /// <param name="loginName">登录名</param>
+    /// <returns>单个用户视图模型，不存在则返回 null</returns>
+    Task<UserVo?> GetEnabledUserByLoginNameAsync(string loginName);
+
+    /// <summary>
     /// 通过登录用户名和登录密码查询用户的角色名称
     /// </summary>
     /// <param name="loginName">登录用户名</param>

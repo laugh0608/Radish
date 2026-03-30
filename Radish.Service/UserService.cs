@@ -34,6 +34,25 @@ public class UserService : BaseService<User, UserVo>, IUserService
     }
 
     /// <summary>
+    /// 根据登录名获取可登录用户
+    /// </summary>
+    /// <param name="loginName">登录名</param>
+    /// <returns>用户视图模型</returns>
+    public async Task<UserVo?> GetEnabledUserByLoginNameAsync(string loginName)
+    {
+        if (string.IsNullOrWhiteSpace(loginName))
+        {
+            return null;
+        }
+
+        var normalizedLoginName = loginName.Trim();
+        return await QueryFirstAsync(u =>
+            u.LoginName == normalizedLoginName &&
+            u.IsDeleted == false &&
+            u.IsEnable);
+    }
+
+    /// <summary>
     /// 通过登录用户名和登录密码查询用户的角色名称
     /// </summary>
     /// <param name="loginName">登录用户名</param>
@@ -41,8 +60,7 @@ public class UserService : BaseService<User, UserVo>, IUserService
     /// <returns>string RoleName, 可能为多个</returns>
     public async Task<string> GetUserRoleNameStrAsync(string loginName, string loginPwd)
     {
-        var user =
-            (await base.QueryAsync(a => a.LoginName == loginName && a.LoginPassword == loginPwd)).FirstOrDefault();
+        var user = await QueryFirstAsync(a => a.LoginName == loginName && a.LoginPassword == loginPwd);
         if (user == null)
         {
             return string.Empty;

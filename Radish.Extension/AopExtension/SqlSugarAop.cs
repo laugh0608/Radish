@@ -4,6 +4,7 @@ using Radish.Common.OptionTool;
 using Serilog;
 using SqlSugar;
 using System.Globalization;
+using System.Data;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -12,6 +13,8 @@ namespace Radish.Extension.AopExtension;
 public class SqlSugarAop
 {
     private const int ParameterPreviewLimit = 120;
+    private const int SlowSqlThresholdMs = 1000;
+    private const int SlowConnectionThresholdMs = 500;
 
     private static readonly HashSet<string> DefaultOmittedFieldNames =
     [
@@ -57,6 +60,88 @@ public class SqlSugarAop
         catch (Exception e)
         {
             Console.WriteLine("Error occured OnLogExecuting:" + e);
+        }
+    }
+
+    public static void OnQueryExecuted(ISqlSugarClient sqlSugarScopeProvider, string user, string table, string operate,
+        string sql, SugarParameter[] parameters, ConnectionConfig config, TimeSpan elapsed)
+    {
+        try
+        {
+            var options = ResolveOptions();
+            if (!ShouldLog(options, user, table, operate) || elapsed.TotalMilliseconds < SlowSqlThresholdMs)
+            {
+                return;
+            }
+
+            using (LogContextTool.Create.SqlAopPushProperty(sqlSugarScopeProvider))
+            {
+                Log.Warning(
+                    "[SqlSugar] 检测到慢查询，ConnId: {ConnId}, User: {User}, Table: {Table}, Operate: {Operate}, ElapsedMs: {ElapsedMs}, Sql: {Sql}, Params: {Params}",
+                    config.ConfigId,
+                    user,
+                    table,
+                    operate,
+                    elapsed.TotalMilliseconds,
+                    SanitizeSqlText(sql, options),
+                    FormatParameters(parameters, options));
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Error occured OnQueryExecuted:" + e);
+        }
+    }
+
+    public static void OnCommandExecuted(ISqlSugarClient sqlSugarScopeProvider, string user, string table, string operate,
+        string sql, SugarParameter[] parameters, ConnectionConfig config, TimeSpan elapsed)
+    {
+        try
+        {
+            var options = ResolveOptions();
+            if (!ShouldLog(options, user, table, operate) || elapsed.TotalMilliseconds < SlowSqlThresholdMs)
+            {
+                return;
+            }
+
+            using (LogContextTool.Create.SqlAopPushProperty(sqlSugarScopeProvider))
+            {
+                Log.Warning(
+                    "[SqlSugar] 检测到慢命令，ConnId: {ConnId}, User: {User}, Table: {Table}, Operate: {Operate}, ElapsedMs: {ElapsedMs}, Sql: {Sql}, Params: {Params}",
+                    config.ConfigId,
+                    user,
+                    table,
+                    operate,
+                    elapsed.TotalMilliseconds,
+                    SanitizeSqlText(sql, options),
+                    FormatParameters(parameters, options));
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Error occured OnCommandExecuted:" + e);
+        }
+    }
+
+    public static void OnConnectionChecked(ConnectionConfig config, IDbConnection connection, TimeSpan elapsed)
+    {
+        try
+        {
+            if (elapsed.TotalMilliseconds < SlowConnectionThresholdMs)
+            {
+                return;
+            }
+
+            Log.Warning(
+                "[SqlSugar] 检测到慢连接检查，ConnId: {ConnId}, DbType: {DbType}, Database: {Database}, ElapsedMs: {ElapsedMs}",
+                config.ConfigId,
+                config.DbType,
+                connection.Database,
+                elapsed.TotalMilliseconds);
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("Error occured OnConnectionChecked:" + e);
         }
     }
 

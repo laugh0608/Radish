@@ -10,6 +10,10 @@ namespace Radish.Model;
 
 /// <summary>用户实体</summary>
 /// <remarks>对应仓储层生成的内存数据</remarks>
+[SugarIndex("idx_user_login_active", nameof(ITenantEntity.TenantId), OrderByType.Asc,
+    nameof(LoginName), OrderByType.Asc,
+    nameof(IsDeleted), OrderByType.Asc,
+    nameof(IsEnable), OrderByType.Asc)]
 public class User : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认用户实例</summary>
