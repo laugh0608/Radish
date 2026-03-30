@@ -1065,6 +1065,28 @@ curl https://localhost:7100/connect/userinfo \
 | 调用需要 `Client` 策略的 API 返回 403 | Access Token 中缺少 `scope=radish-api`；或使用的是不带 scope 的旧登录方式 | 调用 `/connect/authorize` + `/connect/token` 时明确申请 `scope=radish-api`，并使用通过 Gateway/OIDC 获取的 Token 访问需要 `Client` 策略的接口 |
 | `/connect/userinfo` 中 `tenant_id` 为空 | 使用了未写入 `tenant_id` 的旧 Token，或 Auth 登录流程未正确设置租户 | 确保通过最新的 Auth 登录入口（`/Account/Login` 或前端 OIDC 流程）获取 Token，并确认登录用户绑定了有效的 TenantId |
 
+### 12.5 登录链路稳定性排障（2026-03-30）
+
+近期针对“标签页长时间后台后重新打开，前端 UI 仍显示已登录，但实际访问已掉登录态；重新输入账号密码后又明显变慢”的场景，当前排障结论和治理口径如下：
+
+- 当前慢点优先按 **Auth 前置登录链路** 排查，而不是先怀疑 `/connect/token`：
+  - 用户在 `/Account/Login` 完成业务用户校验与 Cookie 会话建立后，才会继续进入后续 OIDC 授权流程。
+  - 如果这里发生等待，用户体感会是“点登录后停顿几十秒才继续”，而不是 Token 端点本身慢。
+- 当前已落地的治理点：
+  - `IUserService.GetEnabledUserByLoginNameAsync(...)` 已收口为单用户精确查询，替代旧的列表查询后再 `FirstOrDefault()`，避免登录入口额外物化结果集。
+  - `User` 已补登录复合索引 `idx_user_login_active(TenantId, LoginName, IsDeleted, IsEnable)`；旧 SQLite 库可通过 `DbMigrate apply/init/seed` 自动补齐。
+  - 登录页提交后会立即禁用按钮并显示“登录中...”，避免重复点击把并发请求放大成新的等待。
+  - `AccountController` 已补登录分段耗时日志，`SqlSugarSetup` / `SqlSugarAop` 已补慢连接、慢查询、慢命令与数据库异常观测，用于区分“用户查询慢”“密码校验慢”“角色查询慢”“SQLite 连接检查慢”。
+- 建议的排障顺序：
+  - 先看 `Log/Radish.Auth/Log.txt` 中 `[Account/Login]` 的阶段日志，确认等待主要落在用户查询、密码校验还是角色查询。
+  - 再看 `Log/Radish.Auth/AopSql/AopSql.txt` 中是否出现 `[SqlSugar] 检测到慢连接检查`、`慢查询` 或 `慢命令`。
+  - 若本地或测试环境仍使用旧 SQLite 库，先执行一次 `DbMigrate apply`，确认登录索引已自愈补齐后再复测。
+  - 若问题只在标签页长时间后台恢复后出现，应同时复核当前 token 身份缓存、自动续期结果和前端恢复逻辑，不要把 Dock 的本地显示状态直接当作真实会话状态。
+- 当前手工回归重点：
+  - 标签页长时间后台后恢复，再触发受保护接口访问。
+  - 登录按钮连点、网络抖动、旧 SQLite 库三类场景。
+  - 切账号 / 切租户后重新登录，确认不会复用旧身份。
+
 ## 13. 迁移指南
 
 ### 13.1 从旧版 JWT 迁移

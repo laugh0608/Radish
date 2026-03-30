@@ -386,6 +386,30 @@ public static void OnLogExecuting(ISqlSugarClient sqlSugarScopeProvider, string 
 - `MarkdownContent`、`Content`、`RequestBody` 等大文本字段默认只记录长度占位，不输出正文
 - 仍会保留普通字段和 SQL 结构，方便排查问题
 
+### SQLite 连接初始化与慢链路观测
+
+自 `2026-03-30` 起，`SqlSugarSetup` 对非 `Log` 库连接除了原有 `OnLogExecuting` 外，又补了一层连接级与执行后观测，重点用于排查“登录前置链路等待几十秒”“标签页后台恢复后再次登录变慢”这类问题：
+
+- `CheckConnectionExecuted`
+  - 记录数据库连接检查耗时。
+  - 超过 `500ms` 会输出 `[SqlSugar] 检测到慢连接检查`。
+- `OnGetDataReadered`
+  - 记录查询实际读取耗时。
+  - 超过 `1000ms` 会输出 `[SqlSugar] 检测到慢查询`。
+- `OnLogExecuted`
+  - 对非 `Query` 命令记录执行耗时。
+  - 超过 `1000ms` 会输出 `[SqlSugar] 检测到慢命令`。
+- `OnError`
+  - 统一补 `ConnId / DbType / Message`，便于快速定位具体连接和数据库类型。
+
+对于默认本地开发使用的 SQLite，当前还会在连接已打开时自动执行以下初始化：
+
+- `PRAGMA busy_timeout = 60000;`
+- `PRAGMA synchronous = NORMAL;`
+- `PRAGMA journal_mode = WAL;`
+
+其中 `journal_mode = WAL` 只会按“连接配置 + 数据库文件”初始化一次，避免每次连接都重复切模式。这个策略的目标是尽量降低单文件 SQLite 在高频读写下的瞬时锁等待，但它不是生产级数据库治理的替代品；如果业务已经进入多实例、高并发或持续高写入阶段，仍应优先评估 PostgreSQL。
+
 **日志输出位置**：
 - 文件：`Log/{ProjectName}/AopSql/AopSql.txt`
 - 控制台：同时输出到控制台（开发环境）
@@ -889,6 +913,16 @@ db.Aop.OnLogExecuting = (sql, pars) =>
     }
 };
 ```
+
+### SQLite 登录链路偶发慢请求
+
+**问题**：登录页输入账号密码后需要等待数十秒，或标签页长时间后台后再次进入登录流程明显变慢。
+
+**建议排查**：
+1. 先看 `Log/Radish.Auth/Log.txt` 中 `[Account/Login]` 的阶段耗时，确认慢点落在用户查询、密码校验还是角色查询。
+2. 再看 `Log/Radish.Auth/AopSql/AopSql.txt` 是否出现慢连接、慢查询、慢命令或数据库异常日志。
+3. 如果当前数据库是旧 SQLite 库，先执行一次 `DbMigrate apply`，确认 `idx_user_login_active` 已自动补齐。
+4. 如果仍频繁出现连接等待，应优先评估是否存在同库高频写入竞争，必要时把环境从 SQLite 切到 PostgreSQL。
 
 ## 扩展功能
 

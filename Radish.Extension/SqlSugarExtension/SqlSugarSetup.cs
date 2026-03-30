@@ -36,7 +36,7 @@ public static class SqlSugarSetup
             {
                 ConfigId = m.ConnId.ObjToString().ToLower(),
                 ConnectionString = m.ConnectionString,
-                DbType = (DbType)m.DbType,
+                DbType = (SqlSugar.DbType)m.DbType,
                 IsAutoCloseConnection = true,
                 MoreSettings = new ConnMoreSettings()
                 {
@@ -129,7 +129,7 @@ public static class SqlSugarSetup
 
                         dbProvider.Aop.CheckConnectionExecuted = (connection, elapsed) =>
                         {
-                            if (config.DbType == DbType.Sqlite)
+                            if (config.DbType == SqlSugar.DbType.Sqlite)
                             {
                                 ApplySqlitePragmas(connection, config);
                             }
