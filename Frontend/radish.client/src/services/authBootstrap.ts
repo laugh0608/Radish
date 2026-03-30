@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import i18n from '@/i18n';
 import { log } from '@/utils/logger';
+import { AUTH_TOKEN_EXPIRED_EVENT } from './authSession';
 
 export interface CurrentUser {
   voUserId: number;
@@ -28,6 +29,7 @@ export interface AuthBootstrapOptions {
 
 const inFlightAuthHydrations = new Map<string, Promise<CurrentUser>>();
 const CURRENT_USER_CACHE_KEY = 'cached_user_info';
+const FOREGROUND_SESSION_REVALIDATE_COOLDOWN_MS = 15_000;
 
 interface CurrentUserCacheEntry {
   version: 2;
@@ -349,6 +351,38 @@ export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<Cu
   }
 }
 
+export async function revalidateAuthSession(options: AuthBootstrapOptions): Promise<CurrentUser | null> {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  const authStore = useAuthStore.getState();
+  const userStore = useUserStore.getState();
+  const token = await tokenService.getValidAccessToken();
+
+  if (!token) {
+    if (authStore.isAuthenticated || userStore.isAuthenticated()) {
+      await authStore.logout();
+    } else {
+      userStore.clearUser();
+      authStore.setAuthenticated(false);
+    }
+
+    return null;
+  }
+
+  const currentStoreUser = buildCurrentUserFromStore();
+  if (currentStoreUser && matchesTokenIdentity(currentStoreUser, token)) {
+    authStore.setAuthenticated(true);
+    return currentStoreUser;
+  }
+
+  return await hydrateAuthUser({
+    ...options,
+    useCache: false,
+  });
+}
+
 export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
   if (typeof window === 'undefined') {
     return () => {};
@@ -391,13 +425,57 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
     log.warn('AuthBootstrap', '收到 Token 过期事件，执行登出');
     authStore.logout();
   };
-  window.addEventListener('auth:token-expired', handleTokenExpired);
+  let lastForegroundSyncAt = 0;
+  let foregroundSyncPromise: Promise<CurrentUser | null> | null = null;
+
+  const requestForegroundSessionSync = () => {
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+      return;
+    }
+
+    const now = Date.now();
+    if (foregroundSyncPromise || now - lastForegroundSyncAt < FOREGROUND_SESSION_REVALIDATE_COOLDOWN_MS) {
+      return;
+    }
+
+    foregroundSyncPromise = revalidateAuthSession(options)
+      .catch((error) => {
+        log.warn('AuthBootstrap', '前台恢复后登录态重校验失败:', error);
+        return null;
+      })
+      .finally(() => {
+        lastForegroundSyncAt = Date.now();
+        foregroundSyncPromise = null;
+      });
+  };
+
+  const handleVisibilityChange = () => {
+    if (document.visibilityState === 'visible') {
+      requestForegroundSessionSync();
+    }
+  };
+
+  const handleWindowFocus = () => {
+    requestForegroundSessionSync();
+  };
+
+  const handlePageShow = () => {
+    requestForegroundSessionSync();
+  };
+
+  window.addEventListener(AUTH_TOKEN_EXPIRED_EVENT, handleTokenExpired);
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('focus', handleWindowFocus);
+  window.addEventListener('pageshow', handlePageShow);
 
   tokenService.startAutoRefresh();
   void hydrateAuthUser(options);
 
   return () => {
-    window.removeEventListener('auth:token-expired', handleTokenExpired);
+    window.removeEventListener(AUTH_TOKEN_EXPIRED_EVENT, handleTokenExpired);
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('focus', handleWindowFocus);
+    window.removeEventListener('pageshow', handlePageShow);
     tokenService.stopAutoRefresh();
   };
 }

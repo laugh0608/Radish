@@ -4,6 +4,13 @@
  */
 import { log } from '@/utils/logger';
 import { getAuthBaseUrl } from '@/config/env';
+import {
+  classifyTokenRefreshFailure,
+  dispatchAuthTokenExpired,
+  shouldInvalidateSessionAfterRefreshFailure,
+  TokenRefreshFailureReason,
+  type TokenRefreshFailureReason as TokenRefreshFailureReasonValue,
+} from './authSession';
 
 const CLIENT_ID = 'radish-client';
 
@@ -24,6 +31,18 @@ export interface AccessTokenIdentity {
 type JwtPayload = Record<string, unknown> & {
   exp?: number;
 };
+
+class TokenRefreshError extends Error {
+  readonly reason: TokenRefreshFailureReasonValue;
+  readonly status?: number;
+
+  constructor(message: string, reason: TokenRefreshFailureReasonValue, status?: number) {
+    super(message);
+    this.name = 'TokenRefreshError';
+    this.reason = reason;
+    this.status = status;
+  }
+}
 
 class TokenService {
   private static instance: TokenService;
@@ -375,7 +394,12 @@ class TokenService {
 
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
-      throw new Error('没有可用的刷新令牌');
+      const error = new TokenRefreshError(
+        '没有可用的刷新令牌',
+        TokenRefreshFailureReason.MissingRefreshToken,
+      );
+      this.handleRefreshFailure(error);
+      throw error;
     }
 
     this.refreshPromise = this.performTokenRefresh(refreshToken);
@@ -383,6 +407,9 @@ class TokenService {
     try {
       const newAccessToken = await this.refreshPromise;
       return newAccessToken;
+    } catch (error) {
+      this.handleRefreshFailure(error);
+      throw error;
     } finally {
       this.refreshPromise = null;
     }
@@ -409,7 +436,11 @@ class TokenService {
       });
 
       if (!response.ok) {
-        throw new Error(`Token 刷新失败: ${response.status} ${response.statusText}`);
+        throw new TokenRefreshError(
+          `Token 刷新失败: ${response.status} ${response.statusText}`,
+          classifyTokenRefreshFailure(response.status),
+          response.status,
+        );
       }
 
       const tokenData: TokenInfo = await response.json();
@@ -425,12 +456,13 @@ class TokenService {
       log.debug('TokenService', 'Token 刷新成功');
       return tokenData.access_token;
     } catch (error) {
-      log.error('TokenService', 'Token 刷新失败', error);
+      if (error instanceof TokenRefreshError) {
+        throw error;
+      }
 
-      // 刷新失败，清除所有 Token
-      this.clearTokens();
-
-      throw error;
+      const reason = classifyTokenRefreshFailure(undefined, error);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new TokenRefreshError(`Token 刷新失败: ${message}`, reason);
     }
   }
 
@@ -449,7 +481,12 @@ class TokenService {
       try {
         return await this.refreshAccessToken();
       } catch (error) {
-        log.error('TokenService', '自动刷新 Token 失败', error);
+        if (!this.isTokenExpired()) {
+          log.warn('TokenService', '提前刷新失败，继续使用当前访问令牌', error);
+          return currentToken;
+        }
+
+        log.error('TokenService', '自动刷新 Token 失败，当前访问令牌已不可用', error);
         return null;
       }
     }
@@ -482,9 +519,13 @@ class TokenService {
           await this.refreshAccessToken();
           log.debug('TokenService', '自动刷新成功');
         } catch (error) {
-          log.error('TokenService', '自动刷新失败', error);
-          // 刷新失败，停止定时器
-          this.stopAutoRefresh();
+          if (!this.getAccessToken()) {
+            log.error('TokenService', '自动刷新失败，认证会话已失效', error);
+            this.stopAutoRefresh();
+            return;
+          }
+
+          log.warn('TokenService', '自动刷新失败，保留当前访问令牌并等待下一次重试', error);
         }
       }
     };
@@ -557,6 +598,28 @@ class TokenService {
     if (legacyValue !== null) {
       localStorage.setItem(targetKey, legacyValue);
     }
+  }
+
+  private handleRefreshFailure(error: unknown): void {
+    const refreshError = error instanceof TokenRefreshError
+      ? error
+      : new TokenRefreshError(
+          error instanceof Error ? error.message : String(error),
+          classifyTokenRefreshFailure(undefined, error),
+        );
+
+    log.error('TokenService', 'Token 刷新失败', {
+      reason: refreshError.reason,
+      status: refreshError.status,
+      message: refreshError.message,
+    });
+
+    if (!shouldInvalidateSessionAfterRefreshFailure(refreshError.reason, this.isTokenExpired())) {
+      return;
+    }
+
+    this.clearTokens();
+    dispatchAuthTokenExpired(refreshError.reason);
   }
 }
 

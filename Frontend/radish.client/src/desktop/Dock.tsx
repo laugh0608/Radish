@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWindowStore } from '@/stores/windowStore';
+import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { redirectToLogin, logout, hasAccessToken } from '@/services/auth';
+import { hasAuthenticatedSession } from '@/services/authSession';
 import { getAppById } from './AppRegistry';
 import type { AppDefinition } from './types';
 import { Icon } from '@radish/ui/icon';
@@ -28,7 +30,8 @@ import styles from './Dock.module.css';
 export const Dock = () => {
   const { t } = useTranslation();
   const { openWindows, openApp, restoreWindow } = useWindowStore();
-  const { userName, userId, avatarUrl, avatarThumbnailUrl, isAuthenticated, clearUser } = useUserStore();
+  const authAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { userName, userId, avatarUrl, avatarThumbnailUrl, clearUser } = useUserStore();
   const { unreadCount: storeUnreadCount, connectionState } = useNotificationStore();
   const { currentTheme, cycleTheme } = useTheme();
   const [time, setTime] = useState(new Date());
@@ -42,7 +45,7 @@ export const Dock = () => {
   const themeIcon = currentTheme.id === 'default' ? 'mdi:view-dashboard-outline' : 'mdi:landscape';
   const themeBadge = currentTheme.id === 'default' ? '简' : '风';
 
-  const loggedIn = isAuthenticated();
+  const loggedIn = hasAuthenticatedSession(authAuthenticated, userId);
 
   // 根据连接状态决定显示哪个未读数
   const unreadMessages = connectionState === 'connected' ? storeUnreadCount : pollingUnreadCount;
