@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useUserStore } from '@/stores/userStore';
+import { redirectToLogin } from '@/services/auth';
 import { Icon } from '@radish/ui/icon';
 import { AboutTab, OpenSourceTab, QuickStartTab, RulesTab } from './components';
 import styles from './WelcomeApp.module.css';
@@ -27,9 +28,11 @@ const tabs: Tab[] = [
  */
 export const WelcomeApp = () => {
   const { t } = useTranslation();
-  const { userName } = useUserStore();
+  const userId = useUserStore((state) => state.userId);
+  const userName = useUserStore((state) => state.userName);
   const [activeTab, setActiveTab] = useState<TabType>('about');
   const displayName = userName?.trim() || t('welcome.common.friendFallback');
+  const isGuest = !userId;
 
   const heroHighlights = [
     {
@@ -78,6 +81,15 @@ export const WelcomeApp = () => {
                 components={{ strong: <strong /> }}
               />
             </p>
+            {isGuest && (
+              <div className={styles.guestNotice}>
+                <span className={styles.guestBadge}>{t('welcome.hero.guestBadge')}</span>
+                <p className={styles.guestHint}>{t('welcome.hero.guestHint')}</p>
+                <button type="button" className={styles.heroActionButton} onClick={redirectToLogin}>
+                  {t('welcome.hero.loginAction')}
+                </button>
+              </div>
+            )}
           </div>
 
           <div className={styles.heroStats}>

@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -14,6 +15,7 @@ using Radish.Shared.CustomEnum;
 using Microsoft.Extensions.Localization;
 using Radish.Api.Resources;
 using Radish.Model.DtoModels;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -147,20 +149,7 @@ public class UserController : ControllerBase
             .Distinct()
             .ToList();
 
-        var avatarAttachments = await _attachmentService.QueryAsync(attachment =>
-            attachment.BusinessType == "Avatar" &&
-            !attachment.IsDeleted &&
-            attachment.BusinessId != null &&
-            userIds.Contains(attachment.BusinessId.Value));
-
-        var avatarMap = avatarAttachments
-            .Where(attachment => attachment.VoBusinessId.HasValue)
-            .GroupBy(attachment => attachment.VoBusinessId!.Value)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .OrderByDescending(attachment => attachment.VoCreateTime)
-                    .First());
+        var avatarMap = await _attachmentService.GetLatestAvatarAssetMapAsync(userIds);
 
         foreach (var user in users)
         {
@@ -169,8 +158,8 @@ public class UserController : ControllerBase
                 continue;
             }
 
-            user.VoAvatarUrl = avatar.VoUrl;
-            user.VoAvatarThumbnailUrl = avatar.VoThumbnailUrl;
+            user.VoAvatarUrl = avatar.Url;
+            user.VoAvatarThumbnailUrl = avatar.ThumbnailUrl;
         }
     }
 
@@ -264,6 +253,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel> GetUserByHttpContext()
     {
+        var totalStopwatch = Stopwatch.StartNew();
         var userId = Current.UserId;
         var userName = Current.UserName;
         var tenantId = Current.TenantId;
@@ -273,25 +263,69 @@ public class UserController : ControllerBase
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(role => role, StringComparer.OrdinalIgnoreCase)
             .ToList();
-        var permissions = await _userService.GetPermissionKeysByRolesAsync(roles);
 
-        // 获取用户头像
-        var avatar = await _attachmentService.QueryFirstAsync(a =>
-            a.UploaderId == userId &&
-            !a.IsDeleted &&
-            a.BusinessType == "Avatar" &&
-            a.BusinessId == userId);
+        Log.Information(
+            "[GetUserByHttpContext] 开始处理当前用户信息，用户: {UserId}, 角色数: {RoleCount}",
+            userId,
+            roles.Count);
+
+        List<string> permissions;
+        var permissionsStopwatch = Stopwatch.StartNew();
+        try
+        {
+            permissions = await _userService.GetPermissionKeysByRolesAsync(roles);
+            Log.Information(
+                "[GetUserByHttpContext] 权限查询完成，用户: {UserId}, 权限数: {PermissionCount}, 耗时: {ElapsedMs}ms",
+                userId,
+                permissions.Count,
+                permissionsStopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            permissions = new List<string>();
+            Log.Error(
+                ex,
+                "[GetUserByHttpContext] 权限查询失败，用户: {UserId}, 耗时: {ElapsedMs}ms，将返回空权限集",
+                userId,
+                permissionsStopwatch.ElapsedMilliseconds);
+        }
+
+        AttachmentAssetDto? avatar = null;
+        var avatarStopwatch = Stopwatch.StartNew();
+        try
+        {
+            avatar = await _attachmentService.GetLatestAvatarAssetAsync(userId);
+            Log.Information(
+                "[GetUserByHttpContext] 头像查询完成，用户: {UserId}, 头像Id: {AvatarId}, 耗时: {ElapsedMs}ms",
+                userId,
+                avatar?.AttachmentId,
+                avatarStopwatch.ElapsedMilliseconds);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(
+                ex,
+                "[GetUserByHttpContext] 头像查询失败，用户: {UserId}, 耗时: {ElapsedMs}ms，将忽略头像信息",
+                userId,
+                avatarStopwatch.ElapsedMilliseconds);
+        }
 
         var userInfo = new CurrentUserVo
         {
             VoUserId = userId,
             VoUserName = userName,
             VoTenantId = tenantId,
-            VoAvatarUrl = avatar?.VoUrl,
-            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl,
+            VoAvatarUrl = avatar?.Url,
+            VoAvatarThumbnailUrl = avatar?.ThumbnailUrl,
             VoRoles = roles,
             VoPermissions = permissions
         };
+
+        Log.Information(
+            "[GetUserByHttpContext] 当前用户信息组装完成，用户: {UserId}, 总耗时: {ElapsedMs}ms",
+            userId,
+            totalStopwatch.ElapsedMilliseconds);
+
         return new MessageModel
         {
             IsSuccess = true,
@@ -443,15 +477,15 @@ public class UserController : ControllerBase
         var commentCount = await _commentService.QueryCountAsync(
             c => c.AuthorId == userId && !c.IsDeleted);
 
-        // 统计帖子获赞数
-        var posts = await _postService.QueryAsync(
+        // 统计帖子获赞数（数据库聚合，避免全量物化）
+        var postLikeCount = await _postService.QuerySumAsync(
+            p => p.LikeCount,
             p => p.AuthorId == userId && p.IsPublished && !p.IsDeleted);
-        var postLikeCount = posts.Sum(p => p.VoLikeCount);
 
-        // 统计评论获赞数
-        var comments = await _commentService.QueryAsync(
+        // 统计评论获赞数（数据库聚合，避免全量物化）
+        var commentLikeCount = await _commentService.QuerySumAsync(
+            c => c.LikeCount,
             c => c.AuthorId == userId && !c.IsDeleted);
-        var commentLikeCount = comments.Sum(c => c.VoLikeCount);
 
         var stats = new UserStatsVo
         {
@@ -518,11 +552,7 @@ public class UserController : ControllerBase
         }
 
         // 当前方案：头像通过 Attachment 的 Avatar 业务类型关联（BusinessId = userId）实现
-        var avatar = await _attachmentService.QueryFirstAsync(a =>
-            a.UploaderId == userId &&
-            !a.IsDeleted &&
-            a.BusinessType == "Avatar" &&
-            a.BusinessId == userId);
+        var avatar = await _attachmentService.GetLatestAvatarAssetAsync(userId);
 
         var profile = new UserProfileVo
         {
@@ -535,9 +565,9 @@ public class UserController : ControllerBase
             VoBirth = user.VoUserBirth,
             VoAddress = user.VoUserAddress,
             VoCreateTime = user.VoCreateTime,
-            VoAvatarAttachmentId = avatar?.VoId,
-            VoAvatarUrl = avatar?.VoUrl,
-            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl
+            VoAvatarAttachmentId = avatar?.AttachmentId,
+            VoAvatarUrl = avatar?.Url,
+            VoAvatarThumbnailUrl = avatar?.ThumbnailUrl
         };
 
         return new MessageModel
@@ -579,10 +609,7 @@ public class UserController : ControllerBase
             };
         }
 
-        var avatar = await _attachmentService.QueryFirstAsync(a =>
-            !a.IsDeleted &&
-            a.BusinessType == "Avatar" &&
-            a.BusinessId == userId);
+        var avatar = await _attachmentService.GetLatestAvatarAssetAsync(userId);
 
         var profile = new UserPublicProfileVo
         {
@@ -590,8 +617,8 @@ public class UserController : ControllerBase
             VoUserName = user.VoUserName,
             VoDisplayName = string.IsNullOrWhiteSpace(user.VoUserRealName) ? null : user.VoUserRealName,
             VoCreateTime = user.VoCreateTime,
-            VoAvatarUrl = avatar?.VoUrl,
-            VoAvatarThumbnailUrl = avatar?.VoThumbnailUrl
+            VoAvatarUrl = avatar?.Url,
+            VoAvatarThumbnailUrl = avatar?.ThumbnailUrl
         };
 
         return new MessageModel
@@ -831,7 +858,7 @@ public class UserController : ControllerBase
             };
         }
 
-        var attachment = await _attachmentService.QueryFirstAsync(a => a.Id == dto.AttachmentId && !a.IsDeleted);
+        var attachment = await _attachmentService.GetAttachmentAssetAsync(dto.AttachmentId);
         if (attachment == null)
         {
             return new MessageModel
@@ -844,7 +871,7 @@ public class UserController : ControllerBase
 
         // 只有上传者或管理员可以绑定为头像
         var isAdmin = Current.IsSystemOrAdmin();
-        if (attachment.VoUploaderId != userId && !isAdmin)
+        if (attachment.UploaderId != userId && !isAdmin)
         {
             return new MessageModel
             {

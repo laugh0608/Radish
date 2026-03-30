@@ -12,7 +12,6 @@ import {
 } from '@radish/ui';
 import { Upload } from 'antd';
 import type { UploadProps } from 'antd';
-import { getApiClientConfig } from '@radish/http';
 import {
   addSticker,
   checkStickerCode,
@@ -21,6 +20,8 @@ import {
   type StickerVo,
   type UpdateStickerRequest,
 } from '@/api/stickerApi';
+import { uploadAttachmentImage } from '@/api/attachmentApi';
+import { getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 
 interface StickerFormProps {
@@ -32,131 +33,21 @@ interface StickerFormProps {
   onSuccess: () => void;
 }
 
-interface UploadStickerImageResult {
-  attachmentId: string;
-  imageUrl?: string;
-  thumbnailUrl?: string;
-}
-
-function toStringOrUndefined(value: unknown): string | undefined {
-  if (typeof value === 'string' && value.trim()) {
-    return value;
-  }
-
-  return undefined;
-}
-
-function toIdString(value: unknown): string | undefined {
-  if (typeof value === 'string' && /^[1-9]\d*$/.test(value.trim())) {
-    return value.trim();
-  }
-
-  if (typeof value === 'number' && Number.isFinite(value) && value > 0) {
-    return String(Math.trunc(value));
-  }
-
-  return undefined;
-}
-
-function uploadStickerImage(file: File, onProgress: (percent: number) => void): Promise<UploadStickerImageResult> {
-  return new Promise((resolve, reject) => {
-    const config = getApiClientConfig();
-    const normalizedBaseUrl = (config.baseUrl || '').trim().replace(/\/$/, '');
-    if (!normalizedBaseUrl) {
-      reject(new Error('API baseUrl 未配置'));
-      return;
-    }
-
-    const uploadUrl = `${normalizedBaseUrl}/api/v1/Attachment/UploadImage`;
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', uploadUrl, true);
-
-    const token = config.getToken?.();
-    if (token) {
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    }
-
-    xhr.upload.onprogress = (event) => {
-      if (!event.lengthComputable) {
-        return;
-      }
-
-      const percent = Math.round((event.loaded / event.total) * 100);
-      onProgress(Math.min(100, Math.max(0, percent)));
-    };
-
-    xhr.onerror = () => {
-      reject(new Error('图片上传失败，请检查网络连接'));
-    };
-
-    xhr.onload = () => {
-      if (xhr.status < 200 || xhr.status >= 300) {
-        reject(new Error(`图片上传失败（HTTP ${xhr.status}）`));
-        return;
-      }
-
-      let payload: Record<string, unknown> | null = null;
-      try {
-        payload = JSON.parse(xhr.responseText) as Record<string, unknown>;
-      } catch {
-        reject(new Error('图片上传响应解析失败'));
-        return;
-      }
-
-      const isSuccess = Boolean(payload.isSuccess ?? payload.IsSuccess);
-      const messageText = toStringOrUndefined(payload.messageInfo ?? payload.MessageInfo) || '图片上传失败';
-      if (!isSuccess) {
-        reject(new Error(messageText));
-        return;
-      }
-
-      const responseData = (payload.responseData ?? payload.ResponseData) as Record<string, unknown> | undefined;
-      if (!responseData) {
-        reject(new Error('图片上传成功但未返回附件信息'));
-        return;
-      }
-
-      const attachmentId = toIdString(
-        responseData.voId
-        ?? responseData.VoId
-        ?? responseData.id
-        ?? responseData.Id
-      );
-      if (!attachmentId) {
-        reject(new Error('图片上传成功但未获取到附件 ID'));
-        return;
-      }
-
-      resolve({
-        attachmentId,
-        imageUrl: toStringOrUndefined(responseData.voUrl ?? responseData.VoUrl ?? responseData.url ?? responseData.Url),
-        thumbnailUrl: toStringOrUndefined(
-          responseData.voThumbnailUrl
-          ?? responseData.VoThumbnailUrl
-          ?? responseData.thumbnailUrl
-          ?? responseData.ThumbnailUrl
-        ),
-      });
-    };
-
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('businessType', 'Sticker');
-    formData.append('generateThumbnail', 'true');
-    formData.append('removeExif', 'true');
-    xhr.send(formData);
-  });
-}
-
 export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSuccess }: StickerFormProps) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [codeChecking, setCodeChecking] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
-  const imageUrl = Form.useWatch('imageUrl', form) || '';
-  const thumbnailUrl = Form.useWatch('thumbnailUrl', form) || '';
   const attachmentId = Form.useWatch('attachmentId', form);
-  const previewUrl = thumbnailUrl || imageUrl;
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+
+  const normalizeOptionalAttachmentId = (value: unknown): string | null => {
+    if (typeof value === 'string' && /^[1-9]\d*$/.test(value.trim())) {
+      return value.trim();
+    }
+
+    return null;
+  };
 
   const handleImageUpload: UploadProps['customRequest'] = async (options) => {
     const file = options.file;
@@ -185,17 +76,16 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
 
     try {
       setImageUploading(true);
-      const result = await uploadStickerImage(file, (percent) => {
+      const result = await uploadAttachmentImage(file, { businessType: 'Sticker' }, (percent) => {
         options.onProgress?.({ percent });
       });
 
       form.setFieldsValue({
         attachmentId: result.attachmentId,
-        imageUrl: result.imageUrl || '',
-        thumbnailUrl: result.thumbnailUrl || '',
       });
+      setPreviewUrl(getAvatarUrl(result.thumbnailUrl || result.url) || '');
       options.onSuccess?.(result);
-      message.success('图片上传成功，已自动回填');
+      message.success('图片上传成功，已自动回填附件 ID');
     } catch (error) {
       const uploadError = error instanceof Error ? error : new Error('图片上传失败');
       options.onError?.(uploadError);
@@ -253,11 +143,9 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
           groupId: groupId.trim(),
           code: normalizedCode,
           name: values.name.trim(),
-          imageUrl: values.imageUrl?.trim() || undefined,
-          thumbnailUrl: values.thumbnailUrl?.trim() || undefined,
           isAnimated: values.isAnimated,
           allowInline: values.allowInline,
-          attachmentId: values.attachmentId?.trim() || undefined,
+          attachmentId: normalizeOptionalAttachmentId(values.attachmentId),
           isEnabled: values.isEnabled,
           sort: values.sort,
         };
@@ -267,11 +155,9 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
       } else if (mode === 'edit' && sticker) {
         const request: UpdateStickerRequest = {
           name: values.name.trim(),
-          imageUrl: values.imageUrl?.trim() || undefined,
-          thumbnailUrl: values.thumbnailUrl?.trim() || undefined,
           isAnimated: values.isAnimated,
           allowInline: values.allowInline,
-          attachmentId: values.attachmentId?.trim() || undefined,
+          attachmentId: normalizeOptionalAttachmentId(values.attachmentId),
           isEnabled: values.isEnabled,
           sort: values.sort,
         };
@@ -292,6 +178,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
   useEffect(() => {
     if (!visible) {
       form.resetFields();
+      setPreviewUrl('');
       return;
     }
 
@@ -299,28 +186,26 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
       form.setFieldsValue({
         code: sticker.voCode,
         name: sticker.voName,
-        imageUrl: sticker.voImageUrl,
-        thumbnailUrl: sticker.voThumbnailUrl,
         isAnimated: sticker.voIsAnimated,
         allowInline: sticker.voAllowInline,
         attachmentId: sticker.voAttachmentId,
         isEnabled: sticker.voIsEnabled,
         sort: sticker.voSort,
       });
+      setPreviewUrl(getAvatarUrl(sticker.voThumbnailUrl || sticker.voImageUrl) || '');
       return;
     }
 
     form.setFieldsValue({
       code: '',
       name: '',
-      imageUrl: '',
-      thumbnailUrl: '',
       isAnimated: false,
       allowInline: true,
       attachmentId: undefined,
       isEnabled: true,
       sort: 0,
     });
+    setPreviewUrl('');
   }, [visible, mode, sticker, form]);
 
   return (
@@ -338,7 +223,14 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
       footer={(_, { OkBtn, CancelBtn }) => (
         <>
           <CancelBtn />
-          <Button onClick={() => form.resetFields()}>重置</Button>
+          <Button
+            onClick={() => {
+              form.resetFields();
+              setPreviewUrl('');
+            }}
+          >
+            重置
+          </Button>
           <OkBtn />
         </>
       )}
@@ -419,9 +311,8 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
                 onClick={() => {
                   form.setFieldsValue({
                     attachmentId: undefined,
-                    imageUrl: '',
-                    thumbnailUrl: '',
                   });
+                  setPreviewUrl('');
                 }}
               >
                 清空图片
@@ -437,22 +328,6 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
           rules={[{ pattern: /^[1-9]\d*$/, message: '附件ID必须为正整数' }]}
         >
           <Input placeholder="例如：2028085755741470720" />
-        </Form.Item>
-
-        <Form.Item
-          name="imageUrl"
-          label="图片 URL（手填兜底）"
-          rules={[{ max: 500, message: '图片 URL 不能超过500个字符' }]}
-        >
-          <Input placeholder="https://..." />
-        </Form.Item>
-
-        <Form.Item
-          name="thumbnailUrl"
-          label="缩略图 URL"
-          rules={[{ max: 500, message: '缩略图 URL 不能超过500个字符' }]}
-        >
-          <Input placeholder="https://...（可选）" />
         </Form.Item>
 
         <Form.Item

@@ -28,11 +28,12 @@ import {
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { ROUTES } from '@/router';
+import { getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 import { StickerForm } from './StickerForm';
 import { StickerBatchUploadModal } from './StickerBatchUploadModal';
 
-const getPreviewUrl = (sticker: StickerVo) => sticker.voThumbnailUrl || sticker.voImageUrl;
+const getPreviewUrl = (sticker: StickerVo) => getAvatarUrl(sticker.voThumbnailUrl || sticker.voImageUrl);
 
 export const StickerList = () => {
   const navigate = useNavigate();

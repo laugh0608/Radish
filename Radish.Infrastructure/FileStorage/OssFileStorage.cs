@@ -45,17 +45,6 @@ public class OssFileStorage : IFileStorage
         throw new NotImplementedException("OSS 存储下载功能尚未实现");
     }
 
-    public string GetFileUrl(string filePath)
-    {
-        if (!string.IsNullOrWhiteSpace(_options.Domain))
-        {
-            return $"{_options.Domain.TrimEnd('/')}/{filePath.TrimStart('/')}";
-        }
-
-        // TODO: 没有 CDN 域名时，按 endpoint/bucket 拼出可访问地址（需要根据 OSS Endpoint 规则调整）
-        return $"https://{_options.BucketName}.{_options.Endpoint}/{filePath.TrimStart('/')}";
-    }
-
     public Task<bool> ExistsAsync(string filePath)
     {
         throw new NotImplementedException("OSS 存储存在检查功能尚未实现");
@@ -69,6 +58,6 @@ public class OssFileStorage : IFileStorage
     public string GetFullPath(string relativePath)
     {
         // OSS 是对象存储，没有本地文件系统路径概念
-        return GetFileUrl(relativePath);
+        return relativePath;
     }
 }

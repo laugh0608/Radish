@@ -27,8 +27,9 @@ public class ChatProfile : Profile
             .ForMember(dest => dest.VoReplyTo, opt => opt.Ignore())
             .ForMember(dest => dest.VoIsRecalled, opt => opt.MapFrom(src => src.IsDeleted))
             .ForMember(dest => dest.VoContent, opt => opt.MapFrom(src => src.IsDeleted ? null : src.Content))
-            .ForMember(dest => dest.VoImageUrl, opt => opt.MapFrom(src => src.IsDeleted ? null : src.ImageUrl))
-            .ForMember(dest => dest.VoImageThumbnailUrl, opt => opt.MapFrom(src => src.IsDeleted ? null : src.ImageThumbnailUrl));
+            .ForMember(dest => dest.VoUserAvatarUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.VoImageUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.VoImageThumbnailUrl, opt => opt.Ignore());
         RecognizePrefixes("Vo");
         CreateMap<ChannelMessageVo, ChannelMessage>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore());

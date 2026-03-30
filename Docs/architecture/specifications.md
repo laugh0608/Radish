@@ -127,6 +127,33 @@ export async function uploadChunk(
 - ❌ 禁止在每个 API 文件中重复实现认证逻辑
 - ❌ 禁止硬编码 API Base URL（使用环境变量）
 
+## 附件与媒体资源规范
+
+### 业务真值
+
+- 附件类业务数据的唯一真值统一为 `attachmentId`，禁止把完整绝对 URL 作为数据库业务真值长期存储。
+- `Attachment` 实体当前只持久化 `StoragePath`、`ThumbnailPath`、`BusinessType`、`BusinessId` 等存储与关联信息，不再把域名绑定进数据层。
+- `Sticker`、`StickerGroup`、`Reaction`、`Product`、`ProductCategory`、`ChannelMessage`、`Order` 等涉及媒体的业务实体，统一通过 `AttachmentId` 或附件快照 Id 建模。
+
+### 运行时 URL 派生
+
+- `AttachmentVo.VoUrl` 与 `AttachmentVo.VoThumbnailUrl` 为运行时派生字段，不是数据库真值。
+- 后端统一通过 `IAttachmentUrlResolver` 派生相对资源地址：
+  - 原图：`/_assets/attachments/{id}`
+  - 缩略图：`/_assets/attachments/{id}/thumbnail`
+- 前端统一通过 `@radish/ui` 的 `resolveConfiguredMediaUrl()`、`buildAttachmentAssetUrl()` 等工具拼接当前 `baseUrl`，避免在业务代码里手写域名。
+
+### 正文协议
+
+- Markdown / 富文本正文中的图片与文档引用，统一保存为 `attachment://{id}` 协议，而不是完整 URL。
+- 如需记录显示变体或缩放信息，统一附加在 `#radish:` 元数据中，由 `buildAttachmentMarkdownUrl()` 生成、`parseAttachmentMarkdownUrl()` 解析。
+- `MarkdownEditor`、`RichTextMarkdownEditor`、`MarkdownRenderer` 必须围绕该协议协同，禁止再次引入“编辑态存 URL、渲染态再猜测附件”的双口径。
+
+### 部署边界
+
+- `RADISH_PUBLIC_URL` 是部署公开入口、OIDC 与运行时配置的真相源，但不再是媒体业务真值。
+- 更换域名时，不应再要求手工更新附件类数据库字段；正确做法是更新公开入口、反向代理和 OIDC 配置，让运行时 URL 自然切换到新域名。
+
 ## 代码质量标准
 
 **单个源文件行数建议**：为保持代码可读性与可维护性，建议单文件控制在 **500-1000 行**；非必要不超过 **1000 行**。
@@ -341,8 +368,11 @@ git push origin v26.1.1.3003
 - **Radish.Api** 和 **Radish.Auth** 项目必须使用**相同的业务数据库配置**
 - 两个项目的 `appsettings.json` 中 `Databases` 配置必须保持一致（至少包括 `Radish.db`、`Radish.Log.db`，以及已启用的独立库如 `Radish.Message.db`、`Radish.Chat.db`）
 - 这是因为 Auth 项目需要访问用户、角色、权限、租户等业务数据来验证身份和权限
-- **OpenIddict 数据库**（`RadishAuth.OpenIddict.db`）是独立的，仅由 Auth 项目使用，存储 OIDC 认证相关数据
+- **OpenIddict 数据库**（`Radish.OpenIddict.db`）是独立的，仅由 Auth 项目使用，存储 OIDC 认证相关数据
 - **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
+- `DataBases/SystemConfigs/system-configs.json` 用于 `SystemConfig` 模块的本地 JSON 持久化，属于运行时数据文件，不是源码或数据库种子文件
+- 面向人工审阅的本地 JSON 持久化文件应优先保持 UTF-8 可读文本落盘；中文默认直写，仅保留 JSON 语法必需或序列化器仍要求保留的转义
+- `DataBases/` 目录下的运行时生成文件默认不纳入 Git；除仓库已显式放行的种子静态资源外，不得把本地状态文件作为源码资产提交
 
 - `Program.cs` 需要在 `builder.Build()` 前调用 `builder.Services.AddSqlSugarSetup()`。该扩展定义于 `Radish.Extension.SqlSugarExtension`，内部依赖 `Radish.Infrastructure.Tenant.RepositorySetting`、`TenantUtil` 等组件，使用 `SqlSugarScope` 单例注入并绑定所有连接配置。
 - `appsettings.json` 约定结构如下（**API 和 Auth 项目必须保持一致**）：

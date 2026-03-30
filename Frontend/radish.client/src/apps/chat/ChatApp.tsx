@@ -1,6 +1,7 @@
 import { type ChangeEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@radish/ui/toast';
+import { buildAttachmentAssetUrl } from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
 import type { ContentReportTargetType } from '@/api/contentModeration';
 import {
@@ -39,9 +40,17 @@ interface MentionContext {
   keyword: string;
 }
 
+interface PendingImageDraft {
+  attachmentId: EntityIdValue;
+  imageUrl: string;
+  imageThumbnailUrl?: string | null;
+  fileName?: string | null;
+}
+
 interface ChannelDraft {
   content: string;
   replyTarget: ChannelMessageVo | null;
+  pendingImage: PendingImageDraft | null;
 }
 
 type ChannelDraftMap = Record<string, ChannelDraft>;
@@ -89,6 +98,22 @@ function resolveMediaUrl(apiBaseUrl: string, url: string | null | undefined): st
   }
 
   return `${apiBaseUrl}/${url}`;
+}
+
+function resolveAttachmentAssetUrl(
+  attachmentId: EntityIdValue | null | undefined,
+  variant: 'original' | 'thumbnail' = 'original'
+): string | null {
+  const normalizedAttachmentId = normalizeEntityId(attachmentId);
+  if (!normalizedAttachmentId || normalizedAttachmentId === '0' || normalizedAttachmentId.startsWith('-')) {
+    return null;
+  }
+
+  try {
+    return buildAttachmentAssetUrl(normalizedAttachmentId, variant);
+  } catch {
+    return null;
+  }
 }
 
 function buildAvatarText(name: string): string {
@@ -228,7 +253,8 @@ function persistChannelDraft(
   userId: number,
   channelId: EntityIdValue,
   content: string,
-  replyTarget: ChannelMessageVo | null
+  replyTarget: ChannelMessageVo | null,
+  pendingImage: PendingImageDraft | null
 ): void {
   if (userId <= 0 || !isPersistedEntityId(channelId)) {
     return;
@@ -238,7 +264,7 @@ function persistChannelDraft(
   const key = getDraftStorageKey(userId, channelId);
   const normalizedContent = content.trim();
 
-  if (!normalizedContent && !replyTarget) {
+  if (!normalizedContent && !replyTarget && !pendingImage) {
     delete draftMap[key];
     writeDraftMap(draftMap);
     return;
@@ -247,12 +273,13 @@ function persistChannelDraft(
   draftMap[key] = {
     content,
     replyTarget,
+    pendingImage,
   };
   writeDraftMap(draftMap);
 }
 
 function clearChannelDraft(userId: number, channelId: EntityIdValue): void {
-  persistChannelDraft(userId, channelId, '', null);
+  persistChannelDraft(userId, channelId, '', null, null);
 }
 
 function buildClientRequestId(channelId: EntityIdValue): string {
@@ -312,6 +339,7 @@ export const ChatApp = () => {
   const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [messageInput, setMessageInput] = useState('');
   const [replyTarget, setReplyTarget] = useState<ChannelMessageVo | null>(null);
+  const [pendingImage, setPendingImage] = useState<PendingImageDraft | null>(null);
   const [hasMoreHistory, setHasMoreHistory] = useState<Record<string, boolean>>({});
   const [typingAt, setTypingAt] = useState(0);
   const [mentionContext, setMentionContext] = useState<MentionContext | null>(null);
@@ -327,11 +355,13 @@ export const ChatApp = () => {
   const imageInputRef = useRef<HTMLInputElement | null>(null);
   const previousConnectionStateRef = useRef(connectionState);
   const previousChannelIdRef = useRef<EntityIdValue | null>(null);
+  const activeChannelIdRef = useRef<EntityIdValue | null>(null);
   const loadedDraftChannelRef = useRef<EntityIdValue | null>(null);
   const tempMessageIdRef = useRef(-1);
-  const composerStateRef = useRef<{ messageInput: string; replyTarget: ChannelMessageVo | null }>({
+  const composerStateRef = useRef<{ messageInput: string; replyTarget: ChannelMessageVo | null; pendingImage: PendingImageDraft | null }>({
     messageInput: '',
     replyTarget: null,
+    pendingImage: null,
   });
 
   const currentUserIdValue = useMemo(() => toNumericId(currentUserId), [currentUserId]);
@@ -666,6 +696,7 @@ export const ChatApp = () => {
   const resetComposer = useCallback((channelId: EntityIdValue) => {
     setMessageInput('');
     setReplyTarget(null);
+    setPendingImage(null);
     closeMentionDropdown();
     clearChannelDraft(currentUserIdValue, channelId);
   }, [closeMentionDropdown, currentUserIdValue]);
@@ -686,7 +717,13 @@ export const ChatApp = () => {
     attachmentId?: EntityIdValue;
     imageUrl?: string;
     imageThumbnailUrl?: string;
-  }): ChannelMessageVo => ({
+  }): ChannelMessageVo => {
+    const fallbackImageUrl = params.imageUrl ?? resolveAttachmentAssetUrl(params.attachmentId, 'original');
+    const fallbackThumbnailUrl = params.imageThumbnailUrl
+      ?? resolveAttachmentAssetUrl(params.attachmentId, 'thumbnail')
+      ?? fallbackImageUrl;
+
+    return {
     voId: params.tempMessageId,
     voClientRequestId: params.clientRequestId,
     voChannelId: params.channelId,
@@ -698,13 +735,14 @@ export const ChatApp = () => {
     voReplyToId: params.replyTo ? params.replyTo.voId : null,
     voReplyTo: params.replyTo,
     voAttachmentId: params.attachmentId ?? null,
-    voImageUrl: params.imageUrl ?? null,
-    voImageThumbnailUrl: params.imageThumbnailUrl ?? params.imageUrl ?? null,
+    voImageUrl: fallbackImageUrl ?? null,
+    voImageThumbnailUrl: fallbackThumbnailUrl ?? null,
     voIsRecalled: false,
     voCreateTime: new Date().toISOString(),
     voLocalStatus: 'sending',
     voLocalError: null,
-  }), [currentUserAvatarUrlValue, currentUserIdKey, currentUserIdValue, currentUserNameValue]);
+    };
+  }, [currentUserAvatarUrlValue, currentUserIdKey, currentUserIdValue, currentUserNameValue]);
 
   const sendOptimisticMessage = useCallback(async (
     optimisticMessage: ChannelMessageVo,
@@ -755,7 +793,8 @@ export const ChatApp = () => {
     }
 
     const content = messageInput.trim();
-    if (!content) {
+    const pendingImageSnapshot = pendingImage;
+    if (!content && !pendingImageSnapshot) {
       return;
     }
 
@@ -767,9 +806,12 @@ export const ChatApp = () => {
       tempMessageId,
       clientRequestId,
       channelId: activeChannelId,
-      type: 1,
-      content,
+      type: pendingImageSnapshot ? 2 : 1,
+      content: content || undefined,
       replyTo: replyTargetSnapshot,
+      attachmentId: pendingImageSnapshot?.attachmentId,
+      imageUrl: pendingImageSnapshot?.imageUrl,
+      imageThumbnailUrl: pendingImageSnapshot?.imageThumbnailUrl || pendingImageSnapshot?.imageUrl,
     });
 
     resetComposer(activeChannelId);
@@ -778,15 +820,28 @@ export const ChatApp = () => {
       optimisticMessage,
       {
         channelId: activeChannelId,
-        type: 1,
-        content,
+        type: pendingImageSnapshot ? 2 : 1,
+        content: content || undefined,
         replyToId: replyTargetId ?? undefined,
+        attachmentId: pendingImageSnapshot?.attachmentId,
       },
       {
-        failureFallbackMessage: t('chat.sendFailed'),
+        successToastMessage: pendingImageSnapshot ? t('chat.imageSent') : undefined,
+        failureFallbackMessage: pendingImageSnapshot ? t('chat.imageSendFailed') : t('chat.sendFailed'),
       }
     );
-  }, [activeChannelId, createOptimisticMessage, createTempMessageId, messageInput, replyTarget, resetComposer, sendOptimisticMessage, t, uploadingImage]);
+  }, [
+    activeChannelId,
+    createOptimisticMessage,
+    createTempMessageId,
+    messageInput,
+    pendingImage,
+    replyTarget,
+    resetComposer,
+    sendOptimisticMessage,
+    t,
+    uploadingImage,
+  ]);
 
   const handleImageSelected = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -798,6 +853,9 @@ export const ChatApp = () => {
     setImageUploadProgress(0);
 
     try {
+      const targetChannelId = activeChannelId;
+      const draftContentSnapshot = messageInput;
+      const draftReplyTargetSnapshot = replyTarget;
       const attachment = await uploadImage(
         {
           file,
@@ -808,51 +866,44 @@ export const ChatApp = () => {
         t
       );
 
-      const content = messageInput.trim();
-      const replyTargetId = getReplyTargetMessageId(replyTarget);
-      const replyTargetSnapshot = replyTargetId ? replyTarget : null;
-      const tempMessageId = createTempMessageId();
-      const clientRequestId = buildClientRequestId(activeChannelId);
-      const optimisticMessage = createOptimisticMessage({
-        tempMessageId,
-        clientRequestId,
-        channelId: activeChannelId,
-        type: 2,
-        content: content || undefined,
-        replyTo: replyTargetSnapshot,
+      const nextPendingImage: PendingImageDraft = {
         attachmentId: attachment.voId,
-        imageUrl: attachment.voUrl,
-        imageThumbnailUrl: attachment.voThumbnailUrl || attachment.voUrl,
-      });
+        imageUrl: resolveAttachmentAssetUrl(attachment.voId, 'original') || attachment.voUrl,
+        imageThumbnailUrl: (
+          resolveAttachmentAssetUrl(attachment.voId, 'thumbnail')
+          || resolveAttachmentAssetUrl(attachment.voId, 'original')
+          || attachment.voThumbnailUrl
+          || attachment.voUrl
+        ),
+        fileName: attachment.voOriginalName || file.name,
+      };
 
-      resetComposer(activeChannelId);
       setImageUploadProgress(100);
 
-      void sendOptimisticMessage(
-        optimisticMessage,
-        {
-          channelId: activeChannelId,
-          type: 2,
-          content: content || undefined,
-          replyToId: replyTargetId ?? undefined,
-          attachmentId: attachment.voId,
-          imageUrl: attachment.voUrl,
-          imageThumbnailUrl: attachment.voThumbnailUrl || attachment.voUrl,
-        },
-        {
-          successToastMessage: t('chat.imageSent'),
-          failureFallbackMessage: t('chat.imageSendFailed'),
-        }
-      );
+      if (areEntityIdsEqual(activeChannelIdRef.current, targetChannelId)) {
+        setPendingImage(nextPendingImage);
+      } else {
+        persistChannelDraft(
+          currentUserIdValue,
+          targetChannelId,
+          draftContentSnapshot,
+          draftReplyTargetSnapshot,
+          nextPendingImage
+        );
+      }
     } catch (error) {
-      log.error('ChatApp', '发送图片消息失败:', error);
+      log.error('ChatApp', '上传聊天室图片失败:', error);
       toast.error(getErrorMessage(error, t('chat.imageSendFailed')));
     } finally {
       setUploadingImage(false);
       setTimeout(() => setImageUploadProgress(0), 400);
       event.target.value = '';
     }
-  }, [activeChannelId, createOptimisticMessage, createTempMessageId, messageInput, replyTarget, resetComposer, sendOptimisticMessage, t, uploadingImage]);
+  }, [activeChannelId, currentUserIdValue, messageInput, replyTarget, t, uploadingImage]);
+
+  const handleRemovePendingImage = useCallback(() => {
+    setPendingImage(null);
+  }, []);
 
   const handleRetryMessage = useCallback((message: ChannelMessageVo) => {
     const channelId = message.voChannelId;
@@ -877,8 +928,6 @@ export const ChatApp = () => {
         content: message.voContent?.trim() || undefined,
         replyToId: isPersistedEntityId(message.voReplyToId) ? message.voReplyToId : undefined,
         attachmentId: isPersistedEntityId(message.voAttachmentId) ? message.voAttachmentId : undefined,
-        imageUrl: message.voImageUrl || undefined,
-        imageThumbnailUrl: message.voImageThumbnailUrl || message.voImageUrl || undefined,
       },
       {
         successToastMessage: message.voType === 2 ? t('chat.imageSent') : undefined,
@@ -941,8 +990,13 @@ export const ChatApp = () => {
     composerStateRef.current = {
       messageInput,
       replyTarget,
+      pendingImage,
     };
-  }, [messageInput, replyTarget]);
+  }, [messageInput, pendingImage, replyTarget]);
+
+  useEffect(() => {
+    activeChannelIdRef.current = activeChannelId;
+  }, [activeChannelId]);
 
   useEffect(() => {
     void loadChannels();
@@ -959,7 +1013,8 @@ export const ChatApp = () => {
         currentUserIdValue,
         previousChannelId,
         composerStateRef.current.messageInput,
-        composerStateRef.current.replyTarget
+        composerStateRef.current.replyTarget,
+        composerStateRef.current.pendingImage
       );
     }
 
@@ -968,6 +1023,7 @@ export const ChatApp = () => {
     if (!activeChannelId) {
       setMessageInput('');
       setReplyTarget(null);
+      setPendingImage(null);
       setOnlineMembers([]);
       loadedDraftChannelRef.current = null;
       closeMentionDropdown();
@@ -977,6 +1033,7 @@ export const ChatApp = () => {
     const draft = loadChannelDraft(currentUserIdValue, activeChannelId);
     setMessageInput(draft?.content ?? '');
     setReplyTarget(draft?.replyTarget ?? null);
+    setPendingImage(draft?.pendingImage ?? null);
     closeMentionDropdown();
     loadedDraftChannelRef.current = activeChannelId;
 
@@ -994,8 +1051,8 @@ export const ChatApp = () => {
       return;
     }
 
-    persistChannelDraft(currentUserIdValue, activeChannelId, messageInput, replyTarget);
-  }, [activeChannelId, currentUserIdValue, messageInput, replyTarget]);
+    persistChannelDraft(currentUserIdValue, activeChannelId, messageInput, replyTarget, pendingImage);
+  }, [activeChannelId, currentUserIdValue, messageInput, pendingImage, replyTarget]);
 
   useEffect(() => {
     if (!activeChannelId) {
@@ -1092,6 +1149,13 @@ export const ChatApp = () => {
       window.clearTimeout(timer);
     };
   }, [mentionContext, t]);
+
+  const pendingImagePreviewUrl = resolveMediaUrl(
+    apiBaseUrl,
+    pendingImage?.imageThumbnailUrl || pendingImage?.imageUrl
+  );
+  const hasPendingImage = !!pendingImage;
+  const hasComposerContent = !!messageInput.trim() || hasPendingImage;
 
   return (
     <div className={styles.chatApp}>
@@ -1326,7 +1390,33 @@ export const ChatApp = () => {
                 </div>
               )}
 
-              {activeChannelId !== null && messageInput.trim() && (
+              {pendingImage && (
+                <div className={styles.pendingImagePreview}>
+                  {pendingImagePreviewUrl && (
+                    <img
+                      src={pendingImagePreviewUrl}
+                      alt={t('chat.pendingImage')}
+                      className={styles.pendingImageThumbnail}
+                      loading="lazy"
+                    />
+                  )}
+                  <div className={styles.pendingImageMeta}>
+                    <div className={styles.pendingImageLabel}>{t('chat.pendingImage')}</div>
+                    <div className={styles.pendingImageName}>
+                      {pendingImage.fileName?.trim() || t('chat.imageMessage')}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.pendingImageRemoveButton}
+                    onClick={handleRemovePendingImage}
+                  >
+                    {t('chat.pendingImageRemove')}
+                  </button>
+                </div>
+              )}
+
+              {activeChannelId !== null && hasComposerContent && (
                 <div className={styles.draftHint}>{t('chat.draftSaved')}</div>
               )}
 
@@ -1402,7 +1492,7 @@ export const ChatApp = () => {
                       }
                     }}
                     placeholder={activeChannelId ? t('chat.inputPlaceholder') : t('chat.inputSelectChannel')}
-                    disabled={!activeChannelId || uploadingImage}
+                    disabled={!activeChannelId}
                   />
 
                   {isMentionOpen && (
@@ -1465,7 +1555,7 @@ export const ChatApp = () => {
                   <button
                     className={styles.sendButton}
                     type="button"
-                    disabled={!activeChannelId || uploadingImage || !messageInput.trim()}
+                    disabled={!activeChannelId || uploadingImage || !hasComposerContent}
                     onClick={() => {
                       void handleSendMessage();
                     }}

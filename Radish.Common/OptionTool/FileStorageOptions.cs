@@ -67,7 +67,7 @@ public sealed class MaxFileSizeOptions
 public sealed class AllowedExtensionsOptions
 {
     /// <summary>允许的图片类型</summary>
-    public List<string> Image { get; set; } = new() { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg" };
+    public List<string> Image { get; set; } = new() { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico" };
 
     /// <summary>允许的文档类型</summary>
     public List<string> Document { get; set; } = new() { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".md" };

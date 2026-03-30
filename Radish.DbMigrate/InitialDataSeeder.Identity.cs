@@ -1367,8 +1367,6 @@ internal static partial class InitialDataSeeder
 
             var fileInfo = new FileInfo(filePath);
             var relativePath = Path.Combine("DefaultAvatars", seed.FileName).Replace('\\', '/');
-            var url = $"/uploads/{relativePath}";
-
             var existingAttachment = await db.Queryable<Attachment>()
                 .FirstAsync(a => a.Id == seed.AttachmentId);
 
@@ -1386,7 +1384,6 @@ internal static partial class InitialDataSeeder
                         StorageType = "Local",
                         StoragePath = relativePath,
                         ThumbnailPath = relativePath,
-                        Url = url,
                         UploaderId = seed.UserId,
                         UploaderName = seed.UserName,
                         BusinessType = "Avatar",
@@ -1418,7 +1415,6 @@ internal static partial class InitialDataSeeder
                 StorageType = "Local",
                 StoragePath = relativePath,
                 ThumbnailPath = relativePath,
-                Url = url,
                 UploaderId = seed.UserId,
                 UploaderName = seed.UserName,
                 BusinessType = "Avatar",

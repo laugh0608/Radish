@@ -68,6 +68,12 @@ public interface IPostService : IBaseService<Post, PostVo>
     Task FillPostListMetadataAsync(List<PostVo> posts);
 
     /// <summary>
+    /// 批量回填帖子作者头像、问答回答头像与最近互动人
+    /// </summary>
+    /// <param name="posts">帖子列表</param>
+    Task FillPostAvatarAndInteractorsAsync(List<PostVo> posts);
+
+    /// <summary>
     /// 为问答帖提交回答
     /// </summary>
     /// <param name="postId">帖子 Id</param>
@@ -155,6 +161,16 @@ public interface IPostService : IBaseService<Post, PostVo>
     /// <param name="postId">帖子 Id</param>
     /// <returns>点赞操作结果（当前状态和最新点赞数）</returns>
     Task<PostLikeResultDto> ToggleLikeAsync(long userId, long postId);
+
+    /// <summary>
+    /// 设置帖子置顶状态
+    /// </summary>
+    /// <param name="postId">帖子 Id</param>
+    /// <param name="isTop">是否置顶</param>
+    /// <param name="operatorId">操作者 Id</param>
+    /// <param name="operatorName">操作者名称</param>
+    /// <returns>更新后的帖子详情</returns>
+    Task<PostVo> SetTopAsync(long postId, bool isTop, long operatorId, string operatorName);
 
     /// <summary>
     /// 分页获取帖子编辑历史

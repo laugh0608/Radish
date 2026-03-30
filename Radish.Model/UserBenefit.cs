@@ -69,9 +69,9 @@ public class UserBenefit : RootEntityTKey<long>, IHasUserId, ITenantEntity
     [SugarColumn(Length = 200, IsNullable = true, ColumnDescription = "权益名称")]
     public string? BenefitName { get; set; }
 
-    /// <summary>权益图标</summary>
-    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "权益图标")]
-    public string? BenefitIcon { get; set; }
+    /// <summary>权益图标附件快照 Id</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "权益图标附件ID")]
+    public long? BenefitIconAttachmentId { get; set; }
 
     #endregion
 

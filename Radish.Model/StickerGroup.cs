@@ -22,9 +22,9 @@ public class StickerGroup : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(Length = 500, IsNullable = true)]
     public string? Description { get; set; }
 
-    /// <summary>封面图 URL</summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? CoverImageUrl { get; set; }
+    /// <summary>封面附件 Id</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? CoverAttachmentId { get; set; }
 
     /// <summary>分组类型</summary>
     [SugarColumn(IsNullable = false)]

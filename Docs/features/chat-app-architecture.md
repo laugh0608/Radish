@@ -115,8 +115,9 @@ Frontend/radish.client/src/types/
 
 2. 发送消息（当前流程）
 - 前端先生成负数临时消息与 `clientRequestId`，立即插入本地列表。
-- 前端调用 REST `/ChannelMessage/Send`，请求体携带 `clientRequestId`。
+- 前端调用 REST `/ChannelMessage/Send`，请求体携带 `clientRequestId`；图片消息只提交 `attachmentId`，本地预览用到的 `imageUrl / imageThumbnailUrl` 仅存在于前端临时状态，不再回写服务端。
 - REST 成功返回 `ChannelMessageVo` 后，前端按 `clientRequestId` 将临时消息替换为真实消息。
+- `ChannelMessageVo.voImageUrl / voImageThumbnailUrl` 为服务端基于 `attachmentId` 派生的展示字段，不是消息实体的持久化真值。
 - 服务端同时通过 ChatHub 广播 `MessageReceived`，发送端和其他在线端统一按 `messageId / clientRequestId` 合并，避免重复气泡。
 - 失败时保留原位消息并标记 `status: 'failed'`，支持重试 / 撤销；图片消息重试复用已上传附件信息。
 

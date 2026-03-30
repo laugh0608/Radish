@@ -72,6 +72,7 @@ function parseForumWindowParams(appParams?: Record<string, unknown> | null): { p
 export const ForumApp = () => {
   const { t } = useTranslation();
   const { isAuthenticated, userId } = useUserStore();
+  const roles = useUserStore((state) => state.roles || []);
   const { openApp } = useWindowStore();
   const currentWindow = useCurrentWindow();
   const loggedIn = isAuthenticated();
@@ -99,6 +100,10 @@ export const ForumApp = () => {
   const [followLoading, setFollowLoading] = useState(false);
   const windowParams = parseForumWindowParams(currentWindow?.appParams);
   const handledWindowRouteRef = useRef<string | null>(null);
+  const canTogglePostTop = roles.some((role) => {
+    const normalized = role.trim().toLowerCase();
+    return normalized === 'admin' || normalized === 'system';
+  });
 
   useEffect(() => {
     const element = containerShellRef.current;
@@ -217,11 +222,13 @@ export const ForumApp = () => {
     isAuthenticated: loggedIn,
     userId: userId ?? 0,
     commentSortBy: dataState.commentSortBy,
+    loadedCommentPages: dataState.loadedCommentPages,
     selectedCategoryId: dataState.selectedCategoryId,
     selectedTagName: dataState.selectedTagName,
     selectedPost: dataState.selectedPost,
     setSelectedPost: dataState.setSelectedPost,
     setComments: dataState.setComments,
+    setCommentTotal: dataState.setCommentTotal,
     setCurrentPage: dataState.setCurrentPage,
     setSortBy: dataState.setSortBy,
     setCommentSortBy: dataState.setCommentSortBy,
@@ -520,8 +527,11 @@ export const ForumApp = () => {
               <PostDetailContentView
                 post={dataState.selectedPost}
                 comments={dataState.comments}
+                commentTotal={dataState.commentTotal}
+                commentPageSize={dataState.commentPageSize}
                 loadingPostDetail={dataState.loadingPostDetail}
                 loadingComments={dataState.loadingComments}
+                loadingMoreComments={dataState.loadingMoreComments}
                 displayTimeZone={displayTimeZone}
                 isLiked={actionsState.likedPosts.has(dataState.selectedPost.voId)}
                 isAuthenticated={loggedIn}
@@ -546,6 +556,8 @@ export const ForumApp = () => {
                 onAcceptAnswer={actionsState.handleAcceptAnswer}
                 onQuestionAnswerSortChange={actionsState.handleQuestionAnswerSortChange}
                 onQuestionAnswerFilterChange={actionsState.handleQuestionAnswerFilterChange}
+                canToggleTop={canTogglePostTop}
+                onToggleTop={actionsState.handleTogglePostTop}
                 onEdit={actionsState.handleEditPost}
                 onViewPostHistory={actionsState.handleViewPostHistory}
                 onDelete={actionsState.handleDeletePost}
@@ -556,6 +568,7 @@ export const ForumApp = () => {
                 onLikeComment={actionsState.handleCommentLike}
                 onReplyComment={actionsState.handleReplyComment}
                 onLoadMoreChildren={actionsState.handleLoadMoreChildren}
+                onLoadMoreComments={dataState.loadMoreComments}
                 onCreateComment={actionsState.handleCreateComment}
                 onCancelReply={actionsState.handleCancelReply}
                 onReactionError={dataState.setError}

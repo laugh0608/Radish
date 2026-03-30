@@ -37,6 +37,7 @@ public class CommentEditHistoryServiceTest
         var notificationService = new Mock<INotificationService>();
         var dedupService = new Mock<INotificationDedupService>();
         var experienceService = new Mock<IExperienceService>();
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>();
 
         var comment = new Comment
         {
@@ -89,6 +90,7 @@ public class CommentEditHistoryServiceTest
             notificationService.Object,
             dedupService.Object,
             experienceService.Object,
+            attachmentUrlResolver.Object,
             Options.Create(highlightOptions),
             commentEditHistoryRepository.Object,
             Options.Create(editOptions));
@@ -116,6 +118,7 @@ public class CommentEditHistoryServiceTest
         var notificationService = new Mock<INotificationService>();
         var dedupService = new Mock<INotificationDedupService>();
         var experienceService = new Mock<IExperienceService>();
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>();
 
         var comment = new Comment
         {
@@ -167,6 +170,7 @@ public class CommentEditHistoryServiceTest
             notificationService.Object,
             dedupService.Object,
             experienceService.Object,
+            attachmentUrlResolver.Object,
             Options.Create(new CommentHighlightOptions()),
             commentEditHistoryRepository.Object,
             Options.Create(editOptions));
@@ -193,6 +197,7 @@ public class CommentEditHistoryServiceTest
         var notificationService = new Mock<INotificationService>();
         var dedupService = new Mock<INotificationDedupService>();
         var experienceService = new Mock<IExperienceService>();
+        var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>();
 
         var comment = new Comment
         {
@@ -261,6 +266,7 @@ public class CommentEditHistoryServiceTest
             notificationService.Object,
             dedupService.Object,
             experienceService.Object,
+            attachmentUrlResolver.Object,
             Options.Create(highlightOptions),
             commentEditHistoryRepository.Object,
             Options.Create(editOptions));

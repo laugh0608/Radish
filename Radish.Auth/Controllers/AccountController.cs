@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Security.Claims;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
@@ -64,27 +65,47 @@ public class AccountController : Controller
     [EnableRateLimiting("login")]
     public async Task<IActionResult> Login([FromForm] string username, [FromForm] string password, [FromForm] string? returnUrl = null)
     {
+        var totalStopwatch = Stopwatch.StartNew();
+
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
         {
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
             return RedirectToAction(nameof(Login), new { returnUrl, username });
         }
 
-        // 1. 查询用户（使用 Service 层）
-        var users = await _userService.QueryAsync(u =>
-            u.LoginName == username &&
-            u.IsDeleted == false &&
-            u.IsEnable);
+        Log.Information("[Account/Login] 开始处理登录请求，用户名: {UserName}", username);
 
-        var user = users.FirstOrDefault();
+        // 1. 查询用户（单用户精确查询，避免列表物化）
+        var userQueryStopwatch = Stopwatch.StartNew();
+        var user = await _userService.GetEnabledUserByLoginNameAsync(username);
+        Log.Information(
+            "[Account/Login] 用户查询完成，用户名: {UserName}, 结果数: {UserCount}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
+            username,
+            user == null ? 0 : 1,
+            userQueryStopwatch.ElapsedMilliseconds,
+            totalStopwatch.ElapsedMilliseconds);
+
         if (user is null)
         {
+            Log.Warning(
+                "[Account/Login] 用户不存在，用户名: {UserName}, 总耗时: {ElapsedMs}ms",
+                username,
+                totalStopwatch.ElapsedMilliseconds);
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
             return RedirectToAction(nameof(Login), new { returnUrl, username });
         }
 
         // 2. 使用 Argon2id 验证密码
-        if (!PasswordHasher.VerifyPassword(password, user.VoLoginPassword))
+        var passwordVerifyStopwatch = Stopwatch.StartNew();
+        var isPasswordValid = PasswordHasher.VerifyPassword(password, user.VoLoginPassword);
+        Log.Information(
+            "[Account/Login] 密码校验完成，用户名: {UserName}, 结果: {IsValid}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
+            username,
+            isPasswordValid,
+            passwordVerifyStopwatch.ElapsedMilliseconds,
+            totalStopwatch.ElapsedMilliseconds);
+
+        if (!isPasswordValid)
         {
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
             return RedirectToAction(nameof(Login), new { returnUrl, username });
@@ -94,9 +115,14 @@ public class AccountController : Controller
         var userId = user.Uuid.ToString();
         var tenantId = user.VoTenantId.ToString();
 
-        // 查询用户角色字符串（逗号分隔，传递哈希后的密码）
-        var roleNamesStr = await _userService.GetUserRoleNameStrAsync(username, user.VoLoginPassword);
-        var roleNames = roleNamesStr.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        var roleQueryStopwatch = Stopwatch.StartNew();
+        var roleNames = await _userService.GetUserRoleNamesAsync(user.Uuid);
+        Log.Information(
+            "[Account/Login] 角色查询完成，用户名: {UserName}, 角色数: {RoleCount}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
+            username,
+            roleNames.Count,
+            roleQueryStopwatch.ElapsedMilliseconds,
+            totalStopwatch.ElapsedMilliseconds);
 
         var claims = new List<Claim>
         {
@@ -136,7 +162,13 @@ public class AccountController : Controller
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
 
+        var signInStopwatch = Stopwatch.StartNew();
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        Log.Information(
+            "[Account/Login] Cookie 登录完成，用户名: {UserName}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
+            username,
+            signInStopwatch.ElapsedMilliseconds,
+            totalStopwatch.ElapsedMilliseconds);
 
         if (!string.IsNullOrEmpty(returnUrl))
         {

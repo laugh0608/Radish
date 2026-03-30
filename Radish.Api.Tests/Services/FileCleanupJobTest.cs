@@ -33,7 +33,6 @@ public class FileCleanupJobTest
             GroupId = 1,
             Code = "test_sticker",
             Name = "Test Sticker",
-            ImageUrl = "/uploads/Sticker/2026/03/1001.jpg",
             AttachmentId = orphanAttachment.Id,
             IsDeleted = false
         };
@@ -68,7 +67,6 @@ public class FileCleanupJobTest
         var chatAttachment = new Attachment
         {
             Id = 1002,
-            Url = "/uploads/Chat/2026/03/1002.png",
             StoragePath = "Chat/2026/03/1002.png",
             CreateTime = now.AddDays(-2),
             IsDeleted = false,
@@ -77,7 +75,6 @@ public class FileCleanupJobTest
         var answerAttachment = new Attachment
         {
             Id = 1003,
-            Url = "/uploads/Comment/2026/03/1003.jpg",
             ThumbnailPath = "Comment/2026/03/1003_thumb.jpg",
             StoragePath = "Comment/2026/03/1003.jpg",
             CreateTime = now.AddDays(-2),
@@ -133,7 +130,7 @@ public class FileCleanupJobTest
                     PostId = 4004,
                     AuthorId = 9527,
                     AuthorName = "tester",
-                    Content = "![answer](/uploads/Comment/2026/03/1003_thumb.jpg#radish:full=%2Fuploads%2FComment%2F2026%2F03%2F1003.jpg)",
+                    Content = "![answer](attachment://1003#radish:display=thumbnail)",
                     CreateTime = now
                 }
             });

@@ -95,9 +95,10 @@ export enum DurationType {
  * 商品分类 Vo（直接使用后端字段名）
  */
 export interface ProductCategory {
-  voId: number;
+  voId: string;
   voName: string;
   voDescription: string;
+  voIconAttachmentId?: string | null;
   voIcon: string;
   voSortOrder: number;
   voIsEnabled: boolean;
@@ -113,9 +114,11 @@ export interface Product {
   voId: number;
   voName: string;
   voDescription: string;
+  voIconAttachmentId?: string | null;
   voIcon: string;
+  voCoverAttachmentId?: string | null;
   voCoverImage: string;
-  voCategoryId: number;
+  voCategoryId: string;
   voCategoryName: string;
   voProductType: string;
   voBenefitType?: string;
@@ -173,8 +176,8 @@ export interface Order {
 export interface CreateProductDto {
   name: string;
   description?: string;
-  icon?: string;
-  coverImage?: string;
+  iconAttachmentId?: string | null;
+  coverAttachmentId?: string | null;
   categoryId: string;
   productType: ProductType;
   benefitType?: BenefitType;

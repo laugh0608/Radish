@@ -20,6 +20,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     private readonly IBaseRepository<Product> _productRepository;
     private readonly IBaseRepository<ProductCategory> _categoryRepository;
     private readonly IBaseRepository<Order> _orderRepository;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     /// <summary>乐观锁冲突重试次数</summary>
     private const int MaxRetryCount = 5;
@@ -31,12 +32,14 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         IMapper mapper,
         IBaseRepository<Product> productRepository,
         IBaseRepository<ProductCategory> categoryRepository,
-        IBaseRepository<Order> orderRepository)
+        IBaseRepository<Order> orderRepository,
+        IAttachmentUrlResolver attachmentUrlResolver)
         : base(mapper, productRepository)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
         _orderRepository = orderRepository;
+        _attachmentUrlResolver = attachmentUrlResolver;
     }
 
     #region 商品分类
@@ -56,6 +59,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                     p => p.CategoryId == category.VoId && p.IsEnabled && p.IsOnSale && !p.IsDeleted);
             }
 
+            FillProductCategoryUrls(categoryVos);
             return categoryVos;
         }
         catch (Exception ex)
@@ -77,6 +81,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             vo.VoProductCount = await _productRepository.QueryCountAsync(
                 p => p.CategoryId == categoryId && p.IsEnabled && p.IsOnSale && !p.IsDeleted);
 
+            FillProductCategoryUrl(vo);
             return vo;
         }
         catch (Exception ex)
@@ -126,6 +131,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 orderByType: OrderByType.Asc);
 
             var productVos = Mapper.Map<List<ProductListItemVo>>(products);
+            FillProductListItemUrls(productVos);
 
             return new PageModel<ProductListItemVo>
             {
@@ -156,6 +162,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             // 填充分类名称
             var category = await _categoryRepository.QueryFirstAsync(c => c.Id == product.CategoryId);
             vo.VoCategoryName = category?.Name;
+            FillProductUrl(vo);
 
             return vo;
         }
@@ -521,6 +528,8 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 }
             }
 
+            FillProductUrls(productVos);
+
             return new PageModel<ProductVo>
             {
                 Page = pageIndex,
@@ -570,6 +579,52 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     private static long NormalizeTenantId(long tenantId)
     {
         return tenantId > 0 ? tenantId : 0;
+    }
+
+    private void FillProductCategoryUrls(List<ProductCategoryVo> categories)
+    {
+        foreach (var category in categories)
+        {
+            FillProductCategoryUrl(category);
+        }
+    }
+
+    private void FillProductCategoryUrl(ProductCategoryVo category)
+    {
+        category.VoIcon = ResolveAttachmentUrl(category.VoIconAttachmentId);
+    }
+
+    private void FillProductUrls(List<ProductVo> products)
+    {
+        foreach (var product in products)
+        {
+            FillProductUrl(product);
+        }
+    }
+
+    private void FillProductUrl(ProductVo product)
+    {
+        product.VoIcon = ResolveAttachmentUrl(product.VoIconAttachmentId);
+        product.VoCoverImage = ResolveAttachmentUrl(product.VoCoverAttachmentId);
+    }
+
+    private void FillProductListItemUrls(List<ProductListItemVo> products)
+    {
+        foreach (var product in products)
+        {
+            product.VoIcon = ResolveAttachmentUrl(product.VoIconAttachmentId);
+            product.VoCoverImage = ResolveAttachmentUrl(product.VoCoverAttachmentId);
+        }
+    }
+
+    private string? ResolveAttachmentUrl(long? attachmentId)
+    {
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
+        {
+            return null;
+        }
+
+        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
     }
 
     #endregion

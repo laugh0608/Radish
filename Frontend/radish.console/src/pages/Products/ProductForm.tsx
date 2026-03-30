@@ -9,8 +9,12 @@ import {
   DatePicker,
   Switch,
   Button,
+  Space,
+  PlusOutlined,
   message,
 } from '@radish/ui';
+import { Upload } from 'antd';
+import type { UploadProps } from 'antd';
 import { getCategories, createProduct, updateProduct } from '../../api/shopApi';
 import type {
   Product,
@@ -18,6 +22,8 @@ import type {
   CreateProductDto,
   UpdateProductDto,
 } from '../../api/types';
+import { uploadAttachmentImage } from '../../api/attachmentApi';
+import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
 import dayjs from 'dayjs';
 
@@ -32,11 +38,67 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   const [form] = Form.useForm<CreateProductDto | UpdateProductDto>();
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(false);
+  const [iconUploading, setIconUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
+  const [iconPreviewUrl, setIconPreviewUrl] = useState<string | undefined>(undefined);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | undefined>(undefined);
+  const iconAttachmentId = Form.useWatch('iconAttachmentId', form);
+  const coverAttachmentId = Form.useWatch('coverAttachmentId', form);
 
   // 监听商品类型变化
   const productType = Form.useWatch('productType', form);
   const stockType = Form.useWatch('stockType', form);
   const durationType = Form.useWatch('durationType', form);
+
+  const normalizeOptionalAttachmentId = (value: unknown): string | null | undefined => {
+    if (typeof value === 'string' && /^[1-9]\d*$/.test(value.trim())) {
+      return value.trim();
+    }
+
+    return null;
+  };
+
+  const createUploadHandler = (
+    businessType: string,
+    setUploading: (value: boolean) => void,
+    setPreview: (value: string | undefined) => void,
+    fieldName: 'iconAttachmentId' | 'coverAttachmentId'
+  ): UploadProps['customRequest'] => async (options) => {
+    const file = options.file;
+    if (!(file instanceof File)) {
+      options.onError?.(new Error('无效文件'));
+      return;
+    }
+
+    const isImage = file.type
+      ? file.type.startsWith('image/')
+      : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+    if (!isImage) {
+      const error = new Error('仅支持上传图片文件');
+      options.onError?.(error);
+      message.error(error.message);
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const uploaded = await uploadAttachmentImage(file, { businessType }, (percent) => {
+        options.onProgress?.({ percent });
+      });
+
+      form.setFieldValue(fieldName, uploaded.attachmentId);
+      setPreview(getAvatarUrl(uploaded.thumbnailUrl || uploaded.url));
+      options.onSuccess?.(uploaded);
+      message.success('图片上传成功，已回填附件 ID');
+    } catch (error) {
+      const uploadError = error instanceof Error ? error : new Error('图片上传失败');
+      log.error('ProductForm', '上传商品图片失败:', error);
+      options.onError?.(uploadError);
+      message.error(uploadError.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // 加载分类列表
   useEffect(() => {
@@ -51,8 +113,8 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       form.setFieldsValue({
         name: product.voName,
         description: product.voDescription,
-        icon: product.voIcon,
-        coverImage: product.voCoverImage,
+        iconAttachmentId: product.voIconAttachmentId ?? undefined,
+        coverAttachmentId: product.voCoverAttachmentId ?? undefined,
         categoryId: product.voCategoryId,
         productType: product.voProductType,
         benefitType: product.voBenefitType,
@@ -68,6 +130,8 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         isOnSale: product.voIsOnSale,
         expiresAt: product.voExpiresAt ? dayjs(product.voExpiresAt) : undefined,
       } as any);
+      setIconPreviewUrl(getAvatarUrl(product.voIcon));
+      setCoverPreviewUrl(getAvatarUrl(product.voCoverImage));
     } else if (visible) {
       form.resetFields();
       // 设置默认值
@@ -80,6 +144,12 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         sortOrder: 0,
         isOnSale: false,
       } as any);
+      setIconPreviewUrl(undefined);
+      setCoverPreviewUrl(undefined);
+    }
+    if (!visible) {
+      setIconPreviewUrl(undefined);
+      setCoverPreviewUrl(undefined);
     }
   }, [visible, product, form]);
 
@@ -93,6 +163,11 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   };
 
   const handleSubmit = async () => {
+    if (iconUploading || coverUploading) {
+      message.warning('图片仍在上传中，请稍候提交');
+      return;
+    }
+
     try {
       const values = await form.validateFields();
       setLoading(true);
@@ -100,6 +175,8 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       // 处理日期字段
       const dto = {
         ...values,
+        iconAttachmentId: normalizeOptionalAttachmentId(values.iconAttachmentId),
+        coverAttachmentId: normalizeOptionalAttachmentId(values.coverAttachmentId),
         expiresAt: values.expiresAt ? dayjs(values.expiresAt).format('YYYY-MM-DD HH:mm:ss') : undefined,
       };
 
@@ -136,8 +213,8 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       footer={
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
           <Button onClick={onClose}>取消</Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={loading}>
-            {loading ? '保存中...' : '保存'}
+          <Button variant="primary" onClick={handleSubmit} disabled={loading || iconUploading || coverUploading}>
+            {loading || iconUploading || coverUploading ? '保存中...' : '保存'}
           </Button>
         </div>
       }
@@ -232,7 +309,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           <Form.Item
             label="权益/消耗品值"
             name="benefitValue"
-            tooltip="例如：徽章图标URL、经验卡数值等"
+            tooltip="例如：徽章资源标识、经验卡数值等"
           >
             <Input placeholder="请输入权益/消耗品值" />
           </Form.Item>
@@ -240,18 +317,136 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
         <Form.Item
           label="商品图标"
-          name="icon"
-          tooltip="图标URL，例如：mdi:star"
         >
-          <Input placeholder="请输入图标URL" />
+          <Form.Item
+            name="iconAttachmentId"
+            noStyle
+            rules={[{ pattern: /^[1-9]\d*$/, message: '附件 ID 必须为正整数' }]}
+          >
+            <Input style={{ display: 'none' }} />
+          </Form.Item>
+          <Space direction="vertical" style={{ width: '100%' }} size={10}>
+            <div
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: 10,
+                border: '1px solid #f0f0f0',
+                background: '#fafafa',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#999',
+                fontSize: 12,
+              }}
+            >
+              {iconPreviewUrl ? (
+                <img
+                  src={iconPreviewUrl}
+                  alt="商品图标预览"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span>暂无图标</span>
+              )}
+            </div>
+
+            <Space>
+              <Upload
+                accept="image/*"
+                showUploadList={false}
+                customRequest={createUploadHandler('ProductIcon', setIconUploading, setIconPreviewUrl, 'iconAttachmentId')}
+                disabled={iconUploading || loading}
+              >
+                <Button icon={<PlusOutlined />} disabled={iconUploading || loading}>
+                  {iconUploading ? '上传中...' : '上传图标'}
+                </Button>
+              </Upload>
+              <Button
+                disabled={!iconAttachmentId || iconUploading || loading}
+                onClick={() => {
+                  form.setFieldValue('iconAttachmentId', undefined);
+                  setIconPreviewUrl(undefined);
+                }}
+              >
+                清空图标
+              </Button>
+            </Space>
+
+            <Input
+              placeholder="上传后自动回填附件 ID"
+              value={iconAttachmentId ? String(iconAttachmentId) : ''}
+              readOnly
+            />
+          </Space>
         </Form.Item>
 
         <Form.Item
           label="商品封面图"
-          name="coverImage"
-          tooltip="封面图URL"
         >
-          <Input placeholder="请输入封面图URL" />
+          <Form.Item
+            name="coverAttachmentId"
+            noStyle
+            rules={[{ pattern: /^[1-9]\d*$/, message: '附件 ID 必须为正整数' }]}
+          >
+            <Input style={{ display: 'none' }} />
+          </Form.Item>
+          <Space direction="vertical" style={{ width: '100%' }} size={10}>
+            <div
+              style={{
+                width: 160,
+                height: 96,
+                borderRadius: 10,
+                border: '1px solid #f0f0f0',
+                background: '#fafafa',
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#999',
+                fontSize: 12,
+              }}
+            >
+              {coverPreviewUrl ? (
+                <img
+                  src={coverPreviewUrl}
+                  alt="商品封面预览"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span>暂无封面</span>
+              )}
+            </div>
+
+            <Space>
+              <Upload
+                accept="image/*"
+                showUploadList={false}
+                customRequest={createUploadHandler('ProductCover', setCoverUploading, setCoverPreviewUrl, 'coverAttachmentId')}
+                disabled={coverUploading || loading}
+              >
+                <Button icon={<PlusOutlined />} disabled={coverUploading || loading}>
+                  {coverUploading ? '上传中...' : '上传封面'}
+                </Button>
+              </Upload>
+              <Button
+                disabled={!coverAttachmentId || coverUploading || loading}
+                onClick={() => {
+                  form.setFieldValue('coverAttachmentId', undefined);
+                  setCoverPreviewUrl(undefined);
+                }}
+              >
+                清空封面
+              </Button>
+            </Space>
+
+            <Input
+              placeholder="上传后自动回填附件 ID"
+              value={coverAttachmentId ? String(coverAttachmentId) : ''}
+              readOnly
+            />
+          </Space>
         </Form.Item>
 
         <Form.Item label="价格设置">

@@ -17,7 +17,7 @@ namespace Radish.Service;
 /// <summary>萝卜币服务实现</summary>
 public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 {
-    private readonly IBaseRepository<UserBalance> _userBalanceRepository;
+    private readonly IUserBalanceRepository _userBalanceRepository;
     private readonly IBaseRepository<CoinTransaction> _coinTransactionRepository;
     private readonly IBaseRepository<BalanceChangeLog> _balanceChangeLogRepository;
     private readonly IPaymentPasswordService _paymentPasswordService;
@@ -30,7 +30,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 
     public CoinService(
         IMapper mapper,
-        IBaseRepository<UserBalance> userBalanceRepository,
+        IUserBalanceRepository userBalanceRepository,
         IBaseRepository<CoinTransaction> coinTransactionRepository,
         IBaseRepository<BalanceChangeLog> balanceChangeLogRepository,
         IPaymentPasswordService paymentPasswordService)
@@ -99,29 +99,33 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     {
         try
         {
-            // 首先检查是否有被软删除的余额记录
-            var deletedBalance = await _userBalanceRepository.QueryFirstAsync(
-                b => b.UserId == userId && b.IsDeleted);
+            // 先查包含软删除的记录，避免唯一约束下重复插入。
+            var existingBalance = await _userBalanceRepository.QueryByUserIdIncludingDeletedAsync(userId);
 
-            if (deletedBalance != null)
+            if (existingBalance != null)
             {
+                if (!existingBalance.IsDeleted)
+                {
+                    return existingBalance;
+                }
+
                 // 恢复被软删除的余额记录
+                await _userBalanceRepository.RestoreByIdAsync(existingBalance.Id);
                 await _userBalanceRepository.UpdateColumnsAsync(
                     b => new UserBalance
                     {
-                        IsDeleted = false,
                         ModifyTime = DateTime.Now,
                         ModifyBy = "System",
                         ModifyId = 0
                     },
-                    b => b.Id == deletedBalance.Id);
+                    b => b.Id == existingBalance.Id);
 
                 // 重新查询恢复后的记录
-                return await _userBalanceRepository.QueryByIdAsync(deletedBalance.Id)
+                return await _userBalanceRepository.QueryByIdAsync(existingBalance.Id)
                        ?? throw new InvalidOperationException("恢复用户余额记录失败");
             }
 
-            // 如果没有被软删除的记录，创建新记录
+            // 记录不存在时再创建新记录
             var userBalance = new UserBalance
             {
                 UserId = userId,
@@ -140,7 +144,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             await _userBalanceRepository.AddAsync(userBalance);
             return userBalance;
         }
-        catch (SqlSugar.SqlSugarException ex) when (ex.Message.Contains("UNIQUE constraint failed"))
+        catch (Exception ex) when (IsUniqueConstraintConflict(ex, "UserBalance.UserId"))
         {
             // 并发情况下，其他请求可能已经创建了记录，重新查询
             Log.Warning("用户 {UserId} 余额记录已存在（并发创建），重新查询", userId);
@@ -975,6 +979,26 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 
         // 理论上不会执行到这里，但为了类型安全
         throw lastException ?? new ConcurrencyException("重试失败");
+    }
+
+    private static bool IsUniqueConstraintConflict(Exception ex, string? token = null)
+    {
+        var current = ex;
+        while (current != null)
+        {
+            if (!string.IsNullOrWhiteSpace(current.Message) &&
+                (current.Message.Contains("UNIQUE constraint failed", StringComparison.OrdinalIgnoreCase) ||
+                 current.Message.Contains("duplicate key", StringComparison.OrdinalIgnoreCase) ||
+                 current.Message.Contains("23505", StringComparison.OrdinalIgnoreCase)) &&
+                (string.IsNullOrWhiteSpace(token) || current.Message.Contains(token, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+
+            current = current.InnerException!;
+        }
+
+        return false;
     }
 
     #endregion

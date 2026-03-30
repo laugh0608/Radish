@@ -47,6 +47,7 @@ import type {
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
+  SetPostTopRequest,
   UpdatePostRequest,
   ReactionSummaryVo,
   ToggleReactionRequest,
@@ -100,6 +101,7 @@ export type {
   CreateCommentRequest,
   CommentLikeResult,
   PostLikeResult,
+  SetPostTopRequest,
   UpdatePostRequest,
   ReactionSummaryVo,
   ToggleReactionRequest,
@@ -343,15 +345,20 @@ export async function acceptQuestionAnswer(request: AcceptAnswerRequest, t: TFun
 }
 
 /**
- * 获取帖子的评论树（自动包含当前用户的点赞状态）
+ * 分页获取帖子的根评论（自动包含当前用户的点赞状态）
  */
-export async function getCommentTree(postId: number, sortBy: 'newest' | 'hottest' | 'default', t: TFunction): Promise<CommentNode[]> {
+export async function getRootCommentsPage(
+  postId: number,
+  pageIndex: number,
+  pageSize: number,
+  sortBy: 'newest' | 'hottest' | 'default',
+  t: TFunction
+): Promise<VoPagedResult<CommentNode>> {
   void t;
-  // 如果用户已登录，自动发送token以获取点赞状态
   const hasToken = Boolean(tokenService.getAccessToken());
 
-  const response = await apiGet<CommentNode[]>(
-    `/api/v1/Comment/GetCommentTree?postId=${postId}&sortBy=${sortBy}`,
+  const response = await apiGet<VoPagedResult<CommentNode>>(
+    `/api/v1/Comment/GetRootComments?postId=${postId}&pageIndex=${pageIndex}&pageSize=${pageSize}&sortBy=${sortBy}`,
     { withAuth: !!hasToken, timeout: FORUM_READ_TIMEOUT_MS }
   );
 
@@ -442,6 +449,19 @@ export async function updatePost(request: UpdatePostRequest, t: TFunction): Prom
 
   if (!response.ok) {
     throw new Error(response.message || '编辑帖子失败');
+  }
+}
+
+/**
+ * 设置帖子置顶状态
+ * @param request 置顶请求
+ */
+export async function setPostTop(request: SetPostTopRequest, t: TFunction): Promise<void> {
+  void t;
+  const response = await apiPost<null>('/api/v1/Post/SetTop', request, { withAuth: true });
+
+  if (!response.ok) {
+    throw new Error(response.message || '设置帖子置顶状态失败');
   }
 }
 

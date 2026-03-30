@@ -34,6 +34,25 @@ public class UserService : BaseService<User, UserVo>, IUserService
     }
 
     /// <summary>
+    /// 根据登录名获取可登录用户
+    /// </summary>
+    /// <param name="loginName">登录名</param>
+    /// <returns>用户视图模型</returns>
+    public async Task<UserVo?> GetEnabledUserByLoginNameAsync(string loginName)
+    {
+        if (string.IsNullOrWhiteSpace(loginName))
+        {
+            return null;
+        }
+
+        var normalizedLoginName = loginName.Trim();
+        return await QueryFirstAsync(u =>
+            u.LoginName == normalizedLoginName &&
+            u.IsDeleted == false &&
+            u.IsEnable);
+    }
+
+    /// <summary>
     /// 通过登录用户名和登录密码查询用户的角色名称
     /// </summary>
     /// <param name="loginName">登录用户名</param>
@@ -41,26 +60,40 @@ public class UserService : BaseService<User, UserVo>, IUserService
     /// <returns>string RoleName, 可能为多个</returns>
     public async Task<string> GetUserRoleNameStrAsync(string loginName, string loginPwd)
     {
-        string roleName = "";
-        var user =
-            (await base.QueryAsync(a => a.LoginName == loginName && a.LoginPassword == loginPwd)).FirstOrDefault();
-        var roleList = await _roleRepository.QueryAsync(a => a.IsDeleted == false && a.IsEnabled);
-        if (user != null)
+        var user = await QueryFirstAsync(a => a.LoginName == loginName && a.LoginPassword == loginPwd);
+        if (user == null)
         {
-            var userRoles = await _userRoleRepository.QueryAsync(ur => ur.UserId == user.Uuid && ur.IsDeleted == false);
-            if (userRoles.Count > 0)
-            {
-                var arr = userRoles.Select(ur => ur.RoleId.ObjToString()).ToList();
-                var roles = roleList
-                    .Where(d => arr.Contains(d.Id.ObjToString()))
-                    .DistinctBy(d => d.Id)
-                    .OrderBy(d => d.RoleName, StringComparer.OrdinalIgnoreCase);
-
-                roleName = string.Join(',', roles.Select(r => r.RoleName).ToArray());
-            }
+            return string.Empty;
         }
 
-        return roleName;
+        var roleNames = await GetUserRoleNamesAsync(user.Uuid);
+        return string.Join(',', roleNames);
+    }
+
+    public async Task<List<string>> GetUserRoleNamesAsync(long userId)
+    {
+        var userRoles = await _userRoleRepository.QueryAsync(ur => ur.UserId == userId && ur.IsDeleted == false);
+        if (userRoles.Count <= 0)
+        {
+            return new List<string>();
+        }
+
+        var roleIds = userRoles
+            .Select(ur => ur.RoleId)
+            .Distinct()
+            .ToList();
+
+        var roles = await _roleRepository.QueryAsync(role =>
+            roleIds.Contains(role.Id) &&
+            role.IsDeleted == false &&
+            role.IsEnabled);
+
+        return roles
+            .Select(role => role.RoleName)
+            .Where(roleName => !string.IsNullOrWhiteSpace(roleName))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(roleName => roleName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     /// <summary>

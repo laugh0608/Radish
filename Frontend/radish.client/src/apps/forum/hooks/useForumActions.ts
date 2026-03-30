@@ -15,6 +15,7 @@ import {
   likePost,
   toggleCommentLike,
   updatePost,
+  setPostTop,
   updateComment,
   deletePost,
   deleteComment,
@@ -91,6 +92,7 @@ export interface ForumActionsHandlers {
   handleEditPost: (postId: number) => void;
   handleViewPostHistory: (postId: number) => Promise<void>;
   handleSaveEdit: (postId: number, title: string, content: string, categoryId: number, tagNames: string[]) => Promise<void>;
+  handleTogglePostTop: (isTop: boolean) => Promise<void>;
   handleDeletePost: (postId: number) => void;
   confirmDeletePost: () => Promise<void>;
   cancelDeletePost: () => void;
@@ -129,11 +131,13 @@ interface UseForumActionsParams {
   isAuthenticated: boolean;
   userId: number;
   commentSortBy: 'newest' | 'hottest' | null;
+  loadedCommentPages: number;
   selectedCategoryId: number | null;
   selectedTagName: string | null;
   selectedPost: PostDetail | null;
   setSelectedPost: Dispatch<SetStateAction<PostDetail | null>>;
   setComments: Dispatch<SetStateAction<CommentNode[]>>;
+  setCommentTotal: Dispatch<SetStateAction<number>>;
   setCurrentPage: (page: number) => void;
   setSortBy: (sortBy: ForumPostSortBy) => void;
   setCommentSortBy: (sortBy: 'newest' | 'hottest' | null) => void;
@@ -142,7 +146,7 @@ interface UseForumActionsParams {
   setSearchKeyword: (keyword: string) => void;
   setError: (error: string | null) => void;
   loadPostDetail: (postId: number, answerSortOverride?: QuestionAnswerSort) => Promise<void>;
-  loadComments: (postId: number) => Promise<void>;
+  loadComments: (postId: number, pageCount?: number) => Promise<void>;
   loadPosts: () => Promise<void>;
   resetCommentSort: () => void;
 }
@@ -154,9 +158,11 @@ export const useForumActions = (
     t,
     isAuthenticated,
     userId,
+    loadedCommentPages,
     selectedPost,
     setSelectedPost,
     setComments,
+    setCommentTotal,
     setCurrentPage,
     setSortBy,
     setCommentSortBy,
@@ -170,6 +176,8 @@ export const useForumActions = (
     resetCommentSort,
     commentSortBy
   } = params;
+
+  const getLoadedCommentPageCount = () => Math.max(loadedCommentPages, 1);
 
   // Modal 状态
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
@@ -284,7 +292,7 @@ export const useForumActions = (
     setQuestionAnswerSort('default');
     setQuestionAnswerFilter('all');
     await loadPostDetail(postId, 'default');
-    await loadComments(postId);
+    await loadComments(postId, 1);
   };
 
   const handleQuestionAnswerSortChange = async (sortBy: QuestionAnswerSort) => {
@@ -636,6 +644,32 @@ export const useForumActions = (
     }
   };
 
+  const handleTogglePostTop = async (isTop: boolean) => {
+    if (!selectedPost?.voId) {
+      const message = '请先选择要操作的帖子';
+      setError(message);
+      throw new Error(message);
+    }
+
+    setError(null);
+    try {
+      await setPostTop(
+        {
+          postId: selectedPost.voId,
+          isTop
+        },
+        t
+      );
+      toast.success(isTop ? '帖子已置顶' : '帖子已取消置顶');
+      await Promise.all([loadPostDetail(selectedPost.voId), loadPosts()]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message);
+      toast.error(message || '设置帖子置顶状态失败');
+      throw err;
+    }
+  };
+
   // 删除帖子
   const handleDeletePost = (postId: number) => {
     setPostToDelete(postId);
@@ -759,7 +793,11 @@ export const useForumActions = (
       setComments(prev => mergeCommentIntoTree(prev, parentId, newComment));
 
       setReplyTo(null);
-      await loadComments(selectedPost.voId);
+      if (parentId == null && commentSortBy === null) {
+        setCommentTotal(prev => prev + 1);
+      } else {
+        await loadComments(selectedPost.voId, getLoadedCommentPageCount());
+      }
       if (selectedPost.voHasLottery && parentId == null) {
         try {
           const latestLottery = await getLotteryByPostId(selectedPost.voId, t);
@@ -816,7 +854,7 @@ export const useForumActions = (
     setError(null);
     try {
       await updateComment({ commentId, content: newContent }, t);
-      await loadComments(selectedPost.voId);
+      await loadComments(selectedPost.voId, getLoadedCommentPageCount());
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -844,7 +882,7 @@ export const useForumActions = (
       await deleteComment(commentToDelete, t);
       setIsDeleteCommentDialogOpen(false);
       setCommentToDelete(null);
-      await loadComments(selectedPost.voId);
+      await loadComments(selectedPost.voId, getLoadedCommentPageCount());
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -888,7 +926,7 @@ export const useForumActions = (
   const handleCommentSortChange = (newSortBy: 'newest' | 'hottest') => {
     setCommentSortBy(newSortBy);
     if (selectedPost) {
-      void loadComments(selectedPost.voId);
+      void loadComments(selectedPost.voId, 1);
     }
   };
 
@@ -972,6 +1010,7 @@ export const useForumActions = (
     handleEditPost,
     handleViewPostHistory,
     handleSaveEdit,
+    handleTogglePostTop,
     handleDeletePost,
     confirmDeletePost,
     cancelDeletePost,

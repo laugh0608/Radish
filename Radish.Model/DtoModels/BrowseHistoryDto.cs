@@ -24,8 +24,8 @@ public class RecordBrowseHistoryDto
     /// <summary>摘要快照</summary>
     public string? Summary { get; set; }
 
-    /// <summary>封面快照</summary>
-    public string? CoverImage { get; set; }
+    /// <summary>封面附件快照 Id</summary>
+    public long? CoverAttachmentId { get; set; }
 
     /// <summary>路由快照</summary>
     public string? RoutePath { get; set; }

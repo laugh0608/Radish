@@ -4,6 +4,7 @@ import {
   type StickerPickerGroup,
   type StickerPickerSelection,
 } from '../StickerPicker/StickerPicker';
+import { resolveConfiguredMediaUrl } from '../../utils';
 import styles from './ReactionBar.module.css';
 
 const QUICK_EMOJIS = ['😀', '😂', '❤️', '👍', '😢', '😮'];
@@ -250,7 +251,7 @@ export const ReactionBar = ({
                 <span className={styles.emoji}>{item.voEmojiValue}</span>
               ) : item.voThumbnailUrl ? (
                 <img
-                  src={item.voThumbnailUrl}
+                  src={resolveConfiguredMediaUrl(item.voThumbnailUrl)}
                   alt={item.voEmojiValue}
                   className={styles.sticker}
                   loading="lazy"

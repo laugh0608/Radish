@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { message } from '@radish/ui';
+import { OidcCallbackError, redeemOidcAuthorizationCode } from '@radish/http';
 import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
 import { tokenService } from '../../services/tokenService';
 import { log } from '@/utils/logger';
@@ -11,7 +12,6 @@ import { log } from '@/utils/logger';
 export function OidcCallback() {
   const [error, setError] = useState<string>();
   const [messageText, setMessageText] = useState<string>('正在完成登录...');
-  const hasProcessed = useRef(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,53 +19,31 @@ export function OidcCallback() {
       return;
     }
 
-    // 防止重复执行（React StrictMode 会导致 useEffect 执行两次）
-    if (hasProcessed.current) {
-      return;
-    }
-    hasProcessed.current = true;
-
-    const url = new URL(window.location.href);
-    const code = url.searchParams.get('code');
-
-    if (!code) {
-      setError('授权码缺失');
-      setMessageText('登录失败');
-      return;
-    }
+    let cancelled = false;
+    let redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
     const redirectUri = getRedirectUri();
     const authServerBaseUrl = getAuthServerBaseUrl();
 
-    const fetchToken = async () => {
-      const body = new URLSearchParams();
-      body.set('grant_type', 'authorization_code');
-      body.set('client_id', 'radish-console');
-      body.set('code', code);
-      body.set('redirect_uri', redirectUri);
-
+    const completeLogin = async () => {
       try {
-        const response = await fetch(`${authServerBaseUrl}/connect/token`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-          },
-          body
+        const tokenSet = await redeemOidcAuthorizationCode({
+          clientId: 'radish-console',
+          authServerBaseUrl,
+          redirectUri,
+          missingCodeMessage: '授权码缺失',
+          staleCallbackMessage: '登录回调已失效，请重新发起登录。',
+          missingAccessTokenMessage: '未收到 access_token',
+          buildTokenRequestFailedMessage: ({ status, statusText, error, errorDescription }) => {
+            const detailMessage = errorDescription || error;
+            return detailMessage
+              ? `Token 请求失败: ${status} ${statusText} (${detailMessage})`
+              : `Token 请求失败: ${status} ${statusText}`;
+          }
         });
 
-        if (!response.ok) {
-          throw new Error(`Token 请求失败: ${response.status} ${response.statusText}`);
-        }
-
-        const tokenSet = await response.json() as {
-          access_token?: string;
-          refresh_token?: string;
-          expires_in?: number;
-          token_type?: string;
-        };
-
-        if (!tokenSet.access_token) {
-          throw new Error('未收到 access_token');
+        if (cancelled) {
+          return;
         }
 
         // 使用 TokenService 存储 Token 信息
@@ -83,10 +61,21 @@ export function OidcCallback() {
         message.success('登录成功');
 
         // 使用 React Router 导航到首页
-        setTimeout(() => {
+        redirectTimer = setTimeout(() => {
           navigate('/', { replace: true });
         }, 500);
       } catch (err) {
+        if (cancelled) {
+          return;
+        }
+
+        if (err instanceof OidcCallbackError && err.code === 'stale_callback') {
+          setError('登录回调已失效，请重新发起登录。');
+          setMessageText('登录失败');
+          message.error('登录回调已失效，请重新发起登录。');
+          return;
+        }
+
         const msg = err instanceof Error ? err.message : String(err);
         setError(msg);
         setMessageText('登录失败');
@@ -94,7 +83,14 @@ export function OidcCallback() {
       }
     };
 
-    void fetchToken();
+    void completeLogin();
+
+    return () => {
+      cancelled = true;
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+      }
+    };
   }, [navigate]);
 
   return (

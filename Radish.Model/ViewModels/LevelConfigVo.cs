@@ -34,9 +34,19 @@ public class LevelConfigVo
     public string? VoThemeColor { get; set; }
 
     /// <summary>
+    /// 等级图标附件 Id
+    /// </summary>
+    public long? VoIconAttachmentId { get; set; }
+
+    /// <summary>
     /// 等级图标 URL
     /// </summary>
     public string? VoIconUrl { get; set; }
+
+    /// <summary>
+    /// 等级徽章附件 Id
+    /// </summary>
+    public long? VoBadgeAttachmentId { get; set; }
 
     /// <summary>
     /// 等级徽章 URL

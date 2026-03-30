@@ -10,7 +10,10 @@ public class ProductCategoryVo
     /// <summary>分类名称</summary>
     public string VoName { get; set; } = string.Empty;
 
-    /// <summary>分类图标</summary>
+    /// <summary>分类图标附件 Id</summary>
+    public long? VoIconAttachmentId { get; set; }
+
+    /// <summary>分类图标 URL</summary>
     public string? VoIcon { get; set; }
 
     /// <summary>分类描述</summary>

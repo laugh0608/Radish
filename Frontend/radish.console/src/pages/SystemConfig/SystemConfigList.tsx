@@ -6,12 +6,13 @@ import {
   Space,
   Tag,
   message,
-  Modal,
   Popconfirm,
   AntSelect as Select,
   AntInput as Input,
   type TableColumnsType,
 } from '@radish/ui';
+import { Upload } from 'antd';
+import type { UploadProps } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
@@ -23,13 +24,19 @@ import {
   getSystemConfigs,
   getConfigCategories,
   deleteConfig,
+  updateConfig,
   type SystemConfigVo,
 } from '@/api/systemConfigApi';
+import { uploadAttachmentImage } from '@/api/attachmentApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
+import { getAvatarUrl } from '@/config/env';
 import { SystemConfigForm } from './SystemConfigForm';
 import { log } from '@/utils/logger';
 import './SystemConfigList.css';
+
+const SITE_FAVICON_KEY = 'Site.Branding.FaviconUrl';
+const DEFAULT_SITE_FAVICON_PATH = '/uploads/DefaultIco/bailuobo.ico';
 
 export const SystemConfigList = () => {
   useDocumentTitle('系统配置');
@@ -37,6 +44,8 @@ export const SystemConfigList = () => {
   const [filteredConfigs, setFilteredConfigs] = useState<SystemConfigVo[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [faviconUploading, setFaviconUploading] = useState(false);
+  const [faviconSaving, setFaviconSaving] = useState(false);
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingConfigId, setEditingConfigId] = useState<number>();
@@ -104,6 +113,94 @@ export const SystemConfigList = () => {
 
     setFilteredConfigs(filtered);
   }, [configs, selectedCategory, searchKeyword]);
+
+  const faviconConfig = configs.find((config) => config.voKey === SITE_FAVICON_KEY);
+  const faviconPreviewUrl = getAvatarUrl(faviconConfig?.voValue || DEFAULT_SITE_FAVICON_PATH);
+  const isUsingDefaultFavicon = !faviconConfig || faviconConfig.voValue === DEFAULT_SITE_FAVICON_PATH;
+
+  const handleRestoreDefaultFavicon = async () => {
+    if (!faviconConfig) {
+      message.error('站点图标配置尚未加载完成');
+      return;
+    }
+
+    try {
+      setFaviconSaving(true);
+      await updateConfig(faviconConfig.voId, {
+        value: DEFAULT_SITE_FAVICON_PATH,
+        description: faviconConfig.voDescription,
+        isEnabled: true,
+      });
+      message.success('已恢复为默认站点图标');
+      await loadConfigs();
+    } catch (error) {
+      log.error('SystemConfigList', '恢复默认站点图标失败:', error);
+      message.error(error instanceof Error ? error.message : '恢复默认站点图标失败');
+    } finally {
+      setFaviconSaving(false);
+    }
+  };
+
+  const handleFaviconUpload: UploadProps['customRequest'] = async (options) => {
+    const file = options.file;
+    if (!(file instanceof File)) {
+      const uploadError = new Error('无效的图标文件');
+      options.onError?.(uploadError);
+      message.error(uploadError.message);
+      return;
+    }
+
+    if (!/\.ico$/i.test(file.name)) {
+      const uploadError = new Error('仅支持上传 .ico 格式的图标文件');
+      options.onError?.(uploadError);
+      message.error(uploadError.message);
+      return;
+    }
+
+    if (!faviconConfig) {
+      const uploadError = new Error('站点图标配置尚未加载完成');
+      options.onError?.(uploadError);
+      message.error(uploadError.message);
+      return;
+    }
+
+    try {
+      setFaviconUploading(true);
+      const uploaded = await uploadAttachmentImage(
+        file,
+        {
+          businessType: 'SiteFavicon',
+          generateThumbnail: false,
+          removeExif: false,
+        },
+        (percent) => {
+          options.onProgress?.({ percent });
+        }
+      );
+
+      if (!uploaded.url) {
+        throw new Error('上传成功但未返回图标地址');
+      }
+
+      setFaviconSaving(true);
+      await updateConfig(faviconConfig.voId, {
+        value: uploaded.url,
+        description: faviconConfig.voDescription,
+        isEnabled: true,
+      });
+      await loadConfigs();
+      options.onSuccess?.(uploaded);
+      message.success('站点图标已更新');
+    } catch (error) {
+      const uploadError = error instanceof Error ? error : new Error('站点图标上传失败');
+      log.error('SystemConfigList', '上传站点图标失败:', error);
+      options.onError?.(uploadError);
+      message.error(uploadError.message);
+    } finally {
+      setFaviconUploading(false);
+      setFaviconSaving(false);
+    }
+  };
 
   // 新增配置
   const handleCreate = () => {
@@ -198,6 +295,16 @@ export const SystemConfigList = () => {
         if (record.voType === 'boolean') {
           return <Tag color={value === 'true' ? 'success' : 'error'}>{value}</Tag>;
         }
+        if (record.voKey === SITE_FAVICON_KEY) {
+          return (
+            <div className="favicon-cell">
+              {faviconPreviewUrl ? (
+                <img src={faviconPreviewUrl} alt="站点图标预览" className="favicon-cell__image" />
+              ) : null}
+              <span className="favicon-cell__value">{value}</span>
+            </div>
+          );
+        }
         return <span>{value}</span>;
       },
     },
@@ -250,6 +357,7 @@ export const SystemConfigList = () => {
             编辑
           </Button>
           {canDeleteSystemConfig ? (
+            record.voKey === SITE_FAVICON_KEY ? null : (
             <Popconfirm
               title="确认删除"
               description="确定要删除这个配置吗？此操作不可恢复。"
@@ -265,6 +373,7 @@ export const SystemConfigList = () => {
                 删除
               </Button>
             </Popconfirm>
+            )
           ) : null}
         </Space>
       ),
@@ -290,6 +399,62 @@ export const SystemConfigList = () => {
               新增配置
             </Button>
           ) : null}
+        </Space>
+      </div>
+
+      <div className="branding-card">
+        <div className="branding-card__main">
+          <div className="branding-card__preview">
+            {faviconPreviewUrl ? (
+              <img src={faviconPreviewUrl} alt="当前站点图标" className="branding-card__image" />
+            ) : (
+              <span className="branding-card__empty">暂无图标</span>
+            )}
+          </div>
+          <div className="branding-card__content">
+            <div className="branding-card__title-row">
+              <h3 className="branding-card__title">网站标签页图标</h3>
+              <Tag color={isUsingDefaultFavicon ? 'default' : 'processing'}>
+                {isUsingDefaultFavicon ? '默认种子' : '自定义图标'}
+              </Tag>
+            </div>
+            <p className="branding-card__description">
+              当前浏览器标签页左侧显示的站点图标。默认种子文件来自 `DataBases/Uploads/DefaultIco/bailuobo.ico`。
+            </p>
+            <code className="branding-card__value">{faviconConfig?.voValue || DEFAULT_SITE_FAVICON_PATH}</code>
+          </div>
+        </div>
+        <Space wrap>
+          <Upload
+            accept=".ico"
+            showUploadList={false}
+            customRequest={handleFaviconUpload}
+            disabled={!canEditSystemConfig || faviconUploading || faviconSaving}
+          >
+            <Button
+              variant="primary"
+              icon={<PlusOutlined />}
+              disabled={!canEditSystemConfig || faviconUploading || faviconSaving}
+            >
+              {faviconUploading ? '上传中...' : '上传 ICO'}
+            </Button>
+          </Upload>
+          <Button
+            onClick={() => {
+              void handleRestoreDefaultFavicon();
+            }}
+            disabled={!canEditSystemConfig || faviconUploading || faviconSaving || isUsingDefaultFavicon}
+          >
+            恢复默认
+          </Button>
+          <Button
+            onClick={() => {
+              void loadConfigs();
+            }}
+            disabled={faviconUploading || faviconSaving}
+          >
+            重新读取
+          </Button>
         </Space>
       </div>
 

@@ -4,6 +4,13 @@
  */
 import { log } from '@/utils/logger';
 import { getAuthBaseUrl } from '@/config/env';
+import {
+  classifyTokenRefreshFailure,
+  dispatchAuthTokenExpired,
+  shouldInvalidateSessionAfterRefreshFailure,
+  TokenRefreshFailureReason,
+  type TokenRefreshFailureReason as TokenRefreshFailureReasonValue,
+} from './authSession';
 
 const CLIENT_ID = 'radish-client';
 
@@ -14,9 +21,28 @@ interface TokenInfo {
   token_type: string;
 }
 
+export interface AccessTokenIdentity {
+  userId: number;
+  userName: string;
+  tenantId: number;
+  roles: string[];
+}
+
 type JwtPayload = Record<string, unknown> & {
   exp?: number;
 };
+
+class TokenRefreshError extends Error {
+  readonly reason: TokenRefreshFailureReasonValue;
+  readonly status?: number;
+
+  constructor(message: string, reason: TokenRefreshFailureReasonValue, status?: number) {
+    super(message);
+    this.name = 'TokenRefreshError';
+    this.reason = reason;
+    this.status = status;
+  }
+}
 
 class TokenService {
   private static instance: TokenService;
@@ -26,6 +52,7 @@ class TokenService {
   private readonly REFRESH_TOKEN_KEY = 'radish_client_refresh_token';
   private readonly TOKEN_EXPIRES_KEY = 'radish_client_token_expires_at';
   private readonly TOKEN_REFRESH_AT_KEY = 'radish_client_token_refresh_at';
+  private readonly CURRENT_USER_CACHE_KEY = 'cached_user_info';
   private readonly LEGACY_TOKEN_KEY = 'access_token';
   private readonly LEGACY_REFRESH_TOKEN_KEY = 'refresh_token';
   private readonly LEGACY_TOKEN_EXPIRES_KEY = 'token_expires_at';
@@ -121,6 +148,76 @@ class TokenService {
     return uniqueRoles;
   }
 
+  getUserIdentityFromAccessToken(token?: string | null): AccessTokenIdentity | null {
+    const targetToken = token ?? this.getAccessToken();
+    if (!targetToken) {
+      return null;
+    }
+
+    const payload = this.parseJwt(targetToken);
+    if (!payload) {
+      return null;
+    }
+
+    const parseNumericClaim = (value: unknown): number | null => {
+      if (typeof value === 'number' && Number.isFinite(value)) {
+        return Math.trunc(value);
+      }
+
+      if (typeof value === 'string') {
+        const parsed = Number.parseInt(value, 10);
+        return Number.isFinite(parsed) ? parsed : null;
+      }
+
+      return null;
+    };
+
+    const parseStringClaim = (value: unknown): string | null => {
+      if (typeof value !== 'string') {
+        return null;
+      }
+
+      const normalized = value.trim();
+      return normalized ? normalized : null;
+    };
+
+    const userId = parseNumericClaim(
+      payload.sub ?? payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
+    );
+
+    if (!userId || userId <= 0) {
+      return null;
+    }
+
+    const userName = parseStringClaim(payload.preferred_username)
+      ?? parseStringClaim(payload.name)
+      ?? parseStringClaim(payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'])
+      ?? String(userId);
+
+    const tenantId = parseNumericClaim(payload.tenant_id ?? payload.TenantId) ?? 0;
+
+    return {
+      userId,
+      userName,
+      tenantId,
+      roles: this.getRolesFromAccessToken(targetToken),
+    };
+  }
+
+  getCurrentUserCacheScope(token?: string | null): string | null {
+    const targetToken = token ?? this.getAccessToken();
+    if (!targetToken) {
+      return null;
+    }
+
+    const identity = this.getUserIdentityFromAccessToken(targetToken);
+    if (!identity) {
+      return null;
+    }
+
+    return `v2:${identity.userId}:${identity.tenantId}:${this.createTokenFingerprint(targetToken)}`;
+  }
+
   setTokenInfo(tokenInfo: TokenInfo): void {
     localStorage.setItem(this.TOKEN_KEY, tokenInfo.access_token);
 
@@ -161,7 +258,7 @@ class TokenService {
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.TOKEN_EXPIRES_KEY);
     localStorage.removeItem(this.TOKEN_REFRESH_AT_KEY);
-    localStorage.removeItem('cached_user_info');
+    localStorage.removeItem(this.CURRENT_USER_CACHE_KEY);
     this.refreshPromise = null;
     this.stopAutoRefresh(); // 清除 Token 时停止自动刷新
     log.debug('TokenService', 'Token 信息已清除');
@@ -266,6 +363,16 @@ class TokenService {
     }
   }
 
+  private createTokenFingerprint(token: string): string {
+    let hash = 2166136261;
+    for (let index = 0; index < token.length; index += 1) {
+      hash ^= token.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+
+    return `${token.length}:${(hash >>> 0).toString(16)}`;
+  }
+
   private getExpiresInFromJwt(token: string): number {
     const payload = this.parseJwt(token);
     if (!payload?.exp) {
@@ -287,7 +394,12 @@ class TokenService {
 
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
-      throw new Error('没有可用的刷新令牌');
+      const error = new TokenRefreshError(
+        '没有可用的刷新令牌',
+        TokenRefreshFailureReason.MissingRefreshToken,
+      );
+      this.handleRefreshFailure(error);
+      throw error;
     }
 
     this.refreshPromise = this.performTokenRefresh(refreshToken);
@@ -295,6 +407,9 @@ class TokenService {
     try {
       const newAccessToken = await this.refreshPromise;
       return newAccessToken;
+    } catch (error) {
+      this.handleRefreshFailure(error);
+      throw error;
     } finally {
       this.refreshPromise = null;
     }
@@ -321,7 +436,11 @@ class TokenService {
       });
 
       if (!response.ok) {
-        throw new Error(`Token 刷新失败: ${response.status} ${response.statusText}`);
+        throw new TokenRefreshError(
+          `Token 刷新失败: ${response.status} ${response.statusText}`,
+          classifyTokenRefreshFailure(response.status),
+          response.status,
+        );
       }
 
       const tokenData: TokenInfo = await response.json();
@@ -337,12 +456,13 @@ class TokenService {
       log.debug('TokenService', 'Token 刷新成功');
       return tokenData.access_token;
     } catch (error) {
-      log.error('TokenService', 'Token 刷新失败', error);
+      if (error instanceof TokenRefreshError) {
+        throw error;
+      }
 
-      // 刷新失败，清除所有 Token
-      this.clearTokens();
-
-      throw error;
+      const reason = classifyTokenRefreshFailure(undefined, error);
+      const message = error instanceof Error ? error.message : String(error);
+      throw new TokenRefreshError(`Token 刷新失败: ${message}`, reason);
     }
   }
 
@@ -361,7 +481,12 @@ class TokenService {
       try {
         return await this.refreshAccessToken();
       } catch (error) {
-        log.error('TokenService', '自动刷新 Token 失败', error);
+        if (!this.isTokenExpired()) {
+          log.warn('TokenService', '提前刷新失败，继续使用当前访问令牌', error);
+          return currentToken;
+        }
+
+        log.error('TokenService', '自动刷新 Token 失败，当前访问令牌已不可用', error);
         return null;
       }
     }
@@ -394,9 +519,13 @@ class TokenService {
           await this.refreshAccessToken();
           log.debug('TokenService', '自动刷新成功');
         } catch (error) {
-          log.error('TokenService', '自动刷新失败', error);
-          // 刷新失败，停止定时器
-          this.stopAutoRefresh();
+          if (!this.getAccessToken()) {
+            log.error('TokenService', '自动刷新失败，认证会话已失效', error);
+            this.stopAutoRefresh();
+            return;
+          }
+
+          log.warn('TokenService', '自动刷新失败，保留当前访问令牌并等待下一次重试', error);
         }
       }
     };
@@ -469,6 +598,28 @@ class TokenService {
     if (legacyValue !== null) {
       localStorage.setItem(targetKey, legacyValue);
     }
+  }
+
+  private handleRefreshFailure(error: unknown): void {
+    const refreshError = error instanceof TokenRefreshError
+      ? error
+      : new TokenRefreshError(
+          error instanceof Error ? error.message : String(error),
+          classifyTokenRefreshFailure(undefined, error),
+        );
+
+    log.error('TokenService', 'Token 刷新失败', {
+      reason: refreshError.reason,
+      status: refreshError.status,
+      message: refreshError.message,
+    });
+
+    if (!shouldInvalidateSessionAfterRefreshFailure(refreshError.reason, this.isTokenExpired())) {
+      return;
+    }
+
+    this.clearTokens();
+    dispatchAuthTokenExpired(refreshError.reason);
   }
 }
 

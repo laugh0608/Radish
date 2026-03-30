@@ -13,6 +13,8 @@ public class ChannelMessageVo
 
     public string VoUserName { get; set; } = string.Empty;
 
+    public long? VoUserAvatarAttachmentId { get; set; }
+
     public string? VoUserAvatarUrl { get; set; }
 
     public MessageType VoType { get; set; }

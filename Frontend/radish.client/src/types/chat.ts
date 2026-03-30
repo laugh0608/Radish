@@ -111,8 +111,6 @@ export interface SendChannelMessageRequest {
   content?: string;
   replyToId?: EntityIdValue;
   attachmentId?: EntityIdValue;
-  imageUrl?: string;
-  imageThumbnailUrl?: string;
 }
 
 export interface ChannelUnreadChangedPayload {

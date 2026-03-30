@@ -146,7 +146,7 @@ public class AttachmentController : ControllerBase
         }
 
         // 验证是否为图片
-        var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg" };
+        var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg", ".ico" };
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!imageExtensions.Contains(extension))
         {
@@ -154,7 +154,7 @@ public class AttachmentController : ControllerBase
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "仅支持图片格式（jpg/jpeg/png/gif/bmp/webp/svg）"
+                MessageInfo = "仅支持图片格式（jpg/jpeg/png/gif/bmp/webp/svg/ico）"
             };
         }
 
@@ -528,6 +528,74 @@ public class AttachmentController : ControllerBase
 
     #region Download
 
+    [HttpGet("/_assets/attachments/{id:long}")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Open(long id)
+    {
+        long? userId = null;
+        List<string>? roles = null;
+
+        if (Current.UserId > 0)
+        {
+            userId = Current.UserId;
+            roles = Current.Roles.ToList();
+        }
+
+        var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(
+            id,
+            userId,
+            roles,
+            AttachmentUrlVariant.Original);
+
+        if (stream == null || attachment == null)
+        {
+            return NotFound(new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "文件不存在或无权访问"
+            });
+        }
+
+        return File(stream, attachment.MimeType);
+    }
+
+    [HttpGet("/_assets/attachments/{id:long}/thumbnail")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(FileResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> OpenThumbnail(long id)
+    {
+        long? userId = null;
+        List<string>? roles = null;
+
+        if (Current.UserId > 0)
+        {
+            userId = Current.UserId;
+            roles = Current.Roles.ToList();
+        }
+
+        var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(
+            id,
+            userId,
+            roles,
+            AttachmentUrlVariant.Thumbnail);
+
+        if (stream == null || attachment == null)
+        {
+            return NotFound(new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "文件不存在或无权访问"
+            });
+        }
+
+        return File(stream, attachment.MimeType);
+    }
+
     /// <summary>
     /// 下载附件
     /// </summary>
@@ -549,7 +617,11 @@ public class AttachmentController : ControllerBase
             roles = Current.Roles.ToList();
         }
 
-        var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(id, userId, roles);
+        var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(
+            id,
+            userId,
+            roles,
+            AttachmentUrlVariant.Original);
 
         if (stream == null || attachment == null)
         {
@@ -561,7 +633,7 @@ public class AttachmentController : ControllerBase
             });
         }
 
-        return File(stream, attachment.VoMimeType, attachment.VoOriginalName);
+        return File(stream, attachment.MimeType, attachment.OriginalName);
     }
 
     #endregion
@@ -644,7 +716,11 @@ public class AttachmentController : ControllerBase
                 downloadRoles = Current.Roles.ToList();
             }
 
-            var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(attachmentId.Value, downloadUserId, downloadRoles);
+            var (stream, attachment) = await _attachmentService.GetDownloadStreamAsync(
+                attachmentId.Value,
+                downloadUserId,
+                downloadRoles,
+                AttachmentUrlVariant.Original);
             if (stream == null || attachment == null)
             {
                 return NotFound(new MessageModel
@@ -655,7 +731,7 @@ public class AttachmentController : ControllerBase
                 });
             }
 
-            return File(stream, attachment.VoMimeType, attachment.VoOriginalName);
+            return File(stream, attachment.MimeType, attachment.OriginalName);
         }
         catch (Exception ex)
         {
@@ -754,7 +830,7 @@ public class AttachmentController : ControllerBase
     public async Task<MessageModel> Delete(long id)
     {
         // 检查附件是否存在
-        var attachment = await _attachmentService.QueryByIdAsync(id);
+        var attachment = await _attachmentService.GetAttachmentAssetAsync(id);
         if (attachment == null)
         {
             return new MessageModel
@@ -769,7 +845,7 @@ public class AttachmentController : ControllerBase
         var userId = Current.UserId;
         var isAdmin = Current.IsSystemOrAdmin();
 
-        if (attachment.VoUploaderId != userId && !isAdmin)
+        if (attachment.UploaderId != userId && !isAdmin)
         {
             return new MessageModel
             {
@@ -825,8 +901,8 @@ public class AttachmentController : ControllerBase
         // 权限检查：验证每个附件的权限
         foreach (var id in ids)
         {
-            var attachment = await _attachmentService.QueryByIdAsync(id);
-            if (attachment != null && attachment.VoUploaderId != userId && !isAdmin)
+            var attachment = await _attachmentService.GetAttachmentAssetAsync(id);
+            if (attachment != null && attachment.UploaderId != userId && !isAdmin)
             {
                 return new MessageModel
                 {
@@ -869,7 +945,7 @@ public class AttachmentController : ControllerBase
         [FromQuery] long businessId)
     {
         // 检查附件是否存在
-        var attachment = await _attachmentService.QueryByIdAsync(id);
+        var attachment = await _attachmentService.GetAttachmentAssetAsync(id);
         if (attachment == null)
         {
             return new MessageModel
@@ -884,7 +960,7 @@ public class AttachmentController : ControllerBase
         var userId = Current.UserId;
         var isAdmin = Current.IsSystemOrAdmin();
 
-        if (attachment.VoUploaderId != userId && !isAdmin)
+        if (attachment.UploaderId != userId && !isAdmin)
         {
             return new MessageModel
             {

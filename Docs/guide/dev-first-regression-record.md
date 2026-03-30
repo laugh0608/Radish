@@ -117,3 +117,36 @@
 1. 维持当前 `master` PR 质量门禁与 `validate:baseline` 作为内部开发版默认回归入口。
 2. 如近期再发生跨层改动，优先重新执行 `npm run validate:baseline`；涉及宿主 / 配置时再补 `npm run validate:baseline:host`。
 3. 维持当前统一镜像推送与轻量前端镜像口径；如后续再改 Dockerfile / workflow / Compose，优先复核镜像可拉取性与前端镜像体积。待具备真实外部域名、Auth 证书与镜像推送条件后，再补记真实外部反代域名、Auth 证书与 OIDC 回调链路的联调结果。
+
+## 正式发布补充记录（2026-03-28）
+
+- 记录日期：2026-03-28
+- 记录人：项目协作记录
+- 范围：`v26.3.2-test` 与 `v26.3.2-release` 的发布、部署与验收结果补记
+- 触发原因：在“可发内部开发版”与首轮测试部署验收之后，需要补齐最新测试轨道与正式发布轨道的真实验收记录，避免规划页仍停留在“release 待验证”或 “dbmigrate 待下一次 tag 验证”的旧口径
+
+### 执行摘要
+
+- `v26.3.2-test` 已完成 tag 驱动镜像构建、`GHCR` 拉取与 `base + test` 真实部署验收。
+- `v26.3.2-release` 已完成 release 镜像产出、`GHCR` 拉取与 `base + prod` 生产口径部署验收。
+- 用户已确认 release 与部署验收均已通过，登录 / 回调 / 权限 / 核心页面当前无明显阻塞问题。
+- `radish-dbmigrate` 已在本轮补齐首次真实拉取、初始化与启动顺序验证，`local / test / prod` 三套口径当前都已形成真实交付事实。
+
+### 本轮补齐事实
+
+- `DbMigrate` 容器化初始化当前已不再只是“静态编排正确”或 “workflow 已纳入统一发布链”，而是已经过真实部署验证。
+- `AuthUi__ShowTestAccountHint` 当前已作为显式配置项稳定用于测试与正式发布，不再依赖环境名或域名形态隐式推断。
+- 容器 / 发布态日志目录识别修复当前已进入真实发布环境，不再优先落到 `Logs/Unknown/`。
+- `Deploy/.env.test.example` / `Deploy/.env.prod.example` 的默认镜像地址与 tag 示例已和当前 `test-latest / latest` 轨道口径对齐，正式环境仍推荐固定到明确 `v*-release`。
+
+### 当前结论
+
+- 结果：`首版 dev`、测试部署与正式发布链路均已完成当前批次收口
+- 工程判断：当前最小 CI、镜像产出、`DbMigrate` 初始化、测试部署与正式发布验收均已形成闭环，后续不再把“首次真实发布验证”作为待办事项
+- 下一阶段更准确的表述应为：`发布链路转入回归维护，当前主线切换到论坛 / 聊天等社区体验与运营能力优化`
+
+### 下一动作
+
+1. 继续以 `master` PR 质量门禁与 `validate:baseline` / `validate:baseline:host` 作为跨层改动默认回归入口。
+2. 维持当前 `DbMigrate -> Api/Auth -> Gateway`、`AuthUi__ShowTestAccountHint` 与日志目录识别等发布口径冻结，避免文档与真实行为再次漂移。
+3. 推进论坛置顶、聊天室图片草稿发送与论坛发帖分类状态同步等发布后优化项。

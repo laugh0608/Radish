@@ -572,6 +572,37 @@ if (hasAccessToken()) {
 
 **详细文档**：参见 [认证服务统一指南](../guide/authentication-service.md)
 
+### 7.3 附件与媒体协议
+
+前端当前已经统一采用“`attachmentId` 为真值、URL 运行时解析”的媒体口径：
+
+- 帖子、评论、Wiki 正文中的图片 / 文档链接统一保存为 `attachment://{id}`，而不是完整 URL。
+- `MarkdownEditor` 与 `RichTextMarkdownEditor` 在上传成功后统一调用 `buildAttachmentMarkdownUrl()` 写回正文。
+- `MarkdownRenderer`、论坛富文本工作区、聊天室图片预览等展示链路统一通过 `buildAttachmentAssetUrl()` / `resolveConfiguredMediaUrl()` 解析当前环境下的真实访问地址。
+- `AttachmentVo.voUrl` / `voThumbnailUrl`、`StickerVo.voImageUrl` / `voThumbnailUrl`、`ProductVo.voIcon` / `voCoverImage`、`ChannelMessageVo.voImageUrl` / `voImageThumbnailUrl` 都属于运行时派生展示字段，不是前端回写数据库的依据。
+
+推荐模式如下：
+
+```typescript
+import {
+  buildAttachmentAssetUrl,
+  buildAttachmentMarkdownUrl,
+  parseAttachmentMarkdownUrl,
+} from '@radish/ui';
+
+const markdownUrl = buildAttachmentMarkdownUrl(result.attachmentId, {
+  displayVariant: 'thumbnail',
+  scalePercent: 60,
+});
+
+const parsed = parseAttachmentMarkdownUrl(markdownUrl);
+const previewUrl = parsed
+  ? buildAttachmentAssetUrl(parsed.attachmentId, parsed.displayVariant)
+  : null;
+```
+
+这套约束的目标只有一个：前端可以跟随当前 `baseUrl`、Gateway、反向代理与部署域名自然切换，而不会把旧域名硬编码进业务数据。
+
 ## 8. 设计系统
 
 ### 8.1 Design Tokens
@@ -624,7 +655,7 @@ Frontend/radish.client/src/stores/
 - `Dock`
 - `Desktop`
 - `DesktopWindow`
-- `WelcomeApp`（当前已完成主题 token 接入与内容口径重写）
+- `WelcomeApp`（当前已完成主题 token 接入、内容口径重写与游客安全打开）
 
 当前已完成首轮文案资源化的高频范围：
 
@@ -640,6 +671,7 @@ Frontend/radish.client/src/stores/
 
 - 论坛发帖入口已从传统表单弹窗重构为“创作器工作区”，支持 `Markdown / 富文本` 双模式输入、右侧帖子设置区、全屏创作与“富文本输入体验 + Markdown 统一存储”的编辑策略
 - 论坛评论入口已重构为轻量讨论面板：评论编辑器采用紧凑卡片式结构，支持 `@提及`、贴图、图片、附件与预览切换；评论弹层外框也已单独收口，避免继续复用过厚的通用白板样式
+- 正文中的图片 / 附件当前统一保存为 `attachment://{id}`，显示时再通过 `buildAttachmentAssetUrl()` 解析为当前环境可访问的资源地址，从业务层面解除对部署域名的强依赖
 
 当前约束：
 
@@ -655,7 +687,7 @@ Frontend/radish.client/src/stores/
 - `npm run build --workspace=radish.client` 已在系统环境构建通过；
 - 桌面余额 / 经验值状态文案、Dock 少量交互色与个人中心尾部样式已完成当前批次收口。
 - 最新一轮手工联调已确认：`Shell` 的窗口层点击拦截已修复，Dock 顶部定位与状态按钮可读性已重新对齐，桌面图标已回到轻量图标 + 文案的列式排布，避免固定网格造成滚动列表感。
-- 欢迎页当前已完成主题适配、旧口径清理与主内容重写，但长文案仍为中文，后续应继续纳入 `i18n` 范围。
+- 欢迎页当前已完成主题适配、长文案双语资源化与游客安全模式；未登录时也可直接打开，并展示游客 badge、说明与登录 CTA，不再依赖先拿到用户名。
 
 ### 8.1.2 当前 i18n 实现落点
 

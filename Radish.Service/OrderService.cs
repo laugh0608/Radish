@@ -25,6 +25,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private readonly IProductService _productService;
     private readonly IUserBenefitService _userBenefitService;
     private readonly ICoinService _coinService;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly INotificationService? _notificationService;
 
     public OrderService(
@@ -35,6 +36,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         IProductService productService,
         IUserBenefitService userBenefitService,
         ICoinService coinService,
+        IAttachmentUrlResolver attachmentUrlResolver,
         INotificationService? notificationService = null)
         : base(mapper, orderRepository)
     {
@@ -44,6 +46,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         _productService = productService;
         _userBenefitService = userBenefitService;
         _coinService = coinService;
+        _attachmentUrlResolver = attachmentUrlResolver;
         _notificationService = notificationService;
     }
 
@@ -104,7 +107,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 UserId = userId,
                 ProductId = product.Id,
                 ProductName = product.Name,
-                ProductIcon = product.Icon,
+                ProductIconAttachmentId = product.IconAttachmentId,
                 ProductType = product.ProductType,
                 BenefitType = product.BenefitType,
                 ConsumableType = product.ConsumableType,
@@ -299,6 +302,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 orderByType: OrderByType.Desc);
 
             var orderVos = Mapper.Map<List<OrderListItemVo>>(orders);
+            FillOrderListItemUrls(orderVos);
 
             return new PageModel<OrderListItemVo>
             {
@@ -324,7 +328,9 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId && !o.IsDeleted);
             if (order == null) return null;
 
-            return Mapper.Map<OrderVo>(order);
+            var orderVo = Mapper.Map<OrderVo>(order);
+            FillOrderUrl(orderVo);
+            return orderVo;
         }
         catch (Exception ex)
         {
@@ -341,7 +347,9 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var order = await _orderRepository.QueryFirstAsync(o => o.OrderNo == orderNo && !o.IsDeleted);
             if (order == null) return null;
 
-            return Mapper.Map<OrderVo>(order);
+            var orderVo = Mapper.Map<OrderVo>(order);
+            FillOrderUrl(orderVo);
+            return orderVo;
         }
         catch (Exception ex)
         {
@@ -427,6 +435,8 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                     vo.VoUserName = userName;
                 }
             }
+
+            FillOrderUrls(orderVos);
 
             return new PageModel<OrderVo>
             {
@@ -529,5 +539,36 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private static long NormalizeTenantId(long tenantId)
     {
         return tenantId > 0 ? tenantId : 0;
+    }
+
+    private void FillOrderUrls(List<OrderVo> orders)
+    {
+        foreach (var order in orders)
+        {
+            FillOrderUrl(order);
+        }
+    }
+
+    private void FillOrderUrl(OrderVo order)
+    {
+        order.VoProductIcon = ResolveAttachmentUrl(order.VoProductIconAttachmentId);
+    }
+
+    private void FillOrderListItemUrls(List<OrderListItemVo> orders)
+    {
+        foreach (var order in orders)
+        {
+            order.VoProductIcon = ResolveAttachmentUrl(order.VoProductIconAttachmentId);
+        }
+    }
+
+    private string? ResolveAttachmentUrl(long? attachmentId)
+    {
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
+        {
+            return null;
+        }
+
+        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
     }
 }

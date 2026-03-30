@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
+import { buildAttachmentAssetUrl, parseAttachmentMarkdownUrl, resolveConfiguredMediaUrl } from '@radish/ui';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import type { CommentNode as CommentNodeType, ReactionSummaryVo } from '@/api/forum';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
@@ -118,18 +119,27 @@ const parseStickerUri = (rawSrc: string): ParsedStickerUri | null => {
 };
 
 const parseImageMeta = (src: string) => {
+  const attachmentMeta = parseAttachmentMarkdownUrl(src);
+  if (attachmentMeta) {
+    return {
+      displaySrc: buildAttachmentAssetUrl(attachmentMeta.attachmentId, attachmentMeta.displayVariant),
+      fullSrc: buildAttachmentAssetUrl(attachmentMeta.attachmentId, 'original'),
+    };
+  }
+
   const [baseSrc, hash] = src.split('#');
+  const normalizedBaseSrc = resolveConfiguredMediaUrl(baseSrc || src);
   if (!hash || !hash.startsWith('radish:')) {
     return {
-      displaySrc: baseSrc || src,
-      fullSrc: baseSrc || src,
+      displaySrc: normalizedBaseSrc,
+      fullSrc: normalizedBaseSrc,
     };
   }
 
   const params = new URLSearchParams(hash.slice('radish:'.length));
   return {
-    displaySrc: baseSrc || src,
-    fullSrc: params.get('full') || baseSrc || src,
+    displaySrc: normalizedBaseSrc,
+    fullSrc: resolveConfiguredMediaUrl(params.get('full') || baseSrc || src),
   };
 };
 
@@ -198,7 +208,7 @@ const renderCommentHtml = (content: string, stickerMap?: MarkdownStickerMap): st
       const stickerTitle = alt || mapped?.name || `${stickerMeta.groupCode}/${stickerMeta.stickerCode}`;
 
       if (isSafeStickerUrl(resolvedSrc)) {
-        const safeSrc = escapeHtml(resolvedSrc);
+        const safeSrc = escapeHtml(resolveConfiguredMediaUrl(resolvedSrc));
         const safeTitle = escapeHtml(stickerTitle);
         html += `<img src="${safeSrc}" alt="${safeTitle}" title="${safeTitle}" class="stickerInline" loading="lazy" draggable="false" />`;
       } else {

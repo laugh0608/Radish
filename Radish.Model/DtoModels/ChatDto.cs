@@ -26,11 +26,4 @@ public class SendChannelMessageDto
     /// <summary>图片附件 Id</summary>
     public long? AttachmentId { get; set; }
 
-    /// <summary>图片地址</summary>
-    [StringLength(500, ErrorMessage = "图片地址长度不能超过 500")]
-    public string? ImageUrl { get; set; }
-
-    /// <summary>图片缩略图地址</summary>
-    [StringLength(500, ErrorMessage = "图片缩略图地址长度不能超过 500")]
-    public string? ImageThumbnailUrl { get; set; }
 }

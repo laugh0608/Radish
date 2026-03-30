@@ -23,9 +23,9 @@ public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(Length = 100, IsNullable = false)]
     public string UserName { get; set; } = string.Empty;
 
-    /// <summary>发送者头像（冗余）</summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? UserAvatarUrl { get; set; }
+    /// <summary>发送者头像附件快照 Id</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? UserAvatarAttachmentIdSnapshot { get; set; }
 
     /// <summary>消息类型</summary>
     [SugarColumn(IsNullable = false)]
@@ -42,14 +42,6 @@ public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     /// <summary>图片附件 Id</summary>
     [SugarColumn(IsNullable = true)]
     public long? AttachmentId { get; set; }
-
-    /// <summary>图片原图地址</summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? ImageUrl { get; set; }
-
-    /// <summary>图片缩略图地址</summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? ImageThumbnailUrl { get; set; }
 
     /// <summary>租户 Id</summary>
     [SugarColumn(IsNullable = false)]

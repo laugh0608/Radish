@@ -12,8 +12,8 @@ import {
 } from '@radish/ui';
 import { Upload } from 'antd';
 import type { UploadProps } from 'antd';
-import { getApiClientConfig } from '@radish/http';
 import { PlusOutlined } from '@radish/ui';
+import { uploadAttachmentImage } from '@/api/attachmentApi';
 import {
   checkGroupCode,
   createStickerGroup,
@@ -37,78 +37,15 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
   const [loading, setLoading] = useState(false);
   const [codeChecking, setCodeChecking] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
-  const coverImageUrl = Form.useWatch('coverImageUrl', form) || '';
-  const coverPreviewUrl = getAvatarUrl(coverImageUrl);
+  const coverAttachmentId = Form.useWatch('coverAttachmentId', form);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | undefined>(undefined);
 
-  const uploadCoverImage = (file: File, onProgress: (percent: number) => void): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const config = getApiClientConfig();
-      const normalizedBaseUrl = (config.baseUrl || '').trim().replace(/\/$/, '');
-      if (!normalizedBaseUrl) {
-        reject(new Error('API baseUrl 未配置'));
-        return;
-      }
+  const normalizeOptionalAttachmentId = (value: unknown): string | null => {
+    if (typeof value === 'string' && /^[1-9]\d*$/.test(value.trim())) {
+      return value.trim();
+    }
 
-      const uploadUrl = `${normalizedBaseUrl}/api/v1/Attachment/UploadImage`;
-      const xhr = new XMLHttpRequest();
-      xhr.open('POST', uploadUrl, true);
-
-      const token = config.getToken?.();
-      if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-      }
-
-      xhr.upload.onprogress = (event) => {
-        if (!event.lengthComputable) {
-          return;
-        }
-
-        const percent = Math.round((event.loaded / event.total) * 100);
-        onProgress(Math.min(100, Math.max(0, percent)));
-      };
-
-      xhr.onerror = () => {
-        reject(new Error('封面图上传失败，请检查网络'));
-      };
-
-      xhr.onload = () => {
-        if (xhr.status < 200 || xhr.status >= 300) {
-          reject(new Error(`封面图上传失败（HTTP ${xhr.status}）`));
-          return;
-        }
-
-        let payload: Record<string, unknown> | null = null;
-        try {
-          payload = JSON.parse(xhr.responseText) as Record<string, unknown>;
-        } catch {
-          reject(new Error('封面图上传响应解析失败'));
-          return;
-        }
-
-        const isSuccess = Boolean(payload.isSuccess ?? payload.IsSuccess);
-        const messageText = String(payload.messageInfo ?? payload.MessageInfo ?? '封面图上传失败');
-        if (!isSuccess) {
-          reject(new Error(messageText));
-          return;
-        }
-
-        const responseData = (payload.responseData ?? payload.ResponseData) as Record<string, unknown> | undefined;
-        const uploadedUrl = String(responseData?.voUrl ?? responseData?.VoUrl ?? responseData?.url ?? '');
-        if (!uploadedUrl) {
-          reject(new Error('封面图上传成功但未返回 URL'));
-          return;
-        }
-
-        resolve(uploadedUrl);
-      };
-
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('businessType', 'StickerCover');
-      formData.append('generateThumbnail', 'true');
-      formData.append('removeExif', 'true');
-      xhr.send(formData);
-    });
+    return null;
   };
 
   const handleCoverUpload: UploadProps['customRequest'] = async (options) => {
@@ -138,13 +75,13 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
 
     try {
       setCoverUploading(true);
-      const uploadedUrl = await uploadCoverImage(file, (percent) => {
+      const uploaded = await uploadAttachmentImage(file, { businessType: 'StickerCover' }, (percent) => {
         options.onProgress?.({ percent });
       });
-
-      form.setFieldValue('coverImageUrl', uploadedUrl);
-      options.onSuccess?.({ url: uploadedUrl });
-      message.success('封面图上传成功');
+      form.setFieldValue('coverAttachmentId', uploaded.attachmentId);
+      setCoverPreviewUrl(getAvatarUrl(uploaded.thumbnailUrl || uploaded.url));
+      options.onSuccess?.(uploaded);
+      message.success('封面图上传成功，已回填附件 ID');
     } catch (error) {
       const uploadError = error instanceof Error ? error : new Error('封面图上传失败');
       options.onError?.(uploadError);
@@ -181,6 +118,11 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
   };
 
   const handleSubmit = async () => {
+    if (coverUploading) {
+      message.warning('封面图仍在上传中，请稍候提交');
+      return;
+    }
+
     try {
       const values = await form.validateFields();
       setLoading(true);
@@ -189,7 +131,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
         name: values.name.trim(),
         code: mode === 'create' ? values.code.trim().toLowerCase() : undefined,
         description: values.description?.trim() || undefined,
-        coverImageUrl: values.coverImageUrl?.trim() || undefined,
+        coverAttachmentId: normalizeOptionalAttachmentId(values.coverAttachmentId),
         groupType: values.groupType,
         isEnabled: values.isEnabled,
         sort: values.sort,
@@ -221,6 +163,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
   useEffect(() => {
     if (!visible) {
       form.resetFields();
+      setCoverPreviewUrl(undefined);
       return;
     }
 
@@ -229,11 +172,12 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
         name: group.voName,
         code: group.voCode,
         description: group.voDescription,
-        coverImageUrl: group.voCoverImageUrl,
+        coverAttachmentId: group.voCoverAttachmentId,
         groupType: group.voGroupType,
         isEnabled: group.voIsEnabled,
         sort: group.voSort,
       });
+      setCoverPreviewUrl(getAvatarUrl(group.voCoverImageUrl));
       return;
     }
 
@@ -241,11 +185,12 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
       name: '',
       code: '',
       description: '',
-      coverImageUrl: '',
+      coverAttachmentId: undefined,
       groupType: 1,
       isEnabled: true,
       sort: 0,
     });
+    setCoverPreviewUrl(undefined);
   }, [visible, mode, group, form]);
 
   return (
@@ -256,7 +201,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
         void handleSubmit();
       }}
       onCancel={onCancel}
-      confirmLoading={loading}
+      confirmLoading={loading || coverUploading}
       width={680}
       destroyOnHidden
       forceRender
@@ -303,9 +248,9 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
 
         <Form.Item label="封面图">
           <Form.Item
-            name="coverImageUrl"
+            name="coverAttachmentId"
             noStyle
-            rules={[{ max: 500, message: '封面图地址不能超过500个字符' }]}
+            rules={[{ pattern: /^[1-9]\d*$/, message: '附件 ID 必须为正整数' }]}
           >
             <Input style={{ display: 'none' }} />
           </Form.Item>
@@ -348,9 +293,10 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
                 </Button>
               </Upload>
               <Button
-                disabled={!coverImageUrl || coverUploading || loading}
+                disabled={!coverAttachmentId || coverUploading || loading}
                 onClick={() => {
-                  form.setFieldValue('coverImageUrl', '');
+                  form.setFieldValue('coverAttachmentId', undefined);
+                  setCoverPreviewUrl(undefined);
                 }}
               >
                 清空封面
@@ -358,8 +304,8 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
             </Space>
 
             <Input
-              placeholder="上传后自动回填封面 URL"
-              value={coverImageUrl}
+              placeholder="上传后自动回填附件 ID"
+              value={coverAttachmentId ? String(coverAttachmentId) : ''}
               readOnly
             />
           </Space>

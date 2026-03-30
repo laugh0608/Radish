@@ -32,6 +32,7 @@ import { usePermission } from '@/hooks/usePermission';
 import type { Product, ProductCategory } from '../../api/types';
 import { ProductType } from '../../api/types';
 import { ProductForm } from './ProductForm';
+import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
 import './ProductList.css';
 
@@ -189,7 +190,7 @@ export const ProductList = () => {
       width: 100,
       render: (coverImage: string, record: Product) => (
         <Image
-          src={coverImage || record.voIcon || '/placeholder.png'}
+          src={getAvatarUrl(coverImage || record.voIcon) || '/placeholder.png'}
           alt={record.voName}
           width={60}
           height={60}

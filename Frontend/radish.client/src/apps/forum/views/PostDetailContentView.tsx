@@ -24,13 +24,17 @@ const CreateCommentForm = lazy(() =>
 interface PostDetailContentViewProps {
   post: PostDetail;
   comments: CommentNode[];
+  commentTotal: number;
+  commentPageSize: number;
   loadingPostDetail: boolean;
   loadingComments: boolean;
+  loadingMoreComments: boolean;
   displayTimeZone: string;
   isLiked: boolean;
   isAuthenticated: boolean;
   showFloatingTools?: boolean;
   currentUserId: number;
+  canToggleTop: boolean;
   commentSortBy: 'newest' | 'hottest' | null;
   questionAnswerSort: QuestionAnswerSort;
   questionAnswerFilter: QuestionAnswerFilter;
@@ -47,6 +51,7 @@ interface PostDetailContentViewProps {
   onAcceptAnswer: (answerId: number) => Promise<void>;
   onQuestionAnswerSortChange: (sortBy: QuestionAnswerSort) => Promise<void>;
   onQuestionAnswerFilterChange: (filterBy: QuestionAnswerFilter) => void;
+  onToggleTop: (isTop: boolean) => Promise<void>;
   onEdit: (postId: number) => void;
   onViewPostHistory: (postId: number) => void;
   onDelete: (postId: number) => void;
@@ -61,6 +66,7 @@ interface PostDetailContentViewProps {
     pageIndex: number,
     pageSize: number
   ) => Promise<CommentNode[]>;
+  onLoadMoreComments: (postId: number) => Promise<void>;
   onCreateComment: (content: string) => Promise<void>;
   onCancelReply: () => void;
   onReactionError?: (message: string) => void;
@@ -92,13 +98,17 @@ const collectCommentIds = (nodes: CommentNode[]): number[] => {
 export const PostDetailContentView = ({
   post,
   comments,
+  commentTotal,
+  commentPageSize,
   loadingPostDetail,
   loadingComments,
+  loadingMoreComments,
   displayTimeZone,
   isLiked,
   isAuthenticated,
   showFloatingTools = true,
   currentUserId,
+  canToggleTop,
   commentSortBy,
   questionAnswerSort,
   questionAnswerFilter,
@@ -114,6 +124,7 @@ export const PostDetailContentView = ({
   onAcceptAnswer,
   onQuestionAnswerSortChange,
   onQuestionAnswerFilterChange,
+  onToggleTop,
   onEdit,
   onViewPostHistory,
   onDelete,
@@ -124,6 +135,7 @@ export const PostDetailContentView = ({
   onLikeComment,
   onReplyComment,
   onLoadMoreChildren,
+  onLoadMoreComments,
   onCreateComment,
   onCancelReply,
   onReactionError,
@@ -254,6 +266,8 @@ export const PostDetailContentView = ({
               onAnswerFilterChange={onQuestionAnswerFilterChange}
               isAuthenticated={isAuthenticated}
               currentUserId={currentUserId}
+              canToggleTop={canToggleTop}
+              onToggleTop={onToggleTop}
               onEdit={onEdit}
               onViewHistory={onViewPostHistory}
               onDelete={onDelete}
@@ -275,10 +289,14 @@ export const PostDetailContentView = ({
             <CommentTree
               comments={comments}
               loading={loadingComments}
+              loadingMoreRootComments={loadingMoreComments}
               hasPost={true}
               displayTimeZone={displayTimeZone}
               currentUserId={currentUserId}
               pageSize={5}
+              rootCommentTotal={commentTotal}
+              loadedRootCommentCount={comments.length}
+              rootCommentPageSize={commentPageSize}
               sortBy={commentSortBy}
               onSortChange={onCommentSortChange}
               onDeleteComment={onDeleteComment}
@@ -290,6 +308,7 @@ export const PostDetailContentView = ({
                 setIsCommentSheetOpen(true);
               }}
               onLoadMoreChildren={handleLoadMoreChildren}
+              onLoadMoreRootComments={() => onLoadMoreComments(post.voId)}
               stickerMap={stickerMap}
               reactionMap={reactionsState.commentItemsMap}
               isAuthenticated={isAuthenticated}

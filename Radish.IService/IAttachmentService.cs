@@ -53,6 +53,27 @@ public interface IAttachmentService : IBaseService<Attachment, AttachmentVo>
     Task<AttachmentVo?> FindByHashAsync(string fileHash);
 
     /// <summary>
+    /// 获取附件轻量资源信息
+    /// </summary>
+    /// <param name="attachmentId">附件 ID</param>
+    /// <returns>附件轻量资源信息</returns>
+    Task<AttachmentAssetDto?> GetAttachmentAssetAsync(long attachmentId);
+
+    /// <summary>
+    /// 获取用户最新头像资源信息
+    /// </summary>
+    /// <param name="userId">用户 ID</param>
+    /// <returns>头像资源信息</returns>
+    Task<AttachmentAssetDto?> GetLatestAvatarAssetAsync(long userId);
+
+    /// <summary>
+    /// 批量获取用户最新头像资源信息
+    /// </summary>
+    /// <param name="userIds">用户 ID 列表</param>
+    /// <returns>用户头像资源映射</returns>
+    Task<Dictionary<long, AttachmentAssetDto>> GetLatestAvatarAssetMapAsync(IReadOnlyCollection<long> userIds);
+
+    /// <summary>
     /// 更新附件的业务关联
     /// </summary>
     /// <param name="attachmentId">附件 ID</param>
@@ -73,6 +94,11 @@ public interface IAttachmentService : IBaseService<Attachment, AttachmentVo>
     /// <param name="attachmentId">附件 ID</param>
     /// <param name="requestUserId">请求用户 ID（可选，用于权限检查）</param>
     /// <param name="requestUserRoles">请求用户角色（可选，用于权限检查）</param>
+    /// <param name="variant">附件访问变体</param>
     /// <returns>文件流和文件信息</returns>
-    Task<(Stream? stream, AttachmentVo? attachment)> GetDownloadStreamAsync(long attachmentId, long? requestUserId = null, List<string>? requestUserRoles = null);
+    Task<(Stream? stream, AttachmentAssetDto? attachment)> GetDownloadStreamAsync(
+        long attachmentId,
+        long? requestUserId = null,
+        List<string>? requestUserRoles = null,
+        AttachmentUrlVariant variant = AttachmentUrlVariant.Original);
 }

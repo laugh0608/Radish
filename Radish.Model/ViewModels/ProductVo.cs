@@ -14,10 +14,16 @@ public class ProductVo
     /// <summary>商品描述</summary>
     public string? VoDescription { get; set; }
 
-    /// <summary>商品图标</summary>
+    /// <summary>商品图标附件 Id</summary>
+    public long? VoIconAttachmentId { get; set; }
+
+    /// <summary>商品图标 URL</summary>
     public string? VoIcon { get; set; }
 
-    /// <summary>商品封面图</summary>
+    /// <summary>商品封面附件 Id</summary>
+    public long? VoCoverAttachmentId { get; set; }
+
+    /// <summary>商品封面图 URL</summary>
     public string? VoCoverImage { get; set; }
 
     /// <summary>分类 ID</summary>
@@ -125,10 +131,16 @@ public class ProductListItemVo
     /// <summary>商品名称</summary>
     public string VoName { get; set; } = string.Empty;
 
-    /// <summary>商品图标</summary>
+    /// <summary>商品图标附件 Id</summary>
+    public long? VoIconAttachmentId { get; set; }
+
+    /// <summary>商品图标 URL</summary>
     public string? VoIcon { get; set; }
 
-    /// <summary>商品封面图</summary>
+    /// <summary>商品封面附件 Id</summary>
+    public long? VoCoverAttachmentId { get; set; }
+
+    /// <summary>商品封面图 URL</summary>
     public string? VoCoverImage { get; set; }
 
     /// <summary>分类 ID</summary>
@@ -165,11 +177,11 @@ public class CreateProductDto
     /// <summary>商品描述</summary>
     public string? Description { get; set; }
 
-    /// <summary>商品图标</summary>
-    public string? Icon { get; set; }
+    /// <summary>商品图标附件 Id</summary>
+    public long? IconAttachmentId { get; set; }
 
-    /// <summary>商品封面图</summary>
-    public string? CoverImage { get; set; }
+    /// <summary>商品封面附件 Id</summary>
+    public long? CoverAttachmentId { get; set; }
 
     /// <summary>分类 ID</summary>
     public string CategoryId { get; set; } = string.Empty;

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
+using Radish.IService;
 using Radish.IService.Base;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -26,13 +27,16 @@ public class CategoryController : ControllerBase
 {
     private readonly IBaseService<Category, CategoryVo> _categoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public CategoryController(
         IBaseService<Category, CategoryVo> categoryService,
-        ICurrentUserAccessor currentUserAccessor)
+        ICurrentUserAccessor currentUserAccessor,
+        IAttachmentUrlResolver attachmentUrlResolver)
     {
         _categoryService = categoryService;
         _currentUserAccessor = currentUserAccessor;
+        _attachmentUrlResolver = attachmentUrlResolver;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -46,6 +50,7 @@ public class CategoryController : ControllerBase
     public async Task<MessageModel> GetTopCategories()
     {
         var categories = await _categoryService.QueryAsync(c => c.ParentId == null && c.IsEnabled && !c.IsDeleted);
+        FillCategoryUrls(categories);
         return BuildSuccess(categories);
     }
 
@@ -58,6 +63,7 @@ public class CategoryController : ControllerBase
     public async Task<MessageModel> GetChildCategories(long parentId)
     {
         var categories = await _categoryService.QueryAsync(c => c.ParentId == parentId && c.IsEnabled && !c.IsDeleted);
+        FillCategoryUrls(categories);
         return BuildSuccess(categories);
     }
 
@@ -76,6 +82,7 @@ public class CategoryController : ControllerBase
             return BuildError(HttpStatusCodeEnum.NotFound, "分类不存在");
         }
 
+        FillCategoryUrl(category);
         return BuildSuccess(category);
     }
 
@@ -114,6 +121,7 @@ public class CategoryController : ControllerBase
             c => c.CreateTime,
             OrderByType.Desc);
 
+        FillCategoryUrls(data);
         return BuildSuccess(new PageModel<CategoryVo>
         {
             Page = safePageIndex,
@@ -146,8 +154,8 @@ public class CategoryController : ControllerBase
             {
                 Slug = NormalizeSlug(createDto.Name, createDto.Slug),
                 Description = createDto.Description ?? string.Empty,
-                Icon = createDto.Icon ?? string.Empty,
-                CoverImage = createDto.CoverImage ?? string.Empty,
+                IconAttachmentId = createDto.IconAttachmentId,
+                CoverAttachmentId = createDto.CoverAttachmentId,
                 ParentId = createDto.ParentId,
                 Level = level,
                 OrderSort = createDto.OrderSort,
@@ -209,8 +217,8 @@ public class CategoryController : ControllerBase
                     Name = updateDto.Name.Trim(),
                     Slug = NormalizeSlug(updateDto.Name, updateDto.Slug),
                     Description = updateDto.Description ?? string.Empty,
-                    Icon = updateDto.Icon ?? string.Empty,
-                    CoverImage = updateDto.CoverImage ?? string.Empty,
+                    IconAttachmentId = updateDto.IconAttachmentId,
+                    CoverAttachmentId = updateDto.CoverAttachmentId,
                     ParentId = updateDto.ParentId,
                     Level = level,
                     OrderSort = updateDto.OrderSort,
@@ -346,6 +354,30 @@ public class CategoryController : ControllerBase
     {
         var rawValue = string.IsNullOrWhiteSpace(slug) ? name : slug;
         return rawValue.Trim().ToLowerInvariant().Replace(" ", "-", StringComparison.Ordinal);
+    }
+
+    private void FillCategoryUrls(List<CategoryVo> categories)
+    {
+        foreach (var category in categories)
+        {
+            FillCategoryUrl(category);
+        }
+    }
+
+    private void FillCategoryUrl(CategoryVo category)
+    {
+        category.VoIcon = ResolveAttachmentUrl(category.VoIconAttachmentId);
+        category.VoCoverImage = ResolveAttachmentUrl(category.VoCoverAttachmentId);
+    }
+
+    private string? ResolveAttachmentUrl(long? attachmentId)
+    {
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
+        {
+            return null;
+        }
+
+        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
     }
 
     private static MessageModel BuildSuccess(object? data, string message = "获取成功")

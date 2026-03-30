@@ -45,13 +45,6 @@ public class MinioFileStorage : IFileStorage
         throw new NotImplementedException("MinIO 存储下载功能尚未实现");
     }
 
-    public string GetFileUrl(string filePath)
-    {
-        // TODO: 根据 MinIO 配置生成访问 URL
-        // 如果是私有桶，需要生成临时签名 URL
-        return $"https://{_options.Endpoint}/{_options.BucketName}/{filePath}";
-    }
-
     public Task<bool> ExistsAsync(string filePath)
     {
         throw new NotImplementedException("MinIO 存储存在检查功能尚未实现");
@@ -65,6 +58,6 @@ public class MinioFileStorage : IFileStorage
     public string GetFullPath(string relativePath)
     {
         // MinIO 是对象存储，没有本地文件系统路径概念
-        return GetFileUrl(relativePath);
+        return relativePath;
     }
 }

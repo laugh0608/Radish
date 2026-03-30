@@ -219,6 +219,12 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-brand-primary) 12%, transparent);
 }
 
+.titleInputError,
+.controlAttention {
+  border-color: color-mix(in srgb, var(--theme-state-danger) 68%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-state-danger) 12%, transparent);
+}
+
 .titleCount {
   flex-shrink: 0;
   padding: 4px 8px;
@@ -254,6 +260,29 @@
 .workspaceRich {
   display: flex;
   justify-content: center;
+}
+
+.validationBanner {
+  margin: 0 16px 10px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--theme-state-danger) 22%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--theme-state-danger) 6%, var(--theme-bg-surface) 94%);
+}
+
+.validationTitle {
+  display: block;
+  color: var(--theme-text-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.validationList {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: var(--theme-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .editorFrame {
@@ -445,6 +474,11 @@
   color: var(--theme-text-secondary);
 }
 
+.helperTextStrong {
+  color: var(--theme-text-primary);
+  font-weight: 600;
+}
+
 .summaryCardValue,
 .sectionTitle,
 .featureTitle,
@@ -618,6 +652,13 @@
   cursor: not-allowed;
 }
 
+.publishButtonDisabled {
+  border-color: var(--theme-border-soft);
+  background: color-mix(in srgb, var(--theme-bg-component) 82%, var(--theme-bg-surface) 18%);
+  color: var(--theme-text-placeholder);
+  cursor: not-allowed;
+}
+
 .cancelButton {
   padding: 8px 12px;
   font-size: 12px;
@@ -700,6 +741,11 @@
   .composerHeader {
     padding-left: 14px;
     padding-right: 14px;
+  }
+
+  .validationBanner {
+    margin-left: 14px;
+    margin-right: 14px;
   }
 
   .workspace {

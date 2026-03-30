@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { WindowState } from '@/desktop/types';
 import { getAppById } from '@/desktop/AppRegistry';
 import { canAccessApp } from '@/desktop/appAccess';
+import { hasAuthenticatedSession } from '@/services/authSession';
 import { useAuthStore } from './authStore';
 import { useUserStore } from './userStore';
 import { toast } from '@radish/ui/toast';
@@ -59,7 +60,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
 
     const authState = useAuthStore.getState();
     const userState = useUserStore.getState();
-    const isAuthenticated = authState.isAuthenticated || userState.isAuthenticated();
+    const isAuthenticated = hasAuthenticatedSession(authState.isAuthenticated, userState.userId);
 
     if (!canAccessApp(app, {
       isAuthenticated,

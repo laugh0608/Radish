@@ -28,25 +28,23 @@ public class PostController : ControllerBase
 {
     private readonly IPostService _postService;
     private readonly IContentModerationService _contentModerationService;
-    private readonly IBaseService<Attachment, AttachmentVo> _attachmentService;
-    private readonly IBaseService<Comment, CommentVo> _commentService;
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public PostController(
         IPostService postService,
         IContentModerationService contentModerationService,
-        IBaseService<Attachment, AttachmentVo> attachmentService,
-        IBaseService<Comment, CommentVo> commentService,
+        IAttachmentService? attachmentService,
+        IBaseService<Comment, CommentVo>? commentService,
         IUserBrowseHistoryService userBrowseHistoryService,
         ICurrentUserAccessor currentUserAccessor)
     {
         _postService = postService;
         _contentModerationService = contentModerationService;
-        _attachmentService = attachmentService;
-        _commentService = commentService;
         _userBrowseHistoryService = userBrowseHistoryService;
         _currentUserAccessor = currentUserAccessor;
+        _ = attachmentService;
+        _ = commentService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -78,7 +76,7 @@ public class PostController : ControllerBase
             };
         }
 
-        await FillPostAvatarAndInteractorsAsync(new List<PostVo> { post });
+        await _postService.FillPostAvatarAndInteractorsAsync(new List<PostVo> { post });
 
         if (Current.UserId > 0)
         {
@@ -90,7 +88,7 @@ public class PostController : ControllerBase
                 TargetId = post.VoId,
                 Title = post.VoTitle,
                 Summary = post.VoSummary,
-                CoverImage = post.VoCoverImage,
+                CoverAttachmentId = post.VoCoverAttachmentId,
                 RoutePath = $"/forum/post/{post.VoId}",
                 OperatorName = Current.UserName
             });
@@ -231,15 +229,17 @@ public class PostController : ControllerBase
                 case "hottest":
                     // 按热度排序：置顶在前，然后按热度值排序（综合浏览、点赞、评论）
                     // 热度计算公式：ViewCount + LikeCount*2 + CommentCount*3
-                    var allPosts = await _postService.QueryAsync(baseCondition);
-                    totalCount = allPosts.Count;
-
-                    data = allPosts
-                        .OrderByDescending(p => p.VoIsTop)
-                        .ThenByDescending(p => p.VoViewCount + p.VoLikeCount * 2 + p.VoCommentCount * 3)
-                        .Skip((pageIndex - 1) * pageSize)
-                        .Take(pageSize)
-                        .ToList();
+                    (data, totalCount) = await _postService.QueryPageAsync(
+                        baseCondition,
+                        pageIndex,
+                        pageSize,
+                        p => new
+                        {
+                            p.IsTop,
+                            HotScore = p.ViewCount + p.LikeCount * 2 + p.CommentCount * 3,
+                            p.CreateTime
+                        },
+                        SqlSugar.OrderByType.Desc);
                     break;
 
                 case "essence":
@@ -269,7 +269,7 @@ public class PostController : ControllerBase
         if (data.Any())
         {
             await _postService.FillPostListMetadataAsync(data);
-            await FillPostAvatarAndInteractorsAsync(data);
+            await _postService.FillPostAvatarAndInteractorsAsync(data);
         }
 
         var pageModel = new PageModel<PostVo>
@@ -288,97 +288,6 @@ public class PostController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = pageModel
         };
-    }
-
-    private async Task FillPostAvatarAndInteractorsAsync(List<PostVo> posts)
-    {
-        if (posts.Count == 0)
-        {
-            return;
-        }
-
-        var postIds = posts
-            .Select(post => post.VoId)
-            .Distinct()
-            .ToList();
-
-        var comments = await _commentService.QueryAsync(comment =>
-            postIds.Contains(comment.PostId) &&
-            comment.IsEnabled &&
-            !comment.IsDeleted);
-
-        var commentsByPost = comments
-            .Where(comment => comment.VoAuthorId > 0)
-            .GroupBy(comment => comment.VoPostId)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .OrderByDescending(comment => comment.VoCreateTime)
-                    .ToList());
-
-        var userIds = posts
-            .Select(post => post.VoAuthorId)
-            .Concat(posts.SelectMany(post => post.VoQuestion?.VoAnswers ?? new List<PostAnswerVo>()).Select(answer => answer.VoAuthorId))
-            .Concat(comments.Select(comment => comment.VoAuthorId))
-            .Where(userId => userId > 0)
-            .Distinct()
-            .ToList();
-
-        var avatarUrlMap = new Dictionary<long, string>();
-        if (userIds.Count > 0)
-        {
-            var avatarAttachments = await _attachmentService.QueryAsync(attachment =>
-                attachment.BusinessType == "Avatar" &&
-                attachment.BusinessId.HasValue &&
-                userIds.Contains(attachment.BusinessId.Value) &&
-                attachment.IsEnabled &&
-                !attachment.IsDeleted);
-
-            avatarUrlMap = avatarAttachments
-                .Where(attachment => attachment.VoBusinessId.HasValue && !string.IsNullOrWhiteSpace(attachment.VoUrl))
-                .OrderByDescending(attachment => attachment.VoCreateTime)
-                .GroupBy(attachment => attachment.VoBusinessId!.Value)
-                .ToDictionary(group => group.Key, group => group.First().VoUrl);
-        }
-
-        foreach (var post in posts)
-        {
-            if (avatarUrlMap.TryGetValue(post.VoAuthorId, out var authorAvatarUrl))
-            {
-                post.VoAuthorAvatarUrl = authorAvatarUrl;
-            }
-
-            if (post.VoQuestion?.VoAnswers?.Count > 0)
-            {
-                foreach (var answer in post.VoQuestion.VoAnswers.Where(answer => answer.VoAuthorId > 0))
-                {
-                    if (avatarUrlMap.TryGetValue(answer.VoAuthorId, out var answerAvatarUrl))
-                    {
-                        answer.VoAuthorAvatarUrl = answerAvatarUrl;
-                    }
-                }
-            }
-
-            if (!commentsByPost.TryGetValue(post.VoId, out var postComments))
-            {
-                post.VoLatestInteractors = new List<PostInteractorVo>();
-                continue;
-            }
-
-            post.VoLatestInteractors = postComments
-                .Where(comment => comment.VoAuthorId > 0 && comment.VoAuthorId != post.VoAuthorId)
-                .GroupBy(comment => comment.VoAuthorId)
-                .Select(group => group.OrderByDescending(comment => comment.VoCreateTime).First())
-                .OrderByDescending(comment => comment.VoCreateTime)
-                .Take(3)
-                .Select(comment => new PostInteractorVo
-                {
-                    VoUserId = comment.VoAuthorId,
-                    VoUserName = comment.VoAuthorName,
-                    VoAvatarUrl = avatarUrlMap.GetValueOrDefault(comment.VoAuthorId)
-                })
-                .ToList();
-        }
     }
 
     /// <summary>
@@ -491,6 +400,60 @@ public class PostController : ControllerBase
             MessageInfo = result.IsLiked ? "点赞成功" : "取消点赞成功",
             ResponseData = new VoLikeResult { VoIsLiked = result.IsLiked, VoLikeCount = result.LikeCount }
         };
+    }
+
+    /// <summary>
+    /// 设置帖子置顶状态
+    /// </summary>
+    /// <param name="request">置顶请求</param>
+    /// <returns>更新后的帖子详情</returns>
+    [HttpPost]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> SetTop([FromBody] SetPostTopDto request)
+    {
+        if (request.PostId <= 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "帖子ID必须大于0"
+            };
+        }
+
+        if (!Current.IsSystemOrAdmin())
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "无权置顶帖子"
+            };
+        }
+
+        try
+        {
+            var post = await _postService.SetTopAsync(request.PostId, request.IsTop, Current.UserId, Current.UserName);
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = request.IsTop ? "置顶成功" : "取消置顶成功",
+                ResponseData = post
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = ex.Message
+            };
+        }
     }
 
     /// <summary>

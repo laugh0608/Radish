@@ -278,8 +278,8 @@ public partial class PostService
             return;
         }
 
-        var referencedUrls = AttachmentReferenceHelper.ExtractUploadUrls(content);
-        if (referencedUrls.Count == 0)
+        var referencedAttachmentIds = AttachmentReferenceHelper.ExtractAttachmentIds(content);
+        if (referencedAttachmentIds.Count == 0)
         {
             return;
         }
@@ -291,7 +291,7 @@ public partial class PostService
             a.TenantId == normalizedTenantId &&
             a.UploaderId == operatorId);
 
-        foreach (var attachment in attachments.Where(a => AttachmentReferenceHelper.IsAttachmentReferenced(a, referencedUrls)))
+        foreach (var attachment in attachments.Where(a => AttachmentReferenceHelper.IsAttachmentReferenced(a, referencedAttachmentIds)))
         {
             attachment.BusinessType = businessType;
             attachment.BusinessId = businessId;

@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using Radish.Common;
+using Radish.Common.CoreTool;
 using Radish.Common.OptionTool;
 using SqlSugar;
 using System.Security.Cryptography;
@@ -20,17 +20,16 @@ public class LocalFileStorage : IFileStorage
 {
     private readonly FileStorageOptions _options;
     private readonly string _rootPath;
-    private readonly IWebHostEnvironment _environment;
 
-    public LocalFileStorage(IOptions<FileStorageOptions> options, IWebHostEnvironment environment)
+    public LocalFileStorage(IOptions<FileStorageOptions> options)
     {
         _options = options.Value;
-        _environment = environment;
 
-        // 将相对路径转换为绝对路径
+        // 统一相对于解决方案根目录解析，避免启动目录变化导致附件根路径漂移。
+        var solutionRoot = AppPathTool.GetSolutionRootOrBasePath();
         _rootPath = Path.IsPathRooted(_options.Local.BasePath)
-            ? _options.Local.BasePath
-            : Path.Combine(_environment.ContentRootPath, _options.Local.BasePath);
+            ? Path.GetFullPath(_options.Local.BasePath)
+            : Path.GetFullPath(Path.Combine(solutionRoot, _options.Local.BasePath));
 
         // 确保根目录存在
         if (!Directory.Exists(_rootPath))
@@ -118,9 +117,6 @@ public class LocalFileStorage : IFileStorage
                 await stream.CopyToAsync(fileStream);
             }
 
-            // 生成访问 URL
-            var url = GetFileUrl(relativePath);
-
             // 生成缩略图路径（如果需要）
             string? thumbnailPath = null;
             if (options.GenerateThumbnail && IsImageFile(extension))
@@ -132,7 +128,6 @@ public class LocalFileStorage : IFileStorage
             var result = FileUploadResult.Ok(
                 storedName: storedName,
                 storagePath: relativePath,
-                url: url,
                 fileSize: stream.Length,
                 fileHash: fileHash
             );
@@ -213,20 +208,6 @@ public class LocalFileStorage : IFileStorage
         {
             return null;
         }
-    }
-
-    #endregion
-
-    #region GetFileUrl
-
-    /// <summary>
-    /// 获取文件访问 URL
-    /// </summary>
-    public string GetFileUrl(string filePath)
-    {
-        // 将 Windows 路径分隔符替换为 URL 分隔符
-        var urlPath = filePath.Replace('\\', '/');
-        return $"{_options.Local.BaseUrl}/{urlPath}";
     }
 
     #endregion
@@ -332,6 +313,7 @@ public class LocalFileStorage : IFileStorage
             [".gif"] = new[] { new byte[] { 0x47, 0x49, 0x46, 0x38 } }, // GIF8
             [".bmp"] = new[] { new byte[] { 0x42, 0x4D } }, // BM
             [".webp"] = new[] { new byte[] { 0x52, 0x49, 0x46, 0x46 } }, // RIFF (需要进一步检查 WEBP)
+            [".ico"] = new[] { new byte[] { 0x00, 0x00, 0x01, 0x00 } }, // ICO
 
             // 文档格式
             [".pdf"] = new[] { new byte[] { 0x25, 0x50, 0x44, 0x46 } }, // %PDF
@@ -483,6 +465,7 @@ public class LocalFileStorage : IFileStorage
             ".bmp" => "image/bmp",
             ".webp" => "image/webp",
             ".svg" => "image/svg+xml",
+            ".ico" => "image/x-icon",
 
             // Documents
             ".pdf" => "application/pdf",

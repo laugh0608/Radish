@@ -55,14 +55,13 @@ public class Product : RootEntityTKey<long>, ITenantEntity
     [SugarColumn(Length = 2000, IsNullable = true, ColumnDescription = "商品描述")]
     public string? Description { get; set; }
 
-    /// <summary>商品图标</summary>
-    /// <remarks>图标类名或图片 URL</remarks>
-    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "商品图标")]
-    public string? Icon { get; set; }
+    /// <summary>商品图标附件 Id</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "商品图标附件ID")]
+    public long? IconAttachmentId { get; set; }
 
-    /// <summary>商品封面图</summary>
-    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "商品封面图")]
-    public string? CoverImage { get; set; }
+    /// <summary>商品封面附件 Id</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "商品封面附件ID")]
+    public long? CoverAttachmentId { get; set; }
 
     /// <summary>分类 ID</summary>
     /// <remarks>关联 ProductCategory 表</remarks>

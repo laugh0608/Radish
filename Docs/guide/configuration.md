@@ -343,7 +343,7 @@ services:
 **重要说明 - API 和 Auth 项目共享业务数据库**：
 - **Radish.Api** 和 **Radish.Auth** 项目使用**相同的业务数据库**（`Radish.db` 和 `Radish.Log.db`）
 - 这两个数据库存储用户、角色、权限、租户等业务数据，需要被两个项目共同访问
-- **OpenIddict 使用独立的数据库**（`RadishAuth.OpenIddict.db`），由 EF Core 管理，存储 OIDC 认证相关数据（客户端、授权码、令牌等）
+- **OpenIddict 使用独立的数据库**（`Radish.OpenIddict.db`），由 EF Core 管理，存储 OIDC 认证相关数据（客户端、授权码、令牌等）
 - **所有数据库文件统一存放在解决方案根目录的 `DataBases/` 文件夹**
 - `MainDb` 与 `Databases` 默认配置位于根目录 `appsettings.Shared.json`
 
@@ -407,10 +407,15 @@ services:
 **说明**：
 - `Type`：存储后端类型（`Local`/`MinIO`/`OSS`）
 - `Local.BasePath`：本地文件存储根目录（相对于仓库根目录）
-- `Local.BaseUrl`：对外访问 URL 前缀
+- `Local.BaseUrl`：底层静态文件暴露前缀，不再作为附件业务真值
 - `ImageProcessing.GenerateMultipleSizes`：是否生成多尺寸图片
 - `Watermark`：水印配置（默认关闭）
 - `Deduplication`：文件去重配置（默认启用）
+
+补充口径：
+
+- 当前附件业务统一以 `attachmentId` 为真值，对外展示统一推荐 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail`。
+- 因此 `Local.BaseUrl=/uploads` 主要影响底层文件暴露与静态存储路径，不应被前端正文或业务表当作长期引用地址写回数据库。
 
 ### 2.2 Hangfire 定时任务配置
 

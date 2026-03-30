@@ -22,6 +22,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
     private readonly INotificationService _notificationService;
     private readonly ILogger<UserFollowService> _logger;
     private readonly FeedDistributionOptions _feedDistributionOptions;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public UserFollowService(
         IMapper mapper,
@@ -31,7 +32,8 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         IBaseRepository<Attachment> attachmentRepository,
         INotificationService notificationService,
         ILogger<UserFollowService> logger,
-        IOptions<FeedDistributionOptions> feedDistributionOptions)
+        IOptions<FeedDistributionOptions> feedDistributionOptions,
+        IAttachmentUrlResolver attachmentUrlResolver)
         : base(mapper, baseRepository)
     {
         _userFollowRepository = baseRepository;
@@ -41,6 +43,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         _notificationService = notificationService;
         _logger = logger;
         _feedDistributionOptions = feedDistributionOptions.Value;
+        _attachmentUrlResolver = attachmentUrlResolver;
     }
 
     public async Task<bool> FollowAsync(long followerUserId, long targetUserId, long tenantId, string? operatorName)
@@ -397,9 +400,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
                 group =>
                 {
                     var attachment = group.First();
-                    return !string.IsNullOrWhiteSpace(attachment.Url)
-                        ? attachment.Url!
-                        : attachment.ThumbnailPath ?? string.Empty;
+                    return _attachmentUrlResolver.ResolveAttachmentUrl(attachment.Id);
                 });
     }
 

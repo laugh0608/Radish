@@ -18,7 +18,7 @@
 | Orders | ✅ 已接入 | `console.orders.*` | ✅ 已补齐 | 当前主动作仅保留查看/重试 |
 | Tags | ✅ 已接入 | `console.tags.*` | ✅ 已补齐 | 页面与资源映射已对齐 |
 | Stickers | ✅ 已接入 | `console.stickers.*` | ✅ 已补齐 | 编码校验与批量上传辅助接口已纳入 |
-| SystemConfig | ✅ 已接入 | `console.system-config.*` | ✅ 已补齐 | 编辑详情链路已闭环 |
+| SystemConfig | ✅ 已接入 | `console.system-config.*` | ✅ 已补齐 | 编辑详情与站点图标链路已闭环 |
 | Hangfire | ✅ 已接入 | `console.hangfire.view` | ✅ 已补齐 | 通过特殊入口授权过滤器校验 |
 
 ## 3.2 Dashboard
@@ -169,11 +169,18 @@
 - 创建：`console.system-config.create`
 - 编辑：`console.system-config.edit`
 - 删除：`console.system-config.delete`
+- 公开站点设置：`GET /api/v1/SystemConfig/GetPublicSiteSettings`（匿名读取，不纳入 Console 权限）
 
 ### 当前状态
 
 - ✅ 页面访问闭环完成
 - ✅ 编辑详情资源映射已对齐
+- ✅ 系统配置当前已改为本地 JSON 持久化，默认落盘到 `DataBases/SystemConfigs/system-configs.json`
+- ✅ `system-configs.json` 当前按“UTF-8 + 中文直写、仅保留必要 JSON 转义”的策略落盘，便于本地排障、人工审阅与差异比对
+- ✅ `DataBases/SystemConfigs/system-configs.json` 属于运行时本地状态文件，不作为源码资产提交，继续遵循 `DataBases/` 目录忽略规则
+- ✅ SystemConfig 页面已支持站点 favicon `.ico` 上传、预览与恢复默认
+- ✅ 默认站点图标已固定为 `/uploads/DefaultIco/bailuobo.ico`，默认种子文件位于 `DataBases/Uploads/DefaultIco/bailuobo.ico`
+- ✅ `radish.client / radish.console` 当前都通过公开站点设置接口读取 favicon，标签页图标不再写死在前端静态资源中
 
 ## 3.11 Hangfire
 

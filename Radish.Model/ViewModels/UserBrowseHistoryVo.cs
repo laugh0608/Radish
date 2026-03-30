@@ -30,7 +30,10 @@ public class UserBrowseHistoryVo
     /// <summary>摘要</summary>
     public string? VoSummary { get; set; }
 
-    /// <summary>封面</summary>
+    /// <summary>封面附件快照 Id</summary>
+    public long? VoCoverAttachmentId { get; set; }
+
+    /// <summary>封面 URL</summary>
     public string? VoCoverImage { get; set; }
 
     /// <summary>路由</summary>

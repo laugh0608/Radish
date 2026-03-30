@@ -28,6 +28,42 @@
   - 容器内部 `Gateway / Api / Auth` 只提供 `HTTP`
   - `Auth` OIDC 证书可在首次启动时自动生成并写入挂载目录；后续必须复用同一组证书
 
+## 更换域名时的处理边界
+
+### 不再需要手工修改的数据库数据
+
+当前附件相关业务已经完成“去 URL 真值化”收口。更换域名时，不再需要手工修改以下数据库字段：
+
+- `Attachment` 记录
+- `Sticker.AttachmentId`、`StickerGroup.CoverAttachmentId`
+- `Reaction.StickerAttachmentId`
+- `ChannelMessage.AttachmentId`
+- `Product.IconAttachmentId`、`Product.CoverAttachmentId`
+- `ProductCategory.IconAttachmentId`
+- `Order.ProductIconAttachmentId`
+- 正文中的 `attachment://{id}` 引用
+
+原因很简单：
+
+- 附件实体当前只存 `StoragePath` / `ThumbnailPath` 等存储信息；
+- 业务实体统一存 `AttachmentId`；
+- `voUrl` / `voThumbnailUrl` 等展示字段全部在运行时派生。
+
+### 更换域名时真正需要调整的内容
+
+- `RADISH_PUBLIC_URL`
+- 外部反向代理的域名、证书与回源配置
+- OIDC `Issuer`、客户端回调地址和登录登出入口
+- 前端运行时公开入口配置
+- 如果外部系统缓存了旧域名下的临时访问链接 `accessUrl`，需要重新分发新链接
+
+### 资源访问路径要求
+
+- 业务侧统一推荐通过 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail` 暴露媒体资源。
+- `Radish.Gateway` 当前已内建 `/_assets/attachments/** -> Radish.Api` 转发。
+- 如果系统通过外层反代统一对外，仍需确保该路径被放行到 Gateway，而不是被静态站点或默认首页兜底吞掉。
+- `/uploads/**` 只应理解为底层静态文件暴露或兼容路径，不应继续被当作业务长期引用口径。
+
 ## 仓库发版与合并流程
 
 当前仓库已启用 `master` 分支保护，默认约束如下：
@@ -67,8 +103,8 @@
    ```bash
    git checkout master
    git pull origin master
-   git tag -a v26.3.1-release -m "Release v26.3.1"
-   git push origin v26.3.1-release
+   git tag -a v26.3.2-release -m "Release v26.3.2"
+   git push origin v26.3.2-release
    ```
 
 7. 等待 `Docker Images` 工作流完成本次镜像产出；若当前标签为 `v*-release`，`GHCR` 会同步产出：
@@ -315,6 +351,7 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 **文件上传目录挂载（生产环境建议）**：
 - 本地存储模式下，上传文件存放在 `DataBases/Uploads/`
 - 建议挂载到宿主机持久化目录，避免容器重启丢失文件
+- Gateway 当前默认已经转发 `/_assets/attachments/**`；如果前面还有 `Nginx / Traefik / Caddy`，也要同步放行该路径，而不是只暴露底层 `/uploads/**`
 
 如需分别单独运行镜像，可参考：
 
@@ -654,6 +691,12 @@ HTTP (5000/5100) → ASP.NET Core 应用
 2. API 启动时自动扫描 `Docs/**/*.md`，同步为只读固定文档，并重写站内链接与资源路径。
 3. WebOS 中统一使用“文档”应用展示固定文档与在线文档；在线文档继续存数据库。
 4. 通过 `Document.ShowBuiltInDocs` 控制是否展示固定文档，便于其他站点复用时关闭项目内置文档。
+
+补充约束：
+
+- 固定文档启动同步当前依赖 `WikiDocument / WikiDocumentRevision` 表已存在。
+- 若部署机上的主库仍未完成 `DbMigrate apply`，API 启动时会把固定文档同步记为“已跳过，请先执行 DbMigrate apply”，而不是继续抛缺表错误。
+- 这类跳过日志不代表文档系统坏了，而是说明当前部署顺序不满足“先迁移、后启动宿主”的前置要求。
 
 ### 相关配置
 

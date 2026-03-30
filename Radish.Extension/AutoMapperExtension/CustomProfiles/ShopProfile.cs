@@ -25,6 +25,7 @@ public class ShopProfile : Profile
     {
         // ProductCategory -> ProductCategoryVo
         CreateMap<ProductCategory, ProductCategoryVo>()
+            .ForMember(dest => dest.VoIcon, opt => opt.Ignore())
             .ForMember(dest => dest.VoProductCount, opt => opt.Ignore()); // 运行时计算
 
         // ProductCategoryVo -> ProductCategory
@@ -38,10 +39,14 @@ public class ShopProfile : Profile
     {
         // Product -> ProductVo (使用前缀识别 + 手动配置特殊字段)
         CreateMap<Product, ProductVo>()
+            .ForMember(dest => dest.VoIcon, opt => opt.Ignore())
+            .ForMember(dest => dest.VoCoverImage, opt => opt.Ignore())
             .ForMember(dest => dest.VoCategoryName, opt => opt.Ignore()); // 运行时填充
 
         // Product -> ProductListItemVo (使用前缀识别 + 手动配置特殊字段)
         CreateMap<Product, ProductListItemVo>()
+            .ForMember(dest => dest.VoIcon, opt => opt.Ignore())
+            .ForMember(dest => dest.VoCoverImage, opt => opt.Ignore())
             .ForMember(dest => dest.VoInStock, opt => opt.MapFrom(src =>
                 src.StockType == StockType.Unlimited || src.Stock > 0))
             .ForMember(dest => dest.VoDurationDisplay, opt => opt.MapFrom(src =>
@@ -82,19 +87,22 @@ public class ShopProfile : Profile
     {
         // Order -> OrderVo (使用前缀识别 + 手动配置特殊字段)
         CreateMap<Order, OrderVo>()
+            .ForMember(dest => dest.VoProductIcon, opt => opt.Ignore())
             .ForMember(dest => dest.VoUserName, opt => opt.Ignore()) // 运行时填充
             .ForMember(dest => dest.VoDurationDisplay, opt => opt.MapFrom(src =>
                 GetDurationDisplay(src.DurationType, src.DurationDays, src.BenefitExpiresAt)));
 
         // Order -> OrderListItemVo (使用前缀识别自动映射)
-        CreateMap<Order, OrderListItemVo>();
+        CreateMap<Order, OrderListItemVo>()
+            .ForMember(dest => dest.VoProductIcon, opt => opt.Ignore());
     }
 
     /// <summary>配置用户权益映射</summary>
     private void ConfigureUserBenefitMapping()
     {
         // UserBenefit -> UserBenefitVo
-        CreateMap<UserBenefit, UserBenefitVo>();
+        CreateMap<UserBenefit, UserBenefitVo>()
+            .ForMember(dest => dest.VoBenefitIcon, opt => opt.Ignore());
 
         // UserBenefitVo -> UserBenefit
         CreateMap<UserBenefitVo, UserBenefit>()
@@ -114,7 +122,8 @@ public class ShopProfile : Profile
     private void ConfigureUserInventoryMapping()
     {
         // UserInventory -> UserInventoryVo
-        CreateMap<UserInventory, UserInventoryVo>();
+        CreateMap<UserInventory, UserInventoryVo>()
+            .ForMember(dest => dest.ItemIcon, opt => opt.Ignore());
 
         // UserInventoryVo -> UserInventory
         CreateMap<UserInventoryVo, UserInventory>()

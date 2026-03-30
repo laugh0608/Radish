@@ -5,6 +5,11 @@ import { Icon } from '../Icon/Icon';
 import { StickerPicker } from '../StickerPicker/StickerPicker';
 import type { StickerPickerGroup, StickerPickerSelection } from '../StickerPicker/StickerPicker';
 import type { MarkdownStickerMap } from '../MarkdownRenderer/MarkdownRenderer';
+import {
+  buildAttachmentMarkdownUrl,
+  type MarkdownDocumentUploadResult,
+  type MarkdownImageUploadResult,
+} from '../../utils';
 import styles from './MarkdownEditor.module.css';
 
 const MarkdownRenderer = lazy(() =>
@@ -27,12 +32,12 @@ export interface MarkdownEditorProps {
    * 图片上传处理函数
    * 如果不提供，图片按钮将插入默认的 Markdown 语法
    */
-  onImageUpload?: (file: File) => Promise<{ url: string; thumbnailUrl?: string }>;
+  onImageUpload?: (file: File) => Promise<MarkdownImageUploadResult>;
   /**
    * 文档上传处理函数
    * 如果不提供，文档按钮将不显示
    */
-  onDocumentUpload?: (file: File) => Promise<{ url: string; fileName: string }>;
+  onDocumentUpload?: (file: File) => Promise<MarkdownDocumentUploadResult>;
   /** 贴图分组（可选，传入后显示 StickerPicker） */
   stickerGroups?: StickerPickerGroup[];
   /** 贴图渲染映射（可选） */
@@ -100,24 +105,11 @@ export const MarkdownEditor = ({
 
   const buildStickerMarkdownUrl = (
     groupCode: string,
-    stickerCode: string,
-    imageUrl?: string,
-    thumbnailUrl?: string
+    stickerCode: string
   ): string => {
     const normalizedGroupCode = ensureStickerCode(groupCode);
     const normalizedStickerCode = ensureStickerCode(stickerCode);
-    const params = new URLSearchParams();
-
-    if (imageUrl) {
-      params.set('image', imageUrl);
-    }
-    if (thumbnailUrl) {
-      params.set('thumbnail', thumbnailUrl);
-    }
-
-    const meta = params.toString();
-    const base = `sticker://${normalizedGroupCode}/${normalizedStickerCode}`;
-    return meta ? `${base}#radish:${meta}` : base;
+    return `sticker://${normalizedGroupCode}/${normalizedStickerCode}`;
   };
 
   const mergedStickerMap = useMemo<MarkdownStickerMap | undefined>(() => {
@@ -187,7 +179,10 @@ export const MarkdownEditor = ({
 
     try {
       const result = await onImageUpload(file);
-      const imageUrl = result.url;
+      const imageUrl = buildAttachmentMarkdownUrl(result.attachmentId, {
+        displayVariant: result.displayVariant,
+        scalePercent: result.scalePercent,
+      });
 
       // 插入图片 Markdown 语法
       insertText(`![${file.name}](${imageUrl})`, '', '');
@@ -211,9 +206,10 @@ export const MarkdownEditor = ({
 
     try {
       const result = await onDocumentUpload(file);
+      const documentUrl = buildAttachmentMarkdownUrl(result.attachmentId);
 
       // 插入文档链接 Markdown 语法
-      insertText(`[${result.fileName || file.name}](${result.url})`, '', '');
+      insertText(`[${result.fileName || file.name}](${documentUrl})`, '', '');
 
       setUploading(false);
     } catch (error) {
@@ -396,12 +392,7 @@ export const MarkdownEditor = ({
     }
 
     const altText = escapeMarkdownAlt(selection.stickerName || stickerCode) || stickerCode;
-    const stickerUrl = buildStickerMarkdownUrl(
-      groupCode,
-      stickerCode,
-      selection.imageUrl,
-      selection.thumbnailUrl
-    );
+    const stickerUrl = buildStickerMarkdownUrl(groupCode, stickerCode);
     insertText(`![${altText}](${stickerUrl})`, '', '');
     onStickerSelect?.(selection);
   };

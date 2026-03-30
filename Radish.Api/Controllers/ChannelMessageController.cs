@@ -88,7 +88,6 @@ public class ChannelMessageController : ControllerBase
                 Current.TenantId,
                 Current.UserId,
                 Current.UserName,
-                null,
                 request);
             messageVo.VoClientRequestId = string.IsNullOrWhiteSpace(request.ClientRequestId)
                 ? null

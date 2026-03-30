@@ -680,14 +680,100 @@ public class PostControllerTest
         Assert.Contains("投票选项不能重复", result.MessageInfo);
     }
 
+    [Fact]
+    public async Task SetTop_Should_Return_Updated_Post_When_CurrentUser_Is_Admin()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        postServiceMock
+            .Setup(service => service.SetTopAsync(9527, true, 10001, "Tester"))
+            .ReturnsAsync(new PostVo
+            {
+                VoId = 9527,
+                VoTitle = "管理员置顶帖",
+                VoIsTop = true
+            });
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object,
+            new CurrentUser
+            {
+                UserId = 10001,
+                UserName = "Tester",
+                TenantId = 0,
+                Roles = [UserRoles.Admin]
+            });
+
+        var result = await controller.SetTop(new SetPostTopDto
+        {
+            PostId = 9527,
+            IsTop = true
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal("置顶成功", result.MessageInfo);
+
+        var post = Assert.IsType<PostVo>(result.ResponseData);
+        Assert.Equal(9527, post.VoId);
+        Assert.True(post.VoIsTop);
+
+        postServiceMock.Verify(service => service.SetTopAsync(9527, true, 10001, "Tester"), Times.Once);
+    }
+
+    [Fact]
+    public async Task SetTop_Should_Return_Forbidden_When_CurrentUser_Is_Not_Admin()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object,
+            new CurrentUser
+            {
+                UserId = 10002,
+                UserName = "Member",
+                TenantId = 0,
+                Roles = Array.Empty<string>()
+            });
+
+        var result = await controller.SetTop(new SetPostTopDto
+        {
+            PostId = 9527,
+            IsTop = true
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(403, result.StatusCode);
+        Assert.Equal("无权置顶帖子", result.MessageInfo);
+
+        postServiceMock.Verify(service => service.SetTopAsync(It.IsAny<long>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<string>()), Times.Never);
+    }
+
     private static PostController CreateController(
         IPostService postService,
         IContentModerationService moderationService,
         IBaseService<Attachment, AttachmentVo> attachmentService,
-        IBaseService<Comment, CommentVo> commentService)
+        IBaseService<Comment, CommentVo> commentService,
+        CurrentUser? currentUser = null)
     {
+        Mock.Get(postService)
+            .Setup(service => service.FillPostAvatarAndInteractorsAsync(It.IsAny<List<PostVo>>()))
+            .Returns(Task.CompletedTask);
+
         var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
-        currentUserAccessorMock.SetupGet(accessor => accessor.Current).Returns(new CurrentUser
+        currentUserAccessorMock.SetupGet(accessor => accessor.Current).Returns(currentUser ?? new CurrentUser
         {
             UserId = 10001,
             UserName = "Tester",
@@ -698,10 +784,13 @@ public class PostControllerTest
             .Setup(service => service.RecordAsync(It.IsAny<RecordBrowseHistoryDto>()))
             .Returns(Task.CompletedTask);
 
+        var attachmentServiceAdapter = attachmentService as IAttachmentService
+            ?? new Mock<IAttachmentService>(MockBehavior.Strict).Object;
+
         return new PostController(
             postService,
             moderationService,
-            attachmentService,
+            attachmentServiceAdapter,
             commentService,
             browseHistoryServiceMock.Object,
             currentUserAccessorMock.Object);

@@ -3,6 +3,11 @@ import { useTranslation } from 'react-i18next';
 import { Modal } from '@radish/ui/modal';
 import { Button } from '@radish/ui/button';
 import { Icon } from '@radish/ui/icon';
+import {
+  buildAttachmentAssetUrl,
+  type MarkdownDocumentUploadResult,
+  type MarkdownImageUploadResult,
+} from '@radish/ui';
 import { getAllTags, type Category, type PostDetail } from '@/api/forum';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
@@ -25,18 +30,6 @@ const MAX_TAG_COUNT = 5;
 const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
 );
-
-const appendImageMeta = (displayUrl: string, fullUrl?: string, scalePercent?: number): string => {
-  const params = new URLSearchParams();
-  if (fullUrl) {
-    params.set('full', fullUrl);
-  }
-  if (scalePercent && Number.isFinite(scalePercent)) {
-    params.set('scale', String(Math.min(Math.max(scalePercent, 10), 100)));
-  }
-  const meta = params.toString();
-  return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
-};
 
 export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: EditPostModalProps) => {
   const { t } = useTranslation();
@@ -190,7 +183,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
     }
   };
 
-  const handleImageUpload = async (file: File) => {
+  const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
     try {
       const result = await uploadImage({
         file,
@@ -203,8 +196,10 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
       }, t);
 
       return {
-        url: appendImageMeta(result.voUrl, result.voUrl, imageScalePercent),
-        thumbnailUrl: result.voThumbnailUrl
+        attachmentId: result.voId,
+        displayVariant: 'original',
+        previewUrl: buildAttachmentAssetUrl(result.voId, 'original'),
+        scalePercent: imageScalePercent,
       };
     } catch (uploadError) {
       log.error('编辑帖子上传图片失败:', uploadError);
@@ -212,7 +207,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
     }
   };
 
-  const handleDocumentUpload = async (file: File) => {
+  const handleDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
     try {
       const result = await uploadDocument({
         file,
@@ -220,7 +215,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
       }, t);
 
       return {
-        url: result.voUrl,
+        attachmentId: result.voId,
         fileName: result.voOriginalName || file.name
       };
     } catch (uploadError) {

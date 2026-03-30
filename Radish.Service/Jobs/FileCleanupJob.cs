@@ -301,25 +301,21 @@ public class FileCleanupJob
                         .Select(m => m.AttachmentId!.Value));
                 }
 
-                var attachmentUrlMap = BuildAttachmentUrlMap(orphanAttachments);
-                if (attachmentUrlMap.Count > 0)
+                if (orphanAttachmentIds.Count > 0)
                 {
                     await UnionReferencedAttachmentIdsFromContentAsync(
-                        attachmentUrlMap,
                         referencedAttachmentIds,
                         _postRepository,
                         static post => post.Content,
                         static post => !post.IsDeleted && post.Content != null && post.Content != string.Empty);
 
                     await UnionReferencedAttachmentIdsFromContentAsync(
-                        attachmentUrlMap,
                         referencedAttachmentIds,
                         _commentRepository,
                         static comment => comment.Content,
                         static comment => !comment.IsDeleted && comment.Content != null && comment.Content != string.Empty);
 
                     await UnionReferencedAttachmentIdsFromContentAsync(
-                        attachmentUrlMap,
                         referencedAttachmentIds,
                         _postAnswerRepository,
                         static answer => answer.Content,
@@ -465,28 +461,7 @@ public class FileCleanupJob
         }
     }
 
-    private static Dictionary<string, HashSet<long>> BuildAttachmentUrlMap(IEnumerable<Attachment> attachments)
-    {
-        var urlMap = new Dictionary<string, HashSet<long>>(StringComparer.OrdinalIgnoreCase);
-        foreach (var attachment in attachments)
-        {
-            foreach (var url in AttachmentReferenceHelper.GetAttachmentUrls(attachment))
-            {
-                if (!urlMap.TryGetValue(url, out var ids))
-                {
-                    ids = new HashSet<long>();
-                    urlMap[url] = ids;
-                }
-
-                ids.Add(attachment.Id);
-            }
-        }
-
-        return urlMap;
-    }
-
     private static async Task UnionReferencedAttachmentIdsFromContentAsync<TEntity>(
-        IReadOnlyDictionary<string, HashSet<long>> attachmentUrlMap,
         ISet<long> referencedAttachmentIds,
         IBaseRepository<TEntity>? repository,
         Func<TEntity, string?> contentSelector,
@@ -501,18 +476,10 @@ public class FileCleanupJob
         var records = await repository.QueryAsync(predicate);
         foreach (var record in records)
         {
-            var referencedUrls = AttachmentReferenceHelper.ExtractUploadUrls(contentSelector(record));
-            foreach (var url in referencedUrls)
+            var contentAttachmentIds = AttachmentReferenceHelper.ExtractAttachmentIds(contentSelector(record));
+            foreach (var attachmentId in contentAttachmentIds)
             {
-                if (!attachmentUrlMap.TryGetValue(url, out var attachmentIds))
-                {
-                    continue;
-                }
-
-                foreach (var attachmentId in attachmentIds)
-                {
-                    referencedAttachmentIds.Add(attachmentId);
-                }
+                referencedAttachmentIds.Add(attachmentId);
             }
         }
     }

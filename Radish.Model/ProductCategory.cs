@@ -20,10 +20,9 @@ public class ProductCategory
     [SugarColumn(Length = 100, IsNullable = false)]
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>分类图标</summary>
-    /// <remarks>图标类名或图标 URL</remarks>
-    [SugarColumn(Length = 200, IsNullable = true)]
-    public string? Icon { get; set; }
+    /// <summary>分类图标附件 Id</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? IconAttachmentId { get; set; }
 
     /// <summary>分类描述</summary>
     [SugarColumn(Length = 500, IsNullable = true)]

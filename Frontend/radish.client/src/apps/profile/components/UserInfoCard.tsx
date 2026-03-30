@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { apiGet, configureApiClient } from '@radish/http';
@@ -12,6 +12,7 @@ import { Select } from '@radish/ui/select';
 import { useUserStore } from '@/stores/userStore';
 import { tokenService } from '@/services/tokenService';
 import { buildTimeZoneOptions, formatDateTimeByTimeZone, resolveTimeZoneId } from '@/utils/dateTime';
+import { reuseInFlightRequest } from '../requestDedup';
 import styles from './UserInfoCard.module.css';
 
 const AvatarUploadModal = lazy(() =>
@@ -100,6 +101,43 @@ function formatCoinAmount(
   return negative ? `-${result}` : result;
 }
 
+interface OwnProfileBundle {
+  profile: ProfileInfo | null;
+  coinBalance: CoinBalanceInfo | null;
+}
+
+function buildOwnProfileRequestKey(apiBaseUrl: string, userId: number): string {
+  return `own-profile|${apiBaseUrl}|${userId}`;
+}
+
+async function fetchOwnProfileBundle(
+  apiBaseUrl: string,
+  userId: number,
+  reuseInFlight: boolean
+): Promise<OwnProfileBundle> {
+  const loadBundle = async () => {
+    const [profileResult, coinBalanceResult] = await Promise.allSettled([
+      apiGet<ProfileInfo>('/api/v1/User/GetMyProfile', { withAuth: true }),
+      apiGet<CoinBalanceInfo>('/api/v1/Coin/GetBalance', { withAuth: true })
+    ]);
+
+    return {
+      profile: profileResult.status === 'fulfilled' && profileResult.value.ok
+        ? profileResult.value.data ?? null
+        : null,
+      coinBalance: coinBalanceResult.status === 'fulfilled' && coinBalanceResult.value.ok
+        ? coinBalanceResult.value.data ?? null
+        : null
+    };
+  };
+
+  if (!reuseInFlight) {
+    return loadBundle();
+  }
+
+  return reuseInFlightRequest(buildOwnProfileRequestKey(apiBaseUrl, userId), loadBundle);
+}
+
 export const UserInfoCard = ({
   userId,
   userName,
@@ -131,6 +169,7 @@ export const UserInfoCard = ({
   const [editAddress, setEditAddress] = useState('');
   const [customTimeZone, setCustomTimeZone] = useState(displayTimeZone);
   const [timeZoneError, setTimeZoneError] = useState<string | null>(null);
+  const loadProfileRequestIdRef = useRef(0);
 
   const presetTimeZoneOptions = useMemo(() => {
     return buildTimeZoneOptions(systemTimeZone, displayTimeZone);
@@ -143,9 +182,15 @@ export const UserInfoCard = ({
   }, [apiBaseUrl]);
 
   useEffect(() => {
-    void loadProfile();
+    void loadProfile(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [apiBaseUrl, userId]);
+
+  useEffect(() => {
+    return () => {
+      loadProfileRequestIdRef.current += 1;
+    };
+  }, []);
 
   useEffect(() => {
     setCustomTimeZone(displayTimeZone);
@@ -156,58 +201,56 @@ export const UserInfoCard = ({
     setAvatarLoadError(false);
   }, [profile?.voAvatarThumbnailUrl, profile?.voAvatarUrl]);
 
-  const loadProfile = async () => {
+  const loadProfile = async (reuseInFlight: boolean = false) => {
+    const requestId = ++loadProfileRequestIdRef.current;
     setLoadingProfile(true);
+
     try {
-      const [profileResult, coinBalanceResult] = await Promise.allSettled([
-        apiGet<ProfileInfo>('/api/v1/User/GetMyProfile', { withAuth: true }),
-        apiGet<CoinBalanceInfo>('/api/v1/Coin/GetBalance', { withAuth: true })
-      ]);
-
-      if (profileResult.status === 'fulfilled') {
-        const profileRes = profileResult.value;
-
-        log.debug('UserInfoCard', 'GetMyProfile 响应:', profileRes);
-
-        if (profileRes.ok && profileRes.data) {
-          const profile = profileRes.data;
-          log.debug('UserInfoCard', '头像信息:', {
-            avatarAttachmentId: profile.voAvatarAttachmentId,
-            avatarUrl: profile.voAvatarUrl,
-            avatarThumbnailUrl: profile.voAvatarThumbnailUrl
-          });
-          setProfile(profile);
-
-          // 更新全局 userStore，使 Dock 栏能实时刷新头像
-          setUser({
-            userId: profile.voUserId,
-            userName: profile.voUserName,
-            tenantId: tenantId,
-            roles: roles || ['User'],
-            permissions: permissions || [],
-            avatarUrl: profile.voAvatarUrl || undefined,
-            avatarThumbnailUrl: profile.voAvatarThumbnailUrl || undefined
-          });
-
-          setEditUserName(profile.voUserName || userName);
-          setEditUserEmail(profile.voUserEmail || '');
-          setEditRealName(profile.voRealName || '');
-          setEditAge(String(profile.voAge ?? ''));
-          setEditAddress(profile.voAddress || '');
-        }
+      const result = await fetchOwnProfileBundle(apiBaseUrl, userId, reuseInFlight);
+      if (requestId !== loadProfileRequestIdRef.current) {
+        return;
       }
 
-      if (coinBalanceResult.status === 'fulfilled') {
-        const coinBalanceRes = coinBalanceResult.value;
+      if (result.profile) {
+        const currentProfile = result.profile;
+        log.debug('UserInfoCard', '头像信息:', {
+          avatarAttachmentId: currentProfile.voAvatarAttachmentId,
+          avatarUrl: currentProfile.voAvatarUrl,
+          avatarThumbnailUrl: currentProfile.voAvatarThumbnailUrl
+        });
+        setProfile(currentProfile);
 
-        if (coinBalanceRes.ok && coinBalanceRes.data) {
-          setCoinBalance(coinBalanceRes.data);
-        }
+        // 更新全局 userStore，使 Dock 栏能实时刷新头像
+        setUser({
+          userId: currentProfile.voUserId,
+          userName: currentProfile.voUserName,
+          tenantId: tenantId,
+          roles: roles || ['User'],
+          permissions: permissions || [],
+          avatarUrl: currentProfile.voAvatarUrl || undefined,
+          avatarThumbnailUrl: currentProfile.voAvatarThumbnailUrl || undefined
+        });
+
+        setEditUserName(currentProfile.voUserName || userName);
+        setEditUserEmail(currentProfile.voUserEmail || '');
+        setEditRealName(currentProfile.voRealName || '');
+        setEditAge(String(currentProfile.voAge ?? ''));
+        setEditAddress(currentProfile.voAddress || '');
+      }
+
+      if (result.coinBalance) {
+        setCoinBalance(result.coinBalance);
       }
     } catch (error) {
+      if (requestId !== loadProfileRequestIdRef.current) {
+        return;
+      }
+
       log.error('UserInfoCard', '加载用户资料失败:', error);
     } finally {
-      setLoadingProfile(false);
+      if (requestId === loadProfileRequestIdRef.current) {
+        setLoadingProfile(false);
+      }
     }
   };
 

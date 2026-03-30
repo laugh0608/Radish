@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -35,9 +34,7 @@ public static class FileStorageFactory
 
         return storageType switch
         {
-            "Local" => new LocalFileStorage(
-                options,
-                serviceProvider.GetRequiredService<IWebHostEnvironment>()),
+            "Local" => new LocalFileStorage(options),
 
             "MinIO" => throw new NotSupportedException(
                 "当前未实现 MinIO 存储。请先实现 MinIO 存储适配器后再将 FileStorage:Type 设置为 MinIO。"),

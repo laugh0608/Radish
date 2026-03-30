@@ -93,7 +93,7 @@ public interface IUserInventoryService : IBaseService<UserInventory, UserInvento
     /// <param name="consumableType">消耗品类型</param>
     /// <param name="itemValue">道具值</param>
     /// <param name="itemName">道具名称</param>
-    /// <param name="itemIcon">道具图标</param>
+    /// <param name="itemIconAttachmentId">道具图标附件 Id</param>
     /// <param name="quantity">增加数量</param>
     /// <param name="sourceProductId">来源商品 ID</param>
     /// <returns>背包项 ID</returns>
@@ -102,7 +102,7 @@ public interface IUserInventoryService : IBaseService<UserInventory, UserInvento
         ConsumableType consumableType,
         string? itemValue,
         string? itemName,
-        string? itemIcon,
+        long? itemIconAttachmentId,
         int quantity = 1,
         long? sourceProductId = null);
 

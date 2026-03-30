@@ -36,7 +36,12 @@ public class PostVo
     public string VoContentType { get; set; } = "markdown";
 
     /// <summary>
-    /// 封面图片
+    /// 封面附件 Id
+    /// </summary>
+    public long? VoCoverAttachmentId { get; set; }
+
+    /// <summary>
+    /// 封面图片 URL
     /// </summary>
     public string? VoCoverImage { get; set; }
 

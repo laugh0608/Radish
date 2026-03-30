@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Data;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
@@ -6,6 +8,7 @@ using Radish.Common.CoreTool;
 using Radish.Common.DbTool;
 using Radish.Extension.AopExtension;
 using Radish.Infrastructure.Tenant;
+using Serilog;
 using SqlSugar;
 
 namespace Radish.Extension.SqlSugarExtension;
@@ -13,6 +16,10 @@ namespace Radish.Extension.SqlSugarExtension;
 /// <summary>SqlSugar 启动服务</summary>
 public static class SqlSugarSetup
 {
+    private const int SqliteBusyTimeoutMs = 60000;
+    private static readonly ConcurrentDictionary<string, byte> InitializedSqliteWalDatabases =
+        new(StringComparer.OrdinalIgnoreCase);
+
     public static void AddSqlSugarSetup(this IServiceCollection services)
     {
         if (services == null) throw new ArgumentNullException(nameof(services));
@@ -29,7 +36,7 @@ public static class SqlSugarSetup
             {
                 ConfigId = m.ConnId.ObjToString().ToLower(),
                 ConnectionString = m.ConnectionString,
-                DbType = (DbType)m.DbType,
+                DbType = (SqlSugar.DbType)m.DbType,
                 IsAutoCloseConnection = true,
                 MoreSettings = new ConnMoreSettings()
                 {
@@ -87,6 +94,58 @@ public static class SqlSugarSetup
                                 Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType), s, parameters,
                                 config);
                         };
+
+                        dbProvider.Aop.OnLogExecuted = (s, parameters) =>
+                        {
+                            var operate = ResolveOperateName(dbProvider);
+                            if (string.Equals(operate, nameof(SugarActionType.Query), StringComparison.OrdinalIgnoreCase))
+                            {
+                                return;
+                            }
+
+                            SqlSugarAop.OnCommandExecuted(
+                                dbProvider,
+                                ResolveSqlAopUser(),
+                                ExtractTableName(s),
+                                operate,
+                                s,
+                                parameters,
+                                config,
+                                dbProvider.Ado.SqlExecutionTime);
+                        };
+
+                        dbProvider.Aop.OnGetDataReadered = (s, parameters, elapsed) =>
+                        {
+                            SqlSugarAop.OnQueryExecuted(
+                                dbProvider,
+                                ResolveSqlAopUser(),
+                                ExtractTableName(s),
+                                ResolveOperateName(dbProvider),
+                                s,
+                                parameters,
+                                config,
+                                elapsed);
+                        };
+
+                        dbProvider.Aop.CheckConnectionExecuted = (connection, elapsed) =>
+                        {
+                            if (config.DbType == SqlSugar.DbType.Sqlite)
+                            {
+                                ApplySqlitePragmas(connection, config);
+                            }
+
+                            SqlSugarAop.OnConnectionChecked(config, connection, elapsed);
+                        };
+
+                        dbProvider.Aop.OnError = ex =>
+                        {
+                            Log.Warning(
+                                ex,
+                                "[SqlSugar] 数据库执行异常，ConnId: {ConnId}, DbType: {DbType}, Message: {Message}",
+                                config.ConfigId,
+                                config.DbType,
+                                ex.Message);
+                        };
                     }
                 });
             });
@@ -110,6 +169,51 @@ public static class SqlSugarSetup
         }
 
         return App.HttpContext == null ? "System" : "Anonymous";
+    }
+
+    private static string ResolveOperateName(ISqlSugarClient dbProvider)
+    {
+        return Enum.GetName(typeof(SugarActionType), dbProvider.SugarActionType) ?? "Unknown";
+    }
+
+    private static void ApplySqlitePragmas(IDbConnection connection, ConnectionConfig config)
+    {
+        if (connection.State != ConnectionState.Open)
+        {
+            return;
+        }
+
+        ExecuteSqlitePragma(connection, $"PRAGMA busy_timeout = {SqliteBusyTimeoutMs};", expectScalarResult: false);
+        ExecuteSqlitePragma(connection, "PRAGMA synchronous = NORMAL;", expectScalarResult: false);
+
+        var sqliteWalKey = $"{config.ConfigId}:{connection.ConnectionString}";
+        if (InitializedSqliteWalDatabases.TryAdd(sqliteWalKey, 0))
+        {
+            ExecuteSqlitePragma(connection, "PRAGMA journal_mode = WAL;", expectScalarResult: true);
+        }
+    }
+
+    private static void ExecuteSqlitePragma(IDbConnection connection, string sql, bool expectScalarResult)
+    {
+        try
+        {
+            using var command = connection.CreateCommand();
+            command.CommandText = sql;
+            command.CommandTimeout = Math.Max(SqliteBusyTimeoutMs / 1000, 1);
+
+            if (expectScalarResult)
+            {
+                _ = command.ExecuteScalar();
+            }
+            else
+            {
+                _ = command.ExecuteNonQuery();
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "[SqlSugar] SQLite PRAGMA 执行失败，Sql: {Sql}", sql);
+        }
     }
 
     private static string ExtractTableName(string sql)

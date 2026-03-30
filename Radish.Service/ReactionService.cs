@@ -23,6 +23,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
     private readonly IBaseRepository<StickerGroup> _stickerGroupRepository;
     private readonly IBaseRepository<Sticker> _stickerRepository;
     private readonly ILogger<ReactionService> _logger;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public ReactionService(
         IMapper mapper,
@@ -31,7 +32,8 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
         IBaseRepository<Comment> commentRepository,
         IBaseRepository<StickerGroup> stickerGroupRepository,
         IBaseRepository<Sticker> stickerRepository,
-        ILogger<ReactionService> logger)
+        ILogger<ReactionService> logger,
+        IAttachmentUrlResolver attachmentUrlResolver)
         : base(mapper, baseRepository)
     {
         _reactionRepository = baseRepository;
@@ -40,6 +42,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
         _stickerGroupRepository = stickerGroupRepository;
         _stickerRepository = stickerRepository;
         _logger = logger;
+        _attachmentUrlResolver = attachmentUrlResolver;
     }
 
     public async Task<List<ReactionSummaryVo>> GetSummaryAsync(string targetType, long targetId, long currentUserId = 0)
@@ -137,10 +140,10 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
 
         await EnsureTargetExistsAsync(normalizedTargetType, request.TargetId);
 
-        string? thumbnailUrl = null;
+        long? stickerAttachmentId = null;
         if (normalizedEmojiType == "sticker")
         {
-            thumbnailUrl = await ResolveStickerThumbnailAsync(tenantId, normalizedEmojiValue);
+            stickerAttachmentId = await ResolveStickerAttachmentIdAsync(tenantId, normalizedEmojiValue);
         }
 
         try
@@ -150,7 +153,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
                 request.TargetId,
                 normalizedEmojiType,
                 normalizedEmojiValue,
-                thumbnailUrl,
+                stickerAttachmentId,
                 userId,
                 normalizedUserName);
         }
@@ -167,7 +170,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
                     request.TargetId,
                     normalizedEmojiType,
                     normalizedEmojiValue,
-                    thumbnailUrl,
+                    stickerAttachmentId,
                     userId,
                     normalizedUserName);
             }
@@ -185,7 +188,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
         long targetId,
         string emojiType,
         string emojiValue,
-        string? thumbnailUrl,
+        long? stickerAttachmentId,
         long userId,
         string userName)
     {
@@ -230,7 +233,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
                     DeletedAt = null,
                     DeletedBy = null,
                     EmojiType = emojiType,
-                    ThumbnailUrl = thumbnailUrl,
+                    StickerAttachmentId = stickerAttachmentId,
                     UserName = userName,
                     ModifyTime = DateTime.UtcNow,
                     ModifyBy = userName,
@@ -248,7 +251,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
             TargetId = targetId,
             EmojiType = emojiType,
             EmojiValue = emojiValue,
-            ThumbnailUrl = thumbnailUrl,
+            StickerAttachmentId = stickerAttachmentId,
             IsDeleted = false,
             CreateTime = DateTime.UtcNow,
             CreateBy = userName,
@@ -311,7 +314,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
         }
     }
 
-    private async Task<string?> ResolveStickerThumbnailAsync(long tenantId, string emojiValue)
+    private async Task<long?> ResolveStickerAttachmentIdAsync(long tenantId, string emojiValue)
     {
         if (!TryParseStickerEmojiValue(emojiValue, out var groupCode, out var stickerCode))
         {
@@ -337,7 +340,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
             throw new BusinessException("表情不存在或已禁用", 404, "StickerNotAvailable");
         }
 
-        return sticker.ThumbnailUrl;
+        return sticker.AttachmentId;
     }
 
     private async Task<StickerGroup?> QueryEnabledGroupByCodeAsync(long normalizedTenantId, string groupCode)
@@ -358,7 +361,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
                  && !g.IsDeleted);
     }
 
-    private static List<ReactionSummaryVo> BuildSummary(IEnumerable<Reaction> reactions, long currentUserId)
+    private List<ReactionSummaryVo> BuildSummary(IEnumerable<Reaction> reactions, long currentUserId)
     {
         return reactions
             .Where(r => !r.IsDeleted)
@@ -370,12 +373,22 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
                 VoCount = g.Count(),
                 VoIsReacted = currentUserId > 0 && g.Any(x => x.UserId == currentUserId),
                 VoThumbnailUrl = g
-                    .Select(x => x.ThumbnailUrl)
+                    .Select(x => ResolveStickerThumbnailUrl(x.StickerAttachmentId))
                     .FirstOrDefault(url => !string.IsNullOrWhiteSpace(url))
             })
             .OrderByDescending(x => x.VoCount)
             .ThenBy(x => x.VoEmojiValue)
             .ToList();
+    }
+
+    private string? ResolveStickerThumbnailUrl(long? attachmentId)
+    {
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
+        {
+            return null;
+        }
+
+        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value, AttachmentUrlVariant.Thumbnail);
     }
 
     private static string NormalizeTargetTypeOrThrow(string targetType)

@@ -237,12 +237,20 @@
 - **用户已完成一轮真实测试部署 Smoke**：登录、回调、权限与核心页面当前均已通过，`base + test` 测试部署链路已完成本轮收口。
 - **当前下一步已继续收束**：后续重点不再是验证测试部署是否可用，而是组织 `dev -> master` 发布 PR、产出 `v*-release` 镜像，并执行生产口径首轮 Smoke。
 
+### `v26.3.2-test / v26.3.2-release` 阶段验收通过
+
+- **最新测试轨道已完成更新验收**：`v26.3.2-test` 当前已完成 tag 驱动镜像构建、`GHCR` 拉取与 `base + test` 真实部署验收，登录 / 回调 / 权限 / 核心页面以及 `DbMigrate` 初始化链路当前均已通过。
+- **正式发布轨道已完成真实部署与发布验收**：`v26.3.2-release` 当前已完成 release 镜像产出、`GHCR` 拉取与 `base + prod` 生产口径部署验收，发布与部署验收均已通过。
+- **`radish-dbmigrate` 已补齐首次真实拉取与初始化验证**：本轮不再停留在“等待下一次规范 tag 验证”的状态，容器化初始化、`dbmigrate -> api/auth -> gateway` 启动顺序，以及 `local / test / prod` 三套口径当前都已形成真实交付事实。
+- **当前阶段结论已更新**：首版 `dev`、测试部署与正式发布链路均已完成本轮收口，下一阶段主线切换到论坛 / 聊天等社区体验与运营能力优化。
+
 ### DbMigrate 容器化初始化补齐
 
 - **已补 `Radish.DbMigrate` 独立镜像入口**：当前仓库已新增 `Radish.DbMigrate/Dockerfile`，用于容器部署时执行 `apply` 一次性初始化任务，不再要求宿主机必须安装 `dotnet`。
 - **三套容器口径已统一接入初始化步骤**：`Deploy/docker-compose.yml` 当前已收口为 `dbmigrate -> api/auth -> gateway` 的启动顺序，`local / test / prod` 都会先初始化共享业务库，再启动登录链路相关宿主。
 - **`radish-dbmigrate` 已纳入 GHCR 发布链**：`Docker Images` workflow 当前会与 `radish-api / radish-auth / radish-gateway / radish-frontend` 一起产出 `radish-dbmigrate` 镜像，测试与生产样例变量也已同步补齐。
 - **当前问题口径已修正**：生产环境之前出现的 `SQLite Error 1: 'no such table: User'`，根因已明确为容器部署未先初始化共享业务库；后续同类场景将由 `dbmigrate apply` 自动兜底。
+- **首次真实部署验证已补齐**：最新 `v26.3.2-test / v26.3.2-release` 验收中，`radish-dbmigrate` 已完成真实拉取、初始化与启动顺序验证，不再仅停留在静态配置或 workflow 资产层面。
 
 ### 发布态细节收口
 
@@ -250,9 +258,64 @@
 - **容器 / 发布态日志目录识别已修复**：`LogContextTool` 当前改为优先使用宿主入口程序集名识别项目目录名，本地开发仍保留 `.csproj` 扫描兜底，避免发布目录或 Docker 容器继续把日志落到 `Logs/Unknown/`。
 - **示意环境文件默认镜像地址已收口**：`Deploy/.env.test.example` 当前默认指向 `ghcr.io/laugh0608/...:test-latest`，`Deploy/.env.prod.example` 默认指向 `ghcr.io/laugh0608/...:latest`，同时继续保留“正式环境优先固定版本 tag”的文档口径。
 
+### 社区体验优化首批收口
+
+- **论坛置顶最小闭环已接通**：当前复用既有 `Post.IsTop` 字段，不新增表结构；管理员可在论坛帖子详情区执行置顶 / 取消置顶，列表页继续沿用既有“置顶优先，再按当前排序规则”的口径。
+- **聊天室图片已改为“先入草稿、点击发送再统一发出”**：用户选择图片后，当前不会立即发消息，而是先作为待发送附件显示在输入区；此时仍可继续输入文字、移除待发图片，并在点击发送时与文字一并发出，也支持纯图片发送。
+- **聊天室待发图片已纳入频道草稿恢复**：当前按频道持久化 `content + replyTarget + pendingImage`，切换频道后会自动恢复；若上传完成时用户已切到其他频道，图片也会回写到原频道草稿，降低误发风险。
+- **论坛发帖分类摘要不同步问题已修复**：发帖弹窗当前已统一维护 `categoryId + categoryName` 的快照状态，顶部“帖子设置”摘要不再依赖分类列表二次查找，初选、切换、清空与恢复草稿时都能即时同步显示。
+- **最小回归已补齐**：本轮已新增帖子置顶控制器测试，管理员置顶成功与非管理员 `403` 当前均有自动化兜底；`radish.client` 也已完成类型检查与生产构建，确认论坛 / 聊天前端改动可通过当前构建链路。
+- **相关设计文档已同步**：论坛功能说明、分类 / 标签专题，以及聊天室 App 总览 / UI 模块 / 路线图当前都已对齐到本轮实现，避免设计口径继续停留在旧交互。
+
 ### 本轮验证
 
 - ✅ `docker compose -f Deploy/docker-compose.yml -f Deploy/docker-compose.local.yml config` 通过。
 - ✅ `docker compose --env-file Deploy/.env.test.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml config` 通过。
 - ✅ `docker compose --env-file Deploy/.env.prod.example -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml config` 通过。
-- ✅ `v26.3.1-test` 已完成 tag 驱动镜像构建、远程镜像拉取与 `base + test` 真实部署 Smoke。
+- ✅ `v26.3.2-test / v26.3.2-release` 已完成 tag 驱动镜像构建、远程镜像拉取，以及 `base + test` / `base + prod` 真实部署验收。
+
+## 2026-03-29 (周日)
+
+### 附件协议与部署文档收口
+
+- **附件业务真值已从“URL”彻底收口为“附件标识”**：贴图、Reaction、聊天图片、商品图标 / 封面、订单商品图标快照，以及论坛 / 评论 / Wiki 正文中的图片与文档引用，当前统一围绕 `attachmentId` 与 `attachment://{id}` 协议建模。
+- **运行时资源访问口径已统一**：公开媒体地址当前统一收口为 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail`，`AttachmentVo.voUrl` / `voThumbnailUrl`、`StickerVo.voImageUrl` / `voThumbnailUrl`、`ChannelMessageVo.voImageUrl` / `voImageThumbnailUrl` 等均明确为运行时派生字段，不再被设计文档描述为数据库真值。
+- **换域名时的运维边界已明确**：部署文档、配置文档与 Gateway 文档当前已统一说明，更换域名时应调整 `RADISH_PUBLIC_URL`、反向代理与 OIDC 配置，而不再需要手工更新附件类数据库字段。
+- **商城 / 论坛 / 聊天 / 贴图相关文档已同步对齐**：前后端设计、功能设计与上传设计文档已补齐商品图标附件快照、背包图标附件快照、正文附件协议，以及 Gateway 对 `/_assets/attachments/**` 的公开访问要求。
+
+### 社区体验优化第二批收口
+
+- **发帖按钮缺失项提示已补齐**：论坛发帖创作器在标题、正文、分类、标签或未确认标签输入缺失时，当前不会只停留在纯 `disabled` 吞点击，而是会展开设置区、提示缺失项，并聚焦到首个阻塞字段。
+- **标签确认交互已收口**：标签现在只有进入“已选标签”列表后才算生效；单纯在输入框里输入文本不会被误判为已选择。当前支持回车 / 点击添加，且与现有标签精确匹配时失焦会自动补入。
+- **欢迎 App 已切到游客安全模式**：未登录用户当前也可直接打开欢迎应用；若拿不到用户名，会回退为游客态展示，并提供游客 badge、说明与登录 CTA，而不再因为依赖用户名而阻塞打开。
+- **站点 favicon 配置链路已接通**：SystemConfig 当前已改为本地 JSON 持久化，并新增 `Site.Branding.FaviconUrl`。Console 可直接上传 `.ico`、预览并恢复默认；`radish.client / radish.console` 则通过公开站点设置接口同步标签页图标。
+- **SystemConfig 本地 JSON 可读性已收口**：`DataBases/SystemConfigs/system-configs.json` 当前改为中文直写落盘，保留必要 JSON 转义，便于本地排障与人工审阅；该文件继续按 `DataBases/` 运行时目录处理，不纳入 Git。
+- **默认站点图标种子已固定**：默认回退图标当前统一为 `/uploads/DefaultIco/bailuobo.ico`，对应种子文件为 `DataBases/Uploads/DefaultIco/bailuobo.ico`。
+
+### 相关文档同步
+
+- **论坛专题已补当前发帖规则**：`forum-features.md` 与 `forum-category-tag.md` 当前已同步记录发帖缺失项提示、标签确认规则与创作器提示口径。
+- **WebOS / Console 文档已补游客态与 favicon 事实**：`frontend/design.md`、`frontend/webos-quick-start.md` 与 `guide/console-modules.md` 当前已对齐欢迎 App 游客安全打开、SystemConfig 持久化、公开站点设置接口与默认图标种子。
+- **系统配置持久化规范已补长期约束**：`architecture/specifications.md` 当前已明确 `DataBases/SystemConfigs/system-configs.json` 的职责、中文直写策略，以及 `DataBases/` 运行时文件不纳入 Git 的规则。
+- **规划页已回写本轮进度**：`planning/current.md` 与 `development-plan.md` 当前已补回“发帖引导 / 游客态 / 站点图标配置已完成并验证”的阶段结论，避免规划口径继续停在上一批社区优化。
+
+### 社区技术债治理补充
+
+- **登录态初始化已继续收口**：前一批已补稳 OIDC 回调链与登录态初始化，本轮又把 `cached_user_info` 收口为“与当前 access token 身份强绑定的一次性 bootstrap 缓存”，切换账号、租户或 token 会话时不再复用上一位用户资料。
+- **当前用户回退链路已补身份一致性约束**：`fetchCurrentUser` 失败时，前端当前只会在 store 用户与当前 token 身份一致时保留现有登录态；否则清掉旧态并回退到 token 基础身份，避免前端出现“上一位用户资料 + 当前 token”的串号错态。
+- **禁用附件已从公开访问链统一阻断**：`/_assets/attachments/{id}`、缩略图路由与临时访问令牌下载当前都会在服务层统一校验 `IsEnabled && !IsDeleted`，后台仍可查询和治理 disabled 记录，但禁用附件不会再继续对外提供资源流。
+- **个人中心统计已改为数据库聚合**：`GetUserStats` 当前不再全量拉帖子和评论到内存里求和，而是直接走 `QueryCountAsync / QuerySumAsync` 聚合，减少个人中心高频初始化请求的物化量。
+- **论坛热点链路已完成首批数据库下推**：全部帖子与投票帖子视图下的 `hottest` 排序当前都改为数据库表达式排序后再分页，不再“先查全量、再内存排序、最后截页”。
+- **子评论懒加载口径已对齐启用状态**：`GetChildCommentsPageAsync` 当前已补 `IsEnabled` 过滤，被禁用的子评论不会再通过懒加载接口重新暴露给前端。
+- **帖子列表最近互动人已完成服务 / 仓储下沉**：`FillPostAvatarAndInteractorsAsync` 当前已不再在 `PostController` 内部整页物化全部评论，而是通过评论仓储按页批量查询“每帖最近互动作者 Top N”，再统一回填头像与互动人信息。
+- **评论详情已切到“根评论分页 + 子评论懒加载”正式契约**：论坛前端主链当前改走 `GET /api/v1/Comment/GetRootComments` 分页获取根评论，子评论继续使用 `GetChildComments` 懒加载，帖子详情不再整帖拉评论后再内存组树。
+- **旧评论树入口已降级为兼容观察态**：仓库内主链、`HttpTest` 与功能文档当前都已切到新分页口径；`GetCommentTree` 仍保留对外兼容，但已从 API 展示面隐藏，并在命中时补轻量日志与响应头标记，便于后续确认是否还能正式删除。
+- **旧入口正式删除事项已挂回主线规划持续跟踪**：当前先不急于删除 `GetCommentTree`，而是把“基于真实命中与仓库外依赖确认后再正式收缩”明确保留在主线规划里，避免分页主链稳定后该事项被遗漏。
+
+### 本轮验证
+
+- ✅ `npm run build --workspace=radish.client` 通过。
+- ✅ `npm run build --workspace=radish.console` 通过。
+- ✅ `dotnet build Radish.slnx -c Debug` 通过（保留仓库既有 warning，无新增编译错误）。
+- ✅ `dotnet test Radish.Api.Tests` 通过（`221` 条测试全部通过）。
+- ✅ `npm run build --workspace=radish.client` 已针对本轮社区技术债治理再次复跑通过。

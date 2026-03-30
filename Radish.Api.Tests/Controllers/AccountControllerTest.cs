@@ -50,8 +50,8 @@ public class AccountControllerTest
             .ReturnsAsync(new List<UserVo> { userVo });
 
         userServiceMock
-            .Setup(s => s.GetUserRoleNameStrAsync(username, hashedPassword))
-            .ReturnsAsync("Admin");
+            .Setup(s => s.GetUserRoleNamesAsync(userVo.Uuid))
+            .ReturnsAsync(new List<string> { "Admin" });
 
         var errorsLocalizer = new Mock<IStringLocalizer<Errors>>();
 

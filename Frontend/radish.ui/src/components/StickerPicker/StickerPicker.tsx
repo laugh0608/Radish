@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Icon } from '../Icon/Icon';
+import { resolveConfiguredMediaUrl } from '../../utils';
 import styles from './StickerPicker.module.css';
 
 const DEFAULT_EMOJIS = [
@@ -242,7 +243,7 @@ export const StickerPicker = ({
               >
                 <span className={styles.tabIcon}>
                   {group.coverImageUrl ? (
-                    <img src={group.coverImageUrl} alt={group.name} className={styles.tabImage} />
+                    <img src={resolveConfiguredMediaUrl(group.coverImageUrl)} alt={group.name} className={styles.tabImage} />
                   ) : (
                     <span className={styles.tabText}>{group.name.slice(0, 1)}</span>
                   )}
@@ -290,7 +291,7 @@ export const StickerPicker = ({
             <div className={styles.grid}>
               {filteredStickers.map((sticker) => {
                 const disabledInInsert = mode === 'insert' && sticker.allowInline === false;
-                const preview = sticker.thumbnailUrl || sticker.imageUrl;
+                const preview = resolveConfiguredMediaUrl(sticker.thumbnailUrl || sticker.imageUrl);
 
                 return (
                   <button

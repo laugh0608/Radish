@@ -7,6 +7,8 @@ public class ChannelMemberVo
 
     public string VoUserName { get; set; } = string.Empty;
 
+    public long? VoUserAvatarAttachmentId { get; set; }
+
     public string? VoUserAvatarUrl { get; set; }
 
     public bool VoIsOnline { get; set; }

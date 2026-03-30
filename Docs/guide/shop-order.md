@@ -47,10 +47,10 @@ public class Order : RootEntityTKey<long>, ITenantEntity
     public string ProductName { get; set; } = string.Empty;
 
     /// <summary>
-    /// 商品图片（快照）
+    /// 商品图标附件快照 Id
     /// </summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? ProductImage { get; set; }
+    [SugarColumn(IsNullable = true)]
+    public long? ProductIconAttachmentId { get; set; }
 
     /// <summary>
     /// 商品类型（快照）
@@ -245,7 +245,7 @@ public class OrderService : IOrderService
 
             // 商品快照
             ProductName = product.Name,
-            ProductImage = product.ImageUrl,
+            ProductIconAttachmentId = product.IconAttachmentId,
             ProductType = product.ProductType,
             BenefitType = product.BenefitType,
             ConsumableType = product.ConsumableType,

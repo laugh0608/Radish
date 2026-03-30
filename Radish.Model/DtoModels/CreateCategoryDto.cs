@@ -22,15 +22,11 @@ public class CreateCategoryDto
     [StringLength(1000, ErrorMessage = "分类描述不能超过1000个字符")]
     public string? Description { get; set; }
 
-    /// <summary>分类图标</summary>
-    /// <remarks>可选，最大 200 字符，可存储图标类名或图标 URL</remarks>
-    [StringLength(200, ErrorMessage = "分类图标不能超过200个字符")]
-    public string? Icon { get; set; }
+    /// <summary>分类图标附件 Id</summary>
+    public long? IconAttachmentId { get; set; }
 
-    /// <summary>分类封面图</summary>
-    /// <remarks>可选，最大 500 字符</remarks>
-    [StringLength(500, ErrorMessage = "分类封面图不能超过500个字符")]
-    public string? CoverImage { get; set; }
+    /// <summary>分类封面附件 Id</summary>
+    public long? CoverAttachmentId { get; set; }
 
     /// <summary>父分类 Id</summary>
     /// <remarks>可选，顶级分类为 null</remarks>

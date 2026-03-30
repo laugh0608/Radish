@@ -2,6 +2,7 @@
 import { useWindowStore } from '@/stores/windowStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
+import { hasAuthenticatedSession } from '@/services/authSession';
 import { getVisibleApps } from './AppRegistry';
 import { AppIcon } from '@/widgets/AppIcon';
 import { ContextMenu } from '@radish/ui/context-menu';
@@ -22,9 +23,10 @@ import styles from './Desktop.module.css';
 export const Desktop = () => {
   
   const { openApp } = useWindowStore();
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const { roles, permissions } = useUserStore();
+  const authAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { userId, roles, permissions } = useUserStore();
   const { cycleTheme } = useTheme();
+  const isAuthenticated = hasAuthenticatedSession(authAuthenticated, userId);
 
   // 根据桌面显示规则过滤可见应用
   const visibleApps = getVisibleApps(isAuthenticated, roles, permissions);

@@ -30,6 +30,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
     private readonly IFileStorage _fileStorage;
     private readonly IImageProcessor _imageProcessor;
     private readonly ILogger<StickerService> _logger;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public StickerService(
         IMapper mapper,
@@ -39,7 +40,8 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         ICaching caching,
         IFileStorage fileStorage,
         IImageProcessor imageProcessor,
-        ILogger<StickerService> logger)
+        ILogger<StickerService> logger,
+        IAttachmentUrlResolver attachmentUrlResolver)
         : base(mapper, baseRepository)
     {
         _stickerGroupRepository = baseRepository;
@@ -49,6 +51,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         _fileStorage = fileStorage;
         _imageProcessor = imageProcessor;
         _logger = logger;
+        _attachmentUrlResolver = attachmentUrlResolver;
     }
 
     public async Task<List<StickerGroupVo>> GetGroupsAsync(long tenantId)
@@ -90,7 +93,10 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             .GroupBy(s => s.GroupId)
             .ToDictionary(g => g.Key, g => Mapper.Map<List<StickerVo>>(g.ToList()));
 
+        await FillStickerUrlsAsync(stickerLookup.Values.SelectMany(x => x).ToList());
+
         var groupVos = Mapper.Map<List<StickerGroupVo>>(groups);
+        FillStickerGroupUrls(groupVos);
         foreach (var groupVo in groupVos)
         {
             if (!stickerLookup.TryGetValue(groupVo.VoId, out var stickerVos))
@@ -132,7 +138,10 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             .GroupBy(s => s.GroupId)
             .ToDictionary(g => g.Key, g => Mapper.Map<List<StickerVo>>(g.ToList()));
 
+        await FillStickerUrlsAsync(stickerLookup.Values.SelectMany(x => x).ToList());
+
         var groupVos = Mapper.Map<List<StickerGroupVo>>(groups);
+        FillStickerGroupUrls(groupVos);
         foreach (var groupVo in groupVos)
         {
             if (!stickerLookup.TryGetValue(groupVo.VoId, out var stickerVos))
@@ -168,8 +177,10 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         var stickers = await _stickerRepository.QueryAsync(
             s => s.GroupId == group.Id && s.IsEnabled && !s.IsDeleted);
         var stickerVos = Mapper.Map<List<StickerVo>>(stickers.OrderBy(s => s.Sort).ThenBy(s => s.Id).ToList());
+        await FillStickerUrlsAsync(stickerVos);
 
         var groupVo = Mapper.Map<StickerGroupVo>(group);
+        FillStickerGroupUrl(groupVo);
         groupVo.VoStickers = stickerVos;
         groupVo.VoStickerCount = stickerVos.Count;
         return groupVo;
@@ -255,7 +266,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             Name = createDto.Name.Trim(),
             Code = normalizedCode,
             Description = createDto.Description?.Trim(),
-            CoverImageUrl = createDto.CoverImageUrl?.Trim(),
+            CoverAttachmentId = createDto.CoverAttachmentId,
             GroupType = createDto.GroupType,
             IsEnabled = createDto.IsEnabled,
             Sort = createDto.Sort,
@@ -288,7 +299,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
 
         entity.Name = updateDto.Name.Trim();
         entity.Description = updateDto.Description?.Trim();
-        entity.CoverImageUrl = updateDto.CoverImageUrl?.Trim();
+        entity.CoverAttachmentId = updateDto.CoverAttachmentId;
         entity.GroupType = updateDto.GroupType;
         entity.IsEnabled = updateDto.IsEnabled;
         entity.Sort = updateDto.Sort;
@@ -388,10 +399,8 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             throw new InvalidOperationException("该分组内表情标识符已存在");
         }
 
-        var (imageUrl, thumbnailUrl, isAnimated) = await ResolveStickerImageDataAsync(
+        var isAnimated = await ResolveStickerAttachmentAsync(
             createDto.AttachmentId,
-            createDto.ImageUrl,
-            createDto.ThumbnailUrl,
             createDto.IsAnimated,
             group.Code,
             normalizedCode);
@@ -402,8 +411,6 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             GroupId = createDto.GroupId,
             Code = normalizedCode,
             Name = createDto.Name.Trim(),
-            ImageUrl = imageUrl,
-            ThumbnailUrl = thumbnailUrl,
             IsAnimated = isAnimated,
             AllowInline = createDto.AllowInline,
             AttachmentId = createDto.AttachmentId,
@@ -436,7 +443,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             return false;
         }
 
-        if (updateDto.AttachmentId.HasValue || !string.IsNullOrWhiteSpace(updateDto.ImageUrl))
+        if (updateDto.AttachmentId.HasValue)
         {
             var groupCode = string.Empty;
             if (updateDto.AttachmentId.HasValue)
@@ -445,21 +452,16 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
                 groupCode = group?.Code ?? string.Empty;
             }
 
-            var (imageUrl, thumbnailUrl, isAnimated) = await ResolveStickerImageDataAsync(
+            var isAnimated = await ResolveStickerAttachmentAsync(
                 updateDto.AttachmentId,
-                updateDto.ImageUrl,
-                updateDto.ThumbnailUrl,
                 updateDto.IsAnimated,
                 groupCode,
                 entity.Code);
-            entity.ImageUrl = imageUrl;
-            entity.ThumbnailUrl = thumbnailUrl;
             entity.IsAnimated = isAnimated;
             entity.AttachmentId = updateDto.AttachmentId;
         }
         else
         {
-            entity.ThumbnailUrl = string.IsNullOrWhiteSpace(updateDto.ThumbnailUrl) ? entity.ThumbnailUrl : updateDto.ThumbnailUrl.Trim();
             entity.IsAnimated = updateDto.IsAnimated;
         }
 
@@ -544,7 +546,9 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
                  && !s.IsDeleted
                  && (includeDisabled || s.IsEnabled));
 
-        return Mapper.Map<List<StickerVo>>(stickers.OrderBy(s => s.Sort).ThenBy(s => s.Id).ToList());
+        var stickerVos = Mapper.Map<List<StickerVo>>(stickers.OrderBy(s => s.Sort).ThenBy(s => s.Id).ToList());
+        await FillStickerUrlsAsync(stickerVos);
+        return stickerVos;
     }
 
     public StickerNormalizeCodeVo NormalizeCode(string filename)
@@ -690,10 +694,8 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         {
             try
             {
-                var (imageUrl, thumbnailUrl, isAnimated) = await ResolveStickerImageDataAsync(
+                var isAnimated = await ResolveStickerAttachmentAsync(
                     row.item.AttachmentId,
-                    imageUrl: null,
-                    thumbnailUrl: null,
                     isAnimated: false,
                     groupCode: group.Code,
                     stickerCode: row.code);
@@ -703,8 +705,6 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
                     GroupId = request.GroupId,
                     Code = row.code,
                     Name = row.name,
-                    ImageUrl = imageUrl,
-                    ThumbnailUrl = thumbnailUrl,
                     IsAnimated = isAnimated,
                     AllowInline = row.item.AllowInline,
                     AttachmentId = row.item.AttachmentId,
@@ -800,82 +800,59 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         return affected;
     }
 
-    private async Task<(string imageUrl, string? thumbnailUrl, bool isAnimated)> ResolveStickerImageDataAsync(
+    private async Task<bool> ResolveStickerAttachmentAsync(
         long? attachmentId,
-        string? imageUrl,
-        string? thumbnailUrl,
         bool isAnimated,
         string? groupCode = null,
         string? stickerCode = null)
     {
-        var resolvedImageUrl = imageUrl?.Trim();
-        var resolvedThumbnailUrl = thumbnailUrl?.Trim();
         var resolvedAnimated = isAnimated;
 
-        if (attachmentId.HasValue)
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
         {
-            var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId.Value);
-            if (attachment == null || attachment.IsDeleted)
-            {
-                throw new InvalidOperationException("关联附件不存在或已删除");
-            }
-
-            if (string.IsNullOrWhiteSpace(resolvedImageUrl))
-            {
-                resolvedImageUrl = attachment.Url;
-            }
-
-            if (string.IsNullOrWhiteSpace(resolvedThumbnailUrl))
-            {
-                resolvedThumbnailUrl = !string.IsNullOrWhiteSpace(attachment.ThumbnailPath)
-                    ? ResolveFileUrl(attachment.ThumbnailPath)
-                    : attachment.Url;
-            }
-
-            if (!resolvedAnimated)
-            {
-                resolvedAnimated = string.Equals(attachment.Extension, ".gif", StringComparison.OrdinalIgnoreCase)
-                                   || string.Equals(attachment.MimeType, "image/gif", StringComparison.OrdinalIgnoreCase);
-            }
-
-            if (string.IsNullOrWhiteSpace(attachment.ThumbnailPath) &&
-                !string.IsNullOrWhiteSpace(groupCode) &&
-                !string.IsNullOrWhiteSpace(stickerCode))
-            {
-                var generatedThumbnailUrl = await TryGenerateStickerThumbnailAsync(attachment, groupCode, stickerCode);
-                if (!string.IsNullOrWhiteSpace(generatedThumbnailUrl))
-                {
-                    resolvedThumbnailUrl = generatedThumbnailUrl;
-                }
-            }
+            throw new ArgumentException("附件 ID 不能为空", nameof(attachmentId));
         }
 
-        if (string.IsNullOrWhiteSpace(resolvedImageUrl))
+        var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId.Value);
+        if (attachment == null || attachment.IsDeleted)
         {
-            throw new ArgumentException("图片地址不能为空");
+            throw new InvalidOperationException("关联附件不存在或已删除");
         }
 
-        return (resolvedImageUrl, resolvedThumbnailUrl, resolvedAnimated);
+        if (!resolvedAnimated)
+        {
+            resolvedAnimated = string.Equals(attachment.Extension, ".gif", StringComparison.OrdinalIgnoreCase)
+                               || string.Equals(attachment.MimeType, "image/gif", StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (string.IsNullOrWhiteSpace(attachment.ThumbnailPath) &&
+            !string.IsNullOrWhiteSpace(groupCode) &&
+            !string.IsNullOrWhiteSpace(stickerCode))
+        {
+            await TryGenerateStickerThumbnailAsync(attachment, groupCode, stickerCode);
+        }
+
+        return resolvedAnimated;
     }
 
-    private async Task<string?> TryGenerateStickerThumbnailAsync(Attachment attachment, string groupCode, string stickerCode)
+    private async Task TryGenerateStickerThumbnailAsync(Attachment attachment, string groupCode, string stickerCode)
     {
         if (string.IsNullOrWhiteSpace(attachment.StoragePath))
         {
-            return null;
+            return;
         }
 
         try
         {
             if (!await _fileStorage.ExistsAsync(attachment.StoragePath))
             {
-                return null;
+                return;
             }
 
             await using var sourceStream = await _fileStorage.DownloadAsync(attachment.StoragePath);
             if (sourceStream == null)
             {
-                return null;
+                return;
             }
 
             var thumbnailRelativePath = $"stickers/thumbnails/{groupCode}/{stickerCode}.jpg";
@@ -890,26 +867,18 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             if (!result.Success)
             {
                 _logger.LogWarning("生成表情缩略图失败：AttachmentId={AttachmentId}, Error={Error}", attachment.Id, result.ErrorMessage);
-                return null;
+                return;
             }
 
-            return _fileStorage.GetFileUrl(thumbnailRelativePath);
+            attachment.ThumbnailPath = thumbnailRelativePath;
+            attachment.ModifyTime = DateTime.Now;
+            attachment.ModifyBy = "StickerService";
+            await _attachmentRepository.UpdateAsync(attachment);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "生成表情缩略图异常，AttachmentId={AttachmentId}", attachment.Id);
-            return null;
         }
-    }
-
-    private string ResolveFileUrl(string pathOrUrl)
-    {
-        if (Uri.TryCreate(pathOrUrl, UriKind.Absolute, out _))
-        {
-            return pathOrUrl;
-        }
-
-        return _fileStorage.GetFileUrl(pathOrUrl);
     }
 
     private async Task InvalidateGroupsCacheByGroupIdAsync(long groupId)
@@ -1019,6 +988,62 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
     private static bool IsValidCode(string code)
     {
         return !string.IsNullOrWhiteSpace(code) && code.Length <= 100 && CodeRegex.IsMatch(code);
+    }
+
+    private void FillStickerGroupUrls(List<StickerGroupVo> groups)
+    {
+        foreach (var group in groups)
+        {
+            FillStickerGroupUrl(group);
+        }
+    }
+
+    private void FillStickerGroupUrl(StickerGroupVo group)
+    {
+        group.VoCoverImageUrl = ResolveAttachmentUrl(group.VoCoverAttachmentId);
+    }
+
+    private async Task FillStickerUrlsAsync(List<StickerVo> stickers)
+    {
+        if (stickers.Count == 0)
+        {
+            return;
+        }
+
+        var attachmentIds = stickers
+            .Where(sticker => sticker.VoAttachmentId.HasValue && sticker.VoAttachmentId.Value > 0)
+            .Select(sticker => sticker.VoAttachmentId!.Value)
+            .Distinct()
+            .ToList();
+
+        var attachments = attachmentIds.Count == 0
+            ? new Dictionary<long, Attachment>()
+            : (await _attachmentRepository.QueryByIdsAsync(attachmentIds)).ToDictionary(attachment => attachment.Id);
+
+        foreach (var sticker in stickers)
+        {
+            sticker.VoImageUrl = ResolveAttachmentUrl(sticker.VoAttachmentId) ?? string.Empty;
+
+            if (sticker.VoAttachmentId.HasValue &&
+                attachments.TryGetValue(sticker.VoAttachmentId.Value, out var attachment) &&
+                !string.IsNullOrWhiteSpace(attachment.ThumbnailPath))
+            {
+                sticker.VoThumbnailUrl = ResolveAttachmentUrl(sticker.VoAttachmentId, AttachmentUrlVariant.Thumbnail);
+                continue;
+            }
+
+            sticker.VoThumbnailUrl = sticker.VoImageUrl;
+        }
+    }
+
+    private string? ResolveAttachmentUrl(long? attachmentId, AttachmentUrlVariant variant = AttachmentUrlVariant.Original)
+    {
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
+        {
+            return null;
+        }
+
+        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value, variant);
     }
 
     private static string NormalizeCodeCore(string filename, out List<string> reasons)

@@ -28,7 +28,6 @@ public class Attachment : RootEntityTKey<long>, ITenantEntity
         StorageType = "Local";
         StoragePath = string.Empty;
         ThumbnailPath = string.Empty;
-        Url = string.Empty;
         UploaderId = 0;
         UploaderName = string.Empty;
         BusinessType = string.Empty;
@@ -111,11 +110,6 @@ public class Attachment : RootEntityTKey<long>, ITenantEntity
     /// <remarks>可空，最大 500 字符</remarks>
     [SugarColumn(Length = 500, IsNullable = true)]
     public string? LargePath { get; set; }
-
-    /// <summary>访问 URL</summary>
-    /// <remarks>不可为空，最大 1000 字符</remarks>
-    [SugarColumn(Length = 1000, IsNullable = false)]
-    public string Url { get; set; } = string.Empty;
 
     #endregion
 

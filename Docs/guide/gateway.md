@@ -43,7 +43,8 @@ Radish.Gateway (http://gateway:5000，容器内仅提供 HTTP)
 
 统一路由：
     ├─→ /api/** (业务 API → Radish.Api :5100)
-    ├─→ /uploads/** (上传文件 → Radish.Api :5100)
+    ├─→ /_assets/attachments/** (附件公开资源 → Radish.Api :5100)
+    ├─→ /uploads/** (底层静态文件 / 存储层兼容路径 → Radish.Api :5100)
     ├─→ /scalar/** (API 文档 → Radish.Api :5100)
     ├─→ /openapi/** (OpenAPI 规范 → Radish.Api :5100)
     ├─→ /hangfire/** (定时任务面板 → Radish.Api :5100)
@@ -141,7 +142,8 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 | 路径模式 | 目标服务 | 说明 | 特殊配置 |
 |---------|---------|------|---------|
 | `/api/**` | Radish.Api (:5100) | 业务 API 接口 | - |
-| `/uploads/**` | Radish.Api (:5100) | 上传文件静态资源 | - |
+| `/_assets/attachments/**` | Radish.Api (:5100) | 附件公开资源口径 | - |
+| `/uploads/**` | Radish.Api (:5100) | 底层静态文件暴露 / 兼容路径 | - |
 | `/scalar/**` | Radish.Api (:5100) | Scalar API 文档 | - |
 | `/openapi/**` | Radish.Api (:5100) | OpenAPI 规范 | - |
 | `/hangfire/**` | Radish.Api (:5100) | Hangfire 定时任务面板 | - |
@@ -150,15 +152,19 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 | `/connect/**` | Radish.Auth (:5200) | OIDC 协议端点 | X-Forwarded-* 头 |
 | `/**` | radish.client (:3000) | 前端应用（最低优先级） | WebSocket, Order: 1000 |
 
+补充说明：
+
+- 附件业务公开访问口径已经切换到 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail`。
+- `Radish.Gateway/appsettings.json` 当前已内建 `/_assets/attachments/** -> Radish.Api` 路由，避免该路径落到前端兜底路由。
+- 如果系统前面还有 `Nginx / Traefik / Caddy`，仍需确保该路径被继续放行到 Gateway，而不是被前端静态站点或默认首页吞掉。
+- `/uploads/**` 可以继续保留为底层静态目录或兼容路径，但不再是业务正文、商品、贴图、聊天图片等场景的推荐公开引用口径。
+
 #### 完整配置示例
 
 ```json
 {
   "ReverseProxy": {
     "Routes": {
-      "docs-route": {
-        "ClusterId": "docs-cluster",
-      },
       "api-route": {
         "ClusterId": "apiCluster",
         "Match": { "Path": "/api/{**catch-all}" }
@@ -190,11 +196,6 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
       }
     },
     "Clusters": {
-      "docs-cluster": {
-        "Destinations": {
-          "docs": { "Address": "http://localhost:4000" }
-        }
-      },
       "apiCluster": {
         "Destinations": {
           "api": { "Address": "http://localhost:5100" }
@@ -219,6 +220,11 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
   }
 }
 ```
+
+说明：
+
+- 当前主线不再维护独立的 Docs 前端项目或旧的 Docs 下游服务。
+- 固定项目文档统一收口到仓库 `Docs/`，由 `Radish.Api` 启动后同步到 WebOS“文档”应用；Gateway 当前仅保留 `/scalar` 等面向 API 文档与服务入口的代理能力。
 
 #### 路由特性说明
 

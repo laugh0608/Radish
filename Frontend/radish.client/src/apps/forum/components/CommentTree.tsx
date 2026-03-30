@@ -10,10 +10,14 @@ import styles from './CommentTree.module.css';
 interface CommentTreeProps {
   comments: CommentNodeType[];
   loading?: boolean;
+  loadingMoreRootComments?: boolean;
   hasPost?: boolean;
   displayTimeZone: string;
   currentUserId?: number;
   pageSize?: number;
+  rootCommentTotal?: number;
+  loadedRootCommentCount?: number;
+  rootCommentPageSize?: number;
   sortBy?: 'newest' | 'hottest' | null; // null表示默认排序
   onDeleteComment?: (commentId: number) => void;
   onEditComment?: (commentId: number, newContent: string) => Promise<void>;
@@ -21,6 +25,7 @@ interface CommentTreeProps {
   onLikeComment?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment?: (commentId: number, authorName: string) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
+  onLoadMoreRootComments?: () => Promise<void>;
   onSortChange?: (sortBy: 'newest' | 'hottest') => void;
   stickerMap?: MarkdownStickerMap;
   reactionMap?: Record<number, ReactionSummaryVo[]>;
@@ -36,10 +41,14 @@ interface CommentTreeProps {
 export const CommentTree = ({
   comments,
   loading = false,
+  loadingMoreRootComments = false,
   hasPost = false,
   displayTimeZone,
   currentUserId = 0,
   pageSize = 10,
+  rootCommentTotal = 0,
+  loadedRootCommentCount = 0,
+  rootCommentPageSize = 20,
   sortBy = null,
   onDeleteComment,
   onEditComment,
@@ -47,6 +56,7 @@ export const CommentTree = ({
   onLikeComment,
   onReplyComment,
   onLoadMoreChildren,
+  onLoadMoreRootComments,
   onSortChange,
   stickerMap,
   reactionMap = {},
@@ -90,6 +100,7 @@ export const CommentTree = ({
     // 手动排序时，直接使用后端返回的顺序（此时不再需要前端重新排序）
     return comments;
   }, [comments, sortBy, topGodComment]);
+  const hasMoreRootComments = hasPost && loadedRootCommentCount < rootCommentTotal;
 
   return (
     <div className={styles.container}>
@@ -149,6 +160,28 @@ export const CommentTree = ({
           />
         ))}
       </div>
+      {!loading && hasMoreRootComments && (
+        <div className={styles.loadMoreWrap}>
+          <button
+            type="button"
+            className={styles.loadMoreButton}
+            onClick={() => void onLoadMoreRootComments?.()}
+            disabled={loadingMoreRootComments}
+          >
+            {loadingMoreRootComments
+              ? t('forum.loadingDiscussion')
+              : t('forum.comment.loadMoreReplies', {
+                  loaded: loadedRootCommentCount,
+                  total: rootCommentTotal
+                })}
+          </button>
+          {rootCommentPageSize > 0 && (
+            <p className={styles.loadMoreHint}>
+              {loadedRootCommentCount}/{rootCommentTotal}
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 };

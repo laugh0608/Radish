@@ -13,13 +13,16 @@ namespace Radish.Service;
 public class UserBrowseHistoryService : BaseService<UserBrowseHistory, UserBrowseHistoryVo>, IUserBrowseHistoryService
 {
     private readonly IBaseRepository<UserBrowseHistory> _browseHistoryRepository;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public UserBrowseHistoryService(
         IMapper mapper,
-        IBaseRepository<UserBrowseHistory> baseRepository)
+        IBaseRepository<UserBrowseHistory> baseRepository,
+        IAttachmentUrlResolver attachmentUrlResolver)
         : base(mapper, baseRepository)
     {
         _browseHistoryRepository = baseRepository;
+        _attachmentUrlResolver = attachmentUrlResolver;
     }
 
     /// <summary>记录浏览行为</summary>
@@ -40,7 +43,7 @@ public class UserBrowseHistoryService : BaseService<UserBrowseHistory, UserBrows
         var normalizedOperatorName = NormalizeRequired(request.OperatorName, 50, "System");
         var normalizedTargetSlug = NormalizeOptional(request.TargetSlug, 200);
         var normalizedSummary = NormalizeOptional(request.Summary, 500);
-        var normalizedCoverImage = NormalizeOptional(request.CoverImage, 500);
+        var normalizedCoverAttachmentId = NormalizeAttachmentId(request.CoverAttachmentId);
         var normalizedRoutePath = NormalizeOptional(request.RoutePath, 500);
         var nowUtc = DateTime.UtcNow;
         var existing = await _browseHistoryRepository.QueryFirstAsync(history =>
@@ -59,7 +62,7 @@ public class UserBrowseHistoryService : BaseService<UserBrowseHistory, UserBrows
                 TargetSlug = normalizedTargetSlug,
                 Title = normalizedTitle,
                 Summary = normalizedSummary,
-                CoverImage = normalizedCoverImage,
+                CoverAttachmentId = normalizedCoverAttachmentId,
                 RoutePath = normalizedRoutePath,
                 ViewCount = 1,
                 LastViewTime = nowUtc,
@@ -74,7 +77,7 @@ public class UserBrowseHistoryService : BaseService<UserBrowseHistory, UserBrows
         existing.TargetSlug = normalizedTargetSlug ?? existing.TargetSlug;
         existing.Title = normalizedTitle;
         existing.Summary = normalizedSummary;
-        existing.CoverImage = normalizedCoverImage;
+        existing.CoverAttachmentId = normalizedCoverAttachmentId;
         existing.RoutePath = normalizedRoutePath ?? existing.RoutePath;
         existing.ViewCount = Math.Max(0, existing.ViewCount) + 1;
         existing.LastViewTime = nowUtc;
@@ -100,7 +103,9 @@ public class UserBrowseHistoryService : BaseService<UserBrowseHistory, UserBrows
             history => history.Id,
             OrderByType.Desc);
 
-        return (Mapper.Map<List<UserBrowseHistoryVo>>(items), total);
+        var historyVos = Mapper.Map<List<UserBrowseHistoryVo>>(items);
+        FillBrowseHistoryUrls(historyVos);
+        return (historyVos, total);
     }
 
     private static string NormalizeRequired(string? value, int maxLength, string fallback)
@@ -118,5 +123,30 @@ public class UserBrowseHistoryService : BaseService<UserBrowseHistory, UserBrows
 
         var normalized = value.Trim();
         return normalized.Length <= maxLength ? normalized : normalized[..maxLength];
+    }
+
+    private static long? NormalizeAttachmentId(long? attachmentId)
+    {
+        return attachmentId.HasValue && attachmentId.Value > 0
+            ? attachmentId.Value
+            : null;
+    }
+
+    private void FillBrowseHistoryUrls(List<UserBrowseHistoryVo> items)
+    {
+        foreach (var item in items)
+        {
+            item.VoCoverImage = ResolveAttachmentUrl(item.VoCoverAttachmentId);
+        }
+    }
+
+    private string? ResolveAttachmentUrl(long? attachmentId)
+    {
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
+        {
+            return null;
+        }
+
+        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
     }
 }

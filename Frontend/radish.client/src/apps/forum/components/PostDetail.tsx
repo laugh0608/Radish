@@ -6,6 +6,11 @@ import type { UserFollowStatus } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { Icon } from '@radish/ui/icon';
+import {
+  buildAttachmentAssetUrl,
+  type MarkdownDocumentUploadResult,
+  type MarkdownImageUploadResult,
+} from '@radish/ui';
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
@@ -18,16 +23,6 @@ const MarkdownRenderer = lazy(() =>
 const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
 );
-
-const appendImageMeta = (displayUrl: string, fullUrl?: string): string => {
-  const params = new URLSearchParams();
-  if (fullUrl) {
-    params.set('full', fullUrl);
-  }
-
-  const meta = params.toString();
-  return meta ? `${displayUrl}#radish:${meta}` : displayUrl;
-};
 
 interface PostDetailProps {
   post: PostDetailType | null;
@@ -46,6 +41,8 @@ interface PostDetailProps {
   onAnswerFilterChange?: (filterBy: QuestionAnswerFilter) => void;
   isAuthenticated?: boolean;
   currentUserId?: number;
+  canToggleTop?: boolean;
+  onToggleTop?: (isTop: boolean) => Promise<void>;
   onEdit?: (postId: number) => void;
   onDelete?: (postId: number) => void;
   onViewHistory?: (postId: number) => void;
@@ -79,6 +76,8 @@ export const PostDetail = ({
   onAnswerFilterChange,
   isAuthenticated = false,
   currentUserId = 0,
+  canToggleTop = false,
+  onToggleTop,
   onEdit,
   onDelete,
   onViewHistory,
@@ -111,6 +110,7 @@ export const PostDetail = ({
   const [acceptingAnswerId, setAcceptingAnswerId] = useState<number | null>(null);
   const [isDrawingLottery, setIsDrawingLottery] = useState(false);
   const [isClosingPoll, setIsClosingPoll] = useState(false);
+  const [isTogglingTop, setIsTogglingTop] = useState(false);
 
   const isAuthor = !!post && currentUserId > 0 && String(post.voAuthorId) === String(currentUserId);
   const showFollowAction = isAuthenticated && !!post && !isAuthor && post.voAuthorId > 0;
@@ -200,6 +200,10 @@ export const PostDetail = ({
     setAcceptingAnswerId(null);
   }, [post?.voId]);
 
+  useEffect(() => {
+    setIsTogglingTop(false);
+  }, [post?.voId, post?.voIsTop]);
+
   if (loading) {
     return (
       <div className={styles.container}>
@@ -285,7 +289,7 @@ export const PostDetail = ({
     }
   };
 
-  const handleAnswerImageUpload = async (file: File) => {
+  const handleAnswerImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
     const result = await uploadImage({
       file,
       businessType: 'Comment',
@@ -294,21 +298,21 @@ export const PostDetail = ({
       removeExif: true
     }, t);
 
-    const displayUrl = result.voThumbnailUrl || result.voUrl;
     return {
-      url: appendImageMeta(displayUrl, result.voUrl),
-      thumbnailUrl: result.voThumbnailUrl
+      attachmentId: result.voId,
+      displayVariant: result.voThumbnailUrl ? 'thumbnail' : 'original',
+      previewUrl: buildAttachmentAssetUrl(result.voId, result.voThumbnailUrl ? 'thumbnail' : 'original'),
     };
   };
 
-  const handleAnswerDocumentUpload = async (file: File) => {
+  const handleAnswerDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
     const result = await uploadDocument({
       file,
       businessType: 'Comment'
     }, t);
 
     return {
-      url: result.voUrl,
+      attachmentId: result.voId,
       fileName: result.voOriginalName || file.name
     };
   };
@@ -323,6 +327,19 @@ export const PostDetail = ({
       await onAcceptAnswer(answerId);
     } finally {
       setAcceptingAnswerId(null);
+    }
+  };
+
+  const handleToggleTop = async () => {
+    if (!onToggleTop || !post) {
+      return;
+    }
+
+    setIsTogglingTop(true);
+    try {
+      await onToggleTop(!post.voIsTop);
+    } finally {
+      setIsTogglingTop(false);
     }
   };
 
@@ -841,36 +858,59 @@ export const PostDetail = ({
             />
           )}
 
-          {isAuthor && (
+          {(canToggleTop || isAuthor) && (
             <div className={styles.authorActions}>
-              <button
-                type="button"
-                onClick={() => onEdit?.(post.voId)}
-                className={styles.editButton}
-                title={t('forum.postDetail.action.editTitle')}
-              >
-                <Icon icon="mdi:pencil" size={18} />
-                {t('forum.postDetail.action.edit')}
-              </button>
-              <button
-                type="button"
-                onClick={() => onDelete?.(post.voId)}
-                className={styles.deleteButton}
-                title={t('forum.postDetail.action.deleteTitle')}
-              >
-                <Icon icon="mdi:delete" size={18} />
-                {t('forum.postDetail.action.delete')}
-              </button>
-              {!isQuestionPost && (
+              {canToggleTop && (
                 <button
                   type="button"
-                  onClick={() => onViewHistory?.(post.voId)}
+                  onClick={() => {
+                    void handleToggleTop();
+                  }}
                   className={styles.historyButton}
-                  title={t('forum.postDetail.action.historyTitle')}
+                  title={post.voIsTop ? t('forum.postDetail.action.untopTitle') : t('forum.postDetail.action.topTitle')}
+                  disabled={isTogglingTop}
                 >
-                  <Icon icon="mdi:history" size={18} />
-                  {t('forum.postDetail.action.history')}
+                  <Icon icon={post.voIsTop ? 'mdi:pin-off-outline' : 'mdi:pin-outline'} size={18} />
+                  {isTogglingTop
+                    ? t('forum.postDetail.action.topping')
+                    : post.voIsTop
+                      ? t('forum.postDetail.action.untop')
+                      : t('forum.postDetail.action.top')}
                 </button>
+              )}
+
+              {isAuthor && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onEdit?.(post.voId)}
+                    className={styles.editButton}
+                    title={t('forum.postDetail.action.editTitle')}
+                  >
+                    <Icon icon="mdi:pencil" size={18} />
+                    {t('forum.postDetail.action.edit')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onDelete?.(post.voId)}
+                    className={styles.deleteButton}
+                    title={t('forum.postDetail.action.deleteTitle')}
+                  >
+                    <Icon icon="mdi:delete" size={18} />
+                    {t('forum.postDetail.action.delete')}
+                  </button>
+                  {!isQuestionPost && (
+                    <button
+                      type="button"
+                      onClick={() => onViewHistory?.(post.voId)}
+                      className={styles.historyButton}
+                      title={t('forum.postDetail.action.historyTitle')}
+                    >
+                      <Icon icon="mdi:history" size={18} />
+                      {t('forum.postDetail.action.history')}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           )}

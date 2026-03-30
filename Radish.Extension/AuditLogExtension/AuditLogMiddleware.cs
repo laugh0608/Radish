@@ -38,26 +38,31 @@ public class AuditLogMiddleware
 
         var stopwatch = Stopwatch.StartNew();
         var originalBodyStream = context.Response.Body;
+        var captureResponseBody = _options.LogResponseBody;
+        MemoryStream? responseBody = null;
 
         try
         {
             // 读取请求体
             var requestBody = await ReadRequestBodyAsync(context.Request);
 
-            // 创建响应体缓冲区
-            using var responseBody = new MemoryStream();
-            context.Response.Body = responseBody;
+            if (captureResponseBody)
+            {
+                responseBody = new MemoryStream();
+                context.Response.Body = responseBody;
+            }
 
             // 执行请求
             await _next(context);
 
             stopwatch.Stop();
 
-            // 读取响应体
-            var responseBodyText = await ReadResponseBodyAsync(responseBody);
-
-            // 恢复原始响应流
-            await responseBody.CopyToAsync(originalBodyStream);
+            string? responseBodyText = null;
+            if (captureResponseBody && responseBody != null)
+            {
+                responseBodyText = await ReadResponseBodyAsync(context.Response, responseBody);
+                await responseBody.CopyToAsync(originalBodyStream);
+            }
 
             // 记录审计日志（在请求上下文中执行，确保 ServiceProvider 可用）
             try
@@ -88,6 +93,7 @@ public class AuditLogMiddleware
         finally
         {
             context.Response.Body = originalBodyStream;
+            responseBody?.Dispose();
         }
     }
 
@@ -129,6 +135,16 @@ public class AuditLogMiddleware
     /// </summary>
     private async Task<string?> ReadRequestBodyAsync(HttpRequest request)
     {
+        if (request.ContentLength == 0)
+        {
+            return null;
+        }
+
+        if (!ShouldCaptureBodyAsText(request.ContentType))
+        {
+            return BuildBinaryPayloadSummary("request", request.ContentType, request.ContentLength);
+        }
+
         if (!request.Body.CanSeek)
         {
             request.EnableBuffering();
@@ -148,8 +164,14 @@ public class AuditLogMiddleware
     /// <summary>
     /// 读取响应体
     /// </summary>
-    private async Task<string?> ReadResponseBodyAsync(MemoryStream responseBody)
+    private async Task<string?> ReadResponseBodyAsync(HttpResponse response, MemoryStream responseBody)
     {
+        if (!ShouldCaptureBodyAsText(response.ContentType))
+        {
+            responseBody.Seek(0, SeekOrigin.Begin);
+            return BuildBinaryPayloadSummary("response", response.ContentType, responseBody.Length);
+        }
+
         responseBody.Seek(0, SeekOrigin.Begin);
         var text = await new StreamReader(responseBody).ReadToEndAsync();
         responseBody.Seek(0, SeekOrigin.Begin);
@@ -199,6 +221,31 @@ public class AuditLogMiddleware
             // 不是 JSON 格式，直接返回
             return body;
         }
+    }
+
+    private static bool ShouldCaptureBodyAsText(string? contentType)
+    {
+        if (string.IsNullOrWhiteSpace(contentType))
+        {
+            return false;
+        }
+
+        var mediaType = contentType.Split(';', 2, StringSplitOptions.TrimEntries)[0];
+        if (string.IsNullOrWhiteSpace(mediaType))
+        {
+            return false;
+        }
+
+        return mediaType.StartsWith("text/", StringComparison.OrdinalIgnoreCase)
+               || mediaType.Contains("json", StringComparison.OrdinalIgnoreCase)
+               || mediaType.Contains("xml", StringComparison.OrdinalIgnoreCase)
+               || mediaType.Contains("javascript", StringComparison.OrdinalIgnoreCase)
+               || mediaType.Equals("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string BuildBinaryPayloadSummary(string direction, string? contentType, long? length)
+    {
+        return $"[binary {direction} omitted] contentType={contentType ?? "unknown"}; length={(length.HasValue ? length.Value.ToString() : "unknown")}";
     }
 
     /// <summary>

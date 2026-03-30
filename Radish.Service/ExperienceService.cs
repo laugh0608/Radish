@@ -26,6 +26,7 @@ namespace Radish.Service;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IExperienceCalculator _experienceCalculator;
     private readonly ICoinService _coinService;
+    private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly INotificationService _notificationService;
 
 	    /// <summary>乐观锁冲突重试次数</summary>
@@ -46,6 +47,7 @@ namespace Radish.Service;
         IBaseRepository<User> userRepository,
         IExperienceCalculator experienceCalculator,
         ICoinService coinService,
+        IAttachmentUrlResolver attachmentUrlResolver,
         INotificationService notificationService)
         : base(mapper, userExpRepository)
     {
@@ -56,6 +58,7 @@ namespace Radish.Service;
         _userRepository = userRepository;
         _experienceCalculator = experienceCalculator;
         _coinService = coinService;
+        _attachmentUrlResolver = attachmentUrlResolver;
         _notificationService = notificationService;
     }
 
@@ -343,7 +346,9 @@ namespace Radish.Service;
             // 手动排序
             var sortedConfigs = levelConfigs.OrderBy(l => l.Level).ToList();
 
-            return Mapper.Map<List<LevelConfigVo>>(sortedConfigs);
+            var configVos = Mapper.Map<List<LevelConfigVo>>(sortedConfigs);
+            FillLevelConfigUrls(configVos);
+            return configVos;
         }
         catch (Exception ex)
         {
@@ -360,7 +365,14 @@ namespace Radish.Service;
         try
         {
             var levelConfig = await _levelConfigRepository.QueryFirstAsync(l => l.Level == level && l.IsEnabled);
-            return levelConfig == null ? null : Mapper.Map<LevelConfigVo>(levelConfig);
+            if (levelConfig == null)
+            {
+                return null;
+            }
+
+            var configVo = Mapper.Map<LevelConfigVo>(levelConfig);
+            FillLevelConfigUrl(configVo);
+            return configVo;
         }
         catch (Exception ex)
         {
@@ -815,8 +827,8 @@ namespace Radish.Service;
         {
             vo.VoCurrentLevelName = currentLevelConfig.LevelName;
             vo.VoThemeColor = currentLevelConfig.ThemeColor ?? "#9E9E9E";
-            vo.VoIconUrl = currentLevelConfig.IconUrl;
-            vo.VoBadgeUrl = currentLevelConfig.BadgeUrl;
+            vo.VoIconUrl = ResolveAttachmentUrl(currentLevelConfig.IconAttachmentId);
+            vo.VoBadgeUrl = ResolveAttachmentUrl(currentLevelConfig.BadgeAttachmentId);
         }
 
         if (nextLevelConfig != null)
@@ -857,6 +869,30 @@ namespace Radish.Service;
         }
 
         return vo;
+    }
+
+    private void FillLevelConfigUrls(List<LevelConfigVo> configs)
+    {
+        foreach (var config in configs)
+        {
+            FillLevelConfigUrl(config);
+        }
+    }
+
+    private void FillLevelConfigUrl(LevelConfigVo config)
+    {
+        config.VoIconUrl = ResolveAttachmentUrl(config.VoIconAttachmentId);
+        config.VoBadgeUrl = ResolveAttachmentUrl(config.VoBadgeAttachmentId);
+    }
+
+    private string? ResolveAttachmentUrl(long? attachmentId)
+    {
+        if (!attachmentId.HasValue || attachmentId.Value <= 0)
+        {
+            return null;
+        }
+
+        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
     }
 
     /// <summary>

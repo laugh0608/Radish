@@ -39,9 +39,9 @@ public class Reaction : RootEntityTKey<long>, IDeleteFilter, ITenantEntity
     [SugarColumn(Length = 200, IsNullable = false)]
     public string EmojiValue { get; set; } = string.Empty;
 
-    /// <summary>缩略图 URL（sticker 可用）</summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? ThumbnailUrl { get; set; }
+    /// <summary>贴纸附件快照 Id（sticker 可用）</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? StickerAttachmentId { get; set; }
 
     /// <summary>是否软删除</summary>
     [SugarColumn(IsNullable = false)]

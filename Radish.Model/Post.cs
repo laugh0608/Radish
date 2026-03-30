@@ -47,7 +47,7 @@ public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
         Summary = string.Empty;
         Content = string.Empty;
         ContentType = "markdown"; // 默认使用 Markdown
-        CoverImage = string.Empty;
+        CoverAttachmentId = null;
         AuthorId = 0;
         AuthorName = string.Empty;
         CategoryId = 0;
@@ -103,10 +103,7 @@ public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
             ContentType = options.ContentType.Trim().ToLowerInvariant();
         }
 
-        if (!string.IsNullOrWhiteSpace(options.CoverImage))
-        {
-            CoverImage = options.CoverImage.Trim();
-        }
+        CoverAttachmentId = options.CoverAttachmentId;
     }
 
     /// <summary>处理分类信息</summary>
@@ -237,10 +234,9 @@ public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(Length = 20, IsNullable = false)]
     public string ContentType { get; set; } = "markdown";
 
-    /// <summary>封面图片</summary>
-    /// <remarks>可空，最大 500 字符</remarks>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string CoverImage { get; set; } = string.Empty;
+    /// <summary>封面附件 Id</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? CoverAttachmentId { get; set; }
 
     #endregion
 
@@ -424,8 +420,8 @@ public sealed class PostInitializationOptions
     /// <summary>内容类型</summary>
     public string? ContentType { get; set; }
 
-    /// <summary>封面图片</summary>
-    public string? CoverImage { get; set; }
+    /// <summary>封面附件 Id</summary>
+    public long? CoverAttachmentId { get; set; }
 
     /// <summary>作者 Id</summary>
     public long? AuthorId { get; set; }

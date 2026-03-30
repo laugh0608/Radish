@@ -197,6 +197,12 @@ API 启动时执行固定文档同步：
 - 将图片等资源重写为 `StaticAssetsRequestPath` 可访问路径；
 - 固定文档视为只读内容，编辑请求应被拒绝。
 
+当前又补了一层启动守卫：
+
+- 若 `Document.ShowBuiltInDocs=false`，启动同步会直接跳过；
+- 若 `WikiDocument / WikiDocumentRevision` 任一表尚未初始化，启动同步也会直接跳过，并输出“请先执行 `DbMigrate apply`”的提示日志；
+- 也就是说，固定文档启动同步当前不再把“数据库尚未初始化”的一次性时序问题打成错误，而是明确收口为“前置条件未满足，先迁移再同步”。
+
 同时，`DbMigrate apply/seed` 也需要保证 Wiki 表结构在本地 SQLite 环境中可自愈：
 
 - 旧库若仅存在 `WikiDocument` 表、但缺少 `Visibility`、`AllowedRoles`、`AllowedPermissions` 等新增列，不能再被误判为“结构已齐全”；
