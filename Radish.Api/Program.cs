@@ -47,6 +47,7 @@ using Radish.Common.DocumentTool;
 using Radish.Service.Jobs;
 using Radish.Api.Filters;
 using Radish.Api.Hubs;
+using Radish.Model;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Radish.IRepository.Base;
 using Radish.IService.Base;
@@ -865,27 +866,42 @@ if (shopConfig.GetValue<bool>("DailyStats:Enable", false))
 try
 {
     using var documentSyncScope = app.Services.CreateScope();
-    var wikiDocumentService = documentSyncScope.ServiceProvider.GetRequiredService<IWikiDocumentService>();
-    var builtInSyncSummary = await wikiDocumentService.SyncBuiltInDocumentsAsync();
+    var sqlSugarClient = documentSyncScope.ServiceProvider.GetRequiredService<ISqlSugarClient>();
+    var wikiDocumentTableName = sqlSugarClient.EntityMaintenance.GetEntityInfo<WikiDocument>().DbTableName;
+    var wikiDocumentRevisionTableName = sqlSugarClient.EntityMaintenance.GetEntityInfo<WikiDocumentRevision>().DbTableName;
+    var builtInSyncSkipReason = WikiBuiltInSyncStartupGuard.GetSkipReason(
+        documentOptions.ShowBuiltInDocs,
+        sqlSugarClient.DbMaintenance.IsAnyTable(wikiDocumentTableName, false),
+        sqlSugarClient.DbMaintenance.IsAnyTable(wikiDocumentRevisionTableName, false));
 
-    if (builtInSyncSummary.IsSkipped)
+    if (!string.IsNullOrWhiteSpace(builtInSyncSkipReason))
     {
-        Log.Information("固定文档启动同步已跳过: {Reason}", builtInSyncSummary.SkipReason ?? "未提供原因");
+        Log.Information("固定文档启动同步已跳过: {Reason}", builtInSyncSkipReason);
     }
     else
     {
-        Log.Information(
-            "固定文档启动同步完成: Markdown {MarkdownFileCount}, 描述符 {DescriptorCount}, 生成目录 {GeneratedNodeCount}, 同步 {SyncedCount}, 新增 {CreatedCount}, 更新 {UpdatedCount}, 恢复 {RestoredCount}, 父子调整 {ParentAdjustedCount}, 软删除 {SoftDeletedCount}, 跳过 {SkippedCount}",
-            builtInSyncSummary.MarkdownFileCount,
-            builtInSyncSummary.DescriptorCount,
-            builtInSyncSummary.GeneratedNodeCount,
-            builtInSyncSummary.SyncedCount,
-            builtInSyncSummary.CreatedCount,
-            builtInSyncSummary.UpdatedCount,
-            builtInSyncSummary.RestoredCount,
-            builtInSyncSummary.ParentAdjustedCount,
-            builtInSyncSummary.SoftDeletedCount,
-            builtInSyncSummary.SkippedCount);
+        var wikiDocumentService = documentSyncScope.ServiceProvider.GetRequiredService<IWikiDocumentService>();
+        var builtInSyncSummary = await wikiDocumentService.SyncBuiltInDocumentsAsync();
+
+        if (builtInSyncSummary.IsSkipped)
+        {
+            Log.Information("固定文档启动同步已跳过: {Reason}", builtInSyncSummary.SkipReason ?? "未提供原因");
+        }
+        else
+        {
+            Log.Information(
+                "固定文档启动同步完成: Markdown {MarkdownFileCount}, 描述符 {DescriptorCount}, 生成目录 {GeneratedNodeCount}, 同步 {SyncedCount}, 新增 {CreatedCount}, 更新 {UpdatedCount}, 恢复 {RestoredCount}, 父子调整 {ParentAdjustedCount}, 软删除 {SoftDeletedCount}, 跳过 {SkippedCount}",
+                builtInSyncSummary.MarkdownFileCount,
+                builtInSyncSummary.DescriptorCount,
+                builtInSyncSummary.GeneratedNodeCount,
+                builtInSyncSummary.SyncedCount,
+                builtInSyncSummary.CreatedCount,
+                builtInSyncSummary.UpdatedCount,
+                builtInSyncSummary.RestoredCount,
+                builtInSyncSummary.ParentAdjustedCount,
+                builtInSyncSummary.SoftDeletedCount,
+                builtInSyncSummary.SkippedCount);
+        }
     }
 }
 catch (Exception ex)

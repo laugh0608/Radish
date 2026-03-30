@@ -692,6 +692,12 @@ HTTP (5000/5100) → ASP.NET Core 应用
 3. WebOS 中统一使用“文档”应用展示固定文档与在线文档；在线文档继续存数据库。
 4. 通过 `Document.ShowBuiltInDocs` 控制是否展示固定文档，便于其他站点复用时关闭项目内置文档。
 
+补充约束：
+
+- 固定文档启动同步当前依赖 `WikiDocument / WikiDocumentRevision` 表已存在。
+- 若部署机上的主库仍未完成 `DbMigrate apply`，API 启动时会把固定文档同步记为“已跳过，请先执行 DbMigrate apply”，而不是继续抛缺表错误。
+- 这类跳过日志不代表文档系统坏了，而是说明当前部署顺序不满足“先迁移、后启动宿主”的前置要求。
+
 ### 相关配置
 
 ```json
