@@ -1,5 +1,27 @@
 # 2026-03 第五周 (03-30)
 
+## 2026-03-31 (周二)
+
+### 论坛首屏慢链路治理
+
+- **论坛首页请求链路已收敛**：`radish.client` 当前已去掉论坛首页数据加载中的前端串行阻塞，分类、标签与帖子列表不再被无谓串行等待放大成整页白屏。
+- **帖子列表已补专用查询路径**：帖子列表当前改走专用查询与投影路径，分页阶段不再把长文本正文一并拖入 SQLite 查询，首屏列表读取压力已明显收敛。
+- **论坛热点索引已补自愈**：`DbMigrate` 当前已补论坛热点相关索引的自愈入口，旧库执行 `apply` 后可自动补齐，避免历史 SQLite 库继续拖慢首屏分类 / 标签 / 列表读取。
+- **日志序列化异常已同步收敛**：围绕 `serializer.Serialize(writer, CreateSummary(typedValue));` 的日志序列化异常当前已补收敛处理，避免排障期继续被同类异常刷屏。
+
+### 日志系统行为修复
+
+- **文件日志已恢复按宿主项目分目录输出**：`LogContextTool` 当前会优先通过 `ContentRootPath` 与 `AppContext.BaseDirectory` 解析更具体的项目名，避免开发态再次把 `Radish.Api`、`Radish.Auth`、`Radish.Gateway` 统一误判成 `Radish` 并写入同一个日志目录。
+- **日志库口径已明确仍为共享 `Log` 库**：当前数据库日志设计仍为共享 `ConnId=Log`，配合 `InformationLog / WarningLog / ErrorLog / AuditSqlLog / AuditLog` 按类型分表，不是按宿主项目拆分日志库。
+- **`SkipTables` 对插入场景已真正生效**：`SqlSugarSetup.ExtractTableName(...)` 当前已补齐 `INSERT INTO` 的表名提取，`WikiDocument` / `WikiDocumentRevision` 不会再因为插入语句拿不到表名而刷出整段 SQL。
+- **SQL AOP 已避免模板占位冲突**：SQL 日志当前改为结构化参数写入，参数值中即使包含 `{userId}` 这类花括号文本，也不会再触发 Serilog SelfLog 的 `Required properties not provided` 异常。
+
+### 协作与提交流程治理
+
+- **多入口协作文件约束已对齐**：`AGENTS.md`、`CLAUDE.md`、`GEMINI.md` 当前已统一补入“同类协作文件保持基本复制与长期同步”的约束，避免多入口协作规范后续分叉。
+- **PR 模板已落地**：仓库当前已补 `.github/PULL_REQUEST_TEMPLATE.md`，并按现阶段主线、验证基线与 `DbMigrate` 影响检查收口。
+- **分支与 PR 治理 ADR 已补齐**：新增 `Docs/adr/0001-branch-and-pr-governance.md`，统一沉淀 `master / dev` 角色、默认 PR 流向、规则来源与长期执行边界。
+
 ## 2026-03-30 (周一)
 
 ### 认证登录链路稳定性治理
