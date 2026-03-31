@@ -7,6 +7,35 @@ namespace Radish.Service;
 public partial class PostService
 {
     /// <summary>
+    /// 分页获取普通论坛帖子列表
+    /// </summary>
+    public async Task<(List<PostVo> data, int totalCount)> GetForumPostPageAsync(
+        long? categoryId = null,
+        int pageIndex = 1,
+        int pageSize = 20,
+        string sortBy = "newest",
+        string? keyword = null,
+        DateTime? startTime = null,
+        DateTime? endTime = null)
+    {
+        if (_postCustomRepository == null)
+        {
+            throw new InvalidOperationException("帖子仓储未配置，无法查询论坛帖子列表");
+        }
+
+        var (posts, totalCount) = await _postCustomRepository.QueryForumPostPageAsync(
+            categoryId,
+            keyword,
+            startTime,
+            endTime,
+            pageIndex,
+            pageSize,
+            sortBy);
+
+        return (Mapper.Map<List<PostVo>>(posts), totalCount);
+    }
+
+    /// <summary>
     /// 获取帖子详情（包含分类名称和标签）
     /// </summary>
     public async Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null, string answerSort = "default")

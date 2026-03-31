@@ -8,6 +8,8 @@ namespace Radish.Model;
 
 /// <summary>帖子实体</summary>
 /// <remarks>支持多租户，主键为 Id，类型为 long</remarks>
+[SugarIndex("idx_post_forum_list", nameof(TenantId), OrderByType.Asc, nameof(IsDeleted), OrderByType.Asc, nameof(IsPublished), OrderByType.Asc, nameof(IsTop), OrderByType.Desc, nameof(CreateTime), OrderByType.Desc)]
+[SugarIndex("idx_post_forum_category_list", nameof(TenantId), OrderByType.Asc, nameof(CategoryId), OrderByType.Asc, nameof(IsDeleted), OrderByType.Asc, nameof(IsPublished), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 {
     /// <summary>初始化默认帖子实例</summary>

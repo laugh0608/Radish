@@ -49,7 +49,12 @@ public class CategoryController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetTopCategories()
     {
-        var categories = await _categoryService.QueryAsync(c => c.ParentId == null && c.IsEnabled && !c.IsDeleted);
+        var categories = (await _categoryService.QueryWithCacheAsync(
+                c => c.ParentId == null && c.IsEnabled && !c.IsDeleted,
+                300))
+            .OrderByDescending(c => c.VoOrderSort)
+            .ThenBy(c => c.VoId)
+            .ToList();
         FillCategoryUrls(categories);
         return BuildSuccess(categories);
     }

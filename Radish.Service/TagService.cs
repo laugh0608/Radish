@@ -71,6 +71,25 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
     }
 
     /// <summary>
+    /// 获取热门标签列表（按帖子数降序）
+    /// </summary>
+    public async Task<List<TagVo>> GetHotTagsAsync(int topCount = 20)
+    {
+        var safeTopCount = topCount <= 0 ? 20 : Math.Min(topCount, 100);
+
+        var (data, _) = await QueryPageAsync(
+            whereExpression: t => t.IsEnabled && !t.IsDeleted,
+            pageIndex: 1,
+            pageSize: safeTopCount,
+            orderByExpression: t => t.PostCount,
+            orderByType: OrderByType.Desc,
+            thenByExpression: t => t.SortOrder,
+            thenByType: OrderByType.Asc);
+
+        return data;
+    }
+
+    /// <summary>
     /// 分页查询标签（后台管理）
     /// </summary>
     public async Task<PageModel<TagVo>> GetTagPageAsync(
