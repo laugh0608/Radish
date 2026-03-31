@@ -14,6 +14,12 @@
 - 涉及当前阶段、优先级或范围判断时，优先查看 `Docs/planning/current.md`。
 - 涉及本地验证、CI 对齐或回归入口时，优先查看 `Docs/guide/validation-baseline.md`。
 
+## Agent 协同文件
+- 仓库中面向不同 Agent 入口名的协作文件，应保持“基本复制”和长期同步。
+- 这些同类协作文件不应演化出彼此冲突的规则口径。
+- 若某个同类协作文件更新了通用协作规则、执行边界、验证基线或阶段约束，其余同类文件也应尽快同步。
+- 同类协作文件只允许保留极少量与入口名称直接相关的表述差异，不应借此分叉实际协作规范。
+
 ## 项目概览
 - 后端：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite）
 - 网关：`Radish.Gateway`，统一门户与 API 网关
