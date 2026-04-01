@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { enUS, zhCN } from 'date-fns/locale';
@@ -6,6 +6,8 @@ import { log } from '@/utils/logger';
 import { NotificationList } from '@radish/ui/notification-list';
 import type { NotificationItemData } from '@radish/ui/notification';
 import { notificationApi, type UserNotificationVo } from '@/api/notification';
+import { getPublicProfile } from '@/api/user';
+import { getApiBaseUrl } from '@/config/env';
 import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
@@ -25,10 +27,29 @@ export const NotificationApp = () => {
   const { openApp, openOrReuseApp } = useWindowStore();
   const currentUserId = useUserStore((state) => state.userId);
   const { unreadCount, recentNotifications } = useNotificationStore();
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
+  const triggerAvatarCacheRef = useRef(new Map<number, string | null>());
 
   interface NotificationListItem extends NotificationItemData {
     notificationId?: number;
   }
+
+  const resolveNotificationAvatar = useCallback((avatarUrl?: string | null) => {
+    const normalized = avatarUrl?.trim();
+    if (!normalized) {
+      return null;
+    }
+
+    if (/^https?:\/\//i.test(normalized)) {
+      return normalized;
+    }
+
+    if (normalized.startsWith('/')) {
+      return `${apiBaseUrl}${normalized}`;
+    }
+
+    return `${apiBaseUrl}/${normalized}`;
+  }, [apiBaseUrl]);
 
   const [notifications, setNotifications] = useState<NotificationListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -69,7 +90,7 @@ export const NotificationApp = () => {
       businessType: notification?.voBusinessType,
       triggerId: notification?.voTriggerId,
       triggerName: notification?.voTriggerName,
-      triggerAvatar: notification?.voTriggerAvatar
+      triggerAvatar: resolveNotificationAvatar(notification?.voTriggerAvatar)
     };
   };
 
@@ -86,7 +107,7 @@ export const NotificationApp = () => {
       businessId: notification?.voBusinessId,
       triggerId: notification?.voTriggerId,
       triggerName: notification?.voTriggerName,
-      triggerAvatar: notification?.voTriggerAvatar,
+      triggerAvatar: resolveNotificationAvatar(notification?.voTriggerAvatar),
       isRead: n.voIsRead,
       createdAt: n.voCreateTime
     };
@@ -104,11 +125,77 @@ export const NotificationApp = () => {
       businessId: n.businessId,
       triggerId: n.triggerId,
       triggerName: n.triggerName,
-      triggerAvatar: n.triggerAvatar,
+      triggerAvatar: resolveNotificationAvatar(n.triggerAvatar),
       isRead: n.isRead,
       createdAt: n.createdAt
     }));
   };
+
+  const patchNotificationsWithResolvedAvatars = useCallback((avatarMap: Map<number, string | null>) => {
+    if (avatarMap.size === 0) {
+      return;
+    }
+
+    const store = useNotificationStore.getState();
+
+    setNotifications((prev) => prev.map((item) => {
+      if (item.triggerAvatar || !item.triggerId) {
+        return item;
+      }
+
+      const resolvedAvatar = avatarMap.get(item.triggerId);
+      return resolvedAvatar ? { ...item, triggerAvatar: resolvedAvatar } : item;
+    }));
+
+    store.setRecentNotifications(
+      store.recentNotifications.map((item) => {
+        if (item.triggerAvatar || !item.triggerId) {
+          return item;
+        }
+
+        const resolvedAvatar = avatarMap.get(item.triggerId);
+        return resolvedAvatar ? { ...item, triggerAvatar: resolvedAvatar } : item;
+      })
+    );
+  }, []);
+
+  const backfillTriggerAvatars = useCallback(async (items: NotificationListItem[]) => {
+    const missingTriggerIds = Array.from(new Set(
+      items
+        .filter((item) => !item.triggerAvatar && (item.triggerId ?? 0) > 0)
+        .map((item) => item.triggerId as number)
+    ));
+
+    if (missingTriggerIds.length === 0) {
+      return;
+    }
+
+    const unresolvedTriggerIds = missingTriggerIds.filter((triggerId) => !triggerAvatarCacheRef.current.has(triggerId));
+    if (unresolvedTriggerIds.length > 0) {
+      const profileResults = await Promise.allSettled(
+        unresolvedTriggerIds.map(async (triggerId) => {
+          const profile = await getPublicProfile(triggerId);
+          return {
+            triggerId,
+            avatar: resolveNotificationAvatar(profile.voAvatarThumbnailUrl || profile.voAvatarUrl)
+          };
+        })
+      );
+
+      for (const result of profileResults) {
+        if (result.status === 'fulfilled') {
+          triggerAvatarCacheRef.current.set(result.value.triggerId, result.value.avatar);
+        }
+      }
+    }
+
+    const resolvedAvatarMap = new Map<number, string | null>();
+    for (const triggerId of missingTriggerIds) {
+      resolvedAvatarMap.set(triggerId, triggerAvatarCacheRef.current.get(triggerId) ?? null);
+    }
+
+    patchNotificationsWithResolvedAvatars(resolvedAvatarMap);
+  }, [patchNotificationsWithResolvedAvatars, resolveNotificationAvatar]);
 
   const mergeNotifications = (
     base: NotificationListItem[],
@@ -164,7 +251,8 @@ export const NotificationApp = () => {
   useEffect(() => {
     const converted = mapStoreToUi(recentNotifications);
     setNotifications(prev => mergeNotifications(prev, converted));
-  }, [recentNotifications]);
+    void backfillTriggerAvatars(converted);
+  }, [backfillTriggerAvatars, recentNotifications]);
 
   // 初始加载通知列表
   useEffect(() => {
@@ -189,6 +277,7 @@ export const NotificationApp = () => {
           );
           const firstPage = result.data.map(mapApiNotificationToUi);
           setNotifications(firstPage);
+          void backfillTriggerAvatars(firstPage);
           setPageIndex(result.page);
           setHasMore(result.page < result.pageCount);
           await syncUnreadCountFromServer();
@@ -218,6 +307,7 @@ export const NotificationApp = () => {
       });
       if (result && result.data) {
         const nextItems = result.data.map(mapApiNotificationToUi);
+        void backfillTriggerAvatars(nextItems);
         setNotifications(prev => {
           const indexMap = new Map<number, number>();
           const merged = prev.slice();

@@ -8,7 +8,7 @@ import { useUserStore } from './stores/userStore';
 import { LevelUpModal } from '@radish/ui/level-up-modal';
 import { useLevelUpListener } from '@/hooks/useLevelUpListener';
 import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
-import { bootstrapAuth, type CurrentUser } from '@/services/authBootstrap';
+import { bootstrapAuth, hydrateAuthUser, type CurrentUser } from '@/services/authBootstrap';
 import { tokenService } from '@/services/tokenService';
 import './App.css';
 
@@ -168,6 +168,7 @@ function OidcCallback() {
 
         const redirectUri = `${window.location.origin}/oidc/callback`;
         const authServerBaseUrl = getAuthBaseUrl();
+        const apiBaseUrl = getApiBaseUrl();
 
         const completeLogin = async () => {
             try {
@@ -203,6 +204,17 @@ function OidcCallback() {
                 if (cancelled) {
                     return;
                 }
+
+                setMessage(t('oidc.syncingProfile'));
+                await hydrateAuthUser({
+                    apiBaseUrl,
+                    useCache: false,
+                }).catch(() => null);
+
+                if (cancelled) {
+                    return;
+                }
+
                 setMessage(t('oidc.loginSucceeded'));
 
                 window.location.replace('/');

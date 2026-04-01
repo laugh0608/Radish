@@ -11,6 +11,7 @@ import { useNotificationStore } from '@/stores/notificationStore';
 import { useChatStore } from '@/stores/chatStore';
 import { tokenService } from '@/services/tokenService';
 import { bootstrapAuth } from '@/services/authBootstrap';
+import { prefetchAppComponent } from './AppRegistry';
 import { Desktop } from './Desktop';
 import { Dock } from './Dock';
 import { WindowManager } from './WindowManager';
@@ -54,6 +55,27 @@ export const Shell = () => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
     return () => cleanup();
   }, [apiBaseUrl]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const preloadApps = () => {
+      prefetchAppComponent('forum');
+      if (isAuthenticated) {
+        prefetchAppComponent('chat');
+      }
+    };
+
+    if (typeof window.requestIdleCallback === 'function') {
+      const idleHandle = window.requestIdleCallback(() => preloadApps(), { timeout: 1500 });
+      return () => window.cancelIdleCallback(idleHandle);
+    }
+
+    const timer = window.setTimeout(preloadApps, 600);
+    return () => window.clearTimeout(timer);
+  }, [isAuthenticated]);
 
   // 根据认证状态控制 SignalR 连接
   useEffect(() => {

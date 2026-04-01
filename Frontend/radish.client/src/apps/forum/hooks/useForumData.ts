@@ -489,9 +489,20 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   // 初始化：加载分类和热门内容
   useEffect(() => {
     void loadCategories();
-    void loadFixedTags();
-    void loadHotTags();
-    void loadTrendingContent();
+
+    const loadDeferredPanels = () => {
+      void loadFixedTags();
+      void loadHotTags();
+      void loadTrendingContent();
+    };
+
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const idleHandle = window.requestIdleCallback(() => loadDeferredPanels(), { timeout: 1200 });
+      return () => window.cancelIdleCallback(idleHandle);
+    }
+
+    const timer = window.setTimeout(loadDeferredPanels, 240);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // 当选择分类时重新加载帖子
