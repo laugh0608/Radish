@@ -1,4 +1,4 @@
-import { type ChangeEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ChangeEvent, type ClipboardEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from '@radish/ui/toast';
 import { buildAttachmentAssetUrl } from '@radish/ui';
@@ -193,7 +193,7 @@ function findMentionContext(text: string, cursor: number): MentionContext | null
   }
 
   const keyword = beforeCaret.slice(atIndex + 1);
-  if (!keyword || /[\s()[\]{}]/.test(keyword)) {
+  if (/[\s()[\]{}]/.test(keyword)) {
     return null;
   }
 
@@ -398,10 +398,7 @@ export const ChatApp = () => {
 
   const connectionHint = useMemo(() => getConnectionHint(connectionState), [connectionState]);
 
-  const isMentionOpen = useMemo(
-    () => !!mentionContext && (mentionLoading || mentionOptions.length > 0 || mentionContext.keyword.length > 0),
-    [mentionContext, mentionLoading, mentionOptions.length]
-  );
+  const isMentionOpen = mentionContext !== null;
 
   const scrollToBottom = useCallback(() => {
     const scrollEl = messageScrollRef.current;
@@ -826,7 +823,6 @@ export const ChatApp = () => {
         attachmentId: pendingImageSnapshot?.attachmentId,
       },
       {
-        successToastMessage: pendingImageSnapshot ? t('chat.imageSent') : undefined,
         failureFallbackMessage: pendingImageSnapshot ? t('chat.imageSendFailed') : t('chat.sendFailed'),
       }
     );
@@ -843,9 +839,13 @@ export const ChatApp = () => {
     uploadingImage,
   ]);
 
-  const handleImageSelected = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !activeChannelId || uploadingImage) {
+  const uploadImageToPendingDraft = useCallback(async (
+    file: File,
+    targetChannelId: EntityIdValue,
+    draftContentSnapshot: string,
+    draftReplyTargetSnapshot: ChannelMessageVo | null
+  ) => {
+    if (!targetChannelId || uploadingImage) {
       return;
     }
 
@@ -853,9 +853,6 @@ export const ChatApp = () => {
     setImageUploadProgress(0);
 
     try {
-      const targetChannelId = activeChannelId;
-      const draftContentSnapshot = messageInput;
-      const draftReplyTargetSnapshot = replyTarget;
       const attachment = await uploadImage(
         {
           file,
@@ -897,9 +894,38 @@ export const ChatApp = () => {
     } finally {
       setUploadingImage(false);
       setTimeout(() => setImageUploadProgress(0), 400);
+    }
+  }, [currentUserIdValue, t, uploadingImage]);
+
+  const handleImageSelected = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !activeChannelId) {
+      return;
+    }
+
+    try {
+      await uploadImageToPendingDraft(file, activeChannelId, messageInput, replyTarget);
+    } finally {
       event.target.value = '';
     }
-  }, [activeChannelId, currentUserIdValue, messageInput, replyTarget, t, uploadingImage]);
+  }, [activeChannelId, messageInput, replyTarget, uploadImageToPendingDraft]);
+
+  const handleComposerPaste = useCallback((event: ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!activeChannelId || uploadingImage) {
+      return;
+    }
+
+    const clipboardItems = Array.from(event.clipboardData.items);
+    const imageItem = clipboardItems.find((item) => item.type.startsWith('image/'));
+    const pastedImage = imageItem?.getAsFile();
+
+    if (!pastedImage) {
+      return;
+    }
+
+    event.preventDefault();
+    void uploadImageToPendingDraft(pastedImage, activeChannelId, messageInput, replyTarget);
+  }, [activeChannelId, messageInput, replyTarget, uploadImageToPendingDraft, uploadingImage]);
 
   const handleRemovePendingImage = useCallback(() => {
     setPendingImage(null);
@@ -930,7 +956,6 @@ export const ChatApp = () => {
         attachmentId: isPersistedEntityId(message.voAttachmentId) ? message.voAttachmentId : undefined,
       },
       {
-        successToastMessage: message.voType === 2 ? t('chat.imageSent') : undefined,
         failureFallbackMessage: message.voType === 2 ? t('chat.imageSendFailed') : t('chat.sendFailed'),
       }
     );
@@ -1039,9 +1064,13 @@ export const ChatApp = () => {
 
     void chatHub.joinChannel(activeChannelId);
     void loadInitialHistory(activeChannelId);
-    void loadOnlineMembers(activeChannelId);
+
+    const initialMemberTimer = window.setTimeout(() => {
+      void loadOnlineMembers(activeChannelId);
+    }, 240);
 
     return () => {
+      window.clearTimeout(initialMemberTimer);
       void chatHub.leaveChannel(activeChannelId);
     };
   }, [activeChannelId, closeMentionDropdown, currentUserIdValue, loadInitialHistory, loadOnlineMembers]);
@@ -1142,7 +1171,7 @@ export const ChatApp = () => {
           setMentionLoading(false);
         }
       }
-    }, 180);
+    }, 120);
 
     return () => {
       cancelled = true;
@@ -1449,6 +1478,7 @@ export const ChatApp = () => {
                     onKeyUp={(event) => {
                       updateMentionContext(messageInput, event.currentTarget.selectionStart);
                     }}
+                    onPaste={handleComposerPaste}
                     onKeyDown={(event) => {
                       if (isMentionOpen) {
                         if (event.key === 'ArrowDown') {
@@ -1497,14 +1527,21 @@ export const ChatApp = () => {
 
                   {isMentionOpen && (
                     <div className={styles.mentionDropdown}>
-                      {mentionLoading ? (
-                        <div className={styles.mentionEmpty}>{t('chat.mentionSearching')}</div>
+                      <div className={styles.mentionHeader}>
+                        <span className={styles.mentionTitle}>{t('chat.mentionTitle')}</span>
+                        <span className={styles.mentionHint}>{t('chat.mentionHint')}</span>
+                      </div>
+                      {!mentionContext?.keyword.trim() ? (
+                        <div className={styles.mentionState}>{t('chat.mentionTypeToSearch')}</div>
+                      ) : mentionLoading ? (
+                        <div className={styles.mentionState}>{t('chat.mentionSearching')}</div>
                       ) : mentionOptions.length === 0 ? (
-                        <div className={styles.mentionEmpty}>{t('chat.mentionNotFound')}</div>
+                        <div className={styles.mentionState}>{t('chat.mentionNotFound')}</div>
                       ) : (
                         mentionOptions.map((option, index) => {
                           const optionId = normalizeEntityId(option.voId) ?? `mention-${index}`;
                           const optionName = option.voUserName?.trim() || getFallbackUserName(optionId);
+                          const optionDisplayName = option.voDisplayName?.trim();
                           const optionAvatarUrl = resolveMediaUrl(apiBaseUrl, option.voAvatar);
 
                           return (
@@ -1525,7 +1562,12 @@ export const ChatApp = () => {
                                   {buildAvatarText(optionName)}
                                 </span>
                               )}
-                              <span className={styles.mentionLabel}>@{optionName}</span>
+                              <span className={styles.mentionMeta}>
+                                <span className={styles.mentionLabel}>@{optionName}</span>
+                                {optionDisplayName && optionDisplayName !== optionName ? (
+                                  <span className={styles.mentionDisplayName}>{optionDisplayName}</span>
+                                ) : null}
+                              </span>
                             </button>
                           );
                         })
