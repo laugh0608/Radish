@@ -27,6 +27,8 @@ export interface UserMentionProps {
   onClose: () => void;
   /** 下拉框位置 */
   position: { top: number; left: number };
+  /** 定位模式 */
+  positionMode?: 'fixed' | 'absolute';
 }
 
 export const UserMention = ({
@@ -35,6 +37,7 @@ export const UserMention = ({
   onSelect,
   onClose,
   position,
+  positionMode = 'fixed',
 }: UserMentionProps) => {
   const [users, setUsers] = useState<UserMentionOption[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -70,8 +73,8 @@ export const UserMention = ({
       }
     };
 
-    // Debounce 300ms
-    const timer = setTimeout(searchUsers, 300);
+    // 缩短等待时间，提升 @ 提及的即时反馈感
+    const timer = setTimeout(searchUsers, 120);
 
     return () => {
       cancelled = true;
@@ -127,9 +130,27 @@ export const UserMention = ({
       <div
         ref={containerRef}
         className={styles.container}
-        style={{ top: position.top, left: position.left }}
+        style={{ position: positionMode, top: position.top, left: position.left }}
       >
-        <div className={styles.loading}>搜索中...</div>
+        <div className={styles.statePanel}>
+          <div className={styles.panelTitle}>匹配用户</div>
+          <div className={styles.loading}>搜索中...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!keyword.trim()) {
+    return (
+      <div
+        ref={containerRef}
+        className={styles.container}
+        style={{ position: positionMode, top: position.top, left: position.left }}
+      >
+        <div className={styles.statePanel}>
+          <div className={styles.panelTitle}>匹配用户</div>
+          <div className={styles.empty}>继续输入用户名进行匹配</div>
+        </div>
       </div>
     );
   }
@@ -139,9 +160,12 @@ export const UserMention = ({
       <div
         ref={containerRef}
         className={styles.container}
-        style={{ top: position.top, left: position.left }}
+        style={{ position: positionMode, top: position.top, left: position.left }}
       >
-        <div className={styles.empty}>未找到匹配的用户</div>
+        <div className={styles.statePanel}>
+          <div className={styles.panelTitle}>匹配用户</div>
+          <div className={styles.empty}>未找到匹配的用户</div>
+        </div>
       </div>
     );
   }
@@ -150,8 +174,12 @@ export const UserMention = ({
     <div
       ref={containerRef}
       className={styles.container}
-      style={{ top: position.top, left: position.left }}
+      style={{ position: positionMode, top: position.top, left: position.left }}
     >
+      <div className={styles.panelHeader}>
+        <span className={styles.panelTitle}>匹配用户</span>
+        <span className={styles.panelHint}>Enter 选择</span>
+      </div>
       <ul className={styles.list}>
         {users.map((user, index) => (
           <li

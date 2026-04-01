@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { ImageLightbox } from '../ImageLightbox/ImageLightbox';
@@ -146,6 +146,9 @@ const resolveLinkHref = (href: string): string => {
   return resolveConfiguredMediaUrl(href);
 };
 
+const isRadishCustomProtocol = (value: string): boolean =>
+  /^attachment:\/\//i.test(value) || /^sticker:\/\//i.test(value);
+
 /**
  * Markdown 渲染器
  *
@@ -193,6 +196,13 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight]}
+          urlTransform={(url, key, node) => {
+            if (isRadishCustomProtocol(url)) {
+              return url;
+            }
+
+            return defaultUrlTransform(url);
+          }}
           components={{
             // 自定义链接行为：在新标签页打开外部链接
             a: ({ node, ...props }) => {

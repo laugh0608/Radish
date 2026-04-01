@@ -1,10 +1,12 @@
-import { lazy, Suspense, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { KeyboardEvent, ChangeEvent, ClipboardEvent, DragEvent } from 'react';
 import { Icon } from '../Icon/Icon';
 import { StickerPicker } from '../StickerPicker/StickerPicker';
 import type { StickerPickerGroup, StickerPickerSelection } from '../StickerPicker/StickerPicker';
 import type { MarkdownStickerMap } from '../MarkdownRenderer/MarkdownRenderer';
+import { UserMention } from '../UserMention/UserMention';
+import type { UserMentionOption } from '../UserMention/UserMention';
 import {
   buildAttachmentMarkdownUrl,
   type MarkdownDocumentUploadResult,
@@ -15,6 +17,119 @@ import styles from './MarkdownEditor.module.css';
 const MarkdownRenderer = lazy(() =>
   import('../MarkdownRenderer/MarkdownRenderer').then((module) => ({ default: module.MarkdownRenderer }))
 );
+
+const MENTION_PANEL_WIDTH = 320;
+const MENTION_PANEL_HEIGHT = 220;
+const MENTION_PANEL_GAP = 10;
+const MENTION_PANEL_PADDING = 12;
+
+interface MentionContext {
+  keyword: string;
+  start: number;
+}
+
+const getTextareaCaretRelativePosition = (
+  textarea: HTMLTextAreaElement,
+  cursorPos: number
+): { top: number; left: number; lineHeight: number } | null => {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  const computed = window.getComputedStyle(textarea);
+  const mirror = document.createElement('div');
+  const span = document.createElement('span');
+  const textBeforeCaret = textarea.value.slice(0, cursorPos);
+
+  const mirroredProperties = [
+    'boxSizing',
+    'width',
+    'height',
+    'paddingTop',
+    'paddingRight',
+    'paddingBottom',
+    'paddingLeft',
+    'borderTopWidth',
+    'borderRightWidth',
+    'borderBottomWidth',
+    'borderLeftWidth',
+    'borderTopStyle',
+    'borderRightStyle',
+    'borderBottomStyle',
+    'borderLeftStyle',
+    'fontFamily',
+    'fontSize',
+    'fontStyle',
+    'fontVariant',
+    'fontWeight',
+    'fontStretch',
+    'fontKerning',
+    'fontFeatureSettings',
+    'fontVariationSettings',
+    'lineHeight',
+    'letterSpacing',
+    'textTransform',
+    'textIndent',
+    'textAlign',
+    'whiteSpace',
+    'wordBreak',
+    'overflowWrap',
+    'tabSize'
+  ] as const;
+
+  for (const property of mirroredProperties) {
+    mirror.style[property] = computed[property];
+  }
+
+  mirror.style.position = 'absolute';
+  mirror.style.top = '0';
+  mirror.style.left = '0';
+  mirror.style.visibility = 'hidden';
+  mirror.style.pointerEvents = 'none';
+  mirror.style.overflow = 'hidden';
+  mirror.style.whiteSpace = 'pre-wrap';
+  mirror.style.wordBreak = 'break-word';
+  mirror.style.overflowWrap = 'break-word';
+
+  mirror.textContent = textBeforeCaret;
+  span.textContent = textarea.value.slice(cursorPos) || '.';
+  mirror.appendChild(span);
+  document.body.appendChild(mirror);
+
+  const lineHeight = Number.parseFloat(computed.lineHeight) || 24;
+  const caretTop = span.offsetTop - textarea.scrollTop;
+  const caretLeft = span.offsetLeft - textarea.scrollLeft;
+
+  document.body.removeChild(mirror);
+
+  return {
+    top: caretTop,
+    left: caretLeft,
+    lineHeight
+  };
+};
+
+function findMentionContext(text: string, cursor: number): MentionContext | null {
+  if (cursor < 0) {
+    return null;
+  }
+
+  const textBeforeCursor = text.slice(0, cursor);
+  const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+  if (lastAtIndex < 0) {
+    return null;
+  }
+
+  const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
+  if (/[\s()[\]{}]/.test(textAfterAt)) {
+    return null;
+  }
+
+  return {
+    keyword: textAfterAt,
+    start: lastAtIndex
+  };
+}
 
 export interface MarkdownEditorProps {
   value: string;
@@ -44,6 +159,8 @@ export interface MarkdownEditorProps {
   stickerMap?: MarkdownStickerMap;
   /** 选择贴图/emoji 后回调（可用于埋点或记录使用） */
   onStickerSelect?: (selection: StickerPickerSelection) => void;
+  /** 搜索 @ 提及用户（传入后启用 @ 提及能力） */
+  onUserMentionSearch?: (keyword: string) => Promise<UserMentionOption[]>;
 }
 
 type ToolbarAction = 'bold' | 'italic' | 'strikethrough' | 'heading' | 'quote' | 'code' | 'codeblock' | 'ul' | 'ol' | 'link' | 'image' | 'document' | 'hr';
@@ -65,13 +182,17 @@ export const MarkdownEditor = ({
   stickerGroups,
   stickerMap,
   onStickerSelect,
+  onUserMentionSearch,
 }: MarkdownEditorProps) => {
   const [mode, setMode] = useState<'edit' | 'preview' | 'split'>(
     defaultMode ?? (typeof window !== 'undefined' && window.innerWidth > 768 ? 'split' : 'edit')
   );
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [mentionContext, setMentionContext] = useState<MentionContext | null>(null);
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editPaneRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
 
@@ -144,6 +265,56 @@ export const MarkdownEditor = ({
 
     return map;
   }, [stickerGroups, stickerMap]);
+
+  const updateMentionPosition = useCallback((textarea: HTMLTextAreaElement, cursorPos?: number) => {
+    const container = editPaneRef.current;
+    if (!container) {
+      return;
+    }
+
+    const selectionStart = cursorPos ?? textarea.selectionStart ?? 0;
+    const caretPosition = getTextareaCaretRelativePosition(textarea, selectionStart);
+    const baseTop = caretPosition?.top ?? 18;
+    const baseLeft = caretPosition?.left ?? 18;
+    const lineHeight = caretPosition?.lineHeight ?? 24;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    const left = Math.max(
+      MENTION_PANEL_PADDING,
+      Math.min(baseLeft - 14, containerWidth - MENTION_PANEL_WIDTH - MENTION_PANEL_PADDING)
+    );
+    let top = baseTop + lineHeight + MENTION_PANEL_GAP;
+
+    if (top + MENTION_PANEL_HEIGHT > containerHeight - MENTION_PANEL_PADDING) {
+      top = baseTop - MENTION_PANEL_HEIGHT - MENTION_PANEL_GAP;
+    }
+
+    top = Math.max(
+      MENTION_PANEL_PADDING,
+      Math.min(top, containerHeight - MENTION_PANEL_HEIGHT - MENTION_PANEL_PADDING)
+    );
+
+    setMentionPosition({ top, left });
+  }, []);
+
+  useEffect(() => {
+    if (!mentionContext || !textareaRef.current) {
+      return;
+    }
+
+    const syncPosition = () => {
+      if (textareaRef.current) {
+        updateMentionPosition(textareaRef.current, textareaRef.current.selectionStart);
+      }
+    };
+
+    syncPosition();
+    window.addEventListener('resize', syncPosition);
+
+    return () => {
+      window.removeEventListener('resize', syncPosition);
+    };
+  }, [mentionContext, updateMentionPosition]);
 
   // 插入文本
   const insertText = (before: string, after: string = '', placeholder: string = '') => {
@@ -397,8 +568,48 @@ export const MarkdownEditor = ({
     onStickerSelect?.(selection);
   };
 
+  const replaceSelection = useCallback((text: string, start: number, end: number) => {
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      return;
+    }
+
+    const currentValue = textarea.value;
+    const nextValue = currentValue.substring(0, start) + text + currentValue.substring(end);
+    onChange(nextValue);
+
+    setTimeout(() => {
+      textarea.focus();
+      const nextCursor = start + text.length;
+      textarea.setSelectionRange(nextCursor, nextCursor);
+    }, 0);
+  }, [onChange]);
+
+  const handleMentionSelect = useCallback((user: UserMentionOption) => {
+    const textarea = textareaRef.current;
+    if (!textarea || !mentionContext) {
+      return;
+    }
+
+    const mentionText = `@${user.userName} `;
+    replaceSelection(mentionText, mentionContext.start, textarea.selectionStart);
+    setMentionContext(null);
+  }, [mentionContext, replaceSelection]);
+
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    onChange(e.target.value);
+    const nextValue = e.target.value;
+    onChange(nextValue);
+
+    if (!onUserMentionSearch) {
+      return;
+    }
+
+    const nextMentionContext = findMentionContext(nextValue, e.target.selectionStart);
+    setMentionContext(nextMentionContext);
+
+    if (nextMentionContext) {
+      updateMentionPosition(e.target, e.target.selectionStart);
+    }
   };
 
   const rootStyle: React.CSSProperties = {
@@ -618,7 +829,10 @@ export const MarkdownEditor = ({
       {/* 编辑/预览区域 */}
       <div className={`${styles.content} ${mode === 'split' ? styles.contentSplit : ''}`}>
         {(mode === 'edit' || mode === 'split') && (
-          <div className={`${styles.editPane} ${mode === 'split' ? styles.paneSplit : ''}`}>
+          <div
+            ref={editPaneRef}
+            className={`${styles.editPane} ${mode === 'split' ? styles.paneSplit : ''}`}
+          >
             <textarea
               ref={textareaRef}
               className={styles.textarea}
@@ -628,9 +842,34 @@ export const MarkdownEditor = ({
               onPaste={handlePaste}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
+              onClick={(event) => {
+                if (mentionContext) {
+                  updateMentionPosition(event.currentTarget, event.currentTarget.selectionStart);
+                }
+              }}
+              onKeyUp={(event) => {
+                if (mentionContext) {
+                  updateMentionPosition(event.currentTarget, event.currentTarget.selectionStart);
+                }
+              }}
+              onScroll={(event) => {
+                if (mentionContext) {
+                  updateMentionPosition(event.currentTarget, event.currentTarget.selectionStart);
+                }
+              }}
               placeholder={placeholder}
               disabled={disabled || uploading}
             />
+            {mentionContext && onUserMentionSearch && (
+              <UserMention
+                keyword={mentionContext.keyword}
+                onSearch={onUserMentionSearch}
+                onSelect={handleMentionSelect}
+                onClose={() => setMentionContext(null)}
+                position={mentionPosition}
+                positionMode="absolute"
+              />
+            )}
             {uploading && (
               <div className={styles.uploadingOverlay}>
                 <Icon icon="mdi:loading" size={24} className={styles.spinIcon} />

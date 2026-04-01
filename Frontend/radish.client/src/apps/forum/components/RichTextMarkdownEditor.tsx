@@ -49,8 +49,11 @@ const buildRichImageHtml = (markdownSrc: string, altText: string): string => {
   const scaleStyle = attachmentMeta.scalePercent
     ? ` style="width:${attachmentMeta.scalePercent}%;max-width:100%;"`
     : '';
+  const scaleAttr = attachmentMeta.scalePercent
+    ? ` data-scale-percent="${attachmentMeta.scalePercent}"`
+    : '';
 
-  return `<img src="${escapeHtml(previewSrc)}" data-markdown-src="${escapeHtml(markdownSrc)}" alt="${escapedAltText}"${scaleStyle} />`;
+  return `<img src="${escapeHtml(previewSrc)}" data-markdown-src="${escapeHtml(markdownSrc)}" data-attachment-id="${attachmentMeta.attachmentId}" data-display-variant="${attachmentMeta.displayVariant}"${scaleAttr} alt="${escapedAltText}"${scaleStyle} />`;
 };
 
 const buildRichLinkHtml = (markdownHref: string, text: string): string => {
@@ -59,8 +62,11 @@ const buildRichLinkHtml = (markdownHref: string, text: string): string => {
     ? buildAttachmentAssetUrl(attachmentMeta.attachmentId, 'original')
     : resolveConfiguredMediaUrl(markdownHref);
   const escapedText = escapeHtml(text.trim() || markdownHref);
+  const attachmentAttrs = attachmentMeta
+    ? ` data-attachment-id="${attachmentMeta.attachmentId}"`
+    : '';
 
-  return `<a href="${escapeHtml(resolvedHref)}" data-markdown-href="${escapeHtml(markdownHref)}" target="_blank" rel="noreferrer">${escapedText}</a>`;
+  return `<a href="${escapeHtml(resolvedHref)}" data-markdown-href="${escapeHtml(markdownHref)}"${attachmentAttrs} target="_blank" rel="noreferrer">${escapedText}</a>`;
 };
 
 const inlineMarkdownToHtml = (value: string) => {
@@ -184,6 +190,26 @@ const normalizeMarkdown = (value: string) =>
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
+const rebuildAttachmentMarkdownUrlFromDataset = (element: HTMLElement): string | null => {
+  const attachmentId = element.getAttribute('data-attachment-id');
+  if (!attachmentId) {
+    return null;
+  }
+
+  const displayVariant = element.getAttribute('data-display-variant');
+  const scalePercentRaw = element.getAttribute('data-scale-percent');
+  const scalePercent = scalePercentRaw ? Number(scalePercentRaw) : undefined;
+
+  try {
+    return buildAttachmentMarkdownUrl(attachmentId, {
+      displayVariant: displayVariant === 'thumbnail' ? 'thumbnail' : 'original',
+      scalePercent: Number.isFinite(scalePercent) ? scalePercent : undefined,
+    });
+  } catch {
+    return null;
+  }
+};
+
 const serializeNode = (node: Node, orderedIndex = 1): string => {
   if (node.nodeType === Node.TEXT_NODE) {
     return node.textContent ?? '';
@@ -245,11 +271,17 @@ const serializeNode = (node: Node, orderedIndex = 1): string => {
     case 'li':
       return serializeChildren(node);
     case 'a': {
-      const href = node.getAttribute('data-markdown-href') ?? node.getAttribute('href') ?? '';
+      const href = node.getAttribute('data-markdown-href')
+        ?? rebuildAttachmentMarkdownUrlFromDataset(node)
+        ?? node.getAttribute('href')
+        ?? '';
       return `[${serializeChildren(node).trim() || href}](${href})`;
     }
     case 'img': {
-      const src = node.getAttribute('data-markdown-src') ?? node.getAttribute('src') ?? '';
+      const src = node.getAttribute('data-markdown-src')
+        ?? rebuildAttachmentMarkdownUrlFromDataset(node)
+        ?? node.getAttribute('src')
+        ?? '';
       const alt = node.getAttribute('alt') ?? '图片';
       return `![${alt}](${src})`;
     }
@@ -340,6 +372,16 @@ export const RichTextMarkdownEditor = ({
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLDivElement>) => {
+    const clipboardItems = Array.from(event.clipboardData.items);
+    const imageItem = clipboardItems.find((item) => item.type.startsWith('image/'));
+    const pastedImage = imageItem?.getAsFile();
+
+    if (pastedImage) {
+      event.preventDefault();
+      void handleImageSelection(pastedImage);
+      return;
+    }
+
     event.preventDefault();
     const text = event.clipboardData.getData('text/plain');
     document.execCommand('insertText', false, text);

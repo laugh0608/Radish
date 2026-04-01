@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
+import type { UserMentionOption as UiUserMentionOption } from '@radish/ui';
 import {
   buildAttachmentAssetUrl,
   type MarkdownDocumentUploadResult,
@@ -16,6 +17,7 @@ import {
   type CreateLotteryRequest,
   type CreatePollRequest
 } from '@/api/forum';
+import { searchUsersForMention } from '@/api/user';
 import { uploadDocument, uploadImage } from '@/api/attachment';
 import { useUserStore } from '@/stores/userStore';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -161,6 +163,21 @@ export const PublishPostModal = ({
   });
   const { t } = useTranslation();
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
+
+  const handleSearchUsers = useCallback(async (keyword: string): Promise<UiUserMentionOption[]> => {
+    try {
+      const users = await searchUsersForMention(keyword, t);
+      return users.map((user) => ({
+        id: user.voId,
+        userName: user.voUserName,
+        displayName: user.voDisplayName,
+        avatar: user.voAvatar
+      }));
+    } catch (error) {
+      log.error('发布帖子搜索提及用户失败:', error);
+      return [];
+    }
+  }, [t]);
 
   const applyCategorySelection = useCallback((nextCategoryId: number | null, snapshot?: CategorySelectionSnapshot | null) => {
     setCategoryId(nextCategoryId);
@@ -974,6 +991,7 @@ export const PublishPostModal = ({
                   className={styles.markdownEditor}
                   theme="light"
                   toolbarExtras={editorToolbarExtras}
+                  onUserMentionSearch={handleSearchUsers}
                 />
               </Suspense>
             ) : (
