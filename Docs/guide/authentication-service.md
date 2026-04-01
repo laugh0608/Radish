@@ -466,7 +466,7 @@ export const OidcCallback: React.FC = () => {
         // 存储 Token
         tokenService.setTokenInfoFromJwt(data.access_token, data.refresh_token);
 
-        // 跳转到首页
+        // 当前真实实现会先预热当前用户资料，再跳回桌面壳层
         navigate('/');
       }
     } catch (error) {
@@ -478,6 +478,12 @@ export const OidcCallback: React.FC = () => {
   return <div>正在登录...</div>;
 };
 ```
+
+### 当前实现补充
+
+- OIDC 回调完成并写入 token 后，`radish.client` 当前会先执行一次当前用户资料预热，再返回桌面壳层，优先同步头像、昵称、等级经验等高频信息。
+- 这一步的目标不是扩大缓存生命周期，而是缩短“刚登录成功但桌面头像 / 等级信息还要再等几秒”的体感空窗。
+- `cached_user_info` 仍只允许作为与当前 `access token` 身份强绑定的一次性引导缓存；资料预热完成后应继续按既有规则消费并清理，不能回退为跨账号、跨租户的长期缓存。
 
 ### 路由配置
 
