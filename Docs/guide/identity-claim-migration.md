@@ -1,6 +1,8 @@
 # 身份语义收敛迁移计划
 
 > 本文是《[身份语义收敛与 Claim 治理设计](/architecture/identity-claim-convergence)》的执行版，定义 Radish 如何从“分散解析 Claim”迁移到“统一当前用户上下文”。
+>
+> 关于 **Phase 4 现在能不能启动** 的具体判断，见：[身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
 
 ## 1. 迁移目标
 
@@ -144,6 +146,12 @@
 
 - 所有运行时代码已经完成迁移
 - 外部客户端不再依赖历史输出 Claim
+- 已形成明确的协议消费者清单、历史 Claim 保留矩阵与回滚方案
+
+当前入口：
+
+- 在正式启动前，先完成 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
+- 只有在“兼容边界已明确”被写成事实后，当前阶段才从“前提确认”切换为“协议输出收敛实施”
 
 验收：
 
@@ -269,7 +277,7 @@
 - **Phase 1：建立唯一身份抽象** —— 已完成。
 - **Phase 2：迁移所有运行时入口** —— 主路径已完成。
 - **Phase 3：收缩旧逃逸接口** —— 已完成到“兼容层冻结”状态。
-- **Phase 4：协议输出收敛** —— 暂未启动，需等待外部客户端兼容性确认。
+- **Phase 4：协议输出收敛** —— 暂未启动；当前先进入 [启动前提确认](/guide/identity-claim-phase4-readiness)，在外部客户端兼容边界、历史 Claim 保留矩阵与回滚方案明确后再正式进入实施。
 - **Phase 5：M12 后续防回归落地** —— 规则已形成，计划在 M13（验证基线与回归资产工程化）阶段接入脚本/流水线。
 
 ### 11.2 当前兼容层最终边界
@@ -291,5 +299,6 @@
 ### 11.4 下一步建议
 
 1. `M13` 首轮已落地 `npm run check:identity-claims`，并接入根目录 `validate:baseline` / `validate:baseline:quick`；后续再视项目阶段决定是否继续上升到 CI/CD。
-2. 在确认无外部依赖后，评估移除 `IHttpContextUser` 兼容层。
-3. 清理遗留注释、示例与文档中的旧 JWT/Claim 口径，避免回归。
+2. 优先完成 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)，明确协议消费者清单、历史 Claim 保留矩阵与回滚窗口。
+3. 在确认无外部依赖后，再评估移除 `IHttpContextUser` 兼容层。
+4. 清理遗留注释、示例与文档中的旧 JWT/Claim 口径，避免回归。

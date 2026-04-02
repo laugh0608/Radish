@@ -5,6 +5,7 @@
 > 相关文档：
 > - [鉴权与授权指南](/guide/authentication)
 > - [身份语义收敛迁移计划](/guide/identity-claim-migration)
+> - [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
 > - [开发框架说明](/architecture/framework)
 > - [开发规范](/architecture/specifications)
 
@@ -293,6 +294,7 @@ npm run validate:baseline:quick
 
 仍待后续阶段完成的事项：
 
+- 在正式进入协议输出收敛前，先完成 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)，把外部兼容边界、历史 Claim 保留矩阵与回滚方案落成事实文档。
 - 将静态扫描规则纳入 M12 之后的工程化规划，在 M13 阶段再接入脚本或流水线。
 - 评估 `IHttpContextUser` 兼容层的最终删除时机。
 - 在外部客户端确认完成前，不推动协议边界语义变更或历史 Claim 输出清退。
