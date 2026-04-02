@@ -4,6 +4,10 @@
 >
 > 关于 **Phase 4 现在能不能启动** 的具体判断，见：[身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
 >
+> 关于 **Phase 4 最终是否正式启动** 的当前结论，见：[身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)
+>
+> 关于 **仓库外兼容边界还差哪些事实**，见：[身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist)
+>
 > 关于 **哪些 Claim 继续保留输出、哪些只保留兼容输入** 的具体判断，见：[身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)
 >
 > 关于 **实施顺序、官方回归顺序与回滚优先级** 的具体判断，见：[身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window)
@@ -156,8 +160,11 @@
 当前入口：
 
 - 在正式启动前，先完成 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
+- 当前已完成 [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)，结论为“暂不启动实施”
+- 后续若要重启评审，先按 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 逐项补齐外部事实
 - 实施批次与回滚顺序以 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 为准
 - 只有在“兼容边界已明确”被写成事实后，当前阶段才从“前提确认”切换为“协议输出收敛实施”
+- 若短期内仍无法确认外部兼容边界，则先切换到 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)，不让主线悬空
 
 验收：
 
@@ -275,7 +282,7 @@
 - 若不先治理身份语义层，后续社区功能越多，修补成本越高
 - 该专项完成后，才能真正为权限治理、Console 扩展、Gateway/BFF 演进建立稳定基线
 
-## 11. 当前实施状态（截至 2026-03-07）
+## 11. 当前实施状态（截至 2026-04-02）
 
 ### 11.1 阶段状态
 
@@ -283,7 +290,7 @@
 - **Phase 1：建立唯一身份抽象** —— 已完成。
 - **Phase 2：迁移所有运行时入口** —— 主路径已完成。
 - **Phase 3：收缩旧逃逸接口** —— 已完成到“兼容层冻结”状态。
-- **Phase 4：协议输出收敛** —— 暂未启动；当前先进入 [启动前提确认](/guide/identity-claim-phase4-readiness)，在外部客户端兼容边界、历史 Claim 保留矩阵与回滚方案明确后再正式进入实施。
+- **Phase 4：协议输出收敛** —— 暂未启动；当前已完成 [启动前提确认](/guide/identity-claim-phase4-readiness) 与 [最终启动评审](/guide/identity-claim-phase4-start-review)，但因仓库外兼容边界仍未被事实关闭，正式结论仍为“暂不启动实施”。
 - **Phase 5：M12 后续防回归落地** —— 规则已形成，计划在 M13（验证基线与回归资产工程化）阶段接入脚本/流水线。
 
 ### 11.2 当前兼容层最终边界
@@ -305,6 +312,7 @@
 ### 11.4 下一步建议
 
 1. `M13` 首轮已落地 `npm run check:identity-claims`，并接入根目录 `validate:baseline` / `validate:baseline:quick`；后续再视项目阶段决定是否继续上升到 CI/CD。
-2. 优先完成 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)，明确协议消费者清单、历史 Claim 保留矩阵与回滚窗口。
-3. 在确认无外部依赖后，再评估移除 `IHttpContextUser` 兼容层。
-4. 清理遗留注释、示例与文档中的旧 JWT/Claim 口径，避免回归。
+2. 若后续仍计划重启 Phase 4，先按 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 补齐测试 / 生产环境、外部脚本、网关映射与第三方接入事实。
+3. 若短期内仍无法确认外部边界，则先切换到 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)，把下一条主线收束清楚。
+4. 在确认无外部依赖后，再评估移除 `IHttpContextUser` 兼容层。
+5. 清理遗留注释、示例与文档中的旧 JWT/Claim 口径，避免回归。

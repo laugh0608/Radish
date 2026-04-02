@@ -6,6 +6,8 @@
 > - [鉴权与授权指南](/guide/authentication)
 > - [身份语义收敛迁移计划](/guide/identity-claim-migration)
 > - [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
+> - [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)
+> - [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist)
 > - [开发框架说明](/architecture/framework)
 > - [开发规范](/architecture/specifications)
 
@@ -275,7 +277,7 @@ npm run validate:baseline
 npm run validate:baseline:quick
 ```
 
-## 11. 当前实施状态（2026-03-07）
+## 11. 当前实施状态（截至 2026-04-02）
 
 当前专项已进入“兼容层冻结”阶段，运行时主路径基本完成收敛：
 
@@ -294,10 +296,10 @@ npm run validate:baseline:quick
 
 仍待后续阶段完成的事项：
 
-- 在正式进入协议输出收敛前，先完成 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)，把外部兼容边界、历史 Claim 保留矩阵与回滚方案落成事实文档。
+- [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness) 与 [最终启动评审](/guide/identity-claim-phase4-start-review) 当前都已完成，正式结论为“仓库内输入已齐，但仓库外兼容边界未被事实关闭，因此暂不启动 Phase 4”；后续若要重启评审，先按 [仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 逐项补事实。
 - 将静态扫描规则纳入 M12 之后的工程化规划，在 M13 阶段再接入脚本或流水线。
 - 评估 `IHttpContextUser` 兼容层的最终删除时机。
-- 在外部客户端确认完成前，不推动协议边界语义变更或历史 Claim 输出清退。
+- 在外部客户端确认完成前，不推动协议边界语义变更或历史 Claim 输出清退；若短期内仍无法关闭外部事实边界，则按 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline) 切换下一条主线。
 
 ## 12. 验收标准
 
