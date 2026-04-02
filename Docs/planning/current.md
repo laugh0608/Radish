@@ -75,6 +75,8 @@
 - [x] 已完成身份语义 Phase 4 启动前提确认的第一份事实资产：新增 [身份语义 Phase 4 协议消费者矩阵](/guide/identity-claim-protocol-consumers)，当前已明确 `radish-client`、`radish-console` 与 `Radish.Api.AuthFlow.http` 属于最关键的直接协议消费者
 - [x] 已完成身份语义 Phase 4 启动前提确认的第二份事实资产：新增 [身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)，当前已明确标准长期保留字段与历史双写字段的收缩方向
 - [x] 已完成身份语义 Phase 4 启动前提确认的第三份事实资产：新增 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window)，当前已明确输出收缩顺序、官方回归顺序与默认回滚优先级
+- [x] 已完成身份语义 Phase 4 最终启动评审：新增 [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)，当前已明确“仓库内输入已齐，但仓库外兼容边界未被事实关闭，因此不正式启动实施”
+- [x] 已补身份语义 Phase 4 仓库外兼容边界确认清单：新增 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist)，把外部脚本、网关映射、独立调用方与第三方客户端的确认项拆成可执行检查项
 - [x] 已完成论坛置顶首批最小闭环：当前复用 `Post.IsTop`，管理员可在帖子详情区执行置顶 / 取消置顶，列表排序继续沿用既有置顶优先规则
 - [x] 已完成聊天室图片“先入草稿、后统一发送”改造：图片上传后会先进入当前频道草稿区，支持继续输入文字、移除待发图片、切换频道后按频道恢复，再在点击发送时与文字一起发出
 - [x] 已修复论坛发帖分类摘要不同步问题：发帖分类选择与顶部“帖子设置”摘要当前已统一走同一条 `categoryId + categoryName` 状态链，初选、切换、清空与恢复草稿时都会即时同步
@@ -103,8 +105,8 @@
 - 第 1 步：维持当前规划页、总回归记录、状态矩阵与周志口径一致，避免“事实已收口、文档仍待确认”再次出现
 - 第 2 步：把社区主链正式转入稳定维护；如近期再发生跨层改动，优先重跑 `npm run validate:baseline`，涉及宿主 / 配置时再补 `npm run validate:baseline:host`
 - 第 3 步：继续维持当前统一镜像推送、`local / test / prod`、`DbMigrate -> Api/Auth -> Gateway` 与 `AuthUi__ShowTestAccountHint` 的发布口径冻结状态，避免部署事实再次漂移
-- 第 4 步：基于已完成的三份前置资产，做身份语义 Phase 4 的最终启动评审，确认仓库外兼容边界是否允许正式开工
-- 第 5 步：若启动评审仍不能通过，则先重定义 `M14` 的宿主运行与最小可观测性基线，避免继续沿用过早形成的旧阶段名直接开工
+- 第 4 步：按 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 逐项确认测试 / 生产环境、外部脚本、网关映射与第三方接入事实
+- 第 5 步：若短期内仍无法确认仓库外兼容边界，则先重定义 `M14` 的宿主运行与最小可观测性基线，避免继续沿用过早形成的旧阶段名直接开工
 - 第 6 步：旧 `GetCommentTree` 兼容入口继续保留在观察池中，仅在确认仓库外也已无依赖后，再安排正式删除窗口
 
 ### 当前结论
@@ -297,7 +299,7 @@
 
 - **当前状态**：主体已完成，协议输出收敛尚未启动
 - **剩余任务**：
-  - Phase 4：协议输出收敛（当前 [启动前提确认](/guide/identity-claim-phase4-readiness) 的三份前置资产已齐： [协议消费者矩阵](/guide/identity-claim-protocol-consumers)、[历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)、[实施与回滚窗口](/guide/identity-claim-phase4-rollout-window)；下一步进入最终启动评审）
+  - Phase 4：协议输出收敛（当前已完成 [最终启动评审](/guide/identity-claim-phase4-start-review)，结论为“暂不启动实施”；后续若要重启评审，按 [仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 逐项补事实）
   - Phase 5：防回归资产接入脚本 / 校验流程（留待重定义后的 `M13`）
 
 ### 工程治理

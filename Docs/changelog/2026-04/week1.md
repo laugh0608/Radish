@@ -21,3 +21,6 @@
 - **历史 Claim 保留矩阵已新增**：新增 `guide/identity-claim-retention-matrix.md`，把 `sub / name / preferred_username / role / scope / tenant_id`、`ClaimTypes.*`、`TenantId`、`jti` 的保留策略收束为单一口径。
 - **实施与回滚窗口已新增**：新增 `guide/identity-claim-phase4-rollout-window.md`，把输出收缩顺序、官方回归顺序与默认回滚优先级收束为同一份执行口径。
 - **当前状态更新为前置资产已完成 3/3**：协议消费者清单、历史 Claim 保留矩阵与实施 / 回滚窗口当前均已落文档；下一步进入最终启动评审，而不是直接把事项改写为“Phase 4 实施中”。
+- **最终启动评审已新增**：新增 `guide/identity-claim-phase4-start-review.md`，把三份前置资产收束为一次正式评审结论。
+- **当前评审结论已明确**：仓库内启动输入当前已经齐备，但仓库外兼容边界仍未被事实关闭，因此当前不正式启动身份语义 Phase 4；若短期内仍无法确认外部边界，则下一步转入 `M14` 宿主运行与最小可观测性基线重定义。
+- **仓库外兼容边界确认清单已新增**：新增 `guide/identity-claim-external-compat-checklist.md`，把测试 / 生产环境脚本、外部网关映射、仓库外调用方与第三方客户端接入拆成逐项可确认的检查清单。

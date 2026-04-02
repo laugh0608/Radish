@@ -101,7 +101,7 @@ PostgreSQL / SQLite
 - 自 **2026-03-07** 起，Radish 将“Claim 解析收口”升级为“身份语义收敛”专项治理。
 - 目标不是继续在控制器、Hub、中间件层补 `FindFirst(...)`，而是建立运行时唯一身份视图 `CurrentUser`，让业务与基础设施代码不再直接理解 Claim 结构。
 - 协议边界（Auth 签发、`userinfo`、JWT/OIDC 配置）继续保留显式 Claim 语义；非协议边界运行时代码统一通过 `ICurrentUserAccessor` 获取当前用户。
-- 详细设计见 [身份语义收敛与 Claim 治理设计](/architecture/identity-claim-convergence)，执行顺序见 [身份语义收敛迁移计划](/guide/identity-claim-migration)，Phase 4 是否可启动见 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)。
+- 详细设计见 [身份语义收敛与 Claim 治理设计](/architecture/identity-claim-convergence)，执行顺序见 [身份语义收敛迁移计划](/guide/identity-claim-migration)，Phase 4 是否可启动见 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)，最终判断见 [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)。
 
 - `Radish.Api`
   - 负责 DI、配置、日志、全局异常、认证授权、Swagger/Scalar、HealthChecks。
