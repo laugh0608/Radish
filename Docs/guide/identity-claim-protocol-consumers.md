@@ -6,6 +6,7 @@
 >
 > - [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
 > - [身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)
+> - [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window)
 > - [身份语义收敛迁移计划](/guide/identity-claim-migration)
 > - [身份语义收敛与 Claim 治理设计](/architecture/identity-claim-convergence)
 > - [鉴权与授权指南](/guide/authentication)
@@ -98,7 +99,8 @@ Phase 4 要处理的不是“仓库里还有没有 `FindFirst(...)`”，而是 
 
 3. **当前仍不足以宣布 Phase 4 已启动。**
    - 历史 Claim 保留矩阵当前已补齐，见 [身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)。
-   - 当前还缺最后一份前置资产：实施顺序与回滚窗口。
+   - 实施顺序与回滚窗口当前也已补齐，见 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window)。
+   - 当前下一步不再是继续补文档，而是基于三份前置资产做最终启动评审。
 
 在这两份资产补齐前，当前阶段仍应维持为：
 

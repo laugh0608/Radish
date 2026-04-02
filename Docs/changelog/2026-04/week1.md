@@ -19,4 +19,5 @@
 - **当前结论已明确**：身份语义 Phase 4 当前进入“启动前提确认”阶段，而不是直接进入实施；先确认协议消费者清单、历史 Claim 保留矩阵与回滚方案，再决定是否启动。
 - **协议消费者矩阵已新增**：新增 `guide/identity-claim-protocol-consumers.md`，把官方客户端、仓库内 `.http` 联调资产、共享前端 OIDC 基础设施与仓库外待确认边界收束到同一份事实清单。
 - **历史 Claim 保留矩阵已新增**：新增 `guide/identity-claim-retention-matrix.md`，把 `sub / name / preferred_username / role / scope / tenant_id`、`ClaimTypes.*`、`TenantId`、`jti` 的保留策略收束为单一口径。
-- **当前状态更新为已完成 2/3**：协议消费者清单与历史 Claim 保留矩阵当前均已落文档；剩余待补项为“实施 / 回滚窗口”。
+- **实施与回滚窗口已新增**：新增 `guide/identity-claim-phase4-rollout-window.md`，把输出收缩顺序、官方回归顺序与默认回滚优先级收束为同一份执行口径。
+- **当前状态更新为前置资产已完成 3/3**：协议消费者清单、历史 Claim 保留矩阵与实施 / 回滚窗口当前均已落文档；下一步进入最终启动评审，而不是直接把事项改写为“Phase 4 实施中”。

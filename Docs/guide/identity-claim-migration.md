@@ -5,6 +5,8 @@
 > 关于 **Phase 4 现在能不能启动** 的具体判断，见：[身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
 >
 > 关于 **哪些 Claim 继续保留输出、哪些只保留兼容输入** 的具体判断，见：[身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)
+>
+> 关于 **实施顺序、官方回归顺序与回滚优先级** 的具体判断，见：[身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window)
 
 ## 1. 迁移目标
 
@@ -154,6 +156,7 @@
 当前入口：
 
 - 在正式启动前，先完成 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
+- 实施批次与回滚顺序以 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 为准
 - 只有在“兼容边界已明确”被写成事实后，当前阶段才从“前提确认”切换为“协议输出收敛实施”
 
 验收：
