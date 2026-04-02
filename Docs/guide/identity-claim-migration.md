@@ -3,6 +3,8 @@
 > 本文是《[身份语义收敛与 Claim 治理设计](/architecture/identity-claim-convergence)》的执行版，定义 Radish 如何从“分散解析 Claim”迁移到“统一当前用户上下文”。
 >
 > 关于 **Phase 4 现在能不能启动** 的具体判断，见：[身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
+>
+> 关于 **哪些 Claim 继续保留输出、哪些只保留兼容输入** 的具体判断，见：[身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)
 
 ## 1. 迁移目标
 
@@ -145,8 +147,9 @@
 前提：
 
 - 所有运行时代码已经完成迁移
+- 已形成明确的协议消费者清单（见 [身份语义 Phase 4 协议消费者矩阵](/guide/identity-claim-protocol-consumers)）
 - 外部客户端不再依赖历史输出 Claim
-- 已形成明确的协议消费者清单、历史 Claim 保留矩阵与回滚方案
+- 已形成明确的历史 Claim 保留矩阵（见 [身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)）与回滚方案
 
 当前入口：
 

@@ -72,6 +72,8 @@
 - [x] 已完成 `v26.3.2-test` 的真实测试部署验收：tag 驱动镜像构建、`GHCR` 拉取、`base + test` 启动、登录 / 回调 / 权限 / 核心页面以及 `DbMigrate` 初始化链路当前均已通过，测试部署链路已完成本轮收口
 - [x] 已完成 `v26.3.2-release` 的真实发布与生产口径部署验收：release 镜像产出、`base + prod` 启动、登录 / 回调 / 权限 / 核心页面当前均已通过，正式发布链路已完成本轮收口
 - [x] 已确认 `radish-dbmigrate` 完成首次真实拉取、初始化与容器化部署验收，不再停留在“等待下一次规范 tag 验证”的状态
+- [x] 已完成身份语义 Phase 4 启动前提确认的第一份事实资产：新增 [身份语义 Phase 4 协议消费者矩阵](/guide/identity-claim-protocol-consumers)，当前已明确 `radish-client`、`radish-console` 与 `Radish.Api.AuthFlow.http` 属于最关键的直接协议消费者
+- [x] 已完成身份语义 Phase 4 启动前提确认的第二份事实资产：新增 [身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)，当前已明确标准长期保留字段与历史双写字段的收缩方向
 - [x] 已完成论坛置顶首批最小闭环：当前复用 `Post.IsTop`，管理员可在帖子详情区执行置顶 / 取消置顶，列表排序继续沿用既有置顶优先规则
 - [x] 已完成聊天室图片“先入草稿、后统一发送”改造：图片上传后会先进入当前频道草稿区，支持继续输入文字、移除待发图片、切换频道后按频道恢复，再在点击发送时与文字一起发出
 - [x] 已修复论坛发帖分类摘要不同步问题：发帖分类选择与顶部“帖子设置”摘要当前已统一走同一条 `categoryId + categoryName` 状态链，初选、切换、清空与恢复草稿时都会即时同步
@@ -100,8 +102,8 @@
 - 第 1 步：维持当前规划页、总回归记录、状态矩阵与周志口径一致，避免“事实已收口、文档仍待确认”再次出现
 - 第 2 步：把社区主链正式转入稳定维护；如近期再发生跨层改动，优先重跑 `npm run validate:baseline`，涉及宿主 / 配置时再补 `npm run validate:baseline:host`
 - 第 3 步：继续维持当前统一镜像推送、`local / test / prod`、`DbMigrate -> Api/Auth -> Gateway` 与 `AuthUi__ShowTestAccountHint` 的发布口径冻结状态，避免部署事实再次漂移
-- 第 4 步：优先完成身份语义 Phase 4 的启动前提确认，明确外部客户端兼容边界，再决定是否正式进入协议输出收敛
-- 第 5 步：若身份语义 Phase 4 的启动前提暂不满足，则先重定义 `M14` 的宿主运行与最小可观测性基线，避免继续沿用过早形成的旧阶段名直接开工
+- 第 4 步：补齐身份语义 Phase 4 启动前提确认最后一份资产：实施顺序与回滚窗口
+- 第 5 步：在三份前置资产全部齐备后，再决定是否正式进入协议输出收敛；若前提仍不满足，则先重定义 `M14` 的宿主运行与最小可观测性基线
 - 第 6 步：旧 `GetCommentTree` 兼容入口继续保留在观察池中，仅在确认仓库外也已无依赖后，再安排正式删除窗口
 
 ### 当前结论
@@ -294,7 +296,7 @@
 
 - **当前状态**：主体已完成，协议输出收敛尚未启动
 - **剩余任务**：
-  - Phase 4：协议输出收敛（当前先做 [启动前提确认](/guide/identity-claim-phase4-readiness)，明确外部兼容边界、历史 Claim 保留矩阵与回滚方案）
+  - Phase 4：协议输出收敛（当前先做 [启动前提确认](/guide/identity-claim-phase4-readiness)；其中 [协议消费者矩阵](/guide/identity-claim-protocol-consumers) 与 [历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix) 已完成，待补实施 / 回滚窗口）
   - Phase 5：防回归资产接入脚本 / 校验流程（留待重定义后的 `M13`）
 
 ### 工程治理
