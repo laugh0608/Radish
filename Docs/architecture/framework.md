@@ -20,7 +20,7 @@
   - 安全：所有外部访问统一收口到 Gateway 公共入口并以 HTTPS 对外暴露；测试部署可由 Gateway 容器直接提供 TLS，生产部署则由外部 `Nginx / Traefik / Caddy` 终止 TLS。前端不做自定义“二次加密”（不做 RSA 前端加密）。结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。开发阶段 Radish.Api 保留 HTTPS 端口便于直接调试，但在完成 Gateway/OIDC 接入并进入生产环境前，应关闭或限制直接暴露的 API HTTPS 端口，仅通过 Gateway/反向代理对外提供服务。
   - 性能：关键查询 P95 ≤ 200ms；SQLSugar Profile + PostgreSQL EXPLAIN 校验索引；读多写少场景可使用内存缓存。
   - 可用性：健康检查 `/health`, `/ready`; SQLSugar 迁移幂等；容器探针。
-  - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点。
+  - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点；宿主侧当前按 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline) 收束最小运行观测边界。
   - 国际化：后端资源文件（zh-Hans 基线）+ `MessageModel` 三件套，前端 i18n（React i18next），详见 [国际化指南](/architecture/i18n)。
   - 质量：后端以 xUnit + Shouldly + Moq 为当前基线；前端当前以 `type-check`、`node --test`、`HttpTest` 与最小人工验收为主，Vitest / RTL / Playwright 仍属于后续增强方向。
   - 配置：`appsettings.{Env}.json` + 环境变量 + `.env`；禁止把密钥写入仓库。
@@ -222,7 +222,7 @@ graph LR
    - `appsettings.json` 仅放默认值，环境差异通过 `appsettings.{Env}.json` + 环境变量。
    - 本地秘密写入 `dotnet user-secrets` 或 `.env.local`（被 .gitignore 忽略）。
 2. **日志与监控**：
-   - Serilog 写入 Console + File；API / Gateway 已具备健康检查入口，当前以“日志 + 健康检查 + `DbMigrate doctor/verify`”作为最小自检基线。
+   - Serilog 写入 Console + File；API / Gateway 已具备健康检查入口，当前以“日志 + 健康检查 + `DbMigrate doctor/verify`”作为最小自检基线，统一口径见 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。
    - OpenTelemetry Exporter、Prometheus 指标与更完整的 Tracing 仍处于后续规划阶段，尚未作为当前仓库既成能力。
 3. **部署流水线**：
    - 当前仓库已具备 `Radish.DbMigrate`、`Radish.Api`、`Radish.Auth`、`Radish.Gateway` 与 `Frontend` 五个 Dockerfile，多阶段构建资产已形成最小镜像链。
