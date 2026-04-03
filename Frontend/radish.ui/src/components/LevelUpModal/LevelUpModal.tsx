@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import './LevelUpModal.css';
 
 export interface LevelUpData {
@@ -32,32 +32,37 @@ export const LevelUpModal = ({
   const [isAnimating, setIsAnimating] = useState(false);
   const [showContent, setShowContent] = useState(false);
 
+  const handleClose = useCallback(() => {
+    setShowContent(false);
+    window.setTimeout(() => {
+      setIsAnimating(false);
+      onClose();
+    }, 300);
+  }, [onClose]);
+
   useEffect(() => {
     if (isOpen) {
       setIsAnimating(true);
       // 延迟显示内容，让动画更流畅
-      setTimeout(() => setShowContent(true), 300);
+      const contentTimer = window.setTimeout(() => setShowContent(true), 300);
 
       // 自动关闭
       if (autoClose) {
-        const timer = setTimeout(() => {
+        const closeTimer = window.setTimeout(() => {
           handleClose();
         }, autoCloseDelay);
-        return () => clearTimeout(timer);
+        return () => {
+          window.clearTimeout(contentTimer);
+          window.clearTimeout(closeTimer);
+        };
       }
+
+      return () => window.clearTimeout(contentTimer);
     } else {
       setShowContent(false);
       setIsAnimating(false);
     }
-  }, [isOpen, autoClose, autoCloseDelay]);
-
-  const handleClose = () => {
-    setShowContent(false);
-    setTimeout(() => {
-      setIsAnimating(false);
-      onClose();
-    }, 300);
-  };
+  }, [isOpen, autoClose, autoCloseDelay, handleClose]);
 
   if (!isOpen && !isAnimating) {
     return null;

@@ -222,7 +222,7 @@ export const MarkdownEditor = ({
 
   const ensureStickerCode = (value: string): string => value.trim().toLowerCase();
 
-  const escapeMarkdownAlt = (value: string): string => value.replace(/[\[\]]/g, '').trim();
+  const escapeMarkdownAlt = (value: string): string => value.replace(/[[\]]/g, '').trim();
 
   const buildStickerMarkdownUrl = (
     groupCode: string,

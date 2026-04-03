@@ -29,15 +29,18 @@ export interface DataTableProps<T> extends Omit<AntTableProps<T>, 'dataSource' |
 /**
  * 判断是否为分页数据
  */
-function isPagedResponse<T>(data: any): data is PagedResponse<T> {
+function isPagedResponse<T>(data: unknown): data is PagedResponse<T> {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const candidate = data as Partial<PagedResponse<T>> & Record<string, unknown>;
+
   return (
-    data &&
-    typeof data === 'object' &&
-    'data' in data &&
-    'page' in data &&
-    'pageSize' in data &&
-    'dataCount' in data &&
-    Array.isArray(data.data)
+    typeof candidate.page === 'number' &&
+    typeof candidate.pageSize === 'number' &&
+    typeof candidate.dataCount === 'number' &&
+    Array.isArray(candidate.data)
   );
 }
 
@@ -61,7 +64,7 @@ function isPagedResponse<T>(data: any): data is PagedResponse<T> {
  * />
  * ```
  */
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends Record<string, unknown>>({
   columns,
   dataSource,
   loading = false,

@@ -35,7 +35,7 @@
     "./bar-chart": "./src/components/Charts/BarChart.tsx",
     "./area-chart": "./src/components/Charts/AreaChart.tsx",
     "./notification-list": "./src/components/Notification/NotificationList.tsx",
-    "./toast": "./src/components/Toast/Toast.tsx",
+    "./toast": "./src/components/Toast/index.ts",
     "./notification": "./src/components/Notification/Notification.tsx"
   },
   "scripts": {

@@ -1,6 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode, type ReactElement, cloneElement } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode, type ReactElement, cloneElement } from 'react';
 import { createPortal } from 'react-dom';
 import './ContextMenu.css';
+
+type ContextMenuTriggerProps = {
+  onContextMenu?: (event: React.MouseEvent) => void;
+};
 
 export interface ContextMenuItem {
   /**
@@ -72,8 +76,15 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
   const [submenuState, setSubmenuState] = useState<{ [key: string]: boolean }>({});
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // 关闭菜单
+  const handleClose = useCallback(() => {
+    setVisible(false);
+    setSubmenuState({});
+    onClose?.();
+  }, [onClose]);
+
   // 处理右键点击
-  const handleContextMenu = (e: React.MouseEvent) => {
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -84,7 +95,7 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
     setPosition({ x, y });
     setVisible(true);
     setSubmenuState({});
-  };
+  }, []);
 
   // 处理菜单项点击
   const handleItemClick = (item: ContextMenuItem) => {
@@ -106,13 +117,6 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
     handleClose();
   };
 
-  // 关闭菜单
-  const handleClose = () => {
-    setVisible(false);
-    setSubmenuState({});
-    onClose?.();
-  };
-
   // 点击外部关闭菜单
   useEffect(() => {
     if (!visible) return;
@@ -127,7 +131,7 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [visible]);
+  }, [visible, handleClose]);
 
   // 调整菜单位置，防止超出视口
   useEffect(() => {
@@ -194,7 +198,7 @@ export const ContextMenu = ({ items, children, onClose }: ContextMenuProps) => {
 
   return (
     <>
-      {cloneElement(children as ReactElement<any>, {
+      {cloneElement(children as ReactElement<ContextMenuTriggerProps>, {
         onContextMenu: handleContextMenu
       })}
       {visible && createPortal(
