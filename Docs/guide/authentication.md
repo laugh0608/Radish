@@ -664,13 +664,13 @@ var scopes = User.FindAll("scope")
 ### 8.3 与多租户 / 权限体系的关系
 
 - **多租户（Tenant）**
-  - Auth 在签发 Token 时必须写入正确的 `tenant_id`（以及兼容的 `TenantId`）；
+  - Auth 在签发 Token 时必须写入正确的 `tenant_id`；
   - Api 通过上述规则解析出 `TenantId`，`RepositorySetting`/`BaseRepository` 会基于该值：
     - 对实现 `ITenantEntity` 的实体增加 QueryFilter；
     - 根据租户切换数据库或分表后缀。
 
 - **角色与权限（RBAC）**
-  - Auth 需将用户角色写入 `role`/`ClaimTypes.Role`，值必须与 `Role.RoleName` 一致；
+  - Auth 需将用户角色写入标准 `role` Claim，值必须与 `Role.RoleName` 一致；
   - Api 侧授权策略：
     - `System` / `SystemOrAdmin` 通过角色 Claim 做静态角色判断；
     - `RadishAuthPolicy` 通过角色 Claim 与 `ApiModule.LinkUrl`（正则）构建的 `PermissionItem` 集合做 URL 级权限校验。
@@ -749,8 +749,7 @@ private static IEnumerable<string> GetClaimDestinations(Claim claim, ImmutableAr
     }
 
     // role claim
-    if (claim.Type == OpenIddictConstants.Claims.Role ||
-        claim.Type == ClaimTypes.Role)
+    if (claim.Type == OpenIddictConstants.Claims.Role)
     {
         yield return OpenIddictConstants.Destinations.AccessToken;
         if (scopes.Contains(OpenIddictConstants.Scopes.Profile))
@@ -761,7 +760,7 @@ private static IEnumerable<string> GetClaimDestinations(Claim claim, ImmutableAr
     }
 
     // tenant_id: 仅用于授权
-    if (claim.Type == "tenant_id" || claim.Type == "TenantId")
+    if (claim.Type == "tenant_id")
     {
         yield return OpenIddictConstants.Destinations.AccessToken;
         yield break;
@@ -779,17 +778,13 @@ private static IEnumerable<string> GetClaimDestinations(Claim claim, ImmutableAr
 ```csharp
 var claims = new List<Claim>
 {
-    // 标准身份标识
-    new(ClaimTypes.NameIdentifier, userId),
-    new(ClaimTypes.Name, username),
-
     // OIDC 标准 claims
     new(OpenIddictConstants.Claims.Subject, userId),
-    new(OpenIddictConstants.Claims.Name, username),
-    new(OpenIddictConstants.Claims.PreferredUsername, user.VoLoName),
+    new(OpenIddictConstants.Claims.Name, user.VoLoginName ?? username),
+    new(OpenIddictConstants.Claims.PreferredUsername, user.VoLoginName ?? username),
 
     // 多租户标识
-    new("tenant_id", tenantId)
+    new(UserClaimTypes.TenantId, tenantId)
 };
 
 // Email claim (如果存在)
@@ -808,10 +803,11 @@ if (!string.IsNullOrWhiteSpace(user.VoReNa))
 // 角色 claims
 foreach (var role in roleNames)
 {
-    claims.Add(new Claim(ClaimTypes.Role, role));
     claims.Add(new Claim(OpenIddictConstants.Claims.Role, role));
 }
 ```
+
+> 自 Phase 4 首轮窗口启动后，Auth 登录主路径已停止 `ClaimTypes.NameIdentifier`、`ClaimTypes.Name`、`ClaimTypes.Role` 与 `TenantId` 的历史双写输出；`IHttpContextUser`、`userinfo` 等读取侧仍保留输入兼容，用于承接旧 Token / 旧 Cookie 主体。
 
 #### 8.4.5 支持的 Scopes
 
