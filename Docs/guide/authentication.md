@@ -147,7 +147,7 @@ new OpenIddictApplicationDescriptor
 1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
 2. 点击右上角 **Authenticate** 按钮
 3. 选择 **oauth2** 认证方式，点击 **Authorize**
-4. 使用测试账号登录（用户名：`test`，密码：`P@ssw0rd!`）
+4. 使用测试账号登录（用户名：`test`，密码：`test123456`）
 5. 确认授权后，所有 API 请求将自动携带 Bearer Token
 
 ### 4.2 前端 Web 客户端
@@ -1260,7 +1260,7 @@ options.AddPreferredSecuritySchemes("oauth2")
 4. 点击 **Authorize** 按钮
 5. 使用测试账号登录：
    - 用户名：`test`
-   - 密码：`P@ssw0rd!`
+   - 密码：`test123456`
 6. 确认授权后，所有 API 请求将自动携带 Bearer Token
 
 ### 15.3 客户端配置

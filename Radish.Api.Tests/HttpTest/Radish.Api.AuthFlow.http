@@ -4,6 +4,9 @@
 ### - 经 Gateway 的授权码 → Token → API 调用
 ### - UserInfo 查询
 ### - Refresh Token 换新 Access Token
+### 注意：
+### - 这份脚本默认按“官方回归闭环”申请 `openid profile offline_access radish-api`
+### - 这样才能同时验证授权码、`/connect/userinfo` 与 refresh_token 三条链路
 
 ### 环境变量（按本地默认端口配置）
 @authBase = http://localhost:5200
@@ -28,8 +31,8 @@
 ### A.2 在浏览器中触发授权码流程（直连 Auth）
 ### 步骤：
 ### 1) 浏览器访问：
-###    {{authBase}}/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=radish-api
-###    http://localhost:5200/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=radish-api
+###    {{authBase}}/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=openid%20profile%20offline_access%20radish-api
+###    http://localhost:5200/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=openid%20profile%20offline_access%20radish-api
 ### 2) 如果未登录，会跳到登录页，用上面的 test 账号登录；
 ### 3) 登录/授权成功后，会跳转到：
 ###    https://localhost:5000/oidc/callback?code=xxxxx
@@ -78,7 +81,8 @@ Authorization: Bearer {{accessToken}}
 
 ### 预期：
 ### - 状态码 200
-### - 响应体中包含 sub / name / email / role 等用户信息
+### - 响应体中包含 sub / name / role / tenant_id 等用户信息
+### - email 是否有值取决于当前测试用户资料
 
 ### A.6 使用 Refresh Token 换取新的 Access Token（直连 Auth）
 
@@ -103,13 +107,13 @@ refresh_token={{refreshToken}}
 ###    https://localhost:5000/Account/Login
 ### 2) 使用测试账号登录：
 ###    用户名: test
-###    密  码: P@ssw0rd!
+###    密  码: test123456
 
 ### B.2 在浏览器中通过 Gateway 触发授权码流程
 ### 步骤：
 ### 1) 浏览器访问：
-###    {{gatewayBase}}/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=radish-api
-###    https://localhost:5000/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=radish-api
+###    {{gatewayBase}}/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=openid%20profile%20offline_access%20radish-api
+###    https://localhost:5000/connect/authorize?response_type=code&client_id=radish-client&redirect_uri=https%3A%2F%2Flocalhost%3A5000%2Foidc%2Fcallback&scope=openid%20profile%20offline_access%20radish-api
 ### 2) 未登录会跳转登录页，登录后会重定向到：
 ###    https://localhost:5000/oidc/callback?code=xxxxx
 ### 3) 从 URL 中复制 code 参数，粘到下面的 @gatewayAuthCode 变量。
