@@ -5,6 +5,7 @@
 > 关联文档：
 >
 > - [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)
+> - [身份语义 Phase 4 仓库外兼容边界首轮执行记录（仓库资产侧）](/guide/identity-claim-external-compat-first-pass)
 > - [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
 > - [身份语义 Phase 4 协议消费者矩阵](/guide/identity-claim-protocol-consumers)
 > - [身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)
@@ -162,6 +163,8 @@
 
 并把这些对象纳入后续迁移或替换计划，而不是强行推进输出收缩。
 
+> 补充说明：截至 `2026-04-03`，当前实际部署范围已按“确认通过”分支完成事实关闭，见：[身份语义 Phase 4 仓库外兼容边界首轮执行记录（仓库资产侧）](/guide/identity-claim-external-compat-first-pass) 与 [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)。
+
 ## 9. 当前结论
 
 截至 `2026-04-02`，这份清单的价值不在于“已经证明可以启动”，而在于：
@@ -169,3 +172,4 @@
 - 它把最后缺失的外部事实确认工作拆成了明确对象；
 - 它给出了“确认通过 / 仍无法确认 / 明确发现阻塞”三种出口；
 - 后续不需要再重复讨论“到底还差什么”，只需要按这份清单逐项关闭即可。
+- 截至 `2026-04-03`，仓库资产侧的首轮排查记录也已补齐，见：[身份语义 Phase 4 仓库外兼容边界首轮执行记录（仓库资产侧）](/guide/identity-claim-external-compat-first-pass)。

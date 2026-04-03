@@ -25,3 +25,12 @@
 - **最终启动评审已新增**：新增 `guide/identity-claim-phase4-start-review.md`，把三份前置资产收束为一次正式评审结论。
 - **当前评审结论已明确**：仓库内启动输入当前已经齐备，但仓库外兼容边界仍未被事实关闭，因此当前不正式启动身份语义 Phase 4；若短期内仍无法确认外部边界，则下一步转入 `M14` 宿主运行与最小可观测性基线重定义。
 - **仓库外兼容边界确认清单已新增**：新增 `guide/identity-claim-external-compat-checklist.md`，把测试 / 生产环境脚本、外部网关映射、仓库外调用方与第三方客户端接入拆成逐项可确认的检查清单。
+
+## 2026-04-03 (周五)
+
+### 身份语义 Phase 4 外部边界首轮盘点
+
+- **仓库资产侧首轮执行记录已新增**：新增 `guide/identity-claim-external-compat-first-pass.md`，把仓库交付的 Nginx 样例、Compose 编排、部署指南、`HttpTest` 联调资产与默认客户端种子做了一轮事实化排查。
+- **仓库内可排除范围已明确**：当前可确认仓库交付的反向代理样例与 Compose 口径未发现 `ClaimTypes.NameIdentifier`、`ClaimTypes.Role`、`TenantId`、`jti` 等旧 Claim 字段依赖；`userinfo` 的仓库内直接消费者当前主要收束在 `Radish.Api.AuthFlow.http`。
+- **生产环境事实已补齐**：当前现网仅有 1 套 `v26.3.2-release` Docker 部署，外层使用 1Panel 默认 HTTPS 反向代理，无仓库外换 Token / 联调 / 巡检脚本，OpenIddict 仅有默认种子数据。
+- **最终启动评审结论已更新**：基于仓库资产侧与当前生产环境侧事实，身份语义 `Phase 4` 当前已从“暂不启动”更新为“允许启动”；后续主线转入协议输出收敛与官方回归顺序执行，不再默认切向 `M14`。
