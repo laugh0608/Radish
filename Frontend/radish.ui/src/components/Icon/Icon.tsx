@@ -3,6 +3,8 @@ import { Icon as IconifyIcon, getIcon, addCollection } from '@iconify/react';
 import type { IconProps as IconifyIconProps } from '@iconify/react';
 import './Icon.css';
 
+type IconCollection = Parameters<typeof addCollection>[0];
+
 let mdiCollectionLoaded = false;
 let mdiCollectionLoadingPromise: Promise<void> | null = null;
 
@@ -14,7 +16,7 @@ async function ensureMdiCollectionLoaded(): Promise<void> {
   if (!mdiCollectionLoadingPromise) {
     mdiCollectionLoadingPromise = import('./mdi-subset.json')
       .then((module) => {
-        addCollection(module.default as any);
+        addCollection(module.default as IconCollection);
         mdiCollectionLoaded = true;
       })
       .finally(() => {

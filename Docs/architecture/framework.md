@@ -20,7 +20,7 @@
   - 安全：所有外部访问统一收口到 Gateway 公共入口并以 HTTPS 对外暴露；测试部署可由 Gateway 容器直接提供 TLS，生产部署则由外部 `Nginx / Traefik / Caddy` 终止 TLS。前端不做自定义“二次加密”（不做 RSA 前端加密）。结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。开发阶段 Radish.Api 保留 HTTPS 端口便于直接调试，但在完成 Gateway/OIDC 接入并进入生产环境前，应关闭或限制直接暴露的 API HTTPS 端口，仅通过 Gateway/反向代理对外提供服务。
   - 性能：关键查询 P95 ≤ 200ms；SQLSugar Profile + PostgreSQL EXPLAIN 校验索引；读多写少场景可使用内存缓存。
   - 可用性：健康检查 `/health`, `/ready`; SQLSugar 迁移幂等；容器探针。
-  - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点。
+  - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点；宿主侧当前按 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline) 收束最小运行观测边界。
   - 国际化：后端资源文件（zh-Hans 基线）+ `MessageModel` 三件套，前端 i18n（React i18next），详见 [国际化指南](/architecture/i18n)。
   - 质量：后端以 xUnit + Shouldly + Moq 为当前基线；前端当前以 `type-check`、`node --test`、`HttpTest` 与最小人工验收为主，Vitest / RTL / Playwright 仍属于后续增强方向。
   - 配置：`appsettings.{Env}.json` + 环境变量 + `.env`；禁止把密钥写入仓库。
@@ -101,14 +101,14 @@ PostgreSQL / SQLite
 - 自 **2026-03-07** 起，Radish 将“Claim 解析收口”升级为“身份语义收敛”专项治理。
 - 目标不是继续在控制器、Hub、中间件层补 `FindFirst(...)`，而是建立运行时唯一身份视图 `CurrentUser`，让业务与基础设施代码不再直接理解 Claim 结构。
 - 协议边界（Auth 签发、`userinfo`、JWT/OIDC 配置）继续保留显式 Claim 语义；非协议边界运行时代码统一通过 `ICurrentUserAccessor` 获取当前用户。
-- 详细设计见 [身份语义收敛与 Claim 治理设计](/architecture/identity-claim-convergence)，执行顺序见 [身份语义收敛迁移计划](/guide/identity-claim-migration)。
+- 详细设计见 [身份语义收敛与 Claim 治理设计](/architecture/identity-claim-convergence)，执行顺序见 [身份语义收敛迁移计划](/guide/identity-claim-migration)，Phase 4 是否可启动见 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)，最终判断见 [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)。
 
 - `Radish.Api`
   - 负责 DI、配置、日志、全局异常、认证授权、Swagger/Scalar、HealthChecks。
   - 仅保留轻量 Controller/Endpoint，所有核心逻辑委派给 Service 层。
   - 配置加载：`ConfigureAppConfiguration` 会先清空默认源，再依次加载 `appsettings.Shared.json`、`appsettings.json`、`appsettings.{Environment}.json` 与 `appsettings.Local.json`，保证共享默认值先落地、宿主差异后覆盖，本地敏感值最后生效。
   - 雪花 ID：`Program` 在注册 SqlSugar 之后从 `Snowflake` 节读取 `WorkId`、`DataCenterId` 并写入 `SnowFlakeSingle`；当前约定 `WorkId` 保留宿主差异配置，`DataCenterId` 放在 `appsettings.Shared.json` 统一维护。多实例部署必须保证 `WorkId` 唯一，禁止把生产与本地设置为同一个编号。
-  - 日志：宿主调用 `builder.Host.AddSerilogSetup()`，由 `Radish.Extension.Log` 统一配置输出目标。Serilog 默认读取 appsettings，写入控制台与 `Log/` 目录（普通日志 -> `Log.txt`，SqlSugar AOP 日志 -> `AopSql/AopSql.txt`），内部基于 `LogContextTool.LogSource` 区分日志类型并通过 `WriteTo.Async()` 异步落盘，避免阻塞请求线程；SQL AOP 生成策略由共享配置 `SqlAopLog` 控制，可按操作类型、表名、操作人和大文本字段做过滤或脱敏，当前默认跳过 `WikiDocument` 与 `WikiDocumentRevision` 两张文档同步表；业务代码默认直接使用 `Serilog.Log` 静态方法输出日志，仅在依赖外部框架时才注入 `ILogger<T>`。
+  - 日志：宿主调用 `builder.Host.AddSerilogSetup()`，由 `Radish.Extension.Log` 统一配置输出目标。Serilog 默认读取 appsettings，写入控制台与 `Logs/{ProjectName}/` 目录（普通日志 -> `Log.txt`，SqlSugar AOP 日志 -> `AopSql/AopSql.txt`），内部基于 `LogContextTool.LogSource` 区分日志类型并通过 `WriteTo.Async()` 异步落盘，避免阻塞请求线程；项目名解析当前优先依赖 `ContentRootPath` / `AppContext.BaseDirectory`，避免开发态把多个宿主统一误判到 `Logs/Radish/`。SQL AOP 生成策略由共享配置 `SqlAopLog` 控制，可按操作类型、表名、操作人和大文本字段做过滤或脱敏，当前默认跳过 `WikiDocument` 与 `WikiDocumentRevision` 两张文档同步表，且 `SkipTables` 已对 `INSERT / UPDATE / DELETE / SELECT` 统一生效；SQL 原文也改为结构化参数写入，避免花括号文本触发 Serilog 模板异常。业务代码默认直接使用 `Serilog.Log` 静态方法输出日志，仅在依赖外部框架时才注入 `ILogger<T>`。
   - API 文档：开发环境把 Scalar UI 映射到 `/scalar`（`/api/docs` 重定向到 `/scalar`），并通过 `builder.Services.AddOpenApi("v1|v2")` + `options.AddDocument(...)` 维护多版本；如需定制交互，可在 `Radish.Api/wwwroot/scalar/config.js` 中追加 JS 配置并在 `MapScalarApiReference` 中调用 `WithJavaScriptConfiguration`。
   - API 版本控制：采用 **URL 路径版本控制**（`/api/v{version}/[controller]/[action]`），基于 `Asp.Versioning.Mvc` (8.1.0) 实现；Controller 通过 `[ApiVersion("x.0")]` 特性声明版本，未指定版本时默认使用 v1.0。v1 包含核心稳定接口（Login、User），v2 包含新功能与实验接口（AppSetting、RustTest）；OpenAPI 文档通过 `IApiVersionDescriptionProvider` 自动发现所有版本，为每个版本生成独立文档（`/openapi/v1.json`、`/openapi/v2.json`），Scalar UI 提供版本下拉菜单，切换时文档自动过滤只显示对应版本的接口。详细规范见 [开发规范](./specifications.md) 的"API 版本控制规范"章节。
   - 本地调试：`Properties/launchSettings.json` 提供 `http`/`https`（仅启动 API）与 `https+spaproxy`（同时拉起 `radish.client` Vite 服务）两种 Profile，可在 VS/`dotnet run --launch-profile` 间切换作为"联调开关"。
@@ -194,7 +194,7 @@ graph LR
 
 ## 数据与持久化策略
 
-- SQLSugar 统一由 `SqlSugarScope` 单例提供，`Radish.Common.DbTool.BaseDbConfig.MutiConnectionString` 负责解析配置中的 `MainDb` 与 `Databases` 列表并生成所有连接配置。当前约定这两项放在 `appsettings.Shared.json` 统一维护，宿主按需在本地文件/环境变量覆盖。默认示例包含 `Main`（业务库）与 `Log`（日志库）两个 SQLite 文件，可扩展到 PostgreSQL/MySQL 等；若缺少 `Log` 库会在启动阶段直接抛出异常。
+- SQLSugar 统一由 `SqlSugarScope` 单例提供，`Radish.Common.DbTool.BaseDbConfig.MutiConnectionString` 负责解析配置中的 `MainDb` 与 `Databases` 列表并生成所有连接配置。当前约定这两项放在 `appsettings.Shared.json` 统一维护，宿主按需在本地文件/环境变量覆盖。默认示例包含 `Main`（业务库）与 `Log`（共享日志库）两个 SQLite 文件，可扩展到 PostgreSQL/MySQL 等；若缺少 `Log` 库会在启动阶段直接抛出异常。当前数据库日志设计不是按宿主分库，而是共享 `ConnId=Log` 并按日志类型 / 日期分表。
 - `SqlSugarExtension.SqlSugarSetup` 会为日志库之外的所有连接注册到 `BaseDbConfig.ValidConfig`，并将 `SqlSugarConst.Log` 标记的配置注入日志上下文；SqlSugar 内部缓存通过 `SqlSugarCache` 委托给现有 `ICaching`，AOP 事件统一写入 Serilog，便于分析 SQL。
 - 公共实体基类统一继承 `Radish.Model.Root.RootEntityTKey<TKey>`，并在派生类中补充审计字段（`CreatedAt/By`, `UpdatedAt/By`, `IsDeleted`, `ConcurrencyStamp` 等），保证主键类型可控且能被 SqlSugar 的 Attribute 正确识别。
 - 软删除通过 SQLSugar Filter 全局开启；必要时在仓储层提供 `IncludeDeleted` 选项。
@@ -222,7 +222,7 @@ graph LR
    - `appsettings.json` 仅放默认值，环境差异通过 `appsettings.{Env}.json` + 环境变量。
    - 本地秘密写入 `dotnet user-secrets` 或 `.env.local`（被 .gitignore 忽略）。
 2. **日志与监控**：
-   - Serilog 写入 Console + File；API / Gateway 已具备健康检查入口，当前以“日志 + 健康检查 + `DbMigrate doctor/verify`”作为最小自检基线。
+   - Serilog 写入 Console + File；API / Gateway 已具备健康检查入口，当前以“日志 + 健康检查 + `DbMigrate doctor/verify`”作为最小自检基线，统一口径见 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。
    - OpenTelemetry Exporter、Prometheus 指标与更完整的 Tracing 仍处于后续规划阶段，尚未作为当前仓库既成能力。
 3. **部署流水线**：
    - 当前仓库已具备 `Radish.DbMigrate`、`Radish.Api`、`Radish.Auth`、`Radish.Gateway` 与 `Frontend` 五个 Dockerfile，多阶段构建资产已形成最小镜像链。

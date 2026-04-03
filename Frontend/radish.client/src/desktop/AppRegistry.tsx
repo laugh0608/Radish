@@ -3,6 +3,21 @@ import i18n from '@/i18n';
 import type { AppDefinition } from './types';
 import { getVisibleAppsForUser } from './appAccess';
 
+const createCachedLoader = <TModule,>(loader: () => Promise<TModule>) => {
+  let cachedPromise: Promise<TModule> | null = null;
+
+  return () => {
+    if (!cachedPromise) {
+      cachedPromise = loader().catch((error) => {
+        cachedPromise = null;
+        throw error;
+      });
+    }
+
+    return cachedPromise;
+  };
+};
+
 const createLazyWindowApp = (loader: () => Promise<{ default: ComponentType }>): ComponentType => {
   const LazyComponent = lazy(loader);
 
@@ -15,49 +30,60 @@ const createLazyWindowApp = (loader: () => Promise<{ default: ComponentType }>):
   };
 };
 
-const WelcomeApp = createLazyWindowApp(() =>
+const welcomeAppLoader = createCachedLoader(() =>
   import('@/apps/welcome/WelcomeApp').then((module) => ({ default: module.WelcomeApp }))
 );
+const WelcomeApp = createLazyWindowApp(welcomeAppLoader);
 
-const ShowcaseApp = createLazyWindowApp(() =>
+const showcaseAppLoader = createCachedLoader(() =>
   import('@/apps/showcase/ShowcaseApp').then((module) => ({ default: module.ShowcaseApp }))
 );
+const ShowcaseApp = createLazyWindowApp(showcaseAppLoader);
 
-const ForumApp = createLazyWindowApp(() =>
+const forumAppLoader = createCachedLoader(() =>
   import('@/apps/forum/ForumApp').then((module) => ({ default: module.ForumApp }))
 );
+const ForumApp = createLazyWindowApp(forumAppLoader);
 
-const ChatApp = createLazyWindowApp(() =>
+const chatAppLoader = createCachedLoader(() =>
   import('@/apps/chat/ChatApp').then((module) => ({ default: module.ChatApp }))
 );
+const ChatApp = createLazyWindowApp(chatAppLoader);
 
-const ProfileApp = createLazyWindowApp(() =>
+const profileAppLoader = createCachedLoader(() =>
   import('@/apps/profile/ProfileApp').then((module) => ({ default: module.ProfileApp }))
 );
+const ProfileApp = createLazyWindowApp(profileAppLoader);
 
-const RadishPitApp = createLazyWindowApp(() =>
+const radishPitAppLoader = createCachedLoader(() =>
   import('@/apps/radish-pit').then((module) => ({ default: module.RadishPitApp }))
 );
+const RadishPitApp = createLazyWindowApp(radishPitAppLoader);
 
-const NotificationApp = createLazyWindowApp(() =>
+const notificationAppLoader = createCachedLoader(() =>
   import('@/apps/notification/NotificationApp').then((module) => ({ default: module.NotificationApp }))
 );
+const NotificationApp = createLazyWindowApp(notificationAppLoader);
 
-const LeaderboardApp = createLazyWindowApp(() =>
+const leaderboardAppLoader = createCachedLoader(() =>
   import('@/apps/leaderboard/LeaderboardApp').then((module) => ({ default: module.LeaderboardApp }))
 );
+const LeaderboardApp = createLazyWindowApp(leaderboardAppLoader);
 
-const ExperienceDetailApp = createLazyWindowApp(() =>
+const experienceDetailAppLoader = createCachedLoader(() =>
   import('@/apps/experience-detail/ExperienceDetailApp').then((module) => ({ default: module.ExperienceDetailApp }))
 );
+const ExperienceDetailApp = createLazyWindowApp(experienceDetailAppLoader);
 
-const ShopApp = createLazyWindowApp(() =>
+const shopAppLoader = createCachedLoader(() =>
   import('@/apps/shop/ShopApp').then((module) => ({ default: module.ShopApp }))
 );
+const ShopApp = createLazyWindowApp(shopAppLoader);
 
-const WikiApp = createLazyWindowApp(() =>
+const wikiAppLoader = createCachedLoader(() =>
   import('@/apps/wiki/WikiApp').then((module) => ({ default: module.WikiApp }))
 );
+const WikiApp = createLazyWindowApp(wikiAppLoader);
 
 /**
  * 判断是否通过 Gateway 访问（5000端口）
@@ -257,6 +283,19 @@ export const appRegistry: AppDefinition[] = [
  */
 export const getAppById = (id: string): AppDefinition | undefined => {
   return appRegistry.find((app) => app.id === id);
+};
+
+export const prefetchAppComponent = (appId: string): void => {
+  switch (appId) {
+    case 'forum':
+      void forumAppLoader();
+      break;
+    case 'chat':
+      void chatAppLoader();
+      break;
+    default:
+      break;
+  }
 };
 
 /**

@@ -97,7 +97,20 @@ internal static class LogPayloadSerializer
                 return;
             }
 
-            serializer.Serialize(writer, CreateSummary(typedValue));
+            try
+            {
+                serializer.Serialize(writer, CreateSummary(typedValue));
+            }
+            catch (Exception ex)
+            {
+                serializer.Serialize(writer, new
+                {
+                    kind = "SummaryCreationFailed",
+                    targetType = typedValue.GetType().FullName,
+                    error = ex.GetType().FullName,
+                    ex.Message
+                });
+            }
         }
 
         protected abstract object CreateSummary(T value);

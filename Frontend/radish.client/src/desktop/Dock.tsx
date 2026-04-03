@@ -6,7 +6,7 @@ import { useUserStore } from '@/stores/userStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { redirectToLogin, logout, hasAccessToken } from '@/services/auth';
 import { hasAuthenticatedSession } from '@/services/authSession';
-import { getAppById } from './AppRegistry';
+import { getAppById, prefetchAppComponent } from './AppRegistry';
 import type { AppDefinition } from './types';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
@@ -292,6 +292,8 @@ export const Dock = () => {
                           isRunning && isMinimized ? styles.minimized :
                           isPinned ? styles.pinned : ''
                         }`}
+                        onMouseEnter={() => prefetchAppComponent(app!.id)}
+                        onFocus={() => prefetchAppComponent(app!.id)}
                         onClick={() => {
                           // 如果是通知中心，未登录时先登录
                           if (isNotification && !loggedIn && !hasAccessToken()) {
@@ -394,6 +396,7 @@ export const Dock = () => {
                   key={app!.id}
                   className={styles.miniAppIcon}
                   style={{ position: 'relative', cursor: 'pointer' }}
+                  onMouseEnter={() => prefetchAppComponent(app!.id)}
                   onClick={() => {
                     // 如果是通知中心，未登录时先登录
                     if (isNotification && !loggedIn && !hasAccessToken()) {

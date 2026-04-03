@@ -14,6 +14,7 @@ using Moq;
 using OpenIddict.Abstractions;
 using Radish.Auth.Controllers;
 using Radish.Auth.Resources;
+using Radish.Common.HttpContextTool;
 using Radish.Common.HelpTool;
 using Radish.IService;
 using Radish.Model;
@@ -46,8 +47,8 @@ public class AccountControllerTest
         };
 
         userServiceMock
-            .Setup(s => s.QueryAsync(It.IsAny<Expression<Func<User, bool>>>() ))
-            .ReturnsAsync(new List<UserVo> { userVo });
+            .Setup(s => s.GetEnabledUserByLoginNameAsync(username))
+            .ReturnsAsync(userVo);
 
         userServiceMock
             .Setup(s => s.GetUserRoleNamesAsync(userVo.Uuid))
@@ -55,6 +56,7 @@ public class AccountControllerTest
 
         var errorsLocalizer = new Mock<IStringLocalizer<Errors>>();
 
+        ClaimsPrincipal? signInPrincipal = null;
         var authServiceMock = new Mock<IAuthenticationService>();
         authServiceMock
             .Setup(s => s.SignInAsync(
@@ -62,6 +64,10 @@ public class AccountControllerTest
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 It.IsAny<ClaimsPrincipal>(),
                 It.IsAny<AuthenticationProperties>()))
+            .Callback<HttpContext, string?, ClaimsPrincipal, AuthenticationProperties?>((_, _, principal, _) =>
+            {
+                signInPrincipal = principal;
+            })
             .Returns(Task.CompletedTask);
 
         var httpContext = new DefaultHttpContext();
@@ -96,5 +102,16 @@ public class AccountControllerTest
 
         var redirect = Assert.IsType<RedirectResult>(result);
         Assert.Equal(returnUrl, redirect.Url);
+
+        Assert.NotNull(signInPrincipal);
+        Assert.Contains(signInPrincipal!.Claims, claim => claim.Type == OpenIddictConstants.Claims.Subject && claim.Value == "1");
+        Assert.Contains(signInPrincipal.Claims, claim => claim.Type == OpenIddictConstants.Claims.Name && claim.Value == username);
+        Assert.Contains(signInPrincipal.Claims, claim => claim.Type == OpenIddictConstants.Claims.PreferredUsername && claim.Value == username);
+        Assert.Contains(signInPrincipal.Claims, claim => claim.Type == OpenIddictConstants.Claims.Role && claim.Value == "Admin");
+        Assert.Contains(signInPrincipal.Claims, claim => claim.Type == UserClaimTypes.TenantId && claim.Value == "0");
+
+        Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.NameIdentifier);
+        Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.Name);
+        Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.Role);
     }
 }

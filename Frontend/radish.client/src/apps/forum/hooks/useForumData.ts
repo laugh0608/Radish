@@ -177,7 +177,6 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   const [loadingComments, setLoadingComments] = useState(false);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
   const [loadingTrending, setLoadingTrending] = useState(false);
-  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const commentPageSize = 20;
 
   // 错误状态
@@ -198,7 +197,6 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       setError(message);
     } finally {
       setLoadingCategories(false);
-      setCategoriesLoaded(true);
     }
   };
 
@@ -237,9 +235,6 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
 
   // 加载帖子列表
   const loadPosts = async () => {
-    if (!categoriesLoaded && selectedCategoryId == null) {
-      return;
-    }
     const resolvedPageIndex = selectedTagName ? 1 : currentPage;
     const resolvedPageSize = selectedTagName ? 100 : pageSize;
     const loadKey = `${selectedCategoryId ?? 'all'}|${resolvedPageIndex}|${resolvedPageSize}|${sortBy}|${postViewMode}|${questionStatus}|${pollStatus}|${searchKeyword.trim()}|${selectedTagName ?? ''}`;
@@ -282,8 +277,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
       setPosts(filteredPosts);
       setTotalPages(selectedTagName ? (filteredPosts.length > 0 ? 1 : 0) : pageModel.pageCount);
 
-      // 加载每个帖子的神评
-      await loadGodCommentsForPosts(pageModel.data);
+      // 神评仅用于补充预览，不应阻塞帖子首屏渲染。
+      void loadGodCommentsForPosts(pageModel.data);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -494,9 +489,20 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   // 初始化：加载分类和热门内容
   useEffect(() => {
     void loadCategories();
-    void loadFixedTags();
-    void loadHotTags();
-    void loadTrendingContent();
+
+    const loadDeferredPanels = () => {
+      void loadFixedTags();
+      void loadHotTags();
+      void loadTrendingContent();
+    };
+
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const idleHandle = window.requestIdleCallback(() => loadDeferredPanels(), { timeout: 1200 });
+      return () => window.cancelIdleCallback(idleHandle);
+    }
+
+    const timer = window.setTimeout(loadDeferredPanels, 240);
+    return () => window.clearTimeout(timer);
   }, []);
 
   // 当选择分类时重新加载帖子
@@ -523,7 +529,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
   // 当页码、排序或搜索变化时重新加载帖子
   useEffect(() => {
     void loadPosts();
-  }, [categoriesLoaded, selectedCategoryId, selectedTagName, currentPage, sortBy, searchKeyword, postViewMode, questionStatus, pollStatus]);
+  }, [selectedCategoryId, selectedTagName, currentPage, sortBy, searchKeyword, postViewMode, questionStatus, pollStatus]);
 
   return {
     // 状态

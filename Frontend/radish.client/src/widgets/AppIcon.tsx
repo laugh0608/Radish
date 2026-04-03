@@ -8,12 +8,14 @@ export interface AppIconProps {
   app: AppDefinition;
   /** 双击事件 */
   onDoubleClick?: () => void;
+  /** 指针移入事件 */
+  onPointerEnter?: () => void;
 }
 
 /**
  * 桌面应用图标组件
  */
-export const AppIcon = ({ app, onDoubleClick }: AppIconProps) => {
+export const AppIcon = ({ app, onDoubleClick, onPointerEnter }: AppIconProps) => {
   const { t } = useTranslation();
   const appName = app.nameKey ? t(app.nameKey) : app.name;
   const appDescription = app.descriptionKey
@@ -35,6 +37,8 @@ export const AppIcon = ({ app, onDoubleClick }: AppIconProps) => {
     <div
       className={getIconClass()}
       onDoubleClick={onDoubleClick}
+      onPointerEnter={onPointerEnter}
+      onFocus={onPointerEnter}
       title={appDescription}
     >
       <div className={styles.iconImage}>

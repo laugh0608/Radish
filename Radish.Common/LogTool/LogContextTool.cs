@@ -1,3 +1,5 @@
+using System.Reflection;
+using Radish.Common.CoreTool;
 using Serilog.Context;
 using SqlSugar;
 
@@ -123,31 +125,15 @@ public class LogContextTool: IDisposable
     {
         try
         {
-            var entryAssemblyName = System.Reflection.Assembly.GetEntryAssembly()?.GetName().Name;
-            if (!string.IsNullOrWhiteSpace(entryAssemblyName))
-            {
-                return Path.GetFileNameWithoutExtension(entryAssemblyName.Trim());
-            }
+            var resolvedProjectName = ResolveProjectName(
+                App.HostEnvironment?.ApplicationName,
+                App.HostEnvironment?.ContentRootPath,
+                Assembly.GetEntryAssembly()?.GetName().Name,
+                AppContext.BaseDirectory);
 
-            // AppContext.BaseDirectory 通常是：/path/to/Radish.Api/bin/Debug/net10.0/
-            var baseDir = new DirectoryInfo(AppContext.BaseDirectory);
-            var currentDir = baseDir;
-            for (int i = 0; i < 5 && currentDir != null; i++)
+            if (!string.IsNullOrWhiteSpace(resolvedProjectName))
             {
-                var projectFiles = currentDir.GetFiles("*.csproj");
-                if (projectFiles.Length > 0)
-                {
-                    // 使用 .csproj 文件名（不含扩展名）作为项目名称
-                    return Path.GetFileNameWithoutExtension(projectFiles[0].Name);
-                }
-                currentDir = currentDir.Parent;
-            }
-
-            // 最后再回退到包含 bin 目录的父目录名称
-            var binParent = baseDir.Parent?.Parent?.Parent;
-            if (!string.IsNullOrWhiteSpace(binParent?.Name))
-            {
-                return binParent.Name;
+                return resolvedProjectName;
             }
         }
         catch
@@ -156,5 +142,131 @@ public class LogContextTool: IDisposable
         }
 
         return "Unknown";
+    }
+
+    private static string? ResolveProjectName(
+        string? applicationName,
+        string? contentRootPath,
+        string? entryAssemblyName,
+        string? baseDirectory)
+    {
+        var contentRootProjectName = FindProjectNameFromContentRoot(contentRootPath);
+        if (!string.IsNullOrWhiteSpace(contentRootProjectName))
+        {
+            return contentRootProjectName;
+        }
+
+        var baseDirectoryProjectName = FindProjectNameFromBaseDirectory(baseDirectory);
+        if (!string.IsNullOrWhiteSpace(baseDirectoryProjectName))
+        {
+            return baseDirectoryProjectName;
+        }
+
+        return PreferSpecificProjectName(
+            NormalizeProjectName(applicationName),
+            NormalizeProjectName(entryAssemblyName));
+    }
+
+    private static string? FindProjectNameFromContentRoot(string? contentRootPath)
+    {
+        if (string.IsNullOrWhiteSpace(contentRootPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            var contentRoot = new DirectoryInfo(contentRootPath);
+            if (!contentRoot.Exists)
+            {
+                return null;
+            }
+
+            var projectFiles = contentRoot.GetFiles("*.csproj", SearchOption.TopDirectoryOnly);
+            if (projectFiles.Length == 1)
+            {
+                return NormalizeProjectName(projectFiles[0].Name);
+            }
+        }
+        catch
+        {
+            // 忽略内容根目录解析失败，继续使用其他候选来源
+        }
+
+        return null;
+    }
+
+    private static string? FindProjectNameFromBaseDirectory(string? baseDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(baseDirectory))
+        {
+            return null;
+        }
+
+        try
+        {
+            // AppContext.BaseDirectory 通常是：/path/to/Radish.Api/bin/Debug/net10.0/
+            var currentDir = new DirectoryInfo(baseDirectory);
+            for (int i = 0; i < 5 && currentDir != null; i++)
+            {
+                var projectFiles = currentDir.GetFiles("*.csproj", SearchOption.TopDirectoryOnly);
+                if (projectFiles.Length == 1)
+                {
+                    return NormalizeProjectName(projectFiles[0].Name);
+                }
+
+                currentDir = currentDir.Parent;
+            }
+
+            // 最后再回退到包含 bin 目录的父目录名称
+            var baseDir = new DirectoryInfo(baseDirectory);
+            var binParent = baseDir.Parent?.Parent?.Parent;
+            if (!string.IsNullOrWhiteSpace(binParent?.Name))
+            {
+                return NormalizeProjectName(binParent.Name);
+            }
+        }
+        catch
+        {
+            // 忽略运行目录解析失败，继续返回空值
+        }
+
+        return null;
+    }
+
+    private static string? NormalizeProjectName(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var projectName = Path.GetFileNameWithoutExtension(value.Trim());
+        return string.IsNullOrWhiteSpace(projectName) ? null : projectName;
+    }
+
+    private static string? PreferSpecificProjectName(string? primaryCandidate, string? secondaryCandidate)
+    {
+        if (IsSpecificProjectName(primaryCandidate))
+        {
+            return primaryCandidate;
+        }
+
+        if (IsSpecificProjectName(secondaryCandidate))
+        {
+            return secondaryCandidate;
+        }
+
+        return primaryCandidate ?? secondaryCandidate;
+    }
+
+    private static bool IsSpecificProjectName(string? projectName)
+    {
+        if (string.IsNullOrWhiteSpace(projectName))
+        {
+            return false;
+        }
+
+        return projectName.Contains('.', StringComparison.Ordinal);
     }
 }

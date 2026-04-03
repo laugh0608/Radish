@@ -11,6 +11,12 @@ import {
   TokenRefreshFailureReason,
   type TokenRefreshFailureReason as TokenRefreshFailureReasonValue,
 } from './authSession';
+import {
+  getRolesFromTokenPayload,
+  getUserIdentityFromTokenPayload,
+  type AccessTokenIdentity,
+  type JwtPayload,
+} from './tokenClaims';
 
 const CLIENT_ID = 'radish-client';
 
@@ -21,14 +27,7 @@ interface TokenInfo {
   token_type: string;
 }
 
-export interface AccessTokenIdentity {
-  userId: number;
-  userName: string;
-  tenantId: number;
-  roles: string[];
-}
-
-type JwtPayload = Record<string, unknown> & {
+type ParsedJwtPayload = JwtPayload & {
   exp?: number;
 };
 
@@ -102,50 +101,7 @@ class TokenService {
       return [];
     }
 
-    const roleClaimKeys = [
-      'role',
-      'roles',
-      'http://schemas.microsoft.com/ws/2008/06/identity/claims/role',
-    ] as const;
-
-    const parseRoleClaim = (claim: unknown): string[] => {
-      if (typeof claim === 'string') {
-        return claim
-          .split(',')
-          .map((item) => item.trim())
-          .filter(Boolean);
-      }
-
-      if (Array.isArray(claim)) {
-        return claim
-          .flatMap((item) => (typeof item === 'string' ? item.split(',') : []))
-          .map((item) => item.trim())
-          .filter(Boolean);
-      }
-
-      return [];
-    };
-
-    const roles = roleClaimKeys.flatMap((key) => parseRoleClaim(payload[key]));
-
-    const uniqueRoles: string[] = [];
-    const roleSet = new Set<string>();
-    roles.forEach((role) => {
-      const normalizedRole = role.trim();
-      if (!normalizedRole) {
-        return;
-      }
-
-      const roleKey = normalizedRole.toLowerCase();
-      if (roleSet.has(roleKey)) {
-        return;
-      }
-
-      roleSet.add(roleKey);
-      uniqueRoles.push(normalizedRole);
-    });
-
-    return uniqueRoles;
+    return getRolesFromTokenPayload(payload);
   }
 
   getUserIdentityFromAccessToken(token?: string | null): AccessTokenIdentity | null {
@@ -159,49 +115,7 @@ class TokenService {
       return null;
     }
 
-    const parseNumericClaim = (value: unknown): number | null => {
-      if (typeof value === 'number' && Number.isFinite(value)) {
-        return Math.trunc(value);
-      }
-
-      if (typeof value === 'string') {
-        const parsed = Number.parseInt(value, 10);
-        return Number.isFinite(parsed) ? parsed : null;
-      }
-
-      return null;
-    };
-
-    const parseStringClaim = (value: unknown): string | null => {
-      if (typeof value !== 'string') {
-        return null;
-      }
-
-      const normalized = value.trim();
-      return normalized ? normalized : null;
-    };
-
-    const userId = parseNumericClaim(
-      payload.sub ?? payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
-    );
-
-    if (!userId || userId <= 0) {
-      return null;
-    }
-
-    const userName = parseStringClaim(payload.preferred_username)
-      ?? parseStringClaim(payload.name)
-      ?? parseStringClaim(payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name'])
-      ?? String(userId);
-
-    const tenantId = parseNumericClaim(payload.tenant_id ?? payload.TenantId) ?? 0;
-
-    return {
-      userId,
-      userName,
-      tenantId,
-      roles: this.getRolesFromAccessToken(targetToken),
-    };
+    return getUserIdentityFromTokenPayload(payload);
   }
 
   getCurrentUserCacheScope(token?: string | null): string | null {
@@ -342,7 +256,7 @@ class TokenService {
   /**
    * 解析 JWT Token
    */
-  private parseJwt(token: string): JwtPayload | null {
+  private parseJwt(token: string): ParsedJwtPayload | null {
     try {
       const base64Url = token.split('.')[1];
       if (!base64Url) {

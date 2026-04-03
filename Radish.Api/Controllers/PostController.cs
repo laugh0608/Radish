@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -205,64 +204,14 @@ public class PostController : ControllerBase
         }
         else
         {
-            // 构建基础查询条件
-            var normalizedKeyword = keyword ?? string.Empty;
-            var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
-            var hasCategory = categoryId.HasValue;
-            var categoryValue = categoryId ?? 0;
-            var hasStartTime = startTime.HasValue;
-            var hasEndTime = endTime.HasValue;
-            var startTimeValue = startTime ?? DateTime.MinValue;
-            var endTimeValue = endTime ?? DateTime.MaxValue;
-
-            Expression<Func<Post, bool>> baseCondition = post =>
-                post.IsPublished &&
-                !post.IsDeleted &&
-                (!hasCategory || post.CategoryId == categoryValue) &&
-                (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&
-                (!hasStartTime || post.CreateTime >= startTimeValue) &&
-                (!hasEndTime || post.CreateTime <= endTimeValue);
-
-            // 根据排序方式执行不同的查询逻辑
-            switch (sortBy)
-            {
-                case "hottest":
-                    // 按热度排序：置顶在前，然后按热度值排序（综合浏览、点赞、评论）
-                    // 热度计算公式：ViewCount + LikeCount*2 + CommentCount*3
-                    (data, totalCount) = await _postService.QueryPageAsync(
-                        baseCondition,
-                        pageIndex,
-                        pageSize,
-                        p => new
-                        {
-                            p.IsTop,
-                            HotScore = p.ViewCount + p.LikeCount * 2 + p.CommentCount * 3,
-                            p.CreateTime
-                        },
-                        SqlSugar.OrderByType.Desc);
-                    break;
-
-                case "essence":
-                    // 按精华排序：置顶在前，然后精华在前，最后按创建时间倒序
-                    (data, totalCount) = await _postService.QueryPageAsync(
-                        baseCondition,
-                        pageIndex,
-                        pageSize,
-                        p => new { p.IsTop, p.IsEssence, p.CreateTime },
-                        SqlSugar.OrderByType.Desc);
-                    break;
-
-                case "newest":
-                default:
-                    // 按最新排序：置顶在前，然后按创建时间倒序
-                    (data, totalCount) = await _postService.QueryPageAsync(
-                        baseCondition,
-                        pageIndex,
-                        pageSize,
-                        p => new { p.IsTop, p.CreateTime },
-                        SqlSugar.OrderByType.Desc);
-                    break;
-            }
+            (data, totalCount) = await _postService.GetForumPostPageAsync(
+                categoryId,
+                pageIndex,
+                pageSize,
+                sortBy,
+                keyword,
+                startTime,
+                endTime);
         }
 
         // 构建分页模型

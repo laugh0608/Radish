@@ -3,7 +3,7 @@ import { useWindowStore } from '@/stores/windowStore';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { hasAuthenticatedSession } from '@/services/authSession';
-import { getVisibleApps } from './AppRegistry';
+import { getVisibleApps, prefetchAppComponent } from './AppRegistry';
 import { AppIcon } from '@/widgets/AppIcon';
 import { ContextMenu } from '@radish/ui/context-menu';
 import { Icon } from '@radish/ui/icon';
@@ -61,6 +61,7 @@ export const Desktop = () => {
             key={app.id}
             app={app}
             onDoubleClick={() => openApp(app.id)}
+            onPointerEnter={() => prefetchAppComponent(app.id)}
           />
         ))}
       </div>

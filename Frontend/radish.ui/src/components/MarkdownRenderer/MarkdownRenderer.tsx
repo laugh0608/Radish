@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { ImageLightbox } from '../ImageLightbox/ImageLightbox';
@@ -146,6 +146,9 @@ const resolveLinkHref = (href: string): string => {
   return resolveConfiguredMediaUrl(href);
 };
 
+const isRadishCustomProtocol = (value: string): boolean =>
+  /^attachment:\/\//i.test(value) || /^sticker:\/\//i.test(value);
+
 /**
  * Markdown 渲染器
  *
@@ -193,9 +196,16 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight]}
+          urlTransform={(url) => {
+            if (isRadishCustomProtocol(url)) {
+              return url;
+            }
+
+            return defaultUrlTransform(url);
+          }}
           components={{
             // 自定义链接行为：在新标签页打开外部链接
-            a: ({ node, ...props }) => {
+            a: (props) => {
               const href = props.href || '';
               const attachmentMeta = parseAttachmentMarkdownUrl(href);
               const resolvedHref = resolveLinkHref(href);
@@ -215,7 +225,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
               return <a {...props} href={resolvedHref} />;
             },
-            img: ({ node, ...props }) => {
+            img: (props) => {
               const rawSrc = props.src || '';
               const stickerMeta = parseStickerUri(rawSrc);
               if (stickerMeta) {
@@ -270,11 +280,11 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               );
             },
             // 为代码块添加复制按钮的容器
-            pre: ({ node, ...props }) => {
+            pre: (props) => {
               return <pre className={styles.codeBlock} {...props} />;
             },
             // 为表格添加包装器以支持横向滚动
-            table: ({ node, ...props }) => {
+            table: (props) => {
               return (
                 <div className={styles.tableWrapper}>
                   <table {...props} />

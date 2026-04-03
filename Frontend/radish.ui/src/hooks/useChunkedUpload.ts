@@ -2,12 +2,60 @@ import { useState, useCallback, useRef } from 'react';
 import type { TFunction } from 'i18next';
 import type { UploadProgress, ChunkedUploadOptions, ChunkedUploadResult } from '../components/ChunkedFileUpload/ChunkedFileUpload';
 
+type ChunkedUploadBusinessType = NonNullable<ChunkedUploadOptions['businessType']>;
+
+interface CreateChunkedUploadSessionOptions {
+  fileName: string;
+  totalSize: number;
+  mimeType?: string;
+  chunkSize?: number;
+  businessType?: ChunkedUploadBusinessType;
+  businessId?: number | string;
+}
+
+interface ChunkedUploadSession {
+  sessionId: string;
+  uploadedChunks: number;
+  uploadedChunkIndexes: number[];
+}
+
+interface MergeChunkedUploadOptions {
+  sessionId: string;
+  generateThumbnail?: boolean;
+  generateMultipleSizes?: boolean;
+  addWatermark?: boolean;
+  watermarkText?: string;
+  removeExif?: boolean;
+}
+
+interface ChunkedUploadAttachmentInfo {
+  id: number;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  accessUrl: string;
+}
+
+interface ChunkedUploadApi {
+  createSession: (opts: CreateChunkedUploadSessionOptions) => Promise<ChunkedUploadSession>;
+  uploadChunk: (
+    sessionId: string,
+    index: number,
+    blob: Blob,
+    onChunkProgress?: (progress: number) => void
+  ) => Promise<void>;
+  getSession: (sessionId: string) => Promise<ChunkedUploadSession>;
+  mergeChunks: (opts: MergeChunkedUploadOptions) => Promise<ChunkedUploadAttachmentInfo>;
+  cancelSession: (sessionId: string) => Promise<void>;
+}
+
 /**
  * 分片上传 Hook
  *
  * 封装分片上传的完整逻辑：文件切片、并发控制、进度跟踪、断点续传
  */
-export function useChunkedUpload(_t: TFunction) {
+export function useChunkedUpload(t: TFunction) {
+  void t;
   const [uploading, setUploading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const sessionIdRef = useRef<string | null>(null);
@@ -22,13 +70,7 @@ export function useChunkedUpload(_t: TFunction) {
       options: ChunkedUploadOptions,
       onProgress: (progress: UploadProgress) => void,
       // API 函数由外部传入（避免循环依赖）
-      api: {
-        createSession: (opts: any) => Promise<any>;
-        uploadChunk: (sessionId: string, index: number, blob: Blob, onChunkProgress?: (p: number) => void) => Promise<any>;
-        getSession: (sessionId: string) => Promise<any>;
-        mergeChunks: (opts: any) => Promise<any>;
-        cancelSession: (sessionId: string) => Promise<void>;
-      }
+      api: ChunkedUploadApi
     ): Promise<ChunkedUploadResult> => {
       if (uploading) {
         throw new Error('上传已在进行中');

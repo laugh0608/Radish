@@ -54,7 +54,7 @@ public class SqlSugarAop
 
             using (LogContextTool.Create.SqlAopPushProperty(sqlSugarScopeProvider))
             {
-                Log.Information(logConsole);
+                Log.Information("{SqlAopLog}", logConsole);
             }
         }
         catch (Exception e)

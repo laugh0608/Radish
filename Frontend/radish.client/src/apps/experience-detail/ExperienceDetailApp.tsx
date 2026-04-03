@@ -32,20 +32,30 @@ export const ExperienceDetailApp = () => {
     setError(null);
 
     try {
-      // 加载经验值信息
       const expResult = await experienceApi.getMyExperience();
+      if (!expResult) {
+        setExperience(null);
+        setTransactions([]);
+        setTotalPages(1);
+        setError('暂时无法获取等级数据，请稍后重试');
+        return;
+      }
+
       setExperience(expResult);
 
-      // 尝试加载交易记录（如果 API 不存在则忽略）
       try {
         const transResult = await experienceApi.getTransactions({ pageIndex, pageSize });
         if (transResult) {
           setTransactions(transResult.data);
           setTotalPages(transResult.pageCount);
+        } else {
+          setTransactions([]);
+          setTotalPages(1);
         }
       } catch (transErr) {
         log.warn('经验值交易记录 API 不可用:', transErr);
-        // 忽略交易记录加载失败，只显示经验值信息
+        setTransactions([]);
+        setTotalPages(1);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载数据失败');
@@ -146,6 +156,10 @@ export const ExperienceDetailApp = () => {
 
   const dailyStats = getDailyStats();
   const sourceDistribution = getExpSourceDistribution();
+  const resolvedLevelName = experience?.voCurrentLevelName?.trim() || (experience ? `等级 ${experience.voCurrentLevel}` : '');
+  const totalProgress = experience
+    ? Math.min(1, Math.max(0, experience.voTotalExp / Math.max(experience.voTotalExp + experience.voExpToNextLevel, 1)))
+    : 0;
 
   return (
     <div className={styles.container}>
@@ -173,6 +187,16 @@ export const ExperienceDetailApp = () => {
         </div>
       )}
 
+      {!loading && !error && !experience && (
+        <div className={styles.empty}>
+          <Icon icon="mdi:star-off-outline" size={56} />
+          <p>当前没有可展示的等级数据</p>
+          <button onClick={() => void loadData()} className={styles.retryButton}>
+            重新获取
+          </button>
+        </div>
+      )}
+
       {!loading && !error && experience && (
         <>
           {/* 经验条区域 */}
@@ -184,9 +208,6 @@ export const ExperienceDetailApp = () => {
                 <ExperienceBar
                   data={{
                     ...experience,
-                    // 使用 voLevelProgress 反推 voNextLevelExp
-                    // voLevelProgress = voCurrentExp / voNextLevelExp
-                    // 所以 voNextLevelExp = voCurrentExp / voLevelProgress
                     voNextLevelExp: experience.voLevelProgress > 0
                       ? Math.round(experience.voCurrentExp / experience.voLevelProgress)
                       : experience.voCurrentExp + experience.voExpToNextLevel
@@ -205,10 +226,10 @@ export const ExperienceDetailApp = () => {
                 <ExperienceBar
                   data={{
                     ...experience,
-                    voCurrentLevelName: `${experience.voCurrentLevelName} → 满级`,
+                    voCurrentLevelName: `${resolvedLevelName} → 满级`,
                     voCurrentExp: experience.voTotalExp,
-                    voNextLevelExp: 999999, // 假设满级需要的总经验值，实际应该从后端获取
-                    voLevelProgress: (experience.voTotalExp / 999999) * 100
+                    voNextLevelExp: Math.max(experience.voTotalExp + experience.voExpToNextLevel, 1),
+                    voLevelProgress: totalProgress
                   }}
                   size="medium"
                   showLevel={true}
@@ -225,7 +246,7 @@ export const ExperienceDetailApp = () => {
             <div className={styles.statCard}>
               <div className={styles.statLabel}>当前等级</div>
               <div className={styles.statValue} style={{ color: experience.voThemeColor || 'var(--theme-brand-primary)' }}>
-                Lv.{experience.voCurrentLevel} {experience.voCurrentLevelName}
+                Lv.{experience.voCurrentLevel} {resolvedLevelName}
               </div>
             </div>
             <div className={styles.statCard}>

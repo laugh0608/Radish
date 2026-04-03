@@ -154,15 +154,17 @@
 
 ### M14：宿主运行与最小可观测性基线
 
+重定义入口见：[M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
+
 **目标**
-- 以当前真实宿主为基础，补齐 API / Gateway / Auth 的运行时观测与自检口径
-- 在已有 Serilog、HealthCheck、`DbMigrate doctor/verify` 基础上，形成更统一的“看得见、查得到、能自检”的最小观测基线
-- 不直接把阶段目标膨胀成完整 Tracing / Metrics 平台建设
+- 以当前真实宿主为基础，先收束 API / Gateway / Auth 的最小运行、自检与排障基线
+- 在已有 Serilog、HealthCheck、`DbMigrate doctor/verify` 与 `validate:baseline:host` 基础上，形成更统一的“看得见、查得到、能自检”的最小观测口径
+- 不直接把阶段目标膨胀成完整 Tracing / Metrics 平台建设，也不把它重新泛化成“部署与运维”大阶段
 
 **预期输出**
-- 宿主健康检查、启动日志、关键链路诊断入口和慢性问题排查口径更统一
-- `Auth` / `Api` / `Gateway` 的运行时观测边界更加一致
-- 对“需要进一步引入 OpenTelemetry / 指标平台”的前提条件有明确结论
+- 宿主配置一致性、只读自检、健康检查、启动日志与部署复核入口之间的关系更统一
+- `Auth` / `Api` / `Gateway` 的最小运行观测边界更加一致
+- 对“哪些问题已属于下一轮更重的可观测性平台建设”有明确边界说明
 
 ### M15：最小交付与部署基线
 

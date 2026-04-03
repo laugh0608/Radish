@@ -5,6 +5,9 @@
 > 相关文档：
 > - [鉴权与授权指南](/guide/authentication)
 > - [身份语义收敛迁移计划](/guide/identity-claim-migration)
+> - [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
+> - [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)
+> - [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist)
 > - [开发框架说明](/architecture/framework)
 > - [开发规范](/architecture/specifications)
 
@@ -274,7 +277,7 @@ npm run validate:baseline
 npm run validate:baseline:quick
 ```
 
-## 11. 当前实施状态（2026-03-07）
+## 11. 当前实施状态（截至 2026-04-02）
 
 当前专项已进入“兼容层冻结”阶段，运行时主路径基本完成收敛：
 
@@ -293,9 +296,11 @@ npm run validate:baseline:quick
 
 仍待后续阶段完成的事项：
 
+- [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)、[最终启动评审](/guide/identity-claim-phase4-start-review) 与 [仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 当前都已完成；正式结论已更新为“仓库内输入已齐，且当前部署范围内的仓库外兼容边界已被事实关闭，因此允许启动 Phase 4”。
+- 当前已按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 完成首轮仓库内实施：Auth 历史双写输出已收缩，`userinfo` 已完成最小对齐，`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 的仓库内回归资产也已完成首轮同步与测试固化。
 - 将静态扫描规则纳入 M12 之后的工程化规划，在 M13 阶段再接入脚本或流水线。
 - 评估 `IHttpContextUser` 兼容层的最终删除时机。
-- 在外部客户端确认完成前，不推动协议边界语义变更或历史 Claim 输出清退。
+- `UserClaimReader / CurrentUser / IHttpContextUser` 的输入兼容删除当前仍未纳入首轮窗口；在真实端到端官方回归完成前，继续维持“输出先收缩、输入兼容后删除”的边界。
 
 ## 12. 验收标准
 

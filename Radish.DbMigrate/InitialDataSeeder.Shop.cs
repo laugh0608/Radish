@@ -1,4 +1,8 @@
 using System;
+using System.IO;
+using System.Linq;
+using Radish.Common;
+using Radish.Common.CoreTool;
 using Radish.Model;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
@@ -7,6 +11,24 @@ namespace Radish.DbMigrate;
 
 internal static partial class InitialDataSeeder
 {
+    private sealed record ShopCategoryImageSeed(
+        string CategoryId,
+        long CategoryIconAttachmentId,
+        string CategoryIconFileName,
+        long ProductAttachmentId,
+        string ProductFileName
+    );
+
+    private static readonly ShopCategoryImageSeed[] DefaultShopImageSeeds =
+    {
+        new("badge", 73000L, "20241008200026.jpg", 73001L, "20241008200046.jpg"),
+        new("frame", 73002L, "20241008200053.jpg", 73003L, "20241008200058.jpg"),
+        new("title", 73004L, "20241008200104.jpg", 73005L, "20241008200110.jpg"),
+        new("signature", 73006L, "20241008200119.jpg", 73007L, "20241008200124.jpg"),
+        new("effect", 73008L, "20241008200129.jpg", 73009L, "20241008200135.jpg"),
+        new("theme", 73010L, "20241008200142.jpg", 73011L, "20241008200147.jpg"),
+    };
+
     /// <summary>初始化商城分类数据</summary>
     private static async Task SeedShopCategoriesAsync(ISqlSugarClient db)
     {
@@ -467,5 +489,173 @@ internal static partial class InitialDataSeeder
                 Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={product.Id} 的商品，跳过。");
             }
         }
+    }
+
+    /// <summary>补齐商城默认图片附件及商品/分类关联</summary>
+    private static async Task SeedShopDefaultImagesAsync(ISqlSugarClient db)
+    {
+        const long publicTenantId = 0;
+        var defaultImagesPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Uploads", "DefaultShopImage");
+        if (!Directory.Exists(defaultImagesPath))
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 商城默认图片目录不存在，跳过：{defaultImagesPath}");
+            return;
+        }
+
+        foreach (var seed in DefaultShopImageSeeds)
+        {
+            await EnsureShopSeedAttachmentAsync(
+                db,
+                attachmentId: seed.CategoryIconAttachmentId,
+                fileName: seed.CategoryIconFileName,
+                publicTenantId: publicTenantId,
+                businessType: "ShopCategorySeed",
+                businessId: null);
+
+            await EnsureShopSeedAttachmentAsync(
+                db,
+                attachmentId: seed.ProductAttachmentId,
+                fileName: seed.ProductFileName,
+                publicTenantId: publicTenantId,
+                businessType: "ShopProductSeed",
+                businessId: null);
+        }
+
+        foreach (var seed in DefaultShopImageSeeds)
+        {
+            var category = await db.Queryable<ProductCategory>().FirstAsync(c => c.Id == seed.CategoryId);
+            if (category == null)
+            {
+                continue;
+            }
+
+            if (!category.IconAttachmentId.HasValue || category.IconAttachmentId.Value <= 0)
+            {
+                await db.Updateable<ProductCategory>()
+                    .SetColumns(c => new ProductCategory
+                    {
+                        IconAttachmentId = seed.CategoryIconAttachmentId,
+                        ModifyTime = DateTime.Now
+                    })
+                    .Where(c => c.Id == seed.CategoryId)
+                    .ExecuteCommandAsync();
+
+                Console.WriteLine($"[Radish.DbMigrate] 已为商城分类 {seed.CategoryId} 回填默认图标附件。");
+            }
+        }
+
+        var productImageMap = DefaultShopImageSeeds.ToDictionary(seed => seed.CategoryId, seed => seed.ProductAttachmentId);
+        var products = await db.Queryable<Product>()
+            .Where(p => !p.IsDeleted)
+            .ToListAsync();
+
+        foreach (var product in products)
+        {
+            if (!productImageMap.TryGetValue(product.CategoryId, out var productAttachmentId))
+            {
+                continue;
+            }
+
+            var nextIconAttachmentId = product.IconAttachmentId.HasValue && product.IconAttachmentId.Value > 0
+                ? product.IconAttachmentId
+                : productAttachmentId;
+            var nextCoverAttachmentId = product.CoverAttachmentId.HasValue && product.CoverAttachmentId.Value > 0
+                ? product.CoverAttachmentId
+                : productAttachmentId;
+
+            if (nextIconAttachmentId == product.IconAttachmentId && nextCoverAttachmentId == product.CoverAttachmentId)
+            {
+                continue;
+            }
+
+            await db.Updateable<Product>()
+                .SetColumns(p => new Product
+                {
+                    IconAttachmentId = nextIconAttachmentId,
+                    CoverAttachmentId = nextCoverAttachmentId,
+                    ModifyBy = "System",
+                    ModifyId = 0,
+                    ModifyTime = DateTime.Now
+                })
+                .Where(p => p.Id == product.Id)
+                .ExecuteCommandAsync();
+
+            Console.WriteLine($"[Radish.DbMigrate] 已为商品 Id={product.Id}, Name={product.Name} 回填默认图片附件。");
+        }
+    }
+
+    private static async Task EnsureShopSeedAttachmentAsync(
+        ISqlSugarClient db,
+        long attachmentId,
+        string fileName,
+        long publicTenantId,
+        string businessType,
+        long? businessId)
+    {
+        var defaultImagesPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Uploads", "DefaultShopImage");
+        var filePath = Path.Combine(defaultImagesPath, fileName);
+        if (!File.Exists(filePath))
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 商城默认图片文件不存在，跳过：{filePath}");
+            return;
+        }
+
+        var fileInfo = new FileInfo(filePath);
+        var relativePath = Path.Combine("DefaultShopImage", fileName).Replace('\\', '/');
+        var existingAttachment = await db.Queryable<Attachment>().FirstAsync(a => a.Id == attachmentId);
+
+        if (existingAttachment != null)
+        {
+            await db.Updateable<Attachment>()
+                .SetColumns(a => new Attachment
+                {
+                    OriginalName = fileName,
+                    StoredName = $"shop-seed-{attachmentId}",
+                    Extension = Path.GetExtension(fileName),
+                    FileSize = fileInfo.Length,
+                    MimeType = GetImageMimeType(fileName),
+                    StorageType = "Local",
+                    StoragePath = relativePath,
+                    ThumbnailPath = relativePath,
+                    UploaderId = 0,
+                    UploaderName = "System",
+                    BusinessType = businessType,
+                    BusinessId = businessId,
+                    IsPublic = true,
+                    IsEnabled = true,
+                    IsDeleted = false,
+                    TenantId = publicTenantId,
+                    ModifyBy = "System",
+                    ModifyId = 0,
+                    ModifyTime = DateTime.Now
+                })
+                .Where(a => a.Id == attachmentId)
+                .ExecuteCommandAsync();
+
+            return;
+        }
+
+        await db.Insertable(new Attachment
+        {
+            Id = attachmentId,
+            OriginalName = fileName,
+            StoredName = $"shop-seed-{attachmentId}",
+            Extension = Path.GetExtension(fileName),
+            FileSize = fileInfo.Length,
+            MimeType = GetImageMimeType(fileName),
+            StorageType = "Local",
+            StoragePath = relativePath,
+            ThumbnailPath = relativePath,
+            UploaderId = 0,
+            UploaderName = "System",
+            BusinessType = businessType,
+            BusinessId = businessId,
+            IsPublic = true,
+            IsEnabled = true,
+            IsDeleted = false,
+            TenantId = publicTenantId,
+            CreateBy = "System",
+            CreateId = 0
+        }).ExecuteCommandAsync();
     }
 }

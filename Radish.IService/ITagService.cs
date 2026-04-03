@@ -23,6 +23,13 @@ public interface ITagService : IBaseService<Tag, TagVo>
     Task<List<TagVo>> GetFixedTagsAsync(bool includeDisabled = false);
 
     /// <summary>
+    /// 获取热门标签列表（按帖子数降序）
+    /// </summary>
+    /// <param name="topCount">返回数量</param>
+    /// <returns>热门标签列表</returns>
+    Task<List<TagVo>> GetHotTagsAsync(int topCount = 20);
+
+    /// <summary>
     /// 分页查询标签（后台管理）
     /// </summary>
     /// <param name="pageIndex">页码（从1开始）</param>

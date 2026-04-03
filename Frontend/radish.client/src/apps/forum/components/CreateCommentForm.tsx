@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { type ClipboardEvent, useState, useRef, useCallback, useEffect } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
@@ -26,6 +26,92 @@ interface CreateCommentFormProps {
   placeholder?: string;
 }
 
+const MENTION_PANEL_WIDTH = 320;
+const MENTION_PANEL_HEIGHT = 220;
+const MENTION_PANEL_GAP = 10;
+const VIEWPORT_PADDING = 12;
+
+const getTextareaCaretRelativePosition = (
+  textarea: HTMLTextAreaElement,
+  cursorPos: number
+): { top: number; left: number; lineHeight: number } | null => {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+
+  const computed = window.getComputedStyle(textarea);
+  const mirror = document.createElement('div');
+  const span = document.createElement('span');
+  const textBeforeCaret = textarea.value.slice(0, cursorPos);
+
+  const mirroredProperties = [
+    'boxSizing',
+    'width',
+    'height',
+    'paddingTop',
+    'paddingRight',
+    'paddingBottom',
+    'paddingLeft',
+    'borderTopWidth',
+    'borderRightWidth',
+    'borderBottomWidth',
+    'borderLeftWidth',
+    'borderTopStyle',
+    'borderRightStyle',
+    'borderBottomStyle',
+    'borderLeftStyle',
+    'fontFamily',
+    'fontSize',
+    'fontStyle',
+    'fontVariant',
+    'fontWeight',
+    'fontStretch',
+    'fontKerning',
+    'fontFeatureSettings',
+    'fontVariationSettings',
+    'lineHeight',
+    'letterSpacing',
+    'textTransform',
+    'textIndent',
+    'textAlign',
+    'whiteSpace',
+    'wordBreak',
+    'overflowWrap',
+    'tabSize'
+  ] as const;
+
+  for (const property of mirroredProperties) {
+    mirror.style[property] = computed[property];
+  }
+
+  mirror.style.position = 'fixed';
+  mirror.style.top = '0';
+  mirror.style.left = '0';
+  mirror.style.visibility = 'hidden';
+  mirror.style.pointerEvents = 'none';
+  mirror.style.overflow = 'hidden';
+  mirror.style.whiteSpace = 'pre-wrap';
+  mirror.style.wordBreak = 'break-word';
+  mirror.style.overflowWrap = 'break-word';
+
+  mirror.textContent = textBeforeCaret;
+  span.textContent = textarea.value.slice(cursorPos) || '.';
+  mirror.appendChild(span);
+  document.body.appendChild(mirror);
+
+  const lineHeight = Number.parseFloat(computed.lineHeight) || 24;
+  const caretTop = span.offsetTop - textarea.scrollTop;
+  const caretLeft = span.offsetLeft - textarea.scrollLeft;
+
+  document.body.removeChild(mirror);
+
+  return {
+    top: caretTop,
+    left: caretLeft,
+    lineHeight
+  };
+};
+
 export const CreateCommentForm = ({
   isAuthenticated,
   hasPost,
@@ -42,6 +128,8 @@ export const CreateCommentForm = ({
 }: CreateCommentFormProps) => {
   const { t } = useTranslation();
   const [content, setContent] = useState('');
+  const contentRef = useRef('');
+  const textareaWrapperRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
@@ -60,6 +148,46 @@ export const CreateCommentForm = ({
   const resolvedSubmitText = submitText ?? t('forum.submitDiscussion');
   const resolvedPlaceholder = placeholder ?? t('forum.discussionPlaceholder');
   const isEditorDisabled = !isAuthenticated || !hasPost || disabled || uploading;
+
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
+
+  const updateMentionPosition = useCallback((textarea: HTMLTextAreaElement, cursorPos?: number) => {
+    const wrapper = textareaWrapperRef.current;
+    if (!wrapper) {
+      return;
+    }
+
+    const selectionStart = cursorPos ?? textarea.selectionStart ?? 0;
+    const caretPosition = getTextareaCaretRelativePosition(textarea, selectionStart);
+    const fallbackTop = 56;
+    const fallbackLeft = 18;
+    const baseTop = caretPosition?.top ?? fallbackTop;
+    const baseLeft = caretPosition?.left ?? fallbackLeft;
+    const lineHeight = caretPosition?.lineHeight ?? 24;
+    const wrapperWidth = wrapper.clientWidth;
+    const wrapperHeight = wrapper.clientHeight;
+    const left = Math.max(
+      VIEWPORT_PADDING,
+      Math.min(baseLeft - 14, wrapperWidth - MENTION_PANEL_WIDTH - VIEWPORT_PADDING)
+    );
+    let top = baseTop + lineHeight + MENTION_PANEL_GAP;
+
+    if (top + MENTION_PANEL_HEIGHT > wrapperHeight - VIEWPORT_PADDING) {
+      top = baseTop - MENTION_PANEL_HEIGHT - MENTION_PANEL_GAP;
+    }
+
+    top = Math.max(
+      VIEWPORT_PADDING,
+      Math.min(top, wrapperHeight - MENTION_PANEL_HEIGHT - VIEWPORT_PADDING)
+    );
+
+    setMentionPosition({
+      top,
+      left
+    });
+  }, []);
 
   useEffect(() => {
     if (!replyTo || !textareaRef.current || !isAuthenticated || !hasPost) {
@@ -122,11 +250,7 @@ export const CreateCommentForm = ({
 
         // 计算下拉框位置
         if (textareaRef.current) {
-          const rect = textareaRef.current.getBoundingClientRect();
-          setMentionPosition({
-            top: rect.bottom,
-            left: rect.left
-          });
+          updateMentionPosition(textareaRef.current, cursorPos);
         }
         return;
       }
@@ -152,6 +276,25 @@ export const CreateCommentForm = ({
     }
   }, [t]);
 
+  useEffect(() => {
+    if (!showMention || !textareaRef.current) {
+      return;
+    }
+
+    const syncPosition = () => {
+      if (textareaRef.current) {
+        updateMentionPosition(textareaRef.current);
+      }
+    };
+
+    syncPosition();
+    window.addEventListener('resize', syncPosition);
+
+    return () => {
+      window.removeEventListener('resize', syncPosition);
+    };
+  }, [showMention, updateMentionPosition]);
+
   // 选择用户
   const handleSelectUser = (user: UiUserMentionOption) => {
     if (!textareaRef.current) return;
@@ -175,29 +318,36 @@ export const CreateCommentForm = ({
     }, 0);
   };
 
+  const insertTextAtRange = useCallback((text: string, start: number, end: number) => {
+    const textarea = textareaRef.current;
+    const currentContent = contentRef.current;
+    const safeStart = Math.max(0, Math.min(start, currentContent.length));
+    const safeEnd = Math.max(safeStart, Math.min(end, currentContent.length));
+    const newContent = currentContent.substring(0, safeStart) + text + currentContent.substring(safeEnd);
+
+    setContent(newContent);
+    contentRef.current = newContent;
+
+    setTimeout(() => {
+      if (!textarea) {
+        return;
+      }
+
+      const newCursorPos = safeStart + text.length;
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  }, []);
+
   // 插入文本到光标位置
   const insertTextAtCursor = (text: string) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const newContent = content.substring(0, start) + text + content.substring(end);
-    setContent(newContent);
-
-    // 设置光标位置到插入文本后面
-    setTimeout(() => {
-      const newCursorPos = start + text.length;
-      textarea.focus();
-      textarea.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
+    insertTextAtRange(text, textarea.selectionStart, textarea.selectionEnd);
   };
 
-  // 处理图片上传
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const uploadImageFile = useCallback(async (file: File, selectionStart: number, selectionEnd: number) => {
     setUploading(true);
     setUploadError(null);
 
@@ -215,13 +365,27 @@ export const CreateCommentForm = ({
         displayVariant: result.voThumbnailUrl ? 'thumbnail' : 'original',
       });
       const imageMarkdown = `![${file.name}](${markdownUrl})`;
-      insertTextAtCursor(imageMarkdown);
+      insertTextAtRange(imageMarkdown, selectionStart, selectionEnd);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : t('forum.comment.imageUploadFailed');
       setUploadError(errorMessage);
       log.error(t('forum.comment.imageUploadFailed'), error);
     } finally {
       setUploading(false);
+    }
+  }, [insertTextAtRange, t]);
+
+  // 处理图片上传
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !textareaRef.current) return;
+
+    const selectionStart = textareaRef.current.selectionStart;
+    const selectionEnd = textareaRef.current.selectionEnd;
+
+    try {
+      await uploadImageFile(file, selectionStart, selectionEnd);
+    } finally {
       // 清空 input 以允许重复上传同一文件
       if (imageInputRef.current) {
         imageInputRef.current.value = '';
@@ -268,6 +432,23 @@ export const CreateCommentForm = ({
   const handleDocumentButtonClick = () => {
     documentInputRef.current?.click();
   };
+
+  const handleTextareaPaste = useCallback(async (event: ClipboardEvent<HTMLTextAreaElement>) => {
+    if (isEditorDisabled) {
+      return;
+    }
+
+    const clipboardItems = Array.from(event.clipboardData.items);
+    const imageItem = clipboardItems.find((item) => item.type.startsWith('image/'));
+    const pastedImage = imageItem?.getAsFile();
+
+    if (!pastedImage) {
+      return;
+    }
+
+    event.preventDefault();
+    await uploadImageFile(pastedImage, event.currentTarget.selectionStart, event.currentTarget.selectionEnd);
+  }, [isEditorDisabled, uploadImageFile]);
 
   const handlePickerSelect = (selection: StickerPickerSelection) => {
     if (selection.type === 'unicode') {
@@ -349,7 +530,7 @@ export const CreateCommentForm = ({
           </div>
         )}
 
-        <div className={styles.textareaWrapper}>
+        <div ref={textareaWrapperRef} className={styles.textareaWrapper}>
           {mode === 'preview' ? (
             <div className={styles.previewContainer}>
               {content ? <MarkdownRenderer content={content} /> : <div className={styles.previewEmpty}>没有任何内容</div>}
@@ -361,6 +542,24 @@ export const CreateCommentForm = ({
                 placeholder={resolvedPlaceholder}
                 value={content}
                 onChange={handleTextChange}
+                onClick={(event) => {
+                  if (showMention) {
+                    updateMentionPosition(event.currentTarget, event.currentTarget.selectionStart);
+                  }
+                }}
+                onKeyUp={(event) => {
+                  if (showMention) {
+                    updateMentionPosition(event.currentTarget, event.currentTarget.selectionStart);
+                  }
+                }}
+                onScroll={(event) => {
+                  if (showMention) {
+                    updateMentionPosition(event.currentTarget, event.currentTarget.selectionStart);
+                  }
+                }}
+                onPaste={(event) => {
+                  void handleTextareaPaste(event);
+                }}
                 rows={5}
                 className={styles.textarea}
                 disabled={isEditorDisabled}
@@ -372,6 +571,7 @@ export const CreateCommentForm = ({
                   onSelect={handleSelectUser}
                   onClose={() => setShowMention(false)}
                   position={mentionPosition}
+                  positionMode="absolute"
                 />
               )}
             </>

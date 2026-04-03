@@ -1,44 +1,80 @@
 .container {
-  position: fixed;  /* 改为fixed，相对于viewport定位 */
-  z-index: 1000;
-  background: #1e293b;
-  border: 1px solid #334155;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  min-width: 240px;
-  max-width: 320px;
-  max-height: 280px;
-  overflow-y: auto;
-  margin-top: 4px;
+  position: fixed;
+  z-index: 1200;
+  min-width: 260px;
+  max-width: 360px;
+  max-height: 320px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-border-strong) 72%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 96%, white 4%);
+  box-shadow:
+    0 20px 36px color-mix(in srgb, var(--theme-accent-ink) 14%, transparent),
+    0 0 0 1px color-mix(in srgb, white 68%, transparent);
+  backdrop-filter: blur(14px);
 }
 
 .loading,
 .empty {
   padding: 12px 16px;
   text-align: center;
-  color: #94a3b8;
-  font-size: 14px;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+}
+
+.statePanel {
+  display: flex;
+  flex-direction: column;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 86%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-brand-soft) 28%, var(--theme-bg-surface) 72%) 0%,
+    color-mix(in srgb, var(--theme-bg-surface) 100%, transparent) 100%
+  );
+}
+
+.panelTitle {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--theme-text-primary);
+}
+
+.panelHint {
+  font-size: 11px;
+  color: var(--theme-text-muted);
 }
 
 .list {
   list-style: none;
   margin: 0;
-  padding: 4px;
+  padding: 6px;
+  max-height: 268px;
+  overflow-y: auto;
 }
 
 .item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
+  padding: 9px 12px;
   cursor: pointer;
-  border-radius: 6px;
-  transition: background-color 0.15s;
+  border-radius: 12px;
+  transition: background-color 0.15s, transform 0.15s;
 }
 
 .item:hover,
 .item.selected {
-  background-color: #334155;
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-bg-surface) 28%);
+  transform: translateY(-1px);
 }
 
 .avatar {
@@ -55,16 +91,16 @@
 }
 
 .userName {
-  color: #60a5fa;
+  color: var(--theme-brand-primary);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .displayName {
-  color: #94a3b8;
+  color: var(--theme-text-secondary);
   font-size: 12px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -72,20 +108,19 @@
   margin-top: 2px;
 }
 
-/* 自定义滚动条 */
-.container::-webkit-scrollbar {
+.list::-webkit-scrollbar {
   width: 6px;
 }
 
-.container::-webkit-scrollbar-track {
+.list::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.container::-webkit-scrollbar-thumb {
-  background: #475569;
+.list::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--theme-border-strong) 82%, transparent);
   border-radius: 3px;
 }
 
-.container::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+.list::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--theme-brand-primary) 34%, var(--theme-border-strong) 66%);
 }

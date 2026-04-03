@@ -86,6 +86,7 @@ internal static partial class InitialDataSeeder
             ("等级配置", () => SeedLevelConfigsAsync(db, services)),
             ("商城分类", () => SeedShopCategoriesAsync(db)),
             ("商城商品", () => SeedShopProductsAsync(db)),
+            ("商城默认图片", () => SeedShopDefaultImagesAsync(db)),
             ("表情包默认数据", SeedStickerDefaultsAsync)
         };
 

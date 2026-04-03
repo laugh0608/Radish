@@ -135,6 +135,7 @@ internal static class DbMigrateRunner
             .ToLowerInvariant();
         var mainDb = dbScope.GetConnectionScope(normalizedMainDbConnId);
         EnsureUserLoginIndex(mainDb);
+        EnsureForumIndexes(mainDb);
     }
 
     private static void EnsureUserLoginIndex(ISqlSugarClient db)
@@ -154,6 +155,40 @@ internal static class DbMigrateRunner
             indexName,
             false);
 
+        Console.WriteLine(created
+            ? $"[Radish.DbMigrate] 已补齐索引 {indexName}。"
+            : $"[Radish.DbMigrate] 索引 {indexName} 创建未生效，请检查数据库状态。");
+    }
+
+    private static void EnsureForumIndexes(ISqlSugarClient db)
+    {
+        EnsureIndex(
+            db,
+            db.EntityMaintenance.GetEntityInfo<Category>().DbTableName,
+            "idx_category_parent_enabled_deleted_sort",
+            [nameof(Category.ParentId), nameof(Category.IsEnabled), nameof(Category.IsDeleted), nameof(Category.OrderSort)]);
+
+        EnsureIndex(
+            db,
+            db.EntityMaintenance.GetEntityInfo<Post>().DbTableName,
+            "idx_post_forum_list",
+            [nameof(Post.TenantId), nameof(Post.IsDeleted), nameof(Post.IsPublished), nameof(Post.IsTop), nameof(Post.CreateTime)]);
+
+        EnsureIndex(
+            db,
+            db.EntityMaintenance.GetEntityInfo<Post>().DbTableName,
+            "idx_post_forum_category_list",
+            [nameof(Post.TenantId), nameof(Post.CategoryId), nameof(Post.IsDeleted), nameof(Post.IsPublished), nameof(Post.CreateTime)]);
+    }
+
+    private static void EnsureIndex(ISqlSugarClient db, string tableName, string indexName, string[] columns)
+    {
+        if (!db.DbMaintenance.IsAnyTable(tableName, false) || db.DbMaintenance.IsAnyIndex(indexName))
+        {
+            return;
+        }
+
+        var created = db.DbMaintenance.CreateIndex(tableName, columns, indexName, false);
         Console.WriteLine(created
             ? $"[Radish.DbMigrate] 已补齐索引 {indexName}。"
             : $"[Radish.DbMigrate] 索引 {indexName} 创建未生效，请检查数据库状态。");

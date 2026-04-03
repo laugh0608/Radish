@@ -7,6 +7,7 @@ namespace Radish.Model;
 
 /// <summary>论坛分类实体</summary>
 /// <remarks>支持多级分类，主键为 Id，类型为 long</remarks>
+[SugarIndex("idx_category_parent_enabled_deleted_sort", nameof(ParentId), OrderByType.Asc, nameof(IsEnabled), OrderByType.Asc, nameof(IsDeleted), OrderByType.Asc, nameof(OrderSort), OrderByType.Desc)]
 public class Category : RootEntityTKey<long>
 {
     /// <summary>初始化默认分类实例</summary>

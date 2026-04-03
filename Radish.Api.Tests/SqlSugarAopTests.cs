@@ -1,6 +1,10 @@
+using System;
+using System.IO;
 using System.Reflection;
+using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Radish.Extension.AopExtension;
+using Radish.Extension.SqlSugarExtension;
 using Shouldly;
 using SqlSugar;
 using Xunit;
@@ -76,6 +80,64 @@ public class SqlSugarAopTests
         var shouldLog = InvokePrivate<bool>("ShouldLog", new object[] { options, "System", "AnyTable", "Query" });
 
         shouldLog.ShouldBeFalse();
+    }
+
+    [Theory(DisplayName = "ExtractTableName 应支持 INSERT/UPDATE/DELETE/SELECT 并归一化表名")]
+    [InlineData("INSERT INTO `WikiDocument` (`Id`) VALUES (@Id)", "WikiDocument")]
+    [InlineData("UPDATE `WikiDocument` SET `Title`=@Title WHERE `Id`=@Id", "WikiDocument")]
+    [InlineData("DELETE FROM `WikiDocument` WHERE `Id`=@Id", "WikiDocument")]
+    [InlineData("SELECT * FROM `WikiDocument` WHERE `Id`=@Id", "WikiDocument")]
+    [InlineData("SELECT * FROM public.WikiDocument WHERE Id=@Id", "WikiDocument")]
+    public void ExtractTableName_ShouldSupportCommonSqlPatterns(string sql, string expectedTableName)
+    {
+        var method = typeof(SqlSugarSetup).GetMethod("ExtractTableName", BindingFlags.NonPublic | BindingFlags.Static);
+        method.ShouldNotBeNull();
+
+        var result = method.Invoke(null, [sql]);
+        result.ShouldBe(expectedTableName);
+    }
+
+    [Fact(DisplayName = "内容根目录中的 csproj 应优先决定日志项目名")]
+    public void ResolveProjectName_ShouldPreferContentRootProjectFile()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"radish-log-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempRoot);
+        File.WriteAllText(Path.Combine(tempRoot, "Radish.Api.csproj"), "<Project />");
+
+        try
+        {
+            var method = typeof(LogContextTool).GetMethod("ResolveProjectName", BindingFlags.NonPublic | BindingFlags.Static);
+            method.ShouldNotBeNull();
+
+            var result = method.Invoke(null, ["Radish", tempRoot, "Radish", tempRoot]);
+            result.ShouldBe("Radish.Api");
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
+    }
+
+    [Fact(DisplayName = "BaseDirectory 解析到具体项目名时不应退回泛化的 ApplicationName")]
+    public void ResolveProjectName_ShouldPreferBaseDirectoryOverGenericApplicationName()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"radish-log-{Guid.NewGuid():N}");
+        var baseDirectory = Path.Combine(tempRoot, "Radish.Api", "bin", "Debug", "net10.0");
+        Directory.CreateDirectory(baseDirectory);
+        File.WriteAllText(Path.Combine(tempRoot, "Radish.Api", "Radish.Api.csproj"), "<Project />");
+
+        try
+        {
+            var method = typeof(LogContextTool).GetMethod("ResolveProjectName", BindingFlags.NonPublic | BindingFlags.Static);
+            method.ShouldNotBeNull();
+
+            var result = method.Invoke(null, ["Radish", null, "Radish", baseDirectory]);
+            result.ShouldBe("Radish.Api");
+        }
+        finally
+        {
+            Directory.Delete(tempRoot, recursive: true);
+        }
     }
 
     private static T InvokePrivate<T>(string methodName, params object[] args)

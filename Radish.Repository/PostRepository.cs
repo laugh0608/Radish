@@ -13,6 +13,104 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
     {
     }
 
+    public async Task<(List<Post> data, int totalCount)> QueryForumPostPageAsync(
+        long? categoryId,
+        string? keyword,
+        DateTime? startTime,
+        DateTime? endTime,
+        int pageIndex,
+        int pageSize,
+        string sortBy)
+    {
+        var normalizedKeyword = keyword?.Trim() ?? string.Empty;
+        var hasKeyword = !string.IsNullOrWhiteSpace(normalizedKeyword);
+        var hasCategory = categoryId.HasValue && categoryId.Value > 0;
+        var hasStartTime = startTime.HasValue;
+        var hasEndTime = endTime.HasValue;
+        var categoryValue = categoryId ?? 0;
+        var startTimeValue = startTime ?? DateTime.MinValue;
+        var endTimeValue = endTime ?? DateTime.MaxValue;
+
+        RefAsync<int> totalCount = 0;
+
+        var query = CreateTenantQueryableFor<Post>()
+            .Where(post => post.IsPublished && !post.IsDeleted);
+
+        if (hasCategory)
+        {
+            query = query.Where(post => post.CategoryId == categoryValue);
+        }
+
+        if (hasStartTime)
+        {
+            query = query.Where(post => post.CreateTime >= startTimeValue);
+        }
+
+        if (hasEndTime)
+        {
+            query = query.Where(post => post.CreateTime <= endTimeValue);
+        }
+
+        if (hasKeyword)
+        {
+            query = query.Where(post =>
+                post.Title.Contains(normalizedKeyword) ||
+                post.Summary.Contains(normalizedKeyword) ||
+                post.Content.Contains(normalizedKeyword));
+        }
+
+        query = sortBy.ToLowerInvariant() switch
+        {
+            "hottest" => query
+                .OrderBy(post => post.IsTop, OrderByType.Desc)
+                .OrderBy(post => post.ViewCount + post.LikeCount * 2 + post.CommentCount * 3, OrderByType.Desc)
+                .OrderBy(post => post.CreateTime, OrderByType.Desc),
+            "essence" => query
+                .OrderBy(post => post.IsTop, OrderByType.Desc)
+                .OrderBy(post => post.IsEssence, OrderByType.Desc)
+                .OrderBy(post => post.CreateTime, OrderByType.Desc),
+            _ => query
+                .OrderBy(post => post.IsTop, OrderByType.Desc)
+                .OrderBy(post => post.CreateTime, OrderByType.Desc)
+        };
+
+        var data = await query
+            .Select(post => new Post
+            {
+                Id = post.Id,
+                Title = post.Title,
+                Slug = post.Slug,
+                Summary = post.Summary,
+                ContentType = post.ContentType,
+                CoverAttachmentId = post.CoverAttachmentId,
+                AuthorId = post.AuthorId,
+                AuthorName = post.AuthorName,
+                CategoryId = post.CategoryId,
+                IsTop = post.IsTop,
+                IsEssence = post.IsEssence,
+                IsLocked = post.IsLocked,
+                IsPublished = post.IsPublished,
+                PublishTime = post.PublishTime,
+                IsEnabled = post.IsEnabled,
+                IsDeleted = post.IsDeleted,
+                ViewCount = post.ViewCount,
+                LikeCount = post.LikeCount,
+                CommentCount = post.CommentCount,
+                CollectCount = post.CollectCount,
+                ShareCount = post.ShareCount,
+                TenantId = post.TenantId,
+                CreateTime = post.CreateTime,
+                CreateBy = post.CreateBy,
+                CreateId = post.CreateId,
+                ModifyTime = post.ModifyTime,
+                ModifyBy = post.ModifyBy,
+                ModifyId = post.ModifyId
+            })
+            .ToPageListAsync(pageIndex, pageSize, totalCount);
+
+        return (data, totalCount);
+    }
+
     public async Task<(List<Post> data, int totalCount)> QueryQuestionPostPageAsync(
         long? categoryId,
         string? keyword,

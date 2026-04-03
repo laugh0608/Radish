@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Collections;
 using Castle.DynamicProxy;
 using Newtonsoft.Json;
 using Radish.Common;
@@ -15,8 +16,6 @@ public class ServiceAop : IInterceptor
     /// <param name="invocation"></param>
     public void Intercept(IInvocation invocation)
     {
-        var json = LogPayloadSerializer.Serialize(invocation.Arguments);
-
         DateTime startTime = DateTime.Now;
         AopLogInfoTool apiLogAopInfo = new AopLogInfoTool
         {
@@ -24,7 +23,7 @@ public class ServiceAop : IInterceptor
             OpUserName = "",
             RequestMethodName = invocation.Method.Name,
             RequestParamsName = string.Join(", ", invocation.Arguments.Select(a => (a ?? "").ToString()).ToArray()),
-            RequestParamsData = json
+            RequestParamsData = BuildPayloadSnapshot(invocation.Arguments)
         };
 
         try
@@ -60,7 +59,7 @@ public class ServiceAop : IInterceptor
                 string responseTime = (endTime - startTime).Milliseconds.ToString();
                 apiLogAopInfo.ResponseTime = endTime.ToString("yyyy-MM-dd hh:mm:ss fff");
                 apiLogAopInfo.ResponseIntervalTime = responseTime + "ms";
-                apiLogAopInfo.ResponseJsonData = LogPayloadSerializer.Serialize(invocation.ReturnValue);
+                apiLogAopInfo.ResponseJsonData = BuildPayloadSnapshot(invocation.ReturnValue);
                 Console.WriteLine(JsonConvert.SerializeObject(apiLogAopInfo));
             }
         }
@@ -78,7 +77,7 @@ public class ServiceAop : IInterceptor
         string responseTime = (endTime - startTime).Milliseconds.ToString();
         apiLogAopInfo.ResponseTime = endTime.ToString("yyyy-MM-dd hh:mm:ss fff");
         apiLogAopInfo.ResponseIntervalTime = responseTime + "ms";
-        apiLogAopInfo.ResponseJsonData = LogPayloadSerializer.Serialize(o);
+        apiLogAopInfo.ResponseJsonData = BuildPayloadSnapshot(o);
 
         await Task.CompletedTask;
         // await Task.Run(() => { Console.WriteLine("执行成功-->" + JsonConvert.SerializeObject(apiLogAopInfo)); });
@@ -97,6 +96,72 @@ public class ServiceAop : IInterceptor
         return
             method.ReturnType == typeof(Task) ||
             method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>);
+    }
+
+    private static string BuildPayloadSnapshot(object? value)
+    {
+        try
+        {
+            if (value == null)
+            {
+                return "null";
+            }
+
+            if (value is string text)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    kind = "String",
+                    length = text.Length
+                });
+            }
+
+            if (value is ICollection collection)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    kind = "Collection",
+                    type = value.GetType().FullName,
+                    count = collection.Count
+                });
+            }
+
+            if (value is IEnumerable enumerable)
+            {
+                var count = 0;
+                foreach (var _ in enumerable)
+                {
+                    count++;
+                    if (count >= 20)
+                    {
+                        break;
+                    }
+                }
+
+                return JsonConvert.SerializeObject(new
+                {
+                    kind = "Enumerable",
+                    type = value.GetType().FullName,
+                    previewCount = count
+                });
+            }
+
+            return JsonConvert.SerializeObject(new
+            {
+                kind = "Object",
+                type = value.GetType().FullName
+            });
+        }
+        catch (Exception ex)
+        {
+            return JsonConvert.SerializeObject(new
+            {
+                kind = "SnapshotFailed",
+                type = value?.GetType().FullName,
+                error = ex.GetType().FullName,
+                ex.Message
+            });
+        }
     }
 }
 

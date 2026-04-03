@@ -206,7 +206,7 @@ Authorization: Bearer {{your_token}}
 3. 点击 **Authorize** 跳转到登录页面
 4. 使用测试账号登录：
    - 用户名：`test`
-   - 密码：`P@ssw0rd!`
+   - 密码：`test123456`
 5. 授权后自动返回，所有请求将自动携带 Token
 
 **方式二：传统 API 登录**

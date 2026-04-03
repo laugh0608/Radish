@@ -1,14 +1,16 @@
-import { lazy, Suspense, useState, useEffect } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@radish/ui/modal';
 import { Button } from '@radish/ui/button';
 import { Icon } from '@radish/ui/icon';
+import type { UserMentionOption as UiUserMentionOption } from '@radish/ui';
 import {
   buildAttachmentAssetUrl,
   type MarkdownDocumentUploadResult,
   type MarkdownImageUploadResult,
 } from '@radish/ui';
 import { getAllTags, type Category, type PostDetail } from '@/api/forum';
+import { searchUsersForMention } from '@/api/user';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { uploadDocument, uploadImage } from '@/api/attachment';
@@ -53,6 +55,21 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
   const [tagError, setTagError] = useState<string | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const handleSearchUsers = useCallback(async (keyword: string): Promise<UiUserMentionOption[]> => {
+    try {
+      const users = await searchUsersForMention(keyword, t);
+      return users.map((user) => ({
+        id: user.voId,
+        userName: user.voUserName,
+        displayName: user.voDisplayName,
+        avatar: user.voAvatar
+      }));
+    } catch (searchError) {
+      log.error('EditPostModal', '搜索提及用户失败:', searchError);
+      return [];
+    }
+  }, [t]);
 
   // 当 post 改变时更新表单
   useEffect(() => {
@@ -418,9 +435,11 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
                 void handleStickerSelect(selection);
               }}
               minHeight={320}
+              defaultMode="edit"
               className={styles.editor}
               theme="light"
               toolbarExtras={editorToolbarExtras}
+              onUserMentionSearch={handleSearchUsers}
               disabled={saving}
             />
           </Suspense>

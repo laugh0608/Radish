@@ -17,6 +17,16 @@ namespace Radish.Extension.SqlSugarExtension;
 public static class SqlSugarSetup
 {
     private const int SqliteBusyTimeoutMs = 60000;
+    private static readonly Regex TableNameRegex = new(
+        @"(?ix)
+        (?:\bINSERT\s+INTO\b|\bFROM\b|\bUPDATE\b|\bDELETE\s+FROM\b)\s+
+        (?:
+            `(?<table>[^`]+)` |
+            \[(?<table>[^\]]+)\] |
+            ""(?<table>[^""]+)"" |
+            (?<table>[A-Za-z_][A-Za-z0-9_\.]*)
+        )",
+        RegexOptions.Compiled);
     private static readonly ConcurrentDictionary<string, byte> InitializedSqliteWalDatabases =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -218,16 +228,24 @@ public static class SqlSugarSetup
 
     private static string ExtractTableName(string sql)
     {
-        // 匹配 SQL 语句中的表名的正则表达式
-        // string regexPattern = @"\s*(?:UPDATE|DELETE\s+FROM|SELECT\s+\*\s+FROM)\s+(\w+)";
-        string regexPattern = @"(?i)(?:FROM|UPDATE|DELETE\s+FROM)\s+`(.+?)`";
-        Regex regex = new Regex(regexPattern, RegexOptions.IgnoreCase);
-        Match match = regex.Match(sql);
+        if (string.IsNullOrWhiteSpace(sql))
+        {
+            return string.Empty;
+        }
 
-        return match.Success ?
-            // 提取匹配到的表名
-            match.Groups[1].Value :
-            // 如果没有匹配到表名，则返回空字符串或者抛出异常等处理
-            string.Empty;
+        var match = TableNameRegex.Match(sql);
+        if (!match.Success)
+        {
+            return string.Empty;
+        }
+
+        var rawTableName = match.Groups["table"].Value.Trim();
+        if (string.IsNullOrWhiteSpace(rawTableName))
+        {
+            return string.Empty;
+        }
+
+        var normalizedTableName = rawTableName.Split('.', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+        return normalizedTableName?.Trim('`', '"', '[', ']') ?? string.Empty;
     }
 }

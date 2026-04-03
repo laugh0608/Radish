@@ -1,6 +1,16 @@
 # 身份语义收敛迁移计划
 
 > 本文是《[身份语义收敛与 Claim 治理设计](/architecture/identity-claim-convergence)》的执行版，定义 Radish 如何从“分散解析 Claim”迁移到“统一当前用户上下文”。
+>
+> 关于 **Phase 4 现在能不能启动** 的具体判断，见：[身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
+>
+> 关于 **Phase 4 最终是否正式启动** 的当前结论，见：[身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)
+>
+> 关于 **仓库外兼容边界还差哪些事实**，见：[身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist)
+>
+> 关于 **哪些 Claim 继续保留输出、哪些只保留兼容输入** 的具体判断，见：[身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)
+>
+> 关于 **实施顺序、官方回归顺序与回滚优先级** 的具体判断，见：[身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window)
 
 ## 1. 迁移目标
 
@@ -143,7 +153,18 @@
 前提：
 
 - 所有运行时代码已经完成迁移
+- 已形成明确的协议消费者清单（见 [身份语义 Phase 4 协议消费者矩阵](/guide/identity-claim-protocol-consumers)）
 - 外部客户端不再依赖历史输出 Claim
+- 已形成明确的历史 Claim 保留矩阵（见 [身份语义 Phase 4 历史 Claim 保留矩阵](/guide/identity-claim-retention-matrix)）与回滚方案
+
+当前入口：
+
+- 在正式启动前，先完成 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
+- 当前已完成 [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)，结论已更新为“允许启动实施”
+- 当前部署范围内的外部兼容边界事实已补齐，后续直接按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 推进
+- 实施批次与回滚顺序以 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 为准
+- 当前“兼容边界已明确”已被写成事实，当前阶段已从“前提确认”切换为“协议输出收敛实施”
+- `M14` 继续保留为后续候选，不再作为当前默认切换方向
 
 验收：
 
@@ -261,7 +282,7 @@
 - 若不先治理身份语义层，后续社区功能越多，修补成本越高
 - 该专项完成后，才能真正为权限治理、Console 扩展、Gateway/BFF 演进建立稳定基线
 
-## 11. 当前实施状态（截至 2026-03-07）
+## 11. 当前实施状态（截至 2026-04-03）
 
 ### 11.1 阶段状态
 
@@ -269,7 +290,7 @@
 - **Phase 1：建立唯一身份抽象** —— 已完成。
 - **Phase 2：迁移所有运行时入口** —— 主路径已完成。
 - **Phase 3：收缩旧逃逸接口** —— 已完成到“兼容层冻结”状态。
-- **Phase 4：协议输出收敛** —— 暂未启动，需等待外部客户端兼容性确认。
+- **Phase 4：协议输出收敛** —— 已允许启动；当前已完成 [启动前提确认](/guide/identity-claim-phase4-readiness) 与 [最终启动评审](/guide/identity-claim-phase4-start-review)，且当前部署范围内的仓库外兼容边界已被事实关闭。
 - **Phase 5：M12 后续防回归落地** —— 规则已形成，计划在 M13（验证基线与回归资产工程化）阶段接入脚本/流水线。
 
 ### 11.2 当前兼容层最终边界
@@ -291,5 +312,7 @@
 ### 11.4 下一步建议
 
 1. `M13` 首轮已落地 `npm run check:identity-claims`，并接入根目录 `validate:baseline` / `validate:baseline:quick`；后续再视项目阶段决定是否继续上升到 CI/CD。
-2. 在确认无外部依赖后，评估移除 `IHttpContextUser` 兼容层。
-3. 清理遗留注释、示例与文档中的旧 JWT/Claim 口径，避免回归。
+2. 当前直接按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 推进协议输出收缩与官方回归。
+3. 若后续新增新的部署环境、第三方客户端或自定义反代规则，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实。
+4. 在确认首轮输出收缩稳定后，再评估移除 `IHttpContextUser` 兼容层。
+5. 清理遗留注释、示例与文档中的旧 JWT/Claim 口径，避免回归。

@@ -90,10 +90,7 @@ public class TagController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetHotTags(int topCount = 20)
     {
-        var allTags = await _tagService.QueryAsync(t => t.IsEnabled && !t.IsDeleted);
-        var hotTags = allTags.OrderByDescending(t => t.VoPostCount)
-                            .Take(topCount)
-                            .ToList();
+        var hotTags = await _tagService.GetHotTagsAsync(topCount);
 
         return new MessageModel
         {

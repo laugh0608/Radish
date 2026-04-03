@@ -1,5 +1,6 @@
 import { log } from '@/utils/logger';
 import { getAuthServerBaseUrl } from '@/config/env';
+import { getUserNameFromTokenPayload, type JwtPayload } from './tokenClaims';
 
 /**
  * Token 信息接口
@@ -20,8 +21,6 @@ interface TokenRefreshResponse {
   expires_in: number;
   token_type: string;
 }
-
-type JwtPayload = Record<string, unknown>;
 
 export interface TokenDebugInfo {
   hasAccessToken: boolean;
@@ -81,22 +80,7 @@ class TokenService {
       return null;
     }
 
-    const claimKeys = [
-      'name',
-      'preferred_username',
-      'nickname',
-      'unique_name',
-      'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name',
-    ] as const;
-
-    for (const key of claimKeys) {
-      const value = payload[key];
-      if (typeof value === 'string' && value.trim()) {
-        return value.trim();
-      }
-    }
-
-    return null;
+    return getUserNameFromTokenPayload(payload);
   }
 
   /**

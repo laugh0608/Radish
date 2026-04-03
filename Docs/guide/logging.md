@@ -19,15 +19,15 @@ Radish 的日志系统分为三个层次：
 ```
 应用代码
   ├─> Serilog.Log.* 方法
-  │     ├─> Log/{ProjectName}/Log.txt (应用日志文件)
+  │     ├─> Logs/{ProjectName}/Log.txt (应用日志文件)
   │     └─> Radish.Log.db -> InformationLog/WarningLog/ErrorLog_YYYYMMDD (可选)
   │
   ├─> SqlSugar AOP
-  │     ├─> Log/{ProjectName}/AopSql/AopSql.txt (SQL 日志文件)
+  │     ├─> Logs/{ProjectName}/AopSql/AopSql.txt (SQL 日志文件)
   │     └─> Radish.Log.db -> AuditSqlLog_YYYYMMDD (可选)
   │
   └─> AuditLogMiddleware
-        ├─> Log/{ProjectName}/Log.txt (审计日志文件)
+        ├─> Logs/{ProjectName}/Log.txt (审计日志文件)
         └─> Radish.Log.db -> AuditLog_YYYYMMDD (审计日志数据库)
 ```
 
@@ -54,10 +54,10 @@ builder.Host.AddSerilogSetup();
 
 ### 日志目录结构
 
-日志文件位于解决方案根目录的 `Log/` 文件夹：
+日志文件位于解决方案根目录的 `Logs/` 文件夹：
 
 ```
-Log/
+Logs/
 ├── Radish.Api/
 │   ├── Log.txt                    # 应用日志（滚动文件）
 │   ├── AopSql/
@@ -72,10 +72,11 @@ Log/
 
 **自动检测机制**：
 1. 向上查找 `*.slnx` 或 `*.sln` 文件确定解决方案根目录
-2. 优先从宿主入口程序集名识别当前项目名称；本地开发场景下再回退到 `.csproj` 扫描
-3. 在 `Log/{ProjectName}/` 下创建项目专属日志目录
+2. 优先尝试从宿主 `ContentRootPath` 与 `AppContext.BaseDirectory` 解析具体项目名；若无法定位源码目录，再回退到 `ApplicationName` / 宿主入口程序集名
+3. 当多个候选名称冲突时，优先使用更具体的项目名（如 `Radish.Api`），避免误落到泛化目录 `Logs/Radish/`
+4. 在 `Logs/{ProjectName}/` 下创建项目专属日志目录
 
-补充说明：发布目录与 Docker 容器场景下通常拿不到源码目录中的 `.csproj`，因此当前会优先依赖宿主入口程序集名，避免日志继续落到 `Logs/Unknown/`。
+补充说明：本地开发态优先依赖 `ContentRootPath` / `BaseDirectory`，避免 `ApplicationName=Radish` 这类泛化值把 `Radish.Api`、`Radish.Auth`、`Radish.Gateway` 误写到同一目录；发布目录与 Docker 容器拿不到源码 `.csproj` 时，再回退到宿主名称，避免日志继续落到 `Logs/Unknown/`。
 
 ### 日志级别配置
 
@@ -189,6 +190,11 @@ Log/
 - 屏蔽系统同步 SQL：在 `SkipUsers` 中加入 `System`
 - 屏蔽指定大表：在 `SkipTables` 中加入表名
 - 保留 SQL 结构但隐藏正文：保持 `OmitLargeText=true`
+
+补充说明：
+
+- `SkipTables` 当前会同时作用于 `INSERT / UPDATE / DELETE / SELECT` 场景，不再只对 `FROM` / `UPDATE` 类语句生效。
+- SQL AOP 当前以结构化参数方式把整段 SQL 文本写入 Serilog；即使参数值中包含 `{userId}` 这类花括号文本，也不会再触发 Serilog 的模板占位异常。
 
 **启用数据库日志**：
 
@@ -411,7 +417,7 @@ public static void OnLogExecuting(ISqlSugarClient sqlSugarScopeProvider, string 
 其中 `journal_mode = WAL` 只会按“连接配置 + 数据库文件”初始化一次，避免每次连接都重复切模式。这个策略的目标是尽量降低单文件 SQLite 在高频读写下的瞬时锁等待，但它不是生产级数据库治理的替代品；如果业务已经进入多实例、高并发或持续高写入阶段，仍应优先评估 PostgreSQL。
 
 **日志输出位置**：
-- 文件：`Log/{ProjectName}/AopSql/AopSql.txt`
+- 文件：`Logs/{ProjectName}/AopSql/AopSql.txt`
 - 控制台：同时输出到控制台（开发环境）
 - 数据库：`Radish.Log.db -> AuditSqlLog_YYYYMMDD`（需启用）
 
@@ -455,13 +461,13 @@ public class AuditSqlLog : BaseLog
 
 ```bash
 # 查看最新的 SQL 日志
-tail -f Log/Radish.Api/AopSql/AopSql.txt
+tail -f Logs/Radish.Api/AopSql/AopSql.txt
 
 # 搜索特定表的 SQL
-grep "Table:\[User\]" Log/Radish.Api/AopSql/AopSql.txt
+grep "Table:\[User\]" Logs/Radish.Api/AopSql/AopSql.txt
 
 # 查看今天的 SQL 日志
-cat Log/Radish.Api/AopSql/AopSql.txt | grep "$(date +%Y-%m-%d)"
+cat Logs/Radish.Api/AopSql/AopSql.txt | grep "$(date +%Y-%m-%d)"
 ```
 
 ## 业务审计日志
@@ -592,7 +598,7 @@ GET {{Api_HostAddress}}/api/v1/AuditLog/GetUserStatistics?topN=10
 
 ### 数据库配置
 
-日志使用独立的数据库，在 `appsettings.json` 中配置：
+日志使用共享的 `ConnId=Log` 日志库，在 `appsettings.json` 中配置：
 
 ```json
 {
@@ -617,6 +623,7 @@ GET {{Api_HostAddress}}/api/v1/AuditLog/GetUserStatistics?topN=10
 - `ConnId=Log` 是固定名称，不可更改
 - 日志库配置缺失会在启动时抛出异常
 - 本地开发使用 SQLite，生产环境建议使用 PostgreSQL
+- 当前设计不是“每个宿主项目独立一个日志库”；文件日志按项目分目录，数据库日志则共享一套 `Log` 库并按日志类型 / 日期分表
 
 ### 分表策略
 
@@ -746,13 +753,13 @@ Log.Information("Processing {ItemCount} items", items.Count);
 
 ```bash
 # 查看最新的应用日志
-tail -f Log/Radish.Api/Log.txt
+tail -f Logs/Radish.Api/Log.txt
 
 # 搜索特定用户的日志
-grep "UserId: 20000" Log/Radish.Api/Log.txt
+grep "UserId: 20000" Logs/Radish.Api/Log.txt
 
 # 查看今天的错误日志
-grep "Error" Log/Radish.Api/Log20251220.txt
+grep "Error" Logs/Radish.Api/Log20251220.txt
 ```
 
 ### 数据库日志查询
@@ -862,8 +869,8 @@ echo "Cleaned up logs older than $TARGET_DATE"
 
 **解决方案**：
 1. 检查 `Program.cs` 是否调用了 `builder.Host.AddSerilogSetup()`
-2. 检查文件系统权限（确保应用有写入 `Log/` 目录的权限）
-3. 查看 `Log/{ProjectName}/SerilogDebug/` 目录中的调试日志
+2. 检查文件系统权限（确保应用有写入 `Logs/` 目录的权限）
+3. 查看 `Logs/{ProjectName}/SerilogDebug/` 目录中的调试日志
 
 ### 审计日志未写入数据库
 
@@ -873,7 +880,7 @@ echo "Cleaned up logs older than $TARGET_DATE"
 1. 检查 `AuditLog` 配置是否启用：`"Enable": true`
 2. 检查中间件是否注册：`app.UseAuditLogSetup()`
 3. 检查日志数据库配置：`ConnId=Log` 必须存在
-4. 查看应用日志中的错误信息：`grep "AuditLog" Log/Radish.Api/Log.txt`
+4. 查看应用日志中的错误信息：`grep "AuditLog" Logs/Radish.Api/Log.txt`
 
 ### 应用日志/SQL日志未写入数据库
 
@@ -883,7 +890,7 @@ echo "Cleaned up logs older than $TARGET_DATE"
 1. 检查 `Serilog.Database.Enable` 是否为 `true`
 2. 检查 `Serilog.Database.EnableApplicationLog` 或 `EnableSqlLog` 是否启用
 3. 检查日志数据库配置：`ConnId=Log` 必须存在且正确
-4. 查看 Serilog 调试日志：`Log/{ProjectName}/SerilogDebug/Serilog*.txt`
+4. 查看 Serilog 调试日志：`Logs/{ProjectName}/SerilogDebug/Serilog*.txt`
 5. 确认 SqlSugar 配置正确初始化了 Log 数据库连接
 
 **常见错误**：
@@ -919,8 +926,8 @@ db.Aop.OnLogExecuting = (sql, pars) =>
 **问题**：登录页输入账号密码后需要等待数十秒，或标签页长时间后台后再次进入登录流程明显变慢。
 
 **建议排查**：
-1. 先看 `Log/Radish.Auth/Log.txt` 中 `[Account/Login]` 的阶段耗时，确认慢点落在用户查询、密码校验还是角色查询。
-2. 再看 `Log/Radish.Auth/AopSql/AopSql.txt` 是否出现慢连接、慢查询、慢命令或数据库异常日志。
+1. 先看 `Logs/Radish.Auth/Log.txt` 中 `[Account/Login]` 的阶段耗时，确认慢点落在用户查询、密码校验还是角色查询。
+2. 再看 `Logs/Radish.Auth/AopSql/AopSql.txt` 是否出现慢连接、慢查询、慢命令或数据库异常日志。
 3. 如果当前数据库是旧 SQLite 库，先执行一次 `DbMigrate apply`，确认 `idx_user_login_active` 已自动补齐。
 4. 如果仍频繁出现连接等待，应优先评估是否存在同库高频写入竞争，必要时把环境从 SQLite 切到 PostgreSQL。
 

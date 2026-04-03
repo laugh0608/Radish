@@ -1,13 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
+import type { UserMentionOption as UiUserMentionOption } from '@radish/ui';
 import {
   buildAttachmentAssetUrl,
   type MarkdownDocumentUploadResult,
   type MarkdownImageUploadResult,
 } from '@radish/ui';
 import { getOidcLoginUrl } from '@/api/forum';
+import { searchUsersForMention } from '@/api/user';
 import { uploadImage, uploadDocument } from '@/api/attachment';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './PublishPostForm.module.css';
@@ -36,6 +38,21 @@ export const PublishPostForm = ({
   const [imageScalePercent, setImageScalePercent] = useState<number>(75);
   const { t } = useTranslation();
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
+
+  const handleSearchUsers = useCallback(async (keyword: string): Promise<UiUserMentionOption[]> => {
+    try {
+      const users = await searchUsersForMention(keyword, t);
+      return users.map((user) => ({
+        id: user.voId,
+        userName: user.voUserName,
+        displayName: user.voDisplayName,
+        avatar: user.voAvatar
+      }));
+    } catch (error) {
+      log.error('发帖正文搜索提及用户失败:', error);
+      return [];
+    }
+  }, [t]);
 
   // 组件加载时恢复草稿
   useEffect(() => {
@@ -215,6 +232,7 @@ export const PublishPostForm = ({
         onStickerSelect={(selection) => {
           void handleStickerSelect(selection);
         }}
+        onUserMentionSearch={handleSearchUsers}
       />
 
 

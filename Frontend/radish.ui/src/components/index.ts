@@ -71,8 +71,9 @@ export type {
 export { ImageCropper } from './ImageCropper/ImageCropper';
 export type { ImageCropperProps } from './ImageCropper/ImageCropper';
 
-export { Toast, ToastContainer, toast, toastManager } from './Toast/Toast';
-export type { ToastProps } from './Toast/Toast';
+export { Toast, ToastContainer } from './Toast/Toast';
+export { toast, toastManager } from './Toast';
+export type { ToastProps } from './Toast';
 
 export { Notification } from './Notification/Notification';
 export type { NotificationProps, NotificationItemData } from './Notification/Notification';
