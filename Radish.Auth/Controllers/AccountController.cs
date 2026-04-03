@@ -9,6 +9,7 @@ using Microsoft.Extensions.Localization;
 using OpenIddict.Abstractions;
 using Radish.Auth.Resources;
 using Radish.Auth.ViewModels.Account;
+using Radish.Common.HttpContextTool;
 using Radish.Common.HelpTool;
 using Radish.IService;
 using Radish.Model.OpenIddict;
@@ -126,17 +127,13 @@ public class AccountController : Controller
 
         var claims = new List<Claim>
         {
-            // 标准身份标识 (ClaimTypes)
-            new(ClaimTypes.NameIdentifier, userId),
-            new(ClaimTypes.Name, user.VoLoginName ?? username), // 优先使用显示名称
-
             // OIDC 标准 claims
             new(OpenIddictConstants.Claims.Subject, userId),
             new(OpenIddictConstants.Claims.Name, user.VoLoginName ?? username), // 优先使用显示名称
             new(OpenIddictConstants.Claims.PreferredUsername, user.VoLoginName ?? username),
 
             // 多租户标识（与 AuthenticationGuide 中的约定一致）
-            new("tenant_id", tenantId)
+            new(UserClaimTypes.TenantId, tenantId)
         };
 
         // Email claim (如果存在)
@@ -155,7 +152,6 @@ public class AccountController : Controller
         // 角色 claims
         foreach (var role in roleNames)
         {
-            claims.Add(new Claim(ClaimTypes.Role, role));
             claims.Add(new Claim(OpenIddictConstants.Claims.Role, role));
         }
 

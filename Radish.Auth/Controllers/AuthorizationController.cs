@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using Radish.Auth.Models;
+using Radish.Common.HttpContextTool;
 
 namespace Radish.Auth.Controllers;
 
@@ -165,6 +166,16 @@ public class AuthorizationController : Controller
     /// </summary>
     private static IEnumerable<string> GetClaimDestinations(Claim claim, ImmutableArray<string> scopes)
     {
+        // Phase 4 首轮窗口显式停止历史双写输出，但继续允许标准化层读取旧字段。
+        if (claim.Type == UserClaimTypes.LegacyNameIdentifier ||
+            claim.Type == UserClaimTypes.LegacyName ||
+            claim.Type == UserClaimTypes.LegacyRole ||
+            claim.Type == UserClaimTypes.LegacyTenantId ||
+            claim.Type == UserClaimTypes.LegacyJti)
+        {
+            yield break;
+        }
+
         // sub 是必需的标识符，始终包含在 id_token 和 access_token 中
         if (claim.Type == OpenIddictConstants.Claims.Subject)
         {
@@ -206,8 +217,7 @@ public class AuthorizationController : Controller
         }
 
         // role claim: 业务授权相关，始终包含在 access_token 中；如果请求了 profile，也包含在 id_token 中
-        if (claim.Type == OpenIddictConstants.Claims.Role ||
-            claim.Type == ClaimTypes.Role)
+        if (claim.Type == OpenIddictConstants.Claims.Role)
         {
             yield return OpenIddictConstants.Destinations.AccessToken;
 
@@ -220,7 +230,7 @@ public class AuthorizationController : Controller
         }
 
         // tenant_id: 业务相关的多租户标识，始终包含在 access_token 中
-        if (claim.Type == "tenant_id" || claim.Type == "TenantId")
+        if (claim.Type == UserClaimTypes.TenantId)
         {
             yield return OpenIddictConstants.Destinations.AccessToken;
             yield break;
