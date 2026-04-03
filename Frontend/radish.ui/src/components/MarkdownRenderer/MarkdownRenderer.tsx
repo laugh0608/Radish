@@ -196,7 +196,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight]}
-          urlTransform={(url, key, node) => {
+          urlTransform={(url, _key, _node) => {
             if (isRadishCustomProtocol(url)) {
               return url;
             }
