@@ -8,7 +8,7 @@
 
 - **里程碑**：`M12 社区功能冲刺`
 - **当前主线**：`身份语义 Phase 4 协议输出收敛`
-- **当前阶段**：`截至 2026-04-03，社区主链多轮回归、首版 dev 文档收口，以及身份语义 Phase 4 的启动前提确认均已完成；当前生产环境的外部兼容边界事实也已补齐：现网仅有 1 套 `v26.3.2-release` Docker 部署，使用 1Panel 默认 HTTPS 反向代理，无仓库外换 Token / 联调 / 巡检脚本，OpenIddict 仅有默认种子数据。当前口径已从“继续等待外部边界确认”切换为“按实施与回滚窗口启动 Phase 4 协议输出收敛”，优先收缩 Auth 输出双写，并按官方回归顺序完成验证。详见：[身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)。`
+- **当前阶段**：`截至 2026-04-03，社区主链多轮回归、首版 dev 文档收口，以及身份语义 Phase 4 的启动前提确认均已完成；当前生产环境的外部兼容边界事实也已补齐：现网仅有 1 套 `v26.3.2-release` Docker 部署，使用 1Panel 默认 HTTPS 反向代理，无仓库外换 Token / 联调 / 巡检脚本，OpenIddict 仅有默认种子数据。当前 Phase 4 已进入首轮实施窗口，并已完成仓库内第一批收口：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 的仓库内回归资产已完成首轮同步与测试固化。后续若继续做真实端到端回归，仍按官方顺序执行。详见：[身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)。`
 - **复核日期**：`2026-04-03`
 
 ## 当前主线：身份语义 Phase 4 协议输出收敛
@@ -78,6 +78,9 @@
 - [x] 已完成身份语义 Phase 4 最终启动评审：新增 [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)，当前已明确“仓库内输入已齐，且当前部署范围内的仓库外兼容边界已被事实关闭，因此允许正式启动实施”
 - [x] 已补身份语义 Phase 4 仓库外兼容边界确认清单：新增 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist)，把外部脚本、网关映射、独立调用方与第三方客户端的确认项拆成可执行检查项
 - [x] 已补身份语义 Phase 4 仓库外兼容边界首轮执行记录：新增 [身份语义 Phase 4 仓库外兼容边界首轮执行记录（仓库资产侧）](/guide/identity-claim-external-compat-first-pass)，并已结合当前生产环境事实补齐“单套 `v26.3.2-release` Docker 部署 + 1Panel 默认 HTTPS 反代 + 默认客户端种子 + 无仓库外脚本”的外部边界结论
+- [x] 已完成身份语义 Phase 4 第 1 批实施：`AccountController / AuthorizationController` 当前已停止 `ClaimTypes.NameIdentifier / ClaimTypes.Name / ClaimTypes.Role / TenantId` 等历史双写输出，并补齐最小控制器回归测试
+- [x] 已完成身份语义 Phase 4 第 2 批实施：`UserInfoController` 当前已在保持 `sub / name / email / role / tenant_id` 对外结构稳定的前提下完成最小对齐，并补齐标准优先 / legacy fallback 的最小测试
+- [x] 已完成官方回归资产首轮收口：`radish-client / radish-console` 的 Token 直读规则当前已提取为可测试解析模块并锁定“标准优先 + 输入兼容 fallback”；`Radish.Api.AuthFlow.http`、`Scalar` 联调提示与鉴权文档也已同步到当前 Phase 4 口径
 - [x] 已完成论坛置顶首批最小闭环：当前复用 `Post.IsTop`，管理员可在帖子详情区执行置顶 / 取消置顶，列表排序继续沿用既有置顶优先规则
 - [x] 已完成聊天室图片“先入草稿、后统一发送”改造：图片上传后会先进入当前频道草稿区，支持继续输入文字、移除待发图片、切换频道后按频道恢复，再在点击发送时与文字一起发出
 - [x] 已修复论坛发帖分类摘要不同步问题：发帖分类选择与顶部“帖子设置”摘要当前已统一走同一条 `categoryId + categoryName` 状态链，初选、切换、清空与恢复草稿时都会即时同步
@@ -106,15 +109,16 @@
 - 第 1 步：维持当前规划页、总回归记录、状态矩阵与周志口径一致，避免“事实已收口、文档仍待确认”再次出现
 - 第 2 步：把社区主链正式转入稳定维护；如近期再发生跨层改动，优先重跑 `npm run validate:baseline`，涉及宿主 / 配置时再补 `npm run validate:baseline:host`
 - 第 3 步：继续维持当前统一镜像推送、`local / test / prod`、`DbMigrate -> Api/Auth -> Gateway` 与 `AuthUi__ShowTestAccountHint` 的发布口径冻结状态，避免部署事实再次漂移
-- 第 4 步：按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 执行 Auth 输出双写收缩
-- 第 5 步：按 `radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 完成官方回归
+- 第 4 步：继续维持 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 的当前边界，不在同一窗口提前删除 `UserClaimReader / CurrentUser` 的输入兼容
+- 第 5 步：在仓库内代码、测试与联调资产已首轮收口的基础上，按 `radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 继续做真实端到端官方回归；若出现阻塞，按回滚窗口优先恢复最小必要双写
 - 第 6 步：若实施中出现新的部署环境、第三方客户端或自定义反代规则，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实确认
-- 第 6 步：旧 `GetCommentTree` 兼容入口继续保留在观察池中，仅在确认仓库外也已无依赖后，再安排正式删除窗口
+- 第 7 步：旧 `GetCommentTree` 兼容入口继续保留在观察池中，仅在确认仓库外也已无依赖后，再安排正式删除窗口
 
 ### 当前结论
 
 - 社区主功能收口只是首版 `dev` 的一部分，不再代表整产品已经达到首版边界
 - 当前主线已从“社区主链回归收口完成，转入下一里程碑入口重审”进一步切换为“身份语义 Phase 4 协议输出收敛”
+- 当前已完成 Phase 4 首轮仓库内实施与回归资产收口：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、官方客户端直读规则与联调示例已完成首轮同步；当前不再停留在“等待启动”或“只补前置文档”的阶段
 - 旧 `GetCommentTree` 兼容入口的正式删除当前已明确保留在主线跟踪项中，后续以真实命中观测结果作为收缩前置条件，避免事项脱离主线后被遗忘
 - 通知中心已于 `2026-03-23` 完成一轮真实首版 Smoke，并已在本轮总回归中完成复核；当前转入稳定维护
 - 认证基础入口虽已于 `2026-03-23` 完成一轮真实首版 Smoke，但 `2026-03-30` 又针对后台闲置恢复、慢登录与重复提交场景补了一轮治根治理；截至 `2026-04-02`，相关回归已完成当前批次确认，当前转入稳定维护
@@ -299,7 +303,7 @@
 
 ### 身份语义收敛尾项
 
-- **当前状态**：主体已完成，协议输出收敛尚未启动
+- **当前状态**：主体已完成，Phase 4 首轮实施与仓库内回归资产收口已启动
 - **剩余任务**：
   - Phase 4：协议输出收敛（当前已完成 [最终启动评审](/guide/identity-claim-phase4-start-review)，结论为“允许启动实施”；后续若部署形态变化，再按 [仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实）
   - Phase 5：防回归资产接入脚本 / 校验流程（留待重定义后的 `M13`）

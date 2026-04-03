@@ -34,3 +34,11 @@
 - **仓库内可排除范围已明确**：当前可确认仓库交付的反向代理样例与 Compose 口径未发现 `ClaimTypes.NameIdentifier`、`ClaimTypes.Role`、`TenantId`、`jti` 等旧 Claim 字段依赖；`userinfo` 的仓库内直接消费者当前主要收束在 `Radish.Api.AuthFlow.http`。
 - **生产环境事实已补齐**：当前现网仅有 1 套 `v26.3.2-release` Docker 部署，外层使用 1Panel 默认 HTTPS 反向代理，无仓库外换 Token / 联调 / 巡检脚本，OpenIddict 仅有默认种子数据。
 - **最终启动评审结论已更新**：基于仓库资产侧与当前生产环境侧事实，身份语义 `Phase 4` 当前已从“暂不启动”更新为“允许启动”；后续主线转入协议输出收敛与官方回归顺序执行，不再默认切向 `M14`。
+
+### 身份语义 Phase 4 首轮实施与仓库内回归资产收口
+
+- **Auth 输出双写已完成首轮收缩**：`AccountController / AuthorizationController` 当前已停止 `ClaimTypes.NameIdentifier`、`ClaimTypes.Name`、`ClaimTypes.Role` 与 `TenantId` 等历史双写输出；对应最小控制器测试已补齐，当前最小 .NET 验证通过。
+- **`userinfo` 已完成最小对齐**：`UserInfoController` 当前已在保持 `sub / name / email / role / tenant_id` 对外结构稳定的前提下，完成标准字段优先、legacy 输入 fallback 的内部对齐；对应控制器测试已补齐并通过。
+- **官方回归资产已完成首轮同步**：`Radish.Api.AuthFlow.http` 当前已统一为可闭环验证授权码、`/connect/userinfo` 与 refresh token 的脚本；`Scalar` 联调提示与鉴权文档中的默认测试账号也已统一回仓库真实种子值 `test / test123456`。
+- **前端直接字段消费者已锁定测试边界**：`radish-client / radish-console` 当前已把 Token Claim 解析提取为可测试模块，并通过最小测试明确锁定“标准优先 + 输入兼容 fallback”的现行口径，避免后续回归把旧字段重新恢复成默认主口径。
+- **仓库内最小验证已补齐**：本轮已完成 `Radish.Api.Tests` 相关控制器最小测试、`radish-client / radish-console` Token 解析测试、两个前端 workspace 类型检查，以及身份语义扫描；当前均无新的阻塞错误。

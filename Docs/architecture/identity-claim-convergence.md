@@ -296,10 +296,11 @@ npm run validate:baseline:quick
 
 仍待后续阶段完成的事项：
 
-- [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness) 与 [最终启动评审](/guide/identity-claim-phase4-start-review) 当前都已完成，正式结论为“仓库内输入已齐，但仓库外兼容边界未被事实关闭，因此暂不启动 Phase 4”；后续若要重启评审，先按 [仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 逐项补事实。
+- [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)、[最终启动评审](/guide/identity-claim-phase4-start-review) 与 [仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 当前都已完成；正式结论已更新为“仓库内输入已齐，且当前部署范围内的仓库外兼容边界已被事实关闭，因此允许启动 Phase 4”。
+- 当前已按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 完成首轮仓库内实施：Auth 历史双写输出已收缩，`userinfo` 已完成最小对齐，`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 的仓库内回归资产也已完成首轮同步与测试固化。
 - 将静态扫描规则纳入 M12 之后的工程化规划，在 M13 阶段再接入脚本或流水线。
 - 评估 `IHttpContextUser` 兼容层的最终删除时机。
-- 在外部客户端确认完成前，不推动协议边界语义变更或历史 Claim 输出清退；若短期内仍无法关闭外部事实边界，则按 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline) 切换下一条主线。
+- `UserClaimReader / CurrentUser / IHttpContextUser` 的输入兼容删除当前仍未纳入首轮窗口；在真实端到端官方回归完成前，继续维持“输出先收缩、输入兼容后删除”的边界。
 
 ## 12. 验收标准
 

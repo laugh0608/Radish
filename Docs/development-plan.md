@@ -12,13 +12,13 @@
 ## 当前状态
 
 - **当前里程碑**：`M12 社区功能冲刺`
-- **当前主线**：`身份语义 Phase 4 协议输出收敛启动`
-- **当前阶段**：`截至 2026-04-03，社区主链多轮回归与首版 dev 文档收口已完成；身份语义 Phase 4 的仓库内前置资产、仓库资产侧首轮排查，以及当前生产环境的外部兼容边界事实也已完成补齐。当前口径不再是“继续等待外部边界确认”，而是按实施与回滚窗口正式进入协议输出收敛：先按窗口收缩 Auth 输出双写，再按官方回归顺序验证 radish-client、radish-console、Radish.Api.AuthFlow.http 与 radish-scalar。详见：[身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)。`
+- **当前主线**：`身份语义 Phase 4 协议输出收敛`
+- **当前阶段**：`截至 2026-04-03，社区主链多轮回归与首版 dev 文档收口已完成；身份语义 Phase 4 的仓库内前置资产、仓库资产侧首轮排查，以及当前生产环境的外部兼容边界事实也已完成补齐。当前已正式进入首轮实施窗口，并已完成仓库内第一批收口：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、官方客户端与联调资产已完成首轮同步和测试固化。后续若继续做真实端到端回归，仍按 `radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 的顺序执行。详见：[身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)。`
 - **并行治理尾项**：
   - 身份语义 Phase 4：协议输出收敛（当前已完成 [最终启动评审](/guide/identity-claim-phase4-start-review)，结论为允许启动实施）
   - `DbMigrate` 进入回归维护（解耦宿主 + `doctor` 校验已完成）
 
-## 当前关注（2026-04-02）
+## 当前关注（2026-04-03）
 
 ### 当前阶段原则
 
@@ -62,7 +62,9 @@
 4. **身份治理尾项进入实施**
    - 当前最终启动评审已完成，结论已更新为“仓库内输入已齐，且当前部署范围内的仓库外兼容边界已被事实关闭，因此允许启动 Phase 4”
    - 当前已补 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 与 [首轮执行记录（仓库资产侧）](/guide/identity-claim-external-compat-first-pass)，并已补齐当前生产环境事实
-   - 当前下一步不再是继续确认是否能启动，而是按实施窗口收缩 Auth 输出双写，并按官方回归顺序完成验证
+   - 当前已完成首轮仓库内实施：`AccountController / AuthorizationController` 已停止历史双写输出，`UserInfoController` 已完成最小对齐，`radish-client / radish-console` 的 Token 直读规则也已提取为可测试解析模块
+   - 当前 `Radish.Api.AuthFlow.http`、`Scalar` 联调提示与鉴权文档已同步到最新口径；官方回归资产不再停留在旧 scope、旧密码或旧双写说明
+   - 当前下一步不再是继续确认是否能启动，而是在已完成仓库内收口的基础上，按官方顺序做真实端到端回归
    - 防回归扫描规则继续留待 `M13` 纳入脚本 / CI
 
 5. **工程治理**
@@ -178,9 +180,8 @@
 ### 当前进行中子阶段
 
 - 下一里程碑入口重审
-- 身份语义 Phase 4 最终启动评审后的后续处理
-- 身份语义 Phase 4 仓库外兼容边界确认
-- `M14` 宿主运行与最小可观测性基线重定义（见 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)）
+- 身份语义 Phase 4 首轮实施与仓库内回归资产收口
+- 按 `radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 执行真实端到端官方回归
 - 旧 `GetCommentTree` 兼容入口继续观察真实命中与仓库外依赖，暂不直接删除
 - 文档、验证基线与发布口径冻结维护
 
