@@ -103,6 +103,11 @@ const steps = [
     args: ['run', 'check:console-permissions'],
   },
   {
+    title: 'Repo Quality contract 自校验',
+    command: npmCommand,
+    args: ['run', 'check:repo-quality-contract'],
+  },
+  {
     title: '身份语义影响面判定自校验',
     command: npmCommand,
     args: ['run', 'check:identity-impact:self-test'],

@@ -73,3 +73,9 @@
 - **ruleset 模板已补 `Identity Guard`**：`.github/rulesets/master-protection.json` 当前已把 required checks 从三项补齐到四项，正式与 `Repo Quality` workflow 的 job 名保持一致。
 - **ruleset README、ADR 与部署文档已完成同步**：`master` 分支保护说明、分支治理 ADR、部署发版指南与首版总回归检查单 / 记录当前均已统一为 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四项门禁。
 - **历史事实与现行口径已拆分记录**：`2026-03-26` 的三项门禁闭环继续保留为历史事实；截至 `2026-04-04`，后续稳定主线合并与 required checks 维护均以四项门禁为准。
+
+### Repo Quality contract 自校验
+
+- **新增 contract 自校验入口**：新增 `check:repo-quality-contract`，当前会自动核对 `.github/workflows/repo-quality.yml`、`.github/rulesets/master-protection.json` 与本地 `validate:ci` 的门禁契约是否一致。
+- **本地门禁定义已改为共享 contract**：`validate:ci` 当前不再手写三段本地门禁标题与脚本参数，而是直接复用同一份 `Repo Quality` contract，降低 workflow / ruleset / 本地入口三处继续分叉的概率。
+- **默认基线已接入轻量守卫**：`validate:baseline` / `validate:baseline:quick` 当前都会先做 contract 自校验，再继续执行 identity impact 自校验与后续基线步骤。

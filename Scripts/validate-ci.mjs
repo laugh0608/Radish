@@ -2,6 +2,11 @@ import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
 import { collectIdentityImpactMatches } from './identity-impact-rules.mjs';
+import {
+  IDENTITY_GUARD_CHECK_NAME,
+  IDENTITY_GUARD_VALIDATE_ARGS,
+  REPO_QUALITY_LOCAL_STEPS,
+} from './repo-quality-contract.mjs';
 
 const repoRoot = process.cwd();
 
@@ -55,15 +60,15 @@ function splitZeroTerminated(buffer) {
 
 console.log('[validate:ci] 模式：repo-quality-local');
 
-runNpm('Repo Hygiene changed-only', ['run', 'check:repo-hygiene:changed']);
-runNpm('Frontend changed-only Lint', ['run', 'lint:changed']);
-runNpm('Baseline Quick', ['run', 'validate:baseline:quick']);
+for (const step of REPO_QUALITY_LOCAL_STEPS) {
+  runNpm(step.title, step.npmArgs);
+}
 
 const changedFilesOutput = runNode(['Scripts/collect-changed-files.mjs'], { captureStdout: true });
 const changedFiles = splitZeroTerminated(changedFilesOutput);
 const matchedFiles = collectIdentityImpactMatches(changedFiles);
 
-console.log('\n[validate:ci] Identity Guard changed-only 判定');
+console.log(`\n[validate:ci] ${IDENTITY_GUARD_CHECK_NAME} changed-only 判定`);
 console.log(`- 当前变更文件：${changedFiles.length} 个`);
 console.log(`- 命中身份语义影响面：${matchedFiles.length} 个`);
 
@@ -76,4 +81,4 @@ for (const matchedFile of matchedFiles) {
   console.log(`  - ${matchedFile}`);
 }
 
-runNpm('Identity Regression Validation', ['run', 'validate:identity']);
+runNpm('Identity Regression Validation', IDENTITY_GUARD_VALIDATE_ARGS);

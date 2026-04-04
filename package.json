@@ -12,6 +12,7 @@
     "check:repo-hygiene": "git ls-files -z | node Scripts/check-repo-hygiene.mjs --stdin-z",
     "check:repo-hygiene:changed": "node Scripts/run-with-changed-files.mjs --mode=worktree -- node Scripts/check-repo-hygiene.mjs --stdin-z",
     "check:repo-hygiene:staged": "node Scripts/run-with-changed-files.mjs --mode=staged -- node Scripts/check-repo-hygiene.mjs --stdin-z",
+    "check:repo-quality-contract": "node Scripts/check-repo-quality-contract.mjs",
     "check:commit-message": "node Scripts/validate-commit-message.mjs",
     "check:console-permissions": "node Scripts/check-console-permissions.mjs",
     "collect:changed": "node Scripts/collect-changed-files.mjs",
