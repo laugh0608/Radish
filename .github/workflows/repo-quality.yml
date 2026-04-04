@@ -35,24 +35,7 @@ jobs:
         run: npm ci
 
       - name: Collect changed files
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            if [[ -n "${{ github.event.pull_request.head.sha }}" && -n "${{ github.event.pull_request.base.sha }}" ]]; then
-              git diff-tree --no-commit-id --name-only --diff-filter=ACMR -z -r "${{ github.event.pull_request.head.sha }}" > changed-files.txt
-            else
-              git ls-files -z > changed-files.txt
-            fi
-          else
-            base_sha="${{ github.event.before }}"
-            head_sha="${{ github.sha }}"
-
-            if [[ -z "$base_sha" || "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
-              git ls-files -z > changed-files.txt
-            else
-              git diff --name-only --diff-filter=ACMR -z "$base_sha" "$head_sha" > changed-files.txt
-            fi
-          fi
+        run: node Scripts/collect-changed-files.mjs --base="${{ github.event.before }}" --head="${{ github.sha }}" --include-all-on-empty-base --write=changed-files.txt
 
       - name: Check repository hygiene
         shell: bash
@@ -78,24 +61,7 @@ jobs:
         run: npm ci
 
       - name: Collect changed files
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            if [[ -n "${{ github.event.pull_request.head.sha }}" && -n "${{ github.event.pull_request.base.sha }}" ]]; then
-              git diff-tree --no-commit-id --name-only --diff-filter=ACMR -z -r "${{ github.event.pull_request.head.sha }}" > changed-files.txt
-            else
-              git ls-files -z > changed-files.txt
-            fi
-          else
-            base_sha="${{ github.event.before }}"
-            head_sha="${{ github.sha }}"
-
-            if [[ -z "$base_sha" || "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
-              git ls-files -z > changed-files.txt
-            else
-              git diff --name-only --diff-filter=ACMR -z "$base_sha" "$head_sha" > changed-files.txt
-            fi
-          fi
+        run: node Scripts/collect-changed-files.mjs --base="${{ github.event.before }}" --head="${{ github.sha }}" --include-all-on-empty-base --write=changed-files.txt
 
       - name: Run frontend lint
         shell: bash
@@ -136,24 +102,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Collect changed files
-        shell: bash
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            if [[ -n "${{ github.event.pull_request.head.sha }}" && -n "${{ github.event.pull_request.base.sha }}" ]]; then
-              git diff-tree --no-commit-id --name-only --diff-filter=ACMR -z -r "${{ github.event.pull_request.head.sha }}" > changed-files.txt
-            else
-              git ls-files -z > changed-files.txt
-            fi
-          else
-            base_sha="${{ github.event.before }}"
-            head_sha="${{ github.sha }}"
-
-            if [[ -z "$base_sha" || "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
-              git ls-files -z > changed-files.txt
-            else
-              git diff --name-only --diff-filter=ACMR -z "$base_sha" "$head_sha" > changed-files.txt
-            fi
-          fi
+        run: node Scripts/collect-changed-files.mjs --base="${{ github.event.before }}" --head="${{ github.sha }}" --include-all-on-empty-base --write=changed-files.txt
 
       - name: Detect identity impact
         id: identity-impact

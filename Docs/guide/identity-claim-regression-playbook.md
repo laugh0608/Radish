@@ -181,6 +181,7 @@ npm run validate:identity
 
 - 若 PR 未命中身份语义影响面，则工作流会显式跳过 `validate:identity`
 - 若 PR 命中 `CurrentUser / HttpContextTool / Auth 输出 / Token 解析 / AuthFlow / 身份语义文档与脚本` 等收口范围，则继续执行完整 `validate:identity`
+- 这套判定当前继续复用仓库统一的变更文件收集脚本，而不是在 workflow 内重复维护多份 git diff 逻辑
 
 ## 8. 当前结论
 
