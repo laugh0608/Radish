@@ -35,7 +35,7 @@
 
 1. 维持当前规划页、总回归记录、状态矩阵与周志口径一致，避免事实再次漂移。
 2. 继续以 `validate:baseline` / `validate:baseline:host` 与 `master` PR 门禁作为跨层改动默认回归入口。
-3. 身份语义 Phase 4 启动前提确认、最终启动评审、首轮实施与官方顺序真实回归当前均已完成；后续优先维持稳定维护边界并推进 `Phase 5` 防回归治理准备。
+3. 身份语义 Phase 4 启动前提确认、最终启动评审、首轮实施与官方顺序真实回归当前均已完成；后续优先维持稳定维护边界，并按 `validate:identity`、身份语义回归手册与 `Identity Guard` 门禁继续维护 `Phase 5` 防回归资产。
 
 ## 身份语义补充记录（2026-04-04）
 
@@ -53,9 +53,9 @@
 
 ### 下一动作
 
-1. 继续以 `validate:baseline` / `validate:baseline:host` 与 `check:identity-claims` 作为身份语义相关改动的默认自动化入口。
+1. 继续以 `validate:baseline` / `validate:baseline:host` 与 `validate:identity` 作为身份语义相关改动的默认自动化入口；扫描细分入口为 `check:identity-runtime` 与 `check:identity-protocol-output`。
 2. 维持 `UserClaimReader / CurrentUser / IHttpContextUser` 输入兼容保留边界，不在同一窗口提前删除兼容读取。
-3. 将后续重点切换到 `Phase 5` 防回归治理准备；若部署边界再次变化，再回到身份语义外部兼容边界清单补事实。
+3. 将后续重点切换到 `Phase 5` 工程化入口维护；若部署边界再次变化，再回到身份语义外部兼容边界清单补事实，并按回归手册补 `AuthFlow` 与官方顺序回归记录。
 
 ## 首版 dev 总回归记录（2026-03-26）
 

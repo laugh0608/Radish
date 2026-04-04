@@ -32,8 +32,8 @@
 | 体验主线 | 国风视觉基线 | 已完成 | 国风视觉规范、颜色参考、纹样边界与 `radish.client` 首批主题 Token 已落地，并于 `2026-03-26` 结合真实页面完成一轮首版视觉烟雾复核，用户确认无明显断层问题；截至 `2026-04-02` 已完成总回归收口 | 转入稳定维护，仅做必要视觉一致性维护 |
 | 体验主线 | 主题切换（`radish.client`） | 已完成 | `default / guofeng` 主题切换、持久化与桌面 Shell / Dock / 桌面图标 / 窗口容器骨架已落地，并于 `2026-03-26` 完成一轮首版烟雾联调，当前无明显样式断层或切换阻塞问题；截至 `2026-04-02` 已完成总回归收口 | 转入稳定维护，仅做必要主题一致性维护 |
 | 体验主线 | i18n（`radish.client`） | 已完成 | 桌面壳层语言切换入口、应用注册、商城主链路、论坛高频讨论链路与边缘页、文档应用主链，以及聊天、通知中心、个人中心高频模块已完成首轮接入，并于 `2026-03-26` 完成一轮首版语言切换烟雾复核，用户确认无明显残余硬编码问题；截至 `2026-04-02` 已完成总回归收口 | 转入稳定维护，仅做必要文案与残余样式维护 |
-| 工程门槛 | 验证基线 | 已完成 | `npm run validate:baseline` 与 `npm run validate:baseline:host` 已于 `2026-03-26` 完成复跑：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、身份语义扫描、后端 build/test，以及 `DbMigrate doctor / verify` 当前均已通过 | 转入稳定维护，后续继续作为跨层改动默认回归入口 |
-| 工程门槛 | 首次 CI/CD | 已完成 | GitHub Actions 已接通 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`，最新一次用于合并的 `master` PR 已完成三项检查并成功合并，`dev` 也已同步 `master` 合并结果，首次门禁已形成真实闭环 | 转入稳定维护，仅继续维护 `master` PR 质量门禁与首版发布口径 |
+| 工程门槛 | 验证基线 | 已完成 | `npm run validate:baseline` 与 `npm run validate:baseline:host` 已于 `2026-03-26` 完成复跑：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、身份语义扫描、后端 build/test，以及 `DbMigrate doctor / verify` 当前均已通过；截至 `2026-04-04`，身份语义专题入口也已继续收口为 `validate:identity` 与回归手册 | 转入稳定维护，后续继续作为跨层改动默认回归入口；身份语义相关改动默认再补 `validate:identity` |
+| 工程门槛 | 首次 CI/CD | 已完成 | GitHub Actions 已接通 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 与 `Identity Guard`，最新一次用于合并的 `master` PR 已完成最小门禁并成功合并，`dev` 也已同步 `master` 合并结果，首次门禁已形成真实闭环 | 转入稳定维护，仅继续维护 `master` PR 质量门禁、`Identity Guard` 与首版发布口径 |
 | 工程门槛 | Docker 镜像构建链 | 已完成 | 已补 `Radish.DbMigrate / Radish.Api / Radish.Auth / Radish.Gateway / Frontend` 的 Dockerfile、前端静态托管脚本，以及 `Deploy/docker-compose.yml / docker-compose.local.yml / docker-compose.test.yml / docker-compose.prod.yml`；并已完成镜像 build 级验证、开发运行与 Compose 部署口径拆分、`dbmigrate -> api/auth -> gateway` 启动顺序收口、`base + local` 运行态验证、Gateway 容器内 HTTP / HTTPS 模式切换，以及 `RADISH_PUBLIC_URL -> OpenIddict__Server__Issuer -> 官方客户端回调地址` 的交付口径收口；当前已完成 `radish-dbmigrate / radish-api / radish-auth / radish-gateway / radish-frontend` 的 `GHCR` 真实产物验证，并通过 `v26.3.2-test / v26.3.2-release` 完成首次真实拉取、初始化与部署验收，`Frontend/Dockerfile` 也已收口为轻量多阶段运行时镜像，本地验证体积约 `300MB`；最新于 `2026-03-29`，附件业务公开资源口径已统一为 `/_assets/attachments/*`，Gateway 已补显式转发，换域名时的运维边界也已收口到“调整 `RADISH_PUBLIC_URL`、反向代理与 OIDC 配置即可，不再手工改附件类数据库数据” | 当前转入发布链稳定维护，下一阶段进入下一里程碑入口重审 |
 
 ## 2. 明确不纳入首版
@@ -55,8 +55,8 @@
 
 1. **发布链路转入回归维护**
    - 当前已完成 `radish-dbmigrate / radish-api / radish-auth / radish-gateway / radish-frontend` 的 `GHCR` workflow 真实产物验证，并已通过 `v26.3.2-test / v26.3.2-release` 补齐拉取、初始化与部署验收；后续以回归维护为主，不再把“首次真实验证”留作待办
-2. **下一阶段主线已切换到身份语义 Phase 4 稳定维护与防回归治理准备**
-   - 社区体验优化批次已完成本轮回归收口；身份语义 Phase 4 当前也已完成首轮实施、官方顺序真实回归与回滚窗口验证，正式结论已更新为“无需回滚，转入稳定维护”；后续主线收束为“维持既有边界 + 推进 Phase 5 防回归治理准备”
+2. **下一阶段主线已切换到身份语义 Phase 4 稳定维护与 Phase 5 首轮工程化维护**
+   - 社区体验优化批次已完成本轮回归收口；身份语义 Phase 4 当前也已完成首轮实施、官方顺序真实回归与回滚窗口验证，正式结论已更新为“无需回滚，转入稳定维护”；`Phase 5` 的首轮工程化入口、回归手册与独立门禁也已补齐，后续主线收束为“维持既有边界 + 继续按新入口执行与维护”
 
 ## 4. 建议执行顺序
 
