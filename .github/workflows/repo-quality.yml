@@ -35,7 +35,7 @@ jobs:
         run: npm ci
 
       - name: Collect changed files
-        run: node Scripts/collect-changed-files.mjs --base="${{ github.event.before }}" --head="${{ github.sha }}" --include-all-on-empty-base --write=changed-files.txt
+        run: node Scripts/collect-changed-files.mjs --base="${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}" --head="${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" --include-all-on-empty-base --write=changed-files.txt
 
       - name: Check repository hygiene
         shell: bash
@@ -61,7 +61,7 @@ jobs:
         run: npm ci
 
       - name: Collect changed files
-        run: node Scripts/collect-changed-files.mjs --base="${{ github.event.before }}" --head="${{ github.sha }}" --include-all-on-empty-base --write=changed-files.txt
+        run: node Scripts/collect-changed-files.mjs --base="${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}" --head="${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" --include-all-on-empty-base --write=changed-files.txt
 
       - name: Run frontend lint
         shell: bash
@@ -102,7 +102,7 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Collect changed files
-        run: node Scripts/collect-changed-files.mjs --base="${{ github.event.before }}" --head="${{ github.sha }}" --include-all-on-empty-base --write=changed-files.txt
+        run: node Scripts/collect-changed-files.mjs --base="${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}" --head="${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}" --include-all-on-empty-base --write=changed-files.txt
 
       - name: Detect identity impact
         id: identity-impact

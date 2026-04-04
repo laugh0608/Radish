@@ -8,7 +8,12 @@ const repoRoot = process.cwd();
 function readOption(name) {
   const prefix = `${name}=`;
   const matched = rawArgs.find((arg) => arg.startsWith(prefix));
-  return matched ? matched.slice(prefix.length) : null;
+  if (!matched) {
+    return null;
+  }
+
+  const value = matched.slice(prefix.length).trim();
+  return value === '' ? null : value;
 }
 
 function hasFlag(flag) {
@@ -56,18 +61,32 @@ function collectFiles() {
   const base = readOption('--base');
   const head = readOption('--head');
   const mode = readOption('--mode') ?? 'worktree';
+  const includeAllOnEmptyBase = hasFlag('--include-all-on-empty-base');
 
-  if ((base && !head) || (!base && head)) {
+  if (base && !head) {
+    console.error('[collect-changed-files] `--base` 与 `--head` 必须同时出现。');
+    process.exit(1);
+  }
+
+  if (!base && head) {
+    if (includeAllOnEmptyBase) {
+      return runGit(['ls-files', '-z']);
+    }
+
     console.error('[collect-changed-files] `--base` 与 `--head` 必须同时出现。');
     process.exit(1);
   }
 
   if (base && head) {
-    if (hasFlag('--include-all-on-empty-base') && /^0+$/.test(base)) {
+    if (includeAllOnEmptyBase && /^0+$/.test(base)) {
       return runGit(['ls-files', '-z']);
     }
 
     return runGit(['diff', '--name-only', '--diff-filter=ACMR', '-z', base, head]);
+  }
+
+  if (includeAllOnEmptyBase) {
+    return runGit(['ls-files', '-z']);
   }
 
   if (mode === 'staged') {
