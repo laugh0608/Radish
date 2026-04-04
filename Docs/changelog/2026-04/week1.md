@@ -60,7 +60,7 @@
 ### 身份语义 Phase 5 工程一致性补强
 
 - **impact 判定当前已收口到单一规则源**：`check:identity-impact` 当前不再由脚本内部散落维护路径清单，而是改为统一复用单一规则源；除身份语义核心代码、前端 Token 解析与 `Radish.Api.AuthFlow.http` 外，也已把 `validation-baseline / regression-index / dev-first-regression-record / development-plan / planning/current / PR template` 等默认执行面文档与门禁资产纳入同一判定范围。
-- **本地 `validate:ci` 已与真实 CI 对齐**：当前会先执行 `lint:changed`、`validate:baseline:quick`，再仅在命中身份语义影响面时追加 `validate:identity`，不再无条件跑完整身份语义专题。
+- **本地 `validate:ci` 已与真实 CI 对齐**：当前会先执行 `check:repo-hygiene:changed`、`lint:changed`、`validate:baseline:quick`，再仅在命中身份语义影响面时追加 `validate:identity`，不再无条件跑完整身份语义专题。
 - **已补轻量自校验**：`validate:baseline` / `validate:baseline:quick` 当前都会先校验 identity impact 判定样本，避免 `Identity Guard` 的 changed-only 触发边界再次无声漂移。
 
 ### 默认执行面入口继续收口
@@ -79,3 +79,4 @@
 - **新增 contract 自校验入口**：新增 `check:repo-quality-contract`，当前会自动核对 `.github/workflows/repo-quality.yml`、`.github/rulesets/master-protection.json` 与本地 `validate:ci` 的门禁契约是否一致。
 - **本地门禁定义已改为共享 contract**：`validate:ci` 当前不再手写三段本地门禁标题与脚本参数，而是直接复用同一份 `Repo Quality` contract，降低 workflow / ruleset / 本地入口三处继续分叉的概率。
 - **默认基线已接入轻量守卫**：`validate:baseline` / `validate:baseline:quick` 当前都会先做 contract 自校验，再继续执行 identity impact 自校验与后续基线步骤。
+- **workflow 执行语义也已纳入守卫**：contract 当前不只检查 required check 名称，还会校验 `repo-quality.yml` 中四个 job 的关键命令片段，避免 changed-only、impact 判定或条件 `validate:identity` 在名称不变时悄悄漂移。

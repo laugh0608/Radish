@@ -7,6 +7,46 @@ export const REPO_QUALITY_REQUIRED_CHECKS = [
   'Identity Guard',
 ];
 
+export const REPO_QUALITY_WORKFLOW_JOBS = [
+  {
+    jobId: 'repo-hygiene',
+    checkName: 'Repo Hygiene',
+    requiredFragments: [
+      'node Scripts/collect-changed-files.mjs',
+      '--write=changed-files.txt',
+      'node Scripts/check-repo-hygiene.mjs --stdin-z < changed-files.txt',
+    ],
+  },
+  {
+    jobId: 'frontend-lint',
+    checkName: 'Frontend Lint',
+    requiredFragments: [
+      'node Scripts/collect-changed-files.mjs',
+      '--write=changed-files.txt',
+      'node Scripts/lint-frontend-changed.mjs --stdin-z < changed-files.txt',
+    ],
+  },
+  {
+    jobId: 'baseline-quick',
+    checkName: 'Baseline Quick',
+    requiredFragments: [
+      "run: npm run validate:baseline:quick",
+    ],
+  },
+  {
+    jobId: 'identity-guard',
+    checkName: 'Identity Guard',
+    requiredFragments: [
+      'node Scripts/collect-changed-files.mjs',
+      '--write=changed-files.txt',
+      'node Scripts/check-identity-impact.mjs --stdin-z --format=github-output < changed-files.txt >> "$GITHUB_OUTPUT"',
+      "if: steps.identity-impact.outputs.impacted == 'true'",
+      'run: npm run validate:identity',
+      'Identity Guard skipped: no identity-related files changed.',
+    ],
+  },
+];
+
 export const REPO_QUALITY_LOCAL_STEPS = [
   {
     checkName: 'Repo Hygiene',

@@ -199,8 +199,10 @@ npm run validate:ci
 
 其执行面当前与 CI 对齐为：
 
+- `check:repo-hygiene:changed`
 - `lint:changed`
 - `validate:baseline:quick`
+  - 其中已继续包含 `Repo Quality` contract 自校验、identity impact 自校验与身份语义防回归扫描
 - 仅在命中身份语义影响面时追加 `validate:identity`
 
 ## 8. 当前结论

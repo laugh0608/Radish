@@ -8,6 +8,7 @@ import {
   IDENTITY_GUARD_VALIDATE_ARGS,
   REPO_QUALITY_LOCAL_STEPS,
   REPO_QUALITY_REQUIRED_CHECKS,
+  REPO_QUALITY_WORKFLOW_JOBS,
   REPO_QUALITY_WORKFLOW_NAME,
   VALIDATE_CI_PACKAGE_SCRIPT,
 } from './repo-quality-contract.mjs';
@@ -32,10 +33,14 @@ function parseWorkflowName(workflowContent) {
 }
 
 function parseWorkflowJobNames(workflowContent) {
+  return parseWorkflowJobs(workflowContent).map((job) => job.name).filter(Boolean);
+}
+
+function parseWorkflowJobs(workflowContent) {
   const lines = workflowContent.split(/\r?\n/);
-  const jobNames = [];
+  const jobs = [];
   let inJobs = false;
-  let currentJobId = null;
+  let currentJob = null;
 
   for (const line of lines) {
     if (!inJobs) {
@@ -51,22 +56,31 @@ function parseWorkflowJobNames(workflowContent) {
 
     const jobMatch = line.match(/^  ([A-Za-z0-9_-]+):\s*$/);
     if (jobMatch) {
-      currentJobId = jobMatch[1];
+      currentJob = {
+        jobId: jobMatch[1],
+        name: null,
+        lines: [line],
+      };
+      jobs.push(currentJob);
       continue;
     }
 
-    if (!currentJobId) {
+    if (!currentJob) {
       continue;
     }
+
+    currentJob.lines.push(line);
 
     const nameMatch = line.match(/^    name:\s+(.+?)\s*$/);
     if (nameMatch) {
-      jobNames.push(normalizeQuotedScalar(nameMatch[1]));
-      currentJobId = null;
+      currentJob.name = normalizeQuotedScalar(nameMatch[1]);
     }
   }
 
-  return jobNames;
+  return jobs.map((job) => ({
+    ...job,
+    block: job.lines.join('\n'),
+  }));
 }
 
 function parseRulesetRequiredChecks(rulesetContent) {
@@ -132,6 +146,35 @@ function assertValidateCiContract(validateCiSource, failures) {
   }
 }
 
+function assertWorkflowJobContract(parsedWorkflowJobs, failures) {
+  const jobsById = new Map(parsedWorkflowJobs.map((job) => [job.jobId, job]));
+
+  for (const expectedJob of REPO_QUALITY_WORKFLOW_JOBS) {
+    const actualJob = jobsById.get(expectedJob.jobId);
+
+    if (!actualJob) {
+      failures.push(`.github/workflows/repo-quality.yml 缺少 job: ${expectedJob.jobId}`);
+      continue;
+    }
+
+    if (actualJob.name !== expectedJob.checkName) {
+      failures.push(
+        `.github/workflows/repo-quality.yml 中 job \`${expectedJob.jobId}\` 的显示名漂移。\n  期望: ${expectedJob.checkName}\n  实际: ${actualJob.name ?? '<missing>'}`
+      );
+    }
+
+    const missingFragments = expectedJob.requiredFragments.filter(
+      (fragment) => !actualJob.block.includes(fragment)
+    );
+
+    if (missingFragments.length > 0) {
+      failures.push(
+        `.github/workflows/repo-quality.yml 中 job \`${expectedJob.jobId}\` 的执行语义片段缺失: ${missingFragments.join(', ')}`
+      );
+    }
+  }
+}
+
 const workflowContent = readUtf8(workflowPath);
 const rulesetContent = readUtf8(rulesetPath);
 const packageJsonContent = JSON.parse(readUtf8(packageJsonPath));
@@ -139,7 +182,8 @@ const validateCiSource = readUtf8(validateCiPath);
 
 const failures = [];
 const workflowName = parseWorkflowName(workflowContent);
-const workflowJobNames = parseWorkflowJobNames(workflowContent);
+const parsedWorkflowJobs = parseWorkflowJobs(workflowContent);
+const workflowJobNames = parsedWorkflowJobs.map((job) => job.name).filter(Boolean);
 const rulesetRequiredChecks = parseRulesetRequiredChecks(rulesetContent);
 const packageScripts = packageJsonContent.scripts ?? {};
 const localCheckNames = [
@@ -166,6 +210,8 @@ compareContainsInOrder(
   REPO_QUALITY_REQUIRED_CHECKS,
   failures
 );
+
+assertWorkflowJobContract(parsedWorkflowJobs, failures);
 
 compareExactArray(
   '本地 Repo Quality contract checks',
