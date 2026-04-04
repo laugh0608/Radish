@@ -80,3 +80,8 @@
 - **本地门禁定义已改为共享 contract**：`validate:ci` 当前不再手写三段本地门禁标题与脚本参数，而是直接复用同一份 `Repo Quality` contract，降低 workflow / ruleset / 本地入口三处继续分叉的概率。
 - **默认基线已接入轻量守卫**：`validate:baseline` / `validate:baseline:quick` 当前都会先做 contract 自校验，再继续执行 identity impact 自校验与后续基线步骤。
 - **workflow 执行语义也已纳入守卫**：contract 当前不只检查 required check 名称，还会校验 `repo-quality.yml` 中四个 job 的关键命令片段，避免 changed-only、impact 判定或条件 `validate:identity` 在名称不变时悄悄漂移。
+
+### Windows 共享执行层兼容性
+
+- **共享执行层已收口**：新增 `Scripts/process-runner.mjs`，当前 `run-with-changed-files`、`validate:ci`、`validate:baseline`、`validate:identity` 与 changed-only lint 入口已统一复用，尽量减少对 `cmd.exe /c` 的依赖。
+- **受限环境提示已统一**：如果当前 Windows 沙盒禁止 Node 脚本再次拉起外部进程，脚本现在会明确提示这是环境边界，而不是把原始 `EPERM / EINVAL` 直接抛给使用者。

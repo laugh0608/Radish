@@ -1,5 +1,6 @@
-import { spawnSync } from 'node:child_process';
 import process from 'node:process';
+
+import { formatCommand, runCommand } from './process-runner.mjs';
 
 const repoRoot = process.cwd();
 const identityTestFilter = [
@@ -22,11 +23,10 @@ function resolvePowerShellCommand() {
   const preferred = ['pwsh'];
 
   for (const command of preferred) {
-    const result = spawnSync(command, ['-NoLogo', '-NoProfile', '-Command', '$PSVersionTable.PSVersion.ToString()'], {
+    const result = runCommand(command, ['-NoLogo', '-NoProfile', '-Command', '$PSVersionTable.PSVersion.ToString()'], {
       cwd: repoRoot,
       encoding: 'utf8',
       stdio: 'pipe',
-      shell: false,
     });
 
     if (result.status === 0) {
@@ -39,20 +39,11 @@ function resolvePowerShellCommand() {
 
 function runStep(title, command, commandArgs) {
   console.log(`\n[identity] ${title}`);
-  console.log(`> ${command} ${commandArgs.join(' ')}`);
+  console.log(`> ${formatCommand(command, commandArgs)}`);
 
-  const needsCmdWrapper =
-    process.platform === 'win32' && command === 'npm';
-  const spawnCommand = needsCmdWrapper ? 'cmd.exe' : command;
-  const spawnArgs =
-    needsCmdWrapper
-      ? ['/d', '/s', '/c', [command, ...commandArgs].join(' ')]
-      : commandArgs;
-
-  const result = spawnSync(spawnCommand, spawnArgs, {
+  const result = runCommand(command, commandArgs, {
     cwd: repoRoot,
     stdio: 'inherit',
-    shell: false,
   });
 
   if (result.error) {

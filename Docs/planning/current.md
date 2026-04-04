@@ -57,6 +57,7 @@
 - [x] 已补治理真相源第四轮对齐：`.github/rulesets/master-protection.json`、ruleset README、分支治理 ADR、部署指南与首版回归文档当前已统一改为 `Repo Hygiene / Frontend Lint / Baseline Quick / Identity Guard` 四项 required checks，避免 workflow 已升级而 ruleset / 文档仍停留在旧三项门禁
 - [x] 已补 Repo Quality contract 第五轮自校验：新增 `check:repo-quality-contract` 与共享 contract 模块，当前会自动校验 workflow job 名、ruleset required checks 与本地 `validate:ci` 的门禁契约；`validate:baseline` / `quick` 也已纳入这层轻量守卫，避免门禁名称与默认执行面再次无声漂移
 - [x] 已补 Repo Quality contract 第六轮语义守卫：当前 contract 不再只校验 required checks 名称，还会校验 `repo-quality.yml` 四个 job 的关键命令片段；`validate:ci` 在文档中的执行面说明也已同步补上 `check:repo-hygiene:changed`，避免“名字一致但执行语义已漂移”
+- [x] 已补 Windows 共享执行层兼容性收口：新增共享 `process-runner`，默认脚本当前已尽量改为直连 `node / npm` 可执行体，减少对 `cmd.exe /c` 的依赖；受限沙盒下若仍禁止 Node 再拉起子进程，也已统一输出明确边界说明，避免把环境限制误判成门禁脚本回归
 - [x] 已完成一轮 `full` 验证：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 共 195 个测试通过
 - [x] 已补 `M15` 首轮最小 CI 门禁：`Repo Hygiene` / `Frontend Lint` / `Baseline Quick` / `Identity Guard` 已接入 GitHub Actions，并已在最新一次 `master` PR 上完成真实通过与合并闭环
 - [x] 已补 `GHCR` 镜像 workflow 资产：`.github/workflows/docker-images.yml` 当前已收口为 `push v*-dev / v*-test / v*-release` 与手动补跑规范 tag 时推送；`frontend` 已接入统一 GHCR 推送规则，普通 `dev` push 不再触发镜像发布

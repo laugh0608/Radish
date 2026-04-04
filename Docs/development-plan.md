@@ -123,6 +123,7 @@
    - 最新已继续补齐默认执行面：`.githooks/pre-commit` 当前已改为直接调用 `check:repo-hygiene:staged` 与 `lint:staged`；PR 模板、回归记录模板与专题回归索引也已同步纳入 `validate:ci` 口径，避免脚本、hooks 与记录模板各说各话
    - 最新已补 `Repo Quality` contract 自校验：新增 `check:repo-quality-contract` 与共享 contract 模块，当前会自动核对 workflow job 名、ruleset required checks 与本地 `validate:ci` 门禁契约；`validate:baseline` / `quick` 也已接入，避免 required checks 与默认执行面再次无声漂移
    - 最新已继续补齐 workflow 语义守卫：contract 当前也会校验 `repo-quality.yml` 中四个 job 的关键命令片段，避免 changed-only、impact 判定或条件 `validate:identity` 在名称不变时无声漂移
+   - 最新已补 Windows 共享执行层兼容性收口：默认脚本当前已统一走共享 `process-runner`，尽量避免再手写 `cmd.exe /c`；若当前环境从 Node 脚本层面禁止再拉起外部进程，也会输出统一边界提示，避免误判为门禁脚本本身回归
    - 已完成一轮 `full` 验证：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 195 个测试通过
    - 当前结论为：`M13` 不再只是规划名词，已具备第一版真实入口；接下来优先服务于首个 dev 版本的总回归与最小发布准备，而不是先扩张为更重的工程平台
 

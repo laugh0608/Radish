@@ -130,11 +130,14 @@ function assertPackageScript(scripts, scriptName, expectedValue, failures) {
 function assertValidateCiContract(validateCiSource, failures) {
   const requiredFragments = [
     "from './repo-quality-contract.mjs'",
+    "from './process-runner.mjs'",
     'REPO_QUALITY_LOCAL_STEPS',
     'IDENTITY_GUARD_VALIDATE_ARGS',
     'IDENTITY_GUARD_CHECK_NAME',
     'collectIdentityImpactMatches',
     'runNpm(step.title, step.npmArgs);',
+    "runCommand('npm', args, {",
+    "runCommand('node', commandArgs, {",
   ];
 
   const missingFragments = requiredFragments.filter((fragment) => !validateCiSource.includes(fragment));

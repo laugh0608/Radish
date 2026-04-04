@@ -1,5 +1,6 @@
-import { spawnSync } from 'node:child_process';
 import process from 'node:process';
+
+import { runCommand } from './process-runner.mjs';
 
 const rawArgs = process.argv.slice(2);
 const separatorIndex = rawArgs.indexOf('--');
@@ -25,12 +26,10 @@ function collectChangedFiles(mode) {
     args.push(`--mode=${mode}`);
   }
 
-  const needsCmdWrapper = process.platform === 'win32';
-  const result = spawnSync(needsCmdWrapper ? 'cmd.exe' : 'node', needsCmdWrapper ? ['/d', '/s', '/c', ['node', ...args].join(' ')] : args, {
+  const result = runCommand('node', args, {
     cwd: process.cwd(),
     encoding: null,
     stdio: ['ignore', 'pipe', 'inherit'],
-    shell: false,
   });
 
   if (result.status !== 0 || result.error) {
@@ -41,12 +40,11 @@ function collectChangedFiles(mode) {
 }
 
 function runTarget(command, inputBuffer) {
-  const needsCmdWrapper = process.platform === 'win32';
-  const result = spawnSync(needsCmdWrapper ? 'cmd.exe' : command[0], needsCmdWrapper ? ['/d', '/s', '/c', command.join(' ')] : command.slice(1), {
+  const [targetCommand, ...targetArgs] = command;
+  const result = runCommand(targetCommand, targetArgs, {
     cwd: process.cwd(),
     input: inputBuffer,
     stdio: ['pipe', 'inherit', 'inherit'],
-    shell: false,
   });
 
   if (result.status !== 0 || result.error) {

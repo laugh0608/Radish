@@ -1,7 +1,7 @@
-import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
 import { collectIdentityImpactMatches } from './identity-impact-rules.mjs';
+import { formatCommand, runCommand } from './process-runner.mjs';
 import {
   IDENTITY_GUARD_CHECK_NAME,
   IDENTITY_GUARD_VALIDATE_ARGS,
@@ -11,11 +11,9 @@ import {
 const repoRoot = process.cwd();
 
 function runNode(commandArgs, options = {}) {
-  const needsCmdWrapper = process.platform === 'win32';
-  const result = spawnSync(needsCmdWrapper ? 'cmd.exe' : 'node', needsCmdWrapper ? ['/d', '/s', '/c', ['node', ...commandArgs].join(' ')] : commandArgs, {
+  const result = runCommand('node', commandArgs, {
     cwd: repoRoot,
     stdio: options.captureStdout ? ['ignore', 'pipe', 'inherit'] : 'inherit',
-    shell: false,
   });
 
   if (result.error) {
@@ -32,12 +30,11 @@ function runNode(commandArgs, options = {}) {
 
 function runNpm(title, args) {
   console.log(`\n[validate:ci] ${title}`);
-  console.log(`> npm ${args.join(' ')}`);
+  console.log(`> ${formatCommand('npm', args)}`);
 
-  const result = spawnSync('cmd.exe', ['/d', '/s', '/c', ['npm', ...args].join(' ')], {
+  const result = runCommand('npm', args, {
     cwd: repoRoot,
     stdio: 'inherit',
-    shell: false,
   });
 
   if (result.error) {
