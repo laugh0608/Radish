@@ -277,9 +277,9 @@ npm run validate:baseline
 npm run validate:baseline:quick
 ```
 
-## 11. 当前实施状态（截至 2026-04-02）
+## 11. 当前实施状态（截至 2026-04-04）
 
-当前专项已进入“兼容层冻结”阶段，运行时主路径基本完成收敛：
+当前专项已进入“兼容层冻结 + Phase 4 首轮收口完成”阶段，运行时主路径基本完成收敛：
 
 - `CurrentUser` / `ICurrentUserAccessor` 已成为 `Radish.Api`、`Radish.Extension`、`Radish.Repository`、`Radish.Service`、`Radish.Infrastructure` 的默认身份读取入口。
 - `IClaimsPrincipalNormalizer` + `UserClaimReader` 已成为 Claim 兼容输入的唯一标准化入口。
@@ -294,13 +294,17 @@ npm run validate:baseline:quick
 2. **协议配置保留项**：`Radish.Api/Program.cs` 中 JWT/OIDC 验证、策略配置与兼容注册。
 3. **标准化保留项**：`ClaimsPrincipalNormalizer`、`UserClaimReader`、`CurrentUserAccessor`。
 
-仍待后续阶段完成的事项：
+当前已完成并确认的事项：
 
 - [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)、[最终启动评审](/guide/identity-claim-phase4-start-review) 与 [仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 当前都已完成；正式结论已更新为“仓库内输入已齐，且当前部署范围内的仓库外兼容边界已被事实关闭，因此允许启动 Phase 4”。
-- 当前已按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 完成首轮仓库内实施：Auth 历史双写输出已收缩，`userinfo` 已完成最小对齐，`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 的仓库内回归资产也已完成首轮同步与测试固化。
-- 将静态扫描规则纳入 M12 之后的工程化规划，在 M13 阶段再接入脚本或流水线。
+- 当前已按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 完成首轮仓库内实施与官方顺序真实回归：Auth 历史双写输出已收缩，`userinfo` 已完成最小对齐，`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 当前均已完成端到端回归，结论已更新为“无需回滚，转入稳定维护”。
+- `npm run check:identity-claims` 当前已补到“运行时散点 Claim 解析 + Phase 4 协议输出回退风险”双重守卫，并已纳入 `validate:baseline` / `validate:baseline:quick`。
+
+仍待后续阶段完成的事项：
+
+- 将身份语义防回归规则是否继续上升到更重的 CI/CD 流水线，留待 M13 阶段按工程现实再决定。
 - 评估 `IHttpContextUser` 兼容层的最终删除时机。
-- `UserClaimReader / CurrentUser / IHttpContextUser` 的输入兼容删除当前仍未纳入首轮窗口；在真实端到端官方回归完成前，继续维持“输出先收缩、输入兼容后删除”的边界。
+- `UserClaimReader / CurrentUser / IHttpContextUser` 的输入兼容删除当前仍未纳入首轮窗口；在确认后续稳定维护阶段无新增阻塞前，继续维持“输出先收缩、输入兼容后删除”的边界。
 
 ## 12. 验收标准
 
