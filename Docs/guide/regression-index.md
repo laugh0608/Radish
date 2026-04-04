@@ -15,6 +15,7 @@
    - 宿主 / 配置 / `DbMigrate` 相关改动再跑 `npm run validate:baseline:host`
    - 若需要在本地复现当前 `Repo Quality` 最小门禁，再跑 `npm run validate:ci`
    - 若当前处于首版 `dev` 收官或准备判断“可发内部开发版”，优先同时查看 [首版 dev 总回归与发布前检查单](/guide/dev-first-regression-checklist)
+   - 若自动化失败点集中在 `Repo Quality`、`validate:ci`、contract 自校验或受限环境边界，优先看 [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
 2. 再按改动主题补专题回归：
    - 需要账号、Token、运行中宿主的，优先看本页对应 `HttpTest`
    - 需要人工观察 UI、窗口跳转、深链或实时行为的，再补专题文档中的最小人工验收顺序

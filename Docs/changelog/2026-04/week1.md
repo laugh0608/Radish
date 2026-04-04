@@ -85,3 +85,8 @@
 
 - **共享执行层已收口**：新增 `Scripts/process-runner.mjs`，当前 `run-with-changed-files`、`validate:ci`、`validate:baseline`、`validate:identity` 与 changed-only lint 入口已统一复用，尽量减少对 `cmd.exe /c` 的依赖。
 - **受限环境提示已统一**：如果当前 Windows 沙盒禁止 Node 脚本再次拉起外部进程，脚本现在会明确提示这是环境边界，而不是把原始 `EPERM / EINVAL` 直接抛给使用者。
+
+### Repo Quality 故障分诊入口
+
+- **维护侧单一分诊入口已新增**：新增 `guide/repo-quality-troubleshooting.md`，把 `check:repo-quality-contract`、`validate:ci`、身份语义条件触发、受限环境边界与历史 warnings / DLL 锁的排查口径收口到同一页。
+- **默认入口文档已同步**：`guide/validation-baseline.md`、`guide/regression-index.md` 与 `guide/identity-claim-regression-playbook.md` 当前都已补回该手册入口，后续维护者不必再从脚本实现里自己反推失败归类。

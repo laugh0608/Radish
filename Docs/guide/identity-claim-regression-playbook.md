@@ -10,6 +10,7 @@
 > - [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window)
 > - [验证基线说明](/guide/validation-baseline)
 > - [专题回归索引](/guide/regression-index)
+> - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
 
 ## 1. 目的
 
@@ -204,6 +205,8 @@ npm run validate:ci
 - `validate:baseline:quick`
   - 其中已继续包含 `Repo Quality` contract 自校验、identity impact 自校验与身份语义防回归扫描
 - 仅在命中身份语义影响面时追加 `validate:identity`
+
+如果这条链路失败，且你需要先判断“是 contract 漂移、默认执行面失败、身份语义专题失败，还是受限环境不允许 Node 再拉子进程”，优先先看 [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)，不要把所有失败都直接归为 `Identity Guard` 回归。
 
 ## 8. 当前结论
 

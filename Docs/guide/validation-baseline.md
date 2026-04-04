@@ -1,6 +1,10 @@
 # 验证基线说明
 
 > 本页说明当前仓库认可的最小验证基线，以及 `M13` 首轮统一入口的使用方式。
+>
+> 关联维护入口：
+>
+> - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
 
 ## 当前目标
 
@@ -215,6 +219,8 @@ npm run validate:baseline:host
 
 ## 失败时先看哪里
 
+如果你现在面对的是 `Repo Quality`、`validate:ci`、`check:repo-quality-contract`、身份语义条件触发或受限环境边界提示，优先先看：[Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)。
+
 - 前端类型错误：优先看对应 workspace 的 `tsc` 输出
 - `radish.client` 最小测试失败：优先看 `Frontend/radish.client/tests/`
 - 权限扫描失败：优先看 `Scripts/check-console-permissions.mjs` 输出中的四层对齐差异
@@ -223,6 +229,8 @@ npm run validate:baseline:host
 - 后端构建 / 测试失败：优先看 `Scripts/dotnet-local.ps1` 包装后的 `dotnet` 输出
 - `doctor` / `verify` 失败：优先核对当前环境配置、`MainDb` / `Databases` 与关键 `ConnId`
 - 如果是 Wiki / 文档链路，额外确认 `doctor` 是否已报告 `WikiDocument.Visibility`、`AllowedRoles`、`AllowedPermissions` 等缺列；旧 SQLite 库需要重新执行 `DbMigrate apply` 触发自动补齐
+- `check:repo-quality-contract` 失败：优先回到 workflow / ruleset / 本地 `validate:ci` contract，而不是先改业务代码
+- `validate:ci` 失败：优先拆成 `Repo Hygiene changed-only`、`Frontend Lint changed-only`、`Baseline Quick`、条件 `validate:identity` 四类
 
 ## 边界说明
 
