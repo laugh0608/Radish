@@ -59,6 +59,44 @@
 3. 将后续重点切换到 `Phase 5` 工程化入口维护；若部署边界再次变化，再回到身份语义外部兼容边界清单补事实，并按回归手册补 `AuthFlow` 与官方顺序回归记录。
 4. 继续把 ruleset、ADR、部署与回归文档中的 required checks 维持在同一口径，避免 `Identity Guard` 已在 workflow 中独立存在，但治理真相源仍停留在旧三项门禁。
 
+## 身份语义 Phase 5 工程化维护补充记录（2026-04-04）
+
+- 记录日期：2026-04-04
+- 记录人：项目协作记录
+- 范围：身份语义 `Phase 5` 防回归治理工程化维护闭环
+- 触发原因：`Phase 5` 首轮工程化入口、impact 单一规则源、Repo Quality contract、自校验、Windows 共享执行层兼容性与单一故障分诊入口均已补齐，当前需要继续把“为什么命中身份语义影响面 / 失败属于哪一类”沉淀到默认记录流程，避免维护动作继续停留在脚本输出和口头解释层。
+
+### 变更摘要
+
+- 将 `check:identity-impact` 的规则源进一步收口为带原因类别的单一资产，当前除命中文件外也会输出命中原因类别。
+- 将本地 `validate:ci` 的 changed-only 判定结果同步升级为“命中原因类别 + 文件明细”，与 `Identity Guard` 的维护说明保持同源。
+- 将 `PULL_REQUEST_TEMPLATE`、`change-regression-record-template`、`regression-result-template`、`repo-quality-troubleshooting`、`validation-baseline` 与 `identity-claim-regression-playbook` 一并改为复用同一套“命中原因 + 失败归类”表达。
+- 补做本地最小验证，确认 `check:identity-impact:self-test`、`check:repo-quality-contract` 与 `validate:ci` 当前均与新口径对齐。
+
+### 本轮确认结论
+
+- `Phase 5` 默认维护记录闭环：完成
+- 身份语义 impact 判定原因类别：已统一
+- `Repo Quality / validate:ci` 失败归类口径：已统一
+- 当前阶段更准确的表述应为：`身份语义 Phase 5 已从首轮工程化入口补齐，继续收口到默认记录与维护动作闭环`
+
+### 自动化执行
+
+- `npm run check:identity-impact:self-test`：通过
+- `npm run check:repo-quality-contract`：通过
+- `npm run validate:ci`：通过
+
+### 风险 / 说明
+
+- 当前 Codex 沙盒内首次执行 `npm run validate:ci` 仍会命中“Node 脚本禁止再拉起外部进程”的受限环境边界；该现象已按 `Repo Quality 故障分诊手册` 归类为环境限制，而非门禁语义回归。
+- 提权复跑后，`validate:ci` 当前可正常完成 `Repo Hygiene changed-only`、`Frontend changed-only Lint`、`Baseline Quick` 与条件 `validate:identity` 全链验证。
+
+### 下一动作
+
+1. 后续涉及 `Identity Guard`、`validate:ci`、默认执行面文档或回归记录模板的调整时，继续沿用同一份 impact 规则源与四类失败归类，不再临时发明新标签。
+2. 继续把 `repo-quality-troubleshooting`、PR 模板、回归记录模板与 `validation-baseline` 视为同一组资产维护，避免记录入口再次晚于脚本事实。
+3. 若后续出现新的宿主 / CI 边界，再按现有分诊手册补事实，不直接把环境限制回写成 `Phase 5` 门禁缺陷。
+
 ## 首版 dev 总回归记录（2026-03-26）
 
 - 记录日期：2026-03-26

@@ -90,3 +90,10 @@
 
 - **维护侧单一分诊入口已新增**：新增 `guide/repo-quality-troubleshooting.md`，把 `check:repo-quality-contract`、`validate:ci`、身份语义条件触发、受限环境边界与历史 warnings / DLL 锁的排查口径收口到同一页。
 - **默认入口文档已同步**：`guide/validation-baseline.md`、`guide/regression-index.md` 与 `guide/identity-claim-regression-playbook.md` 当前都已补回该手册入口，后续维护者不必再从脚本实现里自己反推失败归类。
+
+### Phase 5 记录闭环补齐
+
+- **impact 判定当前会直接输出命中原因类别**：`check:identity-impact` 已从单纯给出“是否命中”升级为同时输出命中文件与原因类别，当前统一收口为 `身份运行时入口 / Auth 协议输出 / 官方协议消费者 / Token 解析 / 默认执行面文档 / 门禁资产` 四类。
+- **本地 `validate:ci` 已同步显示命中理由**：当 changed-only 判定命中身份语义影响面时，`validate:ci` 当前会直接打印原因类别与命中文件明细，维护者不必再手工比对脚本规则去解释 `Identity Guard` 为什么触发。
+- **默认记录入口已补“命中原因 + 失败归类”双字段**：`PULL_REQUEST_TEMPLATE`、`change-regression-record-template`、`regression-result-template` 当前都已补齐结构化字段，用于统一表达“为什么命中身份语义影响面”以及“失败属于 contract 漂移 / 默认执行面失败 / 身份语义专题失败 / 受限环境边界中的哪一类”。
+- **记录模板与分诊口径已纳入同一维护组**：`repo-quality-troubleshooting`、`validation-baseline`、`identity-claim-regression-playbook`、回归记录模板与 PR 模板当前已同步改为复用同一套原因/归类语义，`Phase 5` 工程化维护链路已从“脚本 + 手册”收口到“脚本 + 默认记录入口 + 分诊口径”闭环。
