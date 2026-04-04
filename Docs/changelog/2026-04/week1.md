@@ -42,3 +42,16 @@
 - **官方回归资产已完成首轮同步**：`Radish.Api.AuthFlow.http` 当前已统一为可闭环验证授权码、`/connect/userinfo` 与 refresh token 的脚本；`Scalar` 联调提示与鉴权文档中的默认测试账号也已统一回仓库真实种子值 `test / test123456`。
 - **前端直接字段消费者已锁定测试边界**：`radish-client / radish-console` 当前已把 Token Claim 解析提取为可测试模块，并通过最小测试明确锁定“标准优先 + 输入兼容 fallback”的现行口径，避免后续回归把旧字段重新恢复成默认主口径。
 - **仓库内最小验证已补齐**：本轮已完成 `Radish.Api.Tests` 相关控制器最小测试、`radish-client / radish-console` Token 解析测试、两个前端 workspace 类型检查，以及身份语义扫描；当前均无新的阻塞错误。
+
+## 2026-04-04 (周六)
+
+### 身份语义 Phase 4 官方回归收口
+
+- **官方顺序真实回归已完成**：`radish-client`、`radish-console`、`radish-scalar` 当前均已完成实际回归，登录、回调、刷新、权限与调试入口未发现新的阻塞问题。
+- **`Radish.Api.AuthFlow.http` 授权流程已确认闭环**：授权码、`/connect/token`、`/connect/userinfo`、refresh token 与受保护接口调用当前均可按最新 Phase 4 口径走通。
+- **本轮无需触发回滚**：本次官方回归窗口内未发现需要恢复 `ClaimTypes.NameIdentifier / ClaimTypes.Name / ClaimTypes.Role / TenantId` 的阻塞事实；当前保持“输出收缩完成、输入兼容保留”的既定边界不变。
+
+### 规划口径收束
+
+- **当前结论已更新**：身份语义 `Phase 4` 当前不再停留在“继续做官方回归”的状态，而是明确收口为“首轮实施与官方顺序真实回归已完成，转入稳定维护”。
+- **后续重点已切换**：下一步优先进入 `Phase 5` 防回归资产接入脚本 / 校验流程准备，以及下一里程碑入口重审；当前不在同一窗口提前删除 `UserClaimReader / CurrentUser` 的输入兼容。

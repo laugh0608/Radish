@@ -13,7 +13,7 @@
 
 - **当前里程碑**：`M12 社区功能冲刺`
 - **当前主线**：`身份语义 Phase 4 协议输出收敛`
-- **当前阶段**：`截至 2026-04-03，社区主链多轮回归与首版 dev 文档收口已完成；身份语义 Phase 4 的仓库内前置资产、仓库资产侧首轮排查，以及当前生产环境的外部兼容边界事实也已完成补齐。当前已正式进入首轮实施窗口，并已完成仓库内第一批收口：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、官方客户端与联调资产已完成首轮同步和测试固化。后续若继续做真实端到端回归，仍按 `radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 的顺序执行。详见：[身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)。`
+- **当前阶段**：`截至 2026-04-04，社区主链多轮回归与首版 dev 文档收口已完成；身份语义 Phase 4 的仓库内前置资产、仓库资产侧首轮排查，以及当前生产环境的外部兼容边界事实也已完成补齐。当前已完成首轮实施窗口与官方顺序真实回归：Auth 输出双写已收缩、`userinfo` 已完成最小对齐，`radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 已按既定顺序完成端到端验证，当前无需触发回滚，转入稳定维护与防回归治理准备。详见：[身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)。`
 - **并行治理尾项**：
   - 身份语义 Phase 4：协议输出收敛（当前已完成 [最终启动评审](/guide/identity-claim-phase4-start-review)，结论为允许启动实施）
   - `DbMigrate` 进入回归维护（解耦宿主 + `doctor` 校验已完成）
@@ -59,13 +59,13 @@
    - 最新一轮已修复长整型 ID 精度问题与输入区布局挤压问题，并完成一轮手工冒烟联调
    - 当前无明显阻塞问题，可从当前主线移出，后续仅做稳定性回归维护
 
-4. **身份治理尾项进入实施**
+4. **身份治理尾项首轮实施已收口**
    - 当前最终启动评审已完成，结论已更新为“仓库内输入已齐，且当前部署范围内的仓库外兼容边界已被事实关闭，因此允许启动 Phase 4”
    - 当前已补 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 与 [首轮执行记录（仓库资产侧）](/guide/identity-claim-external-compat-first-pass)，并已补齐当前生产环境事实
    - 当前已完成首轮仓库内实施：`AccountController / AuthorizationController` 已停止历史双写输出，`UserInfoController` 已完成最小对齐，`radish-client / radish-console` 的 Token 直读规则也已提取为可测试解析模块
    - 当前 `Radish.Api.AuthFlow.http`、`Scalar` 联调提示与鉴权文档已同步到最新口径；官方回归资产不再停留在旧 scope、旧密码或旧双写说明
-   - 当前下一步不再是继续确认是否能启动，而是在已完成仓库内收口的基础上，按官方顺序做真实端到端回归
-   - 防回归扫描规则继续留待 `M13` 纳入脚本 / CI
+   - 当前已按官方顺序完成 `radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 真实端到端回归，授权流程与权限链路当前均正常，本轮无需触发回滚
+   - 当前下一步已从“继续做官方回归”切换为“稳定维护 + 防回归治理准备”；防回归扫描规则继续留待 `M13` 纳入脚本 / CI
 
 5. **工程治理**
    - `DbMigrate` 已完成本轮解耦宿主、启动入口收口与 `doctor` 只读校验命令补齐
@@ -180,8 +180,7 @@
 ### 当前进行中子阶段
 
 - 下一里程碑入口重审
-- 身份语义 Phase 4 首轮实施与仓库内回归资产收口
-- 按 `radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 执行真实端到端官方回归
+- 身份语义 Phase 4 稳定维护与防回归治理准备
 - 旧 `GetCommentTree` 兼容入口继续观察真实命中与仓库外依赖，暂不直接删除
 - 文档、验证基线与发布口径冻结维护
 
@@ -206,6 +205,7 @@
 
 ### 可转维护
 
+- 身份语义 Phase 4 首轮实施与官方回归结果
 - 聊天室 `P1`
 - 通知中心
 - `Console-ext` 一期
