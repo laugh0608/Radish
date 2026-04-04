@@ -33,6 +33,7 @@ npm run validate:ci
 
 - `check:repo-quality-contract` 先回答“门禁定义有没有漂移”
 - `validate:ci` 再回答“当前默认执行面里到底是哪一步真的失败了”
+- 若需要给 PR、回归记录或维护记录补说明，默认把结论回写成四类之一：`contract 漂移`、`默认执行面失败`、`身份语义专题失败`、`受限环境边界`
 
 ## 2. `check:repo-quality-contract` 失败时
 
@@ -140,6 +141,13 @@ npm run collect:changed
 npm run check:identity-impact
 ```
 
+该命令当前会额外输出命中原因类别，记录时默认直接复用：
+
+- `身份运行时入口`
+- `Auth 协议输出`
+- `官方协议消费者 / Token 解析`
+- `默认执行面文档 / 门禁资产`
+
 ## 4. 身份语义专题失败时
 
 如果失败已经落到 `validate:identity`、`check:identity-runtime` 或 `check:identity-protocol-output`，说明问题已经不再是通用 `Repo Quality` 故障，而是身份语义防回归本身触发了。
@@ -207,6 +215,9 @@ npm run check:identity-impact
 - [validate-ci.mjs](/D:/Code/Radish/Scripts/validate-ci.mjs)
 - [validation-baseline.md](/D:/Code/Radish/Docs/guide/validation-baseline.md)
 - [identity-claim-regression-playbook.md](/D:/Code/Radish/Docs/guide/identity-claim-regression-playbook.md)
+- [change-regression-record-template.md](/D:/Code/Radish/Docs/guide/change-regression-record-template.md)
+- [regression-result-template.md](/D:/Code/Radish/Docs/guide/regression-result-template.md)
+- [PULL_REQUEST_TEMPLATE.md](/D:/Code/Radish/.github/PULL_REQUEST_TEMPLATE.md)
 
 最重要的原则只有一条：
 

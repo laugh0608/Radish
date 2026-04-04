@@ -135,6 +135,9 @@ npm run validate:identity
 ```md
 ## 身份语义回归记录
 
+- 身份语义影响面：
+  - 命中情况：命中 / 未命中
+  - 命中原因：身份运行时入口 / Auth 协议输出 / 官方协议消费者 / Token 解析 / 默认执行面文档与门禁资产 / 无
 - 自动化：
   - `npm run validate:baseline`：通过 / 阻塞 / 未执行
   - `npm run validate:identity`：通过 / 阻塞 / 未执行
@@ -146,6 +149,8 @@ npm run validate:identity
   - `radish-console`：通过 / 阻塞 / 未执行
   - `Radish.Api.AuthFlow.http`：通过 / 阻塞 / 未执行
   - `radish-scalar`：通过 / 阻塞 / 未执行
+- 失败归类：
+  - 无 / contract 漂移 / 默认执行面失败 / 身份语义专题失败 / 受限环境边界
 - 结论：
   - 可合并 / 可转维护 / 仍需观察 / 触发回滚窗口
 ```
@@ -154,6 +159,11 @@ npm run validate:identity
 
 - [回归结论记录模板](/guide/regression-result-template)
 - [变更回归记录模板](/guide/change-regression-record-template)
+
+补充约定：
+
+- `npm run check:identity-impact` 当前会直接输出命中原因类别，可作为 PR 或维护记录里的“为什么命中身份语义影响面”的事实来源
+- 若 `validate:ci` 或 `Identity Guard` 失败，失败归类默认复用 [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting) 的四类口径，不要再临时发明新标签
 
 ## 7. 哪些继续留在本地，哪些适合上 CI
 
@@ -191,6 +201,7 @@ npm run validate:identity
 - 只看 staged 内容：`npm run check:identity-impact:staged`
 - 两者当前都先走 `Scripts/collect-changed-files.mjs`，再交给 `check-identity-impact.mjs` 判定
 - `check:identity-impact` 的命中范围当前已统一到单一规则源，不再在本地脚本、PR 模板与 CI 之间重复维护多份路径清单
+- 该入口当前也会输出“身份运行时入口 / Auth 协议输出 / 官方协议消费者 / Token 解析 / 默认执行面文档与门禁资产”等命中原因类别，便于把 `Identity Guard` 命中理由直接回写到记录模板
 
 如需在本地直接复现当前 `Repo Quality` 的最小门禁，可运行：
 

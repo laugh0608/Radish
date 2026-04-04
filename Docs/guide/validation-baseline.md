@@ -64,6 +64,7 @@ npm run validate:ci
   - 适合排查全量文本卫生或脚本命中范围
 - `check:identity-impact`
   - 只判定“当前变更是否命中身份语义影响面”
+  - 默认同时输出命中文件与命中原因类别，便于直接回写 PR / 维护记录
   - 适合与 GitHub Actions 的 `Identity Guard` 按改动范围触发逻辑对齐
 - `check:identity-impact:staged`
   - 只判定 staged 变更是否命中身份语义影响面
@@ -166,7 +167,7 @@ npm run validate:ci
 - 当前 changed-only 入口与 `Repo Quality` 的变更文件收集逻辑已统一复用 `Scripts/collect-changed-files.mjs`
 - `check:repo-hygiene:changed` 与 `check:repo-hygiene:staged` 当前也已切到统一 collector，不再单独维护 `git diff` 口径
 - `check:repo-quality-contract` 当前会先校验 workflow、ruleset 与本地 `validate:ci` 的 required checks 契约，避免门禁名称或执行面无声漂移
-- `check:identity-impact` 的命中范围当前已收口到单一规则源，除身份语义代码、Auth 协议输出、前端 Token 解析与 `AuthFlow` 入口外，也覆盖 `validation-baseline / regression-index / dev-first-regression-record / development-plan / planning/current / PR template` 等默认执行面文档与门禁资产
+- `check:identity-impact` 的命中范围当前已收口到单一规则源，除身份语义代码、Auth 协议输出、前端 Token 解析与 `AuthFlow` 入口外，也覆盖 `validation-baseline / regression-index / repo-quality-troubleshooting / change-regression-record-template / regression-result-template / dev-first-regression-record / development-plan / planning/current / PR template / repo-quality contract / validate:ci` 等默认执行面文档与门禁资产
 - 工作区级 changed-only 默认使用 `collect:changed`
 - 提交前只看 staged 内容时，优先使用 `collect:changed:staged`、`lint:staged` 与 `check:identity-impact:staged`
 - `check:repo-hygiene` 本地全量扫描仍建议按需人工执行，适合做历史清理批次时使用
@@ -231,6 +232,7 @@ npm run validate:baseline:host
 - 如果是 Wiki / 文档链路，额外确认 `doctor` 是否已报告 `WikiDocument.Visibility`、`AllowedRoles`、`AllowedPermissions` 等缺列；旧 SQLite 库需要重新执行 `DbMigrate apply` 触发自动补齐
 - `check:repo-quality-contract` 失败：优先回到 workflow / ruleset / 本地 `validate:ci` contract，而不是先改业务代码
 - `validate:ci` 失败：优先拆成 `Repo Hygiene changed-only`、`Frontend Lint changed-only`、`Baseline Quick`、条件 `validate:identity` 四类
+- 若需要把本轮判断回写到 PR 或维护记录，优先直接复用 `check:identity-impact` 的命中原因类别，以及 `Repo Quality 故障分诊手册` 的失败归类
 
 ## 边界说明
 

@@ -49,6 +49,30 @@ Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http
 radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar
 ```
 
+## Phase 5 维护记录（按需）
+
+如本轮命中 `Identity Guard`、追加了 `validate:identity`，或需要说明 `validate:ci` / `Repo Quality` 的失败归类，请按需补记：
+
+### 身份语义影响面命中原因
+
+- [ ] 未命中身份语义影响面
+- [ ] 身份运行时入口
+- [ ] Auth 协议输出
+- [ ] 官方协议消费者 / Token 解析
+- [ ] 默认执行面文档 / 门禁资产
+
+说明：可直接参考 `npm run check:identity-impact` 的输出填写。
+
+### 失败归类 / 环境边界
+
+- [ ] 无
+- [ ] contract 漂移
+- [ ] 默认执行面失败
+- [ ] 身份语义专题失败
+- [ ] 受限环境边界
+
+- 补充说明：
+
 ## 影响评估
 
 - 文档影响：

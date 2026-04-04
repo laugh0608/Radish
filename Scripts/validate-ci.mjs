@@ -1,6 +1,10 @@
 import process from 'node:process';
 
-import { collectIdentityImpactMatches } from './identity-impact-rules.mjs';
+import {
+  collectIdentityImpactDetails,
+  collectIdentityImpactMatches,
+  collectIdentityImpactReasonGroups,
+} from './identity-impact-rules.mjs';
 import { formatCommand, runCommand } from './process-runner.mjs';
 import {
   IDENTITY_GUARD_CHECK_NAME,
@@ -64,18 +68,27 @@ for (const step of REPO_QUALITY_LOCAL_STEPS) {
 const changedFilesOutput = runNode(['Scripts/collect-changed-files.mjs'], { captureStdout: true });
 const changedFiles = splitZeroTerminated(changedFilesOutput);
 const matchedFiles = collectIdentityImpactMatches(changedFiles);
+const impactDetails = collectIdentityImpactDetails(changedFiles);
+const reasonGroups = collectIdentityImpactReasonGroups(changedFiles);
 
 console.log(`\n[validate:ci] ${IDENTITY_GUARD_CHECK_NAME} changed-only 判定`);
 console.log(`- 当前变更文件：${changedFiles.length} 个`);
 console.log(`- 命中身份语义影响面：${matchedFiles.length} 个`);
+console.log(`- 命中原因类别：${reasonGroups.length} 类`);
 
 if (matchedFiles.length === 0) {
   console.log('- 结果：跳过 `validate:identity`，与当前 Repo Quality / Identity Guard 一致。');
   process.exit(0);
 }
 
-for (const matchedFile of matchedFiles) {
-  console.log(`  - ${matchedFile}`);
+for (const reasonGroup of reasonGroups) {
+  console.log(`  - ${reasonGroup.label}：${reasonGroup.files.length} 个文件`);
+}
+
+console.log('- 命中文件明细：');
+for (const detail of impactDetails) {
+  const labels = detail.reasons.map((reason) => reason.label).join(' / ');
+  console.log(`  - ${detail.file} [${labels}]`);
 }
 
 runNpm('Identity Regression Validation', IDENTITY_GUARD_VALIDATE_ARGS);

@@ -125,6 +125,7 @@
    - 最新已继续补齐 workflow 语义守卫：contract 当前也会校验 `repo-quality.yml` 中四个 job 的关键命令片段，避免 changed-only、impact 判定或条件 `validate:identity` 在名称不变时无声漂移
    - 最新已补 Windows 共享执行层兼容性收口：默认脚本当前已统一走共享 `process-runner`，尽量避免再手写 `cmd.exe /c`；若当前环境从 Node 脚本层面禁止再拉起外部进程，也会输出统一边界提示，避免误判为门禁脚本本身回归
    - 最新已补单一故障分诊入口：新增 [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)，把 contract 漂移、`validate:ci` 默认执行面失败、身份语义条件触发、受限环境边界与历史 warnings / DLL 锁分流到同一页，降低后续维护继续依赖脚本细节记忆的成本
+   - 最新已补 `Phase 5` 记录闭环：`check:identity-impact` 当前会输出命中原因类别，`validate:ci`、PR 模板、变更回归记录模板与回归结论记录模板也已统一要求记录“为什么命中身份语义影响面 / 失败属于哪一类”，避免 `Identity Guard` 与维护记录继续靠口头解释
    - 已完成一轮 `full` 验证：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 195 个测试通过
    - 当前结论为：`M13` 不再只是规划名词，已具备第一版真实入口；接下来优先服务于首个 dev 版本的总回归与最小发布准备，而不是先扩张为更重的工程平台
 

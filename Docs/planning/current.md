@@ -59,6 +59,7 @@
 - [x] 已补 Repo Quality contract 第六轮语义守卫：当前 contract 不再只校验 required checks 名称，还会校验 `repo-quality.yml` 四个 job 的关键命令片段；`validate:ci` 在文档中的执行面说明也已同步补上 `check:repo-hygiene:changed`，避免“名字一致但执行语义已漂移”
 - [x] 已补 Windows 共享执行层兼容性收口：新增共享 `process-runner`，默认脚本当前已尽量改为直连 `node / npm` 可执行体，减少对 `cmd.exe /c` 的依赖；受限沙盒下若仍禁止 Node 再拉起子进程，也已统一输出明确边界说明，避免把环境限制误判成门禁脚本回归
 - [x] 已补 `Repo Quality` 单一故障分诊入口：新增 [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)，把 `check:repo-quality-contract`、`validate:ci`、身份语义条件触发、受限环境边界与历史 warning / DLL 锁的分流口径收束到同一页，并已同步到验证基线与专题回归索引
+- [x] 已补 `Phase 5` 记录与维护动作闭环：`check:identity-impact` 当前可直接输出命中原因类别，`validate:ci` 会同步显示身份语义命中理由；PR 模板、变更回归记录模板、回归结论记录模板与故障分诊手册也已统一收口为“命中原因 + 失败归类”双字段，避免维护者仍需靠口头解释 `Identity Guard / validate:ci` 为什么命中、失败属于哪一类
 - [x] 已完成一轮 `full` 验证：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 共 195 个测试通过
 - [x] 已补 `M15` 首轮最小 CI 门禁：`Repo Hygiene` / `Frontend Lint` / `Baseline Quick` / `Identity Guard` 已接入 GitHub Actions，并已在最新一次 `master` PR 上完成真实通过与合并闭环
 - [x] 已补 `GHCR` 镜像 workflow 资产：`.github/workflows/docker-images.yml` 当前已收口为 `push v*-dev / v*-test / v*-release` 与手动补跑规范 tag 时推送；`frontend` 已接入统一 GHCR 推送规则，普通 `dev` push 不再触发镜像发布
@@ -316,7 +317,7 @@
 - **当前状态**：主体已完成，Phase 4 首轮实施、官方顺序真实回归与回滚窗口验证均已完成，当前转入稳定维护
 - **剩余任务**：
   - Phase 4：协议输出收敛（当前已完成 [最终启动评审](/guide/identity-claim-phase4-start-review) 与首轮官方回归；后续若部署形态变化，再按 [仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实）
-  - Phase 5：防回归资产接入脚本 / 校验流程（首轮工程化入口已补齐；后续再视项目阶段决定是否继续扩张到更重的 CI/CD / 宿主专题）
+  - Phase 5：防回归资产接入脚本 / 校验流程（当前已完成首轮工程化入口、单一故障分诊入口，以及“命中原因 + 失败归类”记录闭环；后续再视项目阶段决定是否继续扩张到更重的 CI/CD / 宿主专题）
 
 ### 工程治理
 

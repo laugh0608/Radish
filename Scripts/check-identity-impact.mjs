@@ -2,7 +2,11 @@ import process from 'node:process';
 
 import { readFileSync } from 'node:fs';
 
-import { collectIdentityImpactMatches, normalizePath } from './identity-impact-rules.mjs';
+import {
+  collectIdentityImpactDetails,
+  collectIdentityImpactReasonGroups,
+  normalizePath,
+} from './identity-impact-rules.mjs';
 
 const args = new Set(process.argv.slice(2));
 
@@ -24,43 +28,62 @@ function parseFiles() {
   return chunks.map((file) => file.trim()).filter(Boolean);
 }
 
-function renderDefault(matches, allFiles) {
+function renderDefault(details, reasonGroups, allFiles) {
   console.log('[identity-impact] 身份语义影响面判定');
   console.log(`- 输入文件：${allFiles.length} 个`);
-  console.log(`- 命中文件：${matches.length} 个`);
+  console.log(`- 命中文件：${details.length} 个`);
+  console.log(`- 命中原因：${reasonGroups.length} 类`);
 
-  if (matches.length === 0) {
+  if (details.length === 0) {
     console.log('- 结果：未命中身份语义影响面。');
     return;
   }
 
   console.log('- 结果：命中身份语义影响面。');
-  for (const match of matches) {
-    console.log(`  - ${match}`);
+  for (const reasonGroup of reasonGroups) {
+    console.log(`  - ${reasonGroup.label}：${reasonGroup.files.length} 个文件`);
+  }
+
+  console.log('- 命中文件明细：');
+  for (const detail of details) {
+    const labels = detail.reasons.map((reason) => reason.label).join(' / ');
+    console.log(`  - ${detail.file} [${labels}]`);
   }
 }
 
-function renderGithubOutput(matches) {
-  console.log(`impacted=${matches.length > 0 ? 'true' : 'false'}`);
-  console.log(`matched_count=${matches.length}`);
+function renderGithubOutput(details, reasonGroups) {
+  console.log(`impacted=${details.length > 0 ? 'true' : 'false'}`);
+  console.log(`matched_count=${details.length}`);
   console.log('matched_files<<EOF');
-  for (const match of matches) {
-    console.log(match);
+  for (const detail of details) {
+    console.log(detail.file);
+  }
+  console.log('EOF');
+  console.log(`matched_reason_count=${reasonGroups.length}`);
+  console.log('matched_reason_keys<<EOF');
+  for (const reasonGroup of reasonGroups) {
+    console.log(reasonGroup.key);
+  }
+  console.log('EOF');
+  console.log('matched_reason_labels<<EOF');
+  for (const reasonGroup of reasonGroups) {
+    console.log(reasonGroup.label);
   }
   console.log('EOF');
 }
 
 function main() {
   const files = parseFiles().map(normalizePath);
-  const matches = collectIdentityImpactMatches(files);
+  const details = collectIdentityImpactDetails(files);
+  const reasonGroups = collectIdentityImpactReasonGroups(files);
   const format = args.has('--format=github-output') ? 'github-output' : 'default';
 
   if (format === 'github-output') {
-    renderGithubOutput(matches);
+    renderGithubOutput(details, reasonGroups);
     return;
   }
 
-  renderDefault(matches, files);
+  renderDefault(details, reasonGroups, files);
 }
 
 main();
