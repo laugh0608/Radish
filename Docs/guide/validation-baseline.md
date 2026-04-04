@@ -24,6 +24,7 @@ npm run validate:baseline
 npm run validate:baseline:quick
 npm run validate:baseline:host
 npm run validate:identity
+npm run validate:ci
 ```
 
 对应关系：
@@ -59,6 +60,8 @@ npm run validate:identity
   - 运行前端 `type-check`
   - 运行 `radish.client` 现有 `node --test`（当前以 `--test-isolation=none` 兼容受限环境）
   - 运行 `Console` 权限链路扫描
+  - 运行身份语义 impact 判定自校验
+    - 确保 `check:identity-impact` 与 `Identity Guard` 的命中规则未因脚本或文档入口调整而漂移
   - 运行身份语义防回归扫描
     - 运行时代码是否重新散落 `FindFirst/FindAll/ClaimTypes/User.IsInRole` 等原始 Claim 读取
     - `Radish.Auth` 协议输出侧是否试图恢复 `ClaimTypes.NameIdentifier / ClaimTypes.Name / ClaimTypes.Role / TenantId / jti` 等历史双写承诺
@@ -68,6 +71,7 @@ npm run validate:identity
   - 只运行前端 `type-check`
   - `radish.client` 最小测试
   - `Console` 权限链路扫描
+  - 身份语义 impact 判定自校验
   - 身份语义防回归扫描
 - `validate:baseline:host`
   - 等同于 `validate:baseline`
@@ -76,6 +80,10 @@ npm run validate:identity
   - 身份语义专题聚合入口，不替代默认 baseline
   - 分别执行运行时散点 Claim 读取扫描与协议输出回退扫描
   - 运行身份语义后端定向测试，覆盖 `ClaimsPrincipalNormalizer`、`HttpContextUser`、`AccountController`、`AuthorizationController`、`UserInfoController`
+- `validate:ci`
+  - 本地复现当前 `Repo Quality` 的最小执行面
+  - 依次运行 `lint:changed`、`validate:baseline:quick`
+  - 再按 `check:identity-impact` 的同源规则决定是否追加 `validate:identity`
 
 ## 分层使用建议
 
@@ -128,12 +136,19 @@ npm run lint:changed
 npm run check:repo-hygiene
 ```
 
+如果想在本地先复现当前 `Repo Quality` 的最小门禁，也可直接运行：
+
+```bash
+npm run validate:ci
+```
+
 说明：
 
 - `master` 当前受规则保护，只允许通过 PR 合并
 - GitHub Actions 中的 `Repo Hygiene` 与 `Frontend Lint` 当前仅检查“本次变更文件”，用于先拦新增问题，避免被历史债务拖死
 - `Identity Guard` 当前也已改为按变更文件触发：先用 `check:identity-impact` 判定是否命中身份语义影响面，再决定是否执行 `validate:identity`
 - 当前 changed-only 入口与 `Repo Quality` 的变更文件收集逻辑已统一复用 `Scripts/collect-changed-files.mjs`
+- `check:identity-impact` 的命中范围当前已收口到单一规则源，除身份语义代码、Auth 协议输出、前端 Token 解析与 `AuthFlow` 入口外，也覆盖 `validation-baseline / regression-index / dev-first-regression-record / development-plan / planning/current / PR template` 等默认执行面文档与门禁资产
 - 工作区级 changed-only 默认使用 `collect:changed`
 - 提交前只看 staged 内容时，优先使用 `collect:changed:staged`、`lint:staged` 与 `check:identity-impact:staged`
 - `check:repo-hygiene` 本地全量扫描仍建议按需人工执行，适合做历史清理批次时使用

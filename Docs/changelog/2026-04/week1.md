@@ -56,3 +56,9 @@
 - **当前结论已更新**：身份语义 `Phase 4` 当前不再停留在“继续做官方回归”的状态，而是明确收口为“首轮实施与官方顺序真实回归已完成，转入稳定维护”。
 - **后续重点已切换**：下一步优先进入 `Phase 5` 防回归资产接入脚本 / 校验流程准备，以及下一里程碑入口重审；当前不在同一窗口提前删除 `UserClaimReader / CurrentUser` 的输入兼容。
 - **`Phase 5` 首轮工程化入口已落地**：当前已补 `check:identity-runtime`、`check:identity-protocol-output`、`validate:identity`、`Identity Guard` CI 门禁，以及 `guide/identity-claim-regression-playbook.md`；身份语义相关改动后默认必跑项、官方顺序回归与本地 / CI 分层口径已统一。
+
+### 身份语义 Phase 5 工程一致性补强
+
+- **impact 判定当前已收口到单一规则源**：`check:identity-impact` 当前不再由脚本内部散落维护路径清单，而是改为统一复用单一规则源；除身份语义核心代码、前端 Token 解析与 `Radish.Api.AuthFlow.http` 外，也已把 `validation-baseline / regression-index / dev-first-regression-record / development-plan / planning/current / PR template` 等默认执行面文档与门禁资产纳入同一判定范围。
+- **本地 `validate:ci` 已与真实 CI 对齐**：当前会先执行 `lint:changed`、`validate:baseline:quick`，再仅在命中身份语义影响面时追加 `validate:identity`，不再无条件跑完整身份语义专题。
+- **已补轻量自校验**：`validate:baseline` / `validate:baseline:quick` 当前都会先校验 identity impact 判定样本，避免 `Identity Guard` 的 changed-only 触发边界再次无声漂移。

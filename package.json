@@ -19,6 +19,7 @@
     "check:identity-claims": "node Scripts/check-identity-claims.mjs",
     "check:identity-impact": "node Scripts/run-with-changed-files.mjs --mode=worktree -- node Scripts/check-identity-impact.mjs --stdin-z",
     "check:identity-impact:staged": "node Scripts/run-with-changed-files.mjs --mode=staged -- node Scripts/check-identity-impact.mjs --stdin-z",
+    "check:identity-impact:self-test": "node Scripts/check-identity-impact-self-test.mjs",
     "check:identity-runtime": "node Scripts/check-identity-claims.mjs --runtime-only",
     "check:identity-protocol-output": "node Scripts/check-identity-claims.mjs --protocol-only",
     "dev:frontend": "npm run dev --workspace=radish.client",
@@ -37,7 +38,7 @@
     "validate:baseline:quick": "node Scripts/validate-baseline.mjs --quick",
     "validate:baseline:host": "node Scripts/validate-baseline.mjs --with-host-checks",
     "validate:identity": "node Scripts/validate-identity-regression.mjs",
-    "validate:ci": "npm run lint:changed && npm run validate:baseline:quick && npm run validate:identity",
+    "validate:ci": "node Scripts/validate-ci.mjs",
     "install:all": "npm install"
   }
 }

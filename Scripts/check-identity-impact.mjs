@@ -1,29 +1,10 @@
-import { readFileSync } from 'node:fs';
 import process from 'node:process';
 
+import { readFileSync } from 'node:fs';
+
+import { collectIdentityImpactMatches, normalizePath } from './identity-impact-rules.mjs';
+
 const args = new Set(process.argv.slice(2));
-
-const exactPaths = new Set([
-  'Radish.Auth/Controllers/AccountController.cs',
-  'Radish.Auth/Controllers/AuthorizationController.cs',
-  'Radish.Auth/Controllers/UserInfoController.cs',
-  'Frontend/radish.http/src/oidc-callback.ts',
-  'Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http',
-  'Scripts/check-identity-claims.mjs',
-  'Scripts/check-identity-impact.mjs',
-  'Scripts/validate-identity-regression.mjs',
-  'package.json',
-  '.github/workflows/repo-quality.yml',
-  'Docs/architecture/identity-claim-convergence.md',
-]);
-
-const pathPrefixes = [
-  'Radish.Common/HttpContextTool/',
-  'Frontend/radish.client/src/services/',
-  'Frontend/radish.console/src/services/',
-  'Frontend/radish.console/src/pages/OidcCallback/',
-  'Docs/guide/identity-claim-',
-];
 
 function parseFiles() {
   const fileArgs = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
@@ -41,20 +22,6 @@ function parseFiles() {
     : stdin.toString().split(/\r?\n/u);
 
   return chunks.map((file) => file.trim()).filter(Boolean);
-}
-
-function normalizePath(filePath) {
-  return filePath.replace(/\\/g, '/');
-}
-
-function isIdentityImpacted(filePath) {
-  const normalized = normalizePath(filePath);
-
-  if (exactPaths.has(normalized)) {
-    return true;
-  }
-
-  return pathPrefixes.some((prefix) => normalized.startsWith(prefix));
 }
 
 function renderDefault(matches, allFiles) {
@@ -85,7 +52,7 @@ function renderGithubOutput(matches) {
 
 function main() {
   const files = parseFiles().map(normalizePath);
-  const matches = files.filter((file) => isIdentityImpacted(file));
+  const matches = collectIdentityImpactMatches(files);
   const format = args.has('--format=github-output') ? 'github-output' : 'default';
 
   if (format === 'github-output') {

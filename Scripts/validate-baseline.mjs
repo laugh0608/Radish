@@ -66,7 +66,7 @@ function runStep(title, command, commandArgs) {
 function printUsage() {
   console.log('用法: node Scripts/validate-baseline.mjs [--quick] [--with-host-checks]');
   console.log('');
-  console.log('--quick             只执行前端 type-check、client node --test、权限扫描');
+  console.log('--quick             只执行前端 type-check、client node --test、权限扫描与身份语义轻量校验');
   console.log('--with-host-checks  在 full 模式下追加 DbMigrate doctor / verify 只读自检');
 }
 
@@ -101,6 +101,11 @@ const steps = [
     title: 'Console 权限链路扫描',
     command: npmCommand,
     args: ['run', 'check:console-permissions'],
+  },
+  {
+    title: '身份语义影响面判定自校验',
+    command: npmCommand,
+    args: ['run', 'check:identity-impact:self-test'],
   },
   {
     title: '身份语义防回归扫描',

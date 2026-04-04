@@ -30,6 +30,7 @@
 - 修改前端 Token 解析、OIDC 回调、用户名 / 租户 / 角色兜底逻辑
 - 修改 `Radish.Api.AuthFlow.http`、`/connect/token`、`/connect/userinfo` 相关契约说明
 - 修改身份语义回归规则、扫描白名单或相关 CI 门禁
+- 修改 `validation-baseline`、`regression-index`、`dev-first-regression-record`、`development-plan`、`planning/current` 或 `.github/PULL_REQUEST_TEMPLATE.md` 中与身份语义默认执行面、回归要求、CI 触发条件相关的口径
 
 ## 3. 默认必须跑什么
 
@@ -188,6 +189,19 @@ npm run validate:identity
 - 工作区未暂存改动：`npm run check:identity-impact`
 - 只看 staged 内容：`npm run check:identity-impact:staged`
 - 两者当前都先走 `Scripts/collect-changed-files.mjs`，再交给 `check-identity-impact.mjs` 判定
+- `check:identity-impact` 的命中范围当前已统一到单一规则源，不再在本地脚本、PR 模板与 CI 之间重复维护多份路径清单
+
+如需在本地直接复现当前 `Repo Quality` 的最小门禁，可运行：
+
+```bash
+npm run validate:ci
+```
+
+其执行面当前与 CI 对齐为：
+
+- `lint:changed`
+- `validate:baseline:quick`
+- 仅在命中身份语义影响面时追加 `validate:identity`
 
 ## 8. 当前结论
 
@@ -196,4 +210,5 @@ npm run validate:identity
 - 用 `validate:identity` 回答“默认必须跑什么”；
 - 用 `check:identity-runtime / protocol-output` 明确回归类型；
 - 用 `Radish.Api.AuthFlow.http` 与官方顺序回归维持协议消费者事实基线；
-- 用按改动范围触发的独立 CI 门禁维持“身份语义保护是显式资产，而不是 baseline 的附属说明”。
+- 用按改动范围触发的独立 CI 门禁维持“身份语义保护是显式资产，而不是 baseline 的附属说明”；
+- 用单一 impact 规则源、本地 `validate:ci` 对齐入口与轻量自校验，避免默认执行面与 `Identity Guard` 再次漂移。

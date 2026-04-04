@@ -25,7 +25,8 @@ function collectChangedFiles(mode) {
     args.push(`--mode=${mode}`);
   }
 
-  const result = spawnSync(process.execPath, args, {
+  const needsCmdWrapper = process.platform === 'win32';
+  const result = spawnSync(needsCmdWrapper ? 'cmd.exe' : 'node', needsCmdWrapper ? ['/d', '/s', '/c', ['node', ...args].join(' ')] : args, {
     cwd: process.cwd(),
     encoding: null,
     stdio: ['ignore', 'pipe', 'inherit'],
@@ -40,7 +41,8 @@ function collectChangedFiles(mode) {
 }
 
 function runTarget(command, inputBuffer) {
-  const result = spawnSync(command[0], command.slice(1), {
+  const needsCmdWrapper = process.platform === 'win32';
+  const result = spawnSync(needsCmdWrapper ? 'cmd.exe' : command[0], needsCmdWrapper ? ['/d', '/s', '/c', command.join(' ')] : command.slice(1), {
     cwd: process.cwd(),
     input: inputBuffer,
     stdio: ['pipe', 'inherit', 'inherit'],
