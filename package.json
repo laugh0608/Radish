@@ -32,7 +32,7 @@
     "validate:baseline:quick": "node Scripts/validate-baseline.mjs --quick",
     "validate:baseline:host": "node Scripts/validate-baseline.mjs --with-host-checks",
     "validate:identity": "node Scripts/validate-identity-regression.mjs",
-    "validate:ci": "npm run lint:changed && npm run validate:baseline:quick",
+    "validate:ci": "npm run lint:changed && npm run validate:baseline:quick && npm run validate:identity",
     "install:all": "npm install"
   }
 }
