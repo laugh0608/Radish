@@ -16,7 +16,7 @@
 - 禁止删除分支
 - 仅允许通过 Pull Request 合并
 - 要求 1 个审批和已解决会话
-- 要求 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 三个检查通过
+- 要求 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四个检查通过
 - 限制合并方式为 `squash` / `rebase`
 - 管理员仅可通过 Pull Request 方式绕过规则，不开放直接 push
 
@@ -27,6 +27,8 @@
 
 前端 `Frontend Lint` 也采用同样策略，只校验本次变更涉及的前端脚本文件。
 
+`Identity Guard` 同样属于必需状态检查，但会先按变更文件判定是否命中身份语义影响面；未命中时 job 仍会以显式 skip 成功结束，确保 ruleset、workflow 与本地 `validate:ci` 口径一致。
+
 ## 应用方式
 
 如果仓库当前还没有对应 ruleset，可以使用 GitHub CLI 或 REST API 导入：
@@ -36,6 +38,8 @@ gh api repos/<owner>/<repo>/rulesets --method POST --input .github/rulesets/mast
 ```
 
 如果仓库已经存在旧 ruleset，建议改用 `PUT /repos/{owner}/{repo}/rulesets/{ruleset_id}` 更新。
+
+导入或更新前，请确认 `master-protection.json` 中的 required check 名称与 `.github/workflows/repo-quality.yml` 的 job 名完全一致；`Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 任一名称漂移，都会导致 ruleset 无法正确识别通过状态。
 
 `master-protection.json` 中的 `actor_id: 5` 按“RepositoryRole = Admin”模板生成，用于管理员仅通过 PR 绕过规则。
 如果你的仓库类型或角色映射不同，导入前请按实际角色重新调整。

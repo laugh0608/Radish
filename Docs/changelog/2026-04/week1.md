@@ -67,3 +67,9 @@
 
 - **pre-commit 已改为统一 staged 入口**：`.githooks/pre-commit` 当前不再手写 `git diff --cached` 管道，而是直接调用 `check:repo-hygiene:staged` 与 `lint:staged`，提交前入口已与统一 collector 保持同源。
 - **PR 与回归记录模板已同步当前事实**：`PULL_REQUEST_TEMPLATE`、`change-regression-record-template` 与 `regression-index` 当前已纳入 `validate:ci` 与 staged 入口口径，避免“脚本事实已更新，但记录模板仍沿用旧写法”。
+
+### required checks 治理真相源对齐
+
+- **ruleset 模板已补 `Identity Guard`**：`.github/rulesets/master-protection.json` 当前已把 required checks 从三项补齐到四项，正式与 `Repo Quality` workflow 的 job 名保持一致。
+- **ruleset README、ADR 与部署文档已完成同步**：`master` 分支保护说明、分支治理 ADR、部署发版指南与首版总回归检查单 / 记录当前均已统一为 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四项门禁。
+- **历史事实与现行口径已拆分记录**：`2026-03-26` 的三项门禁闭环继续保留为历史事实；截至 `2026-04-04`，后续稳定主线合并与 required checks 维护均以四项门禁为准。

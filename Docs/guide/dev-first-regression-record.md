@@ -49,6 +49,7 @@
 - `Phase 4` 首轮实施：完成
 - 官方顺序真实回归：完成
 - 回滚窗口验证：完成
+- `master` required checks 治理真相源：已统一到 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四项
 - 当前阶段更准确的表述应为：`身份语义 Phase 4 无需回滚，转入稳定维护与防回归治理准备`
 
 ### 下一动作
@@ -56,6 +57,7 @@
 1. 继续以 `validate:baseline` / `validate:baseline:host` 与 `validate:identity` 作为身份语义相关改动的默认自动化入口；扫描细分入口为 `check:identity-runtime` 与 `check:identity-protocol-output`。
 2. 维持 `UserClaimReader / CurrentUser / IHttpContextUser` 输入兼容保留边界，不在同一窗口提前删除兼容读取。
 3. 将后续重点切换到 `Phase 5` 工程化入口维护；若部署边界再次变化，再回到身份语义外部兼容边界清单补事实，并按回归手册补 `AuthFlow` 与官方顺序回归记录。
+4. 继续把 ruleset、ADR、部署与回归文档中的 required checks 维持在同一口径，避免 `Identity Guard` 已在 workflow 中独立存在，但治理真相源仍停留在旧三项门禁。
 
 ## 首版 dev 总回归记录（2026-03-26）
 
@@ -97,7 +99,7 @@
   - `DbMigrate doctor`：通过
   - `DbMigrate verify`：通过
 - `master` Pull Request 最小 `CI` 门禁：通过
-  - 最新一次用于合并的 `master` PR 已完成 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`
+  - 最新一次用于合并的 `master` PR 已完成当时的三项门禁：`Repo Hygiene`、`Frontend Lint`、`Baseline Quick`
   - PR 已合并到 `master`：`37fe89c`
   - `dev` 已同步 `master` 合并结果：`cbd0f8a`
 

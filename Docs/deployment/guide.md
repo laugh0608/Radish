@@ -76,6 +76,7 @@
   - `Repo Hygiene`
   - `Frontend Lint`
   - `Baseline Quick`
+  - `Identity Guard`
 - 合并前需至少完成 1 次审批，并解决全部 review 对话
 - 管理员当前仅允许“通过 Pull Request 绕过”，不开放直接 push
 
@@ -96,7 +97,7 @@
    ```
 
 3. 发起 `dev -> master` 的 PR
-4. 等待 GitHub Actions 中的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 全部通过
+4. 等待 GitHub Actions 中的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 全部通过
 5. 完成审批与会话收束后合并到 `master`
 6. 合并后创建版本标签，例如：
 
@@ -597,7 +598,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 ### 进入条件
 
-- 最新一次 `master` PR 已完成 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`
+- 当前 `master` 最小门禁已收敛为 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四项
 - `npm run validate:baseline` 已通过
 - 如本轮触达宿主 / 配置 / `DbMigrate` / 部署链，`npm run validate:baseline:host` 已通过
 - 当前没有阻塞主线的已知 `P0 / P1` 问题

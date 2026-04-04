@@ -54,6 +54,9 @@
           },
           {
             "context": "Baseline Quick"
+          },
+          {
+            "context": "Identity Guard"
           }
         ],
         "strict_required_status_checks_policy": true

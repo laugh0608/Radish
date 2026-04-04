@@ -1,6 +1,6 @@
 # ADR 0001: Branch And PR Governance
 
-更新时间：2026-03-31
+更新时间：2026-04-04
 
 ## 状态
 
@@ -72,7 +72,7 @@ Accepted
 1. 确保远端存在 `dev` 分支，并作为当前默认开发集成面
 2. 默认开发 PR 目标分支保持为 `dev`
 3. 对 `master` 启用 branch protection / ruleset
-4. 对 `master` 要求通过 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 三个状态检查
+4. 对 `master` 要求通过 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四个状态检查
 5. 对 `master` 开启 “Require a pull request before merging”
 6. 限制 `master` 的合并方式为 `squash` / `rebase`
 7. 管理员仅通过 Pull Request 方式绕过规则，不开放直接 push
@@ -90,7 +90,8 @@ Accepted
   - `.github/rulesets/README.md`
 - GitHub Actions PR 检查工作流
   - `.github/workflows/repo-quality.yml`
-  - 当前包含 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 三个 job
+  - 当前包含 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四个 job
+  - `Identity Guard` 会先按 impact 判定决定是否执行 `validate:identity`，但 job 本身保持独立可见并作为 required check
   - 当前在 `pull_request -> master/dev` 上触发，其中 `master` ruleset 使用的 required check 名称按 job 名配置
 - 统一验证基线说明
   - `Docs/guide/validation-baseline.md`

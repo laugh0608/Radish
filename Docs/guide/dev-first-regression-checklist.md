@@ -57,8 +57,11 @@
 - `master` Pull Request 上的 `Repo Hygiene`
 - `Frontend Lint`
 - `Baseline Quick`
+- `Identity Guard`
 
-截至 `2026-03-26`，最新一次用于合并的 `master` PR 已完成以上三项检查并成功合并，可作为“首次 `CI/CD` 已完成真实闭环”的当前依据。
+截至 `2026-03-26`，最新一次用于合并的 `master` PR 已完成当时的三项检查并成功合并，可作为“首次 `CI/CD` 已完成真实闭环”的历史依据。
+
+截至 `2026-04-04`，当前 `master` 最小 CI 门禁口径已扩展为以上四项；后续所有稳定主线合并前，均应以四项全绿为准。
 
 若以上门槛不稳定，当前不应继续下“可发内部开发版”的结论。
 
@@ -135,7 +138,7 @@
 - 结论：`可发内部开发版`
 - 判断依据：
   - `validate:baseline` 与 `validate:baseline:host` 已通过
-  - 最新一次 `master` PR 的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 已全绿并成功合并
+  - 当前 `master` 最小 CI 门禁已统一为 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard`
   - 首版范围内的业务、体验与最小工程门槛已在状态矩阵中收口为 `已完成`
   - 当前无已知阻塞主线的 `P0 / P1` 问题
 - 不纳入本结论的后续项：
@@ -146,7 +149,7 @@
 
 - [x] `npm run validate:baseline` 通过
 - [x] 如涉及宿主 / 配置 / `DbMigrate` / 部署链，`npm run validate:baseline:host` 通过
-- [x] 最近一次 `master` PR 的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 正常
+- [x] 当前 `master` PR 的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 门禁口径已统一
 - [x] 当前没有已知阻塞主线的 `P0 / P1` 问题
 
 ### B. 当前已收口主线
@@ -194,7 +197,7 @@
 
 - `npm run validate:baseline`：通过 / 阻塞 / 未执行
 - `npm run validate:baseline:host`：通过 / 阻塞 / 未执行
-- `master` PR 最小 CI 门禁：正常 / 异常 / 未确认
+- `master` PR 最小 CI 门禁（`Repo Hygiene / Frontend Lint / Baseline Quick / Identity Guard`）：正常 / 异常 / 未确认
 
 ### 直接引用的已有通过记录
 
