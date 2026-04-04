@@ -160,7 +160,7 @@
 当前入口：
 
 - 在正式启动前，先完成 [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)
-- 当前已完成 [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)，结论已更新为“允许启动实施”
+- 当前已完成 [身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)，且后续首轮实施与官方顺序真实回归也已完成，当前结论已更新为“无需回滚，转入稳定维护”
 - 当前部署范围内的外部兼容边界事实已补齐，后续直接按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 推进
 - 实施批次与回滚顺序以 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 为准
 - 当前“兼容边界已明确”已被写成事实，当前阶段已从“前提确认”切换为“协议输出收敛实施”
