@@ -135,13 +135,47 @@ jobs:
           cache: 'npm'
           cache-dependency-path: package-lock.json
 
+      - name: Collect changed files
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            if [[ -n "${{ github.event.pull_request.head.sha }}" && -n "${{ github.event.pull_request.base.sha }}" ]]; then
+              git diff-tree --no-commit-id --name-only --diff-filter=ACMR -z -r "${{ github.event.pull_request.head.sha }}" > changed-files.txt
+            else
+              git ls-files -z > changed-files.txt
+            fi
+          else
+            base_sha="${{ github.event.before }}"
+            head_sha="${{ github.sha }}"
+
+            if [[ -z "$base_sha" || "$base_sha" == "0000000000000000000000000000000000000000" ]]; then
+              git ls-files -z > changed-files.txt
+            else
+              git diff --name-only --diff-filter=ACMR -z "$base_sha" "$head_sha" > changed-files.txt
+            fi
+          fi
+
+      - name: Detect identity impact
+        id: identity-impact
+        shell: bash
+        run: node Scripts/check-identity-impact.mjs --stdin-z --format=github-output < changed-files.txt >> "$GITHUB_OUTPUT"
+
       - name: Setup .NET SDK
+        if: steps.identity-impact.outputs.impacted == 'true'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
 
       - name: Install dependencies
+        if: steps.identity-impact.outputs.impacted == 'true'
         run: npm ci
 
       - name: Run identity regression validation
+        if: steps.identity-impact.outputs.impacted == 'true'
         run: npm run validate:identity
+
+      - name: Skip identity guard when unaffected
+        if: steps.identity-impact.outputs.impacted != 'true'
+        shell: bash
+        run: |
+          echo "Identity Guard skipped: no identity-related files changed."

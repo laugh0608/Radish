@@ -14,6 +14,7 @@
 npm run setup:hooks
 npm run check:repo-hygiene
 npm run lint:changed
+npm run check:identity-impact
 npm run validate:baseline
 npm run validate:baseline:quick
 npm run validate:baseline:host
@@ -31,6 +32,9 @@ npm run validate:identity
 - `lint:changed`
   - 只对当前变更中的前端脚本文件执行 `eslint`
   - 适合与 GitHub Actions 的 `Frontend Lint` 对齐
+- `check:identity-impact`
+  - 只判定“当前变更是否命中身份语义影响面”
+  - 适合与 GitHub Actions 的 `Identity Guard` 按改动范围触发逻辑对齐
 - `validate:baseline`
   - 运行前端 `type-check`
   - 运行 `radish.client` 现有 `node --test`（当前以 `--test-isolation=none` 兼容受限环境）
@@ -102,6 +106,7 @@ npm run check:repo-hygiene
 
 - `master` 当前受规则保护，只允许通过 PR 合并
 - GitHub Actions 中的 `Repo Hygiene` 与 `Frontend Lint` 当前仅检查“本次变更文件”，用于先拦新增问题，避免被历史债务拖死
+- `Identity Guard` 当前也已改为按变更文件触发：先用 `check:identity-impact` 判定是否命中身份语义影响面，再决定是否执行 `validate:identity`
 - `check:repo-hygiene` 本地全量扫描仍建议按需人工执行，适合做历史清理批次时使用
 
 ### 3. 身份语义相关改动后

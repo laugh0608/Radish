@@ -177,6 +177,11 @@ npm run validate:identity
 - 稳定、可重复、无宿主依赖；
 - 失败时可直接指向具体回归类型，不会淹没在 `Baseline Quick` 的综合输出里。
 
+当前 `Repo Quality / Identity Guard` 已进一步收口为“按改动范围触发”：
+
+- 若 PR 未命中身份语义影响面，则工作流会显式跳过 `validate:identity`
+- 若 PR 命中 `CurrentUser / HttpContextTool / Auth 输出 / Token 解析 / AuthFlow / 身份语义文档与脚本` 等收口范围，则继续执行完整 `validate:identity`
+
 ## 8. 当前结论
 
 截至 `2026-04-04`，身份语义 `Phase 4` 的首轮实施、官方顺序真实回归与回滚窗口验证都已完成；`Phase 5` 当前首轮工程化落点收束为：
@@ -184,4 +189,4 @@ npm run validate:identity
 - 用 `validate:identity` 回答“默认必须跑什么”；
 - 用 `check:identity-runtime / protocol-output` 明确回归类型；
 - 用 `Radish.Api.AuthFlow.http` 与官方顺序回归维持协议消费者事实基线；
-- 用独立 CI 门禁维持“身份语义保护是显式资产，而不是 baseline 的附属说明”。
+- 用按改动范围触发的独立 CI 门禁维持“身份语义保护是显式资产，而不是 baseline 的附属说明”。
