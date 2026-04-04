@@ -183,6 +183,12 @@ npm run validate:identity
 - 若 PR 命中 `CurrentUser / HttpContextTool / Auth 输出 / Token 解析 / AuthFlow / 身份语义文档与脚本` 等收口范围，则继续执行完整 `validate:identity`
 - 这套判定当前继续复用仓库统一的变更文件收集脚本，而不是在 workflow 内重复维护多份 git diff 逻辑
 
+本地 changed-only 自检也按同一条 collector 口径执行：
+
+- 工作区未暂存改动：`npm run check:identity-impact`
+- 只看 staged 内容：`npm run check:identity-impact:staged`
+- 两者当前都先走 `Scripts/collect-changed-files.mjs`，再交给 `check-identity-impact.mjs` 判定
+
 ## 8. 当前结论
 
 截至 `2026-04-04`，身份语义 `Phase 4` 的首轮实施、官方顺序真实回归与回滚窗口验证都已完成；`Phase 5` 当前首轮工程化落点收束为：

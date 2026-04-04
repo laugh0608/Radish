@@ -14,8 +14,12 @@
 npm run setup:hooks
 npm run check:repo-hygiene
 npm run lint:changed
+npm run lint:staged
 npm run collect:changed
+npm run collect:changed:staged
+npm run collect:tracked
 npm run check:identity-impact
+npm run check:identity-impact:staged
 npm run validate:baseline
 npm run validate:baseline:quick
 npm run validate:baseline:host
@@ -33,12 +37,24 @@ npm run validate:identity
 - `lint:changed`
   - 只对当前变更中的前端脚本文件执行 `eslint`
   - 适合与 GitHub Actions 的 `Frontend Lint` 对齐
+- `lint:staged`
+  - 只对 staged 变更中的前端脚本文件执行 `eslint`
+  - 适合提交前先看“这次准备提交的文件”是否通过
 - `collect:changed`
   - 统一输出当前变更文件列表
   - 适合排查“当前 CI / changed-only 脚本到底看到了哪些文件”
+- `collect:changed:staged`
+  - 统一输出 staged 变更文件列表
+  - 适合与本地 hooks、提交前自检对齐
+- `collect:tracked`
+  - 统一输出仓库当前所有 tracked files
+  - 适合排查全量文本卫生或脚本命中范围
 - `check:identity-impact`
   - 只判定“当前变更是否命中身份语义影响面”
   - 适合与 GitHub Actions 的 `Identity Guard` 按改动范围触发逻辑对齐
+- `check:identity-impact:staged`
+  - 只判定 staged 变更是否命中身份语义影响面
+  - 适合提交前先判断“本次准备提交的内容”是否需要追加 `validate:identity`
 - `validate:baseline`
   - 运行前端 `type-check`
   - 运行 `radish.client` 现有 `node --test`（当前以 `--test-isolation=none` 兼容受限环境）
@@ -83,6 +99,12 @@ npm run validate:baseline:quick
   - staged 文件的文本卫生检查
   - staged 变更中的前端脚本 lint
   - Conventional Commits 提交标题校验
+- 如果只想看“本次准备提交的内容”是否会命中身份语义专题，可先运行：
+
+```bash
+npm run check:identity-impact:staged
+```
+
 - 如果提交被 hooks 拦截，优先先修正本次变更，不要绕过 hooks 强行提交
 
 ### 2. 合并前 / 跨层改动后
@@ -112,6 +134,8 @@ npm run check:repo-hygiene
 - GitHub Actions 中的 `Repo Hygiene` 与 `Frontend Lint` 当前仅检查“本次变更文件”，用于先拦新增问题，避免被历史债务拖死
 - `Identity Guard` 当前也已改为按变更文件触发：先用 `check:identity-impact` 判定是否命中身份语义影响面，再决定是否执行 `validate:identity`
 - 当前 changed-only 入口与 `Repo Quality` 的变更文件收集逻辑已统一复用 `Scripts/collect-changed-files.mjs`
+- 工作区级 changed-only 默认使用 `collect:changed`
+- 提交前只看 staged 内容时，优先使用 `collect:changed:staged`、`lint:staged` 与 `check:identity-impact:staged`
 - `check:repo-hygiene` 本地全量扫描仍建议按需人工执行，适合做历史清理批次时使用
 
 ### 3. 身份语义相关改动后
