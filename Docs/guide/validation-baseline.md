@@ -17,6 +17,7 @@ npm run lint:changed
 npm run validate:baseline
 npm run validate:baseline:quick
 npm run validate:baseline:host
+npm run validate:identity
 ```
 
 对应关系：
@@ -47,6 +48,10 @@ npm run validate:baseline:host
 - `validate:baseline:host`
   - 等同于 `validate:baseline`
   - 额外追加 `DbMigrate doctor` / `verify` 只读自检（复用前序构建产物，不重复 build）
+- `validate:identity`
+  - 身份语义专题聚合入口，不替代默认 baseline
+  - 分别执行运行时散点 Claim 读取扫描与协议输出回退扫描
+  - 运行身份语义后端定向测试，覆盖 `ClaimsPrincipalNormalizer`、`HttpContextUser`、`AccountController`、`AuthorizationController`、`UserInfoController`
 
 ## 分层使用建议
 
@@ -99,7 +104,27 @@ npm run check:repo-hygiene
 - GitHub Actions 中的 `Repo Hygiene` 与 `Frontend Lint` 当前仅检查“本次变更文件”，用于先拦新增问题，避免被历史债务拖死
 - `check:repo-hygiene` 本地全量扫描仍建议按需人工执行，适合做历史清理批次时使用
 
-### 3. 宿主或配置相关改动后
+### 3. 身份语义相关改动后
+
+再追加：
+
+```bash
+npm run validate:identity
+```
+
+适用场景：
+
+- `CurrentUser` / `IHttpContextUser` / `UserClaimReader` / `ClaimsPrincipalNormalizer`
+- `UserClaimTypes`、角色 / Scope / 授权策略常量
+- `Radish.Auth` 的 `AccountController`、`AuthorizationController`、`UserInfoController`
+- 前端 Token 解析、OIDC 回调、`userinfo` 契约说明
+
+补充说明：
+
+- `validate:identity` 是身份语义专题入口，不替代 `validate:baseline`
+- 若本轮触达 Auth 输出、`userinfo`、官方客户端 Token 解析或 `Radish.Api.AuthFlow.http`，再按 [身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 补 `AuthFlow` 与官方顺序回归
+
+### 4. 宿主或配置相关改动后
 
 再追加：
 

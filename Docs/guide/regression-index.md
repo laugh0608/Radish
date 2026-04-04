@@ -25,6 +25,7 @@
 
 | 改动主题 | 什么时候补跑 | `HttpTest` / 脚本入口 | 专题文档 / 人工验收入口 | 说明 |
 | --- | --- | --- | --- | --- |
+| 身份语义 / Claim / Auth 协议输出 | `CurrentUser`、Claim 常量、Auth 输出、`userinfo`、Token 解析、协议消费者改动后 | `npm run validate:identity`、`npm run check:identity-claims`、`Radish.Api.AuthFlow.http` | [身份语义防回归回归手册](/guide/identity-claim-regression-playbook)、[身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) | 默认先跑 `validate:baseline + validate:identity`；若触达协议输出或官方消费者，再补 `AuthFlow` 与官方顺序回归 |
 | 认证 / OIDC / 基础烟雾 | 登录、Token、网关入口、基础连通性改动后 | `Radish.Api.AuthFlow.http`、`Radish.Api.Smoke.http`、`Radish.Api.Tenant.http` | [验证基线说明](/guide/validation-baseline) | 所有需要 Bearer Token 的专题都默认先从 `AuthFlow` 取 token；若本轮涉及身份语义 / Claim 口径，同时优先补 `check:identity-claims` 与 `AuthFlow` 回归 |
 | 社区关系链 / 内容治理 / 分发流 | 关注、举报、审核、分发流、个人主页关系链改动后 | `Radish.Api.Community.http` | [社区主线验收清单](/features/community-m12-p0-acceptance)、[论坛应用功能说明](/features/forum-features) | 当前 `Community` 脚本承接原 `Forum.http` 中的关系链与治理段 |
 | 论坛核心主链 / 分类标签 / 帖子编辑历史 | 分类、标签、发帖、帖子列表 / 详情、帖子编辑历史改动后 | `Radish.Api.Forum.Core.http` | [论坛应用功能说明](/features/forum-features)、[论坛编辑历史（专题）](/features/forum-edit-history) | 论坛主链基础能力统一看 `Forum.Core` |

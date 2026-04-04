@@ -55,3 +55,4 @@
 
 - **当前结论已更新**：身份语义 `Phase 4` 当前不再停留在“继续做官方回归”的状态，而是明确收口为“首轮实施与官方顺序真实回归已完成，转入稳定维护”。
 - **后续重点已切换**：下一步优先进入 `Phase 5` 防回归资产接入脚本 / 校验流程准备，以及下一里程碑入口重审；当前不在同一窗口提前删除 `UserClaimReader / CurrentUser` 的输入兼容。
+- **`Phase 5` 首轮工程化入口已落地**：当前已补 `check:identity-runtime`、`check:identity-protocol-output`、`validate:identity`、`Identity Guard` CI 门禁，以及 `guide/identity-claim-regression-playbook.md`；身份语义相关改动后默认必跑项、官方顺序回归与本地 / CI 分层口径已统一。

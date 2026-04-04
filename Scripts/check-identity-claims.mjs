@@ -3,6 +3,7 @@ import { dirname, extname, join, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
+const args = new Set(process.argv.slice(2));
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(scriptDir, '..');
 
@@ -111,6 +112,17 @@ const protocolOutputGuards = [
     ],
   },
 ];
+
+function hasFlag(flag) {
+  return args.has(flag);
+}
+
+function printUsage() {
+  console.log('用法: node Scripts/check-identity-claims.mjs [--runtime-only] [--protocol-only]');
+  console.log('');
+  console.log('--runtime-only   只扫描运行时代码中的散点 Claim 读取回归');
+  console.log('--protocol-only  只扫描 Radish.Auth 协议输出侧的回退风险');
+}
 
 function toRepoPath(filePath) {
   return relative(repoRoot, filePath).split(sep).join('/');
@@ -252,21 +264,48 @@ function collectProtocolGuardFindings(filePath) {
   return findings;
 }
 
+if (hasFlag('--help') || hasFlag('-h')) {
+  printUsage();
+  process.exit(0);
+}
+
+const runtimeOnly = hasFlag('--runtime-only');
+const protocolOnly = hasFlag('--protocol-only');
+
+if (runtimeOnly && protocolOnly) {
+  console.error('[Identity Claim 扫描] `--runtime-only` 与 `--protocol-only` 不能同时使用。');
+  process.exit(1);
+}
+
+const shouldScanRuntime = !protocolOnly;
+const shouldScanProtocol = !runtimeOnly;
 const scanFiles = scanRoots
   .map((root) => join(repoRoot, root))
   .flatMap((rootPath) => getAllCsFiles(rootPath));
 
 const scannedFiles = scanFiles.filter((filePath) => !shouldSkipFile(toRepoPath(filePath)));
-const findings = scanFiles.flatMap((filePath) => [
-  ...collectFindings(filePath),
-  ...collectProtocolGuardFindings(filePath),
-]);
+const findings = scanFiles.flatMap((filePath) => {
+  const fileFindings = [];
+
+  if (shouldScanRuntime) {
+    fileFindings.push(...collectFindings(filePath));
+  }
+
+  if (shouldScanProtocol) {
+    fileFindings.push(...collectProtocolGuardFindings(filePath));
+  }
+
+  return fileFindings;
+});
 
 console.log('[Identity Claim 扫描]');
 console.log(`- 扫描目录：${scanRoots.join(', ')}`);
 console.log(`- 扫描文件：${scannedFiles.length} 个`);
 console.log(`- 排除文件/目录：${excludedFiles.size + excludedPrefixes.length} 条`);
-console.log(`- 协议输出守卫：${protocolOutputGuards.length} 个文件`);
+console.log(`- 扫描模式：${shouldScanRuntime && shouldScanProtocol ? 'runtime + protocol' : shouldScanRuntime ? 'runtime' : 'protocol'}`);
+if (shouldScanProtocol) {
+  console.log(`- 协议输出守卫：${protocolOutputGuards.length} 个文件`);
+}
 
 if (findings.length === 0) {
   console.log('- 结果：未发现新的身份语义回归命中。');

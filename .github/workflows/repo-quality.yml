@@ -120,3 +120,28 @@ jobs:
 
       - name: Run quick baseline validation
         run: npm run validate:baseline:quick
+
+  identity-guard:
+    name: Identity Guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run identity regression validation
+        run: npm run validate:identity

@@ -14,6 +14,8 @@
     "check:commit-message": "node Scripts/validate-commit-message.mjs",
     "check:console-permissions": "node Scripts/check-console-permissions.mjs",
     "check:identity-claims": "node Scripts/check-identity-claims.mjs",
+    "check:identity-runtime": "node Scripts/check-identity-claims.mjs --runtime-only",
+    "check:identity-protocol-output": "node Scripts/check-identity-claims.mjs --protocol-only",
     "dev:frontend": "npm run dev --workspace=radish.client",
     "dev:console": "npm run dev --workspace=radish.console",
     "dev:gateway": "dotnet run --project Radish.Gateway/Radish.Gateway.csproj",
@@ -29,6 +31,7 @@
     "validate:baseline": "node Scripts/validate-baseline.mjs",
     "validate:baseline:quick": "node Scripts/validate-baseline.mjs --quick",
     "validate:baseline:host": "node Scripts/validate-baseline.mjs --with-host-checks",
+    "validate:identity": "node Scripts/validate-identity-regression.mjs",
     "validate:ci": "npm run lint:changed && npm run validate:baseline:quick",
     "install:all": "npm install"
   }

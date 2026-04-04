@@ -175,4 +175,5 @@ console.log('\n[baseline] 自动化基线验证已完成。');
 if (!withHostChecks) {
   console.log('[baseline] 如需宿主只读自检，可追加 --with-host-checks。');
 }
+console.log('[baseline] 身份语义相关改动建议再补 `npm run validate:identity`。');
 console.log('[baseline] HttpTest 仍需在本地服务准备完成后按专题手工执行。');

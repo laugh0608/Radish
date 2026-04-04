@@ -178,6 +178,9 @@
 
 - 为运行时代码整理 `rg` 静态扫描规则与白名单口径
 - 先以仓库脚本形式固化“运行时散点 Claim 读取”与“Phase 4 协议输出回退”两类风险
+- 当前已进一步拆分为 `check:identity-runtime` 与 `check:identity-protocol-output`
+- 当前已新增 `validate:identity`，作为身份语义相关改动后的默认专题自动化入口
+- 当前已新增 [身份语义防回归回归手册](/guide/identity-claim-regression-playbook)，把默认命令、专题回归顺序、记录格式与 CI 分层收束为单一操作面
 - 再视项目阶段决定是否继续上升到更重的本地校验或后续 CI/CD 流水线
 
 验收：
@@ -292,7 +295,7 @@
 - **Phase 2：迁移所有运行时入口** —— 主路径已完成。
 - **Phase 3：收缩旧逃逸接口** —— 已完成到“兼容层冻结”状态。
 - **Phase 4：协议输出收敛** —— 已完成首轮实施与官方顺序真实回归，当前无需触发回滚，转入稳定维护。
-- **Phase 5：M12 后续防回归落地** —— 最小脚本化入口已补齐；当前 `check-identity-claims` 已同时覆盖运行时散点 Claim 解析与 Phase 4 协议输出侧回退风险，后续再视项目阶段决定是否继续上升到 CI/CD。
+- **Phase 5：M12 后续防回归落地** —— 首轮工程化入口已补齐；当前已形成 `check-identity-claims / check-identity-runtime / check-identity-protocol-output / validate:identity`、[身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 与独立 CI 门禁的组合口径，后续再视项目阶段决定是否继续扩张到更重的流水线或宿主专题。
 
 ### 11.2 当前兼容层最终边界
 
@@ -312,7 +315,7 @@
 
 ### 11.4 下一步建议
 
-1. `M13` 首轮已落地 `npm run check:identity-claims`，并接入根目录 `validate:baseline` / `validate:baseline:quick`；后续再视项目阶段决定是否继续上升到 CI/CD。
+1. `M13` 当前已形成 `npm run check:identity-claims`、`check:identity-runtime`、`check:identity-protocol-output` 与 `validate:identity` 的专题入口组合，并已通过 [身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 明确“改了身份语义后默认必须跑什么”；后续再视项目阶段决定是否继续扩张到更重的流水线或宿主专题。
 2. 当前优先维持 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 的既定边界，不在同一窗口提前删除输入兼容；若后续回归再暴露阻塞，再按回滚窗口处理。
 3. 若后续新增新的部署环境、第三方客户端或自定义反代规则，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实。
 4. 在确认首轮输出收缩稳定后，再评估移除 `IHttpContextUser` 兼容层。

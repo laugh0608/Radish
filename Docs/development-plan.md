@@ -65,7 +65,7 @@
    - 当前已完成首轮仓库内实施：`AccountController / AuthorizationController` 已停止历史双写输出，`UserInfoController` 已完成最小对齐，`radish-client / radish-console` 的 Token 直读规则也已提取为可测试解析模块
    - 当前 `Radish.Api.AuthFlow.http`、`Scalar` 联调提示与鉴权文档已同步到最新口径；官方回归资产不再停留在旧 scope、旧密码或旧双写说明
    - 当前已按官方顺序完成 `radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 真实端到端回归，授权流程与权限链路当前均正常，本轮无需触发回滚
-   - 当前下一步已从“继续做官方回归”切换为“稳定维护 + 防回归治理准备”；防回归扫描规则继续留待 `M13` 纳入脚本 / CI
+   - 当前下一步已从“继续做官方回归”切换为“稳定维护 + 防回归治理准备”；首轮 `Phase 5` 工程化资产也已补齐：`check:identity-runtime`、`check:identity-protocol-output`、`validate:identity`、[身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 与 `Identity Guard` CI 门禁当前已形成同一口径
 
 5. **工程治理**
    - `DbMigrate` 已完成本轮解耦宿主、启动入口收口与 `doctor` 只读校验命令补齐
@@ -116,13 +116,15 @@
 
 12. **M13 首轮验证入口已完成最小落地**
    - 根目录已补齐 `npm run validate:baseline`、`validate:baseline:quick`、`validate:baseline:host`
+   - 身份语义专题入口已继续收口：当前已补齐 `check:identity-runtime`、`check:identity-protocol-output` 与 `validate:identity`
+   - 当前已新增 [身份语义防回归回归手册](/guide/identity-claim-regression-playbook)，明确“身份语义相关改动后默认必须跑什么”、哪些继续留在本地专题层、哪些已适合上 CI
    - 已补验证基线说明页，明确“日常提交前 / 合并前 / 宿主配置相关改动后”的分层使用建议
    - 已完成一轮 `full` 验证：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 195 个测试通过
    - 当前结论为：`M13` 不再只是规划名词，已具备第一版真实入口；接下来优先服务于首个 dev 版本的总回归与最小发布准备，而不是先扩张为更重的工程平台
 
 13. **M15 首轮最小 CI 门禁已完成真实落地**
    - GitHub Actions 已新增 `Repo Quality` 工作流，当前已覆盖 `pull_request -> master / dev` 与手动触发；普通 `dev` push 不再触发该工作流
-   - 当前已接通 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 三个最小质量门禁，并已在真实 PR 中成功通过
+   - 当前已接通 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick` 与 `Identity Guard` 四个最小质量门禁，并已把身份语义防回归从“baseline 的附属检查”提升为独立可见门禁
    - 当前已补 `Docker Images` 工作流：仅在 `push v*-dev / v*-test / v*-release` 与手动补跑规范 tag 时推送镜像，`radish-dbmigrate / radish-api / radish-auth / radish-gateway / radish-frontend` 已纳入统一 GHCR 口径，并已通过 `v26.3.2-test / v26.3.2-release` 补齐首次真实拉取、初始化与部署验收
    - `frontend` 侧的运行时配置注入已完成：静态服务当前会在请求 `/runtime-config.js` 时动态返回运行时配置脚本，`radish.client / radish.console` 已优先读取运行时配置，不再要求只能依赖构建期 `VITE_*`
    - `frontend` GHCR 首次真实产物已完成验证，当前已可通过 `docker pull` 获取；`Frontend/Dockerfile` 也已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`

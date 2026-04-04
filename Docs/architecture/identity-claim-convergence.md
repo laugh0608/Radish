@@ -270,12 +270,22 @@ rg -n --glob '*.cs' \
 npm run check:identity-claims
 ```
 
+并已拆分专题入口：
+
+```bash
+npm run check:identity-runtime
+npm run check:identity-protocol-output
+npm run validate:identity
+```
+
 并已纳入：
 
 ```bash
 npm run validate:baseline
 npm run validate:baseline:quick
 ```
+
+执行面统一见：[身份语义防回归回归手册](/guide/identity-claim-regression-playbook)
 
 ## 11. 当前实施状态（截至 2026-04-04）
 
@@ -298,11 +308,12 @@ npm run validate:baseline:quick
 
 - [身份语义 Phase 4 启动前提确认](/guide/identity-claim-phase4-readiness)、[最终启动评审](/guide/identity-claim-phase4-start-review) 与 [仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 当前都已完成；正式结论已更新为“仓库内输入已齐，且当前部署范围内的仓库外兼容边界已被事实关闭，因此允许启动 Phase 4”。
 - 当前已按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 完成首轮仓库内实施与官方顺序真实回归：Auth 历史双写输出已收缩，`userinfo` 已完成最小对齐，`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 当前均已完成端到端回归，结论已更新为“无需回滚，转入稳定维护”。
-- `npm run check:identity-claims` 当前已补到“运行时散点 Claim 解析 + Phase 4 协议输出回退风险”双重守卫，并已纳入 `validate:baseline` / `validate:baseline:quick`。
+- `npm run check:identity-claims` 当前已补到“运行时散点 Claim 解析 + Phase 4 协议输出回退风险”双重守卫，并已拆分为 `check:identity-runtime`、`check:identity-protocol-output` 与 `validate:identity` 作为更清晰的专题执行入口。
+- [身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 当前已明确身份语义相关改动后的默认命令、专题回归顺序、记录模板与 CI 分层。
 
 仍待后续阶段完成的事项：
 
-- 将身份语义防回归规则是否继续上升到更重的 CI/CD 流水线，留待 M13 阶段按工程现实再决定。
+- 将身份语义防回归规则是否继续扩张到更重的 CI/CD 或宿主专题流水线，留待 M13 后续阶段按工程现实再决定。
 - 评估 `IHttpContextUser` 兼容层的最终删除时机。
 - `UserClaimReader / CurrentUser / IHttpContextUser` 的输入兼容删除当前仍未纳入首轮窗口；在确认后续稳定维护阶段无新增阻塞前，继续维持“输出先收缩、输入兼容后删除”的边界。
 

@@ -19,6 +19,7 @@
 - [ ] 本次改动符合当前阶段主线，或已明确说明为何属于例外
 - [ ] 已优先从根因、长期维护性和系统一致性出发处理问题，而不是仅做最小修补
 - [ ] 已执行与本次改动匹配的最小验证
+- [ ] 如触达身份语义 / Claim / Auth 协议输出 / Token 解析，已补 `npm run validate:identity`，并按需记录 `Radish.Api.AuthFlow.http` 与官方顺序回归结果
 - [ ] 如修改了架构、规则、接口、流程、视觉口径或协作规范，已同步更新 `Docs/` 与相关协作文件
 - [ ] 如修改了宿主、配置、数据库结构、种子或 `DbMigrate`，已说明影响范围与处理方式
 - [ ] 未直接向 `master` 提交常规功能改动
@@ -32,10 +33,18 @@
 npm run validate:baseline:quick
 npm run validate:baseline
 npm run validate:baseline:host
+npm run validate:identity
 dotnet build Radish.slnx -c Debug
 dotnet test Radish.Api.Tests
 npm run build --workspace=radish.client
 npm run build --workspace=radish.console
+```
+
+如本轮触达身份语义 / Claim / Auth 协议输出，请再补记：
+
+```text
+Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http
+radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar
 ```
 
 ## 影响评估

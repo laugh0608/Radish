@@ -51,8 +51,9 @@
 - [x] 已补 Console 新一轮收尾边界：`console.access` 不再单独放行，分类与标签后台已拆分，内容治理 / 胡萝卜 / 经验等级后台首版已接入，相关资源映射与种子已同步
 - [x] 已补社区资料与身份展示细节：查看他人主页时已走公开资料接口，帖子详情作者区与评论树节点已补头像显示，关注/取消关注入口已回到公开主页卡片
 - [x] 已补 `M13` 首轮统一验证入口：`validate:baseline` / `quick` / `host`、验证基线说明页与最小脚本化收口
+- [x] 已补身份语义 `Phase 5` 首轮工程化资产：新增 `check:identity-runtime`、`check:identity-protocol-output` 与 `validate:identity`，并补 [身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 统一“默认必跑项 / 官方顺序回归 / CI 分层”口径；`Repo Quality` 也已补 `Identity Guard` 独立门禁
 - [x] 已完成一轮 `full` 验证：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 共 195 个测试通过
-- [x] 已补 `M15` 首轮最小 CI 门禁：`Repo Hygiene` / `Frontend Lint` / `Baseline Quick` 已接入 GitHub Actions，并已在最新一次 `master` PR 上完成真实通过与合并闭环
+- [x] 已补 `M15` 首轮最小 CI 门禁：`Repo Hygiene` / `Frontend Lint` / `Baseline Quick` / `Identity Guard` 已接入 GitHub Actions，并已在最新一次 `master` PR 上完成真实通过与合并闭环
 - [x] 已补 `GHCR` 镜像 workflow 资产：`.github/workflows/docker-images.yml` 当前已收口为 `push v*-dev / v*-test / v*-release` 与手动补跑规范 tag 时推送；`frontend` 已接入统一 GHCR 推送规则，普通 `dev` push 不再触发镜像发布
 - [x] 已补 `DbMigrate` 容器化入口：`Radish.DbMigrate/Dockerfile`、`radish-dbmigrate` GHCR 发布链与 `dbmigrate -> api/auth -> gateway` 启动顺序当前已纳入 `local / test / prod` 三套容器口径，并已完成 Compose 静态展开校验，避免首次部署因共享业务库缺表导致登录链路直接失败
 - [x] 已确认 `GHCR` 后端镜像真实产物可用：当前已可通过 `docker pull` 获取 `radish-api / radish-auth / radish-gateway` 镜像，后端包权限、可见性与 tag 规则已完成一轮真实验证
@@ -307,7 +308,7 @@
 - **当前状态**：主体已完成，Phase 4 首轮实施、官方顺序真实回归与回滚窗口验证均已完成，当前转入稳定维护
 - **剩余任务**：
   - Phase 4：协议输出收敛（当前已完成 [最终启动评审](/guide/identity-claim-phase4-start-review) 与首轮官方回归；后续若部署形态变化，再按 [仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实）
-  - Phase 5：防回归资产接入脚本 / 校验流程（留待重定义后的 `M13`）
+  - Phase 5：防回归资产接入脚本 / 校验流程（首轮工程化入口已补齐；后续再视项目阶段决定是否继续扩张到更重的 CI/CD / 宿主专题）
 
 ### 工程治理
 
