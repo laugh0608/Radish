@@ -55,6 +55,7 @@ function splitZeroTerminated(buffer) {
 
 console.log('[validate:ci] 模式：repo-quality-local');
 
+runNpm('Repo Hygiene changed-only', ['run', 'check:repo-hygiene:changed']);
 runNpm('Frontend changed-only Lint', ['run', 'lint:changed']);
 runNpm('Baseline Quick', ['run', 'validate:baseline:quick']);
 

@@ -13,6 +13,7 @@
 ```bash
 npm run setup:hooks
 npm run check:repo-hygiene
+npm run check:repo-hygiene:changed
 npm run lint:changed
 npm run lint:staged
 npm run collect:changed
@@ -35,6 +36,9 @@ npm run validate:ci
 - `check:repo-hygiene`
   - 全量检查仓库已跟踪文本文件的 UTF-8 / BOM / 换行符 / 末尾换行 / 尾随空格
   - 适合治理历史文本问题时使用
+- `check:repo-hygiene:changed`
+  - 只检查当前 worktree 变更文件的文本卫生
+  - 适合与 GitHub Actions 的 `Repo Hygiene` changed-only 行为对齐
 - `lint:changed`
   - 只对当前变更中的前端脚本文件执行 `eslint`
   - 适合与 GitHub Actions 的 `Frontend Lint` 对齐
@@ -82,7 +86,7 @@ npm run validate:ci
   - 运行身份语义后端定向测试，覆盖 `ClaimsPrincipalNormalizer`、`HttpContextUser`、`AccountController`、`AuthorizationController`、`UserInfoController`
 - `validate:ci`
   - 本地复现当前 `Repo Quality` 的最小执行面
-  - 依次运行 `lint:changed`、`validate:baseline:quick`
+  - 依次运行 `check:repo-hygiene:changed`、`lint:changed`、`validate:baseline:quick`
   - 再按 `check:identity-impact` 的同源规则决定是否追加 `validate:identity`
 
 ## 分层使用建议
@@ -148,6 +152,7 @@ npm run validate:ci
 - GitHub Actions 中的 `Repo Hygiene` 与 `Frontend Lint` 当前仅检查“本次变更文件”，用于先拦新增问题，避免被历史债务拖死
 - `Identity Guard` 当前也已改为按变更文件触发：先用 `check:identity-impact` 判定是否命中身份语义影响面，再决定是否执行 `validate:identity`
 - 当前 changed-only 入口与 `Repo Quality` 的变更文件收集逻辑已统一复用 `Scripts/collect-changed-files.mjs`
+- `check:repo-hygiene:changed` 与 `check:repo-hygiene:staged` 当前也已切到统一 collector，不再单独维护 `git diff` 口径
 - `check:identity-impact` 的命中范围当前已收口到单一规则源，除身份语义代码、Auth 协议输出、前端 Token 解析与 `AuthFlow` 入口外，也覆盖 `validation-baseline / regression-index / dev-first-regression-record / development-plan / planning/current / PR template` 等默认执行面文档与门禁资产
 - 工作区级 changed-only 默认使用 `collect:changed`
 - 提交前只看 staged 内容时，优先使用 `collect:changed:staged`、`lint:staged` 与 `check:identity-impact:staged`
