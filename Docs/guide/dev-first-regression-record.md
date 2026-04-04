@@ -35,7 +35,27 @@
 
 1. 维持当前规划页、总回归记录、状态矩阵与周志口径一致，避免事实再次漂移。
 2. 继续以 `validate:baseline` / `validate:baseline:host` 与 `master` PR 门禁作为跨层改动默认回归入口。
-3. 优先完成身份语义 Phase 4 的启动前提确认；若前提暂不满足，再先按 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline) 收束下一条主线。
+3. 身份语义 Phase 4 启动前提确认、最终启动评审、首轮实施与官方顺序真实回归当前均已完成；后续优先维持稳定维护边界并推进 `Phase 5` 防回归治理准备。
+
+## 身份语义补充记录（2026-04-04）
+
+- 记录日期：2026-04-04
+- 记录人：项目协作记录
+- 范围：身份语义 `Phase 4` 首轮实施与官方顺序真实回归收口
+- 触发原因：`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 已按官方顺序完成真实回归，需要把“允许启动实施”的中间口径统一回写为事实结论。
+
+### 本轮确认结论
+
+- `Phase 4` 首轮实施：完成
+- 官方顺序真实回归：完成
+- 回滚窗口验证：完成
+- 当前阶段更准确的表述应为：`身份语义 Phase 4 无需回滚，转入稳定维护与防回归治理准备`
+
+### 下一动作
+
+1. 继续以 `validate:baseline` / `validate:baseline:host` 与 `check:identity-claims` 作为身份语义相关改动的默认自动化入口。
+2. 维持 `UserClaimReader / CurrentUser / IHttpContextUser` 输入兼容保留边界，不在同一窗口提前删除兼容读取。
+3. 将后续重点切换到 `Phase 5` 防回归治理准备；若部署边界再次变化，再回到身份语义外部兼容边界清单补事实。
 
 ## 首版 dev 总回归记录（2026-03-26）
 

@@ -25,7 +25,7 @@
 
 | 改动主题 | 什么时候补跑 | `HttpTest` / 脚本入口 | 专题文档 / 人工验收入口 | 说明 |
 | --- | --- | --- | --- | --- |
-| 认证 / OIDC / 基础烟雾 | 登录、Token、网关入口、基础连通性改动后 | `Radish.Api.AuthFlow.http`、`Radish.Api.Smoke.http`、`Radish.Api.Tenant.http` | [验证基线说明](/guide/validation-baseline) | 所有需要 Bearer Token 的专题都默认先从 `AuthFlow` 取 token |
+| 认证 / OIDC / 基础烟雾 | 登录、Token、网关入口、基础连通性改动后 | `Radish.Api.AuthFlow.http`、`Radish.Api.Smoke.http`、`Radish.Api.Tenant.http` | [验证基线说明](/guide/validation-baseline) | 所有需要 Bearer Token 的专题都默认先从 `AuthFlow` 取 token；若本轮涉及身份语义 / Claim 口径，同时优先补 `check:identity-claims` 与 `AuthFlow` 回归 |
 | 社区关系链 / 内容治理 / 分发流 | 关注、举报、审核、分发流、个人主页关系链改动后 | `Radish.Api.Community.http` | [社区主线验收清单](/features/community-m12-p0-acceptance)、[论坛应用功能说明](/features/forum-features) | 当前 `Community` 脚本承接原 `Forum.http` 中的关系链与治理段 |
 | 论坛核心主链 / 分类标签 / 帖子编辑历史 | 分类、标签、发帖、帖子列表 / 详情、帖子编辑历史改动后 | `Radish.Api.Forum.Core.http` | [论坛应用功能说明](/features/forum-features)、[论坛编辑历史（专题）](/features/forum-edit-history) | 论坛主链基础能力统一看 `Forum.Core` |
 | 论坛评论 / 回复 / 评论编辑历史 | 评论树、回复、评论编辑、评论历史改动后 | `Radish.Api.Forum.Comment.http` | [论坛编辑历史（专题）](/features/forum-edit-history) | 评论链路与帖子主链已拆分，避免混在同一文件里 |
