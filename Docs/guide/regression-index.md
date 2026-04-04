@@ -13,6 +13,7 @@
    - 日常改动先跑 `npm run validate:baseline:quick`
    - 跨层改动再跑 `npm run validate:baseline`
    - 宿主 / 配置 / `DbMigrate` 相关改动再跑 `npm run validate:baseline:host`
+   - 若需要在本地复现当前 `Repo Quality` 最小门禁，再跑 `npm run validate:ci`
    - 若当前处于首版 `dev` 收官或准备判断“可发内部开发版”，优先同时查看 [首版 dev 总回归与发布前检查单](/guide/dev-first-regression-checklist)
 2. 再按改动主题补专题回归：
    - 需要账号、Token、运行中宿主的，优先看本页对应 `HttpTest`

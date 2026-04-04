@@ -53,6 +53,7 @@
 - [x] 已补 `M13` 首轮统一验证入口：`validate:baseline` / `quick` / `host`、验证基线说明页与最小脚本化收口
 - [x] 已补身份语义 `Phase 5` 首轮工程化资产：新增 `check:identity-runtime`、`check:identity-protocol-output` 与 `validate:identity`，并补 [身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 统一“默认必跑项 / 官方顺序回归 / CI 分层”口径；`Repo Quality` 也已补 `Identity Guard` 独立门禁
 - [x] 已补身份语义 `Phase 5` 第二轮工程一致性收口：`check:identity-impact` 当前已统一为单一规则源，并已纳入 `validation-baseline / regression-index / dev-first-regression-record / development-plan / planning/current / PR template` 等默认执行面文档与门禁资产；本地 `validate:ci` 也已对齐为 `Repo Quality` changed-only + 条件 `validate:identity`，并补轻量自校验避免门禁判定再次漂移
+- [x] 已补默认执行面第三轮收口：`.githooks/pre-commit` 当前已切到 `check:repo-hygiene:staged + lint:staged` 统一脚本入口；PR 模板、回归记录模板与专题回归索引也已同步纳入 `validate:ci` 与 staged 入口口径，避免“脚本已更新、提交前入口与记录模板仍停留旧写法”
 - [x] 已完成一轮 `full` 验证：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 共 195 个测试通过
 - [x] 已补 `M15` 首轮最小 CI 门禁：`Repo Hygiene` / `Frontend Lint` / `Baseline Quick` / `Identity Guard` 已接入 GitHub Actions，并已在最新一次 `master` PR 上完成真实通过与合并闭环
 - [x] 已补 `GHCR` 镜像 workflow 资产：`.github/workflows/docker-images.yml` 当前已收口为 `push v*-dev / v*-test / v*-release` 与手动补跑规范 tag 时推送；`frontend` 已接入统一 GHCR 推送规则，普通 `dev` push 不再触发镜像发布

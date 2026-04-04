@@ -120,6 +120,7 @@
    - 当前已新增 [身份语义防回归回归手册](/guide/identity-claim-regression-playbook)，明确“身份语义相关改动后默认必须跑什么”、哪些继续留在本地专题层、哪些已适合上 CI
    - 已补验证基线说明页，明确“日常提交前 / 合并前 / 宿主配置相关改动后”的分层使用建议
    - 最新已继续补齐身份语义 impact 判定的工程一致性：`check:identity-impact` 当前已统一为单一规则源，并已纳入 `validation-baseline / regression-index / dev-first-regression-record / development-plan / planning/current / PR template` 等默认执行面文档与门禁资产；本地 `validate:ci` 也已对齐为 `Repo Quality` changed-only + 条件 `validate:identity`
+   - 最新已继续补齐默认执行面：`.githooks/pre-commit` 当前已改为直接调用 `check:repo-hygiene:staged` 与 `lint:staged`；PR 模板、回归记录模板与专题回归索引也已同步纳入 `validate:ci` 口径，避免脚本、hooks 与记录模板各说各话
    - 已完成一轮 `full` 验证：前端 `type-check`、`radish.client` 最小测试、Console 权限扫描、后端构建与 `Radish.Api.Tests` 195 个测试通过
    - 当前结论为：`M13` 不再只是规划名词，已具备第一版真实入口；接下来优先服务于首个 dev 版本的总回归与最小发布准备，而不是先扩张为更重的工程平台
 

@@ -62,3 +62,8 @@
 - **impact 判定当前已收口到单一规则源**：`check:identity-impact` 当前不再由脚本内部散落维护路径清单，而是改为统一复用单一规则源；除身份语义核心代码、前端 Token 解析与 `Radish.Api.AuthFlow.http` 外，也已把 `validation-baseline / regression-index / dev-first-regression-record / development-plan / planning/current / PR template` 等默认执行面文档与门禁资产纳入同一判定范围。
 - **本地 `validate:ci` 已与真实 CI 对齐**：当前会先执行 `lint:changed`、`validate:baseline:quick`，再仅在命中身份语义影响面时追加 `validate:identity`，不再无条件跑完整身份语义专题。
 - **已补轻量自校验**：`validate:baseline` / `validate:baseline:quick` 当前都会先校验 identity impact 判定样本，避免 `Identity Guard` 的 changed-only 触发边界再次无声漂移。
+
+### 默认执行面入口继续收口
+
+- **pre-commit 已改为统一 staged 入口**：`.githooks/pre-commit` 当前不再手写 `git diff --cached` 管道，而是直接调用 `check:repo-hygiene:staged` 与 `lint:staged`，提交前入口已与统一 collector 保持同源。
+- **PR 与回归记录模板已同步当前事实**：`PULL_REQUEST_TEMPLATE`、`change-regression-record-template` 与 `regression-index` 当前已纳入 `validate:ci` 与 staged 入口口径，避免“脚本事实已更新，但记录模板仍沿用旧写法”。

@@ -19,6 +19,7 @@
 - [ ] 本次改动符合当前阶段主线，或已明确说明为何属于例外
 - [ ] 已优先从根因、长期维护性和系统一致性出发处理问题，而不是仅做最小修补
 - [ ] 已执行与本次改动匹配的最小验证
+- [ ] 如需在本地复现当前 `Repo Quality` 最小门禁，已按需执行 `npm run validate:ci`
 - [ ] 如触达身份语义 / Claim / Auth 协议输出 / Token 解析，已补 `npm run validate:identity`，并按需记录 `Radish.Api.AuthFlow.http` 与官方顺序回归结果
 - [ ] 如修改了架构、规则、接口、流程、视觉口径或协作规范，已同步更新 `Docs/` 与相关协作文件
 - [ ] 如修改了宿主、配置、数据库结构、种子或 `DbMigrate`，已说明影响范围与处理方式
@@ -33,6 +34,7 @@
 npm run validate:baseline:quick
 npm run validate:baseline
 npm run validate:baseline:host
+npm run validate:ci
 npm run validate:identity
 dotnet build Radish.slnx -c Debug
 dotnet test Radish.Api.Tests

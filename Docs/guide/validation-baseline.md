@@ -108,8 +108,8 @@ npm run validate:baseline:quick
 补充说明：
 
 - `setup:hooks` 只需首次执行一次；之后提交时会自动运行：
-  - staged 文件的文本卫生检查
-  - staged 变更中的前端脚本 lint
+  - `check:repo-hygiene:staged`
+  - `lint:staged`
   - Conventional Commits 提交标题校验
 - 如果只想看“本次准备提交的内容”是否会命中身份语义专题，可先运行：
 

@@ -28,7 +28,7 @@
 3. **影响专题**
    - 明确命中哪些专题回归，不写成“已全量验证”
 4. **自动化执行**
-   - 例如 `validate:baseline:quick` / `full` / `host`
+   - 例如 `validate:baseline:quick` / `full` / `host` / `validate:ci`
    - 写清结果是通过、阻塞还是未执行
 5. **专题回归**
    - 对应 `HttpTest`、专题脚本、专题文档中的最小人工验收顺序
@@ -64,6 +64,7 @@
 - `npm run validate:baseline:quick`：通过 / 阻塞 / 未执行
 - `npm run validate:baseline`：通过 / 阻塞 / 未执行
 - `npm run validate:baseline:host`：通过 / 阻塞 / 未执行
+- `npm run validate:ci`：通过 / 阻塞 / 未执行
 
 ### 专题回归
 
@@ -105,6 +106,7 @@
 
 - `npm run validate:baseline:quick`：通过
 - `npm run validate:baseline:host`：通过（含 `DbMigrate doctor / verify`）
+- `npm run validate:ci`：通过（本地已复现当前 `Repo Quality` 最小门禁）
 
 不推荐：
 
