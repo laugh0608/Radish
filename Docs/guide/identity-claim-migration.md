@@ -177,12 +177,13 @@
 实施内容：
 
 - 为运行时代码整理 `rg` 静态扫描规则与白名单口径
-- 在进入 M13（验证基线与回归资产工程化）后，再补为仓库脚本
-- 视项目阶段决定接入本地校验或后续 CI/CD 流水线
+- 先以仓库脚本形式固化“运行时散点 Claim 读取”与“Phase 4 协议输出回退”两类风险
+- 再视项目阶段决定是否继续上升到更重的本地校验或后续 CI/CD 流水线
 
 验收：
 
-- M13 启动后，新增分散 Claim 解析能够被脚本或统一校验入口自动拦截
+- 新增分散 Claim 解析能够被脚本或统一校验入口自动拦截
+- `Radish.Auth` 协议输出侧若试图恢复 `ClaimTypes.NameIdentifier / ClaimTypes.Name / ClaimTypes.Role / TenantId / jti` 等历史承诺，能够被脚本显式阻断
 
 ## 5. 文件级改造建议
 
@@ -282,7 +283,7 @@
 - 若不先治理身份语义层，后续社区功能越多，修补成本越高
 - 该专项完成后，才能真正为权限治理、Console 扩展、Gateway/BFF 演进建立稳定基线
 
-## 11. 当前实施状态（截至 2026-04-03）
+## 11. 当前实施状态（截至 2026-04-04）
 
 ### 11.1 阶段状态
 
@@ -290,8 +291,8 @@
 - **Phase 1：建立唯一身份抽象** —— 已完成。
 - **Phase 2：迁移所有运行时入口** —— 主路径已完成。
 - **Phase 3：收缩旧逃逸接口** —— 已完成到“兼容层冻结”状态。
-- **Phase 4：协议输出收敛** —— 已允许启动；当前已完成 [启动前提确认](/guide/identity-claim-phase4-readiness) 与 [最终启动评审](/guide/identity-claim-phase4-start-review)，且当前部署范围内的仓库外兼容边界已被事实关闭。
-- **Phase 5：M12 后续防回归落地** —— 规则已形成，计划在 M13（验证基线与回归资产工程化）阶段接入脚本/流水线。
+- **Phase 4：协议输出收敛** —— 已完成首轮实施与官方顺序真实回归，当前无需触发回滚，转入稳定维护。
+- **Phase 5：M12 后续防回归落地** —— 最小脚本化入口已补齐；当前 `check-identity-claims` 已同时覆盖运行时散点 Claim 解析与 Phase 4 协议输出侧回退风险，后续再视项目阶段决定是否继续上升到 CI/CD。
 
 ### 11.2 当前兼容层最终边界
 
@@ -312,7 +313,7 @@
 ### 11.4 下一步建议
 
 1. `M13` 首轮已落地 `npm run check:identity-claims`，并接入根目录 `validate:baseline` / `validate:baseline:quick`；后续再视项目阶段决定是否继续上升到 CI/CD。
-2. 当前直接按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 推进协议输出收缩与官方回归。
+2. 当前优先维持 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 的既定边界，不在同一窗口提前删除输入兼容；若后续回归再暴露阻塞，再按回滚窗口处理。
 3. 若后续新增新的部署环境、第三方客户端或自定义反代规则，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实。
 4. 在确认首轮输出收缩稳定后，再评估移除 `IHttpContextUser` 兼容层。
 5. 清理遗留注释、示例与文档中的旧 JWT/Claim 口径，避免回归。

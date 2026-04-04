@@ -52,6 +52,66 @@ const rules = [
   },
 ];
 
+const protocolOutputGuards = [
+  {
+    file: 'Radish.Auth/Controllers/AccountController.cs',
+    guards: [
+      {
+        type: 'forbidden',
+        id: 'legacy-nameidentifier-output',
+        description: 'Phase 4 后禁止重新输出历史 NameIdentifier Claim',
+        test: /new\s*\(\s*ClaimTypes\.NameIdentifier\b|new\s+Claim\s*\(\s*ClaimTypes\.NameIdentifier\b|new\s*\(\s*UserClaimTypes\.LegacyNameIdentifier\b|new\s+Claim\s*\(\s*UserClaimTypes\.LegacyNameIdentifier\b/,
+      },
+      {
+        type: 'forbidden',
+        id: 'legacy-name-output',
+        description: 'Phase 4 后禁止重新输出历史 Name Claim',
+        test: /new\s*\(\s*ClaimTypes\.Name\b|new\s+Claim\s*\(\s*ClaimTypes\.Name\b|new\s*\(\s*UserClaimTypes\.LegacyName\b|new\s+Claim\s*\(\s*UserClaimTypes\.LegacyName\b/,
+      },
+      {
+        type: 'forbidden',
+        id: 'legacy-role-output',
+        description: 'Phase 4 后禁止重新输出历史 Role Claim',
+        test: /new\s*\(\s*ClaimTypes\.Role\b|new\s+Claim\s*\(\s*ClaimTypes\.Role\b|new\s*\(\s*UserClaimTypes\.LegacyRole\b|new\s+Claim\s*\(\s*UserClaimTypes\.LegacyRole\b/,
+      },
+      {
+        type: 'forbidden',
+        id: 'legacy-tenant-output',
+        description: 'Phase 4 后禁止重新输出历史 TenantId Claim',
+        test: /new\s*\(\s*"TenantId"\b|new\s+Claim\s*\(\s*"TenantId"\b|new\s*\(\s*UserClaimTypes\.LegacyTenantId\b|new\s+Claim\s*\(\s*UserClaimTypes\.LegacyTenantId\b/,
+      },
+      {
+        type: 'forbidden',
+        id: 'legacy-jti-output',
+        description: 'Phase 4 后禁止把 jti 当成用户身份输出承诺',
+        test: /new\s*\(\s*JwtRegisteredClaimNames\.Jti\b|new\s+Claim\s*\(\s*JwtRegisteredClaimNames\.Jti\b|new\s*\(\s*UserClaimTypes\.LegacyJti\b|new\s+Claim\s*\(\s*UserClaimTypes\.LegacyJti\b/,
+      },
+    ],
+  },
+  {
+    file: 'Radish.Auth/Controllers/AuthorizationController.cs',
+    guards: [
+      {
+        type: 'required',
+        id: 'legacy-destination-break',
+        description: 'Phase 4 后 AuthorizationController 必须继续阻止历史 Claim 写入 Token destinations',
+        test: /if\s*\(\s*claim\.Type\s*==\s*UserClaimTypes\.LegacyNameIdentifier[\s\S]*?claim\.Type\s*==\s*UserClaimTypes\.LegacyJti[\s\S]*?\)\s*\{\s*yield break;\s*\}/,
+      },
+    ],
+  },
+  {
+    file: 'Radish.Auth/Controllers/UserInfoController.cs',
+    guards: [
+      {
+        type: 'forbidden',
+        id: 'userinfo-legacy-output',
+        description: 'userinfo 对外结构不得回退为历史 Claim 键',
+        test: /\[\s*UserClaimTypes\.LegacyTenantId\s*\]|\[\s*UserClaimTypes\.LegacyRole\s*\]|\[\s*UserClaimTypes\.LegacyName\s*\]|\[\s*UserClaimTypes\.LegacyNameIdentifier\s*\]|\[\s*ClaimTypes\.Role\s*\]/,
+      },
+    ],
+  },
+];
+
 function toRepoPath(filePath) {
   return relative(repoRoot, filePath).split(sep).join('/');
 }
@@ -107,6 +167,14 @@ function shouldSkipLine(line) {
   return false;
 }
 
+function findLineNumber(content, matchIndex) {
+  if (matchIndex <= 0) {
+    return 1;
+  }
+
+  return content.slice(0, matchIndex).split(/\r?\n/).length;
+}
+
 function collectFindings(filePath) {
   const repoPath = toRepoPath(filePath);
   if (shouldSkipFile(repoPath)) {
@@ -140,17 +208,65 @@ function collectFindings(filePath) {
   return findings;
 }
 
+function collectProtocolGuardFindings(filePath) {
+  const repoPath = toRepoPath(filePath);
+  const guardDefinition = protocolOutputGuards.find((item) => item.file === repoPath);
+  if (!guardDefinition) {
+    return [];
+  }
+
+  const content = readFileSync(filePath, 'utf8');
+  const findings = [];
+
+  for (const guard of guardDefinition.guards) {
+    const match = guard.test.exec(content);
+
+    if (guard.type === 'required') {
+      if (match) {
+        continue;
+      }
+
+      findings.push({
+        file: repoPath,
+        line: 1,
+        rule: guard.id,
+        description: guard.description,
+        content: '未匹配到预期的协议输出保护片段',
+      });
+      continue;
+    }
+
+    if (!match) {
+      continue;
+    }
+
+    findings.push({
+      file: repoPath,
+      line: findLineNumber(content, match.index),
+      rule: guard.id,
+      description: guard.description,
+      content: match[0].trim(),
+    });
+  }
+
+  return findings;
+}
+
 const scanFiles = scanRoots
   .map((root) => join(repoRoot, root))
   .flatMap((rootPath) => getAllCsFiles(rootPath));
 
 const scannedFiles = scanFiles.filter((filePath) => !shouldSkipFile(toRepoPath(filePath)));
-const findings = scanFiles.flatMap((filePath) => collectFindings(filePath));
+const findings = scanFiles.flatMap((filePath) => [
+  ...collectFindings(filePath),
+  ...collectProtocolGuardFindings(filePath),
+]);
 
 console.log('[Identity Claim 扫描]');
 console.log(`- 扫描目录：${scanRoots.join(', ')}`);
 console.log(`- 扫描文件：${scannedFiles.length} 个`);
 console.log(`- 排除文件/目录：${excludedFiles.size + excludedPrefixes.length} 条`);
+console.log(`- 协议输出守卫：${protocolOutputGuards.length} 个文件`);
 
 if (findings.length === 0) {
   console.log('- 结果：未发现新的身份语义回归命中。');

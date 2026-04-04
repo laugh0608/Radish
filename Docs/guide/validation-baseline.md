@@ -35,6 +35,8 @@ npm run validate:baseline:host
   - 运行 `radish.client` 现有 `node --test`（当前以 `--test-isolation=none` 兼容受限环境）
   - 运行 `Console` 权限链路扫描
   - 运行身份语义防回归扫描
+    - 运行时代码是否重新散落 `FindFirst/FindAll/ClaimTypes/User.IsInRole` 等原始 Claim 读取
+    - `Radish.Auth` 协议输出侧是否试图恢复 `ClaimTypes.NameIdentifier / ClaimTypes.Name / ClaimTypes.Role / TenantId / jti` 等历史双写承诺
   - 运行后端 `build`
   - 运行后端 `test`
 - `validate:baseline:quick`
@@ -129,6 +131,7 @@ npm run validate:baseline:host
 - `radish.client` 最小测试失败：优先看 `Frontend/radish.client/tests/`
 - 权限扫描失败：优先看 `Scripts/check-console-permissions.mjs` 输出中的四层对齐差异
 - 身份语义扫描失败：优先看 `Scripts/check-identity-claims.mjs` 输出中的命中位置，确认是否回退到原始 Claim 解析或直接字符串判断
+- 若命中 `AccountController / AuthorizationController / UserInfoController`：优先按 Phase 4 口径确认是否误恢复了历史输出承诺，而不是直接放宽白名单
 - 后端构建 / 测试失败：优先看 `Scripts/dotnet-local.ps1` 包装后的 `dotnet` 输出
 - `doctor` / `verify` 失败：优先核对当前环境配置、`MainDb` / `Databases` 与关键 `ConnId`
 - 如果是 Wiki / 文档链路，额外确认 `doctor` 是否已报告 `WikiDocument.Visibility`、`AllowedRoles`、`AllowedPermissions` 等缺列；旧 SQLite 库需要重新执行 `DbMigrate apply` 触发自动补齐
