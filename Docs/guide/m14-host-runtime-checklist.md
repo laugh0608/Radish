@@ -35,6 +35,13 @@ npm run validate:baseline:host
 - 当前环境是否具备最小启动前提
 - 当前失败更像是代码回归、配置问题，还是宿主运行问题
 
+当前默认主路径已经固定为两段：
+
+1. 启动前先执行 `npm run validate:baseline:host`
+2. 宿主启动后再执行 `npm run check:host-runtime`
+
+这样可以先把“代码/配置/数据库前置”与“运行态/网关链路”明确分层，不再混在同一轮里排障。
+
 ### 2. 若失败，优先按“失败归类”拆开
 
 不要一上来就直接重配环境或重启所有宿主，先确认失败属于哪一类：
@@ -103,6 +110,14 @@ npm run validate:baseline:host
 - 运行态检查是否已经明确落到 `Gateway / Api / Auth` 其中某一层
 
 当前 `check:host-runtime` 失败时会直接归类为“端口未监听 / TLS / 超时 / 宿主已启动但健康未通过 / HTTP 状态异常”等类型，先按脚本给出的分类处理，不要一上来就把所有情况都混成“Gateway 有问题”。
+
+当前 `validate:baseline:host` 也已补启动前分流提示：
+
+- 若失败落在默认基线：先修代码回归，再回到 `validate:baseline:host`
+- 若失败落在 `doctor`：先修配置、连接定义与关键 `ConnId`
+- 若失败落在 `verify`：先修数据库前置、缺列/表结构或种子状态
+
+只有这三层通过后，才建议进入 `check:host-runtime` 做启动后分诊。
 
 如果希望在失败时顺手把 `Gateway /healthz` 的关键条目摘要一起打出来，可直接运行：
 

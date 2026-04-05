@@ -133,3 +133,4 @@
 - **运行态脚本已补固定格式报告**：`check:host-runtime` 当前新增 `--report`，可把本轮检查结果输出成固定 Markdown 模板，便于直接回写到维护记录、回归记录或 PR。
 - **运行态报告已拆成事实与动作两段**：`check:host-runtime --report` 当前已把输出收敛为 `Summary / Actions` 两段，并按 `Gateway / Api / Auth` 与具体降级条目分别给出下一步建议，减少人工二次改写。
 - **运行态报告已支持直接落盘**：`check:host-runtime` 当前新增 `--report-file <path>`，会自动启用报告输出并把 Markdown 直接写入指定文件，适合沉淀到本地回归记录或维护痕迹。
+- **启动前/启动后主路径已真正串联**：`validate:baseline:host` 当前已补 baseline / `doctor` / `verify` 三层失败分流提示；通过后再统一进入 `check:host-runtime`，`M14` 启动前检查与启动后分诊不再割裂。

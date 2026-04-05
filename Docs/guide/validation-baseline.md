@@ -95,6 +95,7 @@ npm run validate:ci
   - 等同于 `validate:baseline`
   - 额外追加 `DbMigrate doctor` / `verify` 只读自检（复用前序构建产物，不重复 build）
   - 当前也是 `M14` 的默认宿主验证入口
+  - 当前已补启动前分流提示：若失败落在默认基线 / `doctor` / `verify` 任一层，会分别提示先修代码回归、配置连接定义或数据库前置，而不是直接跳到运行态排障
 - `check:host-runtime`
   - 运行态健康检查入口
   - 默认检查 `Gateway / Api / Auth` 的 `/health`
@@ -223,6 +224,7 @@ npm run validate:baseline:host
 补充说明：
 
 - 当前默认先从 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 开始，按 `validate:baseline:host -> doctor/verify -> 健康检查/日志 -> 网关与部署链路` 的顺序排障
+- 当前主路径已经明确收束为：启动前先跑 `npm run validate:baseline:host`，宿主启动后再跑 `npm run check:host-runtime`
 - 不要跳过 `doctor` / `verify` 直接把问题归因到宿主代码或外层反代
 - 如果宿主已经启动，再补一轮：
 
