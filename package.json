@@ -15,6 +15,7 @@
     "check:repo-quality-contract": "node Scripts/check-repo-quality-contract.mjs",
     "check:commit-message": "node Scripts/validate-commit-message.mjs",
     "check:console-permissions": "node Scripts/check-console-permissions.mjs",
+    "check:host-runtime": "node Scripts/check-host-runtime.mjs",
     "collect:changed": "node Scripts/collect-changed-files.mjs",
     "collect:changed:staged": "node Scripts/collect-changed-files.mjs --mode=staged",
     "collect:tracked": "node Scripts/collect-changed-files.mjs --mode=tracked",

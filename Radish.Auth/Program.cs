@@ -188,6 +188,8 @@ builder.Services.AddControllersWithViews()
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
 
+builder.Services.AddHealthChecks();
+
 // OpenIddict 初始化种子数据（使用 EF Core 存储）
 builder.Services.AddHostedService<OpenIddictSeedHostedService>();
 
@@ -391,6 +393,8 @@ app.UseRateLimitSetup();
 
 // 控制器路由
 app.MapControllers();
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/healthz");
 
 // 启动提示（使用 Serilog，与 Gateway/API 风格统一）
 app.Lifetime.ApplicationStarted.Register(() =>

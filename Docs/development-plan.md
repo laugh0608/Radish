@@ -11,14 +11,14 @@
 
 ## 当前状态
 
-- **当前里程碑**：`M12 社区功能冲刺`
-- **当前主线**：`身份语义 Phase 4 协议输出收敛`
-- **当前阶段**：`截至 2026-04-04，社区主链多轮回归与首版 dev 文档收口已完成；身份语义 Phase 4 的仓库内前置资产、仓库资产侧首轮排查，以及当前生产环境的外部兼容边界事实也已完成补齐。当前已完成首轮实施窗口与官方顺序真实回归：Auth 输出双写已收缩、`userinfo` 已完成最小对齐，`radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 已按既定顺序完成端到端验证，当前无需触发回滚，转入稳定维护与防回归治理准备。详见：[身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)。`
+- **当前里程碑**：`M14 宿主运行与最小可观测性基线`
+- **当前主线**：`M14 宿主运行与最小可观测性基线`
+- **当前阶段**：`截至 2026-04-05，社区主链多轮回归与首版 dev 文档收口已完成；身份语义 Phase 4 的仓库内前置资产、仓库资产侧首轮排查、首轮实施窗口与官方顺序真实回归也均已完成。当前结论已进一步收束为：Auth 输出双写已收缩、`userinfo` 已完成最小对齐，`radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 已按既定顺序完成端到端验证，无需触发回滚，Phase 4 本轮正式收口并转入维护态。当前主线已正式切换为 `M14`，下一步先完成执行入口、排障顺序与最小部署复核口径收口。详见：[M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。`
 - **并行治理尾项**：
   - 身份语义 Phase 4：稳定维护与防回归治理准备（当前已完成 [最终启动评审](/guide/identity-claim-phase4-start-review)、首轮实施与官方顺序真实回归，结论为无需回滚并转入稳定维护）
   - `DbMigrate` 进入回归维护（解耦宿主 + `doctor` 校验已完成）
 
-## 当前关注（2026-04-04）
+## 当前关注（2026-04-05）
 
 ### 当前阶段原则
 
@@ -169,13 +169,19 @@
    - 已于 `2026-03-26` 完成 `npm run validate:baseline` 与 `npm run validate:baseline:host`：前端类型检查、`radish.client` 最小测试、Console 权限扫描、身份语义扫描、后端构建 / 测试，以及 `DbMigrate doctor / verify` 当前均已通过
    - 当前结论为：业务 / 体验主线 Smoke、验证基线与社区主链回归当前均已完成本轮收口，首版剩余重点进一步收束到稳定维护、统一镜像推送口径冻结，以及下一里程碑入口重审
 
+19. **`2026-04-05` 的规划重审已进入 `M14` 第一轮执行阶段**
+   - 今天不直接启动新的功能主线，也不把已收口专题重新拉回当前主线
+   - 当前已把后续事项重新拆成维护池 / 观察池 / 后置池：Phase 4 首轮实施结果、聊天室 `P1`、通知中心、`Console-ext` 一期、投票 / 问答 / 抽奖 MVP、浏览记录与 `DbMigrate` 统一转入维护池；旧 `GetCommentTree`、身份语义外部兼容边界与 `Repo Quality` 默认执行面继续留在观察池
+   - 当前主线已正式切换为 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)，并新增 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 作为默认执行入口；`M13` 与 `M15` 暂继续保留在候选池
+   - 用户已完成 `radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 手工联调确认，本轮 `Phase 4` 可以正式收口，不再维持“继续观察官方回归”的表述
+
 ### 暂不作为当前主线
 
 - 治理前端化：审核台、敏感词与自动策略
 - 分发增强：更复杂召回 / 排序 / 观测压测
 - 邮件通知系统
 
-## M12 当前切分
+## M14 当前切分
 
 ### 已完成子阶段
 
@@ -186,10 +192,12 @@
   - Dashboard / Hangfire / Users / Products / Stickers 等关键资源种子补齐
 - 身份语义收敛主体完成
 - 文档应用 `A` 阶段验收完成
+- 身份语义 `Phase 4` 首轮实施、官方顺序真实回归与本轮正式收口
 
 ### 当前进行中子阶段
 
-- 下一里程碑入口重审
+- `M14` 执行入口与阶段口径收口
+- `validate:baseline:host`、`DbMigrate doctor / verify`、健康检查、日志与部署复核顺序统一
 - 身份语义 Phase 4 稳定维护与防回归治理准备
 - 旧 `GetCommentTree` 兼容入口继续观察真实命中与仓库外依赖，暂不直接删除
 - 文档、验证基线与发布口径冻结维护
@@ -197,7 +205,6 @@
 ### 后续候选子阶段
 
 - `M13` 验证基线与回归资产工程化
-- `M14` 宿主运行与最小可观测性基线（定义见 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)）
 - `M15` 最小交付与部署基线
 - `P3-ext` 论坛投票扩展（首个 dev 版本后再评估）
 - 论坛问答后续增强（首个 dev 版本后再评估）
@@ -224,6 +231,12 @@
 - `P5` 抽奖 MVP 与浏览记录优化
 - `DbMigrate` 当前 `doctor` / `verify` 能力
 
+### 继续观察
+
+- 旧 `GetCommentTree` 兼容入口的真实命中与仓库外依赖
+- 身份语义外部兼容边界是否因部署形态变化而需要补事实
+- `Repo Quality / validate:ci / Identity Guard` 默认执行面是否持续同源
+
 ### 明确后置
 
 - `P3-ext` / `P4-ext` / `P5-ext` / `Console-ext Phase 2+` 的非阻塞增强细节
@@ -234,6 +247,8 @@
 
 ## 本阶段建议入口
 
+- `M14` 阶段定义：见 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
+- `M14` 默认执行清单：见 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
 - 首版边界与完成标准：见 [首版 dev 边界](/planning/dev-first-scope)
 - 首版总回归与发布前检查单：见 [首版 dev 总回归与发布前检查单](/guide/dev-first-regression-checklist)
 - 首版总回归记录：见 [首版 dev 总回归记录](/guide/dev-first-regression-record)
@@ -243,4 +258,4 @@
 - 论坛投票方案与进度：见 [论坛投票 MVP 设计方案](/features/forum-poll-mvp)
 - 论坛问答方案与进度：见 [论坛问答 MVP 设计方案](/features/forum-qa-mvp)
 - 论坛抽奖方案与进度：见 [论坛抽奖 MVP 设计方案](/features/forum-lottery-mvp)
-- 本周实际产出：见 [2026-03 / week4](/changelog/2026-03/week4)
+- 本周实际产出：见 [2026-04 / week1](/changelog/2026-04/week1)

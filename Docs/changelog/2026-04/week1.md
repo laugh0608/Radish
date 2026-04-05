@@ -1,4 +1,4 @@
-# 2026-04 第一周 (04-02)
+# 2026-04 第一周 (04-02 ~ 04-05)
 
 ## 2026-04-02 (周四)
 
@@ -97,3 +97,36 @@
 - **本地 `validate:ci` 已同步显示命中理由**：当 changed-only 判定命中身份语义影响面时，`validate:ci` 当前会直接打印原因类别与命中文件明细，维护者不必再手工比对脚本规则去解释 `Identity Guard` 为什么触发。
 - **默认记录入口已补“命中原因 + 失败归类”双字段**：`PULL_REQUEST_TEMPLATE`、`change-regression-record-template`、`regression-result-template` 当前都已补齐结构化字段，用于统一表达“为什么命中身份语义影响面”以及“失败属于 contract 漂移 / 默认执行面失败 / 身份语义专题失败 / 受限环境边界中的哪一类”。
 - **记录模板与分诊口径已纳入同一维护组**：`repo-quality-troubleshooting`、`validation-baseline`、`identity-claim-regression-playbook`、回归记录模板与 PR 模板当前已同步改为复用同一套原因/归类语义，`Phase 5` 工程化维护链路已从“脚本 + 手册”收口到“脚本 + 默认记录入口 + 分诊口径”闭环。
+
+## 2026-04-05 (周日)
+
+### 规划与阶段口径收口
+
+- **今天先完成阶段切换，再进入 `M14` 第一轮入口**：当前不再继续扩张身份语义 `Phase 4`，而是先把已收口专题转入维护池，再把主线正式切到 `M14`。
+- **维护池 / 观察池 / 后置池已整理**：`Phase 4` 首轮实施结果、聊天室 `P1`、通知中心、`Console-ext` 一期、投票 / 问答 / 抽奖 MVP、浏览记录与 `DbMigrate` 当前统一归入维护池；旧 `GetCommentTree`、身份语义外部兼容边界，以及 `Repo Quality / validate:ci / Identity Guard` 默认执行面继续留在观察池；`P3-ext / P4-ext / P5-ext / Console-ext Phase 2+ / P2-ext Auto / 邮件通知系统` 等继续留在后置池。
+- **当前主线已正式切换到 `M14`**：当前按 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline) 作为正式主线，并把 `M13` 与 `M15` 保持在候选状态。
+
+### 文档真相源继续对齐
+
+- **规划页与总览页已同步今天结论**：`planning/current.md` 与 `development-plan.md` 当前都已明确“Phase 4 正式收口并转入维护态、`M14` 已切为当前主线、默认执行入口已明确”的最新判断。
+- **本周日志已补规划留痕**：今天的规划决策已沉淀到周志，避免后续协作再次依赖口头上下文判断“现在到底该做什么”。
+
+### Phase 4 本轮正式收口
+
+- **官方顺序手工联调全部通过**：用户已确认 `radish-client`、`radish-console`、`Radish.Api.AuthFlow.http` 与 `radish-scalar` 均无异常，当前可将身份语义 `Phase 4` 从“稳定维护准备”进一步收束为“本轮正式收口、转入维护态”。
+- **下一步明确切向 `M14`**：在 Phase 4 本轮正式收口后，后续不再继续扩张协议输出实施，而是转入 `M14` 入口评审与任务拆分。
+
+### WebOS 入口补齐
+
+- **新增 Scalar 桌面入口**：`radish.client` 当前新增 `Scalar` 外部应用图标，跳转到 Gateway `/scalar` 或本机直连 `http://localhost:5100/scalar`，并对齐到仅 `system / admin` 可见。
+- **Scalar 已补自动授权跳转**：桌面入口当前会直接附带自动授权参数，打开 `Scalar` 后会按当前既有 OIDC 流程自动进入一次授权，不再要求用户进入页面后再手工点一次登录。
+
+### M14 第一轮入口启动
+
+- **`M14` 当前已从候选入口切换为正式主线**：本轮已把“宿主运行与最小可观测性基线”从重定义文档进一步推进到执行入口收口，不再停留在“下一里程碑入口评审中”的表述。
+- **首轮执行清单已新增**：新增 `guide/m14-host-runtime-checklist.md`，把 `validate:baseline:host`、`DbMigrate doctor / verify`、宿主排障顺序，以及测试 / 生产部署后的最小复核动作收束到同一入口。
+- **文档口径已同步回链**：`planning/current.md`、`development-plan.md`、`guide/validation-baseline.md`、`deployment/guide.md` 与 `guide/m14-host-runtime-observability-baseline.md` 当前已统一改成“`M14` 已启动，且默认执行入口已经明确”的口径。
+- **运行态检查已补失败分类**：`check:host-runtime` 当前不再只输出失败结果，还会直接归类为端口未监听、TLS/证书、请求超时、宿主自报 `Unhealthy` 或一般 HTTP 状态异常，方便按 `M14` 顺序继续排障。
+- **Gateway 健康端点语义已拆开**：`/health` 当前只代表最小后端宿主链，`/healthz` 继续保留更完整的下游观测；本地未启动 `console` 时不再干扰 `M14` 默认运行态检查。
+- **`/healthz` 明细响应已补齐**：Gateway 当前已把 `/healthz` 从纯文本状态升级为结构化 JSON，默认输出整体状态、生成时间、总耗时，以及每个下游项的名称、状态、标签、耗时和异常摘要，便于直接人工分诊。
+- **运行态脚本已补失败联动明细**：`check:host-runtime` 当前新增 `--details`，在默认检查失败时会自动补拉 `Gateway /healthz` 并输出压缩后的关键摘要，减少手工二次排查。

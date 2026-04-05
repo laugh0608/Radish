@@ -5,6 +5,7 @@
 > 关联维护入口：
 >
 > - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
+> - [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
 
 ## 当前目标
 
@@ -29,6 +30,7 @@ npm run check:identity-impact:staged
 npm run validate:baseline
 npm run validate:baseline:quick
 npm run validate:baseline:host
+npm run check:host-runtime
 npm run validate:identity
 npm run validate:ci
 ```
@@ -92,6 +94,15 @@ npm run validate:ci
 - `validate:baseline:host`
   - 等同于 `validate:baseline`
   - 额外追加 `DbMigrate doctor` / `verify` 只读自检（复用前序构建产物，不重复 build）
+  - 当前也是 `M14` 的默认宿主验证入口
+- `check:host-runtime`
+  - 运行态健康检查入口
+  - 默认检查 `Gateway / Api / Auth` 的 `/health`
+  - 适合在宿主已经启动后，快速判断问题是“宿主没起来”还是“已起来但链路异常”
+  - 当前失败时会附带分类提示，例如端口未监听、TLS、超时、宿主自报 `Unhealthy` 或一般 HTTP 状态异常
+  - 当前其中 `Gateway /health` 表示最小后端宿主链，`/healthz` 留给更完整的下游观测
+  - `Gateway /healthz` 当前已返回结构化 JSON，适合宿主启动后继续人工分诊具体下游项
+  - 如需在失败时顺手带出 `Gateway /healthz` 的关键摘要，可执行 `npm run check:host-runtime -- --details`
 - `validate:identity`
   - 身份语义专题聚合入口，不替代默认 baseline
   - 分别执行运行时散点 Claim 读取扫描与协议输出回退扫描
@@ -205,6 +216,24 @@ npm run validate:baseline:host
 - `DbMigrate`
 - 连接定义、种子前置状态
 - 宿主配置与最小部署自检链路
+
+补充说明：
+
+- 当前默认先从 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 开始，按 `validate:baseline:host -> doctor/verify -> 健康检查/日志 -> 网关与部署链路` 的顺序排障
+- 不要跳过 `doctor` / `verify` 直接把问题归因到宿主代码或外层反代
+- 如果宿主已经启动，再补一轮：
+
+```bash
+npm run check:host-runtime
+```
+
+- 这一轮通过后，再继续看更上层的 Gateway / 反代 / OIDC 问题
+- 如果需要继续判断 `console` 等扩展下游状态，再直接查看 `https://localhost:5000/healthz`
+- 如果默认检查失败，且希望脚本顺手把 `Gateway /healthz` 的摘要一起打出来，可追加：
+
+```bash
+npm run check:host-runtime -- --details
+```
 
 ## 当前仍保留为专题回归的资产
 

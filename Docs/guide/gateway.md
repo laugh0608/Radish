@@ -328,13 +328,13 @@ Gateway 使用 YARP 实现反向代理，支持以下功能：
 Gateway 提供健康检查端点，监控自身和下游服务状态。
 
 **端点**：
-- `/health` - 标准健康检查端点
-- `/healthz` - Kubernetes 风格健康检查端点
+- `/health` - 最小后端宿主链健康检查端点
+- `/healthz` - 更完整的下游观测端点，返回结构化 JSON 便于人工排障
 
 **检查项**：
-1. **Gateway 自身**：进程运行状态
-2. **API 服务**：通过 `DownstreamServices:ApiService:BaseUrl` + `HealthCheckPath` 检查
-3. **Console 服务**：通过 Gateway 公开地址 + `/console` 检查
+1. **`/health`**：当前用于最小宿主链检查，默认只看 `api-service` 与 `auth-service`
+2. **`/healthz`**：当前用于更完整的下游观测，除最小宿主链外，还会纳入 `console-service`，并输出整体状态、时间戳、耗时和每个下游条目的明细
+3. **Console 服务**：当前在 `healthz` 中继续观测；本地未启动时默认记为 `Degraded`，不再影响 `health` 的最小可用结论
 
 **配置示例**：
 
@@ -349,22 +349,41 @@ if (!string.IsNullOrEmpty(apiBaseUrl) && !string.IsNullOrEmpty(apiHealthPath))
     healthChecksBuilder.AddUrlGroup(
         new Uri(apiHealthUrl),
         name: "api-service",
-        tags: ["downstream", "api"]);
+        tags: ["downstream", "api", "minimal"]);
 }
 ```
 
 **响应格式**：
 
+- `/health`：继续保持轻量探活语义，默认返回纯文本 `Healthy / Degraded / Unhealthy`
+- `/healthz`：返回结构化 JSON，适合人工分诊或二次采集
+
 ```json
 {
-  "status": "Healthy",
-  "totalDuration": "00:00:00.1234567",
-  "entries": {
-    "api-service": {
+  "status": "Degraded",
+  "generatedAtUtc": "2026-04-05T03:35:12.3456789+00:00",
+  "totalDuration": "00:00:00.0876543",
+  "totalDurationMs": 87.65,
+  "entries": [
+    {
+      "name": "api-service",
       "status": "Healthy",
-      "description": "OK"
+      "description": null,
+      "duration": "00:00:00.0210000",
+      "durationMs": 21,
+      "tags": ["downstream", "api", "minimal"],
+      "exception": null
+    },
+    {
+      "name": "console-service",
+      "status": "Degraded",
+      "description": null,
+      "duration": "00:00:00.0310000",
+      "durationMs": 31,
+      "tags": ["downstream", "console", "extended"],
+      "exception": "No such host is known."
     }
-  }
+  ]
 }
 ```
 
@@ -482,7 +501,8 @@ dotnet watch --project Radish.Gateway/Radish.Gateway.csproj
 | **Scalar 文档** | https://localhost:5000/scalar | API 文档（通过 Gateway） |
 | **Hangfire 面板** | https://localhost:5000/hangfire | 定时任务面板（通过 Gateway） |
 | **管理控制台** | https://localhost:5000/console | 管理后台（通过 Gateway） |
-| **健康检查** | https://localhost:5000/health | 健康检查端点 |
+| **健康检查** | https://localhost:5000/health | 最小后端宿主链健康检查 |
+| **扩展健康检查** | https://localhost:5000/healthz | 更完整的下游观测入口 |
 
 **直连下游服务（仅用于调试）**：
 
@@ -581,18 +601,35 @@ curl -H "Origin: http://localhost:3000" \
 **4. 检查健康状态**
 
 ```bash
-# 查看所有服务健康状态
-curl https://localhost:5000/health | jq
+# 查看最小宿主链状态
+curl https://localhost:5000/health
+
+# 查看更完整的下游观测状态
+curl https://localhost:5000/healthz | jq
 
 # 输出示例
 {
-  "status": "Healthy",
+  "status": "Degraded",
+  "generatedAtUtc": "2026-04-05T03:35:12.3456789+00:00",
   "totalDuration": "00:00:00.0234567",
-  "entries": {
-    "api-service": {
-      "status": "Healthy"
+  "totalDurationMs": 23.46,
+  "entries": [
+    {
+      "name": "api-service",
+      "status": "Healthy",
+      "tags": ["downstream", "api", "minimal"]
+    },
+    {
+      "name": "auth-service",
+      "status": "Healthy",
+      "tags": ["downstream", "auth", "minimal"]
+    },
+    {
+      "name": "console-service",
+      "status": "Degraded",
+      "tags": ["downstream", "console", "extended"]
     }
-  }
+  ]
 }
 ```
 

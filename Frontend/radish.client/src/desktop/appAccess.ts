@@ -1,6 +1,7 @@
 import type { AppDefinition } from './types';
 
 const CONSOLE_ACCESS_PERMISSION = 'console.access';
+const ADMIN_VISIBLE_APP_IDS = new Set(['scalar']);
 const CONSOLE_ENTRY_PERMISSIONS = new Set([
   'console.dashboard.view',
   'console.applications.view',
@@ -43,11 +44,15 @@ export function canAccessApp(app: AppDefinition, context: AppAccessContext = {})
   const normalizedRoles = normalizeValues(context.userRoles);
   const normalizedPermissions = normalizeValues(context.userPermissions);
   const isAuthenticated = Boolean(context.isAuthenticated);
+  const isAdminLike = normalizedRoles.has('admin') || normalizedRoles.has('system');
 
   if (app.id === 'console') {
-    return normalizedRoles.has('admin') ||
-      normalizedRoles.has('system') ||
+    return isAdminLike ||
       (normalizedPermissions.has(CONSOLE_ACCESS_PERMISSION) && hasConsoleOperationalPermission(normalizedPermissions));
+  }
+
+  if (ADMIN_VISIBLE_APP_IDS.has(app.id)) {
+    return isAdminLike;
   }
 
   const requiredRoles = (app.requiredRoles || [])
@@ -66,7 +71,7 @@ export function canAccessApp(app: AppDefinition, context: AppAccessContext = {})
 }
 
 export function shouldShowAppOnDesktop(app: AppDefinition, context: AppAccessContext = {}): boolean {
-  if (app.id === 'console') {
+  if (app.id === 'console' || ADMIN_VISIBLE_APP_IDS.has(app.id)) {
     return canAccessApp(app, context);
   }
 

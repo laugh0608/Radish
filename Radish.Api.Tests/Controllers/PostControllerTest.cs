@@ -39,12 +39,14 @@ public class PostControllerTest
         };
 
         postServiceMock
-            .Setup(service => service.QueryPageAsync(
-                It.IsAny<Expression<Func<Post, bool>>>(),
+            .Setup(service => service.GetForumPostPageAsync(
+                null,
                 1,
                 20,
-                It.IsAny<Expression<Func<Post, object>>>(),
-                OrderByType.Desc))
+                "newest",
+                null,
+                null,
+                null))
             .ReturnsAsync((posts, 1));
         postServiceMock
             .Setup(service => service.FillPostListMetadataAsync(It.Is<List<PostVo>>(items => ReferenceEquals(items, posts))))
@@ -81,6 +83,14 @@ public class PostControllerTest
         Assert.False(post.VoPollIsClosed);
         Assert.Null(post.VoPoll);
 
+        postServiceMock.Verify(service => service.GetForumPostPageAsync(
+            null,
+            1,
+            20,
+            "newest",
+            null,
+            null,
+            null), Times.Once);
         postServiceMock.Verify(service => service.FillPostListMetadataAsync(It.IsAny<List<PostVo>>()), Times.Once);
         postServiceMock.Verify(service => service.GetPostDetailAsync(It.IsAny<long>(), It.IsAny<long?>(), It.IsAny<string>()), Times.Never);
         attachmentServiceMock.Verify(service => service.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>>()), Times.Never);

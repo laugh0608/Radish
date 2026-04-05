@@ -29,6 +29,15 @@ const consoleApp: AppDefinition = {
   externalUrl: '/console/',
 };
 
+const scalarApp: AppDefinition = {
+  id: 'scalar',
+  name: 'Scalar',
+  icon: 'mdi:api',
+  component: () => null,
+  type: 'external',
+  externalUrl: '/scalar',
+};
+
 test('canAccessApp 在未登录时应拦截需要 User 角色的应用', () => {
   assert.equal(canAccessApp(loginRequiredApp, {
     isAuthenticated: false,
@@ -62,7 +71,7 @@ test('shouldShowAppOnDesktop 在未登录时仍应显示常规应用图标', () 
 });
 
 test('getVisibleAppsForUser 应保留常规桌面应用，仅按权限隐藏控制台', () => {
-  const apps = [publicApp, loginRequiredApp, consoleApp];
+  const apps = [publicApp, loginRequiredApp, consoleApp, scalarApp];
 
   const anonymousVisible = getVisibleAppsForUser(apps, {
     isAuthenticated: false,
@@ -94,7 +103,7 @@ test('getVisibleAppsForUser 应保留常规桌面应用，仅按权限隐藏控�
 });
 
 test('getVisibleAppsForUser 不应因非入口型 Console 权限而显示控制台', () => {
-  const apps = [publicApp, loginRequiredApp, consoleApp];
+  const apps = [publicApp, loginRequiredApp, consoleApp, scalarApp];
 
   const visibleApps = getVisibleAppsForUser(apps, {
     isAuthenticated: true,
@@ -103,4 +112,36 @@ test('getVisibleAppsForUser 不应因非入口型 Console 权限而显示控制�
   });
 
   assert.deepEqual(visibleApps.map((app) => app.id), ['document', 'chat']);
+});
+
+test('getVisibleAppsForUser 仅允许 Admin/System 显示 Scalar 图标', () => {
+  const apps = [publicApp, loginRequiredApp, consoleApp, scalarApp];
+
+  const adminVisibleApps = getVisibleAppsForUser(apps, {
+    isAuthenticated: true,
+    userRoles: ['Admin'],
+    userPermissions: [],
+  });
+  assert.deepEqual(adminVisibleApps.map((app) => app.id), ['document', 'chat', 'console', 'scalar']);
+
+  const systemVisibleApps = getVisibleAppsForUser(apps, {
+    isAuthenticated: true,
+    userRoles: ['System'],
+    userPermissions: [],
+  });
+  assert.deepEqual(systemVisibleApps.map((app) => app.id), ['document', 'chat', 'console', 'scalar']);
+});
+
+test('canAccessApp 不应因普通 Console 权限放行 Scalar', () => {
+  assert.equal(canAccessApp(scalarApp, {
+    isAuthenticated: true,
+    userRoles: ['User'],
+    userPermissions: ['console.access', 'console.tags.view'],
+  }), false);
+
+  assert.equal(canAccessApp(scalarApp, {
+    isAuthenticated: true,
+    userRoles: ['Admin'],
+    userPermissions: [],
+  }), true);
 });

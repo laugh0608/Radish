@@ -6,12 +6,12 @@
 
 ## 当前里程碑
 
-- **里程碑**：`M12 社区功能冲刺`
-- **当前主线**：`身份语义 Phase 4 协议输出收敛`
-- **当前阶段**：`截至 2026-04-04，社区主链多轮回归、首版 dev 文档收口，以及身份语义 Phase 4 的启动前提确认均已完成；当前生产环境的外部兼容边界事实也已补齐：现网仅有 1 套 `v26.3.2-release` Docker 部署，使用 1Panel 默认 HTTPS 反向代理，无仓库外换 Token / 联调 / 巡检脚本，OpenIddict 仅有默认种子数据。当前 Phase 4 已完成首轮实施窗口与官方顺序真实回归：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 已按官方顺序完成端到端回归，当前无需触发回滚，转入稳定维护与防回归治理准备。详见：[身份语义 Phase 4 最终启动评审](/guide/identity-claim-phase4-start-review)。`
-- **复核日期**：`2026-04-04`
+- **里程碑**：`M14 宿主运行与最小可观测性基线`
+- **当前主线**：`M14 宿主运行与最小可观测性基线`
+- **当前阶段**：`截至 2026-04-05，社区主链多轮回归、首版 dev 文档收口，以及身份语义 Phase 4 的启动前提确认、首轮实施窗口与官方顺序真实回归均已完成；当前生产环境的外部兼容边界事实也已补齐：现网仅有 1 套 `v26.3.2-release` Docker 部署，使用 1Panel 默认 HTTPS 反向代理，无仓库外换 Token / 联调 / 巡检脚本，OpenIddict 仅有默认种子数据。当前结论已进一步收束为：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 已按官方顺序完成端到端回归，当前无需触发回滚，Phase 4 本轮正式收口并转入维护态；当前主线已切换到 `M14`，先完成执行入口、排障顺序与最小部署复核口径收口。详见：[M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。`
+- **复核日期**：`2026-04-05`
 
-## 当前主线：身份语义 Phase 4 协议输出收敛
+## 当前主线：M14 宿主运行与最小可观测性基线
 
 ### 当前执行原则
 
@@ -21,15 +21,24 @@
 - 体验主线同步推进：国风视觉基线 / 主题切换 / `radish.client` i18n 已纳入首版范围，但必须收敛在核心页面与核心文案。
 - 非阻塞增强统一后置：`P3-ext`、`P4-ext`、`P5-ext`、`Console-ext Phase 2+`、开放平台第三方接入 / SDK 等增强项统一后置。
 
+### 当前执行入口
+
+- [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
+- [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
+- [验证基线说明](/guide/validation-baseline)
+- [部署与容器指南](/deployment/guide)
+
 ### 本阶段目标
 
-- 维持社区主链、首版 dev 文档与发布口径冻结，不再回退为“继续补社区尾项”
-- 按 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 收缩 Auth 输出双写
-- 完成官方回归顺序验证并冻结当前结论：`radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar`
-- 若实施过程中暴露新的外部依赖，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加评审，而不是直接无边界切换主线
+- 把 `validate:baseline:host`、`DbMigrate doctor / verify`、健康检查、日志与部署复核收束成统一执行顺序
+- 明确宿主异常时的默认排障骨架，避免继续靠口头说明决定“先看哪里”
+- 把测试部署与生产部署的最小运行态复核动作统一回链到同一入口
+- 维持 Phase 4 的稳定维护边界；若部署形态、第三方客户端或反代规则变化，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实评审
+- 明确 `M14` 当前不扩写为完整运维平台、完整可观测性平台或大而全 CI / E2E 工程
 
 ### 当前输出
 
+- [x] 已将当前主线从身份语义 `Phase 4` 正式切换为 `M14`，并新增 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 作为默认执行入口
 - [x] 已将首版 `dev` 的定义从“某条子线已收口”改为“所有纳入范围的核心功能主线至少完成 70%”
 - [x] 已新增 [首版 dev 边界](/planning/dev-first-scope)，明确业务主线、体验主线与工程门槛
 - [x] 已新增 [首版 dev 功能矩阵状态表](/planning/dev-first-status-matrix)，把首版范围内各功能线收束为 `已完成 / 待联调复核 / 待补齐 / 不纳入首版`
@@ -116,20 +125,53 @@
 
 ### 下一步拆分
 
-- 第 1 步：维持当前规划页、总回归记录、状态矩阵与周志口径一致，避免“事实已收口、文档仍待确认”再次出现
-- 第 2 步：把社区主链正式转入稳定维护；如近期再发生跨层改动，优先重跑 `npm run validate:baseline`，涉及宿主 / 配置时再补 `npm run validate:baseline:host`
-- 第 3 步：继续维持当前统一镜像推送、`local / test / prod`、`DbMigrate -> Api/Auth -> Gateway` 与 `AuthUi__ShowTestAccountHint` 的发布口径冻结状态，避免部署事实再次漂移
-- 第 4 步：继续维持 [身份语义 Phase 4 实施与回滚窗口](/guide/identity-claim-phase4-rollout-window) 的当前边界，不在同一窗口提前删除 `UserClaimReader / CurrentUser` 的输入兼容
-- 第 5 步：将 Phase 4 从“继续做官方回归”切换为“稳定维护 + 防回归准备”；若后续回归再暴露阻塞，再按回滚窗口优先恢复最小必要双写
-- 第 6 步：若实施中出现新的部署环境、第三方客户端或自定义反代规则，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实确认
+- 第 1 步：固定 `M14` 的阶段定义、执行入口与周志口径，避免“规划写的是 M14，执行还按旧主线”再次出现
+- 第 2 步：默认先走 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)，把 `validate:baseline:host` 固定为第一轮宿主验证入口
+- 第 3 步：把 `DbMigrate doctor / verify -> 健康检查 -> 日志 -> Gateway / 反代 / OIDC 链路` 的排障顺序保持为单一口径，不再散落到多份文档
+- 第 4 步：继续维持当前统一镜像推送、`local / test / prod`、`DbMigrate -> Api/Auth -> Gateway` 与 `AuthUi__ShowTestAccountHint` 的发布口径冻结状态，避免部署事实再次漂移
+- 第 5 步：把测试部署与生产部署的最小复核动作统一回链到 [部署与容器指南](/deployment/guide) 与 `M14` 清单，不再把部署排障与代码回归混在一起
+- 第 6 步：保持身份语义 `Phase 4` 的稳定维护边界；若后续出现新的部署环境、第三方客户端或自定义反代规则，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实确认
 - 第 7 步：旧 `GetCommentTree` 兼容入口继续保留在观察池中，仅在确认仓库外也已无依赖后，再安排正式删除窗口
 - 第 8 步：继续把 `Repo Quality / validate:ci / Identity Guard / 受限环境边界` 的排查口径维持在 [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting) 单一入口中维护，避免脚本说明与故障分流再次散落
+
+### 今日整理结果（2026-04-05）
+
+#### 维护池
+
+- 身份语义 Phase 4 首轮实施与官方回归结果
+- 聊天室 `P1`
+- 通知中心
+- `Console-ext` 一期
+- `P3` 投票 MVP
+- `P4` 问答 MVP 与 `P4-ext` 首轮闭环
+- `P5` 抽奖 MVP 与个人中心浏览记录优化
+- `DbMigrate` 当前 `doctor` / `verify` 与宿主解耦成果
+
+#### 观察池
+
+- 旧 `GetCommentTree` 兼容入口：继续观察真实命中与仓库外依赖，不提前进入正式删除窗口
+- 身份语义外部兼容边界：仅在部署形态、第三方客户端或反代规则变化时补事实，不预设新增实施
+- `Repo Quality / validate:ci / Identity Guard` 默认执行面：继续维持同源规则与单一故障分诊入口
+
+#### 后置池
+
+- `P3-ext`、`P4-ext`、`P5-ext` 的进一步增强
+- `Console-ext Phase 2+`
+- `P2-ext Auto` 开源软件清单自动生成 / 发布物公告
+- 治理前端化、分发增强、邮件通知系统
+
+#### 下一主线入口判断
+
+- 今天不直接启动新的功能主线，也不把已收口专题重新拉回当前页继续膨胀
+- `M14` 当前已从候选入口切换为正式主线：宿主运行与最小可观测性基线
+- `M13` 与 `M15` 继续保留在候选池中，但当前不改写为已启动阶段
 
 ### 当前结论
 
 - 社区主功能收口只是首版 `dev` 的一部分，不再代表整产品已经达到首版边界
-- 当前主线已从“社区主链回归收口完成，转入下一里程碑入口重审”进一步切换为“身份语义 Phase 4 协议输出收敛”
+- 当前主线已从“身份语义 Phase 4 协议输出收敛”进一步切换为“`M14` 宿主运行与最小可观测性基线”
 - 当前已完成 Phase 4 首轮仓库内实施、官方顺序真实回归与回滚窗口验证：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、官方客户端直读规则与联调示例已完成同步，`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 当前均已通过真实回归，结论更新为“无需回滚，转入稳定维护”
+- 截至 `2026-04-05`，当前进一步确认 `radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 官方顺序真实回归均已通过，Phase 4 本轮已正式收口；后续不再继续扩张实施项，而是优先维持维护态，并转入 `M14` 第一轮执行入口、排障顺序与最小部署复核口径收口
 - 旧 `GetCommentTree` 兼容入口的正式删除当前已明确保留在主线跟踪项中，后续以真实命中观测结果作为收缩前置条件，避免事项脱离主线后被遗忘
 - 通知中心已于 `2026-03-23` 完成一轮真实首版 Smoke，并已在本轮总回归中完成复核；当前转入稳定维护
 - 认证基础入口虽已于 `2026-03-23` 完成一轮真实首版 Smoke，但 `2026-03-30` 又针对后台闲置恢复、慢登录与重复提交场景补了一轮治根治理；截至 `2026-04-02`，相关回归已完成当前批次确认，当前转入稳定维护
@@ -145,7 +187,7 @@
 - `v26.3.2-test` 已完成真实测试部署验收，`v26.3.2-release` 也已完成正式发布与生产口径部署验收；当前已确认远程镜像拉取、容器启动、登录与核心链路均可用，`dbmigrate` 容器初始化链路已完成真实验证
 - 前端镜像当前已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`
 - 当前首版剩余重点已从“验证基线收口 + 社区主线优化”进一步切换为“保持发布链稳定维护 + 重审下一里程碑入口”；前端运行时配置注入、统一推送规则、测试部署、生产部署与镜像体积优化，以及社区主链回归当前均已完成本轮确认
-- 本轮社区主链回归已达到“可转维护、可结束本轮主线”的状态；当前下一阶段已进一步明确为身份语义 Phase 4 协议输出收敛，而不是继续在本页内无边界膨胀社区增强项
+- 本轮社区主链回归已达到“可转维护、可结束本轮主线”的状态；当前下一阶段已进一步明确为 `M14` 宿主运行与最小可观测性基线，而不是继续在本页内无边界膨胀社区增强项
 - 首版总回归与发布前检查单：见 [首版 dev 总回归与发布前检查单](/guide/dev-first-regression-checklist)
 - 首版总回归记录：见 [首版 dev 总回归记录](/guide/dev-first-regression-record)
 - 上线前交付复核入口：见 [部署与容器指南](/deployment/guide)
@@ -154,6 +196,7 @@
 ### 当前不做
 
 - [ ] 直接按旧版 `M13` 口径启动“可观测性与测试”整包工程
+- [ ] 把当前 `M14` 直接扩写成完整运维平台、完整可观测性平台或大而全 CI / E2E 工程
 - [ ] 继续把 `P3-ext`、`P4-ext`、`P5-ext` 的非阻塞细节增强当作当前主线持续推进
 - [ ] 把 `Reaction Phase 2`、开放平台第三方接入 / SDK、邮件通知系统一并拉进当前首版边界
 - [ ] 在未冻结首版功能矩阵前，同时并行启动多个新的横向治理项目
@@ -325,9 +368,9 @@
 - `DbMigrate doctor` / `verify` 已可用于只读检查配置、连接定义与 Seed 前置状态
 - 持续减少“组合根直接绑宿主”的结构耦合
 
-## 下一主线候选
+## 后续候选
 
-> 当前主线已切换到 `身份语义 Phase 4 协议输出收敛`，以下只保留后续候选池。
+> 当前主线已切换到 `M14 宿主运行与最小可观测性基线`，以下只保留后续候选池。
 
 ### `P1`：聊天室完善
 
