@@ -8,7 +8,7 @@
 
 - **里程碑**：`M14 宿主运行与最小可观测性基线`
 - **当前主线**：`M14 宿主运行与最小可观测性基线`
-- **当前阶段**：`截至 2026-04-05，社区主链多轮回归、首版 dev 文档收口，以及身份语义 Phase 4 的启动前提确认、首轮实施窗口与官方顺序真实回归均已完成；当前生产环境的外部兼容边界事实也已补齐：现网仅有 1 套 `v26.3.2-release` Docker 部署，使用 1Panel 默认 HTTPS 反向代理，无仓库外换 Token / 联调 / 巡检脚本，OpenIddict 仅有默认种子数据。当前结论已进一步收束为：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 已按官方顺序完成端到端回归，当前无需触发回滚，Phase 4 本轮正式收口并转入维护态；当前主线已切换到 `M14`，先完成执行入口、排障顺序与最小部署复核口径收口。详见：[M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。`
+- **当前阶段**：`截至 2026-04-05，社区主链多轮回归、首版 dev 文档收口，以及身份语义 Phase 4 的启动前提确认、首轮实施窗口与官方顺序真实回归均已完成；当前生产环境的外部兼容边界事实也已补齐：现网仅有 1 套 `v26.3.2-release` Docker 部署，使用 1Panel 默认 HTTPS 反向代理，无仓库外换 Token / 联调 / 巡检脚本，OpenIddict 仅有默认种子数据。当前结论已进一步收束为：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 已按官方顺序完成端到端回归，当前无需触发回滚，Phase 4 本轮正式收口并转入维护态；当前主线已切换到 `M14`，且“启动前 `validate:baseline:host` -> 启动后 `check:host-runtime`”的两段主路径、统一报告口径与最小运行态检查入口均已完成首轮收口。详见：[M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。`
 - **复核日期**：`2026-04-05`
 
 ## 当前主线：M14 宿主运行与最小可观测性基线
@@ -39,6 +39,9 @@
 ### 当前输出
 
 - [x] 已将当前主线从身份语义 `Phase 4` 正式切换为 `M14`，并新增 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 作为默认执行入口
+- [x] 已将 `M14` 默认主路径固定为“启动前 `npm run validate:baseline:host`，启动后 `npm run check:host-runtime`”，把代码 / 配置 / 数据库前置问题与运行态 / 网关链路问题明确分层
+- [x] 已统一启动前与启动后两段检查的报告能力：`validate:baseline:host` 与 `check:host-runtime` 当前均支持 `--report`、`--report-file`，并统一输出 `Summary / Actions` 两段
+- [x] 已拆分 `Gateway` 健康端点语义：`/health` 当前固定用于最小后端宿主链检查，`/healthz` 固定用于更完整的扩展观测与结构化下游摘要
 - [x] 已将首版 `dev` 的定义从“某条子线已收口”改为“所有纳入范围的核心功能主线至少完成 70%”
 - [x] 已新增 [首版 dev 边界](/planning/dev-first-scope)，明确业务主线、体验主线与工程门槛
 - [x] 已新增 [首版 dev 功能矩阵状态表](/planning/dev-first-status-matrix)，把首版范围内各功能线收束为 `已完成 / 待联调复核 / 待补齐 / 不纳入首版`

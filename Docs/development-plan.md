@@ -13,7 +13,7 @@
 
 - **当前里程碑**：`M14 宿主运行与最小可观测性基线`
 - **当前主线**：`M14 宿主运行与最小可观测性基线`
-- **当前阶段**：`截至 2026-04-05，社区主链多轮回归与首版 dev 文档收口已完成；身份语义 Phase 4 的仓库内前置资产、仓库资产侧首轮排查、首轮实施窗口与官方顺序真实回归也均已完成。当前结论已进一步收束为：Auth 输出双写已收缩、`userinfo` 已完成最小对齐，`radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 已按既定顺序完成端到端验证，无需触发回滚，Phase 4 本轮正式收口并转入维护态。当前主线已正式切换为 `M14`，下一步先完成执行入口、排障顺序与最小部署复核口径收口。详见：[M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。`
+- **当前阶段**：`截至 2026-04-05，社区主链多轮回归与首版 dev 文档收口已完成；身份语义 Phase 4 的仓库内前置资产、仓库资产侧首轮排查、首轮实施窗口与官方顺序真实回归也均已完成。当前结论已进一步收束为：Auth 输出双写已收缩、`userinfo` 已完成最小对齐，`radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 已按既定顺序完成端到端验证，无需触发回滚，Phase 4 本轮正式收口并转入维护态。当前主线已正式切换为 `M14`，且“启动前 `validate:baseline:host` -> 启动后 `check:host-runtime`”的两段主路径、统一报告口径与最小运行态检查入口均已完成首轮收口。详见：[M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。`
 - **并行治理尾项**：
   - 身份语义 Phase 4：稳定维护与防回归治理准备（当前已完成 [最终启动评审](/guide/identity-claim-phase4-start-review)、首轮实施与官方顺序真实回归，结论为无需回滚并转入稳定维护）
   - `DbMigrate` 进入回归维护（解耦宿主 + `doctor` 校验已完成）
@@ -175,6 +175,12 @@
    - 当前主线已正式切换为 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)，并新增 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 作为默认执行入口；`M13` 与 `M15` 暂继续保留在候选池
    - 用户已完成 `radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 手工联调确认，本轮 `Phase 4` 可以正式收口，不再维持“继续观察官方回归”的表述
 
+20. **`M14` 启动前 / 启动后两段主路径与报告口径已完成首轮收口**
+   - 当前默认执行顺序已固定为：启动前先跑 `npm run validate:baseline:host`，宿主启动后再跑 `npm run check:host-runtime`
+   - `validate:baseline:host` 与 `check:host-runtime` 当前都已支持 `--report`、`--report-file`，并统一输出 `Summary / Actions` 两段，便于把启动前与启动后结论写入同一份维护记录
+   - `validate:baseline:host` 当前已明确分流 `baseline / doctor / verify` 三类失败；`check:host-runtime` 当前已承担 `Gateway / Api / Auth` 的最小运行态检查，并支持补充 `Gateway /healthz` 条目摘要
+   - `Gateway` 当前已明确拆分 `/health` 与 `/healthz` 语义：前者用于最小后端宿主链检查，后者用于更完整的扩展观测；本轮重点是把这套主路径固定下来，而不是继续扩成大而全运维平台
+
 ### 暂不作为当前主线
 
 - 治理前端化：审核台、敏感词与自动策略
@@ -196,8 +202,8 @@
 
 ### 当前进行中子阶段
 
-- `M14` 执行入口与阶段口径收口
-- `validate:baseline:host`、`DbMigrate doctor / verify`、健康检查、日志与部署复核顺序统一
+- `M14` 执行入口、报告口径与阶段文档收口
+- `validate:baseline:host`、`DbMigrate doctor / verify`、`check:host-runtime`、健康检查、日志与部署复核顺序统一
 - 身份语义 Phase 4 稳定维护与防回归治理准备
 - 旧 `GetCommentTree` 兼容入口继续观察真实命中与仓库外依赖，暂不直接删除
 - 文档、验证基线与发布口径冻结维护
