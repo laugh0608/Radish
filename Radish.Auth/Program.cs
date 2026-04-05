@@ -411,6 +411,7 @@ app.MapHealthChecks("/healthz", new HealthCheckOptions
 app.Lifetime.ApplicationStarted.Register(() =>
 {
     var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
+    var oidcRuntimeSummary = AuthOidcRuntimeProfile.BuildStartupSummary(builder.Configuration, builder.Environment);
 
     Log.Information("====================================");
     Log.Information("  ____            _ _     _          _         _   _     ");
@@ -424,6 +425,10 @@ app.Lifetime.ApplicationStarted.Register(() =>
     Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
     Log.Information("监听地址: {Urls}", urls);
     Log.Information("CORS 允许来源: {Origins}", string.Join(", ", corsOrigins));
+    Log.Information("OIDC Issuer: {Issuer}", oidcRuntimeSummary.IssuerSummary);
+    Log.Information("OIDC 密钥模式: {KeyMode}", oidcRuntimeSummary.KeyMode);
+    Log.Information("OIDC Signing 证书: {SigningCertificate}", oidcRuntimeSummary.SigningCertificateSummary);
+    Log.Information("OIDC Encryption 证书: {EncryptionCertificate}", oidcRuntimeSummary.EncryptionCertificateSummary);
 });
 
 #endregion

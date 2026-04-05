@@ -17,7 +17,7 @@ public sealed class OidcCertificateHealthCheck(
         CancellationToken cancellationToken = default)
     {
         var certificateSection = _configuration.GetSection("OpenIddict:Encryption");
-        var useDevelopmentKeys = certificateSection.GetValue<bool?>("UseDevelopmentKeys") ?? false;
+        var useDevelopmentKeys = AuthOidcRuntimeProfile.UsesDevelopmentKeys(_configuration);
         if (useDevelopmentKeys)
         {
             return Task.FromResult(HealthCheckResult.Healthy($"OIDC {_certificateType} 已切到开发密钥模式。"));
@@ -30,7 +30,7 @@ public sealed class OidcCertificateHealthCheck(
             return Task.FromResult(HealthCheckResult.Unhealthy($"OIDC {_certificateType} 证书配置缺失，请检查 OpenIddict:Encryption:{_certificateType}CertificatePath / {_certificateType}CertificatePassword。"));
         }
 
-        var resolvedPath = ResolveCertificatePath(configuredPath);
+        var resolvedPath = AuthOidcRuntimeProfile.ResolveCertificatePath(_configuration, _environment, _certificateType);
         if (!File.Exists(resolvedPath))
         {
             return Task.FromResult(HealthCheckResult.Unhealthy($"OIDC {_certificateType} 证书文件不存在: {resolvedPath}"));
@@ -45,15 +45,5 @@ public sealed class OidcCertificateHealthCheck(
         {
             return Task.FromResult(HealthCheckResult.Unhealthy($"OIDC {_certificateType} 证书无法读取: {resolvedPath}", ex));
         }
-    }
-
-    private string ResolveCertificatePath(string configuredPath)
-    {
-        if (Path.IsPathRooted(configuredPath))
-        {
-            return configuredPath;
-        }
-
-        return Path.GetFullPath(Path.Combine(_environment.ContentRootPath, configuredPath));
     }
 }

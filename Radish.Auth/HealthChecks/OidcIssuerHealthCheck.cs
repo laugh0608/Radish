@@ -10,15 +10,15 @@ public sealed class OidcIssuerHealthCheck(IConfiguration configuration) : IHealt
         HealthCheckContext context,
         CancellationToken cancellationToken = default)
     {
-        var issuer = _configuration.GetValue<string>("OpenIddict:Server:Issuer");
-        if (string.IsNullOrWhiteSpace(issuer))
+        var configuredIssuer = _configuration.GetValue<string>("OpenIddict:Server:Issuer");
+        if (string.IsNullOrWhiteSpace(configuredIssuer))
         {
             return Task.FromResult(HealthCheckResult.Unhealthy("OIDC Issuer 配置缺失，请检查 OpenIddict:Server:Issuer。"));
         }
 
-        if (!Uri.TryCreate(issuer, UriKind.Absolute, out var issuerUri))
+        if (!Uri.TryCreate(configuredIssuer, UriKind.Absolute, out var issuerUri))
         {
-            return Task.FromResult(HealthCheckResult.Unhealthy($"OIDC Issuer 不是合法绝对地址: {issuer}"));
+            return Task.FromResult(HealthCheckResult.Unhealthy($"OIDC Issuer 不是合法绝对地址: {configuredIssuer}"));
         }
 
         if (!string.Equals(issuerUri.Scheme, Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) &&
@@ -27,6 +27,6 @@ public sealed class OidcIssuerHealthCheck(IConfiguration configuration) : IHealt
             return Task.FromResult(HealthCheckResult.Unhealthy($"OIDC Issuer 协议不受支持: {issuerUri.Scheme}"));
         }
 
-        return Task.FromResult(HealthCheckResult.Healthy($"OIDC Issuer 已对齐: {issuerUri.GetLeftPart(UriPartial.Authority).TrimEnd('/')}"));
+        return Task.FromResult(HealthCheckResult.Healthy($"OIDC Issuer 已对齐: {AuthOidcRuntimeProfile.ResolveIssuer(_configuration)}"));
     }
 }

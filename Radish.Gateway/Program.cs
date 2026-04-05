@@ -114,6 +114,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 // ===== 健康检查配置 =====
 var apiBaseUrl = builder.Configuration["DownstreamServices:ApiService:BaseUrl"];
 var authBaseUrl = builder.Configuration["DownstreamServices:AuthService:BaseUrl"];
+var gatewayHealthTargets = GatewayHostHealthChecks.CreateHealthTargets(builder.Configuration);
 var healthCheckTags = GatewayHostHealthChecks.CreateTags(builder.Configuration);
 builder.Services.AddGatewayHostHealthChecks(builder.Configuration, healthCheckTags);
 
@@ -211,6 +212,16 @@ app.Lifetime.ApplicationStarted.Register(() =>
     if (!string.IsNullOrEmpty(apiBaseUrl))
     {
         Log.Information("下游 API 服务: {ApiUrl}", apiBaseUrl);
+    }
+
+    foreach (var target in gatewayHealthTargets)
+    {
+        var scope = target.Tags.Contains("minimal") ? "最小探活" : "扩展观测";
+        Log.Information("{Scope}[{TargetName}]: {TargetUrl} | failureStatus={FailureStatus}",
+            scope,
+            target.Name,
+            target.Url,
+            target.FailureStatus);
     }
 });
 

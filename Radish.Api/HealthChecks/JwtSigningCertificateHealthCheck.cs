@@ -12,7 +12,7 @@ public sealed class JwtSigningCertificateHealthCheck(IConfiguration configuratio
         HealthCheckContext context,
         CancellationToken cancellationToken = default)
     {
-        var deploymentJwtValidationEnabled = !string.IsNullOrWhiteSpace(_configuration["RADISH_PUBLIC_URL"]);
+        var deploymentJwtValidationEnabled = ApiJwtRuntimeProfile.IsDeploymentJwtValidationEnabled(_configuration);
         if (!deploymentJwtValidationEnabled)
         {
             return Task.FromResult(HealthCheckResult.Healthy("当前处于本地 Authority 模式，不要求本地 JWT signing 证书。"));
@@ -25,7 +25,10 @@ public sealed class JwtSigningCertificateHealthCheck(IConfiguration configuratio
             return Task.FromResult(HealthCheckResult.Unhealthy("部署态 JWT signing 证书配置缺失，请检查 OpenIddict:Encryption:SigningCertificatePath / SigningCertificatePassword。"));
         }
 
-        var resolvedPath = ResolveCertificatePath(configuredPath, AppContext.BaseDirectory, _environment.ContentRootPath);
+        var resolvedPath = ApiJwtRuntimeProfile.ResolveSigningCertificatePath(
+            _configuration,
+            AppContext.BaseDirectory,
+            _environment.ContentRootPath);
         if (!File.Exists(resolvedPath))
         {
             return Task.FromResult(HealthCheckResult.Unhealthy($"部署态 JWT signing 证书文件不存在: {resolvedPath}"));
@@ -40,21 +43,5 @@ public sealed class JwtSigningCertificateHealthCheck(IConfiguration configuratio
         {
             return Task.FromResult(HealthCheckResult.Unhealthy($"部署态 JWT signing 证书无法读取: {resolvedPath}", ex));
         }
-    }
-
-    private static string ResolveCertificatePath(string configuredPath, string basePath, string contentRootPath)
-    {
-        if (Path.IsPathRooted(configuredPath))
-        {
-            return Path.GetFullPath(configuredPath);
-        }
-
-        var baseDirectoryCandidate = Path.GetFullPath(Path.Combine(basePath, configuredPath));
-        if (File.Exists(baseDirectoryCandidate))
-        {
-            return baseDirectoryCandidate;
-        }
-
-        return Path.GetFullPath(Path.Combine(contentRootPath, configuredPath));
     }
 }

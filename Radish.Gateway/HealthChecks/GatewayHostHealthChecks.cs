@@ -5,31 +5,49 @@ namespace Radish.Gateway.HealthChecks;
 
 public static class GatewayHostHealthChecks
 {
-    public static IReadOnlyDictionary<string, string[]> CreateTags(IConfiguration configuration)
+    public static IReadOnlyList<GatewayHealthTarget> CreateHealthTargets(IConfiguration configuration)
     {
-        var tags = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
+        var targets = new List<GatewayHealthTarget>();
 
         var apiBaseUrl = configuration["DownstreamServices:ApiService:BaseUrl"];
         var apiHealthPath = configuration["DownstreamServices:ApiService:HealthCheckPath"];
         if (!string.IsNullOrWhiteSpace(apiBaseUrl) && !string.IsNullOrWhiteSpace(apiHealthPath))
         {
-            tags["api-service"] = ["downstream", "api", "minimal"];
+            targets.Add(new GatewayHealthTarget(
+                "api-service",
+                $"{apiBaseUrl.TrimEnd('/')}{apiHealthPath}",
+                ["downstream", "api", "minimal"],
+                HealthStatus.Unhealthy));
         }
 
         var authBaseUrl = configuration["DownstreamServices:AuthService:BaseUrl"];
         var authHealthPath = configuration["DownstreamServices:AuthService:HealthCheckPath"];
         if (!string.IsNullOrWhiteSpace(authBaseUrl) && !string.IsNullOrWhiteSpace(authHealthPath))
         {
-            tags["auth-service"] = ["downstream", "auth", "minimal"];
+            targets.Add(new GatewayHealthTarget(
+                "auth-service",
+                $"{authBaseUrl.TrimEnd('/')}{authHealthPath}",
+                ["downstream", "auth", "minimal"],
+                HealthStatus.Unhealthy));
         }
 
         var consoleBaseUrl = configuration["ReverseProxy:Clusters:consoleCluster:Destinations:console:Address"];
         if (!string.IsNullOrWhiteSpace(consoleBaseUrl))
         {
-            tags["console-service"] = ["downstream", "console", "extended"];
+            targets.Add(new GatewayHealthTarget(
+                "console-service",
+                $"{consoleBaseUrl.TrimEnd('/')}/healthz",
+                ["downstream", "console", "extended"],
+                HealthStatus.Degraded));
         }
 
-        return tags;
+        return targets;
+    }
+
+    public static IReadOnlyDictionary<string, string[]> CreateTags(IConfiguration configuration)
+    {
+        return CreateHealthTargets(configuration)
+            .ToDictionary(target => target.Name, target => target.Tags, StringComparer.OrdinalIgnoreCase);
     }
 
     public static IHealthChecksBuilder AddGatewayHostHealthChecks(
@@ -39,37 +57,13 @@ public static class GatewayHostHealthChecks
     {
         var healthChecksBuilder = services.AddHealthChecks();
 
-        var apiBaseUrl = configuration["DownstreamServices:ApiService:BaseUrl"];
-        var apiHealthPath = configuration["DownstreamServices:ApiService:HealthCheckPath"];
-        if (!string.IsNullOrWhiteSpace(apiBaseUrl) && !string.IsNullOrWhiteSpace(apiHealthPath))
+        foreach (var target in CreateHealthTargets(configuration))
         {
-            var apiHealthUrl = $"{apiBaseUrl.TrimEnd('/')}{apiHealthPath}";
             healthChecksBuilder.AddUrlGroup(
-                new Uri(apiHealthUrl),
-                name: "api-service",
-                tags: tags["api-service"]);
-        }
-
-        var authBaseUrl = configuration["DownstreamServices:AuthService:BaseUrl"];
-        var authHealthPath = configuration["DownstreamServices:AuthService:HealthCheckPath"];
-        if (!string.IsNullOrWhiteSpace(authBaseUrl) && !string.IsNullOrWhiteSpace(authHealthPath))
-        {
-            var authHealthUrl = $"{authBaseUrl.TrimEnd('/')}{authHealthPath}";
-            healthChecksBuilder.AddUrlGroup(
-                new Uri(authHealthUrl),
-                name: "auth-service",
-                tags: tags["auth-service"]);
-        }
-
-        var consoleBaseUrl = configuration["ReverseProxy:Clusters:consoleCluster:Destinations:console:Address"];
-        if (!string.IsNullOrWhiteSpace(consoleBaseUrl))
-        {
-            var consoleHealthUrl = $"{consoleBaseUrl.TrimEnd('/')}/healthz";
-            healthChecksBuilder.AddUrlGroup(
-                new Uri(consoleHealthUrl),
-                name: "console-service",
-                failureStatus: HealthStatus.Degraded,
-                tags: tags["console-service"]);
+                new Uri(target.Url),
+                name: target.Name,
+                failureStatus: target.FailureStatus,
+                tags: tags[target.Name]);
         }
 
         return healthChecksBuilder;
@@ -80,3 +74,9 @@ public static class GatewayHostHealthChecks
         return registration.Tags.Contains("minimal");
     }
 }
+
+public sealed record GatewayHealthTarget(
+    string Name,
+    string Url,
+    string[] Tags,
+    HealthStatus FailureStatus);

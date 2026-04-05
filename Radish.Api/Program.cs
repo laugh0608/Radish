@@ -93,47 +93,10 @@ static string ResolveSharedConfigPath(string basePath, string contentRootPath)
     return Path.Combine(contentRootPath, "appsettings.Shared.json");
 }
 
-static string? ResolveJwtIssuer(IConfiguration configuration)
-{
-    var issuer = configuration["OpenIddict:Server:Issuer"];
-    if (string.IsNullOrWhiteSpace(issuer))
-    {
-        issuer = configuration["RADISH_PUBLIC_URL"];
-    }
-
-    if (string.IsNullOrWhiteSpace(issuer))
-    {
-        issuer = configuration["GatewayService:PublicUrl"];
-    }
-
-    if (string.IsNullOrWhiteSpace(issuer) || !Uri.TryCreate(issuer, UriKind.Absolute, out var uri))
-    {
-        return null;
-    }
-
-    return uri.GetLeftPart(UriPartial.Authority).TrimEnd('/');
-}
-
 static string[] BuildValidIssuers(string issuer)
 {
     var normalizedIssuer = issuer.Trim().TrimEnd('/');
     return [normalizedIssuer, $"{normalizedIssuer}/"];
-}
-
-static string ResolveCertificatePath(string configuredPath, string basePath, string contentRootPath)
-{
-    if (Path.IsPathRooted(configuredPath))
-    {
-        return Path.GetFullPath(configuredPath);
-    }
-
-    var baseDirectoryCandidate = Path.GetFullPath(Path.Combine(basePath, configuredPath));
-    if (File.Exists(baseDirectoryCandidate))
-    {
-        return baseDirectoryCandidate;
-    }
-
-    return Path.GetFullPath(Path.Combine(contentRootPath, configuredPath));
 }
 
 static X509Certificate2 LoadJwtSigningCertificate(
@@ -151,7 +114,7 @@ static X509Certificate2 LoadJwtSigningCertificate(
             "JWT 签名证书配置缺失，请检查 OpenIddict:Encryption:SigningCertificatePath / SigningCertificatePassword。");
     }
 
-    var resolvedPath = ResolveCertificatePath(configuredPath, basePath, contentRootPath);
+    var resolvedPath = ApiJwtRuntimeProfile.ResolveSigningCertificatePath(configuration, basePath, contentRootPath);
 
     if (waitForCertificate)
     {
@@ -375,10 +338,10 @@ builder.Services.AddOpenIddict()
                .UseDbContext<Radish.Auth.OpenIddict.AuthOpenIddictDbContext>();
     });
 
-var jwtIssuer = ResolveJwtIssuer(builder.Configuration);
-var deploymentJwtValidationEnabled = !string.IsNullOrWhiteSpace(builder.Configuration["RADISH_PUBLIC_URL"]);
+var jwtIssuer = ApiJwtRuntimeProfile.ResolveJwtIssuer(builder.Configuration);
+var deploymentJwtValidationEnabled = ApiJwtRuntimeProfile.IsDeploymentJwtValidationEnabled(builder.Configuration);
 var jwtValidationMode = "authority";
-var jwtValidationTarget = "http://localhost:5200";
+var jwtValidationTarget = ApiJwtRuntimeProfile.LocalAuthority;
 X509Certificate2? jwtSigningCertificate = null;
 
 if (deploymentJwtValidationEnabled)
@@ -562,7 +525,7 @@ builder.Host.AddSerilogSetup();
 var app = builder.Build();
 // -------------- App 初始化阶段 ---------------
 
-Log.Information("[JWT] 验签模式: {Mode}, 目标: {Target}", jwtValidationMode, jwtValidationTarget);
+Log.Information("[JWT] 初始化验签模式: {Mode}, 目标: {Target}", jwtValidationMode, jwtValidationTarget);
 
 // 3. 绑定 InternalApp 扩展中的服务
 app.ConfigureApplication();
@@ -659,13 +622,17 @@ app.MapHealthChecks("/healthz", new HealthCheckOptions
 });
 app.MapHealthChecks("/api/health", new HealthCheckOptions
 {
-    Predicate = registration => registration.Tags.Contains("minimal"),
+    Predicate = ApiHostHealthChecks.IsMinimal,
 });
 
 // 输出项目启动标识（使用 Serilog，与 Gateway 风格统一）
 app.Lifetime.ApplicationStarted.Register(() =>
 {
     var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
+    var jwtRuntimeSummary = ApiJwtRuntimeProfile.BuildStartupSummary(
+        builder.Configuration,
+        AppContext.BaseDirectory,
+        builder.Environment.ContentRootPath);
 
     Log.Information("====================================");
     Log.Information("   ____           _ _     _");
@@ -679,6 +646,10 @@ app.Lifetime.ApplicationStarted.Register(() =>
     Log.Information("监听地址: {Urls}", urls);
     Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
     Log.Information("默认时区: {TimeZone}", TimeZoneResolver.NormalizeToDisplayId(configuredTimeOptions.DefaultTimeZoneId));
+    Log.Information("JWT 验签模式: {Mode}", jwtRuntimeSummary.ValidationMode);
+    Log.Information("JWT 验签目标: {Target}", jwtRuntimeSummary.ValidationTarget);
+    Log.Information("JWT Issuer 解析: {Issuer}", jwtRuntimeSummary.IssuerSummary);
+    Log.Information("JWT signing 证书: {Certificate}", jwtRuntimeSummary.SigningCertificateSummary);
 });
 
 // 注册 Hangfire 定时任务

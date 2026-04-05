@@ -174,6 +174,8 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 - `/healthz`：更完整的下游观测，适合继续判断 `console` 等扩展下游状态；当前已返回结构化 JSON，可直接看到整体状态、时间戳、耗时和每个下游条目的状态、标签与异常摘要
 - `Api / Auth` 当前也保持同样的分层语义：`/health` 只保留最小存活探活，`/healthz` 继续补 JWT / OIDC Issuer 与证书前提明细
 
+当前 `Api / Auth / Gateway` 的启动日志也会额外打印 JWT / OIDC / 下游探活目标运行摘要，便于在看健康检查之前先核对当前宿主到底按哪套运行模式启动。
+
 ### 第 5 步：确认网关与外部访问链路
 
 如果宿主本身正常，但外部访问仍异常，优先确认：
