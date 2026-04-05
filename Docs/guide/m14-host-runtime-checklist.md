@@ -42,6 +42,18 @@ npm run validate:baseline:host
 
 这样可以先把“代码/配置/数据库前置”与“运行态/网关链路”明确分层，不再混在同一轮里排障。
 
+如果需要把启动前这一轮验证结果直接回写到维护记录或本地留痕，可直接运行：
+
+```bash
+npm run validate:baseline:host -- --report
+```
+
+如果需要直接落到文件，可直接运行：
+
+```bash
+npm run validate:baseline:host -- --report-file .tmp/baseline-host-report.md
+```
+
 ### 2. 若失败，优先按“失败归类”拆开
 
 不要一上来就直接重配环境或重启所有宿主，先确认失败属于哪一类：
@@ -118,6 +130,8 @@ npm run validate:baseline:host
 - 若失败落在 `verify`：先修数据库前置、缺列/表结构或种子状态
 
 只有这三层通过后，才建议进入 `check:host-runtime` 做启动后分诊。
+
+当前其报告输出也已与运行态脚本对齐，统一使用 `Summary / Actions` 两段，便于把启动前与启动后记录放进同一份维护材料。
 
 如果希望在失败时顺手把 `Gateway /healthz` 的关键条目摘要一起打出来，可直接运行：
 

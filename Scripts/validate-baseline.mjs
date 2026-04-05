@@ -1,12 +1,30 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import process from 'node:process';
 
 import { formatCommand, runCommand } from './process-runner.mjs';
 
-const args = new Set(process.argv.slice(2));
+const rawArgs = process.argv.slice(2);
+const args = new Set(rawArgs);
 const repoRoot = process.cwd();
 
 function hasFlag(flag) {
   return args.has(flag);
+}
+
+function getArgValue(flagName, defaultValue) {
+  const directPrefix = `${flagName}=`;
+  const direct = rawArgs.find((arg) => arg.startsWith(directPrefix));
+  if (direct) {
+    return direct.slice(directPrefix.length);
+  }
+
+  const index = rawArgs.indexOf(flagName);
+  if (index >= 0 && index + 1 < rawArgs.length) {
+    return rawArgs[index + 1];
+  }
+
+  return defaultValue;
 }
 
 function resolveNpmCommand() {
@@ -59,6 +77,31 @@ function printHostValidationGuidance(failedStep) {
   console.error('[baseline] 只有默认基线与 doctor/verify 都通过后，才建议进入运行态检查 `npm run check:host-runtime`。');
 }
 
+function getHostValidationGuidanceLines(failedStep) {
+  if (!failedStep) {
+    return [];
+  }
+
+  if (failedStep.phase === 'doctor') {
+    return [
+      '- 先修配置、连接定义和关键 ConnId，再重新执行 `npm run validate:baseline:host`。',
+      '- 当前不建议直接进入 `npm run check:host-runtime`，因为启动前前提尚未成立。',
+    ];
+  }
+
+  if (failedStep.phase === 'verify') {
+    return [
+      '- 先修数据库前置、缺列/表结构或种子状态，再重新执行 `npm run validate:baseline:host`。',
+      '- 当前不建议直接进入 `npm run check:host-runtime`，因为宿主最小运行前提尚未闭合。',
+    ];
+  }
+
+  return [
+    '- 先按 type-check/build/test/扫描类失败修正仓库回归，再回到 `npm run validate:baseline:host`。',
+    '- 只有默认基线与 doctor/verify 都通过后，才建议进入运行态检查 `npm run check:host-runtime`。',
+  ];
+}
+
 function runStep(step) {
   const { title, command, args: commandArgs } = step;
   console.log(`\n[baseline] ${title}`);
@@ -94,10 +137,95 @@ function runStep(step) {
 }
 
 function printUsage() {
-  console.log('用法: node Scripts/validate-baseline.mjs [--quick] [--with-host-checks]');
+  console.log('用法: node Scripts/validate-baseline.mjs [--quick] [--with-host-checks] [--report] [--report-file <path>]');
   console.log('');
   console.log('--quick             只执行前端 type-check、client node --test、权限扫描与身份语义轻量校验');
   console.log('--with-host-checks  在 full 模式下追加 DbMigrate doctor / verify 只读自检');
+  console.log('--report            输出可直接回写到记录/PR 的固定 Markdown 报告');
+  console.log('--report-file       将 Markdown 报告直接写入指定文件（会自动启用 --report）');
+}
+
+function buildStepSummaryLine(outcome) {
+  if (outcome.ok) {
+    return `- ${outcome.step.title}: 正常`;
+  }
+
+  return `- ${outcome.step.title}: 失败 (${outcome.status})`;
+}
+
+function buildBaselineActionLines({ isQuick, withHostChecks, failedStep }) {
+  if (failedStep) {
+    if (withHostChecks && !isQuick) {
+      return getHostValidationGuidanceLines(failedStep);
+    }
+
+    return [
+      '- 先修复当前默认基线失败项，再重新执行对应的 `validate:baseline` 入口。',
+    ];
+  }
+
+  const lines = [];
+  if (!withHostChecks) {
+    lines.push('- 如需补齐宿主启动前前提验证，继续执行 `npm run validate:baseline:host`。');
+  } else if (!isQuick) {
+    lines.push('- 当前启动前基线、doctor 与 verify 均已闭合；宿主启动后执行 `npm run check:host-runtime`。');
+    lines.push('- 若需要更完整分诊，可追加 `npm run check:host-runtime -- --details --report`。');
+  } else {
+    lines.push('- 当前仅完成 quick 模式验证；如需宿主主线闭环，继续执行 `npm run validate:baseline:host`。');
+  }
+
+  lines.push('- 身份语义相关改动建议再补 `npm run validate:identity`。');
+  lines.push('- HttpTest 仍需在本地服务准备完成后按专题手工执行。');
+  return lines;
+}
+
+function buildBaselineMarkdownReport({
+  executedAtUtc,
+  isQuick,
+  withHostChecks,
+  outcomes,
+  failedStep,
+}) {
+  const overallStatus = failedStep ? 'failed' : 'passed';
+  const mode = isQuick ? 'quick' : 'full';
+  const hostChecks = withHostChecks && !isQuick ? 'enabled' : 'disabled';
+
+  const lines = [
+    '### Baseline Validation',
+    '',
+    '#### Summary',
+    `- Time: ${executedAtUtc}`,
+    `- Overall: ${overallStatus}`,
+    `- Mode: ${mode}`,
+    `- HostChecks: ${hostChecks}`,
+    ...outcomes.map((outcome) => buildStepSummaryLine(outcome)),
+  ];
+
+  if (failedStep) {
+    lines.push(`- FailedPhase: ${failedStep.phase}`);
+    lines.push(`- FailedStep: ${failedStep.title}`);
+  }
+
+  lines.push('', '#### Actions', ...buildBaselineActionLines({
+    isQuick,
+    withHostChecks,
+    failedStep,
+  }));
+
+  return lines.join('\n');
+}
+
+function printBaselineMarkdownReport(markdownReport) {
+  console.error('\n[baseline] ----- BEGIN REPORT -----');
+  console.error(markdownReport);
+  console.error('[baseline] ----- END REPORT -----');
+}
+
+async function writeBaselineMarkdownReport(reportFile, markdownReport) {
+  const resolvedReportFile = path.resolve(reportFile);
+  await fs.mkdir(path.dirname(resolvedReportFile), { recursive: true });
+  await fs.writeFile(resolvedReportFile, `${markdownReport}\n`, 'utf8');
+  console.error(`[baseline] 报告已写入: ${resolvedReportFile}`);
 }
 
 if (hasFlag('--help') || hasFlag('-h')) {
@@ -107,6 +235,8 @@ if (hasFlag('--help') || hasFlag('-h')) {
 
 const isQuick = hasFlag('--quick');
 const withHostChecks = hasFlag('--with-host-checks');
+const reportFile = getArgValue('--report-file', '');
+const showReport = hasFlag('--report') || reportFile.length > 0;
 const npmCommand = resolveNpmCommand();
 const needsPowerShell = !isQuick || withHostChecks;
 const powerShellCommand = needsPowerShell ? resolvePowerShellCommand() : null;
@@ -217,11 +347,27 @@ if (!isQuick && withHostChecks) {
 
 console.log(`[baseline] 模式：${isQuick ? 'quick' : 'full'}${withHostChecks && !isQuick ? ' + host-checks' : ''}`);
 
+const outcomes = [];
+const executedAtUtc = new Date().toISOString();
 for (const step of steps) {
   const outcome = runStep(step);
+  outcomes.push(outcome);
   if (!outcome.ok) {
     if (withHostChecks && !isQuick) {
       printHostValidationGuidance(step);
+    }
+    if (showReport) {
+      const markdownReport = buildBaselineMarkdownReport({
+        executedAtUtc,
+        isQuick,
+        withHostChecks,
+        outcomes,
+        failedStep: step,
+      });
+      printBaselineMarkdownReport(markdownReport);
+      if (reportFile) {
+        await writeBaselineMarkdownReport(reportFile, markdownReport);
+      }
     }
     process.exit(outcome.status);
   }
@@ -237,3 +383,17 @@ if (!withHostChecks) {
 }
 console.log('[baseline] 身份语义相关改动建议再补 `npm run validate:identity`。');
 console.log('[baseline] HttpTest 仍需在本地服务准备完成后按专题手工执行。');
+
+if (showReport) {
+  const markdownReport = buildBaselineMarkdownReport({
+    executedAtUtc,
+    isQuick,
+    withHostChecks,
+    outcomes,
+    failedStep: null,
+  });
+  printBaselineMarkdownReport(markdownReport);
+  if (reportFile) {
+    await writeBaselineMarkdownReport(reportFile, markdownReport);
+  }
+}
