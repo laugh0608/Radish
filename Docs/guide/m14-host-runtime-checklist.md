@@ -110,6 +110,35 @@ npm run validate:baseline:host
 npm run check:host-runtime -- --details
 ```
 
+如果需要把当前检查结果直接回写到维护记录、PR 或回归记录，可直接运行：
+
+```bash
+npm run check:host-runtime -- --report
+```
+
+如果需要直接把报告落到文件，避免再从终端复制，可直接运行：
+
+```bash
+npm run check:host-runtime -- --report-file .tmp/host-runtime-report.md
+```
+
+当前 `--report` 输出已拆为：
+
+- `Summary`：保留本轮检查事实与 `Gateway /healthz` 摘要
+- `Actions`：按 `Gateway / Api / Auth` 或具体降级条目直接给出下一步建议
+
+如果既要看终端分诊摘要，又要输出固定格式报告，可组合执行：
+
+```bash
+npm run check:host-runtime -- --details --report
+```
+
+如果既要看终端分诊摘要，又要把固定格式报告直接写入文件，可组合执行：
+
+```bash
+npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.md
+```
+
 当前 `Gateway` 端点语义也已拆开：
 
 - `/health`：最小后端宿主链，优先用于 `M14` 默认检查

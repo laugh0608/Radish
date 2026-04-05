@@ -103,6 +103,9 @@ npm run validate:ci
   - 当前其中 `Gateway /health` 表示最小后端宿主链，`/healthz` 留给更完整的下游观测
   - `Gateway /healthz` 当前已返回结构化 JSON，适合宿主启动后继续人工分诊具体下游项
   - 如需在失败时顺手带出 `Gateway /healthz` 的关键摘要，可执行 `npm run check:host-runtime -- --details`
+  - 如需输出可直接回写到回归记录或 PR 的固定 Markdown 报告，可执行 `npm run check:host-runtime -- --report`
+  - 如需把 Markdown 报告直接落到文件，可执行 `npm run check:host-runtime -- --report-file <path>`；当前会自动启用 `--report`，并在必要时自动创建目标目录
+  - 当前 `--report` 已拆成 `Summary / Actions` 两段；前者记录事实，后者按 `Gateway / Api / Auth` 与扩展下游条目直接给出下一步建议
 - `validate:identity`
   - 身份语义专题聚合入口，不替代默认 baseline
   - 分别执行运行时散点 Claim 读取扫描与协议输出回退扫描
@@ -233,6 +236,30 @@ npm run check:host-runtime
 
 ```bash
 npm run check:host-runtime -- --details
+```
+
+- 如果你需要把这轮运行态结论直接回写到维护记录、回归记录或 PR，可追加：
+
+```bash
+npm run check:host-runtime -- --report
+```
+
+- 如果你希望脚本直接把报告写到文件，而不是从终端复制，可追加：
+
+```bash
+npm run check:host-runtime -- --report-file .tmp/host-runtime-report.md
+```
+
+- 如果既要终端分诊，又要固定格式回写，可直接组合：
+
+```bash
+npm run check:host-runtime -- --details --report
+```
+
+- 如果既要终端分诊，又要把固定格式报告直接落盘，可直接组合：
+
+```bash
+npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.md
 ```
 
 ## 当前仍保留为专题回归的资产

@@ -1,5 +1,7 @@
+import fs from 'node:fs/promises';
 import http from 'node:http';
 import https from 'node:https';
+import path from 'node:path';
 import process from 'node:process';
 
 const args = process.argv.slice(2);
@@ -37,6 +39,8 @@ function printUsage() {
   console.log('  --auth <url>           覆盖 Auth 健康检查地址');
   console.log('  --timeout-ms <number>  单个端点超时时间，默认 5000');
   console.log('  --details              当默认检查失败时，追加抓取 Gateway /healthz 明细摘要');
+  console.log('  --report               输出可直接回写到记录/PR 的固定 Markdown 报告');
+  console.log('  --report-file <path>   将 Markdown 报告直接写入指定文件（会自动启用 --report）');
   console.log('  --strict-tls           严格校验 HTTPS 证书（默认对 localhost/127.0.0.1 放宽）');
 }
 
@@ -183,50 +187,208 @@ function formatDurationMs(value) {
   return Number.isFinite(value) ? `${value.toFixed(2)}ms` : 'n/a';
 }
 
-function printGatewayDetailsSummary(result) {
+function getGatewayDetailsSummary(result) {
   if (!result.ok) {
     const category = inferFailureCategory(result);
-    console.error(`[host-runtime] /healthz 拉取失败 (${result.statusCode || 'no-response'})`);
-    console.error(`[host-runtime]   分类: ${category.label} (${category.code})`);
-    if (result.body) {
-      console.error(`[host-runtime]   响应: ${truncateText(result.body)}`);
-    }
-    return;
+    return {
+      ok: false,
+      summary: null,
+      error: {
+        statusCode: result.statusCode || 0,
+        category,
+        response: truncateText(result.body),
+      },
+    };
   }
 
   const payload = tryParseJson(result.body);
   if (!payload) {
-    console.error('[host-runtime] /healthz 返回的不是可解析 JSON，无法输出明细摘要。');
-    if (result.body) {
-      console.error(`[host-runtime]   响应: ${truncateText(result.body)}`);
+    return {
+      ok: false,
+      summary: null,
+      error: {
+        statusCode: result.statusCode || 0,
+        category: {
+          code: 'invalid-json',
+          label: 'healthz 响应不是可解析 JSON',
+          nextStep: '先确认 Gateway /healthz 是否已切到结构化 JSON 输出，或是否被其他反代层改写了响应。',
+        },
+        response: truncateText(result.body),
+      },
+    };
+  }
+
+  const entries = Array.isArray(payload.entries)
+    ? payload.entries.map((entry) => ({
+        name: entry.name ?? 'unknown',
+        status: entry.status ?? 'unknown',
+        tags: Array.isArray(entry.tags) ? entry.tags : [],
+        durationMs: Number.isFinite(entry.durationMs) ? entry.durationMs : null,
+        description: typeof entry.description === 'string' ? truncateText(entry.description, 120) : '',
+        exception: typeof entry.exception === 'string' ? truncateText(entry.exception, 120) : '',
+      }))
+    : [];
+
+  return {
+    ok: true,
+    error: null,
+    summary: {
+      overallStatus: payload.status ?? 'unknown',
+      generatedAtUtc: payload.generatedAtUtc ?? 'n/a',
+      totalDurationMs: Number.isFinite(payload.totalDurationMs) ? payload.totalDurationMs : null,
+      entries,
+    },
+  };
+}
+
+function printGatewayDetailsSummary(result) {
+  const details = getGatewayDetailsSummary(result);
+  if (!details.ok) {
+    console.error(`[host-runtime] /healthz 拉取失败 (${details.error.statusCode || 'no-response'})`);
+    console.error(`[host-runtime]   分类: ${details.error.category.label} (${details.error.category.code})`);
+    if (details.error.response) {
+      console.error(`[host-runtime]   响应: ${details.error.response}`);
     }
-    return;
+    return details;
   }
 
   console.error('[host-runtime] Gateway /healthz 明细：');
   console.error(
-    `[host-runtime]   overall=${payload.status ?? 'unknown'} generatedAtUtc=${payload.generatedAtUtc ?? 'n/a'} total=${formatDurationMs(payload.totalDurationMs)}`
+    `[host-runtime]   overall=${details.summary.overallStatus} generatedAtUtc=${details.summary.generatedAtUtc} total=${formatDurationMs(details.summary.totalDurationMs)}`
   );
 
-  const entries = Array.isArray(payload.entries) ? payload.entries : [];
-  if (entries.length === 0) {
+  if (details.summary.entries.length === 0) {
     console.error('[host-runtime]   entries: 无可用明细。');
-    return;
+    return details;
   }
 
-  for (const entry of entries) {
-    const tags = Array.isArray(entry.tags) && entry.tags.length > 0
+  for (const entry of details.summary.entries) {
+    const tags = entry.tags.length > 0
       ? entry.tags.join(', ')
       : 'none';
     const extras = [entry.description, entry.exception]
-      .filter((item) => typeof item === 'string' && item.trim().length > 0)
-      .map((item) => truncateText(item, 120));
+      .filter((item) => typeof item === 'string' && item.trim().length > 0);
 
     const suffix = extras.length > 0 ? ` | ${extras.join(' | ')}` : '';
     console.error(
-      `[host-runtime]   - ${entry.name ?? 'unknown'}: ${entry.status ?? 'unknown'} [${tags}] (${formatDurationMs(entry.durationMs)})${suffix}`
+      `[host-runtime]   - ${entry.name}: ${entry.status} [${tags}] (${formatDurationMs(entry.durationMs)})${suffix}`
     );
   }
+
+  return details;
+}
+
+function buildResultReportLine(result) {
+  if (result.ok) {
+    return `- ${result.name}: 正常 (${result.statusCode})`;
+  }
+
+  const category = inferFailureCategory(result);
+  const response = result.body ? ` | 响应: ${truncateText(result.body, 100)}` : '';
+  return `- ${result.name}: 异常 (${result.statusCode || 'no-response'}) | 分类: ${category.label} (${category.code})${response}`;
+}
+
+function buildGatewayDetailsReportLines(details) {
+  if (!details) {
+    return [];
+  }
+
+  if (!details.ok) {
+    const response = details.error.response ? ` | 响应: ${details.error.response}` : '';
+    return [
+      `- Gateway /healthz: 拉取失败 (${details.error.statusCode || 'no-response'}) | 分类: ${details.error.category.label} (${details.error.category.code})${response}`,
+    ];
+  }
+
+  const lines = [
+    `- Gateway /healthz: ${details.summary.overallStatus} | generatedAtUtc: ${details.summary.generatedAtUtc} | total: ${formatDurationMs(details.summary.totalDurationMs)}`,
+  ];
+
+  for (const entry of details.summary.entries) {
+    const tags = entry.tags.length > 0 ? entry.tags.join(', ') : 'none';
+    const extras = [entry.description, entry.exception]
+      .filter((item) => item);
+    const suffix = extras.length > 0 ? ` | ${extras.join(' | ')}` : '';
+    lines.push(`- Gateway /healthz entry: ${entry.name} | ${entry.status} | tags: ${tags} | duration: ${formatDurationMs(entry.durationMs)}${suffix}`);
+  }
+
+  return lines;
+}
+
+function buildActionLines(results, gatewayDetails) {
+  const lines = [];
+
+  for (const result of results) {
+    if (result.ok) {
+      continue;
+    }
+
+    const category = inferFailureCategory(result);
+    lines.push(`- ${result.name}: ${category.nextStep}`);
+  }
+
+  if (gatewayDetails?.ok) {
+    const degradedEntries = gatewayDetails.summary.entries.filter(
+      (entry) => entry.status !== 'Healthy'
+    );
+
+    for (const entry of degradedEntries) {
+      const reason = [entry.description, entry.exception]
+        .filter((item) => item)
+        .join(' | ');
+      const suffix = reason ? ` 当前摘要: ${reason}` : '';
+      lines.push(`- Gateway /healthz ${entry.name}: 优先确认该扩展下游是否应在本轮启动；若不属于最小宿主链，可按 M14 口径单独记录为降级观测项。${suffix}`);
+    }
+  }
+
+  if (gatewayDetails && !gatewayDetails.ok) {
+    lines.push(`- Gateway /healthz: ${gatewayDetails.error.category.nextStep}`);
+  }
+
+  if (lines.length === 0) {
+    lines.push('- 当前运行态健康检查通过，可继续进入更上层联调或保留为本轮复核记录。');
+  }
+
+  return [...new Set(lines)];
+}
+
+function buildMarkdownReport({ executedAtUtc, results, gatewayDetails, strictTls, timeoutMs }) {
+  const overallStatus = results.every((result) => result.ok) ? 'passed' : 'failed';
+  const summaryLines = [
+    ...results.map((result) => buildResultReportLine(result)),
+    ...buildGatewayDetailsReportLines(gatewayDetails),
+  ];
+  const actionLines = buildActionLines(results, gatewayDetails);
+
+  const lines = [
+    '### Host Runtime Check',
+    '',
+    '#### Summary',
+    `- Time: ${executedAtUtc}`,
+    `- Overall: ${overallStatus}`,
+    `- TimeoutMs: ${timeoutMs}`,
+    `- StrictTls: ${strictTls ? 'true' : 'false'}`,
+    ...summaryLines,
+    '',
+    '#### Actions',
+    ...actionLines,
+  ];
+
+  return lines.join('\n');
+}
+
+function printMarkdownReport(markdownReport) {
+  console.error('\n[host-runtime] ----- BEGIN REPORT -----');
+  console.error(markdownReport);
+  console.error('[host-runtime] ----- END REPORT -----');
+}
+
+async function writeMarkdownReport(reportFile, markdownReport) {
+  const resolvedReportFile = path.resolve(reportFile);
+  await fs.mkdir(path.dirname(resolvedReportFile), { recursive: true });
+  await fs.writeFile(resolvedReportFile, `${markdownReport}\n`, 'utf8');
+  console.error(`[host-runtime] 报告已写入: ${resolvedReportFile}`);
+  return resolvedReportFile;
 }
 
 function requestHealth(target, timeoutMs, strictTls) {
@@ -286,6 +448,8 @@ if (hasFlag('--help') || hasFlag('-h')) {
 
 const strictTls = hasFlag('--strict-tls');
 const showDetails = hasFlag('--details');
+const reportFile = getArgValue('--report-file', '');
+const showReport = hasFlag('--report') || reportFile.length > 0;
 const timeoutMs = Number.parseInt(getArgValue('--timeout-ms', '5000'), 10);
 
 if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
@@ -319,6 +483,7 @@ if (!strictTls) {
 }
 
 const results = [];
+const executedAtUtc = new Date().toISOString();
 for (const target of targets) {
   console.log(`\n[host-runtime] ${target.name}`);
   console.log(`> GET ${target.url}`);
@@ -326,6 +491,7 @@ for (const target of targets) {
 }
 
 const failedResults = results.filter((item) => !item.ok);
+let gatewayDetailsSummary = null;
 
 for (const result of results) {
   if (result.ok) {
@@ -347,7 +513,21 @@ if (failedResults.length > 0) {
     console.error(`\n[host-runtime] 追加抓取 Gateway 明细：`);
     console.error(`> GET ${gatewayDetailsTarget.url}`);
     const detailsResult = await requestHealth(gatewayDetailsTarget, detailsTimeoutMs, strictTls);
-    printGatewayDetailsSummary(detailsResult);
+    gatewayDetailsSummary = printGatewayDetailsSummary(detailsResult);
+  }
+
+  if (showReport) {
+    const markdownReport = buildMarkdownReport({
+      executedAtUtc,
+      results,
+      gatewayDetails: gatewayDetailsSummary,
+      strictTls,
+      timeoutMs,
+    });
+    printMarkdownReport(markdownReport);
+    if (reportFile) {
+      await writeMarkdownReport(reportFile, markdownReport);
+    }
   }
 
   console.error('\n[host-runtime] 运行态健康检查未通过。');
@@ -360,6 +540,20 @@ if (failedResults.length > 0) {
   }
   console.error('[host-runtime] 建议顺序：先确认宿主是否已启动，再回到 M14 清单按 doctor/verify、日志、Gateway/反代链路继续排查。');
   process.exit(1);
+}
+
+if (showReport) {
+  const markdownReport = buildMarkdownReport({
+    executedAtUtc,
+    results,
+    gatewayDetails: gatewayDetailsSummary,
+    strictTls,
+    timeoutMs,
+  });
+  printMarkdownReport(markdownReport);
+  if (reportFile) {
+    await writeMarkdownReport(reportFile, markdownReport);
+  }
 }
 
 console.log('\n[host-runtime] 运行态健康检查通过。');

@@ -130,3 +130,6 @@
 - **Gateway 健康端点语义已拆开**：`/health` 当前只代表最小后端宿主链，`/healthz` 继续保留更完整的下游观测；本地未启动 `console` 时不再干扰 `M14` 默认运行态检查。
 - **`/healthz` 明细响应已补齐**：Gateway 当前已把 `/healthz` 从纯文本状态升级为结构化 JSON，默认输出整体状态、生成时间、总耗时，以及每个下游项的名称、状态、标签、耗时和异常摘要，便于直接人工分诊。
 - **运行态脚本已补失败联动明细**：`check:host-runtime` 当前新增 `--details`，在默认检查失败时会自动补拉 `Gateway /healthz` 并输出压缩后的关键摘要，减少手工二次排查。
+- **运行态脚本已补固定格式报告**：`check:host-runtime` 当前新增 `--report`，可把本轮检查结果输出成固定 Markdown 模板，便于直接回写到维护记录、回归记录或 PR。
+- **运行态报告已拆成事实与动作两段**：`check:host-runtime --report` 当前已把输出收敛为 `Summary / Actions` 两段，并按 `Gateway / Api / Auth` 与具体降级条目分别给出下一步建议，减少人工二次改写。
+- **运行态报告已支持直接落盘**：`check:host-runtime` 当前新增 `--report-file <path>`，会自动启用报告输出并把 Markdown 直接写入指定文件，适合沉淀到本地回归记录或维护痕迹。
