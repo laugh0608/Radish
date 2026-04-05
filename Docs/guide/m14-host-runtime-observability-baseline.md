@@ -134,6 +134,8 @@
 - 默认执行顺序已固定为“启动前 `validate:baseline:host` -> 启动后 `check:host-runtime`”
 - 启动前与启动后两段检查当前都已支持 `--report`、`--report-file`，并统一为 `Summary / Actions` 报告格式
 - `Gateway` 当前已明确拆分 `/health` 与 `/healthz` 语义：前者用于最小后端宿主链检查，后者用于更完整的扩展观测
+- `Api / Auth / Gateway` 当前已进一步把健康检查判断与启动日志摘要收口到同一批运行时 helper：`Api` 会输出 JWT 验签模式 / Issuer / signing 证书摘要，`Auth` 会输出 OIDC Issuer / 密钥模式 / 证书摘要，`Gateway` 会输出最小探活与扩展观测目标摘要，便于在人工查看 `/health`、`/healthz` 前先核对宿主到底按哪套模式启动
+- `Gateway` 当前已把下游观测目标进一步结构化：`console-service` 继续保留在扩展观测层，探活目标固定为 `/healthz`，且失败状态固定记为 `Degraded`，避免前端未启动时再次干扰默认后端宿主链判断
 
 在这个前提下，后续不再重复解决“入口是什么”，而是继续沿着已固定的主路径往下补细节。
 

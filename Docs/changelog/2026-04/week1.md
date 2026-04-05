@@ -135,3 +135,7 @@
 - **运行态报告已支持直接落盘**：`check:host-runtime` 当前新增 `--report-file <path>`，会自动启用报告输出并把 Markdown 直接写入指定文件，适合沉淀到本地回归记录或维护痕迹。
 - **启动前/启动后主路径已真正串联**：`validate:baseline:host` 当前已补 baseline / `doctor` / `verify` 三层失败分流提示；通过后再统一进入 `check:host-runtime`，`M14` 启动前检查与启动后分诊不再割裂。
 - **启动前验证也已补固定报告**：`validate:baseline:host` 当前新增 `--report` 与 `--report-file <path>`，并统一输出 `Summary / Actions` 两段，启动前与启动后记录口径已对齐。
+- **`Api / Auth / Gateway` 健康语义已继续收口**：当前三类宿主都已把“最小探活 / 扩展观测”与具体 JWT / OIDC / 下游项判断进一步对齐到同一批运行时 helper，避免 `Program.cs`、健康检查实现与执行文档再次分叉。
+- **Gateway 扩展观测目标已固定**：`console-service` 当前继续保留在扩展观测层，探活目标固定为 `/healthz`，且失败状态固定记为 `Degraded`；本地前端未启动时不再误伤默认后端宿主链结论。
+- **宿主启动日志摘要已补齐**：`Api` 当前会打印 JWT 验签模式 / Issuer / signing 证书摘要，`Auth` 会打印 OIDC Issuer / 密钥模式 / signing/encryption 证书摘要，`Gateway` 会打印最小探活与扩展观测目标摘要，便于在人工查看 `/health`、`/healthz` 前先核对当前运行模式。
+- **规划与阶段文档已同步今天收口结论**：`planning/current.md`、`development-plan.md` 与 `guide/m14-host-runtime-observability-baseline.md` 当前已补入“宿主健康语义 + 启动日志摘要”这一轮事实，避免周志、规划页与执行文档继续停在前一拍。

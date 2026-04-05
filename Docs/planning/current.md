@@ -42,6 +42,7 @@
 - [x] 已将 `M14` 默认主路径固定为“启动前 `npm run validate:baseline:host`，启动后 `npm run check:host-runtime`”，把代码 / 配置 / 数据库前置问题与运行态 / 网关链路问题明确分层
 - [x] 已统一启动前与启动后两段检查的报告能力：`validate:baseline:host` 与 `check:host-runtime` 当前均支持 `--report`、`--report-file`，并统一输出 `Summary / Actions` 两段
 - [x] 已拆分 `Gateway` 健康端点语义：`/health` 当前固定用于最小后端宿主链检查，`/healthz` 固定用于更完整的扩展观测与结构化下游摘要
+- [x] 已补 `Api / Auth / Gateway` 启动日志运行摘要：`Api` 当前会输出 JWT 验签模式 / Issuer / signing 证书摘要，`Auth` 会输出 OIDC Issuer / 密钥模式 / signing/encryption 证书摘要，`Gateway` 会输出最小探活与扩展观测目标摘要，且 `console-service` 已固定为 `/healthz + Degraded`
 - [x] 已将首版 `dev` 的定义从“某条子线已收口”改为“所有纳入范围的核心功能主线至少完成 70%”
 - [x] 已新增 [首版 dev 边界](/planning/dev-first-scope)，明确业务主线、体验主线与工程门槛
 - [x] 已新增 [首版 dev 功能矩阵状态表](/planning/dev-first-status-matrix)，把首版范围内各功能线收束为 `已完成 / 待联调复核 / 待补齐 / 不纳入首版`
@@ -175,6 +176,7 @@
 - 当前主线已从“身份语义 Phase 4 协议输出收敛”进一步切换为“`M14` 宿主运行与最小可观测性基线”
 - 当前已完成 Phase 4 首轮仓库内实施、官方顺序真实回归与回滚窗口验证：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、官方客户端直读规则与联调示例已完成同步，`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 当前均已通过真实回归，结论更新为“无需回滚，转入稳定维护”
 - 截至 `2026-04-05`，当前进一步确认 `radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 官方顺序真实回归均已通过，Phase 4 本轮已正式收口；后续不再继续扩张实施项，而是优先维持维护态，并转入 `M14` 第一轮执行入口、排障顺序与最小部署复核口径收口
+- 截至 `2026-04-05`，`M14` 第一轮主路径也已从“入口与报告口径收口”进一步推进到“宿主健康语义与启动日志摘要收口”：当前可先看启动日志核对 JWT / OIDC / Gateway 探活模式，再看 `/health`、`/healthz` 做最小分诊
 - 旧 `GetCommentTree` 兼容入口的正式删除当前已明确保留在主线跟踪项中，后续以真实命中观测结果作为收缩前置条件，避免事项脱离主线后被遗忘
 - 通知中心已于 `2026-03-23` 完成一轮真实首版 Smoke，并已在本轮总回归中完成复核；当前转入稳定维护
 - 认证基础入口虽已于 `2026-03-23` 完成一轮真实首版 Smoke，但 `2026-03-30` 又针对后台闲置恢复、慢登录与重复提交场景补了一轮治根治理；截至 `2026-04-02`，相关回归已完成当前批次确认，当前转入稳定维护

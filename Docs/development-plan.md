@@ -180,6 +180,7 @@
    - `validate:baseline:host` 与 `check:host-runtime` 当前都已支持 `--report`、`--report-file`，并统一输出 `Summary / Actions` 两段，便于把启动前与启动后结论写入同一份维护记录
    - `validate:baseline:host` 当前已明确分流 `baseline / doctor / verify` 三类失败；`check:host-runtime` 当前已承担 `Gateway / Api / Auth` 的最小运行态检查，并支持补充 `Gateway /healthz` 条目摘要
    - `Gateway` 当前已明确拆分 `/health` 与 `/healthz` 语义：前者用于最小后端宿主链检查，后者用于更完整的扩展观测；本轮重点是把这套主路径固定下来，而不是继续扩成大而全运维平台
+   - 最新已继续补齐宿主启动摘要：`Api / Auth / Gateway` 当前会在启动日志里直接输出 JWT / OIDC / 下游探活目标运行摘要，其中 `console-service` 已固定为扩展观测层的 `/healthz + Degraded`，便于先核对运行模式，再进入健康检查分诊
 
 ### 暂不作为当前主线
 
@@ -203,7 +204,7 @@
 ### 当前进行中子阶段
 
 - `M14` 执行入口、报告口径与阶段文档收口
-- `validate:baseline:host`、`DbMigrate doctor / verify`、`check:host-runtime`、健康检查、日志与部署复核顺序统一
+- `validate:baseline:host`、`DbMigrate doctor / verify`、`check:host-runtime`、健康检查、启动日志与部署复核顺序统一
 - 身份语义 Phase 4 稳定维护与防回归治理准备
 - 旧 `GetCommentTree` 兼容入口继续观察真实命中与仓库外依赖，暂不直接删除
 - 文档、验证基线与发布口径冻结维护
