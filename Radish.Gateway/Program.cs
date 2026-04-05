@@ -5,9 +5,10 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Radish.Common;
 using Radish.Common.CoreTool;
+using Radish.Common.HealthTool;
+using Radish.Gateway.HealthChecks;
 using Radish.Extension.Log;
 using Serilog;
-using System.Text.Json;
 using Yarp.ReverseProxy;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -63,37 +64,6 @@ static void RemoveHttpSysDelegationRegistrations(IServiceCollection services)
     }
 }
 
-static Task WriteHealthCheckJsonResponseAsync(
-    HttpContext context,
-    HealthReport report,
-    IReadOnlyDictionary<string, string[]> healthCheckTags)
-{
-    context.Response.ContentType = "application/json; charset=utf-8";
-
-    var payload = new
-    {
-        status = report.Status.ToString(),
-        generatedAtUtc = DateTimeOffset.UtcNow,
-        totalDuration = report.TotalDuration,
-        totalDurationMs = Math.Round(report.TotalDuration.TotalMilliseconds, 2),
-        entries = report.Entries.Select(entry => new
-        {
-            name = entry.Key,
-            status = entry.Value.Status.ToString(),
-            description = string.IsNullOrWhiteSpace(entry.Value.Description) ? null : entry.Value.Description,
-            duration = entry.Value.Duration,
-            durationMs = Math.Round(entry.Value.Duration.TotalMilliseconds, 2),
-            tags = healthCheckTags.TryGetValue(entry.Key, out var tags) ? tags : [],
-            exception = entry.Value.Exception?.Message
-        })
-    };
-
-    return context.Response.WriteAsync(JsonSerializer.Serialize(payload, new JsonSerializerOptions(JsonSerializerDefaults.Web)
-    {
-        WriteIndented = true
-    }));
-}
-
 // ===== 配置管理 =====
 builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
 {
@@ -142,52 +112,10 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 });
 
 // ===== 健康检查配置 =====
-var downstreamSection = builder.Configuration.GetSection("DownstreamServices:ApiService");
-var apiBaseUrl = downstreamSection["BaseUrl"];
-var apiHealthPath = downstreamSection["HealthCheckPath"];
-var authDownstreamSection = builder.Configuration.GetSection("DownstreamServices:AuthService");
-var authBaseUrl = authDownstreamSection["BaseUrl"];
-var authHealthPath = authDownstreamSection["HealthCheckPath"];
-
-var healthChecksBuilder = builder.Services.AddHealthChecks();
-var healthCheckTags = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
-
-// 添加下游 API 服务健康检查
-if (!string.IsNullOrEmpty(apiBaseUrl) && !string.IsNullOrEmpty(apiHealthPath))
-{
-    var apiHealthUrl = $"{apiBaseUrl.TrimEnd('/')}{apiHealthPath}";
-    healthCheckTags["api-service"] = ["downstream", "api", "minimal"];
-    healthChecksBuilder.AddUrlGroup(
-        new Uri(apiHealthUrl),
-        name: "api-service",
-        tags: healthCheckTags["api-service"]);
-}
-
-if (!string.IsNullOrEmpty(authBaseUrl) && !string.IsNullOrEmpty(authHealthPath))
-{
-    var authHealthUrl = $"{authBaseUrl.TrimEnd('/')}{authHealthPath}";
-    healthCheckTags["auth-service"] = ["downstream", "auth", "minimal"];
-    healthChecksBuilder.AddUrlGroup(
-        new Uri(authHealthUrl),
-        name: "auth-service",
-        tags: healthCheckTags["auth-service"]);
-}
-
-// 直接通过 console 下游服务地址添加健康检查，避免本地自签 HTTPS 导致回环检查证书失败
-var consoleBaseUrl = builder.Configuration["ReverseProxy:Clusters:consoleCluster:Destinations:console:Address"];
-if (!string.IsNullOrEmpty(consoleBaseUrl))
-{
-    var consoleBase = consoleBaseUrl.TrimEnd('/');
-    var consoleRequestPath = "/console";
-
-    var consoleHealthUrl = $"{consoleBase}{consoleRequestPath}";
-    healthCheckTags["console-service"] = ["downstream", "console", "extended"];
-    healthChecksBuilder.AddUrlGroup(
-        new Uri(consoleHealthUrl),
-        name: "console-service",
-        failureStatus: HealthStatus.Degraded,
-        tags: healthCheckTags["console-service"]);
-}
+var apiBaseUrl = builder.Configuration["DownstreamServices:ApiService:BaseUrl"];
+var authBaseUrl = builder.Configuration["DownstreamServices:AuthService:BaseUrl"];
+var healthCheckTags = GatewayHostHealthChecks.CreateTags(builder.Configuration);
+builder.Services.AddGatewayHostHealthChecks(builder.Configuration, healthCheckTags);
 
 // ===== AppSettings 工具初始化 =====
 builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
@@ -248,11 +176,11 @@ app.MapRazorPages();
 // 健康检查端点
 app.MapHealthChecks("/health", new HealthCheckOptions
 {
-    Predicate = registration => registration.Tags.Contains("minimal"),
+    Predicate = GatewayHostHealthChecks.IsMinimal,
 });
 app.MapHealthChecks("/healthz", new HealthCheckOptions
 {
-    ResponseWriter = (context, report) => WriteHealthCheckJsonResponseAsync(context, report, healthCheckTags),
+    ResponseWriter = (context, report) => StructuredHealthCheckResponseWriter.WriteJsonAsync(context, report, healthCheckTags),
 });
 
 // 默认路由到门户页

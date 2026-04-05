@@ -7,13 +7,16 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
+using Radish.Common.HealthTool;
 using Microsoft.Extensions.FileProviders;
 using Radish.Common.TimeTool;
 using Radish.Extension;
@@ -46,6 +49,7 @@ using System.Security.Cryptography.X509Certificates;
 using Radish.Common.DocumentTool;
 using Radish.Service.Jobs;
 using Radish.Api.Filters;
+using Radish.Api.HealthChecks;
 using Radish.Api.Hubs;
 using Radish.Model;
 using Microsoft.IdentityModel.JsonWebTokens;
@@ -163,7 +167,7 @@ static X509Certificate2 LoadJwtSigningCertificate(
         throw new InvalidOperationException($"JWT 签名证书文件不存在: {resolvedPath}");
     }
 
-    return new X509Certificate2(resolvedPath, configuredPassword);
+    return X509CertificateLoader.LoadPkcs12FromFile(resolvedPath, configuredPassword);
 }
 
 // 🔧 禁用 JWT 默认的 claim type 映射，保持 OIDC 标准 claims（sub, name, role 等）原样
@@ -258,7 +262,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new NullableUtcDateTimeJsonConverter());
     });
 // 注册健康检查
-builder.Services.AddHealthChecks();
+var apiHealthCheckTags = ApiHostHealthChecks.Tags;
+builder.Services.AddApiHostHealthChecks();
 // 配置 API 版本控制
 builder.Services.AddApiVersioning(options =>
 {
@@ -644,9 +649,18 @@ app.MapHub<ChatHub>("/hub/chat");
 
 app.MapControllers();
 // 映射健康检查端点
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/healthz");
-app.MapHealthChecks("/api/health");
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = ApiHostHealthChecks.IsMinimal,
+});
+app.MapHealthChecks("/healthz", new HealthCheckOptions
+{
+    ResponseWriter = (context, report) => StructuredHealthCheckResponseWriter.WriteJsonAsync(context, report, apiHealthCheckTags),
+});
+app.MapHealthChecks("/api/health", new HealthCheckOptions
+{
+    Predicate = registration => registration.Tags.Contains("minimal"),
+});
 
 // 输出项目启动标识（使用 Serilog，与 Gateway 风格统一）
 app.Lifetime.ApplicationStarted.Register(() =>

@@ -133,7 +133,7 @@ npm run validate:baseline:host -- --report-file .tmp/baseline-host-report.md
 
 当前其报告输出也已与运行态脚本对齐，统一使用 `Summary / Actions` 两段，便于把启动前与启动后记录放进同一份维护材料。
 
-如果希望在失败时顺手把 `Gateway /healthz` 的关键条目摘要一起打出来，可直接运行：
+如果希望在失败时顺手把失败宿主的 `/healthz` 关键条目摘要一起打出来，可直接运行：
 
 ```bash
 npm run check:host-runtime -- --details
@@ -172,6 +172,7 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 
 - `/health`：最小后端宿主链，优先用于 `M14` 默认检查
 - `/healthz`：更完整的下游观测，适合继续判断 `console` 等扩展下游状态；当前已返回结构化 JSON，可直接看到整体状态、时间戳、耗时和每个下游条目的状态、标签与异常摘要
+- `Api / Auth` 当前也保持同样的分层语义：`/health` 只保留最小存活探活，`/healthz` 继续补 JWT / OIDC Issuer 与证书前提明细
 
 ### 第 5 步：确认网关与外部访问链路
 

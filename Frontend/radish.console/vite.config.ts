@@ -1,8 +1,48 @@
 import { fileURLToPath, URL } from 'node:url';
 
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption, type ViteDevServer } from 'vite';
 import plugin from '@vitejs/plugin-react';
 import { env } from 'process';
+
+const healthCheckPlugin = (): PluginOption => ({
+    name: 'radish-console-health-check',
+    configureServer(server: ViteDevServer) {
+        server.middlewares.use((req, res, next) => {
+            if (!req.url) {
+                next();
+                return;
+            }
+
+            const url = new URL(req.url, 'http://localhost');
+            if (url.pathname === '/health') {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+                res.end('Healthy');
+                return;
+            }
+
+            if (url.pathname === '/healthz') {
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json; charset=utf-8');
+                res.end(JSON.stringify({
+                    status: 'Healthy',
+                    generatedAtUtc: new Date().toISOString(),
+                    totalDurationMs: 0,
+                    entries: [
+                        {
+                            name: 'self',
+                            status: 'Healthy',
+                            tags: ['frontend', 'console', 'self'],
+                        },
+                    ],
+                }, null, 2));
+                return;
+            }
+
+            next();
+        });
+    },
+});
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -10,7 +50,7 @@ export default defineConfig({
     // 这样通过 Gateway 访问 https://localhost:5000/console/ 时，
     // 资源请求会是 https://localhost:5000/console/assets/... 而不是 https://localhost:5000/assets/...
     base: '/console/',
-    plugins: [plugin()],
+    plugins: [plugin(), healthCheckPlugin()],
     // 确保是 SPA 模式
     appType: 'spa',
     resolve: {

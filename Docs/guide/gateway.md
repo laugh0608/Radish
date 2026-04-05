@@ -334,7 +334,7 @@ Gateway 提供健康检查端点，监控自身和下游服务状态。
 **检查项**：
 1. **`/health`**：当前用于最小宿主链检查，默认只看 `api-service` 与 `auth-service`
 2. **`/healthz`**：当前用于更完整的下游观测，除最小宿主链外，还会纳入 `console-service`，并输出整体状态、时间戳、耗时和每个下游条目的明细
-3. **Console 服务**：当前在 `healthz` 中继续观测；本地未启动时默认记为 `Degraded`，不再影响 `health` 的最小可用结论
+3. **Console 服务**：当前在 `healthz` 中继续观测；探活目标收束为前端健康端点 `/healthz`，本地未启动时默认记为 `Degraded`，不再影响 `health` 的最小可用结论
 
 **配置示例**：
 

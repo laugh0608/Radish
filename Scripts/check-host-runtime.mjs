@@ -38,7 +38,7 @@ function printUsage() {
   console.log('  --api <url>            覆盖 Api 健康检查地址');
   console.log('  --auth <url>           覆盖 Auth 健康检查地址');
   console.log('  --timeout-ms <number>  单个端点超时时间，默认 5000');
-  console.log('  --details              当默认检查失败时，追加抓取 Gateway /healthz 明细摘要');
+  console.log('  --details              当默认检查失败时，追加抓取失败宿主的 /healthz 明细摘要');
   console.log('  --report               输出可直接回写到记录/PR 的固定 Markdown 报告');
   console.log('  --report-file <path>   将 Markdown 报告直接写入指定文件（会自动启用 --report）');
   console.log('  --strict-tls           严格校验 HTTPS 证书（默认对 localhost/127.0.0.1 放宽）');
@@ -159,8 +159,8 @@ function inferFailureCategory(result) {
   };
 }
 
-function deriveGatewayDetailsUrl(gatewayHealthUrl) {
-  const url = new URL(gatewayHealthUrl);
+function deriveHealthDetailsUrl(healthUrl) {
+  const url = new URL(healthUrl);
   if (url.pathname.endsWith('/health')) {
     url.pathname = `${url.pathname.slice(0, -'/health'.length)}/healthz`;
   } else {
@@ -187,12 +187,13 @@ function formatDurationMs(value) {
   return Number.isFinite(value) ? `${value.toFixed(2)}ms` : 'n/a';
 }
 
-function getGatewayDetailsSummary(result) {
+function getHealthDetailsSummary(targetName, result) {
   if (!result.ok) {
     const category = inferFailureCategory(result);
     return {
       ok: false,
       summary: null,
+      targetName,
       error: {
         statusCode: result.statusCode || 0,
         category,
@@ -206,12 +207,13 @@ function getGatewayDetailsSummary(result) {
     return {
       ok: false,
       summary: null,
+      targetName,
       error: {
         statusCode: result.statusCode || 0,
         category: {
           code: 'invalid-json',
           label: 'healthz 响应不是可解析 JSON',
-          nextStep: '先确认 Gateway /healthz 是否已切到结构化 JSON 输出，或是否被其他反代层改写了响应。',
+          nextStep: `先确认 ${targetName} /healthz 是否已切到结构化 JSON 输出，或是否被其他反代层改写了响应。`,
         },
         response: truncateText(result.body),
       },
@@ -232,6 +234,7 @@ function getGatewayDetailsSummary(result) {
   return {
     ok: true,
     error: null,
+    targetName,
     summary: {
       overallStatus: payload.status ?? 'unknown',
       generatedAtUtc: payload.generatedAtUtc ?? 'n/a',
@@ -241,10 +244,10 @@ function getGatewayDetailsSummary(result) {
   };
 }
 
-function printGatewayDetailsSummary(result) {
-  const details = getGatewayDetailsSummary(result);
+function printHealthDetailsSummary(targetName, result) {
+  const details = getHealthDetailsSummary(targetName, result);
   if (!details.ok) {
-    console.error(`[host-runtime] /healthz 拉取失败 (${details.error.statusCode || 'no-response'})`);
+    console.error(`[host-runtime] ${targetName} /healthz 拉取失败 (${details.error.statusCode || 'no-response'})`);
     console.error(`[host-runtime]   分类: ${details.error.category.label} (${details.error.category.code})`);
     if (details.error.response) {
       console.error(`[host-runtime]   响应: ${details.error.response}`);
@@ -252,7 +255,7 @@ function printGatewayDetailsSummary(result) {
     return details;
   }
 
-  console.error('[host-runtime] Gateway /healthz 明细：');
+  console.error(`[host-runtime] ${targetName} /healthz 明细：`);
   console.error(
     `[host-runtime]   overall=${details.summary.overallStatus} generatedAtUtc=${details.summary.generatedAtUtc} total=${formatDurationMs(details.summary.totalDurationMs)}`
   );
@@ -288,38 +291,45 @@ function buildResultReportLine(result) {
   return `- ${result.name}: 异常 (${result.statusCode || 'no-response'}) | 分类: ${category.label} (${category.code})${response}`;
 }
 
-function buildGatewayDetailsReportLines(details) {
-  if (!details) {
+function buildHealthDetailsReportLines(detailsByTarget) {
+  if (!detailsByTarget || detailsByTarget.length === 0) {
     return [];
   }
 
-  if (!details.ok) {
-    const response = details.error.response ? ` | 响应: ${details.error.response}` : '';
-    return [
-      `- Gateway /healthz: 拉取失败 (${details.error.statusCode || 'no-response'}) | 分类: ${details.error.category.label} (${details.error.category.code})${response}`,
-    ];
-  }
+  const lines = [];
 
-  const lines = [
-    `- Gateway /healthz: ${details.summary.overallStatus} | generatedAtUtc: ${details.summary.generatedAtUtc} | total: ${formatDurationMs(details.summary.totalDurationMs)}`,
-  ];
+  for (const details of detailsByTarget) {
+    const label = `${details.targetName} /healthz`;
+    if (!details.ok) {
+      const response = details.error.response ? ` | 响应: ${details.error.response}` : '';
+      lines.push(`- ${label}: 拉取失败 (${details.error.statusCode || 'no-response'}) | 分类: ${details.error.category.label} (${details.error.category.code})${response}`);
+      continue;
+    }
 
-  for (const entry of details.summary.entries) {
-    const tags = entry.tags.length > 0 ? entry.tags.join(', ') : 'none';
-    const extras = [entry.description, entry.exception]
-      .filter((item) => item);
-    const suffix = extras.length > 0 ? ` | ${extras.join(' | ')}` : '';
-    lines.push(`- Gateway /healthz entry: ${entry.name} | ${entry.status} | tags: ${tags} | duration: ${formatDurationMs(entry.durationMs)}${suffix}`);
+    lines.push(`- ${label}: ${details.summary.overallStatus} | generatedAtUtc: ${details.summary.generatedAtUtc} | total: ${formatDurationMs(details.summary.totalDurationMs)}`);
+
+    for (const entry of details.summary.entries) {
+      const tags = entry.tags.length > 0 ? entry.tags.join(', ') : 'none';
+      const extras = [entry.description, entry.exception]
+        .filter((item) => item);
+      const suffix = extras.length > 0 ? ` | ${extras.join(' | ')}` : '';
+      lines.push(`- ${label} entry: ${entry.name} | ${entry.status} | tags: ${tags} | duration: ${formatDurationMs(entry.durationMs)}${suffix}`);
+    }
   }
 
   return lines;
 }
 
-function buildActionLines(results, gatewayDetails) {
+function buildActionLines(results, detailsByTarget) {
   const lines = [];
+  const detailedTargets = new Set((detailsByTarget || []).map((details) => details.targetName));
 
   for (const result of results) {
     if (result.ok) {
+      continue;
+    }
+
+    if (detailedTargets.has(result.name)) {
       continue;
     }
 
@@ -327,8 +337,15 @@ function buildActionLines(results, gatewayDetails) {
     lines.push(`- ${result.name}: ${category.nextStep}`);
   }
 
-  if (gatewayDetails?.ok) {
-    const degradedEntries = gatewayDetails.summary.entries.filter(
+  for (const details of detailsByTarget || []) {
+    const label = `${details.targetName} /healthz`;
+
+    if (!details.ok) {
+      lines.push(`- ${label}: ${details.error.category.nextStep}`);
+      continue;
+    }
+
+    const degradedEntries = details.summary.entries.filter(
       (entry) => entry.status !== 'Healthy'
     );
 
@@ -337,12 +354,15 @@ function buildActionLines(results, gatewayDetails) {
         .filter((item) => item)
         .join(' | ');
       const suffix = reason ? ` 当前摘要: ${reason}` : '';
-      lines.push(`- Gateway /healthz ${entry.name}: 优先确认该扩展下游是否应在本轮启动；若不属于最小宿主链，可按 M14 口径单独记录为降级观测项。${suffix}`);
-    }
-  }
+      const isGatewayExtended = details.targetName === 'Gateway' && entry.tags.includes('extended');
 
-  if (gatewayDetails && !gatewayDetails.ok) {
-    lines.push(`- Gateway /healthz: ${gatewayDetails.error.category.nextStep}`);
+      if (isGatewayExtended) {
+        lines.push(`- ${label} ${entry.name}: 优先确认该扩展下游是否应在本轮启动；若不属于最小宿主链，可按 M14 口径单独记录为降级观测项。${suffix}`);
+        continue;
+      }
+
+      lines.push(`- ${label} ${entry.name}: 优先结合当前宿主日志与健康检查注册项继续排查。${suffix}`);
+    }
   }
 
   if (lines.length === 0) {
@@ -352,13 +372,13 @@ function buildActionLines(results, gatewayDetails) {
   return [...new Set(lines)];
 }
 
-function buildMarkdownReport({ executedAtUtc, results, gatewayDetails, strictTls, timeoutMs }) {
+function buildMarkdownReport({ executedAtUtc, results, detailsByTarget, strictTls, timeoutMs }) {
   const overallStatus = results.every((result) => result.ok) ? 'passed' : 'failed';
   const summaryLines = [
     ...results.map((result) => buildResultReportLine(result)),
-    ...buildGatewayDetailsReportLines(gatewayDetails),
+    ...buildHealthDetailsReportLines(detailsByTarget),
   ];
-  const actionLines = buildActionLines(results, gatewayDetails);
+  const actionLines = buildActionLines(results, detailsByTarget);
 
   const lines = [
     '### Host Runtime Check',
@@ -471,10 +491,6 @@ const targets = [
     url: getArgValue('--auth', 'http://localhost:5200/health'),
   },
 ];
-const gatewayDetailsTarget = {
-  name: 'GatewayDetails',
-  url: deriveGatewayDetailsUrl(targets[0].url),
-};
 const detailsTimeoutMs = Math.max(timeoutMs, 5000);
 
 console.log('[host-runtime] 开始检查宿主运行态健康端点。');
@@ -491,7 +507,7 @@ for (const target of targets) {
 }
 
 const failedResults = results.filter((item) => !item.ok);
-let gatewayDetailsSummary = null;
+const healthDetailsByTarget = [];
 
 for (const result of results) {
   if (result.ok) {
@@ -510,17 +526,24 @@ for (const result of results) {
 
 if (failedResults.length > 0) {
   if (showDetails) {
-    console.error(`\n[host-runtime] 追加抓取 Gateway 明细：`);
-    console.error(`> GET ${gatewayDetailsTarget.url}`);
-    const detailsResult = await requestHealth(gatewayDetailsTarget, detailsTimeoutMs, strictTls);
-    gatewayDetailsSummary = printGatewayDetailsSummary(detailsResult);
+    for (const failedResult of failedResults) {
+      const detailsTarget = {
+        name: `${failedResult.name}Details`,
+        url: deriveHealthDetailsUrl(failedResult.url),
+      };
+
+      console.error(`\n[host-runtime] 追加抓取 ${failedResult.name} 明细：`);
+      console.error(`> GET ${detailsTarget.url}`);
+      const detailsResult = await requestHealth(detailsTarget, detailsTimeoutMs, strictTls);
+      healthDetailsByTarget.push(printHealthDetailsSummary(failedResult.name, detailsResult));
+    }
   }
 
   if (showReport) {
     const markdownReport = buildMarkdownReport({
       executedAtUtc,
       results,
-      gatewayDetails: gatewayDetailsSummary,
+      detailsByTarget: healthDetailsByTarget,
       strictTls,
       timeoutMs,
     });
@@ -546,7 +569,7 @@ if (showReport) {
   const markdownReport = buildMarkdownReport({
     executedAtUtc,
     results,
-    gatewayDetails: gatewayDetailsSummary,
+    detailsByTarget: healthDetailsByTarget,
     strictTls,
     timeoutMs,
   });

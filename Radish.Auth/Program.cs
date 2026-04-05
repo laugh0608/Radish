@@ -1,11 +1,15 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Radish.Common;
 using Radish.Common.CoreTool;
+using Radish.Common.HealthTool;
 using Radish.Auth.OpenIddict;
+using Radish.Auth.HealthChecks;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
 using Radish.Extension.AutoMapperExtension;
@@ -188,7 +192,8 @@ builder.Services.AddControllersWithViews()
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
     });
 
-builder.Services.AddHealthChecks();
+var authHealthCheckTags = AuthHostHealthChecks.Tags;
+builder.Services.AddAuthHostHealthChecks(builder.Configuration, builder.Environment);
 
 // OpenIddict 初始化种子数据（使用 EF Core 存储）
 builder.Services.AddHostedService<OpenIddictSeedHostedService>();
@@ -393,8 +398,14 @@ app.UseRateLimitSetup();
 
 // 控制器路由
 app.MapControllers();
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/healthz");
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = AuthHostHealthChecks.IsMinimal,
+});
+app.MapHealthChecks("/healthz", new HealthCheckOptions
+{
+    ResponseWriter = (context, report) => StructuredHealthCheckResponseWriter.WriteJsonAsync(context, report, authHealthCheckTags),
+});
 
 // 启动提示（使用 Serilog，与 Gateway/API 风格统一）
 app.Lifetime.ApplicationStarted.Register(() =>

@@ -102,9 +102,9 @@ npm run validate:ci
   - 默认检查 `Gateway / Api / Auth` 的 `/health`
   - 适合在宿主已经启动后，快速判断问题是“宿主没起来”还是“已起来但链路异常”
   - 当前失败时会附带分类提示，例如端口未监听、TLS、超时、宿主自报 `Unhealthy` 或一般 HTTP 状态异常
-  - 当前其中 `Gateway /health` 表示最小后端宿主链，`/healthz` 留给更完整的下游观测
-  - `Gateway /healthz` 当前已返回结构化 JSON，适合宿主启动后继续人工分诊具体下游项
-  - 如需在失败时顺手带出 `Gateway /healthz` 的关键摘要，可执行 `npm run check:host-runtime -- --details`
+  - 当前三个宿主都保持“`/health` 只做最小探活，`/healthz` 提供结构化明细”的分层语义
+  - `Gateway / Api / Auth` 当前都已提供结构化 `/healthz`，其中 `Api / Auth` 还会补充 JWT / OIDC Issuer 与证书前提明细，适合宿主启动后继续人工分诊具体下游项
+  - 如需在失败时顺手带出失败宿主的 `/healthz` 关键摘要，可执行 `npm run check:host-runtime -- --details`
   - 如需输出可直接回写到回归记录或 PR 的固定 Markdown 报告，可执行 `npm run check:host-runtime -- --report`
   - 如需把 Markdown 报告直接落到文件，可执行 `npm run check:host-runtime -- --report-file <path>`；当前会自动启用 `--report`，并在必要时自动创建目标目录
   - 当前 `--report` 已拆成 `Summary / Actions` 两段；前者记录事实，后者按 `Gateway / Api / Auth` 与扩展下游条目直接给出下一步建议
@@ -247,7 +247,7 @@ npm run check:host-runtime
 
 - 这一轮通过后，再继续看更上层的 Gateway / 反代 / OIDC 问题
 - 如果需要继续判断 `console` 等扩展下游状态，再直接查看 `https://localhost:5000/healthz`
-- 如果默认检查失败，且希望脚本顺手把 `Gateway /healthz` 的摘要一起打出来，可追加：
+- 如果默认检查失败，且希望脚本顺手把失败宿主的 `/healthz` 摘要一起打出来，可追加：
 
 ```bash
 npm run check:host-runtime -- --details
