@@ -132,7 +132,7 @@
 
 - `planning/current.md`、`development-plan.md`、验证基线说明与本页当前已统一回链到同一口径
 - 默认执行顺序已固定为“启动前 `validate:baseline:host` -> 启动后 `check:host-runtime`”
-- 启动前与启动后两段检查当前都已支持 `--report`、`--report-file`，并统一为 `Summary / Actions` 报告格式
+- 启动前与启动后两段检查当前都已支持 `--report`、`--report-file`，并统一为 `Summary / Actions` 报告格式；`Summary` 还固定补 `Route / TriageScope / TriageCode / NextStage` 四个摘要字段，便于把启动前与启动后结论串到同一份维护记录
 - `Gateway` 当前已明确拆分 `/health` 与 `/healthz` 语义：前者用于最小后端宿主链检查，后者用于更完整的扩展观测
 - `Api / Auth / Gateway` 当前已进一步把健康检查判断与启动日志摘要收口到同一批运行时 helper：`Api` 会输出 JWT 验签模式 / Issuer / signing 证书摘要，`Auth` 会输出 OIDC Issuer / 密钥模式 / 证书摘要，`Gateway` 会输出最小探活与扩展观测目标摘要，便于在人工查看 `/health`、`/healthz` 前先核对宿主到底按哪套模式启动
 - `Gateway` 当前已把下游观测目标进一步结构化：`console-service` 继续保留在扩展观测层，探活目标固定为 `/healthz`，且失败状态固定记为 `Degraded`，避免前端未启动时再次干扰默认后端宿主链判断
@@ -143,5 +143,5 @@
 
 1. 继续按 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 维持默认执行顺序，不再回退到口头决定先跑什么。
 2. 沿着启动前与启动后两段主路径，继续补配置自检、健康检查 / 启动日志、测试 / 生产复核三条线的细项，而不是重新发明阶段入口。
-3. 在真实维护记录中继续使用统一的 `Summary / Actions` 报告口径，降低后续排障继续依赖零散终端输出的成本。
+3. 在真实维护记录中继续使用统一的 `Summary / Actions` 报告口径，并复用 `Route / TriageScope / TriageCode / NextStage` 四个摘要字段，降低后续排障继续依赖零散终端输出的成本。
 4. 只有当这些最小基线已经稳定、且真实暴露出进一步观测缺口时，再决定是否进入更重的 Metrics / Tracing / 平台化建设。

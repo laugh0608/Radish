@@ -97,6 +97,7 @@ npm run validate:ci
   - 当前也是 `M14` 的默认宿主验证入口
   - 当前已补启动前分流提示：若失败落在默认基线 / `doctor` / `verify` 任一层，会分别提示先修代码回归、配置连接定义或数据库前置，而不是直接跳到运行态排障
   - 当前也已支持 `--report` / `--report-file <path>`，可把启动前验证结果收敛为固定 Markdown 报告或直接落盘
+  - 当前其 `Summary` 会固定补 `Route / TriageScope / TriageCode / NextStage` 四个摘要字段，便于与启动后报告直接串联
 - `check:host-runtime`
   - 运行态健康检查入口
   - 默认检查 `Gateway / Api / Auth` 的 `/health`
@@ -109,6 +110,7 @@ npm run validate:ci
   - 如需输出可直接回写到回归记录或 PR 的固定 Markdown 报告，可执行 `npm run check:host-runtime -- --report`
   - 如需把 Markdown 报告直接落到文件，可执行 `npm run check:host-runtime -- --report-file <path>`；当前会自动启用 `--report`，并在必要时自动创建目标目录
   - 当前 `--report` 已拆成 `Summary / Actions` 两段；前者记录事实，后者按 `Gateway / Api / Auth` 与扩展下游条目直接给出下一步建议
+  - 当前其 `Summary` 也会固定补 `Route / TriageScope / TriageCode / NextStage` 四个摘要字段，和 `validate:baseline:host` 保持同一套分诊摘要口径
 - `validate:identity`
   - 身份语义专题聚合入口，不替代默认 baseline
   - 分别执行运行时散点 Claim 读取扫描与协议输出回退扫描

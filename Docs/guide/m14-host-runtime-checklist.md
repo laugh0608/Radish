@@ -132,6 +132,12 @@ npm run validate:baseline:host -- --report-file .tmp/baseline-host-report.md
 只有这三层通过后，才建议进入 `check:host-runtime` 做启动后分诊。
 
 当前其报告输出也已与运行态脚本对齐，统一使用 `Summary / Actions` 两段，便于把启动前与启动后记录放进同一份维护材料。
+两段报告当前都会固定补齐以下摘要字段，便于把启动前与启动后结论直接串到同一份维护记录里：
+
+- `Route`：当前属于启动前 `preflight` 还是启动后 `runtime`
+- `TriageScope`：当前结论主要落在哪一层，例如 `baseline`、`doctor`、`verify`、`Gateway`、`Api`、`Auth`
+- `TriageCode`：当前失败或降级的标准化分类码，例如 `config-precheck`、`database-precheck`、`connection-refused`
+- `NextStage`：当前默认建议进入的下一阶段，例如继续修启动前前提、进入运行态检查，或继续看宿主与日志
 
 如果希望在失败时顺手把失败宿主的 `/healthz` 关键条目摘要一起打出来，可直接运行：
 
@@ -155,6 +161,7 @@ npm run check:host-runtime -- --report-file .tmp/host-runtime-report.md
 
 - `Summary`：保留本轮检查事实与 `Gateway /healthz` 摘要
 - `Actions`：按 `Gateway / Api / Auth` 或具体降级条目直接给出下一步建议
+- `Summary` 内当前还会固定补 `Route / TriageScope / TriageCode / NextStage` 四个摘要字段，方便和启动前报告对齐归档
 
 如果既要看终端分诊摘要，又要输出固定格式报告，可组合执行：
 

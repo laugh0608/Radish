@@ -1,8 +1,13 @@
-import fs from 'node:fs/promises';
 import http from 'node:http';
 import https from 'node:https';
-import path from 'node:path';
 import process from 'node:process';
+
+import {
+  buildSummaryActionReport,
+  buildTriageSummaryLines,
+  printSummaryActionReport,
+  writeSummaryActionReport,
+} from './m14-reporting.mjs';
 
 const args = process.argv.slice(2);
 
@@ -372,43 +377,69 @@ function buildActionLines(results, detailsByTarget) {
   return [...new Set(lines)];
 }
 
+function getRuntimeTriageFindings(results, detailsByTarget) {
+  const findings = results
+    .filter((result) => !result.ok)
+    .map((result) => {
+      const category = inferFailureCategory(result);
+      return {
+        scope: result.name,
+        code: category.code,
+      };
+    });
+
+  for (const details of detailsByTarget || []) {
+    if (details.ok) {
+      for (const entry of details.summary.entries.filter((entry) => entry.status !== 'Healthy')) {
+        findings.push({
+          scope: `${details.targetName} /healthz`,
+          code: `healthz-${String(entry.status).toLowerCase()}`,
+        });
+      }
+      continue;
+    }
+
+    findings.push({
+      scope: `${details.targetName} /healthz`,
+      code: details.error.category.code,
+    });
+  }
+
+  return findings;
+}
+
+function getRuntimeNextStage(results) {
+  if (results.every((result) => result.ok)) {
+    return 'continue-smoke-or-record';
+  }
+
+  return 'inspect-runtime-and-host-logs';
+}
+
 function buildMarkdownReport({ executedAtUtc, results, detailsByTarget, strictTls, timeoutMs }) {
   const overallStatus = results.every((result) => result.ok) ? 'passed' : 'failed';
   const summaryLines = [
+    ...buildTriageSummaryLines({
+      route: 'runtime',
+      findings: getRuntimeTriageFindings(results, detailsByTarget),
+      nextStage: getRuntimeNextStage(results),
+    }),
     ...results.map((result) => buildResultReportLine(result)),
     ...buildHealthDetailsReportLines(detailsByTarget),
   ];
   const actionLines = buildActionLines(results, detailsByTarget);
 
-  const lines = [
-    '### Host Runtime Check',
-    '',
-    '#### Summary',
-    `- Time: ${executedAtUtc}`,
-    `- Overall: ${overallStatus}`,
-    `- TimeoutMs: ${timeoutMs}`,
-    `- StrictTls: ${strictTls ? 'true' : 'false'}`,
-    ...summaryLines,
-    '',
-    '#### Actions',
-    ...actionLines,
-  ];
-
-  return lines.join('\n');
-}
-
-function printMarkdownReport(markdownReport) {
-  console.error('\n[host-runtime] ----- BEGIN REPORT -----');
-  console.error(markdownReport);
-  console.error('[host-runtime] ----- END REPORT -----');
-}
-
-async function writeMarkdownReport(reportFile, markdownReport) {
-  const resolvedReportFile = path.resolve(reportFile);
-  await fs.mkdir(path.dirname(resolvedReportFile), { recursive: true });
-  await fs.writeFile(resolvedReportFile, `${markdownReport}\n`, 'utf8');
-  console.error(`[host-runtime] 报告已写入: ${resolvedReportFile}`);
-  return resolvedReportFile;
+  return buildSummaryActionReport({
+    title: 'Host Runtime Check',
+    summaryLines: [
+      `- Time: ${executedAtUtc}`,
+      `- Overall: ${overallStatus}`,
+      `- TimeoutMs: ${timeoutMs}`,
+      `- StrictTls: ${strictTls ? 'true' : 'false'}`,
+      ...summaryLines,
+    ],
+    actionLines,
+  });
 }
 
 function requestHealth(target, timeoutMs, strictTls) {
@@ -547,9 +578,9 @@ if (failedResults.length > 0) {
       strictTls,
       timeoutMs,
     });
-    printMarkdownReport(markdownReport);
+    printSummaryActionReport('host-runtime', markdownReport);
     if (reportFile) {
-      await writeMarkdownReport(reportFile, markdownReport);
+      await writeSummaryActionReport('host-runtime', reportFile, markdownReport);
     }
   }
 
@@ -573,9 +604,9 @@ if (showReport) {
     strictTls,
     timeoutMs,
   });
-  printMarkdownReport(markdownReport);
+  printSummaryActionReport('host-runtime', markdownReport);
   if (reportFile) {
-    await writeMarkdownReport(reportFile, markdownReport);
+    await writeSummaryActionReport('host-runtime', reportFile, markdownReport);
   }
 }
 

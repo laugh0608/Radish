@@ -1,7 +1,11 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import process from 'node:process';
 
+import {
+  buildSummaryActionReport,
+  buildTriageSummaryLines,
+  printSummaryActionReport,
+  writeSummaryActionReport,
+} from './m14-reporting.mjs';
 import { formatCommand, runCommand } from './process-runner.mjs';
 
 const rawArgs = process.argv.slice(2);
@@ -179,6 +183,61 @@ function buildBaselineActionLines({ isQuick, withHostChecks, failedStep }) {
   return lines;
 }
 
+function getBaselineTriageFindings(failedStep) {
+  if (!failedStep) {
+    return [];
+  }
+
+  if (failedStep.phase === 'doctor') {
+    return [
+      {
+        scope: 'doctor',
+        code: 'config-precheck',
+      },
+    ];
+  }
+
+  if (failedStep.phase === 'verify') {
+    return [
+      {
+        scope: 'verify',
+        code: 'database-precheck',
+      },
+    ];
+  }
+
+  return [
+    {
+      scope: 'baseline',
+      code: 'baseline-regression',
+    },
+  ];
+}
+
+function getBaselineNextStage({ isQuick, withHostChecks, failedStep }) {
+  if (failedStep) {
+    if (failedStep.phase === 'doctor') {
+      return 'fix-config-and-rerun-preflight';
+    }
+
+    if (failedStep.phase === 'verify') {
+      return 'fix-database-and-rerun-preflight';
+    }
+
+    return 'fix-baseline-and-rerun-preflight';
+  }
+
+  if (withHostChecks && !isQuick) {
+    return 'run-runtime-check';
+  }
+
+  if (isQuick) {
+    return 'upgrade-to-host-preflight';
+  }
+
+  return 'consider-host-preflight';
+}
+
 function buildBaselineMarkdownReport({
   executedAtUtc,
   isQuick,
@@ -189,43 +248,38 @@ function buildBaselineMarkdownReport({
   const overallStatus = failedStep ? 'failed' : 'passed';
   const mode = isQuick ? 'quick' : 'full';
   const hostChecks = withHostChecks && !isQuick ? 'enabled' : 'disabled';
+  const triageFindings = getBaselineTriageFindings(failedStep);
 
-  const lines = [
-    '### Baseline Validation',
-    '',
-    '#### Summary',
-    `- Time: ${executedAtUtc}`,
-    `- Overall: ${overallStatus}`,
-    `- Mode: ${mode}`,
-    `- HostChecks: ${hostChecks}`,
-    ...outcomes.map((outcome) => buildStepSummaryLine(outcome)),
-  ];
-
-  if (failedStep) {
-    lines.push(`- FailedPhase: ${failedStep.phase}`);
-    lines.push(`- FailedStep: ${failedStep.title}`);
-  }
-
-  lines.push('', '#### Actions', ...buildBaselineActionLines({
-    isQuick,
-    withHostChecks,
-    failedStep,
-  }));
-
-  return lines.join('\n');
-}
-
-function printBaselineMarkdownReport(markdownReport) {
-  console.error('\n[baseline] ----- BEGIN REPORT -----');
-  console.error(markdownReport);
-  console.error('[baseline] ----- END REPORT -----');
-}
-
-async function writeBaselineMarkdownReport(reportFile, markdownReport) {
-  const resolvedReportFile = path.resolve(reportFile);
-  await fs.mkdir(path.dirname(resolvedReportFile), { recursive: true });
-  await fs.writeFile(resolvedReportFile, `${markdownReport}\n`, 'utf8');
-  console.error(`[baseline] 报告已写入: ${resolvedReportFile}`);
+  return buildSummaryActionReport({
+    title: 'Baseline Validation',
+    summaryLines: [
+      `- Time: ${executedAtUtc}`,
+      `- Overall: ${overallStatus}`,
+      `- Mode: ${mode}`,
+      `- HostChecks: ${hostChecks}`,
+      ...outcomes.map((outcome) => buildStepSummaryLine(outcome)),
+      ...(failedStep
+        ? [
+            `- FailedPhase: ${failedStep.phase}`,
+            `- FailedStep: ${failedStep.title}`,
+          ]
+        : []),
+      ...buildTriageSummaryLines({
+        route: 'preflight',
+        findings: triageFindings,
+        nextStage: getBaselineNextStage({
+          isQuick,
+          withHostChecks,
+          failedStep,
+        }),
+      }),
+    ],
+    actionLines: buildBaselineActionLines({
+      isQuick,
+      withHostChecks,
+      failedStep,
+    }),
+  });
 }
 
 if (hasFlag('--help') || hasFlag('-h')) {
@@ -364,9 +418,9 @@ for (const step of steps) {
         outcomes,
         failedStep: step,
       });
-      printBaselineMarkdownReport(markdownReport);
+      printSummaryActionReport('baseline', markdownReport);
       if (reportFile) {
-        await writeBaselineMarkdownReport(reportFile, markdownReport);
+        await writeSummaryActionReport('baseline', reportFile, markdownReport);
       }
     }
     process.exit(outcome.status);
@@ -392,8 +446,8 @@ if (showReport) {
     outcomes,
     failedStep: null,
   });
-  printBaselineMarkdownReport(markdownReport);
+  printSummaryActionReport('baseline', markdownReport);
   if (reportFile) {
-    await writeBaselineMarkdownReport(reportFile, markdownReport);
+    await writeSummaryActionReport('baseline', reportFile, markdownReport);
   }
 }
