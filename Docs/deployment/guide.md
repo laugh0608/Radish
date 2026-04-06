@@ -669,17 +669,18 @@ HTTP (5000/5100) → ASP.NET Core 应用
      - `OpenIddict__Server__Issuer` 是否已跟随 `RADISH_PUBLIC_URL`
      - 外层反代是否正确传递 `X-Forwarded-Proto` 与 `Host`
 
-### 最小记录模板
+### 记录模板
 
-- 记录日期：YYYY-MM-DD
-- 记录范围：上线前交付复核
-- 外部域名：<domain>
-- Compose 组合：`base + prod`
-- 证书来源：<path or secret name>
-- 静态展开：通过 / 阻塞
-- 最小运行态：通过 / 阻塞
-- OIDC 回调链路：通过 / 阻塞
-- 结论：可进入更大范围部署 / 仍需修复
+上线前交付复核不再建议临时手写字段，统一复用：
+
+- [M14 部署后最小复核记录模板](/guide/m14-deployment-review-record-template)
+
+最少应明确记录：
+
+- `base + prod` 组合、外部域名、镜像版本与证书来源
+- `validate:baseline:host`、`check:host-runtime` 与 `collect:m14-host-record` 的执行结果
+- `RADISH_PUBLIC_URL`、Issuer、反代头、`/health`、`/`、`/console/`、`/scalar`
+- `radish-client / radish-console / radish-scalar` 登录、回调、登出，以及 `userinfo` / 受保护接口结论
 
 ### 当前说明
 

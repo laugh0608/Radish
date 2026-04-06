@@ -157,6 +157,14 @@ npm run check:host-runtime -- --report
 npm run check:host-runtime -- --report-file .tmp/host-runtime-report.md
 ```
 
+如果已经生成启动前与启动后的两份报告，希望把它们自动收成一份维护记录，可继续执行：
+
+```bash
+npm run collect:m14-host-record
+```
+
+默认会读取 `.tmp/baseline-host-report.md` 与 `.tmp/host-runtime-report.md`，并输出 `.tmp/m14-host-maintenance-record.md`。
+
 当前 `--report` 输出已拆为：
 
 - `Summary`：保留本轮检查事实与 `Gateway /healthz` 摘要
@@ -209,6 +217,8 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 - `/`、`/console/`、`/scalar` 可打开
 - 登录、回调、登出至少有一轮真实验证
 
+记录时建议直接复用：[M14 部署后最小复核记录模板](/guide/m14-deployment-review-record-template)
+
 ### 生产部署
 
 除了测试部署的最小动作，还应额外确认：
@@ -217,6 +227,8 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 - 外层 Nginx / Traefik / Caddy 反代头未丢失
 - Auth 证书路径、密码与挂载目录真实可用
 - OIDC 回调、`userinfo` 与受保护接口至少完成一轮真实访问
+
+记录时建议直接复用：[M14 部署后最小复核记录模板](/guide/m14-deployment-review-record-template)
 
 ## 首轮完成标准
 
@@ -232,4 +244,5 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 
 - [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
 - [验证基线说明](/guide/validation-baseline)
+- [M14 部署后最小复核记录模板](/guide/m14-deployment-review-record-template)
 - [部署与容器指南](/deployment/guide)

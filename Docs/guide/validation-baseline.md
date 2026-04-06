@@ -25,6 +25,7 @@ npm run lint:staged
 npm run collect:changed
 npm run collect:changed:staged
 npm run collect:tracked
+npm run collect:m14-host-record
 npm run check:identity-impact
 npm run check:identity-impact:staged
 npm run validate:baseline
@@ -64,6 +65,11 @@ npm run validate:ci
 - `collect:tracked`
   - 统一输出仓库当前所有 tracked files
   - 适合排查全量文本卫生或脚本命中范围
+- `collect:m14-host-record`
+  - 汇总 `validate:baseline:host` 与 `check:host-runtime` 已落盘的 Markdown 报告
+  - 默认读取 `.tmp/baseline-host-report.md` 与 `.tmp/host-runtime-report.md`
+  - 默认输出 `.tmp/m14-host-maintenance-record.md`
+  - 适合把启动前与启动后的 `M14` 结论直接沉淀成一份维护记录
 - `check:identity-impact`
   - 只判定“当前变更是否命中身份语义影响面”
   - 默认同时输出命中文件与命中原因类别，便于直接回写 PR / 维护记录
@@ -267,6 +273,14 @@ npm run check:host-runtime -- --report
 ```bash
 npm run check:host-runtime -- --report-file .tmp/host-runtime-report.md
 ```
+
+- 如果两段报告都已生成，想把它们直接汇总成一份 `M14` 维护记录，可执行：
+
+```bash
+npm run collect:m14-host-record
+```
+
+- 默认会读取 `.tmp/baseline-host-report.md` 与 `.tmp/host-runtime-report.md`，并输出 `.tmp/m14-host-maintenance-record.md`
 
 - 如果既要终端分诊，又要固定格式回写，可直接组合：
 
