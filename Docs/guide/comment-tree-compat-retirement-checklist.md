@@ -19,18 +19,18 @@
 
 - 前端主链已经切到“根评论分页 + 子评论懒加载”正式契约
 - 仓库内高频评论详情访问当前不再依赖 `GetCommentTree`
-- `GetCommentTree` 当前已从 API 展示面隐藏
-- 兼容入口命中时，当前会补：
+- `GetCommentTree` 当前已从 API 展示面与代码实现中移除
+- 删除前的兼容观察已完成留痕：
   - 响应头 `X-Radish-Deprecated`
   - 日志 `legacy GetCommentTree invoked`
 - 仓库内未被任何调用使用的旧树方法 `ICommentService.GetCommentTreeAsync` 已移除
 - 本轮论坛评论专项回归已通过：回复父评论、回复子评论、编辑父评论 / 子评论后的子评论展开态、点赞、删除与历史记录当前均正常
 - 本轮日志复核已确认未见有效 `legacy GetCommentTree invoked` 命中
-- 当前仓库内保留的旧评论树相关资产只剩：
-  - `CommentController.GetCommentTree`
-  - `ICommentService.GetCommentTreeWithLikeStatusAsync`
-  - `CommentService.GetCommentTreeWithLikeStatusAsync`
-  - 两个“仅用于观察旧调用”的 `HttpTest` 条目
+- 旧评论树兼容入口的正式删除批次已完成：
+  - `CommentController.GetCommentTree` 已删除
+  - `ICommentService.GetCommentTreeWithLikeStatusAsync` 已删除
+  - `CommentService.GetCommentTreeWithLikeStatusAsync` 已删除
+  - 两个“仅用于观察旧调用”的 `HttpTest` 条目已移除
 
 ## 正式删除前必须同时满足的条件
 
@@ -71,7 +71,7 @@
   - `GetRootComments`
   - `GetChildComments`
 - 论坛专题文档是否已把分页链路当作默认主链
-- `HttpTest` 是否仅把 `GetCommentTree` 标为“观察旧调用”，而不是主链步骤
+- 观察用途的 `HttpTest` 是否已确认可以一并移除
 
 当前若这一步仍不成立，不进入删除窗口。
 
@@ -145,20 +145,20 @@
 
 截至 `2026-04-06`，当前结论已更新为：
 
-- **正式删除窗口已就绪**
-- **本轮观察前置条件已完成当前批次确认**
-- **下一批次应一并删除兼容控制器 / 服务实现与两个观察用 `HttpTest` 条目**
+- **兼容入口已完成正式退役**
+- **旧评论树兼容面已从代码与 `HttpTest` 中移除**
+- **论坛评论主链当前仅保留分页契约**
 
-换句话说，当前最合理的下一步已不是“继续观察”，而是按本页既定顺序完成正式删除批次，并同步更新文档与回归记录。
+换句话说，本页当前已从“删前清单”转为“删后留痕”：后续若论坛评论相关改动需要回归，只需围绕 `GetRootComments + GetChildComments` 与评论编辑历史主链执行，不再回头恢复旧兼容入口。
 
-## 本轮观察记录（2026-04-06）
+## 本轮删除记录（2026-04-06）
 
 - 记录日期：2026-04-06
 - 记录人：Codex 协作记录
-- 观察窗口：2026-04-06 本轮论坛评论专项回归
+- 删除窗口：2026-04-06 本轮论坛评论正式删除批次
 - 仓库内主链依赖：已清零
 - 命中日志：无
 - 命中来源：无
 - 仓库外依赖事实：当前测试范围内未发现有效依赖，且用户确认日志无 `GetCommentTree`
-- 当前结论：可进入正式删除窗口
-- 遗留项：待下一批次删除 `CommentController.GetCommentTree`、`ICommentService.GetCommentTreeWithLikeStatusAsync`、`CommentService.GetCommentTreeWithLikeStatusAsync` 与两个观察用 `HttpTest`
+- 当前结论：已完成正式删除
+- 遗留项：无

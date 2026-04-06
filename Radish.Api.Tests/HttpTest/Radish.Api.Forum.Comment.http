@@ -15,10 +15,6 @@ Accept: application/json
 GET {{Gateway_HostAddress}}/api/v1/Comment/GetChildComments?parentId={{ForumComment_RootId}}&pageIndex=1&pageSize=10
 Accept: application/json
 
-### 兼容入口：获取整棵评论树（仅用于观察旧调用）
-GET {{Gateway_HostAddress}}/api/v1/Comment/GetCommentTree?postId={{ForumComment_PostId}}
-Accept: application/json
-
 ### 发表根评论
 POST {{Gateway_HostAddress}}/api/v1/Comment/Create
 Content-Type: application/json

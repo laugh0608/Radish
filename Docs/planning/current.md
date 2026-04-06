@@ -119,7 +119,7 @@
 - [x] 已完成论坛热点首批数据库化收口：全部帖子与投票帖子视图下的 `hottest` 排序当前已改为数据库排序分页；子评论懒加载也已补 `IsEnabled` 过滤，避免 disabled 子评论重新暴露
 - [x] 已完成帖子列表最近互动人查询下沉：`FillPostAvatarAndInteractorsAsync` 当前已从 `PostController` 私有全量评论查询迁到服务 / 仓储侧批量读模型，按页帖子只查“每帖最近互动作者 Top N”，不再整页物化全部评论
 - [x] 已完成评论详情主链路分页化：论坛帖子详情当前已改为“根评论分页 + 子评论懒加载”正式契约，前端主链改走 `GetRootComments`，替换整帖评论全量拉取后再组树的实现
-- [x] 已完成旧评论树入口的观察期收口：仓库内前端主链与功能文档当前已切到根评论分页口径；`GetCommentTree` 仅剩兼容控制器 / 服务实现与两个观察用 `HttpTest` 条目，本轮论坛评论专项回归通过且日志未见有效命中，当前已进入正式删除窗口
+- [x] 已完成旧评论树入口正式退役：`CommentController.GetCommentTree`、`ICommentService.GetCommentTreeWithLikeStatusAsync`、`CommentService.GetCommentTreeWithLikeStatusAsync` 与两个观察用 `HttpTest` 条目当前已删除；论坛评论主链仅保留根评论分页 + 子评论懒加载正式契约
 - [x] 已完成论坛正文图片坏图链路收口：`MarkdownRenderer` 当前已统一放行 `attachment://` 与 `sticker://` 协议，数据库重建或重新发帖后不再因渲染层过滤导致正文图片变成坏图
 - [x] 已完成论坛发帖正文 / 评论 / 聊天室输入的 `@提及` 联想补齐：发帖正文真实入口、评论编辑器与聊天室输入框当前都已提供匹配用户名列表、键盘确认与插入反馈
 - [x] 已完成评论区与聊天室粘贴图片能力补齐：剪贴板图片当前可直接上传并进入对应输入链路，评论与聊天不再要求先手动保存到本地再选图
@@ -135,7 +135,7 @@
 - 第 4 步：继续维持当前统一镜像推送、`local / test / prod`、`DbMigrate -> Api/Auth -> Gateway` 与 `AuthUi__ShowTestAccountHint` 的发布口径冻结状态，避免部署事实再次漂移
 - 第 5 步：把测试部署与生产部署的最小复核动作统一回链到 [部署与容器指南](/deployment/guide) 与 `M14` 清单，不再把部署排障与代码回归混在一起
 - 第 6 步：保持身份语义 `Phase 4` 的稳定维护边界；若后续出现新的部署环境、第三方客户端或自定义反代规则，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实确认
-- 第 7 步：旧 `GetCommentTree` 兼容入口的观察前置验证已完成，下一批次按 [`GetCommentTree` 兼容入口退场清单](/guide/comment-tree-compat-retirement-checklist) 执行正式删除窗口：一并移除兼容控制器 / 服务实现与两个观察用 `HttpTest` 条目，再同步更新文档与回归记录
+- 第 7 步：旧 `GetCommentTree` 兼容入口已完成正式退役；后续论坛评论相关改动默认只围绕 `GetRootComments + GetChildComments` 主链回归，不再把旧入口保留为观察项
 - 第 8 步：继续把 `Repo Quality / validate:ci / Identity Guard / 受限环境边界` 的排查口径维持在 [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting) 单一入口中维护，避免脚本说明与故障分流再次散落
 
 ### 今日整理结果（2026-04-05）
@@ -176,7 +176,7 @@
 - 当前已完成 Phase 4 首轮仓库内实施、官方顺序真实回归与回滚窗口验证：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、官方客户端直读规则与联调示例已完成同步，`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 当前均已通过真实回归，结论更新为“无需回滚，转入稳定维护”
 - 截至 `2026-04-05`，当前进一步确认 `radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 官方顺序真实回归均已通过，Phase 4 本轮已正式收口；后续不再继续扩张实施项，而是优先维持维护态，并转入 `M14` 第一轮执行入口、排障顺序与最小部署复核口径收口
 - 截至 `2026-04-05`，`M14` 第一轮主路径也已从“入口与报告口径收口”进一步推进到“宿主健康语义与启动日志摘要收口”：当前可先看启动日志核对 JWT / OIDC / Gateway 探活模式，再看 `/health`、`/healthz` 做最小分诊
-- 截至 `2026-04-06`，旧 `GetCommentTree` 兼容入口的观察期已完成当前批次收口：论坛评论专项回归通过、日志未见有效命中，且仓库内高频主链已不再依赖旧接口；当前结论已更新为“可进入正式删除窗口”，下一批次应一并移除兼容控制器 / 服务实现与观察用 `HttpTest`
+- 截至 `2026-04-06`，旧 `GetCommentTree` 兼容入口的正式删除批次已完成：兼容控制器、服务契约与观察用 `HttpTest` 均已移除；后续不再继续维护旧评论树兼容面，论坛评论主链只保留分页契约
 - 通知中心已于 `2026-03-23` 完成一轮真实首版 Smoke，并已在本轮总回归中完成复核；当前转入稳定维护
 - 认证基础入口虽已于 `2026-03-23` 完成一轮真实首版 Smoke，但 `2026-03-30` 又针对后台闲置恢复、慢登录与重复提交场景补了一轮治根治理；截至 `2026-04-02`，相关回归已完成当前批次确认，当前转入稳定维护
 - 论坛首页与日志链路已于 `2026-03-31` 再完成一轮治根收口：论坛首屏已去掉前端串行阻塞并补专用查询路径，日志目录已恢复到 `Logs/{ProjectName}`，`SkipTables` 与 SQL AOP 模板异常当前也已对齐到可持续排障的状态

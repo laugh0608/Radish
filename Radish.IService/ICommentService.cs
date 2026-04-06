@@ -53,15 +53,6 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     Task<Dictionary<long, bool>> GetUserLikeStatusAsync(long userId, List<long> commentIds);
 
     /// <summary>
-    /// 获取帖子的评论树（带点赞状态）
-    /// </summary>
-    /// <param name="postId">帖子 Id</param>
-    /// <param name="userId">用户 Id（可选，用于填充点赞状态）</param>
-    /// <param name="sortBy">排序方式：newest=最新，hottest=最热（默认：newest）</param>
-    /// <returns>评论树（包含点赞状态）</returns>
-    Task<List<CommentVo>> GetCommentTreeWithLikeStatusAsync(long postId, long? userId = null, string sortBy = "newest");
-
-    /// <summary>
     /// 分页获取根评论（带点赞状态）
     /// </summary>
     /// <param name="postId">帖子 Id</param>

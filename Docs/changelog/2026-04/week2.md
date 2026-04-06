@@ -24,3 +24,9 @@
 - **论坛评论专项回归已完成当前批次确认**：回复父评论、回复子评论、编辑评论后的子评论展开态、点赞、删除与历史记录本轮均已复核通过，评论主链当前稳定。
 - **日志复核当前无有效旧入口命中**：用户已确认本轮日志中未出现 `GetCommentTree`，结合前端主链已切到根评论分页口径，旧兼容入口的观察前置条件已完成当前批次收口。
 - **当前结论已更新为“可进入正式删除窗口”**：下一批次应按退场清单一并移除兼容控制器 / 服务实现与两个观察用 `HttpTest` 条目，而不再继续维持“观察池”表述。
+
+### `GetCommentTree` 正式退役
+
+- **旧兼容入口代码已删除**：`CommentController.GetCommentTree`、`ICommentService.GetCommentTreeWithLikeStatusAsync` 与 `CommentService.GetCommentTreeWithLikeStatusAsync` 当前均已移除，论坛评论后端不再保留整树兼容接口。
+- **观察用 `HttpTest` 已同步移除**：`Radish.Api.Forum.Comment.http` 与 `Radish.Api.Forum.Lottery.http` 中仅用于观察旧调用的 `GetCommentTree` 请求当前已删除，避免后续回归再次误打旧接口。
+- **当前主链口径已固定**：论坛评论只保留 `GetRootComments + GetChildComments` 的分页契约，评论树兼容退役事项至此完成闭环。

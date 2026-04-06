@@ -75,11 +75,6 @@ GET {{Gateway_HostAddress}}/api/v1/Comment/GetChildComments?parentId={{ForumLott
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
 
-### 兼容入口：获取整棵评论树（仅用于观察旧调用）
-GET {{Gateway_HostAddress}}/api/v1/Comment/GetCommentTree?postId={{ForumLottery_PostId}}
-Accept: application/json
-Authorization: Bearer {{Access_Token}}
-
 ### 再次获取抽奖详情（预期：父评论计入，回复不计入）
 GET {{Gateway_HostAddress}}/api/v1/Lottery/GetByPostId?postId={{ForumLottery_PostId}}
 Accept: application/json
