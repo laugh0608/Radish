@@ -11,14 +11,14 @@
 
 ## 当前状态
 
-- **当前里程碑**：`M14 宿主运行与最小可观测性基线`
-- **当前主线**：`M14 宿主运行与最小可观测性基线`
-- **当前阶段**：`截至 2026-04-05，社区主链多轮回归与首版 dev 文档收口已完成；身份语义 Phase 4 的仓库内前置资产、仓库资产侧首轮排查、首轮实施窗口与官方顺序真实回归也均已完成。当前结论已进一步收束为：Auth 输出双写已收缩、`userinfo` 已完成最小对齐，`radish-client -> radish-console -> Radish.Api.AuthFlow.http -> radish-scalar` 已按既定顺序完成端到端验证，无需触发回滚，Phase 4 本轮正式收口并转入维护态。当前主线已正式切换为 `M14`，且“启动前 `validate:baseline:host` -> 启动后 `check:host-runtime`”的两段主路径、统一报告口径与最小运行态检查入口均已完成首轮收口。详见：[M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。`
+- **当前里程碑**：`M15 最小交付与部署基线`
+- **当前主线**：`M15 最小交付与部署基线`
+- **当前阶段**：`截至 2026-04-06，M14 的“启动前 validate:baseline:host -> 启动后 check:host-runtime -> 部署后最小复核”三层主路径已完成首轮真实闭环：本地默认主路径、Docker 测试部署与生产部署均已确认无阻塞问题，宿主维护样例与部署复核记录也已补齐。基于此，当前主线已正式切换为 M15 第一批；本轮只收口“发版 / 部署 / 发布后最小复核 / 回滚”的单一入口与默认 tag 口径，不扩张到 workflow 改造、自动回滚或 Gateway & BFF 专题。详见：[M15 最小交付与部署基线](/guide/m15-delivery-baseline)。`
 - **并行治理尾项**：
   - 身份语义 Phase 4：稳定维护与防回归治理准备（当前已完成 [最终启动评审](/guide/identity-claim-phase4-start-review)、首轮实施与官方顺序真实回归，结论为无需回滚并转入稳定维护）
   - `DbMigrate` 进入回归维护（解耦宿主 + `doctor` 校验已完成）
 
-## 当前关注（2026-04-05）
+## 当前关注（2026-04-06）
 
 ### 当前阶段原则
 
@@ -170,17 +170,22 @@
    - 当前结论为：业务 / 体验主线 Smoke、验证基线与社区主链回归当前均已完成本轮收口，首版剩余重点进一步收束到稳定维护、统一镜像推送口径冻结，以及下一里程碑入口重审
 
 19. **`2026-04-05` 的规划重审已进入 `M14` 第一轮执行阶段**
-   - 今天不直接启动新的功能主线，也不把已收口专题重新拉回当前主线
    - 当前已把后续事项重新拆成维护池 / 观察池 / 后置池：Phase 4 首轮实施结果、聊天室 `P1`、通知中心、`Console-ext` 一期、投票 / 问答 / 抽奖 MVP、浏览记录与 `DbMigrate` 统一转入维护池；旧 `GetCommentTree` 兼容入口已完成正式退役，观察池只保留身份语义外部兼容边界与 `Repo Quality` 默认执行面
-   - 当前主线已正式切换为 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)，并新增 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 作为默认执行入口；`M13` 与 `M15` 暂继续保留在候选池
+   - 当前已确认 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline) 的首轮执行路径真实可用，并已完成本地主路径、Docker 测试部署与生产部署复核
    - 用户已完成 `radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 手工联调确认，本轮 `Phase 4` 可以正式收口，不再维持“继续观察官方回归”的表述
 
-20. **`M14` 启动前 / 启动后两段主路径与报告口径已完成首轮收口**
+20. **`M14` 启动前 / 启动后 / 部署后三层主路径已完成首轮收口**
    - 当前默认执行顺序已固定为：启动前先跑 `npm run validate:baseline:host`，宿主启动后再跑 `npm run check:host-runtime`
    - `validate:baseline:host` 与 `check:host-runtime` 当前都已支持 `--report`、`--report-file`，并统一输出 `Summary / Actions` 两段，便于把启动前与启动后结论写入同一份维护记录
    - `validate:baseline:host` 当前已明确分流 `baseline / doctor / verify` 三类失败；`check:host-runtime` 当前已承担 `Gateway / Api / Auth` 的最小运行态检查，并支持补充 `Gateway /healthz` 条目摘要
    - `Gateway` 当前已明确拆分 `/health` 与 `/healthz` 语义：前者用于最小后端宿主链检查，后者用于更完整的扩展观测；本轮重点是把这套主路径固定下来，而不是继续扩成大而全运维平台
    - 最新已继续补齐宿主启动摘要：`Api / Auth / Gateway` 当前会在启动日志里直接输出 JWT / OIDC / 下游探活目标运行摘要，其中 `console-service` 已固定为扩展观测层的 `/healthz + Degraded`，便于先核对运行模式，再进入健康检查分诊
+
+21. **`2026-04-06` 起，当前主线已切换到 `M15` 第一批**
+   - 已新增 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 作为单一入口，统一收口发版、部署、发布后最小复核与回滚
+   - `Deploy/.env.test.example` 与 `Deploy/.env.prod.example` 默认镜像值已从漂移别名改成明确版本占位，避免“文档建议固定 tag、示例却默认漂移”
+   - [部署与容器指南](/deployment/guide) 已补最小回滚入口，并与 `M15` 文档互相回链
+   - 当前第一批明确不扩张到 workflow 改造、自动回滚、蓝绿 / 金丝雀或 `Gateway & BFF` 深化专题
 
 ### 暂不作为当前主线
 
@@ -188,7 +193,7 @@
 - 分发增强：更复杂召回 / 排序 / 观测压测
 - 邮件通知系统
 
-## M14 当前切分
+## M15 当前切分
 
 ### 已完成子阶段
 
@@ -200,18 +205,18 @@
 - 身份语义收敛主体完成
 - 文档应用 `A` 阶段验收完成
 - 身份语义 `Phase 4` 首轮实施、官方顺序真实回归与本轮正式收口
+- `M14` 宿主运行与最小可观测性基线首轮真实闭环
 
 ### 当前进行中子阶段
 
-- `M14` 执行入口、报告口径与阶段文档收口
-- `validate:baseline:host`、`DbMigrate doctor / verify`、`check:host-runtime`、健康检查、启动日志与部署复核顺序统一
-- 身份语义 Phase 4 稳定维护与防回归治理准备
-- 文档、验证基线与发布口径冻结维护
+- `M15` 单一入口文档收口
+- 发版 / 部署 / 发布后最小复核 / 回滚默认顺序收口
+- 测试与生产 `.env` 示例默认 tag 口径统一
+- 部署指南、规划页与验证入口回链统一
 
 ### 后续候选子阶段
 
 - `M13` 验证基线与回归资产工程化
-- `M15` 最小交付与部署基线
 - `P3-ext` 论坛投票扩展（首个 dev 版本后再评估）
 - 论坛问答后续增强（首个 dev 版本后再评估）
 - `P5-ext` 抽奖扩展（首个 dev 版本后再评估）
@@ -252,12 +257,13 @@
 
 ## 本阶段建议入口
 
+- `M15` 阶段定义：见 [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
 - `M14` 阶段定义：见 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
 - `M14` 默认执行清单：见 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
 - 首版边界与完成标准：见 [首版 dev 边界](/planning/dev-first-scope)
 - 首版总回归与发布前检查单：见 [首版 dev 总回归与发布前检查单](/guide/dev-first-regression-checklist)
 - 首版总回归记录：见 [首版 dev 总回归记录](/guide/dev-first-regression-record)
-- 上线前交付复核入口：见 [部署与容器指南](/deployment/guide)
+- 上线前交付与最小回滚入口：见 [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
 - 权限治理状态与清单：见 [Console 权限治理 V1](/guide/console-permission-governance)
 - 当前执行项：见 [当前进行中](/planning/current)
 - 论坛投票方案与进度：见 [论坛投票 MVP 设计方案](/features/forum-poll-mvp)
