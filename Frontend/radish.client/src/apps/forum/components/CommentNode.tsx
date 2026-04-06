@@ -322,12 +322,9 @@ export const CommentNode = ({
     );
     setLoadedChildren(sorted);
     setChildSortBy(null); // 重置排序方式为默认值
-  }, [node.voChildren]);
-
-  // 父评论或子评论总数变化时，重置预加载状态
-  useEffect(() => {
-    setHasPreloadedChildren(false);
-  }, [node.voId, node.voChildrenTotal]);
+    setCurrentPage(sorted.length > 0 ? 1 : 0);
+    setHasPreloadedChildren(sorted.length > 0);
+  }, [node.voChildren, node.voChildrenTotal, node.voId]);
 
   // 若后端只返回 childrenTotal（不带 children 列表），为了“收起态也能看到一条回复”，这里自动预加载第一页子评论
   useEffect(() => {
@@ -449,11 +446,20 @@ export const CommentNode = ({
 
     setIsLoadingMore(true);
     try {
-      const nextPage = currentPage + 1;
+      const nextPage = loadedChildren.length === 0 ? 1 : currentPage + 1;
       const moreChildren = await onLoadMoreChildren(node.voId, nextPage, pageSize);
       const normalized = Array.isArray(moreChildren) ? moreChildren : [];
-      setLoadedChildren([...loadedChildren, ...normalized]);
+      setLoadedChildren((prev) => {
+        if (nextPage === 1) {
+          return normalized;
+        }
+
+        const existingIds = new Set(prev.map(child => child.voId));
+        const appended = normalized.filter(child => !existingIds.has(child.voId));
+        return [...prev, ...appended];
+      });
       setCurrentPage(nextPage);
+      setHasPreloadedChildren(normalized.length > 0 || nextPage > 1);
     } catch (error) {
       log.error(t('forum.comment.loadMoreChildrenFailed'), error);
     } finally {
