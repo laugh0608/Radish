@@ -10,6 +10,7 @@
 > - [当前进行中](/planning/current)
 > - [M15 测试环境最小回滚演练记录（2026-04-06）](/guide/m15-test-rollback-rehearsal-2026-04-06)
 > - [M15 生产环境最小回滚预案（2026-04-06）](/guide/m15-prod-rollback-playbook-2026-04-06)
+> - [M15 发布记录模板](/guide/m15-release-record-template)
 
 ## 目标
 
@@ -34,6 +35,7 @@
 - `M14` 的启动前、启动后与部署后最小复核已完成首轮真实闭环
 - 测试环境已完成一轮真实最小回滚演练：`v26.3.2-r1-test -> v26.3.2-test`
 - 生产环境当前已补最小回滚预案，但尚未做真实回滚演练
+- 发布留痕当前已补统一记录模板，可固定沉淀 tag、镜像、部署结论与回滚目标
 
 因此，`M15` 当前不再需要证明“能不能部署”，而是要把“如何稳定交付与如何回滚”写成默认动作。
 
@@ -69,6 +71,7 @@ git push origin v26.3.2-release
 
 7. 等待 `Docker Images` 工作流产出对应镜像
 8. 在部署环境把镜像 tag 固定到本次发布版本，而不是依赖 `test-latest` / `latest`
+9. 补一份发布记录，固定本次 tag、镜像 tag、部署结论与回滚目标
 
 ## 最小部署顺序
 
@@ -125,6 +128,22 @@ npm run collect:m14-host-record
 4. 如涉及测试部署 / 生产部署，再补部署后复核记录：
 
 - [M14 部署后最小复核记录模板](/guide/m14-deployment-review-record-template)
+
+## 最小发布留痕
+
+一次发布完成后，建议最少沉淀以下事实：
+
+- 本次 Git tag
+- 本次五个镜像 tag
+- 测试部署结论
+- 生产部署结论
+- 测试环境优先回滚目标
+- 生产环境优先回滚目标
+- 已知风险 / 后置项
+
+默认模板见：
+
+- [M15 发布记录模板](/guide/m15-release-record-template)
 
 ## 最小回滚基线
 
@@ -230,3 +249,5 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 
 - 测试环境：优先验证流程是否真实可执行
 - 生产环境：优先保证触发条件、目标选择与人工确认边界不含糊
+
+发布留痕则建议单独维护，不要把“发布事实”“部署复核事实”“回滚事实”混写在同一份记录里。
