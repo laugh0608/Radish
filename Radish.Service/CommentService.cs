@@ -68,42 +68,6 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     }
 
     /// <summary>
-    /// 获取帖子的评论树
-    /// </summary>
-    public async Task<List<CommentVo>> GetCommentTreeAsync(long postId)
-    {
-        // 获取所有评论
-        var comments = await QueryAsync(c => c.PostId == postId && c.IsEnabled && !c.IsDeleted);
-
-        // 构建树形结构
-        var commentMap = comments.ToDictionary(c => c.VoId);
-        var rootComments = new List<CommentVo>();
-
-        foreach (var comment in comments)
-        {
-            if (comment.VoParentId == null)
-            {
-                // 顶级评论
-                rootComments.Add(comment);
-            }
-            else if (commentMap.TryGetValue(comment.VoParentId.Value, out var parent))
-            {
-                // 子评论
-                parent.VoChildren ??= new List<CommentVo>();
-                parent.VoChildren.Add(comment);
-            }
-        }
-
-        // 按时间排序
-        rootComments = rootComments.OrderByDescending(c => c.VoIsTop)
-            .ThenBy(c => c.VoCreateTime)
-            .ToList();
-
-        await FillAuthorAvatarUrlsAsync(rootComments);
-        return rootComments;
-    }
-
-    /// <summary>
     /// 添加评论
     /// </summary>
     public async Task<long> AddCommentAsync(Comment comment)

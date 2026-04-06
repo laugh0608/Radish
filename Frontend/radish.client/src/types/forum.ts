@@ -336,6 +336,17 @@ export interface CommentNode {
 }
 
 /**
+ * 评论回复目标
+ * 当前论坛 UI 仅展示两级评论，因此提交时始终挂到根评论下，
+ * 但仍保留实际点击的回复目标，用于“回复 @某人”的展示。
+ */
+export interface CommentReplyTarget {
+  parentCommentId: number;
+  targetCommentId: number;
+  authorName: string;
+}
+
+/**
  * 帖子编辑历史
  */
 export interface PostEditHistory {

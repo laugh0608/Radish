@@ -23,6 +23,7 @@ import {
   getPostEditHistory,
   getCommentEditHistory,
   type CommentNode,
+  type CommentReplyTarget,
   type PostDetail,
   type CreatePollRequest,
   type CreateLotteryRequest,
@@ -45,7 +46,7 @@ export interface ForumActionsState {
   commentToDelete: number | null;
 
   // 回复状态
-  replyTo: { commentId: number; authorName: string } | null;
+  replyTo: CommentReplyTarget | null;
 
   // 点赞状态
   likedPosts: Set<number>;
@@ -99,7 +100,7 @@ export interface ForumActionsHandlers {
 
   // 评论操作
   handleCreateComment: (content: string) => Promise<void>;
-  handleReplyComment: (commentId: number, authorName: string) => void;
+  handleReplyComment: (target: CommentReplyTarget) => void;
   handleCancelReply: () => void;
   handleCommentLike: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
   handleEditComment: (commentId: number, newContent: string) => Promise<void>;
@@ -188,7 +189,7 @@ export const useForumActions = (
   const [commentToDelete, setCommentToDelete] = useState<number | null>(null);
 
   // 回复状态
-  const [replyTo, setReplyTo] = useState<{ commentId: number; authorName: string } | null>(null);
+  const [replyTo, setReplyTo] = useState<CommentReplyTarget | null>(null);
 
   // 点赞状态
   const [likedPosts, setLikedPosts] = useState<Set<number>>(() => {
@@ -712,7 +713,7 @@ export const useForumActions = (
         {
           postId: selectedPost.voId,
           content,
-          parentId: replyTo?.commentId ?? null,
+          parentId: replyTo?.parentCommentId ?? null,
           replyToUserId: null,
           replyToUserName: replyTo?.authorName ?? null
         },
@@ -723,7 +724,7 @@ export const useForumActions = (
       const authorName = userStore.userName || '我';
       const authorAvatarUrl = userStore.avatarThumbnailUrl || userStore.avatarUrl || null;
       const now = new Date().toISOString();
-      const parentId = replyTo?.commentId ?? null;
+      const parentId = replyTo?.parentCommentId ?? null;
 
       const isSameId = (a: number | string | null | undefined, b: number | string | null | undefined) => {
         if (a == null || b == null) return false;
@@ -744,8 +745,7 @@ export const useForumActions = (
         let inserted = false;
         const next = list.map(root => {
           const isRoot = isSameId(root.voId, targetParentId);
-          const isChild = root.voChildren?.some(child => isSameId(child.voId, targetParentId));
-          if (!isRoot && !isChild) {
+          if (!isRoot) {
             return root;
           }
 
@@ -815,8 +815,8 @@ export const useForumActions = (
   };
 
   // 回复评论
-  const handleReplyComment = (commentId: number, authorName: string) => {
-    setReplyTo({ commentId, authorName });
+  const handleReplyComment = (target: CommentReplyTarget) => {
+    setReplyTo(target);
   };
 
   const handleCancelReply = () => {

@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
-import type { PostDetail, CommentNode, QuestionAnswerSort, QuestionAnswerFilter } from '@/api/forum';
+import type { PostDetail, CommentNode, CommentReplyTarget, QuestionAnswerSort, QuestionAnswerFilter } from '@/api/forum';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
@@ -38,7 +38,7 @@ interface PostDetailContentViewProps {
   commentSortBy: 'newest' | 'hottest' | null;
   questionAnswerSort: QuestionAnswerSort;
   questionAnswerFilter: QuestionAnswerFilter;
-  replyTo: { commentId: number; authorName: string } | null;
+  replyTo: CommentReplyTarget | null;
   followStatus: UserFollowStatus | null;
   followLoading: boolean;
 
@@ -60,7 +60,7 @@ interface PostDetailContentViewProps {
   onEditComment: (commentId: number, newContent: string) => Promise<void>;
   onViewCommentHistory: (commentId: number) => void;
   onLikeComment: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
-  onReplyComment: (commentId: number, authorName: string) => void;
+  onReplyComment: (target: CommentReplyTarget) => void;
   onLoadMoreChildren: (
     parentId: number,
     pageIndex: number,
@@ -303,8 +303,8 @@ export const PostDetailContentView = ({
               onEditComment={onEditComment}
               onViewCommentHistory={onViewCommentHistory}
               onLikeComment={onLikeComment}
-              onReplyComment={(commentId, authorName) => {
-                onReplyComment(commentId, authorName);
+              onReplyComment={(target) => {
+                onReplyComment(target);
                 setIsCommentSheetOpen(true);
               }}
               onLoadMoreChildren={handleLoadMoreChildren}

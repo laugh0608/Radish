@@ -135,7 +135,7 @@
 - 第 4 步：继续维持当前统一镜像推送、`local / test / prod`、`DbMigrate -> Api/Auth -> Gateway` 与 `AuthUi__ShowTestAccountHint` 的发布口径冻结状态，避免部署事实再次漂移
 - 第 5 步：把测试部署与生产部署的最小复核动作统一回链到 [部署与容器指南](/deployment/guide) 与 `M14` 清单，不再把部署排障与代码回归混在一起
 - 第 6 步：保持身份语义 `Phase 4` 的稳定维护边界；若后续出现新的部署环境、第三方客户端或自定义反代规则，再回到 [身份语义 Phase 4 仓库外兼容边界确认清单](/guide/identity-claim-external-compat-checklist) 追加事实确认
-- 第 7 步：旧 `GetCommentTree` 兼容入口继续保留在观察池中，仅在确认仓库外也已无依赖后，再安排正式删除窗口
+- 第 7 步：旧 `GetCommentTree` 兼容入口继续保留在观察池中，仅在同时满足“仓库内主链 / 前端 / `HttpTest` 已无必需依赖、兼容入口命中观测已连续一段时间无有效命中、仓库外调用方已完成事实确认”后，再安排正式删除窗口；执行顺序统一见 [`GetCommentTree` 兼容入口退场清单](/guide/comment-tree-compat-retirement-checklist)
 - 第 8 步：继续把 `Repo Quality / validate:ci / Identity Guard / 受限环境边界` 的排查口径维持在 [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting) 单一入口中维护，避免脚本说明与故障分流再次散落
 
 ### 今日整理结果（2026-04-05）
@@ -153,7 +153,7 @@
 
 #### 观察池
 
-- 旧 `GetCommentTree` 兼容入口：继续观察真实命中与仓库外依赖，不提前进入正式删除窗口
+- 旧 `GetCommentTree` 兼容入口：继续观察真实命中与仓库外依赖；当前仓库内仅保留兼容控制器、旧树构建服务实现与“观察旧调用”用途的 `HttpTest`，在确认外部依赖已清零前不提前进入正式删除窗口；默认检查顺序见 [`GetCommentTree` 兼容入口退场清单](/guide/comment-tree-compat-retirement-checklist)
 - 身份语义外部兼容边界：仅在部署形态、第三方客户端或反代规则变化时补事实，不预设新增实施
 - `Repo Quality / validate:ci / Identity Guard` 默认执行面：继续维持同源规则与单一故障分诊入口
 
@@ -177,7 +177,7 @@
 - 当前已完成 Phase 4 首轮仓库内实施、官方顺序真实回归与回滚窗口验证：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、官方客户端直读规则与联调示例已完成同步，`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 当前均已通过真实回归，结论更新为“无需回滚，转入稳定维护”
 - 截至 `2026-04-05`，当前进一步确认 `radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 官方顺序真实回归均已通过，Phase 4 本轮已正式收口；后续不再继续扩张实施项，而是优先维持维护态，并转入 `M14` 第一轮执行入口、排障顺序与最小部署复核口径收口
 - 截至 `2026-04-05`，`M14` 第一轮主路径也已从“入口与报告口径收口”进一步推进到“宿主健康语义与启动日志摘要收口”：当前可先看启动日志核对 JWT / OIDC / Gateway 探活模式，再看 `/health`、`/healthz` 做最小分诊
-- 旧 `GetCommentTree` 兼容入口的正式删除当前已明确保留在主线跟踪项中，后续以真实命中观测结果作为收缩前置条件，避免事项脱离主线后被遗忘
+- 旧 `GetCommentTree` 兼容入口的正式删除当前已明确保留在主线跟踪项中；截至 `2026-04-06`，仓库内主链已确认不再直接依赖它，当前收缩前置条件进一步明确为“真实命中观测持续为空 + 仓库外依赖事实关闭 + 观察用途 `HttpTest` 可一并移除”，避免事项脱离主线后被遗忘
 - 通知中心已于 `2026-03-23` 完成一轮真实首版 Smoke，并已在本轮总回归中完成复核；当前转入稳定维护
 - 认证基础入口虽已于 `2026-03-23` 完成一轮真实首版 Smoke，但 `2026-03-30` 又针对后台闲置恢复、慢登录与重复提交场景补了一轮治根治理；截至 `2026-04-02`，相关回归已完成当前批次确认，当前转入稳定维护
 - 论坛首页与日志链路已于 `2026-03-31` 再完成一轮治根收口：论坛首屏已去掉前端串行阻塞并补专用查询路径，日志目录已恢复到 `Logs/{ProjectName}`，`SkipTables` 与 SQL AOP 模板异常当前也已对齐到可持续排障的状态

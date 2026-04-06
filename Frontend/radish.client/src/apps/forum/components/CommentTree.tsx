@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
-import type { CommentNode as CommentNodeType, ReactionSummaryVo } from '@/api/forum';
+import type { CommentNode as CommentNodeType, CommentReplyTarget, ReactionSummaryVo } from '@/api/forum';
 import type { ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import { CommentNode } from './CommentNode';
@@ -23,7 +23,7 @@ interface CommentTreeProps {
   onEditComment?: (commentId: number, newContent: string) => Promise<void>;
   onViewCommentHistory?: (commentId: number) => void;
   onLikeComment?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
-  onReplyComment?: (commentId: number, authorName: string) => void;
+  onReplyComment?: (target: CommentReplyTarget) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   onLoadMoreRootComments?: () => Promise<void>;
   onSortChange?: (sortBy: 'newest' | 'hottest') => void;

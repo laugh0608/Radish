@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { buildAttachmentMarkdownUrl } from '@radish/ui';
 import { StickerPicker, type StickerPickerGroup, type StickerPickerSelection } from '@radish/ui/sticker-picker';
+import type { CommentReplyTarget } from '@/api/forum';
 import { getOidcLoginUrl } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { UserMention, type UserMentionOption as UiUserMentionOption } from '@radish/ui/user-mention';
@@ -16,7 +17,7 @@ interface CreateCommentFormProps {
   hasPost: boolean;
   onSubmit: (content: string) => void;
   disabled?: boolean;
-  replyTo?: { commentId: number; authorName: string } | null;
+  replyTo?: CommentReplyTarget | null;
   onCancelReply?: () => void;
   variant?: 'inline' | 'sheet';
   stickerGroups?: StickerPickerGroup[];

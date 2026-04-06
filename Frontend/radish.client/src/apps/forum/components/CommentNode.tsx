@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { buildAttachmentAssetUrl, parseAttachmentMarkdownUrl, resolveConfiguredMediaUrl } from '@radish/ui';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
-import type { CommentNode as CommentNodeType, ReactionSummaryVo } from '@/api/forum';
+import type { CommentNode as CommentNodeType, CommentReplyTarget, ReactionSummaryVo } from '@/api/forum';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { Icon } from '@radish/ui/icon';
@@ -23,7 +23,7 @@ interface CommentNodeProps {
   onEdit?: (commentId: number, newContent: string) => Promise<void>;
   onViewHistory?: (commentId: number) => void;
   onLike?: (commentId: number) => Promise<{ isLiked: boolean; likeCount: number }>;
-  onReply?: (commentId: number, authorName: string) => void;
+  onReply?: (target: CommentReplyTarget) => void;
   onLoadMoreChildren?: (parentId: number, pageIndex: number, pageSize: number) => Promise<CommentNodeType[]>;
   stickerMap?: MarkdownStickerMap;
   reactionMap?: Record<number, ReactionSummaryVo[]>;
@@ -375,7 +375,15 @@ export const CommentNode = ({
   // 处理回复
   const handleReply = () => {
     if (onReply) {
-      onReply(node.voId, node.voAuthorName);
+      const parentCommentId = level === 0
+        ? node.voId
+        : node.voRootId ?? node.voParentId ?? node.voId;
+
+      onReply({
+        parentCommentId,
+        targetCommentId: node.voId,
+        authorName: node.voAuthorName
+      });
     }
   };
 

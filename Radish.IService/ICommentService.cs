@@ -9,13 +9,6 @@ namespace Radish.IService;
 public interface ICommentService : IBaseService<Comment, CommentVo>
 {
     /// <summary>
-    /// 获取帖子的评论树
-    /// </summary>
-    /// <param name="postId">帖子 Id</param>
-    /// <returns>评论树（顶级评论及其子评论）</returns>
-    Task<List<CommentVo>> GetCommentTreeAsync(long postId);
-
-    /// <summary>
     /// 添加评论
     /// </summary>
     /// <param name="comment">评论实体</param>
