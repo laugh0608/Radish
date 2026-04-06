@@ -8,8 +8,8 @@
 
 - **里程碑**：`M14 宿主运行与最小可观测性基线`
 - **当前主线**：`M14 宿主运行与最小可观测性基线`
-- **当前阶段**：`截至 2026-04-05，社区主链多轮回归、首版 dev 文档收口，以及身份语义 Phase 4 的启动前提确认、首轮实施窗口与官方顺序真实回归均已完成；当前生产环境的外部兼容边界事实也已补齐：现网仅有 1 套 `v26.3.2-release` Docker 部署，使用 1Panel 默认 HTTPS 反向代理，无仓库外换 Token / 联调 / 巡检脚本，OpenIddict 仅有默认种子数据。当前结论已进一步收束为：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 已按官方顺序完成端到端回归，当前无需触发回滚，Phase 4 本轮正式收口并转入维护态；当前主线已切换到 `M14`，且“启动前 `validate:baseline:host` -> 启动后 `check:host-runtime`”的两段主路径、统一报告口径与最小运行态检查入口均已完成首轮收口。详见：[M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。`
-- **复核日期**：`2026-04-05`
+- **当前阶段**：`截至 2026-04-06，社区主链多轮回归、首版 dev 文档收口，以及身份语义 Phase 4 的启动前提确认、首轮实施窗口与官方顺序真实回归均已完成；当前生产环境的外部兼容边界事实也已补齐：现网仅有 1 套 `v26.3.2-release` Docker 部署，使用 1Panel 默认 HTTPS 反向代理，无仓库外换 Token / 联调 / 巡检脚本，OpenIddict 仅有默认种子数据。当前结论已进一步收束为：Auth 输出双写已收缩、`userinfo` 已完成最小对齐、`radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 已按官方顺序完成端到端回归，当前无需触发回滚，Phase 4 本轮正式收口并转入维护态；当前主线已切换到 `M14`，且“启动前 validate:baseline:host -> 启动后 check:host-runtime -> 部署后最小复核”的三层入口均已完成首轮真实闭环：本地默认主路径已真实通过，Docker 测试部署与生产部署当前也已确认无阻塞问题，并已补齐宿主维护样例与部署复核记录。详见：[M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)。`
+- **复核日期**：`2026-04-06`
 
 ## 当前主线：M14 宿主运行与最小可观测性基线
 

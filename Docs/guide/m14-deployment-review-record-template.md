@@ -165,3 +165,13 @@ npm run collect:m14-host-record
 3. 阶段汇总或周志
 
 如果本轮同时涉及业务改动和部署改动，可把本模板作为“部署复核”小节附加到 [变更回归记录模板](/guide/change-regression-record-template) 之下，而不是重新写第二套结论。
+
+## 当前样例
+
+当前仓库已补一份真实 `M14` 样例记录：
+
+- [M14 宿主维护记录样例（2026-04-06）](/guide/m14-host-maintenance-record-example)
+- [M14 部署后最小复核记录（2026-04-06）](/guide/m14-deployment-review-record-2026-04-06)
+
+- 前者覆盖“启动前 + 启动后默认主路径真实通过”
+- 后者覆盖“测试部署 + 生产部署首轮真实复核通过”

@@ -71,6 +71,7 @@
 当前仓库已补一份真实样例：
 
 - [论坛抽奖 MVP 设计方案](/features/forum-lottery-mvp)
+- [M14 宿主维护记录样例（2026-04-06）](/guide/m14-host-maintenance-record-example)
 
 ## 放置建议
 

@@ -165,6 +165,10 @@ npm run collect:m14-host-record
 
 默认会读取 `.tmp/baseline-host-report.md` 与 `.tmp/host-runtime-report.md`，并输出 `.tmp/m14-host-maintenance-record.md`。
 
+当前仓库也已补一份真实样例，可直接参考：
+
+- [M14 宿主维护记录样例（2026-04-06）](/guide/m14-host-maintenance-record-example)
+
 当前 `--report` 输出已拆为：
 
 - `Summary`：保留本轮检查事实与 `Gateway /healthz` 摘要
@@ -244,5 +248,7 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 
 - [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
 - [验证基线说明](/guide/validation-baseline)
+- [M14 宿主维护记录样例（2026-04-06）](/guide/m14-host-maintenance-record-example)
+- [M14 部署后最小复核记录（2026-04-06）](/guide/m14-deployment-review-record-2026-04-06)
 - [M14 部署后最小复核记录模板](/guide/m14-deployment-review-record-template)
 - [部署与容器指南](/deployment/guide)
