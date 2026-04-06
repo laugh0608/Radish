@@ -1,57 +1,32 @@
 # M15 最小交付与部署基线
 
-> 本页用于把当前仓库已经具备的发布、部署、自检与回滚资产收束成单一入口。
+> 本页只定义 `M15` 当前主线的默认顺序。
 >
 > 关联入口：
 >
 > - [部署与容器指南](/deployment/guide)
 > - [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
 > - [验证基线说明](/guide/validation-baseline)
-> - [当前进行中](/planning/current)
 > - [M15 测试环境最小回滚演练记录（2026-04-06）](/guide/m15-test-rollback-rehearsal-2026-04-06)
 > - [M15 生产环境最小回滚预案（2026-04-06）](/guide/m15-prod-rollback-playbook-2026-04-06)
-> - [M15 发布记录模板](/guide/m15-release-record-template)
+> - [M15 发布记录（v26.3.2-release，2026-04-06）](/guide/m15-release-record-2026-04-06)
 
 ## 目标
 
-`M15` 当前不追求完整平台化交付，也不扩成更重的流水线或自动回滚系统。  
-本阶段只做一件事：把仓库里已经真实验证过的发布、部署、自检与回滚动作收成可执行的最小基线。
+把仓库里已经真实验证过的发版、部署、发布后最小复核与回滚动作，收成当前唯一默认顺序。
 
-当前要回答的问题是：
+## 当前已确认事实
 
-- 一次正式发布的最小顺序是什么
-- 一次测试部署 / 生产部署的最小步骤是什么
-- 发布后如何做最小复核
-- 如果本次发布出现问题，最小可行回滚怎么做
-
-## 当前仓库现实
-
-截至当前，以下事实已经成立：
-
-- `Repo Quality` 与 `Docker Images` 工作流已落地
-- `v*-dev`、`v*-test`、`v*-release` 三条 tag 轨道已存在
-- `radish-dbmigrate / radish-api / radish-auth / radish-gateway / radish-frontend` 已纳入统一 GHCR 口径
 - `base + test` 与 `base + prod` 已完成真实部署复核
 - `M14` 的启动前、启动后与部署后最小复核已完成首轮真实闭环
-- 测试环境已完成一轮真实最小回滚演练：`v26.3.2-r1-test -> v26.3.2-test`
-- 生产环境当前已补最小回滚预案，但尚未做真实回滚演练
-- 发布留痕当前已补统一记录模板，可固定沉淀 tag、镜像、部署结论与回滚目标
-
-因此，`M15` 当前不再需要证明“能不能部署”，而是要把“如何稳定交付与如何回滚”写成默认动作。
-
-## 适用范围
-
-以下场景优先从本页开始：
-
-- 准备从 `dev` 发起正式发布
-- 需要把某个 `v*-test` 或 `v*-release` 部署到环境
-- 发布后发现异常，需要退回上一版已知可用镜像
-- 需要补发布 / 部署 / 回滚的最小运维留痕
+- 测试环境已完成首轮真实最小回滚演练：`v26.3.2-r1-test -> v26.3.2-test`
+- 生产环境当前已形成最小回滚预案，但尚未做真实回滚演练
+- `v26.3.2-release` 的首份真实发布记录已落库
 
 ## 最小发布顺序
 
 1. 在 `dev` 完成代码、文档与最小验证
-2. 至少执行：
+2. 执行：
 
 ```bash
 npm run validate:baseline:quick
@@ -60,18 +35,10 @@ npm run validate:baseline:quick
 3. 发起 `dev -> master` 的 PR
 4. 等待 `Repo Hygiene / Frontend Lint / Baseline Quick / Identity Guard` 通过
 5. 合并到 `master`
-6. 创建规范 tag：
-
-```bash
-git checkout master
-git pull origin master
-git tag -a v26.3.2-release -m "Release v26.3.2"
-git push origin v26.3.2-release
-```
-
+6. 创建规范 tag
 7. 等待 `Docker Images` 工作流产出对应镜像
-8. 在部署环境把镜像 tag 固定到本次发布版本，而不是依赖 `test-latest` / `latest`
-9. 补一份发布记录，固定本次 tag、镜像 tag、部署结论与回滚目标
+8. 在部署环境把镜像 tag 固定到本次发布版本
+9. 补一份发布记录
 
 ## 最小部署顺序
 
@@ -105,149 +72,57 @@ docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deplo
 
 ## 发布后最小复核
 
-推荐固定沿用 `M14` 的三层顺序：
+固定沿用 `M14` 的三层顺序：
 
-1. 启动前前置验证：
+1. 启动前前置验证
 
 ```bash
 npm run validate:baseline:host -- --report-file .tmp/baseline-host-report.md
 ```
 
-2. 启动后运行态检查：
+2. 启动后运行态检查
 
 ```bash
 npm run check:host-runtime -- --report-file .tmp/host-runtime-report.md
 ```
 
-3. 汇总维护记录：
+3. 汇总维护记录
 
 ```bash
 npm run collect:m14-host-record
 ```
 
-4. 如涉及测试部署 / 生产部署，再补部署后复核记录：
+4. 如涉及测试部署 / 生产部署，再补部署后复核记录
 
-- [M14 部署后最小复核记录模板](/guide/m14-deployment-review-record-template)
+## 最小留痕
 
-## 最小发布留痕
+一次发布后最少保留三类事实：
 
-一次发布完成后，建议最少沉淀以下事实：
-
-- 本次 Git tag
-- 本次五个镜像 tag
-- 测试部署结论
-- 生产部署结论
-- 测试环境优先回滚目标
-- 生产环境优先回滚目标
-- 已知风险 / 后置项
-
-默认模板见：
-
-- [M15 发布记录模板](/guide/m15-release-record-template)
+- 一份发布记录
+- 一份部署后最小复核记录
+- 一份明确的回滚事实或回滚预案说明
 
 ## 最小回滚基线
 
-当前仓库的最小可行回滚，不是自动切换整套环境，而是：
+当前最小可行回滚不是自动切换整套环境，而是：
 
 1. 找到上一版已知可用 tag
 2. 将 `Deploy/.env.test` 或 `Deploy/.env.prod` 中的 `RADISH_*_IMAGE` 改回该 tag
 3. 重新拉取并更新容器
 4. 重新执行最小复核
 
-如果当前只有 1 个已知可用版本，不要强行回滚到已知坏版本。更稳妥的默认做法是：
+### 当前边界
 
-1. 基于当前稳定代码补一个新的测试锚点 tag，例如 `v26.3.2-r1-test`
-2. 先验证该锚点版本可正常部署
-3. 再从该锚点回滚到原稳定版本，优先验证“回滚流程本身”是否闭环
+- 自动回滚脚本：不做
+- workflow 改造：不做
+- 蓝绿 / 金丝雀 / 多集群发布：不做
+- `Gateway & BFF` 深化：不做
 
-首轮真实样例见：
+## 文档冻结说明
 
-- [M15 测试环境最小回滚演练记录（2026-04-06）](/guide/m15-test-rollback-rehearsal-2026-04-06)
+本页后续只在以下情况下更新：
 
-### 测试部署回滚
+- 新的真实发布 / 部署 / 回滚事实已经改变默认顺序
+- `M15` 主线正式结束
 
-1. 找到上一版已知可用 `v*-test`
-2. 在 `Deploy/.env.test` 中把：
-   - `RADISH_DBMIGRATE_IMAGE`
-   - `RADISH_FRONTEND_IMAGE`
-   - `RADISH_API_IMAGE`
-   - `RADISH_AUTH_IMAGE`
-   - `RADISH_GATEWAY_IMAGE`
-   都切回上一版 tag
-3. 执行：
-
-```bash
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml pull
-docker compose --env-file Deploy/.env.test -f Deploy/docker-compose.yml -f Deploy/docker-compose.test.yml up -d
-```
-
-4. 重新执行：
-
-```bash
-npm run check:host-runtime -- --report-file .tmp/host-runtime-report.md
-npm run collect:m14-host-record
-```
-
-### 生产部署回滚
-
-1. 找到上一版已知可用 `v*-release`
-2. 在 `Deploy/.env.prod` 中把：
-   - `RADISH_DBMIGRATE_IMAGE`
-   - `RADISH_FRONTEND_IMAGE`
-   - `RADISH_API_IMAGE`
-   - `RADISH_AUTH_IMAGE`
-   - `RADISH_GATEWAY_IMAGE`
-   都切回上一版 tag
-3. 执行：
-
-```bash
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml pull
-docker compose --env-file Deploy/.env.prod -f Deploy/docker-compose.yml -f Deploy/docker-compose.prod.yml up -d
-```
-
-4. 重新执行最小复核，并补一份部署后记录
-
-如果当前生产环境仍然只有 1 个已知可用 `v*-release` 锚点，不要为了补记录去主动做真实生产回滚。此时默认先执行：
-
-1. 固化回滚触发条件
-2. 固化回滚目标选择规则
-3. 固化回滚前确认项与回滚后最小复核
-
-当前生产预案见：
-
-- [M15 生产环境最小回滚预案（2026-04-06）](/guide/m15-prod-rollback-playbook-2026-04-06)
-
-## 回滚触发条件
-
-当前建议至少在以下情况触发回滚判断：
-
-- 登录 / 回调 / 登出主链路阻塞
-- `Gateway / Api / Auth` 运行态健康检查失败且无法在短窗口内修复
-- `RADISH_PUBLIC_URL`、Issuer、证书或反代头错误导致外部入口不可用
-- 生产环境出现阻塞主线的 `P0 / P1` 问题
-
-如果问题仅限于可快速修正的配置错误，且当前环境仍可控，可优先修配置后复核；不要机械地把所有问题都直接升级为回滚。
-
-## 当前边界
-
-`M15` 当前明确不做：
-
-- 自动回滚脚本
-- 蓝绿 / 金丝雀 / 多集群发布策略
-- 独立部署平台或更重的发布编排系统
-- 把 `M15` 扩成 `Gateway & BFF` 深化专题
-
-## 当前建议
-
-后续所有部署相关留痕，建议至少同时保留三类事实：
-
-- 本次使用的明确镜像 tag
-- 本次执行的最小复核记录
-- 若触发回滚，本次回滚前后的版本差异与回滚后复核结果
-
-当前阶段建议把“测试环境真实回滚演练”与“生产环境书面预案”分开维护：
-
-- 测试环境：优先验证流程是否真实可执行
-- 生产环境：优先保证触发条件、目标选择与人工确认边界不含糊
-
-发布留痕则建议单独维护，不要把“发布事实”“部署复核事实”“回滚事实”混写在同一份记录里。
+普通功能开发、局部 bug 修复与非部署类联调，默认不改本页。

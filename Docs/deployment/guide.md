@@ -6,6 +6,7 @@
 当前若要按仓库现实执行发版、部署、发布后最小复核与回滚，请优先参考：
 
 - [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
+- [M15 发布记录（v26.3.2-release，2026-04-06）](/guide/m15-release-record-2026-04-06)
 - [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
 - [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist)
 
@@ -93,7 +94,7 @@
 - 日常开发：在 `dev` 或功能分支完成开发与自检
 - 准备发版：从 `dev` 向 `master` 发起 Pull Request
 - 合并发布：PR 检查通过后，以 `squash` 或 `rebase` 方式合并到 `master`
-- 发布记录：合并完成后创建 Git tag，并在 GitHub Release 中补发布说明
+- 发布记录：合并完成后创建 Git tag，并补一份仓库内发布记录；如需 GitHub Release，可复用同一套发布事实
 
 ### 最小发版顺序
 
@@ -123,7 +124,11 @@
    - `ghcr.io/<owner>/radish-gateway:<tag>` / `latest`
    - `ghcr.io/<owner>/radish-frontend:<tag>` / `latest`
 
-8. 在 GitHub Release 中补齐本次发布说明、已知风险与回滚信息
+8. 补一份仓库内发布记录；如需 GitHub Release，可同步复用同一套说明、已知风险与回滚信息
+
+当前真实样例见：
+
+- [M15 发布记录（v26.3.2-release，2026-04-06）](/guide/m15-release-record-2026-04-06)
 
 ### 现阶段说明
 
