@@ -171,7 +171,7 @@
 
 19. **`2026-04-05` 的规划重审已进入 `M14` 第一轮执行阶段**
    - 今天不直接启动新的功能主线，也不把已收口专题重新拉回当前主线
-   - 当前已把后续事项重新拆成维护池 / 观察池 / 后置池：Phase 4 首轮实施结果、聊天室 `P1`、通知中心、`Console-ext` 一期、投票 / 问答 / 抽奖 MVP、浏览记录与 `DbMigrate` 统一转入维护池；旧 `GetCommentTree`、身份语义外部兼容边界与 `Repo Quality` 默认执行面继续留在观察池
+   - 当前已把后续事项重新拆成维护池 / 观察池 / 后置池：Phase 4 首轮实施结果、聊天室 `P1`、通知中心、`Console-ext` 一期、投票 / 问答 / 抽奖 MVP、浏览记录与 `DbMigrate` 统一转入维护池；旧 `GetCommentTree` 当前已完成观察期收口并进入正式删除窗口，观察池只保留身份语义外部兼容边界与 `Repo Quality` 默认执行面
    - 当前主线已正式切换为 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)，并新增 [M14 宿主运行首轮执行清单](/guide/m14-host-runtime-checklist) 作为默认执行入口；`M13` 与 `M15` 暂继续保留在候选池
    - 用户已完成 `radish-client / radish-console / Radish.Api.AuthFlow.http / radish-scalar` 手工联调确认，本轮 `Phase 4` 可以正式收口，不再维持“继续观察官方回归”的表述
 
@@ -206,7 +206,7 @@
 - `M14` 执行入口、报告口径与阶段文档收口
 - `validate:baseline:host`、`DbMigrate doctor / verify`、`check:host-runtime`、健康检查、启动日志与部署复核顺序统一
 - 身份语义 Phase 4 稳定维护与防回归治理准备
-- 旧 `GetCommentTree` 兼容入口继续观察真实命中与仓库外依赖，暂不直接删除
+- 旧 `GetCommentTree` 兼容入口已完成观察期收口，下一批次执行正式删除窗口
 - 文档、验证基线与发布口径冻结维护
 
 ### 后续候选子阶段
@@ -240,7 +240,6 @@
 
 ### 继续观察
 
-- 旧 `GetCommentTree` 兼容入口的真实命中与仓库外依赖
 - 身份语义外部兼容边界是否因部署形态变化而需要补事实
 - `Repo Quality / validate:ci / Identity Guard` 默认执行面是否持续同源
 

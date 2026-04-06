@@ -24,6 +24,8 @@
   - 响应头 `X-Radish-Deprecated`
   - 日志 `legacy GetCommentTree invoked`
 - 仓库内未被任何调用使用的旧树方法 `ICommentService.GetCommentTreeAsync` 已移除
+- 本轮论坛评论专项回归已通过：回复父评论、回复子评论、编辑父评论 / 子评论后的子评论展开态、点赞、删除与历史记录当前均正常
+- 本轮日志复核已确认未见有效 `legacy GetCommentTree invoked` 命中
 - 当前仓库内保留的旧评论树相关资产只剩：
   - `CommentController.GetCommentTree`
   - `ICommentService.GetCommentTreeWithLikeStatusAsync`
@@ -141,10 +143,22 @@
 
 ## 当前结论
 
-截至 `2026-04-06`，当前结论仍是：
+截至 `2026-04-06`，当前结论已更新为：
 
-- **不直接删除对外兼容入口**
-- **先维持兼容观察态**
-- **优先补命中观测与仓库外事实确认**
+- **正式删除窗口已就绪**
+- **本轮观察前置条件已完成当前批次确认**
+- **下一批次应一并删除兼容控制器 / 服务实现与两个观察用 `HttpTest` 条目**
 
-换句话说，当前最合理的下一步不是“继续猜测能不能删”，而是按本页清单完成一次真实观察记录。
+换句话说，当前最合理的下一步已不是“继续观察”，而是按本页既定顺序完成正式删除批次，并同步更新文档与回归记录。
+
+## 本轮观察记录（2026-04-06）
+
+- 记录日期：2026-04-06
+- 记录人：Codex 协作记录
+- 观察窗口：2026-04-06 本轮论坛评论专项回归
+- 仓库内主链依赖：已清零
+- 命中日志：无
+- 命中来源：无
+- 仓库外依赖事实：当前测试范围内未发现有效依赖，且用户确认日志无 `GetCommentTree`
+- 当前结论：可进入正式删除窗口
+- 遗留项：待下一批次删除 `CommentController.GetCommentTree`、`ICommentService.GetCommentTreeWithLikeStatusAsync`、`CommentService.GetCommentTreeWithLikeStatusAsync` 与两个观察用 `HttpTest`
